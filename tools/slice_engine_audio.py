@@ -20,8 +20,8 @@ Usage (needs numpy, and matplotlib for --plot):
 
   afconvert -f WAVE -d LEI16@44100 -c 1 379915.mp3 quad.wav     # or ffmpeg
   afconvert -f WAVE -d LEI16@44100 -c 1 419091.mp3 rev.wav
-  afconvert ... 361407.mp3 crf.wav
-  python3 tools/slice_engine_audio.py engine-bank quad=quad.wav rev=rev.wav crf=crf.wav [--plot out.png]
+  afconvert ... 419088.mp3 atv.wav;  afconvert ... 637151.mp3 quarry.wav
+  python3 tools/slice_engine_audio.py engine-bank quad=quad.wav rev=rev.wav atv=atv.wav quarry=quarry.wav [--plot out.png]
 
   afconvert ... 450034.mp3 mx.wav;  afconvert ... 148868.mp3 crm.wav
   afconvert ... 675214.mp3 db.wav
@@ -49,21 +49,29 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #          machine sits at the same level as the first where they meet.
 BANKS = {
     'engine-bank': {
-        # Idle from the quad (red) or the ATV rev recording (blue). Revs come from a
-        # Honda CRF250, a four-stroke single: rising sweeps as it rides off through
-        # the gears, falling sweeps as it backs off. Its own idle bridges the two.
+        # Idle from the quad (red) or the ATV rev recording (blue). Revs come from two
+        # recordings of real quads being ridden, so they carry the sound of an engine
+        # working through a CVT: the same ATV as the blue idle driving away, and a
+        # second ATV riding round a quarry. Both run about 2,500 to 5,500 rpm under
+        # load, which is where a utility quad lives.
         'segments': [
             ('idle', 'quad', 1.60, 7.30, (0.06, 0.12)),
             ('idle', 'quad', 8.80, 12.0, (0.06, 0.12)),
             ('idle', 'quad', 17.0, 19.9, (0.06, 0.12)),
             ('idle2', 'rev', 0.10, 1.95, (0.06, 0.09)),  # the ATV rev recording's idle (blue quad)
-            ('idle3', 'crf', 4.0, 16.2, (0.045, 0.07)),
-            ('accel', 'crf', 16.5, 18.95, (0.018, 0.05)),
-            ('accel', 'crf', 19.25, 20.8, (0.018, 0.035)),
-            ('accel', 'crf', 21.0, 23.0, (0.018, 0.03)),
-            ('accel', 'crf', 25.0, 28.5, (0.018, 0.04)),
-            ('decel', 'crf', 28.6, 31.0, (0.025, 0.04)),
-            ('decel', 'crf', 51.7, 53.1, (0.018, 0.05)),
+            ('accel', 'atv', 0.3, 4.0, (0.034, 0.05)),
+            ('accel', 'atv', 4.0, 8.1, (0.024, 0.034)),
+            ('decel', 'atv', 8.2, 10.9, (0.025, 0.04)),
+            ('accel', 'quarry', 14.4, 17.3, (0.021, 0.037)),
+            ('accel', 'quarry', 19.2, 23.2, (0.023, 0.028)),
+            ('accel', 'quarry', 41.7, 43.8, (0.028, 0.042)),
+            ('accel', 'quarry', 55.2, 57.8, (0.023, 0.036)),
+            ('accel', 'quarry', 83.0, 87.5, (0.023, 0.031)),
+            ('accel', 'quarry', 101.7, 104.0, (0.022, 0.028)),  # starts once it's back in earshot
+            ('accel', 'quarry', 112.9, 114.9, (0.034, 0.054)),
+            ('accel', 'quarry', 116.1, 117.9, (0.025, 0.031)),
+            ('decel', 'quarry', 76.4, 79.5, (0.024, 0.042)),
+            ('decel', 'quarry', 104.0, 108.3, (0.025, 0.04)),
         ],
         'oneshots': [
             # The starter's own chug isn't regular enough to cut per compression stroke, so
@@ -74,7 +82,14 @@ BANKS = {
         ],
         # (base kind, other kind, other source): the other source is scaled so its
         # idle matches the base idle's loudness.
-        'level': [('idle', 'idle2', 'rev'), ('idle', 'idle3', 'crf')],
+        'level': [('idle', 'idle2', 'rev')],
+        # Both ATVs move about in front of the microphone, so their loudness follows
+        # distance more than the engine. Flatten that out and give them a level that
+        # rises with rpm instead, about as steeply as a close recording does.
+        'flatten': {'sources': ('atv', 'quarry'), 'rms3000': 0.3, 'slope': 1.2, 'headroom': 4},
+        # Reject pulses longer or shorter than the segment's period limits allow: the
+        # quarry recording is noisy enough for the tracker to slip now and then.
+        'periodCheck': True,
     },
     'engine-bank-2t': {
         # Idle from a two-stroke motocross bike (its later idle skips beats, so only
@@ -174,6 +189,26 @@ def cut_points(x, peaks, smooth_env):
     return cuts
 
 
+def flatten(x, cuts, rms3000, slope, headroom):
+    """Takes distance out of a recording of a machine moving about: rescales it so each
+    pulse's loudness follows its rpm, (rpm / 3000) ** slope times rms3000, instead of
+    how near the microphone it was. The gain is smoothed over about 0.3 s, so the
+    pulse-to-pulse variation stays. Written at 1 / headroom of the final level so the
+    file doesn't clip; the source gain puts it back."""
+    centres = np.array([(a + b) / 2 for a, b in zip(cuts[:-1], cuts[1:])])
+    rpm = 120 / (np.diff(cuts) / SR)
+    w = int(0.3 * SR)
+    loudness = np.sqrt(np.convolve(x**2, np.ones(w) / w, mode='same')) + 1e-6
+    gains = []
+    for c in centres:
+        near = np.abs(centres - c) <= 0.15 * SR
+        target = rms3000 / headroom * (np.median(rpm[near]) / 3000) ** slope
+        gains.append(target / loudness[int(c)])
+    # Don't let a quiet stretch (the machine out of earshot) be boosted into a roar.
+    gains = np.minimum(gains, 3 * np.median(gains))
+    return x * np.interp(np.arange(len(x)), centres, gains).astype(np.float32)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('bank', choices=sorted(BANKS))
@@ -207,6 +242,10 @@ def main():
         k = int(SR * 0.0008)
         fine_env = np.convolve(np.abs(x), np.ones(k) / k, mode='same')
         cuts = cut_points(x, peaks, fine_env)
+        flat = config.get('flatten')
+        if flat and src in flat['sources']:
+            x = flatten(x, cuts, flat['rms3000'], flat['slope'], flat['headroom'])
+            fine_env = np.convolve(np.abs(x), np.ones(k) / k, mode='same')
         base = append(x)
         durs = np.diff(cuts) / SR
         for i in range(len(cuts) - 1):
@@ -221,7 +260,9 @@ def main():
             rev = kind in ('accel', 'decel')
             odd_limit = config.get('revOdd', 0.2) if rev else 0.2
             tail_limit = config.get('revTail', 0.5) if rev else 0.5
-            if abs(dur - med) / med > odd_limit:
+            if config.get('periodCheck') and not 0.85 * lo <= dur <= 1.15 * hi:
+                reason = 'out of range'  # the tracker slipped: no real pulse is this long or short here
+            elif abs(dur - med) / med > odd_limit:
                 reason = 'odd length'
             elif seg_env[int(n * 0.8) :].max() > tail_limit * seg_env[: int(n * 0.4)].max():
                 reason = 'next thump in tail'
@@ -265,6 +306,9 @@ def main():
         bs = base_src[0] if base_src else None
         base_gain = source_gain[bs] if bs else norm
         source_gain[other_src] = base_gain * median_rms(base_kind, bs) / median_rms(other_kind, other_src)
+    if 'flatten' in config:
+        for name in config['flatten']['sources']:
+            source_gain[name] = config['flatten']['headroom']
 
     os.makedirs(os.path.join(ROOT, 'public', 'audio'), exist_ok=True)
     with wave.open(os.path.join(ROOT, 'public', 'audio', f'{args.bank}.wav'), 'wb') as w:
@@ -289,7 +333,7 @@ def main():
         if not rpms:
             continue
         print(f'{k:6s} {len(rpms):4d} grains, rpm {min(rpms):.0f} to {max(rpms):.0f}')
-    print(f'source gains {source_gain}, {len(audio) / SR:.1f} s, rejected {rejected}')
+    print(f'source gains {source_gain}, {len(audio) / SR:.1f} s, peak {np.abs(audio).max():.2f}, rejected {rejected}')
 
     if args.plot:
         import matplotlib

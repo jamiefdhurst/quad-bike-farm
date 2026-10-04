@@ -25,7 +25,7 @@ export const DEFAULT_AUDIO_PARAMS = {
   recIdleSource: 'quad', // which recording idle pulses come from: 'quad' (the main quad) or 'rev' (the rev-sweep machine)
   recVolume: 0.6,
   recThrottleLoudness: 0.15, // extra loudness with the throttle open (the rev recording is already louder up the range)
-  recRevGain: 0.75, // level of the rev recording relative to idle (it was recorded under load, so it runs hot)
+  recRevGain: 0.75, // level of the rev recordings relative to idle
   recBlendLo: 1500, // rpm where the rev recording starts to blend in over the idle recording
   recBlendHi: 2100, // rpm where it has fully taken over
   recToneClosed: 6000, // Hz low-pass with the throttle shut

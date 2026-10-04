@@ -24,7 +24,8 @@ Quaternius: https://quaternius.com
 | --- | --- | --- | --- | --- |
 | Idle pulses, starter, shutdown | Quad Bike_ATV Engine.wav | Alex Fitzwater (Alex_hears_things) | https://freesound.org/people/Alex_hears_things/sounds/379915/ | CC0 1.0 |
 | The blue quad's idle | ATV Revving engine.mp3 | SomeoneCool15 | https://freesound.org/people/SomeoneCool15/sounds/419091/ | CC0 1.0 |
-| Revs from about 2,000 to 7,000 rpm (both four-strokes) | Single Cylinder Motorcycle (Honda CRF250) | richwise | https://freesound.org/people/richwise/sounds/361407/ | CC0 1.0 |
+| Revs from about 2,500 to 5,000 rpm (both four-strokes) | ATV driving away.mp3 | SomeoneCool15 | https://freesound.org/people/SomeoneCool15/sounds/419088/ | CC0 1.0 |
+| Revs from about 3,000 to 5,500 rpm (both four-strokes) | ATV riding around quarry nearby.flac | kyles | https://freesound.org/people/kyles/sounds/637151/ | CC0 1.0 |
 
 `public/audio/engine-bank-2t.wav` and `engine-bank-2t.json` (the yellow two-stroke) are cut from:
 
