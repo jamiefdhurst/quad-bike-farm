@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import { Input } from './core/input.js';
 import { loadModels } from './world/assets.js';
 import { World } from './world/world.js';
+import { Player } from './player/player.js';
+import { DEFAULT_PLAYER_PARAMS, PLAYER_PARAM_RANGES } from './player/playerParams.js';
+import { registerTuning } from './core/tuning.js';
 
 const FIXED_DT = 1 / 60;
 const MAX_FRAME_DT = 0.1;
@@ -45,9 +48,16 @@ export class Game {
       renderer: this.renderer,
       models: this.models,
     });
-    const s = this.world.spawn.player;
-    this.camera.position.set(s.x, this.world.heightAt(s.x, s.z) + 1.6, s.z);
-    this.camera.rotation.set(0, s.yaw, 0, 'YXZ');
+    report('Placing player…');
+    this.player = new Player({
+      physics: this.physics,
+      RAPIER: this.RAPIER,
+      camera: this.camera,
+      input: this.input,
+      world: this.world,
+      params: { ...DEFAULT_PLAYER_PARAMS },
+    });
+    registerTuning('Player', this.player.params, PLAYER_PARAM_RANGES);
     this.applyDebugCamera();
     if (import.meta.env.DEV) window.game = this;
   }
@@ -77,12 +87,15 @@ export class Game {
       this.fixedUpdate(FIXED_DT);
       this.accumulator -= FIXED_DT;
     }
-    this.world.update(dt, this.camera.position, this.camera);
+    const alpha = this.accumulator / FIXED_DT;
+    if (!this.debugCamera) this.player.update(dt, alpha, null);
+    this.world.update(dt, this.player.position, this.camera);
     this.renderer.render(this.scene, this.camera);
     this.input.endFrame();
   }
 
-  fixedUpdate() {
+  fixedUpdate(dt) {
+    this.player.fixedUpdate(dt);
     this.physics.step();
   }
 
