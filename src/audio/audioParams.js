@@ -32,6 +32,7 @@ export const DEFAULT_AUDIO_PARAMS = {
   recToneOpen: 16000, // Hz low-pass at full throttle
   recMisfireAttack: 0.25, // a misfire's missing bang: level of the opening thump
   recMisfireBody: 0.7, // and of the rest of its cycle, so the engine never goes silent
+  recFollow: 0.08, // carry on through the recording while the next recorded pulse is within this rpm ratio (log), rather than jumping
   recLevelling: 0.5, // 0 leaves each recorded pulse's loudness alone; 1 makes every pulse of a kind equally loud
   recMinGrainMs: 32, // at higher revs a grain spans several recorded firings, at least this long
   recOverlap: 0.05, // each pulse runs this much longer than its cycle, so a late next pulse overlaps rather than leaving a gap
@@ -112,6 +113,7 @@ export const AUDIO_PARAM_RANGES = {
   recToneOpen: [500, 20000, 50],
   recMisfireAttack: [0, 1, 0.01],
   recMisfireBody: [0, 1.5, 0.01],
+  recFollow: [0, 0.4, 0.005],
   recLevelling: [0, 1, 0.01],
   recMinGrainMs: [0, 120, 1],
   recOverlap: [0, 0.3, 0.005],

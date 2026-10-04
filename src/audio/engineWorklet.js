@@ -96,9 +96,11 @@ class RecordedEngine {
       // Grains are stored in recording order; link ones that follow on without a gap.
       if (prev && Math.abs(prev.start + prev.len - grain.start) <= 2) prev.next = grain;
       prev = grain;
-      (this.byKind[g.kind] ??= []).push(grain);
+      // Pulses that failed the slicer's checks can be read through but never start a grain.
+      if (g.ok !== false) (this.byKind[g.kind] ??= []).push(grain);
     }
     this.skip = { low: 0, high: 0 }; // pulses still covered by the last multi-cycle grain on each layer
+    this.cursor = { low: null, high: null }; // last recorded grain played on each layer
     for (const k in this.byKind) this.byKind[k].sort((a, b) => a.rpm - b.rpm);
     // Typical loudness of each kind, for evening out unusually loud or quiet grains.
     this.medianRms = {};
@@ -114,9 +116,21 @@ class RecordedEngine {
     this.voices = [];
     this.overlap = 0.05;
     this.minGrain = 0.032 * sampleRate;
+    this.follow = 0.08;
     this.last = null;
     this.crankVoice = null;
     this.crankSpeed = 0;
+  }
+
+  /**
+   * Picks the next grain for a layer. If the grain that followed the last one in
+   * the recording is close enough in rpm, carry on with it, so steady revs read
+   * straight through the recording instead of jumping between unrelated moments.
+   */
+  pickFor(layer, kinds, rpm) {
+    const next = this.cursor[layer]?.next;
+    if (next && kinds.includes(next.kind) && Math.abs(Math.log(next.rpm / rpm)) < this.follow) return next;
+    return this.pick(kinds, rpm);
   }
 
   /** One of the grains recorded closest to `rpm`, avoiding an immediate repeat. */
@@ -152,11 +166,13 @@ class RecordedEngine {
     }
     cycles = used;
     this.skip[layer] = cycles - 1;
+    this.cursor[layer] = last;
     // Stretch it to last until the pulse after these is due, plus a little extra
     // so a late pulse crossfades over it instead of finding silence.
     const target = cycle * cycles * (1 + this.overlap);
     const rate = Math.min(1.5, Math.max(0.65, len / target));
-    const xfade = 0.003 * sampleRate;
+    // Crossfade a little longer at higher revs, where the material is denser.
+    const xfade = Math.max(0.003 * sampleRate, Math.min(0.007 * sampleRate, cycle * 0.3));
     for (const v of this.voices) {
       if (v.layer === layer && !v.releaseLeft) v.releaseLeft = v.releaseLen = xfade;
     }
@@ -192,6 +208,7 @@ class RecordedEngine {
     this.overlap = p.recOverlap;
     this.minGrain = (p.recMinGrainMs / 1000) * sampleRate;
     this.levelling = p.recLevelling;
+    this.follow = p.recFollow;
     const rpm = Math.max(rpmNow, 400);
     const loud = p.recVolume * (1 + p.recThrottleLoudness * throttle);
     switch (ev.type) {
@@ -209,7 +226,7 @@ class RecordedEngine {
         const idleKinds = p.recIdleSource === 'rev' ? ['idle2'] : ['idle'];
         if (w < 0.999) {
           if (this.skip.low > 0) this.skip.low--;
-          else this.playGrain(this.pick(idleKinds, cycleRpm), rpm, gain * (1 - w), 'low', ev.period, attack);
+          else this.playGrain(this.pickFor('low', idleKinds, cycleRpm), rpm, gain * (1 - w), 'low', ev.period, attack);
         }
         if (w > 0.001) {
           if (this.skip.high > 0) {
@@ -218,7 +235,7 @@ class RecordedEngine {
             // The more throttle, the more likely a grain comes from revs rising rather than falling back.
             const rising = Math.random() < smoothstep(0.08, 0.45, throttle);
             const kinds = rising ? ['accel', 'idle3', 'idle2'] : ['decel', 'idle3', 'idle2'];
-            this.playGrain(this.pick(kinds, cycleRpm), rpm, gain * w * p.recRevGain, 'high', ev.period, attack);
+            this.playGrain(this.pickFor('high', kinds, cycleRpm), rpm, gain * w * p.recRevGain, 'high', ev.period, attack);
           }
         } else {
           this.skip.high = 0;

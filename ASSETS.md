@@ -31,7 +31,8 @@ Quaternius: https://quaternius.com
 | Used for | Recording | Author | Source | Licence |
 | --- | --- | --- | --- | --- |
 | Idle pulses | motorcycle dirt bike motocross start idle, rev, stop, kick start, false start, drive off pull away pull up stop.wav | kyles | https://freesound.org/people/kyles/sounds/450034/ | CC0 1.0 |
-| Pulses from about 3,000 to 8,500 rpm | motorbike crm 250 cc onboard ride pullaway.wav | martian | https://freesound.org/people/martian/sounds/148868/ | CC0 1.0 |
+| Revs from about 2,500 to 9,000 rpm | motorbike crm 250 cc onboard ride pullaway.wav | martian | https://freesound.org/people/martian/sounds/148868/ | CC0 1.0 |
+| Revs up to about 9,000 rpm | S22-11 2-Stroke dirt bike; small motorcycle.wav | craigsmith | https://freesound.org/people/craigsmith/sounds/675214/ | CC0 1.0 |
 | Starter and shutdown | Quad Bike_ATV Engine.wav (as above) | Alex Fitzwater | https://freesound.org/people/Alex_hears_things/sounds/379915/ | CC0 1.0 |
 
 The original WAV of the first recording (96 kHz / 24-bit) needs a free Freesound login to download. To use it, convert it to 44.1 kHz mono 16-bit and rerun the slicer.

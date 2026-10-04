@@ -19,7 +19,7 @@ export function applyIdleOffset(engineParams, vehicleParams, offset) {
   // margins the same: warm never stalls from braking, cold still can.
   engineParams.stallRpm = Math.round(engineParams.stallRpm * f);
   engineParams.loadDragRpm = Math.round(engineParams.loadDragRpm * f);
-  const shortfall = idle + CLUTCH_MARGIN_RPM - vehicleParams.clutchEngageRpm;
+  const shortfall = Math.round(idle + CLUTCH_MARGIN_RPM - vehicleParams.clutchEngageRpm);
   if (shortfall > 0) {
     vehicleParams.clutchEngageRpm += shortfall;
     vehicleParams.clutchFullRpm += shortfall;

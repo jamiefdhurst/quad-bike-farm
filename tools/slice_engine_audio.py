@@ -24,7 +24,8 @@ Usage (needs numpy, and matplotlib for --plot):
   python3 tools/slice_engine_audio.py engine-bank quad=quad.wav rev=rev.wav crf=crf.wav [--plot out.png]
 
   afconvert ... 450034.mp3 mx.wav;  afconvert ... 148868.mp3 crm.wav
-  python3 tools/slice_engine_audio.py engine-bank-2t mx=mx.wav crm=crm.wav quad=quad.wav
+  afconvert ... 675214.mp3 db.wav
+  python3 tools/slice_engine_audio.py engine-bank-2t mx=mx.wav crm=crm.wav db=db.wav quad=quad.wav
 """
 
 import argparse
@@ -77,25 +78,36 @@ BANKS = {
     },
     'engine-bank-2t': {
         # Idle from a two-stroke motocross bike (its later idle skips beats, so only
-        # the steady stretches are used); revs from a Honda CRM250 pulling away
-        # through the gears (rising sweeps) and backing off (falling sweeps). Starter
-        # and shutdown borrow the quad recordings: the game has an electric start.
+        # the steady stretches are used). Revs from a Honda CRM250 pulling away and
+        # backing off, and a second two-stroke dirt bike for the top end (up to about
+        # 9,000 rpm). Period limits are tight per section so the tracker can't lock
+        # onto double or half the firing rate. Starter and shutdown borrow the quad
+        # recordings: the game has an electric start.
         'segments': [
             ('idle', 'mx', 24.0, 30.3, (0.022, 0.045)),
             ('idle', 'mx', 32.0, 40.5, (0.022, 0.045)),
-            ('accel', 'crm', 6.8, 9.0, (0.0095, 0.03)),
-            ('accel', 'crm', 10.0, 11.3, (0.0095, 0.02)),
-            ('accel', 'crm', 12.6, 13.8, (0.0095, 0.02)),
-            ('decel', 'crm', 11.4, 12.4, (0.0095, 0.02)),
-            ('decel', 'crm', 14.0, 15.5, (0.0095, 0.025)),
             ('idle2', 'crm', 0.1, 1.9, (0.02, 0.045)),
+            ('accel', 'crm', 5.5, 9.0, (0.0105, 0.021)),
+            ('accel', 'crm', 9.5, 10.6, (0.0105, 0.0135)),
+            ('decel', 'crm', 12.7, 14.0, (0.0095, 0.0135)),
+            ('decel', 'crm', 14.5, 16.5, (0.0105, 0.018)),
+            ('accel', 'db', 2.7, 4.6, (0.011, 0.023)),
+            ('accel', 'db', 6.8, 9.6, (0.0085, 0.013)),
+            ('accel', 'db', 9.8, 11.0, (0.0062, 0.009)),
+            ('accel', 'db', 15.9, 17.2, (0.0068, 0.0085)),
+            ('accel', 'db', 19.0, 21.0, (0.0075, 0.0095)),
+            ('decel', 'db', 21.5, 25.5, (0.0075, 0.0115)),
         ],
         'oneshots': [
             ('starterEngage', 'quad', 0.08, 0.365),
             ('crankLoop', 'quad', 0.365, 1.329),
             ('shutdown', 'quad', 20.22, 21.2),
         ],
-        'level': [('idle', 'idle2', 'crm')],
+        # The second dirt bike has no idle, so its revs are matched to the CRM250's revs.
+        'level': [('idle', 'idle2', 'crm'), ('accel', 'accel', 'db', 'crm')],
+        # Riding recordings are noisy: be more forgiving cutting rev pulses.
+        'revTail': 0.75,
+        'revOdd': 0.3,
     },
 }
 
@@ -206,25 +218,30 @@ def main():
             n = len(seg_env)
             reason = None
             med = np.median(durs[max(0, i - 3) : i + 4])
-            if abs(dur - med) / med > 0.2:
+            rev = kind in ('accel', 'decel')
+            odd_limit = config.get('revOdd', 0.2) if rev else 0.2
+            tail_limit = config.get('revTail', 0.5) if rev else 0.5
+            if abs(dur - med) / med > odd_limit:
                 reason = 'odd length'
-            elif seg_env[int(n * 0.8) :].max() > 0.5 * seg_env[: int(n * 0.4)].max():
+            elif seg_env[int(n * 0.8) :].max() > tail_limit * seg_env[: int(n * 0.4)].max():
                 reason = 'next thump in tail'
             if reason:
                 rejected[reason] = rejected.get(reason, 0) + 1
-                continue
             seg = x[s:e]
-            grains.append(
-                {
-                    'kind': kind,
-                    'start': (base + s) / SR,
-                    'dur': round(dur, 5),
-                    'tail': round(min(tail, len(x) - e) / SR, 5),
-                    'rpm': round(120 / dur, 1),
-                    'src': src,
-                    'rms': round(float(np.sqrt(np.mean(seg**2))), 5),
-                }
-            )
+            # Pulses that fail the checks stay in the chain, so playback can read
+            # straight through them, but never start a grain ('ok': False).
+            grain = {
+                'kind': kind,
+                'start': (base + s) / SR,
+                'dur': round(dur, 5),
+                'tail': round(min(tail, len(x) - e) / SR, 5),
+                'rpm': round(120 / dur, 1),
+                'src': src,
+                'rms': round(float(np.sqrt(np.mean(seg**2))), 5),
+            }
+            if reason:
+                grain['ok'] = False
+            grains.append(grain)
         plot_data.append((kind, src, t0, x, np.array(cuts) / SR))
 
     for name, src, t0, t1 in config['oneshots']:
@@ -236,14 +253,18 @@ def main():
 
     audio = np.concatenate(out)
     # Level-match the two machines where they meet: the rev recording's idle against the quad's idle.
-    def median_rms(k):
-        return float(np.median([g['rms'] for g in grains if g['kind'] == k]))
+    def median_rms(k, src=None):
+        return float(np.median([g['rms'] for g in grains if g['kind'] == k and g.get('ok', True) and (src is None or g['src'] == src)]))
 
     levels = config['level']
     norm = TARGET_IDLE_RMS / median_rms(levels[0][0])
     source_gain = {name: norm for name in sources}
-    for base_kind, other_kind, other_src in levels:
-        source_gain[other_src] = norm * median_rms(base_kind) / median_rms(other_kind)
+    # (base kind, other kind, other source[, base source]): scale the other source so
+    # its grains of that kind match the base's. Chained pairs build on earlier ones.
+    for base_kind, other_kind, other_src, *base_src in levels:
+        bs = base_src[0] if base_src else None
+        base_gain = source_gain[bs] if bs else norm
+        source_gain[other_src] = base_gain * median_rms(base_kind, bs) / median_rms(other_kind, other_src)
 
     os.makedirs(os.path.join(ROOT, 'public', 'audio'), exist_ok=True)
     with wave.open(os.path.join(ROOT, 'public', 'audio', f'{args.bank}.wav'), 'wb') as w:
@@ -264,7 +285,7 @@ def main():
         json.dump(bank, f, indent=1)
 
     for k in ('idle', 'idle2', 'idle3', 'accel', 'decel'):
-        rpms = [g['rpm'] for g in grains if g['kind'] == k]
+        rpms = [g['rpm'] for g in grains if g['kind'] == k and g.get('ok', True)]
         if not rpms:
             continue
         print(f'{k:6s} {len(rpms):4d} grains, rpm {min(rpms):.0f} to {max(rpms):.0f}')
