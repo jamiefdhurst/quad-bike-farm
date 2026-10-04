@@ -14,7 +14,7 @@ function seededRandom(seed) {
 const DT = 1 / 20;
 
 function makeFuel(overrides = {}) {
-  return new FuelSystem({ ...DEFAULT_FUEL_PARAMS, ...overrides });
+  return new FuelSystem({ ...DEFAULT_FUEL_PARAMS, startTap: 'on', ...overrides });
 }
 
 /** Seconds until the float bowl runs dry at a steady engine state, or Infinity. */
@@ -27,6 +27,13 @@ function secondsToDry(fuel, engineState, limit = 20000) {
 }
 
 describe('fuel system', () => {
+  it('starts with the tap OFF by default', () => {
+    const fuel = new FuelSystem(DEFAULT_FUEL_PARAMS);
+    expect(fuel.tap).toBe('off');
+    // The float bowl starts full, so it would start, run briefly, then starve.
+    expect(fuel.bowlLevel).toBe(1);
+  });
+
   it('lasts roughly 25 minutes flat out from a full tank', () => {
     const fuel = makeFuel({ startLitres: DEFAULT_FUEL_PARAMS.tankCapacity });
     fuel.tap = 'reserve';

@@ -41,13 +41,23 @@ export const LAYOUT = {
   puddleRadius: 1.7,
   puddleDepth: 0.2,
 
-  // Petrol tank by the barn, with the jerry can beside it.
+  // Petrol tank by the barn. The jerry can starts at one of these spots, picked at random.
   fuelTank: { x: -61, z: 52.3, yaw: Math.PI / 2 }, // labelled side facing the yard
-  jerryCan: { x: -58.6, z: 51.6, yaw: 0.4 },
+  jerryCanSpots: [
+    { x: -58.6, z: 51.6, yaw: 0.4, where: 'by the petrol tank' },
+    { x: -57.6, z: 56.6, yaw: 1.2, where: 'by the barn doors' },
+    { x: -58.4, z: 38.5, yaw: 2.1, where: 'by the paddock' },
+    { x: -61.5, z: 67.8, yaw: -0.6, where: 'by the silage bales' },
+    { x: -32.8, z: 77.6, yaw: 0.9, where: 'by the field gate' },
+  ],
+  jerryCanJitter: 0.8, // metres of extra random shift around the chosen spot
 
   spawn: {
     player: { x: -47, z: 46, yaw: -2.68 }, // facing the quad
-    // One spawn per quad, in the order of QUAD_SPECS: parked side by side in the yard.
+    // Parking slots in the yard. Each start the quads are shuffled between them and
+    // nudged a little (quadJitter metres, quadYawJitter radians).
+    quadJitter: 1.2,
+    quadYawJitter: 0.35,
     quads: [
       { x: -44, z: 52, yaw: Math.PI * 0.62 },
       { x: -42.6, z: 55.2, yaw: Math.PI * 0.62 },

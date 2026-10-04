@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { Input } from './core/input.js';
+import { createRandom, startSeed } from './core/random.js';
+import { randomiseQuadSpawns, randomJerryCanSpot } from './world/spawns.js';
 import { registerTuning } from './core/tuning.js';
 import { loadModels } from './world/assets.js';
 import { World } from './world/world.js';
@@ -76,11 +78,17 @@ export class Game {
     this.audioHub = new AudioHub({ ...DEFAULT_SOUND_PARAMS });
     this.input.on('firstinteraction', () => this.audioHub.unlock());
 
+    // Where things start varies a little each game; ?seed=N repeats a layout.
+    this.seed = startSeed();
+    const random = createRandom(this.seed);
+    console.info(`Layout seed ${this.seed} (add ?seed=${this.seed} to the URL to repeat it)`);
+    const spawns = randomiseQuadSpawns(this.world.spawn, QUAD_SPECS.length, random);
+
     this.units = QUAD_SPECS.map(
       (spec, i) =>
         new QuadUnit({
           spec,
-          spawn: this.world.spawn.quads[i],
+          spawn: spawns[i],
           scene: this.scene,
           physics: this.physics,
           RAPIER: this.RAPIER,
@@ -144,11 +152,12 @@ export class Game {
       position: L.fuelTank,
       yaw: L.fuelTank.yaw,
     });
+    const canSpot = randomJerryCanSpot(L, random);
     this.can = new JerryCan({
       scene: this.scene,
       world: this.world,
-      position: L.jerryCan,
-      yaw: L.jerryCan.yaw,
+      position: canSpot,
+      yaw: canSpot.yaw,
       params: { ...DEFAULT_JERRY_CAN_PARAMS },
     });
     this.interaction.add({
@@ -167,6 +176,11 @@ export class Game {
       interact: () => {},
       hold: (dt) => this.can.held && this.can.fill(this.can.params.fillRate * dt) > 0,
     });
+
+    // Start facing the quad she's standing by, wherever it ended up.
+    const q = this.units[0].quad.position;
+    const p = this.player.position;
+    this.player.yaw = Math.atan2(-(q.x - p.x), -(q.z - p.z));
 
     registerTuning('Sound', this.audioHub.params, SOUND_PARAM_RANGES);
     registerTuning('Jerry can', this.can.params, JERRY_CAN_PARAM_RANGES);

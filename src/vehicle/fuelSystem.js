@@ -9,6 +9,7 @@ export const DEFAULT_FUEL_PARAMS = {
   tankCapacity: 12, // litres
   reserveLitres: 2, // only reachable with the tap on RESERVE
   startLitres: 7, // fuel in the tank at the start
+  startTap: 'off', // tap position at the start: turn it ON before riding off
   bowlCapacity: 0.04, // litres in the carburettor float bowl
   bowlFillRate: 0.02, // litres per second from the tank into the bowl
   burnPerRev: 0.000047, // litres per crank revolution at full throttle (game-paced: a full tank lasts about 25 minutes flat out)
@@ -36,7 +37,7 @@ export class FuelSystem {
     this.params = params;
     this.litres = clamp(params.startLitres, 0, params.tankCapacity);
     this.bowl = this.litres > 0 ? params.bowlCapacity : 0;
-    this.tap = 'on';
+    this.tap = params.startTap ?? 'on';
     this.burnRate = 0; // litres per second, last update
   }
 
