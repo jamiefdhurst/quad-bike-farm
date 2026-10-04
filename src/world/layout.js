@@ -42,7 +42,7 @@ export const LAYOUT = {
   puddleDepth: 0.2,
 
   spawn: {
-    player: { x: -47, z: 46, yaw: Math.PI * 0.85 },
+    player: { x: -47, z: 46, yaw: -2.68 }, // facing the quad
     quad: { x: -44, z: 52, yaw: Math.PI * 0.62 },
   },
 };

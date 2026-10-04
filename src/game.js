@@ -18,6 +18,7 @@ import { DEFAULT_COMPANION_PARAMS, COMPANION_PARAM_RANGES } from './npc/companio
 import { Interaction } from './interaction/interaction.js';
 import { Menu } from './interaction/menu.js';
 import { Hud } from './hud/hud.js';
+import { DebugGui } from './debug/debugGui.js';
 
 const FIXED_DT = 1 / 60;
 const MAX_FRAME_DT = 0.1;
@@ -112,9 +113,12 @@ export class Game {
     registerTuning('Engine', this.engine.params, ENGINE_PARAM_RANGES);
     registerTuning('Vibration', this.vibration.params, VIBRATION_PARAM_RANGES);
     registerTuning('Audio', this.audio.params, AUDIO_PARAM_RANGES);
-    registerTuning('Vehicle', this.quad.params, VEHICLE_PARAM_RANGES);
+    registerTuning('Vehicle', this.quad.params, VEHICLE_PARAM_RANGES, {
+      onChange: () => this.quad.physics.applyParams(),
+    });
     registerTuning('Player', this.player.params, PLAYER_PARAM_RANGES);
     registerTuning('Companion', this.companion.params, COMPANION_PARAM_RANGES);
+    this.debugGui = new DebugGui(this);
 
     this.applyDebugCamera();
     if (import.meta.env.DEV) window.game = this;
@@ -223,6 +227,7 @@ export class Game {
     const input = this.input;
 
     if (input.wasPressed('KeyH')) this.hud.toggleHelp();
+    if (input.wasPressed('Backquote')) this.debugGui.toggle();
     if (input.wasPressed('KeyM')) {
       this.audio.params.muted = !this.audio.params.muted;
       this.hud.toast(this.audio.params.muted ? 'Sound off' : 'Sound on', 1.2);

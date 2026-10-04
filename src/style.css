@@ -33,6 +33,26 @@ body {
   display: none;
 }
 
+/* While tuning, keep the game visible and just hint how to get back in. */
+#overlay.tuning {
+  align-items: flex-end;
+  background: transparent;
+}
+
+#overlay.tuning .overlay-card {
+  margin-bottom: 24px;
+  padding: 8px 16px;
+}
+
+#overlay.tuning .overlay-card h1,
+#overlay.tuning .overlay-hint {
+  display: none;
+}
+
+#overlay.tuning #overlay-status::after {
+  content: ' · click the game to resume';
+}
+
 .overlay-card {
   text-align: center;
   padding: 28px 40px;
