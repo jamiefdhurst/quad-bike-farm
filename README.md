@@ -94,6 +94,7 @@ src/
   core/                input, tuning registry
   engine/              engine model (pure logic, no Three.js) and its parameters
   vibration/           pulse-driven vibration model (pure logic) and parameters
+  effects/             exhaust smoke
   audio/               procedural Web Audio engine sound
   vehicle/             quad model, Rapier vehicle, drivetrain, dash
   player/              walking and seated first-person player
@@ -110,6 +111,8 @@ tests/engine.test.js   engine state machine tests
 **Drivetrain** (`src/vehicle/drivetrain.js`). An automatic: centrifugal clutch into a CVT. It turns engine rpm and power into drive force, and puts braking load back on the engine while the clutch is locked to a moving bike.
 
 **Engine sound** (`src/audio/engineWorklet.js`). An AudioWorklet synth. Each firing pulse is a pressure kick into a simulated exhaust pipe and silencer with fixed resonances, so revs change the pulse rate rather than shifting the whole sound up. The starter motor, intake, valve tick and overrun pops are synthesised alongside. Every value is in the Audio folder of the tuning panel.
+
+**Exhaust smoke** (`src/effects/exhaustSmoke.js`). One soft puff per firing pulse, so you can see the beats at idle. White-grey vapour when cold, darker when rich or flooded, a burst when you snap the throttle open, and barely anything once warm. Tunable in the Smoke folder.
 
 **Vibration** (`src/vibration/vibrationModel.js`). Each firing pulse kicks a set of damped oscillators (body heave, pitch and roll, handlebars, rider's head) in a slightly random direction. Kicks are strongest at idle and with a rough engine, and fade as rpm rises. The bike body, handlebars, seated camera and anything sitting on the bike all move with it.
 

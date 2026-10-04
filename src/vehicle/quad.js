@@ -33,6 +33,7 @@ export class Quad {
     this.cameraAnchor = part('cameraAnchor');
     this.pillionAnchor = part('pillionAnchor');
     this.riderAnchor = part('riderAnchor');
+    this.exhaustTip = part('exhaustTip');
     this.wheels = WHEELS.map((w) => ({ ...w, object: part(w.name), spin: part(w.name).getObjectByName('spin') }));
 
     // Invisible box used for "look at it and press E". Reaches about 1.45 m
@@ -87,6 +88,10 @@ export class Quad {
 
   get position() {
     return this.model.position;
+  }
+
+  get velocity() {
+    return this.physics.body.linvel();
   }
 
   get yaw() {

@@ -340,6 +340,11 @@ export function buildQuadModel() {
   tip.rotation.x = Math.PI / 2;
   tip.position.set(-0.3, 0.57, -0.96);
   engine.add(tip);
+  // Where exhaust smoke comes out.
+  const exhaustTip = new THREE.Object3D();
+  exhaustTip.name = 'exhaustTip';
+  exhaustTip.position.set(-0.3, 0.57, -1.0);
+  engine.add(exhaustTip);
 
   // Fenders over each wheel and the body panels joining them.
   for (const w of WHEELS) {

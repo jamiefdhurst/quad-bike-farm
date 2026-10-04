@@ -15,6 +15,7 @@ import { EngineAudio } from './audio/engineAudio.js';
 import { DEFAULT_AUDIO_PARAMS, AUDIO_PARAM_RANGES } from './audio/audioParams.js';
 import { Companion } from './npc/companion.js';
 import { DEFAULT_COMPANION_PARAMS, COMPANION_PARAM_RANGES } from './npc/companionParams.js';
+import { ExhaustSmoke, DEFAULT_SMOKE_PARAMS, SMOKE_PARAM_RANGES } from './effects/exhaustSmoke.js';
 import { Interaction } from './interaction/interaction.js';
 import { Menu } from './interaction/menu.js';
 import { Hud } from './hud/hud.js';
@@ -86,6 +87,8 @@ export class Game {
     });
 
     this.vibration = new VibrationModel({ ...DEFAULT_VIBRATION_PARAMS });
+    this.smoke = new ExhaustSmoke(this.scene, (x, z) => this.world.heightAt(x, z), { ...DEFAULT_SMOKE_PARAMS });
+    this.updateSmokeScale();
     this.audio = new EngineAudio({ ...DEFAULT_AUDIO_PARAMS });
     this.input.on('firstinteraction', () => this.audio.unlock());
 
@@ -113,6 +116,7 @@ export class Game {
     registerTuning('Engine', this.engine.params, ENGINE_PARAM_RANGES);
     registerTuning('Vibration', this.vibration.params, VIBRATION_PARAM_RANGES);
     registerTuning('Audio', this.audio.params, AUDIO_PARAM_RANGES);
+    registerTuning('Smoke', this.smoke.params, SMOKE_PARAM_RANGES);
     registerTuning('Vehicle', this.quad.params, VEHICLE_PARAM_RANGES, {
       onChange: () => this.quad.physics.applyParams(),
     });
@@ -258,6 +262,7 @@ export class Game {
     this.vibration.update(dt, this.engine);
     this.quad.update(dt, alpha, this.vibration);
     this.companion.update(dt, this.vibration);
+    this.smoke.update(dt, this.engine, this.quad.exhaustTip, this.quad.velocity);
     if (!this.debugCamera) this.player.update(dt, alpha, this.vibration);
     this.audio.update(dt, this.engine, this.quad.position, this.camera);
     this.world.update(dt, this.player.isRiding ? this.quad.position : this.player.position, this.camera);
@@ -299,5 +304,10 @@ export class Game {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.updateSmokeScale();
+  }
+
+  updateSmokeScale() {
+    this.smoke?.setViewport(window.innerHeight * this.renderer.getPixelRatio(), this.camera.fov);
   }
 }
