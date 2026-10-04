@@ -118,3 +118,11 @@ A running log of choices made while building this, so later work starts from the
 - Fuel taps start OFF (`startTap`). The float bowl starts full, so a quad started with the tap off runs for a few seconds, then stumbles and stalls: flicking it ON is part of starting up.
 - Each game the quads are shuffled between the yard's parking slots and nudged by up to 1.2 m and 20 degrees, keeping at least 2.8 m between them. The jerry can is left at one of five likely spots (petrol tank, barn doors, paddock, silage bales, field gate) with a small shift. The seed is printed in the console and `?seed=N` repeats a layout. The player starts facing the quad she's standing by.
 - The yellow sport quad now takes a passenger after all: a slim pad at the back of its long seat with a grab strap. It's a tight fit, which is the point.
+
+## Four-stroke revving, second pass (2026-10-04)
+
+- Revving sounded strange while idle was fine. The causes: only 18 usable rising-rev pulses from a short ATV clip (2,700 to 5,200 rpm), so revving cycled the same few and over-stretched them; a hard switch between rising and falling pulses at 25% throttle; single-firing grains at high revs, meaning a join every 15 to 20 ms; and big loudness differences between grains.
+- Revs for both four-strokes now come from a CC0 Honda CRF250 recording (a four-stroke single) riding off and backing off: 235 rising and 80 falling pulses, 2,000 to 7,000 rpm, plus its idle as a bridge. The ATV clip now only provides the blue quad's idle. The slicer's level matching takes a list of source pairs.
+- At higher revs a grain spans several consecutive recorded firings (at least `recMinGrainMs`, 32 ms), linked through the bank's recording order, and the following pulses on that layer are covered by it.
+- Whether a pulse comes from the rising or falling set is now a probability that slides with throttle, not a threshold.
+- Each grain's loudness is pulled halfway towards its kind's median (`recLevelling`), cutting pulse-to-pulse loudness wobble at full throttle by about a fifth. The rev layer has its own gain (`recRevGain`, 0.75 for the four-strokes) because the CRF250 was recorded under load.

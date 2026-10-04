@@ -20,7 +20,8 @@ Usage (needs numpy, and matplotlib for --plot):
 
   afconvert -f WAVE -d LEI16@44100 -c 1 379915.mp3 quad.wav     # or ffmpeg
   afconvert -f WAVE -d LEI16@44100 -c 1 419091.mp3 rev.wav
-  python3 tools/slice_engine_audio.py engine-bank quad=quad.wav rev=rev.wav [--plot out.png]
+  afconvert ... 361407.mp3 crf.wav
+  python3 tools/slice_engine_audio.py engine-bank quad=quad.wav rev=rev.wav crf=crf.wav [--plot out.png]
 
   afconvert ... 450034.mp3 mx.wav;  afconvert ... 148868.mp3 crm.wav
   python3 tools/slice_engine_audio.py engine-bank-2t mx=mx.wav crm=crm.wav quad=quad.wav
@@ -47,13 +48,21 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #          machine sits at the same level as the first where they meet.
 BANKS = {
     'engine-bank': {
+        # Idle from the quad (red) or the ATV rev recording (blue). Revs come from a
+        # Honda CRF250, a four-stroke single: rising sweeps as it rides off through
+        # the gears, falling sweeps as it backs off. Its own idle bridges the two.
         'segments': [
             ('idle', 'quad', 1.60, 7.30, (0.06, 0.12)),
             ('idle', 'quad', 8.80, 12.0, (0.06, 0.12)),
             ('idle', 'quad', 17.0, 19.9, (0.06, 0.12)),
-            ('accel', 'rev', 2.00, 3.05, (0.016, 0.045)),  # revving up, throttle open
-            ('decel', 'rev', 3.15, 6.05, (0.016, 0.085)),  # falling back, throttle closed
-            ('idle2', 'rev', 0.10, 1.95, (0.06, 0.09)),  # the rev recording's own idle, to blend across machines
+            ('idle2', 'rev', 0.10, 1.95, (0.06, 0.09)),  # the ATV rev recording's idle (blue quad)
+            ('idle3', 'crf', 4.0, 16.2, (0.045, 0.07)),
+            ('accel', 'crf', 16.5, 18.95, (0.018, 0.05)),
+            ('accel', 'crf', 19.25, 20.8, (0.018, 0.035)),
+            ('accel', 'crf', 21.0, 23.0, (0.018, 0.03)),
+            ('accel', 'crf', 25.0, 28.5, (0.018, 0.04)),
+            ('decel', 'crf', 28.6, 31.0, (0.025, 0.04)),
+            ('decel', 'crf', 51.7, 53.1, (0.018, 0.05)),
         ],
         'oneshots': [
             # The starter's own chug isn't regular enough to cut per compression stroke, so
@@ -62,7 +71,9 @@ BANKS = {
             ('crankLoop', 'quad', 0.365, 1.329),
             ('shutdown', 'quad', 20.22, 21.2),  # the run-down once the ignition is cut
         ],
-        'level': ('idle', 'idle2', 'rev'),
+        # (base kind, other kind, other source): the other source is scaled so its
+        # idle matches the base idle's loudness.
+        'level': [('idle', 'idle2', 'rev'), ('idle', 'idle3', 'crf')],
     },
     'engine-bank-2t': {
         # Idle from a two-stroke motocross bike (its later idle skips beats, so only
@@ -84,7 +95,7 @@ BANKS = {
             ('crankLoop', 'quad', 0.365, 1.329),
             ('shutdown', 'quad', 20.22, 21.2),
         ],
-        'level': ('idle', 'idle2', 'crm'),
+        'level': [('idle', 'idle2', 'crm')],
     },
 }
 
@@ -228,9 +239,11 @@ def main():
     def median_rms(k):
         return float(np.median([g['rms'] for g in grains if g['kind'] == k]))
 
-    base_kind, other_kind, other_src = config['level']
-    other_gain = median_rms(base_kind) / median_rms(other_kind)
-    norm = TARGET_IDLE_RMS / median_rms(base_kind)
+    levels = config['level']
+    norm = TARGET_IDLE_RMS / median_rms(levels[0][0])
+    source_gain = {name: norm for name in sources}
+    for base_kind, other_kind, other_src in levels:
+        source_gain[other_src] = norm * median_rms(base_kind) / median_rms(other_kind)
 
     os.makedirs(os.path.join(ROOT, 'public', 'audio'), exist_ok=True)
     with wave.open(os.path.join(ROOT, 'public', 'audio', f'{args.bank}.wav'), 'wb') as w:
@@ -243,19 +256,19 @@ def main():
         'sampleRate': SR,
         'strokes': 4,
         'crankRpm': 320,  # cranking speed the crank loop plays back at its natural rate
-        'sourceGain': {**{name: round(norm, 3) for name in sources}, other_src: round(other_gain * norm, 3)},
+        'sourceGain': {name: round(g, 3) for name, g in source_gain.items()},
         'grains': grains,
         'oneshots': oneshots,
     }
     with open(os.path.join(ROOT, 'public', 'audio', f'{args.bank}.json'), 'w') as f:
         json.dump(bank, f, indent=1)
 
-    for k in ('idle', 'idle2', 'accel', 'decel'):
+    for k in ('idle', 'idle2', 'idle3', 'accel', 'decel'):
         rpms = [g['rpm'] for g in grains if g['kind'] == k]
         if not rpms:
             continue
         print(f'{k:6s} {len(rpms):4d} grains, rpm {min(rpms):.0f} to {max(rpms):.0f}')
-    print(f'{other_src} gain {other_gain:.2f}, bank level x{norm:.2f}, {len(audio) / SR:.1f} s, rejected {rejected}')
+    print(f'source gains {source_gain}, {len(audio) / SR:.1f} s, rejected {rejected}')
 
     if args.plot:
         import matplotlib

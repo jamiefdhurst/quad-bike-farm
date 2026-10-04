@@ -81,23 +81,39 @@ class RecordedEngine {
     this.sourceGain = bank.sourceGain;
     this.crankRpm = bank.crankRpm;
     this.byKind = {};
+    let prev = null;
     for (const g of bank.grains) {
       const grain = {
         start: Math.round(g.start * sr),
         len: Math.round(g.dur * sr),
         tail: Math.max(Math.round((g.tail ?? 0) * sr), Math.round(0.001 * sr)),
         rpm: g.rpm,
+        rms: g.rms ?? 0,
+        kind: g.kind,
         gain: bank.sourceGain[g.src] ?? 1,
+        next: null, // the grain straight after this one in the recording, if it survived the cut
       };
+      // Grains are stored in recording order; link ones that follow on without a gap.
+      if (prev && Math.abs(prev.start + prev.len - grain.start) <= 2) prev.next = grain;
+      prev = grain;
       (this.byKind[g.kind] ??= []).push(grain);
     }
+    this.skip = { low: 0, high: 0 }; // pulses still covered by the last multi-cycle grain on each layer
     for (const k in this.byKind) this.byKind[k].sort((a, b) => a.rpm - b.rpm);
+    // Typical loudness of each kind, for evening out unusually loud or quiet grains.
+    this.medianRms = {};
+    for (const [k, list] of Object.entries(this.byKind)) {
+      const sorted = list.map((g) => g.rms).sort((a, b) => a - b);
+      this.medianRms[k] = sorted[Math.floor(sorted.length / 2)] || 1;
+    }
+    this.levelling = 0.5;
     this.oneshots = {};
     for (const [name, o] of Object.entries(bank.oneshots)) {
       this.oneshots[name] = { start: Math.round(o.start * sr), len: Math.round(o.dur * sr) };
     }
     this.voices = [];
     this.overlap = 0.05;
+    this.minGrain = 0.032 * sampleRate;
     this.last = null;
     this.crankVoice = null;
     this.crankSpeed = 0;
@@ -122,10 +138,24 @@ class RecordedEngine {
    */
   playGrain(g, rpm, gain, layer, period, attackGain = 1) {
     if (!g || gain <= 0.0005) return;
-    // Stretch the grain to last until the next pulse is due, plus a little
-    // extra so a late pulse crossfades over it instead of finding silence.
-    const target = (period > 0 ? period * sampleRate : (120 / rpm) * sampleRate) * (1 + this.overlap);
-    const rate = Math.min(1.5, Math.max(0.65, g.len / target));
+    const cycle = period > 0 ? period * sampleRate : (120 / rpm) * sampleRate;
+    // At higher revs, play several consecutive recorded firings as one grain:
+    // fewer joins, and the stretch between them is real continuous engine.
+    let cycles = Math.max(1, Math.min(6, Math.round(this.minGrain / cycle)));
+    let len = g.len;
+    let last = g;
+    let used = 1;
+    while (used < cycles && last.next) {
+      last = last.next;
+      len += last.len;
+      used++;
+    }
+    cycles = used;
+    this.skip[layer] = cycles - 1;
+    // Stretch it to last until the pulse after these is due, plus a little extra
+    // so a late pulse crossfades over it instead of finding silence.
+    const target = cycle * cycles * (1 + this.overlap);
+    const rate = Math.min(1.5, Math.max(0.65, len / target));
     const xfade = 0.003 * sampleRate;
     for (const v of this.voices) {
       if (v.layer === layer && !v.releaseLeft) v.releaseLeft = v.releaseLen = xfade;
@@ -134,15 +164,22 @@ class RecordedEngine {
       layer,
       pos: 0,
       start: g.start,
-      len: g.len + g.tail,
+      len: len + last.tail,
       rate,
-      gain: gain * g.gain,
+      gain: gain * g.gain * this.levelFor(g),
       fadeIn: 0.0005 * sampleRate,
-      fadeOut: g.tail,
+      fadeOut: last.tail,
       // Below 1, the opening thump is held down while the rest of the cycle plays on.
       attackGain,
       attackLen: g.len * 0.3,
     });
+  }
+
+  /** Pulls a grain's loudness part of the way toward its kind's typical level. */
+  levelFor(g) {
+    if (!g.rms || !this.levelling) return 1;
+    const f = Math.pow(this.medianRms[g.kind] / g.rms, this.levelling);
+    return Math.min(2, Math.max(0.5, f));
   }
 
   playOneshot(name, gain, delaySamples = 0) {
@@ -153,6 +190,8 @@ class RecordedEngine {
 
   trigger(ev, p, rpmNow, throttle) {
     this.overlap = p.recOverlap;
+    this.minGrain = (p.recMinGrainMs / 1000) * sampleRate;
+    this.levelling = p.recLevelling;
     const rpm = Math.max(rpmNow, 400);
     const loud = p.recVolume * (1 + p.recThrottleLoudness * throttle);
     switch (ev.type) {
@@ -168,11 +207,21 @@ class RecordedEngine {
         // Pick grains by the rpm this cycle actually runs at.
         const cycleRpm = ev.period > 0 ? 120 / ev.period : rpm;
         const idleKinds = p.recIdleSource === 'rev' ? ['idle2'] : ['idle'];
-        if (w < 0.999) this.playGrain(this.pick(idleKinds, cycleRpm), rpm, gain * (1 - w), 'low', ev.period, attack);
+        if (w < 0.999) {
+          if (this.skip.low > 0) this.skip.low--;
+          else this.playGrain(this.pick(idleKinds, cycleRpm), rpm, gain * (1 - w), 'low', ev.period, attack);
+        }
         if (w > 0.001) {
-          // Throttle open: grains from the rev rising; closed: from it falling back.
-          const kinds = throttle > 0.25 ? ['accel', 'idle2'] : ['decel', 'idle2'];
-          this.playGrain(this.pick(kinds, cycleRpm), rpm, gain * w, 'high', ev.period, attack);
+          if (this.skip.high > 0) {
+            this.skip.high--;
+          } else {
+            // The more throttle, the more likely a grain comes from revs rising rather than falling back.
+            const rising = Math.random() < smoothstep(0.08, 0.45, throttle);
+            const kinds = rising ? ['accel', 'idle3', 'idle2'] : ['decel', 'idle3', 'idle2'];
+            this.playGrain(this.pick(kinds, cycleRpm), rpm, gain * w * p.recRevGain, 'high', ev.period, attack);
+          }
+        } else {
+          this.skip.high = 0;
         }
         return true;
       }

@@ -25,12 +25,15 @@ export const DEFAULT_AUDIO_PARAMS = {
   recIdleSource: 'quad', // which recording idle pulses come from: 'quad' (the main quad) or 'rev' (the rev-sweep machine)
   recVolume: 0.6,
   recThrottleLoudness: 0.15, // extra loudness with the throttle open (the rev recording is already louder up the range)
+  recRevGain: 0.75, // level of the rev recording relative to idle (it was recorded under load, so it runs hot)
   recBlendLo: 1500, // rpm where the rev recording starts to blend in over the idle recording
   recBlendHi: 2100, // rpm where it has fully taken over
   recToneClosed: 6000, // Hz low-pass with the throttle shut
   recToneOpen: 16000, // Hz low-pass at full throttle
   recMisfireAttack: 0.25, // a misfire's missing bang: level of the opening thump
   recMisfireBody: 0.7, // and of the rest of its cycle, so the engine never goes silent
+  recLevelling: 0.5, // 0 leaves each recorded pulse's loudness alone; 1 makes every pulse of a kind equally loud
+  recMinGrainMs: 32, // at higher revs a grain spans several recorded firings, at least this long
   recOverlap: 0.05, // each pulse runs this much longer than its cycle, so a late next pulse overlaps rather than leaving a gap
   recStarterVolume: 0.9,
   recShutdownVolume: 0.9,
@@ -102,12 +105,15 @@ export const AUDIO_PARAM_RANGES = {
   recIdleSource: ['quad', 'rev'],
   recVolume: [0, 3, 0.01],
   recThrottleLoudness: [0, 3, 0.01],
+  recRevGain: [0, 2, 0.01],
   recBlendLo: [500, 5000, 10],
   recBlendHi: [600, 6000, 10],
   recToneClosed: [500, 20000, 50],
   recToneOpen: [500, 20000, 50],
   recMisfireAttack: [0, 1, 0.01],
   recMisfireBody: [0, 1.5, 0.01],
+  recLevelling: [0, 1, 0.01],
+  recMinGrainMs: [0, 120, 1],
   recOverlap: [0, 0.3, 0.005],
   recStarterVolume: [0, 3, 0.01],
   recShutdownVolume: [0, 3, 0.01],

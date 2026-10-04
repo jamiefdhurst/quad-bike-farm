@@ -118,6 +118,7 @@ export const QUAD_SPECS = [
     },
     audio: {
       recBank: 'engine-bank-2t',
+      recRevGain: 1,
       recIdleSource: 'quad',
       recBlendLo: 2600,
       recBlendHi: 3600,
