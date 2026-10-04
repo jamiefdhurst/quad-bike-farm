@@ -28,3 +28,16 @@ A running log of choices made while building this, so later work starts from the
 - Tuned so a hard stop from about 16 mph or more stalls a stone-cold engine on choke, gentler or slower stops don't, and a warm engine never stalls from braking. Checked with a seeded headless sim across 40 seeds.
 - Drive force keeps a floor of 40% even when engine power is low, so a cold bike is sluggish but rideable.
 - The quad never rolls over in normal riding: the Rapier vehicle slides before it tips. There's a "right the quad" action (T when riding, or E when looking at a tipped quad) in case it does.
+
+## Interaction and NPC
+
+- Interaction targets are invisible proxy meshes. A direct ray hit wins; otherwise anything whose bounds come within 8 degrees of the view direction counts. Without that, standing upright next to the quad, your eye line passes over it and you'd have to look down to get a prompt.
+- The companion's walking is direct-path with ray probes at knee height for steering: if the way ahead is blocked she tries angles either side, sticking to one side for a moment so she doesn't dither. If she makes no progress for 5 seconds she ignores obstacles and pushes through. Checked routing round the barn.
+- She's parented to the quad's pillion anchor while seated, which sits inside the vibrating body group, so she shakes with the bike for free. Her spine also gets a small sway from the vibration output.
+- Hedges don't cast shadows. Hundreds of instances made the shadow pass the biggest single cost.
+
+## Verification
+
+- Engine behaviour is covered by Vitest (`tests/engine.test.js`), checked across 100 seeds for flakiness.
+- The rest was checked in headless Chrome via puppeteer during development: a full autopilot lap with her on the pillion (no tipping, no stalls), a cold start through real key and wheel events, mounting and dismounting, the menu, and audio pulse rate against rpm via an analyser node. These scripts were throwaway and aren't in the repo.
+- `?cam=x,y,z,yawDeg,pitchDeg` in the URL pins the camera for screenshots, and `window.game` is exposed in dev builds only.

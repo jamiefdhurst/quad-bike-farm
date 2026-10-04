@@ -3,7 +3,7 @@
 
 export const DEFAULT_VIBRATION_PARAMS = {
   // How hard each firing pulse kicks, and how that changes with rpm.
-  pulseGain: 1.0, // master gain
+  pulseGain: 1.3, // master gain
   idleRpm: 1700, // full shake at and below this
   smoothRpmRange: 1400, // shake falls away over this many rpm above idle
   highRpmFloor: 0.1, // fraction of the body shake left at high rpm
