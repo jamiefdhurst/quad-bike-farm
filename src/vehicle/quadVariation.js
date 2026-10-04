@@ -1,12 +1,17 @@
-// Each game, every quad's warm idle is picked at random within the idleRange
-// in its spec (quadSpecs.js), so the bikes feel a bit different every time.
-// Pure logic.
+// Each game, every quad's warm idle, roughness and starting fuel are picked at
+// random within the ranges in its spec (quadSpecs.js), so the bikes feel a bit
+// different every time. Pure logic.
 
 const CLUTCH_MARGIN_RPM = 400; // the clutch must bite this far above idle, or the bike creeps
 
+/** A value within [min, max], evenly spread, rounded to `step`. */
+export function pickInRange([min, max], random, step = 1) {
+  return Math.round((min + random() * (max - min)) / step) * step;
+}
+
 /** A warm idle within [min, max], evenly spread. */
-export function pickIdle([min, max], random) {
-  return Math.round(min + random() * (max - min));
+export function pickIdle(range, random) {
+  return pickInRange(range, random);
 }
 
 /**
@@ -15,7 +20,7 @@ export function pickIdle([min, max], random) {
  * place and returns the idle used.
  *
  * Safe ranges, from simulating warm and cold braking at the extremes: down to
- * about 650 (red), 950 (blue) and 1,300 (yellow). Below that a warm engine can
+ * about 650 (red), 950 (blue) and 900 (yellow). Below that a warm engine can
  * occasionally stall under hard braking.
  */
 export function applyIdle(engineParams, vehicleParams, idle) {
@@ -32,4 +37,14 @@ export function applyIdle(engineParams, vehicleParams, idle) {
     vehicleParams.couplingRpm += shortfall;
   }
   return engineParams.idleRpmWarm;
+}
+
+/**
+ * Picks this game's roughness and starting fuel from the spec's ranges, if it
+ * has them, and applies them. Returns what was picked.
+ */
+export function applyVariation(spec, engineParams, fuel, random) {
+  if (spec.roughnessRange) engineParams.baseRoughness = pickInRange(spec.roughnessRange, random, 0.01);
+  if (spec.fuelRange) fuel.setLitres(pickInRange(spec.fuelRange, random, 0.1));
+  return { roughness: engineParams.baseRoughness, litres: fuel.litres };
 }

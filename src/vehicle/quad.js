@@ -232,6 +232,7 @@ export class Quad {
       brake: this.brake,
       forwardSpeed: fwd,
       reverse: this.reverse,
+      maxRpm: e.params.maxRpm,
     });
 
     let brake = this.brake * p.maxBrake;

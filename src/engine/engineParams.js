@@ -6,8 +6,8 @@ export const DEFAULT_ENGINE_PARAMS = {
   strokes: 4,
 
   // Speeds
-  maxRpm: 8500,
-  redlineRpm: 7500,
+  maxRpm: 6200, // full throttle: through the CVT a utility quad holds its revs around here under load
+  redlineRpm: 5800,
   idleRpmWarm: 1150, // steady idle, warm, no choke
   stallRpm: 350, // below this the engine dies
   crankRpm: 320, // starter motor speed

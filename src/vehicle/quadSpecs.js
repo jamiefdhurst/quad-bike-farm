@@ -2,10 +2,15 @@
 // bikes feel related but not identical. Spawn points come from LAYOUT.spawn.quads,
 // in the same order.
 //
-// idleRange: [min, max] warm idle in rpm. Each game the idle is picked evenly at
-// random in this range (from the layout seed, so ?seed=N repeats it). Keep the
-// minimum at or above about 650 (red), 950 (blue) and 1,300 (yellow): lower than
-// that and a warm engine can stall under hard braking.
+// Each game these are picked evenly at random within their ranges (from the
+// layout seed, so ?seed=N repeats them):
+//   idleRange: [min, max] warm idle in rpm. Keep the minimum at or above about
+//     650 (red), 950 (blue) and 900 (yellow): lower than that and a warm engine
+//     can stall under hard braking.
+//   roughnessRange: [min, max] how lumpy it runs once warm (baseRoughness, 0 to 1).
+//     Cold, rich, lean and fouled running add to this.
+//   fuelRange: [min, max] litres in the tank at the start. Below the reserve
+//     (reserveLitres) it'll only run on RESERVE.
 
 export const QUAD_SPECS = [
   {
@@ -16,8 +21,10 @@ export const QUAD_SPECS = [
     bodyColor: 0xa8271f,
     style: 'utility',
     dashStyle: 'classic',
-    idleRange: [650, 1650],
-    fuel: { startLitres: 7 }, // about 60% of a 12 litre tank
+    idleRange: [650, 1200],
+    roughnessRange: [0.04, 0.14],
+    fuelRange: [2.5, 11], // 12 litre tank, 2 litre reserve
+    fuel: {},
     engine: {},
     vehicle: {},
     vibration: {},
@@ -25,7 +32,7 @@ export const QUAD_SPECS = [
     smoke: {},
   },
   {
-    // Yamaha-style: idles a bit higher, revs harder and higher, needs more choke
+    // Yamaha-style: idles a bit higher, revs harder and higher (6,800 against 6,200), needs more choke
     // when cold and runs lumpier until it's warm, warms a little quicker, and
     // pulls slightly harder. Its idle comes from the other recorded machine.
     id: 'blue',
@@ -34,12 +41,14 @@ export const QUAD_SPECS = [
     bodyColor: 0x1d4fa3,
     style: 'utility2',
     dashStyle: 'modern',
-    idleRange: [950, 1950],
-    fuel: { tankCapacity: 11, reserveLitres: 1.8, startLitres: 2.8 }, // about 25%, close to reserve
+    idleRange: [950, 1550],
+    roughnessRange: [0.06, 0.3],
+    fuelRange: [1.2, 8], // 11 litre tank, 1.8 litre reserve: some games it starts on its reserve
+    fuel: { tankCapacity: 11, reserveLitres: 1.8 },
     engine: {
       idleRpmWarm: 1450,
-      maxRpm: 9000,
-      redlineRpm: 8000,
+      maxRpm: 6800,
+      redlineRpm: 6400,
       rpmRiseRate: 8.5,
       rpmFallRate: 7,
       warmUpSeconds: 120,
@@ -48,7 +57,6 @@ export const QUAD_SPECS = [
       catchChance: 0.55,
       coldRoughness: 0.62,
       coldPowerLoss: 0.84,
-      baseRoughness: 0.1,
     },
     vehicle: {
       mass: 290,
@@ -83,8 +91,10 @@ export const QUAD_SPECS = [
     bodyColor: 0xe9c21b,
     style: 'sport',
     dashStyle: 'sport',
-    idleRange: [1300, 2300],
-    fuel: { tankCapacity: 9, reserveLitres: 1.5, startLitres: 6, burnPerRev: 0.000032 },
+    idleRange: [900, 2000],
+    roughnessRange: [0.1, 0.4],
+    fuelRange: [1.5, 8], // 9 litre tank, 1.5 litre reserve
+    fuel: { tankCapacity: 9, reserveLitres: 1.5, burnPerRev: 0.000032, idleBurnFraction: 0.45 },
     engine: {
       strokes: 2,
       idleRpmWarm: 1800,
@@ -98,7 +108,6 @@ export const QUAD_SPECS = [
       catchChance: 0.5,
       coldRoughness: 0.6,
       coldPowerLoss: 0.8, // its high idle and quick revving mean it rarely stalls from braking, even cold
-      baseRoughness: 0.14,
       skipChance: 0.35,
       skipThrottle: 0.15,
       skipRpm: 3800,

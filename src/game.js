@@ -9,7 +9,7 @@ import { Player, PLAYER_CAPSULE } from './player/player.js';
 import { DEFAULT_PLAYER_PARAMS, PLAYER_PARAM_RANGES } from './player/playerParams.js';
 import { QuadUnit } from './vehicle/quadUnit.js';
 import { QUAD_SPECS } from './vehicle/quadSpecs.js';
-import { applyIdle, pickIdle } from './vehicle/idleVariation.js';
+import { applyIdle, applyVariation, pickIdle } from './vehicle/quadVariation.js';
 import { AudioHub } from './audio/engineAudio.js';
 import { DEFAULT_SOUND_PARAMS, SOUND_PARAM_RANGES } from './audio/audioParams.js';
 import { Companion } from './npc/companion.js';
@@ -102,7 +102,15 @@ export class Game {
       const range = unit.spec.idleRange ?? [unit.engine.params.idleRpmWarm, unit.engine.params.idleRpmWarm];
       unit.idleRpm = applyIdle(unit.engine.params, unit.quad.params, pickIdle(range, random));
     }
-    console.info(`Warm idles: ${this.units.map((u) => `${u.name} ${u.idleRpm}`).join(', ')}`);
+    // Then roughness and starting fuel, after the idles so a seed keeps its idles.
+    for (const unit of this.units) {
+      unit.variation = applyVariation(unit.spec, unit.engine.params, unit.quad.fuel, random);
+    }
+    console.info(
+      `This game: ${this.units
+        .map((u) => `${u.name} idle ${u.idleRpm} rpm, roughness ${u.variation.roughness.toFixed(2)}, ${u.variation.litres.toFixed(1)} L`)
+        .join('; ')}`,
+    );
     this.updateSmokeScale();
     this.lastUnit = this.units[0];
 
@@ -409,7 +417,7 @@ export class Game {
       this.hud.setStatus(
         [
           unit.name,
-          `Engine   ${e.state}${e.state === 'stalled' ? stalledNote : ''}   (warm idle ${unit.idleRpm} rpm)`,
+          `Engine   ${e.state}${e.state === 'stalled' ? stalledNote : ''}   (warm idle ${unit.idleRpm} rpm, roughness ${unit.engine.params.baseRoughness.toFixed(2)})`,
           `Temp     ${'▮'.repeat(bars)}${'▯'.repeat(10 - bars)}`,
           `Fuel     ${'▮'.repeat(fuelBars)}${'▯'.repeat(10 - fuelBars)}  ${quad.fuel.litres.toFixed(1)} L, tap ${quad.fuel.tap.toUpperCase()}`,
           `Choke    ${Math.round(quad.choke * 100)}%`,

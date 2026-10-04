@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { FuelSystem, DEFAULT_FUEL_PARAMS } from '../src/vehicle/fuelSystem.js';
 import { EngineModel } from '../src/engine/engineModel.js';
+import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
+
+const FULL_RPM = DEFAULT_ENGINE_PARAMS.maxRpm;
 
 function seededRandom(seed) {
   return () => {
@@ -37,7 +40,7 @@ describe('fuel system', () => {
   it('lasts roughly 25 minutes flat out from a full tank', () => {
     const fuel = makeFuel({ startLitres: DEFAULT_FUEL_PARAMS.tankCapacity });
     fuel.tap = 'reserve';
-    const t = secondsToDry(fuel, { rpm: 8500, throttle: 1, choke: 0, running: true });
+    const t = secondsToDry(fuel, { rpm: FULL_RPM, throttle: 1, choke: 0, running: true });
     expect(t / 60).toBeGreaterThan(22);
     expect(t / 60).toBeLessThan(35);
   });
@@ -47,7 +50,7 @@ describe('fuel system', () => {
     flat.tap = 'reserve';
     const idle = makeFuel({ startLitres: 1 });
     idle.tap = 'reserve';
-    const tFlat = secondsToDry(flat, { rpm: 8500, throttle: 1, choke: 0, running: true });
+    const tFlat = secondsToDry(flat, { rpm: FULL_RPM, throttle: 1, choke: 0, running: true });
     const tIdle = secondsToDry(idle, { rpm: 1150, throttle: 0, choke: 0, running: true }, 200000);
     expect(tIdle).toBeGreaterThan(tFlat * 10);
   });

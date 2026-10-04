@@ -65,7 +65,15 @@ Look at her and press `E`. Pick an option with the number keys, or scroll to hig
 - **Blue quad**: Yamaha-style farm quad. Idles higher (about 1,450 rpm warm), revs harder and higher, needs more choke from cold and runs lumpier until it's warm, warms a bit quicker and pulls a little harder. It has a brush guard, square headlights, railed racks and a grey seat. Its idle comes from a different recorded machine, so it sounds different too.
 - **Yellow quad**: a two-stroke sport quad, Blaster-style. It fires every revolution, so it buzzes rather than thumps, and ring-dings at idle. It's weak low down, then comes on hard around 6,000 rpm and revs past 10,000. It has almost no engine braking, and it slowly loads up its plug if you leave it idling (blip the throttle to clear it). It trails blue-white oil smoke. It's lighter and quicker, with an expansion-chamber exhaust, motocross bars, nerf bars and a race number plate. She can squeeze onto a slim pad at the back. It sounds like a two-stroke dirt bike.
 
-All three are automatics and all start cold. Where each quad is parked, where the jerry can has been left, and each quad's warm idle change every game. Each quad's idle is picked from its `idleRange` in `src/vehicle/quadSpecs.js` (red 650 to 1,650, blue 950 to 1,950, yellow 1,300 to 2,300) and shown in the status panel. The browser console prints the layout's seed; add `?seed=<number>` to the URL to get the same layout again.
+All three are automatics and all start cold. Through the CVT the red holds about 6,200 rpm at full throttle and the blue about 6,800; the yellow revs past 10,000. Where each quad is parked, where the jerry can has been left, and each quad's warm idle, roughness and starting fuel change every game, picked from ranges in `src/vehicle/quadSpecs.js`:
+
+| | `idleRange` (rpm) | `roughnessRange` | `fuelRange` (litres) |
+| --- | --- | --- | --- |
+| Red | 650 to 1,200 | 0.04 to 0.14 | 2.5 to 11 of 12 |
+| Blue | 950 to 1,550 | 0.06 to 0.18 | 1.2 to 8 of 11 |
+| Yellow | 900 to 2,000 | 0.10 to 0.40 | 1.5 to 8 of 9 |
+
+The idle and roughness are shown in the status panel and printed in the console. The browser console prints the layout's seed; add `?seed=<number>` to the URL to get the same layout again.
 
 Everything below applies to any of them.
 
@@ -90,7 +98,7 @@ Things to know:
 
 ## Fuel
 
-Each quad has a fuel tank, a fuel tap and a fuel gauge on the dash. Taps start OFF. The red quad starts at about 60%, the blue at about 25%, and the yellow at about two thirds of its smaller tank.
+Each quad has a fuel tank, a fuel tap and a fuel gauge on the dash. Taps start OFF. How much is in each tank varies every game (see `fuelRange` above); the blue can start below its reserve, so it'll only run on RESERVE until it's filled.
 
 - A full tank lasts roughly 25 minutes of hard riding, and much longer at idle.
 - The tap has three positions. On **ON** it can't reach the last couple of litres, so when it starts to cough and stumble, flick it to **RESERVE** with `F` and head for fuel. **OFF** shuts the fuel off; the engine runs on what's in the carburettor for a moment, then dies.

@@ -26,8 +26,9 @@ export class Drivetrain {
    * @param {number} s.brake         0..1
    * @param {number} s.forwardSpeed  m/s, signed.
    * @param {boolean} s.reverse
+   * @param {number} s.maxRpm        The engine's full-throttle rpm.
    */
-  update({ rpm, power, running, throttle, brake, forwardSpeed, reverse }) {
+  update({ rpm, power, running, throttle, brake, forwardSpeed, reverse, maxRpm = 8500 }) {
     const p = this.params;
     const speed = Math.abs(forwardSpeed);
 
@@ -46,7 +47,7 @@ export class Drivetrain {
         // On the pipe: weak low down, then it comes on hard.
         torque = p.torqueBelowBand + (1 - p.torqueBelowBand) * smoothstep(p.powerbandRpm - 1200, p.powerbandRpm + 600, rpm);
       } else {
-        const rpmNorm = clamp(rpm / 8500, 0, 1);
+        const rpmNorm = clamp(rpm / maxRpm, 0, 1);
         torque = 0.75 + 0.25 * Math.sin(Math.PI * Math.min(1, rpmNorm * 1.2));
       }
       const top = reverse ? p.maxReverseSpeed : p.maxSpeed;

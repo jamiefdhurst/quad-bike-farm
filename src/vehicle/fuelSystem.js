@@ -12,8 +12,8 @@ export const DEFAULT_FUEL_PARAMS = {
   startTap: 'off', // tap position at the start: turn it ON before riding off
   bowlCapacity: 0.012, // litres in the carburettor float bowl: with the tap OFF it runs about half a minute at idle
   bowlFillRate: 0.02, // litres per second from the tank into the bowl
-  burnPerRev: 0.000047, // litres per crank revolution at full throttle (game-paced: a full tank lasts about 25 minutes flat out)
-  idleBurnFraction: 0.45, // fraction of that burnt at a closed throttle
+  burnPerRev: 0.0000645, // litres per crank revolution at full throttle (game-paced: a full tank lasts about 25 minutes flat out)
+  idleBurnFraction: 0.33, // fraction of that burnt at a closed throttle
   chokeBurn: 0.3, // extra consumption at full choke
 };
 
@@ -65,6 +65,12 @@ export class FuelSystem {
   cycleTap() {
     this.tap = TAP_POSITIONS[(TAP_POSITIONS.indexOf(this.tap) + 1) % TAP_POSITIONS.length];
     return this.tap;
+  }
+
+  /** Sets what's in the tank, as if it had been there all along. */
+  setLitres(litres) {
+    this.litres = clamp(litres, 0, this.params.tankCapacity);
+    this.bowl = this.litres > 0 ? this.params.bowlCapacity : 0;
   }
 
   /** Pours fuel in; returns how much actually went in. */
