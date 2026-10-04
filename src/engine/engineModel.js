@@ -39,6 +39,7 @@ export class EngineModel {
     this.choke = 0;
     this.throttle = 0;
     this.load = 0;
+    this.fuel = 1; // float bowl level, 0..1
 
     // Derived values, refreshed every step.
     this.mixture = 0;
@@ -101,8 +102,9 @@ export class EngineModel {
    * @param {number}  [controls.throttle] 0..1
    * @param {number}  [controls.choke]    0..1
    * @param {number}  [controls.load]     0..1 drivetrain drag, e.g. braking with the clutch engaged.
+   * @param {number}  [controls.fuel]     0..1 carburettor float bowl level; it starves below fuelStarveLevel.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0 } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1 } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -110,6 +112,7 @@ export class EngineModel {
     this.throttle = clamp(throttle, 0, 1);
     this.choke = clamp(choke, 0, 1);
     this.load = clamp(load, 0, 1);
+    this.fuel = clamp(fuel, 0, 1);
     if (dt <= 0) return;
 
     const steps = Math.max(1, Math.ceil(dt / this.params.maxStep));
@@ -173,7 +176,9 @@ export class EngineModel {
     const p = this.params;
     const need = p.coldEnrichmentNeed * (1 - this.temperature);
     const supplied = p.chokeEnrichment * this.choke * (1 - p.throttleChokeRelief * this.throttle);
-    this.mixture = supplied - need;
+    // A draining float bowl leans the mixture out, whatever the choke is doing.
+    const starve = clamp((p.fuelStarveLevel - this.fuel) / p.fuelStarveLevel, 0, 1);
+    this.mixture = supplied - need - p.starveLean * starve;
     this.lean = Math.max(0, -this.mixture);
     this.rich = Math.max(0, this.mixture - p.richTolerance);
 
@@ -215,7 +220,8 @@ export class EngineModel {
         p.catchChance *
         lerp(p.catchColdFactor, 1, this.temperature) *
         Math.exp(-((this.mixture / width) ** 2)) *
-        (1 - this.fouling);
+        (1 - this.fouling) *
+        (this.fuel > 0.02 ? 1 : 0);
 
       if (this.random() < chance) {
         this.state = EngineState.RUNNING;
@@ -270,7 +276,9 @@ export class EngineModel {
       }
     }
 
-    if (this.fouling >= 1) {
+    if (this.fuel <= 0.001) {
+      this.stall('noFuel');
+    } else if (this.fouling >= 1) {
       this.stall('flooded');
     } else if (this.rpm < p.stallRpm) {
       this.stall('lowRpm');

@@ -78,6 +78,10 @@ export const DEFAULT_ENGINE_PARAMS = {
   misfireRpmDrop: 140, // rpm lost on a misfire
   pulseRpmKick: 90, // rpm swing from pulse strength variation
 
+  // Fuel starvation, from the carburettor float bowl level (0..1)
+  fuelStarveLevel: 0.5, // below this bowl level the mixture starts to go lean
+  starveLean: 1.1, // how lean it goes as the bowl empties
+
   // Integration
   maxStep: 1 / 240,
   initialTemperature: 0,
@@ -137,4 +141,6 @@ export const ENGINE_PARAM_RANGES = {
   misfireRoughness: [0, 1, 0.01],
   misfireRpmDrop: [0, 600, 5],
   pulseRpmKick: [0, 400, 5],
+  fuelStarveLevel: [0.05, 1, 0.01],
+  starveLean: [0, 3, 0.05],
 };
