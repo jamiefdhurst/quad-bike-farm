@@ -7,7 +7,8 @@ const groups = [];
 /**
  * @param {string} name     Folder name in the debug panel.
  * @param {object} params   Live params object; the panel writes into it directly.
- * @param {object} ranges   { key: [min, max, step] } for numeric keys. Keys without a range are left out.
+ * @param {object} ranges   { key: [min, max, step] } for numeric keys, or { key: ['a', 'b'] } for a choice.
+ *                          Keys without a range are left out.
  * @param {object} [options]
  * @param {() => void} [options.onChange]  Called after any value in the group changes.
  */

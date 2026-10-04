@@ -2,9 +2,23 @@
 // (engineWorklet.js) each frame. Ranges are [min, max, step].
 
 export const DEFAULT_AUDIO_PARAMS = {
+  engineSound: 'recorded', // 'recorded' (real recorded pulses) or 'synth' (fully synthesised)
   masterVolume: 0.8,
   muted: false,
   latency: 0.05, // seconds between the simulation and the sound, so pulses can be placed exactly
+
+  // Recorded engine
+  recVolume: 0.6,
+  recThrottleLoudness: 0.15, // extra loudness with the throttle open (the rev recording is already louder up the range)
+  recBlendLo: 1500, // rpm where the rev recording starts to blend in over the idle recording
+  recBlendHi: 2100, // rpm where it has fully taken over
+  recToneClosed: 6000, // Hz low-pass with the throttle shut
+  recToneOpen: 16000, // Hz low-pass at full throttle
+  recMisfireGain: 0.1, // a misfire plays a near-silent pulse
+  recStarterVolume: 0.9,
+  recShutdownVolume: 0.9,
+
+  // Everything below is the synthesised engine
 
   // Combustion pulses
   exhaustVolume: 0.9,
@@ -67,6 +81,16 @@ export const DEFAULT_AUDIO_PARAMS = {
 };
 
 export const AUDIO_PARAM_RANGES = {
+  engineSound: ['recorded', 'synth'],
+  recVolume: [0, 3, 0.01],
+  recThrottleLoudness: [0, 3, 0.01],
+  recBlendLo: [500, 5000, 10],
+  recBlendHi: [600, 6000, 10],
+  recToneClosed: [500, 20000, 50],
+  recToneOpen: [500, 20000, 50],
+  recMisfireGain: [0, 1, 0.01],
+  recStarterVolume: [0, 3, 0.01],
+  recShutdownVolume: [0, 3, 0.01],
   masterVolume: [0, 2, 0.01],
   latency: [0.02, 0.2, 0.005],
   exhaustVolume: [0, 3, 0.01],

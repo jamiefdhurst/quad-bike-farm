@@ -1,7 +1,8 @@
-// Main-thread side of the engine sound. The synthesis itself runs in an
-// AudioWorklet (engineWorklet.js); this file creates the audio graph, forwards
-// the engine's firing pulses and events with exact audio-clock timestamps, and
-// handles positioning and the ambient wind bed.
+// Main-thread side of the engine sound. The sound itself is made in an
+// AudioWorklet (engineWorklet.js), either from recorded pulses or fully
+// synthesised; this file creates the audio graph, loads the recordings,
+// forwards the engine's firing pulses and events with exact audio-clock
+// timestamps, and handles positioning and the ambient wind bed.
 
 import workletUrl from './engineWorklet.js?url';
 import { DEFAULT_AUDIO_PARAMS } from './audioParams.js';
@@ -37,6 +38,7 @@ export class EngineAudio {
     this.loading = this.ctx.audioWorklet
       .addModule(workletUrl)
       .then(() => this.build())
+      .then(() => this.loadBank())
       .catch((err) => console.error('Engine audio failed to load', err));
     return this.loading;
   }
@@ -78,6 +80,23 @@ export class EngineAudio {
   }
 
   /**
+   * Loads the recorded engine pulses (see tools/slice_engine_audio.py) and hands
+   * them to the worklet. Until this finishes, or if it fails, the synth plays.
+   */
+  async loadBank() {
+    const base = import.meta.env?.BASE_URL ?? '/';
+    try {
+      const bank = await (await fetch(`${base}audio/engine-bank.json`)).json();
+      const buffer = await this.ctx.decodeAudioData(await (await fetch(base + bank.file)).arrayBuffer());
+      const data = new Float32Array(buffer.getChannelData(0));
+      this.node.port.postMessage({ bank: { ...bank, data } }, [data.buffer]);
+      this.bankLoaded = true;
+    } catch (err) {
+      console.warn('Recorded engine sound unavailable, using the synth', err);
+    }
+  }
+
+  /**
    * @param {number} dt  Duration of the engine update whose pulses are being played.
    * @param {EngineModel} engine
    * @param {object} source  World position of the engine { x, y, z }.
@@ -98,14 +117,13 @@ export class EngineAudio {
     for (const e of engine.events) {
       const time = frameStart + e.t;
       if (e.type === 'stalled') {
-        // A couple of uneven coughs as it dies.
+        // A couple of uneven coughs as it dies (the synth uses these; the recorded engine plays its own run-down).
         const v = p.coughVolume;
         events.push({ time, type: 'cough', strength: 0.9 * v });
         events.push({ time: time + 0.1 + Math.random() * 0.06, type: 'cough', strength: 0.55 * v });
         events.push({ time: time + 0.27 + Math.random() * 0.08, type: 'cough', strength: 0.3 * v });
-      } else {
-        events.push({ time, type: e.type });
       }
+      events.push({ time, type: e.type });
     }
 
     this.node.port.postMessage({

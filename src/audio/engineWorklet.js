@@ -62,6 +62,159 @@ class Biquad {
   }
 }
 
+const smoothstep = (a, b, x) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+
+/**
+ * Recorded engine: every firing pulse plays one real recorded pulse ("grain")
+ * cut from CC0 recordings by tools/slice_engine_audio.py. The grain recorded
+ * nearest the current rpm is chosen and resampled so it lasts exactly one
+ * engine cycle. Idle grains come from one quad, higher revs from a rev sweep
+ * of another, blended across a band of rpm. Cranking is a looped recording.
+ */
+class RecordedEngine {
+  constructor(bank) {
+    this.data = bank.data;
+    const sr = sampleRate;
+    this.sourceGain = bank.sourceGain;
+    this.crankRpm = bank.crankRpm;
+    this.byKind = {};
+    for (const g of bank.grains) {
+      const grain = { start: Math.round(g.start * sr), len: Math.round(g.dur * sr), rpm: g.rpm, gain: bank.sourceGain[g.src] ?? 1 };
+      (this.byKind[g.kind] ??= []).push(grain);
+    }
+    for (const k in this.byKind) this.byKind[k].sort((a, b) => a.rpm - b.rpm);
+    this.oneshots = {};
+    for (const [name, o] of Object.entries(bank.oneshots)) {
+      this.oneshots[name] = { start: Math.round(o.start * sr), len: Math.round(o.dur * sr) };
+    }
+    this.voices = [];
+    this.last = null;
+    this.crankVoice = null;
+    this.crankSpeed = 0;
+  }
+
+  /** One of the grains recorded closest to `rpm`, avoiding an immediate repeat. */
+  pick(kinds, rpm) {
+    const pool = [];
+    for (const k of kinds) if (this.byKind[k]) pool.push(...this.byKind[k]);
+    if (!pool.length) return null;
+    pool.sort((a, b) => Math.abs(Math.log(a.rpm / rpm)) - Math.abs(Math.log(b.rpm / rpm)));
+    const near = pool.slice(0, 8).filter((g) => g !== this.last);
+    const g = near[Math.floor(Math.random() * near.length)] ?? pool[0];
+    this.last = g;
+    return g;
+  }
+
+  playGrain(g, rpm, gain) {
+    if (!g || gain <= 0.0005) return;
+    const rate = Math.min(1.5, Math.max(0.65, rpm / g.rpm));
+    this.voices.push({ pos: 0, start: g.start, len: g.len, rate, gain: gain * g.gain, fadeIn: 0.0008 * sampleRate, fadeOut: 0.004 * sampleRate });
+  }
+
+  playOneshot(name, gain, delaySamples = 0) {
+    const o = this.oneshots[name];
+    if (!o) return;
+    this.voices.push({ pos: -delaySamples, start: o.start, len: o.len, rate: 1, gain, fadeIn: 0.002 * sampleRate, fadeOut: 0.01 * sampleRate });
+  }
+
+  trigger(ev, p, rpmNow, throttle) {
+    const rpm = Math.max(rpmNow, 400);
+    const loud = p.recVolume * (1 + p.recThrottleLoudness * throttle);
+    switch (ev.type) {
+      case 'fire':
+      case 'sputter':
+      case 'misfire': {
+        const typeGain = ev.type === 'misfire' ? p.recMisfireGain : ev.type === 'sputter' ? 0.5 : 1;
+        const gain = ev.strength * typeGain * loud;
+        const w = smoothstep(p.recBlendLo, p.recBlendHi, rpm);
+        if (w < 0.999) this.playGrain(this.pick(['idle'], rpm), rpm, gain * (1 - w));
+        if (w > 0.001) {
+          // Throttle open: grains from the rev rising; closed: from it falling back.
+          const kinds = throttle > 0.25 ? ['accel', 'idle2'] : ['decel', 'idle2'];
+          this.playGrain(this.pick(kinds, rpm), rpm, gain * w);
+        }
+        return true;
+      }
+      case 'compression':
+      case 'cough':
+        return true; // covered by the crank loop and the shutdown recording
+      case 'starterOn': {
+        this.playOneshot('starterEngage', p.recStarterVolume);
+        const engage = this.oneshots.starterEngage;
+        this.crankVoice = { pos: -(engage ? engage.len - 0.01 * sampleRate : 0), gain: 0, target: p.recStarterVolume };
+        return true;
+      }
+      case 'starterOff':
+      case 'caught':
+        if (this.crankVoice) this.crankVoice.target = 0;
+        for (const v of this.voices) if (v.start === this.oneshots.starterEngage?.start) v.release = true;
+        return ev.type === 'caught';
+      case 'stalled':
+      case 'shutdown':
+        this.playOneshot('shutdown', p.recShutdownVolume);
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /** Next output sample. */
+  sample(state) {
+    const d = this.data;
+    let s = 0;
+    for (let k = this.voices.length - 1; k >= 0; k--) {
+      const v = this.voices[k];
+      const pos = v.pos;
+      v.pos += v.rate;
+      if (pos < 0) continue;
+      if (pos >= v.len - 1) {
+        this.voices.splice(k, 1);
+        continue;
+      }
+      const i = Math.floor(pos);
+      const f = pos - i;
+      const x = d[v.start + i] * (1 - f) + d[v.start + i + 1] * f;
+      let w = Math.min(1, pos / v.fadeIn, (v.len - pos) / v.fadeOut);
+      if (v.release) {
+        v.releaseGain = (v.releaseGain ?? 1) * 0.9993;
+        w *= v.releaseGain;
+      }
+      s += x * v.gain * w;
+    }
+
+    // Starter loop, crossfaded at its seam, playing faster or slower with the cranking speed.
+    const cv = this.crankVoice;
+    const loop = this.oneshots.crankLoop;
+    if (cv && loop) {
+      this.crankSpeed += ((state.cranking ? state.rpm : 0) - this.crankSpeed) * 0.0001;
+      cv.gain += (cv.target - cv.gain) * (cv.target > cv.gain ? 0.004 : 0.0015);
+      if (cv.pos < 0) {
+        cv.pos += 1;
+        cv.gain = 0;
+      } else if (cv.gain > 0.0005 || cv.target > 0) {
+        const rate = Math.min(1.3, Math.max(0.6, this.crankSpeed / this.crankRpm || 1));
+        const xf = Math.floor(0.03 * sampleRate);
+        const len = loop.len;
+        const i = Math.floor(cv.pos);
+        let x = d[loop.start + i];
+        if (i > len - xf) {
+          const k = (i - (len - xf)) / xf;
+          x = x * (1 - k) + d[loop.start + (i - (len - xf))] * k;
+        }
+        s += x * cv.gain;
+        cv.pos += rate;
+        if (cv.pos >= len) cv.pos -= len - xf;
+      } else {
+        this.crankVoice = null;
+      }
+    }
+    return s;
+  }
+}
+
 class EngineProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
@@ -109,6 +262,7 @@ class EngineProcessor extends AudioWorkletProcessor {
       this.updateFilters();
     }
     if (msg.state) this.state = msg.state;
+    if (msg.bank) this.recorded = new RecordedEngine(msg.bank);
     if (msg.events) {
       for (const ev of msg.events) {
         ev.sample = Math.max(currentFrame, Math.round(ev.time * sampleRate));
@@ -127,8 +281,18 @@ class EngineProcessor extends AudioWorkletProcessor {
 
   // Event handling -----------------------------------------------------------
 
+  get useRecorded() {
+    return !!this.recorded && this.p.engineSound === 'recorded';
+  }
+
   trigger(ev) {
     const p = this.p;
+    if (ev.type === 'state') {
+      // Timed control changes, used for offline rendering.
+      this.state = ev.state;
+      return;
+    }
+    if (this.useRecorded && this.recorded.trigger(ev, p, this.rpm, this.throttle)) return;
     const sr = sampleRate;
     const rpm = Math.max(this.rpm, 150);
     const cycle = (120 / rpm) * sr; // samples per four-stroke cycle
@@ -138,10 +302,6 @@ class EngineProcessor extends AudioWorkletProcessor {
     const density = Math.min(1, Math.pow(p.densityRefRpm / rpm, p.densityComp));
     const pressure = (p.pulseBase + p.throttlePressure * throttle) * density;
     switch (ev.type) {
-      case 'state':
-        // Timed control changes, used for offline rendering.
-        this.state = ev.state;
-        break;
       case 'fire':
       case 'sputter': {
         // No two combustion events are quite the same, even in a healthy engine.
@@ -212,6 +372,7 @@ class EngineProcessor extends AudioWorkletProcessor {
     const sr = sampleRate;
     const n = out.length;
     const st = this.state;
+    if (this.useRecorded) return this.processRecorded(out, n, st);
 
     // Smooth control values once per block.
     this.rpm += (st.rpm - this.rpm) * 0.25;
@@ -352,6 +513,40 @@ class EngineProcessor extends AudioWorkletProcessor {
       s += dry;
       s = this.dcBlock.run(s);
       out[i] = Math.tanh(s * p.drive) / Math.max(1, Math.tanh(p.drive));
+    }
+    return true;
+  }
+
+  /** Recorded-engine path: grains and loops, plus the synthesised relay clicks. */
+  processRecorded(out, n, st) {
+    const p = this.p;
+    const sr = sampleRate;
+    this.rpm += (st.rpm - this.rpm) * 0.25;
+    this.throttle += (st.throttle - this.throttle) * 0.2;
+    if ((this.blockCount++ & 7) === 0) {
+      this.tone.set('lowpass', p.recToneClosed + (p.recToneOpen - p.recToneClosed) * this.throttle, 0.7, sr);
+    }
+    for (let i = 0; i < n; i++) {
+      const frame = currentFrame + i;
+      while (this.queue.length && this.queue[0].sample <= frame) this.trigger(this.queue.shift());
+      let dry = 0;
+      for (let k = this.active.length - 1; k >= 0; k--) {
+        const e = this.active[k];
+        const a = e.age++;
+        if (a < 0) continue;
+        let done = true;
+        if (e.kind === 'click') {
+          dry += e.amp * (Math.random() * 2 - 1) * Math.exp(-a / (0.0015 * sr));
+          done = a > 0.02 * sr;
+        } else if (e.kind === 'pump') {
+          const env = Math.min(1, a / (0.04 * sr)) * (a < 0.7 * sr ? 1 : Math.max(0, 1 - (a - 0.7 * sr) / (0.2 * sr)));
+          dry += e.amp * env * (Math.sin((TWO_PI * 1450 * a) / sr) + 0.3 * (Math.random() * 2 - 1));
+          done = a > 0.9 * sr;
+        }
+        if (done) this.active.splice(k, 1);
+      }
+      const s = this.tone.run(this.recorded.sample(st)) + dry;
+      out[i] = Math.tanh(s);
     }
     return true;
   }

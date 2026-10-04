@@ -104,13 +104,20 @@ src/
   world/               terrain, track, sky, props, layout
   debug/               lil-gui tuning panel
 tests/engine.test.js   engine state machine tests
+tools/                 slice_engine_audio.py, cuts recordings into engine pulses (Python, numpy)
+public/audio/          the cut engine recordings
 ```
 
 **Engine model** (`src/engine/engineModel.js`). A state machine (off, ignition, cranking, running, stalled) driven by one idea: mixture. Mixture is the enrichment the choke supplies minus the enrichment a cold engine needs. It decides whether the engine catches, where it idles, how rough it runs and how much power it makes. Running rich fouls the plug, and a fully fouled plug stalls it. Temperature rises while running and falls slowly when off. Each power stroke is emitted as a firing pulse with its own timing and strength jitter, and both the vibration and the audio play those same pulses. That's why a rough engine sounds and feels lumpy together.
 
 **Drivetrain** (`src/vehicle/drivetrain.js`). An automatic: centrifugal clutch into a CVT. It turns engine rpm and power into drive force, and puts braking load back on the engine while the clutch is locked to a moving bike.
 
-**Engine sound** (`src/audio/engineWorklet.js`). An AudioWorklet synth. Each firing pulse is a pressure kick into a simulated exhaust pipe and silencer with fixed resonances, so revs change the pulse rate rather than shifting the whole sound up. The starter motor, intake, valve tick and overrun pops are synthesised alongside. Every value is in the Audio folder of the tuning panel.
+**Engine sound** (`src/audio/engineWorklet.js`). Two engines, chosen in the tuning panel (Audio, `engineSound`):
+
+- *recorded* (default): every firing pulse from the engine model plays one real recorded pulse, cut from CC0 quad recordings and resampled to last exactly one engine cycle. Idle comes from one quad and higher revs from a rev sweep of another, blended across 1,500 to 2,100 rpm. Because pulses still come from the engine model, a cold idle is still lumpy, misfires are still missing beats, and it stays in sync with the vibration and smoke. Cranking is a looped starter recording.
+- *synth*: a pulse-driven exhaust synth with a simulated pipe and silencer.
+
+To recut the recordings, see the instructions at the top of `tools/slice_engine_audio.py`.
 
 **Exhaust smoke** (`src/effects/exhaustSmoke.js`). One soft puff per firing pulse, so you can see the beats at idle. White-grey vapour when cold, darker when rich or flooded, a burst when you snap the throttle open, and barely anything once warm. Tunable in the Smoke folder.
 

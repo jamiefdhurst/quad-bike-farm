@@ -61,3 +61,13 @@ A running log of choices made while building this, so later work starts from the
 ## Choke keys (2026-10-04)
 
 - Choke moved from the mouse wheel to `Q` (more) and `Z` (less), 10% per press, repeating while held (after 0.35 s, then every 0.12 s). Keys are constants at the top of `src/vehicle/quad.js`. The mouse wheel is now only used for highlighting menu options.
+
+## Recorded engine sound (2026-10-04)
+
+- The synth still didn't sound real, so the default is now recorded: each firing pulse from the engine model plays one recorded pulse ("grain"). The synth stays selectable in the tuning panel for comparison.
+- Chose per-pulse grains over steady-rpm loops so the engine model's lumpy idle, misfires and stalls still come through, in sync with vibration and smoke.
+- Sources are CC0 Freesound recordings (see ASSETS.md). The main quad recording idles at about 11.5 pulses a second, so it's a four-stroke single at roughly 1,350 rpm, the same engine type the model simulates. Its revs are blips without a steady rhythm, so pulses above 1,500 rpm come from a second recording with a clean rev sweep. Rising-rev pulses play with the throttle open, falling-rev pulses with it closed.
+- The second machine is level-matched to the first using both recordings' idle pulses, and the two are blended across 1,500 to 2,100 rpm.
+- The starter's chug in the recording is irregular, so cranking is an engage sound followed by a crossfaded loop whose speed follows the cranking speed, rather than one grain per compression stroke.
+- Cutting is done offline by `tools/slice_engine_audio.py` into one WAV plus a JSON index. WAV rather than MP3 so browser MP3 decoder delay can't shift the cut points.
+- Using Freesound's MP3 previews for now; the original WAVs need a Freesound login.

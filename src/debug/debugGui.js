@@ -17,9 +17,16 @@ export class DebugGui {
     for (const group of getTuningGroups()) {
       const folder = this.gui.addFolder(group.name);
       for (const [key, range] of Object.entries(group.ranges)) {
-        if (typeof group.params[key] !== 'number') continue;
-        const [min, max, step] = range;
-        const c = folder.add(group.params, key, min, max, step);
+        let c;
+        if (typeof range[0] === 'string') {
+          // A list of strings is a dropdown of choices.
+          c = folder.add(group.params, key, range);
+        } else if (typeof group.params[key] === 'number') {
+          const [min, max, step] = range;
+          c = folder.add(group.params, key, min, max, step);
+        } else {
+          continue;
+        }
         if (group.onChange) c.onChange(group.onChange);
       }
       for (const [key, value] of Object.entries(group.params)) {
