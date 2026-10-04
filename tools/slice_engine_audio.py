@@ -85,6 +85,31 @@ def find_peaks(env, lo, hi):
     return np.array(peaks) / ENV_RATE
 
 
+def cut_points(x, peaks, smooth_env):
+    """Where to cut before each thump: find where its attack starts, then take the
+    quietest zero crossing just ahead of that, so a grain never carries the start
+    of the next thump and never begins partway into its own."""
+    cuts = []
+    for i, p in enumerate(peaks):
+        pi = int(p * SR)
+        prev = int(peaks[i - 1] * SR) if i > 0 else max(0, pi - int(0.1 * SR))
+        period = pi - prev
+        # Attack start: walk back from the peak until the envelope drops near the local floor.
+        floor_lo = prev + int(0.3 * period)
+        floor = smooth_env[floor_lo:pi].min() if pi > floor_lo else 0
+        level = floor + 0.2 * (smooth_env[pi] - floor)
+        j = pi
+        while j > floor_lo and smooth_env[j] > level:
+            j -= 1
+        # Quietest spot in the stretch just before the attack, snapped to a zero crossing.
+        a = max(floor_lo, j - int(0.25 * period))
+        q = a + int(np.argmin(smooth_env[a : j + 1])) if j > a else j
+        lo, hi = max(1, q - int(0.0015 * SR)), min(len(x) - 1, q + int(0.0015 * SR))
+        zc = [k for k in range(lo, hi) if x[k - 1] <= 0 < x[k]]
+        cuts.append(min(zc, key=lambda k: abs(k - q)) if zc else q)
+    return cuts
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--quad', required=True)
@@ -98,6 +123,7 @@ def main():
     grains = []
     oneshots = {}
     plot_data = []
+    rejected = {}
 
     def append(x):
         nonlocal cursor
@@ -108,28 +134,41 @@ def main():
 
     for kind, src, t0, t1, (lo, hi) in SEGMENTS:
         x = sources[src][int(t0 * SR) : int(t1 * SR)]
-        smooth = 0.0012
-        env = envelope(x, smooth)
+        env = envelope(x, 0.0012)
         peaks = find_peaks(env, lo, hi)
+        k = int(SR * 0.0008)
+        fine_env = np.convolve(np.abs(x), np.ones(k) / k, mode='same')
+        cuts = cut_points(x, peaks, fine_env)
         base = append(x)
-        # Cut a little before each peak so every grain starts just ahead of its thump.
-        for a, b in zip(peaks[:-1], peaks[1:]):
-            period = b - a
-            pre = min(0.004, 0.15 * period)
-            s, e = a - pre, b - pre
-            if s < 0:
+        durs = np.diff(cuts) / SR
+        for i in range(len(cuts) - 1):
+            s, e = cuts[i], cuts[i + 1]
+            dur = (e - s) / SR
+            # Overlap into the quiet stretch before the next thump, for crossfading at playback.
+            tail = int(min(0.003, 0.12 * dur) * SR)
+            seg_env = fine_env[s:e]
+            n = len(seg_env)
+            reason = None
+            med = np.median(durs[max(0, i - 3) : i + 4])
+            if abs(dur - med) / med > 0.2:
+                reason = 'odd length'
+            elif seg_env[int(n * 0.8) :].max() > 0.5 * seg_env[: int(n * 0.4)].max():
+                reason = 'next thump in tail'
+            if reason:
+                rejected[reason] = rejected.get(reason, 0) + 1
                 continue
-            seg = x[int(s * SR) : int(e * SR)]
+            seg = x[s:e]
             grains.append(
                 {
                     'kind': kind,
-                    'start': (base + int(s * SR)) / SR,
-                    'dur': round(e - s, 5),
-                    'rpm': round(120 / period, 1),
+                    'start': (base + s) / SR,
+                    'dur': round(dur, 5),
+                    'tail': round(min(tail, len(x) - e) / SR, 5),
+                    'rpm': round(120 / dur, 1),
                     'rms': round(float(np.sqrt(np.mean(seg**2))), 5),
                 }
             )
-        plot_data.append((kind, src, t0, x, peaks))
+        plot_data.append((kind, src, t0, x, np.array(cuts) / SR))
 
     for name, src, t0, t1 in ONESHOTS:
         x = sources[src][int(t0 * SR) : int(t1 * SR)].copy()
@@ -168,7 +207,7 @@ def main():
     for k in ('idle', 'idle2', 'accel', 'decel'):
         rpms = [g['rpm'] for g in grains if g['kind'] == k]
         print(f'{k:6s} {len(rpms):4d} grains, rpm {min(rpms):.0f} to {max(rpms):.0f}')
-    print(f'rev source gain {rev_gain:.2f}, bank {len(audio) / SR:.1f} s')
+    print(f'rev source gain {rev_gain:.2f}, bank {len(audio) / SR:.1f} s, rejected {rejected}')
 
     if args.plot:
         import matplotlib
@@ -182,7 +221,7 @@ def main():
             ax.plot(t, x, lw=0.3)
             for p in peaks:
                 ax.axvline(p, color='r', lw=0.5)
-            ax.set_title(f'{kind} ({src} from {t0}s): {len(peaks)} pulses', loc='left', fontsize=9)
+            ax.set_title(f'{kind} ({src} from {t0}s): {len(peaks)} cuts', loc='left', fontsize=9)
             ax.set_xlim(0, min(t[-1], 1.2))
         plt.tight_layout()
         plt.savefig(args.plot, dpi=60)

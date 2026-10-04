@@ -113,7 +113,7 @@ export class EngineAudio {
     const frameStart = this.nextFrameTime;
     this.nextFrameTime += dt;
 
-    const events = engine.pulses.map((pulse) => ({ time: frameStart + pulse.t, type: pulse.type, strength: pulse.strength }));
+    const events = engine.pulses.map((pulse) => ({ time: frameStart + pulse.t, type: pulse.type, strength: pulse.strength, period: pulse.period }));
     for (const e of engine.events) {
       const time = frameStart + e.t;
       if (e.type === 'stalled') {

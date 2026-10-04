@@ -57,7 +57,7 @@ export class EngineModel {
     this.events = [];
     this.pendingEvents = []; // raised between updates, e.g. by the ignition switch
     this.updating = false;
-    /** Firing pulses from the last update: { t, type: 'fire'|'misfire'|'sputter'|'compression', strength }. */
+    /** Firing pulses from the last update: { t, type: 'fire'|'misfire'|'sputter'|'compression', strength, period }. */
     this.pulses = [];
   }
 
@@ -220,13 +220,13 @@ export class EngineModel {
       if (this.random() < chance) {
         this.state = EngineState.RUNNING;
         this.rpm = Math.max(this.rpm, p.catchRpm);
-        this.pulses.push({ t, type: 'fire', strength: 1.2 });
+        this.pushPulse(t, 'fire', 1.2);
         this.emit('caught', t);
       } else if (this.random() < Math.min(1, chance * 2)) {
         // Nearly caught: a weak, uneven fire that doesn't sustain.
-        this.pulses.push({ t, type: 'sputter', strength: 0.3 + 0.3 * this.random() });
+        this.pushPulse(t, 'sputter', 0.3 + 0.3 * this.random());
       } else {
-        this.pulses.push({ t, type: 'compression', strength: 0.5 });
+        this.pushPulse(t, 'compression', 0.5);
       }
     }
   }
@@ -262,11 +262,11 @@ export class EngineModel {
       const misfireChance = p.misfireBase + p.misfireRoughness * this.roughness ** 2;
       if (this.random() < misfireChance) {
         this.rpm -= p.misfireRpmDrop;
-        this.pulses.push({ t, type: 'misfire', strength: 0.15 });
+        this.pushPulse(t, 'misfire', 0.15);
       } else {
         const strength = 1 + (this.random() * 2 - 1) * p.pulseStrengthJitter * this.roughness;
         this.rpm += (strength - 1) * p.pulseRpmKick;
-        this.pulses.push({ t, type: 'fire', strength });
+        this.pushPulse(t, 'fire', strength);
       }
     }
 
@@ -286,7 +286,7 @@ export class EngineModel {
     this.targetRpm = 0;
     // The last few compression strokes as it coasts to a stop.
     if (this.rpm > 80 && this.advanceCycle(h)) {
-      this.pulses.push({ t: this.cycleT, type: 'compression', strength: Math.min(0.8, this.rpm / 1500) });
+      this.pushPulse(this.cycleT, 'compression', Math.min(0.8, this.rpm / 1500));
     }
   }
 
@@ -304,6 +304,15 @@ export class EngineModel {
     this.cyclePhase -= 1;
     this.cycleLength = 1 + (this.random() * 2 - 1) * this.params.cycleJitter * this.roughness;
     return true;
+  }
+
+  /**
+   * Records a pulse. `period` is how long until the next one is due at the
+   * current rpm, including this cycle's random variation, so sound can be
+   * fitted to the cycle it belongs to.
+   */
+  pushPulse(t, type, strength) {
+    this.pulses.push({ t, type, strength, period: (this.cycleLength * 120) / Math.max(this.rpm, 60) });
   }
 
   stall(reason) {

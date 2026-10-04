@@ -82,7 +82,13 @@ class RecordedEngine {
     this.crankRpm = bank.crankRpm;
     this.byKind = {};
     for (const g of bank.grains) {
-      const grain = { start: Math.round(g.start * sr), len: Math.round(g.dur * sr), rpm: g.rpm, gain: bank.sourceGain[g.src] ?? 1 };
+      const grain = {
+        start: Math.round(g.start * sr),
+        len: Math.round(g.dur * sr),
+        tail: Math.max(Math.round((g.tail ?? 0) * sr), Math.round(0.001 * sr)),
+        rpm: g.rpm,
+        gain: bank.sourceGain[g.src] ?? 1,
+      };
       (this.byKind[g.kind] ??= []).push(grain);
     }
     for (const k in this.byKind) this.byKind[k].sort((a, b) => a.rpm - b.rpm);
@@ -108,10 +114,30 @@ class RecordedEngine {
     return g;
   }
 
-  playGrain(g, rpm, gain) {
+  /**
+   * Plays a grain on a layer. Any grain still sounding on that layer fades out
+   * over a few milliseconds, so consecutive pulses crossfade in the quiet gap
+   * before each thump instead of stacking or cutting off.
+   */
+  playGrain(g, rpm, gain, layer, period) {
     if (!g || gain <= 0.0005) return;
-    const rate = Math.min(1.5, Math.max(0.65, rpm / g.rpm));
-    this.voices.push({ pos: 0, start: g.start, len: g.len, rate, gain: gain * g.gain, fadeIn: 0.0008 * sampleRate, fadeOut: 0.004 * sampleRate });
+    // Stretch the grain to last exactly until the next pulse is due.
+    const target = period > 0 ? period * sampleRate : (120 / rpm) * sampleRate;
+    const rate = Math.min(1.5, Math.max(0.65, g.len / target));
+    const xfade = 0.003 * sampleRate;
+    for (const v of this.voices) {
+      if (v.layer === layer && !v.releaseLeft) v.releaseLeft = v.releaseLen = xfade;
+    }
+    this.voices.push({
+      layer,
+      pos: 0,
+      start: g.start,
+      len: g.len + g.tail,
+      rate,
+      gain: gain * g.gain,
+      fadeIn: 0.0005 * sampleRate,
+      fadeOut: g.tail,
+    });
   }
 
   playOneshot(name, gain, delaySamples = 0) {
@@ -130,11 +156,13 @@ class RecordedEngine {
         const typeGain = ev.type === 'misfire' ? p.recMisfireGain : ev.type === 'sputter' ? 0.5 : 1;
         const gain = ev.strength * typeGain * loud;
         const w = smoothstep(p.recBlendLo, p.recBlendHi, rpm);
-        if (w < 0.999) this.playGrain(this.pick(['idle'], rpm), rpm, gain * (1 - w));
+        // Pick grains by the rpm this cycle actually runs at.
+        const cycleRpm = ev.period > 0 ? 120 / ev.period : rpm;
+        if (w < 0.999) this.playGrain(this.pick(['idle'], cycleRpm), rpm, gain * (1 - w), 'low', ev.period);
         if (w > 0.001) {
           // Throttle open: grains from the rev rising; closed: from it falling back.
           const kinds = throttle > 0.25 ? ['accel', 'idle2'] : ['decel', 'idle2'];
-          this.playGrain(this.pick(kinds, rpm), rpm, gain * w);
+          this.playGrain(this.pick(kinds, cycleRpm), rpm, gain * w, 'high', ev.period);
         }
         return true;
       }
@@ -181,6 +209,14 @@ class RecordedEngine {
       if (v.release) {
         v.releaseGain = (v.releaseGain ?? 1) * 0.9993;
         w *= v.releaseGain;
+      }
+      if (v.releaseLeft) {
+        // Crossfading out under the next grain (equal-power curve).
+        w *= Math.sin((Math.PI / 2) * (v.releaseLeft / v.releaseLen));
+        if (--v.releaseLeft <= 0) {
+          this.voices.splice(k, 1);
+          continue;
+        }
       }
       s += x * v.gain * w;
     }
