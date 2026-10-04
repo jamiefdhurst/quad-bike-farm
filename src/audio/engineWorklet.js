@@ -97,6 +97,7 @@ class RecordedEngine {
       this.oneshots[name] = { start: Math.round(o.start * sr), len: Math.round(o.dur * sr) };
     }
     this.voices = [];
+    this.overlap = 0.05;
     this.last = null;
     this.crankVoice = null;
     this.crankSpeed = 0;
@@ -119,10 +120,11 @@ class RecordedEngine {
    * over a few milliseconds, so consecutive pulses crossfade in the quiet gap
    * before each thump instead of stacking or cutting off.
    */
-  playGrain(g, rpm, gain, layer, period) {
+  playGrain(g, rpm, gain, layer, period, attackGain = 1) {
     if (!g || gain <= 0.0005) return;
-    // Stretch the grain to last exactly until the next pulse is due.
-    const target = period > 0 ? period * sampleRate : (120 / rpm) * sampleRate;
+    // Stretch the grain to last until the next pulse is due, plus a little
+    // extra so a late pulse crossfades over it instead of finding silence.
+    const target = (period > 0 ? period * sampleRate : (120 / rpm) * sampleRate) * (1 + this.overlap);
     const rate = Math.min(1.5, Math.max(0.65, g.len / target));
     const xfade = 0.003 * sampleRate;
     for (const v of this.voices) {
@@ -137,6 +139,9 @@ class RecordedEngine {
       gain: gain * g.gain,
       fadeIn: 0.0005 * sampleRate,
       fadeOut: g.tail,
+      // Below 1, the opening thump is held down while the rest of the cycle plays on.
+      attackGain,
+      attackLen: g.len * 0.3,
     });
   }
 
@@ -147,22 +152,26 @@ class RecordedEngine {
   }
 
   trigger(ev, p, rpmNow, throttle) {
+    this.overlap = p.recOverlap;
     const rpm = Math.max(rpmNow, 400);
     const loud = p.recVolume * (1 + p.recThrottleLoudness * throttle);
     switch (ev.type) {
       case 'fire':
       case 'sputter':
       case 'misfire': {
-        const typeGain = ev.type === 'misfire' ? p.recMisfireGain : ev.type === 'sputter' ? 0.5 : 1;
-        const gain = ev.strength * typeGain * loud;
+        // A misfire loses its bang, but the engine keeps turning: the rest of the cycle still sounds.
+        const misfire = ev.type === 'misfire';
+        const typeGain = misfire ? p.recMisfireBody : ev.type === 'sputter' ? 0.5 : 1;
+        const attack = misfire ? p.recMisfireAttack / Math.max(0.01, p.recMisfireBody) : 1;
+        const gain = (misfire ? 1 : ev.strength) * typeGain * loud;
         const w = smoothstep(p.recBlendLo, p.recBlendHi, rpm);
         // Pick grains by the rpm this cycle actually runs at.
         const cycleRpm = ev.period > 0 ? 120 / ev.period : rpm;
-        if (w < 0.999) this.playGrain(this.pick(['idle'], cycleRpm), rpm, gain * (1 - w), 'low', ev.period);
+        if (w < 0.999) this.playGrain(this.pick(['idle'], cycleRpm), rpm, gain * (1 - w), 'low', ev.period, attack);
         if (w > 0.001) {
           // Throttle open: grains from the rev rising; closed: from it falling back.
           const kinds = throttle > 0.25 ? ['accel', 'idle2'] : ['decel', 'idle2'];
-          this.playGrain(this.pick(kinds, cycleRpm), rpm, gain * w, 'high', ev.period);
+          this.playGrain(this.pick(kinds, cycleRpm), rpm, gain * w, 'high', ev.period, attack);
         }
         return true;
       }
@@ -206,6 +215,10 @@ class RecordedEngine {
       const f = pos - i;
       const x = d[v.start + i] * (1 - f) + d[v.start + i + 1] * f;
       let w = Math.min(1, pos / v.fadeIn, (v.len - pos) / v.fadeOut);
+      if (v.attackGain !== 1 && pos < v.attackLen) {
+        const k = pos / v.attackLen;
+        w *= v.attackGain + (1 - v.attackGain) * k * k * (3 - 2 * k);
+      }
       if (v.release) {
         v.releaseGain = (v.releaseGain ?? 1) * 0.9993;
         w *= v.releaseGain;

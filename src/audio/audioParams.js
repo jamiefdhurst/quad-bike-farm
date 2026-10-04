@@ -14,7 +14,9 @@ export const DEFAULT_AUDIO_PARAMS = {
   recBlendHi: 2100, // rpm where it has fully taken over
   recToneClosed: 6000, // Hz low-pass with the throttle shut
   recToneOpen: 16000, // Hz low-pass at full throttle
-  recMisfireGain: 0.1, // a misfire plays a near-silent pulse
+  recMisfireAttack: 0.25, // a misfire's missing bang: level of the opening thump
+  recMisfireBody: 0.7, // and of the rest of its cycle, so the engine never goes silent
+  recOverlap: 0.05, // each pulse runs this much longer than its cycle, so a late next pulse overlaps rather than leaving a gap
   recStarterVolume: 0.9,
   recShutdownVolume: 0.9,
 
@@ -88,7 +90,9 @@ export const AUDIO_PARAM_RANGES = {
   recBlendHi: [600, 6000, 10],
   recToneClosed: [500, 20000, 50],
   recToneOpen: [500, 20000, 50],
-  recMisfireGain: [0, 1, 0.01],
+  recMisfireAttack: [0, 1, 0.01],
+  recMisfireBody: [0, 1.5, 0.01],
+  recOverlap: [0, 0.3, 0.005],
   recStarterVolume: [0, 3, 0.01],
   recShutdownVolume: [0, 3, 0.01],
   masterVolume: [0, 2, 0.01],
