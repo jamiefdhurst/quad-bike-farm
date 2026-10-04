@@ -10,6 +10,9 @@
 import workletUrl from './engineWorklet.js?url';
 import { DEFAULT_AUDIO_PARAMS, DEFAULT_SOUND_PARAMS } from './audioParams.js';
 
+// Recorded pulse banks in public/audio/, made by tools/slice_engine_audio.py.
+const BANK_NAMES = ['engine-bank', 'engine-bank-2t'];
+
 function brownNoise(ctx, seconds) {
   const len = Math.floor(ctx.sampleRate * seconds);
   const buf = ctx.createBuffer(1, len, ctx.sampleRate);
@@ -27,7 +30,7 @@ export class AudioHub {
     this.params = params;
     this.ctx = null;
     this.ready = false;
-    this.bank = null;
+    this.banks = {}; // recorded pulse banks by name, filled in as they load
   }
 
   /** Must be called from a user gesture. Safe to call repeatedly. */
@@ -42,7 +45,7 @@ export class AudioHub {
     this.loading = this.ctx.audioWorklet
       .addModule(workletUrl)
       .then(() => this.build())
-      .then(() => this.loadBank())
+      .then(() => Promise.all(BANK_NAMES.map((name) => this.loadBank(name))))
       .catch((err) => console.error('Engine audio failed to load', err));
     return this.loading;
   }
@@ -103,15 +106,15 @@ export class AudioHub {
     }
   }
 
-  /** Loads the recorded engine pulses (see tools/slice_engine_audio.py). Until then, or if it fails, voices use the synth. */
-  async loadBank() {
+  /** Loads one bank of recorded engine pulses (see tools/slice_engine_audio.py). Until then, or if it fails, voices use the synth. */
+  async loadBank(name) {
     const base = import.meta.env?.BASE_URL ?? '/';
     try {
-      const bank = await (await fetch(`${base}audio/engine-bank.json`)).json();
+      const bank = await (await fetch(`${base}audio/${name}.json`)).json();
       const buffer = await this.ctx.decodeAudioData(await (await fetch(base + bank.file)).arrayBuffer());
-      this.bank = { ...bank, data: buffer.getChannelData(0) };
+      this.banks[name] = { ...bank, data: buffer.getChannelData(0) };
     } catch (err) {
-      console.warn('Recorded engine sound unavailable, using the synth', err);
+      console.warn(`Recorded engine sound ${name} unavailable, using the synth`, err);
     }
   }
 
@@ -155,7 +158,7 @@ export class EngineAudio {
     this.hub = hub;
     this.params = params;
     this.node = null;
-    this.bankSent = false;
+    this.bankSent = null; // name of the bank the worklet has
   }
 
   /** Creates the worklet node once the hub is ready, and sends it the pulse bank once that has loaded. */
@@ -176,17 +179,18 @@ export class EngineAudio {
       this.node.connect(this.panner);
       this.nextFrameTime = 0;
     }
-    if (!this.bankSent && hub.bank) {
-      // Each voice gets its own copy; the worklet keeps it for good.
-      const data = new Float32Array(hub.bank.data);
-      this.node.port.postMessage({ bank: { ...hub.bank, data } }, [data.buffer]);
-      this.bankSent = true;
+    const bank = hub.banks[this.params.recBank];
+    if (this.bankSent !== this.params.recBank && bank) {
+      // Each voice gets its own copy; the worklet keeps it until it's replaced.
+      const data = new Float32Array(bank.data);
+      this.node.port.postMessage({ bank: { ...bank, data } }, [data.buffer]);
+      this.bankSent = this.params.recBank;
     }
     return true;
   }
 
   get bankLoaded() {
-    return this.bankSent;
+    return !!this.bankSent;
   }
 
   /**
@@ -232,6 +236,7 @@ export class EngineAudio {
         roughness: engine.roughness,
         running: engine.isRunning,
         cranking: engine.state === 'cranking',
+        revsPerCycle: engine.revsPerCycle,
       },
       events,
     });

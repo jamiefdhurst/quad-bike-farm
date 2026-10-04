@@ -38,6 +38,8 @@ export const DEFAULT_VEHICLE_PARAMS = {
   couplingRpm: 2600, // above this with the bike moving, the drivetrain drags on the engine
   coupledReleaseSpeed: 0.4, // m/s, drivetrain decouples below this
   idleTorque: 0.15, // fraction of torque at closed throttle (cold idle creep)
+  powerbandRpm: 0, // 0 for a flat torque curve; otherwise power comes on hard around these revs (two-strokes)
+  torqueBelowBand: 0.45, // fraction of torque below the power band
   drivePowerFloor: 0.4, // drive force keeps this much even when the engine is weak, so a cold bike is sluggish rather than useless
   engineBrakeForce: 300, // newtons at closed throttle with the clutch locked
   brakeLoadSpeed: 0.8, // m/s; braking load on the engine fades out below this as the bike stops
@@ -79,6 +81,8 @@ export const VEHICLE_PARAM_RANGES = {
   couplingRpm: [800, 6000, 50],
   coupledReleaseSpeed: [0, 3, 0.05],
   idleTorque: [0, 1, 0.01],
+  powerbandRpm: [0, 10000, 50],
+  torqueBelowBand: [0, 1, 0.01],
   drivePowerFloor: [0, 1, 0.01],
   engineBrakeForce: [0, 2000, 10],
   brakeLoadSpeed: [0.5, 10, 0.1],

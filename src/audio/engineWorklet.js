@@ -345,7 +345,7 @@ class EngineProcessor extends AudioWorkletProcessor {
     if (this.useRecorded && this.recorded.trigger(ev, p, this.rpm, this.throttle)) return;
     const sr = sampleRate;
     const rpm = Math.max(this.rpm, 150);
-    const cycle = (120 / rpm) * sr; // samples per four-stroke cycle
+    const cycle = ((60 * (this.state.revsPerCycle ?? 2)) / rpm) * sr; // samples per firing cycle
     const throttle = this.throttle;
     // Pulses overlap more as revs rise; scale each one down so loudness grows
     // with revs and throttle without the sum running away.

@@ -1,6 +1,6 @@
 # Quad Bike Farm
 
-A small first-person browser game: two farm quad bikes with properly temperamental single-cylinder engines, a muddy track round a British field, and your girlfriend, who'll hop on the back if you ask.
+A small first-person browser game: three quad bikes (two farm four-strokes and a two-stroke sport quad) with properly temperamental single-cylinder engines, a muddy track round a British field, and your girlfriend, who'll hop on the back if you ask.
 
 Three.js, Rapier physics, Web Audio. Desktop, keyboard and mouse.
 
@@ -59,12 +59,13 @@ Look at her and press `E`. Pick an option with the number keys, or scroll to hig
 | `M` | Mute |
 | `` ` `` | Tuning panel |
 
-## The two quads
+## The three quads
 
-- **Red quad**: Honda-style. Soft and steady, with a low warm idle around 1,150 rpm.
-- **Blue quad**: Yamaha-style. Idles higher (about 1,450 rpm warm), revs harder and higher, needs more choke from cold and runs lumpier until it's warm, warms a bit quicker, pulls a little harder, and is a touch touchier about stalling when braking hard from cold. It sounds different too: its idle comes from a different recorded machine.
+- **Red quad**: Honda-style farm quad. Soft and steady, with a low warm idle around 1,150 rpm. Racks, round headlights, a pillion seat.
+- **Blue quad**: Yamaha-style farm quad. Idles higher (about 1,450 rpm warm), revs harder and higher, needs more choke from cold and runs lumpier until it's warm, warms a bit quicker and pulls a little harder. It has a brush guard, square headlights, railed racks and a grey seat. Its idle comes from a different recorded machine, so it sounds different too.
+- **Yellow quad**: a two-stroke sport quad, Blaster-style. It fires every revolution, so it buzzes rather than thumps, and ring-dings at idle. It's weak low down, then comes on hard around 6,000 rpm and revs past 10,000. It has almost no engine braking, and it slowly loads up its plug if you leave it idling (blip the throttle to clear it). It trails blue-white oil smoke. It's lighter and quicker, with an expansion-chamber exhaust, motocross bars, nerf bars and a race number plate. It's a single-seater, so she can't ride on it. It sounds like a two-stroke dirt bike.
 
-Both start cold. Everything below applies to either.
+All three are automatics and all start cold. Everything below applies to any of them.
 
 ## Starting a cold engine
 
@@ -86,7 +87,7 @@ Things to know:
 
 ## Fuel
 
-Each quad has a fuel tank, a fuel tap and a fuel gauge on the dash. The red quad starts at about 60%, the blue at about 25%.
+Each quad has a fuel tank, a fuel tap and a fuel gauge on the dash. The red quad starts at about 60%, the blue at about 25%, and the yellow at about two thirds of its smaller tank.
 
 - A full tank lasts roughly 25 minutes of hard riding, and much longer at idle.
 - The tap has three positions. On **ON** it can't reach the last couple of litres, so when it starts to cough and stumble, flick it to **RESERVE** with `F` and head for fuel. **OFF** shuts the fuel off; the engine runs on what's in the carburettor for a moment, then dies.
@@ -95,10 +96,11 @@ Each quad has a fuel tank, a fuel tap and a fuel gauge on the dash. The red quad
 
 ## The dashes
 
-The two quads have different instruments:
+The quads have different instruments:
 
 - **Red**: a round analogue rev counter, plus a green LCD with speed in mph, a fuel bar, RES and OFF flags for the tap, and a trip meter. Separate TEMP, IGN and FUEL lamps.
 - **Blue**: one wide amber display with a bar-graph rev counter, big speed digits, a vertical fuel gauge that goes red on reserve, warning icons and a trip meter, in an angular pod with a visor.
+- **Yellow**: the same layout as the blue's, compact and red-on-black, in a bare pod under the motocross crossbar.
 
 Both go blank with the ignition off.
 
@@ -106,7 +108,7 @@ Both go blank with the ignition off.
 
 Look at her and press `E`:
 
-- **Get on the red / blue quad**: she walks over and sits on the pillion seat. Get on and ride; she stays on. Asking her onto the other quad while she's sitting on one, she gets off and walks over.
+- **Get on the red / blue quad** (not the yellow single-seater): she walks over and sits on the pillion seat. Get on and ride; she stays on. Asking her onto the other quad while she's sitting on one, she gets off and walks over.
 - **Stand next to the red / blue quad**: she gets off if she's on, or walks over if she isn't, and stands beside it facing it.
 
 The menu only offers what makes sense: no "get on" while she's already on, no "stand next to it" while she's already there. She stays put on the pillion when you get off until you ask her to get down.
@@ -144,7 +146,7 @@ public/audio/          the cut engine recordings
 
 **Engine sound** (`src/audio/engineWorklet.js`). Two engines, chosen in the tuning panel (Audio, `engineSound`):
 
-- *recorded* (default): every firing pulse from the engine model plays one real recorded pulse, cut from CC0 quad recordings and resampled to last exactly one engine cycle. Idle comes from one quad and higher revs from a rev sweep of another, blended across 1,500 to 2,100 rpm. Because pulses still come from the engine model, a cold idle is still lumpy, misfires are still missing beats, and it stays in sync with the vibration and smoke. Cranking is a looped starter recording.
+- *recorded* (default): every firing pulse from the engine model plays one real recorded pulse, cut from CC0 recordings and resampled to last exactly one engine cycle. The four-strokes use quad recordings: idle from one quad, higher revs from a rev sweep of another, blended across 1,500 to 2,100 rpm. The two-stroke uses its own bank, with idle from a two-stroke motocross bike and revs from a Honda CRM250. Because pulses still come from the engine model, a cold idle is still lumpy, misfires are still missing beats, and it stays in sync with the vibration and smoke. Cranking is a looped starter recording.
 - *synth*: a pulse-driven exhaust synth with a simulated pipe and silencer.
 
 To recut the recordings, see the instructions at the top of `tools/slice_engine_audio.py`.

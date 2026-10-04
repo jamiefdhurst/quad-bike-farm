@@ -28,6 +28,7 @@ export const DEFAULT_SMOKE_PARAMS = {
   coldGray: 0.88, // colour of cold-engine vapour (0 black, 1 white)
   richGray: 0.22, // colour of rich, sooty smoke
   warmGray: 0.62,
+  tint: '#ffffff', // colour cast; two-stroke oil smoke is bluish
 };
 
 export const SMOKE_PARAM_RANGES = {
@@ -83,6 +84,7 @@ const fragmentShader = /* glsl */ `
   varying float vGray;
   varying float vSeed;
   uniform vec3 uLight;
+  uniform vec3 uTint;
   #include <fog_pars_fragment>
   float hash(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453); }
   float noise(vec2 p) {
@@ -100,7 +102,7 @@ const fragmentShader = /* glsl */ `
     if (a <= 0.003) discard;
     // Lit a little from above.
     float shade = 0.82 + 0.18 * (0.5 - uv.y);
-    gl_FragColor = vec4(uLight * vGray * shade, a * vAlpha);
+    gl_FragColor = vec4(uLight * uTint * vGray * shade, a * vAlpha);
     #include <fog_fragment>
   }
 `;
@@ -131,7 +133,7 @@ export class ExhaustSmoke {
     this.material = new THREE.ShaderMaterial({
       uniforms: THREE.UniformsUtils.merge([
         THREE.UniformsLib.fog,
-        { uScale: { value: 600 }, uLight: { value: new THREE.Color(0xd8dcde) } },
+        { uScale: { value: 600 }, uLight: { value: new THREE.Color(0xd8dcde) }, uTint: { value: new THREE.Color(params.tint ?? '#ffffff') } },
       ]),
       vertexShader,
       fragmentShader,

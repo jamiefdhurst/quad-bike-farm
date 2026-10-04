@@ -95,24 +95,27 @@ export class Companion {
     const s = this.fsm;
     const here = this.root.getWorldPosition(new THREE.Vector3());
     const sorted = [...quads].sort((a, b) => a.position.distanceTo(here) - b.position.distanceTo(here));
+    // Only quads with a pillion seat can carry her.
+    const rideable = (q) => q.hasPillion && !q.isTipped;
     const actions = [];
     const boarding = s.is('seated', 'mounting') || (s.is('walking') && s.data?.goal === 'mount');
     if (boarding) {
       actions.push({ label: `Stand next to the ${this.quad.label}`, run: () => this.requestStandBeside(this.quad) });
       for (const q of sorted) {
-        if (q !== this.quad && !q.isTipped) actions.push({ label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
+        if (q !== this.quad && rideable(q)) actions.push({ label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
       }
       return actions;
     }
     if (s.is('dismounting')) return actions;
     for (const q of sorted) {
-      if (!q.isTipped) actions.push({ label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
+      if (rideable(q)) actions.push({ label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
       if (!this.isStandingBeside(q)) actions.push({ label: `Stand next to the ${q.label}`, run: () => this.requestStandBeside(q) });
     }
     return actions;
   }
 
   requestMount(quad = this.quad) {
+    if (!quad.hasPillion) return;
     if (this.fsm.is('seated', 'mounting') && quad !== this.quad) {
       // Off this one first, then over to the other.
       this.afterDismount = () => this.requestMount(quad);

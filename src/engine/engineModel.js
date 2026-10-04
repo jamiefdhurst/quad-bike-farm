@@ -62,6 +62,11 @@ export class EngineModel {
     this.pulses = [];
   }
 
+  /** Crank revolutions per firing: 2 for a four-stroke, 1 for a two-stroke. */
+  get revsPerCycle() {
+    return this.params.strokes === 2 ? 1 : 2;
+  }
+
   get ignitionOn() {
     return this.state !== EngineState.OFF;
   }
@@ -259,6 +264,9 @@ export class EngineModel {
     // Fouling builds while rich and clears otherwise, faster with throttle.
     if (this.rich > 0) {
       this.fouling += this.rich * p.foulRate * h;
+    } else if (p.idleFoulRate > 0 && this.throttle < 0.05) {
+      // Oily two-stroke plugs slowly load up at idle until the throttle clears them.
+      this.fouling += p.idleFoulRate * h;
     } else {
       this.fouling -= p.foulClearRate * (1 + p.foulClearThrottleBoost * this.throttle) * h;
     }
@@ -266,7 +274,18 @@ export class EngineModel {
     if (this.advanceCycle(h)) {
       const t = this.cycleT;
       const misfireChance = p.misfireBase + p.misfireRoughness * this.roughness ** 2;
-      if (this.random() < misfireChance) {
+      // Two-strokes at light load skip alternate firings: the ring-ding.
+      this.cycleCount = (this.cycleCount ?? 0) + 1;
+      const skip =
+        p.skipChance > 0 &&
+        this.cycleCount % 2 === 0 &&
+        this.throttle < p.skipThrottle &&
+        this.rpm < p.skipRpm &&
+        this.random() < p.skipChance;
+      if (skip) {
+        this.rpm -= p.misfireRpmDrop * 0.25;
+        this.pushPulse(t, 'misfire', 0.3);
+      } else if (this.random() < misfireChance) {
         this.rpm -= p.misfireRpmDrop;
         this.pushPulse(t, 'misfire', 0.15);
       } else {
@@ -300,8 +319,8 @@ export class EngineModel {
 
   /** Advances the four-stroke cycle; returns true if a cycle completed this step. */
   advanceCycle(h) {
-    // One power stroke every two revolutions.
-    const cyclesPerSecond = this.rpm / 120;
+    // One power stroke every revolution on a two-stroke, every two on a four-stroke.
+    const cyclesPerSecond = this.rpm / this.revsPerCycle / 60;
     const before = this.cyclePhase;
     this.cyclePhase += (h * cyclesPerSecond) / this.cycleLength;
     if (this.cyclePhase < 1) return false;
@@ -320,7 +339,7 @@ export class EngineModel {
    * fitted to the cycle it belongs to.
    */
   pushPulse(t, type, strength) {
-    this.pulses.push({ t, type, strength, period: (this.cycleLength * 120) / Math.max(this.rpm, 60) });
+    this.pulses.push({ t, type, strength, period: (this.cycleLength * 60 * this.revsPerCycle) / Math.max(this.rpm, 60) });
   }
 
   stall(reason) {

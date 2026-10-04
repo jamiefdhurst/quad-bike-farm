@@ -2,6 +2,9 @@
 // comments. Ranges are [min, max, step] for the debug panel.
 
 export const DEFAULT_ENGINE_PARAMS = {
+  // Cycle: 4 fires every two revolutions, 2 fires every revolution.
+  strokes: 4,
+
   // Speeds
   maxRpm: 8500,
   redlineRpm: 7500,
@@ -78,6 +81,12 @@ export const DEFAULT_ENGINE_PARAMS = {
   misfireRpmDrop: 140, // rpm lost on a misfire
   pulseRpmKick: 90, // rpm swing from pulse strength variation
 
+  // Two-stroke character (leave at 0 for a four-stroke)
+  skipChance: 0, // at light throttle and low revs, chance each other firing is skipped (the "ring-ding")
+  skipThrottle: 0.2, // only below this throttle
+  skipRpm: 4000, // and below these revs
+  idleFoulRate: 0, // plug fouling per second while idling (oily two-stroke plugs load up); throttle clears it
+
   // Fuel starvation, from the carburettor float bowl level (0..1)
   fuelStarveLevel: 0.5, // below this bowl level the mixture starts to go lean
   starveLean: 1.1, // how lean it goes as the bowl empties
@@ -88,6 +97,11 @@ export const DEFAULT_ENGINE_PARAMS = {
 };
 
 export const ENGINE_PARAM_RANGES = {
+  strokes: [2, 4, 2],
+  skipChance: [0, 1, 0.01],
+  skipThrottle: [0, 1, 0.01],
+  skipRpm: [500, 10000, 50],
+  idleFoulRate: [0, 0.05, 0.0005],
   maxRpm: [5000, 12000, 100],
   redlineRpm: [4000, 11000, 100],
   idleRpmWarm: [800, 2500, 10],

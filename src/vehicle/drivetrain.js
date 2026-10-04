@@ -41,8 +41,14 @@ export class Drivetrain {
     let force = 0;
     if (running) {
       // Fairly flat torque, tailing off near the top.
-      const rpmNorm = clamp(rpm / 8500, 0, 1);
-      const torque = 0.75 + 0.25 * Math.sin(Math.PI * Math.min(1, rpmNorm * 1.2));
+      let torque;
+      if (p.powerbandRpm > 0) {
+        // On the pipe: weak low down, then it comes on hard.
+        torque = p.torqueBelowBand + (1 - p.torqueBelowBand) * smoothstep(p.powerbandRpm - 1200, p.powerbandRpm + 600, rpm);
+      } else {
+        const rpmNorm = clamp(rpm / 8500, 0, 1);
+        torque = 0.75 + 0.25 * Math.sin(Math.PI * Math.min(1, rpmNorm * 1.2));
+      }
       const top = reverse ? p.maxReverseSpeed : p.maxSpeed;
       const speedFactor = clamp(1 - (speed / top) ** 2, 0, 1);
       const pedal = p.idleTorque + (1 - p.idleTorque) * throttle;

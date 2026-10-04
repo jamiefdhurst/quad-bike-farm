@@ -34,6 +34,7 @@ export class QuadUnit {
       spawn,
       bodyColor: spec.bodyColor,
       dashStyle: spec.dashStyle,
+      style: spec.style,
       fuelParams: { ...DEFAULT_FUEL_PARAMS, ...spec.fuel },
     });
     this.quad.unit = this;

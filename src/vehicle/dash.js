@@ -7,6 +7,8 @@ import * as THREE from 'three';
 //   modern:  one wide amber-on-black LCD with a bar-graph rev counter, big
 //            speed digits, a vertical fuel gauge and warning icons drawn on
 //            the display, in an angular pod with a visor. Yamaha-ish.
+//   sport:   the same layout, compact, red-on-black, no visor, in a bare
+//            pod. For the sport quad.
 //
 // buildDash(style) returns { group, update(state) } where state is
 // { rpm, maxRpm, redline, speedMph, fuelLevel, reserveLevel, tap, coldLight,
@@ -298,28 +300,33 @@ function buildClassic() {
 
 // Modern: one amber LCD in an angular pod ---------------------------------------
 
-function buildModern() {
+const MODERN = { width: 0.31, on: '#ffad3a', red: '#ff4a22', ghostRgb: '255,173,58', bg: '#100c07', visor: true };
+const SPORT = { width: 0.27, on: '#ff5a46', red: '#ffffff', ghostRgb: '255,90,70', bg: '#0b0606', visor: false };
+
+function buildModern(look = MODERN) {
   const group = new THREE.Group();
   group.name = 'dash';
-  const housing = new THREE.Mesh(new THREE.BoxGeometry(0.31, 0.115, 0.065), charcoal);
+  const housing = new THREE.Mesh(new THREE.BoxGeometry(look.width, 0.115, 0.065), look.visor ? charcoal : black);
   housing.name = 'dashHousing';
   group.add(housing);
   // Chamfered lower edge and a visor over the display.
-  const chin = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.03, 0.06), charcoal);
-  chin.position.set(0, -0.062, 0.006);
-  chin.rotation.x = -0.5;
-  group.add(chin);
-  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.012, 0.05), charcoal);
-  visor.position.set(0, 0.062, -0.04);
-  visor.rotation.x = 0.35;
-  visor.name = 'dashVisor';
-  group.add(visor);
-  const face = new THREE.Mesh(new THREE.PlaneGeometry(0.29, 0.1), faceMat);
+  if (look.visor) {
+    const chin = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.03, 0.06), charcoal);
+    chin.position.set(0, -0.062, 0.006);
+    chin.rotation.x = -0.5;
+    group.add(chin);
+    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.012, 0.05), charcoal);
+    visor.position.set(0, 0.062, -0.04);
+    visor.rotation.x = 0.35;
+    visor.name = 'dashVisor';
+    group.add(visor);
+  }
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(look.width - 0.02, 0.1), faceMat);
   face.position.z = -0.0326;
   face.rotation.y = Math.PI;
   group.add(face);
 
-  const lcd = canvasPanel(512, 176, 0.262, 0.09);
+  const lcd = canvasPanel(512, 176, look.width - 0.048, 0.09);
   lcd.mesh.name = 'lcd';
   lcd.mesh.position.set(0, 0, -0.0331);
   group.add(lcd.mesh);
@@ -356,11 +363,11 @@ function buildModern() {
     const { ctx, canvas } = lcd;
     const W = canvas.width;
     const H = canvas.height;
-    ctx.fillStyle = s.ignition ? '#100c07' : '#0a0908';
+    ctx.fillStyle = s.ignition ? look.bg : '#0a0908';
     ctx.fillRect(0, 0, W, H);
-    const on = '#ffad3a';
-    const red = '#ff4a22';
-    const ghost = s.ignition ? 'rgba(255,173,58,0.08)' : 'rgba(255,173,58,0.03)';
+    const on = look.on;
+    const red = look.red;
+    const ghost = s.ignition ? `rgba(${look.ghostRgb},0.08)` : `rgba(${look.ghostRgb},0.03)`;
     if (!s.ignition) {
       drawNumber(ctx, '88', 196, 64, 46, 80, 12, ghost, ghost);
       return;
@@ -439,5 +446,7 @@ function buildModern() {
 }
 
 export function buildDash(style = 'classic') {
-  return style === 'modern' ? buildModern() : buildClassic();
+  if (style === 'modern') return buildModern(MODERN);
+  if (style === 'sport') return buildModern(SPORT);
+  return buildClassic();
 }

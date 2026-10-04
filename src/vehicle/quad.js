@@ -23,17 +23,18 @@ export class Quad {
    * @param {string} opts.label   How it's referred to in prompts, e.g. "red quad".
    * @param {object} opts.spawn   { x, z, yaw } where it starts.
    * @param {number} [opts.bodyColor]
-   * @param {string} [opts.dashStyle]  'classic' or 'modern'.
+   * @param {string} [opts.dashStyle]  'classic', 'modern' or 'sport'.
+   * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, fuelParams }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, fuelParams }) {
     this.world = world;
     this.engine = engine;
     this.params = params;
     this.label = label;
     this.spawn = spawn;
 
-    this.model = buildQuadModel({ bodyColor, dashStyle });
+    this.model = buildQuadModel({ bodyColor, dashStyle, style });
     this.dash = this.model.userData.dash;
     this.fuel = new FuelSystem(fuelParams);
     this.tripMiles = 0;
@@ -48,7 +49,7 @@ export class Quad {
     this.chokeLever = part('chokeLever');
     this.riderHands = part('riderHands');
     this.cameraAnchor = part('cameraAnchor');
-    this.pillionAnchor = part('pillionAnchor');
+    this.pillionAnchor = part('pillionAnchor') ?? null; // none on a single-seater
     this.riderAnchor = part('riderAnchor');
     this.exhaustTip = part('exhaustTip');
     this.wheels = WHEELS.map((w) => ({ ...w, object: part(w.name), spin: part(w.name).getObjectByName('spin') }));
@@ -94,6 +95,10 @@ export class Quad {
     this.prevQuat.copy(this.currQuat);
     this.model.position.copy(this.currPos);
     this.model.quaternion.copy(this.currQuat);
+  }
+
+  get hasPillion() {
+    return !!this.pillionAnchor;
   }
 
   get forwardSpeed() {

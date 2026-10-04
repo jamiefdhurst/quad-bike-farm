@@ -21,6 +21,7 @@ export const DEFAULT_AUDIO_PARAMS = {
   engineSound: 'recorded', // 'recorded' (real recorded pulses) or 'synth' (fully synthesised)
 
   // Recorded engine
+  recBank: 'engine-bank', // which recordings: 'engine-bank' (four-stroke quads) or 'engine-bank-2t' (two-stroke dirt bikes)
   recIdleSource: 'quad', // which recording idle pulses come from: 'quad' (the main quad) or 'rev' (the rev-sweep machine)
   recVolume: 0.6,
   recThrottleLoudness: 0.15, // extra loudness with the throttle open (the rev recording is already louder up the range)
@@ -97,6 +98,7 @@ export const DEFAULT_AUDIO_PARAMS = {
 
 export const AUDIO_PARAM_RANGES = {
   engineSound: ['recorded', 'synth'],
+  recBank: ['engine-bank', 'engine-bank-2t'],
   recIdleSource: ['quad', 'rev'],
   recVolume: [0, 3, 0.01],
   recThrottleLoudness: [0, 3, 0.01],

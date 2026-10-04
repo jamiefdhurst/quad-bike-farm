@@ -3,9 +3,14 @@
 Reads mono 16-bit WAVs of the source recordings (see ASSETS.md for where they
 come from), finds each firing pulse, and writes:
 
-  public/audio/engine-bank.wav   the segments that are used, back to back
-  public/audio/engine-bank.json  where every pulse ("grain") starts and ends,
-                                 what rpm it was recorded at, and what kind it is
+  public/audio/<bank>.wav   the segments that are used, back to back
+  public/audio/<bank>.json  where every pulse ("grain") starts and ends, its
+                            pulse rate, and what kind it is
+
+There are two banks: engine-bank (four-stroke quads) and engine-bank-2t
+(two-stroke). A grain's "rpm" is 120 / pulse period whatever the engine type,
+which is the rpm a four-stroke would be doing; the runtime picks grains by the
+same measure, so two-strokes match up without special cases.
 
 At runtime each pulse from the engine model plays one recorded pulse
 (src/audio/engineWorklet.js), so the lumpiness, misfires and starter rhythm
@@ -15,7 +20,10 @@ Usage (needs numpy, and matplotlib for --plot):
 
   afconvert -f WAVE -d LEI16@44100 -c 1 379915.mp3 quad.wav     # or ffmpeg
   afconvert -f WAVE -d LEI16@44100 -c 1 419091.mp3 rev.wav
-  python3 tools/slice_engine_audio.py --quad quad.wav --rev rev.wav [--plot out.png]
+  python3 tools/slice_engine_audio.py engine-bank quad=quad.wav rev=rev.wav [--plot out.png]
+
+  afconvert ... 450034.mp3 mx.wav;  afconvert ... 148868.mp3 crm.wav
+  python3 tools/slice_engine_audio.py engine-bank-2t mx=mx.wav crm=crm.wav quad=quad.wav
 """
 
 import argparse
@@ -26,26 +34,59 @@ import wave
 import numpy as np
 
 SR = 44100
+# Every bank is scaled so its idle pulses sit at this loudness, so quads using
+# different banks are equally loud at idle.
+TARGET_IDLE_RMS = 0.2
 ENV_RATE = 4000  # envelope sample rate, Hz
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Which parts of which recording to use. Times in seconds.
-SEGMENTS = [
-    # kind,     source, start, end,  period range (s),  notes
-    ('idle', 'quad', 1.60, 7.30, (0.06, 0.12)),
-    ('idle', 'quad', 8.80, 12.0, (0.06, 0.12)),
-    ('idle', 'quad', 17.0, 19.9, (0.06, 0.12)),
-    ('accel', 'rev', 2.00, 3.05, (0.016, 0.045)),  # revving up, throttle open
-    ('decel', 'rev', 3.15, 6.05, (0.016, 0.085)),  # falling back, throttle closed
-    ('idle2', 'rev', 0.10, 1.95, (0.06, 0.09)),  # the rev recording's own idle, to blend across machines
-]
-ONESHOTS = [
-    # The starter's own chug isn't regular enough to cut per compression stroke, so
-    # cranking is an engage sound followed by a loop between two quiet points.
-    ('starterEngage', 'quad', 0.08, 0.365),
-    ('crankLoop', 'quad', 0.365, 1.329),
-    ('shutdown', 'quad', 20.22, 21.2),  # the run-down once the ignition is cut
-]
+# Which parts of which recording each bank uses. Times in seconds.
+#   segments: (kind, source, start, end, (shortest, longest pulse period in s))
+#   oneshots: (name, source, start, end)
+#   level: (kind, other kind) whose median loudness is matched, so the second
+#          machine sits at the same level as the first where they meet.
+BANKS = {
+    'engine-bank': {
+        'segments': [
+            ('idle', 'quad', 1.60, 7.30, (0.06, 0.12)),
+            ('idle', 'quad', 8.80, 12.0, (0.06, 0.12)),
+            ('idle', 'quad', 17.0, 19.9, (0.06, 0.12)),
+            ('accel', 'rev', 2.00, 3.05, (0.016, 0.045)),  # revving up, throttle open
+            ('decel', 'rev', 3.15, 6.05, (0.016, 0.085)),  # falling back, throttle closed
+            ('idle2', 'rev', 0.10, 1.95, (0.06, 0.09)),  # the rev recording's own idle, to blend across machines
+        ],
+        'oneshots': [
+            # The starter's own chug isn't regular enough to cut per compression stroke, so
+            # cranking is an engage sound followed by a loop between two quiet points.
+            ('starterEngage', 'quad', 0.08, 0.365),
+            ('crankLoop', 'quad', 0.365, 1.329),
+            ('shutdown', 'quad', 20.22, 21.2),  # the run-down once the ignition is cut
+        ],
+        'level': ('idle', 'idle2', 'rev'),
+    },
+    'engine-bank-2t': {
+        # Idle from a two-stroke motocross bike (its later idle skips beats, so only
+        # the steady stretches are used); revs from a Honda CRM250 pulling away
+        # through the gears (rising sweeps) and backing off (falling sweeps). Starter
+        # and shutdown borrow the quad recordings: the game has an electric start.
+        'segments': [
+            ('idle', 'mx', 24.0, 30.3, (0.022, 0.045)),
+            ('idle', 'mx', 32.0, 40.5, (0.022, 0.045)),
+            ('accel', 'crm', 6.8, 9.0, (0.0095, 0.03)),
+            ('accel', 'crm', 10.0, 11.3, (0.0095, 0.02)),
+            ('accel', 'crm', 12.6, 13.8, (0.0095, 0.02)),
+            ('decel', 'crm', 11.4, 12.4, (0.0095, 0.02)),
+            ('decel', 'crm', 14.0, 15.5, (0.0095, 0.025)),
+            ('idle2', 'crm', 0.1, 1.9, (0.02, 0.045)),
+        ],
+        'oneshots': [
+            ('starterEngage', 'quad', 0.08, 0.365),
+            ('crankLoop', 'quad', 0.365, 1.329),
+            ('shutdown', 'quad', 20.22, 21.2),
+        ],
+        'level': ('idle', 'idle2', 'crm'),
+    },
+}
 
 
 def load(path):
@@ -91,7 +132,7 @@ def cut_points(x, peaks, smooth_env):
     of the next thump and never begins partway into its own."""
     cuts = []
     for i, p in enumerate(peaks):
-        pi = int(p * SR)
+        pi = min(int(p * SR), len(x) - 1)
         prev = int(peaks[i - 1] * SR) if i > 0 else max(0, pi - int(0.1 * SR))
         period = pi - prev
         # Attack start: walk back from the peak until the envelope drops near the local floor.
@@ -112,11 +153,15 @@ def cut_points(x, peaks, smooth_env):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--quad', required=True)
-    ap.add_argument('--rev', required=True)
+    ap.add_argument('bank', choices=sorted(BANKS))
+    ap.add_argument('sources', nargs='+', help='name=path.wav for each source the bank uses')
     ap.add_argument('--plot')
     args = ap.parse_args()
-    sources = {'quad': load(args.quad), 'rev': load(args.rev)}
+    config = BANKS[args.bank]
+    sources = {}
+    for item in args.sources:
+        name, path = item.split('=', 1)
+        sources[name] = load(path)
 
     out = []  # concatenated audio
     cursor = 0
@@ -132,7 +177,7 @@ def main():
         cursor += len(x)
         return start
 
-    for kind, src, t0, t1, (lo, hi) in SEGMENTS:
+    for kind, src, t0, t1, (lo, hi) in config['segments']:
         x = sources[src][int(t0 * SR) : int(t1 * SR)]
         env = envelope(x, 0.0012)
         peaks = find_peaks(env, lo, hi)
@@ -165,12 +210,13 @@ def main():
                     'dur': round(dur, 5),
                     'tail': round(min(tail, len(x) - e) / SR, 5),
                     'rpm': round(120 / dur, 1),
+                    'src': src,
                     'rms': round(float(np.sqrt(np.mean(seg**2))), 5),
                 }
             )
         plot_data.append((kind, src, t0, x, np.array(cuts) / SR))
 
-    for name, src, t0, t1 in ONESHOTS:
+    for name, src, t0, t1 in config['oneshots']:
         x = sources[src][int(t0 * SR) : int(t1 * SR)].copy()
         if name == 'shutdown':
             fade = int(0.05 * SR)
@@ -182,32 +228,34 @@ def main():
     def median_rms(k):
         return float(np.median([g['rms'] for g in grains if g['kind'] == k]))
 
-    rev_gain = median_rms('idle') / median_rms('idle2')
+    base_kind, other_kind, other_src = config['level']
+    other_gain = median_rms(base_kind) / median_rms(other_kind)
+    norm = TARGET_IDLE_RMS / median_rms(base_kind)
 
     os.makedirs(os.path.join(ROOT, 'public', 'audio'), exist_ok=True)
-    with wave.open(os.path.join(ROOT, 'public', 'audio', 'engine-bank.wav'), 'wb') as w:
+    with wave.open(os.path.join(ROOT, 'public', 'audio', f'{args.bank}.wav'), 'wb') as w:
         w.setnchannels(1)
         w.setsampwidth(2)
         w.setframerate(SR)
         w.writeframes((np.clip(audio, -1, 1) * 32767).astype(np.int16).tobytes())
     bank = {
-        'file': 'audio/engine-bank.wav',
+        'file': f'audio/{args.bank}.wav',
         'sampleRate': SR,
         'strokes': 4,
         'crankRpm': 320,  # cranking speed the crank loop plays back at its natural rate
-        'sourceGain': {'quad': 1.0, 'rev': round(rev_gain, 3)},
+        'sourceGain': {**{name: round(norm, 3) for name in sources}, other_src: round(other_gain * norm, 3)},
         'grains': grains,
         'oneshots': oneshots,
     }
-    for g in grains:
-        g['src'] = 'rev' if g['kind'] in ('accel', 'decel', 'idle2') else 'quad'
-    with open(os.path.join(ROOT, 'public', 'audio', 'engine-bank.json'), 'w') as f:
+    with open(os.path.join(ROOT, 'public', 'audio', f'{args.bank}.json'), 'w') as f:
         json.dump(bank, f, indent=1)
 
     for k in ('idle', 'idle2', 'accel', 'decel'):
         rpms = [g['rpm'] for g in grains if g['kind'] == k]
+        if not rpms:
+            continue
         print(f'{k:6s} {len(rpms):4d} grains, rpm {min(rpms):.0f} to {max(rpms):.0f}')
-    print(f'rev source gain {rev_gain:.2f}, bank {len(audio) / SR:.1f} s, rejected {rejected}')
+    print(f'{other_src} gain {other_gain:.2f}, bank level x{norm:.2f}, {len(audio) / SR:.1f} s, rejected {rejected}')
 
     if args.plot:
         import matplotlib

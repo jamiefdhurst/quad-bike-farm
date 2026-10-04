@@ -51,6 +51,7 @@ export const LAYOUT = {
     quads: [
       { x: -44, z: 52, yaw: Math.PI * 0.62 },
       { x: -42.6, z: 55.2, yaw: Math.PI * 0.62 },
+      { x: -41.2, z: 58.4, yaw: Math.PI * 0.62 },
     ],
   },
 };

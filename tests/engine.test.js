@@ -232,3 +232,51 @@ describe('firing pulses', () => {
     expect(engine.temperature).toBeLessThan(0.5);
   });
 });
+
+describe('two-stroke', () => {
+  const TWO_STROKE = { strokes: 2, idleRpmWarm: 1800, skipChance: 0.35, skipThrottle: 0.15, skipRpm: 3800, idleFoulRate: 0.002 };
+
+  it('fires once every revolution', () => {
+    const engine = makeEngine({ temperature: 1, params: { strokes: 2 } });
+    crank(engine, 3);
+    run(engine, 2);
+    let fires = 0;
+    let rpmSum = 0;
+    const seconds = 5;
+    run(engine, seconds, (e) => {
+      fires += e.pulses.filter((p) => p.type === 'fire' || p.type === 'misfire').length;
+      rpmSum += e.rpm;
+      return {};
+    });
+    const avgRpm = rpmSum / Math.round(seconds / DT);
+    expect(fires).toBeCloseTo((avgRpm / 60) * seconds, -1);
+  });
+
+  it('skips some alternate firings at idle but not under throttle', () => {
+    const engine = makeEngine({ temperature: 1, params: TWO_STROKE });
+    crank(engine, 3);
+    run(engine, 2);
+    const count = (controls) => {
+      let skips = 0;
+      let fires = 0;
+      run(engine, 5, (e) => {
+        skips += e.pulses.filter((p) => p.type === 'misfire').length;
+        fires += e.pulses.filter((p) => p.type === 'fire').length;
+        return controls;
+      });
+      return skips / (skips + fires);
+    };
+    expect(count({})).toBeGreaterThan(0.1);
+    run(engine, 2, { throttle: 0.6 });
+    expect(count({ throttle: 0.6 })).toBeLessThan(0.05);
+  });
+
+  it('loads its plug up while idling and clears it with throttle', () => {
+    const engine = makeEngine({ temperature: 1, params: TWO_STROKE });
+    crank(engine, 3);
+    run(engine, 120);
+    expect(engine.fouling).toBeGreaterThan(0.2);
+    run(engine, 8, { throttle: 0.6 });
+    expect(engine.fouling).toBeLessThan(0.05);
+  });
+});
