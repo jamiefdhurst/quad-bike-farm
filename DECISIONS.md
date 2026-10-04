@@ -4,7 +4,8 @@ A running log of choices made while building this, so later work starts from the
 
 ## Working agreement (2026-10-04)
 
-- Built autonomously from the original brief.
+- Built autonomously from the original brief. All later work on this project is autonomous too.
+- Audio started procedural-only per the brief. CC0 audio files are allowed as a fallback if the AudioWorklet synth isn't good enough.
 - Local git repo on `main`, no remote.
 - NPC code lives under `src/npc/` as a generic NPC behaviour state machine with a `Companion` built on it. The in-game label follows the brief.
 
@@ -25,7 +26,8 @@ A running log of choices made while building this, so later work starts from the
 - Mixture is the single idea behind the engine: `choke enrichment - enrichment needed at this temperature`. Catch chance, idle, roughness, power and plug fouling all derive from it. Opening the throttle dilutes the choke a little, so cranking with the throttle open clears a flood.
 - A stalled-from-flooding engine keeps its fouling and dries out slowly, so it's hard to restart straight away. Choke off and throttle open while cranking is the cure.
 - The drivetrain is an automatic: centrifugal clutch into a CVT. Braking drags on the engine only while the drivetrain is "coupled" (the clutch has locked with the bike moving). Coupling releases when the bike nearly stops.
-- Tuned so a hard stop from about 16 mph or more stalls a stone-cold engine on choke, gentler or slower stops don't, and a warm engine never stalls from braking. Checked with a seeded headless sim across 40 seeds.
+- Tuned so a hard stop from about 20 mph or more stalls a stone-cold engine on choke, gentler or slower stops don't, and a warm engine never stalls from braking. Checked with a seeded headless sim across 40 seeds.
+- Warm idle lowered to 1150 rpm (feedback, 2026-10-04). That needed the stall threshold dropped to 350 rpm and braking drag reduced, because a single misfire costs about 140 rpm and a warm engine under braking load must stay clear of the stall line by more than that.
 - Drive force keeps a floor of 40% even when engine power is low, so a cold bike is sluggish but rideable.
 - The quad never rolls over in normal riding: the Rapier vehicle slides before it tips. There's a "right the quad" action (T when riding, or E when looking at a tipped quad) in case it does.
 
