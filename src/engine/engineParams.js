@@ -57,7 +57,7 @@ export const DEFAULT_ENGINE_PARAMS = {
 
   // Starting
   catchChance: 0.6, // chance per compression stroke with a perfect mixture, warm
-  catchColdFactor: 0.6, // catch chance multiplier when stone cold
+  catchColdFactor: 0.75, // catch chance multiplier when stone cold
   catchLeanWidth: 0.35, // mixture width of the catch window on the lean side
   catchRichWidth: 0.45, // and on the rich side
 

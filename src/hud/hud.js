@@ -16,6 +16,7 @@ const HELP_HTML = `
   <div><kbd>T</kbd> right the quad if it tips over</div>
   <h3>Other</h3>
   <div><kbd>H</kbd> toggle this help</div>
+  <div><kbd>M</kbd> mute</div>
   <div><kbd>\`</kbd> tuning panel</div>
 `;
 

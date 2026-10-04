@@ -11,6 +11,8 @@ import { Quad } from './vehicle/quad.js';
 import { DEFAULT_VEHICLE_PARAMS, VEHICLE_PARAM_RANGES } from './vehicle/vehicleParams.js';
 import { VibrationModel } from './vibration/vibrationModel.js';
 import { DEFAULT_VIBRATION_PARAMS, VIBRATION_PARAM_RANGES } from './vibration/vibrationParams.js';
+import { EngineAudio } from './audio/engineAudio.js';
+import { DEFAULT_AUDIO_PARAMS, AUDIO_PARAM_RANGES } from './audio/audioParams.js';
 import { Interaction } from './interaction/interaction.js';
 import { Hud } from './hud/hud.js';
 
@@ -79,6 +81,8 @@ export class Game {
     });
 
     this.vibration = new VibrationModel({ ...DEFAULT_VIBRATION_PARAMS });
+    this.audio = new EngineAudio({ ...DEFAULT_AUDIO_PARAMS });
+    this.input.on('firstinteraction', () => this.audio.unlock());
 
     this.interaction.add({
       target: this.quad.proxy,
@@ -88,6 +92,7 @@ export class Game {
 
     registerTuning('Engine', this.engine.params, ENGINE_PARAM_RANGES);
     registerTuning('Vibration', this.vibration.params, VIBRATION_PARAM_RANGES);
+    registerTuning('Audio', this.audio.params, AUDIO_PARAM_RANGES);
     registerTuning('Vehicle', this.quad.params, VEHICLE_PARAM_RANGES);
     registerTuning('Player', this.player.params, PLAYER_PARAM_RANGES);
 
@@ -107,7 +112,10 @@ export class Game {
 
   start() {
     const overlay = document.getElementById('overlay');
-    overlay.addEventListener('click', () => this.input.requestPointerLock());
+    overlay.addEventListener('click', () => {
+      this.audio.unlock();
+      this.input.requestPointerLock();
+    });
     this.input.on('lockchange', (locked) => overlay.classList.toggle('hidden', locked));
     this.renderer.setAnimationLoop(() => this.frame());
   }
@@ -173,6 +181,10 @@ export class Game {
     const input = this.input;
 
     if (input.wasPressed('KeyH')) this.hud.toggleHelp();
+    if (input.wasPressed('KeyM')) {
+      this.audio.params.muted = !this.audio.params.muted;
+      this.hud.toast(this.audio.params.muted ? 'Sound off' : 'Sound on', 1.2);
+    }
 
     if (this.player.isRiding) {
       this.quad.handleFrameInput();
@@ -195,6 +207,7 @@ export class Game {
     this.vibration.update(dt, this.engine);
     this.quad.update(dt, alpha, this.vibration);
     if (!this.debugCamera) this.player.update(dt, alpha, this.vibration);
+    this.audio.update(dt, this.engine, this.quad.position, this.camera);
     this.world.update(dt, this.player.isRiding ? this.quad.position : this.player.position, this.camera);
     this.updateHud(dt);
 
