@@ -9,6 +9,8 @@ import { EngineModel } from './engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS, ENGINE_PARAM_RANGES } from './engine/engineParams.js';
 import { Quad } from './vehicle/quad.js';
 import { DEFAULT_VEHICLE_PARAMS, VEHICLE_PARAM_RANGES } from './vehicle/vehicleParams.js';
+import { VibrationModel } from './vibration/vibrationModel.js';
+import { DEFAULT_VIBRATION_PARAMS, VIBRATION_PARAM_RANGES } from './vibration/vibrationParams.js';
 import { Interaction } from './interaction/interaction.js';
 import { Hud } from './hud/hud.js';
 
@@ -76,6 +78,8 @@ export class Game {
       params: { ...DEFAULT_VEHICLE_PARAMS },
     });
 
+    this.vibration = new VibrationModel({ ...DEFAULT_VIBRATION_PARAMS });
+
     this.interaction.add({
       target: this.quad.proxy,
       prompt: () => (this.quad.isTipped ? 'Right the quad' : 'Ride the quad'),
@@ -83,6 +87,7 @@ export class Game {
     });
 
     registerTuning('Engine', this.engine.params, ENGINE_PARAM_RANGES);
+    registerTuning('Vibration', this.vibration.params, VIBRATION_PARAM_RANGES);
     registerTuning('Vehicle', this.quad.params, VEHICLE_PARAM_RANGES);
     registerTuning('Player', this.player.params, PLAYER_PARAM_RANGES);
 
@@ -187,8 +192,9 @@ export class Game {
     const alpha = this.accumulator / FIXED_DT;
 
     this.engine.update(dt, this.quad.engineControls());
-    this.quad.update(dt, alpha, null);
-    if (!this.debugCamera) this.player.update(dt, alpha, null);
+    this.vibration.update(dt, this.engine);
+    this.quad.update(dt, alpha, this.vibration);
+    if (!this.debugCamera) this.player.update(dt, alpha, this.vibration);
     this.world.update(dt, this.player.isRiding ? this.quad.position : this.player.position, this.camera);
     this.updateHud(dt);
 
