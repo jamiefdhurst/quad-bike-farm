@@ -112,3 +112,9 @@ A running log of choices made while building this, so later work starts from the
 - Models: `buildQuadModel` takes a `style`: 'utility' (red, as before), 'utility2' (blue: brush guard, square lamps, railed racks, rounded tank, grey seat, flatter fenders) and 'sport' (yellow: sloped nose with number plate, small lamps, bumper, sharp fenders, no racks, long single seat with tail, nerf bars and pegs, expansion chamber with a high silencer, upright finned cylinder, motocross bars with a crossbar ahead of the dash, wider rear tyres).
 - The sport quad is a single-seater: no pillion seat or anchor, so she isn't offered it (`quad.hasPillion`).
 - Its smoke is denser and blue-tinted (a new `tint` smoke setting) for two-stroke oil.
+
+## Start state and the yellow pillion (2026-10-04)
+
+- Fuel taps start OFF (`startTap`). The float bowl starts full, so a quad started with the tap off runs for a few seconds, then stumbles and stalls: flicking it ON is part of starting up.
+- Each game the quads are shuffled between the yard's parking slots and nudged by up to 1.2 m and 20 degrees, keeping at least 2.8 m between them. The jerry can is left at one of five likely spots (petrol tank, barn doors, paddock, silage bales, field gate) with a small shift. The seed is printed in the console and `?seed=N` repeats a layout. The player starts facing the quad she's standing by.
+- The yellow sport quad now takes a passenger after all: a slim pad at the back of its long seat with a grab strap. It's a tight fit, which is the point.

@@ -240,7 +240,7 @@ function rack(root, z0, z1, y, bars, raised = 0) {
  * @param {string} [opts.style]     Body style:
  *   'utility'  farm quad with racks, footwells, a nose box and round headlights;
  *   'utility2' farm quad with a brush guard, square headlights, deeper racks and a grey seat;
- *   'sport'    single-seat sport quad: number plate, no racks, nerf bars, expansion chamber.
+ *   'sport'    sport quad: number plate, no racks, nerf bars, expansion chamber, a tight pillion pad.
  */
 export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', style = 'utility' } = {}) {
   const sport = style === 'sport';
@@ -420,7 +420,8 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
     }
   }
 
-  // Seats. Utility quads carry a raised pillion seat; the sport quad is a single-seater.
+  // Seats. Utility quads carry a raised pillion seat; the sport quad's long seat
+  // squeezes a passenger onto a slim pad at the back, with a grab strap.
   if (sport) {
     const seat = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.8, 4, 12), seatMat);
     seat.name = 'seat';
@@ -428,6 +429,13 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
     seat.scale.set(1.5, 1, 0.5);
     seat.position.set(0, 0.86, -0.36);
     root.add(seat);
+    const pad = new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.12, 4, 10), seatMat);
+    pad.name = 'pillionSeat';
+    pad.rotation.x = Math.PI / 2;
+    pad.scale.set(1.75, 1, 0.5);
+    pad.position.set(0, 0.925, -0.66);
+    root.add(pad);
+    box(0.3, 0.012, 0.03, MAT.black, 0, 0.935, -0.47, root, 'grabStrap');
   } else {
     const seat = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.48, 4, 12), seatMat);
     seat.name = 'seat';
@@ -480,12 +488,10 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
   riderAnchor.name = 'riderAnchor';
   riderAnchor.position.set(0, 0.9, -0.18);
   root.add(riderAnchor);
-  if (!sport) {
-    const pillionAnchor = new THREE.Object3D();
-    pillionAnchor.name = 'pillionAnchor';
-    pillionAnchor.position.set(0, 1.0, -0.6);
-    root.add(pillionAnchor);
-  }
+  const pillionAnchor = new THREE.Object3D();
+  pillionAnchor.name = 'pillionAnchor';
+  pillionAnchor.position.set(0, sport ? 0.98 : 1.0, sport ? -0.66 : -0.6);
+  root.add(pillionAnchor);
   const cameraAnchor = new THREE.Object3D();
   cameraAnchor.name = 'cameraAnchor';
   cameraAnchor.position.set(0, 1.55, -0.22);
