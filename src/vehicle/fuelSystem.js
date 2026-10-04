@@ -10,10 +10,10 @@ export const DEFAULT_FUEL_PARAMS = {
   reserveLitres: 2, // only reachable with the tap on RESERVE
   startLitres: 7, // fuel in the tank at the start
   startTap: 'off', // tap position at the start: turn it ON before riding off
-  bowlCapacity: 0.04, // litres in the carburettor float bowl
+  bowlCapacity: 0.012, // litres in the carburettor float bowl: with the tap OFF it runs about half a minute at idle
   bowlFillRate: 0.02, // litres per second from the tank into the bowl
   burnPerRev: 0.000047, // litres per crank revolution at full throttle (game-paced: a full tank lasts about 25 minutes flat out)
-  idleBurnFraction: 0.25, // fraction of that burnt at a closed throttle
+  idleBurnFraction: 0.45, // fraction of that burnt at a closed throttle
   chokeBurn: 0.3, // extra consumption at full choke
 };
 

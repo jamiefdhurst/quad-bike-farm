@@ -88,7 +88,7 @@ export const DEFAULT_ENGINE_PARAMS = {
   idleFoulRate: 0, // plug fouling per second while idling (oily two-stroke plugs load up); throttle clears it
 
   // Fuel starvation, from the carburettor float bowl level (0..1)
-  fuelStarveLevel: 0.5, // below this bowl level the mixture starts to go lean
+  fuelStarveLevel: 0.65, // below this bowl level the mixture starts to go lean
   starveLean: 1.1, // how lean it goes as the bowl empties
 
   // Integration

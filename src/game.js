@@ -9,6 +9,7 @@ import { Player, PLAYER_CAPSULE } from './player/player.js';
 import { DEFAULT_PLAYER_PARAMS, PLAYER_PARAM_RANGES } from './player/playerParams.js';
 import { QuadUnit } from './vehicle/quadUnit.js';
 import { QUAD_SPECS } from './vehicle/quadSpecs.js';
+import { applyIdleOffset, IDLE_VARIATION_RPM } from './vehicle/idleVariation.js';
 import { AudioHub } from './audio/engineAudio.js';
 import { DEFAULT_SOUND_PARAMS, SOUND_PARAM_RANGES } from './audio/audioParams.js';
 import { Companion } from './npc/companion.js';
@@ -96,6 +97,12 @@ export class Game {
           audioHub: this.audioHub,
         }),
     );
+    // Each quad idles a little differently every game (same seed, same idles).
+    for (const unit of this.units) {
+      const offset = (random() * 2 - 1) * IDLE_VARIATION_RPM;
+      unit.idleRpm = applyIdleOffset(unit.engine.params, unit.quad.params, offset);
+    }
+    console.info(`Warm idles: ${this.units.map((u) => `${u.name} ${u.idleRpm}`).join(', ')}`);
     this.updateSmokeScale();
     this.lastUnit = this.units[0];
 

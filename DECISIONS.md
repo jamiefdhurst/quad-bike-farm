@@ -126,3 +126,8 @@ A running log of choices made while building this, so later work starts from the
 - At higher revs a grain spans several consecutive recorded firings (at least `recMinGrainMs`, 32 ms), linked through the bank's recording order, and the following pulses on that layer are covered by it.
 - Whether a pulse comes from the rising or falling set is now a probability that slides with throttle, not a threshold.
 - Each grain's loudness is pulled halfway towards its kind's median (`recLevelling`), cutting pulse-to-pulse loudness wobble at full throttle by about a fifth. The rev layer has its own gain (`recRevGain`, 0.75 for the four-strokes) because the CRF250 was recorded under load.
+
+## Tap-off timing and idle variation (2026-10-04)
+
+- With the tap OFF a quad ran for nearly three minutes at idle on what was in the float bowl. The bowl is now 12 ml instead of 40, idle burns a bit more (45% of full-throttle consumption per revolution rather than 25%), and starvation starts at 65% of a bowl rather than 50%. Tap off: a warm idle stumbles from about 10 s and dies at about 30 s; on choke it dies at about 20 s. Running dry on the move gives 2 to 3 s of stumbling before it dies, shorter than before. That's the trade-off.
+- Each game every quad's warm idle shifts by up to 450 rpm either way (seeded, so `?seed=N` repeats it), never below 70% of its spec idle. `applyIdleOffset` scales the stall point and braking drag with the idle, so the margins stay the same, and raises the clutch bite point if needed so a high idler doesn't creep. Simulated at both extremes for all three quads: no warm stalls, no creep, and warm braking never stalls. Low idlers are a bit less likely to stall from cold braking. The chosen idles are printed in the console.
