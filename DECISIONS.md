@@ -72,3 +72,12 @@ A running log of choices made while building this, so later work starts from the
 - Cutting is done offline by `tools/slice_engine_audio.py` into one WAV plus a JSON index. WAV rather than MP3 so browser MP3 decoder delay can't shift the cut points.
 - Using Freesound's MP3 previews for now; the original WAVs need a Freesound login.
 - Choppiness fix: the first cut placed each cut a fixed 4 ms before the next thump's peak, but the attack starts earlier, so most grains ended with a scrap of the next thump. The slicer now finds each attack's start and cuts at the quietest zero crossing just before it, and rejects grains with an odd length or a loud tail (about a third of them). At playback each grain carries a few milliseconds of overlap and crossfades into the next, and every pulse carries its own cycle length from the engine model so its grain is stretched to fit exactly, which closes the gaps a rough idle used to leave.
+
+## Companion polish and roadside controls (2026-10-04)
+
+- She's 1.5 m tall now (was 1.66 m).
+- Collar and wellies are fitted to her body instead of sized by hand: `fittedShell` in `src/npc/outfit.js` casts rays in towards a bone's axis from all round, finds the surface, and builds a shell a few millimetres outside it. The collar uses the hit nearest the axis (so hair is ignored); the boots use the outermost hit with a short reach (so the jeans hem tucks inside, and the other leg isn't caught). Shells are built in the rest pose and parented to the bones.
+- She glances at the player on a random timer (4 to 11 s apart, 1.5 to 3.5 s each), looks at you while you're talking to her, and doesn't bother while you're riding with her behind you. Head turns are split 40/60 between neck and head, layered after the animation.
+- Seated on the quad she fidgets every 3 to 8 s: lifting an arm, leaning, stretching or looking out to the side. Standing, she occasionally leans or looks around, half as often. All are procedural bone offsets with ease in and out, so they work on top of any clip.
+- While looking at the quad on foot, K, R, Q and Z work its ignition, starter and choke, and the engine status shows. The quad only listens while it's the focused interactable.
+- The player no longer shoves the quad by walking into it. The character controller's impulses on dynamic bodies are off.

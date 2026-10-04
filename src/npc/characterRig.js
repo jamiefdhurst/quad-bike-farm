@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 
+const AXIS_X = new THREE.Vector3(1, 0, 0);
+const AXIS_Y = new THREE.Vector3(0, 1, 0);
+const AXIS_Z = new THREE.Vector3(0, 0, 1);
+
 /**
  * Wraps a skinned glTF character: scaling, animation cross-fades by short clip
  * name, and small procedural adjustments layered on top of the clips.
@@ -40,6 +44,12 @@ export class CharacterRig {
 
     this.legSpread = 0;
     this.spineSway = { pitch: 0, roll: 0 };
+    // Head turn toward a world point, blended in and out by lookWeight (0..1).
+    this.lookTarget = new THREE.Vector3();
+    this.lookWeight = 0;
+    this.lookLimits = { yaw: 1.2, pitch: 0.5 };
+    // Extra procedural offsets in radians about the character's own axes, set by behaviour code.
+    this.offsets = { headYaw: 0, spineRoll: 0, spinePitch: 0, leftArmOut: 0, rightArmOut: 0, leftElbow: 0, rightElbow: 0 };
     this.tmpQ = new THREE.Quaternion();
     this.tmpQ2 = new THREE.Quaternion();
     this.up = new THREE.Vector3();
@@ -121,5 +131,49 @@ export class CharacterRig {
       spine.rotateX(this.spineSway.pitch);
       spine.rotateZ(this.spineSway.roll);
     }
+
+    const o = this.offsets;
+    const b = this.bones;
+    this.rotateAboutRootAxis(b.Spine1, AXIS_Z, o.spineRoll);
+    this.rotateAboutRootAxis(b.Spine1, AXIS_X, o.spinePitch);
+    // Arms swing out sideways from the shoulder; elbows bend forward.
+    this.rotateAboutRootAxis(b.LeftArm, AXIS_Z, o.leftArmOut);
+    this.rotateAboutRootAxis(b.RightArm, AXIS_Z, -o.rightArmOut);
+    this.rotateAboutRootAxis(b.LeftForeArm, AXIS_X, -o.leftElbow);
+    this.rotateAboutRootAxis(b.RightForeArm, AXIS_X, -o.rightElbow);
+    this.applyLook();
+  }
+
+  /** Turns neck and head toward lookTarget, shared between them, plus any headYaw offset. */
+  applyLook() {
+    const neck = this.bones.Neck;
+    const head = this.bones.Head;
+    if (!neck || !head) return;
+    let yaw = this.offsets.headYaw;
+    let pitch = 0;
+    if (this.lookWeight > 0.001) {
+      const from = this.root.worldToLocal(head.getWorldPosition(new THREE.Vector3()));
+      const to = this.root.worldToLocal(this.lookTarget.clone()).sub(from);
+      const ly = THREE.MathUtils.clamp(Math.atan2(to.x, to.z), -this.lookLimits.yaw, this.lookLimits.yaw);
+      const lp = THREE.MathUtils.clamp(Math.atan2(to.y, Math.hypot(to.x, to.z)), -this.lookLimits.pitch, this.lookLimits.pitch);
+      yaw += ly * this.lookWeight;
+      pitch += lp * this.lookWeight;
+    }
+    if (Math.abs(yaw) < 1e-4 && Math.abs(pitch) < 1e-4) return;
+    this.rotateAboutRootAxis(neck, AXIS_Y, yaw * 0.4);
+    this.rotateAboutRootAxis(head, AXIS_Y, yaw * 0.6);
+    // Positive pitch means looking up, which is a negative turn about the side axis.
+    this.rotateAboutRootAxis(neck, AXIS_X, -pitch * 0.4);
+    this.rotateAboutRootAxis(head, AXIS_X, -pitch * 0.6);
+  }
+
+  /** Rotates a bone about one of the character root's axes, in the bone's parent space. */
+  rotateAboutRootAxis(bone, axis, angle) {
+    if (!bone || Math.abs(angle) < 1e-5) return;
+    this.root.getWorldQuaternion(this.tmpQ);
+    bone.parent.getWorldQuaternion(this.tmpQ2);
+    this.up.copy(axis).applyQuaternion(this.tmpQ).applyQuaternion(this.tmpQ2.invert());
+    bone.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(this.up, angle));
+    bone.updateMatrixWorld(true);
   }
 }

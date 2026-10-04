@@ -62,6 +62,7 @@ export class Quad {
     // Controls, set by the rider.
     this.rider = null;
     this.input = null;
+    this.remoteInput = null; // set while someone on foot is looking at the bike
     this.throttle = 0;
     this.brake = 0;
     this.steer = 0;
@@ -120,25 +121,33 @@ export class Quad {
     }
   }
 
-  /** Discrete inputs (key presses), handled once per frame. */
+  /**
+   * Lets someone standing next to the bike work the ignition, starter and choke
+   * while looking at it. Pass null when they look away.
+   */
+  setRemote(input) {
+    this.remoteInput = input;
+  }
+
+  /** Discrete inputs (key presses), handled once per frame, from the rider or someone beside the bike. */
   handleFrameInput(dt) {
-    if (!this.input) return;
-    const input = this.input;
-    input.takeWheelSteps();
+    const input = this.input ?? this.remoteInput;
+    if (!input) return;
+    if (this.input) input.takeWheelSteps();
     if (input.wasPressed('KeyK')) this.engine.toggleIgnition();
-    this.chokeKey(dt, CHOKE_MORE_KEY, 1);
-    this.chokeKey(dt, CHOKE_LESS_KEY, -1);
+    this.chokeKey(dt, input, CHOKE_MORE_KEY, 1);
+    this.chokeKey(dt, input, CHOKE_LESS_KEY, -1);
     if (input.wasPressed('KeyT') && this.isTipped) this.rightItself();
   }
 
   /** One choke step per press, repeating while the key is held. */
-  chokeKey(dt, code, direction) {
+  chokeKey(dt, input, code, direction) {
     const timers = (this.chokeTimers ??= {});
     let step = false;
-    if (this.input.wasPressed(code)) {
+    if (input.wasPressed(code)) {
       step = true;
       timers[code] = CHOKE_REPEAT_DELAY;
-    } else if (this.input.isDown(code)) {
+    } else if (input.isDown(code)) {
       timers[code] -= dt;
       if (timers[code] <= 0) {
         step = true;
@@ -185,7 +194,8 @@ export class Quad {
         this.reverseTimer = 0;
       }
     } else {
-      this.starter = false;
+      // Someone beside the bike can still hold the starter.
+      this.starter = !!this.remoteInput && this.remoteInput.isDown('KeyR');
     }
 
     this.throttle = throttleInput;

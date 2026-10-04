@@ -28,6 +28,7 @@ Other scripts:
 | Mouse | Look |
 | `Shift` | Jog |
 | `E` | Interact with whatever you're looking at: ride the quad, or talk to her |
+| `K` `R` `Q` `Z` | While looking at the quad: ignition, starter and choke, without getting on |
 
 **On the quad**
 

@@ -33,8 +33,8 @@ export class Player {
     this.controller.enableSnapToGround(0.4);
     this.controller.setMaxSlopeClimbAngle(50 * DEG);
     this.controller.setMinSlopeSlideAngle(60 * DEG);
-    this.controller.setApplyImpulsesToDynamicBodies(true);
-    this.controller.setCharacterMass(80);
+    // Walking into the quad shouldn't shove it; it's an obstacle, not a toy.
+    this.controller.setApplyImpulsesToDynamicBodies(false);
 
     this.yaw = s.yaw;
     this.pitch = 0;

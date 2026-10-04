@@ -66,6 +66,15 @@ export class Companion {
     this.lastPos = this.root.position.clone();
 
     this.fsm = new StateMachine(this, STATES, 'idle');
+
+    this.glanceTimer = this.randomBetween(params.glanceEveryMin, params.glanceEveryMax);
+    this.glanceLeft = 0;
+    this.fidgetTimer = this.randomBetween(params.fidgetEveryMin, params.fidgetEveryMax);
+    this.fidget = null;
+  }
+
+  randomBetween(a, b) {
+    return a + Math.random() * Math.max(0, b - a);
   }
 
   get state() {
@@ -224,8 +233,15 @@ export class Companion {
     }
   }
 
-  update(dt, vibration) {
+  /**
+   * @param {number} dt
+   * @param {VibrationModel} vibration
+   * @param {object} viewer  { position: world position of the player's eyes, isRiding, talking }
+   */
+  update(dt, vibration, viewer) {
     this.fsm.update(dt);
+    if (viewer) this.updateGlance(dt, viewer);
+    this.updateFidget(dt);
     if (this.root.parent === this.scene) this.syncCollider();
 
     // Seated riders shake with the bike; the rig adds a little upper-body lag.
@@ -240,6 +256,76 @@ export class Companion {
     this.rig.update(dt);
   }
 }
+
+// Idle behaviour -------------------------------------------------------------
+
+Companion.prototype.updateGlance = function (dt, viewer) {
+  const p = this.params;
+  const rig = this.rig;
+  // Riding together she's behind you, so there's nothing to look at.
+  const ridingTogether = viewer.isRiding && this.isSeated;
+  const near = this.root.getWorldPosition(this.tmpV).distanceTo(viewer.position) < p.glanceRange;
+  let want = 0;
+  if (viewer.talking && near) {
+    want = 1; // looks at you while you're talking to her
+  } else if (!ridingTogether && near && !this.fsm.is('mounting', 'dismounting')) {
+    if (this.glanceLeft > 0) {
+      this.glanceLeft -= dt;
+      want = 1;
+    } else if ((this.glanceTimer -= dt) <= 0) {
+      this.glanceLeft = this.randomBetween(p.glanceHoldMin, p.glanceHoldMax);
+      this.glanceTimer = this.randomBetween(p.glanceEveryMin, p.glanceEveryMax);
+    }
+  }
+  rig.lookTarget.copy(viewer.position);
+  rig.lookWeight += (want - rig.lookWeight) * Math.min(1, p.lookSpeed * dt);
+};
+
+// Small movements, each with a shape over its life (0..1) and offsets to apply.
+const FIDGETS = {
+  // Lifts one arm out and bends the elbow, as if adjusting her grip or hair.
+  arm: (k, side) => (side > 0 ? { leftArmOut: 0.55 * k, leftElbow: 0.9 * k } : { rightArmOut: 0.55 * k, rightElbow: 0.9 * k }),
+  // Shifts her weight to one side.
+  lean: (k, side) => ({ spineRoll: 0.24 * k * side, headYaw: -0.2 * k * side }),
+  // Stretches back with both arms out a little.
+  stretch: (k) => ({ spinePitch: -0.18 * k, leftArmOut: 0.35 * k, rightArmOut: 0.35 * k, leftElbow: 0.3 * k, rightElbow: 0.3 * k }),
+  // Looks out over the field to one side.
+  lookAround: (k, side) => ({ headYaw: 1.05 * k * side, spineRoll: 0.05 * k * side }),
+};
+const SEATED_FIDGETS = ['arm', 'lean', 'stretch', 'lookAround', 'arm', 'lookAround'];
+const STANDING_FIDGETS = ['lean', 'lookAround'];
+
+Companion.prototype.updateFidget = function (dt) {
+  const p = this.params;
+  const offsets = this.rig.offsets;
+  for (const key in offsets) offsets[key] = 0;
+
+  const seated = this.isSeated;
+  const standing = this.fsm.is('idle');
+  if (!this.fidget && (seated || standing)) {
+    if ((this.fidgetTimer -= dt) <= 0) {
+      const list = seated ? SEATED_FIDGETS : STANDING_FIDGETS;
+      this.fidget = {
+        type: list[Math.floor(Math.random() * list.length)],
+        side: Math.random() < 0.5 ? -1 : 1,
+        t: 0,
+        duration: 1.6 + Math.random() * 1.6,
+      };
+      // Standing, she fidgets less often.
+      this.fidgetTimer = this.randomBetween(p.fidgetEveryMin, p.fidgetEveryMax) * (seated ? 1 : 2);
+    }
+  }
+  if (!this.fidget) return;
+  const f = this.fidget;
+  f.t += dt / f.duration;
+  if (f.t >= 1 || !(seated || standing)) {
+    this.fidget = null;
+    return;
+  }
+  // Ease in, hold, ease out.
+  const k = smooth(Math.min(1, f.t / 0.3)) * smooth(Math.min(1, (1 - f.t) / 0.3)) * p.fidgetScale;
+  Object.assign(offsets, FIDGETS[f.type](k, f.side));
+};
 
 // State definitions. `this` is the Companion.
 const STATES = {

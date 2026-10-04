@@ -6,6 +6,7 @@ const HELP_HTML = `
   <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move, mouse to look</div>
   <div><kbd>Shift</kbd> jog</div>
   <div><kbd>E</kbd> interact with what you're looking at</div>
+  <div>Looking at the quad: <kbd>K</kbd> <kbd>R</kbd> <kbd>Q</kbd> <kbd>Z</kbd> work its engine</div>
   <h3>On the quad</h3>
   <div><kbd>K</kbd> ignition on / off</div>
   <div><kbd>R</kbd> hold to crank the starter</div>

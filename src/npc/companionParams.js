@@ -1,6 +1,6 @@
 export const DEFAULT_COMPANION_PARAMS = {
   outfit: 'farmPolo', // a key of OUTFITS in outfit.js
-  height: 1.66, // metres, the model is scaled to this
+  height: 1.5, // metres, the model is scaled to this
   walkSpeed: 1.3, // m/s
   walkAnimSpeed: 1.25, // m/s the walking clip looks right at, so its playback rate can match
   turnRate: 5, // 1/s
@@ -14,6 +14,19 @@ export const DEFAULT_COMPANION_PARAMS = {
   seatForward: 0.0, // metres, fine-tunes where she sits along the seat
   rideBounce: 1.0, // how much her upper body reacts to the bike's vibration
   maxMountSpeed: 0.3, // m/s, waits for the quad to stop before climbing on
+
+  // Glancing at the player
+  glanceEveryMin: 4, // seconds between glances
+  glanceEveryMax: 11,
+  glanceHoldMin: 1.5, // seconds she keeps looking
+  glanceHoldMax: 3.5,
+  glanceRange: 14, // metres; further than this she doesn't bother
+  lookSpeed: 3, // 1/s, how fast her head turns in and out
+
+  // Fidgeting while seated on the quad
+  fidgetEveryMin: 3, // seconds between fidgets
+  fidgetEveryMax: 8,
+  fidgetScale: 1, // overall size of the movements
 };
 
 export const COMPANION_PARAM_RANGES = {
@@ -31,4 +44,13 @@ export const COMPANION_PARAM_RANGES = {
   seatForward: [-0.3, 0.3, 0.005],
   rideBounce: [0, 4, 0.05],
   maxMountSpeed: [0, 3, 0.05],
+  glanceEveryMin: [0.5, 30, 0.5],
+  glanceEveryMax: [0.5, 60, 0.5],
+  glanceHoldMin: [0.2, 10, 0.1],
+  glanceHoldMax: [0.2, 15, 0.1],
+  glanceRange: [1, 50, 0.5],
+  lookSpeed: [0.3, 10, 0.1],
+  fidgetEveryMin: [0.5, 30, 0.5],
+  fidgetEveryMax: [0.5, 60, 0.5],
+  fidgetScale: [0, 3, 0.05],
 };

@@ -107,9 +107,9 @@ export class Game {
       interact: () => this.openCompanionMenu(),
     });
 
-    this.interaction.add({
+    this.quadInteraction = this.interaction.add({
       target: this.quad.proxy,
-      prompt: () => (this.quad.isTipped ? 'Right the quad' : 'Ride the quad'),
+      prompt: () => (this.quad.isTipped ? 'Right the quad' : 'Ride the quad   ·   K ignition   R start   Q/Z choke'),
       interact: () => (this.quad.isTipped ? this.quad.rightItself() : this.mount()),
     });
 
@@ -239,15 +239,20 @@ export class Game {
     }
 
     if (this.player.isRiding) {
+      this.quad.setRemote(null);
       this.quad.handleFrameInput(dt);
       if (input.wasPressed('KeyE')) this.tryDismount();
       this.interaction.clear();
     } else if (this.menu.isOpen) {
+      this.quad.setRemote(null);
       this.menu.handleInput(input);
       if (!this.menu.isOpen) this.closeMenu();
     } else {
       input.takeWheelSteps();
       const focused = this.interaction.update(this.player, this.player.params.interactRange);
+      // Looking at the quad lets you work its ignition, starter and choke from beside it.
+      this.quad.setRemote(focused === this.quadInteraction ? input : null);
+      this.quad.handleFrameInput(dt);
       if (focused && input.wasPressed('KeyE')) focused.interact();
     }
 
@@ -261,7 +266,11 @@ export class Game {
     this.engine.update(dt, this.quad.engineControls());
     this.vibration.update(dt, this.engine);
     this.quad.update(dt, alpha, this.vibration);
-    this.companion.update(dt, this.vibration);
+    this.companion.update(dt, this.vibration, {
+      position: this.camera.position,
+      isRiding: this.player.isRiding,
+      talking: this.menu.isOpen,
+    });
     this.smoke.update(dt, this.engine, this.quad.exhaustTip, this.quad.velocity);
     if (!this.debugCamera) this.player.update(dt, alpha, this.vibration);
     this.audio.update(dt, this.engine, this.quad.position, this.camera);
@@ -282,7 +291,7 @@ export class Game {
   updateHud(dt) {
     const f = this.interaction.focused;
     this.hud.setPrompt(f ? f.prompt() : '');
-    if (this.player.isRiding) {
+    if (this.player.isRiding || f === this.quadInteraction) {
       const e = this.engine;
       const mph = Math.abs(this.quad.forwardSpeed) * 2.237;
       const bars = Math.round(e.temperature * 10);
