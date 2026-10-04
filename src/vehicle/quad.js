@@ -35,12 +35,13 @@ export class Quad {
     this.riderAnchor = part('riderAnchor');
     this.wheels = WHEELS.map((w) => ({ ...w, object: part(w.name), spin: part(w.name).getObjectByName('spin') }));
 
-    // Invisible box used for "look at it and press E".
+    // Invisible box used for "look at it and press E". Reaches about 1.45 m
+    // off the ground so it's easy to target from a few metres away.
     this.proxy = new THREE.Mesh(
-      new THREE.BoxGeometry(1.25, 1.1, 2.2),
+      new THREE.BoxGeometry(1.25, 1.45, 2.2),
       new THREE.MeshBasicMaterial({ visible: false }),
     );
-    this.proxy.position.y = 0.25;
+    this.proxy.position.y = GROUND_OFFSET + 1.45 / 2;
     this.model.add(this.proxy);
 
     const s = world.spawn.quad;

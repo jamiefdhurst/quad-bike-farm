@@ -10,7 +10,8 @@ export const WHEELS = [
 ];
 export const SUSPENSION_TOP_Y = 0.1;
 
-export const CHASSIS_COLLIDER = { hx: 0.5, hy: 0.2, hz: 0.95, y: 0.15 };
+// Box roughly the size of the bodywork, so people stop at the fenders.
+export const CHASSIS_COLLIDER = { hx: 0.58, hy: 0.2, hz: 1.0, y: 0.15 };
 
 export class QuadPhysics {
   constructor(physics, RAPIER, params, spawn) {
