@@ -73,7 +73,9 @@ All three are automatics and all start cold. Through the CVT the red holds about
 | Blue | 950 to 1,550 | 0.06 to 0.18 | 1.2 to 8 of 11 |
 | Yellow | 900 to 2,000 | 0.10 to 0.40 | 1.5 to 8 of 9 |
 
-The idle and roughness are shown in the status panel and printed in the console. The browser console prints the layout's seed; add `?seed=<number>` to the URL to get the same layout again.
+The idle and roughness are shown in the status panel and printed in the console.
+
+She starts beside a random quad in the yard. The others are parked in the yard at any angle, sometimes facing the other way, or (40% each) left somewhere else on the farm: by the field gate, the paddock, the straw bales, the west hedge, out past the far bend, at the bottom of the track or in the middle of the field. The console says where each one is. The browser console prints the layout's seed; add `?seed=<number>` to the URL to get the same layout again.
 
 Everything below applies to any of them.
 
@@ -162,7 +164,7 @@ public/audio/          the cut engine recordings
 
 To recut the recordings, see the instructions at the top of `tools/slice_engine_audio.py`.
 
-**Exhaust smoke** (`src/effects/exhaustSmoke.js`). One soft puff per firing pulse, so you can see the beats at idle. White-grey vapour when cold, darker when rich or flooded, a burst when you snap the throttle open, and barely anything once warm. Tunable in the Smoke folder.
+**Exhaust smoke** (`src/effects/exhaustSmoke.js`). One soft puff per firing pulse, so you can see the beats at idle. White-grey vapour when cold, darker when rich or flooded, a burst when you snap the throttle open, and a light haze once warm. Tunable in the Smoke folder.
 
 **Vibration** (`src/vibration/vibrationModel.js`). Each firing pulse kicks a set of damped oscillators (body heave, pitch and roll, handlebars, rider's head) in a slightly random direction. Kicks are strongest at idle and with a rough engine, and fade as rpm rises. The bike body, handlebars, seated camera and anything sitting on the bike all move with it.
 

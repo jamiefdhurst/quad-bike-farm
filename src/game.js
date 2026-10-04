@@ -83,7 +83,7 @@ export class Game {
     this.seed = startSeed();
     const random = createRandom(this.seed);
     console.info(`Layout seed ${this.seed} (add ?seed=${this.seed} to the URL to repeat it)`);
-    const spawns = randomiseQuadSpawns(this.world.spawn, QUAD_SPECS.length, random);
+    const { placed: spawns, home } = randomiseQuadSpawns(this.world.spawn, QUAD_SPECS.length, random);
 
     this.units = QUAD_SPECS.map(
       (spec, i) =>
@@ -108,18 +108,20 @@ export class Game {
     }
     console.info(
       `This game: ${this.units
-        .map((u) => `${u.name} idle ${u.idleRpm} rpm, roughness ${u.variation.roughness.toFixed(2)}, ${u.variation.litres.toFixed(1)} L`)
+        .map((u, i) => `${u.name} ${spawns[i].where}, idle ${u.idleRpm} rpm, roughness ${u.variation.roughness.toFixed(2)}, ${u.variation.litres.toFixed(1)} L`)
         .join('; ')}`,
     );
     this.updateSmokeScale();
-    this.lastUnit = this.units[0];
+    // She starts beside a random quad in the yard; the player starts facing it.
+    this.homeUnit = this.units[home];
+    this.lastUnit = this.homeUnit;
 
     this.companion = new Companion({
       scene: this.scene,
       physics: this.physics,
       RAPIER: this.RAPIER,
       world: this.world,
-      quad: this.units[0].quad,
+      quad: this.homeUnit.quad,
       gltf: this.models.companion,
       params: { ...DEFAULT_COMPANION_PARAMS },
     });
@@ -193,7 +195,7 @@ export class Game {
     });
 
     // Start facing the quad she's standing by, wherever it ended up.
-    const q = this.units[0].quad.position;
+    const q = this.homeUnit.quad.position;
     const p = this.player.position;
     this.player.yaw = Math.atan2(-(q.x - p.x), -(q.z - p.z));
 

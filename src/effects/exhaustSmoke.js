@@ -3,27 +3,27 @@ import * as THREE from 'three';
 // Exhaust smoke. One soft puff per firing pulse, so at idle you can see the
 // individual beats. How thick and what colour depends on the engine: white-grey
 // vapour when cold, dark grey when running rich or flooded, a dark burst when
-// the throttle is snapped open, and barely anything once warm.
+// the throttle is snapped open, and a light haze once warm.
 
 export const DEFAULT_SMOKE_PARAMS = {
   opacity: 1.0, // master
   maxPerSecond: 45, // spawn cap; at high revs pulses are merged into fewer, denser puffs
   lifeMin: 1.6, // seconds
-  lifeMax: 3.2,
+  lifeMax: 4.0,
   startSize: 0.09, // metres
-  endSize: 1.5,
+  endSize: 1.9,
   exitSpeed: 2.0, // m/s out of the tip at idle
   throttleExitSpeed: 4.0, // extra at full throttle
   drag: 2.2, // 1/s, how fast puffs stop following the pipe and join the wind
   buoyancy: 0.6, // m/s^2 upward, warm gas rises
   windX: 0.7, // m/s
   windZ: 0.3,
-  warmDensity: 0.04, // opacity of a puff from a warm, healthy engine
-  coldDensity: 0.32, // extra when stone cold
-  richDensity: 0.55, // extra at full richness
+  warmDensity: 0.09, // opacity of a puff from a warm, healthy engine
+  coldDensity: 0.46, // extra when stone cold
+  richDensity: 0.7, // extra at full richness
   foulDensity: 0.4, // extra with a fouled plug
-  throttleBurst: 0.4, // extra when the throttle is snapped open
-  crankDensity: 0.12, // puffs while cranking
+  throttleBurst: 0.6, // extra when the throttle is snapped open
+  crankDensity: 0.18, // puffs while cranking
   coughDensity: 0.9, // puffs on a stall
   coldGray: 0.88, // colour of cold-engine vapour (0 black, 1 white)
   richGray: 0.22, // colour of rich, sooty smoke

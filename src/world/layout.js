@@ -55,13 +55,29 @@ export const LAYOUT = {
   spawn: {
     player: { x: -47, z: 46, yaw: -2.68 }, // facing the quad
     // Parking slots in the yard. Each start the quads are shuffled between them and
-    // nudged a little (quadJitter metres, quadYawJitter radians).
-    quadJitter: 1.2,
-    quadYawJitter: 0.35,
+    // nudged (quadJitter metres, quadYawJitter radians), and sometimes parked the
+    // other way round (quadFlipChance).
+    quadJitter: 2.5,
+    quadYawJitter: 0.8,
+    quadFlipChance: 0.25,
     quads: [
       { x: -44, z: 52, yaw: Math.PI * 0.62 },
       { x: -42.6, z: 55.2, yaw: Math.PI * 0.62 },
       { x: -41.2, z: 58.4, yaw: Math.PI * 0.62 },
+    ],
+    // Every quad but the one she's standing by has this chance of having been left
+    // somewhere else on the farm instead, at any angle, within awayJitter metres of
+    // one of these spots.
+    awayChance: 0.4,
+    awayJitter: 3,
+    away: [
+      { x: -27, z: 73, where: 'by the field gate' },
+      { x: -53, z: 30, where: 'by the paddock' },
+      { x: 18, z: 10, where: 'by the straw bales' },
+      { x: 47, z: -12, where: 'out past the far bend' },
+      { x: -46, z: -30, where: 'by the bottom of the track' },
+      { x: 4, z: -32, where: 'in the middle of the field' },
+      { x: -68, z: 8, where: 'by the west hedge' },
     ],
   },
 };
