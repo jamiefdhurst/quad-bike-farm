@@ -144,6 +144,7 @@ export class Game {
       overlay.classList.toggle('hidden', locked);
       if (!locked) this.closeMenu();
     });
+    this.hud.toggleHelp(true);
     this.renderer.setAnimationLoop(() => this.frame());
   }
 
@@ -279,9 +280,11 @@ export class Game {
     if (this.player.isRiding) {
       const e = this.engine;
       const mph = Math.abs(this.quad.forwardSpeed) * 2.237;
+      const bars = Math.round(e.temperature * 10);
       this.hud.setStatus(
         [
           `Engine   ${e.state}${e.state === 'stalled' ? ' (R to restart)' : ''}`,
+          `Temp     ${'▮'.repeat(bars)}${'▯'.repeat(10 - bars)}`,
           `Choke    ${Math.round(this.quad.choke * 100)}%`,
           `Speed    ${mph.toFixed(0)} mph${this.quad.reverse ? '  R' : ''}`,
         ].join('\n'),

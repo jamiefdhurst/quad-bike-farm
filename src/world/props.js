@@ -99,8 +99,9 @@ function buildHedges({ scene, models, layout, heights, fixedBox, random }) {
       }
     }
   }
-  scene.add(instanceModel(models.hedge.scene, hedgeMatrices));
-  scene.add(instanceModel(models.bush.scene, bushMatrices));
+  // Hedges don't cast shadows: there are hundreds of instances and the shadow pass would double their cost.
+  scene.add(instanceModel(models.hedge.scene, hedgeMatrices, { castShadow: false }));
+  scene.add(instanceModel(models.bush.scene, bushMatrices, { castShadow: false }));
 
   // Colliders: one long box per side, split around the gate.
   const hy = H / 2 + 0.5;

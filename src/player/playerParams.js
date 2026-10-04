@@ -10,7 +10,7 @@ export const DEFAULT_PLAYER_PARAMS = {
   headBobRate: 1.9, // steps per metre travelled
   interactRange: 3.2, // metres
   dismountSpeed: 1.4, // m/s, roughly walking pace
-  rideYawLimit: 110, // degrees either side when seated
+  rideYawLimit: 160, // degrees either side when seated, enough to look back at a passenger
   ridePitchUp: 60,
   ridePitchDown: 65,
   rideCameraShake: 1.0, // multiplier on the vibration camera output
