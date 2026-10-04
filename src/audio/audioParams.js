@@ -1,32 +1,64 @@
+// Engine sound tuning. Everything here is sent to the AudioWorklet synth
+// (engineWorklet.js) each frame. Ranges are [min, max, step].
+
 export const DEFAULT_AUDIO_PARAMS = {
   masterVolume: 0.8,
   muted: false,
-  latency: 0.04, // seconds between the simulation and the sound, to schedule pulses evenly
+  latency: 0.05, // seconds between the simulation and the sound, so pulses can be placed exactly
 
-  // Exhaust pulses
-  pulseVolume: 0.55,
-  pitchBase: 0.75, // playback rate of the thump sample at 0 rpm
-  pitchRpmScale: 0.11, // extra playback rate per 1000 rpm
-  pitchJitter: 0.35, // pitch variation per pulse at full roughness
-  volumeJitter: 0.5, // loudness variation per pulse at full roughness
-  decayFraction: 0.18, // decay time constant of each thump, as a fraction of one engine cycle
-  maxDecay: 0.06, // seconds, cap on the ring at low rpm
-  throttleLoudness: 0.6, // extra loudness with the throttle open
-  drive: 2.2, // soft clipping, adds grit
-  filterBase: 500, // Hz, exhaust low-pass at idle
-  filterRpm: 0.35, // Hz per rpm
-  filterThrottle: 1800, // Hz added at full throttle
+  // Combustion pulses
+  exhaustVolume: 0.9,
+  pulseBase: 0.45, // pulse pressure at closed throttle
+  throttlePressure: 0.7, // extra pressure at full throttle
+  blowdownMs: 2.6, // sharpness of the bang as the exhaust valve opens
+  turbulence: 0.35, // hiss in each pulse
+  turbulenceThrottle: 1.5, // extra rasp at full throttle
+  combustionJitter: 0.18, // random pulse-to-pulse strength variation, always present
+  densityRefRpm: 1200, // pulses at or below this rpm play at full strength
+  densityComp: 0.55, // how much each pulse is scaled down as revs rise (0 = not at all)
 
-  // Mechanical and intake noise
-  mechVolume: 0.06,
-  intakeVolume: 0.08,
+  // Exhaust pipe (resonates at odd multiples of 343 / (4 x length) Hz)
+  pipeLength: 1.15, // metres
+  pipeReflection: 0.72, // how much bounces back from the open end
+  pipeDamping: 0.45, // 0..1, higher keeps more top end in the reflections
+
+  // Silencer
+  mufflerDirect: 0.55,
+  mufflerFreqA: 165, // Hz, the body's boom
+  mufflerQA: 2.2,
+  mufflerGainA: 1.4,
+  mufflerFreqB: 480,
+  mufflerQB: 3,
+  mufflerGainB: 0.6,
+  toneBase: 700, // Hz low-pass at idle
+  toneRpm: 0.25, // extra Hz per rpm
+  toneThrottle: 2200, // extra Hz at full throttle
+
+  // Overrun pops on a closed throttle
+  popChance: 0.12,
+  popMinRpm: 2800,
+  popVolume: 0.5,
+
+  // Mechanical
+  mechVolume: 0.012, // valvetrain and piston clatter
+  intakeVolume: 0.12,
+  intakeFreq: 420,
+  valveTickVolume: 0.05,
+  gearWhineVolume: 0.006,
+  gearTeeth: 23,
 
   // Starter motor
-  starterVolume: 0.22,
-  starterBaseHz: 150,
-  starterRpmHz: 0.55, // whine Hz per crank rpm
+  starterVolume: 0.5,
+  starterRatio: 18, // motor turns per crank turn
+  commutatorSegments: 8,
+  starterGearTeeth: 48, // ring gear teeth, sets the mesh rattle rate
+  starterBrush: 0.2,
+  starterMesh: 0.25,
+  starterDip: 0.45, // extra audible slowdown on each compression stroke
+  solenoidVolume: 0.5,
 
   coughVolume: 0.9,
+  drive: 1.8, // final soft clipping
   ambientVolume: 0.05,
 
   // Positional
@@ -36,25 +68,48 @@ export const DEFAULT_AUDIO_PARAMS = {
 
 export const AUDIO_PARAM_RANGES = {
   masterVolume: [0, 2, 0.01],
-  latency: [0.01, 0.2, 0.005],
-  pulseVolume: [0, 2, 0.01],
-  pitchBase: [0.2, 2, 0.01],
-  pitchRpmScale: [0, 0.5, 0.005],
-  pitchJitter: [0, 1, 0.01],
-  volumeJitter: [0, 1, 0.01],
-  decayFraction: [0.03, 0.6, 0.01],
-  maxDecay: [0.01, 0.2, 0.005],
-  throttleLoudness: [0, 2, 0.01],
-  drive: [0.5, 8, 0.1],
-  filterBase: [100, 3000, 10],
-  filterRpm: [0, 1.5, 0.01],
-  filterThrottle: [0, 6000, 50],
-  mechVolume: [0, 0.5, 0.005],
-  intakeVolume: [0, 0.5, 0.005],
-  starterVolume: [0, 1, 0.01],
-  starterBaseHz: [40, 600, 5],
-  starterRpmHz: [0, 3, 0.05],
+  latency: [0.02, 0.2, 0.005],
+  exhaustVolume: [0, 3, 0.01],
+  pulseBase: [0, 2, 0.01],
+  throttlePressure: [0, 3, 0.01],
+  blowdownMs: [0.2, 8, 0.05],
+  turbulence: [0, 2, 0.01],
+  turbulenceThrottle: [0, 5, 0.05],
+  combustionJitter: [0, 1, 0.01],
+  densityRefRpm: [300, 4000, 10],
+  densityComp: [0, 1.5, 0.01],
+  pipeLength: [0.3, 3, 0.01],
+  pipeReflection: [0, 0.95, 0.01],
+  pipeDamping: [0.05, 1, 0.01],
+  mufflerDirect: [0, 2, 0.01],
+  mufflerFreqA: [40, 600, 1],
+  mufflerQA: [0.3, 10, 0.1],
+  mufflerGainA: [0, 4, 0.01],
+  mufflerFreqB: [100, 3000, 5],
+  mufflerQB: [0.3, 10, 0.1],
+  mufflerGainB: [0, 4, 0.01],
+  toneBase: [100, 6000, 10],
+  toneRpm: [0, 2, 0.01],
+  toneThrottle: [0, 10000, 50],
+  popChance: [0, 1, 0.01],
+  popMinRpm: [1000, 8000, 50],
+  popVolume: [0, 2, 0.01],
+  mechVolume: [0, 0.2, 0.001],
+  intakeVolume: [0, 1, 0.005],
+  intakeFreq: [100, 2000, 10],
+  valveTickVolume: [0, 0.5, 0.005],
+  gearWhineVolume: [0, 0.1, 0.001],
+  gearTeeth: [5, 60, 1],
+  starterVolume: [0, 2, 0.01],
+  starterRatio: [4, 30, 0.5],
+  commutatorSegments: [2, 24, 1],
+  starterGearTeeth: [10, 120, 1],
+  starterBrush: [0, 2, 0.01],
+  starterMesh: [0, 2, 0.01],
+  starterDip: [0, 1, 0.01],
+  solenoidVolume: [0, 2, 0.01],
   coughVolume: [0, 2, 0.01],
+  drive: [0.5, 6, 0.05],
   ambientVolume: [0, 0.5, 0.005],
   refDistance: [0.5, 20, 0.1],
   rolloff: [0, 4, 0.05],

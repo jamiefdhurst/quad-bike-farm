@@ -109,6 +109,8 @@ tests/engine.test.js   engine state machine tests
 
 **Drivetrain** (`src/vehicle/drivetrain.js`). An automatic: centrifugal clutch into a CVT. It turns engine rpm and power into drive force, and puts braking load back on the engine while the clutch is locked to a moving bike.
 
+**Engine sound** (`src/audio/engineWorklet.js`). An AudioWorklet synth. Each firing pulse is a pressure kick into a simulated exhaust pipe and silencer with fixed resonances, so revs change the pulse rate rather than shifting the whole sound up. The starter motor, intake, valve tick and overrun pops are synthesised alongside. Every value is in the Audio folder of the tuning panel.
+
 **Vibration** (`src/vibration/vibrationModel.js`). Each firing pulse kicks a set of damped oscillators (body heave, pitch and roll, handlebars, rider's head) in a slightly random direction. Kicks are strongest at idle and with a rough engine, and fade as rpm rises. The bike body, handlebars, seated camera and anything sitting on the bike all move with it.
 
 **Companion** (`src/npc/companion.js`). A small state machine (idle, walking, mounting, seated, dismounting). Requests are methods, and `getActions()` decides which ones the menu shows. To add a new request, add a method and an entry in `getActions()`, plus a state if it needs one.

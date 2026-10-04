@@ -43,3 +43,12 @@ A running log of choices made while building this, so later work starts from the
 - Engine behaviour is covered by Vitest (`tests/engine.test.js`), checked across 100 seeds for flakiness.
 - The rest was checked in headless Chrome via puppeteer during development: a full autopilot lap with her on the pillion (no tipping, no stalls), a cold start through real key and wheel events, mounting and dismounting, the menu, and audio pulse rate against rpm via an analyser node. These scripts were throwaway and aren't in the repo.
 - `?cam=x,y,z,yawDeg,pitchDeg` in the URL pins the camera for screenshots, and `window.game` is exposed in dev builds only.
+
+## Engine audio, second pass (2026-10-04)
+
+- Replaced per-pulse sample playback with an AudioWorklet synth (`src/audio/engineWorklet.js`). The old approach pitch-shifted one thump sample with rpm, which sounded like a sped-up recording at high revs.
+- The new model: each firing pulse is a pressure kick (sharp blowdown, then falling flow for about a third of the cycle) into a delay-line exhaust pipe with an inverting open-end reflection, then two fixed silencer resonances and a load-dependent tone filter. Rising revs mean faster pulses through fixed resonances, as in a real engine.
+- Pulses are scaled down as revs rise (`densityComp`) so overlapping pulses don't run away into clipping. Full throttle ends up about three times idle loudness.
+- Every pulse varies a little in strength (`combustionJitter`) even when warm, to avoid a synthetic perfectly periodic buzz.
+- Starter: the engine model now slows the crank before each compression stroke and surges after it. The worklet's starter is armature whine with commutator ripple, brush hiss and gear-mesh rattle, following that speed, plus a solenoid clunk.
+- Tuned by rendering timelines offline (OfflineAudioContext in headless Chrome) and reading spectrograms, not by ear. Judging by ear is still to do.

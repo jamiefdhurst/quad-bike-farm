@@ -8,7 +8,9 @@ export const DEFAULT_ENGINE_PARAMS = {
   idleRpmWarm: 1150, // steady idle, warm, no choke
   stallRpm: 350, // below this the engine dies
   crankRpm: 320, // starter motor speed
-  crankSpinUpRate: 6, // 1/s, how fast the starter reaches crank speed
+  crankSpinUpRate: 25, // 1/s, how quickly crank speed follows the starter (spin-up and compression dips)
+  crankCompressionDip: 0.55, // fraction of crank speed lost heaving the piston over compression
+  crankDipWidth: 0.08, // width of that slowdown, as a fraction of the cycle
   catchRpm: 1500, // rpm the engine jumps to when it fires up
   spinDownRate: 2.5, // 1/s, exponential spin-down when not running
   spinDownFriction: 250, // rpm/s, extra linear friction during spin-down
@@ -87,7 +89,9 @@ export const ENGINE_PARAM_RANGES = {
   idleRpmWarm: [800, 2500, 10],
   stallRpm: [200, 1200, 10],
   crankRpm: [100, 600, 10],
-  crankSpinUpRate: [1, 20, 0.5],
+  crankSpinUpRate: [1, 60, 0.5],
+  crankCompressionDip: [0, 0.9, 0.01],
+  crankDipWidth: [0.01, 0.3, 0.005],
   catchRpm: [800, 3000, 10],
   spinDownRate: [0.5, 10, 0.1],
   spinDownFriction: [0, 1000, 10],

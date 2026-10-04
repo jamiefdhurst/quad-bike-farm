@@ -200,7 +200,11 @@ export class EngineModel {
 
   stepCranking(h) {
     const p = this.params;
-    this.rpm += (p.crankRpm - this.rpm) * Math.min(1, p.crankSpinUpRate * h);
+    // The starter labours just before each compression stroke (the cycle wraps
+    // at 1), then surges once it's over the top, so cranking is uneven.
+    const toCompression = this.cyclePhase - 0.92;
+    const dip = p.crankCompressionDip * Math.exp(-((toCompression / p.crankDipWidth) ** 2));
+    this.rpm += (p.crankRpm * (1 - dip) - this.rpm) * Math.min(1, p.crankSpinUpRate * h);
     // Cranking rich floods it; cranking with the throttle open blows it clear.
     this.fouling += (this.rich * p.crankFoulRate - this.throttle * p.crankClearRate) * h;
 

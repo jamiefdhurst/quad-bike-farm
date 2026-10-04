@@ -1,0 +1,360 @@
+// AudioWorklet engine synthesiser. Runs on the audio thread, so it must stay
+// self-contained (no imports).
+//
+// Signal path, loosely modelled on a real single:
+//
+//   exhaust pulses ─┐
+//   overrun pops ───┼─▶ exhaust pipe (delay-line resonator) ─▶ silencer resonances ─▶ tone ─▶ ┐
+//   compression ────┘                                                                         ├─▶ soft clip ─▶ out
+//   intake honk, valve tick, gear whine ─────────────────────────────────────────────────────┤
+//   starter motor, solenoid, relay clicks ───────────────────────────────────────────────────┘
+//
+// The pipe and silencer resonate at fixed frequencies whatever the rpm. As
+// revs rise the pulses arrive faster but excite the same resonances, which is
+// what makes it sound like an engine rather than a sped-up recording.
+
+const TWO_PI = Math.PI * 2;
+
+class Biquad {
+  constructor() {
+    this.b0 = 1;
+    this.b1 = 0;
+    this.b2 = 0;
+    this.a1 = 0;
+    this.a2 = 0;
+    this.x1 = this.x2 = this.y1 = this.y2 = 0;
+  }
+
+  set(type, freq, q, sr) {
+    const w = (TWO_PI * Math.min(freq, sr * 0.45)) / sr;
+    const cos = Math.cos(w);
+    const alpha = Math.sin(w) / (2 * q);
+    let b0, b1, b2;
+    const a0 = 1 + alpha;
+    if (type === 'lowpass') {
+      b0 = (1 - cos) / 2;
+      b1 = 1 - cos;
+      b2 = (1 - cos) / 2;
+    } else if (type === 'highpass') {
+      b0 = (1 + cos) / 2;
+      b1 = -(1 + cos);
+      b2 = (1 + cos) / 2;
+    } else {
+      // Band-pass with 0 dB peak.
+      b0 = alpha;
+      b1 = 0;
+      b2 = -alpha;
+    }
+    this.b0 = b0 / a0;
+    this.b1 = b1 / a0;
+    this.b2 = b2 / a0;
+    this.a1 = (-2 * cos) / a0;
+    this.a2 = (1 - alpha) / a0;
+  }
+
+  run(x) {
+    const y = this.b0 * x + this.b1 * this.x1 + this.b2 * this.x2 - this.a1 * this.y1 - this.a2 * this.y2;
+    this.x2 = this.x1;
+    this.x1 = x;
+    this.y2 = this.y1;
+    this.y1 = y;
+    return y;
+  }
+}
+
+class EngineProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.p = null;
+    this.queue = []; // scheduled events, sorted by sample time
+    this.active = []; // sounding exhaust events
+    this.state = { rpm: 0, throttle: 0, roughness: 0, running: false, cranking: false };
+    this.rpm = 0;
+    this.throttle = 0;
+
+    // Exhaust pipe: feedback delay line.
+    this.pipe = new Float32Array(8192);
+    this.pipeIdx = 0;
+    this.pipeLp = 0;
+
+    this.muffA = new Biquad();
+    this.muffB = new Biquad();
+    this.tone = new Biquad();
+    this.dcBlock = new Biquad();
+    this.intakeBp = new Biquad();
+    this.tickHp = new Biquad();
+    this.brushBp = new Biquad();
+    this.gearBp = new Biquad();
+    this.dcBlock.set('highpass', 28, 0.7, sampleRate);
+    this.tickHp.set('highpass', 3500, 0.7, sampleRate);
+    this.brushBp.set('bandpass', 3200, 2.5, sampleRate);
+    this.gearBp.set('bandpass', 1300, 2.5, sampleRate);
+    this.clatterBp = new Biquad();
+    this.clatterBp.set('bandpass', 2200, 0.8, sampleRate);
+
+    this.gearPhase = 0;
+    this.starterPhase = 0;
+    this.crankPhase = 0;
+    this.starterGain = 0;
+    this.starterSpeed = 0; // crank rpm as the starter sees it
+    this.starterDip = 0;
+    this.blockCount = 0;
+
+    this.port.onmessage = (e) => this.onMessage(e.data);
+  }
+
+  onMessage(msg) {
+    if (msg.params) {
+      this.p = msg.params;
+      this.updateFilters();
+    }
+    if (msg.state) this.state = msg.state;
+    if (msg.events) {
+      for (const ev of msg.events) {
+        ev.sample = Math.max(currentFrame, Math.round(ev.time * sampleRate));
+        this.queue.push(ev);
+      }
+      this.queue.sort((a, b) => a.sample - b.sample);
+    }
+  }
+
+  updateFilters() {
+    const p = this.p;
+    this.muffA.set('bandpass', p.mufflerFreqA, p.mufflerQA, sampleRate);
+    this.muffB.set('bandpass', p.mufflerFreqB, p.mufflerQB, sampleRate);
+    this.intakeBp.set('bandpass', p.intakeFreq, 1.6, sampleRate);
+  }
+
+  // Event handling -----------------------------------------------------------
+
+  trigger(ev) {
+    const p = this.p;
+    const sr = sampleRate;
+    const rpm = Math.max(this.rpm, 150);
+    const cycle = (120 / rpm) * sr; // samples per four-stroke cycle
+    const throttle = this.throttle;
+    // Pulses overlap more as revs rise; scale each one down so loudness grows
+    // with revs and throttle without the sum running away.
+    const density = Math.min(1, Math.pow(p.densityRefRpm / rpm, p.densityComp));
+    const pressure = (p.pulseBase + p.throttlePressure * throttle) * density;
+    switch (ev.type) {
+      case 'state':
+        // Timed control changes, used for offline rendering.
+        this.state = ev.state;
+        break;
+      case 'fire':
+      case 'sputter': {
+        // No two combustion events are quite the same, even in a healthy engine.
+        const vary = 1 + (Math.random() - 0.5) * p.combustionJitter;
+        const amp = ev.strength * pressure * vary * (ev.type === 'sputter' ? 0.6 : 1);
+        // Harder pulses under load rasp more.
+        this.addExhaust(amp, cycle, 1, p.turbulence * (1 + p.turbulenceThrottle * throttle));
+        // Intake honk half a cycle later, and valve ticks.
+        this.addIntake(amp, cycle * 0.5);
+        this.addTick(cycle * 0.27);
+        this.addTick(cycle * 0.73);
+        // Unburnt fuel popping in the pipe on a closed throttle at high revs.
+        if (throttle < 0.05 && this.rpm > p.popMinRpm && Math.random() < p.popChance * (this.rpm / 8000)) {
+          this.active.push({ kind: 'pop', age: -Math.round((0.006 + Math.random() * 0.02) * sr), amp: p.popVolume * (0.5 + Math.random()) });
+        }
+        break;
+      }
+      case 'misfire':
+        this.addExhaust(0.12 * pressure, cycle, 0.3, p.turbulence * 2);
+        if (Math.random() < p.popChance * 2) this.active.push({ kind: 'pop', age: -Math.round(0.01 * sr), amp: p.popVolume * 0.6 });
+        break;
+      case 'compression':
+        // Air pushed through with no combustion: a breathy whoosh.
+        this.addExhaust(ev.strength * 0.35, cycle, 0.15, 3);
+        if (this.state.cranking) this.starterDip = 1;
+        break;
+      case 'cough':
+        this.addExhaust(ev.strength, (120 / 500) * sr, 1, p.turbulence * 1.6);
+        break;
+      case 'starterOn':
+        this.active.push({ kind: 'clunk', age: 0, amp: p.solenoidVolume });
+        break;
+      case 'starterOff':
+      case 'ignitionOn':
+      case 'ignitionOff':
+        this.active.push({ kind: 'click', age: 0, amp: p.solenoidVolume * 0.45 });
+        if (ev.type === 'ignitionOn') this.active.push({ kind: 'pump', age: 0, amp: 0.012 });
+        break;
+      default:
+    }
+  }
+
+  addExhaust(amp, cycleSamples, blow, turbulence) {
+    const sr = sampleRate;
+    // The exhaust valve is open for roughly a third of the cycle.
+    const open = Math.min(cycleSamples * 0.33, 0.06 * sr);
+    this.active.push({ kind: 'exhaust', age: 0, amp, open, blow, turbulence, life: Math.max(open, 0.012 * sr) });
+  }
+
+  addIntake(amp, delay) {
+    this.active.push({ kind: 'intake', age: -Math.round(delay), amp: amp * this.p.intakeVolume * (0.25 + this.throttle) });
+  }
+
+  addTick(delay) {
+    this.active.push({ kind: 'tick', age: -Math.round(delay), amp: this.p.valveTickVolume });
+  }
+
+  // Synthesis ----------------------------------------------------------------
+
+  process(_inputs, outputs) {
+    const out = outputs[0][0];
+    if (!out) return true;
+    const p = this.p;
+    if (!p) {
+      out.fill(0);
+      return true;
+    }
+    const sr = sampleRate;
+    const n = out.length;
+    const st = this.state;
+
+    // Smooth control values once per block.
+    this.rpm += (st.rpm - this.rpm) * 0.25;
+    this.throttle += (st.throttle - this.throttle) * 0.2;
+    const rpmNorm = Math.min(1, this.rpm / 8500);
+    if ((this.blockCount++ & 7) === 0) {
+      this.tone.set('lowpass', p.toneBase + p.toneRpm * this.rpm + p.toneThrottle * this.throttle, 0.75, sr);
+    }
+
+    const pipeDelay = Math.min(8000, Math.max(8, Math.round(((2 * p.pipeLength) / 343) * sr)));
+    const reflection = -p.pipeReflection;
+    const damp = p.pipeDamping;
+    const blowRise = 0.0004 * sr;
+    const blowTau = p.blowdownMs * 0.001 * sr;
+    const gearHz = (this.rpm / 60) * p.gearTeeth;
+    const gearAmp = st.running ? p.gearWhineVolume * rpmNorm : 0;
+
+    // Starter target: follows the engine's crank speed, sagging after each compression stroke.
+    const starterTarget = st.cranking ? 1 : 0;
+    const crankRpm = st.cranking ? st.rpm : 0;
+
+    for (let i = 0; i < n; i++) {
+      const frame = currentFrame + i;
+      while (this.queue.length && this.queue[0].sample <= frame) this.trigger(this.queue.shift());
+
+      // Exhaust excitation and the extras.
+      let exc = 0;
+      let dry = 0;
+      for (let k = this.active.length - 1; k >= 0; k--) {
+        const e = this.active[k];
+        const a = e.age++;
+        if (a < 0) continue;
+        let v = 0;
+        let done = false;
+        switch (e.kind) {
+          case 'exhaust': {
+            // Sharp blowdown as the valve cracks open, then a falling flow.
+            const blow = (1 - Math.exp(-a / blowRise)) * Math.exp(-a / blowTau);
+            const t = a / e.open;
+            const flow = t < 1 ? (1 - t) * (1 - t) * 0.35 : 0;
+            const noise = Math.random() * 2 - 1;
+            v = e.amp * (e.blow * blow + flow + noise * e.turbulence * (0.5 * blow + flow) * 0.5);
+            exc += v;
+            done = a > e.life && a > 8 * blowTau;
+            break;
+          }
+          case 'pop': {
+            const env = Math.exp(-a / (0.003 * sr));
+            exc += e.amp * (Math.random() * 2 - 1) * env * 2 + e.amp * env;
+            done = a > 0.03 * sr;
+            break;
+          }
+          case 'intake': {
+            const env = Math.exp(-a / (0.006 * sr));
+            this.intakeIn = (this.intakeIn || 0) + (Math.random() * 2 - 1) * e.amp * env;
+            done = a > 0.04 * sr;
+            break;
+          }
+          case 'tick': {
+            const env = Math.exp(-a / (0.00025 * sr));
+            this.tickIn = (this.tickIn || 0) + (Math.random() * 2 - 1) * e.amp * env;
+            done = a > 0.004 * sr;
+            break;
+          }
+          case 'clunk': {
+            const env = Math.exp(-a / (0.035 * sr));
+            dry += e.amp * (Math.sin((TWO_PI * 85 * a) / sr) * env + (a < 0.003 * sr ? (Math.random() * 2 - 1) * 0.6 : 0));
+            done = a > 0.25 * sr;
+            break;
+          }
+          case 'click': {
+            const env = Math.exp(-a / (0.0015 * sr));
+            dry += e.amp * (Math.random() * 2 - 1) * env;
+            done = a > 0.02 * sr;
+            break;
+          }
+          case 'pump': {
+            const env = Math.min(1, a / (0.04 * sr)) * (a < 0.7 * sr ? 1 : Math.max(0, 1 - (a - 0.7 * sr) / (0.2 * sr)));
+            dry += e.amp * env * (Math.sin((TWO_PI * 1450 * a) / sr) + 0.3 * (Math.random() * 2 - 1));
+            done = a > 0.9 * sr;
+            break;
+          }
+          default:
+            done = true;
+        }
+        if (done) this.active.splice(k, 1);
+      }
+
+      // Exhaust pipe: what comes back from the open end, inverted and dulled.
+      const idx = this.pipeIdx;
+      const back = this.pipe[(idx - pipeDelay + 8192) & 8191];
+      this.pipeLp += damp * (back - this.pipeLp);
+      const pipeOut = exc + reflection * this.pipeLp;
+      this.pipe[idx] = pipeOut;
+      this.pipeIdx = (idx + 1) & 8191;
+
+      // Silencer: two fixed resonances blended with the pipe sound, then a load-dependent tone filter.
+      const silenced =
+        pipeOut * p.mufflerDirect + this.muffA.run(pipeOut) * p.mufflerGainA + this.muffB.run(pipeOut) * p.mufflerGainB;
+      let s = this.tone.run(silenced) * p.exhaustVolume;
+
+      // Intake honk and valve ticks.
+      s += this.intakeBp.run(this.intakeIn || 0);
+      s += this.tickHp.run(this.tickIn || 0);
+      this.intakeIn = 0;
+      this.tickIn = 0;
+
+      // Mechanical clatter bed: valvetrain and piston noise, louder with revs.
+      if (st.running) s += this.clatterBp.run(Math.random() * 2 - 1) * p.mechVolume * (0.3 + rpmNorm);
+
+      // Primary gear whine, faint.
+      this.gearPhase += (TWO_PI * gearHz) / sr;
+      if (this.gearPhase > TWO_PI) this.gearPhase -= TWO_PI;
+      s += Math.sin(this.gearPhase) * gearAmp;
+
+      // Starter motor.
+      this.starterGain += (starterTarget - this.starterGain) * (starterTarget ? 0.0015 : 0.0004);
+      this.starterDip *= 1 - 1 / (0.09 * sr);
+      const targetSpeed = crankRpm > 0 ? crankRpm * (1 - p.starterDip * this.starterDip) : 0;
+      this.starterSpeed += (targetSpeed - this.starterSpeed) * (targetSpeed > this.starterSpeed ? 0.0008 : 0.0002);
+      if (this.starterGain > 0.0005) {
+        const motorHz = (this.starterSpeed / 60) * p.starterRatio;
+        this.starterPhase += (TWO_PI * motorHz) / sr;
+        if (this.starterPhase > TWO_PI * 1000) this.starterPhase -= TWO_PI * 1000;
+        this.crankPhase += (TWO_PI * (this.starterSpeed / 60) * p.starterGearTeeth) / sr;
+        if (this.crankPhase > TWO_PI * 1000) this.crankPhase -= TWO_PI * 1000;
+        const ph = this.starterPhase;
+        // Armature whine with commutator ripple, brush hiss and gear mesh rattle.
+        const whine =
+          (Math.sin(ph) * 0.5 + Math.sin(2 * ph) * 0.3 + Math.sin(3 * ph) * 0.18 + Math.sin(7 * ph) * 0.1) *
+          (1 + 0.4 * Math.sin(p.commutatorSegments * ph));
+        const brush = this.brushBp.run(Math.random() * 2 - 1) * p.starterBrush;
+        const mesh = this.gearBp.run((Math.random() * 2 - 1) * (0.5 + 0.5 * Math.sin(this.crankPhase))) * p.starterMesh;
+        const speedNorm = Math.min(1.2, this.starterSpeed / 300);
+        s += this.starterGain * p.starterVolume * (whine * 0.35 * speedNorm + brush * speedNorm + mesh);
+      }
+
+      s += dry;
+      s = this.dcBlock.run(s);
+      out[i] = Math.tanh(s * p.drive) / Math.max(1, Math.tanh(p.drive));
+    }
+    return true;
+  }
+}
+
+registerProcessor('engine-processor', EngineProcessor);
