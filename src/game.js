@@ -13,7 +13,10 @@ import { VibrationModel } from './vibration/vibrationModel.js';
 import { DEFAULT_VIBRATION_PARAMS, VIBRATION_PARAM_RANGES } from './vibration/vibrationParams.js';
 import { EngineAudio } from './audio/engineAudio.js';
 import { DEFAULT_AUDIO_PARAMS, AUDIO_PARAM_RANGES } from './audio/audioParams.js';
+import { Companion } from './npc/companion.js';
+import { DEFAULT_COMPANION_PARAMS, COMPANION_PARAM_RANGES } from './npc/companionParams.js';
 import { Interaction } from './interaction/interaction.js';
+import { Menu } from './interaction/menu.js';
 import { Hud } from './hud/hud.js';
 
 const FIXED_DT = 1 / 60;
@@ -42,6 +45,7 @@ export class Game {
     this.input = new Input(canvas);
     this.hud = new Hud(document.getElementById('hud'));
     this.interaction = new Interaction();
+    this.menu = new Menu(document.getElementById('hud'));
     this.timer = new THREE.Timer();
     this.accumulator = 0;
 
@@ -84,6 +88,21 @@ export class Game {
     this.audio = new EngineAudio({ ...DEFAULT_AUDIO_PARAMS });
     this.input.on('firstinteraction', () => this.audio.unlock());
 
+    this.companion = new Companion({
+      scene: this.scene,
+      physics: this.physics,
+      RAPIER: this.RAPIER,
+      world: this.world,
+      quad: this.quad,
+      gltf: this.models.companion,
+      params: { ...DEFAULT_COMPANION_PARAMS },
+    });
+    this.interaction.add({
+      target: this.companion.proxy,
+      prompt: () => 'Talk to her',
+      interact: () => this.openCompanionMenu(),
+    });
+
     this.interaction.add({
       target: this.quad.proxy,
       prompt: () => (this.quad.isTipped ? 'Right the quad' : 'Ride the quad'),
@@ -95,6 +114,7 @@ export class Game {
     registerTuning('Audio', this.audio.params, AUDIO_PARAM_RANGES);
     registerTuning('Vehicle', this.quad.params, VEHICLE_PARAM_RANGES);
     registerTuning('Player', this.player.params, PLAYER_PARAM_RANGES);
+    registerTuning('Companion', this.companion.params, COMPANION_PARAM_RANGES);
 
     this.applyDebugCamera();
     if (import.meta.env.DEV) window.game = this;
@@ -116,8 +136,30 @@ export class Game {
       this.audio.unlock();
       this.input.requestPointerLock();
     });
-    this.input.on('lockchange', (locked) => overlay.classList.toggle('hidden', locked));
+    this.input.on('lockchange', (locked) => {
+      overlay.classList.toggle('hidden', locked);
+      if (!locked) this.closeMenu();
+    });
     this.renderer.setAnimationLoop(() => this.frame());
+  }
+
+  // Companion menu ---------------------------------------------------------
+
+  openCompanionMenu() {
+    const actions = this.companion.getActions();
+    if (!actions.length) {
+      this.hud.toast('She\'s busy');
+      return;
+    }
+    this.menu.open('Ask her to', actions);
+    this.player.lookEnabled = false;
+    this.player.moveEnabled = false;
+  }
+
+  closeMenu() {
+    if (this.menu.isOpen) this.menu.close();
+    this.player.lookEnabled = true;
+    this.player.moveEnabled = true;
   }
 
   // Riding ---------------------------------------------------------------
@@ -190,6 +232,9 @@ export class Game {
       this.quad.handleFrameInput();
       if (input.wasPressed('KeyE')) this.tryDismount();
       this.interaction.clear();
+    } else if (this.menu.isOpen) {
+      this.menu.handleInput(input);
+      if (!this.menu.isOpen) this.closeMenu();
     } else {
       input.takeWheelSteps();
       const focused = this.interaction.update(this.player, this.player.params.interactRange);
@@ -206,6 +251,7 @@ export class Game {
     this.engine.update(dt, this.quad.engineControls());
     this.vibration.update(dt, this.engine);
     this.quad.update(dt, alpha, this.vibration);
+    this.companion.update(dt, this.vibration);
     if (!this.debugCamera) this.player.update(dt, alpha, this.vibration);
     this.audio.update(dt, this.engine, this.quad.position, this.camera);
     this.world.update(dt, this.player.isRiding ? this.quad.position : this.player.position, this.camera);
