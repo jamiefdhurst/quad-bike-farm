@@ -9,7 +9,7 @@ import { Player, PLAYER_CAPSULE } from './player/player.js';
 import { DEFAULT_PLAYER_PARAMS, PLAYER_PARAM_RANGES } from './player/playerParams.js';
 import { QuadUnit } from './vehicle/quadUnit.js';
 import { QUAD_SPECS } from './vehicle/quadSpecs.js';
-import { applyIdleOffset, IDLE_VARIATION_RPM } from './vehicle/idleVariation.js';
+import { applyIdle, pickIdle } from './vehicle/idleVariation.js';
 import { AudioHub } from './audio/engineAudio.js';
 import { DEFAULT_SOUND_PARAMS, SOUND_PARAM_RANGES } from './audio/audioParams.js';
 import { Companion } from './npc/companion.js';
@@ -97,10 +97,10 @@ export class Game {
           audioHub: this.audioHub,
         }),
     );
-    // Each quad idles a little differently every game (same seed, same idles).
+    // Each quad idles differently every game, within its spec's idleRange (same seed, same idles).
     for (const unit of this.units) {
-      const offset = (random() * 2 - 1) * IDLE_VARIATION_RPM;
-      unit.idleRpm = applyIdleOffset(unit.engine.params, unit.quad.params, offset);
+      const range = unit.spec.idleRange ?? [unit.engine.params.idleRpmWarm, unit.engine.params.idleRpmWarm];
+      unit.idleRpm = applyIdle(unit.engine.params, unit.quad.params, pickIdle(range, random));
     }
     console.info(`Warm idles: ${this.units.map((u) => `${u.name} ${u.idleRpm}`).join(', ')}`);
     this.updateSmokeScale();
@@ -409,7 +409,7 @@ export class Game {
       this.hud.setStatus(
         [
           unit.name,
-          `Engine   ${e.state}${e.state === 'stalled' ? stalledNote : ''}`,
+          `Engine   ${e.state}${e.state === 'stalled' ? stalledNote : ''}   (warm idle ${unit.idleRpm} rpm)`,
           `Temp     ${'▮'.repeat(bars)}${'▯'.repeat(10 - bars)}`,
           `Fuel     ${'▮'.repeat(fuelBars)}${'▯'.repeat(10 - fuelBars)}  ${quad.fuel.litres.toFixed(1)} L, tap ${quad.fuel.tap.toUpperCase()}`,
           `Choke    ${Math.round(quad.choke * 100)}%`,

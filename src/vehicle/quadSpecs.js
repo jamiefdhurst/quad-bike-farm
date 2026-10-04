@@ -1,6 +1,11 @@
-// The quads on the farm. Each spec overrides the default parameters so the two
+// The quads on the farm. Each spec overrides the default parameters so the
 // bikes feel related but not identical. Spawn points come from LAYOUT.spawn.quads,
 // in the same order.
+//
+// idleRange: [min, max] warm idle in rpm. Each game the idle is picked evenly at
+// random in this range (from the layout seed, so ?seed=N repeats it). Keep the
+// minimum at or above about 650 (red), 950 (blue) and 1,300 (yellow): lower than
+// that and a warm engine can stall under hard braking.
 
 export const QUAD_SPECS = [
   {
@@ -11,6 +16,7 @@ export const QUAD_SPECS = [
     bodyColor: 0xa8271f,
     style: 'utility',
     dashStyle: 'classic',
+    idleRange: [650, 1650],
     fuel: { startLitres: 7 }, // about 60% of a 12 litre tank
     engine: {},
     vehicle: {},
@@ -28,6 +34,7 @@ export const QUAD_SPECS = [
     bodyColor: 0x1d4fa3,
     style: 'utility2',
     dashStyle: 'modern',
+    idleRange: [950, 1950],
     fuel: { tankCapacity: 11, reserveLitres: 1.8, startLitres: 2.8 }, // about 25%, close to reserve
     engine: {
       idleRpmWarm: 1450,
@@ -76,6 +83,7 @@ export const QUAD_SPECS = [
     bodyColor: 0xe9c21b,
     style: 'sport',
     dashStyle: 'sport',
+    idleRange: [1300, 2300],
     fuel: { tankCapacity: 9, reserveLitres: 1.5, startLitres: 6, burnPerRev: 0.000032 },
     engine: {
       strokes: 2,

@@ -170,7 +170,8 @@ class RecordedEngine {
     // Stretch it to last until the pulse after these is due, plus a little extra
     // so a late pulse crossfades over it instead of finding silence.
     const target = cycle * cycles * (1 + this.overlap);
-    const rate = Math.min(1.5, Math.max(0.65, len / target));
+    // Very low idles need grains stretched further than high revs need them squeezed.
+    const rate = Math.min(1.5, Math.max(0.55, len / target));
     // Crossfade a little longer at higher revs, where the material is denser.
     const xfade = Math.max(0.003 * sampleRate, Math.min(0.007 * sampleRate, cycle * 0.3));
     for (const v of this.voices) {
