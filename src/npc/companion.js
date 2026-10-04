@@ -100,16 +100,16 @@ export class Companion {
     const actions = [];
     const boarding = s.is('seated', 'mounting') || (s.is('walking') && s.data?.goal === 'mount');
     if (boarding) {
-      actions.push({ label: `Stand next to the ${this.quad.label}`, run: () => this.requestStandBeside(this.quad) });
+      actions.push({ kind: 'stand', label: `Stand next to the ${this.quad.label}`, run: () => this.requestStandBeside(this.quad) });
       for (const q of sorted) {
-        if (q !== this.quad && rideable(q)) actions.push({ label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
+        if (q !== this.quad && rideable(q)) actions.push({ kind: 'mount', label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
       }
       return actions;
     }
     if (s.is('dismounting')) return actions;
     for (const q of sorted) {
-      if (rideable(q)) actions.push({ label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
-      if (!this.isStandingBeside(q)) actions.push({ label: `Stand next to the ${q.label}`, run: () => this.requestStandBeside(q) });
+      if (rideable(q)) actions.push({ kind: 'mount', label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
+      if (!this.isStandingBeside(q)) actions.push({ kind: 'stand', label: `Stand next to the ${q.label}`, run: () => this.requestStandBeside(q) });
     }
     return actions;
   }

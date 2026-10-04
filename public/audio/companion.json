@@ -1,0 +1,174 @@
+{
+ "file": "audio/companion.wav",
+ "clips": {
+  "sigh": [
+   {
+    "start": 0.0,
+    "dur": 2.9,
+    "src": "splice"
+   },
+   {
+    "start": 2.95,
+    "dur": 1.6,
+    "src": "splice"
+   },
+   {
+    "start": 4.6,
+    "dur": 1.5,
+    "src": "splice"
+   },
+   {
+    "start": 6.15,
+    "dur": 2.1,
+    "src": "splice"
+   },
+   {
+    "start": 8.3,
+    "dur": 2.1,
+    "src": "splice"
+   },
+   {
+    "start": 10.45,
+    "dur": 1.4,
+    "src": "exasperated"
+   },
+   {
+    "start": 11.9,
+    "dur": 1.15,
+    "src": "girl"
+   },
+   {
+    "start": 13.1,
+    "dur": 0.85,
+    "src": "woman"
+   }
+  ],
+  "hmm": [
+   {
+    "start": 14.0,
+    "dur": 1.0,
+    "src": "hmms"
+   },
+   {
+    "start": 15.05,
+    "dur": 1.15,
+    "src": "hmms"
+   },
+   {
+    "start": 16.25,
+    "dur": 1.0,
+    "src": "hmms"
+   },
+   {
+    "start": 17.3,
+    "dur": 0.75,
+    "src": "hmms"
+   },
+   {
+    "start": 18.1,
+    "dur": 0.94998,
+    "src": "hmms"
+   },
+   {
+    "start": 19.09998,
+    "dur": 1.05,
+    "src": "hmms"
+   },
+   {
+    "start": 20.19998,
+    "dur": 1.05,
+    "src": "hmms"
+   },
+   {
+    "start": 21.29998,
+    "dur": 1.05,
+    "src": "hmms"
+   }
+  ],
+  "laugh": [
+   {
+    "start": 22.39998,
+    "dur": 1.3,
+    "src": "laugh"
+   },
+   {
+    "start": 23.74998,
+    "dur": 1.2,
+    "src": "laugh"
+   },
+   {
+    "start": 24.99998,
+    "dur": 1.45,
+    "src": "laugh"
+   },
+   {
+    "start": 26.49998,
+    "dur": 1.25,
+    "src": "laugh"
+   },
+   {
+    "start": 27.79998,
+    "dur": 1.2,
+    "src": "laugh"
+   },
+   {
+    "start": 29.04998,
+    "dur": 1.19998,
+    "src": "laugh"
+   }
+  ],
+  "yawn": [
+   {
+    "start": 30.29995,
+    "dur": 2.6,
+    "src": "yawn"
+   }
+  ],
+  "hum": [
+   {
+    "start": 32.94995,
+    "dur": 4.15,
+    "src": "hum"
+   },
+   {
+    "start": 37.14995,
+    "dur": 4.1,
+    "src": "hum"
+   },
+   {
+    "start": 41.29995,
+    "dur": 3.85,
+    "src": "hum"
+   },
+   {
+    "start": 45.19995,
+    "dur": 3.75,
+    "src": "hum"
+   },
+   {
+    "start": 48.99995,
+    "dur": 3.6,
+    "src": "hum"
+   },
+   {
+    "start": 52.64995,
+    "dur": 4.0,
+    "src": "hum"
+   }
+  ],
+  "gasp": [
+   {
+    "start": 56.69995,
+    "dur": 0.63,
+    "src": "gasp"
+   }
+  ],
+  "oh": [
+   {
+    "start": 57.37995,
+    "dur": 0.54,
+    "src": "oh"
+   }
+  ]
+ }
+}

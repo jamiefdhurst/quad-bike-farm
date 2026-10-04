@@ -1,4 +1,4 @@
-// DOM overlay: crosshair, interaction prompt, riding status, toasts and the
+// DOM overlay: crosshair, interaction prompt, riding status, toasts, her captions and the
 // controls help panel.
 
 const HELP_HTML = `
@@ -34,6 +34,9 @@ export class Hud {
     this.status = this.el('div', 'status');
     this.toastEl = this.el('div', 'toast');
     this.toastEl.style.opacity = 0;
+    this.captionEl = this.el('div', 'caption');
+    this.captionEl.style.opacity = 0;
+    this.captionTimer = 0;
     this.help = this.el('div', 'help');
     this.help.innerHTML = HELP_HTML;
     this.help.style.display = 'none';
@@ -62,6 +65,13 @@ export class Hud {
     this.toastTimer = seconds;
   }
 
+  /** What she says, at the bottom of the screen. */
+  caption(text, seconds = 3) {
+    this.captionEl.textContent = text;
+    this.captionEl.style.opacity = 1;
+    this.captionTimer = seconds;
+  }
+
   toggleHelp(force) {
     const show = force ?? this.help.style.display === 'none';
     this.help.style.display = show ? 'block' : 'none';
@@ -75,6 +85,10 @@ export class Hud {
     if (this.toastTimer > 0) {
       this.toastTimer -= dt;
       if (this.toastTimer <= 0) this.toastEl.style.opacity = 0;
+    }
+    if (this.captionTimer > 0) {
+      this.captionTimer -= dt;
+      if (this.captionTimer <= 0) this.captionEl.style.opacity = 0;
     }
   }
 }

@@ -27,6 +27,20 @@ export const DEFAULT_COMPANION_PARAMS = {
   fidgetEveryMin: 3, // seconds between fidgets
   fidgetEveryMax: 8,
   fidgetScale: 1, // overall size of the movements
+
+  // Talking (companionVoice.js, lines in voiceLines.js)
+  voice: true, // she talks at all
+  captions: true, // show what she says on screen
+  chattiness: 1, // 2 talks about twice as often, 0 only answers you
+  voiceMinGap: 7, // seconds of quiet after she speaks before she'll speak unprompted
+  voiceVolume: 1, // spoken lines
+  voiceSoundVolume: 1, // sighs, hums, laughs
+  speechRate: 1.0,
+  speechPitch: 1.05,
+  voiceRange: 25, // metres; further away you can't hear her
+  voiceFastSpeed: 13, // m/s riding pillion before she tells you to slow down (about 29 mph)
+  voiceRoughAccel: 9, // m/s^2 of vertical jolting before she complains it's rough
+  voiceWaitAfter: 25, // seconds of nothing happening before she gets bored
 };
 
 export const COMPANION_PARAM_RANGES = {
@@ -53,4 +67,14 @@ export const COMPANION_PARAM_RANGES = {
   fidgetEveryMin: [0.5, 30, 0.5],
   fidgetEveryMax: [0.5, 60, 0.5],
   fidgetScale: [0, 3, 0.05],
+  chattiness: [0, 3, 0.05],
+  voiceMinGap: [0, 30, 0.5],
+  voiceVolume: [0, 1, 0.01],
+  voiceSoundVolume: [0, 2, 0.01],
+  speechRate: [0.5, 2, 0.01],
+  speechPitch: [0, 2, 0.01],
+  voiceRange: [2, 100, 1],
+  voiceFastSpeed: [3, 25, 0.5],
+  voiceRoughAccel: [1, 40, 0.5],
+  voiceWaitAfter: [5, 120, 1],
 };

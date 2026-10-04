@@ -126,6 +126,15 @@ Look at her and press `E`:
 
 The menu only offers what makes sense: no "get on" while she's already on, no "stand next to it" while she's already there. She stays put on the pillion when you get off until you ask her to get down.
 
+She talks, now and then, with captions at the bottom of the screen:
+
+- Riding pillion she reacts to the ride: "Oh, this is fun!" on a smooth run, "This is a bit rough." over bumps, "Careful!" when you go too fast, a gasp when you brake hard, and something when it stalls or runs out of petrol.
+- If you crank a quad near her for a while without it starting, she has a guess at why: the choke if it's cold, flooding if it's rich, the fuel tap if the carburettor is dry.
+- Left waiting she sighs, hums, yawns and asks if you're going. Ride off without her and she'll shout after you.
+- She answers when you ask her something.
+
+Words use the browser's speech synthesis with a British woman's voice if one is installed (the console says which; "Google UK English Female" in Chrome, Sonia or Libby in Edge, Flo or Shelley on a Mac otherwise). Sighs, hums, laughs and the rest are real recordings. How chatty she is, her volume, speech rate and pitch, captions and the thresholds she reacts to are in the Companion folder of the tuning panel. The lines are in `src/npc/voiceLines.js`.
+
 ## Tuning panel
 
 Press `` ` `` to open it. It releases the mouse so you can use the panel; click the game to carry on. Each quad has its own folder (Engine, Vibration, Audio, Smoke, Vehicle), alongside Sound, Player, Companion and Sky. The live engine readouts (state, rpm, mixture, roughness, fouling) and the shortcuts (warm or cool the engine, clear a flood) follow the quad you're on or looking at. There's also a shortcut to put both quads back in the yard and one to copy every value as JSON.
@@ -143,7 +152,7 @@ src/
   vehicle/             quad model, Rapier vehicle, drivetrain, dash styles, fuel; quadSpecs.js defines the quads
   items/               jerry can and petrol tank
   player/              walking and seated first-person player
-  npc/                 state machine, character rig, companion behaviour
+  npc/                 state machine, character rig, companion behaviour, her voice lines
   interaction/         look-at interaction and the context menu
   hud/                 crosshair, prompts, status, help
   world/               terrain, track, sky, props, layout

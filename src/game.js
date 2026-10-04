@@ -13,6 +13,8 @@ import { applyIdle, applyVariation, pickIdle } from './vehicle/quadVariation.js'
 import { AudioHub } from './audio/engineAudio.js';
 import { DEFAULT_SOUND_PARAMS, SOUND_PARAM_RANGES } from './audio/audioParams.js';
 import { Companion } from './npc/companion.js';
+import { CompanionVoice } from './npc/companionVoice.js';
+import { Speech, CompanionSounds } from './audio/companionAudio.js';
 import { DEFAULT_COMPANION_PARAMS, COMPANION_PARAM_RANGES } from './npc/companionParams.js';
 import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES } from './items/jerryCan.js';
 import { FuelTank } from './items/fuelTank.js';
@@ -124,6 +126,15 @@ export class Game {
       quad: this.homeUnit.quad,
       gltf: this.models.companion,
       params: { ...DEFAULT_COMPANION_PARAMS },
+    });
+    this.companionSounds = new CompanionSounds(this.audioHub);
+    this.voice = new CompanionVoice({
+      companion: this.companion,
+      speech: new Speech(),
+      sounds: this.companionSounds,
+      hud: this.hud,
+      params: this.companion.params,
+      soundParams: this.audioHub.params,
     });
     this.interaction.add({
       target: this.companion.proxy,
@@ -258,7 +269,9 @@ export class Game {
       this.hud.toast('She\'s busy');
       return;
     }
-    this.menu.open('Ask her to', actions);
+    // She answers when you ask her something.
+    const answered = actions.map((a) => ({ ...a, run: () => (a.run(), this.voice.onRequest(a.kind)) }));
+    this.menu.open('Ask her to', answered);
     this.player.lookEnabled = false;
     this.player.moveEnabled = false;
   }
@@ -383,6 +396,14 @@ export class Game {
       position: this.camera.position,
       isRiding: this.player.isRiding,
       talking: this.menu.isOpen,
+    });
+    this.companionSounds.ensure();
+    this.voice.update(dt, {
+      listener: this.camera.position,
+      ridden,
+      units: this.units,
+      menuOpen: this.menu.isOpen,
+      pouring,
     });
     if (!this.debugCamera) this.player.update(dt, alpha, ridden ? ridden.vibration : null);
     this.can.pouring = pouring;

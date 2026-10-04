@@ -36,6 +36,21 @@ Quaternius: https://quaternius.com
 | Revs up to about 9,000 rpm | S22-11 2-Stroke dirt bike; small motorcycle.wav | craigsmith | https://freesound.org/people/craigsmith/sounds/675214/ | CC0 1.0 |
 | Starter and shutdown | Quad Bike_ATV Engine.wav (as above) | Alex Fitzwater | https://freesound.org/people/Alex_hears_things/sounds/379915/ | CC0 1.0 |
 
+`public/audio/companion.wav` and `companion.json` (her sighs, hmms, laughs and so on) are cut from these by `tools/slice_companion_audio.py`, using Freesound's high-quality MP3 previews. Her spoken lines use the browser's own speech synthesis, so no voice recordings ship with the game.
+
+| Used for | Recording | Author | Source | Licence |
+| --- | --- | --- | --- | --- |
+| Sighs | Woman, female, inhale, exhale, sigh, breathing.wav | SpliceSound | https://freesound.org/people/SpliceSound/sounds/218311/ | CC0 1.0 |
+| A sigh | Woman Exasperated Sigh, Breathe Out | monsterthing | https://freesound.org/people/monsterthing/sounds/663651/ | CC0 1.0 |
+| A sigh | Girl sighs | BlueSiren | https://freesound.org/people/BlueSiren/sounds/377736/ | CC0 1.0 |
+| A sigh | woman sigh | threadzz | https://freesound.org/people/threadzz/sounds/384992/ | CC0 1.0 |
+| "Hmm" | Hmms various 1.wav | esperar | https://freesound.org/people/esperar/sounds/170767/ | CC0 1.0 |
+| A disappointed "oh" | Oh-disappointed.wav | esperar | https://freesound.org/people/esperar/sounds/170765/ | CC0 1.0 |
+| Laughs | Woman, female, laughing, giggling.wav | SpliceSound | https://freesound.org/people/SpliceSound/sounds/218310/ | CC0 1.0 |
+| A yawn | yawning | Danieka | https://freesound.org/people/Danieka/sounds/221519/ | CC0 1.0 |
+| Humming | Woman Humming Softly- MP3 | MayaTakeda | https://freesound.org/people/MayaTakeda/sounds/646179/ | CC0 1.0 |
+| A gasp | female_gasp.wav | slamaxu | https://freesound.org/people/slamaxu/sounds/509883/ | CC0 1.0 |
+
 The original WAV of the first recording (96 kHz / 24-bit) needs a free Freesound login to download. To use it, convert it to 44.1 kHz mono 16-bit and rerun the slicer.
 
 ## Modifications
