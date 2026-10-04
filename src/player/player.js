@@ -169,7 +169,8 @@ export class Player {
       pitch += c.pitch * k;
       roll += c.roll * k;
     }
-    this.tmpEuler.set(pitch, this.rideYaw, roll, 'YXZ');
+    // The camera looks down -Z; the bike faces +Z.
+    this.tmpEuler.set(pitch, this.rideYaw + Math.PI, roll, 'YXZ');
     this.camera.quaternion.copy(this.tmpQuat).multiply(new THREE.Quaternion().setFromEuler(this.tmpEuler));
   }
 
@@ -179,7 +180,7 @@ export class Player {
     this.mode = 'riding';
     this.vehicle = vehicle;
     this.rideYaw = 0;
-    this.ridePitch = -8 * DEG;
+    this.ridePitch = -12 * DEG;
     this.collider.setEnabled(false);
     this.velocity.set(0, 0, 0);
   }

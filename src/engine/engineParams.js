@@ -6,7 +6,7 @@ export const DEFAULT_ENGINE_PARAMS = {
   maxRpm: 8500,
   redlineRpm: 7500,
   idleRpmWarm: 1400, // steady idle, warm, no choke
-  stallRpm: 600, // below this the engine dies
+  stallRpm: 500, // below this the engine dies
   crankRpm: 320, // starter motor speed
   crankSpinUpRate: 6, // 1/s, how fast the starter reaches crank speed
   catchRpm: 1500, // rpm the engine jumps to when it fires up
@@ -14,9 +14,9 @@ export const DEFAULT_ENGINE_PARAMS = {
   spinDownFriction: 250, // rpm/s, extra linear friction during spin-down
 
   // Throttle response
-  rpmRiseRate: 5, // 1/s toward target when below it, scaled by power
-  rpmFallRate: 3.5, // 1/s toward target when above it
-  loadDragRpm: 2800, // rpm/s pulled off by a full drivetrain load (heavy braking)
+  rpmRiseRate: 7, // 1/s toward target when below it, scaled by power
+  rpmFallRate: 6, // 1/s toward target when above it
+  loadDragRpm: 5200, // rpm/s pulled off by a full drivetrain load (heavy braking)
 
   // Temperature (0 = stone cold, 1 = fully warm)
   warmUpSeconds: 150, // running at idle from cold to fully warm
@@ -28,7 +28,7 @@ export const DEFAULT_ENGINE_PARAMS = {
   // Positive is rich, negative is lean.
   coldEnrichmentNeed: 1.0, // enrichment needed at temperature 0, falls to 0 when warm
   chokeEnrichment: 1.0, // enrichment from full choke
-  throttleChokeRelief: 0.45, // opening the throttle dilutes the choke this much
+  throttleChokeRelief: 0.3, // opening the throttle dilutes the choke this much
   richTolerance: 0.25, // rich mixture tolerated before it starts fouling
 
   // Idle target
@@ -41,7 +41,7 @@ export const DEFAULT_ENGINE_PARAMS = {
   huntFrequency: 0.6, // Hz
 
   // Power available (fraction of full torque)
-  coldPowerLoss: 0.65,
+  coldPowerLoss: 0.72,
   leanPowerLoss: 0.8,
   richPowerLoss: 0.5,
   foulPowerLoss: 0.4,
