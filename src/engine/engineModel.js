@@ -325,6 +325,7 @@ export class EngineModel {
 
   stall(reason) {
     this.state = EngineState.STALLED;
+    this.lastStallReason = reason;
     this.emit('stalled', this.stepT, reason);
   }
 

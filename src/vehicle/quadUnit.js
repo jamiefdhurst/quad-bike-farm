@@ -8,6 +8,7 @@ import { DEFAULT_AUDIO_PARAMS, AUDIO_PARAM_RANGES } from '../audio/audioParams.j
 import { ExhaustSmoke, DEFAULT_SMOKE_PARAMS, SMOKE_PARAM_RANGES } from '../effects/exhaustSmoke.js';
 import { Quad } from './quad.js';
 import { DEFAULT_VEHICLE_PARAMS, VEHICLE_PARAM_RANGES } from './vehicleParams.js';
+import { DEFAULT_FUEL_PARAMS, FUEL_PARAM_RANGES } from './fuelSystem.js';
 
 /**
  * Everything one quad needs, built from a spec in quadSpecs.js: the engine
@@ -32,6 +33,8 @@ export class QuadUnit {
       label: spec.label,
       spawn,
       bodyColor: spec.bodyColor,
+      dashStyle: spec.dashStyle,
+      fuelParams: { ...DEFAULT_FUEL_PARAMS, ...spec.fuel },
     });
     this.quad.unit = this;
     this.vibration = new VibrationModel({ ...DEFAULT_VIBRATION_PARAMS, ...spec.vibration });
@@ -43,6 +46,7 @@ export class QuadUnit {
     registerTuning(`${folder}/Vibration`, this.vibration.params, VIBRATION_PARAM_RANGES);
     registerTuning(`${folder}/Audio`, this.audio.params, AUDIO_PARAM_RANGES);
     registerTuning(`${folder}/Smoke`, this.smoke.params, SMOKE_PARAM_RANGES);
+    registerTuning(`${folder}/Fuel`, this.quad.fuel.params, FUEL_PARAM_RANGES);
     registerTuning(`${folder}/Vehicle`, this.quad.params, VEHICLE_PARAM_RANGES, {
       onChange: () => this.quad.physics.applyParams(),
     });
@@ -58,6 +62,7 @@ export class QuadUnit {
   }
 
   update(dt, alpha) {
+    this.quad.updateFuel(dt);
     this.engine.update(dt, this.quad.engineControls());
     this.vibration.update(dt, this.engine);
     this.quad.update(dt, alpha, this.vibration);

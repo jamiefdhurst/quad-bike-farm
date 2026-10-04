@@ -65,7 +65,42 @@ export class AudioHub {
     wind.connect(this.windFilter).connect(this.windGain).connect(this.master);
     wind.start();
     this.windPhase = Math.random() * 10;
+
+    // Fuel pouring: white noise through a band-pass that glugs about.
+    const len = ctx.sampleRate * 2;
+    const noise = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = noise.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const pour = ctx.createBufferSource();
+    pour.buffer = noise;
+    pour.loop = true;
+    this.pourFilter = ctx.createBiquadFilter();
+    this.pourFilter.type = 'bandpass';
+    this.pourFilter.Q.value = 3;
+    this.pourFilter.frequency.value = 700;
+    this.pourGain = ctx.createGain();
+    this.pourGain.gain.value = 0;
+    pour.connect(this.pourFilter).connect(this.pourGain).connect(this.master);
+    pour.start();
+    this.glugTimer = 0;
     this.ready = true;
+  }
+
+  /** Call every frame with whether fuel is being poured. */
+  setPouring(active, dt) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    if (!active) {
+      this.pourGain.gain.setTargetAtTime(0, t, 0.05);
+      return;
+    }
+    // A glug every so often: the pitch jumps and the level swells.
+    this.glugTimer -= dt;
+    if (this.glugTimer <= 0) {
+      this.glugTimer = 0.09 + Math.random() * 0.12;
+      this.pourFilter.frequency.setTargetAtTime(450 + Math.random() * 700, t, 0.02);
+      this.pourGain.gain.setTargetAtTime(this.params.pourVolume * (0.6 + Math.random() * 0.6), t, 0.03);
+    }
   }
 
   /** Loads the recorded engine pulses (see tools/slice_engine_audio.py). Until then, or if it fails, voices use the synth. */

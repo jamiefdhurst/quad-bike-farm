@@ -41,6 +41,10 @@ export const LAYOUT = {
   puddleRadius: 1.7,
   puddleDepth: 0.2,
 
+  // Petrol tank by the barn, with the jerry can beside it.
+  fuelTank: { x: -61, z: 52.3, yaw: Math.PI / 2 }, // labelled side facing the yard
+  jerryCan: { x: -58.6, z: 51.6, yaw: 0.4 },
+
   spawn: {
     player: { x: -47, z: 46, yaw: -2.68 }, // facing the quad
     // One spawn per quad, in the order of QUAD_SPECS: parked side by side in the yard.

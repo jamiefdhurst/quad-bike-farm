@@ -15,7 +15,7 @@ Open the URL Vite prints (usually http://localhost:5173), click the page to lock
 
 Other scripts:
 
-- `npm test` runs the engine model tests with Vitest.
+- `npm test` runs the engine and fuel tests with Vitest.
 - `npm run build` makes a production build in `dist/`, and `npm run preview` serves it.
 
 ## Controls
@@ -28,7 +28,9 @@ Other scripts:
 | Mouse | Look |
 | `Shift` | Jog |
 | `E` | Interact with whatever you're looking at: ride the quad, or talk to her |
-| `K` `R` `Q` `Z` | While looking at the quad: ignition, starter and choke, without getting on |
+| `K` `R` `Q` `Z` `F` | While looking at a quad: ignition, starter, choke and fuel tap, without getting on |
+| Hold `E` | Holding the jerry can: pour into the quad you're looking at, or refill the can at the petrol tank |
+| `G` | Put the jerry can down |
 
 **On the quad**
 
@@ -41,6 +43,7 @@ Other scripts:
 | `S` | Brake. Hold it at a standstill to reverse |
 | `A` / `D` | Steer |
 | `E` | Get off (only below walking pace) |
+| `F` | Fuel tap: ON, RESERVE, OFF |
 | `T` | Right the quad if it's tipped over |
 | Mouse | Look around from the seat |
 
@@ -81,6 +84,24 @@ Things to know:
 - If you flood it, take the choke off and crank with the throttle held open (`W` + `R`) to clear it.
 - The bike keeps idling when you get off, and you can watch and hear it shake from outside.
 
+## Fuel
+
+Each quad has a fuel tank, a fuel tap and a fuel gauge on the dash. The red quad starts at about 60%, the blue at about 25%.
+
+- A full tank lasts roughly 25 minutes of hard riding, and much longer at idle.
+- The tap has three positions. On **ON** it can't reach the last couple of litres, so when it starts to cough and stumble, flick it to **RESERVE** with `F` and head for fuel. **OFF** shuts the fuel off; the engine runs on what's in the carburettor for a moment, then dies.
+- If it runs completely dry, it stalls and won't restart until it has fuel.
+- To refuel: pick up the red jerry can by the barn with `E` (it holds 20 litres). Look at a quad and hold `E` to pour, with a glug. Refill the can by holding `E` at the green petrol tank. `G` puts the can down. You can't ride holding the can, so put it down first.
+
+## The dashes
+
+The two quads have different instruments:
+
+- **Red**: a round analogue rev counter, plus a green LCD with speed in mph, a fuel bar, RES and OFF flags for the tap, and a trip meter. Separate TEMP, IGN and FUEL lamps.
+- **Blue**: one wide amber display with a bar-graph rev counter, big speed digits, a vertical fuel gauge that goes red on reserve, warning icons and a trip meter, in an angular pod with a visor.
+
+Both go blank with the ignition off.
+
 ## Riding with her
 
 Look at her and press `E`:
@@ -104,14 +125,15 @@ src/
   vibration/           pulse-driven vibration model (pure logic) and parameters
   effects/             exhaust smoke
   audio/               procedural Web Audio engine sound
-  vehicle/             quad model, Rapier vehicle, drivetrain, dash; quadSpecs.js defines the quads
+  vehicle/             quad model, Rapier vehicle, drivetrain, dash styles, fuel; quadSpecs.js defines the quads
+  items/               jerry can and petrol tank
   player/              walking and seated first-person player
   npc/                 state machine, character rig, companion behaviour
   interaction/         look-at interaction and the context menu
   hud/                 crosshair, prompts, status, help
   world/               terrain, track, sky, props, layout
   debug/               lil-gui tuning panel
-tests/engine.test.js   engine state machine tests
+tests/                 engine state machine and fuel tests
 tools/                 slice_engine_audio.py, cuts recordings into engine pulses (Python, numpy)
 public/audio/          the cut engine recordings
 ```

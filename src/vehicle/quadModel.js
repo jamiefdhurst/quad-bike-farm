@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { WHEELS } from './quadPhysics.js';
+import { buildDash } from './dash.js';
 
 // Farm quad built from primitives. One group with named parts so it can be
 // replaced by a real model later without touching the code that drives it:
@@ -26,7 +27,6 @@ const MAT = {
   exhaust: new THREE.MeshStandardMaterial({ color: 0x2e2a26, roughness: 0.7, metalness: 0.4 }),
   glove: new THREE.MeshStandardMaterial({ color: 0x2d3a26, roughness: 0.8 }),
   sleeve: new THREE.MeshStandardMaterial({ color: 0x3f4d34, roughness: 0.9 }),
-  dashFace: new THREE.MeshStandardMaterial({ color: 0x0e0e0e, roughness: 0.35 }),
 };
 
 function box(w, h, d, mat, x, y, z, parent, name) {
@@ -134,70 +134,7 @@ function buildWheel(radius, width, treadMat) {
   return wheel;
 }
 
-function dialTexture() {
-  const c = document.createElement('canvas');
-  c.width = c.height = 256;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#0c0c0c';
-  ctx.beginPath();
-  ctx.arc(128, 128, 126, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#9a9a9a';
-  ctx.lineWidth = 5;
-  ctx.stroke();
-  // 0 to 10 thousand rpm over 270 degrees, starting bottom left.
-  const start = Math.PI * 0.75;
-  const sweep = Math.PI * 1.5;
-  ctx.lineWidth = 12;
-  ctx.strokeStyle = '#c0221a';
-  ctx.beginPath();
-  ctx.arc(128, 128, 104, start + sweep * 0.75, start + sweep);
-  ctx.stroke();
-  ctx.fillStyle = '#eeeeee';
-  ctx.font = 'bold 26px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  for (let i = 0; i <= 10; i++) {
-    const a = start + (sweep * i) / 10;
-    ctx.strokeStyle = i >= 8 ? '#ff4433' : '#eeeeee';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(128 + Math.cos(a) * 112, 128 + Math.sin(a) * 112);
-    ctx.lineTo(128 + Math.cos(a) * 92, 128 + Math.sin(a) * 92);
-    ctx.stroke();
-    if (i % 2 === 0) ctx.fillText(String(i), 128 + Math.cos(a) * 72, 128 + Math.sin(a) * 72);
-  }
-  ctx.font = '16px sans-serif';
-  ctx.fillStyle = '#aaaaaa';
-  ctx.fillText('x1000 rpm', 128, 180);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
-  return tex;
-}
-
-function labelTexture(text) {
-  const c = document.createElement('canvas');
-  c.width = 128;
-  c.height = 48;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#0e0e0e';
-  ctx.fillRect(0, 0, 128, 48);
-  ctx.fillStyle = '#cfcfcf';
-  ctx.font = 'bold 30px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, 64, 26);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-}
-
-export const DIAL_START_ANGLE = Math.PI * 0.75;
-export const DIAL_SWEEP = Math.PI * 1.5;
-export const DIAL_MAX_RPM = 10000;
-
-function buildHandlebars() {
+function buildHandlebars(dashStyle) {
   const bars = new THREE.Group();
   bars.name = 'handlebars';
 
@@ -214,60 +151,11 @@ function buildHandlebars() {
   }
 
   // Dash pod in the middle, face tilted towards the rider.
-  const dash = new THREE.Group();
-  dash.name = 'dash';
-  dash.position.set(0, 0.1, 0.02);
-  dash.rotation.x = 0.75;
-  bars.add(dash);
-  box(0.24, 0.13, 0.07, MAT.black, 0, 0, 0.0, dash, 'dashHousing');
-  const face = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.11), MAT.dashFace);
-  face.position.set(0, 0, -0.0351);
-  face.rotation.y = Math.PI;
-  dash.add(face);
-
-  const dial = new THREE.Mesh(
-    new THREE.CircleGeometry(0.048, 32),
-    new THREE.MeshBasicMaterial({ map: dialTexture(), toneMapped: false }),
-  );
-  dial.name = 'rpmDial';
-  dial.position.set(0.035, 0, -0.036);
-  dial.rotation.y = Math.PI;
-  dash.add(dial);
-  const needlePivot = new THREE.Group();
-  needlePivot.name = 'rpmNeedle';
-  needlePivot.position.set(0.035, 0, -0.038);
-  needlePivot.rotation.y = Math.PI;
-  dash.add(needlePivot);
-  const needle = new THREE.Mesh(
-    new THREE.BoxGeometry(0.04, 0.0035, 0.001),
-    new THREE.MeshBasicMaterial({ color: 0xff5522, toneMapped: false }),
-  );
-  needle.position.x = 0.018;
-  needlePivot.add(needle);
-  const cap = new THREE.Mesh(new THREE.CircleGeometry(0.006, 12), new THREE.MeshBasicMaterial({ color: 0x222222 }));
-  cap.position.z = 0.0005;
-  needlePivot.add(cap);
-
-  // Warning lights with labels underneath.
-  const light = (name, x, y, label) => {
-    const lens = new THREE.Mesh(
-      new THREE.CircleGeometry(0.011, 16),
-      new THREE.MeshBasicMaterial({ color: 0x1a1a1a, toneMapped: false }),
-    );
-    lens.name = name;
-    lens.position.set(x, y, -0.037);
-    lens.rotation.y = Math.PI;
-    dash.add(lens);
-    const plate = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.036, 0.0135),
-      new THREE.MeshBasicMaterial({ map: labelTexture(label), toneMapped: false }),
-    );
-    plate.position.set(x, y - 0.02, -0.037);
-    plate.rotation.y = Math.PI;
-    dash.add(plate);
-  };
-  light('tempLight', -0.065, 0.028, 'TEMP');
-  light('ignitionLight', -0.065, -0.022, 'IGN');
+  const dash = buildDash(dashStyle);
+  dash.group.position.set(0, 0.1, 0.02);
+  dash.group.rotation.x = 0.75;
+  bars.add(dash.group);
+  bars.userData.dash = dash;
 
   // Choke lever on the left bar, inboard of the grip. Rotates about X.
   const chokeHousing = box(0.03, 0.025, 0.03, MAT.black, 0.29, 0.07, -0.03, bars, 'chokeHousing');
@@ -303,8 +191,9 @@ function buildHandlebars() {
 /**
  * @param {object} [opts]
  * @param {number} [opts.bodyColor] Paint colour for the plastics.
+ * @param {string} [opts.dashStyle] 'classic' or 'modern', see dash.js.
  */
-export function buildQuadModel({ bodyColor = 0xa8271f } = {}) {
+export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic' } = {}) {
   const quad = new THREE.Group();
   quad.name = 'quad';
   const paint = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.42, metalness: 0.05 });
@@ -363,6 +252,16 @@ export function buildQuadModel({ bodyColor = 0xa8271f } = {}) {
   box(0.6, 0.18, 0.12, paint, 0, 0.62, 1.0, root, 'nose');
   box(0.68, 0.12, 0.6, paint, 0, 0.74, -0.68, root, 'rearPanel');
   box(0.38, 0.16, 0.34, paint, 0, 0.84, 0.32, root, 'tank');
+  // Fuel tap on the left of the tank: lever points forward for ON, down for RES, back for OFF.
+  const tapBody = box(0.02, 0.03, 0.03, MAT.black, 0.2, 0.8, 0.3, root, 'fuelTapBody');
+  tapBody.castShadow = false;
+  const tap = new THREE.Group();
+  tap.name = 'fuelTap';
+  tap.position.set(0.213, 0.8, 0.3);
+  root.add(tap);
+  const tapLever = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.012, 0.045), MAT.chrome);
+  tapLever.position.z = 0.02;
+  tap.add(tapLever);
   const tankCap = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.02, 12), MAT.chrome);
   tankCap.position.set(0, 0.93, 0.36);
   root.add(tankCap);
@@ -422,7 +321,8 @@ export function buildQuadModel({ bodyColor = 0xa8271f } = {}) {
 
   // Steering column and handlebars.
   tube([0, 0.55, 0.62], [0, 1.0, 0.46], 0.024, MAT.steel, root);
-  const bars = buildHandlebars();
+  const bars = buildHandlebars(dashStyle);
+  quad.userData.dash = bars.userData.dash;
   bars.position.set(0, 1.0, 0.46);
   root.add(bars);
 

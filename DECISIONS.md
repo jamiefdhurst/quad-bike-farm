@@ -92,3 +92,12 @@ A running log of choices made while building this, so later work starts from the
 - Paint and headlight lens materials are per quad; other materials are shared.
 - She can be asked onto either quad. If she's seated on one and asked onto the other, she gets off and walks over. Menu options are per quad, nearest first.
 - The HUD status and the panel's live readouts follow the quad you're riding, else the one you're looking at, else the last one you used.
+
+## Fuel, speedos and dashes (2026-10-04)
+
+- Fuel is modelled as tank, tap and carburettor float bowl (`src/vehicle/fuelSystem.js`, pure logic, tested). The engine is fed from the bowl; the bowl refills from the tank through the tap. Below half a bowl the engine model leans the mixture out, so running dry comes through as stumbling, misfires and power loss in the sound, shake and smoke before it stalls. That's about 6 s while riding and nearly a minute at idle. With an empty bowl it can't fire.
+- Game-paced consumption: a full 12 litre tank lasts about 25 minutes flat out and roughly 12 hours at idle. It burns more on choke.
+- Tap ON can't reach the last 2 litres (1.8 on the blue quad). RESERVE can. OFF shuts it. This gives the classic "it's coughing, flick to reserve" moment.
+- Refuelling is a carried 20 litre jerry can, poured at 0.5 L/s by holding E at a quad, and refilled from an endless petrol tank by the barn at 0.8 L/s. Interactables can now take a `hold(dt)` handler, and a prompt can be plain text (`{ text }`) when E does nothing.
+- You can't ride while holding the can: E pours while you're holding it, so put it down with G first. Carrying it on the rack was left out to keep this simple.
+- Dashes have two styles (`src/vehicle/dash.js`): classic (red: analogue rev counter, green LCD, separate lamps) and modern (blue: one amber LCD with a bar-graph tach, in an angular pod with a visor). The LCD canvases only redraw when what they show changes. The speed reads 0 below about walking pace to stop it flickering at a standstill.

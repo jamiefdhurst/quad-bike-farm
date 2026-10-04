@@ -11,6 +11,8 @@ import { AudioHub } from './audio/engineAudio.js';
 import { DEFAULT_SOUND_PARAMS, SOUND_PARAM_RANGES } from './audio/audioParams.js';
 import { Companion } from './npc/companion.js';
 import { DEFAULT_COMPANION_PARAMS, COMPANION_PARAM_RANGES } from './npc/companionParams.js';
+import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES } from './items/jerryCan.js';
+import { FuelTank } from './items/fuelTank.js';
 import { Interaction } from './interaction/interaction.js';
 import { Menu } from './interaction/menu.js';
 import { Hud } from './hud/hud.js';
@@ -109,13 +111,65 @@ export class Game {
       unit.interaction = this.interaction.add({
         unit,
         target: quad.proxy,
-        prompt: () =>
-          quad.isTipped ? `Right the ${unit.label}` : `Ride the ${unit.label}   ·   K ignition   R start   Q/Z choke`,
-        interact: () => (quad.isTipped ? quad.rightItself() : this.mount(unit)),
+        prompt: () => {
+          if (this.can.held) {
+            const pct = Math.round(quad.fuel.level * 100);
+            if (quad.fuel.space < 0.01) return { text: `The ${unit.label} is full   ·   G put the can down` };
+            if (this.can.litres < 0.01) return { text: 'The can is empty   ·   G put the can down' };
+            return { text: `Hold E to fill the ${unit.label} (${pct}%)   ·   G put the can down` };
+          }
+          if (quad.isTipped) return `Right the ${unit.label}`;
+          return `Ride the ${unit.label}   ·   K ignition   R start   Q/Z choke   F fuel tap`;
+        },
+        interact: () => {
+          if (this.can.held) return; // E is for pouring while you're holding the can
+          if (quad.isTipped) quad.rightItself();
+          else this.mount(unit);
+        },
+        hold: (dt) => {
+          if (!this.can.held) return false;
+          const wanted = Math.min(this.can.params.pourRate * dt, quad.fuel.space);
+          return quad.fuel.add(this.can.take(wanted)) > 0;
+        },
       });
     }
 
+    // Refuelling: a jerry can and the petrol tank by the barn.
+    const L = this.world.layout;
+    this.fuelTank = new FuelTank({
+      scene: this.scene,
+      physics: this.physics,
+      RAPIER: this.RAPIER,
+      world: this.world,
+      position: L.fuelTank,
+      yaw: L.fuelTank.yaw,
+    });
+    this.can = new JerryCan({
+      scene: this.scene,
+      world: this.world,
+      position: L.jerryCan,
+      yaw: L.jerryCan.yaw,
+      params: { ...DEFAULT_JERRY_CAN_PARAMS },
+    });
+    this.interaction.add({
+      target: this.can.proxy,
+      isAvailable: () => !this.can.held,
+      prompt: () => `Pick up the jerry can (${this.can.litres.toFixed(1)} L)`,
+      interact: () => this.can.pickUp(this.camera),
+    });
+    this.interaction.add({
+      target: this.fuelTank.proxy,
+      prompt: () => {
+        if (!this.can.held) return { text: 'Petrol tank: bring the jerry can to fill it' };
+        if (this.can.space < 0.01) return { text: 'The jerry can is full' };
+        return { text: `Hold E to fill the jerry can (${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L)` };
+      },
+      interact: () => {},
+      hold: (dt) => this.can.held && this.can.fill(this.can.params.fillRate * dt) > 0,
+    });
+
     registerTuning('Sound', this.audioHub.params, SOUND_PARAM_RANGES);
+    registerTuning('Jerry can', this.can.params, JERRY_CAN_PARAM_RANGES);
     registerTuning('Player', this.player.params, PLAYER_PARAM_RANGES);
     registerTuning('Companion', this.companion.params, COMPANION_PARAM_RANGES);
     this.debugGui = new DebugGui(this);
@@ -239,6 +293,14 @@ export class Game {
     return null;
   }
 
+  /** Puts the jerry can on the ground just in front of the player. */
+  putCanDown() {
+    const p = this.player.position;
+    const yaw = this.player.yaw;
+    const spot = new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7);
+    this.can.putDown(spot, yaw + Math.PI / 2);
+  }
+
   // Loop -----------------------------------------------------------------
 
   frame() {
@@ -254,6 +316,7 @@ export class Game {
     }
 
     for (const unit of this.units) unit.quad.setRemote(null);
+    let pouring = false;
     if (this.player.isRiding) {
       this.interaction.clear();
       this.riddenUnit.quad.handleFrameInput(dt);
@@ -271,6 +334,9 @@ export class Game {
         this.lastUnit = focused.unit;
       }
       if (focused && input.wasPressed('KeyE')) focused.interact();
+      // Holding E pours fuel or fills the can.
+      if (focused?.hold && input.isDown('KeyE') && focused.hold(dt)) pouring = true;
+      if (this.can.held && input.wasPressed('KeyG')) this.putCanDown();
     }
 
     this.accumulator += dt;
@@ -288,6 +354,9 @@ export class Game {
       talking: this.menu.isOpen,
     });
     if (!this.debugCamera) this.player.update(dt, alpha, ridden ? ridden.vibration : null);
+    this.can.pouring = pouring;
+    this.can.update(dt);
+    this.audioHub.setPouring(pouring, dt);
     this.audioHub.update(dt, this.camera);
     this.world.update(dt, ridden ? ridden.quad.position : this.player.position, this.camera);
     this.updateHud(dt);
@@ -305,22 +374,30 @@ export class Game {
 
   updateHud(dt) {
     const f = this.interaction.focused;
-    this.hud.setPrompt(f ? f.prompt() : '');
+    // A prompt is either an E action (a string) or plain text ({ text }).
+    const p = f ? f.prompt() : '';
+    this.hud.setPrompt(typeof p === 'string' ? (p ? `E  ${p}` : '') : p.text);
     const unit = this.riddenUnit ?? this.focusedUnit;
     if (unit) {
       const e = unit.engine;
       const quad = unit.quad;
       const mph = Math.abs(quad.forwardSpeed) * 2.237;
       const bars = Math.round(e.temperature * 10);
+      const fuelBars = Math.round(quad.fuel.level * 10);
+      const stalledNote = e.lastStallReason === 'noFuel' ? ' (out of fuel?)' : ' (R to restart)';
       this.hud.setStatus(
         [
           unit.name,
-          `Engine   ${e.state}${e.state === 'stalled' ? ' (R to restart)' : ''}`,
+          `Engine   ${e.state}${e.state === 'stalled' ? stalledNote : ''}`,
           `Temp     ${'▮'.repeat(bars)}${'▯'.repeat(10 - bars)}`,
+          `Fuel     ${'▮'.repeat(fuelBars)}${'▯'.repeat(10 - fuelBars)}  ${quad.fuel.litres.toFixed(1)} L, tap ${quad.fuel.tap.toUpperCase()}`,
           `Choke    ${Math.round(quad.choke * 100)}%`,
           `Speed    ${mph.toFixed(0)} mph${quad.reverse ? '  R' : ''}`,
+          ...(this.can.held ? [`Can      ${this.can.litres.toFixed(1)} L`] : []),
         ].join('\n'),
       );
+    } else if (this.can.held) {
+      this.hud.setStatus(`Jerry can  ${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L\nG to put it down`);
     } else {
       this.hud.setStatus('');
     }

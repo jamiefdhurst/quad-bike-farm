@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { buildQuadModel, setHeadlights, DIAL_START_ANGLE, DIAL_SWEEP, DIAL_MAX_RPM } from './quadModel.js';
+import { buildQuadModel, setHeadlights } from './quadModel.js';
+import { FuelSystem } from './fuelSystem.js';
 import { QuadPhysics, WHEELS, SUSPENSION_TOP_Y } from './quadPhysics.js';
 import { Drivetrain } from './drivetrain.js';
 
@@ -22,15 +23,20 @@ export class Quad {
    * @param {string} opts.label   How it's referred to in prompts, e.g. "red quad".
    * @param {object} opts.spawn   { x, z, yaw } where it starts.
    * @param {number} [opts.bodyColor]
+   * @param {string} [opts.dashStyle]  'classic' or 'modern'.
+   * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, fuelParams }) {
     this.world = world;
     this.engine = engine;
     this.params = params;
     this.label = label;
     this.spawn = spawn;
 
-    this.model = buildQuadModel({ bodyColor });
+    this.model = buildQuadModel({ bodyColor, dashStyle });
+    this.dash = this.model.userData.dash;
+    this.fuel = new FuelSystem(fuelParams);
+    this.tripMiles = 0;
     scene.add(this.model);
     const part = (name) => this.model.getObjectByName(name);
     this.body = part('body');
@@ -38,9 +44,7 @@ export class Quad {
     this.bodyRoot.position.y = GROUND_OFFSET;
     this.handlebars = part('handlebars');
     this.handlebarsBase = this.handlebars.position.clone();
-    this.rpmNeedle = part('rpmNeedle');
-    this.tempLight = part('tempLight');
-    this.ignitionLight = part('ignitionLight');
+    this.fuelTap = part('fuelTap');
     this.chokeLever = part('chokeLever');
     this.riderHands = part('riderHands');
     this.cameraAnchor = part('cameraAnchor');
@@ -143,6 +147,7 @@ export class Quad {
     if (!input) return;
     if (this.input) input.takeWheelSteps();
     if (input.wasPressed('KeyK')) this.engine.toggleIgnition();
+    if (input.wasPressed('KeyF')) this.fuel.cycleTap();
     this.chokeKey(dt, input, CHOKE_MORE_KEY, 1);
     this.chokeKey(dt, input, CHOKE_LESS_KEY, -1);
     if (input.wasPressed('KeyT') && this.isTipped) this.rightItself();
@@ -248,6 +253,12 @@ export class Quad {
     this.currQuat.set(r.x, r.y, r.z, r.w);
   }
 
+  /** Burns fuel for this frame and refills the float bowl from the tank. */
+  updateFuel(dt) {
+    const e = this.engine;
+    this.fuel.update(dt, { rpm: e.rpm, throttle: e.throttle, choke: e.choke, running: e.isRunning });
+  }
+
   /** Engine controls for this frame. */
   engineControls() {
     return {
@@ -255,6 +266,7 @@ export class Quad {
       throttle: this.throttle,
       choke: this.choke,
       load: this.drivetrain.engineLoad,
+      fuel: this.fuel.bowlLevel,
     };
   }
 
@@ -283,18 +295,30 @@ export class Quad {
 
   updateDash(dt) {
     const e = this.engine;
-    // Needle has a little lag like a real cable-driven gauge.
-    this.displayRpm += (e.rpm - this.displayRpm) * Math.min(1, 14 * dt);
-    const frac = THREE.MathUtils.clamp(this.displayRpm / DIAL_MAX_RPM, 0, 1);
-    this.rpmNeedle.rotation.z = -(DIAL_START_ANGLE + DIAL_SWEEP * frac);
-
-    this.tempLight.material.color.setHex(e.coldLightOn ? 0x2f7bff : 0x1a1a1a);
-    this.ignitionLight.material.color.setHex(e.ignitionOn ? 0x33dd44 : 0x1a1a1a);
+    const speed = Math.abs(this.forwardSpeed);
+    this.tripMiles += (speed * dt) / 1609.34;
+    const f = this.fuel;
+    this.dash.update({
+      rpm: e.rpm,
+      maxRpm: e.params.maxRpm,
+      redline: e.params.redlineRpm,
+      speedMph: speed > 0.2 ? speed * 2.237 : 0,
+      fuelLevel: f.level,
+      reserveLevel: f.params.reserveLitres / f.params.tankCapacity,
+      tap: f.tap,
+      coldLight: e.coldLightOn,
+      ignition: e.ignitionOn,
+      tripMiles: this.tripMiles,
+      reverse: this.reverse,
+    });
     setHeadlights(this.model, e.ignitionOn);
 
     this.displayChoke += (this.choke - this.displayChoke) * Math.min(1, 12 * dt);
     // Off: lever forward. Full: pulled back towards the rider.
     this.chokeLever.rotation.x = 0.5 - this.displayChoke * 1.45;
+    // Fuel tap: forward for ON, down for RESERVE, back for OFF.
+    const tapAngle = { on: 0, reserve: Math.PI / 2, off: Math.PI }[f.tap];
+    this.fuelTap.rotation.x += (tapAngle - this.fuelTap.rotation.x) * Math.min(1, 15 * dt);
   }
 
   rightItself() {

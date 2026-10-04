@@ -9,6 +9,8 @@ export const QUAD_SPECS = [
     label: 'red quad',
     name: 'Red quad',
     bodyColor: 0xa8271f,
+    dashStyle: 'classic',
+    fuel: { startLitres: 7 }, // about 60% of a 12 litre tank
     engine: {},
     vehicle: {},
     vibration: {},
@@ -23,6 +25,8 @@ export const QUAD_SPECS = [
     label: 'blue quad',
     name: 'Blue quad',
     bodyColor: 0x1d4fa3,
+    dashStyle: 'modern',
+    fuel: { tankCapacity: 11, reserveLitres: 1.8, startLitres: 2.8 }, // about 25%, close to reserve
     engine: {
       idleRpmWarm: 1450,
       maxRpm: 9000,

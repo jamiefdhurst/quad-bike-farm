@@ -6,9 +6,11 @@ export const DEFAULT_SOUND_PARAMS = {
   muted: false,
   latency: 0.05, // seconds between the simulation and the sound, so pulses can be placed exactly
   ambientVolume: 0.05,
+  pourVolume: 0.12,
 };
 
 export const SOUND_PARAM_RANGES = {
+  pourVolume: [0, 1, 0.01],
   masterVolume: [0, 2, 0.01],
   latency: [0.02, 0.2, 0.005],
   ambientVolume: [0, 0.5, 0.005],

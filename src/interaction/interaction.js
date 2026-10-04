@@ -6,8 +6,9 @@ import * as THREE from 'three';
  *   {
  *     target: Object3D,          raycast against this (usually an invisible proxy)
  *     isAvailable(): boolean,    optional, defaults to true
- *     prompt(): string,          text shown under the crosshair, e.g. "Ride the quad"
+ *     prompt(): string | {text}, an E action ("Ride the quad") or plain text ({ text: 'The can is full' })
  *     interact(): void,          called when E is pressed while focused
+ *     hold(dt): boolean,         optional, called every frame E is held; true while something is happening
  *   }
  *
  * A direct ray hit wins. Failing that, anything whose bounds come within a

@@ -37,5 +37,7 @@ These have no external source:
 
 - **Quad bike**: primitives in `src/vehicle/quadModel.js`. No CC0 quad or ATV model was available; Poly Pizza only had CC-BY motorbikes and buggies. The model is one group with named parts (`body`, `handlebars`, `wheel_fl` / `wheel_fr` / `wheel_rl` / `wheel_rr`, `seat`, `pillionSeat`) so it can be swapped for a real model later.
 - **Round bales** (straw and black-wrapped silage) and the **five-bar field gate**: primitives in `src/world/props.js`, with canvas-drawn straw textures.
+- **Jerry can** and **petrol tank**: primitives in `src/items/`.
+- **Dashes**: drawn on canvas in `src/vehicle/dash.js`.
 - **Terrain, track, grass tufts, distant trees and sky**: generated in `src/world/`.
-- **Synthesised engine sound** (selectable in the tuning panel), relay clicks, fuel pump and wind: synthesised at runtime in `src/audio/`.
+- **Synthesised engine sound** (selectable in the tuning panel), relay clicks, fuel pump, pouring and wind: synthesised at runtime in `src/audio/`.
