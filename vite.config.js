@@ -5,9 +5,6 @@ export default defineConfig({
     target: 'es2022',
     chunkSizeWarningLimit: 6000,
   },
-  optimizeDeps: {
-    esbuildOptions: { target: 'es2022' },
-  },
   test: {
     include: ['tests/**/*.test.js'],
     environment: 'node',

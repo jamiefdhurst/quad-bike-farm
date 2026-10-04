@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { Input } from './core/input.js';
+import { loadModels } from './world/assets.js';
+import { World } from './world/world.js';
 
 const FIXED_DT = 1 / 60;
 const MAX_FRAME_DT = 0.1;
@@ -15,7 +17,7 @@ export class Game {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 1200);
@@ -25,38 +27,57 @@ export class Game {
     this.physics.timestep = FIXED_DT;
 
     this.input = new Input(canvas);
-    this.clock = new THREE.Clock(false);
+    this.timer = new THREE.Timer();
     this.accumulator = 0;
 
     window.addEventListener('resize', () => this.onResize());
   }
 
   async load(report) {
+    report('Loading models…');
+    this.models = await loadModels((done, total) => report(`Loading models… ${done}/${total}`));
     report('Building world…');
-    const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(200, 200).rotateX(-Math.PI / 2),
-      new THREE.MeshStandardMaterial({ color: 0x5f7a3a }),
-    );
-    this.scene.add(ground);
-    this.scene.add(new THREE.HemisphereLight(0xdde2e6, 0x4a5030, 2));
-    this.camera.position.set(0, 1.6, 5);
+    await new Promise((r) => setTimeout(r, 0));
+    this.world = new World({
+      scene: this.scene,
+      physics: this.physics,
+      RAPIER: this.RAPIER,
+      renderer: this.renderer,
+      models: this.models,
+    });
+    const s = this.world.spawn.player;
+    this.camera.position.set(s.x, this.world.heightAt(s.x, s.z) + 1.6, s.z);
+    this.camera.rotation.set(0, s.yaw, 0, 'YXZ');
+    this.applyDebugCamera();
+    if (import.meta.env.DEV) window.game = this;
+  }
+
+  /** ?cam=x,y,z,yawDeg,pitchDeg places the camera, for screenshots while developing. */
+  applyDebugCamera() {
+    const cam = new URLSearchParams(location.search).get('cam');
+    if (!cam) return;
+    const [x, y, z, yaw = 0, pitch = 0] = cam.split(',').map(Number);
+    this.debugCamera = true;
+    this.camera.position.set(x, y, z);
+    this.camera.rotation.set((pitch * Math.PI) / 180, (yaw * Math.PI) / 180, 0, 'YXZ');
   }
 
   start() {
     const overlay = document.getElementById('overlay');
     overlay.addEventListener('click', () => this.input.requestPointerLock());
     this.input.on('lockchange', (locked) => overlay.classList.toggle('hidden', locked));
-    this.clock.start();
     this.renderer.setAnimationLoop(() => this.frame());
   }
 
   frame() {
-    const dt = Math.min(this.clock.getDelta(), MAX_FRAME_DT);
+    this.timer.update();
+    const dt = Math.min(this.timer.getDelta(), MAX_FRAME_DT);
     this.accumulator += dt;
     while (this.accumulator >= FIXED_DT) {
       this.fixedUpdate(FIXED_DT);
       this.accumulator -= FIXED_DT;
     }
+    this.world.update(dt, this.camera.position, this.camera);
     this.renderer.render(this.scene, this.camera);
     this.input.endFrame();
   }
