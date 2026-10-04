@@ -15,8 +15,8 @@ import { WHEELS } from './quadPhysics.js';
 //
 // +Z is forward and +X is the rider's left.
 
+// Shared materials. Paint and headlight lenses are made per quad in buildQuadModel.
 const MAT = {
-  red: new THREE.MeshStandardMaterial({ color: 0xa8271f, roughness: 0.42, metalness: 0.05 }),
   black: new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.6 }),
   seat: new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.5 }),
   steel: new THREE.MeshStandardMaterial({ color: 0x3a3c3e, roughness: 0.45, metalness: 0.6 }),
@@ -24,7 +24,6 @@ const MAT = {
   rim: new THREE.MeshStandardMaterial({ color: 0xb4b6b8, roughness: 0.35, metalness: 0.7 }),
   chrome: new THREE.MeshStandardMaterial({ color: 0xd0d2d4, roughness: 0.2, metalness: 0.9 }),
   exhaust: new THREE.MeshStandardMaterial({ color: 0x2e2a26, roughness: 0.7, metalness: 0.4 }),
-  lens: new THREE.MeshStandardMaterial({ color: 0xe8e8dc, roughness: 0.1, emissive: 0x000000 }),
   glove: new THREE.MeshStandardMaterial({ color: 0x2d3a26, roughness: 0.8 }),
   sleeve: new THREE.MeshStandardMaterial({ color: 0x3f4d34, roughness: 0.9 }),
   dashFace: new THREE.MeshStandardMaterial({ color: 0x0e0e0e, roughness: 0.35 }),
@@ -301,9 +300,16 @@ function buildHandlebars() {
   return bars;
 }
 
-export function buildQuadModel() {
+/**
+ * @param {object} [opts]
+ * @param {number} [opts.bodyColor] Paint colour for the plastics.
+ */
+export function buildQuadModel({ bodyColor = 0xa8271f } = {}) {
   const quad = new THREE.Group();
   quad.name = 'quad';
+  const paint = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.42, metalness: 0.05 });
+  const lensMat = new THREE.MeshStandardMaterial({ color: 0xe8e8dc, roughness: 0.1, emissive: 0x000000 });
+  quad.userData.lensMaterial = lensMat;
 
   const body = new THREE.Group();
   body.name = 'body';
@@ -348,15 +354,15 @@ export function buildQuadModel() {
 
   // Fenders over each wheel and the body panels joining them.
   for (const w of WHEELS) {
-    const f = fender(0.32, 0.36, w.front ? 10 : 18, w.front ? 165 : 172, MAT.red);
+    const f = fender(0.32, 0.36, w.front ? 10 : 18, w.front ? 165 : 172, paint);
     f.position.set(w.x * 1.02, 0.3, w.z);
     f.name = `fender_${w.name.slice(-2)}`;
     root.add(f);
   }
-  box(0.68, 0.14, 0.62, MAT.red, 0, 0.72, 0.68, root, 'frontPanel');
-  box(0.6, 0.18, 0.12, MAT.red, 0, 0.62, 1.0, root, 'nose');
-  box(0.68, 0.12, 0.6, MAT.red, 0, 0.74, -0.68, root, 'rearPanel');
-  box(0.38, 0.16, 0.34, MAT.red, 0, 0.84, 0.32, root, 'tank');
+  box(0.68, 0.14, 0.62, paint, 0, 0.72, 0.68, root, 'frontPanel');
+  box(0.6, 0.18, 0.12, paint, 0, 0.62, 1.0, root, 'nose');
+  box(0.68, 0.12, 0.6, paint, 0, 0.74, -0.68, root, 'rearPanel');
+  box(0.38, 0.16, 0.34, paint, 0, 0.84, 0.32, root, 'tank');
   const tankCap = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.02, 12), MAT.chrome);
   tankCap.position.set(0, 0.93, 0.36);
   root.add(tankCap);
@@ -367,7 +373,7 @@ export function buildQuadModel() {
     lamp.rotation.x = Math.PI / 2;
     lamp.position.set(s * 0.18, 0.64, 1.07);
     root.add(lamp);
-    const lens = new THREE.Mesh(new THREE.CircleGeometry(0.048, 16), MAT.lens);
+    const lens = new THREE.Mesh(new THREE.CircleGeometry(0.048, 16), lensMat);
     lens.position.set(s * 0.18, 0.64, 1.096);
     lens.name = s > 0 ? 'headlightLeft' : 'headlightRight';
     root.add(lens);
@@ -452,6 +458,7 @@ export function buildQuadModel() {
 }
 
 export function setHeadlights(quad, on) {
-  MAT.lens.emissive.setHex(on ? 0xfff2cc : 0x000000);
-  MAT.lens.emissiveIntensity = on ? 1.2 : 0;
+  const lens = quad.userData.lensMaterial;
+  lens.emissive.setHex(on ? 0xfff2cc : 0x000000);
+  lens.emissiveIntensity = on ? 1.2 : 0;
 }

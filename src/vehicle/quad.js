@@ -17,12 +17,20 @@ const CHOKE_REPEAT_INTERVAL = 0.12;
  * the visual model, with the engine model plugged in from outside.
  */
 export class Quad {
-  constructor({ scene, physics, RAPIER, world, engine, params }) {
+  /**
+   * @param {object} opts
+   * @param {string} opts.label   How it's referred to in prompts, e.g. "red quad".
+   * @param {object} opts.spawn   { x, z, yaw } where it starts.
+   * @param {number} [opts.bodyColor]
+   */
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor }) {
     this.world = world;
     this.engine = engine;
     this.params = params;
+    this.label = label;
+    this.spawn = spawn;
 
-    this.model = buildQuadModel();
+    this.model = buildQuadModel({ bodyColor });
     scene.add(this.model);
     const part = (name) => this.model.getObjectByName(name);
     this.body = part('body');
@@ -50,7 +58,7 @@ export class Quad {
     this.proxy.position.y = GROUND_OFFSET + 1.45 / 2;
     this.model.add(this.proxy);
 
-    const s = world.spawn.quad;
+    const s = spawn;
     this.physics = new QuadPhysics(physics, RAPIER, params, {
       x: s.x,
       y: world.heightAt(s.x, s.z) - GROUND_OFFSET + 0.05,

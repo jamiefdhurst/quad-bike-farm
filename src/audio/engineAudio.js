@@ -1,11 +1,14 @@
 // Main-thread side of the engine sound. The sound itself is made in an
 // AudioWorklet (engineWorklet.js), either from recorded pulses or fully
-// synthesised; this file creates the audio graph, loads the recordings,
-// forwards the engine's firing pulses and events with exact audio-clock
-// timestamps, and handles positioning and the ambient wind bed.
+// synthesised.
+//
+// AudioHub owns the one AudioContext, the master volume, the wind bed and the
+// recorded pulse bank. Each quad has an EngineAudio voice: its own worklet node
+// and panner, fed with that engine's firing pulses and events at exact
+// audio-clock timestamps.
 
 import workletUrl from './engineWorklet.js?url';
-import { DEFAULT_AUDIO_PARAMS } from './audioParams.js';
+import { DEFAULT_AUDIO_PARAMS, DEFAULT_SOUND_PARAMS } from './audioParams.js';
 
 function brownNoise(ctx, seconds) {
   const len = Math.floor(ctx.sampleRate * seconds);
@@ -19,11 +22,12 @@ function brownNoise(ctx, seconds) {
   return buf;
 }
 
-export class EngineAudio {
-  constructor(params = { ...DEFAULT_AUDIO_PARAMS }) {
+export class AudioHub {
+  constructor(params = { ...DEFAULT_SOUND_PARAMS }) {
     this.params = params;
     this.ctx = null;
     this.ready = false;
+    this.bank = null;
   }
 
   /** Must be called from a user gesture. Safe to call repeatedly. */
@@ -45,22 +49,9 @@ export class EngineAudio {
 
   build() {
     const ctx = this.ctx;
-    const p = this.params;
-
     this.master = ctx.createGain();
-    this.master.gain.value = p.masterVolume;
+    this.master.gain.value = this.params.masterVolume;
     this.master.connect(ctx.destination);
-
-    this.panner = ctx.createPanner();
-    this.panner.panningModel = 'HRTF';
-    this.panner.distanceModel = 'inverse';
-    this.panner.refDistance = p.refDistance;
-    this.panner.rolloffFactor = p.rolloff;
-    this.panner.maxDistance = 600;
-    this.panner.connect(this.master);
-
-    this.node = new AudioWorkletNode(ctx, 'engine-processor', { numberOfInputs: 0, outputChannelCount: [1] });
-    this.node.connect(this.panner);
 
     // Ambient wind, not positional.
     const wind = ctx.createBufferSource();
@@ -74,46 +65,118 @@ export class EngineAudio {
     wind.connect(this.windFilter).connect(this.windGain).connect(this.master);
     wind.start();
     this.windPhase = Math.random() * 10;
-
-    this.nextFrameTime = 0;
     this.ready = true;
   }
 
-  /**
-   * Loads the recorded engine pulses (see tools/slice_engine_audio.py) and hands
-   * them to the worklet. Until this finishes, or if it fails, the synth plays.
-   */
+  /** Loads the recorded engine pulses (see tools/slice_engine_audio.py). Until then, or if it fails, voices use the synth. */
   async loadBank() {
     const base = import.meta.env?.BASE_URL ?? '/';
     try {
       const bank = await (await fetch(`${base}audio/engine-bank.json`)).json();
       const buffer = await this.ctx.decodeAudioData(await (await fetch(base + bank.file)).arrayBuffer());
-      const data = new Float32Array(buffer.getChannelData(0));
-      this.node.port.postMessage({ bank: { ...bank, data } }, [data.buffer]);
-      this.bankLoaded = true;
+      this.bank = { ...bank, data: buffer.getChannelData(0) };
     } catch (err) {
       console.warn('Recorded engine sound unavailable, using the synth', err);
     }
+  }
+
+  /** Points the listener at the camera and drives the master volume and wind. */
+  update(dt, listener) {
+    if (!this.ready) return;
+    const ctx = this.ctx;
+    const p = this.params;
+    const t = ctx.currentTime;
+    this.master.gain.setTargetAtTime(p.muted ? 0 : p.masterVolume, t, 0.05);
+
+    const l = ctx.listener;
+    const pos = listener.position;
+    const fwd = listener.getWorldDirection(this.tmpFwd ?? (this.tmpFwd = listener.position.clone()));
+    const up = listener.up.clone().applyQuaternion(listener.quaternion);
+    if (l.positionX) {
+      l.positionX.setTargetAtTime(pos.x, t, 0.02);
+      l.positionY.setTargetAtTime(pos.y, t, 0.02);
+      l.positionZ.setTargetAtTime(pos.z, t, 0.02);
+      l.forwardX.setTargetAtTime(fwd.x, t, 0.02);
+      l.forwardY.setTargetAtTime(fwd.y, t, 0.02);
+      l.forwardZ.setTargetAtTime(fwd.z, t, 0.02);
+      l.upX.setTargetAtTime(up.x, t, 0.02);
+      l.upY.setTargetAtTime(up.y, t, 0.02);
+      l.upZ.setTargetAtTime(up.z, t, 0.02);
+    } else {
+      l.setPosition(pos.x, pos.y, pos.z);
+      l.setOrientation(fwd.x, fwd.y, fwd.z, up.x, up.y, up.z);
+    }
+
+    this.windPhase += dt;
+    const gust = 0.7 + 0.3 * Math.sin(this.windPhase * 0.23) * Math.sin(this.windPhase * 0.071 + 1);
+    this.windGain.gain.setTargetAtTime(p.ambientVolume * gust, t, 0.5);
+    this.windFilter.frequency.setTargetAtTime(300 + 250 * gust, t, 0.5);
+  }
+}
+
+/** One engine's sound, positioned at its quad. */
+export class EngineAudio {
+  constructor(hub, params = { ...DEFAULT_AUDIO_PARAMS }) {
+    this.hub = hub;
+    this.params = params;
+    this.node = null;
+    this.bankSent = false;
+  }
+
+  /** Creates the worklet node once the hub is ready, and sends it the pulse bank once that has loaded. */
+  attach() {
+    const hub = this.hub;
+    if (!hub.ready) return false;
+    if (!this.node) {
+      const ctx = hub.ctx;
+      const p = this.params;
+      this.panner = ctx.createPanner();
+      this.panner.panningModel = 'HRTF';
+      this.panner.distanceModel = 'inverse';
+      this.panner.refDistance = p.refDistance;
+      this.panner.rolloffFactor = p.rolloff;
+      this.panner.maxDistance = 600;
+      this.panner.connect(hub.master);
+      this.node = new AudioWorkletNode(ctx, 'engine-processor', { numberOfInputs: 0, outputChannelCount: [1] });
+      this.node.connect(this.panner);
+      this.nextFrameTime = 0;
+    }
+    if (!this.bankSent && hub.bank) {
+      // Each voice gets its own copy; the worklet keeps it for good.
+      const data = new Float32Array(hub.bank.data);
+      this.node.port.postMessage({ bank: { ...hub.bank, data } }, [data.buffer]);
+      this.bankSent = true;
+    }
+    return true;
+  }
+
+  get bankLoaded() {
+    return this.bankSent;
   }
 
   /**
    * @param {number} dt  Duration of the engine update whose pulses are being played.
    * @param {EngineModel} engine
    * @param {object} source  World position of the engine { x, y, z }.
-   * @param {THREE.Camera} listener
    */
-  update(dt, engine, source, listener) {
-    if (!this.ready) return;
-    const ctx = this.ctx;
+  update(dt, engine, source) {
+    if (!this.attach()) return;
+    const ctx = this.hub.ctx;
     const p = this.params;
     const now = ctx.currentTime;
+    const latency = this.hub.params.latency;
 
     // Keep a running schedule so pulse spacing survives frame jitter.
-    if (this.nextFrameTime < now || this.nextFrameTime > now + 0.3) this.nextFrameTime = now + p.latency;
+    if (this.nextFrameTime < now || this.nextFrameTime > now + 0.3) this.nextFrameTime = now + latency;
     const frameStart = this.nextFrameTime;
     this.nextFrameTime += dt;
 
-    const events = engine.pulses.map((pulse) => ({ time: frameStart + pulse.t, type: pulse.type, strength: pulse.strength, period: pulse.period }));
+    const events = engine.pulses.map((pulse) => ({
+      time: frameStart + pulse.t,
+      type: pulse.type,
+      strength: pulse.strength,
+      period: pulse.period,
+    }));
     for (const e of engine.events) {
       const time = frameStart + e.t;
       if (e.type === 'stalled') {
@@ -138,46 +201,15 @@ export class EngineAudio {
       events,
     });
 
-    this.master.gain.setTargetAtTime(p.muted ? 0 : p.masterVolume, now, 0.05);
     this.panner.refDistance = p.refDistance;
     this.panner.rolloffFactor = p.rolloff;
-    this.updatePositions(source, listener);
-
-    // Wind gusts slowly.
-    this.windPhase += dt;
-    const gust = 0.7 + 0.3 * Math.sin(this.windPhase * 0.23) * Math.sin(this.windPhase * 0.071 + 1);
-    this.windGain.gain.setTargetAtTime(p.ambientVolume * gust, now, 0.5);
-    this.windFilter.frequency.setTargetAtTime(300 + 250 * gust, now, 0.5);
-  }
-
-  updatePositions(source, listener) {
-    const ctx = this.ctx;
     const pn = this.panner;
-    const t = ctx.currentTime;
     if (pn.positionX) {
-      pn.positionX.setTargetAtTime(source.x, t, 0.02);
-      pn.positionY.setTargetAtTime(source.y, t, 0.02);
-      pn.positionZ.setTargetAtTime(source.z, t, 0.02);
+      pn.positionX.setTargetAtTime(source.x, now, 0.02);
+      pn.positionY.setTargetAtTime(source.y, now, 0.02);
+      pn.positionZ.setTargetAtTime(source.z, now, 0.02);
     } else {
       pn.setPosition(source.x, source.y, source.z);
-    }
-    const l = ctx.listener;
-    const pos = listener.position;
-    const fwd = listener.getWorldDirection(this.tmpFwd ?? (this.tmpFwd = listener.position.clone()));
-    const up = listener.up.clone().applyQuaternion(listener.quaternion);
-    if (l.positionX) {
-      l.positionX.setTargetAtTime(pos.x, t, 0.02);
-      l.positionY.setTargetAtTime(pos.y, t, 0.02);
-      l.positionZ.setTargetAtTime(pos.z, t, 0.02);
-      l.forwardX.setTargetAtTime(fwd.x, t, 0.02);
-      l.forwardY.setTargetAtTime(fwd.y, t, 0.02);
-      l.forwardZ.setTargetAtTime(fwd.z, t, 0.02);
-      l.upX.setTargetAtTime(up.x, t, 0.02);
-      l.upY.setTargetAtTime(up.y, t, 0.02);
-      l.upZ.setTargetAtTime(up.z, t, 0.02);
-    } else {
-      l.setPosition(pos.x, pos.y, pos.z);
-      l.setOrientation(fwd.x, fwd.y, fwd.z, up.x, up.y, up.z);
     }
   }
 }

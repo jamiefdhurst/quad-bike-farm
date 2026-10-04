@@ -82,3 +82,13 @@ A running log of choices made while building this, so later work starts from the
 - While looking at the quad on foot, K, R, Q and Z work its ignition, starter and choke, and the engine status shows. The quad only listens while it's the focused interactable.
 - The player no longer shoves the quad by walking into it. The character controller's impulses on dynamic bodies are off.
 - Misfires no longer drop the sound out. A misfire's pulse now plays with its opening thump held down (25%) while the rest of the cycle plays at 70%, because a real misfire loses the bang but the engine keeps turning. Every pulse also runs 5% longer than its predicted cycle, so a late next pulse crossfades over it instead of leaving a gap. Warm idle now measures the same as the original recording for short dropouts (none).
+
+## Second quad (2026-10-04)
+
+- Quads are data: `src/vehicle/quadSpecs.js` lists each one's name, colour and parameter overrides, and `QuadUnit` builds the engine, bike, vibration, smoke and sound for it. Spawn points are `LAYOUT.spawn.quads`, in the same order. Adding another quad is a spec plus a spawn point.
+- Red quad: the original tuning, Honda-style. Blue quad: Yamaha-style. It idles at 1,450 rpm warm (Yamaha's manual figure for its quads is 1,450 to 1,550), revs to 9,000, has a quicker throttle response, needs more choke cold, runs lumpier cold, warms in 120 s rather than 150 s, and is lighter and stronger. Its cold engine is weaker, which keeps the cold hard-braking stall (from about 18 mph) despite the faster revs; warm it never stalls from braking.
+- The blue quad's recorded idle uses the rev-sweep machine's own idle pulses (`recIdleSource: 'rev'`), so it's one machine throughout and sounds different from the red.
+- One AudioContext (`AudioHub`) with one worklet voice per quad. Master volume, mute, wind and latency are shared ("Sound" in the panel); everything else is per quad.
+- Paint and headlight lens materials are per quad; other materials are shared.
+- She can be asked onto either quad. If she's seated on one and asked onto the other, she gets off and walks over. Menu options are per quad, nearest first.
+- The HUD status and the panel's live readouts follow the quad you're riding, else the one you're looking at, else the last one you used.

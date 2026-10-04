@@ -167,7 +167,8 @@ class RecordedEngine {
         const w = smoothstep(p.recBlendLo, p.recBlendHi, rpm);
         // Pick grains by the rpm this cycle actually runs at.
         const cycleRpm = ev.period > 0 ? 120 / ev.period : rpm;
-        if (w < 0.999) this.playGrain(this.pick(['idle'], cycleRpm), rpm, gain * (1 - w), 'low', ev.period, attack);
+        const idleKinds = p.recIdleSource === 'rev' ? ['idle2'] : ['idle'];
+        if (w < 0.999) this.playGrain(this.pick(idleKinds, cycleRpm), rpm, gain * (1 - w), 'low', ev.period, attack);
         if (w > 0.001) {
           // Throttle open: grains from the rev rising; closed: from it falling back.
           const kinds = throttle > 0.25 ? ['accel', 'idle2'] : ['decel', 'idle2'];

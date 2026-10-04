@@ -87,31 +87,49 @@ export class Companion {
 
   // Requests ----------------------------------------------------------------
 
-  /** Menu options that make sense in the current state. */
-  getActions() {
-    const actions = [];
+  /**
+   * Menu options that make sense right now. With several quads, each gets its
+   * own options, nearest to her first.
+   */
+  getActions(quads = [this.quad]) {
     const s = this.fsm;
-    const goal = s.data?.goal;
-    const canMount = !this.quad.isTipped;
-    if (s.is('idle') || (s.is('walking') && goal !== 'mount')) {
-      if (canMount) actions.push({ label: 'Get on the quad', run: () => this.requestMount() });
+    const here = this.root.getWorldPosition(new THREE.Vector3());
+    const sorted = [...quads].sort((a, b) => a.position.distanceTo(here) - b.position.distanceTo(here));
+    const actions = [];
+    const boarding = s.is('seated', 'mounting') || (s.is('walking') && s.data?.goal === 'mount');
+    if (boarding) {
+      actions.push({ label: `Stand next to the ${this.quad.label}`, run: () => this.requestStandBeside(this.quad) });
+      for (const q of sorted) {
+        if (q !== this.quad && !q.isTipped) actions.push({ label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
+      }
+      return actions;
     }
-    if (s.is('seated', 'mounting') || (s.is('walking') && goal === 'mount')) {
-      actions.push({ label: 'Stand next to the quad', run: () => this.requestStandBeside() });
-    } else if (s.is('idle', 'walking') && !this.isStandingBeside()) {
-      actions.push({ label: 'Stand next to the quad', run: () => this.requestStandBeside() });
+    if (s.is('dismounting')) return actions;
+    for (const q of sorted) {
+      if (!q.isTipped) actions.push({ label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
+      if (!this.isStandingBeside(q)) actions.push({ label: `Stand next to the ${q.label}`, run: () => this.requestStandBeside(q) });
     }
     return actions;
   }
 
-  requestMount() {
+  requestMount(quad = this.quad) {
+    if (this.fsm.is('seated', 'mounting') && quad !== this.quad) {
+      // Off this one first, then over to the other.
+      this.afterDismount = () => this.requestMount(quad);
+      this.fsm.transition('dismounting');
+      return;
+    }
+    if (this.fsm.is('seated')) return;
+    this.quad = quad;
     this.fsm.transition('walking', { goal: 'mount', target: () => this.mountPoint() });
   }
 
-  requestStandBeside() {
+  requestStandBeside(quad = this.quad) {
     if (this.fsm.is('seated', 'mounting')) {
+      this.afterDismount = quad !== this.quad ? () => this.requestStandBeside(quad) : null;
       this.fsm.transition('dismounting');
     } else {
+      this.quad = quad;
       this.fsm.transition('walking', { goal: 'stand', target: () => this.standPoint() });
     }
   }
@@ -119,16 +137,17 @@ export class Companion {
   // Positions around the quad ---------------------------------------------
 
   /** Side of the bike (+1 left, -1 right) nearer to her. */
-  nearSide() {
-    const local = this.quad.model.worldToLocal(this.root.getWorldPosition(this.tmpV));
+  nearSide(quad = this.quad) {
+    const local = quad.model.worldToLocal(this.root.getWorldPosition(this.tmpV));
     return local.x >= 0 ? 1 : -1;
   }
 
   /** Standing spot beside the pillion seat, facing the bike. */
-  standPoint(side = this.root.parent === this.scene ? this.nearSide() : 1) {
-    const p = this.quad.localToWorld(side * this.params.standOffset, 0, -0.35);
+  standPoint(side, quad = this.quad) {
+    if (side === undefined) side = this.root.parent === this.scene ? this.nearSide(quad) : 1;
+    const p = quad.localToWorld(side * this.params.standOffset, 0, -0.35);
     p.y = this.world.heightAt(p.x, p.z);
-    const c = this.quad.position;
+    const c = quad.position;
     return { position: p, facing: Math.atan2(c.x - p.x, c.z - p.z) };
   }
 
@@ -140,9 +159,9 @@ export class Companion {
     return { position: p, facing: this.quad.yaw, side };
   }
 
-  isStandingBeside() {
+  isStandingBeside(quad = this.quad) {
     if (!this.fsm.is('idle')) return false;
-    const s = this.standPoint();
+    const s = this.standPoint(undefined, quad);
     return s.position.distanceTo(this.root.position) < 0.6 && Math.abs(angleTo(this.heading, s.facing)) < 0.6;
   }
 
@@ -422,6 +441,10 @@ const STATES = {
         this.rig.legSpread = 0;
         this.setColliderEnabled(true);
         this.fsm.transition('idle', { facing: this.target.facing });
+        // A request that needed her off this quad first (e.g. getting on the other one).
+        const next = this.afterDismount;
+        this.afterDismount = null;
+        next?.();
       }
     },
   },

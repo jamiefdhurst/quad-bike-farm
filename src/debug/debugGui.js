@@ -14,8 +14,19 @@ export class DebugGui {
 
     this.buildLive();
     this.buildActions();
+    const folders = {};
+    // "Red quad/Engine" becomes an Engine folder inside a Red quad folder.
+    const folderFor = (path) => {
+      if (folders[path]) return folders[path];
+      const cut = path.lastIndexOf('/');
+      const parent = cut < 0 ? this.gui : folderFor(path.slice(0, cut));
+      const f = parent.addFolder(path.slice(cut + 1));
+      f.close();
+      folders[path] = f;
+      return f;
+    };
     for (const group of getTuningGroups()) {
-      const folder = this.gui.addFolder(group.name);
+      const folder = folderFor(group.name);
       for (const [key, range] of Object.entries(group.ranges)) {
         let c;
         if (typeof range[0] === 'string') {
@@ -37,53 +48,61 @@ export class DebugGui {
   }
 
   buildLive() {
-    const { engine, quad, vibration } = this.game;
+    const g = this.game;
+    const unit = () => g.inspectedUnit();
     const live = {
+      get quad() {
+        return unit().name;
+      },
       get state() {
-        return engine.state;
+        return unit().engine.state;
       },
       get rpm() {
-        return Math.round(engine.rpm);
+        return Math.round(unit().engine.rpm);
       },
       get mixture() {
-        return engine.mixture;
+        return unit().engine.mixture;
       },
       get roughness() {
-        return engine.roughness;
+        return unit().engine.roughness;
       },
       get power() {
-        return engine.power;
+        return unit().engine.power;
       },
       get fouling() {
-        return engine.fouling;
+        return unit().engine.fouling;
       },
       get load() {
-        return engine.load;
+        return unit().engine.load;
       },
       get choke() {
-        return quad.choke;
+        return unit().quad.choke;
       },
       get shake() {
-        return vibration.intensity;
+        return unit().vibration.intensity;
+      },
+      get temperature() {
+        return unit().engine.temperature;
+      },
+      set temperature(v) {
+        unit().engine.setTemperature(v);
       },
     };
-    const f = this.gui.addFolder('Engine (live)');
+    const f = this.gui.addFolder('Engine (live): the quad you are on or looking at');
     for (const key of Object.keys(Object.getOwnPropertyDescriptors(live))) {
+      if (key === 'temperature') continue;
       f.add(live, key).listen().disable();
     }
-    f.add(engine, 'temperature', 0, 1, 0.01).name('temperature (drag to set)').listen();
+    f.add(live, 'temperature', 0, 1, 0.01).name('temperature (drag to set)').listen();
   }
 
   buildActions() {
     const g = this.game;
     const actions = {
-      warm: () => g.engine.setTemperature(1),
-      cold: () => g.engine.setTemperature(0),
-      clearFouling: () => (g.engine.fouling = 0),
-      resetQuad: () => {
-        const s = g.world.spawn.quad;
-        g.quad.physics.reset(s.x, g.world.heightAt(s.x, s.z) + 0.5, s.z, s.yaw);
-      },
+      warm: () => g.inspectedUnit().engine.setTemperature(1),
+      cold: () => g.inspectedUnit().engine.setTemperature(0),
+      clearFouling: () => (g.inspectedUnit().engine.fouling = 0),
+      resetQuads: () => g.units.forEach((u) => u.resetToSpawn(g.world)),
       copy: () => {
         const text = JSON.stringify(exportTuning(), null, 2);
         navigator.clipboard?.writeText(text);
@@ -92,10 +111,10 @@ export class DebugGui {
       },
     };
     const f = this.gui.addFolder('Shortcuts');
-    f.add(actions, 'warm').name('Warm engine');
-    f.add(actions, 'cold').name('Cold engine');
+    f.add(actions, 'warm').name('Warm this engine');
+    f.add(actions, 'cold').name('Cool this engine');
     f.add(actions, 'clearFouling').name('Clear plug fouling');
-    f.add(actions, 'resetQuad').name('Put quad back at the barn');
+    f.add(actions, 'resetQuads').name('Put the quads back in the yard');
     f.add(actions, 'copy').name('Copy all values as JSON');
   }
 

@@ -1,6 +1,6 @@
 # Quad Bike Farm
 
-A small first-person browser game: a farm quad bike with a properly temperamental single-cylinder engine, a muddy track round a British field, and your girlfriend, who'll hop on the back if you ask.
+A small first-person browser game: two farm quad bikes with properly temperamental single-cylinder engines, a muddy track round a British field, and your girlfriend, who'll hop on the back if you ask.
 
 Three.js, Rapier physics, Web Audio. Desktop, keyboard and mouse.
 
@@ -56,6 +56,13 @@ Look at her and press `E`. Pick an option with the number keys, or scroll to hig
 | `M` | Mute |
 | `` ` `` | Tuning panel |
 
+## The two quads
+
+- **Red quad**: Honda-style. Soft and steady, with a low warm idle around 1,150 rpm.
+- **Blue quad**: Yamaha-style. Idles higher (about 1,450 rpm warm), revs harder and higher, needs more choke from cold and runs lumpier until it's warm, warms a bit quicker, pulls a little harder, and is a touch touchier about stalling when braking hard from cold. It sounds different too: its idle comes from a different recorded machine.
+
+Both start cold. Everything below applies to either.
+
 ## Starting a cold engine
 
 The engine starts stone cold and won't fire without choke.
@@ -78,14 +85,14 @@ Things to know:
 
 Look at her and press `E`:
 
-- **Get on the quad**: she walks over and sits on the pillion seat. Get on and ride; she stays on.
-- **Stand next to the quad**: she gets off if she's on, or walks over if she isn't, and stands beside it facing it.
+- **Get on the red / blue quad**: she walks over and sits on the pillion seat. Get on and ride; she stays on. Asking her onto the other quad while she's sitting on one, she gets off and walks over.
+- **Stand next to the red / blue quad**: she gets off if she's on, or walks over if she isn't, and stands beside it facing it.
 
 The menu only offers what makes sense: no "get on" while she's already on, no "stand next to it" while she's already there. She stays put on the pillion when you get off until you ask her to get down.
 
 ## Tuning panel
 
-Press `` ` `` to open it. It releases the mouse so you can use the panel; click the game to carry on. Every engine, vibration, audio, vehicle, player and companion value is in there, along with live engine readouts (state, rpm, mixture, roughness, fouling) and shortcuts: warm or cool the engine instantly, clear a flood, put the quad back at the barn, and copy every value as JSON.
+Press `` ` `` to open it. It releases the mouse so you can use the panel; click the game to carry on. Each quad has its own folder (Engine, Vibration, Audio, Smoke, Vehicle), alongside Sound, Player, Companion and Sky. The live engine readouts (state, rpm, mixture, roughness, fouling) and the shortcuts (warm or cool the engine, clear a flood) follow the quad you're on or looking at. There's also a shortcut to put both quads back in the yard and one to copy every value as JSON.
 
 ## How it's put together
 
@@ -97,7 +104,7 @@ src/
   vibration/           pulse-driven vibration model (pure logic) and parameters
   effects/             exhaust smoke
   audio/               procedural Web Audio engine sound
-  vehicle/             quad model, Rapier vehicle, drivetrain, dash
+  vehicle/             quad model, Rapier vehicle, drivetrain, dash; quadSpecs.js defines the quads
   player/              walking and seated first-person player
   npc/                 state machine, character rig, companion behaviour
   interaction/         look-at interaction and the context menu
@@ -125,6 +132,8 @@ To recut the recordings, see the instructions at the top of `tools/slice_engine_
 **Vibration** (`src/vibration/vibrationModel.js`). Each firing pulse kicks a set of damped oscillators (body heave, pitch and roll, handlebars, rider's head) in a slightly random direction. Kicks are strongest at idle and with a rough engine, and fade as rpm rises. The bike body, handlebars, seated camera and anything sitting on the bike all move with it.
 
 **Companion** (`src/npc/companion.js`). A small state machine (idle, walking, mounting, seated, dismounting). Requests are methods, and `getActions()` decides which ones the menu shows. To add a new request, add a method and an entry in `getActions()`, plus a state if it needs one.
+
+**Quads** (`src/vehicle/quadSpecs.js`, `src/vehicle/quadUnit.js`). Each quad is a spec (name, colour and overrides for engine, vehicle, vibration, audio and smoke parameters) built into a `QuadUnit` that owns its engine model, physics, vibration, smoke and sound. To add a third, add a spec and a spawn point in the layout.
 
 **Layout** (`src/world/layout.js`). Positions for the field, barn, gate, track control points and spawn points all live here.
 

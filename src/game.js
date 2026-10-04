@@ -5,17 +5,12 @@ import { loadModels } from './world/assets.js';
 import { World } from './world/world.js';
 import { Player, PLAYER_CAPSULE } from './player/player.js';
 import { DEFAULT_PLAYER_PARAMS, PLAYER_PARAM_RANGES } from './player/playerParams.js';
-import { EngineModel } from './engine/engineModel.js';
-import { DEFAULT_ENGINE_PARAMS, ENGINE_PARAM_RANGES } from './engine/engineParams.js';
-import { Quad } from './vehicle/quad.js';
-import { DEFAULT_VEHICLE_PARAMS, VEHICLE_PARAM_RANGES } from './vehicle/vehicleParams.js';
-import { VibrationModel } from './vibration/vibrationModel.js';
-import { DEFAULT_VIBRATION_PARAMS, VIBRATION_PARAM_RANGES } from './vibration/vibrationParams.js';
-import { EngineAudio } from './audio/engineAudio.js';
-import { DEFAULT_AUDIO_PARAMS, AUDIO_PARAM_RANGES } from './audio/audioParams.js';
+import { QuadUnit } from './vehicle/quadUnit.js';
+import { QUAD_SPECS } from './vehicle/quadSpecs.js';
+import { AudioHub } from './audio/engineAudio.js';
+import { DEFAULT_SOUND_PARAMS, SOUND_PARAM_RANGES } from './audio/audioParams.js';
 import { Companion } from './npc/companion.js';
 import { DEFAULT_COMPANION_PARAMS, COMPANION_PARAM_RANGES } from './npc/companionParams.js';
-import { ExhaustSmoke, DEFAULT_SMOKE_PARAMS, SMOKE_PARAM_RANGES } from './effects/exhaustSmoke.js';
 import { Interaction } from './interaction/interaction.js';
 import { Menu } from './interaction/menu.js';
 import { Hud } from './hud/hud.js';
@@ -76,28 +71,30 @@ export class Game {
       params: { ...DEFAULT_PLAYER_PARAMS },
     });
 
-    this.engine = new EngineModel(DEFAULT_ENGINE_PARAMS);
-    this.quad = new Quad({
-      scene: this.scene,
-      physics: this.physics,
-      RAPIER: this.RAPIER,
-      world: this.world,
-      engine: this.engine,
-      params: { ...DEFAULT_VEHICLE_PARAMS },
-    });
+    this.audioHub = new AudioHub({ ...DEFAULT_SOUND_PARAMS });
+    this.input.on('firstinteraction', () => this.audioHub.unlock());
 
-    this.vibration = new VibrationModel({ ...DEFAULT_VIBRATION_PARAMS });
-    this.smoke = new ExhaustSmoke(this.scene, (x, z) => this.world.heightAt(x, z), { ...DEFAULT_SMOKE_PARAMS });
+    this.units = QUAD_SPECS.map(
+      (spec, i) =>
+        new QuadUnit({
+          spec,
+          spawn: this.world.spawn.quads[i],
+          scene: this.scene,
+          physics: this.physics,
+          RAPIER: this.RAPIER,
+          world: this.world,
+          audioHub: this.audioHub,
+        }),
+    );
     this.updateSmokeScale();
-    this.audio = new EngineAudio({ ...DEFAULT_AUDIO_PARAMS });
-    this.input.on('firstinteraction', () => this.audio.unlock());
+    this.lastUnit = this.units[0];
 
     this.companion = new Companion({
       scene: this.scene,
       physics: this.physics,
       RAPIER: this.RAPIER,
       world: this.world,
-      quad: this.quad,
+      quad: this.units[0].quad,
       gltf: this.models.companion,
       params: { ...DEFAULT_COMPANION_PARAMS },
     });
@@ -107,19 +104,18 @@ export class Game {
       interact: () => this.openCompanionMenu(),
     });
 
-    this.quadInteraction = this.interaction.add({
-      target: this.quad.proxy,
-      prompt: () => (this.quad.isTipped ? 'Right the quad' : 'Ride the quad   ·   K ignition   R start   Q/Z choke'),
-      interact: () => (this.quad.isTipped ? this.quad.rightItself() : this.mount()),
-    });
+    for (const unit of this.units) {
+      const quad = unit.quad;
+      unit.interaction = this.interaction.add({
+        unit,
+        target: quad.proxy,
+        prompt: () =>
+          quad.isTipped ? `Right the ${unit.label}` : `Ride the ${unit.label}   ·   K ignition   R start   Q/Z choke`,
+        interact: () => (quad.isTipped ? quad.rightItself() : this.mount(unit)),
+      });
+    }
 
-    registerTuning('Engine', this.engine.params, ENGINE_PARAM_RANGES);
-    registerTuning('Vibration', this.vibration.params, VIBRATION_PARAM_RANGES);
-    registerTuning('Audio', this.audio.params, AUDIO_PARAM_RANGES);
-    registerTuning('Smoke', this.smoke.params, SMOKE_PARAM_RANGES);
-    registerTuning('Vehicle', this.quad.params, VEHICLE_PARAM_RANGES, {
-      onChange: () => this.quad.physics.applyParams(),
-    });
+    registerTuning('Sound', this.audioHub.params, SOUND_PARAM_RANGES);
     registerTuning('Player', this.player.params, PLAYER_PARAM_RANGES);
     registerTuning('Companion', this.companion.params, COMPANION_PARAM_RANGES);
     this.debugGui = new DebugGui(this);
@@ -141,7 +137,7 @@ export class Game {
   start() {
     const overlay = document.getElementById('overlay');
     overlay.addEventListener('click', () => {
-      this.audio.unlock();
+      this.audioHub.unlock();
       this.input.requestPointerLock();
     });
     this.input.on('lockchange', (locked) => {
@@ -152,10 +148,27 @@ export class Game {
     this.renderer.setAnimationLoop(() => this.frame());
   }
 
+  // Which quad -------------------------------------------------------------
+
+  /** The quad the player is riding, if any. */
+  get riddenUnit() {
+    return this.player.isRiding ? this.player.vehicle.unit : null;
+  }
+
+  /** The quad the player is looking at on foot, if any. */
+  get focusedUnit() {
+    return this.interaction.focused?.unit ?? null;
+  }
+
+  /** The quad the HUD and tuning panel should describe: ridden, else looked at, else the last one. */
+  inspectedUnit() {
+    return this.riddenUnit ?? this.focusedUnit ?? this.lastUnit;
+  }
+
   // Companion menu ---------------------------------------------------------
 
   openCompanionMenu() {
-    const actions = this.companion.getActions();
+    const actions = this.companion.getActions(this.units.map((u) => u.quad));
     if (!actions.length) {
       this.hud.toast('She\'s busy');
       return;
@@ -173,29 +186,31 @@ export class Game {
 
   // Riding ---------------------------------------------------------------
 
-  mount() {
+  mount(unit) {
     if (this.player.isRiding) return;
-    this.player.mount(this.quad);
-    this.quad.setRider(this.player, this.input);
+    this.player.mount(unit.quad);
+    unit.quad.setRider(this.player, this.input);
+    this.lastUnit = unit;
     this.input.takeWheelSteps();
   }
 
   tryDismount() {
-    if (Math.abs(this.quad.forwardSpeed) > this.player.params.dismountSpeed) {
+    const quad = this.riddenUnit.quad;
+    if (Math.abs(quad.forwardSpeed) > this.player.params.dismountSpeed) {
       this.hud.toast('Slow down to get off');
       return;
     }
-    const spot = this.findDismountSpot();
+    const spot = this.findDismountSpot(quad);
     if (!spot) {
       this.hud.toast('No room to get off here');
       return;
     }
-    this.quad.setRider(null, null);
-    this.player.dismount(spot, this.quad.yaw + Math.PI);
+    quad.setRider(null, null);
+    this.player.dismount(spot, quad.yaw + Math.PI);
   }
 
   /** Free spot beside the bike for the player's feet, trying left, right, behind, then in front. */
-  findDismountSpot() {
+  findDismountSpot(quad) {
     const RAPIER = this.RAPIER;
     const shape = new RAPIER.Capsule(PLAYER_CAPSULE.halfHeight, PLAYER_CAPSULE.radius);
     const terrain = this.world.terrain.collider;
@@ -206,7 +221,7 @@ export class Game {
       [0, 1.8],
     ];
     for (const [lx, lz] of candidates) {
-      const p = this.quad.localToWorld(lx, 0, lz);
+      const p = quad.localToWorld(lx, 0, lz);
       const feetY = this.world.heightAt(p.x, p.z) + 0.05;
       const centre = { x: p.x, y: feetY + PLAYER_CAPSULE.feetToCentre + 0.05, z: p.z };
       const hit = this.physics.intersectionWithShape(
@@ -234,25 +249,27 @@ export class Game {
     if (input.wasPressed('KeyH')) this.hud.toggleHelp();
     if (input.wasPressed('Backquote')) this.debugGui.toggle();
     if (input.wasPressed('KeyM')) {
-      this.audio.params.muted = !this.audio.params.muted;
-      this.hud.toast(this.audio.params.muted ? 'Sound off' : 'Sound on', 1.2);
+      this.audioHub.params.muted = !this.audioHub.params.muted;
+      this.hud.toast(this.audioHub.params.muted ? 'Sound off' : 'Sound on', 1.2);
     }
 
+    for (const unit of this.units) unit.quad.setRemote(null);
     if (this.player.isRiding) {
-      this.quad.setRemote(null);
-      this.quad.handleFrameInput(dt);
-      if (input.wasPressed('KeyE')) this.tryDismount();
       this.interaction.clear();
+      this.riddenUnit.quad.handleFrameInput(dt);
+      if (input.wasPressed('KeyE')) this.tryDismount();
     } else if (this.menu.isOpen) {
-      this.quad.setRemote(null);
       this.menu.handleInput(input);
       if (!this.menu.isOpen) this.closeMenu();
     } else {
       input.takeWheelSteps();
       const focused = this.interaction.update(this.player, this.player.params.interactRange);
-      // Looking at the quad lets you work its ignition, starter and choke from beside it.
-      this.quad.setRemote(focused === this.quadInteraction ? input : null);
-      this.quad.handleFrameInput(dt);
+      // Looking at a quad lets you work its ignition, starter and choke from beside it.
+      if (focused?.unit) {
+        focused.unit.quad.setRemote(input);
+        focused.unit.quad.handleFrameInput(dt);
+        this.lastUnit = focused.unit;
+      }
       if (focused && input.wasPressed('KeyE')) focused.interact();
     }
 
@@ -263,18 +280,16 @@ export class Game {
     }
     const alpha = this.accumulator / FIXED_DT;
 
-    this.engine.update(dt, this.quad.engineControls());
-    this.vibration.update(dt, this.engine);
-    this.quad.update(dt, alpha, this.vibration);
-    this.companion.update(dt, this.vibration, {
+    for (const unit of this.units) unit.update(dt, alpha);
+    const ridden = this.riddenUnit;
+    this.companion.update(dt, this.companion.quad.unit.vibration, {
       position: this.camera.position,
       isRiding: this.player.isRiding,
       talking: this.menu.isOpen,
     });
-    this.smoke.update(dt, this.engine, this.quad.exhaustTip, this.quad.velocity);
-    if (!this.debugCamera) this.player.update(dt, alpha, this.vibration);
-    this.audio.update(dt, this.engine, this.quad.position, this.camera);
-    this.world.update(dt, this.player.isRiding ? this.quad.position : this.player.position, this.camera);
+    if (!this.debugCamera) this.player.update(dt, alpha, ridden ? ridden.vibration : null);
+    this.audioHub.update(dt, this.camera);
+    this.world.update(dt, ridden ? ridden.quad.position : this.player.position, this.camera);
     this.updateHud(dt);
 
     this.renderer.render(this.scene, this.camera);
@@ -283,24 +298,27 @@ export class Game {
 
   fixedUpdate(dt) {
     this.player.fixedUpdate(dt);
-    this.quad.fixedUpdate(dt);
+    for (const unit of this.units) unit.fixedUpdate(dt);
     this.physics.step();
-    this.quad.recordTransform();
+    for (const unit of this.units) unit.recordTransform();
   }
 
   updateHud(dt) {
     const f = this.interaction.focused;
     this.hud.setPrompt(f ? f.prompt() : '');
-    if (this.player.isRiding || f === this.quadInteraction) {
-      const e = this.engine;
-      const mph = Math.abs(this.quad.forwardSpeed) * 2.237;
+    const unit = this.riddenUnit ?? this.focusedUnit;
+    if (unit) {
+      const e = unit.engine;
+      const quad = unit.quad;
+      const mph = Math.abs(quad.forwardSpeed) * 2.237;
       const bars = Math.round(e.temperature * 10);
       this.hud.setStatus(
         [
+          unit.name,
           `Engine   ${e.state}${e.state === 'stalled' ? ' (R to restart)' : ''}`,
           `Temp     ${'▮'.repeat(bars)}${'▯'.repeat(10 - bars)}`,
-          `Choke    ${Math.round(this.quad.choke * 100)}%`,
-          `Speed    ${mph.toFixed(0)} mph${this.quad.reverse ? '  R' : ''}`,
+          `Choke    ${Math.round(quad.choke * 100)}%`,
+          `Speed    ${mph.toFixed(0)} mph${quad.reverse ? '  R' : ''}`,
         ].join('\n'),
       );
     } else {
@@ -317,6 +335,6 @@ export class Game {
   }
 
   updateSmokeScale() {
-    this.smoke?.setViewport(window.innerHeight * this.renderer.getPixelRatio(), this.camera.fov);
+    for (const unit of this.units ?? []) unit.setViewport(window.innerHeight * this.renderer.getPixelRatio(), this.camera.fov);
   }
 }

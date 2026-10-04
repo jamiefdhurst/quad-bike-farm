@@ -43,6 +43,10 @@ export const LAYOUT = {
 
   spawn: {
     player: { x: -47, z: 46, yaw: -2.68 }, // facing the quad
-    quad: { x: -44, z: 52, yaw: Math.PI * 0.62 },
+    // One spawn per quad, in the order of QUAD_SPECS: parked side by side in the yard.
+    quads: [
+      { x: -44, z: 52, yaw: Math.PI * 0.62 },
+      { x: -42.6, z: 55.2, yaw: Math.PI * 0.62 },
+    ],
   },
 };
