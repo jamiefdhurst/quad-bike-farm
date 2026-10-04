@@ -35,7 +35,7 @@ Other scripts:
 | --- | --- |
 | `K` | Ignition on / off |
 | `R` (hold) | Crank the starter |
-| Mouse wheel | Choke, in 10% steps (scroll up for more) |
+| `Q` / `Z` | Choke more / less, in 10% steps. Hold to keep stepping |
 | `W` | Throttle |
 | `S` | Brake. Hold it at a standstill to reverse |
 | `A` / `D` | Steer |
@@ -60,10 +60,10 @@ Look at her and press `E`. Pick an option with the number keys, or scroll to hig
 The engine starts stone cold and won't fire without choke.
 
 1. Walk up to the quad and press `E` to get on.
-2. Scroll up to pull the choke to 100%. The yellow lever on the left handlebar moves.
+2. Hold `Q` to pull the choke to 100%. The yellow lever on the left handlebar moves.
 3. Press `K` for ignition. The green IGN light comes on and the blue TEMP light shows the engine is cold.
 4. Hold `R` to crank. It should catch within a couple of seconds and settle into a high, lumpy idle. The whole bike shakes.
-5. Let it warm. With the choke left on, the idle creeps up as it warms. Ease the choke off a notch or two at a time. Too early and it stumbles and dies. Too late and it starts to hunt, runs rich and eventually floods and stalls.
+5. Let it warm. With the choke left on, the idle creeps up as it warms. Ease the choke off with `Z`, a notch or two at a time. Too early and it stumbles and dies. Too late and it starts to hunt, runs rich and eventually floods and stalls.
 6. Once it's warm (TEMP light out, a couple of minutes) it idles low and steady with no choke.
 
 Things to know:

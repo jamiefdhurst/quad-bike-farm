@@ -6,6 +6,11 @@ import { Drivetrain } from './drivetrain.js';
 // Height of the ground below the chassis origin with the bike at rest.
 const GROUND_OFFSET = -0.36;
 const CHOKE_STEP = 0.1;
+const CHOKE_MORE_KEY = 'KeyQ';
+const CHOKE_LESS_KEY = 'KeyZ';
+// Holding a choke key steps again after this delay, then at this interval.
+const CHOKE_REPEAT_DELAY = 0.35;
+const CHOKE_REPEAT_INTERVAL = 0.12;
 
 /**
  * The quad as a game object: rider controls, drivetrain, Rapier physics and
@@ -115,17 +120,34 @@ export class Quad {
     }
   }
 
-  /** Discrete inputs (key presses, wheel notches), handled once per frame. */
-  handleFrameInput() {
+  /** Discrete inputs (key presses), handled once per frame. */
+  handleFrameInput(dt) {
     if (!this.input) return;
     const input = this.input;
+    input.takeWheelSteps();
     if (input.wasPressed('KeyK')) this.engine.toggleIgnition();
-    const steps = input.takeWheelSteps();
-    if (steps !== 0) {
-      // Scroll up (negative) pulls the choke on.
-      this.choke = Math.round(THREE.MathUtils.clamp(this.choke - steps * CHOKE_STEP, 0, 1) * 10) / 10;
-    }
+    this.chokeKey(dt, CHOKE_MORE_KEY, 1);
+    this.chokeKey(dt, CHOKE_LESS_KEY, -1);
     if (input.wasPressed('KeyT') && this.isTipped) this.rightItself();
+  }
+
+  /** One choke step per press, repeating while the key is held. */
+  chokeKey(dt, code, direction) {
+    const timers = (this.chokeTimers ??= {});
+    let step = false;
+    if (this.input.wasPressed(code)) {
+      step = true;
+      timers[code] = CHOKE_REPEAT_DELAY;
+    } else if (this.input.isDown(code)) {
+      timers[code] -= dt;
+      if (timers[code] <= 0) {
+        step = true;
+        timers[code] += CHOKE_REPEAT_INTERVAL;
+      }
+    }
+    if (step) {
+      this.choke = Math.round(THREE.MathUtils.clamp(this.choke + direction * CHOKE_STEP, 0, 1) * 10) / 10;
+    }
   }
 
   fixedUpdate(dt) {

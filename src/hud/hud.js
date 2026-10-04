@@ -9,7 +9,7 @@ const HELP_HTML = `
   <h3>On the quad</h3>
   <div><kbd>K</kbd> ignition on / off</div>
   <div><kbd>R</kbd> hold to crank the starter</div>
-  <div>Mouse wheel: choke (up for more)</div>
+  <div><kbd>Q</kbd> more choke, <kbd>Z</kbd> less (hold to keep going)</div>
   <div><kbd>W</kbd> throttle, <kbd>S</kbd> brake / reverse when stopped</div>
   <div><kbd>A</kbd><kbd>D</kbd> steer</div>
   <div><kbd>E</kbd> get off (below walking pace)</div>

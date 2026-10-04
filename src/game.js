@@ -239,7 +239,7 @@ export class Game {
     }
 
     if (this.player.isRiding) {
-      this.quad.handleFrameInput();
+      this.quad.handleFrameInput(dt);
       if (input.wasPressed('KeyE')) this.tryDismount();
       this.interaction.clear();
     } else if (this.menu.isOpen) {

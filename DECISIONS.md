@@ -57,3 +57,7 @@ A running log of choices made while building this, so later work starts from the
 
 - Exhaust smoke is a pooled point-sprite system with one puff per firing pulse, capped at 45 puffs a second; at high revs pulses merge into fewer, denser puffs. Puffs are kept above the terrain because point sprites depth-test at their centre, and big puffs half in the ground looked like stains. Proper soft particles would need a depth pre-pass; not worth it yet.
 - The companion's outfit is data in `src/npc/outfit.js` (`OUTFITS`). The model's texture is a six-colour palette, so clothes are recoloured by swapping palette entries. The polo collar points and placket are placed by raycasting her skinned mesh to find the chest surface, then attached to the upper spine bone. The navy is lighter than true navy (#3a5690) because darker values read as black under the overcast lighting.
+
+## Choke keys (2026-10-04)
+
+- Choke moved from the mouse wheel to `Q` (more) and `Z` (less), 10% per press, repeating while held (after 0.35 s, then every 0.12 s). Keys are constants at the top of `src/vehicle/quad.js`. The mouse wheel is now only used for highlighting menu options.
