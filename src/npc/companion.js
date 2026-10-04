@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { StateMachine } from './stateMachine.js';
 import { CharacterRig } from './characterRig.js';
 import { DEFAULT_COMPANION_PARAMS } from './companionParams.js';
+import { applyOutfit, OUTFITS } from './outfit.js';
 
 const CAPSULE_HALF_HEIGHT = 0.55;
 const CAPSULE_RADIUS = 0.25;
@@ -31,6 +32,7 @@ export class Companion {
     this.params = params;
 
     this.rig = new CharacterRig(gltf, params.height);
+    applyOutfit(this.rig, OUTFITS[params.outfit] ?? OUTFITS.original);
     this.root = this.rig.root;
     this.root.name = 'companion';
     scene.add(this.root);

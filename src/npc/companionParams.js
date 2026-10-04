@@ -1,4 +1,5 @@
 export const DEFAULT_COMPANION_PARAMS = {
+  outfit: 'farmPolo', // a key of OUTFITS in outfit.js
   height: 1.66, // metres, the model is scaled to this
   walkSpeed: 1.3, // m/s
   walkAnimSpeed: 1.25, // m/s the walking clip looks right at, so its playback rate can match

@@ -14,6 +14,10 @@ Every external asset is CC0 1.0 (public domain). All were downloaded from Poly P
 
 Quaternius: https://quaternius.com
 
+## Modifications
+
+- `companion.glb` is recoloured at load time (navy polo, green wellies) by swapping entries in its palette texture, and gets a collar, polo placket and welly shafts built from primitives and attached to her bones. See `src/npc/outfit.js`. The file itself is unchanged.
+
 ## Built in code
 
 These have no external source:
