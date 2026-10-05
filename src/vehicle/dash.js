@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
 // Instrument panels. Each quad picks a style from its spec:
 //
@@ -189,7 +190,7 @@ function changeGate() {
 function buildClassic() {
   const group = new THREE.Group();
   group.name = 'dash';
-  const housing = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.135, 0.07), black);
+  const housing = new THREE.Mesh(new RoundedBoxGeometry(0.3, 0.135, 0.07, 3, 0.02), black);
   housing.name = 'dashHousing';
   group.add(housing);
   const face = new THREE.Mesh(new THREE.PlaneGeometry(0.284, 0.12), faceMat);
@@ -306,16 +307,16 @@ const SPORT = { width: 0.27, on: '#ff5a46', red: '#ffffff', ghostRgb: '255,90,70
 function buildModern(look = MODERN) {
   const group = new THREE.Group();
   group.name = 'dash';
-  const housing = new THREE.Mesh(new THREE.BoxGeometry(look.width, 0.115, 0.065), look.visor ? charcoal : black);
+  const housing = new THREE.Mesh(new RoundedBoxGeometry(look.width, 0.115, 0.065, 3, look.visor ? 0.012 : 0.02), look.visor ? charcoal : black);
   housing.name = 'dashHousing';
   group.add(housing);
   // Chamfered lower edge and a visor over the display.
   if (look.visor) {
-    const chin = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.03, 0.06), charcoal);
+    const chin = new THREE.Mesh(new RoundedBoxGeometry(0.25, 0.03, 0.06, 2, 0.01), charcoal);
     chin.position.set(0, -0.062, 0.006);
     chin.rotation.x = -0.5;
     group.add(chin);
-    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.012, 0.05), charcoal);
+    const visor = new THREE.Mesh(new RoundedBoxGeometry(0.32, 0.012, 0.05, 2, 0.005), charcoal);
     visor.position.set(0, 0.062, -0.04);
     visor.rotation.x = 0.35;
     visor.name = 'dashVisor';
