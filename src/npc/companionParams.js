@@ -78,6 +78,10 @@ export const DEFAULT_COMPANION_PARAMS = {
   driveSeatForward: 0.0, // metres, fine-tunes where she sits along it
   driveTalkRange: 14, // metres; you can talk to her from this far while she's driving
 
+  askOffAfterMin: 120, // seconds on the back before she asks if she can get off (or, riding, if you can stop soon)
+  askOffAfterMax: 240,
+  askOffAgainMin: 60, // and between asks if you don't answer
+  askOffAgainMax: 150,
   keyOffChance: 0.05, // sat on the back of a quad left running, the chance she switches it off this time (rarely)
   keyOffAfterMin: 60, // and how long she sits there first, seconds
   keyOffAfterMax: 180,
@@ -170,6 +174,10 @@ export const COMPANION_PARAM_RANGES = {
   driveSeatRaise: [-0.3, 0.3, 0.005],
   driveSeatForward: [-0.3, 0.3, 0.005],
   driveTalkRange: [2, 40, 0.5],
+  askOffAfterMin: [5, 900, 1],
+  askOffAfterMax: [5, 1200, 1],
+  askOffAgainMin: [5, 900, 1],
+  askOffAgainMax: [5, 1200, 1],
   keyOffChance: [0, 1, 0.01],
   keyOffAfterMin: [1, 600, 1],
   keyOffAfterMax: [1, 900, 1],

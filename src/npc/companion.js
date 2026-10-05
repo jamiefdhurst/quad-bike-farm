@@ -139,6 +139,11 @@ export class Companion {
     const drivable = (q) => this.canDrive(q) && !(s.is('walking') && s.data?.goal === 'drive' && q === this.quad);
     const boarding = s.is('seated', 'mounting') || (s.is('walking') && s.data?.goal === 'mount');
     if (boarding) {
+      // She's asked if she can get off: answer her.
+      if (s.is('seated') && this.askedToGetOff) {
+        actions.push({ kind: 'letOff', label: 'Yes, hop off', run: () => this.requestStandBeside(this.quad) });
+        actions.push({ kind: 'keepOn', label: 'No, stay there', run: () => this.keepOn() });
+      }
       actions.push({ kind: 'stand', label: `Stand next to the ${this.quad.label}`, run: () => this.requestStandBeside(this.quad) });
       for (const q of sorted) {
         if (q !== this.quad && rideable(q)) actions.push({ kind: 'mount', label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
@@ -225,6 +230,36 @@ export class Companion {
     target.y = this.world.heightAt(target.x, target.z);
     const facing = Math.random() * Math.PI * 2;
     this.fsm.transition('walking', { goal: 'wander', target: () => ({ position: target, facing }) });
+  }
+
+  /**
+   * Sat on the back, every so often she asks if she can get off (parked) or if
+   * you can stop soon (on a long ride). She only gets off if you say so.
+   */
+  askToGetOff(dt) {
+    const p = this.params;
+    const q = this.quad;
+    const riding = !!q.rider && q.speed > 1;
+    this.askIn ??= this.randomBetween(p.askOffAfterMin, p.askOffAfterMax);
+    this.askIn -= dt;
+    if (this.askIn > 0) return;
+    if (riding) {
+      this.selfEvents.push('askStop');
+      this.askIn = this.randomBetween(p.askOffAfterMin, p.askOffAfterMax);
+    } else if (!q.rider) {
+      this.selfEvents.push('askOff');
+      this.askedToGetOff = true;
+      this.askIn = this.randomBetween(p.askOffAgainMin, p.askOffAgainMax);
+    } else {
+      this.askIn = 10; // you're on but stopped: ask again in a bit
+    }
+  }
+
+  /** You told her to stay on: she grumbles and doesn't ask again for a good while. */
+  keepOn() {
+    const p = this.params;
+    this.askedToGetOff = false;
+    this.askIn = this.randomBetween(p.askOffAfterMin, p.askOffAfterMax) * 1.5;
   }
 
   /**
@@ -608,8 +643,11 @@ const STATES = {
       this.rig.legSpread = this.params.legSpread;
       this.pillion.update(dt);
       this.mindTheEngine(dt);
+      this.askToGetOff(dt);
     },
     exit() {
+      this.askedToGetOff = false;
+      this.askIn = null;
       this.pillion.release();
     },
   },

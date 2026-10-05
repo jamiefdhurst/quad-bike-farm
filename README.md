@@ -152,6 +152,7 @@ She talks, now and then, with captions at the bottom of the screen:
 - Riding pillion she reacts to the ride: "Oh, this is fun!" on a smooth run, "This is a bit rough." over bumps, "Careful!" when you go too fast, a gasp when you brake hard, and something when it stalls or runs out of petrol.
 - If you crank a quad near her for a while without it starting, she has a guess at why: the choke if it's cold, flooding if it's rich, the fuel tap if the carburettor is dry.
 - Left waiting she sighs, hums, yawns and asks if you're going. Ride off without her and she'll shout after you.
+- Sat on the back of a parked quad, every few minutes she asks if she can get off; the menu then has "Yes, hop off" and "No, stay there" (she grumbles and stays). She never gets off on her own. On a long ride together she sometimes asks if you can stop soon.
 - Jump off and leave her on a quad driving itself and she's either terrified or having the time of her life (40% of the time), and tells you about it afterwards.
 - She speaks up the further away you are, and shouts some things (being left behind, a quad riding itself), which carry twice as far.
 - She comments when the seat is shaking hard, and has a favourite quad each game.
@@ -224,7 +225,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 2. When you're on the quad, the girl seems a lot taller than you, which doesn't feel right **Done.**
 3. Driving around should warm the quads up quicker, currently it has no effect **Done.**
 4. After finishing driving, she never turns the quad off **Done** (she leaves it running nearly always, and very occasionally switches it off).
-5. If she's on the back, after a while she asks occasionally if she can come off
+5. If she's on the back, after a while she asks occasionally if she can come off **Done.**
 6. Quads get more rough over time, the roughness value needs to go up even more, or have more of an effect at the top range, a lot more in both idle variation and shaking, but it can be fixed with the toolbox
 7. I can also ride pillion with her
 8. Allow her to follow you and ride together on different quads

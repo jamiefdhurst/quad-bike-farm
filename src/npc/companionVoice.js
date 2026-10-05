@@ -60,7 +60,7 @@ export class CompanionVoice {
 
   /** She was asked to do something from the menu. */
   onRequest(kind) {
-    const SAY = { mount: 'ackMount', start: 'ackStart', drive: 'ackDrive', back: 'ackBack', stopDrive: 'ackStopDrive' };
+    const SAY = { mount: 'ackMount', start: 'ackStart', drive: 'ackDrive', back: 'ackBack', stopDrive: 'ackStopDrive', letOff: 'ackLetOff', keepOn: 'ackKeepOn' };
     this.say(SAY[kind] ?? 'ackStand', { force: true });
   }
 
@@ -262,7 +262,7 @@ export class CompanionVoice {
   watchOwnMind() {
     const events = this.companion.selfEvents;
     // Switching a quad off is rare, so she always mentions it.
-    for (const e of events) this.say({ wander: 'selfWander', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive', keyOff: 'selfKeyOff' }[e], { urgent: true, chance: e === 'keyOff' ? 1 : 0.8 });
+    for (const e of events) this.say({ wander: 'selfWander', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive', keyOff: 'selfKeyOff', askOff: 'askOff', askStop: 'askStop' }[e], { urgent: true, chance: e === 'keyOff' || e === 'askOff' ? 1 : 0.8 });
     events.length = 0;
   }
 

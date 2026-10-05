@@ -550,6 +550,34 @@ export const VOICE_LINES = {
       "Right, I'm on. Whenever you're ready.",
     ],
   },
+  askOff: {
+    cooldown: 30,
+    lines: [
+      'Can I get off now?',
+      "Is it alright if I hop off? My legs have gone numb.",
+      "Are we going anywhere, or can I get down?",
+      "I'd quite like to get off now, if that's okay.",
+      'Can I get down? This seat is not as comfy as it was.',
+      "Babe? Can I get off yet?",
+      "I'm going to need to stretch my legs at some point.",
+      'Permission to get off?',
+    ],
+  },
+  askStop: {
+    cooldown: 60,
+    lines: [
+      'Can we stop soon? I could do with a stretch.',
+      "My bum's gone numb. Can we have a break?",
+      'Shall we stop for a bit?',
+      'Can we pull over at some point?',
+      "Lovely, but I'd like to get off soon.",
+    ],
+  },
+  ackLetOff: { cooldown: 0, lines: ['Thank you!', 'Oh, thank goodness.', 'Finally.', 'Ooh, my legs.', 'Lovely, thanks.'] },
+  ackKeepOn: {
+    cooldown: 0,
+    lines: [{ sound: 'sigh' }, 'Fine.', 'Charming.', "Okay, but I'm asking again in a minute.", 'Mean.', 'If I must.'],
+  },
   selfKeyOff: {
     cooldown: 30,
     lines: [
