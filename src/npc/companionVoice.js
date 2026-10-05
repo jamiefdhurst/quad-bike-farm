@@ -174,6 +174,10 @@ export class CompanionVoice {
       if (this.rideTime > 150) this.say('rideLong', { chance: 0.15 });
     }
 
+    // A quad she's on or right by that's badly in need of a service.
+    const sick = (view.units ?? []).find((u) => u.engine.isRunning && u.engine.erratic > 0.25 && (u.quad === c.quad && !c.fsm.is('idle', 'walking') ? true : u.quad.position.distanceTo(this.head) < 6));
+    if (sick) this.say('engineSick', { chance: 0.05 });
+
     // Stood next to you, both on foot: the odd warm word.
     const standing = c.fsm.is('idle');
     const close = standing && !ridden && distance < 4 && !view.menuOpen;

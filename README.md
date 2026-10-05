@@ -79,7 +79,7 @@ All five are automatics and all start cold. Through the CVT the red tops out at 
 | Green | 800 to 900 | 0.55 to 0.70 | 3 to 13 of 14 | 12 mm, slow heave |
 | Orange | 2,000 to 2,300 | 0.75 to 0.90 | 1.5 to 7.5 of 8 | 10 mm, harsh |
 
-Running wears an engine and makes it rougher still; a service from the toolbox brings it back to its own character. Badly worn, a hard stop can now and then stall it.
+Running wears an engine and makes it rougher still, all the way to fully rough if you keep at it (about half an hour of hard riding). Past about 0.8 (its build roughness plus wear), it turns erratic: it stumbles through runs of misfires, losing nearly all its power for a moment and nearly dying, catches again sometimes with a bang and a puff of smoke, flares up at idle, and won't hold a steady tickover. Fully worn, that's a stumble every two or three seconds and it dies on you now and then, and the girls will tell you it needs looking at. A service from the toolbox brings it back to its own character.
 
 The idle and roughness are shown in the status panel and printed in the console.
 
@@ -238,17 +238,39 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 
 ## TODO
 
-1. She can drive differently depending on how she feels, confident or carefully - it can vary **Done.**
-2. When you're on the quad, the girl seems a lot taller than you, which doesn't feel right **Done.**
-3. Driving around should warm the quads up quicker, currently it has no effect **Done.**
-4. After finishing driving, she never turns the quad off **Done** (she leaves it running nearly always, and very occasionally switches it off).
-5. If she's on the back, after a while she asks occasionally if she can come off **Done.**
-6. Quads get more rough over time, the roughness value needs to go up even more, or have more of an effect at the top range, a lot more in both idle variation and shaking, but it can be fixed with the toolbox **Done.**
-7. I can also ride pillion with her **Done.**
-8. Allow her to follow you and ride together on different quads **Done.**
-9. Ability to wash the bikes **Done.**
-10. She should get off sometimes even when she's been driving, when she gets bored. **Done.**
-11. The girl's shirt collar is still not very good - it overlaps with her neck too much. Can we also give her shorts instead of jeans? **Done.**
-12. If she's going round in circles and doesn't like it, after a while she jumps into the driver's seat and stops it, or drives around herself **Done.**
-13. Add two other quads - another 4 and another 2 stroke, with different idle sounds and base characteristics **Done.**
-14. Another girl, slightly different personality, and how do we inject more emotion into the voice? **Done.**
+1. Vehicles need to get way more muddy
+2. I can sit pillion without anyone else there, then the girls automatically jump on to drive me around, and jump off when they're bored, they don't need to wait for me to say stop
+3. Remove the helpful vehicle HUD so I have to guess what the issues are, add a temp gauge to each of the quads
+4. Pillion on the orange one
+5. A way for two girls to sit on the back of a quad at the same time - one on the fairing maybe?
+6. The girls say very nice things to me sometimes - tell me they love me, care for me, etc.
+7. One more go at the collar, which despite what you've said is still not right.
+8. Who you favour. Each girl quietly keeps score: rides given, times you talked to her, whose favourite quad you pick. Favoured, she's warmer and up for anything. Neglected, she sulks, says no to things, or takes a quad off on her own. The rivalry gets an edge: the favoured one gloats and the other gets pointed.
+9. Pranks. Jess sneaks over and turns your fuel tap off, or puts the choke on, while you're away. Amy hides the jerry can or the toolbox. You find out when it won't start, and the culprit can't keep a straight face.
+10. Teaching them. Ride on the back while one drives and coach her ("easy on the throttle", "choke off now"). Each girl gets better at specific things (choke, starting, cornering, mud) rather than just "more confident", and you can hear it in what she says.
+11. Favours. Now and then one asks for something: wash her favourite quad, take her over to the bales, beat Jess round the track for her, fetch the jerry can. Doing it pleases her. Ignoring it, she remembers.
+12. Places to be. On a sunny day they sit on the bales or the paddock fence, or lie in the grass. When it rains they shelter in the barn doorway. Bored, a girl might also go and wait at a favourite spot rather than only at a quad.
+13. Batteries and starting. Leave the ignition on and the battery drains, so the starter cranks slower until it won't turn over. Then you bump-start it down the bank, jump it from another quad, or use the pull-start on the two-strokes (hold and yank, which takes a knack when it's cold).
+14. Two-stroke oil. The yellow and orange run on pre-mix: a second jerry can by the tank. Fill one with straight petrol and it runs hot, then nips up and seizes. Too much oil and it smokes like a bonfire and fouls plugs.
+15. Faults that develop. Things go wrong over time, separate from wear:
+   - A slow puncture from the hedge (it pulls to one side; there's a foot pump in the toolbox).
+   - A slipping drive belt (revs flare, no go).
+   - A sticking throttle cable that keeps it running on.
+   - A dirty carb that hunts worse and worse.
+
+   Each has a symptom you can feel or hear, and a girl who might spot it.
+16. Heat. The air-cooled ones get hot idling for ages on a sunny day and start pinking and running rough. The water-cooled orange's fan cuts in with its own sound. A quad thrashed and then switched off ticks as it cools, and it starts differently hot.
+17. Inside the barn. Open the big doors and the barn becomes a space:
+    - Rain drumming loudly on the tin roof.
+    - Straw bales to sit on, and the workbench with the toolbox.
+    - A spot to park quads under cover, where they stay dry, don't get muddier and start better on cold mornings.
+
+    When it rains the girls make a run for it and sit on the bales. You can drive in, and the engine's roar inside is a different sound.
+18. The workshop corner. The barn bench becomes where real jobs happen: change a plug, clean a carb, swap a tyre, top up two-stroke oil. Each job is a short hands-on sequence, and the girls watch, help or heckle.
+19. The hayloft. Climb the ladder: a view over the farm through the loft door, and a hiding place. The girls can climb up too, and Jess might drop straw on you.
+20. Manual gears - one of them should be manual with a clutch.
+21. Additional vehicles: a random one each time (each needing its own sound and characteristics):
+    - A neighbour's beaten-up old three-wheeler ATC (a real tip-over risk).
+    - A tiny kids' 50cc quad Jess insists on riding.
+    - A mini moto with a pull-start.
+    - A smart new quad on loan for the day.

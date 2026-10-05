@@ -178,6 +178,7 @@ export const JESS_LINES = {
   ackMount: ['Go on then.', 'Fine. You owe me.', 'Shove up.', 'If I must.'],
   ackStand: ['Fine.', 'Bossy.', 'Yes, boss.', 'Alright, alright.'],
   selfWander: ["I'm going for a nosy.", "Don't miss me too much.", "Off exploring. Don't wait up."],
+  engineSick: ['That thing is on its last legs.', 'Sounds like a bag of spanners. Fix it.', 'Bang! Ha! Is that meant to happen?', "It's going to die on you. Just saying."],
   weatherSunny: ['Sun\'s out. Shame I forgot the suncream.', "Lovely. I'll get a tan while you faff about.", 'Finally, some decent weather.'],
   weatherGrey: ['Grim, isn\'t it?', 'Proper miserable sky, this.', 'Grey. Like your driving.'],
   weatherFog: ["Can't see a thing. Perfect for losing you.", "It's like a horror film out here.", 'Fog. Brilliant. Mind the hedge.'],

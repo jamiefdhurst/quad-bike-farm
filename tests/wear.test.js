@@ -24,7 +24,10 @@ describe('wear', () => {
     const hard = running(1, 10);
     expect(idle.wear).toBeGreaterThan(0.08);
     expect(hard.wear).toBeGreaterThan(idle.wear * 2);
-    expect(running(1, 60).wear).toBeCloseTo(idle.params.wearMax, 5);
+    // Worked hard for long enough, it wears well into needing a service (it stops wearing once it stalls).
+    const worn = running(1, 90).wear;
+    expect(worn).toBeGreaterThan(0.85);
+    expect(worn).toBeLessThanOrEqual(idle.params.wearMax);
   });
 
   it('makes it run rougher, and clears when serviced', () => {

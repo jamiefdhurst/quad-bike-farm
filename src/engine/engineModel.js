@@ -61,6 +61,10 @@ export class EngineModel {
     this.roughPhase = 0;
     this.roughNoise = 0;
     this.wear = 0; // roughness built up from running; a service (the toolbox) clears it
+    this.erratic = 0; // 0..1 how erratic it's running for want of a service (see erraticFrom)
+    this.stumbleLeft = 0; // cycles left of a run of misfires
+    this.surge = 0; // rpm of a flare-up at idle, dying away
+    this.erraticNoise = 0;
 
     /** Events from the last update: { type, t, reason? }. t is seconds into that update. */
     this.events = [];
@@ -206,6 +210,10 @@ export class EngineModel {
     this.rich = Math.max(0, this.mixture - p.richTolerance);
 
     const coldness = 1 - this.temperature;
+    // How badly it needs a service: its build roughness plus wear. Past erraticFrom it turns erratic, steeply.
+    const condition = clamp(p.baseRoughness + this.wear, 0, 1);
+    const e = clamp((condition - p.erraticFrom) / Math.max(0.01, 1 - p.erraticFrom), 0, 1);
+    this.erratic = e * e * (3 - 2 * e) * e;
     this.roughness = clamp(
       p.baseRoughness +
         this.wear +
@@ -225,6 +233,8 @@ export class EngineModel {
       p.minPower,
       1,
     );
+    // Stumbling, it's got almost nothing.
+    if (this.stumbleLeft > 0) this.power *= p.stumblePower;
   }
 
   stepCranking(h) {
@@ -274,13 +284,18 @@ export class EngineModel {
     this.roughNoise += (this.random() * 2 - 1) * 4 * h - this.roughNoise * 1.2 * h;
     const r = this.roughness;
     const roughHunt = p.roughHunt * p.idleRpmWarm * r * r * (0.6 * Math.sin(this.roughPhase) + this.roughNoise) * (1 - 0.7 * this.throttle);
+    // Needing a service, the idle won't settle at all: a fast, irregular wander, and flare-ups that die away.
+    this.erraticNoise += (this.random() * 2 - 1) * 14 * h - this.erraticNoise * 4 * h;
+    this.surge *= Math.exp(-1.4 * h);
+    const erratic = (p.erraticHunt * p.idleRpmWarm * this.erratic * this.erraticNoise * 3 + this.surge) * (1 - 0.6 * this.throttle);
 
     this.idleTarget =
       p.idleRpmWarm +
       p.chokeIdleRpm * this.choke * lerp(p.chokeIdleColdFactor, 1, T) -
       p.leanIdleDrop * this.lean +
       hunt +
-      roughHunt;
+      roughHunt +
+      erratic;
     this.freeTargetRpm = Math.min(p.maxRpm, this.idleTarget + this.throttle * (p.maxRpm - this.idleTarget));
     // Under load the revs sag towards idle. A weak engine sags further when it's
     // climbing or ploughing (the slipping clutch spares it when pulling away),
@@ -319,7 +334,31 @@ export class EngineModel {
         this.throttle < p.skipThrottle &&
         this.rpm < p.skipRpm &&
         this.random() < p.skipChance;
-      if (skip) {
+      const k = this.erratic;
+      // Its stumbles and surges come so many times a second, however fast it's firing.
+      const perCycle = 1 / Math.max(1, this.rpm / this.revsPerCycle / 60);
+      if (this.stumbleLeft > 0) {
+        // In the middle of a stumble: another dead cycle.
+        this.stumbleLeft--;
+        this.rpm -= p.misfireRpmDrop * 1.2;
+        this.pushPulse(t, 'misfire', 0.1);
+        if (this.stumbleLeft === 0 && this.dying) {
+          this.dying = false;
+          this.stall('rough');
+          return;
+        }
+        if (this.stumbleLeft === 0 && this.random() < p.backfireChance) {
+          // It catches again with a bang, the unburnt charge going off.
+          this.rpm += p.pulseRpmKick * 3;
+          this.pushPulse(t, 'fire', 2.6);
+          this.emit('backfire', t);
+        }
+      } else if (k > 0 && this.random() < p.stumbleRate * k * perCycle) {
+        this.stumbleLeft = Math.round(p.stumbleRunMin + this.random() * (p.stumbleRunMax - p.stumbleRunMin)) - 1;
+        this.dying = this.random() < p.stumbleStallChance * k;
+        this.rpm -= p.misfireRpmDrop * 1.2;
+        this.pushPulse(t, 'misfire', 0.1);
+      } else if (skip) {
         this.rpm -= p.misfireRpmDrop * 0.25;
         this.pushPulse(t, 'misfire', 0.3);
       } else if (this.random() < misfireChance) {
@@ -329,6 +368,7 @@ export class EngineModel {
         const strength = 1 + (this.random() * 2 - 1) * p.pulseStrengthJitter * this.roughness;
         this.rpm += (strength - 1) * p.pulseRpmKick;
         this.pushPulse(t, 'fire', strength);
+        if (k > 0 && this.random() < p.surgeRate * k * perCycle) this.surge = p.surgeRpm * p.idleRpmWarm * (0.5 + 0.5 * this.random());
       }
     }
 

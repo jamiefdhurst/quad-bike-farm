@@ -85,7 +85,19 @@ export const DEFAULT_ENGINE_PARAMS = {
   roughHuntFrequency: 0.7, // Hz
   wearPerMinute: 0.012, // roughness gained per minute of idling; more when it's worked hard
   wearWorkBoost: 2, // flat out it wears this much faster again
-  wearMax: 0.7, // the most it wears before it needs a service
+  wearMax: 1, // run long and hard enough, any engine wears to fully rough
+  // Badly in need of a service it turns erratic, from erraticFrom up to fully
+  // rough (its condition: build roughness plus wear, not cold or mixture):
+  erraticFrom: 0.8,
+  stumbleRate: 0.45, // per second at worst: it starts a run of misfires...
+  stumbleRunMin: 2, // ...this many cycles long...
+  stumbleRunMax: 6,
+  stumblePower: 0.3, // ...with only this much of its power while it stumbles
+  stumbleStallChance: 0.015, // at worst, the chance a stumble is one it doesn't come back from
+  backfireChance: 0.28, // catching again after a stumble, the chance it does so with a bang
+  surgeRate: 0.25, // per second at worst: the idle flares up...
+  surgeRpm: 0.5, // ...by this fraction of its idle, dying away over a second or so
+  erraticHunt: 0.18, // a fast, irregular wander on top of the rough hunt, as a fraction of idle
 
   // Firing pulses
   cycleJitter: 0.18, // cycle length variation at full roughness
@@ -174,6 +186,16 @@ export const ENGINE_PARAM_RANGES = {
   wearPerMinute: [0, 0.2, 0.001],
   wearWorkBoost: [0, 10, 0.1],
   wearMax: [0, 1, 0.01],
+  erraticFrom: [0, 1, 0.01],
+  stumbleRate: [0, 3, 0.01],
+  stumbleStallChance: [0, 0.5, 0.005],
+  stumbleRunMin: [1, 10, 1],
+  stumbleRunMax: [1, 20, 1],
+  stumblePower: [0, 1, 0.01],
+  backfireChance: [0, 1, 0.01],
+  surgeRate: [0, 3, 0.01],
+  surgeRpm: [0, 2, 0.05],
+  erraticHunt: [0, 1, 0.01],
   cycleJitter: [0, 0.6, 0.01],
   pulseStrengthJitter: [0, 1, 0.01],
   misfireBase: [0, 0.1, 0.001],

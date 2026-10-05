@@ -357,3 +357,16 @@ You asked for these in this order: getting stuck, then the weather (random each 
 - Both banks are recorded with Chatterbox and committed as MP3 (Amy 802 lines, 9 MB; Jess 407 lines, 5 MB), replacing the 37 MB Piper WAV.
 - Chatterbox struggles with one-word shouts: Amy's run had 76 lines that never matched, many of them babble ("Oi!" came out as "We're going to be here today, okay?"), where Jess's had 2. The generator now has `--fallback <piper model>`: a line Chatterbox scores under 0.6 on is recorded again with Piper, and the clearer of the two is kept. For Amy that's the voice her reference was made from, so it's still her, just flatter: 38 lines are Piper now. A line that's still clearly wrong (under 0.3, or heard as far more words than it has) is left out rather than shipped, so it falls back to the browser voice or the caption: for Amy, "Oof!", "Oi!" and "Bumpy!". Chatterbox occasionally runs on for over 30 s on a line, which crashed Whisper the first time; a take far too long for its line now counts as a failed take.
 - About 50 of Amy's lines are a near miss by Whisper's reckoning (mostly short exclamations and Whisper mishearing); the list is printed at the end of each run for listening.
+
+## Roughness made erratic (2026-10-05)
+
+- You asked for roughness to be much more pronounced at the top: very erratic near 1, enough to make you want to service it.
+- A separate "needs a service" layer in the engine model, driven by its condition (build roughness plus wear) rather than its roughness at the moment, so cold, rich and lean running behave as before. Above `erraticFrom` 0.8 it grows steeply (smoothstep times linear) to 1:
+  - stumbles: runs of 2 to 6 misfires, at up to `stumbleRate` 0.45 a second (per second rather than per firing, so the two-strokes, which fire every revolution, aren't twice as bad), with only 30% of its power while it stumbles, so it hesitates under throttle too;
+  - catching again with a bang (28% of stumbles: a 2.6-strength firing pulse, so a thump in the sound, a kick in the shake and a puff of smoke) or, at worst, not at all (`stumbleStallChance` 1.5%);
+  - surges: the idle flaring up by up to half its idle and dying away over a second or so, at up to 0.25 a second;
+  - a fast, irregular hunt on top of the slow rough hunt.
+- Wear now goes all the way to 1 (it stopped at 0.7, so the smoother quads could never get there): roughly half an hour of hard riding.
+- Measured at warm idle, 2 minutes x 3 seeds per quad: below 0.8 nothing changes; at 0.9 about 7 to 10 stumbles a minute and no stalls; at 1, 20 to 29 stumbles a minute, 5 to 9 bangs, the idle swinging over roughly 0.4 to 1.6 times itself, and a stall every one to three minutes. The orange, whose build roughness goes up to 0.9, can stumble now and then from new.
+- Tests: no stalls at idle up to the edge of erratic (hard stops up to halfway there), and fully worn, an idle spread of over 0.9 times the idle with under 9 stalls in 6 minutes. The wear test now expects it to wear past 0.85 (it stops wearing once it stalls).
+- The girls remark on a quad that's this bad when they're on it or beside it.

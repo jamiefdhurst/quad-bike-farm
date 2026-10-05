@@ -555,6 +555,11 @@ export const VOICE_LINES = {
       { sound: 'sigh' },
     ],
   },
+  // A quad that's badly in need of a service: stumbling, surging, banging.
+  engineSick: {
+    cooldown: 90,
+    lines: ["That doesn't sound well at all.", 'It sounds like it is dying.', 'You need to get that serviced.', 'Is it meant to bang like that?', "It keeps nearly cutting out.", 'Poor thing. It needs some love.'],
+  },
   // The weather (weather.js): a word about the day, and the rain coming and going.
   weatherSunny: {
     cooldown: 600,
