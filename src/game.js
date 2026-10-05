@@ -11,6 +11,7 @@ import { QuadUnit } from './vehicle/quadUnit.js';
 import { QUAD_SPECS } from './vehicle/quadSpecs.js';
 import { applyIdle, applyVariation, pickIdle } from './vehicle/quadVariation.js';
 import { AudioHub } from './audio/engineAudio.js';
+import { RideWind } from './audio/rideAudio.js';
 import { DEFAULT_SOUND_PARAMS, SOUND_PARAM_RANGES } from './audio/audioParams.js';
 import { Companion } from './npc/companion.js';
 import { CompanionVoice } from './npc/companionVoice.js';
@@ -80,6 +81,7 @@ export class Game {
 
     this.audioHub = new AudioHub({ ...DEFAULT_SOUND_PARAMS });
     this.input.on('firstinteraction', () => this.audioHub.unlock());
+    this.rideWind = new RideWind(this.audioHub);
 
     // Where things start varies a little each game; ?seed=N repeats a layout.
     this.seed = startSeed();
@@ -453,6 +455,7 @@ export class Game {
     }
     const alpha = this.accumulator / FIXED_DT;
 
+    for (const unit of this.units) unit.listenerOnBoard = unit === this.riddenUnit;
     for (const unit of this.units) unit.update(dt, alpha);
     const ridden = this.riddenUnit;
     this.companion.update(dt, this.companion.quad.unit.vibration, {
@@ -473,6 +476,7 @@ export class Game {
     this.can.update(dt);
     this.audioHub.setPouring(pouring, dt);
     this.audioHub.update(dt, this.camera);
+    this.rideWind.update(dt, ridden ? ridden.quad.speed : 0);
     this.world.update(dt, ridden ? ridden.quad.position : this.player.position, this.camera);
     this.updateHud(dt);
 
