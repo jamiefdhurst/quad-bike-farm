@@ -103,18 +103,20 @@ export class CompanionVoice {
     const distance = this.head.distanceTo(view.listener);
     const ridden = view.ridden;
     const together = !!ridden && c.isSeated && c.quad === ridden.quad;
+    // On the back of a quad that's being driven, by you or by her friend: she reacts to the ride.
+    const rideQuad = together ? ridden.quad : c.isSeated && c.quad.driver ? c.quad : null;
 
     // Talking to her.
-    if (view.menuOpen && !this.wasMenuOpen) this.say('talkTo', { force: true, chance: 0.6 });
-    this.wasMenuOpen = view.menuOpen;
+    if (view.talkingToHer && !this.wasMenuOpen) this.say('talkTo', { force: true, chance: 0.6 });
+    this.wasMenuOpen = !!view.talkingToHer;
 
     // You getting on in front of her.
     if (together && !this.wasTogether) this.say('mountedTogether', { urgent: true, chance: 0.7 });
     this.wasTogether = together;
 
     // Riding pillion: track speed, braking and jolting every frame.
-    if (together) {
-      const quad = ridden.quad;
+    if (rideQuad) {
+      const quad = rideQuad;
       const speed = Math.abs(quad.forwardSpeed);
       const vy = quad.velocity.y;
       if (dt > 0) {
@@ -154,7 +156,7 @@ export class CompanionVoice {
     this.watchOwnMind();
     this.watchDriving(dt);
     this.watchEngines(dt, view, together, distance);
-    this.watchSeat(dt, view, together);
+    this.watchSeat(dt, view, !!rideQuad);
 
     // Slower checks, once a second.
     this.checkTimer -= dt;
@@ -162,7 +164,7 @@ export class CompanionVoice {
     const step = 1 - this.checkTimer;
     this.checkTimer = 1;
 
-    if (together) {
+    if (rideQuad) {
       if (this.funTime > 8) this.say('rideFun', { chance: 0.35 });
       else if (this.gentleTime > 10) this.say('rideGentle', { chance: 0.3 });
       if (this.rideTime > 150) this.say('rideLong', { chance: 0.15 });
@@ -175,7 +177,7 @@ export class CompanionVoice {
     if (this.nearTime > 8) this.say('nearbyWarm', { chance: 0.08 });
 
     // Standing about with nothing happening.
-    const waitingSeated = c.isSeated && !together;
+    const waitingSeated = c.isSeated && !rideQuad;
     this.idleTime = (standing || waitingSeated) && !view.menuOpen ? this.idleTime + step : 0;
     if (!close && this.idleTime > p.voiceWaitAfter && distance < p.voiceRange && this.chatter.sinceSpoke > p.voiceWaitAfter) {
       this.say(standing ? 'waitingStanding' : 'waitingSeated', { chance: 0.12 });
@@ -270,7 +272,7 @@ export class CompanionVoice {
   watchOwnMind() {
     const events = this.companion.selfEvents;
     // Switching a quad off is rare, so she always mentions it.
-    for (const e of events) this.say({ wander: 'selfWander', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive', keyOff: 'selfKeyOff', askOff: 'askOff', askStop: 'askStop', getOff: 'selfGetOff', getOffWaited: 'selfGetOffWaited', takeOverStop: 'takeOverStop', takeOverDrive: 'takeOverDrive' }[e], { urgent: true, chance: e === 'keyOff' || e === 'askOff' || e.startsWith('takeOver') ? 1 : 0.8 });
+    for (const e of events) this.say({ wander: 'selfWander', join: 'selfJoin', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive', keyOff: 'selfKeyOff', askOff: 'askOff', askStop: 'askStop', getOff: 'selfGetOff', getOffWaited: 'selfGetOffWaited', takeOverStop: 'takeOverStop', takeOverDrive: 'takeOverDrive' }[e], { urgent: true, chance: e === 'keyOff' || e === 'askOff' || e.startsWith('takeOver') ? 1 : 0.8 });
     events.length = 0;
   }
 
@@ -298,6 +300,7 @@ export class CompanionVoice {
       noRoom: ['driveNoRoom', 1],
       waitingForYou: ['waitingForYou', 1],
       fallingBehind: ['fallingBehind', 1],
+      friendOn: ['friendOn', 0.9],
       followGaveUp: ['followGaveUp', 1],
       followDriveOn: ['followDriveOn', 1],
       'done:bored': ['driveBored', 0.9],

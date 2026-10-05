@@ -36,8 +36,9 @@ export function driveAppetite(confidence) {
 }
 
 /**
- * What she does this time: 'mount', 'start', 'drive' or 'wander'. `can` says
- * which are possible right now (wandering always is). The usual chances are
+ * What she does this time: 'join' (hop on the back of her friend's quad as
+ * she sets off), 'mount', 'start', 'drive' or 'wander'. `can` says which are
+ * possible right now (wandering always is). The usual chances are
  * the bored*Chance params (wandering gets what's left), each scaled by a whim
  * (log-normal, `boredWhim` wide) and driving by her appetite for it.
  */
@@ -48,6 +49,7 @@ export function pickBoredChoice(p, { confidence = 0.5, can = {} } = {}, random =
     drive: p.boredDriveChance * driveAppetite(confidence),
   };
   base.wander = Math.max(0.1, 1 - p.boredMountChance - p.boredStartChance - p.boredDriveChance);
+  base.join = p.boredJoinChance ?? 0;
   const weights = Object.entries(base).map(([choice, w]) => [
     choice,
     choice === 'wander' || can[choice] ? w * Math.exp(gaussian(random) * p.boredWhim) : 0,

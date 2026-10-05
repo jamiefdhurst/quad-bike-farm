@@ -312,3 +312,15 @@ Decided with you before building:
 
 - You asked whether a girl following you stays on her quad when you stop and get off. She did, indefinitely: following counted as carrying someone, so she never tired, and with you off your quad she just held it on the brake. Now, with you off your quad (or on hers) for `followGiveUpMin..Max` seconds (30 to 90; Jess 15 to 50), she stops following and either drives about on her own from where she is for a go of her usual length (`followDriveOnChance` 0.35, scaled with her confidence like her other driving params, 0.5 for Jess) or pulls up and finishes as after any drive. Each has its own shouted lines. While you're still on your quad, however long you've stopped, she keeps waiting.
 - The help panel no longer opens at the start of every game; H shows it, as the start screen says.
+
+## Both girls on one quad (2026-10-05)
+
+Decided with you: both ways of it happening (you ask, or a bored girl hops on as her friend sets off, never onto a moving quad by her own choice); the driver gives a proper ride (bigger loops, slower to tire) but stops after a few minutes and both get off; each reacts with her own usual lines, no conversation between them yet.
+
+- Claims are per seat now: `claimedSeat` is 'rider' (walking to start or drive it, starting it, getting on the front, driving), 'pillion' (walking to get on, getting on the back, seated) or 'both' (sliding between seats). The other girl leaves a claimed seat alone but can use the free one. `canRidePillion` also keeps her off a quad whose driver is following you or waiting to give you a ride.
+- The driver's brain gets a `friend` hook ('coming', 'on' or null): coming, she pulls up (parks) or waits before setting off; on, she says so, replans a loop 2.5 times bigger and keeps going for `friendRideMin..Max` (90 to 200 s) from then. The passenger gets off 1 to 3 s after her friend has got off at the end. Getting off together, the second one lands on the other side.
+- The girl on the back now gets the pillion ride remarks (fun, rough, fast, hard braking) when her friend is driving, not only when you are; she doesn't ask you to let her off while her friend drives. New lines: hopping on as her friend sets off, and the driver once her friend's aboard (Jess's name Amy in hers). Bored, joining her friend weighs 0.5 against the other choices when it's possible.
+- You can't get on the back with a girl there; the prompt says there's no room. Getting on the front of a quad the other girl's driving with her friend behind, the driver gets off instead of moving back.
+- Tested headless: Amy driving the red, Jess asked onto it: Amy parked for her, set off once she was on ("Okay, I'll go gently. Ish."), Jess commented on the ride, and at the end Amy got off and Jess two seconds later.
+- Also fixed: talking to one girl made both say "Hmm?". The wheel now records who it's for, and only she answers and pauses her boredom.
+- Not fixed: leaving the crowded yard on a big loop she can bump the parked quads and back off several times before she finds her way out.

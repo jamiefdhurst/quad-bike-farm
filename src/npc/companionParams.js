@@ -40,6 +40,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   boredWaitFloor: 12, // seconds, however restless
   boredWaitCeiling: 200,
   restlessDrift: 0.03, // how fast her restlessness (0.5 to 2, shortening the waits) wanders up and down
+  boredJoinChance: 0.5, // her friend's about to set off on a quad: how much she fancies hopping on the back (weighed against the others)
   boredWhim: 0.6, // how much the odds of what she does next are reshuffled each time (log scale)
   wanderFarChance: 0.25, // a longer stroll, two and a half times as far
   boredMountChance: 0.3, // gets on a quad to wait (she stays on it)
@@ -96,6 +97,8 @@ export const DEFAULT_COMPANION_PARAMS = {
   followGiveUpMax: 90,
   followDriveOnChance: 0.35, // ...and then the chance she drives about on her own rather than stopping (more when confident)
   followFarGap: 45, // metres; further behind than this and she shouts after you
+  friendRideMin: 90, // seconds she drives her friend about, once she's on the back...
+  friendRideMax: 200, // ...then they both get off
   rideLoopScale: 2.5, // giving you a ride, her loops are this much bigger
   driveTalkRange: 14, // metres; you can talk to her from this far while she's driving
 
@@ -163,6 +166,7 @@ export const COMPANION_PARAM_RANGES = {
   boredWaitCeiling: [10, 900, 5],
   restlessDrift: [0, 0.2, 0.005],
   boredWhim: [0, 2, 0.05],
+  boredJoinChance: [0, 2, 0.05],
   wanderFarChance: [0, 1, 0.05],
   boredAfterMax: [5, 900, 1],
   boredMountChance: [0, 1, 0.05],
@@ -181,6 +185,8 @@ export const COMPANION_PARAM_RANGES = {
   followScareSpeed: [2, 30, 0.5],
   followFarGap: [5, 200, 1],
   followGiveUpMin: [5, 600, 5],
+  friendRideMin: [10, 900, 5],
+  friendRideMax: [10, 1200, 5],
   followGiveUpMax: [5, 900, 5],
   followDriveOnChance: [0, 1, 0.05],
   rideLoopScale: [1, 6, 0.1],

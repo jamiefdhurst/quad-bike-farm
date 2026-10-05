@@ -56,6 +56,7 @@ export const drivingStates = {
       this.drive = new HerDrive(q, {
         params,
         passenger: () => !!q.passenger,
+        friend: () => this.friendOnBack(),
         waitForPassenger: ride,
         follow: following ? () => {
           const lead = this.followTarget?.();
@@ -77,7 +78,7 @@ export const drivingStates = {
         d.stop('taken');
         q.setDriver(null);
         this.driveEvents.push('taken');
-        if (q.hasPillion) this.fsm.transition('shuffling', { to: 'pillion' });
+        if (q.hasPillion && !this.takenByOther(q, 'pillion')) this.fsm.transition('shuffling', { to: 'pillion' });
         else this.fsm.transition('dismounting');
         return;
       }
@@ -186,7 +187,7 @@ export const drivingMethods = {
     let how = exit?.how;
     if (!how) how = d.result === 'gaveUp' || d.result === 'noRoom' || Math.random() >= p.driveBackChance ? 'off' : 'back';
     q.setDriver(null);
-    if (how === 'back' && q.hasPillion && !q.passenger) {
+    if (how === 'back' && q.hasPillion && !q.passenger && !this.takenByOther(q, 'pillion')) {
       if (!exit) this.driveEvents.push('toBack');
       this.seatedByChoice = !exit; // moved back by herself: she can get bored of it too
       this.fsm.transition('shuffling', { to: 'pillion' });
@@ -197,6 +198,14 @@ export const drivingMethods = {
     if (q.engine.isRunning && Math.random() < p.driveKeyOffChance) q.engine.setIgnition(false);
     this.afterDismount = exit?.next ?? null;
     this.fsm.transition('dismounting');
+  },
+
+  /** Her friend on the back of the quad she's driving: 'on', 'coming' (on her way to get on), or null. */
+  friendOnBack() {
+    const o = this.others().find((o) => o.claimedQuad === this.quad && o.claimedSeat === 'pillion');
+    if (!o) return null;
+    if (o.fsm.is('seated')) return 'on';
+    return o.fsm.is('walking', 'mounting') ? 'coming' : null;
   },
 
   /** Menu while she's driving. */

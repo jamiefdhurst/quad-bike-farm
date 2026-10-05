@@ -178,6 +178,8 @@ export const JESS_LINES = {
   ackMount: ['Go on then.', 'Fine. You owe me.', 'Shove up.', 'If I must.'],
   ackStand: ['Fine.', 'Bossy.', 'Yes, boss.', 'Alright, alright.'],
   selfWander: ["I'm going for a nosy.", "Don't miss me too much.", "Off exploring. Don't wait up."],
+  selfJoin: ["Oi, wait for me! I'm coming!", 'Shove up, I want a ride.', "You're not going without me.", 'Taxi! Wait!'],
+  friendOn: ['Hold on, Amy. This might get messy.', "Right. Scream if you want to go faster.", 'Welcome aboard. No complaining.', "Hold tight, I'm not slowing down for you."],
   selfMount: ["I'm sitting on this. My feet hurt.", "I'm getting on. Come and drive me.", "Bagsy this one."],
   askOff: ['Can I get off now? My bum is dead.', "I've been sat here ages. Off?", 'Let me off, go on.'],
   askStop: ['Pit stop soon? I need to stretch.', "My legs have gone to sleep. Can we stop?"],

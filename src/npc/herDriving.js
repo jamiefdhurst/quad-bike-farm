@@ -148,7 +148,7 @@ export class HerDrive {
    * @param {function} [opts.follow]  () => the quad she's following (yours), or null. Following, she keeps
    *   behind it at its pace rather than doing her own loop, and doesn't tire of it.
    */
-  constructor(quad, { params, probe, isClear, random = Math.random, startingParams, passenger = () => false, waitForPassenger = false, follow = null }) {
+  constructor(quad, { params, probe, isClear, random = Math.random, startingParams, passenger = () => false, waitForPassenger = false, follow = null, friend = () => null }) {
     this.quad = quad;
     this.p = params;
     this.probe = probe;
@@ -156,6 +156,8 @@ export class HerDrive {
     this.random = random;
     this.startingParams = startingParams;
     this.passenger = passenger;
+    this.friend = friend; // the other girl on the back: 'on', 'coming' or null
+    this.friendAboard = false;
     this.waitForPassenger = waitForPassenger;
     this.waited = 0;
     this.cruiseScale = 1; // you asked her to go faster or slower
@@ -263,6 +265,31 @@ export class HerDrive {
     }
   }
 
+  /**
+   * Her friend getting on the back: she pulls up for her, and once she's on,
+   * it's a proper ride: bigger loops, and she keeps going for friendRideMin..Max
+   * seconds from then (both get off at the end).
+   */
+  watchFriend() {
+    const f = this.friend();
+    if (f === 'coming' && this.phase === 'drive') {
+      this.park();
+      this.parkedForFriend = true;
+    } else if (f !== 'coming' && this.parkedForFriend && this.phase === 'parked') {
+      this.parkedForFriend = false;
+      this.resume();
+    }
+    if (f === 'on' && !this.friendAboard) {
+      const p = this.p;
+      this.friendAboard = true;
+      this.events.push('friendOn');
+      p.driveLoopRadiusMin *= p.rideLoopScale;
+      p.driveLoopRadiusMax *= p.rideLoopScale;
+      this.waypoints = []; // a new, bigger loop from here
+      this.driveFor = Math.max(this.driveFor, this.time + this.between(p.friendRideMin, p.friendRideMax));
+    }
+  }
+
   /** Go a bit faster (factor > 1) or slower; she won't go past her scare speed. */
   setCruiseScale(scale) {
     const next = clamp(scale, 0.5, 2);
@@ -331,6 +358,7 @@ export class HerDrive {
     c.starter = false;
     // Following you and you've got off: she waits a while, then gives up on you.
     if (this.follow && (this.phase === 'drive' || this.phase === 'settle')) this.waitForLeader(dt);
+    this.watchFriend();
 
     // Stalled on her (anywhere but while she's starting it).
     if (this.phase !== 'start' && this.running && !q.engine.isRunning) {
@@ -363,6 +391,8 @@ export class HerDrive {
           this.hold(c);
           break;
         }
+        // Her friend's on her way to hop on the back: she waits for her.
+        if (this.friend() === 'coming') break;
         if (this.waitForPassenger && !this.passenger()) {
           this.waited += dt;
           if (this.waited > 15) {

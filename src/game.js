@@ -190,6 +190,7 @@ export class Game {
             return { text: `Hold E to fill the ${unit.label} (${pct}%)   ·   G put the can down` };
           }
           if (quad.isTipped) return `Right the ${unit.label}`;
+          if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger && this.herOnBack(quad)) return { text: `${this.herAtTheFront(quad).name}'s driving and ${this.herOnBack(quad).name}'s on the back: no room` };
           if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger) return `Get on the back (${this.herAtTheFront(quad).name}'s driving)`;
           return `Ride the ${unit.label}   ·   K ignition   R start   Q/Z choke   F fuel tap`;
         },
@@ -205,6 +206,7 @@ export class Game {
           }
           if (this.tooFastToMount(quad)) return;
           if (quad.isTipped) quad.rightItself();
+          else if (this.herAtTheFront(quad) && this.herOnBack(quad)) return;
           else if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger) this.mountPillion(unit);
           else this.mount(unit);
         },
@@ -347,6 +349,11 @@ export class Game {
     return this.companions.find((c) => c.quad === quad && (c.fsm.is('driving') || (c.fsm.is('shuffling') && c.fsm.data?.to === 'rider'))) ?? null;
   }
 
+  /** The companion on the back of this quad (or getting on or off it there), if any. */
+  herOnBack(quad) {
+    return this.companions.find((c) => c.quad === quad && c.claimedSeat === 'pillion' && c.fsm.is('mounting', 'seated', 'dismounting')) ?? null;
+  }
+
   /** The companion on this quad in any seat (or getting on or off it), if any. */
   herOn(quad) {
     return this.companions.find((c) => c.quad === quad && c.fsm.is('mounting', 'seated', 'dismounting', 'driving', 'shuffling')) ?? null;
@@ -408,7 +415,7 @@ export class Game {
 
   /** Your menu riding on the back: talk to her about the ride. */
   openPassengerMenu() {
-    const c = this.herOn(this.boardUnit.quad);
+    const c = this.herAtTheFront(this.boardUnit.quad) ?? this.herOn(this.boardUnit.quad);
     if (!c) return;
     this.passengerHer = c; // who any plan below is with, even once she's off the front
     const drive = c.fsm.is('driving') ? c.drive : null;
@@ -424,7 +431,7 @@ export class Game {
     }
     if (drive && drive.phase === 'parked') ask('goAgain', 'Off we go again', () => drive.resume());
     if (c.fsm.is('driving')) ask('swap', 'Let me drive', () => ((this.passengerPlan = 'swap'), drive?.park()));
-    this.openWheel(`Ask ${c.name} to`, actions);
+    this.openWheel(`Ask ${c.name} to`, actions, c);
     this.player.lookEnabled = false;
     this.player.moveEnabled = false;
   }
@@ -488,14 +495,15 @@ export class Game {
         children: own.map((a) => ({ label: a.short ?? a.label, run: answer(a) })),
       });
     }
-    this.openWheel(`Ask ${c.name} to`, options);
+    this.openWheel(`Ask ${c.name} to`, options, c);
     this.player.lookEnabled = false;
     this.player.moveEnabled = false;
   }
 
   /** Opens the companion wheel, putting the help away so it isn't showing through. */
-  openWheel(title, options) {
+  openWheel(title, options, her = null) {
     this.hud.toggleHelp(false);
+    this.talkingTo = her; // only she answers, and only she stops what she was about to do
     this.menu.open(title, options);
   }
 
@@ -693,7 +701,7 @@ export class Game {
       c.update(dt, c.quad.unit.vibration, {
         position: this.camera.position,
         isRiding: this.player.isRiding,
-        talking: this.menu.isOpen,
+        talking: this.menu.isOpen && this.talkingTo === c,
       });
       c.sounds.ensure();
       c.voice.update(dt, {
@@ -701,6 +709,7 @@ export class Game {
         ridden,
         units: this.units,
         menuOpen: this.menu.isOpen,
+        talkingToHer: this.menu.isOpen && this.talkingTo === c,
         pouring,
       });
     }

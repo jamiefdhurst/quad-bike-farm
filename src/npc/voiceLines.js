@@ -555,6 +555,16 @@ export const VOICE_LINES = {
       { sound: 'sigh' },
     ],
   },
+  // Hopping on the back of the other girl's quad as she sets off.
+  selfJoin: {
+    cooldown: 30,
+    lines: ['Wait! Room for one more?', "Hang on, I'm coming with you!", 'Budge up, I want a go on the back.', "Don't go without me!", 'Ooh, can I come?'],
+  },
+  // Driving, with the other girl just got on the back.
+  friendOn: {
+    cooldown: 20,
+    lines: ['Hold on, then!', 'Right, passenger. Off we go.', "Comfy? Here we go.", 'Hold on tight. I mean it.', "Okay, I'll go gently. Ish."],
+  },
   selfMount: {
     cooldown: 30,
     lines: [

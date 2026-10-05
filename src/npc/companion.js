@@ -133,9 +133,41 @@ export class Companion {
     return this.quad;
   }
 
-  /** Another companion is busy with this quad, so she leaves it alone. */
-  takenByOther(quad) {
-    return this.others().some((o) => o.claimedQuad === quad);
+  /** Which seat of her claimed quad she's after or in: 'rider' (the front, or at the bars), 'pillion', or 'both' while sliding between them. */
+  get claimedSeat() {
+    const s = this.fsm;
+    if (!this.claimedQuad) return null;
+    if (s.is('walking')) return s.data?.goal === 'mount' ? 'pillion' : 'rider';
+    if (s.is('mounting')) return s.data?.seat === 'rider' ? 'rider' : 'pillion';
+    if (s.is('seated')) return 'pillion';
+    if (s.is('shuffling')) return 'both';
+    if (s.is('dismounting')) return this.dismountingFrom ?? 'pillion';
+    return 'rider'; // starting it or driving it
+  }
+
+  /**
+   * Another companion is busy with this quad (or, given a seat, with that seat
+   * of it), so she leaves it alone. With a seat each, they can share one: one
+   * driving, the other on the back.
+   */
+  takenByOther(quad, seat = null) {
+    return this.others().some((o) => o.claimedQuad === quad && (!seat || o.claimedSeat === seat || o.claimedSeat === 'both'));
+  }
+
+  /** The other girl driving this quad (or about to), if any. */
+  friendDriving(quad) {
+    return this.others().find((o) => o.claimedQuad === quad && o.claimedSeat === 'rider') ?? null;
+  }
+
+  /**
+   * She could get on the back of this quad: it has a seat there with nobody in
+   * it, and if her friend's driving it, it's her own drive (not following you
+   * or giving you a ride), so she'll stop to let her on.
+   */
+  canRidePillion(quad) {
+    if (!quad.hasPillion || quad.isTipped || quad.passenger || this.takenByOther(quad, 'pillion')) return false;
+    const friend = this.friendDriving(quad);
+    return !friend?.drive || (!friend.drive.follow && !friend.drive.waitForPassenger);
   }
 
   // Requests ----------------------------------------------------------------
@@ -147,13 +179,13 @@ export class Companion {
   getActions(quads = [this.quad]) {
     const s = this.fsm;
     const here = this.root.getWorldPosition(new THREE.Vector3());
-    const sorted = quads.filter((q) => !this.takenByOther(q)).sort((a, b) => a.position.distanceTo(here) - b.position.distanceTo(here));
-    // Only quads with a pillion seat can carry her.
-    const rideable = (q) => q.hasPillion && !q.isTipped;
+    const sorted = quads.filter((q) => !(this.takenByOther(q, 'rider') && this.takenByOther(q, 'pillion'))).sort((a, b) => a.position.distanceTo(here) - b.position.distanceTo(here));
+    // Only quads with a free pillion seat can carry her (her friend may be driving it).
+    const rideable = (q) => this.canRidePillion(q);
     const actions = [];
     if (s.is('driving')) return this.drivingActions();
     if (s.is('shuffling')) return actions;
-    const drivable = (q) => this.canDrive(q) && !(s.is('walking') && s.data?.goal === 'drive' && q === this.quad);
+    const drivable = (q) => this.canDrive(q) && !this.takenByOther(q, 'rider') && !(s.is('walking') && s.data?.goal === 'drive' && q === this.quad);
     const boarding = s.is('seated', 'mounting') || (s.is('walking') && s.data?.goal === 'mount');
     if (boarding) {
       // She's asked if she can get off: answer her.
@@ -170,9 +202,9 @@ export class Companion {
     }
     if (s.is('dismounting')) return actions;
     // She can have a go at starting any quad that isn't running and has nobody on it.
-    const startable = (q) => !q.engine.isRunning && !q.rider && !q.isTipped && !q.isGhostRiding;
+    const startable = (q) => !q.engine.isRunning && !q.rider && !q.isTipped && !q.isGhostRiding && !this.takenByOther(q, 'rider');
     for (const q of sorted) {
-      if (drivable(q) && q.hasPillion) actions.push({ kind: 'giveRide', quad: q, short: 'Take me for a ride', label: `Take me for a ride on the ${q.label}`, run: () => this.requestDrive(q, { giveRide: true }) });
+      if (drivable(q) && rideable(q)) actions.push({ kind: 'giveRide', quad: q, short: 'Take me for a ride', label: `Take me for a ride on the ${q.label}`, run: () => this.requestDrive(q, { giveRide: true }) });
       if (drivable(q)) actions.push({ kind: 'follow', quad: q, short: 'Follow me on it', label: `Follow me on the ${q.label}`, run: () => this.requestDrive(q, { follow: true }) });
       if (startable(q) && !(s.is('starting') && q === this.quad)) {
         actions.push({ kind: 'start', quad: q, short: 'Start it', label: `Start the ${q.label}`, run: () => this.requestStart(q) });
@@ -217,7 +249,14 @@ export class Companion {
     this.boredAfter = nextBoredWait(p, this.restlessness);
     const here = this.root.position;
     const near = (q) => q.position.distanceTo(here) < 40 && !this.takenByOther(q) && !q.rider && !q.isTipped && !q.isGhostRiding && q.speed < 0.5;
+    // Her friend about to set off on one (walking to it, getting on, starting it or about to go): she might hop on the back.
+    const settingOff = (q) => {
+      const f = this.friendDriving(q);
+      if (!f) return false;
+      return f.fsm.is('walking', 'mounting') || (f.fsm.is('driving') && ['start', 'settle'].includes(f.drive?.phase));
+    };
     const options = {
+      join: this.quads.filter((q) => q.position.distanceTo(here) < 25 && q.speed < 0.5 && !q.rider && settingOff(q) && this.canRidePillion(q)),
       mount: this.quads.filter((q) => near(q) && q.hasPillion),
       start: this.quads.filter((q) => near(q) && !q.engine.isRunning),
       drive: this.quads.filter((q) => near(q) && this.canDrive(q)),
@@ -226,7 +265,8 @@ export class Companion {
     const choice = pickBoredChoice(p, { confidence: this.driveConfidence ?? p.driveConfidence, can });
     const pick = (list) => list[Math.floor(Math.random() * list.length)];
     this.selfEvents.push(choice);
-    if (choice === 'mount') this.requestMount(pick(options.mount), { ownChoice: true });
+    if (choice === 'join') this.requestMount(pick(options.join), { ownChoice: true });
+    else if (choice === 'mount') this.requestMount(pick(options.mount), { ownChoice: true });
     else if (choice === 'start') this.requestStart(pick(options.start));
     else if (choice === 'drive') this.requestDrive(pick(options.drive));
     else this.wander();
@@ -256,6 +296,7 @@ export class Companion {
   askToGetOff(dt) {
     const p = this.params;
     const q = this.quad;
+    if (q.driver) return; // her friend's driving: it's not you she'd ask
     const riding = !!q.rider && q.speed > 1;
     this.askIn ??= this.randomBetween(p.askOffAfterMin, p.askOffAfterMax);
     this.askIn -= dt;
@@ -325,6 +366,23 @@ export class Companion {
   /** How she feels about the quad she's on driving itself (null when it isn't). */
   get ghostLikes() {
     return this.runaway ? this.runaway.likes : null;
+  }
+
+  /** On the back while her friend drove: once her friend's got off at the end, she gets off too, after a moment. */
+  afterFriendsRide(dt) {
+    const q = this.quad;
+    if (this.friendDriving(q)) {
+      this.friendDrove = true;
+      this.friendOffIn = null;
+      return;
+    }
+    if (!this.friendDrove || q.rider || q.speed > 0.4) return;
+    this.friendOffIn ??= this.randomBetween(1, 3);
+    this.friendOffIn -= dt;
+    if (this.friendOffIn > 0) return;
+    this.friendDrove = false;
+    this.friendOffIn = null;
+    this.requestStandBeside(q);
   }
 
   /** You told her to stay on: she grumbles and doesn't ask again for a good while. */
@@ -721,6 +779,7 @@ const STATES = {
       this.askToGetOff(dt);
       this.boredOnTheBack(dt);
       this.watchRunaway(dt);
+      this.afterFriendsRide(dt);
     },
     exit() {
       this.askedToGetOff = false;
@@ -731,20 +790,23 @@ const STATES = {
 
   dismounting: {
     enter() {
+      this.dismountingFrom = this.root.parent === this.quad.riderAnchor ? 'rider' : 'pillion';
+      // Off on the left, unless her friend's getting off or standing there.
+      this.dismountSide = this.others().some((o) => o.root.position.distanceTo(this.standPoint(1).position) < 0.9 || (o.quad === this.quad && o.fsm.is('dismounting') && o.dismountSide === 1)) ? -1 : 1;
       // Back into the world, keeping her current world transform.
       this.scene.attach(this.root);
       this.startPos = this.root.position.clone();
       const e = new THREE.Euler().setFromQuaternion(this.root.quaternion, 'YXZ');
       this.root.rotation.set(0, e.y, 0);
       this.startHeading = e.y;
-      this.target = this.standPoint(1);
+      this.target = this.standPoint(this.dismountSide);
       this.rig.play('Sitting', { once: true, timeScale: -1, fade: 0.2 });
     },
     update() {
       const p = this.params;
       const t = Math.min(1, this.fsm.time / p.dismountDuration);
       const k = smooth(t);
-      this.target = this.standPoint(1);
+      this.target = this.standPoint(this.dismountSide);
       this.root.position.lerpVectors(this.startPos, this.target.position, k);
       this.root.position.y += Math.sin(Math.PI * k) * 0.12;
       this.heading = this.startHeading + angleTo(this.startHeading, this.target.facing) * k;
