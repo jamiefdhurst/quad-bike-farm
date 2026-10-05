@@ -200,14 +200,17 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
     const z = side < 0 ? door.minZ - panelW / 2 + 0.1 : door.maxZ + panelW / 2 - 0.1;
     const leaf = new THREE.Group();
     leaf.add(box(0.06, door.height - 0.1, panelW, new THREE.MeshStandardMaterial({ map: boards([panelW / 2.4, door.height / 2.4]), roughness: 0.85 })));
+    // White battens stacked proud of the boards, each layer at least 2 cm clear of the last (the camera's near/far range
+    // is too wide for faces closer than that to hold their order): boards, then frame bars, then each brace.
     for (const s of [-1, 1]) {
-      const brace = box(0.08, 0.14, Math.hypot(panelW, door.height - 0.4), white);
+      const brace = box(0.07, 0.14, Math.hypot(panelW, door.height - 0.4), white);
       brace.rotation.x = s * Math.atan2(door.height - 0.4, panelW);
+      brace.position.x = s < 0 ? 0.055 : 0.075;
       leaf.add(brace);
     }
     for (const [dy, dz] of [[0, 0], [1, 0], [-1, 0]]) {
-      const frame = box(0.09, 0.14, panelW, white);
-      frame.position.set(0, dy * (door.height / 2 - 0.15), dz);
+      const frame = box(0.07, 0.14, panelW, white);
+      frame.position.set(0.025, dy * (door.height / 2 - 0.15), dz);
       leaf.add(frame);
     }
     leaf.traverse((o) => {
