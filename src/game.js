@@ -213,7 +213,9 @@ export class Game {
     registerTuning('Sound', this.audioHub.params, SOUND_PARAM_RANGES);
     registerTuning('Jerry can', this.can.params, JERRY_CAN_PARAM_RANGES);
     registerTuning('Player', this.player.params, PLAYER_PARAM_RANGES);
-    registerTuning('Companion', this.companion.params, COMPANION_PARAM_RANGES);
+    registerTuning('Companion', this.companion.params, COMPANION_PARAM_RANGES, {
+      onChange: () => this.companion.refreshFigure(),
+    });
     this.debugGui = new DebugGui(this);
 
     this.applyDebugCamera();

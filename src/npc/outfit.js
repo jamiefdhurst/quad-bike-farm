@@ -156,6 +156,7 @@ function attachToBone(rig, mesh, boneName) {
   mesh.castShadow = true;
   rig.root.add(mesh);
   rig.bones[boneName].attach(mesh);
+  rig.outfitParts.push(mesh);
 }
 
 /**
@@ -308,10 +309,12 @@ function addPoloFront(rig, color) {
   group.traverse((o) => (o.castShadow = o.isMesh));
   root.add(group);
   spine.attach(group);
+  rig.outfitParts.push(group);
 }
 
 export function applyOutfit(rig, outfit) {
   rig.root.updateMatrixWorld(true);
+  rig.outfitParts = [];
   rig.model.traverse((o) => {
     if (!o.isMesh) return;
     const mat = o.material;
@@ -321,9 +324,31 @@ export function applyOutfit(rig, outfit) {
     mat.roughness = 0.85;
     mat.needsUpdate = true;
   });
+  addGarments(rig, outfit);
+}
+
+function addGarments(rig, outfit) {
   if (outfit.collar) {
     addCollar(rig, outfit.collar);
     addPoloFront(rig, outfit.collar);
   }
   if (outfit.wellies) addWellies(rig, outfit.wellies);
+}
+
+/**
+ * Rebuilds the fitted garments after the body has changed shape. They're
+ * fitted in the rest pose, whatever she's doing at the moment.
+ */
+export function refitOutfit(rig, outfit) {
+  for (const part of rig.outfitParts ?? []) {
+    part.removeFromParent();
+    part.traverse((o) => {
+      if (o.isMesh) {
+        o.geometry.dispose();
+        o.material.dispose();
+      }
+    });
+  }
+  rig.outfitParts = [];
+  rig.withRestPose(() => addGarments(rig, outfit));
 }
