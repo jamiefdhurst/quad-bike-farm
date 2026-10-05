@@ -82,7 +82,7 @@ export function planLoop(origin, yaw, random, p, isClear) {
       let ok = true;
       for (let k = 1; k <= n; k++) {
         // Round the circle the way she's facing; the last point brings her back.
-        const a = start - side * (k / n) * TAU;
+        const a = start + side * (k / n) * TAU;
         const rk = k === n ? r * 0.6 : r * jitter[k - 1];
         const pt = { x: cx + Math.sin(a) * rk, z: cz + Math.cos(a) * rk };
         if (k === n) {
@@ -213,11 +213,12 @@ export class HerDrive {
     c.starter = false;
 
     // Stalled on her (anywhere but while she's starting it).
-    if (this.phase !== 'start' && this.phase !== 'stalled' && !q.engine.isRunning) {
+    if (this.phase !== 'start' && this.running && !q.engine.isRunning) {
       this.stalls++;
       this.events.push('stalled');
       if (this.phase !== 'stop') this.setPhase('stalled', this.between(1.5, 3));
     }
+    this.running = q.engine.isRunning;
 
     switch (this.phase) {
       case 'start':
@@ -276,6 +277,12 @@ export class HerDrive {
         c.brake = q.forwardSpeed > 0.2 ? 0.8 : 0;
         c.throttle = q.forwardSpeed < 0.2 && q.forwardSpeed > -1.2 ? 0.45 : 0;
         c.steer = this.avoidSide;
+        // Not into whatever's behind her, either.
+        this.probeTimer -= dt;
+        if (this.probeTimer <= 0) {
+          this.probeTimer = 0.1;
+          if (q.forwardSpeed < -0.2 && this.probe(q.yaw + Math.PI, 2.2) < Infinity) this.timer = 0;
+        }
         if (this.timer <= 0) {
           c.reverse = false;
           this.index = Math.min(this.index + 1, this.waypoints.length);
