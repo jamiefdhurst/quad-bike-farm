@@ -10,6 +10,8 @@ import * as THREE from 'three';
  *     interact(): void,          called when E is pressed while focused
  *     hold(dt): boolean,         optional, called every frame E is held; true while something is happening
  *     range(): number,           optional, how far away it can be reached (defaults to the player's reach)
+ *     priority: number,          optional, defaults to 0: a direct hit on a higher priority item wins over a nearer one (the toolbox on
+ *                                the workbench, whose own box is in front of it)
  *   }
  *
  * A direct ray hit wins. Failing that, anything whose bounds come within a
@@ -39,6 +41,7 @@ export class Interaction {
 
     let best = null;
     let bestDist = Infinity;
+    let bestPriority = -Infinity;
     let coneBest = null;
     let coneBestCos = this.coneCos;
     for (const item of this.items) {
@@ -46,9 +49,11 @@ export class Interaction {
       const far = item.range?.() ?? range;
       this.raycaster.far = far;
       const hits = this.raycaster.intersectObject(item.target, true);
-      if (hits.length && hits[0].distance < bestDist) {
+      const priority = item.priority ?? 0;
+      if (hits.length && (priority > bestPriority || (priority === bestPriority && hits[0].distance < bestDist))) {
         best = item;
         bestDist = hits[0].distance;
+        bestPriority = priority;
       }
       // Angle from the view ray to the nearest part of the object's bounds.
       this.box.setFromObject(item.target);

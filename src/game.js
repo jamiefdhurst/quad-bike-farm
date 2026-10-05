@@ -438,6 +438,7 @@ export class Game {
     });
     this.interaction.add({
       target: this.toolbox.proxy,
+      priority: 1, // it sits on the bench, whose box would otherwise be hit first
       isAvailable: () => !this.handsFull,
       prompt: () => 'Pick up the toolbox',
       interact: () => this.toolbox.pickUp(this.camera),
