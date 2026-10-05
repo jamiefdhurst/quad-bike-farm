@@ -447,13 +447,22 @@ export class CompanionVoice {
 
   /** Picks a line for the situation and says it; returns what was said, or null. */
   say(situation, opts) {
-    // Someone else is talking: unprompted chatter waits its turn.
+    // Someone else is talking (or they're bickering): unprompted chatter waits its turn.
     if (this.floor.left > 0 && !opts?.force && !opts?.urgent) return null;
+    if (this.floor.banter && !opts?.force) return null;
     const line = this.chatter.pick(situation, opts);
     if (!line) return null;
+    return this.speak(line, { shout: !!this.chatter.lines[situation]?.shout }) === null ? null : line;
+  }
+
+  /**
+   * Says one particular line (or plays a { sound }) now, cutting off whatever
+   * she was saying. Returns how long it lasts in seconds, 0 if nobody could hear
+   * it, or null if a sound hadn't loaded.
+   */
+  speak(line, { shout = false } = {}) {
     const p = this.params;
     const sp = this.soundParams;
-    const shout = !!this.chatter.lines[situation]?.shout;
     const distance = this.head.distanceTo(this.listener);
     // Like anyone, she raises her voice the further away you are, and some things she shouts.
     const raise = Math.min(p.voiceRaiseMax, 1 + Math.max(0, distance - 4) * p.voiceRaisePerMetre) * (shout ? p.shoutGain : 1);
@@ -461,7 +470,7 @@ export class CompanionVoice {
     let seconds;
     if (typeof line === 'string') {
       const hearing = this.hearing(shout);
-      if (hearing <= 0) return line; // out of earshot: she said it, nobody heard
+      if (hearing <= 0) return 0; // out of earshot: she said it, nobody heard
       this.speech.stop();
       seconds = this.sounds.say(line, this.head, p.voiceVolume * raise, voice);
       if (!seconds) {
@@ -479,7 +488,7 @@ export class CompanionVoice {
     }
     this.chatter.holdFor(seconds);
     this.floor.left = Math.max(this.floor.left, seconds + 1);
-    return line;
+    return seconds;
   }
 
   /** 1 close by, fading to 0 at the edge of earshot. A shout carries twice as far. */

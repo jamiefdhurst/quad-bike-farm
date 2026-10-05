@@ -19,6 +19,9 @@ import { Speech, CompanionSounds } from './audio/companionAudio.js';
 import { DEFAULT_COMPANION_PARAMS, COMPANION_PARAM_RANGES } from './npc/companionParams.js';
 import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
 import { CHARACTERS } from './npc/characters.js';
+import { Banter } from './npc/banter.js';
+import { BANTER } from './npc/banterLines.js';
+import { BanterWatch } from './npc/banterWatch.js';
 import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES } from './items/jerryCan.js';
 import { FuelTank } from './items/fuelTank.js';
 import { Toolbox } from './items/toolbox.js';
@@ -138,7 +141,7 @@ export class Game {
     // The companions (src/npc/characters.js), each starting beside her own quad in the yard.
     const yard = this.units.filter((u, i) => u !== this.homeUnit && spawns[i].where === spawns[home].where);
     const homes = [this.homeUnit, ...yard, ...this.units.filter((u) => u !== this.homeUnit && !yard.includes(u))];
-    const floor = { left: 0 }; // so one waits for the other to finish before chattering
+    const floor = { left: 0, banter: false }; // so one waits for the other to finish before chattering, and both for a bicker
     this.talkFloor = floor;
     this.companions = CHARACTERS.map((character, i) => {
       const c = new Companion({
@@ -421,6 +424,18 @@ export class Game {
     }
   }
 
+  /** The girls bickering with each other (banter.js), when there's a moment for it. */
+  updateBanter(dt, ridden) {
+    if (this.companions.length < 2) return;
+    this.banter ??= new Banter(BANTER);
+    this.banterWatch ??= new BanterWatch();
+    const triggers = this.banterWatch.triggers(dt, { companions: this.companions, ridden, you: this.camera.position, wheelOpen: this.menu.isOpen });
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    const speak = (speaker, text, opts) => (byId[speaker]?.params.voice ? byId[speaker].voice.speak(text, opts) : 0);
+    this.banter.update(dt, triggers, speak, this.talkFloor.left <= 0 && !this.menu.isOpen);
+    this.talkFloor.banter = this.banter.busy;
+  }
+
   /** Rain round you and its sound, and the wind on the exhaust smoke. */
   updateWeather(dt) {
     const w = this.weather;
@@ -567,6 +582,7 @@ export class Game {
   openWheel(title, options, her = null) {
     this.hud.toggleHelp(false);
     this.talkingTo = her; // only she answers, and only she stops what she was about to do
+    if (her && this.banterWatch) this.banterWatch.noteTalk(her, this.companions);
     this.menu.open(title, options);
   }
 
@@ -766,6 +782,7 @@ export class Game {
     for (const unit of this.units) unit.update(dt, alpha);
     const ridden = this.riddenUnit;
     this.talkFloor.left = Math.max(0, this.talkFloor.left - dt);
+    this.updateBanter(dt, ridden);
     for (const c of this.companions) {
       c.update(dt, c.quad.unit.vibration, {
         position: this.camera.position,
