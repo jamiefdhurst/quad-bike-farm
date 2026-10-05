@@ -18,7 +18,7 @@ export const SOUND_PARAM_RANGES = {
 
 // One per engine. Sent to its AudioWorklet (engineWorklet.js) each frame.
 export const DEFAULT_AUDIO_PARAMS = {
-  engineSound: 'recorded', // 'recorded' (real recorded pulses) or 'synth' (fully synthesised)
+  engineSound: 'pulse', // 'pulse' (revs built from recorded idle firings), 'recorded' (idle and rev recordings) or 'synth' (fully synthesised)
 
   // Recorded engine
   recBank: 'engine-bank', // which recordings: 'engine-bank' (four-stroke quads) or 'engine-bank-2t' (two-stroke dirt bikes)
@@ -36,6 +36,19 @@ export const DEFAULT_AUDIO_PARAMS = {
   recLevelling: 0.5, // 0 leaves each recorded pulse's loudness alone; 1 makes every pulse of a kind equally loud
   recMinGrainMs: 32, // at higher revs a grain spans several recorded firings, at least this long
   recOverlap: 0.05, // each pulse runs this much longer than its cycle, so a late next pulse overlaps rather than leaving a gap
+  // 'pulse' sound: every firing is a recorded idle firing, cut off when the next one fires
+  pulsePitchFollow: 0, // 0 keeps each firing at its recorded speed however high the revs; 1 squeezes it to fit the cycle (like 'recorded')
+  pulseRefRpm: 1200, // engine rpm (roughly its idle) where the rev loudness and EQ below start
+  pulseRevLoudness: 0.4, // each firing gets louder with revs, (rpm / pulseRefRpm) to this power
+  pulseLoudnessCap: 2.5, // but never more than this many times louder
+  pulseEqRange: 4500, // rpm above pulseRefRpm over which the rev EQ comes in fully
+  pulseLowCut: 16, // dB less deep thump at high revs
+  pulseMidBoost: 8, // dB more mid-range rasp at high revs
+  pulseMidFreq: 1500, // Hz, centre of that rasp
+  pulseMidQ: 0.4, // narrower above 1, wider below
+  pulseTone: 6000, // Hz low-pass, which tames the edges where firings are cut short
+  pulseCrossfade: 0.4, // fraction of a cycle each firing fades out over as the next starts
+  pulseDrive: 0.6, // extra drive into the soft clipper at full throttle
   recStarterVolume: 0.9,
   recShutdownVolume: 0.9,
 
@@ -101,7 +114,19 @@ export const DEFAULT_AUDIO_PARAMS = {
 };
 
 export const AUDIO_PARAM_RANGES = {
-  engineSound: ['recorded', 'synth'],
+  engineSound: ['pulse', 'recorded', 'synth'],
+  pulsePitchFollow: [0, 1, 0.01],
+  pulseRefRpm: [500, 4000, 10],
+  pulseRevLoudness: [-1, 2, 0.01],
+  pulseLoudnessCap: [1, 10, 0.05],
+  pulseEqRange: [500, 10000, 50],
+  pulseLowCut: [0, 30, 0.5],
+  pulseMidBoost: [0, 20, 0.5],
+  pulseMidFreq: [200, 5000, 10],
+  pulseMidQ: [0.2, 4, 0.01],
+  pulseTone: [1000, 20000, 100],
+  pulseCrossfade: [0.05, 1, 0.01],
+  pulseDrive: [0, 4, 0.01],
   recBank: ['engine-bank', 'engine-bank-2t'],
   recIdleSource: ['quad', 'rev'],
   recVolume: [0, 3, 0.01],

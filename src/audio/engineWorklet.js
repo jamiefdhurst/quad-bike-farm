@@ -25,10 +25,37 @@ class Biquad {
     this.x1 = this.x2 = this.y1 = this.y2 = 0;
   }
 
-  set(type, freq, q, sr) {
+  /** `gainDb` is for 'peaking' and 'lowshelf' (RBJ cookbook). */
+  set(type, freq, q, sr, gainDb = 0) {
     const w = (TWO_PI * Math.min(freq, sr * 0.45)) / sr;
     const cos = Math.cos(w);
     const alpha = Math.sin(w) / (2 * q);
+    if (type === 'peaking' || type === 'lowshelf') {
+      const A = Math.pow(10, gainDb / 40);
+      let b0, b1, b2, a0, a1, a2;
+      if (type === 'peaking') {
+        b0 = 1 + alpha * A;
+        b1 = -2 * cos;
+        b2 = 1 - alpha * A;
+        a0 = 1 + alpha / A;
+        a1 = -2 * cos;
+        a2 = 1 - alpha / A;
+      } else {
+        const r = 2 * Math.sqrt(A) * alpha;
+        b0 = A * (A + 1 - (A - 1) * cos + r);
+        b1 = 2 * A * (A - 1 - (A + 1) * cos);
+        b2 = A * (A + 1 - (A - 1) * cos - r);
+        a0 = A + 1 + (A - 1) * cos + r;
+        a1 = -2 * (A - 1 + (A + 1) * cos);
+        a2 = A + 1 + (A - 1) * cos - r;
+      }
+      this.b0 = b0 / a0;
+      this.b1 = b1 / a0;
+      this.b2 = b2 / a0;
+      this.a1 = a1 / a0;
+      this.a2 = a2 / a0;
+      return;
+    }
     let b0, b1, b2;
     const a0 = 1 + alpha;
     if (type === 'lowpass') {
@@ -192,6 +219,42 @@ class RecordedEngine {
     });
   }
 
+  /**
+   * Plays one recorded idle firing for one engine cycle. Up to idle speed it's
+   * stretched to fill the cycle, as in playGrain. Above that it plays at nearly
+   * its own speed (pulsePitchFollow bends it up a little) and is cut off with a
+   * short crossfade when the next firing starts. The exhaust's resonances stay
+   * where they are in the recording and only the firing rate climbs, which is
+   * how a real engine behaves; resampling whole grains up shifts the
+   * resonances too.
+   */
+  playPulse(g, cycleRpm, gain, period, attackGain, p) {
+    if (!g || gain <= 0.0005) return;
+    const cycle = period > 0 ? period * sampleRate : (120 / cycleRpm) * sampleRate;
+    const target = cycle * (1 + this.overlap);
+    const natural = g.len / target;
+    const rate = natural <= 1 ? Math.max(0.45, natural) : Math.pow(natural, p.pulsePitchFollow);
+    const xfade = Math.max(0.0015 * sampleRate, Math.min(0.008 * sampleRate, cycle * p.pulseCrossfade));
+    // Length in recorded samples: the whole grain, or as much as fits before the next firing.
+    const len = natural <= 1 ? g.len + g.tail : Math.min(g.len + g.tail, (target + xfade) * rate);
+    for (const v of this.voices) {
+      if (v.layer === 'low' && !v.releaseLeft) v.releaseLeft = v.releaseLen = xfade;
+    }
+    this.cursor.low = g;
+    this.voices.push({
+      layer: 'low',
+      pos: 0,
+      start: g.start,
+      len,
+      rate,
+      gain: gain * g.gain * this.levelFor(g),
+      fadeIn: 0.0005 * sampleRate,
+      fadeOut: natural <= 1 ? g.tail : xfade * rate,
+      attackGain,
+      attackLen: g.len * 0.3,
+    });
+  }
+
   /** Pulls a grain's loudness part of the way toward its kind's typical level. */
   levelFor(g) {
     if (!g.rms || !this.levelling) return 1;
@@ -221,10 +284,16 @@ class RecordedEngine {
         const typeGain = misfire ? p.recMisfireBody : ev.type === 'sputter' ? 0.5 : 1;
         const attack = misfire ? p.recMisfireAttack / Math.max(0.01, p.recMisfireBody) : 1;
         const gain = (misfire ? 1 : ev.strength) * typeGain * loud;
-        const w = smoothstep(p.recBlendLo, p.recBlendHi, rpm);
         // Pick grains by the rpm this cycle actually runs at.
         const cycleRpm = ev.period > 0 ? 120 / ev.period : rpm;
         const idleKinds = p.recIdleSource === 'rev' ? ['idle2'] : ['idle'];
+        if (p.engineSound === 'pulse') {
+          // Revs built from idle: every firing is a recorded idle firing, cut off when the next one fires.
+          const louder = Math.min(p.pulseLoudnessCap, Math.pow(Math.max(1, rpm / p.pulseRefRpm), p.pulseRevLoudness));
+          this.playPulse(this.pick(idleKinds, cycleRpm), cycleRpm, gain * louder, ev.period, attack, p);
+          return true;
+        }
+        const w = smoothstep(p.recBlendLo, p.recBlendHi, rpm);
         if (w < 0.999) {
           if (this.skip.low > 0) this.skip.low--;
           else this.playGrain(this.pickFor('low', idleKinds, cycleRpm), rpm, gain * (1 - w), 'low', ev.period, attack);
@@ -399,7 +468,7 @@ class EngineProcessor extends AudioWorkletProcessor {
   // Event handling -----------------------------------------------------------
 
   get useRecorded() {
-    return !!this.recorded && this.p.engineSound === 'recorded';
+    return !!this.recorded && (this.p.engineSound === 'recorded' || this.p.engineSound === 'pulse');
   }
 
   trigger(ev) {
@@ -640,8 +709,20 @@ class EngineProcessor extends AudioWorkletProcessor {
     const sr = sampleRate;
     this.rpm += (st.rpm - this.rpm) * 0.25;
     this.throttle += (st.throttle - this.throttle) * 0.2;
+    const pulse = p.engineSound === 'pulse';
     if ((this.blockCount++ & 7) === 0) {
-      this.tone.set('lowpass', p.recToneClosed + (p.recToneOpen - p.recToneClosed) * this.throttle, 0.7, sr);
+      const tone = pulse ? p.pulseTone : p.recToneClosed + (p.recToneOpen - p.recToneClosed) * this.throttle;
+      this.tone.set('lowpass', tone, 0.7, sr);
+    }
+    const drive = 1 + p.pulseDrive * this.throttle;
+    if (pulse) {
+      this.pulseLow ??= new Biquad();
+      this.pulseMid ??= new Biquad();
+      if ((this.blockCount & 7) === 1) {
+        const rev = smoothstep(p.pulseRefRpm, p.pulseRefRpm + p.pulseEqRange, this.rpm);
+        this.pulseLow.set('lowshelf', 160, 0.7, sr, -p.pulseLowCut * rev);
+        this.pulseMid.set('peaking', p.pulseMidFreq, p.pulseMidQ, sr, p.pulseMidBoost * rev);
+      }
     }
     for (let i = 0; i < n; i++) {
       const frame = currentFrame + i;
@@ -662,7 +743,12 @@ class EngineProcessor extends AudioWorkletProcessor {
         }
         if (done) this.active.splice(k, 1);
       }
-      const s = this.tone.run(this.recorded.sample(st)) + dry;
+      let x = this.recorded.sample(st);
+      if (pulse) {
+        // As revs rise the firings merge: less of the deep thump, more mid-range rasp.
+        x = this.pulseMid.run(this.pulseLow.run(x)) * drive;
+      }
+      const s = this.tone.run(x) + dry;
       out[i] = Math.tanh(s);
     }
     return true;

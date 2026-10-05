@@ -71,6 +71,7 @@ export const QUAD_SPECS = [
     },
     audio: {
       recIdleSource: 'rev',
+      pulseRefRpm: 1450,
       recToneClosed: 7000,
       pipeLength: 1.0,
       mufflerFreqA: 185,
@@ -135,6 +136,9 @@ export const QUAD_SPECS = [
     },
     audio: {
       recBank: 'engine-bank-2t',
+      pulseRefRpm: 1800,
+      pulseRevLoudness: 1.1, // a two-stroke gets louder faster as it revs
+      pulseLoudnessCap: 2,
       recRevGain: 1,
       recIdleSource: 'quad',
       recBlendLo: 2600,
