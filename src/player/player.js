@@ -72,6 +72,11 @@ export class Player {
     this.ridePitch = 0;
     this.lookEnabled = true;
     this.moveEnabled = true;
+    // Turning round on the seat to look back over a shoulder (0 facing forward, 1 turned round).
+    this.lookBackTurn = 0;
+    this.lookBackSide = 1; // +1 over the left shoulder, -1 the right
+    this.lookBackYaw = 0; // mouse look while turned round
+    this.lookBackPitch = 0;
 
     this.tmpQuat = new THREE.Quaternion();
     this.tmpEuler = new THREE.Euler(0, 0, 0, 'YXZ');
@@ -80,6 +85,12 @@ export class Player {
 
   get isRiding() {
     return this.mode === 'riding';
+  }
+
+  /** How far round you're turned to look back, eased, 0..1. */
+  get lookBack() {
+    const t = this.lookBackTurn;
+    return t * t * (3 - 2 * t);
   }
 
   /** Feet position, interpolated for rendering. */
@@ -173,11 +184,16 @@ export class Player {
       if (this.mode === 'foot') {
         this.yaw -= dx;
         this.pitch = THREE.MathUtils.clamp(this.pitch - dy, -88 * DEG, 88 * DEG);
+      } else if (this.lookBackTurn > 0.5) {
+        const free = p.lookBackFreedom * DEG;
+        this.lookBackYaw = THREE.MathUtils.clamp(this.lookBackYaw - dx, -free, free);
+        this.lookBackPitch = THREE.MathUtils.clamp(this.lookBackPitch - dy, -free, free);
       } else {
         this.rideYaw = THREE.MathUtils.clamp(this.rideYaw - dx, -p.rideYawLimit * DEG, p.rideYawLimit * DEG);
         this.ridePitch = THREE.MathUtils.clamp(this.ridePitch - dy, -p.ridePitchDown * DEG, p.ridePitchUp * DEG);
       }
     }
+    this.updateLookBack(dt);
 
     if (this.mode === 'foot') {
       this.renderPos = this.tmpVec.lerpVectors(this.prevPos, this.currPos, alpha);
@@ -192,14 +208,47 @@ export class Player {
     }
   }
 
+  /** Holding C or the middle mouse button turns you round on the seat to look back. */
+  updateLookBack(dt) {
+    const p = this.params;
+    const held = this.isRiding && this.lookEnabled && (this.input.isDown('KeyC') || this.input.isMouseDown?.(1));
+    // Turn over the shoulder you're already looking toward, the left if straight ahead.
+    if (held && this.lookBackTurn === 0) this.lookBackSide = this.rideYaw < -5 * DEG ? -1 : 1;
+    const step = dt / Math.max(0.01, p.lookBackTime);
+    this.lookBackTurn = THREE.MathUtils.clamp(this.lookBackTurn + (held ? step : -step), 0, 1);
+    if (!held) {
+      // Mouse look while turned round lets go as you face forward again.
+      const k = Math.min(1, dt * 8);
+      this.lookBackYaw -= this.lookBackYaw * k;
+      this.lookBackPitch -= this.lookBackPitch * k;
+    }
+  }
+
+  /** Where your eyes move to as you twist round to look back, relative to the camera anchor. */
+  lookBackOffset(out = new THREE.Vector3()) {
+    const back = this.lookBack;
+    // Out over the shoulder and a touch forward.
+    return out.set(this.lookBackSide * this.params.lookBackShift * back, -0.02 * back, 0.1 * back);
+  }
+
   updateRidingCamera(vibration) {
+    const p = this.params;
     const anchor = this.vehicle.cameraAnchor;
     anchor.updateWorldMatrix(true, false);
     anchor.getWorldPosition(this.camera.position);
     anchor.getWorldQuaternion(this.tmpQuat);
 
+    let yaw = this.rideYaw;
     let pitch = this.ridePitch;
     let roll = 0;
+    const back = this.lookBack;
+    if (back > 0) {
+      const side = this.lookBackSide;
+      this.camera.position.add(this.lookBackOffset(this.tmpVec).applyQuaternion(this.tmpQuat));
+      yaw += (side * p.lookBackYaw * DEG + this.lookBackYaw - yaw) * back;
+      pitch += (p.lookBackPitch * DEG + this.lookBackPitch - pitch) * back;
+      roll += side * 4 * DEG * back;
+    }
     if (vibration) {
       const c = vibration.camera;
       const k = this.params.rideCameraShake;
@@ -208,7 +257,7 @@ export class Player {
       roll += c.roll * k;
     }
     // The camera looks down -Z; the bike faces +Z.
-    this.tmpEuler.set(pitch, this.rideYaw + Math.PI, roll, 'YXZ');
+    this.tmpEuler.set(pitch, yaw + Math.PI, roll, 'YXZ');
     this.camera.quaternion.copy(this.tmpQuat).multiply(new THREE.Quaternion().setFromEuler(this.tmpEuler));
   }
 
@@ -226,6 +275,7 @@ export class Player {
     this.vehicle = vehicle;
     this.rideYaw = 0;
     this.ridePitch = -12 * DEG;
+    this.lookBackTurn = this.lookBackYaw = this.lookBackPitch = 0;
     this.collider.setEnabled(false);
     this.velocity.set(0, 0, 0);
   }
@@ -235,6 +285,7 @@ export class Player {
     this.velocity.set(0, 0, 0);
     this.mode = 'foot';
     this.vehicle = null;
+    this.lookBackTurn = 0;
     const centre = { x: feet.x, y: feet.y + FEET_TO_CENTRE, z: feet.z };
     this.body.setTranslation(centre, true);
     this.body.setNextKinematicTranslation(centre);
