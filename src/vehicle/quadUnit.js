@@ -42,7 +42,7 @@ export class QuadUnit {
     this.quad.unit = this;
     this.vibration = new VibrationModel({ ...DEFAULT_VIBRATION_PARAMS, ...spec.vibration });
     this.smoke = new ExhaustSmoke(scene, (x, z) => world.heightAt(x, z), { ...DEFAULT_SMOKE_PARAMS, ...spec.smoke });
-    this.mud = new QuadMud({ scene, world, quad: this.quad, sport: spec.style === 'sport', params: { ...DEFAULT_MUD_PARAMS, ...spec.mud } });
+    this.mud = new QuadMud({ scene, world, quad: this.quad, sport: spec.style?.startsWith('sport'), params: { ...DEFAULT_MUD_PARAMS, ...spec.mud } });
     this.audio = new EngineAudio(audioHub, { ...DEFAULT_AUDIO_PARAMS, ...spec.audio });
     this.ride = new RideAudio(audioHub, this, world);
     this.listenerOnBoard = false; // set by the game while you're riding this one
