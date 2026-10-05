@@ -7,6 +7,7 @@
 // idles, how rough it runs and whether it fouls its plug and dies.
 
 import { DEFAULT_ENGINE_PARAMS } from './engineParams.js';
+import { oilExcess, stepLube, nipping } from './lubrication.js';
 
 export const EngineState = Object.freeze({
   OFF: 'off',
@@ -47,6 +48,12 @@ export class EngineModel {
     this.pullLeft = 0; // seconds left of a yank on the pull-start
     this.pullStrength = 0; // how good that yank was, 0..1
     this.clickedDead = false; // the starter has clicked for this press
+    this.oil = this.params.strokes === 2 ? this.params.oilGood : 0; // oil fraction of the fuel it's being fed
+    this.oilRich = 0; // 0..1 how much more oil than it can burn clean
+    this.overheat = 0; // 0..1 extra heat from poor lubrication, on top of the temperature
+    this.scuff = 0; // 0..1 damage from running without oil; at 1 it seizes
+    this.nip = 0; // 0..1 how far it's nipping up
+    this.seized = false; // locked solid: nothing turns it until it's stripped down
     this.motorOn = false; // the starter motor is turning it (not just a yank on the cord)
 
     // Derived values, refreshed every step.
@@ -129,7 +136,7 @@ export class EngineModel {
    * @param {number}  [controls.resistLoad] 0..1 the part of driveLoad from climbing, mud or being blocked; this is what lugs a weak engine.
    * @param {number}  [controls.overrunRpm] rpm above idle the wheels turn it over at with the throttle shut.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0 } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, oil = this.oil } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -138,6 +145,7 @@ export class EngineModel {
     this.choke = clamp(choke, 0, 1);
     this.load = clamp(load, 0, 1);
     this.fuel = clamp(fuel, 0, 1);
+    this.oil = Math.max(0, oil);
     this.driveLoad = clamp(driveLoad, 0, 1);
     this.resistLoad = clamp(resistLoad, 0, this.driveLoad);
     this.overrunRpm = Math.max(0, overrunRpm);
@@ -163,6 +171,7 @@ export class EngineModel {
     this.updateBattery(h);
     this.pullLeft = Math.max(0, this.pullLeft - h);
     this.updateTemperature(h);
+    this.updateLube(h);
     this.updateMixture();
 
     switch (this.state) {
@@ -182,11 +191,12 @@ export class EngineModel {
 
   updateStarter(starter) {
     const p = this.params;
-    const canCrank = this.state === EngineState.IGNITION || this.state === EngineState.STALLED;
-    const motor = starter && this.battery >= p.batteryDeadBelow;
+    const canTurn = this.state === EngineState.IGNITION || this.state === EngineState.STALLED;
+    const canCrank = canTurn && !this.seized;
+    const motor = starter && this.battery >= p.batteryDeadBelow && !this.seized;
     const pulling = this.pullLeft > 0;
     // A dead battery: the solenoid clicks and nothing turns.
-    if (starter && !motor && canCrank && !this.clickedDead) {
+    if (starter && !motor && canTurn && !this.clickedDead) {
       this.clickedDead = true;
       this.emit('starterClick');
     }
@@ -214,6 +224,16 @@ export class EngineModel {
     return this.ignitionOn && this.battery > this.params.batteryDashOutBelow;
   }
 
+  /** Strips it down and frees it (the toolbox): the scuffing is cleaned off, and a seizure leaves wear behind. */
+  freeSeized() {
+    if (this.scuff < 0.05 && !this.seized) return false;
+    if (this.seized) this.wear = Math.min(this.params.wearMax, this.wear + this.params.seizeWear);
+    this.seized = false;
+    this.scuff = 0;
+    this.overheat = 0;
+    return true;
+  }
+
   /** Put charge in (a jump from another quad), or take it out. */
   charge(amount) {
     this.battery = clamp(this.battery + amount, 0, 1);
@@ -228,6 +248,7 @@ export class EngineModel {
     const p = this.params;
     if (!p.pullStart) return null;
     if (this.state !== EngineState.IGNITION && this.state !== EngineState.STALLED) return null;
+    if (this.seized) return null;
     let strength;
     if (held < p.pullGoodMin) strength = 0.25 + 0.5 * (held / p.pullGoodMin);
     else if (held <= p.pullGoodMax) strength = 1;
@@ -261,6 +282,23 @@ export class EngineModel {
     this.temperature = clamp(this.temperature, 0, 1);
   }
 
+  /** Oil in the fuel: heat and scuffing on straight petrol, smoke and a fouling plug on too much. */
+  updateLube(h) {
+    const p = this.params;
+    const running = this.state === EngineState.RUNNING;
+    const rpmNorm = clamp((this.rpm - p.idleRpmWarm) / (p.maxRpm - p.idleRpmWarm), 0, 1);
+    const work = p.lubeIdleWork + (1 - p.lubeIdleWork) * Math.max(rpmNorm, this.driveLoad * this.throttle);
+    if (p.strokes === 2) {
+      if (stepLube(this, h, { oil: this.oil, running, work }, p)) {
+        this.rpm = 0;
+        this.stall('seized');
+        this.emit('seized');
+      }
+    }
+    this.nip = nipping(this.scuff, p.nipFrom);
+    this.oilRich = oilExcess(this.oil, p.strokes, p);
+  }
+
   updateMixture() {
     const p = this.params;
     const need = p.coldEnrichmentNeed * (1 - this.temperature);
@@ -282,7 +320,9 @@ export class EngineModel {
         p.coldRoughness * coldness +
         p.leanRoughness * this.lean +
         p.richRoughness * this.rich +
-        p.foulRoughness * this.fouling,
+        p.foulRoughness * this.fouling +
+        p.nipRoughness * this.nip +
+        p.oilRichRoughness * this.oilRich,
       0,
       1,
     );
@@ -295,6 +335,8 @@ export class EngineModel {
       p.minPower,
       1,
     );
+    this.power *= 1 - p.nipPowerLoss * this.nip;
+    this.erratic = Math.max(this.erratic, this.nip * this.nip);
     // Stumbling, it's got almost nothing.
     if (this.stumbleLeft > 0) this.power *= p.stumblePower;
   }
@@ -388,6 +430,8 @@ export class EngineModel {
     } else {
       this.fouling -= p.foulClearRate * (1 + p.foulClearThrottleBoost * this.throttle) * h;
     }
+
+    this.fouling += this.oilRich * p.oilFoulRate * h;
 
     if (this.advanceCycle(h)) {
       const t = this.cycleT;

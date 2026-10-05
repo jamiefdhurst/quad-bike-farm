@@ -224,6 +224,11 @@ export class CompanionVoice {
     }
 
     // Pouring petrol right by her.
+    if (view.pouring && view.wrongMix && distance < 8 && !this.warnedMix) {
+      this.warnedMix = true;
+      this.say(view.wrongMix === 'straight' ? 'oilStraight' : 'oilPremixFour', { urgent: true });
+    }
+    if (!view.pouring) this.warnedMix = false;
     if (view.pouring && distance < 6 && !this.pouredNear) {
       this.pouredNear = true;
       this.say('pouring', { chance: 0.4 });
@@ -453,6 +458,7 @@ export class CompanionVoice {
       if (e.state === 'off') w.cranking = 0;
       // You press the starter on a flat battery and it only clicks.
       if (near && e.events.some((x) => x.type === 'starterClick')) this.say('crankFlat', { urgent: true, chance: 0.7 });
+      this.watchOil(dt, unit, w, near || hers);
       // Cranking on and on without it catching.
       if (e.state === 'cranking' && w.cranking > 5 && near) {
         this.say(this.crankHint(unit), { chance: 0.02 });
@@ -462,6 +468,17 @@ export class CompanionVoice {
     }
     this.coldNearTime = coldNear ? this.coldNearTime + dt : 0;
     if (this.coldNearTime > 10) this.say('coldIdleNearby', { chance: 0.01 });
+  }
+
+  /** A two-stroke with too little oil running hot, tightening up and seizing, or one that's smoking from too much. */
+  watchOil(dt, unit, w, listening) {
+    const e = unit.engine;
+    if (!listening) return;
+    if (e.events.some((x) => x.type === 'seized')) this.say('engineSeized', { urgent: true });
+    if (!e.isRunning) return;
+    if (e.nip > 0.3) this.say('engineNipping', { urgent: true, chance: 0.05 });
+    else if (e.overheat > 0.45) this.say('engineHot', { chance: 0.02 });
+    if (e.oilRich > 0.5) this.say('oilSmoky', { chance: 0.01 });
   }
 
   /** Which kind of "it won't start" remark fits what she can see. */

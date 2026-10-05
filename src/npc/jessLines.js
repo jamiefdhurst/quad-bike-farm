@@ -8,6 +8,7 @@ import { JESS_SKILL_LINES } from './skillLines.js';
 import { JESS_REQUEST_LINES } from './requestLines.js';
 import { JESS_PLACE_LINES } from './placeLines.js';
 import { JESS_BATTERY_LINES } from './batteryLines.js';
+import { JESS_OIL_LINES } from './oilLines.js';
 
 export const JESS_LINES = {
   rideStart: [
@@ -326,4 +327,5 @@ export const JESS_LINES = {
   ...JESS_REQUEST_LINES,
   ...JESS_PLACE_LINES,
   ...JESS_BATTERY_LINES,
+  ...JESS_OIL_LINES,
 };

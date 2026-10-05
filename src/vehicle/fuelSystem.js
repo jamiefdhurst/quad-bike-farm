@@ -5,10 +5,13 @@
 // RESERVE it can; OFF shuts it. When the bowl runs low the engine starts to
 // starve, which the engine model turns into a lean, misfiring stumble.
 
+import { mixOil } from '../engine/lubrication.js';
+
 export const DEFAULT_FUEL_PARAMS = {
   tankCapacity: 12, // litres
   reserveLitres: 2, // only reachable with the tap on RESERVE
   startLitres: 7, // fuel in the tank at the start
+  startOil: 0, // oil fraction of that fuel: 0.02 (50:1 pre-mix) on the two-strokes, none on the four-strokes
   startTap: 'off', // tap position at the start: turn it ON before riding off
   bowlCapacity: 0.012, // litres in the carburettor float bowl: with the tap OFF it runs about half a minute at idle
   bowlFillRate: 0.02, // litres per second from the tank into the bowl
@@ -21,6 +24,7 @@ export const FUEL_PARAM_RANGES = {
   tankCapacity: [2, 40, 0.5],
   reserveLitres: [0, 10, 0.1],
   startLitres: [0, 40, 0.1],
+  startOil: [0, 0.2, 0.001],
   bowlCapacity: [0.005, 0.3, 0.005],
   bowlFillRate: [0.001, 0.2, 0.001],
   burnPerRev: [0, 0.0005, 0.000001],
@@ -37,6 +41,7 @@ export class FuelSystem {
     this.params = params;
     this.litres = clamp(params.startLitres, 0, params.tankCapacity);
     this.bowl = this.litres > 0 ? params.bowlCapacity : 0;
+    this.oil = params.startOil ?? 0; // oil fraction of what's in the tank
     this.tap = params.startTap ?? 'on';
     this.burnRate = 0; // litres per second, last update
   }
@@ -73,9 +78,10 @@ export class FuelSystem {
     this.bowl = this.litres > 0 ? this.params.bowlCapacity : 0;
   }
 
-  /** Pours fuel in; returns how much actually went in. */
-  add(litres) {
+  /** Pours fuel in, with `oil` as its oil fraction; returns how much actually went in. */
+  add(litres, oil = 0) {
     const added = clamp(litres, 0, this.space);
+    this.oil = mixOil(this.litres, this.oil, added, oil);
     this.litres += added;
     return added;
   }

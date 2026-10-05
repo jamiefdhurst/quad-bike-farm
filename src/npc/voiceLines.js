@@ -11,6 +11,7 @@ import { AMY_SKILL_LINES } from './skillLines.js';
 import { AMY_REQUEST_LINES } from './requestLines.js';
 import { AMY_PLACE_LINES } from './placeLines.js';
 import { AMY_BATTERY_LINES } from './batteryLines.js';
+import { AMY_OIL_LINES } from './oilLines.js';
 
 export const VOICE_LINES = {
   // Riding pillion ----------------------------------------------------------
@@ -1325,4 +1326,6 @@ export const VOICE_LINES = {
   ...AMY_PLACE_LINES,
   // Flat batteries (batteryLines.js).
   ...AMY_BATTERY_LINES,
+  // Two-stroke oil (oilLines.js).
+  ...AMY_OIL_LINES,
 };

@@ -109,7 +109,7 @@ export const QUAD_SPECS = [
     idleRange: [1500, 1800],
     roughnessRange: [0.35, 0.5],
     fuelRange: [1.5, 8], // 9 litre tank, 1.5 litre reserve
-    fuel: { tankCapacity: 9, reserveLitres: 1.5, burnPerRev: 0.000032, idleBurnFraction: 0.45 },
+    fuel: { tankCapacity: 9, startOil: 0.02, reserveLitres: 1.5, burnPerRev: 0.000032, idleBurnFraction: 0.45 },
     engine: {
       strokes: 2,
       pullStart: true, // a recoil cord as well as the starter
@@ -255,7 +255,7 @@ export const QUAD_SPECS = [
     idleRange: [2000, 2300],
     roughnessRange: [0.75, 0.9],
     fuelRange: [1.5, 7.5], // 8 litre tank, 1.2 litre reserve
-    fuel: { tankCapacity: 8, reserveLitres: 1.2, burnPerRev: 0.000036, idleBurnFraction: 0.45 },
+    fuel: { tankCapacity: 8, startOil: 0.02, reserveLitres: 1.2, burnPerRev: 0.000036, idleBurnFraction: 0.45 },
     engine: {
       strokes: 2,
       pullStart: true, // a recoil cord as well as the starter

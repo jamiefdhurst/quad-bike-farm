@@ -136,6 +136,8 @@ Each quad has a fuel tank, a fuel tap and a fuel gauge on the dash. Taps start O
 - If it runs completely dry, it stalls and won't restart until it has fuel.
 - To refuel: find the red jerry can (it's left somewhere around the yard, the paddock or the gate) and pick it up with `E` (it holds 20 litres). Look at a quad and hold `E` to pour, with a glug. Refill the can by holding `E` at the green petrol tank. `G` puts the can down. You can't ride holding the can, so put it down first.
 
+**Two-stroke oil.** The yellow and orange run on pre-mix, about 50:1 oil in the petrol. By the petrol tank there's a second, yellow jerry can of pre-mix and a bottle of two-stroke oil: hold `E` on the bottle with a can in your hands to add oil to it. Refilling any can at the tank adds plain petrol, so it thins the mix, and the prompts tell you what's in the can you're holding. Nothing tells you what's in a quad's tank except how it behaves. Straight petrol in a two-stroke and it runs hot (the temperature needle climbs into the red), then it starts to lose power and run raggedly (nipping up), and in the end it seizes solid and won't turn over, not even on the pull cord. Flat out takes a couple of minutes; idling takes far longer. Take the toolbox to it and press `F` ("Strip it down") to free it, which leaves it worn until you service it. Too much oil, or any pre-mix in the red, blue or green, smokes like a bonfire and slowly fouls the plug. Amy says so if you pour the wrong can nearby, and reads what's gone wrong when it goes; Jess blames the quad.
+
 ## The dashes
 
 The quads have different instruments:
@@ -208,7 +210,7 @@ src/
   effects/             exhaust smoke
   audio/               procedural Web Audio engine sound
   vehicle/             quad model, Rapier vehicle, drivetrain, dash styles, fuel; quadSpecs.js defines the quads
-  items/               jerry can and petrol tank
+  items/               jerry cans, oil bottle and petrol tank
   player/              walking and seated first-person player
   npc/                 state machine, character rig, companion behaviour, her voice lines
   interaction/         look-at interaction and the context menu
@@ -266,7 +268,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 11. Favours. Now and then one asks for something: wash her favourite quad, take her over to the bales, beat Jess round the track for her, fetch the jerry can. Doing it pleases her. Ignoring it, she remembers. **Done.** Now and then, while you're on foot near her, a girl asks you to wash her favourite quad, take her to the straw bales or fetch the jerry can. Do it and she's pleased and likes you more; leave it and she holds it against you.
 12. Places to be. On a sunny day they sit on the bales or the paddock fence, or lie in the grass. When it rains they shelter in the barn doorway. Bored, a girl might also go and wait at a favourite spot rather than only at a quad. **Done.** On a fine day a bored girl might go and sit on a straw bale or the paddock fence for a minute or three; when the rain sets in they head for the barn doorway and stay there until it dries off. (Lying in the grass is left for later: it needs a new pose.)
 13. Batteries and starting. Leave the ignition on and the battery drains, so the starter cranks slower until it won't turn over. Then you bump-start it down the bank, jump it from another quad, or use the pull-start on the two-strokes (hold and yank, which takes a knack when it's cold). **Done (bump-start left out for now).** Each quad has a battery: leave the ignition on and it drains, so the starter cranks slower and then only clicks. The yellow and orange have a pull-start (`P`); any quad can be jumped from a running one with the jump leads by the petrol tank.
-14. Two-stroke oil. The yellow and orange run on pre-mix: a second jerry can by the tank. Fill one with straight petrol and it runs hot, then nips up and seizes. Too much oil and it smokes like a bonfire and fouls plugs.
+14. Two-stroke oil. The yellow and orange run on pre-mix: a second jerry can by the tank. Fill one with straight petrol and it runs hot, then nips up and seizes. Too much oil and it smokes like a bonfire and fouls plugs. **Done.** A yellow pre-mix can and an oil bottle sit by the petrol tank; straight petrol in a two-stroke runs it hot, then nips it up and seizes it until you strip it down with the toolbox (`F`), and too much oil smokes and fouls the plug.
 15. Faults that develop. Things go wrong over time, separate from wear:
    - A slow puncture from the hedge (it pulls to one side; there's a foot pump in the toolbox).
    - A slipping drive belt (revs flare, no go).

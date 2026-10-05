@@ -1,8 +1,10 @@
 import * as THREE from 'three';
+import { mixOil } from '../engine/lubrication.js';
 
 export const DEFAULT_JERRY_CAN_PARAMS = {
   capacity: 20, // litres
   startLitres: 20,
+  startOil: 0, // oil fraction of what's in it: 0 for petrol, 0.02 (50:1) for the pre-mix can
   pourRate: 0.5, // litres per second into a quad
   fillRate: 0.8, // litres per second from the fuel tank
 };
@@ -10,17 +12,18 @@ export const DEFAULT_JERRY_CAN_PARAMS = {
 export const JERRY_CAN_PARAM_RANGES = {
   capacity: [5, 40, 0.5],
   startLitres: [0, 40, 0.5],
+  startOil: [0, 0.2, 0.001],
   pourRate: [0.05, 5, 0.05],
   fillRate: [0.05, 5, 0.05],
 };
 
 const HEIGHT = 0.46;
 
-function buildModel() {
+function buildModel(colour = 0xc4231a, darkColour = 0x8c1812) {
   const g = new THREE.Group();
   g.name = 'jerryCan';
-  const red = new THREE.MeshStandardMaterial({ color: 0xc4231a, roughness: 0.5, metalness: 0.3 });
-  const dark = new THREE.MeshStandardMaterial({ color: 0x8c1812, roughness: 0.55, metalness: 0.3 });
+  const red = new THREE.MeshStandardMaterial({ color: colour, roughness: 0.5, metalness: 0.3 });
+  const dark = new THREE.MeshStandardMaterial({ color: darkColour, roughness: 0.55, metalness: 0.3 });
   const steel = new THREE.MeshStandardMaterial({ color: 0x9a9c9e, roughness: 0.4, metalness: 0.7 });
 
   const body = new THREE.Mesh(new THREE.BoxGeometry(0.34, HEIGHT - 0.04, 0.165), red);
@@ -58,17 +61,22 @@ function buildModel() {
   return g;
 }
 
+/** The pre-mix can's body, a different colour to the red petrol can. */
+export const PREMIX_CAN_COLOURS = { colour: 0xd8b21c, darkColour: 0x9a7d10 };
+
 /**
  * A 20 litre jerry can. It sits on the ground until picked up, then rides in
  * front of the camera and tips forward while it's pouring.
  */
 export class JerryCan {
-  constructor({ scene, world, position, yaw = 0, params = { ...DEFAULT_JERRY_CAN_PARAMS } }) {
+  constructor({ scene, world, position, yaw = 0, params = { ...DEFAULT_JERRY_CAN_PARAMS }, colours, name = 'jerryCan' }) {
     this.scene = scene;
     this.world = world;
     this.params = params;
     this.litres = Math.min(params.startLitres, params.capacity);
-    this.model = buildModel();
+    this.oil = params.startOil ?? 0; // oil fraction of what's in it
+    this.model = buildModel(colours?.colour, colours?.darkColour);
+    this.model.name = name;
     this.proxy = new THREE.Mesh(
       new THREE.BoxGeometry(0.45, 0.6, 0.3),
       new THREE.MeshBasicMaterial({ visible: false }),
@@ -109,8 +117,18 @@ export class JerryCan {
     return out;
   }
 
-  fill(litres) {
+  /** Fills it from the petrol tank (`oil` is the fraction of oil in what goes in: none); returns how much went in. */
+  fill(litres, oil = 0) {
     const added = Math.max(0, Math.min(litres, this.space));
+    this.oil = mixOil(this.litres, this.oil, added, oil);
+    this.litres += added;
+    return added;
+  }
+
+  /** Tops up the oil from the bottle; returns the litres of oil that went in. */
+  addOil(litres) {
+    const added = Math.max(0, Math.min(litres, this.space));
+    this.oil = mixOil(this.litres, this.oil, added, 1);
     this.litres += added;
     return added;
   }

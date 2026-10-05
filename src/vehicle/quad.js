@@ -421,6 +421,7 @@ export class Quad {
       resistLoad: this.engineLoad.resistLoad,
       overrunRpm: this.engineLoad.overrunRpm,
       fuel: this.fuel.bowlLevel,
+      oil: this.fuel.oil,
     };
   }
 
@@ -465,6 +466,7 @@ export class Quad {
       reserveLevel: f.params.reserveLitres / f.params.tankCapacity,
       tap: f.tap,
       temperature: e.temperature,
+      overheat: e.overheat,
       coldBelow: e.params.warmLightThreshold,
       ignition: e.hasPower, // the dash goes dark on a flat battery
       tripMiles: this.tripMiles,

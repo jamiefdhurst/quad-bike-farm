@@ -278,7 +278,7 @@ function drawTempFace(ctx, s, { cream = false } = {}) {
 
 /** Five temperature blocks along the bottom edge of a box at (x, y): blue while cold, the last one red. */
 function tempBlocks(ctx, x, y, pitch, h, s, on, red, ghost) {
-  const lit = Math.ceil(tempGaugeFraction(s.temperature, true) * 5 - 0.001);
+  const lit = Math.ceil(tempGaugeFraction(s.temperature, true, s.overheat) * 5 - 0.001);
   for (let i = 0; i < 5; i++) {
     const cold = (i + 1) / 5 <= coldZoneEnd(s.coldBelow) + 0.001;
     ctx.fillStyle = i >= lit ? ghost : i === 4 ? red : cold ? '#5ab0ff' : on;
@@ -438,7 +438,7 @@ function buildClassic() {
       rev.point(SWEEP_START + SWEEP * THREE.MathUtils.clamp(displayRpm / top, 0, 1));
       spd.point(SWEEP_START + SWEEP * THREE.MathUtils.clamp(displayMph / SPEEDO_MAX_MPH, 0, 1));
       fuel.point(FUEL_START + FUEL_SWEEP * THREE.MathUtils.clamp(displayFuel, 0, 1));
-      displayTemp += (tempGaugeFraction(s.temperature, s.ignition) - displayTemp) * 0.05;
+      displayTemp += (tempGaugeFraction(s.temperature, s.ignition, s.overheat) - displayTemp) * 0.05;
       temp.point(TEMP_START + TEMP_SWEEP * displayTemp);
       ignLamp.color.setHex(s.ignition ? 0x33dd44 : 0x1a1a1a);
       revLamp.color.setHex(s.ignition && s.reverse ? 0xffe066 : 0x1a1a1a);
@@ -585,7 +585,7 @@ function buildModern(look = MODERN) {
         Math.ceil(s.fuelLevel * 8 - 0.001),
         s.fuelLevel <= s.reserveLevel,
         s.tap,
-        Math.ceil(tempGaugeFraction(s.temperature, true) * 5 - 0.001),
+        Math.ceil(tempGaugeFraction(s.temperature, true, s.overheat) * 5 - 0.001),
         tripText(s.tripMiles),
         s.reverse,
       ].join('|');
@@ -767,7 +767,7 @@ function buildVintage() {
       spd.point(SWEEP_START + SWEEP * THREE.MathUtils.clamp(displayMph / VINTAGE_MAX_MPH, 0, 1));
       fuel.point(VFUEL_START + VFUEL_SWEEP * THREE.MathUtils.clamp(displayFuel, 0, 1));
       lamp.ign.color.setHex(s.ignition ? 0x33dd44 : 0x1a1a1a);
-      displayTemp += (tempGaugeFraction(s.temperature, s.ignition) - displayTemp) * 0.05;
+      displayTemp += (tempGaugeFraction(s.temperature, s.ignition, s.overheat) - displayTemp) * 0.05;
       temp.point(TEMP_START + TEMP_SWEEP * displayTemp);
       lamp.rev.color.setHex(s.ignition && s.reverse ? 0xffe066 : 0x1a1a1a);
       lamp.fuel.color.setHex(s.ignition && s.fuelLevel <= s.reserveLevel ? 0xffa020 : 0x1a1a1a);
@@ -873,7 +873,7 @@ function buildRace() {
         Math.ceil(s.fuelLevel * 6 - 0.001),
         s.fuelLevel <= s.reserveLevel,
         s.tap,
-        Math.ceil(tempGaugeFraction(s.temperature, true) * 5 - 0.001),
+        Math.ceil(tempGaugeFraction(s.temperature, true, s.overheat) * 5 - 0.001),
         s.reverse,
       ].join('|');
       if (gate(key)) {

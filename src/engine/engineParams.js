@@ -126,6 +126,22 @@ export const DEFAULT_ENGINE_PARAMS = {
   skipRpm: 4000, // and below these revs
   idleFoulRate: 0, // plug fouling per second while idling (oily two-stroke plugs load up); throttle clears it
 
+  // Oil in the petrol (see lubrication.js). The fraction is of the tank: 0.02 is 50:1.
+  oilGood: 0.02, // a two-stroke is fully lubricated at this fraction of oil in its fuel
+  oilRichFrom: 0.04, // a two-stroke starts to smoke and foul above this
+  oilRichFull: 0.1, // and is as bad as it gets here
+  oilFourStrokeFrom: 0.004, // a four-stroke burning any oil smokes and fouls from here
+  oilFourStrokeFull: 0.02, // and is as bad as it gets here
+  oilFoulRate: 0.15, // plug fouling per second at full excess oil, on top of any other
+  oilRichRoughness: 0.2, // roughness at full excess oil
+  seizeSeconds: 70, // flat out on straight petrol it seizes in about this long (idling takes lubeIdleWork times longer)
+  lubeIdleWork: 0.15, // how hard an idling engine works the oil, against 1 flat out
+  overheatSeconds: 12, // how quickly the extra heat from poor lubrication builds and fades
+  seizeWear: 0.3, // wear left behind after a seized engine is freed (a service clears it)
+  nipFrom: 0.55, // scuffing this far towards seizing, it starts to tighten up
+  nipRoughness: 0.45, // roughness when nearly seized
+  nipPowerLoss: 0.6, // power lost when nearly seized
+
   // Fuel starvation, from the carburettor float bowl level (0..1)
   fuelStarveLevel: 0.65, // below this bowl level the mixture starts to go lean
   starveLean: 1.1, // how lean it goes as the bowl empties
@@ -227,6 +243,20 @@ export const ENGINE_PARAM_RANGES = {
   misfireRoughness: [0, 1, 0.01],
   misfireRpmDrop: [0, 600, 5],
   pulseRpmKick: [0, 400, 5],
+  oilGood: [0.005, 0.1, 0.001],
+  oilRichFrom: [0, 0.2, 0.001],
+  oilRichFull: [0.01, 0.3, 0.001],
+  oilFourStrokeFrom: [0, 0.05, 0.001],
+  oilFourStrokeFull: [0.005, 0.1, 0.001],
+  oilFoulRate: [0, 1, 0.01],
+  oilRichRoughness: [0, 1, 0.01],
+  seizeSeconds: [5, 600, 5],
+  lubeIdleWork: [0, 1, 0.01],
+  overheatSeconds: [1, 60, 1],
+  seizeWear: [0, 1, 0.01],
+  nipFrom: [0, 0.95, 0.01],
+  nipRoughness: [0, 1, 0.01],
+  nipPowerLoss: [0, 1, 0.01],
   fuelStarveLevel: [0.05, 1, 0.01],
   starveLean: [0, 3, 0.05],
 };
