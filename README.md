@@ -142,6 +142,8 @@ Each quad has a fuel tank, a fuel tap and a fuel gauge on the dash. Taps start O
 
 **Heat.** The air-cooled quads (red, blue, yellow, green) get too hot idling for ages on a sunny day, or crawling through mud with the throttle open: after about four minutes in full sun the needle climbs into the red and the engine starts pinking (a metallic rattle), runs rough and loses power. Riding along at a decent speed blows it away, as does a dull or wet day. The water-cooled orange has a radiator fan that cuts in and out with its own whirr, and never gets that hot. Switch off a quad you've thrashed and it ticks as the metal cools, slower and slower. It also starts differently while it's hot: the carb boils its fuel, so it starts rich, a choke makes it worse, and holding the throttle open while you crank helps. Amy tells you when it's pinking and when it's ticking; Jess is cheerful about both.
 
+**Popping and running on.** Shut the throttle at speed and an engine that's lean, worn or running hot crackles and bangs in the pipe: the two-strokes (yellow and orange) a lot, a healthy four-stroke hardly ever, and more as it wears. Under heavy cloud or rain you can see a small orange flash at the tail pipe with each bang; in sun you can't. Switch off an engine that's hot, worn or lean and it may chug on unevenly for a few more beats before it dies; switch the key back on and it just carries on.
+
 ## The dashes
 
 The quads have different instruments:
@@ -296,14 +298,14 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
     - A mini moto with a pull-start.
     - A smart new quad on loan for the day.
 22. Each quad has a knack. The green only starts cold if you blip the throttle twice before cranking; the blue wants its choke off sooner than the others. Nothing tells you, but the girls know some of them ("you have to tickle it first").
-23. Popping on the overrun. Lean engines and the two-strokes crackle and bang when you shut the throttle from high revs, more so when worn, with a flash from the pipe in poor light.
+23. Popping on the overrun. Lean engines and the two-strokes crackle and bang when you shut the throttle from high revs, more so when worn, with a flash from the pipe in poor light. **Done.** Lean engines, worn ones and the two-strokes crackle and bang when you shut the throttle at speed, with a flash from the pipe in poor light.
 24. Drowning it. Hit a deep puddle or a ford too fast and it gulps water: it splutters, misfires and steams until it dries. Stall it in the water and it won't restart until it has drained.
 25. Silencer off. A toolbox job: much louder and a bit stronger. Jess loves it; Amy covers her ears.
 26. Diagnosing by ear. Stood by a running quad, a girl has a guess at what's wrong from its real state (rich, fouling, worn, cold). Amy is careful and usually right; Jess is sure of herself and wrong half the time, and argues when corrected.
 27. Mechanical sympathy. Jess thrashes engines cold and Amy tells her off. Wear is tracked by who caused it, so "who's been caning the orange?" has a real answer.
 28. Rev-offs. Blip the throttle near a girl sat on a running quad and she might blip back. Jess always does, and it escalates until something complains.
 29. They race each other. Bored and both free, they pick two quads and race round the track without you. The loser has excuses, and the result feeds their rivalry.
-30. Run-on. Switch off a hot, worn or lean engine and it chugs on unevenly for a few more beats before it dies.
+30. Run-on. Switch off a hot, worn or lean engine and it chugs on unevenly for a few more beats before it dies. **Done.** Switched off hot, worn or lean, an engine may chug on unevenly for a few more beats before it dies.
 31. Warming their hands. On a cold or wet day, a girl stood by a running quad holds her hands over the engine. Leave one idling and they gather round it; switch it off and they complain.
 32. Hand on the throttle. Jess on the back reaches round and gives it a handful over your hand. Amy does it once, then apologises.
 33. Smoke and smell. Amy hates two-stroke smoke and coughs and waves it off downwind of the orange or yellow; Jess loves it. Following the orange, Amy hangs further back.

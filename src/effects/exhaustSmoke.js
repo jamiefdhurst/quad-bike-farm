@@ -30,6 +30,7 @@ export const DEFAULT_SMOKE_PARAMS = {
   richGray: 0.22, // colour of rich, sooty smoke
   warmGray: 0.62,
   tint: '#ffffff', // colour cast; two-stroke oil smoke is bluish
+  flashBrightness: 1, // how bright an overrun pop's flash from the pipe is, in poor light
 };
 
 export const SMOKE_PARAM_RANGES = {
@@ -56,6 +57,7 @@ export const SMOKE_PARAM_RANGES = {
   coldGray: [0, 1, 0.01],
   richGray: [0, 1, 0.01],
   warmGray: [0, 1, 0.01],
+  flashBrightness: [0, 3, 0.05],
 };
 
 const MAX = 600;
@@ -148,6 +150,14 @@ export class ExhaustSmoke {
     this.points.renderOrder = 2;
     scene.add(this.points);
 
+    // The flash of an overrun pop: a small additive glow at the tip, only visible when the light is poor.
+    this.flash = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xffa040, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+    this.flash.visible = false;
+    this.flash.renderOrder = 3;
+    scene.add(this.flash);
+    this.flashLeft = 0;
+    this.darkness = 0; // 0 bright day .. 1 dark: set by the game from the weather
+
     this.spawnBudget = 0;
     this.pendingAlpha = 0;
     this.burst = 0;
@@ -204,12 +214,25 @@ export class ExhaustSmoke {
       }
     }
     for (const e of engine.events) {
+      if (e.type === 'overrunPop') this.flashLeft = Math.max(this.flashLeft, e.strength);
       if (e.type === 'stalled' || e.type === 'caught') {
         for (let i = 0; i < 3; i++) this.spawn(p.coughDensity * (1 - i * 0.25), p.richGray + 0.15, 1.5, carrierVel, dt - e.t);
       }
     }
 
+    this.updateFlash(dt);
     this.simulate(dt);
+  }
+
+  /** The flash of an overrun pop at the tip, which you only see in poor light. */
+  updateFlash(dt) {
+    this.flashLeft *= Math.exp(-dt / 0.03);
+    const seen = this.flashLeft * this.params.flashBrightness * this.darkness;
+    this.flash.visible = seen > 0.02;
+    if (!this.flash.visible) return;
+    this.flash.position.copy(this.tipPos);
+    this.flash.material.opacity = Math.min(1, seen);
+    this.flash.scale.setScalar(0.12 + 0.2 * this.flashLeft);
   }
 
   spawn(alpha, gray, exit, carrierVel, preAge) {

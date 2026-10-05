@@ -503,12 +503,12 @@ class EngineProcessor extends AudioWorkletProcessor {
         this.addIntake(amp, cycle * 0.5);
         this.addTick(cycle * 0.27);
         this.addTick(cycle * 0.73);
-        // Unburnt fuel popping in the pipe on a closed throttle at high revs.
-        if (throttle < 0.05 && this.rpm > p.popMinRpm && Math.random() < p.popChance * (this.rpm / 8000)) {
-          this.active.push({ kind: 'pop', age: -Math.round((0.006 + Math.random() * 0.02) * sr), amp: p.popVolume * (0.5 + Math.random()) });
-        }
         break;
       }
+      case 'overrunPop':
+        // Unburnt fuel going off in the pipe on a closed throttle at speed (the engine model decides when).
+        this.active.push({ kind: 'pop', age: -Math.round((0.004 + Math.random() * 0.012) * sr), amp: p.popVolume * (0.5 + ev.strength) });
+        break;
       case 'misfire':
         this.addExhaust(0.12 * pressure, cycle, 0.3, p.turbulence * 2);
         if (Math.random() < p.popChance * 2) this.active.push({ kind: 'pop', age: -Math.round(0.01 * sr), amp: p.popVolume * 0.6 });
@@ -772,6 +772,11 @@ class EngineProcessor extends AudioWorkletProcessor {
         if (e.kind === 'click') {
           dry += e.amp * (Math.random() * 2 - 1) * Math.exp(-a / (0.0015 * sr));
           done = a > 0.02 * sr;
+        } else if (e.kind === 'pop') {
+          // The recorded engine has no pipe to ring in, so a pop is a sharp crack with a short thump under it.
+          const env = Math.exp(-a / (0.003 * sr));
+          dry += e.amp * 0.5 * ((Math.random() * 2 - 1) * env * 1.4 + Math.sin((TWO_PI * 90 * a) / sr) * Math.exp(-a / (0.012 * sr)));
+          done = a > 0.06 * sr;
         } else if (e.kind === 'ping') {
           const env = Math.exp(-a / (0.004 * (e.ring ?? 1) * sr));
           dry += e.amp * env * (Math.sin((TWO_PI * e.freq * a) / sr) + 0.3 * (Math.random() * 2 - 1) * (a < 0.0015 * sr ? 1 : 0));

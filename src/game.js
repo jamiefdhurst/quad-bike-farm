@@ -585,6 +585,8 @@ export class Game {
       s.baseWindZ ??= s.windZ;
       s.windX = s.baseWindX * w.wind;
       s.windZ = s.baseWindZ * w.wind;
+      // A pop's flash from the pipe shows in poor light: none on a sunny day, plenty under heavy cloud.
+      unit.smoke.darkness = Math.max(0, Math.min(1, 1 - w.warmth * 1.3));
     }
   }
 

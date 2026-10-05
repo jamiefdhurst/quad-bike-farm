@@ -171,6 +171,23 @@ export const DEFAULT_ENGINE_PARAMS = {
   hotStartRich: 0.6, // how much richer it starts at full soak
   hotStartThrottleRelief: 0.7, // holding the throttle open takes this much of that away
 
+  // Popping on the overrun: unburnt fuel going off in the pipe when the throttle's shut at speed
+  popFromRpm: 3200, // only above these revs
+  popThrottle: 0.05, // and with the throttle shut to below this
+  popBase: 0.12, // chance each firing at full propensity and full revs
+  popProne: 0.03, // how readily a healthy engine pops (the two-strokes and lean-jetted quads are higher, in their specs)
+  popLean: 1.0, // propensity added per unit of leanness
+  popWear: 0.8, // propensity added by a fully worn engine
+  popHeat: 0.4, // propensity added by running hot
+
+  // Run-on: switched off hot, worn or lean, it chugs on for a few beats
+  runOnBase: 0, // chance of running on from a healthy, cool engine
+  runOnHot: 0.55, // chance added by a fully heat-soaked engine
+  runOnWear: 0.6, // by a fully worn one
+  runOnLean: 0.5, // by running lean
+  runOnCyclesMin: 3, // firings it runs on for, at the least
+  runOnCyclesMax: 15, // and at the most (the worse it is, the longer)
+
   // Fuel starvation, from the carburettor float bowl level (0..1)
   fuelStarveLevel: 0.65, // below this bowl level the mixture starts to go lean
   starveLean: 1.1, // how lean it goes as the bowl empties
@@ -313,6 +330,19 @@ export const ENGINE_PARAM_RANGES = {
   hotStartFrom: [0, 0.95, 0.01],
   hotStartRich: [0, 1.5, 0.01],
   hotStartThrottleRelief: [0, 1, 0.01],
+  popFromRpm: [1000, 8000, 50],
+  popThrottle: [0, 0.3, 0.01],
+  popBase: [0, 1, 0.01],
+  popProne: [0, 1, 0.01],
+  popLean: [0, 3, 0.05],
+  popWear: [0, 3, 0.05],
+  popHeat: [0, 3, 0.05],
+  runOnBase: [0, 1, 0.01],
+  runOnHot: [0, 1, 0.01],
+  runOnWear: [0, 1, 0.01],
+  runOnLean: [0, 1, 0.01],
+  runOnCyclesMin: [0, 30, 1],
+  runOnCyclesMax: [0, 60, 1],
   fuelStarveLevel: [0.05, 1, 0.01],
   starveLean: [0, 3, 0.05],
 };

@@ -112,6 +112,7 @@ export const QUAD_SPECS = [
     fuel: { tankCapacity: 9, startOil: 0.02, reserveLitres: 1.5, burnPerRev: 0.000032, idleBurnFraction: 0.45 },
     engine: {
       strokes: 2,
+      popProne: 0.7, // two-strokes crackle and bang on the overrun
       pullStart: true, // a recoil cord as well as the starter
       idleRpmWarm: 1800,
       maxRpm: 10500,
@@ -258,6 +259,7 @@ export const QUAD_SPECS = [
     fuel: { tankCapacity: 8, startOil: 0.02, reserveLitres: 1.2, burnPerRev: 0.000036, idleBurnFraction: 0.45 },
     engine: {
       strokes: 2,
+      popProne: 0.7, // two-strokes crackle and bang on the overrun
       waterCooled: true, // a radiator with a fan that cuts in; it never gets as hot as the air-cooled ones
       pullStart: true, // a recoil cord as well as the starter
       idleRpmWarm: 1950,

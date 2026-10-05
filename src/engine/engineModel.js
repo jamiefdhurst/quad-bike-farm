@@ -8,6 +8,7 @@
 
 import { DEFAULT_ENGINE_PARAMS } from './engineParams.js';
 import { oilExcess, stepLube, nipping } from './lubrication.js';
+import { runOnChance, popPropensity } from './runOn.js';
 import { stepHeat, stepSoak, pinkLevel, gaugeHeat, coolTickRate, hotStartRich } from './heat.js';
 
 export const EngineState = Object.freeze({
@@ -63,6 +64,8 @@ export class EngineModel {
     this.speed = 0; // ground speed in m/s, for the airflow
     this.ambient = 0.5; // 0..1 how warm a day it is
     this.pink = 0; // 0..1 how badly it's pinking
+    this.keyOff = false; // switched off but running on for a few more beats
+    this.runOnLeft = 0; // firings left of that
     this.pinkLeft = 0; // rattles owed to the audio
     this.tickLeft = 0; // cooling ticks owed to the audio
     this.motorOn = false; // the starter motor is turning it (not just a yank on the cord)
@@ -103,7 +106,7 @@ export class EngineModel {
   }
 
   get ignitionOn() {
-    return this.state !== EngineState.OFF;
+    return this.state !== EngineState.OFF && !this.keyOff;
   }
 
   get isRunning() {
@@ -117,9 +120,23 @@ export class EngineModel {
   setIgnition(on) {
     if (on === this.ignitionOn) return;
     if (on) {
+      if (this.keyOff) {
+        // Switched back on while it was still running on: it just carries on.
+        this.keyOff = false;
+        this.emit('ignitionOn');
+        return;
+      }
       this.state = EngineState.IGNITION;
       this.emit('ignitionOn');
     } else {
+      const chance = this.state === EngineState.RUNNING ? runOnChance(this, this.params) : 0;
+      if (chance > 0 && this.random() < chance) {
+        // Hot, worn or lean, it keeps firing for a few beats, rougher and slower, before it dies.
+        this.keyOff = true;
+        this.runOnLeft = Math.round(this.params.runOnCyclesMin + chance * this.random() * (this.params.runOnCyclesMax - this.params.runOnCyclesMin));
+        this.emit('ignitionOff');
+        return;
+      }
       if (this.state === EngineState.RUNNING) this.emit('shutdown');
       this.state = EngineState.OFF;
       this.emit('ignitionOff');
@@ -500,7 +517,24 @@ export class EngineModel {
 
     if (this.advanceCycle(h)) {
       const t = this.cycleT;
-      const misfireChance = p.misfireBase + p.misfireRoughness * this.roughness ** 2;
+      // Popping on the overrun: unburnt fuel going off in the pipe with the throttle shut at speed.
+      if (this.throttle < p.popThrottle && this.rpm > p.popFromRpm) {
+        const rpmK = clamp((this.rpm - p.popFromRpm) / Math.max(1, p.maxRpm - p.popFromRpm), 0, 1);
+        const propensity = popPropensity(this, p);
+        if (propensity > 0 && this.random() < p.popBase * propensity * (0.3 + rpmK)) {
+          this.events.push({ type: 'overrunPop', t, strength: 0.5 + 0.5 * this.random() });
+        }
+      }
+      // Running on with the key off: it labours, misfires and slows until the beats run out.
+      if (this.keyOff) {
+        this.runOnLeft--;
+        this.rpm -= p.misfireRpmDrop * 0.6;
+        if (this.runOnLeft <= 0) {
+          this.stall('runOn');
+          return;
+        }
+      }
+      const misfireChance = this.keyOff ? 0.45 : p.misfireBase + p.misfireRoughness * this.roughness ** 2;
       // Two-strokes at light load skip alternate firings: the ring-ding.
       this.cycleCount = (this.cycleCount ?? 0) + 1;
       const skip =
@@ -597,6 +631,14 @@ export class EngineModel {
   }
 
   stall(reason) {
+    if (this.keyOff) {
+      // Running on with the key off, it just dies: that's the shutdown.
+      this.keyOff = false;
+      this.state = EngineState.OFF;
+      this.rpm = Math.min(this.rpm, this.params.stallRpm);
+      this.emit('shutdown', this.stepT);
+      return;
+    }
     this.state = EngineState.STALLED;
     this.lastStallReason = reason;
     this.emit('stalled', this.stepT, reason);
