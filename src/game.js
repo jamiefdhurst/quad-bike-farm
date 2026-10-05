@@ -871,26 +871,8 @@ export class Game {
       p = { action: her ? `Talk to ${her.name}` : 'Get off', keys: [['C', 'Look back']] };
     }
     this.hud.setPrompt(typeof p === 'string' ? (p ? { action: p } : null) : p.action ? p : p.text);
-    const unit = this.boardUnit ?? this.focusedUnit;
-    if (unit) {
-      const e = unit.engine;
-      const quad = unit.quad;
-      const mph = Math.abs(quad.forwardSpeed) * 2.237;
-      const bars = Math.round(e.temperature * 10);
-      const fuelBars = Math.round(quad.fuel.level * 10);
-      const stalledNote = e.lastStallReason === 'noFuel' ? ' (out of fuel?)' : ' (R to restart)';
-      this.hud.setStatus(
-        [
-          unit.name,
-          `Engine   ${e.state}${e.state === 'stalled' ? stalledNote : ''}   (warm idle ${unit.idleRpm} rpm, roughness ${Math.min(1, unit.engine.params.baseRoughness + unit.engine.wear).toFixed(2)})`,
-          `Temp     ${'▮'.repeat(bars)}${'▯'.repeat(10 - bars)}`,
-          `Fuel     ${'▮'.repeat(fuelBars)}${'▯'.repeat(10 - fuelBars)}  ${quad.fuel.litres.toFixed(1)} L, tap ${quad.fuel.tap.toUpperCase()}`,
-          `Choke    ${Math.round(quad.choke * 100)}%`,
-          `Speed    ${mph.toFixed(0)} mph${quad.reverse ? '  R' : ''}`,
-          ...(this.can.held ? [`Can      ${this.can.litres.toFixed(1)} L`] : []),
-        ].join('\n'),
-      );
-    } else if (this.winch?.state === 'carried') {
+    // No readout for the quad: its dash is all you get.
+    if (this.winch?.state === 'carried') {
       this.hud.setStatus('Winch hook\nE on a quad to hook it on, X to put it back');
     } else if (this.hose.held) {
       this.hud.setStatus('Hose\nHold E to spray, G to put it back');

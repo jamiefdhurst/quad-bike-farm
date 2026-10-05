@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { tempGaugeFraction, coldZoneEnd, HOT_FROM } from './tempGauge.js';
 
 // Instrument panels. Each quad picks a style from its spec:
 //
 //   classic: three chrome-ringed analogue dials in a pill-shaped pod: rev
 //            counter, speedo with a trip counter, and a fuel gauge with the
-//            tap position, plus lamps set into the dials. Honda-ish.
+//            tap position, plus lamps set into the dials and a tiny temperature
+//            gauge low in the rev counter. Honda-ish.
 //   modern:  one wide amber-on-black LCD with a bar-graph rev counter, big
 //            speed digits, a vertical fuel gauge and warning icons drawn on
 //            the display, in a rounded pod with a curved visor. Yamaha-ish.
@@ -18,9 +20,9 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 //            top, and only speed, fuel and a couple of flags under it.
 //
 // buildDash(style) returns { group, update(state) } where state is
-// { rpm, maxRpm, redline, speedMph, fuelLevel, reserveLevel, tap, coldLight,
-//   ignition, tripMiles, reverse }. The group faces the rider along -Z and its
-// +X is on the rider's left.
+// { rpm, maxRpm, redline, speedMph, fuelLevel, reserveLevel, tap, ignition,
+//   tripMiles, reverse, temperature, coldBelow }. The group faces the rider along -Z
+// and its +X is on the rider's left.
 
 const black = new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.6 });
 const charcoal = new THREE.MeshStandardMaterial({ color: 0x2b2d30, roughness: 0.45, metalness: 0.2 });
@@ -246,6 +248,44 @@ function onDial(dx, dy, radius) {
   return [128 - dx * k, 128 - dy * k];
 }
 
+const TEMP_START = Math.PI * 1.15; // C, upper left
+const TEMP_SWEEP = Math.PI * 0.7; // to H, upper right
+
+/** A small temperature dial face: blue while cold, white when warm, red at the top. */
+function drawTempFace(ctx, s, { cream = false } = {}) {
+  if (cream) {
+    creamBase(ctx);
+  } else {
+    dialBase(ctx);
+  }
+  const ink = cream ? '#1b1b1b' : '#eeeeee';
+  const arc = (from, to, colour) => {
+    ctx.strokeStyle = colour;
+    ctx.lineWidth = 22;
+    ctx.beginPath();
+    ctx.arc(128, 128, 100, TEMP_START + TEMP_SWEEP * from, TEMP_START + TEMP_SWEEP * to);
+    ctx.stroke();
+  };
+  const cold = coldZoneEnd(s.coldBelow);
+  arc(0, cold, '#3f86e8');
+  arc(cold, HOT_FROM, ink);
+  arc(HOT_FROM, 1, '#c0221a');
+  ctx.fillStyle = ink;
+  ctx.font = 'bold 62px sans-serif';
+  ctx.fillText('C', 128 + Math.cos(TEMP_START) * 58, 128 + Math.sin(TEMP_START) * 58 + 24);
+  ctx.fillText('H', 128 + Math.cos(TEMP_START + TEMP_SWEEP) * 58, 128 + Math.sin(TEMP_START + TEMP_SWEEP) * 58 + 24);
+}
+
+/** Five temperature blocks along the bottom edge of a box at (x, y): blue while cold, the last one red. */
+function tempBlocks(ctx, x, y, pitch, h, s, on, red, ghost) {
+  const lit = Math.ceil(tempGaugeFraction(s.temperature, true) * 5 - 0.001);
+  for (let i = 0; i < 5; i++) {
+    const cold = (i + 1) / 5 <= coldZoneEnd(s.coldBelow) + 0.001;
+    ctx.fillStyle = i >= lit ? ghost : i === 4 ? red : cold ? '#5ab0ff' : on;
+    ctx.fillRect(x + i * pitch, y, pitch - 3, h);
+  }
+}
+
 const SPEEDO_MAX_MPH = 40;
 const SWEEP_START = Math.PI * 0.75;
 const SWEEP = Math.PI * 1.5;
@@ -268,7 +308,11 @@ function buildClassic() {
   const spd = gauge(group, { ...SPD, name: 'speedo' });
   const fuel = gauge(group, { ...FUEL, name: 'fuelGauge' });
 
-  const tempLamp = dialLamp(group, REV.x, REV.y, 0, -0.019);
+  // A tiny temperature gauge low in the rev counter, standing just proud of it.
+  const raised = new THREE.Group();
+  raised.position.z = -0.004;
+  group.add(raised);
+  const temp = gauge(raised, { x: REV.x, y: REV.y - 0.018, radius: 0.0115, name: 'tempGauge' });
   const ignLamp = dialLamp(group, SPD.x, SPD.y, 0.02, -0.004);
   const revLamp = dialLamp(group, SPD.x, SPD.y, -0.02, -0.004);
   const fuelLamp = dialLamp(group, FUEL.x, FUEL.y, 0.011, -0.016);
@@ -298,10 +342,9 @@ function buildClassic() {
     ctx.font = '18px sans-serif';
     ctx.fillStyle = '#9a9a9a';
     ctx.fillText('x1000', 128, 92);
-    let [lx, ly] = onDial(0, -0.019, REV.radius);
-    ctx.font = 'bold 18px sans-serif';
-    ctx.fillText('TEMP', lx, ly + 34);
     rev.tex.needsUpdate = true;
+    drawTempFace(temp.ctx, s);
+    temp.tex.needsUpdate = true;
 
     // Speedo.
     ctx = spd.ctx;
@@ -317,7 +360,7 @@ function buildClassic() {
     ctx.fillStyle = '#9a9a9a';
     ctx.fillText('MPH', 128, 86);
     ctx.font = 'bold 15px sans-serif';
-    [lx, ly] = onDial(0.02, -0.004, SPD.radius);
+    let [lx, ly] = onDial(0.02, -0.004, SPD.radius);
     ctx.fillText('IGN', lx, ly + 20);
     [lx, ly] = onDial(-0.02, -0.004, SPD.radius);
     ctx.fillText('R', lx, ly + 20);
@@ -350,6 +393,7 @@ function buildClassic() {
   let displayRpm = 0;
   let displayMph = 0;
   let displayFuel = 0;
+  let displayTemp = 0;
 
   function drawReadouts(s) {
     let { ctx, canvas } = trip;
@@ -381,7 +425,7 @@ function buildClassic() {
   return {
     group,
     update(s) {
-      const facesKey = `${s.maxRpm}|${s.redline}|${s.reserveLevel}`;
+      const facesKey = `${s.maxRpm}|${s.redline}|${s.reserveLevel}|${s.coldBelow}`;
       if (facesKey !== faces) {
         faces = facesKey;
         drawFaces(s);
@@ -394,7 +438,8 @@ function buildClassic() {
       rev.point(SWEEP_START + SWEEP * THREE.MathUtils.clamp(displayRpm / top, 0, 1));
       spd.point(SWEEP_START + SWEEP * THREE.MathUtils.clamp(displayMph / SPEEDO_MAX_MPH, 0, 1));
       fuel.point(FUEL_START + FUEL_SWEEP * THREE.MathUtils.clamp(displayFuel, 0, 1));
-      tempLamp.color.setHex(s.ignition && s.coldLight ? 0x2f7bff : 0x1a1a1a);
+      displayTemp += (tempGaugeFraction(s.temperature, s.ignition) - displayTemp) * 0.05;
+      temp.point(TEMP_START + TEMP_SWEEP * displayTemp);
       ignLamp.color.setHex(s.ignition ? 0x33dd44 : 0x1a1a1a);
       revLamp.color.setHex(s.ignition && s.reverse ? 0xffe066 : 0x1a1a1a);
       fuelLamp.color.setHex(s.ignition && s.fuelLevel <= s.reserveLevel ? 0xffa020 : 0x1a1a1a);
@@ -511,8 +556,10 @@ function buildModern(look = MODERN) {
     ctx.fillText('E', 444, 168);
     drawIcon(ctx, 'fuel', 412, 130, low ? red : ghost);
 
+    // Temperature: a thermometer over a row of five blocks, blue while cold, red at the top.
+    drawIcon(ctx, 'temp', 18, 78, ghost);
+    tempBlocks(ctx, 16, 116, 14, 12, s, on, red, ghost);
     // Warning icons and flags on the left.
-    drawIcon(ctx, 'temp', 18, 78, s.coldLight ? '#5ab0ff' : ghost);
     drawIcon(ctx, 'key', 50, 82, on);
     ctx.font = 'bold 18px sans-serif';
     ctx.fillStyle = s.tap === 'reserve' ? on : ghost;
@@ -538,7 +585,7 @@ function buildModern(look = MODERN) {
         Math.ceil(s.fuelLevel * 8 - 0.001),
         s.fuelLevel <= s.reserveLevel,
         s.tap,
-        s.coldLight,
+        Math.ceil(tempGaugeFraction(s.temperature, true) * 5 - 0.001),
         tripText(s.tripMiles),
         s.reverse,
       ].join('|');
@@ -628,10 +675,14 @@ function buildVintage() {
   const TAP = { x: FUEL.x, y: -0.028 };
 
   // Lamps: ignition, cold and reverse down the left, low fuel in the fuel gauge.
-  const LAMPS = { ign: [0.075, 0.024], temp: [0.075, 0], rev: [0.075, -0.024] };
+  const LAMPS = { ign: [0.075, 0.024], rev: [0.075, -0.024] };
   const lamp = {};
   for (const [k, [x, y]] of Object.entries(LAMPS)) lamp[k] = ringLamp(group, x, y);
   lamp.fuel = dialLamp(group, FUEL.x, FUEL.y, 0, -0.011, 0.0036);
+  // Temperature gauge where the cold lamp was.
+  const TEMP = { x: 0.075, y: 0.0, radius: 0.0125 };
+  const temp = gauge(group, { ...TEMP, name: 'tempGauge' });
+  darkNeedle(group, 'tempGauge');
 
   function drawDials(s) {
     let ctx = spd.ctx;
@@ -664,6 +715,9 @@ function buildVintage() {
     ctx.fillText('E', 128 + Math.cos(VFUEL_START) * 58, 128 + Math.sin(VFUEL_START) * 58 + 22);
     ctx.fillText('F', 128 + Math.cos(VFUEL_START + VFUEL_SWEEP) * 58, 128 + Math.sin(VFUEL_START + VFUEL_SWEEP) * 58 + 22);
     fuel.tex.needsUpdate = true;
+
+    drawTempFace(temp.ctx, s, { cream: true });
+    temp.tex.needsUpdate = true;
   }
 
   function drawFace(s) {
@@ -677,7 +731,7 @@ function buildVintage() {
     ctx.textBaseline = 'middle';
     ctx.font = 'bold 19px sans-serif';
     ctx.fillStyle = '#b8b2a2';
-    for (const [k, label] of [['ign', 'IGN'], ['temp', 'TEMP'], ['rev', 'R']]) {
+    for (const [k, label] of [['ign', 'IGN'], ['rev', 'R']]) {
       const [x, y] = at(LAMPS[k][0] + 0.022, LAMPS[k][1]);
       ctx.fillText(label, x, y + 1);
     }
@@ -698,11 +752,12 @@ function buildVintage() {
   const gate = changeGate();
   let displayMph = 0;
   let displayFuel = 0;
+  let displayTemp = 0;
   return {
     group,
     update(s) {
-      if (String(s.reserveLevel) !== faces) {
-        faces = String(s.reserveLevel);
+      if (`${s.reserveLevel}|${s.coldBelow}` !== faces) {
+        faces = `${s.reserveLevel}|${s.coldBelow}`;
         drawDials(s);
       }
       if (gate(`${s.ignition}|${s.tap}`)) drawFace(s);
@@ -712,7 +767,8 @@ function buildVintage() {
       spd.point(SWEEP_START + SWEEP * THREE.MathUtils.clamp(displayMph / VINTAGE_MAX_MPH, 0, 1));
       fuel.point(VFUEL_START + VFUEL_SWEEP * THREE.MathUtils.clamp(displayFuel, 0, 1));
       lamp.ign.color.setHex(s.ignition ? 0x33dd44 : 0x1a1a1a);
-      lamp.temp.color.setHex(s.ignition && s.coldLight ? 0x2f7bff : 0x1a1a1a);
+      displayTemp += (tempGaugeFraction(s.temperature, s.ignition) - displayTemp) * 0.05;
+      temp.point(TEMP_START + TEMP_SWEEP * displayTemp);
       lamp.rev.color.setHex(s.ignition && s.reverse ? 0xffe066 : 0x1a1a1a);
       lamp.fuel.color.setHex(s.ignition && s.fuelLevel <= s.reserveLevel ? 0xffa020 : 0x1a1a1a);
     },
@@ -789,12 +845,10 @@ function buildRace() {
     ctx.fillStyle = s.tap === 'off' ? red : s.tap === 'reserve' ? amber : ghost;
     ctx.fillText(s.tap === 'off' ? 'OFF' : 'RES', 168, 166);
 
-    // Cold and reverse flags in the middle.
-    ctx.fillStyle = s.coldLight ? '#5ab0ff' : ghost;
-    ctx.fillRect(238, 138, 6, 22);
-    ctx.beginPath();
-    ctx.arc(241, 166, 8, 0, Math.PI * 2);
-    ctx.fill();
+    // Temperature blocks and the reverse flag in the middle.
+    ctx.fillStyle = ghost;
+    ctx.fillRect(226, 118, 62, 3);
+    tempBlocks(ctx, 226, 124, 13, 16, s, on, red, ghost);
     ctx.fillStyle = s.reverse ? amber : ghost;
     ctx.font = 'bold 30px sans-serif';
     ctx.fillText('R', 262, 168);
@@ -819,7 +873,7 @@ function buildRace() {
         Math.ceil(s.fuelLevel * 6 - 0.001),
         s.fuelLevel <= s.reserveLevel,
         s.tap,
-        s.coldLight,
+        Math.ceil(tempGaugeFraction(s.temperature, true) * 5 - 0.001),
         s.reverse,
       ].join('|');
       if (gate(key)) {

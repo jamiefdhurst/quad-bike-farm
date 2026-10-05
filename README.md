@@ -82,7 +82,7 @@ All five are automatics and all start cold. Through the CVT the red tops out at 
 
 Running wears an engine and makes it rougher still, all the way to fully rough if you keep at it (about half an hour of hard riding). Past about 0.8 (its build roughness plus wear), it turns erratic: it stumbles through runs of misfires, losing nearly all its power for a moment and nearly dying, catches again sometimes with a bang and a puff of smoke, flares up at idle, and won't hold a steady tickover. Fully worn, that's a stumble every two or three seconds and it dies on you now and then, and the girls will tell you it needs looking at. A service from the toolbox brings it back to its own character.
 
-The idle and roughness are shown in the status panel and printed in the console.
+The idle and roughness are printed in the console and shown in the tuning panel.
 
 She starts beside a random quad in the yard. The others are parked in the yard at any angle, sometimes facing the other way, or (40% each) left somewhere else on the farm: by the field gate, the paddock, the straw bales, the west hedge, out past the far bend, at the bottom of the track or in the middle of the field. The console says where each one is. The browser console prints the layout's seed; add `?seed=<number>` to the URL to get the same layout again.
 
@@ -140,11 +140,13 @@ Each quad has a fuel tank, a fuel tap and a fuel gauge on the dash. Taps start O
 
 The quads have different instruments:
 
-- **Red**: three chrome-ringed analogue dials in a pill-shaped pod. A rev counter scaled to its engine (red from 5,800), a 0 to 40 mph speedo with a drum trip counter, and a fuel gauge from E to F with a red reserve zone and the tap position (ON, RES, OFF) under the needle. TEMP, IGN, reverse and low-fuel lamps are set into the dials. With the ignition off the fuel needle drops to E.
-- **Blue**: one wide amber display with a bar-graph rev counter, big speed digits, a vertical fuel gauge that goes red on reserve, warning icons and a trip meter, in a rounded pod with a slim brow over it.
+- **Red**: three chrome-ringed analogue dials in a pill-shaped pod. A rev counter scaled to its engine (red from 5,800), a 0 to 40 mph speedo with a drum trip counter, and a fuel gauge from E to F with a red reserve zone and the tap position (ON, RES, OFF) under the needle. A tiny temperature gauge sits low in the rev counter. IGN, reverse and low-fuel lamps are set into the dials. With the ignition off the fuel needle drops to E.
+- **Blue**: one wide amber display with a bar-graph rev counter, big speed digits, a vertical fuel gauge that goes red on reserve, a row of temperature blocks, warning icons and a trip meter, in a rounded pod with a slim brow over it.
 - **Yellow**: the same layout as the blue's, compact and red-on-black, in a rounder bare pod under the motocross crossbar.
-- **Green**: a vintage dash on top of its handlebar headlight: a cream-faced 0 to 40 mph speedo in a chrome cup, a small cream fuel gauge with a low-fuel lamp, chrome-ringed IGN, TEMP and reverse lamps and a tap window.
-- **Orange**: a minimal race dash: a green, amber and red rev bar with a shift light, small speed digits, six fuel blocks and cold and reverse flags.
+- **Green**: a vintage dash on top of its handlebar headlight: a cream-faced 0 to 40 mph speedo in a chrome cup, a small cream fuel gauge with a low-fuel lamp, a small temperature gauge, chrome-ringed IGN and reverse lamps and a tap window.
+- **Orange**: a minimal race dash: a green, amber and red rev bar with a shift light, small speed digits, six fuel blocks, five temperature blocks and a reverse flag.
+
+Every dash has a temperature gauge: blue while the engine is cold, white when it's warm, with a red zone at the top for later. There's no on-screen readout of the quad any more, so you read the dash and listen to the engine to work out what's wrong. The needles rest at cold with the ignition off.
 
 The displays go blank with the ignition off.
 
@@ -199,7 +201,7 @@ src/
   player/              walking and seated first-person player
   npc/                 state machine, character rig, companion behaviour, her voice lines
   interaction/         look-at interaction and the context menu
-  hud/                 crosshair, prompts, status, help
+  hud/                 crosshair, prompts, notes for carried items, help
   world/               terrain, track, sky, props, layout
   debug/               lil-gui tuning panel
 tests/                 engine state machine and fuel tests
@@ -242,7 +244,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 
 1. Vehicles need to get way more muddy **Done.** Bodywork now plasters over within about half a minute of driving through mud, and climbs much higher up the quad.
 2. I can sit pillion without anyone else there, then the girls automatically jump on to drive me around, and jump off when they're bored, they don't need to wait for me to say stop **Done.** `B` at a parked quad sits you on the back; a free girl soon offers, drives you about, then gets off by herself when bored.
-3. Remove the helpful vehicle HUD so I have to guess what the issues are, add a temp gauge to each of the quads
+3. Remove the helpful vehicle HUD so I have to guess what the issues are, add a temp gauge to each of the quads **Done.** The quad readout is gone; every dash now has a temperature gauge.
 4. Pillion on the orange one
 5. A way for two girls to sit on the back of a quad at the same time - one on the fairing maybe?
 6. The girls say very nice things to me sometimes - tell me they love me, care for me, etc.

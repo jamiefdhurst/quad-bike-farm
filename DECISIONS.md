@@ -384,3 +384,11 @@ You asked for these in this order: getting stuck, then the weather (random each 
 - Follow-up: on the back with nobody else on the quad, E did nothing (it only opened the ride wheel when a girl was on it). It now gets you off, and the prompt says so ("Get off", with C look back). The interaction prompt is now a main line (what E does) over a row of key chips (K Ignition, R Start, Q Z Choke, F Fuel tap, B Sit on the back, X Winch cable) instead of one long line of text; prompts that are plain text are unchanged. Checked once headless with a screenshot.
 
 - Follow-up: the rest after an offered ride comes from the girl who gave it. Jess, cheekier and bored sooner, rests 25 to 70 s (Amy 45 to 120) and drives you for 45 to 110 s (Amy 60 to 150). The wait before a first offer is still shared (Amy's numbers).
+
+## Dash temperature gauges, no vehicle readout (2026-10-05)
+
+- Request: take away the helpful vehicle HUD so you have to guess what's wrong, and give each quad a temperature gauge. The top-left panel (engine state, rpm, fuel, choke, speed) is gone while on or looking at a quad; the notes for the hose, winch, toolbox and jerry can stay, since they say what keys do. The tuning panel's live readouts (backtick) are untouched, as a developer tool.
+- The gauge scale lives in `src/vehicle/tempGauge.js` (pure, tested): a fully warm engine sits at 0.7 of the dial, the red zone starts at 0.85 and nothing reaches it yet, ready for the heat item. The cold zone ends where the old cold light went out (`warmLightThreshold`, 0.65 of the way to warm). Needles rest at C with the ignition off.
+- Each style has its own: a tiny dial low in the red's rev counter, a dial in the green's old cold-lamp slot (cream face), and a row of five blocks on the blue, yellow and orange LCDs (blue while cold, the last one red).
+- The cold lamps are gone, replaced by the gauges, so there's one place to look rather than two. This also removes "(R to restart)" and "(out of fuel?)": you have to work those out.
+- Checked once in the browser at a close-up of each dash. The red and green dials are small; I didn't judge them by eye at riding distance beyond the seat-height close-up.
