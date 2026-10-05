@@ -34,6 +34,7 @@ const SCALE = {
   driveScaredChance: [1.6, 0.1],
   driveBrakeFirm: [0.8, 1.6],
   driveCornerAccel: [0.8, 1.3],
+  followDriveOnChance: [0.4, 2.4],
 };
 const BOLD_CURVE = 1.6;
 
@@ -48,6 +49,7 @@ export function driveMood(params, confidence) {
   }
   out.driveScaredChance = clamp01(out.driveScaredChance);
   out.drivePauseChance = clamp01(out.drivePauseChance);
+  if (typeof out.followDriveOnChance === 'number') out.followDriveOnChance = clamp01(out.followDriveOnChance);
   out.driveMaxThrottle = Math.min(1, out.driveMaxThrottle);
   return out;
 }

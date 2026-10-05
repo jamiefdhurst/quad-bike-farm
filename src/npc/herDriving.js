@@ -232,6 +232,37 @@ export class HerDrive {
     return { point, speed, gap, stopped: false };
   }
 
+  /**
+   * Following, with you off your quad (or on hers): after followGiveUpMin..Max
+   * seconds she stops following. Then she either has a drive about on her own
+   * (followDriveOnChance) or pulls up and finishes, as after any drive.
+   */
+  waitForLeader(dt) {
+    const p = this.p;
+    if (!this.follow) return;
+    if (this.follow()) {
+      this.leaderGone = 0;
+      return;
+    }
+    this.leaderGone = (this.leaderGone ?? 0) + dt;
+    this.giveUpAfter ??= this.between(p.followGiveUpMin, p.followGiveUpMax);
+    if (this.leaderGone < this.giveUpAfter) return;
+    this.follow = null;
+    this.waypoints = [];
+    this.leaderGone = 0;
+    this.giveUpAfter = null;
+    if (this.random() < p.followDriveOnChance) {
+      this.events.push('followDriveOn');
+      // Her own loops from here, for a go of her usual length.
+      this.origin = { x: this.quad.position.x, z: this.quad.position.z };
+      this.driveFor = this.time + this.between(p.driveForMin, p.driveForMax);
+      if (this.phase === 'settle') this.timer = 0;
+    } else {
+      this.events.push('followGaveUp');
+      this.stop('bored');
+    }
+  }
+
   /** Go a bit faster (factor > 1) or slower; she won't go past her scare speed. */
   setCruiseScale(scale) {
     const next = clamp(scale, 0.5, 2);
@@ -298,6 +329,8 @@ export class HerDrive {
     this.maxDistance = Math.max(this.maxDistance, Math.hypot(pos.x - this.origin.x, pos.z - this.origin.z));
     this.timer -= dt;
     c.starter = false;
+    // Following you and you've got off: she waits a while, then gives up on you.
+    if (this.follow && (this.phase === 'drive' || this.phase === 'settle')) this.waitForLeader(dt);
 
     // Stalled on her (anywhere but while she's starting it).
     if (this.phase !== 'start' && this.running && !q.engine.isRunning) {

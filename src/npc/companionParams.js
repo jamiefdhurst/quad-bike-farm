@@ -92,6 +92,9 @@ export const DEFAULT_COMPANION_PARAMS = {
   followMaxSpeed: 10, // m/s she'll go to keep up at middling confidence (careful slower, confident quicker)
   followMaxThrottle: 0.9,
   followScareSpeed: 15, // following, she minds speed much less
+  followGiveUpMin: 30, // seconds after you've got off your quad before she stops following...
+  followGiveUpMax: 90,
+  followDriveOnChance: 0.35, // ...and then the chance she drives about on her own rather than stopping (more when confident)
   followFarGap: 45, // metres; further behind than this and she shouts after you
   rideLoopScale: 2.5, // giving you a ride, her loops are this much bigger
   driveTalkRange: 14, // metres; you can talk to her from this far while she's driving
@@ -177,6 +180,9 @@ export const COMPANION_PARAM_RANGES = {
   followMaxThrottle: [0.1, 1, 0.01],
   followScareSpeed: [2, 30, 0.5],
   followFarGap: [5, 200, 1],
+  followGiveUpMin: [5, 600, 5],
+  followGiveUpMax: [5, 900, 5],
+  followDriveOnChance: [0, 1, 0.05],
   rideLoopScale: [1, 6, 0.1],
   driveConfidence: [0, 1, 0.01],
   driveMoodSwing: [0, 1, 0.01],

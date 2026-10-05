@@ -298,6 +298,8 @@ export class CompanionVoice {
       noRoom: ['driveNoRoom', 1],
       waitingForYou: ['waitingForYou', 1],
       fallingBehind: ['fallingBehind', 1],
+      followGaveUp: ['followGaveUp', 1],
+      followDriveOn: ['followDriveOn', 1],
       'done:bored': ['driveBored', 0.9],
       'done:scared': ['driveScared', 0.9],
       'done:gaveUp': ['driveGaveUp', 0.9],

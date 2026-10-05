@@ -696,6 +696,17 @@ export const VOICE_LINES = {
     cooldown: 25,
     lines: ['Wait for me!', 'Slow down!', "Oi! I can't keep up!", 'Hang on!', "You're going too fast!", 'Wait up!'],
   },
+  // Following you, and you got off your quad and left her waiting.
+  followGaveUp: {
+    shout: true,
+    cooldown: 0,
+    lines: ["Right, I'm not waiting all day.", "Are we done? I'm getting off.", 'Fine. Convoy over.', "I'll take that as the end of the ride, then."],
+  },
+  followDriveOn: {
+    shout: true,
+    cooldown: 0,
+    lines: ["Well, I'm not sitting here. I'm off for a drive.", 'If you have stopped, I am going on my own.', "Bye then! I'll go by myself."],
+  },
   ackGiveRide: {
     cooldown: 0,
     lines: ['Ooh, really? Okay!', "Hop on then, I'll drive.", 'Me? Driving you? Go on then.', "Right. Hold on tight, I'm getting it started.", 'You trust me? Brave.'],

@@ -317,7 +317,6 @@ export class Game {
       overlay.classList.toggle('hidden', locked);
       if (!locked) this.closeMenu();
     });
-    this.hud.toggleHelp(true);
     this.renderer.setAnimationLoop(() => this.frame());
   }
 

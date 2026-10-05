@@ -193,6 +193,8 @@ export const JESS_LINES = {
   sprayedHer: ['Oi! You are dead!', 'Right! That is it!', "You'll pay for that!", 'Argh! My hair!'],
   ackFollow: ["Race you! Kidding. I'll follow.", "Right behind you. Don't go slow."],
   fallingBehind: ['Oi! Wait up!', 'Cheat!', 'Slow down, show off!'],
+  followGaveUp: ['Boring. I am getting off.', 'Convoy cancelled, then.', "You've given up already? Lightweight."],
+  followDriveOn: ["You've stopped? Your loss. I'm off!", 'See ya! Not waiting for you.', "Right, I'm having the field to myself."],
   ackGiveRide: ['Hop on then. Hold on tight.', 'Ooh, yes. Get on.', "Taxi's here."],
   waitingForYou: ['Are you getting on or what?', "Meter's running.", "Come on, I won't bite."],
   passengerOn: ['Hold on. I mean it.', "Right. Try not to scream.", 'Welcome aboard. No refunds.'],
