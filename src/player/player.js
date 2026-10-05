@@ -5,6 +5,12 @@ const CAPSULE_HALF_HEIGHT = 0.55;
 const CAPSULE_RADIUS = 0.3;
 const FEET_TO_CENTRE = CAPSULE_HALF_HEIGHT + CAPSULE_RADIUS;
 const DEG = Math.PI / 180;
+// Springs that settle the camera after jumping off a moving quad.
+const CAM_SPRING = 9; // rad/s
+const CAM_DAMPING = 0.55;
+const CAM_KICK = 2.1; // a kick of size * CAM_SPRING * CAM_KICK peaks at about that size
+const ALL_GROUPS = 0xffffffff;
+const NO_CONTACT_FORCES = 0xffff0000; // in every group, pushes against none
 
 /**
  * First-person player. On foot it drives a Rapier kinematic character
@@ -44,6 +50,19 @@ export class Player {
     this.bobPhase = 0;
     this.bobAmount = 0;
 
+    // Jumping off a moving quad: a moment off balance, and the quad you left
+    // can't touch you (or be shoved by you) until you're clear of it.
+    this.stumbleLeft = 0;
+    this.stumble = 0;
+    this.landing = false;
+    this.ignoreCollider = null;
+    this.ignoreLeft = 0;
+    this.ignoreFilter = (c) => c.handle !== this.ignoreCollider.handle;
+    this.camDip = 0;
+    this.camDipVel = 0;
+    this.camRoll = 0;
+    this.camRollVel = 0;
+
     this.prevPos = new THREE.Vector3(s.x, feetY, s.z);
     this.currPos = this.prevPos.clone();
 
@@ -75,9 +94,13 @@ export class Player {
     const p = this.params;
     const input = this.input;
 
+    this.updateIgnore(dt);
+    const stumbling = this.stumbleLeft > 0;
+    if (stumbling) this.stumbleLeft -= dt;
+
     let fx = 0;
     let fz = 0;
-    if (this.moveEnabled) {
+    if (this.moveEnabled && !stumbling) {
       if (input.isDown('KeyW')) fz += 1;
       if (input.isDown('KeyS')) fz -= 1;
       if (input.isDown('KeyD')) fx += 1;
@@ -95,9 +118,19 @@ export class Player {
     // Camera looks down -Z at yaw 0.
     const targetX = (fx * cos - fz * sin) * speed;
     const targetZ = (-fx * sin - fz * cos) * speed;
-    const k = Math.min(1, p.acceleration * dt);
-    this.velocity.x += (targetX - this.velocity.x) * k;
-    this.velocity.z += (targetZ - this.velocity.z) * k;
+    if (stumbling) {
+      // No control while you find your feet; the ground takes the speed off you.
+      if (this.grounded) {
+        const v = Math.hypot(this.velocity.x, this.velocity.z);
+        const scale = v > 0 ? Math.max(0, v - p.stumbleDecel * dt) / v : 0;
+        this.velocity.x *= scale;
+        this.velocity.z *= scale;
+      }
+    } else {
+      const k = Math.min(1, p.acceleration * dt);
+      this.velocity.x += (targetX - this.velocity.x) * k;
+      this.velocity.z += (targetZ - this.velocity.z) * k;
+    }
 
     this.verticalSpeed = this.grounded ? -1 : this.verticalSpeed - p.gravity * dt;
 
@@ -106,9 +139,12 @@ export class Player {
       y: this.verticalSpeed * dt,
       z: this.velocity.z * dt,
     };
-    this.controller.computeColliderMovement(this.collider, desired);
+    const filter = this.ignoreCollider ? this.ignoreFilter : undefined;
+    this.controller.computeColliderMovement(this.collider, desired, undefined, undefined, filter);
     const move = this.controller.computedMovement();
+    const wasGrounded = this.grounded;
     this.grounded = this.controller.computedGrounded();
+    if (this.landing && this.grounded && !wasGrounded) this.land();
 
     const t = this.body.translation();
     const next = { x: t.x + move.x, y: t.y + move.y, z: t.z + move.z };
@@ -147,8 +183,10 @@ export class Player {
       this.renderPos = this.tmpVec.lerpVectors(this.prevPos, this.currPos, alpha);
       const bob = Math.sin(this.bobPhase) * this.bobAmount;
       const sway = Math.cos(this.bobPhase * 0.5) * this.bobAmount * 0.5;
-      this.camera.position.set(this.renderPos.x, this.renderPos.y + p.eyeHeight + bob, this.renderPos.z);
-      this.camera.rotation.set(this.pitch, this.yaw, sway * 0.15, 'YXZ');
+      this.updateCameraSprings(dt);
+      this.camera.position.set(this.renderPos.x, this.renderPos.y + p.eyeHeight + bob + this.camDip, this.renderPos.z);
+      // Dipping on landing also tips the view down a little.
+      this.camera.rotation.set(this.pitch + this.camDip * 0.8, this.yaw, sway * 0.15 + this.camRoll, 'YXZ');
     } else {
       this.updateRidingCamera(vibration);
     }
@@ -178,6 +216,13 @@ export class Player {
 
   mount(vehicle) {
     this.mode = 'riding';
+    this.stumbleLeft = 0;
+    this.landing = false;
+    this.camDip = this.camDipVel = this.camRoll = this.camRollVel = 0;
+    if (this.ignoreCollider) {
+      this.ignoreCollider = null;
+      this.collider.setSolverGroups(ALL_GROUPS);
+    }
     this.vehicle = vehicle;
     this.rideYaw = 0;
     this.ridePitch = -12 * DEG;
@@ -187,6 +232,7 @@ export class Player {
 
   /** Steps off at `feet` (a world position) facing `yaw`. */
   dismount(feet, yaw) {
+    this.velocity.set(0, 0, 0);
     this.mode = 'foot';
     this.vehicle = null;
     const centre = { x: feet.x, y: feet.y + FEET_TO_CENTRE, z: feet.z };
@@ -199,6 +245,66 @@ export class Player {
     this.pitch = 0;
     this.verticalSpeed = 0;
     this.grounded = false;
+  }
+
+  /**
+   * Jumps off a moving quad and lands at speed.
+   * @param {THREE.Vector3} feet  Where to start, beside the quad (a little off the ground is fine).
+   * @param {object} leap
+   * @param {number} leap.yaw, leap.pitch   Which way to look (keep looking where you were).
+   * @param {{x,y,z}} leap.carry   The quad's velocity; you keep some of it.
+   * @param {THREE.Vector3} leap.push  Horizontal unit vector, the way you jump.
+   * @param {number} leap.speed  The quad's speed, for how hard the landing is.
+   * @param {object} [leap.collider]  The quad's collider, ignored until you're clear of it.
+   */
+  leapOff(feet, { yaw, pitch, carry, push, speed, collider }) {
+    const p = this.params;
+    this.dismount(feet, yaw);
+    this.pitch = THREE.MathUtils.clamp(pitch, -60 * DEG, 60 * DEG);
+    this.velocity.set(carry.x * p.leapCarry + push.x * p.leapSideSpeed, 0, carry.z * p.leapCarry + push.z * p.leapSideSpeed);
+    this.verticalSpeed = p.leapHop;
+    const k = THREE.MathUtils.clamp((speed - p.dismountSpeed) / Math.max(0.1, p.stumbleFullSpeed - p.dismountSpeed), 0, 1);
+    this.stumble = k;
+    this.stumbleLeft = p.stumbleTime * (0.4 + 0.6 * k);
+    this.landing = true;
+    if (collider) {
+      this.ignoreCollider = collider;
+      this.ignoreLeft = this.stumbleLeft + 0.6;
+      this.collider.setSolverGroups(NO_CONTACT_FORCES);
+    }
+    // Lean into the jump: roll towards the side you're jumping to.
+    const right = Math.cos(yaw) * push.x - Math.sin(yaw) * push.z;
+    this.camRollVel = -right * p.stumbleRoll * DEG * CAM_SPRING * CAM_KICK * (0.3 + 0.7 * k);
+  }
+
+  /** Touching down after jumping off: the knees give and the view lurches. */
+  land() {
+    const p = this.params;
+    this.landing = false;
+    const k = this.stumble;
+    this.camDipVel -= p.stumbleDip * CAM_SPRING * CAM_KICK * (0.25 + 0.75 * k);
+    this.camRollVel += (this.camRoll >= 0 ? 1 : -1) * p.stumbleRoll * DEG * CAM_SPRING * CAM_KICK * 0.4 * k;
+  }
+
+  /** Stops ignoring the quad you jumped off once you're well clear of it. */
+  updateIgnore(dt) {
+    if (!this.ignoreCollider) return;
+    this.ignoreLeft -= dt;
+    if (this.ignoreLeft > 0) return;
+    const q = this.ignoreCollider.translation();
+    const t = this.body.translation();
+    if (Math.hypot(q.x - t.x, q.z - t.z) < 1.8) return; // still alongside it
+    this.ignoreCollider = null;
+    this.collider.setSolverGroups(ALL_GROUPS);
+  }
+
+  updateCameraSprings(dt) {
+    const w = CAM_SPRING;
+    const c = 2 * CAM_DAMPING * w;
+    this.camDipVel += (-w * w * this.camDip - c * this.camDipVel) * dt;
+    this.camDip += this.camDipVel * dt;
+    this.camRollVel += (-w * w * this.camRoll - c * this.camRollVel) * dt;
+    this.camRoll += this.camRollVel * dt;
   }
 
   /** Ray from the eye through the centre of the screen. */

@@ -148,6 +148,9 @@ export class Game {
         unit,
         target: quad.proxy,
         prompt: () => {
+          if (this.tooFastToMount(quad)) {
+            return { text: `The ${unit.label} is going too fast to get on   ·   K ignition` };
+          }
           if (this.can.held) {
             const pct = Math.round(quad.fuel.level * 100);
             if (quad.fuel.space < 0.01) return { text: `The ${unit.label} is full   ·   G put the can down` };
@@ -159,11 +162,12 @@ export class Game {
         },
         interact: () => {
           if (this.can.held) return; // E is for pouring while you're holding the can
+          if (this.tooFastToMount(quad)) return;
           if (quad.isTipped) quad.rightItself();
           else this.mount(unit);
         },
         hold: (dt) => {
-          if (!this.can.held) return false;
+          if (!this.can.held || this.tooFastToMount(quad)) return false;
           const wanted = Math.min(this.can.params.pourRate * dt, quad.fuel.space);
           return quad.fuel.add(this.can.take(wanted)) > 0;
         },
@@ -264,6 +268,11 @@ export class Game {
   // Companion menu ---------------------------------------------------------
 
   openCompanionMenu() {
+    const c = this.companion;
+    if (c.isSeated && c.quad.speed > this.player.params.mountSpeed) {
+      this.hud.toast('She can\'t get off while it\'s moving');
+      return;
+    }
     const actions = this.companion.getActions(this.units.map((u) => u.quad));
     if (!actions.length) {
       this.hud.toast('She\'s busy');
@@ -285,17 +294,22 @@ export class Game {
   // Riding ---------------------------------------------------------------
 
   mount(unit) {
-    if (this.player.isRiding) return;
+    if (this.player.isRiding || this.tooFastToMount(unit.quad)) return;
     this.player.mount(unit.quad);
     unit.quad.setRider(this.player, this.input);
     this.lastUnit = unit;
     this.input.takeWheelSteps();
   }
 
+  /** A moving quad you can't catch hold of (whether or not anyone is on it). */
+  tooFastToMount(quad) {
+    return quad.speed > this.player.params.mountSpeed;
+  }
+
   tryDismount() {
     const quad = this.riddenUnit.quad;
     if (Math.abs(quad.forwardSpeed) > this.player.params.dismountSpeed) {
-      this.hud.toast('Slow down to get off');
+      this.jumpOff(quad);
       return;
     }
     const spot = this.findDismountSpot(quad);
@@ -307,20 +321,66 @@ export class Game {
     this.player.dismount(spot, quad.yaw + Math.PI);
   }
 
-  /** Free spot beside the bike for the player's feet, trying left, right, behind, then in front. */
-  findDismountSpot(quad) {
-    const RAPIER = this.RAPIER;
-    const shape = new RAPIER.Capsule(PLAYER_CAPSULE.halfHeight, PLAYER_CAPSULE.radius);
-    const terrain = this.world.terrain.collider;
-    const candidates = [
+  /**
+   * Getting off at speed: jump clear to the outside of the turn (or whichever
+   * side is free) and let the quad carry on without you, throttle and bars
+   * left where they were.
+   */
+  jumpOff(quad) {
+    // Positive steer turns left, so the outside of the turn is the right (-x).
+    const side = quad.steer > 0.02 ? -1 : 1;
+    const spot = this.findDismountSpot(
+      quad,
+      [
+        [side * 1.05, -0.15],
+        [-side * 1.05, -0.15],
+        [0, -1.8],
+      ],
+      0.3,
+    );
+    if (!spot) {
+      this.hud.toast('No room to jump off here');
+      return;
+    }
+    const throttle = quad.throttle;
+    const speed = quad.speed;
+    const carry = quad.velocity;
+    const push = new THREE.Vector3(spot.x - quad.position.x, 0, spot.z - quad.position.z).normalize();
+    // Keep looking wherever you were looking.
+    const look = this.camera.getWorldDirection(new THREE.Vector3());
+    quad.setRider(null, null);
+    quad.carryOn(throttle);
+    this.player.leapOff(spot, {
+      yaw: Math.atan2(-look.x, -look.z),
+      pitch: Math.asin(THREE.MathUtils.clamp(look.y, -1, 1)),
+      carry,
+      push,
+      speed,
+      collider: quad.physics.collider,
+    });
+  }
+
+  /**
+   * Free spot beside the bike for the player's feet, trying each [x, z] offset
+   * in chassis space in turn (default: left, right, behind, then in front).
+   * `lift` raises the feet off the ground, for jumping off.
+   */
+  findDismountSpot(
+    quad,
+    candidates = [
       [1.0, -0.15],
       [-1.0, -0.15],
       [0, -1.7],
       [0, 1.8],
-    ];
+    ],
+    lift = 0,
+  ) {
+    const RAPIER = this.RAPIER;
+    const shape = new RAPIER.Capsule(PLAYER_CAPSULE.halfHeight, PLAYER_CAPSULE.radius);
+    const terrain = this.world.terrain.collider;
     for (const [lx, lz] of candidates) {
       const p = quad.localToWorld(lx, 0, lz);
-      const feetY = this.world.heightAt(p.x, p.z) + 0.05;
+      const feetY = this.world.heightAt(p.x, p.z) + 0.05 + lift;
       const centre = { x: p.x, y: feetY + PLAYER_CAPSULE.feetToCentre + 0.05, z: p.z };
       const hit = this.physics.intersectionWithShape(
         centre,
