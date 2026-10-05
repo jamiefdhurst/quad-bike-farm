@@ -411,8 +411,8 @@ export class Game {
     if (this.offeredBy) {
       // Wait for the ride to be over (she's off, or given up) before the rest period starts.
       if (this.offeredBy.fsm.is('walking', 'mounting', 'driving', 'shuffling')) return;
+      offer.rest(this.offeredBy.params);
       this.offeredBy = null;
-      offer.rest();
     }
     const unit = this.boardUnit;
     const waiting = !!unit && this.player.seat === 'pillion' && unit.quad.speed < 0.5 && !this.menu.isOpen && !this.passengerPlan && !this.herOn(unit.quad);

@@ -31,10 +31,10 @@ export class RideOffer {
     return true;
   }
 
-  /** After a ride: nobody offers again for a good while, however long you sit. */
-  rest() {
+  /** After a ride: nobody offers again for a good while, however long you sit. Her own params say how long (she's the one who got bored). */
+  rest(params = this.p) {
     this.left = null;
-    this.resting = between(this.random, this.p.offerRideRestMin, this.p.offerRideRestMax);
+    this.resting = between(this.random, params.offerRideRestMin, params.offerRideRestMax);
   }
 }
 

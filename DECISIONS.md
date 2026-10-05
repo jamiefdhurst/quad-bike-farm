@@ -382,3 +382,5 @@ You asked for these in this order: getting stuck, then the weather (random each 
 - New line `offerRide` for each girl, said on the way over.
 - Checked once headless (offer shortened to 3 to 4 s, ride to 15 s): Amy walked over, got on, drove, pulled up and got off with you still on the back, and didn't offer again. Not checked: Jess offering, both girls busy, real-length rides, or the new lines recorded.
 - Follow-up: on the back with nobody else on the quad, E did nothing (it only opened the ride wheel when a girl was on it). It now gets you off, and the prompt says so ("Get off", with C look back). The interaction prompt is now a main line (what E does) over a row of key chips (K Ignition, R Start, Q Z Choke, F Fuel tap, B Sit on the back, X Winch cable) instead of one long line of text; prompts that are plain text are unchanged. Checked once headless with a screenshot.
+
+- Follow-up: the rest after an offered ride comes from the girl who gave it. Jess, cheekier and bored sooner, rests 25 to 70 s (Amy 45 to 120) and drives you for 45 to 110 s (Amy 60 to 150). The wait before a first offer is still shared (Amy's numbers).

@@ -40,6 +40,12 @@ describe('a girl offering you a ride', () => {
     }
   });
 
+  it('rests for as long as the girl who gave the ride says', () => {
+    const offer = new RideOffer(P, seeded());
+    offer.rest({ offerRideRestMin: 5, offerRideRestMax: 5 });
+    expect(waitFor(offer)).toBeLessThan(P.offerRideRestMin);
+  });
+
   it('keeps resting even while you are not waiting, e.g. while she climbs off', () => {
     const offer = new RideOffer({ ...P, offerRideRestMin: 30, offerRideRestMax: 30, offerRideWaitMin: 1, offerRideWaitMax: 1 }, seeded());
     offer.rest();
