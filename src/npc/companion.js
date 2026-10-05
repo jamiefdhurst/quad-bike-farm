@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { StateMachine } from './stateMachine.js';
 import { CharacterRig } from './characterRig.js';
 import { DEFAULT_COMPANION_PARAMS } from './companionParams.js';
-import { applyOutfit, OUTFITS } from './outfit.js';
+import { applyOutfit, refitOutfit, OUTFITS } from './outfit.js';
+import { shapeFigure } from './figure.js';
 
 const CAPSULE_HALF_HEIGHT = 0.55;
 const CAPSULE_RADIUS = 0.25;
@@ -32,6 +33,9 @@ export class Companion {
     this.params = params;
 
     this.rig = new CharacterRig(gltf, params.height);
+    // Shape her first so the fitted garments follow the figure.
+    this.figure = this.figureAmounts();
+    shapeFigure(this.rig, this.figure);
     applyOutfit(this.rig, OUTFITS[params.outfit] ?? OUTFITS.original);
     this.root = this.rig.root;
     this.root.name = 'companion';
@@ -71,6 +75,20 @@ export class Companion {
     this.glanceLeft = 0;
     this.fidgetTimer = this.randomBetween(params.fidgetEveryMin, params.fidgetEveryMax);
     this.fidget = null;
+  }
+
+  figureAmounts() {
+    const { bust, waist, hips } = this.params;
+    return { bust, waist, hips };
+  }
+
+  /** Reshapes her and refits her clothes if the figure tunables have changed. */
+  refreshFigure() {
+    const next = this.figureAmounts();
+    if (Object.keys(next).every((k) => next[k] === this.figure[k])) return;
+    this.figure = next;
+    shapeFigure(this.rig, next);
+    refitOutfit(this.rig, OUTFITS[this.params.outfit] ?? OUTFITS.original);
   }
 
   randomBetween(a, b) {

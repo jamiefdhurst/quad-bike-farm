@@ -41,6 +41,8 @@ export class CharacterRig {
     this.model.traverse((o) => {
       if (o.isBone) this.bones[o.name] = o;
     });
+    // The pose she loads in, before any clip has played; garments are fitted to it.
+    this.restPose = Object.values(this.bones).map((b) => [b, b.position.clone(), b.quaternion.clone(), b.scale.clone()]);
 
     this.legSpread = 0;
     this.spineSway = { pitch: 0, roll: 0 };
@@ -103,6 +105,25 @@ export class CharacterRig {
     this.currentAction = null;
     if (prev) this.play(prev.getClip().name.split('|').pop(), { fade: 0 });
     return p;
+  }
+
+  /** Runs fn with the skeleton in its rest pose, then puts the current pose back. */
+  withRestPose(fn) {
+    const current = this.restPose.map(([b]) => [b, b.position.clone(), b.quaternion.clone(), b.scale.clone()]);
+    const apply = (pose) => {
+      for (const [b, p, q, s] of pose) {
+        b.position.copy(p);
+        b.quaternion.copy(q);
+        b.scale.copy(s);
+      }
+      this.root.updateMatrixWorld(true);
+    };
+    apply(this.restPose);
+    try {
+      fn();
+    } finally {
+      apply(current);
+    }
   }
 
   update(dt) {

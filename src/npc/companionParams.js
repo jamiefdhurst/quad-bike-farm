@@ -1,6 +1,10 @@
 export const DEFAULT_COMPANION_PARAMS = {
   outfit: 'farmPolo', // a key of OUTFITS in outfit.js
   height: 1.5, // metres, the model is scaled to this
+  // Figure (figure.js), 0 = the model as shipped
+  bust: 1.0, // fuller bust
+  waist: 1.0, // narrower waist
+  hips: 1.0, // wider hips
   walkSpeed: 1.3, // m/s
   walkAnimSpeed: 1.25, // m/s the walking clip looks right at, so its playback rate can match
   turnRate: 5, // 1/s
@@ -45,6 +49,9 @@ export const DEFAULT_COMPANION_PARAMS = {
 
 export const COMPANION_PARAM_RANGES = {
   height: [1.4, 1.95, 0.01],
+  bust: [0, 2, 0.05],
+  waist: [0, 2, 0.05],
+  hips: [0, 2, 0.05],
   walkSpeed: [0.3, 3, 0.05],
   walkAnimSpeed: [0.3, 3, 0.05],
   turnRate: [0.5, 20, 0.1],
