@@ -58,9 +58,37 @@ export class Hud {
     return e;
   }
 
-  setPrompt(text) {
-    const t = text ?? '';
-    if (this.prompt.textContent !== t) this.prompt.textContent = t;
+  /**
+   * What you can do with what you're looking at: plain text, or { action, keys }
+   * where the action is what E does and keys are the other keys that work, as
+   * [key, what it does] pairs shown as little chips.
+   */
+  setPrompt(prompt) {
+    const sig = typeof prompt === 'string' || !prompt ? (prompt ?? '') : JSON.stringify(prompt);
+    if (this.promptSig === sig) return;
+    this.promptSig = sig;
+    const el = this.prompt;
+    el.replaceChildren();
+    if (!prompt) return;
+    if (typeof prompt === 'string') {
+      el.textContent = prompt;
+      return;
+    }
+    const chip = (key, label, cls = '') => {
+      const row = document.createElement('span');
+      row.className = `prompt-item ${cls}`;
+      const k = document.createElement('kbd');
+      k.textContent = key;
+      row.append(k, document.createTextNode(label));
+      return row;
+    };
+    el.appendChild(chip('E', prompt.action, 'prompt-main'));
+    if (prompt.keys?.length) {
+      const row = document.createElement('div');
+      row.className = 'prompt-keys';
+      for (const [key, label] of prompt.keys) row.appendChild(chip(key, label));
+      el.appendChild(row);
+    }
   }
 
   setStatus(text) {

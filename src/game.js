@@ -212,8 +212,10 @@ export class Game {
           if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger && this.herOnBack(quad)) return { text: `${this.herAtTheFront(quad).name}'s driving and ${this.herOnBack(quad).name}'s on the back: no room` };
           if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger) return `Get on the back (${this.herAtTheFront(quad).name}'s driving)`;
           const winchKey = this.winch?.unit === unit && this.winch.state === 'stowed' ? '   X winch cable' : '';
-          const backKey = this.canSitOnBack(quad) ? '   B sit on the back' : '';
-          return `Ride the ${unit.label}   ·   K ignition   R start   Q/Z choke   F fuel tap${backKey}${winchKey}`;
+          return {
+            action: `Ride the ${unit.label}`,
+            keys: [['K', 'Ignition'], ['R', 'Start'], ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
+          };
         },
         interact: () => {
           if (this.winch?.state === 'carried') {
@@ -525,7 +527,7 @@ export class Game {
   /** Your menu riding on the back: talk to her about the ride. */
   openPassengerMenu() {
     const c = this.herAtTheFront(this.boardUnit.quad) ?? this.herOn(this.boardUnit.quad);
-    if (!c) return;
+    if (!c) return void this.getOffBack(); // sat on the back by yourself: E just gets you off
     this.passengerHer = c; // who any plan below is with, even once she's off the front
     const drive = c.fsm.is('driving') ? c.drive : null;
     const stopped = !drive || drive.phase === 'parked' || drive.done;
@@ -863,8 +865,12 @@ export class Game {
   updateHud(dt) {
     const f = this.interaction.focused;
     // A prompt is either an E action (a string) or plain text ({ text }).
-    const p = f ? f.prompt() : '';
-    this.hud.setPrompt(typeof p === 'string' ? (p ? `E  ${p}` : '') : p.text);
+    let p = f ? f.prompt() : '';
+    if (this.player.isRiding && this.player.seat === 'pillion' && !this.menu.isOpen) {
+      const her = this.herOn(this.boardUnit.quad);
+      p = { action: her ? `Talk to ${her.name}` : 'Get off', keys: [['C', 'Look back']] };
+    }
+    this.hud.setPrompt(typeof p === 'string' ? (p ? { action: p } : null) : p.action ? p : p.text);
     const unit = this.boardUnit ?? this.focusedUnit;
     if (unit) {
       const e = unit.engine;
