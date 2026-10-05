@@ -113,6 +113,9 @@ export const DEFAULT_COMPANION_PARAMS = {
   voiceFastSpeed: 13, // m/s riding pillion before she tells you to slow down (about 29 mph)
   voiceRoughAccel: 9, // m/s^2 of vertical jolting before she complains it's rough
   voiceWaitAfter: 25, // seconds of nothing happening before she gets bored
+  takeOverAfterMin: 8, // left on a quad driving itself and hating it, seconds before she climbs forward to sort it out
+  takeOverAfterMax: 18,
+  takeOverDriveChance: 0.45, // and then the chance she drives it about herself rather than stopping it and getting off
   ghostFunChance: 0.4, // when you leave her on a quad driving itself: the chance she enjoys it rather than panics
   voiceShakeLevel: 0.95, // how hard the seat has to shake (about 0.6 at a warm idle, 1 to 2 cold) before she mentions it
 };
@@ -216,6 +219,9 @@ export const COMPANION_PARAM_RANGES = {
   voiceFastSpeed: [3, 25, 0.5],
   voiceRoughAccel: [1, 40, 0.5],
   voiceWaitAfter: [5, 120, 1],
+  takeOverAfterMin: [1, 120, 1],
+  takeOverAfterMax: [1, 240, 1],
+  takeOverDriveChance: [0, 1, 0.05],
   ghostFunChance: [0, 1, 0.05],
   voiceShakeLevel: [0.1, 5, 0.05],
 };

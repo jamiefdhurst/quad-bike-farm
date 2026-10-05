@@ -283,6 +283,37 @@ export class Companion {
     }
   }
 
+  /**
+   * Left on the back of a quad driving itself: each time she either loves it or
+   * hates it (`ghostLikes`). Hating it, after a while she climbs onto the front
+   * and either stops it and gets off, or drives it about herself.
+   */
+  watchRunaway(dt) {
+    const p = this.params;
+    const q = this.quad;
+    if (!q.isGhostRiding || q.rider) {
+      this.runaway = null;
+      return;
+    }
+    if (!this.runaway) {
+      this.runaway = { time: 0, likes: Math.random() < p.ghostFunChance, after: this.randomBetween(p.takeOverAfterMin, p.takeOverAfterMax) };
+    }
+    const r = this.runaway;
+    r.time += dt;
+    if (r.likes || r.time < r.after) return;
+    // Enough. Over the seat to the front.
+    q.releaseGhost();
+    this.takeOverPlan = Math.random() < p.takeOverDriveChance ? 'drive' : 'stop';
+    this.selfEvents.push(this.takeOverPlan === 'drive' ? 'takeOverDrive' : 'takeOverStop');
+    this.runaway = null;
+    this.fsm.transition('shuffling', { to: 'rider' });
+  }
+
+  /** How she feels about the quad she's on driving itself (null when it isn't). */
+  get ghostLikes() {
+    return this.runaway ? this.runaway.likes : null;
+  }
+
   /** You told her to stay on: she grumbles and doesn't ask again for a good while. */
   keepOn() {
     const p = this.params;
@@ -673,6 +704,7 @@ const STATES = {
       this.mindTheEngine(dt);
       this.askToGetOff(dt);
       this.boredOnTheBack(dt);
+      this.watchRunaway(dt);
     },
     exit() {
       this.askedToGetOff = false;

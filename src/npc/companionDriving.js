@@ -124,7 +124,18 @@ export const drivingStates = {
       this.root.position.lerpVectors(this.shuffleFrom, end, k);
       this.root.position.y += Math.sin(Math.PI * k) * 0.06;
       this.root.quaternion.identity();
-      if (t >= 1) this.fsm.transition(front && !q.rider ? 'driving' : 'seated');
+      if (t >= 1) {
+        // Climbed forward to stop a runaway: once it's stopped, key off and get down.
+        if (front && !q.rider && this.takeOverPlan === 'stop') {
+          if (q.speed > 0.4) return;
+          this.takeOverPlan = null;
+          q.engine.setIgnition(false);
+          this.fsm.transition('dismounting');
+          return;
+        }
+        this.takeOverPlan = null;
+        this.fsm.transition(front && !q.rider ? 'driving' : 'seated');
+      }
     },
   },
 };

@@ -599,6 +599,27 @@ export const VOICE_LINES = {
       'Fine. I will let myself off, then.',
     ],
   },
+  takeOverStop: {
+    shout: true,
+    cooldown: 10,
+    lines: [
+      "Right, I'm stopping this thing!",
+      "That's it. I'm turning it off.",
+      'Enough! Where is the key?',
+      'Okay, okay, I am stopping it!',
+      "Stop! Stop! I'll do it myself.",
+    ],
+  },
+  takeOverDrive: {
+    shout: true,
+    cooldown: 10,
+    lines: [
+      "Move over, I'm driving!",
+      "Fine, I'll drive it myself!",
+      "Nobody's steering, so I suppose it's me.",
+      "Right. My turn at the front.",
+    ],
+  },
   selfKeyOff: {
     cooldown: 30,
     lines: [

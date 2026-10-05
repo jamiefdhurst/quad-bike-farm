@@ -155,7 +155,7 @@ She talks, now and then, with captions at the bottom of the screen:
 - If you crank a quad near her for a while without it starting, she has a guess at why: the choke if it's cold, flooding if it's rich, the fuel tap if the carburettor is dry.
 - Left waiting she sighs, hums, yawns and asks if you're going. Ride off without her and she'll shout after you.
 - Sat on the back of a parked quad, every few minutes she asks if she can get off; the menu then has "Yes, hop off" and "No, stay there" (she grumbles and stays). If you don't answer, after several minutes she lets herself off. On the back by her own choice (after one of her drives, or bored), she gets bored of it sooner and gets off. On a long ride together she sometimes asks if you can stop soon.
-- Jump off and leave her on a quad driving itself and she's either terrified or having the time of her life (40% of the time), and tells you about it afterwards.
+- Jump off and leave her on a quad driving itself and she's either terrified or having the time of her life (40% of the time), and tells you about it afterwards. Hating it, after 8 to 18 seconds she climbs onto the front and either stops it, switches it off and gets down, or drives it about herself.
 - She speaks up the further away you are, and shouts some things (being left behind, a quad riding itself), which carry twice as far.
 - She comments when the seat is shaking hard, and has a favourite quad each game.
 - Left standing about for a minute or so, she does something on her own: wanders off for a look round, gets on a quad to wait (and stays on it until you ask her down), has a go at starting one, or takes one for a drive. Turn this off with `ownMind` in the Companion folder.
@@ -234,6 +234,6 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 9. Ability to wash the bikes **Done.**
 10. She should get off sometimes even when she's been driving, when she gets bored. **Done.**
 11. The girl's shirt collar is still not very good - it overlaps with her neck too much. Can we also give her shorts instead of jeans? **Done.**
-12. If she's going round in circles and doesn't like it, after a while she jumps into the driver's seat and stops it, or drives around herself
+12. If she's going round in circles and doesn't like it, after a while she jumps into the driver's seat and stops it, or drives around herself **Done.**
 13. Add two other quads - another 4 and another 2 stroke, with different idle sounds and base characteristics
 14. Another girl, slightly different personality, and how do we inject more emotion into the voice?
