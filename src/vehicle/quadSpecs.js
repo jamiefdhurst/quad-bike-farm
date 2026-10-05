@@ -2,11 +2,13 @@
 // bikes feel related but not identical. Spawn points come from LAYOUT.spawn.quads,
 // in the same order.
 //
-// Each game these are picked evenly at random within their ranges (from the
-// layout seed, so ?seed=N repeats them):
-//   idleRange: [min, max] warm idle in rpm. Keep the minimum at or above about
-//     650 (red), 950 (blue), 900 (yellow), 800 (green) and 1,600 (orange): lower
-//     than that and a warm engine can stall under hard braking.
+// Each quad has its own character, the same every game: its idle, how rough it
+// runs and how it shakes (its vibration block). Within that, each game picks a
+// little variation evenly within these ranges (from the layout seed, so
+// ?seed=N repeats them):
+//   idleRange: [min, max] warm idle in rpm, at or above safeIdle.
+//   safeIdle: the lowest warm idle that's safe (lower and a warm engine can
+//     stall under hard braking). The toolbox's idle screw stops here.
 //   roughnessRange: [min, max] how lumpy it runs once warm (baseRoughness, 0 to 1).
 //     Cold, rich, lean and fouled running add to this.
 //   fuelRange: [min, max] litres in the tank at the start. Below the reserve
@@ -21,13 +23,20 @@ export const QUAD_SPECS = [
     bodyColor: 0xa8271f,
     style: 'utility',
     dashStyle: 'classic',
-    idleRange: [650, 1200],
-    roughnessRange: [0.04, 0.5],
+    // The smooth one: a steady idle and a gentle shake.
+    safeIdle: 650,
+    idleRange: [1050, 1150],
+    roughnessRange: [0.04, 0.12],
     fuelRange: [2.5, 11], // 12 litre tank, 2 litre reserve
     fuel: {},
     engine: {},
     vehicle: {},
-    vibration: {},
+    vibration: {
+      pulseGain: 1.15,
+      heaveDamping: 0.3, // settles quickly: soft and well damped
+      pitchDamping: 0.28,
+      barsGain: 0.13,
+    },
     audio: { recIdleSource: 'quad' },
     smoke: {},
   },
@@ -41,8 +50,10 @@ export const QUAD_SPECS = [
     bodyColor: 0x1d4fa3,
     style: 'utility2',
     dashStyle: 'modern',
-    idleRange: [950, 1550],
-    roughnessRange: [0.06, 1],
+    // Fast, keen idle; a medium, quicker buzz.
+    safeIdle: 950,
+    idleRange: [1400, 1550],
+    roughnessRange: [0.2, 0.3],
     fuelRange: [1.2, 8], // 11 litre tank, 1.8 litre reserve: some games it starts on its reserve
     fuel: { tankCapacity: 11, reserveLitres: 1.8 },
     engine: {
@@ -68,6 +79,7 @@ export const QUAD_SPECS = [
       pulseGain: 1.45,
       heaveFreq: 10,
       pitchFreq: 7.5,
+      barsFreq: 20,
     },
     audio: {
       recIdleSource: 'rev',
@@ -92,8 +104,10 @@ export const QUAD_SPECS = [
     bodyColor: 0xe9c21b,
     style: 'sport',
     dashStyle: 'sport',
-    idleRange: [900, 2000],
-    roughnessRange: [0.1, 1],
+    // Ring-ding idle; a fine high-frequency buzz through the bars more than the body.
+    safeIdle: 900,
+    idleRange: [1500, 1800],
+    roughnessRange: [0.35, 0.5],
     fuelRange: [1.5, 8], // 9 litre tank, 1.5 litre reserve
     fuel: { tankCapacity: 9, reserveLitres: 1.5, burnPerRev: 0.000032, idleBurnFraction: 0.45 },
     engine: {
@@ -133,7 +147,11 @@ export const QUAD_SPECS = [
       idleRpm: 2300,
       smoothRpmRange: 2200,
       barsHighRpmFloor: 0.5,
-      barsFreq: 22,
+      barsFreq: 26,
+      barsGain: 0.26,
+      barsRotGain: 1.3,
+      heaveGain: 0.13,
+      pitchGain: 0.28,
     },
     audio: {
       recBank: 'engine-bank-2t',
@@ -169,8 +187,10 @@ export const QUAD_SPECS = [
     bodyColor: 0x2e6b30,
     style: 'utility3',
     dashStyle: 'vintage',
-    idleRange: [800, 1300],
-    roughnessRange: [0.08, 0.6],
+    // Slow and lumpy; a big slow heave, like a tractor.
+    safeIdle: 800,
+    idleRange: [800, 900],
+    roughnessRange: [0.55, 0.7],
     fuelRange: [3, 13], // 14 litre tank, 2.5 litre reserve
     fuel: { tankCapacity: 14, reserveLitres: 2.5, burnPerRev: 0.000085 },
     engine: {
@@ -179,7 +199,7 @@ export const QUAD_SPECS = [
       redlineRpm: 5200,
       rpmRiseRate: 5.5,
       rpmFallRate: 4.5,
-      loadDragRpm: 2600, // a heavy flywheel: braking drags it down less
+      loadDragRpm: 1700, // a heavy flywheel: braking drags it down less
       warmUpSeconds: 190,
       coldEnrichmentNeed: 1.15,
       chokeIdleRpm: 1100,
@@ -195,9 +215,14 @@ export const QUAD_SPECS = [
       engineBrakeForce: 480,
     },
     vibration: {
-      pulseGain: 1.8,
-      heaveFreq: 7.5,
-      pitchFreq: 6,
+      pulseGain: 1.25,
+      heaveFreq: 5.5,
+      pitchFreq: 4.8,
+      rollFreq: 5.5,
+      heaveGain: 0.2,
+      pitchGain: 0.36,
+      heaveDamping: 0.2,
+      barsFreq: 12,
     },
     audio: {
       recIdleSource: 'third',
@@ -223,8 +248,10 @@ export const QUAD_SPECS = [
     bodyColor: 0xe86a12,
     style: 'sport2', // a single race seat: no room for her on the back
     dashStyle: 'race',
-    idleRange: [1600, 2300],
-    roughnessRange: [0.12, 0.7],
+    // A nervous, hunting idle; harsh and hard.
+    safeIdle: 1600,
+    idleRange: [2000, 2300],
+    roughnessRange: [0.75, 0.9],
     fuelRange: [1.5, 7.5], // 8 litre tank, 1.2 litre reserve
     fuel: { tankCapacity: 8, reserveLitres: 1.2, burnPerRev: 0.000036, idleBurnFraction: 0.45 },
     engine: {
@@ -260,11 +287,16 @@ export const QUAD_SPECS = [
       fourWheelDrive: 0,
     },
     vibration: {
-      pulseGain: 1.15,
+      pulseGain: 0.95,
       idleRpm: 2400,
       smoothRpmRange: 2400,
-      barsHighRpmFloor: 0.55,
+      barsHighRpmFloor: 0.6,
       barsFreq: 24,
+      barsGain: 0.24,
+      heaveFreq: 11,
+      pitchFreq: 9,
+      heaveDamping: 0.14,
+      directionJitter: 0.9,
     },
     audio: {
       recBank: 'engine-bank-2t',

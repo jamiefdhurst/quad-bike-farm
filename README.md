@@ -69,15 +69,17 @@ Look at her and press `E`. Pick an option with the number keys, or scroll to hig
 - **Green quad**: a Kawasaki-style farm workhorse, older and heavier. A big lazy four-stroke that idles low and lumpy (it idles on a Honda CRF250 recording, a different machine again), revs slowly but pulls hard low down, takes an age to warm up, wants plenty of choke, runs rougher than the others and engine-brakes hard. Slower at the top (about 33 mph), with a bigger tank. Boxy bodywork, a single round headlight in a nacelle on the bars, flat mesh racks, a winch, mudflaps and a tan seat.
 - **Orange quad**: a Suzuki LT250R-style two-stroke race quad. Lighter and lower than the yellow, revs to 11,500 and comes on harder still around 7,000, rear-wheel drive, barely any engine braking, and smokes like a chimney. A big "22" number plate, long flat fenders, wide nerf bars and a fat expansion chamber. Single race seat, so she can't ride on the back (she can still start or drive it). It idles on a Honda CRM250 recording, so it sounds different from the yellow.
 
-All five are automatics and all start cold. Through the CVT the red tops out at 6,200 rpm and the blue at 6,800 (the yellow revs past 10,000), but the engine works against the ground: it bogs a little as you pull away, cruises nearer 5,700 flat out, labours lower up hills and through mud, flares when the wheels spin or leave the ground, and engine-brakes on a closed throttle with the revs rising with speed downhill. Try climbing the steep bank by the yard on a stone-cold engine with the choke out and it will probably stall. Where each quad is parked, where the jerry can has been left, and each quad's warm idle, roughness and starting fuel change every game, picked from ranges in `src/vehicle/quadSpecs.js`:
+All five are automatics and all start cold. Through the CVT the red tops out at 6,200 rpm and the blue at 6,800 (the yellow revs past 10,000), but the engine works against the ground: it bogs a little as you pull away, cruises nearer 5,700 flat out, labours lower up hills and through mud, flares when the wheels spin or leave the ground, and engine-brakes on a closed throttle with the revs rising with speed downhill. Try climbing the steep bank by the yard on a stone-cold engine with the choke out and it will probably stall. Each quad has its own character, the same every game: how it idles, how rough it runs and how it shakes. The red is the smooth one; the blue idles fast and keen with a quicker buzz; the yellow ring-dings and buzzes through the bars more than the body; the green idles slow and lumpy with a big slow heave like a tractor; the orange hunts nervously and shakes harsh and hard. Where each quad is parked, where the jerry can has been left, and each quad's exact warm idle, roughness and starting fuel vary a little every game, picked from ranges in `src/vehicle/quadSpecs.js`:
 
-| | `idleRange` (rpm) | `roughnessRange` | `fuelRange` (litres) |
-| --- | --- | --- | --- |
-| Red | 650 to 1,200 | 0.04 to 0.50 | 2.5 to 11 of 12 |
-| Blue | 950 to 1,550 | 0.06 to 1.00 | 1.2 to 8 of 11 |
-| Yellow | 900 to 2,000 | 0.10 to 1.00 | 1.5 to 8 of 9 |
-| Green | 800 to 1,300 | 0.08 to 0.60 | 3 to 13 of 14 |
-| Orange | 1,600 to 2,300 | 0.12 to 0.70 | 1.5 to 7.5 of 8 |
+| | `idleRange` (rpm) | `roughnessRange` | `fuelRange` (litres) | Body shake at idle |
+| --- | --- | --- | --- | --- |
+| Red | 1,050 to 1,150 | 0.04 to 0.12 | 2.5 to 11 of 12 | 2 mm, gentle |
+| Blue | 1,400 to 1,550 | 0.20 to 0.30 | 1.2 to 8 of 11 | 3.5 mm, quick |
+| Yellow | 1,500 to 1,800 | 0.35 to 0.50 | 1.5 to 8 of 9 | 3 mm, buzzy bars |
+| Green | 800 to 900 | 0.55 to 0.70 | 3 to 13 of 14 | 12 mm, slow heave |
+| Orange | 2,000 to 2,300 | 0.75 to 0.90 | 1.5 to 7.5 of 8 | 10 mm, harsh |
+
+Running wears an engine and makes it rougher still; a service from the toolbox brings it back to its own character. Badly worn, a hard stop can now and then stall it.
 
 The idle and roughness are shown in the status panel and printed in the console.
 

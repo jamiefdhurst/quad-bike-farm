@@ -5,7 +5,7 @@
 // A quad's settings are always applied from the stock values it had when you
 // first opened the toolbox on it, so any combination can be undone exactly.
 // The limits keep it safe: the warm idle can't go below the spec's safe minimum
-// (the bottom of its idleRange, see quadSpecs.js), and the clutch always bites
+// (its safeIdle, see quadSpecs.js), and the clutch always bites
 // well clear of the idle, so it can't stall at a standstill or creep.
 
 import { applyIdle, CLUTCH_MARGIN_RPM } from './quadVariation.js';
@@ -120,7 +120,7 @@ export function tuneTarget(unit) {
 
 /** Copies the values tinkering can change, as they are now. */
 export function captureStock(target) {
-  const stock = { safeIdle: target.spec?.idleRange?.[0], topIdle: target.spec?.idleRange?.[1] };
+  const stock = { safeIdle: target.spec?.safeIdle ?? target.spec?.idleRange?.[0], topIdle: target.spec?.idleRange?.[1] };
   for (const [group, keys] of Object.entries(STOCK_KEYS)) {
     stock[group] = {};
     for (const k of keys) stock[group][k] = target[group][k];

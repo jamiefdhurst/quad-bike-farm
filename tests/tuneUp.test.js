@@ -56,19 +56,19 @@ describe('tune-up', () => {
 
   it('never lets the warm idle below the safe minimum, even run lean', () => {
     for (let i = 0; i < QUAD_SPECS.length; i++) {
-      const t = quad(i, QUAD_SPECS[i].idleRange[0] + 100);
+      const t = quad(i, QUAD_SPECS[i].safeIdle + 100);
       const stock = captureStock(t);
       let s = stockSettings(stock);
       s = { ...s, mixture: -P.leanClicks };
       for (let k = 0; k < 40; k++) s = nudge(s, 'idle', -1, stock);
       const used = applyTune(t, stock, s);
-      expect(used.idle).toBe(QUAD_SPECS[i].idleRange[0]);
+      expect(used.idle).toBe(QUAD_SPECS[i].safeIdle);
       // What it actually idles at once the lean drop is taken off the screw.
       const leanDrop = -t.engine.mixtureTrim * t.engine.leanIdleDrop;
-      expect(t.engine.idleRpmWarm - leanDrop).toBeCloseTo(QUAD_SPECS[i].idleRange[0], 5);
+      expect(t.engine.idleRpmWarm - leanDrop).toBeCloseTo(QUAD_SPECS[i].safeIdle, 5);
       // The stall point is scaled to the idle it runs at, as for a stock quad at that idle.
       const base = { ...DEFAULT_ENGINE_PARAMS, ...QUAD_SPECS[i].engine };
-      expect(t.engine.stallRpm).toBe(Math.round((base.stallRpm * QUAD_SPECS[i].idleRange[0]) / base.idleRpmWarm));
+      expect(t.engine.stallRpm).toBe(Math.round((base.stallRpm * QUAD_SPECS[i].safeIdle) / base.idleRpmWarm));
     }
   });
 
