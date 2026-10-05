@@ -371,3 +371,13 @@ You asked for these in this order: getting stuck, then the weather (random each 
 - Measured at warm idle, 2 minutes x 3 seeds per quad: below 0.8 nothing changes; at 0.9 about 7 to 10 stumbles a minute and no stalls; at 1, 20 to 29 stumbles a minute, 5 to 9 bangs, the idle swinging over roughly 0.4 to 1.6 times itself, and a stall every one to three minutes. The orange, whose build roughness goes up to 0.9, can stumble now and then from new.
 - Tests: no stalls at idle up to the edge of erratic (hard stops up to halfway there), and fully worn, an idle spread of over 0.9 times the idle with under 9 stalls in 6 minutes. The wear test now expects it to wear past 0.85 (it stops wearing once it stalls).
 - The girls remark on a quad that's this bad when they're on it or beside it.
+
+## Sitting on the back alone, and being offered a ride (2026-10-05)
+
+- Request: sit pillion with nobody else there; the girls jump on and drive you about, and get off when bored without waiting to be told.
+- `B` while looking at a parked, upright quad with a pillion seat and nobody on it puts you on the back (`canSitOnBack`). E still takes the front. The prompt shows `B sit on the back` when it's possible.
+- `RideOffer` (`src/npc/rideOffer.js`, pure, tested) times it: you must have sat on a parked quad with nobody at the front for `offerRideWaitMin..Max` (6 to 25 s; any interruption restarts the count). Then `pickOfferer` chooses among the girls who are standing idle with nothing else on the go, weighted to the nearer (1 / (1 + distance / 10)), and she goes through the existing `giveRide` path (walk over, get on the front, start it, bigger loops). If nobody is free it tries again after the rest period.
+- Why it ends by itself: a ride you ask for keeps going until you say stop, because `HerDrive.carrying` counted a passenger as a reason not to tire. For her own offer, `tires: true` turns that off, so the drive lasts `offerRideForMin..Max` (60 to 150 s, then the usual pull up, bored or scared, and get off). Rides you ask for with "Take me for a ride" are unchanged. If you get off before she's on, she gives up after `offerRideGiveUp` (25 s).
+- After an offered ride, `offerRideRestMin..Max` (45 to 120 s) must pass before anyone offers again, even if you're still sat there; the rest runs while she climbs down, so it isn't reset by that. A first version reset it and Amy offered again at once.
+- New line `offerRide` for each girl, said on the way over.
+- Checked once headless (offer shortened to 3 to 4 s, ride to 15 s): Amy walked over, got on, drove, pulled up and got off with you still on the back, and didn't offer again. Not checked: Jess offering, both girls busy, real-length rides, or the new lines recorded.

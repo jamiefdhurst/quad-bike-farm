@@ -40,10 +40,17 @@ export const drivingStates = {
       // Giving you a ride: bigger loops, and she waits for you to get on.
       const ride = this.giveRide;
       this.giveRide = false;
+      // Her own idea to take you out: it lasts about as long as any drive of hers, rather than until you say stop.
+      const offered = this.offeredRide;
+      this.offeredRide = false;
       const following = this.followWanted;
       this.followWanted = false;
       const params = driveMood(this.params, this.driveMood);
       params.driveSpeedMaxBase = this.params.driveSpeedMax;
+      if (offered) {
+        params.driveForMin = this.params.offerRideForMin;
+        params.driveForMax = this.params.offerRideForMax;
+      }
       if (following) {
         // Keeping up with you takes more throttle than pottering about, and she minds speed less.
         params.driveMaxThrottle = Math.min(1, this.params.followMaxThrottle * (params.driveSpeedMax / this.params.driveSpeedMax));
@@ -58,6 +65,7 @@ export const drivingStates = {
         passenger: () => !!q.passenger,
         friend: () => this.friendOnBack(),
         waitForPassenger: ride,
+        tires: offered,
         follow: following ? () => {
           const lead = this.followTarget?.();
           return lead && lead !== q ? lead : null;
@@ -145,6 +153,7 @@ export const drivingMethods = {
   /** Walks to the front of a quad, gets on and has a little drive; with `giveRide`, waits for you on the back. */
   requestDrive(quad, { giveRide = false, follow = false } = {}) {
     this.giveRide = giveRide;
+    this.offeredRide = false;
     this.followWanted = follow;
     if (this.fsm.is('driving')) {
       if (quad !== this.quad) this.stopDriving('off', () => this.requestDrive(quad));
@@ -162,6 +171,18 @@ export const drivingMethods = {
     }
     this.quad = quad;
     this.fsm.transition('walking', { goal: 'drive', target: () => this.driveMountPoint() });
+  },
+
+  /** You're sat on the back of this parked quad with nobody driving it: she goes over, gets on the front and takes you for a ride. */
+  offerRide(quad) {
+    this.selfEvents.push('offerRide');
+    this.requestDrive(quad, { giveRide: true });
+    this.offeredRide = true; // after requestDrive, which resets it for anything else she's asked to do
+  },
+
+  /** Free to offer you a ride on this quad: standing about, and nobody else is on it or heading for it. */
+  canOfferRide(quad) {
+    return this.fsm.is('idle') && this.canDrive(quad) && !this.takenByOther(quad);
   },
 
   /**

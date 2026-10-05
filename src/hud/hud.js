@@ -6,7 +6,7 @@ const HELP_HTML = `
   <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move, mouse to look</div>
   <div><kbd>Shift</kbd> jog</div>
   <div><kbd>E</kbd> interact with what you're looking at</div>
-  <div>Looking at a quad: <kbd>K</kbd> <kbd>R</kbd> <kbd>Q</kbd> <kbd>Z</kbd> <kbd>F</kbd> work its engine</div>
+  <div>Looking at a quad: <kbd>K</kbd> <kbd>R</kbd> <kbd>Q</kbd> <kbd>Z</kbd> <kbd>F</kbd> work its engine, <kbd>B</kbd> sit on the back (with nobody driving, sooner or later one of them offers to drive you)</div>
   <h3>On the back while she drives</h3>
   <div><kbd>E</kbd> talk to her (a wheel: move the mouse and click): stop, slow down, faster, let me off, let me drive</div>
   <h3>On the quad</h3>

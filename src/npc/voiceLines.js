@@ -755,6 +755,10 @@ export const VOICE_LINES = {
     cooldown: 0,
     lines: ['Ooh, really? Okay!', "Hop on then, I'll drive.", 'Me? Driving you? Go on then.', "Right. Hold on tight, I'm getting it started.", 'You trust me? Brave.'],
   },
+  offerRide: {
+    cooldown: 0,
+    lines: ["You look lost back there. Shall I take you for a spin?", "Right, you're not going anywhere. I'll drive.", "Sat there doing nothing? Budge up, I'll take you round.", 'Come on then, I know the best bumps.'],
+  },
   waitingForYou: {
     cooldown: 10,
     lines: ['Come on then, hop on!', 'Are you getting on or not?', "I'm waiting!", 'Your chariot awaits. Get on.'],

@@ -238,3 +238,39 @@ describe('driving quickly', () => {
     expect(targetSpeed(3, { clear: 3 })).toBeCloseTo(0.84, 2);
   });
 });
+
+describe('her driving you about on her own idea', () => {
+  const make = (extra) => new HerDrive(fakeQuad(), { params: P, probe: () => Infinity, isClear: open, random: seededRandom(5), ...extra });
+
+  it('keeps going while you ride when you asked for it, but tires of it when it was her idea', () => {
+    expect(make({ passenger: () => true }).carrying).toBe(true);
+    expect(make({ passenger: () => true, tires: true }).carrying).toBe(false);
+  });
+
+  it('stops after her usual length of drive with you aboard, and says she is bored or scared', () => {
+    const quad = fakeQuad();
+    const d = new HerDrive(quad, { params: { ...P, driveForMin: 20, driveForMax: 20 }, probe: () => Infinity, isClear: open, random: seededRandom(5), passenger: () => true, tires: true });
+    quad.driver = d;
+    let t = 0;
+    for (; t < 120 && !d.done; t += DT) {
+      d.update(DT);
+      quad.step(DT);
+    }
+    expect(d.done).toBe(true);
+    expect(['bored', 'scared']).toContain(d.result);
+    expect(t).toBeLessThan(60);
+  });
+
+  it('gives up waiting for you if you never get on the back', () => {
+    const quad = fakeQuad();
+    const d = new HerDrive(quad, { params: P, probe: () => Infinity, isClear: open, random: seededRandom(5), tires: true, waitForPassenger: true });
+    quad.driver = d;
+    let t = 0;
+    for (; t < 120 && !d.done; t += DT) {
+      d.update(DT);
+      quad.step(DT);
+    }
+    expect(d.result).toBe('bored');
+    expect(t).toBeLessThan(P.offerRideGiveUp + 10);
+  });
+});

@@ -100,6 +100,13 @@ export const DEFAULT_COMPANION_PARAMS = {
   friendRideMin: 90, // seconds she drives her friend about, once she's on the back...
   friendRideMax: 200, // ...then they both get off
   rideLoopScale: 2.5, // giving you a ride, her loops are this much bigger
+  offerRideWaitMin: 6, // seconds you've sat on the back of a parked quad before a girl offers to drive you...
+  offerRideWaitMax: 25,
+  offerRideRestMin: 45, // ...and after a ride, how long before anyone offers again
+  offerRideRestMax: 120,
+  offerRideForMin: 60, // seconds she drives you about before she's bored and gets off, unasked...
+  offerRideForMax: 150,
+  offerRideGiveUp: 25, // ...and how long she waits for you to be on the back before giving up
   driveTalkRange: 14, // metres; you can talk to her from this far while she's driving
 
   askOffAfterMin: 120, // seconds on the back before she asks if she can get off (or, riding, if you can stop soon)
@@ -190,6 +197,13 @@ export const COMPANION_PARAM_RANGES = {
   followGiveUpMax: [5, 900, 5],
   followDriveOnChance: [0, 1, 0.05],
   rideLoopScale: [1, 6, 0.1],
+  offerRideWaitMin: [1, 120, 1],
+  offerRideWaitMax: [1, 180, 1],
+  offerRideRestMin: [5, 600, 5],
+  offerRideRestMax: [5, 900, 5],
+  offerRideForMin: [10, 600, 5],
+  offerRideForMax: [10, 900, 5],
+  offerRideGiveUp: [5, 120, 1],
   driveConfidence: [0, 1, 0.01],
   driveMoodSwing: [0, 1, 0.01],
   driveSpeedMin: [0.5, 8, 0.1],

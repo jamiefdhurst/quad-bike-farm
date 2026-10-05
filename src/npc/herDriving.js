@@ -144,11 +144,12 @@ export class HerDrive {
    * @param {function} opts.isClear  (a, b) => whether the straight line a to b is open ground.
    * @param {function} [opts.random]
    * @param {function} [opts.passenger]  () => whether someone's riding on the back; then she doesn't tire of it.
+   * @param {boolean} [opts.tires]  Her own idea to take you out: she gets bored with you aboard like any drive, and gives up if you never get on.
    * @param {boolean} [opts.waitForPassenger]  Started it to give you a ride: she waits for you to get on.
    * @param {function} [opts.follow]  () => the quad she's following (yours), or null. Following, she keeps
    *   behind it at its pace rather than doing her own loop, and doesn't tire of it.
    */
-  constructor(quad, { params, probe, isClear, random = Math.random, startingParams, passenger = () => false, waitForPassenger = false, follow = null, friend = () => null }) {
+  constructor(quad, { params, probe, isClear, random = Math.random, startingParams, passenger = () => false, waitForPassenger = false, tires = false, follow = null, friend = () => null }) {
     this.quad = quad;
     this.p = params;
     this.probe = probe;
@@ -159,7 +160,9 @@ export class HerDrive {
     this.friend = friend; // the other girl on the back: 'on', 'coming' or null
     this.friendAboard = false;
     this.waitForPassenger = waitForPassenger;
+    this.tires = tires;
     this.waited = 0;
+    this.waitedTotal = 0;
     this.cruiseScale = 1; // you asked her to go faster or slower
     this.follow = follow;
     this.behindTime = 0; // seconds she's been well behind you
@@ -208,7 +211,7 @@ export class HerDrive {
 
   /** Someone on the back, or following you: she keeps going until asked, rather than tiring of it. */
   get carrying() {
-    return this.passenger() || !!this.follow;
+    return (this.passenger() && !this.tires) || !!this.follow;
   }
 
   /**
@@ -395,6 +398,11 @@ export class HerDrive {
         if (this.friend() === 'coming') break;
         if (this.waitForPassenger && !this.passenger()) {
           this.waited += dt;
+          if (this.tires && this.waitedTotal > this.p.offerRideGiveUp) {
+            this.finish('bored');
+            break;
+          }
+          this.waitedTotal += dt;
           if (this.waited > 15) {
             this.waited = 0;
             this.events.push('waitingForYou');

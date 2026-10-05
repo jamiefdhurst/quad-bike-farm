@@ -20,6 +20,7 @@ import { DEFAULT_COMPANION_PARAMS, COMPANION_PARAM_RANGES } from './npc/companio
 import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
 import { CHARACTERS } from './npc/characters.js';
 import { Banter } from './npc/banter.js';
+import { RideOffer, pickOfferer } from './npc/rideOffer.js';
 import { BANTER } from './npc/banterLines.js';
 import { BanterWatch } from './npc/banterWatch.js';
 import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES } from './items/jerryCan.js';
@@ -211,7 +212,8 @@ export class Game {
           if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger && this.herOnBack(quad)) return { text: `${this.herAtTheFront(quad).name}'s driving and ${this.herOnBack(quad).name}'s on the back: no room` };
           if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger) return `Get on the back (${this.herAtTheFront(quad).name}'s driving)`;
           const winchKey = this.winch?.unit === unit && this.winch.state === 'stowed' ? '   X winch cable' : '';
-          return `Ride the ${unit.label}   ·   K ignition   R start   Q/Z choke   F fuel tap${winchKey}`;
+          const backKey = this.canSitOnBack(quad) ? '   B sit on the back' : '';
+          return `Ride the ${unit.label}   ·   K ignition   R start   Q/Z choke   F fuel tap${backKey}${winchKey}`;
         },
         interact: () => {
           if (this.winch?.state === 'carried') {
@@ -389,6 +391,35 @@ export class Game {
   /** The companion on this quad in any seat (or getting on or off it), if any. */
   herOn(quad) {
     return this.companions.find((c) => c.quad === quad && c.fsm.is('mounting', 'seated', 'dismounting', 'driving', 'shuffling')) ?? null;
+  }
+
+  /** You could sit on the back of this quad: it's parked, upright and nobody's on it. */
+  canSitOnBack(quad) {
+    return quad.hasPillion && !quad.isTipped && !quad.passenger && !quad.rider && !this.herOn(quad) && quad.speed < 0.5 && !this.handsFull;
+  }
+
+  /**
+   * Sat on the back of a parked quad with nobody at the front: after a while a
+   * free girl comes over and takes you for a ride (and gets off when she's bored,
+   * unasked). Afterwards nobody offers again for a good while.
+   */
+  updateRideOffer(dt) {
+    this.rideOffer ??= new RideOffer(this.companions[0].params);
+    const offer = this.rideOffer;
+    if (this.offeredBy) {
+      // Wait for the ride to be over (she's off, or given up) before the rest period starts.
+      if (this.offeredBy.fsm.is('walking', 'mounting', 'driving', 'shuffling')) return;
+      this.offeredBy = null;
+      offer.rest();
+    }
+    const unit = this.boardUnit;
+    const waiting = !!unit && this.player.seat === 'pillion' && unit.quad.speed < 0.5 && !this.menu.isOpen && !this.passengerPlan && !this.herOn(unit.quad);
+    if (!offer.update(dt, waiting)) return;
+    const girls = this.companions.filter((c) => c.canOfferRide(unit.quad)).map((c) => ({ c, distance: c.root.position.distanceTo(unit.quad.position) }));
+    const pick = pickOfferer(girls);
+    if (!pick) return offer.rest(); // nobody free: try again later
+    pick.c.offerRide(unit.quad);
+    this.offeredBy = pick.c;
   }
 
   /** On the back while she drives. */
@@ -757,6 +788,8 @@ export class Game {
         this.lastUnit = focused.unit;
       }
       if (focused && input.wasPressed('KeyE')) focused.interact();
+      // B: sit on the back of a quad with nobody driving; sooner or later a girl comes and takes you for a ride.
+      if (focused?.unit && input.wasPressed('KeyB') && this.canSitOnBack(focused.unit.quad)) this.mountPillion(focused.unit);
       // Holding E pours fuel or fills the can.
       if (focused?.hold && input.isDown('KeyE') && focused.hold(dt)) pouring = true;
       // The winch: X takes the hook off the green (looking at it), or puts it back.
@@ -778,6 +811,7 @@ export class Game {
     const alpha = this.accumulator / FIXED_DT;
 
     this.updatePassenger();
+    this.updateRideOffer(dt);
     for (const unit of this.units) unit.listenerOnBoard = unit === this.boardUnit;
     for (const unit of this.units) unit.update(dt, alpha);
     const ridden = this.riddenUnit;

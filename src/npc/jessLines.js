@@ -206,6 +206,7 @@ export const JESS_LINES = {
   followGaveUp: ['Boring. I am getting off.', 'Convoy cancelled, then.', "You've given up already? Lightweight."],
   followDriveOn: ["You've stopped? Your loss. I'm off!", 'See ya! Not waiting for you.', "Right, I'm having the field to myself."],
   ackGiveRide: ['Hop on then. Hold on tight.', 'Ooh, yes. Get on.', "Taxi's here."],
+  offerRide: ["Oh, for goodness' sake. Stay there, I'll drive you.", "You look like you need taking out. Hold on.", "Sat there like a sack of spuds. Come on, I'll drive.", "Right. Taxi. Don't touch anything."],
   waitingForYou: ['Are you getting on or what?', "Meter's running.", "Come on, I won't bite."],
   passengerOn: ['Hold on. I mean it.', "Right. Try not to scream.", 'Welcome aboard. No refunds.'],
   ackLetMeOff: ["Fine. Getting off already?", 'Stopping. Wimp.'],
