@@ -30,7 +30,7 @@ export const DEFAULT_VEHICLE_PARAMS = {
   spinRiseRate: 12, // 1/s
   spinFallRate: 5, // 1/s
   spinDriveLoss: 0.2, // fraction of the drive lost with the wheels spinning flat out
-  spinSideLoss: 0.35, // fraction of sideways grip lost by spinning wheels
+  spinSideLoss: 0.15, // fraction of sideways grip lost by spinning wheels
   spinSlipSpeed: 8, // m/s the tyres turn faster than the ground at full spin and throttle
 
   // Steering
