@@ -85,6 +85,25 @@ const STYLE = {
     rear: 'swingarm',
     fwd: false,
   },
+  utility3: {
+    rim: new THREE.MeshStandardMaterial({ color: 0x8e9194, roughness: 0.55, metalness: 0.5, side: THREE.DoubleSide }),
+    rimOpts: { holes: 5 },
+    rimR: 0.13,
+    tyre: { square: true, lugs: 16 },
+    spring: new THREE.MeshStandardMaterial({ color: 0x55585b, roughness: 0.5, metalness: 0.5 }),
+    bars: MAT.frame,
+    rear: 'swingarm',
+    fwd: true,
+  },
+  sport2: {
+    rim: new THREE.MeshStandardMaterial({ color: 0xeceae4, roughness: 0.35, metalness: 0.2, side: THREE.DoubleSide }),
+    rimOpts: { holes: 6 },
+    rimR: 0.14,
+    spring: new THREE.MeshStandardMaterial({ color: 0xd9a21c, roughness: 0.3, metalness: 0.5 }),
+    bars: MAT.alloy,
+    rear: 'swingarm',
+    fwd: false,
+  },
 };
 
 function add(geo, mat, parent, name) {
@@ -97,6 +116,13 @@ function add(geo, mat, parent, name) {
 /** Rounded box. */
 function rbox(w, h, d, r, mat, x, y, z, parent, name, segments = 2) {
   const m = add(new RoundedBoxGeometry(w, h, d, segments, Math.min(r, w / 2, h / 2, d / 2) * 0.999), mat, parent, name);
+  m.position.set(x, y, z);
+  return m;
+}
+
+/** Plain box, for flat steel and strips. */
+function box(w, h, d, mat, x, y, z, parent) {
+  const m = add(new THREE.BoxGeometry(w, h, d), mat, parent);
   m.position.set(x, y, z);
   return m;
 }
@@ -138,7 +164,8 @@ function buildWheel(w, width, style, cfg) {
   spin.name = 'spin';
   spin.userData.keep = true;
   wheel.add(spin);
-  const tyre = cached(`tyre${width}|${cfg.rimR}`, () => tyreGeometry(WHEEL_RADIUS, width, cfg.rimR, 20));
+  const t = cfg.tyre ?? {};
+  const tyre = cached(`tyre${width}|${cfg.rimR}|${!!t.square}`, () => tyreGeometry(WHEEL_RADIUS, width, cfg.rimR, t.lugs ?? 20, t));
   add(tyre, MAT.rubber, spin);
   const rim = cached(`rim${style}|${width}|${s}`, () => rimGeometry(cfg.rimR, width, s, cfg.rimOpts));
   add(rim.rim, cfg.rim, spin);
@@ -403,17 +430,18 @@ function buildHandlebars(dashStyle, cfg) {
   return bars;
 }
 
-function numberPlateTexture(text) {
+function numberPlateTexture(text, { width = 128, height = 128, font = 'bold 96px sans-serif' } = {}) {
   const c = document.createElement('canvas');
-  c.width = c.height = 128;
+  c.width = width;
+  c.height = height;
   const ctx = c.getContext('2d');
   ctx.fillStyle = '#f4f2ea';
-  ctx.fillRect(0, 0, 128, 128);
+  ctx.fillRect(0, 0, width, height);
   ctx.fillStyle = '#151515';
-  ctx.font = 'bold 96px sans-serif';
+  ctx.font = font;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, 64, 70);
+  ctx.fillText(text, width / 2, height * 0.55);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
@@ -483,6 +511,10 @@ const SECTION = {
   utility2: [[0, 0.07], [0.02, 0.02], [0.06, 0.0], [0.5, -0.008], [0.86, -0.002], [0.93, 0.006], [0.965, 0.028], [0.975, 0.06], [0.962, 0.075]],
   // Thin, crowned race fenders with a small lip.
   sport: [[0, 0.05], [0.03, 0.012], [0.1, 0.0], [0.45, -0.014], [0.8, -0.006], [0.93, 0.01], [0.98, 0.03], [0.97, 0.05]],
+  // Flat top with a square edge and a deep upright skirt outboard, like pressed steel.
+  utility3: [[0, 0.06], [0.012, 0.012], [0.04, 0.0], [0.5, 0.0], [0.93, 0.0], [0.955, 0.006], [0.968, 0.03], [0.97, 0.1], [0.962, 0.108]],
+  // Dead flat race plastic with a crisp turned-down edge.
+  sport2: [[0, 0.035], [0.015, 0.006], [0.05, 0.0], [0.5, -0.002], [0.92, 0.0], [0.955, 0.012], [0.968, 0.042], [0.962, 0.05]],
 };
 
 // Side profiles round each wheel, [z, y] from the wheel centre, front to back.
@@ -502,6 +534,19 @@ const PROFILE = {
     rear: [[0.32, 0.16], [0.24, 0.3], [0.1, 0.375], [-0.08, 0.385], [-0.26, 0.36], [-0.4, 0.33], [-0.5, 0.34]],
     width: [0.2, 0.64],
   },
+  // Square-shouldered and flat on top.
+  utility3: {
+    front: [[0.44, 0.08], [0.435, 0.22], [0.42, 0.31], [0.36, 0.37], [0.22, 0.395], [0.0, 0.4], [-0.18, 0.395], [-0.3, 0.36], [-0.35, 0.27], [-0.365, 0.15], [-0.37, 0.05]],
+    rear: [[0.37, 0.05], [0.365, 0.18], [0.35, 0.3], [0.28, 0.375], [0.12, 0.4], [-0.08, 0.405], [-0.28, 0.4], [-0.38, 0.36], [-0.41, 0.25], [-0.42, 0.1]],
+    width: [0.25, 0.66],
+    shell: { taper: 0.08, taperTo: 0.85 }, // square ends
+  },
+  // Long, low and straight: a pointed front blade and a rear that runs on past the tyre.
+  sport2: {
+    front: [[0.54, 0.29], [0.44, 0.33], [0.26, 0.36], [0.08, 0.372], [-0.08, 0.368], [-0.2, 0.34], [-0.28, 0.27], [-0.33, 0.17], [-0.345, 0.08]],
+    rear: [[0.33, 0.12], [0.27, 0.26], [0.15, 0.345], [0.0, 0.37], [-0.2, 0.37], [-0.38, 0.355], [-0.5, 0.34], [-0.55, 0.33]],
+    width: [0.2, 0.645],
+  },
 };
 
 /** Body styles the builder knows: every quad spec must name one of these. */
@@ -511,8 +556,8 @@ function fenders(root, style, paint) {
   const P = PROFILE[style];
   for (const w of WHEELS) {
     const s = Math.sign(w.x);
-    const outer = P.width[1] + (style === 'sport' && !w.front ? 0.03 : 0);
-    const geo = shellGeometry(w.front ? P.front : P.rear, SECTION[style], s * P.width[0], s * outer, { samples: 36 });
+    const outer = P.width[1] + (style.startsWith('sport') && !w.front ? 0.03 : 0);
+    const geo = shellGeometry(w.front ? P.front : P.rear, SECTION[style], s * P.width[0], s * outer, { samples: 36, ...P.shell });
     const f = add(geo, paint, root, `fender_${w.name.slice(-2)}`);
     f.position.set(0, REST_WHEEL_Y, w.z);
   }
@@ -556,9 +601,192 @@ function nerfBars(root) {
   }
 }
 
+/** Race nerf bars: wide loops out past the tyres with heel nets at the back, and pegs. */
+function raceNerfBars(root) {
+  for (const s of [-1, 1]) {
+    pipe(mx(s, [[0.2, 0.33, 0.3], [0.5, 0.35, 0.25], [0.62, 0.37, 0.14], [0.62, 0.37, -0.16], [0.5, 0.35, -0.26], [0.2, 0.33, -0.3]]), 0.017, MAT.frame, root, { bend: 0.08, steps: 5 });
+    tube([s * 0.2, 0.33, 0.06], [s * 0.6, 0.37, 0.06], 0.011, MAT.frame, root);
+    // Heel net between the loop and the frame behind the peg.
+    for (const x of [0.3, 0.4, 0.5]) tube([s * x, 0.345, 0.04], [s * x, 0.355, -0.27], 0.005, MAT.frame, root, 4);
+    for (const z of [-0.06, -0.14, -0.22]) tube([s * 0.21, 0.335, z], [s * 0.6, 0.365, z], 0.005, MAT.frame, root, 4);
+    const parts = [new THREE.CylinderGeometry(0.016, 0.016, 0.11, 10).rotateZ(Math.PI / 2)];
+    for (let k = 0; k < 4; k++) parts.push(new THREE.BoxGeometry(0.006, 0.012, 0.04).translate(-0.04 + k * 0.027, 0.016, 0));
+    const peg = add(mergeGeometries(parts), MAT.steel, root, s > 0 ? 'pegLeft' : 'pegRight');
+    peg.position.set(s * 0.29, 0.34, 0.0);
+  }
+}
+
+/**
+ * Flat steel rack: a square-tube frame round a mesh deck, with a raised stop
+ * along the far end and legs down to the body.
+ */
+function flatRack(root, z0, z1, y, legY) {
+  const W = 0.42;
+  const len = Math.abs(z1 - z0);
+  const zc = (z0 + z1) / 2;
+  const dir = Math.sign(z1 - z0);
+  for (const s of [-1, 1]) box(0.026, 0.026, len + 0.026, MAT.frame, s * W, y, zc, root);
+  for (const z of [z0, z1]) box(2 * W, 0.026, 0.026, MAT.frame, 0, y, z, root);
+  const nx = 14;
+  for (let i = 1; i < nx; i++) box(0.008, 0.006, len, MAT.frame, -W + (2 * W * i) / nx, y + 0.004, zc, root);
+  const nz = Math.round(len / 0.06);
+  for (let i = 1; i < nz; i++) box(2 * W, 0.006, 0.008, MAT.frame, 0, y + 0.002, z0 + ((z1 - z0) * i) / nz, root);
+  pipe([[W, y, z1 - dir * 0.08], [W, y + 0.07, z1], [-W, y + 0.07, z1], [-W, y, z1 - dir * 0.08]], 0.012, MAT.frame, root, { bend: 0.03 });
+  for (const s of [-1, 1]) {
+    for (const z of [z0 + dir * 0.05, z1 - dir * 0.08]) tube([s * W, y - 0.01, z], [s * 0.26, legY, z], 0.012, MAT.frame, root, 6);
+  }
+}
+
+/** Front winch: drum wound with cable between end plates, motor on one end, a roller fairlead and hook. */
+function winch(root, x, y, z, fairleadZ) {
+  const drum = add(new THREE.CylinderGeometry(0.03, 0.03, 0.17, 14).rotateZ(Math.PI / 2), MAT.steel, root);
+  drum.position.set(x, y, z);
+  const cable = add(springGeometry(0.15, 0.036, 0.0055, 12).rotateZ(Math.PI / 2), MAT.engineDark, root);
+  cable.position.set(x - 0.075, y, z);
+  for (const s of [-1, 1]) {
+    const plate = add(new THREE.CylinderGeometry(0.052, 0.052, 0.01, 16).rotateZ(Math.PI / 2), MAT.frame, root);
+    plate.position.set(x + s * 0.09, y, z);
+  }
+  const motor = add(new THREE.CylinderGeometry(0.042, 0.042, 0.1, 16).rotateZ(Math.PI / 2), MAT.plastic, root);
+  motor.position.set(x + 0.15, y, z);
+  rbox(0.07, 0.09, 0.09, 0.015, MAT.frame, x - 0.13, y, z, root);
+  rbox(0.32, 0.016, 0.1, 0.004, MAT.frame, x, y - 0.06, z, root, undefined, 1);
+  rbox(0.12, 0.05, 0.03, 0.01, MAT.frame, x, y - 0.01, fairleadZ, root);
+  tube([x, y + 0.036, z], [x, y - 0.005, fairleadZ], 0.004, MAT.engineDark, root, 4);
+  const hook = add(new THREE.TorusGeometry(0.018, 0.005, 6, 12, Math.PI * 1.5), MAT.steel, root);
+  hook.rotation.y = Math.PI / 2;
+  hook.position.set(x, y - 0.035, fairleadZ + 0.03);
+}
+
+/**
+ * Older farm quad bodywork: a boxy flat-topped hood with an upright grilled face and no lamps
+ * (the headlight's on the bars), black steel bumpers with a winch, one square tail light and mudflaps.
+ */
+function farmBody(root, paint) {
+  add(
+    loftGeometry([
+      { z: 0.3, w: 0.42, y0: 0.62, y1: 0.75 },
+      { z: 0.42, w: 0.56, y0: 0.6, y1: 0.765 },
+      { z: 0.96, w: 0.58, y0: 0.56, y1: 0.775 },
+      { z: 1.045, w: 0.58, y0: 0.54, y1: 0.772 },
+      { z: 1.065, w: 0.54, y0: 0.56, y1: 0.752 },
+    ], { exponent: 9 }),
+    paint,
+    root,
+    'frontPanel',
+  );
+  add(
+    loftGeometry([
+      { z: -0.3, w: 0.42, y0: 0.6, y1: 0.77 },
+      { z: -0.46, w: 0.56, y0: 0.6, y1: 0.785 },
+      { z: -1.02, w: 0.58, y0: 0.6, y1: 0.785 },
+      { z: -1.065, w: 0.54, y0: 0.62, y1: 0.765 },
+    ], { exponent: 9 }),
+    paint,
+    root,
+    'rearPanel',
+  );
+  // Slatted black grille on the face of the hood.
+  rbox(0.4, 0.13, 0.02, 0.012, MAT.plastic, 0, 0.655, 1.06, root);
+  for (let k = 0; k < 5; k++) box(0.35, 0.009, 0.006, MAT.hole, 0, 0.61 + k * 0.023, 1.071, root);
+  rbox(0.11, 0.05, 0.016, 0.01, MAT.tail, 0, 0.71, -1.065, root, undefined, 1);
+
+  // Black steel front bumper: uprights off the frame, a heavy lower bar and a top bar across the grille.
+  for (const s of [-1, 1]) {
+    pipe(mx(s, [[0.16, 0.34, 0.88], [0.27, 0.39, 1.15], [0.27, 0.56, 1.14], [0.22, 0.57, 1.06]]), 0.021, MAT.frame, root, { bend: 0.05 });
+  }
+  rbox(0.62, 0.06, 0.04, 0.012, MAT.frame, 0, 0.41, 1.16, root);
+  tube([-0.27, 0.56, 1.14], [0.27, 0.56, 1.14], 0.018, MAT.frame, root);
+  winch(root, 0, 0.47, 1.07, 1.16);
+  // Rear bumper round the hitch.
+  pipe([[0.2, 0.5, -0.96], [0.27, 0.5, -1.12], [-0.27, 0.5, -1.12], [-0.2, 0.5, -0.96]], 0.02, MAT.frame, root, { bend: 0.07 });
+  mudflaps(root, -1.04, 0.42, 0.18);
+}
+
+/**
+ * Race quad bodywork: a low, sharp nose with a big front number plate over one square lamp,
+ * a radiator behind, black side plates, a long tail, and a wide hoop bumper.
+ */
+function raceBody(root, paint, lensMat) {
+  add(
+    loftGeometry([
+      { z: 0.3, w: 0.26, y0: 0.7, y1: 0.79 },
+      { z: 0.5, w: 0.36, y0: 0.64, y1: 0.775 },
+      { z: 0.86, w: 0.38, y0: 0.58, y1: 0.735 },
+      { z: 1.02, w: 0.32, y0: 0.56, y1: 0.69 },
+      { z: 1.07, w: 0.22, y0: 0.58, y1: 0.65 },
+    ], { exponent: 8 }),
+    paint,
+    root,
+    'nose',
+  );
+  add(
+    loftGeometry([
+      { z: -0.28, w: 0.24, y0: 0.7, y1: 0.78 },
+      { z: -0.5, w: 0.34, y0: 0.69, y1: 0.795 },
+      { z: -0.98, w: 0.3, y0: 0.71, y1: 0.815 },
+      { z: -1.14, w: 0.22, y0: 0.73, y1: 0.8 },
+      { z: -1.18, w: 0.12, y0: 0.75, y1: 0.79 },
+    ], { exponent: 8 }),
+    MAT.plastic,
+    root,
+    'tail',
+  );
+  // Big front plate, leaning back over the lamp.
+  const plateTex = numberPlateTexture('22', { width: 256, height: 160, font: 'bold 128px sans-serif' });
+  const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.21), new THREE.MeshStandardMaterial({ map: plateTex, roughness: 0.6 }));
+  plate.rotation.x = -0.8;
+  plate.position.set(0, 0.69, 1.04).addScaledVector(new THREE.Vector3(0, Math.sin(0.8), Math.cos(0.8)), 0.011);
+  root.add(plate);
+  const backing = rbox(0.37, 0.24, 0.02, 0.03, MAT.plastic, 0, 0.69, 1.04, root);
+  backing.rotation.x = -0.8;
+  // Black lower cowl with one square lamp, the radiator behind it.
+  rbox(0.32, 0.09, 0.12, 0.03, MAT.plastic, 0, 0.55, 1.0, root);
+  squareLamp(root, 0, 0.552, 1.06, 0.12, 0.045, lensMat);
+  rbox(0.32, 0.17, 0.05, 0.012, MAT.plastic, 0, 0.6, 0.84, root);
+  for (let k = 0; k < 6; k++) box(0.28, 0.006, 0.006, MAT.hole, 0, 0.54 + k * 0.024, 0.867, root);
+  // Black side plates under the seat with the number on.
+  const sideTex = numberPlateTexture('22', { width: 256, height: 128, font: 'bold 100px sans-serif' });
+  const sideMat = new THREE.MeshStandardMaterial({ map: sideTex, roughness: 0.6 });
+  for (const s of [-1, 1]) {
+    const side = rbox(0.03, 0.17, 0.42, 0.014, MAT.plastic, s * 0.165, 0.71, -0.4, root);
+    side.rotation.z = s * 0.1;
+    const num = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.12), sideMat);
+    num.position.set(s * 0.183, 0.712, -0.4);
+    num.rotation.set(0, s * (Math.PI / 2), s * 0.1, 'ZYX');
+    root.add(num);
+  }
+  // Black shrouds either side of the tank, sweeping down and out towards the front fenders.
+  for (const s of [-1, 1]) {
+    add(
+      loftGeometry([
+        { z: 0.24, w: 0.016, y0: 0.78, y1: 0.87, x: s * 0.16 },
+        { z: 0.34, w: 0.018, y0: 0.7, y1: 0.86, x: s * 0.185 },
+        { z: 0.52, w: 0.018, y0: 0.66, y1: 0.8, x: s * 0.215 },
+        { z: 0.64, w: 0.016, y0: 0.68, y1: 0.72, x: s * 0.22 },
+      ], { exponent: 8, segments: 16 }),
+      MAT.plastic,
+      root,
+    );
+  }
+  // Wide hoop bumper at the front, a grab loop and a tail light at the back.
+  pipe([[0.17, 0.36, 0.9], [0.36, 0.42, 1.12], [0.32, 0.46, 1.21], [-0.32, 0.46, 1.21], [-0.36, 0.42, 1.12], [-0.17, 0.36, 0.9]], 0.018, MAT.frame, root, { bend: 0.08, steps: 5 });
+  for (const s of [-1, 1]) tube([s * 0.12, 0.46, 1.205], [s * 0.1, 0.38, 0.95], 0.013, MAT.frame, root);
+  pipe([[0.15, 0.76, -0.95], [0.18, 0.79, -1.15], [-0.18, 0.79, -1.15], [-0.15, 0.76, -0.95]], 0.015, MAT.frame, root, { bend: 0.07 });
+  rbox(0.1, 0.03, 0.015, 0.008, MAT.tail, 0, 0.775, -1.183, root, undefined, 1);
+}
+
+/** Black rubber mudflaps hanging behind the rear wheels. */
+function mudflaps(root, z, top, bottom) {
+  for (const s of [-1, 1]) {
+    const flap = rbox(0.2, top - bottom, 0.01, 0.004, MAT.rubber, s * 0.49, (top + bottom) / 2, z, root, undefined, 1);
+    flap.rotation.x = -0.08;
+  }
+}
+
 // Engine and exhaust ---------------------------------------------------------
 
-function buildEngine(root, sport) {
+function buildEngine(root, sport, liquid = false) {
   const engine = new THREE.Group();
   engine.name = 'engine';
   root.add(engine);
@@ -609,6 +837,18 @@ function buildEngine(root, sport) {
   cyl.rotation.x = tilt;
   engine.add(cyl);
   rbox(0.16, 0.24, 0.16, 0.03, MAT.engine, 0, 0.1, 0, cyl, 'cylinder');
+  if (liquid) {
+    // Water-cooled: a smooth barrel with a few shallow ribs, a squat head and the top hose.
+    for (let i = 0; i < 3; i++) rbox(0.19, 0.012, 0.19, 0.005, MAT.engine, 0, 0.04 + i * 0.05, 0, cyl, undefined, 1);
+    rbox(0.21, 0.07, 0.2, 0.03, MAT.engine, 0, 0.235, 0, cyl);
+    rbox(0.07, 0.03, 0.05, 0.012, MAT.engineDark, 0, 0.26, 0.09, cyl);
+    pipe([[0, 0.26, 0.11], [0, 0.27, 0.22], [0.0, 0.16, 0.5]], 0.016, MAT.rubber, cyl, { bend: 0.08 });
+    tube([0.04, 0.27, 0.04], [0.06, 0.32, 0.07], 0.009, MAT.rubber, cyl, 6);
+    tube([0, 0.1, -0.08], [0, 0.12, -0.17], 0.026, MAT.engine, cyl, 10);
+    pipe([[0, 0.12, -0.17], [0, 0.16, -0.26], [0, 0.17, -0.4]], 0.03, MAT.rubber, cyl, { bend: 0.06 });
+    rbox(0.2, 0.14, 0.22, 0.03, MAT.plastic, 0, 0.66, -0.36, engine);
+    return engine;
+  }
   const fins = sport ? 9 : 6;
   for (let i = 0; i < fins; i++) {
     const fw = sport ? 0.29 - Math.abs(i - 4) * 0.006 : 0.25;
@@ -637,11 +877,36 @@ function swept(points, radii, mat, parent, samples = 40) {
   return add(sweepGeometry(curve.getPoints(samples), r, { radial: 14 }), mat, parent);
 }
 
-function buildExhaust(engine, sport) {
+function buildExhaust(engine, sport, race = false) {
   const exhaustTip = new THREE.Object3D();
   exhaustTip.name = 'exhaustTip';
   engine.add(exhaustTip);
-  if (sport) {
+  if (race) {
+    // A big race chamber: out of the front of the barrel, round to the right and back
+    // as a fat heat-browned belly under the seat, then up into a long black can.
+    const browned = new THREE.MeshStandardMaterial({ color: 0x6e5a4a, roughness: 0.4, metalness: 0.85 });
+    swept(
+      [
+        [-0.02, 0.66, 0.22],
+        [-0.1, 0.6, 0.42],
+        [-0.25, 0.54, 0.36],
+        [-0.33, 0.56, 0.1],
+        [-0.34, 0.6, -0.16],
+        [-0.3, 0.68, -0.4],
+        [-0.25, 0.74, -0.52],
+      ],
+      [0.026, 0.036, 0.07, 0.1, 0.088, 0.036, 0.026],
+      browned,
+      engine,
+      60,
+    );
+    const can = latheZ([[0.028, -0.2], [0.05, -0.17], [0.054, -0.1], [0.052, 0.17], [0.044, 0.2], [0.022, 0.205]], MAT.frame, -0.24, 0.79, -0.7, engine, 18);
+    can.rotation.x = 0.28;
+    for (const z of [-0.14, 0.14]) latheZ([[0.057, -0.01], [0.057, 0.01]], MAT.alloy, 0, 0, z, can, 18);
+    const tip = latheZ([[0.022, -0.02], [0.022, 0.03], [0.016, 0.03]], MAT.alloy, -0.24, 0.85, -0.9, engine, 12);
+    tip.rotation.x = 0.28;
+    exhaustTip.position.set(-0.24, 0.86, -0.93);
+  } else if (sport) {
     // Two-stroke expansion chamber: swelling belly down the right, tapering up to a high silencer.
     const blued = new THREE.MeshStandardMaterial({ color: 0x9aa0ab, roughness: 0.28, metalness: 0.9 });
     swept(
@@ -700,20 +965,31 @@ function buildFrame(root, sport) {
 /**
  * @param {object} [opts]
  * @param {number} [opts.bodyColor] Paint colour for the plastics.
- * @param {string} [opts.dashStyle] 'classic', 'modern' or 'sport', see dash.js.
+ * @param {string} [opts.dashStyle] 'classic', 'modern', 'sport', 'vintage' or 'race', see dash.js.
  * @param {string} [opts.style]     Body style:
  *   'utility'  Honda-style farm quad: racks front and back, footwells, round headlights in the nose, raised pillion;
  *   'utility2' Yamaha-style farm quad: brush guard, square headlights, deeper railed racks, a grey seat, independent rear;
- *   'sport'    two-stroke sport quad: number plate, no racks, nerf bars, expansion chamber, chain drive, a slim pillion pad.
+ *   'sport'    two-stroke sport quad: number plate, no racks, nerf bars, expansion chamber, chain drive, a slim pillion pad;
+ *   'utility3' older Kawasaki-style farm quad: headlight in a nacelle on the bars, flat-topped fenders, flat mesh
+ *              racks, steel bumpers and a winch, mudflaps, a tan seat, square-shouldered tyres;
+ *   'sport2'   Suzuki-style two-stroke race quad: lower and longer, big front plate, angular plastics, water-cooled,
+ *              wide nerf bars, a big chamber on the right, white rims, one long race seat and no pillion.
  */
 export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', style = 'utility' } = {}) {
-  const sport = style === 'sport';
+  const race = style === 'sport2';
+  const farm = style === 'utility3';
+  const sport = style === 'sport' || race; // two-stroke chassis
   const cfg = STYLE[style] ?? STYLE.utility;
   const quad = new THREE.Group();
   quad.name = 'quad';
   const paint = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.3, metalness: 0.0, side: THREE.DoubleSide });
   const lensMat = new THREE.MeshStandardMaterial({ color: 0xe8e8dc, roughness: 0.05, emissive: 0x000000 });
-  const seatMat = style === 'utility2' ? new THREE.MeshStandardMaterial({ color: 0x3b3e42, roughness: 0.55 }) : MAT.seat;
+  const seatMat =
+    style === 'utility2'
+      ? new THREE.MeshStandardMaterial({ color: 0x3b3e42, roughness: 0.55 })
+      : farm
+        ? new THREE.MeshStandardMaterial({ color: 0x8a6a45, roughness: 0.62 })
+        : MAT.seat;
   quad.userData.lensMaterial = lensMat;
   const rig = { links: [], shocks: [] };
   quad.userData.suspension = rig;
@@ -726,8 +1002,8 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
   body.add(root);
 
   buildFrame(root, sport);
-  const engine = buildEngine(root, sport);
-  buildExhaust(engine, sport);
+  const engine = buildEngine(root, sport, race);
+  buildExhaust(engine, sport, race);
 
   // Suspension: wishbones at the front, a swingarm or more wishbones at the back.
   for (let i = 0; i < WHEELS.length; i++) {
@@ -742,7 +1018,11 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
   fenders(root, style, paint);
 
   // Body panels, nose and lights.
-  if (sport) {
+  if (race) {
+    raceBody(root, paint, lensMat);
+  } else if (farm) {
+    farmBody(root, paint);
+  } else if (sport) {
     // Narrow nose cowl carrying the number plate, lamps in a black pod below.
     add(
       loftGeometry([
@@ -878,7 +1158,15 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
   }
 
   // Tank cover, with the fuel tap on its left: lever forward for ON, down for RES, back for OFF.
-  const tankStations = sport
+  const tankStations = race
+    ? [
+        { z: 0.1, w: 0.2, y0: 0.74, y1: 0.84 },
+        { z: 0.18, w: 0.3, y0: 0.72, y1: 0.89 },
+        { z: 0.4, w: 0.32, y0: 0.71, y1: 0.9 },
+        { z: 0.53, w: 0.24, y0: 0.72, y1: 0.86 },
+        { z: 0.57, w: 0.1, y0: 0.74, y1: 0.82 },
+      ]
+    : sport
     ? [
         { z: 0.12, w: 0.2, y0: 0.74, y1: 0.85 },
         { z: 0.2, w: 0.31, y0: 0.72, y1: 0.905 },
@@ -893,7 +1181,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
         { z: 0.46, w: 0.32, y0: 0.7, y1: 0.885 },
         { z: 0.5, w: 0.2, y0: 0.72, y1: 0.84 },
       ];
-  add(loftGeometry(tankStations, { exponent: style === 'utility2' ? 5 : 3.2 }), paint, root, 'tank');
+  add(loftGeometry(tankStations, { exponent: style === 'utility2' || farm ? 5 : race ? 6 : 3.2 }), paint, root, 'tank');
   rbox(0.06, 0.03, 0.035, 0.008, MAT.plastic, 0.18, 0.8, 0.3, root, 'fuelTapBody', 1);
   const tap = new THREE.Group();
   tap.name = 'fuelTap';
@@ -903,7 +1191,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
   const tapLever = add(new RoundedBoxGeometry(0.008, 0.012, 0.045, 1, 0.003), MAT.chrome, tap);
   tapLever.position.z = 0.02;
   const tankCap = add(lathe([[0.036, -0.012], [0.036, 0.004], [0.03, 0.012], [0.001, 0.012]], 18), MAT.chrome, root);
-  tankCap.position.set(0, 0.928, 0.36);
+  tankCap.position.set(0, race ? 0.908 : 0.928, race ? 0.38 : 0.36);
 
   // Racks (utility quads only).
   if (style === 'utility') {
@@ -912,11 +1200,30 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
   } else if (style === 'utility2') {
     rack(root, 0.48, 0.98, 0.84, 6, 0.77, 0.06);
     rack(root, -0.8, -1.06, 0.93, 4, 0.79, 0.07);
+  } else if (farm) {
+    flatRack(root, 0.5, 0.98, 0.84, 0.75);
+    flatRack(root, -0.84, -1.06, 0.92, 0.775);
   }
 
   // Seats. Utility quads carry a raised pillion seat; the sport quad's long seat
-  // squeezes a passenger onto a slim pad at the back, with a grab strap.
-  if (sport) {
+  // squeezes a passenger onto a slim pad at the back, with a grab strap. The race
+  // quad has one long thin seat and no room for anyone else.
+  if (race) {
+    add(
+      loftGeometry([
+        { z: 0.17, w: 0.1, y0: 0.79, y1: 0.83 },
+        { z: 0.11, w: 0.2, y0: 0.78, y1: 0.86 },
+        { z: -0.04, w: 0.245, y0: 0.77, y1: 0.875, e: 3 },
+        { z: -0.6, w: 0.255, y0: 0.775, y1: 0.875, e: 3 },
+        { z: -0.98, w: 0.24, y0: 0.79, y1: 0.872, e: 3 },
+        { z: -1.07, w: 0.18, y0: 0.8, y1: 0.856 },
+        { z: -1.1, w: 0.1, y0: 0.81, y1: 0.84 },
+      ], { exponent: 3.4, segments: 28 }),
+      seatMat,
+      root,
+      'seat',
+    );
+  } else if (sport) {
     add(
       loftGeometry([
         { z: 0.14, w: 0.14, y0: 0.8, y1: 0.85 },
@@ -973,13 +1280,14 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
     );
     rbox(0.34, 0.1, 0.38, 0.03, MAT.plastic, 0, 0.82, -0.6, root, 'pillionBase');
     for (const s of [-1, 1]) {
-      pipe(mx(s, [[0.2, 0.84, -0.4], [0.25, 0.99, -0.44], [0.25, 0.99, -0.78], [0.2, 0.84, -0.82]]), 0.013, MAT.chrome, root, { bend: 0.05, steps: 5 });
+      pipe(mx(s, [[0.2, 0.84, -0.4], [0.25, 0.99, -0.44], [0.25, 0.99, -0.78], [0.2, 0.84, -0.82]]), 0.013, farm ? MAT.frame : MAT.chrome, root, { bend: 0.05, steps: 5 });
     }
     pillionGrips(root, 0.25, 0.99, -0.55, false);
   }
 
   // Where the rider's feet go: footwells on the utilities, nerf bars and pegs on the sport quad.
-  if (sport) nerfBars(root);
+  if (race) raceNerfBars(root);
+  else if (sport) nerfBars(root);
   else footwells(root);
 
   // Handlebars.
@@ -991,6 +1299,23 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
     const pad = add(new THREE.CapsuleGeometry(0.02, 0.13, 4, 10).rotateZ(Math.PI / 2), MAT.plastic, bars, 'barPad');
     pad.position.set(0, 0.18, 0.08);
   }
+  if (farm) {
+    // Headlight in a nacelle on the bars, carrying the dash on its top.
+    add(
+      loftGeometry([
+        { z: 0.0, w: 0.16, y0: -0.03, y1: 0.08 },
+        { z: 0.06, w: 0.2, y0: -0.06, y1: 0.1 },
+        { z: 0.15, w: 0.2, y0: -0.06, y1: 0.105 },
+        { z: 0.17, w: 0.18, y0: -0.05, y1: 0.095 },
+      ], { exponent: 4 }),
+      paint,
+      bars,
+    );
+    roundLamp(bars, 0, 0.02, 0.17, 0.06, lensMat, MAT.chrome, 'headlight');
+    const dash = bars.userData.dash.group;
+    dash.position.set(0, 0.115, 0.05);
+    dash.rotation.x = 0.85;
+  }
   quad.userData.dash = bars.userData.dash;
   bars.position.set(0, 1.0, 0.46);
   root.add(bars);
@@ -998,23 +1323,27 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
   // Anchors for people and the camera.
   const riderAnchor = new THREE.Object3D();
   riderAnchor.name = 'riderAnchor';
-  riderAnchor.position.set(0, 0.9, -0.18);
+  // The race seat is lower, so the rider sits lower; it has no pillion.
+  const seatDrop = race ? 0.025 : 0;
+  riderAnchor.position.set(0, 0.9 - seatDrop, -0.18);
   root.add(riderAnchor);
-  const pillionAnchor = new THREE.Object3D();
-  pillionAnchor.name = 'pillionAnchor';
-  pillionAnchor.position.set(0, sport ? 0.98 : 1.0, sport ? -0.66 : -0.6);
-  root.add(pillionAnchor);
+  if (!race) {
+    const pillionAnchor = new THREE.Object3D();
+    pillionAnchor.name = 'pillionAnchor';
+    pillionAnchor.position.set(0, sport ? 0.98 : 1.0, sport ? -0.66 : -0.6);
+    root.add(pillionAnchor);
+    // Your eyes riding on the back while she drives.
+    const pillionCameraAnchor = new THREE.Object3D();
+    pillionCameraAnchor.name = 'pillionCameraAnchor';
+    pillionCameraAnchor.position.set(0, pillionAnchor.position.y + 0.79, pillionAnchor.position.z - 0.02);
+    root.add(pillionCameraAnchor);
+  }
   const cameraAnchor = new THREE.Object3D();
   cameraAnchor.name = 'cameraAnchor';
   // The rider's eyes: 0.79 m above the seat, as for someone of the player's standing
   // eye height (1.62 m). Any lower and you sit shorter than she does behind you.
-  cameraAnchor.position.set(0, 1.69, -0.22);
+  cameraAnchor.position.set(0, 1.69 - seatDrop, -0.22);
   root.add(cameraAnchor);
-  // Your eyes riding on the back while she drives.
-  const pillionCameraAnchor = new THREE.Object3D();
-  pillionCameraAnchor.name = 'pillionCameraAnchor';
-  pillionCameraAnchor.position.set(0, pillionAnchor.position.y + 0.79, pillionAnchor.position.z - 0.02);
-  root.add(pillionCameraAnchor);
 
   // Wheels sit outside the body so they don't rock with it.
   for (const w of WHEELS) {

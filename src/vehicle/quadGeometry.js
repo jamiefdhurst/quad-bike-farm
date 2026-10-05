@@ -235,36 +235,42 @@ const tmpR = new THREE.Matrix4();
 
 /**
  * Balloon ATV tyre with chunky staggered chevron lugs, axle along X. The lug
- * tops sit on `radius` so it matches the physics wheel.
+ * tops sit on `radius` so it matches the physics wheel. `square` gives an older
+ * farm tyre instead: squarer shoulders and big straight block lugs.
  */
-export function tyreGeometry(radius, width, rimR, lugCount = 20) {
+export function tyreGeometry(radius, width, rimR, lugCount = 20, { square = false } = {}) {
   const h = width / 2;
-  const crown = radius - 0.018;
-  const carcass = lathe(
-    [
-      [rimR + 0.004, -h * 0.8],
-      [rimR + 0.03, -h * 0.9],
-      [(rimR + crown) / 2, -h * 0.99],
-      [crown - 0.03, -h * 0.97],
-      [crown - 0.01, -h * 0.86],
-      [crown - 0.002, -h * 0.65],
-      [crown, -h * 0.3],
-      [crown, h * 0.3],
-      [crown - 0.002, h * 0.65],
-      [crown - 0.01, h * 0.86],
-      [crown - 0.03, h * 0.97],
-      [(rimR + crown) / 2, h * 0.99],
-      [rimR + 0.03, h * 0.9],
-      [rimR + 0.004, h * 0.8],
-    ],
-    40,
-  );
+  const crown = radius - (square ? 0.024 : 0.018);
+  const side = square
+    ? [
+        [rimR + 0.004, -h * 0.8],
+        [rimR + 0.03, -h * 0.93],
+        [(rimR + crown) / 2, -h],
+        [crown - 0.022, -h],
+        [crown - 0.008, -h * 0.95],
+        [crown - 0.002, -h * 0.86],
+        [crown, -h * 0.7],
+      ]
+    : [
+        [rimR + 0.004, -h * 0.8],
+        [rimR + 0.03, -h * 0.9],
+        [(rimR + crown) / 2, -h * 0.99],
+        [crown - 0.03, -h * 0.97],
+        [crown - 0.01, -h * 0.86],
+        [crown - 0.002, -h * 0.65],
+        [crown, -h * 0.3],
+      ];
+  const carcass = lathe([...side, ...side.map(([r, y]) => [r, -y]).reverse()], 40);
   const parts = [carcass];
   const A = new THREE.Vector3(0, 1, 0);
   const R = new THREE.Vector3();
   const C = new THREE.Vector3();
-  const main = taperedBox(width * 0.4, 0.024, 0.05, 0.8);
-  const shoulder = taperedBox(width * 0.16, 0.026, 0.044, 0.8);
+  const main = square ? taperedBox(width * 0.36, 0.03, 0.062, 0.86) : taperedBox(width * 0.4, 0.024, 0.05, 0.8);
+  const shoulder = square ? taperedBox(width * 0.2, 0.03, 0.056, 0.85) : taperedBox(width * 0.16, 0.026, 0.044, 0.8);
+  // Tread blocks and shoulder blocks: where across the tread, how far out, and their angles.
+  const at = square
+    ? { mainX: 0.3, mainOut: 0.009, angle: 0, shoulderX: 0.84, shoulderOut: -0.01, lean: 0.55 }
+    : { mainX: 0.3, mainOut: 0.006, angle: 0.45, shoulderX: 0.78, shoulderOut: -0.012, lean: 0.75 };
   for (let i = 0; i < lugCount; i++) {
     for (const s of [-1, 1]) {
       const th = ((i + (s > 0 ? 0 : 0.5)) / lugCount) * Math.PI * 2;
@@ -273,14 +279,14 @@ export function tyreGeometry(radius, width, rimR, lugCount = 20) {
       tmpM.makeBasis(A, R, C);
       // Chevron: each lug angled across the tread.
       const g = main.clone();
-      g.applyMatrix4(tmpR.makeRotationY(s * 0.45));
-      const place = tmpM.clone().setPosition(R.x * (crown + 0.006), s * h * 0.3, R.z * (crown + 0.006));
+      g.applyMatrix4(tmpR.makeRotationY(s * at.angle));
+      const place = tmpM.clone().setPosition(R.x * (crown + at.mainOut), s * h * at.mainX, R.z * (crown + at.mainOut));
       g.applyMatrix4(place);
       parts.push(g);
       // Shoulder block, leaning down the sidewall.
       const sg = shoulder.clone();
-      sg.applyMatrix4(tmpR.makeRotationZ(-s * 0.75));
-      const sp = tmpM.clone().setPosition(R.x * (crown - 0.012), s * h * 0.78, R.z * (crown - 0.012));
+      sg.applyMatrix4(tmpR.makeRotationZ(-s * at.lean));
+      const sp = tmpM.clone().setPosition(R.x * (crown + at.shoulderOut), s * h * at.shoulderX, R.z * (crown + at.shoulderOut));
       sg.applyMatrix4(sp);
       parts.push(sg);
     }

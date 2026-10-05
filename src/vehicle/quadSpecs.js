@@ -167,8 +167,8 @@ export const QUAD_SPECS = [
     label: 'green quad',
     name: 'Green quad',
     bodyColor: 0x2e6b30,
-    style: 'utility', // its own body style and dash are on the way
-    dashStyle: 'classic',
+    style: 'utility3',
+    dashStyle: 'vintage',
     idleRange: [800, 1300],
     roughnessRange: [0.08, 0.6],
     fuelRange: [3, 13], // 14 litre tank, 2.5 litre reserve
@@ -221,8 +221,8 @@ export const QUAD_SPECS = [
     label: 'orange quad',
     name: 'Orange quad',
     bodyColor: 0xe86a12,
-    style: 'sport', // its own body style and dash are on the way
-    dashStyle: 'sport',
+    style: 'sport2', // a single race seat: no room for her on the back
+    dashStyle: 'race',
     idleRange: [1600, 2300],
     roughnessRange: [0.12, 0.7],
     fuelRange: [1.5, 7.5], // 8 litre tank, 1.2 litre reserve
