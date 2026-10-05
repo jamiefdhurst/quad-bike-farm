@@ -137,7 +137,7 @@ export class Workshop {
     document.body.classList.add('workshop-open');
     this.game.input.exitPointerLock();
     this.freezePlayer(true);
-    this.game.voice.onTinker?.('open');
+    for (const c of this.game.companions) c.voice.onTinker?.('open');
   }
 
   close() {
@@ -167,7 +167,7 @@ export class Workshop {
     if (Object.keys(next).every((k) => next[k] === q.settings[k])) return false;
     const raisedLimiter = key === 'limiter' && next.limiter > q.settings.limiter;
     this.apply(next);
-    this.game.voice.onTinker?.(raisedLimiter ? 'limiter' : 'adjust');
+    for (const c of this.game.companions) c.voice.onTinker?.(raisedLimiter ? 'limiter' : 'adjust');
     return true;
   }
 
@@ -179,7 +179,7 @@ export class Workshop {
     const best = unit.spec.roughnessRange?.[0];
     if (best !== undefined) unit.engine.params.baseRoughness = Math.min(unit.engine.params.baseRoughness, best);
     this.render();
-    this.game.voice.onTinker?.('service');
+    for (const c of this.game.companions) c.voice.onTinker?.('service');
   }
 
   isServiced(unit) {
@@ -191,7 +191,7 @@ export class Workshop {
     const q = this.quads.get(this.unit);
     if (isStock(q.settings, q.stock, this.params)) return;
     this.apply(stockSettings(q.stock, this.params));
-    this.game.voice.onTinker?.('stock');
+    for (const c of this.game.companions) c.voice.onTinker?.('stock');
   }
 
   apply(settings) {
@@ -265,12 +265,12 @@ export class Workshop {
 
     const ridden = this.game.riddenUnit;
     const q = ridden && this.quads.get(ridden);
-    const c = this.game.companion;
-    const together = q && c.isSeated && c.quad === ridden.quad;
+    const c = q && this.game.companions.find((h) => h.isSeated && h.quad === ridden.quad);
+    const together = !!c;
     const quicker = together && q.settings.limiter > 0 && Math.abs(ridden.quad.forwardSpeed) > q.stock.vehicle.maxSpeed * 0.97;
     this.fastTime = quicker ? this.fastTime + dt : 0;
     if (!quicker) this.fastSaid = false;
-    if (this.fastTime > FAST_SAY_AFTER && !this.fastSaid) this.fastSaid = !!this.game.voice.onTinker?.('fast');
+    if (this.fastTime > FAST_SAY_AFTER && !this.fastSaid) this.fastSaid = !!c.voice.onTinker?.('fast');
   }
 
   // DOM ------------------------------------------------------------------

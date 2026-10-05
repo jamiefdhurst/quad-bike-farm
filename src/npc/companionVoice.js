@@ -14,14 +14,16 @@ const SOUND_CAPTIONS = { sigh: '(sighs)', hum: '(hums)', laugh: '(laughs)', yawn
  * Which line, and whether she bothers, is up to the Chatter.
  */
 export class CompanionVoice {
-  constructor({ companion, speech, sounds, hud, params, soundParams }) {
+  constructor({ companion, speech, sounds, hud, params, soundParams, lines = VOICE_LINES, name = null, floor = { left: 0 } }) {
     this.companion = companion;
+    this.name = name; // shown before her captions when there's more than one of them
+    this.floor = floor; // shared between companions: seconds until someone else has finished talking
     this.speech = speech;
     this.sounds = sounds;
     this.hud = hud;
     this.params = params;
     this.soundParams = soundParams;
-    this.chatter = new Chatter(VOICE_LINES, { minGap: params.voiceMinGap, chattiness: params.chattiness });
+    this.chatter = new Chatter(lines, { minGap: params.voiceMinGap, chattiness: params.chattiness });
 
     this.head = new THREE.Vector3();
     this.checkTimer = 0;
@@ -417,6 +419,8 @@ export class CompanionVoice {
 
   /** Picks a line for the situation and says it; returns what was said, or null. */
   say(situation, opts) {
+    // Someone else is talking: unprompted chatter waits its turn.
+    if (this.floor.left > 0 && !opts?.force && !opts?.urgent) return null;
     const line = this.chatter.pick(situation, opts);
     if (!line) return null;
     const p = this.params;
@@ -438,14 +442,15 @@ export class CompanionVoice {
         const volume = sp.muted ? 0 : p.voiceVolume * Math.min(1, sp.masterVolume) * hearing;
         this.speech.say(line, { volume, rate: p.speechRate, pitch: p.speechPitch });
       }
-      this.caption(`“${line}”`, seconds + 0.8);
+      this.caption(`${this.name ? `${this.name}: ` : ''}“${line}”`, seconds + 0.8);
     } else {
       this.speech.stop();
       seconds = this.sounds.play(line.sound, this.head, p.voiceSoundVolume * raise, voice);
       if (!seconds) return null; // not loaded yet
-      if (this.hearing(shout) > 0.2) this.caption(SOUND_CAPTIONS[line.sound] ?? '', seconds + 0.4);
+      if (this.hearing(shout) > 0.2 && SOUND_CAPTIONS[line.sound]) this.caption(`${this.name ? `${this.name}: ` : ''}${SOUND_CAPTIONS[line.sound]}`, seconds + 0.4);
     }
     this.chatter.holdFor(seconds);
+    this.floor.left = Math.max(this.floor.left, seconds + 1);
     return line;
   }
 

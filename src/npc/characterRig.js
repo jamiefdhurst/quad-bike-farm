@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 const AXIS_X = new THREE.Vector3(1, 0, 0);
 const AXIS_Y = new THREE.Vector3(0, 1, 0);
@@ -12,11 +13,16 @@ export class CharacterRig {
   constructor(gltf, height) {
     this.root = new THREE.Group();
     this.root.name = 'characterRoot';
-    this.model = gltf.scene;
+    // Her own copy of the model, so two characters can share one glTF: shaping
+    // her figure edits the geometry and her outfit recolours the material.
+    this.model = cloneSkinned(gltf.scene);
     this.root.add(this.model);
 
     this.model.traverse((o) => {
       if (o.isMesh) {
+        o.geometry = o.geometry.clone();
+        o.material = o.material.clone();
+        if (o.isSkinnedMesh) o.boundingBox = o.boundingSphere = null; // recomputed once she's posed
         o.castShadow = true;
         o.receiveShadow = true;
         // Skinned meshes move outside their bind-pose bounds.
@@ -24,7 +30,8 @@ export class CharacterRig {
       }
     });
 
-    const box = new THREE.Box3().setFromObject(this.model);
+    // Measured on the original: a fresh clone's skeleton hasn't been posed yet.
+    const box = new THREE.Box3().setFromObject(gltf.scene);
     const scale = height / (box.max.y - box.min.y);
     this.model.scale.multiplyScalar(scale);
     this.model.position.y -= box.min.y * scale;

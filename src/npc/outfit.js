@@ -24,6 +24,13 @@ export const OUTFITS = {
     wellies: '#2f4a2c',
     shorts: '#56739f',
   },
+  // Jess: black hair, a burgundy polo, black wellies and darker shorts.
+  jessPolo: {
+    colors: { hair: '#2a221d', shirt: '#8e2238', shoes: '#262626', trousers: 'skin' },
+    collar: '#8e2238',
+    wellies: '#262626',
+    shorts: '#3f4f6e',
+  },
 };
 
 function recolourTexture(texture, colors) {

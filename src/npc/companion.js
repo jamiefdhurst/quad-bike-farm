@@ -28,7 +28,8 @@ function angleTo(from, to) {
  * slot in as another method plus an entry in getActions().
  */
 export class Companion {
-  constructor({ scene, physics, RAPIER, world, quad, gltf, params = { ...DEFAULT_COMPANION_PARAMS } }) {
+  constructor({ scene, physics, RAPIER, world, quad, gltf, params = { ...DEFAULT_COMPANION_PARAMS }, name = 'Her' }) {
+    this.name = name;
     this.scene = scene;
     this.physics = physics;
     this.RAPIER = RAPIER;
@@ -42,7 +43,7 @@ export class Companion {
     shapeFigure(this.rig, this.figure);
     applyOutfit(this.rig, OUTFITS[params.outfit] ?? OUTFITS.original);
     this.root = this.rig.root;
-    this.root.name = 'companion';
+    this.root.name = `companion ${name}`;
     scene.add(this.root);
 
     // Where her hips sit in the sitting pose, so she can be placed on the seat.
@@ -81,6 +82,7 @@ export class Companion {
     this.fidget = null;
     this.startEvents = []; // what she's done while starting a quad, for her voice to pick up
     this.quads = [quad]; // every quad on the farm, for doing things on her own (set by the game)
+    this.others = () => []; // the other companions, whose quads she leaves alone (set by the game)
     this.idleFor = 0;
     this.boredAfter = this.randomBetween(params.boredAfterMin, params.boredAfterMax);
     this.selfEvents = []; // things she decided to do on her own, for her voice
@@ -121,6 +123,19 @@ export class Companion {
     return this.fsm.is('seated');
   }
 
+  /** The quad she's busy with (on her way to get on, start or drive it, or on it), if any. */
+  get claimedQuad() {
+    const s = this.fsm;
+    if (s.is('idle')) return null;
+    if (s.is('walking')) return ['mount', 'start', 'drive'].includes(s.data?.goal) ? this.quad : null;
+    return this.quad;
+  }
+
+  /** Another companion is busy with this quad, so she leaves it alone. */
+  takenByOther(quad) {
+    return this.others().some((o) => o.claimedQuad === quad);
+  }
+
   // Requests ----------------------------------------------------------------
 
   /**
@@ -130,7 +145,7 @@ export class Companion {
   getActions(quads = [this.quad]) {
     const s = this.fsm;
     const here = this.root.getWorldPosition(new THREE.Vector3());
-    const sorted = [...quads].sort((a, b) => a.position.distanceTo(here) - b.position.distanceTo(here));
+    const sorted = quads.filter((q) => !this.takenByOther(q)).sort((a, b) => a.position.distanceTo(here) - b.position.distanceTo(here));
     // Only quads with a pillion seat can carry her.
     const rideable = (q) => q.hasPillion && !q.isTipped;
     const actions = [];
@@ -198,7 +213,7 @@ export class Companion {
     this.idleFor = 0;
     this.boredAfter = this.randomBetween(p.boredAfterMin, p.boredAfterMax);
     const here = this.root.position;
-    const near = (q) => q.position.distanceTo(here) < 40 && !q.rider && !q.isTipped && !q.isGhostRiding && q.speed < 0.5;
+    const near = (q) => q.position.distanceTo(here) < 40 && !this.takenByOther(q) && !q.rider && !q.isTipped && !q.isGhostRiding && q.speed < 0.5;
     const mountable = this.quads.filter((q) => near(q) && q.hasPillion);
     const startable = this.quads.filter((q) => near(q) && !q.engine.isRunning);
     const drivable = this.quads.filter((q) => near(q) && this.canDrive(q));
@@ -375,8 +390,11 @@ export class Companion {
 
   /** Standing spot beside the pillion seat, facing the bike. */
   standPoint(side, quad = this.quad) {
-    if (side === undefined) side = this.root.parent === this.scene ? this.nearSide(quad) : 1;
-    const p = quad.localToWorld(side * this.params.standOffset, 0, -0.35);
+    const auto = side === undefined;
+    if (auto) side = this.root.parent === this.scene ? this.nearSide(quad) : 1;
+    let p = quad.localToWorld(side * this.params.standOffset, 0, -0.35);
+    // Someone else already standing there: the other side.
+    if (auto && this.others().some((o) => o.root.position.distanceTo(p) < 0.9)) p = quad.localToWorld(-side * this.params.standOffset, 0, -0.35);
     p.y = this.world.heightAt(p.x, p.z);
     const c = quad.position;
     return { position: p, facing: Math.atan2(c.x - p.x, c.z - p.z) };

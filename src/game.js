@@ -18,6 +18,7 @@ import { CompanionVoice } from './npc/companionVoice.js';
 import { Speech, CompanionSounds } from './audio/companionAudio.js';
 import { DEFAULT_COMPANION_PARAMS, COMPANION_PARAM_RANGES } from './npc/companionParams.js';
 import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
+import { CHARACTERS } from './npc/characters.js';
 import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES } from './items/jerryCan.js';
 import { FuelTank } from './items/fuelTank.js';
 import { Toolbox } from './items/toolbox.js';
@@ -125,32 +126,46 @@ export class Game {
     this.homeUnit = this.units[home];
     this.lastUnit = this.homeUnit;
 
-    this.companion = new Companion({
-      scene: this.scene,
-      physics: this.physics,
-      RAPIER: this.RAPIER,
-      world: this.world,
-      quad: this.homeUnit.quad,
-      gltf: this.models.companion,
-      params: { ...DEFAULT_COMPANION_PARAMS },
-    });
-    this.companion.quads = this.units.map((u) => u.quad);
-    this.companion.followTarget = () => this.riddenUnit?.quad ?? null;
-    this.companionSounds = new CompanionSounds(this.audioHub);
-    this.voice = new CompanionVoice({
-      companion: this.companion,
-      speech: new Speech(),
-      sounds: this.companionSounds,
-      hud: this.hud,
-      params: this.companion.params,
-      soundParams: this.audioHub.params,
-    });
-    this.interaction.add({
-      target: this.companion.proxy,
-      // While she's driving you can call her over from further away.
-      range: () => (this.companion.fsm.is('driving') ? this.companion.params.driveTalkRange : undefined),
-      prompt: () => 'Talk to her',
-      interact: () => this.openCompanionMenu(),
+    // The companions (src/npc/characters.js), each starting beside her own quad in the yard.
+    const yard = this.units.filter((u, i) => u !== this.homeUnit && spawns[i].where === spawns[home].where);
+    const homes = [this.homeUnit, ...yard, ...this.units.filter((u) => u !== this.homeUnit && !yard.includes(u))];
+    const floor = { left: 0 }; // so one waits for the other to finish before chattering
+    this.talkFloor = floor;
+    this.companions = CHARACTERS.map((character, i) => {
+      const c = new Companion({
+        scene: this.scene,
+        physics: this.physics,
+        RAPIER: this.RAPIER,
+        world: this.world,
+        quad: homes[i % homes.length].quad,
+        gltf: this.models.companion,
+        params: { ...DEFAULT_COMPANION_PARAMS, ...character.params },
+        name: character.name,
+      });
+      c.character = character;
+      c.quads = this.units.map((u) => u.quad);
+      c.others = () => this.companions.filter((o) => o !== c);
+      c.followTarget = () => this.riddenUnit?.quad ?? null;
+      c.sounds = new CompanionSounds(this.audioHub, { voiceBank: character.voiceBank, rate: character.soundRate });
+      c.voice = new CompanionVoice({
+        companion: c,
+        speech: new Speech(),
+        sounds: c.sounds,
+        hud: this.hud,
+        params: c.params,
+        soundParams: this.audioHub.params,
+        lines: character.lines,
+        name: CHARACTERS.length > 1 ? character.name : null,
+        floor,
+      });
+      this.interaction.add({
+        target: c.proxy,
+        // While she's driving you can call her over from further away.
+        range: () => (c.fsm.is('driving') ? c.params.driveTalkRange : undefined),
+        prompt: () => `Talk to ${c.name}`,
+        interact: () => this.openCompanionMenu(c),
+      });
+      return c;
     });
 
     for (const unit of this.units) {
@@ -159,7 +174,7 @@ export class Game {
         unit,
         target: quad.proxy,
         prompt: () => {
-          if (this.tooFastToMount(quad) && this.herDriving(quad)) return 'Ask her to stop and let you on';
+          if (this.tooFastToMount(quad) && this.herDriving(quad)) return `Ask ${this.herDriving(quad).name} to stop and let you on`;
           if (this.tooFastToMount(quad)) {
             return { text: `The ${unit.label} is going too fast to get on   ·   K ignition` };
           }
@@ -175,7 +190,7 @@ export class Game {
             return { text: `Hold E to fill the ${unit.label} (${pct}%)   ·   G put the can down` };
           }
           if (quad.isTipped) return `Right the ${unit.label}`;
-          if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger) return 'Get on the back (she\'s driving)';
+          if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger) return `Get on the back (${this.herAtTheFront(quad).name}'s driving)`;
           return `Ride the ${unit.label}   ·   K ignition   R start   Q/Z choke   F fuel tap`;
         },
         interact: () => {
@@ -183,8 +198,9 @@ export class Game {
           if (this.toolbox.held) return this.workshop.open(unit);
           if (this.tooFastToMount(quad) && this.herDriving(quad)) {
             // She pulls up and moves onto the back for you.
-            this.companion.requestMount(quad);
-            this.voice.onRequest('back');
+            const c = this.herDriving(quad);
+            c.requestMount(quad);
+            c.voice.onRequest('back');
             return;
           }
           if (this.tooFastToMount(quad)) return;
@@ -271,10 +287,10 @@ export class Game {
     registerTuning('Jerry can', this.can.params, JERRY_CAN_PARAM_RANGES);
     registerTuning('Hose', this.hose.params, HOSE_PARAM_RANGES);
     registerTuning('Player', this.player.params, PLAYER_PARAM_RANGES);
-    registerTuning('Companion', this.companion.params, COMPANION_PARAM_RANGES, {
-      onChange: () => this.companion.refreshFigure(),
-    });
-    registerTuning('Pillion', this.companion.pillion.params, PILLION_PARAM_RANGES);
+    for (const c of this.companions) {
+      registerTuning(c.name, c.params, COMPANION_PARAM_RANGES, { onChange: () => c.refreshFigure() });
+      registerTuning(`${c.name} pillion`, c.pillion.params, PILLION_PARAM_RANGES);
+    }
     this.debugGui = new DebugGui(this);
 
     this.applyDebugCamera();
@@ -318,10 +334,23 @@ export class Game {
     return this.player.isRiding ? this.player.vehicle.unit : null;
   }
 
-  /** She's on the front seat of this quad (driving it, or about to). */
+  /** The first companion (for the debug console and test scripts). */
+  get companion() {
+    return this.companions[0];
+  }
+
+  get voice() {
+    return this.companions[0].voice;
+  }
+
+  /** The companion on the front seat of this quad (driving it, or about to), if any. */
   herAtTheFront(quad) {
-    const c = this.companion;
-    return c.quad === quad && (c.fsm.is('driving') || (c.fsm.is('shuffling') && c.fsm.data?.to === 'rider'));
+    return this.companions.find((c) => c.quad === quad && (c.fsm.is('driving') || (c.fsm.is('shuffling') && c.fsm.data?.to === 'rider'))) ?? null;
+  }
+
+  /** The companion on this quad in any seat (or getting on or off it), if any. */
+  herOn(quad) {
+    return this.companions.find((c) => c.quad === quad && c.fsm.is('mounting', 'seated', 'dismounting', 'driving', 'shuffling')) ?? null;
   }
 
   /** On the back while she drives. */
@@ -331,7 +360,7 @@ export class Game {
     unit.quad.passenger = this.player;
     this.lastUnit = unit;
     this.input.takeWheelSteps();
-    this.voice.onRequest('passengerOn');
+    this.herAtTheFront(unit.quad)?.voice.onRequest('passengerOn');
   }
 
   /** Spraying, the hose's reach, the hiss, and her reaction if you get her wet. */
@@ -345,14 +374,15 @@ export class Game {
     hose.spraying = hose.held && !this.menu.isOpen && this.input.isDown('KeyE');
     hose.update(dt);
     this.audioHub.setSpraying(hose.spraying, !!this.washing);
-    if (this.washing) this.voice.onWash?.('quad');
-    // Spraying her: she's in front of you and close.
-    if (hose.spraying) {
-      const head = this.voice.head;
-      const to = head.clone().sub(this.camera.position);
-      const dist = to.length();
-      const ahead = this.camera.getWorldDirection(to.clone()).dot(to.normalize());
-      if (dist < 7 && ahead > 0.96) this.voice.onWash?.('her');
+    for (const c of this.companions) {
+      if (this.washing) c.voice.onWash?.('quad');
+      // Spraying her: she's in front of you and close.
+      if (hose.spraying) {
+        const to = c.voice.head.clone().sub(this.camera.position);
+        const dist = to.length();
+        const ahead = this.camera.getWorldDirection(to.clone()).dot(to.normalize());
+        if (dist < 7 && ahead > 0.96) c.voice.onWash?.('her');
+      }
     }
   }
 
@@ -379,11 +409,13 @@ export class Game {
 
   /** Your menu riding on the back: talk to her about the ride. */
   openPassengerMenu() {
-    const c = this.companion;
+    const c = this.herOn(this.boardUnit.quad);
+    if (!c) return;
+    this.passengerHer = c; // who any plan below is with, even once she's off the front
     const drive = c.fsm.is('driving') ? c.drive : null;
     const stopped = !drive || drive.phase === 'parked' || drive.done;
     const actions = [];
-    const ask = (kind, label, run) => actions.push({ kind, label, run: () => (run(), this.voice.onRequest(kind)) });
+    const ask = (kind, label, run) => actions.push({ kind, label, run: () => (run(), c.voice.onRequest(kind)) });
     if (stopped) ask('letMeOff', 'I\'ll get off here', () => this.getOffBack());
     else ask('letMeOff', 'Let me off', () => ((this.passengerPlan = 'off'), drive.park()));
     if (drive && !stopped) {
@@ -393,7 +425,7 @@ export class Game {
     }
     if (drive && drive.phase === 'parked') ask('goAgain', 'Off we go again', () => drive.resume());
     if (c.fsm.is('driving')) ask('swap', 'Let me drive', () => ((this.passengerPlan = 'swap'), drive?.park()));
-    this.menu.open('Ask her to', actions);
+    this.menu.open(`Ask ${c.name} to`, actions);
     this.player.lookEnabled = false;
     this.player.moveEnabled = false;
   }
@@ -404,7 +436,7 @@ export class Game {
     if (!unit || this.player.seat !== 'pillion' || !this.passengerPlan) return;
     const quad = unit.quad;
     if (quad.speed > 0.3) return;
-    const c = this.companion;
+    const c = this.passengerHer;
     if (this.passengerPlan === 'off') {
       if (this.getOffBack()) this.passengerPlan = null;
     } else if (this.passengerPlan === 'swap') {
@@ -433,20 +465,19 @@ export class Game {
 
   // Companion menu ---------------------------------------------------------
 
-  openCompanionMenu() {
-    const c = this.companion;
+  openCompanionMenu(c) {
     if (c.isSeated && c.quad.speed > this.player.params.mountSpeed) {
       this.hud.toast('She can\'t get off while it\'s moving');
       return;
     }
-    const actions = this.companion.getActions(this.units.map((u) => u.quad));
+    const actions = c.getActions(this.units.map((u) => u.quad));
     if (!actions.length) {
       this.hud.toast('She\'s busy');
       return;
     }
     // She answers when you ask her something.
-    const answered = actions.map((a) => ({ ...a, run: () => (a.run(), this.voice.onRequest(a.kind)) }));
-    this.menu.open('Ask her to', answered);
+    const answered = actions.map((a) => ({ ...a, run: () => (a.run(), c.voice.onRequest(a.kind)) }));
+    this.menu.open(`Ask ${c.name} to`, answered);
     this.player.lookEnabled = false;
     this.player.moveEnabled = false;
   }
@@ -472,10 +503,9 @@ export class Game {
     return quad.speed > this.player.params.mountSpeed;
   }
 
-  /** She's at the controls of this quad and still going. */
+  /** The companion at the controls of this quad and still going, if any. */
   herDriving(quad) {
-    const c = this.companion;
-    return c.quad === quad && c.fsm.is('driving') && c.drive?.phase !== 'stop';
+    return this.companions.find((c) => c.quad === quad && c.fsm.is('driving') && c.drive?.phase !== 'stop') ?? null;
   }
 
   tryDismount() {
@@ -641,19 +671,22 @@ export class Game {
     for (const unit of this.units) unit.listenerOnBoard = unit === this.boardUnit;
     for (const unit of this.units) unit.update(dt, alpha);
     const ridden = this.riddenUnit;
-    this.companion.update(dt, this.companion.quad.unit.vibration, {
-      position: this.camera.position,
-      isRiding: this.player.isRiding,
-      talking: this.menu.isOpen,
-    });
-    this.companionSounds.ensure();
-    this.voice.update(dt, {
-      listener: this.camera.position,
-      ridden,
-      units: this.units,
-      menuOpen: this.menu.isOpen,
-      pouring,
-    });
+    this.talkFloor.left = Math.max(0, this.talkFloor.left - dt);
+    for (const c of this.companions) {
+      c.update(dt, c.quad.unit.vibration, {
+        position: this.camera.position,
+        isRiding: this.player.isRiding,
+        talking: this.menu.isOpen,
+      });
+      c.sounds.ensure();
+      c.voice.update(dt, {
+        listener: this.camera.position,
+        ridden,
+        units: this.units,
+        menuOpen: this.menu.isOpen,
+        pouring,
+      });
+    }
     const board = this.boardUnit;
     if (!this.debugCamera) this.player.update(dt, alpha, board ? board.vibration : null);
     this.can.pouring = pouring;

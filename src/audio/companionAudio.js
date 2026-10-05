@@ -81,8 +81,11 @@ export class Speech {
 
 /** Her recorded lines and sounds, played through the AudioHub from her head. */
 export class CompanionSounds {
-  constructor(hub) {
+  /** `voiceBank` is her recorded lines (public/audio/<voiceBank>.json); `rate` plays her sighs and laughs a shade faster and higher. */
+  constructor(hub, { voiceBank = 'companion-voice', rate = 1 } = {}) {
     this.hub = hub;
+    this.voiceBank = voiceBank;
+    this.rate = rate;
     this.banks = {}; // 'sounds' (sighs, hums...) and 'voice' (spoken lines by text): { buffer, clips }
     this.loading = null;
     this.active = null; // { source, panner }
@@ -101,14 +104,14 @@ export class CompanionSounds {
           this.banks[name] = { buffer: await ctx.decodeAudioData(data), clips: bank.clips };
         })
         .catch((err) => console.error(`Companion ${name} failed to load`, err));
-    this.loading = Promise.all([load('sounds', 'companion'), load('voice', 'companion-voice')]);
+    this.loading = Promise.all([load('sounds', 'companion'), load('voice', this.voiceBank)]);
   }
 
   /** Plays a random sound of a kind (sigh, hum...); returns its length in seconds, or 0. */
   play(kind, position, volume = 1, { rolloff = 1.2 } = {}, random = Math.random) {
     const list = this.banks.sounds?.clips[kind];
     if (!list?.length) return 0;
-    return this.start(this.banks.sounds.buffer, list[Math.floor(random() * list.length)], position, volume, rolloff);
+    return this.start(this.banks.sounds.buffer, list[Math.floor(random() * list.length)], position, volume, rolloff, this.rate);
   }
 
   /** Says a recorded line; returns its length in seconds, or 0 if it hasn't been recorded. */
@@ -118,13 +121,14 @@ export class CompanionSounds {
   }
 
   /** `rolloff` is how fast it fades with distance: lower carries further, as a shout does. */
-  start(buffer, clip, position, volume, rolloff = 1.2) {
+  start(buffer, clip, position, volume, rolloff = 1.2, rate = 1) {
     const hub = this.hub;
     if (!hub.master) return 0;
     const ctx = hub.ctx;
     this.stop();
     const source = ctx.createBufferSource();
     source.buffer = buffer;
+    source.playbackRate.value = rate;
     const gain = ctx.createGain();
     gain.gain.value = volume;
     const panner = ctx.createPanner();
@@ -135,11 +139,11 @@ export class CompanionSounds {
     source.connect(gain).connect(panner).connect(hub.master);
     this.active = { source, panner };
     this.setPosition(position);
-    source.start(0, clip.start, clip.dur);
+    source.start(0, clip.start, clip.dur); // in seconds of the recording, whatever the rate
     source.onended = () => {
       if (this.active?.source === source) this.active = null;
     };
-    return clip.dur;
+    return clip.dur / rate;
   }
 
   /** Keeps a playing clip coming from her head as she moves. */
