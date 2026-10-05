@@ -43,7 +43,9 @@ export const DEFAULT_COMPANION_PARAMS = {
   wanderMax: 18,
 
   // Driving a quad herself (herDriving.js)
-  driveSpeedMin: 2, // m/s she's happy at (4.5 to 8 mph)
+  driveConfidence: 0.5, // her usual confidence driving, 0 careful to 1 confident; a fright knocks it, a good go builds it
+  driveMoodSwing: 0.35, // how much it varies from one go to the next
+  driveSpeedMin: 2, // m/s she's happy at (4.5 to 8 mph) at middling confidence
   driveSpeedMax: 3.5,
   driveScareSpeed: 5.5, // m/s; faster than this and she's had enough
   driveMaxThrottle: 0.38, // the most throttle she'll give it
@@ -130,6 +132,8 @@ export const COMPANION_PARAM_RANGES = {
   boredDriveChance: [0, 1, 0.05],
   wanderMin: [1, 50, 0.5],
   wanderMax: [1, 80, 0.5],
+  driveConfidence: [0, 1, 0.01],
+  driveMoodSwing: [0, 1, 0.01],
   driveSpeedMin: [0.5, 8, 0.1],
   driveSpeedMax: [0.5, 10, 0.1],
   driveScareSpeed: [1, 15, 0.1],

@@ -648,6 +648,30 @@ export const VOICE_LINES = {
       "Are you sure? Okay, I'm doing it.",
     ],
   },
+  driveSetOffCareful: {
+    cooldown: 20,
+    lines: [
+      "Slowly. Slowly does it.",
+      "I'm going to take it really easy.",
+      "Nobody look at me.",
+      'Okay. Tiny bit of throttle. Tiny.',
+      "I'm just going to go very, very slowly.",
+      "Don't laugh if I crash.",
+      'Deep breaths. Here we go.',
+    ],
+  },
+  driveSetOffConfident: {
+    cooldown: 20,
+    lines: [
+      "Right, I've got this.",
+      'Hold on to your hat!',
+      'Watch this, then.',
+      "Let's see what it can do.",
+      "I'm basically a pro now.",
+      'Out of my way!',
+      'Ooh, I feel brave today.',
+    ],
+  },
   driveSetOff: {
     cooldown: 10,
     lines: [

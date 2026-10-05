@@ -265,3 +265,7 @@ Six parallel agents this round (engine load, ride sounds and Doppler, mud, pilli
 ## Rougher quads (2026-10-05)
 
 - Tuned by hand: the top of each roughness range went up (red 0.50, blue and yellow 1.00; the debug slider now goes to 1). Simulated 2 minutes of warm idling with a blip every 30 s at roughness up to 1 and both ends of each idle range, 20 seeds each: no stalls, lowest rpm well above the stall point.
+
+## TODO list, one by one (2026-10-05)
+
+1. Her driving mood. Each go she has a confidence from 0 (careful) to 1 (confident), her usual confidence plus or minus 0.35, which scales her driving params for that go (`src/npc/driveMood.js`, tested): careful is 0.7 times the speed, shakier, smaller loops, more pauses and much more likely to stop scared; confident is 1.4 times the speed, smoother, bigger loops and longer. A scary or failed go lowers her usual confidence by 0.15, a go that ended because she got bored or you asked raises it by 0.08. She sets off with a careful or confident line to match, and happy versus nervous remarks lean the same way. Measured: careful averaged 0.6 m/s (top 2) within 7.5 m; confident averaged 3.3 m/s (top 5.3) out to 28 m.

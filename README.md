@@ -140,7 +140,7 @@ Look at her and press `E`:
 
 - **Get on the red / blue / yellow quad**: she walks over and sits on the pillion seat. Get on and ride; she stays on. Asking her onto the other quad while she's sitting on one, she gets off and walks over.
 - **Start the red / blue / yellow quad**: she walks to its handlebars, turns the key, checks the fuel tap (usually), puts the choke on if it's cold (usually), and cranks in short goes, talking herself through it. If it catches she eases the choke off as it warms, then leaves it to you; after four goes she gives up and switches it off. Get on while she's at it and she stops.
-- **Drive the red / blue / yellow quad**: she gets on the front, starts it like the learner she is, and potters round a small loop near where she started for about a minute (slowly, a bit jerkily, nervous or gleeful), then stops, bored or scared, and gets off or hops on the back. While she drives you can ask her to stop and get off or move onto the back. Get on and she shuffles back; if her quad is too fast to climb onto, press `E` on it to ask her to stop and let you on.
+- **Drive the red / blue / yellow quad**: she gets on the front, starts it like the learner she is, and potters round a loop near where she started for about a minute. How she drives depends on how she feels that day: careful (creeping, shaky, lots of stops, quick to get scared) or confident (quicker, smoother, bigger loops), and a fright makes her more careful next time while a good go builds her confidence. She then stops, bored or scared, and gets off or hops on the back. While she drives you can ask her to stop and get off or move onto the back. Get on and she shuffles back; if her quad is too fast to climb onto, press `E` on it to ask her to stop and let you on.
 - **Stand next to the red / blue quad**: she gets off if she's on, or walks over if she isn't, and stands beside it facing it.
 
 The menu only offers what makes sense: no "get on" while she's already on, no "stand next to it" while she's already there. She stays put on the pillion when you get off until you ask her to get down. Jump off at speed with her on the back and she'll let you know what she thinks.
@@ -220,7 +220,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 
 ## TODO
 
-1. She can drive differently depending on how she feels, confident or carefully - it can vary
+1. She can drive differently depending on how she feels, confident or carefully - it can vary **Done.**
 2. When you're on the quad, the girl seems a lot taller than you, which doesn't feel right
 3. Driving around should warm the quads up quicker, currently it has no effect
 4. After finishing driving, she never turns the quad off

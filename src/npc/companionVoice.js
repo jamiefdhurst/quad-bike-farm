@@ -294,7 +294,19 @@ export class CompanionVoice {
       getOff: ['driveGetOff', 0.5],
       taken: ['driveTaken', 1],
     };
+    const mood = c.driveMood ?? 0.5;
     for (const e of events) {
+      // Setting off, how she feels about it shows.
+      if (e === 'setOff' && mood < 0.35) {
+        this.say('driveSetOffCareful', { urgent: true, chance: 0.9 });
+        this.driveNerve = 0;
+        continue;
+      }
+      if (e === 'setOff' && mood > 0.65) {
+        this.say('driveSetOffConfident', { urgent: true, chance: 0.9 });
+        this.driveNerve = 0.5;
+        continue;
+      }
       // Each fright knocks her confidence.
       if (e === 'overSteer' || e === 'obstacle' || e === 'stuck' || e === 'stalled' || e === 'rollBack') this.driveNerve = Math.max(0, this.driveNerve - 0.35);
       if (e === 'setOff') this.driveNerve = 0;
@@ -324,7 +336,7 @@ export class CompanionVoice {
     this.driveTalk -= dt;
     if (this.driveTalk > 0) return;
     this.driveTalk = 4 + Math.random() * 6;
-    const happy = Math.random() < 0.2 + this.driveNerve * 0.6;
+    const happy = Math.random() < 0.05 + mood * 0.4 + this.driveNerve * 0.45;
     this.say(happy ? 'driveHappy' : 'driveNervous', { chance: 0.45 });
   }
 

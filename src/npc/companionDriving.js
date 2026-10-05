@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { driveMood, pickConfidence, afterDrive } from './driveMood.js';
 import { HerDrive } from './herDriving.js';
 import { solveTwoBone, orientHand } from './armIK.js';
 
@@ -33,8 +34,11 @@ export const drivingStates = {
       this.rig.play('SitIdle', { fade: 0.4 });
       this.rig.legSpread = this.params.legSpread;
       this.driveExit = null;
+      // How she feels about it this time: careful, confident or somewhere between.
+      this.driveConfidence ??= this.params.driveConfidence;
+      this.driveMood = pickConfidence(this.driveConfidence, this.params.driveMoodSwing);
       this.drive = new HerDrive(q, {
-        params: this.params,
+        params: driveMood(this.params, this.driveMood),
         probe: (heading, distance) => this.driveProbe(heading, distance),
         isClear: (a, b) => this.driveClear(a, b),
       });
@@ -142,6 +146,7 @@ export const drivingMethods = {
     const exit = this.driveExit;
     this.driveExit = null;
     this.driveEvents.push(`done:${d.result}`);
+    this.driveConfidence = afterDrive(this.driveConfidence ?? p.driveConfidence, d.result);
     let how = exit?.how;
     if (!how) how = d.result === 'gaveUp' || d.result === 'noRoom' || Math.random() >= p.driveBackChance ? 'off' : 'back';
     q.setDriver(null);
