@@ -18,6 +18,8 @@ import { Speech, CompanionSounds } from './audio/companionAudio.js';
 import { DEFAULT_COMPANION_PARAMS, COMPANION_PARAM_RANGES } from './npc/companionParams.js';
 import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES } from './items/jerryCan.js';
 import { FuelTank } from './items/fuelTank.js';
+import { Toolbox } from './items/toolbox.js';
+import { Workshop } from './workshop/workshop.js';
 import { Interaction } from './interaction/interaction.js';
 import { Menu } from './interaction/menu.js';
 import { Hud } from './hud/hud.js';
@@ -152,6 +154,7 @@ export class Game {
           if (this.tooFastToMount(quad)) {
             return { text: `The ${unit.label} is going too fast to get on   ·   K ignition` };
           }
+          if (this.toolbox.held) return this.workshop.prompt(unit);
           if (this.can.held) {
             const pct = Math.round(quad.fuel.level * 100);
             if (quad.fuel.space < 0.01) return { text: `The ${unit.label} is full   ·   G put the can down` };
@@ -163,6 +166,7 @@ export class Game {
         },
         interact: () => {
           if (this.can.held) return; // E is for pouring while you're holding the can
+          if (this.toolbox.held) return this.workshop.open(unit);
           if (this.tooFastToMount(quad)) return;
           if (quad.isTipped) quad.rightItself();
           else this.mount(unit);
@@ -195,7 +199,7 @@ export class Game {
     });
     this.interaction.add({
       target: this.can.proxy,
-      isAvailable: () => !this.can.held,
+      isAvailable: () => !this.can.held && !this.toolbox.held,
       prompt: () => `Pick up the jerry can (${this.can.litres.toFixed(1)} L)`,
       interact: () => this.can.pickUp(this.camera),
     });
@@ -208,6 +212,16 @@ export class Game {
       },
       interact: () => {},
       hold: (dt) => this.can.held && this.can.fill(this.can.params.fillRate * dt) > 0,
+    });
+
+    // A toolbox by the petrol tank, for tinkering with the quads (see workshop.js).
+    this.toolbox = new Toolbox({ scene: this.scene, world: this.world, position: L.toolbox, yaw: L.toolbox.yaw });
+    this.workshop = new Workshop(this);
+    this.interaction.add({
+      target: this.toolbox.proxy,
+      isAvailable: () => !this.toolbox.held && !this.can.held,
+      prompt: () => 'Pick up the toolbox',
+      interact: () => this.toolbox.pickUp(this.camera),
     });
 
     // Start facing the quad she's standing by, wherever it ended up.
@@ -408,6 +422,12 @@ export class Game {
     this.can.putDown(spot, yaw + Math.PI / 2);
   }
 
+  putToolboxDown() {
+    const p = this.player.position;
+    const yaw = this.player.yaw;
+    this.toolbox.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7), yaw);
+  }
+
   // Loop -----------------------------------------------------------------
 
   frame() {
@@ -428,6 +448,8 @@ export class Game {
       this.interaction.clear();
       this.riddenUnit.quad.handleFrameInput(dt);
       if (input.wasPressed('KeyE')) this.tryDismount();
+    } else if (this.workshop.isOpen) {
+      this.workshop.handleInput(input);
     } else if (this.menu.isOpen) {
       this.menu.handleInput(input);
       if (!this.menu.isOpen) this.closeMenu();
@@ -444,6 +466,7 @@ export class Game {
       // Holding E pours fuel or fills the can.
       if (focused?.hold && input.isDown('KeyE') && focused.hold(dt)) pouring = true;
       if (this.can.held && input.wasPressed('KeyG')) this.putCanDown();
+      else if (this.toolbox.held && input.wasPressed('KeyG')) this.putToolboxDown();
     }
 
     this.accumulator += dt;
@@ -471,6 +494,7 @@ export class Game {
     if (!this.debugCamera) this.player.update(dt, alpha, ridden ? ridden.vibration : null);
     this.can.pouring = pouring;
     this.can.update(dt);
+    this.workshop.update(dt);
     this.audioHub.setPouring(pouring, dt);
     this.audioHub.update(dt, this.camera);
     this.world.update(dt, ridden ? ridden.quad.position : this.player.position, this.camera);
@@ -511,6 +535,8 @@ export class Game {
           ...(this.can.held ? [`Can      ${this.can.litres.toFixed(1)} L`] : []),
         ].join('\n'),
       );
+    } else if (this.toolbox.held) {
+      this.hud.setStatus('Toolbox\nTake it to a quad that is switched off\nG to put it down');
     } else if (this.can.held) {
       this.hud.setStatus(`Jerry can  ${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L\nG to put it down`);
     } else {
