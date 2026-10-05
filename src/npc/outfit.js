@@ -290,7 +290,7 @@ function shirtColour(hex) {
   return new THREE.Color().setRGB(lin.r, lin.g, lin.b, THREE.SRGBColorSpace);
 }
 
-const COLLAR_GAP = 0.3; // half-angle of the opening at the front, radians
+const COLLAR_GAP = 0.22; // half-angle of the opening at the front, radians
 
 /**
  * Cross-section of the folded collar: [height above the neckline, distance off the body], from the
@@ -300,12 +300,15 @@ const COLLAR_GAP = 0.3; // half-angle of the opening at the front, radians
 export function collarSection(tip) {
   return [
     [0, 0.004], // inside, hugging the neck at the neckline
-    [0.02, 0.008], // top of the stand
-    [0.023, 0.016], // the crease
-    [0.01, 0.026], // outer face coming down
-    [-0.014 - 0.034 * tip, 0.016], // the flap resting on the shirt
+    [0.012, 0.007], // top of the stand
+    [0.016, 0.014], // the crease
+    [0.004, 0.026], // outer face coming down
+    [-0.032 - 0.036 * tip, 0.016], // the flap resting on the shirt
   ];
 }
+
+// How much lighter than the shirt each row is: the stand is close to it, the flap lighter so the fold shows.
+const COLLAR_SHADE = [1.3, 1.3, 1.7, 1.9, 1.9];
 
 /**
  * A polo collar: the shirt's own neckline thickened into a band, and a folded collar round it,
@@ -339,12 +342,13 @@ function addCollar(rig, color) {
   const segments = 30;
   const rows = collarSection(0).length;
   const positions = [];
+  const colors = [];
   for (let i = 0; i <= segments; i++) {
     const ang = COLLAR_GAP + (i / segments) * (Math.PI * 2 - 2 * COLLAR_GAP);
     const dir = new THREE.Vector3(Math.sin(ang), 0, Math.cos(ang));
     // 1 at the ends beside the opening, falling to 0 a little way round.
     const edge = Math.min(ang - COLLAR_GAP, Math.PI * 2 - COLLAR_GAP - ang);
-    const tip = 1 - smooth01(edge / 0.5);
+    const tip = 1 - smooth01(edge / 0.6);
     // Radius of the neck at the neckline, used up the stand; the flap follows the shoulders and chest.
     const neckR = surfaceDistance(rig, body, new THREE.Vector3(neck.x, top, neck.z), dir) ?? 0.05;
     for (const [dy, off] of collarSection(tip)) {
@@ -352,6 +356,7 @@ function addCollar(rig, color) {
       const r = dy > 0 ? neckR : surfaceDistance(rig, body, new THREE.Vector3(neck.x, y, neck.z), dir) ?? neckR;
       positions.push(neck.x + dir.x * (r + off), y, neck.z + dir.z * (r + off));
     }
+    for (const k of COLLAR_SHADE) colors.push(shirt.r * k, shirt.g * k, shirt.b * k);
   }
   const index = [];
   for (let i = 0; i < segments; i++) {
@@ -363,10 +368,10 @@ function addCollar(rig, color) {
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   geo.setIndex(index);
   geo.computeVertexNormals();
-  // A touch lighter than the shirt so the folds read against it.
-  const fold = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: shirt.clone().multiplyScalar(1.6), roughness: 0.85, side: THREE.DoubleSide, flatShading: true }));
+  const fold = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, side: THREE.DoubleSide, flatShading: true }));
   fold.name = 'collarFold';
   fold.castShadow = true;
   rig.root.add(fold);

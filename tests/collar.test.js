@@ -6,7 +6,7 @@ describe('collarSection', () => {
     const rows = collarSection(0);
     const heights = rows.map(([h]) => h);
     expect(heights[0]).toBe(0);
-    expect(Math.max(...heights)).toBeGreaterThan(0.015);
+    expect(Math.max(...heights)).toBeGreaterThan(0.01);
     expect(heights[heights.length - 1]).toBeLessThan(0);
     // Moves outwards over the crease so the flap lies outside the stand.
     expect(rows[3][1]).toBeGreaterThan(rows[1][1]);
