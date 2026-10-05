@@ -57,8 +57,10 @@ export class EngineLoad {
    * @param {boolean} s.coupled      Clutch locked onto a moving bike.
    * @param {number} s.mass          kg
    * @param {{force:number, mud:number, contact:boolean}[]} s.wheels
+   * @param {number} [s.grip]        Fraction of the drive the tyres put down, from the physics (traction.js);
+   *                                 without it, worked out from tyreGrip and mudGrip.
    */
-  update(dt, { throttle, brake, forwardSpeed, reverse, driveForce, available, clutch, coupled, mass, wheels }) {
+  update(dt, { throttle, brake, forwardSpeed, reverse, driveForce, available, clutch, coupled, mass, wheels, grip }) {
     const p = this.params;
     const a = this.prevSpeed !== null && dt > 0 ? (forwardSpeed - this.prevSpeed) / dt : 0;
     this.prevSpeed = forwardSpeed;
@@ -81,7 +83,7 @@ export class EngineLoad {
     // Of the force the tyres put down, whatever isn't speeding the bike up is
     // going into the hill, the mud or whatever's in the way.
     const push = Math.max(0, driveForce * dir);
-    this.grip = tractionFraction(wheels, push, p);
+    this.grip = push <= 0 ? 1 : (grip ?? tractionFraction(wheels, push, p));
     this.put += (push * this.grip - this.put) * k;
     this.accelForce += (mass * a * dir - this.accelForce) * k;
     const put = this.put;

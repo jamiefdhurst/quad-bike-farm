@@ -329,6 +329,7 @@ export class Quad {
       coupled: d.coupled,
       mass: p.mass,
       wheels: this.physics.wheelLoads(),
+      grip: this.physics.traction.putDown, // wheelspin from last step
     });
 
     let brake = this.brake * p.maxBrake;
@@ -346,6 +347,8 @@ export class Quad {
       brake,
       steer: this.steer,
       mudAt: (x, z) => this.world.mudAt(x, z),
+      puddleAt: (x, z) => this.world.puddleAt?.(x, z) ?? 0,
+      dt,
     });
     this.physics.update(dt);
   }

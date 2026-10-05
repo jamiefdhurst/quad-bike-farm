@@ -126,6 +126,7 @@ export const QUAD_SPECS = [
       engineBrakeForce: 60,
       powerbandRpm: 6000,
       torqueBelowBand: 0.45,
+      fourWheelDrive: 0, // chain drive to a solid rear axle, so it spins up its back wheels in mud
     },
     vibration: {
       pulseGain: 1.1,

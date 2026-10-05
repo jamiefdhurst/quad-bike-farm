@@ -1,6 +1,8 @@
 // Rapier side of the quad: a dynamic chassis and a ray-cast vehicle controller.
 // No rendering here; quad.js mirrors this into the scene.
 
+import { Traction, surfaceGrip, isDriven } from './traction.js';
+
 // Wheel layout in chassis space (+Z forward, +X to the rider's left).
 export const WHEELS = [
   { name: 'wheel_fl', x: 0.48, z: 0.62, front: true },
@@ -49,6 +51,19 @@ export class QuadPhysics {
         params.wheelRadius,
       );
     }
+    // What each wheel is standing on, refreshed every step (see applyControls).
+    this.wheelInfo = WHEELS.map((w) => ({
+      contact: false,
+      point: { x: 0, y: 0, z: 0 },
+      mud: 0,
+      puddle: 0,
+      load: 0,
+      grip: params.grassFrictionSlip,
+      driven: false,
+      spinAngle: 0, // extra wheel rotation from wheelspin, radians
+    }));
+    this.traction = new Traction(WHEELS.length);
+    this.driveSign = 1;
     this.applyParams();
   }
 
@@ -86,26 +101,52 @@ export class QuadPhysics {
    * @param {number} c.driveForce  Newtons, positive forwards, split across all four wheels.
    * @param {number} c.brake       Brake impulse per wheel.
    * @param {number} c.steer       Radians, positive turns left.
-   * @param {(x:number, z:number) => number} [c.mudAt]  Surface lookup for per-wheel grip.
+   * @param {(x:number, z:number) => number} [c.mudAt]     Surface lookup for per-wheel grip, 0..1.
+   * @param {(x:number, z:number) => number} [c.puddleAt]  Standing water, 0..1.
+   * @param {number} [c.dt]
    */
-  applyControls({ driveForce, brake, steer, mudAt }) {
+  applyControls({ driveForce, brake, steer, mudAt, puddleAt, dt = 1 / 60 }) {
     const p = this.params;
+    const v = this.vehicle;
+    // Grip under each wheel, from where it touched down last step.
     for (let i = 0; i < WHEELS.length; i++) {
-      this.vehicle.setWheelEngineForce(i, driveForce / 4);
-      this.vehicle.setWheelBrake(i, brake);
-      this.vehicle.setWheelSteering(i, WHEELS[i].front ? steer : 0);
-      if (mudAt) {
-        const contact = this.vehicle.wheelIsInContact(i) ? this.vehicle.wheelContactPoint(i) : null;
-        const mud = contact ? mudAt(contact.x, contact.z) : 0;
-        this.wheelMud[i] = mud;
-        this.vehicle.setWheelFrictionSlip(i, p.grassFrictionSlip + (p.mudFrictionSlip - p.grassFrictionSlip) * mud);
+      const w = this.wheelInfo[i];
+      w.contact = v.wheelIsInContact(i);
+      if (w.contact) {
+        const c = v.wheelContactPoint(i);
+        w.point.x = c.x;
+        w.point.y = c.y;
+        w.point.z = c.z;
       }
+      w.mud = w.contact && mudAt ? mudAt(w.point.x, w.point.z) : 0;
+      w.puddle = w.contact && puddleAt ? puddleAt(w.point.x, w.point.z) : 0;
+      w.load = w.contact ? (v.wheelSuspensionForce(i) ?? 0) : 0;
+      w.grip = surfaceGrip(p, w.mud, w.puddle);
+      // Puddles are mud too, as far as the engine's concerned.
+      this.wheelMud[i] = Math.max(w.mud, w.puddle);
+      w.driven = isDriven(p, WHEELS[i].front);
     }
+    const t = this.traction.update(dt, driveForce, this.wheelInfo, p);
+    if (Math.abs(driveForce) > 1) this.driveSign = Math.sign(driveForce);
+    for (let i = 0; i < WHEELS.length; i++) {
+      v.setWheelEngineForce(i, t.forces[i]);
+      v.setWheelBrake(i, brake);
+      v.setWheelSteering(i, WHEELS[i].front ? steer : 0);
+      v.setWheelFrictionSlip(i, t.grips[i]);
+    }
+  }
+
+  /** How fast the driven tyres are turning over the ground beyond rolling, m/s. */
+  get spinSlip() {
+    return this.traction.spinSlip(this.params);
   }
 
   /** Must run every fixed step before the physics world steps. */
   update(dt) {
     this.vehicle.updateVehicle(dt);
+    // Spinning wheels turn faster than the ground goes by.
+    const spin = (this.driveSign * this.spinSlip * dt) / this.params.wheelRadius;
+    for (const w of this.wheelInfo) if (w.driven) w.spinAngle = (w.spinAngle + spin) % (Math.PI * 2);
     // The raycast wheels' brakes can't quite hold it on a slope: it creeps a metre
     // or so a minute. Parked and all but still, its sideways and along-the-ground
     // drift is cancelled; it can still settle and bounce up and down.
@@ -140,7 +181,7 @@ export class QuadPhysics {
   wheelState(i) {
     return {
       suspension: this.vehicle.wheelSuspensionLength(i) ?? this.params.suspensionRestLength,
-      rotation: this.vehicle.wheelRotation(i) ?? 0,
+      rotation: (this.vehicle.wheelRotation(i) ?? 0) + this.wheelInfo[i].spinAngle,
       steering: this.vehicle.wheelSteering(i) ?? 0,
       contact: this.vehicle.wheelIsInContact(i),
     };

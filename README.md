@@ -99,6 +99,10 @@ Things to know:
 - If you flood it, take the choke off and crank with the throttle held open (`W` + `R`) to clear it.
 - The bike keeps idling when you get off, and you can watch and hear it shake from outside. With nobody on it, it also jolts over the ground as it moves, harder the faster it goes, so a quad driving itself round in circles visibly bounces. Riding it, the shake is as it always was.
 
+## Mud
+
+The track and especially its puddles are slippery: grip drops from 2.2 on grass to 0.7 on the track and 0.42 in a puddle (all scaled by tyre pressure). The yellow quad is rear-wheel drive and spins its back wheels if you give it everything in the mud; the four-wheel-drive farm quads only slip in puddles. Tyres throw clumps and puddles splash, wheels leave ruts that fade over a couple of minutes, and the quads get muddier the more you ride, dark and wet at first and drying lighter. Each quad's Mud folder in the tuning panel has the spray and rut settings, and "Mud on it" cleans it off.
+
 ## Tinkering
 
 Pick up the red toolbox by the petrol tank (`E`), take it to a quad that's switched off and press `E` to get the spanners out. The panel has five adjustments, each with its current and stock values and a note on the trade-off:
