@@ -515,6 +515,20 @@ function fenders(root, style, paint) {
   }
 }
 
+/**
+ * Where a passenger holds on with nobody in front: pillionGripLeft and
+ * pillionGripRight, on the rails or either end of a grab strap.
+ */
+function pillionGrips(root, x, y, z, strap) {
+  for (const s of [-1, 1]) {
+    const grip = new THREE.Object3D();
+    grip.name = s > 0 ? 'pillionGripLeft' : 'pillionGripRight';
+    grip.position.set(s * x, y, z);
+    grip.userData.strap = strap;
+    root.add(grip);
+  }
+}
+
 /** Footboards with a raised outer lip, grip ribs and a heel guard. */
 function footwells(root) {
   for (const s of [-1, 1]) {
@@ -926,6 +940,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
       'pillionSeat',
     );
     rbox(0.31, 0.012, 0.03, 0.005, MAT.plastic, 0, 0.912, -0.47, root, 'grabStrap', 1);
+    pillionGrips(root, 0.09, 0.912, -0.47, true);
   } else {
     add(
       loftGeometry([
@@ -957,6 +972,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
     for (const s of [-1, 1]) {
       pipe(mx(s, [[0.2, 0.84, -0.4], [0.25, 0.99, -0.44], [0.25, 0.99, -0.78], [0.2, 0.84, -0.82]]), 0.013, MAT.chrome, root, { bend: 0.05, steps: 5 });
     }
+    pillionGrips(root, 0.25, 0.99, -0.55, false);
   }
 
   // Where the rider's feet go: footwells on the utilities, nerf bars and pegs on the sport quad.
