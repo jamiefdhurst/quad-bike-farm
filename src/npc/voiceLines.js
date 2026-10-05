@@ -601,6 +601,15 @@ export const VOICE_LINES = {
   },
 
   // Giving you a ride on the back ---------------------------------------------
+  ackFollow: {
+    cooldown: 0,
+    lines: ["Ooh, a convoy! Okay.", "Right, I'll follow you. Not too fast.", "Lead the way, I'll be right behind you.", 'Go on then, I\'ll get this one going.', 'Follow the leader!'],
+  },
+  fallingBehind: {
+    shout: true,
+    cooldown: 25,
+    lines: ['Wait for me!', 'Slow down!', "Oi! I can't keep up!", 'Hang on!', "You're going too fast!", 'Wait up!'],
+  },
   ackGiveRide: {
     cooldown: 0,
     lines: ['Ooh, really? Okay!', "Hop on then, I'll drive.", 'Me? Driving you? Go on then.', "Right. Hold on tight, I'm getting it started.", 'You trust me? Brave.'],

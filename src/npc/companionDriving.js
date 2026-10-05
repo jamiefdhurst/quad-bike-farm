@@ -40,7 +40,15 @@ export const drivingStates = {
       // Giving you a ride: bigger loops, and she waits for you to get on.
       const ride = this.giveRide;
       this.giveRide = false;
+      const following = this.followWanted;
+      this.followWanted = false;
       const params = driveMood(this.params, this.driveMood);
+      params.driveSpeedMaxBase = this.params.driveSpeedMax;
+      if (following) {
+        // Keeping up with you takes more throttle than pottering about, and she minds speed less.
+        params.driveMaxThrottle = Math.min(1, this.params.followMaxThrottle * (params.driveSpeedMax / this.params.driveSpeedMax));
+        params.driveScareSpeed = this.params.followScareSpeed;
+      }
       if (ride || q.passenger) {
         params.driveLoopRadiusMin *= this.params.rideLoopScale;
         params.driveLoopRadiusMax *= this.params.rideLoopScale;
@@ -49,6 +57,10 @@ export const drivingStates = {
         params,
         passenger: () => !!q.passenger,
         waitForPassenger: ride,
+        follow: following ? () => {
+          const lead = this.followTarget?.();
+          return lead && lead !== q ? lead : null;
+        } : null,
         probe: (heading, distance) => this.driveProbe(heading, distance),
         isClear: (a, b) => this.driveClear(a, b),
       });
@@ -76,6 +88,7 @@ export const drivingStates = {
         return;
       }
 
+      this.probeIgnore = d.follow?.()?.physics.collider.handle ?? null;
       for (const e of d.update(dt)) {
         if (e.startsWith('start:')) this.startEvents.push(e.slice(6));
         else this.driveEvents.push(e);
@@ -118,8 +131,9 @@ export const drivingStates = {
 
 export const drivingMethods = {
   /** Walks to the front of a quad, gets on and has a little drive; with `giveRide`, waits for you on the back. */
-  requestDrive(quad, { giveRide = false } = {}) {
+  requestDrive(quad, { giveRide = false, follow = false } = {}) {
     this.giveRide = giveRide;
+    this.followWanted = follow;
     if (this.fsm.is('driving')) {
       if (quad !== this.quad) this.stopDriving('off', () => this.requestDrive(quad));
       return;
@@ -234,7 +248,8 @@ export const drivingMethods = {
     const own = this.collider.handle;
     const bike = quad.physics.collider.handle;
     const hit = this.physics.castRay(ray, distance, true, undefined, undefined, undefined, undefined, (c) => {
-      return c.handle !== terrain && c.handle !== own && c.handle !== bike;
+      // Following you, your quad isn't an obstacle: she keeps her gap from it anyway.
+      return c.handle !== terrain && c.handle !== own && c.handle !== bike && c.handle !== this.probeIgnore;
     });
     return hit ? (hit.timeOfImpact ?? hit.toi) : Infinity;
   },

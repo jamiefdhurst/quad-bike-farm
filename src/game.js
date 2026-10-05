@@ -133,6 +133,7 @@ export class Game {
       params: { ...DEFAULT_COMPANION_PARAMS },
     });
     this.companion.quads = this.units.map((u) => u.quad);
+    this.companion.followTarget = () => this.riddenUnit?.quad ?? null;
     this.companionSounds = new CompanionSounds(this.audioHub);
     this.voice = new CompanionVoice({
       companion: this.companion,

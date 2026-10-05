@@ -60,7 +60,7 @@ export class CompanionVoice {
 
   /** She was asked to do something from the menu. */
   onRequest(kind) {
-    const SAY = { mount: 'ackMount', start: 'ackStart', drive: 'ackDrive', back: 'ackBack', stopDrive: 'ackStopDrive', letOff: 'ackLetOff', keepOn: 'ackKeepOn', giveRide: 'ackGiveRide', passengerOn: 'passengerOn', letMeOff: 'ackLetMeOff', stopHere: 'ackStopHere', slower: 'ackSlower', faster: 'ackFaster', goAgain: 'ackGoAgain', swap: 'ackSwap' };
+    const SAY = { mount: 'ackMount', start: 'ackStart', drive: 'ackDrive', back: 'ackBack', stopDrive: 'ackStopDrive', letOff: 'ackLetOff', keepOn: 'ackKeepOn', giveRide: 'ackGiveRide', follow: 'ackFollow', passengerOn: 'passengerOn', letMeOff: 'ackLetMeOff', stopHere: 'ackStopHere', slower: 'ackSlower', faster: 'ackFaster', goAgain: 'ackGoAgain', swap: 'ackSwap' };
     this.say(SAY[kind] ?? 'ackStand', { force: true });
   }
 
@@ -289,6 +289,7 @@ export class CompanionVoice {
       tooFast: ['driveTooFast', 1],
       noRoom: ['driveNoRoom', 1],
       waitingForYou: ['waitingForYou', 1],
+      fallingBehind: ['fallingBehind', 1],
       'done:bored': ['driveBored', 0.9],
       'done:scared': ['driveScared', 0.9],
       'done:gaveUp': ['driveGaveUp', 0.9],

@@ -141,6 +141,7 @@ Look at her and press `E`:
 - **Get on the red / blue / yellow quad**: she walks over and sits on the pillion seat. Get on and ride; she stays on. Asking her onto the other quad while she's sitting on one, she gets off and walks over.
 - **Start the red / blue / yellow quad**: she walks to its handlebars, turns the key, checks the fuel tap (usually), puts the choke on if it's cold (usually), and cranks in short goes, talking herself through it. If it catches she eases the choke off as it warms, then leaves it to you; after four goes she gives up and switches it off. Get on while she's at it and she stops.
 - **Take me for a ride on the red / blue quad**: she gets on the front, starts it and waits for you to get on the back (look at the quad and press `E`). She drives bigger loops and keeps going while you're aboard. Press `E` on the back to talk to her: stop here, slow down, go a bit faster, let me off, or let me drive (she gets off, you slide forward, and she hops on the back). You can also get on the back whenever she's driving and going slowly.
+- **Follow me on the red / blue / yellow quad**: she gets on that one, starts it and waits for you to set off on another, then follows about 8 m behind at your pace, up to about 25 mph (less if she's feeling careful, more if confident). Get too far ahead and she shouts after you; stop and she pulls up behind you and waits. To finish, get off and talk to her.
 - **Drive the red / blue / yellow quad**: she gets on the front, starts it like the learner she is, and potters round a loop near where she started for about a minute. How she drives depends on how she feels that day: careful (creeping, shaky, lots of stops, quick to get scared) or confident (quicker, smoother, bigger loops), and a fright makes her more careful next time while a good go builds her confidence. She then stops, bored or scared, and gets off or hops on the back. While she drives you can ask her to stop and get off or move onto the back. Get on and she shuffles back; if her quad is too fast to climb onto, press `E` on it to ask her to stop and let you on.
 - **Stand next to the red / blue quad**: she gets off if she's on, or walks over if she isn't, and stands beside it facing it.
 
@@ -229,7 +230,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 5. If she's on the back, after a while she asks occasionally if she can come off **Done.**
 6. Quads get more rough over time, the roughness value needs to go up even more, or have more of an effect at the top range, a lot more in both idle variation and shaking, but it can be fixed with the toolbox **Done.**
 7. I can also ride pillion with her **Done.**
-8. Allow her to follow you and ride together on different quads
+8. Allow her to follow you and ride together on different quads **Done.**
 9. Ability to wash the bikes
 10. The girl's shirt collar is still not very good - it overlaps with her neck too much. Can we also give her shorts instead of jeans?
 11. If she's going round in circles and doesn't like it, after a while she jumps into the driver's seat and stops it, or drives around herself

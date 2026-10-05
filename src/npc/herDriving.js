@@ -120,8 +120,10 @@ export class HerDrive {
    * @param {function} [opts.random]
    * @param {function} [opts.passenger]  () => whether someone's riding on the back; then she doesn't tire of it.
    * @param {boolean} [opts.waitForPassenger]  Started it to give you a ride: she waits for you to get on.
+   * @param {function} [opts.follow]  () => the quad she's following (yours), or null. Following, she keeps
+   *   behind it at its pace rather than doing her own loop, and doesn't tire of it.
    */
-  constructor(quad, { params, probe, isClear, random = Math.random, startingParams, passenger = () => false, waitForPassenger = false }) {
+  constructor(quad, { params, probe, isClear, random = Math.random, startingParams, passenger = () => false, waitForPassenger = false, follow = null }) {
     this.quad = quad;
     this.p = params;
     this.probe = probe;
@@ -132,6 +134,8 @@ export class HerDrive {
     this.waitForPassenger = waitForPassenger;
     this.waited = 0;
     this.cruiseScale = 1; // you asked her to go faster or slower
+    this.follow = follow;
+    this.behindTime = 0; // seconds she's been well behind you
     this.controls = { throttle: 0, brake: 1, steer: 0, starter: false, reverse: false };
     this.events = [];
     this.done = false;
@@ -174,9 +178,32 @@ export class HerDrive {
     return this.between(this.p.driveSpeedMin, this.p.driveSpeedMax) * this.cruiseScale;
   }
 
-  /** Someone on the back: she keeps going until asked, rather than tiring of it. */
+  /** Someone on the back, or following you: she keeps going until asked, rather than tiring of it. */
   get carrying() {
-    return this.passenger();
+    return this.passenger() || !!this.follow;
+  }
+
+  /**
+   * Following: where to aim (a point behind your quad, a little to one side) and
+   * how fast, to hold her gap. Null when there's nothing to follow or you've stopped
+   * and she's caught up.
+   */
+  followTarget(pos) {
+    const p = this.p;
+    const lead = this.follow?.();
+    if (!lead) return null;
+    const lp = lead.position;
+    const fx = Math.sin(lead.yaw);
+    const fz = Math.cos(lead.yaw);
+    const point = { x: lp.x - fx * p.followGap - fz * 1.2, z: lp.z - fz * p.followGap + fx * 1.2 };
+    const gap = Math.hypot(lp.x - pos.x, lp.z - pos.z);
+    const leadSpeed = Math.max(0, lead.forwardSpeed);
+    if (leadSpeed < 0.8 && gap < p.followGap * 1.4) return { point, speed: 0, gap, stopped: true };
+    // Never right up against you, whichever way you're going.
+    if (gap < p.followMinGap) return { point, speed: 0, gap, stopped: true };
+    const top = p.followMaxSpeed * (p.driveSpeedMax / p.driveSpeedMaxBase);
+    const speed = clamp(leadSpeed + p.followCatchUp * (gap - p.followGap), 0, top);
+    return { point, speed, gap, stopped: false };
   }
 
   /** Go a bit faster (factor > 1) or slower; she won't go past her scare speed. */
@@ -272,7 +299,12 @@ export class HerDrive {
         // Let it tick over a moment, then off she goes (once you're on, if she's giving you a ride).
         this.hold(c);
         this.tendChoke();
-        if (this.waitForPassenger && !this.carrying) {
+        // Following you: she sets off once you do.
+        if (this.follow && !(this.follow()?.forwardSpeed > 1)) {
+          this.hold(c);
+          break;
+        }
+        if (this.waitForPassenger && !this.passenger()) {
           this.waited += dt;
           if (this.waited > 15) {
             this.waited = 0;
@@ -421,11 +453,32 @@ export class HerDrive {
       return;
     }
 
+    // Following you: aim behind your quad at your pace, instead of her own loop.
+    let follow = null;
+    if (this.follow) {
+      follow = this.followTarget(q.position);
+      if (!follow || follow.stopped) {
+        // You've stopped (or got off): she pulls up behind you and waits.
+        this.hold(c);
+        if (q.forwardSpeed > 0.4) c.brake = p.driveBrakeFirm * 1.5;
+        return;
+      }
+      this.waypoints = [follow.point];
+      this.index = 0;
+      this.pauseFor = follow.point;
+      this.pauseHere = false;
+      this.cruise = follow.speed;
+      this.behindTime = follow.gap > p.followFarGap ? this.behindTime + dt : 0;
+      if (this.behindTime > 4) {
+        this.behindTime = -20; // not again for a while
+        this.events.push('fallingBehind');
+      }
+    }
     if (this.index >= this.waypoints.length && !this.plan()) return;
     const wp = this.waypoints[this.index];
     const pos = q.position;
     const dist = Math.hypot(wp.x - pos.x, wp.z - pos.z);
-    if (dist < p.driveArriveRadius) {
+    if (dist < p.driveArriveRadius && !follow) {
       this.index++;
       this.events.push('waypoint');
       if (this.pauseHere) {
@@ -500,7 +553,7 @@ export class HerDrive {
       this.wobbleTimer = this.between(0.3, 1.1);
       this.wobble = 1 + (this.random() * 2 - 1) * p.driveJerk;
     }
-    const stopsHere = this.index === this.waypoints.length - 1 || this.pauseHere;
+    const stopsHere = !follow && (this.index === this.waypoints.length - 1 || this.pauseHere);
     const target = targetSpeed(this.cruise, { error, toStop: stopsHere ? dist : Infinity, clear: this.clearAhead });
     const short = target - speed;
     this.integral = clamp(this.integral + short * dt, -3, 8);

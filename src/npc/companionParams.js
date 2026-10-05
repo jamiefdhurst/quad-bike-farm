@@ -76,6 +76,13 @@ export const DEFAULT_COMPANION_PARAMS = {
   driveKeyOffChance: 0.05, // getting off after a drive, the chance she switches it off (she nearly always leaves it running)
   driveSeatRaise: 0.04, // metres, fine-tunes how high she sits on the front seat
   driveSeatForward: 0.0, // metres, fine-tunes where she sits along it
+  followGap: 8, // metres behind you she likes to be, following you on another quad
+  followMinGap: 4, // closer than this she stops
+  followCatchUp: 0.6, // m/s faster per metre further back than that
+  followMaxSpeed: 10, // m/s she'll go to keep up at middling confidence (careful slower, confident quicker)
+  followMaxThrottle: 0.9,
+  followScareSpeed: 15, // following, she minds speed much less
+  followFarGap: 45, // metres; further behind than this and she shouts after you
   rideLoopScale: 2.5, // giving you a ride, her loops are this much bigger
   driveTalkRange: 14, // metres; you can talk to her from this far while she's driving
 
@@ -141,6 +148,13 @@ export const COMPANION_PARAM_RANGES = {
   boredDriveChance: [0, 1, 0.05],
   wanderMin: [1, 50, 0.5],
   wanderMax: [1, 80, 0.5],
+  followGap: [2, 40, 0.5],
+  followMinGap: [1, 20, 0.5],
+  followCatchUp: [0, 3, 0.05],
+  followMaxSpeed: [1, 25, 0.5],
+  followMaxThrottle: [0.1, 1, 0.01],
+  followScareSpeed: [2, 30, 0.5],
+  followFarGap: [5, 200, 1],
   rideLoopScale: [1, 6, 0.1],
   driveConfidence: [0, 1, 0.01],
   driveMoodSwing: [0, 1, 0.01],
