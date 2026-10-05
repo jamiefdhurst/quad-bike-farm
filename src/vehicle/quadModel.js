@@ -1350,6 +1350,13 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
   pillionAnchor.name = 'pillionAnchor';
   pillionAnchor.position.set(0, race ? 0.94 : sport ? 0.98 : 1.0, sport ? -0.66 : -0.6);
   root.add(pillionAnchor);
+  // Quads with a front rack have a spot on it to sit, hips towards the back of the deck so her legs hang over the nose.
+  if (style === 'utility' || style === 'utility2' || farm) {
+    const rackAnchor = new THREE.Object3D();
+    rackAnchor.name = 'rackAnchor';
+    rackAnchor.position.set(0, 0.84, 0.66);
+    root.add(rackAnchor);
+  }
   // Your eyes riding on the back while she drives.
   const pillionCameraAnchor = new THREE.Object3D();
   pillionCameraAnchor.name = 'pillionCameraAnchor';

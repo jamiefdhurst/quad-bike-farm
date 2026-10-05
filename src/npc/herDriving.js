@@ -286,8 +286,11 @@ export class HerDrive {
       const p = this.p;
       this.friendAboard = true;
       this.events.push('friendOn');
-      p.driveLoopRadiusMin *= p.rideLoopScale;
-      p.driveLoopRadiusMax *= p.rideLoopScale;
+      // Already scaled up if you're on the back.
+      if (!this.passenger()) {
+        p.driveLoopRadiusMin *= p.rideLoopScale;
+        p.driveLoopRadiusMax *= p.rideLoopScale;
+      }
       this.waypoints = []; // a new, bigger loop from here
       this.driveFor = Math.max(this.driveFor, this.time + this.between(p.friendRideMin, p.friendRideMax));
     }

@@ -37,6 +37,7 @@ export const DEFAULT_VEHICLE_PARAMS = {
   maxSteerDeg: 32,
   steerRate: 3.5, // 1/s, how fast the bars follow input
   steerSpeedReduction: 0.06, // less lock at speed: max / (1 + k * speed)
+  rackSteerLoss: 0.08, // fraction of steering lock lost with a girl sat on the front rack
 
   // Drivetrain: automatic with a centrifugal clutch and CVT
   maxDriveForce: 2000, // newtons at the wheels, full throttle, peak torque
@@ -111,6 +112,7 @@ export const VEHICLE_PARAM_RANGES = {
   maxSteerDeg: [5, 50, 0.5],
   steerRate: [0.5, 20, 0.1],
   steerSpeedReduction: [0, 0.5, 0.005],
+  rackSteerLoss: [0, 0.5, 0.01],
   maxDriveForce: [200, 8000, 50],
   maxSpeed: [3, 40, 0.5],
   maxReverseSpeed: [1, 10, 0.1],

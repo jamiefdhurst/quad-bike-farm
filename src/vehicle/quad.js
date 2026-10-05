@@ -54,6 +54,8 @@ export class Quad {
     this.cameraAnchor = part('cameraAnchor');
     this.pillionCameraAnchor = part('pillionCameraAnchor');
     this.pillionAnchor = part('pillionAnchor') ?? null; // every spec's model has one
+    this.rackAnchor = part('rackAnchor') ?? null; // only quads with a front rack
+    this.rackRider = null; // the girl sitting on the front rack, if any
     this.riderAnchor = part('riderAnchor');
     this.exhaustTip = part('exhaustTip');
     this.wheels = WHEELS.map((w) => ({ ...w, object: part(w.name), spin: part(w.name).getObjectByName('spin') }));
@@ -110,6 +112,10 @@ export class Quad {
     this.prevQuat.copy(this.currQuat);
     this.model.position.copy(this.currPos);
     this.model.quaternion.copy(this.currQuat);
+  }
+
+  get hasRack() {
+    return !!this.rackAnchor;
   }
 
   get hasPillion() {
@@ -306,7 +312,9 @@ export class Quad {
       this.steer = this.ghost.steer;
     } else {
       // Steering lock reduces with speed.
-      const maxSteer = ((p.maxSteerDeg * Math.PI) / 180) / (1 + p.steerSpeedReduction * Math.abs(fwd));
+      // Someone sat on the front rack makes the bars a little heavier.
+      const rackLoad = this.rackRider ? 1 - p.rackSteerLoss : 1;
+      const maxSteer = (((p.maxSteerDeg * Math.PI) / 180) * rackLoad) / (1 + p.steerSpeedReduction * Math.abs(fwd));
       this.steer += (steerInput * maxSteer - this.steer) * Math.min(1, p.steerRate * dt);
     }
 

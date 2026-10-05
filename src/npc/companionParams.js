@@ -16,6 +16,9 @@ export const DEFAULT_COMPANION_PARAMS = {
   legSpread: 0.38, // radians each thigh swings out to straddle the seat
   seatRaise: 0.06, // metres, fine-tunes how high she sits on the pillion
   seatForward: 0.0, // metres, fine-tunes where she sits along the seat
+  rackSeatRaise: 0.06, // metres, fine-tunes how high she sits on the front rack
+  rackSeatForward: 0.0, // metres, fine-tunes where she sits along the front rack
+  rackLegSpread: 0.3, // fraction of legSpread on the front rack, where she sits with her legs nearly together
   rideBounce: 1.0, // how much her upper body reacts to the bike's vibration
   maxMountSpeed: 0.3, // m/s, waits for the quad to stop before climbing on
 
@@ -156,6 +159,9 @@ export const COMPANION_PARAM_RANGES = {
   legSpread: [0, 1, 0.01],
   seatRaise: [-0.3, 0.3, 0.005],
   seatForward: [-0.3, 0.3, 0.005],
+  rackSeatRaise: [-0.3, 0.3, 0.005],
+  rackSeatForward: [-0.3, 0.3, 0.005],
+  rackLegSpread: [0, 1, 0.01],
   rideBounce: [0, 4, 0.05],
   maxMountSpeed: [0, 3, 0.05],
   glanceEveryMin: [0.5, 30, 0.5],

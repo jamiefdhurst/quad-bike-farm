@@ -160,7 +160,7 @@ export const drivingMethods = {
       return;
     }
     if (this.fsm.is('shuffling', 'dismounting')) return;
-    if (this.fsm.is('seated') && quad === this.quad) {
+    if (this.fsm.is('seated') && quad === this.quad && this.seatKind !== 'rack') {
       this.fsm.transition('shuffling', { to: 'rider' });
       return;
     }
@@ -223,7 +223,7 @@ export const drivingMethods = {
 
   /** Her friend on the back of the quad she's driving: 'on', 'coming' (on her way to get on), or null. */
   friendOnBack() {
-    const o = this.others().find((o) => o.claimedQuad === this.quad && o.claimedSeat === 'pillion');
+    const o = this.others().find((o) => o.claimedQuad === this.quad && ['pillion', 'rack'].includes(o.claimedSeat));
     if (!o) return null;
     if (o.fsm.is('seated')) return 'on';
     return o.fsm.is('walking', 'mounting') ? 'coming' : null;
