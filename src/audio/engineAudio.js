@@ -9,6 +9,7 @@
 
 import workletUrl from './engineWorklet.js?url';
 import { DEFAULT_AUDIO_PARAMS, DEFAULT_SOUND_PARAMS } from './audioParams.js';
+import { SoundPath } from './propagation.js';
 
 // Recorded pulse banks in public/audio/, made by tools/slice_engine_audio.py.
 const BANK_NAMES = ['engine-bank', 'engine-bank-2t'];
@@ -128,6 +129,8 @@ export class AudioHub {
 
     const l = ctx.listener;
     const pos = listener.position;
+    // Where each quad's sound path measures its distance from (see propagation.js).
+    this.listenerPosition = { x: pos.x, y: pos.y, z: pos.z };
     const fwd = listener.getWorldDirection(this.tmpFwd ?? (this.tmpFwd = listener.position.clone()));
     const up = listener.up.clone().applyQuaternion(listener.quaternion);
     if (l.positionX) {
@@ -168,15 +171,11 @@ export class EngineAudio {
     if (!this.node) {
       const ctx = hub.ctx;
       const p = this.params;
-      this.panner = ctx.createPanner();
-      this.panner.panningModel = 'HRTF';
-      this.panner.distanceModel = 'inverse';
-      this.panner.refDistance = p.refDistance;
-      this.panner.rolloffFactor = p.rolloff;
-      this.panner.maxDistance = 600;
-      this.panner.connect(hub.master);
+      // Travel delay (Doppler), air absorption and panning; the ride sounds join it too.
+      this.path = new SoundPath(hub, { refDistance: p.refDistance, rolloff: p.rolloff });
+      this.panner = this.path.panner;
       this.node = new AudioWorkletNode(ctx, 'engine-processor', { numberOfInputs: 0, outputChannelCount: [1] });
-      this.node.connect(this.panner);
+      this.node.connect(this.path.input);
       this.nextFrameTime = 0;
     }
     const bank = hub.banks[this.params.recBank];
@@ -243,13 +242,7 @@ export class EngineAudio {
 
     this.panner.refDistance = p.refDistance;
     this.panner.rolloffFactor = p.rolloff;
-    const pn = this.panner;
-    if (pn.positionX) {
-      pn.positionX.setTargetAtTime(source.x, now, 0.02);
-      pn.positionY.setTargetAtTime(source.y, now, 0.02);
-      pn.positionZ.setTargetAtTime(source.z, now, 0.02);
-    } else {
-      pn.setPosition(source.x, source.y, source.z);
-    }
+    // onBoard is set by the quad's unit while you're riding it.
+    this.path.update(dt, source, !!this.onBoard);
   }
 }
