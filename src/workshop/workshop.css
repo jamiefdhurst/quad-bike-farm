@@ -1,0 +1,214 @@
+/* The toolbox panel (workshop.js), in the same dark, quiet style as the menu. */
+
+/* The game's "click to play" overlay stays out of the way while it's open. */
+#overlay.workshop {
+  display: none;
+}
+
+/* The quad's status stays up while it's open; the prompt and crosshair go. */
+.workshop-open .prompt,
+.workshop-open .crosshair {
+  display: none;
+}
+
+/* Her captions move over to the open side of the screen, above the quad's status. */
+.workshop-open .caption {
+  left: calc(50% - 240px);
+  bottom: 24%;
+  max-width: 44%;
+}
+
+.workshop {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 16px max(16px, 5vw);
+  pointer-events: none;
+  font-size: 14px;
+  color: #f2f2ee;
+}
+
+.ws-card {
+  pointer-events: auto;
+  width: min(470px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 12px 0 10px;
+  background: rgba(20, 22, 20, 0.86);
+  border-radius: 8px;
+  border-top: 3px solid #b3201a;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  user-select: none;
+}
+
+.ws-head {
+  padding: 0 16px 8px;
+}
+
+.ws-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+  white-space: pre;
+}
+
+.ws-sub {
+  margin-top: 3px;
+  font-size: 12px;
+  opacity: 0.55;
+}
+
+.ws-row {
+  padding: 8px 16px 9px;
+  border-left: 3px solid transparent;
+}
+
+.ws-row.selected {
+  background: rgba(255, 255, 255, 0.13);
+  border-left-color: rgba(255, 255, 255, 0.55);
+}
+
+.workshop .key {
+  display: inline-block;
+  width: 1.4em;
+  opacity: 0.5;
+  font-variant-numeric: tabular-nums;
+}
+
+.ws-name {
+  font-size: 15px;
+}
+
+.ws-row.changed .ws-name::after {
+  content: '  ·  changed';
+  font-size: 11px;
+  color: #f0b45a;
+  white-space: pre;
+}
+
+.ws-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 2px 1.4em;
+}
+
+.ws-step {
+  flex: none;
+  width: 30px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  font: inherit;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ws-step:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.ws-step:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.ws-value {
+  flex: 1;
+  min-width: 0;
+}
+
+.ws-now {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.ws-meter {
+  position: relative;
+  height: 4px;
+  margin-top: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.ws-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.ws-row.changed .ws-fill {
+  background: #f0b45a;
+}
+
+.ws-stock-tick {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 10px;
+  margin-left: -1px;
+  background: #fff;
+  opacity: 0.8;
+}
+
+.ws-detail {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-left: 1.4em;
+  font-size: 12px;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+
+.ws-explain {
+  min-height: calc(12px * 1.45 * 4 + 16px); /* room for the longest, so nothing jumps */
+  margin: 6px 16px 0;
+  padding: 8px 10px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 12px;
+  line-height: 1.45;
+  opacity: 0.75;
+}
+
+.ws-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 16px 4px;
+}
+
+.ws-btn {
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ws-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.ws-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.ws-keys {
+  padding: 6px 16px 0;
+  font-size: 11px;
+  opacity: 0.5;
+  white-space: pre-wrap;
+}

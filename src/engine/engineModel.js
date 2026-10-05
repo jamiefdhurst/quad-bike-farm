@@ -39,6 +39,9 @@ export class EngineModel {
     this.choke = 0;
     this.throttle = 0;
     this.load = 0;
+    this.driveLoad = 0;
+    this.resistLoad = 0;
+    this.overrunRpm = 0;
     this.fuel = 1; // float bowl level, 0..1
 
     // Derived values, refreshed every step.
@@ -46,7 +49,9 @@ export class EngineModel {
     this.roughness = 0;
     this.power = 0;
     this.idleTarget = 0;
-    this.targetRpm = 0;
+    this.freeTargetRpm = 0; // where the throttle alone would take the revs
+    this.targetRpm = 0; // after the drive load and overrun
+    this.lug = 0; // how hard it's labouring: 0 free, 1 dragged down to idle
 
     this.time = 0;
     this.cyclePhase = 0;
@@ -108,8 +113,11 @@ export class EngineModel {
    * @param {number}  [controls.choke]    0..1
    * @param {number}  [controls.load]     0..1 drivetrain drag, e.g. braking with the clutch engaged.
    * @param {number}  [controls.fuel]     0..1 carburettor float bowl level; it starves below fuelStarveLevel.
+   * @param {number}  [controls.driveLoad]  0..1 how hard the wheels hold the revs down (pulling away, hills, mud).
+   * @param {number}  [controls.resistLoad] 0..1 the part of driveLoad from climbing, mud or being blocked; this is what lugs a weak engine.
+   * @param {number}  [controls.overrunRpm] rpm above idle the wheels turn it over at with the throttle shut.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1 } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0 } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -118,6 +126,9 @@ export class EngineModel {
     this.choke = clamp(choke, 0, 1);
     this.load = clamp(load, 0, 1);
     this.fuel = clamp(fuel, 0, 1);
+    this.driveLoad = clamp(driveLoad, 0, 1);
+    this.resistLoad = clamp(resistLoad, 0, this.driveLoad);
+    this.overrunRpm = Math.max(0, overrunRpm);
     if (dt <= 0) return;
 
     const steps = Math.max(1, Math.ceil(dt / this.params.maxStep));
@@ -183,7 +194,7 @@ export class EngineModel {
     const supplied = p.chokeEnrichment * this.choke * (1 - p.throttleChokeRelief * this.throttle);
     // A draining float bowl leans the mixture out, whatever the choke is doing.
     const starve = clamp((p.fuelStarveLevel - this.fuel) / p.fuelStarveLevel, 0, 1);
-    this.mixture = supplied - need - p.starveLean * starve;
+    this.mixture = supplied - need - p.starveLean * starve + p.mixtureTrim;
     this.lean = Math.max(0, -this.mixture);
     this.rich = Math.max(0, this.mixture - p.richTolerance);
 
@@ -256,7 +267,19 @@ export class EngineModel {
       p.chokeIdleRpm * this.choke * lerp(p.chokeIdleColdFactor, 1, T) -
       p.leanIdleDrop * this.lean +
       hunt;
-    this.targetRpm = Math.min(p.maxRpm, this.idleTarget + this.throttle * (p.maxRpm - this.idleTarget));
+    this.freeTargetRpm = Math.min(p.maxRpm, this.idleTarget + this.throttle * (p.maxRpm - this.idleTarget));
+    // Under load the revs sag towards idle. A weak engine sags further when it's
+    // climbing or ploughing (the slipping clutch spares it when pulling away),
+    // much more so as that gets heavy, and can be dragged below idle and stall.
+    const R = this.resistLoad;
+    this.lug = p.lugDepth * this.driveLoad + p.lugWeakness * (1 - this.power) * R * R;
+    // Past idle it gives up quickly rather than hanging on just above stalling.
+    const sag = Math.min(1, this.lug) * (this.freeTargetRpm - this.idleTarget);
+    const beyond = Math.max(0, this.lug - 1) * p.lugStallGain * this.idleTarget;
+    this.targetRpm = Math.max(0, this.freeTargetRpm - sag - beyond);
+    if (this.overrunRpm > 0) this.targetRpm = Math.max(this.targetRpm, this.idleTarget + this.overrunRpm);
+    // A cold engine labouring runs lumpier.
+    this.roughness = clamp(this.roughness + p.lugRoughness * this.lug * (1 - T), 0, 1);
 
     const rate = this.rpm < this.targetRpm ? p.rpmRiseRate * this.power : p.rpmFallRate;
     this.rpm += ((this.targetRpm - this.rpm) * rate - this.load * p.loadDragRpm) * h;
@@ -310,7 +333,9 @@ export class EngineModel {
     this.rpm = Math.max(0, this.rpm);
     this.fouling -= p.foulClearRateStopped * h;
     this.idleTarget = 0;
+    this.freeTargetRpm = 0;
     this.targetRpm = 0;
+    this.lug = 0;
     // The last few compression strokes as it coasts to a stop.
     if (this.rpm > 80 && this.advanceCycle(h)) {
       this.pushPulse(this.cycleT, 'compression', Math.min(0.8, this.rpm / 1500));
