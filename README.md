@@ -221,10 +221,15 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 ## TODO
 
 1. She can drive differently depending on how she feels, confident or carefully - it can vary
-2. When she stops driving, she always gets off, never to the back of the quad
-3. I can also ride pillion with her
-4. Quads get more rough over time, the roughness value needs to go up even more, to 2 or 3, but it can be fixed with the toolbox
-5. Add two other quads - another 4 and another 2 stroke, with different idle sounds and base characteristics
-6. Allow her to follow you and ride together on different quads
-7. Ability to wash the bikes
-8. Another girl, slightly different personality
+2. When you're on the quad, the girl seems a lot taller than you, which doesn't feel right
+3. Driving around should warm the quads up quicker, currently it has no effect
+4. After finishing driving, she never turns the quad off
+5. If she's on the back, after a while she asks occasionally if she can come off
+6. Quads get more rough over time, the roughness value needs to go up even more, or have more of an effect at the top range, a lot more in both idle variation and shaking, but it can be fixed with the toolbox
+7. I can also ride pillion with her
+8. Allow her to follow you and ride together on different quads
+9. Ability to wash the bikes
+10. The girl's shirt collar is still not very good - it overlaps with her neck too much. Can we also give her shorts instead of jeans?
+11. If she's going round in circles and doesn't like it, after a while she jumps into the driver's seat and stops it, or drives around herself
+12. Add two other quads - another 4 and another 2 stroke, with different idle sounds and base characteristics
+13. Another girl, slightly different personality, and how do we inject more emotion into the voice?
