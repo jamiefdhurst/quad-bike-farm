@@ -27,7 +27,7 @@ export const DEFAULT_SOUND_PARAMS = {
   splashVolume: 0.9, // hitting a puddle
   knockVolume: 0.5, // suspension knocking over a bump or a wheel touching down
   bumpVolume: 0.18, // small knocks from uneven ground
-  landVolume: 0.5, // coming down after a jump
+  landVolume: 0.4, // coming down after a jump
   rattleVolume: 0.06, // racks and bodywork rattling
   rattleThreshold: 0.3, // knocks harder than this rattle the racks
   rattleChance: 0.5, // chance a full-size bump rattles them

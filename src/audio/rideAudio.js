@@ -290,7 +290,7 @@ export class RideAudio {
 
     // Squelches through mud and sloshes through water, more of them the faster it goes.
     if (on > 0 && speed > 0.4) {
-      this.squelchTimer -= dt * s.mud * (1.5 + speed * 1.2);
+      this.squelchTimer -= dt * s.mud * (1 + speed * 0.8);
       if (this.squelchTimer <= 0) {
         this.squelchTimer = 0.3 + Math.random() * 0.7;
         this.playClip('squelch', level * p.mudVolume * on * Math.min(1, 0.35 + v) * (0.6 + Math.random() * 0.5), 0.85 + Math.random() * 0.3);
@@ -305,7 +305,8 @@ export class RideAudio {
     // Ground jolts that shake a riderless quad are the bumps you hear from it.
     const vib = this.unit.vibration;
     if (!quad.rider && vib.params.groundGain > 0 && vib.jolts) {
-      for (const k of vib.jolts) this.events.push('bump', Math.min(1.2, k * 0.6));
+      // It takes a jolt every metre or so; only the bigger ones are worth a knock.
+      for (const k of vib.jolts) if (k * 0.6 > 0.45) this.events.push('bump', Math.min(1.2, k * 0.6));
     }
 
     for (const e of this.events.take()) this.play(e, p, level);
