@@ -145,11 +145,15 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
     [outer.maxX, outer.minZ],
     [outer.maxX, outer.maxZ],
   ]) add(box(0.34, wallHeight + 0.05, 0.34, white), cx, floorY + wallHeight / 2, cz);
-  for (const z of [door.minZ - 0.1, door.maxZ + 0.1]) add(box(wall + 0.2, door.height, 0.2, white), door.x - wall / 2, floorY + door.height / 2, z);
+  // Offsets are deliberately off from the wall's own edges so no two faces share a plane.
+  for (const side of [-1, 1]) {
+    const z = side < 0 ? door.minZ - 0.08 : door.maxZ + 0.08;
+    add(box(wall + 0.2, door.height + 0.06, 0.24, white), door.x - wall / 2, floorY + (door.height + 0.06) / 2, z);
+  }
   // The beam over the doorway, and the end wall above it up to the eaves.
-  add(box(wall + 0.2, 0.3, door.maxZ - door.minZ + 0.4, white), door.x - wall / 2, floorY + door.height + 0.15, shape.z);
-  const above = wallHeight - door.height - 0.3;
-  add(box(wall, above, door.maxZ - door.minZ, wallMat(door.maxZ - door.minZ, above)), door.x - wall / 2, floorY + door.height + 0.3 + above / 2, shape.z);
+  add(box(wall + 0.22, 0.3, door.maxZ - door.minZ + 0.56, white), door.x - wall / 2, floorY + door.height + 0.15, shape.z);
+  const above = wallHeight - door.height - 0.28;
+  add(box(wall, above, door.maxZ - door.minZ, wallMat(door.maxZ - door.minZ, above)), door.x - wall / 2, floorY + door.height + 0.28 + above / 2, shape.z);
 
   // Gable ends: a board triangle on top of each end wall.
   const gableShape = new THREE.Shape();
@@ -195,24 +199,25 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   for (const side of [-1, 1]) {
     const z = side < 0 ? door.minZ - panelW / 2 + 0.1 : door.maxZ + panelW / 2 - 0.1;
     const leaf = new THREE.Group();
-    leaf.add(box(0.07, door.height - 0.1, panelW, new THREE.MeshStandardMaterial({ map: boards([panelW / 2.4, door.height / 2.4]), roughness: 0.85 })));
+    leaf.add(box(0.06, door.height - 0.1, panelW, new THREE.MeshStandardMaterial({ map: boards([panelW / 2.4, door.height / 2.4]), roughness: 0.85 })));
     for (const s of [-1, 1]) {
-      const brace = box(0.09, 0.14, Math.hypot(panelW, door.height - 0.4), white);
+      const brace = box(0.08, 0.14, Math.hypot(panelW, door.height - 0.4), white);
       brace.rotation.x = s * Math.atan2(door.height - 0.4, panelW);
       leaf.add(brace);
     }
     for (const [dy, dz] of [[0, 0], [1, 0], [-1, 0]]) {
-      const frame = box(0.1, 0.14, panelW, white);
+      const frame = box(0.09, 0.14, panelW, white);
       frame.position.set(0, dy * (door.height / 2 - 0.15), dz);
       leaf.add(frame);
     }
     leaf.traverse((o) => {
       if (o.isMesh) o.castShadow = o.receiveShadow = true;
     });
-    leaf.position.set(door.x + 0.1, floorY + door.height / 2 + 0.05, z);
+    // Hung 0.25 m out, clear of the door frame and corner posts (they reach 0.17), or the overlapping faces flicker.
+    leaf.position.set(door.x + 0.25, floorY + door.height / 2 + 0.05, z);
     group.add(leaf);
   }
-  add(box(0.08, 0.1, sizeZ - 0.6, steel), door.x + 0.2, floorY + door.height + 0.12, shape.z, { cast: false });
+  add(box(0.06, 0.1, sizeZ - 0.6, steel), door.x + 0.22, floorY + door.height + 0.12, shape.z, { cast: false });
 
   // The workbench along the north wall: a thick top, four legs and a shelf, with a vice at one end.
   const b = layout.bench;
