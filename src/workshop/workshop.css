@@ -11,9 +11,10 @@
   display: none;
 }
 
-/* Her captions move over to the open side of the screen. */
+/* Her captions move over to the open side of the screen, above the quad's status. */
 .workshop-open .caption {
   left: calc(50% - 240px);
+  bottom: 24%;
   max-width: 44%;
 }
 
