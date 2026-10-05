@@ -186,6 +186,22 @@ describe('her driving a quad', () => {
     expect(d.done).toBe(true);
   });
 
+  it('brakes when it rolls back down a slope, then gives it more to get up', () => {
+    // A slope that pulls it back harder than her usual throttle pushes.
+    const quad = fakeQuad();
+    quad.step = ((step) =>
+      function (dt) {
+        step.call(this, dt);
+        this.forwardSpeed -= 2.4 * dt;
+      })(quad.step);
+    const { d, events } = run(quad, { seed: 7, seconds: 40 });
+    expect(events).toContain('rollBack');
+    // She learns to give it more pulling away, rather than sliding back every time.
+    expect(events.filter((e) => e === 'rollBack').length).toBeLessThanOrEqual(2);
+    expect(events.filter((e) => e === 'waypoint').length).toBeGreaterThan(3);
+    expect(d.result).not.toBe('gaveUp');
+  });
+
   it('gives up after stalling it too many times', () => {
     const quad = fakeQuad();
     const d = new HerDrive(quad, { params: { ...P, driveMaxStalls: 1 }, probe: () => Infinity, isClear: open, random: seededRandom(6) });

@@ -51,6 +51,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   driveThrottleGain: 0.05, // throttle per m/s under the speed she wants
   driveThrottleIntegral: 0.04, // and per m/s second, when it's not getting there
   driveBrakeMargin: 0.8, // m/s over before she brakes
+  driveBrakeFirm: 0.25, // how hard she brakes pulling up (0..1); harder when she's scared
   driveJerk: 0.35, // how unsteady her throttle hand is
   driveSteerGain: 1.4, // steering per radian off course
   driveOverSteerRate: 0.15, // chance per second, in a turn, that she yanks the bars too far
@@ -137,6 +138,7 @@ export const COMPANION_PARAM_RANGES = {
   driveThrottleGain: [0, 1, 0.01],
   driveThrottleIntegral: [0, 0.5, 0.005],
   driveBrakeMargin: [0, 3, 0.05],
+  driveBrakeFirm: [0.05, 1, 0.01],
   driveJerk: [0, 1, 0.01],
   driveSteerGain: [0.2, 5, 0.05],
   driveOverSteerRate: [0, 2, 0.01],

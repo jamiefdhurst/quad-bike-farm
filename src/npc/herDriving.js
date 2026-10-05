@@ -146,8 +146,11 @@ export class HerDrive {
     this.stuckTime = 0;
     this.bogs = 0; // times it's sat there and not gone
     this.boost = 0; // seconds left giving it extra throttle
+    this.hillStart = 0; // extra throttle she's learned to pull away with, after rolling back
     this.waypoints = [];
     this.index = 0;
+    this.pauseFor = null; // the waypoint pauseHere was decided for
+    this.pauseHere = false;
     this.cruise = this.pickCruise();
     this.driveFor = this.between(params.driveForMin, params.driveForMax);
     this.forgetsChoke = random() < params.driveForgetChokeChance;
@@ -216,6 +219,8 @@ export class HerDrive {
     if (this.phase !== 'start' && this.running && !q.engine.isRunning) {
       this.stalls++;
       this.events.push('stalled');
+      // Pushing the choke off cold is a mistake she only makes once.
+      this.forgetsChoke = false;
       if (this.phase !== 'stop') this.setPhase('stalled', this.between(1.5, 3));
     }
     this.running = q.engine.isRunning;
@@ -257,6 +262,8 @@ export class HerDrive {
 
       case 'pause':
         this.hold(c);
+        // Pulling up steadily, then holding it.
+        if (q.forwardSpeed > 0.4) c.brake = this.p.driveBrakeFirm;
         this.tendChoke();
         this.time += dt;
         if (this.timer <= 0) {
@@ -293,7 +300,7 @@ export class HerDrive {
       case 'stop':
         c.throttle = 0;
         c.reverse = false;
-        c.brake = speed > 0.3 ? clamp(0.35 + speed * 0.15, 0, 0.9) : 1;
+        c.brake = q.forwardSpeed > 0.4 ? this.p.driveBrakeFirm * (this.stopReason === 'scared' ? 1.5 : 1) : 1;
         c.steer *= 0.9;
         // Sat there a moment once it's stopped, before she does anything.
         if (speed < 0.2) this.sat += dt;
@@ -331,10 +338,14 @@ export class HerDrive {
     // Wandered off a bit: the next loop sets off back towards where she started.
     const away = Math.hypot(pos.x - this.origin.x, pos.z - this.origin.z) > this.p.driveLoopRadiusMin;
     const yaw = away ? headingTo(pos, this.origin) : q.yaw;
-    // The way she's facing (or home) first; failing that, any way there's room.
-    for (const turn of [0, Math.PI / 2, -Math.PI / 2, Math.PI]) {
-      this.waypoints = planLoop(pos, yaw + turn, this.random, this.p, this.isClear);
-      if (this.waypoints.length) break;
+    // The way she's facing (or home) first; failing that, any way there's room,
+    // and in a tight spot another go with different loops.
+    const q4 = Math.PI / 4;
+    search: for (let tries = 0; tries < 2; tries++) {
+      for (const turn of [0, q4, -q4, 2 * q4, -2 * q4, 3 * q4, -3 * q4, Math.PI]) {
+        this.waypoints = planLoop(pos, yaw + turn, this.random, this.p, this.isClear);
+        if (this.waypoints.length) break search;
+      }
     }
     this.index = 0;
     if (!this.waypoints.length) {
@@ -369,14 +380,19 @@ export class HerDrive {
     if (dist < p.driveArriveRadius) {
       this.index++;
       this.events.push('waypoint');
-      if (this.random() < p.drivePauseChance) {
+      if (this.pauseHere) {
         this.events.push('pause');
         this.setPhase('pause', this.between(p.drivePauseMin, p.drivePauseMax));
         // She brakes there rather than coasting.
         this.hold(c);
-        c.brake = 0.6;
+        c.brake = p.driveBrakeFirm;
       }
       return;
+    }
+    // Whether she'll stop for a moment at this one; if so she slows for it on the way.
+    if (this.pauseFor !== wp) {
+      this.pauseFor = wp;
+      this.pauseHere = this.random() < p.drivePauseChance;
     }
 
     // Look where she's going a few times a second, and steer round anything in the way.
@@ -397,6 +413,26 @@ export class HerDrive {
       return;
     }
 
+    // Rolling back down a slope she couldn't get up: brake, then give it more.
+    if (q.forwardSpeed < -0.4) {
+      if (!this.rollingBack) {
+        this.rollingBack = true;
+        this.events.push('rollBack');
+        // Next time she pulls away she gives it more; once that's all she dares, it counts against it.
+        if (this.hillStart >= 0.25) this.bogs++;
+        this.hillStart = Math.min(0.25, this.hillStart + 0.1);
+      }
+      c.throttle = 0;
+      c.brake = 0.8;
+      this.boost = 2.5;
+      if (this.bogs > 3) {
+        this.events.push('bogged');
+        this.stop('gaveUp');
+      }
+      return;
+    }
+    if (q.forwardSpeed > 0.3) this.rollingBack = false;
+
     const error = angleDiff(q.yaw, desired);
     let steer = steerFor(error, p);
     // Now and then she yanks the bars too far, then corrects too far the other way.
@@ -416,7 +452,7 @@ export class HerDrive {
       this.wobbleTimer = this.between(0.3, 1.1);
       this.wobble = 1 + (this.random() * 2 - 1) * p.driveJerk;
     }
-    const stopsHere = this.index === this.waypoints.length - 1;
+    const stopsHere = this.index === this.waypoints.length - 1 || this.pauseHere;
     const target = targetSpeed(this.cruise, { error, toStop: stopsHere ? dist : Infinity, clear: this.clearAhead });
     const short = target - speed;
     this.integral = clamp(this.integral + short * dt, -3, 8);
@@ -425,12 +461,14 @@ export class HerDrive {
     const turning = pedals.throttle > 0 ? Math.abs(c.steer) * 0.04 : 0;
     // Giving it a bootful because it won't go.
     this.boost = Math.max(0, this.boost - dt);
-    const most = this.boost > 0 ? p.driveMaxThrottle + 0.25 : p.driveMaxThrottle;
-    c.throttle = clamp((pedals.throttle + turning) * this.wobble + (this.boost > 0 ? 0.25 : 0), 0, most);
+    // And a bit more pulling away, if it's rolled back on her.
+    const pullAway = pedals.throttle > 0 ? this.hillStart * clamp(1 - speed / 2, 0, 1) : 0;
+    const most = p.driveMaxThrottle + pullAway + (this.boost > 0 ? 0.25 : 0);
+    c.throttle = clamp((pedals.throttle + turning) * this.wobble + pullAway + (this.boost > 0 ? 0.25 : 0), 0, most);
     c.brake = pedals.brake;
 
-    // Wanting to go and going nowhere.
-    this.stuckTime = target > 0.3 && speed < 0.3 ? this.stuckTime + dt : 0;
+    // Wanting to go and going nowhere (or creeping backwards).
+    this.stuckTime = target > 0.3 && q.forwardSpeed < 0.3 ? this.stuckTime + dt : 0;
     if (this.stuckTime > 3) {
       this.stuckTime = 0;
       this.unstick();
