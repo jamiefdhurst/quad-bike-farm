@@ -53,7 +53,7 @@ export class Quad {
     this.riderHands = part('riderHands');
     this.cameraAnchor = part('cameraAnchor');
     this.pillionCameraAnchor = part('pillionCameraAnchor');
-    this.pillionAnchor = part('pillionAnchor') ?? null; // none on a single-seater
+    this.pillionAnchor = part('pillionAnchor') ?? null; // every spec's model has one
     this.riderAnchor = part('riderAnchor');
     this.exhaustTip = part('exhaustTip');
     this.wheels = WHEELS.map((w) => ({ ...w, object: part(w.name), spin: part(w.name).getObjectByName('spin') }));

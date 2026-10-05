@@ -392,3 +392,9 @@ You asked for these in this order: getting stuck, then the weather (random each 
 - Each style has its own: a tiny dial low in the red's rev counter, a dial in the green's old cold-lamp slot (cream face), and a row of five blocks on the blue, yellow and orange LCDs (blue while cold, the last one red).
 - The cold lamps are gone, replaced by the gauges, so there's one place to look rather than two. This also removes "(R to restart)" and "(out of fuel?)": you have to work those out.
 - Checked once in the browser at a close-up of each dash. The red and green dials are small; I didn't judge them by eye at riding distance beyond the seat-height close-up.
+
+## Pillion on the orange (2026-10-05)
+
+- The orange race quad is no longer a single-seater. Like the yellow, it gets a slim pad (`pillionSeat`) at the tail of its long seat with a grab strap and the two grip points, so the pillion pose (hands round your waist in front, on the strap when it's moving) works unchanged. Its seat is lower and thinner than the yellow's, so the pad and the `pillionAnchor` sit 4 cm lower (0.94 m against 0.98 m), the same 0.52 m behind the rider.
+- Nothing else needed changing: every `hasPillion` check reads the anchor, and `B`, her offers and her getting on all follow it. Checked once in headless Chrome: she sat on the back of the orange and the pad, strap and her seat looked right from the side and behind. Not checked: a full ride on it, or you riding on its back.
+

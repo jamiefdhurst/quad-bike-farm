@@ -245,7 +245,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 1. Vehicles need to get way more muddy **Done.** Bodywork now plasters over within about half a minute of driving through mud, and climbs much higher up the quad.
 2. I can sit pillion without anyone else there, then the girls automatically jump on to drive me around, and jump off when they're bored, they don't need to wait for me to say stop **Done.** `B` at a parked quad sits you on the back; a free girl soon offers, drives you about, then gets off by herself when bored.
 3. Remove the helpful vehicle HUD so I have to guess what the issues are, add a temp gauge to each of the quads **Done.** The quad readout is gone; every dash now has a temperature gauge.
-4. Pillion on the orange one
+4. Pillion on the orange one **Done.** The orange now has a slim pad and grab strap on the tail of its race seat, so you and the girls can ride on the back like on the yellow.
 5. A way for two girls to sit on the back of a quad at the same time - one on the fairing maybe?
 6. The girls say very nice things to me sometimes - tell me they love me, care for me, etc.
 7. One more go at the collar, which despite what you've said is still not right.

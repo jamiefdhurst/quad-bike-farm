@@ -978,7 +978,7 @@ function buildFrame(root, sport) {
  *   'utility3' older Kawasaki-style farm quad: headlight in a nacelle on the bars, flat-topped fenders, flat mesh
  *              racks, steel bumpers and a winch, mudflaps, a tan seat, square-shouldered tyres;
  *   'sport2'   Suzuki-style two-stroke race quad: lower and longer, big front plate, angular plastics, water-cooled,
- *              wide nerf bars, a big chamber on the right, white rims, one long race seat and no pillion.
+ *              wide nerf bars, a big chamber on the right, white rims, one long race seat with a slim pillion pad.
  */
 export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', style = 'utility' } = {}) {
   const race = style === 'sport2';
@@ -1212,7 +1212,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
 
   // Seats. Utility quads carry a raised pillion seat; the sport quad's long seat
   // squeezes a passenger onto a slim pad at the back, with a grab strap. The race
-  // quad has one long thin seat and no room for anyone else.
+  // quad's long thin seat gets a pad too.
   if (race) {
     add(
       loftGeometry([
@@ -1228,6 +1228,20 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
       root,
       'seat',
     );
+    // A slim pad on the long seat's tail with a grab strap, a tighter squeeze than the yellow's as the seat is lower and thinner.
+    add(
+      loftGeometry([
+        { z: -0.55, w: 0.17, y0: 0.862, y1: 0.9 },
+        { z: -0.58, w: 0.24, y0: 0.858, y1: 0.915 },
+        { z: -0.76, w: 0.24, y0: 0.858, y1: 0.915 },
+        { z: -0.79, w: 0.17, y0: 0.862, y1: 0.9 },
+      ], { exponent: 3, segments: 24 }),
+      seatMat,
+      root,
+      'pillionSeat',
+    );
+    rbox(0.29, 0.012, 0.03, 0.005, MAT.plastic, 0, 0.87, -0.47, root, 'grabStrap', 1);
+    pillionGrips(root, 0.08, 0.87, -0.47, true);
   } else if (sport) {
     add(
       loftGeometry([
@@ -1328,21 +1342,19 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
   // Anchors for people and the camera.
   const riderAnchor = new THREE.Object3D();
   riderAnchor.name = 'riderAnchor';
-  // The race seat is lower, so the rider sits lower; it has no pillion.
+  // The race seat is lower, so the rider sits lower, and so does the pillion pad.
   const seatDrop = race ? 0.025 : 0;
   riderAnchor.position.set(0, 0.9 - seatDrop, -0.18);
   root.add(riderAnchor);
-  if (!race) {
-    const pillionAnchor = new THREE.Object3D();
-    pillionAnchor.name = 'pillionAnchor';
-    pillionAnchor.position.set(0, sport ? 0.98 : 1.0, sport ? -0.66 : -0.6);
-    root.add(pillionAnchor);
-    // Your eyes riding on the back while she drives.
-    const pillionCameraAnchor = new THREE.Object3D();
-    pillionCameraAnchor.name = 'pillionCameraAnchor';
-    pillionCameraAnchor.position.set(0, pillionAnchor.position.y + 0.79, pillionAnchor.position.z - 0.02);
-    root.add(pillionCameraAnchor);
-  }
+  const pillionAnchor = new THREE.Object3D();
+  pillionAnchor.name = 'pillionAnchor';
+  pillionAnchor.position.set(0, race ? 0.94 : sport ? 0.98 : 1.0, sport ? -0.66 : -0.6);
+  root.add(pillionAnchor);
+  // Your eyes riding on the back while she drives.
+  const pillionCameraAnchor = new THREE.Object3D();
+  pillionCameraAnchor.name = 'pillionCameraAnchor';
+  pillionCameraAnchor.position.set(0, pillionAnchor.position.y + 0.79, pillionAnchor.position.z - 0.02);
+  root.add(pillionCameraAnchor);
   const cameraAnchor = new THREE.Object3D();
   cameraAnchor.name = 'cameraAnchor';
   // The rider's eyes: 0.79 m above the seat, as for someone of the player's standing
