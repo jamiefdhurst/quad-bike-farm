@@ -97,7 +97,7 @@ export const DEFAULT_AUDIO_PARAMS = {
 
   // Recorded engine
   recBank: 'engine-bank', // which recordings: 'engine-bank' (four-stroke quads) or 'engine-bank-2t' (two-stroke dirt bikes)
-  recIdleSource: 'quad', // which recording idle pulses come from: 'quad' (the main quad) or 'rev' (the rev-sweep machine)
+  recIdleSource: 'quad', // which recorded idle: 'quad' (the main quad), 'rev' (the ATV rev recording, or the CRM250 in the two-stroke bank) or 'third' (the CRF250, four-stroke bank)
   recVolume: 0.6,
   recThrottleLoudness: 0.15, // extra loudness with the throttle open (the rev recording is already louder up the range)
   recRevGain: 0.75, // level of the rev recordings relative to idle
@@ -203,7 +203,7 @@ export const AUDIO_PARAM_RANGES = {
   pulseCrossfade: [0.05, 1, 0.01],
   pulseDrive: [0, 4, 0.01],
   recBank: ['engine-bank', 'engine-bank-2t'],
-  recIdleSource: ['quad', 'rev'],
+  recIdleSource: ['quad', 'rev', 'third'],
   recVolume: [0, 3, 0.01],
   recThrottleLoudness: [0, 3, 0.01],
   recRevGain: [0, 2, 0.01],

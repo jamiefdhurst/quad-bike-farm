@@ -286,7 +286,8 @@ class RecordedEngine {
         const gain = (misfire ? 1 : ev.strength) * typeGain * loud;
         // Pick grains by the rpm this cycle actually runs at.
         const cycleRpm = ev.period > 0 ? 120 / ev.period : rpm;
-        const idleKinds = p.recIdleSource === 'rev' ? ['idle2'] : ['idle'];
+        // Which recorded machine it idles on: the main quad, the ATV rev recording, or a third.
+        const idleKinds = [{ rev: 'idle2', third: 'idle3' }[p.recIdleSource] ?? 'idle'];
         if (p.engineSound === 'pulse') {
           // Revs built from idle: every firing is a recorded idle firing, cut off when the next one fires.
           const louder = Math.min(p.pulseLoudnessCap, Math.pow(Math.max(1, rpm / p.pulseRefRpm), p.pulseRevLoudness));

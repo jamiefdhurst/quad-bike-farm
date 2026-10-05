@@ -288,6 +288,22 @@ export const VOICE_LINES = {
       "It's tiny and loud and I love it.",
     ],
   },
+  likeGreen: {
+    cooldown: 240,
+    lines: ["I love the old green one. It's like a tractor.", 'The green one is my favourite. So comfy.', 'Good old green. Slow, but I trust it.', "This one's indestructible, I reckon."],
+  },
+  likeOrange: {
+    cooldown: 240,
+    lines: ["The orange one's my favourite. Don't tell the others."],
+  },
+  preferGreen: {
+    cooldown: 240,
+    lines: ["I'd rather be on the green one.", 'The green one is comfier, you know.', 'Can we take the green one next time? It feels safer.'],
+  },
+  preferOrange: {
+    cooldown: 240,
+    lines: ['I want a go on the orange one. Even if there is no room for me.', 'The orange one looks the most fun.', "One day you're letting me drive the orange one."],
+  },
   preferRed: {
     cooldown: 240,
     lines: ["I'd rather be on the red one, to be honest.", 'The red one is comfier.', 'Can we take the red one next time?'],

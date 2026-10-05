@@ -67,6 +67,8 @@ export const LAYOUT = {
       { x: -44, z: 52, yaw: Math.PI * 0.62 },
       { x: -42.6, z: 55.2, yaw: Math.PI * 0.62 },
       { x: -41.2, z: 58.4, yaw: Math.PI * 0.62 },
+      { x: -39.8, z: 61.6, yaw: Math.PI * 0.62 },
+      { x: -38.4, z: 64.8, yaw: Math.PI * 0.62 },
     ],
     // Every quad but the one she's standing by has this chance of having been left
     // somewhere else on the farm instead, at any angle, within awayJitter metres of

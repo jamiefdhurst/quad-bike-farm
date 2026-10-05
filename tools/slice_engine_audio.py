@@ -21,7 +21,8 @@ Usage (needs numpy, and matplotlib for --plot):
   afconvert -f WAVE -d LEI16@44100 -c 1 379915.mp3 quad.wav     # or ffmpeg
   afconvert -f WAVE -d LEI16@44100 -c 1 419091.mp3 rev.wav
   afconvert ... 419088.mp3 atv.wav;  afconvert ... 637151.mp3 quarry.wav
-  python3 tools/slice_engine_audio.py engine-bank quad=quad.wav rev=rev.wav atv=atv.wav quarry=quarry.wav [--plot out.png]
+  afconvert ... 361407.mp3 crf.wav
+  python3 tools/slice_engine_audio.py engine-bank quad=quad.wav rev=rev.wav atv=atv.wav quarry=quarry.wav crf=crf.wav [--plot out.png]
 
   afconvert ... 450034.mp3 mx.wav;  afconvert ... 148868.mp3 crm.wav
   afconvert ... 675214.mp3 db.wav
@@ -72,6 +73,8 @@ BANKS = {
             ('accel', 'quarry', 116.1, 117.9, (0.025, 0.031)),
             ('decel', 'quarry', 76.4, 79.5, (0.024, 0.042)),
             ('decel', 'quarry', 104.0, 108.3, (0.025, 0.04)),
+            # A third idle, for the green quad: a Honda CRF250 four-stroke single ticking over.
+            ('idle3', 'crf', 4.0, 16.2, (0.045, 0.07)),
         ],
         'oneshots': [
             # The starter's own chug isn't regular enough to cut per compression stroke, so
@@ -82,7 +85,7 @@ BANKS = {
         ],
         # (base kind, other kind, other source): the other source is scaled so its
         # idle matches the base idle's loudness.
-        'level': [('idle', 'idle2', 'rev')],
+        'level': [('idle', 'idle2', 'rev'), ('idle', 'idle3', 'crf')],
         # Both ATVs move about in front of the microphone, so their loudness follows
         # distance more than the engine. Flatten that out and give them a level that
         # rises with rpm instead, about as steeply as a close recording does.
