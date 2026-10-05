@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { angleDiff, headingTo, steerFor, targetSpeed, pedalsFor, planLoop, HerDrive } from '../src/npc/herDriving.js';
+import { angleDiff, headingTo, steerFor, targetSpeed, pedalsFor, planLoop, HerDrive, steerLimit, cornerSpeed } from '../src/npc/herDriving.js';
 import { DEFAULT_COMPANION_PARAMS } from '../src/npc/companionParams.js';
 
 function seededRandom(seed) {
@@ -215,5 +215,26 @@ describe('her driving a quad', () => {
     }
     expect(events.filter((e) => e === 'stalled').length).toBe(2);
     expect(d.result).toBe('gaveUp');
+  });
+});
+
+describe('driving quickly', () => {
+  it('never gives it more bars than a gentle corner at speed', () => {
+    for (const speed of [6, 9, 12, 14]) {
+      const s = steerLimit(speed, 4);
+      const lock = ((32 * Math.PI) / 180) / (1 + 0.06 * speed);
+      const radius = 1.25 / Math.tan(s * lock);
+      expect((speed * speed) / radius).toBeLessThan(4.5);
+    }
+    expect(steerLimit(2, 4)).toBe(1);
+  });
+
+  it('slows for a sharp turn and for something far ahead', () => {
+    expect(cornerSpeed(0.05, 30, 4)).toBeGreaterThan(13);
+    expect(cornerSpeed(1.2, 10, 4)).toBeLessThan(5);
+    expect(targetSpeed(13, { clear: 40 })).toBeGreaterThan(12.5);
+    expect(targetSpeed(13, { clear: 15 })).toBeLessThan(10);
+    // Slow driving near things is as careful as ever.
+    expect(targetSpeed(3, { clear: 3 })).toBeCloseTo(0.84, 2);
   });
 });

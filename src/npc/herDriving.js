@@ -32,15 +32,40 @@ export function steerFor(error, p) {
 }
 
 /**
- * The speed she's comfortable with: her cruising speed, eased off into turns,
- * as she nears a waypoint she means to stop at, and when something's ahead.
+ * The speed she's comfortable with: her cruising speed, eased off into turns
+ * (and no faster than `corner` allows for the turn ahead), as she nears a
+ * waypoint she means to stop at, and when something's ahead.
  */
-export function targetSpeed(cruise, { error = 0, toStop = Infinity, clear = Infinity } = {}) {
+export function targetSpeed(cruise, { error = 0, toStop = Infinity, clear = Infinity, corner = Infinity } = {}) {
   let v = cruise * clamp(1 - Math.abs(error) * 0.55, 0.35, 1);
+  v = Math.min(v, corner);
   v = Math.min(v, 0.6 + toStop * 0.45);
-  // Creeping up to anything ahead (distances from the middle of the quad).
-  v = Math.min(v, Math.max(0.5, (clear - BLOCKED) * 0.6));
+  // Creeping up to anything ahead (distances from the middle of the quad); at
+  // speed, slowing for it no harder than a steady 3.5 m/s2.
+  const gap = clear - BLOCKED;
+  v = Math.min(v, Math.max(0.5, Math.min(gap * 0.6, Math.sqrt(7 * Math.max(0, gap)))));
   return Math.max(0, v);
+}
+
+/**
+ * The fastest she'll take a turn: a heading error of `error` radians to make up
+ * within `distance` metres needs a circle of about distance / (2 sin error),
+ * and she corners at no more than `accel` m/s2 round it.
+ */
+export function cornerSpeed(error, distance, accel) {
+  const radius = distance / (2 * Math.max(Math.abs(Math.sin(clamp(error, -Math.PI / 2, Math.PI / 2))), 0.02));
+  return Math.max(1.5, Math.sqrt(accel * Math.max(2, radius)));
+}
+
+/**
+ * The most bars she'll give (0..1 of the quad's lock at this speed) at a
+ * speed: enough to corner at about `accel` m/s2, so never a yank at full lock
+ * going quickly.
+ */
+export function steerLimit(speed, accel, { maxSteerDeg = 32, steerSpeedReduction = 0.06, wheelbase = 1.25 } = {}) {
+  if (speed < 1) return 1;
+  const lock = ((maxSteerDeg * Math.PI) / 180) / (1 + steerSpeedReduction * speed);
+  return clamp(Math.atan((accel * wheelbase) / (speed * speed)) / lock, 0.05, 1);
 }
 
 /**
@@ -153,6 +178,7 @@ export class HerDrive {
     this.avoidSide = random() < 0.5 ? 1 : -1;
     this.probeTimer = 0;
     this.clearAhead = Infinity;
+    this.clearAround = Infinity; // nearest thing off to either side
     this.stuckTime = 0;
     this.bogs = 0; // times it's sat there and not gone
     this.boost = 0; // seconds left giving it extra throttle
@@ -478,7 +504,8 @@ export class HerDrive {
     const wp = this.waypoints[this.index];
     const pos = q.position;
     const dist = Math.hypot(wp.x - pos.x, wp.z - pos.z);
-    if (dist < p.driveArriveRadius && !follow) {
+    // Going quickly she can't thread a waypoint exactly: near enough will do.
+    if (dist < Math.max(p.driveArriveRadius, speed * 0.5) && !follow) {
       this.index++;
       this.events.push('waypoint');
       if (this.pauseHere) {
@@ -545,7 +572,9 @@ export class HerDrive {
       this.yank = { t: 0.35 + this.between(0.4, 0.8), dir: Math.sign(error) };
       this.events.push('overSteer');
     }
-    c.steer = steer;
+    // However she's steering, she doesn't throw it into a turn at speed (a yank too, just less of one).
+    const bars = steerLimit(speed, p.driveCornerAccel * (this.yank ? 1.8 : 1.3), q.params);
+    c.steer = clamp(steer, -bars, bars);
 
     // A hand that can't keep the throttle still.
     this.wobbleTimer -= dt;
@@ -554,7 +583,9 @@ export class HerDrive {
       this.wobble = 1 + (this.random() * 2 - 1) * p.driveJerk;
     }
     const stopsHere = !follow && (this.index === this.waypoints.length - 1 || this.pauseHere);
-    const target = targetSpeed(this.cruise, { error, toStop: stopsHere ? dist : Infinity, clear: this.clearAhead });
+    const corner = cornerSpeed(error, dist, p.driveCornerAccel);
+    const crowded = Math.max(2.5, this.clearAround * 1.2);
+    const target = targetSpeed(this.cruise, { error, toStop: stopsHere ? dist : Infinity, clear: this.clearAhead, corner: Math.min(corner, crowded) });
     const short = target - speed;
     this.integral = clamp(this.integral + short * dt, -3, 8);
     const pedals = pedalsFor(speed, target, this.integral, p);
@@ -564,7 +595,7 @@ export class HerDrive {
     this.boost = Math.max(0, this.boost - dt);
     // And a bit more pulling away, if it's rolled back on her.
     const pullAway = pedals.throttle > 0 ? this.hillStart * clamp(1 - speed / 2, 0, 1) : 0;
-    const most = p.driveMaxThrottle + pullAway + (this.boost > 0 ? 0.25 : 0);
+    const most = Math.min(1, p.driveMaxThrottle + pullAway + (this.boost > 0 ? 0.25 : 0));
     c.throttle = clamp((pedals.throttle + turning) * this.wobble + pullAway + (this.boost > 0 ? 0.25 : 0), 0, most);
     c.brake = pedals.brake;
 
@@ -606,7 +637,12 @@ export class HerDrive {
   lookAhead(desired, speed, dist) {
     const q = this.quad;
     const reach = Math.min(dist + 1, 3.5 + speed * 1.5);
-    this.clearAhead = this.probe(q.yaw, 2.5 + speed);
+    // Further ahead the quicker she's going, so she has room to slow for it.
+    this.clearAhead = this.probe(q.yaw, 2.5 + speed * 2.2);
+    // And to either side, the way she might turn: among parked quads and people
+    // she picks her way through, and only opens it up with room around her.
+    const side = 5 + speed;
+    this.clearAround = Math.min(this.probe(q.yaw + 0.6, side), this.probe(q.yaw - 0.6, side), this.probe(q.yaw + 1.2, side * 0.6), this.probe(q.yaw - 1.2, side * 0.6));
     if (this.probe(desired + this.avoid, reach) === Infinity) {
       // Ease back towards the straight line once it's clear.
       if (this.avoid !== 0 && this.probe(desired, reach) === Infinity) this.avoid = 0;

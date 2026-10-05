@@ -28,14 +28,15 @@ export const CHARACTERS = [
   {
     id: 'jess',
     name: 'Jess',
-    // Cheekier: braver behind the bars, chattier, bored sooner and more likely
-    // to do something about it, and she likes being left on a runaway.
+    // Cheekier: braver behind the bars, chattier, bored sooner (usually after
+    // about 45 s rather than 60) and more likely to do something about it, and
+    // she likes being left on a runaway.
     params: {
       outfit: 'jessPolo',
       height: 1.53,
       walkSpeed: 1.4,
-      boredAfterMin: 40,
-      boredAfterMax: 75,
+      boredAfterMin: 20,
+      boredAfterMax: 70,
       boredMountChance: 0.2,
       boredStartChance: 0.25,
       boredDriveChance: 0.4,

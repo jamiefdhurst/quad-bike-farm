@@ -8,7 +8,7 @@ const HELP_HTML = `
   <div><kbd>E</kbd> interact with what you're looking at</div>
   <div>Looking at a quad: <kbd>K</kbd> <kbd>R</kbd> <kbd>Q</kbd> <kbd>Z</kbd> <kbd>F</kbd> work its engine</div>
   <h3>On the back while she drives</h3>
-  <div><kbd>E</kbd> talk to her: stop, slow down, faster, let me off, let me drive</div>
+  <div><kbd>E</kbd> talk to her (a wheel: move the mouse and click): stop, slow down, faster, let me off, let me drive</div>
   <h3>On the quad</h3>
   <div><kbd>K</kbd> ignition on / off</div>
   <div><kbd>R</kbd> hold to crank the starter</div>

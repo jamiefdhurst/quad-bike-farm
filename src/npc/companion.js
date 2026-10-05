@@ -7,6 +7,7 @@ import { shapeFigure } from './figure.js';
 import { StartingAttempt } from './startingAttempt.js';
 import { drivingStates, drivingMethods } from './companionDriving.js';
 import { PillionPose } from './pillionPose.js';
+import { nextBoredWait, driftRestlessness, pickBoredChoice } from './boredom.js';
 
 const CAPSULE_HALF_HEIGHT = 0.55;
 const CAPSULE_RADIUS = 0.25;
@@ -84,7 +85,8 @@ export class Companion {
     this.quads = [quad]; // every quad on the farm, for doing things on her own (set by the game)
     this.others = () => []; // the other companions, whose quads she leaves alone (set by the game)
     this.idleFor = 0;
-    this.boredAfter = this.randomBetween(params.boredAfterMin, params.boredAfterMax);
+    this.restlessness = 0.7 + Math.random() * 0.8; // drifts while she's about (boredom.js)
+    this.boredAfter = nextBoredWait(params, this.restlessness);
     this.selfEvents = []; // things she decided to do on her own, for her voice
     this.reach = 0; // how far she's reaching for the bars, 0..1
     this.drive = null; // her go at driving, while she's on the front seat (herDriving.js)
@@ -159,10 +161,10 @@ export class Companion {
         actions.push({ kind: 'letOff', label: 'Yes, hop off', run: () => this.requestStandBeside(this.quad) });
         actions.push({ kind: 'keepOn', label: 'No, stay there', run: () => this.keepOn() });
       }
-      actions.push({ kind: 'stand', label: `Stand next to the ${this.quad.label}`, run: () => this.requestStandBeside(this.quad) });
+      actions.push({ kind: 'stand', label: `Get off the ${this.quad.label}`, run: () => this.requestStandBeside(this.quad) });
       for (const q of sorted) {
-        if (q !== this.quad && rideable(q)) actions.push({ kind: 'mount', label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
-        if (drivable(q)) actions.push({ kind: 'drive', label: `Drive the ${q.label}`, run: () => this.requestDrive(q) });
+        if (q !== this.quad && rideable(q)) actions.push({ kind: 'mount', quad: q, short: 'Get on it', label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
+        if (drivable(q)) actions.push({ kind: 'drive', quad: q, short: 'Drive it', label: `Drive the ${q.label}`, run: () => this.requestDrive(q) });
       }
       return actions;
     }
@@ -170,14 +172,14 @@ export class Companion {
     // She can have a go at starting any quad that isn't running and has nobody on it.
     const startable = (q) => !q.engine.isRunning && !q.rider && !q.isTipped && !q.isGhostRiding;
     for (const q of sorted) {
-      if (drivable(q) && q.hasPillion) actions.push({ kind: 'giveRide', label: `Take me for a ride on the ${q.label}`, run: () => this.requestDrive(q, { giveRide: true }) });
-      if (drivable(q)) actions.push({ kind: 'follow', label: `Follow me on the ${q.label}`, run: () => this.requestDrive(q, { follow: true }) });
+      if (drivable(q) && q.hasPillion) actions.push({ kind: 'giveRide', quad: q, short: 'Take me for a ride', label: `Take me for a ride on the ${q.label}`, run: () => this.requestDrive(q, { giveRide: true }) });
+      if (drivable(q)) actions.push({ kind: 'follow', quad: q, short: 'Follow me on it', label: `Follow me on the ${q.label}`, run: () => this.requestDrive(q, { follow: true }) });
       if (startable(q) && !(s.is('starting') && q === this.quad)) {
-        actions.push({ kind: 'start', label: `Start the ${q.label}`, run: () => this.requestStart(q) });
+        actions.push({ kind: 'start', quad: q, short: 'Start it', label: `Start the ${q.label}`, run: () => this.requestStart(q) });
       }
-      if (drivable(q)) actions.push({ kind: 'drive', label: `Drive the ${q.label}`, run: () => this.requestDrive(q) });
-      if (rideable(q)) actions.push({ kind: 'mount', label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
-      if (!this.isStandingBeside(q)) actions.push({ kind: 'stand', label: `Stand next to the ${q.label}`, run: () => this.requestStandBeside(q) });
+      if (drivable(q)) actions.push({ kind: 'drive', quad: q, short: 'Drive it', label: `Drive the ${q.label}`, run: () => this.requestDrive(q) });
+      if (rideable(q)) actions.push({ kind: 'mount', quad: q, short: 'Get on it', label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
+      if (!this.isStandingBeside(q)) actions.push({ kind: 'stand', quad: q, short: 'Stand next to it', label: `Stand next to the ${q.label}`, run: () => this.requestStandBeside(q) });
     }
     return actions;
   }
@@ -207,31 +209,27 @@ export class Companion {
    */
   updateBoredom(dt, viewer) {
     const p = this.params;
+    this.restlessness = driftRestlessness(this.restlessness, dt, p);
     const waiting = this.fsm.is('idle') && !viewer?.talking;
     this.idleFor = waiting ? this.idleFor + dt : 0;
     if (!p.ownMind || this.idleFor < this.boredAfter) return;
     this.idleFor = 0;
-    this.boredAfter = this.randomBetween(p.boredAfterMin, p.boredAfterMax);
+    this.boredAfter = nextBoredWait(p, this.restlessness);
     const here = this.root.position;
     const near = (q) => q.position.distanceTo(here) < 40 && !this.takenByOther(q) && !q.rider && !q.isTipped && !q.isGhostRiding && q.speed < 0.5;
-    const mountable = this.quads.filter((q) => near(q) && q.hasPillion);
-    const startable = this.quads.filter((q) => near(q) && !q.engine.isRunning);
-    const drivable = this.quads.filter((q) => near(q) && this.canDrive(q));
+    const options = {
+      mount: this.quads.filter((q) => near(q) && q.hasPillion),
+      start: this.quads.filter((q) => near(q) && !q.engine.isRunning),
+      drive: this.quads.filter((q) => near(q) && this.canDrive(q)),
+    };
+    const can = Object.fromEntries(Object.entries(options).map(([k, list]) => [k, list.length > 0]));
+    const choice = pickBoredChoice(p, { confidence: this.driveConfidence ?? p.driveConfidence, can });
     const pick = (list) => list[Math.floor(Math.random() * list.length)];
-    const r = Math.random();
-    if (r < p.boredMountChance && mountable.length) {
-      this.selfEvents.push('mount');
-      this.requestMount(pick(mountable), { ownChoice: true });
-    } else if (r < p.boredMountChance + p.boredStartChance && startable.length) {
-      this.selfEvents.push('start');
-      this.requestStart(pick(startable));
-    } else if (r < p.boredMountChance + p.boredStartChance + p.boredDriveChance && drivable.length) {
-      this.selfEvents.push('drive');
-      this.requestDrive(pick(drivable));
-    } else {
-      this.selfEvents.push('wander');
-      this.wander();
-    }
+    this.selfEvents.push(choice);
+    if (choice === 'mount') this.requestMount(pick(options.mount), { ownChoice: true });
+    else if (choice === 'start') this.requestStart(pick(options.start));
+    else if (choice === 'drive') this.requestDrive(pick(options.drive));
+    else this.wander();
   }
 
   /** A stroll to somewhere nearby on the farm, staying inside the hedges. */
@@ -240,7 +238,7 @@ export class Companion {
     const here = this.root.position;
     const limit = this.world.layout.fieldHalf - 6;
     const angle = Math.random() * Math.PI * 2;
-    const dist = this.randomBetween(p.wanderMin, p.wanderMax);
+    const dist = this.randomBetween(p.wanderMin, p.wanderMax) * (Math.random() < p.wanderFarChance ? 2.5 : 1);
     const target = new THREE.Vector3(
       Math.max(-limit, Math.min(limit, here.x + Math.sin(angle) * dist)),
       0,
@@ -287,7 +285,7 @@ export class Companion {
       return;
     }
     this.backBoredIn ??= this.seatedByChoice
-      ? this.randomBetween(p.boredAfterMin, p.boredAfterMax) * 1.5
+      ? nextBoredWait(p, this.restlessness) * 1.5
       : this.randomBetween(p.placedPatienceMin, p.placedPatienceMax);
     this.backBoredIn -= dt;
     if (this.backBoredIn > 0) return;

@@ -26,7 +26,7 @@ import { Hose, HOSE_PARAM_RANGES } from './items/hose.js';
 import { washMud } from './effects/mudBuildUp.js';
 import { Workshop } from './workshop/workshop.js';
 import { Interaction } from './interaction/interaction.js';
-import { Menu } from './interaction/menu.js';
+import { Wheel } from './interaction/wheel.js';
 import { Hud } from './hud/hud.js';
 import { DebugGui } from './debug/debugGui.js';
 
@@ -56,7 +56,7 @@ export class Game {
     this.input = new Input(canvas);
     this.hud = new Hud(document.getElementById('hud'));
     this.interaction = new Interaction();
-    this.menu = new Menu(document.getElementById('hud'));
+    this.menu = new Wheel(document.getElementById('hud')); // the companion wheel
     this.timer = new THREE.Timer();
     this.accumulator = 0;
 
@@ -425,7 +425,7 @@ export class Game {
     }
     if (drive && drive.phase === 'parked') ask('goAgain', 'Off we go again', () => drive.resume());
     if (c.fsm.is('driving')) ask('swap', 'Let me drive', () => ((this.passengerPlan = 'swap'), drive?.park()));
-    this.menu.open(`Ask ${c.name} to`, actions);
+    this.openWheel(`Ask ${c.name} to`, actions);
     this.player.lookEnabled = false;
     this.player.moveEnabled = false;
   }
@@ -476,10 +476,28 @@ export class Game {
       return;
     }
     // She answers when you ask her something.
-    const answered = actions.map((a) => ({ ...a, run: () => (a.run(), c.voice.onRequest(a.kind)) }));
-    this.menu.open(`Ask ${c.name} to`, answered);
+    const answer = (a) => () => (a.run(), c.voice.onRequest(a.kind));
+    // On the wheel: anything not about a particular quad, then a slice for each
+    // quad (nearest her first) opening a ring of what she could do with it.
+    const options = actions.filter((a) => !a.quad).map((a) => ({ label: a.label, run: answer(a) }));
+    for (const unit of [...new Set(actions.filter((a) => a.quad).map((a) => a.quad.unit))]) {
+      const own = actions.filter((a) => a.quad === unit.quad);
+      options.push({
+        label: unit.name,
+        color: unit.spec.bodyColor,
+        hint: unit.quad === c.quad && c.isSeated ? 'she\'s on it' : null,
+        children: own.map((a) => ({ label: a.short ?? a.label, run: answer(a) })),
+      });
+    }
+    this.openWheel(`Ask ${c.name} to`, options);
     this.player.lookEnabled = false;
     this.player.moveEnabled = false;
+  }
+
+  /** Opens the companion wheel, putting the help away so it isn't showing through. */
+  openWheel(title, options) {
+    this.hud.toggleHelp(false);
+    this.menu.open(title, options);
   }
 
   closeMenu() {

@@ -51,3 +51,25 @@ describe('her driving mood', () => {
     expect(moodName(0.9)).toBe('confident');
   });
 });
+
+describe('a bold driver', () => {
+  it('is unchanged at middling confidence and goes up to about 29 mph at the top', () => {
+    const mid = driveMood(P, 0.5);
+    expect(mid.driveSpeedMax).toBeCloseTo(P.driveSpeedMax, 5);
+    const top = driveMood(P, 1);
+    expect(top.driveSpeedMax * 2.237).toBeGreaterThan(27);
+    expect(top.driveSpeedMax * 2.237).toBeLessThan(31);
+    expect(top.driveScareSpeed).toBeGreaterThan(top.driveSpeedMax + 2);
+    expect(top.driveMaxThrottle).toBe(1);
+    expect(top.driveLoopRadiusMax).toBeGreaterThan(25);
+    expect(top.driveForMax).toBeGreaterThan(180);
+  });
+
+  it('saves the real speed for when she is really sure of herself', () => {
+    const mph = (c) => driveMood(P, c).driveSpeedMax * 2.237;
+    expect(mph(0.7)).toBeLessThan(15);
+    expect(mph(0.85)).toBeGreaterThan(17);
+    expect(mph(0.85)).toBeLessThan(23);
+    expect(mph(0.6)).toBeLessThan(mph(0.7));
+  });
+});

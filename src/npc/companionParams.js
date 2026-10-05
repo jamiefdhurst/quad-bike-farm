@@ -34,8 +34,14 @@ export const DEFAULT_COMPANION_PARAMS = {
 
   // Doing things on her own when left standing about
   ownMind: true,
-  boredAfterMin: 55, // seconds standing about before she does something
+  boredAfterMin: 30, // seconds standing about before she does something: her usual wait is the middle of these...
   boredAfterMax: 90,
+  boredSpread: 0.55, // ...spread widely either side of it (log scale: 0.55 puts two in three waits within 0.6 to 1.7 times it)
+  boredWaitFloor: 12, // seconds, however restless
+  boredWaitCeiling: 200,
+  restlessDrift: 0.03, // how fast her restlessness (0.5 to 2, shortening the waits) wanders up and down
+  boredWhim: 0.6, // how much the odds of what she does next are reshuffled each time (log scale)
+  wanderFarChance: 0.25, // a longer stroll, two and a half times as far
   boredMountChance: 0.3, // gets on a quad to wait (she stays on it)
   placedPatienceMin: 240, // seconds sat on the back where you put her (nobody riding) before she gives up and gets off
   placedPatienceMax: 420,
@@ -65,6 +71,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   driveWaypointsMin: 4,
   driveWaypointsMax: 6,
   driveArriveRadius: 2.2,
+  driveCornerAccel: 3.5, // m/s2 she's happy to corner at (more when confident); she slows and eases the bars to keep to it
   drivePauseChance: 0.3, // at each waypoint, the chance she brakes to a stop for a moment
   drivePauseMin: 1.5, // seconds
   drivePauseMax: 4,
@@ -148,6 +155,12 @@ export const COMPANION_PARAM_RANGES = {
   fidgetEveryMax: [0.5, 60, 0.5],
   fidgetScale: [0, 3, 0.05],
   boredAfterMin: [5, 600, 1],
+  boredSpread: [0, 1.5, 0.05],
+  boredWaitFloor: [1, 120, 1],
+  boredWaitCeiling: [10, 900, 5],
+  restlessDrift: [0, 0.2, 0.005],
+  boredWhim: [0, 2, 0.05],
+  wanderFarChance: [0, 1, 0.05],
   boredAfterMax: [5, 900, 1],
   boredMountChance: [0, 1, 0.05],
   placedPatienceMin: [10, 1800, 5],
@@ -184,6 +197,7 @@ export const COMPANION_PARAM_RANGES = {
   driveWaypointsMin: [2, 10, 1],
   driveWaypointsMax: [2, 12, 1],
   driveArriveRadius: [0.5, 6, 0.1],
+  driveCornerAccel: [1, 10, 0.1],
   drivePauseChance: [0, 1, 0.05],
   drivePauseMin: [0, 15, 0.5],
   drivePauseMax: [0, 20, 0.5],

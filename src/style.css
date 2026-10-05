@@ -191,44 +191,97 @@ body {
   font-size: 12px;
 }
 
-.menu {
+.wheel {
   position: absolute;
   left: 50%;
   top: 50%;
-  transform: translate(24px, -50%);
-  min-width: 220px;
-  padding: 8px 0;
-  background: rgba(20, 22, 20, 0.82);
-  border-radius: 6px;
-  font-size: 15px;
+  width: 440px;
+  height: 440px;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 2; /* over the help panel */
 }
 
-.menu-title {
-  padding: 4px 14px 8px;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.65;
+.wheel svg {
+  position: absolute;
+  inset: 0;
 }
 
-.menu-item {
-  padding: 6px 14px;
+.wheel-slice {
+  fill: rgba(20, 22, 20, 0.78);
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+  transition: fill 0.08s;
 }
 
-.menu-item.selected {
-  background: rgba(255, 255, 255, 0.16);
+.wheel-slice.selected {
+  fill: rgba(70, 74, 68, 0.92);
+  stroke: rgba(255, 255, 255, 0.5);
 }
 
-.menu-item .key {
-  display: inline-block;
-  width: 1.4em;
-  opacity: 0.6;
+.wheel-hub {
+  fill: rgba(20, 22, 20, 0.6);
 }
 
-.menu-footer {
-  padding: 8px 14px 2px;
-  font-size: 12px;
+.wheel-needle {
+  fill: #fff;
+}
+
+.wheel-label {
+  position: absolute;
+  width: 124px;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  line-height: 1.25;
+  opacity: 0.85;
+}
+
+.wheel-label.selected {
+  opacity: 1;
+  font-weight: 600;
+}
+
+.wheel-label .key {
+  display: block;
+  font-size: 11px;
   opacity: 0.55;
+}
+
+.wheel-label small {
+  display: block;
+  font-size: 11px;
+  opacity: 0.6;
+  font-weight: 400;
+}
+
+.wheel-centre {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 104px;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.wheel-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.8;
+}
+
+.wheel-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  text-align: center;
+  font-size: 12px;
+  opacity: 0.7;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  white-space: pre;
 }
 
 .lil-gui.root {
