@@ -168,6 +168,7 @@ export class Game {
             return { text: `Hold E to fill the ${unit.label} (${pct}%)   ·   G put the can down` };
           }
           if (quad.isTipped) return `Right the ${unit.label}`;
+          if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger) return 'Get on the back (she\'s driving)';
           return `Ride the ${unit.label}   ·   K ignition   R start   Q/Z choke   F fuel tap`;
         },
         interact: () => {
@@ -181,6 +182,7 @@ export class Game {
           }
           if (this.tooFastToMount(quad)) return;
           if (quad.isTipped) quad.rightItself();
+          else if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger) this.mountPillion(unit);
           else this.mount(unit);
         },
         hold: (dt) => {
@@ -281,8 +283,95 @@ export class Game {
   // Which quad -------------------------------------------------------------
 
   /** The quad the player is riding, if any. */
+  /** The quad you're at the controls of, if any. */
   get riddenUnit() {
+    return this.player.isRiding && this.player.seat === 'rider' ? this.player.vehicle.unit : null;
+  }
+
+  /** The quad you're on, front or back. */
+  get boardUnit() {
     return this.player.isRiding ? this.player.vehicle.unit : null;
+  }
+
+  /** She's on the front seat of this quad (driving it, or about to). */
+  herAtTheFront(quad) {
+    const c = this.companion;
+    return c.quad === quad && (c.fsm.is('driving') || (c.fsm.is('shuffling') && c.fsm.data?.to === 'rider'));
+  }
+
+  /** On the back while she drives. */
+  mountPillion(unit) {
+    if (this.player.isRiding) return;
+    this.player.mount(unit.quad, 'pillion');
+    unit.quad.passenger = this.player;
+    this.lastUnit = unit;
+    this.input.takeWheelSteps();
+    this.voice.onRequest('passengerOn');
+  }
+
+  /** Off the back: only once she's stopped (or nearly). */
+  getOffBack() {
+    const quad = this.boardUnit.quad;
+    if (quad.speed > this.player.params.dismountSpeed) {
+      this.hud.toast('Ask her to stop first');
+      return false;
+    }
+    const spot = this.findDismountSpot(quad, [
+      [1.05, -0.6],
+      [-1.05, -0.6],
+      [0, -1.9],
+    ]);
+    if (!spot) {
+      this.hud.toast('No room to get off here');
+      return false;
+    }
+    quad.passenger = null;
+    this.player.dismount(spot, quad.yaw + Math.PI);
+    return true;
+  }
+
+  /** Your menu riding on the back: talk to her about the ride. */
+  openPassengerMenu() {
+    const c = this.companion;
+    const drive = c.fsm.is('driving') ? c.drive : null;
+    const stopped = !drive || drive.phase === 'parked' || drive.done;
+    const actions = [];
+    const ask = (kind, label, run) => actions.push({ kind, label, run: () => (run(), this.voice.onRequest(kind)) });
+    if (stopped) ask('letMeOff', 'I\'ll get off here', () => this.getOffBack());
+    else ask('letMeOff', 'Let me off', () => ((this.passengerPlan = 'off'), drive.park()));
+    if (drive && !stopped) {
+      ask('stopHere', 'Stop here', () => drive.park());
+      ask('slower', 'Slow down a bit', () => drive.setCruiseScale(drive.cruiseScale * 0.75));
+      ask('faster', 'Go a bit faster', () => drive.setCruiseScale(drive.cruiseScale * 1.25));
+    }
+    if (drive && drive.phase === 'parked') ask('goAgain', 'Off we go again', () => drive.resume());
+    if (c.fsm.is('driving')) ask('swap', 'Let me drive', () => ((this.passengerPlan = 'swap'), drive?.park()));
+    this.menu.open('Ask her to', actions);
+    this.player.lookEnabled = false;
+    this.player.moveEnabled = false;
+  }
+
+  /** Things you asked for on the back that wait until she's stopped. */
+  updatePassenger() {
+    const unit = this.boardUnit;
+    if (!unit || this.player.seat !== 'pillion' || !this.passengerPlan) return;
+    const quad = unit.quad;
+    if (quad.speed > 0.3) return;
+    const c = this.companion;
+    if (this.passengerPlan === 'off') {
+      if (this.getOffBack()) this.passengerPlan = null;
+    } else if (this.passengerPlan === 'swap') {
+      // She gets off the front, then hops on the back once you've slid forward.
+      if (c.fsm.is('driving')) {
+        c.stopDriving('off', () => c.requestMount(quad));
+        return;
+      }
+      if (c.quad === quad && c.fsm.is('dismounting')) return;
+      quad.passenger = null;
+      this.player.seat = 'rider';
+      quad.setRider(this.player, this.input);
+      this.passengerPlan = null;
+    }
   }
 
   /** The quad the player is looking at on foot, if any. */
@@ -463,15 +552,19 @@ export class Game {
 
     for (const unit of this.units) unit.quad.setRemote(null);
     let pouring = false;
-    if (this.player.isRiding) {
+    if (this.menu.isOpen) {
+      this.menu.handleInput(input);
+      if (!this.menu.isOpen) this.closeMenu();
+    } else if (this.player.isRiding && this.player.seat === 'pillion') {
+      // On the back: E to talk to her about the ride.
+      this.interaction.clear();
+      if (input.wasPressed('KeyE')) this.openPassengerMenu();
+    } else if (this.player.isRiding) {
       this.interaction.clear();
       this.riddenUnit.quad.handleFrameInput(dt);
       if (input.wasPressed('KeyE')) this.tryDismount();
     } else if (this.workshop.isOpen) {
       this.workshop.handleInput(input);
-    } else if (this.menu.isOpen) {
-      this.menu.handleInput(input);
-      if (!this.menu.isOpen) this.closeMenu();
     } else {
       input.takeWheelSteps();
       const focused = this.interaction.update(this.player, this.player.params.interactRange);
@@ -495,7 +588,8 @@ export class Game {
     }
     const alpha = this.accumulator / FIXED_DT;
 
-    for (const unit of this.units) unit.listenerOnBoard = unit === this.riddenUnit;
+    this.updatePassenger();
+    for (const unit of this.units) unit.listenerOnBoard = unit === this.boardUnit;
     for (const unit of this.units) unit.update(dt, alpha);
     const ridden = this.riddenUnit;
     this.companion.update(dt, this.companion.quad.unit.vibration, {
@@ -511,14 +605,15 @@ export class Game {
       menuOpen: this.menu.isOpen,
       pouring,
     });
-    if (!this.debugCamera) this.player.update(dt, alpha, ridden ? ridden.vibration : null);
+    const board = this.boardUnit;
+    if (!this.debugCamera) this.player.update(dt, alpha, board ? board.vibration : null);
     this.can.pouring = pouring;
     this.can.update(dt);
     this.workshop.update(dt);
     this.audioHub.setPouring(pouring, dt);
     this.audioHub.update(dt, this.camera);
-    this.rideWind.update(dt, ridden ? ridden.quad.speed : 0);
-    this.world.update(dt, ridden ? ridden.quad.position : this.player.position, this.camera);
+    this.rideWind.update(dt, board ? board.quad.speed : 0);
+    this.world.update(dt, board ? board.quad.position : this.player.position, this.camera);
     this.updateHud(dt);
 
     this.renderer.render(this.scene, this.camera);
@@ -537,7 +632,7 @@ export class Game {
     // A prompt is either an E action (a string) or plain text ({ text }).
     const p = f ? f.prompt() : '';
     this.hud.setPrompt(typeof p === 'string' ? (p ? `E  ${p}` : '') : p.text);
-    const unit = this.riddenUnit ?? this.focusedUnit;
+    const unit = this.boardUnit ?? this.focusedUnit;
     if (unit) {
       const e = unit.engine;
       const quad = unit.quad;

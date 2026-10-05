@@ -1007,6 +1007,11 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
   // eye height (1.62 m). Any lower and you sit shorter than she does behind you.
   cameraAnchor.position.set(0, 1.69, -0.22);
   root.add(cameraAnchor);
+  // Your eyes riding on the back while she drives.
+  const pillionCameraAnchor = new THREE.Object3D();
+  pillionCameraAnchor.name = 'pillionCameraAnchor';
+  pillionCameraAnchor.position.set(0, pillionAnchor.position.y + 0.79, pillionAnchor.position.z - 0.02);
+  root.add(pillionCameraAnchor);
 
   // Wheels sit outside the body so they don't rock with it.
   for (const w of WHEELS) {

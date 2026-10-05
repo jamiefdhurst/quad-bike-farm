@@ -76,6 +76,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   driveKeyOffChance: 0.05, // getting off after a drive, the chance she switches it off (she nearly always leaves it running)
   driveSeatRaise: 0.04, // metres, fine-tunes how high she sits on the front seat
   driveSeatForward: 0.0, // metres, fine-tunes where she sits along it
+  rideLoopScale: 2.5, // giving you a ride, her loops are this much bigger
   driveTalkRange: 14, // metres; you can talk to her from this far while she's driving
 
   askOffAfterMin: 120, // seconds on the back before she asks if she can get off (or, riding, if you can stop soon)
@@ -140,6 +141,7 @@ export const COMPANION_PARAM_RANGES = {
   boredDriveChance: [0, 1, 0.05],
   wanderMin: [1, 50, 0.5],
   wanderMax: [1, 80, 0.5],
+  rideLoopScale: [1, 6, 0.1],
   driveConfidence: [0, 1, 0.01],
   driveMoodSwing: [0, 1, 0.01],
   driveSpeedMin: [0.5, 8, 0.1],

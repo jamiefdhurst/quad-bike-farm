@@ -37,8 +37,18 @@ export const drivingStates = {
       // How she feels about it this time: careful, confident or somewhere between.
       this.driveConfidence ??= this.params.driveConfidence;
       this.driveMood = pickConfidence(this.driveConfidence, this.params.driveMoodSwing);
+      // Giving you a ride: bigger loops, and she waits for you to get on.
+      const ride = this.giveRide;
+      this.giveRide = false;
+      const params = driveMood(this.params, this.driveMood);
+      if (ride || q.passenger) {
+        params.driveLoopRadiusMin *= this.params.rideLoopScale;
+        params.driveLoopRadiusMax *= this.params.rideLoopScale;
+      }
       this.drive = new HerDrive(q, {
-        params: driveMood(this.params, this.driveMood),
+        params,
+        passenger: () => !!q.passenger,
+        waitForPassenger: ride,
         probe: (heading, distance) => this.driveProbe(heading, distance),
         isClear: (a, b) => this.driveClear(a, b),
       });
@@ -107,8 +117,9 @@ export const drivingStates = {
 };
 
 export const drivingMethods = {
-  /** Walks to the front of a quad, gets on and has a little drive. */
-  requestDrive(quad) {
+  /** Walks to the front of a quad, gets on and has a little drive; with `giveRide`, waits for you on the back. */
+  requestDrive(quad, { giveRide = false } = {}) {
+    this.giveRide = giveRide;
     if (this.fsm.is('driving')) {
       if (quad !== this.quad) this.stopDriving('off', () => this.requestDrive(quad));
       return;
@@ -150,7 +161,7 @@ export const drivingMethods = {
     let how = exit?.how;
     if (!how) how = d.result === 'gaveUp' || d.result === 'noRoom' || Math.random() >= p.driveBackChance ? 'off' : 'back';
     q.setDriver(null);
-    if (how === 'back' && q.hasPillion) {
+    if (how === 'back' && q.hasPillion && !q.passenger) {
       if (!exit) this.driveEvents.push('toBack');
       this.fsm.transition('shuffling', { to: 'pillion' });
       return;

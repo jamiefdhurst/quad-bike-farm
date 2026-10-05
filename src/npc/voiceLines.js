@@ -600,6 +600,29 @@ export const VOICE_LINES = {
     ],
   },
 
+  // Giving you a ride on the back ---------------------------------------------
+  ackGiveRide: {
+    cooldown: 0,
+    lines: ['Ooh, really? Okay!', "Hop on then, I'll drive.", 'Me? Driving you? Go on then.', "Right. Hold on tight, I'm getting it started.", 'You trust me? Brave.'],
+  },
+  waitingForYou: {
+    cooldown: 10,
+    lines: ['Come on then, hop on!', 'Are you getting on or not?', "I'm waiting!", 'Your chariot awaits. Get on.'],
+  },
+  passengerOn: {
+    cooldown: 0,
+    lines: ['Hold on tight!', 'Ooh, this is different. Ready?', "Don't back-seat drive.", 'Comfy back there?', "Right. Off we go. Don't scream."],
+  },
+  ackLetMeOff: { cooldown: 0, lines: ['Okay, stopping.', 'Pulling over.', 'Had enough already?', 'Okay, okay.'] },
+  ackStopHere: { cooldown: 0, lines: ['Stopping!', 'Here? Okay.', 'Brakes, brakes.', 'Righto.'] },
+  ackSlower: { cooldown: 0, lines: ['Sorry! Slowing down.', 'Too fast? Okay.', "Fine, Grandad.", 'Gently, gently.'] },
+  ackFaster: { cooldown: 0, lines: ['Ooh, you asked for it!', 'Faster? Okay!', 'Hold on, then!', "Don't blame me if we fall off."] },
+  ackGoAgain: { cooldown: 0, lines: ['Off we go!', 'Round again!', 'Okay, hold on.'] },
+  ackSwap: {
+    cooldown: 0,
+    lines: ['Fine, you drive.', "Okay, I'll get on the back.", 'Bossy.', 'Your turn. I was getting good at that.'],
+  },
+
   // Starting a quad for you ----------------------------------------------------
   ackStart: {
     cooldown: 0,

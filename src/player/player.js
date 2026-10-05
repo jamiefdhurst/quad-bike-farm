@@ -68,6 +68,7 @@ export class Player {
 
     this.mode = 'foot';
     this.vehicle = null;
+    this.seat = 'rider'; // or 'pillion', riding on the back while she drives
     this.rideYaw = 0;
     this.ridePitch = 0;
     this.lookEnabled = true;
@@ -233,7 +234,7 @@ export class Player {
 
   updateRidingCamera(vibration) {
     const p = this.params;
-    const anchor = this.vehicle.cameraAnchor;
+    const anchor = this.seat === 'pillion' ? this.vehicle.pillionCameraAnchor : this.vehicle.cameraAnchor;
     anchor.updateWorldMatrix(true, false);
     anchor.getWorldPosition(this.camera.position);
     anchor.getWorldQuaternion(this.tmpQuat);
@@ -263,8 +264,10 @@ export class Player {
 
   // Riding -----------------------------------------------------------------
 
-  mount(vehicle) {
+  /** Gets on: at the controls ('rider') or on the back ('pillion'). */
+  mount(vehicle, seat = 'rider') {
     this.mode = 'riding';
+    this.seat = seat;
     this.stumbleLeft = 0;
     this.landing = false;
     this.camDip = this.camDipVel = this.camRoll = this.camRollVel = 0;

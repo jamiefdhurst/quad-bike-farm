@@ -118,14 +118,20 @@ export class HerDrive {
    * @param {function} opts.probe  (heading, distance) => distance to the nearest obstacle that way, or Infinity.
    * @param {function} opts.isClear  (a, b) => whether the straight line a to b is open ground.
    * @param {function} [opts.random]
+   * @param {function} [opts.passenger]  () => whether someone's riding on the back; then she doesn't tire of it.
+   * @param {boolean} [opts.waitForPassenger]  Started it to give you a ride: she waits for you to get on.
    */
-  constructor(quad, { params, probe, isClear, random = Math.random, startingParams }) {
+  constructor(quad, { params, probe, isClear, random = Math.random, startingParams, passenger = () => false, waitForPassenger = false }) {
     this.quad = quad;
     this.p = params;
     this.probe = probe;
     this.isClear = isClear;
     this.random = random;
     this.startingParams = startingParams;
+    this.passenger = passenger;
+    this.waitForPassenger = waitForPassenger;
+    this.waited = 0;
+    this.cruiseScale = 1; // you asked her to go faster or slower
     this.controls = { throttle: 0, brake: 1, steer: 0, starter: false, reverse: false };
     this.events = [];
     this.done = false;
@@ -165,7 +171,32 @@ export class HerDrive {
   }
 
   pickCruise() {
-    return this.between(this.p.driveSpeedMin, this.p.driveSpeedMax);
+    return this.between(this.p.driveSpeedMin, this.p.driveSpeedMax) * this.cruiseScale;
+  }
+
+  /** Someone on the back: she keeps going until asked, rather than tiring of it. */
+  get carrying() {
+    return this.passenger();
+  }
+
+  /** Go a bit faster (factor > 1) or slower; she won't go past her scare speed. */
+  setCruiseScale(scale) {
+    const next = clamp(scale, 0.5, 2);
+    this.cruise *= next / this.cruiseScale;
+    this.cruiseScale = next;
+  }
+
+  /** Pull up and wait where she is, engine running, until resume(). */
+  park() {
+    if (this.done || this.phase === 'start' || this.phase === 'parked') return;
+    this.setPhase('parked');
+    this.events.push('parked');
+  }
+
+  resume() {
+    if (this.phase !== 'parked') return;
+    this.cruise = this.pickCruise();
+    this.setPhase('settle', 0.5);
   }
 
   setPhase(phase, timer = 0) {
@@ -238,9 +269,17 @@ export class HerDrive {
         break;
 
       case 'settle':
-        // Let it tick over a moment, then off she goes.
+        // Let it tick over a moment, then off she goes (once you're on, if she's giving you a ride).
         this.hold(c);
         this.tendChoke();
+        if (this.waitForPassenger && !this.carrying) {
+          this.waited += dt;
+          if (this.waited > 15) {
+            this.waited = 0;
+            this.events.push('waitingForYou');
+          }
+          break;
+        }
         if (this.timer <= 0) {
           if (!this.waypoints.length && !this.plan()) break;
           if (this.forgetsChoke && q.choke > 0) {
@@ -250,6 +289,13 @@ export class HerDrive {
           this.setPhase('drive');
           this.events.push(this.time === 0 ? 'setOff' : 'moveOff');
         }
+        break;
+
+      case 'parked':
+        // Stopped where you asked, holding it on the brake.
+        this.hold(c);
+        if (q.forwardSpeed > 0.4) c.brake = this.p.driveBrakeFirm;
+        this.tendChoke();
         break;
 
       case 'stalled':
@@ -267,7 +313,7 @@ export class HerDrive {
         this.tendChoke();
         this.time += dt;
         if (this.timer <= 0) {
-          if (this.time > this.driveFor) {
+          if (this.time > this.driveFor && !this.carrying) {
             this.stop(this.random() < this.p.driveScaredChance ? 'scared' : 'bored');
             break;
           }
@@ -362,14 +408,16 @@ export class HerDrive {
     const c = this.controls;
     c.reverse = false;
 
-    if (this.time > this.driveFor) {
+    if (this.time > this.driveFor && !this.carrying) {
       this.stop(this.random() < p.driveScaredChance ? 'scared' : 'bored');
       return;
     }
-    // Going faster than she likes (downhill, or her hand slipped): that's her done.
+    // Going faster than she likes (downhill, or her hand slipped): that's her done,
+    // or with you on the back, she pulls up to collect herself.
     if (speed > p.driveScareSpeed) {
       this.events.push('tooFast');
-      this.stop('scared');
+      if (this.carrying) this.park();
+      else this.stop('scared');
       return;
     }
 

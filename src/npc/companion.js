@@ -155,6 +155,7 @@ export class Companion {
     // She can have a go at starting any quad that isn't running and has nobody on it.
     const startable = (q) => !q.engine.isRunning && !q.rider && !q.isTipped && !q.isGhostRiding;
     for (const q of sorted) {
+      if (drivable(q) && q.hasPillion) actions.push({ kind: 'giveRide', label: `Take me for a ride on the ${q.label}`, run: () => this.requestDrive(q, { giveRide: true }) });
       if (startable(q) && !(s.is('starting') && q === this.quad)) {
         actions.push({ kind: 'start', label: `Start the ${q.label}`, run: () => this.requestStart(q) });
       }

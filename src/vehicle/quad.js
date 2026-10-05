@@ -51,6 +51,7 @@ export class Quad {
     this.chokeLever = part('chokeLever');
     this.riderHands = part('riderHands');
     this.cameraAnchor = part('cameraAnchor');
+    this.pillionCameraAnchor = part('pillionCameraAnchor');
     this.pillionAnchor = part('pillionAnchor') ?? null; // none on a single-seater
     this.riderAnchor = part('riderAnchor');
     this.exhaustTip = part('exhaustTip');
@@ -83,6 +84,7 @@ export class Quad {
     this.input = null;
     this.remoteInput = null; // set while someone on foot is looking at the bike
     this.helperStarter = false; // she's holding the starter button
+    this.passenger = null; // you, riding on the back while she drives
     this.driver = null; // someone else at the controls (her), see setDriver()
     this.throttle = 0;
     this.brake = 0;
