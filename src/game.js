@@ -8,7 +8,8 @@ import { World } from './world/world.js';
 import { Player, PLAYER_CAPSULE } from './player/player.js';
 import { DEFAULT_PLAYER_PARAMS, PLAYER_PARAM_RANGES } from './player/playerParams.js';
 import { QuadUnit } from './vehicle/quadUnit.js';
-import { QUAD_SPECS } from './vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS } from './vehicle/quadSpecs.js';
+import { pickFleet } from './vehicle/fleet.js';
 import { applyIdle, applyVariation, pickIdle } from './vehicle/quadVariation.js';
 import { AudioHub } from './audio/engineAudio.js';
 import { RideWind } from './audio/rideAudio.js';
@@ -114,9 +115,11 @@ export class Game {
     this.seed = startSeed();
     const random = createRandom(this.seed);
     console.info(`Layout seed ${this.seed} (add ?seed=${this.seed} to the URL to repeat it)`);
-    const { placed: spawns, home } = randomiseQuadSpawns(this.world.spawn, QUAD_SPECS.length, random);
+    // Which vehicles are here this game (its own random stream, so the rest of a seed's layout doesn't depend on it).
+    const fleet = pickFleet(QUAD_SPECS, EXTRA_SPECS, createRandom(this.seed ^ 0x51ee7));
+    const { placed: spawns, home } = randomiseQuadSpawns(this.world.spawn, fleet.length, random);
 
-    this.units = QUAD_SPECS.map(
+    this.units = fleet.map(
       (spec, i) =>
         new QuadUnit({
           spec,

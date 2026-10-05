@@ -17,7 +17,9 @@ export const SUSPENSION_TOP_Y = 0.1;
 export const CHASSIS_COLLIDER = { hx: 0.58, hy: 0.2, hz: 1.0, y: 0.15 };
 
 export class QuadPhysics {
-  constructor(physics, RAPIER, params, spawn) {
+  /** `scale` shrinks the whole chassis (the kids' quad): wheel positions, suspension mount and bodywork box. */
+  constructor(physics, RAPIER, params, spawn, scale = 1) {
+    this.scale = scale;
     this.physics = physics;
     this.RAPIER = RAPIER;
     this.params = params;
@@ -32,7 +34,7 @@ export class QuadPhysics {
     );
     const c = CHASSIS_COLLIDER;
     this.collider = physics.createCollider(
-      RAPIER.ColliderDesc.cuboid(c.hx, c.hy, c.hz).setTranslation(0, c.y, 0).setFriction(0.6),
+      RAPIER.ColliderDesc.cuboid(c.hx * scale, c.hy * scale, c.hz * scale).setTranslation(0, c.y * scale, 0).setFriction(0.6),
       this.body,
     );
 
@@ -45,7 +47,7 @@ export class QuadPhysics {
     this.vehicle.setIndexForwardAxis = 2;
     for (const w of WHEELS) {
       this.vehicle.addWheel(
-        { x: w.x, y: SUSPENSION_TOP_Y, z: w.z },
+        { x: w.x * scale, y: SUSPENSION_TOP_Y * scale, z: w.z * scale },
         { x: 0, y: -1, z: 0 },
         { x: -1, y: 0, z: 0 },
         params.suspensionRestLength,

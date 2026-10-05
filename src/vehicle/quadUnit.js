@@ -38,6 +38,8 @@ export class QuadUnit {
       bodyColor: spec.bodyColor,
       dashStyle: spec.dashStyle,
       style: spec.style,
+      scale: spec.scale,
+      solo: spec.solo,
       fuelParams: { ...DEFAULT_FUEL_PARAMS, ...spec.fuel },
     });
     this.quad.unit = this;

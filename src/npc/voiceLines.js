@@ -326,6 +326,23 @@ export const VOICE_LINES = {
     cooldown: 240,
     lines: ["The yellow one's more fun than this.", 'Can we go on the yellow one after?', 'I miss the yellow one.'],
   },
+  // The kids' quad is Jess's alone (Amy never rides it, so her lines for it are never heard); the loan quad is anyone's.
+  likeKids: {
+    cooldown: 240,
+    lines: ["The little pink one's cute, but I'd never fit."],
+  },
+  preferKids: {
+    cooldown: 240,
+    lines: ["I'd rather be on the little pink one. It's only a bit small."],
+  },
+  likeLoan: {
+    cooldown: 240,
+    lines: ["The loan one is lovely. Quiet, smooth. Don't you dare muddy it.", 'The loan quad is my favourite. It still smells new.', 'It starts first time. I could get used to this.'],
+  },
+  preferLoan: {
+    cooldown: 240,
+    lines: ["Can we go on the loan quad next? It's so smooth.", "I'd rather be on the loan one. It's got proper suspension."],
+  },
   outOfFuel: {
     cooldown: 60,
     lines: [

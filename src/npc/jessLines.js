@@ -130,6 +130,10 @@ export const JESS_LINES = {
   preferRed: ['The red one is better than this.', 'We should have taken the red one.'],
   preferBlue: ['Blue one next time. This seat is rubbish.', "I'd rather be on the blue one."],
   preferYellow: ['The yellow one is more fun.', 'Yellow one after this? Go on.'],
+  likeKids: ["The little pink one's mine. Don't touch it.", 'Tiny and pink and absolutely mine.'],
+  preferKids: ['I want the little pink one. It is mine, you know.', 'Pink one next. I called it.'],
+  likeLoan: ["The loan one's got no personality, but it's fast. Fine, I love it.", 'Posh one. Go on then, I am in love.'],
+  preferLoan: ['Can we go on the posh loan one next?', "I'd rather be on the loan quad. It's shiny."],
   outOfFuel: [
     'Did you forget to put petrol in? Classic.',
     "We're out of petrol, aren't we?",

@@ -158,6 +158,17 @@ export class Companion {
     return this.others().some((o) => o.claimedQuad === quad && (!seat || o.claimedSeat === seat || o.claimedSeat === 'both'));
   }
 
+  /** A quad that's one girl's alone (the kids' quad is Jess's) isn't ridden by the other. */
+  mayRide(quad) {
+    const owner = quad.unit?.spec.owner;
+    return !owner || owner === this.character?.id;
+  }
+
+  /** It's hers: when she picks a quad to drive she goes for it first. */
+  ownsQuad(quad) {
+    return !!this.character && quad.unit?.spec.owner === this.character.id;
+  }
+
   /** The other girl driving this quad (or about to), if any. */
   friendDriving(quad) {
     return this.others().find((o) => o.claimedQuad === quad && o.claimedSeat === 'rider') ?? null;
@@ -271,7 +282,7 @@ export class Companion {
     this.idleFor = 0;
     this.boredAfter = nextBoredWait(p, this.restlessness);
     const here = this.root.position;
-    const near = (q) => q.position.distanceTo(here) < 40 && !this.takenByOther(q) && !q.rider && !q.isTipped && !q.isGhostRiding && q.speed < 0.5;
+    const near = (q) => q.position.distanceTo(here) < 40 && this.mayRide(q) && !this.takenByOther(q) && !q.rider && !q.isTipped && !q.isGhostRiding && q.speed < 0.5;
     // Her friend about to set off on one (walking to it, getting on, starting it or about to go): she might hop on the back.
     const settingOff = (q) => {
       const f = this.friendDriving(q);
@@ -297,7 +308,7 @@ export class Companion {
     }
     else if (choice === 'mount') this.requestMount(pick(options.mount), { ownChoice: true });
     else if (choice === 'start') this.requestStart(pick(options.start));
-    else if (choice === 'drive') this.requestDrive(pick(options.drive));
+    else if (choice === 'drive') this.requestDrive(pick(options.drive.some((q) => this.ownsQuad(q)) ? options.drive.filter((q) => this.ownsQuad(q)) : options.drive));
     else if (choice === 'rest') this.goRest(pick(options.rest), { stay: this.restStayFor?.() });
     else this.wander();
   }

@@ -5,6 +5,8 @@ import { band } from './skills.js';
 import { Speech } from '../audio/companionAudio.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
 
+const cap = (s) => s[0].toUpperCase() + s.slice(1);
+
 // Captions for her recorded sounds.
 const SOUND_CAPTIONS = { sigh: '(sighs)', hum: '(hums)', laugh: '(laughs)', yawn: '(yawns)', gasp: '(gasps)', hmm: 'Hmm?', oh: 'Oh.' };
 
@@ -254,7 +256,11 @@ export class CompanionVoice {
   watchSeat(dt, view, together) {
     const c = this.companion;
     const p = this.params;
-    this.favourite ??= view.units[Math.floor(Math.random() * view.units.length)]?.spec.id ?? null;
+    if (!this.favourite) {
+      // Only a quad she can ride and has something to say about (the kids' and loan quads have no favourite lines).
+      const likeable = view.units.filter((u) => this.companion.mayRide(u.quad) && this.chatter.lines[`like${cap(u.spec.id)}`]);
+      this.favourite = likeable[Math.floor(Math.random() * likeable.length)]?.spec.id ?? null;
+    }
     const unit = c.quad.unit;
     if (!c.isSeated || !unit?.engine.isRunning) {
       this.shake = 0;
@@ -284,7 +290,6 @@ export class CompanionVoice {
     if (together && Math.abs(unit.quad.forwardSpeed) > 1.5) this.seatTime += dt;
     if (this.favourite && !this.favouriteSaid && this.seatTime > 12) {
       const id = unit.spec.id;
-      const cap = (s) => s[0].toUpperCase() + s.slice(1);
       const situation = id === this.favourite ? `like${cap(id)}` : `prefer${cap(this.favourite)}`;
       if (this.say(situation, { chance: 0.01 })) this.favouriteSaid = true;
     }

@@ -31,14 +31,16 @@ export class Quad {
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, fuelParams }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, fuelParams }) {
+    this.scale = scale; // 1, or smaller for the kids' quad: the model and the physics chassis both shrink by this
     this.world = world;
     this.engine = engine;
     this.params = params;
     this.label = label;
     this.spawn = spawn;
 
-    this.model = buildQuadModel({ bodyColor, dashStyle, style });
+    this.model = buildQuadModel({ bodyColor, dashStyle, style, solo });
+    this.model.scale.setScalar(scale);
     this.dash = this.model.userData.dash;
     this.fuel = new FuelSystem(fuelParams);
     this.faults = new Faults();
@@ -59,6 +61,8 @@ export class Quad {
     this.rackAnchor = part('rackAnchor') ?? null; // only quads with a front rack
     this.rackRider = null; // the girl sitting on the front rack, if any
     this.riderAnchor = part('riderAnchor');
+    // Whoever sits on a smaller quad is still full size: undo the model's scale on the anchors people hang from.
+    for (const a of [this.riderAnchor, this.pillionAnchor, this.rackAnchor, this.cameraAnchor, this.pillionCameraAnchor]) a?.scale.setScalar(1 / scale);
     this.exhaustTip = part('exhaustTip');
     this.wheels = WHEELS.map((w) => ({ ...w, object: part(w.name), spin: part(w.name).getObjectByName('spin') }));
     // Wheel centre heights in bodyRoot space, for posing the suspension arms.
@@ -76,10 +80,10 @@ export class Quad {
     const s = spawn;
     this.physics = new QuadPhysics(physics, RAPIER, params, {
       x: s.x,
-      y: world.heightAt(s.x, s.z) - GROUND_OFFSET + 0.05,
+      y: world.heightAt(s.x, s.z) - GROUND_OFFSET * scale + 0.05 * scale,
       z: s.z,
       yaw: s.yaw,
-    });
+    }, scale);
     this.drivetrain = new Drivetrain(params);
     this.bog = new Bog(); // how far it's sunk into a bog (bog.js)
     this.towed = false; // on the end of the winch: brakes off
@@ -443,7 +447,7 @@ export class Quad {
     for (let i = 0; i < this.wheels.length; i++) {
       const w = this.wheels[i];
       const st = this.physics.wheelState(i);
-      w.object.position.set(w.x, SUSPENSION_TOP_Y - st.suspension, w.z);
+      w.object.position.set(w.x, SUSPENSION_TOP_Y - st.suspension / this.scale, w.z);
       w.object.rotation.y = st.steering;
       w.spin.rotation.x = st.rotation;
       this.wheelHeights[i] = w.object.position.y - GROUND_OFFSET;
@@ -494,7 +498,7 @@ export class Quad {
   rightItself() {
     const p = this.currPos;
     const yaw = this.yaw;
-    this.physics.reset(p.x, this.world.heightAt(p.x, p.z) - GROUND_OFFSET + 0.3, p.z, yaw);
+    this.physics.reset(p.x, this.world.heightAt(p.x, p.z) - GROUND_OFFSET * this.scale + 0.3 * this.scale, p.z, yaw);
     this.recordTransform();
     this.prevPos.copy(this.currPos);
     this.prevQuat.copy(this.currQuat);

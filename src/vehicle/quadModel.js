@@ -971,6 +971,7 @@ function buildFrame(root, sport) {
  * @param {object} [opts]
  * @param {number} [opts.bodyColor] Paint colour for the plastics.
  * @param {string} [opts.dashStyle] 'classic', 'modern', 'sport', 'vintage' or 'race', see dash.js.
+ * @param {boolean} [opts.solo]     No racks, pillion seat or anchors for her: a one-person quad (the kids' quad).
  * @param {string} [opts.style]     Body style:
  *   'utility'  Honda-style farm quad: racks front and back, footwells, round headlights in the nose, raised pillion;
  *   'utility2' Yamaha-style farm quad: brush guard, square headlights, deeper railed racks, a grey seat, independent rear;
@@ -980,7 +981,7 @@ function buildFrame(root, sport) {
  *   'sport2'   Suzuki-style two-stroke race quad: lower and longer, big front plate, angular plastics, water-cooled,
  *              wide nerf bars, a big chamber on the right, white rims, one long race seat with a slim pillion pad.
  */
-export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', style = 'utility' } = {}) {
+export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', style = 'utility', solo = false } = {}) {
   const race = style === 'sport2';
   const farm = style === 'utility3';
   const sport = style === 'sport' || race; // two-stroke chassis
@@ -1198,8 +1199,10 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
   const tankCap = add(lathe([[0.036, -0.012], [0.036, 0.004], [0.03, 0.012], [0.001, 0.012]], 18), MAT.chrome, root);
   tankCap.position.set(0, race ? 0.908 : 0.928, race ? 0.38 : 0.36);
 
-  // Racks (utility quads only).
-  if (style === 'utility') {
+  // Racks (utility quads only, and not the one-seat kids' quad).
+  if (solo) {
+    // nothing to carry
+  } else if (style === 'utility') {
     rack(root, 0.5, 0.98, 0.84, 5, 0.73);
     rack(root, -0.82, -1.04, 0.92, 3, 0.775);
   } else if (style === 'utility2') {
@@ -1349,9 +1352,9 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
   const pillionAnchor = new THREE.Object3D();
   pillionAnchor.name = 'pillionAnchor';
   pillionAnchor.position.set(0, race ? 0.94 : sport ? 0.98 : 1.0, sport ? -0.66 : -0.6);
-  root.add(pillionAnchor);
+  if (!solo) root.add(pillionAnchor);
   // Quads with a front rack have a spot on it to sit, hips towards the back of the deck so her legs hang over the nose.
-  if (style === 'utility' || style === 'utility2' || farm) {
+  if (!solo && (style === 'utility' || style === 'utility2' || farm)) {
     const rackAnchor = new THREE.Object3D();
     rackAnchor.name = 'rackAnchor';
     rackAnchor.position.set(0, 0.84, 0.66);
@@ -1377,6 +1380,11 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
     quad.add(wheel);
   }
 
+  if (solo) {
+    for (const name of ['pillionSeat', 'pillionBase', 'grabStrap', 'pillionGripLeft', 'pillionGripRight']) {
+      for (let o = root.getObjectByName(name); o; o = root.getObjectByName(name)) o.removeFromParent();
+    }
+  }
   mergeStatic(root);
   mergeStatic(bars);
   quad.traverse((o) => {

@@ -298,10 +298,12 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 18. The workshop corner. The barn bench becomes where real jobs happen: change a plug, clean a carb, swap a tyre, top up two-stroke oil. Each job is a short hands-on sequence, and the girls watch, help or heckle. **Done.** Park a switched-off quad in the painted bay in front of the barn bench, look at the bench and press `E`: plug, carb, tyre and (on the two-strokes) oil are each five or so steps of tapping or holding `E`, with a green window to let go in on the tricky ones. Done right it's a proper fix; botched, it's left half-done. Amy helps and corrects, Jess heckles. The toolbox panel's quick fixes in the yard are now only rough ones.
 19. The hayloft. Climb the ladder: a view over the farm through the loft door, and a hiding place. The girls can climb up too, and Jess might drop straw on you. **Done.** A ladder at the back of the barn takes you up to a plank loft with a rail, a hay door looking out over the yard and a stack of hay to hide in. A bored girl may climb up and sit at the edge on a fine day, and Jess sometimes tips straw on you if you stand below her.
 20. Additional vehicles: a random one each time (each needing its own sound and characteristics):
-    - A neighbour's beaten-up old three-wheeler ATC (a real tip-over risk).
-    - A tiny kids' 50cc quad Jess insists on riding.
+    - A neighbour's beaten-up old three-wheeler ATC (a real tip-over risk). (Not doing this one.)
+    - A tiny kids' 50cc quad Jess insists on riding. **Done.** A small pink two-stroke, three quarters the size of the others, light, slow and one-seat. Jess goes for it first when she's bored, and Amy leaves it alone.
     - A mini moto with a pull-start.
-    - A smart new quad on loan for the day.
+    - A smart new quad on loan for the day. **Done.** A teal quad that starts first time with hardly any choke, idles smooth and quiet, wears slowly and comes with a full tank.
+
+    **Done for those two.** The line-up changes every game: one or two of the five regular quads are sometimes missing, and the kids' quad and the loan quad each turn up some of the time (`?seed=N` repeats a game's line-up). The mini moto is still to do.
 21. Each quad has a knack. The green only starts cold if you blip the throttle twice before cranking; the blue wants its choke off sooner than the others. Nothing tells you, but the girls know some of them ("you have to tickle it first").
 22. Popping on the overrun. Lean engines and the two-strokes crackle and bang when you shut the throttle from high revs, more so when worn, with a flash from the pipe in poor light. **Done.** Lean engines, worn ones and the two-strokes crackle and bang when you shut the throttle at speed, with a flash from the pipe in poor light.
 23. Drowning it. Hit a deep puddle or a ford too fast and it gulps water: it splutters, misfires and steams until it dries. Stall it in the water and it won't restart until it has drained.
