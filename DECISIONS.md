@@ -416,3 +416,10 @@ Decided with you: the second girl sits on the front rack (not squeezed onto the 
 - When: `loveYou` on a smooth ride with you (fun or gentle for 15 s, 3% a second, which is the slow check) or after 15 s stood together on foot (5%); `careForYou` instead of it when it's raining, on foot or riding with you after 40 s. Both go through the Chatter, so they wait their turn and never talk over the other girl.
 - No scorekeeping yet: how often she says it doesn't depend on how you treat her. That is item 8's job (who you favour), which can turn these chances up or down.
 - Checked: unit test that both girls have lines for both and none says he, she or they. Not checked in the running game: how often they come up in practice.
+
+## No HUD on the back, and a check on girls getting off (2026-10-05)
+
+- Sitting on the back, the crosshair and the action prompt ("Talk to Amy", "C Look back") are hidden. Captions and toasts stay, since they are what the girls say. E and C still work and the help panel (H) lists them. The prompt comes back as soon as the menu opens or you get off.
+- Checked, by reading the code and a new test, that a girl who has been following you gets off when bored. You get off your quad: after 30 to 90 s (Jess 15 to 50) she stops following, then either drives on alone or pulls up; pulling up she gets off, or (`driveBackChance`) moves onto the back by choice, where `boredOnTheBack` has her get off after a minute or two. Nothing needed fixing.
+- Unchanged on purpose: while you're still sitting on your quad, however long you've stopped, she keeps waiting (see "Following when you stop").
+- Not checked in the running game: the HUD change by eye, or a full follow-then-bored run.

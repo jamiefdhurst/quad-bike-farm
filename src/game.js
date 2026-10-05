@@ -870,6 +870,10 @@ export class Game {
       const her = this.herOn(this.boardUnit.quad);
       p = { action: her ? `Talk to ${her.name}` : 'Get off', keys: [['C', 'Look back']] };
     }
+    // On the back you're a passenger: no crosshair or prompt, just the view (the help panel says E and C).
+    const onBack = this.player.isRiding && this.player.seat === 'pillion' && !this.menu.isOpen;
+    this.hud.setCrosshairVisible(!onBack);
+    if (onBack) p = '';
     this.hud.setPrompt(typeof p === 'string' ? (p ? { action: p } : null) : p.action ? p : p.text);
     // No readout for the quad: its dash is all you get.
     if (this.winch?.state === 'carried') {

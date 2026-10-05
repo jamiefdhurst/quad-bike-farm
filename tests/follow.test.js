@@ -78,3 +78,23 @@ describe('when you get off and leave her following nobody', () => {
     expect(d.follow).not.toBeNull();
   });
 });
+
+describe('after she gives up following you', () => {
+  it('and moves onto the back by choice, she gets bored there and gets off', async () => {
+    const { Companion } = await import('../src/npc/companion.js');
+    const p = { ...DEFAULT_COMPANION_PARAMS, ownMind: true, boredGetOffChance: 1 };
+    const c = Object.create(Companion.prototype);
+    Object.assign(c, {
+      params: p,
+      quad: { rider: null, driver: null, passenger: null },
+      seatedByChoice: true,
+      restlessness: 1,
+      selfEvents: [],
+      randomBetween: (a, b) => a,
+      requestStandBeside: (q) => (c.stoodBeside = q),
+    });
+    for (let t = 0; t < p.boredWaitCeiling * 1.5 + 1 && !c.stoodBeside; t++) c.boredOnTheBack(1);
+    expect(c.stoodBeside).toBe(c.quad);
+    expect(c.selfEvents).toContain('getOff');
+  });
+});
