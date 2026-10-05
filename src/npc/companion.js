@@ -89,6 +89,7 @@ export class Companion {
     this.restlessness = 0.7 + Math.random() * 0.8; // drifts while she's about (boredom.js)
     this.boredAfter = nextBoredWait(params, this.restlessness);
     this.selfEvents = []; // things she decided to do on her own, for her voice
+    this.favourView = () => ({ mood: 'even', warmth: 1, sulk: 1 }); // how you've treated her (favour.js); the game swaps in the real thing
     this.reach = 0; // how far she's reaching for the bars, 0..1
     this.seatKind = 'pillion'; // which seat she's after or in on the back: 'pillion', or 'rack' (sat on the front rack)
     this.drive = null; // her go at driving, while she's on the front seat (herDriving.js)
@@ -283,9 +284,11 @@ export class Companion {
       drive: this.quads.filter((q) => near(q) && this.canDrive(q)),
     };
     const can = Object.fromEntries(Object.entries(options).map(([k, list]) => [k, list.length > 0]));
-    const choice = pickBoredChoice(p, { confidence: this.driveConfidence ?? p.driveConfidence, can });
+    const favour = this.favourView();
+    const choice = pickBoredChoice(p, { confidence: this.driveConfidence ?? p.driveConfidence, can, sulk: favour.sulk });
     const pick = (list) => list[Math.floor(Math.random() * list.length)];
-    this.selfEvents.push(choice);
+    // Neglected and off on a quad alone: she makes a point of it.
+    this.selfEvents.push(choice === 'drive' && favour.mood === 'neglected' ? 'sulkOff' : choice);
     if (choice === 'join') {
       const q = pick(options.join);
       this.requestMount(q, { ownChoice: true, seat: this.canRidePillion(q) ? 'pillion' : 'rack' });

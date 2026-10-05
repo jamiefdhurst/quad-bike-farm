@@ -25,8 +25,9 @@ export class BanterWatch {
    * @param {object|null} s.ridden   The unit you're at the controls of
    * @param {THREE.Vector3} s.you    Where you are
    * @param {boolean} s.wheelOpen
+   * @param {{favoured: string, other: string}|null} [s.rivalry]  Who you clearly favour (favour.js)
    */
-  triggers(dt, { companions, ridden, you, wheelOpen }) {
+  triggers(dt, { companions, ridden, you, wheelOpen, rivalry = null }) {
     const out = [];
     if (companions.length < 2) return out;
     const id = (c) => c.character.id;
@@ -82,6 +83,7 @@ export class BanterWatch {
     const settled = (c) => c.fsm.is('idle') || (c.isSeated && !withYou(c));
     if (settled(a) && settled(b) && near(at.get(a), at.get(b), 8) && near(at.get(a), you, 14) && !(ridden && ridden.quad.speed > 3)) {
       out.push({ when: 'idle' });
+      if (rivalry) out.push({ when: 'favoured', roles: rivalry });
     }
     return out;
   }

@@ -13,6 +13,7 @@ export class DebugGui {
     this.visible = false;
 
     this.buildLive();
+    this.buildFavour();
     this.buildActions();
     const folders = {};
     // "Red quad/Engine" becomes an Engine folder inside a Red quad folder.
@@ -97,6 +98,25 @@ export class DebugGui {
       f.add(live, key).listen().disable();
     }
     f.add(live, 'temperature', 0, 1, 0.01).name('temperature (drag to set)').listen();
+  }
+
+  /** Who you favour: each girl's score, where she stands against her friend, and buttons to push it either way. */
+  buildFavour() {
+    const favour = this.game.favour;
+    const f = this.gui.addFolder('Favour (live): how each girl rates you');
+    const live = {};
+    const nudges = {};
+    for (const id of favour.ids) {
+      const name = id[0].toUpperCase() + id.slice(1);
+      Object.defineProperty(live, `${id} score`, { enumerable: true, get: () => Math.round(favour.scores[id] * 100) / 100 });
+      Object.defineProperty(live, `${id} standing`, { enumerable: true, get: () => `${Math.round(favour.standing(id) * 100) / 100} (${favour.mood(id)})` });
+      nudges[`Favour ${name} +5`] = () => favour.add(id, 5);
+      nudges[`Neglect ${name} -5`] = () => favour.add(id, -5);
+    }
+    for (const key of Object.keys(live)) f.add(live, key).listen().disable();
+    for (const key of Object.keys(nudges)) f.add(nudges, key);
+    nudges['Reset both'] = () => favour.ids.forEach((id) => (favour.scores[id] = 0));
+    f.add(nudges, 'Reset both');
   }
 
   buildActions() {

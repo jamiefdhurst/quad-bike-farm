@@ -514,6 +514,61 @@ export const VOICE_LINES = {
       'You work too hard. Sit down a minute.',
     ],
   },
+  // How you've treated her compared with her friend (favour.js). Favoured: warm and up for anything.
+  favouredWarm: {
+    cooldown: 150,
+    lines: [
+      "I'm up for anything today. You choose.",
+      'Where to next? I will come anywhere with you.',
+      "I'm having a lovely time. Are you?",
+      'You always know how to make a day better.',
+      "Go on, ask me something. I'll say yes.",
+      'I like it when it is just us.',
+    ],
+  },
+  // Neglected: she sulks.
+  neglectedSulk: {
+    cooldown: 150,
+    lines: [
+      "Don't mind me. I'll just stand here.",
+      'Nobody asked me. Not that I mind.',
+      { sound: 'sigh' },
+      "I'm fine. Really. Fine.",
+      'It is nice to be remembered occasionally.',
+      "I'll be over here, then.",
+    ],
+  },
+  // You asked her for something and she's not in the mood; her friend takes it on.
+  refuseRequest: {
+    cooldown: 20,
+    lines: [
+      'No. Ask someone else.',
+      "Not today. I'm busy being ignored.",
+      "I don't think I will, actually.",
+      'Ask her. She seems to be your favourite.',
+    ],
+  },
+  // Her friend's been turned down and she's the one who gets to do it.
+  gloatTakeOver: {
+    cooldown: 20,
+    lines: [
+      'Fine, I will do it. Gladly.',
+      "Don't worry, I've got you.",
+      'Shift over, I will take you. Happily.',
+      'Oh well. More for me.',
+    ],
+  },
+  // Neglected, bored, and off on a quad by herself.
+  sulkOff: {
+    cooldown: 60,
+    shout: true,
+    lines: [
+      "I'm going for a drive! On my own!",
+      'Back later! Or not!',
+      "Don't wait up!",
+      'I need some air!',
+    ],
+  },
   leftBehind: {
     shout: true,
     cooldown: 60,

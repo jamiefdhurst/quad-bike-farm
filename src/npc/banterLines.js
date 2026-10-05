@@ -27,6 +27,16 @@ export const BANTER = [
   { when: 'idle', lines: [['amy', 'I brought biscuits, if anyone nice wants one.'], ['jess', "I'll have two, then."], ['amy', 'I said nice.']] },
   { when: 'idle', lines: [['jess', 'Rock, paper, scissors for the next ride?'], ['amy', "That's not how this works, Jess."], ['jess', 'Scared you will lose?']] },
 
+  // One of them is clearly your favourite, and they both know it -----------------
+  { when: 'favoured', roles: { favoured: 'amy', other: 'jess' }, lines: [['amy', 'Oh, did I get the last ride? Silly me.'], ['jess', 'You are enjoying this far too much.'], ['amy', 'Just a bit.']] },
+  { when: 'favoured', roles: { favoured: 'amy', other: 'jess' }, lines: [['jess', "Funny how I never get picked these days."], ['amy', 'Maybe try being nicer, Jess.'], ['jess', 'Maybe try being quieter.']] },
+  { when: 'favoured', roles: { favoured: 'amy', other: 'jess' }, lines: [['amy', "I've saved you a seat, Jess. Right at the back."], ['jess', 'Very kind. Sod off.']] },
+  { when: 'favoured', roles: { favoured: 'amy', other: 'jess' }, lines: [['jess', "It's a phase. I'll be back on top by teatime."], ['amy', 'Of course you will, Jess.'], ['jess', 'Stop being nice. It is worse.']] },
+  { when: 'favoured', roles: { favoured: 'jess', other: 'amy' }, lines: [['jess', 'Who got picked again? Oh yeah. Me.'], ['amy', 'Gloat quietly, please.'], ['jess', 'No.']] },
+  { when: 'favoured', roles: { favoured: 'jess', other: 'amy' }, lines: [['amy', "It won't last, you know."], ['jess', 'Neither will your patience.']] },
+  { when: 'favoured', roles: { favoured: 'jess', other: 'amy' }, lines: [['jess', "Don't sulk, Amy. It's not a good look."], ['amy', "I'm not sulking. I'm resting my face."]] },
+  { when: 'favoured', roles: { favoured: 'jess', other: 'amy' }, lines: [['amy', 'I made the tea and everything.'], ['jess', 'And I made the memories.'], ['amy', 'Oh, shut up.']] },
+
   // You talking to one of them while the other's close by -------------------
   { when: 'talked', roles: { chosen: 'amy', jealous: 'jess' }, lines: [['jess', 'Oh, her again.'], ['amy', 'Yes. Me again.']] },
   { when: 'talked', roles: { chosen: 'amy', jealous: 'jess' }, lines: [['jess', 'Ask me next. I say yes to everything.'], ['amy', "That's not the boast you think it is."]] },

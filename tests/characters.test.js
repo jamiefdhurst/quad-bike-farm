@@ -25,6 +25,19 @@ describe('characters', () => {
     }
   });
 
+  it('each have lines for being favoured, neglected, turning you down and gloating', () => {
+    for (const character of Object.values(CHARACTERS)) {
+      for (const situation of ['favouredWarm', 'neglectedSulk', 'refuseRequest', 'gloatTakeOver', 'sulkOff']) {
+        const lines = character.lines[situation].lines;
+        expect(lines.length, `${character.id} ${situation}`).toBeGreaterThanOrEqual(4);
+        // The ones said to you never talk about you as he, she or they (the others are about her friend).
+        if (['favouredWarm', 'neglectedSulk'].includes(situation)) {
+          for (const l of lines) if (typeof l === 'string') expect(l, l).not.toMatch(/\b(he|she|they)\b/i);
+        }
+      }
+    }
+  });
+
   it('have different names and voice banks', () => {
     expect(new Set(CHARACTERS.map((c) => c.name)).size).toBe(CHARACTERS.length);
     expect(new Set(CHARACTERS.map((c) => c.voiceBank)).size).toBe(CHARACTERS.length);

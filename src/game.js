@@ -19,6 +19,7 @@ import { Speech, CompanionSounds } from './audio/companionAudio.js';
 import { DEFAULT_COMPANION_PARAMS, COMPANION_PARAM_RANGES } from './npc/companionParams.js';
 import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
 import { CHARACTERS } from './npc/characters.js';
+import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { Banter } from './npc/banter.js';
 import { RideOffer, pickOfferer } from './npc/rideOffer.js';
 import { BANTER } from './npc/banterLines.js';
@@ -181,6 +182,13 @@ export class Game {
       return c;
     });
 
+    // Who you favour: each girl keeps a quiet score of how you treat her (npc/favour.js), shown in the tuning panel.
+    this.favour = new Favour(CHARACTERS.map((ch) => ch.id));
+    for (const c of this.companions) {
+      const id = c.character.id;
+      c.favourView = () => ({ mood: this.favour.mood(id), warmth: this.favour.warmth(id), sulk: this.favour.sulkDrive(id) });
+    }
+
     for (const unit of this.units) {
       const quad = unit.quad;
       unit.interaction = this.interaction.add({
@@ -248,6 +256,7 @@ export class Game {
             if (near) {
               washMud(unit.mud.state, dt, unit.mud.params);
               this.washing = unit;
+              this.favourQuad(unit, this.favour.p.washPerSecond * dt);
             }
             return false;
           }
@@ -323,6 +332,7 @@ export class Game {
     registerTuning('Sound', this.audioHub.params, SOUND_PARAM_RANGES);
     registerTuning('Jerry can', this.can.params, JERRY_CAN_PARAM_RANGES);
     registerTuning('Hose', this.hose.params, HOSE_PARAM_RANGES);
+    registerTuning('Favour', this.favour.p, FAVOUR_PARAM_RANGES);
     if (this.winch) registerTuning('Winch', this.winch.params, WINCH_PARAM_RANGES);
     registerTuning('Player', this.player.params, PLAYER_PARAM_RANGES);
     for (const c of this.companions) {
@@ -417,7 +427,9 @@ export class Game {
     const unit = this.boardUnit;
     const waiting = !!unit && this.player.seat === 'pillion' && unit.quad.speed < 0.5 && !this.menu.isOpen && !this.passengerPlan && !this.herOn(unit.quad);
     if (!offer.update(dt, waiting)) return;
-    const girls = this.companions.filter((c) => c.canOfferRide(unit.quad)).map((c) => ({ c, distance: c.root.position.distanceTo(unit.quad.position) }));
+    const girls = this.companions
+      .filter((c) => c.canOfferRide(unit.quad))
+      .map((c) => ({ c, distance: c.root.position.distanceTo(unit.quad.position), favour: this.favour.offerWeight(c.character.id) }));
     const pick = pickOfferer(girls);
     if (!pick) return offer.rest(); // nobody free: try again later
     pick.c.offerRide(unit.quad);
@@ -428,6 +440,7 @@ export class Game {
   mountPillion(unit) {
     if (this.player.isRiding) return;
     this.player.mount(unit.quad, 'pillion');
+    this.favourQuad(unit, this.favour.p.favouriteQuad);
     unit.quad.passenger = this.player;
     this.lastUnit = unit;
     this.input.takeWheelSteps();
@@ -462,7 +475,7 @@ export class Game {
     if (this.companions.length < 2) return;
     this.banter ??= new Banter(BANTER);
     this.banterWatch ??= new BanterWatch();
-    const triggers = this.banterWatch.triggers(dt, { companions: this.companions, ridden, you: this.camera.position, wheelOpen: this.menu.isOpen });
+    const triggers = this.banterWatch.triggers(dt, { companions: this.companions, ridden, you: this.camera.position, wheelOpen: this.menu.isOpen, rivalry: this.favour.rivalry() });
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
     const speak = (speaker, text, opts) => (byId[speaker]?.params.voice ? byId[speaker].voice.speak(text, opts) : 0);
     this.banter.update(dt, triggers, speak, this.talkFloor.left <= 0 && !this.menu.isOpen);
@@ -580,6 +593,44 @@ export class Game {
     return this.riddenUnit ?? this.focusedUnit ?? this.lastUnit;
   }
 
+  // Who you favour ----------------------------------------------------------
+
+  /** Whichever girl likes this quad best is pleased you're on it, or washing it. */
+  favourQuad(unit, amount) {
+    for (const c of this.companions) if (c.voice.favourite === unit.spec.id) this.favour.add(c.character.id, amount);
+  }
+
+  /** Each frame: scores fade, and the girl giving you a ride earns it while her friend, left on foot, notices. */
+  updateFavour(dt, ridden) {
+    this.favour.update(dt);
+    const driver = ridden && this.player.seat === 'pillion' ? this.companions.find((c) => c.fsm.is('driving') && c.quad === ridden.quad) : null;
+    if (!driver) return;
+    this.favour.add(driver.character.id, this.favour.p.ridePerSecond * dt);
+    for (const c of this.companions) if (c !== driver && c.fsm.is('idle', 'walking')) this.favour.add(c.character.id, -this.favour.p.ignoredPerSecond * dt);
+  }
+
+  /**
+   * You ask her to do something. A neglected girl sometimes says no, but only
+   * when her friend can take it on, so you're never left without: the friend
+   * does it, and often gloats.
+   */
+  askHer(c, action) {
+    const friend = c.others().find((o) => o.fsm.is('idle') && o.getActions(this.units.map((u) => u.quad)).find((x) => x.kind === action.kind && x.quad === action.quad));
+    const refusable = ['giveRide', 'follow', 'drive', 'start', 'mount', 'mountRack'].includes(action.kind);
+    if (friend && refusable && Math.random() < this.favour.refuseChance(c.character.id)) {
+      c.voice.say('refuseRequest', { force: true });
+      const take = friend.getActions(this.units.map((u) => u.quad)).find((x) => x.kind === action.kind && x.quad === action.quad);
+      setTimeout(() => {
+        take.run();
+        if (Math.random() < this.favour.p.gloatChance) friend.voice.say('gloatTakeOver', { force: true });
+        else friend.voice.onRequest(action.kind);
+      }, 2200);
+      return;
+    }
+    action.run();
+    c.voice.onRequest(action.kind);
+  }
+
   // Companion menu ---------------------------------------------------------
 
   openCompanionMenu(c) {
@@ -593,7 +644,7 @@ export class Game {
       return;
     }
     // She answers when you ask her something.
-    const answer = (a) => () => (a.run(), c.voice.onRequest(a.kind));
+    const answer = (a) => () => this.askHer(c, a);
     // On the wheel: anything not about a particular quad, then a slice for each
     // quad (nearest her first) opening a ring of what she could do with it.
     const options = actions.filter((a) => !a.quad).map((a) => ({ label: a.label, run: answer(a) }));
@@ -616,6 +667,12 @@ export class Game {
     this.hud.toggleHelp(false);
     this.talkingTo = her; // only she answers, and only she stops what she was about to do
     if (her && this.banterWatch) this.banterWatch.noteTalk(her, this.companions);
+    if (her) {
+      this.favour.add(her.character.id, this.favour.p.talk);
+      // Her friend stood there watching you talk to the other one.
+      const jealous = this.banterWatch?.talked?.jealous;
+      if (jealous) this.favour.add(jealous.character.id, -this.favour.p.ignored);
+    }
     this.menu.open(title, options);
   }
 
@@ -630,6 +687,7 @@ export class Game {
   mount(unit) {
     if (this.player.isRiding || this.tooFastToMount(unit.quad)) return;
     this.player.mount(unit.quad);
+    this.favourQuad(unit, this.favour.p.favouriteQuad);
     unit.quad.setRider(this.player, this.input);
     this.lastUnit = unit;
     this.input.takeWheelSteps();
@@ -818,6 +876,7 @@ export class Game {
     for (const unit of this.units) unit.update(dt, alpha);
     const ridden = this.riddenUnit;
     this.talkFloor.left = Math.max(0, this.talkFloor.left - dt);
+    this.updateFavour(dt, ridden);
     this.updateBanter(dt, ridden);
     for (const c of this.companions) {
       c.update(dt, c.quad.unit.vibration, {

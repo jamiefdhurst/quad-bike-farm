@@ -38,10 +38,10 @@ export class RideOffer {
   }
 }
 
-/** Which free girl offers: usually the nearer one, but not always. `girls` are { distance } objects. */
+/** Which free girl offers: usually the nearer one, but not always, and the one you favour more often. `girls` are { distance, favour = 1 } objects. */
 export function pickOfferer(girls, random = Math.random) {
   if (!girls.length) return null;
-  const weights = girls.map((g) => 1 / (1 + g.distance / 10));
+  const weights = girls.map((g) => (g.favour ?? 1) / (1 + g.distance / 10));
   let r = random() * weights.reduce((a, b) => a + b, 0);
   for (let i = 0; i < girls.length; i++) {
     r -= weights[i];

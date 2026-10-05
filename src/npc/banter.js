@@ -19,10 +19,11 @@ export const BANTER_TIMING = {
   watching: { gap: 50, chance: 0.06 },
   stuck: { gap: 30 },
   sharing: { gap: 45, chance: 0.05 },
+  favoured: { gap: 90, chance: 0.05 },
 };
 const ANY_GAP = 20; // seconds between any two exchanges
 const MOMENT_KEEPS = 8; // seconds a moment waits for a gap in the talking before it's let go
-const PRIORITY = ['stuck', 'talked', 'riding', 'back', 'sharing', 'watching', 'idle'];
+const PRIORITY = ['stuck', 'talked', 'riding', 'back', 'sharing', 'favoured', 'watching', 'idle'];
 
 const rolesMatch = (exchange, roles = {}) => Object.entries(exchange.roles ?? {}).every(([role, who]) => roles[role] === who);
 

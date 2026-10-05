@@ -168,9 +168,12 @@ export class CompanionVoice {
     const step = 1 - this.checkTimer;
     this.checkTimer = 1;
 
+    // How you've treated her against her friend: a favoured girl says kind things more often, a neglected one hardly at all.
+    const { mood, warmth } = c.favourView();
+
     // The odd kind word: on a smooth ride with you, stood together, or when you're out in the rain.
-    if (together && (this.funTime > 15 || this.gentleTime > 15)) this.say('loveYou', { chance: 0.03 });
-    if (together && view.weather?.rain > 0.25 && this.rideTime > 40) this.say('careForYou', { chance: 0.03 });
+    if (together && (this.funTime > 15 || this.gentleTime > 15)) this.say('loveYou', { chance: 0.03 * warmth });
+    if (together && view.weather?.rain > 0.25 && this.rideTime > 40) this.say('careForYou', { chance: 0.03 * warmth });
 
     if (rideQuad) {
       if (this.funTime > 8) this.say('rideFun', { chance: 0.35 });
@@ -187,7 +190,8 @@ export class CompanionVoice {
     const close = standing && !ridden && distance < 4 && !view.menuOpen;
     this.nearTime = close ? this.nearTime + step : 0;
     if (this.nearTime > 8) this.say('nearbyWarm', { chance: 0.08 });
-    if (this.nearTime > 15) this.say(view.weather?.rain > 0.25 ? 'careForYou' : 'loveYou', { chance: 0.05 });
+    if (this.nearTime > 15) this.say(view.weather?.rain > 0.25 ? 'careForYou' : 'loveYou', { chance: 0.05 * warmth });
+    if (this.nearTime > 6 && mood !== 'even') this.say(mood === 'favoured' ? 'favouredWarm' : 'neglectedSulk', { chance: 0.06 });
 
     // Standing about with nothing happening.
     const waitingSeated = c.isSeated && !rideQuad;
@@ -285,7 +289,7 @@ export class CompanionVoice {
   watchOwnMind() {
     const events = this.companion.selfEvents;
     // Switching a quad off is rare, so she always mentions it.
-    for (const e of events) this.say({ wander: 'selfWander', join: 'selfJoin', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive', offerRide: 'offerRide', keyOff: 'selfKeyOff', askOff: 'askOff', askStop: 'askStop', getOff: 'selfGetOff', getOffWaited: 'selfGetOffWaited', takeOverStop: 'takeOverStop', takeOverDrive: 'takeOverDrive' }[e], { urgent: true, chance: e === 'keyOff' || e === 'askOff' || e === 'offerRide' || e.startsWith('takeOver') ? 1 : 0.8 });
+    for (const e of events) this.say({ wander: 'selfWander', join: 'selfJoin', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive', sulkOff: 'sulkOff', offerRide: 'offerRide', keyOff: 'selfKeyOff', askOff: 'askOff', askStop: 'askStop', getOff: 'selfGetOff', getOffWaited: 'selfGetOffWaited', takeOverStop: 'takeOverStop', takeOverDrive: 'takeOverDrive' }[e], { urgent: true, chance: e === 'keyOff' || e === 'askOff' || e === 'offerRide' || e === 'sulkOff' || e.startsWith('takeOver') ? 1 : 0.8 });
     events.length = 0;
   }
 
