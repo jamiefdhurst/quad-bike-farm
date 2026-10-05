@@ -174,8 +174,8 @@ function attachToBone(rig, mesh, boneName) {
  * A garment made from part of her own body mesh: the triangles `wear` picks,
  * pushed out along the surface by `offset` metres, and skinned to the same
  * skeleton, so it bends exactly as she does (walking, sitting, her figure).
- * `wear(p, bones)` and `offset(p)` get root-space rest-pose positions; `bones`
- * are the names of the bones the vertex follows most.
+ * `wear(p, bone, i)` and `offset(p)` get root-space rest-pose positions; `bone`
+ * is the name of the bone the vertex follows most and `i` its index in the body mesh.
  */
 function skinnedGarment(rig, name, color, wear, offset) {
   const body = bodyMesh(rig);
@@ -199,7 +199,7 @@ function skinnedGarment(rig, name, color, wear, offset) {
     rootPos.push(p);
     let best = 0;
     for (let k = 1; k < 4; k++) if (sw.getComponent(i, k) > sw.getComponent(i, best)) best = k;
-    keep.push(wear(p, boneNames[si.getComponent(i, best)] ?? ''));
+    keep.push(wear(p, boneNames[si.getComponent(i, best)] ?? '', i));
   }
   const index = g.index ? g.index.array : [...Array(n).keys()];
   const tris = [];
@@ -254,28 +254,122 @@ const smooth01 = (t) => {
 };
 
 /**
- * A polo collar band: the base of her neck and the neckline all the way round,
- * standing a little off the skin and opening out at the top. The placket and
- * the collar flaps (addPoloFront) meet it at the front.
+ * Which of the body mesh's vertices are shirt, read from its (recoloured) texture,
+ * with their root-space rest-pose positions. `hex` is the shirt colour the palette was swapped to.
+ */
+function shirtVertices(rig, body, hex) {
+  const map = body.material.map;
+  if (!map?.image) return null;
+  const img = map.image;
+  const canvas = document.createElement('canvas');
+  canvas.width = img.width;
+  canvas.height = img.height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  const px = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  // The recolour writes the linear value as the pixel, so that is what to look for.
+  const want = new THREE.Color(hex).toArray().map((c) => c * 255);
+  const uv = body.geometry.attributes.uv;
+  const pos = body.geometry.attributes.position;
+  const root = rig.root;
+  const positions = [];
+  const shirt = [];
+  for (let i = 0; i < pos.count; i++) {
+    positions.push(root.worldToLocal(body.localToWorld(new THREE.Vector3().fromBufferAttribute(pos, i))));
+    const x = Math.min(canvas.width - 1, Math.floor(uv.getX(i) * canvas.width));
+    const y = Math.min(canvas.height - 1, Math.floor((map.flipY ? 1 - uv.getY(i) : uv.getY(i)) * canvas.height));
+    const k = (y * canvas.width + x) * 4;
+    shirt.push(Math.abs(px[k] - want[0]) < 6 && Math.abs(px[k + 1] - want[1]) < 6 && Math.abs(px[k + 2] - want[2]) < 6);
+  }
+  return { positions, shirt };
+}
+
+/** The shirt's own colour as a material colour (the texture holds the linear value as if it were sRGB). */
+function shirtColour(hex) {
+  const lin = new THREE.Color(hex);
+  return new THREE.Color().setRGB(lin.r, lin.g, lin.b, THREE.SRGBColorSpace);
+}
+
+const COLLAR_GAP = 0.3; // half-angle of the opening at the front, radians
+
+/**
+ * Cross-section of the folded collar: [height above the neckline, distance off the body], from the
+ * neck outwards: up the stand, over the crease and back down on to the shirt. `tip` (0 to 1) is how
+ * close to the front opening it is: the flap runs longer there, so it ends in a point.
+ */
+export function collarSection(tip) {
+  return [
+    [0, 0.004], // inside, hugging the neck at the neckline
+    [0.02, 0.008], // top of the stand
+    [0.023, 0.016], // the crease
+    [0.01, 0.026], // outer face coming down
+    [-0.014 - 0.034 * tip, 0.016], // the flap resting on the shirt
+  ];
+}
+
+/**
+ * A polo collar: the shirt's own neckline thickened into a band, and a folded collar round it,
+ * a stand and a flap that lies back on the shirt and ends in points either side of the opening.
  */
 function addCollar(rig, color) {
-  if (!rig.bones.Neck) return;
+  const body = bodyMesh(rig);
+  if (!body || !rig.bones.Neck || !rig.bones.Spine2) return;
+  const info = shirtVertices(rig, body, color);
+  if (!info) return;
   const neck = bonePos(rig, 'Neck');
-  const lo = neck.y - 0.05;
-  const hi = neck.y - 0.004;
+  // The neckline is the top of the shirt up the middle of the neck, not the neck bone.
+  let top = -Infinity;
+  info.positions.forEach((p, i) => {
+    if (info.shirt[i] && Math.abs(p.x - neck.x) < 0.07 && Math.hypot(p.x - neck.x, p.z - neck.z) < 0.1) top = Math.max(top, p.y);
+  });
+  if (!Number.isFinite(top)) return;
+
+  const shirt = shirtColour(color);
   skinnedGarment(
     rig,
     'collar',
-    new THREE.Color(color).multiplyScalar(0.62),
-    (p, bone) => {
-      if (isArm(bone) || p.y < lo || p.y > hi) return false;
-      const dx = p.x - neck.x;
-      const dz = p.z - neck.z;
-      // All the way round the neck, reaching a little further down the front to meet the placket.
-      return Math.hypot(dx, dz) < (dz > 0 ? 0.11 : 0.085);
-    },
-    (p) => 0.004 + 0.012 * smooth01((p.y - lo) / (hi - lo)),
+    shirt,
+    (p, bone, i) => info.shirt[i] && !isArm(bone) && p.y > top - 0.035 && Math.hypot(p.x - neck.x, p.z - neck.z) < (p.z > neck.z ? 0.12 : 0.1),
+    (p) => 0.003 + 0.006 * smooth01((p.y - (top - 0.035)) / 0.035),
   );
+
+  const segments = 30;
+  const rows = collarSection(0).length;
+  const positions = [];
+  for (let i = 0; i <= segments; i++) {
+    const ang = COLLAR_GAP + (i / segments) * (Math.PI * 2 - 2 * COLLAR_GAP);
+    const dir = new THREE.Vector3(Math.sin(ang), 0, Math.cos(ang));
+    // 1 at the ends beside the opening, falling to 0 a little way round.
+    const edge = Math.min(ang - COLLAR_GAP, Math.PI * 2 - COLLAR_GAP - ang);
+    const tip = 1 - smooth01(edge / 0.5);
+    // Radius of the neck at the neckline, used up the stand; the flap follows the shoulders and chest.
+    const neckR = surfaceDistance(rig, body, new THREE.Vector3(neck.x, top, neck.z), dir) ?? 0.05;
+    for (const [dy, off] of collarSection(tip)) {
+      const y = top + dy;
+      const r = dy > 0 ? neckR : surfaceDistance(rig, body, new THREE.Vector3(neck.x, y, neck.z), dir) ?? neckR;
+      positions.push(neck.x + dir.x * (r + off), y, neck.z + dir.z * (r + off));
+    }
+  }
+  const index = [];
+  for (let i = 0; i < segments; i++) {
+    for (let r = 0; r < rows - 1; r++) {
+      const p0 = i * rows + r;
+      const p1 = (i + 1) * rows + r;
+      index.push(p0, p1, p0 + 1, p1, p1 + 1, p0 + 1);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setIndex(index);
+  geo.computeVertexNormals();
+  // A touch lighter than the shirt so the folds read against it.
+  const fold = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: shirt.clone().multiplyScalar(1.6), roughness: 0.85, side: THREE.DoubleSide, flatShading: true }));
+  fold.name = 'collarFold';
+  fold.castShadow = true;
+  rig.root.add(fold);
+  rig.bones.Spine2.attach(fold);
+  rig.outfitParts.push(fold);
+  return top;
 }
 
 /**
@@ -348,91 +442,69 @@ function addWellies(rig, color) {
 }
 
 /**
- * Point on the front of the body at a height above the character root, found
- * by casting a ray back at the skinned mesh in its rest pose.
+ * Point and surface normal on the front of the body at a height above the
+ * character root, found by casting a ray back at the skinned mesh in its rest pose.
  */
 function chestPoint(rig, mesh, x, y) {
   const root = rig.root;
   const origin = root.localToWorld(new THREE.Vector3(x, y, 0.6));
   const dir = new THREE.Vector3(0, 0, -1).transformDirection(root.matrixWorld);
   const hit = new THREE.Raycaster(origin, dir, 0, 1).intersectObject(mesh, false)[0];
-  return hit ? root.worldToLocal(hit.point.clone()) : null;
+  if (!hit) return null;
+  const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld).transformDirection(root.matrixWorld.clone().invert());
+  return { point: root.worldToLocal(hit.point.clone()), normal };
 }
 
-/** Collar points and a buttoned placket, laid on the chest and carried by the upper spine. */
-function addPoloFront(rig, color) {
+/**
+ * A buttoned placket from the neckline down the chest. It is laid as a ribbon along the
+ * surface, lifted off it along the normal, so the bust doesn't swallow it. Carried by the upper spine.
+ */
+function addPoloFront(rig, color, neckline) {
   const spine = rig.bones.Spine2;
-  const neck = rig.bones.Neck;
-  let mesh = null;
-  rig.model.traverse((o) => {
-    if (o.isSkinnedMesh && !mesh) mesh = o;
-  });
-  if (!spine || !neck || !mesh) return;
+  const mesh = bodyMesh(rig);
+  if (!spine || !mesh || neckline === undefined) return;
   const root = rig.root;
-  const neckY = root.worldToLocal(neck.getWorldPosition(new THREE.Vector3())).y;
-  // From the collar band at the front down past the top of the bust.
-  const top = chestPoint(rig, mesh, 0, neckY - 0.012);
-  const bottom = chestPoint(rig, mesh, 0, neckY - 0.155);
-  if (!top || !bottom) return;
-
-  // Separate pieces catch more sky light than the shirt itself, so they're a shade darker to match.
-  const fabric = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(color).multiplyScalar(0.42),
-    roughness: 0.85,
-    side: THREE.DoubleSide,
-  });
-  const placketColor = new THREE.Color(color).multiplyScalar(0.48);
-  const group = new THREE.Group();
-  group.name = 'poloFront';
-
-  // Placket strip with three buttons (one right at the top), following the slope of the chest.
-  const along = bottom.clone().sub(top);
-  const length = along.length();
-  const placket = new THREE.Mesh(
-    new THREE.BoxGeometry(0.022, length, 0.004),
-    new THREE.MeshStandardMaterial({ color: placketColor, roughness: 0.85 }),
-  );
-  placket.position.copy(top).add(bottom).multiplyScalar(0.5);
-  placket.position.z += 0.017; // over the collar band, which stands off the chest at the front
-  placket.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), along.clone().normalize());
-  group.add(placket);
-  const buttonMat = new THREE.MeshStandardMaterial({ color: 0xf2f2ee, roughness: 0.4 });
-  for (const t of [0.22, 0.5, 0.8]) {
-    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0045, 0.003, 10), buttonMat);
-    b.rotation.x = Math.PI / 2;
-    b.position.copy(top).lerp(bottom, t);
-    b.position.z += 0.021;
-    group.add(b);
+  const samples = 10;
+  const lift = 0.007;
+  const half = 0.011;
+  const top = neckline - 0.006;
+  const length = 0.15;
+  const hits = [];
+  for (let k = 0; k <= samples; k++) {
+    const hit = chestPoint(rig, mesh, 0, top - (k / samples) * length);
+    if (!hit) return;
+    hits.push(hit);
   }
 
-  // Two collar flaps with rounded tips, falling either side of the opening.
-  for (const sx of [-1, 1]) {
-    // Outline on the chest (x across, y up), convex so it fills cleanly: a straight
-    // top edge at the neck, down the outer edge, round the bottom tip, and back up.
-    const outline = [[0.009, neckY + 0.006], [0.047, neckY + 0.004], [0.043, neckY - 0.014]];
-    const cx = 0.029;
-    const cy = neckY - 0.017;
-    const r = 0.012;
-    for (let i = 1; i < 6; i++) {
-      const a = -(i / 6) * Math.PI; // from the outer side, under, to the inner side
-      outline.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
-    }
-    outline.push([0.014, neckY - 0.01]);
-    const pts = outline.map(([x, y]) => chestPoint(rig, mesh, sx * x, y));
-    if (pts.some((q) => !q)) continue;
-    const lift = new THREE.Vector3(0, 0, 0.019);
-    for (const q of pts) q.add(lift);
-    const centre = pts.reduce((acc, q) => acc.add(q), new THREE.Vector3()).multiplyScalar(1 / pts.length);
-    const positions = [];
-    for (let i = 0; i < pts.length; i++) {
-      const a = pts[i];
-      const b = pts[(i + 1) % pts.length];
-      positions.push(centre.x, centre.y, centre.z, a.x, a.y, a.z, b.x, b.y, b.z);
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geo.computeVertexNormals();
-    group.add(new THREE.Mesh(geo, fabric));
+  const placketColor = shirtColour(color).multiplyScalar(1.9);
+  const group = new THREE.Group();
+  group.name = 'poloFront';
+  const positions = [];
+  const index = [];
+  hits.forEach(({ point, normal }, k) => {
+    const c = point.clone().addScaledVector(normal, lift);
+    positions.push(c.x - half, c.y, c.z, c.x + half, c.y, c.z);
+    if (k) index.push(2 * k - 2, 2 * k - 1, 2 * k, 2 * k - 1, 2 * k + 1, 2 * k);
+  });
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setIndex(index);
+  geo.computeVertexNormals();
+  group.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: placketColor, roughness: 0.85, side: THREE.DoubleSide })));
+
+  // Three buttons, one right at the top, standing on the ribbon.
+  const buttonMat = new THREE.MeshStandardMaterial({ color: 0xf2f2ee, roughness: 0.4 });
+  for (const t of [0.12, 0.45, 0.78]) {
+    const f = t * samples;
+    const k = Math.min(samples - 1, Math.floor(f));
+    const a = hits[k];
+    const b = hits[k + 1];
+    const point = a.point.clone().lerp(b.point, f - k);
+    const normal = a.normal.clone().lerp(b.normal, f - k).normalize();
+    const button = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0045, 0.003, 10), buttonMat);
+    button.position.copy(point).addScaledVector(normal, lift + 0.002);
+    button.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
+    group.add(button);
   }
 
   // Everything above was built in character-root space; hand it to the spine bone.
@@ -459,8 +531,7 @@ export function applyOutfit(rig, outfit) {
 
 function addGarments(rig, outfit) {
   if (outfit.collar) {
-    addCollar(rig, outfit.collar);
-    addPoloFront(rig, outfit.collar);
+    addPoloFront(rig, outfit.collar, addCollar(rig, outfit.collar));
   }
   if (outfit.shorts) addShorts(rig, outfit.shorts);
   if (outfit.wellies) addWellies(rig, outfit.wellies);

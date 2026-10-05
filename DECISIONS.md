@@ -423,3 +423,12 @@ Decided with you: the second girl sits on the front rack (not squeezed onto the 
 - Checked, by reading the code and a new test, that a girl who has been following you gets off when bored. You get off your quad: after 30 to 90 s (Jess 15 to 50) she stops following, then either drives on alone or pulls up; pulling up she gets off, or (`driveBackChance`) moves onto the back by choice, where `boredOnTheBack` has her get off after a minute or two. Nothing needed fixing.
 - Unchanged on purpose: while you're still sitting on your quad, however long you've stopped, she keeps waiting (see "Following when you stop").
 - Not checked in the running game: the HUD change by eye, or a full follow-then-bored run.
+
+## The polo collar, third go
+
+- Feedback: the collar sat lower than the top of the blue shirt and looked separate; it should start where the neck skin stops. A real folded collar wanted, and her chest was hiding part of the placket.
+- Cause: the band was placed from the neck bone (y 1.20 m), but the shirt's neckline is about 4 cm higher up the middle of the neck. `shirtVertices` in `src/npc/outfit.js` now reads which body vertices are shirt from the recoloured texture, and the neckline is the top of those up the middle of the neck. The band is the shirt's own top 3.5 cm pushed out a few millimetres, so it joins the shirt exactly.
+- The folded collar is a ring round the neckline with a profile (`collarSection`): up a 2 cm stand, over a crease, down as a flap resting on the shirt. The flap runs longer near the front opening, so it ends in points. Its radius is found by rays at each height, so it follows the shoulders and chest, and it is carried by the upper spine.
+- The old flat flaps are gone. The placket is a ribbon laid along the chest surface (ten samples, lifted 7 mm along the surface normal) rather than a straight strip, so the bust no longer swallows it. Buttons sit on the ribbon, facing out along the normal.
+- Colours: the collar and placket use the shirt's exact colour (the texture holds the linear value as if sRGB, so the material colour is converted the same way), then are lightened by 1.6 and 1.9 so the folds and placket read against the dark navy and burgundy.
+- Checked once headless on Amy, close-up from the front and side. Not checked: Jess's burgundy by eye, and the collar while she rides or sits.
