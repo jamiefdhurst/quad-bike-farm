@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildQuadModel, setHeadlights } from './quadModel.js';
+import { buildQuadModel, poseSuspension, setHeadlights } from './quadModel.js';
 import { FuelSystem } from './fuelSystem.js';
 import { QuadPhysics, WHEELS, SUSPENSION_TOP_Y } from './quadPhysics.js';
 import { Drivetrain } from './drivetrain.js';
@@ -53,6 +53,8 @@ export class Quad {
     this.riderAnchor = part('riderAnchor');
     this.exhaustTip = part('exhaustTip');
     this.wheels = WHEELS.map((w) => ({ ...w, object: part(w.name), spin: part(w.name).getObjectByName('spin') }));
+    // Wheel centre heights in bodyRoot space, for posing the suspension arms.
+    this.wheelHeights = WHEELS.map(() => 0);
 
     // Invisible box used for "look at it and press E". Reaches about 1.45 m
     // off the ground so it's easy to target from a few metres away.
@@ -286,7 +288,9 @@ export class Quad {
       w.object.position.set(w.x, SUSPENSION_TOP_Y - st.suspension, w.z);
       w.object.rotation.y = st.steering;
       w.spin.rotation.x = st.rotation;
+      this.wheelHeights[i] = w.object.position.y - GROUND_OFFSET;
     }
+    poseSuspension(this.model, this.wheelHeights);
 
     // Vibration rocks the sprung body and shakes the bars on top of steering.
     const v = vibration;
