@@ -3,9 +3,12 @@ import { Chatter } from './chatter.js';
 import { VOICE_LINES } from './voiceLines.js';
 import { band } from './skills.js';
 import { Speech } from '../audio/companionAudio.js';
+import { FAULT_KINDS } from '../vehicle/faults.js';
 
 // Captions for her recorded sounds.
 const SOUND_CAPTIONS = { sigh: '(sighs)', hum: '(hums)', laugh: '(laughs)', yawn: '(yawns)', gasp: '(gasps)', hmm: 'Hmm?', oh: 'Oh.' };
+
+const FAULT_SITUATION = { puncture: 'faultPuncture', belt: 'faultBelt', cable: 'faultCable', carb: 'faultCarb' };
 
 // Mistakes that show a skill she's short on.
 const SLIPS = { chokeOff: 'choke', stalled: 'starting', overSteer: 'cornering', revIt: 'mud' };
@@ -459,6 +462,7 @@ export class CompanionVoice {
       // You press the starter on a flat battery and it only clicks.
       if (near && e.events.some((x) => x.type === 'starterClick')) this.say('crankFlat', { urgent: true, chance: 0.7 });
       this.watchOil(dt, unit, w, near || hers);
+      this.watchFaults(unit, w, near || hers);
       // Cranking on and on without it catching.
       if (e.state === 'cranking' && w.cranking > 5 && near) {
         this.say(this.crankHint(unit), { chance: 0.02 });
@@ -479,6 +483,24 @@ export class CompanionVoice {
     if (e.nip > 0.3) this.say('engineNipping', { urgent: true, chance: 0.05 });
     else if (e.overheat > 0.45) this.say('engineHot', { chance: 0.02 });
     if (e.oilRich > 0.5) this.say('oilSmoky', { chance: 0.01 });
+  }
+
+  /** A slow puncture, slipping belt, sticking cable or dirty carb: she mentions it when it's bad enough for her to notice, and sooner on a quad she's on. */
+  watchFaults(unit, w, listening) {
+    const f = unit.quad.faults;
+    const from = this.companion.params.faultNoticeFrom;
+    w.faultSaid ??= {};
+    for (const kind of FAULT_KINDS) {
+      if (!f.has(kind)) {
+        w.faultSaid[kind] = 0;
+        continue;
+      }
+      // Each shows only in its own way: the tyre and belt when it's being ridden, the cable and carb when the engine's going.
+      const showing = kind === 'puncture' || kind === 'belt' ? Math.abs(unit.quad.forwardSpeed) > 2 : unit.engine.isRunning;
+      if (!listening || !showing || f.levels[kind] < from || w.faultSaid[kind] >= 2) continue;
+      const hers = unit.quad === this.companion.quad;
+      if (this.say(FAULT_SITUATION[kind], { urgent: hers, chance: hers ? 0.03 : 0.01 })) w.faultSaid[kind] += 1;
+    }
   }
 
   /** Which kind of "it won't start" remark fits what she can see. */

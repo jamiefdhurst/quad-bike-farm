@@ -141,6 +141,9 @@ export const DEFAULT_ENGINE_PARAMS = {
   nipFrom: 0.55, // scuffing this far towards seizing, it starts to tighten up
   nipRoughness: 0.45, // roughness when nearly seized
   nipPowerLoss: 0.6, // power lost when nearly seized
+  beltFlareRpm: 1800, // rpm a fully slipping drive belt lets the revs run on past what the load would hold, at full throttle
+  dirtRoughness: 0.3, // roughness added by a fully dirty carb
+  dirtPowerLoss: 0.25, // power lost to a fully dirty carb
 
   // Fuel starvation, from the carburettor float bowl level (0..1)
   fuelStarveLevel: 0.65, // below this bowl level the mixture starts to go lean
@@ -257,6 +260,9 @@ export const ENGINE_PARAM_RANGES = {
   nipFrom: [0, 0.95, 0.01],
   nipRoughness: [0, 1, 0.01],
   nipPowerLoss: [0, 1, 0.01],
+  beltFlareRpm: [0, 4000, 50],
+  dirtRoughness: [0, 1, 0.01],
+  dirtPowerLoss: [0, 1, 0.01],
   fuelStarveLevel: [0.05, 1, 0.01],
   starveLean: [0, 3, 0.05],
 };

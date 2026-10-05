@@ -10,6 +10,7 @@ import { ExhaustSmoke, DEFAULT_SMOKE_PARAMS, SMOKE_PARAM_RANGES } from '../effec
 import { QuadMud, DEFAULT_MUD_PARAMS, MUD_PARAM_RANGES, MUD_STATE_RANGES } from '../effects/quadMud.js';
 import { Quad } from './quad.js';
 import { DEFAULT_VEHICLE_PARAMS, VEHICLE_PARAM_RANGES } from './vehicleParams.js';
+import { FAULT_PARAM_RANGES } from './faults.js';
 import { DEFAULT_FUEL_PARAMS, FUEL_PARAM_RANGES } from './fuelSystem.js';
 
 /**
@@ -55,6 +56,7 @@ export class QuadUnit {
     registerTuning(`${folder}/Mud`, this.mud.params, MUD_PARAM_RANGES);
     registerTuning(`${folder}/Mud on it`, this.mud.state, MUD_STATE_RANGES);
     registerTuning(`${folder}/Fuel`, this.quad.fuel.params, FUEL_PARAM_RANGES);
+    registerTuning(`${folder}/Faults`, this.quad.faults.params, FAULT_PARAM_RANGES);
     registerTuning(`${folder}/Vehicle`, this.quad.params, VEHICLE_PARAM_RANGES, {
       onChange: () => this.quad.physics.applyParams(),
     });

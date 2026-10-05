@@ -17,6 +17,20 @@ const REPEAT_DELAY = 0.35;
 const REPEAT_INTERVAL = 0.09;
 const FAST_SAY_AFTER = 1.5; // seconds above the old top speed, with her on the back, before she notices
 
+const REPAIR_DONE = {
+  puncture: 'Found the thorn, patched the tyre and pumped it up',
+  belt: 'Drive belt was glazed: swapped it for a new one',
+  cable: 'Cleaned and oiled the throttle cable',
+  carb: 'Carb was clogged: stripped it and cleaned the jets',
+};
+const REPAIR_NOTHING = {
+  puncture: 'Pumped the tyres up: they were fine',
+  belt: 'Drive belt looks fine',
+  cable: 'Throttle cable runs freely',
+  carb: 'Carb is clean',
+};
+const REPAIR_KEYS = { KeyT: 'puncture', KeyR: 'belt', KeyL: 'cable', KeyC: 'carb' };
+
 const rpm = (n) => `${Math.round(n).toLocaleString('en-GB')} rpm`;
 const pct = (f) => `${f >= 0 ? '+' : '−'}${Math.round(Math.abs(f) * 100)}%`;
 const clicks = (n, word) => `${n} click${n === 1 ? '' : 's'} ${word}`;
@@ -190,6 +204,15 @@ export class Workshop {
     for (const c of this.game.companions) c.voice.onTinker?.('service');
   }
 
+  /** The four jobs for faults that develop. Each does its job if there is one, and says so either way, so it doesn't give a fault away. */
+  repair(kind) {
+    const unit = this.unit;
+    if (!unit) return;
+    const done = unit.quad.faults.fix(kind);
+    this.game.hud.toast(done ? REPAIR_DONE[kind] : REPAIR_NOTHING[kind]);
+    if (done) for (const c of this.game.companions) c.voice.onTinker?.('service');
+  }
+
   isServiced(unit) {
     const best = unit.spec.roughnessRange?.[0] ?? unit.engine.params.baseRoughness;
     return unit.engine.wear < 0.005 && unit.engine.params.baseRoughness <= best + 0.001;
@@ -229,6 +252,7 @@ export class Workshop {
     if (pressed('KeyB', 'Backspace')) this.backToStock();
     if (pressed('KeyV')) this.service();
     if (pressed('KeyF')) this.stripDown();
+    for (const [code, kind] of Object.entries(REPAIR_KEYS)) if (pressed(code)) this.repair(kind);
     const key = ROWS[this.selected].key;
     if (this.repeatKey(input, ['ArrowLeft', 'KeyA'])) this.adjust(key, -1);
     if (this.repeatKey(input, ['ArrowRight', 'KeyD'])) this.adjust(key, 1);
@@ -301,9 +325,13 @@ export class Workshop {
           <button type="button" class="ws-btn ws-reset"><span class="key">B</span>Back to stock</button>
           <button type="button" class="ws-btn ws-strip"><span class="key">F</span>Strip it down</button>
           <button type="button" class="ws-btn ws-service"><span class="key">V</span>Service it</button>
+          <button type="button" class="ws-btn ws-fix" data-fix="puncture"><span class="key">T</span>Pump and patch tyres</button>
+          <button type="button" class="ws-btn ws-fix" data-fix="belt"><span class="key">R</span>Check the belt</button>
+          <button type="button" class="ws-btn ws-fix" data-fix="cable"><span class="key">L</span>Oil the throttle cable</button>
+          <button type="button" class="ws-btn ws-fix" data-fix="carb"><span class="key">C</span>Clean the carb</button>
           <button type="button" class="ws-btn ws-done"><span class="key">E</span>Done</button>
         </div>
-        <div class="ws-keys">↑ ↓ choose   ·   ← → adjust (hold to keep going)   ·   V service   ·   F strip down   ·   or use the mouse</div>
+        <div class="ws-keys">↑ ↓ choose   ·   ← → adjust (hold to keep going)   ·   V service   ·   F strip down   ·   T tyres   ·   R belt   ·   L cable   ·   C carb   ·   or use the mouse</div>
       </div>`;
     document.body.appendChild(el);
     this.el = el;
@@ -335,6 +363,7 @@ export class Workshop {
     el.querySelector('.ws-reset').addEventListener('click', () => this.backToStock());
     el.querySelector('.ws-service').addEventListener('click', () => this.service());
     el.querySelector('.ws-strip').addEventListener('click', () => this.stripDown());
+    for (const b of el.querySelectorAll('.ws-fix')) b.addEventListener('click', () => this.repair(b.dataset.fix));
     el.querySelector('.ws-done').addEventListener('click', () => this.close());
     // Keep clicks on the panel from reaching the game.
     el.addEventListener('mousedown', (e) => e.stopPropagation());

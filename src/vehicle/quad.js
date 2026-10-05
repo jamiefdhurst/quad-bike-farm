@@ -6,6 +6,7 @@ import { Drivetrain } from './drivetrain.js';
 import { EngineLoad } from './engineLoad.js';
 import { CruiseControl } from './cruise.js';
 import { Bog } from './bog.js';
+import { Faults } from './faults.js';
 
 // Height of the ground below the chassis origin with the bike at rest.
 const GROUND_OFFSET = -0.36;
@@ -40,6 +41,7 @@ export class Quad {
     this.model = buildQuadModel({ bodyColor, dashStyle, style });
     this.dash = this.model.userData.dash;
     this.fuel = new FuelSystem(fuelParams);
+    this.faults = new Faults();
     this.tripMiles = 0;
     scene.add(this.model);
     const part = (name) => this.model.getObjectByName(name);
@@ -314,7 +316,9 @@ export class Quad {
       this.pullHeld = 0;
     }
 
-    this.throttle = throttleInput;
+    // Faults that develop: a sticking cable holds the throttle open, a flat tyre pulls the bars over.
+    this.faults.update(dt, { running: this.engine.isRunning, speed: Math.abs(fwd), throttle: throttleInput });
+    this.throttle = this.faults.stickThrottle(dt, throttleInput, this.engine.isRunning);
     this.brake = brakeInput;
 
     if (this.ghost) {
@@ -382,9 +386,9 @@ export class Quad {
     const drive = brake > p.rollingResistance ? 0 : this.drivetrain.driveForce;
     this.physics.hold = hold + this.bog.dragForce(inBog, p.mass, groundSpeed);
     this.physics.applyControls({
-      driveForce: Math.sign(drive) * Math.max(0, Math.abs(drive) - hold),
+      driveForce: Math.sign(drive) * Math.max(0, Math.abs(drive) * this.faults.driveFactor - hold),
       brake,
-      steer: this.steer,
+      steer: this.steer + this.faults.steerPull,
       mudAt: (x, z) => this.world.mudAt(x, z),
       puddleAt: (x, z) => this.world.puddleAt?.(x, z) ?? 0,
       bogAt: (x, z) => this.world.bogAt?.(x, z) ?? 0,
@@ -422,6 +426,8 @@ export class Quad {
       overrunRpm: this.engineLoad.overrunRpm,
       fuel: this.fuel.bowlLevel,
       oil: this.fuel.oil,
+      slip: this.faults.slip,
+      dirt: this.faults.dirt,
     };
   }
 

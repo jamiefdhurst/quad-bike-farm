@@ -48,6 +48,8 @@ export class EngineModel {
     this.pullLeft = 0; // seconds left of a yank on the pull-start
     this.pullStrength = 0; // how good that yank was, 0..1
     this.clickedDead = false; // the starter has clicked for this press
+    this.slip = 0; // see update()
+    this.dirt = 0;
     this.oil = this.params.strokes === 2 ? this.params.oilGood : 0; // oil fraction of the fuel it's being fed
     this.oilRich = 0; // 0..1 how much more oil than it can burn clean
     this.overheat = 0; // 0..1 extra heat from poor lubrication, on top of the temperature
@@ -134,9 +136,11 @@ export class EngineModel {
    * @param {number}  [controls.fuel]     0..1 carburettor float bowl level; it starves below fuelStarveLevel.
    * @param {number}  [controls.driveLoad]  0..1 how hard the wheels hold the revs down (pulling away, hills, mud).
    * @param {number}  [controls.resistLoad] 0..1 the part of driveLoad from climbing, mud or being blocked; this is what lugs a weak engine.
+   * @param {number}  [controls.slip] 0..1 a slipping drive belt: the revs flare and the load doesn't hold them down.
+   * @param {number}  [controls.dirt] 0..1 a dirty carb: lumpy, erratic and short of power.
    * @param {number}  [controls.overrunRpm] rpm above idle the wheels turn it over at with the throttle shut.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, oil = this.oil } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, oil = this.oil, slip = 0, dirt = 0 } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -146,6 +150,8 @@ export class EngineModel {
     this.load = clamp(load, 0, 1);
     this.fuel = clamp(fuel, 0, 1);
     this.oil = Math.max(0, oil);
+    this.slip = clamp(slip, 0, 1);
+    this.dirt = clamp(dirt, 0, 1);
     this.driveLoad = clamp(driveLoad, 0, 1);
     this.resistLoad = clamp(resistLoad, 0, this.driveLoad);
     this.overrunRpm = Math.max(0, overrunRpm);
@@ -322,7 +328,8 @@ export class EngineModel {
         p.richRoughness * this.rich +
         p.foulRoughness * this.fouling +
         p.nipRoughness * this.nip +
-        p.oilRichRoughness * this.oilRich,
+        p.oilRichRoughness * this.oilRich +
+        p.dirtRoughness * this.dirt,
       0,
       1,
     );
@@ -336,7 +343,8 @@ export class EngineModel {
       1,
     );
     this.power *= 1 - p.nipPowerLoss * this.nip;
-    this.erratic = Math.max(this.erratic, this.nip * this.nip);
+    this.erratic = Math.max(this.erratic, this.nip * this.nip, this.dirt ** 1.5);
+    this.power *= 1 - p.dirtPowerLoss * this.dirt;
     // Stumbling, it's got almost nothing.
     if (this.stumbleLeft > 0) this.power *= p.stumblePower;
   }
@@ -409,11 +417,13 @@ export class EngineModel {
     // climbing or ploughing (the slipping clutch spares it when pulling away),
     // much more so as that gets heavy, and can be dragged below idle and stall.
     const R = this.resistLoad;
-    this.lug = p.lugDepth * this.driveLoad + p.lugWeakness * (1 - this.power) * R * R;
+    this.lug = (1 - this.slip) * p.lugDepth * this.driveLoad + p.lugWeakness * (1 - this.power) * R * R;
     // Past idle it gives up quickly rather than hanging on just above stalling.
     const sag = Math.min(1, this.lug) * (this.freeTargetRpm - this.idleTarget);
     const beyond = Math.max(0, this.lug - 1) * p.lugStallGain * this.idleTarget;
     this.targetRpm = Math.max(0, this.freeTargetRpm - sag - beyond);
+    // A slipping belt lets the engine run away from the wheels as soon as there's throttle.
+    this.targetRpm = Math.min(p.maxRpm, this.targetRpm + p.beltFlareRpm * this.slip * this.throttle);
     if (this.overrunRpm > 0) this.targetRpm = Math.max(this.targetRpm, this.idleTarget + this.overrunRpm);
     // A cold engine labouring runs lumpier.
     this.roughness = clamp(this.roughness + p.lugRoughness * this.lug * (1 - T), 0, 1);

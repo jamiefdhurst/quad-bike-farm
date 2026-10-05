@@ -85,6 +85,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   driveForMin: 45, // seconds of driving before she's had enough
   driveForMax: 85,
   driveScaredChance: 0.4, // she stops because she's scared rather than bored
+  faultNoticeFrom: 0.3, // how bad a developing fault (puncture, slipping belt, sticking cable, dirty carb) has to be before she notices it
   startPullWhenFlat: 0, // chance that on a flat battery she has a go at the pull-start (two-strokes) instead of giving up
   driveForgetChokeChance: 0.45, // she pushes the choke off as she sets off, cold or not
   driveMaxStalls: 2, // stalls before she gives up on it
@@ -241,6 +242,7 @@ export const COMPANION_PARAM_RANGES = {
   driveForMin: [5, 300, 1],
   driveForMax: [5, 400, 1],
   driveScaredChance: [0, 1, 0.05],
+  faultNoticeFrom: [0, 1, 0.05],
   startPullWhenFlat: [0, 1, 0.05],
   driveForgetChokeChance: [0, 1, 0.05],
   driveMaxStalls: [0, 6, 1],

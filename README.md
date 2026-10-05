@@ -138,6 +138,8 @@ Each quad has a fuel tank, a fuel tap and a fuel gauge on the dash. Taps start O
 
 **Two-stroke oil.** The yellow and orange run on pre-mix, about 50:1 oil in the petrol. By the petrol tank there's a second, yellow jerry can of pre-mix and a bottle of two-stroke oil: hold `E` on the bottle with a can in your hands to add oil to it. Refilling any can at the tank adds plain petrol, so it thins the mix, and the prompts tell you what's in the can you're holding. Nothing tells you what's in a quad's tank except how it behaves. Straight petrol in a two-stroke and it runs hot (the temperature needle climbs into the red), then it starts to lose power and run raggedly (nipping up), and in the end it seizes solid and won't turn over, not even on the pull cord. Flat out takes a couple of minutes; idling takes far longer. Take the toolbox to it and press `F` ("Strip it down") to free it, which leaves it worn until you service it. Too much oil, or any pre-mix in the red, blue or green, smokes like a bonfire and slowly fouls the plug. Amy says so if you pour the wrong can nearby, and reads what's gone wrong when it goes; Jess blames the quad.
 
+**Faults that develop.** Quads go wrong over time, separately from wear, and nothing tells you: you feel and hear it. A slow puncture starts while a quad's being ridden and gets worse over a couple of minutes: the bars pull towards the soft tyre (less for a rear one) and it drags a little. A slipping drive belt comes from riding hard: the revs flare as soon as you open the throttle and it hardly goes. A sticking throttle cable keeps the engine running on after you let go, for a few seconds when it's bad (switching off frees it). A dirty carb makes it hunt, run rough and lose power, worse and worse the longer it runs. They happen to any quad the girls ride too, about one every ten to twenty minutes of riding across the lot. At the toolbox panel, `T` pumps and patches the tyres, `R` swaps the belt, `L` oils the cable and `C` cleans the carb; each does its job if there is one and otherwise just says everything's fine, so it doesn't give a fault away. Amy notices sooner and says what it is; Jess notices late and blames the quad.
+
 ## The dashes
 
 The quads have different instruments:
@@ -270,12 +272,12 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 13. Batteries and starting. Leave the ignition on and the battery drains, so the starter cranks slower until it won't turn over. Then you bump-start it down the bank, jump it from another quad, or use the pull-start on the two-strokes (hold and yank, which takes a knack when it's cold). **Done (bump-start left out for now).** Each quad has a battery: leave the ignition on and it drains, so the starter cranks slower and then only clicks. The yellow and orange have a pull-start (`P`); any quad can be jumped from a running one with the jump leads by the petrol tank.
 14. Two-stroke oil. The yellow and orange run on pre-mix: a second jerry can by the tank. Fill one with straight petrol and it runs hot, then nips up and seizes. Too much oil and it smokes like a bonfire and fouls plugs. **Done.** A yellow pre-mix can and an oil bottle sit by the petrol tank; straight petrol in a two-stroke runs it hot, then nips it up and seizes it until you strip it down with the toolbox (`F`), and too much oil smokes and fouls the plug.
 15. Faults that develop. Things go wrong over time, separate from wear:
-   - A slow puncture from the hedge (it pulls to one side; there's a foot pump in the toolbox).
-   - A slipping drive belt (revs flare, no go).
-   - A sticking throttle cable that keeps it running on.
-   - A dirty carb that hunts worse and worse.
+   - A slow puncture from the hedge (it pulls to one side; there's a foot pump in the toolbox). **Done.** (Not tied to the hedge: it can start anywhere while riding.)
+   - A slipping drive belt (revs flare, no go). **Done.**
+   - A sticking throttle cable that keeps it running on. **Done.**
+   - A dirty carb that hunts worse and worse. **Done.**
 
-   Each has a symptom you can feel or hear, and a girl who might spot it.
+   Each has a symptom you can feel or hear, and a girl who might spot it. **Done.** All four, with toolbox jobs to fix them; see "Faults that develop" above.
 16. Heat. The air-cooled ones get hot idling for ages on a sunny day and start pinking and running rough. The water-cooled orange's fan cuts in with its own sound. A quad thrashed and then switched off ticks as it cools, and it starts differently hot.
 17. Inside the barn. Open the big doors and the barn becomes a space:
     - Rain drumming loudly on the tin roof.
