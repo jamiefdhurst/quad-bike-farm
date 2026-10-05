@@ -35,7 +35,7 @@ the browser's speech.
 Usage (needs node; for Chatterbox a Python 3.11 venv with
 `pip install chatterbox-tts transformers librosa soundfile "setuptools<81"`):
 
-  python tools/generate_companion_voice.py --character amy --cache .scratch/voice-cache
+  python tools/generate_companion_voice.py --character amy --cache .scratch/voice-cache --fallback en_GB-cori-high.onnx
   python tools/generate_companion_voice.py --character jess --cache .scratch/voice-cache
   python tools/generate_companion_voice.py --character amy --engine piper --model en_GB-cori-high.onnx
 
@@ -62,6 +62,7 @@ PAD = 0.04  # seconds of quiet kept either side
 GAP = 0.08  # seconds of silence between lines in the bank
 TRIES = 4  # recordings of a line before settling for the best
 MATCH = 0.8  # how closely Whisper's transcript has to match the text (0..1)
+FALLBACK_BELOW = 0.6  # with --fallback, a Chatterbox take this far off is tried again with Piper
 
 # Piper settings.
 LENGTH_SCALE = 0.95  # a touch quicker than Piper's default, more like chat
@@ -156,15 +157,16 @@ class Chatterbox:
 
 
 class Piper:
-    def __init__(self, model):
+    def __init__(self, model, exe='piper'):
         self.model = model
+        self.exe = exe
         self.sr = None
 
     def say(self, text, exag, cfg, seed):
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, 'line.wav')
             subprocess.run(
-                ['piper', '-m', self.model, '-f', path, '--length-scale', str(LENGTH_SCALE), '--noise-scale', str(NOISE_SCALE)],
+                [self.exe, '-m', self.model, '-f', path, '--length-scale', str(LENGTH_SCALE), '--noise-scale', str(NOISE_SCALE)],
                 input=text, text=True, check=True, capture_output=True,
             )
             with wave.open(path) as w:
@@ -221,6 +223,9 @@ def main():
     ap.add_argument('--engine', choices=['chatterbox', 'piper'], default='chatterbox')
     ap.add_argument('--ref', help='reference recording for Chatterbox (default tools/voices/<character>-ref.wav)')
     ap.add_argument('--model', help='Piper voice model (.onnx)')
+    ap.add_argument('--fallback', help='Piper voice model (.onnx) to record a line with when Chatterbox makes a mess of it '
+                    '(short exclamations, mostly); for Amy, the voice her reference was made from')
+    ap.add_argument('--piper', default='piper', help='the piper command')
     ap.add_argument('--cache', default=None)
     ap.add_argument('--no-check', action='store_true', help="don't check recordings with Whisper")
     ap.add_argument('--limit', type=int, help='only the first N lines (for trying settings out); writes nothing to public/')
@@ -238,7 +243,8 @@ def main():
         if not args.model:
             sys.exit('--model is needed for piper')
         voice_id = f'piper|{os.path.basename(args.model)}|{LENGTH_SCALE}|{NOISE_SCALE}'
-        engine = Piper(args.model)
+        engine = Piper(args.model, args.piper)
+    fallback = Piper(args.fallback, args.piper) if args.fallback and args.engine == 'chatterbox' else None
     ear = None
     cache = args.cache or tempfile.mkdtemp()
     os.makedirs(cache, exist_ok=True)
@@ -275,16 +281,44 @@ def main():
                     break
             score, x, heard = best
             sr = engine.sr
-            if heard == '(ran on)':
-                # Every take ran on: leave it unrecorded (the browser's voice covers it) and try again next run.
-                unclear.append(f'0.00  "{text}"  every take ran on; not recorded')
-                print(f'[{i + 1}/{len(texts)}] every take ran on: "{text}"', flush=True)
-                continue
-            sf.write(path, x, sr, subtype='PCM_16')
             meta = {'heard': heard, 'score': round(score, 3), 'tries': attempt + 1}
-            json.dump(meta, open(meta_path, 'w'))
+            if heard != '(ran on)':
+                sf.write(path, x, sr, subtype='PCM_16')
+                json.dump(meta, open(meta_path, 'w'))
             recorded += 1
             print(f'[{i + 1}/{len(texts)}] {score:.2f} x{attempt + 1} e{exag} "{text}" heard "{heard}"', flush=True)
+        # Chatterbox made a mess of it: the same voice from Piper, if that's clearer.
+        if fallback and meta.get('score', 1) < FALLBACK_BELOW and not meta.get('fallback'):
+            import librosa
+
+            if ear is None:
+                ear = Ear()
+            fx = fallback.say(spoken, 0, 0, 0)
+            fx = librosa.resample(fx, orig_sr=fallback.sr, target_sr=sr or 24000).astype(np.float32)
+            sr = sr or 24000
+            fheard = ear.hear(fx, sr)
+            fscore = similarity(text, fheard)
+            if fscore > meta.get('score', 0):
+                x = fx
+                meta = {'heard': fheard, 'score': round(fscore, 3), 'tries': meta.get('tries', 0), 'fallback': 'piper'}
+                sf.write(path, x, sr, subtype='PCM_16')
+            else:
+                meta['fallback'] = 'tried'
+            if os.path.exists(path):
+                json.dump(meta, open(meta_path, 'w'))
+            print(f'[{i + 1}/{len(texts)}] Piper {fscore:.2f} for "{text}" (heard "{fheard}"){", used" if meta.get("fallback") == "piper" else ""}', flush=True)
+        if ear is not None or meta.get('heard') is not None:
+            heard = meta.get('heard', '')
+            babble = len(words(heard)) > 2 * len(words(text)) + 1
+            if meta.get('score', 1) < 0.3 or babble:
+                # Clearly not the line (often a short shout turned into babble): better unrecorded.
+                unclear.append(f'{meta.get("score", 0):.2f}  "{text}"  heard "{heard}"; left out')
+                continue
+        if meta.get('heard') == '(ran on)' or not os.path.exists(path):
+            # Every take ran on and nothing better: leave it unrecorded (the browser's voice covers it).
+            unclear.append(f'0.00  "{text}"  every take ran on; not recorded')
+            continue
+        x, sr = sf.read(path, dtype='float32')
         if meta.get('score', 1) < MATCH:
             unclear.append(f'{meta["score"]:.2f}  "{text}"  heard "{meta["heard"]}"')
         x = tidy(x, sr)
