@@ -23,6 +23,7 @@ const HELP_HTML = `
   <div><kbd>E</kbd> pick up the jerry can by the barn</div>
   <div>Hold <kbd>E</kbd> at a quad to pour, or at the petrol tank to refill the can</div>
   <div><kbd>G</kbd> put the can down</div>
+  <div>Hose by the petrol tank: <kbd>E</kbd> pick up, hold <kbd>E</kbd> to spray a quad clean, <kbd>G</kbd> put it back</div>
   <h3>Toolbox</h3>
   <div><kbd>E</kbd> pick up the toolbox by the petrol tank, <kbd>G</kbd> put it down</div>
   <div>Take it to a quad that's switched off and press <kbd>E</kbd> to tinker</div>

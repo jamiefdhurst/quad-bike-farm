@@ -8,7 +8,19 @@
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 export function createMudState() {
-  return { body: 0, wheels: 0, wet: 0 };
+  return { body: 0, wheels: 0, wet: 0, washed: 0 };
+}
+
+/**
+ * Hosing it down: mud comes off the wheels quickest and the bodywork steadily,
+ * what's left is wet, and the paint is left wet and shiny (`washed`, drying off
+ * in updateMudBuildUp). `aim` (0..1) is how squarely you're spraying it.
+ */
+export function washMud(state, dt, p, aim = 1) {
+  state.body = clamp01(state.body - p.washRate * aim * dt);
+  state.wheels = clamp01(state.wheels - p.washRate * 1.6 * aim * dt);
+  state.wet = 1;
+  state.washed = 1;
 }
 
 /**
@@ -45,5 +57,6 @@ export function updateMudBuildUp(state, dt, wheels, speed, spinSlip, p) {
   state.body = clamp01(state.body);
   state.wheels = clamp01(state.wheels);
   state.wet = clamp01(state.wet);
+  state.washed = clamp01((state.washed ?? 0) - dt / p.washDryTime);
   return state;
 }

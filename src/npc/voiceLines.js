@@ -600,6 +600,34 @@ export const VOICE_LINES = {
     ],
   },
 
+  // You with the hose ----------------------------------------------------------
+  washing: {
+    cooldown: 25,
+    lines: [
+      'Ooh, missed a bit.',
+      'Can you do my wellies after?',
+      "It'll only get muddy again.",
+      'Look at it, all shiny.',
+      "Don't you dare point that at me.",
+      'Very domestic.',
+      'You love that thing more than me.',
+    ],
+  },
+  sprayedHer: {
+    shout: true,
+    cooldown: 6,
+    lines: [
+      'Oi!',
+      'Argh! Stop it!',
+      "That's freezing!",
+      "You're dead. You are so dead.",
+      { sound: 'gasp' },
+      { sound: 'laugh' },
+      'Not funny! Okay, a bit funny.',
+      "I'm soaked!",
+    ],
+  },
+
   // Giving you a ride on the back ---------------------------------------------
   ackFollow: {
     cooldown: 0,

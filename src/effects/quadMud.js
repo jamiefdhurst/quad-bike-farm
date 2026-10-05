@@ -8,6 +8,9 @@ import { createMudState, updateMudBuildUp } from './mudBuildUp.js';
 // mud building up on the bike. Grip in mud and puddles is in traction.js.
 
 export const DEFAULT_MUD_PARAMS = {
+  // Washing with the hose
+  washRate: 0.1, // bodywork mud (0..1) off per second of spraying: a muddy quad takes about 8 s
+  washDryTime: 60, // seconds for washed paint to dry off
   // Spray
   maxPerSecond: 500, // spawn cap for the quad
   rollRate: 5, // clumps per second per wheel for each m/s, rolling through mud
@@ -39,6 +42,8 @@ export const DEFAULT_MUD_PARAMS = {
 };
 
 export const MUD_PARAM_RANGES = {
+  washRate: [0, 2, 0.01],
+  washDryTime: [1, 600, 1],
   maxPerSecond: [0, 2000, 10],
   rollRate: [0, 40, 0.5],
   spinRate: [0, 100, 1],
@@ -68,6 +73,7 @@ export const MUD_STATE_RANGES = {
   body: [0, 1, 0.01],
   wheels: [0, 1, 0.01],
   wet: [0, 1, 0.01],
+  washed: [0, 1, 0.01],
 };
 
 const _p = new THREE.Vector3();

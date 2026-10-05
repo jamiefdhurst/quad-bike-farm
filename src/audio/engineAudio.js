@@ -86,11 +86,32 @@ export class AudioHub {
     this.pourGain.gain.value = 0;
     pour.connect(this.pourFilter).connect(this.pourGain).connect(this.master);
     pour.start();
+    // The hose: a bright hiss, with a patter when it hits something.
+    const hose = ctx.createBufferSource();
+    hose.buffer = noise;
+    hose.loop = true;
+    hose.playbackRate.value = 0.83;
+    this.hoseFilter = ctx.createBiquadFilter();
+    this.hoseFilter.type = 'bandpass';
+    this.hoseFilter.Q.value = 0.7;
+    this.hoseFilter.frequency.value = 3200;
+    this.hoseGain = ctx.createGain();
+    this.hoseGain.gain.value = 0;
+    hose.connect(this.hoseFilter).connect(this.hoseGain).connect(this.master);
+    hose.start();
     this.glugTimer = 0;
     this.ready = true;
   }
 
   /** Call every frame with whether fuel is being poured. */
+  /** The hose spraying; `onTarget` when it's hitting something close (it patters lower). */
+  setSpraying(active, onTarget = false) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    this.hoseGain.gain.setTargetAtTime(active ? this.params.hoseVolume * (onTarget ? 1 : 0.7) : 0, t, 0.06);
+    this.hoseFilter.frequency.setTargetAtTime(onTarget ? 1800 : 3200, t, 0.1);
+  }
+
   setPouring(active, dt) {
     if (!this.ready) return;
     const t = this.ctx.currentTime;

@@ -57,6 +57,7 @@ function patchMaterial(material, uniforms, wheel) {
         uniform float uMudBody;
         uniform float uMudWheels;
         uniform float uMudWet;
+        uniform float uWashed;
         varying vec3 vMudPos;
         varying vec3 vMudNormal;
         ${noiseGlsl}
@@ -100,7 +101,9 @@ function patchMaterial(material, uniforms, wheel) {
       .replace(
         '#include <roughnessmap_fragment>',
         `#include <roughnessmap_fragment>
-        roughnessFactor = mix(roughnessFactor, mix(0.92, 0.3, wetHere), mudMask);`,
+        roughnessFactor = mix(roughnessFactor, mix(0.92, 0.3, wetHere), mudMask);
+        // Just hosed down: the clean paint is wet and shiny.
+        roughnessFactor = mix(roughnessFactor, roughnessFactor * 0.35, uWashed * (1.0 - mudMask));`,
       )
       .replace(
         '#include <normal_fragment_maps>',
@@ -137,6 +140,7 @@ export class MudCoat {
       uMudBody: { value: 0 },
       uMudWheels: { value: 0 },
       uMudWet: { value: 1 },
+      uWashed: { value: 0 },
     };
     const model = quad.model;
     const skip = new Set([model.userData.lensMaterial]);
@@ -170,6 +174,7 @@ export class MudCoat {
     u.uMudBody.value = state.body;
     u.uMudWheels.value = state.wheels;
     u.uMudWet.value = state.wet;
+    u.uWashed.value = state.washed ?? 0;
     this.frame.updateWorldMatrix(true, false);
     u.uMudFrame.value.copy(this.frame.matrixWorld).invert();
   }

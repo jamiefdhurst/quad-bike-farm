@@ -21,6 +21,8 @@ import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
 import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES } from './items/jerryCan.js';
 import { FuelTank } from './items/fuelTank.js';
 import { Toolbox } from './items/toolbox.js';
+import { Hose, HOSE_PARAM_RANGES } from './items/hose.js';
+import { washMud } from './effects/mudBuildUp.js';
 import { Workshop } from './workshop/workshop.js';
 import { Interaction } from './interaction/interaction.js';
 import { Menu } from './interaction/menu.js';
@@ -161,6 +163,10 @@ export class Game {
           if (this.tooFastToMount(quad)) {
             return { text: `The ${unit.label} is going too fast to get on   ·   K ignition` };
           }
+          if (this.hose.held) {
+            const muddy = Math.round(Math.max(unit.mud.state.body, unit.mud.state.wheels) * 100);
+            return { text: muddy > 0 ? `Hold E to wash the ${unit.label} (${muddy}% muddy)   ·   G put the hose back` : `The ${unit.label} is clean   ·   G put the hose back` };
+          }
           if (this.toolbox.held) return this.workshop.prompt(unit);
           if (this.can.held) {
             const pct = Math.round(quad.fuel.level * 100);
@@ -173,7 +179,7 @@ export class Game {
           return `Ride the ${unit.label}   ·   K ignition   R start   Q/Z choke   F fuel tap`;
         },
         interact: () => {
-          if (this.can.held) return; // E is for pouring while you're holding the can
+          if (this.can.held || this.hose.held) return; // E is for pouring or spraying while you're holding those
           if (this.toolbox.held) return this.workshop.open(unit);
           if (this.tooFastToMount(quad) && this.herDriving(quad)) {
             // She pulls up and moves onto the back for you.
@@ -187,6 +193,15 @@ export class Game {
           else this.mount(unit);
         },
         hold: (dt) => {
+          if (this.hose.held) {
+            // Close enough and the jet reaches it: the mud comes off.
+            const near = quad.position.distanceTo(this.player.position) < this.hose.params.washRange + 1.2;
+            if (near) {
+              washMud(unit.mud.state, dt, unit.mud.params);
+              this.washing = unit;
+            }
+            return false;
+          }
           if (!this.can.held || this.tooFastToMount(quad)) return false;
           const wanted = Math.min(this.can.params.pourRate * dt, quad.fuel.space);
           return quad.fuel.add(this.can.take(wanted)) > 0;
@@ -214,7 +229,7 @@ export class Game {
     });
     this.interaction.add({
       target: this.can.proxy,
-      isAvailable: () => !this.can.held && !this.toolbox.held,
+      isAvailable: () => !this.can.held && !this.toolbox.held && !this.hose.held,
       prompt: () => `Pick up the jerry can (${this.can.litres.toFixed(1)} L)`,
       interact: () => this.can.pickUp(this.camera),
     });
@@ -232,9 +247,17 @@ export class Game {
     // A toolbox by the petrol tank, for tinkering with the quads (see workshop.js).
     this.toolbox = new Toolbox({ scene: this.scene, world: this.world, position: L.toolbox, yaw: L.toolbox.yaw });
     this.workshop = new Workshop(this);
+    // A hosepipe for washing the mud off.
+    this.hose = new Hose({ scene: this.scene, world: this.world, position: L.hose, yaw: L.hose.yaw });
+    this.interaction.add({
+      target: this.hose.proxy,
+      isAvailable: () => !this.hose.held && !this.toolbox.held && !this.can.held,
+      prompt: () => 'Pick up the hose',
+      interact: () => this.hose.pickUp(this.camera),
+    });
     this.interaction.add({
       target: this.toolbox.proxy,
-      isAvailable: () => !this.toolbox.held && !this.can.held,
+      isAvailable: () => !this.toolbox.held && !this.can.held && !this.hose.held,
       prompt: () => 'Pick up the toolbox',
       interact: () => this.toolbox.pickUp(this.camera),
     });
@@ -246,6 +269,7 @@ export class Game {
 
     registerTuning('Sound', this.audioHub.params, SOUND_PARAM_RANGES);
     registerTuning('Jerry can', this.can.params, JERRY_CAN_PARAM_RANGES);
+    registerTuning('Hose', this.hose.params, HOSE_PARAM_RANGES);
     registerTuning('Player', this.player.params, PLAYER_PARAM_RANGES);
     registerTuning('Companion', this.companion.params, COMPANION_PARAM_RANGES, {
       onChange: () => this.companion.refreshFigure(),
@@ -308,6 +332,28 @@ export class Game {
     this.lastUnit = unit;
     this.input.takeWheelSteps();
     this.voice.onRequest('passengerOn');
+  }
+
+  /** Spraying, the hose's reach, the hiss, and her reaction if you get her wet. */
+  updateHose(dt) {
+    const hose = this.hose;
+    if (hose.held && this.player.isRiding) hose.putBack();
+    if (hose.held && hose.distanceFrom(this.player.position) > hose.params.reach) {
+      hose.putBack();
+      this.hud.toast('The hose won\'t reach any further: it pulled out of your hand');
+    }
+    hose.spraying = hose.held && !this.menu.isOpen && this.input.isDown('KeyE');
+    hose.update(dt);
+    this.audioHub.setSpraying(hose.spraying, !!this.washing);
+    if (this.washing) this.voice.onWash?.('quad');
+    // Spraying her: she's in front of you and close.
+    if (hose.spraying) {
+      const head = this.voice.head;
+      const to = head.clone().sub(this.camera.position);
+      const dist = to.length();
+      const ahead = this.camera.getWorldDirection(to.clone()).dot(to.normalize());
+      if (dist < 7 && ahead > 0.96) this.voice.onWash?.('her');
+    }
   }
 
   /** Off the back: only once she's stopped (or nearly). */
@@ -553,6 +599,7 @@ export class Game {
 
     for (const unit of this.units) unit.quad.setRemote(null);
     let pouring = false;
+    this.washing = null;
     if (this.menu.isOpen) {
       this.menu.handleInput(input);
       if (!this.menu.isOpen) this.closeMenu();
@@ -578,7 +625,8 @@ export class Game {
       if (focused && input.wasPressed('KeyE')) focused.interact();
       // Holding E pours fuel or fills the can.
       if (focused?.hold && input.isDown('KeyE') && focused.hold(dt)) pouring = true;
-      if (this.can.held && input.wasPressed('KeyG')) this.putCanDown();
+      if (this.hose.held && input.wasPressed('KeyG')) this.hose.putBack();
+      else if (this.can.held && input.wasPressed('KeyG')) this.putCanDown();
       else if (this.toolbox.held && input.wasPressed('KeyG')) this.putToolboxDown();
     }
 
@@ -610,6 +658,7 @@ export class Game {
     if (!this.debugCamera) this.player.update(dt, alpha, board ? board.vibration : null);
     this.can.pouring = pouring;
     this.can.update(dt);
+    this.updateHose(dt);
     this.workshop.update(dt);
     this.audioHub.setPouring(pouring, dt);
     this.audioHub.update(dt, this.camera);
@@ -652,6 +701,8 @@ export class Game {
           ...(this.can.held ? [`Can      ${this.can.litres.toFixed(1)} L`] : []),
         ].join('\n'),
       );
+    } else if (this.hose.held) {
+      this.hud.setStatus('Hose\nHold E to spray, G to put it back');
     } else if (this.toolbox.held) {
       this.hud.setStatus('Toolbox\nTake it to a quad that is switched off\nG to put it down');
     } else if (this.can.held) {

@@ -101,7 +101,7 @@ Things to know:
 
 ## Mud
 
-The track and especially its puddles are slippery: grip drops from 2.2 on grass to 0.7 on the track and 0.42 in a puddle (all scaled by tyre pressure). The yellow quad is rear-wheel drive and spins its back wheels if you give it everything in the mud; the four-wheel-drive farm quads only slip in puddles. Tyres throw clumps and puddles splash, wheels leave ruts that fade over a couple of minutes, and the quads get muddier the more you ride, dark and wet at first and drying lighter. Each quad's Mud folder in the tuning panel has the spray and rut settings, and "Mud on it" cleans it off.
+The track and especially its puddles are slippery: grip drops from 2.2 on grass to 0.7 on the track and 0.42 in a puddle (all scaled by tyre pressure). The yellow quad is rear-wheel drive and spins its back wheels if you give it everything in the mud; the four-wheel-drive farm quads only slip in puddles. Tyres throw clumps and puddles splash, wheels leave ruts that fade over a couple of minutes, and the quads get muddier the more you ride, dark and wet at first and drying lighter. To wash one, pick up the hose on its reel at the south end of the petrol tank (`E`; it reaches 25 m), and hold `E` at a quad: the wheels come clean first, then the bodywork, over about 8 seconds for a filthy one, leaving the paint wet and shiny until it dries. `G` puts the hose back. Mind where you point it if she's about. Each quad's Mud folder in the tuning panel has the spray and rut settings, and "Mud on it" cleans it off.
 
 ## Tinkering
 
@@ -231,8 +231,9 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 6. Quads get more rough over time, the roughness value needs to go up even more, or have more of an effect at the top range, a lot more in both idle variation and shaking, but it can be fixed with the toolbox **Done.**
 7. I can also ride pillion with her **Done.**
 8. Allow her to follow you and ride together on different quads **Done.**
-9. Ability to wash the bikes
-10. The girl's shirt collar is still not very good - it overlaps with her neck too much. Can we also give her shorts instead of jeans?
-11. If she's going round in circles and doesn't like it, after a while she jumps into the driver's seat and stops it, or drives around herself
-12. Add two other quads - another 4 and another 2 stroke, with different idle sounds and base characteristics
-13. Another girl, slightly different personality, and how do we inject more emotion into the voice?
+9. Ability to wash the bikes **Done.**
+10. She should get off sometimes even when she's been driving, when she gets bored.
+11. The girl's shirt collar is still not very good - it overlaps with her neck too much. Can we also give her shorts instead of jeans?
+12. If she's going round in circles and doesn't like it, after a while she jumps into the driver's seat and stops it, or drives around herself
+13. Add two other quads - another 4 and another 2 stroke, with different idle sounds and base characteristics
+14. Another girl, slightly different personality, and how do we inject more emotion into the voice?

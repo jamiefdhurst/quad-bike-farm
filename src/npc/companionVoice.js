@@ -70,6 +70,12 @@ export class CompanionVoice {
    * frame while riding her quicker than a de-restricted quad used to go). She
    * only remarks on what she can see. Returns what she said, if anything.
    */
+  /** You're washing a quad, or you've just sprayed her. */
+  onWash(kind) {
+    if (this.head.distanceTo(this.listener) > this.params.voiceRange) return null;
+    return kind === 'her' ? this.say('sprayedHer', { urgent: true }) : this.say('washing', { chance: 0.004 });
+  }
+
   onTinker(kind) {
     const [situation, chance] = { open: ['tinkerOpen', 0.6], adjust: ['tinker', 0.25], limiter: ['tinkerLimiter', 0.9], stock: ['tinkerStock', 0.6], service: ['tinkerService', 0.8], fast: ['tunedFast', 0.02] }[kind] ?? [];
     if (!situation || this.head.distanceTo(this.listener) > Math.min(15, this.params.voiceRange)) return null;
