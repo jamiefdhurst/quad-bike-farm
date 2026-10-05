@@ -31,6 +31,10 @@ export class CompanionVoice {
     this.jolt = 0;
     this.fastTime = 0;
     this.funTime = 0;
+    this.gentleTime = 0;
+    this.rideTime = 0;
+    this.nearTime = 0;
+    this.wasTogether = false;
     this.stoppedTime = 0;
     this.idleTime = 0;
     this.awayTime = 0;
@@ -71,6 +75,10 @@ export class CompanionVoice {
     if (view.menuOpen && !this.wasMenuOpen) this.say('talkTo', { force: true, chance: 0.6 });
     this.wasMenuOpen = view.menuOpen;
 
+    // You getting on in front of her.
+    if (together && !this.wasTogether) this.say('mountedTogether', { urgent: true, chance: 0.7 });
+    this.wasTogether = together;
+
     // Riding pillion: track speed, braking and jolting every frame.
     if (together) {
       const quad = ridden.quad;
@@ -93,6 +101,8 @@ export class CompanionVoice {
 
       const smooth = this.jolt < p.voiceRoughAccel * 0.5;
       this.funTime = speed > 4 && speed <= p.voiceFastSpeed && smooth ? this.funTime + dt : Math.max(0, this.funTime - dt * 2);
+      this.gentleTime = speed > 1.5 && speed <= 5 && smooth ? this.gentleTime + dt : Math.max(0, this.gentleTime - dt * 2);
+      this.rideTime = speed > 1.5 ? this.rideTime + dt : this.rideTime;
       if (speed > 1.5 && this.stoppedTime > 4) this.say('rideStart', { chance: 0.7 });
       this.stoppedTime = speed < 0.5 ? this.stoppedTime + dt : 0;
     } else {
@@ -102,6 +112,7 @@ export class CompanionVoice {
       this.decel = 0;
       this.fastTime = 0;
       this.funTime = 0;
+      this.gentleTime = 0;
       this.stoppedTime = 10;
     }
 
@@ -113,13 +124,22 @@ export class CompanionVoice {
     const step = 1 - this.checkTimer;
     this.checkTimer = 1;
 
-    if (together && this.funTime > 8) this.say('rideFun', { chance: 0.35 });
+    if (together) {
+      if (this.funTime > 8) this.say('rideFun', { chance: 0.35 });
+      else if (this.gentleTime > 10) this.say('rideGentle', { chance: 0.3 });
+      if (this.rideTime > 150) this.say('rideLong', { chance: 0.15 });
+    }
+
+    // Stood next to you, both on foot: the odd warm word.
+    const standing = c.fsm.is('idle');
+    const close = standing && !ridden && distance < 4 && !view.menuOpen;
+    this.nearTime = close ? this.nearTime + step : 0;
+    if (this.nearTime > 8) this.say('nearbyWarm', { chance: 0.08 });
 
     // Standing about with nothing happening.
-    const standing = c.fsm.is('idle');
     const waitingSeated = c.isSeated && !together;
     this.idleTime = (standing || waitingSeated) && !view.menuOpen ? this.idleTime + step : 0;
-    if (this.idleTime > p.voiceWaitAfter && distance < p.voiceRange && this.chatter.sinceSpoke > p.voiceWaitAfter) {
+    if (!close && this.idleTime > p.voiceWaitAfter && distance < p.voiceRange && this.chatter.sinceSpoke > p.voiceWaitAfter) {
       this.say(standing ? 'waitingStanding' : 'waitingSeated', { chance: 0.12 });
     }
 
