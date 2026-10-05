@@ -43,6 +43,18 @@ export const DEFAULT_VEHICLE_PARAMS = {
   drivePowerFloor: 0.4, // drive force keeps this much even when the engine is weak, so a cold bike is sluggish rather than useless
   engineBrakeForce: 300, // newtons at closed throttle with the clutch locked
   brakeLoadSpeed: 0.8, // m/s; braking load on the engine fades out below this as the bike stops
+  overrunBrake: 0.5, // fraction of engineBrakeForce that carries on once the revs drop, while it's coupled to a rolling bike
+
+  // Load on the engine (see engineLoad.js)
+  cvtShiftSpeed: 3, // m/s; below this the CVT is in its lowest ratio and pulling away loads the engine fully
+  launchLoad: 1, // share of the effort spent getting the bike moving that the engine feels when pulling away...
+  cruiseAccelLoad: 0.15, // ...and once the CVT is shifting up (climbing, mud and obstacles always count in full)
+  mudLoad: 0.12, // extra load from churning through mud, at full mud
+  tyreGrip: 0.75, // drive force each tyre can put down per newton pressing it into grass...
+  mudGrip: 0.42, // ...and in mud; asking for more spins it and the revs flare
+  loadSmoothing: 0.08, // seconds; smoothing on the drive force and the acceleration it makes
+  overrunRpmPerMs: 70, // throttle shut and coupled, the wheels hold the engine this many rpm over idle per m/s...
+  overrunMaxRpm: 1400, // ...up to this
 
   // Brakes
   maxBrake: 13, // Rapier wheel brake impulse
@@ -93,6 +105,16 @@ export const VEHICLE_PARAM_RANGES = {
   drivePowerFloor: [0, 1, 0.01],
   engineBrakeForce: [0, 2000, 10],
   brakeLoadSpeed: [0.5, 10, 0.1],
+  overrunBrake: [0, 1, 0.01],
+  cvtShiftSpeed: [0.5, 10, 0.1],
+  launchLoad: [0, 1.5, 0.01],
+  cruiseAccelLoad: [0, 1, 0.01],
+  mudLoad: [0, 1, 0.01],
+  tyreGrip: [0.1, 2, 0.01],
+  mudGrip: [0.1, 2, 0.01],
+  loadSmoothing: [0.02, 1, 0.01],
+  overrunRpmPerMs: [0, 300, 5],
+  overrunMaxRpm: [0, 4000, 50],
   maxBrake: [0, 100, 0.5],
   parkingBrake: [0, 50, 0.5],
   parkedHoldSpeed: [0, 1, 0.01],
