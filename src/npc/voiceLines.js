@@ -856,6 +856,60 @@ export const VOICE_LINES = {
     ],
   },
 
+  // You tinkering with a quad from the toolbox --------------------------------
+  tinkerOpen: {
+    cooldown: 90,
+    lines: [
+      'Ooh, a mechanic now?',
+      'Since when were you a mechanic?',
+      'Oh dear. The spanners are out.',
+      "Shall I put the kettle on? This could take a while.",
+      "Don't lose any of the little screws.",
+      'Is this going to end with it in bits?',
+      'Go on then, show me what you can do.',
+    ],
+  },
+  tinker: {
+    cooldown: 40,
+    lines: [
+      "Do you actually know what you're doing?",
+      'What does that do?',
+      'Was that bit important?',
+      'Righty-tighty, lefty-loosey.',
+      'Are you sure about that?',
+      "You've got oil on your nose.",
+      'Very technical.',
+      "I hope you're remembering how it was.",
+      { sound: 'hmm' },
+    ],
+  },
+  tinkerLimiter: {
+    cooldown: 60,
+    lines: [
+      'Is that legal?',
+      'Why does it need to go faster?',
+      'Is that even allowed?',
+      "I'm not sure I'm getting on that now.",
+      'Oh, here we go.',
+      "If you crash it, I'm telling everyone.",
+    ],
+  },
+  tinkerStock: {
+    cooldown: 60,
+    lines: ['Probably for the best.', 'Back how it was? Good.', 'Sensible.', 'Lost your nerve?', 'Phew.'],
+  },
+  tunedFast: {
+    cooldown: 120,
+    lines: [
+      'Has it always gone this fast?',
+      'What did you do to it?',
+      "This is your fiddling, isn't it?",
+      "Okay, that's quite fast now!",
+      'Slow down, speed demon!',
+      { sound: 'gasp' },
+    ],
+  },
+
   pouring: {
     cooldown: 60,
     lines: [

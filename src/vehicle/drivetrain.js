@@ -14,6 +14,7 @@ export class Drivetrain {
     this.coupled = false; // clutch locked to a moving bike, so braking drags the engine
     this.clutch = 0;
     this.driveForce = 0;
+    this.available = 0; // N the engine could give at this throttle with the clutch locked
     this.engineLoad = 0;
   }
 
@@ -27,12 +28,16 @@ export class Drivetrain {
    * @param {number} s.forwardSpeed  m/s, signed.
    * @param {boolean} s.reverse
    * @param {number} s.maxRpm        The engine's full-throttle rpm.
+   * @param {number} [s.lugDrop]     rpm the load is holding the engine below its free revs.
    */
-  update({ rpm, power, running, throttle, brake, forwardSpeed, reverse, maxRpm = 8500 }) {
+  update({ rpm, power, running, throttle, brake, forwardSpeed, reverse, maxRpm = 8500, lugDrop = 0 }) {
     const p = this.params;
     const speed = Math.abs(forwardSpeed);
 
-    this.clutch = running ? smoothstep(p.clutchEngageRpm, p.clutchFullRpm, rpm) : 0;
+    // Drive comes from the revs the engine is trying for: labouring under load
+    // is heard and felt, but the clutch doesn't slip and the bike still goes.
+    const driveRpm = rpm + lugDrop;
+    this.clutch = running ? smoothstep(p.clutchEngageRpm, p.clutchFullRpm, driveRpm) : 0;
 
     // Coupling has hysteresis: it locks once the clutch bites with the bike
     // moving and only lets go when the bike all but stops.
@@ -45,22 +50,28 @@ export class Drivetrain {
       let torque;
       if (p.powerbandRpm > 0) {
         // On the pipe: weak low down, then it comes on hard.
-        torque = p.torqueBelowBand + (1 - p.torqueBelowBand) * smoothstep(p.powerbandRpm - 1200, p.powerbandRpm + 600, rpm);
+        torque = p.torqueBelowBand + (1 - p.torqueBelowBand) * smoothstep(p.powerbandRpm - 1200, p.powerbandRpm + 600, driveRpm);
       } else {
-        const rpmNorm = clamp(rpm / maxRpm, 0, 1);
+        const rpmNorm = clamp(driveRpm / maxRpm, 0, 1);
         torque = 0.75 + 0.25 * Math.sin(Math.PI * Math.min(1, rpmNorm * 1.2));
       }
       const top = reverse ? p.maxReverseSpeed : p.maxSpeed;
       const speedFactor = clamp(1 - (speed / top) ** 2, 0, 1);
       const pedal = p.idleTorque + (1 - p.idleTorque) * throttle;
       const drivePower = p.drivePowerFloor + (1 - p.drivePowerFloor) * power;
-      force = this.clutch * pedal * torque * drivePower * p.maxDriveForce * speedFactor;
+      this.available = pedal * torque * drivePower * p.maxDriveForce;
+      force = this.clutch * this.available * speedFactor;
       if (reverse) force = -force;
 
-      // Light engine braking at a closed throttle with the clutch locked.
-      if (throttle < 0.05 && this.clutch > 0.5) {
-        force -= Math.sign(forwardSpeed) * p.engineBrakeForce * this.clutch * Math.min(1, speed / 2);
+      // Light engine braking at a closed throttle with the clutch locked. Once
+      // it's coupled to a rolling bike the wheels keep turning the engine over,
+      // so some of it carries on after the revs drop.
+      if (throttle < 0.05) {
+        const engaged = Math.max(this.clutch > 0.5 ? this.clutch : 0, this.coupled ? p.overrunBrake : 0);
+        force -= Math.sign(forwardSpeed) * p.engineBrakeForce * engaged * Math.min(1, speed / 2);
       }
+    } else {
+      this.available = 0;
     }
     this.driveForce = force;
 

@@ -3,6 +3,7 @@ import { buildQuadModel, poseSuspension, setHeadlights } from './quadModel.js';
 import { FuelSystem } from './fuelSystem.js';
 import { QuadPhysics, WHEELS, SUSPENSION_TOP_Y } from './quadPhysics.js';
 import { Drivetrain } from './drivetrain.js';
+import { EngineLoad } from './engineLoad.js';
 import { CruiseControl } from './cruise.js';
 
 // Height of the ground below the chassis origin with the bike at rest.
@@ -74,6 +75,7 @@ export class Quad {
       yaw: s.yaw,
     });
     this.drivetrain = new Drivetrain(params);
+    this.engineLoad = new EngineLoad(params);
     this.cruise = new CruiseControl(params);
 
     // Controls, set by the rider.
@@ -313,6 +315,20 @@ export class Quad {
       forwardSpeed: fwd,
       reverse: this.reverse,
       maxRpm: e.params.maxRpm,
+      lugDrop: e.isRunning ? Math.max(0, e.freeTargetRpm - e.targetRpm) : 0,
+    });
+    const d = this.drivetrain;
+    this.engineLoad.update(dt, {
+      throttle: this.throttle,
+      brake: this.brake,
+      forwardSpeed: fwd,
+      reverse: this.reverse,
+      driveForce: d.driveForce,
+      available: d.available,
+      clutch: d.clutch,
+      coupled: d.coupled,
+      mass: p.mass,
+      wheels: this.physics.wheelLoads(),
     });
 
     let brake = this.brake * p.maxBrake;
@@ -355,6 +371,9 @@ export class Quad {
       throttle: this.throttle,
       choke: this.choke,
       load: this.drivetrain.engineLoad,
+      driveLoad: this.engineLoad.driveLoad,
+      resistLoad: this.engineLoad.resistLoad,
+      overrunRpm: this.engineLoad.overrunRpm,
       fuel: this.fuel.bowlLevel,
     };
   }

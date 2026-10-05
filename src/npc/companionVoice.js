@@ -65,6 +65,18 @@ export class CompanionVoice {
   }
 
   /**
+   * You tinkering with a quad from the toolbox (raised by workshop.js): 'open',
+   * 'adjust', 'limiter' (de-restricting it), 'stock', or 'fast' (asked every
+   * frame while riding her quicker than a de-restricted quad used to go). She
+   * only remarks on what she can see. Returns what she said, if anything.
+   */
+  onTinker(kind) {
+    const [situation, chance] = { open: ['tinkerOpen', 0.6], adjust: ['tinker', 0.25], limiter: ['tinkerLimiter', 0.9], stock: ['tinkerStock', 0.6], fast: ['tunedFast', 0.02] }[kind] ?? [];
+    if (!situation || this.head.distanceTo(this.listener) > Math.min(15, this.params.voiceRange)) return null;
+    return this.say(situation, { urgent: true, chance });
+  }
+
+  /**
    * @param {number} dt
    * @param {object} view  { listener: Vector3, ridden: QuadUnit|null, units, menuOpen, pouring }
    */

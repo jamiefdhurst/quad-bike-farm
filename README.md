@@ -65,7 +65,7 @@ Look at her and press `E`. Pick an option with the number keys, or scroll to hig
 - **Blue quad**: Yamaha-style farm quad. Idles higher (about 1,450 rpm warm), revs harder and higher, needs more choke from cold and runs lumpier until it's warm, warms a bit quicker and pulls a little harder. It has a brush guard, square headlights, railed racks and a grey seat. Its idle comes from a different recorded machine, so it sounds different too.
 - **Yellow quad**: a two-stroke sport quad, Blaster-style. It fires every revolution, so it buzzes rather than thumps, and ring-dings at idle. It's weak low down, then comes on hard around 6,000 rpm and revs past 10,000. It has almost no engine braking, and it slowly loads up its plug if you leave it idling (blip the throttle to clear it). It trails blue-white oil smoke. It's lighter and quicker, with an expansion-chamber exhaust, motocross bars, nerf bars and a race number plate. She can squeeze onto a slim pad at the back. It sounds like a two-stroke dirt bike.
 
-All three are automatics and all start cold. Through the CVT the red holds about 6,200 rpm at full throttle and the blue about 6,800; the yellow revs past 10,000. Where each quad is parked, where the jerry can has been left, and each quad's warm idle, roughness and starting fuel change every game, picked from ranges in `src/vehicle/quadSpecs.js`:
+All three are automatics and all start cold. Through the CVT the red tops out at 6,200 rpm and the blue at 6,800 (the yellow revs past 10,000), but the engine works against the ground: it bogs a little as you pull away, cruises nearer 5,700 flat out, labours lower up hills and through mud, flares when the wheels spin or leave the ground, and engine-brakes on a closed throttle with the revs rising with speed downhill. Try climbing the steep bank by the yard on a stone-cold engine with the choke out and it will probably stall. Where each quad is parked, where the jerry can has been left, and each quad's warm idle, roughness and starting fuel change every game, picked from ranges in `src/vehicle/quadSpecs.js`:
 
 | | `idleRange` (rpm) | `roughnessRange` | `fuelRange` (litres) |
 | --- | --- | --- | --- |
@@ -97,6 +97,18 @@ Things to know:
 - Braking hard from speed while it's still cold can stall it. Roll off early and brake gently until it's warm.
 - If you flood it, take the choke off and crank with the throttle held open (`W` + `R`) to clear it.
 - The bike keeps idling when you get off, and you can watch and hear it shake from outside. With nobody on it, it also jolts over the ground as it moves, harder the faster it goes, so a quad driving itself round in circles visibly bounces. Riding it, the shake is as it always was.
+
+## Tinkering
+
+Pick up the red toolbox by the petrol tank (`E`), take it to a quad that's switched off and press `E` to get the spanners out. The panel has five adjustments, each with its current and stock values and a note on the trade-off:
+
+- **Idle screw**: the warm idle, within safe limits.
+- **Carb mixture**: leaner pulls a bit harder and uses less fuel but runs rougher; richer is easier from cold but smokier and thirstier, and fully rich slowly fouls the plug.
+- **Throttle stop (speed limiter)**: farm quads come with it screwed in. Each turn out adds about 7% top speed (fully off is about +20%: the red goes from 35 to 42 mph), plus a few more revs and more fuel.
+- **Clutch springs**: softer bites sooner, stiffer later; it always bites above the idle.
+- **Tyre pressures**: softer grips better (especially in mud) but bounces more.
+
+"Back to stock" puts everything back exactly. Changes last for the game. `G` puts the toolbox down; you can't ride while carrying it. She has opinions about all of this.
 
 ## Fuel
 
@@ -170,6 +182,8 @@ public/audio/          the cut engine recordings
 **Engine model** (`src/engine/engineModel.js`). A state machine (off, ignition, cranking, running, stalled) driven by one idea: mixture. Mixture is the enrichment the choke supplies minus the enrichment a cold engine needs. It decides whether the engine catches, where it idles, how rough it runs and how much power it makes. Running rich fouls the plug, and a fully fouled plug stalls it. Temperature rises while running and falls slowly when off. Each power stroke is emitted as a firing pulse with its own timing and strength jitter, and both the vibration and the audio play those same pulses. That's why a rough engine sounds and feels lumpy together.
 
 **Drivetrain** (`src/vehicle/drivetrain.js`). An automatic: centrifugal clutch into a CVT. It turns engine rpm and power into drive force, and puts braking load back on the engine while the clutch is locked to a moving bike.
+
+**Ride sounds and Doppler** (`src/audio/rideAudio.js`, `rideEvents.js`, `propagation.js`). Riding sounds like the ground: grass swish, grit on the track, squelch and splash at the puddles, suspension knocks and landing thuds, and wind for the rider that rises with speed. Each quad's sound reaches you through a delay line set to its distance over the speed of sound, so a quad driving past rises and falls in pitch (about 3% each way at 10 m/s) and sounds duller further away. Levels are in the Sound folder of the tuning panel.
 
 **Engine sound** (`src/audio/engineWorklet.js`). Three engines, chosen in the tuning panel (Audio, `engineSound`):
 
