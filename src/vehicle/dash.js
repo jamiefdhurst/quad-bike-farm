@@ -11,6 +11,11 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 //            the display, in a rounded pod with a curved visor. Yamaha-ish.
 //   sport:   the same layout, compact, red-on-black, no visor, in a rounder
 //            bare pod. For the sport quad.
+//   vintage: one chrome-cupped speedo with a cream face and a little fuel
+//            gauge set into it, beside chrome-ringed warning lamps and a fuel
+//            tap window. Sits on a headlight nacelle. Old Kawasaki-ish.
+//   race:    a small bare pod with a big segmented rev bar, a shift light on
+//            top, and only speed, fuel and a couple of flags under it.
 //
 // buildDash(style) returns { group, update(state) } where state is
 // { rpm, maxRpm, redline, speedMph, fuelLevel, reserveLevel, tap, coldLight,
@@ -545,8 +550,291 @@ function buildModern(look = MODERN) {
   };
 }
 
+// Vintage: one chrome-cupped speedo and a row of lamps ------------------------------
+
+/** A warning lamp in a chrome ring on the pod face; returns its material. */
+function ringLamp(group, x, y, radius = 0.0062) {
+  const lens = new THREE.Mesh(new THREE.CircleGeometry(radius, 16), new THREE.MeshBasicMaterial({ color: 0x1a1a1a, toneMapped: false }));
+  lens.position.set(x, y, -0.0368);
+  lens.rotation.y = Math.PI;
+  group.add(lens);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(radius + 0.0012, 0.0016, 6, 20), chrome);
+  ring.position.set(x, y, -0.0368);
+  group.add(ring);
+  return lens.material;
+}
+
+const VINTAGE_MAX_MPH = 40;
+const VFUEL_START = Math.PI * 1.15; // empty, upper left of the fuel dial
+const VFUEL_SWEEP = Math.PI * 0.7; // to full, upper right
+
+/** Cream dial face with black ticks, the old way. */
+function creamBase(ctx) {
+  ctx.clearRect(0, 0, 256, 256);
+  const g = ctx.createRadialGradient(128, 110, 30, 128, 128, 128);
+  g.addColorStop(0, '#f1ead6');
+  g.addColorStop(1, '#d6cbad');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(128, 128, 128, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+}
+
+/** Black needle and a dark red cap, for the cream faces. */
+function darkNeedle(group, name) {
+  const needle = group.getObjectByName(`${name}Needle`);
+  needle.children[0].material.color.setHex(0x111111);
+  needle.children[1].material.color.setHex(0x8a1a12);
+}
+
+function buildVintage() {
+  const group = new THREE.Group();
+  group.name = 'dash';
+  const W = 0.23;
+  const H = 0.1;
+  group.add(podMesh(W, H, 0.04, black));
+
+  // Face: lamp labels and the fuel tap window, redrawn when the tap or ignition changes.
+  const face = canvasPanel(480, 200, W - 0.014, H - 0.014);
+  face.mesh.name = 'dashFace';
+  face.mesh.position.z = -0.0352;
+  face.mesh.material.transparent = true;
+  group.add(face.mesh);
+  const pxPerM = 480 / (W - 0.014);
+  // Canvas position of a point on the face; +x is the rider's left.
+  const at = (x, y) => [240 - x * pxPerM, 100 - y * pxPerM];
+
+  // The speedo stands proud of the pod in a deep chrome cup.
+  const SPD = { x: 0.008, y: 0, radius: 0.042 };
+  const cup = new THREE.Mesh(new THREE.CylinderGeometry(SPD.radius + 0.004, SPD.radius + 0.007, 0.02, 36, 1, true), chrome);
+  cup.rotation.x = Math.PI / 2;
+  cup.position.set(SPD.x, SPD.y, -0.043);
+  group.add(cup);
+  const lip = new THREE.Mesh(new THREE.TorusGeometry(SPD.radius + 0.004, 0.0025, 8, 40), chrome);
+  lip.position.set(SPD.x, SPD.y, -0.053);
+  group.add(lip);
+  const raised = new THREE.Group();
+  raised.position.z = -0.008;
+  group.add(raised);
+  const spd = gauge(raised, { ...SPD, name: 'speedo' });
+  darkNeedle(raised, 'speedo');
+
+  // A little fuel gauge to the right, with the low fuel lamp in it and the tap window under it.
+  const FUEL = { x: -0.075, y: 0.01, radius: 0.022 };
+  const fuel = gauge(group, { ...FUEL, name: 'fuelGauge' });
+  darkNeedle(group, 'fuelGauge');
+  const TAP = { x: FUEL.x, y: -0.028 };
+
+  // Lamps: ignition, cold and reverse down the left, low fuel in the fuel gauge.
+  const LAMPS = { ign: [0.075, 0.024], temp: [0.075, 0], rev: [0.075, -0.024] };
+  const lamp = {};
+  for (const [k, [x, y]] of Object.entries(LAMPS)) lamp[k] = ringLamp(group, x, y);
+  lamp.fuel = dialLamp(group, FUEL.x, FUEL.y, 0, -0.011, 0.0036);
+
+  function drawDials(s) {
+    let ctx = spd.ctx;
+    creamBase(ctx);
+    ticks(ctx, SWEEP_START, SWEEP, VINTAGE_MAX_MPH / 2.5, 2, 122, () => '#1b1b1b');
+    ctx.fillStyle = '#1b1b1b';
+    ctx.font = 'bold 34px serif';
+    for (let v = 0; v <= VINTAGE_MAX_MPH; v += 10) {
+      const a = SWEEP_START + (SWEEP * v) / VINTAGE_MAX_MPH;
+      ctx.fillText(String(v), 128 + Math.cos(a) * 80, 128 + Math.sin(a) * 80);
+    }
+    ctx.font = 'bold 22px serif';
+    ctx.fillText('MPH', 128, 180);
+    spd.tex.needsUpdate = true;
+
+    // Fuel: E to F across the top, red below the reserve.
+    ctx = fuel.ctx;
+    creamBase(ctx);
+    ctx.lineWidth = 16;
+    ctx.strokeStyle = '#1b1b1b';
+    ctx.beginPath();
+    ctx.arc(128, 128, 104, VFUEL_START + VFUEL_SWEEP * s.reserveLevel, VFUEL_START + VFUEL_SWEEP);
+    ctx.stroke();
+    ctx.strokeStyle = '#b3221a';
+    ctx.beginPath();
+    ctx.arc(128, 128, 104, VFUEL_START, VFUEL_START + VFUEL_SWEEP * s.reserveLevel);
+    ctx.stroke();
+    ctx.fillStyle = '#1b1b1b';
+    ctx.font = 'bold 54px serif';
+    ctx.fillText('E', 128 + Math.cos(VFUEL_START) * 58, 128 + Math.sin(VFUEL_START) * 58 + 22);
+    ctx.fillText('F', 128 + Math.cos(VFUEL_START + VFUEL_SWEEP) * 58, 128 + Math.sin(VFUEL_START + VFUEL_SWEEP) * 58 + 22);
+    fuel.tex.needsUpdate = true;
+  }
+
+  function drawFace(s) {
+    const { ctx, canvas } = face;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#0d0d0d';
+    ctx.beginPath();
+    ctx.roundRect(0, 0, canvas.width, canvas.height, 0.033 * pxPerM);
+    ctx.fill();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 19px sans-serif';
+    ctx.fillStyle = '#b8b2a2';
+    for (const [k, label] of [['ign', 'IGN'], ['temp', 'TEMP'], ['rev', 'R']]) {
+      const [x, y] = at(LAMPS[k][0] + 0.022, LAMPS[k][1]);
+      ctx.fillText(label, x, y + 1);
+    }
+    // Fuel tap window: a little drum under the fuel gauge.
+    const [x, y] = at(TAP.x, TAP.y);
+    ctx.fillStyle = '#9a9a9a';
+    ctx.fillRect(x - 40, y - 16, 80, 32);
+    ctx.fillStyle = '#161616';
+    ctx.fillRect(x - 37, y - 13, 74, 26);
+    const colour = { on: '#e8e2d0', reserve: '#ffa020', off: '#ff4433' }[s.tap] ?? '#e8e2d0';
+    ctx.fillStyle = s.ignition ? colour : '#555555';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillText(s.tap === 'reserve' ? 'RES' : String(s.tap).toUpperCase(), x, y + 1);
+    face.tex.needsUpdate = true;
+  }
+
+  let faces = '';
+  const gate = changeGate();
+  let displayMph = 0;
+  let displayFuel = 0;
+  return {
+    group,
+    update(s) {
+      if (String(s.reserveLevel) !== faces) {
+        faces = String(s.reserveLevel);
+        drawDials(s);
+      }
+      if (gate(`${s.ignition}|${s.tap}`)) drawFace(s);
+      // Needles swing rather than jump; with the ignition off the fuel needle drops to empty.
+      displayMph += (s.speedMph - displayMph) * 0.2;
+      displayFuel += ((s.ignition ? s.fuelLevel : 0) - displayFuel) * 0.05;
+      spd.point(SWEEP_START + SWEEP * THREE.MathUtils.clamp(displayMph / VINTAGE_MAX_MPH, 0, 1));
+      fuel.point(VFUEL_START + VFUEL_SWEEP * THREE.MathUtils.clamp(displayFuel, 0, 1));
+      lamp.ign.color.setHex(s.ignition ? 0x33dd44 : 0x1a1a1a);
+      lamp.temp.color.setHex(s.ignition && s.coldLight ? 0x2f7bff : 0x1a1a1a);
+      lamp.rev.color.setHex(s.ignition && s.reverse ? 0xffe066 : 0x1a1a1a);
+      lamp.fuel.color.setHex(s.ignition && s.fuelLevel <= s.reserveLevel ? 0xffa020 : 0x1a1a1a);
+    },
+  };
+}
+
+// Race: a big rev bar and little else ------------------------------------------------
+
+function buildRace() {
+  const group = new THREE.Group();
+  group.name = 'dash';
+  const W = 0.23;
+  const H = 0.094;
+  group.add(podMesh(W, H, 0.036, black));
+  group.add(podFace(W - 0.012, H - 0.012, 0.03));
+
+  const lcd = canvasPanel(512, 184, W - 0.018, H - 0.018);
+  lcd.mesh.name = 'lcd';
+  lcd.mesh.position.set(0, 0, -0.0356);
+  lcd.mesh.material.transparent = true; // its corners are rounded off
+  group.add(lcd.mesh);
+
+  // Shift light on top of the pod.
+  const shift = new THREE.Mesh(new RoundedBoxGeometry(0.03, 0.012, 0.016, 2, 0.005), new THREE.MeshBasicMaterial({ color: 0x2a0d08, toneMapped: false }));
+  shift.name = 'shiftLight';
+  shift.position.set(0, H / 2 + 0.002, -0.012);
+  group.add(shift);
+
+  const on = '#eaf4ff';
+  const green = '#55ff7a';
+  const amber = '#ffc23a';
+  const red = '#ff3b22';
+  const SEGS = 24;
+
+  function drawLcd(s) {
+    const { ctx, canvas } = lcd;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = s.ignition ? '#05080a' : '#060606';
+    ctx.beginPath();
+    ctx.roundRect(0, 0, canvas.width, canvas.height, 40);
+    ctx.fill();
+    const ghost = s.ignition ? 'rgba(234,244,255,0.07)' : 'rgba(234,244,255,0.03)';
+    // Rev bar right across the top: green, amber towards the redline, red past it.
+    const lit = s.ignition ? Math.round((s.rpm / s.maxRpm) * SEGS) : 0;
+    for (let i = 0; i < SEGS; i++) {
+      const f = (i + 1) / SEGS;
+      const rpmAt = f * s.maxRpm;
+      const colour = rpmAt > s.redline ? red : rpmAt > s.redline * 0.75 ? amber : green;
+      const h = 44 + 26 * f;
+      ctx.fillStyle = i < lit ? colour : ghost;
+      ctx.fillRect(26 + i * 19.5, 92 - h, 15, h);
+    }
+    if (!s.ignition) return;
+    ctx.fillStyle = on;
+    ctx.font = 'bold 15px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    const k = Math.floor(s.maxRpm / 1000);
+    for (let i = 2; i <= k; i += 2) ctx.fillText(String(i), 26 + ((i * 1000) / s.maxRpm) * SEGS * 19.5 - 2, 110);
+
+    // Fuel blocks on the left, with the tap when it isn't simply on.
+    const low = s.fuelLevel <= s.reserveLevel;
+    const blocks = 6;
+    const full = Math.ceil(s.fuelLevel * blocks - 0.001);
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillStyle = low ? red : on;
+    ctx.fillText('FUEL', 28, 136);
+    for (let i = 0; i < blocks; i++) {
+      ctx.fillStyle = i < full ? (low ? red : on) : ghost;
+      ctx.fillRect(28 + i * 22, 146, 17, 26);
+    }
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillStyle = s.tap === 'off' ? red : s.tap === 'reserve' ? amber : ghost;
+    ctx.fillText(s.tap === 'off' ? 'OFF' : 'RES', 168, 166);
+
+    // Cold and reverse flags in the middle.
+    ctx.fillStyle = s.coldLight ? '#5ab0ff' : ghost;
+    ctx.fillRect(238, 138, 6, 22);
+    ctx.beginPath();
+    ctx.arc(241, 166, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = s.reverse ? amber : ghost;
+    ctx.font = 'bold 30px sans-serif';
+    ctx.fillText('R', 262, 168);
+
+    // Speed, small, on the right.
+    drawNumber(ctx, padSpeed(s.speedMph), 344, 126, 36, 54, 9, on, ghost);
+    ctx.fillStyle = on;
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText('mph', 440, 176);
+  }
+
+  const gate = changeGate();
+  let displayRpm = 0;
+  return {
+    group,
+    update(s) {
+      displayRpm += (s.rpm - displayRpm) * 0.4;
+      const key = [
+        s.ignition,
+        padSpeed(s.speedMph),
+        Math.round((displayRpm / s.maxRpm) * SEGS),
+        Math.ceil(s.fuelLevel * 6 - 0.001),
+        s.fuelLevel <= s.reserveLevel,
+        s.tap,
+        s.coldLight,
+        s.reverse,
+      ].join('|');
+      if (gate(key)) {
+        drawLcd({ ...s, rpm: displayRpm });
+        lcd.tex.needsUpdate = true;
+      }
+      shift.material.color.setHex(s.ignition && displayRpm >= s.redline - 250 ? 0xff3311 : 0x2a0d08);
+    },
+  };
+}
+
 export function buildDash(style = 'classic') {
   if (style === 'modern') return buildModern(MODERN);
   if (style === 'sport') return buildModern(SPORT);
+  if (style === 'vintage') return buildVintage();
+  if (style === 'race') return buildRace();
   return buildClassic();
 }
