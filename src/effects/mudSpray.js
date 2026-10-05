@@ -188,21 +188,21 @@ export class MudSpray {
   /** Muddy water thrown out sideways and up from a puddle. */
   spawnSplash(centre, carrier, speed, burst) {
     const p = this.params;
-    const k = Math.min(1.4, speed / 7) * (burst ? 1.2 : 0.8);
+    const k = Math.min(1.4, speed / 7) * (burst ? 1.5 : 0.8);
     const out = (0.6 + Math.random() * 2.2) * k * (Math.random() < 0.5 ? -1 : 1);
     const up = (1 + Math.random() * 2.6) * k;
     const fwd = speed * (0.15 + Math.random() * 0.45);
     const fwdX = carrier.x / Math.max(0.1, speed);
     const fwdZ = carrier.z / Math.max(0.1, speed);
     const px = centre.x + (Math.random() - 0.5) * 0.4 - _up.x * 0.25;
-    const py = centre.y - _up.y * 0.22;
+    const py = centre.y - _up.y * 0.12;
     const pz = centre.z + (Math.random() - 0.5) * 0.4 - _up.z * 0.25;
     this.emit(
       px, py, pz,
       fwdX * fwd + _side.x * out + (Math.random() - 0.5) * 0.5,
       up,
       fwdZ * fwd + _side.z * out + (Math.random() - 0.5) * 0.5,
-      p.dropSize * (0.5 + Math.random()) * (burst ? 1.5 : 1),
+      p.dropSize * (0.5 + Math.random()) * (burst ? 2 : 1),
       true,
     );
   }

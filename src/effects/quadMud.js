@@ -13,7 +13,7 @@ export const DEFAULT_MUD_PARAMS = {
   rollRate: 5, // clumps per second per wheel for each m/s, rolling through mud
   spinRate: 22, // clumps per second per wheel for each m/s of wheelspin
   puddleRate: 18, // drops per second per wheel for each m/s, through a puddle
-  splashCount: 28, // drops per wheel driving into a puddle at speed
+  splashCount: 60, // drops per wheel driving into a puddle at speed
   flingLift: 0.32, // how hard clumps leave the tyre upwards, per m/s of speed
   clumpSize: 0.045, // metres
   dropSize: 0.035,
@@ -21,7 +21,7 @@ export const DEFAULT_MUD_PARAMS = {
   gravity: 9.81,
   groundLife: 3, // seconds a landed clump stays before it's gone
   mudGray: 0.16, // colour of the clumps (0 black, 1 white)
-  waterGray: 0.42, // colour of puddle splashes
+  waterGray: 0.5, // colour of puddle splashes
 
   // Ruts
   rutSegments: 4000, // ring buffer size per quad: about 400 m (a lap) of track for each wheel
