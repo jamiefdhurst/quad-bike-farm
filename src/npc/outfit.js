@@ -319,8 +319,11 @@ function addCollar(rig, color) {
   const neck = bonePos(rig, 'Neck');
   // The neckline is the top of the shirt up the middle of the neck, not the neck bone.
   let top = -Infinity;
+  let frontTop = -Infinity; // the neckline dips at the front, and that is where the placket starts
   info.positions.forEach((p, i) => {
-    if (info.shirt[i] && Math.abs(p.x - neck.x) < 0.07 && Math.hypot(p.x - neck.x, p.z - neck.z) < 0.1) top = Math.max(top, p.y);
+    if (!info.shirt[i] || Math.abs(p.x - neck.x) >= 0.07 || Math.hypot(p.x - neck.x, p.z - neck.z) >= 0.1) return;
+    top = Math.max(top, p.y);
+    if (p.z > neck.z && Math.abs(p.x - neck.x) < 0.025) frontTop = Math.max(frontTop, p.y);
   });
   if (!Number.isFinite(top)) return;
 
@@ -369,7 +372,7 @@ function addCollar(rig, color) {
   rig.root.add(fold);
   rig.bones.Spine2.attach(fold);
   rig.outfitParts.push(fold);
-  return top;
+  return Number.isFinite(frontTop) ? frontTop : top;
 }
 
 /**
@@ -467,8 +470,8 @@ function addPoloFront(rig, color, neckline) {
   const samples = 10;
   const lift = 0.007;
   const half = 0.011;
-  const top = neckline - 0.016;
-  const length = 0.14;
+  const top = neckline - 0.03; // the neck rises almost vertically above this, so a higher start would run up it
+  const length = 0.12;
   const hits = [];
   for (let k = 0; k <= samples; k++) {
     const hit = chestPoint(rig, mesh, 0, top - (k / samples) * length);
