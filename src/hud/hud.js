@@ -13,7 +13,7 @@ const HELP_HTML = `
   <div><kbd>Q</kbd> more choke, <kbd>Z</kbd> less (hold to keep going)</div>
   <div><kbd>W</kbd> throttle, <kbd>S</kbd> brake / reverse when stopped</div>
   <div><kbd>A</kbd><kbd>D</kbd> steer</div>
-  <div><kbd>E</kbd> get off (below walking pace)</div>
+  <div><kbd>E</kbd> get off (at speed you jump off and it carries on)</div>
   <div><kbd>F</kbd> fuel tap: ON, RESERVE, OFF</div>
   <div><kbd>T</kbd> right the quad if it tips over</div>
   <h3>Fuel</h3>

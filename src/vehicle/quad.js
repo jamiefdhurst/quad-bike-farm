@@ -3,6 +3,7 @@ import { buildQuadModel, setHeadlights } from './quadModel.js';
 import { FuelSystem } from './fuelSystem.js';
 import { QuadPhysics, WHEELS, SUSPENSION_TOP_Y } from './quadPhysics.js';
 import { Drivetrain } from './drivetrain.js';
+import { CruiseControl } from './cruise.js';
 
 // Height of the ground below the chassis origin with the bike at rest.
 const GROUND_OFFSET = -0.36;
@@ -71,6 +72,7 @@ export class Quad {
       yaw: s.yaw,
     });
     this.drivetrain = new Drivetrain(params);
+    this.cruise = new CruiseControl(params);
 
     // Controls, set by the rider.
     this.rider = null;
@@ -85,6 +87,8 @@ export class Quad {
     this.starter = false;
     this.displayChoke = 0;
     this.displayRpm = 0;
+    // Set while it carries on with nobody on it: { steer, stuckTime }, see carryOn().
+    this.ghost = null;
 
     this.prevPos = new THREE.Vector3();
     this.currPos = new THREE.Vector3();
@@ -132,10 +136,49 @@ export class Quad {
     this.rider = rider;
     this.input = input;
     this.riderHands.visible = !!rider;
+    this.ghost = null;
     if (!rider) {
       this.throttle = 0;
       this.starter = false;
     }
+  }
+
+  /** True while it's driving itself after the rider jumped off. */
+  get isGhostRiding() {
+    return !!this.ghost;
+  }
+
+  /**
+   * The rider has just jumped off at speed: hold the speed and steering it had,
+   * as if the throttle and bars were stuck where they were. Physics does the
+   * rest. Lets go when it tips, stalls or gets stuck. Call after setRider(null).
+   * Returns whether it carried on.
+   */
+  carryOn(throttle = 0) {
+    if (this.rider || !this.engine.isRunning || this.isTipped) return false;
+    const speed = Math.abs(this.forwardSpeed);
+    if (speed < 0.5) return false;
+    this.cruise.engage(speed, throttle);
+    this.ghost = { steer: this.steer, stuckTime: 0 };
+    return true;
+  }
+
+  /** Lets go of the stuck throttle and bars; it coasts and parks like any riderless quad. */
+  releaseGhost() {
+    this.ghost = null;
+    this.throttle = 0;
+  }
+
+  /** Cruise throttle for this step, or null once it's time to let go. */
+  ghostThrottle(dt, fwd) {
+    const p = this.params;
+    const g = this.ghost;
+    if (this.isTipped || !this.engine.isRunning) return null;
+    // Moving the other way to the way it was going (bounced off something) counts as stuck.
+    const along = this.reverse ? -fwd : fwd;
+    g.stuckTime = along < this.cruise.target * p.ghostStuckSpeed ? g.stuckTime + dt : 0;
+    if (g.stuckTime > p.ghostStuckTime) return null;
+    return this.cruise.update(dt, along, this.reverse ? p.reverseThrottle : 1);
   }
 
   /**
@@ -214,14 +257,24 @@ export class Quad {
     } else {
       // Someone beside the bike can still hold the starter.
       this.starter = !!this.remoteInput && this.remoteInput.isDown('KeyR');
+      if (this.ghost) {
+        const cruise = this.ghostThrottle(dt, fwd);
+        if (cruise === null) this.releaseGhost();
+        else throttleInput = cruise;
+      }
     }
 
     this.throttle = throttleInput;
     this.brake = brakeInput;
 
-    // Steering lock reduces with speed.
-    const maxSteer = ((p.maxSteerDeg * Math.PI) / 180) / (1 + p.steerSpeedReduction * Math.abs(fwd));
-    this.steer += (steerInput * maxSteer - this.steer) * Math.min(1, p.steerRate * dt);
+    if (this.ghost) {
+      // The bars stay where they were left.
+      this.steer = this.ghost.steer;
+    } else {
+      // Steering lock reduces with speed.
+      const maxSteer = ((p.maxSteerDeg * Math.PI) / 180) / (1 + p.steerSpeedReduction * Math.abs(fwd));
+      this.steer += (steerInput * maxSteer - this.steer) * Math.min(1, p.steerRate * dt);
+    }
 
     const e = this.engine;
     this.drivetrain.update({
@@ -236,7 +289,8 @@ export class Quad {
     });
 
     let brake = this.brake * p.maxBrake;
-    const idle = !this.input || (throttleInput === 0 && Math.abs(fwd) < 0.5);
+    // Nobody on it (and not carrying on by itself): the parking brake holds it.
+    const idle = (!this.input && !this.ghost) || (throttleInput === 0 && Math.abs(fwd) < 0.5);
     if (idle) brake = Math.max(brake, p.parkingBrake);
     brake = Math.max(brake, p.rollingResistance);
 

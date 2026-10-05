@@ -48,6 +48,12 @@ export const DEFAULT_VEHICLE_PARAMS = {
   maxBrake: 13, // Rapier wheel brake impulse
   parkingBrake: 6,
   rollingResistance: 0.4, // brake impulse always applied, so it coasts to a stop
+
+  // Nobody on it: jump off at speed and it carries on, holding speed and steering
+  cruiseGain: 0.35, // throttle per m/s below the speed it had when you got off
+  cruiseIntegral: 0.3, // throttle per m/s per second, to settle on that speed
+  ghostStuckSpeed: 0.3, // fraction of that speed; below this it's stuck against something...
+  ghostStuckTime: 3, // ...and after this many seconds stuck it lets go of the throttle
 };
 
 export const VEHICLE_PARAM_RANGES = {
@@ -89,4 +95,8 @@ export const VEHICLE_PARAM_RANGES = {
   maxBrake: [0, 100, 0.5],
   parkingBrake: [0, 50, 0.5],
   rollingResistance: [0, 3, 0.05],
+  cruiseGain: [0, 2, 0.01],
+  cruiseIntegral: [0, 1, 0.01],
+  ghostStuckSpeed: [0, 1, 0.05],
+  ghostStuckTime: [0.5, 15, 0.5],
 };

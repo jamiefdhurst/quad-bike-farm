@@ -9,7 +9,16 @@ export const DEFAULT_PLAYER_PARAMS = {
   headBobJog: 0.055,
   headBobRate: 1.9, // steps per metre travelled
   interactRange: 3.2, // metres
-  dismountSpeed: 1.4, // m/s, roughly walking pace
+  dismountSpeed: 1.4, // m/s, roughly walking pace; faster than this you jump off and the quad carries on
+  mountSpeed: 3, // m/s; you can hop on a moving quad up to this, if you can catch it
+  leapSideSpeed: 2.6, // m/s you push yourself out sideways jumping off at speed
+  leapCarry: 0.5, // fraction of the quad's velocity you keep when you jump off
+  leapHop: 1.6, // m/s upwards as you jump
+  stumbleTime: 0.9, // seconds you're off balance after jumping off at full speed
+  stumbleDecel: 9, // m/s^2 you slow down at while stumbling
+  stumbleFullSpeed: 12, // m/s; jumping off at this speed or faster is the full stumble
+  stumbleDip: 0.32, // metres the camera drops on landing at full stumble
+  stumbleRoll: 14, // degrees the camera rolls as you jump at full stumble
   rideYawLimit: 160, // degrees either side when seated, enough to look back at a passenger
   ridePitchUp: 60,
   ridePitchDown: 65,
@@ -28,6 +37,15 @@ export const PLAYER_PARAM_RANGES = {
   headBobRate: [0.5, 4, 0.05],
   interactRange: [1, 6, 0.1],
   dismountSpeed: [0.2, 5, 0.1],
+  mountSpeed: [0, 8, 0.1],
+  leapSideSpeed: [0, 8, 0.1],
+  leapCarry: [0, 1, 0.05],
+  leapHop: [0, 5, 0.1],
+  stumbleTime: [0, 3, 0.05],
+  stumbleDecel: [1, 30, 0.5],
+  stumbleFullSpeed: [3, 25, 0.5],
+  stumbleDip: [0, 1, 0.01],
+  stumbleRoll: [0, 45, 1],
   rideYawLimit: [30, 170, 1],
   ridePitchUp: [10, 89, 1],
   ridePitchDown: [10, 89, 1],
