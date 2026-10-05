@@ -37,6 +37,9 @@ export const DEFAULT_COMPANION_PARAMS = {
   boredAfterMin: 55, // seconds standing about before she does something
   boredAfterMax: 90,
   boredMountChance: 0.3, // gets on a quad to wait (she stays on it)
+  placedPatienceMin: 240, // seconds sat on the back where you put her (nobody riding) before she gives up and gets off
+  placedPatienceMax: 420,
+  boredGetOffChance: 0.6, // sat on the back by her own choice and bored of it, the chance she gets off (each time she gets bored)
   boredStartChance: 0.2, // has a go at starting one
   boredDriveChance: 0.25, // has a little drive on one; otherwise she wanders off for a look round
   wanderMin: 6, // metres
@@ -72,7 +75,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   driveScaredChance: 0.4, // she stops because she's scared rather than bored
   driveForgetChokeChance: 0.45, // she pushes the choke off as she sets off, cold or not
   driveMaxStalls: 2, // stalls before she gives up on it
-  driveBackChance: 0.5, // when she's done, the chance she moves onto the back to wait rather than getting off
+  driveBackChance: 0.4, // when she's done, the chance she moves onto the back to wait rather than getting off
   driveKeyOffChance: 0.05, // getting off after a drive, the chance she switches it off (she nearly always leaves it running)
   driveSeatRaise: 0.04, // metres, fine-tunes how high she sits on the front seat
   driveSeatForward: 0.0, // metres, fine-tunes where she sits along it
@@ -144,6 +147,9 @@ export const COMPANION_PARAM_RANGES = {
   boredAfterMin: [5, 600, 1],
   boredAfterMax: [5, 900, 1],
   boredMountChance: [0, 1, 0.05],
+  placedPatienceMin: [10, 1800, 5],
+  placedPatienceMax: [10, 3600, 5],
+  boredGetOffChance: [0, 1, 0.05],
   boredStartChance: [0, 1, 0.05],
   boredDriveChance: [0, 1, 0.05],
   wanderMin: [1, 50, 0.5],

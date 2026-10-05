@@ -167,8 +167,10 @@ export class Companion {
     return actions;
   }
 
-  requestMount(quad = this.quad) {
+  requestMount(quad = this.quad, { ownChoice = false } = {}) {
     if (!quad.hasPillion) return;
+    // On the back because she chose to: she can get bored and get off again. Put there by you, she waits to be asked.
+    this.seatedByChoice = ownChoice;
     // Driving this one: onto the back. Another: off this one first.
     if (this.stopDriving(quad === this.quad ? 'back' : 'off', quad === this.quad ? null : () => this.requestMount(quad))) return;
     if (this.fsm.is('seated', 'mounting') && quad !== this.quad) {
@@ -204,7 +206,7 @@ export class Companion {
     const r = Math.random();
     if (r < p.boredMountChance && mountable.length) {
       this.selfEvents.push('mount');
-      this.requestMount(pick(mountable));
+      this.requestMount(pick(mountable), { ownChoice: true });
     } else if (r < p.boredMountChance + p.boredStartChance && startable.length) {
       this.selfEvents.push('start');
       this.requestStart(pick(startable));
@@ -254,6 +256,30 @@ export class Companion {
       this.askIn = this.randomBetween(p.askOffAgainMin, p.askOffAgainMax);
     } else {
       this.askIn = 10; // you're on but stopped: ask again in a bit
+    }
+  }
+
+  /**
+   * Sat on the back with nobody else on it, in the end she gets bored and gets
+   * off. On there by her own choice, that's after a minute or two; put there by
+   * you, she's far more patient (and asks first), but not endlessly.
+   */
+  boredOnTheBack(dt) {
+    const p = this.params;
+    const q = this.quad;
+    if (q.rider || q.driver || q.passenger || !p.ownMind) {
+      this.backBoredIn = null;
+      return;
+    }
+    this.backBoredIn ??= this.seatedByChoice
+      ? this.randomBetween(p.boredAfterMin, p.boredAfterMax) * 1.5
+      : this.randomBetween(p.placedPatienceMin, p.placedPatienceMax);
+    this.backBoredIn -= dt;
+    if (this.backBoredIn > 0) return;
+    this.backBoredIn = null;
+    if (!this.seatedByChoice || Math.random() < p.boredGetOffChance) {
+      this.selfEvents.push(this.seatedByChoice ? 'getOff' : 'getOffWaited');
+      this.requestStandBeside(q);
     }
   }
 
@@ -646,6 +672,7 @@ const STATES = {
       this.pillion.update(dt);
       this.mindTheEngine(dt);
       this.askToGetOff(dt);
+      this.boredOnTheBack(dt);
     },
     exit() {
       this.askedToGetOff = false;

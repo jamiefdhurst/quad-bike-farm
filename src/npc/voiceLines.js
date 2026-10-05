@@ -578,6 +578,27 @@ export const VOICE_LINES = {
     cooldown: 0,
     lines: [{ sound: 'sigh' }, 'Fine.', 'Charming.', "Okay, but I'm asking again in a minute.", 'Mean.', 'If I must.'],
   },
+  selfGetOff: {
+    cooldown: 30,
+    lines: [
+      "Right, I'm getting off. My legs have gone dead.",
+      "I'm bored of sitting here.",
+      "I'm going to stretch my legs.",
+      "Sod this, I'm getting down.",
+      'Enough sitting for me.',
+      "I'll be over here if you need me.",
+    ],
+  },
+  selfGetOffWaited: {
+    cooldown: 30,
+    lines: [
+      "Right, I've waited long enough. I'm getting off.",
+      "Well, I asked. I'm getting down.",
+      "I'm not sitting here all day.",
+      "You've forgotten about me, haven't you? I'm off.",
+      'Fine. I will let myself off, then.',
+    ],
+  },
   selfKeyOff: {
     cooldown: 30,
     lines: [

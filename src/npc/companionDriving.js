@@ -177,6 +177,7 @@ export const drivingMethods = {
     q.setDriver(null);
     if (how === 'back' && q.hasPillion && !q.passenger) {
       if (!exit) this.driveEvents.push('toBack');
+      this.seatedByChoice = !exit; // moved back by herself: she can get bored of it too
       this.fsm.transition('shuffling', { to: 'pillion' });
       return;
     }
