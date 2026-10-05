@@ -65,7 +65,7 @@ export class QuadUnit {
   update(dt, alpha) {
     this.quad.updateFuel(dt);
     this.engine.update(dt, this.quad.engineControls());
-    this.vibration.update(dt, this.engine);
+    this.vibration.update(dt, this.engine, this.quad.speed);
     this.quad.update(dt, alpha, this.vibration);
     this.smoke.update(dt, this.engine, this.quad.exhaustTip, this.quad.velocity);
     this.audio.update(dt, this.engine, this.quad.position);

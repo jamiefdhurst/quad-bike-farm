@@ -167,6 +167,15 @@ export const VOICE_LINES = {
       { sound: 'gasp' },
       'Help!',
       "I'm going to kill you!",
+      'Stop it! Stop it!',
+      "Which one's the brake?!",
+      "I'm too young to die!",
+      "We're going round in circles!",
+      "I'm getting dizzy!",
+      'This is your fault!',
+      'Get back on it!',
+      'Somebody stop this thing!',
+      'Mind the hedge! Mind the hedge!',
     ],
   },
   ghostStopped: {
@@ -178,7 +187,82 @@ export const VOICE_LINES = {
       'Never. Again.',
       { sound: 'sigh' },
       'Right. I am walking home.',
+      'My heart is going like the clappers.',
+      'You owe me a very big drink.',
+      "That wasn't funny. Okay, it was a bit funny.",
+      "I'm telling your mum.",
+      'You are in so much trouble.',
+      'Can I get off now, please?',
     ],
+  },
+  rideShaking: {
+    cooldown: 60,
+    lines: [
+      "Ooh, it's really shaking.",
+      'My whole body is buzzing.',
+      'Is it meant to vibrate this much?',
+      'This is making my voice go all wobbly.',
+      'My teeth are chattering.',
+      "It's like riding a washing machine.",
+      'Ooh, that tickles.',
+      'I quite like the shaking, actually.',
+    ],
+  },
+  seatedShaking: {
+    cooldown: 45,
+    lines: [
+      "It's shaking like mad, sat here.",
+      'Is it supposed to judder like this?',
+      'My bum has gone numb.',
+      'This thing is rattling my fillings.',
+      "I'm vibrating. I'm actually vibrating.",
+      "It's like one of those massage chairs.",
+      'Ooh. Ooh. Okay, that is a lot of shaking.',
+    ],
+  },
+  seatedShakingLong: {
+    cooldown: 120,
+    lines: [
+      'I quite like the shaking, actually...',
+      "I've been sat here buzzing for ages.",
+      "My legs have gone all tingly. It's not unpleasant.",
+      "Don't tell anyone, but this is quite relaxing.",
+      "I'll stay here a bit longer, I think.",
+      "Honestly, I'm fine. Take your time.",
+      { sound: 'hum' },
+      { sound: 'laugh' },
+    ],
+  },
+
+  // Which quad she likes best: she picks a favourite each game.
+  likeRed: {
+    cooldown: 240,
+    lines: ['I love the red one.', 'The red one is my favourite.', 'Good old red. Comfy, this.', 'This one just feels right.'],
+  },
+  likeBlue: {
+    cooldown: 240,
+    lines: ['Ooh, I love the blue one.', 'The blue one is definitely the best.', 'This one feels posh.', 'Blue is my favourite. Smoothest seat.'],
+  },
+  likeYellow: {
+    cooldown: 240,
+    lines: [
+      'The yellow one! My favourite.',
+      'I love this little yellow one. So noisy!',
+      'This one is the most fun, the yellow one.',
+      "It's tiny and loud and I love it.",
+    ],
+  },
+  preferRed: {
+    cooldown: 240,
+    lines: ["I'd rather be on the red one, to be honest.", 'The red one is comfier.', 'Can we take the red one next time?'],
+  },
+  preferBlue: {
+    cooldown: 240,
+    lines: ['I prefer the blue one, if I am honest.', 'The blue one has a nicer seat.', 'Can we go on the blue one next?'],
+  },
+  preferYellow: {
+    cooldown: 240,
+    lines: ["The yellow one's more fun than this.", 'Can we go on the yellow one after?', 'I miss the yellow one.'],
   },
   outOfFuel: {
     cooldown: 60,

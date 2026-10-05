@@ -42,7 +42,7 @@ Other scripts:
 | `W` | Throttle |
 | `S` | Brake. Hold it at a standstill to reverse |
 | `A` / `D` | Steer |
-| `E` | Get off (only below walking pace) |
+| `E` | Get off. Above walking pace you jump off and the quad carries on by itself at the same speed and steering until it crashes, tips, stalls or runs dry. To stop a runaway, look at it and press `K`, or catch it once it's below a jog (3 m/s) to get back on. |
 | `F` | Fuel tap: ON, RESERVE, OFF |
 | `T` | Right the quad if it's tipped over |
 | Mouse | Look around from the seat |
@@ -96,7 +96,7 @@ Things to know:
 - A warm engine with lots of choke is hard to start.
 - Braking hard from speed while it's still cold can stall it. Roll off early and brake gently until it's warm.
 - If you flood it, take the choke off and crank with the throttle held open (`W` + `R`) to clear it.
-- The bike keeps idling when you get off, and you can watch and hear it shake from outside.
+- The bike keeps idling when you get off, and you can watch and hear it shake from outside. On the move it also jolts over the ground, harder the faster it goes, so a riderless quad going round in circles visibly bounces.
 
 ## Fuel
 
@@ -124,7 +124,7 @@ Look at her and press `E`:
 - **Get on the red / blue / yellow quad**: she walks over and sits on the pillion seat. Get on and ride; she stays on. Asking her onto the other quad while she's sitting on one, she gets off and walks over.
 - **Stand next to the red / blue quad**: she gets off if she's on, or walks over if she isn't, and stands beside it facing it.
 
-The menu only offers what makes sense: no "get on" while she's already on, no "stand next to it" while she's already there. She stays put on the pillion when you get off until you ask her to get down.
+The menu only offers what makes sense: no "get on" while she's already on, no "stand next to it" while she's already there. She stays put on the pillion when you get off until you ask her to get down. Jump off at speed with her on the back and she'll let you know what she thinks.
 
 She talks, now and then, with captions at the bottom of the screen:
 
@@ -180,6 +180,8 @@ To recut the recordings, see the instructions at the top of `tools/slice_engine_
 **Vibration** (`src/vibration/vibrationModel.js`). Each firing pulse kicks a set of damped oscillators (body heave, pitch and roll, handlebars, rider's head) in a slightly random direction. Kicks are strongest at idle and with a rough engine, and fade as rpm rises. The bike body, handlebars, seated camera and anything sitting on the bike all move with it.
 
 **Companion** (`src/npc/companion.js`). A small state machine (idle, walking, mounting, seated, dismounting). Requests are methods, and `getActions()` decides which ones the menu shows. To add a new request, add a method and an entry in `getActions()`, plus a state if it needs one.
+
+**Quad models** (`src/vehicle/quadModel.js`, `src/vehicle/quadGeometry.js`). Procedural: fender shells swept round each wheel, lofted seats, tanks and hoods, bent-tube racks and frames, lathed tyres with lugs, and suspension arms and shocks posed from the physics wheel heights every frame. Static parts are merged per material.
 
 **Quads** (`src/vehicle/quadSpecs.js`, `src/vehicle/quadUnit.js`). Each quad is a spec (name, colour and overrides for engine, vehicle, vibration, audio and smoke parameters) built into a `QuadUnit` that owns its engine model, physics, vibration, smoke and sound. To add a third, add a spec and a spawn point in the layout.
 

@@ -45,6 +45,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   voiceFastSpeed: 13, // m/s riding pillion before she tells you to slow down (about 29 mph)
   voiceRoughAccel: 9, // m/s^2 of vertical jolting before she complains it's rough
   voiceWaitAfter: 25, // seconds of nothing happening before she gets bored
+  voiceShakeLevel: 0.95, // how hard the seat has to shake (about 0.6 at a warm idle, 1 to 2 cold) before she mentions it
 };
 
 export const COMPANION_PARAM_RANGES = {
@@ -84,4 +85,5 @@ export const COMPANION_PARAM_RANGES = {
   voiceFastSpeed: [3, 25, 0.5],
   voiceRoughAccel: [1, 40, 0.5],
   voiceWaitAfter: [5, 120, 1],
+  voiceShakeLevel: [0.1, 5, 0.05],
 };

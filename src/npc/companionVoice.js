@@ -35,6 +35,12 @@ export class CompanionVoice {
     this.rideTime = 0;
     this.nearTime = 0;
     this.wasTogether = false;
+    this.shake = 0; // how hard her seat is shaking, smoothed
+    this.shakeTime = 0;
+    this.seatedShakeTime = 0;
+    this.seatTime = 0; // on the same quad with you, moving
+    this.favourite = null; // spec id of the quad she likes best, picked once the quads are known
+    this.favouriteSaid = false;
     this.stoppedTime = 0;
     this.idleTime = 0;
     this.awayTime = 0;
@@ -120,6 +126,7 @@ export class CompanionVoice {
 
     this.watchGhostRide(dt, together);
     this.watchEngines(dt, view, together, distance);
+    this.watchSeat(dt, view, together);
 
     // Slower checks, once a second.
     this.checkTimer -= dt;
@@ -164,6 +171,50 @@ export class CompanionVoice {
       this.say('pouring', { chance: 0.4 });
     }
     if (!view.pouring) this.pouredNear = false;
+  }
+
+  /**
+   * Sitting on a quad: how much it's shaking her, and which quad it is. Bad
+   * shaking gets a comment whether you're riding or have left her sat on it
+   * idling, and left on it long enough she admits she quite likes it.
+   */
+  watchSeat(dt, view, together) {
+    const c = this.companion;
+    const p = this.params;
+    this.favourite ??= view.units[Math.floor(Math.random() * view.units.length)]?.spec.id ?? null;
+    const unit = c.quad.unit;
+    if (!c.isSeated || !unit?.engine.isRunning) {
+      this.shake = 0;
+      this.shakeTime = 0;
+      this.seatedShakeTime = 0;
+      if (!c.isSeated) {
+        this.seatTime = 0;
+        this.favouriteSaid = false;
+      }
+      return;
+    }
+    const b = unit.vibration.body;
+    const now = Math.hypot(b.heave * 100, b.pitch * 57.3, b.roll * 57.3);
+    this.shake += (now * now - this.shake) * Math.min(1, dt / 1.5);
+    const bad = Math.sqrt(this.shake) > p.voiceShakeLevel;
+    this.shakeTime = bad ? this.shakeTime + dt : 0;
+    this.seatedShakeTime = bad && !together ? this.seatedShakeTime + dt : together ? 0 : this.seatedShakeTime;
+    if (together) {
+      if (this.shakeTime > 3) this.say('rideShaking', { chance: 0.01 });
+    } else if (this.seatedShakeTime > 40) {
+      this.say('seatedShakingLong', { chance: 0.01 });
+    } else if (this.shakeTime > 5) {
+      this.say('seatedShaking', { chance: 0.01 });
+    }
+
+    // Once per ride, a word about the quad she's on.
+    if (together && Math.abs(unit.quad.forwardSpeed) > 1.5) this.seatTime += dt;
+    if (this.favourite && !this.favouriteSaid && this.seatTime > 12) {
+      const id = unit.spec.id;
+      const cap = (s) => s[0].toUpperCase() + s.slice(1);
+      const situation = id === this.favourite ? `like${cap(id)}` : `prefer${cap(this.favourite)}`;
+      if (this.say(situation, { chance: 0.01 })) this.favouriteSaid = true;
+    }
   }
 
   /** You jumped off and left her on a quad that's driving itself. */

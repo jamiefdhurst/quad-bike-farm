@@ -14,6 +14,11 @@ export const DEFAULT_VIBRATION_PARAMS = {
   misfireScale: 0.3, // a misfire is a missing beat, so only a small jolt
   directionJitter: 0.6, // how much each kick's direction varies (0 = always the same)
 
+  // Jolts from uneven ground while moving.
+  groundGain: 3.5, // jolt size at groundFullSpeed, in pulse kicks
+  groundFullSpeed: 10, // m/s
+  groundJoltsPerMetre: 1.2,
+
   // Sprung body on its suspension.
   heaveFreq: 9, // Hz
   heaveDamping: 0.22, // damping ratio
@@ -49,6 +54,9 @@ export const VIBRATION_PARAM_RANGES = {
   sputterScale: [0, 2, 0.05],
   misfireScale: [0, 2, 0.05],
   directionJitter: [0, 1, 0.01],
+  groundGain: [0, 6, 0.05],
+  groundFullSpeed: [1, 25, 0.5],
+  groundJoltsPerMetre: [0.1, 5, 0.05],
   heaveFreq: [1, 30, 0.5],
   heaveDamping: [0.02, 1, 0.01],
   heaveGain: [0, 0.3, 0.005],

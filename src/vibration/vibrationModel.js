@@ -1,7 +1,8 @@
 // Turns the engine's individual firing pulses into motion for the bike body,
 // the handlebars and the rider's head. Each pulse is a kick with a slightly
 // random direction into a damped oscillator, so it reads as one thumping
-// cylinder rather than a smooth sine wave. Pure logic, no Three.js.
+// cylinder rather than a smooth sine wave. Riding along, the ground adds its
+// own jolts, more and harder the faster it goes. Pure logic, no Three.js.
 
 import { DEFAULT_VIBRATION_PARAMS } from './vibrationParams.js';
 
@@ -48,6 +49,7 @@ export class VibrationModel {
     this.bars = { x: 0, y: 0, yaw: 0, roll: 0 };
     this.camera = { x: 0, y: 0, z: 0, pitch: 0, roll: 0 };
     this.intensity = 0; // smoothed 0..1-ish shake level, handy for HUD and debugging
+    this.groundDistance = 0; // metres travelled since the last ground jolt
   }
 
   /** How much of a full kick survives at this rpm. */
@@ -60,8 +62,9 @@ export class VibrationModel {
   /**
    * @param {number} dt
    * @param {object} engine  Anything with rpm, roughness and pulses[{t, type, strength}].
+   * @param {number} [speed]  Ground speed in m/s, for jolts from the ground.
    */
-  update(dt, engine) {
+  update(dt, engine, speed = 0) {
     const p = this.params;
     const pulses = engine.pulses;
     const bodyFactor = this.rpmFactor(engine.rpm, p.highRpmFloor);
@@ -83,6 +86,7 @@ export class VibrationModel {
     while (pulseIndex < pulses.length) {
       kickSum += this.kick(pulses[pulseIndex++], bodyFactor, barsFactor, roughBoost);
     }
+    this.groundJolts(dt, speed);
 
     const o = this.osc;
     this.body.heave = o.heave.x;
@@ -132,6 +136,34 @@ export class VibrationModel {
     o.camPitch.kick(body * p.cameraRotGain * side());
     o.camRoll.kick(body * p.cameraRotGain * side());
     return body;
+  }
+
+  /**
+   * Uneven ground: a jolt every so many metres, harder with speed, mostly small
+   * with the odd big one. They land between physics bumps, which the terrain is
+   * too smooth to give at this scale.
+   */
+  groundJolts(dt, speed) {
+    const p = this.params;
+    if (speed < 0.3 || p.groundGain <= 0) return;
+    this.groundDistance += speed * dt;
+    const spacing = 1 / p.groundJoltsPerMetre;
+    const size = p.groundGain * Math.min(1.5, speed / p.groundFullSpeed);
+    const o = this.osc;
+    const r = this.random;
+    const sign = () => (r() < 0.5 ? -1 : 1);
+    while (this.groundDistance >= spacing) {
+      this.groundDistance -= spacing * (0.5 + r());
+      const k = size * (0.3 + r() * r() * 1.7);
+      o.heave.kick(k * p.heaveGain * sign());
+      o.pitch.kick(k * p.pitchGain * sign());
+      o.roll.kick(k * p.rollGain * sign());
+      o.barsX.kick(k * p.barsGain * 0.5 * sign());
+      o.barsRoll.kick(k * p.barsRotGain * 0.5 * sign());
+      o.camY.kick(k * p.cameraGain * sign());
+      o.camPitch.kick(k * p.cameraRotGain * sign());
+      o.camRoll.kick(k * p.cameraRotGain * sign());
+    }
   }
 
   integrate(h) {
