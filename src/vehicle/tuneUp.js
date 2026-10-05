@@ -93,6 +93,8 @@ const STOCK_KEYS = {
     'grassFrictionSlip',
     'mudFrictionSlip',
     'puddleFrictionSlip',
+    'tyreGrip',
+    'mudGrip',
     'rollingResistance',
     'suspensionStiffness',
   ],
@@ -242,6 +244,9 @@ export function applyTune(target, stock, settings, P = DEFAULT_TUNE_PARAMS) {
   v.grassFrictionSlip = sv.grassFrictionSlip * (1 - P.psiGrip * psi);
   v.mudFrictionSlip = sv.mudFrictionSlip * (1 - P.psiMudGrip * psi);
   v.puddleFrictionSlip = sv.puddleFrictionSlip * (1 - P.psiMudGrip * psi);
+  // The same for the engine load's fallback wheelspin estimate (see engineLoad.js).
+  v.tyreGrip = sv.tyreGrip * (1 - P.psiGrip * psi);
+  v.mudGrip = sv.mudGrip * (1 - P.psiMudGrip * psi);
   v.rollingResistance = sv.rollingResistance * Math.max(0, 1 - P.psiRolling * psi);
   v.suspensionStiffness = sv.suspensionStiffness * (1 + P.psiStiffness * psi);
 

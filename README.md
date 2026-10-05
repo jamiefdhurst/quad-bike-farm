@@ -43,6 +43,7 @@ Other scripts:
 | `S` | Brake. Hold it at a standstill to reverse |
 | `A` / `D` | Steer |
 | `E` | Get off. Above walking pace you jump off and the quad carries on by itself at the same speed and steering until it crashes, tips, stalls or runs dry. To stop a runaway, look at it and press `K`, or catch it once it's below a jog (3 m/s) to get back on. |
+| `C` (hold) or middle mouse | Look back over your shoulder |
 | `F` | Fuel tap: ON, RESERVE, OFF |
 | `T` | Right the quad if it's tipped over |
 | Mouse | Look around from the seat |
@@ -65,7 +66,7 @@ Look at her and press `E`. Pick an option with the number keys, or scroll to hig
 - **Blue quad**: Yamaha-style farm quad. Idles higher (about 1,450 rpm warm), revs harder and higher, needs more choke from cold and runs lumpier until it's warm, warms a bit quicker and pulls a little harder. It has a brush guard, square headlights, railed racks and a grey seat. Its idle comes from a different recorded machine, so it sounds different too.
 - **Yellow quad**: a two-stroke sport quad, Blaster-style. It fires every revolution, so it buzzes rather than thumps, and ring-dings at idle. It's weak low down, then comes on hard around 6,000 rpm and revs past 10,000. It has almost no engine braking, and it slowly loads up its plug if you leave it idling (blip the throttle to clear it). It trails blue-white oil smoke. It's lighter and quicker, with an expansion-chamber exhaust, motocross bars, nerf bars and a race number plate. She can squeeze onto a slim pad at the back. It sounds like a two-stroke dirt bike.
 
-All three are automatics and all start cold. Through the CVT the red holds about 6,200 rpm at full throttle and the blue about 6,800; the yellow revs past 10,000. Where each quad is parked, where the jerry can has been left, and each quad's warm idle, roughness and starting fuel change every game, picked from ranges in `src/vehicle/quadSpecs.js`:
+All three are automatics and all start cold. Through the CVT the red tops out at 6,200 rpm and the blue at 6,800 (the yellow revs past 10,000), but the engine works against the ground: it bogs a little as you pull away, cruises nearer 5,700 flat out, labours lower up hills and through mud, flares when the wheels spin or leave the ground, and engine-brakes on a closed throttle with the revs rising with speed downhill. Try climbing the steep bank by the yard on a stone-cold engine with the choke out and it will probably stall. Where each quad is parked, where the jerry can has been left, and each quad's warm idle, roughness and starting fuel change every game, picked from ranges in `src/vehicle/quadSpecs.js`:
 
 | | `idleRange` (rpm) | `roughnessRange` | `fuelRange` (litres) |
 | --- | --- | --- | --- |
@@ -138,6 +139,8 @@ Look at her and press `E`:
 - **Stand next to the red / blue quad**: she gets off if she's on, or walks over if she isn't, and stands beside it facing it.
 
 The menu only offers what makes sense: no "get on" while she's already on, no "stand next to it" while she's already there. She stays put on the pillion when you get off until you ask her to get down. Jump off at speed with her on the back and she'll let you know what she thinks.
+
+On the back she holds on round your waist (look down and you'll see her hands), leans with you into corners, lurches forward under hard braking, and looks about or over your shoulder. Hold `C` or the middle mouse button to look back at her. Left alone on a quad she holds the rails (or the strap on the yellow).
 
 She talks, now and then, with captions at the bottom of the screen:
 

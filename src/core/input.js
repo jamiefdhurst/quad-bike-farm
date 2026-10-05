@@ -11,13 +11,17 @@ export class Input {
     this.mouseDY = 0;
     this.wheelSteps = 0;
     this.mouseButtonsPressed = new Set();
+    this.mouseButtonsDown = new Set();
     this.pointerLocked = false;
     this.listeners = { lockchange: [], firstinteraction: [] };
     this.hadInteraction = false;
 
     window.addEventListener('keydown', (e) => this.onKeyDown(e));
     window.addEventListener('keyup', (e) => this.onKeyUp(e));
-    window.addEventListener('blur', () => this.down.clear());
+    window.addEventListener('blur', () => {
+      this.down.clear();
+      this.mouseButtonsDown.clear();
+    });
     document.addEventListener('mousemove', (e) => {
       if (!this.pointerLocked) return;
       this.mouseDX += e.movementX;
@@ -25,8 +29,13 @@ export class Input {
     });
     document.addEventListener('mousedown', (e) => {
       this.noteInteraction();
-      if (this.pointerLocked) this.mouseButtonsPressed.add(e.button);
+      if (!this.pointerLocked) return;
+      this.mouseButtonsPressed.add(e.button);
+      this.mouseButtonsDown.add(e.button);
+      // Middle-click would otherwise start autoscroll in some browsers.
+      if (e.button === 1) e.preventDefault();
     });
+    document.addEventListener('mouseup', (e) => this.mouseButtonsDown.delete(e.button));
     document.addEventListener(
       'wheel',
       (e) => {
@@ -80,6 +89,10 @@ export class Input {
 
   wasPressed(code) {
     return this.pressed.has(code);
+  }
+
+  isMouseDown(button) {
+    return this.mouseButtonsDown.has(button);
   }
 
   wasClicked(button = 0) {

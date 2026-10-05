@@ -317,7 +317,9 @@ export class Quad {
     this.physics.setParked(idle && throttleInput === 0 && Math.abs(fwd) < 0.3);
 
     this.physics.applyControls({
-      driveForce: this.drivetrain.driveForce,
+      // Rapier's raycast wheels ignore the brake on a wheel with any engine force
+      // (even engine braking on the overrun), so braking drops the drive.
+      driveForce: brake > p.rollingResistance ? 0 : this.drivetrain.driveForce,
       brake,
       steer: this.steer,
       mudAt: (x, z) => this.world.mudAt(x, z),
