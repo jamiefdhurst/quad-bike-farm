@@ -1,0 +1,286 @@
+{
+ "file": "audio/companion-voice.wav",
+ "voice": "en_GB-cori-high.onnx",
+ "clips": {
+  "Right, off we go.": {
+   "start": 0.0,
+   "dur": 1.45687
+  },
+  "Go on then.": {
+   "start": 1.50685,
+   "dur": 0.78839
+  },
+  "Don't go mad.": {
+   "start": 2.34522,
+   "dur": 0.99791
+  },
+  "Hang on, let me get comfy. Okay.": {
+   "start": 3.39311,
+   "dur": 2.90358
+  },
+  "Gently does it.": {
+   "start": 6.34667,
+   "dur": 0.89814
+  },
+  "Oh, this is fun!": {
+   "start": 7.29478,
+   "dur": 1.11764
+  },
+  "Ooh, I like this.": {
+   "start": 8.4624,
+   "dur": 1.30721
+  },
+  "This is lovely, actually.": {
+   "start": 9.81959,
+   "dur": 1.96571
+  },
+  "Wheee!": {
+   "start": 11.83528,
+   "dur": 0.57887
+  },
+  "Go on, a bit faster.": {
+   "start": 12.46413,
+   "dur": 1.5366
+  },
+  "This is a bit rough.": {
+   "start": 14.0507,
+   "dur": 1.00789
+  },
+  "Ow! My bum.": {
+   "start": 15.10857,
+   "dur": 1.23737
+  },
+  "Bit bumpy, isn't it?": {
+   "start": 16.39592,
+   "dur": 1.16753
+  },
+  "Ooh, steady.": {
+   "start": 17.61342,
+   "dur": 0.958
+  },
+  "My teeth are rattling.": {
+   "start": 18.62141,
+   "dur": 1.23737
+  },
+  "Mind the holes!": {
+   "start": 19.90875,
+   "dur": 1.01787
+  },
+  "Careful!": {
+   "start": 20.9766,
+   "dur": 0.58875
+  },
+  "Not so fast!": {
+   "start": 21.61533,
+   "dur": 1.07773
+  },
+  "Slow down a bit, will you?": {
+   "start": 22.74304,
+   "dur": 1.64644
+  },
+  "Oi, steady on!": {
+   "start": 24.43946,
+   "dur": 1.12762
+  },
+  "We're going to come off!": {
+   "start": 25.61705,
+   "dur": 1.0478
+  },
+  "Whoa!": {
+   "start": 26.71483,
+   "dur": 0.46912
+  },
+  "Blimey.": {
+   "start": 27.23392,
+   "dur": 0.65868
+  },
+  "Oh. It's died.": {
+   "start": 27.94259,
+   "dur": 1.36707
+  },
+  "Has it stalled again?": {
+   "start": 29.35964,
+   "dur": 1.20744
+  },
+  "Oh, not again.": {
+   "start": 30.61705,
+   "dur": 0.87819
+  },
+  "Is it meant to do that?": {
+   "start": 31.54522,
+   "dur": 1.46685
+  },
+  "Have we run out of petrol?": {
+   "start": 33.06204,
+   "dur": 1.30721
+  },
+  "Did you fill it up?": {
+   "start": 34.41923,
+   "dur": 1.09769
+  },
+  "I think it's out of petrol.": {
+   "start": 35.56689,
+   "dur": 1.39701
+  },
+  "Have you tried the choke?": {
+   "start": 37.01388,
+   "dur": 1.20744
+  },
+  "It's cold, it'll want the choke.": {
+   "start": 38.27129,
+   "dur": 1.80608
+  },
+  "Choke?": {
+   "start": 40.12735,
+   "dur": 0.44916
+  },
+  "Give it a rest, you'll flood it.": {
+   "start": 40.62649,
+   "dur": 1.5766
+  },
+  "Too much choke, maybe?": {
+   "start": 42.25306,
+   "dur": 1.34703
+  },
+  "It smells of petrol.": {
+   "start": 43.65007,
+   "dur": 1.21741
+  },
+  "Is the petrol on?": {
+   "start": 44.91746,
+   "dur": 0.94803
+  },
+  "Maybe it's the fuel tap.": {
+   "start": 45.91546,
+   "dur": 1.47683
+  },
+  "It doesn't want to go, does it?": {
+   "start": 47.44227,
+   "dur": 1.56662
+  },
+  "Come on, you can do it.": {
+   "start": 49.05887,
+   "dur": 1.18739
+  },
+  "Is it broken?": {
+   "start": 50.29624,
+   "dur": 0.88816
+  },
+  "There we go!": {
+   "start": 51.23438,
+   "dur": 0.79837
+  },
+  "Finally!": {
+   "start": 52.08272,
+   "dur": 0.52889
+  },
+  "Yay!": {
+   "start": 52.66159,
+   "dur": 0.47909
+  },
+  "Hooray.": {
+   "start": 53.19066,
+   "dur": 0.55891
+  },
+  "It's ever so loud.": {
+   "start": 53.79955,
+   "dur": 1.36707
+  },
+  "Pooh, that's smoky.": {
+   "start": 55.2166,
+   "dur": 1.02785
+  },
+  "Are we going or what?": {
+   "start": 56.29442,
+   "dur": 1.02785
+  },
+  "It's a bit nippy, isn't it?": {
+   "start": 57.37224,
+   "dur": 1.3571
+  },
+  "Come on, I'm getting cold.": {
+   "start": 58.77932,
+   "dur": 1.32717
+  },
+  "What are you doing?": {
+   "start": 60.15646,
+   "dur": 0.97796
+  },
+  "Lovely day for it. Sort of.": {
+   "start": 61.1844,
+   "dur": 2.00562
+  },
+  "Are you getting on?": {
+   "start": 63.24,
+   "dur": 0.94803
+  },
+  "I'll just wait here, then.": {
+   "start": 64.238,
+   "dur": 1.47683
+  },
+  "Any time you like.": {
+   "start": 65.76481,
+   "dur": 1.02785
+  },
+  "Oi! Wait for me!": {
+   "start": 66.84263,
+   "dur": 1.45687
+  },
+  "Don't leave me here!": {
+   "start": 68.34948,
+   "dur": 1.06766
+  },
+  "Charming.": {
+   "start": 69.46712,
+   "dur": 0.6088
+  },
+  "Oh, you're back.": {
+   "start": 70.1259,
+   "dur": 0.86821
+  },
+  "Did you have fun without me?": {
+   "start": 71.04408,
+   "dur": 1.21741
+  },
+  "There you are.": {
+   "start": 72.31147,
+   "dur": 0.72853
+  },
+  "Alright.": {
+   "start": 73.08998,
+   "dur": 0.65868
+  },
+  "Okay!": {
+   "start": 73.79864,
+   "dur": 0.54893
+  },
+  "If I must.": {
+   "start": 74.39755,
+   "dur": 0.86821
+  },
+  "Ooh, go on.": {
+   "start": 75.31574,
+   "dur": 1.19746
+  },
+  "Okay.": {
+   "start": 76.56317,
+   "dur": 0.69859
+  },
+  "Fine, I'll get off.": {
+   "start": 77.31175,
+   "dur": 1.21741
+  },
+  "Right you are.": {
+   "start": 78.57914,
+   "dur": 0.92807
+  },
+  "Don't spill it.": {
+   "start": 79.55719,
+   "dur": 0.86821
+  },
+  "Mind your shoes.": {
+   "start": 80.47537,
+   "dur": 0.97796
+  }
+ }
+}

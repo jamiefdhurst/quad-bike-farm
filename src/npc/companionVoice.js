@@ -191,14 +191,19 @@ export class CompanionVoice {
     const sp = this.soundParams;
     let seconds;
     if (typeof line === 'string') {
-      seconds = Speech.duration(line, p.speechRate);
       const hearing = this.hearing();
-      if (hearing > 0) {
+      if (hearing <= 0) return line; // out of earshot: she said it, nobody heard
+      this.speech.stop();
+      seconds = this.sounds.say(line, this.head, p.voiceVolume);
+      if (!seconds) {
+        // Not recorded yet: the browser's voice, if it has a woman's, else just the caption.
+        seconds = Speech.duration(line, p.speechRate);
         const volume = sp.muted ? 0 : p.voiceVolume * Math.min(1, sp.masterVolume) * hearing;
         this.speech.say(line, { volume, rate: p.speechRate, pitch: p.speechPitch });
-        this.caption(`“${line}”`, seconds + 0.8);
       }
+      this.caption(`“${line}”`, seconds + 0.8);
     } else {
+      this.speech.stop();
       seconds = this.sounds.play(line.sound, this.head, p.voiceSoundVolume);
       if (!seconds) return null; // not loaded yet
       if (this.hearing() > 0.2) this.caption(SOUND_CAPTIONS[line.sound] ?? '', seconds + 0.4);

@@ -133,7 +133,7 @@ She talks, now and then, with captions at the bottom of the screen:
 - Left waiting she sighs, hums, yawns and asks if you're going. Ride off without her and she'll shout after you.
 - She answers when you ask her something.
 
-Words use the browser's speech synthesis with a British woman's voice if one is installed (the console says which; "Google UK English Female" in Chrome, Sonia or Libby in Edge, Flo or Shelley on a Mac otherwise). Sighs, hums, laughs and the rest are real recordings. How chatty she is, her volume, speech rate and pitch, captions and the thresholds she reacts to are in the Companion folder of the tuning panel. The lines are in `src/npc/voiceLines.js`.
+Her lines are recorded offline with a British woman's voice ("cori", from the Piper text-to-speech engine) and play from where she is, like her sighs, hums and laughs, which are real recordings. After changing the lines in `src/npc/voiceLines.js`, re-record them with `tools/generate_companion_voice.py` (usage at the top of the script). Until then, a new line uses the browser's speech, but only with a voice known to be a woman's (Flo or Shelley on a Mac, Google UK English Female in Chrome, Sonia or Libby in Edge); with none of those she just shows the caption. How chatty she is, her volume, speech rate and pitch, captions and the thresholds she reacts to are in the Companion folder of the tuning panel. The lines are in `src/npc/voiceLines.js`.
 
 ## Tuning panel
 

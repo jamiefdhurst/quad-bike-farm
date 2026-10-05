@@ -1,8 +1,8 @@
-// Her voice. Words go through the browser's speech synthesis with a British
-// woman's voice if there is one (there are no CC0 recordings of lines like
-// these, and shipping generated speech wouldn't be CC0 either). Sighs, hums,
-// laughs and so on are real CC0 recordings (public/audio/companion.*), played
-// from where her head is.
+// Her voice. Spoken lines are recorded offline with a British woman's voice
+// (tools/generate_companion_voice.py, into public/audio/companion-voice.*), and
+// sighs, hums, laughs and so on are real CC0 recordings (public/audio/companion.*).
+// Both play from where her head is. A line with no recording yet falls back to
+// the browser's speech synthesis, but only with a voice known to be a woman's.
 
 // Most natural first. Matched against the start of each voice's name.
 const PREFERRED_VOICES = [
@@ -20,7 +20,9 @@ const PREFERRED_VOICES = [
   'Shelley (English (United Kingdom))',
   'Sandy (English (United Kingdom))',
 ];
-const MALE_VOICES = /daniel|oliver|arthur|george|ryan|thomas|eddy|reed|rocko|grandpa|alfie|elliot|noah|male\b/i;
+// Browsers swap in their default voice (often a man's) when the chosen one
+// isn't loaded or a network voice fails, so a voice is set explicitly every
+// time and anything not on this list is never used.
 
 export class Speech {
   constructor() {
@@ -38,30 +40,37 @@ export class Speech {
   chooseVoice() {
     const voices = this.synth.getVoices();
     if (!voices.length) return;
-    const british = voices.filter((v) => /^en[-_]GB/i.test(v.lang));
+    // Local voices first: network ones are the ones that fail and fall back.
     let voice = null;
-    for (const name of PREFERRED_VOICES) {
-      voice = voices.find((v) => v.name.startsWith(name));
+    for (const local of [true, false]) {
+      for (const name of PREFERRED_VOICES) {
+        voice = voices.find((v) => v.name.startsWith(name) && v.localService === local);
+        if (voice) break;
+      }
       if (voice) break;
     }
-    voice ??= british.find((v) => !MALE_VOICES.test(v.name)) ?? british[0] ?? voices.find((v) => v.lang.startsWith('en'));
     if (voice && voice !== this.voice) {
       this.voice = voice;
-      console.info(`Her voice: ${voice.name} (${voice.lang})`);
+      console.info(`Browser voice for any unrecorded lines: ${voice.name} (${voice.lang})`);
     }
   }
 
-  /** Speaks a line, cutting off anything she was still saying. */
+  /** Speaks a line, cutting off anything she was still saying. Returns false if there's no suitable voice. */
   say(text, { volume = 1, rate = 1, pitch = 1 } = {}) {
-    if (!this.synth) return;
+    if (!this.synth || !this.voice) return false;
     this.synth.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    if (this.voice) u.voice = this.voice;
-    u.lang = this.voice?.lang ?? 'en-GB';
+    u.voice = this.voice;
+    u.lang = this.voice.lang;
     u.volume = Math.min(1, Math.max(0, volume));
     u.rate = rate;
     u.pitch = pitch;
     this.synth.speak(u);
+    return true;
+  }
+
+  stop() {
+    this.synth?.cancel();
   }
 
   /** Rough length of a spoken line, for captions and spacing. */
@@ -70,41 +79,51 @@ export class Speech {
   }
 }
 
-/** Her recorded non-verbal sounds, played through the AudioHub. */
+/** Her recorded lines and sounds, played through the AudioHub from her head. */
 export class CompanionSounds {
   constructor(hub) {
     this.hub = hub;
-    this.clips = null;
-    this.buffer = null;
+    this.banks = {}; // 'sounds' (sighs, hums...) and 'voice' (spoken lines by text): { buffer, clips }
     this.loading = null;
     this.active = null; // { source, panner }
   }
 
-  /** Loads the clips once the audio context exists. */
+  /** Loads both banks once the audio context exists. */
   ensure() {
     const ctx = this.hub.ctx;
     if (!ctx || this.loading) return;
     const base = import.meta.env?.BASE_URL ?? '/';
-    this.loading = fetch(`${base}audio/companion.json`)
-      .then((r) => r.json())
-      .then(async (bank) => {
-        const data = await (await fetch(base + bank.file)).arrayBuffer();
-        this.buffer = await ctx.decodeAudioData(data);
-        this.clips = bank.clips;
-      })
-      .catch((err) => console.error('Companion sounds failed to load', err));
+    const load = (name, file) =>
+      fetch(`${base}audio/${file}.json`)
+        .then((r) => r.json())
+        .then(async (bank) => {
+          const data = await (await fetch(base + bank.file)).arrayBuffer();
+          this.banks[name] = { buffer: await ctx.decodeAudioData(data), clips: bank.clips };
+        })
+        .catch((err) => console.error(`Companion ${name} failed to load`, err));
+    this.loading = Promise.all([load('sounds', 'companion'), load('voice', 'companion-voice')]);
   }
 
-  /** Plays a random clip of a kind from `position`; returns its length in seconds, or 0. */
+  /** Plays a random sound of a kind (sigh, hum...); returns its length in seconds, or 0. */
   play(kind, position, volume = 1, random = Math.random) {
+    const list = this.banks.sounds?.clips[kind];
+    if (!list?.length) return 0;
+    return this.start(this.banks.sounds.buffer, list[Math.floor(random() * list.length)], position, volume);
+  }
+
+  /** Says a recorded line; returns its length in seconds, or 0 if it hasn't been recorded. */
+  say(text, position, volume = 1) {
+    const clip = this.banks.voice?.clips[text];
+    return clip ? this.start(this.banks.voice.buffer, clip, position, volume) : 0;
+  }
+
+  start(buffer, clip, position, volume) {
     const hub = this.hub;
-    const list = this.clips?.[kind];
-    if (!list?.length || !hub.master) return 0;
+    if (!hub.master) return 0;
     const ctx = hub.ctx;
-    const clip = list[Math.floor(random() * list.length)];
     this.stop();
     const source = ctx.createBufferSource();
-    source.buffer = this.buffer;
+    source.buffer = buffer;
     const gain = ctx.createGain();
     gain.gain.value = volume;
     const panner = ctx.createPanner();

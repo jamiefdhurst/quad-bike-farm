@@ -35,8 +35,8 @@ export const DEFAULT_COMPANION_PARAMS = {
   voiceMinGap: 7, // seconds of quiet after she speaks before she'll speak unprompted
   voiceVolume: 1, // spoken lines
   voiceSoundVolume: 1, // sighs, hums, laughs
-  speechRate: 1.0,
-  speechPitch: 1.05,
+  speechRate: 1.0, // browser speech only, for lines not yet recorded
+  speechPitch: 1.05, // browser speech only
   voiceRange: 25, // metres; further away you can't hear her
   voiceFastSpeed: 13, // m/s riding pillion before she tells you to slow down (about 29 mph)
   voiceRoughAccel: 9, // m/s^2 of vertical jolting before she complains it's rough
