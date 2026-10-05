@@ -46,6 +46,32 @@ export const VOICE_LINES = {
     cooldown: 25,
     lines: [{ sound: 'oh' }, "Oh. It's died.", 'Has it stalled again?', 'Oh, not again.', 'Is it meant to do that?'],
   },
+  ghostRiding: {
+    cooldown: 5,
+    lines: [
+      'Where are you going?!',
+      'Come back!',
+      "Who's driving this?!",
+      'Oi!',
+      'What are you doing?!',
+      'How do I stop it?!',
+      'This is not funny!',
+      { sound: 'gasp' },
+      'Help!',
+      "I'm going to kill you!",
+    ],
+  },
+  ghostStopped: {
+    cooldown: 20,
+    lines: [
+      "Don't you ever do that again.",
+      'You absolute muppet.',
+      'I could have died!',
+      'Never. Again.',
+      { sound: 'sigh' },
+      'Right. I am walking home.',
+    ],
+  },
   outOfFuel: {
     cooldown: 60,
     lines: ['Have we run out of petrol?', 'Did you fill it up?', "I think it's out of petrol."],

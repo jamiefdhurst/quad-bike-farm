@@ -35,6 +35,8 @@ export class CompanionVoice {
     this.idleTime = 0;
     this.awayTime = 0;
     this.leftBehindSaid = false;
+    this.ghostTime = 0;
+    this.ghostVerdict = 0; // seconds left to tell you what she thought of that
     this.engineWatch = new Map(); // unit -> { state, cranking }
     this.coldNearTime = 0;
     this.pouredNear = false;
@@ -105,6 +107,7 @@ export class CompanionVoice {
       this.stoppedTime = 10;
     }
 
+    this.watchGhostRide(dt, together);
     this.watchEngines(dt, view, together, distance);
 
     // Slower checks, once a second.
@@ -141,6 +144,25 @@ export class CompanionVoice {
       this.say('pouring', { chance: 0.4 });
     }
     if (!view.pouring) this.pouredNear = false;
+  }
+
+  /** You jumped off and left her on a quad that's driving itself. */
+  watchGhostRide(dt, together) {
+    const c = this.companion;
+    if (c.isSeated && c.quad.isGhostRiding && !together) {
+      this.ghostTime += dt;
+      if (this.ghostTime > 0.4) this.say('ghostRiding', { urgent: true });
+    } else if (this.ghostTime > 0) {
+      // Once it's come to a stop, or you've caught it, she tells you what she thinks.
+      if (!c.isSeated || together || c.quad.speed < 0.5) {
+        if (this.ghostTime > 2 && c.isSeated) this.ghostVerdict = 4;
+        this.ghostTime = 0;
+      }
+    }
+    if (this.ghostVerdict > 0) {
+      this.ghostVerdict -= dt;
+      if (this.say('ghostStopped', { urgent: true })) this.ghostVerdict = 0;
+    }
   }
 
   /** Stalls, long cranking and catching at last, for quads near her. */
