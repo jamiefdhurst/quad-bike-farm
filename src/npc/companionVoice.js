@@ -282,6 +282,7 @@ export class CompanionVoice {
       stuck: ['driveObstacle', 0.8],
       stalled: ['driveStalled', 0.9],
       revIt: ['driveBogged', 0.8],
+      rollBack: ['driveRollBack', 1],
       chokeBack: ['startRemembered', 0.9],
       pause: ['drivePause', 0.35],
       tooFast: ['driveTooFast', 1],
@@ -295,7 +296,7 @@ export class CompanionVoice {
     };
     for (const e of events) {
       // Each fright knocks her confidence.
-      if (e === 'overSteer' || e === 'obstacle' || e === 'stuck' || e === 'stalled') this.driveNerve = Math.max(0, this.driveNerve - 0.35);
+      if (e === 'overSteer' || e === 'obstacle' || e === 'stuck' || e === 'stalled' || e === 'rollBack') this.driveNerve = Math.max(0, this.driveNerve - 0.35);
       if (e === 'setOff') this.driveNerve = 0;
       // A stall that ends her go has its own line.
       if (e === 'stalled' && c.drive?.stalls > this.params.driveMaxStalls) continue;

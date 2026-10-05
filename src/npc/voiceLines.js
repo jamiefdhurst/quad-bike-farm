@@ -747,6 +747,18 @@ export const VOICE_LINES = {
       'Giddy up.',
     ],
   },
+  driveRollBack: {
+    shout: true,
+    cooldown: 8,
+    lines: [
+      "Why's it going backwards?",
+      'No, no, wrong way!',
+      "It's rolling back! Brake!",
+      "Whoa, I'm going backwards!",
+      "Up! Go up! Why won't it go up?",
+      { sound: 'gasp' },
+    ],
+  },
   driveStalled: {
     cooldown: 10,
     lines: [
@@ -799,7 +811,7 @@ export const VOICE_LINES = {
       "Okay, I don't like this.",
       'Nope. Done. Never again.',
       'My legs are shaking.',
-      "I'm stopping before I kill us both.",
+      "I'm stopping before I crash it.",
       'That was terrifying.',
       "I'm not built for this.",
       "Okay, that's quite enough of that.",
@@ -824,11 +836,22 @@ export const VOICE_LINES = {
       "You drive, I'll hold on.",
       "I'm staying on, though. Back seat for me.",
       "Scooch. I mean, I'll scooch.",
+      "Back seat's comfier anyway.",
+      "Right, I'm a passenger again. Where are we going?",
+      "I'll stay on. You can be the chauffeur.",
+      "I've done my bit. Take me for a spin.",
     ],
   },
   driveGetOff: {
     cooldown: 10,
-    lines: ["Right, I'm getting off.", 'Feet on solid ground, please.', 'Off I get.', 'Oh, that feels better.'],
+    lines: [
+      "Right, I'm getting off.",
+      'Feet on solid ground, please.',
+      'Off I get.',
+      'Oh, that feels better.',
+      'My legs have gone all wobbly.',
+      'There. Parked. Sort of.',
+    ],
   },
   ackBack: {
     cooldown: 0,
