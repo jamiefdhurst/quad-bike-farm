@@ -18,9 +18,11 @@ const PALETTE = {
 export const OUTFITS = {
   original: {},
   farmPolo: {
-    colors: { shirt: '#3a5690', shoes: '#2f4a2c' },
+    // Bare legs: the jeans band becomes skin, and shorts go on as a garment.
+    colors: { shirt: '#3a5690', shoes: '#2f4a2c', trousers: 'skin' },
     collar: '#3a5690',
     wellies: '#2f4a2c',
+    shorts: '#56739f',
   },
 };
 
@@ -32,7 +34,9 @@ function recolourTexture(texture, colors) {
   const ctx = canvas.getContext('2d');
   ctx.drawImage(img, 0, 0);
   const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  // A colour is a hex, or the name of another palette band (e.g. 'skin' for bare legs).
   const swaps = Object.entries(colors).map(([band, hex]) => {
+    if (PALETTE[hex]) return { from: PALETTE[band], to: PALETTE[hex] };
     const c = new THREE.Color(hex);
     return { from: PALETTE[band], to: [c.r * 255, c.g * 255, c.b * 255].map(Math.round) };
   });
@@ -167,16 +171,17 @@ function addCollar(rig, color) {
   const mesh = bodyMesh(rig);
   if (!mesh || !rig.bones.Neck) return;
   const neck = bonePos(rig, 'Neck');
-  const a = neck.clone().add(new THREE.Vector3(0, 0.008, 0));
-  const b = neck.clone().add(new THREE.Vector3(0, 0.036, 0));
+  // Low on the neck, from the neckline up a little, so it sits round the base rather than climbing it.
+  const a = neck.clone().add(new THREE.Vector3(0, -0.014, 0));
+  const b = neck.clone().add(new THREE.Vector3(0, 0.012, 0));
   const geo = fittedShell(
     rig,
     mesh,
     a,
     b,
     [0, 0.5, 1],
-    // Hug the neck, never balloon onto the shoulders, flare slightly at the fold.
-    (t, r) => Math.min(r, 0.05) + 0.005 + 0.006 * t,
+    // Stand a little off the neck and fold outwards at the top, never ballooning onto the shoulders.
+    (t, r) => Math.min(r, 0.052) + 0.008 + 0.016 * t,
     { segments: 24, skip: 0.42, fallback: 0.035 },
   );
   const collar = new THREE.Mesh(
@@ -185,6 +190,47 @@ function addCollar(rig, color) {
   );
   collar.name = 'collar';
   attachToBone(rig, collar, 'Neck');
+}
+
+/**
+ * Shorts: a band round the hips and a leg round each thigh, ending a little
+ * above the knee with a turned-up hem.
+ */
+function addShorts(rig, color) {
+  const mesh = bodyMesh(rig);
+  if (!mesh || !rig.bones.Hips) return;
+  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.88, side: THREE.DoubleSide });
+  const hips = bonePos(rig, 'Hips');
+  const waist = rig.bones.Spine ? bonePos(rig, 'Spine') : hips.clone().add(new THREE.Vector3(0, 0.08, 0));
+  // Round the hips, from the waistband down to the crotch.
+  const top = new THREE.Vector3(hips.x, waist.y - 0.015, hips.z);
+  const bottom = new THREE.Vector3(hips.x, hips.y - 0.12, hips.z);
+  const seat = new THREE.Mesh(
+    fittedShell(rig, mesh, top, bottom, [0, 0.35, 0.7, 1], (t, r) => Math.min(r, 0.2) + 0.009, { segments: 24, fallback: 0.13, reach: 0.25, outermost: true }),
+    mat,
+  );
+  seat.name = 'shortsSeat';
+  attachToBone(rig, seat, 'Hips');
+  for (const side of ['Left', 'Right']) {
+    if (!rig.bones[`${side}UpLeg`] || !rig.bones[`${side}Leg`]) continue;
+    const hip = bonePos(rig, `${side}UpLeg`);
+    const knee = bonePos(rig, `${side}Leg`);
+    const leg = new THREE.Mesh(
+      fittedShell(
+        rig,
+        mesh,
+        hip.clone().addScaledVector(knee.clone().sub(hip).normalize(), -0.03),
+        knee,
+        [0, 0.15, 0.3, 0.42, 0.46],
+        // A loose leg, a little wider at the turned-up hem.
+        (t, r) => Math.min(r, 0.1) + 0.008 + (t > 0.4 ? 0.006 : 0),
+        { segments: 16, fallback: 0.07, reach: 0.12, outermost: true },
+      ),
+      mat,
+    );
+    leg.name = `${side.toLowerCase()}ShortsLeg`;
+    attachToBone(rig, leg, `${side}UpLeg`);
+  }
 }
 
 /** Rubber boots: a shaft fitted round each shin and a chunky foot over the shoe. */
@@ -332,6 +378,7 @@ function addGarments(rig, outfit) {
     addCollar(rig, outfit.collar);
     addPoloFront(rig, outfit.collar);
   }
+  if (outfit.shorts) addShorts(rig, outfit.shorts);
   if (outfit.wellies) addWellies(rig, outfit.wellies);
 }
 

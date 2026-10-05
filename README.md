@@ -233,7 +233,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 8. Allow her to follow you and ride together on different quads **Done.**
 9. Ability to wash the bikes **Done.**
 10. She should get off sometimes even when she's been driving, when she gets bored.
-11. The girl's shirt collar is still not very good - it overlaps with her neck too much. Can we also give her shorts instead of jeans?
+11. The girl's shirt collar is still not very good - it overlaps with her neck too much. Can we also give her shorts instead of jeans? **Done.**
 12. If she's going round in circles and doesn't like it, after a while she jumps into the driver's seat and stops it, or drives around herself
 13. Add two other quads - another 4 and another 2 stroke, with different idle sounds and base characteristics
 14. Another girl, slightly different personality, and how do we inject more emotion into the voice?
