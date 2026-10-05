@@ -224,6 +224,8 @@ export const JESS_LINES = {
   driveOverSteer: ['Woah! Meant that.', 'Wrong way! My bad!'],
   driveBump: ['Oof!', 'Whoops!', 'Ha!'],
   driveObstacle: ['Nope. Not going near that.', 'Not today, wall.'],
+  stuckInBog: ["Oi! It's stuck! Come and get me out!", 'Totally not my fault. It is stuck.', "Help! The mud's eating it!"],
+  stuckRiding: ['Nice one. We are stuck.', 'Brilliant driving. Really.', "You've buried it. Well done.", "Rock it! Back and forth! Honestly."],
   driveStalled: ['It died. Not my fault.', 'Who turned it off?'],
   drivePause: ['Hang on. Admiring the view.', 'Quick breather.'],
   driveTooFast: ['Woah! Okay! Fast!', 'Too fast, too fast! Ha!'],

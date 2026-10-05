@@ -653,9 +653,14 @@ function winch(root, x, y, z, fairleadZ) {
   rbox(0.32, 0.016, 0.1, 0.004, MAT.frame, x, y - 0.06, z, root, undefined, 1);
   rbox(0.12, 0.05, 0.03, 0.01, MAT.frame, x, y - 0.01, fairleadZ, root);
   tube([x, y + 0.036, z], [x, y - 0.005, fairleadZ], 0.004, MAT.engineDark, root, 4);
-  const hook = add(new THREE.TorusGeometry(0.018, 0.005, 6, 12, Math.PI * 1.5), MAT.steel, root);
+  const hook = add(new THREE.TorusGeometry(0.018, 0.005, 6, 12, Math.PI * 1.5), MAT.steel, root, 'winchHook');
   hook.rotation.y = Math.PI / 2;
   hook.position.set(x, y - 0.035, fairleadZ + 0.03);
+  // Where the cable comes out, for the working winch (src/items/winch.js).
+  const lead = new THREE.Object3D();
+  lead.name = 'winchFairlead';
+  lead.position.set(x, y - 0.01, fairleadZ + 0.03);
+  root.add(lead);
 }
 
 /**

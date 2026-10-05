@@ -29,6 +29,10 @@ export class World {
     return this.heights.mudAt(x, z);
   }
 
+  bogAt(x, z) {
+    return this.heights.bogAt(x, z);
+  }
+
   puddleAt(x, z) {
     return this.heights.puddleAt(x, z);
   }

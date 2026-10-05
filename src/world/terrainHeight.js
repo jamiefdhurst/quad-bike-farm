@@ -20,6 +20,7 @@ export function createTerrainHeight(layout, track) {
   const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf } = layout;
   const yardHeight = baseHeight(yard.x, yard.z);
   const puddles = layout.puddles.map((u) => track.sample(u));
+  const bogs = (layout.bogs ?? []).map((b) => (b.track !== undefined ? { ...track.sample(b.track), radius: b.radius } : { ...b }));
   const trackReach = trackHalfWidth + 1.5;
 
   function heightAt(x, z) {
@@ -40,6 +41,12 @@ export function createTerrainHeight(layout, track) {
       h -= trackDepth * k;
     }
 
+    // Bogs sit in a shallow dip.
+    for (const b of bogs) {
+      const bd = Math.hypot(x - b.x, z - b.z);
+      if (bd < b.radius) h -= layout.bogDepth * (1 - smoothstep(b.radius * 0.3, b.radius, bd));
+    }
+
     // Puddle hollows.
     for (const p of puddles) {
       const pd = Math.hypot(x - p.x, z - p.z);
@@ -48,10 +55,20 @@ export function createTerrainHeight(layout, track) {
     return h;
   }
 
-  /** 0..1, how muddy the surface is here (1 on the track centre). */
+  /** 0..1, how deep a bog this is (1 in the middle of one). */
+  function bogAt(x, z) {
+    let w = 0;
+    for (const b of bogs) {
+      const bd = Math.hypot(x - b.x, z - b.z);
+      if (bd < b.radius) w = Math.max(w, 1 - smoothstep(b.radius * 0.35, b.radius * 0.9, bd));
+    }
+    return w;
+  }
+
+  /** 0..1, how muddy the surface is here (1 on the track centre, and in a bog). */
   function mudAt(x, z) {
     const d = track.distanceTo(x, z, trackReach);
-    return 1 - smoothstep(trackHalfWidth * 0.7, trackHalfWidth + 0.6, d);
+    return Math.max(1 - smoothstep(trackHalfWidth * 0.7, trackHalfWidth + 0.6, d), Math.min(1, bogAt(x, z) * 1.5));
   }
 
   /** 0..1, how much standing water there is here (1 in the middle of a puddle). */
@@ -64,5 +81,5 @@ export function createTerrainHeight(layout, track) {
     return w;
   }
 
-  return { heightAt, mudAt, puddleAt, puddles };
+  return { heightAt, mudAt, puddleAt, bogAt, puddles, bogs };
 }

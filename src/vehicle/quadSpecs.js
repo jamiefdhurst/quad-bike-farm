@@ -186,6 +186,7 @@ export const QUAD_SPECS = [
     name: 'Green quad',
     bodyColor: 0x2e6b30,
     style: 'utility3',
+    winch: true, // its front winch works (src/items/winch.js)
     dashStyle: 'vintage',
     // Slow and lumpy; a big slow heave, like a tractor.
     safeIdle: 800,

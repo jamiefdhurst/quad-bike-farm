@@ -128,6 +128,9 @@ export class CompanionVoice {
       this.prevSpeed = speed;
       this.prevVy = vy;
 
+      // Bogged down with her on the back.
+      if (quad.bog?.stuck && !this.stuckSaid) this.stuckSaid = !!this.say('stuckRiding', { urgent: true });
+      if (!quad.bog?.stuck) this.stuckSaid = false;
       if (this.decel > 6 && speed > 4) this.say('hardBrake', { urgent: true });
       else if (this.jolt > p.voiceRoughAccel && speed > 2) this.say('rideRough', { chance: 0.6 });
 
@@ -302,6 +305,7 @@ export class CompanionVoice {
       fallingBehind: ['fallingBehind', 1],
       friendOn: ['friendOn', 0.9],
       followGaveUp: ['followGaveUp', 1],
+      stuckInBog: ['stuckInBog', 1],
       followDriveOn: ['followDriveOn', 1],
       'done:bored': ['driveBored', 0.9],
       'done:scared': ['driveScared', 0.9],

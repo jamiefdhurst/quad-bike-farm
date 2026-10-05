@@ -2,6 +2,7 @@
 // No rendering here; quad.js mirrors this into the scene.
 
 import { Traction, surfaceGrip, isDriven } from './traction.js';
+import { bogGrip } from './bog.js';
 
 // Wheel layout in chassis space (+Z forward, +X to the rider's left).
 export const WHEELS = [
@@ -68,6 +69,8 @@ export class QuadPhysics {
   }
 
   /** While parked, a nearly stationary quad is held where it is (see update). */
+  bogSpin = 0;
+
   setParked(parked) {
     this.parked = parked;
   }
@@ -105,7 +108,7 @@ export class QuadPhysics {
    * @param {(x:number, z:number) => number} [c.puddleAt]  Standing water, 0..1.
    * @param {number} [c.dt]
    */
-  applyControls({ driveForce, brake, steer, mudAt, puddleAt, dt = 1 / 60 }) {
+  applyControls({ driveForce, brake, steer, mudAt, puddleAt, bogAt, dt = 1 / 60 }) {
     const p = this.params;
     const v = this.vehicle;
     // Grip under each wheel, from where it touched down last step.
@@ -121,7 +124,7 @@ export class QuadPhysics {
       w.mud = w.contact && mudAt ? mudAt(w.point.x, w.point.z) : 0;
       w.puddle = w.contact && puddleAt ? puddleAt(w.point.x, w.point.z) : 0;
       w.load = w.contact ? (v.wheelSuspensionForce(i) ?? 0) : 0;
-      w.grip = surfaceGrip(p, w.mud, w.puddle);
+      w.grip = surfaceGrip(p, w.mud, w.puddle) * (w.contact && bogAt ? bogGrip(bogAt(w.point.x, w.point.z)) : 1);
       // Puddles are mud too, as far as the engine's concerned.
       this.wheelMud[i] = Math.max(w.mud, w.puddle);
       w.driven = isDriven(p, WHEELS[i].front);
@@ -136,13 +139,22 @@ export class QuadPhysics {
     }
   }
 
-  /** How fast the driven tyres are turning over the ground beyond rolling, m/s. */
+  /** How fast the driven tyres are turning over the ground beyond rolling, m/s (including churning in a bog, `bogSpin`). */
   get spinSlip() {
-    return this.traction.spinSlip(this.params);
+    return this.traction.spinSlip(this.params) + (this.bogSpin ?? 0);
   }
 
   /** Must run every fixed step before the physics world steps. */
   update(dt) {
+    // A bog's suction (newtons, `hold`) resists it moving over the ground, like static friction.
+    if (this.hold > 0) {
+      const v = this.body.linvel();
+      const h = Math.hypot(v.x, v.z);
+      if (h > 1e-4) {
+        const j = Math.min(this.hold * dt, this.body.mass() * h);
+        this.body.applyImpulse({ x: (-v.x / h) * j, y: 0, z: (-v.z / h) * j }, true);
+      }
+    }
     this.vehicle.updateVehicle(dt);
     // Spinning wheels turn faster than the ground goes by.
     const spin = (this.driveSign * this.spinSlip * dt) / this.params.wheelRadius;

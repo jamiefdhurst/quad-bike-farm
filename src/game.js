@@ -23,6 +23,7 @@ import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES } from './it
 import { FuelTank } from './items/fuelTank.js';
 import { Toolbox } from './items/toolbox.js';
 import { Hose, HOSE_PARAM_RANGES } from './items/hose.js';
+import { Winch, WINCH_PARAM_RANGES } from './items/winch.js';
 import { washMud } from './effects/mudBuildUp.js';
 import { Workshop } from './workshop/workshop.js';
 import { Interaction } from './interaction/interaction.js';
@@ -178,6 +179,12 @@ export class Game {
           if (this.tooFastToMount(quad)) {
             return { text: `The ${unit.label} is going too fast to get on   ·   K ignition` };
           }
+          const winch = this.winch;
+          if (winch?.state === 'carried') {
+            if (unit === winch.unit) return { text: 'X put the winch hook back' };
+            return `Hook the winch cable on the ${unit.label}${quad.bog.stuck ? ' (it\'s stuck)' : ''}   ·   X put it back`;
+          }
+          if (winch?.state === 'hooked' && winch.target === quad) return 'Unhook the winch   ·   hold X by the green quad to wind in';
           if (this.hose.held) {
             const muddy = Math.round(Math.max(unit.mud.state.body, unit.mud.state.wheels) * 100);
             return { text: muddy > 0 ? `Hold E to wash the ${unit.label} (${muddy}% muddy)   ·   G put the hose back` : `The ${unit.label} is clean   ·   G put the hose back` };
@@ -192,9 +199,18 @@ export class Game {
           if (quad.isTipped) return `Right the ${unit.label}`;
           if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger && this.herOnBack(quad)) return { text: `${this.herAtTheFront(quad).name}'s driving and ${this.herOnBack(quad).name}'s on the back: no room` };
           if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger) return `Get on the back (${this.herAtTheFront(quad).name}'s driving)`;
-          return `Ride the ${unit.label}   ·   K ignition   R start   Q/Z choke   F fuel tap`;
+          const winchKey = this.winch?.unit === unit && this.winch.state === 'stowed' ? '   X winch cable' : '';
+          return `Ride the ${unit.label}   ·   K ignition   R start   Q/Z choke   F fuel tap${winchKey}`;
         },
         interact: () => {
+          if (this.winch?.state === 'carried') {
+            if (unit !== this.winch.unit) this.winch.hookOn(quad);
+            return;
+          }
+          if (this.winch?.state === 'hooked' && this.winch.target === quad) {
+            this.winch.unhook(this.camera);
+            return;
+          }
           if (this.can.held || this.hose.held) return; // E is for pouring or spraying while you're holding those
           if (this.toolbox.held) return this.workshop.open(unit);
           if (this.tooFastToMount(quad) && this.herDriving(quad)) {
@@ -247,7 +263,7 @@ export class Game {
     });
     this.interaction.add({
       target: this.can.proxy,
-      isAvailable: () => !this.can.held && !this.toolbox.held && !this.hose.held,
+      isAvailable: () => !this.handsFull,
       prompt: () => `Pick up the jerry can (${this.can.litres.toFixed(1)} L)`,
       interact: () => this.can.pickUp(this.camera),
     });
@@ -267,15 +283,19 @@ export class Game {
     this.workshop = new Workshop(this);
     // A hosepipe for washing the mud off.
     this.hose = new Hose({ scene: this.scene, world: this.world, position: L.hose, yaw: L.hose.yaw });
+    // The green quad's winch, for pulling a stuck quad out of a bog.
+    const winchUnit = this.units.find((u) => u.spec.winch);
+    this.winch = winchUnit ? new Winch({ scene: this.scene, unit: winchUnit }) : null;
+    this.winchReel = false;
     this.interaction.add({
       target: this.hose.proxy,
-      isAvailable: () => !this.hose.held && !this.toolbox.held && !this.can.held,
+      isAvailable: () => !this.handsFull,
       prompt: () => 'Pick up the hose',
       interact: () => this.hose.pickUp(this.camera),
     });
     this.interaction.add({
       target: this.toolbox.proxy,
-      isAvailable: () => !this.toolbox.held && !this.can.held && !this.hose.held,
+      isAvailable: () => !this.handsFull,
       prompt: () => 'Pick up the toolbox',
       interact: () => this.toolbox.pickUp(this.camera),
     });
@@ -288,6 +308,7 @@ export class Game {
     registerTuning('Sound', this.audioHub.params, SOUND_PARAM_RANGES);
     registerTuning('Jerry can', this.can.params, JERRY_CAN_PARAM_RANGES);
     registerTuning('Hose', this.hose.params, HOSE_PARAM_RANGES);
+    if (this.winch) registerTuning('Winch', this.winch.params, WINCH_PARAM_RANGES);
     registerTuning('Player', this.player.params, PLAYER_PARAM_RANGES);
     for (const c of this.companions) {
       registerTuning(c.name, c.params, COMPANION_PARAM_RANGES, { onChange: () => c.refreshFigure() });
@@ -390,6 +411,26 @@ export class Game {
         if (dist < 7 && ahead > 0.96) c.voice.onWash?.('her');
       }
     }
+  }
+
+  /** Carrying the can, the hose, the toolbox or the winch hook. */
+  get handsFull() {
+    return this.can.held || this.hose.held || this.toolbox.held || this.winch?.state === 'carried';
+  }
+
+  /** The winch: the cable's reach, and winding in while X is held by the green (or on it). */
+  updateWinch() {
+    const w = this.winch;
+    if (!w) return;
+    if (w.state === 'carried' && this.player.isRiding) w.stow();
+    if (w.state === 'carried' && w.distanceFrom(this.player.position) > w.params.length) {
+      w.stow();
+      this.hud.toast('The winch cable won\'t reach any further: the hook pulled out of your hand');
+    }
+    const onIt = this.boardUnit === w.unit;
+    const near = !this.player.isRiding && w.distanceFrom(this.player.position) < w.params.remoteReach;
+    this.winchReel = w.state === 'hooked' && (onIt || near) && !this.menu.isOpen && this.input.isDown('KeyX');
+    w.update();
   }
 
   /** Off the back: only once she's stopped (or nearly). */
@@ -680,6 +721,12 @@ export class Game {
       if (focused && input.wasPressed('KeyE')) focused.interact();
       // Holding E pours fuel or fills the can.
       if (focused?.hold && input.isDown('KeyE') && focused.hold(dt)) pouring = true;
+      // The winch: X takes the hook off the green (looking at it), or puts it back.
+      if (this.winch && input.wasPressed('KeyX')) {
+        const w = this.winch;
+        if (w.state === 'stowed' && focused?.unit === w.unit && !this.handsFull) w.take(this.camera);
+        else if (w.state === 'carried') w.stow();
+      }
       if (this.hose.held && input.wasPressed('KeyG')) this.hose.putBack();
       else if (this.can.held && input.wasPressed('KeyG')) this.putCanDown();
       else if (this.toolbox.held && input.wasPressed('KeyG')) this.putToolboxDown();
@@ -718,6 +765,7 @@ export class Game {
     this.can.pouring = pouring;
     this.can.update(dt);
     this.updateHose(dt);
+    this.updateWinch();
     this.workshop.update(dt);
     this.audioHub.setPouring(pouring, dt);
     this.audioHub.update(dt, this.camera);
@@ -731,6 +779,7 @@ export class Game {
 
   fixedUpdate(dt) {
     this.player.fixedUpdate(dt);
+    this.winch?.fixedUpdate(dt, this.winchReel);
     for (const unit of this.units) unit.fixedUpdate(dt);
     this.physics.step();
     for (const unit of this.units) unit.recordTransform();
@@ -760,6 +809,8 @@ export class Game {
           ...(this.can.held ? [`Can      ${this.can.litres.toFixed(1)} L`] : []),
         ].join('\n'),
       );
+    } else if (this.winch?.state === 'carried') {
+      this.hud.setStatus('Winch hook\nE on a quad to hook it on, X to put it back');
     } else if (this.hose.held) {
       this.hud.setStatus('Hose\nHold E to spray, G to put it back');
     } else if (this.toolbox.held) {

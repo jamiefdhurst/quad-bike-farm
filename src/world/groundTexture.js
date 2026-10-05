@@ -55,7 +55,7 @@ export function createDetailCanvas(size = 256) {
  * @param {object} opts.layout
  * @param {object[]} opts.puddles   Puddle centres from the height model.
  */
-export function createGroundCanvas({ size, worldSize, track, layout, puddles }) {
+export function createGroundCanvas({ size, worldSize, track, layout, puddles, bogs = [] }) {
   const random = rand(42);
   const c = document.createElement('canvas');
   c.width = c.height = size;
@@ -138,6 +138,27 @@ export function createGroundCanvas({ size, worldSize, track, layout, puddles }) 
     ctx.beginPath();
     ctx.ellipse(px, pz, r * (1 + random()), r, random() * Math.PI, 0, Math.PI * 2);
     ctx.fill();
+  }
+
+  // Bogs: a churned, dark, wet patch with a ragged edge.
+  for (const b of bogs) {
+    const [px, pz] = toPx(b.x, b.z);
+    const r = b.radius * 1.15 * s;
+    const g = ctx.createRadialGradient(px, pz, 0, px, pz, r);
+    g.addColorStop(0, 'rgba(30,22,13,0.97)');
+    g.addColorStop(0.55, 'rgba(38,28,16,0.9)');
+    g.addColorStop(0.8, 'rgba(52,40,24,0.55)');
+    g.addColorStop(1, 'rgba(52,40,24,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(px - r, pz - r, r * 2, r * 2);
+    for (let i = 0; i < 60; i++) {
+      const a = random() * Math.PI * 2;
+      const d = Math.sqrt(random()) * r * 0.8;
+      ctx.fillStyle = random() < 0.5 ? 'rgba(20,14,8,0.5)' : 'rgba(70,55,35,0.35)';
+      ctx.beginPath();
+      ctx.ellipse(px + Math.cos(a) * d, pz + Math.sin(a) * d, (0.15 + random() * 0.4) * s, (0.08 + random() * 0.2) * s, random() * Math.PI, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   // Puddle surrounds, darker and wetter.

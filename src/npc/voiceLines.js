@@ -937,6 +937,17 @@ export const VOICE_LINES = {
       'Who put that there?',
     ],
   },
+  // Her quad's sunk in a bog and she's given up on it.
+  stuckInBog: {
+    shout: true,
+    cooldown: 20,
+    lines: ["I'm stuck! Can you help?", "It's sunk! It won't move!", 'Help! I think I am stuck in the mud!', "Er... it's stuck. Properly stuck."],
+  },
+  // On the back of yours when you get it stuck.
+  stuckRiding: {
+    cooldown: 30,
+    lines: ["We're stuck, aren't we?", 'Well, this is going well.', "Don't just keep revving it, you're digging us in.", 'Try going backwards and forwards.', "I'm not getting off in that."],
+  },
   driveBogged: {
     cooldown: 8,
     lines: [

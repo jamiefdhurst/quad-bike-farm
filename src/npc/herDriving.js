@@ -683,6 +683,12 @@ export class HerDrive {
       return;
     }
     this.bogs++;
+    // Sunk in a bog: a couple of goes at it, then she's had it and shouts for help.
+    if (q.bog?.sink > 0.3 && this.bogs > 1) {
+      this.events.push('stuckInBog');
+      this.stop('gaveUp');
+      return;
+    }
     if (this.bogs > 3) {
       this.events.push('bogged');
       this.stop('gaveUp');

@@ -259,6 +259,8 @@ export const drivingMethods = {
     for (const off of [-0.9, 0, 0.9]) {
       if (this.castFrom(a.x + uz * off, y, a.z - ux * off, ux, uz, len + 1.5, this.quad) < Infinity) return false;
     }
+    // Not through a bog: she's seen what happens.
+    if (this.world.bogAt(b.x, b.z) > 0.15 || this.world.bogAt((a.x + b.x) / 2, (a.z + b.z) / 2) > 0.15) return false;
     // Not over a steep bank.
     return Math.abs(this.world.heightAt(b.x, b.z) - this.world.heightAt(a.x, a.z)) < len * 0.25 + 0.3;
   },

@@ -39,6 +39,7 @@ export function buildProps(ctx) {
   buildDistantTrees(c);
   buildGrass(c);
   buildPuddles(c);
+  buildBogs(c);
 }
 
 function buildBarn({ scene, models, layout, heights, fixedBox }) {
@@ -381,6 +382,30 @@ function buildGrass({ scene, layout, heights, random }) {
   mesh.receiveShadow = true;
   mesh.name = 'grass';
   scene.add(mesh);
+}
+
+/** A bog's surface: wet, shiny, nearly black mud with a ragged edge, sitting in its dip. */
+function buildBogs({ scene, heights }) {
+  const mat = new THREE.MeshStandardMaterial({ color: 0x2e2416, roughness: 0.22, metalness: 0.05, transparent: true, opacity: 0.85, depthWrite: false });
+  for (const b of heights.bogs ?? []) {
+    const n = 36;
+    const shape = new THREE.Shape();
+    for (let i = 0; i <= n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      const r = b.radius * (0.62 + 0.1 * Math.sin(a * 3 + b.x) + 0.06 * Math.sin(a * 7 + b.z));
+      if (i === 0) shape.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+      else shape.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    const geo = new THREE.ShapeGeometry(shape, 1).rotateX(-Math.PI / 2);
+    // Drape it over the ground so it follows the dip.
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) pos.setY(i, heights.heightAt(b.x + pos.getX(i), b.z + pos.getZ(i)) + 0.03);
+    geo.computeVertexNormals();
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(b.x, 0, b.z);
+    mesh.receiveShadow = true;
+    scene.add(mesh);
+  }
 }
 
 function buildPuddles({ scene, layout, heights }) {

@@ -40,6 +40,14 @@ export const LAYOUT = {
   puddles: [0.12, 0.31, 0.47, 0.66, 0.9],
   puddleRadius: 1.7,
   puddleDepth: 0.2,
+  // Bogs: deep mud a quad can get stuck in (src/vehicle/bog.js). Two on the track
+  // (at these positions round the loop) and one in the low ground of the field.
+  bogs: [
+    { track: 0.2, radius: 4.5 },
+    { track: 0.58, radius: 4 },
+    { x: -30, z: -38, radius: 6 },
+  ],
+  bogDepth: 0.12, // metres the ground dips
 
   // Petrol tank by the barn. The jerry can starts at one of these spots, picked at random.
   fuelTank: { x: -61, z: 52.3, yaw: Math.PI / 2 }, // labelled side facing the yard

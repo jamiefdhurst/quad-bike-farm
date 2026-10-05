@@ -5,6 +5,7 @@ import { QuadPhysics, WHEELS, SUSPENSION_TOP_Y } from './quadPhysics.js';
 import { Drivetrain } from './drivetrain.js';
 import { EngineLoad } from './engineLoad.js';
 import { CruiseControl } from './cruise.js';
+import { Bog } from './bog.js';
 
 // Height of the ground below the chassis origin with the bike at rest.
 const GROUND_OFFSET = -0.36;
@@ -76,6 +77,8 @@ export class Quad {
       yaw: s.yaw,
     });
     this.drivetrain = new Drivetrain(params);
+    this.bog = new Bog(); // how far it's sunk into a bog (bog.js)
+    this.towed = false; // on the end of the winch: brakes off
     this.engineLoad = new EngineLoad(params);
     this.cruise = new CruiseControl(params);
 
@@ -334,22 +337,37 @@ export class Quad {
       grip: this.physics.traction.putDown, // wheelspin from last step
     });
 
+    // In a bog it sinks, faster with the wheels spinning, and the mud holds it.
+    const at = this.physics.body.translation();
+    const lin = this.physics.body.linvel();
+    const inBog = this.world.bogAt?.(at.x, at.z) ?? 0;
+    const groundSpeed = Math.hypot(lin.x, lin.z);
+    // Held by the mud with the power on, the wheels churn round without it going anywhere.
+    const churn = inBog > 0.1 && Math.abs(d.driveForce) > 300 && groundSpeed < 1 ? (Math.abs(d.driveForce) / p.maxDriveForce) * 6 * (1 - groundSpeed) : 0;
+    this.physics.bogSpin += (churn - this.physics.bogSpin) * Math.min(1, dt * 4);
+    this.bog.update(dt, { bog: inBog, spin: this.physics.spinSlip, speed: groundSpeed, drive: d.driveForce });
+    const hold = this.bog.holdForce(p.mass);
+
     let brake = this.brake * p.maxBrake;
-    // Nobody on it (and not carrying on by itself): the parking brake holds it.
-    const idle = (!this.input && !this.ghost && !this.driver) || (throttleInput === 0 && Math.abs(fwd) < 0.5);
+    // Nobody on it (and not carrying on by itself): the parking brake holds it. Not while it's being winched.
+    const idle = !this.towed && ((!this.input && !this.ghost && !this.driver) || (throttleInput === 0 && Math.abs(fwd) < 0.5));
     if (idle) brake = Math.max(brake, p.parkingBrake);
     brake = Math.max(brake, p.rollingResistance);
     // Wheel brakes alone let a parked quad creep down a slope, so a stationary one is held.
     this.physics.setParked(idle && throttleInput === 0 && Math.abs(fwd) < 0.3);
 
+    // Rapier's raycast wheels ignore the brake on a wheel with any engine force
+    // (even engine braking on the overrun), so braking drops the drive. The bog's
+    // hold takes its share of the drive first.
+    const drive = brake > p.rollingResistance ? 0 : this.drivetrain.driveForce;
+    this.physics.hold = hold + this.bog.dragForce(inBog, p.mass, groundSpeed);
     this.physics.applyControls({
-      // Rapier's raycast wheels ignore the brake on a wheel with any engine force
-      // (even engine braking on the overrun), so braking drops the drive.
-      driveForce: brake > p.rollingResistance ? 0 : this.drivetrain.driveForce,
+      driveForce: Math.sign(drive) * Math.max(0, Math.abs(drive) - hold),
       brake,
       steer: this.steer,
       mudAt: (x, z) => this.world.mudAt(x, z),
       puddleAt: (x, z) => this.world.puddleAt?.(x, z) ?? 0,
+      bogAt: (x, z) => this.world.bogAt?.(x, z) ?? 0,
       dt,
     });
     this.physics.update(dt);
@@ -387,6 +405,8 @@ export class Quad {
 
   update(dt, alpha, vibration) {
     this.model.position.lerpVectors(this.prevPos, this.currPos, alpha);
+    // Sunk into a bog, it sits lower in the mud.
+    this.model.position.y -= this.bog.sink * this.bog.p.sinkDepth;
     this.model.quaternion.slerpQuaternions(this.prevQuat, this.currQuat, alpha);
 
     for (let i = 0; i < this.wheels.length; i++) {

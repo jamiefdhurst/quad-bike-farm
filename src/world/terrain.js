@@ -60,7 +60,7 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
   geo.computeVertexNormals();
 
   const groundTex = new THREE.CanvasTexture(
-    createGroundCanvas({ size: 2048, worldSize: size, track, layout, puddles: heights.puddles }),
+    createGroundCanvas({ size: 2048, worldSize: size, track, layout, puddles: heights.puddles, bogs: heights.bogs }),
   );
   groundTex.flipY = false;
   groundTex.colorSpace = THREE.SRGBColorSpace;
