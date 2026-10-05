@@ -240,9 +240,10 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   fixedBox(b.x, floorY + b.height / 2, b.z, b.length / 2, b.height / 2, b.depth / 2);
   // The bay for working on a quad, painted on the floor in front of the bench.
   const bay = layout.bay;
-  const paint = new THREE.MeshStandardMaterial({ color: 0xd9b82a, roughness: 0.9 });
+  // The floor is pulled towards the camera by a polygon offset of -2, so the paint needs a bigger one or the floor hides it from a distance.
+  const paint = new THREE.MeshStandardMaterial({ color: 0xd9b82a, roughness: 0.9, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
   for (const [w, d, x, z] of [[bay.halfX * 2, 0.08, 0, -bay.halfZ], [bay.halfX * 2, 0.08, 0, bay.halfZ], [0.08, bay.halfZ * 2, -bay.halfX, 0], [0.08, bay.halfZ * 2, bay.halfX, 0]]) {
-    add(box(w, 0.012, d, paint), bay.x + x, floorY + 0.012, bay.z + z, { cast: false });
+    add(box(w, 0.012, d, paint), bay.x + x, floorY + 0.016, bay.z + z, { cast: false });
   }
 
   // A bare bulb on a flex from the ridge, which comes on in the gloom.
