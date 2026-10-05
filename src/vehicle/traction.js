@@ -23,6 +23,7 @@ export class Traction {
   constructor(wheelCount = 4) {
     this.spin = 0; // 0..1, how hard the driven wheels are spinning
     this.demand = 0; // drive force asked for over the grip available (1 = on the limit)
+    this.putDown = 1; // fraction of the drive force that got through to the ground
     this.forces = new Float32Array(wheelCount);
     this.grips = new Float32Array(wheelCount);
   }
@@ -52,6 +53,7 @@ export class Traction {
 
     // What gets through: up to the grip, less once the tyres are spinning.
     const through = Math.min(want, capacity * (1 - p.spinDriveLoss * this.spin));
+    this.putDown = want > 1 ? through / want : 1;
     const sign = Math.sign(driveForce);
     for (let i = 0; i < wheels.length; i++) {
       const w = wheels[i];

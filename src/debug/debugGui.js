@@ -75,6 +75,9 @@ export class DebugGui {
       get load() {
         return unit().engine.load;
       },
+      get lug() {
+        return unit().engine.lug;
+      },
       get choke() {
         return unit().quad.choke;
       },

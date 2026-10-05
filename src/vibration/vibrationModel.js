@@ -51,6 +51,7 @@ export class VibrationModel {
     this.camera = { x: 0, y: 0, z: 0, pitch: 0, roll: 0 };
     this.intensity = 0; // smoothed 0..1-ish shake level, handy for HUD and debugging
     this.groundDistance = 0; // metres travelled since the last ground jolt
+    this.jolts = []; // sizes of this update's ground jolts (in groundGain units), for the ride sounds
   }
 
   /** How much of a full kick survives at this rpm. */
@@ -71,6 +72,7 @@ export class VibrationModel {
     const bodyFactor = this.rpmFactor(engine.rpm, p.highRpmFloor);
     const barsFactor = this.rpmFactor(engine.rpm, p.barsHighRpmFloor);
     const roughBoost = 1 + p.roughnessGain * engine.roughness;
+    this.jolts.length = 0;
 
     let pulseIndex = 0;
     const steps = Math.max(1, Math.ceil(dt / SUBSTEP));
@@ -156,6 +158,7 @@ export class VibrationModel {
     while (this.groundDistance >= spacing) {
       this.groundDistance -= spacing * (0.5 + r());
       const k = size * (0.3 + r() * r() * 1.7);
+      this.jolts.push(k / p.groundGain);
       o.heave.kick(k * p.heaveGain * sign());
       o.pitch.kick(k * p.pitchGain * sign());
       o.roll.kick(k * p.rollGain * sign());

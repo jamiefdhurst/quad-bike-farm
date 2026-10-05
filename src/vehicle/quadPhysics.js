@@ -35,6 +35,10 @@ export class QuadPhysics {
       this.body,
     );
 
+    // Per wheel, for the engine load: { force, mud, contact }. See wheelLoads().
+    this.wheelMud = WHEELS.map(() => 0);
+    this.wheelLoadState = WHEELS.map(() => ({ force: 0, mud: 0, contact: false }));
+
     this.vehicle = physics.createVehicleController(this.body);
     this.vehicle.indexUpAxis = 1;
     this.vehicle.setIndexForwardAxis = 2;
@@ -118,6 +122,8 @@ export class QuadPhysics {
       w.puddle = w.contact && puddleAt ? puddleAt(w.point.x, w.point.z) : 0;
       w.load = w.contact ? (v.wheelSuspensionForce(i) ?? 0) : 0;
       w.grip = surfaceGrip(p, w.mud, w.puddle);
+      // Puddles are mud too, as far as the engine's concerned.
+      this.wheelMud[i] = Math.max(w.mud, w.puddle);
       w.driven = isDriven(p, WHEELS[i].front);
     }
     const t = this.traction.update(dt, driveForce, this.wheelInfo, p);
@@ -148,6 +154,17 @@ export class QuadPhysics {
       const v = this.body.linvel();
       if (Math.hypot(v.x, v.z) < this.params.parkedHoldSpeed) this.body.setLinvel({ x: 0, y: v.y, z: 0 }, true);
     }
+  }
+
+  /** How hard each wheel is pressed into the ground (N), how muddy it is there, and whether it's touching. */
+  wheelLoads() {
+    for (let i = 0; i < WHEELS.length; i++) {
+      const w = this.wheelLoadState[i];
+      w.contact = this.vehicle.wheelIsInContact(i);
+      w.force = w.contact ? (this.vehicle.wheelSuspensionForce(i) ?? 0) : 0;
+      w.mud = this.wheelMud[i];
+    }
+    return this.wheelLoadState;
   }
 
   /** Signed speed along the chassis forward axis, m/s. */

@@ -23,6 +23,13 @@ export const DEFAULT_ENGINE_PARAMS = {
   rpmFallRate: 6, // 1/s toward target when above it
   loadDragRpm: 4000, // rpm/s pulled off by a full drivetrain load (heavy braking)
 
+  // Labouring under drive load (hills, mud, pulling away). A full load pulls the
+  // revs this fraction of the way from where the throttle wants them down to idle.
+  lugDepth: 0.5,
+  lugWeakness: 1.1, // extra pull per unit of power lost (cold, choked, fouled), with the square of the climbing or ploughing load: past 1 in all it drags a weak engine below idle and stalls it
+  lugStallGain: 3, // dragged past idle, the revs fall this many idles per unit of lugging beyond 1
+  lugRoughness: 0.35, // extra roughness per unit of lugging when stone cold, fading as it warms
+
   // Temperature (0 = stone cold, 1 = fully warm)
   warmUpSeconds: 150, // running at idle from cold to fully warm
   warmUpRpmBoost: 0.8, // extra warming at high rpm (fraction of the base rate)
@@ -35,6 +42,7 @@ export const DEFAULT_ENGINE_PARAMS = {
   chokeEnrichment: 1.0, // enrichment from full choke
   throttleChokeRelief: 0.3, // opening the throttle dilutes the choke this much
   richTolerance: 0.25, // rich mixture tolerated before it starts fouling
+  mixtureTrim: 0, // carburettor jetting: added to the mixture all the time, positive richer (set from the toolbox)
 
   // Idle target
   chokeIdleRpm: 1500, // idle lift from full choke on a warm engine
@@ -116,6 +124,10 @@ export const ENGINE_PARAM_RANGES = {
   rpmRiseRate: [0.5, 15, 0.1],
   rpmFallRate: [0.5, 15, 0.1],
   loadDragRpm: [0, 6000, 50],
+  lugDepth: [0, 1, 0.01],
+  lugWeakness: [0, 3, 0.01],
+  lugStallGain: [0, 10, 0.1],
+  lugRoughness: [0, 1, 0.01],
   warmUpSeconds: [10, 600, 5],
   warmUpRpmBoost: [0, 3, 0.05],
   coolDownSeconds: [30, 3600, 10],
@@ -124,6 +136,7 @@ export const ENGINE_PARAM_RANGES = {
   chokeEnrichment: [0, 2, 0.01],
   throttleChokeRelief: [0, 1, 0.01],
   richTolerance: [0, 1, 0.01],
+  mixtureTrim: [-0.5, 0.5, 0.01],
   chokeIdleRpm: [0, 3000, 10],
   chokeIdleColdFactor: [0, 1, 0.01],
   leanIdleDrop: [0, 3000, 10],

@@ -4,6 +4,7 @@ import { DEFAULT_ENGINE_PARAMS, ENGINE_PARAM_RANGES } from '../engine/enginePara
 import { VibrationModel } from '../vibration/vibrationModel.js';
 import { DEFAULT_VIBRATION_PARAMS, VIBRATION_PARAM_RANGES } from '../vibration/vibrationParams.js';
 import { EngineAudio } from '../audio/engineAudio.js';
+import { RideAudio } from '../audio/rideAudio.js';
 import { DEFAULT_AUDIO_PARAMS, AUDIO_PARAM_RANGES } from '../audio/audioParams.js';
 import { ExhaustSmoke, DEFAULT_SMOKE_PARAMS, SMOKE_PARAM_RANGES } from '../effects/exhaustSmoke.js';
 import { QuadMud, DEFAULT_MUD_PARAMS, MUD_PARAM_RANGES, MUD_STATE_RANGES } from '../effects/quadMud.js';
@@ -43,6 +44,8 @@ export class QuadUnit {
     this.smoke = new ExhaustSmoke(scene, (x, z) => world.heightAt(x, z), { ...DEFAULT_SMOKE_PARAMS, ...spec.smoke });
     this.mud = new QuadMud({ scene, world, quad: this.quad, sport: spec.style === 'sport', params: { ...DEFAULT_MUD_PARAMS, ...spec.mud } });
     this.audio = new EngineAudio(audioHub, { ...DEFAULT_AUDIO_PARAMS, ...spec.audio });
+    this.ride = new RideAudio(audioHub, this, world);
+    this.listenerOnBoard = false; // set by the game while you're riding this one
 
     const folder = this.name;
     registerTuning(`${folder}/Engine`, this.engine.params, ENGINE_PARAM_RANGES);
@@ -59,6 +62,7 @@ export class QuadUnit {
 
   fixedUpdate(dt) {
     this.quad.fixedUpdate(dt);
+    this.ride.step(dt);
   }
 
   /** After the physics step. */
@@ -74,7 +78,9 @@ export class QuadUnit {
     this.quad.update(dt, alpha, this.vibration);
     this.smoke.update(dt, this.engine, this.quad.exhaustTip, this.quad.velocity);
     this.mud.update(dt);
+    this.audio.onBoard = this.listenerOnBoard;
     this.audio.update(dt, this.engine, this.quad.position);
+    this.ride.update(dt);
   }
 
   setViewport(heightPx, fovDeg) {

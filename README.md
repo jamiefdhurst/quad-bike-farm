@@ -98,6 +98,18 @@ Things to know:
 - If you flood it, take the choke off and crank with the throttle held open (`W` + `R`) to clear it.
 - The bike keeps idling when you get off, and you can watch and hear it shake from outside. With nobody on it, it also jolts over the ground as it moves, harder the faster it goes, so a quad driving itself round in circles visibly bounces. Riding it, the shake is as it always was.
 
+## Tinkering
+
+Pick up the red toolbox by the petrol tank (`E`), take it to a quad that's switched off and press `E` to get the spanners out. The panel has five adjustments, each with its current and stock values and a note on the trade-off:
+
+- **Idle screw**: the warm idle, within safe limits.
+- **Carb mixture**: leaner pulls a bit harder and uses less fuel but runs rougher; richer is easier from cold but smokier and thirstier, and fully rich slowly fouls the plug.
+- **Throttle stop (speed limiter)**: farm quads come with it screwed in. Each turn out adds about 7% top speed (fully off is about +20%: the red goes from 35 to 42 mph), plus a few more revs and more fuel.
+- **Clutch springs**: softer bites sooner, stiffer later; it always bites above the idle.
+- **Tyre pressures**: softer grips better (especially in mud) but bounces more.
+
+"Back to stock" puts everything back exactly. Changes last for the game. `G` puts the toolbox down; you can't ride while carrying it. She has opinions about all of this.
+
 ## Fuel
 
 Each quad has a fuel tank, a fuel tap and a fuel gauge on the dash. Taps start OFF. How much is in each tank varies every game (see `fuelRange` above); the blue can start below its reserve, so it'll only run on RESERVE until it's filled.
@@ -170,6 +182,8 @@ public/audio/          the cut engine recordings
 **Engine model** (`src/engine/engineModel.js`). A state machine (off, ignition, cranking, running, stalled) driven by one idea: mixture. Mixture is the enrichment the choke supplies minus the enrichment a cold engine needs. It decides whether the engine catches, where it idles, how rough it runs and how much power it makes. Running rich fouls the plug, and a fully fouled plug stalls it. Temperature rises while running and falls slowly when off. Each power stroke is emitted as a firing pulse with its own timing and strength jitter, and both the vibration and the audio play those same pulses. That's why a rough engine sounds and feels lumpy together.
 
 **Drivetrain** (`src/vehicle/drivetrain.js`). An automatic: centrifugal clutch into a CVT. It turns engine rpm and power into drive force, and puts braking load back on the engine while the clutch is locked to a moving bike.
+
+**Ride sounds and Doppler** (`src/audio/rideAudio.js`, `rideEvents.js`, `propagation.js`). Riding sounds like the ground: grass swish, grit on the track, squelch and splash at the puddles, suspension knocks and landing thuds, and wind for the rider that rises with speed. Each quad's sound reaches you through a delay line set to its distance over the speed of sound, so a quad driving past rises and falls in pitch (about 3% each way at 10 m/s) and sounds duller further away. Levels are in the Sound folder of the tuning panel.
 
 **Engine sound** (`src/audio/engineWorklet.js`). Three engines, chosen in the tuning panel (Audio, `engineSound`):
 

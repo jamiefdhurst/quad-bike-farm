@@ -7,6 +7,46 @@ export const DEFAULT_SOUND_PARAMS = {
   latency: 0.05, // seconds between the simulation and the sound, so pulses can be placed exactly
   ambientVolume: 0.05,
   pourVolume: 0.12,
+
+  // How each quad's sound reaches you (propagation.js)
+  doppler: true, // passing quads rise and fall in pitch
+  dopplerAmount: 1, // 1 is real; more exaggerates it
+  speedOfSound: 343, // m/s
+  dopplerMaxSpeed: 40, // m/s; distance changes faster than this (getting on and off) are smoothed out
+  dopplerSmoothing: 0.08, // seconds
+  airAbsorptionDistance: 40, // metres at which the air has halved the treble cutoff (20 kHz close by)
+
+  // Ride sounds besides the engine (rideAudio.js), all per quad and positioned at it
+  rideVolume: 1, // all of them together
+  rideFullSpeed: 12, // m/s at which the tyre sounds reach their set levels
+  rollVolume: 0.35, // low rumble of the tyres on any surface
+  grassVolume: 0.05, // grass swishing past
+  dirtVolume: 0.5, // grit and crunch on the track and the yard
+  mudVolume: 0.7, // squelches round the puddles
+  waterVolume: 0.08, // water churning round the wheels in a puddle
+  splashVolume: 0.9, // hitting a puddle
+  knockVolume: 0.5, // suspension knocking over a bump or a wheel touching down
+  bumpVolume: 0.18, // small knocks from uneven ground
+  landVolume: 0.4, // coming down after a jump
+  rattleVolume: 0.06, // racks and bodywork rattling
+  rattleThreshold: 0.3, // knocks harder than this rattle the racks
+  rattleChance: 0.5, // chance a full-size bump rattles them
+  rideWindVolume: 0.3, // wind past the rider's ears at rideWindFullSpeed (only on the quad you ride)
+  rideWindFullSpeed: 15, // m/s
+
+  // When the suspension makes a sound (rideEvents.js)
+  knockThreshold: 0.5, // m/s of suspension compression before it knocks
+  knockFullSpeed: 2, // m/s more than that for a full knock
+  knockCooldown: 0.12, // seconds before the same wheel can knock again
+  touchdownMinAir: 0.06, // seconds a wheel must be off the ground for its touchdown to knock
+  landMinAir: 0.25, // seconds with all four wheels off the ground for a landing
+  landFullSpeed: 4, // m/s falling for a full landing thud
+  landQuiet: 0.3, // seconds after a landing before the suspension knocks again
+  bumpsPerMetreGrass: 0.15, // small knocks from uneven ground while ridden
+  bumpsPerMetreTrack: 0.4,
+  bumpFullSpeed: 10, // m/s for full-size small knocks
+  splashMinSpeed: 1.2, // m/s into a puddle for a splash
+  splashFullSpeed: 8,
 };
 
 export const SOUND_PARAM_RANGES = {
@@ -14,6 +54,39 @@ export const SOUND_PARAM_RANGES = {
   masterVolume: [0, 2, 0.01],
   latency: [0.02, 0.2, 0.005],
   ambientVolume: [0, 0.5, 0.005],
+  dopplerAmount: [0, 5, 0.05],
+  speedOfSound: [50, 1000, 1],
+  dopplerMaxSpeed: [5, 150, 1],
+  dopplerSmoothing: [0.01, 0.5, 0.005],
+  airAbsorptionDistance: [0, 300, 1],
+  rideVolume: [0, 3, 0.01],
+  rideFullSpeed: [2, 30, 0.5],
+  rollVolume: [0, 2, 0.01],
+  grassVolume: [0, 1, 0.005],
+  dirtVolume: [0, 2, 0.01],
+  mudVolume: [0, 2, 0.01],
+  waterVolume: [0, 1, 0.005],
+  splashVolume: [0, 3, 0.01],
+  knockVolume: [0, 2, 0.01],
+  bumpVolume: [0, 2, 0.01],
+  landVolume: [0, 3, 0.01],
+  rattleVolume: [0, 1, 0.005],
+  rattleThreshold: [0, 2, 0.01],
+  rattleChance: [0, 1, 0.01],
+  rideWindVolume: [0, 2, 0.01],
+  rideWindFullSpeed: [2, 40, 0.5],
+  knockThreshold: [0.05, 5, 0.05],
+  knockFullSpeed: [0.2, 10, 0.1],
+  knockCooldown: [0, 0.5, 0.01],
+  touchdownMinAir: [0, 0.5, 0.01],
+  landMinAir: [0.05, 1.5, 0.01],
+  landFullSpeed: [0.5, 15, 0.1],
+  landQuiet: [0, 1, 0.01],
+  bumpsPerMetreGrass: [0, 5, 0.05],
+  bumpsPerMetreTrack: [0, 5, 0.05],
+  bumpFullSpeed: [1, 30, 0.5],
+  splashMinSpeed: [0, 10, 0.1],
+  splashFullSpeed: [1, 20, 0.5],
 };
 
 // One per engine. Sent to its AudioWorklet (engineWorklet.js) each frame.
