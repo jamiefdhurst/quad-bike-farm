@@ -177,7 +177,8 @@ export class Companion {
 
   /**
    * Left standing about long enough, she does something on her own: wanders
-   * off for a look round, gets on a quad to wait, or has a go at starting one.
+   * off for a look round, gets on a quad to wait, has a go at starting one, or
+   * has a little drive of one.
    * Once she's sat on a quad she stays there until you ask her to get off.
    */
   updateBoredom(dt, viewer) {

@@ -156,6 +156,7 @@ export class Game {
         unit,
         target: quad.proxy,
         prompt: () => {
+          if (this.tooFastToMount(quad) && this.herDriving(quad)) return 'Ask her to stop and let you on';
           if (this.tooFastToMount(quad)) {
             return { text: `The ${unit.label} is going too fast to get on   ·   K ignition` };
           }
@@ -172,6 +173,12 @@ export class Game {
         interact: () => {
           if (this.can.held) return; // E is for pouring while you're holding the can
           if (this.toolbox.held) return this.workshop.open(unit);
+          if (this.tooFastToMount(quad) && this.herDriving(quad)) {
+            // She pulls up and moves onto the back for you.
+            this.companion.requestMount(quad);
+            this.voice.onRequest('back');
+            return;
+          }
           if (this.tooFastToMount(quad)) return;
           if (quad.isTipped) quad.rightItself();
           else this.mount(unit);
@@ -327,6 +334,12 @@ export class Game {
   /** A moving quad you can't catch hold of (whether or not anyone is on it). */
   tooFastToMount(quad) {
     return quad.speed > this.player.params.mountSpeed;
+  }
+
+  /** She's at the controls of this quad and still going. */
+  herDriving(quad) {
+    const c = this.companion;
+    return c.quad === quad && c.fsm.is('driving') && c.drive?.phase !== 'stop';
   }
 
   tryDismount() {

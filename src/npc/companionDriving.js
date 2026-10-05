@@ -83,6 +83,12 @@ export const drivingStates = {
     },
     update(dt, data) {
       const q = this.quad;
+      // You've got on while she was sliding forward: back she goes.
+      if (data.to === 'rider' && q.rider) {
+        data.to = 'pillion';
+        this.shuffleFrom = this.root.position.clone();
+        this.fsm.time = 0;
+      }
       const front = data.to === 'rider';
       const t = Math.min(1, this.fsm.time / SHUFFLE_DURATION);
       const k = smooth(t);
