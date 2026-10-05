@@ -52,6 +52,8 @@ export class CharacterRig {
     this.lookLimits = { yaw: 1.2, pitch: 0.5 };
     // Extra procedural offsets in radians about the character's own axes, set by behaviour code.
     this.offsets = { headYaw: 0, spineRoll: 0, spinePitch: 0, leftArmOut: 0, rightArmOut: 0, leftElbow: 0, rightElbow: 0 };
+    // Further posing layered on by behaviour modules, each called as fn(dt) after the offsets.
+    this.posers = [];
     this.tmpQ = new THREE.Quaternion();
     this.tmpQ2 = new THREE.Quaternion();
     this.up = new THREE.Vector3();
@@ -128,10 +130,10 @@ export class CharacterRig {
 
   update(dt) {
     this.mixer.update(dt);
-    this.applyProcedural();
+    this.applyProcedural(dt);
   }
 
-  applyProcedural() {
+  applyProcedural(dt = 0) {
     // Swing the thighs out about the body's vertical so she straddles the seat.
     if (this.legSpread > 0.001) {
       this.root.getWorldQuaternion(this.tmpQ);
@@ -162,6 +164,7 @@ export class CharacterRig {
     this.rotateAboutRootAxis(b.RightArm, AXIS_Z, -o.rightArmOut);
     this.rotateAboutRootAxis(b.LeftForeArm, AXIS_X, -o.leftElbow);
     this.rotateAboutRootAxis(b.RightForeArm, AXIS_X, -o.rightElbow);
+    for (const fn of this.posers) fn(dt);
     this.applyLook();
   }
 

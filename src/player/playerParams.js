@@ -23,6 +23,11 @@ export const DEFAULT_PLAYER_PARAMS = {
   ridePitchUp: 60,
   ridePitchDown: 65,
   rideCameraShake: 1.0, // multiplier on the vibration camera output
+  lookBackYaw: 205, // degrees you turn round (past 180 to see back across the seat from out over your shoulder) holding C (or the middle mouse button) while riding
+  lookBackPitch: -10, // degrees, a little down toward a passenger
+  lookBackShift: 0.28, // metres your head moves out over the shoulder as you twist round
+  lookBackTime: 0.35, // seconds to turn round, and back again
+  lookBackFreedom: 35, // degrees the mouse can move the view while turned round
 };
 
 export const PLAYER_PARAM_RANGES = {
@@ -50,4 +55,9 @@ export const PLAYER_PARAM_RANGES = {
   ridePitchUp: [10, 89, 1],
   ridePitchDown: [10, 89, 1],
   rideCameraShake: [0, 3, 0.05],
+  lookBackYaw: [60, 240, 1],
+  lookBackPitch: [-60, 30, 1],
+  lookBackShift: [0, 0.4, 0.01],
+  lookBackTime: [0.05, 1.5, 0.05],
+  lookBackFreedom: [0, 90, 1],
 };
