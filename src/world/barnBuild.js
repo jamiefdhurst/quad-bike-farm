@@ -209,12 +209,13 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
       leaf.add(brace);
     }
     for (const [dy, dz] of [[0, 0], [1, 0], [-1, 0]]) {
-      const frame = box(0.07, 0.14, panelW, white);
+      const frame = box(0.07, 0.14, panelW + 0.06, white); // longer than the boards, so their end faces are not in the same plane
       frame.position.set(0.025, dy * (door.height / 2 - 0.15), dz);
       leaf.add(frame);
     }
+    // The thin battens would make a jagged, flickering shadow on themselves and the boards, so they take part in none: only the boards do.
     leaf.traverse((o) => {
-      if (o.isMesh) o.castShadow = o.receiveShadow = true;
+      if (o.isMesh) o.castShadow = o.receiveShadow = o.material !== white;
     });
     // Hung 0.25 m out, clear of the door frame and corner posts (they reach 0.17), or the overlapping faces flicker.
     leaf.position.set(door.x + 0.25, floorY + door.height / 2 + 0.05, z);
