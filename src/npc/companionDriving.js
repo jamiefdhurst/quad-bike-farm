@@ -156,7 +156,8 @@ export const drivingMethods = {
       return;
     }
     if (!exit) this.driveEvents.push('getOff');
-    if (q.engine.isRunning && !exit && Math.random() < p.driveKeyOffChance) q.engine.setIgnition(false);
+    // Getting off, she nearly always leaves it running.
+    if (q.engine.isRunning && Math.random() < p.driveKeyOffChance) q.engine.setIgnition(false);
     this.afterDismount = exit?.next ?? null;
     this.fsm.transition('dismounting');
   },

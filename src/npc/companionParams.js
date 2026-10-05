@@ -73,10 +73,14 @@ export const DEFAULT_COMPANION_PARAMS = {
   driveForgetChokeChance: 0.45, // she pushes the choke off as she sets off, cold or not
   driveMaxStalls: 2, // stalls before she gives up on it
   driveBackChance: 0.5, // when she's done, the chance she moves onto the back to wait rather than getting off
-  driveKeyOffChance: 0.5, // getting off, the chance she switches it off
+  driveKeyOffChance: 0.05, // getting off after a drive, the chance she switches it off (she nearly always leaves it running)
   driveSeatRaise: 0.04, // metres, fine-tunes how high she sits on the front seat
   driveSeatForward: 0.0, // metres, fine-tunes where she sits along it
   driveTalkRange: 14, // metres; you can talk to her from this far while she's driving
+
+  keyOffChance: 0.05, // sat on the back of a quad left running, the chance she switches it off this time (rarely)
+  keyOffAfterMin: 60, // and how long she sits there first, seconds
+  keyOffAfterMax: 180,
 
   // Talking (companionVoice.js, lines in voiceLines.js)
   voice: true, // she talks at all
@@ -166,6 +170,9 @@ export const COMPANION_PARAM_RANGES = {
   driveSeatRaise: [-0.3, 0.3, 0.005],
   driveSeatForward: [-0.3, 0.3, 0.005],
   driveTalkRange: [2, 40, 0.5],
+  keyOffChance: [0, 1, 0.01],
+  keyOffAfterMin: [1, 600, 1],
+  keyOffAfterMax: [1, 900, 1],
   chattiness: [0, 3, 0.05],
   voiceMinGap: [0, 30, 0.5],
   voiceVolume: [0, 1, 0.01],

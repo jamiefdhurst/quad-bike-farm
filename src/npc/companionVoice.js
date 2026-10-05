@@ -261,7 +261,8 @@ export class CompanionVoice {
   /** Says what she's up to when she decides to do something on her own. */
   watchOwnMind() {
     const events = this.companion.selfEvents;
-    for (const e of events) this.say({ wander: 'selfWander', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive' }[e], { urgent: true, chance: 0.8 });
+    // Switching a quad off is rare, so she always mentions it.
+    for (const e of events) this.say({ wander: 'selfWander', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive', keyOff: 'selfKeyOff' }[e], { urgent: true, chance: e === 'keyOff' ? 1 : 0.8 });
     events.length = 0;
   }
 

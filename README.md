@@ -223,7 +223,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 1. She can drive differently depending on how she feels, confident or carefully - it can vary **Done.**
 2. When you're on the quad, the girl seems a lot taller than you, which doesn't feel right **Done.**
 3. Driving around should warm the quads up quicker, currently it has no effect **Done.**
-4. After finishing driving, she never turns the quad off
+4. After finishing driving, she never turns the quad off **Done** (she leaves it running nearly always, and very occasionally switches it off).
 5. If she's on the back, after a while she asks occasionally if she can come off
 6. Quads get more rough over time, the roughness value needs to go up even more, or have more of an effect at the top range, a lot more in both idle variation and shaking, but it can be fixed with the toolbox
 7. I can also ride pillion with her

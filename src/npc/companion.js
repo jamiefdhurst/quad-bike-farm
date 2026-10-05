@@ -227,6 +227,27 @@ export class Companion {
     this.fsm.transition('walking', { goal: 'wander', target: () => ({ position: target, facing }) });
   }
 
+  /**
+   * Sat on the back of a quad left running with nobody driving it, now and then
+   * (rarely) she leans forward after a while and switches it off.
+   */
+  mindTheEngine(dt) {
+    const q = this.quad;
+    const idling = q.engine.isRunning && !q.rider && !q.driver && !q.isGhostRiding && q.speed < 0.3;
+    if (!idling) {
+      this.keyOffIn = null;
+      return;
+    }
+    // Decided once each time she's left sitting there.
+    this.keyOffIn ??= Math.random() < this.params.keyOffChance ? this.randomBetween(this.params.keyOffAfterMin, this.params.keyOffAfterMax) : Infinity;
+    this.keyOffIn -= dt;
+    if (this.keyOffIn <= 0) {
+      this.keyOffIn = null;
+      q.engine.setIgnition(false);
+      this.selfEvents.push('keyOff');
+    }
+  }
+
   /** Walks to the bars of a quad and has a go at starting it. */
   requestStart(quad) {
     if (this.stopDriving('off', () => this.requestStart(quad))) return;
@@ -586,6 +607,7 @@ const STATES = {
       this.root.position.copy(this.seatOffset());
       this.rig.legSpread = this.params.legSpread;
       this.pillion.update(dt);
+      this.mindTheEngine(dt);
     },
     exit() {
       this.pillion.release();

@@ -550,6 +550,17 @@ export const VOICE_LINES = {
       "Right, I'm on. Whenever you're ready.",
     ],
   },
+  selfKeyOff: {
+    cooldown: 30,
+    lines: [
+      "I'll turn it off, shall I?",
+      "There. It's off. Saving petrol.",
+      'I switched it off, it was getting on my nerves.',
+      'Off. You can thank me later.',
+      'Ah, peace and quiet.',
+      "I've turned it off, it was just sitting there burning petrol.",
+    ],
+  },
   selfStart: {
     cooldown: 30,
     lines: [
