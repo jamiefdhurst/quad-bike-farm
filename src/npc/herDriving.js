@@ -293,7 +293,7 @@ export class HerDrive {
       case 'stop':
         c.throttle = 0;
         c.reverse = false;
-        c.brake = speed > 0.3 ? clamp(0.25 + speed * 0.12, 0, 0.7) : 1;
+        c.brake = speed > 0.3 ? clamp(0.35 + speed * 0.15, 0, 0.9) : 1;
         c.steer *= 0.9;
         // Sat there a moment once it's stopped, before she does anything.
         if (speed < 0.2) this.sat += dt;
@@ -327,7 +327,15 @@ export class HerDrive {
 
   plan() {
     const q = this.quad;
-    this.waypoints = planLoop(q.position, q.yaw, this.random, this.p, this.isClear);
+    const pos = q.position;
+    // Wandered off a bit: the next loop sets off back towards where she started.
+    const away = Math.hypot(pos.x - this.origin.x, pos.z - this.origin.z) > this.p.driveLoopRadiusMin;
+    const yaw = away ? headingTo(pos, this.origin) : q.yaw;
+    // The way she's facing (or home) first; failing that, any way there's room.
+    for (const turn of [0, Math.PI / 2, -Math.PI / 2, Math.PI]) {
+      this.waypoints = planLoop(pos, yaw + turn, this.random, this.p, this.isClear);
+      if (this.waypoints.length) break;
+    }
     this.index = 0;
     if (!this.waypoints.length) {
       this.events.push('noRoom');
