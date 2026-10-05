@@ -6,6 +6,7 @@ import { applyOutfit, refitOutfit, OUTFITS } from './outfit.js';
 import { shapeFigure } from './figure.js';
 import { StartingAttempt } from './startingAttempt.js';
 import { drivingStates, drivingMethods } from './companionDriving.js';
+import { PillionPose } from './pillionPose.js';
 
 const CAPSULE_HALF_HEIGHT = 0.55;
 const CAPSULE_RADIUS = 0.25;
@@ -87,6 +88,11 @@ export class Companion {
     this.drive = null; // her go at driving, while she's on the front seat (herDriving.js)
     this.driveEvents = []; // what's happened while she's driving, for her voice
     this.gripReach = 0; // how far her hands are on the grips, 0..1
+    // Holding on, leaning and looking about while she rides pillion.
+    this.pillion = new PillionPose(this);
+    this.rig.posers.push((dt) => this.pillion.apply(dt));
+    // Hands on the bars while she's driving (companionDriving.js).
+    this.rig.posers.push((dt) => this.poseDriving(dt));
   }
 
   figureAmounts() {
@@ -393,7 +399,6 @@ export class Companion {
       this.rig.spineSway.roll = 0;
     }
     this.rig.update(dt);
-    this.poseDriving(dt);
   }
 }
 
@@ -573,11 +578,16 @@ const STATES = {
       this.root.quaternion.identity();
       this.rig.play('SitIdle', { fade: 0.4 });
       this.rig.legSpread = this.params.legSpread;
+      this.pillion.engage();
     },
-    update() {
+    update(dt) {
       // Pick up live tuning of the seat position.
       this.root.position.copy(this.seatOffset());
       this.rig.legSpread = this.params.legSpread;
+      this.pillion.update(dt);
+    },
+    exit() {
+      this.pillion.release();
     },
   },
 

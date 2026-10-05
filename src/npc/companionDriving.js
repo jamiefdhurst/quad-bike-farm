@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { HerDrive } from './herDriving.js';
+import { solveTwoBone, orientHand } from './armIK.js';
 
 // Her driving a quad herself, as Companion states and methods: getting on the
 // front, driving (the logic is HerDrive in herDriving.js), shuffling between
@@ -9,61 +10,16 @@ import { HerDrive } from './herDriving.js';
 const smooth = (t) => t * t * (3 - 2 * t);
 const SHUFFLE_DURATION = 0.9; // seconds to slide between the front seat and the back
 
-const S = new THREE.Vector3();
-const E = new THREE.Vector3();
-const H = new THREE.Vector3();
-const goal = new THREE.Vector3();
-const u = new THREE.Vector3();
-const v = new THREE.Vector3();
-const n = new THREE.Vector3();
-const rot = new THREE.Quaternion();
-const parentQ = new THREE.Quaternion();
+const _target = new THREE.Vector3();
+const _pole = new THREE.Vector3();
+const _fingers = new THREE.Vector3();
+const _palm = new THREE.Vector3();
+const _q = new THREE.Quaternion();
 const AXIS_X = new THREE.Vector3(1, 0, 0);
-
-/** Rotates a bone by a world-space rotation, keeping its parent where it is. */
-function rotateBoneWorld(bone, q) {
-  bone.parent.getWorldQuaternion(parentQ);
-  // local' = parent^-1 * q * parent * local
-  bone.quaternion.premultiply(parentQ).premultiply(q).premultiply(parentQ.invert());
-  bone.updateMatrixWorld(true);
-}
-
-/**
- * Two-bone reach: bends the elbow so the hand can get to `target`, then swings
- * the upper arm to point it there. `weight` 0..1 blends from where the clip
- * has the hand.
- */
-function reachArm(rig, side, target, weight) {
-  const upper = rig.bones[`${side}Arm`];
-  const fore = rig.bones[`${side}ForeArm`];
-  const hand = rig.bones[`${side}Hand`];
-  if (!upper || !fore || !hand || weight <= 0.001) return;
-  upper.getWorldPosition(S);
-  fore.getWorldPosition(E);
-  hand.getWorldPosition(H);
-  goal.lerpVectors(H, target, weight);
-  const a = S.distanceTo(E);
-  const b = E.distanceTo(H);
-  const d = THREE.MathUtils.clamp(S.distanceTo(goal), Math.abs(a - b) + 1e-3, a + b - 1e-3);
-
-  // Elbow: the angle at the elbow that puts the hand d from the shoulder.
-  u.subVectors(S, E);
-  v.subVectors(H, E);
-  const current = u.angleTo(v);
-  const wanted = Math.acos(THREE.MathUtils.clamp((a * a + b * b - d * d) / (2 * a * b), -1, 1));
-  n.crossVectors(u, v);
-  if (n.lengthSq() > 1e-10) {
-    rot.setFromAxisAngle(n.normalize(), wanted - current);
-    rotateBoneWorld(fore, rot);
-  }
-
-  // Shoulder: swing the whole arm so the hand points at the goal.
-  hand.getWorldPosition(H);
-  u.subVectors(H, S).normalize();
-  v.subVectors(goal, S).normalize();
-  rot.setFromUnitVectors(u, v);
-  rotateBoneWorld(upper, rot);
-}
+const ARMS = [
+  { side: 1, arm: 'LeftArm', fore: 'LeftForeArm', hand: 'LeftHand', finger: 'LeftHandIndex1', thumb: 'LeftHandThumb1', grip: 'gripLeft' },
+  { side: -1, arm: 'RightArm', fore: 'RightForeArm', hand: 'RightHand', finger: 'RightHandIndex1', thumb: 'RightHandThumb1', grip: 'gripRight' },
+];
 
 export const drivingStates = {
   // On the front seat with the quad hers: starting it, driving, stopping.
@@ -259,20 +215,36 @@ export const drivingMethods = {
     return hit ? (hit.timeOfImpact ?? hit.toi) : Infinity;
   },
 
-  /** Leans her in a touch and puts her hands on the grips, following the bars. */
+  /** Leans her in a touch and puts her hands on the grips, following the bars. Runs as a rig poser. */
   poseDriving(dt) {
     const q = this.quad;
-    const front = this.fsm.is('driving') || (this.fsm.is('shuffling') && this.fsm.data.to === 'rider' && this.fsm.time > 0.4);
-    const mountingFront = this.fsm.is('mounting') && this.fsm.data.seat === 'rider' && this.fsm.time > this.params.mountDuration * 0.6;
-    const want = front || mountingFront ? 1 : 0;
-    this.gripReach += (want - this.gripReach) * Math.min(1, dt * 4);
-    if (this.gripReach < 0.01 || !q.model) return;
+    const s = this.fsm;
+    const front = s.is('driving') || (s.is('shuffling') && s.data.to === 'rider' && s.time > 0.4);
+    const mountingFront = s.is('mounting') && s.data.seat === 'rider' && s.time > this.params.mountDuration * 0.6;
+    this.gripReach += ((front || mountingFront ? 1 : 0) - this.gripReach) * Math.min(1, dt * 4);
+    if (this.gripReach < 0.01) return;
     const k = smooth(Math.min(1, this.gripReach));
-    q.grips ??= { left: q.model.getObjectByName('gripLeft'), right: q.model.getObjectByName('gripRight') };
-    if (!q.grips.left || !q.grips.right) return;
-    this.rig.rotateAboutRootAxis(this.rig.bones.Spine1, AXIS_X, 0.18 * k);
-    q.model.updateMatrixWorld(true);
-    reachArm(this.rig, 'Left', q.grips.left.localToWorld(goal.set(0, 0.055, 0)).clone(), k);
-    reachArm(this.rig, 'Right', q.grips.right.localToWorld(goal.set(0, 0.055, 0)).clone(), k);
+    const rig = this.rig;
+    const b = rig.bones;
+    rig.rotateAboutRootAxis(b.Spine1, AXIS_X, 0.18 * k);
+    const model = q.model;
+    model.updateMatrixWorld(true);
+    const modelQ = model.getWorldQuaternion(_q);
+    for (const a of ARMS) {
+      const grip = (q.grips ??= {})[a.grip] ??= model.getObjectByName(a.grip);
+      if (!grip || !b[a.arm]) continue;
+      grip.localToWorld(_target.set(0, 0.055, 0));
+      // Elbows a little out and down, as you'd hold the bars.
+      b[a.arm].getWorldPosition(_pole);
+      model.worldToLocal(_pole).add(_fingers.set(a.side * 0.35, -0.25, -0.1));
+      model.localToWorld(_pole);
+      solveTwoBone(b[a.arm], b[a.fore], b[a.hand], _target, _pole, k);
+      // Fingers over the front of the grip, palm down on it.
+      if (b[a.finger] && b[a.thumb]) {
+        _fingers.set(-a.side * 0.25, -0.45, 0.85).normalize().applyQuaternion(modelQ);
+        _palm.set(0, -1, 0.15).normalize().applyQuaternion(modelQ);
+        orientHand(b[a.hand], b[a.finger], b[a.thumb], _fingers, _palm, a.side, k);
+      }
+    }
   },
 };

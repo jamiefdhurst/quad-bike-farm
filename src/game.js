@@ -17,6 +17,7 @@ import { Companion } from './npc/companion.js';
 import { CompanionVoice } from './npc/companionVoice.js';
 import { Speech, CompanionSounds } from './audio/companionAudio.js';
 import { DEFAULT_COMPANION_PARAMS, COMPANION_PARAM_RANGES } from './npc/companionParams.js';
+import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
 import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES } from './items/jerryCan.js';
 import { FuelTank } from './items/fuelTank.js';
 import { Toolbox } from './items/toolbox.js';
@@ -239,6 +240,7 @@ export class Game {
     registerTuning('Companion', this.companion.params, COMPANION_PARAM_RANGES, {
       onChange: () => this.companion.refreshFigure(),
     });
+    registerTuning('Pillion', this.companion.pillion.params, PILLION_PARAM_RANGES);
     this.debugGui = new DebugGui(this);
 
     this.applyDebugCamera();

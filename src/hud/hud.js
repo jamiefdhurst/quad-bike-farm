@@ -16,6 +16,7 @@ const HELP_HTML = `
   <div><kbd>E</kbd> get off (at speed you jump off and it carries on)</div>
   <div><kbd>F</kbd> fuel tap: ON, RESERVE, OFF</div>
   <div><kbd>T</kbd> right the quad if it tips over</div>
+  <div>Hold <kbd>C</kbd> or the middle mouse button to look back over your shoulder</div>
   <h3>Fuel</h3>
   <div><kbd>E</kbd> pick up the jerry can by the barn</div>
   <div>Hold <kbd>E</kbd> at a quad to pour, or at the petrol tank to refill the can</div>
