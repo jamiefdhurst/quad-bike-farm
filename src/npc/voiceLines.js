@@ -12,6 +12,7 @@ import { AMY_REQUEST_LINES } from './requestLines.js';
 import { AMY_PLACE_LINES } from './placeLines.js';
 import { AMY_BATTERY_LINES } from './batteryLines.js';
 import { AMY_OIL_LINES } from './oilLines.js';
+import { AMY_HEAT_LINES } from './heatLines.js';
 import { AMY_FAULT_LINES } from './faultLines.js';
 
 export const VOICE_LINES = {
@@ -1329,6 +1330,8 @@ export const VOICE_LINES = {
   ...AMY_BATTERY_LINES,
   // Two-stroke oil (oilLines.js).
   ...AMY_OIL_LINES,
+  // Heat (heatLines.js).
+  ...AMY_HEAT_LINES,
   // Faults that develop (faultLines.js).
   ...AMY_FAULT_LINES,
 };

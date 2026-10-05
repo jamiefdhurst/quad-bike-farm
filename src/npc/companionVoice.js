@@ -462,6 +462,7 @@ export class CompanionVoice {
       // You press the starter on a flat battery and it only clicks.
       if (near && e.events.some((x) => x.type === 'starterClick')) this.say('crankFlat', { urgent: true, chance: 0.7 });
       this.watchOil(dt, unit, w, near || hers);
+      this.watchHeat(unit, near || hers);
       this.watchFaults(unit, w, near || hers);
       // Cranking on and on without it catching.
       if (e.state === 'cranking' && w.cranking > 5 && near) {
@@ -483,6 +484,14 @@ export class CompanionVoice {
     if (e.nip > 0.3) this.say('engineNipping', { urgent: true, chance: 0.05 });
     else if (e.overheat > 0.45) this.say('engineHot', { chance: 0.02 });
     if (e.oilRich > 0.5) this.say('oilSmoky', { chance: 0.01 });
+  }
+
+  /** An air-cooled quad running too hot and pinking, or a hot one that's been switched off ticking as it cools. */
+  watchHeat(unit, listening) {
+    const e = unit.engine;
+    if (!listening) return;
+    if (e.pink > 0.4) this.say('heatPink', { chance: 0.03 });
+    else if (!e.isRunning && e.events.some((x) => x.type === 'coolTick')) this.say('heatTicking', { chance: 0.08 });
   }
 
   /** A slow puncture, slipping belt, sticking cable or dirty carb: she mentions it when it's bad enough for her to notice, and sooner on a quad she's on. */

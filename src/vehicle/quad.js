@@ -428,6 +428,8 @@ export class Quad {
       oil: this.fuel.oil,
       slip: this.faults.slip,
       dirt: this.faults.dirt,
+      speed: this.forwardSpeed,
+      ambient: this.world.warmth ?? 0.5,
     };
   }
 
@@ -472,7 +474,7 @@ export class Quad {
       reserveLevel: f.params.reserveLitres / f.params.tankCapacity,
       tap: f.tap,
       temperature: e.temperature,
-      overheat: e.overheat,
+      overheat: e.gaugeHeat,
       coldBelow: e.params.warmLightThreshold,
       ignition: e.hasPower, // the dash goes dark on a flat battery
       tripMiles: this.tripMiles,

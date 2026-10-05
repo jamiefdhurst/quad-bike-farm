@@ -145,6 +145,32 @@ export const DEFAULT_ENGINE_PARAMS = {
   dirtRoughness: 0.3, // roughness added by a fully dirty carb
   dirtPowerLoss: 0.25, // power lost to a fully dirty carb
 
+  // Heat (see heat.js). Running heat is 0..1 above a normal warm engine; soak is the heat held in the metal.
+  waterCooled: false, // a radiator and a fan: the heat stays low and the fan cuts in and out
+  heatSun: 0.75, // heat load of a full-sun day
+  heatWork: 0.5, // heat load of working flat out
+  heatAirCool: 1.2, // heat carried off by full airflow, which needs about airflowSpeed
+  airflowSpeed: 8, // ground speed in m/s that gives full airflow
+  heatRiseSeconds: 240, // time constant of heating up (an air-cooled engine idling in full sun is pinking in about four minutes)
+  heatFallSeconds: 90, // and of cooling down
+  heatWaterScale: 0.6, // the water-cooled engine feels this much of the load
+  fanOnAt: 0.28, // the radiator fan cuts in above this heat
+  fanOffAt: 0.12, // and out below this
+  fanCooling: 0.7, // heat carried off by the fan
+  pinkFrom: 0.45, // pinking starts at this heat
+  pinkRoughness: 0.3, // roughness at full pinking
+  pinkPowerLoss: 0.25, // power lost at full pinking
+  pinkRate: 14, // rattles a second at full pinking under load
+  heatGaugeWater: 0.25, // how much of its heat the water-cooled one's gauge shows
+  soakIdle: 0.25, // heat held in the metal by an engine just idling, against 1 flat out
+  soakRiseSeconds: 60, // how fast the metal heats up
+  soakFallSeconds: 240, // and how long it takes to shed it (running, or switched off)
+  tickFrom: 0.3, // an engine switched off ticks as it cools from this much soak
+  coolTickRate: 1.1, // ticks a second when it's as hot as it gets
+  hotStartFrom: 0.5, // a carburettor this heat-soaked starts to boil its fuel
+  hotStartRich: 0.6, // how much richer it starts at full soak
+  hotStartThrottleRelief: 0.7, // holding the throttle open takes this much of that away
+
   // Fuel starvation, from the carburettor float bowl level (0..1)
   fuelStarveLevel: 0.65, // below this bowl level the mixture starts to go lean
   starveLean: 1.1, // how lean it goes as the bowl empties
@@ -263,6 +289,30 @@ export const ENGINE_PARAM_RANGES = {
   beltFlareRpm: [0, 4000, 50],
   dirtRoughness: [0, 1, 0.01],
   dirtPowerLoss: [0, 1, 0.01],
+  waterCooled: [0, 1, 1],
+  heatSun: [0, 2, 0.01],
+  heatWork: [0, 2, 0.01],
+  heatAirCool: [0, 3, 0.05],
+  airflowSpeed: [1, 20, 0.5],
+  heatRiseSeconds: [10, 900, 5],
+  heatFallSeconds: [10, 900, 5],
+  heatWaterScale: [0, 1, 0.01],
+  fanOnAt: [0, 1, 0.01],
+  fanOffAt: [0, 1, 0.01],
+  fanCooling: [0, 2, 0.01],
+  pinkFrom: [0, 0.95, 0.01],
+  pinkRoughness: [0, 1, 0.01],
+  pinkPowerLoss: [0, 1, 0.01],
+  pinkRate: [0, 40, 1],
+  heatGaugeWater: [0, 1, 0.01],
+  soakIdle: [0, 1, 0.01],
+  soakRiseSeconds: [5, 600, 5],
+  soakFallSeconds: [30, 1800, 10],
+  tickFrom: [0, 0.95, 0.01],
+  coolTickRate: [0, 5, 0.05],
+  hotStartFrom: [0, 0.95, 0.01],
+  hotStartRich: [0, 1.5, 0.01],
+  hotStartThrottleRelief: [0, 1, 0.01],
   fuelStarveLevel: [0.05, 1, 0.01],
   starveLean: [0, 3, 0.05],
 };

@@ -181,6 +181,8 @@ export const DEFAULT_AUDIO_PARAMS = {
   starterMesh: 0.25,
   starterDip: 0.45, // extra audible slowdown on each compression stroke
   solenoidVolume: 0.5,
+  pingVolume: 0.12, // pinking and the metal ticking as it cools
+  fanVolume: 0.05, // the water-cooled quad's radiator fan
 
   coughVolume: 0.9,
   drive: 1.8, // final soft clipping
@@ -260,6 +262,8 @@ export const AUDIO_PARAM_RANGES = {
   starterMesh: [0, 2, 0.01],
   starterDip: [0, 1, 0.01],
   solenoidVolume: [0, 2, 0.01],
+  pingVolume: [0, 1, 0.01],
+  fanVolume: [0, 0.3, 0.005],
   coughVolume: [0, 2, 0.01],
   drive: [0.5, 6, 0.05],
   refDistance: [0.5, 20, 0.1],

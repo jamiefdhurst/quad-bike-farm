@@ -8,6 +8,7 @@
 
 import { DEFAULT_ENGINE_PARAMS } from './engineParams.js';
 import { oilExcess, stepLube, nipping } from './lubrication.js';
+import { stepHeat, stepSoak, pinkLevel, gaugeHeat, coolTickRate, hotStartRich } from './heat.js';
 
 export const EngineState = Object.freeze({
   OFF: 'off',
@@ -56,6 +57,14 @@ export class EngineModel {
     this.scuff = 0; // 0..1 damage from running without oil; at 1 it seizes
     this.nip = 0; // 0..1 how far it's nipping up
     this.seized = false; // locked solid: nothing turns it until it's stripped down
+    this.heat = 0; // 0..1 running too hot (see heat.js)
+    this.fan = false; // the radiator fan's on (water-cooled only)
+    this.soak = 0; // 0..1 heat held in the metal after work; ticks as it cools, and a hot carb starts rich
+    this.speed = 0; // ground speed in m/s, for the airflow
+    this.ambient = 0.5; // 0..1 how warm a day it is
+    this.pink = 0; // 0..1 how badly it's pinking
+    this.pinkLeft = 0; // rattles owed to the audio
+    this.tickLeft = 0; // cooling ticks owed to the audio
     this.motorOn = false; // the starter motor is turning it (not just a yank on the cord)
 
     // Derived values, refreshed every step.
@@ -138,9 +147,11 @@ export class EngineModel {
    * @param {number}  [controls.resistLoad] 0..1 the part of driveLoad from climbing, mud or being blocked; this is what lugs a weak engine.
    * @param {number}  [controls.slip] 0..1 a slipping drive belt: the revs flare and the load doesn't hold them down.
    * @param {number}  [controls.dirt] 0..1 a dirty carb: lumpy, erratic and short of power.
+   * @param {number}  [controls.speed] ground speed in m/s: the air that cools it.
+   * @param {number}  [controls.ambient] 0..1 how warm the day is (sun on the engine).
    * @param {number}  [controls.overrunRpm] rpm above idle the wheels turn it over at with the throttle shut.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, oil = this.oil, slip = 0, dirt = 0 } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, oil = this.oil, slip = 0, dirt = 0, speed = 0, ambient = 0.5 } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -152,6 +163,8 @@ export class EngineModel {
     this.oil = Math.max(0, oil);
     this.slip = clamp(slip, 0, 1);
     this.dirt = clamp(dirt, 0, 1);
+    this.speed = Math.abs(speed);
+    this.ambient = clamp(ambient, 0, 1);
     this.driveLoad = clamp(driveLoad, 0, 1);
     this.resistLoad = clamp(resistLoad, 0, this.driveLoad);
     this.overrunRpm = Math.max(0, overrunRpm);
@@ -160,6 +173,9 @@ export class EngineModel {
     const steps = Math.max(1, Math.ceil(dt / this.params.maxStep));
     const h = dt / steps;
     this.updating = true;
+    // Heat comes and goes over minutes, so it takes one step a frame rather than one per substep.
+    this.stepT = 0;
+    this.updateHeat(dt);
     for (let i = 0; i < steps; i++) {
       this.stepT = i * h;
       this.step(h, starter);
@@ -288,6 +304,41 @@ export class EngineModel {
     this.temperature = clamp(this.temperature, 0, 1);
   }
 
+  /** How hard it's working, 0 (idling) to 1 (flat out or pulling hard). */
+  get work() {
+    const p = this.params;
+    const rpmNorm = clamp((this.rpm - p.idleRpmWarm) / (p.maxRpm - p.idleRpmWarm), 0, 1);
+    return Math.max(rpmNorm, this.driveLoad * this.throttle);
+  }
+
+  /** Running hot in the sun or in the mud, the radiator fan, the metal's heat, and the pinking and cooling ticks that go with them. */
+  updateHeat(h) {
+    const p = this.params;
+    const running = this.state === EngineState.RUNNING;
+    stepHeat(this, h, { running, ambient: this.ambient, work: this.work, speed: this.speed }, p);
+    this.soak = stepSoak(this.soak, h, { running, work: this.work, heat: this.heat }, p);
+    this.pink = running && !p.waterCooled ? pinkLevel(this.heat, p) : 0;
+    // Rattling under load; the audio plays what's owed (ticks a second, so they land at random times).
+    if (this.pink > 0) this.pinkLeft += p.pinkRate * this.pink * (0.2 + 0.8 * this.throttle) * h;
+    while (this.pinkLeft >= 1) {
+      this.pinkLeft -= 1;
+      this.emit('pink', this.random() * h);
+    }
+    // Switched off hot, the metal ticks as it contracts, slower and slower.
+    const tickRate = !running && this.state !== EngineState.CRANKING ? coolTickRate(this.soak, p) : 0;
+    if (tickRate > 0) this.tickLeft += tickRate * (0.4 + 1.2 * this.random()) * h;
+    else this.tickLeft = 0;
+    while (this.tickLeft >= 1) {
+      this.tickLeft -= 1;
+      this.emit('coolTick', this.random() * h);
+    }
+  }
+
+  /** What the dash gauge shows above the normal band: poor lubrication, or running hot. */
+  get gaugeHeat() {
+    return gaugeHeat(this.overheat, this.heat, this.params);
+  }
+
   /** Oil in the fuel: heat and scuffing on straight petrol, smoke and a fouling plug on too much. */
   updateLube(h) {
     const p = this.params;
@@ -311,7 +362,9 @@ export class EngineModel {
     const supplied = p.chokeEnrichment * this.choke * (1 - p.throttleChokeRelief * this.throttle);
     // A draining float bowl leans the mixture out, whatever the choke is doing.
     const starve = clamp((p.fuelStarveLevel - this.fuel) / p.fuelStarveLevel, 0, 1);
-    this.mixture = supplied - need - p.starveLean * starve + p.mixtureTrim;
+    // A heat-soaked carburettor boils its fuel, so a hot engine that isn't running starts rich; the throttle open clears it.
+    const hot = this.state === EngineState.RUNNING ? 0 : hotStartRich(this.soak, this.throttle, p);
+    this.mixture = supplied - need - p.starveLean * starve + p.mixtureTrim + hot;
     this.lean = Math.max(0, -this.mixture);
     this.rich = Math.max(0, this.mixture - p.richTolerance);
 
@@ -329,7 +382,8 @@ export class EngineModel {
         p.foulRoughness * this.fouling +
         p.nipRoughness * this.nip +
         p.oilRichRoughness * this.oilRich +
-        p.dirtRoughness * this.dirt,
+        p.dirtRoughness * this.dirt +
+        p.pinkRoughness * this.pink,
       0,
       1,
     );
@@ -345,6 +399,7 @@ export class EngineModel {
     this.power *= 1 - p.nipPowerLoss * this.nip;
     this.erratic = Math.max(this.erratic, this.nip * this.nip, this.dirt ** 1.5);
     this.power *= 1 - p.dirtPowerLoss * this.dirt;
+    this.power *= 1 - p.pinkPowerLoss * this.pink;
     // Stumbling, it's got almost nothing.
     if (this.stumbleLeft > 0) this.power *= p.stumblePower;
   }

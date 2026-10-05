@@ -277,6 +277,7 @@ export class EngineAudio {
         roughness: engine.roughness,
         running: engine.isRunning,
         cranking: engine.state === 'cranking',
+        fan: engine.fan,
         revsPerCycle: engine.revsPerCycle,
       },
       events,

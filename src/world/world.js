@@ -56,6 +56,11 @@ export class World {
     this.sky.buildEnvironment();
   }
 
+  /** 0..1 how warm the day is: full sun on a sunny day, nothing much in the rain. */
+  get warmth() {
+    return this.weather?.warmth ?? 0.5;
+  }
+
   /** 0..1 how wet the ground is. */
   get wet() {
     return this.weather?.wet ?? 0;

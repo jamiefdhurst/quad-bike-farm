@@ -109,6 +109,11 @@ export class Weather {
     return this.def.name;
   }
 
+  /** 0..1 how warm the day is for an engine in the sun: the sunshine, taken off by rain. */
+  get warmth() {
+    return clamp01(this.def.sky.sunIntensity / 2.6) * (1 - 0.8 * this.rain);
+  }
+
   get wind() {
     return this.def.wind * (1 + this.rain * 0.4);
   }

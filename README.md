@@ -140,6 +140,8 @@ Each quad has a fuel tank, a fuel tap and a fuel gauge on the dash. Taps start O
 
 **Faults that develop.** Quads go wrong over time, separately from wear, and nothing tells you: you feel and hear it. A slow puncture starts while a quad's being ridden and gets worse over a couple of minutes: the bars pull towards the soft tyre (less for a rear one) and it drags a little. A slipping drive belt comes from riding hard: the revs flare as soon as you open the throttle and it hardly goes. A sticking throttle cable keeps the engine running on after you let go, for a few seconds when it's bad (switching off frees it). A dirty carb makes it hunt, run rough and lose power, worse and worse the longer it runs. They happen to any quad the girls ride too, about one every ten to twenty minutes of riding across the lot. At the toolbox panel, `T` pumps and patches the tyres, `R` swaps the belt, `L` oils the cable and `C` cleans the carb; each does its job if there is one and otherwise just says everything's fine, so it doesn't give a fault away. Amy notices sooner and says what it is; Jess notices late and blames the quad.
 
+**Heat.** The air-cooled quads (red, blue, yellow, green) get too hot idling for ages on a sunny day, or crawling through mud with the throttle open: after about four minutes in full sun the needle climbs into the red and the engine starts pinking (a metallic rattle), runs rough and loses power. Riding along at a decent speed blows it away, as does a dull or wet day. The water-cooled orange has a radiator fan that cuts in and out with its own whirr, and never gets that hot. Switch off a quad you've thrashed and it ticks as the metal cools, slower and slower. It also starts differently while it's hot: the carb boils its fuel, so it starts rich, a choke makes it worse, and holding the throttle open while you crank helps. Amy tells you when it's pinking and when it's ticking; Jess is cheerful about both.
+
 ## The dashes
 
 The quads have different instruments:
@@ -278,7 +280,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
    - A dirty carb that hunts worse and worse. **Done.**
 
    Each has a symptom you can feel or hear, and a girl who might spot it. **Done.** All four, with toolbox jobs to fix them; see "Faults that develop" above.
-16. Heat. The air-cooled ones get hot idling for ages on a sunny day and start pinking and running rough. The water-cooled orange's fan cuts in with its own sound. A quad thrashed and then switched off ticks as it cools, and it starts differently hot.
+16. Heat. The air-cooled ones get hot idling for ages on a sunny day and start pinking and running rough. The water-cooled orange's fan cuts in with its own sound. A quad thrashed and then switched off ticks as it cools, and it starts differently hot. **Done.** Air-cooled quads overheat idling in the sun or crawling in mud (needle into the red, pinking, rough, weaker); the orange's fan cuts in and out; a thrashed quad ticks as it cools and starts rich while it's hot.
 17. Inside the barn. Open the big doors and the barn becomes a space:
     - Rain drumming loudly on the tin roof.
     - Straw bales to sit on, and the workbench with the toolbox.

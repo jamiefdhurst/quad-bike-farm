@@ -258,6 +258,7 @@ export const QUAD_SPECS = [
     fuel: { tankCapacity: 8, startOil: 0.02, reserveLitres: 1.2, burnPerRev: 0.000036, idleBurnFraction: 0.45 },
     engine: {
       strokes: 2,
+      waterCooled: true, // a radiator with a fan that cuts in; it never gets as hot as the air-cooled ones
       pullStart: true, // a recoil cord as well as the starter
       idleRpmWarm: 1950,
       maxRpm: 11500,

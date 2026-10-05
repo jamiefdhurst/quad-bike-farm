@@ -74,7 +74,7 @@ describe('each quad has its own character', () => {
         }
       }
     }
-  });
+  }, 30000); // a sweep of every quad, idle, wear and seed: slow by design
 
   it('runs very erratically fully worn: stumbling, surging, and now and then dying, so it wants a service', () => {
     for (const spec of QUAD_SPECS) {

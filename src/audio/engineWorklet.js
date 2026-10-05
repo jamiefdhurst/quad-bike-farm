@@ -438,6 +438,9 @@ class EngineProcessor extends AudioWorkletProcessor {
     this.starterGain = 0;
     this.starterSpeed = 0; // crank rpm as the starter sees it
     this.starterDip = 0;
+    this.fanGain = 0; // the radiator fan's level, easing in and out
+    this.fanLp = 0;
+    this.fanPhase = 0;
     this.blockCount = 0;
 
     this.port.onmessage = (e) => this.onMessage(e.data);
@@ -526,6 +529,16 @@ class EngineProcessor extends AudioWorkletProcessor {
         this.active.push({ kind: 'click', age: 0, amp: p.solenoidVolume * 0.9 });
         this.active.push({ kind: 'click', age: -Math.round(0.07 * sr), amp: p.solenoidVolume * 0.6 });
         break;
+      case 'pink':
+        // Pinking: a quick metallic rattle of pings, a little different each time.
+        for (let k = 0; k < 2 + Math.floor(Math.random() * 3); k++) {
+          this.active.push({ kind: 'ping', age: -Math.round((k * 0.011 + Math.random() * 0.006) * sr), amp: p.pingVolume * (0.5 + Math.random() * 0.5), freq: 2600 + Math.random() * 1400 });
+        }
+        break;
+      case 'coolTick':
+        // The metal contracting as it cools: one small, higher, ringing tick.
+        this.active.push({ kind: 'ping', age: 0, amp: p.pingVolume * (0.35 + Math.random() * 0.4), freq: 3600 + Math.random() * 1800, ring: 2.2 });
+        break;
       case 'starterOff':
       case 'ignitionOn':
       case 'ignitionOff':
@@ -534,6 +547,17 @@ class EngineProcessor extends AudioWorkletProcessor {
         break;
       default:
     }
+  }
+
+  /** The radiator fan: a soft rush of air with a faint motor hum, easing in and out as it cuts in and out. */
+  fanSample() {
+    const target = this.state.fan ? 1 : 0;
+    this.fanGain += (target - this.fanGain) * (1 / (0.6 * sampleRate));
+    if (this.fanGain < 0.0005 && !target) return 0;
+    this.fanLp += 0.12 * (Math.random() * 2 - 1 - this.fanLp);
+    this.fanPhase += (TWO_PI * (170 + 40 * this.fanGain)) / sampleRate;
+    if (this.fanPhase > TWO_PI * 1000) this.fanPhase -= TWO_PI * 1000;
+    return this.fanGain * this.p.fanVolume * (this.fanLp * 1.6 + 0.25 * Math.sin(this.fanPhase));
   }
 
   addExhaust(amp, cycleSamples, blow, turbulence) {
@@ -641,6 +665,12 @@ class EngineProcessor extends AudioWorkletProcessor {
             done = a > 0.02 * sr;
             break;
           }
+          case 'ping': {
+            const env = Math.exp(-a / ((0.004 * (e.ring ?? 1)) * sr));
+            dry += e.amp * env * (Math.sin((TWO_PI * e.freq * a) / sr) + 0.3 * (Math.random() * 2 - 1) * (a < 0.0015 * sr ? 1 : 0));
+            done = a > 0.05 * sr;
+            break;
+          }
           case 'pump': {
             const env = Math.min(1, a / (0.04 * sr)) * (a < 0.7 * sr ? 1 : Math.max(0, 1 - (a - 0.7 * sr) / (0.2 * sr)));
             dry += e.amp * env * (Math.sin((TWO_PI * 1450 * a) / sr) + 0.3 * (Math.random() * 2 - 1));
@@ -702,7 +732,7 @@ class EngineProcessor extends AudioWorkletProcessor {
         s += this.starterGain * p.starterVolume * (whine * 0.35 * speedNorm + brush * speedNorm + mesh);
       }
 
-      s += dry;
+      s += dry + this.fanSample();
       s = this.dcBlock.run(s);
       out[i] = Math.tanh(s * p.drive) / Math.max(1, Math.tanh(p.drive));
     }
@@ -742,6 +772,10 @@ class EngineProcessor extends AudioWorkletProcessor {
         if (e.kind === 'click') {
           dry += e.amp * (Math.random() * 2 - 1) * Math.exp(-a / (0.0015 * sr));
           done = a > 0.02 * sr;
+        } else if (e.kind === 'ping') {
+          const env = Math.exp(-a / (0.004 * (e.ring ?? 1) * sr));
+          dry += e.amp * env * (Math.sin((TWO_PI * e.freq * a) / sr) + 0.3 * (Math.random() * 2 - 1) * (a < 0.0015 * sr ? 1 : 0));
+          done = a > 0.05 * sr;
         } else if (e.kind === 'pump') {
           const env = Math.min(1, a / (0.04 * sr)) * (a < 0.7 * sr ? 1 : Math.max(0, 1 - (a - 0.7 * sr) / (0.2 * sr)));
           dry += e.amp * env * (Math.sin((TWO_PI * 1450 * a) / sr) + 0.3 * (Math.random() * 2 - 1));
@@ -754,7 +788,7 @@ class EngineProcessor extends AudioWorkletProcessor {
         // As revs rise the firings merge: less of the deep thump, more mid-range rasp.
         x = this.pulseMid.run(this.pulseLow.run(x)) * drive;
       }
-      const s = this.tone.run(x) + dry;
+      const s = this.tone.run(x) + dry + this.fanSample();
       out[i] = Math.tanh(s);
     }
     return true;

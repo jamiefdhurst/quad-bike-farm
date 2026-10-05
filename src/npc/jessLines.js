@@ -9,6 +9,7 @@ import { JESS_REQUEST_LINES } from './requestLines.js';
 import { JESS_PLACE_LINES } from './placeLines.js';
 import { JESS_BATTERY_LINES } from './batteryLines.js';
 import { JESS_OIL_LINES } from './oilLines.js';
+import { JESS_HEAT_LINES } from './heatLines.js';
 import { JESS_FAULT_LINES } from './faultLines.js';
 
 export const JESS_LINES = {
@@ -329,5 +330,6 @@ export const JESS_LINES = {
   ...JESS_PLACE_LINES,
   ...JESS_BATTERY_LINES,
   ...JESS_OIL_LINES,
+  ...JESS_HEAT_LINES,
   ...JESS_FAULT_LINES,
 };
