@@ -140,6 +140,7 @@ Look at her and press `E`:
 
 - **Get on the red / blue / yellow quad**: she walks over and sits on the pillion seat. Get on and ride; she stays on. Asking her onto the other quad while she's sitting on one, she gets off and walks over.
 - **Start the red / blue / yellow quad**: she walks to its handlebars, turns the key, checks the fuel tap (usually), puts the choke on if it's cold (usually), and cranks in short goes, talking herself through it. If it catches she eases the choke off as it warms, then leaves it to you; after four goes she gives up and switches it off. Get on while she's at it and she stops.
+- **Drive the red / blue / yellow quad**: she gets on the front, starts it like the learner she is, and potters round a small loop near where she started for about a minute (slowly, a bit jerkily, nervous or gleeful), then stops, bored or scared, and gets off or hops on the back. While she drives you can ask her to stop and get off or move onto the back. Get on and she shuffles back; if her quad is too fast to climb onto, press `E` on it to ask her to stop and let you on.
 - **Stand next to the red / blue quad**: she gets off if she's on, or walks over if she isn't, and stands beside it facing it.
 
 The menu only offers what makes sense: no "get on" while she's already on, no "stand next to it" while she's already there. She stays put on the pillion when you get off until you ask her to get down. Jump off at speed with her on the back and she'll let you know what she thinks.
@@ -154,7 +155,7 @@ She talks, now and then, with captions at the bottom of the screen:
 - Jump off and leave her on a quad driving itself and she's either terrified or having the time of her life (40% of the time), and tells you about it afterwards.
 - She speaks up the further away you are, and shouts some things (being left behind, a quad riding itself), which carry twice as far.
 - She comments when the seat is shaking hard, and has a favourite quad each game.
-- Left standing about for a minute or so, she does something on her own: wanders off for a look round, gets on a quad to wait (and stays on it until you ask her down), or has a go at starting one. Turn this off with `ownMind` in the Companion folder.
+- Left standing about for a minute or so, she does something on her own: wanders off for a look round, gets on a quad to wait (and stays on it until you ask her down), has a go at starting one, or takes one for a drive. Turn this off with `ownMind` in the Companion folder.
 - She answers when you ask her something.
 
 Her lines are recorded offline with a British woman's voice ("cori", from the Piper text-to-speech engine) and play from where she is, like her sighs, hums and laughs, which are real recordings. After changing the lines in `src/npc/voiceLines.js`, re-record them with `tools/generate_companion_voice.py` (usage at the top of the script). Until then, a new line uses the browser's speech, but only with a voice known to be a woman's (Flo or Shelley on a Mac, Google UK English Female in Chrome, Sonia or Libby in Edge); with none of those she just shows the caption. Her figure (bust, waist, hips) can be adjusted live in the Companion folder of the tuning panel. How chatty she is, her volume, speech rate and pitch, captions and the thresholds she reacts to are in the Companion folder of the tuning panel. The lines are in `src/npc/voiceLines.js`.
@@ -216,3 +217,14 @@ To recut the recordings, see the instructions at the top of `tools/slice_engine_
 **Parameters**. Every tunable number lives in a `*Params.js` file next to the code that uses it, with a range for the tuning panel.
 
 Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). Asset sources and licences are in [ASSETS.md](ASSETS.md).
+
+## TODO
+
+1. She can drive differently depending on how she feels, confident or carefully - it can vary
+2. When she stops driving, she always gets off, never to the back of the quad
+3. I can also ride pillion with her
+4. Quads get more rough over time, the roughness value needs to go up even more, to 2 or 3, but it can be fixed with the toolbox
+5. Add two other quads - another 4 and another 2 stroke, with different idle sounds and base characteristics
+6. Allow her to follow you and ride together on different quads
+7. Ability to wash the bikes
+8. Another girl, slightly different personality
