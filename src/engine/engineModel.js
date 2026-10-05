@@ -180,8 +180,10 @@ export class EngineModel {
   updateTemperature(h) {
     const p = this.params;
     if (this.state === EngineState.RUNNING) {
+      // Heat follows how hard it's working: revs, and more again pulling under load.
       const rpmNorm = clamp((this.rpm - p.idleRpmWarm) / (p.maxRpm - p.idleRpmWarm), 0, 1);
-      this.temperature += (h / p.warmUpSeconds) * (1 + p.warmUpRpmBoost * rpmNorm);
+      const work = 1 + p.warmUpRpmBoost * rpmNorm + p.warmUpLoadBoost * this.driveLoad * this.throttle;
+      this.temperature += (h / p.warmUpSeconds) * work;
     } else {
       this.temperature -= (h * this.temperature) / p.coolDownSeconds;
     }

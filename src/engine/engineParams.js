@@ -32,7 +32,8 @@ export const DEFAULT_ENGINE_PARAMS = {
 
   // Temperature (0 = stone cold, 1 = fully warm)
   warmUpSeconds: 150, // running at idle from cold to fully warm
-  warmUpRpmBoost: 0.8, // extra warming at high rpm (fraction of the base rate)
+  warmUpRpmBoost: 2.0, // extra warming at high rpm (fraction of the base rate): flat out it warms about three times as fast as at idle
+  warmUpLoadBoost: 1.5, // and more again pulling hard under load (climbing, mud, pulling away)
   coolDownSeconds: 900, // exponential time constant when off
   warmLightThreshold: 0.65, // dash cold light goes out above this
 
@@ -129,7 +130,8 @@ export const ENGINE_PARAM_RANGES = {
   lugStallGain: [0, 10, 0.1],
   lugRoughness: [0, 1, 0.01],
   warmUpSeconds: [10, 600, 5],
-  warmUpRpmBoost: [0, 3, 0.05],
+  warmUpRpmBoost: [0, 6, 0.05],
+  warmUpLoadBoost: [0, 6, 0.05],
   coolDownSeconds: [30, 3600, 10],
   warmLightThreshold: [0, 1, 0.01],
   coldEnrichmentNeed: [0, 2, 0.01],
