@@ -1003,7 +1003,9 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
   root.add(pillionAnchor);
   const cameraAnchor = new THREE.Object3D();
   cameraAnchor.name = 'cameraAnchor';
-  cameraAnchor.position.set(0, 1.55, -0.22);
+  // The rider's eyes: 0.79 m above the seat, as for someone of the player's standing
+  // eye height (1.62 m). Any lower and you sit shorter than she does behind you.
+  cameraAnchor.position.set(0, 1.69, -0.22);
   root.add(cameraAnchor);
 
   // Wheels sit outside the body so they don't rock with it.

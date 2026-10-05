@@ -221,7 +221,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 ## TODO
 
 1. She can drive differently depending on how she feels, confident or carefully - it can vary **Done.**
-2. When you're on the quad, the girl seems a lot taller than you, which doesn't feel right
+2. When you're on the quad, the girl seems a lot taller than you, which doesn't feel right **Done.**
 3. Driving around should warm the quads up quicker, currently it has no effect
 4. After finishing driving, she never turns the quad off
 5. If she's on the back, after a while she asks occasionally if she can come off
