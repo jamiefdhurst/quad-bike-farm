@@ -98,6 +98,18 @@ Things to know:
 - If you flood it, take the choke off and crank with the throttle held open (`W` + `R`) to clear it.
 - The bike keeps idling when you get off, and you can watch and hear it shake from outside. With nobody on it, it also jolts over the ground as it moves, harder the faster it goes, so a quad driving itself round in circles visibly bounces. Riding it, the shake is as it always was.
 
+## Tinkering
+
+Pick up the red toolbox by the petrol tank (`E`), take it to a quad that's switched off and press `E` to get the spanners out. The panel has five adjustments, each with its current and stock values and a note on the trade-off:
+
+- **Idle screw**: the warm idle, within safe limits.
+- **Carb mixture**: leaner pulls a bit harder and uses less fuel but runs rougher; richer is easier from cold but smokier and thirstier, and fully rich slowly fouls the plug.
+- **Throttle stop (speed limiter)**: farm quads come with it screwed in. Each turn out adds about 7% top speed (fully off is about +20%: the red goes from 35 to 42 mph), plus a few more revs and more fuel.
+- **Clutch springs**: softer bites sooner, stiffer later; it always bites above the idle.
+- **Tyre pressures**: softer grips better (especially in mud) but bounces more.
+
+"Back to stock" puts everything back exactly. Changes last for the game. `G` puts the toolbox down; you can't ride while carrying it. She has opinions about all of this.
+
 ## Fuel
 
 Each quad has a fuel tank, a fuel tap and a fuel gauge on the dash. Taps start OFF. How much is in each tank varies every game (see `fuelRange` above); the blue can start below its reserve, so it'll only run on RESERVE until it's filled.

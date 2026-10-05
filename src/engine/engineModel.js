@@ -194,7 +194,7 @@ export class EngineModel {
     const supplied = p.chokeEnrichment * this.choke * (1 - p.throttleChokeRelief * this.throttle);
     // A draining float bowl leans the mixture out, whatever the choke is doing.
     const starve = clamp((p.fuelStarveLevel - this.fuel) / p.fuelStarveLevel, 0, 1);
-    this.mixture = supplied - need - p.starveLean * starve;
+    this.mixture = supplied - need - p.starveLean * starve + p.mixtureTrim;
     this.lean = Math.max(0, -this.mixture);
     this.rich = Math.max(0, this.mixture - p.richTolerance);
 

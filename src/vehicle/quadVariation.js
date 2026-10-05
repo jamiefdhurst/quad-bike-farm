@@ -2,7 +2,7 @@
 // random within the ranges in its spec (quadSpecs.js), so the bikes feel a bit
 // different every time. Pure logic.
 
-const CLUTCH_MARGIN_RPM = 400; // the clutch must bite this far above idle, or the bike creeps
+export const CLUTCH_MARGIN_RPM = 400; // the clutch must bite this far above idle, or the bike creeps
 
 /** A value within [min, max], evenly spread, rounded to `step`. */
 export function pickInRange([min, max], random, step = 1) {
