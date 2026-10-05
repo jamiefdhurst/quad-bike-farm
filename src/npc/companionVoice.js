@@ -221,8 +221,10 @@ export class CompanionVoice {
   watchGhostRide(dt, together) {
     const c = this.companion;
     if (c.isSeated && c.quad.isGhostRiding && !together) {
+      // Each time, she's either terrified or having the time of her life.
+      if (this.ghostTime === 0) this.ghostFun = Math.random() < this.params.ghostFunChance;
       this.ghostTime += dt;
-      if (this.ghostTime > 0.4) this.say('ghostRiding', { urgent: true });
+      if (this.ghostTime > 0.4) this.say(this.ghostFun ? 'ghostRidingFun' : 'ghostRiding', { urgent: true });
     } else if (this.ghostTime > 0) {
       // Once it's come to a stop, or you've caught it, she tells you what she thinks.
       if (!c.isSeated || together || c.quad.speed < 0.5) {
@@ -232,7 +234,7 @@ export class CompanionVoice {
     }
     if (this.ghostVerdict > 0) {
       this.ghostVerdict -= dt;
-      if (this.say('ghostStopped', { urgent: true })) this.ghostVerdict = 0;
+      if (this.say(this.ghostFun ? 'ghostStoppedFun' : 'ghostStopped', { urgent: true })) this.ghostVerdict = 0;
     }
   }
 
@@ -282,12 +284,17 @@ export class CompanionVoice {
     if (!line) return null;
     const p = this.params;
     const sp = this.soundParams;
+    const shout = !!this.chatter.lines[situation]?.shout;
+    const distance = this.head.distanceTo(this.listener);
+    // Like anyone, she raises her voice the further away you are, and some things she shouts.
+    const raise = Math.min(p.voiceRaiseMax, 1 + Math.max(0, distance - 4) * p.voiceRaisePerMetre) * (shout ? p.shoutGain : 1);
+    const voice = { rolloff: shout ? 0.6 : 1.2 };
     let seconds;
     if (typeof line === 'string') {
-      const hearing = this.hearing();
+      const hearing = this.hearing(shout);
       if (hearing <= 0) return line; // out of earshot: she said it, nobody heard
       this.speech.stop();
-      seconds = this.sounds.say(line, this.head, p.voiceVolume);
+      seconds = this.sounds.say(line, this.head, p.voiceVolume * raise, voice);
       if (!seconds) {
         // Not recorded yet: the browser's voice, if it has a woman's, else just the caption.
         seconds = Speech.duration(line, p.speechRate);
@@ -297,18 +304,18 @@ export class CompanionVoice {
       this.caption(`“${line}”`, seconds + 0.8);
     } else {
       this.speech.stop();
-      seconds = this.sounds.play(line.sound, this.head, p.voiceSoundVolume);
+      seconds = this.sounds.play(line.sound, this.head, p.voiceSoundVolume * raise, voice);
       if (!seconds) return null; // not loaded yet
-      if (this.hearing() > 0.2) this.caption(SOUND_CAPTIONS[line.sound] ?? '', seconds + 0.4);
+      if (this.hearing(shout) > 0.2) this.caption(SOUND_CAPTIONS[line.sound] ?? '', seconds + 0.4);
     }
     this.chatter.holdFor(seconds);
     return line;
   }
 
-  /** 1 close by, fading to 0 at the edge of earshot. */
-  hearing() {
+  /** 1 close by, fading to 0 at the edge of earshot. A shout carries twice as far. */
+  hearing(shout = false) {
     const d = this.head.distanceTo(this.listener);
-    const range = this.params.voiceRange;
+    const range = this.params.voiceRange * (shout ? 2 : 1);
     return Math.max(0, Math.min(1, 1 - (d - 3) / (range - 3)));
   }
 

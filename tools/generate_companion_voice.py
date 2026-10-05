@@ -19,13 +19,19 @@ Usage (needs node, numpy and piper-tts):
   pip install piper-tts numpy
   curl -LO https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/cori/high/en_GB-cori-high.onnx
   curl -LO https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/cori/high/en_GB-cori-high.onnx.json
-  python3 tools/generate_companion_voice.py en_GB-cori-high.onnx
+  python3 tools/generate_companion_voice.py en_GB-cori-high.onnx [--cache DIR]
+
+With --cache, each line's raw recording is kept in DIR and reused while its
+text and the voice settings are unchanged, so only new or edited lines are
+recorded again.
 """
 
+import argparse
+import hashlib
 import json
 import os
+import shutil
 import subprocess
-import sys
 import tempfile
 import wave
 
@@ -92,13 +98,30 @@ def tidy(x, sr):
 
 
 def main():
-    model = sys.argv[1]
+    ap = argparse.ArgumentParser()
+    ap.add_argument('model')
+    ap.add_argument('--cache')
+    args = ap.parse_args()
+    model = args.model
     texts = lines()
     out, clips, sr = [], {}, None
     cursor = 0
+    recorded = 0
     with tempfile.TemporaryDirectory() as tmp:
-        for i, text in enumerate(texts):
-            x, sr = synth(model, SPOKEN.get(text, text), os.path.join(tmp, f'{i}.wav'))
+        cache = args.cache or tmp
+        os.makedirs(cache, exist_ok=True)
+        for text in texts:
+            spoken = SPOKEN.get(text, text)
+            key = hashlib.sha1(f'{os.path.basename(model)}|{LENGTH_SCALE}|{NOISE_SCALE}|{spoken}'.encode()).hexdigest()[:16]
+            path = os.path.join(cache, f'{key}.wav')
+            if os.path.exists(path):
+                with wave.open(path) as w:
+                    sr = w.getframerate()
+                    x = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(np.float32) / 32768.0
+            else:
+                x, sr = synth(model, spoken, os.path.join(tmp, 'line.wav'))
+                shutil.copy(os.path.join(tmp, 'line.wav'), path)
+                recorded += 1
             x = tidy(x, sr)
             clips[text] = {'start': round(cursor / sr, 5), 'dur': round(len(x) / sr, 5)}
             gap = np.zeros(int(0.05 * sr), dtype=np.float32)
@@ -113,7 +136,7 @@ def main():
         w.writeframes((np.clip(audio, -1, 1) * 32767).astype(np.int16).tobytes())
     with open(path + '.json', 'w') as f:
         json.dump({'file': 'audio/companion-voice.wav', 'voice': os.path.basename(model), 'clips': clips}, f, indent=1)
-    print(f'{len(clips)} lines, {len(audio) / sr:.1f} s, peak {np.abs(audio).max():.2f}')
+    print(f'{len(clips)} lines ({recorded} newly recorded), {len(audio) / sr:.1f} s, peak {np.abs(audio).max():.2f}')
 
 
 if __name__ == '__main__':

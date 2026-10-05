@@ -96,7 +96,7 @@ Things to know:
 - A warm engine with lots of choke is hard to start.
 - Braking hard from speed while it's still cold can stall it. Roll off early and brake gently until it's warm.
 - If you flood it, take the choke off and crank with the throttle held open (`W` + `R`) to clear it.
-- The bike keeps idling when you get off, and you can watch and hear it shake from outside. On the move it also jolts over the ground, harder the faster it goes, so a riderless quad going round in circles visibly bounces.
+- The bike keeps idling when you get off, and you can watch and hear it shake from outside. With nobody on it, it also jolts over the ground as it moves, harder the faster it goes, so a quad driving itself round in circles visibly bounces. Riding it, the shake is as it always was.
 
 ## Fuel
 
@@ -111,11 +111,11 @@ Each quad has a fuel tank, a fuel tap and a fuel gauge on the dash. Taps start O
 
 The quads have different instruments:
 
-- **Red**: a round analogue rev counter, plus a green LCD with speed in mph, a fuel bar, RES and OFF flags for the tap, and a trip meter. Separate TEMP, IGN and FUEL lamps.
-- **Blue**: one wide amber display with a bar-graph rev counter, big speed digits, a vertical fuel gauge that goes red on reserve, warning icons and a trip meter, in an angular pod with a visor.
-- **Yellow**: the same layout as the blue's, compact and red-on-black, in a bare pod under the motocross crossbar.
+- **Red**: three chrome-ringed analogue dials in a pill-shaped pod. A rev counter scaled to its engine (red from 5,800), a 0 to 40 mph speedo with a drum trip counter, and a fuel gauge from E to F with a red reserve zone and the tap position (ON, RES, OFF) under the needle. TEMP, IGN, reverse and low-fuel lamps are set into the dials. With the ignition off the fuel needle drops to E.
+- **Blue**: one wide amber display with a bar-graph rev counter, big speed digits, a vertical fuel gauge that goes red on reserve, warning icons and a trip meter, in a rounded pod with a slim brow over it.
+- **Yellow**: the same layout as the blue's, compact and red-on-black, in a rounder bare pod under the motocross crossbar.
 
-Both go blank with the ignition off.
+The displays go blank with the ignition off.
 
 ## Riding with her
 
@@ -131,6 +131,9 @@ She talks, now and then, with captions at the bottom of the screen:
 - Riding pillion she reacts to the ride: "Oh, this is fun!" on a smooth run, "This is a bit rough." over bumps, "Careful!" when you go too fast, a gasp when you brake hard, and something when it stalls or runs out of petrol.
 - If you crank a quad near her for a while without it starting, she has a guess at why: the choke if it's cold, flooding if it's rich, the fuel tap if the carburettor is dry.
 - Left waiting she sighs, hums, yawns and asks if you're going. Ride off without her and she'll shout after you.
+- Jump off and leave her on a quad driving itself and she's either terrified or having the time of her life (40% of the time), and tells you about it afterwards.
+- She speaks up the further away you are, and shouts some things (being left behind, a quad riding itself), which carry twice as far.
+- She comments when the seat is shaking hard, and has a favourite quad each game.
 - She answers when you ask her something.
 
 Her lines are recorded offline with a British woman's voice ("cori", from the Piper text-to-speech engine) and play from where she is, like her sighs, hums and laughs, which are real recordings. After changing the lines in `src/npc/voiceLines.js`, re-record them with `tools/generate_companion_voice.py` (usage at the top of the script). Until then, a new line uses the browser's speech, but only with a voice known to be a woman's (Flo or Shelley on a Mac, Google UK English Female in Chrome, Sonia or Libby in Edge); with none of those she just shows the caption. Her figure (bust, waist, hips) can be adjusted live in the Companion folder of the tuning panel. How chatty she is, her volume, speech rate and pitch, captions and the thresholds she reacts to are in the Companion folder of the tuning panel. The lines are in `src/npc/voiceLines.js`.

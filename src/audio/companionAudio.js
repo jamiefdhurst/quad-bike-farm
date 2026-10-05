@@ -105,19 +105,20 @@ export class CompanionSounds {
   }
 
   /** Plays a random sound of a kind (sigh, hum...); returns its length in seconds, or 0. */
-  play(kind, position, volume = 1, random = Math.random) {
+  play(kind, position, volume = 1, { rolloff = 1.2 } = {}, random = Math.random) {
     const list = this.banks.sounds?.clips[kind];
     if (!list?.length) return 0;
-    return this.start(this.banks.sounds.buffer, list[Math.floor(random() * list.length)], position, volume);
+    return this.start(this.banks.sounds.buffer, list[Math.floor(random() * list.length)], position, volume, rolloff);
   }
 
   /** Says a recorded line; returns its length in seconds, or 0 if it hasn't been recorded. */
-  say(text, position, volume = 1) {
+  say(text, position, volume = 1, { rolloff = 1.2 } = {}) {
     const clip = this.banks.voice?.clips[text];
-    return clip ? this.start(this.banks.voice.buffer, clip, position, volume) : 0;
+    return clip ? this.start(this.banks.voice.buffer, clip, position, volume, rolloff) : 0;
   }
 
-  start(buffer, clip, position, volume) {
+  /** `rolloff` is how fast it fades with distance: lower carries further, as a shout does. */
+  start(buffer, clip, position, volume, rolloff = 1.2) {
     const hub = this.hub;
     if (!hub.master) return 0;
     const ctx = hub.ctx;
@@ -130,7 +131,7 @@ export class CompanionSounds {
     panner.panningModel = 'HRTF';
     panner.distanceModel = 'inverse';
     panner.refDistance = 1.5;
-    panner.rolloffFactor = 1.2;
+    panner.rolloffFactor = rolloff;
     source.connect(gain).connect(panner).connect(hub.master);
     this.active = { source, panner };
     this.setPosition(position);

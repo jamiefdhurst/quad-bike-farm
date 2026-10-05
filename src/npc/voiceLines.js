@@ -2,6 +2,7 @@
 // recorded non-verbal sounds (public/audio/companion.json: sigh, hmm, laugh,
 // yawn, hum, gasp, oh). `cooldown` is the least time in seconds before the same
 // situation can make her speak again (scaled by the chattiness setting).
+// `shout: true` lines are shouted: louder, and they carry further.
 //
 // To add a situation, add it here and raise it from companionVoice.js. After
 // changing any spoken line, re-record them with tools/generate_companion_voice.py.
@@ -155,6 +156,7 @@ export const VOICE_LINES = {
     ],
   },
   ghostRiding: {
+    shout: true,
     cooldown: 5,
     lines: [
       'Where are you going?!',
@@ -178,7 +180,41 @@ export const VOICE_LINES = {
       'Mind the hedge! Mind the hedge!',
     ],
   },
+  ghostRidingFun: {
+    shout: true,
+    cooldown: 5,
+    lines: [
+      'Wheee! Look, no driver!',
+      "I'm driving! Sort of!",
+      'Round and round we go!',
+      'This is actually brilliant!',
+      { sound: 'laugh' },
+      { sound: 'laugh' },
+      'Woo hoo!',
+      "Don't you dare stop it!",
+      'Bye! See you next lap!',
+      'Faster, little quad!',
+      "I'm queen of the field!",
+      'Wave! Wave at me!',
+      'Ha! You look so small from here!',
+      'I love it!',
+    ],
+  },
+  ghostStoppedFun: {
+    shout: true,
+    cooldown: 20,
+    lines: [
+      'Again! Do it again!',
+      'That was amazing.',
+      "Okay, that's the most fun I've had all year.",
+      'Best. Ride. Ever.',
+      { sound: 'laugh' },
+      "I'm still dizzy. Brilliant.",
+      "Don't tell my mum, but that was great.",
+    ],
+  },
   ghostStopped: {
+    shout: true,
     cooldown: 20,
     lines: [
       "Don't you ever do that again.",
@@ -432,6 +468,7 @@ export const VOICE_LINES = {
     ],
   },
   leftBehind: {
+    shout: true,
     cooldown: 60,
     lines: [
       'Oi! Wait for me!',

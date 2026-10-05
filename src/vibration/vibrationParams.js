@@ -14,8 +14,8 @@ export const DEFAULT_VIBRATION_PARAMS = {
   misfireScale: 0.3, // a misfire is a missing beat, so only a small jolt
   directionJitter: 0.6, // how much each kick's direction varies (0 = always the same)
 
-  // Jolts from uneven ground while moving.
-  groundGain: 3.5, // jolt size at groundFullSpeed, in pulse kicks
+  // Jolts from uneven ground while moving with nobody on it.
+  groundGain: 8, // jolt size at groundFullSpeed, in pulse kicks
   groundFullSpeed: 10, // m/s
   groundJoltsPerMetre: 1.2,
 

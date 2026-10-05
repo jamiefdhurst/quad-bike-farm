@@ -1,8 +1,9 @@
 // Turns the engine's individual firing pulses into motion for the bike body,
 // the handlebars and the rider's head. Each pulse is a kick with a slightly
 // random direction into a damped oscillator, so it reads as one thumping
-// cylinder rather than a smooth sine wave. Riding along, the ground adds its
-// own jolts, more and harder the faster it goes. Pure logic, no Three.js.
+// cylinder rather than a smooth sine wave. A quad moving with nobody on it
+// also takes jolts from the ground, more and harder the faster it goes, so it
+// visibly bounces along when it's driving itself. Pure logic, no Three.js.
 
 import { DEFAULT_VIBRATION_PARAMS } from './vibrationParams.js';
 
@@ -62,7 +63,7 @@ export class VibrationModel {
   /**
    * @param {number} dt
    * @param {object} engine  Anything with rpm, roughness and pulses[{t, type, strength}].
-   * @param {number} [speed]  Ground speed in m/s, for jolts from the ground.
+   * @param {number} [speed]  Ground speed in m/s for jolts from the ground; pass 0 to leave them out.
    */
   update(dt, engine, speed = 0) {
     const p = this.params;

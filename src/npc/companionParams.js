@@ -41,10 +41,14 @@ export const DEFAULT_COMPANION_PARAMS = {
   voiceSoundVolume: 1, // sighs, hums, laughs
   speechRate: 1.0, // browser speech only, for lines not yet recorded
   speechPitch: 1.05, // browser speech only
-  voiceRange: 25, // metres; further away you can't hear her
+  voiceRange: 25, // metres; further away you can't hear her (twice that for a shout)
+  voiceRaisePerMetre: 0.12, // she speaks up the further away you are: this much louder per metre beyond 4 m
+  voiceRaiseMax: 2.5, // up to this many times louder
+  shoutGain: 1.6, // shouted lines (voiceLines.js `shout: true`) are this much louder again, and fade less with distance
   voiceFastSpeed: 13, // m/s riding pillion before she tells you to slow down (about 29 mph)
   voiceRoughAccel: 9, // m/s^2 of vertical jolting before she complains it's rough
   voiceWaitAfter: 25, // seconds of nothing happening before she gets bored
+  ghostFunChance: 0.4, // when you leave her on a quad driving itself: the chance she enjoys it rather than panics
   voiceShakeLevel: 0.95, // how hard the seat has to shake (about 0.6 at a warm idle, 1 to 2 cold) before she mentions it
 };
 
@@ -82,8 +86,12 @@ export const COMPANION_PARAM_RANGES = {
   speechRate: [0.5, 2, 0.01],
   speechPitch: [0, 2, 0.01],
   voiceRange: [2, 100, 1],
+  voiceRaisePerMetre: [0, 1, 0.01],
+  voiceRaiseMax: [1, 6, 0.05],
+  shoutGain: [1, 4, 0.05],
   voiceFastSpeed: [3, 25, 0.5],
   voiceRoughAccel: [1, 40, 0.5],
   voiceWaitAfter: [5, 120, 1],
+  ghostFunChance: [0, 1, 0.05],
   voiceShakeLevel: [0.1, 5, 0.05],
 };
