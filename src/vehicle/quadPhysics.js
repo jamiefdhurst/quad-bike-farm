@@ -108,7 +108,7 @@ export class QuadPhysics {
    * @param {(x:number, z:number) => number} [c.puddleAt]  Standing water, 0..1.
    * @param {number} [c.dt]
    */
-  applyControls({ driveForce, brake, steer, mudAt, puddleAt, bogAt, dt = 1 / 60 }) {
+  applyControls({ driveForce, brake, steer, mudAt, puddleAt, bogAt, wet = 0, dt = 1 / 60 }) {
     const p = this.params;
     const v = this.vehicle;
     // Grip under each wheel, from where it touched down last step.
@@ -125,6 +125,8 @@ export class QuadPhysics {
       w.puddle = w.contact && puddleAt ? puddleAt(w.point.x, w.point.z) : 0;
       w.load = w.contact ? (v.wheelSuspensionForce(i) ?? 0) : 0;
       w.grip = surfaceGrip(p, w.mud, w.puddle) * (w.contact && bogAt ? bogGrip(bogAt(w.point.x, w.point.z)) : 1);
+      // Wet ground is slipperier, and wet mud more so.
+      w.grip *= 1 - wet * (0.15 + 0.15 * w.mud);
       // Puddles are mud too, as far as the engine's concerned.
       this.wheelMud[i] = Math.max(w.mud, w.puddle);
       w.driven = isDriven(p, WHEELS[i].front);

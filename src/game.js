@@ -24,6 +24,8 @@ import { FuelTank } from './items/fuelTank.js';
 import { Toolbox } from './items/toolbox.js';
 import { Hose, HOSE_PARAM_RANGES } from './items/hose.js';
 import { Winch, WINCH_PARAM_RANGES } from './items/winch.js';
+import { Weather, pickWeatherKind } from './world/weather.js';
+import { Rain } from './effects/rain.js';
 import { washMud } from './effects/mudBuildUp.js';
 import { Workshop } from './workshop/workshop.js';
 import { Interaction } from './interaction/interaction.js';
@@ -123,6 +125,12 @@ export class Game {
         .join('; ')}`,
     );
     this.updateSmokeScale();
+    // This game's weather, picked after everything else so a seed keeps its layout (?weather=rain forces one).
+    const forced = new URLSearchParams(location.search).get('weather');
+    this.weather = new Weather(forced ?? pickWeatherKind(random), random);
+    this.world.setWeather(this.weather);
+    this.rain = new Rain(this.scene);
+    console.info(`Weather: ${this.weather.name}`);
     // She starts beside a random quad in the yard; the player starts facing it.
     this.homeUnit = this.units[home];
     this.lastUnit = this.homeUnit;
@@ -410,6 +418,20 @@ export class Game {
         const ahead = this.camera.getWorldDirection(to.clone()).dot(to.normalize());
         if (dist < 7 && ahead > 0.96) c.voice.onWash?.('her');
       }
+    }
+  }
+
+  /** Rain round you and its sound, and the wind on the exhaust smoke. */
+  updateWeather(dt) {
+    const w = this.weather;
+    this.rain.update(dt, this.camera, w.rain, w.wind);
+    this.audioHub.setRain(w.rain);
+    for (const unit of this.units) {
+      const s = unit.smoke.params;
+      s.baseWindX ??= s.windX;
+      s.baseWindZ ??= s.windZ;
+      s.windX = s.baseWindX * w.wind;
+      s.windZ = s.baseWindZ * w.wind;
     }
   }
 
@@ -757,6 +779,7 @@ export class Game {
         units: this.units,
         menuOpen: this.menu.isOpen,
         talkingToHer: this.menu.isOpen && this.talkingTo === c,
+        weather: this.weather,
         pouring,
       });
     }
@@ -771,6 +794,7 @@ export class Game {
     this.audioHub.update(dt, this.camera);
     this.rideWind.update(dt, board ? board.quad.speed : 0);
     this.world.update(dt, board ? board.quad.position : this.player.position, this.camera);
+    this.updateWeather(dt);
     this.updateHud(dt);
 
     this.renderer.render(this.scene, this.camera);

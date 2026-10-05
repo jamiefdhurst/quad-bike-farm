@@ -340,7 +340,9 @@ export class Quad {
     // In a bog it sinks, faster with the wheels spinning, and the mud holds it.
     const at = this.physics.body.translation();
     const lin = this.physics.body.linvel();
-    const inBog = this.world.bogAt?.(at.x, at.z) ?? 0;
+    // A wet day makes the bogs worse.
+    const wet = this.world.wet ?? 0;
+    const inBog = Math.min(1, (this.world.bogAt?.(at.x, at.z) ?? 0) * (0.85 + 0.3 * wet));
     const groundSpeed = Math.hypot(lin.x, lin.z);
     // Held by the mud with the power on, the wheels churn round without it going anywhere.
     const churn = inBog > 0.1 && Math.abs(d.driveForce) > 300 && groundSpeed < 1 ? (Math.abs(d.driveForce) / p.maxDriveForce) * 6 * (1 - groundSpeed) : 0;
@@ -368,6 +370,7 @@ export class Quad {
       mudAt: (x, z) => this.world.mudAt(x, z),
       puddleAt: (x, z) => this.world.puddleAt?.(x, z) ?? 0,
       bogAt: (x, z) => this.world.bogAt?.(x, z) ?? 0,
+      wet,
       dt,
     });
     this.physics.update(dt);

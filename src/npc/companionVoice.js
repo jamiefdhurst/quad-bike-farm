@@ -154,6 +154,7 @@ export class CompanionVoice {
       this.stoppedTime = 10;
     }
 
+    this.watchWeather(dt, view.weather);
     this.watchGhostRide(dt, together);
     this.watchStarting();
     this.watchOwnMind();
@@ -424,6 +425,24 @@ export class CompanionVoice {
     if (e.fouling > 0.4 || e.rich > 0.2) return 'crankStruggleFlooded';
     if (e.temperature < 0.4 && unit.quad.choke < 0.5) return 'crankStruggleCold';
     return 'crankStruggle';
+  }
+
+  /** What the day's like: a word about it early on, and when the rain comes and goes. */
+  watchWeather(dt, weather) {
+    if (!weather) return;
+    this.weatherTime = (this.weatherTime ?? 0) + dt;
+    if (!this.weatherSaid && this.weatherTime > (this.weatherAt ??= 12 + Math.random() * 40)) {
+      this.weatherSaid = true;
+      const kind = weather.rain > 0.25 ? 'raining' : { sunny: 'sunny', fair: 'sunny', fog: 'fog' }[weather.kind] ?? 'grey';
+      this.say({ sunny: 'weatherSunny', raining: 'weatherRain', fog: 'weatherFog', grey: 'weatherGrey' }[kind], { chance: 0.75 });
+    }
+    const raining = weather.rain > 0.25;
+    if (raining && this.wasRaining === false) this.say('rainStarts', { urgent: true, chance: 0.9 });
+    if (!raining && this.wasRaining && weather.rain < 0.1) this.say('rainStops', { chance: 0.7 });
+    if (raining || weather.rain < 0.1) this.wasRaining = raining;
+    // Out in it a while, the odd grumble.
+    this.rainTime = raining ? (this.rainTime ?? 0) + dt : 0;
+    if (this.rainTime > 60) this.say('stillRaining', { chance: 0.004 });
   }
 
   /** Picks a line for the situation and says it; returns what was said, or null. */

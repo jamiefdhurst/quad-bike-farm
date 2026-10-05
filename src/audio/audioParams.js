@@ -8,6 +8,7 @@ export const DEFAULT_SOUND_PARAMS = {
   ambientVolume: 0.05,
   pourVolume: 0.12,
   hoseVolume: 0.1,
+  rainVolume: 0.09,
 
   // How each quad's sound reaches you (propagation.js)
   doppler: true, // passing quads rise and fall in pitch
@@ -53,6 +54,7 @@ export const DEFAULT_SOUND_PARAMS = {
 export const SOUND_PARAM_RANGES = {
   pourVolume: [0, 1, 0.01],
   hoseVolume: [0, 1, 0.01],
+  rainVolume: [0, 1, 0.01],
   masterVolume: [0, 2, 0.01],
   latency: [0.02, 0.2, 0.005],
   ambientVolume: [0, 0.5, 0.005],

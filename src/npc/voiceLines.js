@@ -555,6 +555,35 @@ export const VOICE_LINES = {
       { sound: 'sigh' },
     ],
   },
+  // The weather (weather.js): a word about the day, and the rain coming and going.
+  weatherSunny: {
+    cooldown: 600,
+    lines: ['What a lovely day for it.', "Ooh, it's actually sunny.", 'Look at that sky!', 'Perfect day for this.'],
+  },
+  weatherGrey: {
+    cooldown: 600,
+    lines: ["Bit grey, isn't it?", 'At least it is not raining. Yet.', 'Typical English summer.', 'Could be worse, I suppose.'],
+  },
+  weatherFog: {
+    cooldown: 600,
+    lines: ["I can't see a thing in this.", "It's like riding through soup.", 'Spooky in the fog, isn\'t it?', 'Mind where you go in this.'],
+  },
+  weatherRain: {
+    cooldown: 600,
+    lines: ['Lovely weather for ducks.', "I'm going to be soaked.", "Why did we come out in this?", "It's tipping it down."],
+  },
+  rainStarts: {
+    cooldown: 120,
+    lines: ["Oh no, it's starting to rain.", 'Was that a drop of rain?', "Here it comes. I didn't bring a coat.", 'Oh great. Rain.'],
+  },
+  rainStops: {
+    cooldown: 120,
+    lines: ["Oh, it's stopped.", 'Thank goodness, it has stopped raining.', "That's better.", "I think it's brightening up."],
+  },
+  stillRaining: {
+    cooldown: 180,
+    lines: ["My socks are wet.", "I'm absolutely drenched.", 'My hair is ruined.', "Can we go in yet? I'm soaking."],
+  },
   // Hopping on the back of the other girl's quad as she sets off.
   selfJoin: {
     cooldown: 30,

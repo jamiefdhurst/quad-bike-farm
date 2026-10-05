@@ -147,6 +147,13 @@ export class Sky {
     const p = this.params;
     this.uniforms.time.value += dt * p.cloudSpeed;
     this.uniforms.cover.value = p.cloudCover;
+    // Colours follow the params too, as the weather changes.
+    this.uniforms.horizonColor.value.set(p.horizonColor);
+    this.uniforms.zenithColor.value.set(p.zenithColor);
+    this.uniforms.cloudColor.value.set(p.cloudColor);
+    this.uniforms.cloudShadowColor.value.set(p.cloudShadowColor);
+    this.scene.fog.color.set(p.horizonColor);
+    this.scene.background.set(p.horizonColor);
     this.scene.fog.density = p.fogDensity;
     this.sun.intensity = p.sunIntensity;
     this.hemi.intensity = p.hemiIntensity;

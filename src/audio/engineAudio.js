@@ -99,6 +99,19 @@ export class AudioHub {
     this.hoseGain.gain.value = 0;
     hose.connect(this.hoseFilter).connect(this.hoseGain).connect(this.master);
     hose.start();
+    // Rain: a soft wash of noise, brighter the harder it falls.
+    const rain = ctx.createBufferSource();
+    rain.buffer = noise;
+    rain.loop = true;
+    rain.playbackRate.value = 0.61;
+    this.rainFilter = ctx.createBiquadFilter();
+    this.rainFilter.type = 'bandpass';
+    this.rainFilter.Q.value = 0.35;
+    this.rainFilter.frequency.value = 1400;
+    this.rainGain = ctx.createGain();
+    this.rainGain.gain.value = 0;
+    rain.connect(this.rainFilter).connect(this.rainGain).connect(this.master);
+    rain.start();
     this.glugTimer = 0;
     this.ready = true;
   }
@@ -110,6 +123,14 @@ export class AudioHub {
     const t = this.ctx.currentTime;
     this.hoseGain.gain.setTargetAtTime(active ? this.params.hoseVolume * (onTarget ? 1 : 0.7) : 0, t, 0.06);
     this.hoseFilter.frequency.setTargetAtTime(onTarget ? 1800 : 3200, t, 0.1);
+  }
+
+  /** How hard it's raining, 0..1. */
+  setRain(level) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    this.rainGain.gain.setTargetAtTime(this.params.rainVolume * Math.sqrt(Math.max(0, level)), t, 0.5);
+    this.rainFilter.frequency.setTargetAtTime(1000 + 1400 * level, t, 0.5);
   }
 
   setPouring(active, dt) {
