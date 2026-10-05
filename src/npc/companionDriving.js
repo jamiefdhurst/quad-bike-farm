@@ -26,6 +26,7 @@ export const drivingStates = {
   driving: {
     enter() {
       const q = this.quad;
+      this.setColliderEnabled(false);
       q.riderAnchor.add(this.root);
       this.root.position.copy(this.seatOffset(true));
       this.root.quaternion.identity();
