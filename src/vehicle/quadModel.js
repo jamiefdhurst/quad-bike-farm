@@ -504,6 +504,9 @@ const PROFILE = {
   },
 };
 
+/** Body styles the builder knows: every quad spec must name one of these. */
+export const BODY_STYLES = Object.keys(PROFILE).filter((k) => k in SECTION);
+
 function fenders(root, style, paint) {
   const P = PROFILE[style];
   for (const w of WHEELS) {

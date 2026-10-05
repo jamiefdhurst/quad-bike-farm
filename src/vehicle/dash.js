@@ -545,6 +545,9 @@ function buildModern(look = MODERN) {
   };
 }
 
+/** Dash styles buildDash knows: every quad spec must name one of these. */
+export const DASH_STYLES = ['classic', 'modern', 'sport'];
+
 export function buildDash(style = 'classic') {
   if (style === 'modern') return buildModern(MODERN);
   if (style === 'sport') return buildModern(SPORT);
