@@ -70,9 +70,9 @@ All three are automatics and all start cold. Through the CVT the red tops out at
 
 | | `idleRange` (rpm) | `roughnessRange` | `fuelRange` (litres) |
 | --- | --- | --- | --- |
-| Red | 650 to 1,200 | 0.04 to 0.14 | 2.5 to 11 of 12 |
-| Blue | 950 to 1,550 | 0.06 to 0.18 | 1.2 to 8 of 11 |
-| Yellow | 900 to 2,000 | 0.10 to 0.40 | 1.5 to 8 of 9 |
+| Red | 650 to 1,200 | 0.04 to 0.50 | 2.5 to 11 of 12 |
+| Blue | 950 to 1,550 | 0.06 to 1.00 | 1.2 to 8 of 11 |
+| Yellow | 900 to 2,000 | 0.10 to 1.00 | 1.5 to 8 of 9 |
 
 The idle and roughness are shown in the status panel and printed in the console.
 

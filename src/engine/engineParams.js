@@ -161,7 +161,7 @@ export const ENGINE_PARAM_RANGES = {
   leanRoughness: [0, 2, 0.01],
   richRoughness: [0, 2, 0.01],
   foulRoughness: [0, 2, 0.01],
-  baseRoughness: [0, 0.5, 0.01],
+  baseRoughness: [0, 1, 0.01],
   cycleJitter: [0, 0.6, 0.01],
   pulseStrengthJitter: [0, 1, 0.01],
   misfireBase: [0, 0.1, 0.001],

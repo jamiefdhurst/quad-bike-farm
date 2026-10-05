@@ -22,7 +22,7 @@ export const QUAD_SPECS = [
     style: 'utility',
     dashStyle: 'classic',
     idleRange: [650, 1200],
-    roughnessRange: [0.04, 0.14],
+    roughnessRange: [0.04, 0.5],
     fuelRange: [2.5, 11], // 12 litre tank, 2 litre reserve
     fuel: {},
     engine: {},
@@ -42,7 +42,7 @@ export const QUAD_SPECS = [
     style: 'utility2',
     dashStyle: 'modern',
     idleRange: [950, 1550],
-    roughnessRange: [0.06, 0.3],
+    roughnessRange: [0.06, 1],
     fuelRange: [1.2, 8], // 11 litre tank, 1.8 litre reserve: some games it starts on its reserve
     fuel: { tankCapacity: 11, reserveLitres: 1.8 },
     engine: {
@@ -93,7 +93,7 @@ export const QUAD_SPECS = [
     style: 'sport',
     dashStyle: 'sport',
     idleRange: [900, 2000],
-    roughnessRange: [0.1, 0.4],
+    roughnessRange: [0.1, 1],
     fuelRange: [1.5, 8], // 9 litre tank, 1.5 litre reserve
     fuel: { tankCapacity: 9, reserveLitres: 1.5, burnPerRev: 0.000032, idleBurnFraction: 0.45 },
     engine: {
