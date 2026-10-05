@@ -58,6 +58,9 @@ export class EngineModel {
     this.cycleLength = 1;
     this.huntPhase = 0;
     this.huntNoise = 0;
+    this.roughPhase = 0;
+    this.roughNoise = 0;
+    this.wear = 0; // roughness built up from running; a service (the toolbox) clears it
 
     /** Events from the last update: { type, t, reason? }. t is seconds into that update. */
     this.events = [];
@@ -184,6 +187,8 @@ export class EngineModel {
       const rpmNorm = clamp((this.rpm - p.idleRpmWarm) / (p.maxRpm - p.idleRpmWarm), 0, 1);
       const work = 1 + p.warmUpRpmBoost * rpmNorm + p.warmUpLoadBoost * this.driveLoad * this.throttle;
       this.temperature += (h / p.warmUpSeconds) * work;
+      // And it wears: plug, filter and carb slowly go off, faster when it's worked hard.
+      this.wear = Math.min(p.wearMax, this.wear + (h / 60) * p.wearPerMinute * (1 + p.wearWorkBoost * rpmNorm));
     } else {
       this.temperature -= (h * this.temperature) / p.coolDownSeconds;
     }
@@ -203,6 +208,7 @@ export class EngineModel {
     const coldness = 1 - this.temperature;
     this.roughness = clamp(
       p.baseRoughness +
+        this.wear +
         p.coldRoughness * coldness +
         p.leanRoughness * this.lean +
         p.richRoughness * this.rich +
@@ -263,12 +269,18 @@ export class EngineModel {
     this.huntPhase += 2 * Math.PI * p.huntFrequency * h;
     this.huntNoise += (this.random() * 2 - 1) * 3 * h - this.huntNoise * 1.5 * h;
     const hunt = p.huntRpm * this.rich * (0.7 * Math.sin(this.huntPhase) + this.huntNoise);
+    // A rough engine can't hold a steady idle: it hunts up and down, far more so near the top of the range.
+    this.roughPhase += 2 * Math.PI * p.roughHuntFrequency * h;
+    this.roughNoise += (this.random() * 2 - 1) * 4 * h - this.roughNoise * 1.2 * h;
+    const r = this.roughness;
+    const roughHunt = p.roughHunt * p.idleRpmWarm * r * r * (0.6 * Math.sin(this.roughPhase) + this.roughNoise) * (1 - 0.7 * this.throttle);
 
     this.idleTarget =
       p.idleRpmWarm +
       p.chokeIdleRpm * this.choke * lerp(p.chokeIdleColdFactor, 1, T) -
       p.leanIdleDrop * this.lean +
-      hunt;
+      hunt +
+      roughHunt;
     this.freeTargetRpm = Math.min(p.maxRpm, this.idleTarget + this.throttle * (p.maxRpm - this.idleTarget));
     // Under load the revs sag towards idle. A weak engine sags further when it's
     // climbing or ploughing (the slipping clutch spares it when pulling away),

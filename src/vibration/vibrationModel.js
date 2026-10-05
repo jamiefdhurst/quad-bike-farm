@@ -71,7 +71,8 @@ export class VibrationModel {
     const pulses = engine.pulses;
     const bodyFactor = this.rpmFactor(engine.rpm, p.highRpmFloor);
     const barsFactor = this.rpmFactor(engine.rpm, p.barsHighRpmFloor);
-    const roughBoost = 1 + p.roughnessGain * engine.roughness;
+    // Roughness shakes it harder, much more so near the top of the range.
+    const roughBoost = 1 + p.roughnessGain * engine.roughness + p.roughnessGainTop * engine.roughness ** 3;
     this.jolts.length = 0;
 
     let pulseIndex = 0;

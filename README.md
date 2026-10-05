@@ -113,7 +113,7 @@ Pick up the red toolbox by the petrol tank (`E`), take it to a quad that's switc
 - **Clutch springs**: softer bites sooner, stiffer later; it always bites above the idle.
 - **Tyre pressures**: softer grips better (especially in mud) but bounces more.
 
-"Back to stock" puts everything back exactly. Changes last for the game. `G` puts the toolbox down; you can't ride while carrying it. She has opinions about all of this.
+"Back to stock" puts everything back exactly. Engines also wear as they run (faster when worked hard), getting rougher: a lumpy, hunting idle and a lot more shake. The panel says how it's running, and **Service it** (`V`) clears the wear and leaves it as sweet as that quad gets. Changes last for the game. `G` puts the toolbox down; you can't ride while carrying it. She has opinions about all of this.
 
 ## Fuel
 
@@ -226,7 +226,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 3. Driving around should warm the quads up quicker, currently it has no effect **Done.**
 4. After finishing driving, she never turns the quad off **Done** (she leaves it running nearly always, and very occasionally switches it off).
 5. If she's on the back, after a while she asks occasionally if she can come off **Done.**
-6. Quads get more rough over time, the roughness value needs to go up even more, or have more of an effect at the top range, a lot more in both idle variation and shaking, but it can be fixed with the toolbox
+6. Quads get more rough over time, the roughness value needs to go up even more, or have more of an effect at the top range, a lot more in both idle variation and shaking, but it can be fixed with the toolbox **Done.**
 7. I can also ride pillion with her
 8. Allow her to follow you and ride together on different quads
 9. Ability to wash the bikes

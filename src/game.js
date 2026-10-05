@@ -548,7 +548,7 @@ export class Game {
       this.hud.setStatus(
         [
           unit.name,
-          `Engine   ${e.state}${e.state === 'stalled' ? stalledNote : ''}   (warm idle ${unit.idleRpm} rpm, roughness ${unit.engine.params.baseRoughness.toFixed(2)})`,
+          `Engine   ${e.state}${e.state === 'stalled' ? stalledNote : ''}   (warm idle ${unit.idleRpm} rpm, roughness ${Math.min(1, unit.engine.params.baseRoughness + unit.engine.wear).toFixed(2)})`,
           `Temp     ${'▮'.repeat(bars)}${'▯'.repeat(10 - bars)}`,
           `Fuel     ${'▮'.repeat(fuelBars)}${'▯'.repeat(10 - fuelBars)}  ${quad.fuel.litres.toFixed(1)} L, tap ${quad.fuel.tap.toUpperCase()}`,
           `Choke    ${Math.round(quad.choke * 100)}%`,

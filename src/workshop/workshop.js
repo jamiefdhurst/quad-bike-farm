@@ -171,6 +171,22 @@ export class Workshop {
     return true;
   }
 
+  /** A service: new plug, clean filter, carb tickled over. Clears the wear and leaves it running as sweetly as this quad can. */
+  service() {
+    const unit = this.unit;
+    if (!unit || this.isServiced(unit)) return;
+    unit.engine.wear = 0;
+    const best = unit.spec.roughnessRange?.[0];
+    if (best !== undefined) unit.engine.params.baseRoughness = Math.min(unit.engine.params.baseRoughness, best);
+    this.render();
+    this.game.voice.onTinker?.('service');
+  }
+
+  isServiced(unit) {
+    const best = unit.spec.roughnessRange?.[0] ?? unit.engine.params.baseRoughness;
+    return unit.engine.wear < 0.005 && unit.engine.params.baseRoughness <= best + 0.001;
+  }
+
   backToStock() {
     const q = this.quads.get(this.unit);
     if (isStock(q.settings, q.stock, this.params)) return;
@@ -203,6 +219,7 @@ export class Workshop {
     if (pressed('ArrowUp', 'KeyW')) this.select((this.selected + ROWS.length - 1) % ROWS.length);
     if (pressed('ArrowDown', 'KeyS')) this.select((this.selected + 1) % ROWS.length);
     if (pressed('KeyB', 'Backspace')) this.backToStock();
+    if (pressed('KeyV')) this.service();
     const key = ROWS[this.selected].key;
     if (this.repeatKey(input, ['ArrowLeft', 'KeyA'])) this.adjust(key, -1);
     if (this.repeatKey(input, ['ArrowRight', 'KeyD'])) this.adjust(key, 1);
@@ -267,14 +284,16 @@ export class Workshop {
         <div class="ws-head">
           <div class="ws-title"></div>
           <div class="ws-sub">Changes take effect straight away and stay for the rest of the game.</div>
+          <div class="ws-cond"></div>
         </div>
         <div class="ws-rows"></div>
         <div class="ws-explain"></div>
         <div class="ws-foot">
           <button type="button" class="ws-btn ws-reset"><span class="key">B</span>Back to stock</button>
+          <button type="button" class="ws-btn ws-service"><span class="key">V</span>Service it</button>
           <button type="button" class="ws-btn ws-done"><span class="key">E</span>Done</button>
         </div>
-        <div class="ws-keys">↑ ↓ choose   ·   ← → adjust (hold to keep going)   ·   or use the mouse</div>
+        <div class="ws-keys">↑ ↓ choose   ·   ← → adjust (hold to keep going)   ·   V service   ·   or use the mouse</div>
       </div>`;
     document.body.appendChild(el);
     this.el = el;
@@ -304,6 +323,7 @@ export class Workshop {
       }
     });
     el.querySelector('.ws-reset').addEventListener('click', () => this.backToStock());
+    el.querySelector('.ws-service').addEventListener('click', () => this.service());
     el.querySelector('.ws-done').addEventListener('click', () => this.close());
     // Keep clicks on the panel from reaching the game.
     el.addEventListener('mousedown', (e) => e.stopPropagation());
@@ -334,5 +354,11 @@ export class Workshop {
       more.disabled = settings[r.key] >= hi;
     });
     this.el.querySelector('.ws-reset').disabled = isStock(settings, stock, P);
+    // How it's running: roughness from its build plus wear, which a service clears.
+    const e = unit.engine;
+    const rough = Math.min(1, e.params.baseRoughness + e.wear);
+    const word = rough < 0.15 ? 'sweet' : rough < 0.35 ? 'a bit lumpy' : rough < 0.6 ? 'rough' : 'very rough';
+    this.el.querySelector('.ws-cond').textContent = `Running ${word}: roughness ${rough.toFixed(2)}${e.wear >= 0.005 ? ` (${e.wear.toFixed(2)} of it wear)` : ''}. A service clears the wear.`;
+    this.el.querySelector('.ws-service').disabled = this.isServiced(unit);
   }
 }

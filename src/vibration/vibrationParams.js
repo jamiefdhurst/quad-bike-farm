@@ -9,6 +9,7 @@ export const DEFAULT_VIBRATION_PARAMS = {
   highRpmFloor: 0.1, // fraction of the body shake left at high rpm
   barsHighRpmFloor: 0.35, // the bars keep more of a buzz at high rpm
   roughnessGain: 3.0, // extra kick at full roughness
+  roughnessGainTop: 5.0, // and more again near the top (grows with roughness cubed)
   compressionScale: 0.55, // kicks from compression strokes when cranking or coasting to a stop
   sputterScale: 0.8,
   misfireScale: 0.3, // a misfire is a missing beat, so only a small jolt
@@ -50,6 +51,7 @@ export const VIBRATION_PARAM_RANGES = {
   highRpmFloor: [0, 1, 0.01],
   barsHighRpmFloor: [0, 1, 0.01],
   roughnessGain: [0, 5, 0.05],
+  roughnessGainTop: [0, 20, 0.1],
   compressionScale: [0, 2, 0.05],
   sputterScale: [0, 2, 0.05],
   misfireScale: [0, 2, 0.05],

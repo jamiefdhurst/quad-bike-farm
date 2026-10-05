@@ -980,6 +980,17 @@ export const VOICE_LINES = {
       "If you crash it, I'm telling everyone.",
     ],
   },
+  tinkerService: {
+    cooldown: 60,
+    lines: [
+      'Ooh, a proper service.',
+      'Does that mean it will stop shaking now?',
+      'New plug? Look at you.',
+      'It was sounding a bit poorly.',
+      "Smells like you've been at it.",
+      'Better. Probably.',
+    ],
+  },
   tinkerStock: {
     cooldown: 60,
     lines: ['Probably for the best.', 'Back how it was? Good.', 'Sensible.', 'Lost your nerve?', 'Phew.'],

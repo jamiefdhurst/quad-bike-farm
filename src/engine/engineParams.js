@@ -81,6 +81,11 @@ export const DEFAULT_ENGINE_PARAMS = {
   richRoughness: 0.9,
   foulRoughness: 0.5,
   baseRoughness: 0.08, // a single cylinder is never perfectly smooth
+  roughHunt: 0.32, // a fully rough engine's idle hunts by about this fraction of its idle (it grows with roughness squared)
+  roughHuntFrequency: 0.7, // Hz
+  wearPerMinute: 0.012, // roughness gained per minute of idling; more when it's worked hard
+  wearWorkBoost: 2, // flat out it wears this much faster again
+  wearMax: 0.7, // the most it wears before it needs a service
 
   // Firing pulses
   cycleJitter: 0.18, // cycle length variation at full roughness
@@ -164,6 +169,11 @@ export const ENGINE_PARAM_RANGES = {
   richRoughness: [0, 2, 0.01],
   foulRoughness: [0, 2, 0.01],
   baseRoughness: [0, 1, 0.01],
+  roughHunt: [0, 1, 0.01],
+  roughHuntFrequency: [0.05, 5, 0.05],
+  wearPerMinute: [0, 0.2, 0.001],
+  wearWorkBoost: [0, 10, 0.1],
+  wearMax: [0, 1, 0.01],
   cycleJitter: [0, 0.6, 0.01],
   pulseStrengthJitter: [0, 1, 0.01],
   misfireBase: [0, 0.1, 0.001],

@@ -71,7 +71,7 @@ export class CompanionVoice {
    * only remarks on what she can see. Returns what she said, if anything.
    */
   onTinker(kind) {
-    const [situation, chance] = { open: ['tinkerOpen', 0.6], adjust: ['tinker', 0.25], limiter: ['tinkerLimiter', 0.9], stock: ['tinkerStock', 0.6], fast: ['tunedFast', 0.02] }[kind] ?? [];
+    const [situation, chance] = { open: ['tinkerOpen', 0.6], adjust: ['tinker', 0.25], limiter: ['tinkerLimiter', 0.9], stock: ['tinkerStock', 0.6], service: ['tinkerService', 0.8], fast: ['tunedFast', 0.02] }[kind] ?? [];
     if (!situation || this.head.distanceTo(this.listener) > Math.min(15, this.params.voiceRange)) return null;
     return this.say(situation, { urgent: true, chance });
   }
