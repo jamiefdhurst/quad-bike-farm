@@ -304,5 +304,17 @@ export const JESS_LINES = {
     'Going for a drive! Alone!',
     'Bye!',
   ],
+  prankGiggle: [
+    "Wasn't me.",
+    'Ha! Took you long enough.',
+    "I'm not laughing. You're laughing.",
+    "Don't look at me. Look at the quad.",
+    'Oh, come on. That was brilliant.',
+  ],
+  prankConfess: [
+    'Yeah, all right, it was me.',
+    'Course it was me. Who else?',
+    'Worth it. Totally worth it.',
+  ],
   pouring: ["Don't spill it.", "You're getting it everywhere."],
 };

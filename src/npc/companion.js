@@ -299,6 +299,18 @@ export class Companion {
     else this.wander();
   }
 
+  /**
+   * Sneaks over to `spot` ({ x, z }) to play a prank (pranks.js): once there she pauses a moment,
+   * does `act()`, then carries on. Only when she's stood about; returns whether she set off.
+   */
+  sneakTo(spot, act) {
+    if (!this.fsm.is('idle')) return false;
+    const target = new THREE.Vector3(spot.x, this.world.heightAt(spot.x, spot.z), spot.z);
+    const facing = Math.atan2(this.root.position.x - spot.x, this.root.position.z - spot.z) + Math.PI;
+    this.fsm.transition('walking', { goal: 'prank', target: () => ({ position: target, facing }), act });
+    return true;
+  }
+
   /** A stroll to somewhere nearby on the farm, staying inside the hedges. */
   wander() {
     const p = this.params;
@@ -748,8 +760,25 @@ const STATES = {
         // If you've beaten her to the front seat, she gets on the back.
         else if (data.goal === 'drive') this.fsm.transition('mounting', { side: t.side, seat: this.quad.rider ? 'pillion' : 'rider' });
         else if (data.goal === 'start') this.fsm.transition('starting', { facing: t.facing, side: t.side });
+        else if (data.goal === 'prank') this.fsm.transition('pranking', { facing: t.facing, act: data.act });
         else this.fsm.transition('idle', { facing: t.facing });
       }
+    },
+  },
+
+  // Up to no good: a quiet moment at the thing she's meddling with, then done.
+  pranking: {
+    enter() {
+      this.rig.play('Idle', { fade: 0.3 });
+      this.prankDone = false;
+    },
+    update(dt, data) {
+      this.turnToward(dt, data.facing);
+      if (!this.prankDone && this.fsm.time > 1.4) {
+        this.prankDone = true;
+        data.act();
+      }
+      if (this.fsm.time > 2.6) this.fsm.transition('idle', { facing: data.facing });
     },
   },
 

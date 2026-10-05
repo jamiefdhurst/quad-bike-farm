@@ -569,6 +569,26 @@ export const VOICE_LINES = {
       'I need some air!',
     ],
   },
+  // You've found out she's been at something while you were away, and she can't keep a straight face.
+  prankGiggle: {
+    cooldown: 30,
+    lines: [
+      'Hee. Sorry. I cannot do this.',
+      "I didn't do anything. Look, my face is perfectly straight.",
+      "Oh no, you've found it. Sorry! Sorry.",
+      "Don't look at me like that. It was funny.",
+      'I was going to tell you. Eventually.',
+    ],
+  },
+  // You talk to her once she's been caught.
+  prankConfess: {
+    cooldown: 30,
+    lines: [
+      'Fine. It was me. You should have seen your face.',
+      "All right, it was me. I couldn't resist.",
+      "Yes, I did it. You're not cross, are you?",
+    ],
+  },
   leftBehind: {
     shout: true,
     cooldown: 60,

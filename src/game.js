@@ -20,6 +20,7 @@ import { DEFAULT_COMPANION_PARAMS, COMPANION_PARAM_RANGES } from './npc/companio
 import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
 import { CHARACTERS } from './npc/characters.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
+import { Pranks, PRANK_PARAM_RANGES } from './npc/pranks.js';
 import { Banter } from './npc/banter.js';
 import { RideOffer, pickOfferer } from './npc/rideOffer.js';
 import { BANTER } from './npc/banterLines.js';
@@ -189,6 +190,10 @@ export class Game {
       c.favourView = () => ({ mood: this.favour.mood(id), warmth: this.favour.warmth(id), sulk: this.favour.sulkDrive(id) });
     }
 
+    // Pranks: Jess meddles with a quad's tap or choke, Amy hides the can or toolbox while you're away (npc/pranks.js).
+    this.pranks = new Pranks();
+    this.itemHome = {}; // where a hidden item was taken from, by name
+
     for (const unit of this.units) {
       const quad = unit.quad;
       unit.interaction = this.interaction.add({
@@ -333,6 +338,7 @@ export class Game {
     registerTuning('Jerry can', this.can.params, JERRY_CAN_PARAM_RANGES);
     registerTuning('Hose', this.hose.params, HOSE_PARAM_RANGES);
     registerTuning('Favour', this.favour.p, FAVOUR_PARAM_RANGES);
+    registerTuning('Pranks', this.pranks.p, PRANK_PARAM_RANGES);
     if (this.winch) registerTuning('Winch', this.winch.params, WINCH_PARAM_RANGES);
     registerTuning('Player', this.player.params, PLAYER_PARAM_RANGES);
     for (const c of this.companions) {
@@ -609,6 +615,69 @@ export class Game {
     for (const c of this.companions) if (c !== driver && c.fsm.is('idle', 'walking')) this.favour.add(c.character.id, -this.favour.p.ignoredPerSecond * dt);
   }
 
+  // Pranks -----------------------------------------------------------------
+
+  /** What the prank logic needs to know about the farm right now. */
+  prankContext(ridden) {
+    const item = (thing, name) => ({ x: thing.model.position.x, z: thing.model.position.z, held: thing.held, home: this.itemHome[name] ?? thing.model.position });
+    return {
+      you: { x: this.player.position.x, z: this.player.position.z, riding: ridden?.spec.id ?? null },
+      girls: this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !this.menu.isOpen, mood: this.favour.mood(c.character.id) })),
+      quads: this.units.map((u) => ({
+        id: u.spec.id,
+        x: u.quad.position.x,
+        z: u.quad.position.z,
+        taken: !!u.quad.rider || this.companions.some((c) => c.quad === u.quad && !c.fsm.is('idle')),
+        running: u.quad.engine.isRunning,
+        tap: u.quad.fuel.tap,
+        choke: u.quad.choke,
+        temperature: u.quad.engine.temperature,
+      })),
+      items: { can: item(this.can, 'can'), toolbox: item(this.toolbox, 'toolbox') },
+      spots: this.world.layout.jerryCanSpots,
+    };
+  }
+
+  updatePranks(dt, ridden) {
+    for (const e of this.pranks.update(dt, this.prankContext(ridden))) {
+      const a = e.prank;
+      const girl = this.companions.find((c) => c.character.id === a.girl);
+      if (e.type === 'start') this.startPrank(a, girl);
+      else if (e.type === 'found') girl?.voice.say('prankGiggle', { force: true });
+      else if (e.type === 'restore') {
+        const thing = a.item === 'can' ? this.can : this.toolbox;
+        const home = this.itemHome[a.item];
+        if (home && !thing.held) thing.putDown(home, home.yaw);
+      }
+      if (e.type === 'resolved' || e.type === 'restore') delete this.itemHome[a.item];
+    }
+  }
+
+  /** She sets off to do it; it only happens if it's still fair game when she gets there. */
+  startPrank(a, girl) {
+    if (!girl) return this.pranks.cancel(a);
+    const quad = a.quad ? this.units.find((u) => u.spec.id === a.quad).quad : null;
+    const thing = a.item === 'can' ? this.can : a.item === 'toolbox' ? this.toolbox : null;
+    const at = quad ? quad.position : thing.model.position;
+    // Stops short of it, on her side.
+    const from = girl.root.position;
+    const d = Math.hypot(from.x - at.x, from.z - at.z) || 1;
+    const spot = { x: at.x + ((from.x - at.x) / d) * 1.3, z: at.z + ((from.z - at.z) / d) * 1.3 };
+    const act = () => {
+      if (quad) {
+        if (quad.rider || quad.engine.isRunning) return this.pranks.cancel(a);
+        if (a.kind === 'tap') quad.fuel.tap = 'off';
+        else quad.choke = 1;
+      } else {
+        if (thing.held) return this.pranks.cancel(a);
+        this.itemHome[a.item] = { x: thing.model.position.x, z: thing.model.position.z, yaw: thing.model.rotation.y };
+        thing.putDown(a.spot, Math.random() * Math.PI * 2);
+      }
+      this.pranks.apply(a);
+    };
+    if (!girl.sneakTo(spot, act)) this.pranks.cancel(a);
+  }
+
   /**
    * You ask her to do something. A neglected girl sometimes says no, but only
    * when her friend can take it on, so you're never left without: the friend
@@ -668,6 +737,12 @@ export class Game {
     this.talkingTo = her; // only she answers, and only she stops what she was about to do
     if (her && this.banterWatch) this.banterWatch.noteTalk(her, this.companions);
     if (her) {
+      // Caught out, she owns up as soon as you speak to her.
+      const prank = this.pranks.unconfessed(her.character.id);
+      if (prank) {
+        this.pranks.confess(prank);
+        her.voice.say('prankConfess', { force: true });
+      }
       this.favour.add(her.character.id, this.favour.p.talk);
       // Her friend stood there watching you talk to the other one.
       const jealous = this.banterWatch?.talked?.jealous;
@@ -877,6 +952,7 @@ export class Game {
     const ridden = this.riddenUnit;
     this.talkFloor.left = Math.max(0, this.talkFloor.left - dt);
     this.updateFavour(dt, ridden);
+    this.updatePranks(dt, ridden);
     this.updateBanter(dt, ridden);
     for (const c of this.companions) {
       c.update(dt, c.quad.unit.vibration, {

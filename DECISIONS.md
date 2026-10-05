@@ -448,3 +448,16 @@ Decided with you: the score counts rides, talking, her favourite quad, washing i
 - The tuning panel (backtick) has a "Favour (live)" folder with each girl's score, standing and mood, plus buttons to push either one by 5 or reset, and a "Favour" folder with every number above.
 - Checked once headless (banter timing shortened, refusals made certain): with Amy favoured the three-line exchange played, and asking the neglected Jess for a ride got "Make me.", then Amy walked over, gloated and drove. The ten new situations are recorded for both girls. Not checked: how quickly the standing builds up in an ordinary play session (the numbers are a first guess), Jess being the favoured one in the running game, or a neglected girl's solo drive by eye.
 
+
+## Pranks (2026-10-05)
+
+Decided with you: only while you're away; you find out by the quad misbehaving or the thing missing, no hint; hidden things go to fixed spots and come back by themselves; Jess does engines, Amy hides things; favour changes who does it; nothing persists between games.
+
+- `src/npc/pranks.js` (pure, tested). The first prank can't happen until 4 minutes in, then at most one every 10 minutes. Every 5 s there is a 12% chance of a look for something fair game: a quad that is parked, switched off, not being got on and more than 30 m from you (Jess: tap not already off, or choke off on an engine warmer than half), or the jerry can or toolbox not in your hands and more than 30 m from you (Amy). You must not be riding for the item pranks.
+- Favour: a favoured girl never pranks; a neglected one is twice as likely to be the one.
+- The girl has to be stood about. She walks over (`sneakTo` in `companion.js`, a `pranking` state), pauses 1.4 s, then does it, and only if it is still fair game then (nobody on the quad, not running, item not picked up). Otherwise it lapses; so does one she hasn't reached in 90 s.
+- Hiding: the item moves to one of the farm's existing can spots (`jerryCanSpots`, so known good ground) between 8 and 40 m from where it was and not within 12 m of you. She puts it back herself after 10 minutes. Picking it up ends the prank.
+- Finding out: sat on a pranked quad for 3 s, or putting it right yourself, or walking within 6 m of where a hidden item should be. The culprit then says a `prankGiggle` line (not a "tell"; Amy's poker face is poor, Jess blames you). Talk to her afterwards and she says `prankConfess` once. Both are new situations for both girls, recorded.
+- Tap off gives the existing 10 to 30 s warm idle before it dies; choke on a warm engine runs rich and may stall. No new engine behaviour.
+- The tuning panel (backtick) has a "Pranks" folder with every number above.
+- Checked once headless, with the delays and distances squeezed: Jess and Amy both walked over, paused and did it (choke on the orange, toolbox hidden with its home remembered), no errors. Not checked: how it feels at the real pace, the culprit's lines in the running game, a hidden item being found and put back by eye.
