@@ -809,6 +809,8 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
     for (const s of [-1, 1]) tube([s * 0.1, 0.55, 1.128], [s * 0.1, 0.8, 1.1], 0.012, MAT.frame, root);
     const skid = rbox(0.44, 0.012, 0.24, 0.006, MAT.frame, 0, 0.38, 1.03, root, undefined, 1);
     skid.rotation.x = -0.25;
+    // Rear bumper under the tail lights.
+    pipe([[0.2, 0.5, -0.96], [0.25, 0.5, -1.11], [-0.25, 0.5, -1.11], [-0.2, 0.5, -0.96]], 0.017, MAT.frame, root, { bend: 0.07 });
   } else {
     // Rounded hood dropping into a nose with round headlights, and a tubular bumper.
     add(
@@ -843,10 +845,19 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
     }
     pipe([[0.16, 0.34, 0.9], [0.21, 0.41, 1.13], [-0.21, 0.41, 1.13], [-0.16, 0.34, 0.9]], 0.017, MAT.frame, root, { bend: 0.07 });
     rbox(0.36, 0.08, 0.06, 0.025, MAT.plastic, 0, 0.44, 1.05, root);
+    // Slotted grille between the lamps.
+    rbox(0.13, 0.05, 0.02, 0.012, MAT.plastic, 0, 0.555, 1.083, root);
+    for (let k = 0; k < 3; k++) rbox(0.11, 0.006, 0.006, 0.002, MAT.hole, 0, 0.541 + k * 0.014, 1.094, root, undefined, 1);
   }
   if (!sport) {
     // Black side covers under the seat.
     for (const s of [-1, 1]) rbox(0.03, 0.14, 0.5, 0.014, MAT.plastic, s * 0.185, 0.69, -0.12, root);
+    // Tow hitch: a drawbar out of the frame with a ball on a plate.
+    rbox(0.05, 0.05, 0.3, 0.01, MAT.frame, 0, 0.37, -1.0, root);
+    rbox(0.1, 0.012, 0.09, 0.004, MAT.frame, 0, 0.4, -1.12, root, undefined, 1);
+    tube([0, 0.4, -1.13], [0, 0.43, -1.13], 0.012, MAT.chrome, root);
+    const ball = add(new THREE.SphereGeometry(0.024, 14, 10), MAT.chrome, root);
+    ball.position.set(0, 0.445, -1.13);
   }
 
   // Tank cover, with the fuel tap on its left: lever forward for ON, down for RES, back for OFF.
