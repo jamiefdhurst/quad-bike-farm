@@ -81,7 +81,7 @@ export const LAYOUT = {
     { id: 'fenceEast', kind: 'fence', x: -59, z: 30.5, yaw: -Math.PI / 2, seat: 1.05 },
     { id: 'fenceWest', kind: 'fence', x: -73, z: 37.5, yaw: Math.PI / 2, seat: 1.05 },
   ],
-  baleSeat: 1.38, // how high up a girl sits on a straw bale
+  baleSeat: 1.52, // how high her hips sit above the ground on a straw bale (the top is at 1.44, and her hips want to be a little above it)
 
   // Petrol tank by the barn. The jerry can starts at one of these spots, picked at random.
   fuelTank: { x: -61, z: 52.3, yaw: Math.PI / 2 }, // labelled side facing the yard
