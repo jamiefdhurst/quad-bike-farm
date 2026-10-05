@@ -43,6 +43,7 @@ Other scripts:
 | `S` | Brake. Hold it at a standstill to reverse |
 | `A` / `D` | Steer |
 | `E` | Get off. Above walking pace you jump off and the quad carries on by itself at the same speed and steering until it crashes, tips, stalls or runs dry. To stop a runaway, look at it and press `K`, or catch it once it's below a jog (3 m/s) to get back on. |
+| `C` (hold) or middle mouse | Look back over your shoulder |
 | `F` | Fuel tap: ON, RESERVE, OFF |
 | `T` | Right the quad if it's tipped over |
 | Mouse | Look around from the seat |
@@ -138,6 +139,8 @@ Look at her and press `E`:
 - **Stand next to the red / blue quad**: she gets off if she's on, or walks over if she isn't, and stands beside it facing it.
 
 The menu only offers what makes sense: no "get on" while she's already on, no "stand next to it" while she's already there. She stays put on the pillion when you get off until you ask her to get down. Jump off at speed with her on the back and she'll let you know what she thinks.
+
+On the back she holds on round your waist (look down and you'll see her hands), leans with you into corners, lurches forward under hard braking, and looks about or over your shoulder. Hold `C` or the middle mouse button to look back at her. Left alone on a quad she holds the rails (or the strap on the yellow).
 
 She talks, now and then, with captions at the bottom of the screen:
 
