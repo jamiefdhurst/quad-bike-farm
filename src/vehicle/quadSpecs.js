@@ -332,7 +332,7 @@ export const QUAD_SPECS = [
 // Vehicles that turn up only some games (src/vehicle/fleet.js picks which). They follow the same rules as the five above.
 export const EXTRA_SPECS = [
   {
-    // A kids' 50cc two-stroke that Jess insists on riding. Three quarters the size of the others (scale shrinks the model and the
+    // A kids' 50cc two-stroke that Jess insists on riding. Two thirds the size of the others (scale shrinks the model and the
     // physics together), light and slow, one seat, and it revs very high and sounds like an angry wasp. Pull-start as well as the
     // starter; it runs on the same pre-mix as the yellow.
     id: 'kids',
@@ -341,12 +341,12 @@ export const EXTRA_SPECS = [
     bodyColor: 0xdc3f8f,
     style: 'sport',
     dashStyle: 'sport',
-    scale: 0.75,
+    scale: 0.65,
     solo: true, // no room for anyone on the back
     owner: 'jess', // Amy won't ride it, and Jess goes for it first
-    // A thin, fast buzz.
-    safeIdle: 1500,
-    idleRange: [2000, 2300],
+    // A thin, fast buzz, but a lazier tickover than the yellow's or the orange's.
+    safeIdle: 800,
+    idleRange: [1100, 1300],
     roughnessRange: [0.3, 0.5],
     fuelRange: [0.4, 2.2], // 2.5 litre tank, 0.4 litre reserve
     fuel: { tankCapacity: 2.5, startOil: 0.02, reserveLitres: 0.4, burnPerRev: 0.000032, idleBurnFraction: 0.45 },
@@ -354,7 +354,7 @@ export const EXTRA_SPECS = [
       strokes: 2,
       popProne: 0.7, // two-strokes crackle and bang on the overrun
       pullStart: true,
-      idleRpmWarm: 2100,
+      idleRpmWarm: 1200,
       maxRpm: 9800,
       redlineRpm: 9200,
       rpmRiseRate: 14,
@@ -377,16 +377,16 @@ export const EXTRA_SPECS = [
       rollInertia: 20,
       pitchInertia: 35,
       yawInertia: 42,
-      wheelRadius: 0.225, // 0.3 m scaled by 0.75
-      suspensionRestLength: 0.18,
-      maxSuspensionTravel: 0.15,
+      wheelRadius: 0.195, // 0.3 m scaled by 0.65
+      suspensionRestLength: 0.156,
+      maxSuspensionTravel: 0.13,
       maxSuspensionForce: 12000,
       maxDriveForce: 700,
       maxSpeed: 9.5,
       maxSteerDeg: 36,
-      clutchEngageRpm: 3000,
-      clutchFullRpm: 4600,
-      couplingRpm: 3600,
+      clutchEngageRpm: 2200,
+      clutchFullRpm: 4000,
+      couplingRpm: 3000,
       engineBrakeForce: 40,
       powerbandRpm: 6000,
       torqueBelowBand: 0.5,
@@ -394,7 +394,7 @@ export const EXTRA_SPECS = [
     },
     vibration: {
       pulseGain: 0.8,
-      idleRpm: 2300,
+      idleRpm: 1300,
       barsFreq: 28,
       barsGain: 0.2,
       heaveFreq: 12,
@@ -404,7 +404,7 @@ export const EXTRA_SPECS = [
     audio: {
       recBank: 'engine-bank-2t',
       recIdleSource: 'quad',
-      pulseRefRpm: 2100,
+      pulseRefRpm: 1200,
       recBlendLo: 3200,
       recBlendHi: 4200,
       recToneClosed: 9500,
@@ -422,18 +422,18 @@ export const EXTRA_SPECS = [
     },
   },
   {
-    // A smart new quad on loan for the day: the Yamaha's body in deep teal, fuel injected so it hardly wants any choke, starts on
+    // A smart new quad on loan for the day: the Yamaha's body in neutral silver, fuel injected so it hardly wants any choke, starts on
     // the button, idles smooth and quiet and has almost no wear. Full tank, and a bit more power than the old farm quads.
     id: 'loan',
     label: 'loan quad',
     name: 'Loan quad',
-    bodyColor: 0x0f7f86,
+    bodyColor: 0xaeb4ba, // a neutral silver
     style: 'utility2',
     dashStyle: 'modern',
     // Smooth and refined; a small, quick buzz.
     safeIdle: 700,
     idleRange: [1100, 1200],
-    roughnessRange: [0.01, 0.04],
+    roughnessRange: [0, 0.015],
     fuelRange: [9, 11], // 12 litre tank, brought full
     fuel: { tankCapacity: 12, reserveLitres: 1.8, burnPerRev: 0.000075 },
     engine: {
@@ -448,7 +448,7 @@ export const EXTRA_SPECS = [
       catchChance: 0.9,
       coldRoughness: 0.2,
       coldPowerLoss: 0.95,
-      wearPerMinute: 0.003, // new: it takes a lot of thrashing to rough it up
+      wearPerMinute: 0.0008, // new: a fifteenth of the usual wear, it takes hours of thrashing to rough it up
     },
     vehicle: {
       mass: 295,

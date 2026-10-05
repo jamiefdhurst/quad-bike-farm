@@ -78,6 +78,8 @@ export class AudioHub {
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) return null;
     this.ctx = new Ctx();
+    // If the browser pauses the sound (it can, after a while, if it thinks nothing's playing) say so in the console and keep trying to resume it.
+    this.ctx.onstatechange = () => console.warn(`Audio context ${this.ctx.state}`);
     this.loading = this.ctx.audioWorklet
       .addModule(workletUrl)
       .then(() => this.build())
@@ -215,6 +217,10 @@ export class AudioHub {
   update(dt, listener) {
     if (!this.ready) return;
     const ctx = this.ctx;
+    if (ctx.state !== 'running' && ctx.state !== 'closed' && (this.resumeWait = (this.resumeWait ?? 0) - dt) <= 0) {
+      this.resumeWait = 1;
+      ctx.resume().catch(() => {});
+    }
     const p = this.params;
     const t = ctx.currentTime;
     this.master.gain.setTargetAtTime(p.muted ? 0 : p.masterVolume, t, 0.05);
@@ -267,6 +273,7 @@ export class EngineAudio {
       this.path = new SoundPath(hub, { refDistance: p.refDistance, rolloff: p.rolloff });
       this.panner = this.path.panner;
       this.node = new AudioWorkletNode(ctx, 'engine-processor', { numberOfInputs: 0, outputChannelCount: [1] });
+      this.node.onprocessorerror = () => console.error(`Engine sound processor failed (${hub.ctx.currentTime.toFixed(0)} s in)`);
       this.node.connect(this.path.input);
       this.nextFrameTime = 0;
     }

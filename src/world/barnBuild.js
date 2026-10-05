@@ -188,12 +188,16 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
     const g = add(new THREE.Mesh(x === outer.maxX ? notchGeo : gableGeo, gableMat), x, floorY + wallHeight, shape.z);
     g.rotation.y = -Math.PI / 2;
   }
-  // A white frame round the hay door and a hoist beam sticking out above it.
+  // A white frame round the hay door and a hoist beam sticking out above it. Each piece stands 0.02 m proud of the opening's edges
+  // (sill top, reveals and lintel underside), or its faces share a plane with the wall's and flicker, as the barn doors' did.
   const doorTop = floorY + wallHeight + notchTop;
   const sillTop = floorY + hd.sill;
-  add(box(wall + 0.14, 0.1, hd.halfWidth * 2 + 0.3, white), door.x - wall / 2, sillTop - 0.05, shape.z);
-  for (const side of [-1, 1]) add(box(wall + 0.14, doorTop - sillTop + 0.1, 0.1, white), door.x - wall / 2, (sillTop + doorTop) / 2, shape.z + side * (hd.halfWidth + 0.05));
-  add(box(wall + 0.14, 0.1, hd.halfWidth * 2 + 0.3, white), door.x - wall / 2, doorTop + 0.05, shape.z);
+  const proud = 0.02;
+  const fx = door.x - wall / 2;
+  add(box(wall + 0.14, 0.1, hd.halfWidth * 2 + 0.3, white), fx, sillTop + proud - 0.05, shape.z); // top at sillTop + proud
+  const postH = doorTop - sillTop + 0.13; // up into the lintel
+  for (const side of [-1, 1]) add(box(wall + 0.14, postH, 0.1 + proud, white), fx, sillTop - 0.08 + postH / 2, shape.z + side * (hd.halfWidth + 0.05 - proud / 2));
+  add(box(wall + 0.14, 0.1, hd.halfWidth * 2 + 0.3, white), fx, doorTop - proud + 0.05, shape.z); // underside at doorTop - proud
   add(box(0.9, 0.12, 0.12, timber), door.x + 0.35, doorTop + 0.2, shape.z);
 
   // Roof: two tin slopes with an overhang, and a ridge cap.

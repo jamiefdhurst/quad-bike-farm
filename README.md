@@ -299,9 +299,9 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 19. The hayloft. Climb the ladder: a view over the farm through the loft door, and a hiding place. The girls can climb up too, and Jess might drop straw on you. **Done.** A ladder at the back of the barn takes you up to a plank loft with a rail, a hay door looking out over the yard and a stack of hay to hide in. A bored girl may climb up and sit at the edge on a fine day, and Jess sometimes tips straw on you if you stand below her.
 20. Additional vehicles: a random one each time (each needing its own sound and characteristics):
     - A neighbour's beaten-up old three-wheeler ATC (a real tip-over risk). (Not doing this one.)
-    - A tiny kids' 50cc quad Jess insists on riding. **Done.** A small pink two-stroke, three quarters the size of the others, light, slow and one-seat. Jess goes for it first when she's bored, and Amy leaves it alone.
+    - A tiny kids' 50cc quad Jess insists on riding. **Done.** A small pink two-stroke, about two thirds the size of the others, light, slow and one-seat, with a lazier idle than the other two-strokes. Jess goes for it first when she's bored, and Amy leaves it alone.
     - A mini moto with a pull-start.
-    - A smart new quad on loan for the day. **Done.** A teal quad that starts first time with hardly any choke, idles smooth and quiet, wears slowly and comes with a full tank.
+    - A smart new quad on loan for the day. **Done.** A silver quad that starts first time with hardly any choke, idles very smooth and quiet, hardly wears and comes with a full tank.
 
     **Done for those two.** The line-up changes every game: one or two of the five regular quads are sometimes missing, and the kids' quad and the loan quad each turn up some of the time (`?seed=N` repeats a game's line-up). The mini moto is still to do.
 21. Each quad has a knack. The green only starts cold if you blip the throttle twice before cranking; the blue wants its choke off sooner than the others. Nothing tells you, but the girls know some of them ("you have to tickle it first").
