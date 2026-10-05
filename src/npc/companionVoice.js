@@ -56,7 +56,7 @@ export class CompanionVoice {
 
   /** She was asked to do something from the menu. */
   onRequest(kind) {
-    this.say(kind === 'mount' ? 'ackMount' : 'ackStand', { force: true });
+    this.say({ mount: 'ackMount', start: 'ackStart' }[kind] ?? 'ackStand', { force: true });
   }
 
   /**
@@ -125,6 +125,8 @@ export class CompanionVoice {
     }
 
     this.watchGhostRide(dt, together);
+    this.watchStarting();
+    this.watchOwnMind();
     this.watchEngines(dt, view, together, distance);
     this.watchSeat(dt, view, together);
 
@@ -238,6 +240,37 @@ export class CompanionVoice {
     }
   }
 
+  /** Says what she's up to when she decides to do something on her own. */
+  watchOwnMind() {
+    const events = this.companion.selfEvents;
+    for (const e of events) this.say({ wander: 'selfWander', mount: 'selfMount', start: 'selfStart' }[e], { urgent: true, chance: 0.8 });
+    events.length = 0;
+  }
+
+  /** Talking herself through starting a quad you asked her to. */
+  watchStarting() {
+    const events = this.companion.startEvents;
+    if (!events.length) return;
+    const SAY = {
+      tapOn: ['startTap', 0.6],
+      chokeOn: ['startChoke', 0.7],
+      remembered: ['startRemembered', 1],
+      caught: ['startCaught', 1],
+      gaveUp: ['startGaveUp', 1],
+      warmedUp: ['startWarm', 1],
+    };
+    for (const e of events) {
+      if (e === 'crank') {
+        const a = this.companion.attempt;
+        if (a && a.bursts > 1) this.say('startCrank', { urgent: true, chance: 0.6 });
+        continue;
+      }
+      const [situation, chance] = SAY[e] ?? [];
+      if (situation) this.say(situation, { urgent: true, chance });
+    }
+    events.length = 0;
+  }
+
   /** Stalls, long cranking and catching at last, for quads near her. */
   watchEngines(dt, view, together, distance) {
     const c = this.companion;
@@ -246,7 +279,9 @@ export class CompanionVoice {
       const e = unit.engine;
       const w = this.engineWatch.get(unit) ?? { state: e.state, cranking: 0 };
       this.engineWatch.set(unit, w);
-      const near = unit.quad.position.distanceTo(this.head) < 15 && distance < this.params.voiceRange;
+      // When she's the one starting it, she has her own things to say.
+      const hersToStart = c.fsm.is('starting') && c.quad === unit.quad;
+      const near = !hersToStart && unit.quad.position.distanceTo(this.head) < 15 && distance < this.params.voiceRange;
       const hers = together && view.ridden === unit;
 
       if (e.state === 'cranking') w.cranking += dt;

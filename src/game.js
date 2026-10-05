@@ -127,6 +127,7 @@ export class Game {
       gltf: this.models.companion,
       params: { ...DEFAULT_COMPANION_PARAMS },
     });
+    this.companion.quads = this.units.map((u) => u.quad);
     this.companionSounds = new CompanionSounds(this.audioHub);
     this.voice = new CompanionVoice({
       companion: this.companion,

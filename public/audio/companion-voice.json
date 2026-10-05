@@ -4,283 +4,1507 @@
  "clips": {
   "Right, off we go.": {
    "start": 0.0,
-   "dur": 1.45687
+   "dur": 1.41696
   },
   "Go on then.": {
-   "start": 1.50685,
-   "dur": 0.78839
+   "start": 1.46694,
+   "dur": 0.73841
   },
   "Don't go mad.": {
-   "start": 2.34522,
-   "dur": 0.99791
+   "start": 2.25533,
+   "dur": 1.28726
   },
   "Hang on, let me get comfy. Okay.": {
-   "start": 3.39311,
-   "dur": 2.90358
+   "start": 3.59256,
+   "dur": 2.82376
   },
   "Gently does it.": {
-   "start": 6.34667,
+   "start": 6.4663,
+   "dur": 0.90812
+  },
+  "Here we go!": {
+   "start": 7.4244,
+   "dur": 0.68862
+  },
+  "Onwards!": {
+   "start": 8.16299,
+   "dur": 0.6088
+  },
+  "Take it easy to start with.": {
+   "start": 8.82177,
+   "dur": 1.37705
+  },
+  "Okay, I'm holding on.": {
+   "start": 10.2488,
+   "dur": 1.37705
+  },
+  "Off we pop.": {
+   "start": 11.67583,
+   "dur": 0.8283
+  },
+  "Lead the way.": {
+   "start": 12.5541,
+   "dur": 0.85823
+  },
+  "Ooh, here we go.": {
+   "start": 13.46231,
+   "dur": 1.32717
+  },
+  "Right. I'm ready.": {
+   "start": 14.83946,
+   "dur": 1.39701
+  },
+  "Steady away.": {
+   "start": 16.28644,
    "dur": 0.89814
   },
   "Oh, this is fun!": {
-   "start": 7.29478,
-   "dur": 1.11764
+   "start": 17.23456,
+   "dur": 1.06776
   },
   "Ooh, I like this.": {
-   "start": 8.4624,
-   "dur": 1.30721
-  },
-  "This is lovely, actually.": {
-   "start": 9.81959,
-   "dur": 1.96571
-  },
-  "Wheee!": {
-   "start": 11.83528,
-   "dur": 0.57887
-  },
-  "Go on, a bit faster.": {
-   "start": 12.46413,
-   "dur": 1.5366
-  },
-  "This is a bit rough.": {
-   "start": 14.0507,
-   "dur": 1.00789
-  },
-  "Ow! My bum.": {
-   "start": 15.10857,
-   "dur": 1.23737
-  },
-  "Bit bumpy, isn't it?": {
-   "start": 16.39592,
-   "dur": 1.16753
-  },
-  "Ooh, steady.": {
-   "start": 17.61342,
-   "dur": 0.958
-  },
-  "My teeth are rattling.": {
-   "start": 18.62141,
-   "dur": 1.23737
-  },
-  "Mind the holes!": {
-   "start": 19.90875,
-   "dur": 1.01787
-  },
-  "Careful!": {
-   "start": 20.9766,
-   "dur": 0.58875
-  },
-  "Not so fast!": {
-   "start": 21.61533,
-   "dur": 1.07773
-  },
-  "Slow down a bit, will you?": {
-   "start": 22.74304,
-   "dur": 1.64644
-  },
-  "Oi, steady on!": {
-   "start": 24.43946,
-   "dur": 1.12762
-  },
-  "We're going to come off!": {
-   "start": 25.61705,
-   "dur": 1.0478
-  },
-  "Whoa!": {
-   "start": 26.71483,
-   "dur": 0.46912
-  },
-  "Blimey.": {
-   "start": 27.23392,
-   "dur": 0.65868
-  },
-  "Oh. It's died.": {
-   "start": 27.94259,
-   "dur": 1.36707
-  },
-  "Has it stalled again?": {
-   "start": 29.35964,
-   "dur": 1.20744
-  },
-  "Oh, not again.": {
-   "start": 30.61705,
-   "dur": 0.87819
-  },
-  "Is it meant to do that?": {
-   "start": 31.54522,
-   "dur": 1.46685
-  },
-  "Have we run out of petrol?": {
-   "start": 33.06204,
-   "dur": 1.30721
-  },
-  "Did you fill it up?": {
-   "start": 34.41923,
-   "dur": 1.09769
-  },
-  "I think it's out of petrol.": {
-   "start": 35.56689,
-   "dur": 1.39701
-  },
-  "Have you tried the choke?": {
-   "start": 37.01388,
-   "dur": 1.20744
-  },
-  "It's cold, it'll want the choke.": {
-   "start": 38.27129,
-   "dur": 1.80608
-  },
-  "Choke?": {
-   "start": 40.12735,
-   "dur": 0.44916
-  },
-  "Give it a rest, you'll flood it.": {
-   "start": 40.62649,
-   "dur": 1.5766
-  },
-  "Too much choke, maybe?": {
-   "start": 42.25306,
-   "dur": 1.34703
-  },
-  "It smells of petrol.": {
-   "start": 43.65007,
-   "dur": 1.21741
-  },
-  "Is the petrol on?": {
-   "start": 44.91746,
-   "dur": 0.94803
-  },
-  "Maybe it's the fuel tap.": {
-   "start": 45.91546,
-   "dur": 1.47683
-  },
-  "It doesn't want to go, does it?": {
-   "start": 47.44227,
-   "dur": 1.56662
-  },
-  "Come on, you can do it.": {
-   "start": 49.05887,
-   "dur": 1.18739
-  },
-  "Is it broken?": {
-   "start": 50.29624,
-   "dur": 0.88816
-  },
-  "There we go!": {
-   "start": 51.23438,
-   "dur": 0.79837
-  },
-  "Finally!": {
-   "start": 52.08272,
-   "dur": 0.52889
-  },
-  "Yay!": {
-   "start": 52.66159,
-   "dur": 0.47909
-  },
-  "Hooray.": {
-   "start": 53.19066,
-   "dur": 0.55891
-  },
-  "It's ever so loud.": {
-   "start": 53.79955,
-   "dur": 1.36707
-  },
-  "Pooh, that's smoky.": {
-   "start": 55.2166,
-   "dur": 1.02785
-  },
-  "Are we going or what?": {
-   "start": 56.29442,
-   "dur": 1.02785
-  },
-  "It's a bit nippy, isn't it?": {
-   "start": 57.37224,
-   "dur": 1.3571
-  },
-  "Come on, I'm getting cold.": {
-   "start": 58.77932,
-   "dur": 1.32717
-  },
-  "What are you doing?": {
-   "start": 60.15646,
-   "dur": 0.97796
-  },
-  "Lovely day for it. Sort of.": {
-   "start": 61.1844,
-   "dur": 2.00562
-  },
-  "Are you getting on?": {
-   "start": 63.24,
-   "dur": 0.94803
-  },
-  "I'll just wait here, then.": {
-   "start": 64.238,
-   "dur": 1.47683
-  },
-  "Any time you like.": {
-   "start": 65.76481,
-   "dur": 1.02785
-  },
-  "Oi! Wait for me!": {
-   "start": 66.84263,
+   "start": 18.35229,
    "dur": 1.45687
   },
-  "Don't leave me here!": {
-   "start": 68.34948,
-   "dur": 1.06766
+  "This is lovely, actually.": {
+   "start": 19.85914,
+   "dur": 1.97569
   },
-  "Charming.": {
-   "start": 69.46712,
-   "dur": 0.6088
+  "Wheee!": {
+   "start": 21.88481,
+   "dur": 0.48907
   },
-  "Oh, you're back.": {
-   "start": 70.1259,
-   "dur": 0.86821
+  "Go on, a bit faster.": {
+   "start": 22.42385,
+   "dur": 1.66639
   },
-  "Did you have fun without me?": {
-   "start": 71.04408,
+  "I love this!": {
+   "start": 24.14023,
+   "dur": 0.81832
+  },
+  "Best idea you have had all week.": {
+   "start": 25.00853,
+   "dur": 1.7561
+  },
+  "Look at us go!": {
+   "start": 26.8146,
+   "dur": 1.0478
+  },
+  "This is brilliant.": {
+   "start": 27.91238,
+   "dur": 1.1376
+  },
+  "I could do this all day.": {
+   "start": 29.09995,
    "dur": 1.21741
   },
-  "There you are.": {
-   "start": 72.31147,
-   "dur": 0.72853
+  "Isn't this great?": {
+   "start": 30.36735,
+   "dur": 1.01787
   },
-  "Alright.": {
-   "start": 73.08998,
-   "dur": 0.65868
+  "Woo!": {
+   "start": 31.43519,
+   "dur": 0.42921
   },
-  "Okay!": {
-   "start": 73.79864,
-   "dur": 0.54893
+  "Okay, I'll admit it. This is fun.": {
+   "start": 31.91438,
+   "dur": 2.04553
   },
-  "If I must.": {
-   "start": 74.39755,
-   "dur": 0.86821
+  "More of this, please.": {
+   "start": 34.00989,
+   "dur": 1.25732
   },
-  "Ooh, go on.": {
-   "start": 75.31574,
+  "I am grinning like an idiot back here.": {
+   "start": 35.31719,
+   "dur": 2.02558
+  },
+  "We're like a proper farming couple.": {
+   "start": 37.39274,
+   "dur": 1.49678
+  },
+  "Again! Again!": {
+   "start": 38.9395,
+   "dur": 1.4868
+  },
+  "This is nice. Nice and gentle.": {
+   "start": 40.47628,
+   "dur": 2.42467
+  },
+  "I could get used to this.": {
+   "start": 42.95093,
+   "dur": 1.42685
+  },
+  "Look at that view.": {
+   "start": 44.42776,
+   "dur": 1.05778
+  },
+  "Lovely and peaceful out here.": {
+   "start": 45.53551,
+   "dur": 1.87592
+  },
+  "Just us and the fields.": {
+   "start": 47.46141,
+   "dur": 1.49678
+  },
+  "Isn't it pretty?": {
+   "start": 49.00816,
+   "dur": 0.89814
+  },
+  "This is my kind of speed.": {
+   "start": 49.95628,
+   "dur": 1.30721
+  },
+  "Smell that fresh air.": {
+   "start": 51.31347,
+   "dur": 1.38703
+  },
+  "You know, this is really nice.": {
+   "start": 52.75048,
+   "dur": 1.8859
+  },
+  "Look, the hedges are all wild flowers.": {
+   "start": 54.68635,
+   "dur": 2.57433
+  },
+  "We should do this more often.": {
+   "start": 57.31066,
+   "dur": 1.34712
+  },
+  "I'm really glad we came out.": {
+   "start": 58.70776,
+   "dur": 1.39701
+  },
+  "My legs have gone numb, but I am happy.": {
+   "start": 60.15474,
+   "dur": 2.14531
+  },
+  "Thanks for bringing me out, by the way.": {
+   "start": 62.35002,
+   "dur": 2.09542
+  },
+  "Best day out in ages.": {
+   "start": 64.49542,
+   "dur": 1.54667
+  },
+  "Remind me why we ever stay in?": {
+   "start": 66.09206,
+   "dur": 1.95574
+  },
+  "This beats sitting on the sofa.": {
+   "start": 68.09778,
+   "dur": 1.59655
+  },
+  "This is a bit rough.": {
+   "start": 69.74431,
+   "dur": 0.958
+  },
+  "Ow! My bum.": {
+   "start": 70.75229,
+   "dur": 1.15755
+  },
+  "Bit bumpy, isn't it?": {
+   "start": 71.95982,
+   "dur": 1.2673
+  },
+  "Ooh, steady.": {
+   "start": 73.2771,
+   "dur": 1.06776
+  },
+  "My teeth are rattling.": {
+   "start": 74.39483,
+   "dur": 1.21741
+  },
+  "Mind the holes!": {
+   "start": 75.66222,
+   "dur": 0.93805
+  },
+  "Bumpy bumpy bumpy.": {
+   "start": 76.65025,
+   "dur": 1.38694
+  },
+  "Oof!": {
+   "start": 78.08717,
+   "dur": 0.40916
+  },
+  "That one went right up my spine.": {
+   "start": 78.5463,
+   "dur": 1.7063
+  },
+  "Did you aim for that?": {
+   "start": 80.30259,
+   "dur": 1.01787
+  },
+  "Ow, ow, ow.": {
+   "start": 81.37043,
+   "dur": 1.09769
+  },
+  "Whoa, hold on!": {
+   "start": 82.5181,
+   "dur": 0.90812
+  },
+  "Is there a smooth bit anywhere?": {
+   "start": 83.47619,
+   "dur": 1.65642
+  },
+  "My poor back.": {
+   "start": 85.18259,
+   "dur": 0.80834
+  },
+  "Careful, I nearly bit my tongue.": {
+   "start": 86.04091,
+   "dur": 1.91574
+  },
+  "Careful!": {
+   "start": 88.00662,
+   "dur": 0.52889
+  },
+  "Not so fast!": {
+   "start": 88.58549,
+   "dur": 0.98794
+  },
+  "Slow down a bit, will you?": {
+   "start": 89.6234,
+   "dur": 1.94576
+  },
+  "Oi, steady on!": {
+   "start": 91.61914,
+   "dur": 1.14757
+  },
+  "We're going to come off!": {
+   "start": 92.81669,
+   "dur": 0.9181
+  },
+  "Too fast! Too fast!": {
+   "start": 93.78476,
+   "dur": 1.63637
+  },
+  "Easy, Lewis Hamilton.": {
+   "start": 95.47111,
+   "dur": 1.68635
+  },
+  "I'd like to get home in one piece.": {
+   "start": 97.20744,
+   "dur": 1.81605
+  },
+  "Slow down, you nutter!": {
+   "start": 99.07347,
+   "dur": 1.1376
+  },
+  "This is not a race!": {
+   "start": 100.26104,
+   "dur": 1.23737
+  },
+  "Ahh! Slow down!": {
+   "start": 101.54839,
+   "dur": 1.28726
+  },
+  "My hair's going everywhere!": {
+   "start": 102.88562,
+   "dur": 1.25732
+  },
+  "I'm holding on for dear life back here!": {
+   "start": 104.19293,
+   "dur": 1.96571
+  },
+  "Okay, okay, that is fast enough!": {
+   "start": 106.20862,
+   "dur": 2.77388
+  },
+  "Whoa!": {
+   "start": 109.03247,
+   "dur": 0.43918
+  },
+  "Blimey.": {
+   "start": 109.52163,
+   "dur": 0.63873
+  },
+  "Jeez!": {
+   "start": 110.21034,
+   "dur": 0.44916
+  },
+  "Ooh, my nose nearly hit your back.": {
+   "start": 110.70948,
+   "dur": 1.7063
+  },
+  "A bit of warning next time?": {
+   "start": 112.46576,
+   "dur": 1.82603
+  },
+  "Ow! Gently!": {
+   "start": 114.34177,
+   "dur": 0.97796
+  },
+  "Whoa, what was that for?": {
+   "start": 115.36971,
+   "dur": 1.71628
+  },
+  "Oh. It's died.": {
+   "start": 117.13596,
+   "dur": 1.40698
+  },
+  "Has it stalled again?": {
+   "start": 118.59293,
+   "dur": 1.16744
+  },
+  "Oh, not again.": {
+   "start": 119.81034,
+   "dur": 0.8283
+  },
+  "Is it meant to do that?": {
+   "start": 120.68862,
    "dur": 1.19746
   },
-  "Okay.": {
-   "start": 76.56317,
+  "Well, that went well.": {
+   "start": 121.93605,
+   "dur": 1.86594
+  },
+  "Uh oh.": {
+   "start": 123.85197,
+   "dur": 0.56889
+  },
+  "Have you broken it?": {
+   "start": 124.47084,
+   "dur": 0.93805
+  },
+  "That doesn't sound good.": {
+   "start": 125.45887,
+   "dur": 1.33714
+  },
+  "It's gone quiet.": {
+   "start": 126.84599,
+   "dur": 0.99791
+  },
+  "Oops.": {
+   "start": 127.89388,
+   "dur": 0.59882
+  },
+  "Poor thing.": {
+   "start": 128.54268,
    "dur": 0.69859
   },
-  "Fine, I'll get off.": {
-   "start": 77.31175,
+  "Don't worry, it happens.": {
+   "start": 129.29125,
+   "dur": 1.60653
+  },
+  "Where are you going?!": {
+   "start": 130.94776,
+   "dur": 0.958
+  },
+  "Come back!": {
+   "start": 131.95574,
+   "dur": 0.53896
+  },
+  "Who's driving this?!": {
+   "start": 132.54467,
+   "dur": 1.1376
+  },
+  "Oi!": {
+   "start": 133.73224,
+   "dur": 0.48907
+  },
+  "What are you doing?!": {
+   "start": 134.27129,
+   "dur": 1.06776
+  },
+  "How do I stop it?!": {
+   "start": 135.38902,
+   "dur": 0.98794
+  },
+  "This is not funny!": {
+   "start": 136.42694,
+   "dur": 0.99791
+  },
+  "Help!": {
+   "start": 137.47483,
+   "dur": 0.43918
+  },
+  "I'm going to kill you!": {
+   "start": 137.96399,
+   "dur": 1.16753
+  },
+  "Stop it! Stop it!": {
+   "start": 139.1815,
+   "dur": 1.17741
+  },
+  "Which one's the brake?!": {
+   "start": 140.40889,
    "dur": 1.21741
   },
-  "Right you are.": {
-   "start": 78.57914,
-   "dur": 0.92807
+  "I'm too young to die!": {
+   "start": 141.67628,
+   "dur": 1.09769
   },
-  "Don't spill it.": {
-   "start": 79.55719,
+  "We're going round in circles!": {
+   "start": 142.82395,
+   "dur": 1.44689
+  },
+  "I'm getting dizzy!": {
+   "start": 144.32082,
+   "dur": 1.00789
+  },
+  "This is your fault!": {
+   "start": 145.37868,
+   "dur": 1.00789
+  },
+  "Get back on it!": {
+   "start": 146.43655,
+   "dur": 0.90812
+  },
+  "Somebody stop this thing!": {
+   "start": 147.39465,
+   "dur": 1.51673
+  },
+  "Mind the hedge! Mind the hedge!": {
+   "start": 148.96136,
+   "dur": 2.12535
+  },
+  "Wheee! Look, no driver!": {
+   "start": 151.13669,
+   "dur": 2.07546
+  },
+  "I'm driving! Sort of!": {
+   "start": 153.26213,
+   "dur": 1.7063
+  },
+  "Round and round we go!": {
+   "start": 155.01841,
+   "dur": 1.7063
+  },
+  "This is actually brilliant!": {
+   "start": 156.77469,
+   "dur": 1.7063
+  },
+  "Woo hoo!": {
+   "start": 158.53098,
+   "dur": 0.59882
+  },
+  "Don't you dare stop it!": {
+   "start": 159.17977,
+   "dur": 1.15755
+  },
+  "Bye! See you next lap!": {
+   "start": 160.3873,
+   "dur": 1.76617
+  },
+  "Faster, little quad!": {
+   "start": 162.20345,
+   "dur": 1.32717
+  },
+  "I'm queen of the field!": {
+   "start": 163.58059,
+   "dur": 1.30721
+  },
+  "Wave! Wave at me!": {
+   "start": 164.93778,
+   "dur": 1.64644
+  },
+  "Ha! You look so small from here!": {
+   "start": 166.6342,
+   "dur": 1.92571
+  },
+  "I love it!": {
+   "start": 168.60989,
+   "dur": 0.63873
+  },
+  "Again! Do it again!": {
+   "start": 169.29859,
+   "dur": 1.58658
+  },
+  "That was amazing.": {
+   "start": 170.93515,
+   "dur": 1.12762
+  },
+  "Okay, that's the most fun I've had all year.": {
+   "start": 172.11274,
+   "dur": 2.53442
+  },
+  "Best. Ride. Ever.": {
+   "start": 174.69714,
+   "dur": 1.9258
+  },
+  "I'm still dizzy. Brilliant.": {
+   "start": 176.67293,
+   "dur": 1.72626
+  },
+  "Don't tell my mum, but that was great.": {
+   "start": 178.44916,
+   "dur": 1.99565
+  },
+  "Don't you ever do that again.": {
+   "start": 180.49478,
+   "dur": 1.31719
+  },
+  "You absolute muppet.": {
+   "start": 181.86195,
+   "dur": 1.23737
+  },
+  "I could have died!": {
+   "start": 183.1493,
+   "dur": 1.03782
+  },
+  "Never. Again.": {
+   "start": 184.2371,
+   "dur": 1.32717
+  },
+  "Right. I am walking home.": {
+   "start": 185.61424,
+   "dur": 1.90585
+  },
+  "My heart is going like the clappers.": {
+   "start": 187.57007,
+   "dur": 1.84599
+  },
+  "You owe me a very big drink.": {
+   "start": 189.46603,
+   "dur": 1.41696
+  },
+  "That wasn't funny. Okay, it was a bit funny.": {
+   "start": 190.93297,
+   "dur": 3.33261
+  },
+  "I'm telling your mum.": {
+   "start": 194.31556,
+   "dur": 1.18748
+  },
+  "You are in so much trouble.": {
+   "start": 195.55302,
+   "dur": 1.55664
+  },
+  "Can I get off now, please?": {
+   "start": 197.15964,
+   "dur": 1.54667
+  },
+  "Ooh, it's really shaking.": {
+   "start": 198.75628,
+   "dur": 1.60653
+  },
+  "My whole body is buzzing.": {
+   "start": 200.41279,
+   "dur": 1.3571
+  },
+  "Is it meant to vibrate this much?": {
+   "start": 201.81986,
+   "dur": 1.93578
+  },
+  "This is making my voice go all wobbly.": {
+   "start": 203.80562,
+   "dur": 1.99565
+  },
+  "My teeth are chattering.": {
+   "start": 205.85125,
+   "dur": 1.25732
+  },
+  "It's like riding a washing machine.": {
+   "start": 207.15855,
+   "dur": 1.9258
+  },
+  "Ooh, that tickles.": {
+   "start": 209.13433,
+   "dur": 1.5766
+  },
+  "I quite like the shaking, actually.": {
+   "start": 210.76091,
+   "dur": 2.34485
+  },
+  "It's shaking like mad, sat here.": {
+   "start": 213.15574,
+   "dur": 2.34485
+  },
+  "Is it supposed to judder like this?": {
+   "start": 215.55057,
+   "dur": 1.96571
+  },
+  "My bum has gone numb.": {
+   "start": 217.56626,
+   "dur": 1.25732
+  },
+  "This thing is rattling my fillings.": {
+   "start": 218.87356,
+   "dur": 1.59655
+  },
+  "I'm vibrating. I'm actually vibrating.": {
+   "start": 220.52009,
+   "dur": 2.70404
+  },
+  "It's like one of those massage chairs.": {
+   "start": 223.2741,
+   "dur": 1.9258
+  },
+  "Ooh. Ooh. Okay, that is a lot of shaking.": {
+   "start": 225.24989,
+   "dur": 3.11311
+  },
+  "I quite like the shaking, actually...": {
+   "start": 228.41297,
+   "dur": 2.5444
+  },
+  "I've been sat here buzzing for ages.": {
+   "start": 231.00735,
+   "dur": 1.81605
+  },
+  "My legs have gone all tingly. It's not unpleasant.": {
+   "start": 232.87338,
+   "dur": 2.71401
+  },
+  "Don't tell anyone, but this is quite relaxing.": {
+   "start": 235.63737,
+   "dur": 2.8537
+  },
+  "I'll stay here a bit longer, I think.": {
+   "start": 238.54104,
+   "dur": 1.87583
+  },
+  "Honestly, I'm fine. Take your time.": {
+   "start": 240.46685,
+   "dur": 2.53442
+  },
+  "I love the red one.": {
+   "start": 243.05125,
+   "dur": 1.11764
+  },
+  "The red one is my favourite.": {
+   "start": 244.21887,
+   "dur": 1.41696
+  },
+  "Good old red. Comfy, this.": {
+   "start": 245.6858,
+   "dur": 1.9258
+  },
+  "This one just feels right.": {
+   "start": 247.66159,
+   "dur": 1.55664
+  },
+  "Ooh, I love the blue one.": {
+   "start": 249.26821,
+   "dur": 1.84599
+  },
+  "The blue one is definitely the best.": {
+   "start": 251.16417,
+   "dur": 2.1054
+  },
+  "This one feels posh.": {
+   "start": 253.31955,
+   "dur": 1.40698
+  },
+  "Blue is my favourite. Smoothest seat.": {
+   "start": 254.77651,
+   "dur": 2.38476
+  },
+  "The yellow one! My favourite.": {
+   "start": 257.21125,
+   "dur": 1.76617
+  },
+  "I love this little yellow one. So noisy!": {
+   "start": 259.02739,
+   "dur": 2.47456
+  },
+  "This one is the most fun, the yellow one.": {
+   "start": 261.55193,
+   "dur": 2.39474
+  },
+  "It's tiny and loud and I love it.": {
+   "start": 263.99664,
+   "dur": 2.36481
+  },
+  "I'd rather be on the red one, to be honest.": {
+   "start": 266.41143,
+   "dur": 2.21515
+  },
+  "The red one is comfier.": {
+   "start": 268.67655,
+   "dur": 1.36707
+  },
+  "Can we take the red one next time?": {
+   "start": 270.09361,
+   "dur": 1.87592
+  },
+  "I prefer the blue one, if I am honest.": {
+   "start": 272.0195,
+   "dur": 2.57433
+  },
+  "The blue one has a nicer seat.": {
+   "start": 274.64381,
+   "dur": 1.60653
+  },
+  "Can we go on the blue one next?": {
+   "start": 276.30032,
+   "dur": 1.87592
+  },
+  "The yellow one's more fun than this.": {
+   "start": 278.22621,
+   "dur": 1.82603
+  },
+  "Can we go on the yellow one after?": {
+   "start": 280.10222,
+   "dur": 1.73624
+  },
+  "I miss the yellow one.": {
+   "start": 281.88844,
+   "dur": 1.28726
+  },
+  "Have we run out of petrol?": {
+   "start": 283.22567,
+   "dur": 1.26721
+  },
+  "Did you fill it up?": {
+   "start": 284.54286,
+   "dur": 0.96798
+  },
+  "I think it's out of petrol.": {
+   "start": 285.56082,
+   "dur": 1.33714
+  },
+  "Please tell me you checked the fuel.": {
+   "start": 286.94794,
+   "dur": 1.59655
+  },
+  "Is the tank empty?": {
+   "start": 288.59447,
+   "dur": 1.14757
+  },
+  "I'm not pushing it.": {
+   "start": 289.79202,
+   "dur": 1.00789
+  },
+  "There was a jerry can by the barn, I think.": {
+   "start": 290.84989,
+   "dur": 2.03556
+  },
+  "We're not walking home, are we?": {
+   "start": 292.93542,
+   "dur": 1.99565
+  },
+  "Try the reserve?": {
+   "start": 294.98104,
+   "dur": 0.89814
+  },
+  "Hello, you.": {
+   "start": 295.92916,
+   "dur": 0.9181
+  },
+  "Ready when you are.": {
+   "start": 296.89723,
+   "dur": 1.06776
+  },
+  "Oh, there you are.": {
+   "start": 298.01497,
+   "dur": 1.15755
+  },
+  "Comfy? I'm comfy.": {
+   "start": 299.22249,
+   "dur": 1.36698
+  },
+  "Right, where are we off to?": {
+   "start": 300.63946,
+   "dur": 1.82603
+  },
+  "I saved you the front seat.": {
+   "start": 302.51546,
+   "dur": 1.45687
+  },
+  "Hiya.": {
+   "start": 304.02231,
+   "dur": 0.44916
+  },
+  "Driver, take me somewhere nice.": {
+   "start": 304.52145,
+   "dur": 1.78612
+  },
+  "Don't forget I'm back here.": {
+   "start": 306.35755,
+   "dur": 1.31719
+  },
+  "Have you tried the choke?": {
+   "start": 307.72472,
+   "dur": 0.98794
+  },
+  "It's cold, it'll want the choke.": {
+   "start": 308.76263,
+   "dur": 1.95574
+  },
+  "Choke?": {
+   "start": 310.76834,
+   "dur": 0.43918
+  },
+  "Give it some choke, it is freezing.": {
+   "start": 311.25751,
+   "dur": 1.85596
+  },
+  "Mine always needs the choke when it's cold.": {
+   "start": 313.16345,
+   "dur": 2.2351
+  },
+  "I don't know much about engines, but isn't there a choke?": {
+   "start": 315.44853,
+   "dur": 2.64417
+  },
+  "Give it a rest, you'll flood it.": {
+   "start": 318.14268,
+   "dur": 1.72626
+  },
+  "Too much choke, maybe?": {
+   "start": 319.91891,
+   "dur": 1.3171
+  },
+  "It smells of petrol.": {
+   "start": 321.28599,
+   "dur": 1.23737
+  },
+  "I think you have drowned it.": {
+   "start": 322.57333,
+   "dur": 1.37705
+  },
+  "Maybe leave it a minute?": {
+   "start": 324.00036,
+   "dur": 1.16753
+  },
+  "Ease off the choke, perhaps?": {
+   "start": 325.21787,
+   "dur": 1.4868
+  },
+  "Is the petrol on?": {
+   "start": 326.75465,
+   "dur": 1.08771
+  },
+  "Maybe it's the fuel tap.": {
+   "start": 327.89234,
+   "dur": 1.34712
+  },
+  "Does it have any petrol?": {
+   "start": 329.28943,
+   "dur": 1.27728
+  },
+  "Is there a tap or something?": {
+   "start": 330.61669,
+   "dur": 1.43692
+  },
+  "Check the fuel?": {
+   "start": 332.10358,
+   "dur": 0.96798
+  },
+  "It doesn't want to go, does it?": {
+   "start": 333.12154,
+   "dur": 1.76617
+  },
+  "Come on, you can do it.": {
+   "start": 334.93769,
+   "dur": 1.06766
+  },
+  "Is it broken?": {
+   "start": 336.05533,
+   "dur": 0.89814
+  },
+  "Come on, little quad.": {
+   "start": 337.00345,
+   "dur": 1.10766
+  },
+  "Third time lucky?": {
+   "start": 338.16109,
+   "dur": 1.03782
+  },
+  "You'll get it.": {
+   "start": 339.24889,
+   "dur": 0.7385
+  },
+  "Have you tried swearing at it?": {
+   "start": 340.03737,
+   "dur": 1.50676
+  },
+  "Maybe it needs a cuddle.": {
+   "start": 341.5941,
+   "dur": 1.21741
+  },
+  "Keep going, it nearly went.": {
+   "start": 342.8615,
+   "dur": 1.50676
+  },
+  "There we go!": {
+   "start": 344.41823,
+   "dur": 0.69859
+  },
+  "Finally!": {
+   "start": 345.1668,
+   "dur": 0.53896
+  },
+  "Yay!": {
+   "start": 345.75574,
+   "dur": 0.49905
+  },
+  "Hooray.": {
+   "start": 346.30476,
+   "dur": 0.54893
+  },
+  "Knew you could do it.": {
+   "start": 346.90367,
+   "dur": 0.98794
+  },
+  "Ooh, it lives!": {
+   "start": 347.94159,
+   "dur": 1.33714
+  },
+  "Well done, you.": {
+   "start": 349.32871,
+   "dur": 0.78839
+  },
+  "My hero.": {
+   "start": 350.16707,
+   "dur": 0.66866
+  },
+  "Told you.": {
+   "start": 350.88571,
+   "dur": 0.72844
+  },
+  "It's ever so loud.": {
+   "start": 351.66413,
+   "dur": 1.2673
+  },
+  "Pooh, that's smoky.": {
+   "start": 352.98141,
+   "dur": 1.07773
+  },
+  "Ugh, the fumes.": {
+   "start": 354.10912,
+   "dur": 1.55664
+  },
+  "I'm going to smell of exhaust all day.": {
+   "start": 355.71574,
+   "dur": 2.00562
+  },
+  "Is it supposed to smoke that much?": {
+   "start": 357.77134,
+   "dur": 2.13533
+  },
+  "Let it warm up a bit.": {
+   "start": 359.95664,
+   "dur": 1.11764
+  },
+  "Are we going or what?": {
+   "start": 361.12426,
+   "dur": 1.2673
+  },
+  "It's a bit nippy, isn't it?": {
+   "start": 362.44154,
+   "dur": 1.33714
+  },
+  "Come on, I'm getting cold.": {
+   "start": 363.82866,
+   "dur": 1.23737
+  },
+  "What are you doing?": {
+   "start": 365.11601,
+   "dur": 1.01787
+  },
+  "Lovely day for it. Sort of.": {
+   "start": 366.18385,
+   "dur": 2.04553
+  },
+  "I could murder a cup of tea.": {
+   "start": 368.27937,
+   "dur": 1.4868
+  },
+  "Any time today would be nice.": {
+   "start": 369.81615,
+   "dur": 1.85596
+  },
+  "My wellies are filling with mud.": {
+   "start": 371.72209,
+   "dur": 1.51673
+  },
+  "I'm just going to stand here then.": {
+   "start": 373.2888,
+   "dur": 1.75619
+  },
+  "I think it's going to rain.": {
+   "start": 375.09497,
+   "dur": 1.43692
+  },
+  "Are we nearly ready?": {
+   "start": 376.58186,
+   "dur": 1.00789
+  },
+  "I spy something beginning with... grass.": {
+   "start": 377.63973,
+   "dur": 1.86594
+  },
+  "It's very green out here, isn't it?": {
+   "start": 379.55565,
+   "dur": 1.85596
+  },
+  "Shall I come and help?": {
+   "start": 381.46159,
+   "dur": 1.18739
+  },
+  "Are you getting on?": {
+   "start": 382.69896,
+   "dur": 0.89814
+  },
+  "I'll just wait here, then.": {
+   "start": 383.64707,
+   "dur": 1.31719
+  },
+  "Any time you like.": {
+   "start": 385.01424,
+   "dur": 1.14757
+  },
+  "I'm keeping your seat warm.": {
+   "start": 386.21179,
+   "dur": 1.50676
+  },
+  "Hello? Driver?": {
+   "start": 387.76853,
+   "dur": 1.27728
+  },
+  "Ooh, I could have a little nap here.": {
+   "start": 389.09578,
+   "dur": 1.7961
+  },
+  "This seat is surprisingly comfy.": {
+   "start": 390.94186,
+   "dur": 1.71628
+  },
+  "I'm not getting off, if that's what you're hoping.": {
+   "start": 392.70812,
+   "dur": 2.73397
+  },
+  "Shall I drive, then?": {
+   "start": 395.49206,
+   "dur": 1.06776
+  },
+  "I do like it out here.": {
+   "start": 396.6098,
+   "dur": 1.47673
+  },
+  "Fancy a cuppa after this?": {
+   "start": 398.13651,
+   "dur": 1.61651
+  },
+  "Thanks for this, by the way.": {
+   "start": 399.80299,
+   "dur": 1.9756
+  },
+  "You look happy.": {
+   "start": 401.82857,
+   "dur": 0.85823
+  },
+  "It's nice, isn't it? Just us.": {
+   "start": 402.73678,
+   "dur": 1.82603
+  },
+  "I love you, you know.": {
+   "start": 404.61279,
+   "dur": 1.07773
+  },
+  "You have mud on your face. No, there.": {
+   "start": 405.7405,
+   "dur": 2.37478
+  },
+  "This is the best kind of weekend.": {
+   "start": 408.16526,
+   "dur": 1.86594
+  },
+  "Look at that sky.": {
+   "start": 410.08118,
+   "dur": 1.19746
+  },
+  "We should have a picnic out here one day.": {
+   "start": 411.32862,
+   "dur": 1.98567
+  },
+  "You and your quads.": {
+   "start": 413.36426,
+   "dur": 0.98794
+  },
+  "I'm glad we came.": {
+   "start": 414.40218,
+   "dur": 1.23737
+  },
+  "Smell that? Cut grass.": {
+   "start": 415.68952,
+   "dur": 1.69624
+  },
+  "Come here, you.": {
+   "start": 417.43574,
    "dur": 0.86821
   },
-  "Mind your shoes.": {
-   "start": 80.47537,
+  "Oi! Wait for me!": {
+   "start": 418.35392,
+   "dur": 1.7961
+  },
+  "Don't leave me here!": {
+   "start": 420.2,
+   "dur": 0.93805
+  },
+  "Charming.": {
+   "start": 421.18803,
+   "dur": 0.64862
+  },
+  "Fine! I'll walk!": {
+   "start": 421.88662,
+   "dur": 1.51673
+  },
+  "Hey! Come back!": {
+   "start": 423.45333,
+   "dur": 1.27719
+  },
+  "Rude.": {
+   "start": 424.7805,
+   "dur": 0.46912
+  },
+  "I see how it is.": {
+   "start": 425.29959,
+   "dur": 1.18748
+  },
+  "Oh, thanks very much.": {
+   "start": 426.53705,
+   "dur": 1.32717
+  },
+  "Oh, you're back.": {
+   "start": 427.9142,
+   "dur": 1.12762
+  },
+  "Did you have fun without me?": {
+   "start": 429.09179,
+   "dur": 1.22739
+  },
+  "There you are.": {
+   "start": 430.36916,
+   "dur": 0.70857
+  },
+  "I missed you. A bit.": {
+   "start": 431.12771,
+   "dur": 1.45687
+  },
+  "Welcome back, stranger.": {
+   "start": 432.63456,
+   "dur": 1.51673
+  },
+  "Where did you get to?": {
+   "start": 434.20127,
+   "dur": 1.07773
+  },
+  "Oh, hello. Thought you'd forgotten me.": {
+   "start": 435.32898,
+   "dur": 2.65415
+  },
+  "Alright.": {
+   "start": 438.03311,
+   "dur": 0.62875
+  },
+  "Okay!": {
+   "start": 438.71184,
+   "dur": 0.61878
+  },
+  "If I must.": {
+   "start": 439.38059,
+   "dur": 0.77841
+  },
+  "Ooh, go on.": {
+   "start": 440.20898,
+   "dur": 1.05778
+  },
+  "Yes please.": {
+   "start": 441.31673,
+   "dur": 0.7385
+  },
+  "Ooh, a ride. Lovely.": {
+   "start": 442.10522,
+   "dur": 2.09542
+  },
+  "I thought you'd never ask.": {
+   "start": 444.25061,
+   "dur": 1.27728
+  },
+  "Coming!": {
+   "start": 445.57787,
+   "dur": 0.519
+  },
+  "Okay, but don't show off.": {
+   "start": 446.14685,
+   "dur": 1.61651
+  },
+  "Room for a little one?": {
+   "start": 447.81333,
+   "dur": 0.958
+  },
+  "Okay.": {
+   "start": 448.82132,
+   "dur": 0.46912
+  },
+  "Fine, I'll get off.": {
+   "start": 449.34041,
+   "dur": 1.10766
+  },
+  "Right you are.": {
+   "start": 450.49805,
+   "dur": 0.80834
+  },
+  "Sure.": {
+   "start": 451.35637,
+   "dur": 0.52898
+  },
+  "If you say so.": {
+   "start": 451.93533,
+   "dur": 1.05778
+  },
+  "On my way.": {
+   "start": 453.04308,
+   "dur": 0.89814
+  },
+  "Coming.": {
+   "start": 453.9912,
+   "dur": 0.45914
+  },
+  "I'm going for a little wander.": {
+   "start": 454.50032,
+   "dur": 1.41696
+  },
+  "Back in a bit.": {
+   "start": 455.96726,
+   "dur": 0.79837
+  },
+  "I'm just going to have a look over there.": {
+   "start": 456.8156,
+   "dur": 1.64644
+  },
+  "Stretching my legs.": {
+   "start": 458.51202,
+   "dur": 1.12762
+  },
+  "Shout if you need me.": {
+   "start": 459.68961,
+   "dur": 1.06776
+  },
+  "I'll go and look at the cows. Are there cows?": {
+   "start": 460.80735,
+   "dur": 2.66413
+  },
+  "I'm getting on. I'm fed up of standing.": {
+   "start": 463.52145,
+   "dur": 2.35483
+  },
+  "I'll wait on this one.": {
+   "start": 465.92626,
+   "dur": 1.19746
+  },
+  "Bagsy this one.": {
+   "start": 467.1737,
+   "dur": 0.99791
+  },
+  "My feet hurt. Sitting down.": {
+   "start": 468.22159,
+   "dur": 1.97569
+  },
+  "I'm sitting on this till we go.": {
+   "start": 470.24726,
+   "dur": 1.77615
+  },
+  "Right, I'm on. Whenever you're ready.": {
+   "start": 472.07338,
+   "dur": 2.03556
+  },
+  "Right, I'm starting one myself.": {
+   "start": 474.15891,
+   "dur": 1.98567
+  },
+  "If you won't, I will.": {
+   "start": 476.19456,
+   "dur": 1.45687
+  },
+  "Let's see if I can get this going.": {
+   "start": 477.70141,
+   "dur": 1.60653
+  },
+  "I'm bored. I'm starting one.": {
+   "start": 479.35791,
+   "dur": 1.65642
+  },
+  "Watch me do it without you.": {
+   "start": 481.06431,
+   "dur": 1.47683
+  },
+  "I'll have a go.": {
+   "start": 482.59111,
+   "dur": 0.78839
+  },
+  "How hard can it be?": {
+   "start": 483.42948,
+   "dur": 1.15755
+  },
+  "Leave it to me.": {
+   "start": 484.63701,
    "dur": 0.97796
+  },
+  "Right, stand back.": {
+   "start": 485.66494,
+   "dur": 1.58658
+  },
+  "Okay. I've seen you do it loads of times.": {
+   "start": 487.3015,
+   "dur": 2.46458
+  },
+  "Watch and learn.": {
+   "start": 489.81605,
+   "dur": 1.04771
+  },
+  "Me? Go on then.": {
+   "start": 490.91374,
+   "dur": 1.30721
+  },
+  "Petrol on first.": {
+   "start": 492.27093,
+   "dur": 1.16753
+  },
+  "Tap on. I remembered that one.": {
+   "start": 493.48844,
+   "dur": 2.04553
+  },
+  "Fuel on...": {
+   "start": 495.58395,
+   "dur": 0.79828
+  },
+  "This little lever is the petrol, isn't it?": {
+   "start": 496.4322,
+   "dur": 2.18522
+  },
+  "Bit of choke, I think.": {
+   "start": 498.66739,
+   "dur": 1.37705
+  },
+  "Choke on.": {
+   "start": 500.09442,
+   "dur": 0.67864
+  },
+  "Pull the choke thing...": {
+   "start": 500.82304,
+   "dur": 1.21741
+  },
+  "It's cold, so choke.": {
+   "start": 502.09043,
+   "dur": 1.46685
+  },
+  "Come on...": {
+   "start": 503.60726,
+   "dur": 0.62875
+  },
+  "Come on, you.": {
+   "start": 504.28599,
+   "dur": 0.57887
+  },
+  "Is it this button?": {
+   "start": 504.91483,
+   "dur": 0.97796
+  },
+  "Why is it not going?": {
+   "start": 505.94277,
+   "dur": 1.19746
+  },
+  "It nearly went!": {
+   "start": 507.1902,
+   "dur": 0.88816
+  },
+  "Please start. Please.": {
+   "start": 508.12834,
+   "dur": 1.58658
+  },
+  "One more go.": {
+   "start": 509.7649,
+   "dur": 0.86821
+  },
+  "Oh! Hang on.": {
+   "start": 510.68308,
+   "dur": 1.15746
+  },
+  "Wait, I know what I forgot.": {
+   "start": 511.89052,
+   "dur": 1.71628
+  },
+  "Ooh, silly me.": {
+   "start": 513.65678,
+   "dur": 1.53669
+  },
+  "Ah. That might help.": {
+   "start": 515.24345,
+   "dur": 1.53669
+  },
+  "Ha! I did it!": {
+   "start": 516.83011,
+   "dur": 1.12753
+  },
+  "See? Easy.": {
+   "start": 518.00762,
+   "dur": 1.03782
+  },
+  "Yes! It lives!": {
+   "start": 519.09542,
+   "dur": 1.40698
+  },
+  "Told you I could do it.": {
+   "start": 520.55238,
+   "dur": 1.13751
+  },
+  "Ooh, listen to it go!": {
+   "start": 521.73986,
+   "dur": 1.60653
+  },
+  "It won't go. Your turn.": {
+   "start": 523.39637,
+   "dur": 2.0156
+  },
+  "I give up.": {
+   "start": 525.46195,
+   "dur": 0.68862
+  },
+  "Nope. It hates me.": {
+   "start": 526.20054,
+   "dur": 1.43692
+  },
+  "I think it's broken.": {
+   "start": 527.68744,
+   "dur": 1.08771
+  },
+  "You do it, it doesn't like me.": {
+   "start": 528.82512,
+   "dur": 1.91583
+  },
+  "It's warmed up now. All yours.": {
+   "start": 530.79093,
+   "dur": 2.03556
+  },
+  "There. Nice and warm for you.": {
+   "start": 532.87646,
+   "dur": 2.18522
+  },
+  "Choke's off, it's ready.": {
+   "start": 535.11166,
+   "dur": 1.72626
+  },
+  "Your chariot awaits.": {
+   "start": 536.88789,
+   "dur": 1.15755
+  },
+  "Don't spill it.": {
+   "start": 538.09542,
+   "dur": 0.85823
+  },
+  "Mind your shoes.": {
+   "start": 539.00363,
+   "dur": 1.03782
+  },
+  "Careful, you will get it everywhere.": {
+   "start": 540.09143,
+   "dur": 1.57651
+  },
+  "Ooh, I love the smell of petrol. Is that weird?": {
+   "start": 541.71791,
+   "dur": 2.88363
+  },
+  "Is that enough?": {
+   "start": 544.65152,
+   "dur": 0.72853
+  },
+  "Good thinking.": {
+   "start": 545.43002,
+   "dur": 0.81832
   }
  }
 }

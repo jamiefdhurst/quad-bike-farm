@@ -525,6 +525,100 @@ export const VOICE_LINES = {
       'Coming.',
     ],
   },
+  // Doing things on her own when she's bored -------------------------------------
+  selfWander: {
+    cooldown: 30,
+    lines: [
+      "I'm going for a little wander.",
+      'Back in a bit.',
+      "I'm just going to have a look over there.",
+      'Stretching my legs.',
+      'Shout if you need me.',
+      "I'll go and look at the cows. Are there cows?",
+      { sound: 'hum' },
+      { sound: 'sigh' },
+    ],
+  },
+  selfMount: {
+    cooldown: 30,
+    lines: [
+      "I'm getting on. I'm fed up of standing.",
+      "I'll wait on this one.",
+      "Bagsy this one.",
+      'My feet hurt. Sitting down.',
+      "I'm sitting on this till we go.",
+      "Right, I'm on. Whenever you're ready.",
+    ],
+  },
+  selfStart: {
+    cooldown: 30,
+    lines: [
+      "Right, I'm starting one myself.",
+      'If you won\'t, I will.',
+      "Let's see if I can get this going.",
+      "I'm bored. I'm starting one.",
+      'Watch me do it without you.',
+    ],
+  },
+
+  // Starting a quad for you ----------------------------------------------------
+  ackStart: {
+    cooldown: 0,
+    lines: [
+      "I'll have a go.",
+      'How hard can it be?',
+      'Leave it to me.',
+      'Right, stand back.',
+      "Okay. I've seen you do it loads of times.",
+      'Watch and learn.',
+      'Me? Go on then.',
+    ],
+  },
+  startTap: {
+    cooldown: 20,
+    lines: ['Petrol on first.', "Tap on. I remembered that one.", 'Fuel on...', 'This little lever is the petrol, isn\'t it?'],
+  },
+  startChoke: {
+    cooldown: 20,
+    lines: ['Bit of choke, I think.', 'Choke on.', 'Pull the choke thing...', "It's cold, so choke."],
+  },
+  startCrank: {
+    cooldown: 6,
+    lines: [
+      'Come on...',
+      'Come on, you.',
+      'Is it this button?',
+      'Why is it not going?',
+      'It nearly went!',
+      'Please start. Please.',
+      'One more go.',
+      { sound: 'sigh' },
+    ],
+  },
+  startRemembered: {
+    cooldown: 10,
+    lines: ['Oh! Hang on.', 'Wait, I know what I forgot.', 'Ooh, silly me.', 'Ah. That might help.'],
+  },
+  startCaught: {
+    cooldown: 10,
+    lines: ['Ha! I did it!', 'See? Easy.', 'Yes! It lives!', 'Told you I could do it.', 'Ooh, listen to it go!', { sound: 'laugh' }],
+  },
+  startGaveUp: {
+    cooldown: 10,
+    lines: [
+      "It won't go. Your turn.",
+      'I give up.',
+      'Nope. It hates me.',
+      "I think it's broken.",
+      "You do it, it doesn't like me.",
+      { sound: 'sigh' },
+    ],
+  },
+  startWarm: {
+    cooldown: 30,
+    lines: ["It's warmed up now. All yours.", 'There. Nice and warm for you.', "Choke's off, it's ready.", 'Your chariot awaits.'],
+  },
+
   pouring: {
     cooldown: 60,
     lines: [

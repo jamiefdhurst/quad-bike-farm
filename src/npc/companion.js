@@ -4,6 +4,7 @@ import { CharacterRig } from './characterRig.js';
 import { DEFAULT_COMPANION_PARAMS } from './companionParams.js';
 import { applyOutfit, refitOutfit, OUTFITS } from './outfit.js';
 import { shapeFigure } from './figure.js';
+import { StartingAttempt } from './startingAttempt.js';
 
 const CAPSULE_HALF_HEIGHT = 0.55;
 const CAPSULE_RADIUS = 0.25;
@@ -17,7 +18,7 @@ function angleTo(from, to) {
 /**
  * The companion NPC. Behaviour is a small state machine:
  *
- *   idle ──walk──▶ walking ──arrive──▶ idle | mounting ──▶ seated ──▶ dismounting ──▶ idle
+ *   idle ──walk──▶ walking ──arrive──▶ idle | starting | mounting ──▶ seated ──▶ dismounting ──▶ idle
  *
  * Requests (the menu options) are methods that pick the next state, and
  * getActions() lists only the ones that make sense right now. New requests
@@ -75,6 +76,12 @@ export class Companion {
     this.glanceLeft = 0;
     this.fidgetTimer = this.randomBetween(params.fidgetEveryMin, params.fidgetEveryMax);
     this.fidget = null;
+    this.startEvents = []; // what she's done while starting a quad, for her voice to pick up
+    this.quads = [quad]; // every quad on the farm, for doing things on her own (set by the game)
+    this.idleFor = 0;
+    this.boredAfter = this.randomBetween(params.boredAfterMin, params.boredAfterMax);
+    this.selfEvents = []; // things she decided to do on her own, for her voice
+    this.reach = 0; // how far she's reaching for the bars, 0..1
   }
 
   figureAmounts() {
@@ -125,7 +132,12 @@ export class Companion {
       return actions;
     }
     if (s.is('dismounting')) return actions;
+    // She can have a go at starting any quad that isn't running and has nobody on it.
+    const startable = (q) => !q.engine.isRunning && !q.rider && !q.isTipped && !q.isGhostRiding;
     for (const q of sorted) {
+      if (startable(q) && !(s.is('starting') && q === this.quad)) {
+        actions.push({ kind: 'start', label: `Start the ${q.label}`, run: () => this.requestStart(q) });
+      }
       if (rideable(q)) actions.push({ kind: 'mount', label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
       if (!this.isStandingBeside(q)) actions.push({ kind: 'stand', label: `Stand next to the ${q.label}`, run: () => this.requestStandBeside(q) });
     }
@@ -143,6 +155,64 @@ export class Companion {
     if (this.fsm.is('seated')) return;
     this.quad = quad;
     this.fsm.transition('walking', { goal: 'mount', target: () => this.mountPoint() });
+  }
+
+  /**
+   * Left standing about long enough, she does something on her own: wanders
+   * off for a look round, gets on a quad to wait, or has a go at starting one.
+   * Once she's sat on a quad she stays there until you ask her to get off.
+   */
+  updateBoredom(dt, viewer) {
+    const p = this.params;
+    const waiting = this.fsm.is('idle') && !viewer?.talking;
+    this.idleFor = waiting ? this.idleFor + dt : 0;
+    if (!p.ownMind || this.idleFor < this.boredAfter) return;
+    this.idleFor = 0;
+    this.boredAfter = this.randomBetween(p.boredAfterMin, p.boredAfterMax);
+    const here = this.root.position;
+    const near = (q) => q.position.distanceTo(here) < 40 && !q.rider && !q.isTipped && !q.isGhostRiding && q.speed < 0.5;
+    const mountable = this.quads.filter((q) => near(q) && q.hasPillion);
+    const startable = this.quads.filter((q) => near(q) && !q.engine.isRunning);
+    const pick = (list) => list[Math.floor(Math.random() * list.length)];
+    const r = Math.random();
+    if (r < p.boredMountChance && mountable.length) {
+      this.selfEvents.push('mount');
+      this.requestMount(pick(mountable));
+    } else if (r < p.boredMountChance + p.boredStartChance && startable.length) {
+      this.selfEvents.push('start');
+      this.requestStart(pick(startable));
+    } else {
+      this.selfEvents.push('wander');
+      this.wander();
+    }
+  }
+
+  /** A stroll to somewhere nearby on the farm, staying inside the hedges. */
+  wander() {
+    const p = this.params;
+    const here = this.root.position;
+    const limit = this.world.layout.fieldHalf - 6;
+    const angle = Math.random() * Math.PI * 2;
+    const dist = this.randomBetween(p.wanderMin, p.wanderMax);
+    const target = new THREE.Vector3(
+      Math.max(-limit, Math.min(limit, here.x + Math.sin(angle) * dist)),
+      0,
+      Math.max(-limit, Math.min(limit, here.z + Math.cos(angle) * dist)),
+    );
+    target.y = this.world.heightAt(target.x, target.z);
+    const facing = Math.random() * Math.PI * 2;
+    this.fsm.transition('walking', { goal: 'wander', target: () => ({ position: target, facing }) });
+  }
+
+  /** Walks to the bars of a quad and has a go at starting it. */
+  requestStart(quad) {
+    if (this.fsm.is('seated', 'mounting')) {
+      this.afterDismount = () => this.requestStart(quad);
+      this.fsm.transition('dismounting');
+      return;
+    }
+    this.quad = quad;
+    this.fsm.transition('walking', { goal: 'start', target: () => this.startPoint() });
   }
 
   requestStandBeside(quad = this.quad) {
@@ -178,6 +248,15 @@ export class Companion {
     const p = this.quad.localToWorld(side * 0.85, 0, -0.5);
     p.y = this.world.heightAt(p.x, p.z);
     return { position: p, facing: this.quad.yaw, side };
+  }
+
+  /** Beside the handlebars on her nearer side, facing them, within reach of the key and starter. */
+  startPoint(quad = this.quad) {
+    const side = this.root.parent === this.scene ? this.nearSide(quad) : 1;
+    const p = quad.localToWorld(side * 0.8, 0, 0.3);
+    p.y = this.world.heightAt(p.x, p.z);
+    const bars = quad.localToWorld(0, 0, 0.35);
+    return { position: p, facing: Math.atan2(bars.x - p.x, bars.z - p.z), side };
   }
 
   isStandingBeside(quad = this.quad) {
@@ -280,6 +359,7 @@ export class Companion {
    */
   update(dt, vibration, viewer) {
     this.fsm.update(dt);
+    this.updateBoredom(dt, viewer);
     if (viewer) this.updateGlance(dt, viewer);
     this.updateFidget(dt);
     if (this.root.parent === this.scene) this.syncCollider();
@@ -340,6 +420,17 @@ Companion.prototype.updateFidget = function (dt) {
   const offsets = this.rig.offsets;
   for (const key in offsets) offsets[key] = 0;
 
+  // Reaching for the key and the starter while she gets a quad going.
+  const a = this.attempt;
+  const want = a && !a.done ? (a.starter || a.phase === 'reach' ? 1 : 0.45) : 0;
+  this.reach += (want - this.reach) * Math.min(1, dt * 5);
+  if (this.reach > 0.01) {
+    const k = smooth(Math.min(1, this.reach));
+    if (this.reachSide > 0) Object.assign(offsets, { leftArmOut: 0.6 * k, leftElbow: 0.5 * k, spinePitch: 0.12 * k });
+    else Object.assign(offsets, { rightArmOut: 0.6 * k, rightElbow: 0.5 * k, spinePitch: 0.12 * k });
+    return;
+  }
+
   const seated = this.isSeated;
   const standing = this.fsm.is('idle');
   if (!this.fidget && (seated || standing)) {
@@ -394,8 +485,34 @@ const STATES = {
       }
       if (this.walkToward(dt, t.position)) {
         if (data.goal === 'mount') this.fsm.transition('mounting', { side: t.side });
+        else if (data.goal === 'start') this.fsm.transition('starting', { facing: t.facing, side: t.side });
         else this.fsm.transition('idle', { facing: t.facing });
       }
+    },
+  },
+
+  // Having a go at starting the quad: key, tap, choke, starter, then minding the choke as it warms.
+  starting: {
+    enter(data) {
+      this.rig.play('Idle', { fade: 0.3 });
+      this.attempt = new StartingAttempt(this.quad);
+      this.reachSide = data.side ?? 1;
+    },
+    update(dt, data) {
+      this.turnToward(dt, data.facing);
+      const a = this.attempt;
+      // You've got on, or it's gone over: she leaves it to you.
+      if (this.quad.rider || this.quad.isTipped) a.abandon();
+      for (const e of a.update(dt)) this.startEvents.push(e);
+      this.quad.helperStarter = a.starter;
+      if (a.done) {
+        if (a.result === 'running' && !this.quad.rider) this.startEvents.push('warmedUp');
+        this.fsm.transition('idle', { facing: data.facing });
+      }
+    },
+    exit() {
+      this.quad.helperStarter = false;
+      this.attempt = null;
     },
   },
 

@@ -80,6 +80,7 @@ export class Quad {
     this.rider = null;
     this.input = null;
     this.remoteInput = null; // set while someone on foot is looking at the bike
+    this.helperStarter = false; // she's holding the starter button
     this.throttle = 0;
     this.brake = 0;
     this.steer = 0;
@@ -258,7 +259,7 @@ export class Quad {
       }
     } else {
       // Someone beside the bike can still hold the starter.
-      this.starter = !!this.remoteInput && this.remoteInput.isDown('KeyR');
+      this.starter = (!!this.remoteInput && this.remoteInput.isDown('KeyR')) || this.helperStarter;
       if (this.ghost) {
         const cruise = this.ghostThrottle(dt, fwd);
         if (cruise === null) this.releaseGhost();
@@ -295,6 +296,8 @@ export class Quad {
     const idle = (!this.input && !this.ghost) || (throttleInput === 0 && Math.abs(fwd) < 0.5);
     if (idle) brake = Math.max(brake, p.parkingBrake);
     brake = Math.max(brake, p.rollingResistance);
+    // Wheel brakes alone let a parked quad creep down a slope, so a stationary one is held.
+    this.physics.setParked(idle && throttleInput === 0 && Math.abs(fwd) < 0.3);
 
     this.physics.applyControls({
       driveForce: this.drivetrain.driveForce,

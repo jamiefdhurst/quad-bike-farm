@@ -32,6 +32,15 @@ export const DEFAULT_COMPANION_PARAMS = {
   fidgetEveryMax: 8,
   fidgetScale: 1, // overall size of the movements
 
+  // Doing things on her own when left standing about
+  ownMind: true,
+  boredAfterMin: 55, // seconds standing about before she does something
+  boredAfterMax: 90,
+  boredMountChance: 0.35, // gets on a quad to wait (she stays on it)
+  boredStartChance: 0.3, // has a go at starting one; otherwise she wanders off for a look round
+  wanderMin: 6, // metres
+  wanderMax: 18,
+
   // Talking (companionVoice.js, lines in voiceLines.js)
   voice: true, // she talks at all
   captions: true, // show what she says on screen
@@ -79,6 +88,12 @@ export const COMPANION_PARAM_RANGES = {
   fidgetEveryMin: [0.5, 30, 0.5],
   fidgetEveryMax: [0.5, 60, 0.5],
   fidgetScale: [0, 3, 0.05],
+  boredAfterMin: [5, 600, 1],
+  boredAfterMax: [5, 900, 1],
+  boredMountChance: [0, 1, 0.05],
+  boredStartChance: [0, 1, 0.05],
+  wanderMin: [1, 50, 0.5],
+  wanderMax: [1, 80, 0.5],
   chattiness: [0, 3, 0.05],
   voiceMinGap: [0, 30, 0.5],
   voiceVolume: [0, 1, 0.01],

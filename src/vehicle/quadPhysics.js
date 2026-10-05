@@ -48,6 +48,11 @@ export class QuadPhysics {
     this.applyParams();
   }
 
+  /** While parked, a nearly stationary quad is held where it is (see update). */
+  setParked(parked) {
+    this.parked = parked;
+  }
+
   /** Pushes the current params into Rapier; call after tuning. */
   applyParams() {
     const p = this.params;
@@ -96,6 +101,13 @@ export class QuadPhysics {
   /** Must run every fixed step before the physics world steps. */
   update(dt) {
     this.vehicle.updateVehicle(dt);
+    // The raycast wheels' brakes can't quite hold it on a slope: it creeps a metre
+    // or so a minute. Parked and all but still, its sideways and along-the-ground
+    // drift is cancelled; it can still settle and bounce up and down.
+    if (this.parked) {
+      const v = this.body.linvel();
+      if (Math.hypot(v.x, v.z) < this.params.parkedHoldSpeed) this.body.setLinvel({ x: 0, y: v.y, z: 0 }, true);
+    }
   }
 
   /** Signed speed along the chassis forward axis, m/s. */

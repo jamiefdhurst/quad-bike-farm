@@ -77,7 +77,7 @@ export const QUAD_SPECS = [
       mufflerFreqA: 185,
     },
     smoke: {
-      coldDensity: 0.52,
+      coldDensity: 0.7,
     },
   },
   {
@@ -150,8 +150,8 @@ export const QUAD_SPECS = [
       densityRefRpm: 2400,
     },
     smoke: {
-      warmDensity: 0.22,
-      coldDensity: 0.6,
+      warmDensity: 0.32,
+      coldDensity: 0.8,
       warmGray: 0.82,
       coldGray: 0.9,
       tint: '#dde6ff',

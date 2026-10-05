@@ -6,24 +6,24 @@ import * as THREE from 'three';
 // the throttle is snapped open, and a light haze once warm.
 
 export const DEFAULT_SMOKE_PARAMS = {
-  opacity: 1.0, // master
-  maxPerSecond: 45, // spawn cap; at high revs pulses are merged into fewer, denser puffs
+  opacity: 1.4, // master
+  maxPerSecond: 60, // spawn cap; at high revs pulses are merged into fewer, denser puffs
   lifeMin: 1.6, // seconds
-  lifeMax: 4.0,
+  lifeMax: 5.0,
   startSize: 0.09, // metres
-  endSize: 1.9,
+  endSize: 2.3,
   exitSpeed: 2.0, // m/s out of the tip at idle
   throttleExitSpeed: 4.0, // extra at full throttle
   drag: 2.2, // 1/s, how fast puffs stop following the pipe and join the wind
   buoyancy: 0.6, // m/s^2 upward, warm gas rises
   windX: 0.7, // m/s
   windZ: 0.3,
-  warmDensity: 0.09, // opacity of a puff from a warm, healthy engine
-  coldDensity: 0.46, // extra when stone cold
-  richDensity: 0.7, // extra at full richness
+  warmDensity: 0.15, // opacity of a puff from a warm, healthy engine
+  coldDensity: 0.6, // extra when stone cold
+  richDensity: 0.9, // extra at full richness
   foulDensity: 0.4, // extra with a fouled plug
-  throttleBurst: 0.6, // extra when the throttle is snapped open
-  crankDensity: 0.18, // puffs while cranking
+  throttleBurst: 0.85, // extra when the throttle is snapped open
+  crankDensity: 0.26, // puffs while cranking
   coughDensity: 0.9, // puffs on a stall
   coldGray: 0.88, // colour of cold-engine vapour (0 black, 1 white)
   richGray: 0.22, // colour of rich, sooty smoke
