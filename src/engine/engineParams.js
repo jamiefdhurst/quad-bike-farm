@@ -11,6 +11,19 @@ export const DEFAULT_ENGINE_PARAMS = {
   idleRpmWarm: 1150, // steady idle, warm, no choke
   stallRpm: 350, // below this the engine dies
   crankRpm: 320, // starter motor speed
+  batteryIgnitionDrain: 0.0021, // battery (0..1) lost per second with the ignition on and the engine not running (flat in about 8 minutes)
+  batteryCrankDrain: 0.0125, // lost per second on the starter (about 8 s of cranking per 10%)
+  batteryChargeRate: 0.0017, // gained per second while it runs (flat to full in about 10 minutes)
+  batteryWeakBelow: 0.6, // below this the starter turns slower
+  batteryDeadBelow: 0.25, // below this the starter only clicks
+  weakCrankFactor: 0.4, // the starter's speed, as a fraction of normal, just above dead
+  batteryDashOutBelow: 0.1, // below this the dash lights go out
+  pullStart: false, // has a recoil pull-start as well as the starter (the two-strokes)
+  pullSeconds: 0.9, // how long one good yank turns it over
+  pullRpmFactor: 1.1, // a perfect yank's speed, as a fraction of the starter's
+  pullGoodMin: 0.45, // seconds holding the cord before the yank that count as a proper pull...
+  pullGoodMax: 1.0, // ...up to here; shorter is weak, longer is a botched yank
+  pullLateMax: 1.6, // held longer than this and it's the weakest it gets
   crankSpinUpRate: 25, // 1/s, how quickly crank speed follows the starter (spin-up and compression dips)
   crankCompressionDip: 0.55, // fraction of crank speed lost heaving the piston over compression
   crankDipWidth: 0.08, // width of that slowdown, as a fraction of the cycle
@@ -133,6 +146,18 @@ export const ENGINE_PARAM_RANGES = {
   idleRpmWarm: [800, 2500, 10],
   stallRpm: [200, 1200, 10],
   crankRpm: [100, 600, 10],
+  batteryIgnitionDrain: [0, 0.02, 0.0001],
+  batteryCrankDrain: [0, 0.1, 0.0005],
+  batteryChargeRate: [0, 0.02, 0.0001],
+  batteryWeakBelow: [0.1, 1, 0.01],
+  batteryDeadBelow: [0, 0.6, 0.01],
+  weakCrankFactor: [0.05, 1, 0.01],
+  batteryDashOutBelow: [0, 0.3, 0.01],
+  pullSeconds: [0.2, 3, 0.05],
+  pullRpmFactor: [0.3, 2, 0.05],
+  pullGoodMin: [0.1, 1.5, 0.05],
+  pullGoodMax: [0.3, 3, 0.05],
+  pullLateMax: [0.5, 4, 0.05],
   crankSpinUpRate: [1, 60, 0.5],
   crankCompressionDip: [0, 0.9, 0.01],
   crankDipWidth: [0.01, 0.3, 0.005],

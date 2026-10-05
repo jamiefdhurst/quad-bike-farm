@@ -4,8 +4,9 @@ import { CharacterRig } from './characterRig.js';
 import { DEFAULT_COMPANION_PARAMS } from './companionParams.js';
 import { applyOutfit, refitOutfit, OUTFITS } from './outfit.js';
 import { shapeFigure } from './figure.js';
-import { StartingAttempt } from './startingAttempt.js';
+import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 import { drivingStates, drivingMethods } from './companionDriving.js';
+import { restingMethods, restingStates } from './companionResting.js';
 import { PillionPose } from './pillionPose.js';
 import { canRideRack } from './rackSeat.js';
 import { nextBoredWait, driftRestlessness, pickBoredChoice } from './boredom.js';
@@ -282,13 +283,14 @@ export class Companion {
       mount: this.quads.filter((q) => near(q) && q.hasPillion),
       start: this.quads.filter((q) => near(q) && !q.engine.isRunning),
       drive: this.quads.filter((q) => near(q) && this.canDrive(q)),
+      rest: this.restSpotsNear?.(here) ?? [],
     };
     const can = Object.fromEntries(Object.entries(options).map(([k, list]) => [k, list.length > 0]));
     const favour = this.favourView();
     const choice = pickBoredChoice(p, { confidence: this.driveConfidence ?? p.driveConfidence, can, sulk: favour.sulk });
     const pick = (list) => list[Math.floor(Math.random() * list.length)];
     // Neglected and off on a quad alone: she makes a point of it.
-    this.selfEvents.push(choice === 'drive' && favour.mood === 'neglected' ? 'sulkOff' : choice);
+    if (choice === 'rest') this.selfEvents.push('restGo'); else this.selfEvents.push(choice === 'drive' && favour.mood === 'neglected' ? 'sulkOff' : choice);
     if (choice === 'join') {
       const q = pick(options.join);
       this.requestMount(q, { ownChoice: true, seat: this.canRidePillion(q) ? 'pillion' : 'rack' });
@@ -296,6 +298,7 @@ export class Companion {
     else if (choice === 'mount') this.requestMount(pick(options.mount), { ownChoice: true });
     else if (choice === 'start') this.requestStart(pick(options.start));
     else if (choice === 'drive') this.requestDrive(pick(options.drive));
+    else if (choice === 'rest') this.goRest(pick(options.rest), { stay: this.restStayFor?.() });
     else this.wander();
   }
 
@@ -646,6 +649,8 @@ export class Companion {
 }
 
 Object.assign(Companion.prototype, drivingMethods);
+// (restingMethods has getters, so copy its descriptors rather than assigning.)
+Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(restingMethods));
 
 // Idle behaviour -------------------------------------------------------------
 
@@ -731,6 +736,7 @@ Companion.prototype.updateFidget = function (dt) {
 // State definitions. `this` is the Companion.
 const STATES = {
   ...drivingStates,
+  ...restingStates,
 
   idle: {
     enter() {
@@ -761,6 +767,7 @@ const STATES = {
         else if (data.goal === 'drive') this.fsm.transition('mounting', { side: t.side, seat: this.quad.rider ? 'pillion' : 'rider' });
         else if (data.goal === 'start') this.fsm.transition('starting', { facing: t.facing, side: t.side });
         else if (data.goal === 'prank') this.fsm.transition('pranking', { facing: t.facing, act: data.act });
+        else if (data.goal === 'rest') this.fsm.transition('resting', { spot: data.spot, stay: data.stay });
         else this.fsm.transition('idle', { facing: t.facing });
       }
     },
@@ -786,7 +793,7 @@ const STATES = {
   starting: {
     enter(data) {
       this.rig.play('Idle', { fade: 0.3 });
-      this.attempt = new StartingAttempt(this.quad);
+      this.attempt = new StartingAttempt(this.quad, { params: { ...DEFAULT_STARTING_PARAMS, pullWhenFlat: this.params.startPullWhenFlat } });
       this.reachSide = data.side ?? 1;
     },
     update(dt, data) {

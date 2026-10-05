@@ -112,6 +112,7 @@ export const QUAD_SPECS = [
     fuel: { tankCapacity: 9, reserveLitres: 1.5, burnPerRev: 0.000032, idleBurnFraction: 0.45 },
     engine: {
       strokes: 2,
+      pullStart: true, // a recoil cord as well as the starter
       idleRpmWarm: 1800,
       maxRpm: 10500,
       redlineRpm: 9500,
@@ -257,6 +258,7 @@ export const QUAD_SPECS = [
     fuel: { tankCapacity: 8, reserveLitres: 1.2, burnPerRev: 0.000036, idleBurnFraction: 0.45 },
     engine: {
       strokes: 2,
+      pullStart: true, // a recoil cord as well as the starter
       idleRpmWarm: 1950,
       maxRpm: 11500,
       redlineRpm: 10800,

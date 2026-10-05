@@ -1,10 +1,14 @@
 import * as THREE from 'three';
 import { Chatter } from './chatter.js';
 import { VOICE_LINES } from './voiceLines.js';
+import { band } from './skills.js';
 import { Speech } from '../audio/companionAudio.js';
 
 // Captions for her recorded sounds.
 const SOUND_CAPTIONS = { sigh: '(sighs)', hum: '(hums)', laugh: '(laughs)', yawn: '(yawns)', gasp: '(gasps)', hmm: 'Hmm?', oh: 'Oh.' };
+
+// Mistakes that show a skill she's short on.
+const SLIPS = { chokeOff: 'choke', stalled: 'starting', overSteer: 'cornering', revIt: 'mud' };
 
 /**
  * Watches what's going on around her and has her say something about it now
@@ -58,6 +62,12 @@ export class CompanionVoice {
     this.driveNerve = 0; // 0 nervous .. 1 enjoying it, while she's driving
     this.driveVy = 0;
     this.driveJolt = 0;
+  }
+
+  /** She got something right by herself: once she's getting the hang of it, or has it, she says so. */
+  onPractice(skill) {
+    const level = band(this.companion.skillLevels?.[skill] ?? 0.5);
+    if (level !== 'novice') this.say(`skill_${skill}_${level}`, { urgent: true, chance: 0.5 });
   }
 
   /** She was asked to do something from the menu. */
@@ -158,6 +168,7 @@ export class CompanionVoice {
     this.watchGhostRide(dt, together);
     this.watchStarting();
     this.watchOwnMind();
+    this.watchResting(dt);
     this.watchDriving(dt);
     this.watchEngines(dt, view, together, distance);
     this.watchSeat(dt, view, !!rideQuad);
@@ -285,11 +296,25 @@ export class CompanionVoice {
     }
   }
 
+  /** Sat out on the bales or fence, or stood in the barn doorway: now and then she says something about it. */
+  watchResting(dt) {
+    const c = this.companion;
+    if (!c.isResting || c.restPhase !== 'sat') {
+      this.restTalk = null;
+      return;
+    }
+    this.restTalk ??= 25 + Math.random() * 50;
+    this.restTalk -= dt;
+    if (this.restTalk > 0) return;
+    this.restTalk = 60 + Math.random() * 90;
+    this.say(c.restSpot?.kind === 'shelter' ? 'restShelter' : 'restSat', { chance: 0.7 });
+  }
+
   /** Says what she's up to when she decides to do something on her own. */
   watchOwnMind() {
     const events = this.companion.selfEvents;
     // Switching a quad off is rare, so she always mentions it.
-    for (const e of events) this.say({ wander: 'selfWander', join: 'selfJoin', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive', sulkOff: 'sulkOff', offerRide: 'offerRide', keyOff: 'selfKeyOff', askOff: 'askOff', askStop: 'askStop', getOff: 'selfGetOff', getOffWaited: 'selfGetOffWaited', takeOverStop: 'takeOverStop', takeOverDrive: 'takeOverDrive' }[e], { urgent: true, chance: e === 'keyOff' || e === 'askOff' || e === 'offerRide' || e === 'sulkOff' || e.startsWith('takeOver') ? 1 : 0.8 });
+    for (const e of events) this.say({ wander: 'selfWander', restGo: 'restGo', restRain: 'restRain', restLeave: 'restLeave', join: 'selfJoin', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive', sulkOff: 'sulkOff', offerRide: 'offerRide', keyOff: 'selfKeyOff', askOff: 'askOff', askStop: 'askStop', getOff: 'selfGetOff', getOffWaited: 'selfGetOffWaited', takeOverStop: 'takeOverStop', takeOverDrive: 'takeOverDrive' }[e], { urgent: true, chance: e === 'keyOff' || e === 'askOff' || e === 'offerRide' || e === 'sulkOff' || e.startsWith('takeOver') ? 1 : 0.8 });
     events.length = 0;
   }
 
@@ -330,6 +355,9 @@ export class CompanionVoice {
     };
     const mood = c.driveMood ?? 0.5;
     for (const e of events) {
+      // A mistake she's no good at yet gets her own line about it, in place of the usual yelp.
+      const slip = SLIPS[e];
+      if (slip && c.skillLevels && band(c.skillLevels[slip]) === 'novice' && this.say(`skill_${slip}_novice`, { urgent: true, chance: 0.7 })) continue;
       // Setting off, how she feels about it shows.
       if (e === 'setOff' && mood < 0.35) {
         this.say('driveSetOffCareful', { urgent: true, chance: 0.9 });
@@ -385,6 +413,9 @@ export class CompanionVoice {
       caught: ['startCaught', 1],
       gaveUp: ['startGaveUp', 1],
       warmedUp: ['startWarm', 1],
+      slow: ['startSlow', 1],
+      flat: ['startFlat', 1],
+      pull: ['startPull', 1],
     };
     for (const e of events) {
       if (e === 'crank') {
@@ -420,6 +451,8 @@ export class CompanionVoice {
         w.cranking = 0;
       }
       if (e.state === 'off') w.cranking = 0;
+      // You press the starter on a flat battery and it only clicks.
+      if (near && e.events.some((x) => x.type === 'starterClick')) this.say('crankFlat', { urgent: true, chance: 0.7 });
       // Cranking on and on without it catching.
       if (e.state === 'cranking' && w.cranking > 5 && near) {
         this.say(this.crankHint(unit), { chance: 0.02 });
@@ -434,6 +467,7 @@ export class CompanionVoice {
   /** Which kind of "it won't start" remark fits what she can see. */
   crankHint(unit) {
     const e = unit.engine;
+    if (e.battery < e.params.batteryWeakBelow) return 'crankStruggleBattery';
     if (unit.quad.fuel.bowlLevel < 0.3) return 'crankStruggleNoFuel';
     if (e.fouling > 0.4 || e.rich > 0.2) return 'crankStruggleFlooded';
     if (e.temperature < 0.4 && unit.quad.choke < 0.5) return 'crankStruggleCold';

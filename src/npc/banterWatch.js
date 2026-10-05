@@ -38,7 +38,7 @@ export class BanterWatch {
     ];
     const withYou = (c) => !!ridden && c.isSeated && c.quad === ridden.quad;
     const driving = (c) => c.fsm.is('driving') && c.drive?.phase !== 'start';
-    const onFoot = (c) => c.fsm.is('idle', 'walking');
+    const onFoot = (c) => c.fsm.is('idle', 'walking', 'resting');
     // World positions (seated, a girl's root is relative to the quad).
     const at = new Map(companions.map((c) => [c, c.root.getWorldPosition(c.tmpV.clone())]));
 
@@ -80,7 +80,7 @@ export class BanterWatch {
     }
 
     // Standing about together, near you, with nothing else going on.
-    const settled = (c) => c.fsm.is('idle') || (c.isSeated && !withYou(c));
+    const settled = (c) => c.fsm.is('idle', 'resting') || (c.isSeated && !withYou(c));
     if (settled(a) && settled(b) && near(at.get(a), at.get(b), 8) && near(at.get(a), you, 14) && !(ridden && ridden.quad.speed > 3)) {
       out.push({ when: 'idle' });
       if (rivalry) out.push({ when: 'favoured', roles: rivalry });

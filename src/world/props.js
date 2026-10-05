@@ -248,18 +248,7 @@ function buildBales({ scene, layout, heights, track, physics, RAPIER, random }) 
   for (let i = 0; i < 3; i++) place(sx + i * 1.55 + 0.3, sz + 1.6, { wrapped: true, upright: true });
 
   // Straw bales out in the field, away from the track.
-  const spots = [
-    [12, 14, 0.4],
-    [14.2, 15.4, 0.5],
-    [10.5, 16.8, 1.9],
-    [42, -18, 1.2],
-    [-22, -24, 2.6],
-    [62, -66, 0.2],
-    [64, -63.4, 0.25],
-    [-70, -68, 0.9],
-    [-50, 66, 0.1],
-  ];
-  for (const [x, z, yaw] of spots) {
+  for (const [x, z, yaw] of layout.strawBaleSpots) {
     if (track.distanceTo(x, z, 10) < layout.trackHalfWidth + 3) continue;
     place(x, z, { yaw });
   }

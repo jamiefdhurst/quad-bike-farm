@@ -8,10 +8,11 @@ const HELP_HTML = `
   <div><kbd>E</kbd> interact with what you're looking at</div>
   <div>Looking at a quad: <kbd>K</kbd> <kbd>R</kbd> <kbd>Q</kbd> <kbd>Z</kbd> <kbd>F</kbd> work its engine, <kbd>B</kbd> sit on the back (with nobody driving, sooner or later one of them offers to drive you)</div>
   <h3>On the back while she drives</h3>
-  <div><kbd>E</kbd> talk to her (a wheel: move the mouse and click): stop, slow down, faster, let me off, let me drive</div>
+  <div><kbd>E</kbd> talk to her (a wheel: move the mouse and click): stop, slow down, faster, let me off, let me drive, and "Coach her" when she's just got something wrong</div>
   <h3>On the quad</h3>
   <div><kbd>K</kbd> ignition on / off</div>
-  <div><kbd>R</kbd> hold to crank the starter</div>
+  <div><kbd>R</kbd> hold to crank the starter (a flat battery cranks slowly, then only clicks)</div>
+  <div><kbd>P</kbd> the yellow and orange have a pull-start as well: hold to draw the cord, let go to yank (about half a second to a second is right), and it works with a flat battery</div>
   <div><kbd>Q</kbd> more choke, <kbd>Z</kbd> less (hold to keep going)</div>
   <div><kbd>W</kbd> throttle, <kbd>S</kbd> brake / reverse when stopped</div>
   <div><kbd>A</kbd><kbd>D</kbd> steer</div>

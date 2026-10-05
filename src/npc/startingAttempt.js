@@ -14,6 +14,11 @@ export const DEFAULT_STARTING_PARAMS = {
   pauseMin: 1.5, // seconds between goes
   pauseMax: 3,
   maxBursts: 4, // then she gives up
+  pullWhenFlat: 0, // chance that on a flat battery she has a go at the pull-start (if it has one) instead of giving up
+  maxPulls: 5, // yanks on the cord before she gives up
+  pullHoldMin: 0.3, // seconds she holds the cord before a yank: anywhere from here...
+  pullHoldMax: 1.4, // ...to here, so only some are proper ones
+  pullWait: 2, // seconds between yanks
 };
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -31,7 +36,9 @@ export class StartingAttempt {
     this.bursts = 0;
     this.checkedTap = false;
     this.starter = false;
-    this.events = []; // what she did this step, for her voice: 'tapOn', 'chokeOn', 'crank', 'remembered', 'caught', 'gaveUp'
+    this.events = []; // what she did this step, for her voice: 'tapOn', 'chokeOn', 'crank', 'remembered', 'caught', 'gaveUp', 'slow', 'flat', 'pull'
+    this.pulls = 0;
+    this.saidSlow = false;
     this.done = false;
     this.result = null; // 'running' or 'gaveUp'
   }
@@ -86,6 +93,26 @@ export class StartingAttempt {
       case 'pause':
         if (this.timer <= 0) this.startBurst();
         break;
+      case 'pull':
+        // Pulling the cord: hold it, yank, wait to see, again.
+        if (engine.isRunning) {
+          this.quad.helperPull = false;
+          this.phase = 'tending';
+          this.events.push('caught');
+        } else if (this.timer <= 0) {
+          if (this.pulling) {
+            this.quad.helperPull = false; // letting go is the yank
+            this.pulling = false;
+            this.timer = p.pullWait;
+          } else if (this.pulls >= p.maxPulls) {
+            engine.setIgnition(false);
+            this.finish('gaveUp');
+            this.events.push('gaveUp');
+          } else {
+            this.beginPull();
+          }
+        }
+        break;
       case 'tending':
         // Ease the choke off as it warms, keeping it a little rich, until it's warm.
         if (!engine.isRunning) {
@@ -107,7 +134,35 @@ export class StartingAttempt {
     return this.events;
   }
 
+  /** Draws the cord back for a yank. */
+  beginPull() {
+    this.pulls++;
+    this.pulling = true;
+    this.timer = this.between(this.p.pullHoldMin, this.p.pullHoldMax);
+    this.quad.helperPull = true;
+    if (this.pulls === 1) this.events.push('pull');
+  }
+
   startBurst() {
+    const { engine } = this.quad;
+    const ep = engine.params ?? {};
+    // A flat battery: it only clicks. She says so, then either has a go at the cord or gives up.
+    if (engine.battery < ep.batteryDeadBelow) {
+      this.events.push('flat');
+      if (ep.pullStart && this.random() < this.p.pullWhenFlat) {
+        this.phase = 'pull';
+        this.beginPull();
+      } else {
+        engine.setIgnition(false);
+        this.finish('gaveUp');
+        this.events.push('gaveUp');
+      }
+      return;
+    }
+    if (engine.battery < ep.batteryWeakBelow && !this.saidSlow) {
+      this.saidSlow = true;
+      this.events.push('slow');
+    }
     this.phase = 'crank';
     this.timer = this.between(this.p.burstMin, this.p.burstMax);
     this.bursts++;
@@ -135,12 +190,14 @@ export class StartingAttempt {
 
   finish(result) {
     this.starter = false;
+    this.quad.helperPull = false;
     this.done = true;
     this.result = result;
   }
 
   /** Stops whatever she's doing, e.g. because you've got on. */
   abandon() {
+    this.quad.helperPull = false;
     this.finish(this.quad.engine.isRunning ? 'running' : 'gaveUp');
   }
 }

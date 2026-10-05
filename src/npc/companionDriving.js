@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { driveMood, pickConfidence, afterDrive } from './driveMood.js';
 import { HerDrive } from './herDriving.js';
+import { DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 import { solveTwoBone, orientHand } from './armIK.js';
 
 // Her driving a quad herself, as Companion states and methods: getting on the
@@ -63,6 +64,9 @@ export const drivingStates = {
       this.drive = new HerDrive(q, {
         params,
         passenger: () => !!q.passenger,
+        skill: this.skillLevels,
+        startingParams: { ...DEFAULT_STARTING_PARAMS, pullWhenFlat: this.params.startPullWhenFlat },
+        momentWindow: this.skillMomentWindow?.(),
         friend: () => this.friendOnBack(),
         waitForPassenger: ride,
         tires: offered,
@@ -99,7 +103,8 @@ export const drivingStates = {
 
       this.probeIgnore = d.follow?.()?.physics.collider.handle ?? null;
       for (const e of d.update(dt)) {
-        if (e.startsWith('start:')) this.startEvents.push(e.slice(6));
+        if (e.startsWith('practice:')) this.onPractice?.(e.slice(9));
+        else if (e.startsWith('start:')) this.startEvents.push(e.slice(6));
         else this.driveEvents.push(e);
       }
       if (d.done) this.endDrive();
@@ -175,6 +180,8 @@ export const drivingMethods = {
 
   /** You're sat on the back of this parked quad with nobody driving it: she goes over, gets on the front and takes you for a ride. */
   offerRide(quad) {
+    // Sat out somewhere: she gets down first.
+    if (this.isResting) return void this.leaveRest(() => this.offerRide(quad));
     this.selfEvents.push('offerRide');
     this.requestDrive(quad, { giveRide: true });
     this.offeredRide = true; // after requestDrive, which resets it for anything else she's asked to do
@@ -182,7 +189,7 @@ export const drivingMethods = {
 
   /** Free to offer you a ride on this quad: standing about, and nobody else is on it or heading for it. */
   canOfferRide(quad) {
-    return this.fsm.is('idle') && this.canDrive(quad) && !this.takenByOther(quad);
+    return (this.fsm.is('idle') || (this.fsm.is('resting') && this.restPhase === 'sat')) && this.canDrive(quad) && !this.takenByOther(quad);
   },
 
   /**

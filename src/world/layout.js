@@ -49,6 +49,33 @@ export const LAYOUT = {
   ],
   bogDepth: 0.12, // metres the ground dips
 
+  // Straw bales dotted about the farm as [x, z, yaw]; any too near the track are left out (props.js). The girls ask to be taken to them.
+  strawBaleSpots: [
+    [12, 14, 0.4],
+    [14.2, 15.4, 0.5],
+    [10.5, 16.8, 1.9],
+    [42, -18, 1.2],
+    [-22, -24, 2.6],
+    [62, -66, 0.2],
+    [64, -63.4, 0.25],
+    [-70, -68, 0.9],
+    [-50, 66, 0.1],
+  ],
+
+  // Places the girls sit or shelter (npc/places.js). yaw is the way she faces; seat is how high up she sits (none: she stands).
+  // Straw bales are added from strawBaleSpots by the game. Fence seats are on the paddock rail, facing in from outside it.
+  restSpots: [
+    { id: 'fenceNorth', kind: 'fence', x: -62.5, z: 27, yaw: 0, seat: 1.05 },
+    { id: 'fenceSouth', kind: 'fence', x: -69.5, z: 41, yaw: Math.PI, seat: 1.05 },
+    { id: 'fenceEast', kind: 'fence', x: -59, z: 30.5, yaw: -Math.PI / 2, seat: 1.05 },
+    { id: 'fenceWest', kind: 'fence', x: -73, z: 37.5, yaw: Math.PI / 2, seat: 1.05 },
+    // In the barn doorway, out of the rain, looking out at the yard.
+    { id: 'barnDoorA', kind: 'shelter', x: -58.4, z: 59, yaw: Math.PI / 2 },
+    { id: 'barnDoorB', kind: 'shelter', x: -58.4, z: 61.2, yaw: Math.PI / 2 },
+    { id: 'barnDoorC', kind: 'shelter', x: -58.4, z: 63.4, yaw: Math.PI / 2 },
+  ],
+  baleSeat: 1.38, // how high up a girl sits on a straw bale
+
   // Petrol tank by the barn. The jerry can starts at one of these spots, picked at random.
   fuelTank: { x: -61, z: 52.3, yaw: Math.PI / 2 }, // labelled side facing the yard
   jerryCanSpots: [
@@ -61,6 +88,7 @@ export const LAYOUT = {
   jerryCanJitter: 0.8, // metres of extra random shift around the chosen spot
   // The toolbox for tinkering with the quads, on the ground at the far end of the petrol tank.
   toolbox: { x: -59.9, z: 54.4, yaw: 2.6 },
+  jumpLeads: { x: -59.6, z: 48.6, yaw: 0.6 }, // jump leads on the ground by the hose
   hose: { x: -61.2, z: 49.4, yaw: 0.2 }, // hose reel at the south end of the petrol tank
 
   spawn: {

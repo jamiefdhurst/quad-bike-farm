@@ -37,7 +37,7 @@ export function driveAppetite(confidence) {
 
 /**
  * What she does this time: 'join' (hop on the back of her friend's quad as
- * she sets off), 'mount', 'start', 'drive' or 'wander'. `can` says which are
+ * she sets off), 'mount', 'start', 'drive', 'rest' (go and sit somewhere) or 'wander'. `can` says which are
  * possible right now (wandering always is). The usual chances are
  * the bored*Chance params (wandering gets what's left), each scaled by a whim
  * (log-normal, `boredWhim` wide) and driving by her appetite for it.
@@ -47,6 +47,7 @@ export function pickBoredChoice(p, { confidence = 0.5, can = {}, sulk = 1 } = {}
     mount: p.boredMountChance,
     start: p.boredStartChance,
     drive: p.boredDriveChance * driveAppetite(confidence) * sulk, // sulk: a neglected girl takes a quad off on her own
+    rest: p.boredRestChance ?? 0, // sits on the bales or the fence: only on a fine day
   };
   base.wander = Math.max(0.1, 1 - p.boredMountChance - p.boredStartChance - p.boredDriveChance);
   base.join = p.boredJoinChance ?? 0;

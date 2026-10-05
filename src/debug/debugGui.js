@@ -14,6 +14,7 @@ export class DebugGui {
 
     this.buildLive();
     this.buildFavour();
+    this.buildSkills();
     this.buildActions();
     const folders = {};
     // "Red quad/Engine" becomes an Engine folder inside a Red quad folder.
@@ -91,13 +92,20 @@ export class DebugGui {
       set temperature(v) {
         unit().engine.setTemperature(v);
       },
+      get battery() {
+        return Math.round(unit().engine.battery * 100) / 100;
+      },
+      set battery(v) {
+        unit().engine.battery = v;
+      },
     };
     const f = this.gui.addFolder('Engine (live): the quad you are on or looking at');
     for (const key of Object.keys(Object.getOwnPropertyDescriptors(live))) {
-      if (key === 'temperature') continue;
+      if (key === 'temperature' || key === 'battery') continue;
       f.add(live, key).listen().disable();
     }
     f.add(live, 'temperature', 0, 1, 0.01).name('temperature (drag to set)').listen();
+    f.add(live, 'battery', 0, 1, 0.01).name('battery (drag to set)').listen();
   }
 
   /** Who you favour: each girl's score, where she stands against her friend, and buttons to push it either way. */
@@ -117,6 +125,25 @@ export class DebugGui {
     for (const key of Object.keys(nudges)) f.add(nudges, key);
     nudges['Reset both'] = () => favour.ids.forEach((id) => (favour.scores[id] = 0));
     f.add(nudges, 'Reset both');
+  }
+
+  /** What each girl is good at, live, with buttons to push a skill up or down. */
+  buildSkills() {
+    const skills = this.game.skills;
+    const f = this.gui.addFolder('Skills (live): what each girl is good at');
+    for (const id of skills.ids) {
+      for (const skill of Object.keys(skills.levels[id])) {
+        const row = {
+          get level() {
+            return Math.round(skills.level(id, skill) * 100) / 100;
+          },
+          set level(v) {
+            skills.set(id, skill, v);
+          },
+        };
+        f.add(row, 'level', 0, 1, 0.01).name(`${id} ${skill}`).listen();
+      }
+    }
   }
 
   buildActions() {

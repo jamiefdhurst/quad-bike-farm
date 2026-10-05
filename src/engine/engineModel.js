@@ -43,6 +43,11 @@ export class EngineModel {
     this.resistLoad = 0;
     this.overrunRpm = 0;
     this.fuel = 1; // float bowl level, 0..1
+    this.battery = 1; // charge, 0..1: drained by the ignition and the starter, charged while it runs
+    this.pullLeft = 0; // seconds left of a yank on the pull-start
+    this.pullStrength = 0; // how good that yank was, 0..1
+    this.clickedDead = false; // the starter has clicked for this press
+    this.motorOn = false; // the starter motor is turning it (not just a yank on the cord)
 
     // Derived values, refreshed every step.
     this.mixture = 0;
@@ -155,6 +160,8 @@ export class EngineModel {
     this.time += h;
 
     this.updateStarter(starter);
+    this.updateBattery(h);
+    this.pullLeft = Math.max(0, this.pullLeft - h);
     this.updateTemperature(h);
     this.updateMixture();
 
@@ -174,14 +181,69 @@ export class EngineModel {
   }
 
   updateStarter(starter) {
+    const p = this.params;
     const canCrank = this.state === EngineState.IGNITION || this.state === EngineState.STALLED;
-    if (starter && canCrank) {
+    const motor = starter && this.battery >= p.batteryDeadBelow;
+    const pulling = this.pullLeft > 0;
+    // A dead battery: the solenoid clicks and nothing turns.
+    if (starter && !motor && canCrank && !this.clickedDead) {
+      this.clickedDead = true;
+      this.emit('starterClick');
+    }
+    if (!starter) this.clickedDead = false;
+    this.motorOn = motor;
+    if ((motor || pulling) && canCrank) {
       this.state = EngineState.CRANKING;
       this.emit('starterOn');
-    } else if (!starter && this.state === EngineState.CRANKING) {
+    } else if (!motor && !pulling && this.state === EngineState.CRANKING) {
       this.state = EngineState.IGNITION;
       this.emit('starterOff');
     }
+  }
+
+  /** How fast the starter turns as a fraction of normal: slows as the battery goes. */
+  get crankFactor() {
+    const p = this.params;
+    if (this.battery >= p.batteryWeakBelow) return 1;
+    const t = clamp((this.battery - p.batteryDeadBelow) / Math.max(0.01, p.batteryWeakBelow - p.batteryDeadBelow), 0, 1);
+    return lerp(p.weakCrankFactor, 1, t);
+  }
+
+  /** Whether the dash has power to light. */
+  get hasPower() {
+    return this.ignitionOn && this.battery > this.params.batteryDashOutBelow;
+  }
+
+  /** Put charge in (a jump from another quad), or take it out. */
+  charge(amount) {
+    this.battery = clamp(this.battery + amount, 0, 1);
+  }
+
+  /**
+   * A yank on the recoil pull-start after holding the cord for `held` seconds.
+   * Needs a pull-start, the ignition on and the engine not running. A pull of 0.45 to 1 s is a proper one; shorter is weak
+   * and longer a botched yank. Returns the strength (0..1), or null if nothing happened.
+   */
+  pull(held) {
+    const p = this.params;
+    if (!p.pullStart) return null;
+    if (this.state !== EngineState.IGNITION && this.state !== EngineState.STALLED) return null;
+    let strength;
+    if (held < p.pullGoodMin) strength = 0.25 + 0.5 * (held / p.pullGoodMin);
+    else if (held <= p.pullGoodMax) strength = 1;
+    else strength = lerp(1, 0.4, clamp((held - p.pullGoodMax) / Math.max(0.01, p.pullLateMax - p.pullGoodMax), 0, 1));
+    this.pullLeft = p.pullSeconds;
+    this.pullStrength = strength;
+    return strength;
+  }
+
+  updateBattery(h) {
+    const p = this.params;
+    if (this.state === EngineState.RUNNING) this.battery += p.batteryChargeRate * h;
+    else if (this.state === EngineState.CRANKING) {
+      if (this.motorOn) this.battery -= p.batteryCrankDrain * h;
+    } else if (this.state !== EngineState.OFF) this.battery -= p.batteryIgnitionDrain * h;
+    this.battery = clamp(this.battery, 0, 1);
   }
 
   updateTemperature(h) {
@@ -243,7 +305,9 @@ export class EngineModel {
     // at 1), then surges once it's over the top, so cranking is uneven.
     const toCompression = this.cyclePhase - 0.92;
     const dip = p.crankCompressionDip * Math.exp(-((toCompression / p.crankDipWidth) ** 2));
-    this.rpm += (p.crankRpm * (1 - dip) - this.rpm) * Math.min(1, p.crankSpinUpRate * h);
+    // The starter turns slower on a weak battery; a yank on the cord goes by how good it was.
+    const speed = this.motorOn ? this.crankFactor : this.pullStrength * p.pullRpmFactor;
+    this.rpm += (p.crankRpm * speed * (1 - dip) - this.rpm) * Math.min(1, p.crankSpinUpRate * h);
     // Cranking rich floods it; cranking with the throttle open blows it clear.
     this.fouling += (this.rich * p.crankFoulRate - this.throttle * p.crankClearRate) * h;
 
@@ -255,6 +319,8 @@ export class EngineModel {
         lerp(p.catchColdFactor, 1, this.temperature) *
         Math.exp(-((this.mixture / width) ** 2)) *
         (1 - this.fouling) *
+        clamp(speed, 0, 1) * // turned over too slowly, it won't fire
+
         (this.fuel > 0.02 ? 1 : 0);
 
       if (this.random() < chance) {

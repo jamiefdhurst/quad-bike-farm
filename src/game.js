@@ -21,6 +21,9 @@ import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
 import { CHARACTERS } from './npc/characters.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { Pranks, PRANK_PARAM_RANGES } from './npc/pranks.js';
+import { Places, PLACE_PARAM_RANGES, isFine, nearestSpot, restStay } from './npc/places.js';
+import { Requests, REQUEST_PARAM_RANGES } from './npc/requests.js';
+import { Skills, SKILL_PARAM_RANGES, COACHING } from './npc/skills.js';
 import { Banter } from './npc/banter.js';
 import { RideOffer, pickOfferer } from './npc/rideOffer.js';
 import { BANTER } from './npc/banterLines.js';
@@ -28,6 +31,7 @@ import { BanterWatch } from './npc/banterWatch.js';
 import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES } from './items/jerryCan.js';
 import { FuelTank } from './items/fuelTank.js';
 import { Toolbox } from './items/toolbox.js';
+import { JumpLeads, JUMP_LEAD_PARAM_RANGES } from './items/jumpLeads.js';
 import { Hose, HOSE_PARAM_RANGES } from './items/hose.js';
 import { Winch, WINCH_PARAM_RANGES } from './items/winch.js';
 import { Weather, pickWeatherKind } from './world/weather.js';
@@ -190,6 +194,43 @@ export class Game {
       c.favourView = () => ({ mood: this.favour.mood(id), warmth: this.favour.warmth(id), sulk: this.favour.sulkDrive(id) });
     }
 
+    // What each girl is good at, and coaching her from the back (npc/skills.js); her driving reads the live levels.
+    this.skills = new Skills(CHARACTERS.map((ch) => ch.id));
+    for (const c of this.companions) {
+      const id = c.character.id;
+      c.skillLevels = this.skills.levels[id];
+      c.skillMomentWindow = () => this.skills.p.momentWindow;
+      c.onPractice = (skill) => {
+        this.skills.practice(id, skill);
+        c.voice.onPractice(skill);
+      };
+    }
+
+    // Places to be: sitting on the bales or fence on a fine day, in the barn doorway when it rains (npc/places.js).
+    this.places = new Places();
+    this.restSpots = [
+      ...this.world.layout.restSpots,
+      ...this.world.layout.strawBaleSpots
+        .filter(([x, z]) => this.world.track.distanceTo(x, z, 10) >= this.world.layout.trackHalfWidth + 3)
+        .map(([x, z, yaw], i) => ({ id: `bale${i}`, kind: 'bale', x, z, yaw, seat: this.world.layout.baleSeat })),
+    ];
+    const fine = () => isFine(this.weather.name, this.weather.rain, this.places.p);
+    const spotTaken = (spot) => this.companions.some((o) => o.currentSpot()?.id === spot.id);
+    for (const c of this.companions) {
+      c.restStayFor = () => restStay(this.places.p);
+      c.restSpotsNear = (here) => {
+        if (!fine()) return [];
+        const free = this.restSpots.filter((s) => s.kind !== 'shelter' && !spotTaken(s));
+        const near = nearestSpot(free, ['bale', 'fence'], here, new Set(), this.places.p.restFrom);
+        return near ? [near] : [];
+      };
+    }
+
+    // Favours the girls ask of you: wash her quad, take her to the bales, fetch the can (npc/requests.js).
+    this.requests = new Requests();
+    const baleSpots = this.world.layout.strawBaleSpots.filter(([x, z]) => this.world.track.distanceTo(x, z, 10) >= this.world.layout.trackHalfWidth + 3);
+    this.bales = baleSpots.map(([x, z]) => ({ x, z }));
+
     // Pranks: Jess meddles with a quad's tap or choke, Amy hides the can or toolbox while you're away (npc/pranks.js).
     this.pranks = new Pranks();
     this.itemHome = {}; // where a hidden item was taken from, by name
@@ -204,6 +245,8 @@ export class Game {
           if (this.tooFastToMount(quad)) {
             return { text: `The ${unit.label} is going too fast to get on   ·   K ignition` };
           }
+          if (this.leads.held) return this.leads.ends.length ? `Clamp the other end on the ${unit.label}   ·   G put the leads down` : `Clamp the jump leads on the ${unit.label}   ·   G put them down`;
+          if (this.leads.ends.includes(quad)) return `Take the jump leads off the ${unit.label}`;
           const winch = this.winch;
           if (winch?.state === 'carried') {
             if (unit === winch.unit) return { text: 'X put the winch hook back' };
@@ -227,10 +270,12 @@ export class Game {
           const winchKey = this.winch?.unit === unit && this.winch.state === 'stowed' ? '   X winch cable' : '';
           return {
             action: `Ride the ${unit.label}`,
-            keys: [['K', 'Ignition'], ['R', 'Start'], ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
+            keys: [['K', 'Ignition'], ['R', 'Start'], ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
           };
         },
         interact: () => {
+          if (this.leads.held) return this.clampLeads(quad);
+          if (this.leads.ends.includes(quad)) return this.leads.unclamp(this.camera);
           if (this.winch?.state === 'carried') {
             if (unit !== this.winch.unit) this.winch.hookOn(quad);
             return;
@@ -322,6 +367,14 @@ export class Game {
       prompt: () => 'Pick up the hose',
       interact: () => this.hose.pickUp(this.camera),
     });
+    // Jump leads, for a flat battery: a running quad charges it.
+    this.leads = new JumpLeads({ scene: this.scene, world: this.world, position: L.jumpLeads, yaw: L.jumpLeads.yaw });
+    this.interaction.add({
+      target: this.leads.proxy,
+      isAvailable: () => !this.handsFull && !this.leads.held,
+      prompt: () => 'Pick up the jump leads',
+      interact: () => this.leads.pickUp(this.camera),
+    });
     this.interaction.add({
       target: this.toolbox.proxy,
       isAvailable: () => !this.handsFull,
@@ -339,6 +392,10 @@ export class Game {
     registerTuning('Hose', this.hose.params, HOSE_PARAM_RANGES);
     registerTuning('Favour', this.favour.p, FAVOUR_PARAM_RANGES);
     registerTuning('Pranks', this.pranks.p, PRANK_PARAM_RANGES);
+    registerTuning('Jump leads', this.leads.params, JUMP_LEAD_PARAM_RANGES);
+    registerTuning('Skills', this.skills.p, SKILL_PARAM_RANGES);
+    registerTuning('Places', this.places.p, PLACE_PARAM_RANGES);
+    registerTuning('Favours asked', this.requests.p, REQUEST_PARAM_RANGES);
     if (this.winch) registerTuning('Winch', this.winch.params, WINCH_PARAM_RANGES);
     registerTuning('Player', this.player.params, PLAYER_PARAM_RANGES);
     for (const c of this.companions) {
@@ -504,7 +561,7 @@ export class Game {
 
   /** Carrying the can, the hose, the toolbox or the winch hook. */
   get handsFull() {
-    return this.can.held || this.hose.held || this.toolbox.held || this.winch?.state === 'carried';
+    return this.can.held || this.hose.held || this.toolbox.held || this.leads.held || this.winch?.state === 'carried';
   }
 
   /** The winch: the cable's reach, and winding in while X is held by the green (or on it). */
@@ -561,9 +618,32 @@ export class Game {
     }
     if (drive && drive.phase === 'parked') ask('goAgain', 'Off we go again', () => drive.resume());
     if (c.fsm.is('driving')) ask('swap', 'Let me drive', () => ((this.passengerPlan = 'swap'), drive?.park()));
+    // Advice that fits what she's just got wrong (or is about to): only those are on the wheel.
+    const coaching = drive && !stopped ? drive.coachable() : [];
+    if (coaching.length) actions.push({ label: 'Coach her', children: coaching.map((key) => ({ label: COACHING[key].label, run: () => this.coachHer(c, key) })) });
     this.openWheel(`Ask ${c.name} to`, actions, c);
     this.player.lookEnabled = false;
     this.player.moveEnabled = false;
+  }
+
+  /** You tell her how to do something from the back. She learns if it's the right moment; at the wrong one, or again too soon, she doesn't. */
+  coachHer(c, key) {
+    const { skill } = COACHING[key];
+    const id = c.character.id;
+    const fitting = !!c.drive?.isMoment(skill);
+    const result = this.skills.coach(id, skill, fitting);
+    if (result === 'taught') {
+      this.favour.add(id, this.skills.p.taughtFavour);
+      // She does it right away where she can.
+      if (skill === 'choke' && c.quad.choke > 0) c.quad.choke = 0;
+      if (skill === 'mud' && c.drive) c.drive.boost = 2;
+      c.voice.say(`taught_${skill}`, { force: true });
+    } else if (result === 'nagged') {
+      this.favour.add(id, this.skills.p.nagFavour);
+      c.voice.say('coachNagged', { force: true });
+    } else {
+      c.voice.say('coachWrongTime', { force: true });
+    }
   }
 
   /** Things you asked for on the back that wait until she's stopped. */
@@ -613,6 +693,90 @@ export class Game {
     if (!driver) return;
     this.favour.add(driver.character.id, this.favour.p.ridePerSecond * dt);
     for (const c of this.companions) if (c !== driver && c.fsm.is('idle', 'walking')) this.favour.add(c.character.id, -this.favour.p.ignoredPerSecond * dt);
+  }
+
+  // Places to be ------------------------------------------------------------
+
+  /** Rain sends them to the barn doorway; drying off lets them out. */
+  updatePlaces(dt) {
+    const ctx = {
+      rain: this.weather.rain,
+      spots: this.restSpots,
+      girls: this.companions.map((c) => {
+        const spot = c.currentSpot();
+        return { id: c.character.id, x: c.root.position.x, z: c.root.position.z, spot, state: c.fsm.is('idle') ? 'idle' : c.isResting && c.restPhase === 'sat' ? 'resting' : 'busy' };
+      }),
+    };
+    for (const a of this.places.update(dt, ctx)) {
+      const c = this.companions.find((o) => o.character.id === a.girl);
+      if (a.do === 'shelter') {
+        const go = () => {
+          if (c.goRest(a.spot)) c.selfEvents.push('restRain');
+          else c.pendingSpot = null;
+        };
+        c.pendingSpot = a.spot; // held for her while she gets up, so her friend picks another
+        if (c.isResting) c.leaveRest(go);
+        else go();
+      } else if (a.do === 'leave') c.leaveRest();
+    }
+  }
+
+  // Favours she asks for ----------------------------------------------------
+
+  /** What the favour logic needs to know about the farm right now. */
+  requestContext(ridden) {
+    const pos = this.player.position;
+    return {
+      you: { x: pos.x, z: pos.z, onFoot: !this.player.isRiding },
+      girls: this.companions.map((c) => ({
+        id: c.character.id,
+        x: c.root.position.x,
+        z: c.root.position.z,
+        free: c.fsm.is('idle') && !this.menu.isOpen,
+        favourite: c.voice.favourite,
+      })),
+      quads: this.units.map((u) => ({
+        id: u.spec.id,
+        x: u.quad.position.x,
+        z: u.quad.position.z,
+        muddy: Math.max(u.mud.state.body, u.mud.state.wheels),
+        speed: u.quad.speed,
+        ridden: u === ridden,
+        hasPillion: u.quad.hasPillion,
+        pillion: this.companions.find((c) => c.isSeated && c.quad === u.quad && c.seatKind !== 'rider')?.character.id ?? null,
+      })),
+      can: { x: this.can.model.position.x, z: this.can.model.position.z, held: this.can.held },
+      bales: this.bales,
+    };
+  }
+
+  updateRequests(dt, ridden) {
+    for (const e of this.requests.update(dt, this.requestContext(ridden))) {
+      const r = e.request;
+      const girl = this.companions.find((c) => c.character.id === r.girl);
+      const kind = r.kind[0].toUpperCase() + r.kind.slice(1);
+      if (e.type === 'ask') girl?.voice.say(`ask${kind}`, { force: true });
+      else if (e.type === 'done') {
+        this.favour.add(r.girl, this.requests.p.doneFavour);
+        girl?.voice.say(`thanks${kind}`, { force: true });
+        // The favoured one crows if her friend's close enough to hear.
+        const friend = girl?.others().find((o) => o.root.position.distanceTo(girl.root.position) < 12);
+        if (friend && this.favour.mood(r.girl) === 'favoured' && Math.random() < 0.6) setTimeout(() => girl.voice.say('gloatFavour', { force: true }), 4000);
+      } else if (e.type === 'lapsed') this.favour.add(r.girl, this.requests.p.ignoredFavour);
+    }
+  }
+
+  /** Talking to her: she reminds you of what she asked, or holds a lapsed one against you (once). */
+  remindOfFavour(her) {
+    const id = her.character.id;
+    const open = this.requests.openFor(id);
+    const grudge = this.requests.grudge(id);
+    const cap = (k) => k[0].toUpperCase() + k.slice(1);
+    if (open) her.voice.say(`remind${cap(open.kind)}`, { force: true });
+    else if (grudge && !grudge.told) {
+      grudge.told = true;
+      her.voice.say(`grudge${cap(grudge.kind)}`, { force: true });
+    }
   }
 
   // Pranks -----------------------------------------------------------------
@@ -686,7 +850,7 @@ export class Game {
   askHer(c, action) {
     const friend = c.others().find((o) => o.fsm.is('idle') && o.getActions(this.units.map((u) => u.quad)).find((x) => x.kind === action.kind && x.quad === action.quad));
     const refusable = ['giveRide', 'follow', 'drive', 'start', 'mount', 'mountRack'].includes(action.kind);
-    if (friend && refusable && Math.random() < this.favour.refuseChance(c.character.id)) {
+    if (friend && refusable && Math.random() < Math.max(this.favour.refuseChance(c.character.id), this.requests.refuseChance(c.character.id))) {
       c.voice.say('refuseRequest', { force: true });
       const take = friend.getActions(this.units.map((u) => u.quad)).find((x) => x.kind === action.kind && x.quad === action.quad);
       setTimeout(() => {
@@ -703,6 +867,11 @@ export class Game {
   // Companion menu ---------------------------------------------------------
 
   openCompanionMenu(c) {
+    // She's sat out or in the doorway: she gets up first (a moment, with a "hang on"), then you can talk.
+    if (c.isResting) {
+      if (c.leaveRest(() => this.openCompanionMenu(c))) c.selfEvents.push('restLeave');
+      return;
+    }
     if (c.isSeated && c.quad.speed > this.player.params.mountSpeed) {
       this.hud.toast('She can\'t get off while it\'s moving');
       return;
@@ -742,7 +911,7 @@ export class Game {
       if (prank) {
         this.pranks.confess(prank);
         her.voice.say('prankConfess', { force: true });
-      }
+      } else this.remindOfFavour(her);
       this.favour.add(her.character.id, this.favour.p.talk);
       // Her friend stood there watching you talk to the other one.
       const jealous = this.banterWatch?.talked?.jealous;
@@ -877,6 +1046,19 @@ export class Game {
     this.can.putDown(spot, yaw + Math.PI / 2);
   }
 
+  /** E on a quad with the jump leads in hand. */
+  clampLeads(quad) {
+    const result = this.leads.clamp(quad);
+    if (result === 'first') this.hud.toast('Clamped on. Now the other end on a running quad');
+    else if (result === 'joined') this.hud.toast('Leads on: a running quad charges a flat one. Keep them close, nose to nose');
+  }
+
+  putLeadsDown() {
+    const p = this.player.position;
+    const yaw = this.player.yaw;
+    this.leads.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7), yaw);
+  }
+
   putToolboxDown() {
     const p = this.player.position;
     const yaw = this.player.yaw;
@@ -936,6 +1118,7 @@ export class Game {
       if (this.hose.held && input.wasPressed('KeyG')) this.hose.putBack();
       else if (this.can.held && input.wasPressed('KeyG')) this.putCanDown();
       else if (this.toolbox.held && input.wasPressed('KeyG')) this.putToolboxDown();
+      else if (this.leads.held && input.wasPressed('KeyG')) this.putLeadsDown();
     }
 
     this.accumulator += dt;
@@ -952,6 +1135,9 @@ export class Game {
     const ridden = this.riddenUnit;
     this.talkFloor.left = Math.max(0, this.talkFloor.left - dt);
     this.updateFavour(dt, ridden);
+    this.skills.update(dt);
+    this.updateRequests(dt, ridden);
+    this.updatePlaces(dt);
     this.updatePranks(dt, ridden);
     this.updateBanter(dt, ridden);
     for (const c of this.companions) {
@@ -992,6 +1178,7 @@ export class Game {
   fixedUpdate(dt) {
     this.player.fixedUpdate(dt);
     this.winch?.fixedUpdate(dt, this.winchReel);
+    if (this.leads.update(dt, this.camera.position) === 'pulledOff') this.hud.toast('The jump leads came off');
     for (const unit of this.units) unit.fixedUpdate(dt);
     this.physics.step();
     for (const unit of this.units) unit.recordTransform();
@@ -1015,6 +1202,8 @@ export class Game {
       this.hud.setStatus('Winch hook\nE on a quad to hook it on, X to put it back');
     } else if (this.hose.held) {
       this.hud.setStatus('Hose\nHold E to spray, G to put it back');
+    } else if (this.leads.held) {
+      this.hud.setStatus('Jump leads\nE on a quad to clamp one end, then another quad for the other\nG to put them down');
     } else if (this.toolbox.held) {
       this.hud.setStatus('Toolbox\nTake it to a quad that is switched off\nG to put it down');
     } else if (this.can.held) {

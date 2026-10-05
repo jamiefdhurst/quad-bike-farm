@@ -89,6 +89,8 @@ export class Quad {
     this.input = null;
     this.remoteInput = null; // set while someone on foot is looking at the bike
     this.helperStarter = false; // she's holding the starter button
+    this.helperPull = false; // she's holding the pull-start cord
+    this.pullHeld = 0; // seconds the cord's been held, until it's let go (the yank)
     this.passenger = null; // you, riding on the back while she drives
     this.driver = null; // someone else at the controls (her), see setDriver()
     this.throttle = 0;
@@ -304,6 +306,14 @@ export class Quad {
       }
     }
 
+    // The recoil pull-start (the two-strokes): hold P to draw the cord, let go to yank.
+    const pullDown = this.input ? this.input.isDown('KeyP') : (!!this.remoteInput && this.remoteInput.isDown('KeyP')) || this.helperPull;
+    if (pullDown) this.pullHeld += dt;
+    else if (this.pullHeld > 0) {
+      this.engine.pull(this.pullHeld);
+      this.pullHeld = 0;
+    }
+
     this.throttle = throttleInput;
     this.brake = brakeInput;
 
@@ -456,7 +466,7 @@ export class Quad {
       tap: f.tap,
       temperature: e.temperature,
       coldBelow: e.params.warmLightThreshold,
-      ignition: e.ignitionOn,
+      ignition: e.hasPower, // the dash goes dark on a flat battery
       tripMiles: this.tripMiles,
       reverse: this.reverse,
     });

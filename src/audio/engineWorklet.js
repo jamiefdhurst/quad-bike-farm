@@ -521,6 +521,11 @@ class EngineProcessor extends AudioWorkletProcessor {
       case 'starterOn':
         this.active.push({ kind: 'clunk', age: 0, amp: p.solenoidVolume });
         break;
+      case 'starterClick':
+        // A flat battery: the solenoid chatters and nothing turns.
+        this.active.push({ kind: 'click', age: 0, amp: p.solenoidVolume * 0.9 });
+        this.active.push({ kind: 'click', age: -Math.round(0.07 * sr), amp: p.solenoidVolume * 0.6 });
+        break;
       case 'starterOff':
       case 'ignitionOn':
       case 'ignitionOff':

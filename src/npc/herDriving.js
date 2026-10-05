@@ -9,7 +9,8 @@
 // use in place of a rider's keys. Obstacles come from a probe callback, so the
 // game can answer with raycasts and tests with anything.
 
-import { StartingAttempt } from './startingAttempt.js';
+import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
+import { COACHING, mistake, mistakeChance, successChance } from './skills.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const TAU = Math.PI * 2;
@@ -149,13 +150,19 @@ export class HerDrive {
    * @param {function} [opts.follow]  () => the quad she's following (yours), or null. Following, she keeps
    *   behind it at its pace rather than doing her own loop, and doesn't tire of it.
    */
-  constructor(quad, { params, probe, isClear, random = Math.random, startingParams, passenger = () => false, waitForPassenger = false, tires = false, follow = null, friend = () => null }) {
+  constructor(quad, { params, probe, isClear, random = Math.random, startingParams, momentWindow = 5, skill = { starting: 0.5, choke: 0.5, cornering: 0.5, mud: 0.5 }, passenger = () => false, waitForPassenger = false, tires = false, follow = null, friend = () => null }) {
     this.quad = quad;
     this.p = params;
     this.probe = probe;
     this.isClear = isClear;
     this.random = random;
     this.startingParams = startingParams;
+    this.momentWindow = momentWindow; // seconds a wobble stays a good moment to coach about it
+    this.skill = skill; // her live levels (npc/skills.js); coaching changes them under her
+    this.clock = 0; // seconds since she took the bars, for how recent a wobble was
+    this.noted = {}; // skill -> clock time of something going wrong that you could coach her about
+    this.cleanLeg = true; // no wobble since the last waypoint
+    this.wasStuck = false;
     this.passenger = passenger;
     this.friend = friend; // the other girl on the back: 'on', 'coming' or null
     this.friendAboard = false;
@@ -194,7 +201,7 @@ export class HerDrive {
     this.pauseHere = false;
     this.cruise = this.pickCruise();
     this.driveFor = this.between(params.driveForMin, params.driveForMax);
-    this.forgetsChoke = random() < params.driveForgetChokeChance;
+    this.forgetsChoke = random() < mistakeChance(params.driveForgetChokeChance, skill.choke);
     this.attempt = null;
     this.stopReason = null;
     if (quad.engine.isRunning) this.setPhase('settle', this.between(0.8, 2));
@@ -322,8 +329,49 @@ export class HerDrive {
   }
 
   beginStart() {
-    this.attempt = new StartingAttempt(this.quad, { random: this.random, params: this.startingParams });
+    this.attempt = new StartingAttempt(this.quad, { random: this.random, params: this.skilledStarting() });
     this.setPhase('start');
+  }
+
+  /** Her starting habits at her level: with less skill she forgets the tap and the choke more, and takes longer to remember. */
+  skilledStarting() {
+    const base = this.startingParams ?? DEFAULT_STARTING_PARAMS;
+    const level = this.skill.starting;
+    return {
+      ...base,
+      tapCheckChance: successChance(base.tapCheckChance, level),
+      coldChokeChance: successChance(base.coldChokeChance, level),
+      rememberChance: clamp(base.rememberChance * (0.5 + level), 0, 1),
+    };
+  }
+
+  /** Something went wrong that you could coach her about. */
+  note(skill) {
+    this.noted[skill] = this.clock;
+  }
+
+  /** Whether now is a good moment to coach her about this skill: what she's getting wrong, as it happens. */
+  isMoment(skill) {
+    const q = this.quad;
+    const recent = this.clock - (this.noted[skill] ?? -Infinity) < this.momentWindow;
+    switch (skill) {
+      case 'choke':
+        return q.engine.isRunning && q.choke > 0 && q.engine.temperature > 0.5;
+      case 'starting':
+        return this.phase === 'start' || this.phase === 'stalled' || recent;
+      case 'cornering':
+        return recent || (this.phase === 'drive' && Math.abs(this.controls.steer) > 0.35);
+      case 'mud':
+        return recent || this.stuckTime > 1 || q.bog?.sink > 0.1;
+      default:
+        return false;
+    }
+  }
+
+  /** The coaching that fits this moment, as keys of COACHING. */
+  coachable() {
+    if (this.done || this.phase === 'stop') return [];
+    return Object.keys(COACHING).filter((k) => this.isMoment(COACHING[k].skill));
   }
 
   /** Brake to a stop and finish, e.g. because you asked her to. */
@@ -355,6 +403,7 @@ export class HerDrive {
   update(dt) {
     this.events = [];
     if (this.done) return this.events;
+    this.clock += dt;
     const q = this.quad;
     const c = this.controls;
     const speed = Math.abs(q.forwardSpeed);
@@ -370,6 +419,7 @@ export class HerDrive {
     if (this.phase !== 'start' && this.running && !q.engine.isRunning) {
       this.stalls++;
       this.events.push('stalled');
+      this.note('starting');
       // Pushing the choke off cold is a mistake she only makes once.
       this.forgetsChoke = false;
       if (this.phase !== 'stop') this.setPhase('stalled', this.between(1.5, 3));
@@ -379,7 +429,10 @@ export class HerDrive {
     switch (this.phase) {
       case 'start':
         this.hold(c);
-        for (const e of this.attempt.update(dt)) this.events.push(`start:${e}`);
+        for (const e of this.attempt.update(dt)) {
+          this.events.push(`start:${e}`);
+          if (e === 'caught') this.events.push('practice:starting');
+        }
         c.starter = this.attempt.starter;
         if (q.engine.isRunning && (this.attempt.phase === 'tending' || this.attempt.done)) {
           this.setPhase('settle', this.between(this.p.driveSettleMin, this.p.driveSettleMax));
@@ -507,7 +560,9 @@ export class HerDrive {
     const q = this.quad;
     if (this.forgetsChoke || !q.engine.isRunning || q.choke <= 0) return;
     const want = q.engine.temperature > 0.9 ? 0 : 1.15 - q.engine.temperature;
+    const before = q.choke;
     q.choke = Math.round(clamp(want, 0, q.choke) * 10) / 10;
+    if (before > 0 && q.choke === 0) this.events.push('practice:choke');
   }
 
   plan() {
@@ -582,6 +637,8 @@ export class HerDrive {
     if (dist < Math.max(p.driveArriveRadius, speed * 0.5) && !follow) {
       this.index++;
       this.events.push('waypoint');
+      if (this.cleanLeg && Math.abs(c.steer) > 0.2) this.events.push('practice:cornering');
+      this.cleanLeg = true;
       if (this.pauseHere) {
         this.events.push('pause');
         this.setPhase('pause', this.between(p.drivePauseMin, p.drivePauseMax));
@@ -620,6 +677,7 @@ export class HerDrive {
       if (!this.rollingBack) {
         this.rollingBack = true;
         this.events.push('rollBack');
+        this.note('mud');
         // Next time she pulls away she gives it more; once that's all she dares, it counts against it.
         if (this.hillStart >= 0.25) this.bogs++;
         this.hillStart = Math.min(0.25, this.hillStart + 0.1);
@@ -634,6 +692,10 @@ export class HerDrive {
       return;
     }
     if (q.forwardSpeed > 0.3) this.rollingBack = false;
+    if (this.wasStuck && q.forwardSpeed > 1.5) {
+      this.wasStuck = false;
+      this.events.push('practice:mud');
+    }
 
     const error = angleDiff(q.yaw, desired);
     let steer = steerFor(error, p);
@@ -642,12 +704,16 @@ export class HerDrive {
       this.yank.t -= dt;
       steer = this.yank.t > 0.35 ? this.yank.dir : -this.yank.dir * 0.7;
       if (this.yank.t <= 0) this.yank = null;
-    } else if (Math.abs(error) > 0.25 && speed > 1 && this.random() < p.driveOverSteerRate * dt) {
+    } else if (Math.abs(error) > 0.25 && speed > 1 && this.random() < p.driveOverSteerRate * mistake(this.skill.cornering) * dt) {
       this.yank = { t: 0.35 + this.between(0.4, 0.8), dir: Math.sign(error) };
       this.events.push('overSteer');
+      this.note('cornering');
+      this.cleanLeg = false;
     }
     // However she's steering, she doesn't throw it into a turn at speed (a yank too, just less of one).
-    const bars = steerLimit(speed, p.driveCornerAccel * (this.yank ? 1.8 : 1.3), q.params);
+    // Better hands take a corner a little harder and cleaner; poorer ones go in hot or too timid.
+    const cornerAccel = p.driveCornerAccel * (0.8 + 0.4 * this.skill.cornering);
+    const bars = steerLimit(speed, cornerAccel * (this.yank ? 1.8 : 1.3), q.params);
     c.steer = clamp(steer, -bars, bars);
 
     // A hand that can't keep the throttle still.
@@ -657,7 +723,7 @@ export class HerDrive {
       this.wobble = 1 + (this.random() * 2 - 1) * p.driveJerk;
     }
     const stopsHere = !follow && (this.index === this.waypoints.length - 1 || this.pauseHere);
-    const corner = cornerSpeed(error, dist, p.driveCornerAccel);
+    const corner = cornerSpeed(error, dist, cornerAccel);
     const crowded = Math.max(2.5, this.clearAround * 1.2);
     const target = targetSpeed(this.cruise, { error, toStop: stopsHere ? dist : Infinity, clear: this.clearAhead, corner: Math.min(corner, crowded) });
     const short = target - speed;
@@ -694,13 +760,17 @@ export class HerDrive {
       return;
     }
     this.bogs++;
+    this.wasStuck = true;
+    this.note('mud');
+    // A hand that knows mud keeps at it a go longer before giving up.
+    const patient = this.skill.mud >= 0.8 ? 1 : 0;
     // Sunk in a bog: a couple of goes at it, then she's had it and shouts for help.
-    if (q.bog?.sink > 0.3 && this.bogs > 1) {
+    if (q.bog?.sink > 0.3 && this.bogs > 1 + patient) {
       this.events.push('stuckInBog');
       this.stop('gaveUp');
       return;
     }
-    if (this.bogs > 3) {
+    if (this.bogs > 3 + patient) {
       this.events.push('bogged');
       this.stop('gaveUp');
     } else if (q.engine.temperature < 0.5 && q.choke < 0.5 && this.random() < 0.5) {
@@ -708,7 +778,7 @@ export class HerDrive {
       this.forgetsChoke = false; // and now she'll mind it
       this.events.push('chokeBack');
     } else {
-      this.boost = 2;
+      this.boost = 2 * (0.6 + 0.8 * this.skill.mud); // she knows how much to give it
       this.events.push('revIt');
     }
   }

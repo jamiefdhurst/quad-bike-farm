@@ -4,6 +4,11 @@
 // she says from the shared lines. Same rules as voiceLines.js, and the same
 // re-recording step (tools/generate_companion_voice.py --character jess).
 
+import { JESS_SKILL_LINES } from './skillLines.js';
+import { JESS_REQUEST_LINES } from './requestLines.js';
+import { JESS_PLACE_LINES } from './placeLines.js';
+import { JESS_BATTERY_LINES } from './batteryLines.js';
+
 export const JESS_LINES = {
   rideStart: [
     'Go on then, impress me.',
@@ -317,4 +322,8 @@ export const JESS_LINES = {
     'Worth it. Totally worth it.',
   ],
   pouring: ["Don't spill it.", "You're getting it everywhere."],
+  ...JESS_SKILL_LINES,
+  ...JESS_REQUEST_LINES,
+  ...JESS_PLACE_LINES,
+  ...JESS_BATTERY_LINES,
 };

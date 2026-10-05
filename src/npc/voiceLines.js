@@ -7,6 +7,11 @@
 // To add a situation, add it here and raise it from companionVoice.js. After
 // changing any spoken line, re-record them with tools/generate_companion_voice.py.
 
+import { AMY_SKILL_LINES } from './skillLines.js';
+import { AMY_REQUEST_LINES } from './requestLines.js';
+import { AMY_PLACE_LINES } from './placeLines.js';
+import { AMY_BATTERY_LINES } from './batteryLines.js';
+
 export const VOICE_LINES = {
   // Riding pillion ----------------------------------------------------------
   rideStart: {
@@ -1312,4 +1317,12 @@ export const VOICE_LINES = {
       'Good thinking.',
     ],
   },
+  // What she's good at, and being coached (skillLines.js).
+  ...AMY_SKILL_LINES,
+  // Favours she asks for (requestLines.js).
+  ...AMY_REQUEST_LINES,
+  // Sitting out, and sheltering (placeLines.js).
+  ...AMY_PLACE_LINES,
+  // Flat batteries (batteryLines.js).
+  ...AMY_BATTERY_LINES,
 };
