@@ -35,6 +35,7 @@ export const DEFAULT_ENGINE_PARAMS = {
   chokeEnrichment: 1.0, // enrichment from full choke
   throttleChokeRelief: 0.3, // opening the throttle dilutes the choke this much
   richTolerance: 0.25, // rich mixture tolerated before it starts fouling
+  mixtureTrim: 0, // carburettor jetting: added to the mixture all the time, positive richer (set from the toolbox)
 
   // Idle target
   chokeIdleRpm: 1500, // idle lift from full choke on a warm engine
@@ -124,6 +125,7 @@ export const ENGINE_PARAM_RANGES = {
   chokeEnrichment: [0, 2, 0.01],
   throttleChokeRelief: [0, 1, 0.01],
   richTolerance: [0, 1, 0.01],
+  mixtureTrim: [-0.5, 0.5, 0.01],
   chokeIdleRpm: [0, 3000, 10],
   chokeIdleColdFactor: [0, 1, 0.01],
   leanIdleDrop: [0, 3000, 10],
