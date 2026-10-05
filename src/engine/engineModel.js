@@ -9,6 +9,7 @@
 import { DEFAULT_ENGINE_PARAMS } from './engineParams.js';
 import { oilExcess, stepLube, nipping } from './lubrication.js';
 import { runOnChance, popPropensity } from './runOn.js';
+import { offTemperature } from '../world/barn.js';
 import { stepHeat, stepSoak, pinkLevel, gaugeHeat, coolTickRate, hotStartRich } from './heat.js';
 
 export const EngineState = Object.freeze({
@@ -63,6 +64,7 @@ export class EngineModel {
     this.soak = 0; // 0..1 heat held in the metal after work; ticks as it cools, and a hot carb starts rich
     this.speed = 0; // ground speed in m/s, for the airflow
     this.ambient = 0.5; // 0..1 how warm a day it is
+    this.sheltered = false; // parked under the barn roof: it cools slowly and never goes stone cold
     this.pink = 0; // 0..1 how badly it's pinking
     this.keyOff = false; // switched off but running on for a few more beats
     this.runOnLeft = 0; // firings left of that
@@ -168,7 +170,7 @@ export class EngineModel {
    * @param {number}  [controls.ambient] 0..1 how warm the day is (sun on the engine).
    * @param {number}  [controls.overrunRpm] rpm above idle the wheels turn it over at with the throttle shut.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, oil = this.oil, slip = 0, dirt = 0, speed = 0, ambient = 0.5 } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, oil = this.oil, slip = 0, dirt = 0, speed = 0, ambient = 0.5, sheltered = false } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -182,6 +184,7 @@ export class EngineModel {
     this.dirt = clamp(dirt, 0, 1);
     this.speed = Math.abs(speed);
     this.ambient = clamp(ambient, 0, 1);
+    this.sheltered = sheltered;
     this.driveLoad = clamp(driveLoad, 0, 1);
     this.resistLoad = clamp(resistLoad, 0, this.driveLoad);
     this.overrunRpm = Math.max(0, overrunRpm);
@@ -316,7 +319,7 @@ export class EngineModel {
       // And it wears: plug, filter and carb slowly go off, faster when it's worked hard.
       this.wear = Math.min(p.wearMax, this.wear + (h / 60) * p.wearPerMinute * (1 + p.wearWorkBoost * rpmNorm));
     } else {
-      this.temperature -= (h * this.temperature) / p.coolDownSeconds;
+      this.temperature = offTemperature(this.temperature, h, p.coolDownSeconds, this.sheltered, { warmFloor: p.barnWarmFloor, coolFactor: p.barnCoolFactor });
     }
     this.temperature = clamp(this.temperature, 0, 1);
   }

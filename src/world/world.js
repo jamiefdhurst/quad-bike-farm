@@ -3,6 +3,7 @@ import { Track } from './track.js';
 import { createTerrainHeight } from './terrainHeight.js';
 import { createTerrain } from './terrain.js';
 import { buildProps } from './props.js';
+import { DEFAULT_BARN_PARAMS, BARN_PARAM_RANGES, underRoof, insideBarn, indoorLevel } from './barn.js';
 import { Sky, SKY_PARAMS, SKY_RANGES } from './sky.js';
 import { registerTuning } from '../core/tuning.js';
 import * as THREE from 'three';
@@ -14,12 +15,15 @@ export class World {
     this.track = new Track(layout.trackPoints);
     this.heights = createTerrainHeight(layout, this.track);
 
+    this.barnParams = { ...DEFAULT_BARN_PARAMS };
+    registerTuning('Barn', this.barnParams, BARN_PARAM_RANGES);
+
     this.sky = new Sky(scene, renderer, { ...SKY_PARAMS });
     registerTuning('Sky', this.sky.params, SKY_RANGES);
 
     const ctx = { scene, physics, RAPIER, renderer, models, layout, heights: this.heights, track: this.track };
     this.terrain = createTerrain(ctx);
-    buildProps(ctx);
+    this.props = buildProps(ctx);
   }
 
   heightAt(x, z) {
@@ -42,6 +46,21 @@ export class World {
   groundHeightAt(x, z) {
     const h = this.terrain.meshHeightAt(x, z);
     return Number.isNaN(h) ? this.heights.heightAt(x, z) : h;
+  }
+
+  /** Under the barn roof: out of the rain, and a quad parked here keeps its warmth. */
+  covered(x, z) {
+    return underRoof(this.layout, x, z);
+  }
+
+  /** Inside the barn's walls (`margin` metres in from them). */
+  inBarn(x, z, margin = 0) {
+    return insideBarn(this.layout, x, z, margin);
+  }
+
+  /** 0..1 how far indoors (for the light and the sound of rain on the roof). */
+  indoor(x, z) {
+    return indoorLevel(this.layout, x, z, this.barnParams);
   }
 
   get spawn() {

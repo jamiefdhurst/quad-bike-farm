@@ -38,12 +38,15 @@ import { Hose, HOSE_PARAM_RANGES } from './items/hose.js';
 import { Winch, WINCH_PARAM_RANGES } from './items/winch.js';
 import { Weather, pickWeatherKind } from './world/weather.js';
 import { Rain } from './effects/rain.js';
+
 import { washMud } from './effects/mudBuildUp.js';
 import { Workshop } from './workshop/workshop.js';
 import { Interaction } from './interaction/interaction.js';
 import { Wheel } from './interaction/wheel.js';
 import { Hud } from './hud/hud.js';
 import { DebugGui } from './debug/debugGui.js';
+
+const BARN_BULB = 30; // candela of the bulb in the barn, scaled by how far in you are and how gloomy the day is
 
 const FIXED_DT = 1 / 60;
 const MAX_FRAME_DT = 0.1;
@@ -212,6 +215,8 @@ export class Game {
     this.places = new Places();
     this.restSpots = [
       ...this.world.layout.restSpots,
+      // Inside the barn, sat on the bales out of the rain, facing the doors.
+      ...(this.world.layout.barnBaleSpots ?? []).map(([x, z, yaw], i) => ({ id: `barnBale${i}`, kind: 'shelter', x, z, yaw, seat: this.world.layout.baleSeat })),
       ...this.world.layout.strawBaleSpots
         .filter(([x, z]) => this.world.track.distanceTo(x, z, 10) >= this.world.layout.trackHalfWidth + 3)
         .map(([x, z, yaw], i) => ({ id: `bale${i}`, kind: 'bale', x, z, yaw, seat: this.world.layout.baleSeat })),
@@ -381,6 +386,7 @@ export class Game {
 
     // A toolbox by the petrol tank, for tinkering with the quads (see workshop.js).
     this.toolbox = new Toolbox({ scene: this.scene, world: this.world, position: L.toolbox, yaw: L.toolbox.yaw });
+    this.toolbox.model.position.y += L.toolbox.lift ?? 0; // up on the barn workbench
     this.workshop = new Workshop(this);
     // A hosepipe for washing the mud off.
     this.hose = new Hose({ scene: this.scene, world: this.world, position: L.hose, yaw: L.hose.yaw });
@@ -577,8 +583,20 @@ export class Game {
   /** Rain round you and its sound, and the wind on the exhaust smoke. */
   updateWeather(dt) {
     const w = this.weather;
-    this.rain.update(dt, this.camera, w.rain, w.wind);
-    this.audioHub.setRain(w.rain);
+    const cam = this.camera.position;
+    const world = this.world;
+    // The barn: no rain under its roof, the drumming of it on the tin, a dimmer light inside with the bulb on, and a room's echo.
+    const indoor = world.indoor(cam.x, cam.z);
+    this.rain.update(dt, this.camera, w.rain, w.wind, (x, z) => world.covered(x, z));
+    this.audioHub.setRain(w.rain, indoor, world.barnParams);
+    this.audioHub.room ??= { inside: (x, z) => world.inBarn(x, z), params: world.barnParams, listenerIn: false };
+    this.audioHub.room.listenerIn = world.inBarn(cam.x, cam.z);
+    const barn = world.props?.barn;
+    if (barn) {
+      world.sky.hemi.intensity *= 1 - 0.55 * indoor;
+      const gloom = Math.min(1, 1.3 - w.warmth * 0.9);
+      barn.light.intensity = BARN_BULB * indoor * gloom;
+    }
     for (const unit of this.units) {
       const s = unit.smoke.params;
       s.baseWindX ??= s.windX;

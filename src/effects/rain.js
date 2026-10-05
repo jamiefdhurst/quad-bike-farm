@@ -31,8 +31,8 @@ export class Rain {
     this.drops[i * 3 + 2] = Math.sin(a) * r;
   }
 
-  /** @param {number} level 0..1 how hard it's raining. @param {number} wind how windy (1 normal). */
-  update(dt, camera, level, wind = 1) {
+  /** @param {number} level 0..1 how hard it's raining. @param {number} wind how windy (1 normal). @param {(x, z) => boolean} [covered] true under a roof: no rain falls there. */
+  update(dt, camera, level, wind = 1, covered = null) {
     const count = Math.round(DROPS * Math.min(1, level));
     this.lines.visible = count > 0;
     if (!count) return;
@@ -52,7 +52,8 @@ export class Rain {
       const x = cx + this.drops[k];
       const y = cy + this.drops[k + 1];
       const z = cz + this.drops[k + 2];
-      this.pos.set([x, y, z, x - sx, y + STREAK, z - sz], i * 6);
+      if (covered && covered(x, z)) this.pos.set([x, y, z, x, y, z], i * 6); // under a roof: no streak
+      else this.pos.set([x, y, z, x - sx, y + STREAK, z - sz], i * 6);
     }
     this.lines.geometry.setDrawRange(0, count * 2);
     this.lines.geometry.attributes.position.needsUpdate = true;

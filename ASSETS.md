@@ -7,7 +7,6 @@ Every external asset is CC0 1.0 (public domain). Models come from Poly Pizza and
 | File | Asset | Author | Source | Licence |
 | --- | --- | --- | --- | --- |
 | `companion.glb` | Animated Woman (Idle, Walking, Sitting, SitIdle and others) | Quaternius | https://poly.pizza/m/9kF7eTDbhO | CC0 1.0 |
-| `barn.glb` | Barn | Quaternius | https://poly.pizza/m/vSqQNA7ez6 | CC0 1.0 |
 | `tree-oak-a.glb` | Tree | Quaternius | https://poly.pizza/m/qZtx0AHhcy | CC0 1.0 |
 | `tree-oak-b.glb` | Tree | Quaternius | https://poly.pizza/m/aVOxaHRPWe | CC0 1.0 |
 | `fence.glb` | Fence | Quaternius | https://poly.pizza/m/e02PFKKhbr | CC0 1.0 |

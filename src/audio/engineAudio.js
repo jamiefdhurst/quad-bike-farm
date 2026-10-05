@@ -10,9 +10,44 @@
 import workletUrl from './engineWorklet.js?url';
 import { DEFAULT_AUDIO_PARAMS, DEFAULT_SOUND_PARAMS } from './audioParams.js';
 import { SoundPath } from './propagation.js';
+import { rainHeard } from '../world/barn.js';
 
 // Recorded pulse banks in public/audio/, made by tools/slice_engine_audio.py.
 const BANK_NAMES = ['engine-bank', 'engine-bank-2t'];
+
+/** The echo of the barn: a couple of seconds of noise that dies away fast, duller as it goes (tin and brick, not a cathedral). */
+function barnImpulse(ctx, seconds = 1.6) {
+  const len = Math.floor(ctx.sampleRate * seconds);
+  const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let c = 0; c < 2; c++) {
+    const d = buf.getChannelData(c);
+    let lp = 0;
+    for (let i = 0; i < len; i++) {
+      const t = i / len;
+      lp += (0.55 - 0.45 * t) * (Math.random() * 2 - 1 - lp);
+      d[i] = lp * Math.pow(1 - t, 3.2) * (i < 400 ? i / 400 : 1);
+    }
+  }
+  return buf;
+}
+
+/** Raindrops on tin: sparse sharp ticks, each a short ring, looped. */
+function tinRain(ctx, seconds = 3) {
+  const len = Math.floor(ctx.sampleRate * seconds);
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  const drops = Math.floor(seconds * 520);
+  for (let n = 0; n < drops; n++) {
+    const at = Math.floor(Math.random() * len);
+    const amp = 0.15 + Math.random() ** 3 * 0.9;
+    const ring = 0.0015 + Math.random() * 0.004;
+    const f = 2200 + Math.random() * 2600;
+    for (let k = 0; k < ring * ctx.sampleRate * 5 && at + k < len; k++) {
+      d[at + k] += amp * Math.sin((2 * Math.PI * f * k) / ctx.sampleRate) * Math.exp(-k / (ring * ctx.sampleRate));
+    }
+  }
+  return buf;
+}
 
 function brownNoise(ctx, seconds) {
   const len = Math.floor(ctx.sampleRate * seconds);
@@ -112,6 +147,19 @@ export class AudioHub {
     this.rainGain.gain.value = 0;
     rain.connect(this.rainFilter).connect(this.rainGain).connect(this.master);
     rain.start();
+    // Rain on the barn's tin roof, only heard under it.
+    const tin = ctx.createBufferSource();
+    tin.buffer = tinRain(ctx);
+    tin.loop = true;
+    this.tinGain = ctx.createGain();
+    this.tinGain.gain.value = 0;
+    tin.connect(this.tinGain).connect(this.master);
+    tin.start();
+    // The barn's echo: every quad's sound path can send into this (propagation.js).
+    this.reverb = ctx.createConvolver();
+    this.reverb.buffer = barnImpulse(ctx);
+    this.reverbOut = ctx.createGain();
+    this.reverb.connect(this.reverbOut).connect(this.master);
     this.glugTimer = 0;
     this.ready = true;
   }
@@ -125,12 +173,14 @@ export class AudioHub {
     this.hoseFilter.frequency.setTargetAtTime(onTarget ? 1800 : 3200, t, 0.1);
   }
 
-  /** How hard it's raining, 0..1. */
-  setRain(level) {
+  /** How hard it's raining, 0..1, and how far indoors you are (0..1): under the barn's tin roof it drums (see `rainHeard`). */
+  setRain(level, indoor = 0, barnParams) {
     if (!this.ready) return;
     const t = this.ctx.currentTime;
-    this.rainGain.gain.setTargetAtTime(this.params.rainVolume * Math.sqrt(Math.max(0, level)), t, 0.5);
+    const heard = barnParams ? rainHeard(level, indoor, barnParams) : { level, tin: 0 };
+    this.rainGain.gain.setTargetAtTime(this.params.rainVolume * Math.sqrt(Math.max(0, heard.level)), t, 0.5);
     this.rainFilter.frequency.setTargetAtTime(1000 + 1400 * level, t, 0.5);
+    this.tinGain.gain.setTargetAtTime(this.params.rainVolume * 2.2 * heard.tin * Math.sqrt(Math.max(0, level)), t, 0.4);
   }
 
   setPouring(active, dt) {

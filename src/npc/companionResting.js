@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 // Her sitting about somewhere on the farm: on the straw bales or the paddock fence
-// when it's fine, in the barn doorway when it rains (places.js decides where and
+// when it's fine, on the bales in the barn when it rains (places.js decides where and
 // when). As Companion states and methods, mixed in by companion.js.
 
 const angleTo = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - from));
@@ -11,9 +11,10 @@ const UP = new THREE.Vector3(0, 1, 0);
 export const restingMethods = {
   /** Where she stands to climb up (or, for shelter, where she stands). */
   restStandPoint(spot) {
-    const back = spot.kind === 'bale' ? 1.65 : 0.9;
-    const x = spot.kind === 'shelter' ? spot.x : spot.x - Math.sin(spot.yaw) * back;
-    const z = spot.kind === 'shelter' ? spot.z : spot.z - Math.cos(spot.yaw) * back;
+    const stands = spot.kind === 'shelter' && spot.seat === undefined; // shelter without a seat: she just stands there
+    const back = spot.kind === 'bale' || spot.kind === 'shelter' ? 1.65 : 0.9;
+    const x = stands ? spot.x : spot.x - Math.sin(spot.yaw) * back;
+    const z = stands ? spot.z : spot.z - Math.cos(spot.yaw) * back;
     return new THREE.Vector3(x, this.world.heightAt(x, z), z);
   },
 

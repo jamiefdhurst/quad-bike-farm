@@ -14,7 +14,16 @@ export const LAYOUT = {
   hedgeThickness: 1.8,
   hedgeHeight: 2.4,
 
-  barn: { x: -64, z: 60, rotY: Math.PI / 2, scale: 1.3 },
+  // The barn (world/barn.js): a hollow shed with its big doors open on the +x side, facing the yard. halfX and halfZ are the outside
+  // half-sizes, wall the thickness, wallHeight the eaves and ridge the top of the roof along its length (x). The door is centred on z.
+  barn: { x: -64, z: 60, halfX: 5.2, halfZ: 4.6, wall: 0.2, wallHeight: 4.2, ridge: 6.3, door: { halfWidth: 2.3, height: 3.2 } },
+  // Straw bales inside the barn, [x, z, yaw] (she sits facing yaw, climbing up from behind it): somewhere dry to sit out of the rain.
+  barnBaleSpots: [
+    [-66.4, 57.3, Math.PI / 2],
+    [-66.4, 62.7, Math.PI / 2],
+  ],
+  // The workbench along the north wall: where the toolbox sits (its height is `lift`). Item 18 builds the workshop on it.
+  bench: { x: -62.3, z: 56.1, length: 3.2, depth: 0.7, height: 0.92 },
   yard: { x: -54, z: 58, radius: 20 },
   paddock: { x: -66, z: 34, half: 7 },
   gate: { x: -30, side: 'south', width: 4.2 },
@@ -69,10 +78,6 @@ export const LAYOUT = {
     { id: 'fenceSouth', kind: 'fence', x: -69.5, z: 41, yaw: Math.PI, seat: 1.05 },
     { id: 'fenceEast', kind: 'fence', x: -59, z: 30.5, yaw: -Math.PI / 2, seat: 1.05 },
     { id: 'fenceWest', kind: 'fence', x: -73, z: 37.5, yaw: Math.PI / 2, seat: 1.05 },
-    // In the barn doorway, out of the rain, looking out at the yard.
-    { id: 'barnDoorA', kind: 'shelter', x: -58.4, z: 59, yaw: Math.PI / 2 },
-    { id: 'barnDoorB', kind: 'shelter', x: -58.4, z: 61.2, yaw: Math.PI / 2 },
-    { id: 'barnDoorC', kind: 'shelter', x: -58.4, z: 63.4, yaw: Math.PI / 2 },
   ],
   baleSeat: 1.38, // how high up a girl sits on a straw bale
 
@@ -86,8 +91,8 @@ export const LAYOUT = {
     { x: -32.8, z: 77.6, yaw: 0.9, where: 'by the field gate' },
   ],
   jerryCanJitter: 0.8, // metres of extra random shift around the chosen spot
-  // The toolbox for tinkering with the quads, on the ground at the far end of the petrol tank.
-  toolbox: { x: -59.9, z: 54.4, yaw: 2.6 },
+  // The toolbox for tinkering with the quads, on the workbench in the barn.
+  toolbox: { x: -62.9, z: 56.1, yaw: 0.1, lift: 0.92 }, // on the barn workbench
   oilBottle: { x: -59.3, z: 52.9, yaw: 0.3 }, // two-stroke oil, by the petrol tank
   premixCan: { x: -58.9, z: 53.5, yaw: 1.1 }, // the pre-mix can starts here
   jumpLeads: { x: -59.6, z: 48.6, yaw: 0.6 }, // jump leads on the ground by the hose

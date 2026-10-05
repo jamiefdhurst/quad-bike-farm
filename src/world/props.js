@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { enableShadows, instanceModel, modelBounds } from './assets.js';
 import { patchAt } from './terrain.js';
+import { buildBarnShed } from './barnBuild.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -30,7 +31,7 @@ export function buildProps(ctx) {
     );
   };
 
-  buildBarn(c);
+  const barn = buildBarn(c);
   buildHedges(c);
   buildGate(c);
   buildPaddock(c);
@@ -40,19 +41,11 @@ export function buildProps(ctx) {
   buildGrass(c);
   buildPuddles(c);
   buildBogs(c);
+  return { barn };
 }
 
-function buildBarn({ scene, models, layout, heights, fixedBox }) {
-  const { x, z, rotY, scale } = layout.barn;
-  const barn = models.barn.scene.clone();
-  const y = heights.heightAt(x, z) - 0.05;
-  barn.position.set(x, y, z);
-  barn.rotation.y = rotY;
-  barn.scale.setScalar(scale);
-  enableShadows(barn);
-  scene.add(barn);
-  const b = modelBounds(models.barn.scene);
-  fixedBox(x, y + (b.max.y * scale) / 2, z, (b.max.x * scale) * 0.98, (b.max.y * scale) / 2, b.max.z * scale * 0.98, rotY);
+function buildBarn(c) {
+  return buildBarnShed(c);
 }
 
 function buildHedges({ scene, models, layout, heights, fixedBox, random }) {
@@ -246,6 +239,9 @@ function buildBales({ scene, layout, heights, track, physics, RAPIER, random }) 
   for (let i = 0; i < 4; i++) place(sx + i * 1.55, sz, { wrapped: true, upright: true });
   for (let i = 0; i < 3; i++) place(sx + 0.78 + i * 1.55, sz, { wrapped: true, upright: true, stackLevel: 1 });
   for (let i = 0; i < 3; i++) place(sx + i * 1.55 + 0.3, sz + 1.6, { wrapped: true, upright: true });
+
+  // Straw bales in the barn, to sit on out of the rain.
+  for (const [x, z, yaw] of layout.barnBaleSpots ?? []) place(x, z, { yaw });
 
   // Straw bales out in the field, away from the track.
   for (const [x, z, yaw] of layout.strawBaleSpots) {

@@ -430,6 +430,7 @@ export class Quad {
       dirt: this.faults.dirt,
       speed: this.forwardSpeed,
       ambient: this.world.warmth ?? 0.5,
+      sheltered: this.world.covered?.(this.position.x, this.position.z) ?? false,
     };
   }
 

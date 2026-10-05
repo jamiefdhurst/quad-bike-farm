@@ -3,7 +3,6 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 // Every external model. Sources and licences are listed in ASSETS.md.
 export const MODEL_FILES = {
-  barn: 'models/barn.glb',
   treeA: 'models/tree-oak-a.glb',
   treeB: 'models/tree-oak-b.glb',
   fence: 'models/fence.glb',

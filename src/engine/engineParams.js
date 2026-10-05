@@ -48,6 +48,8 @@ export const DEFAULT_ENGINE_PARAMS = {
   warmUpRpmBoost: 2.0, // extra warming at high rpm (fraction of the base rate): flat out it warms about three times as fast as at idle
   warmUpLoadBoost: 1.5, // and more again pulling hard under load (climbing, mud, pulling away)
   coolDownSeconds: 900, // exponential time constant when off
+  barnWarmFloor: 0.25, // temperature (0..1) a switched-off engine only cools down to in the barn (it never warms up by itself)
+  barnCoolFactor: 2.5, // how many times slower it cools in the barn, out of the wind and rain
   warmLightThreshold: 0.65, // dash cold light goes out above this
 
   // Mixture. mixture = choke enrichment - enrichment the engine needs.
@@ -237,6 +239,8 @@ export const ENGINE_PARAM_RANGES = {
   warmUpRpmBoost: [0, 6, 0.05],
   warmUpLoadBoost: [0, 6, 0.05],
   coolDownSeconds: [30, 3600, 10],
+  barnWarmFloor: [0, 0.8, 0.01],
+  barnCoolFactor: [1, 8, 0.1],
   warmLightThreshold: [0, 1, 0.01],
   coldEnrichmentNeed: [0, 2, 0.01],
   chokeEnrichment: [0, 2, 0.01],

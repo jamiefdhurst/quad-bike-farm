@@ -16,6 +16,8 @@ export function baseHeight(x, z) {
   );
 }
 
+import { floorBlend } from './barn.js';
+
 export function createTerrainHeight(layout, track) {
   const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf } = layout;
   const yardHeight = baseHeight(yard.x, yard.z);
@@ -33,6 +35,9 @@ export function createTerrainHeight(layout, track) {
     // Flatten the yard around the barn.
     const yd = Math.hypot(x - yard.x, z - yard.z);
     h += (yardHeight - h) * (1 - smoothstep(yard.radius * 0.6, yard.radius, yd));
+
+    // And level under the barn, so its floor is flat.
+    if (layout.barn) h += (yardHeight - h) * floorBlend(layout, x, z);
 
     // Dished dirt track with softened shoulders.
     const d = track.distanceTo(x, z, trackReach);

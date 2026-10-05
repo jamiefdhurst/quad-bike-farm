@@ -10,6 +10,8 @@
 // is 1 + v/c, the same as c / (c - v) to within a hundredth of a percent at
 // these speeds. The quad you're riding has no delay.
 
+import { reverbSend, boomFor } from '../world/barn.js';
+
 export const SPEED_OF_SOUND = 343;
 // Long enough for a quad at the far end of the farm; anything further is inaudible anyway.
 const MAX_DELAY = 2;
@@ -104,7 +106,16 @@ export class SoundPath {
     this.panner.refDistance = refDistance;
     this.panner.rolloffFactor = rolloff;
     this.panner.maxDistance = 600;
-    this.input.connect(this.delayNode).connect(this.air).connect(this.panner).connect(hub.master);
+    // In the barn it booms: a bass shelf, and a send into the hub's echo.
+    this.boom = ctx.createBiquadFilter();
+    this.boom.type = 'lowshelf';
+    this.boom.frequency.value = 220;
+    this.boom.gain.value = 0;
+    this.send = ctx.createGain();
+    this.send.gain.value = 0;
+    this.input.connect(this.delayNode).connect(this.air).connect(this.boom).connect(this.panner).connect(hub.master);
+    this.boom.connect(this.send);
+    if (hub.reverb) this.send.connect(hub.reverb);
     this.travel = new TravelDelay();
     this.schedTime = 0;
     this.distance = 0;
@@ -140,6 +151,15 @@ export class SoundPath {
 
     const cutoff = onBoard ? 20000 : airCutoff(distance, sp.airAbsorptionDistance);
     this.air.frequency.setTargetAtTime(cutoff, now, 0.05);
+
+    // The barn's room: echo and bass when you or the sound are inside it (set up by the game as hub.room).
+    const room = hub.room;
+    if (room) {
+      const listenerIn = room.listenerIn;
+      const sourceIn = room.inside(source.x, source.z);
+      this.send.gain.setTargetAtTime(reverbSend(listenerIn, sourceIn, room.params), now, 0.12);
+      this.boom.gain.setTargetAtTime(boomFor(listenerIn, sourceIn, room.params), now, 0.12);
+    }
 
     const pn = this.panner;
     if (pn.positionX) {
