@@ -17,12 +17,12 @@ describe('mud build-up', () => {
     expect(s.wheels).toBe(0);
   });
 
-  it('coats the tyres in seconds and the bodywork over a few laps', () => {
+  it('coats the tyres in seconds and the bodywork over the next half minute', () => {
     const s = ride(createMudState(), 10, on(1), 9);
     expect(s.wheels).toBeGreaterThan(0.6);
-    expect(s.body).toBeLessThan(0.15);
-    ride(s, 120, on(1), 9);
-    expect(s.body).toBeGreaterThan(0.6);
+    expect(s.body).toBeLessThan(0.4);
+    ride(s, 60, on(1), 9);
+    expect(s.body).toBeGreaterThan(0.8);
     expect(s.body).toBeLessThanOrEqual(1);
     expect(s.wet).toBe(1);
   });
@@ -40,7 +40,7 @@ describe('mud build-up', () => {
     const body = s.body;
     const tyres = s.wheels;
     ride(s, 60, on(0), 9);
-    expect(s.wheels).toBeLessThan(tyres * 0.6);
+    expect(s.wheels).toBeLessThan(tyres * 0.75);
     expect(s.body).toBe(body);
     ride(s, p.dryTime, on(0), 0);
     expect(s.wet).toBe(0);

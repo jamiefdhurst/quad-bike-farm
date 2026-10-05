@@ -238,7 +238,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 
 ## TODO
 
-1. Vehicles need to get way more muddy
+1. Vehicles need to get way more muddy **Done.** Bodywork now plasters over within about half a minute of driving through mud, and climbs much higher up the quad.
 2. I can sit pillion without anyone else there, then the girls automatically jump on to drive me around, and jump off when they're bored, they don't need to wait for me to say stop
 3. Remove the helpful vehicle HUD so I have to guess what the issues are, add a temp gauge to each of the quads
 4. Pillion on the orange one

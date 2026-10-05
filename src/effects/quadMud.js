@@ -34,11 +34,11 @@ export const DEFAULT_MUD_PARAMS = {
   rutGrassAlpha: 0.22, // how dark tracks on grass are
 
   // Build-up
-  wheelBuildRate: 0.014, // tyres coat at this rate per m/s through mud
-  bodyBuildRate: 0.0011, // bodywork, much slower
-  puddleSplashRate: 0.02, // extra per m/s through a puddle
-  tyreCleanRate: 0.0015, // rolling on grass sheds mud off the tyres, per m/s
-  dryTime: 240, // seconds for fresh mud to dry
+  wheelBuildRate: 0.03, // tyres coat at this rate per m/s through mud
+  bodyBuildRate: 0.004, // bodywork, slower than the tyres: about half-coated after 20 s through mud at 9 m/s
+  puddleSplashRate: 0.04, // extra per m/s through a puddle
+  tyreCleanRate: 0.0008, // rolling on grass sheds mud off the tyres, per m/s
+  dryTime: 360, // seconds for fresh mud to dry
 };
 
 export const MUD_PARAM_RANGES = {

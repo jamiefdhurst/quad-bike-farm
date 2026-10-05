@@ -74,7 +74,7 @@ function patchMaterial(material, uniforms, wheel) {
         float rad = length(mp.yz) / 0.3;
         cover = uMudWheels * mix(0.75, 1.35, smoothstep(0.45, 0.85, rad));`
           : `// Low down, round the wheels and underneath, creeping higher as it builds up.
-        float reach = mix(0.32, 0.95, uMudBody);
+        float reach = mix(0.5, 1.3, uMudBody);
         float low = 1.0 - smoothstep(reach * 0.3, reach, mp.y);
         // Tops of panels catch less than their sides and undersides.
         float top = smoothstep(0.35, 0.95, vMudNormal.y);
@@ -84,10 +84,10 @@ function patchMaterial(material, uniforms, wheel) {
           arch = max(arch, 1.0 - smoothstep(0.28, 0.62, length(d)));
         }
         float under = smoothstep(0.1, -0.6, vMudNormal.y);
-        cover = uMudBody * ((0.95 * low + 0.7 * arch) * (1.0 - 0.5 * top) + 0.45 * under) + uMudBody * uMudBody * 0.12;`}
-        float mudMask = smoothstep(blot - 0.06, blot + 0.06, cover * 0.95);
+        cover = uMudBody * ((0.95 * low + 0.7 * arch) * (1.0 - 0.25 * top) + 0.45 * under) + uMudBody * uMudBody * 0.3;`}
+        float mudMask = smoothstep(blot - 0.06, blot + 0.06, cover * 1.25);
         // Flecks flung a bit higher than the main coat.
-        float fleck = step(0.86 - 0.12 * cover, mudNoise(mp * 95.0)) * step(0.05, cover);
+        float fleck = step(0.8 - 0.14 * cover, mudNoise(mp * 95.0)) * step(0.05, cover);
         mudMask = max(mudMask, fleck * 0.9);
         float thick = smoothstep(0.0, 0.5, cover - blot);
         // Patches of lighter clay and darker earth.
