@@ -41,6 +41,7 @@ import { Rain } from './effects/rain.js';
 
 import { washMud } from './effects/mudBuildUp.js';
 import { Workshop } from './workshop/workshop.js';
+import { Bench } from './workshop/bench.js';
 import { Interaction } from './interaction/interaction.js';
 import { Wheel } from './interaction/wheel.js';
 import { Hud } from './hud/hud.js';
@@ -388,6 +389,7 @@ export class Game {
     this.toolbox = new Toolbox({ scene: this.scene, world: this.world, position: L.toolbox, yaw: L.toolbox.yaw });
     this.toolbox.model.position.y += L.toolbox.lift ?? 0; // up on the barn workbench
     this.workshop = new Workshop(this);
+    this.bench = new Bench(this);
     // A hosepipe for washing the mud off.
     this.hose = new Hose({ scene: this.scene, world: this.world, position: L.hose, yaw: L.hose.yaw });
     // The green quad's winch, for pulling a stuck quad out of a bog.
@@ -413,6 +415,13 @@ export class Game {
       isAvailable: () => !this.handsFull,
       prompt: () => 'Pick up the toolbox',
       interact: () => this.toolbox.pickUp(this.camera),
+    });
+    // The workbench: jobs on a quad parked in the painted bay (workshop/bench.js).
+    this.interaction.add({
+      target: this.bench.proxy,
+      isAvailable: () => !this.handsFull,
+      prompt: () => this.bench.prompt(),
+      interact: () => this.bench.open(),
     });
 
     // Start facing the quad she's standing by, wherever it ended up.
@@ -1155,6 +1164,9 @@ export class Game {
       if (input.wasPressed('KeyE')) this.tryDismount();
     } else if (this.workshop.isOpen) {
       this.workshop.handleInput(input);
+    } else if (this.bench.isOpen) {
+      this.interaction.clear();
+      this.bench.handleInput(input);
     } else {
       input.takeWheelSteps();
       const focused = this.interaction.update(this.player, this.player.params.interactRange);
@@ -1227,6 +1239,7 @@ export class Game {
     this.updateHose(dt);
     this.updateWinch();
     this.workshop.update(dt);
+    this.bench.update(dt);
     this.audioHub.setPouring(pouring, dt);
     this.audioHub.update(dt, this.camera);
     this.rideWind.update(dt, board ? board.quad.speed : 0);

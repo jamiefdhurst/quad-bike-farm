@@ -97,6 +97,13 @@ export class CompanionVoice {
     return this.say(situation, { urgent: true, chance });
   }
 
+  /** You working at the barn bench: 'start', 'step', 'flaw', 'done' (done right) or 'botched'. */
+  onBench(kind) {
+    const [situation, chance] = { start: ['benchStart', 0.6], step: ['benchStep', 0.12], flaw: ['benchFlaw', 0.8], done: ['benchDone', 0.7], botched: ['benchBotched', 0.8] }[kind] ?? [];
+    if (!situation || this.head.distanceTo(this.listener) > Math.min(15, this.params.voiceRange)) return null;
+    return this.say(situation, { urgent: true, chance });
+  }
+
   /**
    * @param {number} dt
    * @param {object} view  { listener: Vector3, ridden: QuadUnit|null, units, menuOpen, pouring }

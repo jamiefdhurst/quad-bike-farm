@@ -18,10 +18,10 @@ const REPEAT_INTERVAL = 0.09;
 const FAST_SAY_AFTER = 1.5; // seconds above the old top speed, with her on the back, before she notices
 
 const REPAIR_DONE = {
-  puncture: 'Found the thorn, patched the tyre and pumped it up',
-  belt: 'Drive belt was glazed: swapped it for a new one',
-  cable: 'Cleaned and oiled the throttle cable',
-  carb: 'Carb was clogged: stripped it and cleaned the jets',
+  puncture: 'Stuck a bodge patch on the tyre and pumped it up: it will do for now',
+  belt: 'Turned the glazed belt round: it grips a bit better',
+  cable: 'Squirted some oil on the cable: it is freer, but not right',
+  carb: 'Gave the carb a clean with what is in the toolbox: better, not perfect',
 };
 const REPAIR_NOTHING = {
   puncture: 'Pumped the tyres up: they were fine',
@@ -204,11 +204,14 @@ export class Workshop {
     for (const c of this.game.companions) c.voice.onTinker?.('service');
   }
 
-  /** The four jobs for faults that develop. Each does its job if there is one, and says so either way, so it doesn't give a fault away. */
+  /**
+   * The four quick jobs for faults that develop. Each does its job if there is one, and says so either way, so it doesn't give a fault away.
+   * In the yard it's only a rough fix (the fault stays, mildly); the barn bench does it properly.
+   */
   repair(kind) {
     const unit = this.unit;
     if (!unit) return;
-    const done = unit.quad.faults.fix(kind);
+    const done = unit.quad.faults.fix(kind, { rough: true });
     this.game.hud.toast(done ? REPAIR_DONE[kind] : REPAIR_NOTHING[kind]);
     if (done) for (const c of this.game.companions) c.voice.onTinker?.('service');
   }

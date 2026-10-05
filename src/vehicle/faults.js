@@ -22,6 +22,8 @@ export const DEFAULT_FAULT_PARAMS = {
   cableHangFrom: 0.2, // below this the cable's only a little stiff and doesn't hang
   hardThrottle: 0.6, // throttle that counts as riding hard
   movingSpeed: 2, // m/s over which it counts as being ridden
+  fieldFixLevel: 0.12, // what's left of a fault after a rough fix in the yard (the bench does it properly)
+  fieldFixCap: 0.28, // and it never gets worse than this, which is just under what Amy notices
 };
 
 export const FAULT_PARAM_RANGES = {
@@ -40,6 +42,8 @@ export const FAULT_PARAM_RANGES = {
   cableHangFrom: [0, 1, 0.05],
   hardThrottle: [0.1, 1, 0.05],
   movingSpeed: [0.5, 10, 0.5],
+  fieldFixLevel: [0, 0.5, 0.01],
+  fieldFixCap: [0, 1, 0.01],
 };
 
 export const FAULT_KINDS = ['puncture', 'belt', 'cable', 'carb'];
@@ -57,6 +61,7 @@ export class Faults {
     this.tyre = -1; // which wheel has the puncture
     this.levels = { puncture: 0, belt: 0, cable: 0, carb: 0 }; // 0 none, rising to 1 at their worst
     this.started = { puncture: false, belt: false, cable: false, carb: false };
+    this.caps = { puncture: 1, belt: 1, cable: 1, carb: 1 }; // a rough fix leaves it from getting any worse than this
     this.heldThrottle = 0; // what a sticking cable is still holding open
     this.events = []; // { type: 'start' | 'fixed', kind } this step
   }
@@ -97,7 +102,7 @@ export class Faults {
     if (running && !this.started.cable && this.random() < chance(p.cableEvery)) this.begin('cable');
     if (running && !this.started.carb && this.random() < chance(p.carbEvery)) this.begin('carb');
     const grow = (kind, on, seconds) => {
-      if (this.started[kind] && on) this.levels[kind] = Math.min(1, this.levels[kind] + dt / seconds);
+      if (this.started[kind] && on) this.levels[kind] = Math.min(this.caps[kind], this.levels[kind] + dt / seconds);
     };
     grow('puncture', true, p.punctureSeconds); // a tyre goes down parked too
     grow('belt', hard, p.beltSeconds);
@@ -139,15 +144,33 @@ export class Faults {
     return this.levels.carb;
   }
 
-  /** Puts one right (pump and patch the tyre, new belt, lubricate the cable, clean the carb). True if there was anything to do. */
-  fix(kind) {
+  /**
+   * Puts one right (pump and patch the tyre, new belt, lubricate the cable, clean the carb). True if there was anything to do.
+   * A rough fix, which is all you can do in the yard, leaves a mild fault that never gets much worse; the bench does it properly.
+   */
+  fix(kind, { rough = false } = {}) {
     if (!this.started[kind]) return false;
+    if (rough) {
+      if (this.caps[kind] < 1) return false; // already patched up as far as it'll go
+      this.leave(kind, this.params.fieldFixLevel, this.params.fieldFixCap);
+      this.events.push({ type: 'fixed', kind });
+      return true;
+    }
     this.started[kind] = false;
     this.levels[kind] = 0;
+    this.caps[kind] = 1;
     if (kind === 'puncture') this.tyre = -1;
     if (kind === 'cable') this.heldThrottle = 0;
     this.events.push({ type: 'fixed', kind });
     return true;
+  }
+
+  /** Leaves a fault at this level, unable to get worse than `cap`: a botched or rough repair. */
+  leave(kind, level, cap = 1) {
+    this.started[kind] = true;
+    this.levels[kind] = Math.min(level, cap);
+    this.caps[kind] = cap;
+    if (kind === 'puncture' && this.tyre < 0) this.tyre = Math.floor(this.random() * 4);
   }
 }
 

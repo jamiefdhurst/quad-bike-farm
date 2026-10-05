@@ -1,0 +1,90 @@
+/* The barn bench panel (bench.js): a small card low on the screen, so the quad and the girls stay in view. */
+.bench {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 14%;
+  z-index: 25;
+  display: none;
+  pointer-events: none;
+  font-size: 14px;
+  color: #f2f2ee;
+}
+
+.bench-open .prompt {
+  display: none;
+}
+
+.bn-card {
+  width: min(420px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 12px 16px;
+  background: rgba(20, 22, 20, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+}
+
+.bn-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.bn-row,
+.bn-step {
+  padding: 3px 0;
+  opacity: 0.55;
+}
+
+.bn-row,
+.bn-step.now {
+  opacity: 1;
+}
+
+.bn-row.off {
+  opacity: 0.35;
+}
+
+.bn-step.now {
+  font-weight: 600;
+}
+
+.bn-step.done {
+  opacity: 0.4;
+}
+
+.bn-hold {
+  position: relative;
+  height: 10px;
+  margin: 10px 0 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.bn-window {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(110, 200, 110, 0.45);
+}
+
+.bn-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  background: rgba(240, 240, 232, 0.9);
+}
+
+.bn-keys {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.bench .key {
+  display: inline-block;
+  width: 1.4em;
+  opacity: 0.5;
+}

@@ -14,6 +14,7 @@ import { AMY_BATTERY_LINES } from './batteryLines.js';
 import { AMY_OIL_LINES } from './oilLines.js';
 import { AMY_HEAT_LINES } from './heatLines.js';
 import { AMY_FAULT_LINES } from './faultLines.js';
+import { AMY_BENCH_LINES } from './benchLines.js';
 
 export const VOICE_LINES = {
   // Riding pillion ----------------------------------------------------------
@@ -1334,4 +1335,6 @@ export const VOICE_LINES = {
   ...AMY_HEAT_LINES,
   // Faults that develop (faultLines.js).
   ...AMY_FAULT_LINES,
+  // The barn bench (benchLines.js).
+  ...AMY_BENCH_LINES,
 };

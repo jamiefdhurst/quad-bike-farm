@@ -27,7 +27,8 @@ const HELP_HTML = `
   <div>Hose by the petrol tank: <kbd>E</kbd> pick up, hold <kbd>E</kbd> to spray a quad clean, <kbd>G</kbd> put it back</div>
   <div>Green quad's winch: <kbd>X</kbd> take the hook, <kbd>E</kbd> on a quad to hook it, hold <kbd>X</kbd> by the green to wind in</div>
   <h3>Toolbox</h3>
-  <div><kbd>E</kbd> pick up the toolbox by the petrol tank, <kbd>G</kbd> put it down; <kbd>F</kbd> in the panel strips down a seized engine; <kbd>T</kbd> tyres, <kbd>R</kbd> belt, <kbd>L</kbd> throttle cable and <kbd>C</kbd> carb put right what's gone wrong</div>
+  <div><kbd>E</kbd> pick up the toolbox by the petrol tank, <kbd>G</kbd> put it down; <kbd>F</kbd> in the panel strips down a seized engine; <kbd>T</kbd> tyres, <kbd>R</kbd> belt, <kbd>L</kbd> throttle cable and <kbd>C</kbd> carb give what's gone wrong a rough fix</div>
+  <div>The workbench in the barn: the toolbox lives on it. Park a switched-off quad in the painted bay, look at the bench and press <kbd>E</kbd>; <kbd>1</kbd> to <kbd>4</kbd> pick plug, carb, tyre or two-stroke oil, then <kbd>E</kbd> taps or holds each step (let go in the green where there is one); <kbd>G</kbd> steps away</div>
   <div>Take it to a quad that's switched off and press <kbd>E</kbd> to tinker</div>
   <h3>Other</h3>
   <div><kbd>H</kbd> toggle this help</div>

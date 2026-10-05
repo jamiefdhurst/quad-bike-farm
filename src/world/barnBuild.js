@@ -238,6 +238,12 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
     add(tool, b.x - b.length / 2 + 0.3 + i * ((b.length - 0.6) / 6), benchTop + 1.2 + random() * 0.15, inner.minZ + 0.08, { cast: false });
   }
   fixedBox(b.x, floorY + b.height / 2, b.z, b.length / 2, b.height / 2, b.depth / 2);
+  // The bay for working on a quad, painted on the floor in front of the bench.
+  const bay = layout.bay;
+  const paint = new THREE.MeshStandardMaterial({ color: 0xd9b82a, roughness: 0.9 });
+  for (const [w, d, x, z] of [[bay.halfX * 2, 0.08, 0, -bay.halfZ], [bay.halfX * 2, 0.08, 0, bay.halfZ], [0.08, bay.halfZ * 2, -bay.halfX, 0], [0.08, bay.halfZ * 2, bay.halfX, 0]]) {
+    add(box(w, 0.012, d, paint), bay.x + x, floorY + 0.012, bay.z + z, { cast: false });
+  }
 
   // A bare bulb on a flex from the ridge, which comes on in the gloom.
   const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 8), new THREE.MeshBasicMaterial({ color: 0xfff1c9 }));
