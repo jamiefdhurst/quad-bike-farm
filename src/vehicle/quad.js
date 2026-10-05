@@ -304,6 +304,8 @@ export class Quad {
       brake,
       steer: this.steer,
       mudAt: (x, z) => this.world.mudAt(x, z),
+      puddleAt: (x, z) => this.world.puddleAt?.(x, z) ?? 0,
+      dt,
     });
     this.physics.update(dt);
   }

@@ -54,5 +54,15 @@ export function createTerrainHeight(layout, track) {
     return 1 - smoothstep(trackHalfWidth * 0.7, trackHalfWidth + 0.6, d);
   }
 
-  return { heightAt, mudAt, puddles };
+  /** 0..1, how much standing water there is here (1 in the middle of a puddle). */
+  function puddleAt(x, z) {
+    let w = 0;
+    for (const p of puddles) {
+      const pd = Math.hypot(x - p.x, z - p.z);
+      if (pd < puddleRadius) w = Math.max(w, 1 - smoothstep(puddleRadius * 0.45, puddleRadius * 0.85, pd));
+    }
+    return w;
+  }
+
+  return { heightAt, mudAt, puddleAt, puddles };
 }

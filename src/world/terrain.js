@@ -79,7 +79,29 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
 
   scene.add(createOuterRing(layout, heights));
 
-  return { mesh, collider };
+  return { mesh, collider, meshHeightAt: (x, z) => gridHeight(grid, n, step, half, x, z) };
+}
+
+/**
+ * Height of the visual terrain mesh itself (flat triangles between the 1 m
+ * samples), or NaN off the detailed square. Cheap; for things that must sit
+ * exactly on the drawn ground, like wheel ruts and mud specks.
+ */
+function gridHeight(grid, n, step, half, x, z) {
+  const gx = (x + half) / step;
+  const gz = (z + half) / step;
+  const ix = Math.floor(gx);
+  const iz = Math.floor(gz);
+  if (ix < 0 || iz < 0 || ix >= n - 1 || iz >= n - 1) return NaN;
+  const fx = gx - ix;
+  const fz = gz - iz;
+  const a = grid[ix * n + iz];
+  const b = grid[ix * n + iz + 1];
+  const c = grid[(ix + 1) * n + iz];
+  const d = grid[(ix + 1) * n + iz + 1];
+  // Each cell is split along its b-c diagonal, as in the index buffer.
+  if (fx + fz <= 1) return a + (c - a) * fx + (b - a) * fz;
+  return d + (b - d) * (1 - fx) + (c - d) * (1 - fz);
 }
 
 /** Multiplies a tiling greyscale texture over the diffuse colour in world space. */

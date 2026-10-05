@@ -29,6 +29,16 @@ export class World {
     return this.heights.mudAt(x, z);
   }
 
+  puddleAt(x, z) {
+    return this.heights.puddleAt(x, z);
+  }
+
+  /** Height of the drawn ground: cheaper than heightAt, and exact for things laid on it. */
+  groundHeightAt(x, z) {
+    const h = this.terrain.meshHeightAt(x, z);
+    return Number.isNaN(h) ? this.heights.heightAt(x, z) : h;
+  }
+
   get spawn() {
     return this.layout.spawn;
   }

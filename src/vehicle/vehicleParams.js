@@ -19,8 +19,19 @@ export const DEFAULT_VEHICLE_PARAMS = {
   maxSuspensionTravel: 0.2,
   maxSuspensionForce: 30000,
   grassFrictionSlip: 2.2,
-  mudFrictionSlip: 1.25,
+  mudFrictionSlip: 0.7, // the wet track
+  puddleFrictionSlip: 0.42,
   sideFrictionStiffness: 0.9,
+
+  // Traction and wheelspin, see traction.js
+  fourWheelDrive: 1, // 1 drives all four wheels, 0 the rear axle only
+  driveGrip: 1.3, // drive force the tyres can take, as a multiple of grip times load
+  spinRange: 0.6, // asking this much more than the grip (0.6 = 60%) spins them flat out
+  spinRiseRate: 12, // 1/s
+  spinFallRate: 5, // 1/s
+  spinDriveLoss: 0.2, // fraction of the drive lost with the wheels spinning flat out
+  spinSideLoss: 0.35, // fraction of sideways grip lost by spinning wheels
+  spinSlipSpeed: 8, // m/s the tyres turn faster than the ground at full spin and throttle
 
   // Steering
   maxSteerDeg: 32,
@@ -74,6 +85,15 @@ export const VEHICLE_PARAM_RANGES = {
   maxSuspensionForce: [1000, 100000, 500],
   grassFrictionSlip: [0.2, 10, 0.05],
   mudFrictionSlip: [0.2, 10, 0.05],
+  puddleFrictionSlip: [0.1, 10, 0.02],
+  fourWheelDrive: [0, 1, 1],
+  driveGrip: [0.2, 4, 0.05],
+  spinRange: [0.05, 3, 0.05],
+  spinRiseRate: [0.5, 40, 0.5],
+  spinFallRate: [0.5, 40, 0.5],
+  spinDriveLoss: [0, 0.9, 0.01],
+  spinSideLoss: [0, 0.9, 0.01],
+  spinSlipSpeed: [0, 20, 0.5],
   sideFrictionStiffness: [0.1, 3, 0.05],
   maxSteerDeg: [5, 50, 0.5],
   steerRate: [0.5, 20, 0.1],
