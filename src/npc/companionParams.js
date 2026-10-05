@@ -36,10 +36,44 @@ export const DEFAULT_COMPANION_PARAMS = {
   ownMind: true,
   boredAfterMin: 55, // seconds standing about before she does something
   boredAfterMax: 90,
-  boredMountChance: 0.35, // gets on a quad to wait (she stays on it)
-  boredStartChance: 0.3, // has a go at starting one; otherwise she wanders off for a look round
+  boredMountChance: 0.3, // gets on a quad to wait (she stays on it)
+  boredStartChance: 0.2, // has a go at starting one
+  boredDriveChance: 0.25, // has a little drive on one; otherwise she wanders off for a look round
   wanderMin: 6, // metres
   wanderMax: 18,
+
+  // Driving a quad herself (herDriving.js)
+  driveSpeedMin: 2, // m/s she's happy at (4.5 to 8 mph)
+  driveSpeedMax: 3.5,
+  driveScareSpeed: 5.5, // m/s; faster than this and she's had enough
+  driveMaxThrottle: 0.38, // the most throttle she'll give it
+  driveThrottleBase: 0.18, // about where the clutch starts to bite
+  driveThrottleGain: 0.05, // throttle per m/s under the speed she wants
+  driveThrottleIntegral: 0.04, // and per m/s second, when it's not getting there
+  driveBrakeMargin: 0.8, // m/s over before she brakes
+  driveJerk: 0.35, // how unsteady her throttle hand is
+  driveSteerGain: 1.4, // steering per radian off course
+  driveOverSteerRate: 0.15, // chance per second, in a turn, that she yanks the bars too far
+  driveLoopRadiusMin: 5, // metres; her loop is a rough circle this size through where she starts
+  driveLoopRadiusMax: 9,
+  driveWaypointsMin: 4,
+  driveWaypointsMax: 6,
+  driveArriveRadius: 2.2,
+  drivePauseChance: 0.3, // at each waypoint, the chance she brakes to a stop for a moment
+  drivePauseMin: 1.5, // seconds
+  drivePauseMax: 4,
+  driveSettleMin: 1.5, // seconds letting it tick over before she sets off
+  driveSettleMax: 4,
+  driveForMin: 45, // seconds of driving before she's had enough
+  driveForMax: 85,
+  driveScaredChance: 0.4, // she stops because she's scared rather than bored
+  driveForgetChokeChance: 0.45, // she pushes the choke off as she sets off, cold or not
+  driveMaxStalls: 2, // stalls before she gives up on it
+  driveBackChance: 0.5, // when she's done, the chance she moves onto the back to wait rather than getting off
+  driveKeyOffChance: 0.5, // getting off, the chance she switches it off
+  driveSeatRaise: 0.04, // metres, fine-tunes how high she sits on the front seat
+  driveSeatForward: 0.0, // metres, fine-tunes where she sits along it
+  driveTalkRange: 14, // metres; you can talk to her from this far while she's driving
 
   // Talking (companionVoice.js, lines in voiceLines.js)
   voice: true, // she talks at all
@@ -92,8 +126,40 @@ export const COMPANION_PARAM_RANGES = {
   boredAfterMax: [5, 900, 1],
   boredMountChance: [0, 1, 0.05],
   boredStartChance: [0, 1, 0.05],
+  boredDriveChance: [0, 1, 0.05],
   wanderMin: [1, 50, 0.5],
   wanderMax: [1, 80, 0.5],
+  driveSpeedMin: [0.5, 8, 0.1],
+  driveSpeedMax: [0.5, 10, 0.1],
+  driveScareSpeed: [1, 15, 0.1],
+  driveMaxThrottle: [0.05, 1, 0.01],
+  driveThrottleBase: [0, 0.5, 0.01],
+  driveThrottleGain: [0, 1, 0.01],
+  driveThrottleIntegral: [0, 0.5, 0.005],
+  driveBrakeMargin: [0, 3, 0.05],
+  driveJerk: [0, 1, 0.01],
+  driveSteerGain: [0.2, 5, 0.05],
+  driveOverSteerRate: [0, 2, 0.01],
+  driveLoopRadiusMin: [3, 30, 0.5],
+  driveLoopRadiusMax: [3, 40, 0.5],
+  driveWaypointsMin: [2, 10, 1],
+  driveWaypointsMax: [2, 12, 1],
+  driveArriveRadius: [0.5, 6, 0.1],
+  drivePauseChance: [0, 1, 0.05],
+  drivePauseMin: [0, 15, 0.5],
+  drivePauseMax: [0, 20, 0.5],
+  driveSettleMin: [0, 15, 0.5],
+  driveSettleMax: [0, 20, 0.5],
+  driveForMin: [5, 300, 1],
+  driveForMax: [5, 400, 1],
+  driveScaredChance: [0, 1, 0.05],
+  driveForgetChokeChance: [0, 1, 0.05],
+  driveMaxStalls: [0, 6, 1],
+  driveBackChance: [0, 1, 0.05],
+  driveKeyOffChance: [0, 1, 0.05],
+  driveSeatRaise: [-0.3, 0.3, 0.005],
+  driveSeatForward: [-0.3, 0.3, 0.005],
+  driveTalkRange: [2, 40, 0.5],
   chattiness: [0, 3, 0.05],
   voiceMinGap: [0, 30, 0.5],
   voiceVolume: [0, 1, 0.01],

@@ -81,6 +81,7 @@ export class Quad {
     this.input = null;
     this.remoteInput = null; // set while someone on foot is looking at the bike
     this.helperStarter = false; // she's holding the starter button
+    this.driver = null; // someone else at the controls (her), see setDriver()
     this.throttle = 0;
     this.brake = 0;
     this.steer = 0;
@@ -143,6 +144,22 @@ export class Quad {
     if (!rider) {
       this.throttle = 0;
       this.starter = false;
+    }
+  }
+
+  /**
+   * Someone other than the player at the controls: an object whose `controls`
+   * ({ throttle, brake, steer, starter, reverse }, throttle and brake 0..1,
+   * steer -1..1 positive left) are read each physics step in place of the
+   * rider's keys. The player getting on takes over from it. Pass null to clear.
+   */
+  setDriver(driver) {
+    this.driver = driver;
+    this.ghost = null;
+    if (!driver && !this.input) {
+      this.throttle = 0;
+      this.starter = false;
+      this.reverse = false;
     }
   }
 
@@ -260,7 +277,14 @@ export class Quad {
     } else {
       // Someone beside the bike can still hold the starter.
       this.starter = (!!this.remoteInput && this.remoteInput.isDown('KeyR')) || this.helperStarter;
-      if (this.ghost) {
+      if (this.driver) {
+        const c = this.driver.controls;
+        if (!!c.reverse !== this.reverse && Math.abs(fwd) < 0.3) this.reverse = !!c.reverse;
+        throttleInput = c.throttle;
+        brakeInput = c.brake;
+        steerInput = c.steer;
+        this.starter ||= !!c.starter;
+      } else if (this.ghost) {
         const cruise = this.ghostThrottle(dt, fwd);
         if (cruise === null) this.releaseGhost();
         else throttleInput = cruise;
@@ -293,7 +317,7 @@ export class Quad {
 
     let brake = this.brake * p.maxBrake;
     // Nobody on it (and not carrying on by itself): the parking brake holds it.
-    const idle = (!this.input && !this.ghost) || (throttleInput === 0 && Math.abs(fwd) < 0.5);
+    const idle = (!this.input && !this.ghost && !this.driver) || (throttleInput === 0 && Math.abs(fwd) < 0.5);
     if (idle) brake = Math.max(brake, p.parkingBrake);
     brake = Math.max(brake, p.rollingResistance);
     // Wheel brakes alone let a parked quad creep down a slope, so a stationary one is held.

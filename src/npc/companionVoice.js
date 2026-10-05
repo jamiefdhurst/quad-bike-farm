@@ -52,11 +52,16 @@ export class CompanionVoice {
     this.pouredNear = false;
     this.wasMenuOpen = false;
     this.listener = new THREE.Vector3();
+    this.driveTalk = 0; // seconds until she might say something while driving
+    this.driveNerve = 0; // 0 nervous .. 1 enjoying it, while she's driving
+    this.driveVy = 0;
+    this.driveJolt = 0;
   }
 
   /** She was asked to do something from the menu. */
   onRequest(kind) {
-    this.say({ mount: 'ackMount', start: 'ackStart' }[kind] ?? 'ackStand', { force: true });
+    const SAY = { mount: 'ackMount', start: 'ackStart', drive: 'ackDrive', back: 'ackBack', stopDrive: 'ackStopDrive' };
+    this.say(SAY[kind] ?? 'ackStand', { force: true });
   }
 
   /**
@@ -127,6 +132,7 @@ export class CompanionVoice {
     this.watchGhostRide(dt, together);
     this.watchStarting();
     this.watchOwnMind();
+    this.watchDriving(dt);
     this.watchEngines(dt, view, together, distance);
     this.watchSeat(dt, view, together);
 
@@ -243,8 +249,70 @@ export class CompanionVoice {
   /** Says what she's up to when she decides to do something on her own. */
   watchOwnMind() {
     const events = this.companion.selfEvents;
-    for (const e of events) this.say({ wander: 'selfWander', mount: 'selfMount', start: 'selfStart' }[e], { urgent: true, chance: 0.8 });
+    for (const e of events) this.say({ wander: 'selfWander', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive' }[e], { urgent: true, chance: 0.8 });
     events.length = 0;
+  }
+
+  /**
+   * Driving a quad herself: what happens (setting off, yanking the bars,
+   * nearly hitting things, stalling, bumps), a nervous or gleeful word now and
+   * then as she gets the hang of it, and why she's stopping.
+   */
+  watchDriving(dt) {
+    const c = this.companion;
+    const events = c.driveEvents;
+    const driving = c.fsm.is('driving') && c.drive;
+    const SAY = {
+      setOff: ['driveSetOff', 0.9],
+      moveOff: ['driveMoveOff', 0.25],
+      overSteer: ['driveOverSteer', 0.7],
+      obstacle: ['driveObstacle', 0.8],
+      stuck: ['driveObstacle', 0.8],
+      stalled: ['driveStalled', 0.9],
+      revIt: ['driveBogged', 0.8],
+      chokeBack: ['startRemembered', 0.9],
+      pause: ['drivePause', 0.35],
+      tooFast: ['driveTooFast', 1],
+      noRoom: ['driveNoRoom', 1],
+      'done:bored': ['driveBored', 0.9],
+      'done:scared': ['driveScared', 0.9],
+      'done:gaveUp': ['driveGaveUp', 0.9],
+      toBack: ['driveToBack', 0.8],
+      getOff: ['driveGetOff', 0.5],
+      taken: ['driveTaken', 1],
+    };
+    for (const e of events) {
+      // Each fright knocks her confidence.
+      if (e === 'overSteer' || e === 'obstacle' || e === 'stuck' || e === 'stalled') this.driveNerve = Math.max(0, this.driveNerve - 0.35);
+      if (e === 'setOff') this.driveNerve = 0;
+      // A stall that ends her go has its own line.
+      if (e === 'stalled' && c.drive?.stalls > this.params.driveMaxStalls) continue;
+      const [situation, chance] = SAY[e] ?? [];
+      if (situation) this.say(situation, { urgent: true, chance });
+    }
+    events.length = 0;
+    if (!driving) {
+      this.driveVy = 0;
+      this.driveJolt = 0;
+      return;
+    }
+
+    // Bumps: a squeak when the ground throws her about.
+    const quad = c.quad;
+    const vy = quad.velocity.y;
+    if (dt > 0) this.driveJolt += (Math.abs(vy - this.driveVy) / dt - this.driveJolt) * Math.min(1, dt * 6);
+    this.driveVy = vy;
+    const speed = Math.abs(quad.forwardSpeed);
+    if (this.driveJolt > this.params.voiceRoughAccel * 0.7 && speed > 1) this.say('driveBump', { urgent: true, chance: 0.5 });
+
+    // Getting the hang of it, slowly.
+    if (c.drive.phase !== 'drive') return;
+    this.driveNerve = Math.min(1, this.driveNerve + dt / 40);
+    this.driveTalk -= dt;
+    if (this.driveTalk > 0) return;
+    this.driveTalk = 4 + Math.random() * 6;
+    const happy = Math.random() < 0.2 + this.driveNerve * 0.6;
+    this.say(happy ? 'driveHappy' : 'driveNervous', { chance: 0.45 });
   }
 
   /** Talking herself through starting a quad you asked her to. */
@@ -261,7 +329,7 @@ export class CompanionVoice {
     };
     for (const e of events) {
       if (e === 'crank') {
-        const a = this.companion.attempt;
+        const a = this.companion.attempt ?? this.companion.drive?.attempt;
         if (a && a.bursts > 1) this.say('startCrank', { urgent: true, chance: 0.6 });
         continue;
       }
@@ -280,7 +348,7 @@ export class CompanionVoice {
       const w = this.engineWatch.get(unit) ?? { state: e.state, cranking: 0 };
       this.engineWatch.set(unit, w);
       // When she's the one starting it, she has her own things to say.
-      const hersToStart = c.fsm.is('starting') && c.quad === unit.quad;
+      const hersToStart = c.fsm.is('starting', 'driving') && c.quad === unit.quad;
       const near = !hersToStart && unit.quad.position.distanceTo(this.head) < 15 && distance < this.params.voiceRange;
       const hers = together && view.ridden === unit;
 

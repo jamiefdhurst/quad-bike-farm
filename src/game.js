@@ -139,6 +139,8 @@ export class Game {
     });
     this.interaction.add({
       target: this.companion.proxy,
+      // While she's driving you can call her over from further away.
+      range: () => (this.companion.fsm.is('driving') ? this.companion.params.driveTalkRange : undefined),
       prompt: () => 'Talk to her',
       interact: () => this.openCompanionMenu(),
     });

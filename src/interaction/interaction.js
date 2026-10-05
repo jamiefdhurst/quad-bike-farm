@@ -9,6 +9,7 @@ import * as THREE from 'three';
  *     prompt(): string | {text}, an E action ("Ride the quad") or plain text ({ text: 'The can is full' })
  *     interact(): void,          called when E is pressed while focused
  *     hold(dt): boolean,         optional, called every frame E is held; true while something is happening
+ *     range(): number,           optional, how far away it can be reached (defaults to the player's reach)
  *   }
  *
  * A direct ray hit wins. Failing that, anything whose bounds come within a
@@ -42,6 +43,8 @@ export class Interaction {
     let coneBestCos = this.coneCos;
     for (const item of this.items) {
       if (item.isAvailable && !item.isAvailable()) continue;
+      const far = item.range?.() ?? range;
+      this.raycaster.far = far;
       const hits = this.raycaster.intersectObject(item.target, true);
       if (hits.length && hits[0].distance < bestDist) {
         best = item;
@@ -54,7 +57,7 @@ export class Interaction {
       this.ray.at(along, this.centre);
       const to = this.box.clampPoint(this.centre, this.centre).sub(this.ray.origin);
       const dist = to.length();
-      if (dist > range + 0.5 || dist < 1e-3) continue;
+      if (dist > far + 0.5 || dist < 1e-3) continue;
       const cos = to.dot(this.ray.direction) / dist;
       if (cos > coneBestCos) {
         coneBest = item;

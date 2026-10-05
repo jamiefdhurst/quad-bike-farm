@@ -5,6 +5,7 @@ import { DEFAULT_COMPANION_PARAMS } from './companionParams.js';
 import { applyOutfit, refitOutfit, OUTFITS } from './outfit.js';
 import { shapeFigure } from './figure.js';
 import { StartingAttempt } from './startingAttempt.js';
+import { drivingStates, drivingMethods } from './companionDriving.js';
 
 const CAPSULE_HALF_HEIGHT = 0.55;
 const CAPSULE_RADIUS = 0.25;
@@ -19,6 +20,7 @@ function angleTo(from, to) {
  * The companion NPC. Behaviour is a small state machine:
  *
  *   idle ──walk──▶ walking ──arrive──▶ idle | starting | mounting ──▶ seated ──▶ dismounting ──▶ idle
+ *                                                 mounting (front) ──▶ driving ──▶ dismounting | shuffling ──▶ seated
  *
  * Requests (the menu options) are methods that pick the next state, and
  * getActions() lists only the ones that make sense right now. New requests
@@ -82,6 +84,9 @@ export class Companion {
     this.boredAfter = this.randomBetween(params.boredAfterMin, params.boredAfterMax);
     this.selfEvents = []; // things she decided to do on her own, for her voice
     this.reach = 0; // how far she's reaching for the bars, 0..1
+    this.drive = null; // her go at driving, while she's on the front seat (herDriving.js)
+    this.driveEvents = []; // what's happened while she's driving, for her voice
+    this.gripReach = 0; // how far her hands are on the grips, 0..1
   }
 
   figureAmounts() {
@@ -123,11 +128,15 @@ export class Companion {
     // Only quads with a pillion seat can carry her.
     const rideable = (q) => q.hasPillion && !q.isTipped;
     const actions = [];
+    if (s.is('driving')) return this.drivingActions();
+    if (s.is('shuffling')) return actions;
+    const drivable = (q) => this.canDrive(q) && !(s.is('walking') && s.data?.goal === 'drive' && q === this.quad);
     const boarding = s.is('seated', 'mounting') || (s.is('walking') && s.data?.goal === 'mount');
     if (boarding) {
       actions.push({ kind: 'stand', label: `Stand next to the ${this.quad.label}`, run: () => this.requestStandBeside(this.quad) });
       for (const q of sorted) {
         if (q !== this.quad && rideable(q)) actions.push({ kind: 'mount', label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
+        if (drivable(q)) actions.push({ kind: 'drive', label: `Drive the ${q.label}`, run: () => this.requestDrive(q) });
       }
       return actions;
     }
@@ -138,6 +147,7 @@ export class Companion {
       if (startable(q) && !(s.is('starting') && q === this.quad)) {
         actions.push({ kind: 'start', label: `Start the ${q.label}`, run: () => this.requestStart(q) });
       }
+      if (drivable(q)) actions.push({ kind: 'drive', label: `Drive the ${q.label}`, run: () => this.requestDrive(q) });
       if (rideable(q)) actions.push({ kind: 'mount', label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
       if (!this.isStandingBeside(q)) actions.push({ kind: 'stand', label: `Stand next to the ${q.label}`, run: () => this.requestStandBeside(q) });
     }
@@ -146,6 +156,8 @@ export class Companion {
 
   requestMount(quad = this.quad) {
     if (!quad.hasPillion) return;
+    // Driving this one: onto the back. Another: off this one first.
+    if (this.stopDriving(quad === this.quad ? 'back' : 'off', quad === this.quad ? null : () => this.requestMount(quad))) return;
     if (this.fsm.is('seated', 'mounting') && quad !== this.quad) {
       // Off this one first, then over to the other.
       this.afterDismount = () => this.requestMount(quad);
@@ -173,6 +185,7 @@ export class Companion {
     const near = (q) => q.position.distanceTo(here) < 40 && !q.rider && !q.isTipped && !q.isGhostRiding && q.speed < 0.5;
     const mountable = this.quads.filter((q) => near(q) && q.hasPillion);
     const startable = this.quads.filter((q) => near(q) && !q.engine.isRunning);
+    const drivable = this.quads.filter((q) => near(q) && this.canDrive(q));
     const pick = (list) => list[Math.floor(Math.random() * list.length)];
     const r = Math.random();
     if (r < p.boredMountChance && mountable.length) {
@@ -181,6 +194,9 @@ export class Companion {
     } else if (r < p.boredMountChance + p.boredStartChance && startable.length) {
       this.selfEvents.push('start');
       this.requestStart(pick(startable));
+    } else if (r < p.boredMountChance + p.boredStartChance + p.boredDriveChance && drivable.length) {
+      this.selfEvents.push('drive');
+      this.requestDrive(pick(drivable));
     } else {
       this.selfEvents.push('wander');
       this.wander();
@@ -206,6 +222,7 @@ export class Companion {
 
   /** Walks to the bars of a quad and has a go at starting it. */
   requestStart(quad) {
+    if (this.stopDriving('off', () => this.requestStart(quad))) return;
     if (this.fsm.is('seated', 'mounting')) {
       this.afterDismount = () => this.requestStart(quad);
       this.fsm.transition('dismounting');
@@ -216,6 +233,7 @@ export class Companion {
   }
 
   requestStandBeside(quad = this.quad) {
+    if (this.stopDriving('off', quad !== this.quad ? () => this.requestStandBeside(quad) : null)) return;
     if (this.fsm.is('seated', 'mounting')) {
       this.afterDismount = quad !== this.quad ? () => this.requestStandBeside(quad) : null;
       this.fsm.transition('dismounting');
@@ -265,9 +283,10 @@ export class Companion {
     return s.position.distanceTo(this.root.position) < 0.6 && Math.abs(angleTo(this.heading, s.facing)) < 0.6;
   }
 
-  /** Root-local transform that puts her hips on the pillion seat. */
-  seatOffset() {
+  /** Root-local transform that puts her hips on the pillion seat (or the front seat). */
+  seatOffset(front = false) {
     const p = this.params;
+    if (front) return new THREE.Vector3(-this.sitHips.x, -this.sitHips.y + p.driveSeatRaise, -this.sitHips.z + p.driveSeatForward);
     return new THREE.Vector3(-this.sitHips.x, -this.sitHips.y + p.seatRaise, -this.sitHips.z + p.seatForward);
   }
 
@@ -365,7 +384,7 @@ export class Companion {
     if (this.root.parent === this.scene) this.syncCollider();
 
     // Seated riders shake with the bike; the rig adds a little upper-body lag.
-    if (this.isSeated && vibration) {
+    if ((this.isSeated || this.fsm.is('driving')) && vibration) {
       const k = this.params.rideBounce;
       this.rig.spineSway.pitch = vibration.camera.pitch * 2 * k + vibration.body.pitch * 0.8 * k;
       this.rig.spineSway.roll = vibration.camera.roll * 2 * k;
@@ -374,8 +393,11 @@ export class Companion {
       this.rig.spineSway.roll = 0;
     }
     this.rig.update(dt);
+    this.poseDriving(dt);
   }
 }
+
+Object.assign(Companion.prototype, drivingMethods);
 
 // Idle behaviour -------------------------------------------------------------
 
@@ -460,6 +482,8 @@ Companion.prototype.updateFidget = function (dt) {
 
 // State definitions. `this` is the Companion.
 const STATES = {
+  ...drivingStates,
+
   idle: {
     enter() {
       this.rig.play('Idle');
@@ -477,7 +501,7 @@ const STATES = {
     update(dt, data) {
       const t = data.target();
       // Hold back near a moving quad until it stops.
-      if (data.goal === 'mount' && this.quad.speed > this.params.maxMountSpeed) {
+      if ((data.goal === 'mount' || data.goal === 'drive') && this.quad.speed > this.params.maxMountSpeed) {
         if (t.position.distanceTo(this.root.position) < 1.2) {
           this.rig.setTimeScale(0);
           return;
@@ -485,6 +509,8 @@ const STATES = {
       }
       if (this.walkToward(dt, t.position)) {
         if (data.goal === 'mount') this.fsm.transition('mounting', { side: t.side });
+        // If you've beaten her to the front seat, she gets on the back.
+        else if (data.goal === 'drive') this.fsm.transition('mounting', { side: t.side, seat: this.quad.rider ? 'pillion' : 'rider' });
         else if (data.goal === 'start') this.fsm.transition('starting', { facing: t.facing, side: t.side });
         else this.fsm.transition('idle', { facing: t.facing });
       }
@@ -523,19 +549,20 @@ const STATES = {
       this.startHeading = this.heading;
       this.rig.play('Sitting', { once: true, fade: 0.3 });
     },
-    update(dt) {
+    update(dt, data) {
       const p = this.params;
       const t = Math.min(1, this.fsm.time / p.mountDuration);
       const k = smooth(t);
       // Blend from the ground to the seat, swinging round to face forward.
-      const seat = this.quad.pillionAnchor.localToWorld(this.seatOffset());
+      const front = data.seat === 'rider';
+      const seat = (front ? this.quad.riderAnchor : this.quad.pillionAnchor).localToWorld(this.seatOffset(front));
       this.root.position.lerpVectors(this.startPos, seat, k);
       // Lift over the seat rather than sliding through it.
       this.root.position.y += Math.sin(Math.PI * k) * 0.15;
       this.heading = this.startHeading + angleTo(this.startHeading, this.quad.yaw) * k;
       this.root.rotation.y = this.heading;
       this.rig.legSpread = p.legSpread * k;
-      if (t >= 1) this.fsm.transition('seated');
+      if (t >= 1) this.fsm.transition(front ? 'driving' : 'seated');
     },
   },
 
