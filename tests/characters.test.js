@@ -14,6 +14,17 @@ describe('characters', () => {
     expect(lines.rideFun).toBe(VOICE_LINES.rideFun);
   });
 
+  it('each have kind words for you, and never call you he, she or they', () => {
+    for (const character of Object.values(CHARACTERS)) {
+      const id = character.id;
+      for (const situation of ['loveYou', 'careForYou']) {
+        const lines = character.lines[situation].lines;
+        expect(lines.length, `${id} ${situation}`).toBeGreaterThan(4);
+        for (const l of lines) expect(l, l).not.toMatch(/\b(he|she|they)\b/i);
+      }
+    }
+  });
+
   it('have different names and voice banks', () => {
     expect(new Set(CHARACTERS.map((c) => c.name)).size).toBe(CHARACTERS.length);
     expect(new Set(CHARACTERS.map((c) => c.voiceBank)).size).toBe(CHARACTERS.length);

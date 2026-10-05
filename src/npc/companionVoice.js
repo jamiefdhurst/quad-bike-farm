@@ -168,6 +168,10 @@ export class CompanionVoice {
     const step = 1 - this.checkTimer;
     this.checkTimer = 1;
 
+    // The odd kind word: on a smooth ride with you, stood together, or when you're out in the rain.
+    if (together && (this.funTime > 15 || this.gentleTime > 15)) this.say('loveYou', { chance: 0.03 });
+    if (together && view.weather?.rain > 0.25 && this.rideTime > 40) this.say('careForYou', { chance: 0.03 });
+
     if (rideQuad) {
       if (this.funTime > 8) this.say('rideFun', { chance: 0.35 });
       else if (this.gentleTime > 10) this.say('rideGentle', { chance: 0.3 });
@@ -183,6 +187,7 @@ export class CompanionVoice {
     const close = standing && !ridden && distance < 4 && !view.menuOpen;
     this.nearTime = close ? this.nearTime + step : 0;
     if (this.nearTime > 8) this.say('nearbyWarm', { chance: 0.08 });
+    if (this.nearTime > 15) this.say(view.weather?.rain > 0.25 ? 'careForYou' : 'loveYou', { chance: 0.05 });
 
     // Standing about with nothing happening.
     const waitingSeated = c.isSeated && !rideQuad;

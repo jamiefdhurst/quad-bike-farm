@@ -483,6 +483,37 @@ export const VOICE_LINES = {
       { sound: 'laugh' },
     ],
   },
+  // Rare and sincere: how she feels about you. Raised from companionVoice.js.
+  loveYou: {
+    cooldown: 240,
+    lines: [
+      'I love you, you know.',
+      'I love you. That is all.',
+      "I'm really happy, you know. With you.",
+      'You make me feel safe.',
+      'I think you are lovely.',
+      "I don't say it enough. I love you.",
+      'I am so glad I get to do this with you.',
+      "Whatever happens, I'm on your side.",
+      'You are my favourite person.',
+      "I couldn't have picked a better person to be stuck in a field with.",
+      'Thank you for being you.',
+      'I love our days like this.',
+    ],
+  },
+  careForYou: {
+    cooldown: 180,
+    lines: [
+      'Are you alright? You look cold.',
+      "You'll tell me if you need anything, won't you?",
+      'Look after yourself out here.',
+      "I worry about you, that's all.",
+      'Mind yourself, yeah? I need you in one piece.',
+      "Don't wear yourself out. I care about you.",
+      'Do you want a break? I will wait.',
+      'You work too hard. Sit down a minute.',
+    ],
+  },
   leftBehind: {
     shout: true,
     cooldown: 60,

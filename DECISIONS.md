@@ -408,3 +408,11 @@ Decided with you: the second girl sits on the front rack (not squeezed onto the 
 - She sits facing forward, hips 0.66 m up the deck, legs 30% of the pillion spread (`rackLegSpread`), no hold-on pose (the sitting clip's hands on her lap). `rackSeatRaise` and `rackSeatForward` tune her position. She gets off when her friend has stopped driving (the same rule as the back), landing beside the front wing. She can't be asked to drive from the rack: she'd have to get off first.
 - Handling: with a girl on the rack the steering lock is `rackSteerLoss` (0.08) smaller. Nothing else changes: weight isn't modelled for riders anywhere, so there's no nose dip or extra load on the front springs.
 - Checked once in headless Chrome: Amy gave me a ride on the green, Jess was asked to sit on the front, waited for the quad to stop, climbed on and sat upright on the rack with Amy driving on. Not checked: getting off, a full ride with her aboard, the other two racked quads by eye, and the swap ("Let me drive") with her on the rack. She says the usual "get on" acknowledgement; no new lines.
+
+
+## Kind words (2026-10-05)
+
+- Two new voice situations, `loveYou` and `careForYou`, with their own lines for Amy and for Jess (hers are gruffer and cheekier but still meant). The shared `nearbyWarm` already had the odd "I love you" among its lines; these are separate so the sincere ones can be rarer and have a long cooldown (240 s and 180 s).
+- When: `loveYou` on a smooth ride with you (fun or gentle for 15 s, 3% a second, which is the slow check) or after 15 s stood together on foot (5%); `careForYou` instead of it when it's raining, on foot or riding with you after 40 s. Both go through the Chatter, so they wait their turn and never talk over the other girl.
+- No scorekeeping yet: how often she says it doesn't depend on how you treat her. That is item 8's job (who you favour), which can turn these chances up or down.
+- Checked: unit test that both girls have lines for both and none says he, she or they. Not checked in the running game: how often they come up in practice.

@@ -247,7 +247,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 3. Remove the helpful vehicle HUD so I have to guess what the issues are, add a temp gauge to each of the quads **Done.** The quad readout is gone; every dash now has a temperature gauge.
 4. Pillion on the orange one **Done.** The orange now has a slim pad and grab strap on the tail of its race seat, so you and the girls can ride on the back like on the yellow.
 5. A way for two girls to sit on the back of a quad at the same time - one on the fairing maybe? **Done.** With you on the back and one girl driving, the other can sit on the front rack of the red, blue or green.
-6. The girls say very nice things to me sometimes - tell me they love me, care for me, etc.
+6. The girls say very nice things to me sometimes - tell me they love me, care for me, etc. **Done.** Now and then, on a smooth ride with you on the back or stood about together, a girl tells you she loves you; in the rain she tells you to look after yourself. Rare, and Jess says it her own way.
 7. One more go at the collar, which despite what you've said is still not right.
 8. Who you favour. Each girl quietly keeps score: rides given, times you talked to her, whose favourite quad you pick. Favoured, she's warmer and up for anything. Neglected, she sulks, says no to things, or takes a quad off on her own. The rivalry gets an edge: the favoured one gloats and the other gets pointed.
 9. Pranks. Jess sneaks over and turns your fuel tap off, or puts the choke on, while you're away. Amy hides the jerry can or the toolbox. You find out when it won't start, and the culprit can't keep a straight face.
