@@ -467,8 +467,8 @@ function addPoloFront(rig, color, neckline) {
   const samples = 10;
   const lift = 0.007;
   const half = 0.011;
-  const top = neckline - 0.006;
-  const length = 0.15;
+  const top = neckline - 0.016;
+  const length = 0.14;
   const hits = [];
   for (let k = 0; k <= samples; k++) {
     const hit = chestPoint(rig, mesh, 0, top - (k / samples) * length);
