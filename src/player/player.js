@@ -58,6 +58,8 @@ export class Player {
     this.ignoreCollider = null;
     this.ignoreLeft = 0;
     this.ignoreFilter = (c) => c.handle !== this.ignoreCollider.handle;
+    this.eyeDrop = 0; // metres the eyes are lowered, eased towards eyeDropTarget (crouching in the hay)
+    this.eyeDropTarget = 0;
     this.camDip = 0;
     this.camDipVel = 0;
     this.camRoll = 0;
@@ -201,7 +203,8 @@ export class Player {
       const bob = Math.sin(this.bobPhase) * this.bobAmount;
       const sway = Math.cos(this.bobPhase * 0.5) * this.bobAmount * 0.5;
       this.updateCameraSprings(dt);
-      this.camera.position.set(this.renderPos.x, this.renderPos.y + p.eyeHeight + bob + this.camDip, this.renderPos.z);
+      this.eyeDrop += (this.eyeDropTarget - this.eyeDrop) * Math.min(1, dt * 6);
+      this.camera.position.set(this.renderPos.x, this.renderPos.y + p.eyeHeight + bob + this.camDip - this.eyeDrop, this.renderPos.z);
       // Dipping on landing also tips the view down a little.
       this.camera.rotation.set(this.pitch + this.camDip * 0.8, this.yaw, sway * 0.15 + this.camRoll, 'YXZ');
     } else {
@@ -281,6 +284,17 @@ export class Player {
     this.lookBackTurn = this.lookBackYaw = this.lookBackPitch = 0;
     this.collider.setEnabled(false);
     this.velocity.set(0, 0, 0);
+  }
+
+  /** Puts you at `feet` (a world position) on foot, as if you'd stepped there, keeping which way you're looking. */
+  moveTo(feet) {
+    const centre = { x: feet.x, y: feet.y + FEET_TO_CENTRE, z: feet.z };
+    this.velocity.set(0, 0, 0);
+    this.body.setTranslation(centre, true);
+    this.body.setNextKinematicTranslation(centre);
+    this.currPos.set(feet.x, feet.y, feet.z);
+    this.prevPos.copy(this.currPos);
+    this.verticalSpeed = 0;
   }
 
   /** Steps off at `feet` (a world position) facing `yaw`. */

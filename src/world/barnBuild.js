@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { barnShape, wallBoxes } from './barn.js';
+import { loftShape } from './loft.js';
 
 // Draws the barn (the shape and numbers are in barn.js): board walls, a tin gable roof on timber ties, the big
 // sliding doors pushed back open on the yard side, a concrete floor and the workbench along the north wall.
@@ -152,8 +153,16 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   }
   // The beam over the doorway, and the end wall above it up to the eaves.
   add(box(wall + 0.22, 0.3, door.maxZ - door.minZ + 0.56, white), door.x - wall / 2, floorY + door.height + 0.15, shape.z);
+  // The hay door is a gap in it (and in the gable above, below), so the loft looks out over the yard.
   const above = wallHeight - door.height - 0.28;
-  add(box(wall, above, door.maxZ - door.minZ, wallMat(door.maxZ - door.minZ, above)), door.x - wall / 2, floorY + door.height + 0.28 + above / 2, shape.z);
+  const hd = layout.loft.hayDoor;
+  const sideLen = (door.maxZ - door.minZ) / 2 - hd.halfWidth;
+  const sillY = hd.sill - door.height - 0.28; // how far up the header the opening starts
+  for (const side of [-1, 1]) {
+    const z = shape.z + side * (hd.halfWidth + sideLen / 2);
+    add(box(wall, above, sideLen, wallMat(sideLen, above)), door.x - wall / 2, floorY + door.height + 0.28 + above / 2, z);
+  }
+  add(box(wall, sillY, hd.halfWidth * 2, wallMat(hd.halfWidth * 2, sillY)), door.x - wall / 2, floorY + door.height + 0.28 + sillY / 2, shape.z);
 
   // Gable ends: a board triangle on top of each end wall.
   const gableShape = new THREE.Shape();
@@ -163,10 +172,29 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   gableShape.closePath();
   const gableGeo = new THREE.ExtrudeGeometry(gableShape, { depth: wall, bevelEnabled: false });
   const gableMat = new THREE.MeshStandardMaterial({ map: boards([sizeZ / 4, 1]), roughness: 0.85, side: THREE.DoubleSide });
+  // The east one has a notch cut up from its foot for the hay door.
+  const notchShape = new THREE.Shape();
+  const notchTop = 0.6;
+  notchShape.moveTo(-sizeZ / 2, 0);
+  notchShape.lineTo(-hd.halfWidth, 0);
+  notchShape.lineTo(-hd.halfWidth, notchTop);
+  notchShape.lineTo(hd.halfWidth, notchTop);
+  notchShape.lineTo(hd.halfWidth, 0);
+  notchShape.lineTo(sizeZ / 2, 0);
+  notchShape.lineTo(0, ridge - wallHeight);
+  notchShape.closePath();
+  const notchGeo = new THREE.ExtrudeGeometry(notchShape, { depth: wall, bevelEnabled: false });
   for (const x of [outer.minX + wall, outer.maxX]) {
-    const g = add(new THREE.Mesh(gableGeo, gableMat), x, floorY + wallHeight, shape.z);
+    const g = add(new THREE.Mesh(x === outer.maxX ? notchGeo : gableGeo, gableMat), x, floorY + wallHeight, shape.z);
     g.rotation.y = -Math.PI / 2;
   }
+  // A white frame round the hay door and a hoist beam sticking out above it.
+  const doorTop = floorY + wallHeight + notchTop;
+  const sillTop = floorY + hd.sill;
+  add(box(wall + 0.14, 0.1, hd.halfWidth * 2 + 0.3, white), door.x - wall / 2, sillTop - 0.05, shape.z);
+  for (const side of [-1, 1]) add(box(wall + 0.14, doorTop - sillTop + 0.1, 0.1, white), door.x - wall / 2, (sillTop + doorTop) / 2, shape.z + side * (hd.halfWidth + 0.05));
+  add(box(wall + 0.14, 0.1, hd.halfWidth * 2 + 0.3, white), door.x - wall / 2, doorTop + 0.05, shape.z);
+  add(box(0.9, 0.12, 0.12, timber), door.x + 0.35, doorTop + 0.2, shape.z);
 
   // Roof: two tin slopes with an overhang, and a ridge cap.
   const overhang = 0.35;
@@ -246,6 +274,79 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
     add(box(w, 0.012, d, paint), bay.x + x, floorY + 0.016, bay.z + z, { cast: false });
   }
 
+  // The hayloft over the west end: planks on joists, a rail along the open edge with a gap at the ladder, hay to hide behind.
+  const l = layout.loft;
+  const lf = loftShape(layout, floorY);
+  const plankMat = new THREE.MeshStandardMaterial({ map: boards([4, 1.5]), roughness: 0.9, color: 0xc9b08a });
+  const lx = (lf.minX + lf.maxX) / 2;
+  const lz = (lf.minZ + lf.maxZ) / 2;
+  const lw = lf.maxX - lf.minX;
+  const ld = lf.maxZ - lf.minZ;
+  add(box(lw, 0.1, ld, plankMat), lx, lf.top - 0.05, lz);
+  fixedBox(lx, lf.top - 0.06, lz, lw / 2, 0.06, ld / 2);
+  for (let z = lf.minZ + 0.6; z < lf.maxZ; z += 1.2) add(box(lw, 0.18, 0.1, timber), lx, lf.top - 0.19, z, { cast: false });
+  add(box(0.14, 0.26, ld, timber), lf.maxX - 0.07, lf.top - 0.23, lz); // the beam under the open edge
+  for (const z of [lf.minZ + 0.1, lz, lf.maxZ - 0.1]) add(box(0.14, l.floor - 0.1, 0.14, timber), lf.maxX - 0.1, floorY + (l.floor - 0.1) / 2, z); // and its posts
+  // Rail: two rails and posts in each span, each with a collider you can't climb over.
+  for (const span of lf.railSpans) {
+    const len = span.z1 - span.z0;
+    if (len < 0.05) continue;
+    const cz = (span.z0 + span.z1) / 2;
+    add(box(0.07, 0.07, len, timber), lf.maxX - 0.04, lf.top + l.rail, cz, { cast: false });
+    add(box(0.05, 0.05, len, timber), lf.maxX - 0.04, lf.top + l.rail * 0.5, cz, { cast: false });
+    for (const z of [span.z0 + 0.05, span.z1 - 0.05]) add(box(0.07, l.rail, 0.07, timber), lf.maxX - 0.04, lf.top + l.rail / 2, z, { cast: false });
+    fixedBox(lf.maxX - 0.04, lf.top + l.rail / 2, cz, 0.05, l.rail / 2, len / 2);
+  }
+  // The ladder: leans from the foot on the barn floor to just over the edge at the gap in the rail.
+  const lad = new THREE.Group();
+  const top = lf.ladderTop;
+  const foot = lf.ladderFoot;
+  const ladRise = top.y + 0.7 - foot.y;
+  const run = lf.maxX - 0.1 - foot.x;
+  const len = Math.hypot(ladRise, run);
+  lad.position.set(foot.x, foot.y, foot.z);
+  lad.rotation.z = Math.atan2(-run, ladRise); // leans its top over towards the loft (-x)
+  const half = l.ladder.width / 2;
+  for (const side of [-1, 1]) {
+    const rail = box(0.06, len, 0.06, timber);
+    rail.position.set(0, len / 2, side * half);
+    lad.add(rail);
+  }
+  for (let d = 0.3; d < len - 0.1; d += 0.3) {
+    const rung = box(0.05, 0.05, l.ladder.width, timber);
+    rung.position.set(0, d, 0);
+    lad.add(rung);
+  }
+  lad.traverse((o) => {
+    if (o.isMesh) o.castShadow = o.receiveShadow = true;
+  });
+  group.add(lad);
+  // Something to look at to climb it: a box round the whole ladder.
+  const ladderProxy = new THREE.Mesh(new THREE.BoxGeometry(1.1, lf.top - foot.y + 0.6, 0.9), new THREE.MeshBasicMaterial({ visible: false }));
+  ladderProxy.position.set((foot.x + lf.maxX) / 2, foot.y + (lf.top - foot.y + 0.6) / 2, foot.z);
+  group.add(ladderProxy);
+
+  // Hay: loose heaps (squashed boxes in two colours) along the west wall, a tall stack to hide behind, and the bale a girl sits on.
+  const hayA = new THREE.MeshStandardMaterial({ color: 0xc9a54a, roughness: 1 });
+  const hayB = new THREE.MeshStandardMaterial({ color: 0xb08d3a, roughness: 1 });
+  const hy = l.hay;
+  for (let i = 0; i < 9; i++) {
+    const w = 0.7 + random() * 0.6;
+    const hgt = 0.35 + random() * 0.3;
+    const x = hy.x + (random() - 0.5) * hy.halfX * 1.6;
+    const z = hy.z + (random() - 0.5) * hy.halfZ * 1.6;
+    const lvl = Math.floor(i / 4);
+    add(box(w, hgt, w * (0.8 + random() * 0.5), i % 2 ? hayA : hayB), x, lf.top + hgt / 2 + lvl * 0.4, z).rotation.y = random() * 0.8;
+  }
+  fixedBox(hy.x, lf.top + hy.height / 2, hy.z, hy.halfX, hy.height / 2, hy.halfZ);
+  const seat = l.seat;
+  add(box(1.2, 0.46, 0.55, hayA), seat.x - 0.1, lf.top + 0.23, seat.z).rotation.y = seat.yaw + Math.PI / 2;
+  const hayProxy = new THREE.Mesh(new THREE.BoxGeometry(hy.halfX * 2 + 1.2, 1.6, hy.halfZ * 2 + 1.2), new THREE.MeshBasicMaterial({ visible: false }));
+  hayProxy.position.set(hy.x, lf.top + 0.8, hy.z);
+  group.add(hayProxy);
+  // A loose scatter of straw on the planks.
+  for (let i = 0; i < 22; i++) add(box(0.4 + random() * 0.4, 0.015, 0.05, hayB), lf.minX + 0.5 + random() * (lw - 1), lf.top + 0.01, lf.minZ + 0.5 + random() * (ld - 1), { cast: false }).rotation.y = random() * 3;
+
   // A bare bulb on a flex from the ridge, which comes on in the gloom.
   const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 8), new THREE.MeshBasicMaterial({ color: 0xfff1c9 }));
   const bulbY = floorY + wallHeight + 0.2;
@@ -255,5 +356,5 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   light.position.set(shape.x, bulbY - 0.15, shape.z);
   group.add(light);
 
-  return { group, light, bulb, floorY };
+  return { group, light, bulb, floorY, loft: { ...lf, ladderProxy, hayProxy } };
 }

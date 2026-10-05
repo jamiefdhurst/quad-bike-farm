@@ -22,6 +22,18 @@ export const LAYOUT = {
     [-66.4, 57.3, Math.PI / 2],
     [-66.4, 62.7, Math.PI / 2],
   ],
+  // The hayloft over the west end of the barn (world/loft.js): planks `floor` m above the barn floor out to `edgeX`, an open edge with a rail
+  // and a gap at the ladder, a hay door in the east gable, a stack of hay to hide behind and a bale at the edge where a girl sits.
+  loft: {
+    floor: 2.6,
+    edgeX: -64.6,
+    rail: 1,
+    ladder: { z: 63.6, footX: -63.85, gap: 0.7, width: 0.55 },
+    hayDoor: { halfWidth: 0.8, sill: 3.5 },
+    hay: { x: -67.9, z: 57.3, halfX: 1.1, halfZ: 1.1, height: 1.15 }, // you duck into the hay behind this
+    hideSpot: { x: -68.2, z: 58.6 },
+    seat: { id: 'loft0', kind: 'loft', x: -65.35, z: 60.1, yaw: Math.PI / 2, seat: 2.6 + 0.53 }, // sat on a bale at the edge, facing the doors
+  },
   // The workbench along the north wall: where the toolbox sits (its height is `lift`).
   bench: { x: -62.3, z: 56.1, length: 3.2, depth: 0.7, height: 0.92 },
   // The bay painted on the barn floor in front of the bench: park a quad here to work on it at the bench (workshop/bench.js).

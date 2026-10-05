@@ -322,14 +322,14 @@ export class CompanionVoice {
     this.restTalk -= dt;
     if (this.restTalk > 0) return;
     this.restTalk = 60 + Math.random() * 90;
-    this.say(c.restSpot?.kind === 'shelter' ? 'restShelter' : 'restSat', { chance: 0.7 });
+    this.say(c.restSpot?.kind === 'shelter' ? 'restShelter' : c.restSpot?.kind === 'loft' ? 'loftSat' : 'restSat', { chance: 0.7 });
   }
 
   /** Says what she's up to when she decides to do something on her own. */
   watchOwnMind() {
     const events = this.companion.selfEvents;
     // Switching a quad off is rare, so she always mentions it.
-    for (const e of events) this.say({ wander: 'selfWander', restGo: 'restGo', restRain: 'restRain', restLeave: 'restLeave', join: 'selfJoin', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive', sulkOff: 'sulkOff', offerRide: 'offerRide', keyOff: 'selfKeyOff', askOff: 'askOff', askStop: 'askStop', getOff: 'selfGetOff', getOffWaited: 'selfGetOffWaited', takeOverStop: 'takeOverStop', takeOverDrive: 'takeOverDrive' }[e], { urgent: true, chance: e === 'keyOff' || e === 'askOff' || e === 'offerRide' || e === 'sulkOff' || e.startsWith('takeOver') ? 1 : 0.8 });
+    for (const e of events) this.say({ wander: 'selfWander', restGo: 'restGo', loftGo: 'loftGo', restRain: 'restRain', restLeave: 'restLeave', join: 'selfJoin', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive', sulkOff: 'sulkOff', offerRide: 'offerRide', keyOff: 'selfKeyOff', askOff: 'askOff', askStop: 'askStop', getOff: 'selfGetOff', getOffWaited: 'selfGetOffWaited', takeOverStop: 'takeOverStop', takeOverDrive: 'takeOverDrive' }[e], { urgent: true, chance: e === 'keyOff' || e === 'askOff' || e === 'offerRide' || e === 'sulkOff' || e.startsWith('takeOver') ? 1 : 0.8 });
     events.length = 0;
   }
 

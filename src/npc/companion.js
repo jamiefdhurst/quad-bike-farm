@@ -290,7 +290,7 @@ export class Companion {
     const choice = pickBoredChoice(p, { confidence: this.driveConfidence ?? p.driveConfidence, can, sulk: favour.sulk });
     const pick = (list) => list[Math.floor(Math.random() * list.length)];
     // Neglected and off on a quad alone: she makes a point of it.
-    if (choice === 'rest') this.selfEvents.push('restGo'); else this.selfEvents.push(choice === 'drive' && favour.mood === 'neglected' ? 'sulkOff' : choice);
+    if (choice === 'rest') this.selfEvents.push(options.rest[0]?.kind === 'loft' ? 'loftGo' : 'restGo'); else this.selfEvents.push(choice === 'drive' && favour.mood === 'neglected' ? 'sulkOff' : choice);
     if (choice === 'join') {
       const q = pick(options.join);
       this.requestMount(q, { ownChoice: true, seat: this.canRidePillion(q) ? 'pillion' : 'rack' });

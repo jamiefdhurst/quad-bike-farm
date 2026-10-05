@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { pathAt } from '../world/loft.js';
 
 // Her sitting about somewhere on the farm: on the straw bales or the paddock fence
 // when it's fine, on the bales in the barn when it rains (places.js decides where and
@@ -11,6 +12,7 @@ const UP = new THREE.Vector3(0, 1, 0);
 export const restingMethods = {
   /** Where she stands to climb up (or, for shelter, where she stands). */
   restStandPoint(spot) {
+    if (spot.stand) return new THREE.Vector3(spot.stand.x, this.world.heightAt(spot.stand.x, spot.stand.z), spot.stand.z); // the foot of the loft ladder
     const stands = spot.kind === 'shelter' && spot.seat === undefined; // shelter without a seat: she just stands there
     const back = spot.kind === 'bale' || spot.kind === 'shelter' ? 1.65 : 0.9;
     const x = stands ? spot.x : spot.x - Math.sin(spot.yaw) * back;
@@ -67,7 +69,8 @@ export const restingStates = {
       this.startHeading = this.heading;
       if (sit) {
         this.setColliderEnabled(false);
-        this.rig.play('Sitting', { once: true, fade: 0.3 });
+        this.rig.play(data.spot.via ? 'Walking' : 'Sitting', data.spot.via ? { fade: 0.3 } : { once: true, fade: 0.3 });
+        this.loftClimbing = !!data.spot.via;
       } else {
         this.rig.play('Idle', { fade: 0.3 });
       }
@@ -83,6 +86,10 @@ export const restingStates = {
         return;
       }
       const seat = this.restSeatPoint(spot);
+      if (spot.via && this.restPhase !== 'sat') {
+        restLoftPath(this, spot, seat, data);
+        return;
+      }
       const tall = Math.max(0.15, Math.min(0.5, spot.seat * 0.35)); // how high she lifts over the edge on the way up
       if (this.restPhase === 'up') {
         const t = Math.min(1, this.fsm.time / p.mountDuration);
@@ -104,7 +111,8 @@ export const restingStates = {
         if (data.leaving || this.restFor <= 0) {
           this.restPhase = 'down';
           this.downAt = this.fsm.time;
-          this.rig.play('Sitting', { once: true, timeScale: -1, fade: 0.2 });
+          if (spot.via) this.rig.play('Walking', { fade: 0.3 });
+          else this.rig.play('Sitting', { once: true, timeScale: -1, fade: 0.2 });
         }
         return;
       }
@@ -122,6 +130,40 @@ export const restingStates = {
     },
   },
 };
+
+/**
+ * Up the ladder to a loft seat, and back down: she walks from where she stood through the points in `spot.via` (the top of
+ * the ladder, then across the planks) to her seat over `spot.climbSeconds`, and the same in reverse to get down.
+ */
+function restLoftPath(c, spot, seat, data) {
+  const up = c.restPhase === 'up';
+  const points = [
+    c.restStandPoint(spot),
+    ...spot.via.map((v) => ({ x: v.x, y: c.world.heightAt(v.x, v.z) + v.rise, z: v.z })),
+    seat,
+  ];
+  const t = Math.min(1, (up ? c.fsm.time : c.fsm.time - c.downAt) / spot.climbSeconds);
+  const k = up ? smooth(t) : 1 - smooth(t);
+  const at = pathAt(points, k);
+  c.root.position.set(at.x, at.y, at.z);
+  const ahead = pathAt(points, Math.min(1, Math.max(0, k + (up ? 0.02 : -0.02))));
+  const dx = ahead.x - at.x;
+  const dz = ahead.z - at.z;
+  if (Math.hypot(dx, dz) > 1e-4) c.heading = Math.atan2(dx, dz);
+  c.root.rotation.y = c.heading;
+  if (up && !at.climbing && c.loftClimbing) {
+    c.loftClimbing = false;
+    c.rig.play('Sitting', { once: true, fade: 0.3 });
+  }
+  if (t < 1) return;
+  if (up) {
+    c.restPhase = 'sat';
+    c.rig.play('SitIdle', { fade: 0.4 });
+    c.rig.legSpread = 0;
+    c.heading = spot.yaw;
+    c.root.rotation.y = spot.yaw;
+  } else finishRest(c, data);
+}
 
 /** Back on her feet at the end of a rest: collider on, stood about, and whatever was waiting for her. */
 export function finishRest(companion, data) {
