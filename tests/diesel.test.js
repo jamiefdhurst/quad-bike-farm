@@ -11,7 +11,7 @@ const seeded = (seed) => () => {
 };
 
 describe('diesel soak', () => {
-  it('climbs toward what the diesel in the fuel calls for, only while running or cranking, and never falls', () => {
+  it('climbs toward what the diesel in the fuel calls for, only while running, and never falls', () => {
     expect(stepDieselSoak(0, 10, { diesel: 1, active: false }, P)).toBe(0);
     const s = stepDieselSoak(0, 10, { diesel: 1, active: true }, P);
     expect(s).toBeCloseTo(10 * P.dieselSoakRate, 5);

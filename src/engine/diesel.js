@@ -6,7 +6,7 @@ import { ratioText } from './lubrication.js';
 
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
-/** The new soak after dt seconds: it climbs toward what the diesel in the fuel calls for, while running or cranking, and never falls. */
+/** The new soak after dt seconds: it climbs toward what the diesel in the fuel calls for, while running (not cranking or standing), and never falls. */
 export function stepDieselSoak(soak, dt, { diesel = 0, active = false }, p) {
   if (!active) return soak;
   const target = clamp01(diesel * p.dieselPotency);

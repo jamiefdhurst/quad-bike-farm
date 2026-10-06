@@ -231,7 +231,7 @@ export class EngineModel {
     this.updateTemperature(h);
     this.updateLube(h);
     this.water = stepWater(this.water, h, { gulp: this.gulp, running: this.state === EngineState.RUNNING, throttle: this.throttle }, p);
-    this.dieselSoak = stepDieselSoak(this.dieselSoak, h, { diesel: this.diesel, active: this.state === EngineState.RUNNING || this.state === EngineState.CRANKING }, p);
+    this.dieselSoak = stepDieselSoak(this.dieselSoak, h, { diesel: this.diesel, active: this.state === EngineState.RUNNING }, p);
     this.updateMixture();
 
     switch (this.state) {

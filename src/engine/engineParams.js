@@ -220,7 +220,7 @@ export const DEFAULT_ENGINE_PARAMS = {
 
   // Red diesel in the tank (see diesel.js): it soaks the engine and only a drain at the toolbox clears it
   dieselPotency: 2.5, // soak aimed for per unit of diesel in the fuel (so 40% diesel is as bad as it gets)
-  dieselSoakRate: 0.04, // per second the soak climbs toward that while running or cranking, so about 25 s to the worst
+  dieselSoakRate: 0.04, // per second the soak climbs toward that while running, so about 25 s to the worst
   dieselRoughness: 0.8, // roughness added by a full soak
   dieselPowerLoss: 0.6, // power lost to it
   dieselMisfire: 0.5, // extra chance of a misfire on each firing at full soak
