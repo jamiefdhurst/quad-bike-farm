@@ -277,12 +277,21 @@ export class DebugGui {
       g.tea.forced = true;
       g.hud.toast('A free girl will put her tea on a rack');
     };
+    for (const id of ['amy', 'jess']) {
+      const name = id[0].toUpperCase() + id.slice(1);
+      actions[`jumper_${id}`] = () => {
+        const what = g.jumpers.toggle(id);
+        g.hud.toast(what === 'fetch' ? `${name} will go and put a jumper on once she is stood about` : `${name} will go and hang her jumper up once she is stood about`);
+      };
+    }
     actions.diesel = () => {
       g.dieselMistake.forced = true;
       g.hud.toast('Jess will fill a parked quad from the diesel can as soon as she is stood about');
     };
     f.add(actions, 'race').name('Start a race now');
     f.add(actions, 'diesel').name('Jess pours red diesel into a quad');
+    f.add(actions, 'jumper_amy').name('Amy fetches or hangs up a jumper');
+    f.add(actions, 'jumper_jess').name('Jess fetches or hangs up a jumper');
     f.add(actions, 'tea').name('A girl leaves her tea on a rack');
     f.add(actions, 'convoy').name('Start follow the leader now');
     f.add(actions, 'grabJess').name('Jess grabs the throttle (next ride)');

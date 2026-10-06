@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { StateMachine } from './stateMachine.js';
 import { CharacterRig } from './characterRig.js';
 import { DEFAULT_COMPANION_PARAMS } from './companionParams.js';
-import { applyOutfit, refitOutfit, reshirt, OUTFITS } from './outfit.js';
+import { applyOutfit, refitOutfit, reshirt, withJumper, OUTFITS } from './outfit.js';
 import { shapeFigure } from './figure.js';
 import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 import { drivingStates, drivingMethods } from './companionDriving.js';
@@ -130,6 +130,12 @@ export class Companion {
   /** Her shirt in the colour of her favourite quad, which isn't known until the game has dealt them out. */
   setShirt(color) {
     this.outfit = reshirt(this.rig, this.outfit, color);
+  }
+
+  /** Puts a jumper on (a colour), or takes it off (null), refitting what's under it. */
+  setJumper(color) {
+    this.outfit = withJumper(this.outfit, color);
+    refitOutfit(this.rig, this.outfit);
   }
 
   randomBetween(a, b) {

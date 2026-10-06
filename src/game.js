@@ -37,6 +37,8 @@ import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
 import { Convoy, CONVOY_PARAM_RANGES } from './npc/convoy.js';
 import { DoughnutWatch, DOUGHNUT_PARAM_RANGES } from './npc/doughnuts.js';
 import { Tea, TEA_PARAM_RANGES } from './npc/tea.js';
+import { Jumpers, JUMPER_PARAM_RANGES, JUMPERS } from './npc/jumpers.js';
+import { JumperRail } from './world/jumperRail.js';
 import { DieselMistake, DIESEL_MISTAKE_PARAM_RANGES } from './npc/dieselMistake.js';
 import { Mugs } from './items/mug.js';
 import { buildStartLine, nearestTrackFraction } from './world/startLine.js';
@@ -325,6 +327,8 @@ export class Game {
     this.dieselJob = null; // her pouring: { spec, left }
     this.mugs = new Mugs(this.scene, (x, z) => this.world.heightAt(x, z), this.tea.p.stainFor);
     this.teaMugs = {}; // girl id -> the mug on a rack
+    this.jumpers = new Jumpers(); // jumpers from the barn rail on cold or wet days (npc/jumpers.js)
+    this.jumperRail = new JumperRail(this.scene, this.world.layout, (x, z) => this.world.heightAt(x, z));
     this.convoy = new Convoy(); // follow the leader, swapping places (npc/convoy.js)
     this.convoyIdle = {};
     this.race = new Race();
@@ -608,6 +612,7 @@ export class Game {
     registerTuning('Follow the leader', this.convoy.p, CONVOY_PARAM_RANGES);
     registerTuning('Doughnuts', this.doughnutWatch.p, DOUGHNUT_PARAM_RANGES);
     registerTuning('Tea on the rack', this.tea.p, TEA_PARAM_RANGES);
+    registerTuning('Jumpers', this.jumpers.p, JUMPER_PARAM_RANGES);
     registerTuning('Red diesel mistake', this.dieselMistake.p, DIESEL_MISTAKE_PARAM_RANGES);
     registerTuning('Reading the dash', this.dashReader.p, READING_PARAM_RANGES);
     registerTuning('Jump leads', this.leads.params, JUMP_LEAD_PARAM_RANGES);
@@ -1455,6 +1460,32 @@ export class Game {
     this.mugs.update(dt);
   }
 
+  // Jumpers from the barn ------------------------------------------------------
+
+  updateJumpers(dt) {
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot, x: c.root.position.x, z: c.root.position.z }));
+    const rail = this.world.layout.jumperRail;
+    for (const e of this.jumpers.update(dt, { weather: this.weather, girls, rail })) {
+      const c = byId[e.girl];
+      const colour = JUMPERS.find((j) => j.id === e.jumper).color;
+      const act = e.type === 'fetch'
+        ? () => {
+            this.jumpers.dressed(e.girl, e.jumper);
+            c.setJumper(colour);
+            c.voice.say('jumperOn', { urgent: true, chance: 0.9 });
+            this.jumperRail.show(this.jumpers.onRail().map((j) => j.id));
+          }
+        : () => {
+            this.jumpers.hung(e.girl);
+            c.setJumper(null);
+            c.voice.say('jumperOff', { urgent: true, chance: 0.8 });
+            this.jumperRail.show(this.jumpers.onRail().map((j) => j.id));
+          };
+      if (!c.sneakTo(rail.stand, act)) this.jumpers.cancel(e.girl);
+    }
+  }
+
   // Red diesel by mistake ----------------------------------------------------
 
   /** Jess takes the diesel can to a low quad and pours it in; Amy, near enough to see, tells her off. */
@@ -2053,6 +2084,7 @@ export class Game {
     this.updateHeadStart(dt, ridden);
     this.updateDoughnuts(dt);
     this.updateTea(dt, ridden);
+    this.updateJumpers(dt);
     this.updateDieselMistake(dt, ridden);
     this.updateRecall(dt);
     if (!this.recalling) this.updateConvoy(dt, ridden);

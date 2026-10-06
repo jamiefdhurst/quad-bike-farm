@@ -40,6 +40,9 @@ export const LAYOUT = {
   },
   // The workbench along the north wall: where the toolbox sits (its height is `lift`).
   bench: { x: -62.3, z: 56.1, length: 3.2, depth: 0.7, height: 0.92 },
+  // The freestanding clothes rack by the barn's south wall where the two jumpers hang (npc/jumpers.js): its bar runs along x at height `y`, `length`
+  // long, so they hang edge-on to the wall. A girl stands at `stand`, at the end of the rack, to take one down or hang it up.
+  jumperRail: { x: -61.2, z: 63.2, y: 1.7, length: 1.3, stand: { x: -60.0, z: 63.2 } },
   // The bay painted on the barn floor in front of the bench: park a quad here to work on it at the bench (workshop/bench.js).
   bay: { x: -62.3, z: 58.5, halfX: 1.5, halfZ: 1.1, yaw: 0 },
   yard: { x: -54, z: 58, radius: 20 },

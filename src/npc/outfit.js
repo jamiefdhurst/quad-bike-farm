@@ -174,10 +174,10 @@ function attachToBone(rig, mesh, boneName) {
  * A garment made from part of her own body mesh: the triangles `wear` picks,
  * pushed out along the surface by `offset` metres, and skinned to the same
  * skeleton, so it bends exactly as she does (walking, sitting, her figure).
- * `wear(p, bone, i)` and `offset(p)` get root-space rest-pose positions; `bone`
+ * `wear(p, bone, i)` and `offset(p, bone)` get root-space rest-pose positions; `bone`
  * is the name of the bone the vertex follows most and `i` its index in the body mesh.
  */
-function skinnedGarment(rig, name, color, wear, offset) {
+function skinnedGarment(rig, name, color, wear, offset, { smooth = false } = {}) {
   const body = bodyMesh(rig);
   if (!body) return null;
   const g = body.geometry;
@@ -193,13 +193,29 @@ function skinnedGarment(rig, name, color, wear, offset) {
   const n = pos.count;
   const rootPos = [];
   const keep = [];
+  const boneOf = [];
   const v = new THREE.Vector3();
   for (let i = 0; i < n; i++) {
     const p = toRoot(v.fromBufferAttribute(pos, i));
     rootPos.push(p);
     let best = 0;
     for (let k = 1; k < 4; k++) if (sw.getComponent(i, k) > sw.getComponent(i, best)) best = k;
-    keep.push(wear(p, boneNames[si.getComponent(i, best)] ?? '', i));
+    boneOf.push(boneNames[si.getComponent(i, best)] ?? '');
+    keep.push(wear(p, boneOf[i], i));
+  }
+  // The body is flat shaded, so the vertices on a corner each carry their own face's normal. A big offset along those pulls
+  // the faces apart into cracks; `smooth` pushes every vertex at the same spot along their average instead.
+  const pushDir = [];
+  if (smooth) {
+    const sums = new Map();
+    const key = (i) => `${Math.round(pos.getX(i) * 1e4)},${Math.round(pos.getY(i) * 1e4)},${Math.round(pos.getZ(i) * 1e4)}`;
+    for (let i = 0; i < n; i++) {
+      const k = key(i);
+      const sum = sums.get(k) ?? new THREE.Vector3();
+      sum.add(v.fromBufferAttribute(nrm, i));
+      sums.set(k, sum);
+    }
+    for (let i = 0; i < n; i++) pushDir.push(sums.get(key(i)).clone().normalize());
   }
   const index = g.index ? g.index.array : [...Array(n).keys()];
   const tris = [];
@@ -218,8 +234,9 @@ function skinnedGarment(rig, name, color, wear, offset) {
   for (const i of tris) {
     if (!remap.has(i)) {
       remap.set(i, P.length / 3);
-      const d = offset(rootPos[i]) * unit;
-      P.push(pos.getX(i) + nrm.getX(i) * d, pos.getY(i) + nrm.getY(i) * d, pos.getZ(i) + nrm.getZ(i) * d);
+      const d = offset(rootPos[i], boneOf[i]) * unit;
+      const push = smooth ? pushDir[i] : { x: nrm.getX(i), y: nrm.getY(i), z: nrm.getZ(i) };
+      P.push(pos.getX(i) + push.x * d, pos.getY(i) + push.y * d, pos.getZ(i) + push.z * d);
       N.push(nrm.getX(i), nrm.getY(i), nrm.getZ(i));
       for (let k = 0; k < 4; k++) {
         SI.push(si.getComponent(i, k));
@@ -546,6 +563,12 @@ export function withShirt(outfit, color) {
   return { ...outfit, colors: { ...outfit.colors, shirt: hex }, ...(outfit.collar ? { collar: hex } : {}) };
 }
 
+/** The outfit with a jumper over it (a colour), or with it taken off (null). */
+export function withJumper(outfit, color) {
+  const { jumper, ...rest } = outfit;
+  return color ? { ...rest, jumper: color } : rest;
+}
+
 /** Puts her in the same outfit with a different shirt, once the colour is known. */
 export function reshirt(rig, outfit, color) {
   const next = withShirt(outfit, color);
@@ -560,10 +583,50 @@ export function reshirt(rig, outfit, color) {
   return next;
 }
 
-function addGarments(rig, outfit) {
-  if (outfit.collar) {
-    addPoloFront(rig, outfit.collar, addCollar(rig, outfit.collar));
+/**
+ * A jumper, deliberately too big: her torso and arms down to the wrist, standing well off her body, with a wide round neck
+ * that shows the polo's collar and placket, and a hem that hangs over her hips.
+ */
+function addJumper(rig, color, shirtHex) {
+  const body = bodyMesh(rig);
+  if (!body || !rig.bones.Neck || !rig.bones.Hips || !rig.bones.LeftUpLeg) return;
+  const info = shirtHex ? shirtVertices(rig, body, shirtHex) : null;
+  const neck = bonePos(rig, 'Neck');
+  let top = neck.y + 0.03;
+  if (info) {
+    // The shirt's own neckline, up the middle of the neck, so the jumper's neck sits where the polo's did.
+    let found = -Infinity;
+    info.positions.forEach((p, i) => {
+      if (info.shirt[i] && Math.hypot(p.x - neck.x, p.z - neck.z) < 0.1) found = Math.max(found, p.y);
+    });
+    if (Number.isFinite(found)) top = found;
   }
+  // The hem hangs well over the shorts' waistband, which is at her spine bone.
+  const hem = (rig.bones.Spine ? bonePos(rig, 'Spine') : bonePos(rig, 'Hips')).y - 0.11;
+  const neckBand = 0.035;
+  const scoop = top - 0.1; // the neckline at the front and back: a wide round neck, with the collar and the top of the placket showing
+  const wide = 0.1; // beyond this far from the middle of her neck the jumper goes right up over the shoulders
+  const hemBand = 0.04;
+  const sleeve = /Shoulder|Arm/; // Arm also matches ForeArm; the hand is left bare
+  skinnedGarment(
+    rig,
+    'jumper',
+    color,
+    (p, bone) => (sleeve.test(bone) ? true : !/Leg|Foot|Toe|Hand|Head|Neck/.test(bone) && p.y <= (Math.abs(p.x - neck.x) > wide ? top : scoop) && p.y >= hem),
+    (p, bone) => {
+      if (sleeve.test(bone)) return 0.024;
+      // Baggy through the body, a snug-ish rib at the neck and a hem that hangs out a touch.
+      const rib = 0.008 * smooth01((p.y - (scoop - neckBand)) / neckBand);
+      const flare = 0.006 * smooth01((hem + hemBand - p.y) / hemBand);
+      return 0.03 + rib + flare;
+    },
+    { smooth: true },
+  );
+}
+
+function addGarments(rig, outfit) {
+  if (outfit.collar) addPoloFront(rig, outfit.collar, addCollar(rig, outfit.collar));
+  if (outfit.jumper) addJumper(rig, outfit.jumper, outfit.colors?.shirt);
   if (outfit.shorts) addShorts(rig, outfit.shorts);
   if (outfit.wellies) addWellies(rig, outfit.wellies);
 }
