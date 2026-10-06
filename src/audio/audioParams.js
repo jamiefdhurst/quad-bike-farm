@@ -182,7 +182,7 @@ export const DEFAULT_AUDIO_PARAMS = {
   starterDip: 0.45, // extra audible slowdown on each compression stroke
   solenoidVolume: 0.5,
   pingVolume: 0.12, // pinking and the metal ticking as it cools
-  silencerLoud: 0.9, // how much louder the exhaust is with the silencer off
+  silencerLoud: 2.5, // how much louder the exhaust is with the silencer off (the output's tanh squashes the top, so it needs plenty)
   silencerBright: 0.8, // and how much more open its tone is
   fanVolume: 0.05, // the water-cooled quad's radiator fan
 
@@ -265,7 +265,7 @@ export const AUDIO_PARAM_RANGES = {
   starterDip: [0, 1, 0.01],
   solenoidVolume: [0, 2, 0.01],
   pingVolume: [0, 1, 0.01],
-  silencerLoud: [0, 3, 0.05],
+  silencerLoud: [0, 6, 0.05],
   silencerBright: [0, 3, 0.05],
   fanVolume: [0, 0.3, 0.005],
   coughVolume: [0, 2, 0.01],
