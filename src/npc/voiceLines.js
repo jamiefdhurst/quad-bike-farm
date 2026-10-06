@@ -16,6 +16,7 @@ import { AMY_KNACK_LINES } from './knackLines.js';
 import { AMY_OIL_LINES } from './oilLines.js';
 import { AMY_HEAT_LINES } from './heatLines.js';
 import { AMY_SILENCER_LINES } from './silencerLines.js';
+import { AMY_DIAGNOSIS_LINES } from './diagnosisLines.js';
 import { AMY_FAULT_LINES } from './faultLines.js';
 import { AMY_BENCH_LINES } from './benchLines.js';
 
@@ -1361,6 +1362,8 @@ export const VOICE_LINES = {
   ...AMY_SILENCER_LINES,
   // Faults that develop (faultLines.js).
   ...AMY_FAULT_LINES,
+  // Listening to a running quad (diagnosisLines.js).
+  ...AMY_DIAGNOSIS_LINES,
   // The barn bench (benchLines.js).
   ...AMY_BENCH_LINES,
 };

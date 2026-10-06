@@ -41,6 +41,7 @@ export const CHARACTERS = [
       boredStartChance: 0.25,
       boredDriveChance: 0.4,
       driveConfidence: 0.7,
+      diagnoseAccuracy: 0.5, // sure of herself, wrong about half the time
       faultNoticeFrom: 0.6, // not watching the quad, only what's fun
       startPullWhenFlat: 1, // on a flat battery she'd rather yank the pull-start than give up
       driveScaredChance: 0.25,

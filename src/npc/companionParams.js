@@ -86,6 +86,12 @@ export const DEFAULT_COMPANION_PARAMS = {
   driveForMax: 85,
   driveScaredChance: 0.4, // she stops because she's scared rather than bored
   faultNoticeFrom: 0.3, // how bad a developing fault (puncture, slipping belt, sticking cable, dirty carb) has to be before she notices it
+  diagnoseAccuracy: 0.9, // how often her guess at what's wrong with a running quad is right
+  diagnoseChance: 0.03, // per second stood by a running quad, that she says what she thinks is wrong with it
+  diagnoseColdBelow: 0.35, // engine temperature (0 cold, 1 warm) under which it sounds cold
+  diagnoseRichFrom: 0.2, // how rich the mixture has to be before it sounds rich
+  diagnoseFoulFrom: 0.35, // how fouled the plug has to be before it sounds like it
+  diagnoseWearFrom: 0.2, // how worn the engine has to be before it sounds tired
   startPullWhenFlat: 0, // chance that on a flat battery she has a go at the pull-start (two-strokes) instead of giving up
   driveForgetChokeChance: 0.45, // she pushes the choke off as she sets off, cold or not
   driveMaxStalls: 2, // stalls before she gives up on it
@@ -243,6 +249,12 @@ export const COMPANION_PARAM_RANGES = {
   driveForMax: [5, 400, 1],
   driveScaredChance: [0, 1, 0.05],
   faultNoticeFrom: [0, 1, 0.05],
+  diagnoseAccuracy: [0, 1, 0.05],
+  diagnoseChance: [0, 0.3, 0.005],
+  diagnoseColdBelow: [0, 1, 0.05],
+  diagnoseRichFrom: [0, 0.9, 0.05],
+  diagnoseFoulFrom: [0, 0.9, 0.05],
+  diagnoseWearFrom: [0, 0.9, 0.05],
   startPullWhenFlat: [0, 1, 0.05],
   driveForgetChokeChance: [0, 1, 0.05],
   driveMaxStalls: [0, 6, 1],

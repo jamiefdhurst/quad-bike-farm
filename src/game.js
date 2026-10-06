@@ -627,6 +627,15 @@ export class Game {
     this.banterWatch ??= new BanterWatch();
     const triggers = this.banterWatch.triggers(dt, { companions: this.companions, ridden, you: this.camera.position, wheelOpen: this.menu.isOpen, rivalry: this.favour.rivalry() });
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    // Jess has just guessed wrong about a running quad with Amy close by: she puts her right.
+    const said = byId.jess?.voice?.lastDiagnosis;
+    if (said) {
+      byId.jess.voice.lastDiagnosis = null;
+      const amy = byId.amy;
+      if (amy && !amy.fsm.is('driving', 'starting') && amy.voice.head.distanceTo(byId.jess.voice.head) < 10) {
+        triggers.push({ when: 'corrected', edge: true, roles: { guesser: 'jess', corrector: 'amy', guess: said.guess, truth: said.truth } });
+      }
+    }
     const speak = (speaker, text, opts) => (byId[speaker]?.params.voice ? byId[speaker].voice.speak(text, opts) : 0);
     this.banter.update(dt, triggers, speak, this.talkFloor.left <= 0 && !this.menu.isOpen);
     this.talkFloor.banter = this.banter.busy;

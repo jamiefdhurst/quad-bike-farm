@@ -4,12 +4,14 @@ import { VOICE_LINES } from './voiceLines.js';
 import { band } from './skills.js';
 import { Speech } from '../audio/companionAudio.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
+import { engineCondition, guessCondition } from './diagnosis.js';
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
 
 // Captions for her recorded sounds.
 const SOUND_CAPTIONS = { sigh: '(sighs)', hum: '(hums)', laugh: '(laughs)', yawn: '(yawns)', gasp: '(gasps)', hmm: 'Hmm?', oh: 'Oh.' };
 
+const DIAGNOSE_SITUATION = { cold: 'diagnoseCold', rich: 'diagnoseRich', fouled: 'diagnoseFouled', worn: 'diagnoseWorn', fine: 'diagnoseFine' };
 const FAULT_SITUATION = { puncture: 'faultPuncture', belt: 'faultBelt', cable: 'faultCable', carb: 'faultCarb' };
 
 // Mistakes that show a skill she's short on.
@@ -479,6 +481,7 @@ export class CompanionVoice {
       this.watchHeat(unit, near || hers);
       if (e.silencerOff && e.isRunning && (near || hers)) this.say('silencerLoud', { chance: 0.015 });
       this.watchFaults(unit, w, near || hers);
+      this.watchDiagnosis(dt, unit, w);
       // Cranking on and on without it catching.
       if (e.state === 'cranking' && w.cranking > 5 && near) {
         this.say(this.crankHint(unit), { chance: 0.02 });
@@ -525,6 +528,23 @@ export class CompanionVoice {
       const hers = unit.quad === this.companion.quad;
       if (this.say(FAULT_SITUATION[kind], { urgent: hers, chance: hers ? 0.03 : 0.01 })) w.faultSaid[kind] += 1;
     }
+  }
+
+  /**
+   * Stood by a running quad, she listens and says what she thinks is wrong with it (diagnosis.js). Her guess is
+   * only as good as she is; a wrong one is left in `lastDiagnosis` for the game to have her friend put right.
+   */
+  watchDiagnosis(dt, unit, w) {
+    const c = this.companion;
+    const e = unit.engine;
+    if (!e.isRunning || !c.fsm.is('idle', 'resting') || unit.quad.position.distanceTo(this.head) > 6) return;
+    if (this.chatter.time < (w.diagnosedUntil ?? 0)) return;
+    const p = c.params;
+    const truth = engineCondition(e, p);
+    const guess = guessCondition(truth, p.diagnoseAccuracy);
+    if (!this.say(DIAGNOSE_SITUATION[guess], { chance: p.diagnoseChance * dt })) return;
+    w.diagnosedUntil = this.chatter.time + 120; // once per quad every couple of minutes, so she doesn't keep guessing it
+    if (guess !== truth) this.lastDiagnosis = { guesser: c.character.id, guess, truth };
   }
 
   /** Which kind of "it won't start" remark fits what she can see. */

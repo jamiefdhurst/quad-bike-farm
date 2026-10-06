@@ -9,6 +9,8 @@
 // order as [speaker, text], with `shout: true` for lines called across a
 // distance. After editing, re-record both voices (tools/generate_companion_voice.py).
 
+import { DIAGNOSIS_BANTER } from './diagnosisLines.js';
+
 export const BANTER = [
   // Standing about together, near you --------------------------------------
   { when: 'idle', lines: [['jess', 'Nice polo, Amy. Did your mum pick it?'], ['amy', 'At least mine fits, Jess.']] },
@@ -80,4 +82,5 @@ export const BANTER = [
   { when: 'sharing', roles: { driver: 'jess', passenger: 'amy' }, lines: [['jess', 'Comfy back there, Amy?'], ['amy', 'Just drive.']] },
   { when: 'sharing', roles: { driver: 'amy', passenger: 'jess' }, lines: [['jess', 'Any chance of second gear today?'], ['amy', "It doesn't have gears, Jess."], ['jess', 'Well, find some.']] },
   { when: 'sharing', roles: { driver: 'amy', passenger: 'jess' }, lines: [['amy', "Stop wriggling, you'll have us over."], ['jess', "I'm bored. Faster!"]] },
+  ...DIAGNOSIS_BANTER,
 ];
