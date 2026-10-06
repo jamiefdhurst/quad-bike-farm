@@ -123,10 +123,11 @@ export class Game {
     const fleet = pickFleet(QUAD_SPECS, EXTRA_SPECS, createRandom(this.seed ^ 0x51ee7));
     const { placed: spawns, home } = randomiseQuadSpawns(this.world.spawn, fleet.length, random);
 
+    const plateRandom = createRandom(this.seed ^ 0x91a7e);
     this.units = fleet.map(
       (spec, i) =>
         new QuadUnit({
-          spec,
+          spec: spec.plateNumbers ? { ...spec, plateNumber: spec.plateNumbers[Math.floor(plateRandom() * spec.plateNumbers.length)] } : spec,
           spawn: spawns[i],
           scene: this.scene,
           physics: this.physics,
