@@ -409,7 +409,7 @@ export class Quad {
     const idle = !this.towed && ((!this.input && !this.ghost && !this.driver) || (throttleInput === 0 && Math.abs(fwd) < 0.5));
     if (this.driver) this.parkBrake = false; // she takes it off before she sets off
     if (idle) brake = Math.max(brake, p.parkingBrake);
-    if (this.parkBrake && this.input) brake = p.maxBrake;
+    if (this.parkBrake && (this.input || this.ghost)) brake = p.maxBrake; // a stuck throttle with nobody on it doesn't undo it
     brake = Math.max(brake, p.rollingResistance);
     // Wheel brakes alone let a parked quad creep down a slope, so a stationary one is held.
     this.physics.setParked((idle && throttleInput === 0 && Math.abs(fwd) < 0.3) || (this.parkBrake && Math.abs(fwd) < 0.3));
