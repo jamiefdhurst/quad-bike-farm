@@ -335,6 +335,7 @@ export class EngineAudio {
         running: engine.isRunning,
         cranking: engine.state === 'cranking',
         fan: engine.fan,
+        loud: engine.silencerOff ? 1 : 0,
         revsPerCycle: engine.revsPerCycle,
       },
       events,

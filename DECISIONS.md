@@ -644,3 +644,13 @@ Item 23, chosen as the first with nothing done. The farm has puddles but no ford
 - Steam: the exhaust smoke gets denser and whiter with `water` (`waterDensity` 0.8).
 - A puddle's high-water zone is only about 2 m across, so crossing it at 10 m/s takes about a quarter of a second. I first set the rate at 3.5 and a headless run through a puddle at 6 m/s took on only 0.13, so I raised it to 6 by arithmetic, not by trying it again.
 - Checked: unit tests, and the game loads without errors headless. Not checked: how it feels and sounds crossing a puddle at different speeds in play, the steam by eye, or whether 5 to 6 m/s is the right point to start spluttering. The girls say nothing about it yet, and the AI drivers don't slow for puddles.
+
+## Silencer off (2026-10-06)
+
+Item 24. The item settled the effects; I chose the rest without asking: one on/off toggle per quad in the toolbox panel rather than a hands-on bench job, and no downside beyond the noise and the girls' opinions.
+
+- `X` in the toolbox panel (or its button) sets `engine.silencerOff`. "Back to stock" refits it. It lasts for the game and works on any quad, switched off, like the other panel jobs.
+- Engine (`engineParams.js`, all with ranges): `silencerPower` 0.08 multiplies the power by 1.08 (the drivetrain treats power as a fraction, so this nudges the pull slightly past a healthy engine's; I didn't raise the rev limit, since that's clamped by the spec), and `silencerPop` 0.5 is added to the overrun propensity, so a healthy four-stroke that never pops now does, and a two-stroke does a lot more.
+- Sound (`audioParams.js`): `silencerLoud` 0.9 raises the exhaust level by 90% and `silencerBright` 0.8 opens the low-pass by 80%. Done for both the recorded and synthesised engines through a `loud` flag in the state sent to the worklet. These are first guesses by arithmetic.
+- The girls (`silencerLines.js`): `silencerOff` and `silencerOn` when you do it near her, and `silencerLoud` now and then when a quad with it off is running near her or under her. Amy covers her ears; Jess loves it. Both banks are re-recorded.
+- Checked: unit tests (`tests/silencer.test.js`). Not checked: how loud or bright it sounds against the standard engine, whether 8% more power can be felt, or the toolbox panel's layout with the extra button.

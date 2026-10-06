@@ -29,6 +29,8 @@ const REPAIR_NOTHING = {
   cable: 'Throttle cable runs freely',
   carb: 'Carb is clean',
 };
+const SILENCER_OFF = 'Took the silencer off: it will be a lot louder, and a bit stronger';
+const SILENCER_ON = 'Put the silencer back on';
 const REPAIR_KEYS = { KeyT: 'puncture', KeyR: 'belt', KeyL: 'cable', KeyC: 'carb' };
 
 const rpm = (n) => `${Math.round(n).toLocaleString('en-GB')} rpm`;
@@ -216,6 +218,16 @@ export class Workshop {
     if (done) for (const c of this.game.companions) c.voice.onTinker?.('service');
   }
 
+  /** Takes the silencer off, or puts it back. */
+  toggleSilencer() {
+    const unit = this.unit;
+    if (!unit) return;
+    unit.engine.silencerOff = !unit.engine.silencerOff;
+    this.game.hud.toast(unit.engine.silencerOff ? SILENCER_OFF : SILENCER_ON);
+    this.render();
+    for (const c of this.game.companions) c.voice.onTinker?.(unit.engine.silencerOff ? 'silencerOff' : 'silencerOn');
+  }
+
   isServiced(unit) {
     const best = unit.spec.roughnessRange?.[0] ?? unit.engine.params.baseRoughness;
     return unit.engine.wear < 0.005 && unit.engine.params.baseRoughness <= best + 0.001;
@@ -223,7 +235,9 @@ export class Workshop {
 
   backToStock() {
     const q = this.quads.get(this.unit);
-    if (isStock(q.settings, q.stock, this.params)) return;
+    const e = this.unit.engine;
+    if (isStock(q.settings, q.stock, this.params) && !e.silencerOff) return;
+    e.silencerOff = false;
     this.apply(stockSettings(q.stock, this.params));
     for (const c of this.game.companions) c.voice.onTinker?.('stock');
   }
@@ -254,6 +268,7 @@ export class Workshop {
     if (pressed('ArrowDown', 'KeyS')) this.select((this.selected + 1) % ROWS.length);
     if (pressed('KeyB', 'Backspace')) this.backToStock();
     if (pressed('KeyV')) this.service();
+    if (pressed('KeyX')) this.toggleSilencer();
     if (pressed('KeyF')) this.stripDown();
     for (const [code, kind] of Object.entries(REPAIR_KEYS)) if (pressed(code)) this.repair(kind);
     const key = ROWS[this.selected].key;
@@ -327,6 +342,7 @@ export class Workshop {
         <div class="ws-foot">
           <button type="button" class="ws-btn ws-reset"><span class="key">B</span>Back to stock</button>
           <button type="button" class="ws-btn ws-strip"><span class="key">F</span>Strip it down</button>
+          <button type="button" class="ws-btn ws-silencer"><span class="key">X</span>Take the silencer off</button>
           <button type="button" class="ws-btn ws-service"><span class="key">V</span>Service it</button>
           <button type="button" class="ws-btn ws-fix" data-fix="puncture"><span class="key">T</span>Pump and patch tyres</button>
           <button type="button" class="ws-btn ws-fix" data-fix="belt"><span class="key">R</span>Check the belt</button>
@@ -334,7 +350,7 @@ export class Workshop {
           <button type="button" class="ws-btn ws-fix" data-fix="carb"><span class="key">C</span>Clean the carb</button>
           <button type="button" class="ws-btn ws-done"><span class="key">E</span>Done</button>
         </div>
-        <div class="ws-keys">↑ ↓ choose   ·   ← → adjust (hold to keep going)   ·   V service   ·   F strip down   ·   T tyres   ·   R belt   ·   L cable   ·   C carb   ·   or use the mouse</div>
+        <div class="ws-keys">↑ ↓ choose   ·   ← → adjust (hold to keep going)   ·   V service   ·   X silencer   ·   F strip down   ·   T tyres   ·   R belt   ·   L cable   ·   C carb   ·   or use the mouse</div>
       </div>`;
     document.body.appendChild(el);
     this.el = el;
@@ -364,6 +380,7 @@ export class Workshop {
       }
     });
     el.querySelector('.ws-reset').addEventListener('click', () => this.backToStock());
+    el.querySelector('.ws-silencer').addEventListener('click', () => this.toggleSilencer());
     el.querySelector('.ws-service').addEventListener('click', () => this.service());
     el.querySelector('.ws-strip').addEventListener('click', () => this.stripDown());
     for (const b of el.querySelectorAll('.ws-fix')) b.addEventListener('click', () => this.repair(b.dataset.fix));
@@ -396,7 +413,8 @@ export class Workshop {
       less.disabled = settings[r.key] <= lo;
       more.disabled = settings[r.key] >= hi;
     });
-    this.el.querySelector('.ws-reset').disabled = isStock(settings, stock, P);
+    this.el.querySelector('.ws-reset').disabled = isStock(settings, stock, P) && !unit.engine.silencerOff;
+    this.el.querySelector('.ws-silencer').lastChild.textContent = unit.engine.silencerOff ? 'Put the silencer back' : 'Take the silencer off';
     // How it's running: roughness from its build plus wear, which a service clears.
     const e = unit.engine;
     const rough = Math.min(1, e.params.baseRoughness + e.wear);

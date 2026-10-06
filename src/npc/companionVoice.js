@@ -94,7 +94,7 @@ export class CompanionVoice {
   }
 
   onTinker(kind) {
-    const [situation, chance] = { open: ['tinkerOpen', 0.6], adjust: ['tinker', 0.25], limiter: ['tinkerLimiter', 0.9], stock: ['tinkerStock', 0.6], service: ['tinkerService', 0.8], fast: ['tunedFast', 0.02] }[kind] ?? [];
+    const [situation, chance] = { open: ['tinkerOpen', 0.6], adjust: ['tinker', 0.25], limiter: ['tinkerLimiter', 0.9], stock: ['tinkerStock', 0.6], service: ['tinkerService', 0.8], silencerOff: ['silencerOff', 0.9], silencerOn: ['silencerOn', 0.8], fast: ['tunedFast', 0.02] }[kind] ?? [];
     if (!situation || this.head.distanceTo(this.listener) > Math.min(15, this.params.voiceRange)) return null;
     return this.say(situation, { urgent: true, chance });
   }
@@ -477,6 +477,7 @@ export class CompanionVoice {
       this.watchOil(dt, unit, w, near || hers);
       if (unit.id === 'blue' && e.isRunning && unit.quad.choke > 0.3 && e.rich > 0.2 && (near || hers)) this.say('chokeOffBlue', { chance: 0.01 });
       this.watchHeat(unit, near || hers);
+      if (e.silencerOff && e.isRunning && (near || hers)) this.say('silencerLoud', { chance: 0.015 });
       this.watchFaults(unit, w, near || hers);
       // Cranking on and on without it catching.
       if (e.state === 'cranking' && w.cranking > 5 && near) {

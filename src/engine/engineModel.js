@@ -61,6 +61,7 @@ export class EngineModel {
     this.overheat = 0; // 0..1 extra heat from poor lubrication, on top of the temperature
     this.scuff = 0; // 0..1 damage from running without oil; at 1 it seizes
     this.nip = 0; // 0..1 how far it's nipping up
+    this.silencerOff = false; // a toolbox job: louder, a bit stronger, crackles more
     this.seized = false; // locked solid: nothing turns it until it's stripped down
     this.heat = 0; // 0..1 running too hot (see heat.js)
     this.fan = false; // the radiator fan's on (water-cooled only)
@@ -431,6 +432,7 @@ export class EngineModel {
     this.power *= 1 - p.dirtPowerLoss * this.dirt;
     this.power *= 1 - p.pinkPowerLoss * this.pink;
     this.power *= 1 - p.waterPowerLoss * this.water;
+    if (this.silencerOff) this.power *= 1 + p.silencerPower;
     // Stumbling, it's got almost nothing.
     if (this.stumbleLeft > 0) this.power *= p.stumblePower;
   }

@@ -125,7 +125,9 @@ Pick up the red toolbox from the workbench in the barn (`E`), take it to a quad 
 - **Clutch springs**: softer bites sooner, stiffer later; it always bites above the idle.
 - **Tyre pressures**: softer grips better (especially in mud) but bounces more.
 
-"Back to stock" puts everything back exactly. Engines also wear as they run (faster when worked hard), getting rougher: a lumpy, hunting idle and a lot more shake. The panel says how it's running, and **Service it** (`V`) clears the wear and leaves it as sweet as that quad gets. Changes last for the game. `G` puts the toolbox down; you can't ride while carrying it. She has opinions about all of this.
+**Silencer off** (`X`) is a separate job: the quad gets a lot louder and a more open, rasping tone, about 8% more power, and it crackles and bangs far more when you shut the throttle at speed. `X` again puts it back. Jess loves it; Amy covers her ears and tells you to turn it off.
+
+"Back to stock" puts everything back exactly, silencer included. Engines also wear as they run (faster when worked hard), getting rougher: a lumpy, hunting idle and a lot more shake. The panel says how it's running, and **Service it** (`V`) clears the wear and leaves it as sweet as that quad gets. Changes last for the game. `G` puts the toolbox down; you can't ride while carrying it. She has opinions about all of this.
 
 ## Fuel
 
@@ -308,7 +310,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 21. Each quad has a knack. The green only starts cold if you blip the throttle twice before cranking; the blue wants its choke off sooner than the others. Nothing tells you, but the girls know some of them ("you have to tickle it first"). **Done.** The green won't fire from cold until you blip the throttle twice (tap `W` twice, then crank); the blue's choke runs it rich as soon as it warms, so ease it off early. Nothing on the dash says so. The girls know both: they do the green's blips themselves (or remember them after a failed go), and hint if you struggle with it cold.
 22. Popping on the overrun. Lean engines and the two-strokes crackle and bang when you shut the throttle from high revs, more so when worn, with a flash from the pipe in poor light. **Done.** Lean engines, worn ones and the two-strokes crackle and bang when you shut the throttle at speed, with a flash from the pipe in poor light.
 23. Drowning it. Hit a deep puddle or a ford too fast and it gulps water: it splutters, misfires and steams until it dries. Stall it in the water and it won't restart until it has drained. **Done.** Ploughing through a puddle faster than a steady 5 m/s or so makes the engine gulp water: it splutters, misfires, loses power and steams white while it dries out, and at speed it often stalls. A drowned engine won't catch until it has drained (about 45 s standing, quicker running with the throttle open). Wading through slowly is fine. (The farm has puddles but no fords.)
-24. Silencer off. A toolbox job: much louder and a bit stronger. Jess loves it; Amy covers her ears.
+24. Silencer off. A toolbox job: much louder and a bit stronger. Jess loves it; Amy covers her ears. **Done.** `X` in the toolbox panel takes a quad's silencer off (or refits it): the exhaust is much louder and brighter, it has about 8% more power and it crackles on the overrun. Jess cheers it on; Amy complains about her ears.
 25. Diagnosing by ear. Stood by a running quad, a girl has a guess at what's wrong from its real state (rich, fouling, worn, cold). Amy is careful and usually right; Jess is sure of herself and wrong half the time, and argues when corrected.
 26. Mechanical sympathy. Jess thrashes engines cold and Amy tells her off. Wear is tracked by who caused it, so "who's been caning the orange?" has a real answer.
 27. Rev-offs. Blip the throttle near a girl sat on a running quad and she might blip back. Jess always does, and it escalates until something complains.

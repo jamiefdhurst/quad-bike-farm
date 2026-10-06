@@ -187,6 +187,10 @@ export const DEFAULT_ENGINE_PARAMS = {
   popWear: 0.8, // propensity added by a fully worn engine
   popHeat: 0.4, // propensity added by running hot
 
+  // Silencer off (a toolbox job)
+  silencerPower: 0.08, // power gained with the silencer off
+  silencerPop: 0.5, // overrun propensity added with it off (open pipe, so it crackles)
+
   // Run-on: switched off hot, worn or lean, it chugs on for a few beats
   runOnBase: 0, // chance of running on from a healthy, cool engine
   runOnHot: 0.55, // chance added by a fully heat-soaked engine
@@ -361,6 +365,8 @@ export const ENGINE_PARAM_RANGES = {
   popProne: [0, 1, 0.01],
   popLean: [0, 3, 0.05],
   popWear: [0, 3, 0.05],
+  silencerPower: [0, 0.3, 0.01],
+  silencerPop: [0, 2, 0.01],
   popHeat: [0, 3, 0.05],
   runOnBase: [0, 1, 0.01],
   runOnHot: [0, 1, 0.01],

@@ -594,8 +594,9 @@ class EngineProcessor extends AudioWorkletProcessor {
     this.rpm += (st.rpm - this.rpm) * 0.25;
     this.throttle += (st.throttle - this.throttle) * 0.2;
     const rpmNorm = Math.min(1, this.rpm / 8500);
+    const loud = st.loud || 0;
     if ((this.blockCount++ & 7) === 0) {
-      this.tone.set('lowpass', p.toneBase + p.toneRpm * this.rpm + p.toneThrottle * this.throttle, 0.75, sr);
+      this.tone.set('lowpass', (p.toneBase + p.toneRpm * this.rpm + p.toneThrottle * this.throttle) * (1 + p.silencerBright * (st.loud || 0)), 0.75, sr);
     }
 
     const pipeDelay = Math.min(8000, Math.max(8, Math.round(((2 * p.pipeLength) / 343) * sr)));
@@ -694,7 +695,7 @@ class EngineProcessor extends AudioWorkletProcessor {
       // Silencer: two fixed resonances blended with the pipe sound, then a load-dependent tone filter.
       const silenced =
         pipeOut * p.mufflerDirect + this.muffA.run(pipeOut) * p.mufflerGainA + this.muffB.run(pipeOut) * p.mufflerGainB;
-      let s = this.tone.run(silenced) * p.exhaustVolume;
+      let s = this.tone.run(silenced) * p.exhaustVolume * (1 + p.silencerLoud * loud);
 
       // Intake honk and valve ticks.
       s += this.intakeBp.run(this.intakeIn || 0);
@@ -748,7 +749,7 @@ class EngineProcessor extends AudioWorkletProcessor {
     const pulse = p.engineSound === 'pulse';
     if ((this.blockCount++ & 7) === 0) {
       const tone = pulse ? p.pulseTone : p.recToneClosed + (p.recToneOpen - p.recToneClosed) * this.throttle;
-      this.tone.set('lowpass', tone, 0.7, sr);
+      this.tone.set('lowpass', tone * (1 + p.silencerBright * (st.loud || 0)), 0.7, sr);
     }
     const drive = 1 + p.pulseDrive * this.throttle;
     if (pulse) {
@@ -793,7 +794,7 @@ class EngineProcessor extends AudioWorkletProcessor {
         // As revs rise the firings merge: less of the deep thump, more mid-range rasp.
         x = this.pulseMid.run(this.pulseLow.run(x)) * drive;
       }
-      const s = this.tone.run(x) + dry + this.fanSample();
+      const s = this.tone.run(x) * (1 + p.silencerLoud * (st.loud || 0)) + dry + this.fanSample();
       out[i] = Math.tanh(s);
     }
     return true;
