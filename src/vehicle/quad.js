@@ -216,6 +216,16 @@ export class Quad {
     return true;
   }
 
+  /**
+   * The rider got off a quad that wasn't going anywhere while they had the throttle open: it stays revving, as if the cable
+   * stuck there. Call after setRider(null). Lets go when it stalls or tips, or you get back on. Returns whether it held.
+   */
+  holdRev(throttle) {
+    if (this.rider || !this.engine.isRunning || this.isTipped || throttle < this.params.revHoldMin) return false;
+    this.ghost = { steer: this.steer, stuckTime: 0, hold: throttle };
+    return true;
+  }
+
   /** Lets go of the stuck throttle and bars; it coasts and parks like any riderless quad. */
   releaseGhost() {
     this.ghost = null;
@@ -227,6 +237,7 @@ export class Quad {
     const p = this.params;
     const g = this.ghost;
     if (this.isTipped || !this.engine.isRunning) return null;
+    if (g.hold !== undefined) return g.hold; // revving on the spot: the throttle stays where it was left
     // Moving the other way to the way it was going (bounced off something) counts as stuck.
     const along = this.reverse ? -fwd : fwd;
     g.stuckTime = along < this.cruise.target * p.ghostStuckSpeed ? g.stuckTime + dt : 0;

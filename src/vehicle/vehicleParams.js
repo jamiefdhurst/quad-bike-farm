@@ -79,6 +79,7 @@ export const DEFAULT_VEHICLE_PARAMS = {
   cruiseGain: 0.35, // throttle per m/s below the speed it had when you got off
   cruiseIntegral: 0.3, // throttle per m/s per second, to settle on that speed
   ghostStuckSpeed: 0.3, // fraction of that speed; below this it's stuck against something...
+  revHoldMin: 0.15, // least throttle you had open, getting off a quad stood still, for it to stay revving on its own
   ghostStuckTime: 3, // ...and after this many seconds stuck it lets go of the throttle
 };
 
@@ -145,5 +146,6 @@ export const VEHICLE_PARAM_RANGES = {
   cruiseGain: [0, 2, 0.01],
   cruiseIntegral: [0, 1, 0.01],
   ghostStuckSpeed: [0, 1, 0.05],
+  revHoldMin: [0, 1, 0.05],
   ghostStuckTime: [0.5, 15, 0.5],
 };

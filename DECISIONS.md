@@ -940,3 +940,9 @@ Jamie: the sound sometimes stops altogether, perhaps only in Firefox, with nothi
 - Lines (`nickLines.js`): Jess says `nickGo` setting off, `nickLaugh` every 14 s away, `nickBack` on returning; Amy says `nickWatch` 3 s after it starts if she is idle within 60 m, and Amy has `nickGo`, `nickLaugh` and `nickBack` lines only because every situation has to exist in her set; her `nickChance` is 0, so she never says them.
 - Debug panel, Girls folder: "Jess nicks the nearest quad" (any free quad, running or not). Tuning panel has "Nicking your quad".
 - Checked once headless with the away time cut to 12 s: she started the quad, drove it off (fuel 10.00 to 9.71 L, churn 0.35), drove back and got off 2.0 m from where it stood. Not checked: whether the trigger ever fires at a sensible rate in a real game, how the mud looks on the body afterwards, or how the lines sound in play.
+
+## Stuck throttle when you get off revving
+
+- Getting off a quad that is standing still (under the speed that makes you jump) with the throttle at `revHoldMin` 0.15 or more now leaves it revving at that throttle: `Quad.holdRev`, using the same ghost state as the runaway, so the throttle holds until it stalls or tips, you get on again or something switches it off. It uses the throttle value you had when you got off, so a blip of 0.6 stays at 0.6.
+- It will pull away if it has gears to take it, like a stuck cable would. The girls treat it as a runaway because it is in the ghost state; I didn't look at what they make of it in play.
+- Checked once headless by calling `holdRev(0.6)` on a running quad: throttle stayed 0.6 and rpm about 3,800 over three seconds. Not checked: getting off with the real key, or how the girls react.

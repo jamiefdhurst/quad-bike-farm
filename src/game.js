@@ -1943,7 +1943,9 @@ export class Game {
       this.hud.toast('No room to get off here');
       return;
     }
+    const throttle = quad.throttle;
     quad.setRider(null, null);
+    quad.holdRev(throttle); // still revving when you got off: it stays revving
     this.player.dismount(spot, quad.yaw + Math.PI);
   }
 
