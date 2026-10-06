@@ -9,8 +9,8 @@ export const DEFAULT_GRAB_PARAMS = {
   minSpeed: 2, // m/s: you're moving, not stood revving
   maxSpeed: 16, // m/s: she won't add to it going faster than this
   reachTime: 0.7, // seconds to get her hand to the grip
-  holdMin: 1.2, // seconds she keeps it open
-  holdMax: 2.4,
+  holdMin: 5, // seconds she keeps it open
+  holdMax: 10,
   releaseTime: 0.6, // seconds letting go
   throttle: 0.9, // the throttle she holds it at (you can still have more)
   rampTime: 0.35, // seconds to take it from nothing to that
@@ -26,8 +26,8 @@ export const GRAB_PARAM_RANGES = {
   minSpeed: [0, 10, 0.5],
   maxSpeed: [2, 30, 0.5],
   reachTime: [0.1, 3, 0.05],
-  holdMin: [0.2, 6, 0.1],
-  holdMax: [0.2, 10, 0.1],
+  holdMin: [0.2, 20, 0.1],
+  holdMax: [0.2, 30, 0.1],
   releaseTime: [0.1, 3, 0.05],
   throttle: [0.1, 1, 0.05],
   rampTime: [0.05, 2, 0.05],
