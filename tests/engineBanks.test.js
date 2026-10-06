@@ -27,6 +27,18 @@ describe('engine banks', () => {
     expect(TRACTOR_SPEC.audio.recBank).toBe('engine-bank-tractor');
   });
 
+  it("cuts the tractor's idle into whole, matching cycles to be played in order, so its tickover stays even", () => {
+    const bank = JSON.parse(readFileSync('public/audio/engine-bank-tractor.json', 'utf8'));
+    expect(bank.readThrough).toBe(true);
+    const idle = bank.grains.filter((g) => g.kind === 'idle' && g.ok !== false);
+    expect(idle.length).toBeGreaterThan(100);
+    // A four-cylinder at about 1,000 rpm: every grain one 0.12 s cycle, none a beat short or long (0.09 or 0.15 s).
+    for (const g of idle) {
+      expect(g.dur).toBeGreaterThan(0.105);
+      expect(g.dur).toBeLessThan(0.135);
+    }
+  });
+
   it("gives the kids' quad its own bank", () => {
     expect(EXTRA_SPECS.find((s) => s.id === 'kids').audio.recBank).toBe('engine-bank-50');
   });

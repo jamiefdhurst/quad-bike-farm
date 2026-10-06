@@ -53,6 +53,7 @@ export class VibrationModel {
     this.intensity = 0; // smoothed 0..1-ish shake level, handy for HUD and debugging
     this.groundDistance = 0; // metres travelled since the last ground jolt
     this.jolts = []; // sizes of this update's ground jolts (in groundGain units), for the ride sounds
+    this.pending = []; // a multi-cylinder's later firings from a pulse, due after this update (times from the start of the update that queued them)
   }
 
   /** How much of a full kick survives at this rpm. */
@@ -69,7 +70,7 @@ export class VibrationModel {
    */
   update(dt, engine, speed = 0) {
     const p = this.params;
-    const pulses = engine.pulses;
+    const pulses = this.firings(engine, dt);
     const bodyFactor = this.rpmFactor(engine.rpm, p.highRpmFloor);
     const barsFactor = this.rpmFactor(engine.rpm, p.barsHighRpmFloor);
     // Roughness shakes it harder, much more so near the top of the range.
@@ -109,6 +110,27 @@ export class VibrationModel {
 
     const rate = dt > 0 ? kickSum / dt : 0;
     this.intensity += (clamp(rate / 20, 0, 2) - this.intensity) * Math.min(1, 4 * dt);
+  }
+
+  /**
+   * The kicks due in this update. The engine model gives one pulse per cycle, as a single would; a multi-cylinder engine (the
+   * tractor's four) fires `firingsPerCycle` times in that cycle, so each pulse is spread into that many kicks evenly through its
+   * period, and any that fall after this update wait in `pending`.
+   */
+  firings(engine, dt) {
+    const n = Math.max(1, Math.round(this.params.firingsPerCycle ?? 1));
+    if (n === 1 && !this.pending.length) return engine.pulses;
+    const due = [];
+    const later = [];
+    const add = (k) => (k.t <= dt ? due : later).push(k);
+    for (const k of this.pending) add({ ...k, t: k.t - this.lastDt });
+    for (const q of engine.pulses) {
+      const gap = (q.period > 0 ? q.period : 120 / Math.max(engine.rpm, 60)) / n;
+      for (let i = 0; i < n; i++) add({ t: q.t + i * gap, type: q.type, strength: q.strength });
+    }
+    this.pending = later;
+    this.lastDt = dt;
+    return due.sort((a, b) => a.t - b.t);
   }
 
   /** The engine's torque twisting the body on its springs (a kick in rad/s from torqueRock.js). */

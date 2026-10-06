@@ -112,6 +112,9 @@ class RecordedEngine {
     this.sourceGain = bank.sourceGain;
     this.crankRpm = bank.crankRpm;
     this.byKind = {};
+    // Idle grains cut as whole, matching cycles (the tractor's) are played in recording order in the pulse sound, so its own
+    // even rhythm comes through instead of a random grain from somewhere else each cycle.
+    this.readThrough = !!bank.readThrough;
     // Decoded at another sample rate (48 kHz is usual on a Mac), the bank can come out a sample shorter than the
     // times in its index say. Keep every read inside the data: one read past the end is undefined, the NaN it
     // makes sticks in the filters, and the whole mix goes silent for good without an error.
@@ -129,6 +132,7 @@ class RecordedEngine {
         kind: g.kind,
         gain: bank.sourceGain[g.src] ?? 1,
         next: null, // the grain straight after this one in the recording, if it survived the cut
+        ok: g.ok !== false,
       };
       // Grains are stored in recording order; link ones that follow on without a gap.
       if (prev && Math.abs(prev.start + prev.len - grain.start) <= 2) prev.next = grain;
@@ -302,7 +306,9 @@ class RecordedEngine {
         if (p.engineSound === 'pulse') {
           // Revs built from idle: every firing is a recorded idle firing, cut off when the next one fires.
           const louder = Math.min(p.pulseLoudnessCap, Math.pow(Math.max(1, rpm / p.pulseRefRpm), p.pulseRevLoudness));
-          this.playPulse(this.pick(idleKinds, cycleRpm), cycleRpm, gain * louder, ev.period, attack, p);
+          const next = this.readThrough ? this.cursor.low?.next : null;
+          const g = next?.ok && idleKinds.includes(next.kind) ? next : this.pick(idleKinds, cycleRpm);
+          this.playPulse(g, cycleRpm, gain * louder, ev.period, attack, p);
           return true;
         }
         const w = smoothstep(p.recBlendLo, p.recBlendHi, rpm);

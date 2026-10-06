@@ -150,9 +150,10 @@ BANKS = {
             ('shutdown', 't0', 61.4, 63.6),
         ],
         'level': [('idle', 'accel', 't0')],
-        # An uneven tickover: one strong beat in each cycle.
-        'idleTail': 1.0,
-        'idleOdd': 0.35,
+        # A four-cylinder: four beats in each cycle, one of them stronger. Cut the idle into whole cycles that all start on that
+        # strong beat, so every grain is the same shape and length, and let playback read them in recording order.
+        'idleCycles': True,
+        'idleOdd': 0.06,
         'revTail': 0.9,
         'revOdd': 0.3,
     },
@@ -247,6 +248,42 @@ def cut_points(x, peaks, smooth_env):
     return cuts
 
 
+def whole_cycle_cuts(x, lo, hi):
+    """Cuts a steady multi-cylinder engine into whole cycles that all start just before the same cylinder's beat. Following
+    single beats (find_peaks) lands on whichever cylinder is loudest nearby, so cuts drift by a beat either way and grains come
+    out three, four or five beats long. Here the cycle's average shape is the template, and each cut is placed where the next
+    cycle best matches it, about one period on from the last."""
+    step = SR // ENV_RATE
+    rate = SR / step
+    e = envelope(x, 0.004)
+    e = e - e.mean()
+    ac = np.correlate(e, e, 'full')[len(e) - 1 :]
+    lo_i, hi_i = int(lo * rate), int(hi * rate)
+    n = lo_i + int(np.argmax(ac[lo_i:hi_i]))  # the cycle, in envelope samples
+    # Average cycle on a fixed grid, then shift the grid to cut 6 ms ahead of its strongest beat.
+    template = np.mean([e[s : s + n] for s in range(0, len(e) - n, n)], axis=0)
+    first = (int(np.argmax(template)) - int(0.006 * rate)) % n
+    w = max(2, n // 16)  # how far each cut may move from one period on
+    starts = list(range(first, len(e) - n, n))
+    for _ in range(2):
+        template = np.mean([e[s : s + n] for s in starts], axis=0)
+        starts = [starts[0]]
+        while starts[-1] + n + w + n < len(e):
+            guess = starts[-1] + n
+            starts.append(max(range(guess - w, guess + w + 1), key=lambda s: float(np.dot(e[s : s + n], template))))
+    # The cuts now agree with each other; move them all so they sit just ahead of the aligned cycle's strongest beat.
+    template = np.mean([e[s : s + n] for s in starts], axis=0)
+    shift = int(np.argmax(template)) - int(0.006 * rate)
+    starts = [s + shift for s in starts if s + shift >= 0 and s + shift + n < len(e)]
+    # Back to audio samples, each snapped to the nearest rising zero crossing.
+    cuts = []
+    for s in starts:
+        q = s * step
+        zc = [k for k in range(max(1, q - int(0.0015 * SR)), min(len(x) - 1, q + int(0.0015 * SR))) if x[k - 1] <= 0 < x[k]]
+        cuts.append(min(zc, key=lambda k: abs(k - q)) if zc else q)
+    return cuts
+
+
 def flatten(x, cuts, rms3000, slope, headroom):
     """Takes distance out of a recording of a machine moving about: rescales it so each
     pulse's loudness follows its rpm, (rpm / 3000) ** slope times rms3000, instead of
@@ -295,11 +332,14 @@ def main():
 
     for kind, src, t0, t1, (lo, hi) in config['segments']:
         x = sources[src][int(t0 * SR) : int(t1 * SR)]
-        env = envelope(x, 0.0012)
-        peaks = find_peaks(env, lo, hi)
         k = int(SR * 0.0008)
         fine_env = np.convolve(np.abs(x), np.ones(k) / k, mode='same')
-        cuts = cut_points(x, peaks, fine_env)
+        whole = kind == 'idle' and config.get('idleCycles')
+        if whole:
+            cuts = whole_cycle_cuts(x, lo, hi)
+        else:
+            peaks = find_peaks(envelope(x, 0.0012), lo, hi)
+            cuts = cut_points(x, peaks, fine_env)
         flat = config.get('flatten')
         if flat and src in flat['sources']:
             x = flatten(x, cuts, flat['rms3000'], flat['slope'], flat['headroom'])
@@ -324,7 +364,8 @@ def main():
                 reason = 'out of range'  # the tracker slipped: no real pulse is this long or short here
             elif abs(dur - med) / med > odd_limit:
                 reason = 'odd length'
-            elif seg_env[int(n * 0.8) :].max() > tail_limit * seg_env[: int(n * 0.4)].max():
+            elif not whole and seg_env[int(n * 0.8) :].max() > tail_limit * seg_env[: int(n * 0.4)].max():
+                # (A whole cycle has its other cylinders' beats in it, so this check doesn't apply.)
                 reason = 'next thump in tail'
             if reason:
                 rejected[reason] = rejected.get(reason, 0) + 1
@@ -385,6 +426,8 @@ def main():
         'grains': grains,
         'oneshots': oneshots,
     }
+    if config.get('idleCycles'):
+        bank['readThrough'] = True  # idle grains are whole, matching cycles: play them in recording order (engineWorklet.js)
     with open(os.path.join(ROOT, 'public', 'audio', f'{args.bank}.json'), 'w') as f:
         json.dump(bank, f, indent=1, allow_nan=False)  # NaN isn't JSON: the browser would refuse the whole bank
 
