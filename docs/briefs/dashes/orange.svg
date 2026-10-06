@@ -1,0 +1,9 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 150' width='960' height='450'>
+<rect width='320' height='150' fill='#f4f4f2'/>
+<text x='6' y='11' font-family='Helvetica, Arial, sans-serif' font-size='7' font-weight='bold' fill='#222'>Orange: Suzuki LT250R-style bare race bars</text>
+<text x='6' y='20' font-family='Helvetica, Arial, sans-serif' font-size='4.6' fill='#555'>Nothing to read. A red kill switch on the left bar that flips RUN / OFF with the ignition (K), and a tether. A pod is the only way to see anything.</text>
+<g transform='translate(0 30)'>
+<rect x='0' y='29.0' width='320' height='22' rx='11.0' fill='#3a3c3f'/><rect x='0' y='31.0' width='320' height='3' fill='#55585c' opacity='0.6'/><rect x='90' y='6' width='140' height='14' rx='7' fill='#e07a1f' stroke='#9a5212'/><rect x='34' y='28' width='26' height='24' rx='3' fill='#202020'/><rect x='40' y='31' width='14' height='8' rx='2' fill='#ff4a3a'/><text x='47' y='47' font-family='Helvetica, Arial, sans-serif' font-size='3.6' fill='#ddd' text-anchor='middle'>RUN</text><path d='M47,52 q-6,18 6,30 q10,10 0,24' fill='none' stroke='#d33' stroke-width='1.4'/><rect x='130.0' y='9' width='60' height='8' fill='none' stroke='#2a7fff' stroke-width='0.8' stroke-dasharray='2 1.5'/><text x='193.0' y='14.5' font-family='Helvetica, Arial, sans-serif' font-size='4' fill='#2a7fff'>pod mount on the crossbar pad</text>
+</g>
+<text x='314' y='147' font-family='Helvetica, Arial, sans-serif' font-size='4' fill='#888' text-anchor='end'>mm, rider's view</text>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 118' width='660' height='354'>
+<rect width='220' height='118' fill='#f4f4f2'/>
+<text x='6' y='11' font-family='Helvetica, Arial, sans-serif' font-size='7' font-weight='bold' fill='#222'>Kids': a key switch on the bar clamp</text>
+<text x='6' y='20' font-family='Helvetica, Arial, sans-serif' font-size='4.6' fill='#555'>Nothing else. A fitted pod keeps its full size, so it looks comically big here.</text>
+<g transform='translate(0 30)'>
+<rect x='0' y='27.0' width='220' height='18' rx='9.0' fill='#3a3c3f'/><rect x='0' y='29.0' width='220' height='3' fill='#55585c' opacity='0.6'/><rect x='70' y='22' width='80' height='14' rx='7' fill='#d98fb0' stroke='#a86486'/><rect x='96' y='44' width='28' height='22' rx='4' fill='#151515'/><circle cx='110' cy='55' r='6.5' fill='#111' stroke='#9a9a9a' stroke-width='1'/><rect x='108.8' y='50' width='2.4' height='10' rx='0.6' fill='#bbb' transform='rotate(0 110 55)'/><text x='101' y='49' font-family='Helvetica, Arial, sans-serif' font-size='3.4' fill='#ccc'>O</text><text x='117.5' y='49' font-family='Helvetica, Arial, sans-serif' font-size='3.4' fill='#ccc'>I</text><rect x='87.0' y='10' width='46' height='8' fill='none' stroke='#2a7fff' stroke-width='0.8' stroke-dasharray='2 1.5'/><text x='136.0' y='15.5' font-family='Helvetica, Arial, sans-serif' font-size='4' fill='#2a7fff'>pod mount (small quad, full-size pod)</text>
+</g>
+<text x='214' y='115' font-family='Helvetica, Arial, sans-serif' font-size='4' fill='#888' text-anchor='end'>mm, rider's view</text>
+</svg>

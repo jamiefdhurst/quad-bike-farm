@@ -674,3 +674,11 @@ Shopped for on Freesound (CC0 only) and picked by ear by Jamie; not wired in yet
   - https://freesound.org/s/637891/ (43 s): start about 2 to 4 s, revs 4 to 10 s, an almost-stall, shut-off about 37 to 40 s.
   - https://freesound.org/s/637892/ (84 s): start about 5 s, steadier running 27 to 37 s; the rest are passes with Doppler.
   - If the steady stretches turn out too short to slice well, look for a long close idle of a similar old diesel rather than mixing in the smoother tractor.
+
+## The dashes, planned (2026-10-06)
+
+Brief for TODO 26 in `docs/briefs/dashes.md`, with SVG mockups in `docs/briefs/dashes/`. Settled with Jamie:
+
+- Each quad's own dash goes close to the real machine it's based on: the red a Honda Foreman's speedo with hour meter and odometer, R / N / oil lamps and the key; the blue a Grizzly 660's grey-green LCD; the loan a newer Kodiak-style LCD; the green a Bayou's two lamps and key on its nacelle; the yellow a Blaster's single lamp on its headlamp; the orange bare race bars with a kill switch; the kids' quad a key. Most lose the rev counter, fuel and temperature gauges they have now.
+- Jamie's idea to make up for it: two accessory pods, one older analogue, one new digital, each showing everything for whichever quad it's fitted to. Only one of each, swapped with the toolbox, and each starts every game in the toolbox or on a random quad. Not realistic (a meter wouldn't carry readings between quads), but more fun than bolting extra gauges onto every quad, which was the first plan for the red and dropped.
+- Reference photos (eBay listings, not committed) were used for layouts only; the mockups are drawn from scratch.
