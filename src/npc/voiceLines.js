@@ -20,6 +20,7 @@ import { AMY_SILENCER_LINES } from './silencerLines.js';
 import { AMY_DIAGNOSIS_LINES } from './diagnosisLines.js';
 import { AMY_THRASH_LINES } from './thrashLines.js';
 import { AMY_REVOFF_LINES } from './revOffLines.js';
+import { AMY_TRACTOR_LINES } from './tractorLines.js';
 import { AMY_QUAD_LINES } from './quadLines.js';
 import { AMY_WARMING_LINES } from './warmingLines.js';
 import { AMY_HEADSTART_LINES } from './headStartLines.js';
@@ -1388,6 +1389,8 @@ export const VOICE_LINES = {
   ...AMY_THRASH_LINES,
   // Rev-offs (revOffLines.js).
   ...AMY_REVOFF_LINES,
+  // The tractor: the key that doesn't stop it, waiting for the glow plugs, and it catching (tractorLines.js).
+  ...AMY_TRACTOR_LINES,
   // Quad nicknames, whose is whose, and placing a quad by ear (quadLines.js).
   ...AMY_QUAD_LINES,
   // Warming their hands over an idling engine (warmingLines.js).
