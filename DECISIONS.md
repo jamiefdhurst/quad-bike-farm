@@ -682,3 +682,19 @@ Brief for TODO 26 in `docs/briefs/dashes.md`, with SVG mockups in `docs/briefs/d
 - Each quad's own dash goes close to the real machine it's based on: the red a Honda Foreman's speedo with hour meter and odometer, R / N / oil lamps and the key; the blue a Grizzly 660's grey-green LCD; the loan a newer Kodiak-style LCD; the green a Bayou's two lamps and key on its nacelle; the yellow a Blaster's single lamp on its headlamp; the orange bare race bars with a kill switch; the kids' quad a key. Most lose the rev counter, fuel and temperature gauges they have now.
 - Jamie's idea to make up for it: two accessory pods, one older analogue, one new digital, each showing everything for whichever quad it's fitted to. Only one of each, swapped with the toolbox, and each starts every game in the toolbox or on a random quad. Not realistic (a meter wouldn't carry readings between quads), but more fun than bolting extra gauges onto every quad, which was the first plan for the red and dropped.
 - Reference photos (eBay listings, not committed) were used for layouts only; the mockups are drawn from scratch.
+
+## The dashes, built (2026-10-06)
+
+Built to the brief above. What differs or wasn't said:
+
+- Drawing: every dash and pod is one canvas face drawn in the mockups' own millimetre coordinates (`dashParts.js` scales the context so the code reads against the SVG), over a moulded housing. Faces redraw only when something they show changes, with the needle and bar values quantised for the gate. Pure parts are `dashState.js` (neutral, lamps, counters, usage, clock) and `pods.js` (where each pod is), both with tests.
+- Hours and odometer: `hoursRange` and `odoRange` on each spec (the brief's suggested numbers; odometer about 2.5 times hours for the farm quads, 4 times for the sport ones). Hours run only while the engine does, at real speed. They use their own seeded stream (`seed ^ 0xd45b`), as do the clock (`0xc10c`) and the pod placement (`0x90d5`), so a seed keeps its old layout.
+- Pod placement: the analogue is placed first among the toolbox and every quad, then the digital among the toolbox and the quads with no pod, so each lands anywhere equally likely.
+- Odometer drums have four digits and tenths on the stock red and the pod, as in the mockups (the brief's text said five on the pod).
+- Neutral is "ignition on, not in reverse, stopped, rpm below the clutch bite", so it lights while idling at a standstill, as the brief said.
+- The pods sit on the dash's top (red, blue, loan, green), the crossbar pad (yellow, orange) or the bar clamp (kids), leaning back about 20 degrees whatever the dash's own tilt, and the kids' quad cancels its scale so the pod is full size. They stand above the dash, so they don't cover it, but they do cover a slice of the view ahead; I didn't try to lower them.
+- Blaster: the real headlamp stays in the nose. Only the shell's back (lamp and key) is on the bars, so the yellow has two lamps' worth of shell; moving the lamp up was more modelling than the dash needed.
+- The fuel tap's position (ON, RES, OFF) was on the old dashes and isn't on any now, which is as the brief wanted.
+- No sound for fitting a pod (silent was allowed) and the girls don't remark on it yet.
+- Checked: unit tests, and one headless run (`.scratch/dashes/`) of every stock dash with the ignition on and each pod on the red, yellow and kids' quad, with no page errors. Looked at the close-ups and seat views. Not checked: the faces while moving (needle sweeps, lamp changes, the LCD line cycling), a pod being fitted through the toolbox panel by keyboard, or the dashes with the battery flat.
+

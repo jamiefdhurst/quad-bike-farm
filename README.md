@@ -127,11 +127,13 @@ Pick up the red toolbox from the workbench in the barn (`E`), take it to a quad 
 
 **Silencer off** (`X`) is a separate job: the quad gets a lot louder and a more open, rasping tone, about 8% more power, and it crackles and bangs far more when you shut the throttle at speed. `X` again puts it back. Jess loves it; Amy covers her ears and tells you to turn it off.
 
+**Pods** (`Y`, `U`, `O`): at a switched-off quad the panel says which pod is on it and which are in the toolbox. `Y` fits the analogue pod and `U` the digital one (each takes about three seconds, and the quad must have none already); `O` takes the one that's there off, back into the toolbox. To move a pod you take it off one quad and fit it to another.
+
 "Back to stock" puts everything back exactly, silencer included. Engines also wear as they run (faster when worked hard), getting rougher: a lumpy, hunting idle and a lot more shake. The panel says how it's running, and **Service it** (`V`) clears the wear and leaves it as sweet as that quad gets. Changes last for the game. `G` puts the toolbox down; you can't ride while carrying it. She has opinions about all of this.
 
 ## Fuel
 
-Each quad has a fuel tank, a fuel tap and a fuel gauge on the dash. Taps start OFF. How much is in each tank varies every game (see `fuelRange` above); the blue can start below its reserve, so it'll only run on RESERVE until it's filled.
+Each quad has a fuel tank and a fuel tap, and a fuel gauge on the loan quad's and the blue's LCD or on a pod. Taps start OFF. How much is in each tank varies every game (see `fuelRange` above); the blue can start below its reserve, so it'll only run on RESERVE until it's filled.
 
 - A full tank lasts roughly 25 minutes of hard riding, and much longer at idle.
 - The tap has three positions. On **ON** it can't reach the last couple of litres, so when it starts to cough and stumble, flick it to **RESERVE** with `F` and head for fuel. **OFF** shuts the fuel off; the engine runs on what's in the carburettor for a moment, then dies.
@@ -154,17 +156,21 @@ Each quad has a fuel tank, a fuel tap and a fuel gauge on the dash. Taps start O
 
 ## The dashes
 
-The quads have different instruments:
+Each quad's own dash is close to the real machine it's modelled on, which for most of them means very little:
 
-- **Red**: three chrome-ringed analogue dials in a pill-shaped pod. A rev counter scaled to its engine (red from 5,800), a 0 to 40 mph speedo with a drum trip counter, and a fuel gauge from E to F with a red reserve zone and the tap position (ON, RES, OFF) under the needle. A tiny temperature gauge sits low in the rev counter. IGN, reverse and low-fuel lamps are set into the dials. With the ignition off the fuel needle drops to E.
-- **Blue**: one wide amber display with a bar-graph rev counter, big speed digits, a vertical fuel gauge that goes red on reserve, a row of temperature blocks, warning icons and a trip meter, in a rounded pod with a slim brow over it.
-- **Yellow**: the same layout as the blue's, compact and red-on-black, in a rounder bare pod under the motocross crossbar.
-- **Green**: a vintage dash on top of its handlebar headlight: a cream-faced 0 to 40 mph speedo in a chrome cup, a small cream fuel gauge with a low-fuel lamp, a small temperature gauge, chrome-ringed IGN and reverse lamps and a tap window.
-- **Orange**: a minimal race dash: a green, amber and red rev bar with a shift light, small speed digits, six fuel blocks, five temperature blocks and a reverse flag.
+- **Red** (after a Honda Foreman): a rectangular 0 to 45 mph speedo with an hour meter and an odometer, three lamps (R, N, OIL °C) and the key. No rev counter, fuel or temperature gauge.
+- **Blue** (after a Yamaha Grizzly): a grey-green LCD in a charcoal pod: fuel and temperature bars, a gear letter (H, R or N), big speed digits, a clock and a bottom line that shows trip, odometer and hours four seconds each. N, R, TEMP and FUEL lamps either side. No rev counter.
+- **Loan quad** (after a newer Yamaha Kodiak): the same idea, wider and glossier, with a crisper LCD, a gear column and a fuel sweep.
+- **Green** (after a Kawasaki Bayou): a small cover on top of the headlight nacelle with N and R lamps and the key. Nothing else.
+- **Yellow** (after a Yamaha Blaster): the back of a headlamp shell on the bars with one red lamp that lights with the ignition, and the key.
+- **Orange** (after a Suzuki LT250R): bare race bars and a RUN / OFF kill switch with its lanyard on the left bar.
+- **Kids' quad**: a key switch and nothing else.
 
-Every dash has a temperature gauge: blue while the engine is cold, white when it's warm, with a red zone at the top for later. There's no on-screen readout of the quad any more, so you read the dash and listen to the engine to work out what's wrong. The needles rest at cold with the ignition off.
+To make up for it there are **two accessory pods**, and there's only one of each: an older **analogue** pod (a cream speedo and rev counter with drum counters, small fuel and temperature dials, four lamps) and a new **digital** one (amber on black: a bar-graph rev counter, speed, fuel and temperature blocks, gear letter, clock and a line cycling odometer, trip and hours). Each shows everything for whichever quad it's fitted to, with its rev counter's red band starting at that quad's own redline. Each game they start in the toolbox or on a random quad (the console says where), and you move them with the toolbox (see above). The K key still turns the key on every quad; the dashes go dark with the ignition off or the battery flat.
 
-The displays go blank with the ignition off.
+Every quad starts each game with some hours and miles on it (the Blaster and the loan quad low, the green's well into four figures), and they add up as you run and ride.
+
+The fuel tap's position isn't on any dash now: look at the tap itself.
 
 ## Riding with her
 
@@ -284,7 +290,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 12. Places to be. On a sunny day they sit on the bales or the paddock fence, or lie in the grass. When it rains they shelter in the barn doorway. Bored, a girl might also go and wait at a favourite spot rather than only at a quad. **Done.** On a fine day a bored girl might go and sit on a straw bale or the paddock fence for a minute or three; when the rain sets in they head for the barn doorway and stay there until it dries off. (Lying in the grass is left for later: it needs a new pose.)
 13. Batteries and starting. Leave the ignition on and the battery drains, so the starter cranks slower until it won't turn over. Then you bump-start it down the bank, jump it from another quad, or use the pull-start on the two-strokes (hold and yank, which takes a knack when it's cold). **Done (bump-start left out for now).** Each quad has a battery: leave the ignition on and it drains, so the starter cranks slower and then only clicks. The yellow and orange have a pull-start (`P`); any quad can be jumped from a running one with the jump leads by the petrol tank.
 14. Two-stroke oil. The yellow and orange run on pre-mix: a second jerry can by the tank. Fill one with straight petrol and it runs hot, then nips up and seizes. Too much oil and it smokes like a bonfire and fouls plugs. **Done.** A yellow pre-mix can and an oil bottle sit by the petrol tank; straight petrol in a two-stroke runs it hot, then nips it up and seizes it until you strip it down with the toolbox (`F`), and too much oil smokes and fouls the plug.
-15. Faults that develop. Things go wrong over time, separate from wear:
+15. Faults that develop. **Done.** Things go wrong over time, separate from wear:
    - A slow puncture from the hedge (it pulls to one side; there's a foot pump in the toolbox). **Done.** (Not tied to the hedge: it can start anywhere while riding.)
    - A slipping drive belt (revs flare, no go). **Done.**
    - A sticking throttle cable that keeps it running on. **Done.**
@@ -301,18 +307,16 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 18. The workshop corner. The barn bench becomes where real jobs happen: change a plug, clean a carb, swap a tyre, top up two-stroke oil. Each job is a short hands-on sequence, and the girls watch, help or heckle. **Done.** Park a switched-off quad in the painted bay in front of the barn bench, look at the bench and press `E`: plug, carb, tyre and (on the two-strokes) oil are each five or so steps of tapping or holding `E`, with a green window to let go in on the tricky ones. Done right it's a proper fix; botched, it's left half-done. Amy helps and corrects, Jess heckles. The toolbox panel's quick fixes in the yard are now only rough ones.
 19. The hayloft. Climb the ladder: a view over the farm through the loft door, and a hiding place. The girls can climb up too, and Jess might drop straw on you. **Done.** A ladder just inside the barn doors takes you up to a plank loft over the doorway with a rail, a hay door at head height looking out over the yard and a stack of hay to hide in. A bored girl may climb up and sit at the edge on a fine day, and Jess sometimes tips straw on you if you stand below her.
 20. Additional vehicles: a random one each time (each needing its own sound and characteristics):
-    - A neighbour's beaten-up old three-wheeler ATC (a real tip-over risk). (Not doing this one.)
     - A tiny kids' 50cc quad Jess insists on riding. **Done.** A small pink two-stroke, about two thirds the size of the others, light, slow and one-seat, with a lazier idle than the other two-strokes. Jess goes for it first when she's bored, and Amy leaves it alone.
-    - A mini moto with a pull-start.
     - A smart new quad on loan for the day. **Done.** A silver quad that starts first time with hardly any choke, idles very smooth and quiet, hardly wears and comes with a full tank.
 
-    **Done for those two.** The line-up changes every game: one or two of the five regular quads are sometimes missing, and the kids' quad and the loan quad each turn up some of the time (`?seed=N` repeats a game's line-up). The mini moto is still to do.
+    **Done.** (The mini moto and the ATC moved to 71.) The line-up changes every game: one or two of the five regular quads are sometimes missing, and the kids' quad and the loan quad each turn up some of the time (`?seed=N` repeats a game's line-up).
 21. Each quad has a knack. The green only starts cold if you blip the throttle twice before cranking; the blue wants its choke off sooner than the others. Nothing tells you, but the girls know some of them ("you have to tickle it first"). **Done.** The green won't fire from cold until you blip the throttle twice (tap `W` twice, then crank); the blue's choke runs it rich as soon as it warms, so ease it off early. Nothing on the dash says so. The girls know both: they do the green's blips themselves (or remember them after a failed go), and hint if you struggle with it cold.
 22. Popping on the overrun. Lean engines and the two-strokes crackle and bang when you shut the throttle from high revs, more so when worn, with a flash from the pipe in poor light. **Done.** Lean engines, worn ones and the two-strokes crackle and bang when you shut the throttle at speed, with a flash from the pipe in poor light.
 23. Drowning it. Hit a deep puddle or a ford too fast and it gulps water: it splutters, misfires and steams until it dries. Stall it in the water and it won't restart until it has drained. **Done.** Ploughing through a puddle faster than a steady 5 m/s or so makes the engine gulp water: it splutters, misfires, loses power and steams white while it dries out, and at speed it often stalls. A drowned engine won't catch until it has drained (about 45 s standing, quicker running with the throttle open). Wading through slowly is fine. (The farm has puddles but no fords.)
 24. Silencer off. A toolbox job: much louder and a bit stronger. Jess loves it; Amy covers her ears. **Done.** `X` in the toolbox panel takes a quad's silencer off (or refits it): the exhaust is much louder and brighter, it has about 8% more power and it crackles on the overrun. Jess cheers it on; Amy complains about her ears.
 25. Diagnosing by ear. Stood by a running quad, a girl has a guess at what's wrong from its real state (rich, fouling, worn, cold). Amy is careful and usually right; Jess is sure of herself and wrong half the time, and argues when corrected. **Done.** Stood by a running quad, a girl now and then says what she thinks is wrong with it: cold, running rich, a fouled plug, worn, or fine. The guess comes from the engine's real state. Amy is right nine times in ten; Jess about half, and when Jess is wrong with Amy close by, Amy puts her right and Jess argues.
-26. Redesign the dashboards for all quads to make them more similar to their real-life counterparts. The kids one in particular should be very basic. Each quad's own dash goes close to the real machine (which for most means much less), and two accessory pods, one analogue and one digital, show everything for whichever quad they're fitted to; you swap them between quads with the toolbox. The full brief, with a mockup of every dash: `docs/briefs/dashes.md`.
+26. Redesign the dashboards for all quads to make them more similar to their real-life counterparts. The kids one in particular should be very basic. Each quad's own dash goes close to the real machine (which for most means much less), and two accessory pods, one analogue and one digital, show everything for whichever quad they're fitted to; you swap them between quads with the toolbox. The full brief, with a mockup of every dash: `docs/briefs/dashes.md`. **Done.** Each quad has a dash like its real counterpart's (the red a speedo with hour meter and odometer, the blue and the loan quad LCDs, the rest almost nothing), and an analogue and a digital pod that you fit and take off with the toolbox (`Y`, `U`, `O`). Every quad starts with some hours and miles on it.
 27. A sound of its own for the kids' quad. It borrows the yellow's recordings and doesn't sound like a 50cc. Cut a new idle and revs from a Gilera Runner SP50 two-stroke scooter recorded an inch from its exhaust (Freesound 140384, CC0), maybe with a Simson 50cc moped failing to start (378350) for when it won't catch. Sources and cut times are in DECISIONS.md, "Engine sounds for the kids' quad and the tractor".
 28. Mechanical sympathy. Jess thrashes engines cold and Amy tells her off. Wear is tracked by who caused it, so "who's been caning the orange?" has a real answer.
 29. Rev-offs. Blip the throttle near a girl sat on a running quad and she might blip back. Jess always does, and it escalates until something complains.
@@ -357,3 +361,4 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 68. Tyres. Mismatched brands, a bald rear, pressures not where they should be at the start, so grip and pull differ every game. The toolbox's pressure gauge is how you find out.
 69. The day's temperature. A frosty morning or a mild one, picked with the weather. Cold days need more choke, take longer to warm up and drain batteries faster. Frost on the seats, and the girls in hats.
 70. Different controls. Each quad has its own reverse: the red a lever you push down while turning the bars, the blue a button held with the brake, the green a lever by your left knee, and the two-strokes none at all, so you get off and push (the girls won't help). Chokes differ too: a thumb lever, a plunger on the carb under the tank, a pull knob, each with its own reach. (The dashes themselves are 26.)
+71. More vehicles, left over from 20. A mini moto with a pull-start. A neighbour's beaten-up old three-wheeler ATC (a real tip-over risk), which we weren't doing. Each needs its own sound and characteristics.
