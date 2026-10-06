@@ -22,17 +22,21 @@ export const LAYOUT = {
     [-66.4, 57.3, Math.PI / 2],
     [-66.4, 62.7, Math.PI / 2],
   ],
-  // The hayloft over the west end of the barn (world/loft.js): planks `floor` m above the barn floor out to `edgeX`, an open edge with a rail
-  // and a gap at the ladder, a hay door in the east gable, a stack of hay to hide behind and a bale at the edge where a girl sits.
+  // The hayloft over the front of the barn, above the big doors (world/loft.js): planks `floor` m above the barn floor (clear of the doorway's
+  // 3.2 m and its header) from the end wall back to `edgeX`, an open edge with a rail and a gap at the ladder, and a hay door in the end wall
+  // at head height (from `sill` to `top` above the barn floor). The roof comes down at the sides, so you can only walk `band` m either side of
+  // the centre line; hay is stacked outside that, the north stack (`hay`) being the one you hide in. A girl sits on a bale at the open edge.
   loft: {
-    floor: 2.6,
-    edgeX: -64.6,
+    floor: 3.5,
+    edgeX: -62.5,
+    band: 1.9,
     rail: 1,
-    ladder: { z: 63.6, footX: -63.85, gap: 0.7, width: 0.55 },
-    hayDoor: { halfWidth: 0.8, sill: 3.5 },
-    hay: { x: -67.9, z: 57.3, halfX: 1.1, halfZ: 1.1, height: 1.15 }, // you duck into the hay behind this
-    hideSpot: { x: -68.2, z: 58.6 },
-    seat: { id: 'loft0', kind: 'loft', x: -65.35, z: 60.1, yaw: Math.PI / 2, seat: 2.6 + 0.53 }, // sat on a bale at the edge, facing the doors
+    ladder: { z: 61.3, footX: -63.4, gap: 0.7, width: 0.55 },
+    hayDoor: { halfWidth: 0.8, sill: 4.1, top: 5.5 },
+    hay: { x: -60.75, z: 56.85, halfX: 1.75, halfZ: 1.25, height: 1.3 },
+    hideSpot: { x: -60.75, z: 56.85 },
+    seat: { id: 'loft0', kind: 'loft', x: -62.0, z: 59.2, yaw: -Math.PI / 2, seat: 3.5 + 0.53 }, // sat on a bale at the edge, facing out over the barn
+    strawDx: -0.4, // Jess tips her straw from this far towards the edge
   },
   // The workbench along the north wall: where the toolbox sits (its height is `lift`).
   bench: { x: -62.3, z: 56.1, length: 3.2, depth: 0.7, height: 0.92 },

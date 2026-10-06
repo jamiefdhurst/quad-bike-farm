@@ -7,8 +7,8 @@ const P = DEFAULT_LOFT_PARAMS;
 describe('loft shape', () => {
   const s = loftShape(LAYOUT, 10);
   it('puts the planks at the layout height and the ladder in the rail gap', () => {
-    expect(s.top).toBeCloseTo(12.6);
-    expect(s.ladderTop.y).toBeCloseTo(12.6);
+    expect(s.top).toBeCloseTo(13.5);
+    expect(s.ladderTop.y).toBeCloseTo(13.5);
     const [a, b] = s.railSpans;
     expect(a.z1).toBeLessThan(LAYOUT.loft.ladder.z);
     expect(b.z0).toBeGreaterThan(LAYOUT.loft.ladder.z);
@@ -17,19 +17,39 @@ describe('loft shape', () => {
     expect(overLoft(LAYOUT, s.ladderFoot.x, s.ladderFoot.z)).toBe(false);
     expect(overLoft(LAYOUT, s.ladderTop.x, s.ladderTop.z)).toBe(true);
   });
-  it('clears the bay and the bench', () => {
-    const bay = LAYOUT.bay;
-    expect(overLoft(LAYOUT, bay.x - bay.halfX, bay.z)).toBe(false);
-    expect(overLoft(LAYOUT, LAYOUT.bench.x - LAYOUT.bench.length / 2, LAYOUT.bench.z)).toBe(false);
+  it('is above the doorway and its header, so quads drive in underneath', () => {
+    expect(LAYOUT.loft.floor).toBeGreaterThanOrEqual(LAYOUT.barn.door.height + 0.3);
+    expect(overLoft(LAYOUT, LAYOUT.barn.x + LAYOUT.barn.halfX - 1, LAYOUT.barn.z)).toBe(true);
   });
-  it('lets a girl sit under a head height of its own and the hay and seat sit on the planks', () => {
+  it('keeps the ladder foot clear of the bay and the bench', () => {
+    const bay = LAYOUT.bay;
+    const f = s.ladderFoot;
+    expect(Math.abs(f.x - bay.x) > bay.halfX + 0.4 || Math.abs(f.z - bay.z) > bay.halfZ + 0.4).toBe(true);
+    expect(Math.abs(f.z - LAYOUT.bench.z)).toBeGreaterThan(1.5);
+  });
+  it('has the ladder and the seat in the walkable band, where the roof is high enough', () => {
+    expect(s.ladderTop.z).toBeGreaterThan(s.walkMinZ);
+    expect(s.ladderTop.z).toBeLessThan(s.walkMaxZ);
+    expect(LAYOUT.loft.seat.z).toBeGreaterThan(s.walkMinZ);
+    expect(LAYOUT.loft.seat.z).toBeLessThan(s.walkMaxZ);
+    // Standing eye height (1.62 m) and a margin under the roof's underside at the edge of the band.
+    const b = LAYOUT.barn;
+    const roofAt = (dz) => b.wallHeight + (b.ridge - b.wallHeight) * (1 - Math.abs(dz) / b.halfZ);
+    expect(roofAt(LAYOUT.loft.band)).toBeGreaterThan(LAYOUT.loft.floor + 1.62 + 0.3);
+  });
+  it('puts the hay door at head height above the planks', () => {
+    const h = LAYOUT.loft.hayDoor;
+    expect(h.sill - LAYOUT.loft.floor).toBeGreaterThan(0.3);
+    expect(h.top - LAYOUT.loft.floor).toBeGreaterThan(1.62);
+  });
+  it('lets a girl sit and the hay sit on the planks', () => {
     expect(overLoft(LAYOUT, LAYOUT.loft.seat.x, LAYOUT.loft.seat.z)).toBe(true);
     expect(overLoft(LAYOUT, LAYOUT.loft.hideSpot.x, LAYOUT.loft.hideSpot.z)).toBe(true);
   });
   it('knows whether you are up or below', () => {
-    expect(onLoft(LAYOUT, -66, 12.6, 60, 10)).toBe(true);
-    expect(onLoft(LAYOUT, -66, 10, 60, 10)).toBe(false);
-    expect(onLoft(LAYOUT, -62, 12.6, 60, 10)).toBe(false);
+    expect(onLoft(LAYOUT, -60.5, 13.5, 60, 10)).toBe(true);
+    expect(onLoft(LAYOUT, -60.5, 10, 60, 10)).toBe(false);
+    expect(onLoft(LAYOUT, -66, 13.5, 60, 10)).toBe(false);
   });
 });
 

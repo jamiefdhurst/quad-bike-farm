@@ -164,6 +164,9 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   }
   add(box(wall, sillY, hd.halfWidth * 2, wallMat(hd.halfWidth * 2, sillY)), door.x - wall / 2, floorY + door.height + 0.28 + sillY / 2, shape.z);
 
+  // Nothing walks out of the hay door or over the doorway: a solid barrier across the whole end wall above the big doors, up to the opening's top.
+  fixedBox(door.x - wall / 2, floorY + (door.height + hd.top) / 2, shape.z, wall / 2, (hd.top - door.height) / 2, (door.maxZ - door.minZ) / 2);
+
   // Gable ends: a board triangle on top of each end wall.
   const gableShape = new THREE.Shape();
   gableShape.moveTo(-sizeZ / 2, 0);
@@ -174,7 +177,7 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   const gableMat = new THREE.MeshStandardMaterial({ map: boards([sizeZ / 4, 1]), roughness: 0.85, side: THREE.DoubleSide });
   // The east one has a notch cut up from its foot for the hay door.
   const notchShape = new THREE.Shape();
-  const notchTop = 0.6;
+  const notchTop = hd.top - wallHeight; // the hay door's top, above the eaves line
   notchShape.moveTo(-sizeZ / 2, 0);
   notchShape.lineTo(-hd.halfWidth, 0);
   notchShape.lineTo(-hd.halfWidth, notchTop);
@@ -190,7 +193,7 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   }
   // A white frame round the hay door and a hoist beam sticking out above it. Each piece stands 0.02 m proud of the opening's edges
   // (sill top, reveals and lintel underside), or its faces share a plane with the wall's and flicker, as the barn doors' did.
-  const doorTop = floorY + wallHeight + notchTop;
+  const doorTop = floorY + hd.top;
   const sillTop = floorY + hd.sill;
   const proud = 0.02;
   const fx = door.x - wall / 2;
@@ -217,7 +220,15 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
 
   // Timber inside: a tie beam across the barn every few metres, a collar and a ridge beam.
   for (let x = outer.minX + 1.4; x < outer.maxX - 0.8; x += 2.6) {
+    // None over the loft: you stand there with your head at their height. (Its edge beam does their job.)
+    if (x > layout.loft.edgeX - 0.3) {
+      addRafters(x);
+      continue;
+    }
     add(box(0.16, 0.22, sizeZ - wall * 2, timber), x, floorY + wallHeight - 0.15, shape.z);
+    addRafters(x);
+  }
+  function addRafters(x) {
     for (const side of [-1, 1]) {
       const rafter = box(0.12, 0.16, Math.hypot(sizeZ / 2, rise), timber);
       rafter.rotation.x = side * slope;
@@ -278,7 +289,8 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
     add(box(w, 0.012, d, paint), bay.x + x, floorY + 0.016, bay.z + z, { cast: false });
   }
 
-  // The hayloft over the west end: planks on joists, a rail along the open edge with a gap at the ladder, hay to hide behind.
+  // The hayloft over the front of the barn: planks on joists from the end wall back to an open edge with a rail and a gap at the ladder,
+  // and hay stacked down both sides where the roof comes too low to walk (they have colliders, so you stay in the middle).
   const l = layout.loft;
   const lf = loftShape(layout, floorY);
   const plankMat = new THREE.MeshStandardMaterial({ map: boards([4, 1.5]), roughness: 0.9, color: 0xc9b08a });
@@ -289,27 +301,27 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   add(box(lw, 0.1, ld, plankMat), lx, lf.top - 0.05, lz);
   fixedBox(lx, lf.top - 0.06, lz, lw / 2, 0.06, ld / 2);
   for (let z = lf.minZ + 0.6; z < lf.maxZ; z += 1.2) add(box(lw, 0.18, 0.1, timber), lx, lf.top - 0.19, z, { cast: false });
-  add(box(0.14, 0.26, ld, timber), lf.maxX - 0.07, lf.top - 0.23, lz); // the beam under the open edge
-  for (const z of [lf.minZ + 0.1, lz, lf.maxZ - 0.1]) add(box(0.14, l.floor - 0.1, 0.14, timber), lf.maxX - 0.1, floorY + (l.floor - 0.1) / 2, z); // and its posts
+  add(box(0.14, 0.26, ld, timber), lf.edgeX + 0.07, lf.top - 0.23, lz); // the beam under the open edge
+  for (const z of [lf.minZ + 0.1, lz, lf.maxZ - 0.1]) add(box(0.14, l.floor - 0.1, 0.14, timber), lf.edgeX + 0.1, floorY + (l.floor - 0.1) / 2, z); // and its posts
   // Rail: two rails and posts in each span, each with a collider you can't climb over.
   for (const span of lf.railSpans) {
     const len = span.z1 - span.z0;
     if (len < 0.05) continue;
     const cz = (span.z0 + span.z1) / 2;
-    add(box(0.07, 0.07, len, timber), lf.maxX - 0.04, lf.top + l.rail, cz, { cast: false });
-    add(box(0.05, 0.05, len, timber), lf.maxX - 0.04, lf.top + l.rail * 0.5, cz, { cast: false });
-    for (const z of [span.z0 + 0.05, span.z1 - 0.05]) add(box(0.07, l.rail, 0.07, timber), lf.maxX - 0.04, lf.top + l.rail / 2, z, { cast: false });
-    fixedBox(lf.maxX - 0.04, lf.top + l.rail / 2, cz, 0.05, l.rail / 2, len / 2);
+    add(box(0.07, 0.07, len, timber), lf.edgeX + 0.04, lf.top + l.rail, cz, { cast: false });
+    add(box(0.05, 0.05, len, timber), lf.edgeX + 0.04, lf.top + l.rail * 0.5, cz, { cast: false });
+    for (const z of [span.z0 + 0.05, span.z1 - 0.05]) add(box(0.07, l.rail, 0.07, timber), lf.edgeX + 0.04, lf.top + l.rail / 2, z, { cast: false });
+    fixedBox(lf.edgeX + 0.04, lf.top + l.rail / 2, cz, 0.05, l.rail / 2, len / 2);
   }
   // The ladder: leans from the foot on the barn floor to just over the edge at the gap in the rail.
   const lad = new THREE.Group();
   const top = lf.ladderTop;
   const foot = lf.ladderFoot;
   const ladRise = top.y + 0.7 - foot.y;
-  const run = lf.maxX - 0.1 - foot.x;
+  const run = lf.edgeX + 0.1 - foot.x;
   const len = Math.hypot(ladRise, run);
   lad.position.set(foot.x, foot.y, foot.z);
-  lad.rotation.z = Math.atan2(-run, ladRise); // leans its top over towards the loft (-x)
+  lad.rotation.z = Math.atan2(-run, ladRise); // leans its top over towards the loft (+x)
   const half = l.ladder.width / 2;
   for (const side of [-1, 1]) {
     const rail = box(0.06, len, 0.06, timber);
@@ -327,29 +339,40 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   group.add(lad);
   // Something to look at to climb it: a box round the whole ladder.
   const ladderProxy = new THREE.Mesh(new THREE.BoxGeometry(1.1, lf.top - foot.y + 0.6, 0.9), new THREE.MeshBasicMaterial({ visible: false }));
-  ladderProxy.position.set((foot.x + lf.maxX) / 2, foot.y + (lf.top - foot.y + 0.6) / 2, foot.z);
+  ladderProxy.position.set((foot.x + lf.edgeX) / 2, foot.y + (lf.top - foot.y + 0.6) / 2, foot.z);
   group.add(ladderProxy);
 
-  // Hay: loose heaps (squashed boxes in two colours) along the west wall, a tall stack to hide behind, and the bale a girl sits on.
+  // Hay: a stack down each side of the walkable band (the north one is the one you hide in), each a base with loose heaps on top and a
+  // tall collider, and the bale a girl sits on at the edge.
   const hayA = new THREE.MeshStandardMaterial({ color: 0xc9a54a, roughness: 1 });
   const hayB = new THREE.MeshStandardMaterial({ color: 0xb08d3a, roughness: 1 });
   const hy = l.hay;
-  for (let i = 0; i < 9; i++) {
-    const w = 0.7 + random() * 0.6;
-    const hgt = 0.35 + random() * 0.3;
-    const x = hy.x + (random() - 0.5) * hy.halfX * 1.6;
-    const z = hy.z + (random() - 0.5) * hy.halfZ * 1.6;
-    const lvl = Math.floor(i / 4);
-    add(box(w, hgt, w * (0.8 + random() * 0.5), i % 2 ? hayA : hayB), x, lf.top + hgt / 2 + lvl * 0.4, z).rotation.y = random() * 0.8;
+  const stacks = [
+    { x: hy.x, z: hy.z, hx: hy.halfX, hz: hy.halfZ },
+    { x: hy.x, z: (lf.walkMaxZ + lf.maxZ) / 2, hx: hy.halfX, hz: (lf.maxZ - lf.walkMaxZ) / 2 },
+  ];
+  for (const st of stacks) {
+    add(box(st.hx * 2 - 0.1, 0.8, st.hz * 2 - 0.1, hayB), st.x, lf.top + 0.4, st.z);
+    for (let i = 0; i < 9; i++) {
+      const w = 0.7 + random() * 0.6;
+      const hgt = 0.3 + random() * 0.3;
+      const x = st.x + (random() - 0.5) * (st.hx * 2 - w);
+      const z = st.z + (random() - 0.5) * (st.hz * 2 - w);
+      add(box(w, hgt, w * (0.8 + random() * 0.5), i % 2 ? hayA : hayB), x, lf.top + 0.8 + hgt / 2 - 0.05 + (i % 3) * 0.1, z).rotation.y = (random() - 0.5) * 0.6;
+    }
+    fixedBox(st.x, lf.top + 1.1, st.z, st.hx, 1.1, st.hz); // taller than the hay: the roof is too low to walk there
   }
-  fixedBox(hy.x, lf.top + hy.height / 2, hy.z, hy.halfX, hy.height / 2, hy.halfZ);
   const seat = l.seat;
-  add(box(1.2, 0.46, 0.55, hayA), seat.x - 0.1, lf.top + 0.23, seat.z).rotation.y = seat.yaw + Math.PI / 2;
+  add(box(1.2, 0.46, 0.55, hayA), seat.x - Math.sin(seat.yaw) * 0.1, lf.top + 0.23, seat.z).rotation.y = seat.yaw + Math.PI / 2;
   const hayProxy = new THREE.Mesh(new THREE.BoxGeometry(hy.halfX * 2 + 1.2, 1.6, hy.halfZ * 2 + 1.2), new THREE.MeshBasicMaterial({ visible: false }));
   hayProxy.position.set(hy.x, lf.top + 0.8, hy.z);
   group.add(hayProxy);
   // A loose scatter of straw on the planks.
-  for (let i = 0; i < 22; i++) add(box(0.4 + random() * 0.4, 0.015, 0.05, hayB), lf.minX + 0.5 + random() * (lw - 1), lf.top + 0.01, lf.minZ + 0.5 + random() * (ld - 1), { cast: false }).rotation.y = random() * 3;
+  for (let i = 0; i < 22; i++) {
+    const x = lf.minX + 0.4 + random() * (lw - 0.8);
+    const z = lf.walkMinZ + random() * (lf.walkMaxZ - lf.walkMinZ);
+    add(box(0.4 + random() * 0.4, 0.015, 0.05, hayB), x, lf.top + 0.01, z, { cast: false }).rotation.y = random() * 3;
+  }
 
   // A bare bulb on a flex from the ridge, which comes on in the gloom.
   const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 8), new THREE.MeshBasicMaterial({ color: 0xfff1c9 }));

@@ -1,4 +1,5 @@
-// The hayloft over the west end of the barn: where its floor, rail, ladder and hay are, who is up there, and what happens
+// The hayloft over the front of the barn (above the big doors, so the hay door in the end wall is a window at your eye height): where
+// its floor, rail, ladder and hay are, who is up there, and what happens
 // to someone hiding in the hay or stood under a girl who has a handful of straw. Pure logic, no Three.js; barnBuild.js
 // draws it and game.js wires it up.
 
@@ -32,20 +33,28 @@ export const LOFT_PARAM_RANGES = {
 
 const smooth = (t) => t * t * (3 - 2 * t);
 
-/** Heights and places of the loft, from the layout. `floorY` is the barn floor's height. */
+/**
+ * Heights and places of the loft, from the layout. `floorY` is the barn floor's height. The planks run from the open edge (`edgeX`,
+ * looking back into the barn) to the east end wall. You can only walk the middle band of it: the roof comes down at the sides, so
+ * hay is stacked there, north and south of `band` metres either side of the barn's centre line.
+ */
 export function loftShape(layout, floorY) {
   const l = layout.loft;
-  const { inner } = barnShape(layout);
+  const { inner, z: midZ } = barnShape(layout);
   const top = floorY + l.floor;
   return {
     top, // the planks' upper face
-    minX: inner.minX,
-    maxX: l.edgeX,
+    minX: l.edgeX,
+    maxX: inner.maxX,
+    edgeX: l.edgeX,
     minZ: inner.minZ,
     maxZ: inner.maxZ,
+    // The walkable band across the planks, between the two hay stacks.
+    walkMinZ: midZ - l.band,
+    walkMaxZ: midZ + l.band,
     // Where the ladder stands on the barn floor, and where it lands on the loft (just inside the gap in the rail).
     ladderFoot: { x: l.ladder.footX, y: floorY, z: l.ladder.z },
-    ladderTop: { x: l.edgeX - 0.35, y: top, z: l.ladder.z },
+    ladderTop: { x: l.edgeX + 0.35, y: top, z: l.ladder.z },
     // The rail along the open edge in two pieces, with the gap at the ladder between them: { z0, z1 }.
     railSpans: [
       { z0: inner.minZ, z1: l.ladder.z - l.ladder.gap / 2 },
@@ -57,7 +66,7 @@ export function loftShape(layout, floorY) {
 /** Whether (x, z) is over the loft's planks, `margin` metres in from the edges. */
 export function overLoft(layout, x, z, margin = 0) {
   const { inner } = barnShape(layout);
-  return x > inner.minX + margin && x < layout.loft.edgeX - margin && z > inner.minZ + margin && z < inner.maxZ - margin;
+  return x > layout.loft.edgeX + margin && x < inner.maxX - margin && z > inner.minZ + margin && z < inner.maxZ - margin;
 }
 
 /** Whether you're up there: over the planks and standing on them (feet more than half the floor height up). */

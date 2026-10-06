@@ -872,7 +872,7 @@ export class Game {
     const p = this.player.position;
     const jessUp = !!jess && girlUp === jess;
     if (this.strawDrop.update(dt, { jessUp, you: { x: p.x, z: p.z, below: !this.youOnLoft() && !this.player.isRiding }, jess: { x: this.loftSpot.x, z: this.loftSpot.z } })) {
-      this.strawFall.drop({ x: this.loftSpot.x + 0.4, y: this.loft.top + 0.5, z: this.loftSpot.z }, p, this.loft.ladderFoot.y);
+      this.strawFall.drop({ x: this.loftSpot.x + this.world.layout.loft.strawDx, y: this.loft.top + 0.5, z: this.loftSpot.z }, p, this.loft.ladderFoot.y);
       for (const c of this.companions) c.voice.say('loftDrop', { force: c === jess, urgent: true });
     }
   }
