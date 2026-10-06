@@ -44,6 +44,7 @@ export const CHARACTERS = [
       boredDoughnutChance: 0.12, // spins doughnuts in the field when she's bored
       boredLineUpChance: 0.06, // now and then parks one quad crooked on purpose, to wind Amy up
       lineUpCrookedChance: 1,
+      nickChance: 1, // hops on a quad you've left running and rides off with it (nicking.js)
       boredDriveChance: 0.4,
       driveConfidence: 0.7,
       diagnoseAccuracy: 0.5, // sure of herself, wrong about half the time

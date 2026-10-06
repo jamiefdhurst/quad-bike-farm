@@ -321,7 +321,17 @@ export class DebugGui {
     };
     f.add(actions, 'lineUp').name('Amy lines the quads up by the barn');
     f.add(actions, 'crooked').name('Jess parks one crooked');
+    actions.nick = () => {
+      const c = girl('jess');
+      if (!free(c)) return;
+      const quads = g.units.map((u) => u.quad).filter((q) => c.mayRide(q) && c.canDrive(q) && !c.takenByOther(q) && !q.rider);
+      quads.sort((a, b) => a.position.distanceTo(g.player.position) - b.position.distanceTo(g.player.position));
+      if (!quads.length) return g.hud.toast('No free quad');
+      g.startNick(c, quads[0]);
+      g.hud.toast(`Jess is off with the ${quads[0].label}`);
+    };
     f.add(actions, 'doughnuts').name('Jess does doughnuts');
+    f.add(actions, 'nick').name('Jess nicks the nearest quad');
     f.add(actions, 'race').name('Start a race now');
     f.add(actions, 'diesel').name('Jess pours red diesel into a quad');
     f.add(actions, 'jumper_amy').name('Amy fetches or hangs up a jumper');

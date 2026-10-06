@@ -32,6 +32,7 @@ import { AMY_READING_LINES } from './readingLines.js';
 import { AMY_PASS_LINES } from './passLines.js';
 import { AMY_CONVOY_LINES } from './convoyLines.js';
 import { AMY_DOUGHNUT_LINES } from './doughnutLines.js';
+import { AMY_NICK_LINES } from './nickLines.js';
 import { AMY_LINEUP_LINES } from './lineUpLines.js';
 import { AMY_TEA_LINES } from './teaLines.js';
 import { AMY_JUMPER_LINES } from './jumperLines.js';
@@ -1411,6 +1412,7 @@ export const VOICE_LINES = {
   ...AMY_CONVOY_LINES,
   // Doughnuts (doughnutLines.js).
   ...AMY_DOUGHNUT_LINES,
+  ...AMY_NICK_LINES,
   ...AMY_LINEUP_LINES,
   // Tea on the rack (teaLines.js).
   ...AMY_TEA_LINES,

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { driveMood, pickConfidence, afterDrive } from './driveMood.js';
 import { HerDrive } from './herDriving.js';
 import { DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
+import { DEFAULT_LINEUP_PARAMS, parkRoute } from './lineUp.js';
 import { solveTwoBone, orientHand } from './armIK.js';
 
 // Her driving a quad herself, as Companion states and methods: getting on the
@@ -77,9 +78,11 @@ export const drivingStates = {
         params.driveMaxThrottle = 1;
         params.driveScareSpeed = 99; // she's not frightened by the speed, only by tipping over
       }
+      const nick = this.nickJob;
+      if (nick?.phase === 'away') params.driveForMin = params.driveForMax = nick.seconds; // having fun with yours, for as long as she likes
       if (park) {
-        // Tidying: slow and careful, nothing frightens her off.
-        params.driveSpeedMin = params.driveSpeedMax = this.params.parkSpeed;
+        // Tidying: slow and careful, nothing frightens her off. Bringing yours back is quicker.
+        params.driveSpeedMin = params.driveSpeedMax = park.nick ? nick.returnSpeed : this.params.parkSpeed;
         params.driveScareSpeed = 99;
         params.drivePauseChance = 0;
       }
@@ -251,7 +254,17 @@ export const drivingMethods = {
     const exit = this.driveExit;
     this.driveExit = null;
     this.driveEvents.push(`done:${d.result}`);
-    if (d.park && d.result !== 'parked') this.endLineUp(`the drive ended: ${d.result}`);
+    if (d.park && !d.park.nick && d.result !== 'parked') this.endLineUp(`the drive ended: ${d.result}`);
+    const nick = this.nickJob;
+    if (nick?.phase === 'away' && !exit && d.result === 'bored') {
+      // Had her fun: back to where you left it, still driving.
+      nick.phase = 'back';
+      this.parkWanted = { route: parkRoute(nick.slot, this.lineUpParams ?? DEFAULT_LINEUP_PARAMS), yaw: nick.slot.yaw, crooked: false, nick: true };
+      q.setDriver(null);
+      this.fsm.transition('driving');
+      return;
+    }
+    if (nick && !(nick.phase === 'back' && d.result === 'parked')) this.nickJob = null; // anything else ends it: she's done, or you've got it back
     this.driveConfidence = afterDrive(this.driveConfidence ?? p.driveConfidence, d.result);
     let how = exit?.how;
     if (!how) how = d.result === 'parked' || d.result === 'gaveUp' || d.result === 'noRoom' || Math.random() >= p.driveBackChance ? 'off' : 'back';
@@ -271,6 +284,11 @@ export const drivingMethods = {
 
   /** She has put a quad in its place in the row: if it was left crooked on purpose her friend notices, otherwise she goes on to the next. */
   finishParking(park) {
+    if (park.nick) {
+      this.nickJob = null;
+      this.selfEvents.push('nickBack');
+      return;
+    }
     if (park.crooked) for (const o of this.others()) o.noticeCrooked?.();
     else this.continueLineUp();
   },

@@ -36,6 +36,7 @@ import { Race, RACE_PARAM_RANGES, planLap } from './npc/race.js';
 import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
 import { Convoy, CONVOY_PARAM_RANGES } from './npc/convoy.js';
 import { DoughnutWatch, DOUGHNUT_PARAM_RANGES } from './npc/doughnuts.js';
+import { Nicking, NICK_PARAM_RANGES } from './npc/nicking.js';
 import { DEFAULT_LINEUP_PARAMS, LINEUP_PARAM_RANGES } from './npc/lineUp.js';
 import { Tea, TEA_PARAM_RANGES } from './npc/tea.js';
 import { Jumpers, JUMPER_PARAM_RANGES, JUMPERS } from './npc/jumpers.js';
@@ -339,6 +340,7 @@ export class Game {
     this.raceStart = nearestTrackFraction(this.world.track, this.world.layout.yard.x, this.world.layout.yard.z);
     buildStartLine(this.scene, (x, z) => this.world.heightAt(x, z), this.world.track, this.raceStart, this.world.layout.trackHalfWidth);
     this.warming = new Warming(); // hands over an idling engine on a cold day (npc/warming.js)
+    this.nicking = new Nicking(undefined, createRandom(this.seed ^ 0x61c3)); // Jess taking a quad you left running (npc/nicking.js)
     this.headStart = new HeadStart(undefined, createRandom(this.seed ^ 0x4ead)); // starting your usual quad for you (npc/headStart.js)
     this.gossip = new Gossip(BANTER.filter((e) => e.when === 'gossip'), undefined, createRandom(this.seed ^ 0x6055)); // talking about you (npc/gossip.js)
     const capital = (id) => id[0].toUpperCase() + id.slice(1);
@@ -614,6 +616,7 @@ export class Game {
     registerTuning('Racing', this.race.p, RACE_PARAM_RANGES);
     registerTuning('Follow the leader', this.convoy.p, CONVOY_PARAM_RANGES);
     registerTuning('Doughnuts', this.doughnutWatch.p, DOUGHNUT_PARAM_RANGES);
+    registerTuning('Nicking your quad', this.nicking.p, NICK_PARAM_RANGES);
     registerTuning('Lining them up', this.lineUpParams, LINEUP_PARAM_RANGES);
     registerTuning('Tea on the rack', this.tea.p, TEA_PARAM_RANGES);
     registerTuning('Jumpers', this.jumpers.p, JUMPER_PARAM_RANGES);
@@ -1539,6 +1542,58 @@ export class Game {
     }
   }
 
+  // Nicking your quad ---------------------------------------------------------
+
+  /** She takes this quad off for a while; Amy, if she sees it go, objects. */
+  startNick(c, quad) {
+    c.nickQuad(quad, { seconds: this.nicking.awayFor(), returnSpeed: this.nicking.p.returnSpeed });
+    setTimeout(() => {
+      const amy = this.companions.find((o) => o !== c && o.fsm.is('idle') && o.root.position.distanceTo(quad.position) < 60);
+      amy?.voice.say('nickWatch', { urgent: true });
+    }, 3000);
+  }
+
+  updateNicking(dt, ridden) {
+    const np = this.nicking.p;
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    const quads = this.units.map((u) => {
+      const q = u.quad;
+      const claimed = this.companions.some((c) => c.quad === q && c.fsm.is('walking', 'starting'));
+      return { id: u.spec.id, x: q.position.x, z: q.position.z, running: q.engine.isRunning, free: !q.rider && !q.driver && !q.passenger && !q.isTipped && !q.isGhostRiding && !this.herOn(q) && !claimed };
+    });
+    const girls = this.companions.map((c) => ({
+      id: c.character.id,
+      x: c.root.position.x,
+      z: c.root.position.z,
+      free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob,
+      chance: c.params.nickChance ?? 0,
+    }));
+    const you = { x: this.player.position.x, z: this.player.position.z };
+    for (const e of this.nicking.update(dt, { riding: ridden?.spec.id ?? null, you, quads, girls })) {
+      const c = byId[e.girl];
+      const quad = this.units.find((u) => u.spec.id === e.spec).quad;
+      if (!c.takenByOther(quad, 'rider') && c.canDrive(quad)) this.startNick(c, quad);
+    }
+    // While she has it: tearing it up (the mud it comes back in), burning fuel, and laughing. A job that has come to nothing
+    // (you got back on, or she gave up) is dropped.
+    for (const c of this.companions) {
+      const job = c.nickJob;
+      if (!job) continue;
+      if (c.fsm.is('idle', 'seated', 'resting')) {
+        c.nickJob = null;
+        continue;
+      }
+      if (job.phase !== 'away' || !c.fsm.is('driving')) continue;
+      job.quad.churn = np.churn;
+      job.quad.fuel.litres = Math.max(0, job.quad.fuel.litres - np.extraBurn * dt);
+      job.laughed += dt;
+      if (job.laughed > np.laughGap) {
+        job.laughed = 0;
+        c.voice.say('nickLaugh', { urgent: true, chance: 0.8 });
+      }
+    }
+  }
+
   // Doughnuts ----------------------------------------------------------------
 
   updateDoughnuts(dt) {
@@ -2089,6 +2144,7 @@ export class Game {
     this.updateWarming(dt);
     this.updateHeadStart(dt, ridden);
     this.updateDoughnuts(dt);
+    this.updateNicking(dt, ridden);
     this.updateTea(dt, ridden);
     this.updateJumpers(dt);
     this.updateDieselMistake(dt, ridden);

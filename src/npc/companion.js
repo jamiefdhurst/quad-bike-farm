@@ -94,6 +94,7 @@ export class Companion {
     this.idleFor = 0;
     this.restlessness = 0.7 + Math.random() * 0.8; // drifts while she's about (boredom.js)
     this.boredAfter = nextBoredWait(params, this.restlessness);
+    this.nickJob = null; // a quad of yours she has taken off: { quad, phase: 'away' | 'back', ... } (nicking.js)
     this.selfEvents = []; // things she decided to do on her own, for her voice
     this.favourView = () => ({ mood: 'even', warmth: 1, sulk: 1 }); // how you've treated her (favour.js); the game swaps in the real thing
     this.reach = 0; // how far she's reaching for the bars, 0..1
@@ -387,6 +388,16 @@ export class Companion {
       this.nudge = { quad: q, from: { x: q.position.x, z: q.position.z, yaw: q.yaw }, to: job.slot, t: 0 };
     }, lp.shoveSeconds + 1);
     if (!set) this.endLineUp('could not walk to it');
+  }
+
+  /**
+   * Nicking a quad you left running (nicking.js): she takes it for `seconds`, then brings it back to where it stood (`from`:
+   * { x, z, yaw }) at `returnSpeed`. `nickJob.phase` is 'away' and then 'back'; game.js watches it for the mud and the fuel.
+   */
+  nickQuad(quad, { seconds, returnSpeed }) {
+    this.nickJob = { quad, phase: 'away', seconds, returnSpeed, slot: { x: quad.position.x, z: quad.position.z, yaw: quad.yaw }, laughed: 0 };
+    this.selfEvents.push('nickGo');
+    this.requestDrive(quad);
   }
 
   /** After one is in place she often goes on to the next, until they are all in a row. */
