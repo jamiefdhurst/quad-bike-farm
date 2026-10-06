@@ -14,6 +14,7 @@ import { DEFAULT_VEHICLE_PARAMS, VEHICLE_PARAM_RANGES } from './vehicleParams.js
 import { FAULT_PARAM_RANGES } from './faults.js';
 import { DEFAULT_FUEL_PARAMS, FUEL_PARAM_RANGES } from './fuelSystem.js';
 import { DEFAULT_GEARBOX_PARAMS, GEARBOX_PARAM_RANGES } from './manualDrivetrain.js';
+import { SHIFTER_PARAM_RANGES } from './autoShifter.js';
 import { buildTractorModel, TRACTOR_LAYOUT, TRACTOR_GROUND_OFFSET, TRACTOR_PROXY } from './tractorModel.js';
 
 /**
@@ -46,11 +47,12 @@ export class QuadUnit {
       solo: spec.solo,
       plateNumber: spec.plateNumber,
       fuelParams: { ...DEFAULT_FUEL_PARAMS, ...spec.fuel },
+      ...((spec.tractor || spec.manual) && { gearbox: { ...DEFAULT_GEARBOX_PARAMS, ...spec.gearbox } }),
       ...(spec.tractor && {
+        tractor: true,
         build: ({ dashStyle }) => buildTractorModel({ bodyColor: spec.bodyColor, dashStyle }),
         layout: TRACTOR_LAYOUT,
         groundOffset: TRACTOR_GROUND_OFFSET,
-        gearbox: { ...DEFAULT_GEARBOX_PARAMS, ...spec.gearbox },
         proxy: TRACTOR_PROXY,
         wheelShake: spec.wheelShake,
       }),
@@ -73,7 +75,10 @@ export class QuadUnit {
     registerTuning(`${folder}/Mud on it`, this.mud.state, MUD_STATE_RANGES);
     registerTuning(`${folder}/Fuel`, this.quad.fuel.params, FUEL_PARAM_RANGES);
     registerTuning(`${folder}/Faults`, this.quad.faults.params, FAULT_PARAM_RANGES);
-    if (this.quad.manual) registerTuning(`${folder}/Gearbox`, this.quad.gearbox, GEARBOX_PARAM_RANGES);
+    if (this.quad.manual) {
+      registerTuning(`${folder}/Gearbox`, this.quad.gearbox, GEARBOX_PARAM_RANGES);
+      if (!this.quad.tractor) registerTuning(`${folder}/Her gear changes`, this.quad.shifter.params, SHIFTER_PARAM_RANGES);
+    }
     registerTuning(`${folder}/Vehicle`, this.quad.params, VEHICLE_PARAM_RANGES, {
       onChange: () => this.quad.physics.applyParams(),
     });

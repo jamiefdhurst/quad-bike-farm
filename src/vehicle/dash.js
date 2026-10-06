@@ -161,7 +161,7 @@ function buildGrizzly() {
       ctx.strokeStyle = on;
       ctx.lineWidth = 0.6;
       ctx.strokeRect(x + 4, y + 14, 11, 14);
-      text(ctx, s.reverse ? 'R' : s.neutral ? 'N' : 'H', x + 9.5, y + 25, 10, on, { align: 'center', weight: 'bold' });
+      text(ctx, s.reverse ? 'R' : s.neutral ? 'N' : 'D', x + 9.5, y + 25, 10, on, { align: 'center', weight: 'bold' });
       text(ctx, 'MPH', x + w / 2 + 17, y + 35, 4.4, on);
       segText(ctx, L.speed, x + w / 2 + 14, y + 18, 18, on, ghost);
       segText(ctx, s.clock, x + w - 5, y + 16, 5.2, on);
@@ -249,7 +249,7 @@ function buildKodiak() {
       text(ctx, 'F', x + 120, y + 8.4, 4, on);
       // Gear column, the current one boxed.
       const cur = s.reverse ? 3 : s.neutral ? 2 : 0;
-      [...'HLNRP'].forEach((g, i) => text(ctx, g, x + 8, y + 18 + i * 9, 6.4, i === cur ? on : ghost, { align: 'center', weight: 'bold' }));
+      [...'DLNRP'].forEach((g, i) => text(ctx, g, x + 8, y + 18 + i * 9, 6.4, i === cur ? on : ghost, { align: 'center', weight: 'bold' }));
       ctx.strokeStyle = on;
       ctx.lineWidth = 0.6;
       ctx.strokeRect(x + 3.5, y + 12 + cur * 9, 9, 8);

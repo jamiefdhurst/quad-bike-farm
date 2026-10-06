@@ -4,6 +4,7 @@ import { FuelSystem } from './fuelSystem.js';
 import { QuadPhysics, QUAD_LAYOUT } from './quadPhysics.js';
 import { Drivetrain } from './drivetrain.js';
 import { ManualDrivetrain, gearLabel } from './manualDrivetrain.js';
+import { AutoShifter } from './autoShifter.js';
 import { poseTractorControls } from './tractorModel.js';
 import { EngineLoad } from './engineLoad.js';
 import { waterGulp } from '../engine/water.js';
@@ -21,10 +22,10 @@ const CHOKE_LESS_KEY = 'KeyZ';
 // Holding a choke key steps again after this delay, then at this interval.
 const CHOKE_REPEAT_DELAY = 0.35;
 const CHOKE_REPEAT_INTERVAL = 0.12;
-// The tractor's controls (a manual, so the quads' choke keys and automatic drive are set aside): Shift is the clutch, 1 to 3 the
-// gears, 0 neutral and V reverse, Q and Z move the hand throttle and X pulls the stop knob.
+// The manual controls: Shift is the clutch, 1 to 4 the gears, 0 neutral and B reverse. The tractor also sets the quads' choke keys and
+// automatic drive aside: Q and Z move its hand throttle and X pulls its stop knob.
 const CLUTCH_KEYS = ['ShiftLeft', 'ShiftRight'];
-const GEAR_KEYS = { Digit1: 1, Digit2: 2, Digit3: 3, Digit0: 0, KeyB: -1 };
+const GEAR_KEYS = { Digit1: 1, Digit2: 2, Digit3: 3, Digit4: 4, Digit0: 0, KeyB: -1 };
 const HAND_THROTTLE_RATE = 0.35; // per second the hand throttle moves while its key is held
 const HAND_THROTTLE_UP_KEY = 'KeyQ';
 const HAND_THROTTLE_DOWN_KEY = 'KeyZ';
@@ -45,7 +46,7 @@ export class Quad {
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, proxy = null, wheelShake = 0 }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0 }) {
     this.wheelShake = wheelShake; // how much of the body's vibration the wheels share (the tractor's wheels shake with it; the quads' don't)
     this.scale = scale; // 1, or smaller for the kids' quad: the model and the physics chassis both shrink by this
     this.world = world;
@@ -109,8 +110,10 @@ export class Quad {
       yaw: s.yaw,
     }, scale, layout);
     // The tractor has a clutch pedal and a gearbox rather than a CVT; everything reads the same drivetrain fields.
-    this.manual = !!gearbox;
+    this.manual = !!gearbox; // a clutch and gearbox: the tractor and the manual quads
+    this.tractor = tractor; // the tractor's own controls and body on top of that
     this.gearbox = gearbox;
+    this.shifter = new AutoShifter(); // what the girls do with the clutch and lever when one of them drives
     this.drivetrain = this.manual ? new ManualDrivetrain(params, gearbox) : new Drivetrain(params);
     this.handSetting = gearbox?.handStart ?? 0; // the tractor's hand throttle, 0..1: it stays where it was put, even with nobody on it
     this.note = null; // something to tell whoever's at the controls, taken by the game (see takeNote)
@@ -211,11 +214,27 @@ export class Quad {
     this.driver = driver;
     this.ghost = null;
     if (!driver) this.churn = 0;
+    if (!driver && this.manual && !this.input) this.parkInNeutral(); // she leaves it in neutral when she gets off
     if (!driver && !this.input) {
       this.throttle = 0;
       this.starter = false;
       this.reverse = false;
     }
+  }
+
+  /** One step of her gear changing: where the lever goes and whether she has the clutch down. */
+  shift(dt, throttle, brake, fwd) {
+    const d = this.drivetrain;
+    const out = this.shifter.update(dt, { gear: d.gear, gears: this.gearbox.gears, topSpeed: (g) => d.topSpeed(g), speed: Math.abs(fwd), throttle, brake, reverse: !!this.driver?.controls.reverse });
+    this.clutchHeld = out.clutch;
+    if (out.gear !== d.gear) d.select(out.gear);
+  }
+
+  /** Neutral, clutch up, with nothing left for the shifter to finish. */
+  parkInNeutral() {
+    this.drivetrain.setGear(0);
+    this.shifter.reset();
+    this.clutchHeld = false;
   }
 
   /** True while it's driving itself after the rider jumped off. */
@@ -283,16 +302,16 @@ export class Quad {
     if (input.wasPressed('KeyK')) this.engine.toggleIgnition();
     if (input.wasPressed('KeyF') && !this.fuel.params.noTap) this.fuel.cycleTap();
     if (this.manual) this.manualKeys(input);
-    else {
+    if (!this.tractor) {
       this.chokeKey(dt, input, CHOKE_MORE_KEY, 1);
       this.chokeKey(dt, input, CHOKE_LESS_KEY, -1);
     }
     if (input.wasPressed('KeyT') && this.isTipped) this.rightItself();
   }
 
-  /** The tractor's gear lever and stop knob. */
+  /** The gear lever, and the tractor's stop knob. */
   manualKeys(input) {
-    if (input.wasPressed(STOP_KNOB_KEY)) this.engine.stopKnob();
+    if (this.tractor && input.wasPressed(STOP_KNOB_KEY)) this.engine.stopKnob();
     if (!this.input) return; // standing beside it you can reach the knob but not the lever
     for (const [code, gear] of Object.entries(GEAR_KEYS)) {
       if (!input.wasPressed(code)) continue;
@@ -300,9 +319,13 @@ export class Quad {
     }
   }
 
-  /** The tractor's starter interlock: in neutral or with the clutch down, never in gear with the pedal up. Quads have no such thing. */
+  /** A manual's starter interlock: in neutral or with the clutch down, never in gear with the pedal up. The girls just take it out of gear. */
   starterAllowed() {
     if (!this.manual || this.drivetrain.mayCrank) return true;
+    if (!this.input && !this.remoteInput) {
+      this.drivetrain.setGear(0);
+      return true;
+    }
     this.say('It is in gear: hold Shift for the clutch, or put it in neutral (0), to use the starter');
     return false;
   }
@@ -347,7 +370,7 @@ export class Quad {
     let brakeInput = 0;
     let steerInput = 0;
 
-    if (this.manual && this.input) {
+    if (this.tractor && this.input) {
       // The tractor: foot throttle and brake, a hand throttle that stays put, a clutch pedal and a gear lever.
       const input = this.input;
       steerInput = (input.isDown('KeyA') ? 1 : 0) - (input.isDown('KeyD') ? 1 : 0);
@@ -365,27 +388,34 @@ export class Quad {
       const w = input.isDown('KeyW');
       const s = input.isDown('KeyS');
       steerInput = (input.isDown('KeyA') ? 1 : 0) - (input.isDown('KeyD') ? 1 : 0);
-      this.starter = input.isDown('KeyR');
+      this.starter = input.isDown('KeyR') && this.starterAllowed();
+      if (this.manual) this.clutchHeld = CLUTCH_KEYS.some((k) => input.isDown(k));
 
-      if (w) {
-        if (this.reverse && fwd < -0.3) brakeInput = 1;
-        else {
-          this.reverse = false;
-          throttleInput = 1;
-        }
-      }
-      if (s) {
-        if (!this.reverse && fwd > 0.5) {
-          brakeInput = 1;
-          this.reverseTimer = 0;
-        } else {
-          this.reverseTimer += dt;
-          if (this.reverseTimer > p.reverseDelay) this.reverse = true;
-          if (this.reverse) throttleInput = p.reverseThrottle;
-          else brakeInput = 1;
-        }
+      if (this.manual) {
+        // The lever decides which way it goes: W is throttle and S the brake, never reverse.
+        throttleInput = w ? 1 : 0;
+        brakeInput = s ? 1 : 0;
       } else {
-        this.reverseTimer = 0;
+        if (w) {
+          if (this.reverse && fwd < -0.3) brakeInput = 1;
+          else {
+            this.reverse = false;
+            throttleInput = 1;
+          }
+        }
+        if (s) {
+          if (!this.reverse && fwd > 0.5) {
+            brakeInput = 1;
+            this.reverseTimer = 0;
+          } else {
+            this.reverseTimer += dt;
+            if (this.reverseTimer > p.reverseDelay) this.reverse = true;
+            if (this.reverse) throttleInput = p.reverseThrottle;
+            else brakeInput = 1;
+          }
+        } else {
+          this.reverseTimer = 0;
+        }
       }
       if (!this.reverse && !brakeInput) throttleInput = Math.max(throttleInput, this.handThrottle);
     } else {
@@ -405,10 +435,12 @@ export class Quad {
         if (cruise === null) this.releaseGhost();
         else throttleInput = cruise;
       }
+      // A girl driving a manual works the clutch and lever herself. A runaway keeps whatever gear it was left in.
+      if (this.driver && this.manual) this.shift(dt, throttleInput, brakeInput, fwd);
     }
 
     // The hand throttle holds the engine up wherever it was left, ridden or not.
-    if (this.manual) throttleInput = Math.max(throttleInput, this.handSetting);
+    if (this.tractor) throttleInput = Math.max(throttleInput, this.handSetting);
 
     // The recoil pull-start (the two-strokes): hold P to draw the cord, let go to yank.
     const pullDown = this.input ? this.input.isDown('KeyP') : (!!this.remoteInput && this.remoteInput.isDown('KeyP')) || this.helperPull;
@@ -662,7 +694,7 @@ export class Quad {
     this.pod?.update(state);
     setHeadlights(this.model, e.ignitionOn);
 
-    if (this.manual) poseTractorControls(this.model, { gear: this.drivetrain.gear, hand: this.handSetting, pedal: this.drivetrain.pedal });
+    if (this.tractor) poseTractorControls(this.model, { gear: this.drivetrain.gear, hand: this.handSetting, pedal: this.drivetrain.pedal });
     this.displayChoke += (this.choke - this.displayChoke) * Math.min(1, 12 * dt);
     // Off: lever forward. Full: pulled back towards the rider.
     this.chokeLever.rotation.x = 0.5 - this.displayChoke * 1.45;

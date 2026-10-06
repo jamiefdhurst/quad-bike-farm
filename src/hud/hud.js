@@ -11,6 +11,7 @@ const HELP_HTML = `
   <h3>On the quad</h3>
   <div><kbd>K</kbd> ignition, hold <kbd>R</kbd> to crank, <kbd>P</kbd> pull-start (yellow and orange)</div>
   <div><kbd>Q</kbd> more choke, <kbd>Z</kbd> less, <kbd>F</kbd> fuel tap</div>
+  <div>Red, green and yellow have a clutch: hold <kbd>Shift</kbd> to change gear with <kbd>1</kbd> to <kbd>4</kbd>, <kbd>B</kbd> reverse, <kbd>0</kbd> neutral</div>
   <div><kbd>W</kbd> throttle, <kbd>S</kbd> brake / reverse, <kbd>A</kbd><kbd>D</kbd> steer</div>
   <div><kbd>Space</kbd> parking brake, <kbd>T</kbd> right it if it tips, <kbd>E</kbd> get off</div>
   <div>Hold <kbd>C</kbd> to look back, <kbd>V</kbd> to lean in to the dash</div>

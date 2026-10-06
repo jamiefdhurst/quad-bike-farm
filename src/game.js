@@ -403,9 +403,9 @@ export class Game {
           const winchKey = this.winch?.unit === unit && this.winch.state === 'stowed' ? '   X winch cable' : '';
           return {
             action: `Ride the ${unit.label}`,
-            keys: quad.manual
+            keys: quad.tractor
               ? [['K', 'Key'], ['R', 'Start'], ['X', 'Stop knob']]
-              : [['K', 'Ignition'], ['R', 'Start'], ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
+              : [['K', 'Ignition'], ['R', 'Start'], ...(quad.manual ? [['Shift 1-4', 'Clutch, gears']] : []), ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
           };
         },
         interact: () => {
@@ -2291,9 +2291,9 @@ export class Game {
     } else if (this.can.held) {
       this.hud.setStatus(`Jerry can  ${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel)}\nG to put it down`);
     } else if (this.riddenUnit?.quad.manual) {
-      // The tractor's levers aren't on its dash, so say where they are.
+      // The gear lever and clutch aren't on a dash (nor the tractor's hand throttle), so say where they are.
       const q = this.riddenUnit.quad;
-      this.hud.setStatus(`Gear ${gearLabel(q.drivetrain.gear)}   clutch ${q.drivetrain.pedal > 0.5 ? 'in' : 'out'}   hand throttle ${Math.round(q.handSetting * 100)}%`);
+      this.hud.setStatus(`Gear ${gearLabel(q.drivetrain.gear)}   clutch ${q.drivetrain.pedal > 0.5 ? 'in' : 'out'}${q.tractor ? `   hand throttle ${Math.round(q.handSetting * 100)}%` : ''}`);
     } else {
       this.hud.setStatus('');
     }

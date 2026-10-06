@@ -10,18 +10,22 @@ export const DEFAULT_GEARBOX_PARAMS = {
   topSpeed1: 2.4, // m/s in first at full throttle (about 5 mph)
   topSpeed2: 4.8, // in second
   topSpeed3: 8.5, // in third
+  topSpeed4: 12, // in fourth (only the quads' four-speed boxes have one)
   topSpeedReverse: 2.6,
   torque1: 1, // share of the vehicle's maxDriveForce in first...
   torque2: 0.68, // ...second
   torque3: 0.46, // ...third
+  torque4: 0.4, // ...fourth
   torqueReverse: 0.9,
   launchLoad1: 0.25, // how hard pulling away from rest drags the engine down with the clutch fully out, in first...
   launchLoad2: 0.5, // ...second (about stalls an idling engine)
   launchLoad3: 0.95, // ...third (stalls it unless there's throttle)
+  launchLoad4: 1.2, // ...fourth (always stalls it from rest without a lot of throttle)
   launchRelief: 0.9, // fraction of that drag a fully open throttle takes away
   clutchPressRate: 8, // 1/s the pedal goes down at
   clutchReleaseRate: 1.6, // 1/s it comes up at, so about 0.6 s from down to fully engaged
   handStart: 0.15, // where the hand throttle is left when the game starts (about 710 rpm); it moves in steps of 0.35 a second from there
+  gears: 3, // forward gears: 3 on the tractor, 4 on the manual quads
   changeClutch: 0.7, // the pedal has to be this far down to change gear (neutral can always be found)
 };
 
@@ -29,22 +33,26 @@ export const GEARBOX_PARAM_RANGES = {
   topSpeed1: [0.5, 8, 0.1],
   topSpeed2: [1, 12, 0.1],
   topSpeed3: [2, 20, 0.1],
+  topSpeed4: [3, 30, 0.1],
   topSpeedReverse: [0.5, 8, 0.1],
   torque1: [0.1, 2, 0.01],
   torque2: [0.1, 2, 0.01],
   torque3: [0.1, 2, 0.01],
+  torque4: [0.1, 2, 0.01],
   torqueReverse: [0.1, 2, 0.01],
   launchLoad1: [0, 1.5, 0.01],
   launchLoad2: [0, 1.5, 0.01],
   launchLoad3: [0, 1.5, 0.01],
+  launchLoad4: [0, 1.5, 0.01],
   launchRelief: [0, 1, 0.01],
   clutchPressRate: [1, 30, 0.5],
   clutchReleaseRate: [0.2, 10, 0.1],
   handStart: [0, 1, 0.01],
+  gears: [3, 4, 1],
   changeClutch: [0.1, 1, 0.05],
 };
 
-export const GEARS = [-1, 0, 1, 2, 3];
+export const GEARS = [-1, 0, 1, 2, 3, 4];
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const smoothstep = (a, b, x) => {
@@ -74,21 +82,22 @@ export class ManualDrivetrain {
     return this.gear === 0;
   }
 
-  /** The top speed of a gear, m/s. */
+  /** The top speed of a gear, m/s. A gear can't pull past the vehicle's own top speed (a limiter, say), whatever its ratio. */
   topSpeed(gear = this.gear) {
     const g = this.gearbox;
-    return gear < 0 ? g.topSpeedReverse : [g.topSpeedReverse, 1, g.topSpeed1, g.topSpeed2, g.topSpeed3][gear + 1];
+    const ratio = gear < 0 ? g.topSpeedReverse : [g.topSpeedReverse, 1, g.topSpeed1, g.topSpeed2, g.topSpeed3, g.topSpeed4][gear + 1];
+    return Math.min(ratio, gear < 0 ? this.params.maxReverseSpeed ?? Infinity : this.params.maxSpeed ?? Infinity);
   }
 
   /** Share of the drive force a gear has. */
   torque(gear = this.gear) {
     const g = this.gearbox;
-    return gear < 0 ? g.torqueReverse : [g.torqueReverse, 1, g.torque1, g.torque2, g.torque3][gear + 1];
+    return gear < 0 ? g.torqueReverse : [g.torqueReverse, 1, g.torque1, g.torque2, g.torque3, g.torque4][gear + 1];
   }
 
   launchLoad(gear = this.gear) {
     const g = this.gearbox;
-    return gear === 0 ? 0 : gear < 0 ? g.launchLoad1 : [0, 0, g.launchLoad1, g.launchLoad2, g.launchLoad3][gear + 1];
+    return gear === 0 ? 0 : gear < 0 ? g.launchLoad1 : [0, 0, g.launchLoad1, g.launchLoad2, g.launchLoad3, g.launchLoad4][gear + 1];
   }
 
   /** Whether the clutch is down far enough to change gear. */
@@ -101,12 +110,17 @@ export class ManualDrivetrain {
     return this.gear === 0 || this.pedal >= this.gearbox.changeClutch;
   }
 
+  /** Forces the lever to a gear without the clutch: the girls' shifter dips the clutch itself, and getting off puts it in neutral. */
+  setGear(gear) {
+    this.gear = gear;
+  }
+
   /**
    * Moves the lever to a gear (-1 to 3). Neutral can always be found; the others need the clutch down.
    * @returns {'ok'|'clutch'|'same'}
    */
   select(gear) {
-    if (!GEARS.includes(gear)) return 'same';
+    if (!GEARS.includes(gear) || gear > this.gearbox.gears) return 'same';
     if (gear === this.gear) return 'same';
     if (gear !== 0 && !this.canChange) return 'clutch';
     this.gear = gear;
@@ -123,8 +137,10 @@ export class ManualDrivetrain {
    * @param {number} s.throttle      0..1 as sent to the engine.
    * @param {number} s.brake         0..1
    * @param {number} s.forwardSpeed  m/s, signed.
+   * @param {number} [s.rpm]         Used by the two-stroke's power band only.
+   * @param {number} [s.lugDrop]
    */
-  update({ dt = 0, clutchHeld = false, power, running, throttle, brake, forwardSpeed }) {
+  update({ dt = 0, clutchHeld = false, power, running, throttle, brake, forwardSpeed, rpm = 0, lugDrop = 0 }) {
     const p = this.params;
     const gb = this.gearbox;
     const speed = Math.abs(forwardSpeed);
@@ -144,7 +160,9 @@ export class ManualDrivetrain {
     if (inGear) {
       const pedalTorque = p.idleTorque + (1 - p.idleTorque) * throttle;
       const drivePower = p.drivePowerFloor + (1 - p.drivePowerFloor) * power;
-      this.available = pedalTorque * drivePower * p.maxDriveForce * this.torque(g);
+      // A two-stroke is weak below its power band, whatever the gear; the four-strokes are flat.
+      const band = p.powerbandRpm > 0 ? p.torqueBelowBand + (1 - p.torqueBelowBand) * smoothstep(p.powerbandRpm - 1200, p.powerbandRpm + 600, rpm + lugDrop) : 1;
+      this.available = pedalTorque * band * drivePower * p.maxDriveForce * this.torque(g);
       // Past the gear's top speed (rolling downhill, say) it holds back rather than pushing.
       const speedFactor = clamp(1 - (speed / top) ** 2, 0, 1);
       force = dir * this.clutch * this.available * speedFactor;
