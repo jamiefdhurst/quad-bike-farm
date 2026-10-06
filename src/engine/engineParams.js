@@ -195,6 +195,21 @@ export const DEFAULT_ENGINE_PARAMS = {
   runOnCyclesMin: 3, // firings it runs on for, at the least
   runOnCyclesMax: 15, // and at the most (the worse it is, the longer)
 
+  // Drowning it: a deep puddle taken too fast (see water.js)
+  waterDepthFrom: 0.35, // puddle depth (0..1) under the wheels below which no water gets in
+  waterSafeSpeed: 3, // m/s: slower than this it wades through without a drop
+  waterFullSpeed: 10, // m/s at which it takes in the most
+  waterGulpRate: 6, // water taken in per second at full depth and speed (a puddle is only about a quarter of a second long at speed)
+  waterDrainRunning: 0.03, // per second it drains while running (it blows out)
+  waterDrainThrottle: 0.05, // extra per second with the throttle wide open
+  waterDrainOff: 0.022, // per second it drains standing about, so about 45 s to clear
+  waterRoughness: 0.9, // roughness added by a full load of water
+  waterPowerLoss: 0.7, // power lost to it
+  waterMisfire: 0.6, // extra chance of a misfire on each firing at full water
+  waterStallAt: 0.65, // above this it may stall
+  waterStallChance: 0.25, // chance of stalling on each firing once past that
+  waterNoStart: 0.15, // wetter than this it won't catch (fades out to nothing at this level)
+
   // Fuel starvation, from the carburettor float bowl level (0..1)
   fuelStarveLevel: 0.65, // below this bowl level the mixture starts to go lean
   starveLean: 1.1, // how lean it goes as the bowl empties
@@ -353,6 +368,19 @@ export const ENGINE_PARAM_RANGES = {
   runOnLean: [0, 1, 0.01],
   runOnCyclesMin: [0, 30, 1],
   runOnCyclesMax: [0, 60, 1],
+  waterDepthFrom: [0, 0.9, 0.01],
+  waterSafeSpeed: [0, 15, 0.5],
+  waterFullSpeed: [1, 25, 0.5],
+  waterGulpRate: [0, 10, 0.1],
+  waterDrainRunning: [0, 0.5, 0.005],
+  waterDrainThrottle: [0, 0.5, 0.005],
+  waterDrainOff: [0, 0.5, 0.002],
+  waterRoughness: [0, 1, 0.01],
+  waterPowerLoss: [0, 1, 0.01],
+  waterMisfire: [0, 1, 0.01],
+  waterStallAt: [0.1, 1, 0.01],
+  waterStallChance: [0, 1, 0.01],
+  waterNoStart: [0.02, 1, 0.01],
   fuelStarveLevel: [0.05, 1, 0.01],
   starveLean: [0, 3, 0.05],
 };

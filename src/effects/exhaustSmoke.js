@@ -23,6 +23,7 @@ export const DEFAULT_SMOKE_PARAMS = {
   richDensity: 0.9, // extra at full richness
   foulDensity: 0.4, // extra with a fouled plug
   oilDensity: 1.2, // extra at full excess oil (too much pre-mix, or any in a four-stroke)
+  waterDensity: 0.8, // extra steam from a drowned engine, white
   throttleBurst: 0.85, // extra when the throttle is snapped open
   crankDensity: 0.26, // puffs while cranking
   coughDensity: 0.9, // puffs on a stall
@@ -49,6 +50,7 @@ export const SMOKE_PARAM_RANGES = {
   warmDensity: [0, 1, 0.005],
   coldDensity: [0, 1, 0.005],
   richDensity: [0, 2, 0.01],
+  waterDensity: [0, 2, 0.01],
   foulDensity: [0, 2, 0.01],
   oilDensity: [0, 3, 0.01],
   throttleBurst: [0, 2, 0.01],
@@ -193,11 +195,12 @@ export class ExhaustSmoke {
     const coldness = 1 - engine.temperature;
     const rich = Math.max(0, engine.mixture - engine.params.richTolerance);
     const density =
-      p.warmDensity + p.coldDensity * coldness + p.richDensity * rich + p.foulDensity * engine.fouling + p.oilDensity * engine.oilRich + p.throttleBurst * this.burst;
+      p.warmDensity + p.coldDensity * coldness + p.richDensity * rich + p.foulDensity * engine.fouling + p.oilDensity * engine.oilRich + p.waterDensity * (engine.water ?? 0) + p.throttleBurst * this.burst;
     // Colour: vapour-white when cold, sooty when rich or bursting.
     const sooty = Math.min(1, rich * 1.5 + engine.fouling + engine.oilRich * 0.6 + this.burst * 0.5);
     const base = p.warmGray + (p.coldGray - p.warmGray) * coldness;
-    const gray = base + (p.richGray - base) * sooty;
+    const steamy = Math.min(1, (engine.water ?? 0) * 3); // water's steam is white whatever else is going on
+    const gray = (base + (p.richGray - base) * sooty) * (1 - steamy) + p.coldGray * steamy;
 
     this.spawnBudget = Math.min(this.spawnBudget + p.maxPerSecond * dt, 3);
     for (const pulse of engine.pulses) {

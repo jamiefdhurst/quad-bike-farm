@@ -10,6 +10,7 @@ import { DEFAULT_ENGINE_PARAMS } from './engineParams.js';
 import { Knack } from './knack.js';
 import { oilExcess, stepLube, nipping } from './lubrication.js';
 import { runOnChance, popPropensity } from './runOn.js';
+import { stepWater, waterCatchFactor } from './water.js';
 import { offTemperature } from '../world/barn.js';
 import { stepHeat, stepSoak, pinkLevel, gaugeHeat, coolTickRate, hotStartRich } from './heat.js';
 
@@ -70,6 +71,8 @@ export class EngineModel {
     this.pink = 0; // 0..1 how badly it's pinking
     this.keyOff = false; // switched off but running on for a few more beats
     this.runOnLeft = 0; // firings left of that
+    this.water = 0; // 0..1 water swallowed through the intake (see water.js); it drains, and it won't catch while wet
+    this.gulp = 0; // water being taken in right now, per second
     this.pinkLeft = 0; // rattles owed to the audio
     this.tickLeft = 0; // cooling ticks owed to the audio
     this.motorOn = false; // the starter motor is turning it (not just a yank on the cord)
@@ -168,11 +171,12 @@ export class EngineModel {
    * @param {number}  [controls.resistLoad] 0..1 the part of driveLoad from climbing, mud or being blocked; this is what lugs a weak engine.
    * @param {number}  [controls.slip] 0..1 a slipping drive belt: the revs flare and the load doesn't hold them down.
    * @param {number}  [controls.dirt] 0..1 a dirty carb: lumpy, erratic and short of power.
+   * @param {number}  [controls.gulp] water going in at the intake, per second (see waterGulp).
    * @param {number}  [controls.speed] ground speed in m/s: the air that cools it.
    * @param {number}  [controls.ambient] 0..1 how warm the day is (sun on the engine).
    * @param {number}  [controls.overrunRpm] rpm above idle the wheels turn it over at with the throttle shut.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, oil = this.oil, slip = 0, dirt = 0, speed = 0, ambient = 0.5, sheltered = false } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, oil = this.oil, slip = 0, dirt = 0, gulp = 0, speed = 0, ambient = 0.5, sheltered = false } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -184,6 +188,7 @@ export class EngineModel {
     this.oil = Math.max(0, oil);
     this.slip = clamp(slip, 0, 1);
     this.dirt = clamp(dirt, 0, 1);
+    this.gulp = Math.max(0, gulp);
     this.speed = Math.abs(speed);
     this.ambient = clamp(ambient, 0, 1);
     this.sheltered = sheltered;
@@ -217,6 +222,7 @@ export class EngineModel {
     this.pullLeft = Math.max(0, this.pullLeft - h);
     this.updateTemperature(h);
     this.updateLube(h);
+    this.water = stepWater(this.water, h, { gulp: this.gulp, running: this.state === EngineState.RUNNING, throttle: this.throttle }, p);
     this.updateMixture();
 
     switch (this.state) {
@@ -406,7 +412,8 @@ export class EngineModel {
         p.nipRoughness * this.nip +
         p.oilRichRoughness * this.oilRich +
         p.dirtRoughness * this.dirt +
-        p.pinkRoughness * this.pink,
+        p.pinkRoughness * this.pink +
+        p.waterRoughness * this.water,
       0,
       1,
     );
@@ -423,6 +430,7 @@ export class EngineModel {
     this.erratic = Math.max(this.erratic, this.nip * this.nip, this.dirt ** 1.5);
     this.power *= 1 - p.dirtPowerLoss * this.dirt;
     this.power *= 1 - p.pinkPowerLoss * this.pink;
+    this.power *= 1 - p.waterPowerLoss * this.water;
     // Stumbling, it's got almost nothing.
     if (this.stumbleLeft > 0) this.power *= p.stumblePower;
   }
@@ -446,6 +454,7 @@ export class EngineModel {
         p.catchChance *
         lerp(p.catchColdFactor, 1, this.temperature) *
         this.knack.catchFactor(this.temperature) *
+        waterCatchFactor(this.water, p) *
         Math.exp(-((this.mixture / width) ** 2)) *
         (1 - this.fouling) *
         clamp(speed, 0, 1) * // turned over too slowly, it won't fire
@@ -524,6 +533,11 @@ export class EngineModel {
 
     if (this.advanceCycle(h)) {
       const t = this.cycleT;
+      // Too much water in it: it may just give up.
+      if (this.water > p.waterStallAt && this.random() < p.waterStallChance) {
+        this.stall('water');
+        return;
+      }
       // Popping on the overrun: unburnt fuel going off in the pipe with the throttle shut at speed.
       if (this.throttle < p.popThrottle && this.rpm > p.popFromRpm) {
         const rpmK = clamp((this.rpm - p.popFromRpm) / Math.max(1, p.maxRpm - p.popFromRpm), 0, 1);
@@ -541,7 +555,7 @@ export class EngineModel {
           return;
         }
       }
-      const misfireChance = this.keyOff ? 0.45 : p.misfireBase + p.misfireRoughness * this.roughness ** 2;
+      const misfireChance = this.keyOff ? 0.45 : p.misfireBase + p.misfireRoughness * this.roughness ** 2 + p.waterMisfire * this.water;
       // Two-strokes at light load skip alternate firings: the ring-ding.
       this.cycleCount = (this.cycleCount ?? 0) + 1;
       const skip =

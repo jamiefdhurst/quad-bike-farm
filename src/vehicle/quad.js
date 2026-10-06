@@ -4,6 +4,7 @@ import { FuelSystem } from './fuelSystem.js';
 import { QuadPhysics, WHEELS, SUSPENSION_TOP_Y } from './quadPhysics.js';
 import { Drivetrain } from './drivetrain.js';
 import { EngineLoad } from './engineLoad.js';
+import { waterGulp } from '../engine/water.js';
 import { CruiseControl } from './cruise.js';
 import { Bog } from './bog.js';
 import { Faults } from './faults.js';
@@ -422,6 +423,13 @@ export class Quad {
     this.fuel.update(dt, { rpm: e.rpm, throttle: e.throttle, choke: e.choke, running: e.isRunning });
   }
 
+  /** Water going up the intake, per second: the deepest puddle under a wheel, ploughed through fast. */
+  waterGulp() {
+    let puddle = 0;
+    for (const w of this.physics.wheelInfo) puddle = Math.max(puddle, w.puddle);
+    return waterGulp(puddle, this.speed, this.engine.params);
+  }
+
   /** Engine controls for this frame. */
   engineControls() {
     return {
@@ -436,6 +444,7 @@ export class Quad {
       oil: this.fuel.oil,
       slip: this.faults.slip,
       dirt: this.faults.dirt,
+      gulp: this.waterGulp(),
       speed: this.forwardSpeed,
       ambient: this.world.warmth ?? 0.5,
       sheltered: this.world.covered?.(this.position.x, this.position.z) ?? false,
