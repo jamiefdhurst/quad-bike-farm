@@ -33,7 +33,7 @@ export class Quad {
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, fuelParams }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams }) {
     this.scale = scale; // 1, or smaller for the kids' quad: the model and the physics chassis both shrink by this
     this.world = world;
     this.engine = engine;
@@ -41,7 +41,7 @@ export class Quad {
     this.label = label;
     this.spawn = spawn;
 
-    this.model = buildQuadModel({ bodyColor, dashStyle, style, solo });
+    this.model = buildQuadModel({ bodyColor, dashStyle, style, solo, plateNumber });
     this.model.scale.setScalar(scale);
     this.dash = this.model.userData.dash;
     this.fuel = new FuelSystem(fuelParams);

@@ -353,6 +353,7 @@ export const EXTRA_SPECS = [
     name: "Kids' quad",
     bodyColor: 0xcf6f98, // a faded pink
     style: 'sport',
+    plateNumber: '3', // the number on its front plate (the yellow keeps the default 7)
     dashStyle: 'kidsKey',
     hoursRange: [30, 200], // engine hours showing when the game starts
     odoRange: [100, 800], // odometer miles showing when the game starts

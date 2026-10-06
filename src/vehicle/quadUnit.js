@@ -40,6 +40,7 @@ export class QuadUnit {
       style: spec.style,
       scale: spec.scale,
       solo: spec.solo,
+      plateNumber: spec.plateNumber,
       fuelParams: { ...DEFAULT_FUEL_PARAMS, ...spec.fuel },
     });
     this.quad.unit = this;

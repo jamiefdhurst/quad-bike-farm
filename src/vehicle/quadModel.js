@@ -984,7 +984,7 @@ function buildFrame(root, sport) {
  *   'sport2'   Suzuki-style two-stroke race quad: lower and longer, big front plate, angular plastics, water-cooled,
  *              wide nerf bars, a big chamber on the right, white rims, one long race seat with a slim pillion pad.
  */
-export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', style = 'utility', solo = false } = {}) {
+export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', style = 'utility', solo = false, plateNumber = '7' } = {}) {
   const race = style === 'sport2';
   const farm = style === 'utility3';
   const sport = style === 'sport' || race; // two-stroke chassis
@@ -1063,7 +1063,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
       const side = rbox(0.03, 0.15, 0.42, 0.014, paint, s * 0.16, 0.71, -0.2, root);
       side.rotation.z = s * 0.12;
     }
-    const plate = new THREE.Mesh(new THREE.CircleGeometry(0.11, 28), new THREE.MeshStandardMaterial({ map: numberPlateTexture('7'), roughness: 0.6 }));
+    const plate = new THREE.Mesh(new THREE.CircleGeometry(0.11, 28), new THREE.MeshStandardMaterial({ map: numberPlateTexture(plateNumber), roughness: 0.6 }));
     plate.scale.set(1.25, 1, 1);
     plate.position.set(0, 0.7, 0.985);
     plate.rotation.x = -0.25;
