@@ -373,6 +373,8 @@ export class CompanionVoice {
       stuckInBog: ['stuckInBog', 1],
       followDriveOn: ['followDriveOn', 1],
       followSmoke: ['followSmoke', 0.8],
+      overtook: ['passOvertook', 1],
+      waitedAhead: ['passPleased', 1],
       'done:bored': ['driveBored', 0.9],
       'done:scared': ['driveScared', 0.9],
       'done:gaveUp': ['driveGaveUp', 0.9],

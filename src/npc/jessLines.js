@@ -23,6 +23,7 @@ import { JESS_SMOKE_LINES } from './smokeLines.js';
 import { JESS_RACE_LINES } from './raceLines.js';
 import { JESS_RECALL_LINES } from './recallLines.js';
 import { JESS_READING_LINES } from './readingLines.js';
+import { JESS_PASS_LINES } from './passLines.js';
 import { JESS_FAULT_LINES } from './faultLines.js';
 import { JESS_BENCH_LINES } from './benchLines.js';
 
@@ -363,5 +364,6 @@ export const JESS_LINES = {
   ...JESS_RACE_LINES,
   ...JESS_RECALL_LINES,
   ...JESS_READING_LINES,
+  ...JESS_PASS_LINES,
   ...JESS_BENCH_LINES,
 };

@@ -121,6 +121,13 @@ export const DEFAULT_COMPANION_PARAMS = {
   followGiveUpMin: 30, // seconds after you've got off your quad before she stops following...
   followGiveUpMax: 90,
   followDriveOnChance: 0.35, // ...and then the chance she drives about on her own rather than stopping (more when confident)
+  overtakeChance: 0, // per second, once she's been stuck behind a slow pace long enough: the chance she overtakes you out of impatience (Jess)
+  overtakeAfter: 20, // seconds behind a pace under overtakeBelow before she's impatient
+  overtakeBelow: 6, // m/s: a pace she finds too slow to follow
+  overtakeSpeedUp: 4, // m/s faster than whoever she's passing
+  overtakeAhead: 12, // metres ahead of them she goes to before she stops and waits
+  overtakeGloatRange: 10, // metres: when they get this close she looks pleased with herself
+  overtakeWait: 30, // seconds she waits ahead at the most
   followFarGap: 45, // metres; further behind than this and she shouts after you
   friendRideMin: 90, // seconds she drives her friend about, once she's on the back...
   friendRideMax: 200, // ...then they both get off
@@ -220,6 +227,13 @@ export const COMPANION_PARAM_RANGES = {
   followMaxSpeed: [1, 25, 0.5],
   followMaxThrottle: [0.1, 1, 0.01],
   followScareSpeed: [2, 30, 0.5],
+  overtakeChance: [0, 1, 0.01],
+  overtakeAfter: [1, 120, 1],
+  overtakeBelow: [1, 20, 0.5],
+  overtakeSpeedUp: [0.5, 15, 0.5],
+  overtakeAhead: [4, 50, 1],
+  overtakeGloatRange: [3, 40, 1],
+  overtakeWait: [3, 120, 1],
   followFarGap: [5, 200, 1],
   followGiveUpMin: [5, 600, 5],
   friendRideMin: [10, 900, 5],

@@ -52,6 +52,7 @@ export const CHARACTERS = [
       takeOverDriveChance: 0.7,
       chattiness: 1.3,
       voiceMinGap: 6,
+      overtakeChance: 0.04, // bored of your pace, she goes round you and waits
       followSmokeGap: 0.7, // right up behind a two-stroke: she loves the smoke
       followGiveUpMin: 15,
       followGiveUpMax: 50,

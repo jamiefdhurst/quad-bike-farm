@@ -115,3 +115,74 @@ describe('after she gives up following you', () => {
     expect(c.selfEvents).toContain('getOff');
   });
 });
+
+describe('overtaking out of impatience', () => {
+  const lead = { position: { x: 0, z: 0 }, yaw: 0, forwardSpeed: 4 };
+  function passer(extra = {}, pos = { x: 0, z: -8 }) {
+    const d = Object.create(HerDrive.prototype);
+    d.p = { ...DEFAULT_COMPANION_PARAMS, driveSpeedMaxBase: DEFAULT_COMPANION_PARAMS.driveSpeedMax, overtakeChance: 1, ...extra };
+    d.follow = () => lead;
+    d.quad = { position: pos };
+    d.events = [];
+    d.random = () => 0;
+    d.pass = null;
+    d.slowFor = 0;
+    return d;
+  }
+  const run = (d, seconds, dt = 0.5) => {
+    let last = null;
+    for (let t = 0; t < seconds; t += dt) last = d.passTarget(dt);
+    return last;
+  };
+
+  it('does nothing until she has been stuck behind a slow pace long enough, and only if she is the impatient sort', () => {
+    expect(run(passer(), 10)).toBeNull();
+    expect(run(passer({ overtakeChance: 0 }), 60)).toBeNull();
+    expect(run(passer(), 21)).not.toBeNull();
+  });
+
+  it('a pace she is happy with, or you stopped, never makes her impatient', () => {
+    const fast = passer();
+    fast.follow = () => ({ ...lead, forwardSpeed: 8 });
+    expect(run(fast, 60)).toBeNull();
+    const stopped = passer();
+    stopped.follow = () => ({ ...lead, forwardSpeed: 0 });
+    expect(run(stopped, 60)).toBeNull();
+  });
+
+  it('drives past on one side to a point ahead, faster than you, then waits there and says so', () => {
+    const d = passer();
+    d.startPass(1);
+    const t = d.passTarget(0.1);
+    expect(t.stopped).toBe(false);
+    expect(t.point.z).toBeGreaterThan(lead.position.z + d.p.overtakeAhead);
+    expect(Math.abs(t.point.x)).toBeGreaterThan(2);
+    expect(t.speed).toBeGreaterThan(lead.forwardSpeed);
+    d.quad.position = { x: 3, z: 14 }; // ahead of you now
+    const waiting = d.passTarget(0.1);
+    expect(waiting.stopped).toBe(true);
+    expect(d.events).toContain('overtook');
+    d.quad.position = { x: 3, z: 14 };
+    lead.position.z = 6; // you've come up to her
+    d.passTarget(0.1);
+    expect(d.events).toContain('waitedAhead');
+    lead.position.z = 0;
+  });
+
+  it('goes back to following once you have gone by, or she has waited long enough', () => {
+    const d = passer({ overtakeWait: 10 });
+    d.startPass(1);
+    d.quad.position = { x: 3, z: 14 };
+    d.passTarget(0.1);
+    expect(d.passTarget(5).stopped).toBe(true);
+    expect(d.passTarget(6)).toBeNull();
+    expect(d.pass).toBeNull();
+    const e = passer();
+    e.startPass(1);
+    e.quad.position = { x: 3, z: 14 };
+    e.passTarget(0.1);
+    lead.position.z = 20; // you've gone by
+    expect(e.passTarget(0.1)).toBeNull();
+    lead.position.z = 0;
+  });
+});

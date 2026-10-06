@@ -838,3 +838,10 @@ Jamie: the sound sometimes stops altogether, perhaps only in Firefox, with nothi
 - Each reading is once per spell (it can be said again after the lamp goes off, or the engine warms) and per girl, with `gap` 45 s between readings by the same girl. Only the girl on the pillion seat, with you at the controls and the engine running. The dash lamps come from `quad.lamps`, kept up to date with the dash itself.
 - Not checked in the running game: how often it comes up, or whether 0.04 is far enough past the red to feel "too late".
 
+## Impatient follower (TODO 13)
+
+- In `HerDrive.passTarget` (herDriving.js), which stands in for the normal follow target while she is passing. Stuck behind a pace between 0.8 and `overtakeBelow` 6 m/s for `overtakeAfter` 20 s, she has `overtakeChance` a second to start (Jess 0.04, Amy 0, in the Companion folder). Not in a race.
+- Overtaking: she aims for a point `overtakeAhead` 12 m + 10 m ahead of you and 3.5 m to one side (a random side), at your speed plus `overtakeSpeedUp` 4 m/s (capped at her follow top speed). Once she is 12 m ahead (or after 25 s, or 70 m away) she pulls up and waits (`overtook`: "Come on, slowcoach!"). When you get within `overtakeGloatRange` 10 m she looks pleased (`waitedAhead`). When you've gone by her, or after `overtakeWait` 30 s, she is following again, from behind.
+- The same pass is what a convoy uses to swap who is in front (TODO 14).
+- Not checked in the running game: whether she overtakes cleanly on the real ground (the side she picks might be a hedge; her usual obstacle avoidance applies), or how the wait looks.
+

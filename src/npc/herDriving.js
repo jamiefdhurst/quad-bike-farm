@@ -176,6 +176,8 @@ export class HerDrive {
     this.cruiseScale = 1; // you asked her to go faster or slower
     this.follow = follow;
     this.race = race;
+    this.pass = null; // overtaking whoever she's following (passTarget)
+    this.slowFor = 0;
     this.behindTime = 0; // seconds she's been well behind you
     this.controls = { throttle: 0, brake: 1, steer: 0, starter: false, reverse: false };
     this.events = [];
@@ -253,6 +255,69 @@ export class HerDrive {
     const top = p.followMaxSpeed * (p.driveSpeedMax / p.driveSpeedMaxBase);
     const speed = clamp(leadSpeed + p.followCatchUp * (gap - want), 0, top);
     return { point, speed, gap, stopped: false };
+  }
+
+  /**
+   * Overtaking whoever she's following, out of impatience (Jess, at your pace) or because a convoy swaps its order. She
+   * drives past on one side to a point well ahead, then waits there, looking pleased with herself, until they've gone
+   * by again (or `overtakeWait` is up), when she goes back to following. Returns a follow target while she's at it,
+   * else null (and then maybe starts one: stuck behind a slow pace for `overtakeAfter` seconds, with `overtakeChance`
+   * a second). The 'overtook' event is her getting ahead and 'waitedAhead' the leader coming up to her.
+   */
+  passTarget(dt) {
+    const p = this.p;
+    const q = this.quad;
+    const lead = this.follow?.();
+    if (!lead) {
+      this.pass = null;
+      return null;
+    }
+    const lp = lead.position;
+    const fx = Math.sin(lead.yaw);
+    const fz = Math.cos(lead.yaw);
+    const leadSpeed = Math.max(0, lead.forwardSpeed);
+    if (!this.pass) {
+      // Bored of the pace: following something slowly for a while.
+      this.slowFor = leadSpeed > 0.8 && leadSpeed < p.overtakeBelow ? (this.slowFor ?? 0) + dt : 0;
+      if (!this.race && this.slowFor > p.overtakeAfter && this.random() < p.overtakeChance * dt) this.startPass();
+      if (!this.pass) return null;
+    }
+    const g = this.pass;
+    g.t += dt;
+    const pos = q.position;
+    const rx = pos.x - lp.x;
+    const rz = pos.z - lp.z;
+    const along = rx * fx + rz * fz; // metres ahead of the leader (negative: behind)
+    const gap = Math.hypot(rx, rz);
+    if (g.phase === 'overtaking') {
+      if (along > p.overtakeAhead || g.t > 25 || gap > 70) {
+        Object.assign(g, { phase: 'waiting', t: 0, said: false });
+        this.events.push('overtook');
+      } else {
+        const out = p.overtakeAhead + 10;
+        const point = { x: lp.x + fx * out - fz * g.side * 3.5, z: lp.z + fz * out + fx * g.side * 3.5 };
+        const top = p.followMaxSpeed * (p.driveSpeedMax / p.driveSpeedMaxBase);
+        return { point, speed: clamp(leadSpeed + p.overtakeSpeedUp, 4, top), gap, stopped: false };
+      }
+    }
+    if (!g.said && gap < p.overtakeGloatRange) {
+      g.said = true;
+      this.events.push('waitedAhead');
+    }
+    // They've caught up and gone by (or she's waited long enough): back to following.
+    if (along < -1.5 || g.t > p.overtakeWait) {
+      this.pass = null;
+      this.slowFor = 0;
+      return null;
+    }
+    return { point: { x: pos.x, z: pos.z }, speed: 0, gap, stopped: true };
+  }
+
+  /** Starts overtaking whoever she's following, on a side. */
+  startPass(side = this.random() < 0.5 ? 1 : -1) {
+    if (this.pass || !this.follow) return false;
+    this.pass = { phase: 'overtaking', t: 0, side, said: false };
+    return true;
   }
 
   /**
@@ -643,7 +708,7 @@ export class HerDrive {
     // Following you: aim behind your quad at your pace, instead of her own loop.
     let follow = null;
     if (this.follow) {
-      follow = this.followTarget(q.position);
+      follow = this.passTarget(dt) ?? this.followTarget(q.position);
       if (!follow || follow.stopped) {
         // You've stopped (or got off): she pulls up behind you and waits.
         this.hold(c);
