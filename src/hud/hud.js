@@ -27,7 +27,7 @@ const HELP_HTML = `
   <div>Hose by the petrol tank: <kbd>E</kbd> pick up, hold <kbd>E</kbd> to spray a quad clean, <kbd>G</kbd> put it back</div>
   <div>Green quad's winch: <kbd>X</kbd> take the hook, <kbd>E</kbd> on a quad to hook it, hold <kbd>X</kbd> by the green to wind in</div>
   <h3>Toolbox</h3>
-  <div><kbd>E</kbd> pick up the toolbox by the petrol tank, <kbd>G</kbd> put it down; <kbd>X</kbd> in the panel takes the silencer off or puts it back, <kbd>F</kbd> strips down a seized engine; <kbd>T</kbd> tyres, <kbd>R</kbd> belt, <kbd>L</kbd> throttle cable and <kbd>C</kbd> carb give what's gone wrong a rough fix</div>
+  <div><kbd>E</kbd> pick up the toolbox by the petrol tank, <kbd>G</kbd> put it down; <kbd>X</kbd> in the panel takes the silencer off or puts it back, <kbd>F</kbd> strips down a seized engine; <kbd>Y</kbd> fits the analogue pod, <kbd>U</kbd> the digital pod and <kbd>O</kbd> takes a pod off; <kbd>T</kbd> tyres, <kbd>R</kbd> belt, <kbd>L</kbd> throttle cable and <kbd>C</kbd> carb give what's gone wrong a rough fix</div>
   <div>The hayloft: look at the ladder just inside the barn doors and press <kbd>E</kbd> to climb up (and again at the top to climb down). Up there, look at the hay and press <kbd>E</kbd> to hide in it; any key gets you out</div>
   <div>The workbench in the barn: the toolbox lives on it. Park a switched-off quad in the painted bay, look at the bench and press <kbd>E</kbd>; <kbd>1</kbd> to <kbd>4</kbd> pick plug, carb, tyre or two-stroke oil, then <kbd>E</kbd> taps or holds each step (let go in the green where there is one); <kbd>G</kbd> steps away</div>
   <div>Take it to a quad that's switched off and press <kbd>E</kbd> to tinker</div>

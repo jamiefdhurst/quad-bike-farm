@@ -31,6 +31,8 @@ const REPAIR_NOTHING = {
 };
 const SILENCER_OFF = 'Took the silencer off: it will be a lot louder, and a bit stronger';
 const SILENCER_ON = 'Put the silencer back on';
+const POD_JOB_SECONDS = 3; // fitting or taking off an accessory pod
+const POD_NAMES = { analogue: 'analogue pod', digital: 'digital pod' };
 const REPAIR_KEYS = { KeyT: 'puncture', KeyR: 'belt', KeyL: 'cable', KeyC: 'carb' };
 
 const rpm = (n) => `${Math.round(n).toLocaleString('en-GB')} rpm`;
@@ -159,6 +161,7 @@ export class Workshop {
   close() {
     if (!this.unit) return;
     this.unit = null;
+    this.podJob = null;
     this.el.style.display = 'none';
     document.getElementById('overlay')?.classList.remove('workshop');
     document.body.classList.remove('workshop-open');
@@ -228,6 +231,38 @@ export class Workshop {
     for (const c of this.game.companions) c.voice.onTinker?.(unit.engine.silencerOff ? 'silencerOff' : 'silencerOn');
   }
 
+  /** Starts fitting a pod from the toolbox to this quad, or taking its pod off. Each takes a few seconds. */
+  startPod(action, kind) {
+    const unit = this.unit;
+    const rack = this.game.podRack;
+    if (!unit || !rack || this.podJob) return;
+    if (action === 'fit') {
+      if (rack.podOn(unit.id)) return this.game.hud.toast(`There's already a ${POD_NAMES[rack.podOn(unit.id)]} on it`);
+      if (!rack.inToolbox(kind)) return this.game.hud.toast(`The ${POD_NAMES[kind]} is on another quad`);
+      if (!unit.quad.model.userData.podMount) return this.game.hud.toast("Nowhere to mount it on this one");
+    } else {
+      kind = rack.podOn(unit.id);
+      if (!kind) return this.game.hud.toast('There is no pod on it');
+    }
+    this.podJob = { action, kind, unit, t: 0 };
+    this.render();
+  }
+
+  finishPod() {
+    const { action, kind, unit } = this.podJob;
+    const rack = this.game.podRack;
+    this.podJob = null;
+    if (action === 'fit' && rack.fit(kind, unit.id)) {
+      unit.quad.fitPod(this.game.pods[kind]);
+      this.game.hud.toast(`The ${POD_NAMES[kind]} is fitted`);
+    } else if (action === 'off' && rack.takeOff(unit.id)) {
+      unit.quad.removePod();
+      this.game.hud.toast(`The ${POD_NAMES[kind]} is off and back in the toolbox`);
+    }
+    this.render();
+    for (const c of this.game.companions) c.voice.onTinker?.('service');
+  }
+
   isServiced(unit) {
     const best = unit.spec.roughnessRange?.[0] ?? unit.engine.params.baseRoughness;
     return unit.engine.wear < 0.005 && unit.engine.params.baseRoughness <= best + 0.001;
@@ -270,6 +305,9 @@ export class Workshop {
     if (pressed('KeyV')) this.service();
     if (pressed('KeyX')) this.toggleSilencer();
     if (pressed('KeyF')) this.stripDown();
+    if (pressed('KeyY')) this.startPod('fit', 'analogue');
+    if (pressed('KeyU')) this.startPod('fit', 'digital');
+    if (pressed('KeyO')) this.startPod('off');
     for (const [code, kind] of Object.entries(REPAIR_KEYS)) if (pressed(code)) this.repair(kind);
     const key = ROWS[this.selected].key;
     if (this.repeatKey(input, ['ArrowLeft', 'KeyA'])) this.adjust(key, -1);
@@ -309,6 +347,7 @@ export class Workshop {
   update(dt) {
     this.dt = dt;
     const unit = this.unit;
+    if (this.podJob && (this.podJob.t += dt) >= POD_JOB_SECONDS) this.finishPod();
     if (unit && (unit.engine.isRunning || unit.quad.speed > 1 || this.game.player.isRiding)) {
       this.close();
       this.game.hud.toast(unit.engine.isRunning ? "It's running: toolbox away" : 'Toolbox away');
@@ -350,7 +389,13 @@ export class Workshop {
           <button type="button" class="ws-btn ws-fix" data-fix="carb"><span class="key">C</span>Clean the carb</button>
           <button type="button" class="ws-btn ws-done"><span class="key">E</span>Done</button>
         </div>
-        <div class="ws-keys">↑ ↓ choose   ·   ← → adjust (hold to keep going)   ·   V service   ·   X silencer   ·   F strip down   ·   T tyres   ·   R belt   ·   L cable   ·   C carb   ·   or use the mouse</div>
+        <div class="ws-pods">
+          <div class="ws-podline"></div>
+          <button type="button" class="ws-btn ws-pod" data-pod="analogue"><span class="key">Y</span>Fit the analogue pod</button>
+          <button type="button" class="ws-btn ws-pod" data-pod="digital"><span class="key">U</span>Fit the digital pod</button>
+          <button type="button" class="ws-btn ws-podoff"><span class="key">O</span>Take the pod off</button>
+        </div>
+        <div class="ws-keys">↑ ↓ choose   ·   ← → adjust (hold to keep going)   ·   V service   ·   X silencer   ·   F strip down   ·   Y U O pods   ·   T tyres   ·   R belt   ·   L cable   ·   C carb   ·   or use the mouse</div>
       </div>`;
     document.body.appendChild(el);
     this.el = el;
@@ -384,6 +429,8 @@ export class Workshop {
     el.querySelector('.ws-service').addEventListener('click', () => this.service());
     el.querySelector('.ws-strip').addEventListener('click', () => this.stripDown());
     for (const b of el.querySelectorAll('.ws-fix')) b.addEventListener('click', () => this.repair(b.dataset.fix));
+    for (const b of el.querySelectorAll('.ws-pod')) b.addEventListener('click', () => this.startPod('fit', b.dataset.pod));
+    el.querySelector('.ws-podoff').addEventListener('click', () => this.startPod('off'));
     el.querySelector('.ws-done').addEventListener('click', () => this.close());
     // Keep clicks on the panel from reaching the game.
     el.addEventListener('mousedown', (e) => e.stopPropagation());
@@ -421,6 +468,18 @@ export class Workshop {
     const word = rough < 0.15 ? 'sweet' : rough < 0.35 ? 'a bit lumpy' : rough < 0.6 ? 'rough' : 'very rough';
     this.el.querySelector('.ws-cond').textContent = `Running ${word}: roughness ${rough.toFixed(2)}${e.wear >= 0.005 ? ` (${e.wear.toFixed(2)} of it wear)` : ''}. A service clears the wear.`;
     this.el.querySelector('.ws-service').disabled = this.isServiced(unit);
+    // The pods: what's on this quad, what's in the toolbox, and the job in hand.
+    const rack = this.game.podRack;
+    if (rack) {
+      const fitted = rack.podOn(unit.id);
+      const loose = ['analogue', 'digital'].filter((k) => rack.inToolbox(k)).map((k) => POD_NAMES[k]);
+      const job = this.podJob;
+      this.el.querySelector('.ws-podline').textContent = job
+        ? `${job.action === 'fit' ? 'Fitting' : 'Taking off'} the ${POD_NAMES[job.kind]}...`
+        : `On this quad: ${fitted ? `the ${POD_NAMES[fitted]}` : 'no pod'}.   In the toolbox: ${loose.length ? loose.join(' and ') : 'nothing'}.`;
+      for (const b of this.el.querySelectorAll('.ws-pod')) b.disabled = !!job || !!fitted || !rack.inToolbox(b.dataset.pod);
+      this.el.querySelector('.ws-podoff').disabled = !!job || !fitted;
+    }
     // Only a two-stroke that's scuffed or seized has anything to strip.
     const strip = this.el.querySelector('.ws-strip');
     strip.style.display = e.params.strokes === 2 && (e.seized || e.scuff >= 0.05) ? '' : 'none';

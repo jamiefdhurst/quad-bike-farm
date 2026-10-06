@@ -194,6 +194,20 @@
   padding: 10px 16px 4px;
 }
 
+.ws-pods {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px 4px;
+}
+
+.ws-podline {
+  flex: 1 1 100%;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
 .ws-btn {
   padding: 6px 12px;
   border: 1px solid rgba(255, 255, 255, 0.35);

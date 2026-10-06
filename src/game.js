@@ -44,6 +44,9 @@ import { Rain } from './effects/rain.js';
 
 import { washMud } from './effects/mudBuildUp.js';
 import { Workshop } from './workshop/workshop.js';
+import { PodRack } from './vehicle/pods.js';
+import { buildPod } from './vehicle/dashPod.js';
+import { DashClock, CLOCK_START_RANGE, pickReading, setDashClock } from './vehicle/dashState.js';
 import { Bench } from './workshop/bench.js';
 import { Interaction } from './interaction/interaction.js';
 import { Wheel } from './interaction/wheel.js';
@@ -145,6 +148,22 @@ export class Game {
         .map((u, i) => `${u.name} ${spawns[i].where}, idle ${u.idleRpm} rpm, roughness ${u.variation.roughness.toFixed(2)}, ${u.variation.litres.toFixed(1)} L`)
         .join('; ')}`,
     );
+    // What the hour meters and odometers show, the dash clock, and where the two accessory pods start. Each has its own seeded
+    // stream, so a seed keeps its layout and these repeat too.
+    const usageRandom = createRandom(this.seed ^ 0xd45b);
+    for (const unit of this.units) {
+      unit.quad.usage.hours = pickReading(unit.spec.hoursRange ?? [0, 0], usageRandom);
+      unit.quad.usage.odoMiles = pickReading(unit.spec.odoRange ?? [0, 0], usageRandom);
+    }
+    setDashClock(new DashClock(pickReading(CLOCK_START_RANGE, createRandom(this.seed ^ 0xc10c))));
+    this.podRack = new PodRack(this.units.map((u) => u.id));
+    this.podRack.place(createRandom(this.seed ^ 0x90d5));
+    this.pods = { analogue: buildPod('analogue'), digital: buildPod('digital') };
+    for (const unit of this.units) {
+      const kind = this.podRack.podOn(unit.id);
+      if (kind) unit.quad.fitPod(this.pods[kind]);
+    }
+    console.info(`Pods: ${this.podRack.describe((id) => this.units.find((u) => u.id === id).name)}`);
     this.updateSmokeScale();
     // This game's weather, picked after everything else so a seed keeps its layout (?weather=rain forces one).
     const forced = new URLSearchParams(location.search).get('weather');

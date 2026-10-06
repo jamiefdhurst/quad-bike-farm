@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { WHEELS } from './quadPhysics.js';
-import { buildDash } from './dash.js';
+import { buildDash, DASH_PLACE } from './dash.js';
 import {
   bentTube,
   bootGeometry,
@@ -392,11 +392,14 @@ function buildHandlebars(dashStyle, cfg) {
 
   // Dash pod in the middle, face tilted towards the rider.
   const dash = buildDash(dashStyle);
-  dash.group.position.set(0, 0.1, 0.02);
-  dash.group.rotation.x = 0.75;
+  const place = DASH_PLACE[dashStyle] ?? DASH_PLACE.foreman;
+  dash.group.position.set(...place.pos);
+  dash.group.rotation.x = place.tilt;
   dash.group.userData.keep = true;
   bars.add(dash.group);
   bars.userData.dash = dash;
+  // Where an accessory pod stands: on top of the dash, or (set by the model, for the bare bars) on the crossbar pad or bar clamp.
+  bars.userData.podMount = dash.mount ?? null;
 
   // Choke lever on the left bar, inboard of the grip. Rotates about X.
   const chokeHousing = rbox(0.03, 0.026, 0.032, 0.008, MAT.plastic, 0.29, 0.07, -0.03, bars, 'chokeHousing');
@@ -970,7 +973,7 @@ function buildFrame(root, sport) {
 /**
  * @param {object} [opts]
  * @param {number} [opts.bodyColor] Paint colour for the plastics.
- * @param {string} [opts.dashStyle] 'classic', 'modern', 'sport', 'vintage' or 'race', see dash.js.
+ * @param {string} [opts.dashStyle] one of DASH_STYLES, see dash.js.
  * @param {boolean} [opts.solo]     No racks, pillion seat or anchors for her: a one-person quad (the kids' quad).
  * @param {string} [opts.style]     Body style:
  *   'utility'  Honda-style farm quad: racks front and back, footwells, round headlights in the nose, raised pillion;
@@ -981,7 +984,7 @@ function buildFrame(root, sport) {
  *   'sport2'   Suzuki-style two-stroke race quad: lower and longer, big front plate, angular plastics, water-cooled,
  *              wide nerf bars, a big chamber on the right, white rims, one long race seat with a slim pillion pad.
  */
-export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', style = 'utility', solo = false } = {}) {
+export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', style = 'utility', solo = false } = {}) {
   const race = style === 'sport2';
   const farm = style === 'utility3';
   const sport = style === 'sport' || race; // two-stroke chassis
@@ -1320,6 +1323,15 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
     tube([-0.17, 0.18, 0.08], [0.17, 0.18, 0.08], 0.011, MAT.alloy, bars);
     const pad = add(new THREE.CapsuleGeometry(0.02, 0.13, 4, 10).rotateZ(Math.PI / 2), MAT.plastic, bars, 'barPad');
     pad.position.set(0, 0.18, 0.08);
+    // A pod stands on the crossbar pad, leaning back towards the rider.
+    const mount = new THREE.Object3D();
+    mount.name = 'podMount';
+    mount.position.set(0, 0.2, 0.08);
+    mount.rotation.x = 0.35;
+    bars.add(mount);
+    bars.userData.podMount = mount;
+    // On the kids' quad it stands on the bar clamp instead, where the key switch is.
+    if (dashStyle === 'kidsKey') mount.position.set(0, 0.095, 0.0);
   }
   if (farm) {
     // Headlight in a nacelle on the bars, carrying the dash on its top.
@@ -1334,11 +1346,9 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'classic', st
       bars,
     );
     roundLamp(bars, 0, 0.02, 0.17, 0.06, lensMat, MAT.chrome, 'headlight');
-    const dash = bars.userData.dash.group;
-    dash.position.set(0, 0.115, 0.05);
-    dash.rotation.x = 0.85;
   }
   quad.userData.dash = bars.userData.dash;
+  quad.userData.podMount = bars.userData.podMount;
   bars.position.set(0, 1.0, 0.46);
   root.add(bars);
 

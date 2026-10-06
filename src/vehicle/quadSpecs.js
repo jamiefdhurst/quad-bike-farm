@@ -11,6 +11,7 @@
 //     stall under hard braking). The toolbox's idle screw stops here.
 //   roughnessRange: [min, max] how lumpy it runs once warm (baseRoughness, 0 to 1).
 //     Cold, rich, lean and fouled running add to this.
+//   hoursRange, odoRange: [min, max] engine hours and odometer miles the dash shows at the start.
 //   fuelRange: [min, max] litres in the tank at the start. Below the reserve
 //     (reserveLitres) it'll only run on RESERVE.
 
@@ -22,7 +23,9 @@ export const QUAD_SPECS = [
     name: 'Red quad',
     bodyColor: 0xa8271f,
     style: 'utility',
-    dashStyle: 'classic',
+    dashStyle: 'foreman',
+    hoursRange: [600, 1500], // engine hours showing when the game starts
+    odoRange: [1500, 3750], // odometer miles showing when the game starts
     // The smooth one: a steady idle and a gentle shake.
     safeIdle: 650,
     idleRange: [1050, 1150],
@@ -49,7 +52,9 @@ export const QUAD_SPECS = [
     name: 'Blue quad',
     bodyColor: 0x1d4fa3,
     style: 'utility2',
-    dashStyle: 'modern',
+    dashStyle: 'grizzly',
+    hoursRange: [400, 1100], // engine hours showing when the game starts
+    odoRange: [1000, 2750], // odometer miles showing when the game starts
     // Fast, keen idle; a medium, quicker buzz.
     safeIdle: 950,
     idleRange: [1400, 1550],
@@ -104,7 +109,9 @@ export const QUAD_SPECS = [
     name: 'Yellow quad',
     bodyColor: 0xe9c21b,
     style: 'sport',
-    dashStyle: 'sport',
+    dashStyle: 'blaster',
+    hoursRange: [150, 600], // engine hours showing when the game starts
+    odoRange: [600, 2400], // odometer miles showing when the game starts
     // Ring-ding idle; a fine high-frequency buzz through the bars more than the body.
     safeIdle: 900,
     idleRange: [1500, 1800],
@@ -190,7 +197,9 @@ export const QUAD_SPECS = [
     bodyColor: 0x2e6b30,
     style: 'utility3',
     winch: true, // its front winch works (src/items/winch.js)
-    dashStyle: 'vintage',
+    dashStyle: 'bayou',
+    hoursRange: [1800, 3500], // engine hours showing when the game starts
+    odoRange: [4500, 8750], // odometer miles showing when the game starts
     // Slow and lumpy; a big slow heave, like a tractor.
     safeIdle: 800,
     idleRange: [800, 900],
@@ -252,7 +261,9 @@ export const QUAD_SPECS = [
     name: 'Orange quad',
     bodyColor: 0xe86a12,
     style: 'sport2', // a single race seat: no room for her on the back
-    dashStyle: 'race',
+    dashStyle: 'quadracer',
+    hoursRange: [100, 400], // engine hours showing when the game starts
+    odoRange: [400, 1600], // odometer miles showing when the game starts
     // A nervous, hunting idle; harsh and hard.
     safeIdle: 1600,
     idleRange: [2000, 2300],
@@ -342,7 +353,9 @@ export const EXTRA_SPECS = [
     name: "Kids' quad",
     bodyColor: 0xcf6f98, // a faded pink
     style: 'sport',
-    dashStyle: 'sport',
+    dashStyle: 'kidsKey',
+    hoursRange: [30, 200], // engine hours showing when the game starts
+    odoRange: [100, 800], // odometer miles showing when the game starts
     scale: 0.65,
     solo: true, // no room for anyone on the back
     owner: 'jess', // Amy won't ride it, and Jess goes for it first
@@ -431,7 +444,9 @@ export const EXTRA_SPECS = [
     name: 'Loan quad',
     bodyColor: 0xaeb4ba, // a neutral silver
     style: 'utility2',
-    dashStyle: 'modern',
+    dashStyle: 'kodiak',
+    hoursRange: [2, 25], // engine hours showing when the game starts
+    odoRange: [5, 60], // odometer miles showing when the game starts
     // Smooth and refined; a small, quick buzz.
     safeIdle: 700,
     idleRange: [1100, 1200],

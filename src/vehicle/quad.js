@@ -8,6 +8,7 @@ import { waterGulp } from '../engine/water.js';
 import { CruiseControl } from './cruise.js';
 import { Bog } from './bog.js';
 import { Faults } from './faults.js';
+import { advanceUsage, isNeutral, dashClock } from './dashState.js';
 
 // Height of the ground below the chassis origin with the bike at rest.
 const GROUND_OFFSET = -0.36;
@@ -28,7 +29,7 @@ export class Quad {
    * @param {string} opts.label   How it's referred to in prompts, e.g. "red quad".
    * @param {object} opts.spawn   { x, z, yaw } where it starts.
    * @param {number} [opts.bodyColor]
-   * @param {string} [opts.dashStyle]  'classic', 'modern' or 'sport'.
+   * @param {string} [opts.dashStyle]  One of DASH_STYLES, see dash.js.
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
@@ -46,6 +47,8 @@ export class Quad {
     this.fuel = new FuelSystem(fuelParams);
     this.faults = new Faults();
     this.tripMiles = 0;
+    this.usage = { hours: 0, odoMiles: 0 }; // what the hour meter and odometer show; the game sets the starting readings
+    this.pod = null; // the accessory pod fitted to the bars, if any (see pods.js)
     scene.add(this.model);
     const part = (name) => this.model.getObjectByName(name);
     this.body = part('body');
@@ -478,12 +481,32 @@ export class Quad {
     this.updateDash(dt);
   }
 
+  /** Stands a pod ({ group, update }) on the bars' mount, at full size even on the small quad. Returns false if there's no mount. */
+  fitPod(pod) {
+    const mount = this.model.userData.podMount;
+    if (!mount || this.pod) return false;
+    mount.add(pod.group);
+    mount.scale.setScalar(1 / this.scale);
+    this.pod = pod;
+    return true;
+  }
+
+  /** Takes the fitted pod off and returns it. */
+  removePod() {
+    const pod = this.pod;
+    if (pod) pod.group.parent?.remove(pod.group);
+    this.pod = null;
+    return pod;
+  }
+
   updateDash(dt) {
     const e = this.engine;
     const speed = Math.abs(this.forwardSpeed);
     this.tripMiles += (speed * dt) / 1609.34;
+    advanceUsage(this.usage, { running: e.isRunning, speedMps: speed, dt });
     const f = this.fuel;
-    this.dash.update({
+    const clock = dashClock();
+    const state = {
       rpm: e.rpm,
       maxRpm: e.params.maxRpm,
       redline: e.params.redlineRpm,
@@ -495,9 +518,17 @@ export class Quad {
       overheat: e.gaugeHeat,
       coldBelow: e.params.warmLightThreshold,
       ignition: e.hasPower, // the dash goes dark on a flat battery
+      keyOn: e.ignitionOn,
       tripMiles: this.tripMiles,
+      odoMiles: this.usage.odoMiles,
+      hours: this.usage.hours,
       reverse: this.reverse,
-    });
+      neutral: isNeutral({ ignition: e.hasPower && e.ignitionOn, reverse: this.reverse, speedMps: this.forwardSpeed, rpm: e.rpm, clutchEngageRpm: this.params.clutchEngageRpm }),
+      clock: clock.text(),
+      seconds: clock.seconds(),
+    };
+    this.dash.update(state);
+    this.pod?.update(state);
     setHeadlights(this.model, e.ignitionOn);
 
     this.displayChoke += (this.choke - this.displayChoke) * Math.min(1, 12 * dt);

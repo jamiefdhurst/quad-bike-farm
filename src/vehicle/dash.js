@@ -1,897 +1,430 @@
 import * as THREE from 'three';
-import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { tempGaugeFraction, coldZoneEnd, HOT_FROM } from './tempGauge.js';
+import { tempGaugeFraction } from './tempGauge.js';
+import { lampStates, counterDigits, counterText, cycleIndex } from './dashState.js';
+import {
+  plastic, charcoal, blackMat, gloss, chromeMat, changeGate, mmPanel, housing, text, ticks, labels, needle, drum, lamp, keySwitch,
+  segText, speedText, LAMP,
+} from './dashParts.js';
 
-// Instrument panels. Each quad picks a style from its spec:
+// The stock dashes. Each quad's own dash is close to the real machine it's modelled on, which for most means very little: the
+// instruments are on the two accessory pods (dashPod.js). Layouts and colours follow docs/briefs/dashes/ (see README TODO 26).
 //
-//   classic: three chrome-ringed analogue dials in a pill-shaped pod: rev
-//            counter, speedo with a trip counter, and a fuel gauge with the
-//            tap position, plus lamps set into the dials and a tiny temperature
-//            gauge low in the rev counter. Honda-ish.
-//   modern:  one wide amber-on-black LCD with a bar-graph rev counter, big
-//            speed digits, a vertical fuel gauge and warning icons drawn on
-//            the display, in a rounded pod with a curved visor. Yamaha-ish.
-//   sport:   the same layout, compact, red-on-black, no visor, in a rounder
-//            bare pod. For the sport quad.
-//   vintage: one chrome-cupped speedo with a cream face and a little fuel
-//            gauge set into it, beside chrome-ringed warning lamps and a fuel
-//            tap window. Sits on a headlight nacelle. Old Kawasaki-ish.
-//   race:    a small bare pod with a big segmented rev bar, a shift light on
-//            top, and only speed, fuel and a couple of flags under it.
+//   foreman:   red. A Honda Foreman-style cover: a rectangular speedo with hour and odometer drums, N / R / OIL lamps and the key.
+//   grizzly:   blue. A Yamaha Grizzly-style pod around a grey-green LCD: fuel and temperature bars, gear letter, speed, clock and a
+//              line that cycles trip, odometer and hours.
+//   kodiak:    loan quad. The same idea, newer: a wider, glossier pod with a cooler LCD and a gear column.
+//   bayou:     green. Only a little cover on the headlight nacelle with N and R lamps and the key.
+//   blaster:   yellow. The back of a headlamp shell on the bars with a red power lamp and the key.
+//   quadracer: orange. A RUN / OFF kill switch on the left bar and its lanyard.
+//   kidsKey:   kids' quad. A key switch under the bar clamp.
 //
-// buildDash(style) returns { group, update(state) } where state is
-// { rpm, maxRpm, redline, speedMph, fuelLevel, reserveLevel, tap, ignition,
-//   tripMiles, reverse, temperature, coldBelow }. The group faces the rider along -Z
-// and its +X is on the rider's left.
+// buildDash(style) returns { group, update(state), mount } where state is { rpm, maxRpm, redline, speedMph, fuelLevel, reserveLevel,
+// tap, temperature, overheat, coldBelow, ignition (has power), keyOn, tripMiles, odoMiles, hours, reverse, neutral, clock, seconds }.
+// The group faces the rider along -Z and its +X is on the rider's left. `mount` is where a pod stands (a child of the group) or null.
 
-const black = new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.6 });
-const charcoal = new THREE.MeshStandardMaterial({ color: 0x2b2d30, roughness: 0.45, metalness: 0.2 });
-const faceMat = new THREE.MeshStandardMaterial({ color: 0x0e0e0e, roughness: 0.35 });
+const LCD = { bg: '#a9b59d', on: '#1f261c', ghost: '#9aa68f', dim: '#b0bba5' }; // Grizzly 660: positive, grey-green
+const LCD_COOL = { bg: '#b8c2c7', on: '#151a1e', ghost: '#a9b3b8', dim: '#bcc6cb' }; // the loan quad's newer one
 
-// Seven-segment digits ------------------------------------------------------
-
-const SEGMENTS = {
-  0: 'abcdef',
-  1: 'bc',
-  2: 'abdeg',
-  3: 'abcdg',
-  4: 'bcfg',
-  5: 'acdfg',
-  6: 'acdefg',
-  7: 'abc',
-  8: 'abcdefg',
-  9: 'abcdfg',
-  '-': 'g',
-  ' ': '',
-};
-
-/** One seven-segment character, slanted slightly like a real LCD. Unlit segments are drawn faintly. */
-function drawDigit(ctx, ch, x, y, w, h, on, ghost) {
-  const t = Math.max(2, w * 0.17); // segment thickness
-  const slant = w * 0.12;
-  const lit = SEGMENTS[ch] ?? '';
-  const sx = (px, py) => x + px + slant * (1 - py / h);
-  const seg = {
-    a: [[t * 0.6, 0], [w - t * 0.6, 0], [w - t * 1.4, t], [t * 1.4, t]],
-    b: [[w, t * 0.6], [w, h / 2 - t * 0.4], [w - t, h / 2 - t * 0.1], [w - t, t * 1.3]],
-    c: [[w, h / 2 + t * 0.4], [w, h - t * 0.6], [w - t, h - t * 1.3], [w - t, h / 2 + t * 0.1]],
-    d: [[t * 1.4, h - t], [w - t * 1.4, h - t], [w - t * 0.6, h], [t * 0.6, h]],
-    e: [[0, h / 2 + t * 0.4], [t, h / 2 + t * 0.1], [t, h - t * 1.3], [0, h - t * 0.6]],
-    f: [[0, t * 0.6], [t, t * 1.3], [t, h / 2 - t * 0.1], [0, h / 2 - t * 0.4]],
-    g: [[t * 0.8, h / 2], [t * 1.3, h / 2 - t / 2], [w - t * 1.3, h / 2 - t / 2], [w - t * 0.8, h / 2], [w - t * 1.3, h / 2 + t / 2], [t * 1.3, h / 2 + t / 2]],
-  };
-  for (const [name, pts] of Object.entries(seg)) {
-    ctx.fillStyle = lit.includes(name) ? on : ghost;
-    ctx.beginPath();
-    pts.forEach(([px, py], i) => (i ? ctx.lineTo(sx(px, py), y + py) : ctx.moveTo(sx(px, py), y + py)));
-    ctx.closePath();
-    ctx.fill();
-  }
-}
-
-function drawNumber(ctx, text, x, y, w, h, gap, on, ghost) {
-  [...text].forEach((ch, i) => {
-    if (ch === '.') {
-      ctx.fillStyle = on;
-      ctx.fillRect(x + i * (w + gap) - gap * 0.8, y + h - w * 0.18, w * 0.18, w * 0.18);
-      return;
-    }
-    drawDigit(ctx, ch, x + i * (w + gap), y, w, h, on, ghost);
-  });
-}
-
-function padSpeed(mph) {
-  return String(Math.min(99, Math.round(mph))).padStart(2, ' ');
-}
-
-function tripText(miles) {
-  return (Math.floor(miles * 10) / 10).toFixed(1).padStart(5, ' ');
-}
-
-// Shared pieces ---------------------------------------------------------------
-
-function canvasPanel(width, height, wMetres, hMetres) {
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
-  const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(wMetres, hMetres),
-    new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }),
-  );
-  mesh.rotation.y = Math.PI;
-  return { canvas, ctx: canvas.getContext('2d'), tex, mesh };
-}
-
-/** Redraws only when what's shown has actually changed. */
-function changeGate() {
-  let last = '';
-  return (key) => {
-    if (key === last) return false;
-    last = key;
-    return true;
-  };
-}
-
-// Rounded pods ---------------------------------------------------------------
-
-const chrome = new THREE.MeshStandardMaterial({ color: 0xd8dadc, roughness: 0.15, metalness: 1.0 });
-
-/** A rounded-rectangle outline; a radius of half the height gives a pill. */
-function roundedRectShape(w, h, r) {
-  const s = new THREE.Shape();
-  const x = -w / 2;
-  const y = -h / 2;
-  s.moveTo(x + r, y);
-  s.lineTo(x + w - r, y);
-  s.absarc(x + w - r, y + r, r, -Math.PI / 2, 0);
-  s.lineTo(x + w, y + h - r);
-  s.absarc(x + w - r, y + h - r, r, 0, Math.PI / 2);
-  s.lineTo(x + r, y + h);
-  s.absarc(x + r, y + h - r, r, Math.PI / 2, Math.PI);
-  s.lineTo(x, y + r);
-  s.absarc(x + r, y + r, r, Math.PI, Math.PI * 1.5);
-  return s;
-}
-
-/** A moulded pod with softly rounded edges, its face at z = -0.035 towards the rider. */
-function podMesh(w, h, r, material) {
-  const bevel = 0.008;
-  const geo = new THREE.ExtrudeGeometry(roundedRectShape(w - 2 * bevel, h - 2 * bevel, Math.max(0.002, r - bevel)), {
-    depth: 0.05,
-    bevelEnabled: true,
-    bevelThickness: 0.01,
-    bevelSize: bevel,
-    bevelSegments: 4,
-    curveSegments: 16,
-  });
-  geo.translate(0, 0, -0.025);
-  const mesh = new THREE.Mesh(geo, material);
-  mesh.name = 'dashHousing';
-  return mesh;
-}
-
-/** The dark front of a pod, inset from its edge. */
-function podFace(w, h, r) {
-  const face = new THREE.Mesh(new THREE.ShapeGeometry(roundedRectShape(w, h, r), 16), faceMat);
-  face.position.z = -0.0352;
-  face.rotation.y = Math.PI;
-  return face;
-}
-
-// Classic: three analogue dials in a pill-shaped pod ---------------------------------
-
-/**
- * A round analogue gauge: a face drawn on a canvas (redrawn only when asked), a
- * chrome bezel and a needle. Angles are canvas angles (clockwise from +x).
- */
-function gauge(group, { x, y, radius, name }) {
-  const c = document.createElement('canvas');
-  c.width = c.height = 256;
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
-  const face = new THREE.Mesh(new THREE.CircleGeometry(radius, 48), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
-  face.name = name;
-  face.position.set(x, y, -0.036);
-  face.rotation.y = Math.PI;
-  group.add(face);
-  const bezel = new THREE.Mesh(new THREE.TorusGeometry(radius + 0.002, 0.0028, 8, 48), chrome);
-  bezel.position.set(x, y, -0.0362);
-  group.add(bezel);
-  const pivot = new THREE.Group();
-  pivot.name = `${name}Needle`;
-  pivot.position.set(x, y, -0.038);
-  pivot.rotation.y = Math.PI;
-  group.add(pivot);
-  const needle = new THREE.Mesh(
-    new THREE.BoxGeometry(radius * 0.86, Math.max(0.0022, radius * 0.06), 0.001),
-    new THREE.MeshBasicMaterial({ color: 0xff5522, toneMapped: false }),
-  );
-  needle.position.x = radius * 0.33;
-  pivot.add(needle);
-  const cap = new THREE.Mesh(new THREE.CircleGeometry(radius * 0.13, 16), new THREE.MeshBasicMaterial({ color: 0x1a1a1a }));
-  cap.position.z = 0.0005;
-  pivot.add(cap);
+/** Fuel and temperature as lit-segment counts, shared by the LCDs. */
+export function segmentCounts(s, fuelSegs, tempSegs) {
   return {
-    ctx: c.getContext('2d'),
-    tex,
-    /** Points the needle at a canvas angle. */
-    point(angle) {
-      pivot.rotation.z = -angle;
-    },
+    fuel: Math.ceil(s.fuelLevel * fuelSegs - 0.001),
+    temp: Math.ceil(tempGaugeFraction(s.temperature, true, s.overheat) * tempSegs - 0.001),
   };
 }
 
-/** Plain dial background with a ring of ticks; returns the canvas centre. */
-function dialBase(ctx) {
-  ctx.clearRect(0, 0, 256, 256);
-  const g = ctx.createRadialGradient(128, 110, 20, 128, 128, 128);
-  g.addColorStop(0, '#1c1c1c');
-  g.addColorStop(1, '#070707');
-  ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.arc(128, 128, 128, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+/** Everything a face needs about a state that changes how it looks, as a string: redraw only when it changes. */
+function lookKey(s, extra = []) {
+  const l = lampStates(s);
+  return [s.ignition, s.keyOn, l.r, l.n, l.temp, l.fuel, ...extra].join('|');
 }
 
-function ticks(ctx, start, sweep, count, major, outer, colourFor) {
-  for (let i = 0; i <= count; i++) {
-    const a = start + (sweep * i) / count;
-    const big = i % major === 0;
-    ctx.strokeStyle = colourFor(i / count);
-    ctx.lineWidth = big ? 5 : 2.5;
-    const inner = outer - (big ? 22 : 12);
-    ctx.beginPath();
-    ctx.moveTo(128 + Math.cos(a) * outer, 128 + Math.sin(a) * outer);
-    ctx.lineTo(128 + Math.cos(a) * inner, 128 + Math.sin(a) * inner);
-    ctx.stroke();
-  }
+/** A pod's mounting point: a child of the dash, leaning the pod back about 20 degrees whatever the dash's tilt. */
+function podMount(group, x, y, z, dashTilt) {
+  const m = new THREE.Object3D();
+  m.name = 'podMount';
+  m.position.set(x, y, z);
+  m.rotation.x = 0.35 - dashTilt;
+  group.add(m);
+  return m;
 }
 
-/** A small round warning lamp set into a dial, at (dx, dy) metres from its centre. */
-function dialLamp(group, gx, gy, dx, dy, radius = 0.0045) {
-  const lens = new THREE.Mesh(new THREE.CircleGeometry(radius, 16), new THREE.MeshBasicMaterial({ color: 0x1a1a1a, toneMapped: false }));
-  lens.position.set(gx + dx, gy + dy, -0.0368);
-  lens.rotation.y = Math.PI;
-  group.add(lens);
-  return lens.material;
-}
+// Red: Honda Foreman ------------------------------------------------------------------
 
-/** Canvas position of a point (dx, dy) metres from a dial's centre; +x is the rider's left. */
-function onDial(dx, dy, radius) {
-  const k = 128 / radius;
-  return [128 - dx * k, 128 - dy * k];
-}
-
-const TEMP_START = Math.PI * 1.15; // C, upper left
-const TEMP_SWEEP = Math.PI * 0.7; // to H, upper right
-
-/** A small temperature dial face: blue while cold, white when warm, red at the top. */
-function drawTempFace(ctx, s, { cream = false } = {}) {
-  if (cream) {
-    creamBase(ctx);
-  } else {
-    dialBase(ctx);
-  }
-  const ink = cream ? '#1b1b1b' : '#eeeeee';
-  const arc = (from, to, colour) => {
-    ctx.strokeStyle = colour;
-    ctx.lineWidth = 22;
-    ctx.beginPath();
-    ctx.arc(128, 128, 100, TEMP_START + TEMP_SWEEP * from, TEMP_START + TEMP_SWEEP * to);
-    ctx.stroke();
-  };
-  const cold = coldZoneEnd(s.coldBelow);
-  arc(0, cold, '#3f86e8');
-  arc(cold, HOT_FROM, ink);
-  arc(HOT_FROM, 1, '#c0221a');
-  ctx.fillStyle = ink;
-  ctx.font = 'bold 62px sans-serif';
-  ctx.fillText('C', 128 + Math.cos(TEMP_START) * 58, 128 + Math.sin(TEMP_START) * 58 + 24);
-  ctx.fillText('H', 128 + Math.cos(TEMP_START + TEMP_SWEEP) * 58, 128 + Math.sin(TEMP_START + TEMP_SWEEP) * 58 + 24);
-}
-
-/** Five temperature blocks along the bottom edge of a box at (x, y): blue while cold, the last one red. */
-function tempBlocks(ctx, x, y, pitch, h, s, on, red, ghost) {
-  const lit = Math.ceil(tempGaugeFraction(s.temperature, true, s.overheat) * 5 - 0.001);
-  for (let i = 0; i < 5; i++) {
-    const cold = (i + 1) / 5 <= coldZoneEnd(s.coldBelow) + 0.001;
-    ctx.fillStyle = i >= lit ? ghost : i === 4 ? red : cold ? '#5ab0ff' : on;
-    ctx.fillRect(x + i * pitch, y, pitch - 3, h);
-  }
-}
-
-const SPEEDO_MAX_MPH = 40;
-const SWEEP_START = Math.PI * 0.75;
-const SWEEP = Math.PI * 1.5;
-const FUEL_START = Math.PI * 1.2; // empty, upper left
-const FUEL_SWEEP = Math.PI * 0.6; // to full, upper right
-
-function buildClassic() {
+function buildForeman() {
   const group = new THREE.Group();
   group.name = 'dash';
-  const W = 0.31;
-  const H = 0.13;
-  group.add(podMesh(W, H, H / 2, black));
-  group.add(podFace(W - 0.012, H - 0.012, (H - 0.012) / 2));
-
-  // Rev counter on the rider's left, speedo in the middle, fuel on the right.
-  const REV = { x: 0.1, y: 0, radius: 0.034 };
-  const SPD = { x: 0, y: 0.002, radius: 0.052 };
-  const FUEL = { x: -0.1, y: 0, radius: 0.034 };
-  const rev = gauge(group, { ...REV, name: 'rpmDial' });
-  const spd = gauge(group, { ...SPD, name: 'speedo' });
-  const fuel = gauge(group, { ...FUEL, name: 'fuelGauge' });
-
-  // A tiny temperature gauge low in the rev counter, standing just proud of it.
-  const raised = new THREE.Group();
-  raised.position.z = -0.004;
-  group.add(raised);
-  const temp = gauge(raised, { x: REV.x, y: REV.y - 0.018, radius: 0.0115, name: 'tempGauge' });
-  const ignLamp = dialLamp(group, SPD.x, SPD.y, 0.02, -0.004);
-  const revLamp = dialLamp(group, SPD.x, SPD.y, -0.02, -0.004);
-  const fuelLamp = dialLamp(group, FUEL.x, FUEL.y, 0.011, -0.016);
-
-  // Trip counter: a little drum readout in the speedo.
-  const trip = canvasPanel(160, 40, 0.022, 0.0055);
-  trip.mesh.position.set(SPD.x, SPD.y - 0.036, -0.0369);
-  group.add(trip.mesh);
-  // Fuel tap position under the fuel needle.
-  const tap = canvasPanel(120, 40, 0.024, 0.008);
-  tap.mesh.position.set(FUEL.x - 0.008, FUEL.y - 0.017, -0.0369);
-  group.add(tap.mesh);
-
-  let faces = '';
-  function drawFaces(s) {
-    // Rev counter, scaled to this engine.
-    const top = Math.ceil((s.maxRpm + 500) / 1000);
-    let ctx = rev.ctx;
-    dialBase(ctx);
-    ticks(ctx, SWEEP_START, SWEEP, top * 2, 2, 120, (f) => (f * top * 1000 >= s.redline ? '#ff4433' : '#eeeeee'));
-    ctx.fillStyle = '#eeeeee';
-    ctx.font = 'bold 34px sans-serif';
-    for (let i = 0; i <= top; i++) {
-      const a = SWEEP_START + (SWEEP * i) / top;
-      ctx.fillText(String(i), 128 + Math.cos(a) * 74, 128 + Math.sin(a) * 74);
-    }
-    ctx.font = '18px sans-serif';
-    ctx.fillStyle = '#9a9a9a';
-    ctx.fillText('x1000', 128, 92);
-    rev.tex.needsUpdate = true;
-    drawTempFace(temp.ctx, s);
-    temp.tex.needsUpdate = true;
-
-    // Speedo.
-    ctx = spd.ctx;
-    dialBase(ctx);
-    ticks(ctx, SWEEP_START, SWEEP, SPEEDO_MAX_MPH / 2.5, 2, 122, () => '#eeeeee');
-    ctx.fillStyle = '#eeeeee';
-    ctx.font = 'bold 30px sans-serif';
-    for (let v = 0; v <= SPEEDO_MAX_MPH; v += 10) {
-      const a = SWEEP_START + (SWEEP * v) / SPEEDO_MAX_MPH;
-      ctx.fillText(String(v), 128 + Math.cos(a) * 80, 128 + Math.sin(a) * 80);
-    }
-    ctx.font = 'bold 20px sans-serif';
-    ctx.fillStyle = '#9a9a9a';
-    ctx.fillText('MPH', 128, 86);
-    ctx.font = 'bold 15px sans-serif';
-    let [lx, ly] = onDial(0.02, -0.004, SPD.radius);
-    ctx.fillText('IGN', lx, ly + 20);
-    [lx, ly] = onDial(-0.02, -0.004, SPD.radius);
-    ctx.fillText('R', lx, ly + 20);
-    spd.tex.needsUpdate = true;
-
-    // Fuel: E to F across the top, red below the reserve.
-    ctx = fuel.ctx;
-    dialBase(ctx);
-    ticks(ctx, FUEL_START, FUEL_SWEEP, 8, 4, 118, (f) => (f <= s.reserveLevel + 0.001 ? '#ff4433' : '#eeeeee'));
-    ctx.lineWidth = 10;
-    ctx.strokeStyle = '#c0221a';
-    ctx.beginPath();
-    ctx.arc(128, 128, 112, FUEL_START, FUEL_START + FUEL_SWEEP * s.reserveLevel);
-    ctx.stroke();
-    ctx.fillStyle = '#eeeeee';
-    ctx.font = 'bold 34px sans-serif';
-    ctx.fillText('E', 128 + Math.cos(FUEL_START) * 72, 128 + Math.sin(FUEL_START) * 72 + 6);
-    ctx.fillText('F', 128 + Math.cos(FUEL_START + FUEL_SWEEP) * 72, 128 + Math.sin(FUEL_START + FUEL_SWEEP) * 72 + 6);
-    // A fuel pump in the middle.
-    ctx.fillStyle = '#9a9a9a';
-    ctx.fillRect(116, 62, 18, 26);
-    ctx.fillRect(134, 66, 8, 4);
-    ctx.fillRect(140, 66, 4, 18);
-    ctx.fillStyle = '#0c0c0c';
-    ctx.fillRect(120, 66, 10, 8);
-    fuel.tex.needsUpdate = true;
-  }
-
-  const gate = changeGate();
-  let displayRpm = 0;
-  let displayMph = 0;
-  let displayFuel = 0;
-  let displayTemp = 0;
-
-  function drawReadouts(s) {
-    let { ctx, canvas } = trip;
-    ctx.fillStyle = '#111111';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    const digits = tripText(s.tripMiles).replace('.', '').padStart(5, '0').slice(-5);
-    for (let i = 0; i < 5; i++) {
-      const last = i === 4;
-      ctx.fillStyle = last ? '#e8e8e8' : '#262626';
-      ctx.fillRect(4 + i * 31, 3, 28, 34);
-      ctx.fillStyle = last ? '#111111' : '#e8e8e8';
-      ctx.font = 'bold 28px monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(digits[i], 18 + i * 31, 21);
-    }
-    ({ ctx, canvas } = tap);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.font = 'bold 26px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const colour = { on: '#9a9a9a', reserve: '#ffa020', off: '#ff4433' }[s.tap] ?? '#9a9a9a';
-    ctx.fillStyle = s.ignition ? colour : '#555555';
-    ctx.fillText(s.tap === 'reserve' ? 'RES' : s.tap.toUpperCase(), 60, 21);
-    trip.tex.needsUpdate = true;
-    tap.tex.needsUpdate = true;
-  }
-
-  return {
-    group,
-    update(s) {
-      const facesKey = `${s.maxRpm}|${s.redline}|${s.reserveLevel}|${s.coldBelow}`;
-      if (facesKey !== faces) {
-        faces = facesKey;
-        drawFaces(s);
-      }
-      // Needles swing rather than jump; with the ignition off they drop to rest.
-      displayRpm += (s.rpm - displayRpm) * 0.25;
-      displayMph += (s.speedMph - displayMph) * 0.2;
-      displayFuel += ((s.ignition ? s.fuelLevel : 0) - displayFuel) * 0.05;
-      const top = Math.ceil((s.maxRpm + 500) / 1000) * 1000;
-      rev.point(SWEEP_START + SWEEP * THREE.MathUtils.clamp(displayRpm / top, 0, 1));
-      spd.point(SWEEP_START + SWEEP * THREE.MathUtils.clamp(displayMph / SPEEDO_MAX_MPH, 0, 1));
-      fuel.point(FUEL_START + FUEL_SWEEP * THREE.MathUtils.clamp(displayFuel, 0, 1));
-      displayTemp += (tempGaugeFraction(s.temperature, s.ignition, s.overheat) - displayTemp) * 0.05;
-      temp.point(TEMP_START + TEMP_SWEEP * displayTemp);
-      ignLamp.color.setHex(s.ignition ? 0x33dd44 : 0x1a1a1a);
-      revLamp.color.setHex(s.ignition && s.reverse ? 0xffe066 : 0x1a1a1a);
-      fuelLamp.color.setHex(s.ignition && s.fuelLevel <= s.reserveLevel ? 0xffa020 : 0x1a1a1a);
-      if (gate([s.ignition, s.tap, tripText(s.tripMiles)].join('|'))) drawReadouts(s);
-    },
-  };
-}
-
-// Modern: one amber LCD in a rounded pod -----------------------------------------
-
-const MODERN = { width: 0.31, on: '#ffad3a', red: '#ff4a22', ghostRgb: '255,173,58', bg: '#100c07', visor: true };
-const SPORT = { width: 0.27, on: '#ff5a46', red: '#ffffff', ghostRgb: '255,90,70', bg: '#0b0606', visor: false };
-
-function buildModern(look = MODERN) {
-  const group = new THREE.Group();
-  group.name = 'dash';
-  group.add(podMesh(look.width, 0.115, look.visor ? 0.04 : 0.05, look.visor ? charcoal : black));
-  // Chamfered lower edge and a visor over the display.
-  if (look.visor) {
-    const chin = new THREE.Mesh(new RoundedBoxGeometry(0.25, 0.03, 0.06, 2, 0.01), charcoal);
-    chin.position.set(0, -0.062, 0.006);
-    chin.rotation.x = -0.5;
-    group.add(chin);
-    // A slim rounded brow along the top edge.
-    const visor = new THREE.Mesh(new RoundedBoxGeometry(look.width + 0.008, 0.012, 0.045, 3, 0.0058), charcoal);
-    visor.position.set(0, 0.06, -0.036);
-    visor.rotation.x = 0.35;
-    visor.name = 'dashVisor';
-    group.add(visor);
-  }
-  group.add(podFace(look.width - 0.014, 0.103, look.visor ? 0.034 : 0.044));
-
-  const lcd = canvasPanel(512, 176, look.width - 0.048, 0.09);
-  lcd.mesh.name = 'lcd';
-  lcd.mesh.position.set(0, 0, -0.0356);
-  lcd.mesh.material.transparent = true; // its corners are rounded off
-  group.add(lcd.mesh);
-
-  const gate = changeGate();
-  let displayRpm = 0;
-  const BARS = 30;
-
-  function drawIcon(ctx, kind, x, y, colour) {
-    ctx.fillStyle = colour;
-    ctx.strokeStyle = colour;
-    ctx.lineWidth = 3;
-    if (kind === 'temp') {
-      ctx.fillRect(x + 6, y, 6, 20);
-      ctx.beginPath();
-      ctx.arc(x + 9, y + 24, 7, 0, Math.PI * 2);
-      ctx.fill();
-      for (let i = 0; i < 3; i++) ctx.fillRect(x + 14, y + 3 + i * 6, 6, 2);
-    } else if (kind === 'fuel') {
-      ctx.fillRect(x, y + 4, 14, 24);
-      ctx.fillRect(x + 14, y + 8, 6, 3);
-      ctx.fillRect(x + 18, y + 8, 3, 16);
-      ctx.clearRect(x + 3, y + 7, 8, 7);
-    } else if (kind === 'key') {
-      ctx.beginPath();
-      ctx.arc(x + 8, y + 14, 7, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.fillRect(x + 14, y + 12, 14, 4);
-      ctx.fillRect(x + 22, y + 16, 3, 6);
-    }
-  }
-
-  function drawLcd(s) {
-    const { ctx, canvas } = lcd;
-    const W = canvas.width;
-    const H = canvas.height;
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = s.ignition ? look.bg : '#0a0908';
-    ctx.beginPath();
-    ctx.roundRect(0, 0, W, H, 36);
-    ctx.fill();
-    const on = look.on;
-    const red = look.red;
-    const ghost = s.ignition ? `rgba(${look.ghostRgb},0.08)` : `rgba(${look.ghostRgb},0.03)`;
-    if (!s.ignition) {
-      drawNumber(ctx, '88', 196, 64, 46, 80, 12, ghost, ghost);
-      return;
-    }
-    // Bar-graph rev counter across the top, rising to the right.
-    const litBars = Math.round((s.rpm / s.maxRpm) * BARS);
-    const redFrom = Math.round((s.redline / s.maxRpm) * BARS);
-    for (let i = 0; i < BARS; i++) {
-      const x = 14 + i * 16;
-      const h = 10 + (i / BARS) * 26;
-      ctx.fillStyle = i < litBars ? (i >= redFrom ? red : on) : ghost;
-      ctx.fillRect(x, 46 - h, 12, h);
-    }
-    ctx.fillStyle = on;
-    ctx.font = 'bold 13px sans-serif';
-    const k = Math.floor(s.maxRpm / 1000);
-    for (let i = 0; i <= k; i++) ctx.fillText(String(i), 14 + (i / (s.maxRpm / 1000)) * BARS * 16, 62);
-    ctx.fillText('x1000 r/min', 14, 18); // above the short end of the bars
-
-    // Speed in the middle.
-    drawNumber(ctx, padSpeed(s.speedMph), 196, 70, 46, 80, 12, on, ghost);
-    ctx.font = 'bold 20px sans-serif';
-    ctx.fillText('mph', 312, 146);
-
-    // Vertical fuel gauge on the right.
-    const segs = 8;
-    const lit = Math.ceil(s.fuelLevel * segs - 0.001);
-    const low = s.fuelLevel <= s.reserveLevel;
-    for (let i = 0; i < segs; i++) {
-      ctx.fillStyle = i < lit ? (low ? red : on) : ghost;
-      ctx.fillRect(460, 160 - i * 12, 34, 8);
-    }
-    ctx.fillStyle = on;
-    ctx.font = 'bold 13px sans-serif';
-    ctx.fillText('F', 444, 80);
-    ctx.fillText('E', 444, 168);
-    drawIcon(ctx, 'fuel', 412, 130, low ? red : ghost);
-
-    // Temperature: a thermometer over a row of five blocks, blue while cold, red at the top.
-    drawIcon(ctx, 'temp', 18, 78, ghost);
-    tempBlocks(ctx, 16, 116, 14, 12, s, on, red, ghost);
-    // Warning icons and flags on the left.
-    drawIcon(ctx, 'key', 50, 82, on);
-    ctx.font = 'bold 18px sans-serif';
-    ctx.fillStyle = s.tap === 'reserve' ? on : ghost;
-    ctx.fillText('RES', 100, 100);
-    ctx.fillStyle = s.tap === 'off' ? red : ghost;
-    ctx.fillText('OFF', 148, 100);
-    ctx.fillStyle = s.reverse ? on : ghost;
-    ctx.fillText('R', 100, 126);
-    ctx.fillStyle = on;
-    ctx.font = 'bold 14px sans-serif';
-    ctx.fillText('TRIP', 18, 160);
-    drawNumber(ctx, tripText(s.tripMiles), 60, 142, 13, 22, 5, on, ghost);
-  }
-
-  return {
-    group,
-    update(s) {
-      displayRpm += (s.rpm - displayRpm) * 0.35;
-      const key = [
-        s.ignition,
-        padSpeed(s.speedMph),
-        Math.round((displayRpm / s.maxRpm) * BARS),
-        Math.ceil(s.fuelLevel * 8 - 0.001),
-        s.fuelLevel <= s.reserveLevel,
-        s.tap,
-        Math.ceil(tempGaugeFraction(s.temperature, true, s.overheat) * 5 - 0.001),
-        tripText(s.tripMiles),
-        s.reverse,
-      ].join('|');
-      if (gate(key)) {
-        drawLcd({ ...s, rpm: displayRpm });
-        lcd.tex.needsUpdate = true;
-      }
-    },
-  };
-}
-
-// Vintage: one chrome-cupped speedo and a row of lamps ------------------------------
-
-/** A warning lamp in a chrome ring on the pod face; returns its material. */
-function ringLamp(group, x, y, radius = 0.0062) {
-  const lens = new THREE.Mesh(new THREE.CircleGeometry(radius, 16), new THREE.MeshBasicMaterial({ color: 0x1a1a1a, toneMapped: false }));
-  lens.position.set(x, y, -0.0368);
-  lens.rotation.y = Math.PI;
-  group.add(lens);
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(radius + 0.0012, 0.0016, 6, 20), chrome);
-  ring.position.set(x, y, -0.0368);
-  group.add(ring);
-  return lens.material;
-}
-
-const VINTAGE_MAX_MPH = 40;
-const VFUEL_START = Math.PI * 1.15; // empty, upper left of the fuel dial
-const VFUEL_SWEEP = Math.PI * 0.7; // to full, upper right
-
-/** Cream dial face with black ticks, the old way. */
-function creamBase(ctx) {
-  ctx.clearRect(0, 0, 256, 256);
-  const g = ctx.createRadialGradient(128, 110, 30, 128, 128, 128);
-  g.addColorStop(0, '#f1ead6');
-  g.addColorStop(1, '#d6cbad');
-  ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.arc(128, 128, 128, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-}
-
-/** Black needle and a dark red cap, for the cream faces. */
-function darkNeedle(group, name) {
-  const needle = group.getObjectByName(`${name}Needle`);
-  needle.children[0].material.color.setHex(0x111111);
-  needle.children[1].material.color.setHex(0x8a1a12);
-}
-
-function buildVintage() {
-  const group = new THREE.Group();
-  group.name = 'dash';
-  const W = 0.23;
-  const H = 0.1;
-  group.add(podMesh(W, H, 0.04, black));
-
-  // Face: lamp labels and the fuel tap window, redrawn when the tap or ignition changes.
-  const face = canvasPanel(480, 200, W - 0.014, H - 0.014);
-  face.mesh.name = 'dashFace';
-  face.mesh.position.z = -0.0352;
-  face.mesh.material.transparent = true;
+  const O = { ox: 180, oy: 79 };
+  housing(group, { x: 98, y: 8, w: 164, h: 142, r: 12, ...O, material: plastic });
+  const face = mmPanel({ x: 98, y: 8, w: 164, h: 142, ...O });
   group.add(face.mesh);
-  const pxPerM = 480 / (W - 0.014);
-  // Canvas position of a point on the face; +x is the rider's left.
-  const at = (x, y) => [240 - x * pxPerM, 100 - y * pxPerM];
-
-  // The speedo stands proud of the pod in a deep chrome cup.
-  const SPD = { x: 0.008, y: 0, radius: 0.042 };
-  const cup = new THREE.Mesh(new THREE.CylinderGeometry(SPD.radius + 0.004, SPD.radius + 0.007, 0.02, 36, 1, true), chrome);
-  cup.rotation.x = Math.PI / 2;
-  cup.position.set(SPD.x, SPD.y, -0.043);
-  group.add(cup);
-  const lip = new THREE.Mesh(new THREE.TorusGeometry(SPD.radius + 0.004, 0.0025, 8, 40), chrome);
-  lip.position.set(SPD.x, SPD.y, -0.053);
-  group.add(lip);
-  const raised = new THREE.Group();
-  raised.position.z = -0.008;
-  group.add(raised);
-  const spd = gauge(raised, { ...SPD, name: 'speedo' });
-  darkNeedle(raised, 'speedo');
-
-  // A little fuel gauge to the right, with the low fuel lamp in it and the tap window under it.
-  const FUEL = { x: -0.075, y: 0.01, radius: 0.022 };
-  const fuel = gauge(group, { ...FUEL, name: 'fuelGauge' });
-  darkNeedle(group, 'fuelGauge');
-  const TAP = { x: FUEL.x, y: -0.028 };
-
-  // Lamps: ignition, cold and reverse down the left, low fuel in the fuel gauge.
-  const LAMPS = { ign: [0.075, 0.024], rev: [0.075, -0.024] };
-  const lamp = {};
-  for (const [k, [x, y]] of Object.entries(LAMPS)) lamp[k] = ringLamp(group, x, y);
-  lamp.fuel = dialLamp(group, FUEL.x, FUEL.y, 0, -0.011, 0.0036);
-  // Temperature gauge where the cold lamp was.
-  const TEMP = { x: 0.075, y: 0.0, radius: 0.0125 };
-  const temp = gauge(group, { ...TEMP, name: 'tempGauge' });
-  darkNeedle(group, 'tempGauge');
-
-  function drawDials(s) {
-    let ctx = spd.ctx;
-    creamBase(ctx);
-    ticks(ctx, SWEEP_START, SWEEP, VINTAGE_MAX_MPH / 2.5, 2, 122, () => '#1b1b1b');
-    ctx.fillStyle = '#1b1b1b';
-    ctx.font = 'bold 34px serif';
-    for (let v = 0; v <= VINTAGE_MAX_MPH; v += 10) {
-      const a = SWEEP_START + (SWEEP * v) / VINTAGE_MAX_MPH;
-      ctx.fillText(String(v), 128 + Math.cos(a) * 80, 128 + Math.sin(a) * 80);
-    }
-    ctx.font = 'bold 22px serif';
-    ctx.fillText('MPH', 128, 180);
-    spd.tex.needsUpdate = true;
-
-    // Fuel: E to F across the top, red below the reserve.
-    ctx = fuel.ctx;
-    creamBase(ctx);
-    ctx.lineWidth = 16;
-    ctx.strokeStyle = '#1b1b1b';
-    ctx.beginPath();
-    ctx.arc(128, 128, 104, VFUEL_START + VFUEL_SWEEP * s.reserveLevel, VFUEL_START + VFUEL_SWEEP);
-    ctx.stroke();
-    ctx.strokeStyle = '#b3221a';
-    ctx.beginPath();
-    ctx.arc(128, 128, 104, VFUEL_START, VFUEL_START + VFUEL_SWEEP * s.reserveLevel);
-    ctx.stroke();
-    ctx.fillStyle = '#1b1b1b';
-    ctx.font = 'bold 54px serif';
-    ctx.fillText('E', 128 + Math.cos(VFUEL_START) * 58, 128 + Math.sin(VFUEL_START) * 58 + 22);
-    ctx.fillText('F', 128 + Math.cos(VFUEL_START + VFUEL_SWEEP) * 58, 128 + Math.sin(VFUEL_START + VFUEL_SWEEP) * 58 + 22);
-    fuel.tex.needsUpdate = true;
-
-    drawTempFace(temp.ctx, s, { cream: true });
-    temp.tex.needsUpdate = true;
-  }
-
-  function drawFace(s) {
-    const { ctx, canvas } = face;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#0d0d0d';
-    ctx.beginPath();
-    ctx.roundRect(0, 0, canvas.width, canvas.height, 0.033 * pxPerM);
-    ctx.fill();
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = 'bold 19px sans-serif';
-    ctx.fillStyle = '#b8b2a2';
-    for (const [k, label] of [['ign', 'IGN'], ['rev', 'R']]) {
-      const [x, y] = at(LAMPS[k][0] + 0.022, LAMPS[k][1]);
-      ctx.fillText(label, x, y + 1);
-    }
-    // Fuel tap window: a little drum under the fuel gauge.
-    const [x, y] = at(TAP.x, TAP.y);
-    ctx.fillStyle = '#9a9a9a';
-    ctx.fillRect(x - 40, y - 16, 80, 32);
-    ctx.fillStyle = '#161616';
-    ctx.fillRect(x - 37, y - 13, 74, 26);
-    const colour = { on: '#e8e2d0', reserve: '#ffa020', off: '#ff4433' }[s.tap] ?? '#e8e2d0';
-    ctx.fillStyle = s.ignition ? colour : '#555555';
-    ctx.font = 'bold 22px sans-serif';
-    ctx.fillText(s.tap === 'reserve' ? 'RES' : String(s.tap).toUpperCase(), x, y + 1);
-    face.tex.needsUpdate = true;
-  }
-
-  let faces = '';
   const gate = changeGate();
-  let displayMph = 0;
-  let displayFuel = 0;
-  let displayTemp = 0;
+  let shownMph = 0;
+
+  function draw(ctx, s, L) {
+    ctx.fillStyle = '#111';
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.roundRect(118, 18, 124, 78, 6);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#0c0d0e';
+    ctx.beginPath();
+    ctx.roundRect(122, 22, 116, 70, 4);
+    ctx.fill();
+    const [cx, cy, r] = [196, 70, 40];
+    ticks(ctx, cx, cy, r - 6, r, 170, 10, 9, '#e9e9e9', 0.9);
+    ticks(ctx, cx, cy, r - 3, r, 170, 10, 18, '#bbb', 0.5);
+    labels(ctx, cx, cy, r - 11, 170, 10, ['0', '5', '10', '15', '20', '25', '30', '35', '40', '45'], '#e9e9e9', 4.6);
+    text(ctx, 'mph', cx + 30, cy + 12, 4, '#bbb');
+    text(ctx, 'HOUR METER', 128, 37, 3.6, '#ccc');
+    const h = counterDigits(s.hours, 4);
+    drum(ctx, 128, 40, h.whole, h.tenth);
+    text(ctx, 'ODOMETER', 128, 57, 3.6, '#ccc');
+    const o = counterDigits(s.odoMiles, 4);
+    drum(ctx, 128, 60, o.whole, o.tenth);
+    text(ctx, 'HONDA', 128, 86, 6.5, '#e8e8e8', { weight: 'bold', spacing: 1 });
+    needle(ctx, cx, cy, r - 2, 170 - (160 * Math.min(45, L.mph)) / 45, '#e8541e');
+    // Lamps and the key, on a small panel under the window.
+    ctx.fillStyle = '#18191b';
+    ctx.beginPath();
+    ctx.roundRect(126, 104, 68, 26, 3);
+    ctx.fill();
+    lamp(ctx, 138, 114, LAMP.amber, 'R', L.lamps.r, { shape: 'rect' });
+    lamp(ctx, 160, 114, LAMP.green, 'N', L.lamps.n, { shape: 'rect' });
+    lamp(ctx, 182, 114, LAMP.red, 'OIL °C', L.lamps.temp, { shape: 'rect' });
+    keySwitch(ctx, 222, 118, s.keyOn);
+  }
+
   return {
     group,
+    mount: podMount(group, 0, 0.079, 0, 0.75),
     update(s) {
-      if (`${s.reserveLevel}|${s.coldBelow}` !== faces) {
-        faces = `${s.reserveLevel}|${s.coldBelow}`;
-        drawDials(s);
-      }
-      if (gate(`${s.ignition}|${s.tap}`)) drawFace(s);
-      // Needles swing rather than jump; with the ignition off the fuel needle drops to empty.
-      displayMph += (s.speedMph - displayMph) * 0.2;
-      displayFuel += ((s.ignition ? s.fuelLevel : 0) - displayFuel) * 0.05;
-      spd.point(SWEEP_START + SWEEP * THREE.MathUtils.clamp(displayMph / VINTAGE_MAX_MPH, 0, 1));
-      fuel.point(VFUEL_START + VFUEL_SWEEP * THREE.MathUtils.clamp(displayFuel, 0, 1));
-      lamp.ign.color.setHex(s.ignition ? 0x33dd44 : 0x1a1a1a);
-      displayTemp += (tempGaugeFraction(s.temperature, s.ignition, s.overheat) - displayTemp) * 0.05;
-      temp.point(TEMP_START + TEMP_SWEEP * displayTemp);
-      lamp.rev.color.setHex(s.ignition && s.reverse ? 0xffe066 : 0x1a1a1a);
-      lamp.fuel.color.setHex(s.ignition && s.fuelLevel <= s.reserveLevel ? 0xffa020 : 0x1a1a1a);
+      // The needle follows the road speed with a little lag, like a cable.
+      shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
+      const L = { lamps: lampStates(s), mph: shownMph };
+      const o = counterDigits(s.odoMiles, 4);
+      const h = counterDigits(s.hours, 4);
+      if (gate(lookKey(s, [Math.round(shownMph * 4), o.whole + o.tenth, h.whole + h.tenth]))) face.redraw((ctx) => draw(ctx, s, L));
     },
   };
 }
 
-// Race: a big rev bar and little else ------------------------------------------------
+// The two LCDs --------------------------------------------------------------------------
 
-function buildRace() {
+function buildGrizzly() {
   const group = new THREE.Group();
   group.name = 'dash';
-  const W = 0.23;
-  const H = 0.094;
-  group.add(podMesh(W, H, 0.036, black));
-  group.add(podFace(W - 0.012, H - 0.012, 0.03));
+  const O = { ox: 165, oy: 62 };
+  housing(group, { x: 64, y: 10, w: 202, h: 104, r: 14, ...O, material: charcoal });
+  const face = mmPanel({ x: 64, y: 10, w: 202, h: 104, ...O });
+  group.add(face.mesh);
+  const gate = changeGate();
 
-  const lcd = canvasPanel(512, 184, W - 0.018, H - 0.018);
-  lcd.mesh.name = 'lcd';
-  lcd.mesh.position.set(0, 0, -0.0356);
-  lcd.mesh.material.transparent = true; // its corners are rounded off
-  group.add(lcd.mesh);
-
-  // Shift light on top of the pod.
-  const shift = new THREE.Mesh(new RoundedBoxGeometry(0.03, 0.012, 0.016, 2, 0.005), new THREE.MeshBasicMaterial({ color: 0x2a0d08, toneMapped: false }));
-  shift.name = 'shiftLight';
-  shift.position.set(0, H / 2 + 0.002, -0.012);
-  group.add(shift);
-
-  const on = '#eaf4ff';
-  const green = '#55ff7a';
-  const amber = '#ffc23a';
-  const red = '#ff3b22';
-  const SEGS = 24;
-
-  function drawLcd(s) {
-    const { ctx, canvas } = lcd;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = s.ignition ? '#05080a' : '#060606';
+  function draw(ctx, s, L) {
+    // The brow, and the black window around the LCD.
+    ctx.fillStyle = '#202124';
     ctx.beginPath();
-    ctx.roundRect(0, 0, canvas.width, canvas.height, 40);
+    ctx.moveTo(96, 16);
+    ctx.lineTo(234, 16);
+    ctx.lineTo(228, 24);
+    ctx.lineTo(102, 24);
     ctx.fill();
-    const ghost = s.ignition ? 'rgba(234,244,255,0.07)' : 'rgba(234,244,255,0.03)';
-    // Rev bar right across the top: green, amber towards the redline, red past it.
-    const lit = s.ignition ? Math.round((s.rpm / s.maxRpm) * SEGS) : 0;
-    for (let i = 0; i < SEGS; i++) {
-      const f = (i + 1) / SEGS;
-      const rpmAt = f * s.maxRpm;
-      const colour = rpmAt > s.redline ? red : rpmAt > s.redline * 0.75 ? amber : green;
-      const h = 44 + 26 * f;
-      ctx.fillStyle = i < lit ? colour : ghost;
-      ctx.fillRect(26 + i * 19.5, 92 - h, 15, h);
+    ctx.fillStyle = '#151617';
+    ctx.beginPath();
+    ctx.roundRect(103, 26, 124, 72, 6);
+    ctx.fill();
+    const [x, y, w, h] = [109, 31, 112, 62];
+    const { on, ghost } = LCD;
+    ctx.fillStyle = LCD.bg;
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, 3);
+    ctx.fill();
+    if (s.ignition) {
+      const c = segmentCounts(s, 6, 5);
+      text(ctx, 'E', x + 4, y + 8, 3.6, on);
+      for (let i = 0; i < 6; i++) {
+        ctx.fillStyle = i < c.fuel ? on : ghost;
+        ctx.fillRect(x + 9 + i * 6, y + 4, 4.6, 5);
+      }
+      text(ctx, 'F', x + 46, y + 8, 3.6, on);
+      const tx = x + w - 44;
+      text(ctx, 'C', tx, y + 8, 3.6, on);
+      for (let i = 0; i < 5; i++) {
+        ctx.fillStyle = i < c.temp ? on : ghost;
+        ctx.fillRect(tx + 5 + i * 6, y + 4, 4.6, 5);
+      }
+      text(ctx, 'H', tx + 36, y + 8, 3.6, on);
+      // Gear letter in a box.
+      ctx.strokeStyle = on;
+      ctx.lineWidth = 0.6;
+      ctx.strokeRect(x + 4, y + 14, 11, 14);
+      text(ctx, s.reverse ? 'R' : s.neutral ? 'N' : 'H', x + 9.5, y + 25, 10, on, { align: 'center', weight: 'bold' });
+      text(ctx, 'MPH', x + w / 2 + 17, y + 35, 4.4, on);
+      segText(ctx, L.speed, x + w / 2 + 14, y + 18, 18, on, ghost);
+      segText(ctx, s.clock, x + w - 5, y + 16, 5.2, on);
+      // Trip, odometer and hours in turn.
+      ctx.strokeStyle = ghost;
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(x + 3, y + h - 13);
+      ctx.lineTo(x + w - 3, y + h - 13);
+      ctx.stroke();
+      text(ctx, L.line[0], x + 5, y + h - 4, 4.2, on, { weight: 'bold' });
+      segText(ctx, L.line[1], x + w - 5, y + h - 9.1, 5.6, on);
+    } else {
+      segText(ctx, '88', x + w / 2 + 14, y + 18, 18, ghost);
     }
-    if (!s.ignition) return;
-    ctx.fillStyle = on;
-    ctx.font = 'bold 15px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'alphabetic';
-    const k = Math.floor(s.maxRpm / 1000);
-    for (let i = 2; i <= k; i += 2) ctx.fillText(String(i), 26 + ((i * 1000) / s.maxRpm) * SEGS * 19.5 - 2, 110);
-
-    // Fuel blocks on the left, with the tap when it isn't simply on.
-    const low = s.fuelLevel <= s.reserveLevel;
-    const blocks = 6;
-    const full = Math.ceil(s.fuelLevel * blocks - 0.001);
-    ctx.textAlign = 'left';
-    ctx.font = 'bold 18px sans-serif';
-    ctx.fillStyle = low ? red : on;
-    ctx.fillText('FUEL', 28, 136);
-    for (let i = 0; i < blocks; i++) {
-      ctx.fillStyle = i < full ? (low ? red : on) : ghost;
-      ctx.fillRect(28 + i * 22, 146, 17, 26);
-    }
-    ctx.font = 'bold 20px sans-serif';
-    ctx.fillStyle = s.tap === 'off' ? red : s.tap === 'reserve' ? amber : ghost;
-    ctx.fillText(s.tap === 'off' ? 'OFF' : 'RES', 168, 166);
-
-    // Temperature blocks and the reverse flag in the middle.
-    ctx.fillStyle = ghost;
-    ctx.fillRect(226, 118, 62, 3);
-    tempBlocks(ctx, 226, 124, 13, 16, s, on, red, ghost);
-    ctx.fillStyle = s.reverse ? amber : ghost;
-    ctx.font = 'bold 30px sans-serif';
-    ctx.fillText('R', 262, 168);
-
-    // Speed, small, on the right.
-    drawNumber(ctx, padSpeed(s.speedMph), 344, 126, 36, 54, 9, on, ghost);
-    ctx.fillStyle = on;
-    ctx.font = 'bold 16px sans-serif';
-    ctx.fillText('mph', 440, 176);
+    // Lamps either side, and the two buttons under the LCD.
+    lamp(ctx, 86, 44, LAMP.green, 'N', L.lamps.n, { r: 4.2 });
+    lamp(ctx, 86, 72, LAMP.amber, 'R', L.lamps.r, { r: 4.2 });
+    lamp(ctx, 244, 44, LAMP.red, 'TEMP', L.lamps.temp, { r: 4.2 });
+    lamp(ctx, 244, 72, LAMP.amber, 'FUEL', L.lamps.fuel, { r: 4.2 });
+    ctx.fillStyle = '#444';
+    ctx.beginPath();
+    ctx.roundRect(146, 100, 14, 6, 2);
+    ctx.roundRect(170, 100, 14, 6, 2);
+    ctx.fill();
+    text(ctx, 'SELECT', 153, 111, 3.2, '#aaa', { align: 'center' });
+    text(ctx, 'RESET', 177, 111, 3.2, '#aaa', { align: 'center' });
   }
 
-  const gate = changeGate();
-  let displayRpm = 0;
   return {
     group,
+    mount: podMount(group, 0, 0.06, 0, 0.75),
     update(s) {
-      displayRpm += (s.rpm - displayRpm) * 0.4;
-      const key = [
-        s.ignition,
-        padSpeed(s.speedMph),
-        Math.round((displayRpm / s.maxRpm) * SEGS),
-        Math.ceil(s.fuelLevel * 6 - 0.001),
-        s.fuelLevel <= s.reserveLevel,
-        s.tap,
-        Math.ceil(tempGaugeFraction(s.temperature, true, s.overheat) * 5 - 0.001),
-        s.reverse,
-      ].join('|');
-      if (gate(key)) {
-        drawLcd({ ...s, rpm: displayRpm });
-        lcd.tex.needsUpdate = true;
+      const c = segmentCounts(s, 6, 5);
+      const line = bottomLine(s, 4, 5);
+      const L = { lamps: lampStates(s), speed: speedText(s.speedMph), line };
+      const key = lookKey(s, [L.speed, c.fuel, c.temp, s.reverse, s.neutral, s.clock, line.join(' ')]);
+      if (gate(key)) face.redraw((ctx) => draw(ctx, s, L));
+    },
+  };
+}
+
+/** The line along the bottom of an LCD: trip, odometer or hours, four seconds each. */
+function bottomLine(s, tripDigits, odoDigits, labelsFor = ['TRIP', 'ODO', 'HRS']) {
+  const i = cycleIndex(s.seconds ?? 0, 3);
+  const value = [s.tripMiles, s.odoMiles, s.hours][i];
+  return [labelsFor[i], counterText(value, i === 0 ? tripDigits : odoDigits)];
+}
+
+function buildKodiak() {
+  const group = new THREE.Group();
+  group.name = 'dash';
+  const O = { ox: 170, oy: 62 };
+  housing(group, { x: 56, y: 8, w: 228, h: 108, r: 16, ...O, material: gloss });
+  const face = mmPanel({ x: 56, y: 8, w: 228, h: 108, ...O });
+  group.add(face.mesh);
+  const gate = changeGate();
+
+  function draw(ctx, s, L) {
+    ctx.strokeStyle = '#8d949a'; // the thin silver trim
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(80, 12);
+    ctx.lineTo(260, 12);
+    ctx.stroke();
+    ctx.fillStyle = '#0e0f10';
+    ctx.beginPath();
+    ctx.roundRect(88, 20, 164, 76, 8);
+    ctx.fill();
+    const [x, y, w] = [94, 25, 152];
+    const { on, ghost } = LCD_COOL;
+    ctx.fillStyle = LCD_COOL.bg;
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, 66, 5);
+    ctx.fill();
+    if (s.ignition) {
+      const c = segmentCounts(s, 8, 6);
+      for (let i = 0; i < 8; i++) {
+        ctx.fillStyle = i < c.fuel ? on : ghost;
+        ctx.beginPath();
+        ctx.roundRect(x + 34 + i * 10.5, y + 4, 8.5, 4.6, 0.6);
+        ctx.fill();
       }
-      shift.material.color.setHex(s.ignition && displayRpm >= s.redline - 250 ? 0xff3311 : 0x2a0d08);
+      text(ctx, 'E', x + 28, y + 8.4, 4, on, { align: 'right' });
+      text(ctx, 'F', x + 120, y + 8.4, 4, on);
+      // Gear column, the current one boxed.
+      const cur = s.reverse ? 3 : s.neutral ? 2 : 0;
+      [...'HLNRP'].forEach((g, i) => text(ctx, g, x + 8, y + 18 + i * 9, 6.4, i === cur ? on : ghost, { align: 'center', weight: 'bold' }));
+      ctx.strokeStyle = on;
+      ctx.lineWidth = 0.6;
+      ctx.strokeRect(x + 3.5, y + 12 + cur * 9, 9, 8);
+      text(ctx, 'mph', x + 95, y + 44, 5, on);
+      segText(ctx, L.speed, x + 92, y + 23.6, 22.4, on, ghost);
+      for (let i = 0; i < 6; i++) {
+        ctx.fillStyle = i < c.temp ? on : ghost;
+        ctx.fillRect(x + w - 12, y + 46 - i * 6, 7, 4.4);
+      }
+      text(ctx, '°C', x + w - 8.5, y + 56, 3.6, on, { align: 'center' });
+      text(ctx, '4WD', x + w - 30, y + 20, 4.6, on, { weight: 'bold' });
+      segText(ctx, s.clock, x + w - 18, y + 25.8, 5.25, on);
+      ctx.strokeStyle = ghost;
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(x + 18, y + 52);
+      ctx.lineTo(x + w - 18, y + 52);
+      ctx.stroke();
+      text(ctx, L.line[0], x + 20, y + 62, 4.6, on, { weight: 'bold' });
+      segText(ctx, L.line[1], x + w - 20, y + 56.2, 6.3, on);
+    } else {
+      segText(ctx, '88', x + 92, y + 23.6, 22.4, ghost);
+    }
+    ctx.fillStyle = '#3a3d40';
+    ctx.beginPath();
+    for (const bx of [126, 162, 198]) ctx.roundRect(bx, 100, 18, 7, 2.5);
+    ctx.fill();
+    lamp(ctx, 74, 50, LAMP.amber, 'R', L.lamps.r, { r: 3.6 });
+    lamp(ctx, 74, 76, LAMP.green, 'N', L.lamps.n, { r: 3.6 });
+    lamp(ctx, 266, 50, LAMP.red, 'TEMP', L.lamps.temp, { r: 3.6 });
+    lamp(ctx, 266, 76, LAMP.amber, 'FUEL', L.lamps.fuel, { r: 3.6 });
+  }
+
+  return {
+    group,
+    mount: podMount(group, 0, 0.062, 0, 0.75),
+    update(s) {
+      const c = segmentCounts(s, 8, 6);
+      const line = bottomLine(s, 4, 5, ['TRIP A', 'ODO', 'HRS']);
+      const L = { lamps: lampStates(s), speed: speedText(s.speedMph), line };
+      const key = lookKey(s, [L.speed, c.fuel, c.temp, s.reverse, s.neutral, s.clock, line.join(' ')]);
+      if (gate(key)) face.redraw((ctx) => draw(ctx, s, L));
+    },
+  };
+}
+
+// Green: Kawasaki Bayou ---------------------------------------------------------------
+
+function buildBayou() {
+  const group = new THREE.Group();
+  group.name = 'dash';
+  const O = { ox: 150, oy: 28 };
+  housing(group, { x: 102, y: 10, w: 96, h: 36, r: 6, ...O, material: plastic });
+  const face = mmPanel({ x: 102, y: 10, w: 96, h: 36, ...O });
+  group.add(face.mesh);
+  const gate = changeGate();
+  return {
+    group,
+    mount: podMount(group, 0, 0.026, 0.03, 0.85),
+    update(s) {
+      const l = lampStates(s);
+      if (gate(lookKey(s)))
+        face.redraw((ctx) => {
+          lamp(ctx, 132, 26, LAMP.green, 'N', l.n, { r: 4.6, shape: 'rect' });
+          lamp(ctx, 156, 26, LAMP.amber, 'R', l.r, { r: 4.6, shape: 'rect' });
+          keySwitch(ctx, 182, 28, s.keyOn);
+        });
+    },
+  };
+}
+
+// Yellow: Yamaha Blaster ----------------------------------------------------------------
+
+function buildBlaster() {
+  const group = new THREE.Group();
+  group.name = 'dash';
+  const O = { ox: 150, oy: 80 };
+  housing(group, { x: 96, y: 52, w: 108, h: 56, r: 10, ...O, material: blackMat });
+  const rim = housing(group, { x: 104, y: 44, w: 92, h: 7, r: 3.5, ...O, material: chromeMat, depth: 0.04 });
+  rim.name = 'dashRim';
+  const face = mmPanel({ x: 96, y: 52, w: 108, h: 56, ...O });
+  group.add(face.mesh);
+  const gate = changeGate();
+  return {
+    group,
+    mount: null,
+    update(s) {
+      if (gate(lookKey(s)))
+        face.redraw((ctx) => {
+          lamp(ctx, 150, 60, LAMP.red, 'power', s.ignition, { r: 3.6, labelBelow: false });
+          keySwitch(ctx, 150, 86, s.keyOn);
+        });
+    },
+  };
+}
+
+// Orange: Suzuki quadracer ------------------------------------------------------------------
+
+function buildQuadracer() {
+  const group = new THREE.Group();
+  group.name = 'dash';
+  const O = { ox: 47, oy: 40 };
+  housing(group, { x: 34, y: 28, w: 26, h: 24, r: 3, ...O, material: new THREE.MeshStandardMaterial({ color: 0x202020, roughness: 0.5 }), depth: 0.03 });
+  const face = mmPanel({ x: 30, y: 26, w: 34, h: 96, ...O });
+  group.add(face.mesh);
+  const gate = changeGate();
+  return {
+    group,
+    mount: null,
+    update(s) {
+      if (gate(lookKey(s)))
+        face.redraw((ctx) => {
+          // The red tab sits at RUN with the ignition on, OFF with it off.
+          ctx.fillStyle = LAMP.red;
+          ctx.beginPath();
+          ctx.roundRect(40, s.keyOn ? 31 : 40, 14, 8, 2);
+          ctx.fill();
+          text(ctx, 'RUN', 47, s.keyOn ? 46 : 37, 3.6, '#ddd', { align: 'center' });
+          text(ctx, 'OFF', 47, s.keyOn ? 37 : 46, 3.6, '#777', { align: 'center' });
+          // The tether lanyard.
+          ctx.strokeStyle = '#d33';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.moveTo(47, 52);
+          ctx.quadraticCurveTo(41, 61, 47, 67);
+          ctx.quadraticCurveTo(53, 73, 47, 82);
+          ctx.quadraticCurveTo(57, 92, 47, 106);
+          ctx.stroke();
+        });
+    },
+  };
+}
+
+// Kids': a key switch --------------------------------------------------------------------------
+
+function buildKidsKey() {
+  const group = new THREE.Group();
+  group.name = 'dash';
+  const O = { ox: 110, oy: 55 };
+  housing(group, { x: 96, y: 44, w: 28, h: 22, r: 4, ...O, material: blackMat, depth: 0.03 });
+  const face = mmPanel({ x: 96, y: 44, w: 28, h: 22, ...O });
+  group.add(face.mesh);
+  const gate = changeGate();
+  return {
+    group,
+    mount: null,
+    update(s) {
+      if (gate(lookKey(s))) face.redraw((ctx) => keySwitch(ctx, 110, 55, s.keyOn));
     },
   };
 }
 
 /** Dash styles buildDash knows: every quad spec must name one of these. */
-export const DASH_STYLES = ['classic', 'modern', 'sport', 'vintage', 'race'];
+export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey'];
 
-export function buildDash(style = 'classic') {
-  if (style === 'modern') return buildModern(MODERN);
-  if (style === 'sport') return buildModern(SPORT);
-  if (style === 'vintage') return buildVintage();
-  if (style === 'race') return buildRace();
-  return buildClassic();
+/** Where each dash sits on the bars (metres, in the bars' frame) and how far it tilts back. A nacelle quad carries its own on its top. */
+export const DASH_PLACE = {
+  foreman: { pos: [0, 0.1, 0.02], tilt: 0.75 },
+  grizzly: { pos: [0, 0.1, 0.02], tilt: 0.75 },
+  kodiak: { pos: [0, 0.1, 0.02], tilt: 0.75 },
+  bayou: { pos: [0, 0.115, 0.05], tilt: 0.85 },
+  blaster: { pos: [0, 0.1, 0.045], tilt: 0.45 },
+  quadracer: { pos: [0.225, 0.085, -0.035], tilt: 0.9 },
+  kidsKey: { pos: [0, 0.075, 0.0], tilt: 0.9 },
+};
+
+const BUILDERS = {
+  foreman: buildForeman,
+  grizzly: buildGrizzly,
+  kodiak: buildKodiak,
+  bayou: buildBayou,
+  blaster: buildBlaster,
+  quadracer: buildQuadracer,
+  kidsKey: buildKidsKey,
+};
+
+export function buildDash(style = 'foreman') {
+  return (BUILDERS[style] ?? buildForeman)();
 }
