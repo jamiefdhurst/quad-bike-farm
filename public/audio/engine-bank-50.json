@@ -31219,16 +31219,6 @@
    "src": "gil",
    "rms": 0.03729,
    "ok": false
-  },
-  {
-   "kind": "accel",
-   "start": 41.39959183673469,
-   "dur": 2e-05,
-   "tail": 0.0,
-   "rpm": 5292000.0,
-   "src": "gil",
-   "rms": NaN,
-   "ok": false
   }
  ],
  "oneshots": {

@@ -282,7 +282,9 @@ def main():
         durs = np.diff(cuts) / SR
         for i in range(len(cuts) - 1):
             s, e = cuts[i], cuts[i + 1]
-            dur = max(e - s, 1) / SR  # a noisy stretch can give two cuts at one point
+            if e <= s:
+                continue  # a noisy stretch can give two cuts at one point: there's no pulse between them
+            dur = (e - s) / SR
             # Overlap into the quiet stretch before the next thump, for crossfading at playback.
             tail = int(min(0.003, 0.12 * dur) * SR)
             seg_env = fine_env[s:e]
@@ -358,7 +360,7 @@ def main():
         'oneshots': oneshots,
     }
     with open(os.path.join(ROOT, 'public', 'audio', f'{args.bank}.json'), 'w') as f:
-        json.dump(bank, f, indent=1)
+        json.dump(bank, f, indent=1, allow_nan=False)  # NaN isn't JSON: the browser would refuse the whole bank
 
     for k in ('idle', 'idle2', 'idle3', 'accel', 'decel'):
         rpms = [g['rpm'] for g in grains if g['kind'] == k and g.get('ok', True)]
