@@ -63,6 +63,36 @@ describe('up there', () => {
   });
 });
 
+describe('boredom', () => {
+  it('gets bored and climbs down after her own stay, asked up or not', () => {
+    for (const asked of [false, true]) {
+      const m = make(() => 0.5);
+      if (asked) m.ask('amy');
+      const c = ctx({ speed: 3, girls: [girl('amy', { aboard: true, free: false })] });
+      const stay = (P.stayMin + P.stayMax) / 2;
+      expect(run(m, stay - 5, c).filter((e) => e.type === 'leave')).toEqual([]);
+      const leaves = run(m, 10, c).filter((e) => e.type === 'leave');
+      expect(leaves.length).toBeGreaterThan(0);
+      expect(leaves[0].bored).toBe(true);
+    }
+  });
+
+  it('gets bored with you off the tractor, if you asked her up', () => {
+    const m = make(() => 0.5);
+    m.ask('amy');
+    const c = ctx({ riding: false, active: false, girls: [girl('amy', { aboard: true, free: false })] });
+    expect(run(m, P.stayMax + 5, c).some((e) => e.type === 'leave' && e.bored)).toBe(true);
+  });
+
+  it('starts counting afresh the next time she goes up', () => {
+    const m = make(() => 0.5);
+    const up = ctx({ speed: 3, girls: [girl('amy', { aboard: true, free: false })] });
+    run(m, 100, up);
+    run(m, 1, ctx({ speed: 3 })); // she's down
+    expect(run(m, 100, up).filter((e) => e.type === 'leave')).toEqual([]);
+  });
+});
+
 describe('getting down', () => {
   it('climbs down after a short wait when you get off, or put a trailer on', () => {
     for (const over of [{ riding: false }, { trailer: true }]) {

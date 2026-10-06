@@ -17,6 +17,8 @@ export const DEFAULT_MUDGUARD_PARAMS = {
   shoutMax: 40,
   shoutSpeed: 1, // m/s: she only shouts over it when it's going
   leaveDelayMax: 0.9, // seconds she takes to start climbing down once you've got off
+  stayMin: 90, // seconds up there before she gets bored and climbs down by herself (asked up or not)...
+  stayMax: 240, // ...somewhere between these
 };
 
 export const MUDGUARD_PARAM_RANGES = {
@@ -31,6 +33,8 @@ export const MUDGUARD_PARAM_RANGES = {
   shoutMax: [3, 240, 1],
   shoutSpeed: [0.2, 6, 0.1],
   leaveDelayMax: [0, 5, 0.1],
+  stayMin: [10, 600, 5],
+  stayMax: [10, 900, 5],
 };
 
 export class MudguardRide {
@@ -46,7 +50,7 @@ export class MudguardRide {
   }
 
   girl(id) {
-    return (this.girls[id] ??= { shoutIn: null, leaveIn: null });
+    return (this.girls[id] ??= { shoutIn: null, leaveIn: null, aboardFor: 0, stayFor: null });
   }
 
   between(a, b) {
@@ -66,6 +70,7 @@ export class MudguardRide {
     const events = [];
     const aboard = ctx.girls.filter((g) => g.aboard);
 
+    this.bore(dt, ctx, events); // an asked girl with you off the tractor gets bored too
     if (ctx.trailer) this.asked.clear(); // the bales are the ride now
     // Climbing down: you got off, or something changed.
     if (!ctx.riding || ctx.trailer) {
@@ -134,6 +139,21 @@ export class MudguardRide {
       }
     }
     return events;
+  }
+
+  /** Sat up there too long: she gets bored and climbs down, whether or not you asked her up. */
+  bore(dt, ctx, events) {
+    for (const g of ctx.girls) {
+      const s = this.girl(g.id);
+      if (!g.aboard) {
+        s.aboardFor = 0;
+        s.stayFor = null;
+        continue;
+      }
+      s.stayFor ??= this.between(this.p.stayMin, this.p.stayMax);
+      s.aboardFor += dt;
+      if (s.aboardFor >= s.stayFor) events.push({ type: 'leave', girl: g.id, bored: true });
+    }
   }
 
   /** You asked her up there from the wheel. */
