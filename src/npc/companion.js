@@ -6,6 +6,7 @@ import { applyOutfit, refitOutfit, reshirt, withJumper, OUTFITS } from './outfit
 import { shapeFigure } from './figure.js';
 import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 import { drivingStates, drivingMethods } from './companionDriving.js';
+import { hayRideStates, hayRideMethods, DEFAULT_HAYSEAT_PARAMS } from './companionHayRide.js';
 import { restingMethods, restingStates } from './companionResting.js';
 import { warmingMethods } from './companionWarming.js';
 import { wavingMethods } from './companionWaving.js';
@@ -110,6 +111,14 @@ export class Companion {
     // Hands over a running engine on a cold day (companionWarming.js).
     this.warmingAt = null;
     this.rig.posers.push((dt) => this.poseWarming(dt));
+    // Riding on the bale trailer (companionHayRide.js).
+    this.hay = { ...DEFAULT_HAYSEAT_PARAMS };
+    this.trailer = null;
+    this.traSlot = null;
+    this.paceBoost = 1; // times her walking speed: more when she's running after the trailer
+    this.hayFell = false; // she has come off the trailer and wants to catch it up
+    this.hayLanded = false;
+    this.rig.posers.push((dt) => this.poseHayRide(dt));
     // Waving two-stroke smoke away (companionWaving.js).
     this.waving = null;
     this.rig.posers.push((dt) => this.poseWaving(dt));
@@ -155,7 +164,7 @@ export class Companion {
   /** The quad she's busy with (on her way to get on, start or drive it, or on it), if any. */
   get claimedQuad() {
     const s = this.fsm;
-    if (s.is('idle')) return null;
+    if (s.is('idle', 'boarding', 'onTrailer', 'sliding')) return null;
     if (s.is('walking')) return ['mount', 'start', 'drive'].includes(s.data?.goal) ? this.quad : null;
     return this.quad;
   }
@@ -240,6 +249,7 @@ export class Companion {
     const rideable = (q) => this.canRidePillion(q);
     const actions = [];
     if (s.is('driving')) return this.drivingActions();
+    if (s.is('boarding', 'onTrailer', 'sliding')) return actions; // on the hay ride: nothing to ask of her
     if (s.is('shuffling')) return actions;
     const drivable = (q) => this.canDrive(q) && !this.takenByOther(q, 'rider') && !(s.is('walking') && s.data?.goal === 'drive' && q === this.quad);
     const boarding = s.is('seated', 'mounting') || (s.is('walking') && s.data?.goal === 'mount');
@@ -779,7 +789,7 @@ export class Companion {
     this.heading += angleTo(this.heading, desired) * Math.min(1, p.turnRate * dt);
     // Slow down when turning sharply and near the end.
     const turnFactor = Math.max(0.2, Math.cos(angleTo(this.heading, desired)));
-    const speed = p.walkSpeed * turnFactor * Math.min(1, dist / 0.6 + 0.3);
+    const speed = p.walkSpeed * this.paceBoost * turnFactor * Math.min(1, dist / 0.6 + 0.3);
     pos.x += Math.sin(this.heading) * speed * dt;
     pos.z += Math.cos(this.heading) * speed * dt;
     pos.y = this.world.heightAt(pos.x, pos.z);
@@ -859,6 +869,8 @@ export class Companion {
 }
 
 Object.assign(Companion.prototype, drivingMethods);
+// (hayRideMethods has a getter too.)
+Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(hayRideMethods));
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(warmingMethods));
 Object.assign(Companion.prototype, wavingMethods);
 // (restingMethods has getters, so copy its descriptors rather than assigning.)
@@ -948,6 +960,7 @@ Companion.prototype.updateFidget = function (dt) {
 // State definitions. `this` is the Companion.
 const STATES = {
   ...drivingStates,
+  ...hayRideStates,
   ...restingStates,
 
   idle: {
@@ -976,8 +989,14 @@ const STATES = {
           return;
         }
       }
+      // Wait for the trailer to slow down before climbing on, as she does for a quad.
+      if (data.goal === 'board' && this.trailer.motion.speed > 1.2 && t.position.distanceTo(this.root.position) < 1.2) {
+        this.rig.setTimeScale(0);
+        return;
+      }
       if (this.walkToward(dt, t.position)) {
-        if (data.goal === 'mount') this.fsm.transition('mounting', { side: t.side });
+        if (data.goal === 'board') this.fsm.transition('boarding');
+        else if (data.goal === 'mount') this.fsm.transition('mounting', { side: t.side });
         // If you've beaten her to the front seat, she gets on the back.
         else if (data.goal === 'drive') this.fsm.transition('mounting', { side: t.side, seat: this.quad.rider ? 'pillion' : 'rider' });
         else if (data.goal === 'start') this.fsm.transition('starting', { facing: t.facing, side: t.side });

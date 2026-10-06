@@ -1,0 +1,122 @@
+import * as THREE from 'three';
+
+// The bale trailer, procedural like the tractor: a flat bed on one axle with two wheels, a tongue to the tractor's drawbar, and
+// bales stacked on it, two high at the back (to lean on) and at the front, with a well between where legs hang down.
+//
+//   trailer (origin on the ground, under the axle; +Z toward the tractor, +X left)
+//   ├── body          the bed and bales, which ride on the springs and tilt
+//   │   ├── seatLeft, seatRight   where a girl's hips go (on the top of the lower layer, at the edge of the well)
+//   └── wheelLeft, wheelRight     spin as it rolls
+
+export const TRAILER_SPEC = {
+  bedY: 0.78, // top of the bed
+  bedHalfWidth: 1.0,
+  rearZ: -1.7, // the back end of the bed
+  frontZ: 1.5, // the front end of the bed
+  baleHeight: 0.38,
+  wheelRadius: 0.42,
+  seatX: 0.5, // her hips' distance from the middle, either side
+  seatZ: -0.12,
+  ringHeight: 0.5, // the hitch ring, above the ground
+};
+
+/** Where she stands to climb on or off, beside the wheel on her side, as trailer-local metres. */
+export function trailerStandLocal(side) {
+  return { x: side * 1.7, z: -0.4 };
+}
+
+const MAT = {
+  steel: new THREE.MeshStandardMaterial({ color: 0x4a4c4e, roughness: 0.55, metalness: 0.5 }),
+  deck: new THREE.MeshStandardMaterial({ color: 0x6b5a45, roughness: 0.85 }),
+  rubber: new THREE.MeshStandardMaterial({ color: 0x1a1917, roughness: 0.95 }),
+  rim: new THREE.MeshStandardMaterial({ color: 0x8a2f24, roughness: 0.6 }),
+  hay: new THREE.MeshStandardMaterial({ color: 0xc9a74c, roughness: 0.95 }),
+  hayDark: new THREE.MeshStandardMaterial({ color: 0xb8933f, roughness: 0.95 }),
+  twine: new THREE.MeshStandardMaterial({ color: 0x3b6e8f, roughness: 0.8 }),
+};
+
+function box(w, h, d, mat, x, y, z, parent) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(x, y, z);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  parent.add(m);
+  return m;
+}
+
+function bale(x, y, z, parent, shade) {
+  // A bale is 1 m across the trailer, 0.45 along it: two across fill the bed, and a couple of bands of twine show.
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+  box(0.98, 0.38, 0.44, shade ? MAT.hayDark : MAT.hay, 0, 0, 0, g);
+  for (const s of [-0.28, 0.28]) box(0.02, 0.4, 0.46, MAT.twine, s, 0, 0, g);
+  parent.add(g);
+}
+
+export function buildTrailerModel() {
+  const S = TRAILER_SPEC;
+  const root = new THREE.Group();
+  root.name = 'trailer';
+  const body = new THREE.Group();
+  body.name = 'body';
+  root.add(body);
+
+  // Bed, two rails under it, and the tongue.
+  const len = S.frontZ - S.rearZ;
+  box(S.bedHalfWidth * 2, 0.08, len, MAT.deck, 0, S.bedY - 0.04, (S.frontZ + S.rearZ) / 2, body);
+  for (const s of [-0.6, 0.6]) box(0.08, 0.12, len, MAT.steel, s, S.bedY - 0.14, (S.frontZ + S.rearZ) / 2, body);
+  box(0.1, 0.1, 1.3, MAT.steel, 0, S.ringHeight + 0.1, 1.95, body); // the tongue, up to where the ring will be
+  const tongue = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.9, 6), MAT.steel);
+  tongue.rotation.x = Math.PI / 2 - 0.12;
+  tongue.position.set(0, S.ringHeight + 0.2, 2.15);
+  body.add(tongue);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.016, 6, 12), MAT.steel);
+  ring.position.set(0, S.ringHeight, 2.6);
+  ring.rotation.y = Math.PI / 2;
+  body.add(ring);
+
+  // Bales: a layer across the back four rows, a second layer on the back two, and a stack at the front.
+  const top = S.bedY + S.baleHeight / 2;
+  let n = 0;
+  for (let row = 0; row < 4; row++) {
+    for (const x of [-0.5, 0.5]) bale(x, top, S.rearZ + 0.22 + row * 0.45, body, n++ % 3 === 0);
+  }
+  for (let row = 0; row < 2; row++) {
+    for (const x of [-0.5, 0.5]) bale(x, top + S.baleHeight, S.rearZ + 0.22 + row * 0.45, body, n++ % 3 === 1);
+  }
+  for (const x of [-0.5, 0.5]) {
+    bale(x, top, S.frontZ - 0.22, body, n++ % 3 === 2);
+    bale(x, top + S.baleHeight, S.frontZ - 0.22, body, n++ % 3 === 0);
+  }
+
+  // Where the girls sit: hips on the top of the lower layer at the edge of the well, facing forward.
+  const seatY = S.bedY + S.baleHeight;
+  for (const [name, side] of [['seatLeft', 1], ['seatRight', -1]]) {
+    const a = new THREE.Object3D();
+    a.name = name;
+    a.position.set(side * S.seatX, seatY, S.seatZ);
+    body.add(a);
+  }
+
+  // Wheels, with a mudguard over each.
+  for (const [name, side] of [['wheelLeft', 1], ['wheelRight', -1]]) {
+    const w = new THREE.Group();
+    w.name = name;
+    w.position.set(side * (S.bedHalfWidth + 0.14), S.wheelRadius, 0);
+    const spin = new THREE.Group();
+    spin.name = 'spin';
+    const tyre = new THREE.Mesh(new THREE.CylinderGeometry(S.wheelRadius, S.wheelRadius, 0.2, 18), MAT.rubber);
+    tyre.rotation.z = Math.PI / 2;
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.22, 10), MAT.rim);
+    hub.rotation.z = Math.PI / 2;
+    const lug = box(0.22, 0.06, 0.1, MAT.steel, 0, S.wheelRadius - 0.05, 0, spin); // so the spin shows
+    spin.add(tyre, hub);
+    w.add(spin);
+    for (const m of [tyre, hub, lug]) {
+      m.castShadow = true;
+    }
+    root.add(w);
+    box(0.26, 0.04, 0.9, MAT.steel, side * (S.bedHalfWidth + 0.14), S.wheelRadius * 2 + 0.06, 0, root);
+  }
+  return root;
+}

@@ -18,6 +18,7 @@ import { JESS_DIAGNOSIS_LINES } from './diagnosisLines.js';
 import { JESS_THRASH_LINES } from './thrashLines.js';
 import { JESS_REVOFF_LINES } from './revOffLines.js';
 import { JESS_TRACTOR_LINES } from './tractorLines.js';
+import { JESS_HAYRIDE_LINES } from './hayRideLines.js';
 import { JESS_QUAD_LINES } from './quadLines.js';
 import { JESS_WARMING_LINES } from './warmingLines.js';
 import { JESS_HEADSTART_LINES } from './headStartLines.js';
@@ -369,6 +370,7 @@ export const JESS_LINES = {
   ...JESS_THRASH_LINES,
   ...JESS_REVOFF_LINES,
   ...JESS_TRACTOR_LINES,
+  ...JESS_HAYRIDE_LINES,
   ...JESS_QUAD_LINES,
   ...JESS_WARMING_LINES,
   // Starting your usual quad for you, or pointedly not (headStartLines.js).

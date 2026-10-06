@@ -25,6 +25,10 @@ import { WearLedger, LEDGER_PARAM_RANGES } from './engine/wearLedger.js';
 import { Pranks, PRANK_PARAM_RANGES } from './npc/pranks.js';
 import { RevOff, REVOFF_PARAM_RANGES } from './npc/revOff.js';
 import { TractorWatch, TRACTOR_WATCH_PARAM_RANGES } from './npc/tractorWatch.js';
+import { HayRide, HAYRIDE_PARAM_RANGES } from './npc/hayRide.js';
+import { HAYSEAT_PARAM_RANGES, DEFAULT_HAYSEAT_PARAMS } from './npc/companionHayRide.js';
+import { HayTrailer } from './vehicle/hayTrailer.js';
+import { TRAILER_PARAM_RANGES } from './vehicle/trailer.js';
 import { QuadNames, NAME_PARAM_RANGES, quadKey } from './npc/quadNames.js';
 import { Ownership, OWNERSHIP_PARAM_RANGES } from './npc/ownership.js';
 import { Hearing, EAR_PARAM_RANGES } from './npc/earing.js';
@@ -319,6 +323,14 @@ export class Game {
     this.revOff = new RevOff();
     // What they say about the tractor: the key that doesn't stop it, waiting for the glow plugs, it catching (npc/tractorWatch.js).
     this.tractorWatch = new TractorWatch(undefined, createRandom(this.seed ^ 0x7a7c));
+    // The bale trailer in the yard, and the girls riding on it (vehicle/hayTrailer.js, npc/hayRide.js, npc/companionHayRide.js).
+    this.trailer = new HayTrailer({ scene: this.scene, world: this.world });
+    const tl = this.world.layout.trailer;
+    this.trailer.place(tl.x, tl.z, tl.yaw);
+    this.hayRide = new HayRide(undefined, createRandom(this.seed ^ 0x4a71));
+    this.haySeat = { ...DEFAULT_HAYSEAT_PARAMS };
+    for (const c of this.companions) c.hay = this.haySeat;
+    this.hayLater = []; // lines to say in a moment: { left, girl, key }
     this.itemHome = {}; // where a hidden item was taken from, by name
 
     // What they call the quads, whose is whose, and placing a quad by ear (npc/quadNames.js, ownership.js, earing.js).
@@ -615,6 +627,9 @@ export class Game {
     registerTuning('Pranks', this.pranks.p, PRANK_PARAM_RANGES);
     registerTuning('Rev-offs', this.revOff.p, REVOFF_PARAM_RANGES);
     registerTuning('Tractor remarks', this.tractorWatch.p, TRACTOR_WATCH_PARAM_RANGES);
+    registerTuning('Hay ride', this.hayRide.p, HAYRIDE_PARAM_RANGES);
+    registerTuning('Hay ride seat', this.haySeat, HAYSEAT_PARAM_RANGES);
+    registerTuning('Trailer', this.trailer.p, TRAILER_PARAM_RANGES);
     registerTuning('Quad names', this.quadNames.p, NAME_PARAM_RANGES);
     registerTuning('Whose quad', this.ownership.p, OWNERSHIP_PARAM_RANGES);
     registerTuning('Hearing a quad', this.hearing.p, EAR_PARAM_RANGES);
@@ -694,6 +709,82 @@ export class Game {
       const girl = this.companions.find((c) => c.character.id === ev.girl);
       girl?.voice.say(`tractor${ev.type[0].toUpperCase()}${ev.type.slice(1)}`, { urgent: true });
     }
+  }
+
+  /** J on the tractor: hook the trailer on when the drawbar is at its ring, or take it off when you're stopped. */
+  toggleHitch() {
+    const unit = this.tractorUnit;
+    const t = this.trailer;
+    if (this.riddenUnit !== unit) return;
+    if (t.hitched) {
+      if (unit.quad.speed > 0.5) return this.hud.toast('Stop before you unhitch the trailer', 2);
+      t.unhitch();
+      return this.hud.toast('Trailer unhitched', 1.6);
+    }
+    if (t.canHitch(unit.quad)) {
+      t.hitch(unit.quad);
+      return this.hud.toast('Trailer hitched', 1.6);
+    }
+    this.hud.toast(t.gap(unit.quad) < 8 ? 'Back the drawbar up to the trailer\'s ring' : 'No trailer behind you', 2);
+  }
+
+  /** The hay ride: the trailer follows the tractor, and the girls climb on, bounce about, lie back, fall off and climb down (npc/hayRide.js). */
+  updateHayRide(dt, ridden) {
+    const t = this.trailer;
+    t.update(dt);
+    const m = t.motion;
+    const active = t.hitched && ridden === this.tractorUnit;
+    const free = (c) => c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob;
+    const girlOf = (id) => this.companions.find((c) => c.character.id === id);
+    const say = (c, key) => c?.voice.say(key, { urgent: true });
+
+    // Whoever has come off is straight after it, running, and nobody waits for the tractor to stop.
+    for (const c of this.companions) {
+      if (!c.hayFell || !c.fsm.is('idle')) continue;
+      if (!active) c.hayFell = false;
+      else if (free(c)) {
+        const slot = t.freeSlot(c.root.position);
+        if (slot) c.boardTrailer(t, slot, { chase: true });
+      }
+    }
+    const girls = this.companions.map((c) => ({
+      id: c.character.id,
+      free: free(c) && !c.hayFell,
+      aboard: c.onHayRide,
+      dist: c.root.position.distanceTo(t.model.position),
+      seatX: c.traSlot ? c.traSlot.side * 0.5 : 0,
+    }));
+    for (const ev of this.hayRide.update(dt, { active, speed: m.speed, omega: m.omega, jolt: m.jolt, girls })) {
+      const c = girlOf(ev.girl);
+      if (ev.type === 'board') {
+        const slot = t.freeSlot(c.root.position);
+        if (slot && c.boardTrailer(t, slot)) say(c, 'hayBoard');
+      } else if (ev.type === 'leave') {
+        c.leaveTrailer();
+        c.abortBoarding();
+      } else if (ev.type === 'lie') {
+        c.hayLie(true);
+        say(c, 'hayLie');
+      } else if (ev.type === 'sit') c.hayLie(false);
+      else if (ev.type === 'bump') {
+        for (const o of this.companions) o.hayFlail();
+        say(c, 'hayBump');
+      } else if (ev.type === 'slide') {
+        if (c.slideOffTrailer(ev.side)) this.hayRide.clear(ev.girl);
+      }
+    }
+    // A girl who has just landed says so, and the other one sees it.
+    for (const c of this.companions) {
+      if (!c.hayLanded || c.hayLandedSaid) c.hayLandedSaid &&= c.hayLanded;
+      else {
+        c.hayLandedSaid = true;
+        say(c, 'hayFall');
+        this.hayLater.push({ left: 1.2, girl: c.others()[0], key: 'hayFallOther' });
+      }
+    }
+    for (const l of this.hayLater) l.left -= dt;
+    for (const l of this.hayLater.filter((x) => x.left <= 0)) say(l.girl, l.key);
+    this.hayLater = this.hayLater.filter((x) => x.left > 0);
   }
 
   /** Builds the tractor, with its own seeded idle, roughness, fuel and hours, and adds it to `units` (not `girlUnits`). */
@@ -2116,6 +2207,7 @@ export class Game {
 
     if (input.wasPressed('KeyH')) this.hud.toggleHelp();
     if (input.wasPressed('Backquote')) this.debugGui.toggle();
+    if (input.wasPressed('KeyJ')) this.toggleHitch();
     if (input.wasPressed('KeyN')) this.recallGirls();
     if (input.wasPressed('KeyM')) {
       this.audioHub.params.muted = !this.audioHub.params.muted;
@@ -2198,6 +2290,7 @@ export class Game {
     this.updatePranks(dt, ridden);
     this.updateRevOff(dt, ridden);
     this.updateTractorWatch(dt);
+    this.updateHayRide(dt, ridden);
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);
     this.updateHeadStart(dt, ridden);
@@ -2289,6 +2382,8 @@ export class Game {
       this.hud.setStatus('Toolbox\nTake it to a quad that is switched off\nG to put it down');
     } else if (this.can.held) {
       this.hud.setStatus(`Jerry can  ${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel)}\nG to put it down`);
+    } else if (this.riddenUnit === this.tractorUnit && this.trailer.canHitch(this.tractorUnit.quad)) {
+      this.hud.setStatus('The drawbar is at the trailer\'s ring\nJ to hitch it on');
     } else {
       this.hud.setStatus('');
     }
