@@ -698,3 +698,9 @@ Built to the brief above. What differs or wasn't said:
 - No sound for fitting a pod (silent was allowed) and the girls don't remark on it yet.
 - Checked: unit tests, and one headless run (`.scratch/dashes/`) of every stock dash with the ignition on and each pod on the red, yellow and kids' quad, with no page errors. Looked at the close-ups and seat views. Not checked: the faces while moving (needle sweeps, lamp changes, the LCD line cycling), a pod being fitted through the toolbox panel by keyboard, or the dashes with the battery flat.
 
+## Looking closely at the dash (2026-10-06)
+
+- Hold `V` while riding at the controls to lean in: over 0.3 s your eyes move to 0.44 m in front of the middle of the dash (and the pod, if one's fitted, so both fit in view) and the field of view narrows from 75 to 42 degrees. Let go and it eases back. Turning to look back (`C`) wins over it, it doesn't work from the back seat, and the view is locked on the dash while it's held. `dashZoomFov`, `dashZoomDistance` and `dashZoomTime` are in the player params.
+- On the kids' quad the distance isn't scaled down when a pod is fitted (the pod is full size) but is when it isn't (its dash is 0.65 scale).
+- Checked once headless: red with the analogue pod (both dash and pod legible) and the kids' quad with its key switch. Not checked: the other quads, or the ride back out of the zoom at speed.
+

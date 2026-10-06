@@ -20,6 +20,7 @@ const HELP_HTML = `
   <div><kbd>F</kbd> fuel tap: ON, RESERVE, OFF</div>
   <div><kbd>T</kbd> right the quad if it tips over</div>
   <div>Hold <kbd>C</kbd> or the middle mouse button to look back over your shoulder</div>
+  <div>Hold <kbd>V</kbd> to lean in and look closely at the dash (and the pod, if there's one)</div>
   <h3>Fuel</h3>
   <div><kbd>E</kbd> pick up the red jerry can by the barn, or the yellow pre-mix can by the petrol tank (the yellow and orange take pre-mix, the others plain petrol; hold <kbd>E</kbd> on the oil bottle to add oil to a can)</div>
   <div>Hold <kbd>E</kbd> at a quad to pour, or at the petrol tank to refill the can</div>

@@ -45,6 +45,7 @@ Other scripts:
 | `E` | Get off. Above walking pace you jump off and the quad carries on by itself at the same speed and steering until it crashes, tips, stalls or runs dry. To stop a runaway, look at it and press `K`, or catch it once it's below a jog (3 m/s) to get back on. |
 | `B` | Looking at a parked quad with a pillion seat and nobody on it: sit on the back. Wait there and one of the girls comes over and drives you (see Companions) |
 | `C` (hold) or middle mouse | Look back over your shoulder |
+| `V` (hold) | Lean in and look closely at the dash, and the pod if one's fitted |
 | `F` | Fuel tap: ON, RESERVE, OFF |
 | `T` | Right the quad if it's tipped over |
 | Mouse | Look around from the seat |

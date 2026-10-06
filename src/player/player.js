@@ -80,6 +80,9 @@ export class Player {
     this.lookBackSide = 1; // +1 over the left shoulder, -1 the right
     this.lookBackYaw = 0; // mouse look while turned round
     this.lookBackPitch = 0;
+    // Holding V leans in to look closely at the dash (0 normal view, 1 right in).
+    this.dashZoom = 0;
+    this.baseFov = camera.fov;
 
     this.tmpQuat = new THREE.Quaternion();
     this.tmpEuler = new THREE.Euler(0, 0, 0, 'YXZ');
@@ -197,6 +200,7 @@ export class Player {
       }
     }
     this.updateLookBack(dt);
+    this.updateDashZoom(dt);
 
     if (this.mode === 'foot') {
       this.renderPos = this.tmpVec.lerpVectors(this.prevPos, this.currPos, alpha);
@@ -225,6 +229,19 @@ export class Player {
       const k = Math.min(1, dt * 8);
       this.lookBackYaw -= this.lookBackYaw * k;
       this.lookBackPitch -= this.lookBackPitch * k;
+    }
+  }
+
+  /** Holding V leans in to the dash, as a rider at the controls. Looking back wins over it. */
+  updateDashZoom(dt) {
+    const p = this.params;
+    const held = this.isRiding && this.seat === 'rider' && this.lookEnabled && this.lookBack === 0 && this.input.isDown('KeyV');
+    const step = dt / Math.max(0.01, p.dashZoomTime);
+    this.dashZoom = THREE.MathUtils.clamp(this.dashZoom + (held ? step : -step), 0, 1);
+    const fov = this.baseFov + (p.dashZoomFov - this.baseFov) * THREE.MathUtils.smoothstep(this.dashZoom, 0, 1);
+    if (Math.abs(fov - this.camera.fov) > 0.01) {
+      this.camera.fov = fov;
+      this.camera.updateProjectionMatrix();
     }
   }
 
@@ -263,6 +280,28 @@ export class Player {
     // The camera looks down -Z; the bike faces +Z.
     this.tmpEuler.set(pitch, yaw + Math.PI, roll, 'YXZ');
     this.camera.quaternion.copy(this.tmpQuat).multiply(new THREE.Quaternion().setFromEuler(this.tmpEuler));
+    if (this.dashZoom > 0 && this.seat === 'rider') this.leanToDash(THREE.MathUtils.smoothstep(this.dashZoom, 0, 1));
+  }
+
+  /** Moves the eyes in towards the middle of the dash (and the pod above it) and turns to face it, by `k` of the way. */
+  leanToDash(k) {
+    const v = this.vehicle;
+    const dash = v.model.userData.dash?.group;
+    if (!dash) return;
+    const mid = dash.getWorldPosition(new THREE.Vector3());
+    const dashQuat = dash.getWorldQuaternion(new THREE.Quaternion());
+    if (v.pod) {
+      const podAt = v.pod.group.getWorldPosition(new THREE.Vector3());
+      // The pod's origin is its foot; its face is about 9 cm up it.
+      podAt.add(new THREE.Vector3(0, 0.09, 0).applyQuaternion(v.pod.group.getWorldQuaternion(new THREE.Quaternion())));
+      mid.lerp(podAt, 0.5);
+    }
+    // Stand in front of the dash's face (it looks along -Z, towards the rider), a bit above, and look at its middle.
+    const to = new THREE.Vector3(0, 0.05, -1).normalize().applyQuaternion(dashQuat).multiplyScalar(this.params.dashZoomDistance * (v.pod ? 1 : v.scale ?? 1)).add(mid);
+    const m = new THREE.Matrix4().lookAt(to, mid, new THREE.Vector3(0, 1, 0));
+    const q = new THREE.Quaternion().setFromRotationMatrix(m);
+    this.camera.position.lerp(to, k);
+    this.camera.quaternion.slerp(q, k);
   }
 
   // Riding -----------------------------------------------------------------

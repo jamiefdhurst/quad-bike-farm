@@ -28,6 +28,9 @@ export const DEFAULT_PLAYER_PARAMS = {
   lookBackShift: 0.28, // metres your head moves out over the shoulder as you twist round
   lookBackTime: 0.35, // seconds to turn round, and back again
   lookBackFreedom: 35, // degrees the mouse can move the view while turned round
+  dashZoomFov: 42, // field of view while holding V to look closely at the dash (and a pod, if one's fitted)
+  dashZoomDistance: 0.44, // metres your eyes come in to, from the middle of the dash
+  dashZoomTime: 0.3, // seconds to lean in, and back again
 };
 
 export const PLAYER_PARAM_RANGES = {
@@ -60,4 +63,7 @@ export const PLAYER_PARAM_RANGES = {
   lookBackShift: [0, 0.4, 0.01],
   lookBackTime: [0.05, 1.5, 0.05],
   lookBackFreedom: [0, 90, 1],
+  dashZoomFov: [20, 75, 1],
+  dashZoomDistance: [0.15, 0.8, 0.01],
+  dashZoomTime: [0.05, 1.5, 0.05],
 };
