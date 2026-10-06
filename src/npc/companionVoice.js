@@ -685,6 +685,13 @@ export class CompanionVoice {
     return seconds;
   }
 
+  /** Stops mid-word (caught talking about you). */
+  cut() {
+    this.speech.stop();
+    this.sounds.stop();
+    this.chatter.holdFor(0);
+  }
+
   /** 1 close by, fading to 0 at the edge of earshot. A shout carries twice as far. */
   hearing(shout = false) {
     const d = this.head.distanceTo(this.listener);

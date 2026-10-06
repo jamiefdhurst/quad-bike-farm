@@ -12,6 +12,7 @@
 import { DIAGNOSIS_BANTER } from './diagnosisLines.js';
 import { RACE_BANTER } from './raceLines.js';
 import { CONVOY_BANTER } from './convoyLines.js';
+import { GOSSIP_BANTER } from './gossipLines.js';
 
 export const BANTER = [
   // Standing about together, near you --------------------------------------
@@ -87,4 +88,5 @@ export const BANTER = [
   ...DIAGNOSIS_BANTER,
   ...RACE_BANTER,
   ...CONVOY_BANTER,
+  ...GOSSIP_BANTER,
 ];

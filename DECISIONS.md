@@ -897,3 +897,10 @@ Jamie: the sound sometimes stops altogether, perhaps only in Firefox, with nothi
 - Lines: `headStartGo` and `snubGo` for each girl (`headStartLines.js`). When she gets it running, the existing `startWarm` line is her handing it over.
 - Not checked in the running game: how often it fires in a real game or how the lines sound in play. Checked once headless with the approach faked: a favoured Amy walked to the usual quad and had it running.
 
+## Talking about you (TODO 4)
+
+- `src/npc/gossip.js` (pure, tested) runs it. The exchanges are `when: 'gossip'` entries in the banter list (`gossipLines.js`, so the voice tool records them as banter), but the main banter runner ignores them and `Gossip` plays them, least used first.
+- It starts when both girls are free, within `together` 7 m of each other, you are on foot, and you have been between `hearMin` 4.5 m and `hearMax` 14 m of the nearer one for `settle` 2 s without being noticed (chance 0.4 per second after that, nothing before 60 s into the game, then `cooldown` 150 s). All in `DEFAULT_GOSSIP_PARAMS`, in the panel as "Talking about you".
+- You are noticed when you are nearer than `hearMin`, or running (over `runSpeed` 3.2 m/s; walking is 2.2) or making noise (a quad running near them, or a wheel open) within `noticeRange` 20 m. Mid-exchange that cuts the speaker off (`voice.cut()`), leaves `silence` 0.9 s, and the girl who was not talking says a `gossipCaught` line. If one of them wanders off instead, it just stops.
+- They never call you he, she or they in it (a test checks): you are "our friend" or "someone".
+- Not done: line of sight (standing behind the barn still counts as creeping up on them) and facing, so they do not turn when caught. Checked once headless: from 10 m on foot an exchange played, and moving to 2.5 m cut it and got the caught line. Not checked: how often it fires in a real game or how it sounds.

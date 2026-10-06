@@ -20,6 +20,7 @@ import { JESS_REVOFF_LINES } from './revOffLines.js';
 import { JESS_QUAD_LINES } from './quadLines.js';
 import { JESS_WARMING_LINES } from './warmingLines.js';
 import { JESS_HEADSTART_LINES } from './headStartLines.js';
+import { JESS_GOSSIP_LINES } from './gossipLines.js';
 import { JESS_THROTTLE_LINES } from './throttleLines.js';
 import { JESS_SMOKE_LINES } from './smokeLines.js';
 import { JESS_RACE_LINES } from './raceLines.js';
@@ -367,6 +368,8 @@ export const JESS_LINES = {
   ...JESS_WARMING_LINES,
   // Starting your usual quad for you, or pointedly not (headStartLines.js).
   ...JESS_HEADSTART_LINES,
+  // Caught talking about you (gossipLines.js).
+  ...JESS_GOSSIP_LINES,
   ...JESS_THROTTLE_LINES,
   ...JESS_SMOKE_LINES,
   ...JESS_RACE_LINES,

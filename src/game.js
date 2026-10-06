@@ -29,6 +29,7 @@ import { Ownership, OWNERSHIP_PARAM_RANGES } from './npc/ownership.js';
 import { Hearing, EAR_PARAM_RANGES } from './npc/earing.js';
 import { Warming, WARMING_PARAM_RANGES, isChilly } from './npc/warming.js';
 import { HeadStart, HEADSTART_PARAM_RANGES } from './npc/headStart.js';
+import { Gossip, GOSSIP_PARAM_RANGES } from './npc/gossip.js';
 import { ThrottleGrab, GRAB_PARAM_RANGES } from './npc/throttleGrab.js';
 import { SmokeSense, SMOKE_PARAM_RANGES } from './npc/smokeSense.js';
 import { Race, RACE_PARAM_RANGES, planLap } from './npc/race.js';
@@ -332,6 +333,7 @@ export class Game {
     buildStartLine(this.scene, (x, z) => this.world.heightAt(x, z), this.world.track, this.raceStart, this.world.layout.trackHalfWidth);
     this.warming = new Warming(); // hands over an idling engine on a cold day (npc/warming.js)
     this.headStart = new HeadStart(undefined, createRandom(this.seed ^ 0x4ead)); // starting your usual quad for you (npc/headStart.js)
+    this.gossip = new Gossip(BANTER.filter((e) => e.when === 'gossip'), undefined, createRandom(this.seed ^ 0x6055)); // talking about you (npc/gossip.js)
     const capital = (id) => id[0].toUpperCase() + id.slice(1);
     this.ownership.assign(
       Object.fromEntries(this.companions.map((c) => [c.character.id, this.units.filter((u) => c.mayRide(u.quad) && c.voice.chatter.lines[`like${capital(u.spec.id)}`]).map((u) => u.spec.id)])),
@@ -597,6 +599,7 @@ export class Game {
     registerTuning('Hearing a quad', this.hearing.p, EAR_PARAM_RANGES);
     registerTuning('Warming hands', this.warming.p, WARMING_PARAM_RANGES);
     registerTuning('Head start', this.headStart.p, HEADSTART_PARAM_RANGES);
+    registerTuning('Talking about you', this.gossip.p, GOSSIP_PARAM_RANGES);
     registerTuning('Hand on the throttle', this.throttleGrab.p, GRAB_PARAM_RANGES);
     registerTuning('Two-stroke smoke', this.smokeSense.p, SMOKE_PARAM_RANGES);
     registerTuning('Racing', this.race.p, RACE_PARAM_RANGES);
@@ -777,8 +780,25 @@ export class Game {
     const [first, second] = this.companions;
     if (rivals && first.fsm.is('idle') && second.fsm.is('idle') && first.root.position.distanceTo(second.root.position) < 12) triggers.push({ when: 'rivals', roles: rivals });
     const speak = (speaker, text, opts) => (byId[speaker]?.params.voice ? byId[speaker].voice.speak(text, opts) : 0);
-    this.banter.update(dt, triggers, speak, this.talkFloor.left <= 0 && !this.menu.isOpen);
-    this.talkFloor.banter = this.banter.busy;
+    this.banter.update(dt, triggers, speak, this.talkFloor.left <= 0 && !this.menu.isOpen && !this.gossip.busy);
+    this.talkFloor.banter = this.banter.busy || this.gossip.busy;
+    this.updateGossip(dt, byId, speak);
+  }
+
+  /** Talking about you while they think you can't hear (npc/gossip.js). */
+  updateGossip(dt, byId, speak) {
+    const girls = this.companions.map((c) => ({
+      id: c.character.id,
+      x: c.root.position.x,
+      z: c.root.position.z,
+      free: c.fsm.is('idle') && !c.warmingAt && !c.pendingSpot && !this.dieselJob,
+    }));
+    const loud = this.menu.isOpen || this.units.some((u) => u.quad.engine.isRunning && girls.some((g) => Math.hypot(u.quad.position.x - g.x, u.quad.position.z - g.z) < this.gossip.p.noticeRange));
+    const v = this.player.velocity;
+    const ctx = { you: { x: this.player.position.x, z: this.player.position.z, onFoot: !this.player.isRiding, speed: Math.hypot(v.x, v.z) }, girls, loud, floorFree: this.talkFloor.left <= 0 && !this.banter.busy };
+    for (const e of this.gossip.update(dt, ctx, speak, () => this.companions.forEach((c) => c.voice.cut()))) {
+      byId[e.girl]?.voice.say('gossipCaught', { urgent: true, force: true });
+    }
   }
 
   /** Rain round you and its sound, and the wind on the exhaust smoke. */
