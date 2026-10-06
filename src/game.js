@@ -35,6 +35,7 @@ import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
 import { Convoy, CONVOY_PARAM_RANGES } from './npc/convoy.js';
 import { DoughnutWatch, DOUGHNUT_PARAM_RANGES } from './npc/doughnuts.js';
 import { Tea, TEA_PARAM_RANGES } from './npc/tea.js';
+import { DieselMistake, DIESEL_MISTAKE_PARAM_RANGES } from './npc/dieselMistake.js';
 import { Mugs } from './items/mug.js';
 import { buildStartLine, nearestTrackFraction } from './world/startLine.js';
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
@@ -46,9 +47,10 @@ import { Banter } from './npc/banter.js';
 import { RideOffer, pickOfferer } from './npc/rideOffer.js';
 import { BANTER } from './npc/banterLines.js';
 import { BanterWatch } from './npc/banterWatch.js';
-import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES, PREMIX_CAN_COLOURS } from './items/jerryCan.js';
+import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES, PREMIX_CAN_COLOURS, DIESEL_CAN_COLOURS } from './items/jerryCan.js';
 import { OilBottle, OIL_BOTTLE_PARAM_RANGES } from './items/oilBottle.js';
 import { ratioText } from './engine/lubrication.js';
+import { fuelText } from './engine/diesel.js';
 import { FuelTank } from './items/fuelTank.js';
 import { Toolbox } from './items/toolbox.js';
 import { JumpLeads, JUMP_LEAD_PARAM_RANGES } from './items/jumpLeads.js';
@@ -317,6 +319,8 @@ export class Game {
     this.doughnutWatch = new DoughnutWatch(); // Amy watches Jess's doughnuts and has a go (npc/doughnuts.js)
     for (const c of this.companions) c.doughnutParams = this.doughnutWatch.p;
     this.tea = new Tea(); // tea left on the rear rack (npc/tea.js)
+    this.dieselMistake = new DieselMistake(); // Jess pours red diesel into a quad (npc/dieselMistake.js)
+    this.dieselJob = null; // her pouring: { spec, left }
     this.mugs = new Mugs(this.scene, (x, z) => this.world.heightAt(x, z), this.tea.p.stainFor);
     this.teaMugs = {}; // girl id -> the mug on a rack
     this.convoy = new Convoy(); // follow the leader, swapping places (npc/convoy.js)
@@ -368,7 +372,7 @@ export class Game {
             const pct = Math.round(quad.fuel.level * 100);
             if (quad.fuel.space < 0.01) return { text: `The ${unit.label} is full   ·   G put the can down` };
             if (this.can.litres < 0.01) return { text: 'The can is empty   ·   G put the can down' };
-            return { text: `Hold E to fill the ${unit.label} (${pct}%) with ${ratioText(this.can.oil)}   ·   G put the can down` };
+            return { text: `Hold E to fill the ${unit.label} (${pct}%) with ${fuelText(this.can.oil, this.can.diesel)}   ·   G put the can down` };
           }
           if (quad.isTipped) return `Right the ${unit.label}`;
           if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger && this.herOnBack(quad)) return { text: `${this.herAtTheFront(quad).name}'s driving and ${this.herOnBack(quad).name}'s on the back: no room` };
@@ -418,7 +422,7 @@ export class Game {
           }
           if (!this.can.held || this.tooFastToMount(quad)) return false;
           const wanted = Math.min(this.can.params.pourRate * dt, quad.fuel.space);
-          const poured = quad.fuel.add(this.can.take(wanted), this.can.oil) > 0;
+          const poured = quad.fuel.add(this.can.take(wanted), this.can.oil, this.can.diesel) > 0;
           if (poured) this.wrongMix = this.mixWrongFor(quad, this.can);
           return poured;
         },
@@ -453,12 +457,35 @@ export class Game {
       colours: PREMIX_CAN_COLOURS,
       name: 'premixCan',
     });
+    // Red diesel for the tractor: a bowser south of the petrol tank, and a dark green can beside it. Petrol engines hate it.
+    this.dieselBowser = new FuelTank({
+      scene: this.scene,
+      physics: this.physics,
+      RAPIER: this.RAPIER,
+      world: this.world,
+      position: L.dieselBowser,
+      yaw: L.dieselBowser.yaw,
+      text: 'RED DIESEL',
+      colour: 0x2d5a38,
+      paper: '#b3261e',
+      ink: '#f4efe0',
+      scale: 0.8,
+    });
+    this.dieselCan = new JerryCan({
+      scene: this.scene,
+      world: this.world,
+      position: L.dieselCan,
+      yaw: L.dieselCan.yaw,
+      params: { ...DEFAULT_JERRY_CAN_PARAMS, startLitres: 10, startDiesel: 1 },
+      colours: DIESEL_CAN_COLOURS,
+      name: 'dieselCan',
+    });
     this.oilBottle = new OilBottle({ scene: this.scene, world: this.world, position: L.oilBottle, yaw: L.oilBottle.yaw });
-    for (const can of [this.petrolCan, this.premixCan]) {
+    for (const can of [this.petrolCan, this.premixCan, this.dieselCan]) {
       this.interaction.add({
         target: can.proxy,
         isAvailable: () => !this.handsFull,
-        prompt: () => `Pick up the ${can === this.premixCan ? 'yellow' : 'red'} jerry can (${can.litres.toFixed(1)} L, ${ratioText(can.oil)})`,
+        prompt: () => `Pick up the ${can === this.premixCan ? 'yellow' : can === this.dieselCan ? 'dark green' : 'red'} jerry can (${can.litres.toFixed(1)} L, ${fuelText(can.oil, can.diesel)})`,
         interact: () => can.pickUp(this.camera),
       });
     }
@@ -467,7 +494,7 @@ export class Game {
       prompt: () => {
         if (!this.can.held) return { text: 'Two-stroke oil: bring a jerry can to add some' };
         if (this.can.space < 0.01) return { text: 'The jerry can is full' };
-        return { text: `Hold E to add oil to the can (${ratioText(this.can.oil)})` };
+        return { text: `Hold E to add oil to the can (${fuelText(this.can.oil, this.can.diesel)})` };
       },
       interact: () => {},
       hold: (dt) => this.can.held && this.can.addOil(this.oilBottle.params.pourRate * dt) > 0,
@@ -477,10 +504,20 @@ export class Game {
       prompt: () => {
         if (!this.can.held) return { text: 'Petrol tank: bring the jerry can to fill it' };
         if (this.can.space < 0.01) return { text: 'The jerry can is full' };
-        return { text: `Hold E to fill the jerry can (${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${ratioText(this.can.oil)})` };
+        return { text: `Hold E to fill the jerry can (${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel)})` };
       },
       interact: () => {},
       hold: (dt) => this.can.held && this.can.fill(this.can.params.fillRate * dt) > 0,
+    });
+    this.interaction.add({
+      target: this.dieselBowser.proxy,
+      prompt: () => {
+        if (!this.can.held) return { text: 'Red diesel, for the tractor: bring a jerry can to fill it' };
+        if (this.can.space < 0.01) return { text: 'The jerry can is full' };
+        return { text: `Hold E to fill the jerry can with red diesel (${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel)})` };
+      },
+      interact: () => {},
+      hold: (dt) => this.can.held && this.can.fill(this.can.params.fillRate * dt, 0, 1) > 0,
     });
 
     // A toolbox by the petrol tank, for tinkering with the quads (see workshop.js).
@@ -545,6 +582,7 @@ export class Game {
     registerTuning('Sound', this.audioHub.params, SOUND_PARAM_RANGES);
     registerTuning('Jerry can', this.petrolCan.params, JERRY_CAN_PARAM_RANGES);
     registerTuning('Pre-mix can', this.premixCan.params, JERRY_CAN_PARAM_RANGES);
+    registerTuning('Diesel can', this.dieselCan.params, JERRY_CAN_PARAM_RANGES);
     registerTuning('Oil bottle', this.oilBottle.params, OIL_BOTTLE_PARAM_RANGES);
     registerTuning('Hose', this.hose.params, HOSE_PARAM_RANGES);
     registerTuning('Favour', this.favour.p, FAVOUR_PARAM_RANGES);
@@ -562,6 +600,7 @@ export class Game {
     registerTuning('Follow the leader', this.convoy.p, CONVOY_PARAM_RANGES);
     registerTuning('Doughnuts', this.doughnutWatch.p, DOUGHNUT_PARAM_RANGES);
     registerTuning('Tea on the rack', this.tea.p, TEA_PARAM_RANGES);
+    registerTuning('Red diesel mistake', this.dieselMistake.p, DIESEL_MISTAKE_PARAM_RANGES);
     registerTuning('Reading the dash', this.dashReader.p, READING_PARAM_RANGES);
     registerTuning('Jump leads', this.leads.params, JUMP_LEAD_PARAM_RANGES);
     registerTuning('Skills', this.skills.p, SKILL_PARAM_RANGES);
@@ -770,17 +809,18 @@ export class Game {
   /** Carrying the can, the hose, the toolbox or the winch hook. */
   /** Whichever jerry can you're holding, else the red petrol one. */
   get can() {
-    return this.premixCan?.held ? this.premixCan : this.petrolCan;
+    return this.premixCan?.held ? this.premixCan : this.dieselCan?.held ? this.dieselCan : this.petrolCan;
   }
 
   /** Pouring this can into that quad is a mistake: 'straight' petrol in a two-stroke, 'premix' in a four-stroke. */
   mixWrongFor(quad, can) {
+    if (can.diesel > 0.05) return 'diesel';
     if (quad.engine.params.strokes === 2) return can.oil < 0.002 ? 'straight' : null;
     return can.oil > 0.004 ? 'premix' : null;
   }
 
   get handsFull() {
-    return this.petrolCan.held || this.premixCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.winch?.state === 'carried';
+    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.winch?.state === 'carried';
   }
 
   /** The winch: the cable's reach, and winding in while X is held by the green (or on it). */
@@ -1361,6 +1401,53 @@ export class Game {
     this.mugs.update(dt);
   }
 
+  // Red diesel by mistake ----------------------------------------------------
+
+  /** Jess takes the diesel can to a low quad and pours it in; Amy, near enough to see, tells her off. */
+  updateDieselMistake(dt, ridden) {
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    const m = this.dieselMistake;
+    const unitOf = (spec) => this.units.find((u) => u.spec.id === spec);
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob, x: c.root.position.x, z: c.root.position.z }));
+    const quads = this.units.map((u) => {
+      const q = u.quad;
+      return { id: u.spec.id, x: q.position.x, z: q.position.z, speed: Math.abs(q.speed), rider: u === ridden, driver: this.quadUser(u, ridden) !== 'you' ? this.quadUser(u, ridden) : null, tipped: q.isTipped, space: q.fuel.space, level: q.fuel.level };
+    });
+    for (const e of m.update(dt, { girls, quads })) {
+      const c = byId[e.girl];
+      const quad = unitOf(e.spec).quad;
+      const p = quad.localToWorld(c.nearSide(quad) * 0.85, 0, -0.95);
+      const stay = m.p.pourSeconds + 1.6;
+      const set = c.sneakTo({ x: p.x, z: p.z }, () => {
+        if (quad.rider || quad.driver || Math.abs(quad.speed) > 0.3 || quad.isTipped) return m.finished();
+        m.started();
+        this.dieselJob = { spec: e.spec, left: m.p.pourSeconds, rate: m.p.litres / m.p.pourSeconds, girl: e.girl };
+        c.voice.say('dieselPour', { urgent: true, chance: 0.9 });
+        const amy = byId.amy;
+        if (amy && amy !== c && amy.root.position.distanceTo(quad.position) < m.p.amyRange && Math.random() < m.p.amyChance) {
+          setTimeout(() => {
+            if (!this.dieselJob) return;
+            if (amy.voice.say('dieselCaught', { force: true })) setTimeout(() => c.voice.say('dieselCaughtReply', { force: true }), 3500);
+          }, 2500);
+        }
+      }, stay);
+      if (!set) m.finished();
+    }
+    const job = this.dieselJob;
+    if (job) {
+      const u = unitOf(job.spec);
+      const c = byId[job.girl];
+      const stillThere = c.root.position.distanceTo(u.quad.position) < 3.5 && !u.quad.rider && !u.quad.driver && Math.abs(u.quad.speed) < 0.3;
+      if (stillThere && job.left > 0) {
+        job.left -= dt;
+        u.quad.fuel.add(job.rate * dt, 0, 1);
+      } else {
+        this.dieselJob = null;
+        m.finished();
+      }
+    }
+  }
+
   // Doughnuts ----------------------------------------------------------------
 
   updateDoughnuts(dt) {
@@ -1911,6 +1998,7 @@ export class Game {
     this.updateWarming(dt);
     this.updateDoughnuts(dt);
     this.updateTea(dt, ridden);
+    this.updateDieselMistake(dt, ridden);
     this.updateRecall(dt);
     if (!this.recalling) this.updateConvoy(dt, ridden);
     this.updateDashReading(dt, ridden);
@@ -1944,6 +2032,7 @@ export class Game {
     this.can.pouring = pouring;
     this.petrolCan.update(dt);
     this.premixCan.update(dt);
+    this.dieselCan.update(dt);
     this.updateHose(dt);
     this.updateWinch();
     this.workshop.update(dt);
@@ -1992,7 +2081,7 @@ export class Game {
     } else if (this.toolbox.held) {
       this.hud.setStatus('Toolbox\nTake it to a quad that is switched off\nG to put it down');
     } else if (this.can.held) {
-      this.hud.setStatus(`Jerry can  ${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${ratioText(this.can.oil)}\nG to put it down`);
+      this.hud.setStatus(`Jerry can  ${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel)}\nG to put it down`);
     } else {
       this.hud.setStatus('');
     }

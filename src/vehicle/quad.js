@@ -437,6 +437,12 @@ export class Quad {
     this.fuel.update(dt, { rpm: e.rpm, throttle: e.throttle, choke: e.choke, running: e.isRunning });
   }
 
+  /** The toolbox drain after red diesel: tank and carb emptied, the engine's soak cleared. Returns the litres lost. */
+  drainFuel() {
+    this.engine.dieselSoak = 0;
+    return this.fuel.drain();
+  }
+
   /** Water going up the intake, per second: the deepest puddle under a wheel, ploughed through fast. */
   waterGulp() {
     let puddle = 0;
@@ -460,6 +466,7 @@ export class Quad {
       dirt: this.faults.dirt,
       clog: this.filter.clog,
       gulp: this.waterGulp(),
+      diesel: this.fuel.bowlDiesel,
       speed: this.forwardSpeed,
       ambient: this.world.warmth ?? 0.5,
       sheltered: this.world.covered?.(this.position.x, this.position.z) ?? false,

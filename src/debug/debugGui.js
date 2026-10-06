@@ -277,7 +277,12 @@ export class DebugGui {
       g.tea.forced = true;
       g.hud.toast('A free girl will put her tea on a rack');
     };
+    actions.diesel = () => {
+      g.dieselMistake.forced = true;
+      g.hud.toast('Jess will fill a parked quad from the diesel can as soon as she is stood about');
+    };
     f.add(actions, 'race').name('Start a race now');
+    f.add(actions, 'diesel').name('Jess pours red diesel into a quad');
     f.add(actions, 'tea').name('A girl leaves her tea on a rack');
     f.add(actions, 'convoy').name('Start follow the leader now');
     f.add(actions, 'grabJess').name('Jess grabs the throttle (next ride)');

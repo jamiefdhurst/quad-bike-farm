@@ -387,11 +387,11 @@ export class Companion {
    * Sneaks over to `spot` ({ x, z }) to play a prank (pranks.js): once there she pauses a moment,
    * does `act()`, then carries on. Only when she's stood about; returns whether she set off.
    */
-  sneakTo(spot, act) {
+  sneakTo(spot, act, stay = 2.6) {
     if (!this.fsm.is('idle')) return false;
     const target = new THREE.Vector3(spot.x, this.world.heightAt(spot.x, spot.z), spot.z);
     const facing = Math.atan2(this.root.position.x - spot.x, this.root.position.z - spot.z) + Math.PI;
-    this.fsm.transition('walking', { goal: 'prank', target: () => ({ position: target, facing }), act });
+    this.fsm.transition('walking', { goal: 'prank', target: () => ({ position: target, facing }), act, stay });
     return true;
   }
 
@@ -852,7 +852,7 @@ const STATES = {
         // If you've beaten her to the front seat, she gets on the back.
         else if (data.goal === 'drive') this.fsm.transition('mounting', { side: t.side, seat: this.quad.rider ? 'pillion' : 'rider' });
         else if (data.goal === 'start') this.fsm.transition('starting', { facing: t.facing, side: t.side });
-        else if (data.goal === 'prank') this.fsm.transition('pranking', { facing: t.facing, act: data.act });
+        else if (data.goal === 'prank') this.fsm.transition('pranking', { facing: t.facing, act: data.act, stay: data.stay });
         else if (data.goal === 'rest') this.fsm.transition('resting', { spot: data.spot, stay: data.stay });
         else if (data.goal === 'warm') {
           this.fsm.transition('idle', { facing: t.facing });
@@ -874,7 +874,7 @@ const STATES = {
         this.prankDone = true;
         data.act();
       }
-      if (this.fsm.time > 2.6) this.fsm.transition('idle', { facing: data.facing });
+      if (this.fsm.time > (data.stay ?? 2.6)) this.fsm.transition('idle', { facing: data.facing });
     },
   },
 

@@ -42,6 +42,8 @@ export class FuelSystem {
     this.litres = clamp(params.startLitres, 0, params.tankCapacity);
     this.bowl = this.litres > 0 ? params.bowlCapacity : 0;
     this.oil = params.startOil ?? 0; // oil fraction of what's in the tank
+    this.diesel = 0; // diesel fraction of what's in the tank (red diesel poured in by mistake)
+    this.bowlDiesel = 0; // and of what's in the float bowl, which is what the engine is fed
     this.tap = params.startTap ?? 'on';
     this.burnRate = 0; // litres per second, last update
   }
@@ -78,12 +80,23 @@ export class FuelSystem {
     this.bowl = this.litres > 0 ? this.params.bowlCapacity : 0;
   }
 
-  /** Pours fuel in, with `oil` as its oil fraction; returns how much actually went in. */
-  add(litres, oil = 0) {
+  /** Pours fuel in, with `oil` as its oil fraction and `diesel` as its diesel fraction; returns how much actually went in. */
+  add(litres, oil = 0, diesel = 0) {
     const added = clamp(litres, 0, this.space);
     this.oil = mixOil(this.litres, this.oil, added, oil);
+    this.diesel = mixOil(this.litres, this.diesel, added, diesel);
     this.litres += added;
     return added;
+  }
+
+  /** Tank and float bowl emptied (the toolbox drain): the fuel is lost, diesel and all. Returns the litres that went. */
+  drain() {
+    const lost = this.litres + this.bowl;
+    this.litres = 0;
+    this.bowl = 0;
+    this.diesel = 0;
+    this.bowlDiesel = 0;
+    return lost;
   }
 
   /**
@@ -101,6 +114,7 @@ export class FuelSystem {
     const want = p.bowlCapacity - this.bowl;
     const flow = Math.min(want, p.bowlFillRate * dt, this.reachable);
     if (flow > 0) {
+      this.bowlDiesel = mixOil(this.bowl, this.bowlDiesel, flow, this.diesel);
       this.bowl += flow;
       this.litres -= flow;
     }

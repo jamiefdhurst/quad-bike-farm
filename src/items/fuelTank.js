@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 
-function label(text) {
+function label(text, paper = '#e8e2c8', ink = '#1e1e1e') {
   const c = document.createElement('canvas');
   c.width = 256;
   c.height = 64;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#e8e2c8';
+  ctx.fillStyle = paper;
   ctx.fillRect(0, 0, 256, 64);
-  ctx.fillStyle = '#1e1e1e';
+  ctx.fillStyle = ink;
   ctx.font = 'bold 40px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -19,13 +19,13 @@ function label(text) {
 
 /**
  * A farm fuel tank on a stand with a hose and nozzle: where the jerry can is
- * refilled. Never runs out.
+ * refilled. Never runs out. The red diesel bowser is the same thing, squatter, darker and labelled.
  */
 export class FuelTank {
-  constructor({ scene, physics, RAPIER, world, position, yaw = 0 }) {
+  constructor({ scene, physics, RAPIER, world, position, yaw = 0, text = 'PETROL', colour = 0x4a8a50, paper, ink, scale = 1 }) {
     const g = new THREE.Group();
     g.name = 'fuelTank';
-    const green = new THREE.MeshStandardMaterial({ color: 0x4a8a50, roughness: 0.55, metalness: 0.15 });
+    const green = new THREE.MeshStandardMaterial({ color: colour, roughness: 0.55, metalness: 0.15 });
     const steel = new THREE.MeshStandardMaterial({ color: 0x55585b, roughness: 0.5, metalness: 0.6 });
     const rubber = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.9 });
 
@@ -47,7 +47,7 @@ export class FuelTank {
     }
     const sign = new THREE.Mesh(
       new THREE.PlaneGeometry(0.7, 0.18),
-      new THREE.MeshBasicMaterial({ map: label('PETROL') }),
+      new THREE.MeshBasicMaterial({ map: label(text, paper, ink) }),
     );
     sign.position.set(0, 1.45, 0.553);
     g.add(sign);
@@ -72,6 +72,7 @@ export class FuelTank {
     const y = world.heightAt(position.x, position.z);
     g.position.set(position.x, y, position.z);
     g.rotation.y = yaw;
+    g.scale.setScalar(scale);
     scene.add(g);
     this.model = g;
 
@@ -81,7 +82,7 @@ export class FuelTank {
 
     const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
     physics.createCollider(
-      RAPIER.ColliderDesc.cuboid(1.05, 1.0, 0.6).setTranslation(position.x, y + 1.0, position.z).setRotation(q),
+      RAPIER.ColliderDesc.cuboid(1.05 * scale, 1.0 * scale, 0.6 * scale).setTranslation(position.x, y + 1.0 * scale, position.z).setRotation(q),
     );
   }
 }

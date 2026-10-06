@@ -218,6 +218,17 @@ export const DEFAULT_ENGINE_PARAMS = {
   waterStallChance: 0.25, // chance of stalling on each firing once past that
   waterNoStart: 0.15, // wetter than this it won't catch (fades out to nothing at this level)
 
+  // Red diesel in the tank (see diesel.js): it soaks the engine and only a drain at the toolbox clears it
+  dieselPotency: 2.5, // soak aimed for per unit of diesel in the fuel (so 40% diesel is as bad as it gets)
+  dieselSoakRate: 0.04, // per second the soak climbs toward that while running or cranking, so about 25 s to the worst
+  dieselRoughness: 0.8, // roughness added by a full soak
+  dieselPowerLoss: 0.6, // power lost to it
+  dieselMisfire: 0.5, // extra chance of a misfire on each firing at full soak
+  dieselStallAt: 0.5, // above this it may stall (past dieselNoStart, so a stalled one never restarts)
+  dieselStallChance: 0.1, // chance of stalling on each firing once past that
+  dieselStartFrom: 0.15, // from here it starts to catch less
+  dieselNoStart: 0.45, // soaked this far it won't catch at all
+
   // Fuel starvation, from the carburettor float bowl level (0..1)
   fuelStarveLevel: 0.65, // below this bowl level the mixture starts to go lean
   starveLean: 1.1, // how lean it goes as the bowl empties
@@ -395,6 +406,15 @@ export const ENGINE_PARAM_RANGES = {
   waterStallAt: [0.1, 1, 0.01],
   waterStallChance: [0, 1, 0.01],
   waterNoStart: [0.02, 1, 0.01],
+  dieselPotency: [0.5, 10, 0.1],
+  dieselSoakRate: [0.002, 0.5, 0.002],
+  dieselRoughness: [0, 1, 0.01],
+  dieselPowerLoss: [0, 1, 0.01],
+  dieselMisfire: [0, 1, 0.01],
+  dieselStallAt: [0.1, 1, 0.01],
+  dieselStallChance: [0, 1, 0.01],
+  dieselStartFrom: [0, 1, 0.01],
+  dieselNoStart: [0.05, 1, 0.01],
   fuelStarveLevel: [0.05, 1, 0.01],
   starveLean: [0, 3, 0.05],
 };

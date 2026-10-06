@@ -244,7 +244,7 @@ export class CompanionVoice {
     // Pouring petrol right by her.
     if (view.pouring && view.wrongMix && distance < 8 && !this.warnedMix) {
       this.warnedMix = true;
-      this.say(view.wrongMix === 'straight' ? 'oilStraight' : 'oilPremixFour', { urgent: true });
+      this.say(view.wrongMix === 'straight' ? 'oilStraight' : view.wrongMix === 'diesel' ? 'dieselWarn' : 'oilPremixFour', { urgent: true });
     }
     if (!view.pouring) this.warnedMix = false;
     if (view.pouring && distance < 6 && !this.pouredNear) {
@@ -475,7 +475,7 @@ export class CompanionVoice {
 
       if (e.state === 'cranking') w.cranking += dt;
       if (w.state === 'running' && e.state === 'stalled' && (hers || (near && c.quad === unit.quad))) {
-        this.say(e.lastStallReason === 'noFuel' ? 'outOfFuel' : 'stalledRiding', { urgent: true, chance: 0.8 });
+        this.say(e.lastStallReason === 'noFuel' ? 'outOfFuel' : e.lastStallReason === 'diesel' ? 'dieselDied' : 'stalledRiding', { urgent: true, chance: 0.8 });
       }
       if (w.state !== 'running' && e.isRunning) {
         if (w.cranking > 5 && near) this.say('caughtAfterStruggle', { urgent: true, chance: 0.8 });
@@ -487,6 +487,7 @@ export class CompanionVoice {
       this.watchOil(dt, unit, w, near || hers);
       if (unit.id === 'blue' && e.isRunning && unit.quad.choke > 0.3 && e.rich > 0.2 && (near || hers)) this.say('chokeOffBlue', { chance: 0.01 });
       this.watchHeat(unit, near || hers);
+      this.watchDiesel(unit, near || hers);
       if (e.silencerOff && e.isRunning && (near || hers)) this.say('silencerLoud', { chance: 0.015 });
       this.watchFaults(unit, w, near || hers);
       this.watchDiagnosis(dt, unit, w);
@@ -512,6 +513,13 @@ export class CompanionVoice {
     if (e.nip > 0.3) this.say('engineNipping', { urgent: true, chance: 0.05 });
     else if (e.overheat > 0.45) this.say('engineHot', { chance: 0.02 });
     if (e.oilRich > 0.5) this.say('oilSmoky', { chance: 0.01 });
+  }
+
+  /** A quad running badly on red diesel (when it dies on it, the stall remark above picks the line). */
+  watchDiesel(unit, listening) {
+    const e = unit.engine;
+    if (!listening) return;
+    if (e.isRunning && e.dieselSoak > 0.3) this.say('dieselRough', { chance: 0.02 });
   }
 
   /** An air-cooled quad running too hot and pinking, or a hot one that's been switched off ticking as it cools. */
@@ -579,6 +587,7 @@ export class CompanionVoice {
   /** Which kind of "it won't start" remark fits what she can see. */
   crankHint(unit) {
     const e = unit.engine;
+    if (e.dieselSoak > 0.4) return 'dieselNoStart';
     if (e.battery < e.params.batteryWeakBelow) return 'crankStruggleBattery';
     if (e.knack && !e.knack.primed && e.temperature < e.params.knackColdBelow) return 'crankStruggleKnack';
     if (unit.quad.fuel.bowlLevel < 0.3) return 'crankStruggleNoFuel';

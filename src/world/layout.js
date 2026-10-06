@@ -108,6 +108,8 @@ export const LAYOUT = {
     { x: -61.5, z: 67.8, yaw: -0.6, where: 'by the silage bales' },
     { x: -32.8, z: 77.6, yaw: 0.9, where: 'by the field gate' },
   ],
+  dieselBowser: { x: -61, z: 45.6, yaw: Math.PI / 2 }, // red diesel for the tractor, south of the petrol tank (and the hose)
+  dieselCan: { x: -58.9, z: 46.2, yaw: 0.5 }, // the dark green diesel can stands by it
   jerryCanJitter: 0.8, // metres of extra random shift around the chosen spot
   // The toolbox for tinkering with the quads, on the workbench in the barn.
   toolbox: { x: -62.9, z: 56.1, yaw: 0.1, lift: 0.92 }, // on the barn workbench

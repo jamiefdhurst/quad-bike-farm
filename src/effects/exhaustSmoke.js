@@ -24,12 +24,14 @@ export const DEFAULT_SMOKE_PARAMS = {
   foulDensity: 0.4, // extra with a fouled plug
   oilDensity: 1.2, // extra at full excess oil (too much pre-mix, or any in a four-stroke)
   waterDensity: 0.8, // extra steam from a drowned engine, white
+  dieselDensity: 0.9, // extra thick smoke from a diesel-soaked engine, mid grey
   throttleBurst: 0.85, // extra when the throttle is snapped open
   crankDensity: 0.26, // puffs while cranking
   coughDensity: 0.9, // puffs on a stall
   coldGray: 0.88, // colour of cold-engine vapour (0 black, 1 white)
   richGray: 0.22, // colour of rich, sooty smoke
   warmGray: 0.62,
+  dieselGray: 0.5, // colour of diesel smoke: thick grey
   tint: '#ffffff', // colour cast; two-stroke oil smoke is bluish
   flashBrightness: 1, // how bright an overrun pop's flash from the pipe is, in poor light
 };
@@ -51,6 +53,8 @@ export const SMOKE_PARAM_RANGES = {
   coldDensity: [0, 1, 0.005],
   richDensity: [0, 2, 0.01],
   waterDensity: [0, 2, 0.01],
+  dieselDensity: [0, 2, 0.01],
+  dieselGray: [0, 1, 0.01],
   foulDensity: [0, 2, 0.01],
   oilDensity: [0, 3, 0.01],
   throttleBurst: [0, 2, 0.01],
@@ -195,12 +199,14 @@ export class ExhaustSmoke {
     const coldness = 1 - engine.temperature;
     const rich = Math.max(0, engine.mixture - engine.params.richTolerance);
     const density =
-      p.warmDensity + p.coldDensity * coldness + p.richDensity * rich + p.foulDensity * engine.fouling + p.oilDensity * engine.oilRich + p.waterDensity * (engine.water ?? 0) + p.throttleBurst * this.burst;
+      p.warmDensity + p.coldDensity * coldness + p.richDensity * rich + p.foulDensity * engine.fouling + p.oilDensity * engine.oilRich + p.waterDensity * (engine.water ?? 0) + p.dieselDensity * (engine.dieselSoak ?? 0) + p.throttleBurst * this.burst;
     // Colour: vapour-white when cold, sooty when rich or bursting.
     const sooty = Math.min(1, rich * 1.5 + engine.fouling + engine.oilRich * 0.6 + this.burst * 0.5);
     const base = p.warmGray + (p.coldGray - p.warmGray) * coldness;
     const steamy = Math.min(1, (engine.water ?? 0) * 3); // water's steam is white whatever else is going on
-    const gray = (base + (p.richGray - base) * sooty) * (1 - steamy) + p.coldGray * steamy;
+    const dieselly = Math.min(1, (engine.dieselSoak ?? 0) * 2); // diesel smoke is grey, over the sootiness
+    const sootGray = (base + (p.richGray - base) * sooty) * (1 - dieselly) + p.dieselGray * dieselly;
+    const gray = sootGray * (1 - steamy) + p.coldGray * steamy;
 
     this.spawnBudget = Math.min(this.spawnBudget + p.maxPerSecond * dt, 3);
     for (const pulse of engine.pulses) {

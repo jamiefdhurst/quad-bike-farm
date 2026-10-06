@@ -229,6 +229,21 @@ export class Workshop {
     this.render();
   }
 
+  /** Empties the tank and carb, for fuel that's gone wrong (red diesel). The fuel is lost; the engine's soak goes with it. */
+  drainFuel() {
+    const unit = this.unit;
+    if (!unit || !this.canDrain(unit)) return;
+    const lost = unit.quad.drainFuel();
+    this.game.hud.toast(`Tank and carb drained: ${lost.toFixed(1)} L gone`);
+    this.render();
+    for (const c of this.game.companions) c.voice.onTinker?.('service');
+  }
+
+  /** Worth draining: there's diesel in the fuel or the engine is soaked with it. */
+  canDrain(unit) {
+    return unit.quad.fuel.diesel > 0.005 || unit.quad.fuel.bowlDiesel > 0.005 || unit.engine.dieselSoak > 0.005;
+  }
+
   /** Strip a nipped-up or seized two-stroke down and free it. */
   stripDown() {
     const unit = this.unit;
@@ -334,6 +349,7 @@ export class Workshop {
     if (pressed('KeyV')) this.service();
     if (pressed('KeyX')) this.toggleSilencer();
     if (pressed('KeyF')) this.stripDown();
+    if (pressed('KeyP')) this.drainFuel();
     if (pressed('KeyY')) this.startPod('fit', 'analogue');
     if (pressed('KeyU')) this.startPod('fit', 'digital');
     if (pressed('KeyO')) this.startPod('off');
@@ -410,6 +426,7 @@ export class Workshop {
         <div class="ws-explain"></div>
         <div class="ws-foot">
           <button type="button" class="ws-btn ws-reset"><span class="key">B</span>Back to stock</button>
+          <button type="button" class="ws-btn ws-drain"><span class="key">P</span>Pump out the tank and carb</button>
           <button type="button" class="ws-btn ws-strip"><span class="key">F</span>Strip it down</button>
           <button type="button" class="ws-btn ws-silencer"><span class="key">X</span>Take the silencer off</button>
           <button type="button" class="ws-btn ws-service"><span class="key">V</span>Service it</button>
@@ -426,7 +443,7 @@ export class Workshop {
           <button type="button" class="ws-btn ws-pod" data-pod="digital"><span class="key">U</span>Fit the digital pod</button>
           <button type="button" class="ws-btn ws-podoff"><span class="key">O</span>Take the pod off</button>
         </div>
-        <div class="ws-keys">↑ ↓ choose   ·   ← → adjust (hold to keep going)   ·   V service   ·   hold I air filter   ·   X silencer   ·   F strip down   ·   Y U O pods   ·   T tyres   ·   R belt   ·   L cable   ·   C carb   ·   or use the mouse</div>
+        <div class="ws-keys">↑ ↓ choose   ·   ← → adjust (hold to keep going)   ·   V service   ·   hold I air filter   ·   X silencer   ·   F strip down   ·   P pump out the fuel   ·   Y U O pods   ·   T tyres   ·   R belt   ·   L cable   ·   C carb   ·   or use the mouse</div>
       </div>`;
     document.body.appendChild(el);
     this.el = el;
@@ -459,6 +476,7 @@ export class Workshop {
     el.querySelector('.ws-silencer').addEventListener('click', () => this.toggleSilencer());
     el.querySelector('.ws-service').addEventListener('click', () => this.service());
     el.querySelector('.ws-strip').addEventListener('click', () => this.stripDown());
+    el.querySelector('.ws-drain').addEventListener('click', () => this.drainFuel());
     // The air filter takes a hold, with the key or the mouse button.
     const filterBtn = el.querySelector('.ws-filter');
     filterBtn.addEventListener('mousedown', () => (this.filterButton = true));
@@ -503,6 +521,7 @@ export class Workshop {
     const word = rough < 0.15 ? 'sweet' : rough < 0.35 ? 'a bit lumpy' : rough < 0.6 ? 'rough' : 'very rough';
     this.el.querySelector('.ws-cond').textContent = `Running ${word}: roughness ${rough.toFixed(2)}${e.wear >= 0.005 ? ` (${e.wear.toFixed(2)} of it wear)` : ''}. A service clears the wear.`;
     this.el.querySelector('.ws-service').disabled = this.isServiced(unit);
+    this.el.querySelector('.ws-drain').disabled = !this.canDrain(unit);
     const filter = unit.quad.filter;
     const filterBtn = this.el.querySelector('.ws-filter');
     filterBtn.disabled = filter.isClean;
