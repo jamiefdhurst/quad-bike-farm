@@ -112,7 +112,7 @@ export class Quad {
     this.manual = !!gearbox;
     this.gearbox = gearbox;
     this.drivetrain = this.manual ? new ManualDrivetrain(params, gearbox) : new Drivetrain(params);
-    this.handSetting = 0; // the tractor's hand throttle, 0..1: it stays where it was put, even with nobody on it
+    this.handSetting = gearbox?.handStart ?? 0; // the tractor's hand throttle, 0..1: it stays where it was put, even with nobody on it
     this.note = null; // something to tell whoever's at the controls, taken by the game (see takeNote)
     this.bog = new Bog(); // how far it's sunk into a bog (bog.js)
     this.towed = false; // on the end of the winch: brakes off
@@ -408,7 +408,7 @@ export class Quad {
     }
 
     // The hand throttle holds the engine up wherever it was left, ridden or not.
-    if (this.manual && this.handSetting > 0) throttleInput = Math.max(throttleInput, this.gearbox.handFloor + (1 - this.gearbox.handFloor) * this.handSetting);
+    if (this.manual) throttleInput = Math.max(throttleInput, this.handSetting);
 
     // The recoil pull-start (the two-strokes): hold P to draw the cord, let go to yank.
     const pullDown = this.input ? this.input.isDown('KeyP') : (!!this.remoteInput && this.remoteInput.isDown('KeyP')) || this.helperPull;

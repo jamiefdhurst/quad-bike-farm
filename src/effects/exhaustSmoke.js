@@ -26,6 +26,8 @@ export const DEFAULT_SMOKE_PARAMS = {
   waterDensity: 0.8, // extra steam from a drowned engine, white
   dieselDensity: 0.9, // extra thick smoke from a diesel-soaked engine, mid grey
   throttleBurst: 0.85, // extra when the throttle is snapped open
+  throttleDensity: 0, // extra smoke at full throttle, held, not just on a blip (the tractor's)
+  throttleBlack: 0, // and how black that is
   burstBlack: 0, // how black that burst is, 0 as usual to 1 for soot (the tractor's)
   catchBlack: 0, // how black, and how big, the cloud is when it catches: 0 as usual, 1 for the tractor's clatter and black cloud
   crankDensity: 0.26, // puffs while cranking
@@ -60,6 +62,8 @@ export const SMOKE_PARAM_RANGES = {
   foulDensity: [0, 2, 0.01],
   oilDensity: [0, 3, 0.01],
   throttleBurst: [0, 2, 0.01],
+  throttleDensity: [0, 3, 0.01],
+  throttleBlack: [0, 1, 0.01],
   burstBlack: [0, 1, 0.01],
   catchBlack: [0, 1, 0.01],
   crankDensity: [0, 1, 0.005],
@@ -203,14 +207,14 @@ export class ExhaustSmoke {
     const coldness = 1 - engine.temperature;
     const rich = Math.max(0, engine.mixture - engine.params.richTolerance);
     const density =
-      p.warmDensity + p.coldDensity * coldness + p.richDensity * rich + p.foulDensity * engine.fouling + p.oilDensity * engine.oilRich + p.waterDensity * (engine.water ?? 0) + p.dieselDensity * (engine.dieselSoak ?? 0) + p.throttleBurst * this.burst;
+      p.warmDensity + p.coldDensity * coldness + p.richDensity * rich + p.foulDensity * engine.fouling + p.oilDensity * engine.oilRich + p.waterDensity * (engine.water ?? 0) + p.dieselDensity * (engine.dieselSoak ?? 0) + p.throttleBurst * this.burst + p.throttleDensity * engine.throttle;
     // Colour: vapour-white when cold, sooty when rich or bursting.
     const sooty = Math.min(1, rich * 1.5 + engine.fouling + engine.oilRich * 0.6 + this.burst * 0.5);
     const base = p.warmGray + (p.coldGray - p.warmGray) * coldness;
     const steamy = Math.min(1, (engine.water ?? 0) * 3); // water's steam is white whatever else is going on
     const dieselly = Math.min(1, (engine.dieselSoak ?? 0) * 2); // diesel smoke is grey, over the sootiness
     const sootGray = (base + (p.richGray - base) * sooty) * (1 - dieselly) + p.dieselGray * dieselly;
-    const gray = (sootGray * (1 - steamy) + p.coldGray * steamy) * (1 - p.burstBlack * this.burst);
+    const gray = (sootGray * (1 - steamy) + p.coldGray * steamy) * (1 - p.burstBlack * this.burst) * (1 - p.throttleBlack * engine.throttle);
 
     this.spawnBudget = Math.min(this.spawnBudget + p.maxPerSecond * dt, 3);
     for (const pulse of engine.pulses) {
@@ -230,7 +234,7 @@ export class ExhaustSmoke {
       if (e.type === 'overrunPop') this.flashLeft = Math.max(this.flashLeft, e.strength);
       if (e.type === 'stalled' || e.type === 'caught') {
         const black = e.type === 'caught' ? p.catchBlack : 0;
-        const puffs = 3 + Math.round(black * 4);
+        const puffs = 3 + Math.round(black * 12);
         for (let i = 0; i < puffs; i++) {
           this.spawn(Math.min(1, p.coughDensity * (1 - i * 0.25 / (1 + black * 1.5)) * (1 + black)), (p.richGray + 0.15) * (1 - black * 0.9), 1.5 + black * 1.5, carrierVel, dt - e.t);
         }

@@ -980,3 +980,8 @@ Settled with Jamie before building: the item as written, in one go (the trailer,
 - Idle 430 to 470 rpm (spec `idleRpmWarm` 450, `stallRpm` 280). `loadDragRpm` came down from 3,200 to 1,400 to match, or first gear would stall it from rest: the tests still say first never stalls, second stalls with no throttle but not with a little, third wants throttle.
 - Hand throttle: `handFloor` 0.22 in the gearbox params. At 0 it's idle; the first notch jumps to 22% throttle (about 840 rpm) and the rest of the travel goes from there to full. Checked headless: idle 463, one tap of `Q` (a tenth of the travel) gave 988 rpm. If you meant something other than this by "starts somewhere more sensible", say.
 
+### The tractor, third round
+
+- The hand throttle goes back to plain steps (0.35 of its travel a second, linear from idle to full); `handFloor` is gone. Instead it's left at 0.15 when the game starts (`handStart` in the gearbox params), about 710 rpm, so the tractor doesn't spawn with the lever at the bottom.
+- Much more black smoke: a steady dark plume even at idle (`warmDensity` 0.5, `warmGray` 0.22), a thick black column whenever it's working (new `throttleDensity` 1.4 and `throttleBlack` 0.8 smoke params), a huge burst on a blip (`throttleBurst` 4), up to 15 puffs when it catches, opacity 2.2, puffs lasting up to 7 s and growing to 3.6 m. Looked at once headless with the hand throttle up: a dense black column. Not checked: how it looks in fog or rain, or that it isn't too much from the seat.
+

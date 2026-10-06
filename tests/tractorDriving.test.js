@@ -109,11 +109,12 @@ describe('no fuel tap, and a hand throttle that starts at a working speed', () =
     expect(f.reachable).toBe(2);
   });
 
-  it('idles low, and its first notch of hand throttle is a sensible working speed', () => {
+  it('idles low, and the hand throttle is left a little open at the start', () => {
     expect(TRACTOR_SPEC.engine.idleRpmWarm).toBeLessThanOrEqual(500);
-    const first = TRACTOR_SPEC.engine.idleRpmWarm + (DEFAULT_GEARBOX_PARAMS.handFloor * (TRACTOR_SPEC.engine.maxRpm - TRACTOR_SPEC.engine.idleRpmWarm));
-    expect(first).toBeGreaterThan(750);
-    expect(first).toBeLessThan(950);
+    expect(DEFAULT_GEARBOX_PARAMS.handStart).toBeGreaterThan(0);
+    const e = TRACTOR_SPEC.engine;
+    const start = e.idleRpmWarm + DEFAULT_GEARBOX_PARAMS.handStart * (e.maxRpm - e.idleRpmWarm);
+    expect(start).toBeGreaterThan(600);
+    expect(start).toBeLessThan(800);
   });
 });
-

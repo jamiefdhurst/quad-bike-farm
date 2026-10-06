@@ -602,14 +602,20 @@ export const TRACTOR_SPEC = {
     densityRefRpm: 900,
   },
   smoke: {
-    warmDensity: 0.14,
-    coldDensity: 0.75,
-    throttleBurst: 1.7, // a big dark burst every time you blip it
-    burstBlack: 0.85,
+    opacity: 2.2,
+    maxPerSecond: 110,
+    lifeMax: 7,
+    warmDensity: 0.5, // even at idle it's a steady dark plume
+    coldDensity: 0.9,
+    throttleBurst: 4, // a huge dark burst every time you blip it
+    throttleDensity: 1.4, // and a thick black column whenever it's working
+    throttleBlack: 0.8,
+    burstBlack: 0.95,
     catchBlack: 1,
-    coldGray: 0.55,
-    warmGray: 0.45,
-    startSize: 0.12,
+    coldGray: 0.3,
+    warmGray: 0.22,
+    startSize: 0.16,
+    endSize: 3.6,
     exitSpeed: 3.2,
     throttleExitSpeed: 5,
     buoyancy: 0.9,
