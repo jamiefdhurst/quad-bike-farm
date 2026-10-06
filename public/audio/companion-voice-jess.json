@@ -2606,333 +2606,1545 @@
    "start": 1497.21,
    "dur": 2.37
   },
-  "Ooh, are we doing engines? Can I hit something?": {
+  "The red quad? That one is mine. Hands off.": {
    "start": 1499.66,
+   "dur": 4.61
+  },
+  "Just so you know, the red quad is mine.": {
+   "start": 1504.35,
+   "dur": 2.5
+  },
+  "Postie? That one is mine. Hands off.": {
+   "start": 1506.93,
+   "dur": 2.78
+  },
+  "Just so you know, Postie is mine.": {
+   "start": 1509.79,
+   "dur": 2.32
+  },
+  "The tomato? That one is mine. Hands off.": {
+   "start": 1512.19,
+   "dur": 3.02
+  },
+  "Just so you know, the tomato is mine.": {
+   "start": 1515.29,
+   "dur": 3.02
+  },
+  "The blue quad? That one is mine. Hands off.": {
+   "start": 1518.39,
+   "dur": 3.22
+  },
+  "Just so you know, the blue quad is mine.": {
+   "start": 1521.69,
+   "dur": 3.16
+  },
+  "Smurf? That one is mine. Hands off.": {
+   "start": 1524.93,
+   "dur": 2.6
+  },
+  "Just so you know, Smurf is mine.": {
+   "start": 1527.61,
+   "dur": 2.48
+  },
+  "Bluebell? That one is mine. Hands off.": {
+   "start": 1530.17,
+   "dur": 4.4
+  },
+  "Just so you know, Bluebell is mine.": {
+   "start": 1534.65,
+   "dur": 2.26
+  },
+  "The yellow quad? That one is mine. Hands off.": {
+   "start": 1536.99,
+   "dur": 3.3
+  },
+  "Just so you know, the yellow quad is mine.": {
+   "start": 1540.37,
+   "dur": 2.84
+  },
+  "The wasp? That one is mine. Hands off.": {
+   "start": 1543.29,
+   "dur": 3.05
+  },
+  "Just so you know, the wasp is mine.": {
+   "start": 1546.42,
+   "dur": 2.14
+  },
+  "Custard? That one is mine. Hands off.": {
+   "start": 1548.64,
+   "dur": 3.15
+  },
+  "Just so you know, Custard is mine.": {
+   "start": 1551.87,
+   "dur": 2.26
+  },
+  "The green quad? That one is mine. Hands off.": {
+   "start": 1554.21,
+   "dur": 3.33
+  },
+  "Just so you know, the green quad is mine.": {
+   "start": 1557.62,
+   "dur": 2.92
+  },
+  "Grandad? That one is mine. Hands off.": {
+   "start": 1560.62,
+   "dur": 3.03
+  },
+  "Just so you know, Grandad is mine.": {
+   "start": 1563.73,
+   "dur": 2.65
+  },
+  "Kermit? That one is mine. Hands off.": {
+   "start": 1566.46,
+   "dur": 2.59
+  },
+  "Just so you know, Kermit is mine.": {
+   "start": 1569.13,
+   "dur": 2.38
+  },
+  "The orange quad? That one is mine. Hands off.": {
+   "start": 1571.59,
+   "dur": 3.28
+  },
+  "Just so you know, the orange quad is mine.": {
+   "start": 1574.95,
+   "dur": 3.29
+  },
+  "The satsuma? That one is mine. Hands off.": {
+   "start": 1578.32,
+   "dur": 3.2
+  },
+  "Just so you know, the satsuma is mine.": {
+   "start": 1581.6,
+   "dur": 2.92
+  },
+  "Tango? That one is mine. Hands off.": {
+   "start": 1584.6,
+   "dur": 3.26
+  },
+  "Just so you know, Tango is mine.": {
+   "start": 1587.94,
+   "dur": 2.25
+  },
+  "The kids' quad? That one is mine. Hands off.": {
+   "start": 1590.27,
+   "dur": 3.25
+  },
+  "Just so you know, the kids' quad is mine.": {
+   "start": 1593.6,
+   "dur": 2.28
+  },
+  "Tiddler? That one is mine. Hands off.": {
+   "start": 1595.96,
+   "dur": 3.6
+  },
+  "Just so you know, Tiddler is mine.": {
+   "start": 1599.64,
+   "dur": 2.35
+  },
+  "The pram? That one is mine. Hands off.": {
+   "start": 1602.07,
+   "dur": 4.27
+  },
+  "Just so you know, the pram is mine.": {
+   "start": 1606.42,
+   "dur": 2.6
+  },
+  "The loan quad? That one is mine. Hands off.": {
+   "start": 1609.1,
+   "dur": 3.49
+  },
+  "Just so you know, the loan quad is mine.": {
+   "start": 1612.67,
+   "dur": 2.81
+  },
+  "Lucky? That one is mine. Hands off.": {
+   "start": 1615.56,
+   "dur": 2.6
+  },
+  "Just so you know, Lucky is mine.": {
+   "start": 1618.24,
+   "dur": 2.36
+  },
+  "The loaner? That one is mine. Hands off.": {
+   "start": 1620.68,
+   "dur": 2.92
+  },
+  "Just so you know, the loaner is mine.": {
+   "start": 1623.68,
+   "dur": 2.71
+  },
+  "That's Amy on the red quad? Flat out? Wonders never cease.": {
+   "start": 1626.47,
+   "dur": 5.68
+  },
+  "Is that Amy on the red quad? She is actually giving it some.": {
+   "start": 1632.23,
+   "dur": 4.69
+  },
+  "That's Amy on Postie? Flat out? Wonders never cease.": {
+   "start": 1637.0,
+   "dur": 4.2
+  },
+  "Is that Amy on Postie? She is actually giving it some.": {
+   "start": 1641.28,
+   "dur": 3.48
+  },
+  "That's Amy on the tomato? Flat out? Wonders never cease.": {
+   "start": 1644.84,
+   "dur": 4.52
+  },
+  "Is that Amy on the tomato? She is actually giving it some.": {
+   "start": 1649.44,
+   "dur": 4.55
+  },
+  "That's Amy on the blue quad? Flat out? Wonders never cease.": {
+   "start": 1654.07,
+   "dur": 5.12
+  },
+  "Is that Amy on the blue quad? She is actually giving it some.": {
+   "start": 1659.27,
+   "dur": 4.41
+  },
+  "That's Amy on Smurf? Flat out? Wonders never cease.": {
+   "start": 1663.76,
+   "dur": 4.98
+  },
+  "Is that Amy on Smurf? She is actually giving it some.": {
+   "start": 1668.82,
+   "dur": 4.02
+  },
+  "That's Amy on Bluebell? Flat out? Wonders never cease.": {
+   "start": 1672.92,
+   "dur": 4.93
+  },
+  "Is that Amy on Bluebell? She is actually giving it some.": {
+   "start": 1677.93,
+   "dur": 4.49
+  },
+  "That's Amy on the yellow quad? Flat out? Wonders never cease.": {
+   "start": 1682.5,
+   "dur": 4.66
+  },
+  "Is that Amy on the yellow quad? She is actually giving it some.": {
+   "start": 1687.24,
+   "dur": 3.97
+  },
+  "That's Amy on the wasp? Flat out? Wonders never cease.": {
+   "start": 1691.29,
+   "dur": 4.25
+  },
+  "Is that Amy on the wasp? She is actually giving it some.": {
+   "start": 1695.62,
+   "dur": 3.03
+  },
+  "That's Amy on Custard? Flat out? Wonders never cease.": {
+   "start": 1698.73,
+   "dur": 4.65
+  },
+  "Is that Amy on Custard? She is actually giving it some.": {
+   "start": 1703.46,
+   "dur": 3.95
+  },
+  "That's Amy on the green quad? Flat out? Wonders never cease.": {
+   "start": 1707.49,
+   "dur": 4.85
+  },
+  "Is that Amy on the green quad? She is actually giving it some.": {
+   "start": 1712.42,
+   "dur": 5.07
+  },
+  "That's Amy on Grandad? Flat out? Wonders never cease.": {
+   "start": 1717.57,
+   "dur": 4.88
+  },
+  "Is that Amy on Grandad? She is actually giving it some.": {
+   "start": 1722.53,
+   "dur": 3.61
+  },
+  "That's Amy on Kermit? Flat out? Wonders never cease.": {
+   "start": 1726.22,
+   "dur": 4.22
+  },
+  "Is that Amy on Kermit? She is actually giving it some.": {
+   "start": 1730.52,
+   "dur": 3.13
+  },
+  "That's Amy on the orange quad? Flat out? Wonders never cease.": {
+   "start": 1733.73,
+   "dur": 4.6
+  },
+  "Is that Amy on the orange quad? She is actually giving it some.": {
+   "start": 1738.41,
+   "dur": 4.01
+  },
+  "That's Amy on the satsuma? Flat out? Wonders never cease.": {
+   "start": 1742.5,
+   "dur": 5.25
+  },
+  "Is that Amy on the satsuma? She is actually giving it some.": {
+   "start": 1747.83,
+   "dur": 4.68
+  },
+  "That's Amy on Tango? Flat out? Wonders never cease.": {
+   "start": 1752.59,
+   "dur": 4.19
+  },
+  "Is that Amy on Tango? She is actually giving it some.": {
+   "start": 1756.86,
+   "dur": 4.22
+  },
+  "That's Amy on the kids' quad? Flat out? Wonders never cease.": {
+   "start": 1761.16,
+   "dur": 4.72
+  },
+  "Is that Amy on the kids' quad? She is actually giving it some.": {
+   "start": 1765.96,
+   "dur": 3.84
+  },
+  "That's Amy on Tiddler? Flat out? Wonders never cease.": {
+   "start": 1769.88,
+   "dur": 4.23
+  },
+  "Is that Amy on Tiddler? She is actually giving it some.": {
+   "start": 1774.19,
+   "dur": 3.16
+  },
+  "That's Amy on the pram? Flat out? Wonders never cease.": {
+   "start": 1777.43,
+   "dur": 4.62
+  },
+  "Is that Amy on the pram? She is actually giving it some.": {
+   "start": 1782.13,
+   "dur": 4.18
+  },
+  "That's Amy on the loan quad? Flat out? Wonders never cease.": {
+   "start": 1786.39,
+   "dur": 4.61
+  },
+  "Is that Amy on the loan quad? She is actually giving it some.": {
+   "start": 1791.08,
+   "dur": 4.42
+  },
+  "That's Amy on Lucky? Flat out? Wonders never cease.": {
+   "start": 1795.58,
+   "dur": 4.45
+  },
+  "Is that Amy on Lucky? She is actually giving it some.": {
+   "start": 1800.11,
+   "dur": 3.23
+  },
+  "That's Amy on the loaner? Flat out? Wonders never cease.": {
+   "start": 1803.42,
+   "dur": 3.91
+  },
+  "Is that Amy on the loaner? She is actually giving it some.": {
+   "start": 1807.41,
+   "dur": 4.23
+  },
+  "That's Amy on the red quad. Hear that? She is killing it with kindness.": {
+   "start": 1811.72,
+   "dur": 5.32
+  },
+  "Amy is on the red quad. It sounds like it is begging for mercy.": {
+   "start": 1817.12,
+   "dur": 3.91
+  },
+  "That's Amy on Postie. Hear that? She is killing it with kindness.": {
+   "start": 1821.11,
+   "dur": 4.64
+  },
+  "Amy is on Postie. It sounds like it is begging for mercy.": {
+   "start": 1825.83,
+   "dur": 3.92
+  },
+  "That's Amy on the tomato. Hear that? She is killing it with kindness.": {
+   "start": 1829.83,
+   "dur": 5.09
+  },
+  "Amy is on the tomato. It sounds like it is begging for mercy.": {
+   "start": 1835.0,
+   "dur": 3.96
+  },
+  "That's Amy on the blue quad. Hear that? She is killing it with kindness.": {
+   "start": 1839.04,
+   "dur": 5.59
+  },
+  "Amy is on the blue quad. It sounds like it is begging for mercy.": {
+   "start": 1844.71,
+   "dur": 4.32
+  },
+  "That's Amy on Smurf. Hear that? She is killing it with kindness.": {
+   "start": 1849.11,
+   "dur": 3.96
+  },
+  "Amy is on Smurf. It sounds like it is begging for mercy.": {
+   "start": 1853.15,
+   "dur": 3.93
+  },
+  "That's Amy on Bluebell. Hear that? She is killing it with kindness.": {
+   "start": 1857.16,
+   "dur": 4.05
+  },
+  "Amy is on Bluebell. It sounds like it is begging for mercy.": {
+   "start": 1861.29,
+   "dur": 4.18
+  },
+  "That's Amy on the yellow quad. Hear that? She is killing it with kindness.": {
+   "start": 1865.55,
+   "dur": 4.42
+  },
+  "Amy is on the yellow quad. It sounds like it is begging for mercy.": {
+   "start": 1870.05,
+   "dur": 4.41
+  },
+  "That's Amy on the wasp. Hear that? She is killing it with kindness.": {
+   "start": 1874.54,
+   "dur": 3.94
+  },
+  "Amy is on the wasp. It sounds like it is begging for mercy.": {
+   "start": 1878.56,
+   "dur": 3.69
+  },
+  "That's Amy on Custard. Hear that? She is killing it with kindness.": {
+   "start": 1882.33,
+   "dur": 4.99
+  },
+  "Amy is on Custard. It sounds like it is begging for mercy.": {
+   "start": 1887.4,
+   "dur": 4.15
+  },
+  "That's Amy on the green quad. Hear that? She is killing it with kindness.": {
+   "start": 1891.63,
+   "dur": 5.43
+  },
+  "Amy is on the green quad. It sounds like it is begging for mercy.": {
+   "start": 1897.14,
+   "dur": 4.73
+  },
+  "That's Amy on Grandad. Hear that? She is killing it with kindness.": {
+   "start": 1901.95,
+   "dur": 4.54
+  },
+  "Amy is on Grandad. It sounds like it is begging for mercy.": {
+   "start": 1906.57,
+   "dur": 4.87
+  },
+  "That's Amy on Kermit. Hear that? She is killing it with kindness.": {
+   "start": 1911.52,
+   "dur": 3.57
+  },
+  "Amy is on Kermit. It sounds like it is begging for mercy.": {
+   "start": 1915.17,
+   "dur": 3.98
+  },
+  "That's Amy on the orange quad. Hear that? She is killing it with kindness.": {
+   "start": 1919.23,
+   "dur": 4.2
+  },
+  "Amy is on the orange quad. It sounds like it is begging for mercy.": {
+   "start": 1923.51,
+   "dur": 4.28
+  },
+  "That's Amy on the satsuma. Hear that? She is killing it with kindness.": {
+   "start": 1927.87,
+   "dur": 4.76
+  },
+  "Amy is on the satsuma. It sounds like it is begging for mercy.": {
+   "start": 1932.71,
+   "dur": 4.71
+  },
+  "That's Amy on Tango. Hear that? She is killing it with kindness.": {
+   "start": 1937.5,
+   "dur": 3.92
+  },
+  "Amy is on Tango. It sounds like it is begging for mercy.": {
+   "start": 1941.5,
+   "dur": 3.86
+  },
+  "That's Amy on the kids' quad. Hear that? She is killing it with kindness.": {
+   "start": 1945.44,
+   "dur": 5.02
+  },
+  "Amy is on the kids' quad. It sounds like it is begging for mercy.": {
+   "start": 1950.54,
+   "dur": 4.26
+  },
+  "That's Amy on Tiddler. Hear that? She is killing it with kindness.": {
+   "start": 1954.88,
+   "dur": 4.15
+  },
+  "Amy is on Tiddler. It sounds like it is begging for mercy.": {
+   "start": 1959.11,
+   "dur": 3.91
+  },
+  "That's Amy on the pram. Hear that? She is killing it with kindness.": {
+   "start": 1963.1,
+   "dur": 4.19
+  },
+  "Amy is on the pram. It sounds like it is begging for mercy.": {
+   "start": 1967.37,
+   "dur": 3.93
+  },
+  "That's Amy on the loan quad. Hear that? She is killing it with kindness.": {
+   "start": 1971.38,
+   "dur": 5.27
+  },
+  "Amy is on the loan quad. It sounds like it is begging for mercy.": {
+   "start": 1976.73,
+   "dur": 4.08
+  },
+  "That's Amy on Lucky. Hear that? She is killing it with kindness.": {
+   "start": 1980.89,
+   "dur": 5.23
+  },
+  "Amy is on Lucky. It sounds like it is begging for mercy.": {
+   "start": 1986.2,
+   "dur": 4.17
+  },
+  "That's Amy on the loaner. Hear that? She is killing it with kindness.": {
+   "start": 1990.45,
+   "dur": 5.08
+  },
+  "Amy is on the loaner. It sounds like it is begging for mercy.": {
+   "start": 1995.61,
+   "dur": 3.76
+  },
+  "That's Amy on the red quad. I can tell, she is going at walking pace.": {
+   "start": 1999.45,
+   "dur": 4.83
+  },
+  "Amy on the red quad, listen. Nice and sensible. Boring.": {
+   "start": 2004.36,
+   "dur": 4.82
+  },
+  "That's Amy on Postie. I can tell, she is going at walking pace.": {
+   "start": 2009.26,
+   "dur": 4.41
+  },
+  "Amy on Postie, listen. Nice and sensible. Boring.": {
+   "start": 2013.75,
+   "dur": 3.71
+  },
+  "That's Amy on the tomato. I can tell, she is going at walking pace.": {
+   "start": 2017.54,
+   "dur": 4.45
+  },
+  "Amy on the tomato, listen. Nice and sensible. Boring.": {
+   "start": 2022.07,
+   "dur": 4.42
+  },
+  "That's Amy on the blue quad. I can tell, she is going at walking pace.": {
+   "start": 2026.57,
+   "dur": 5.36
+  },
+  "Amy on the blue quad, listen. Nice and sensible. Boring.": {
+   "start": 2032.01,
+   "dur": 4.96
+  },
+  "That's Amy on Smurf. I can tell, she is going at walking pace.": {
+   "start": 2037.05,
+   "dur": 4.65
+  },
+  "Amy on Smurf, listen. Nice and sensible. Boring.": {
+   "start": 2041.78,
+   "dur": 3.73
+  },
+  "That's Amy on Bluebell. I can tell, she is going at walking pace.": {
+   "start": 2045.59,
+   "dur": 4.08
+  },
+  "Amy on Bluebell, listen. Nice and sensible. Boring.": {
+   "start": 2049.75,
+   "dur": 5.04
+  },
+  "That's Amy on the yellow quad. I can tell, she is going at walking pace.": {
+   "start": 2054.87,
+   "dur": 5.03
+  },
+  "Amy on the yellow quad, listen. Nice and sensible. Boring.": {
+   "start": 2059.98,
+   "dur": 5.09
+  },
+  "That's Amy on the wasp. I can tell, she is going at walking pace.": {
+   "start": 2065.15,
+   "dur": 4.68
+  },
+  "Amy on the wasp, listen. Nice and sensible. Boring.": {
+   "start": 2069.91,
+   "dur": 5.17
+  },
+  "That's Amy on Custard. I can tell, she is going at walking pace.": {
+   "start": 2075.16,
+   "dur": 3.92
+  },
+  "Amy on Custard, listen. Nice and sensible. Boring.": {
+   "start": 2079.16,
+   "dur": 3.46
+  },
+  "That's Amy on the green quad. I can tell, she is going at walking pace.": {
+   "start": 2082.7,
+   "dur": 4.99
+  },
+  "Amy on the green quad, listen. Nice and sensible. Boring.": {
+   "start": 2087.77,
+   "dur": 5.13
+  },
+  "That's Amy on Grandad. I can tell, she is going at walking pace.": {
+   "start": 2092.98,
+   "dur": 3.49
+  },
+  "Amy on Grandad, listen. Nice and sensible. Boring.": {
+   "start": 2096.55,
+   "dur": 4.54
+  },
+  "That's Amy on Kermit. I can tell, she is going at walking pace.": {
+   "start": 2101.17,
+   "dur": 3.28
+  },
+  "Amy on Kermit, listen. Nice and sensible. Boring.": {
+   "start": 2104.53,
+   "dur": 3.61
+  },
+  "That's Amy on the orange quad. I can tell, she is going at walking pace.": {
+   "start": 2108.22,
+   "dur": 5.38
+  },
+  "Amy on the orange quad, listen. Nice and sensible. Boring.": {
+   "start": 2113.68,
+   "dur": 5.47
+  },
+  "That's Amy on the satsuma. I can tell, she is going at walking pace.": {
+   "start": 2119.23,
+   "dur": 4.58
+  },
+  "Amy on the satsuma, listen. Nice and sensible. Boring.": {
+   "start": 2123.89,
+   "dur": 4.83
+  },
+  "That's Amy on Tango. I can tell, she is going at walking pace.": {
+   "start": 2128.8,
+   "dur": 3.31
+  },
+  "Amy on Tango, listen. Nice and sensible. Boring.": {
+   "start": 2132.19,
+   "dur": 3.61
+  },
+  "That's Amy on the kids' quad. I can tell, she is going at walking pace.": {
+   "start": 2135.88,
+   "dur": 4.0
+  },
+  "Amy on the kids' quad, listen. Nice and sensible. Boring.": {
+   "start": 2139.96,
+   "dur": 4.3
+  },
+  "That's Amy on Tiddler. I can tell, she is going at walking pace.": {
+   "start": 2144.34,
+   "dur": 3.65
+  },
+  "Amy on Tiddler, listen. Nice and sensible. Boring.": {
+   "start": 2148.07,
+   "dur": 4.0
+  },
+  "That's Amy on the pram. I can tell, she is going at walking pace.": {
+   "start": 2152.15,
+   "dur": 4.73
+  },
+  "Amy on the pram, listen. Nice and sensible. Boring.": {
+   "start": 2156.96,
+   "dur": 3.88
+  },
+  "That's Amy on the loan quad. I can tell, she is going at walking pace.": {
+   "start": 2160.92,
+   "dur": 4.82
+  },
+  "Amy on the loan quad, listen. Nice and sensible. Boring.": {
+   "start": 2165.82,
+   "dur": 4.65
+  },
+  "That's Amy on Lucky. I can tell, she is going at walking pace.": {
+   "start": 2170.55,
+   "dur": 3.39
+  },
+  "Amy on Lucky, listen. Nice and sensible. Boring.": {
+   "start": 2174.02,
+   "dur": 3.64
+  },
+  "That's Amy on the loaner. I can tell, she is going at walking pace.": {
+   "start": 2177.74,
+   "dur": 4.38
+  },
+  "Amy on the loaner, listen. Nice and sensible. Boring.": {
+   "start": 2182.2,
+   "dur": 4.61
+  },
+  "I am not calling it that.": {
+   "start": 2186.89,
+   "dur": 1.64
+  },
+  "Absolutely not. It has a colour.": {
+   "start": 2188.61,
+   "dur": 3.24
+  },
+  "It is a quad, Jess. It does not need a name.": {
+   "start": 2191.93,
+   "dur": 3.19
+  },
+  "That is my quad you are on. You owe me.": {
+   "start": 2195.2,
+   "dur": 6.28
+  },
+  "Oi! My quad! Go on then, but be careful with it.": {
+   "start": 2201.56,
+   "dur": 2.95
+  },
+  "Jess! Get off my quad!": {
+   "start": 2204.59,
+   "dur": 1.89
+  },
+  "That is my quad, Jess! Give it back!": {
+   "start": 2206.56,
+   "dur": 2.19
+  },
+  "Jess, I said that one was mine!": {
+   "start": 2208.83,
+   "dur": 3.27
+  },
+  "Freezing! Right, engine.": {
+   "start": 2212.18,
+   "dur": 1.79
+  },
+  "I am going to go and hug that engine.": {
+   "start": 2214.05,
+   "dur": 2.77
+  },
+  "Ahh. Better than any radiator.": {
+   "start": 2216.9,
+   "dur": 2.64
+  },
+  "Look at me, warming my hands like an old farmer.": {
+   "start": 2219.62,
+   "dur": 3.91
+  },
+  "Do not tell me off, I am cold.": {
+   "start": 2223.61,
+   "dur": 3.03
+  },
+  "Budge up, Amy.": {
+   "start": 2226.72,
+   "dur": 1.01
+  },
+  "Oh, it is a party. Move over.": {
+   "start": 2227.81,
+   "dur": 2.57
+  },
+  "Oi! I was using that!": {
+   "start": 2230.46,
+   "dur": 1.68
+  },
+  "Well that is just rude. I was nice and warm.": {
+   "start": 2232.22,
+   "dur": 3.17
+  },
+  "Faster!": {
+   "start": 2235.47,
+   "dur": 0.63
+  },
+  "Give it some!": {
+   "start": 2236.18,
+   "dur": 0.92
+  },
+  "Hold on, I have got the throttle!": {
+   "start": 2237.18,
+   "dur": 1.98
+  },
+  "Too slow. I will do it.": {
+   "start": 2239.24,
+   "dur": 2.4
+  },
+  "You loved it.": {
+   "start": 2241.72,
+   "dur": 1.31
+  },
+  "Do not look at me like that. It was fun.": {
+   "start": 2243.11,
+   "dur": 2.67
+  },
+  "Ha! Did you feel that?": {
+   "start": 2245.86,
+   "dur": 1.68
+  },
+  "Oops. My hand slipped. Twice.": {
+   "start": 2247.62,
+   "dur": 2.11
+  },
+  "Ugh, smoke.": {
+   "start": 2249.81,
+   "dur": 1.69
+  },
+  "Right up the tailpipe. Lovely.": {
+   "start": 2251.58,
+   "dur": 2.56
+  },
+  "I am going to stay right behind you. I love that smoke.": {
+   "start": 2254.22,
+   "dur": 4.09
+  },
+  "Race you round the track, Amy. Loser makes the tea.": {
+   "start": 2258.39,
+   "dur": 3.65
+  },
+  "Amy, you and me, one lap, right now. Scared?": {
+   "start": 2262.12,
+   "dur": 3.09
+  },
+  "Oh, you are on.": {
+   "start": 2265.29,
+   "dur": 1.63
+  },
+  "Go on then. Try to keep up.": {
+   "start": 2267.0,
+   "dur": 1.54
+  },
+  "On your marks. Three, two, one, go!": {
+   "start": 2268.62,
+   "dur": 3.88
+  },
+  "Yes! Top of the leaderboard!": {
+   "start": 2272.58,
+   "dur": 1.92
+  },
+  "Too easy. Do you want to go again?": {
+   "start": 2274.58,
+   "dur": 2.44
+  },
+  "Eat my mud, Amy!": {
+   "start": 2277.1,
+   "dur": 1.36
+  },
+  "That quad is rubbish. Give me a better one.": {
+   "start": 2278.54,
+   "dur": 3.27
+  },
+  "It was not a fair race. My engine was cold.": {
+   "start": 2281.89,
+   "dur": 4.3
+  },
+  "Best of three. I want a rematch.": {
+   "start": 2286.27,
+   "dur": 2.72
+  },
+  "It has stalled! Foul! Restart the race!": {
+   "start": 2289.07,
+   "dur": 3.95
+  },
+  "Typical. It has died on me.": {
+   "start": 2293.1,
+   "dur": 2.58
+  },
+  "What now? Fine, coming.": {
+   "start": 2295.76,
+   "dur": 2.07
+  },
+  "Oh, just when it was getting good.": {
+   "start": 2297.91,
+   "dur": 2.02
+  },
+  "Alright, alright, I am on my way.": {
+   "start": 2300.01,
+   "dur": 2.41
+  },
+  "Your fuel is on the red. Has been for ages.": {
+   "start": 2302.5,
+   "dur": 3.65
+  },
+  "Um, the tank is basically empty. Just so you know.": {
+   "start": 2306.23,
+   "dur": 3.67
+  },
+  "Fuel light. Very, very on.": {
+   "start": 2309.98,
+   "dur": 2.77
+  },
+  "It was cold, you know. You thrashed it.": {
+   "start": 2312.83,
+   "dur": 2.82
+  },
+  "That engine was freezing when you flogged it. Just saying.": {
+   "start": 2315.73,
+   "dur": 4.02
+  },
+  "Told you it needed warming up. Well, I was going to.": {
+   "start": 2319.83,
+   "dur": 3.93
+  },
+  "It has been boiling for ages. I did not like to say.": {
+   "start": 2323.84,
+   "dur": 3.4
+  },
+  "The temperature light has been on for a bit. A while, actually.": {
+   "start": 2327.32,
+   "dur": 3.27
+  },
+  "Is it meant to rattle like that? It is pretty hot.": {
+   "start": 2330.67,
+   "dur": 3.12
+  },
+  "Come on, slowcoach!": {
+   "start": 2333.87,
+   "dur": 1.67
+  },
+  "Too slow! Coming through!": {
+   "start": 2335.62,
+   "dur": 2.88
+  },
+  "Is that as fast as it goes? Bye!": {
+   "start": 2338.58,
+   "dur": 2.59
+  },
+  "Out of my way, granny!": {
+   "start": 2341.25,
+   "dur": 1.52
+  },
+  "Oh, there you are. I have been here ages.": {
+   "start": 2342.85,
+   "dur": 2.68
+  },
+  "Took your time! I could have had a cup of tea.": {
+   "start": 2345.61,
+   "dur": 2.94
+  },
+  "Ha! Told you I would beat you. Not that it was a race.": {
+   "start": 2348.63,
+   "dur": 3.26
+  },
+  "Lovely day for a wait.": {
+   "start": 2351.97,
+   "dur": 1.59
+  },
+  "Follow me, Amy! Try to keep up.": {
+   "start": 2353.64,
+   "dur": 2.3
+  },
+  "Come on, Amy, I will show you how it is done.": {
+   "start": 2356.02,
+   "dur": 2.43
+  },
+  "Right behind you. For now.": {
+   "start": 2358.53,
+   "dur": 2.36
+  },
+  "Lead on. I will overtake you in a minute.": {
+   "start": 2360.97,
+   "dur": 2.48
+  },
+  "Doughnut time!": {
+   "start": 2363.53,
+   "dur": 1.01
+  },
+  "Do not tell Amy. Actually, tell Amy.": {
+   "start": 2364.62,
+   "dur": 3.06
+  },
+  "Wheeeee!": {
+   "start": 2367.76,
+   "dur": 1.13
+  },
+  "Yeah! Mud everywhere!": {
+   "start": 2368.97,
+   "dur": 1.85
+  },
+  "Go on, Amy! Faster!": {
+   "start": 2370.9,
+   "dur": 1.91
+  },
+  "Is that Amy? Amy is doing doughnuts?!": {
+   "start": 2372.89,
+   "dur": 2.74
+  },
+  "Oh, move over, it is my turn.": {
+   "start": 2375.71,
+   "dur": 2.15
+  },
+  "Hold my tea. Well, the rack can.": {
+   "start": 2377.94,
+   "dur": 3.02
+  },
+  "Tea on the rack. Do not knock it.": {
+   "start": 2381.04,
+   "dur": 3.11
+  },
+  "Cold tea. Lovely.": {
+   "start": 2384.23,
+   "dur": 2.32
+  },
+  "Right, tea time.": {
+   "start": 2386.63,
+   "dur": 1.38
+  },
+  "Oi! My tea!": {
+   "start": 2388.09,
+   "dur": 1.54
+  },
+  "You drove off with my mug on it! Idiot!": {
+   "start": 2389.71,
+   "dur": 2.59
+  },
+  "That was a good cup of tea, that was.": {
+   "start": 2392.38,
+   "dur": 2.26
+  },
+  "Ooh, are we doing engines? Can I hit something?": {
+   "start": 2394.72,
    "dur": 3.16
   },
   "Go on then, show us what you can do.": {
-   "start": 1502.9,
+   "start": 2397.96,
    "dur": 2.26
   },
   "Is that how it goes? Looks wrong.": {
-   "start": 1505.24,
+   "start": 2400.3,
    "dur": 2.67
   },
   "Faster, I am getting old here.": {
-   "start": 1507.99,
+   "start": 2403.05,
    "dur": 1.87
   },
   "Give it a good thump.": {
-   "start": 1509.94,
+   "start": 2405.0,
    "dur": 1.14
   },
   "Ha! You have broken it.": {
-   "start": 1511.16,
+   "start": 2406.22,
    "dur": 1.44
   },
   "That's not meant to go like that.": {
-   "start": 1512.68,
+   "start": 2407.74,
    "dur": 2.03
   },
   "Oops.": {
-   "start": 1514.79,
+   "start": 2409.85,
    "dur": 0.62
   },
   "Look at you, a proper grease monkey.": {
-   "start": 1515.49,
+   "start": 2410.55,
    "dur": 2.67
   },
   "Can I start it? Please?": {
-   "start": 1518.24,
+   "start": 2413.3,
    "dur": 2.32
   },
   "I'm not getting on that.": {
-   "start": 1520.64,
+   "start": 2415.7,
    "dur": 1.39
   },
   "Bit of tape and it'll be fine.": {
-   "start": 1522.11,
+   "start": 2417.17,
    "dur": 1.82
   },
+  "Right. the red quad is Postie from now on.": {
+   "start": 2419.07,
+   "dur": 3.42
+  },
+  "I am calling the red quad Postie. Do not argue.": {
+   "start": 2422.57,
+   "dur": 4.01
+  },
+  "Right. the red quad is the tomato from now on.": {
+   "start": 2426.66,
+   "dur": 3.39
+  },
+  "I am calling the red quad the tomato. Do not argue.": {
+   "start": 2430.13,
+   "dur": 4.28
+  },
+  "Right. the blue quad is Smurf from now on.": {
+   "start": 2434.49,
+   "dur": 4.87
+  },
+  "I am calling the blue quad Smurf. Do not argue.": {
+   "start": 2439.44,
+   "dur": 4.14
+  },
+  "Right. the blue quad is Bluebell from now on.": {
+   "start": 2443.66,
+   "dur": 3.88
+  },
+  "I am calling the blue quad Bluebell. Do not argue.": {
+   "start": 2447.62,
+   "dur": 4.1
+  },
+  "Right. the yellow quad is the wasp from now on.": {
+   "start": 2451.8,
+   "dur": 3.3
+  },
+  "I am calling the yellow quad the wasp. Do not argue.": {
+   "start": 2455.18,
+   "dur": 4.64
+  },
+  "Right. the yellow quad is Custard from now on.": {
+   "start": 2459.9,
+   "dur": 3.1
+  },
+  "I am calling the yellow quad Custard. Do not argue.": {
+   "start": 2463.08,
+   "dur": 4.52
+  },
+  "Right. the green quad is Grandad from now on.": {
+   "start": 2467.68,
+   "dur": 3.49
+  },
+  "I am calling the green quad Grandad. Do not argue.": {
+   "start": 2471.25,
+   "dur": 4.65
+  },
+  "Right. the green quad is Kermit from now on.": {
+   "start": 2475.98,
+   "dur": 3.03
+  },
+  "I am calling the green quad Kermit. Do not argue.": {
+   "start": 2479.09,
+   "dur": 3.98
+  },
+  "Right. the orange quad is the satsuma from now on.": {
+   "start": 2483.15,
+   "dur": 3.69
+  },
+  "I am calling the orange quad the satsuma. Do not argue.": {
+   "start": 2486.92,
+   "dur": 4.62
+  },
+  "Right. the orange quad is Tango from now on.": {
+   "start": 2491.62,
+   "dur": 3.51
+  },
+  "I am calling the orange quad Tango. Do not argue.": {
+   "start": 2495.21,
+   "dur": 4.5
+  },
+  "Right. the kids' quad is Tiddler from now on.": {
+   "start": 2499.79,
+   "dur": 2.94
+  },
+  "I am calling the kids' quad Tiddler. Do not argue.": {
+   "start": 2502.81,
+   "dur": 3.71
+  },
+  "Right. the kids' quad is the pram from now on.": {
+   "start": 2506.6,
+   "dur": 3.02
+  },
+  "I am calling the kids' quad the pram. Do not argue.": {
+   "start": 2509.7,
+   "dur": 3.33
+  },
+  "Right. the loan quad is Lucky from now on.": {
+   "start": 2513.11,
+   "dur": 3.07
+  },
+  "I am calling the loan quad Lucky. Do not argue.": {
+   "start": 2516.26,
+   "dur": 4.76
+  },
+  "Right. the loan quad is the loaner from now on.": {
+   "start": 2521.1,
+   "dur": 3.41
+  },
+  "I am calling the loan quad the loaner. Do not argue.": {
+   "start": 2524.59,
+   "dur": 5.62
+  },
+  "You said it. You used its name!": {
+   "start": 2530.29,
+   "dur": 2.89
+  },
+  "Ha! Amy used the name! I heard you.": {
+   "start": 2533.26,
+   "dur": 2.58
+  },
+  "Amy! That one is mine!": {
+   "start": 2535.92,
+   "dur": 2.06
+  },
+  "Oi, Amy, that is my quad. Hands off.": {
+   "start": 2538.06,
+   "dur": 2.42
+  },
+  "Borrowing yours, Amy. Hope you don't mind.": {
+   "start": 2540.56,
+   "dur": 2.69
+  },
+  "Amy's quad looks lonely. I'll take it.": {
+   "start": 2543.33,
+   "dur": 2.86
+  },
+  "This one is Amy's, isn't it? Lovely.": {
+   "start": 2546.27,
+   "dur": 3.26
+  },
+  "Relax, Amy. I am just keeping it warm for you.": {
+   "start": 2549.61,
+   "dur": 3.61
+  },
+  "What? It is only a quad.": {
+   "start": 2553.3,
+   "dur": 1.97
+  },
+  "You snooze, you lose.": {
+   "start": 2555.35,
+   "dur": 1.65
+  },
+  "Mmm, I love the smell of two-stroke.": {
+   "start": 2557.08,
+   "dur": 3.18
+  },
+  "That is the smell of summer. Breathe it in.": {
+   "start": 2560.34,
+   "dur": 3.32
+  },
+  "Ahh. Smells like a motocross track.": {
+   "start": 2563.74,
+   "dur": 3.15
+  },
   "Nice polo, Amy. Did your mum pick it?": {
-   "start": 1524.01,
+   "start": 2566.97,
    "dur": 2.87
   },
   "You did not.": {
-   "start": 1526.96,
+   "start": 2569.92,
    "dur": 1.02
   },
   "Bet I'm the one who gets taken for a ride next.": {
-   "start": 1528.06,
+   "start": 2571.02,
    "dur": 2.58
   },
   "Watch me.": {
-   "start": 1530.72,
+   "start": 2573.68,
    "dur": 0.85
   },
   "Some of us are actually fun.": {
-   "start": 1531.65,
+   "start": 2574.61,
    "dur": 2.66
   },
   "Amy drives like she is carrying eggs.": {
-   "start": 1534.39,
+   "start": 2577.35,
    "dur": 2.5
   },
   "That hedge moved.": {
-   "start": 1536.97,
+   "start": 2579.93,
    "dur": 1.57
   },
   "Everyone?": {
-   "start": 1538.62,
+   "start": 2581.58,
    "dur": 0.69
   },
   "Your hair's gone a bit flat, Amy.": {
-   "start": 1539.39,
+   "start": 2582.35,
    "dur": 2.29
   },
   "Windswept. Look it up.": {
-   "start": 1541.76,
+   "start": 2584.72,
    "dur": 1.62
   },
   "Am I? Hadn't noticed.": {
-   "start": 1543.46,
+   "start": 2586.42,
    "dur": 1.61
   },
   "You know I am the better driver, right?": {
-   "start": 1545.15,
+   "start": 2588.11,
    "dur": 1.91
   },
   "And you still can't start the red one.": {
-   "start": 1547.14,
+   "start": 2590.1,
    "dur": 1.98
   },
   "Amy, are you wearing perfume? Out here?": {
-   "start": 1549.2,
+   "start": 2592.16,
    "dur": 3.34
   },
   "Nope. Right here suits me.": {
-   "start": 1552.62,
+   "start": 2595.58,
    "dur": 2.5
   },
   "Go on, admit it. I'm your favourite.": {
-   "start": 1555.2,
+   "start": 2598.16,
    "dur": 2.68
   },
   "See? She is scared of the answer.": {
-   "start": 1557.96,
+   "start": 2600.92,
    "dur": 2.59
   },
   "I'll have two, then.": {
-   "start": 1560.63,
+   "start": 2603.59,
    "dur": 1.27
   },
   "Rock, paper, scissors for the next ride?": {
-   "start": 1561.98,
+   "start": 2604.94,
    "dur": 2.97
   },
   "Scared you will lose?": {
-   "start": 1565.03,
+   "start": 2607.99,
    "dur": 1.55
   },
   "You are enjoying this far too much.": {
-   "start": 1566.66,
+   "start": 2609.62,
    "dur": 3.05
   },
   "Funny how I never get picked these days.": {
-   "start": 1569.79,
+   "start": 2612.75,
    "dur": 2.54
   },
   "Maybe try being quieter.": {
-   "start": 1572.41,
+   "start": 2615.37,
    "dur": 1.75
   },
   "Very kind. Sod off.": {
-   "start": 1574.24,
+   "start": 2617.2,
    "dur": 1.62
   },
   "It's a phase. I'll be back on top by teatime.": {
-   "start": 1575.94,
+   "start": 2618.9,
    "dur": 3.15
   },
   "Stop being nice. It is worse.": {
-   "start": 1579.17,
+   "start": 2622.13,
    "dur": 2.39
   },
   "Who got picked again? Oh yeah. Me.": {
-   "start": 1581.64,
+   "start": 2624.6,
    "dur": 3.12
   },
   "No.": {
-   "start": 1584.84,
+   "start": 2627.8,
    "dur": 0.53
   },
   "Neither will your patience.": {
-   "start": 1585.45,
+   "start": 2628.41,
    "dur": 1.33
   },
   "Don't sulk, Amy. It's not a good look.": {
-   "start": 1586.86,
+   "start": 2629.82,
    "dur": 2.38
   },
   "And I made the memories.": {
-   "start": 1589.32,
+   "start": 2632.28,
    "dur": 1.55
   },
   "Oh, her again.": {
-   "start": 1590.95,
+   "start": 2633.91,
    "dur": 1.13
   },
   "Ask me next. I say yes to everything.": {
-   "start": 1592.16,
+   "start": 2635.12,
    "dur": 2.92
   },
   "Go on then, Amy. Do your sweet voice.": {
-   "start": 1595.16,
+   "start": 2638.12,
    "dur": 2.56
   },
   "Too late.": {
-   "start": 1597.8,
+   "start": 2640.76,
    "dur": 0.8
   },
   "We know, Amy.": {
-   "start": 1598.68,
+   "start": 2641.64,
    "dur": 0.94
   },
   "You didn't say anything.": {
-   "start": 1599.7,
+   "start": 2642.66,
    "dur": 1.56
   },
   "Jealous!": {
-   "start": 1601.34,
+   "start": 2644.3,
    "dur": 0.66
   },
   "Bye, Amy!": {
-   "start": 1602.08,
+   "start": 2645.04,
    "dur": 0.7
   },
   "Not likely!": {
-   "start": 1602.86,
+   "start": 2645.82,
    "dur": 1.17
   },
   "Go faster! See if she screams!": {
-   "start": 1604.11,
+   "start": 2647.07,
    "dur": 2.13
   },
   "Very funny!": {
-   "start": 1606.32,
+   "start": 2649.28,
    "dur": 1.23
   },
   "Oi! You're meant to take me next!": {
-   "start": 1607.63,
+   "start": 2650.59,
    "dur": 2.58
   },
   "Lovely, thanks. Shame you missed it.": {
-   "start": 1610.29,
+   "start": 2653.25,
    "dur": 2.68
   },
   "Best ride of my life, that.": {
-   "start": 1613.05,
+   "start": 2656.01,
    "dur": 1.92
   },
   "Missed us?": {
-   "start": 1615.05,
+   "start": 2658.01,
    "dur": 0.85
   },
   "Don't get used to it, Amy.": {
-   "start": 1615.98,
+   "start": 2658.94,
    "dur": 1.6
   },
   "Gentle. How thrilling.": {
-   "start": 1617.66,
+   "start": 2660.62,
    "dur": 2.17
   },
   "Right, my go. Shift.": {
-   "start": 1619.91,
+   "start": 2662.87,
    "dur": 1.44
   },
   "You can go faster than walking pace, Amy!": {
-   "start": 1621.43,
+   "start": 2664.39,
    "dur": 2.72
   },
   "Mind the hedge!": {
-   "start": 1624.23,
+   "start": 2667.19,
    "dur": 0.93
   },
   "Ten out of ten for effort, Amy.": {
-   "start": 1625.24,
+   "start": 2668.2,
    "dur": 2.66
   },
   "Can't hear you!": {
-   "start": 1627.98,
+   "start": 2670.94,
    "dur": 1.1
   },
   "Thank you!": {
-   "start": 1629.16,
+   "start": 2672.12,
    "dur": 1.52
   },
   "Watch this, Amy!": {
-   "start": 1630.76,
+   "start": 2673.72,
    "dur": 1.58
   },
   "Oh dear. Need a hand, Amy?": {
-   "start": 1632.42,
+   "start": 2675.38,
    "dur": 2.16
   },
   "Hold on, let me get a photo!": {
-   "start": 1634.66,
+   "start": 2677.62,
    "dur": 1.77
   },
   "The mud came out of nowhere!": {
-   "start": 1636.51,
+   "start": 2679.47,
    "dur": 1.67
   },
   "Amy! Help me!": {
-   "start": 1638.26,
+   "start": 2681.22,
    "dur": 1.63
   },
   "Hold on, then.": {
-   "start": 1639.97,
+   "start": 2682.93,
    "dur": 0.86
   },
   "Comfy back there, Amy?": {
-   "start": 1640.91,
+   "start": 2683.87,
    "dur": 1.56
   },
   "Any chance of second gear today?": {
-   "start": 1642.55,
+   "start": 2685.51,
    "dur": 2.0
   },
   "Well, find some.": {
-   "start": 1644.63,
+   "start": 2687.59,
    "dur": 1.37
   },
   "I'm bored. Faster!": {
-   "start": 1646.08,
+   "start": 2689.04,
    "dur": 1.9
   },
   "It's rich. Trust me, I know engines.": {
-   "start": 1648.06,
+   "start": 2691.02,
    "dur": 3.16
   },
   "It's the plug. I'd bet money on it.": {
-   "start": 1651.3,
+   "start": 2694.26,
    "dur": 2.64
   },
   "Worn out. I stand by it.": {
-   "start": 1654.02,
+   "start": 2696.98,
    "dur": 1.9
   },
   "I'd know if it was broken.": {
-   "start": 1656.0,
+   "start": 2698.96,
    "dur": 1.51
   },
   "It's cold. I know a cold engine when I hear one.": {
-   "start": 1657.59,
+   "start": 2700.55,
    "dur": 4.02
   },
   "I know a dirty plug when I hear one.": {
-   "start": 1661.69,
+   "start": 2704.65,
    "dur": 2.7
+  },
+  "You cut the corner by the hedge.": {
+   "start": 2707.43,
+   "dur": 1.98
+  },
+  "Best of three.": {
+   "start": 2709.49,
+   "dur": 1.04
+  },
+  "Do not be nice to me. It is worse.": {
+   "start": 2710.61,
+   "dur": 3.0
+  },
+  "Did you see that? I made it look easy.": {
+   "start": 2713.69,
+   "dur": 2.67
+  },
+  "The ground is always in my favour.": {
+   "start": 2716.44,
+   "dur": 2.21
+  },
+  "You were being slow.": {
+   "start": 2718.73,
+   "dur": 1.75
+  },
+  "Loser makes the tea, Amy.": {
+   "start": 2720.56,
+   "dur": 1.84
+  },
+  "It is now.": {
+   "start": 2722.48,
+   "dur": 1.04
+  },
+  "Wins so far: me, lots. You, not so many.": {
+   "start": 2723.6,
+   "dur": 4.44
+  },
+  "Keep telling yourself that.": {
+   "start": 2728.12,
+   "dur": 1.67
+  },
+  "Alright, you have won more. It is a fluke.": {
+   "start": 2729.87,
+   "dur": 3.03
+  },
+  "Keep up, Amy!": {
+   "start": 2732.98,
+   "dur": 1.0
+  },
+  "You are going far too slow!": {
+   "start": 2734.06,
+   "dur": 2.52
+  },
+  "It is a good speed for a pensioner.": {
+   "start": 2736.66,
+   "dur": 2.09
+  },
+  "Faster! Faster!": {
+   "start": 2738.83,
+   "dur": 1.74
   }
  }
 }
