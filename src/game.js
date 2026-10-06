@@ -28,6 +28,10 @@ import { TractorWatch, TRACTOR_WATCH_PARAM_RANGES } from './npc/tractorWatch.js'
 import { HayRide, HAYRIDE_PARAM_RANGES } from './npc/hayRide.js';
 import { MudguardRide, MUDGUARD_PARAM_RANGES } from './npc/mudguardRide.js';
 import { TractorMount } from './vehicle/tractorMount.js';
+import { TractorGo, TRACTORGO_PARAM_RANGES } from './npc/tractorGo.js';
+import { DEFAULT_TRACTOR_GO_DRIVE, TRACTOR_GO_DRIVE_RANGES } from './npc/companionDriving.js';
+import { DEFAULT_TRACTOR_START_PARAMS, TRACTOR_START_PARAM_RANGES } from './npc/tractorStart.js';
+import { DEFAULT_NOVICE_PARAMS, NOVICE_PARAM_RANGES } from './vehicle/autoShifter.js';
 import { HAYSEAT_PARAM_RANGES, DEFAULT_HAYSEAT_PARAMS } from './npc/companionHayRide.js';
 import { HayTrailer } from './vehicle/hayTrailer.js';
 import { TRAILER_PARAM_RANGES } from './vehicle/trailer.js';
@@ -247,6 +251,10 @@ export class Game {
         // While she's driving you can call her over from further away.
         range: () => (c.fsm.is('driving') ? c.params.driveTalkRange : undefined),
         prompt: () => `Talk to ${c.name}`,
+        // Sat up on the tractor, she's inside its big get-on box, so she has to win over it to be asked down.
+        get priority() {
+          return c.fsm.is('onTrailer') ? 1 : 0;
+        },
         interact: () => this.openCompanionMenu(c),
       });
       return c;
@@ -335,6 +343,13 @@ export class Game {
     // A girl on the tractor's wheel arch (npc/mudguardRide.js, vehicle/tractorMount.js); the tractor is built above.
     this.mudguard = new MudguardRide(undefined, createRandom(this.seed ^ 0x3d6a));
     this.tractorMount = new TractorMount(this.tractorUnit.quad, (x, z) => this.world.heightAt(x, z));
+    // Having a go on the tractor: Jess takes it, Amy won't until her day (npc/tractorGo.js). The girls' own numbers are shared objects.
+    this.tractorGo = new TractorGo(undefined, createRandom(this.seed ^ 0x70c0));
+    this.tractorDrive = { ...DEFAULT_TRACTOR_GO_DRIVE };
+    this.tractorStartParams = { ...DEFAULT_TRACTOR_START_PARAMS };
+    this.noviceParams = { ...DEFAULT_NOVICE_PARAMS };
+    for (const c of this.companions) Object.assign(c, { tractorGo: this.tractorDrive, tractorStartParams: this.tractorStartParams, noviceParams: this.noviceParams });
+    this.tractorSeen = {}; // girl id -> what we've already noticed about her go, for her lines
     this.hayLater = []; // lines to say in a moment: { left, girl, key }
     this.itemHome = {}; // where a hidden item was taken from, by name
 
@@ -634,6 +649,10 @@ export class Game {
     registerTuning('Tractor remarks', this.tractorWatch.p, TRACTOR_WATCH_PARAM_RANGES);
     registerTuning('Hay ride', this.hayRide.p, HAYRIDE_PARAM_RANGES);
     registerTuning('Mudguard ride', this.mudguard.p, MUDGUARD_PARAM_RANGES);
+    registerTuning('Tractor go', this.tractorGo.p, TRACTORGO_PARAM_RANGES);
+    registerTuning('Tractor go drive', this.tractorDrive, TRACTOR_GO_DRIVE_RANGES);
+    registerTuning('Tractor go start', this.tractorStartParams, TRACTOR_START_PARAM_RANGES);
+    registerTuning('Tractor go novice', this.noviceParams, NOVICE_PARAM_RANGES);
     registerTuning('Hay ride seat', this.haySeat, HAYSEAT_PARAM_RANGES);
     registerTuning('Trailer', this.trailer.p, TRAILER_PARAM_RANGES);
     registerTuning('Quad names', this.quadNames.p, NAME_PARAM_RANGES);
@@ -793,6 +812,86 @@ export class Game {
     this.hayLater = this.hayLater.filter((x) => x.left > 0);
   }
 
+  /** The wheel's "Tractor" slice for a girl: up on the mudguard (or down again), or a go at driving it. */
+  tractorWheelOption(c) {
+    const unit = this.tractorUnit;
+    const children = [];
+    if (c.fsm.is('onTrailer') && c.trailer === this.tractorMount) children.push({ label: 'Get down off the tractor', run: () => (this.mudguard.dismiss(c.character.id), c.leaveTrailer()) });
+    else if (c.fsm.is('idle')) {
+      if (!this.trailer.hitched && this.tractorMount.freeSlot(c.root.position)) children.push({ label: 'Climb up on the mudguard', run: () => this.askOntoTractor(c) });
+      if (this.tractorFree() && c.canDrive(unit.quad)) children.push({ label: 'Drive it', run: () => this.askDriveTractor(c) });
+    }
+    return { label: 'Tractor', color: unit.spec.bodyColor, children };
+  }
+
+  /** Nobody's on the tractor or on their way to it, it's stopped, and nothing is hitched to it. */
+  tractorFree() {
+    const q = this.tractorUnit.quad;
+    const busy = (c) => (c.quad === q && (c.fsm.is('driving', 'mounting', 'dismounting', 'shuffling') || (c.fsm.is('walking') && c.fsm.data?.goal === 'drive'))) || (c.onHayRide && c.trailer === this.tractorMount);
+    return !q.rider && q.speed < 0.5 && !this.trailer.hitched && !this.companions.some(busy);
+  }
+
+  /** You ask her for a go on the tractor: Jess is thrilled, and Amy says no until her day has come. */
+  askDriveTractor(c) {
+    const id = c.character.id;
+    if (this.tractorGo.ask(id) === 'refuse') return void c.voice.say('tractorRefuse', { force: true });
+    this.startTractorGo(c);
+    c.voice.say('tractorGoAsk', { force: true });
+  }
+
+  /** She walks over and has a go at starting and driving the tractor. */
+  startTractorGo(c) {
+    if (!c.homeQuad && c.quad !== this.tractorUnit.quad) c.homeQuad = c.quad;
+    this.tractorGo.started(c.character.id);
+    this.tractorSeen[c.character.id] = { stalls: 0, hops: 0, setOff: false, wasDriving: false };
+    c.requestDrive(this.tractorUnit.quad);
+  }
+
+  /** Jess takes it now and then, Amy has her day, and each of them says what's happening on her go (npc/tractorGo.js, tractorGoLines.js). */
+  updateTractorGo(dt, ridden) {
+    const q = this.tractorUnit.quad;
+    const girlsFree = {};
+    for (const c of this.companions) girlsFree[c.character.id] = c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob && !c.hayFell;
+    for (const ev of this.tractorGo.update(dt, { free: girlsFree, tractorFree: this.tractorFree(), youOnTractor: ridden === this.tractorUnit })) {
+      const c = this.companions.find((o) => o.character.id === ev.girl);
+      if (ev.type === 'amyDay') c.voice.say('tractorDay', { force: true });
+      else c.voice.say('tractorGoAsk', { force: true });
+      this.startTractorGo(c);
+    }
+    for (const c of this.companions) {
+      const id = c.character.id;
+      const seen = (this.tractorSeen[id] ??= { stalls: 0, hops: 0, setOff: false, wasDriving: false });
+      const other = c.others()[0];
+      const driving = c.quad === q && c.fsm.is('driving');
+      if (driving) {
+        const d = c.drive;
+        seen.wasDriving = true;
+        if (d.phase === 'drive' && !seen.setOff) {
+          seen.setOff = true;
+          c.voice.say('tractorGoSetOff', { urgent: true });
+          this.hayLater.push({ left: 4, girl: other, key: 'tractorGoWatch' });
+        }
+        if (d.stalls > seen.stalls) {
+          seen.stalls = d.stalls;
+          c.voice.say('tractorGoStall', { urgent: true });
+        }
+        if ((q.shifter.hops ?? 0) > (seen.hops ?? 0)) {
+          seen.hops = q.shifter.hops;
+          c.voice.say('tractorGoLurch', { urgent: true });
+          if (other.root.position.distanceTo(q.position) < 30) this.hayLater.push({ left: 1.4, girl: other, key: 'tractorGoLurch' });
+        }
+      } else if (seen.wasDriving) {
+        seen.wasDriving = false;
+        if (c.drive?.result !== 'gaveUp') c.voice.say('tractorGoDone', { urgent: true });
+      }
+      // Back to her own quad once she's off the tractor, so everything else that looks at her quad finds one of the girls'.
+      if (c.homeQuad && c.quad === q && c.fsm.is('idle')) {
+        c.quad = c.homeQuad;
+        c.homeQuad = null;
+      }
+    }
+  }
+
   /** You asked her to climb up on the tractor's wheel arch: she goes at once and stays until you ask her down. */
   askOntoTractor(c) {
     const mount = this.tractorMount;
@@ -824,6 +923,7 @@ export class Game {
         if (slot && c.boardTrailer(mount, slot)) c.voice.say('mudBoard', { urgent: true });
       } else if (ev.type === 'shout') c.voice.say('mudShout', { urgent: true });
       else if (ev.type === 'leave') {
+        if (ev.bored) this.mudguard.dismiss(ev.girl);
         c.leaveTrailer();
         c.abortBoarding();
       }
@@ -2046,7 +2146,7 @@ export class Game {
     }
     // Up on the tractor's wheel arch already: the one thing to ask is to come down.
     if (c.fsm.is('onTrailer') && c.trailer === this.tractorMount) {
-      this.openWheel(`Ask ${c.name} to`, [{ label: 'Get down off the tractor', run: () => (this.mudguard.dismiss(c.character.id), c.leaveTrailer()) }], c);
+      this.openWheel(`Ask ${c.name} to`, [this.tractorWheelOption(c)], c);
       this.player.lookEnabled = false;
       this.player.moveEnabled = false;
       return;
@@ -2061,8 +2161,8 @@ export class Game {
     // On the wheel: anything not about a particular quad, then a slice for each
     // quad (nearest her first) opening a ring of what she could do with it.
     const options = actions.filter((a) => !a.quad).map((a) => ({ label: a.label, run: answer(a) }));
-    const slot = !this.trailer.hitched && this.tractorMount.freeSlot(c.root.position);
-    if (slot && c.fsm.is('idle')) options.push({ label: 'Climb up on the tractor', run: () => this.askOntoTractor(c) });
+    const tractor = this.tractorWheelOption(c);
+    if (tractor.children.length) options.push(tractor);
     for (const unit of [...new Set(actions.filter((a) => a.quad).map((a) => a.quad.unit))]) {
       const own = actions.filter((a) => a.quad === unit.quad);
       options.push({
@@ -2344,6 +2444,7 @@ export class Game {
     this.updateTractorWatch(dt);
     this.updateHayRide(dt, ridden);
     this.updateMudguard(dt, ridden);
+    this.updateTractorGo(dt, ridden);
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);
     this.updateHeadStart(dt, ridden);

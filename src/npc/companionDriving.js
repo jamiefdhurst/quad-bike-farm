@@ -4,11 +4,36 @@ import { HerDrive } from './herDriving.js';
 import { DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 import { DEFAULT_LINEUP_PARAMS, parkRoute } from './lineUp.js';
 import { solveTwoBone, orientHand } from './armIK.js';
+import { AutoShifter, NoviceShifter, DEFAULT_SHIFTER_PARAMS, DEFAULT_NOVICE_PARAMS } from '../vehicle/autoShifter.js';
+import { DEFAULT_TRACTOR_START_PARAMS } from './tractorStart.js';
 
 // Her driving a quad herself, as Companion states and methods: getting on the
 // front, driving (the logic is HerDrive in herDriving.js), shuffling between
 // the front seat and the back, and her hands on the grips. Mixed into
 // Companion by companion.js.
+
+/** How a girl drives the tractor, apart from the clutch (the novice shifter's own numbers are in autoShifter.js). */
+export const DEFAULT_TRACTOR_GO_DRIVE = {
+  jessSpeedMin: 1.4, // m/s she is happy at...
+  jessSpeedMax: 3.4,
+  amySpeedMin: 2.5,
+  amySpeedMax: 5.5,
+  forMin: 40, // seconds of driving before she has had enough
+  forMax: 70,
+  maxThrottle: 0.7, // the most throttle she gives it
+  jessMaxStalls: 6, // she stalls it a lot, and keeps going
+};
+
+export const TRACTOR_GO_DRIVE_RANGES = {
+  jessSpeedMin: [0.5, 6, 0.1],
+  jessSpeedMax: [0.5, 8, 0.1],
+  amySpeedMin: [0.5, 8, 0.1],
+  amySpeedMax: [0.5, 8.5, 0.1],
+  forMin: [10, 300, 5],
+  forMax: [10, 400, 5],
+  maxThrottle: [0.2, 1, 0.05],
+  jessMaxStalls: [0, 15, 1],
+};
 
 const smooth = (t) => t * t * (3 - 2 * t);
 const SHUFFLE_DURATION = 0.9; // seconds to slide between the front seat and the back
@@ -19,6 +44,7 @@ const _fingers = new THREE.Vector3();
 const _palm = new THREE.Vector3();
 const _q = new THREE.Quaternion();
 const AXIS_X = new THREE.Vector3(1, 0, 0);
+const AXIS_Z = new THREE.Vector3(0, 0, 1);
 const ARMS = [
   { side: 1, arm: 'LeftArm', fore: 'LeftForeArm', hand: 'LeftHand', finger: 'LeftHandIndex1', thumb: 'LeftHandThumb1', grip: 'gripLeft' },
   { side: -1, arm: 'RightArm', fore: 'RightForeArm', hand: 'RightHand', finger: 'RightHandIndex1', thumb: 'RightHandThumb1', grip: 'gripRight' },
@@ -96,8 +122,10 @@ export const drivingStates = {
         params.driveLoopRadiusMin *= this.params.rideLoopScale;
         params.driveLoopRadiusMax *= this.params.rideLoopScale;
       }
+      if (q.tractor) this.tractorGoParams(params);
       this.drive = new HerDrive(q, {
         params,
+        tractorStarting: this.tractorStartParams ?? DEFAULT_TRACTOR_START_PARAMS,
         passenger: () => !!q.passenger,
         skill: this.skillLevels,
         startingParams: { ...DEFAULT_STARTING_PARAMS, pullWhenFlat: this.params.startPullWhenFlat },
@@ -193,6 +221,23 @@ export const drivingStates = {
 };
 
 export const drivingMethods = {
+  /**
+   * Her go on the tractor: slow and steady, not scared off by speed, and her own way with the clutch: Jess's is the novice's (stays
+   * in the low gears, kangaroos, stalls it), Amy's is a good driver's. `params` is her drive params for this go, changed in place.
+   */
+  tractorGoParams(params) {
+    const jess = this.character.id === 'jess';
+    const t = this.tractorGo ?? DEFAULT_TRACTOR_GO_DRIVE;
+    params.driveSpeedMin = jess ? t.jessSpeedMin : t.amySpeedMin;
+    params.driveSpeedMax = jess ? t.jessSpeedMax : t.amySpeedMax;
+    params.driveForMin = t.forMin;
+    params.driveForMax = t.forMax;
+    params.driveMaxThrottle = t.maxThrottle;
+    params.driveScareSpeed = 99;
+    params.driveMaxStalls = jess ? t.jessMaxStalls : params.driveMaxStalls;
+    this.quad.shifter = jess ? new NoviceShifter(DEFAULT_SHIFTER_PARAMS, this.noviceParams ?? DEFAULT_NOVICE_PARAMS) : new AutoShifter();
+  },
+
   /** Walks to the front of a quad, gets on and has a little drive; with `giveRide`, waits for you on the back. */
   requestDrive(quad, { giveRide = false, follow = false, race = null, followWho = null, convoyLead = false, doughnut = null, park = null } = {}) {
     this.giveRide = giveRide;
@@ -276,8 +321,11 @@ export const drivingMethods = {
       return;
     }
     if (!exit) this.driveEvents.push('getOff');
-    // Getting off, she nearly always leaves it running.
-    if (q.engine.isRunning && Math.random() < p.driveKeyOffChance) q.engine.setIgnition(false);
+    // Getting off, she nearly always leaves it running (on the tractor, switching it off is the stop knob).
+    if (q.engine.isRunning && Math.random() < p.driveKeyOffChance) {
+      if (q.tractor) q.engine.stopKnob();
+      else q.engine.setIgnition(false);
+    }
     this.afterDismount = exit?.next ?? (d.park && d.result === 'parked' ? () => this.finishParking(d.park) : null);
     this.fsm.transition('dismounting');
   },
@@ -382,6 +430,11 @@ export const drivingMethods = {
     const rig = this.rig;
     const b = rig.bones;
     rig.rotateAboutRootAxis(b.Spine1, AXIS_X, 0.18 * k);
+    // Jess can't see over the tractor's bonnet: she cranes up and leans first one way and then the other to look round it.
+    if (q.tractor && s.is('driving') && this.character.id === 'jess') {
+      rig.rotateAboutRootAxis(b.Spine1, AXIS_Z, 0.16 * Math.sin(s.time * 1.1) * k);
+      rig.rotateAboutRootAxis(b.Spine1, AXIS_X, -0.12 * k);
+    }
     const model = q.model;
     model.updateMatrixWorld(true);
     const modelQ = model.getWorldQuaternion(_q);

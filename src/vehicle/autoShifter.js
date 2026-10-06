@@ -84,3 +84,93 @@ export class AutoShifter {
     return { gear, clutch };
   }
 }
+
+export const DEFAULT_NOVICE_PARAMS = {
+  maxGear: 2, // she never goes above this: it's quick enough for her
+  skipFirstChance: 0.35, // chance she sets off in second from rest
+  hopChance: 0.6, // chance a set-off kangaroos (the clutch coming up in fits)
+  hopCycles: 3, // fits of it
+  hopPeriod: 0.24, // seconds for each fit: the clutch bites, then lets go
+  cutChance: 0.5, // chance a set-off in second has her lift off the throttle as the clutch comes up, which stalls it
+  cutSeconds: 0.9,
+};
+
+export const NOVICE_PARAM_RANGES = {
+  maxGear: [1, 3, 1],
+  skipFirstChance: [0, 1, 0.05],
+  hopChance: [0, 1, 0.05],
+  hopCycles: [1, 8, 1],
+  hopPeriod: [0.1, 0.6, 0.02],
+  cutChance: [0, 1, 0.05],
+  cutSeconds: [0.2, 3, 0.1],
+};
+
+/**
+ * Jess on the tractor. The same lever and pedal as the AutoShifter, but she stays in the low gears, sometimes sets off in second,
+ * lets the clutch up in fits so it kangaroos, and sometimes comes off the throttle as it bites, which stalls it for real (second
+ * from rest with the throttle shut is the tractor's own stall). `update` also returns `throttleScale` for the caller to apply, and
+ * `events` collects 'hop' and 'cut' (what just went wrong) for her voice.
+ */
+export class NoviceShifter extends AutoShifter {
+  constructor(params = DEFAULT_SHIFTER_PARAMS, novice = DEFAULT_NOVICE_PARAMS, random = Math.random) {
+    super(params);
+    this.novice = novice;
+    this.random = random;
+    this.events = [];
+    this.wasClutch = false;
+    this.hop = null; // { t, cycles } while the clutch is coming up in fits
+    this.cutLeft = 0;
+    this.inSecond = false; // she set off in second this time
+    this.hops = 0; // kangaroos so far, for whoever's counting
+  }
+
+  reset() {
+    super.reset();
+    this.hop = null;
+    this.cutLeft = 0;
+    this.wasClutch = false;
+  }
+
+  update(dt, s) {
+    const n = this.novice;
+    this.events = [];
+    if ((s.gear === 0 && this.pending === null) || s.reverse) this.inSecond = false;
+    // Having set off in second she stays there, rather than the shifter dropping her back to first the moment she's slow.
+    const topSpeed = (g) => (g === 1 && this.inSecond ? 0 : s.topSpeed(g));
+    const out = super.update(dt, { ...s, topSpeed, gears: Math.min(s.gears, n.maxGear) });
+    // Setting off from neutral, she sometimes picks second.
+    if (s.gear === 0 && this.pending === 1 && this.timer === this.params.shiftSeconds && n.maxGear >= 2 && this.random() < n.skipFirstChance) {
+      this.pending = 2;
+      this.inSecond = true;
+    }
+    if (this.inSecond && s.speed > s.topSpeed(1)) this.inSecond = false;
+    let { clutch } = out;
+    // The clutch has just come up with it in gear and her nearly stopped: a set-off.
+    if (this.wasClutch && !clutch && out.gear >= 1 && s.speed < this.params.crawlSpeed * 3 && !s.reverse) {
+      if (this.random() < n.hopChance) this.hop = { t: 0 };
+      if (out.gear >= 2 && this.random() < n.cutChance) {
+        this.cutLeft = n.cutSeconds;
+        this.events.push('cut');
+      }
+    }
+    this.wasClutch = clutch;
+    if (this.hop) {
+      this.hop.t += dt;
+      const cycle = this.hop.t / n.hopPeriod;
+      if (cycle >= n.hopCycles) this.hop = null;
+      else {
+        // Bites, lets go, bites: the pedal half down on the way.
+        clutch = cycle % 1 > 0.5;
+        if (Math.floor(cycle) !== this.hop.last) {
+          this.hop.last = Math.floor(cycle);
+          if (this.hop.last === 1) {
+            this.events.push('hop');
+            this.hops++;
+          }
+        }
+      }
+    }
+    this.cutLeft = Math.max(0, this.cutLeft - dt);
+    return { gear: out.gear, clutch, throttleScale: this.cutLeft > 0 ? 0 : 1 };
+  }
+}

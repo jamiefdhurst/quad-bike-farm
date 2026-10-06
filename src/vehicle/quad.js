@@ -214,6 +214,7 @@ export class Quad {
     this.driver = driver;
     this.ghost = null;
     if (!driver) this.churn = 0;
+    if (!driver && this.tractor) this.shifter = new AutoShifter(); // Jess's go leaves her clumsy shifter behind
     if (!driver && this.manual && !this.input) this.parkInNeutral(); // she leaves it in neutral when she gets off
     if (!driver && !this.input) {
       this.throttle = 0;
@@ -228,6 +229,7 @@ export class Quad {
     const out = this.shifter.update(dt, { gear: d.gear, gears: this.gearbox.gears, topSpeed: (g) => d.topSpeed(g), speed: Math.abs(fwd), throttle, brake, reverse: !!this.driver?.controls.reverse });
     this.clutchHeld = out.clutch;
     if (out.gear !== d.gear) d.select(out.gear);
+    return throttle * (out.throttleScale ?? 1); // a novice sometimes comes off the throttle as the clutch bites
   }
 
   /** Neutral, clutch up, with nothing left for the shifter to finish. */
@@ -436,7 +438,7 @@ export class Quad {
         else throttleInput = cruise;
       }
       // A girl driving a manual works the clutch and lever herself. A runaway keeps whatever gear it was left in.
-      if (this.driver && this.manual) this.shift(dt, throttleInput, brakeInput, fwd);
+      if (this.driver && this.manual) throttleInput = this.shift(dt, throttleInput, brakeInput, fwd);
     }
 
     // The hand throttle holds the engine up wherever it was left, ridden or not.

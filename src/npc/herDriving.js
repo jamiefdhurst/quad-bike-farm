@@ -10,6 +10,7 @@
 // game can answer with raycasts and tests with anything.
 
 import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
+import { TractorStartAttempt } from './tractorStart.js';
 import { COACHING, mistake, mistakeChance, successChance } from './skills.js';
 import { doughnutControl } from './doughnuts.js';
 import { slotHeading, slotOffsets } from './lineUp.js';
@@ -158,8 +159,9 @@ export class HerDrive {
    * @param {function} [opts.follow]  () => the quad she's following (yours), or null. Following, she keeps
    *   behind it at its pace rather than doing her own loop, and doesn't tire of it.
    */
-  constructor(quad, { params, probe, isClear, random = Math.random, startingParams, momentWindow = 5, skill = { starting: 0.5, choke: 0.5, cornering: 0.5, mud: 0.5 }, passenger = () => false, waitForPassenger = false, tires = false, follow = null, friend = () => null, race = null, doughnut = null, park = null }) {
+  constructor(quad, { tractorStarting = undefined, params, probe, isClear, random = Math.random, startingParams, momentWindow = 5, skill = { starting: 0.5, choke: 0.5, cornering: 0.5, mud: 0.5 }, passenger = () => false, waitForPassenger = false, tires = false, follow = null, friend = () => null, race = null, doughnut = null, park = null }) {
     this.quad = quad;
+    this.tractorStarting = tractorStarting; // how she goes about starting the tractor (tractorStart.js), when it is one
     this.p = params;
     this.probe = probe;
     this.isClear = isClear;
@@ -412,7 +414,9 @@ export class HerDrive {
   }
 
   beginStart() {
-    this.attempt = new StartingAttempt(this.quad, { random: this.random, params: this.skilledStarting() });
+    // The tractor's a diesel: no tap or choke, but a key and glow plugs to wait for (Jess doesn't always).
+    if (this.quad.tractor) this.attempt = new TractorStartAttempt(this.quad, { random: this.random, params: this.tractorStarting });
+    else this.attempt = new StartingAttempt(this.quad, { random: this.random, params: this.skilledStarting() });
     this.setPhase('start');
   }
 
