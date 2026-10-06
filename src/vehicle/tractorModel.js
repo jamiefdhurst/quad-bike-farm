@@ -252,6 +252,14 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
     const a = (i / 3) * Math.PI * 2 + 0.3;
     tube([0, 0, 0], [Math.sin(a) * 0.2, 0, Math.cos(a) * 0.2], 0.012, MAT.steel, wheel);
   }
+  // Where a girl's hands go: the rim at nine and three o'clock, turning with the wheel (npc/companionDriving.js reads these by name).
+  for (const side of [1, -1]) {
+    const grip = new THREE.Object3D();
+    grip.name = side > 0 ? 'gripLeft' : 'gripRight';
+    grip.userData.keep = true;
+    grip.position.set(side * 0.2, 0, 0);
+    wheel.add(grip);
+  }
   // Your own arms aren't drawn: the group is only here because Quad expects one.
   const hands = new THREE.Group();
   hands.name = 'riderHands';
