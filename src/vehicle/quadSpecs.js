@@ -32,9 +32,9 @@ export const QUAD_SPECS = [
     roughnessRange: [0.04, 0.12],
     fuelRange: [2.5, 11], // 12 litre tank, 2 litre reserve
     manual: true, // a clutch (Shift) and a four-speed gearbox in place of the CVT (src/vehicle/manualDrivetrain.js)
-    gearbox: { gears: 4, topSpeed1: 4.5, topSpeed2: 8.5, topSpeed3: 12.5, topSpeed4: 17, topSpeedReverse: 3.5, torque1: 1, torque2: 0.85, torque3: 0.7, torque4: 0.6, torqueReverse: 0.9, launchLoad1: 0.3, launchLoad2: 0.55, launchLoad3: 0.85, launchLoad4: 1.1 },
+    gearbox: { gears: 4, topSpeed1: 4.5, topSpeed2: 8.5, topSpeed3: 12.5, topSpeed4: 17, topSpeedReverse: 3.5, torque1: 1, torque2: 0.85, torque3: 0.7, torque4: 0.6, torqueReverse: 0.9, launchLoad1: 0.15, launchLoad2: 0.7, launchLoad3: 0.9, launchLoad4: 1, lugSpeed: 0.6 },
     fuel: {},
-    engine: {},
+    engine: { loadDragRpm: 9000 }, // a manual: slowing in a high gear drags it down and stalls it (manualDrivetrain.js)
     vehicle: {},
     vibration: {
       pulseGain: 1.15,
@@ -120,9 +120,10 @@ export const QUAD_SPECS = [
     roughnessRange: [0.35, 0.5],
     fuelRange: [1.5, 8], // 9 litre tank, 1.5 litre reserve
     manual: true, // a clutch (Shift) and a four-speed gearbox in place of the CVT (src/vehicle/manualDrivetrain.js)
-    gearbox: { gears: 4, topSpeed1: 5, topSpeed2: 9.5, topSpeed3: 14.5, topSpeed4: 20, topSpeedReverse: 3.5, torque1: 1, torque2: 0.85, torque3: 0.7, torque4: 0.6, torqueReverse: 0.9, launchLoad1: 0.3, launchLoad2: 0.55, launchLoad3: 0.85, launchLoad4: 1.1 },
+    gearbox: { gears: 4, topSpeed1: 5, topSpeed2: 9.5, topSpeed3: 14.5, topSpeed4: 20, topSpeedReverse: 3.5, torque1: 1, torque2: 0.85, torque3: 0.7, torque4: 0.6, torqueReverse: 0.9, launchLoad1: 0.15, launchLoad2: 0.7, launchLoad3: 0.9, launchLoad4: 1, lugSpeed: 0.6 },
     fuel: { tankCapacity: 9, startOil: 0.02, reserveLitres: 1.5, burnPerRev: 0.000032, idleBurnFraction: 0.45 },
     engine: {
+      loadDragRpm: 32000, // a manual: slowing in a high gear drags it down and stalls it, high idle and all (manualDrivetrain.js)
       strokes: 2,
       popProne: 0.7, // two-strokes crackle and bang on the overrun
       pullStart: true, // a recoil cord as well as the starter
@@ -210,7 +211,7 @@ export const QUAD_SPECS = [
     roughnessRange: [0.55, 0.7],
     fuelRange: [3, 13], // 14 litre tank, 2.5 litre reserve
     manual: true, // a clutch (Shift) and a four-speed gearbox in place of the CVT (src/vehicle/manualDrivetrain.js)
-    gearbox: { gears: 4, topSpeed1: 4, topSpeed2: 7.5, topSpeed3: 11, topSpeed4: 15, topSpeedReverse: 3, torque1: 1, torque2: 0.9, torque3: 0.75, torque4: 0.65, torqueReverse: 1, launchLoad1: 0.2, launchLoad2: 0.4, launchLoad3: 0.7, launchLoad4: 1 },
+    gearbox: { gears: 4, topSpeed1: 4, topSpeed2: 7.5, topSpeed3: 11, topSpeed4: 15, topSpeedReverse: 3, torque1: 1, torque2: 0.9, torque3: 0.75, torque4: 0.65, torqueReverse: 1, launchLoad1: 0.1, launchLoad2: 0.6, launchLoad3: 0.85, launchLoad4: 1, lugSpeed: 0.6 },
     fuel: { tankCapacity: 14, reserveLitres: 2.5, burnPerRev: 0.000085 },
     engine: {
       idleRpmWarm: 1050,
@@ -218,7 +219,7 @@ export const QUAD_SPECS = [
       redlineRpm: 5200,
       rpmRiseRate: 5.5,
       rpmFallRate: 4.5,
-      loadDragRpm: 1700, // a heavy flywheel: braking drags it down less
+      loadDragRpm: 7500, // a heavy flywheel, but a manual: slowing in a high gear still drags it down and stalls it (manualDrivetrain.js)
       warmUpSeconds: 190,
       coldEnrichmentNeed: 1.15,
       chokeIdleRpm: 1100,

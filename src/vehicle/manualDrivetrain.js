@@ -21,6 +21,7 @@ export const DEFAULT_GEARBOX_PARAMS = {
   launchLoad2: 0.5, // ...second (about stalls an idling engine)
   launchLoad3: 0.95, // ...third (stalls it unless there's throttle)
   launchLoad4: 1.2, // ...fourth (always stalls it from rest without a lot of throttle)
+  lugSpeed: 1, // the drag fades out by this fraction of the gear's top speed: below it, a high gear labours the engine (1 is only from rest)
   launchRelief: 0.9, // fraction of that drag a fully open throttle takes away
   clutchPressRate: 8, // 1/s the pedal goes down at
   clutchReleaseRate: 1.6, // 1/s it comes up at, so about 0.6 s from down to fully engaged
@@ -44,6 +45,7 @@ export const GEARBOX_PARAM_RANGES = {
   launchLoad2: [0, 1.5, 0.01],
   launchLoad3: [0, 1.5, 0.01],
   launchLoad4: [0, 1.5, 0.01],
+  lugSpeed: [0.1, 1, 0.01],
   launchRelief: [0, 1, 0.01],
   clutchPressRate: [1, 30, 0.5],
   clutchReleaseRate: [0.2, 10, 0.1],
@@ -173,8 +175,10 @@ export class ManualDrivetrain {
     // Pulling away from rest in too high a gear drags the engine down, and so does braking while coupled.
     let load = 0;
     if (inGear) {
-      const launch = this.launchLoad(g) * this.clutch * (1 - clamp(speed / top, 0, 1)) * (1 - gb.launchRelief * throttle);
-      const braking = this.coupled ? brake * Math.min(1, speed / p.brakeLoadSpeed) : 0;
+      const launch = this.launchLoad(g) * this.clutch * (1 - clamp(speed / (top * gb.lugSpeed), 0, 1)) * (1 - gb.launchRelief * throttle);
+      // Braking with the clutch out only stalls it once it is slow enough to labour in that gear (the tractor's does at any speed).
+      const lugged = gb.lugSpeed < 1 ? 1 - clamp(speed / (top * gb.lugSpeed), 0, 1) : 1;
+      const braking = this.coupled ? brake * Math.min(1, speed / p.brakeLoadSpeed) * lugged : 0;
       load = Math.max(launch, braking);
     }
     this.engineLoad = clamp(load, 0, 1);

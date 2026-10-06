@@ -2290,10 +2290,10 @@ export class Game {
       this.hud.setStatus('Toolbox\nTake it to a quad that is switched off\nG to put it down');
     } else if (this.can.held) {
       this.hud.setStatus(`Jerry can  ${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel)}\nG to put it down`);
-    } else if (this.riddenUnit?.quad.manual) {
-      // The gear lever and clutch aren't on a dash (nor the tractor's hand throttle), so say where they are.
+    } else if (this.riddenUnit?.quad.tractor) {
+      // The tractor's levers aren't on its dash, so say where they are. The manual quads get no readout: you go by feel.
       const q = this.riddenUnit.quad;
-      this.hud.setStatus(`Gear ${gearLabel(q.drivetrain.gear)}   clutch ${q.drivetrain.pedal > 0.5 ? 'in' : 'out'}${q.tractor ? `   hand throttle ${Math.round(q.handSetting * 100)}%` : ''}`);
+      this.hud.setStatus(`Gear ${gearLabel(q.drivetrain.gear)}   clutch ${q.drivetrain.pedal > 0.5 ? 'in' : 'out'}   hand throttle ${Math.round(q.handSetting * 100)}%`);
     } else {
       this.hud.setStatus('');
     }

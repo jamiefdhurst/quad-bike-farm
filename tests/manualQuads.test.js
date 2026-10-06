@@ -51,6 +51,26 @@ describe('the manual quads', () => {
     }
   });
 
+  it('stall when slowed in a high gear with the clutch out and no throttle, but not in first or with throttle held', () => {
+    const stalls = (spec, gear, frac, throttle) => {
+      const { engine, drive } = warm(spec);
+      drive.setGear(gear);
+      const v = drive.topSpeed(gear) * frac;
+      for (let t = 0; t < 4; t += DT) {
+        drive.update({ dt: DT, clutchHeld: false, power: engine.power, running: engine.isRunning, throttle, brake: 0, forwardSpeed: v, rpm: engine.rpm });
+        engine.update(DT, { fuel: 1, throttle, load: drive.engineLoad });
+        if (engine.state === EngineState.STALLED) return true;
+      }
+      return false;
+    };
+    for (const spec of manualSpecs) {
+      for (const gear of [3, 4]) expect(stalls(spec, gear, 0.15, 0), `${spec.id} g${gear}`).toBe(true);
+      for (const frac of [0, 0.15, 0.5]) expect(stalls(spec, 1, frac, 0), `${spec.id} first at ${frac}`).toBe(false);
+      for (const gear of [2, 3, 4]) expect(stalls(spec, gear, 0.15, 0.6), `${spec.id} g${gear} with throttle`).toBe(false);
+      expect(stalls(spec, 4, 0.8, 0), `${spec.id} g4 up to speed`).toBe(false);
+    }
+  });
+
   it('a gear is capped by the quad top speed, so a limiter still limits', () => {
     const { drive, params } = warm(manualSpecs[0]);
     params.maxSpeed = 10;

@@ -61,7 +61,8 @@ describe('each quad has its own character', () => {
           for (const wear of [0, Math.max(0, params.erraticFrom - roughness) / 2, Math.max(0, params.erraticFrom - roughness)]) {
             for (const seed of [1, 2, 3, 4, 5, 6]) {
               // Hard stops are only safe to about halfway there (a worn engine can die on one).
-              for (const braking of wear <= Math.max(0, params.erraticFrom - roughness) / 2 ? [false, true] : [false]) {
+              // The manual quads stall on a hard stop with the clutch out by design (tests/manualQuads.test.js).
+              for (const braking of !spec.manual && wear <= Math.max(0, params.erraticFrom - roughness) / 2 ? [false, true] : [false]) {
                 const r = idleTwoMinutes(spec, idle, roughness, wear, seed, { braking });
                 const what = `${spec.name} idle ${idle} roughness ${roughness} wear ${wear} seed ${seed}${braking ? ' braking' : ''}`;
                 if (roughness + wear > params.erraticFrom) continue;
