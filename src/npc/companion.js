@@ -10,6 +10,7 @@ import { restingMethods, restingStates } from './companionResting.js';
 import { warmingMethods } from './companionWarming.js';
 import { wavingMethods } from './companionWaving.js';
 import { DEFAULT_DOUGHNUT_PARAMS, ringPoints } from './doughnuts.js';
+import { DEFAULT_LINEUP_PARAMS, nextJob, assignSlots, rowSlots, crookedSlot, parkRoute, nudgePose } from './lineUp.js';
 import { PillionPose } from './pillionPose.js';
 import { canRideRack } from './rackSeat.js';
 import { nextBoredWait, driftRestlessness, pickBoredChoice } from './boredom.js';
@@ -315,7 +316,9 @@ export class Companion {
     const drivable = this.quads.filter((q) => near(q) && this.canDrive(q));
     // Doughnuts want a clear stretch of field to spin in, found now so she only picks it when there is one.
     const doughnutPlan = p.boredDoughnutChance > 0 && drivable.length ? this.doughnutPlan() : null;
+    const lineUpJob = p.boredLineUpChance > 0 ? this.planLineUp() : null;
     const options = {
+      lineUp: lineUpJob ? [lineUpJob.quad] : [],
       doughnuts: doughnutPlan ? drivable : [],
       join: this.quads.filter((q) => q.position.distanceTo(here) < 25 && q.speed < 0.5 && !q.rider && settingOff(q) && (this.canRidePillion(q) || this.canRideRackOn(q))),
       mount: this.quads.filter((q) => near(q) && q.hasPillion),
@@ -339,10 +342,87 @@ export class Companion {
     else if (choice === 'mount') this.requestMount(pick(options.mount), { ownChoice: true });
     else if (choice === 'start') this.requestStart(pick(options.start));
     else if (borrowed) this.requestDrive(borrowed);
+    else if (choice === 'lineUp') this.startLineUp(lineUpJob);
     else if (choice === 'doughnuts') this.requestDrive(pick(options.doughnuts), { doughnut: doughnutPlan });
     else if (choice === 'drive') this.requestDrive(pick(options.drive.some((q) => this.ownsQuad(q)) ? options.drive.filter((q) => this.ownsQuad(q)) : options.drive));
     else if (choice === 'rest') this.goRest(pick(options.rest), { stay: this.restStayFor?.() });
     else this.wander();
+  }
+
+  /**
+   * Her next job tidying the quads in front of the barn (lineUp.js): { quad, slot, mode, crooked }, or null if there is nothing
+   * to do. The tidy sort works down the untidy ones nearest first; the other sort (lineUpCrookedChance) takes one quad and
+   * parks it a bit off its slot on purpose.
+   */
+  planLineUp(crookedChance = this.params.lineUpCrookedChance ?? 0) {
+    const lp = this.lineUpParams ?? DEFAULT_LINEUP_PARAMS;
+    const here = this.root.position;
+    const quads = this.quads.filter((q) => q.position.distanceTo(here) < lp.nearRange && this.mayRide(q) && !this.takenByOther(q) && this.canDrive(q));
+    if (!quads.length) return null;
+    const poses = quads.map((q) => ({ x: q.position.x, z: q.position.z, yaw: q.yaw }));
+    if (Math.random() < crookedChance) {
+      const slots = assignSlots(poses, rowSlots(poses.length, lp));
+      const i = Math.floor(Math.random() * quads.length);
+      return { quad: quads[i], slot: crookedSlot(slots[i], lp), mode: 'drive', crooked: true };
+    }
+    const job = nextJob(poses, { x: here.x, z: here.z }, lp);
+    return job ? { quad: quads[job.index], slot: job.slot, mode: job.mode, crooked: false } : null;
+  }
+
+  /** Does a tidying job: drives the quad to its slot, or goes and nudges it straight by hand. */
+  startLineUp(job) {
+    const lp = this.lineUpParams ?? DEFAULT_LINEUP_PARAMS;
+    this.lineUpOn = !job.crooked;
+    if (job.crooked) this.selfEvents.push('lineUpCrooked');
+    if (job.mode === 'drive') {
+      this.requestDrive(job.quad, { park: { route: parkRoute(job.slot, lp), yaw: job.slot.yaw, crooked: job.crooked } });
+      return;
+    }
+    const q = job.quad;
+    const side = q.localToWorld(1.2, 0, 0.5);
+    const set = this.sneakTo({ x: side.x, z: side.z }, () => {
+      this.selfEvents.push('straighten');
+      this.nudge = { quad: q, from: { x: q.position.x, z: q.position.z, yaw: q.yaw }, to: job.slot, t: 0 };
+    }, lp.shoveSeconds + 1);
+    if (!set) this.lineUpOn = false;
+  }
+
+  /** After one is in place she often goes on to the next, until they are all in a row. */
+  continueLineUp() {
+    const lp = this.lineUpParams ?? DEFAULT_LINEUP_PARAMS;
+    if (!this.lineUpOn || Math.random() >= lp.continueChance) return void (this.lineUpOn = false);
+    const job = this.planLineUp(0);
+    if (job) this.startLineUp(job);
+    else this.lineUpOn = false;
+  }
+
+  /** Called on her friend when someone has just left a quad crooked on purpose: she'll see it in a few seconds and go and put it right. */
+  noticeCrooked() {
+    if (this.params.lineUpCrookedChance > 0 || !this.params.boredLineUpChance) return;
+    this.crookedNotice = 5 + Math.random() * 5;
+  }
+
+  /** The nudge in progress, and noticing something crooked. */
+  updateLineUp(dt) {
+    const lp = this.lineUpParams ?? DEFAULT_LINEUP_PARAMS;
+    if (this.crookedNotice > 0 && this.fsm.is('idle') && (this.crookedNotice -= dt) <= 0) {
+      this.crookedNotice = 0;
+      const job = this.planLineUp(0);
+      if (job) {
+        this.selfEvents.push('lineUpNotice');
+        this.startLineUp(job);
+        this.lineUpOn = false; // just the one she was cross about
+      }
+    }
+    const n = this.nudge;
+    if (!n) return;
+    n.t += dt / lp.shoveSeconds;
+    const pose = nudgePose(n.from, n.to, Math.min(1, n.t));
+    n.quad.placeAt(pose.x, pose.z, pose.yaw);
+    if (n.t >= 1 || n.quad.rider) {
+      this.nudge = null;
+      this.continueLineUp();
+    }
   }
 
   /**
@@ -731,6 +811,7 @@ export class Companion {
   update(dt, vibration, viewer) {
     this.fsm.update(dt);
     this.updateBoredom(dt, viewer);
+    this.updateLineUp(dt);
     if (viewer) this.updateGlance(dt, viewer);
     this.updateFidget(dt);
     if (this.root.parent === this.scene) this.syncCollider();

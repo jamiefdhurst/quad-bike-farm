@@ -36,6 +36,7 @@ import { Race, RACE_PARAM_RANGES, planLap } from './npc/race.js';
 import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
 import { Convoy, CONVOY_PARAM_RANGES } from './npc/convoy.js';
 import { DoughnutWatch, DOUGHNUT_PARAM_RANGES } from './npc/doughnuts.js';
+import { DEFAULT_LINEUP_PARAMS, LINEUP_PARAM_RANGES } from './npc/lineUp.js';
 import { Tea, TEA_PARAM_RANGES } from './npc/tea.js';
 import { Jumpers, JUMPER_PARAM_RANGES, JUMPERS } from './npc/jumpers.js';
 import { JumperRail } from './world/jumperRail.js';
@@ -322,6 +323,8 @@ export class Game {
     this.dashReader = new DashReader(); // the girl on the back reads the dash out (npc/dashReading.js)
     this.doughnutWatch = new DoughnutWatch(); // Amy watches Jess's doughnuts and has a go (npc/doughnuts.js)
     for (const c of this.companions) c.doughnutParams = this.doughnutWatch.p;
+    this.lineUpParams = { ...DEFAULT_LINEUP_PARAMS }; // the row in front of the barn (npc/lineUp.js)
+    for (const c of this.companions) c.lineUpParams = this.lineUpParams;
     this.tea = new Tea(); // tea left on the rear rack (npc/tea.js)
     this.dieselMistake = new DieselMistake(); // Jess pours red diesel into a quad (npc/dieselMistake.js)
     this.dieselJob = null; // her pouring: { spec, left }
@@ -611,6 +614,7 @@ export class Game {
     registerTuning('Racing', this.race.p, RACE_PARAM_RANGES);
     registerTuning('Follow the leader', this.convoy.p, CONVOY_PARAM_RANGES);
     registerTuning('Doughnuts', this.doughnutWatch.p, DOUGHNUT_PARAM_RANGES);
+    registerTuning('Lining them up', this.lineUpParams, LINEUP_PARAM_RANGES);
     registerTuning('Tea on the rack', this.tea.p, TEA_PARAM_RANGES);
     registerTuning('Jumpers', this.jumpers.p, JUMPER_PARAM_RANGES);
     registerTuning('Red diesel mistake', this.dieselMistake.p, DIESEL_MISTAKE_PARAM_RANGES);

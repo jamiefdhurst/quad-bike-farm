@@ -12,6 +12,7 @@
 import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 import { COACHING, mistake, mistakeChance, successChance } from './skills.js';
 import { doughnutControl } from './doughnuts.js';
+import { slotHeading, slotOffsets } from './lineUp.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const TAU = Math.PI * 2;
@@ -153,10 +154,11 @@ export class HerDrive {
    *   waypoint), with no pauses and no tiring or scaring of herself.
    * @param {object} [opts.doughnut]  { centre, radius, dir, seconds, p }: instead of her loops she drives to the circle and spins
    *   round it for `seconds`, tearing the ground up (quad.churn), then pulls up.
+   * @param {object} [opts.park]  { route }: drive the route (in line with a slot, then the slot) slowly, and stop on the last point.
    * @param {function} [opts.follow]  () => the quad she's following (yours), or null. Following, she keeps
    *   behind it at its pace rather than doing her own loop, and doesn't tire of it.
    */
-  constructor(quad, { params, probe, isClear, random = Math.random, startingParams, momentWindow = 5, skill = { starting: 0.5, choke: 0.5, cornering: 0.5, mud: 0.5 }, passenger = () => false, waitForPassenger = false, tires = false, follow = null, friend = () => null, race = null, doughnut = null }) {
+  constructor(quad, { params, probe, isClear, random = Math.random, startingParams, momentWindow = 5, skill = { starting: 0.5, choke: 0.5, cornering: 0.5, mud: 0.5 }, passenger = () => false, waitForPassenger = false, tires = false, follow = null, friend = () => null, race = null, doughnut = null, park = null }) {
     this.quad = quad;
     this.p = params;
     this.probe = probe;
@@ -180,6 +182,7 @@ export class HerDrive {
     this.follow = follow;
     this.race = race;
     this.doughnut = doughnut; // spinning doughnuts: { centre, radius, dir, seconds, p } (doughnuts.js)
+    this.park = park; // tidying a quad into the row (lineUp.js): { route: [stage, slot] }; she drives in line with the slot, stops on it
     this.pass = null; // overtaking whoever she's following (passTarget)
     this.slowFor = 0;
     this.behindTime = 0; // seconds she's been well behind you
@@ -663,6 +666,11 @@ export class HerDrive {
   }
 
   plan() {
+    if (this.park) {
+      this.waypoints = this.park.route.map((pt) => ({ ...pt }));
+      this.index = 0;
+      return true;
+    }
     if (this.race) {
       this.waypoints = this.race.route.map((pt) => ({ ...pt }));
       this.index = 0;
@@ -698,7 +706,7 @@ export class HerDrive {
     c.reverse = false;
     if (this.doughnut) return this.driveDoughnut(dt, speed);
 
-    if (this.time > this.driveFor && !this.carrying && !this.race) {
+    if (this.time > this.driveFor && !this.carrying && !this.race && !this.park) {
       this.stop(this.random() < p.driveScaredChance ? 'scared' : 'bored');
       return;
     }
@@ -734,6 +742,11 @@ export class HerDrive {
     }
     // Not on the grid yet: she can't be past it.
     if (this.race && !this.race.go() && this.index > this.race.gridIndex) this.index = this.race.gridIndex;
+    if (this.park && this.index >= this.waypoints.length) {
+      this.events.push('parkedUp');
+      this.stop('parked');
+      return;
+    }
     if (this.index >= this.waypoints.length && !this.plan()) return;
     const wp = this.waypoints[this.index];
     const pos = q.position;
@@ -741,7 +754,18 @@ export class HerDrive {
     // Going quickly she can't thread a waypoint exactly: near enough will do.
     // (Racing she holds her line much tighter, to keep out of the puddles.)
     const onGrid = this.race && this.index === this.race.gridIndex;
-    if (dist < Math.max(onGrid ? this.p.raceGridRadius : p.driveArriveRadius, speed * (this.race ? 0.2 : 0.5)) && !follow) {
+    const lastPark = this.park && this.index === this.waypoints.length - 1;
+    // The last leg: she lines up with the slot's heading rather than just pointing at it, and stops once she is on it.
+    let slotLeg = null;
+    if (lastPark && this.park.yaw !== undefined) {
+      slotLeg = slotOffsets(pos, { x: wp.x, z: wp.z, yaw: this.park.yaw });
+      if (slotLeg.along > -0.3) {
+        this.index++;
+        return;
+      }
+    }
+    const arrive = lastPark ? this.p.parkArriveRadius : this.park ? this.p.parkStageRadius : onGrid ? this.p.raceGridRadius : p.driveArriveRadius;
+    if (dist < Math.max(arrive, speed * (this.race || this.park ? 0.2 : 0.5)) && !follow) {
       this.index++;
       this.events.push('waypoint');
       if (this.cleanLeg && Math.abs(c.steer) > 0.2) this.events.push('practice:cornering');
@@ -773,11 +797,11 @@ export class HerDrive {
     // Whether she'll stop for a moment at this one; if so she slows for it on the way.
     if (this.pauseFor !== wp) {
       this.pauseFor = wp;
-      this.pauseHere = this.random() < p.drivePauseChance;
+      this.pauseHere = !this.park && this.random() < p.drivePauseChance;
     }
 
     // Look where she's going a few times a second, and steer round anything in the way.
-    let desired = headingTo(pos, wp);
+    let desired = slotLeg && dist < 8 ? slotHeading(this.park.yaw, slotLeg.lateral) : headingTo(pos, wp);
     this.probeTimer -= dt;
     if (this.probeTimer <= 0) {
       this.probeTimer = 0.1;

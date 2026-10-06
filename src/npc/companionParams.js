@@ -52,6 +52,11 @@ export const DEFAULT_COMPANION_PARAMS = {
   placedPatienceMax: 420,
   boredGetOffChance: 0.6, // sat on the back by her own choice and bored of it, the chance she gets off (each time she gets bored)
   boredDoughnutChance: 0, // the chance, when bored, she takes a quad off and spins doughnuts in the field (Jess)
+  boredLineUpChance: 0.1, // the chance, when bored, she moves the quads into a neat row in front of the barn (lineUp.js)
+  lineUpCrookedChance: 0, // when she does, the chance it is just the one quad, parked crooked on purpose (Jess)
+  parkSpeed: 2.2, // m/s she drives a quad into place at
+  parkArriveRadius: 0.5, // metres from the slot she stops
+  parkStageRadius: 1.8, // metres from the point in line with the slot that counts as reached
   boredStartChance: 0.2, // has a go at starting one
   boredDriveChance: 0.25, // has a little drive on one; otherwise she wanders off for a look round
   wanderMin: 6, // metres
@@ -218,6 +223,11 @@ export const COMPANION_PARAM_RANGES = {
   placedPatienceMax: [10, 3600, 5],
   boredGetOffChance: [0, 1, 0.05],
   boredDoughnutChance: [0, 1, 0.05],
+  boredLineUpChance: [0, 1, 0.05],
+  lineUpCrookedChance: [0, 1, 0.05],
+  parkSpeed: [0.5, 5, 0.1],
+  parkArriveRadius: [0.2, 2, 0.1],
+  parkStageRadius: [0.5, 4, 0.1],
   boredStartChance: [0, 1, 0.05],
   boredDriveChance: [0, 1, 0.05],
   wanderMin: [1, 50, 0.5],

@@ -288,6 +288,39 @@ export class DebugGui {
       g.dieselMistake.forced = true;
       g.hud.toast('Jess will fill a parked quad from the diesel can as soon as she is stood about');
     };
+    const girl = (id) => g.companions.find((c) => c.character.id === id);
+    const free = (c) => (c.fsm.is('idle') ? true : g.hud.toast(`${cap(c.character.id)} is busy: call her back to the barn first (N)`) && false);
+    actions.lineUp = () => {
+      const c = girl('amy');
+      if (!free(c)) return;
+      const job = c.planLineUp(0);
+      if (!job) return g.hud.toast('The quads are already in a row (or none are free)');
+      c.lineUpOn = true;
+      c.startLineUp(job);
+      g.hud.toast('Amy is tidying the quads into a row in front of the barn');
+    };
+    actions.crooked = () => {
+      const c = girl('jess');
+      if (!free(c)) return;
+      const job = c.planLineUp(1);
+      if (!job) return g.hud.toast('No free quad');
+      c.startLineUp(job);
+      g.hud.toast('Jess will park one crooked, then Amy will notice');
+    };
+    actions.doughnuts = () => {
+      const c = girl('jess');
+      if (!free(c)) return;
+      const quads = g.units.map((u) => u.quad).filter((q) => c.mayRide(q) && c.canDrive(q) && !c.takenByOther(q) && q.position.distanceTo(c.root.position) < 60);
+      quads.sort((a, b) => a.position.distanceTo(c.root.position) - b.position.distanceTo(c.root.position));
+      const plan = c.doughnutPlan();
+      if (!quads.length || !plan) return g.hud.toast('Jess cannot find a free quad or a clear stretch of field');
+      c.selfEvents.push('doughnuts');
+      c.requestDrive(quads[0], { doughnut: plan });
+      g.hud.toast('Jess is off to spin doughnuts');
+    };
+    f.add(actions, 'lineUp').name('Amy lines the quads up by the barn');
+    f.add(actions, 'crooked').name('Jess parks one crooked');
+    f.add(actions, 'doughnuts').name('Jess does doughnuts');
     f.add(actions, 'race').name('Start a race now');
     f.add(actions, 'diesel').name('Jess pours red diesel into a quad');
     f.add(actions, 'jumper_amy').name('Amy fetches or hangs up a jumper');

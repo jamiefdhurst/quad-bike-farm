@@ -559,6 +559,14 @@ export class Quad {
     this.fuelTap.rotation.x += (tapAngle - this.fuelTap.rotation.x) * Math.min(1, 15 * dt);
   }
 
+  /** Moves the parked quad to a spot and heading (a girl nudging it straight by hand). */
+  placeAt(x, z, yaw) {
+    this.physics.reset(x, this.world.heightAt(x, z) - GROUND_OFFSET * this.scale + 0.3 * this.scale, z, yaw);
+    this.recordTransform();
+    this.prevPos.copy(this.currPos);
+    this.prevQuat.copy(this.currQuat);
+  }
+
   rightItself() {
     const p = this.currPos;
     const yaw = this.yaw;

@@ -54,6 +54,8 @@ export const drivingStates = {
       this.convoyLeadWanted = false;
       const doughnut = this.doughnutWanted;
       this.doughnutWanted = null;
+      const park = this.parkWanted;
+      this.parkWanted = null;
       const params = driveMood(this.params, this.driveMood);
       params.driveSpeedMaxBase = this.params.driveSpeedMax;
       if (offered) {
@@ -75,6 +77,12 @@ export const drivingStates = {
         params.driveMaxThrottle = 1;
         params.driveScareSpeed = 99; // she's not frightened by the speed, only by tipping over
       }
+      if (park) {
+        // Tidying: slow and careful, nothing frightens her off.
+        params.driveSpeedMin = params.driveSpeedMax = this.params.parkSpeed;
+        params.driveScareSpeed = 99;
+        params.drivePauseChance = 0;
+      }
       if (race) {
         // Racing: flat out, no pauses, nothing frightens her off.
         params.driveMaxThrottle = race.throttle;
@@ -94,6 +102,7 @@ export const drivingStates = {
         friend: () => this.friendOnBack(),
         waitForPassenger: ride,
         race,
+        park,
         doughnut: doughnut ? { ...doughnut, spinning: false, t: 0 } : null,
         tires: offered,
         follow: following ? () => {
@@ -182,7 +191,7 @@ export const drivingStates = {
 
 export const drivingMethods = {
   /** Walks to the front of a quad, gets on and has a little drive; with `giveRide`, waits for you on the back. */
-  requestDrive(quad, { giveRide = false, follow = false, race = null, followWho = null, convoyLead = false, doughnut = null } = {}) {
+  requestDrive(quad, { giveRide = false, follow = false, race = null, followWho = null, convoyLead = false, doughnut = null, park = null } = {}) {
     this.giveRide = giveRide;
     this.offeredRide = false;
     this.followWanted = follow;
@@ -190,8 +199,9 @@ export const drivingMethods = {
     this.followWhoWanted = followWho; // following something other than you: a convoy (npc/convoy.js)
     this.convoyLeadWanted = convoyLead; // leading one
     this.doughnutWanted = doughnut; // spinning doughnuts (npc/doughnuts.js)
+    this.parkWanted = park; // moving it into the row in front of the barn (npc/lineUp.js)
     if (this.fsm.is('driving')) {
-      if (quad !== this.quad) this.stopDriving('off', () => this.requestDrive(quad, { giveRide, follow, race, followWho, convoyLead, doughnut }));
+      if (quad !== this.quad) this.stopDriving('off', () => this.requestDrive(quad, { giveRide, follow, race, followWho, convoyLead, doughnut, park }));
       return;
     }
     if (this.fsm.is('shuffling', 'dismounting')) return;
@@ -200,7 +210,7 @@ export const drivingMethods = {
       return;
     }
     if (this.fsm.is('seated', 'mounting')) {
-      this.afterDismount = () => this.requestDrive(quad, { giveRide, follow, race, followWho, convoyLead, doughnut });
+      this.afterDismount = () => this.requestDrive(quad, { giveRide, follow, race, followWho, convoyLead, doughnut, park });
       this.fsm.transition('dismounting');
       return;
     }
@@ -243,7 +253,7 @@ export const drivingMethods = {
     this.driveEvents.push(`done:${d.result}`);
     this.driveConfidence = afterDrive(this.driveConfidence ?? p.driveConfidence, d.result);
     let how = exit?.how;
-    if (!how) how = d.result === 'gaveUp' || d.result === 'noRoom' || Math.random() >= p.driveBackChance ? 'off' : 'back';
+    if (!how) how = d.result === 'parked' || d.result === 'gaveUp' || d.result === 'noRoom' || Math.random() >= p.driveBackChance ? 'off' : 'back';
     q.setDriver(null);
     if (how === 'back' && q.hasPillion && !q.passenger && !this.takenByOther(q, 'pillion')) {
       if (!exit) this.driveEvents.push('toBack');
@@ -254,8 +264,14 @@ export const drivingMethods = {
     if (!exit) this.driveEvents.push('getOff');
     // Getting off, she nearly always leaves it running.
     if (q.engine.isRunning && Math.random() < p.driveKeyOffChance) q.engine.setIgnition(false);
-    this.afterDismount = exit?.next ?? null;
+    this.afterDismount = exit?.next ?? (d.park && d.result === 'parked' ? () => this.finishParking(d.park) : null);
     this.fsm.transition('dismounting');
+  },
+
+  /** She has put a quad in its place in the row: if it was left crooked on purpose her friend notices, otherwise she goes on to the next. */
+  finishParking(park) {
+    if (park.crooked) for (const o of this.others()) o.noticeCrooked?.();
+    else this.continueLineUp();
   },
 
   /** Her friend on the back of the quad she's driving: 'on', 'coming' (on her way to get on), or null. */
