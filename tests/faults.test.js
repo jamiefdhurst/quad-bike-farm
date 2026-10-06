@@ -105,14 +105,45 @@ describe('sticking cable', () => {
     // A slightly stiff cable doesn't hang.
     expect(hang(0.1)).toBeLessThan(0.05);
     expect(hang(0.5)).toBeGreaterThan(1);
-    expect(hang(1)).toBeGreaterThan(hang(0.5));
-    expect(hang(1)).toBeLessThan(30);
+    expect(hang(0.8)).toBeGreaterThan(hang(0.5));
+    expect(hang(0.8)).toBeLessThan(30);
+  });
+
+  it('gets worse progressively, from a flicker to a long hang, before it sticks', () => {
+    const hang = (level) => {
+      const f = faults();
+      f.begin('cable');
+      f.levels.cable = level;
+      f.stickThrottle(0.016, 1, true);
+      let t = 0;
+      while (f.stickThrottle(0.016, 0, true) > 0.05 && t < 60) t += 0.016;
+      return t;
+    };
+    const times = [0.25, 0.4, 0.55, 0.7, 0.85].map(hang);
+    for (let i = 1; i < times.length; i++) expect(times[i]).toBeGreaterThan(times[i - 1]);
+    expect(times[0]).toBeLessThan(1.5);
+    expect(times.at(-1)).toBeGreaterThan(4);
+  });
+
+  it('eventually sticks open for good: it holds where you left it, never closes, and opens further if you do', () => {
+    const f = faults();
+    f.begin('cable');
+    f.levels.cable = f.params.cableStuckAt;
+    expect(f.stuck).toBe(true);
+    f.stickThrottle(0.016, 0.6, true);
+    for (let i = 0; i < 2000; i++) expect(f.stickThrottle(0.016, 0, true)).toBeCloseTo(0.6, 5);
+    expect(f.stickThrottle(0.016, 0.9, true)).toBeCloseTo(0.9, 5);
+    expect(f.stickThrottle(0.016, 0, true)).toBeCloseTo(0.9, 5);
+    // Switching off frees it, and it can be fixed.
+    expect(f.stickThrottle(0.016, 0, false)).toBe(0);
+    f.fix('cable');
+    expect(f.stuck).toBe(false);
   });
 
   it('pressing the throttle is never held back, and switching off frees it', () => {
     const f = faults();
     f.begin('cable');
-    f.levels.cable = 1;
+    f.levels.cable = 0.8;
     f.stickThrottle(0.016, 1, true);
     expect(f.stickThrottle(0.016, 0, true)).toBeGreaterThan(0.9);
     expect(f.stickThrottle(0.016, 0.5, true)).toBeGreaterThan(0.5 - 1e-9);

@@ -1,5 +1,6 @@
 import GUI from 'lil-gui';
 import { getTuningGroups, exportTuning } from '../core/tuning.js';
+import { FAULT_KINDS } from '../vehicle/faults.js';
 
 /**
  * lil-gui panel built from the tuning registry, plus live engine readouts and
@@ -86,6 +87,44 @@ export class DebugGui {
       get shake() {
         return unit().vibration.intensity;
       },
+      get speed() {
+        return Math.round(unit().quad.speed * 10) / 10;
+      },
+      get fuel() {
+        const f = unit().quad.fuel;
+        return `${f.litres.toFixed(1)} L, tap ${f.tap}`;
+      },
+      get oil() {
+        return Math.round(unit().engine.oil * 1000) / 1000;
+      },
+      get wear() {
+        return unit().engine.wear;
+      },
+      get erratic() {
+        return unit().engine.erratic;
+      },
+      get heat() {
+        return unit().engine.heat;
+      },
+      get pinking() {
+        return unit().engine.pink;
+      },
+      get fan() {
+        return unit().engine.fan;
+      },
+      get soak() {
+        return unit().engine.soak;
+      },
+      get scuff() {
+        return unit().engine.scuff;
+      },
+      get nip() {
+        return unit().engine.nip;
+      },
+      get seized() {
+        return unit().engine.seized;
+      },
+
       get temperature() {
         return unit().engine.temperature;
       },
@@ -106,6 +145,28 @@ export class DebugGui {
     }
     f.add(live, 'temperature', 0, 1, 0.01).name('temperature (drag to set)').listen();
     f.add(live, 'battery', 0, 1, 0.01).name('battery (drag to set)').listen();
+
+    // The faults that develop (vehicle/faults.js): each shows its level (0 is none), and dragging it starts or clears one.
+    const faults = {};
+    for (const kind of FAULT_KINDS) {
+      Object.defineProperty(faults, kind, {
+        enumerable: true,
+        get: () => (unit().quad.faults.started[kind] ? Math.round(unit().quad.faults.levels[kind] * 100) / 100 : 0),
+        set: (v) => {
+          const fl = unit().quad.faults;
+          if (v <= 0) fl.fix(kind);
+          else {
+            fl.begin(kind);
+            fl.levels[kind] = v;
+            fl.caps[kind] = 1;
+          }
+        },
+      });
+    }
+    const ff = this.gui.addFolder('Faults (live): drag to start, set or clear one');
+    for (const kind of FAULT_KINDS) ff.add(faults, kind, 0, 1, 0.01).listen();
+    Object.defineProperty(faults, 'tyre', { enumerable: false, get: () => unit().quad.faults.tyre });
+    ff.add(faults, 'tyre').name('flat tyre (wheel, -1 none)').listen().disable();
   }
 
   /** Who you favour: each girl's score, where she stands against her friend, and buttons to push it either way. */

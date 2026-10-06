@@ -18,8 +18,10 @@ export const DEFAULT_FAULT_PARAMS = {
   puncturePull: 0.09, // radians the bars are pulled towards the flat tyre (half for a rear one)
   punctureDrag: 0.12, // drive lost to a flat tyre's rolling resistance
   beltDriveLoss: 0.8, // drive lost to a fully slipping belt
-  cableHang: 5, // seconds the throttle takes to come back from open with a fully sticking cable
+  cableHang: 5, // seconds the throttle takes to come back from open, just before the cable sticks for good
   cableHangFrom: 0.2, // below this the cable's only a little stiff and doesn't hang
+  cableHangMin: 0.4, // seconds it takes to come back as it first starts to hang, lengthening from there (faster than linear)
+  cableStuckAt: 0.9, // at this level it never comes back: it holds wherever you last opened it until you switch off
   hardThrottle: 0.6, // throttle that counts as riding hard
   movingSpeed: 2, // m/s over which it counts as being ridden
   fieldFixLevel: 0.12, // what's left of a fault after a rough fix in the yard (the bench does it properly)
@@ -40,6 +42,8 @@ export const FAULT_PARAM_RANGES = {
   beltDriveLoss: [0, 1, 0.01],
   cableHang: [0, 15, 0.5],
   cableHangFrom: [0, 1, 0.05],
+  cableHangMin: [0, 5, 0.1],
+  cableStuckAt: [0.3, 1, 0.01],
   hardThrottle: [0.1, 1, 0.05],
   movingSpeed: [0.5, 10, 0.5],
   fieldFixLevel: [0, 0.5, 0.01],
@@ -110,7 +114,15 @@ export class Faults {
     grow('carb', running, p.carbSeconds);
   }
 
-  /** What the throttle really is: a sticking cable keeps it open for a while after you let go, and switching off frees it. */
+  /** The cable has stuck for good: it won't close until you switch off (or it's fixed). */
+  get stuck() {
+    return this.started.cable && this.levels.cable >= this.params.cableStuckAt;
+  }
+
+  /**
+   * What the throttle really is. A stiffening cable keeps it open for a while after you let go, longer the worse it gets, and once
+   * it's bad enough it stays wherever you last opened it (opening further still works). Switching off frees it.
+   */
   stickThrottle(dt, throttle, running) {
     const p = this.params;
     const level = this.levels.cable;
@@ -118,7 +130,13 @@ export class Faults {
       this.heldThrottle = throttle;
       return throttle;
     }
-    const hang = p.cableHang * level;
+    if (this.stuck) {
+      this.heldThrottle = Math.max(throttle, this.heldThrottle);
+      return this.heldThrottle;
+    }
+    // From a moment's hesitation to p.cableHang seconds, accelerating as it nears sticking.
+    const t = clamp((level - p.cableHangFrom) / Math.max(0.01, p.cableStuckAt - p.cableHangFrom), 0, 1);
+    const hang = p.cableHangMin + (p.cableHang - p.cableHangMin) * Math.pow(t, 1.5);
     // Eases back from where it was left.
     this.heldThrottle = Math.max(throttle, this.heldThrottle - (dt / hang) * Math.max(0.1, this.heldThrottle));
     return this.heldThrottle > throttle ? this.heldThrottle : throttle;

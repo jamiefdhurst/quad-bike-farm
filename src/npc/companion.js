@@ -187,7 +187,8 @@ export class Companion {
 
   /**
    * She could sit on the front rack: her friend's driving with you on the back
-   * (so the back is taken), and nobody else is up there.
+   * (so the back is taken), or the quad's parked with nobody on it and you've
+   * asked her to, and nobody else is up there.
    */
   canRideRackOn(quad) {
     const friend = this.friendDriving(quad);
@@ -198,6 +199,7 @@ export class Companion {
       friendDriving: !!friend,
       friendBusy: !!(friend?.drive && (friend.drive.follow || (friend.drive.waitForPassenger && !quad.passenger))),
       pillionFree: !quad.passenger && !this.takenByOther(quad, 'pillion'),
+      parked: !friend && !quad.rider && !quad.driver && !quad.passenger && quad.speed < 0.5,
     });
   }
 

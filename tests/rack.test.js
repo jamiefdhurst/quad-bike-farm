@@ -19,4 +19,12 @@ describe('sitting on the front rack', () => {
   it('is not needed while the back is free', () => {
     expect(canRideRack({ ...ok, pillionFree: true })).toBe(false);
   });
+  it('can be asked for on a parked quad, whoever else could take the back', () => {
+    const parked = { hasRack: true, tipped: false, rackTaken: false, friendDriving: false, pillionFree: true, parked: true };
+    expect(canRideRack(parked)).toBe(true);
+    expect(canRideRack({ ...parked, hasRack: false })).toBe(false);
+    expect(canRideRack({ ...parked, tipped: true })).toBe(false);
+    expect(canRideRack({ ...parked, rackTaken: true })).toBe(false);
+    expect(canRideRack({ ...parked, parked: false })).toBe(false);
+  });
 });

@@ -322,6 +322,8 @@ export class Quad {
 
     // Faults that develop: a sticking cable holds the throttle open, a flat tyre pulls the bars over.
     this.faults.update(dt, { running: this.engine.isRunning, speed: Math.abs(fwd), throttle: throttleInput });
+    // She has the sense to switch off a quad whose throttle has stuck open.
+    if (this.driver && this.faults.stuck && this.engine.isRunning && this.faults.heldThrottle > 0.3) this.engine.setIgnition(false);
     this.throttle = this.faults.stickThrottle(dt, throttleInput, this.engine.isRunning);
     this.brake = brakeInput;
 

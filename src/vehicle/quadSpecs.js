@@ -338,7 +338,7 @@ export const EXTRA_SPECS = [
     id: 'kids',
     label: "kids' quad",
     name: "Kids' quad",
-    bodyColor: 0xdc3f8f,
+    bodyColor: 0xcf6f98, // a faded pink
     style: 'sport',
     dashStyle: 'sport',
     scale: 0.65,
