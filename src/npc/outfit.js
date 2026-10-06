@@ -528,13 +528,36 @@ export function applyOutfit(rig, outfit) {
   rig.model.traverse((o) => {
     if (!o.isMesh) return;
     const mat = o.material;
-    if (outfit.colors && mat.map) mat.map = recolourTexture(mat.map, outfit.colors);
+    if (outfit.colors && mat.map) {
+      mat.userData.baseMap ??= mat.map; // kept so the shirt can be recoloured later
+      mat.map = recolourTexture(mat.userData.baseMap, outfit.colors);
+    }
     // The FBX conversion left the clothes slightly metallic; fabric isn't.
     mat.metalness = 0;
     mat.roughness = 0.85;
     mat.needsUpdate = true;
   });
   addGarments(rig, outfit);
+}
+
+/** The outfit with the shirt (and its collar) in another colour, e.g. a number like a quad's 0xe9c21b. */
+export function withShirt(outfit, color) {
+  const hex = typeof color === 'number' ? `#${color.toString(16).padStart(6, '0')}` : color;
+  return { ...outfit, colors: { ...outfit.colors, shirt: hex }, ...(outfit.collar ? { collar: hex } : {}) };
+}
+
+/** Puts her in the same outfit with a different shirt, once the colour is known. */
+export function reshirt(rig, outfit, color) {
+  const next = withShirt(outfit, color);
+  rig.model.traverse((o) => {
+    const base = o.isMesh && o.material.userData.baseMap;
+    if (!base) return;
+    o.material.map.dispose();
+    o.material.map = recolourTexture(base, next.colors);
+    o.material.needsUpdate = true;
+  });
+  refitOutfit(rig, next);
+  return next;
 }
 
 function addGarments(rig, outfit) {

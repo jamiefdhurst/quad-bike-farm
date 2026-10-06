@@ -342,6 +342,8 @@ export class Game {
       const id = c.character.id;
       c.claimedSpec = this.ownership.claims[id] ?? null;
       c.voice.favourite = c.claimedSpec; // the one she likes best is the one she says is hers
+      const mine = this.units.find((u) => u.spec.id === c.claimedSpec);
+      if (mine) c.setShirt(mine.spec.bodyColor); // and her shirt is its colour, so you can see why
       c.voice.names = this.quadNames;
       c.borrowPick = (specs) => this.ownership.borrowPick(id, specs);
     }

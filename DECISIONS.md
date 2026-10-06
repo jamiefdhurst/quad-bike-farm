@@ -904,3 +904,9 @@ Jamie: the sound sometimes stops altogether, perhaps only in Firefox, with nothi
 - You are noticed when you are nearer than `hearMin`, or running (over `runSpeed` 3.2 m/s; walking is 2.2) or making noise (a quad running near them, or a wheel open) within `noticeRange` 20 m. Mid-exchange that cuts the speaker off (`voice.cut()`), leaves `silence` 0.9 s, and the girl who was not talking says a `gossipCaught` line. If one of them wanders off instead, it just stops.
 - They never call you he, she or they in it (a test checks): you are "our friend" or "someone".
 - Not done: line of sight (standing behind the barn still counts as creeping up on them) and facing, so they do not turn when caught. Checked once headless: from 10 m on foot an exchange played, and moving to 2.5 m cut it and got the caught line. Not checked: how often it fires in a real game or how it sounds.
+
+## Shirts the colour of her quad (TODO 5)
+
+- A girl's favourite is the quad the ownership deal gives her at the start of a game (`ownership.assign`), so the shirt can't be fixed in `characters.js`. The game recolours it right after the deal, using the spec's `bodyColor` as it is, collar included.
+- `outfit.js` keeps the untouched texture on the material (`userData.baseMap`) and `reshirt` recolours from that, then refits the garments, so colouring twice never compounds. `Companion.setShirt` keeps `this.outfit` current so a figure change refits the right colour.
+- Checked once headless at seed 3: Amy on green and Jess on red, shirt hex matching `bodyColor`, no console errors. Not looked at by eye in the game, so how the yellow and silver-ish shades read on the model is untested.

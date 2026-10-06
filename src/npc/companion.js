@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { StateMachine } from './stateMachine.js';
 import { CharacterRig } from './characterRig.js';
 import { DEFAULT_COMPANION_PARAMS } from './companionParams.js';
-import { applyOutfit, refitOutfit, OUTFITS } from './outfit.js';
+import { applyOutfit, refitOutfit, reshirt, OUTFITS } from './outfit.js';
 import { shapeFigure } from './figure.js';
 import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 import { drivingStates, drivingMethods } from './companionDriving.js';
@@ -47,7 +47,8 @@ export class Companion {
     // Shape her first so the fitted garments follow the figure.
     this.figure = this.figureAmounts();
     shapeFigure(this.rig, this.figure);
-    applyOutfit(this.rig, OUTFITS[params.outfit] ?? OUTFITS.original);
+    this.outfit = OUTFITS[params.outfit] ?? OUTFITS.original;
+    applyOutfit(this.rig, this.outfit);
     this.root = this.rig.root;
     this.root.name = `companion ${name}`;
     scene.add(this.root);
@@ -123,7 +124,12 @@ export class Companion {
     if (Object.keys(next).every((k) => next[k] === this.figure[k])) return;
     this.figure = next;
     shapeFigure(this.rig, next);
-    refitOutfit(this.rig, OUTFITS[this.params.outfit] ?? OUTFITS.original);
+    refitOutfit(this.rig, this.outfit);
+  }
+
+  /** Her shirt in the colour of her favourite quad, which isn't known until the game has dealt them out. */
+  setShirt(color) {
+    this.outfit = reshirt(this.rig, this.outfit, color);
   }
 
   randomBetween(a, b) {
