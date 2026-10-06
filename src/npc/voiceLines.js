@@ -18,6 +18,7 @@ import { AMY_HEAT_LINES } from './heatLines.js';
 import { AMY_SILENCER_LINES } from './silencerLines.js';
 import { AMY_DIAGNOSIS_LINES } from './diagnosisLines.js';
 import { AMY_THRASH_LINES } from './thrashLines.js';
+import { AMY_REVOFF_LINES } from './revOffLines.js';
 import { AMY_FAULT_LINES } from './faultLines.js';
 import { AMY_BENCH_LINES } from './benchLines.js';
 
@@ -1367,6 +1368,8 @@ export const VOICE_LINES = {
   ...AMY_DIAGNOSIS_LINES,
   // Thrashing a cold engine, and who wore it out (thrashLines.js).
   ...AMY_THRASH_LINES,
+  // Rev-offs (revOffLines.js).
+  ...AMY_REVOFF_LINES,
   // The barn bench (benchLines.js).
   ...AMY_BENCH_LINES,
 };

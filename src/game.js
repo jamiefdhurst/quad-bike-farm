@@ -23,6 +23,7 @@ import { CHARACTERS } from './npc/characters.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { WearLedger, LEDGER_PARAM_RANGES } from './engine/wearLedger.js';
 import { Pranks, PRANK_PARAM_RANGES } from './npc/pranks.js';
+import { RevOff, REVOFF_PARAM_RANGES } from './npc/revOff.js';
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
 import { StrawFall } from './effects/strawFall.js';
 import { Places, PLACE_PARAM_RANGES, isFine, nearestSpot, restStay } from './npc/places.js';
@@ -288,6 +289,8 @@ export class Game {
 
     // Pranks: Jess meddles with a quad's tap or choke, Amy hides the can or toolbox while you're away (npc/pranks.js).
     this.pranks = new Pranks();
+    // Rev-offs: blip the throttle near a girl sat on a running quad and she may blip back (npc/revOff.js).
+    this.revOff = new RevOff();
     this.itemHome = {}; // where a hidden item was taken from, by name
 
     for (const unit of this.units) {
@@ -500,6 +503,7 @@ export class Game {
     this.wearLedger ??= new WearLedger();
     registerTuning('Who wore it out', this.wearLedger.p, LEDGER_PARAM_RANGES);
     registerTuning('Pranks', this.pranks.p, PRANK_PARAM_RANGES);
+    registerTuning('Rev-offs', this.revOff.p, REVOFF_PARAM_RANGES);
     registerTuning('Jump leads', this.leads.params, JUMP_LEAD_PARAM_RANGES);
     registerTuning('Skills', this.skills.p, SKILL_PARAM_RANGES);
     registerTuning('Places', this.places.p, PLACE_PARAM_RANGES);
@@ -1006,6 +1010,40 @@ export class Game {
     }
   }
 
+  // Rev-offs -----------------------------------------------------------------
+
+  /** A girl can answer a blip from a running quad she's sat on with nobody at its controls. */
+  revOffQuad(c) {
+    const q = c.quad;
+    return c.fsm.is('seated') && !q.rider && !q.driver && q.engine.isRunning ? q : null;
+  }
+
+  updateRevOff(dt, ridden) {
+    const q = ridden?.quad;
+    const girls = this.companions.map((c) => ({ id: c.character.id, canBlip: !!this.revOffQuad(c), x: c.root.position.x, z: c.root.position.z }));
+    const you = { riding: !!q && !this.menu.isOpen, running: !!q?.engine.isRunning, speed: Math.abs(q?.speed ?? 0), throttle: q?.throttle ?? 0, x: this.player.position.x, z: this.player.position.z };
+    const events = this.revOff.update(dt, { you, girls });
+    for (const c of this.companions) {
+      const quad = this.revOffQuad(c);
+      if (quad) quad.helperThrottle = this.revOff.throttleFor(c.character.id);
+    }
+    for (const e of events) {
+      const girl = this.companions.find((c) => c.character.id === e.girl);
+      if (!girl) continue;
+      if (e.type === 'done') {
+        if (girl.quad.helperThrottle > 0) girl.quad.helperThrottle = 0;
+      } else if (e.type === 'answer') {
+        girl.voice.say(e.round > 1 ? 'revAnswerMore' : 'revAnswer', { force: true });
+      } else if (e.type === 'complain') {
+        if (e.by === 'amy') this.companions.find((c) => c.character.id === 'amy')?.voice.say('revComplain', { force: true });
+        else if (this.revOff.stalls(girl.quad.engine)) {
+          girl.quad.engine.stall('revOff');
+          girl.voice.say('revStall', { force: true });
+        }
+      }
+    }
+  }
+
   // Pranks -----------------------------------------------------------------
 
   /** What the prank logic needs to know about the farm right now. */
@@ -1379,6 +1417,7 @@ export class Game {
     this.updateRequests(dt, ridden);
     this.updatePlaces(dt);
     this.updatePranks(dt, ridden);
+    this.updateRevOff(dt, ridden);
     this.updateBanter(dt, ridden);
     for (const c of this.companions) {
       c.update(dt, c.quad.unit.vibration, {
