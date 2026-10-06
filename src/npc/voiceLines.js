@@ -23,6 +23,7 @@ import { AMY_QUAD_LINES } from './quadLines.js';
 import { AMY_WARMING_LINES } from './warmingLines.js';
 import { AMY_THROTTLE_LINES } from './throttleLines.js';
 import { AMY_SMOKE_LINES } from './smokeLines.js';
+import { AMY_RACE_LINES } from './raceLines.js';
 import { AMY_FAULT_LINES } from './faultLines.js';
 import { AMY_BENCH_LINES } from './benchLines.js';
 
@@ -1382,6 +1383,8 @@ export const VOICE_LINES = {
   ...AMY_THROTTLE_LINES,
   // Two-stroke smoke (smokeLines.js).
   ...AMY_SMOKE_LINES,
+  // Racing each other (raceLines.js).
+  ...AMY_RACE_LINES,
   // The barn bench (benchLines.js).
   ...AMY_BENCH_LINES,
 };

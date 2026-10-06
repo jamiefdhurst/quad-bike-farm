@@ -147,10 +147,13 @@ export class HerDrive {
    * @param {function} [opts.passenger]  () => whether someone's riding on the back; then she doesn't tire of it.
    * @param {boolean} [opts.tires]  Her own idea to take you out: she gets bored with you aboard like any drive, and gives up if you never get on.
    * @param {boolean} [opts.waitForPassenger]  Started it to give you a ride: she waits for you to get on.
+   * @param {object} [opts.race]  A race (npc/race.js): { route, gridIndex, cruise, go(), alive(), onGrid(), onFinish(), onAbort() }. She
+   *   drives to the grid waypoint, waits for go(), then flat out round the rest of the route and over the line (the last
+   *   waypoint), with no pauses and no tiring or scaring of herself.
    * @param {function} [opts.follow]  () => the quad she's following (yours), or null. Following, she keeps
    *   behind it at its pace rather than doing her own loop, and doesn't tire of it.
    */
-  constructor(quad, { params, probe, isClear, random = Math.random, startingParams, momentWindow = 5, skill = { starting: 0.5, choke: 0.5, cornering: 0.5, mud: 0.5 }, passenger = () => false, waitForPassenger = false, tires = false, follow = null, friend = () => null }) {
+  constructor(quad, { params, probe, isClear, random = Math.random, startingParams, momentWindow = 5, skill = { starting: 0.5, choke: 0.5, cornering: 0.5, mud: 0.5 }, passenger = () => false, waitForPassenger = false, tires = false, follow = null, friend = () => null, race = null }) {
     this.quad = quad;
     this.p = params;
     this.probe = probe;
@@ -172,6 +175,7 @@ export class HerDrive {
     this.waitedTotal = 0;
     this.cruiseScale = 1; // you asked her to go faster or slower
     this.follow = follow;
+    this.race = race;
     this.behindTime = 0; // seconds she's been well behind you
     this.controls = { throttle: 0, brake: 1, steer: 0, starter: false, reverse: false };
     this.events = [];
@@ -199,7 +203,7 @@ export class HerDrive {
     this.index = 0;
     this.pauseFor = null; // the waypoint pauseHere was decided for
     this.pauseHere = false;
-    this.cruise = this.pickCruise();
+    this.cruise = race ? race.cruise : this.pickCruise();
     this.driveFor = this.between(params.driveForMin, params.driveForMax);
     this.forgetsChoke = random() < mistakeChance(params.driveForgetChokeChance, skill.choke);
     this.attempt = null;
@@ -400,6 +404,7 @@ export class HerDrive {
   }
 
   finish(result) {
+    if (this.race && !this.done && result !== 'raced') this.race.onAbort?.();
     this.done = true;
     this.result = result;
     this.phase = 'done';
@@ -421,6 +426,8 @@ export class HerDrive {
     // Following you and you've got off: she waits a while, then gives up on you.
     if (this.follow && (this.phase === 'drive' || this.phase === 'settle')) this.waitForLeader(dt);
     this.watchFriend();
+    // The race has been called off (or is long over): she stops where she is.
+    if (this.race?.alive && !this.race.alive() && this.phase !== 'stop' && this.phase !== 'done') this.stop('bored');
 
     // Stalled on her (anywhere but while she's starting it).
     if (this.phase !== 'start' && this.running && !q.engine.isRunning) {
@@ -480,6 +487,17 @@ export class HerDrive {
           }
           this.setPhase('drive');
           this.events.push(this.time === 0 ? 'setOff' : 'moveOff');
+        }
+        break;
+
+      case 'grid':
+        // On the start line, waiting for the other one and the count-down.
+        this.hold(c);
+        if (q.forwardSpeed > 0.4) c.brake = this.p.driveBrakeFirm;
+        this.tendChoke();
+        if (this.race.go()) {
+          this.setPhase('drive');
+          this.events.push('raceGo');
         }
         break;
 
@@ -573,6 +591,11 @@ export class HerDrive {
   }
 
   plan() {
+    if (this.race) {
+      this.waypoints = this.race.route.map((pt) => ({ ...pt }));
+      this.index = 0;
+      return true;
+    }
     const q = this.quad;
     const pos = q.position;
     // Wandered off a bit: the next loop sets off back towards where she started.
@@ -602,7 +625,7 @@ export class HerDrive {
     const c = this.controls;
     c.reverse = false;
 
-    if (this.time > this.driveFor && !this.carrying) {
+    if (this.time > this.driveFor && !this.carrying && !this.race) {
       this.stop(this.random() < p.driveScaredChance ? 'scared' : 'bored');
       return;
     }
@@ -641,11 +664,27 @@ export class HerDrive {
     const pos = q.position;
     const dist = Math.hypot(wp.x - pos.x, wp.z - pos.z);
     // Going quickly she can't thread a waypoint exactly: near enough will do.
-    if (dist < Math.max(p.driveArriveRadius, speed * 0.5) && !follow) {
+    // (Racing she holds her line much tighter, to keep out of the puddles.)
+    if (dist < Math.max(p.driveArriveRadius, speed * (this.race ? 0.2 : 0.5)) && !follow) {
       this.index++;
       this.events.push('waypoint');
       if (this.cleanLeg && Math.abs(c.steer) > 0.2) this.events.push('practice:cornering');
       this.cleanLeg = true;
+      if (this.race) {
+        if (this.index - 1 === this.race.gridIndex) {
+          // On the start line: stop and wait for the start.
+          this.events.push('raceGrid');
+          this.race.onGrid?.();
+          this.hold(c);
+          this.setPhase('grid');
+        } else if (this.index >= this.waypoints.length) {
+          // Over the line: that's the race, and she pulls up.
+          this.events.push('raceFinish');
+          this.race.onFinish?.();
+          this.stop('raced');
+        }
+        return;
+      }
       if (this.pauseHere) {
         this.events.push('pause');
         this.setPhase('pause', this.between(p.drivePauseMin, p.drivePauseMax));
@@ -729,7 +768,7 @@ export class HerDrive {
       this.wobbleTimer = this.between(0.3, 1.1);
       this.wobble = 1 + (this.random() * 2 - 1) * p.driveJerk;
     }
-    const stopsHere = !follow && (this.index === this.waypoints.length - 1 || this.pauseHere);
+    const stopsHere = this.race ? this.index === this.race.gridIndex : !follow && (this.index === this.waypoints.length - 1 || this.pauseHere);
     const corner = cornerSpeed(error, dist, cornerAccel);
     const crowded = Math.max(2.5, this.clearAround * 1.2);
     const target = targetSpeed(this.cruise, { error, toStop: stopsHere ? dist : Infinity, clear: this.clearAhead, corner: Math.min(corner, crowded) });

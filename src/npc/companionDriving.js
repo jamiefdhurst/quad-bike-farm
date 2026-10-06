@@ -46,6 +46,8 @@ export const drivingStates = {
       this.offeredRide = false;
       const following = this.followWanted;
       this.followWanted = false;
+      const race = this.raceWanted;
+      this.raceWanted = null;
       const params = driveMood(this.params, this.driveMood);
       params.driveSpeedMaxBase = this.params.driveSpeedMax;
       if (offered) {
@@ -56,6 +58,12 @@ export const drivingStates = {
         // Keeping up with you takes more throttle than pottering about, and she minds speed less.
         params.driveMaxThrottle = Math.min(1, this.params.followMaxThrottle * (params.driveSpeedMax / this.params.driveSpeedMax));
         params.driveScareSpeed = this.params.followScareSpeed;
+      }
+      if (race) {
+        // Racing: flat out, no pauses, nothing frightens her off.
+        params.driveMaxThrottle = race.throttle;
+        params.driveScareSpeed = 99;
+        params.drivePauseChance = 0;
       }
       if (ride || q.passenger) {
         params.driveLoopRadiusMin *= this.params.rideLoopScale;
@@ -69,6 +77,7 @@ export const drivingStates = {
         momentWindow: this.skillMomentWindow?.(),
         friend: () => this.friendOnBack(),
         waitForPassenger: ride,
+        race,
         tires: offered,
         follow: following ? () => {
           const lead = this.followTarget?.();
@@ -156,12 +165,13 @@ export const drivingStates = {
 
 export const drivingMethods = {
   /** Walks to the front of a quad, gets on and has a little drive; with `giveRide`, waits for you on the back. */
-  requestDrive(quad, { giveRide = false, follow = false } = {}) {
+  requestDrive(quad, { giveRide = false, follow = false, race = null } = {}) {
     this.giveRide = giveRide;
     this.offeredRide = false;
     this.followWanted = follow;
+    this.raceWanted = race; // a race to drive in (npc/race.js)
     if (this.fsm.is('driving')) {
-      if (quad !== this.quad) this.stopDriving('off', () => this.requestDrive(quad));
+      if (quad !== this.quad) this.stopDriving('off', () => this.requestDrive(quad, { giveRide, follow, race }));
       return;
     }
     if (this.fsm.is('shuffling', 'dismounting')) return;
@@ -170,7 +180,7 @@ export const drivingMethods = {
       return;
     }
     if (this.fsm.is('seated', 'mounting')) {
-      this.afterDismount = () => this.requestDrive(quad);
+      this.afterDismount = () => this.requestDrive(quad, { giveRide, follow, race });
       this.fsm.transition('dismounting');
       return;
     }

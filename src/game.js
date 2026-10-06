@@ -30,6 +30,8 @@ import { Hearing, EAR_PARAM_RANGES } from './npc/earing.js';
 import { Warming, WARMING_PARAM_RANGES } from './npc/warming.js';
 import { ThrottleGrab, GRAB_PARAM_RANGES } from './npc/throttleGrab.js';
 import { SmokeSense, SMOKE_PARAM_RANGES } from './npc/smokeSense.js';
+import { Race, RACE_PARAM_RANGES, planLap } from './npc/race.js';
+import { buildStartLine, nearestTrackFraction } from './world/startLine.js';
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
 import { StrawFall } from './effects/strawFall.js';
 import { Places, PLACE_PARAM_RANGES, isFine, nearestSpot, restStay } from './npc/places.js';
@@ -305,6 +307,10 @@ export class Game {
     this.hearing = new Hearing();
     this.throttleGrab = new ThrottleGrab(); // a girl on the back opening it over your hand (npc/throttleGrab.js)
     this.smokeSense = new SmokeSense(); // Amy coughs at two-stroke smoke, Jess loves it (npc/smokeSense.js)
+    // Racing: the girls race a lap of the track from a start line by the yard (npc/race.js).
+    this.race = new Race();
+    this.raceStart = nearestTrackFraction(this.world.track, this.world.layout.yard.x, this.world.layout.yard.z);
+    buildStartLine(this.scene, (x, z) => this.world.heightAt(x, z), this.world.track, this.raceStart, this.world.layout.trackHalfWidth);
     this.warming = new Warming(); // hands over an idling engine on a cold day (npc/warming.js)
     const capital = (id) => id[0].toUpperCase() + id.slice(1);
     this.ownership.assign(
@@ -535,6 +541,7 @@ export class Game {
     registerTuning('Warming hands', this.warming.p, WARMING_PARAM_RANGES);
     registerTuning('Hand on the throttle', this.throttleGrab.p, GRAB_PARAM_RANGES);
     registerTuning('Two-stroke smoke', this.smokeSense.p, SMOKE_PARAM_RANGES);
+    registerTuning('Racing', this.race.p, RACE_PARAM_RANGES);
     registerTuning('Jump leads', this.leads.params, JUMP_LEAD_PARAM_RANGES);
     registerTuning('Skills', this.skills.p, SKILL_PARAM_RANGES);
     registerTuning('Places', this.places.p, PLACE_PARAM_RANGES);
@@ -694,6 +701,14 @@ export class Game {
         triggers.push({ when: 'corrected', edge: true, roles: { guesser: 'jess', corrector: 'amy', guess: said.guess, truth: said.truth } });
       }
     }
+    // A race has just finished, or one of them is well ahead on wins (npc/race.js).
+    if (this.raceResult) {
+      triggers.push({ when: 'raced', edge: true, roles: this.raceResult });
+      this.raceResult = null;
+    }
+    const rivals = this.race.rivalry();
+    const [first, second] = this.companions;
+    if (rivals && first.fsm.is('idle') && second.fsm.is('idle') && first.root.position.distanceTo(second.root.position) < 12) triggers.push({ when: 'rivals', roles: rivals });
     const speak = (speaker, text, opts) => (byId[speaker]?.params.voice ? byId[speaker].voice.speak(text, opts) : 0);
     this.banter.update(dt, triggers, speak, this.talkFloor.left <= 0 && !this.menu.isOpen);
     this.talkFloor.banter = this.banter.busy;
@@ -1220,6 +1235,60 @@ export class Game {
     }
   }
 
+  // Racing ------------------------------------------------------------------
+
+  /** The lap as waypoints for a girl on her side of the track: the grid point first, then round the loop and back to it. */
+  raceRoute(lateral) {
+    const L = this.world.layout;
+    const h = this.world.heights;
+    const hazards = [...(h.bogs ?? []).map((b) => ({ x: b.x, z: b.z, radius: b.radius })), ...(h.puddles ?? []).map((p) => ({ x: p.x, z: p.z, radius: L.puddleRadius + 1.5 }))]; // a puddle at speed drowns the engine, so well clear
+    const s = this.world.track.sample(this.raceStart);
+    const grid = { x: s.x - s.tz * lateral, z: s.z + s.tx * lateral };
+    return [grid, ...planLap(this.world.track, this.raceStart, hazards, { spacing: this.race.p.routeSpacing, margin: this.race.p.hazardMargin, lateral })];
+  }
+
+  updateRace(dt, ridden) {
+    const p = this.race.p;
+    const free = (c) => c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot;
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: free(c) }));
+    const options = {};
+    for (const c of this.companions) {
+      options[c.character.id] = this.units.filter((u) => u !== ridden && c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && !u.quad.bog.stuck).map((u) => u.spec.id);
+    }
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    const later = (ms, fn) => setTimeout(fn, ms);
+    for (const e of this.race.update(dt, { girls, options, claims: this.ownership.claims })) {
+      if (e.type === 'invite') {
+        byId[e.challenger].voice.say('raceInvite', { force: true });
+        later(3500, () => byId[e.other]?.voice.say('raceAccept', { force: true }));
+        let side = 1;
+        for (const [id, spec] of Object.entries(e.picks)) {
+          const c = byId[id];
+          const quad = this.units.find((u) => u.spec.id === spec).quad;
+          const confidence = c.driveConfidence ?? c.params.driveConfidence;
+          const race = {
+            route: this.raceRoute(0.9 * side),
+            gridIndex: 0,
+            cruise: p.cruiseBase + p.cruiseConfidence * confidence + (Math.random() * 2 - 1) * p.cruiseSpread,
+            throttle: p.throttle,
+            go: () => this.race.go(),
+            alive: () => this.race.active,
+            onGrid: () => this.race.grid(id),
+            onFinish: () => this.race.finish(id),
+            onAbort: () => this.race.abort(id),
+          };
+          side = -side;
+          c.requestDrive(quad, { race });
+        }
+      } else if (e.type === 'countdown') byId[this.race.challenger]?.voice.say('raceCount', { force: true });
+      else if (e.type === 'finish') {
+        if (e.place === 1) byId[e.girl].voice.say('raceWin', { force: true });
+        else later(2500, () => byId[e.girl]?.voice.say('raceLose', { force: true }));
+      } else if (e.type === 'out') byId[e.girl]?.voice.say('raceOut', { force: true });
+      else if (e.type === 'result' && e.winner) this.raceResult = { winner: e.winner, loser: e.loser };
+    }
+  }
+
   // Pranks -----------------------------------------------------------------
 
   /** What the prank logic needs to know about the farm right now. */
@@ -1603,6 +1672,7 @@ export class Game {
     this.updateRevOff(dt, ridden);
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);
+    this.updateRace(dt, ridden);
     this.updateSmokeSense(dt);
     this.updateThrottleGrab(dt, ridden);
     this.updateRockPrank(dt);
