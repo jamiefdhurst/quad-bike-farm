@@ -16,10 +16,16 @@ export const SUSPENSION_TOP_Y = 0.1;
 // Box roughly the size of the bodywork, so people stop at the fenders.
 export const CHASSIS_COLLIDER = { hx: 0.58, hy: 0.2, hz: 1.0, y: 0.15 };
 
+// Where the wheels, their suspension mounts and the bodywork box are. The tractor brings its own: a longer wheelbase, big rear wheels
+// and small front ones (a wheel's own `radius` and mount height `y` override the vehicle's wheelRadius and `topY`).
+export const QUAD_LAYOUT = { wheels: WHEELS, topY: SUSPENSION_TOP_Y, chassis: CHASSIS_COLLIDER };
+
 export class QuadPhysics {
   /** `scale` shrinks the whole chassis (the kids' quad): wheel positions, suspension mount and bodywork box. */
-  constructor(physics, RAPIER, params, spawn, scale = 1) {
+  constructor(physics, RAPIER, params, spawn, scale = 1, layout = QUAD_LAYOUT) {
     this.scale = scale;
+    this.layout = layout;
+    this.wheels = layout.wheels;
     this.physics = physics;
     this.RAPIER = RAPIER;
     this.params = params;
@@ -32,30 +38,30 @@ export class QuadPhysics {
         .setCcdEnabled(true)
         .setCanSleep(false),
     );
-    const c = CHASSIS_COLLIDER;
+    const c = layout.chassis;
     this.collider = physics.createCollider(
       RAPIER.ColliderDesc.cuboid(c.hx * scale, c.hy * scale, c.hz * scale).setTranslation(0, c.y * scale, 0).setFriction(0.6),
       this.body,
     );
 
     // Per wheel, for the engine load: { force, mud, contact }. See wheelLoads().
-    this.wheelMud = WHEELS.map(() => 0);
-    this.wheelLoadState = WHEELS.map(() => ({ force: 0, mud: 0, contact: false }));
+    this.wheelMud = this.wheels.map(() => 0);
+    this.wheelLoadState = this.wheels.map(() => ({ force: 0, mud: 0, contact: false }));
 
     this.vehicle = physics.createVehicleController(this.body);
     this.vehicle.indexUpAxis = 1;
     this.vehicle.setIndexForwardAxis = 2;
-    for (const w of WHEELS) {
+    for (const w of this.wheels) {
       this.vehicle.addWheel(
-        { x: w.x * scale, y: SUSPENSION_TOP_Y * scale, z: w.z * scale },
+        { x: w.x * scale, y: (w.y ?? layout.topY) * scale, z: w.z * scale },
         { x: 0, y: -1, z: 0 },
         { x: -1, y: 0, z: 0 },
         params.suspensionRestLength,
-        params.wheelRadius,
+        w.radius ?? params.wheelRadius,
       );
     }
     // What each wheel is standing on, refreshed every step (see applyControls).
-    this.wheelInfo = WHEELS.map((w) => ({
+    this.wheelInfo = this.wheels.map((w) => ({
       contact: false,
       point: { x: 0, y: 0, z: 0 },
       mud: 0,
@@ -65,7 +71,7 @@ export class QuadPhysics {
       driven: false,
       spinAngle: 0, // extra wheel rotation from wheelspin, radians
     }));
-    this.traction = new Traction(WHEELS.length);
+    this.traction = new Traction(this.wheels.length);
     this.driveSign = 1;
     this.applyParams();
   }
@@ -88,8 +94,8 @@ export class QuadPhysics {
       { x: p.pitchInertia, y: p.yawInertia, z: p.rollInertia },
       { x: 0, y: 0, z: 0, w: 1 },
     );
-    for (let i = 0; i < WHEELS.length; i++) {
-      this.vehicle.setWheelRadius(i, p.wheelRadius);
+    for (let i = 0; i < this.wheels.length; i++) {
+      this.vehicle.setWheelRadius(i, this.wheels[i].radius ?? p.wheelRadius);
       this.vehicle.setWheelSuspensionRestLength(i, p.suspensionRestLength);
       this.vehicle.setWheelSuspensionStiffness(i, p.suspensionStiffness);
       this.vehicle.setWheelSuspensionCompression(i, p.suspensionCompression);
@@ -114,7 +120,7 @@ export class QuadPhysics {
     const p = this.params;
     const v = this.vehicle;
     // Grip under each wheel, from where it touched down last step.
-    for (let i = 0; i < WHEELS.length; i++) {
+    for (let i = 0; i < this.wheels.length; i++) {
       const w = this.wheelInfo[i];
       w.contact = v.wheelIsInContact(i);
       if (w.contact) {
@@ -131,14 +137,14 @@ export class QuadPhysics {
       w.grip *= 1 - wet * (0.15 + 0.15 * w.mud);
       // Puddles are mud too, as far as the engine's concerned.
       this.wheelMud[i] = Math.max(w.mud, w.puddle);
-      w.driven = isDriven(p, WHEELS[i].front);
+      w.driven = isDriven(p, this.wheels[i].front);
     }
     const t = this.traction.update(dt, driveForce, this.wheelInfo, p);
     if (Math.abs(driveForce) > 1) this.driveSign = Math.sign(driveForce);
-    for (let i = 0; i < WHEELS.length; i++) {
+    for (let i = 0; i < this.wheels.length; i++) {
       v.setWheelEngineForce(i, t.forces[i]);
       v.setWheelBrake(i, brake);
-      v.setWheelSteering(i, WHEELS[i].front ? steer : 0);
+      v.setWheelSteering(i, this.wheels[i].front ? steer : 0);
       v.setWheelFrictionSlip(i, t.grips[i]);
     }
   }
@@ -162,7 +168,9 @@ export class QuadPhysics {
     this.vehicle.updateVehicle(dt);
     // Spinning wheels turn faster than the ground goes by.
     const spin = (this.driveSign * this.spinSlip * dt) / this.params.wheelRadius;
-    for (const w of this.wheelInfo) if (w.driven) w.spinAngle = (w.spinAngle + spin) % (Math.PI * 2);
+    this.wheelInfo.forEach((w, i) => {
+      if (w.driven) w.spinAngle = (w.spinAngle + (spin * this.params.wheelRadius) / (this.wheels[i].radius ?? this.params.wheelRadius)) % (Math.PI * 2);
+    });
     // The raycast wheels' brakes can't quite hold it on a slope: it creeps a metre
     // or so a minute. Parked and all but still, its sideways and along-the-ground
     // drift is cancelled; it can still settle and bounce up and down.
@@ -174,7 +182,7 @@ export class QuadPhysics {
 
   /** How hard each wheel is pressed into the ground (N), how muddy it is there, and whether it's touching. */
   wheelLoads() {
-    for (let i = 0; i < WHEELS.length; i++) {
+    for (let i = 0; i < this.wheels.length; i++) {
       const w = this.wheelLoadState[i];
       w.contact = this.vehicle.wheelIsInContact(i);
       w.force = w.contact ? (this.vehicle.wheelSuspensionForce(i) ?? 0) : 0;

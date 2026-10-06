@@ -12,6 +12,7 @@ import { oilExcess, stepLube, nipping } from './lubrication.js';
 import { runOnChance, popPropensity } from './runOn.js';
 import { stepWater, waterCatchFactor } from './water.js';
 import { stepDieselSoak, dieselCatchFactor } from './diesel.js';
+import { stepGlow, glowReady, compressionCatchFactor } from './compression.js';
 import { offTemperature } from '../world/barn.js';
 import { stepHeat, stepSoak, pinkLevel, gaugeHeat, coolTickRate, hotStartRich } from './heat.js';
 
@@ -78,6 +79,8 @@ export class EngineModel {
     this.gulp = 0; // water being taken in right now, per second
     this.diesel = 0; // diesel fraction of the fuel in the carb right now
     this.dieselSoak = 0; // 0..1 how soaked it is with diesel (see diesel.js); only a drain at the toolbox clears it
+    this.glow = 0; // 0..1 how hot the glow plugs are (a diesel; see compression.js)
+    this.keyPulled = false; // a diesel's key switched off while it runs on: it keeps going until the stop knob
     this.pinkLeft = 0; // rattles owed to the audio
     this.tickLeft = 0; // cooling ticks owed to the audio
     this.motorOn = false; // the starter motor is turning it (not just a yank on the cord)
@@ -118,7 +121,22 @@ export class EngineModel {
   }
 
   get ignitionOn() {
-    return this.state !== EngineState.OFF && !this.keyOff;
+    return this.state !== EngineState.OFF && !this.keyOff && !this.keyPulled;
+  }
+
+  /** The glow lamp: a cold diesel with the key on, not running, and the plugs hot enough to start. */
+  get glowLamp() {
+    return this.params.compressionIgnition && this.ignitionOn && this.state !== EngineState.RUNNING && glowReady(this.glow, this.temperature, this.params);
+  }
+
+  /** The pull-out stop knob: shuts a diesel off whatever the key says. Returns false if it wasn't running. */
+  stopKnob() {
+    if (!this.params.compressionIgnition || this.state !== EngineState.RUNNING) return false;
+    this.keyPulled = false;
+    this.keyOff = false;
+    this.state = EngineState.OFF;
+    this.emit('shutdown');
+    return true;
   }
 
   get isRunning() {
@@ -131,6 +149,19 @@ export class EngineModel {
 
   setIgnition(on) {
     if (on === this.ignitionOn) return;
+    if (this.params.compressionIgnition) {
+      // A diesel's key is only the plugs and the dash: turned off with it running, it carries on.
+      if (!on && this.state === EngineState.RUNNING) {
+        this.keyPulled = true;
+        this.emit('ignitionOff');
+        return;
+      }
+      if (on && this.keyPulled) {
+        this.keyPulled = false;
+        this.emit('ignitionOn');
+        return;
+      }
+    }
     if (on) {
       if (this.keyOff) {
         // Switched back on while it was still running on: it just carries on.
@@ -196,7 +227,7 @@ export class EngineModel {
     this.dirt = clamp(dirt, 0, 1);
     this.clog = clamp(clog, 0, 1);
     this.gulp = Math.max(0, gulp);
-    this.diesel = clamp(diesel, 0, 1);
+    this.diesel = this.params.runsOnDiesel ? 0 : clamp(diesel, 0, 1);
     this.speed = Math.abs(speed);
     this.ambient = clamp(ambient, 0, 1);
     this.sheltered = sheltered;
@@ -231,6 +262,7 @@ export class EngineModel {
     this.updateTemperature(h);
     this.updateLube(h);
     this.water = stepWater(this.water, h, { gulp: this.gulp, running: this.state === EngineState.RUNNING, throttle: this.throttle }, p);
+    this.glow = stepGlow(this.glow, h, p.compressionIgnition && this.ignitionOn && this.state !== EngineState.RUNNING, p);
     this.dieselSoak = stepDieselSoak(this.dieselSoak, h, { diesel: this.diesel, active: this.state === EngineState.RUNNING }, p);
     this.updateMixture();
 
@@ -466,7 +498,7 @@ export class EngineModel {
     if (this.advanceCycle(h)) {
       const t = this.cycleT;
       const width = this.mixture < 0 ? p.catchLeanWidth : p.catchRichWidth;
-      const chance =
+      let chance =
         p.catchChance *
         lerp(p.catchColdFactor, 1, this.temperature) *
         this.knack.catchFactor(this.temperature) *
@@ -477,6 +509,10 @@ export class EngineModel {
         clamp(speed, 0, 1) * // turned over too slowly, it won't fire
 
         (this.fuel > 0.02 ? 1 : 0);
+      // A diesel doesn't care about the mixture: it wants hot plugs when it's cold, and turning over fast enough.
+      if (p.compressionIgnition) {
+        chance = p.catchChance * lerp(p.catchColdFactor, 1, this.temperature) * compressionCatchFactor(this.glow, this.temperature, p) * (1 - this.fouling) * clamp(speed, 0, 1) * (this.fuel > 0.02 ? 1 : 0);
+      }
 
       if (this.random() < chance) {
         this.state = EngineState.RUNNING;
@@ -673,6 +709,13 @@ export class EngineModel {
   }
 
   stall(reason) {
+    if (this.keyPulled) {
+      // A diesel stalling with its key already off: nothing left to switch, it's simply off.
+      this.keyPulled = false;
+      this.state = EngineState.OFF;
+      this.emit('shutdown', this.stepT);
+      return;
+    }
     if (this.keyOff) {
       // Running on with the key off, it just dies: that's the shutdown.
       this.keyOff = false;

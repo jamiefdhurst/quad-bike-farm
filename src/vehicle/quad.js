@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import { buildQuadModel, poseSuspension, setHeadlights } from './quadModel.js';
 import { FuelSystem } from './fuelSystem.js';
-import { QuadPhysics, WHEELS, SUSPENSION_TOP_Y } from './quadPhysics.js';
+import { QuadPhysics, QUAD_LAYOUT } from './quadPhysics.js';
 import { Drivetrain } from './drivetrain.js';
+import { ManualDrivetrain, gearLabel } from './manualDrivetrain.js';
+import { poseTractorControls } from './tractorModel.js';
 import { EngineLoad } from './engineLoad.js';
 import { waterGulp } from '../engine/water.js';
 import { AirFilter } from './airFilter.js';
@@ -19,6 +21,15 @@ const CHOKE_LESS_KEY = 'KeyZ';
 // Holding a choke key steps again after this delay, then at this interval.
 const CHOKE_REPEAT_DELAY = 0.35;
 const CHOKE_REPEAT_INTERVAL = 0.12;
+// The tractor's controls (a manual, so the quads' choke keys and automatic drive are set aside): Shift is the clutch, 1 to 3 the
+// gears, 0 neutral and V reverse, Q and Z move the hand throttle and X pulls the stop knob.
+const CLUTCH_KEYS = ['ShiftLeft', 'ShiftRight'];
+const GEAR_KEYS = { Digit1: 1, Digit2: 2, Digit3: 3, Digit0: 0, KeyB: -1 };
+const HAND_THROTTLE_RATE = 0.35; // per second the hand throttle moves while its key is held
+const HAND_THROTTLE_UP_KEY = 'KeyQ';
+const HAND_THROTTLE_DOWN_KEY = 'KeyZ';
+const STOP_KNOB_KEY = 'KeyX';
+const NOTE_SECONDS = 2.5;
 
 /**
  * The quad as a game object: rider controls, drivetrain, Rapier physics and
@@ -34,7 +45,7 @@ export class Quad {
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, proxy = null }) {
     this.scale = scale; // 1, or smaller for the kids' quad: the model and the physics chassis both shrink by this
     this.world = world;
     this.engine = engine;
@@ -42,7 +53,9 @@ export class Quad {
     this.label = label;
     this.spawn = spawn;
 
-    this.model = buildQuadModel({ bodyColor, dashStyle, style, solo, plateNumber });
+    this.layout = layout;
+    this.groundOffset = groundOffset; // chassis origin to ground, at rest
+    this.model = build ? build({ dashStyle }) : buildQuadModel({ bodyColor, dashStyle, style, solo, plateNumber });
     this.model.scale.setScalar(scale);
     this.dash = this.model.userData.dash;
     this.fuel = new FuelSystem(fuelParams);
@@ -55,7 +68,7 @@ export class Quad {
     const part = (name) => this.model.getObjectByName(name);
     this.body = part('body');
     this.bodyRoot = part('bodyRoot');
-    this.bodyRoot.position.y = GROUND_OFFSET;
+    this.bodyRoot.position.y = this.groundOffset;
     this.handlebars = part('handlebars');
     this.handlebarsBase = this.handlebars.position.clone();
     this.fuelTap = part('fuelTap');
@@ -71,27 +84,35 @@ export class Quad {
     // Whoever sits on a smaller quad is still full size: undo the model's scale on the anchors people hang from.
     for (const a of [this.riderAnchor, this.pillionAnchor, this.rackAnchor, this.mugAnchor, this.cameraAnchor, this.pillionCameraAnchor]) a?.scale.setScalar(1 / scale);
     this.exhaustTip = part('exhaustTip');
-    this.wheels = WHEELS.map((w) => ({ ...w, object: part(w.name), spin: part(w.name).getObjectByName('spin') }));
+    this.wheels = layout.wheels.map((w) => ({ ...w, topY: w.y ?? layout.topY, object: part(w.name), spin: part(w.name).getObjectByName('spin') }));
     // Wheel centre heights in bodyRoot space, for posing the suspension arms.
-    this.wheelHeights = WHEELS.map(() => 0);
+    this.wheelHeights = this.wheels.map(() => 0);
+    this.exhaustFlap = part('exhaustFlap') ?? null; // the tractor's upright exhaust has a flap that lifts with each beat
+    this.flap = 0; // how far it's lifted, 0..1
 
     // Invisible box used for "look at it and press E". Reaches about 1.45 m
     // off the ground so it's easy to target from a few metres away.
+    const box = proxy ?? { w: 1.25, h: 1.45, d: 2.2 };
     this.proxy = new THREE.Mesh(
-      new THREE.BoxGeometry(1.25, 1.45, 2.2),
+      new THREE.BoxGeometry(box.w, box.h, box.d),
       new THREE.MeshBasicMaterial({ visible: false }),
     );
-    this.proxy.position.y = GROUND_OFFSET + 1.45 / 2;
+    this.proxy.position.y = this.groundOffset + box.h / 2;
     this.model.add(this.proxy);
 
     const s = spawn;
     this.physics = new QuadPhysics(physics, RAPIER, params, {
       x: s.x,
-      y: world.heightAt(s.x, s.z) - GROUND_OFFSET * scale + 0.05 * scale,
+      y: world.heightAt(s.x, s.z) - this.groundOffset * scale + 0.05 * scale,
       z: s.z,
       yaw: s.yaw,
-    }, scale);
-    this.drivetrain = new Drivetrain(params);
+    }, scale, layout);
+    // The tractor has a clutch pedal and a gearbox rather than a CVT; everything reads the same drivetrain fields.
+    this.manual = !!gearbox;
+    this.gearbox = gearbox;
+    this.drivetrain = this.manual ? new ManualDrivetrain(params, gearbox) : new Drivetrain(params);
+    this.handSetting = 0; // the tractor's hand throttle, 0..1: it stays where it was put, even with nobody on it
+    this.note = null; // something to tell whoever's at the controls, taken by the game (see takeNote)
     this.bog = new Bog(); // how far it's sunk into a bog (bog.js)
     this.towed = false; // on the end of the winch: brakes off
     this.engineLoad = new EngineLoad(params);
@@ -260,9 +281,43 @@ export class Quad {
     if (this.input) input.takeWheelSteps();
     if (input.wasPressed('KeyK')) this.engine.toggleIgnition();
     if (input.wasPressed('KeyF')) this.fuel.cycleTap();
-    this.chokeKey(dt, input, CHOKE_MORE_KEY, 1);
-    this.chokeKey(dt, input, CHOKE_LESS_KEY, -1);
+    if (this.manual) this.manualKeys(input);
+    else {
+      this.chokeKey(dt, input, CHOKE_MORE_KEY, 1);
+      this.chokeKey(dt, input, CHOKE_LESS_KEY, -1);
+    }
     if (input.wasPressed('KeyT') && this.isTipped) this.rightItself();
+  }
+
+  /** The tractor's gear lever and stop knob. */
+  manualKeys(input) {
+    if (input.wasPressed(STOP_KNOB_KEY)) this.engine.stopKnob();
+    if (!this.input) return; // standing beside it you can reach the knob but not the lever
+    for (const [code, gear] of Object.entries(GEAR_KEYS)) {
+      if (!input.wasPressed(code)) continue;
+      if (this.drivetrain.select(gear) === 'clutch') this.say('Clutch in (hold Shift) to change gear');
+    }
+  }
+
+  /** The tractor's starter interlock: in neutral or with the clutch down, never in gear with the pedal up. Quads have no such thing. */
+  starterAllowed() {
+    if (!this.manual || this.drivetrain.mayCrank) return true;
+    this.say('It is in gear: hold Shift for the clutch, or put it in neutral (0), to use the starter');
+    return false;
+  }
+
+  /** Tells whoever's at the controls something, for a moment; the game shows it (takeNote). */
+  say(text) {
+    if (this.note?.text === text) return; // still showing it
+    this.note = { text, left: NOTE_SECONDS };
+  }
+
+  /** The current note if it's new since last asked, else null. */
+  takeNote() {
+    const n = this.note;
+    if (!n || n.shown) return null;
+    n.shown = true;
+    return n.text;
   }
 
   /** One choke step per press, repeating while the key is held. */
@@ -291,7 +346,20 @@ export class Quad {
     let brakeInput = 0;
     let steerInput = 0;
 
-    if (this.input) {
+    if (this.manual && this.input) {
+      // The tractor: foot throttle and brake, a hand throttle that stays put, a clutch pedal and a gear lever.
+      const input = this.input;
+      steerInput = (input.isDown('KeyA') ? 1 : 0) - (input.isDown('KeyD') ? 1 : 0);
+      throttleInput = input.isDown('KeyW') ? 1 : 0;
+      brakeInput = input.isDown('KeyS') ? 1 : 0;
+      this.clutchHeld = CLUTCH_KEYS.some((k) => input.isDown(k));
+      this.handSetting = THREE.MathUtils.clamp(
+        this.handSetting + ((input.isDown(HAND_THROTTLE_UP_KEY) ? 1 : 0) - (input.isDown(HAND_THROTTLE_DOWN_KEY) ? 1 : 0)) * HAND_THROTTLE_RATE * dt,
+        0,
+        1,
+      );
+      this.starter = input.isDown('KeyR') && this.starterAllowed();
+    } else if (this.input) {
       const input = this.input;
       const w = input.isDown('KeyW');
       const s = input.isDown('KeyS');
@@ -321,7 +389,8 @@ export class Quad {
       if (!this.reverse && !brakeInput) throttleInput = Math.max(throttleInput, this.handThrottle);
     } else {
       // Someone beside the bike can still hold the starter.
-      this.starter = (!!this.remoteInput && this.remoteInput.isDown('KeyR')) || this.helperStarter;
+      this.starter = ((!!this.remoteInput && this.remoteInput.isDown('KeyR')) || this.helperStarter) && this.starterAllowed();
+      this.clutchHeld = false;
       throttleInput = this.helperThrottle;
       if (this.driver) {
         const c = this.driver.controls;
@@ -336,6 +405,9 @@ export class Quad {
         else throttleInput = cruise;
       }
     }
+
+    // The hand throttle holds the engine up wherever it was left, ridden or not.
+    if (this.manual) throttleInput = Math.max(throttleInput, this.handSetting);
 
     // The recoil pull-start (the two-strokes): hold P to draw the cord, let go to yank.
     const pullDown = this.input ? this.input.isDown('KeyP') : (!!this.remoteInput && this.remoteInput.isDown('KeyP')) || this.helperPull;
@@ -366,6 +438,8 @@ export class Quad {
 
     const e = this.engine;
     this.drivetrain.update({
+      dt,
+      clutchHeld: this.clutchHeld,
       rpm: e.rpm,
       power: e.power,
       running: e.isRunning,
@@ -376,6 +450,7 @@ export class Quad {
       maxRpm: e.params.maxRpm,
       lugDrop: e.isRunning ? Math.max(0, e.freeTargetRpm - e.targetRpm) : 0,
     });
+    if (this.manual) this.reverse = this.drivetrain.gear < 0; // the lever decides, not S held at a stop
     const d = this.drivetrain;
     this.engineLoad.update(dt, {
       throttle: this.throttle,
@@ -493,12 +568,12 @@ export class Quad {
     for (let i = 0; i < this.wheels.length; i++) {
       const w = this.wheels[i];
       const st = this.physics.wheelState(i);
-      w.object.position.set(w.x, SUSPENSION_TOP_Y - st.suspension / this.scale, w.z);
+      w.object.position.set(w.x, w.topY - st.suspension / this.scale, w.z);
       w.object.rotation.y = st.steering;
       w.spin.rotation.x = st.rotation;
-      this.wheelHeights[i] = w.object.position.y - GROUND_OFFSET;
+      this.wheelHeights[i] = w.object.position.y - this.groundOffset;
     }
-    poseSuspension(this.model, this.wheelHeights);
+    if (this.model.userData.suspension) poseSuspension(this.model, this.wheelHeights);
 
     // Vibration rocks the sprung body and shakes the bars on top of steering.
     const v = vibration;
@@ -509,6 +584,20 @@ export class Quad {
     this.handlebars.rotation.set(0, this.steer * 0.85 + (v ? v.bars.yaw : 0), v ? v.bars.roll : 0);
 
     this.updateDash(dt);
+    if (this.note && (this.note.left -= dt) <= 0) this.note = null;
+    this.updateFlap(dt);
+  }
+
+  /** The tractor's exhaust flap lifts with each firing beat and rattles as it falls back, so it chatters at idle and stands open when revved. */
+  updateFlap(dt) {
+    if (!this.exhaustFlap) return;
+    const e = this.engine;
+    for (const pulse of e.pulses) if (pulse.type === 'fire') this.flap = Math.min(1, this.flap + 0.55 * pulse.strength);
+    this.flap *= Math.exp(-dt * 14);
+    // Held up by the exhaust pressure when revved, a little jitter on top so it rattles.
+    const open = e.isRunning ? Math.min(1, 0.15 + e.throttle * 0.6 + this.flap * 0.5) : 0;
+    const rattle = e.isRunning ? Math.sin(e.time * 140) * 0.06 * (0.3 + this.flap) : 0;
+    this.exhaustFlap.rotation.x = -(open * 1.15 + rattle);
   }
 
   /** Stands a pod ({ group, update }) on the bars' mount, at full size even on the small quad. Returns false if there's no mount. */
@@ -553,7 +642,12 @@ export class Quad {
       odoMiles: this.usage.odoMiles,
       hours: this.usage.hours,
       reverse: this.reverse,
-      neutral: isNeutral({ ignition: e.hasPower && e.ignitionOn, reverse: this.reverse, speedMps: this.forwardSpeed, rpm: e.rpm, clutchEngageRpm: this.params.clutchEngageRpm }),
+      neutral: this.manual
+        ? e.hasPower && this.drivetrain.neutral
+        : isNeutral({ ignition: e.hasPower && e.ignitionOn, reverse: this.reverse, speedMps: this.forwardSpeed, rpm: e.rpm, clutchEngageRpm: this.params.clutchEngageRpm }),
+      gear: this.manual ? gearLabel(this.drivetrain.gear) : null,
+      glow: e.glowLamp,
+      hand: this.handSetting,
       clock: clock.text(),
       seconds: clock.seconds(),
     };
@@ -562,6 +656,7 @@ export class Quad {
     this.pod?.update(state);
     setHeadlights(this.model, e.ignitionOn);
 
+    if (this.manual) poseTractorControls(this.model, { gear: this.drivetrain.gear, hand: this.handSetting, pedal: this.drivetrain.pedal });
     this.displayChoke += (this.choke - this.displayChoke) * Math.min(1, 12 * dt);
     // Off: lever forward. Full: pulled back towards the rider.
     this.chokeLever.rotation.x = 0.5 - this.displayChoke * 1.45;
@@ -584,7 +679,7 @@ export class Quad {
   rightItself() {
     const p = this.currPos;
     const yaw = this.yaw;
-    this.physics.reset(p.x, this.world.heightAt(p.x, p.z) - GROUND_OFFSET * this.scale + 0.3 * this.scale, p.z, yaw);
+    this.physics.reset(p.x, this.world.heightAt(p.x, p.z) - this.groundOffset * this.scale + 0.3 * this.scale, p.z, yaw);
     this.recordTransform();
     this.prevPos.copy(this.currPos);
     this.prevQuat.copy(this.currQuat);

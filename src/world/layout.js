@@ -111,6 +111,7 @@ export const LAYOUT = {
     { x: -61.5, z: 67.8, yaw: -0.6, where: 'by the silage bales' },
     { x: -32.8, z: 77.6, yaw: 0.9, where: 'by the field gate' },
   ],
+  tractor: { x: -48.5, z: 70.5, yaw: 2.7 }, // the old tractor, parked in the yard south of the quads' rows (vehicle/quadSpecs.js TRACTOR_SPEC)
   dieselBowser: { x: -61, z: 45.6, yaw: Math.PI / 2 }, // red diesel for the tractor, south of the petrol tank (and the hose)
   dieselCan: { x: -58.9, z: 46.2, yaw: 0.5 }, // the dark green diesel can stands by it
   jerryCanJitter: 0.8, // metres of extra random shift around the chosen spot

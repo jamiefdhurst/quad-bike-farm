@@ -494,3 +494,114 @@ export const EXTRA_SPECS = [
     },
   },
 ];
+
+// The tractor: always on the farm (it isn't part of the fleet, src/vehicle/fleet.js) and the girls leave it alone for now (it's TODO 8's
+// own; they come to it in 11 and 14). An old diesel in the yard: heavy, slow and strong, with a clutch and a three-speed gearbox, glow
+// plugs for a cold start, a hand throttle and a stop knob. Built as a QuadUnit like the rest, with its own body, wheels and drivetrain
+// (QuadUnit reads `tractor`). Runs on red diesel, so it doesn't mind it. Its sound is kyles's old tractor recordings.
+export const TRACTOR_SPEC = {
+  id: 'tractor',
+  label: 'tractor',
+  name: 'Tractor',
+  tractor: true,
+  bodyColor: 0xa82a20, // a faded red bonnet
+  dashStyle: 'tractor',
+  hoursRange: [3500, 7500], // engine hours showing when the game starts
+  odoRange: [0, 0], // no odometer
+  // A big lazy diesel: low, lumpy tickover and a slow heave.
+  safeIdle: 650,
+  idleRange: [760, 840],
+  roughnessRange: [0.35, 0.5],
+  fuelRange: [12, 34], // 45 litre tank, 4 litre reserve
+  fuel: { tankCapacity: 45, reserveLitres: 4, startDiesel: 1, burnPerRev: 0.0003, idleBurnFraction: 0.3, bowlCapacity: 0.05, bowlFillRate: 0.06 },
+  engine: {
+    compressionIgnition: true, // glow plugs, no choke, the key doesn't stop it, a knob does (src/engine/compression.js)
+    runsOnDiesel: true,
+    idleRpmWarm: 800,
+    maxRpm: 2200,
+    redlineRpm: 2100,
+    stallRpm: 300,
+    crankRpm: 220, // a heavy engine turns over slowly
+    catchRpm: 1000,
+    rpmRiseRate: 3.4,
+    rpmFallRate: 2.8,
+    loadDragRpm: 3200, // dumping the clutch in too high a gear drags it down and stalls it (manualDrivetrain.js)
+    warmUpSeconds: 260,
+    coldEnrichmentNeed: 0, // no mixture to enrich
+    chokeIdleRpm: 0,
+    catchChance: 0.85,
+    catchColdFactor: 0.9,
+    coldRoughness: 0.5,
+    coldPowerLoss: 0.4,
+    lugDepth: 0.35, // a lot of torque: it hardly sags under load
+    popProne: 0,
+    wearPerMinute: 0.0006, // slow: it's built to be run all day
+  },
+  vehicle: {
+    mass: 2000,
+    centreOfMassY: -0.2,
+    rollInertia: 650,
+    pitchInertia: 1800,
+    yawInertia: 1900,
+    wheelRadius: 0.72, // the big rear wheels; the front ones' own radius is in TRACTOR_LAYOUT
+    suspensionRestLength: 0.12,
+    maxSuspensionTravel: 0.14,
+    suspensionStiffness: 24,
+    suspensionCompression: 3,
+    suspensionRelaxation: 2.6,
+    maxSuspensionForce: 90000,
+    mudFrictionSlip: 0.95, // big lugged tyres
+    fourWheelDrive: 0, // rear wheel drive
+    maxDriveForce: 5200,
+    maxSpeed: 8.5,
+    maxReverseSpeed: 2.6,
+    maxSteerDeg: 38,
+    steerRate: 2.6,
+    steerSpeedReduction: 0.08,
+    idleTorque: 0.12,
+    drivePowerFloor: 0.55,
+    engineBrakeForce: 900,
+    maxBrake: 70,
+    parkingBrake: 40,
+    rollingResistance: 2.5,
+    cvtShiftSpeed: 1,
+    launchLoad: 0.6,
+    mudLoad: 0.08,
+    revHoldMin: 2, // getting off never leaves it revving: the hand throttle does that
+  },
+  vibration: {
+    pulseGain: 1.7,
+    heaveFreq: 6.5,
+    pitchFreq: 5.5,
+    rollFreq: 6,
+    heaveGain: 0.2,
+    pitchGain: 0.3,
+    heaveDamping: 0.26,
+    barsFreq: 14,
+    barsGain: 0.12,
+  },
+  audio: {
+    recBank: 'engine-bank-tractor',
+    recIdleSource: 'quad',
+    pulseRefRpm: 800,
+    pulseRevLoudness: 0.15, // it's already loud and lumpy; it doesn't need to get much louder
+    recVolume: 0.55,
+    recToneClosed: 4200,
+    pipeLength: 1.6,
+    densityRefRpm: 900,
+  },
+  smoke: {
+    warmDensity: 0.14,
+    coldDensity: 0.75,
+    throttleBurst: 1.7, // a big dark burst every time you blip it
+    burstBlack: 0.85,
+    catchBlack: 1,
+    coldGray: 0.55,
+    warmGray: 0.45,
+    startSize: 0.12,
+    exitSpeed: 3.2,
+    throttleExitSpeed: 5,
+    buoyancy: 0.9,
+    tint: '#c9ccd0',
+  },
+};

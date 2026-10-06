@@ -42,6 +42,13 @@ Quaternius: https://quaternius.com
 | Idle pulses and revs | Gilera Runner SP50 two-stroke scooter | lovretta | https://freesound.org/people/lovretta/sounds/140384/ | CC0 1.0 |
 | Starter and shutdown | Quad Bike_ATV Engine.wav (as above) | Alex Fitzwater | https://freesound.org/people/Alex_hears_things/sounds/379915/ | CC0 1.0 |
 
+`public/audio/engine-bank-tractor.wav` and `engine-bank-tractor.json` (the tractor) are cut from:
+
+| Used for | Recording | Author | Source | Licence |
+| --- | --- | --- | --- | --- |
+| Idle pulses, revs and shutdown | old throaty rattly tractor, close beside it | kyles | https://freesound.org/people/kyles/sounds/637890/ | CC0 1.0 |
+| A second idle, starter and cranking | the same tractor starting, revving and almost stalling | kyles | https://freesound.org/people/kyles/sounds/637891/ | CC0 1.0 |
+
 `public/audio/ride.wav` and `ride.json` (mud squelches, splashes and landing thuds) are cut from these by `tools/slice_ride_audio.py`, using Freesound's high-quality MP3 previews. The other ride sounds (tyre rumble, grass, gravel, water churn, knocks, rattles and the rider's wind) are made in code.
 
 | Used for | Recording | Author | Source | Licence |

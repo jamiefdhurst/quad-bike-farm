@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
-import { QUAD_SPECS, EXTRA_SPECS } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC } from '../src/vehicle/quadSpecs.js';
 import { AUDIO_PARAM_RANGES } from '../src/audio/audioParams.js';
 
 describe('engine banks', () => {
   it('every quad names a bank that is listed, loads in the hub and exists on disk', () => {
-    for (const spec of [...QUAD_SPECS, ...EXTRA_SPECS]) {
+    for (const spec of [...QUAD_SPECS, ...EXTRA_SPECS, TRACTOR_SPEC]) {
       const bank = spec.audio?.recBank;
       if (!bank) continue;
       expect(AUDIO_PARAM_RANGES.recBank, spec.id).toContain(bank);
@@ -21,6 +21,10 @@ describe('engine banks', () => {
         expect(g.dur, name).toBeGreaterThan(0);
       }
     }
+  });
+
+  it('gives the tractor its own bank', () => {
+    expect(TRACTOR_SPEC.audio.recBank).toBe('engine-bank-tractor');
   });
 
   it("gives the kids' quad its own bank", () => {

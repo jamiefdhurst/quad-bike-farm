@@ -31,7 +31,7 @@ export class Bench {
   /** The quad parked in the bay, if there's one. */
   unitInBay() {
     const bay = this.game.world.layout.bay;
-    return this.game.units.find((u) => !u.quad.driver && inBay(bay, u.quad.position.x, u.quad.position.z, this.params.bayMargin)) ?? null;
+    return this.game.girlUnits.find((u) => !u.quad.driver && inBay(bay, u.quad.position.x, u.quad.position.z, this.params.bayMargin)) ?? null;
   }
 
   toolboxHere() {

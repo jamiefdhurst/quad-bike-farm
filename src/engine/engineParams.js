@@ -218,6 +218,13 @@ export const DEFAULT_ENGINE_PARAMS = {
   waterStallChance: 0.25, // chance of stalling on each firing once past that
   waterNoStart: 0.15, // wetter than this it won't catch (fades out to nothing at this level)
 
+  // A diesel (the tractor): see compression.js
+  compressionIgnition: false, // true: catches on glow plugs and compression rather than the mixture, the key doesn't stop it, a knob does
+  runsOnDiesel: false, // red diesel is its fuel, so it doesn't soak it up like a petrol engine
+  glowSeconds: 7, // seconds the glow plugs take to heat from cold, on a stone cold engine
+  glowCoolSeconds: 14, // seconds they take to cool again
+  glowWarmAbove: 0.6, // engine temperature above which it needs no glow at all
+  glowColdCatch: 0.04, // fraction of its chance of catching that it keeps, cranked cold on unheated plugs
   // Red diesel in the tank (see diesel.js): it soaks the engine and only a drain at the toolbox clears it
   dieselPotency: 2.5, // soak aimed for per unit of diesel in the fuel (so 40% diesel is as bad as it gets)
   dieselSoakRate: 0.04, // per second the soak climbs toward that while running, so about 25 s to the worst
@@ -406,6 +413,10 @@ export const ENGINE_PARAM_RANGES = {
   waterStallAt: [0.1, 1, 0.01],
   waterStallChance: [0, 1, 0.01],
   waterNoStart: [0.02, 1, 0.01],
+  glowSeconds: [1, 30, 0.5],
+  glowCoolSeconds: [1, 60, 0.5],
+  glowWarmAbove: [0.1, 1, 0.01],
+  glowColdCatch: [0, 1, 0.01],
   dieselPotency: [0.5, 10, 0.1],
   dieselSoakRate: [0.002, 0.5, 0.002],
   dieselRoughness: [0, 1, 0.01],

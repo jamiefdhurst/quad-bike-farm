@@ -11,6 +11,7 @@ export const DEFAULT_FUEL_PARAMS = {
   tankCapacity: 12, // litres
   reserveLitres: 2, // only reachable with the tap on RESERVE
   startLitres: 7, // fuel in the tank at the start
+  startDiesel: 0, // diesel fraction of that fuel: 1 on the tractor, which runs on red diesel
   startOil: 0, // oil fraction of that fuel: 0.02 (50:1 pre-mix) on the two-strokes, none on the four-strokes
   startTap: 'off', // tap position at the start: turn it ON before riding off
   bowlCapacity: 0.012, // litres in the carburettor float bowl: with the tap OFF it runs about half a minute at idle
@@ -42,8 +43,8 @@ export class FuelSystem {
     this.litres = clamp(params.startLitres, 0, params.tankCapacity);
     this.bowl = this.litres > 0 ? params.bowlCapacity : 0;
     this.oil = params.startOil ?? 0; // oil fraction of what's in the tank
-    this.diesel = 0; // diesel fraction of what's in the tank (red diesel poured in by mistake)
-    this.bowlDiesel = 0; // and of what's in the float bowl, which is what the engine is fed
+    this.diesel = params.startDiesel ?? 0; // diesel fraction of what's in the tank (red diesel poured in by mistake, or the tractor's own fuel)
+    this.bowlDiesel = this.diesel; // and of what's in the float bowl, which is what the engine is fed
     this.tap = params.startTap ?? 'on';
     this.burnRate = 0; // litres per second, last update
   }

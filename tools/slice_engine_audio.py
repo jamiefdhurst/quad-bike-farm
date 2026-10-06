@@ -7,8 +7,8 @@ come from), finds each firing pulse, and writes:
   public/audio/<bank>.json  where every pulse ("grain") starts and ends, its
                             pulse rate, and what kind it is
 
-There are three banks: engine-bank (four-stroke quads), engine-bank-2t
-(two-stroke) and engine-bank-50 (the kids' 50cc). A grain's "rpm" is 120 / pulse period whatever the engine type,
+There are four banks: engine-bank (four-stroke quads), engine-bank-2t
+(two-stroke), engine-bank-50 (the kids' 50cc) and engine-bank-tractor (the diesel tractor). A grain's "rpm" is 120 / pulse period whatever the engine type,
 which is the rpm a four-stroke would be doing; the runtime picks grains by the
 same measure, so two-strokes match up without special cases.
 
@@ -30,6 +30,9 @@ Usage (needs numpy, and matplotlib for --plot):
 
   afconvert ... 140384.mp3 gil.wav
   python3 tools/slice_engine_audio.py engine-bank-50 gil=gil.wav quad=quad.wav
+
+  afconvert ... 637890.mp3 t0.wav;  afconvert ... 637891.mp3 t1.wav
+  python3 tools/slice_engine_audio.py engine-bank-tractor t0=t0.wav t1=t1.wav
 """
 
 import argparse
@@ -128,6 +131,29 @@ BANKS = {
         'level': [('idle', 'idle2', 'crm'), ('accel', 'accel', 'db', 'crm')],
         # Riding recordings are noisy: be more forgiving cutting rev pulses.
         'revTail': 0.75,
+        'revOdd': 0.3,
+    },
+    'engine-bank-tractor': {
+        # The old tractor: kyles's throaty, rattly diesel (Freesound 637890 and 637891), recorded close beside it. The idle is its
+        # steady running (about 1,000 rpm by the pulse-rate measure, with one beat in each cycle stronger); the revs are the pulled-
+        # away stretches, which are lower and lumpier. Starter and shutdown come from the same two recordings.
+        'segments': [
+            ('idle', 't0', 14.8, 30.6, (0.09, 0.16)),
+            ('idle', 't1', 6.0, 11.0, (0.09, 0.14)),
+            ('accel', 't0', 34.0, 44.0, (0.12, 0.24)),
+            ('accel', 't0', 46.0, 60.5, (0.12, 0.24)),
+            ('decel', 't0', 34.0, 44.0, (0.12, 0.24)),
+        ],
+        'oneshots': [
+            ('starterEngage', 't1', 1.1, 1.4),
+            ('crankLoop', 't1', 1.4, 2.9),
+            ('shutdown', 't0', 61.4, 63.6),
+        ],
+        'level': [('idle', 'accel', 't0')],
+        # An uneven tickover: one strong beat in each cycle.
+        'idleTail': 1.0,
+        'idleOdd': 0.35,
+        'revTail': 0.9,
         'revOdd': 0.3,
     },
     'engine-bank-50': {

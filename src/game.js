@@ -8,7 +8,8 @@ import { World } from './world/world.js';
 import { Player, PLAYER_CAPSULE } from './player/player.js';
 import { DEFAULT_PLAYER_PARAMS, PLAYER_PARAM_RANGES } from './player/playerParams.js';
 import { QuadUnit } from './vehicle/quadUnit.js';
-import { QUAD_SPECS, EXTRA_SPECS } from './vehicle/quadSpecs.js';
+import { gearLabel } from './vehicle/manualDrivetrain.js';
+import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC } from './vehicle/quadSpecs.js';
 import { pickFleet } from './vehicle/fleet.js';
 import { applyIdle, applyVariation, pickIdle } from './vehicle/quadVariation.js';
 import { AudioHub } from './audio/engineAudio.js';
@@ -24,6 +25,7 @@ import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { WearLedger, LEDGER_PARAM_RANGES } from './engine/wearLedger.js';
 import { Pranks, PRANK_PARAM_RANGES } from './npc/pranks.js';
 import { RevOff, REVOFF_PARAM_RANGES } from './npc/revOff.js';
+import { TractorWatch, TRACTOR_WATCH_PARAM_RANGES } from './npc/tractorWatch.js';
 import { QuadNames, NAME_PARAM_RANGES, quadKey } from './npc/quadNames.js';
 import { Ownership, OWNERSHIP_PARAM_RANGES } from './npc/ownership.js';
 import { Hearing, EAR_PARAM_RANGES } from './npc/earing.js';
@@ -188,6 +190,10 @@ export class Game {
       if (kind) unit.quad.fitPod(this.pods[kind]);
     }
     console.info(`Pods: ${this.podRack.describe((id) => this.units.find((u) => u.id === id).name)}`);
+    // The tractor stands in the yard whatever the fleet is. It's a unit like the quads (you ride it, fuel it, hear it), but `girlUnits` is what
+    // the girls know about: they leave it alone for now.
+    this.girlUnits = this.units;
+    this.tractorUnit = this.addTractor();
     this.updateSmokeScale();
     // This game's weather, picked after everything else so a seed keeps its layout (?weather=rain forces one).
     const forced = new URLSearchParams(location.search).get('weather');
@@ -200,8 +206,8 @@ export class Game {
     this.lastUnit = this.homeUnit;
 
     // The companions (src/npc/characters.js), each starting beside her own quad in the yard.
-    const yard = this.units.filter((u, i) => u !== this.homeUnit && spawns[i].where === spawns[home].where);
-    const homes = [this.homeUnit, ...yard, ...this.units.filter((u) => u !== this.homeUnit && !yard.includes(u))];
+    const yard = this.girlUnits.filter((u, i) => u !== this.homeUnit && spawns[i].where === spawns[home].where);
+    const homes = [this.homeUnit, ...yard, ...this.girlUnits.filter((u) => u !== this.homeUnit && !yard.includes(u))];
     const floor = { left: 0, banter: false }; // so one waits for the other to finish before chattering, and both for a bicker
     this.talkFloor = floor;
     this.companions = CHARACTERS.map((character, i) => {
@@ -216,7 +222,7 @@ export class Game {
         name: character.name,
       });
       c.character = character;
-      c.quads = this.units.map((u) => u.quad);
+      c.quads = this.girlUnits.map((u) => u.quad);
       c.others = () => this.companions.filter((o) => o !== c);
       c.followTarget = () => this.riddenUnit?.quad ?? null;
       c.sounds = new CompanionSounds(this.audioHub, { voiceBank: character.voiceBank, rate: character.soundRate });
@@ -312,10 +318,12 @@ export class Game {
     this.pranks = new Pranks();
     // Rev-offs: blip the throttle near a girl sat on a running quad and she may blip back (npc/revOff.js).
     this.revOff = new RevOff();
+    // What they say about the tractor: the key that doesn't stop it, waiting for the glow plugs, it catching (npc/tractorWatch.js).
+    this.tractorWatch = new TractorWatch(undefined, createRandom(this.seed ^ 0x7a7c));
     this.itemHome = {}; // where a hidden item was taken from, by name
 
     // What they call the quads, whose is whose, and placing a quad by ear (npc/quadNames.js, ownership.js, earing.js).
-    this.quadNames = new QuadNames(this.units.map((u) => u.spec.id), { random: createRandom(this.seed ^ 0x6a3e) });
+    this.quadNames = new QuadNames(this.girlUnits.map((u) => u.spec.id), { random: createRandom(this.seed ^ 0x6a3e) });
     this.ownership = new Ownership(undefined, createRandom(this.seed ^ 0x0c1a));
     this.hearing = new Hearing();
     this.throttleGrab = new ThrottleGrab(); // a girl on the back opening it over your hand (npc/throttleGrab.js)
@@ -345,20 +353,20 @@ export class Game {
     this.gossip = new Gossip(BANTER.filter((e) => e.when === 'gossip'), undefined, createRandom(this.seed ^ 0x6055)); // talking about you (npc/gossip.js)
     const capital = (id) => id[0].toUpperCase() + id.slice(1);
     this.ownership.assign(
-      Object.fromEntries(this.companions.map((c) => [c.character.id, this.units.filter((u) => c.mayRide(u.quad) && c.voice.chatter.lines[`like${capital(u.spec.id)}`]).map((u) => u.spec.id)])),
+      Object.fromEntries(this.companions.map((c) => [c.character.id, this.girlUnits.filter((u) => c.mayRide(u.quad) && c.voice.chatter.lines[`like${capital(u.spec.id)}`]).map((u) => u.spec.id)])),
     );
     for (const c of this.companions) {
       const id = c.character.id;
       c.claimedSpec = this.ownership.claims[id] ?? null;
       c.voice.favourite = c.claimedSpec; // the one she likes best is the one she says is hers
-      const mine = this.units.find((u) => u.spec.id === c.claimedSpec);
+      const mine = this.girlUnits.find((u) => u.spec.id === c.claimedSpec);
       if (mine) c.setShirt(mine.spec.bodyColor); // and her shirt is its colour, so you can see why
       c.voice.names = this.quadNames;
       c.borrowPick = (specs) => this.ownership.borrowPick(id, specs);
     }
 
     // Each quad is dealt its own luck with faults this game, from the seed (vehicle/faults.js).
-    this.units.forEach((u, i) => u.quad.faults.roll(createRandom(this.seed ^ (0xfa17 + i * 7919))));
+    this.girlUnits.forEach((u, i) => u.quad.faults.roll(createRandom(this.seed ^ (0xfa17 + i * 7919))));
 
     for (const unit of this.units) {
       const quad = unit.quad;
@@ -382,7 +390,7 @@ export class Game {
             const muddy = Math.round(Math.max(unit.mud.state.body, unit.mud.state.wheels) * 100);
             return { text: muddy > 0 ? `Hold E to wash the ${unit.label} (${muddy}% muddy)   ·   G put the hose back` : `The ${unit.label} is clean   ·   G put the hose back` };
           }
-          if (this.toolbox.held) return this.workshop.prompt(unit);
+          if (this.toolbox.held) return unit.spec.tractor ? { text: 'The toolbox is for the quads: the tractor is too much for it   ·   G put it down' } : this.workshop.prompt(unit);
           if (this.can.held) {
             const pct = Math.round(quad.fuel.level * 100);
             if (quad.fuel.space < 0.01) return { text: `The ${unit.label} is full   ·   G put the can down` };
@@ -395,7 +403,9 @@ export class Game {
           const winchKey = this.winch?.unit === unit && this.winch.state === 'stowed' ? '   X winch cable' : '';
           return {
             action: `Ride the ${unit.label}`,
-            keys: [['K', 'Ignition'], ['R', 'Start'], ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
+            keys: quad.manual
+              ? [['K', 'Key'], ['R', 'Start'], ['X', 'Stop knob'], ['F', 'Fuel tap']]
+              : [['K', 'Ignition'], ['R', 'Start'], ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
           };
         },
         interact: () => {
@@ -410,7 +420,7 @@ export class Game {
             return;
           }
           if (this.can.held || this.hose.held) return; // E is for pouring or spraying while you're holding those
-          if (this.toolbox.held) return this.workshop.open(unit);
+          if (this.toolbox.held) return unit.spec.tractor ? undefined : this.workshop.open(unit);
           if (this.tooFastToMount(quad) && this.herDriving(quad)) {
             // She pulls up and moves onto the back for you.
             const c = this.herDriving(quad);
@@ -605,6 +615,7 @@ export class Game {
     registerTuning('Who wore it out', this.wearLedger.p, LEDGER_PARAM_RANGES);
     registerTuning('Pranks', this.pranks.p, PRANK_PARAM_RANGES);
     registerTuning('Rev-offs', this.revOff.p, REVOFF_PARAM_RANGES);
+    registerTuning('Tractor remarks', this.tractorWatch.p, TRACTOR_WATCH_PARAM_RANGES);
     registerTuning('Quad names', this.quadNames.p, NAME_PARAM_RANGES);
     registerTuning('Whose quad', this.ownership.p, OWNERSHIP_PARAM_RANGES);
     registerTuning('Hearing a quad', this.hearing.p, EAR_PARAM_RANGES);
@@ -660,6 +671,50 @@ export class Game {
       if (!locked) this.closeMenu();
     });
     this.renderer.setAnimationLoop(() => this.frame());
+  }
+
+  /** The girls' remarks on the tractor (npc/tractorWatch.js). */
+  updateTractorWatch(dt) {
+    const unit = this.tractorUnit;
+    const e = unit.quad.engine;
+    const girls = this.companions.map((c) => ({
+      id: c.character.id,
+      free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob,
+      x: c.root.position.x,
+      z: c.root.position.z,
+    }));
+    const tractor = {
+      x: unit.quad.position.x,
+      z: unit.quad.position.z,
+      running: e.isRunning,
+      keyOn: e.ignitionOn,
+      glowWaiting: this.riddenUnit === unit && e.ignitionOn && !e.isRunning && !e.glowLamp && e.temperature < e.params.glowWarmAbove,
+      caught: e.events.some((ev) => ev.type === 'caught'),
+    };
+    for (const ev of this.tractorWatch.update(dt, { tractor, girls })) {
+      const girl = this.companions.find((c) => c.character.id === ev.girl);
+      girl?.voice.say(`tractor${ev.type[0].toUpperCase()}${ev.type.slice(1)}`, { urgent: true });
+    }
+  }
+
+  /** Builds the tractor, with its own seeded idle, roughness, fuel and hours, and adds it to `units` (not `girlUnits`). */
+  addTractor() {
+    const random = createRandom(this.seed ^ 0x7ac70);
+    const unit = new QuadUnit({
+      spec: TRACTOR_SPEC,
+      spawn: this.world.layout.tractor,
+      scene: this.scene,
+      physics: this.physics,
+      RAPIER: this.RAPIER,
+      world: this.world,
+      audioHub: this.audioHub,
+    });
+    unit.idleRpm = applyIdle(unit.engine.params, unit.quad.params, pickIdle(TRACTOR_SPEC.idleRange, random));
+    unit.variation = applyVariation(TRACTOR_SPEC, unit.engine.params, unit.quad.fuel, random);
+    unit.quad.usage.hours = pickReading(TRACTOR_SPEC.hoursRange, random);
+    this.units = [...this.units, unit];
+    console.info(`Tractor: idle ${unit.idleRpm} rpm, ${unit.variation.litres.toFixed(1)} L of red diesel`);
+    return unit;
   }
 
   // Which quad -------------------------------------------------------------
@@ -851,6 +906,7 @@ export class Game {
 
   /** Pouring this can into that quad is a mistake: 'straight' petrol in a two-stroke, 'premix' in a four-stroke. */
   mixWrongFor(quad, can) {
+    if (quad.engine.params.runsOnDiesel) return null; // the tractor takes red diesel; what else goes in it isn't modelled
     if (can.diesel > 0.05) return 'diesel';
     if (quad.engine.params.strokes === 2) return can.oil < 0.002 ? 'straight' : null;
     return can.oil > 0.004 ? 'premix' : null;
@@ -986,7 +1042,7 @@ export class Game {
   updateWearLedger() {
     this.wearLedger ??= new WearLedger();
     this.drivers = new Map();
-    for (const unit of this.units) {
+    for (const unit of this.girlUnits) {
       const girl = this.companions.find((c) => c.fsm.is('driving') && c.quad === unit.quad);
       const who = unit === this.riddenUnit ? 'you' : girl ? girl.character.id : null;
       if (who) this.drivers.set(unit, who);
@@ -1113,7 +1169,7 @@ export class Game {
         free: c.fsm.is('idle') && !this.menu.isOpen,
         favourite: c.voice.favourite,
       })),
-      quads: this.units.map((u) => ({
+      quads: this.girlUnits.map((u) => ({
         id: u.spec.id,
         x: u.quad.position.x,
         z: u.quad.position.z,
@@ -1229,7 +1285,7 @@ export class Game {
   updateQuadTalk(dt, ridden) {
     const pos = this.player.position;
     const girls = this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.fsm.is('idle') && !this.menu.isOpen }));
-    const quads = this.units.map((u) => {
+    const quads = this.girlUnits.map((u) => {
       const user = this.quadUser(u, ridden);
       const q = u.quad;
       return { id: u.spec.id, x: q.position.x, z: q.position.z, user, driver: user, running: q.engine.isRunning, speed: q.speed, throttle: q.throttle, temperature: q.engine.temperature, wear: q.engine.wear };
@@ -1279,7 +1335,7 @@ export class Game {
       free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt,
       warmSpec: c.warmingAt?.unit.spec.id ?? null,
     }));
-    const quads = this.units.map((u) => {
+    const quads = this.girlUnits.map((u) => {
       const q = u.quad;
       const idling = q.engine.isRunning && !q.rider && !q.driver && !q.passenger && !q.isGhostRiding && q.speed < 0.3 && !this.herOn(q);
       return { id: u.spec.id, x: q.position.x, z: q.position.z, idling };
@@ -1287,7 +1343,7 @@ export class Game {
     for (const e of this.warming.update(dt, { weather: this.weather, girls, quads })) {
       const c = byId[e.girl];
       if (e.type === 'go') {
-        if (c.goWarm(this.units.find((u) => u.spec.id === e.spec).quad)) c.voice.say(e.join ? 'warmJoin' : 'warmGo', { urgent: true, chance: 0.8 });
+        if (c.goWarm(this.girlUnits.find((u) => u.spec.id === e.spec).quad)) c.voice.say(e.join ? 'warmJoin' : 'warmGo', { urgent: true, chance: 0.8 });
       } else if (e.type === 'warm') c.voice.say('warmHands', { chance: 0.8 });
       else if (e.type === 'leave') {
         c.stopWarming();
@@ -1309,7 +1365,7 @@ export class Game {
       mood: this.favour.mood(c.character.id),
       own: c.claimedSpec,
     }));
-    const quads = this.units.map((u) => {
+    const quads = this.girlUnits.map((u) => {
       const q = u.quad;
       const claimed = this.companions.some((c) => c.quad === q && c.fsm.is('walking', 'starting'));
       const startable = !q.engine.isRunning && !q.rider && !q.driver && !q.passenger && !q.isTipped && !q.isGhostRiding && !this.herOn(q) && !claimed;
@@ -1318,7 +1374,7 @@ export class Game {
     const events = this.headStart.update(dt, { cold: isChilly(this.weather, this.warming.p), you: { x: this.player.position.x, z: this.player.position.z, onFoot: !this.player.isRiding }, girls, quads });
     for (const e of events) {
       const c = byId[e.girl];
-      const quad = this.units.find((u) => u.spec.id === e.spec).quad;
+      const quad = this.girlUnits.find((u) => u.spec.id === e.spec).quad;
       if (c.takenByOther(quad, 'rider')) continue;
       c.requestStart(quad);
       c.voice.say(e.type === 'warmFor' ? 'headStartGo' : 'snubGo', { urgent: true, force: true });
@@ -1345,15 +1401,15 @@ export class Game {
       c.pillion.throttleReach = mine ? grab.reach : 0;
     }
     if (q) q.handThrottle = grab.throttle;
-    for (const u of this.units) if (u.quad !== q && u.quad.handThrottle) u.quad.handThrottle = 0;
+    for (const u of this.girlUnits) if (u.quad !== q && u.quad.handThrottle) u.quad.handThrottle = 0;
   }
 
   // Two-stroke smoke ---------------------------------------------------------
 
   updateSmokeSense(dt) {
-    const smoke = this.units[0].smoke.params;
+    const smoke = this.girlUnits[0].smoke.params;
     const girls = this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.fsm.is('idle') && !this.menu.isOpen }));
-    const quads = this.units.map((u) => {
+    const quads = this.girlUnits.map((u) => {
       const q = u.quad;
       return { id: u.spec.id, x: q.position.x, z: q.position.z, yaw: q.yaw, twoStroke: q.engine.params.strokes === 2, running: q.engine.isRunning, throttle: q.throttle || q.helperThrottle, temperature: q.engine.temperature };
     });
@@ -1422,11 +1478,11 @@ export class Game {
   updateTea(dt, ridden) {
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
     const girls = this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot, x: c.root.position.x, z: c.root.position.z }));
-    const quads = this.units.map((u) => {
+    const quads = this.girlUnits.map((u) => {
       const q = u.quad;
       return { id: u.spec.id, x: q.position.x, z: q.position.z, speed: Math.abs(q.speed), rider: u === ridden, driver: this.quadUser(u, ridden) !== 'you' ? this.quadUser(u, ridden) : null, tipped: q.isTipped, hasRack: !!q.mugAnchor };
     });
-    const unitOf = (spec) => this.units.find((u) => u.spec.id === spec);
+    const unitOf = (spec) => this.girlUnits.find((u) => u.spec.id === spec);
     // A girl walks to the back of the quad, pauses, and does it (the same walk-up as for a prank).
     const sendTo = (girl, spec, act) => {
       const quad = unitOf(spec).quad;
@@ -1501,9 +1557,9 @@ export class Game {
   updateDieselMistake(dt, ridden) {
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
     const m = this.dieselMistake;
-    const unitOf = (spec) => this.units.find((u) => u.spec.id === spec);
+    const unitOf = (spec) => this.girlUnits.find((u) => u.spec.id === spec);
     const girls = this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob, x: c.root.position.x, z: c.root.position.z }));
-    const quads = this.units.map((u) => {
+    const quads = this.girlUnits.map((u) => {
       const q = u.quad;
       return { id: u.spec.id, x: q.position.x, z: q.position.z, speed: Math.abs(q.speed), rider: u === ridden, driver: this.quadUser(u, ridden) !== 'you' ? this.quadUser(u, ridden) : null, tipped: q.isTipped, space: q.fuel.space, level: q.fuel.level };
     });
@@ -1556,7 +1612,7 @@ export class Game {
   updateNicking(dt, ridden) {
     const np = this.nicking.p;
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
-    const quads = this.units.map((u) => {
+    const quads = this.girlUnits.map((u) => {
       const q = u.quad;
       const claimed = this.companions.some((c) => c.quad === q && c.fsm.is('walking', 'starting'));
       return { id: u.spec.id, x: q.position.x, z: q.position.z, running: q.engine.isRunning, free: !q.rider && !q.driver && !q.passenger && !q.isTipped && !q.isGhostRiding && !this.herOn(q) && !claimed };
@@ -1571,7 +1627,7 @@ export class Game {
     const you = { x: this.player.position.x, z: this.player.position.z };
     for (const e of this.nicking.update(dt, { riding: ridden?.spec.id ?? null, you, quads, girls })) {
       const c = byId[e.girl];
-      const quad = this.units.find((u) => u.spec.id === e.spec).quad;
+      const quad = this.girlUnits.find((u) => u.spec.id === e.spec).quad;
       if (!c.takenByOther(quad, 'rider') && c.canDrive(quad)) this.startNick(c, quad);
     }
     // While she has it: tearing it up (the mud it comes back in), burning fuel, and laughing. A job that has come to nothing
@@ -1611,7 +1667,7 @@ export class Game {
         c.voice.say('doughnutJoin', { force: true });
         setTimeout(() => {
           if (!c.fsm.is('idle')) return;
-          const quads = this.units.filter((u) => c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && u !== this.riddenUnit).map((u) => u.quad);
+          const quads = this.girlUnits.filter((u) => c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && u !== this.riddenUnit).map((u) => u.quad);
           const quad = quads.find((q) => c.ownsQuad(q)) ?? quads[0];
           const plan = c.doughnutPlan(1.3);
           if (quad && plan) c.requestDrive(quad, { doughnut: plan });
@@ -1619,7 +1675,7 @@ export class Game {
       }
     }
     // The ground a quad has been torn up with stays marked for a good while, not the usual forty seconds.
-    for (const u of this.units) {
+    for (const u of this.girlUnits) {
       if (u.quad.churn > 0 && !u.torn) {
         u.torn = true;
         u.mud.ruts.uniforms.uGrassLife.value = 240;
@@ -1636,7 +1692,7 @@ export class Game {
     const girls = this.companions.map((c) => ({ id: c.character.id, free: free(c) }));
     const options = {};
     for (const c of this.companions) {
-      options[c.character.id] = this.units.filter((u) => u !== ridden && c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && !u.quad.bog.stuck).map((u) => u.spec.id);
+      options[c.character.id] = this.girlUnits.filter((u) => u !== ridden && c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && !u.quad.bog.stuck).map((u) => u.spec.id);
     }
     const cv = this.convoy;
     const later = (ms, fn) => setTimeout(fn, ms);
@@ -1681,7 +1737,7 @@ export class Game {
       if (e.type === 'invite') {
         byId[e.leader].voice.say('convoyInvite', { force: true });
         later(3500, () => byId[e.follower]?.voice.say('convoyAccept', { force: true }));
-        const quadOf = (id) => this.units.find((u) => u.spec.id === e.picks[id]).quad;
+        const quadOf = (id) => this.girlUnits.find((u) => u.spec.id === e.picks[id]).quad;
         byId[e.leader].requestDrive(quadOf(e.leader), { convoyLead: true });
         byId[e.follower].requestDrive(quadOf(e.follower), { follow: true, followWho: () => quadOf(e.leader) });
       } else if (e.type === 'swap') {
@@ -1713,7 +1769,7 @@ export class Game {
     const girls = this.companions.map((c) => ({ id: c.character.id, free: free(c) }));
     const options = {};
     for (const c of this.companions) {
-      options[c.character.id] = this.units.filter((u) => u !== ridden && c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && !u.quad.bog.stuck).map((u) => u.spec.id);
+      options[c.character.id] = this.girlUnits.filter((u) => u !== ridden && c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && !u.quad.bog.stuck).map((u) => u.spec.id);
     }
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
     const later = (ms, fn) => setTimeout(fn, ms);
@@ -1733,7 +1789,7 @@ export class Game {
         let side = 1;
         for (const [id, spec] of Object.entries(e.picks)) {
           const c = byId[id];
-          const quad = this.units.find((u) => u.spec.id === spec).quad;
+          const quad = this.girlUnits.find((u) => u.spec.id === spec).quad;
           const confidence = c.driveConfidence ?? c.params.driveConfidence;
           const race = {
             route: this.raceRoute(1.5 * side),
@@ -1766,7 +1822,7 @@ export class Game {
     return {
       you: { x: this.player.position.x, z: this.player.position.z, riding: ridden?.spec.id ?? null },
       girls: this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !this.menu.isOpen, mood: this.favour.mood(c.character.id) })),
-      quads: this.units.map((u) => ({
+      quads: this.girlUnits.map((u) => ({
         id: u.spec.id,
         x: u.quad.position.x,
         z: u.quad.position.z,
@@ -1799,7 +1855,7 @@ export class Game {
   /** She sets off to do it; it only happens if it's still fair game when she gets there. */
   startPrank(a, girl) {
     if (!girl) return this.pranks.cancel(a);
-    const quad = a.quad ? this.units.find((u) => u.spec.id === a.quad).quad : null;
+    const quad = a.quad ? this.girlUnits.find((u) => u.spec.id === a.quad).quad : null;
     const thing = a.item === 'can' ? this.petrolCan : a.item === 'toolbox' ? this.toolbox : null;
     const at = quad ? quad.position : thing.model.position;
     // Stops short of it, on her side.
@@ -1827,11 +1883,11 @@ export class Game {
    * does it, and often gloats.
    */
   askHer(c, action) {
-    const friend = c.others().find((o) => o.fsm.is('idle') && o.getActions(this.units.map((u) => u.quad)).find((x) => x.kind === action.kind && x.quad === action.quad));
+    const friend = c.others().find((o) => o.fsm.is('idle') && o.getActions(this.girlUnits.map((u) => u.quad)).find((x) => x.kind === action.kind && x.quad === action.quad));
     const refusable = ['giveRide', 'follow', 'drive', 'start', 'mount', 'mountRack'].includes(action.kind);
     if (friend && refusable && Math.random() < Math.max(this.favour.refuseChance(c.character.id), this.requests.refuseChance(c.character.id))) {
       c.voice.say('refuseRequest', { force: true });
-      const take = friend.getActions(this.units.map((u) => u.quad)).find((x) => x.kind === action.kind && x.quad === action.quad);
+      const take = friend.getActions(this.girlUnits.map((u) => u.quad)).find((x) => x.kind === action.kind && x.quad === action.quad);
       setTimeout(() => {
         take.run();
         if (Math.random() < this.favour.p.gloatChance) friend.voice.say('gloatTakeOver', { force: true });
@@ -1855,7 +1911,7 @@ export class Game {
       this.hud.toast('She can\'t get off while it\'s moving');
       return;
     }
-    const actions = c.getActions(this.units.map((u) => u.quad));
+    const actions = c.getActions(this.girlUnits.map((u) => u.quad));
     if (!actions.length) {
       this.hud.toast('She\'s busy');
       return;
@@ -2142,6 +2198,7 @@ export class Game {
     this.updatePlaces(dt);
     this.updatePranks(dt, ridden);
     this.updateRevOff(dt, ridden);
+    this.updateTractorWatch(dt);
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);
     this.updateHeadStart(dt, ridden);
@@ -2168,7 +2225,7 @@ export class Game {
       c.voice.update(dt, {
         listener: this.camera.position,
         ridden,
-        units: this.units,
+        units: this.girlUnits,
         drivers: this.drivers,
         ledger: this.wearLedger,
         menuOpen: this.menu.isOpen,
@@ -2233,8 +2290,17 @@ export class Game {
       this.hud.setStatus('Toolbox\nTake it to a quad that is switched off\nG to put it down');
     } else if (this.can.held) {
       this.hud.setStatus(`Jerry can  ${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel)}\nG to put it down`);
+    } else if (this.riddenUnit?.quad.manual) {
+      // The tractor's levers aren't on its dash, so say where they are.
+      const q = this.riddenUnit.quad;
+      this.hud.setStatus(`Gear ${gearLabel(q.drivetrain.gear)}   clutch ${q.drivetrain.pedal > 0.5 ? 'in' : 'out'}   hand throttle ${Math.round(q.handSetting * 100)}%`);
     } else {
       this.hud.setStatus('');
+    }
+    // Anything the tractor has to say (the starter in gear, a gear change without the clutch) to whoever's at it.
+    for (const u of this.units) {
+      const note = u.quad.manual ? u.quad.takeNote() : null;
+      if (note && (u === this.riddenUnit || u.quad.position.distanceTo(this.player.position) < 6)) this.hud.toast(note, 2.2);
     }
     this.hud.update(dt);
   }

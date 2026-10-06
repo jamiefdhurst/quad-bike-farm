@@ -22,6 +22,11 @@ const HELP_HTML = `
   <div><kbd>T</kbd> right the quad if it tips over</div>
   <div>Hold <kbd>C</kbd> or the middle mouse button to look back over your shoulder</div>
   <div>Hold <kbd>V</kbd> to lean in and look closely at the dash (and the pod, if there's one)</div>
+  <h3>The old tractor</h3>
+  <div>Cold start: <kbd>K</kbd> turns the key on and heats the glow plugs; wait for the GLOW lamp, then hold <kbd>R</kbd> to crank (a warm engine needs no wait). The starter won't turn in gear unless you hold the clutch</div>
+  <div>Hold <kbd>Shift</kbd> for the clutch. <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> are the gears, <kbd>B</kbd> reverse and <kbd>0</kbd> neutral; change gear with the clutch in, and let it up slowly in the higher gears or it stalls</div>
+  <div><kbd>Q</kbd> opens the hand throttle and <kbd>Z</kbd> closes it (it stays where you leave it); <kbd>W</kbd> is the foot throttle and <kbd>S</kbd> the brake</div>
+  <div><kbd>X</kbd> pulls the stop knob, which is how you switch it off: the key only turns the lights and the plugs off, and it runs on without it</div>
   <h3>Fuel</h3>
   <div><kbd>E</kbd> pick up the red jerry can by the barn, or the yellow pre-mix can by the petrol tank (the yellow and orange take pre-mix, the others plain petrol; hold <kbd>E</kbd> on the oil bottle to add oil to a can)</div>
   <div>Hold <kbd>E</kbd> at a quad to pour, or at the petrol tank to refill the can</div>

@@ -234,7 +234,7 @@ export class DebugGui {
       const id = c.character.id;
       Object.defineProperty(live, `${cap(id)}'s quad`, { enumerable: true, get: () => g.ownership.claims[id] ?? 'none' });
     }
-    for (const u of g.units) {
+    for (const u of g.girlUnits) {
       Object.defineProperty(live, `${u.spec.id} quad`, {
         enumerable: true,
         get: () => `${g.ownership.ownerOf(u.spec.id) ?? 'nobody'}'s${g.quadNames.names[u.spec.id] ? ` (${g.quadNames.names[u.spec.id]}${g.quadNames.announced.has(u.spec.id) ? '' : ', not said yet'})` : ''}`,
@@ -311,7 +311,7 @@ export class DebugGui {
     actions.doughnuts = () => {
       const c = girl('jess');
       if (!free(c)) return;
-      const quads = g.units.map((u) => u.quad).filter((q) => c.mayRide(q) && c.canDrive(q) && !c.takenByOther(q) && q.position.distanceTo(c.root.position) < 60);
+      const quads = g.girlUnits.map((u) => u.quad).filter((q) => c.mayRide(q) && c.canDrive(q) && !c.takenByOther(q) && q.position.distanceTo(c.root.position) < 60);
       quads.sort((a, b) => a.position.distanceTo(c.root.position) - b.position.distanceTo(c.root.position));
       const plan = c.doughnutPlan();
       if (!quads.length || !plan) return g.hud.toast('Jess cannot find a free quad or a clear stretch of field');
@@ -324,7 +324,7 @@ export class DebugGui {
     actions.nick = () => {
       const c = girl('jess');
       if (!free(c)) return;
-      const quads = g.units.map((u) => u.quad).filter((q) => c.mayRide(q) && c.canDrive(q) && !c.takenByOther(q) && !q.rider);
+      const quads = g.girlUnits.map((u) => u.quad).filter((q) => c.mayRide(q) && c.canDrive(q) && !c.takenByOther(q) && !q.rider);
       quads.sort((a, b) => a.position.distanceTo(g.player.position) - b.position.distanceTo(g.player.position));
       if (!quads.length) return g.hud.toast('No free quad');
       g.startNick(c, quads[0]);
@@ -369,6 +369,7 @@ export class DebugGui {
       stopAll: () => {
         g.units.forEach((u) => {
           u.engine.setIgnition(false);
+          u.engine.stopKnob(); // a diesel runs on with the key off
           u.quad.fuel.tap = 'off';
         });
         g.hud.toast('All the quads are switched off, fuel taps off');

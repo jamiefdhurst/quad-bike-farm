@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { tempGaugeFraction } from './tempGauge.js';
 import { lampStates, counterDigits, counterText, cycleIndex } from './dashState.js';
 import {
-  plastic, charcoal, blackMat, gloss, chromeMat, changeGate, mmPanel, housing, text, ticks, labels, needle, drum, lamp, keySwitch,
+  plastic, charcoal, blackMat, gloss, chromeMat, changeGate, mmPanel, housing, text, ticks, labels, arc, needle, drum, lamp, keySwitch,
   segText, speedText, LAMP,
 } from './dashParts.js';
 
@@ -17,6 +17,7 @@ import {
 //   blaster:   yellow. The back of a headlamp shell on the bars with a red power lamp and the key.
 //   quadracer: orange. A RUN / OFF kill switch on the left bar and its lanyard.
 //   kidsKey:   kids' quad. A key switch under the bar clamp.
+//   tractor:   the tractor. A round rev counter with an hour meter, a small fuel gauge, GLOW and CHARGE lamps and the key.
 //
 // buildDash(style) returns { group, update(state), mount } where state is { rpm, maxRpm, redline, speedMph, fuelLevel, reserveLevel,
 // tap, temperature, overheat, coldBelow, ignition (has power), keyOn, tripMiles, odoMiles, hours, reverse, neutral, clock, seconds }.
@@ -401,8 +402,74 @@ function buildKidsKey() {
   };
 }
 
+// The tractor ------------------------------------------------------------------------------
+
+function buildTractor() {
+  const group = new THREE.Group();
+  group.name = 'dash';
+  const O = { ox: 180, oy: 70 };
+  housing(group, { x: 85, y: 20, w: 190, h: 100, r: 10, ...O, material: plastic });
+  const face = mmPanel({ x: 85, y: 20, w: 190, h: 100, ...O });
+  group.add(face.mesh);
+  const gate = changeGate();
+  let shownRpm = 0;
+  let shownFuel = 0;
+
+  function draw(ctx, s, L) {
+    ctx.fillStyle = '#0c0d0e';
+    ctx.beginPath();
+    ctx.roundRect(88, 23, 184, 94, 7);
+    ctx.fill();
+    // The rev counter, 0 to 3,000 rpm in hundreds, with the green working band.
+    const [cx, cy, r] = [130, 72, 40];
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 4, 0, Math.PI * 2);
+    ctx.stroke();
+    arc(ctx, cx, cy, r - 3, 170 - 160 * (1400 / 3000), 170 - 160 * (1900 / 3000), '#3fb85a', 3);
+    ticks(ctx, cx, cy, r - 6, r, 170, 10, 30, '#e9e9e9', 0.6);
+    ticks(ctx, cx, cy, r - 9, r, 170, 10, 6, '#e9e9e9', 1);
+    labels(ctx, cx, cy, r - 15, 170, 10, ['0', '5', '10', '15', '20', '25', '30'], '#e9e9e9', 5);
+    text(ctx, 'x100 r.p.m.', cx, cy + 14, 3.8, '#bbb', { align: 'center' });
+    text(ctx, 'HOURS', cx - 12, cy + 27, 3.2, '#ccc');
+    const h = counterDigits(s.hours, 4);
+    drum(ctx, cx - 12, cy + 29, h.whole, h.tenth, 6);
+    needle(ctx, cx, cy, r - 2, 170 - (160 * Math.min(3000, L.rpm)) / 3000, '#e8541e');
+    // Fuel, a small gauge.
+    const [fx, fy, fr] = [206, 52, 16];
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(fx, fy, fr + 2, 0, Math.PI * 2);
+    ctx.stroke();
+    ticks(ctx, fx, fy, fr - 4, fr, 150, 30, 4, '#e9e9e9', 0.8);
+    text(ctx, 'E', fx - 11, fy + 10, 4.5, '#ff6a5a', { align: 'center' });
+    text(ctx, 'F', fx + 11, fy + 10, 4.5, '#e9e9e9', { align: 'center' });
+    text(ctx, 'FUEL', fx, fy + 14, 3.4, '#bbb', { align: 'center' });
+    needle(ctx, fx, fy, fr - 2, 150 - 120 * L.fuel, '#e8541e', 1);
+    // Lamps and the key. The charge lamp is lit with the key on and the engine not yet running, as on any old tractor.
+    lamp(ctx, 196, 94, LAMP.amber, 'GLOW', L.glow, { r: 3.6 });
+    lamp(ctx, 218, 94, LAMP.red, 'CHARGE', L.charge, { r: 3.6 });
+    keySwitch(ctx, 248, 72, s.keyOn);
+  }
+
+  return {
+    group,
+    mount: null,
+    update(s) {
+      // A cable-driven counter reads with the key off, and swings with a little lag.
+      shownRpm += (s.rpm - shownRpm) * 0.35;
+      shownFuel += ((s.ignition ? s.fuelLevel : 0) - shownFuel) * 0.2;
+      const L = { rpm: shownRpm, fuel: shownFuel, glow: !!s.ignition && !!s.glow, charge: !!s.ignition && s.rpm < 300 };
+      const hh = counterDigits(s.hours, 4);
+      if (gate([s.ignition, s.keyOn, L.glow, L.charge, Math.round(shownRpm / 8), Math.round(shownFuel * 20), hh.whole + hh.tenth].join('|'))) face.redraw((ctx) => draw(ctx, s, L));
+    },
+  };
+}
+
 /** Dash styles buildDash knows: every quad spec must name one of these. */
-export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey'];
+export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey', 'tractor'];
 
 /** Where each dash sits on the bars (metres, in the bars' frame) and how far it tilts back. A nacelle quad carries its own on its top. */
 export const DASH_PLACE = {
@@ -413,6 +480,7 @@ export const DASH_PLACE = {
   blaster: { pos: [0, 0.08, 0.04], tilt: 0.45 }, // sat down on the bar clamp, not floating over it
   quadracer: { pos: [0.225, 0.085, -0.035], tilt: 0.9 },
   kidsKey: { pos: [0, 0.075, 0.0], tilt: 0.9 },
+  tractor: { pos: [0, 0, 0], tilt: 1.05 }, // the tractor's model places it on its scuttle itself
 };
 
 const BUILDERS = {
@@ -423,6 +491,7 @@ const BUILDERS = {
   blaster: buildBlaster,
   quadracer: buildQuadracer,
   kidsKey: buildKidsKey,
+  tractor: buildTractor,
 };
 
 export function buildDash(style = 'foreman') {
