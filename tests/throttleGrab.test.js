@@ -66,3 +66,15 @@ describe('hand on the throttle', () => {
     expect(JESS_THROTTLE_LINES.grabGo.length).toBeGreaterThan(0);
   });
 });
+
+describe('forcing one from the debug panel', () => {
+  it('the named girl does it at the first chance, ignoring the wait and the dice, but not when she is off the back', () => {
+    const g = new ThrottleGrab({ ...P }, () => 0.99);
+    g.forced = 'amy';
+    expect(g.update(0.05, ctx())).toEqual([]); // only Jess is on the back
+    expect(g.forced).toBe('amy');
+    const events = g.update(0.05, ctx({ girls: [{ id: 'amy', onBack: true }] }));
+    expect(events).toEqual([{ type: 'start', girl: 'amy' }]);
+    expect(g.forced).toBeNull();
+  });
+});

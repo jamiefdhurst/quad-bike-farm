@@ -806,3 +806,9 @@ Jamie: the sound sometimes stops altogether, perhaps only in Firefox, with nothi
 - The cones are four, either side of the track at the point nearest the yard (`src/world/startLine.js`), no collider.
 - Checked headless (five short runs, forced to start at once): they gather and grid up, the count-down runs, both leave the line together and Jess ran a whole lap in about 75 s and pulled up over the line. The puddle problem above was found and fixed that way. Not seen: Amy finishing (the run was cut at 150 s), the result and win lines in play, the banter after, the cones, or a race with the green or another stubborn starter. A girl who can't start the quad she picked cancels the race; that is common with a cold green and with novices (two of the five runs), which I haven't tried to cure.
 
+## Debug panel for the girls, and fewer stuck cables (after TODO 3 to 11)
+
+- Jamie: the throttle cable was sticking too often. `cableEvery` (average running seconds per cable fault) goes from 2700 to 7200. The other faults are unchanged.
+- A "Girls (live)" folder in the tuning panel: each girl's claimed quad, each quad's owner and nickname (and whether Jess has said it yet), the race phase and score, and the throttle-grab state. Buttons: start a race now (it begins as soon as both girls are stood about and two quads are free), make Jess or Amy grab the throttle on your next ride (you must be moving with her on the back), and have Jess name the quads now.
+- Jamie hadn't seen the hand on the throttle: it needed 25 s of riding with a girl on the back, then 3% a second for Jess (0.75% for Amy), and only up to 11 m/s. The speed limit goes to 16 m/s; the rest is unchanged.
+

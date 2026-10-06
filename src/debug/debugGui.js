@@ -16,6 +16,7 @@ export class DebugGui {
     this.buildLive();
     this.buildFavour();
     this.buildSkills();
+    this.buildGirls();
     this.buildActions();
     const folders = {};
     // "Red quad/Engine" becomes an Engine folder inside a Red quad folder.
@@ -208,6 +209,53 @@ export class DebugGui {
         f.add(row, 'level', 0, 1, 0.01).name(`${id} ${skill}`).listen();
       }
     }
+  }
+
+  /** Whose quad is whose, what the quads are called, the race score, and buttons to start things that are otherwise left to chance. */
+  buildGirls() {
+    const g = this.game;
+    const f = this.gui.addFolder('Girls (live): quads, names, racing');
+    const live = {};
+    const cap = (s) => s[0].toUpperCase() + s.slice(1);
+    for (const c of g.companions) {
+      const id = c.character.id;
+      Object.defineProperty(live, `${cap(id)}'s quad`, { enumerable: true, get: () => g.ownership.claims[id] ?? 'none' });
+    }
+    for (const u of g.units) {
+      Object.defineProperty(live, `${u.spec.id} quad`, {
+        enumerable: true,
+        get: () => `${g.ownership.ownerOf(u.spec.id) ?? 'nobody'}'s${g.quadNames.names[u.spec.id] ? ` (${g.quadNames.names[u.spec.id]}${g.quadNames.announced.has(u.spec.id) ? '' : ', not said yet'})` : ''}`,
+      });
+    }
+    Object.defineProperty(live, 'Race', { enumerable: true, get: () => g.race.phase });
+    Object.defineProperty(live, 'Race score', { enumerable: true, get: () => g.companions.map((c) => `${cap(c.character.id)} ${g.race.tally[c.character.id]?.wins ?? 0}-${g.race.tally[c.character.id]?.losses ?? 0}`).join(', ') });
+    Object.defineProperty(live, 'Throttle grab', { enumerable: true, get: () => g.throttleGrab.grab?.girl ? `${g.throttleGrab.grab.girl} (${g.throttleGrab.grab.phase})` : g.throttleGrab.forced ? `${g.throttleGrab.forced} waiting` : 'none' });
+    for (const key of Object.keys(live)) f.add(live, key).listen().disable();
+    const actions = {
+      race: () => {
+        if (g.race.active) return g.hud.toast('A race is already on');
+        g.race.forced = true;
+        g.hud.toast('A race will start as soon as both girls are stood about (and not on a quad)');
+      },
+      grabJess: () => {
+        g.throttleGrab.forced = 'jess';
+        g.hud.toast('Ride with Jess on the back (moving): she will grab the throttle');
+      },
+      grabAmy: () => {
+        g.throttleGrab.forced = 'amy';
+        g.hud.toast('Ride with Amy on the back (moving): she will grab the throttle');
+      },
+      names: () => {
+        g.quadNames.p.firstNameAfter = 0;
+        g.quadNames.p.nameEvery = 5;
+        g.quadNames.nextAt = 0;
+        g.hud.toast('Jess will name the quads, one every 5 seconds, when she is free and you are near');
+      },
+    };
+    f.add(actions, 'race').name('Start a race now');
+    f.add(actions, 'grabJess').name('Jess grabs the throttle (next ride)');
+    f.add(actions, 'grabAmy').name('Amy grabs the throttle (next ride)');
+    f.add(actions, 'names').name('Jess names the quads now');
   }
 
   buildActions() {

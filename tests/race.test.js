@@ -192,3 +192,14 @@ describe('what they say', () => {
     for (const e of RACE_BANTER) expect(BANTER_TIMING[e.when]).toBeTruthy();
   });
 });
+
+describe('starting one from the debug panel', () => {
+  it('forced, it starts at the first chance whatever the timing, once both are free', () => {
+    const r = new Race({ ...P }, () => 0.99); // the dice would never allow it
+    expect(r.update(1, ctx())).toEqual([]);
+    r.forced = true;
+    expect(r.update(1, ctx({ girls: [{ id: 'amy', free: true }, { id: 'jess', free: false }] }))).toEqual([]);
+    expect(r.update(1, ctx())[0].type).toBe('invite');
+    expect(r.forced).toBe(false);
+  });
+});

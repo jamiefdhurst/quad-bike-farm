@@ -99,6 +99,7 @@ export class Race {
     this.freeTime = 0;
     this.lastRace = -Infinity;
     this.tally = {}; // girl id -> { wins, losses }
+    this.forced = false; // start one at the first chance, whatever the timing (the debug panel)
     this.reset();
   }
 
@@ -171,9 +172,11 @@ export class Race {
     if (this.phase === 'idle') {
       const bothFree = ctx.girls.length >= 2 && ctx.girls.every((g) => g.free);
       this.freeTime = bothFree ? this.freeTime + dt : 0;
-      if (!bothFree || this.clock < p.startAfter || this.clock - this.lastRace < p.cooldown || this.freeTime < p.freeFor || this.random() >= p.chance * dt) return events;
+      const wait = !this.forced && (this.clock < p.startAfter || this.clock - this.lastRace < p.cooldown || this.freeTime < p.freeFor || this.random() >= p.chance * dt);
+      if (!bothFree || wait) return events;
       const picks = pickQuads(ctx.options, ctx.claims, this.random);
       if (!picks) return events;
+      this.forced = false;
       const ids = ctx.girls.map((g) => g.id);
       this.challenger = ids.includes('jess') && this.random() < p.jessChallenges ? 'jess' : ids.find((id) => id !== 'jess') ?? ids[0];
       this.picks = picks;

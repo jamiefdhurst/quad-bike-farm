@@ -7,7 +7,7 @@ export const DEFAULT_FAULT_PARAMS = {
   // How often each one starts, as the average seconds of the right kind of use per fault.
   punctureEvery: 2400, // riding: a thorn from the hedge
   beltEvery: 1800, // riding hard, with the throttle well open
-  cableEvery: 2700, // engine running
+  cableEvery: 7200, // engine running (was 2700: it stuck too often)
   carbEvery: 2400, // engine running
   // How long each takes to go from just started to as bad as it gets.
   punctureSeconds: 120, // the tyre going flat

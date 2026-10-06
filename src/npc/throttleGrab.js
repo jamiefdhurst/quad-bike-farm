@@ -7,7 +7,7 @@ export const DEFAULT_GRAB_PARAMS = {
   chance: 0.03, // per second after that, at Jess's boldness of 1
   gap: 40, // seconds between grabs, after the last one ends
   minSpeed: 2, // m/s: you're moving, not stood revving
-  maxSpeed: 11, // m/s: she won't add to it going faster than this
+  maxSpeed: 16, // m/s: she won't add to it going faster than this
   reachTime: 0.7, // seconds to get her hand to the grip
   holdMin: 1.2, // seconds she keeps it open
   holdMax: 2.4,
@@ -43,6 +43,7 @@ export class ThrottleGrab {
     this.together = 0; // seconds riding together, moving
     this.rest = 0; // seconds until she might again
     this.count = {}; // girl id -> times she has
+    this.forced = null; // a girl id told to do it at the first chance (the debug panel)
     this.grab = null; // { girl, phase: 'reach' | 'hold' | 'release', t, hold }
   }
 
@@ -89,11 +90,13 @@ export class ThrottleGrab {
     const moving = ctx.riding && ctx.speed >= p.minSpeed && ctx.speed <= p.maxSpeed;
     const companions = ctx.girls.filter((o) => o.onBack);
     this.together = moving && companions.length ? this.together + dt : 0;
-    if (!moving || !companions.length || this.together < p.firstAfter || this.rest > 0) return events;
-    for (const o of companions) {
+    const force = this.forced && companions.find((o) => o.id === this.forced);
+    if (!moving || !companions.length || (!force && (this.together < p.firstAfter || this.rest > 0))) return events;
+    for (const o of force ? [force] : companions) {
       const bold = o.id === 'jess' ? p.jessBoldness : p.amyBoldness;
-      if (o.id === 'amy' && (this.count.amy ?? 0) >= p.amyMax) continue;
-      if (this.random() >= p.chance * bold * dt) continue;
+      if (!force && o.id === 'amy' && (this.count.amy ?? 0) >= p.amyMax) continue;
+      if (!force && this.random() >= p.chance * bold * dt) continue;
+      this.forced = null;
       this.count[o.id] = (this.count[o.id] ?? 0) + 1;
       this.grab = { girl: o.id, phase: 'reach', t: 0, hold: p.holdMin + this.random() * Math.max(0, p.holdMax - p.holdMin) };
       events.push({ type: 'start', girl: o.id });
