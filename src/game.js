@@ -8,7 +8,6 @@ import { World } from './world/world.js';
 import { Player, PLAYER_CAPSULE } from './player/player.js';
 import { DEFAULT_PLAYER_PARAMS, PLAYER_PARAM_RANGES } from './player/playerParams.js';
 import { QuadUnit } from './vehicle/quadUnit.js';
-import { gearLabel } from './vehicle/manualDrivetrain.js';
 import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC } from './vehicle/quadSpecs.js';
 import { pickFleet } from './vehicle/fleet.js';
 import { applyIdle, applyVariation, pickIdle } from './vehicle/quadVariation.js';
@@ -2290,10 +2289,6 @@ export class Game {
       this.hud.setStatus('Toolbox\nTake it to a quad that is switched off\nG to put it down');
     } else if (this.can.held) {
       this.hud.setStatus(`Jerry can  ${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel)}\nG to put it down`);
-    } else if (this.riddenUnit?.quad.tractor) {
-      // The tractor's levers aren't on its dash, so say where they are. The manual quads get no readout: you go by feel.
-      const q = this.riddenUnit.quad;
-      this.hud.setStatus(`Gear ${gearLabel(q.drivetrain.gear)}   clutch ${q.drivetrain.pedal > 0.5 ? 'in' : 'out'}   hand throttle ${Math.round(q.handSetting * 100)}%`);
     } else {
       this.hud.setStatus('');
     }
