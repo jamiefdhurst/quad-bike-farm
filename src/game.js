@@ -1482,7 +1482,9 @@ export class Game {
             c.voice.say('jumperOff', { urgent: true, chance: 0.8 });
             this.jumperRail.show(this.jumpers.onRail().map((j) => j.id));
           };
-      if (!c.sneakTo(rail.stand, act)) this.jumpers.cancel(e.girl);
+      // In and out through the big doors: they're on the +x side, so go through the doorway first (and back out through it after).
+      const door = this.world.layout.jumperRail.door;
+      if (!c.sneakTo(rail.stand, act, 2.6, { via: door.in, out: door.out })) this.jumpers.cancel(e.girl);
     }
   }
 

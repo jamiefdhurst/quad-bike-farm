@@ -604,8 +604,8 @@ function addJumper(rig, color, shirtHex) {
   // The hem hangs well over the shorts' waistband, which is at her spine bone.
   const hem = (rig.bones.Spine ? bonePos(rig, 'Spine') : bonePos(rig, 'Hips')).y - 0.11;
   const neckBand = 0.035;
-  const scoop = top - 0.1; // the neckline at the front and back: a wide round neck, with the collar and the top of the placket showing
-  const wide = 0.1; // beyond this far from the middle of her neck the jumper goes right up over the shoulders
+  const scoop = top - 0.06; // the neckline at the front and back: just low enough to show the collar and the top button
+  const wide = 0.075; // beyond this far from the middle of her neck the jumper goes right up over the shoulders
   const hemBand = 0.04;
   const sleeve = /Shoulder|Arm/; // Arm also matches ForeArm; the hand is left bare
   skinnedGarment(
