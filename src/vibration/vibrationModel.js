@@ -36,6 +36,7 @@ export class VibrationModel {
       heave: new Oscillator(),
       pitch: new Oscillator(),
       roll: new Oscillator(),
+      torque: new Oscillator(), // the slow sway from a blip of the throttle (torqueRock.js)
       barsX: new Oscillator(),
       barsY: new Oscillator(),
       barsYaw: new Oscillator(),
@@ -95,7 +96,7 @@ export class VibrationModel {
     const o = this.osc;
     this.body.heave = o.heave.x;
     this.body.pitch = o.pitch.x;
-    this.body.roll = o.roll.x;
+    this.body.roll = o.roll.x + o.torque.x;
     this.bars.x = o.barsX.x;
     this.bars.y = o.barsY.x;
     this.bars.yaw = o.barsYaw.x;
@@ -104,10 +105,15 @@ export class VibrationModel {
     this.camera.y = o.camY.x;
     this.camera.z = o.camZ.x;
     this.camera.pitch = o.camPitch.x;
-    this.camera.roll = o.camRoll.x;
+    this.camera.roll = o.camRoll.x + o.torque.x * p.torqueCamera;
 
     const rate = dt > 0 ? kickSum / dt : 0;
     this.intensity += (clamp(rate / 20, 0, 2) - this.intensity) * Math.min(1, 4 * dt);
+  }
+
+  /** The engine's torque twisting the body on its springs (a kick in rad/s from torqueRock.js). */
+  torqueKick(v) {
+    this.osc.torque.kick(v);
   }
 
   kick(pulse, bodyFactor, barsFactor, roughBoost) {
@@ -177,6 +183,7 @@ export class VibrationModel {
     o.heave.step(h, p.heaveFreq, p.heaveDamping);
     o.pitch.step(h, p.pitchFreq, p.pitchDamping);
     o.roll.step(h, p.rollFreq, p.rollDamping);
+    o.torque.step(h, p.torqueFreq, p.torqueDamping);
     o.barsX.step(h, p.barsFreq, p.barsDamping);
     o.barsY.step(h, p.barsFreq * 1.13, p.barsDamping);
     o.barsYaw.step(h, p.barsFreq * 0.8, p.barsDamping);

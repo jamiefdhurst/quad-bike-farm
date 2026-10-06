@@ -1,6 +1,7 @@
 import { registerTuning } from '../core/tuning.js';
 import { EngineModel } from '../engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS, ENGINE_PARAM_RANGES } from '../engine/engineParams.js';
+import { TorqueRock } from '../vibration/torqueRock.js';
 import { VibrationModel } from '../vibration/vibrationModel.js';
 import { DEFAULT_VIBRATION_PARAMS, VIBRATION_PARAM_RANGES } from '../vibration/vibrationParams.js';
 import { EngineAudio } from '../audio/engineAudio.js';
@@ -44,6 +45,7 @@ export class QuadUnit {
       fuelParams: { ...DEFAULT_FUEL_PARAMS, ...spec.fuel },
     });
     this.quad.unit = this;
+    this.torqueRock = new TorqueRock();
     this.vibration = new VibrationModel({ ...DEFAULT_VIBRATION_PARAMS, ...spec.vibration });
     this.smoke = new ExhaustSmoke(scene, (x, z) => world.heightAt(x, z), { ...DEFAULT_SMOKE_PARAMS, ...spec.smoke });
     this.mud = new QuadMud({ scene, world, quad: this.quad, sport: spec.style?.startsWith('sport'), params: { ...DEFAULT_MUD_PARAMS, ...spec.mud } });
@@ -78,6 +80,10 @@ export class QuadUnit {
   update(dt, alpha) {
     this.quad.updateFuel(dt);
     this.engine.update(dt, this.quad.engineControls());
+    // A sharp blip on a standing quad (parking brake on, or nobody driving it) twists it on its springs.
+    const q = this.quad;
+    const standing = q.parkBrake || (!q.rider && !q.driver);
+    this.vibration.torqueKick(this.torqueRock.update(dt, q.throttle || q.helperThrottle, this.engine.isRunning && Math.abs(q.speed) < 0.5 && standing, this.vibration.params));
     // Ground jolts only show from outside: with you on it, it shakes as it always has.
     this.vibration.update(dt, this.engine, this.quad.rider || this.quad.driver || this.quad.passenger ? 0 : this.quad.speed);
     this.quad.update(dt, alpha, this.vibration);

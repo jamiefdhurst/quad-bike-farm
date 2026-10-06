@@ -746,3 +746,11 @@ Jamie: the sound sometimes stops altogether, perhaps only in Firefox, with nothi
 - Hard revving is the existing engine model, so a cold or worn quad she keeps revving wears, and shows up in the wear tally from TODO 1 as hers.
 - Lines in `revOffLines.js` (situations `revAnswer`, `revAnswerMore`, `revComplain`, `revStall`); tunables in the "Rev-offs" tuning folder.
 - Checked: unit tests, and once headless that the game loads without errors. Not checked: a rev-off in play (the sound of two quads revving, how the girl's throttle looks on a stood quad, how often the stall comes), or the lines in play.
+
+## Parking brake and torque rock (TODO 18)
+
+- Agreed with you: Space toggles; with it on, W revs the engine and the wheels don't move; the girls set it themselves; blips rock the quad only when it is standing.
+- `quad.parkBrake`: with a rider's input and the brake on, the wheel brake is `maxBrake`, the drive is cut (the existing "braking drops the drive" rule) and the quad is held still below `parkedHoldSpeed`. A girl taking the controls releases it. Getting off the front seat she pulls it on with `parkBrakeChance` (Amy 1, Jess 0.5). A toast says so when you mount a quad with it on. A dash light was not added; the toast is the only sign.
+- `src/vibration/torqueRock.js` (pure, tested) spots a blip: the throttle rising by `torqueMinRise` 0.4 within `torqueWindow` 0.15 s, once until it falls back. The kick (`torqueGain` 1.2 rad/s, always the one way) goes to a new slow oscillator in the vibration model (3.2 Hz, damping 0.25) that adds to the body's roll (about 3 degrees at full) and to your head's (`torqueCamera` 0.4). It only fires with the engine running, the quad slower than 0.5 m/s, and the brake on or nobody at the controls, so pulling away never rocks it. A girl sat on it moves with the body, so she wobbles too.
+- Jess's prank: a free girl with `rockPrankChance` (Jess 0.02 a second, Amy 0) within `rockPrankRange` 3.5 m of a quad her friend is sat on, running, holds its throttle for 0.4 s (so the same rock fires), at most every two minutes. Jess says `rockPrank`, Amy `rockPrankAmy`. No new state.
+- Not checked in the running game: whether 3 degrees reads right, the brake holding on a slope, or how often Jess does it. Unit tests cover the blip detection, the sway and the lines.

@@ -38,6 +38,8 @@ export const CHARACTERS = [
       boredAfterMin: 20,
       boredAfterMax: 70,
       boredMountChance: 0.2,
+      parkBrakeChance: 0.5, // leaves it in gear-less limbo half the time
+      rockPrankChance: 0.02,
       boredStartChance: 0.25,
       boredDriveChance: 0.4,
       driveConfidence: 0.7,

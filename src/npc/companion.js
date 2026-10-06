@@ -913,6 +913,7 @@ const STATES = {
       if (t >= 1) {
         this.rig.legSpread = 0;
         this.setColliderEnabled(true);
+        if (this.dismountingFrom === 'rider' && Math.random() < p.parkBrakeChance) this.quad.parkBrake = true;
         this.fsm.transition('idle', { facing: this.target.facing });
         // A request that needed her off this quad first (e.g. getting on the other one).
         const next = this.afterDismount;

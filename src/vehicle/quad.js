@@ -100,6 +100,7 @@ export class Quad {
     this.remoteInput = null; // set while someone on foot is looking at the bike
     this.helperStarter = false; // she's holding the starter button
     this.helperPull = false; // she's holding the pull-start cord
+    this.parkBrake = false; // the parking brake: wheels locked, so the throttle only revs the engine (toggled with Space)
     this.helperThrottle = 0; // she's blipping the throttle (a quad's starting knack)
     this.pullHeld = 0; // seconds the cord's been held, until it's let go (the yank)
     this.passenger = null; // you, riding on the back while she drives
@@ -387,10 +388,12 @@ export class Quad {
     let brake = this.brake * p.maxBrake;
     // Nobody on it (and not carrying on by itself): the parking brake holds it. Not while it's being winched.
     const idle = !this.towed && ((!this.input && !this.ghost && !this.driver) || (throttleInput === 0 && Math.abs(fwd) < 0.5));
+    if (this.driver) this.parkBrake = false; // she takes it off before she sets off
     if (idle) brake = Math.max(brake, p.parkingBrake);
+    if (this.parkBrake && this.input) brake = p.maxBrake;
     brake = Math.max(brake, p.rollingResistance);
     // Wheel brakes alone let a parked quad creep down a slope, so a stationary one is held.
-    this.physics.setParked(idle && throttleInput === 0 && Math.abs(fwd) < 0.3);
+    this.physics.setParked((idle && throttleInput === 0 && Math.abs(fwd) < 0.3) || (this.parkBrake && Math.abs(fwd) < 0.3));
 
     // Rapier's raycast wheels ignore the brake on a wheel with any engine force
     // (even engine braking on the overrun), so braking drops the drive. The bog's

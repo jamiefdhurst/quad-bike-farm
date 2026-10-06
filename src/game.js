@@ -1018,6 +1018,32 @@ export class Game {
     return c.fsm.is('seated') && !q.rider && !q.driver && q.engine.isRunning ? q : null;
   }
 
+  /** A girl free beside a quad her friend is sat on, running, reaches over and blips it so it rocks (Jess does; Amy doesn't). */
+  updateRockPrank(dt) {
+    this.rockPrank ??= { until: 0, quad: null, next: 0 };
+    const r = this.rockPrank;
+    r.next -= dt;
+    if (r.quad) {
+      if (this.revOff.clock < r.until) return;
+      r.quad.helperThrottle = 0;
+      r.quad = null;
+    }
+    if (r.next > 0 || this.menu.isOpen) return;
+    for (const c of this.companions) {
+      const p = c.params;
+      if (!p.rockPrankChance || !c.fsm.is('idle') || Math.random() >= p.rockPrankChance * dt) continue;
+      const friend = this.companions.find((o) => o !== c && this.revOffQuad(o) && c.root.position.distanceTo(o.quad.position) <= p.rockPrankRange);
+      if (!friend) continue;
+      r.quad = friend.quad;
+      r.until = this.revOff.clock + 0.4;
+      r.next = 120;
+      friend.quad.helperThrottle = 1;
+      c.voice.say('rockPrank', { force: true });
+      friend.voice.say('rockPrankAmy', { force: true });
+      return;
+    }
+  }
+
   updateRevOff(dt, ridden) {
     const q = ridden?.quad;
     const girls = this.companions.map((c) => ({ id: c.character.id, canBlip: !!this.revOffQuad(c), x: c.root.position.x, z: c.root.position.z }));
@@ -1025,7 +1051,7 @@ export class Game {
     const events = this.revOff.update(dt, { you, girls });
     for (const c of this.companions) {
       const quad = this.revOffQuad(c);
-      if (quad) quad.helperThrottle = this.revOff.throttleFor(c.character.id);
+      if (quad && quad !== this.rockPrank?.quad) quad.helperThrottle = this.revOff.throttleFor(c.character.id);
     }
     for (const e of events) {
       const girl = this.companions.find((c) => c.character.id === e.girl);
@@ -1193,6 +1219,11 @@ export class Game {
 
   // Riding ---------------------------------------------------------------
 
+  toggleParkBrake(quad) {
+    quad.parkBrake = !quad.parkBrake;
+    this.hud.toast(quad.parkBrake ? 'Parking brake on' : 'Parking brake off', 1.2);
+  }
+
   mount(unit) {
     if (this.player.isRiding || this.tooFastToMount(unit.quad)) return;
     this.player.mount(unit.quad);
@@ -1200,6 +1231,7 @@ export class Game {
     unit.quad.setRider(this.player, this.input);
     this.lastUnit = unit;
     this.input.takeWheelSteps();
+    if (unit.quad.parkBrake) this.hud.toast('Parking brake is on (Space)', 2);
   }
 
   /** A moving quad you can't catch hold of (whether or not anyone is on it). */
@@ -1357,6 +1389,7 @@ export class Game {
     } else if (this.player.isRiding) {
       this.interaction.clear();
       this.riddenUnit.quad.handleFrameInput(dt);
+      if (input.wasPressed('Space')) this.toggleParkBrake(this.riddenUnit.quad);
       if (input.wasPressed('KeyE')) this.tryDismount();
     } else if (this.workshop.isOpen) {
       this.workshop.handleInput(input);
@@ -1418,6 +1451,7 @@ export class Game {
     this.updatePlaces(dt);
     this.updatePranks(dt, ridden);
     this.updateRevOff(dt, ridden);
+    this.updateRockPrank(dt);
     this.updateBanter(dt, ridden);
     for (const c of this.companions) {
       c.update(dt, c.quad.unit.vibration, {

@@ -15,6 +15,7 @@ const HELP_HTML = `
   <div><kbd>P</kbd> the yellow and orange have a pull-start as well: hold to draw the cord, let go to yank (about half a second to a second is right), and it works with a flat battery</div>
   <div><kbd>Q</kbd> more choke, <kbd>Z</kbd> less (hold to keep going)</div>
   <div><kbd>W</kbd> throttle, <kbd>S</kbd> brake / reverse when stopped</div>
+  <div><kbd>Space</kbd> parking brake on / off: with it on, the wheels are locked and the throttle only revs the engine, and a sharp blip rocks the quad on its springs</div>
   <div><kbd>A</kbd><kbd>D</kbd> steer</div>
   <div><kbd>E</kbd> get off (at speed you jump off and it carries on)</div>
   <div><kbd>F</kbd> fuel tap: ON, RESERVE, OFF</div>
