@@ -281,7 +281,7 @@ export class Quad {
     if (!input) return;
     if (this.input) input.takeWheelSteps();
     if (input.wasPressed('KeyK')) this.engine.toggleIgnition();
-    if (input.wasPressed('KeyF')) this.fuel.cycleTap();
+    if (input.wasPressed('KeyF') && !this.fuel.params.noTap) this.fuel.cycleTap();
     if (this.manual) this.manualKeys(input);
     else {
       this.chokeKey(dt, input, CHOKE_MORE_KEY, 1);
@@ -408,7 +408,7 @@ export class Quad {
     }
 
     // The hand throttle holds the engine up wherever it was left, ridden or not.
-    if (this.manual) throttleInput = Math.max(throttleInput, this.handSetting);
+    if (this.manual && this.handSetting > 0) throttleInput = Math.max(throttleInput, this.gearbox.handFloor + (1 - this.gearbox.handFloor) * this.handSetting);
 
     // The recoil pull-start (the two-strokes): hold P to draw the cord, let go to yank.
     const pullDown = this.input ? this.input.isDown('KeyP') : (!!this.remoteInput && this.remoteInput.isDown('KeyP')) || this.helperPull;

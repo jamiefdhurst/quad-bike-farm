@@ -21,6 +21,7 @@ export const DEFAULT_GEARBOX_PARAMS = {
   launchRelief: 0.9, // fraction of that drag a fully open throttle takes away
   clutchPressRate: 8, // 1/s the pedal goes down at
   clutchReleaseRate: 1.6, // 1/s it comes up at, so about 0.6 s from down to fully engaged
+  handFloor: 0.22, // the hand throttle's first notch opens this much (about 840 rpm), so its travel starts at a working speed rather than at idle
   changeClutch: 0.7, // the pedal has to be this far down to change gear (neutral can always be found)
 };
 
@@ -39,6 +40,7 @@ export const GEARBOX_PARAM_RANGES = {
   launchRelief: [0, 1, 0.01],
   clutchPressRate: [1, 30, 0.5],
   clutchReleaseRate: [0.2, 10, 0.1],
+  handFloor: [0, 0.6, 0.01],
   changeClutch: [0.1, 1, 0.05],
 };
 

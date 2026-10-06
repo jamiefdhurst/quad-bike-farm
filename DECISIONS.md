@@ -974,3 +974,9 @@ Settled with Jamie before building: the item as written, in one go (the trailer,
 - Help panel trimmed to about two thirds of its length (it now also scrolls if the window is still too small).
 - Not checked: how the wheel shake looks in motion.
 
+### The tractor, second round
+
+- No fuel tap: `noTap` in its fuel params (the whole tank is always reachable, no reserve, `F` does nothing and isn't in its prompt or help, and the tap part on the model is hidden because `Quad` still poses one).
+- Idle 430 to 470 rpm (spec `idleRpmWarm` 450, `stallRpm` 280). `loadDragRpm` came down from 3,200 to 1,400 to match, or first gear would stall it from rest: the tests still say first never stalls, second stalls with no throttle but not with a little, third wants throttle.
+- Hand throttle: `handFloor` 0.22 in the gearbox params. At 0 it's idle; the first notch jumps to 22% throttle (about 840 rpm) and the rest of the travel goes from there to full. Checked headless: idle 463, one tap of `Q` (a tenth of the travel) gave 988 rpm. If you meant something other than this by "starts somewhere more sensible", say.
+

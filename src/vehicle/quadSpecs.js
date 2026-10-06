@@ -510,23 +510,23 @@ export const TRACTOR_SPEC = {
   hoursRange: [3500, 7500], // engine hours showing when the game starts
   odoRange: [0, 0], // no odometer
   // A big lazy diesel: low, lumpy tickover and a slow heave.
-  safeIdle: 650,
-  idleRange: [760, 840],
+  safeIdle: 400,
+  idleRange: [430, 470], // a big diesel tickovers slowly
   roughnessRange: [0.05, 0.08], // a diesel ticks over steadily
   fuelRange: [12, 34], // 45 litre tank, 4 litre reserve
-  fuel: { tankCapacity: 45, reserveLitres: 4, startDiesel: 1, burnPerRev: 0.0003, idleBurnFraction: 0.3, bowlCapacity: 0.05, bowlFillRate: 0.06 },
+  fuel: { tankCapacity: 45, reserveLitres: 4, startDiesel: 1, noTap: true, startTap: 'on', burnPerRev: 0.0003, idleBurnFraction: 0.3, bowlCapacity: 0.05, bowlFillRate: 0.06 },
   engine: {
     compressionIgnition: true, // glow plugs, no choke, the key doesn't stop it, a knob does (src/engine/compression.js)
     runsOnDiesel: true,
-    idleRpmWarm: 800,
+    idleRpmWarm: 450,
     maxRpm: 2200,
     redlineRpm: 2100,
-    stallRpm: 300,
+    stallRpm: 280,
     crankRpm: 220, // a heavy engine turns over slowly
     catchRpm: 1000,
     rpmRiseRate: 3.4,
     rpmFallRate: 2.8,
-    loadDragRpm: 3200, // dumping the clutch in too high a gear drags it down and stalls it (manualDrivetrain.js)
+    loadDragRpm: 1400, // dumping the clutch in too high a gear drags it down and stalls it (manualDrivetrain.js)
     warmUpSeconds: 260,
     coldEnrichmentNeed: 0, // no mixture to enrich
     chokeIdleRpm: 0,
@@ -594,7 +594,7 @@ export const TRACTOR_SPEC = {
   audio: {
     recBank: 'engine-bank-tractor',
     recIdleSource: 'quad',
-    pulseRefRpm: 800,
+    pulseRefRpm: 450,
     pulseRevLoudness: 0.15, // it's already loud and lumpy; it doesn't need to get much louder
     recVolume: 0.55,
     recToneClosed: 4200,

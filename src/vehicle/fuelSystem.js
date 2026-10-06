@@ -13,6 +13,7 @@ export const DEFAULT_FUEL_PARAMS = {
   startLitres: 7, // fuel in the tank at the start
   startDiesel: 0, // diesel fraction of that fuel: 1 on the tractor, which runs on red diesel
   startOil: 0, // oil fraction of that fuel: 0.02 (50:1 pre-mix) on the two-strokes, none on the four-strokes
+  noTap: false, // no fuel tap (the tractor's): the fuel always flows and there's no reserve
   startTap: 'off', // tap position at the start: turn it ON before riding off
   bowlCapacity: 0.012, // litres in the carburettor float bowl: with the tap OFF it runs about half a minute at idle
   bowlFillRate: 0.02, // litres per second from the tank into the bowl
@@ -61,6 +62,7 @@ export class FuelSystem {
 
   /** Litres the tap can currently reach. */
   get reachable() {
+    if (this.params.noTap) return this.litres;
     if (this.tap === 'off') return 0;
     if (this.tap === 'on') return Math.max(0, this.litres - this.params.reserveLitres);
     return this.litres;
@@ -71,6 +73,7 @@ export class FuelSystem {
   }
 
   cycleTap() {
+    if (this.params.noTap) return this.tap;
     this.tap = TAP_POSITIONS[(TAP_POSITIONS.indexOf(this.tap) + 1) % TAP_POSITIONS.length];
     return this.tap;
   }

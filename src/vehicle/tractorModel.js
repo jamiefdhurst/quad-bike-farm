@@ -14,7 +14,7 @@ import { loftGeometry, mergeStatic, rod } from './quadGeometry.js';
 //   │       ├── bonnet, engine, scuttle, gearbox, fenders, seat, exhaust (exhaustFlap, exhaustTip), lamps, drawbar
 //   │       ├── dash                       on the scuttle, not turning with the wheel
 //   │       ├── steeringColumn > handlebars    the wheel; turns about the column's axis (and holds riderHands)
-//   │       ├── gearLever, handThrottle, clutchPedal, stopKnob, fuelTap   posed from the controls (quad.js poseControls)
+//   │       ├── gearLever, handThrottle, clutchPedal, stopKnob   posed from the controls (quad.js poseControls)
 //   │       └── riderAnchor, cameraAnchor
 //   └── wheel_fl / wheel_fr / wheel_rl / wheel_rr   (each with a 'spin' child)
 //
@@ -265,7 +265,7 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   quad.userData.dash = dash;
   quad.userData.podMount = null;
 
-  // The stop knob, pulled out to stop it; the hand throttle on the right of the column; the fuel tap on the engine.
+  // The stop knob, pulled out to stop it; the hand throttle on the right of the column; (there's no fuel tap).
   const stopKnob = new THREE.Group();
   stopKnob.name = 'stopKnob';
   stopKnob.userData.keep = true;
@@ -285,7 +285,7 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   tap.name = 'fuelTap';
   tap.userData.keep = true;
   tap.position.set(0.28, 0.82, 0.5);
-  add(new RoundedBoxGeometry(0.008, 0.012, 0.045, 1, 0.003), MAT.chrome, tap);
+  tap.visible = false; // a proper tractor has no fuel tap; Quad still poses the part, so it stays hidden
   root.add(tap);
   // The quads' choke lever has no place here; Quad still poses it, so it stays hidden.
   const choke = new THREE.Group();

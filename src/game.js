@@ -404,7 +404,7 @@ export class Game {
           return {
             action: `Ride the ${unit.label}`,
             keys: quad.manual
-              ? [['K', 'Key'], ['R', 'Start'], ['X', 'Stop knob'], ['F', 'Fuel tap']]
+              ? [['K', 'Key'], ['R', 'Start'], ['X', 'Stop knob']]
               : [['K', 'Ignition'], ['R', 'Start'], ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
           };
         },
