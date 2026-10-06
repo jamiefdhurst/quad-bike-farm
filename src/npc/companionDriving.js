@@ -251,6 +251,7 @@ export const drivingMethods = {
     const exit = this.driveExit;
     this.driveExit = null;
     this.driveEvents.push(`done:${d.result}`);
+    if (d.park && d.result !== 'parked') this.endLineUp(`the drive ended: ${d.result}`);
     this.driveConfidence = afterDrive(this.driveConfidence ?? p.driveConfidence, d.result);
     let how = exit?.how;
     if (!how) how = d.result === 'parked' || d.result === 'gaveUp' || d.result === 'noRoom' || Math.random() >= p.driveBackChance ? 'off' : 'back';

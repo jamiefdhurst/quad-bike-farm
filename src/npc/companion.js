@@ -373,6 +373,8 @@ export class Companion {
   startLineUp(job) {
     const lp = this.lineUpParams ?? DEFAULT_LINEUP_PARAMS;
     this.lineUpOn = !job.crooked;
+    this.lineUpJob = job;
+    this.lineUpWhy = null;
     if (job.crooked) this.selfEvents.push('lineUpCrooked');
     if (job.mode === 'drive') {
       this.requestDrive(job.quad, { park: { route: parkRoute(job.slot, lp), yaw: job.slot.yaw, crooked: job.crooked } });
@@ -384,16 +386,32 @@ export class Companion {
       this.selfEvents.push('straighten');
       this.nudge = { quad: q, from: { x: q.position.x, z: q.position.z, yaw: q.yaw }, to: job.slot, t: 0 };
     }, lp.shoveSeconds + 1);
-    if (!set) this.lineUpOn = false;
+    if (!set) this.endLineUp('could not walk to it');
   }
 
   /** After one is in place she often goes on to the next, until they are all in a row. */
   continueLineUp() {
     const lp = this.lineUpParams ?? DEFAULT_LINEUP_PARAMS;
-    if (!this.lineUpOn || Math.random() >= lp.continueChance) return void (this.lineUpOn = false);
+    this.lineUpJob = null;
+    if (!this.lineUpOn) return this.endLineUp('that was the one job');
+    if (Math.random() >= lp.continueChance) return this.endLineUp('got bored of it');
     const job = this.planLineUp(0);
     if (job) this.startLineUp(job);
-    else this.lineUpOn = false;
+    else this.endLineUp('nothing left to move');
+  }
+
+  /** She's done with tidying, and why (shown in the debug panel). */
+  endLineUp(why) {
+    this.lineUpOn = false;
+    this.lineUpJob = null;
+    this.lineUpWhy = why;
+  }
+
+  /** For the debug panel: what she's doing about the row. */
+  get lineUpStatus() {
+    const j = this.lineUpJob;
+    if (j) return `${this.nudge ? 'nudging' : j.mode === 'shove' ? 'going to nudge' : 'driving'} the ${j.quad.label}${j.crooked ? ' crooked' : ''} (${this.lineUpOn ? 'then the next' : 'just this one'})`;
+    return this.lineUpWhy ? `stopped: ${this.lineUpWhy}` : 'not tidying';
   }
 
   /** Called on her friend when someone has just left a quad crooked on purpose: she'll see it in a few seconds and go and put it right. */

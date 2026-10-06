@@ -244,6 +244,7 @@ export class DebugGui {
     Object.defineProperty(live, 'Follow the leader', { enumerable: true, get: () => (g.convoy.active ? `${g.convoy.phase}: ${g.convoy.leader} leads, ${g.convoy.swapsDone} swaps` : 'idle') });
     Object.defineProperty(live, 'Race score', { enumerable: true, get: () => g.companions.map((c) => `${cap(c.character.id)} ${g.race.tally[c.character.id]?.wins ?? 0}-${g.race.tally[c.character.id]?.losses ?? 0}`).join(', ') });
     Object.defineProperty(live, 'Throttle grab', { enumerable: true, get: () => g.throttleGrab.grab?.girl ? `${g.throttleGrab.grab.girl} (${g.throttleGrab.grab.phase})` : g.throttleGrab.forced ? `${g.throttleGrab.forced} waiting` : 'none' });
+    for (const c of g.companions) Object.defineProperty(live, `${cap(c.character.id)} tidying`, { enumerable: true, get: () => c.lineUpStatus });
     for (const key of Object.keys(live)) f.add(live, key).listen().disable();
     const actions = {
       race: () => {
@@ -338,6 +339,24 @@ export class DebugGui {
       warm: () => g.inspectedUnit().engine.setTemperature(1),
       cold: () => g.inspectedUnit().engine.setTemperature(0),
       clearFouling: () => (g.inspectedUnit().engine.fouling = 0),
+      warmAll: () => g.units.forEach((u) => u.engine.setTemperature(1)),
+      startAll: () => {
+        // Straight to running and warm, as if each had been started and left a while (no cranking).
+        for (const u of g.units) {
+          const e = u.engine;
+          e.setIgnition(true);
+          e.setTemperature(1);
+          if (!e.isRunning) {
+            e.state = 'running';
+            e.rpm = Math.max(e.rpm, e.params.catchRpm);
+          }
+        }
+        g.hud.toast('All the quads are running');
+      },
+      stopAll: () => {
+        g.units.forEach((u) => u.engine.setIgnition(false));
+        g.hud.toast('All the quads are switched off');
+      },
       resetQuads: () => g.units.forEach((u) => u.resetToSpawn(g.world)),
       copy: () => {
         const text = JSON.stringify(exportTuning(), null, 2);
@@ -349,6 +368,9 @@ export class DebugGui {
     const f = this.gui.addFolder('Shortcuts');
     f.add(actions, 'warm').name('Warm this engine');
     f.add(actions, 'cold').name('Cool this engine');
+    f.add(actions, 'warmAll').name('Warm every engine');
+    f.add(actions, 'startAll').name('Start every quad (warm)');
+    f.add(actions, 'stopAll').name('Switch every quad off');
     f.add(actions, 'clearFouling').name('Clear plug fouling');
     f.add(actions, 'resetQuads').name('Put the quads back in the yard');
     f.add(actions, 'copy').name('Copy all values as JSON');

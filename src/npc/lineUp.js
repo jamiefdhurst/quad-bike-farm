@@ -13,7 +13,7 @@ export const DEFAULT_LINEUP_PARAMS = {
   shoveRange: 4, // metres: a quad this near its slot is nudged by hand, not driven
   shoveSeconds: 1.6, // how long the nudge takes
   nearRange: 55, // metres from her: only quads this close are hers to tidy
-  continueChance: 0.85, // the chance, once one is in, she goes on to the next
+  continueChance: 0.97, // the chance, once one is in, she goes on to the next
   crookedYaw: 0.5, // radians out Jess leaves it
   crookedShift: 0.7, // metres along the row she leaves it off its slot
 };

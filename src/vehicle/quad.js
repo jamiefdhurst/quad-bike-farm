@@ -561,7 +561,10 @@ export class Quad {
 
   /** Moves the parked quad to a spot and heading (a girl nudging it straight by hand). */
   placeAt(x, z, yaw) {
-    this.physics.reset(x, this.world.heightAt(x, z) - GROUND_OFFSET * this.scale + 0.3 * this.scale, z, yaw);
+    // Keeps the height it was sitting at (plus any slope), rather than dropping it from above each frame, so it stays on its wheels.
+    const here = this.physics.body.translation();
+    const y = here.y + this.world.heightAt(x, z) - this.world.heightAt(here.x, here.z);
+    this.physics.reset(x, y, z, yaw);
     this.recordTransform();
     this.prevPos.copy(this.currPos);
     this.prevQuat.copy(this.currQuat);
