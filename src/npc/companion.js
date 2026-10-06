@@ -327,6 +327,34 @@ export class Companion {
     else this.wander();
   }
 
+  /** Walks to a point and stands there, facing `facing`, dropping whatever else she was up to. */
+  walkTo(point, facing) {
+    this.warmingAt = null;
+    this.waving = null;
+    this.recallTarget = point;
+    this.fsm.transition('walking', { goal: 'stand', target: () => ({ position: point, facing }) });
+  }
+
+  /**
+   * Stop whatever she's doing and go to a point (called back to the barn). Driving she pulls up and gets off first; sat
+   * on a quad or on the bales she gets down first. Safe to call again every so often until she's there: where she is
+   * mid-change (sliding between seats, getting off) it takes effect when that's done.
+   */
+  recall(point, facing) {
+    const s = this.fsm;
+    const go = () => this.walkTo(point, facing);
+    if (s.is('walking') && s.data?.goal === 'stand' && this.recallTarget === point) return;
+    if (this.stopDriving('off', go)) return;
+    if (s.is('seated', 'mounting')) {
+      this.afterDismount = go;
+      s.transition('dismounting');
+    } else if (s.is('shuffling', 'dismounting')) {
+      this.afterDismount = go;
+    } else if (s.is('resting')) {
+      this.leaveRest(go);
+    } else go();
+  }
+
   /**
    * Sneaks over to `spot` ({ x, z }) to play a prank (pranks.js): once there she pauses a moment,
    * does `act()`, then carries on. Only when she's stood about; returns whether she set off.

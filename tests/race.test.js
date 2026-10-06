@@ -203,3 +203,12 @@ describe('starting one from the debug panel', () => {
     expect(r.forced).toBe(false);
   });
 });
+
+describe('called away', () => {
+  it('stand() calls a race off quietly and keeps them from starting another straight away', () => {
+    const { r } = started();
+    r.stand();
+    expect(r.active).toBe(false);
+    expect(step(r, 5).some((e) => e.type === 'invite')).toBe(false);
+  });
+});

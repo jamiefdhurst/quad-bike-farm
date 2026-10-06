@@ -9,7 +9,7 @@ export const DEFAULT_RACE_PARAMS = {
   chance: 0.015, // per second after that
   cooldown: 300, // seconds between races
   jessChallenges: 0.7, // chance it's Jess who dares Amy to it
-  gatherTimeout: 150, // seconds to get both quads started and to the start line before it's called off
+  gatherTimeout: 100, // seconds to get both quads started and to the start line before it's called off
   countdown: 3, // seconds of "three, two, one"
   raceTimeout: 150, // seconds after the start before whoever is still going is out of it
   rivalLead: 2, // wins ahead before they start going on about the score
@@ -221,6 +221,12 @@ export class Race {
       this.reset();
     }
     return events;
+  }
+
+  /** Called off from outside (they've been called away): no event, and not straight away again. */
+  stand() {
+    if (this.active) this.cancel([]);
+    this.forced = false;
   }
 
   cancel(events) {

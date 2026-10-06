@@ -21,6 +21,7 @@ import { JESS_WARMING_LINES } from './warmingLines.js';
 import { JESS_THROTTLE_LINES } from './throttleLines.js';
 import { JESS_SMOKE_LINES } from './smokeLines.js';
 import { JESS_RACE_LINES } from './raceLines.js';
+import { JESS_RECALL_LINES } from './recallLines.js';
 import { JESS_FAULT_LINES } from './faultLines.js';
 import { JESS_BENCH_LINES } from './benchLines.js';
 
@@ -359,5 +360,6 @@ export const JESS_LINES = {
   ...JESS_THROTTLE_LINES,
   ...JESS_SMOKE_LINES,
   ...JESS_RACE_LINES,
+  ...JESS_RECALL_LINES,
   ...JESS_BENCH_LINES,
 };

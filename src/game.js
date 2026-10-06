@@ -309,6 +309,7 @@ export class Game {
     this.smokeSense = new SmokeSense(); // Amy coughs at two-stroke smoke, Jess loves it (npc/smokeSense.js)
     // Racing: the girls race a lap of the track from a start line by the yard (npc/race.js).
     this.race = new Race();
+    this.raceIdle = {}; // seconds each racer has been doing nothing about it
     this.raceStart = nearestTrackFraction(this.world.track, this.world.layout.yard.x, this.world.layout.yard.z);
     buildStartLine(this.scene, (x, z) => this.world.heightAt(x, z), this.world.track, this.raceStart, this.world.layout.trackHalfWidth);
     this.warming = new Warming(); // hands over an idling engine on a cold day (npc/warming.js)
@@ -1238,14 +1239,55 @@ export class Game {
     }
   }
 
+  // Calling them back ------------------------------------------------------
+
+  /** Where each girl stands when called back: in front of the barn doors, side by side. */
+  recallSpot(i) {
+    const b = this.world.layout.barn;
+    const x = b.x + b.halfX + 3;
+    return { point: new THREE.Vector3(x, this.world.heightAt(x, b.z + (i === 0 ? -1.4 : 1.4)), b.z + (i === 0 ? -1.4 : 1.4)), facing: Math.PI / 2 };
+  }
+
+  /** Stop whatever they're doing and gather by the barn doors. */
+  recallGirls() {
+    this.race.stand();
+    this.recalling = { left: 120, spots: this.companions.map((c, i) => this.recallSpot(i)), said: false };
+    this.hud.toast('Girls: stop what you are doing and come to the barn');
+  }
+
+  /** Keeps at it until each is there (a girl mid-change gets another nudge), or two minutes have gone. */
+  updateRecall(dt) {
+    const r = this.recalling;
+    if (!r) return;
+    r.left -= dt;
+    r.nudge = (r.nudge ?? 0) - dt;
+    let waiting = false;
+    this.companions.forEach((c, i) => {
+      const { point, facing } = r.spots[i];
+      const arrived = c.fsm.is('idle') && c.root.position.distanceTo(point) < 2.5;
+      if (arrived) return;
+      waiting = true;
+      if (r.nudge <= 0) c.recall(point, facing);
+    });
+    if (r.nudge <= 0) {
+      r.nudge = 0.7;
+      if (!r.said) {
+        r.said = true;
+        for (const c of this.companions) c.voice.say('recalled', { force: true });
+      }
+    }
+    if (!waiting || r.left <= 0) this.recalling = null;
+  }
+
   // Racing ------------------------------------------------------------------
 
   /** The lap as waypoints for a girl on her side of the track: the grid point first, then round the loop and back to it. */
-  raceRoute(lateral) {
+  raceRoute(lateral, back = 0) {
     const L = this.world.layout;
     const h = this.world.heights;
     const hazards = [...(h.bogs ?? []).map((b) => ({ x: b.x, z: b.z, radius: b.radius })), ...(h.puddles ?? []).map((p) => ({ x: p.x, z: p.z, radius: L.puddleRadius + 1.5 }))]; // a puddle at speed drowns the engine, so well clear
-    const s = this.world.track.sample(this.raceStart);
+    // `back` metres behind the line (side by side on the grid, 3 m apart, so neither is in the other's way).
+    const s = this.world.track.sample(this.raceStart - back / this.world.track.totalLength);
     const grid = { x: s.x - s.tz * lateral, z: s.z + s.tx * lateral };
     return [grid, ...planLap(this.world.track, this.raceStart, hazards, { spacing: this.race.p.routeSpacing, margin: this.race.p.hazardMargin, lateral })];
   }
@@ -1260,6 +1302,15 @@ export class Game {
     }
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
     const later = (ms, fn) => setTimeout(fn, ms);
+    // A racer who has stopped doing anything about it (told to do something else, say) is out, rather than holding it up.
+    if (this.race.active && this.race.phase !== 'over') {
+      for (const id of Object.keys(this.race.picks ?? {})) {
+        const c = byId[id];
+        const busy = c.fsm.is('walking', 'mounting', 'driving', 'shuffling', 'dismounting') || !!c.drive?.race;
+        this.raceIdle[id] = busy ? 0 : (this.raceIdle[id] ?? 0) + dt;
+        if (this.raceIdle[id] > 4) this.race.abort(id);
+      }
+    } else this.raceIdle = {};
     for (const e of this.race.update(dt, { girls, options, claims: this.ownership.claims })) {
       if (e.type === 'invite') {
         byId[e.challenger].voice.say('raceInvite', { force: true });
@@ -1270,7 +1321,7 @@ export class Game {
           const quad = this.units.find((u) => u.spec.id === spec).quad;
           const confidence = c.driveConfidence ?? c.params.driveConfidence;
           const race = {
-            route: this.raceRoute(0.9 * side),
+            route: this.raceRoute(1.5 * side),
             gridIndex: 0,
             cruise: p.cruiseBase + p.cruiseConfidence * confidence + (Math.random() * 2 - 1) * p.cruiseSpread,
             throttle: p.throttle,
@@ -1593,6 +1644,7 @@ export class Game {
 
     if (input.wasPressed('KeyH')) this.hud.toggleHelp();
     if (input.wasPressed('Backquote')) this.debugGui.toggle();
+    if (input.wasPressed('KeyN')) this.recallGirls();
     if (input.wasPressed('KeyM')) {
       this.audioHub.params.muted = !this.audioHub.params.muted;
       this.hud.toast(this.audioHub.params.muted ? 'Sound off' : 'Sound on', 1.2);
@@ -1675,7 +1727,8 @@ export class Game {
     this.updateRevOff(dt, ridden);
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);
-    this.updateRace(dt, ridden);
+    this.updateRecall(dt);
+    if (!this.recalling) this.updateRace(dt, ridden);
     this.updateSmokeSense(dt);
     this.updateThrottleGrab(dt, ridden);
     this.updateRockPrank(dt);

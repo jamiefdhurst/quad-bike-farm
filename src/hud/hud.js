@@ -35,6 +35,7 @@ const HELP_HTML = `
   <div>Take it to a quad that's switched off and press <kbd>E</kbd> to tinker</div>
   <h3>Other</h3>
   <div><kbd>H</kbd> toggle this help</div>
+  <div><kbd>N</kbd> call the girls back to the barn</div>
   <div><kbd>M</kbd> mute</div>
   <div><kbd>\`</kbd> tuning panel</div>
 `;

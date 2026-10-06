@@ -342,3 +342,47 @@ describe('backing off the same thing again and again', () => {
     expect(d.stopped).toBe('noRoom');
   });
 });
+
+describe('backing off in a race', () => {
+  function reversing(race) {
+    const d = Object.create(HerDrive.prototype);
+    Object.assign(d, {
+      p: { ...DEFAULT_COMPANION_PARAMS },
+      quad: { forwardSpeed: 0, position: { x: 0, z: 0 }, yaw: 0, engine: { isRunning: true, temperature: 1 }, choke: 0 },
+      race,
+      events: [],
+      controls: { throttle: 0, brake: 0, steer: 0, reverse: false },
+      phase: 'reversing',
+      timer: 0,
+      probeTimer: 1,
+      index: 0,
+      waypoints: [{ x: 0, z: 0 }, { x: 0, z: 10 }, { x: 0, z: 20 }],
+      origin: { x: 0, z: 0 },
+      maxDistance: 0,
+      clock: 0,
+      noted: {},
+      running: true,
+      friend: () => null,
+      friendAboard: false,
+      forgetsChoke: true,
+      random: () => 0,
+      probe: () => Infinity,
+      avoidSide: 1,
+    });
+    return d;
+  }
+
+  it('has another go at the same waypoint, so she never skips the start line', () => {
+    const d = reversing({ route: [], gridIndex: 0, go: () => false, alive: () => true });
+    d.update(0.1);
+    expect(d.phase).toBe('pause');
+    expect(d.index).toBe(0);
+  });
+
+  it('but on an ordinary drive she moves on to the next', () => {
+    const d = reversing(null);
+    d.update(0.1);
+    expect(d.phase).toBe('pause');
+    expect(d.index).toBe(1);
+  });
+});

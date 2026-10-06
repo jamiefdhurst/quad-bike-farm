@@ -265,6 +265,8 @@ export class DebugGui {
         g.hud.toast('Jess will name the quads, one every 5 seconds, when she is free and you are near');
       },
     };
+    actions.recall = () => g.recallGirls();
+    f.add(actions, 'recall').name('Call the girls back to the barn (N)');
     f.add(actions, 'race').name('Start a race now');
     f.add(actions, 'grabJess').name('Jess grabs the throttle (next ride)');
     f.add(actions, 'grabAmy').name('Amy grabs the throttle (next ride)');

@@ -548,7 +548,9 @@ export class HerDrive {
         }
         if (this.timer <= 0) {
           c.reverse = false;
-          this.index = Math.min(this.index + 1, this.waypoints.length);
+          // Having backed off a waypoint she moves on to the next one, except in a race, where skipping one (the start
+          // line, say) would have her drive the whole lap without ever lining up: there she has another go at it.
+          if (!this.race) this.index = Math.min(this.index + 1, this.waypoints.length);
           this.setPhase('pause', this.between(0.8, 1.6));
         }
         break;
@@ -659,13 +661,16 @@ export class HerDrive {
         this.events.push('fallingBehind');
       }
     }
+    // Not on the grid yet: she can't be past it.
+    if (this.race && !this.race.go() && this.index > this.race.gridIndex) this.index = this.race.gridIndex;
     if (this.index >= this.waypoints.length && !this.plan()) return;
     const wp = this.waypoints[this.index];
     const pos = q.position;
     const dist = Math.hypot(wp.x - pos.x, wp.z - pos.z);
     // Going quickly she can't thread a waypoint exactly: near enough will do.
     // (Racing she holds her line much tighter, to keep out of the puddles.)
-    if (dist < Math.max(p.driveArriveRadius, speed * (this.race ? 0.2 : 0.5)) && !follow) {
+    const onGrid = this.race && this.index === this.race.gridIndex;
+    if (dist < Math.max(onGrid ? this.p.raceGridRadius : p.driveArriveRadius, speed * (this.race ? 0.2 : 0.5)) && !follow) {
       this.index++;
       this.events.push('waypoint');
       if (this.cleanLeg && Math.abs(c.steer) > 0.2) this.events.push('practice:cornering');

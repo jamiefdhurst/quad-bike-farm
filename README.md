@@ -59,6 +59,7 @@ Look at her and press `E`. Pick an option with the number keys, or scroll to hig
 | Key | Action |
 | --- | --- |
 | `H` | Show or hide the controls |
+| `N` | Call the girls back: they stop whatever they're doing (driving, racing, warming up, sat on a bale) and gather in front of the barn doors |
 | `M` | Mute |
 | `` ` `` | Tuning panel |
 
