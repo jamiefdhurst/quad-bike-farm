@@ -765,3 +765,10 @@ Jamie: the sound sometimes stops altogether, perhaps only in Firefox, with nothi
 - Hearing (9): a free girl, `chance` 0.04 a second, places a running quad her friend is driving that has been going 3 s and is 28 to 130 m away, at most every 75 s. Its sound is `rough` if it is cold (under 0.45) or worn (over 0.4), else `hard` over 7 m/s or 0.8 throttle, else `steady`. Out of sight is judged by distance only, not by what is in the way. She doesn't place you riding: you would not be near enough to hear her say it.
 - Not checked in the running game: how the lines sound or feel in play, how often Jess borrows, or whether 28 m really is out of sight on this farm. Unit tests cover the logic and that every line exists.
 
+## Warming their hands (TODO 5)
+
+- A cold day is weather warmth under `coldBelow` 0.5 (overcast 0.48, fog 0.23, drizzle 0.19, rain 0.05 on the existing scale; sunny intervals 0.73 and sunny 1 aren't) or rain over `wetAbove` 0.25. After `startAfter` 20 s, every 2 s a free girl with a quad that's running, unattended and not moving within `warmRange` 16 m goes to it with `warmChance` 0.2, or 0.7 if her friend is already there. At most two at one engine, one each side. She stays `warmForMin` 25 to `warmForMax` 70 s, then doesn't think of it again for a minute.
+- She stays in the idle state with a flag (`warmingAt`), rather than getting a state of her own, so the wheel, boredom and requests all treat her as stood about; whatever she does next (the idle state's `exit`) puts her hands down. Boredom doesn't build up while she's at it. A rig poser puts both hands over the engine with the same arm IK as the grips.
+- Switching it off, or anything stopping it, while she is there: she leaves and complains (`warmOff`, Jess "Oi! I was using that!"). The engine stopping on her before she gets there counts the same.
+- Not checked in the running game: where the hands land on each quad's body (the target is a fixed point over the middle of the quad, 0.78 m up), how the walk-up looks, or how often it happens on a cold day. Unit tests cover the decisions and the lines.
+

@@ -17,6 +17,7 @@ import { JESS_DIAGNOSIS_LINES } from './diagnosisLines.js';
 import { JESS_THRASH_LINES } from './thrashLines.js';
 import { JESS_REVOFF_LINES } from './revOffLines.js';
 import { JESS_QUAD_LINES } from './quadLines.js';
+import { JESS_WARMING_LINES } from './warmingLines.js';
 import { JESS_FAULT_LINES } from './faultLines.js';
 import { JESS_BENCH_LINES } from './benchLines.js';
 
@@ -351,5 +352,6 @@ export const JESS_LINES = {
   ...JESS_THRASH_LINES,
   ...JESS_REVOFF_LINES,
   ...JESS_QUAD_LINES,
+  ...JESS_WARMING_LINES,
   ...JESS_BENCH_LINES,
 };

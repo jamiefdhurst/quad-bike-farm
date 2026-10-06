@@ -7,6 +7,7 @@ import { shapeFigure } from './figure.js';
 import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 import { drivingStates, drivingMethods } from './companionDriving.js';
 import { restingMethods, restingStates } from './companionResting.js';
+import { warmingMethods } from './companionWarming.js';
 import { PillionPose } from './pillionPose.js';
 import { canRideRack } from './rackSeat.js';
 import { nextBoredWait, driftRestlessness, pickBoredChoice } from './boredom.js';
@@ -101,6 +102,9 @@ export class Companion {
     this.rig.posers.push((dt) => this.pillion.apply(dt));
     // Hands on the bars while she's driving (companionDriving.js).
     this.rig.posers.push((dt) => this.poseDriving(dt));
+    // Hands over a running engine on a cold day (companionWarming.js).
+    this.warmingAt = null;
+    this.rig.posers.push((dt) => this.poseWarming(dt));
   }
 
   figureAmounts() {
@@ -278,7 +282,7 @@ export class Companion {
   updateBoredom(dt, viewer) {
     const p = this.params;
     this.restlessness = driftRestlessness(this.restlessness, dt, p);
-    const waiting = this.fsm.is('idle') && !viewer?.talking;
+    const waiting = this.fsm.is('idle') && !viewer?.talking && !this.warmingAt; // warming her hands isn't being bored
     this.idleFor = waiting ? this.idleFor + dt : 0;
     if (!p.ownMind || this.idleFor < this.boredAfter) return;
     this.idleFor = 0;
@@ -666,6 +670,7 @@ export class Companion {
 }
 
 Object.assign(Companion.prototype, drivingMethods);
+Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(warmingMethods));
 // (restingMethods has getters, so copy its descriptors rather than assigning.)
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(restingMethods));
 
@@ -762,6 +767,9 @@ const STATES = {
     update(dt, data) {
       if (data.facing !== undefined) this.turnToward(dt, data.facing);
     },
+    exit() {
+      this.warmingAt = null; // whatever she does next, the hands come down
+    },
   },
 
   walking: {
@@ -785,7 +793,10 @@ const STATES = {
         else if (data.goal === 'start') this.fsm.transition('starting', { facing: t.facing, side: t.side });
         else if (data.goal === 'prank') this.fsm.transition('pranking', { facing: t.facing, act: data.act });
         else if (data.goal === 'rest') this.fsm.transition('resting', { spot: data.spot, stay: data.stay });
-        else this.fsm.transition('idle', { facing: t.facing });
+        else if (data.goal === 'warm') {
+          this.fsm.transition('idle', { facing: t.facing });
+          this.startWarming(data.quad, data.side);
+        } else this.fsm.transition('idle', { facing: t.facing });
       }
     },
   },

@@ -27,6 +27,7 @@ import { RevOff, REVOFF_PARAM_RANGES } from './npc/revOff.js';
 import { QuadNames, NAME_PARAM_RANGES, quadKey } from './npc/quadNames.js';
 import { Ownership, OWNERSHIP_PARAM_RANGES } from './npc/ownership.js';
 import { Hearing, EAR_PARAM_RANGES } from './npc/earing.js';
+import { Warming, WARMING_PARAM_RANGES } from './npc/warming.js';
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
 import { StrawFall } from './effects/strawFall.js';
 import { Places, PLACE_PARAM_RANGES, isFine, nearestSpot, restStay } from './npc/places.js';
@@ -300,6 +301,7 @@ export class Game {
     this.quadNames = new QuadNames(this.units.map((u) => u.spec.id), { random: createRandom(this.seed ^ 0x6a3e) });
     this.ownership = new Ownership(undefined, createRandom(this.seed ^ 0x0c1a));
     this.hearing = new Hearing();
+    this.warming = new Warming(); // hands over an idling engine on a cold day (npc/warming.js)
     const capital = (id) => id[0].toUpperCase() + id.slice(1);
     this.ownership.assign(
       Object.fromEntries(this.companions.map((c) => [c.character.id, this.units.filter((u) => c.mayRide(u.quad) && c.voice.chatter.lines[`like${capital(u.spec.id)}`]).map((u) => u.spec.id)])),
@@ -526,6 +528,7 @@ export class Game {
     registerTuning('Quad names', this.quadNames.p, NAME_PARAM_RANGES);
     registerTuning('Whose quad', this.ownership.p, OWNERSHIP_PARAM_RANGES);
     registerTuning('Hearing a quad', this.hearing.p, EAR_PARAM_RANGES);
+    registerTuning('Warming hands', this.warming.p, WARMING_PARAM_RANGES);
     registerTuning('Jump leads', this.leads.params, JUMP_LEAD_PARAM_RANGES);
     registerTuning('Skills', this.skills.p, SKILL_PARAM_RANGES);
     registerTuning('Places', this.places.p, PLACE_PARAM_RANGES);
@@ -1142,6 +1145,34 @@ export class Game {
     }
   }
 
+  // Warming their hands --------------------------------------------------
+
+  updateWarming(dt) {
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    const girls = this.companions.map((c) => ({
+      id: c.character.id,
+      x: c.root.position.x,
+      z: c.root.position.z,
+      free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt,
+      warmSpec: c.warmingAt?.unit.spec.id ?? null,
+    }));
+    const quads = this.units.map((u) => {
+      const q = u.quad;
+      const idling = q.engine.isRunning && !q.rider && !q.driver && !q.passenger && !q.isGhostRiding && q.speed < 0.3 && !this.herOn(q);
+      return { id: u.spec.id, x: q.position.x, z: q.position.z, idling };
+    });
+    for (const e of this.warming.update(dt, { weather: this.weather, girls, quads })) {
+      const c = byId[e.girl];
+      if (e.type === 'go') {
+        if (c.goWarm(this.units.find((u) => u.spec.id === e.spec).quad)) c.voice.say(e.join ? 'warmJoin' : 'warmGo', { urgent: true, chance: 0.8 });
+      } else if (e.type === 'warm') c.voice.say('warmHands', { chance: 0.8 });
+      else if (e.type === 'leave') {
+        c.stopWarming();
+        if (e.off) c.voice.say('warmOff', { force: true });
+      }
+    }
+  }
+
   // Pranks -----------------------------------------------------------------
 
   /** What the prank logic needs to know about the farm right now. */
@@ -1524,6 +1555,7 @@ export class Game {
     this.updatePranks(dt, ridden);
     this.updateRevOff(dt, ridden);
     this.updateQuadTalk(dt, ridden);
+    this.updateWarming(dt);
     this.updateRockPrank(dt);
     this.updateBanter(dt, ridden);
     for (const c of this.companions) {

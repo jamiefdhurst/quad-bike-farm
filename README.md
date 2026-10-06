@@ -99,7 +99,7 @@ The engine starts stone cold and won't fire without choke.
 2. Hold `Q` to pull the choke to 100%. The yellow lever on the left handlebar moves.
 3. Turn the fuel tap ON with `F`. The quads are parked with it OFF; forget and it'll start, run for a few seconds on what's in the carburettor, then stumble and die.
 4. Press `K` for ignition. The green IGN light comes on and the blue TEMP light shows the engine is cold.
-5. Hold `R` to crank. It should catch within a couple of seconds and settle into a high, lumpy idle. The whole bike shakes.
+5. Hold `R` to crank. It should catch within a couple of seconds and settle into a high, lumpy idle. The whole bike shakes. **Done.** On a cold or wet day a girl stood about near a quad that's idling walks over and holds her hands over its engine; her friend often joins her, and they complain if it's switched off.
 6. Let it warm. With the choke left on, the idle creeps up as it warms. Ease the choke off with `Z`, a notch or two at a time. Too early and it stumbles and dies. Too late and it starts to hunt, runs rich and eventually floods and stalls.
 7. Once it's warm (TEMP light out, a couple of minutes) it idles low and steady with no choke.
 
@@ -208,6 +208,8 @@ The wheel only offers what makes sense: no "get on" while she's already on, no "
 **My quad.** Each girl claims one quad for the game (never the same one; it's also the one she likes best), and once you're on foot near her and it, she tells you so. If somebody else rides it (you, or her friend) she objects, with a different line for each: Amy tells off Jess, Jess says you owe her. Now and then, picking a quad for her own drive, Jess takes Amy's on purpose, says so, and teases her when she complains. A girl goes for her own quad first when she wants a drive. In `src/npc/ownership.js`; the "Whose quad" folder.
 
 **Who's that.** A girl stood about who hears her friend on a running quad she can't see (between about 28 and 130 metres off) says which one it is and how it sounds: flat out, rough (cold or worn) or steady ("That's Jess on the blue. She never lets it idle."). In `src/npc/earing.js`; the "Hearing a quad" folder.
+
+**Warming their hands.** On a cold or wet day (overcast, drizzle, rain or fog), a girl stood about near a quad that's running with nobody on it walks over and holds her hands out over its engine for half a minute to over a minute. Leave one idling and the other often joins her, one each side. Switch it off while they're at it and they complain. In `src/npc/warming.js`; the "Warming hands" folder.
 
 On the back she holds on round your waist (look down and you'll see her hands), leans with you into corners, lurches forward under hard braking, and looks about or over your shoulder. Hold `C` or the middle mouse button to look back at her. Left alone on a quad she holds the rails (or the strap on the yellow).
 
