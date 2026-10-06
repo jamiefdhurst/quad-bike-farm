@@ -13,7 +13,7 @@ const clamp01 = (v) => Math.max(0, Math.min(1, v));
 export const WEATHER_KINDS = {
   sunny: {
     name: 'sunny',
-    weight: 0.2,
+    weight: 0.7,
     sky: { horizonColor: '#d6e3ea', zenithColor: '#6c9ccd', cloudColor: '#f6f7f8', cloudShadowColor: '#b9c4ce', cloudCover: 0.22, fogDensity: 0.0032, sunIntensity: 2.6, hemiIntensity: 1.35, exposure: 1.05 },
     rain: 0,
     showers: 0,
@@ -22,7 +22,7 @@ export const WEATHER_KINDS = {
   },
   fair: {
     name: 'sunny intervals',
-    weight: 0.2,
+    weight: 0.15,
     sky: { horizonColor: '#d3dbe0', zenithColor: '#88a5c0', cloudColor: '#eef0f1', cloudShadowColor: '#a2abb3', cloudCover: 0.45, fogDensity: 0.004, sunIntensity: 1.9, hemiIntensity: 1.5, exposure: 1.02 },
     rain: 0,
     showers: 0.15,
@@ -31,7 +31,7 @@ export const WEATHER_KINDS = {
   },
   overcast: {
     name: 'overcast',
-    weight: 0.25,
+    weight: 0.07,
     sky: { horizonColor: '#cfd3d4', zenithColor: '#9aa3ab', cloudColor: '#e4e6e6', cloudShadowColor: '#8c949b', cloudCover: 0.62, fogDensity: 0.0055, sunIntensity: 1.25, hemiIntensity: 1.7, exposure: 1.0 },
     rain: 0,
     showers: 0.3,
@@ -40,7 +40,7 @@ export const WEATHER_KINDS = {
   },
   drizzle: {
     name: 'drizzly',
-    weight: 0.13,
+    weight: 0.03,
     sky: { horizonColor: '#bdc2c4', zenithColor: '#8e959b', cloudColor: '#c9cccd', cloudShadowColor: '#7d8388', cloudCover: 0.85, fogDensity: 0.009, sunIntensity: 0.7, hemiIntensity: 1.35, exposure: 0.93 },
     rain: 0.35,
     showers: 0.6,
@@ -49,7 +49,7 @@ export const WEATHER_KINDS = {
   },
   rain: {
     name: 'raining',
-    weight: 0.12,
+    weight: 0.03,
     sky: { horizonColor: '#aab0b3', zenithColor: '#7b8288', cloudColor: '#b4b8ba', cloudShadowColor: '#6a7076', cloudCover: 0.95, fogDensity: 0.012, sunIntensity: 0.4, hemiIntensity: 1.15, exposure: 0.86 },
     rain: 0.85,
     showers: 0.8,
@@ -58,7 +58,7 @@ export const WEATHER_KINDS = {
   },
   fog: {
     name: 'foggy',
-    weight: 0.1,
+    weight: 0.02,
     sky: { horizonColor: '#d2d5d4', zenithColor: '#b8bdbf', cloudColor: '#dfe1e1', cloudShadowColor: '#a9aeb0', cloudCover: 0.8, fogDensity: 0.028, sunIntensity: 0.6, hemiIntensity: 1.65, exposure: 1.0 },
     rain: 0,
     showers: 0.05,

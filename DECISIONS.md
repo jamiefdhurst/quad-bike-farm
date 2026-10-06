@@ -704,3 +704,8 @@ Built to the brief above. What differs or wasn't said:
 - On the kids' quad the distance isn't scaled down when a pod is fitted (the pod is full size) but is when it isn't (its dash is 0.65 scale).
 - Checked once headless: red with the analogue pod (both dash and pod legible) and the kids' quad with its key switch. Not checked: the other quads, or the ride back out of the zoom at speed.
 
+## Mostly sunny (2026-10-06)
+
+- Weather weights are now sunny 0.70, sunny intervals 0.15, overcast 0.07, drizzle 0.03, rain 0.03, fog 0.02 (they were 0.2, 0.2, 0.25, 0.13, 0.12, 0.1). Showers within a game are unchanged; `?weather=` still forces a kind.
+- The yellow's lamp shell was floating above the bars; it now sits down on the bar clamp (`DASH_PLACE.blaster`, checked once headless).
+
