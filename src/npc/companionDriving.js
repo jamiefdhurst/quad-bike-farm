@@ -48,6 +48,10 @@ export const drivingStates = {
       this.followWanted = false;
       const race = this.raceWanted;
       this.raceWanted = null;
+      const followWho = this.followWhoWanted;
+      this.followWhoWanted = null;
+      const convoyLead = this.convoyLeadWanted;
+      this.convoyLeadWanted = false;
       const params = driveMood(this.params, this.driveMood);
       params.driveSpeedMaxBase = this.params.driveSpeedMax;
       if (offered) {
@@ -58,6 +62,12 @@ export const drivingStates = {
         // Keeping up with you takes more throttle than pottering about, and she minds speed less.
         params.driveMaxThrottle = Math.min(1, this.params.followMaxThrottle * (params.driveSpeedMax / this.params.driveSpeedMax));
         params.driveScareSpeed = this.params.followScareSpeed;
+      }
+      if (convoyLead) {
+        // Out in front of the other girl: big loops, and she keeps going until the convoy ends.
+        params.driveForMin = params.driveForMax = 1e6;
+        params.driveLoopRadiusMin *= this.params.rideLoopScale;
+        params.driveLoopRadiusMax *= this.params.rideLoopScale;
       }
       if (race) {
         // Racing: flat out, no pauses, nothing frightens her off.
@@ -80,7 +90,7 @@ export const drivingStates = {
         race,
         tires: offered,
         follow: following ? () => {
-          const lead = this.followTarget?.();
+          const lead = (followWho ?? this.followTarget)?.();
           return lead && lead !== q ? lead : null;
         } : null,
         probe: (heading, distance) => this.driveProbe(heading, distance),
@@ -165,13 +175,15 @@ export const drivingStates = {
 
 export const drivingMethods = {
   /** Walks to the front of a quad, gets on and has a little drive; with `giveRide`, waits for you on the back. */
-  requestDrive(quad, { giveRide = false, follow = false, race = null } = {}) {
+  requestDrive(quad, { giveRide = false, follow = false, race = null, followWho = null, convoyLead = false } = {}) {
     this.giveRide = giveRide;
     this.offeredRide = false;
     this.followWanted = follow;
     this.raceWanted = race; // a race to drive in (npc/race.js)
+    this.followWhoWanted = followWho; // following something other than you: a convoy (npc/convoy.js)
+    this.convoyLeadWanted = convoyLead; // leading one
     if (this.fsm.is('driving')) {
-      if (quad !== this.quad) this.stopDriving('off', () => this.requestDrive(quad, { giveRide, follow, race }));
+      if (quad !== this.quad) this.stopDriving('off', () => this.requestDrive(quad, { giveRide, follow, race, followWho, convoyLead }));
       return;
     }
     if (this.fsm.is('shuffling', 'dismounting')) return;
@@ -180,7 +192,7 @@ export const drivingMethods = {
       return;
     }
     if (this.fsm.is('seated', 'mounting')) {
-      this.afterDismount = () => this.requestDrive(quad, { giveRide, follow, race });
+      this.afterDismount = () => this.requestDrive(quad, { giveRide, follow, race, followWho, convoyLead });
       this.fsm.transition('dismounting');
       return;
     }

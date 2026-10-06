@@ -845,3 +845,12 @@ Jamie: the sound sometimes stops altogether, perhaps only in Firefox, with nothi
 - The same pass is what a convoy uses to swap who is in front (TODO 14).
 - Not checked in the running game: whether she overtakes cleanly on the real ground (the side she picks might be a hedge; her usual obstacle avoidance applies), or how the wait looks.
 
+## Follow the leader (TODO 14)
+
+- `src/npc/convoy.js` (pure, tested). Gating like the race: after `startAfter` 150 s, both free for `freeFor` 20 s, `chance` 0.012 a second, `cooldown` 420 s, and not while a race is on or they've been called back. Jess leads 0.6 of the time. Quads picked as in the race (`pickQuads`).
+- The leader drives her usual loops, bigger (`rideLoopScale`) and without tiring (`driveFor` 1e6). The follower is an ordinary follower (the same HerDrive follow as for you: gap, smoke gap, catch-up) whose target is the leader's quad (`followWho`), so she waits for the leader to set off. When both are going it is "running".
+- After `swapMin` 60 to `swapMax` 120 s the follower is told to overtake (the pass from TODO 13, `startPass`); when she is ahead and waiting, the roles flip: the old leader's follow target becomes the new leader's quad and the new leader drops her follow and plans her own loops. A pass that doesn't get there within 45 s is given up and they carry on in the same order. After `swaps` 2 swaps and a `lastLeg` 60 s they stop (`drive.stop('bored')`) and get off.
+- If either drive ends, someone gets on one of the quads, or one stands about doing nothing for 4 s, the whole convoy ends and the other stops. Calling them back (N) ends it too. A convoy that hasn't got both going within `formTimeout` 120 s is called off.
+- The swap is a banter exchange (`swapped`, four, two for each order), and each girl has an offer and an answer line.
+- Checked headless (one run, with the timers shortened): forming, both driving, the follower overtaking, the swap, and the stop at the end all happened; Jess backed off obstacles several times in the field. Not seen: the banter, or a full-length convoy.
+

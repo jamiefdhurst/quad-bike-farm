@@ -32,6 +32,7 @@ import { ThrottleGrab, GRAB_PARAM_RANGES } from './npc/throttleGrab.js';
 import { SmokeSense, SMOKE_PARAM_RANGES } from './npc/smokeSense.js';
 import { Race, RACE_PARAM_RANGES, planLap } from './npc/race.js';
 import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
+import { Convoy, CONVOY_PARAM_RANGES } from './npc/convoy.js';
 import { buildStartLine, nearestTrackFraction } from './world/startLine.js';
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
 import { StrawFall } from './effects/strawFall.js';
@@ -310,6 +311,8 @@ export class Game {
     this.smokeSense = new SmokeSense(); // Amy coughs at two-stroke smoke, Jess loves it (npc/smokeSense.js)
     // Racing: the girls race a lap of the track from a start line by the yard (npc/race.js).
     this.dashReader = new DashReader(); // the girl on the back reads the dash out (npc/dashReading.js)
+    this.convoy = new Convoy(); // follow the leader, swapping places (npc/convoy.js)
+    this.convoyIdle = {};
     this.race = new Race();
     this.raceIdle = {}; // seconds each racer has been doing nothing about it
     this.raceStart = nearestTrackFraction(this.world.track, this.world.layout.yard.x, this.world.layout.yard.z);
@@ -548,6 +551,7 @@ export class Game {
     registerTuning('Hand on the throttle', this.throttleGrab.p, GRAB_PARAM_RANGES);
     registerTuning('Two-stroke smoke', this.smokeSense.p, SMOKE_PARAM_RANGES);
     registerTuning('Racing', this.race.p, RACE_PARAM_RANGES);
+    registerTuning('Follow the leader', this.convoy.p, CONVOY_PARAM_RANGES);
     registerTuning('Reading the dash', this.dashReader.p, READING_PARAM_RANGES);
     registerTuning('Jump leads', this.leads.params, JUMP_LEAD_PARAM_RANGES);
     registerTuning('Skills', this.skills.p, SKILL_PARAM_RANGES);
@@ -712,6 +716,10 @@ export class Game {
     if (this.raceResult) {
       triggers.push({ when: 'raced', edge: true, roles: this.raceResult });
       this.raceResult = null;
+    }
+    if (this.convoySwapped) {
+      triggers.push({ when: 'swapped', edge: true, roles: this.convoySwapped });
+      this.convoySwapped = null;
     }
     const rivals = this.race.rivalry();
     const [first, second] = this.companions;
@@ -1264,6 +1272,7 @@ export class Game {
   /** Stop whatever they're doing and gather by the barn doors. */
   recallGirls() {
     this.race.stand();
+    this.convoy.stand();
     this.recalling = { left: 120, spots: this.companions.map((c, i) => this.recallSpot(i)), said: false };
     this.hud.toast('Girls: stop what you are doing and come to the barn');
   }
@@ -1290,6 +1299,72 @@ export class Game {
       }
     }
     if (!waiting || r.left <= 0) this.recalling = null;
+  }
+
+  // Follow the leader --------------------------------------------------------
+
+  updateConvoy(dt, ridden) {
+    const free = (c) => c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot;
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: free(c) }));
+    const options = {};
+    for (const c of this.companions) {
+      options[c.character.id] = this.units.filter((u) => u !== ridden && c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && !u.quad.bog.stuck).map((u) => u.spec.id);
+    }
+    const cv = this.convoy;
+    const later = (ms, fn) => setTimeout(fn, ms);
+    // A girl who has stopped or finished driving ends it for both: nobody is left leading nobody.
+    if (cv.active) {
+      for (const id of Object.keys(cv.picks ?? {})) {
+        const c = byId[id];
+        const busy = c.fsm.is('walking', 'mounting', 'driving', 'shuffling') || (cv.phase === 'forming' && c.fsm.is('dismounting'));
+        this.convoyIdle[id] = busy ? 0 : (this.convoyIdle[id] ?? 0) + dt;
+        const lost = c.drive?.done || this.convoyIdle[id] > 4 || (c.fsm.is('driving') && c.quad.rider);
+        if (lost) {
+          cv.stand();
+          for (const o of this.companions) if (o.fsm.is('driving') && o.drive && !o.drive.done) o.drive.stop('bored');
+          break;
+        }
+        if (cv.phase === 'forming') {
+          const driving = c.fsm.is('driving') && c.drive && ['drive', 'settle'].includes(c.drive.phase) && (id !== cv.leader || c.drive.phase === 'drive');
+          if (driving) cv.ready(id);
+        }
+      }
+      // The follower has got ahead: they swap.
+      const f = byId[cv.follower];
+      if (cv.phase === 'running' && cv.passing && f?.drive?.pass?.phase === 'waiting') {
+        const order = cv.passed();
+        const nl = byId[order.leader];
+        const ol = byId[order.follower];
+        // The old leader follows the new one, who carries on in her own loops.
+        ol.drive.follow = () => nl.quad;
+        ol.drive.pass = null;
+        ol.drive.waypoints = [];
+        nl.drive.follow = null;
+        nl.drive.pass = null;
+        nl.drive.waypoints = [];
+        nl.drive.index = 0;
+        nl.drive.driveFor = 1e6;
+        this.convoySwapped = { front: order.leader, back: order.follower };
+      } else if (cv.phase === 'running' && cv.passing && f?.drive && !f.drive.pass) {
+        cv.passFailed();
+      }
+    } else this.convoyIdle = {};
+    for (const e of cv.update(dt, { girls, options, claims: this.ownership.claims, busy: this.race.active || !!this.recalling })) {
+      if (e.type === 'invite') {
+        byId[e.leader].voice.say('convoyInvite', { force: true });
+        later(3500, () => byId[e.follower]?.voice.say('convoyAccept', { force: true }));
+        const quadOf = (id) => this.units.find((u) => u.spec.id === e.picks[id]).quad;
+        byId[e.leader].requestDrive(quadOf(e.leader), { convoyLead: true });
+        byId[e.follower].requestDrive(quadOf(e.follower), { follow: true, followWho: () => quadOf(e.leader) });
+      } else if (e.type === 'swap') {
+        // The follower is to overtake whoever is in front.
+        const f = byId[e.follower];
+        if (!f.drive?.startPass()) cv.passFailed();
+      } else if (e.type === 'end') {
+        for (const c of this.companions) if (c.fsm.is('driving') && c.drive && !c.drive.done) c.drive.stop('bored');
+      }
+    }
   }
 
   // Racing ------------------------------------------------------------------
@@ -1741,6 +1816,7 @@ export class Game {
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);
     this.updateRecall(dt);
+    if (!this.recalling) this.updateConvoy(dt, ridden);
     this.updateDashReading(dt, ridden);
     if (!this.recalling) this.updateRace(dt, ridden);
     this.updateSmokeSense(dt);

@@ -22,11 +22,12 @@ export const BANTER_TIMING = {
   favoured: { gap: 90, chance: 0.05 },
   corrected: { gap: 20 },
   raced: { gap: 20 }, // just after a race
+  swapped: { gap: 20 }, // they've swapped places in a convoy
   rivals: { gap: 150, chance: 0.04 }, // one of them is well ahead on race wins
 };
 const ANY_GAP = 20; // seconds between any two exchanges
 const MOMENT_KEEPS = 8; // seconds a moment waits for a gap in the talking before it's let go
-const PRIORITY = ['stuck', 'corrected', 'raced', 'talked', 'riding', 'back', 'sharing', 'favoured', 'rivals', 'watching', 'idle'];
+const PRIORITY = ['stuck', 'corrected', 'raced', 'swapped', 'talked', 'riding', 'back', 'sharing', 'favoured', 'rivals', 'watching', 'idle'];
 
 const rolesMatch = (exchange, roles = {}) => Object.entries(exchange.roles ?? {}).every(([role, who]) => roles[role] === who);
 

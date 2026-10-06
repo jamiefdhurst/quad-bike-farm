@@ -241,6 +241,7 @@ export class DebugGui {
       });
     }
     Object.defineProperty(live, 'Race', { enumerable: true, get: () => g.race.phase });
+    Object.defineProperty(live, 'Follow the leader', { enumerable: true, get: () => (g.convoy.active ? `${g.convoy.phase}: ${g.convoy.leader} leads, ${g.convoy.swapsDone} swaps` : 'idle') });
     Object.defineProperty(live, 'Race score', { enumerable: true, get: () => g.companions.map((c) => `${cap(c.character.id)} ${g.race.tally[c.character.id]?.wins ?? 0}-${g.race.tally[c.character.id]?.losses ?? 0}`).join(', ') });
     Object.defineProperty(live, 'Throttle grab', { enumerable: true, get: () => g.throttleGrab.grab?.girl ? `${g.throttleGrab.grab.girl} (${g.throttleGrab.grab.phase})` : g.throttleGrab.forced ? `${g.throttleGrab.forced} waiting` : 'none' });
     for (const key of Object.keys(live)) f.add(live, key).listen().disable();
@@ -267,7 +268,13 @@ export class DebugGui {
     };
     actions.recall = () => g.recallGirls();
     f.add(actions, 'recall').name('Call the girls back to the barn (N)');
+    actions.convoy = () => {
+      if (g.convoy.active) return g.hud.toast('They are already out');
+      g.convoy.forced = true;
+      g.hud.toast('Follow the leader will start as soon as both girls are stood about');
+    };
     f.add(actions, 'race').name('Start a race now');
+    f.add(actions, 'convoy').name('Start follow the leader now');
     f.add(actions, 'grabJess').name('Jess grabs the throttle (next ride)');
     f.add(actions, 'grabAmy').name('Amy grabs the throttle (next ride)');
     f.add(actions, 'names').name('Jess names the quads now');
