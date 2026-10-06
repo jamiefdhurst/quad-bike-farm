@@ -868,3 +868,8 @@ Jamie: the sound sometimes stops altogether, perhaps only in Firefox, with nothi
 - The rear rack, not the front: the front is where she sits, and you don't see the back, which is the point. Added a `mugAnchor` to the utility quads' models (red, blue, green, loan; the sport quads and the kids' quad have no rack).
 - Checked headless: Amy left a mug on the blue, it was on the rack, and pushing the quad off made it fall with a stain. Not seen: the walk up and collecting it, or how the mug looks on the rack by eye.
 
+## The green's knack off, and a starter sound that never stopped
+
+- Jamie: remove the green's need for the throttle to be blipped; it stopped the girls starting it. `knackBlips` is 0 on the green. The mechanism (`knack.js`, the girls knowing the trick, the struggle line) is left in, ready to put back as a different quad's quirk (TODO 39).
+- Jamie: when the girls give up starting a quad it keeps making a slow start sound for ever. I couldn't reproduce it headless (a weak-battery start just clicked and switched off). The sound is the starter loop in the engine worklet, which only stopped on a `starterOff` event; if that event is missed the loop winds down to its slowest rate and carries on. It now also fades out once the engine has not been cranking for a quarter of a second, whatever events arrive. This is the likely cause, not a confirmed one.
+

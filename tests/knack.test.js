@@ -51,11 +51,11 @@ describe('the knack', () => {
     expect(new Knack(DEFAULT_KNACK_PARAMS).primed).toBe(true);
   });
 
-  it('only the green has one, and the blue runs rich on choke sooner', () => {
+  it('no quad has one now (the green lost it so the girls can start it), and the blue runs rich on choke sooner', () => {
     const green = QUAD_SPECS.find((s) => s.id === 'green');
     const blue = QUAD_SPECS.find((s) => s.id === 'blue');
-    expect(green.engine.knackBlips).toBe(2);
-    expect(QUAD_SPECS.filter((s) => s.engine.knackBlips).length).toBe(1);
+    expect(green.engine.knackBlips ?? 0).toBe(0);
+    expect(QUAD_SPECS.filter((s) => s.engine.knackBlips).length).toBe(0);
     expect(blue.engine.chokeEnrichment).toBeGreaterThan(1);
   });
 });

@@ -217,7 +217,7 @@ export const QUAD_SPECS = [
       coldEnrichmentNeed: 1.15,
       chokeIdleRpm: 1100,
       catchChance: 0.45,
-      knackBlips: 2, // cold, it only fires after the throttle's been blipped twice
+      knackBlips: 0, // it used to only fire cold after the throttle had been blipped twice (set to 2 to bring that back); the girls couldn't start it
       coldRoughness: 0.7,
       coldPowerLoss: 0.85,
     },

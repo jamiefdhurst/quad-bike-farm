@@ -388,6 +388,10 @@ class RecordedEngine {
     const loop = this.oneshots.crankLoop;
     if (cv && loop) {
       this.crankSpeed += ((state.cranking ? state.rpm : 0) - this.crankSpeed) * 0.0001;
+      // The starter loop follows the engine, not just the 'starterOff' event: if that never arrives the loop would otherwise
+      // wind down to a slow crank and play on for ever.
+      cv.off = state.cranking ? 0 : (cv.off ?? 0) + 1;
+      if (cv.off > 0.25 * sampleRate) cv.target = 0;
       cv.gain += (cv.target - cv.gain) * (cv.target > cv.gain ? 0.004 : 0.0015);
       if (cv.pos < 0) {
         cv.pos += 1;
