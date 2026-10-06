@@ -418,6 +418,7 @@ export const EXTRA_SPECS = [
     },
     audio: {
       recBank: 'engine-bank-50', // a Gilera Runner SP50 recorded close to its exhaust
+      engineSound: 'recorded', // its revs from the Gilera's own rev recordings: its idle beats (it fires every other turn) are too long to build revs from
       recIdleSource: 'quad',
       pulseRefRpm: 1200,
       recBlendLo: 3200,
