@@ -819,3 +819,9 @@ Jamie: the sound sometimes stops altogether, perhaps only in Firefox, with nothi
 - Not tied to the spec (an old quad isn't more prone than a new one): that belongs with TODO 38 and 39. Faults that depend on riding (belt needs hard riding, puncture needs moving) still need it, so a quad nobody rides stays fault-free however prone it is.
 - The averages across the fleet move a little: a log-uniform from 0.4 to 2.5 has a mean of about 1.27, so faults are somewhat more common overall than before, which partly undoes the longer cable interval. Not checked in play.
 
+## A girl driving that keeps reversing
+
+- Jamie: sometimes one of them driving gets stuck going backwards all the time. Not reproduced, so this is the loop found by reading `herDriving.js`, not a confirmed cause: she meets something in front of her (or the `stuck` check finds it within 3.5 m), reverses for 1.5 to 2.5 s, pauses, drives, meets the same thing again, and so on for ever. Each reversal also skipped a waypoint, so even a new loop was planned from the same blocked spot facing it.
+- Fix: `backOff` counts backing off in the same spot (within `backOffRadius` 6 m and `backOffWithin` 25 s of the last time). The second time she throws away her waypoints, so the next plan tries other headings and picks one that is clear; the fifth (`backOffsToGiveUp`) she says there's no room (`noRoom`, the existing line), stops and gets off. Moving elsewhere or waiting longer starts the count again. In a race the route is kept and only the give-up applies; following you, the point to aim at is recalculated anyway. All three are in the Companion folder.
+- If it still happens, the next suspect is the quad's reverse flag, which only flips when it's moving slower than 0.3 m/s, so a quad rolling back on a slope can stay in reverse while she gives it forward throttle. I didn't change that.
+

@@ -711,10 +711,9 @@ export class HerDrive {
 
     // Something right in front of her: stamp on the brake, then back off it.
     if (this.clearAhead < BLOCKED + speed * 0.5) {
-      this.events.push('obstacle');
       this.hold(c);
-      this.setPhase('reversing', this.between(1.5, 2.5));
       this.avoidSide = -this.avoidSide;
+      this.backOff('obstacle');
       return;
     }
 
@@ -794,6 +793,27 @@ export class HerDrive {
   }
 
   /**
+   * Backs away from something in the way. Backing off again and again in the same spot (it is still in the way) used to
+   * go on for ever: the second time she plans a fresh way out (a different heading), and the fifth she's had enough and
+   * gets off. In a race the route is kept, and she just gives up the fifth time.
+   */
+  backOff(event) {
+    const here = this.quad.position;
+    const last = this.lastBackOff;
+    const again = last && Math.hypot(here.x - last.x, here.z - last.z) < this.p.backOffRadius && this.clock - last.at < this.p.backOffWithin;
+    this.backOffs = again ? this.backOffs + 1 : 1;
+    this.lastBackOff = { x: here.x, z: here.z, at: this.clock };
+    if (this.backOffs >= this.p.backOffsToGiveUp) {
+      this.events.push('noRoom');
+      this.stop('noRoom');
+      return;
+    }
+    if (this.backOffs >= 2 && !this.race && !this.follow) this.waypoints = [];
+    this.events.push(event);
+    this.setPhase('reversing', this.between(1.5, 2.5));
+  }
+
+  /**
    * Not moving. Up against something: she backs off it. Otherwise it's
    * bogging: she gives it more, or remembers the choke if it's cold, and in
    * the end gives up on it.
@@ -801,8 +821,7 @@ export class HerDrive {
   unstick() {
     const q = this.quad;
     if (this.clearAhead < 3.5) {
-      this.events.push('stuck');
-      this.setPhase('reversing', this.between(1.5, 2.5));
+      this.backOff('stuck');
       return;
     }
     this.bogs++;

@@ -274,3 +274,71 @@ describe('her driving you about on her own idea', () => {
     expect(t).toBeLessThan(P.offerRideGiveUp + 10);
   });
 });
+
+describe('backing off the same thing again and again', () => {
+  // Just the bookkeeping, without a quad to drive.
+  function boxedIn(race = null) {
+    const d = Object.create(HerDrive.prototype);
+    Object.assign(d, {
+      p: { ...DEFAULT_COMPANION_PARAMS },
+      quad: { position: { x: 0, z: 0 } },
+      events: [],
+      clock: 0,
+      waypoints: [{ x: 1, z: 1 }],
+      race,
+      follow: null,
+      random: () => 0,
+      timer: 0,
+      stopped: null,
+    });
+    d.stop = (reason) => (d.stopped = reason);
+    return d;
+  }
+
+  it('backs off the first time, plans a fresh way out the second, and gives up on the fifth', () => {
+    const d = boxedIn();
+    d.backOff('obstacle');
+    expect(d.phase).toBe('reversing');
+    expect(d.waypoints.length).toBe(1);
+    d.clock += 5;
+    d.backOff('obstacle');
+    expect(d.waypoints).toEqual([]);
+    for (let i = 0; i < 2; i++) {
+      d.clock += 5;
+      d.backOff('obstacle');
+    }
+    expect(d.stopped).toBeNull();
+    d.clock += 5;
+    d.backOff('stuck');
+    expect(d.stopped).toBe('noRoom');
+    expect(d.events).toContain('noRoom');
+  });
+
+  it('starts counting again once she has got somewhere else, or a while has passed', () => {
+    const d = boxedIn();
+    for (let i = 0; i < 4; i++) {
+      d.clock += 5;
+      d.backOff('obstacle');
+    }
+    d.quad.position.x = 30;
+    d.backOff('obstacle');
+    expect(d.backOffs).toBe(1);
+    d.clock += 60;
+    d.backOff('obstacle');
+    expect(d.backOffs).toBe(1);
+    expect(d.stopped).toBeNull();
+  });
+
+  it('keeps a race route, but still gives up in the end', () => {
+    const d = boxedIn({ route: [] });
+    for (let i = 0; i < 4; i++) {
+      d.clock += 5;
+      d.backOff('obstacle');
+    }
+    expect(d.waypoints.length).toBe(1);
+    expect(d.stopped).toBeNull();
+    d.clock += 5;
+    d.backOff('obstacle');
+    expect(d.stopped).toBe('noRoom');
+  });
+});
