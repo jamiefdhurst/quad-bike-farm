@@ -5,6 +5,7 @@ import { band } from './skills.js';
 import { Speech } from '../audio/companionAudio.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
 import { engineCondition, guessCondition } from './diagnosis.js';
+import { isThrashed } from '../engine/wearLedger.js';
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
 
@@ -482,6 +483,8 @@ export class CompanionVoice {
       if (e.silencerOff && e.isRunning && (near || hers)) this.say('silencerLoud', { chance: 0.015 });
       this.watchFaults(unit, w, near || hers);
       this.watchDiagnosis(dt, unit, w);
+      this.watchThrash(dt, unit, view, near || hers);
+      this.watchBlame(dt, unit, w, view);
       // Cranking on and on without it catching.
       if (e.state === 'cranking' && w.cranking > 5 && near) {
         this.say(this.crankHint(unit), { chance: 0.02 });
@@ -545,6 +548,25 @@ export class CompanionVoice {
     if (!this.say(DIAGNOSE_SITUATION[guess], { chance: p.diagnoseChance * dt })) return;
     w.diagnosedUntil = this.chatter.time + 120; // once per quad every couple of minutes, so she doesn't keep guessing it
     if (guess !== truth) this.lastDiagnosis = { guesser: c.character.id, guess, truth };
+  }
+
+  /** Somebody caning a quad before it's warm: Amy tells off whoever it is (Jess cheers you on). */
+  watchThrash(dt, unit, view, listening) {
+    const who = view.drivers?.get(unit);
+    if (!listening || !who || who === this.companion.character.id || !isThrashed(unit.engine, this.companion.params)) return;
+    const situation = who === 'you' ? 'thrashColdYou' : 'thrashCold';
+    this.say(situation, { chance: this.companion.params.thrashChance * dt });
+  }
+
+  /** Stood by a quad that's worn, she says who she thinks did it, going by who was really riding it (wearLedger.js). */
+  watchBlame(dt, unit, w, view) {
+    const c = this.companion;
+    if (!view.ledger || !c.fsm.is('idle', 'resting') || unit.quad.position.distanceTo(this.head) > 6) return;
+    if (unit.engine.wear < c.params.blameWearFrom || this.chatter.time < (w.blamedUntil ?? 0)) return;
+    const culprit = view.ledger.culprit(unit.id);
+    if (!culprit) return;
+    if (!this.say(`blame${culprit.who === 'you' ? 'You' : culprit.who === 'amy' ? 'Amy' : 'Jess'}`, { chance: c.params.blameChance * dt })) return;
+    w.blamedUntil = this.chatter.time + 180;
   }
 
   /** Which kind of "it won't start" remark fits what she can see. */

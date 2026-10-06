@@ -105,6 +105,8 @@ export const DEFAULT_ENGINE_PARAMS = {
   roughHuntFrequency: 0.7, // Hz
   wearPerMinute: 0.012, // roughness gained per minute of idling; more when it's worked hard
   wearWorkBoost: 2, // flat out it wears this much faster again
+  wearColdBoost: 6, // revved hard while it's cold, it wears this much faster again
+  wearColdBelow: 0.5, // engine temperature (0 cold, 1 warm) under which revving it counts as thrashing it
   wearMax: 1, // run long and hard enough, any engine wears to fully rough
   // Badly in need of a service it turns erratic, from erraticFrom up to fully
   // rough (its condition: build roughness plus wear, not cold or mixture):
@@ -301,6 +303,8 @@ export const ENGINE_PARAM_RANGES = {
   roughHuntFrequency: [0.05, 5, 0.05],
   wearPerMinute: [0, 0.2, 0.001],
   wearWorkBoost: [0, 10, 0.1],
+  wearColdBoost: [0, 10, 0.1],
+  wearColdBelow: [0.1, 1, 0.05],
   wearMax: [0, 1, 0.01],
   erraticFrom: [0, 1, 0.01],
   stumbleRate: [0, 3, 0.01],

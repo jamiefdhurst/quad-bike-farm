@@ -91,6 +91,11 @@ export const DEFAULT_COMPANION_PARAMS = {
   diagnoseColdBelow: 0.35, // engine temperature (0 cold, 1 warm) under which it sounds cold
   diagnoseRichFrom: 0.2, // how rich the mixture has to be before it sounds rich
   diagnoseFoulFrom: 0.35, // how fouled the plug has to be before it sounds like it
+  thrashColdBelow: 0.4, // engine temperature (0 cold, 1 warm) under which hard riding counts as thrashing it
+  thrashWork: 0.6, // how hard it's working (0..1) before she calls it thrashing
+  thrashChance: 0.15, // per second she can see a quad being thrashed cold, that she says something
+  blameWearFrom: 0.15, // wear a quad needs before she says who's worn it out
+  blameChance: 0.02, // per second stood by a worn quad, that she says who did it
   diagnoseWearFrom: 0.2, // how worn the engine has to be before it sounds tired
   startPullWhenFlat: 0, // chance that on a flat battery she has a go at the pull-start (two-strokes) instead of giving up
   driveForgetChokeChance: 0.45, // she pushes the choke off as she sets off, cold or not
@@ -255,6 +260,11 @@ export const COMPANION_PARAM_RANGES = {
   diagnoseRichFrom: [0, 0.9, 0.05],
   diagnoseFoulFrom: [0, 0.9, 0.05],
   diagnoseWearFrom: [0, 0.9, 0.05],
+  thrashColdBelow: [0, 1, 0.05],
+  thrashWork: [0, 1, 0.05],
+  thrashChance: [0, 1, 0.01],
+  blameWearFrom: [0, 0.9, 0.05],
+  blameChance: [0, 0.3, 0.005],
   startPullWhenFlat: [0, 1, 0.05],
   driveForgetChokeChance: [0, 1, 0.05],
   driveMaxStalls: [0, 6, 1],

@@ -21,6 +21,7 @@ import { DEFAULT_COMPANION_PARAMS, COMPANION_PARAM_RANGES } from './npc/companio
 import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
 import { CHARACTERS } from './npc/characters.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
+import { WearLedger, LEDGER_PARAM_RANGES } from './engine/wearLedger.js';
 import { Pranks, PRANK_PARAM_RANGES } from './npc/pranks.js';
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
 import { StrawFall } from './effects/strawFall.js';
@@ -495,6 +496,8 @@ export class Game {
     registerTuning('Oil bottle', this.oilBottle.params, OIL_BOTTLE_PARAM_RANGES);
     registerTuning('Hose', this.hose.params, HOSE_PARAM_RANGES);
     registerTuning('Favour', this.favour.p, FAVOUR_PARAM_RANGES);
+    this.wearLedger ??= new WearLedger();
+    registerTuning('Who wore it out', this.wearLedger.p, LEDGER_PARAM_RANGES);
     registerTuning('Pranks', this.pranks.p, PRANK_PARAM_RANGES);
     registerTuning('Jump leads', this.leads.params, JUMP_LEAD_PARAM_RANGES);
     registerTuning('Skills', this.skills.p, SKILL_PARAM_RANGES);
@@ -824,6 +827,18 @@ export class Game {
   /** Whichever girl likes this quad best is pleased you're on it, or washing it. */
   favourQuad(unit, amount) {
     for (const c of this.companions) if (c.voice.favourite === unit.spec.id) this.favour.add(c.character.id, amount);
+  }
+
+  /** Each frame: who's at the controls of each quad (you, or a girl's id), and the wear that lands on them. */
+  updateWearLedger() {
+    this.wearLedger ??= new WearLedger();
+    this.drivers = new Map();
+    for (const unit of this.units) {
+      const girl = this.companions.find((c) => c.fsm.is('driving') && c.quad === unit.quad);
+      const who = unit === this.riddenUnit ? 'you' : girl ? girl.character.id : null;
+      if (who) this.drivers.set(unit, who);
+      this.wearLedger.record(unit.id, unit.engine.wear, who);
+    }
   }
 
   /** Each frame: scores fade, and the girl giving you a ride earns it while her friend, left on foot, notices. */
@@ -1358,6 +1373,7 @@ export class Game {
     const ridden = this.riddenUnit;
     this.talkFloor.left = Math.max(0, this.talkFloor.left - dt);
     this.updateFavour(dt, ridden);
+    this.updateWearLedger();
     this.skills.update(dt);
     this.updateRequests(dt, ridden);
     this.updatePlaces(dt);
@@ -1374,6 +1390,8 @@ export class Game {
         listener: this.camera.position,
         ridden,
         units: this.units,
+        drivers: this.drivers,
+        ledger: this.wearLedger,
         menuOpen: this.menu.isOpen,
         talkingToHer: this.menu.isOpen && this.talkingTo === c,
         weather: this.weather,

@@ -327,7 +327,9 @@ export class EngineModel {
       const work = 1 + p.warmUpRpmBoost * rpmNorm + p.warmUpLoadBoost * this.driveLoad * this.throttle;
       this.temperature += (h / p.warmUpSeconds) * work;
       // And it wears: plug, filter and carb slowly go off, faster when it's worked hard.
-      this.wear = Math.min(p.wearMax, this.wear + (h / 60) * p.wearPerMinute * (1 + p.wearWorkBoost * rpmNorm));
+      // Revving it hard before it's warm is the worst of it.
+      const coldThrash = clamp(1 - this.temperature / p.wearColdBelow, 0, 1) * rpmNorm;
+      this.wear = Math.min(p.wearMax, this.wear + (h / 60) * p.wearPerMinute * (1 + p.wearWorkBoost * rpmNorm + p.wearColdBoost * coldThrash));
     } else {
       this.temperature = offTemperature(this.temperature, h, p.coolDownSeconds, this.sheltered, { warmFloor: p.barnWarmFloor, coolFactor: p.barnCoolFactor });
     }

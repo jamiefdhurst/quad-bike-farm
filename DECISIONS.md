@@ -729,3 +729,11 @@ Jamie: the sound sometimes stops altogether, perhaps only in Firefox, with nothi
 - Fix: every grain and clip read is clamped inside the decoded data. And as a backstop, a worklet that ever outputs NaN resets its filters, pipe and voices, outputs silence for that sample and warns once in the console ("Engine sound went NaN"), so if anything else ever does it, the sound recovers and there's a clue.
 - Tests in `tests/engineWorkletNaN.test.js` load the real worklet in a sandbox at 48 kHz: a bank a sample short plays its last clip to the end without a NaN, and a NaN forced into a filter is cleared. Both fail on the old worklet.
 - Not checked in Firefox itself: I couldn't reproduce it there, so this is the most likely cause found by reading, not a confirmed one.
+
+
+## Mechanical sympathy (TODO 1)
+
+- Cold thrash: wear per minute gets `wearColdBoost` (6) times how cold it is (0 at `wearColdBelow` 0.5 of warm, 1 stone cold) times how far up the revs it is, on top of the existing work boost. Held cold and flat out in a test, it wears about 3.5 times as fast as the same revs warm. Warm running is unchanged.
+- Who wore it: `src/engine/wearLedger.js` (pure) takes each quad's wear every frame and the rider (`you`, or a girl's id when she's driving, else nobody) and adds the increase to that rider's share. Wear a quad comes with, and idling with nobody on it, belongs to nobody. A fall in wear (a service or strip down) shrinks every share in proportion. A culprit needs `minBlamed` 0.04 of pinned wear and `blameShare` 0.5 of it.
+- Speech: Amy tells off a girl thrashing a cold engine and tells you to go easy; Jess cheers you on (she doesn't tell herself off). Both need to be near or on the quad, with a `thrashChance` of 0.15 a second and the line cooldowns. Stood by a quad past `blameWearFrom` 0.15 wear, a girl names the culprit at `blameChance` 0.02 a second, once per quad every three minutes. Amy owns up when it's her; Jess owns up cheerfully. Lines in `thrashLines.js`.
+- Not checked in the running game: how often Jess actually thrashes a cold engine on her own, or the lines in play. Tests cover the ledger, the wear rate and the lines being present.
