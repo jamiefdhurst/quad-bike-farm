@@ -130,7 +130,7 @@ export const hayRideStates = {
       const anchor = this.traSlot.anchor;
       const seat = anchor.localToWorld(this.haySeatOffset());
       this.root.position.lerpVectors(this.startPos, seat, k);
-      this.root.position.y += Math.sin(Math.PI * k) * p.climbLift;
+      this.root.position.y += Math.sin(Math.PI * k) * (this.traSlot.lift ?? p.climbLift);
       const yaw = new THREE.Euler().setFromQuaternion(anchor.getWorldQuaternion(new THREE.Quaternion()), 'YXZ').y;
       this.heading = this.startHeading + angleTo(this.startHeading, yaw) * k;
       this.root.rotation.y = this.heading;
@@ -270,7 +270,7 @@ export function finishClimbDown(c, data) {
   }
   const stand = c.trailer.standPoint(c.traSlot.side);
   c.root.position.lerpVectors(data.fromWorld, stand.position, k);
-  c.root.position.y += Math.sin(Math.PI * k) * p.climbLift * 0.5;
+  c.root.position.y += Math.sin(Math.PI * k) * (c.traSlot.lift ?? p.climbLift) * 0.5;
   c.heading = data.fromHeading + angleTo(data.fromHeading, stand.facing) * k;
   c.root.rotation.y = c.heading;
   if (t >= 1) {

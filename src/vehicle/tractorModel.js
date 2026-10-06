@@ -39,6 +39,9 @@ export const TRACTOR_LAYOUT = {
   chassis: { hx: 0.55, hy: 0.5, hz: 1.5, y: 0.95 + TRACTOR_GROUND_OFFSET },
 };
 
+/** The tops of the rear wheel arches, where a girl sits (chassis frame, metres), and where she stands on the ground to climb up. */
+export const MUDGUARD = { x: 0.88, top: REAR_R + REAR_R + 0.17, z: -0.95, standX: 1.5, standZ: -0.35 };
+
 /** The invisible box you look at to get on: ground to roof, wider than the body so it's easy to target. */
 export const TRACTOR_PROXY = { w: 2.0, h: 2.0, d: 3.2 };
 
@@ -319,7 +322,13 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   for (const s of [-1, 1]) tube([s * 0.22, 0.6, -0.95], [s * 0.4, 0.5, -1.45], 0.02, MAT.steel, root);
   tube([-0.4, 0.5, -1.45], [0.4, 0.5, -1.45], 0.016, MAT.steel, root);
 
-  // Anchors for people and the camera.
+  // Anchors for people and the camera. A girl can sit on top of each rear wheel arch (npc/mudguardRide.js).
+  for (const [name, s] of [['mudguardLeft', 1], ['mudguardRight', -1]]) {
+    const a = new THREE.Object3D();
+    a.name = name;
+    a.position.set(s * MUDGUARD.x, MUDGUARD.top, MUDGUARD.z);
+    root.add(a);
+  }
   const riderAnchor = new THREE.Object3D();
   riderAnchor.name = 'riderAnchor';
   riderAnchor.position.set(0, 1.15, -0.8);

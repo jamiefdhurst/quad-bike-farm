@@ -26,6 +26,8 @@ import { Pranks, PRANK_PARAM_RANGES } from './npc/pranks.js';
 import { RevOff, REVOFF_PARAM_RANGES } from './npc/revOff.js';
 import { TractorWatch, TRACTOR_WATCH_PARAM_RANGES } from './npc/tractorWatch.js';
 import { HayRide, HAYRIDE_PARAM_RANGES } from './npc/hayRide.js';
+import { MudguardRide, MUDGUARD_PARAM_RANGES } from './npc/mudguardRide.js';
+import { TractorMount } from './vehicle/tractorMount.js';
 import { HAYSEAT_PARAM_RANGES, DEFAULT_HAYSEAT_PARAMS } from './npc/companionHayRide.js';
 import { HayTrailer } from './vehicle/hayTrailer.js';
 import { TRAILER_PARAM_RANGES } from './vehicle/trailer.js';
@@ -330,6 +332,9 @@ export class Game {
     this.hayRide = new HayRide(undefined, createRandom(this.seed ^ 0x4a71));
     this.haySeat = { ...DEFAULT_HAYSEAT_PARAMS };
     for (const c of this.companions) c.hay = this.haySeat;
+    // A girl on the tractor's wheel arch (npc/mudguardRide.js, vehicle/tractorMount.js); the tractor is built above.
+    this.mudguard = new MudguardRide(undefined, createRandom(this.seed ^ 0x3d6a));
+    this.tractorMount = new TractorMount(this.tractorUnit.quad, (x, z) => this.world.heightAt(x, z));
     this.hayLater = []; // lines to say in a moment: { left, girl, key }
     this.itemHome = {}; // where a hidden item was taken from, by name
 
@@ -628,6 +633,7 @@ export class Game {
     registerTuning('Rev-offs', this.revOff.p, REVOFF_PARAM_RANGES);
     registerTuning('Tractor remarks', this.tractorWatch.p, TRACTOR_WATCH_PARAM_RANGES);
     registerTuning('Hay ride', this.hayRide.p, HAYRIDE_PARAM_RANGES);
+    registerTuning('Mudguard ride', this.mudguard.p, MUDGUARD_PARAM_RANGES);
     registerTuning('Hay ride seat', this.haySeat, HAYSEAT_PARAM_RANGES);
     registerTuning('Trailer', this.trailer.p, TRAILER_PARAM_RANGES);
     registerTuning('Quad names', this.quadNames.p, NAME_PARAM_RANGES);
@@ -750,7 +756,7 @@ export class Game {
     const girls = this.companions.map((c) => ({
       id: c.character.id,
       free: free(c) && !c.hayFell,
-      aboard: c.onHayRide,
+      aboard: c.onHayRide && c.trailer === t,
       dist: c.root.position.distanceTo(t.model.position),
       seatX: c.traSlot ? c.traSlot.side * 0.5 : 0,
     }));
@@ -785,6 +791,43 @@ export class Game {
     for (const l of this.hayLater) l.left -= dt;
     for (const l of this.hayLater.filter((x) => x.left <= 0)) say(l.girl, l.key);
     this.hayLater = this.hayLater.filter((x) => x.left > 0);
+  }
+
+  /** You asked her to climb up on the tractor's wheel arch: she goes at once and stays until you ask her down. */
+  askOntoTractor(c) {
+    const mount = this.tractorMount;
+    const slot = mount.freeSlot(c.root.position);
+    if (!slot || !c.boardTrailer(mount, slot)) return this.hud.toast('She can\'t just now');
+    this.mudguard.ask(c.character.id);
+    c.voice.say('mudBoard', { force: true });
+  }
+
+  /** A girl on the tractor's wheel arch: she climbs up when you stop with it running, shouts across at you, and climbs down when you get off. */
+  updateMudguard(dt, ridden) {
+    const mount = this.tractorMount;
+    mount.update(dt);
+    const unit = this.tractorUnit;
+    const riding = ridden === unit;
+    const girlOf = (id) => this.companions.find((c) => c.character.id === id);
+    const on = (c) => c.onHayRide && c.trailer === mount;
+    const girls = this.companions.map((c) => ({
+      id: c.character.id,
+      free: c.fsm.is('idle') && !c.hayFell && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob,
+      aboard: on(c),
+      dist: c.root.position.distanceTo(mount.model.position),
+    }));
+    const ctx = { active: riding && unit.quad.engine.isRunning, riding, trailer: this.trailer.hitched, speed: unit.quad.speed, girls };
+    for (const ev of this.mudguard.update(dt, ctx)) {
+      const c = girlOf(ev.girl);
+      if (ev.type === 'board') {
+        const slot = mount.freeSlot(c.root.position);
+        if (slot && c.boardTrailer(mount, slot)) c.voice.say('mudBoard', { urgent: true });
+      } else if (ev.type === 'shout') c.voice.say('mudShout', { urgent: true });
+      else if (ev.type === 'leave') {
+        c.leaveTrailer();
+        c.abortBoarding();
+      }
+    }
   }
 
   /** Builds the tractor, with its own seeded idle, roughness, fuel and hours, and adds it to `units` (not `girlUnits`). */
@@ -2001,6 +2044,13 @@ export class Game {
       this.hud.toast('She can\'t get off while it\'s moving');
       return;
     }
+    // Up on the tractor's wheel arch already: the one thing to ask is to come down.
+    if (c.fsm.is('onTrailer') && c.trailer === this.tractorMount) {
+      this.openWheel(`Ask ${c.name} to`, [{ label: 'Get down off the tractor', run: () => (this.mudguard.dismiss(c.character.id), c.leaveTrailer()) }], c);
+      this.player.lookEnabled = false;
+      this.player.moveEnabled = false;
+      return;
+    }
     const actions = c.getActions(this.girlUnits.map((u) => u.quad));
     if (!actions.length) {
       this.hud.toast('She\'s busy');
@@ -2011,6 +2061,8 @@ export class Game {
     // On the wheel: anything not about a particular quad, then a slice for each
     // quad (nearest her first) opening a ring of what she could do with it.
     const options = actions.filter((a) => !a.quad).map((a) => ({ label: a.label, run: answer(a) }));
+    const slot = !this.trailer.hitched && this.tractorMount.freeSlot(c.root.position);
+    if (slot && c.fsm.is('idle')) options.push({ label: 'Climb up on the tractor', run: () => this.askOntoTractor(c) });
     for (const unit of [...new Set(actions.filter((a) => a.quad).map((a) => a.quad.unit))]) {
       const own = actions.filter((a) => a.quad === unit.quad);
       options.push({
@@ -2291,6 +2343,7 @@ export class Game {
     this.updateRevOff(dt, ridden);
     this.updateTractorWatch(dt);
     this.updateHayRide(dt, ridden);
+    this.updateMudguard(dt, ridden);
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);
     this.updateHeadStart(dt, ridden);
