@@ -344,6 +344,9 @@ export class DebugGui {
         // Straight to running and warm, as if each had been started and left a while (no cranking).
         for (const u of g.units) {
           const e = u.engine;
+          const f = u.quad.fuel;
+          f.tap = 'on';
+          if (f.litres > 0) f.bowl = f.params.bowlCapacity;
           e.setIgnition(true);
           e.setTemperature(1);
           if (!e.isRunning) {
@@ -354,8 +357,11 @@ export class DebugGui {
         g.hud.toast('All the quads are running');
       },
       stopAll: () => {
-        g.units.forEach((u) => u.engine.setIgnition(false));
-        g.hud.toast('All the quads are switched off');
+        g.units.forEach((u) => {
+          u.engine.setIgnition(false);
+          u.quad.fuel.tap = 'off';
+        });
+        g.hud.toast('All the quads are switched off, fuel taps off');
       },
       resetQuads: () => g.units.forEach((u) => u.resetToSpawn(g.world)),
       copy: () => {
@@ -369,8 +375,8 @@ export class DebugGui {
     f.add(actions, 'warm').name('Warm this engine');
     f.add(actions, 'cold').name('Cool this engine');
     f.add(actions, 'warmAll').name('Warm every engine');
-    f.add(actions, 'startAll').name('Start every quad (warm)');
-    f.add(actions, 'stopAll').name('Switch every quad off');
+    f.add(actions, 'startAll').name('Start every quad (warm, fuel on)');
+    f.add(actions, 'stopAll').name('Switch every quad off (fuel off)');
     f.add(actions, 'clearFouling').name('Clear plug fouling');
     f.add(actions, 'resetQuads').name('Put the quads back in the yard');
     f.add(actions, 'copy').name('Copy all values as JSON');
