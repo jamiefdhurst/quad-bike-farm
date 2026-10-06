@@ -22,6 +22,7 @@ import { AMY_THRASH_LINES } from './thrashLines.js';
 import { AMY_REVOFF_LINES } from './revOffLines.js';
 import { AMY_QUAD_LINES } from './quadLines.js';
 import { AMY_WARMING_LINES } from './warmingLines.js';
+import { AMY_HEADSTART_LINES } from './headStartLines.js';
 import { AMY_THROTTLE_LINES } from './throttleLines.js';
 import { AMY_SMOKE_LINES } from './smokeLines.js';
 import { AMY_RACE_LINES } from './raceLines.js';
@@ -1387,6 +1388,8 @@ export const VOICE_LINES = {
   ...AMY_QUAD_LINES,
   // Warming their hands over an idling engine (warmingLines.js).
   ...AMY_WARMING_LINES,
+  // Starting your usual quad for you, or pointedly not (headStartLines.js).
+  ...AMY_HEADSTART_LINES,
   // A hand on your throttle from the back (throttleLines.js).
   ...AMY_THROTTLE_LINES,
   // Two-stroke smoke (smokeLines.js).

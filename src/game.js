@@ -27,7 +27,8 @@ import { RevOff, REVOFF_PARAM_RANGES } from './npc/revOff.js';
 import { QuadNames, NAME_PARAM_RANGES, quadKey } from './npc/quadNames.js';
 import { Ownership, OWNERSHIP_PARAM_RANGES } from './npc/ownership.js';
 import { Hearing, EAR_PARAM_RANGES } from './npc/earing.js';
-import { Warming, WARMING_PARAM_RANGES } from './npc/warming.js';
+import { Warming, WARMING_PARAM_RANGES, isChilly } from './npc/warming.js';
+import { HeadStart, HEADSTART_PARAM_RANGES } from './npc/headStart.js';
 import { ThrottleGrab, GRAB_PARAM_RANGES } from './npc/throttleGrab.js';
 import { SmokeSense, SMOKE_PARAM_RANGES } from './npc/smokeSense.js';
 import { Race, RACE_PARAM_RANGES, planLap } from './npc/race.js';
@@ -330,6 +331,7 @@ export class Game {
     this.raceStart = nearestTrackFraction(this.world.track, this.world.layout.yard.x, this.world.layout.yard.z);
     buildStartLine(this.scene, (x, z) => this.world.heightAt(x, z), this.world.track, this.raceStart, this.world.layout.trackHalfWidth);
     this.warming = new Warming(); // hands over an idling engine on a cold day (npc/warming.js)
+    this.headStart = new HeadStart(undefined, createRandom(this.seed ^ 0x4ead)); // starting your usual quad for you (npc/headStart.js)
     const capital = (id) => id[0].toUpperCase() + id.slice(1);
     this.ownership.assign(
       Object.fromEntries(this.companions.map((c) => [c.character.id, this.units.filter((u) => c.mayRide(u.quad) && c.voice.chatter.lines[`like${capital(u.spec.id)}`]).map((u) => u.spec.id)])),
@@ -594,6 +596,7 @@ export class Game {
     registerTuning('Whose quad', this.ownership.p, OWNERSHIP_PARAM_RANGES);
     registerTuning('Hearing a quad', this.hearing.p, EAR_PARAM_RANGES);
     registerTuning('Warming hands', this.warming.p, WARMING_PARAM_RANGES);
+    registerTuning('Head start', this.headStart.p, HEADSTART_PARAM_RANGES);
     registerTuning('Hand on the throttle', this.throttleGrab.p, GRAB_PARAM_RANGES);
     registerTuning('Two-stroke smoke', this.smokeSense.p, SMOKE_PARAM_RANGES);
     registerTuning('Racing', this.race.p, RACE_PARAM_RANGES);
@@ -1256,6 +1259,35 @@ export class Game {
         c.stopWarming();
         if (e.off) c.voice.say('warmOff', { force: true });
       }
+    }
+  }
+
+  // A head start on your usual quad ----------------------------------------
+
+  updateHeadStart(dt, ridden) {
+    if (ridden) this.headStart.ride(ridden.spec.id, dt);
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    const girls = this.companions.map((c) => ({
+      id: c.character.id,
+      x: c.root.position.x,
+      z: c.root.position.z,
+      free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob,
+      mood: this.favour.mood(c.character.id),
+      own: c.claimedSpec,
+    }));
+    const quads = this.units.map((u) => {
+      const q = u.quad;
+      const claimed = this.companions.some((c) => c.quad === q && c.fsm.is('walking', 'starting'));
+      const startable = !q.engine.isRunning && !q.rider && !q.driver && !q.passenger && !q.isTipped && !q.isGhostRiding && !this.herOn(q) && !claimed;
+      return { id: u.spec.id, x: q.position.x, z: q.position.z, startable };
+    });
+    const events = this.headStart.update(dt, { cold: isChilly(this.weather, this.warming.p), you: { x: this.player.position.x, z: this.player.position.z, onFoot: !this.player.isRiding }, girls, quads });
+    for (const e of events) {
+      const c = byId[e.girl];
+      const quad = this.units.find((u) => u.spec.id === e.spec).quad;
+      if (c.takenByOther(quad, 'rider')) continue;
+      c.requestStart(quad);
+      c.voice.say(e.type === 'warmFor' ? 'headStartGo' : 'snubGo', { urgent: true, force: true });
     }
   }
 
@@ -1996,6 +2028,7 @@ export class Game {
     this.updateRevOff(dt, ridden);
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);
+    this.updateHeadStart(dt, ridden);
     this.updateDoughnuts(dt);
     this.updateTea(dt, ridden);
     this.updateDieselMistake(dt, ridden);
