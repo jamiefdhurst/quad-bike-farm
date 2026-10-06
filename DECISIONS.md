@@ -788,3 +788,11 @@ Jamie: the sound sometimes stops altogether, perhaps only in Firefox, with nothi
 - Following you (`followSmokeGap`, a multiple of `followGap` 8 m): Amy 1.8, so about 14 m behind a two-stroke; Jess 0.7, about 5.6 m. Each says `followSmoke` once per drive when she first notices she is behind one. It also shifts the point at which she pulls up when you stop.
 - Not checked in the running game: how the wave looks, whether a plume 9 m long matches what you see in the smoke particles, or whether Amy's 14 m gap loses you on a fast ride. Unit tests cover the plume shape, the cough and the gap.
 
+## Clogged air filter (TODO 8)
+
+- `AirFilter` (`src/vehicle/airFilter.js`, one per quad, pure) has `clog` 0..1. While the engine runs and the quad moves faster than `minSpeed` 1.5 m/s it grows by `mudRate` 0.0024 a second times the worst mud under any wheel plus `puddleRate` 0.0033 times the deepest puddle. That is about seven minutes from clean to choked in full mud all the time, which is not what a typical ride is: ordinary riding on this farm clogs it by a few per cent in a ride. The numbers are a guess at "slowly"; they are in the tuning panel.
+- The engine takes `clog` as a control. It adds `clogRich` 0.3 to the mixture (the existing path, so everything that already follows from a rich mixture follows: fouling, hunting, power loss, and darker smoke, which the smoke reads from the mixture), and takes up to `clogPowerLoss` 0.3 of power, scaled by the square of how far up the revs it is, so idle is almost untouched. Stock richTolerance is 0.25, so a fully choked filter is just past it on a stock-jetted quad: it smokes and slowly fouls but is not undriveable. A lean-jetted quad is hurt less by the richness and a rich-jetted one more.
+- Cleaning (the workshop panel): hold `I` (or the button) for `cleanSeconds` 3; let go and the hold starts again. It only takes the time if the filter has something in it. A service doesn't clean it, on purpose: it is a separate job.
+- Not done: nothing the girls say about the filter, and nothing on the dash. The toolbox panel is the only place it shows, apart from how the quad runs.
+- Not checked in the running game: how quickly it clogs in a real ride, how the hold feels with the mouse button, or how much darker the smoke is. Unit tests cover the clogging rates, the cleaning, and the rich and power effects.
+

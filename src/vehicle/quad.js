@@ -5,6 +5,7 @@ import { QuadPhysics, WHEELS, SUSPENSION_TOP_Y } from './quadPhysics.js';
 import { Drivetrain } from './drivetrain.js';
 import { EngineLoad } from './engineLoad.js';
 import { waterGulp } from '../engine/water.js';
+import { AirFilter } from './airFilter.js';
 import { CruiseControl } from './cruise.js';
 import { Bog } from './bog.js';
 import { Faults } from './faults.js';
@@ -46,6 +47,7 @@ export class Quad {
     this.dash = this.model.userData.dash;
     this.fuel = new FuelSystem(fuelParams);
     this.faults = new Faults();
+    this.filter = new AirFilter(); // clogs with mud and puddles; cleaned at the toolbox
     this.tripMiles = 0;
     this.usage = { hours: 0, odoMiles: 0 }; // what the hour meter and odometer show; the game sets the starting readings
     this.pod = null; // the accessory pod fitted to the bars, if any (see pods.js)
@@ -331,6 +333,7 @@ export class Quad {
 
     // Faults that develop: a sticking cable holds the throttle open, a flat tyre pulls the bars over.
     this.faults.update(dt, { running: this.engine.isRunning, speed: Math.abs(fwd), throttle: throttleInput });
+    this.filter.update(dt, { running: this.engine.isRunning, speed: fwd, mud: Math.max(...this.physics.wheelInfo.map((w) => w.mud ?? 0)), puddle: Math.max(...this.physics.wheelInfo.map((w) => w.puddle ?? 0)) });
     // She has the sense to switch off a quad whose throttle has stuck open.
     if (this.driver && this.faults.stuck && this.engine.isRunning && this.faults.heldThrottle > 0.3) this.engine.setIgnition(false);
     this.throttle = this.faults.stickThrottle(dt, throttleInput, this.engine.isRunning);
@@ -452,6 +455,7 @@ export class Quad {
       oil: this.fuel.oil,
       slip: this.faults.slip,
       dirt: this.faults.dirt,
+      clog: this.filter.clog,
       gulp: this.waterGulp(),
       speed: this.forwardSpeed,
       ambient: this.world.warmth ?? 0.5,

@@ -56,6 +56,7 @@ export class EngineModel {
     this.clickedDead = false; // the starter has clicked for this press
     this.slip = 0; // see update()
     this.dirt = 0;
+    this.clog = 0; // 0..1 how clogged the air filter is
     this.oil = this.params.strokes === 2 ? this.params.oilGood : 0; // oil fraction of the fuel it's being fed
     this.oilRich = 0; // 0..1 how much more oil than it can burn clean
     this.overheat = 0; // 0..1 extra heat from poor lubrication, on top of the temperature
@@ -172,12 +173,13 @@ export class EngineModel {
    * @param {number}  [controls.resistLoad] 0..1 the part of driveLoad from climbing, mud or being blocked; this is what lugs a weak engine.
    * @param {number}  [controls.slip] 0..1 a slipping drive belt: the revs flare and the load doesn't hold them down.
    * @param {number}  [controls.dirt] 0..1 a dirty carb: lumpy, erratic and short of power.
+   * @param {number}  [controls.clog] 0..1 a clogged air filter: runs rich, smokes darker, loses top-end power.
    * @param {number}  [controls.gulp] water going in at the intake, per second (see waterGulp).
    * @param {number}  [controls.speed] ground speed in m/s: the air that cools it.
    * @param {number}  [controls.ambient] 0..1 how warm the day is (sun on the engine).
    * @param {number}  [controls.overrunRpm] rpm above idle the wheels turn it over at with the throttle shut.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, oil = this.oil, slip = 0, dirt = 0, gulp = 0, speed = 0, ambient = 0.5, sheltered = false } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, oil = this.oil, slip = 0, dirt = 0, clog = 0, gulp = 0, speed = 0, ambient = 0.5, sheltered = false } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -189,6 +191,7 @@ export class EngineModel {
     this.oil = Math.max(0, oil);
     this.slip = clamp(slip, 0, 1);
     this.dirt = clamp(dirt, 0, 1);
+    this.clog = clamp(clog, 0, 1);
     this.gulp = Math.max(0, gulp);
     this.speed = Math.abs(speed);
     this.ambient = clamp(ambient, 0, 1);
@@ -396,7 +399,7 @@ export class EngineModel {
     const starve = clamp((p.fuelStarveLevel - this.fuel) / p.fuelStarveLevel, 0, 1);
     // A heat-soaked carburettor boils its fuel, so a hot engine that isn't running starts rich; the throttle open clears it.
     const hot = this.state === EngineState.RUNNING ? 0 : hotStartRich(this.soak, this.throttle, p);
-    this.mixture = supplied - need - p.starveLean * starve + p.mixtureTrim + hot;
+    this.mixture = supplied - need - p.starveLean * starve + p.mixtureTrim + p.clogRich * this.clog + hot;
     this.lean = Math.max(0, -this.mixture);
     this.rich = Math.max(0, this.mixture - p.richTolerance);
 
@@ -432,6 +435,8 @@ export class EngineModel {
     this.power *= 1 - p.nipPowerLoss * this.nip;
     this.erratic = Math.max(this.erratic, this.nip * this.nip, this.dirt ** 1.5);
     this.power *= 1 - p.dirtPowerLoss * this.dirt;
+    // A clogged filter can't feed the revs: it's the top end that goes.
+    this.power *= 1 - p.clogPowerLoss * this.clog * clamp((this.rpm - p.idleRpmWarm) / (p.maxRpm - p.idleRpmWarm), 0, 1) ** 2;
     this.power *= 1 - p.pinkPowerLoss * this.pink;
     this.power *= 1 - p.waterPowerLoss * this.water;
     if (this.silencerOff) this.power *= 1 + p.silencerPower;

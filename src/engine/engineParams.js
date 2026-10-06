@@ -153,6 +153,8 @@ export const DEFAULT_ENGINE_PARAMS = {
   beltFlareRpm: 1800, // rpm a fully slipping drive belt lets the revs run on past what the load would hold, at full throttle
   dirtRoughness: 0.3, // roughness added by a fully dirty carb
   dirtPowerLoss: 0.25, // power lost to a fully dirty carb
+  clogRich: 0.3, // mixture added by a fully clogged air filter (it chokes the air, so it runs rich: past richTolerance it smokes and fouls)
+  clogPowerLoss: 0.3, // top-end power lost to a fully clogged air filter (it's the revs it can't breathe for)
 
   // Heat (see heat.js). Running heat is 0..1 above a normal warm engine; soak is the heat held in the metal.
   waterCooled: false, // a radiator and a fan: the heat stays low and the fan cuts in and out
@@ -339,6 +341,8 @@ export const ENGINE_PARAM_RANGES = {
   beltFlareRpm: [0, 4000, 50],
   dirtRoughness: [0, 1, 0.01],
   dirtPowerLoss: [0, 1, 0.01],
+  clogRich: [0, 1, 0.01],
+  clogPowerLoss: [0, 1, 0.01],
   waterCooled: [0, 1, 1],
   heatSun: [0, 2, 0.01],
   heatWork: [0, 2, 0.01],

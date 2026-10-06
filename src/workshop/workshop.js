@@ -32,6 +32,7 @@ const REPAIR_NOTHING = {
 const SILENCER_OFF = 'Took the silencer off: it will be a lot louder, and a bit stronger';
 const SILENCER_ON = 'Put the silencer back on';
 const POD_JOB_SECONDS = 3; // fitting or taking off an accessory pod
+const FILTER_KEY = 'KeyI'; // hold to clean the air filter
 const POD_NAMES = { analogue: 'analogue pod', digital: 'digital pod' };
 const REPAIR_KEYS = { KeyT: 'puncture', KeyR: 'belt', KeyL: 'cable', KeyC: 'carb' };
 
@@ -162,6 +163,8 @@ export class Workshop {
     if (!this.unit) return;
     this.unit = null;
     this.podJob = null;
+    this.filterHeld = 0;
+    this.filterKey = false;
     this.el.style.display = 'none';
     document.getElementById('overlay')?.classList.remove('workshop');
     document.body.classList.remove('workshop-open');
@@ -199,6 +202,31 @@ export class Workshop {
     if (best !== undefined) unit.engine.params.baseRoughness = Math.min(unit.engine.params.baseRoughness, best);
     this.render();
     for (const c of this.game.companions) c.voice.onTinker?.('service');
+  }
+
+  /**
+   * Holding the key (or button) cleans the air filter: a few seconds' hold, which starts again if you let go. It
+   * says so while you do, and only a filter that has anything in it takes the time.
+   */
+  cleanFilter(dt) {
+    const unit = this.unit;
+    const filter = unit?.quad.filter;
+    if (!filter || !this.filterKey || filter.isClean || this.podJob) {
+      if (this.filterHeld > 0) {
+        this.filterHeld = 0;
+        if (unit) this.render();
+      }
+      return;
+    }
+    this.filterHeld += dt;
+    if (this.filterHeld >= filter.p.cleanSeconds) {
+      this.filterHeld = 0;
+      filter.clean();
+      this.filterButton = false;
+      this.game.hud.toast('Air filter cleaned out');
+      for (const c of this.game.companions) c.voice.onTinker?.('service');
+    }
+    this.render();
   }
 
   /** Strip a nipped-up or seized two-stroke down and free it. */
@@ -302,6 +330,7 @@ export class Workshop {
     if (pressed('ArrowUp', 'KeyW')) this.select((this.selected + ROWS.length - 1) % ROWS.length);
     if (pressed('ArrowDown', 'KeyS')) this.select((this.selected + 1) % ROWS.length);
     if (pressed('KeyB', 'Backspace')) this.backToStock();
+    this.filterKey = input.isDown(FILTER_KEY) || this.filterButton;
     if (pressed('KeyV')) this.service();
     if (pressed('KeyX')) this.toggleSilencer();
     if (pressed('KeyF')) this.stripDown();
@@ -348,6 +377,7 @@ export class Workshop {
     this.dt = dt;
     const unit = this.unit;
     if (this.podJob && (this.podJob.t += dt) >= POD_JOB_SECONDS) this.finishPod();
+    this.cleanFilter(dt);
     if (unit && (unit.engine.isRunning || unit.quad.speed > 1 || this.game.player.isRiding)) {
       this.close();
       this.game.hud.toast(unit.engine.isRunning ? "It's running: toolbox away" : 'Toolbox away');
@@ -383,6 +413,7 @@ export class Workshop {
           <button type="button" class="ws-btn ws-strip"><span class="key">F</span>Strip it down</button>
           <button type="button" class="ws-btn ws-silencer"><span class="key">X</span>Take the silencer off</button>
           <button type="button" class="ws-btn ws-service"><span class="key">V</span>Service it</button>
+          <button type="button" class="ws-btn ws-filter"><span class="key">I</span>Hold to clean the air filter</button>
           <button type="button" class="ws-btn ws-fix" data-fix="puncture"><span class="key">T</span>Pump and patch tyres</button>
           <button type="button" class="ws-btn ws-fix" data-fix="belt"><span class="key">R</span>Check the belt</button>
           <button type="button" class="ws-btn ws-fix" data-fix="cable"><span class="key">L</span>Oil the throttle cable</button>
@@ -395,7 +426,7 @@ export class Workshop {
           <button type="button" class="ws-btn ws-pod" data-pod="digital"><span class="key">U</span>Fit the digital pod</button>
           <button type="button" class="ws-btn ws-podoff"><span class="key">O</span>Take the pod off</button>
         </div>
-        <div class="ws-keys">↑ ↓ choose   ·   ← → adjust (hold to keep going)   ·   V service   ·   X silencer   ·   F strip down   ·   Y U O pods   ·   T tyres   ·   R belt   ·   L cable   ·   C carb   ·   or use the mouse</div>
+        <div class="ws-keys">↑ ↓ choose   ·   ← → adjust (hold to keep going)   ·   V service   ·   hold I air filter   ·   X silencer   ·   F strip down   ·   Y U O pods   ·   T tyres   ·   R belt   ·   L cable   ·   C carb   ·   or use the mouse</div>
       </div>`;
     document.body.appendChild(el);
     this.el = el;
@@ -428,6 +459,10 @@ export class Workshop {
     el.querySelector('.ws-silencer').addEventListener('click', () => this.toggleSilencer());
     el.querySelector('.ws-service').addEventListener('click', () => this.service());
     el.querySelector('.ws-strip').addEventListener('click', () => this.stripDown());
+    // The air filter takes a hold, with the key or the mouse button.
+    const filterBtn = el.querySelector('.ws-filter');
+    filterBtn.addEventListener('mousedown', () => (this.filterButton = true));
+    for (const ev of ['mouseup', 'mouseleave']) filterBtn.addEventListener(ev, () => (this.filterButton = false));
     for (const b of el.querySelectorAll('.ws-fix')) b.addEventListener('click', () => this.repair(b.dataset.fix));
     for (const b of el.querySelectorAll('.ws-pod')) b.addEventListener('click', () => this.startPod('fit', b.dataset.pod));
     el.querySelector('.ws-podoff').addEventListener('click', () => this.startPod('off'));
@@ -468,6 +503,10 @@ export class Workshop {
     const word = rough < 0.15 ? 'sweet' : rough < 0.35 ? 'a bit lumpy' : rough < 0.6 ? 'rough' : 'very rough';
     this.el.querySelector('.ws-cond').textContent = `Running ${word}: roughness ${rough.toFixed(2)}${e.wear >= 0.005 ? ` (${e.wear.toFixed(2)} of it wear)` : ''}. A service clears the wear.`;
     this.el.querySelector('.ws-service').disabled = this.isServiced(unit);
+    const filter = unit.quad.filter;
+    const filterBtn = this.el.querySelector('.ws-filter');
+    filterBtn.disabled = filter.isClean;
+    filterBtn.lastChild.textContent = this.filterHeld > 0 ? `Cleaning the air filter... ${Math.round((this.filterHeld / filter.p.cleanSeconds) * 100)}%` : `Hold to clean the air filter (${filter.state})`;
     // The pods: what's on this quad, what's in the toolbox, and the job in hand.
     const rack = this.game.podRack;
     if (rack) {
