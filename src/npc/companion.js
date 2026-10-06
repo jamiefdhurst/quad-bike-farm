@@ -8,6 +8,7 @@ import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 import { drivingStates, drivingMethods } from './companionDriving.js';
 import { restingMethods, restingStates } from './companionResting.js';
 import { warmingMethods } from './companionWarming.js';
+import { wavingMethods } from './companionWaving.js';
 import { PillionPose } from './pillionPose.js';
 import { canRideRack } from './rackSeat.js';
 import { nextBoredWait, driftRestlessness, pickBoredChoice } from './boredom.js';
@@ -105,6 +106,9 @@ export class Companion {
     // Hands over a running engine on a cold day (companionWarming.js).
     this.warmingAt = null;
     this.rig.posers.push((dt) => this.poseWarming(dt));
+    // Waving two-stroke smoke away (companionWaving.js).
+    this.waving = null;
+    this.rig.posers.push((dt) => this.poseWaving(dt));
   }
 
   figureAmounts() {
@@ -671,6 +675,7 @@ export class Companion {
 
 Object.assign(Companion.prototype, drivingMethods);
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(warmingMethods));
+Object.assign(Companion.prototype, wavingMethods);
 // (restingMethods has getters, so copy its descriptors rather than assigning.)
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(restingMethods));
 

@@ -109,6 +109,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   driveSeatForward: 0.0, // metres, fine-tunes where she sits along it
   followGap: 8, // metres behind you she likes to be, following you on another quad
   followMinGap: 4, // closer than this she stops
+  followSmokeGap: 1.8, // her gap behind a two-stroke, as a multiple of followGap (Amy hates the smoke; Jess is under 1)
   followCatchUp: 0.6, // m/s faster per metre further back than that
   followMaxSpeed: 10, // m/s she'll go to keep up at middling confidence (careful slower, confident quicker)
   followMaxThrottle: 0.9,
@@ -210,6 +211,7 @@ export const COMPANION_PARAM_RANGES = {
   wanderMax: [1, 80, 0.5],
   followGap: [2, 40, 0.5],
   followMinGap: [1, 20, 0.5],
+  followSmokeGap: [0.3, 4, 0.05],
   followCatchUp: [0, 3, 0.05],
   followMaxSpeed: [1, 25, 0.5],
   followMaxThrottle: [0.1, 1, 0.01],

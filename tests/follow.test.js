@@ -29,6 +29,23 @@ describe('following you', () => {
     expect(miles.speed).toBeLessThanOrEqual(DEFAULT_COMPANION_PARAMS.followMaxSpeed);
   });
 
+  it('hangs further back behind a two-stroke if she hates the smoke, and closer in if she loves it', () => {
+    const smoky = { ...lead, engine: { params: { strokes: 2 } } };
+    const p = DEFAULT_COMPANION_PARAMS;
+    const amy = follower(smoky);
+    amy.events = [];
+    expect(amy.followTarget({ x: 0, z: 0 }).point.z).toBeCloseTo(-p.followGap * p.followSmokeGap, 5);
+    expect(amy.events).toEqual(['followSmoke']);
+    amy.followTarget({ x: 0, z: 0 });
+    expect(amy.events).toEqual(['followSmoke']); // said once
+    const jess = follower(smoky);
+    jess.events = [];
+    jess.p = { ...jess.p, followSmokeGap: 0.7 };
+    expect(jess.followTarget({ x: 0, z: 0 }).point.z).toBeCloseTo(-p.followGap * 0.7, 5);
+    // A four-stroke makes no difference.
+    expect(follower({ ...lead, engine: { params: { strokes: 4 } } }).followTarget({ x: 0, z: 0 }).point.z).toBeCloseTo(-p.followGap, 5);
+  });
+
   it('pulls up behind you when you stop, and waits with nothing to follow', () => {
     expect(follower({ ...lead, forwardSpeed: 0 }).followTarget({ x: 0, z: -8 }).stopped).toBe(true);
     expect(follower(null).followTarget({ x: 0, z: -8 })).toBeNull();

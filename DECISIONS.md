@@ -780,3 +780,11 @@ Jamie: the sound sometimes stops altogether, perhaps only in Firefox, with nothi
 - Speech: she says `grabGo` as she starts (Jess "Faster!", Amy "Oh, go on, faster!"); at the end Amy always says `grabSorry` and Jess does 60% of the time, pleased with herself.
 - Not checked in the running game: how the arm looks reaching across, how 0.9 throttle feels from a stop-start pace, or whether 0.03 a second is too often for Jess. Unit tests cover the timeline, limits and lines.
 
+## Smoke and smell (TODO 7)
+
+- "Orange or yellow" is any two-stroke (`engine.params.strokes === 2`), which is just those two. How much a two-stroke smokes (`smokeLevel`, 0..1): 0.35 running, plus 0.5 of the throttle, plus up to 0.3 when cold; she reacts at 0.3 or more, so any running two-stroke counts.
+- The plume (`inPlume`): from the pipe, 1.1 m behind the quad's middle, downwind for `plumeLength` 9 m and `plumeWidth` 1.3 m across at the pipe, widening 0.22 m per metre. Wind is the smoke's own (`windX`, `windZ`, which the weather already scales); under `calmWind` 0.35 m/s the smoke hangs straight behind the quad instead.
+- A free girl (stood about) in it for `reactAfter` 1.2 s reacts: Amy coughs, waves her right hand across her face for 2.6 s (a rig poser, `companionWaving.js`) and says `smokeCough`, at most every 30 s. Jess says `smokeLove`, at most every 50 s. A girl on a quad or walking doesn't react.
+- Following you (`followSmokeGap`, a multiple of `followGap` 8 m): Amy 1.8, so about 14 m behind a two-stroke; Jess 0.7, about 5.6 m. Each says `followSmoke` once per drive when she first notices she is behind one. It also shifts the point at which she pulls up when you stop.
+- Not checked in the running game: how the wave looks, whether a plume 9 m long matches what you see in the smoke particles, or whether Amy's 14 m gap loses you on a fast ride. Unit tests cover the plume shape, the cough and the gap.
+

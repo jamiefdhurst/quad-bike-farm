@@ -29,6 +29,7 @@ import { Ownership, OWNERSHIP_PARAM_RANGES } from './npc/ownership.js';
 import { Hearing, EAR_PARAM_RANGES } from './npc/earing.js';
 import { Warming, WARMING_PARAM_RANGES } from './npc/warming.js';
 import { ThrottleGrab, GRAB_PARAM_RANGES } from './npc/throttleGrab.js';
+import { SmokeSense, SMOKE_PARAM_RANGES } from './npc/smokeSense.js';
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
 import { StrawFall } from './effects/strawFall.js';
 import { Places, PLACE_PARAM_RANGES, isFine, nearestSpot, restStay } from './npc/places.js';
@@ -303,6 +304,7 @@ export class Game {
     this.ownership = new Ownership(undefined, createRandom(this.seed ^ 0x0c1a));
     this.hearing = new Hearing();
     this.throttleGrab = new ThrottleGrab(); // a girl on the back opening it over your hand (npc/throttleGrab.js)
+    this.smokeSense = new SmokeSense(); // Amy coughs at two-stroke smoke, Jess loves it (npc/smokeSense.js)
     this.warming = new Warming(); // hands over an idling engine on a cold day (npc/warming.js)
     const capital = (id) => id[0].toUpperCase() + id.slice(1);
     this.ownership.assign(
@@ -532,6 +534,7 @@ export class Game {
     registerTuning('Hearing a quad', this.hearing.p, EAR_PARAM_RANGES);
     registerTuning('Warming hands', this.warming.p, WARMING_PARAM_RANGES);
     registerTuning('Hand on the throttle', this.throttleGrab.p, GRAB_PARAM_RANGES);
+    registerTuning('Two-stroke smoke', this.smokeSense.p, SMOKE_PARAM_RANGES);
     registerTuning('Jump leads', this.leads.params, JUMP_LEAD_PARAM_RANGES);
     registerTuning('Skills', this.skills.p, SKILL_PARAM_RANGES);
     registerTuning('Places', this.places.p, PLACE_PARAM_RANGES);
@@ -1199,6 +1202,24 @@ export class Game {
     for (const u of this.units) if (u.quad !== q && u.quad.handThrottle) u.quad.handThrottle = 0;
   }
 
+  // Two-stroke smoke ---------------------------------------------------------
+
+  updateSmokeSense(dt) {
+    const smoke = this.units[0].smoke.params;
+    const girls = this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.fsm.is('idle') && !this.menu.isOpen }));
+    const quads = this.units.map((u) => {
+      const q = u.quad;
+      return { id: u.spec.id, x: q.position.x, z: q.position.z, yaw: q.yaw, twoStroke: q.engine.params.strokes === 2, running: q.engine.isRunning, throttle: q.throttle || q.helperThrottle, temperature: q.engine.temperature };
+    });
+    for (const e of this.smokeSense.update(dt, { wind: { x: smoke.windX, z: smoke.windZ }, girls, quads })) {
+      const c = this.companions.find((o) => o.character.id === e.girl);
+      if (e.type === 'cough') {
+        c.waveOff(this.smokeSense.p.waveFor);
+        c.voice.say('smokeCough', { urgent: true });
+      } else c.voice.say('smokeLove', { urgent: true, chance: 0.8 });
+    }
+  }
+
   // Pranks -----------------------------------------------------------------
 
   /** What the prank logic needs to know about the farm right now. */
@@ -1582,6 +1603,7 @@ export class Game {
     this.updateRevOff(dt, ridden);
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);
+    this.updateSmokeSense(dt);
     this.updateThrottleGrab(dt, ridden);
     this.updateRockPrank(dt);
     this.updateBanter(dt, ridden);

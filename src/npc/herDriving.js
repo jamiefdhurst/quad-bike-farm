@@ -233,14 +233,21 @@ export class HerDrive {
     const lp = lead.position;
     const fx = Math.sin(lead.yaw);
     const fz = Math.cos(lead.yaw);
-    const point = { x: lp.x - fx * p.followGap - fz * 1.2, z: lp.z - fz * p.followGap + fx * 1.2 };
+    // Behind a two-stroke she hangs back (or, if she likes the smoke, in close).
+    const smoky = lead.engine?.params?.strokes === 2;
+    const want = p.followGap * (smoky ? p.followSmokeGap ?? 1 : 1);
+    if (smoky && !this.smokeNoted) {
+      this.smokeNoted = true;
+      this.events.push('followSmoke');
+    }
+    const point = { x: lp.x - fx * want - fz * 1.2, z: lp.z - fz * want + fx * 1.2 };
     const gap = Math.hypot(lp.x - pos.x, lp.z - pos.z);
     const leadSpeed = Math.max(0, lead.forwardSpeed);
-    if (leadSpeed < 0.8 && gap < p.followGap * 1.4) return { point, speed: 0, gap, stopped: true };
+    if (leadSpeed < 0.8 && gap < want * 1.4) return { point, speed: 0, gap, stopped: true };
     // Never right up against you, whichever way you're going.
     if (gap < p.followMinGap) return { point, speed: 0, gap, stopped: true };
     const top = p.followMaxSpeed * (p.driveSpeedMax / p.driveSpeedMaxBase);
-    const speed = clamp(leadSpeed + p.followCatchUp * (gap - p.followGap), 0, top);
+    const speed = clamp(leadSpeed + p.followCatchUp * (gap - want), 0, top);
     return { point, speed, gap, stopped: false };
   }
 
