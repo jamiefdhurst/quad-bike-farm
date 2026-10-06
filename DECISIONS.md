@@ -720,3 +720,12 @@ Built to the brief above. What differs or wasn't said:
 - Weather weights are now sunny 0.70, sunny intervals 0.15, overcast 0.07, drizzle 0.03, rain 0.03, fog 0.02 (they were 0.2, 0.2, 0.25, 0.13, 0.12, 0.1). Showers within a game are unchanged; `?weather=` still forces a kind.
 - The yellow's lamp shell was floating above the bars; it now sits down on the bar clamp (`DASH_PLACE.blaster`, checked once headless).
 
+
+## Sound cutting out for good (2026-10-06)
+
+Jamie: the sound sometimes stops altogether, perhaps only in Firefox, with nothing in the console.
+
+- Cause: the worklet turns each grain's and clip's time into a sample index at the audio context's rate, usually 48 kHz on a Mac, while the banks are 44.1 kHz WAVs resampled on decoding. The engine-off clip ends exactly at the end of `engine-bank` and `engine-bank-2t`, and at 48 kHz its last read lands one past the decoded data when the browser rounds the length down (Chrome and Firefox round differently, hence "maybe Firefox"). That read is `undefined`, the sample becomes NaN, the NaN sticks in the worklet's tone filter, and once it reaches the master every sound in the game is silent for good. No exception, so nothing in the console.
+- Fix: every grain and clip read is clamped inside the decoded data. And as a backstop, a worklet that ever outputs NaN resets its filters, pipe and voices, outputs silence for that sample and warns once in the console ("Engine sound went NaN"), so if anything else ever does it, the sound recovers and there's a clue.
+- Tests in `tests/engineWorkletNaN.test.js` load the real worklet in a sandbox at 48 kHz: a bank a sample short plays its last clip to the end without a NaN, and a NaN forced into a filter is cleared. Both fail on the old worklet.
+- Not checked in Firefox itself: I couldn't reproduce it there, so this is the most likely cause found by reading, not a confirmed one.

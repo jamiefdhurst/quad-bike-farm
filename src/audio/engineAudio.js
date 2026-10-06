@@ -274,6 +274,7 @@ export class EngineAudio {
       this.panner = this.path.panner;
       this.node = new AudioWorkletNode(ctx, 'engine-processor', { numberOfInputs: 0, outputChannelCount: [1] });
       this.node.onprocessorerror = () => console.error(`Engine sound processor failed (${hub.ctx.currentTime.toFixed(0)} s in)`);
+      this.node.port.onmessage = (e) => e.data?.warn && console.warn(e.data.warn);
       this.node.connect(this.path.input);
       this.nextFrameTime = 0;
     }

@@ -79,6 +79,10 @@ class Biquad {
     this.a2 = (1 - alpha) / a0;
   }
 
+  reset() {
+    this.x1 = this.x2 = this.y1 = this.y2 = 0;
+  }
+
   run(x) {
     const y = this.b0 * x + this.b1 * this.x1 + this.b2 * this.x2 - this.a1 * this.y1 - this.a2 * this.y2;
     this.x2 = this.x1;
@@ -108,12 +112,18 @@ class RecordedEngine {
     this.sourceGain = bank.sourceGain;
     this.crankRpm = bank.crankRpm;
     this.byKind = {};
+    // Decoded at another sample rate (48 kHz is usual on a Mac), the bank can come out a sample shorter than the
+    // times in its index say. Keep every read inside the data: one read past the end is undefined, the NaN it
+    // makes sticks in the filters, and the whole mix goes silent for good without an error.
+    const end = this.data.length - 2;
     let prev = null;
     for (const g of bank.grains) {
+      const start = Math.min(Math.round(g.start * sr), end);
+      const len = Math.min(Math.round(g.dur * sr), end - start);
       const grain = {
-        start: Math.round(g.start * sr),
-        len: Math.round(g.dur * sr),
-        tail: Math.max(Math.round((g.tail ?? 0) * sr), Math.round(0.001 * sr)),
+        start,
+        len,
+        tail: Math.min(Math.max(Math.round((g.tail ?? 0) * sr), Math.round(0.001 * sr)), end - start - len),
         rpm: g.rpm,
         rms: g.rms ?? 0,
         kind: g.kind,
@@ -138,7 +148,8 @@ class RecordedEngine {
     this.levelling = 0.5;
     this.oneshots = {};
     for (const [name, o] of Object.entries(bank.oneshots)) {
-      this.oneshots[name] = { start: Math.round(o.start * sr), len: Math.round(o.dur * sr) };
+      const start = Math.min(Math.round(o.start * sr), end);
+      this.oneshots[name] = { start, len: Math.min(Math.round(o.dur * sr), end - start) };
     }
     this.voices = [];
     this.overlap = 0.05;
@@ -446,6 +457,26 @@ class EngineProcessor extends AudioWorkletProcessor {
     this.port.onmessage = (e) => this.onMessage(e.data);
   }
 
+  /**
+   * A NaN anywhere in this engine sticks in its filters and pipe for good, and once it reaches the mix every other
+   * sound goes silent too. Clear it out, say so once, and carry on. Returns the sample to output instead.
+   */
+  recover(where) {
+    for (const v of Object.values(this)) if (v instanceof Biquad) v.reset();
+    this.pipe.fill(0);
+    this.pipeLp = this.intakeIn = this.tickIn = this.fanLp = 0;
+    this.active = [];
+    if (this.recorded) {
+      this.recorded.voices = [];
+      this.recorded.crankVoice = null;
+    }
+    if (!this.warned) {
+      this.warned = true;
+      this.port.postMessage({ warn: `Engine sound went NaN (${where}) and was reset` });
+    }
+    return 0;
+  }
+
   onMessage(msg) {
     if (msg.params) {
       this.p = msg.params;
@@ -736,6 +767,7 @@ class EngineProcessor extends AudioWorkletProcessor {
       s += dry + this.fanSample();
       s = this.dcBlock.run(s);
       out[i] = Math.tanh(s * p.drive) / Math.max(1, Math.tanh(p.drive));
+      if (out[i] !== out[i]) out[i] = this.recover('synth');
     }
     return true;
   }
@@ -796,6 +828,7 @@ class EngineProcessor extends AudioWorkletProcessor {
       }
       const s = this.tone.run(x) * (1 + p.silencerLoud * (st.loud || 0)) + dry + this.fanSample();
       out[i] = Math.tanh(s);
+      if (out[i] !== out[i]) out[i] = this.recover('recorded');
     }
     return true;
   }
