@@ -31,6 +31,7 @@ import { Warming, WARMING_PARAM_RANGES } from './npc/warming.js';
 import { ThrottleGrab, GRAB_PARAM_RANGES } from './npc/throttleGrab.js';
 import { SmokeSense, SMOKE_PARAM_RANGES } from './npc/smokeSense.js';
 import { Race, RACE_PARAM_RANGES, planLap } from './npc/race.js';
+import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
 import { buildStartLine, nearestTrackFraction } from './world/startLine.js';
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
 import { StrawFall } from './effects/strawFall.js';
@@ -308,6 +309,7 @@ export class Game {
     this.throttleGrab = new ThrottleGrab(); // a girl on the back opening it over your hand (npc/throttleGrab.js)
     this.smokeSense = new SmokeSense(); // Amy coughs at two-stroke smoke, Jess loves it (npc/smokeSense.js)
     // Racing: the girls race a lap of the track from a start line by the yard (npc/race.js).
+    this.dashReader = new DashReader(); // the girl on the back reads the dash out (npc/dashReading.js)
     this.race = new Race();
     this.raceIdle = {}; // seconds each racer has been doing nothing about it
     this.raceStart = nearestTrackFraction(this.world.track, this.world.layout.yard.x, this.world.layout.yard.z);
@@ -546,6 +548,7 @@ export class Game {
     registerTuning('Hand on the throttle', this.throttleGrab.p, GRAB_PARAM_RANGES);
     registerTuning('Two-stroke smoke', this.smokeSense.p, SMOKE_PARAM_RANGES);
     registerTuning('Racing', this.race.p, RACE_PARAM_RANGES);
+    registerTuning('Reading the dash', this.dashReader.p, READING_PARAM_RANGES);
     registerTuning('Jump leads', this.leads.params, JUMP_LEAD_PARAM_RANGES);
     registerTuning('Skills', this.skills.p, SKILL_PARAM_RANGES);
     registerTuning('Places', this.places.p, PLACE_PARAM_RANGES);
@@ -1239,6 +1242,16 @@ export class Game {
     }
   }
 
+  // Reading the dash out -----------------------------------------------------
+
+  updateDashReading(dt, ridden) {
+    const q = ridden?.quad;
+    const girls = this.companions.map((c) => ({ id: c.character.id, onBack: !!q && c.quad === q && c.fsm.is('seated') && c.seatKind === 'pillion' }));
+    const dash = q ? { fuelLamp: !!q.lamps?.fuel, tempLamp: !!q.lamps?.temp, fuelLevel: q.fuel.level, temperature: q.engine.temperature } : {};
+    const events = this.dashReader.update(dt, { riding: !!q && q.engine.isRunning && !this.menu.isOpen, girls, dash, speed: Math.abs(q?.forwardSpeed ?? 0), throttle: q?.throttle ?? 0 });
+    for (const e of events) this.companions.find((c) => c.character.id === e.girl)?.voice.say(`read${e.what[0].toUpperCase()}${e.what.slice(1)}`, { force: true });
+  }
+
   // Calling them back ------------------------------------------------------
 
   /** Where each girl stands when called back: in front of the barn doors, side by side. */
@@ -1728,6 +1741,7 @@ export class Game {
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);
     this.updateRecall(dt);
+    this.updateDashReading(dt, ridden);
     if (!this.recalling) this.updateRace(dt, ridden);
     this.updateSmokeSense(dt);
     this.updateThrottleGrab(dt, ridden);

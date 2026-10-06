@@ -831,3 +831,10 @@ Jamie: the sound sometimes stops altogether, perhaps only in Firefox, with nothi
 - Checked headless: the line-up and the call-back below. Not seen again: a whole race from the new grid. That run ended with both on the grid in time but I did not run it on to the finish.
 - Call the girls back (N, or "Call the girls back" in the tuning panel's Girls folder): any race is called off, and each girl is told to stop what she's doing and stand in front of the barn doors, one either side of the middle (`recallSpot`). Driving, she pulls up and gets off first; sat on a quad or the bales, she gets down first; mid-change she's nudged again every 0.7 s until she is there (within 2.5 m and stood), or two minutes have gone. Races don't start while it is going on. They say `recalled`. Once they're there they carry on as usual (wander, get bored, and so on); this is not a hold. Checked headless: both were at the doors in about 20 s.
 
+## Reading the dash (TODO 12)
+
+- Three things get read out, the ones the dash shows as lamps or a gauge: fuel (the fuel lamp, which comes on at the reserve), temperature (the hot lamp) and a cold engine (not a lamp, but what the cold light and gauge show). Nothing about the battery or faults, which the dash doesn't show.
+- Amy reads in good time: fuel the moment the lamp comes on, hot the moment the hot lamp does, cold when the engine is under `coldBelow` 0.4 and you have been faster than `coldPace` 5 m/s or on more than 0.6 throttle for 2 s. Jess is late: fuel only at `fuelLateLevel` 0.04 of a tank, hot after the lamp has been on `hotLateFor` 6 s, and cold only once the engine has warmed past 0.65 after you had gone hard while cold for 6 s ("you thrashed it").
+- Each reading is once per spell (it can be said again after the lamp goes off, or the engine warms) and per girl, with `gap` 45 s between readings by the same girl. Only the girl on the pillion seat, with you at the controls and the engine running. The dash lamps come from `quad.lamps`, kept up to date with the dash itself.
+- Not checked in the running game: how often it comes up, or whether 0.04 is far enough past the red to feel "too late".
+

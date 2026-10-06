@@ -9,7 +9,7 @@ import { AirFilter } from './airFilter.js';
 import { CruiseControl } from './cruise.js';
 import { Bog } from './bog.js';
 import { Faults } from './faults.js';
-import { advanceUsage, isNeutral, dashClock } from './dashState.js';
+import { advanceUsage, isNeutral, dashClock, lampStates } from './dashState.js';
 
 // Height of the ground below the chassis origin with the bike at rest.
 const GROUND_OFFSET = -0.36;
@@ -536,6 +536,7 @@ export class Quad {
       clock: clock.text(),
       seconds: clock.seconds(),
     };
+    this.lamps = lampStates(state); // what the dash's warning lamps show, for the girl on the back to read out
     this.dash.update(state);
     this.pod?.update(state);
     setHeadlights(this.model, e.ignitionOn);
