@@ -24,6 +24,9 @@ import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { WearLedger, LEDGER_PARAM_RANGES } from './engine/wearLedger.js';
 import { Pranks, PRANK_PARAM_RANGES } from './npc/pranks.js';
 import { RevOff, REVOFF_PARAM_RANGES } from './npc/revOff.js';
+import { QuadNames, NAME_PARAM_RANGES, quadKey } from './npc/quadNames.js';
+import { Ownership, OWNERSHIP_PARAM_RANGES } from './npc/ownership.js';
+import { Hearing, EAR_PARAM_RANGES } from './npc/earing.js';
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
 import { StrawFall } from './effects/strawFall.js';
 import { Places, PLACE_PARAM_RANGES, isFine, nearestSpot, restStay } from './npc/places.js';
@@ -293,6 +296,22 @@ export class Game {
     this.revOff = new RevOff();
     this.itemHome = {}; // where a hidden item was taken from, by name
 
+    // What they call the quads, whose is whose, and placing a quad by ear (npc/quadNames.js, ownership.js, earing.js).
+    this.quadNames = new QuadNames(this.units.map((u) => u.spec.id), { random: createRandom(this.seed ^ 0x6a3e) });
+    this.ownership = new Ownership(undefined, createRandom(this.seed ^ 0x0c1a));
+    this.hearing = new Hearing();
+    const capital = (id) => id[0].toUpperCase() + id.slice(1);
+    this.ownership.assign(
+      Object.fromEntries(this.companions.map((c) => [c.character.id, this.units.filter((u) => c.mayRide(u.quad) && c.voice.chatter.lines[`like${capital(u.spec.id)}`]).map((u) => u.spec.id)])),
+    );
+    for (const c of this.companions) {
+      const id = c.character.id;
+      c.claimedSpec = this.ownership.claims[id] ?? null;
+      c.voice.favourite = c.claimedSpec; // the one she likes best is the one she says is hers
+      c.voice.names = this.quadNames;
+      c.borrowPick = (specs) => this.ownership.borrowPick(id, specs);
+    }
+
     for (const unit of this.units) {
       const quad = unit.quad;
       unit.interaction = this.interaction.add({
@@ -504,6 +523,9 @@ export class Game {
     registerTuning('Who wore it out', this.wearLedger.p, LEDGER_PARAM_RANGES);
     registerTuning('Pranks', this.pranks.p, PRANK_PARAM_RANGES);
     registerTuning('Rev-offs', this.revOff.p, REVOFF_PARAM_RANGES);
+    registerTuning('Quad names', this.quadNames.p, NAME_PARAM_RANGES);
+    registerTuning('Whose quad', this.ownership.p, OWNERSHIP_PARAM_RANGES);
+    registerTuning('Hearing a quad', this.hearing.p, EAR_PARAM_RANGES);
     registerTuning('Jump leads', this.leads.params, JUMP_LEAD_PARAM_RANGES);
     registerTuning('Skills', this.skills.p, SKILL_PARAM_RANGES);
     registerTuning('Places', this.places.p, PLACE_PARAM_RANGES);
@@ -1070,6 +1092,56 @@ export class Game {
     }
   }
 
+  // Names, whose quad, and hearing one ------------------------------------
+
+  /** Who is at the controls of this quad: 'you', the girl driving it, or nobody. */
+  quadUser(u, ridden) {
+    if (u === ridden) return 'you';
+    return this.companions.find((c) => c.quad === u.quad && c.fsm.is('driving'))?.character.id ?? null;
+  }
+
+  updateQuadTalk(dt, ridden) {
+    const pos = this.player.position;
+    const girls = this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.fsm.is('idle') && !this.menu.isOpen }));
+    const quads = this.units.map((u) => {
+      const user = this.quadUser(u, ridden);
+      const q = u.quad;
+      return { id: u.spec.id, x: q.position.x, z: q.position.z, user, driver: user, running: q.engine.isRunning, speed: q.speed, throttle: q.throttle, temperature: q.engine.temperature, wear: q.engine.wear };
+    });
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    const later = (ms, fn) => setTimeout(fn, ms);
+
+    // Jess names a quad, and Amy won't use it.
+    const jess = girls.find((g) => g.id === 'jess');
+    if (jess) {
+      const near = [...quads].sort((a, b) => Math.hypot(a.x - jess.x, a.z - jess.z) - Math.hypot(b.x - jess.x, b.z - jess.z)).map((q) => q.id);
+      const named = this.quadNames.update(dt, { jessFree: jess.free, youNear: Math.hypot(pos.x - jess.x, pos.z - jess.z) < this.quadNames.p.nameRange, candidates: near });
+      if (named) {
+        byId.jess.voice.say(quadKey('nameQuad', named.specId, named.nick), { force: true });
+        const amy = girls.find((g) => g.id === 'amy');
+        if (amy && Math.hypot(amy.x - jess.x, amy.z - jess.z) < 15) later(3500, () => byId.amy.voice.say('nameAmy', { force: true }));
+      }
+    }
+    // Amy slips: Jess pounces.
+    if (byId.amy?.voice.slipped) {
+      byId.amy.voice.slipped = false;
+      later(2500, () => byId.jess?.voice.say('nameCaved', { force: true }));
+    }
+
+    // Whose is whose.
+    for (const e of this.ownership.update(dt, { you: { x: pos.x, z: pos.z, onFoot: !this.player.isRiding }, girls, quads })) {
+      if (e.type === 'claim') byId[e.girl].voice.sayQuad('claim', e.spec, { urgent: true });
+      else if (byId[e.girl].voice.say(`ownerUpset_${e.by}`, { force: true }) && e.by === 'jess' && Math.random() < this.ownership.p.teaseChance) {
+        later(3500, () => byId.jess?.voice.say('borrowTease', { force: true }));
+      }
+    }
+
+    // Hearing a quad out of sight.
+    for (const e of this.hearing.update(dt, { girls, quads })) {
+      byId[e.girl].voice.sayQuad(`ear${e.sound[0].toUpperCase()}${e.sound.slice(1)}`, e.spec, { urgent: true });
+    }
+  }
+
   // Pranks -----------------------------------------------------------------
 
   /** What the prank logic needs to know about the farm right now. */
@@ -1451,6 +1523,7 @@ export class Game {
     this.updatePlaces(dt);
     this.updatePranks(dt, ridden);
     this.updateRevOff(dt, ridden);
+    this.updateQuadTalk(dt, ridden);
     this.updateRockPrank(dt);
     this.updateBanter(dt, ridden);
     for (const c of this.companions) {

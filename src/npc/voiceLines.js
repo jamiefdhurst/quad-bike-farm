@@ -19,6 +19,7 @@ import { AMY_SILENCER_LINES } from './silencerLines.js';
 import { AMY_DIAGNOSIS_LINES } from './diagnosisLines.js';
 import { AMY_THRASH_LINES } from './thrashLines.js';
 import { AMY_REVOFF_LINES } from './revOffLines.js';
+import { AMY_QUAD_LINES } from './quadLines.js';
 import { AMY_FAULT_LINES } from './faultLines.js';
 import { AMY_BENCH_LINES } from './benchLines.js';
 
@@ -1370,6 +1371,8 @@ export const VOICE_LINES = {
   ...AMY_THRASH_LINES,
   // Rev-offs (revOffLines.js).
   ...AMY_REVOFF_LINES,
+  // Quad nicknames, whose is whose, and placing a quad by ear (quadLines.js).
+  ...AMY_QUAD_LINES,
   // The barn bench (benchLines.js).
   ...AMY_BENCH_LINES,
 };

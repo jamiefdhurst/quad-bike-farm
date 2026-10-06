@@ -166,7 +166,7 @@ export class Companion {
 
   /** It's hers: when she picks a quad to drive she goes for it first. */
   ownsQuad(quad) {
-    return !!this.character && quad.unit?.spec.owner === this.character.id;
+    return !!this.character && (quad.unit?.spec.owner === this.character.id || quad.unit?.spec.id === this.claimedSpec);
   }
 
   /** The other girl driving this quad (or about to), if any. */
@@ -303,13 +303,17 @@ export class Companion {
     const choice = pickBoredChoice(p, { confidence: this.driveConfidence ?? p.driveConfidence, can, sulk: favour.sulk });
     const pick = (list) => list[Math.floor(Math.random() * list.length)];
     // Neglected and off on a quad alone: she makes a point of it.
-    if (choice === 'rest') this.selfEvents.push(options.rest[0]?.kind === 'loft' ? 'loftGo' : 'restGo'); else this.selfEvents.push(choice === 'drive' && favour.mood === 'neglected' ? 'sulkOff' : choice);
+    // Jess now and then takes her friend's quad, to wind her up (ownership.js).
+    const borrowSpec = choice === 'drive' ? this.borrowPick?.(options.drive.map((q) => q.unit?.spec.id)) : null;
+    const borrowed = borrowSpec ? options.drive.find((q) => q.unit?.spec.id === borrowSpec) : null;
+    if (choice === 'rest') this.selfEvents.push(options.rest[0]?.kind === 'loft' ? 'loftGo' : 'restGo'); else this.selfEvents.push(borrowed ? 'borrow' : choice === 'drive' && favour.mood === 'neglected' ? 'sulkOff' : choice);
     if (choice === 'join') {
       const q = pick(options.join);
       this.requestMount(q, { ownChoice: true, seat: this.canRidePillion(q) ? 'pillion' : 'rack' });
     }
     else if (choice === 'mount') this.requestMount(pick(options.mount), { ownChoice: true });
     else if (choice === 'start') this.requestStart(pick(options.start));
+    else if (borrowed) this.requestDrive(borrowed);
     else if (choice === 'drive') this.requestDrive(pick(options.drive.some((q) => this.ownsQuad(q)) ? options.drive.filter((q) => this.ownsQuad(q)) : options.drive));
     else if (choice === 'rest') this.goRest(pick(options.rest), { stay: this.restStayFor?.() });
     else this.wander();

@@ -6,6 +6,7 @@ import { Speech } from '../audio/companionAudio.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
 import { engineCondition, guessCondition } from './diagnosis.js';
 import { isThrashed } from '../engine/wearLedger.js';
+import { quadKey } from './quadNames.js';
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
 
@@ -55,6 +56,8 @@ export class CompanionVoice {
     this.seatTime = 0; // on the same quad with you, moving
     this.favourite = null; // spec id of the quad she likes best, picked once the quads are known
     this.favouriteSaid = false;
+    this.names = null; // the game's QuadNames: what the girls call each quad (npc/quadNames.js)
+    this.slipped = false; // Amy has just used a nickname she was pretending not to know
     this.stoppedTime = 0;
     this.idleTime = 0;
     this.awayTime = 0;
@@ -337,7 +340,7 @@ export class CompanionVoice {
   watchOwnMind() {
     const events = this.companion.selfEvents;
     // Switching a quad off is rare, so she always mentions it.
-    for (const e of events) this.say({ wander: 'selfWander', restGo: 'restGo', loftGo: 'loftGo', restRain: 'restRain', restLeave: 'restLeave', join: 'selfJoin', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive', sulkOff: 'sulkOff', offerRide: 'offerRide', keyOff: 'selfKeyOff', askOff: 'askOff', askStop: 'askStop', getOff: 'selfGetOff', getOffWaited: 'selfGetOffWaited', takeOverStop: 'takeOverStop', takeOverDrive: 'takeOverDrive' }[e], { urgent: true, chance: e === 'keyOff' || e === 'askOff' || e === 'offerRide' || e === 'sulkOff' || e.startsWith('takeOver') ? 1 : 0.8 });
+    for (const e of events) this.say({ wander: 'selfWander', restGo: 'restGo', loftGo: 'loftGo', restRain: 'restRain', restLeave: 'restLeave', join: 'selfJoin', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive', sulkOff: 'sulkOff', offerRide: 'offerRide', borrow: 'borrow', keyOff: 'selfKeyOff', askOff: 'askOff', askStop: 'askStop', getOff: 'selfGetOff', getOffWaited: 'selfGetOffWaited', takeOverStop: 'takeOverStop', takeOverDrive: 'takeOverDrive' }[e], { urgent: true, chance: e === 'keyOff' || e === 'askOff' || e === 'offerRide' || e === 'sulkOff' || e === 'borrow' || e.startsWith('takeOver') ? 1 : 0.8 });
     events.length = 0;
   }
 
@@ -599,6 +602,20 @@ export class CompanionVoice {
   }
 
   /** Picks a line for the situation and says it; returns what was said, or null. */
+  /**
+   * Says a line about a quad (a kind from quadLines.js), calling it by its nickname if she'd use it, else by its
+   * colour. Amy holds out on the nicknames for a while, then slips (`slipped`, which the game answers).
+   */
+  sayQuad(kind, specId, opts) {
+    const girl = this.companion.character?.id;
+    const how = this.names?.refer(girl, specId) ?? { nick: null, slip: false };
+    const line = this.say(quadKey(kind, specId, how.nick), opts);
+    if (!line) return null;
+    this.names?.mentioned(girl, specId, how);
+    if (how.slip) this.slipped = true;
+    return line;
+  }
+
   say(situation, opts) {
     // Someone else is talking (or they're bickering): unprompted chatter waits its turn.
     if (this.floor.left > 0 && !opts?.force && !opts?.urgent) return null;
