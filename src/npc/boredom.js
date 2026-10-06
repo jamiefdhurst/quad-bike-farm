@@ -48,6 +48,7 @@ export function pickBoredChoice(p, { confidence = 0.5, can = {}, sulk = 1 } = {}
     start: p.boredStartChance,
     drive: p.boredDriveChance * driveAppetite(confidence) * sulk, // sulk: a neglected girl takes a quad off on her own
     rest: p.boredRestChance ?? 0, // sits on the bales or the fence: only on a fine day
+    doughnuts: p.boredDoughnutChance ?? 0, // spins doughnuts in the field (Jess)
   };
   base.wander = Math.max(0.1, 1 - p.boredMountChance - p.boredStartChance - p.boredDriveChance);
   base.join = p.boredJoinChance ?? 0;

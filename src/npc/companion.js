@@ -9,6 +9,7 @@ import { drivingStates, drivingMethods } from './companionDriving.js';
 import { restingMethods, restingStates } from './companionResting.js';
 import { warmingMethods } from './companionWarming.js';
 import { wavingMethods } from './companionWaving.js';
+import { DEFAULT_DOUGHNUT_PARAMS, ringPoints } from './doughnuts.js';
 import { PillionPose } from './pillionPose.js';
 import { canRideRack } from './rackSeat.js';
 import { nextBoredWait, driftRestlessness, pickBoredChoice } from './boredom.js';
@@ -299,7 +300,11 @@ export class Companion {
       if (!f) return false;
       return f.fsm.is('walking', 'mounting') || (f.fsm.is('driving') && ['start', 'settle'].includes(f.drive?.phase));
     };
+    const drivable = this.quads.filter((q) => near(q) && this.canDrive(q));
+    // Doughnuts want a clear stretch of field to spin in, found now so she only picks it when there is one.
+    const doughnutPlan = p.boredDoughnutChance > 0 && drivable.length ? this.doughnutPlan() : null;
     const options = {
+      doughnuts: doughnutPlan ? drivable : [],
       join: this.quads.filter((q) => q.position.distanceTo(here) < 25 && q.speed < 0.5 && !q.rider && settingOff(q) && (this.canRidePillion(q) || this.canRideRackOn(q))),
       mount: this.quads.filter((q) => near(q) && q.hasPillion),
       start: this.quads.filter((q) => near(q) && !q.engine.isRunning),
@@ -322,9 +327,32 @@ export class Companion {
     else if (choice === 'mount') this.requestMount(pick(options.mount), { ownChoice: true });
     else if (choice === 'start') this.requestStart(pick(options.start));
     else if (borrowed) this.requestDrive(borrowed);
+    else if (choice === 'doughnuts') this.requestDrive(pick(options.doughnuts), { doughnut: doughnutPlan });
     else if (choice === 'drive') this.requestDrive(pick(options.drive.some((q) => this.ownsQuad(q)) ? options.drive.filter((q) => this.ownsQuad(q)) : options.drive));
     else if (choice === 'rest') this.goRest(pick(options.rest), { stay: this.restStayFor?.() });
     else this.wander();
+  }
+
+  /**
+   * A circle of clear field to spin doughnuts in, a little way from her: { centre, radius, dir, seconds, p }, or null if
+   * she can't find one (a ring that is clear of bogs, puddles, obstacles and slopes). `scale` makes the circle bigger
+   * and the throttle a touch gentler (Amy having a go).
+   */
+  doughnutPlan(scale = 1) {
+    const dp = this.doughnutParams ?? DEFAULT_DOUGHNUT_PARAMS;
+    const radius = dp.radius * scale;
+    const from = this.root.position;
+    for (let tries = 0; tries < 14; tries++) {
+      const a = Math.random() * Math.PI * 2;
+      const d = dp.findFrom + Math.random() * (dp.findTo - dp.findFrom);
+      const centre = { x: from.x + Math.sin(a) * d, z: from.z + Math.cos(a) * d };
+      const ring = ringPoints(centre, radius + dp.clearExtra, 12);
+      const level = this.world.heightAt(centre.x, centre.z);
+      const open = [centre, ...ring].every((pt) => !(this.world.bogAt?.(pt.x, pt.z) > 0) && !(this.world.puddleAt?.(pt.x, pt.z) > 0) && Math.abs(this.world.heightAt(pt.x, pt.z) - level) < 0.8);
+      if (!open || !this.driveClear(from, centre) || !ring.every((pt) => this.driveClear(centre, pt))) continue;
+      return { centre, radius, dir: Math.random() < 0.5 ? 1 : -1, seconds: this.randomBetween(dp.forMin, dp.forMax), p: { ...dp, throttle: dp.throttle * (scale > 1 ? 0.85 : 1) } };
+    }
+    return null;
   }
 
   /** Walks to a point and stands there, facing `facing`, dropping whatever else she was up to. */

@@ -52,6 +52,8 @@ export const drivingStates = {
       this.followWhoWanted = null;
       const convoyLead = this.convoyLeadWanted;
       this.convoyLeadWanted = false;
+      const doughnut = this.doughnutWanted;
+      this.doughnutWanted = null;
       const params = driveMood(this.params, this.driveMood);
       params.driveSpeedMaxBase = this.params.driveSpeedMax;
       if (offered) {
@@ -68,6 +70,10 @@ export const drivingStates = {
         params.driveForMin = params.driveForMax = 1e6;
         params.driveLoopRadiusMin *= this.params.rideLoopScale;
         params.driveLoopRadiusMax *= this.params.rideLoopScale;
+      }
+      if (doughnut) {
+        params.driveMaxThrottle = 1;
+        params.driveScareSpeed = 99; // she's not frightened by the speed, only by tipping over
       }
       if (race) {
         // Racing: flat out, no pauses, nothing frightens her off.
@@ -88,6 +94,7 @@ export const drivingStates = {
         friend: () => this.friendOnBack(),
         waitForPassenger: ride,
         race,
+        doughnut: doughnut ? { ...doughnut, spinning: false, t: 0 } : null,
         tires: offered,
         follow: following ? () => {
           const lead = (followWho ?? this.followTarget)?.();
@@ -175,15 +182,16 @@ export const drivingStates = {
 
 export const drivingMethods = {
   /** Walks to the front of a quad, gets on and has a little drive; with `giveRide`, waits for you on the back. */
-  requestDrive(quad, { giveRide = false, follow = false, race = null, followWho = null, convoyLead = false } = {}) {
+  requestDrive(quad, { giveRide = false, follow = false, race = null, followWho = null, convoyLead = false, doughnut = null } = {}) {
     this.giveRide = giveRide;
     this.offeredRide = false;
     this.followWanted = follow;
     this.raceWanted = race; // a race to drive in (npc/race.js)
     this.followWhoWanted = followWho; // following something other than you: a convoy (npc/convoy.js)
     this.convoyLeadWanted = convoyLead; // leading one
+    this.doughnutWanted = doughnut; // spinning doughnuts (npc/doughnuts.js)
     if (this.fsm.is('driving')) {
-      if (quad !== this.quad) this.stopDriving('off', () => this.requestDrive(quad, { giveRide, follow, race, followWho, convoyLead }));
+      if (quad !== this.quad) this.stopDriving('off', () => this.requestDrive(quad, { giveRide, follow, race, followWho, convoyLead, doughnut }));
       return;
     }
     if (this.fsm.is('shuffling', 'dismounting')) return;
@@ -192,7 +200,7 @@ export const drivingMethods = {
       return;
     }
     if (this.fsm.is('seated', 'mounting')) {
-      this.afterDismount = () => this.requestDrive(quad, { giveRide, follow, race, followWho, convoyLead });
+      this.afterDismount = () => this.requestDrive(quad, { giveRide, follow, race, followWho, convoyLead, doughnut });
       this.fsm.transition('dismounting');
       return;
     }

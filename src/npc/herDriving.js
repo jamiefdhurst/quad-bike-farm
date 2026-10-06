@@ -11,6 +11,7 @@
 
 import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 import { COACHING, mistake, mistakeChance, successChance } from './skills.js';
+import { doughnutControl } from './doughnuts.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const TAU = Math.PI * 2;
@@ -150,10 +151,12 @@ export class HerDrive {
    * @param {object} [opts.race]  A race (npc/race.js): { route, gridIndex, cruise, go(), alive(), onGrid(), onFinish(), onAbort() }. She
    *   drives to the grid waypoint, waits for go(), then flat out round the rest of the route and over the line (the last
    *   waypoint), with no pauses and no tiring or scaring of herself.
+   * @param {object} [opts.doughnut]  { centre, radius, dir, seconds, p }: instead of her loops she drives to the circle and spins
+   *   round it for `seconds`, tearing the ground up (quad.churn), then pulls up.
    * @param {function} [opts.follow]  () => the quad she's following (yours), or null. Following, she keeps
    *   behind it at its pace rather than doing her own loop, and doesn't tire of it.
    */
-  constructor(quad, { params, probe, isClear, random = Math.random, startingParams, momentWindow = 5, skill = { starting: 0.5, choke: 0.5, cornering: 0.5, mud: 0.5 }, passenger = () => false, waitForPassenger = false, tires = false, follow = null, friend = () => null, race = null }) {
+  constructor(quad, { params, probe, isClear, random = Math.random, startingParams, momentWindow = 5, skill = { starting: 0.5, choke: 0.5, cornering: 0.5, mud: 0.5 }, passenger = () => false, waitForPassenger = false, tires = false, follow = null, friend = () => null, race = null, doughnut = null }) {
     this.quad = quad;
     this.p = params;
     this.probe = probe;
@@ -176,6 +179,7 @@ export class HerDrive {
     this.cruiseScale = 1; // you asked her to go faster or slower
     this.follow = follow;
     this.race = race;
+    this.doughnut = doughnut; // spinning doughnuts: { centre, radius, dir, seconds, p } (doughnuts.js)
     this.pass = null; // overtaking whoever she's following (passTarget)
     this.slowFor = 0;
     this.behindTime = 0; // seconds she's been well behind you
@@ -469,6 +473,7 @@ export class HerDrive {
   }
 
   finish(result) {
+    if (this.doughnut) this.quad.churn = 0;
     if (this.race && !this.done && result !== 'raced') this.race.onAbort?.();
     this.done = true;
     this.result = result;
@@ -691,6 +696,7 @@ export class HerDrive {
     const q = this.quad;
     const c = this.controls;
     c.reverse = false;
+    if (this.doughnut) return this.driveDoughnut(dt, speed);
 
     if (this.time > this.driveFor && !this.carrying && !this.race) {
       this.stop(this.random() < p.driveScaredChance ? 'scared' : 'bored');
@@ -860,6 +866,39 @@ export class HerDrive {
       this.stuckTime = 0;
       this.unstick();
     }
+  }
+
+  /** Getting to the circle, then going round and round it until her time is up. */
+  driveDoughnut(dt, speed) {
+    const d = this.doughnut;
+    const q = this.quad;
+    const c = this.controls;
+    const pos = q.position;
+    const dist = Math.hypot(pos.x - d.centre.x, pos.z - d.centre.z);
+    if (!d.spinning) {
+      if (dist <= d.radius * 1.4) {
+        Object.assign(d, { spinning: true, t: 0 });
+        this.events.push('doughnuts');
+      } else {
+        // Straight at the middle, at a gentle pace, until she is near enough to start going round.
+        const pedals = pedalsFor(speed, 4, this.integral, this.p);
+        c.steer = steerFor(angleDiff(q.yaw, headingTo(pos, d.centre)), this.p);
+        c.throttle = pedals.throttle;
+        c.brake = pedals.brake;
+        return;
+      }
+    }
+    d.t += dt;
+    if (d.t > d.seconds) {
+      q.churn = 0;
+      this.stop('bored');
+      return;
+    }
+    const k = doughnutControl(pos, q.yaw, d.centre, d.radius, d.dir, d.p, this.p.driveSteerGain);
+    c.steer = k.steer;
+    c.throttle = k.throttle;
+    c.brake = 0;
+    q.churn = d.p.churn;
   }
 
   /**

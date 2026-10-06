@@ -41,6 +41,7 @@ export const CHARACTERS = [
       parkBrakeChance: 0.5, // leaves it in gear-less limbo half the time
       rockPrankChance: 0.02,
       boredStartChance: 0.25,
+      boredDoughnutChance: 0.12, // spins doughnuts in the field when she's bored
       boredDriveChance: 0.4,
       driveConfidence: 0.7,
       diagnoseAccuracy: 0.5, // sure of herself, wrong about half the time

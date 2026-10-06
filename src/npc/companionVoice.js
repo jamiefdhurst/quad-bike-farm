@@ -340,7 +340,7 @@ export class CompanionVoice {
   watchOwnMind() {
     const events = this.companion.selfEvents;
     // Switching a quad off is rare, so she always mentions it.
-    for (const e of events) this.say({ wander: 'selfWander', restGo: 'restGo', loftGo: 'loftGo', restRain: 'restRain', restLeave: 'restLeave', join: 'selfJoin', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive', sulkOff: 'sulkOff', offerRide: 'offerRide', borrow: 'borrow', keyOff: 'selfKeyOff', askOff: 'askOff', askStop: 'askStop', getOff: 'selfGetOff', getOffWaited: 'selfGetOffWaited', takeOverStop: 'takeOverStop', takeOverDrive: 'takeOverDrive' }[e], { urgent: true, chance: e === 'keyOff' || e === 'askOff' || e === 'offerRide' || e === 'sulkOff' || e === 'borrow' || e.startsWith('takeOver') ? 1 : 0.8 });
+    for (const e of events) this.say({ wander: 'selfWander', restGo: 'restGo', loftGo: 'loftGo', restRain: 'restRain', restLeave: 'restLeave', join: 'selfJoin', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive', sulkOff: 'sulkOff', offerRide: 'offerRide', borrow: 'borrow', doughnuts: 'selfDoughnuts', keyOff: 'selfKeyOff', askOff: 'askOff', askStop: 'askStop', getOff: 'selfGetOff', getOffWaited: 'selfGetOffWaited', takeOverStop: 'takeOverStop', takeOverDrive: 'takeOverDrive' }[e], { urgent: true, chance: e === 'keyOff' || e === 'askOff' || e === 'offerRide' || e === 'sulkOff' || e === 'borrow' || e.startsWith('takeOver') ? 1 : 0.8 });
     events.length = 0;
   }
 
@@ -373,6 +373,7 @@ export class CompanionVoice {
       stuckInBog: ['stuckInBog', 1],
       followDriveOn: ['followDriveOn', 1],
       followSmoke: ['followSmoke', 0.8],
+      doughnuts: ['doughnutSpin', 0.7],
       overtook: ['passOvertook', 1],
       waitedAhead: ['passPleased', 1],
       'done:bored': ['driveBored', 0.9],

@@ -104,6 +104,7 @@ export class Quad {
     this.helperPull = false; // she's holding the pull-start cord
     this.parkBrake = false; // the parking brake: wheels locked, so the throttle only revs the engine (toggled with Space)
     this.helperThrottle = 0; // she's blipping the throttle (a quad's starting knack)
+    this.churn = 0; // 0..1 the ground torn up under the wheels, whatever it is (a girl's doughnuts: npc/doughnuts.js): it acts as mud
     this.handThrottle = 0; // a girl on the back reaching round to open it over your hand (npc/throttleGrab.js)
     this.pullHeld = 0; // seconds the cord's been held, until it's let go (the yank)
     this.passenger = null; // you, riding on the back while she drives
@@ -186,6 +187,7 @@ export class Quad {
   setDriver(driver) {
     this.driver = driver;
     this.ghost = null;
+    if (!driver) this.churn = 0;
     if (!driver && !this.input) {
       this.throttle = 0;
       this.starter = false;
@@ -409,7 +411,7 @@ export class Quad {
       driveForce: Math.sign(drive) * Math.max(0, Math.abs(drive) * this.faults.driveFactor - hold),
       brake,
       steer: this.steer + this.faults.steerPull,
-      mudAt: (x, z) => this.world.mudAt(x, z),
+      mudAt: (x, z) => Math.max(this.world.mudAt(x, z), this.churn),
       puddleAt: (x, z) => this.world.puddleAt?.(x, z) ?? 0,
       bogAt: (x, z) => this.world.bogAt?.(x, z) ?? 0,
       wet,

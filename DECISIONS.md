@@ -854,3 +854,10 @@ Jamie: the sound sometimes stops altogether, perhaps only in Firefox, with nothi
 - The swap is a banter exchange (`swapped`, four, two for each order), and each girl has an offer and an answer line.
 - Checked headless (one run, with the timers shortened): forming, both driving, the follower overtaking, the swap, and the stop at the end all happened; Jess backed off obstacles several times in the field. Not seen: the banter, or a full-length convoy.
 
+## Doughnuts (TODO 15)
+
+- `src/npc/doughnuts.js` (pure, tested) steers round a circle (`doughnutControl`, radius 5 m, throttle 0.65, 18 to 32 s); `HerDrive` has a doughnut mode (drive gently to the circle, spin, then pull up). A girl with `boredDoughnutChance` (Jess 0.12) finds a ring that is clear of bogs, puddles, obstacles and slopes (`Companion.doughnutPlan`) and takes a quad there.
+- Tearing it up: `quad.churn` (0.7) acts as mud under the wheels, so there is spray and clods, ruts, less grip (which is what lets it slide) and mud load on the engine; the quad's grass ruts then last 240 s at alpha 0.5 instead of 40 s at 0.22, for that quad from then on.
+- Amy: stood still within 35 m she disapproves every 20 s or so; 4 s after Jess stops she has a go with 0.6 chance, on a circle 1.3 times the size and 15% less throttle. She doesn't watch from the fence: she stands where she is.
+- Not checked in the running game at all (unit tests only): whether the quad slides or just circles, whether it tips, how the ruts and clods look, or whether the ring finder ever succeeds in the real field.
+

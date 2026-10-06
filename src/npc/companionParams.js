@@ -51,6 +51,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   placedPatienceMin: 240, // seconds sat on the back where you put her (nobody riding) before she gives up and gets off
   placedPatienceMax: 420,
   boredGetOffChance: 0.6, // sat on the back by her own choice and bored of it, the chance she gets off (each time she gets bored)
+  boredDoughnutChance: 0, // the chance, when bored, she takes a quad off and spins doughnuts in the field (Jess)
   boredStartChance: 0.2, // has a go at starting one
   boredDriveChance: 0.25, // has a little drive on one; otherwise she wanders off for a look round
   wanderMin: 6, // metres
@@ -216,6 +217,7 @@ export const COMPANION_PARAM_RANGES = {
   placedPatienceMin: [10, 1800, 5],
   placedPatienceMax: [10, 3600, 5],
   boredGetOffChance: [0, 1, 0.05],
+  boredDoughnutChance: [0, 1, 0.05],
   boredStartChance: [0, 1, 0.05],
   boredDriveChance: [0, 1, 0.05],
   wanderMin: [1, 50, 0.5],

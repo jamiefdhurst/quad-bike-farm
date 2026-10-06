@@ -33,6 +33,7 @@ import { SmokeSense, SMOKE_PARAM_RANGES } from './npc/smokeSense.js';
 import { Race, RACE_PARAM_RANGES, planLap } from './npc/race.js';
 import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
 import { Convoy, CONVOY_PARAM_RANGES } from './npc/convoy.js';
+import { DoughnutWatch, DOUGHNUT_PARAM_RANGES } from './npc/doughnuts.js';
 import { buildStartLine, nearestTrackFraction } from './world/startLine.js';
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
 import { StrawFall } from './effects/strawFall.js';
@@ -311,6 +312,8 @@ export class Game {
     this.smokeSense = new SmokeSense(); // Amy coughs at two-stroke smoke, Jess loves it (npc/smokeSense.js)
     // Racing: the girls race a lap of the track from a start line by the yard (npc/race.js).
     this.dashReader = new DashReader(); // the girl on the back reads the dash out (npc/dashReading.js)
+    this.doughnutWatch = new DoughnutWatch(); // Amy watches Jess's doughnuts and has a go (npc/doughnuts.js)
+    for (const c of this.companions) c.doughnutParams = this.doughnutWatch.p;
     this.convoy = new Convoy(); // follow the leader, swapping places (npc/convoy.js)
     this.convoyIdle = {};
     this.race = new Race();
@@ -552,6 +555,7 @@ export class Game {
     registerTuning('Two-stroke smoke', this.smokeSense.p, SMOKE_PARAM_RANGES);
     registerTuning('Racing', this.race.p, RACE_PARAM_RANGES);
     registerTuning('Follow the leader', this.convoy.p, CONVOY_PARAM_RANGES);
+    registerTuning('Doughnuts', this.doughnutWatch.p, DOUGHNUT_PARAM_RANGES);
     registerTuning('Reading the dash', this.dashReader.p, READING_PARAM_RANGES);
     registerTuning('Jump leads', this.leads.params, JUMP_LEAD_PARAM_RANGES);
     registerTuning('Skills', this.skills.p, SKILL_PARAM_RANGES);
@@ -1301,6 +1305,40 @@ export class Game {
     if (!waiting || r.left <= 0) this.recalling = null;
   }
 
+  // Doughnuts ----------------------------------------------------------------
+
+  updateDoughnuts(dt) {
+    const spinner = this.companions.find((c) => c.fsm.is('driving') && c.drive?.doughnut?.spinning);
+    const girls = this.companions.map((c) => ({
+      id: c.character.id,
+      free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt,
+      distance: spinner ? c.root.position.distanceTo(spinner.root.position) : Infinity,
+    }));
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    for (const e of this.doughnutWatch.update(dt, { spinner: spinner?.character.id ?? null, girls })) {
+      const c = byId[e.girl];
+      if (e.type === 'watch') c.voice.say('doughnutWatch', { urgent: true });
+      else if (e.type === 'join') {
+        c.voice.say('doughnutJoin', { force: true });
+        setTimeout(() => {
+          if (!c.fsm.is('idle')) return;
+          const quads = this.units.filter((u) => c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && u !== this.riddenUnit).map((u) => u.quad);
+          const quad = quads.find((q) => c.ownsQuad(q)) ?? quads[0];
+          const plan = c.doughnutPlan(1.3);
+          if (quad && plan) c.requestDrive(quad, { doughnut: plan });
+        }, 2500);
+      }
+    }
+    // The ground a quad has been torn up with stays marked for a good while, not the usual forty seconds.
+    for (const u of this.units) {
+      if (u.quad.churn > 0 && !u.torn) {
+        u.torn = true;
+        u.mud.ruts.uniforms.uGrassLife.value = 240;
+        u.mud.ruts.uniforms.uGrassAlpha.value = 0.5;
+      }
+    }
+  }
+
   // Follow the leader --------------------------------------------------------
 
   updateConvoy(dt, ridden) {
@@ -1815,6 +1853,7 @@ export class Game {
     this.updateRevOff(dt, ridden);
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);
+    this.updateDoughnuts(dt);
     this.updateRecall(dt);
     if (!this.recalling) this.updateConvoy(dt, ridden);
     this.updateDashReading(dt, ridden);
