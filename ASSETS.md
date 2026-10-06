@@ -35,6 +35,13 @@ Quaternius: https://quaternius.com
 | Revs up to about 9,000 rpm | S22-11 2-Stroke dirt bike; small motorcycle.wav | craigsmith | https://freesound.org/people/craigsmith/sounds/675214/ | CC0 1.0 |
 | Starter and shutdown | Quad Bike_ATV Engine.wav (as above) | Alex Fitzwater | https://freesound.org/people/Alex_hears_things/sounds/379915/ | CC0 1.0 |
 
+`public/audio/engine-bank-50.wav` and `engine-bank-50.json` (the kids' 50cc quad) are cut from:
+
+| Used for | Recording | Author | Source | Licence |
+| --- | --- | --- | --- | --- |
+| Idle pulses and revs | Gilera Runner SP50 two-stroke scooter | lovretta | https://freesound.org/people/lovretta/sounds/140384/ | CC0 1.0 |
+| Starter and shutdown | Quad Bike_ATV Engine.wav (as above) | Alex Fitzwater | https://freesound.org/people/Alex_hears_things/sounds/379915/ | CC0 1.0 |
+
 `public/audio/ride.wav` and `ride.json` (mud squelches, splashes and landing thuds) are cut from these by `tools/slice_ride_audio.py`, using Freesound's high-quality MP3 previews. The other ride sounds (tyre rumble, grass, gravel, water churn, knocks, rattles and the rider's wind) are made in code.
 
 | Used for | Recording | Author | Source | Licence |

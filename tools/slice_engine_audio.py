@@ -7,8 +7,8 @@ come from), finds each firing pulse, and writes:
   public/audio/<bank>.json  where every pulse ("grain") starts and ends, its
                             pulse rate, and what kind it is
 
-There are two banks: engine-bank (four-stroke quads) and engine-bank-2t
-(two-stroke). A grain's "rpm" is 120 / pulse period whatever the engine type,
+There are three banks: engine-bank (four-stroke quads), engine-bank-2t
+(two-stroke) and engine-bank-50 (the kids' 50cc). A grain's "rpm" is 120 / pulse period whatever the engine type,
 which is the rpm a four-stroke would be doing; the runtime picks grains by the
 same measure, so two-strokes match up without special cases.
 
@@ -27,6 +27,9 @@ Usage (needs numpy, and matplotlib for --plot):
   afconvert ... 450034.mp3 mx.wav;  afconvert ... 148868.mp3 crm.wav
   afconvert ... 675214.mp3 db.wav
   python3 tools/slice_engine_audio.py engine-bank-2t mx=mx.wav crm=crm.wav db=db.wav quad=quad.wav
+
+  afconvert ... 140384.mp3 gil.wav
+  python3 tools/slice_engine_audio.py engine-bank-50 gil=gil.wav quad=quad.wav
 """
 
 import argparse
@@ -124,6 +127,32 @@ BANKS = {
         # The second dirt bike has no idle, so its revs are matched to the CRM250's revs.
         'level': [('idle', 'idle2', 'crm'), ('accel', 'accel', 'db', 'crm')],
         # Riding recordings are noisy: be more forgiving cutting rev pulses.
+        'revTail': 0.75,
+        'revOdd': 0.3,
+    },
+    'engine-bank-50': {
+        # The kids' 50cc quad: a Gilera Runner SP50 scooter two-stroke, recorded an inch
+        # from its exhaust. Its cold idle on the automatic choke and its warm idle at the
+        # end are the idle; the rev blips and the long held high rev are the revs. Starter
+        # and shutdown borrow the quad recordings, as the other two-stroke bank does.
+        'segments': [
+            ('idle', 'gil', 3.2, 9.6, (0.04, 0.07)),
+            ('idle', 'gil', 53.6, 57.6, (0.06, 0.1)),
+            ('accel', 'gil', 10.0, 14.0, (0.007, 0.02)),
+            ('accel', 'gil', 16.0, 20.0, (0.007, 0.02)),
+            ('accel', 'gil', 20.0, 26.0, (0.007, 0.016)),
+            ('decel', 'gil', 30.0, 35.0, (0.007, 0.02)),
+            ('accel', 'gil', 40.5, 52.5, (0.007, 0.012)),
+        ],
+        'oneshots': [
+            ('starterEngage', 'quad', 0.08, 0.365),
+            ('crankLoop', 'quad', 0.365, 1.329),
+            ('shutdown', 'quad', 20.22, 21.2),
+        ],
+        'level': [('idle', 'accel', 'gil')],
+        # It fires every other turn at idle, so the beats alternate strong and weak.
+        'idleTail': 1.2,
+        'idleOdd': 0.4,
         'revTail': 0.75,
         'revOdd': 0.3,
     },
@@ -253,7 +282,7 @@ def main():
         durs = np.diff(cuts) / SR
         for i in range(len(cuts) - 1):
             s, e = cuts[i], cuts[i + 1]
-            dur = (e - s) / SR
+            dur = max(e - s, 1) / SR  # a noisy stretch can give two cuts at one point
             # Overlap into the quiet stretch before the next thump, for crossfading at playback.
             tail = int(min(0.003, 0.12 * dur) * SR)
             seg_env = fine_env[s:e]
@@ -261,8 +290,8 @@ def main():
             reason = None
             med = np.median(durs[max(0, i - 3) : i + 4])
             rev = kind in ('accel', 'decel')
-            odd_limit = config.get('revOdd', 0.2) if rev else 0.2
-            tail_limit = config.get('revTail', 0.5) if rev else 0.5
+            odd_limit = config.get('revOdd', 0.2) if rev else config.get('idleOdd', 0.2)
+            tail_limit = config.get('revTail', 0.5) if rev else config.get('idleTail', 0.5)
             if config.get('periodCheck') and not 0.85 * lo <= dur <= 1.15 * hi:
                 reason = 'out of range'  # the tracker slipped: no real pulse is this long or short here
             elif abs(dur - med) / med > odd_limit:

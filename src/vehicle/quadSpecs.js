@@ -417,7 +417,7 @@ export const EXTRA_SPECS = [
       heaveDamping: 0.16,
     },
     audio: {
-      recBank: 'engine-bank-2t',
+      recBank: 'engine-bank-50', // a Gilera Runner SP50 recorded close to its exhaust
       recIdleSource: 'quad',
       pulseRefRpm: 1200,
       recBlendLo: 3200,

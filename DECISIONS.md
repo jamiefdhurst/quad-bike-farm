@@ -675,6 +675,16 @@ Shopped for on Freesound (CC0 only) and picked by ear by Jamie; not wired in yet
   - https://freesound.org/s/637892/ (84 s): start about 5 s, steadier running 27 to 37 s; the rest are passes with Doppler.
   - If the steady stretches turn out too short to slice well, look for a long close idle of a similar old diesel rather than mixing in the smoother tractor.
 
+## The kids' quad's own sound (2026-10-06)
+
+Item 27. Built from the Gilera Runner SP50 recording picked above; it's `engine-bank-50` and only the kids' quad uses it (`recBank` in its spec; the loan quad keeps the farm quads' sound).
+
+- Cut by `tools/slice_engine_audio.py engine-bank-50 gil=140384.wav quad=379915.wav`: idle from the cold auto-choke idle (3.2 to 9.6 s) and the warm idle at the end (53.6 to 57.6 s), revs from the blips (10 to 35 s) and the long held rev (40.5 to 52.5 s). Starter and shutdown borrow the quad recording, as the yellow's bank does. 126 idle grains (about 1,000 to 3,700 rpm by the bank's pulse-rate measure, which is where the game's 1,100 to 1,300 rpm idle lands), 825 accel and 117 decel.
+- The scooter fires every other turn at idle, so its beats alternate strong and weak and the old "next thump in tail" and "odd length" checks threw almost all of them out (4 idle grains). The slicer now takes `idleTail` and `idleOdd` per bank, as it already did for revs; this bank uses 1.2 and 0.4. A cut with zero length (two cuts at one point in a noisy stretch) no longer divides by zero.
+- Rev stretches are noisy (many grains are rejected, and the tracker's periods run to double the real rate in places), so the revs lean on the existing "ok" filtering and on picking by nearest pulse rate. First guesses, by arithmetic only.
+- Left out: the Simson 50cc "failing to start" clip for cranking that doesn't catch (cranking is the shared starter loop, so a separate sound would need a new case in the engine audio), and the yellow's short-pipe settings, which I kept (`pipeLength` 0.55, `recToneClosed` 9500).
+- Checked: unit tests (`tests/engineBanks.test.js`: every quad's bank is listed and on disk) and that the game loads headless without errors. Not checked: how it sounds in play (idle, revs, the blend point at 3,200 to 4,200 rpm, loudness against the other quads), or whether the pipe settings now suit a recording that's already close and clean.
+
 ## The dashes, planned (2026-10-06)
 
 Brief for TODO 26 in `docs/briefs/dashes.md`, with SVG mockups in `docs/briefs/dashes/`. Settled with Jamie:
