@@ -182,6 +182,7 @@ export class CompanionVoice {
       this.stoppedTime = 10;
     }
 
+    this.view = view;
     this.watchWeather(dt, view.weather);
     this.watchGhostRide(dt, together);
     this.watchStarting();
@@ -448,10 +449,20 @@ export class CompanionVoice {
       pull: ['startPull', 1],
       knack: ['startKnack', 1],
     };
+    const girl = this.companion.character?.id;
+    const specId = this.view?.units?.find((u) => u.quad === this.companion.quad)?.spec.id;
     for (const e of events) {
       if (e === 'crank') {
         const a = this.companion.attempt ?? this.companion.drive?.attempt;
+        // Jess pats the tank and talks to it on the first go; after that it is "come on" like anyone.
+        if (a && a.bursts === 1 && girl === 'jess' && specId && this.sayQuad('startPat', specId, { urgent: true, chance: 0.7 })) continue;
         if (a && a.bursts > 1) this.say('startCrank', { urgent: true, chance: 0.6 });
+        continue;
+      }
+      // Jess cheers it by name; Amy says sorry to it when it floods.
+      if (e === 'caught' && girl === 'jess' && specId && this.sayQuad('startCheer', specId, { urgent: true, chance: 0.7 })) continue;
+      if (e === 'flooded') {
+        if (girl === 'amy' && specId) this.sayQuad('startSorry', specId, { urgent: true, chance: 0.8 });
         continue;
       }
       const [situation, chance] = SAY[e] ?? [];

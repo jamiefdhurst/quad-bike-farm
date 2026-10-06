@@ -12,6 +12,7 @@ const AMY_TEMPLATES = {
   claim: line(300, ['Just so you know, {q} is mine. I always ride it.', 'I like {q}. It is mine, really.']),
   earHard: line(60, ["That's Jess on {q}. She never lets it idle.", 'Listen to that. Jess is thrashing {q} again.']),
   earRough: line(60, ["That's Jess on {q}. It sounds poorly. That is not a healthy noise.", 'Jess is on {q}. Listen to the state of it.']),
+  startSorry: line(30, ['Oh, {q}, I am so sorry. I flooded you.', 'Sorry, {q}. That was too much choke. My fault.', 'I am sorry, {q}. I did not mean to drown you.', 'Poor {q}. Sorry. Give it a minute.']),
   earSteady: line(60, ["That's Jess on {q}. I can tell by the sound.", 'I can hear Jess on {q}. At least it sounds happy.']),
 };
 
@@ -19,6 +20,8 @@ const JESS_TEMPLATES = {
   claim: line(300, ['{Q}? That one is mine. Hands off.', 'Just so you know, {q} is mine.']),
   earHard: line(60, ["That's Amy on {q}? Flat out? Wonders never cease.", 'Is that Amy on {q}? She is actually giving it some.']),
   earRough: line(60, ["That's Amy on {q}. Hear that? She is killing it with kindness.", 'Amy is on {q}. It sounds like it is begging for mercy.']),
+  startPat: line(15, ['Come on, {q}. You can do it.', 'There, {q}. Be good for me.', 'Come on, {q}, do it for me.', 'Hello, {q}. Wake up.']),
+  startCheer: line(15, ['Yes! Well done, {q}!', 'Clever {q}! Told you it would.', 'That is it, {q}! I knew you had it in you.', 'Ha! {Q} loves me.']),
   earSteady: line(60, ["That's Amy on {q}. I can tell, she is going at walking pace.", 'Amy on {q}, listen. Nice and sensible. Boring.']),
 };
 
@@ -48,4 +51,4 @@ export const JESS_QUAD_LINES = {
 };
 
 // Things only Jess says (naming, pouncing, borrowing, and objecting when Amy is on hers): Amy has no version of them.
-export const JESS_ONLY_QUAD_SITUATIONS = [...Object.keys(NAMING), 'nameCaved', 'ownerUpset_amy', 'borrow', 'borrowTease'];
+export const JESS_ONLY_QUAD_SITUATIONS = [...Object.keys(NAMING), 'nameCaved', ...Object.keys(JESS_QUAD_LINES).filter((k) => /^start(Pat|Cheer):/.test(k)), 'ownerUpset_amy', 'borrow', 'borrowTease'];

@@ -69,6 +69,10 @@ describe('lines about a quad', () => {
           expect(JESS_QUAD_LINES[quadKey(kind, id, nick)]?.lines.length, `jess ${kind} ${id} ${nick}`).toBeGreaterThan(0);
         }
       }
+      for (const nick of [null, ...NICKNAMES[id]]) {
+        expect(AMY_QUAD_LINES[quadKey('startSorry', id, nick)]?.lines.length, `amy sorry ${id} ${nick}`).toBeGreaterThan(0);
+        for (const kind of ['startPat', 'startCheer']) expect(JESS_QUAD_LINES[quadKey(kind, id, nick)]?.lines.length, `jess ${kind} ${id} ${nick}`).toBeGreaterThan(0);
+      }
       for (const nick of NICKNAMES[id]) expect(JESS_QUAD_LINES[quadKey('nameQuad', id, nick)].lines.join(' ')).toContain(nick);
     }
   });

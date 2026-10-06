@@ -68,4 +68,14 @@ describe('her starting a quad', () => {
     expect(a.result).toBe('running');
     expect(events.filter((e) => e === 'crank').length).toBe(1);
   });
+
+  it('says it has flooded once, after a failed go, when the plug is fouled', () => {
+    const forgetful = { ...DEFAULT_STARTING_PARAMS, rememberChance: 0 };
+    const a = new StartingAttempt({ engine: Object.assign(new EngineModel({ initialTemperature: 1 }), { fouling: 0.8 }), fuel: new FuelSystem({ ...DEFAULT_FUEL_PARAMS, startTap: 'on' }), choke: 0 }, { params: forgetful });
+    a.rethink();
+    expect(a.events).toContain('flooded');
+    a.events = [];
+    a.rethink();
+    expect(a.events).not.toContain('flooded');
+  });
 });

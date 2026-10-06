@@ -22,6 +22,8 @@ export const DEFAULT_STARTING_PARAMS = {
   knackChance: 0.6, // chance she knows the quad's starting trick (the green's double blip) before she's tried it
   blipHold: 0.2, // seconds the throttle is open for each blip of that trick...
   blipGap: 0.3, // ...and shut between them
+  floodedFouling: 0.4, // plug fouling past which she thinks it's flooded (Amy apologises to it)...
+  floodedRich: 0.2, // ...or mixture richness past which she does
 };
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -39,11 +41,12 @@ export class StartingAttempt {
     this.bursts = 0;
     this.checkedTap = false;
     this.starter = false;
-    this.events = []; // what she did this step, for her voice: 'tapOn', 'chokeOn', 'crank', 'remembered', 'caught', 'gaveUp', 'slow', 'flat', 'pull', 'knack'
+    this.events = []; // what she did this step, for her voice: 'tapOn', 'chokeOn', 'crank', 'remembered', 'caught', 'gaveUp', 'slow', 'flat', 'pull', 'knack', 'flooded'
     this.pulls = 0;
     this.knowsKnack = false;
     this.blipsLeft = 0;
     this.saidSlow = false;
+    this.saidFlooded = false;
     this.done = false;
     this.result = null; // 'running' or 'gaveUp'
   }
@@ -207,6 +210,11 @@ export class StartingAttempt {
   rethink() {
     const { engine, fuel } = this.quad;
     const p = this.p;
+    // Too much petrol in it: she notices (once) before she thinks of anything else.
+    if (!this.saidFlooded && (engine.fouling > p.floodedFouling || engine.rich > p.floodedRich)) {
+      this.saidFlooded = true;
+      this.events.push('flooded');
+    }
     if (this.random() >= p.rememberChance) return;
     if (fuel.tap === 'off' && !this.checkedTap) {
       fuel.tap = 'on';
