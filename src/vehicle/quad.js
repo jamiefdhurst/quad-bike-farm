@@ -65,10 +65,11 @@ export class Quad {
     this.pillionCameraAnchor = part('pillionCameraAnchor');
     this.pillionAnchor = part('pillionAnchor') ?? null; // every spec's model has one
     this.rackAnchor = part('rackAnchor') ?? null; // only quads with a front rack
+    this.mugAnchor = part('mugAnchor') ?? null; // the same quads' rear rack: where a girl leaves her tea (items/mug.js)
     this.rackRider = null; // the girl sitting on the front rack, if any
     this.riderAnchor = part('riderAnchor');
     // Whoever sits on a smaller quad is still full size: undo the model's scale on the anchors people hang from.
-    for (const a of [this.riderAnchor, this.pillionAnchor, this.rackAnchor, this.cameraAnchor, this.pillionCameraAnchor]) a?.scale.setScalar(1 / scale);
+    for (const a of [this.riderAnchor, this.pillionAnchor, this.rackAnchor, this.mugAnchor, this.cameraAnchor, this.pillionCameraAnchor]) a?.scale.setScalar(1 / scale);
     this.exhaustTip = part('exhaustTip');
     this.wheels = WHEELS.map((w) => ({ ...w, object: part(w.name), spin: part(w.name).getObjectByName('spin') }));
     // Wheel centre heights in bodyRoot space, for posing the suspension arms.

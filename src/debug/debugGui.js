@@ -273,7 +273,12 @@ export class DebugGui {
       g.convoy.forced = true;
       g.hud.toast('Follow the leader will start as soon as both girls are stood about');
     };
+    actions.tea = () => {
+      g.tea.forced = true;
+      g.hud.toast('A free girl will put her tea on a rack');
+    };
     f.add(actions, 'race').name('Start a race now');
+    f.add(actions, 'tea').name('A girl leaves her tea on a rack');
     f.add(actions, 'convoy').name('Start follow the leader now');
     f.add(actions, 'grabJess').name('Jess grabs the throttle (next ride)');
     f.add(actions, 'grabAmy').name('Amy grabs the throttle (next ride)');

@@ -34,6 +34,8 @@ import { Race, RACE_PARAM_RANGES, planLap } from './npc/race.js';
 import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
 import { Convoy, CONVOY_PARAM_RANGES } from './npc/convoy.js';
 import { DoughnutWatch, DOUGHNUT_PARAM_RANGES } from './npc/doughnuts.js';
+import { Tea, TEA_PARAM_RANGES } from './npc/tea.js';
+import { Mugs } from './items/mug.js';
 import { buildStartLine, nearestTrackFraction } from './world/startLine.js';
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
 import { StrawFall } from './effects/strawFall.js';
@@ -314,6 +316,9 @@ export class Game {
     this.dashReader = new DashReader(); // the girl on the back reads the dash out (npc/dashReading.js)
     this.doughnutWatch = new DoughnutWatch(); // Amy watches Jess's doughnuts and has a go (npc/doughnuts.js)
     for (const c of this.companions) c.doughnutParams = this.doughnutWatch.p;
+    this.tea = new Tea(); // tea left on the rear rack (npc/tea.js)
+    this.mugs = new Mugs(this.scene, (x, z) => this.world.heightAt(x, z), this.tea.p.stainFor);
+    this.teaMugs = {}; // girl id -> the mug on a rack
     this.convoy = new Convoy(); // follow the leader, swapping places (npc/convoy.js)
     this.convoyIdle = {};
     this.race = new Race();
@@ -556,6 +561,7 @@ export class Game {
     registerTuning('Racing', this.race.p, RACE_PARAM_RANGES);
     registerTuning('Follow the leader', this.convoy.p, CONVOY_PARAM_RANGES);
     registerTuning('Doughnuts', this.doughnutWatch.p, DOUGHNUT_PARAM_RANGES);
+    registerTuning('Tea on the rack', this.tea.p, TEA_PARAM_RANGES);
     registerTuning('Reading the dash', this.dashReader.p, READING_PARAM_RANGES);
     registerTuning('Jump leads', this.leads.params, JUMP_LEAD_PARAM_RANGES);
     registerTuning('Skills', this.skills.p, SKILL_PARAM_RANGES);
@@ -1305,6 +1311,56 @@ export class Game {
     if (!waiting || r.left <= 0) this.recalling = null;
   }
 
+  // Tea on the rack ----------------------------------------------------------
+
+  updateTea(dt, ridden) {
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot, x: c.root.position.x, z: c.root.position.z }));
+    const quads = this.units.map((u) => {
+      const q = u.quad;
+      return { id: u.spec.id, x: q.position.x, z: q.position.z, speed: Math.abs(q.speed), rider: u === ridden, driver: this.quadUser(u, ridden) !== 'you' ? this.quadUser(u, ridden) : null, tipped: q.isTipped, hasRack: !!q.mugAnchor };
+    });
+    const unitOf = (spec) => this.units.find((u) => u.spec.id === spec);
+    // A girl walks to the back of the quad, pauses, and does it (the same walk-up as for a prank).
+    const sendTo = (girl, spec, act) => {
+      const quad = unitOf(spec).quad;
+      const c = byId[girl];
+      const side = c.nearSide(quad);
+      const p = quad.localToWorld(side * 0.85, 0, -0.95);
+      const spot = { x: p.x, z: p.z };
+      if (!c.sneakTo(spot, act)) this.tea.cancel(girl);
+    };
+    for (const e of this.tea.update(dt, { girls, quads })) {
+      const c = byId[e.girl];
+      if (e.type === 'place') {
+        sendTo(e.girl, e.spec, () => {
+          const u = unitOf(e.spec);
+          const free = !u.quad.rider && !u.quad.driver && Math.abs(u.quad.speed) < 0.3;
+          const mug = free ? this.mugs.put(u.quad, e.girl === 'amy' ? 0x3a6ea5 : 0xb8322a) : null;
+          if (!mug) return this.tea.cancel(e.girl);
+          this.teaMugs[e.girl] = mug;
+          this.tea.placed(e.girl, e.spec);
+          c.voice.say('teaPlace', { urgent: true, chance: 0.9 });
+        });
+      } else if (e.type === 'collect') {
+        sendTo(e.girl, e.spec, () => {
+          const u = unitOf(e.spec);
+          if (u.quad.rider || u.quad.driver || Math.abs(u.quad.speed) > 0.3) return this.tea.cancel(e.girl);
+          this.mugs.remove(this.teaMugs[e.girl]);
+          delete this.teaMugs[e.girl];
+          this.tea.collected(e.girl);
+          c.voice.say('teaCollect', { urgent: true, chance: 0.8 });
+        });
+      } else if (e.type === 'fall') {
+        const q = unitOf(e.spec).quad;
+        this.mugs.drop(this.teaMugs[e.girl], q.velocity);
+        delete this.teaMugs[e.girl];
+        c.voice.say('teaFell', { force: true });
+      }
+    }
+    this.mugs.update(dt);
+  }
+
   // Doughnuts ----------------------------------------------------------------
 
   updateDoughnuts(dt) {
@@ -1854,6 +1910,7 @@ export class Game {
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);
     this.updateDoughnuts(dt);
+    this.updateTea(dt, ridden);
     this.updateRecall(dt);
     if (!this.recalling) this.updateConvoy(dt, ridden);
     this.updateDashReading(dt, ridden);

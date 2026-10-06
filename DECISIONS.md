@@ -861,3 +861,10 @@ Jamie: the sound sometimes stops altogether, perhaps only in Firefox, with nothi
 - Amy: stood still within 35 m she disapproves every 20 s or so; 4 s after Jess stops she has a go with 0.6 chance, on a circle 1.3 times the size and 15% less throttle. She doesn't watch from the fence: she stands where she is.
 - Not checked in the running game at all (unit tests only): whether the quad slides or just circles, whether it tips, how the ruts and clods look, or whether the ring finder ever succeeds in the real field.
 
+## Tea on the rack (TODO 16)
+
+- `src/npc/tea.js` (pure, tested). After `startAfter` 90 s a free girl with no mug out has `chance` 0.01 a second (after a `cooldown` of 120 s) to go to the nearest parked, unattended quad with a rack within `range` 18 m and leave a mug on its rear rack (she walks up and pauses like for a prank, then it appears). One mug each, one per quad. The mug stays `leaveMin` 90 to `leaveMax` 180 s; then if the quad is still parked and nobody is on it, she walks over and takes it.
+- It falls when that quad goes faster than `fallSpeed` 2.5 m/s or tips over, whoever is riding it. The mug drops from the rack with some of the quad's speed, lands on its side with a tea stain (60 s) and the owner says `teaFell` wherever she is (Amy "My tea! You have driven off with my tea on the back!"). Nothing warns you when you get on. It only counts the quad's speed, not bumps.
+- The rear rack, not the front: the front is where she sits, and you don't see the back, which is the point. Added a `mugAnchor` to the utility quads' models (red, blue, green, loan; the sport quads and the kids' quad have no rack).
+- Checked headless: Amy left a mug on the blue, it was on the rack, and pushing the quad off made it fall with a stain. Not seen: the walk up and collecting it, or how the mug looks on the rack by eye.
+
