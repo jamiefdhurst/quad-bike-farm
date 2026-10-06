@@ -7,6 +7,7 @@
 // idles, how rough it runs and whether it fouls its plug and dies.
 
 import { DEFAULT_ENGINE_PARAMS } from './engineParams.js';
+import { Knack } from './knack.js';
 import { oilExcess, stepLube, nipping } from './lubrication.js';
 import { runOnChance, popPropensity } from './runOn.js';
 import { offTemperature } from '../world/barn.js';
@@ -33,6 +34,7 @@ export class EngineModel {
   constructor(params = {}, { random = Math.random } = {}) {
     this.params = { ...DEFAULT_ENGINE_PARAMS, ...params };
     this.random = random;
+    this.knack = new Knack(this.params);
 
     this.state = EngineState.OFF;
     this.rpm = 0;
@@ -185,6 +187,7 @@ export class EngineModel {
     this.speed = Math.abs(speed);
     this.ambient = clamp(ambient, 0, 1);
     this.sheltered = sheltered;
+    this.knack.update(dt, this.throttle, this.state === EngineState.RUNNING);
     this.driveLoad = clamp(driveLoad, 0, 1);
     this.resistLoad = clamp(resistLoad, 0, this.driveLoad);
     this.overrunRpm = Math.max(0, overrunRpm);
@@ -442,6 +445,7 @@ export class EngineModel {
       const chance =
         p.catchChance *
         lerp(p.catchColdFactor, 1, this.temperature) *
+        this.knack.catchFactor(this.temperature) *
         Math.exp(-((this.mixture / width) ** 2)) *
         (1 - this.fouling) *
         clamp(speed, 0, 1) * // turned over too slowly, it won't fire

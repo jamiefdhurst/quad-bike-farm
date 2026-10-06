@@ -1,7 +1,12 @@
 // Every tunable number in the engine model. Units are in the key names or the
 // comments. Ranges are [min, max, step] for the debug panel.
 
+import { DEFAULT_KNACK_PARAMS, KNACK_RANGES } from './knack.js';
+
 export const DEFAULT_ENGINE_PARAMS = {
+  // A quad's knack for starting (knack.js)
+  ...DEFAULT_KNACK_PARAMS,
+
   // Cycle: 4 fires every two revolutions, 2 fires every revolution.
   strokes: 4,
 
@@ -200,6 +205,7 @@ export const DEFAULT_ENGINE_PARAMS = {
 };
 
 export const ENGINE_PARAM_RANGES = {
+  ...KNACK_RANGES,
   strokes: [2, 4, 2],
   skipChance: [0, 1, 0.01],
   skipThrottle: [0, 1, 0.01],

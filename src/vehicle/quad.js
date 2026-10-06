@@ -96,6 +96,7 @@ export class Quad {
     this.remoteInput = null; // set while someone on foot is looking at the bike
     this.helperStarter = false; // she's holding the starter button
     this.helperPull = false; // she's holding the pull-start cord
+    this.helperThrottle = 0; // she's blipping the throttle (a quad's starting knack)
     this.pullHeld = 0; // seconds the cord's been held, until it's let go (the yank)
     this.passenger = null; // you, riding on the back while she drives
     this.driver = null; // someone else at the controls (her), see setDriver()
@@ -298,6 +299,7 @@ export class Quad {
     } else {
       // Someone beside the bike can still hold the starter.
       this.starter = (!!this.remoteInput && this.remoteInput.isDown('KeyR')) || this.helperStarter;
+      throttleInput = this.helperThrottle;
       if (this.driver) {
         const c = this.driver.controls;
         if (!!c.reverse !== this.reverse && Math.abs(fwd) < 0.3) this.reverse = !!c.reverse;

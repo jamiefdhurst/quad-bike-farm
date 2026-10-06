@@ -65,6 +65,7 @@ export const QUAD_SPECS = [
       warmUpSeconds: 120,
       coldEnrichmentNeed: 1.1,
       chokeIdleRpm: 1300,
+      chokeEnrichment: 1.5, // full choke is rich once it's warming, so this one wants it off sooner
       catchChance: 0.55,
       coldRoughness: 0.62,
       coldPowerLoss: 0.84,
@@ -207,6 +208,7 @@ export const QUAD_SPECS = [
       coldEnrichmentNeed: 1.15,
       chokeIdleRpm: 1100,
       catchChance: 0.45,
+      knackBlips: 2, // cold, it only fires after the throttle's been blipped twice
       coldRoughness: 0.7,
       coldPowerLoss: 0.85,
     },

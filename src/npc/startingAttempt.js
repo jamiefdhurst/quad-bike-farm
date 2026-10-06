@@ -19,6 +19,9 @@ export const DEFAULT_STARTING_PARAMS = {
   pullHoldMin: 0.3, // seconds she holds the cord before a yank: anywhere from here...
   pullHoldMax: 1.4, // ...to here, so only some are proper ones
   pullWait: 2, // seconds between yanks
+  knackChance: 0.6, // chance she knows the quad's starting trick (the green's double blip) before she's tried it
+  blipHold: 0.2, // seconds the throttle is open for each blip of that trick...
+  blipGap: 0.3, // ...and shut between them
 };
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -36,8 +39,10 @@ export class StartingAttempt {
     this.bursts = 0;
     this.checkedTap = false;
     this.starter = false;
-    this.events = []; // what she did this step, for her voice: 'tapOn', 'chokeOn', 'crank', 'remembered', 'caught', 'gaveUp', 'slow', 'flat', 'pull'
+    this.events = []; // what she did this step, for her voice: 'tapOn', 'chokeOn', 'crank', 'remembered', 'caught', 'gaveUp', 'slow', 'flat', 'pull', 'knack'
     this.pulls = 0;
+    this.knowsKnack = false;
+    this.blipsLeft = 0;
     this.saidSlow = false;
     this.done = false;
     this.result = null; // 'running' or 'gaveUp'
@@ -69,7 +74,21 @@ export class StartingAttempt {
           this.quad.choke = 1;
           this.events.push('chokeOn');
         }
+        this.knowsKnack = this.random() < p.knackChance;
         this.startBurst();
+        break;
+      case 'blip':
+        // The trick: open and shut the throttle the right number of times, then crank.
+        if (this.timer > 0) break;
+        if (this.quad.helperThrottle > 0 || this.blipsLeft <= 0) {
+          this.quad.helperThrottle = 0;
+          this.timer = p.blipGap;
+          if (this.blipsLeft <= 0) this.startBurst();
+        } else {
+          this.quad.helperThrottle = 1;
+          this.blipsLeft--;
+          this.timer = p.blipHold;
+        }
         break;
       case 'crank':
         if (engine.isRunning) {
@@ -143,9 +162,23 @@ export class StartingAttempt {
     if (this.pulls === 1) this.events.push('pull');
   }
 
+  /** A cold quad with a trick to starting it that hasn't been done lately. */
+  needsKnack() {
+    const { engine } = this.quad;
+    return !!engine.knack && !engine.knack.primed && engine.temperature < engine.params.knackColdBelow;
+  }
+
   startBurst() {
     const { engine } = this.quad;
     const ep = engine.params ?? {};
+    if (this.knowsKnack && this.needsKnack() && engine.battery >= ep.batteryDeadBelow) {
+      this.phase = 'blip';
+      this.blipsLeft = ep.knackBlips;
+      this.timer = 0;
+      if (!this.saidKnack) this.events.push('knack');
+      this.saidKnack = true;
+      return;
+    }
     // A flat battery: it only clicks. She says so, then either has a go at the cord or gives up.
     if (engine.battery < ep.batteryDeadBelow) {
       this.events.push('flat');
@@ -182,6 +215,9 @@ export class StartingAttempt {
     } else if (engine.temperature < 0.5 && this.quad.choke < 0.5) {
       this.quad.choke = 1;
       this.events.push('remembered', 'chokeOn');
+    } else if (this.needsKnack() && !this.knowsKnack) {
+      this.knowsKnack = true;
+      this.events.push('remembered');
     } else if (engine.temperature >= 0.5 && this.quad.choke > 0.5) {
       this.quad.choke = 0;
       this.events.push('remembered');
@@ -190,6 +226,7 @@ export class StartingAttempt {
 
   finish(result) {
     this.starter = false;
+    this.quad.helperThrottle = 0;
     this.quad.helperPull = false;
     this.done = true;
     this.result = result;

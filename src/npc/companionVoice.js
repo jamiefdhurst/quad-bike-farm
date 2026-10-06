@@ -436,6 +436,7 @@ export class CompanionVoice {
       slow: ['startSlow', 1],
       flat: ['startFlat', 1],
       pull: ['startPull', 1],
+      knack: ['startKnack', 1],
     };
     for (const e of events) {
       if (e === 'crank') {
@@ -474,6 +475,7 @@ export class CompanionVoice {
       // You press the starter on a flat battery and it only clicks.
       if (near && e.events.some((x) => x.type === 'starterClick')) this.say('crankFlat', { urgent: true, chance: 0.7 });
       this.watchOil(dt, unit, w, near || hers);
+      if (unit.id === 'blue' && e.isRunning && unit.quad.choke > 0.3 && e.rich > 0.2 && (near || hers)) this.say('chokeOffBlue', { chance: 0.01 });
       this.watchHeat(unit, near || hers);
       this.watchFaults(unit, w, near || hers);
       // Cranking on and on without it catching.
@@ -528,6 +530,7 @@ export class CompanionVoice {
   crankHint(unit) {
     const e = unit.engine;
     if (e.battery < e.params.batteryWeakBelow) return 'crankStruggleBattery';
+    if (e.knack && !e.knack.primed && e.temperature < e.params.knackColdBelow) return 'crankStruggleKnack';
     if (unit.quad.fuel.bowlLevel < 0.3) return 'crankStruggleNoFuel';
     if (e.fouling > 0.4 || e.rich > 0.2) return 'crankStruggleFlooded';
     if (e.temperature < 0.4 && unit.quad.choke < 0.5) return 'crankStruggleCold';
