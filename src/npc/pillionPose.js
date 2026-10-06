@@ -62,6 +62,7 @@ export class PillionPose {
     this.glance = { kind: 'ahead', side: 1, left: 0, timer: 2 };
     this.lookBack = 0; // how much she's looking at you looking back at her
     this.grips = new WeakMap();
+    this.throttleReach = 0; // 0..1: her right hand going round you to your throttle grip (throttleGrab.js)
   }
 
   /** She's sat down on the pillion seat. */
@@ -160,6 +161,17 @@ export class PillionPose {
     const follow = Math.min(1, (dt * 3) / Math.max(0.01, p.gripBlendTime));
     for (const a of this.arms) {
       let want = this.wantedHold(a, quad, _target);
+      if (a.side < 0 && this.throttleReach > 0.01 && quad.rider) {
+        // Reaching round you to the grip your hand is on: the right one.
+        const grip = quad.model.getObjectByName('gripRight');
+        if (grip) {
+          grip.getWorldPosition(_v);
+          quad.pillionAnchor.worldToLocal(_v);
+          _v.y += 0.07;
+          _target.lerp(_v, smooth(this.throttleReach));
+          want = Math.max(want, this.throttleReach);
+        }
+      }
       if (free && (freeSide === 0 || freeSide === a.side)) want *= 1 - free;
       a.pos.lerp(_target, follow);
       a.weight += (want - a.weight) * follow;

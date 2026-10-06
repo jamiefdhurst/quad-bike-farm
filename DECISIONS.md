@@ -772,3 +772,11 @@ Jamie: the sound sometimes stops altogether, perhaps only in Firefox, with nothi
 - Switching it off, or anything stopping it, while she is there: she leaves and complains (`warmOff`, Jess "Oi! I was using that!"). The engine stopping on her before she gets there counts the same.
 - Not checked in the running game: where the hands land on each quad's body (the target is a fixed point over the middle of the quad, 0.78 m up), how the walk-up looks, or how often it happens on a cold day. Unit tests cover the decisions and the lines.
 
+## Hand on the throttle (TODO 6)
+
+- `src/npc/throttleGrab.js` (pure, tested). You are at the controls of a running quad between `minSpeed` 2 and `maxSpeed` 11 m/s with a girl on the pillion seat (not the front rack); after `firstAfter` 25 s of that she has `chance` 0.03 a second times her boldness (Jess 1, Amy 0.25) to grab. One at a time, at least `gap` 40 s after the last. Amy does it `amyMax` 1 time a game; Jess has no limit.
+- The grab: her hand takes `reachTime` 0.7 s to reach your throttle grip, then the throttle rises to `throttle` 0.9 over 0.35 s and is held 1.2 to 2.4 s, then released over 0.6 s. If she gets off, or you stop riding, it ends at once. It is added to the quad as `quad.handThrottle` and taken as the larger of that and your own throttle, so your W is still there if you want more; it's ignored while you're braking or reversing.
+- The arm: the pillion pose's right arm is pulled towards the quad's right grip (`gripRight`, the throttle side) as `throttleReach` rises, so she is seen reaching round you. The hand isn't posed on the grip itself, only brought to it.
+- Speech: she says `grabGo` as she starts (Jess "Faster!", Amy "Oh, go on, faster!"); at the end Amy always says `grabSorry` and Jess does 60% of the time, pleased with herself.
+- Not checked in the running game: how the arm looks reaching across, how 0.9 throttle feels from a stop-start pace, or whether 0.03 a second is too often for Jess. Unit tests cover the timeline, limits and lines.
+

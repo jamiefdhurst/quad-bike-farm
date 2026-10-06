@@ -28,6 +28,7 @@ import { QuadNames, NAME_PARAM_RANGES, quadKey } from './npc/quadNames.js';
 import { Ownership, OWNERSHIP_PARAM_RANGES } from './npc/ownership.js';
 import { Hearing, EAR_PARAM_RANGES } from './npc/earing.js';
 import { Warming, WARMING_PARAM_RANGES } from './npc/warming.js';
+import { ThrottleGrab, GRAB_PARAM_RANGES } from './npc/throttleGrab.js';
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
 import { StrawFall } from './effects/strawFall.js';
 import { Places, PLACE_PARAM_RANGES, isFine, nearestSpot, restStay } from './npc/places.js';
@@ -301,6 +302,7 @@ export class Game {
     this.quadNames = new QuadNames(this.units.map((u) => u.spec.id), { random: createRandom(this.seed ^ 0x6a3e) });
     this.ownership = new Ownership(undefined, createRandom(this.seed ^ 0x0c1a));
     this.hearing = new Hearing();
+    this.throttleGrab = new ThrottleGrab(); // a girl on the back opening it over your hand (npc/throttleGrab.js)
     this.warming = new Warming(); // hands over an idling engine on a cold day (npc/warming.js)
     const capital = (id) => id[0].toUpperCase() + id.slice(1);
     this.ownership.assign(
@@ -529,6 +531,7 @@ export class Game {
     registerTuning('Whose quad', this.ownership.p, OWNERSHIP_PARAM_RANGES);
     registerTuning('Hearing a quad', this.hearing.p, EAR_PARAM_RANGES);
     registerTuning('Warming hands', this.warming.p, WARMING_PARAM_RANGES);
+    registerTuning('Hand on the throttle', this.throttleGrab.p, GRAB_PARAM_RANGES);
     registerTuning('Jump leads', this.leads.params, JUMP_LEAD_PARAM_RANGES);
     registerTuning('Skills', this.skills.p, SKILL_PARAM_RANGES);
     registerTuning('Places', this.places.p, PLACE_PARAM_RANGES);
@@ -1173,6 +1176,29 @@ export class Game {
     }
   }
 
+  // Hand on the throttle ---------------------------------------------------
+
+  updateThrottleGrab(dt, ridden) {
+    const q = ridden?.quad;
+    const girls = this.companions.map((c) => ({ id: c.character.id, onBack: !!q && c.quad === q && c.fsm.is('seated') && c.seatKind === 'pillion' }));
+    const riding = !!q && q.engine.isRunning && !this.menu.isOpen;
+    const grab = this.throttleGrab;
+    for (const e of grab.update(dt, { riding, speed: Math.abs(q?.forwardSpeed ?? 0), girls })) {
+      const c = this.companions.find((o) => o.character.id === e.girl);
+      if (e.type === 'start') c.voice.say('grabGo', { force: true });
+      else if (e.type === 'end') {
+        // Amy apologises (her one go); Jess is pleased with herself.
+        if (e.girl === 'amy' || Math.random() < 0.6) c.voice.say('grabSorry', { force: true });
+      }
+    }
+    for (const c of this.companions) {
+      const mine = grab.grab?.girl === c.character.id;
+      c.pillion.throttleReach = mine ? grab.reach : 0;
+    }
+    if (q) q.handThrottle = grab.throttle;
+    for (const u of this.units) if (u.quad !== q && u.quad.handThrottle) u.quad.handThrottle = 0;
+  }
+
   // Pranks -----------------------------------------------------------------
 
   /** What the prank logic needs to know about the farm right now. */
@@ -1556,6 +1582,7 @@ export class Game {
     this.updateRevOff(dt, ridden);
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);
+    this.updateThrottleGrab(dt, ridden);
     this.updateRockPrank(dt);
     this.updateBanter(dt, ridden);
     for (const c of this.companions) {

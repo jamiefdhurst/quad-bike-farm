@@ -21,6 +21,7 @@ import { AMY_THRASH_LINES } from './thrashLines.js';
 import { AMY_REVOFF_LINES } from './revOffLines.js';
 import { AMY_QUAD_LINES } from './quadLines.js';
 import { AMY_WARMING_LINES } from './warmingLines.js';
+import { AMY_THROTTLE_LINES } from './throttleLines.js';
 import { AMY_FAULT_LINES } from './faultLines.js';
 import { AMY_BENCH_LINES } from './benchLines.js';
 
@@ -1376,6 +1377,8 @@ export const VOICE_LINES = {
   ...AMY_QUAD_LINES,
   // Warming their hands over an idling engine (warmingLines.js).
   ...AMY_WARMING_LINES,
+  // A hand on your throttle from the back (throttleLines.js).
+  ...AMY_THROTTLE_LINES,
   // The barn bench (benchLines.js).
   ...AMY_BENCH_LINES,
 };

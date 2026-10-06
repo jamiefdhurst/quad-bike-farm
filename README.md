@@ -100,7 +100,7 @@ The engine starts stone cold and won't fire without choke.
 3. Turn the fuel tap ON with `F`. The quads are parked with it OFF; forget and it'll start, run for a few seconds on what's in the carburettor, then stumble and die.
 4. Press `K` for ignition. The green IGN light comes on and the blue TEMP light shows the engine is cold.
 5. Hold `R` to crank. It should catch within a couple of seconds and settle into a high, lumpy idle. The whole bike shakes. **Done.** On a cold or wet day a girl stood about near a quad that's idling walks over and holds her hands over its engine; her friend often joins her, and they complain if it's switched off.
-6. Let it warm. With the choke left on, the idle creeps up as it warms. Ease the choke off with `Z`, a notch or two at a time. Too early and it stumbles and dies. Too late and it starts to hunt, runs rich and eventually floods and stalls.
+6. Let it warm. With the choke left on, the idle creeps up as it warms. Ease the choke off with `Z`, a notch or two at a time. Too early and it stumbles and dies. Too late and it starts to hunt, runs rich and eventually floods and stalls. **Done.** With a girl on the back and you riding along, she reaches round and opens the throttle for a second or two over your hand. Jess keeps doing it; Amy does it once and apologises.
 7. Once it's warm (TEMP light out, a couple of minutes) it idles low and steady with no choke.
 
 Things to know:
@@ -210,6 +210,8 @@ The wheel only offers what makes sense: no "get on" while she's already on, no "
 **Who's that.** A girl stood about who hears her friend on a running quad she can't see (between about 28 and 130 metres off) says which one it is and how it sounds: flat out, rough (cold or worn) or steady ("That's Jess on the blue. She never lets it idle."). In `src/npc/earing.js`; the "Hearing a quad" folder.
 
 **Warming their hands.** On a cold or wet day (overcast, drizzle, rain or fog), a girl stood about near a quad that's running with nobody on it walks over and holds her hands out over its engine for half a minute to over a minute. Leave one idling and the other often joins her, one each side. Switch it off while they're at it and they complain. In `src/npc/warming.js`; the "Warming hands" folder.
+
+**Hand on the throttle.** Riding along with a girl on the back, now and then she reaches her right arm round you to your throttle grip and gives it a handful for a second or two (up to 90% throttle, though your own input still counts if it's higher). Jess does it again and again, at least 40 seconds apart, and gloats. Amy does it once in a game, then apologises. Not when you're stood still or already doing 25 mph or more. In `src/npc/throttleGrab.js`; the "Hand on the throttle" folder.
 
 On the back she holds on round your waist (look down and you'll see her hands), leans with you into corners, lurches forward under hard braking, and looks about or over your shoulder. Hold `C` or the middle mouse button to look back at her. Left alone on a quad she holds the rails (or the strap on the yellow).
 

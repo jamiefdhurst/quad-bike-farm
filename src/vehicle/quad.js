@@ -102,6 +102,7 @@ export class Quad {
     this.helperPull = false; // she's holding the pull-start cord
     this.parkBrake = false; // the parking brake: wheels locked, so the throttle only revs the engine (toggled with Space)
     this.helperThrottle = 0; // she's blipping the throttle (a quad's starting knack)
+    this.handThrottle = 0; // a girl on the back reaching round to open it over your hand (npc/throttleGrab.js)
     this.pullHeld = 0; // seconds the cord's been held, until it's let go (the yank)
     this.passenger = null; // you, riding on the back while she drives
     this.driver = null; // someone else at the controls (her), see setDriver()
@@ -301,6 +302,7 @@ export class Quad {
       } else {
         this.reverseTimer = 0;
       }
+      if (!this.reverse && !brakeInput) throttleInput = Math.max(throttleInput, this.handThrottle);
     } else {
       // Someone beside the bike can still hold the starter.
       this.starter = (!!this.remoteInput && this.remoteInput.isDown('KeyR')) || this.helperStarter;
