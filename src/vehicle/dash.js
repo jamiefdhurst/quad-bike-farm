@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { tempGaugeFraction } from './tempGauge.js';
 import { lampStates, counterDigits, counterText, cycleIndex } from './dashState.js';
 import {
-  plastic, charcoal, blackMat, gloss, chromeMat, changeGate, mmPanel, housing, text, ticks, labels, arc, needle, drum, lamp, keySwitch,
+  plastic, charcoal, blackMat, gloss, chromeMat, changeGate, mmPanel, housing, chromeRing, text, ticks, labels, arc, needle, drum, lamp, keySwitch,
   segText, speedText, LAMP,
 } from './dashParts.js';
 
@@ -17,7 +17,7 @@ import {
 //   blaster:   yellow. The back of a headlamp shell on the bars with a red power lamp and the key.
 //   quadracer: orange. A RUN / OFF kill switch on the left bar and its lanyard.
 //   kidsKey:   kids' quad. A key switch under the bar clamp.
-//   tractor:   the tractor. A round rev counter with an hour meter, a small fuel gauge, GLOW and CHARGE lamps and the key.
+//   tractor:   the tractor. Three round dials in chrome bezels (water temperature, a rev counter with an hour meter and the PTO speed marked, fuel), GLOW, CHARGE and OIL lamps and the key.
 //
 // buildDash(style) returns { group, update(state), mount } where state is { rpm, maxRpm, redline, speedMph, fuelLevel, reserveLevel,
 // tap, temperature, overheat, coldBelow, ignition (has power), keyOn, tripMiles, odoMiles, hours, reverse, neutral, clock, seconds }.
@@ -408,62 +408,72 @@ function buildTractor() {
   const group = new THREE.Group();
   group.name = 'dash';
   const O = { ox: 180, oy: 70 };
-  housing(group, { x: 85, y: 20, w: 190, h: 100, r: 10, ...O, material: plastic });
-  const face = mmPanel({ x: 85, y: 20, w: 190, h: 100, ...O });
+  // A black pressed-steel binnacle with three round dials in chrome bezels: water temperature, the rev counter and fuel.
+  housing(group, { x: 80, y: 22, w: 200, h: 96, r: 12, ...O, material: blackMat });
+  const face = mmPanel({ x: 80, y: 22, w: 200, h: 96, ...O });
   group.add(face.mesh);
+  const dials = [
+    { cx: 118, cy: 58, r: 20 },
+    { cx: 180, cy: 62, r: 31 },
+    { cx: 242, cy: 58, r: 20 },
+  ];
+  for (const d of dials) chromeRing(group, { ...d, r: d.r + 1, ...O });
   const gate = changeGate();
   let shownRpm = 0;
   let shownFuel = 0;
+  let shownTemp = 0;
+
+  /** A small dial: a cream-on-black arc scale from 150 to 30 degrees with a needle. */
+  function small(ctx, d, frac, label, lo, hi, redEnd = false) {
+    ctx.fillStyle = '#0a0a0a';
+    ctx.beginPath();
+    ctx.arc(d.cx, d.cy, d.r, 0, Math.PI * 2);
+    ctx.fill();
+    ticks(ctx, d.cx, d.cy, d.r - 5, d.r - 1.5, 150, 30, 6, '#ece6d2', 0.8);
+    if (redEnd) arc(ctx, d.cx, d.cy, d.r - 2.5, 50, 30, '#d8402e', 2.2);
+    text(ctx, lo, d.cx - d.r * 0.62, d.cy + d.r * 0.5, 4.4, '#ece6d2', { align: 'center' });
+    text(ctx, hi, d.cx + d.r * 0.62, d.cy + d.r * 0.5, 4.4, redEnd ? '#ff6a5a' : '#ece6d2', { align: 'center' });
+    text(ctx, label, d.cx, d.cy + d.r * 0.55, 3.6, '#bbb', { align: 'center' });
+    needle(ctx, d.cx, d.cy, d.r - 3, 150 - 120 * frac, '#f0f0e0', 1);
+  }
 
   function draw(ctx, s, L) {
-    ctx.fillStyle = '#0c0d0e';
+    // The rev counter, 0 to 3,000 rpm in hundreds, with the PTO speed marked in green.
+    const t = dials[1];
+    ctx.fillStyle = '#0a0a0a';
     ctx.beginPath();
-    ctx.roundRect(88, 23, 184, 94, 7);
+    ctx.arc(t.cx, t.cy, t.r, 0, Math.PI * 2);
     ctx.fill();
-    // The rev counter, 0 to 3,000 rpm in hundreds, with the green working band.
-    const [cx, cy, r] = [130, 72, 40];
-    ctx.strokeStyle = '#444';
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r + 4, 0, Math.PI * 2);
-    ctx.stroke();
-    arc(ctx, cx, cy, r - 3, 170 - 160 * (1400 / 3000), 170 - 160 * (1900 / 3000), '#3fb85a', 3);
-    ticks(ctx, cx, cy, r - 6, r, 170, 10, 30, '#e9e9e9', 0.6);
-    ticks(ctx, cx, cy, r - 9, r, 170, 10, 6, '#e9e9e9', 1);
-    labels(ctx, cx, cy, r - 15, 170, 10, ['0', '5', '10', '15', '20', '25', '30'], '#e9e9e9', 5);
-    text(ctx, 'x100 r.p.m.', cx, cy + 14, 3.8, '#bbb', { align: 'center' });
-    text(ctx, 'HOURS', cx - 12, cy + 27, 3.2, '#ccc');
+    arc(ctx, t.cx, t.cy, t.r - 3, 170 - 160 * (1500 / 3000), 170 - 160 * (1800 / 3000), '#3fb85a', 3);
+    ticks(ctx, t.cx, t.cy, t.r - 6, t.r - 1.5, 170, 10, 30, '#ece6d2', 0.5);
+    ticks(ctx, t.cx, t.cy, t.r - 9, t.r - 1.5, 170, 10, 6, '#ece6d2', 1);
+    labels(ctx, t.cx, t.cy, t.r - 14.5, 170, 10, ['0', '5', '10', '15', '20', '25', '30'], '#ece6d2', 4.6);
+    text(ctx, 'PTO', t.cx + 8, t.cy - 16.5, 3.2, '#6fd18a', { align: 'center' });
+    text(ctx, 'R.P.M. x 100', t.cx, t.cy + 10, 3.4, '#ccc', { align: 'center' });
     const h = counterDigits(s.hours, 4);
-    drum(ctx, cx - 12, cy + 29, h.whole, h.tenth, 6);
-    needle(ctx, cx, cy, r - 2, 170 - (160 * Math.min(3000, L.rpm)) / 3000, '#e8541e');
-    // Fuel, a small gauge.
-    const [fx, fy, fr] = [206, 52, 16];
-    ctx.strokeStyle = '#444';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(fx, fy, fr + 2, 0, Math.PI * 2);
-    ctx.stroke();
-    ticks(ctx, fx, fy, fr - 4, fr, 150, 30, 4, '#e9e9e9', 0.8);
-    text(ctx, 'E', fx - 11, fy + 10, 4.5, '#ff6a5a', { align: 'center' });
-    text(ctx, 'F', fx + 11, fy + 10, 4.5, '#e9e9e9', { align: 'center' });
-    text(ctx, 'FUEL', fx, fy + 14, 3.4, '#bbb', { align: 'center' });
-    needle(ctx, fx, fy, fr - 2, 150 - 120 * L.fuel, '#e8541e', 1);
-    // Lamps and the key. The charge lamp is lit with the key on and the engine not yet running, as on any old tractor.
-    lamp(ctx, 196, 94, LAMP.amber, 'GLOW', L.glow, { r: 3.6 });
-    lamp(ctx, 218, 94, LAMP.red, 'CHARGE', L.charge, { r: 3.6 });
-    keySwitch(ctx, 248, 72, s.keyOn);
+    drum(ctx, t.cx - 11.5, t.cy + 14, h.whole, h.tenth, 6);
+    needle(ctx, t.cx, t.cy, t.r - 2, 170 - (160 * Math.min(3000, L.rpm)) / 3000, '#f0f0e0', 1.3);
+    small(ctx, dials[0], L.temp, 'WATER', 'C', 'H', true);
+    small(ctx, dials[2], L.fuel, 'FUEL', 'E', 'F');
+    // The lamps along the bottom, and the key.
+    lamp(ctx, 150, 105, LAMP.amber, 'GLOW', L.glow, { r: 3.4 });
+    lamp(ctx, 172, 105, LAMP.red, 'CHARGE', L.charge, { r: 3.4 });
+    lamp(ctx, 194, 105, LAMP.red, 'OIL', L.oil, { r: 3.4 });
+    keySwitch(ctx, 236, 100, s.keyOn);
   }
 
   return {
     group,
     mount: null,
     update(s) {
-      // A cable-driven counter reads with the key off, and swings with a little lag.
+      // Cable-driven and mechanical gauges read with the key off, and swing with a little lag.
       shownRpm += (s.rpm - shownRpm) * 0.35;
-      shownFuel += ((s.ignition ? s.fuelLevel : 0) - shownFuel) * 0.2;
-      const L = { rpm: shownRpm, fuel: shownFuel, glow: !!s.ignition && !!s.glow, charge: !!s.ignition && s.rpm < 300 };
+      shownFuel += (s.fuelLevel - shownFuel) * 0.2;
+      shownTemp += (tempGaugeFraction(s.temperature, true, s.overheat) - shownTemp) * 0.1;
+      const running = s.rpm > 300;
+      const L = { rpm: shownRpm, fuel: shownFuel, temp: shownTemp, glow: !!s.ignition && !!s.glow, charge: !!s.ignition && !running, oil: !!s.ignition && !running };
       const hh = counterDigits(s.hours, 4);
-      if (gate([s.ignition, s.keyOn, L.glow, L.charge, Math.round(shownRpm / 8), Math.round(shownFuel * 20), hh.whole + hh.tenth].join('|'))) face.redraw((ctx) => draw(ctx, s, L));
+      if (gate([s.ignition, s.keyOn, L.glow, L.charge, Math.round(shownRpm / 8), Math.round(shownFuel * 20), Math.round(shownTemp * 20), hh.whole + hh.tenth].join('|'))) face.redraw((ctx) => draw(ctx, s, L));
     },
   };
 }

@@ -3,46 +3,28 @@
 
 const HELP_HTML = `
   <h3>On foot</h3>
-  <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move, mouse to look</div>
-  <div><kbd>Shift</kbd> jog</div>
+  <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move, mouse to look, <kbd>Shift</kbd> jog</div>
   <div><kbd>E</kbd> interact with what you're looking at</div>
-  <div>Looking at a quad: <kbd>K</kbd> <kbd>R</kbd> <kbd>Q</kbd> <kbd>Z</kbd> <kbd>F</kbd> work its engine, <kbd>B</kbd> sit on the back (with nobody driving, sooner or later one of them offers to drive you)</div>
+  <div>At a quad: <kbd>K</kbd> <kbd>R</kbd> <kbd>Q</kbd> <kbd>Z</kbd> <kbd>F</kbd> work its engine, <kbd>B</kbd> sit on the back</div>
   <h3>On the back while she drives</h3>
-  <div><kbd>E</kbd> talk to her (a wheel: move the mouse and click): stop, slow down, faster, let me off, let me drive, and "Coach her" when she's just got something wrong</div>
+  <div><kbd>E</kbd> talk to her (mouse and click): stop, slower, faster, let me off, let me drive, coach her</div>
   <h3>On the quad</h3>
-  <div><kbd>K</kbd> ignition on / off</div>
-  <div><kbd>R</kbd> hold to crank the starter (a flat battery cranks slowly, then only clicks)</div>
-  <div><kbd>P</kbd> the yellow and orange have a pull-start as well: hold to draw the cord, let go to yank (about half a second to a second is right), and it works with a flat battery</div>
-  <div><kbd>Q</kbd> more choke, <kbd>Z</kbd> less (hold to keep going)</div>
-  <div><kbd>W</kbd> throttle, <kbd>S</kbd> brake / reverse when stopped</div>
-  <div><kbd>Space</kbd> parking brake on / off: with it on, the wheels are locked and the throttle only revs the engine, and a sharp blip rocks the quad on its springs</div>
-  <div><kbd>A</kbd><kbd>D</kbd> steer</div>
-  <div><kbd>E</kbd> get off (at speed you jump off and it carries on)</div>
-  <div><kbd>F</kbd> fuel tap: ON, RESERVE, OFF</div>
-  <div><kbd>T</kbd> right the quad if it tips over</div>
-  <div>Hold <kbd>C</kbd> or the middle mouse button to look back over your shoulder</div>
-  <div>Hold <kbd>V</kbd> to lean in and look closely at the dash (and the pod, if there's one)</div>
+  <div><kbd>K</kbd> ignition, hold <kbd>R</kbd> to crank, <kbd>P</kbd> pull-start (yellow and orange)</div>
+  <div><kbd>Q</kbd> more choke, <kbd>Z</kbd> less, <kbd>F</kbd> fuel tap</div>
+  <div><kbd>W</kbd> throttle, <kbd>S</kbd> brake / reverse, <kbd>A</kbd><kbd>D</kbd> steer</div>
+  <div><kbd>Space</kbd> parking brake, <kbd>T</kbd> right it if it tips, <kbd>E</kbd> get off</div>
+  <div>Hold <kbd>C</kbd> to look back, <kbd>V</kbd> to lean in to the dash</div>
   <h3>The old tractor</h3>
-  <div>Cold start: <kbd>K</kbd> turns the key on and heats the glow plugs; wait for the GLOW lamp, then hold <kbd>R</kbd> to crank (a warm engine needs no wait). The starter won't turn in gear unless you hold the clutch</div>
-  <div>Hold <kbd>Shift</kbd> for the clutch. <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> are the gears, <kbd>B</kbd> reverse and <kbd>0</kbd> neutral; change gear with the clutch in, and let it up slowly in the higher gears or it stalls</div>
-  <div><kbd>Q</kbd> opens the hand throttle and <kbd>Z</kbd> closes it (it stays where you leave it); <kbd>W</kbd> is the foot throttle and <kbd>S</kbd> the brake</div>
-  <div><kbd>X</kbd> pulls the stop knob, which is how you switch it off: the key only turns the lights and the plugs off, and it runs on without it</div>
-  <h3>Fuel</h3>
-  <div><kbd>E</kbd> pick up the red jerry can by the barn, or the yellow pre-mix can by the petrol tank (the yellow and orange take pre-mix, the others plain petrol; hold <kbd>E</kbd> on the oil bottle to add oil to a can)</div>
-  <div>Hold <kbd>E</kbd> at a quad to pour, or at the petrol tank to refill the can</div>
-  <div><kbd>G</kbd> put the can down</div>
-  <div>Hose by the petrol tank: <kbd>E</kbd> pick up, hold <kbd>E</kbd> to spray a quad clean, <kbd>G</kbd> put it back</div>
-  <div>Green quad's winch: <kbd>X</kbd> take the hook, <kbd>E</kbd> on a quad to hook it, hold <kbd>X</kbd> by the green to wind in</div>
-  <h3>Toolbox</h3>
-  <div><kbd>E</kbd> pick up the toolbox by the petrol tank, <kbd>G</kbd> put it down; <kbd>X</kbd> in the panel takes the silencer off or puts it back, <kbd>F</kbd> strips down a seized engine; <kbd>Y</kbd> fits the analogue pod, <kbd>U</kbd> the digital pod and <kbd>O</kbd> takes a pod off; <kbd>T</kbd> tyres, <kbd>R</kbd> belt, <kbd>L</kbd> throttle cable and <kbd>C</kbd> carb give what's gone wrong a rough fix</div>
-  <div>The hayloft: look at the ladder just inside the barn doors and press <kbd>E</kbd> to climb up (and again at the top to climb down). Up there, look at the hay and press <kbd>E</kbd> to hide in it; any key gets you out</div>
-  <div>The workbench in the barn: the toolbox lives on it. Park a switched-off quad in the painted bay, look at the bench and press <kbd>E</kbd>; <kbd>1</kbd> to <kbd>4</kbd> pick plug, carb, tyre or two-stroke oil, then <kbd>E</kbd> taps or holds each step (let go in the green where there is one); <kbd>G</kbd> steps away</div>
-  <div>Take it to a quad that's switched off and press <kbd>E</kbd> to tinker</div>
+  <div><kbd>K</kbd> key (heats the glow plugs: wait for the GLOW lamp), hold <kbd>R</kbd> to crank</div>
+  <div>Hold <kbd>Shift</kbd> for the clutch: <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> gears, <kbd>B</kbd> reverse, <kbd>0</kbd> neutral</div>
+  <div><kbd>Q</kbd> <kbd>Z</kbd> hand throttle, <kbd>W</kbd> foot throttle, <kbd>S</kbd> brake, <kbd>X</kbd> stop knob (the key won't stop it)</div>
+  <h3>Fuel and tools</h3>
+  <div><kbd>E</kbd> pick up a jerry can, hold <kbd>E</kbd> at a quad to pour or at the tank to refill, <kbd>G</kbd> put it down</div>
+  <div>Hose: <kbd>E</kbd> pick up, hold <kbd>E</kbd> to wash. Toolbox: <kbd>E</kbd> pick up, <kbd>E</kbd> on a quad to tinker</div>
+  <div>Green quad's winch: <kbd>X</kbd> take the hook, <kbd>E</kbd> on a quad to hook it, hold <kbd>X</kbd> to wind in</div>
+  <div>Hayloft ladder and workbench in the barn: <kbd>E</kbd></div>
   <h3>Other</h3>
-  <div><kbd>H</kbd> toggle this help</div>
-  <div><kbd>N</kbd> call the girls back to the barn</div>
-  <div><kbd>M</kbd> mute</div>
-  <div><kbd>\`</kbd> tuning panel</div>
+  <div><kbd>H</kbd> help, <kbd>N</kbd> call the girls, <kbd>M</kbd> mute, <kbd>\`</kbd> tuning panel</div>
 `;
 
 export class Hud {

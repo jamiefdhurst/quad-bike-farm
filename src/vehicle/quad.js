@@ -45,7 +45,8 @@ export class Quad {
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, proxy = null }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, proxy = null, wheelShake = 0 }) {
+    this.wheelShake = wheelShake; // how much of the body's vibration the wheels share (the tractor's wheels shake with it; the quads' don't)
     this.scale = scale; // 1, or smaller for the kids' quad: the model and the physics chassis both shrink by this
     this.world = world;
     this.engine = engine;
@@ -569,6 +570,11 @@ export class Quad {
       const w = this.wheels[i];
       const st = this.physics.wheelState(i);
       w.object.position.set(w.x, w.topY - st.suspension / this.scale, w.z);
+      if (this.wheelShake && vibration) {
+        // The same heave, pitch and roll as the body, taken at the wheel's own spot.
+        const b = vibration.body;
+        w.object.position.y += this.wheelShake * (b.heave - w.z * b.pitch + w.x * b.roll);
+      }
       w.object.rotation.y = st.steering;
       w.spin.rotation.x = st.rotation;
       this.wheelHeights[i] = w.object.position.y - this.groundOffset;

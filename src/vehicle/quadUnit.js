@@ -52,6 +52,7 @@ export class QuadUnit {
         groundOffset: TRACTOR_GROUND_OFFSET,
         gearbox: { ...DEFAULT_GEARBOX_PARAMS, ...spec.gearbox },
         proxy: TRACTOR_PROXY,
+        wheelShake: spec.wheelShake,
       }),
     });
     this.quad.unit = this;

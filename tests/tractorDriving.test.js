@@ -74,3 +74,28 @@ describe('the tractor spec', () => {
     expect(TRACTOR_SPEC.idleRange[0]).toBeGreaterThanOrEqual(TRACTOR_SPEC.safeIdle);
   });
 });
+
+describe('the tractor idling', () => {
+  const idleSpread = (temperature) => {
+    const engine = new EngineModel({ ...DEFAULT_ENGINE_PARAMS, ...TRACTOR_SPEC.engine, baseRoughness: 0.08, initialTemperature: temperature }, { random: seeded(7) });
+    engine.setIgnition(true);
+    for (let t = 0; t < 8 && !engine.isRunning; t += DT) engine.update(DT, { starter: true, fuel: 1 });
+    for (let t = 0; t < 3; t += DT) engine.update(DT, { fuel: 1 });
+    let lo = Infinity;
+    let hi = 0;
+    for (let t = 0; t < 30; t += DT) {
+      engine.update(DT, { fuel: 1 });
+      lo = Math.min(lo, engine.rpm);
+      hi = Math.max(hi, engine.rpm);
+    }
+    return { lo, hi, running: engine.isRunning };
+  };
+
+  it('holds a steady rpm, warm or cold, dead steady', () => {
+    for (const temperature of [1, 0.3]) {
+      const { lo, hi, running } = idleSpread(temperature);
+      expect(running).toBe(true);
+      expect(hi - lo).toBeLessThan(5);
+    }
+  });
+});

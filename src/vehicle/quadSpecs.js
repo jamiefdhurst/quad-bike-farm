@@ -504,6 +504,7 @@ export const TRACTOR_SPEC = {
   label: 'tractor',
   name: 'Tractor',
   tractor: true,
+  wheelShake: 1.3, // its wheels shake with the body (a multiple of the body's own heave, pitch and roll)
   bodyColor: 0xa82a20, // a faded red bonnet
   dashStyle: 'tractor',
   hoursRange: [3500, 7500], // engine hours showing when the game starts
@@ -511,7 +512,7 @@ export const TRACTOR_SPEC = {
   // A big lazy diesel: low, lumpy tickover and a slow heave.
   safeIdle: 650,
   idleRange: [760, 840],
-  roughnessRange: [0.35, 0.5],
+  roughnessRange: [0.05, 0.08], // a diesel ticks over steadily
   fuelRange: [12, 34], // 45 litre tank, 4 litre reserve
   fuel: { tankCapacity: 45, reserveLitres: 4, startDiesel: 1, burnPerRev: 0.0003, idleBurnFraction: 0.3, bowlCapacity: 0.05, bowlFillRate: 0.06 },
   engine: {
@@ -535,6 +536,16 @@ export const TRACTOR_SPEC = {
     coldPowerLoss: 0.4,
     lugDepth: 0.35, // a lot of torque: it hardly sags under load
     popProne: 0,
+    // Steady as a clock at idle: no hunting, wandering or stumbling, a barely uneven beat.
+    roughHunt: 0,
+    erraticHunt: 0,
+    huntRpm: 0,
+    stumbleRate: 0,
+    misfireBase: 0,
+    misfireRoughness: 0.02,
+    cycleJitter: 0.03,
+    pulseStrengthJitter: 0.1,
+    coldRoughness: 0.12,
     wearPerMinute: 0.0006, // slow: it's built to be run all day
   },
   vehicle: {

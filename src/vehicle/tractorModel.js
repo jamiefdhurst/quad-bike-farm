@@ -32,8 +32,8 @@ export const TRACTOR_LAYOUT = {
   wheels: [
     { name: 'wheel_fl', x: 0.66, z: 0.95, front: true, radius: FRONT_R, y: wheelY(FRONT_R) },
     { name: 'wheel_fr', x: -0.66, z: 0.95, front: true, radius: FRONT_R, y: wheelY(FRONT_R) },
-    { name: 'wheel_rl', x: 0.8, z: -0.95, front: false, radius: REAR_R, y: wheelY(REAR_R) },
-    { name: 'wheel_rr', x: -0.8, z: -0.95, front: false, radius: REAR_R, y: wheelY(REAR_R) },
+    { name: 'wheel_rl', x: 0.88, z: -0.95, front: false, radius: REAR_R, y: wheelY(REAR_R) },
+    { name: 'wheel_rr', x: -0.88, z: -0.95, front: false, radius: REAR_R, y: wheelY(REAR_R) },
   ],
   topY: wheelY(REAR_R),
   chassis: { hx: 0.55, hy: 0.5, hz: 1.5, y: 0.95 + TRACTOR_GROUND_OFFSET },
@@ -191,17 +191,17 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   // Gearbox and clutch housing, rear axle and final drives.
   rbox(0.58, 0.5, 0.82, 0.05, MAT.cast, 0, 0.7, -0.32, root);
   rbox(0.44, 0.1, 0.5, 0.03, grey, 0, 0.98, -0.4, root); // the cover the seat bracket and lever stand on
-  axleCyl(0.09, 1.3, MAT.castDark, 0, 0.72, -0.95, root);
-  for (const s of [-1, 1]) axleCyl(0.17, 0.28, MAT.cast, s * 0.46, 0.72, -0.95, root);
+  axleCyl(0.09, 1.5, MAT.castDark, 0, 0.72, -0.95, root);
+  for (const s of [-1, 1]) axleCyl(0.17, 0.3, MAT.cast, s * 0.46, 0.72, -0.95, root);
   // Front axle beam and the kingpin housings.
   rbox(1.0, 0.1, 0.12, 0.03, MAT.castDark, 0, 0.5, 0.95, root);
   for (const s of [-1, 1]) rbox(0.09, 0.2, 0.09, 0.03, MAT.cast, s * 0.58, 0.46, 0.95, root);
 
   // Rear mudguards, wide curved shells over the big wheels, with a stay each.
   for (const s of [-1, 1]) {
-    const g = new THREE.CylinderGeometry(REAR_R + 0.08, REAR_R + 0.08, 0.4, 28, 1, true, -0.12, Math.PI + 0.24).rotateZ(Math.PI / 2);
-    add(g, paint, root).position.set(s * 0.8, REAR_R, -0.95);
-    tube([s * 0.6, 1.0, -0.95], [s * 0.62, 1.4, -0.95], 0.016, MAT.steel, root);
+    const g = new THREE.CylinderGeometry(REAR_R + 0.17, REAR_R + 0.17, 0.58, 28, 1, true, -0.12, Math.PI + 0.24).rotateZ(Math.PI / 2);
+    add(g, paint, root).position.set(s * 0.88, REAR_R, -0.95);
+    tube([s * 0.62, 1.0, -0.95], [s * 0.64, 1.45, -0.95], 0.016, MAT.steel, root);
   }
   // Steps and the footplate.
   for (const s of [-1, 1]) rbox(0.22, 0.03, 0.55, 0.01, MAT.steel, s * 0.46, 0.7, -0.35, root);
@@ -249,16 +249,11 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
     const a = (i / 3) * Math.PI * 2 + 0.3;
     tube([0, 0, 0], [Math.sin(a) * 0.2, 0, Math.cos(a) * 0.2], 0.012, MAT.steel, wheel);
   }
-  // The rider's gloves and forearms, only shown while riding.
+  // Your own arms aren't drawn: the group is only here because Quad expects one.
   const hands = new THREE.Group();
   hands.name = 'riderHands';
   hands.userData.keep = true;
   hands.visible = false;
-  for (const s of [-1, 1]) {
-    const glove = add(new THREE.CapsuleGeometry(0.03, 0.06, 4, 8).rotateX(Math.PI / 2), MAT.glove, hands);
-    glove.position.set(s * 0.17, 0.02, -0.1);
-    tube([s * 0.17, 0.03, -0.12], [s * 0.22, 0.4, -0.55], 0.034, MAT.sleeve, hands, 10);
-  }
   wheel.add(hands);
 
   // The dash, on the scuttle's top, tilted up to the driver.
