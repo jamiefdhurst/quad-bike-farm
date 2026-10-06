@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Faults, DEFAULT_FAULT_PARAMS, tyreSide, noticeable } from '../src/vehicle/faults.js';
+import { Faults, FAULT_KINDS, DEFAULT_FAULT_PARAMS, tyreSide, noticeable } from '../src/vehicle/faults.js';
 import { EngineModel } from '../src/engine/engineModel.js';
 
 const seeded = (seed) => () => {
@@ -197,5 +197,48 @@ describe('in the engine', () => {
     expect(dirty.roughness).toBeGreaterThan(clean.roughness + 0.2);
     expect(dirty.power).toBeLessThan(clean.power);
     expect(dirty.erratic).toBeGreaterThan(clean.erratic);
+  });
+});
+
+describe('each quad is dealt its own luck', () => {
+  const seeded = (seed) => () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  it('rolls how often and how fast each fault comes, within the spread, differently per quad and per fault', () => {
+    const a = new Faults(undefined, seeded(3));
+    const b = new Faults(undefined, seeded(11));
+    a.roll(seeded(3));
+    b.roll(seeded(11));
+    const s = a.params.proneSpread;
+    for (const f of [a, b]) for (const kind of FAULT_KINDS) for (const v of [f.prone[kind], f.worsens[kind]]) expect(v).toBeGreaterThanOrEqual(1 / s - 1e-9) && expect(v).toBeLessThanOrEqual(s + 1e-9);
+    expect(a.prone).not.toEqual(b.prone);
+    expect(new Set(Object.values(a.prone)).size).toBeGreaterThan(1);
+    const again = new Faults(undefined, seeded(3));
+    again.roll(seeded(3));
+    expect(again.prone).toEqual(a.prone); // a seed repeats it
+  });
+
+  it('a more prone quad starts a fault sooner on average, and one that worsens faster gets bad sooner', () => {
+    const run = (prone, worsens, seconds) => {
+      let n = 0;
+      for (let seed = 1; seed <= 200; seed++) {
+        const f = new Faults({ ...DEFAULT_FAULT_PARAMS, cableEvery: 100 }, seeded(seed * 104729 + 17));
+        f.prone.cable = prone;
+        f.worsens.cable = worsens;
+        for (let t = 0; t < seconds; t++) f.update(1, { running: true, speed: 0, throttle: 0 });
+        if (f.started.cable) n++;
+      }
+      return n;
+    };
+    expect(run(2, 1, 100)).toBeGreaterThan(run(0.5, 1, 100));
+    const f = new Faults({ ...DEFAULT_FAULT_PARAMS }, () => 0);
+    const g = new Faults({ ...DEFAULT_FAULT_PARAMS }, () => 0);
+    g.worsens.cable = 2;
+    for (const x of [f, g]) {
+      x.begin('cable');
+      for (let t = 0; t < 100; t++) x.update(1, { running: true, speed: 0, throttle: 0 });
+    }
+    expect(g.levels.cable).toBeGreaterThan(f.levels.cable);
   });
 });

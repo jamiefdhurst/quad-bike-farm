@@ -136,6 +136,8 @@ Pick up the red toolbox from the workbench in the barn (`E`), take it to a quad 
 
 "Back to stock" puts everything back exactly, silencer included. Engines also wear as they run (faster when worked hard), getting rougher: a lumpy, hunting idle and a lot more shake. The panel says how it's running, and **Service it** (`V`) clears the wear and leaves it as sweet as that quad gets. Changes last for the game. `G` puts the toolbox down; you can't ride while carrying it. She has opinions about all of this.
 
+**Faults differ per quad.** Each game every quad is dealt its own luck: for each of the four faults (puncture, belt, cable, carb), how often it starts and how fast it gets worse, each from 0.4 to 2.5 times the usual rate, picked at random (from the layout seed, so `?seed=` repeats it). So one quad might be belt-prone and slow to puncture, another the reverse. The tuning panel shows the quad you're looking at, under "Faults (live)", and `proneSpread` sets the range.
+
 ## Fuel
 
 Each quad has a fuel tank and a fuel tap, and a fuel gauge on the loan quad's and the blue's LCD or on a pod. Taps start OFF. How much is in each tank varies every game (see `fuelRange` above); the blue can start below its reserve, so it'll only run on RESERVE until it's filled.

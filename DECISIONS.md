@@ -812,3 +812,10 @@ Jamie: the sound sometimes stops altogether, perhaps only in Firefox, with nothi
 - A "Girls (live)" folder in the tuning panel: each girl's claimed quad, each quad's owner and nickname (and whether Jess has said it yet), the race phase and score, and the throttle-grab state. Buttons: start a race now (it begins as soon as both girls are stood about and two quads are free), make Jess or Amy grab the throttle on your next ride (you must be moving with her on the back), and have Jess name the quads now.
 - Jamie hadn't seen the hand on the throttle: it needed 25 s of riding with a girl on the back, then 3% a second for Jess (0.75% for Amy), and only up to 11 m/s. The speed limit goes to 16 m/s; the rest is unchanged.
 - Jamie: she should hold the throttle a lot longer. The hold goes from 1.2 to 2.4 s up to `holdMin` 5 to `holdMax` 10 s (ranges widened to 20 and 30 s). The rest of the grab is unchanged, so with `maxSpeed` 16 a long hold can take you well past your usual pace; it ends early if she gets off or you stop riding.
+
+## Faults differ per quad
+
+- Jamie: they all need to be random. `Faults.roll(random)` deals each quad, once a game, a multiplier for each of the four faults on how often it starts and another on how fast it worsens, each log-uniform between 1/`proneSpread` and `proneSpread` (2.5, so 0.4 to 2.5 times the default rates). That is eight independent rolls per quad. The stream is seeded from the layout seed and the quad's place in the fleet, so the same `?seed=` deals the same luck; the fault dice themselves use that stream too, but what happens still depends on how you ride, so a seed does not repeat the faults.
+- Not tied to the spec (an old quad isn't more prone than a new one): that belongs with TODO 38 and 39. Faults that depend on riding (belt needs hard riding, puncture needs moving) still need it, so a quad nobody rides stays fault-free however prone it is.
+- The averages across the fleet move a little: a log-uniform from 0.4 to 2.5 has a mean of about 1.27, so faults are somewhat more common overall than before, which partly undoes the longer cable interval. Not checked in play.
+

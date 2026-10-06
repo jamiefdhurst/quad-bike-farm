@@ -167,8 +167,21 @@ export class DebugGui {
         },
       });
     }
+    // How prone the quad is to each, dealt once a game: [times as often it starts, times as fast it worsens].
+    for (const kind of FAULT_KINDS) {
+      Object.defineProperty(faults, `${kind} luck`, {
+        enumerable: false,
+        get: () => {
+          const f = unit().quad.faults;
+          return `x${f.prone[kind].toFixed(2)} often, x${f.worsens[kind].toFixed(2)} fast`;
+        },
+      });
+    }
     const ff = this.gui.addFolder('Faults (live): drag to start, set or clear one');
-    for (const kind of FAULT_KINDS) ff.add(faults, kind, 0, 1, 0.01).listen();
+    for (const kind of FAULT_KINDS) {
+      ff.add(faults, kind, 0, 1, 0.01).listen();
+      ff.add(faults, `${kind} luck`).listen().disable();
+    }
     Object.defineProperty(faults, 'tyre', { enumerable: false, get: () => unit().quad.faults.tyre });
     ff.add(faults, 'tyre').name('flat tyre (wheel, -1 none)').listen().disable();
   }

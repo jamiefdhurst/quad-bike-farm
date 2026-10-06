@@ -324,6 +324,9 @@ export class Game {
       c.borrowPick = (specs) => this.ownership.borrowPick(id, specs);
     }
 
+    // Each quad is dealt its own luck with faults this game, from the seed (vehicle/faults.js).
+    this.units.forEach((u, i) => u.quad.faults.roll(createRandom(this.seed ^ (0xfa17 + i * 7919))));
+
     for (const unit of this.units) {
       const quad = unit.quad;
       unit.interaction = this.interaction.add({

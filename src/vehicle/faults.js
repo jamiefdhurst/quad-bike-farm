@@ -22,6 +22,7 @@ export const DEFAULT_FAULT_PARAMS = {
   cableHangFrom: 0.2, // below this the cable's only a little stiff and doesn't hang
   cableHangMin: 0.4, // seconds it takes to come back as it first starts to hang, lengthening from there (faster than linear)
   cableStuckAt: 0.9, // at this level it never comes back: it holds wherever you last opened it until you switch off
+  proneSpread: 2.5, // each quad is dealt, once a game, how prone it is to each fault and how fast each worsens: from 1/this to this times the rates here
   hardThrottle: 0.6, // throttle that counts as riding hard
   movingSpeed: 2, // m/s over which it counts as being ridden
   fieldFixLevel: 0.12, // what's left of a fault after a rough fix in the yard (the bench does it properly)
@@ -44,6 +45,7 @@ export const FAULT_PARAM_RANGES = {
   cableHangFrom: [0, 1, 0.05],
   cableHangMin: [0, 5, 0.1],
   cableStuckAt: [0.3, 1, 0.01],
+  proneSpread: [1, 6, 0.1],
   hardThrottle: [0.1, 1, 0.05],
   movingSpeed: [0.5, 10, 0.5],
   fieldFixLevel: [0, 0.5, 0.01],
@@ -67,7 +69,24 @@ export class Faults {
     this.started = { puncture: false, belt: false, cable: false, carb: false };
     this.caps = { puncture: 1, belt: 1, cable: 1, carb: 1 }; // a rough fix leaves it from getting any worse than this
     this.heldThrottle = 0; // what a sticking cable is still holding open
+    this.prone = { puncture: 1, belt: 1, cable: 1, carb: 1 }; // times as often it starts (see roll)
+    this.worsens = { puncture: 1, belt: 1, cable: 1, carb: 1 }; // times as fast it gets worse
     this.events = []; // { type: 'start' | 'fixed', kind } this step
+  }
+
+  /**
+   * Deals this quad its own luck for the game, from `random` (so a seed repeats it): for each fault, how prone it is
+   * (times as often it starts) and how fast it worsens, each between 1/proneSpread and proneSpread times the usual,
+   * evenly on a log scale, so one quad can be belt-prone and slow to puncture and another the reverse.
+   */
+  roll(random) {
+    const k = Math.log(this.params.proneSpread);
+    const deal = () => Math.exp((random() * 2 - 1) * k);
+    for (const kind of FAULT_KINDS) {
+      this.prone[kind] = deal();
+      this.worsens[kind] = deal();
+    }
+    this.random = random;
   }
 
   has(kind) {
@@ -100,13 +119,13 @@ export class Faults {
     this.events.length = 0;
     const moving = running && speed > p.movingSpeed;
     const hard = moving && throttle > p.hardThrottle;
-    const chance = (every) => 1 - Math.exp(-dt / every);
-    if (moving && !this.started.puncture && this.random() < chance(p.punctureEvery)) this.begin('puncture');
-    if (hard && !this.started.belt && this.random() < chance(p.beltEvery)) this.begin('belt');
-    if (running && !this.started.cable && this.random() < chance(p.cableEvery)) this.begin('cable');
-    if (running && !this.started.carb && this.random() < chance(p.carbEvery)) this.begin('carb');
+    const chance = (every, kind) => 1 - Math.exp((-dt * this.prone[kind]) / every);
+    if (moving && !this.started.puncture && this.random() < chance(p.punctureEvery, 'puncture')) this.begin('puncture');
+    if (hard && !this.started.belt && this.random() < chance(p.beltEvery, 'belt')) this.begin('belt');
+    if (running && !this.started.cable && this.random() < chance(p.cableEvery, 'cable')) this.begin('cable');
+    if (running && !this.started.carb && this.random() < chance(p.carbEvery, 'carb')) this.begin('carb');
     const grow = (kind, on, seconds) => {
-      if (this.started[kind] && on) this.levels[kind] = Math.min(this.caps[kind], this.levels[kind] + dt / seconds);
+      if (this.started[kind] && on) this.levels[kind] = Math.min(this.caps[kind], this.levels[kind] + (dt * this.worsens[kind]) / seconds);
     };
     grow('puncture', true, p.punctureSeconds); // a tyre goes down parked too
     grow('belt', hard, p.beltSeconds);
