@@ -63,6 +63,9 @@ export class DebugGui {
       get rpm() {
         return Math.round(unit().engine.rpm);
       },
+      get water() {
+        return Math.round(unit().engine.water * 100) / 100;
+      },
       get mixture() {
         return unit().engine.mixture;
       },
