@@ -117,7 +117,7 @@ function buildAnalogue() {
     miniDial(ctx, 40, 125, 15, 'fuel', s, on);
     miniDial(ctx, 160, 125, 15, 'temp', s, on);
     const l = lampStates(s);
-    [[76, LAMP.green, 'N', l.n], [92, LAMP.amber, 'R', l.r], [108, LAMP.red, 'TEMP', l.temp], [124, LAMP.amber, 'FUEL', l.fuel]].forEach(([x, c, name, lit]) => {
+    [[68, LAMP.green, 'N', l.n], [84, LAMP.amber, 'R', l.r], [100, LAMP.red, 'TEMP', l.temp], [116, LAMP.amber, 'FUEL', l.fuel], [132, LAMP.red, 'OIL', l.oil]].forEach(([x, c, name, lit]) => {
       ctx.fillStyle = CHROME;
       ctx.beginPath();
       ctx.arc(x, 122, 5.6, 0, Math.PI * 2);
@@ -135,7 +135,7 @@ function buildAnalogue() {
       const h = counterDigits(s.hours, 4);
       const l = lampStates(s);
       const key = [
-        s.ignition, l.r, l.n, l.temp, l.fuel, Math.round(s.speedMph * 3), Math.round(s.rpm / 40), Math.round(s.redline / 100),
+        s.ignition, l.r, l.n, l.temp, l.fuel, l.oil, Math.round(s.speedMph * 3), Math.round(s.rpm / 40), Math.round(s.redline / 100),
         Math.round(s.fuelLevel * 60), Math.round(s.reserveLevel * 100), Math.round(tempGaugeFraction(s.temperature, s.ignition, s.overheat) * 60),
         o.whole + o.tenth, t.whole + t.tenth, h.whole + h.tenth,
       ].join('|');
@@ -197,6 +197,7 @@ function buildDigital() {
     segText(ctx, L.speed, x + 92, y + 31, 21, on ? AMBER : ghost, ghost);
     if (!on) return;
     text(ctx, 'MPH', x + 95, y + 50, 5, AMBER);
+    text(ctx, 'OIL', x + 38, y + 50, 4.6, L.lamps.oil ? AMBER_RED : AMBER_GHOST, { align: 'center', weight: 'bold' }); // the low-oil lamp, dark until the sump is low
     const f = segmentCounts(s, 6, 6);
     for (let i = 0; i < 6; i++) {
       ctx.fillStyle = i < f.fuel ? (L.lamps.fuel ? AMBER_RED : AMBER) : AMBER_GHOST;
@@ -228,7 +229,7 @@ function buildDigital() {
       const f = segmentCounts(s, 6, 6);
       const key = [
         s.ignition, L.speed, Math.round((s.rpm / REV_MAX) * BARS), Math.round((s.redline / REV_MAX) * BARS), f.fuel, f.temp, L.lamps.r, L.lamps.n,
-        L.lamps.temp, L.lamps.fuel, s.reverse, s.neutral, s.clock, line.join(' '),
+        L.lamps.temp, L.lamps.fuel, L.lamps.oil, s.reverse, s.neutral, s.clock, line.join(' '),
       ].join('|');
       if (gate(key)) face.redraw((ctx) => draw(ctx, s, L));
     },
