@@ -248,6 +248,16 @@ export const DEFAULT_ENGINE_PARAMS = {
   popWear: 0.8, // propensity added by a fully worn engine
   popHeat: 0.4, // propensity added by running hot
 
+  // Spitting back through the carb: a lean, cold engine with the throttle snapped open
+  spitBase: 0.8, // chance a snap spits back at full propensity (0 turns it off)
+  spitLeanFrom: 0.05, // leanness below this never spits
+  spitLeanFull: 0.35, // and this lean is as bad as it gets
+  spitColdBelow: 0.7, // temperature (0..1) it has to be under; the colder, the likelier
+  spitSnapStep: 0.4, // how far the throttle has to jump above its recent self to count as snapped
+  spitSnapTo: 0.6, // and open at least this far
+  spitFollow: 0.15, // seconds the recent throttle takes to catch up
+  spitCooldown: 1.5, // seconds before it can spit again
+
   // Silencer off (a toolbox job)
   silencerPower: 0.08, // power gained with the silencer off
   silencerBlowPerMinute: 0.05, // two-strokes only: how much of the silencer's packing blows out per minute at full revs (a third of that idling)
@@ -509,6 +519,14 @@ export const ENGINE_PARAM_RANGES = {
   silencerBlownLoud: [0, 1, 0.05],
   silencerPop: [0, 2, 0.01],
   popHeat: [0, 3, 0.05],
+  spitBase: [0, 1, 0.05],
+  spitLeanFrom: [0, 0.5, 0.01],
+  spitLeanFull: [0.1, 1, 0.01],
+  spitColdBelow: [0.1, 1, 0.05],
+  spitSnapStep: [0.1, 1, 0.05],
+  spitSnapTo: [0.2, 1, 0.05],
+  spitFollow: [0.05, 0.5, 0.01],
+  spitCooldown: [0, 10, 0.1],
   runOnBase: [0, 1, 0.01],
   runOnHot: [0, 1, 0.01],
   runOnWear: [0, 1, 0.01],

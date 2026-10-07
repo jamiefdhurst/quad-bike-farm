@@ -98,6 +98,7 @@ export class QuadUnit {
     this.quad.unit = this;
     this.torqueRock = new TorqueRock();
     this.vibration = new VibrationModel({ ...DEFAULT_VIBRATION_PARAMS, ...spec.vibration });
+    this.airbox = new THREE.Vector3(); // scratch: where a spit back puffs from, under the seat
     this.smoke = new ExhaustSmoke(scene, (x, z) => world.heightAt(x, z), { ...DEFAULT_SMOKE_PARAMS, ...spec.smoke });
     // The orange's radiator steams when it's low on coolant (a second smoke system, white, rising from the front).
     if (this.engine.params.waterCooled) {
@@ -153,6 +154,10 @@ export class QuadUnit {
     this.vibration.update(dt, this.engine, this.quad.rider || this.quad.driver || this.quad.passenger ? 0 : this.quad.speed);
     this.quad.update(dt, alpha, this.vibration);
     this.smoke.update(dt, this.engine, this.quad.exhaustTip, this.quad.velocity);
+    for (const e of this.engine.events) {
+      // The airbox is under the seat: a puff comes up from there, not the pipe.
+      if (e.type === 'spitBack' && this.quad.riderAnchor) this.smoke.spit(this.quad.riderAnchor.getWorldPosition(this.airbox), this.quad.velocity, e.strength);
+    }
     if (this.steam) {
       this.quad.model.localToWorld(this.radiator.set(RADIATOR_AT.x, RADIATOR_AT.y, RADIATOR_AT.z));
       this.steam.steam(dt, this.radiator, this.engine.steam, this.quad.velocity);

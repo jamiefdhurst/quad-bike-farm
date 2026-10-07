@@ -116,6 +116,8 @@ export const DEFAULT_COMPANION_PARAMS = {
   recoilSpeed: 3.2, // m/s she jumps back from a boil-over, easing off over recoilSeconds
   recoilSeconds: 0.5, // how long the jump back takes
   coolantSeeRange: 6, // metres: how near she has to be to notice a damp patch under the orange, or steam off it
+  spitHearRange: 12, // metres: how near she has to be to react to a quad spitting back through its carb
+  spitSayChance: 0.6, // the chance she says something about one she only heard
   coolantJumpRange: 7, // metres: how near she has to be to a boil-over to jump back from it
   dripSmellRange: 4, // metres: how near she has to be to smell it
   joyRise: 0.15, // per second her mood follows more of the quads running...
@@ -356,6 +358,8 @@ export const COMPANION_PARAM_RANGES = {
   recoilSpeed: [0, 8, 0.1],
   recoilSeconds: [0.1, 2, 0.05],
   coolantSeeRange: [1, 15, 0.5],
+  spitHearRange: [2, 30, 1],
+  spitSayChance: [0, 1, 0.05],
   coolantJumpRange: [1, 15, 0.5],
   dripSmellRange: [1, 15, 0.5],
   joyRise: [0, 1, 0.01],

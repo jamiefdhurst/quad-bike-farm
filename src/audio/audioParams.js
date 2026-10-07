@@ -170,6 +170,7 @@ export const DEFAULT_AUDIO_PARAMS = {
   popChance: 0.12,
   popMinRpm: 2800,
   popVolume: 0.5,
+  spitVolume: 0.45, // a lean cold engine spitting back through the carb: a softer, lower whuff than a pop
 
   // Mechanical
   mechVolume: 0.012, // valvetrain and piston clatter
@@ -262,6 +263,7 @@ export const AUDIO_PARAM_RANGES = {
   popChance: [0, 1, 0.01],
   popMinRpm: [1000, 8000, 50],
   popVolume: [0, 2, 0.01],
+  spitVolume: [0, 2, 0.01],
   mechVolume: [0, 0.2, 0.001],
   intakeVolume: [0, 1, 0.005],
   intakeFreq: [100, 2000, 10],

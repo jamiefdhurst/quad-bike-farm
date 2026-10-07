@@ -557,6 +557,7 @@ export class CompanionVoice {
       this.watchLeftRunning(dt, unit, w, view);
       this.watchDrip(dt, unit, w, view);
       this.watchCoolant(dt, unit, w, view);
+      this.watchSpit(unit);
       this.watchHistory(dt, unit, w, view);
       this.watchQuirks(dt, unit, w, view);
       // Cranking on and on without it catching.
@@ -662,6 +663,18 @@ export class CompanionVoice {
     if (!view.drip.smells(unit.id) || this.chatter.time < (w.dripUntil ?? 0)) return;
     if (!this.say('dripSmell', { chance: c.params.dripSmellChance * dt })) return;
     w.dripUntil = this.chatter.time + 240;
+  }
+
+  /** A cold, lean quad spitting back through its carb (engine/spitBack.js): the girl sat on it jumps and yelps, one nearby just remarks on it. */
+  watchSpit(unit) {
+    if (!unit.engine.events.some((x) => x.type === 'spitBack')) return;
+    const c = this.companion;
+    if (c.isSeated && c.quad === unit.quad) {
+      c.startle();
+      this.say('spitBackOn', { urgent: true, chance: 1 });
+    } else if (unit.quad.position.distanceTo(this.head) < c.params.spitHearRange) {
+      this.say('spitBackNear', { chance: c.params.spitSayChance });
+    }
   }
 
   /**

@@ -584,6 +584,10 @@ class EngineProcessor extends AudioWorkletProcessor {
         // Unburnt fuel going off in the pipe on a closed throttle at speed (the engine model decides when).
         this.active.push({ kind: 'pop', age: -Math.round((0.004 + Math.random() * 0.012) * sr), amp: p.popVolume * (0.5 + ev.strength) });
         break;
+      case 'spitBack':
+        // A lean, cold engine's flame going back up the intake: a soft, wide 'whuff' from the airbox, not the pipe's sharp crack.
+        this.active.push({ kind: 'spit', age: -Math.round(0.003 * sr), amp: p.spitVolume * (0.5 + ev.strength), lp: 0 });
+        break;
       case 'misfire':
         this.addExhaust(0.12 * pressure, cycle, 0.3, p.turbulence * 2);
         if (Math.random() < p.popChance * 2) this.active.push({ kind: 'pop', age: -Math.round(0.01 * sr), amp: p.popVolume * 0.6 });
@@ -715,6 +719,13 @@ class EngineProcessor extends AudioWorkletProcessor {
             const env = Math.exp(-a / (0.003 * sr));
             exc += e.amp * (Math.random() * 2 - 1) * env * 2 + e.amp * env;
             done = a > 0.03 * sr;
+            break;
+          }
+          case 'spit': {
+            const env = Math.min(1, a / (0.004 * sr)) * Math.exp(-a / (0.035 * sr));
+            e.lp += ((Math.random() * 2 - 1) - e.lp) * 0.18;
+            dry += e.amp * env * (e.lp * 2.2 + Math.sin((TWO_PI * 130 * a) / sr) * 0.5);
+            done = a > 0.2 * sr;
             break;
           }
           case 'intake': {
@@ -855,6 +866,11 @@ class EngineProcessor extends AudioWorkletProcessor {
           const env = Math.exp(-a / (0.003 * sr));
           dry += e.amp * 0.5 * ((Math.random() * 2 - 1) * env * 1.4 + Math.sin((TWO_PI * 90 * a) / sr) * Math.exp(-a / (0.012 * sr)));
           done = a > 0.06 * sr;
+        } else if (e.kind === 'spit') {
+          const env = Math.min(1, a / (0.004 * sr)) * Math.exp(-a / (0.035 * sr));
+          e.lp += ((Math.random() * 2 - 1) - e.lp) * 0.18;
+          dry += e.amp * env * (e.lp * 2.2 + Math.sin((TWO_PI * 130 * a) / sr) * 0.5);
+          done = a > 0.2 * sr;
         } else if (e.kind === 'ping') {
           const env = Math.exp(-a / (0.004 * (e.ring ?? 1) * sr));
           dry += e.amp * env * (Math.sin((TWO_PI * e.freq * a) / sr) + 0.3 * (Math.random() * 2 - 1) * (a < 0.0015 * sr ? 1 : 0));

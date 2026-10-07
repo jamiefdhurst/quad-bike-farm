@@ -971,6 +971,11 @@ Companion.prototype.jumpBack = function (from) {
   this.recoil = { vx: (dx / d) * this.params.recoilSpeed, vz: (dz / d) * this.params.recoilSpeed, t: 0, k: 1 };
 };
 
+/** A start without going anywhere (a quad spitting back under her): arms up for a moment. */
+Companion.prototype.startle = function () {
+  this.recoil = { vx: 0, vz: 0, t: 0, k: 1 };
+};
+
 Companion.prototype.updateRecoil = function (dt) {
   const r = this.recoil;
   if (!r) return;

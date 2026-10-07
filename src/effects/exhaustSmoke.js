@@ -37,6 +37,7 @@ export const DEFAULT_SMOKE_PARAMS = {
   warmGray: 0.62,
   dieselGray: 0.5, // colour of diesel smoke: thick grey
   tint: '#ffffff', // colour cast; two-stroke oil smoke is bluish
+  spitPuffs: 5, // puffs of smoke a spit back through the carb throws out from under the seat (at full strength)
   flashBrightness: 1, // how bright an overrun pop's flash from the pipe is, in poor light
 };
 
@@ -71,6 +72,7 @@ export const SMOKE_PARAM_RANGES = {
   coldGray: [0, 1, 0.01],
   richGray: [0, 1, 0.01],
   warmGray: [0, 1, 0.01],
+  spitPuffs: [0, 12, 1],
   flashBrightness: [0, 3, 0.05],
 };
 
@@ -270,6 +272,18 @@ export class ExhaustSmoke {
       this.spawn(0.35 + 0.5 * level, 0.97, p.exitSpeed * (0.6 + level), carrierVel, 0);
     }
     this.simulate(dt);
+  }
+
+  /** A puff of smoke from the airbox, up and out from `at` (a world point under the seat), when a cold lean engine spits back. */
+  spit(at, carrierVel, strength) {
+    const keep = this.tipPos.clone();
+    const keepDir = this.tipDir.clone();
+    this.tipPos.copy(at);
+    this.tipDir.set(0, 1, 0);
+    const n = Math.round(this.params.spitPuffs * strength);
+    for (let i = 0; i < n; i++) this.spawn(0.55, this.params.coldGray, 0.9 + Math.random() * 0.6, carrierVel, 0);
+    this.tipPos.copy(keep);
+    this.tipDir.copy(keepDir);
   }
 
   spawn(alpha, gray, exit, carrierVel, preAge) {

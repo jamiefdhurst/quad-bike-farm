@@ -10,6 +10,7 @@ import { DEFAULT_ENGINE_PARAMS } from './engineParams.js';
 import { Knack } from './knack.js';
 import { oilExcess, stepLube, nipping, sumpLube } from './lubrication.js';
 import { runOnChance, popPropensity } from './runOn.js';
+import { followThrottle, isSnap, spitChance } from './spitBack.js';
 import { stepWater, waterCatchFactor } from './water.js';
 import { stepDieselSoak, dieselCatchFactor, contaminant } from './diesel.js';
 import { stepGlow, glowReady, compressionCatchFactor } from './compression.js';
@@ -97,6 +98,8 @@ export class EngineModel {
     this.sheltered = false; // parked under the barn roof: it cools slowly and never goes stone cold
     this.pink = 0; // 0..1 how badly it's pinking
     this.keyOff = false; // switched off but running on for a few more beats
+    this.slowThrottle = 0; // the throttle's recent self, to tell a snapped-open one (spitBack.js)
+    this.spitWait = 0; // seconds before it can spit back again
     this.runOnLeft = 0; // firings left of that
     this.water = 0; // 0..1 water swallowed through the intake (see water.js); it drains, and it won't catch while wet
     this.gulp = 0; // water being taken in right now, per second
@@ -248,6 +251,7 @@ export class EngineModel {
     this.pendingEvents.length = 0;
     if (this.params.noStarter) starter = false;
     this.throttle = clamp(throttle, 0, 1);
+    this.updateSpit(dt);
     this.choke = clamp(choke, 0, 1);
     this.load = clamp(load, 0, 1);
     this.fuel = clamp(fuel, 0, 1);
@@ -516,6 +520,19 @@ export class EngineModel {
     if (running && this.tick > 0 && this.random() < this.tick * p.tickRate * h * (0.5 + 0.5 * rpmNorm)) this.emit('coolTick', this.random() * h);
     this.nip = nipping(this.scuff, p.nipFrom);
     this.oilRich = oilExcess(this.oil, p.strokes, p);
+  }
+
+  /** A lean, cold engine with the throttle snapped open can spit back through the carb (spitBack.js). */
+  updateSpit(dt) {
+    const p = this.params;
+    this.spitWait = Math.max(0, this.spitWait - dt);
+    const snapped = isSnap(this.slowThrottle, this.throttle, p);
+    this.slowThrottle = followThrottle(this.slowThrottle, this.throttle, dt, p);
+    if (!snapped || this.spitWait > 0 || this.state !== EngineState.RUNNING) return;
+    if (this.random() < spitChance(this, p)) {
+      this.spitWait = p.spitCooldown;
+      this.events.push({ type: 'spitBack', t: 0, strength: 0.6 + 0.4 * this.random() });
+    }
   }
 
   updateMixture() {
