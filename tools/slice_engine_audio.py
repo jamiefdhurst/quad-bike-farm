@@ -183,6 +183,78 @@ BANKS = {
         'revTail': 0.75,
         'revOdd': 0.3,
     },
+    'engine-bank-moto': {
+        # The mini moto: a Derbi GPR 50 two-stroke with a race kit (ahnoj, Freesound 127592), close by as it's ridden off and
+        # back. Its idle is the purr between blips once it's back (the engine is off from about 54.5 s). At idle it bangs every
+        # other turn, a burst every 63 ms (about 1,900 rpm), so each burst is cut as a whole cycle and split in two
+        # (cycleSplit), one slice per turn, read back in order. Revs from the blips and riding off. Starter and shutdown
+        # borrow the quad recordings.
+        'segments': [
+            ('idle', 'der', 32.5, 35.0, (0.055, 0.075)),
+            ('idle', 'der', 41.0, 44.0, (0.055, 0.075)),
+            ('idle', 'der', 51.0, 54.0, (0.055, 0.075)),
+            ('accel', 'der', 17.5, 20.5, (0.01, 0.02)),
+            ('accel', 'der', 28.0, 30.5, (0.01, 0.02)),
+            ('accel', 'der', 44.0, 47.0, (0.01, 0.02)),
+            ('accel', 'der', 48.5, 50.5, (0.01, 0.02)),
+            ('decel', 'der', 20.5, 22.5, (0.01, 0.025)),
+        ],
+        'oneshots': [
+            ('starterEngage', 'quad', 0.08, 0.365),
+            ('crankLoop', 'quad', 0.365, 1.329),
+            ('shutdown', 'quad', 20.22, 21.2),
+        ],
+        'level': [('idle', 'idle', 'der')],
+        'fixedGain': {'quad': 4.851},  # as in engine-bank-50, which the mini moto used before
+        'idleCycles': True,
+        'cycleSplit': 2,
+        'revTail': 0.75,
+        'revOdd': 0.3,
+    },
+    'engine-bank-atc': {
+        # The ATC: a Piaggio Ape idling in a Bangalore street (nikitralala, Freesound 239927). It lumps along with a strong
+        # beat every 110 to 116 ms, buried in street noise, so like the moto it's cut into whole lumps split in three. Revs
+        # come from a Yamaha DT 125 two-stroke (kristian321, 175964) and an old Vespa PX 200 with a rusted exhaust ridden
+        # onboard (druki, 158891). Starter and shutdown borrow the quad recordings.
+        'segments': [
+            ('idle', 'ape', 2.0, 28.0, (0.1, 0.13)),
+            ('idle', 'ape', 30.0, 50.0, (0.1, 0.13)),
+            ('accel', 'dt', 15.0, 18.5, (0.01, 0.03)),
+            ('accel', 'ves', 48.0, 60.0, (0.012, 0.04)),
+            ('decel', 'dt', 18.0, 20.0, (0.01, 0.035)),
+        ],
+        'oneshots': [
+            ('starterEngage', 'quad', 0.08, 0.365),
+            ('crankLoop', 'quad', 0.365, 1.329),
+            ('shutdown', 'quad', 20.22, 21.2),
+        ],
+        'level': [('idle', 'idle', 'ape'), ('idle', 'accel', 'dt'), ('accel', 'accel', 'ves', 'dt')],
+        'fixedGain': {'quad': 6.283},  # as in engine-bank-2t, which the ATC used before
+        'idleCycles': True,
+        'cycleSplit': 3,
+        'revTail': 0.75,
+        'revOdd': 0.3,
+    },
+    'engine-bank-utv': {
+        # The UTV: a John Deere Gator idling, recorded on the vehicle (videog, Freesound 149193). A small three-cylinder
+        # diesel at about 970 rpm with one sharp beat per cycle, so it's cut into whole cycles like the tractor. Revs from a
+        # small Bobcat loader's diesel working (cognito perceptu, 174237). Starter and shutdown borrow the tractor's.
+        'segments': [
+            ('idle', 'gat', 0.2, 14.2, (0.11, 0.14)),
+            ('accel', 'bob', 168.0, 184.0, (0.04, 0.07)),
+            ('decel', 'bob', 176.0, 184.0, (0.04, 0.07)),
+        ],
+        'oneshots': [
+            ('starterEngage', 't1', 1.1, 1.4),
+            ('crankLoop', 't1', 1.4, 2.9),
+            ('shutdown', 't0', 61.4, 63.6),
+        ],
+        'level': [('idle', 'idle', 'gat'), ('idle', 'accel', 'bob')],
+        'fixedGain': {'t0': 1.503, 't1': 1.042},  # as in engine-bank-tractor, which the UTV used before
+        'idleCycles': True,
+        'revTail': 0.9,
+        'revOdd': 0.3,
+    },
 }
 
 
@@ -284,6 +356,21 @@ def whole_cycle_cuts(x, lo, hi):
     return cuts
 
 
+def split_cycles(x, cuts, n):
+    """Cuts each whole cycle into n equal grains, each start snapped to the nearest rising zero crossing. For a two-stroke whose
+    idle lumps along with a strong beat every few firings (four-stroking): the lump is easy to find in a noisy recording where
+    the single firings aren't, and read back in order (readThrough), its slices keep the lumpy pattern at the engine's own
+    firing rate instead of each firing playing only the start of a lump."""
+    out = []
+    for a, b in zip(cuts[:-1], cuts[1:]):
+        for k in range(n):
+            q = a + round(k * (b - a) / n)
+            zc = [j for j in range(max(1, q - int(0.0015 * SR)), min(len(x) - 1, q + int(0.0015 * SR))) if x[j - 1] <= 0 < x[j]]
+            out.append(min(zc, key=lambda j: abs(j - q)) if zc and k else q)
+    out.append(cuts[-1])
+    return out
+
+
 def flatten(x, cuts, rms3000, slope, headroom):
     """Takes distance out of a recording of a machine moving about: rescales it so each
     pulse's loudness follows its rpm, (rpm / 3000) ** slope times rms3000, instead of
@@ -337,6 +424,8 @@ def main():
         whole = kind == 'idle' and config.get('idleCycles')
         if whole:
             cuts = whole_cycle_cuts(x, lo, hi)
+            if config.get('cycleSplit', 1) > 1:
+                cuts = split_cycles(x, cuts, config['cycleSplit'])
         else:
             peaks = find_peaks(envelope(x, 0.0012), lo, hi)
             cuts = cut_points(x, peaks, fine_env)
@@ -383,6 +472,8 @@ def main():
             }
             if reason:
                 grain['ok'] = False
+            if whole and config.get('cycleSplit', 1) > 1:
+                grain['slice'] = i % config['cycleSplit']  # 0 is the slice with the bang in it
             grains.append(grain)
         plot_data.append((kind, src, t0, x, np.array(cuts) / SR))
 
@@ -410,6 +501,9 @@ def main():
     if 'flatten' in config:
         for name in config['flatten']['sources']:
             source_gain[name] = config['flatten']['headroom']
+    # Borrowed starter and shutdown recordings keep the gain they have in the bank the vehicle used before, so changing its
+    # idle recording doesn't make its starter louder or quieter.
+    source_gain.update(config.get('fixedGain', {}))
 
     os.makedirs(os.path.join(ROOT, 'public', 'audio'), exist_ok=True)
     with wave.open(os.path.join(ROOT, 'public', 'audio', f'{args.bank}.wav'), 'wb') as w:

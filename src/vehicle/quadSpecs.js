@@ -565,16 +565,16 @@ export const EXTRA_SPECS = [
       pitchFreq: 10,
       heaveDamping: 0.16,
     },
-    // The kids' quad's sound until it gets its own.
     audio: {
-      recBank: 'engine-bank-50',
+      recBank: 'engine-bank-moto', // a Derbi GPR 50 two-stroke, banging every other turn at idle
       engineSound: 'pulse',
       recIdleSource: 'quad',
       pulseRefRpm: 1800,
+      pulseRevLoudness: 0.2, // its revs are all bangs (pulseCleanUp), loud already: grow less than the default with revs
       recBlendLo: 3200,
       recBlendHi: 4200,
       recToneClosed: 9500,
-      recVolume: 0.5,
+      recVolume: 0.3, // the Derbi is a close, loud recording: this idles it as loud as the kids' quad's bank did
       pipeLength: 0.55,
       mufflerFreqA: 300,
       densityRefRpm: 2600,
@@ -668,9 +668,8 @@ export const EXTRA_SPECS = [
       heaveGain: 0.16,
       pitchGain: 0.3,
     },
-    // The yellow's sound until it gets its own.
     audio: {
-      recBank: 'engine-bank-2t',
+      recBank: 'engine-bank-atc', // a Piaggio Ape's slow lumpy tickover, with old two-stroke revs
       pulseRefRpm: 1500,
       pulseRevLoudness: 1.1, // a two-stroke gets louder faster as it revs
       pulseLoudnessCap: 2,
@@ -679,7 +678,7 @@ export const EXTRA_SPECS = [
       recBlendLo: 2600,
       recBlendHi: 3600,
       recToneClosed: 8000,
-      recVolume: 0.55,
+      recVolume: 0.42, // idles as loud as it did on the yellow's bank
       pipeLength: 0.95,
       mufflerFreqA: 210,
       densityRefRpm: 2400,
@@ -995,11 +994,11 @@ export const UTV_SPEC = {
     barsGain: 0.09,
   },
   audio: {
-    recBank: 'engine-bank-tractor',
+    recBank: 'engine-bank-utv', // a John Deere Gator's three-cylinder diesel, recorded on the vehicle
     recIdleSource: 'quad',
     pulseRefRpm: 850,
     pulseRevLoudness: 0.25,
-    recVolume: 0.5,
+    recVolume: 0.72, // the Gator's bank plays quieter than the tractor's did: this keeps its loudness
     recToneClosed: 4200,
     pipeLength: 1.2,
     densityRefRpm: 1200,

@@ -105,7 +105,7 @@ describe('extra vehicles', () => {
     expect(atc.engine.pullStart).toBe(true);
     expect(atc.engine.noStarter).toBe(true);
     expect(atc.wearRange[0]).toBeGreaterThanOrEqual(yellow.wearRange[1]);
-    expect(atc.audio.recBank).toBe(yellow.audio.recBank); // the yellow's sound for now
+    expect(atc.audio.recBank).toBe('engine-bank-atc'); // its own sound, a Piaggio Ape's tickover
     expect(atc.idleRange[0]).toBeGreaterThanOrEqual(1300); // a realistic two-stroke tickover
     expect(atc.idleRange[1]).toBeLessThanOrEqual(1800);
     const { ATC_LAYOUT } = await import('../src/vehicle/atcModel.js');

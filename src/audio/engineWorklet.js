@@ -112,6 +112,7 @@ class RecordedEngine {
     this.sourceGain = bank.sourceGain;
     this.crankRpm = bank.crankRpm;
     this.byKind = {};
+    this.leads = {}; // the bang slices of idles cut whole and split, by kind
     // Idle grains cut as whole, matching cycles (the tractor's) are played in recording order in the pulse sound, so its own
     // even rhythm comes through instead of a random grain from somewhere else each cycle.
     this.readThrough = !!bank.readThrough;
@@ -133,21 +134,25 @@ class RecordedEngine {
         gain: bank.sourceGain[g.src] ?? 1,
         next: null, // the grain straight after this one in the recording, if it survived the cut
         ok: g.ok !== false,
+        slice: g.slice ?? null, // which slice of its cycle, for idles cut whole and split (0 has the bang in it)
       };
       // Grains are stored in recording order; link ones that follow on without a gap.
       if (prev && Math.abs(prev.start + prev.len - grain.start) <= 2) prev.next = grain;
       prev = grain;
       // Pulses that failed the slicer's checks can be read through but never start a grain.
       if (g.ok !== false) (this.byKind[g.kind] ??= []).push(grain);
+      if (g.ok !== false && g.slice === 0) (this.leads[g.kind] ??= []).push(grain);
     }
     this.skip = { low: 0, high: 0 }; // pulses still covered by the last multi-cycle grain on each layer
     this.cursor = { low: null, high: null }; // last recorded grain played on each layer
     for (const k in this.byKind) this.byKind[k].sort((a, b) => a.rpm - b.rpm);
     // Typical loudness of each kind, for evening out unusually loud or quiet grains.
     this.medianRms = {};
+    this.medianRpm = {};
     for (const [k, list] of Object.entries(this.byKind)) {
       const sorted = list.map((g) => g.rms).sort((a, b) => a - b);
       this.medianRms[k] = sorted[Math.floor(sorted.length / 2)] || 1;
+      this.medianRpm[k] = list[Math.floor(list.length / 2)].rpm; // the list is sorted by rpm
     }
     this.levelling = 0.5;
     this.oneshots = {};
@@ -179,6 +184,11 @@ class RecordedEngine {
   pick(kinds, rpm) {
     const pool = [];
     for (const k of kinds) if (this.byKind[k]) pool.push(...this.byKind[k]);
+    return this.pickFrom(pool, rpm);
+  }
+
+  /** As pick, from a given list of grains (sorted here, so pass a copy if the order matters). */
+  pickFrom(pool, rpm) {
     if (!pool.length) return null;
     pool.sort((a, b) => Math.abs(Math.log(a.rpm / rpm)) - Math.abs(Math.log(b.rpm / rpm)));
     const near = pool.slice(0, 8).filter((g) => g !== this.last);
@@ -306,8 +316,16 @@ class RecordedEngine {
         if (p.engineSound === 'pulse') {
           // Revs built from idle: every firing is a recorded idle firing, cut off when the next one fires.
           const louder = Math.min(p.pulseLoudnessCap, Math.pow(Math.max(1, rpm / p.pulseRefRpm), p.pulseRevLoudness));
-          const next = this.readThrough ? this.cursor.low?.next : null;
-          const g = next?.ok && idleKinds.includes(next.kind) ? next : this.pick(idleKinds, cycleRpm);
+          // An idle cut in slices (the moto's and ATC's two-strokes) bangs every other turn or so, as the recording does. Well
+          // above the recorded idle a two-stroke cleans up and fires every turn, so from there only the bang slices play.
+          const leads = this.leads[idleKinds[0]];
+          let g;
+          if (leads && cycleRpm > p.pulseCleanUp * this.medianRpm[idleKinds[0]]) {
+            g = this.pickFrom([...leads], cycleRpm);
+          } else {
+            const next = this.readThrough ? this.cursor.low?.next : null;
+            g = next?.ok && idleKinds.includes(next.kind) ? next : this.pick(idleKinds, cycleRpm);
+          }
           this.playPulse(g, cycleRpm, gain * louder, ev.period, attack, p);
           return true;
         }

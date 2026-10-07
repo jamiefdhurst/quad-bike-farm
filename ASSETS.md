@@ -49,6 +49,30 @@ Quaternius: https://quaternius.com
 | Idle pulses, revs and shutdown | old throaty rattly tractor, close beside it | kyles | https://freesound.org/people/kyles/sounds/637890/ | CC0 1.0 |
 | A second idle, starter and cranking | the same tractor starting, revving and almost stalling | kyles | https://freesound.org/people/kyles/sounds/637891/ | CC0 1.0 |
 
+`public/audio/engine-bank-moto.wav` and `engine-bank-moto.json` (the mini moto) are cut from:
+
+| Used for | Recording | Author | Source | Licence |
+| --- | --- | --- | --- | --- |
+| Idle pulses and revs | moped-start-go-return-stop.WAV (a Derbi GPR 50 with a race kit) | ahnoj | https://freesound.org/people/ahnoj/sounds/127592/ | CC0 1.0 |
+| Starter and shutdown | Quad Bike_ATV Engine.wav (as above) | Alex Fitzwater | https://freesound.org/people/Alex_hears_things/sounds/379915/ | CC0 1.0 |
+
+`public/audio/engine-bank-atc.wav` and `engine-bank-atc.json` (the ATC) are cut from:
+
+| Used for | Recording | Author | Source | Licence |
+| --- | --- | --- | --- | --- |
+| Idle pulses | bangalore_ape.flac (a Piaggio Ape idling) | nikitralala | https://freesound.org/people/nikitralala/sounds/239927/ | CC0 1.0 |
+| Revs | Motocross bike starting and ticking over (a Yamaha DT 125) | kristian321 | https://freesound.org/people/kristian321/sounds/175964/ | CC0 1.0 |
+| Revs | Vespa Scooter PX 200 GS old exhaust wav | druki | https://freesound.org/people/druki/sounds/158891/ | CC0 1.0 |
+| Starter and shutdown | Quad Bike_ATV Engine.wav (as above) | Alex Fitzwater | https://freesound.org/people/Alex_hears_things/sounds/379915/ | CC0 1.0 |
+
+`public/audio/engine-bank-utv.wav` and `engine-bank-utv.json` (the UTV) are cut from:
+
+| Used for | Recording | Author | Source | Licence |
+| --- | --- | --- | --- | --- |
+| Idle pulses | tractor idling (a Gator, recorded on the vehicle) | videog | https://freesound.org/people/videog/sounds/149193/ | CC0 1.0 |
+| Revs | Bobcat.wav (a small loader at work) | cognito perceptu | https://freesound.org/people/cognito%20perceptu/sounds/174237/ | CC0 1.0 |
+| Starter, cranking and shutdown | the tractor recordings (as above) | kyles | https://freesound.org/people/kyles/sounds/637890/ | CC0 1.0 |
+
 `public/audio/ride.wav` and `ride.json` (mud squelches, splashes and landing thuds) are cut from these by `tools/slice_ride_audio.py`, using Freesound's high-quality MP3 previews. The other ride sounds (tyre rumble, grass, gravel, water churn, knocks, rattles and the rider's wind) are made in code.
 
 | Used for | Recording | Author | Source | Licence |
