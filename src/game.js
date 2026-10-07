@@ -109,6 +109,7 @@ import { buildPod } from './vehicle/dashPod.js';
 import { pickWornGearbox } from './vehicle/manualDrivetrain.js';
 import { DashClock, CLOCK_START_RANGE, pickReading, pickRelatedReading, setDashClock } from './vehicle/dashState.js';
 import { Bench } from './workshop/bench.js';
+import { Notebook } from './workshop/notebook.js';
 import { Interaction } from './interaction/interaction.js';
 import { Wheel } from './interaction/wheel.js';
 import { Hud } from './hud/hud.js';
@@ -696,6 +697,7 @@ export class Game {
       unit.quad.physics.applyParams();
     }
     this.bench = new Bench(this);
+    this.notebook = new Notebook(this); // Amy's logbook, on the bench
     // A hosepipe for washing the mud off.
     this.hose = new Hose({ scene: this.scene, world: this.world, position: L.hose, yaw: L.hose.yaw });
     // The green quad's winch, for pulling a stuck quad out of a bog.
@@ -731,6 +733,13 @@ export class Game {
       isAvailable: () => !this.handsFull,
       prompt: () => this.bench.prompt(),
       interact: () => this.bench.open(),
+    });
+    this.interaction.add({
+      target: this.notebook.proxy,
+      priority: 1, // it lies on the bench, whose box would otherwise be hit first
+      isAvailable: () => !this.handsFull,
+      prompt: () => this.notebook.prompt(),
+      interact: () => this.notebook.open(),
     });
 
     // The hayloft: the ladder up and down, and the hay to hide in.
@@ -2916,16 +2925,19 @@ export class Game {
       if (!c.quad || c.oilChecked === c.quad) continue;
       c.oilChecked = c.quad;
       c.walkFound = [];
+      const driven = this.units.find((u) => u.quad === c.quad);
       if (c.character.id !== 'amy') continue;
       if (Math.random() < this.walkParams.amyWalks) {
         c.walkFound = walkRound({ tyres: c.quad.tyres, faults: c.quad.faults }, this.walkParams);
         c.walkFound.forEach((key, i) => c.voice.say(key, { urgent: i === 0, chance: 1 }));
+        if (driven) for (const finding of c.walkFound) this.notebook.note(driven, { kind: 'walk', finding }, { saw: true });
       }
       const sump = c.quad.sump;
       if (!sump || Math.random() > this.sumpParams.amyChecks) continue;
       if (sump.level < this.sumpParams.minMark + this.sumpParams.amyTopUpMargin) {
         sump.fill();
         c.voice.say('oilTopUp', { urgent: true, chance: 1 });
+        if (driven) this.notebook.note(driven, { kind: 'oil' }, { saw: true });
       } else if (!c.walkFound.length) {
         c.voice.say('oilFine', { chance: 0.35 });
       }
@@ -2990,6 +3002,9 @@ export class Game {
     } else if (this.bench.isOpen) {
       this.interaction.clear();
       this.bench.handleInput(input);
+    } else if (this.notebook.isOpen) {
+      this.interaction.clear();
+      this.notebook.handleInput(input);
     } else if (this.climb) {
       this.interaction.clear();
       input.takeWheelSteps();
@@ -3121,6 +3136,7 @@ export class Game {
     this.updateChain();
     this.workshop.update(dt);
     this.bench.update(dt);
+    this.notebook.update(dt);
     this.updateLoft(dt);
     this.audioHub.setPouring(pouring, dt);
     this.audioHub.update(dt, this.camera);

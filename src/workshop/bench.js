@@ -85,6 +85,7 @@ export class Bench {
       const reading = readPlug(this.unit.engine, this.params);
       this.game.hud.toast(`The old plug is ${plugCondition(this.unit.engine, this.params)}`);
       for (const c of this.game.companions) c.voice.onPlug?.(reading.kind);
+      this.game.notebook.note(this.unit, { kind: 'plug', reading: reading.kind }, { by: 'you' });
     }
     for (const e of events) {
       if (e.type === 'flaw') this.say('flaw');
@@ -94,6 +95,7 @@ export class Bench {
         const unit = this.unit;
         this.game.hud.toast(finishJob(job, { engine: unit.engine, faults: unit.quad.faults, fuel: unit.quad.fuel, tyres: unit.quad.tyres, sump: unit.quad.sump }, this.params));
         this.say(job.botched ? 'botched' : 'done');
+        this.game.notebook.note(unit, { kind: 'job', job: job.kind, botched: job.botched }, { by: 'you' });
         this.job = null;
       }
     }

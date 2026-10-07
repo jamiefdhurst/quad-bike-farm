@@ -1409,3 +1409,12 @@ The item settled it; I chose the details without asking.
 - `taillightLevel` (headlight.js, tests in `tests/headlight.test.js`) takes the headlight's level so the tail shares its supply: `tailShare` 0.4 of it running (dim at idle, brighter with revs, flickering when rough, out when stalled or the key's off, steady on the loan quad), and braking lifts it to the brake light, from `brakeBase` 0.6 up to full as the supply does. With no supply, braking lights nothing. A girl braking while driving lights it too, as it goes by the quad's own brake input.
 - The orange has no lights (`noHeadlight`), so its tail light stays dark and it has no brake light.
 - Not checked: the brake light itself in the running game (the brake input is overwritten each frame, so my headless check only saw the dim running glow, which looked right), or the halo from side-on.
+
+## Amy's logbook (TODO 20)
+
+The item settled the idea, so I chose the details without asking.
+
+- Pure logic in `src/workshop/logbook.js` (tests in `tests/logbook.test.js`): `Logbook.write` turns "what happened" into a line like "Blue, belt slipping." and drops repeats of the same thing about the same quad inside `repeatSeconds` (120), so a quad she walks round every ride doesn't fill the page. The page keeps the last `maxEntries` (40). Time is seconds since the game began, shown as m:ss. Tunables are under "Logbook".
+- What goes in: her walk-round findings and oil top-ups (she did those herself, so always written), and the plug you pulled and the bench jobs you finish (written only if she is within `writeRange`, 15 m, which is her voice range for the bench lines, so she has to have seen it). Jobs and plugs are marked "(you)"; a botched job says "not well". The plug is written as what it really is (`readPlug`), not what a girl guessed, which is the point of the book being more honest than Jess.
+- The prop and the page are in `src/workshop/notebook.js`: a red notebook on the bench, 0.9 m along from the toolbox, read with `E`. The page is a card low on the screen like the bench panel, so the barn stays in view, and shows the newest entries at the bottom.
+- Left out: Jess's mistakes (she writes nothing), quirks and history (Amy doesn't know them for certain, so a line would be a lie or a spoiler), faults she hears or smells away from the bench, and the notebook surviving a reload. A girl can't pick it up or tease you about it yet. Checked: unit tests only. Not checked: how the notebook looks on the bench, whether the card reads well, or that the interact box beats the bench's own.

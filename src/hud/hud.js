@@ -27,7 +27,7 @@ const HELP_HTML = `
   <div>Hose: <kbd>E</kbd> pick up, hold <kbd>E</kbd> to wash. Toolbox: <kbd>E</kbd> pick up, <kbd>E</kbd> on a quad to tinker</div>
   <div>Green quad's winch: <kbd>X</kbd> take the hook, <kbd>E</kbd> on a quad to hook it, hold <kbd>X</kbd> to wind in</div>
   <div>Tractor's tow chain: <kbd>X</kbd> looking at the tractor to take it, <kbd>E</kbd> on a quad to hook it, then back the tractor up and drive off</div>
-  <div>Hayloft ladder and workbench in the barn: <kbd>E</kbd></div>
+  <div>Hayloft ladder, workbench and Amy's logbook in the barn: <kbd>E</kbd></div>
   <h3>Other</h3>
   <div><kbd>H</kbd> help, <kbd>N</kbd> call the girls, <kbd>M</kbd> mute, <kbd>\`</kbd> tuning panel</div>
 `;
