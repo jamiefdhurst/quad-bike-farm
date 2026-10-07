@@ -11,6 +11,10 @@ export const AMY_RACE_LINES = {
   raceWin: line(60, ['I won! I actually won!', 'Told you. Slow and steady.', 'That was a good one. Better luck next time, Jess.']),
   raceLose: line(60, ['It was the quad, not me. It would not pull.', 'You cheated. You must have cut a corner.', 'I was being careful. Somebody has to be.']),
   raceOut: line(60, ['Oh no, it has died. That does not count!', 'I am stuck. Stop the race, I am stuck!']),
+  raceInviteYou: line(60, ['Jess and I are going to race round the track. Would you like to join in? Line up on the start line.', 'Come and race with us. One lap, and you are on the start line by the yard.']),
+  raceJoinYou: line(60, ['Three of us, then. Do not worry, I will go easy on you.', 'Good. Somebody to beat who is not Jess.']),
+  raceBeatYou: line(60, ['I beat you! I actually beat you!', 'Never mind. You can try again when you have had some practice.']),
+  raceLoseToYou: line(60, ['Oh, you were quick. Well done.', 'I let you win. Honestly.', 'That is not fair, you had the better quad.']),
 };
 
 export const JESS_RACE_LINES = {
@@ -20,6 +24,10 @@ export const JESS_RACE_LINES = {
   raceWin: ['Yes! Top of the leaderboard!', 'Too easy. Do you want to go again?', 'Eat my mud, Amy!'],
   raceLose: ['That quad is rubbish. Give me a better one.', 'It was not a fair race. My engine was cold.', 'Best of three. I want a rematch.'],
   raceOut: ['It has stalled! Foul! Restart the race!', 'Typical. It has died on me.'],
+  raceInviteYou: ['Oi, you. Race us round the track. Me, Amy and you, one lap. Scared?', 'Bet you cannot beat me. Get on the start line.'],
+  raceJoinYou: ['Amy, you are going down as well.', 'Three of us. Loser makes the tea.'],
+  raceBeatYou: ['Ha! Beaten by me! Better luck next time.', 'You had no chance. I am the fastest.'],
+  raceLoseToYou: ['Oh, shut up. You got lucky.', 'You cheated. I know you cheated.', 'Fine. Fine! Rematch.'],
 };
 
 // After a race, whoever won and whoever lost (the roles are girl ids).

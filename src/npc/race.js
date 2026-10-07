@@ -19,6 +19,16 @@ export const DEFAULT_RACE_PARAMS = {
   cruiseConfidence: 4, // more for each 1 of confidence
   cruiseSpread: 1.5, // +/- random per race
   throttle: 1, // most throttle she'll use
+  youWait: 30, // seconds you get to line up on the grid once asked, before they race without you
+  dareStill: 4, // seconds you've sat still on a quad near the line before Jess may dare you
+  dareChance: 0.05, // per second after that, when the girls are free and it's been long enough
+  nearLine: 45, // metres from the start line you count as there (to be asked, or dared)
+  gridSpacing: 3, // metres between lanes on the grid when you are racing (1.5 either side of the middle when you're not)
+  youGridRadius: 5, // metres from your grid point you count as on the grid
+  youGridYaw: 0.7, // radians off the track's direction you may be pointing and still count as lined up
+  youCheckpoints: 4, // quarters of the lap you must pass through, in order, before the line counts
+  youFinishRadius: 8, // metres from the line at which you've finished, once the lap is done
+  youOutAfter: 15, // seconds off the quad or with it stalled and you're out of it
 };
 
 export const RACE_PARAM_RANGES = {
@@ -37,6 +47,16 @@ export const RACE_PARAM_RANGES = {
   cruiseConfidence: [0, 10, 0.5],
   cruiseSpread: [0, 5, 0.1],
   throttle: [0.3, 1, 0.05],
+  youWait: [5, 120, 5],
+  dareStill: [0, 30, 1],
+  dareChance: [0, 0.5, 0.01],
+  nearLine: [10, 150, 5],
+  gridSpacing: [2, 6, 0.5],
+  youGridRadius: [2, 12, 0.5],
+  youGridYaw: [0.2, 1.5, 0.05],
+  youCheckpoints: [2, 12, 1],
+  youFinishRadius: [3, 20, 1],
+  youOutAfter: [3, 60, 1],
 };
 
 /**
@@ -91,6 +111,46 @@ export function planLap(track, u0, hazards, { spacing = 10, margin = 1.4, latera
   return points;
 }
 
+/**
+ * Judges your lap, since you're not following a route: you must pass through each quarter of the lap in order (so you
+ * can't cut across the field), then get back to the line. `u0` is the line's fraction round the track, `p` the race
+ * params. Fed each frame with where you are: { riding, running, u (fraction round the track), distToLine }. Returns
+ * 'finish' once, 'out' once if you're off the quad or stalled for `youOutAfter` seconds, else null.
+ */
+export class YouRun {
+  constructor(u0, p) {
+    this.u0 = u0;
+    this.p = p;
+    this.next = 1; // the quarter to reach next
+    this.idle = 0;
+    this.done = false;
+  }
+
+  update(dt, { riding, running, u, distToLine }) {
+    if (this.done) return null;
+    this.idle = riding && running ? 0 : this.idle + dt;
+    if (this.idle > this.p.youOutAfter) {
+      this.done = true;
+      return 'out';
+    }
+    const n = this.p.youCheckpoints;
+    const rel = (((u - this.u0) % 1) + 1) % 1;
+    // Only the band you're meant to be in next counts, so going backwards or cutting across gets you nowhere.
+    if (this.next < n && rel >= this.next / n && rel < (this.next + 1) / n) this.next++;
+    if (this.next >= n && riding && distToLine < this.p.youFinishRadius && rel > 0.5 + 0.5 / n) {
+      this.done = true;
+      return 'finish';
+    }
+    return null;
+  }
+}
+
+/** Whether you're lined up on your grid point: close, stopped and pointing along the track (`trackYaw`). */
+export function youOnGrid({ dist, speed, yaw }, trackYaw, p) {
+  const off = Math.atan2(Math.sin(yaw - trackYaw), Math.cos(yaw - trackYaw));
+  return dist < p.youGridRadius && Math.abs(speed) < 0.5 && Math.abs(off) < p.youGridYaw;
+}
+
 export class Race {
   constructor(params = { ...DEFAULT_RACE_PARAMS }, random = Math.random) {
     this.p = params;
@@ -99,7 +159,8 @@ export class Race {
     this.freeTime = 0;
     this.lastRace = -Infinity;
     this.tally = {}; // girl id -> { wins, losses }
-    this.forced = false; // start one at the first chance, whatever the timing (the debug panel)
+    this.forced = false; // start one at the first chance, whatever the timing (the debug panel, or you asking)
+    this.stillTime = 0; // seconds you have sat still on a quad near the line
     this.reset();
   }
 
@@ -113,6 +174,7 @@ export class Race {
     this.phaseClock = 0;
     this.raceClock = 0;
     this.reported = null;
+    this.youIn = false;
   }
 
   get active() {
@@ -130,7 +192,7 @@ export class Race {
 
   /** Who is ahead on wins by the lead they go on about, if anyone: { leader, trailing }. */
   rivalry() {
-    const ids = Object.keys(this.tally);
+    const ids = Object.keys(this.tally).filter((id) => id !== 'you'); // the score between the girls
     if (ids.length < 2) return null;
     const [a, b] = ids;
     const diff = this.tally[a].wins - this.tally[b].wins;
@@ -142,6 +204,18 @@ export class Race {
   grid(girl) {
     if (this.phase !== 'gather') return;
     this.ready.add(girl);
+  }
+
+  /** You've pulled off the grid (or it's been noticed you are no longer on it): ready no more. */
+  ungrid(girl) {
+    this.ready.delete(girl);
+  }
+
+  dropYou(events) {
+    delete this.picks.you;
+    this.ready.delete('you');
+    this.youIn = false;
+    events.push({ type: 'youDropped' });
   }
 
   /** A girl has crossed the finish line. */
@@ -169,24 +243,41 @@ export class Race {
     const p = this.p;
     const events = [];
     this.clock += dt;
+    const you = ctx.you ?? {};
+    const youHere = !!(you.riding && you.near);
+    this.stillTime = youHere && you.still ? this.stillTime + dt : 0;
     if (this.phase === 'idle') {
       const bothFree = ctx.girls.length >= 2 && ctx.girls.every((g) => g.free);
       this.freeTime = bothFree ? this.freeTime + dt : 0;
-      const wait = !this.forced && (this.clock < p.startAfter || this.clock - this.lastRace < p.cooldown || this.freeTime < p.freeFor || this.random() >= p.chance * dt);
-      if (!bothFree || wait) return events;
+      const gated = this.clock < p.startAfter || this.clock - this.lastRace < p.cooldown || this.freeTime < p.freeFor;
+      let dare = false;
+      if (!bothFree) return events;
+      if (!this.forced) {
+        if (gated) return events;
+        if (this.random() < p.chance * dt) { /* they fancy a race anyway */ }
+        else if (this.stillTime >= p.dareStill && this.random() < p.dareChance * dt) dare = true;
+        else return events;
+      }
       const picks = pickQuads(ctx.options, ctx.claims, this.random);
       if (!picks) return events;
       this.forced = false;
       const ids = ctx.girls.map((g) => g.id);
-      this.challenger = ids.includes('jess') && this.random() < p.jessChallenges ? 'jess' : ids.find((id) => id !== 'jess') ?? ids[0];
+      // A dare to you is Jess's (or whoever's there); otherwise the usual.
+      this.challenger = dare && ids.includes('jess') ? 'jess' : ids.includes('jess') && this.random() < p.jessChallenges ? 'jess' : ids.find((id) => id !== 'jess') ?? ids[0];
+      this.youIn = youHere;
+      if (this.youIn) picks.you = you.riding;
       this.picks = picks;
       this.phase = 'gather';
       this.phaseClock = 0;
-      events.push({ type: 'invite', challenger: this.challenger, other: ids.find((id) => id !== this.challenger), picks });
+      events.push({ type: 'invite', challenger: this.challenger, other: ids.find((id) => id !== this.challenger), picks, youIn: this.youIn, dare });
       return events;
     }
 
     this.phaseClock += dt;
+    // You didn't line up in time, or got off: they race without you.
+    if ((this.phase === 'gather' && this.picks.you && (this.phaseClock > p.youWait || (you.riding !== this.picks.you && !this.ready.has('you')))) || (this.phase === 'countdown' && this.picks.you && !this.ready.has('you'))) {
+      this.dropYou(events);
+    }
     const racers = Object.keys(this.picks);
     if (this.phase === 'gather') {
       for (const g of this.out) events.push({ type: 'out', girl: g });
@@ -210,7 +301,7 @@ export class Race {
       this.finished.forEach((f, i) => {
         if (seen.has(`f${f.girl}`)) return;
         seen.add(`f${f.girl}`);
-        events.push({ type: 'finish', girl: f.girl, place: i + 1, time: f.time });
+        events.push({ type: 'finish', girl: f.girl, place: i + 1, time: f.time, ahead: this.finished.slice(0, i).map((x) => x.girl), youIn: !!this.picks.you });
       });
       for (const g of this.out) if (!seen.has(`o${g}`)) { seen.add(`o${g}`); events.push({ type: 'out', girl: g }); }
       if (this.raceClock > p.raceTimeout) for (const g of racers) if (!this.finished.some((f) => f.girl === g)) this.out.add(g);
@@ -239,16 +330,17 @@ export class Race {
   conclude(events) {
     const racers = Object.keys(this.picks);
     const first = this.finished[0]?.girl ?? null;
-    const loser = first ? racers.find((g) => g !== first) : null;
+    // The other girl, for the bicker afterwards (null when you won, or nobody finished).
+    const loser = first && first !== 'you' ? racers.find((g) => g !== first && g !== 'you') : null;
     let margin = 0;
     if (first && this.finished[1]) margin = this.finished[1].time - this.finished[0].time;
     if (first) {
       this.record(first).wins++;
-      this.record(loser).losses++;
+      for (const g of racers) if (g !== first) this.record(g).losses++;
     }
     this.lastRace = this.clock;
     this.phase = 'over';
     this.reported = null;
-    events.push({ type: 'result', winner: first, loser, margin, dnf: first && !this.finished[1] });
+    events.push({ type: 'result', winner: first, loser, margin, dnf: first && !this.finished[1], youIn: !!this.picks.you });
   }
 }

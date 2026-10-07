@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Race, pickQuads, planLap, DEFAULT_RACE_PARAMS as P } from '../src/npc/race.js';
+import { Race, YouRun, youOnGrid, pickQuads, planLap, DEFAULT_RACE_PARAMS as P } from '../src/npc/race.js';
 import { Track } from '../src/world/track.js';
 import { AMY_RACE_LINES, JESS_RACE_LINES, RACE_BANTER } from '../src/npc/raceLines.js';
 import { BANTER_TIMING } from '../src/npc/banter.js';
@@ -170,6 +170,32 @@ describe('her race mode when driving', () => {
     expect(d.events).toContain('raceGo');
   });
 
+  it('arriving on the grid pointing across the track, she goes back to the staging point to face the right way, twice at most', () => {
+    const race = { route: [{ x: 0, z: -14 }, { x: 0, z: 0 }, { x: 0, z: 30 }], gridIndex: 1, gridYaw: 0, go: () => false, alive: () => true, onGrid() {}, cruise: 10 };
+    const d = racer(race);
+    d.regrids = 0;
+    d.phase = 'drive';
+    d.index = 1;
+    d.quad.yaw = Math.PI / 2;
+    d.update(0.1);
+    expect(d.events).toContain('raceRegrid');
+    expect(d.index).toBe(0);
+    expect(d.phase).toBe('drive');
+    d.regrids = 2;
+    d.index = 1;
+    d.events = [];
+    d.update(0.1);
+    expect(d.events).toContain('raceGrid');
+    expect(d.phase).toBe('grid');
+    d.quad.yaw = 0;
+    d.regrids = 0;
+    d.index = 1;
+    d.phase = 'drive';
+    d.events = [];
+    d.update(0.1);
+    expect(d.events).toContain('raceGrid');
+  });
+
   it('stops where she is if the race is called off', () => {
     const race = { route: [{ x: 0, z: 0 }], gridIndex: 0, go: () => false, alive: () => false, cruise: 10 };
     const d = racer(race);
@@ -183,6 +209,10 @@ describe('her race mode when driving', () => {
 describe('what they say', () => {
   it('has lines for every part of a race, and banter for every outcome', () => {
     for (const k of ['raceInvite', 'raceAccept', 'raceCount', 'raceWin', 'raceLose', 'raceOut']) {
+      expect(AMY_RACE_LINES[k].lines.length, k).toBeGreaterThan(0);
+      expect(JESS_RACE_LINES[k].length, k).toBeGreaterThan(0);
+    }
+    for (const k of ['raceInviteYou', 'raceJoinYou', 'raceBeatYou', 'raceLoseToYou']) {
       expect(AMY_RACE_LINES[k].lines.length, k).toBeGreaterThan(0);
       expect(JESS_RACE_LINES[k].length, k).toBeGreaterThan(0);
     }
@@ -210,5 +240,148 @@ describe('called away', () => {
     r.stand();
     expect(r.active).toBe(false);
     expect(step(r, 5).some((e) => e.type === 'invite')).toBe(false);
+  });
+});
+
+describe('racing with you', () => {
+  const here = { riding: 'green', near: true, still: true };
+  const withYou = (o = {}) => ctx({ you: { ...here, ...o } });
+
+  it('invites you when they start a race and you are on a quad near the line, and not otherwise', () => {
+    expect(make().update(1, withYou())[0].youIn).toBe(true);
+    expect(make().update(1, withYou())[0].picks.you).toBe('green');
+    expect(make().update(1, withYou({ near: false }))[0].youIn).toBe(false);
+    expect(make().update(1, withYou({ riding: null }))[0].picks.you).toBeUndefined();
+  });
+
+  it('has Jess dare you once you have sat still near the line, even when they would not have asked themselves', () => {
+    const r = make({ chance: 0, dareChance: 1, dareStill: 3 });
+    expect(step(r, 2, withYou())).toEqual([]);
+    const [invite] = step(r, 3, withYou());
+    expect(invite).toMatchObject({ type: 'invite', challenger: 'jess', dare: true, youIn: true });
+    expect(make({ chance: 0, dareChance: 1, dareStill: 3 }).update(5, withYou({ still: false }))).toEqual([]);
+  });
+
+  it('starts when you ask for one, whatever the timing', () => {
+    const r = make({ chance: 0, startAfter: 999 });
+    r.forced = true;
+    expect(r.update(1, withYou())[0]).toMatchObject({ type: 'invite', youIn: true });
+  });
+
+  it('waits for you on the grid, then counts down, then runs', () => {
+    const r = make();
+    r.update(1, withYou());
+    r.grid('amy');
+    r.grid('jess');
+    step(r, 5, withYou());
+    expect(r.phase).toBe('gather');
+    r.grid('you');
+    expect(step(r, 1, withYou()).some((e) => e.type === 'countdown')).toBe(true);
+    step(r, 5, withYou());
+    expect(r.phase).toBe('race');
+  });
+
+  it('races without you if you do not line up in time, or get off', () => {
+    const r = make({ youWait: 20 });
+    r.update(1, withYou());
+    r.grid('amy');
+    r.grid('jess');
+    const events = step(r, 25, withYou());
+    expect(events.some((e) => e.type === 'youDropped')).toBe(true);
+    expect(r.phase).toBe('race');
+    expect(r.picks.you).toBeUndefined();
+    const r2 = make();
+    r2.update(1, withYou());
+    expect(step(r2, 1, withYou({ riding: null })).some((e) => e.type === 'youDropped')).toBe(true);
+  });
+
+  it('drops you rather than calling it off if you pull away during the count-down', () => {
+    const r = make();
+    r.update(1, withYou());
+    r.grid('amy');
+    r.grid('jess');
+    r.grid('you');
+    step(r, 0.5, withYou());
+    expect(r.phase).toBe('countdown');
+    r.ungrid('you');
+    const events = step(r, 1, withYou());
+    expect(events.some((e) => e.type === 'youDropped')).toBe(true);
+    expect(r.phase).toBe('countdown');
+  });
+
+  it('puts you in the results: you can win, and a girl is only the loser to the other girl', () => {
+    const r = make();
+    r.update(1, withYou());
+    r.grid('amy');
+    r.grid('jess');
+    r.grid('you');
+    step(r, 5, withYou());
+    r.finish('you');
+    r.finish('amy');
+    r.finish('jess');
+    const events = step(r, 1, withYou());
+    const result = events.find((e) => e.type === 'result');
+    expect(result).toMatchObject({ winner: 'you', loser: null, youIn: true });
+    expect(events.filter((e) => e.type === 'finish').map((e) => e.place)).toEqual([1, 2, 3]);
+    expect(events.find((e) => e.girl === 'amy' && e.type === 'finish').ahead).toEqual(['you']);
+    expect(r.tally.you.wins).toBe(1);
+    expect(r.tally.amy.losses).toBe(1);
+  });
+
+  it('ends the race when you are out and the girls are done, and keeps the girls own rivalry separate from you', () => {
+    const r = make({ rivalLead: 2 });
+    r.update(1, withYou());
+    r.grid('amy');
+    r.grid('jess');
+    r.grid('you');
+    step(r, 5, withYou());
+    r.abort('you');
+    r.finish('amy');
+    r.finish('jess');
+    const result = step(r, 1, withYou()).find((e) => e.type === 'result');
+    expect(result).toMatchObject({ winner: 'amy', loser: 'jess' });
+    r.tally.you = { wins: 9, losses: 0 };
+    expect(r.rivalry()).toBeNull();
+  });
+});
+
+describe('judging your lap', () => {
+  const run = () => new YouRun(0.3, { ...P });
+  const at = (rel, o = {}) => ({ riding: true, running: true, u: 0.3 + rel, distToLine: rel === 0 || rel > 0.95 ? 3 : 100, ...o });
+
+  it('finishes only after the lap in order, back at the line', () => {
+    const y = run();
+    expect(y.update(1, at(0))).toBeNull(); // sat on the line at the start is not a finish
+    for (const rel of [0.1, 0.3, 0.55, 0.8]) expect(y.update(1, at(rel))).toBeNull();
+    expect(y.update(1, at(0.97))).toBe('finish');
+    expect(y.update(1, at(0.97))).toBeNull(); // once
+  });
+
+  it('does not let you cut across the field or go back the wrong way', () => {
+    const y = run();
+    y.update(1, at(0.05));
+    expect(y.update(1, at(0.97))).toBeNull(); // skipped the quarters
+    const z = run();
+    expect(z.update(1, at(0.97))).toBeNull(); // wrong way round
+  });
+
+  it('puts you out after being off the quad or stalled too long', () => {
+    const y = run();
+    expect(y.update(10, at(0.2, { running: false }))).toBeNull();
+    expect(y.update(10, at(0.2, { running: false }))).toBe('out');
+    const z = run();
+    z.update(10, at(0.2, { riding: false }));
+    z.update(1, at(0.2)); // back on: the clock restarts
+    expect(z.update(10, at(0.2, { riding: false }))).toBeNull();
+  });
+});
+
+describe('lining up on the grid', () => {
+  it('counts you as lined up when close, stopped and pointing along the track', () => {
+    expect(youOnGrid({ dist: 2, speed: 0.1, yaw: 0.2 }, 0, P)).toBe(true);
+    expect(youOnGrid({ dist: 2, speed: 0.1, yaw: Math.PI }, 0, P)).toBe(false);
+    expect(youOnGrid({ dist: 9, speed: 0, yaw: 0 }, 0, P)).toBe(false);
+    expect(youOnGrid({ dist: 2, speed: 3, yaw: 0 }, 0, P)).toBe(false);
+    expect(youOnGrid({ dist: 2, speed: 0, yaw: 2 * Math.PI - 0.1 }, 0, P)).toBe(true); // wraps round
   });
 });

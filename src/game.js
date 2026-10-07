@@ -73,7 +73,7 @@ import { Haze, HAZE_PARAM_RANGES } from './world/haze.js';
 import { HazeLayer } from './effects/hazeLayer.js';
 import { BarnFumes, FUMES_PARAM_RANGES } from './world/barnFumes.js';
 import { barnShape } from './world/barn.js';
-import { Race, RACE_PARAM_RANGES, planLap } from './npc/race.js';
+import { Race, RACE_PARAM_RANGES, planLap, YouRun, youOnGrid } from './npc/race.js';
 import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
 import { Convoy, CONVOY_PARAM_RANGES } from './npc/convoy.js';
 import { DoughnutWatch, DOUGHNUT_PARAM_RANGES } from './npc/doughnuts.js';
@@ -132,6 +132,7 @@ const BARN_BULB = 30; // candela of the bulb in the barn, scaled by how far in y
 
 const FIXED_DT = 1 / 60;
 const MAX_FRAME_DT = 0.1;
+const RACE_STAGE_BACK = 14; // metres behind the start line the girls stage before they come up to the grid
 
 export class Game {
   constructor(RAPIER, canvas) {
@@ -2926,6 +2927,7 @@ export class Game {
     const free = (c) => c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot;
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
     const girls = this.companions.map((c) => ({ id: c.character.id, free: free(c) }));
+    this.updateRaceYou(dt, ridden);
     const options = {};
     for (const c of this.companions) {
       options[c.character.id] = this.girlUnits.filter((u) => u !== ridden && c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && !u.quad.bog.stuck).map((u) => u.spec.id);
@@ -2988,15 +2990,70 @@ export class Game {
 
   // Racing ------------------------------------------------------------------
 
-  /** The lap as waypoints for a girl on her side of the track: the grid point first, then round the loop and back to it. */
-  raceRoute(lateral, back = 0) {
+  /**
+   * The lap as waypoints for a girl on her side of the track: a staging point `STAGE_BACK` metres behind the line (so she comes at the
+   * grid along the track and ends up facing the right way), the grid point, then round the loop and back to the grid point.
+   */
+  raceRoute(lateral) {
     const L = this.world.layout;
     const h = this.world.heights;
     const hazards = [...(h.bogs ?? []).map((b) => ({ x: b.x, z: b.z, radius: b.radius })), ...(h.puddles ?? []).map((p) => ({ x: p.x, z: p.z, radius: L.puddleRadius + 1.5 }))]; // a puddle at speed drowns the engine, so well clear
-    // `back` metres behind the line (side by side on the grid, 3 m apart, so neither is in the other's way).
-    const s = this.world.track.sample(this.raceStart - back / this.world.track.totalLength);
-    const grid = { x: s.x - s.tz * lateral, z: s.z + s.tx * lateral };
-    return [grid, ...planLap(this.world.track, this.raceStart, hazards, { spacing: this.race.p.routeSpacing, margin: this.race.p.hazardMargin, lateral })];
+    const track = this.world.track;
+    const at = (back) => {
+      const s = track.sample(this.raceStart - back / track.totalLength);
+      return { x: s.x - s.tz * lateral, z: s.z + s.tx * lateral };
+    };
+    return [at(RACE_STAGE_BACK), at(0), ...planLap(track, this.raceStart, hazards, { spacing: this.race.p.routeSpacing, margin: this.race.p.hazardMargin, lateral })];
+  }
+
+  /** Where you are for the race: on a quad or not, how near the start line, and whether you've sat still there. */
+  raceYou(ridden) {
+    const q = ridden?.quad;
+    if (!q || !this.girlUnits.includes(ridden)) return { riding: null, near: false, still: false };
+    const line = this.world.track.sample(this.raceStart);
+    return {
+      riding: ridden.spec.id,
+      near: Math.hypot(q.position.x - line.x, q.position.z - line.z) < this.race.p.nearLine,
+      still: Math.abs(q.forwardSpeed) < 1 && q.engine.isRunning,
+    };
+  }
+
+  /** You ask the girls for a race, from the saddle near the start line. They start one as soon as both are free. */
+  askForRace(ridden) {
+    const you = this.raceYou(ridden);
+    if (!you.riding) return this.hud.toast('You need to be on a quad to ask for a race', 2);
+    if (!you.near) return this.hud.toast('Ride up to the start line by the yard first', 2);
+    if (this.race.active) return this.hud.toast('There is a race on already', 1.6);
+    this.race.forced = true;
+    this.hud.toast('Asking the girls for a race', 2);
+  }
+
+  /** Your part in a race: lined up on the grid, then your lap judged (npc/race.js). */
+  updateRaceYou(dt, ridden) {
+    const race = this.race;
+    if (!race.active || !race.picks?.you) return void (this.youRun = null);
+    const q = ridden?.quad;
+    const line = this.world.track.sample(this.raceStart);
+    const dist = q ? Math.hypot(q.position.x - line.x, q.position.z - line.z) : Infinity;
+    if (race.phase === 'gather' || race.phase === 'countdown') {
+      // Once lined up you may roll a little on a slope; the count-down only drops you if you really move off.
+      const speed = q ? (race.ready.has('you') && Math.abs(q.forwardSpeed) < 2 ? 0 : q.forwardSpeed) : 9;
+      const on = !!q && ridden.spec.id === race.picks.you && youOnGrid({ dist, speed, yaw: q.yaw }, Math.atan2(line.tx, line.tz), race.p);
+      if (on && !race.ready.has('you')) {
+        race.grid('you');
+        this.hud.toast('On the line. Waiting for the girls', 2);
+      } else if (!on) race.ungrid('you');
+    } else if (race.phase === 'race') {
+      this.youRun ??= new YouRun(this.raceStart, race.p);
+      this.youClock = (this.youClock ?? 0) + dt;
+      if (this.youClock < 0.2) return;
+      const step = this.youClock;
+      this.youClock = 0;
+      const u = q ? nearestTrackFraction(this.world.track, q.position.x, q.position.z) : this.raceStart;
+      const verdict = this.youRun.update(step, { riding: !!q && ridden.spec.id === race.picks.you, running: !!q && q.engine.isRunning, u, distToLine: dist });
+      if (verdict === 'finish') race.finish('you');
+      else if (verdict === 'out') race.abort('you');
+    }
   }
 
   updateRace(dt, ridden) {
@@ -3013,23 +3070,27 @@ export class Game {
     if (this.race.active && this.race.phase !== 'over') {
       for (const id of Object.keys(this.race.picks ?? {})) {
         const c = byId[id];
+        if (!c) continue; // you
         const busy = c.fsm.is('walking', 'mounting', 'driving', 'shuffling', 'dismounting') || !!c.drive?.race;
         this.raceIdle[id] = busy ? 0 : (this.raceIdle[id] ?? 0) + dt;
         if (this.raceIdle[id] > 4) this.race.abort(id);
       }
     } else this.raceIdle = {};
-    for (const e of this.race.update(dt, { girls, options, claims: this.ownership.claims })) {
+    for (const e of this.race.update(dt, { girls, options, claims: this.ownership.claims, you: this.raceYou(ridden) })) {
       if (e.type === 'invite') {
-        byId[e.challenger].voice.say('raceInvite', { force: true });
-        later(3500, () => byId[e.other]?.voice.say('raceAccept', { force: true }));
+        byId[e.challenger].voice.say(e.youIn ? 'raceInviteYou' : 'raceInvite', { force: true });
+        later(3500, () => byId[e.other]?.voice.say(e.youIn ? 'raceJoinYou' : 'raceAccept', { force: true }));
+        if (e.youIn) this.hud.toast('Race: line up on the start line by the yard, pointing along the track', 4);
         let side = 1;
         for (const [id, spec] of Object.entries(e.picks)) {
           const c = byId[id];
+          if (!c) continue; // you
           const quad = this.girlUnits.find((u) => u.spec.id === spec).quad;
           const confidence = c.driveConfidence ?? c.params.driveConfidence;
           const race = {
-            route: this.raceRoute(1.5 * side),
-            gridIndex: 0,
+            route: this.raceRoute((e.youIn ? p.gridSpacing : 1.5) * side),
+            gridIndex: 1,
+            gridYaw: Math.atan2(this.world.track.sample(this.raceStart).tx, this.world.track.sample(this.raceStart).tz),
             cruise: p.cruiseBase + p.cruiseConfidence * confidence + (Math.random() * 2 - 1) * p.cruiseSpread,
             throttle: p.throttle,
             go: () => this.race.go(),
@@ -3042,11 +3103,17 @@ export class Game {
           c.requestDrive(quad, { race });
         }
       } else if (e.type === 'countdown') byId[this.race.challenger]?.voice.say('raceCount', { force: true });
+      else if (e.type === 'go') {
+        if (this.race.picks.you) this.hud.toast('Go!', 1.2);
+      } else if (e.type === 'youDropped') this.hud.toast('The girls are going without you', 2.5);
       else if (e.type === 'finish') {
-        if (e.place === 1) byId[e.girl].voice.say('raceWin', { force: true });
-        else later(2500, () => byId[e.girl]?.voice.say('raceLose', { force: true }));
-      } else if (e.type === 'out') byId[e.girl]?.voice.say('raceOut', { force: true });
-      else if (e.type === 'result' && e.winner) this.raceResult = { winner: e.winner, loser: e.loser };
+        if (e.girl === 'you') this.hud.toast(['', 'You won!', 'You came second', 'You came third'][e.place] ?? `You finished`, 3);
+        else if (e.place === 1) byId[e.girl].voice.say(e.youIn ? 'raceBeatYou' : 'raceWin', { force: true });
+        else later(2500, () => byId[e.girl]?.voice.say(e.ahead.includes('you') ? 'raceLoseToYou' : 'raceLose', { force: true }));
+      } else if (e.type === 'out') {
+        if (e.girl === 'you') this.hud.toast('You are out of the race', 2.5);
+        else byId[e.girl]?.voice.say('raceOut', { force: true });
+      } else if (e.type === 'result' && e.winner && e.loser) this.raceResult = { winner: e.winner, loser: e.loser };
     }
   }
 
@@ -3453,6 +3520,7 @@ export class Game {
     if (input.wasPressed('Backquote')) this.debugGui.toggle();
     if (input.wasPressed('KeyJ')) this.toggleHitch();
     if (input.wasPressed('KeyN')) this.recallGirls();
+    if (input.wasPressed('Enter') && !this.menu.isOpen && this.player.isRiding) this.askForRace(this.riddenUnit);
     if (input.wasPressed('KeyM')) {
       this.audioHub.params.muted = !this.audioHub.params.muted;
       this.hud.toast(this.audioHub.params.muted ? 'Sound off' : 'Sound on', 1.2);

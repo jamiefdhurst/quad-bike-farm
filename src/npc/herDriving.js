@@ -152,7 +152,7 @@ export class HerDrive {
    * @param {function} [opts.passenger]  () => whether someone's riding on the back; then she doesn't tire of it.
    * @param {boolean} [opts.tires]  Her own idea to take you out: she gets bored with you aboard like any drive, and gives up if you never get on.
    * @param {boolean} [opts.waitForPassenger]  Started it to give you a ride: she waits for you to get on.
-   * @param {object} [opts.race]  A race (npc/race.js): { route, gridIndex, cruise, go(), alive(), onGrid(), onFinish(), onAbort() }. She
+   * @param {object} [opts.race]  A race (npc/race.js): { route, gridIndex, gridYaw, cruise, go(), alive(), onGrid(), onFinish(), onAbort() }. She
    *   drives to the grid waypoint, waits for go(), then flat out round the rest of the route and over the line (the last
    *   waypoint), with no pauses and no tiring or scaring of herself.
    * @param {object} [opts.doughnut]  { centre, radius, dir, seconds, p }: instead of her loops she drives to the circle and spins
@@ -217,6 +217,7 @@ export class HerDrive {
     this.clearAround = Infinity; // nearest thing off to either side
     this.stuckTime = 0;
     this.bogs = 0; // times it's sat there and not gone
+    this.regrids = 0; // times she has gone round again to face the right way on the grid
     this.boost = 0; // seconds left giving it extra throttle
     this.hillStart = 0; // extra throttle she's learned to pull away with, after rolling back
     this.waypoints = [];
@@ -788,6 +789,13 @@ export class HerDrive {
       this.cleanLeg = true;
       if (this.race) {
         if (this.index - 1 === this.race.gridIndex) {
+          // Pointing the wrong way (she came at it from the side): back to the staging point behind the line and come at it again.
+          if (this.race.gridYaw !== undefined && Math.abs(angleDiff(q.yaw, this.race.gridYaw)) > this.p.raceGridYaw && this.regrids < 2) {
+            this.regrids++;
+            this.index = 0;
+            this.events.push('raceRegrid');
+            return;
+          }
           // On the start line: stop and wait for the start.
           this.events.push('raceGrid');
           this.race.onGrid?.();
