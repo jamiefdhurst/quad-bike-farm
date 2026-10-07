@@ -1576,6 +1576,12 @@ Settled with Jamie before building: a second, small trailer (the bale trailer st
 - No new lines: they use `mudBoard`, `utvBoard` and `utvBedGo`. The girls don't drive the UTV yet, so there is no UTV version of the join; it comes with item 37.
 - Checked: unit tests for all of it (`tests/mudguardRide.test.js`, `tests/utvRide.test.js`). Not run in the game: the walk over and climb, the driver's wait for her, and how often it happens in real play.
 
+## Back on the bench (2026-10-07)
+
+- Holding the toolbox or the jump leads and looking at the workbench, `E` puts them in their own places on top of it: the toolbox where it starts (`LAYOUT.toolbox`) and the leads at `LAYOUT.benchLeads` (x -63.55, the far end, clear of the toolbox and Amy's logbook; a test checks the places sit on the bench and apart). Before, `G` only dropped them on the floor at your feet. The leads still start by the hose; I took "back" to mean returning them, not moving where they begin.
+- Amy hiding the toolbox and putting it back used to lose its height and leave it on the floor under the bench. The height is kept with where it was taken from now.
+- Checked: the places test only. Not looked at in the game (how the leads lie on the bench, and the prompt).
+
 ## The trailer's cargo (2026-10-07)
 
 - The jump leads can be stood in the tipping trailer like a can or the toolbox (`heldLoad` includes them; they tip out with the rest).

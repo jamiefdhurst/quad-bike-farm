@@ -127,7 +127,7 @@ The ground changes as you play. Wherever quads keep driving over the field (you,
 
 ## Tinkering
 
-Pick up the red toolbox from the workbench in the barn (`E`), take it to a quad that's switched off and press `E` to get the spanners out. The panel has six adjustments (seven on the yellow and orange, which have a jet kit), each with its current and stock values and a note on the trade-off:
+Pick up the red toolbox from the workbench in the barn (`E`), take it to a quad that's switched off and press `E` to get the spanners out (look at the workbench and press `E` to put it back). The panel has six adjustments (seven on the yellow and orange, which have a jet kit), each with its current and stock values and a note on the trade-off:
 
 - **Idle screw**: the warm idle, within safe limits.
 - **Carb mixture**: leaner pulls a bit harder and uses less fuel but runs rougher; richer is easier from cold but smokier and thirstier, and fully rich slowly fouls the plug.
@@ -376,7 +376,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 3.  Need to be able to service the UTV and the tractor at least, a little bit. **Done.** See DECISIONS.md, "Servicing the tractor and UTV".
 4.  Toolbox menu is a mess, it needs fixed positions for all of the button options, they're jumping around. **Done.** See DECISIONS.md, "A steady toolbox panel".
 5.  Jump leads need to be able to go in the back of the trailer too. The items in the trailer need to be further in, they're overlapping with the sides. **Done.** See DECISIONS.md, "The trailer's cargo".
-6.  Put toolbox back on bench, and jump leads.
+6.  Put toolbox back on bench, and jump leads. **Done.** Look at the workbench with the toolbox or the jump leads in your hands and `E` puts them back in their places on top of it. See DECISIONS.md, "Back on the bench".
 7.  How do I put oil in the 4-strokes? I can't pick the oil bottle up. Make sure I can put this where every other picked up item can go today.
 8.  Tractor noise sometimes sounds OK, sometimes has something over it, like a heavy noise.
 9.  Steam from hot engines.

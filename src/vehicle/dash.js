@@ -19,6 +19,8 @@ import {
 //   kidsKey:   kids' quad. A key switch under the bar clamp.
 //   tractor:   the tractor. Three round dials in chrome bezels (water temperature, a rev counter with an hour meter and the PTO speed marked, fuel), GLOW, CHARGE and OIL lamps and the key.
 //   utv:       the UTV. A big speedo with an hour meter, fuel and water dials, GLOW, CHARGE, OIL and PARK (parking brake) lamps, R / N / D lamps and the key.
+//   series:    the Land Rover. A Series III binnacle: a big speedo to 90 mph with its odometer, a combined fuel and water gauge,
+//              IGN, OIL, CHOKE and BRAKE lamps, a 4WD and a DIFF lamp, and the key.
 //
 // buildDash(style) returns { group, update(state), mount } where state is { rpm, maxRpm, redline, speedMph, fuelLevel, reserveLevel,
 // tap, temperature, overheat, coldBelow, ignition (has power), keyOn, tripMiles, odoMiles, hours, reverse, neutral, clock, seconds }.
@@ -567,8 +569,94 @@ function buildUtv() {
   };
 }
 
+// The Land Rover ----------------------------------------------------------------------------
+
+function buildSeries() {
+  const group = new THREE.Group();
+  group.name = 'dash';
+  const O = { ox: 180, oy: 60 };
+  // A black binnacle in front of the driver: the speedo on the left, the fuel and water gauge on the right, the lamps along the
+  // bottom and the key at the end.
+  housing(group, { x: 80, y: 14, w: 200, h: 92, r: 10, ...O, material: plastic });
+  const face = mmPanel({ x: 80, y: 14, w: 200, h: 92, ...O });
+  group.add(face.mesh);
+  const speedo = { cx: 140, cy: 50, r: 34 };
+  const combo = { cx: 222, cy: 48, r: 25 };
+  for (const d of [speedo, combo]) chromeRing(group, { ...d, r: d.r + 1, ...O });
+  const gate = changeGate();
+  let shownMph = 0;
+  let shownFuel = 0;
+  let shownTemp = 0;
+
+  function draw(ctx, s, L) {
+    // The speedo: 0 to 90 mph round 260 degrees, white on black, with the odometer's drums under the boss.
+    ctx.fillStyle = '#0b0b0b';
+    ctx.beginPath();
+    ctx.arc(speedo.cx, speedo.cy, speedo.r, 0, Math.PI * 2);
+    ctx.fill();
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 6, speedo.r - 1.5, 220, -40, 18, '#ece6d2', 0.5);
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 9, speedo.r - 1.5, 220, -40, 9, '#ece6d2', 1);
+    labels(ctx, speedo.cx, speedo.cy, speedo.r - 15, 220, -40, ['0', '10', '20', '30', '40', '50', '60', '70', '80', '90'], '#ece6d2', 4.2);
+    text(ctx, 'MPH', speedo.cx, speedo.cy - 10, 3.6, '#ccc', { align: 'center' });
+    const odo = counterDigits(s.odoMiles, 5);
+    drum(ctx, speedo.cx - 14, speedo.cy + 12, odo.whole, odo.tenth, 6);
+    needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 220 - (260 * Math.min(90, L.mph)) / 90, '#f0eadc', 1.2);
+    // The combination gauge: fuel along its top half, water temperature along its bottom, each with its own needle.
+    ctx.fillStyle = '#0b0b0b';
+    ctx.beginPath();
+    ctx.arc(combo.cx, combo.cy, combo.r, 0, Math.PI * 2);
+    ctx.fill();
+    ticks(ctx, combo.cx, combo.cy, combo.r - 5, combo.r - 1.5, 150, 30, 4, '#ece6d2', 0.8);
+    ticks(ctx, combo.cx, combo.cy, combo.r - 5, combo.r - 1.5, 210, 330, 4, '#ece6d2', 0.8);
+    arc(ctx, combo.cx, combo.cy, combo.r - 2.5, 315, 330, '#d8402e', 2.2);
+    text(ctx, 'FUEL', combo.cx, combo.cy - 9, 3.4, '#bbb', { align: 'center' });
+    text(ctx, 'TEMP', combo.cx, combo.cy + 12, 3.4, '#bbb', { align: 'center' });
+    text(ctx, 'E', combo.cx - combo.r * 0.62, combo.cy - 6, 3.8, '#ece6d2', { align: 'center' });
+    text(ctx, 'F', combo.cx + combo.r * 0.62, combo.cy - 6, 3.8, '#ece6d2', { align: 'center' });
+    text(ctx, 'C', combo.cx - combo.r * 0.62, combo.cy + 9, 3.8, '#ece6d2', { align: 'center' });
+    text(ctx, 'H', combo.cx + combo.r * 0.62, combo.cy + 9, 3.8, '#ff6a5a', { align: 'center' });
+    needle(ctx, combo.cx, combo.cy, combo.r - 4, 150 - 120 * L.fuel, '#f0eadc', 1);
+    needle(ctx, combo.cx, combo.cy, combo.r - 4, 210 + 120 * L.temp, '#f0eadc', 1);
+    // The lamps along the bottom, then the key.
+    lamp(ctx, 100, 95, LAMP.red, 'IGN', L.charge, { r: 3.2 });
+    lamp(ctx, 122, 95, LAMP.amber, 'OIL', L.oil, { r: 3.2 });
+    lamp(ctx, 144, 95, LAMP.amber, 'CHOKE', L.choke, { r: 3.2 });
+    lamp(ctx, 166, 95, LAMP.red, 'BRAKE', L.park, { r: 3.2 });
+    lamp(ctx, 190, 95, LAMP.green, '4WD', L.fourWd, { r: 3.2, shape: 'rect' });
+    lamp(ctx, 212, 95, LAMP.amber, 'DIFF', L.lock, { r: 3.2, shape: 'rect' });
+    keySwitch(ctx, 256, 92, s.keyOn);
+  }
+
+  return {
+    group,
+    mount: null,
+    update(s) {
+      shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
+      shownFuel += ((s.ignition ? s.fuelLevel : 0) - shownFuel) * 0.2;
+      shownTemp += ((s.ignition ? tempGaugeFraction(s.temperature, true, s.overheat) : 0) - shownTemp) * 0.1;
+      const running = s.rpm > 300;
+      const on = !!s.ignition;
+      const L = {
+        mph: shownMph,
+        fuel: shownFuel,
+        temp: shownTemp,
+        charge: on && !running,
+        oil: on && (!running || !!s.oilLow),
+        choke: on && (s.choke ?? 0) > 0.05,
+        park: on && !!s.parkBrake,
+        fourWd: on && !!s.fourWd,
+        lock: on && !!s.diffLock,
+      };
+      const odo = counterDigits(s.odoMiles, 5);
+      if (gate([on, s.keyOn, L.charge, L.oil, L.choke, L.park, L.fourWd, L.lock, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
+        face.redraw((ctx) => draw(ctx, s, L));
+      }
+    },
+  };
+}
+
 /** Dash styles buildDash knows: every quad spec must name one of these. */
-export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey', 'tractor', 'utv'];
+export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey', 'tractor', 'utv', 'series'];
 
 /** Where each dash sits on the bars (metres, in the bars' frame) and how far it tilts back. A nacelle quad carries its own on its top. */
 export const DASH_PLACE = {
@@ -581,6 +669,7 @@ export const DASH_PLACE = {
   kidsKey: { pos: [0, 0.075, 0.0], tilt: 0.9 },
   tractor: { pos: [0, 0, 0], tilt: 1.05 }, // the tractor's model places it on its scuttle itself
   utv: { pos: [0, 0, 0], tilt: 0.9 }, // so does the UTV's
+  series: { pos: [0, 0, 0], tilt: 0.55 }, // and the Land Rover's
 };
 
 const BUILDERS = {
@@ -593,6 +682,7 @@ const BUILDERS = {
   kidsKey: buildKidsKey,
   tractor: buildTractor,
   utv: buildUtv,
+  series: buildSeries,
 };
 
 export function buildDash(style = 'foreman') {

@@ -817,9 +817,9 @@ export class Game {
     // The workbench: jobs on a quad parked in the painted bay (workshop/bench.js).
     this.interaction.add({
       target: this.bench.proxy,
-      isAvailable: () => !this.handsFull,
-      prompt: () => this.bench.prompt(),
-      interact: () => this.bench.open(),
+      isAvailable: () => !this.handsFull || !!this.benchItem(),
+      prompt: () => (this.benchItem() ? `Put the ${this.benchItem().name} back on the bench` : this.bench.prompt()),
+      interact: () => (this.benchItem() ? this.putOnBench(this.benchItem()) : this.bench.open()),
     });
     this.interaction.add({
       target: this.notebook.proxy,
@@ -3359,7 +3359,10 @@ export class Game {
       else if (e.type === 'restore') {
         const thing = a.item === 'can' ? this.petrolCan : this.toolbox;
         const home = this.itemHome[a.item];
-        if (home && !thing.held) thing.putDown(home, home.yaw);
+        if (home && !thing.held) {
+          thing.putDown(home, home.yaw);
+          if (home.y !== undefined) thing.model.position.y = home.y; // back on the bench, not under it
+        }
       }
       if (e.type === 'resolved' || e.type === 'restore') delete this.itemHome[a.item];
     }
@@ -3382,7 +3385,7 @@ export class Game {
         else quad.choke = 1;
       } else {
         if (thing.held) return this.pranks.cancel(a);
-        this.itemHome[a.item] = { x: thing.model.position.x, z: thing.model.position.z, yaw: thing.model.rotation.y };
+        this.itemHome[a.item] = { x: thing.model.position.x, z: thing.model.position.z, yaw: thing.model.rotation.y, y: thing.model.position.y };
         thing.putDown(a.spot, Math.random() * Math.PI * 2);
       }
       this.pranks.apply(a);
@@ -3725,6 +3728,20 @@ export class Game {
     const p = this.player.position;
     const yaw = this.player.yaw;
     this.leads.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7), yaw);
+  }
+
+  /** The toolbox or the jump leads in your hands, which the workbench has a place for: { name, item, spot }, or null. */
+  benchItem() {
+    const L = this.world.layout;
+    if (this.toolbox.held) return { name: 'toolbox', item: this.toolbox, spot: L.toolbox };
+    if (this.leads.held) return { name: 'jump leads', item: this.leads, spot: L.benchLeads };
+    return null;
+  }
+
+  /** E at the workbench with the toolbox or the leads in your hands: back in their place on top of it. */
+  putOnBench({ item, spot }) {
+    item.putDown(new THREE.Vector3(spot.x, 0, spot.z), spot.yaw);
+    item.model.position.y += this.world.layout.bench.height;
   }
 
   putToolboxDown() {
