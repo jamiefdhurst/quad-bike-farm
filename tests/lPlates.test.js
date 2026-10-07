@@ -64,3 +64,16 @@ describe('meanSkill', () => {
     expect(meanSkill(undefined)).toBe(0.5);
   });
 });
+
+describe('put', () => {
+  it('moves them for the debug window, and the story carries on', () => {
+    const l = make();
+    l.put('tractor');
+    expect(l.where).toBe('tractor');
+    l.put('quad');
+    expect(l.where).toBe('quad');
+    expect(l.tapes).toBe(1);
+    l.put('none');
+    expect(run(l, P.backGapMin - 5)).toEqual([]);
+  });
+});

@@ -18,6 +18,7 @@ export class DebugGui {
     this.buildLive();
     this.buildFavour();
     this.buildSkills();
+    this.buildLPlates();
     this.buildGirls();
     this.buildActions();
     const folders = {};
@@ -205,6 +206,17 @@ export class DebugGui {
     for (const key of Object.keys(nudges)) f.add(nudges, key);
     nudges['Reset both'] = () => favour.ids.forEach((id) => (favour.scores[id] = 0));
     f.add(nudges, 'Reset both');
+  }
+
+  /** Buttons to put the L plates on Amy's quad or the tractor, or take them off, so you can see them (npc/lPlates.js). */
+  buildLPlates() {
+    const l = this.game.lPlates;
+    const f = this.gui.addFolder('L plates (live)');
+    f.add(l, 'where').listen().disable();
+    const actions = { quad: () => l.put('quad'), tractor: () => l.put('tractor'), off: () => l.put('none') };
+    f.add(actions, 'quad').name("Put them on Amy's quad");
+    f.add(actions, 'tractor').name('Put them on the tractor');
+    f.add(actions, 'off').name('Take them off');
   }
 
   /** What each girl is good at, live, with buttons to push a skill up or down. */

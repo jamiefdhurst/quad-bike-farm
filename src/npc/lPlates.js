@@ -46,6 +46,14 @@ export class LPlates {
     this.backAt = this.p.firstAfter; // clock time they turn up again
   }
 
+  /** Debug: put the plates somewhere now ('quad', 'tractor' or 'none'). The story carries on from there. */
+  put(where) {
+    this.where = where;
+    this.peelAt = Infinity;
+    if (where === 'quad') this.tapes = Math.max(this.tapes, 1);
+    if (where === 'none') this.backAt = this.clock + this.p.backGapMin;
+  }
+
   /**
    * One step. `ctx`: { amyFree, jessFree, amyByQuad (she's within reach of the plates on her quad), hasQuad (Amy has a quad of her own),
    * confidence (Amy's mean skill), tractorFree (nobody on or going to it) }. Returns events: { type, girl }.
