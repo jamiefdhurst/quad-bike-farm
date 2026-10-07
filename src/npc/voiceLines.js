@@ -14,6 +14,7 @@ import { AMY_LOFT_LINES } from './loftLines.js';
 import { AMY_BATTERY_LINES } from './batteryLines.js';
 import { AMY_KNACK_LINES } from './knackLines.js';
 import { AMY_OIL_LINES } from './oilLines.js';
+import { AMY_WALK_LINES } from './walkLines.js';
 import { AMY_DIESEL_LINES } from './dieselLines.js';
 import { AMY_HEAT_LINES } from './heatLines.js';
 import { AMY_SILENCER_LINES } from './silencerLines.js';
@@ -1388,6 +1389,8 @@ export const VOICE_LINES = {
   ...AMY_KNACK_LINES,
   // Two-stroke oil (oilLines.js).
   ...AMY_OIL_LINES,
+  // Amy's walk-round before she rides (walkLines.js).
+  ...AMY_WALK_LINES,
   ...AMY_DIESEL_LINES,
   // Heat (heatLines.js).
   ...AMY_HEAT_LINES,

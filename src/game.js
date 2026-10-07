@@ -85,6 +85,7 @@ import { BanterWatch } from './npc/banterWatch.js';
 import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES, PREMIX_CAN_COLOURS, DIESEL_CAN_COLOURS } from './items/jerryCan.js';
 import { OilBottle, OIL_BOTTLE_PARAM_RANGES } from './items/oilBottle.js';
 import { ratioText } from './engine/lubrication.js';
+import { walkRound, DEFAULT_WALK_PARAMS, WALK_PARAM_RANGES } from './npc/walkRound.js';
 import { Sump, DEFAULT_SUMP_PARAMS, SUMP_PARAM_RANGES, pickBurner, startLevel, readStick } from './vehicle/sump.js';
 import { fuelText } from './engine/diesel.js';
 import { FuelTank } from './items/fuelTank.js';
@@ -250,6 +251,8 @@ export class Game {
     // Engine oil: each four-stroke's sump starts at its own level, and one of them burns oil this game (vehicle/sump.js).
     this.sumpParams = { ...DEFAULT_SUMP_PARAMS };
     registerTuning('Engine oil', this.sumpParams, SUMP_PARAM_RANGES);
+    this.walkParams = { ...DEFAULT_WALK_PARAMS };
+    registerTuning('Amy walk-round', this.walkParams, WALK_PARAM_RANGES);
     const sumpRandom = createRandom(this.seed ^ 0x0115);
     const sumpUnits = this.units.filter((u) => u.quad.sump);
     const burnerId = pickBurner(sumpUnits.map((u) => u.spec.id), sumpRandom);
@@ -2797,7 +2800,8 @@ export class Game {
   }
 
   /**
-   * Amy checks the dipstick before she rides a quad, and tops it up if it wants some; Jess never has. Once per ride.
+   * Amy walks round a quad before she rides it: squeezes the tyres, looks it over and checks the dipstick, and tops it up if it wants some,
+   * saying what she finds. Jess goes straight to the starter. Once per ride. `c.walkFound` keeps what she found, for the girls to act on later.
    */
   updateOilChecks() {
     for (const c of this.companions) {
@@ -2806,14 +2810,20 @@ export class Game {
         c.oilChecked = null;
         continue;
       }
-      const sump = c.quad?.sump;
-      if (!sump || c.oilChecked === c.quad) continue;
+      if (!c.quad || c.oilChecked === c.quad) continue;
       c.oilChecked = c.quad;
-      if (c.character.id !== 'amy' || Math.random() > this.sumpParams.amyChecks) continue;
+      c.walkFound = [];
+      if (c.character.id !== 'amy') continue;
+      if (Math.random() < this.walkParams.amyWalks) {
+        c.walkFound = walkRound({ tyres: c.quad.tyres, faults: c.quad.faults }, this.walkParams);
+        c.walkFound.forEach((key, i) => c.voice.say(key, { urgent: i === 0, chance: 1 }));
+      }
+      const sump = c.quad.sump;
+      if (!sump || Math.random() > this.sumpParams.amyChecks) continue;
       if (sump.level < this.sumpParams.minMark + this.sumpParams.amyTopUpMargin) {
         sump.fill();
         c.voice.say('oilTopUp', { urgent: true, chance: 1 });
-      } else {
+      } else if (!c.walkFound.length) {
         c.voice.say('oilFine', { chance: 0.35 });
       }
     }

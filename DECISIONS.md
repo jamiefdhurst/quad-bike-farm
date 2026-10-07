@@ -1327,3 +1327,12 @@ Item 11; the item settled the shape, so I chose the details without asking.
 - The girls: Amy checks the dipstick once each time she starts driving a quad (nine times in ten) and tops it up with no ceremony if it's under 0.45 ("That's low on oil. There, I've topped it up."), otherwise sometimes says it's fine. Jess never checks. The girls' ticking line (`engineTicking`) is new for both; the existing hot, nipping and seized lines already fit. Lines are in `oilLines.js`. Amy tops up instantly rather than walking to the bottle.
 - Debug panel: the engine folder has a draggable engine oil level and whether it's the burner, and the start-of-game console report prints each quad's sump and which one burns.
 - Checked: unit tests and a production build. Not checked in the running game: how the dipstick toast and the pour feel, the tick sound, the smoke look, the lamp flicker on the red's dash, or the girls' new lines (recording in the background). Left for later: a carried oil bottle, oil in the tractor (it has an OIL lamp but no sump), and Amy refusing a quad she knows is low (item 31).
+
+## Amy's walk-round (TODO 12)
+
+The item settled the shape, so I chose the details without asking.
+
+- Pure logic in `src/npc/walkRound.js` (tests in `tests/walkRound.test.js`, tunables under "Amy walk-round" in the panel). It is the oil check's moment: `Game.updateOilChecks` runs it once each time a girl starts driving a quad. Jess does nothing, as before. Amy walks round 85% of the time, then does the dipstick (as in the oil section).
+- What she can find: a puncture past level 0.12 (85%), else a tyre 1.2 psi or more under stock, counting only real wheels, not a two-wheeler's outriggers (85%); a belt, cable or carb fault past level 0.3 (55% each). She says at most two, the puncture or soft tyre first. If she found something she skips the "oil is fine" remark.
+- She says it and does nothing else: she doesn't pump the tyre or fix anything, and she still rides. Her finds are kept in `companion.walkFound` for item 31 (Amy won't ride it) to use. It is instant at the moment she takes the quad, with no walking round and no animation (item 45 is about animations).
+- Not done: the fuel tap. The girls' starting already deals with the tap, and a walk-round remark about it would repeat that. Not checked in the running game: how often she finds something on a real start, or the five new lines (recorded in the background).
