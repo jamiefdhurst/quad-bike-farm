@@ -116,9 +116,6 @@ export class DebugGui {
       get trip() {
         return `${unit().quad.tripMiles.toFixed(2)} mi`;
       },
-      get history() {
-        return g.describeHistory(unit());
-      },
       get erratic() {
         return unit().engine.erratic;
       },
