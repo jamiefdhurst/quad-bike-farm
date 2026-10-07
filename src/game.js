@@ -25,6 +25,7 @@ import { pickHistory, pickFaultChance } from './vehicle/history.js';
 import { TyreSet, dealTyres, DEFAULT_TYRE_PARAMS, TYRE_PARAM_RANGES } from './vehicle/tyres.js';
 import { pushDirection, localAlong } from './vehicle/controls.js';
 import { RollWatch, rollReactions, DEFAULT_HANDBRAKE_PARAMS, HANDBRAKE_PARAM_RANGES } from './vehicle/handbrake.js';
+import { DEFAULT_DRIVE_PARAMS, DRIVE_PARAM_RANGES, StuckWatch, forgotReaction } from './vehicle/driveMode.js';
 import { HEADLIGHT_PARAMS, HEADLIGHT_PARAM_RANGES } from './vehicle/headlight.js';
 import { describeVehicle } from './debug/startReport.js';
 import { QuirkSet, DEFAULT_QUIRK_PARAMS, QUIRK_PARAM_RANGES, featuresOf, pickQuirks } from './vehicle/quirks.js';
@@ -252,6 +253,9 @@ export class Game {
     this.pushing = null; // the unit you're shoving along on foot (pushOnFoot)
     registerTuning('Handbrake', this.handbrakeParams, HANDBRAKE_PARAM_RANGES);
     this.rollWatch = new RollWatch(this.handbrakeParams);
+    // The red and blue's 2WD / 4WD switch (vehicle/driveMode.js): they start in 2WD, and the girls forget it.
+    registerTuning('2WD and 4WD', DEFAULT_DRIVE_PARAMS, DRIVE_PARAM_RANGES);
+    this.fourWdState = new Map(); // companion -> { quad: the switched quad she's driving or null, watch }
     registerTuning('Headlights', HEADLIGHT_PARAMS, HEADLIGHT_PARAM_RANGES);
     // One to three quirks each, from the parts the quad has (a gauge quirk needs a dash or pod that shows it, so this comes after the pods).
     this.quirkParams = { ...DEFAULT_QUIRK_PARAMS };
@@ -1355,6 +1359,30 @@ export class Game {
       const at = this.units.find((u) => u.id === e.id).quad.position;
       const girls = this.companions.map((c) => ({ id: c.character.id, near: c.root.position.distanceTo(at) < this.handbrakeParams.hearRange && !c.fsm.is('driving') }));
       for (const r of rollReactions(e, girls)) this.companions.find((c) => c.character.id === r.girl)?.voice.say(r.situation, { force: true });
+    }
+  }
+
+  /**
+   * A girl taking the wheel of a quad with a 2WD / 4WD switch may remember to put it in 4WD (a per-girl chance); if she doesn't and it
+   * bogs her down in 2WD, she works out why, flips it, and her friend (if near) says so (vehicle/driveMode.js).
+   */
+  updateFourWd(dt) {
+    for (const c of this.companions) {
+      const st = this.fourWdState.get(c) ?? { quad: null, watch: new StuckWatch(DEFAULT_DRIVE_PARAMS) };
+      this.fourWdState.set(c, st);
+      const q = c.fsm.is('driving') && c.quad.drive ? c.quad : null;
+      if (q !== st.quad) {
+        st.quad = q;
+        st.watch.reset();
+        if (q && Math.random() < c.params.remembers4wd) q.drive.engage4wd();
+      }
+      if (!q) continue;
+      const mud = Math.max(this.world.mudAt(q.position.x, q.position.z), this.world.bogAt?.(q.position.x, q.position.z) ?? 0);
+      const speed = Math.hypot(q.velocity.x, q.velocity.z);
+      if (!st.watch.update(dt, { is2wd: !q.drive.frontDriven, throttle: q.throttle, mud, speed })) continue;
+      q.drive.engage4wd();
+      const near = this.companions.filter((o) => o === c || o.root.position.distanceTo(q.position) < DEFAULT_HANDBRAKE_PARAMS.hearRange).map((o) => o.character.id);
+      for (const r of forgotReaction(c.character.id, near)) this.companions.find((o) => o.character.id === r.girl)?.voice.say(r.situation, { force: true });
     }
   }
 
@@ -3367,6 +3395,7 @@ export class Game {
     this.updateQuirks(dt, ridden);
     this.updateOilChecks();
     this.updateHandbrake(dt);
+    this.updateFourWd(dt);
     this.skills.update(dt);
     this.updatePillionCoach(dt);
     this.updateRequests(dt, ridden);

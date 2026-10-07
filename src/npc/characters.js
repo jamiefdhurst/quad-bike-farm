@@ -20,7 +20,7 @@ export const CHARACTERS = [
   {
     id: 'amy',
     name: 'Amy',
-    params: { outfit: 'farmPolo', boredShowOffChance: 0.04, sideSaddleChance: 0.4, blownNoticeAt: 0.25 }, // sits side-saddle on the back, ladylike
+    params: { outfit: 'farmPolo', boredShowOffChance: 0.04, sideSaddleChance: 0.4, blownNoticeAt: 0.25, remembers4wd: 0.65 }, // sits side-saddle on the back, ladylike
     lines: VOICE_LINES,
     voiceBank: 'companion-voice', // public/audio/<voiceBank>.json, recorded by tools/generate_companion_voice.py
     soundRate: 1, // her sighs and laughs, played at this speed (a shade higher pitched above 1)
@@ -39,6 +39,7 @@ export const CHARACTERS = [
       boredAfterMax: 70,
       boredMountChance: 0.2,
       parkBrakeChance: 0.5, // leaves it in gear-less limbo half the time
+      remembers4wd: 0.25, // and mostly forgets the 4WD switch
       rockPrankChance: 0.02,
       boredStartChance: 0.25,
       boredDoughnutChance: 0.12, // spins doughnuts in the field when she's bored

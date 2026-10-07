@@ -370,7 +370,7 @@ export function poseSuspension(quad, wheelY) {
 
 // Handlebars -----------------------------------------------------------------
 
-function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb') {
+function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = null) {
   const bars = new THREE.Group();
   bars.name = 'handlebars';
   bars.userData.keep = true;
@@ -424,6 +424,24 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb') {
     bars.userData.chokeElsewhere = true; // buildQuadModel fits it under the tank and parents this empty group there
   }
   bars.userData.chokeGroup = choke;
+
+  // The 2WD / 4WD rocker on a little housing inboard of the right grip (driveMode.js), and on the blue a red diff lock button beside it.
+  if (driveSwitch) {
+    rbox(0.04, 0.026, 0.044, 0.008, MAT.plastic, -0.19, 0.068, -0.03, bars, 'driveSwitchHousing');
+    const rocker = new THREE.Group();
+    rocker.name = 'driveSwitchRocker';
+    rocker.position.set(-0.19, 0.084, -0.03);
+    bars.add(rocker);
+    rbox(0.028, 0.008, 0.032, 0.003, new THREE.MeshStandardMaterial({ color: 0x25272a, roughness: 0.6 }), 0, 0.002, 0, rocker, 'driveSwitchRockerCap', 1);
+    if (driveSwitch.lock) {
+      rbox(0.03, 0.02, 0.03, 0.006, MAT.plastic, -0.245, 0.064, -0.03, bars, 'diffLockHousing');
+      const button = add(new THREE.CylinderGeometry(0.009, 0.009, 0.012, 12), new THREE.MeshStandardMaterial({ color: 0xc8261e, roughness: 0.5 }), bars, 'diffLockButton');
+      button.position.set(-0.245, 0.078, -0.03);
+      button.userData.baseY = button.position.y;
+      button.userData.keep = true;
+    }
+    rocker.userData.keep = true;
+  }
 
   // Thumb throttle and its housing on the right.
   rbox(0.04, 0.036, 0.042, 0.01, MAT.plastic, -0.3, 0.066, -0.032, bars);
@@ -1043,7 +1061,7 @@ function buildChokePlunger(root, choke) {
   add(new THREE.CylinderGeometry(0.02, 0.02, 0.016, 14), new THREE.MeshStandardMaterial({ color: 0xf0d020, roughness: 0.5 }), choke, 'chokeKnob').position.set(0, -0.008, 0);
 }
 
-export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', style = 'utility', solo = false, plateNumber = '7', chokeStyle = 'thumb', tapStyle = 'left' } = {}) {
+export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', style = 'utility', solo = false, plateNumber = '7', chokeStyle = 'thumb', tapStyle = 'left', driveSwitch = null } = {}) {
   const race = style === 'sport2';
   const farm = style === 'utility3';
   const sport = style === 'sport' || race; // two-stroke chassis
@@ -1369,7 +1387,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   else footwells(root);
 
   // Handlebars.
-  const bars = buildHandlebars(dashStyle, cfg, chokeStyle);
+  const bars = buildHandlebars(dashStyle, cfg, chokeStyle, driveSwitch);
   if (chokeStyle === 'plunger') buildChokePlunger(root, bars.userData.chokeGroup);
   if (sport) {
     // Motocross bars with a padded crossbar, ahead of the dash so it doesn't block the display.

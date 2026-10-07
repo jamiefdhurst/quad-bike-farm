@@ -13,6 +13,7 @@ const HELP_HTML = `
   <div><kbd>Q</kbd> more choke, <kbd>Z</kbd> less, <kbd>F</kbd> fuel tap. Each quad's choke, tap and reverse are in a different place: look down for them, and some need you stopped or a hand off the bars</div>
   <div>Red, green and yellow have a clutch: hold <kbd>Shift</kbd> to change gear with <kbd>1</kbd> to <kbd>4</kbd>, <kbd>B</kbd> reverse (red: turn the bars as you press it; green: stopped), <kbd>0</kbd> neutral</div>
   <div><kbd>W</kbd> throttle, <kbd>S</kbd> brake (blue and loan: hold it and press <kbd>B</kbd> for reverse, then <kbd>S</kbd> backs up), <kbd>A</kbd><kbd>D</kbd> steer</div>
+  <div>Red and blue: <kbd>G</kbd> 2WD or 4WD (4WD for the mud; the rocker on the bars), blue: <kbd>U</kbd> diff lock</div>
   <div><kbd>Space</kbd> parking brake, <kbd>T</kbd> right it if it tips, <kbd>E</kbd> get off</div>
   <div>Hold <kbd>L</kbd> for the horn: the girls beep back</div>
   <div>Hold <kbd>C</kbd> to look back, <kbd>V</kbd> to lean in to the dash</div>

@@ -139,7 +139,7 @@ export class QuadPhysics {
       if (this.tyres) w.grip *= this.tyres.grip(i, w.mud, w.puddle);
       // Puddles are mud too, as far as the engine's concerned.
       this.wheelMud[i] = Math.max(w.mud, w.puddle);
-      w.driven = this.wheels[i].driven !== false && isDriven(p, this.wheels[i].front);
+      w.driven = this.wheels[i].driven !== false && (!this.wheels[i].front || (this.frontDriven ?? isDriven(p, true)));
     }
     const t = this.traction.update(dt, driveForce, this.wheelInfo, p);
     if (Math.abs(driveForce) > 1) this.driveSign = Math.sign(driveForce);

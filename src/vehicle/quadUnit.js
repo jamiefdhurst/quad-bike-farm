@@ -53,6 +53,7 @@ export class QuadUnit {
       reverseStyle: spec.reverseStyle,
       chokeStyle: spec.chokeStyle,
       tapStyle: spec.tapStyle,
+      drive: spec.driveSwitch ? { lock: !!spec.diffLock } : null,
       controlsParams: { ...DEFAULT_CONTROLS_PARAMS },
       fuelParams: { ...DEFAULT_FUEL_PARAMS, ...spec.fuel },
       ...((spec.tractor || spec.manual) && { gearbox: { ...DEFAULT_GEARBOX_PARAMS, ...spec.gearbox } }),

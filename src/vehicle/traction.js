@@ -24,6 +24,7 @@ export class Traction {
     this.spin = 0; // 0..1, how hard the driven wheels are spinning
     this.demand = 0; // drive force asked for over the grip available (1 = on the limit)
     this.putDown = 1; // fraction of the drive force that got through to the ground
+    this.gripScale = 1; // the diff lock's extra bite on the drive (driveMode.js), set by the quad
     this.forces = new Float32Array(wheelCount);
     this.grips = new Float32Array(wheelCount);
   }
@@ -43,7 +44,8 @@ export class Traction {
       driven++;
       if (w.contact) capacity += w.grip * w.load;
     }
-    capacity *= p.driveGrip;
+    const driveGrip = p.driveGrip * this.gripScale;
+    capacity *= driveGrip;
     const want = Math.abs(driveForce);
     // Airborne, the wheels spin freely with any throttle.
     this.demand = capacity > 1 ? want / capacity : want > 1 ? 10 : 0;
@@ -59,7 +61,7 @@ export class Traction {
       const w = wheels[i];
       let f = 0;
       if (w.driven) {
-        if (capacity > 1) f = w.contact ? (through * w.grip * w.load * p.driveGrip) / capacity : 0;
+        if (capacity > 1) f = w.contact ? (through * w.grip * w.load * driveGrip) / capacity : 0;
         else f = want / driven;
       }
       this.forces[i] = sign * f;

@@ -103,6 +103,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   thrashColdBelow: 0.4, // engine temperature (0 cold, 1 warm) under which hard riding counts as thrashing it
   thrashWork: 0.6, // how hard it's working (0..1) before she calls it thrashing
   parkBrakeChance: 0.9, // getting off a quad she was driving, the chance she pulls the parking brake on (an empty quad only holds on a slope if she does)
+  remembers4wd: 0.4, // taking the wheel of a quad with a 2WD / 4WD switch left in 2WD, the chance she remembers to put it in 4WD (else she finds out in the mud)
   rockPrankChance: 0, // per second stood next to a quad her friend is sat on running: the chance she reaches over and blips it
   rockPrankRange: 3.5, // metres from that quad she has to be
   thrashChance: 0.15, // per second she can see a quad being thrashed cold, that she says something
@@ -336,6 +337,7 @@ export const COMPANION_PARAM_RANGES = {
   thrashColdBelow: [0, 1, 0.05],
   thrashWork: [0, 1, 0.05],
   parkBrakeChance: [0, 1, 0.05],
+  remembers4wd: [0, 1, 0.05],
   rockPrankChance: [0, 0.2, 0.005],
   rockPrankRange: [1, 10, 0.5],
   thrashChance: [0, 1, 0.01],

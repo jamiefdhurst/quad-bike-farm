@@ -29,6 +29,7 @@ export const QUAD_SPECS = [
     bodyColor: 0xa8271f,
     style: 'utility',
     dashStyle: 'foreman',
+    driveSwitch: true, // a 2WD / 4WD switch on the bars (driveMode.js)
     reverseStyle: 'bars', // where the reverse is and what it takes to use it (controls.js)
     chokeStyle: 'thumb', // where the choke is and what it takes to reach it
     tapStyle: 'left', // where the fuel tap sits
@@ -65,6 +66,8 @@ export const QUAD_SPECS = [
     bodyColor: 0x1d4fa3,
     style: 'utility2',
     dashStyle: 'grizzly',
+    driveSwitch: true,
+    diffLock: true, // and a diff lock button
     reverseStyle: 'button', // where the reverse is and what it takes to use it (controls.js)
     chokeStyle: 'plunger', // where the choke is and what it takes to reach it
     tapStyle: 'right', // where the fuel tap sits

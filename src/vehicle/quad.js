@@ -18,6 +18,7 @@ import { Creep, mayCreep, DEFAULT_CREEP_PARAMS } from './creep.js';
 import { Bog } from './bog.js';
 import { Sump, hasSump, oilPressureLamp } from './sump.js';
 import { Faults } from './faults.js';
+import { DriveSwitch, driveEffects, DEFAULT_DRIVE_PARAMS } from './driveMode.js';
 import { reverseAllowed, chokeReach, DEFAULT_CONTROLS_PARAMS } from './controls.js';
 import { advanceUsage, isNeutral, dashClock, lampStates } from './dashState.js';
 
@@ -53,11 +54,15 @@ export class Quad {
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null }) {
     this.reverseStyle = reverseStyle; // where its reverse is and what it takes (controls.js)
     this.chokeStyle = chokeStyle;
     this.tapStyle = tapStyle;
     this.controlsParams = controlsParams;
+    this.drive = drive ? new DriveSwitch(drive) : null; // the 2WD / 4WD switch (and diff lock), on the red and blue only (driveMode.js)
+    this.driveParams = DEFAULT_DRIVE_PARAMS;
+    this.driveShown = 0; // the switch's rocker, eased towards the mode: 0 for 2WD, 1 for 4WD
+    this.driveEffects = driveEffects('4wd', this.driveParams); // what the mode does this step; a quad with no switch keeps its own drive
     this.handOff = 1; // how much steering you keep while a hand is off the bars for the choke
     this.pushDir = 0; // set by the game while someone on foot shoves it along: +1 forwards, -1 backwards, 0 not
     this.pushLeft = 0; // seconds since it was last pushed, counting down: the roll watch doesn't blame anyone for a quad being pushed
@@ -73,7 +78,7 @@ export class Quad {
 
     this.layout = layout;
     this.groundOffset = groundOffset; // chassis origin to ground, at rest
-    this.model = build ? build({ dashStyle }) : buildQuadModel({ bodyColor, dashStyle, style, solo, plateNumber, chokeStyle, tapStyle });
+    this.model = build ? build({ dashStyle }) : buildQuadModel({ bodyColor, dashStyle, style, solo, plateNumber, chokeStyle, tapStyle, driveSwitch: drive });
     this.model.scale.setScalar(scale);
     this.dash = this.model.userData.dash;
     this.fuel = new FuelSystem(fuelParams);
@@ -98,6 +103,8 @@ export class Quad {
     this.handlebarsBase = this.handlebars.position.clone();
     this.fuelTap = part('fuelTap');
     this.chokeLever = part('chokeLever');
+    this.driveRocker = part('driveSwitchRocker'); // the 2WD / 4WD rocker on the bars (the red and blue)
+    this.diffLockButton = part('diffLockButton'); // the blue's diff lock button beside it
     this.riderHands = part('riderHands');
     this.cameraAnchor = part('cameraAnchor');
     this.pillionCameraAnchor = part('pillionCameraAnchor');
@@ -360,6 +367,7 @@ export class Quad {
       if (this.quirks.pressTap()) this.fuel.cycleTap();
       else this.say('The fuel tap is stiff: keep working it');
     }
+    if (this.drive && this.input) this.driveKeys(input);
     if (this.manual) this.manualKeys(input);
     // An automatic's reverse is a button, pressed with the brake held (the two-strokes have none).
     if (this.input && !this.manual && !this.tractor && input.wasPressed('KeyB') && this.reverseCheck(input)) this.reverse = true;
@@ -408,6 +416,13 @@ export class Quad {
     }
     this.say('It is in gear: hold Shift for the clutch, or put it in neutral (0), to use the starter');
     return false;
+  }
+
+  /** G flips between 2WD and 4WD; U puts the diff lock in and out where there is one. A switch on the bars, so always in reach. */
+  driveKeys(input) {
+    const d = this.drive;
+    if (input.wasPressed('KeyG')) this.say(d.toggle() === '2wd' ? '2WD' : '4WD');
+    if (d.hasLock && input.wasPressed('KeyU')) this.say(d.toggleLock() === 'lock' ? '4WD, diff lock in' : '4WD, diff lock out');
   }
 
   /** Tells whoever's at the controls something, for a moment; the game shows it (takeNote). */
@@ -549,8 +564,9 @@ export class Quad {
       // Steering lock reduces with speed.
       // Someone sat on the front rack makes the bars a little heavier.
       const rackLoad = this.rackRider ? 1 - p.rackSteerLoss : 1;
-      const maxSteer = (((p.maxSteerDeg * Math.PI) / 180) * rackLoad) / (1 + p.steerSpeedReduction * Math.abs(fwd));
-      this.steer += (steerInput * this.handOff * maxSteer - this.steer) * Math.min(1, p.steerRate * dt);
+      const fx = this.drive ? this.driveEffects : null;
+      const maxSteer = (((p.maxSteerDeg * Math.PI) / 180) * rackLoad * (fx?.steerScale ?? 1)) / (1 + p.steerSpeedReduction * Math.abs(fwd));
+      this.steer += (steerInput * this.handOff * maxSteer - this.steer) * Math.min(1, p.steerRate * (fx?.steerRate ?? 1) * dt);
     }
 
     const e = this.engine;
@@ -616,9 +632,14 @@ export class Quad {
     // (even engine braking on the overrun), so braking drops the drive. The bog's
     // hold takes its share of the drive first.
     const drive = brake > rolling ? 0 : this.drivetrain.driveForce;
+    if (this.drive) {
+      this.driveEffects = driveEffects(this.drive.mode, this.driveParams);
+      this.physics.frontDriven = this.driveEffects.frontDriven;
+      this.physics.traction.gripScale = this.driveEffects.gripScale;
+    }
     this.physics.hold = hold + this.bog.dragForce(inBog, p.mass, groundSpeed);
     this.physics.applyControls({
-      driveForce: Math.sign(drive) * Math.max(0, Math.abs(drive) * this.faults.driveFactor - hold),
+      driveForce: Math.sign(drive) * Math.max(0, Math.abs(drive) * this.faults.driveFactor * (this.drive ? this.driveEffects.driveScale : 1) - hold),
       brake,
       steer: this.steer + this.faults.steerPull + this.quirks.brakePull(this.brake),
       mudAt: (x, z) => Math.max(this.world.mudAt(x, z), this.churn),
@@ -815,6 +836,8 @@ export class Quad {
       gear: this.manual ? gearLabel(this.drivetrain.gear) : null,
       glow: e.glowLit,
       parkBrake: this.parkBrake, // the UTV's dash has a lamp for it
+      fourWd: this.drive ? this.drive.frontDriven : null, // the 4WD lamp on the red and blue's dashes (null: no switch)
+      diffLock: this.drive ? this.drive.locked : false,
       hand: this.handSetting,
       clock: clock.text(),
       seconds: clock.seconds(),
@@ -847,6 +870,11 @@ export class Quad {
     if (this.chokeStyle === 'knob') this.chokeLever.position.z = this.chokeLever.userData.baseZ - this.displayChoke * 0.05; // pulled out towards you
     else if (this.chokeStyle === 'plunger') this.chokeLever.position.y = this.chokeLever.userData.baseY - this.displayChoke * 0.045; // pulled down
     else this.chokeLever.rotation.x = 0.5 - this.displayChoke * 1.45;
+    if (this.drive && this.driveRocker) {
+      this.driveShown += ((this.drive.frontDriven ? 1 : 0) - this.driveShown) * Math.min(1, 15 * dt);
+      this.driveRocker.rotation.x = 0.35 - this.driveShown * 0.7; // top pressed in for 4WD
+      if (this.diffLockButton) this.diffLockButton.position.y = this.diffLockButton.userData.baseY - (this.drive.locked ? 0.006 : 0);
+    }
     // Fuel tap: forward for ON, down for RESERVE, back for OFF.
     const tapAngle = { on: 0, reserve: Math.PI / 2, off: Math.PI }[f.tap];
     this.fuelTap.rotation.x += (tapAngle - this.fuelTap.rotation.x) * Math.min(1, 15 * dt);
