@@ -62,6 +62,10 @@ export class QuadUnit {
     this.vibration = new VibrationModel({ ...DEFAULT_VIBRATION_PARAMS, ...spec.vibration });
     this.smoke = new ExhaustSmoke(scene, (x, z) => world.heightAt(x, z), { ...DEFAULT_SMOKE_PARAMS, ...spec.smoke });
     this.mud = new QuadMud({ scene, world, quad: this.quad, sport: spec.style?.startsWith('sport'), params: { ...DEFAULT_MUD_PARAMS, ...spec.mud } });
+    // The mud coat swaps every body material for a copy, so the seat's frost has to tint that copy.
+    const seat = this.quad.model.userData.seatMaterial;
+    const seatCopy = seat && this.mud.coat?.bodyCopies?.get(seat);
+    if (seatCopy) this.quad.seatMaterial = seatCopy;
     this.audio = new EngineAudio(audioHub, { ...DEFAULT_AUDIO_PARAMS, ...spec.audio });
     this.ride = new RideAudio(audioHub, this, world);
     this.listenerOnBoard = false; // set by the game while you're riding this one

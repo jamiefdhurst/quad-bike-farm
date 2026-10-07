@@ -672,8 +672,11 @@ export class CompanionVoice {
     this.weatherTime = (this.weatherTime ?? 0) + dt;
     if (!this.weatherSaid && this.weatherTime > (this.weatherAt ??= 12 + Math.random() * 40)) {
       this.weatherSaid = true;
-      const kind = weather.rain > 0.25 ? 'raining' : { sunny: 'sunny', fair: 'sunny', fog: 'fog' }[weather.kind] ?? 'grey';
-      this.say({ sunny: 'weatherSunny', raining: 'weatherRain', fog: 'weatherFog', grey: 'weatherGrey' }[kind], { chance: 0.75 });
+      // The temperature is worth a word when it's frosty, cold or warm (and the rain still comes first); a mild day says nothing of it.
+      const temperature = { frosty: 'frost', cold: 'cold', warm: 'warm' }[weather.band];
+      const kind = weather.rain > 0.25 ? 'raining' : temperature ?? ({ sunny: 'sunny', fair: 'sunny', fog: 'fog' }[weather.kind] ?? 'grey');
+      const situation = { sunny: 'weatherSunny', raining: 'weatherRain', fog: 'weatherFog', grey: 'weatherGrey', frost: 'weatherFrost', cold: 'weatherCold', warm: 'weatherWarm' }[kind];
+      this.say(situation, { chance: 0.75 });
     }
     const raining = weather.rain > 0.25;
     if (raining && this.wasRaining === false) this.say('rainStarts', { urgent: true, chance: 0.9 });

@@ -164,6 +164,7 @@ export class MudCoat {
       for (const c of o.children) visit(c, wheel);
     };
     visit(model, false);
+    this.bodyCopies = bodyCopies; // original material -> the muddy copy the meshes really use, so others can tint it
     this.materialCount = bodyCopies.size + wheelCopies.size;
     this.frame = model.getObjectByName('bodyRoot');
   }

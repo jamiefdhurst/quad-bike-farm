@@ -998,8 +998,9 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
       ? new THREE.MeshStandardMaterial({ color: 0x3b3e42, roughness: 0.55 })
       : farm
         ? new THREE.MeshStandardMaterial({ color: 0x8a6a45, roughness: 0.62 })
-        : MAT.seat;
+        : MAT.seat.clone(); // its own, so frost on one quad's seat is not on them all
   quad.userData.lensMaterial = lensMat;
+  quad.userData.seatMaterial = seatMat;
   const rig = { links: [], shocks: [] };
   quad.userData.suspension = rig;
 

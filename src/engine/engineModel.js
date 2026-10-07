@@ -71,6 +71,7 @@ export class EngineModel {
     this.soak = 0; // 0..1 heat held in the metal after work; ticks as it cools, and a hot carb starts rich
     this.speed = 0; // ground speed in m/s, for the airflow
     this.ambient = 0.5; // 0..1 how warm a day it is
+    this.chill = 0; // 0..1 how cold a day it is: more choke, slower warm-up, faster battery drain (chill* params)
     this.sheltered = false; // parked under the barn roof: it cools slowly and never goes stone cold
     this.pink = 0; // 0..1 how badly it's pinking
     this.keyOff = false; // switched off but running on for a few more beats
@@ -218,7 +219,7 @@ export class EngineModel {
    * @param {number}  [controls.ambient] 0..1 how warm the day is (sun on the engine).
    * @param {number}  [controls.overrunRpm] rpm above idle the wheels turn it over at with the throttle shut.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, oil = this.oil, slip = 0, dirt = 0, clog = 0, gulp = 0, diesel = 0, speed = 0, ambient = 0.5, sheltered = false } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, oil = this.oil, slip = 0, dirt = 0, clog = 0, gulp = 0, diesel = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0 } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -235,6 +236,7 @@ export class EngineModel {
     this.diesel = this.params.runsOnDiesel ? 0 : clamp(diesel, 0, 1);
     this.speed = Math.abs(speed);
     this.ambient = clamp(ambient, 0, 1);
+    this.chill = clamp(chill, 0, 1);
     this.sheltered = sheltered;
     this.knack.update(dt, this.throttle, this.state === EngineState.RUNNING);
     this.driveLoad = clamp(driveLoad, 0, 1);
@@ -267,7 +269,8 @@ export class EngineModel {
     this.updateTemperature(h);
     this.updateLube(h);
     this.water = stepWater(this.water, h, { gulp: this.gulp, running: this.state === EngineState.RUNNING, throttle: this.throttle }, p);
-    this.glow = stepGlow(this.glow, h, p.compressionIgnition && this.ignitionOn && this.state !== EngineState.RUNNING, p);
+    const glowHeating = p.compressionIgnition && this.ignitionOn && this.state !== EngineState.RUNNING;
+    this.glow = stepGlow(this.glow, glowHeating ? h / (1 + p.chillGlow * this.chill) : h, glowHeating, p);
     this.dieselSoak = stepDieselSoak(this.dieselSoak, h, { diesel: this.diesel, active: this.state === EngineState.RUNNING }, p);
     this.updateMixture();
 
@@ -357,10 +360,11 @@ export class EngineModel {
 
   updateBattery(h) {
     const p = this.params;
+    const cold = 1 + p.chillBattery * this.chill; // a cold battery gives less
     if (this.state === EngineState.RUNNING) this.battery += p.batteryChargeRate * h;
     else if (this.state === EngineState.CRANKING) {
-      if (this.motorOn) this.battery -= p.batteryCrankDrain * h;
-    } else if (this.state !== EngineState.OFF) this.battery -= p.batteryIgnitionDrain * h;
+      if (this.motorOn) this.battery -= p.batteryCrankDrain * h * cold;
+    } else if (this.state !== EngineState.OFF) this.battery -= p.batteryIgnitionDrain * h * cold;
     this.battery = clamp(this.battery, 0, 1);
   }
 
@@ -370,7 +374,7 @@ export class EngineModel {
       // Heat follows how hard it's working: revs, and more again pulling under load.
       const rpmNorm = clamp((this.rpm - p.idleRpmWarm) / (p.maxRpm - p.idleRpmWarm), 0, 1);
       const work = 1 + p.warmUpRpmBoost * rpmNorm + p.warmUpLoadBoost * this.driveLoad * this.throttle;
-      this.temperature += (h / p.warmUpSeconds) * work;
+      this.temperature += (h / (p.warmUpSeconds * (1 + p.chillWarmUp * this.chill))) * work;
       // And it wears: plug, filter and carb slowly go off, faster when it's worked hard.
       // Revving it hard before it's warm is the worst of it.
       const coldThrash = clamp(1 - this.temperature / p.wearColdBelow, 0, 1) * rpmNorm;
@@ -440,7 +444,7 @@ export class EngineModel {
 
   updateMixture() {
     const p = this.params;
-    const need = p.coldEnrichmentNeed * (1 - this.temperature);
+    const need = p.coldEnrichmentNeed * (1 + p.chillChoke * this.chill) * (1 - this.temperature);
     const supplied = p.chokeEnrichment * this.choke * (1 - p.throttleChokeRelief * this.throttle);
     // A draining float bowl leans the mixture out, whatever the choke is doing.
     const starve = clamp((p.fuelStarveLevel - this.fuel) / p.fuelStarveLevel, 0, 1);

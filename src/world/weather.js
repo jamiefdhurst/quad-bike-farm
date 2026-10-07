@@ -67,6 +67,48 @@ export const WEATHER_KINDS = {
   },
 };
 
+// The day's temperature in degrees C, picked with the kind: the bands it falls in and how likely each is for that kind. Frost needs a dry
+// day and a warm one needs sun (a warm day of rain would be nice but it is not in the weather yet).
+export const TEMPERATURE_BANDS = {
+  frosty: [-5, 0],
+  cold: [2, 6],
+  mild: [8, 14],
+  warm: [16, 22],
+};
+const TEMPERATURE_ODDS = {
+  sunny: { frosty: 0.15, cold: 0.2, mild: 0.3, warm: 0.35 },
+  fair: { frosty: 0.1, cold: 0.25, mild: 0.35, warm: 0.3 },
+  overcast: { frosty: 0.1, cold: 0.35, mild: 0.55 },
+  drizzle: { cold: 0.35, mild: 0.65 },
+  rain: { cold: 0.35, mild: 0.65 },
+  fog: { frosty: 0.35, cold: 0.4, mild: 0.25 },
+};
+export const MILD_C = 12; // at and above this the cold doesn't bother an engine
+export const COLDEST_C = -5; // the coldest day there is: chill 1
+
+/** The day's temperature (a band, then a value in it to the nearest half degree) for a weather kind. */
+export function pickTemperature(kind, random = Math.random) {
+  const odds = TEMPERATURE_ODDS[kind] ?? TEMPERATURE_ODDS.overcast;
+  let r = random() * Object.values(odds).reduce((a, b) => a + b, 0);
+  let band = Object.keys(odds)[0];
+  for (const [b, o] of Object.entries(odds)) {
+    band = b;
+    if ((r -= o) <= 0) break;
+  }
+  const [lo, hi] = TEMPERATURE_BANDS[band];
+  return Math.round((lo + (hi - lo) * random()) * 2) / 2;
+}
+
+/** How far into the cold an engine is, 0 (mild or warmer) to 1 (the coldest day). */
+export function chillOf(celsius) {
+  return clamp01((MILD_C - celsius) / (MILD_C - COLDEST_C));
+}
+
+/** Which band a temperature is in, for what the girls say. */
+export function bandOf(celsius) {
+  return celsius <= 0.5 ? 'frosty' : celsius <= 6.5 ? 'cold' : celsius >= 15.5 ? 'warm' : 'mild';
+}
+
 /** The rainy look the sky moves towards while it rains, whatever the kind. */
 const RAIN_SKY = WEATHER_KINDS.rain.sky;
 
@@ -91,8 +133,9 @@ function mixColor(a, b, t) {
 }
 
 export class Weather {
-  constructor(kind = 'overcast', random = Math.random) {
+  constructor(kind = 'overcast', random = Math.random, celsius = MILD_C) {
     this.kind = WEATHER_KINDS[kind] ? kind : 'overcast';
+    this.temperature = celsius; // degrees C; fixed for the game for now
     this.random = random;
     const k = WEATHER_KINDS[this.kind];
     this.rain = k.rain; // 0..1 falling now
@@ -111,7 +154,22 @@ export class Weather {
 
   /** 0..1 how warm the day is for an engine in the sun: the sunshine, taken off by rain. */
   get warmth() {
-    return clamp01(this.def.sky.sunIntensity / 2.6) * (1 - 0.8 * this.rain);
+    // The temperature nudges it: a frosty day takes the edge off the sun, a warm one adds to a dull day.
+    return clamp01(clamp01(this.def.sky.sunIntensity / 2.6) * (1 - 0.8 * this.rain) + (this.temperature - MILD_C) * 0.01);
+  }
+
+  /** 0..1 how cold it is for an engine (see chillOf). */
+  get chill() {
+    return chillOf(this.temperature);
+  }
+
+  /** 0..1 how frosty: nothing above freezing, white seats at a few degrees below. */
+  get frost() {
+    return this.temperature > 0.5 ? 0 : 0.4 + 0.6 * clamp01((0.5 - this.temperature) / 4);
+  }
+
+  get band() {
+    return bandOf(this.temperature);
   }
 
   get wind() {

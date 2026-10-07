@@ -5,6 +5,7 @@ import { QuadPhysics, QUAD_LAYOUT } from './quadPhysics.js';
 import { Drivetrain } from './drivetrain.js';
 import { QuirkSet } from './quirks.js';
 import { TyreSet } from './tyres.js';
+import { frostAfter, frostedColour, DEFAULT_FROST_PARAMS } from './seatFrost.js';
 import { ManualDrivetrain, gearLabel } from './manualDrivetrain.js';
 import { AutoShifter } from './autoShifter.js';
 import { poseTractorControls } from './tractorModel.js';
@@ -112,6 +113,10 @@ export class Quad {
       z: s.z,
       yaw: s.yaw,
     }, scale, layout);
+    this.seatFrost = 0; // 0 bare to 1 white over; the game sets it on a freezing day, and sitting on it clears it (seatFrost.js)
+    this.seatMaterial = this.model.userData.seatMaterial ?? null;
+    this.seatBase = this.seatMaterial ? { color: this.seatMaterial.color.getHex(), roughness: this.seatMaterial.roughness } : null;
+    this.shownFrost = 0;
     this.tyres = new TyreSet(); // pressures, brands and tread (tyres.js); the game deals this game's
     this.physics.tyres = this.tyres;
     this.physics.applyParams();
@@ -639,6 +644,7 @@ export class Quad {
       diesel: this.fuel.bowlDiesel,
       speed: this.forwardSpeed,
       ambient: this.world.warmth ?? 0.5,
+      chill: this.world.chill ?? 0,
       sheltered: this.world.covered?.(this.position.x, this.position.z) ?? false,
     };
   }
@@ -679,6 +685,7 @@ export class Quad {
 
     this.updateDash(dt);
     this.updateQuirks(dt, vibration);
+    this.updateFrost(dt);
     if (this.note && (this.note.left -= dt) <= 0) this.note = null;
     this.updateFlap(dt);
   }
@@ -711,6 +718,16 @@ export class Quad {
     if (pod) pod.group.parent?.remove(pod.group);
     this.pod = null;
     return pod;
+  }
+
+  /** Frost on the seat, cleared by whoever sits on it, shown as a tint on the seat material. */
+  updateFrost(dt) {
+    if (!this.seatMaterial || (this.seatFrost <= 0 && this.shownFrost <= 0)) return;
+    this.seatFrost = frostAfter(this.seatFrost, !!(this.rider || this.driver || this.passenger), dt);
+    if (Math.abs(this.seatFrost - this.shownFrost) < 0.01 && this.seatFrost > 0) return;
+    this.shownFrost = this.seatFrost;
+    this.seatMaterial.color.setHex(frostedColour(this.seatBase.color, this.seatFrost));
+    this.seatMaterial.roughness = this.seatBase.roughness + (DEFAULT_FROST_PARAMS.frostRoughness - this.seatBase.roughness) * this.seatFrost;
   }
 
   /** The quirks that act on the quad itself: the choke creeping on with the shake, the tap's press window. */

@@ -19,6 +19,10 @@ export const DEFAULT_ENGINE_PARAMS = {
   batteryIgnitionDrain: 0.0021, // battery (0..1) lost per second with the ignition on and the engine not running (flat in about 8 minutes)
   batteryCrankDrain: 0.0125, // lost per second on the starter (about 8 s of cranking per 10%)
   batteryChargeRate: 0.0017, // gained per second while it runs (flat to full in about 10 minutes)
+  chillChoke: 0.5, // extra choke a cold engine needs on the coldest day (times 1 + this), see Weather.chill
+  chillWarmUp: 0.6, // longer a cold engine takes to warm up on the coldest day (times 1 + this)
+  chillBattery: 1, // faster the battery drains (ignition and starter) on the coldest day (times 1 + this)
+  chillGlow: 0.5, // longer the glow plugs take on the coldest day (times 1 + this)
   batteryWeakBelow: 0.6, // below this the starter turns slower
   batteryDeadBelow: 0.25, // below this the starter only clicks
   weakCrankFactor: 0.4, // the starter's speed, as a fraction of normal, just above dead
@@ -261,6 +265,10 @@ export const ENGINE_PARAM_RANGES = {
   crankRpm: [100, 600, 10],
   batteryIgnitionDrain: [0, 0.02, 0.0001],
   batteryCrankDrain: [0, 0.1, 0.0005],
+  chillChoke: [0, 2, 0.05],
+  chillWarmUp: [0, 3, 0.05],
+  chillBattery: [0, 4, 0.05],
+  chillGlow: [0, 3, 0.05],
   batteryChargeRate: [0, 0.02, 0.0001],
   batteryWeakBelow: [0.1, 1, 0.01],
   batteryDeadBelow: [0, 0.6, 0.01],

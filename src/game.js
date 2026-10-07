@@ -89,7 +89,7 @@ import { Hose, HOSE_PARAM_RANGES } from './items/hose.js';
 import { Winch, WINCH_PARAM_RANGES } from './items/winch.js';
 import { Chain, CHAIN_PARAM_RANGES } from './items/chain.js';
 import { TRACTOR_GROUND_OFFSET } from './vehicle/tractorModel.js';
-import { Weather, pickWeatherKind } from './world/weather.js';
+import { Weather, pickWeatherKind, pickTemperature } from './world/weather.js';
 import { Rain } from './effects/rain.js';
 
 import { washMud } from './effects/mudBuildUp.js';
@@ -241,13 +241,17 @@ export class Game {
     this.updateSmokeScale();
     // This game's weather, picked after everything else so a seed keeps its layout (?weather=rain forces one).
     const forced = new URLSearchParams(location.search).get('weather');
-    this.weather = new Weather(forced ?? pickWeatherKind(random), random);
+    const kind = forced ?? pickWeatherKind(random);
+    const forcedTemp = new URLSearchParams(location.search).get('temp'); // ?temp=-3 forces the day's temperature in degrees C
+    const celsius = forcedTemp !== null && forcedTemp !== '' && Number.isFinite(+forcedTemp) ? +forcedTemp : pickTemperature(kind, createRandom(this.seed ^ 0x7e3b));
+    this.weather = new Weather(kind, random, celsius);
+    for (const unit of this.units) unit.quad.seatFrost = this.weather.frost;
     this.world.setWeather(this.weather);
     this.rain = new Rain(this.scene);
     // Smoke hanging over the yard on a still day (world/haze.js, effects/hazeLayer.js).
     this.haze = new Haze(this.world.layout.yard);
     this.hazeLayer = new HazeLayer(this.scene, this.world.layout.yard, this.world.layout.yard.radius, createRandom(this.seed ^ 0x4a2e));
-    console.info(`Weather: ${this.weather.name}`);
+    console.info(`Weather: ${this.weather.name}, ${this.weather.temperature} °C (${this.weather.band}), chill ${this.weather.chill.toFixed(2)}, frost ${this.weather.frost.toFixed(2)} (add ?temp=<degrees> to the URL to force it)`);
     // She starts beside a random quad in the yard; the player starts facing it.
     this.homeUnit = this.units[home];
     this.lastUnit = this.homeUnit;
@@ -1102,10 +1106,19 @@ export class Game {
     }
     if (ridden === this.lastRiddenForSeat) return;
     this.lastRiddenForSeat = ridden;
-    if (!ridden?.quad.quirks.sitOn()) return;
-    this.hud.toast('The seat is split and soaked: your trousers are wet through', 3);
-    const near = this.companions.filter((c) => c.quad.position.distanceTo(ridden.quad.position) < 10);
-    near[Math.floor(Math.random() * near.length)]?.voice.say('seatSoaked', { force: true });
+    if (!ridden) return;
+    const remark = (situation) => {
+      const near = this.companions.filter((c) => c.quad.position.distanceTo(ridden.quad.position) < 10);
+      near[Math.floor(Math.random() * near.length)]?.voice.say(situation, { force: true });
+    };
+    if (ridden.quad.seatFrost > 0.3) {
+      this.hud.toast('The seat is frosted over', 2.5);
+      remark('seatFrosty');
+    }
+    if (ridden.quad.quirks.sitOn()) {
+      this.hud.toast('The seat is split and soaked: your trousers are wet through', 3);
+      remark('seatSoaked');
+    }
   }
 
   /** Gives a quad its past: wear, any starting faults and any tinkering left in (the toolbox opens on it as it is, with stock the factory's). */

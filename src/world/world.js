@@ -80,6 +80,11 @@ export class World {
     return this.weather?.warmth ?? 0.5;
   }
 
+  /** 0..1 how cold the day is for an engine (the weather's chill). */
+  get chill() {
+    return this.weather?.chill ?? 0;
+  }
+
   /** 0..1 how wet the ground is. */
   get wet() {
     return this.weather?.wet ?? 0;
