@@ -144,6 +144,7 @@ export class Quad {
     this.remoteInput = null; // set while someone on foot is looking at the bike
     this.helperStarter = false; // she's holding the starter button
     this.helperPull = false; // she's holding the pull-start cord
+    this.lastLeft = null; // who last got off it and whether they set the parking brake: { who: 'you' | a girl's id, braked } (handbrake.js)
     this.parkBrake = false; // the parking brake: wheels locked, so the throttle only revs the engine (toggled with Space)
     this.helperThrottle = 0; // she's blipping the throttle (a quad's starting knack)
     this.churn = 0; // 0..1 the ground torn up under the wheels, whatever it is (a girl's doughnuts: npc/doughnuts.js): it acts as mud
@@ -568,8 +569,10 @@ export class Quad {
     const hold = this.bog.holdForce(p.mass);
 
     let brake = this.brake * p.maxBrake;
-    // Nobody on it (and not carrying on by itself): the parking brake holds it. Not while it's being winched.
-    const idle = !this.towed && ((!this.input && !this.ghost && !this.driver && !this.creeping) || (throttleInput === 0 && Math.abs(fwd) < 0.5));
+    // Someone at the controls with nothing pressed and stopped: it holds itself. With nobody on it (and not carrying on by itself) it only
+    // holds if the parking brake was set, or it rolls off down a slope; the tractor still holds itself. Not while it's being winched.
+    const attended = !!(this.input || this.ghost || this.driver || this.creeping);
+    const idle = !this.towed && (attended ? throttleInput === 0 && Math.abs(fwd) < 0.5 : this.parkBrake || this.tractor);
     if (this.driver) this.parkBrake = false; // she takes it off before she sets off
     if (idle) brake = Math.max(brake, p.parkingBrake);
     if (this.parkBrake && (this.input || this.ghost)) brake = p.maxBrake; // a stuck throttle with nobody on it doesn't undo it

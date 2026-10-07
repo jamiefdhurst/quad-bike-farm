@@ -108,6 +108,10 @@ export class DebugGui {
       get wear() {
         return unit().engine.wear;
       },
+      get parkingBrake() {
+        const q = unit().quad;
+        return `${q.parkBrake ? 'on' : 'off'}, last left by ${q.lastLeft ? `${q.lastLeft.who} (${q.lastLeft.braked ? 'braked' : 'brake off'})` : 'nobody yet'}`;
+      },
       get quirks() {
         return unit().quad.quirks.kinds.join(', ') || 'none';
       },

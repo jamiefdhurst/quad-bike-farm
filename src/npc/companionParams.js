@@ -102,7 +102,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   diagnoseFoulFrom: 0.35, // how fouled the plug has to be before it sounds like it
   thrashColdBelow: 0.4, // engine temperature (0 cold, 1 warm) under which hard riding counts as thrashing it
   thrashWork: 0.6, // how hard it's working (0..1) before she calls it thrashing
-  parkBrakeChance: 1, // getting off a quad she was driving, the chance she pulls the parking brake on
+  parkBrakeChance: 0.9, // getting off a quad she was driving, the chance she pulls the parking brake on (an empty quad only holds on a slope if she does)
   rockPrankChance: 0, // per second stood next to a quad her friend is sat on running: the chance she reaches over and blips it
   rockPrankRange: 3.5, // metres from that quad she has to be
   thrashChance: 0.15, // per second she can see a quad being thrashed cold, that she says something

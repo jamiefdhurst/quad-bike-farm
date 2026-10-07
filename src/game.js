@@ -23,6 +23,7 @@ import { CHARACTERS } from './npc/characters.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { pickHistory, pickFaultChance } from './vehicle/history.js';
 import { TyreSet, dealTyres, DEFAULT_TYRE_PARAMS, TYRE_PARAM_RANGES } from './vehicle/tyres.js';
+import { RollWatch, rollReactions, DEFAULT_HANDBRAKE_PARAMS, HANDBRAKE_PARAM_RANGES } from './vehicle/handbrake.js';
 import { describeVehicle } from './debug/startReport.js';
 import { QuirkSet, DEFAULT_QUIRK_PARAMS, QUIRK_PARAM_RANGES, featuresOf, pickQuirks } from './vehicle/quirks.js';
 import { captureStock, tuneTarget, stockSettings, clampSettings, applyTune } from './vehicle/tuneUp.js';
@@ -224,6 +225,11 @@ export class Game {
     registerTuning('Tyres', this.tyreParams, TYRE_PARAM_RANGES);
     const tyreRandom = createRandom(this.seed ^ 0x7e55);
     for (const unit of this.units) unit.quad.tyres = new TyreSet(dealTyres(tyreRandom, 4, this.tyreParams), this.tyreParams);
+    // Every quad starts parked properly, with its brake on; after that it's down to whoever gets off one (vehicle/handbrake.js).
+    for (const unit of this.units) unit.quad.parkBrake = true;
+    this.handbrakeParams = { ...DEFAULT_HANDBRAKE_PARAMS };
+    registerTuning('Handbrake', this.handbrakeParams, HANDBRAKE_PARAM_RANGES);
+    this.rollWatch = new RollWatch(this.handbrakeParams);
     // One to three quirks each, from the parts the quad has (a gauge quirk needs a dash or pod that shows it, so this comes after the pods).
     this.quirkParams = { ...DEFAULT_QUIRK_PARAMS };
     registerTuning('Quirks', this.quirkParams, QUIRK_PARAM_RANGES);
@@ -1097,6 +1103,21 @@ export class Game {
   }
 
   /** One manual vehicle (a quad or the tractor) has a worn gearbox this game: a gear that jumps out under load on a climb. Seeded. */
+  /** An empty quad that's rolling off with its brake off: the girls near it say whose fault it was (a real tally, vehicle/handbrake.js). */
+  updateHandbrake(dt) {
+    const quads = this.units
+      .filter((u) => !u.spec.tractor)
+      .map((u) => {
+        const q = u.quad;
+        return { id: u.id, attended: !!(q.input || q.ghost || q.driver || q.creeping || q.towed || q.passenger), braked: q.parkBrake, speed: Math.hypot(q.velocity.x, q.velocity.z), left: q.lastLeft };
+      });
+    for (const e of this.rollWatch.update(dt, quads)) {
+      const at = this.units.find((u) => u.id === e.id).quad.position;
+      const girls = this.companions.map((c) => ({ id: c.character.id, near: c.root.position.distanceTo(at) < this.handbrakeParams.hearRange && !c.fsm.is('driving') }));
+      for (const r of rollReactions(e, girls)) this.companions.find((c) => c.character.id === r.girl)?.voice.say(r.situation, { force: true });
+    }
+  }
+
   /** A split seat soaks up the rain, and soaks you if you sit on it wet; the nearest girl has something to say. */
   updateQuirks(dt, ridden) {
     const raining = this.weather.rain > 0.25;
@@ -1163,6 +1184,7 @@ export class Game {
           hasHistory: !!h,
           quirks: q.quirks.kinds,
           tyres: q.tyres,
+          parkBrake: q.parkBrake,
           wornGear: worn ? { gear: worn.gear, wear: worn.wear } : null,
           hand: unit.spec.tractor ? q.handSetting : null,
         }),
@@ -2603,6 +2625,11 @@ export class Game {
     }
     const throttle = quad.throttle;
     quad.setRider(null, null);
+    quad.lastLeft = { who: 'you', braked: quad.parkBrake };
+    if (!quad.parkBrake && !this.handbrakeHinted) {
+      this.handbrakeHinted = true;
+      this.hud.toast('Space sets the parking brake, or it will roll off a slope', 3);
+    }
     quad.holdRev(throttle); // still revving when you got off: it stays revving
     this.player.dismount(spot, quad.yaw + Math.PI);
   }
@@ -2635,6 +2662,7 @@ export class Game {
     // Keep looking wherever you were looking.
     const look = this.camera.getWorldDirection(new THREE.Vector3());
     quad.setRider(null, null);
+    quad.lastLeft = { who: 'you', braked: false }; // jumped off at speed: no time for the brake
     quad.carryOn(throttle);
     this.player.leapOff(spot, {
       yaw: Math.atan2(-look.x, -look.z),
@@ -2805,6 +2833,7 @@ export class Game {
     this.updateFavour(dt, ridden);
     this.updateWearLedger();
     this.updateQuirks(dt, ridden);
+    this.updateHandbrake(dt);
     this.skills.update(dt);
     this.updateRequests(dt, ridden);
     this.updatePlaces(dt);

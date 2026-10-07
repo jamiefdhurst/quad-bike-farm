@@ -7,10 +7,11 @@ import { JESS_ONLY_QUAD_SITUATIONS } from '../src/npc/quadLines.js';
 import { JESS_ONLY_SMOKE_SITUATIONS } from '../src/npc/smokeLines.js';
 import { JESS_ONLY_DIESEL_SITUATIONS } from '../src/npc/dieselLines.js';
 import { JESS_ONLY_LPLATE_SITUATIONS } from '../src/npc/lPlateLines.js';
+import { JESS_ONLY_HANDBRAKE_SITUATIONS } from '../src/npc/handbrakeLines.js';
 
 describe('characters', () => {
   it('only give their own lines for situations that exist, keeping cooldowns and shouts', () => {
-    for (const situation of Object.keys(JESS_LINES).filter((s) => ![...JESS_ONLY_QUAD_SITUATIONS, ...JESS_ONLY_SMOKE_SITUATIONS, ...JESS_ONLY_DIESEL_SITUATIONS, ...JESS_ONLY_LPLATE_SITUATIONS].includes(s))) expect(VOICE_LINES, situation).toHaveProperty(situation);
+    for (const situation of Object.keys(JESS_LINES).filter((s) => ![...JESS_ONLY_QUAD_SITUATIONS, ...JESS_ONLY_SMOKE_SITUATIONS, ...JESS_ONLY_DIESEL_SITUATIONS, ...JESS_ONLY_LPLATE_SITUATIONS, ...JESS_ONLY_HANDBRAKE_SITUATIONS].includes(s))) expect(VOICE_LINES, situation).toHaveProperty(situation);
     const lines = linesFor({ leftBehind: ['Oi!'] });
     expect(lines.leftBehind.lines).toEqual(['Oi!']);
     expect(lines.leftBehind.cooldown).toBe(VOICE_LINES.leftBehind.cooldown);
