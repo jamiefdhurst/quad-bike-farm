@@ -22,6 +22,7 @@ import { JESS_TRACTOR_LINES } from './tractorLines.js';
 import { JESS_HAYRIDE_LINES } from './hayRideLines.js';
 import { JESS_MUDGUARD_LINES } from './mudguardLines.js';
 import { JESS_TRACTORGO_LINES } from './tractorGoLines.js';
+import { JESS_LPLATE_LINES } from './lPlateLines.js';
 import { JESS_TRACTORRUNAWAY_LINES } from './tractorRunawayLines.js';
 import { JESS_QUAD_LINES } from './quadLines.js';
 import { JESS_WARMING_LINES } from './warmingLines.js';
@@ -369,6 +370,7 @@ export const JESS_LINES = {
   ...JESS_KNACK_LINES,
   ...JESS_OIL_LINES,
   ...JESS_DIESEL_LINES,
+  ...JESS_LPLATE_LINES,
   ...JESS_HEAT_LINES,
   ...JESS_SILENCER_LINES,
   ...JESS_FAULT_LINES,

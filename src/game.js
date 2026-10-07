@@ -30,6 +30,8 @@ import { HayRide, HAYRIDE_PARAM_RANGES } from './npc/hayRide.js';
 import { MudguardRide, MUDGUARD_PARAM_RANGES } from './npc/mudguardRide.js';
 import { TractorMount } from './vehicle/tractorMount.js';
 import { TractorGo, TRACTORGO_PARAM_RANGES } from './npc/tractorGo.js';
+import { LPlates, LPLATE_PARAM_RANGES, meanSkill } from './npc/lPlates.js';
+import { LPlateSet } from './vehicle/lPlateModel.js';
 import { TractorRunaway, TRACTOR_RUNAWAY_PARAM_RANGES } from './npc/tractorRunaway.js';
 import { DEFAULT_CREEP_PARAMS, CREEP_PARAM_RANGES, distanceToHedge } from './vehicle/creep.js';
 import { DEFAULT_TRACTOR_GO_DRIVE, TRACTOR_GO_DRIVE_RANGES } from './npc/companionDriving.js';
@@ -371,6 +373,9 @@ export class Game {
     this.tractorStartParams = { ...DEFAULT_TRACTOR_START_PARAMS };
     this.noviceParams = { ...DEFAULT_NOVICE_PARAMS };
     for (const c of this.companions) Object.assign(c, { tractorGo: this.tractorDrive, tractorStartParams: this.tractorStartParams, noviceParams: this.noviceParams });
+    // Jess tapes L plates to Amy's quad; Amy peels them off, and once she's confident they go on the tractor (npc/lPlates.js).
+    this.lPlates = new LPlates(undefined, createRandom(this.seed ^ 0x1b1a));
+    this.lPlateSet = new LPlateSet();
     this.tractorSeen = {}; // girl id -> what we've already noticed about her go, for her lines
     this.hayLater = []; // lines to say in a moment: { left, girl, key }
     this.itemHome = {}; // where a hidden item was taken from, by name
@@ -699,6 +704,7 @@ export class Game {
     registerTuning('Hay ride', this.hayRide.p, HAYRIDE_PARAM_RANGES);
     registerTuning('Mudguard ride', this.mudguard.p, MUDGUARD_PARAM_RANGES);
     registerTuning('Tractor go', this.tractorGo.p, TRACTORGO_PARAM_RANGES);
+    registerTuning('L plates', this.lPlates.p, LPLATE_PARAM_RANGES);
     registerTuning('Tractor go drive', this.tractorDrive, TRACTOR_GO_DRIVE_RANGES);
     registerTuning('Tractor go start', this.tractorStartParams, TRACTOR_START_PARAM_RANGES);
     registerTuning('Tractor go novice', this.noviceParams, NOVICE_PARAM_RANGES);
@@ -937,6 +943,38 @@ export class Game {
     if (this.tractorGo.ask(id) === 'refuse') return void c.voice.say('tractorRefuse', { force: true });
     this.startTractorGo(c);
     c.voice.say('tractorGoAsk', { force: true });
+  }
+
+  /** Jess tapes L plates to Amy's quad, Amy peels them off, and once she's confident she tapes them to the tractor (npc/lPlates.js). */
+  updateLPlates(dt) {
+    const amy = this.companions.find((c) => c.character.id === 'amy');
+    const jess = this.companions.find((c) => c.character.id === 'jess');
+    if (!amy || !jess) return;
+    const mine = this.girlUnits.find((u) => u.spec.id === amy.claimedSpec);
+    const free = (c) => c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob && !c.hayFell;
+    const near = mine ? Math.hypot(amy.root.position.x - mine.quad.position.x, amy.root.position.z - mine.quad.position.z) < 4 : false;
+    for (const ev of this.lPlates.update(dt, {
+      amyFree: free(amy),
+      jessFree: free(jess),
+      amyByQuad: near,
+      hasQuad: !!mine,
+      confidence: meanSkill(this.skills.levels.amy),
+      tractorFree: this.tractorFree(),
+    })) {
+      if (ev.type === 'jessTape') {
+        jess.voice.say('lplateTape', { force: true });
+        this.hayLater.push({ left: 4, girl: amy, key: 'lplateFound' });
+      } else if (ev.type === 'amyPeel') {
+        amy.voice.say('lplatePeel', { force: true });
+        this.hayLater.push({ left: 3.5, girl: jess, key: 'lplateCheek' });
+      } else if (ev.type === 'amyStick') {
+        amy.voice.say('lplateStick', { force: true });
+        this.hayLater.push({ left: 4, girl: jess, key: 'lplateTractor' });
+      }
+    }
+    const where = this.lPlates.where;
+    if (where === 'tractor') this.lPlateSet.showOn(this.tractorUnit.quad.model, 'tractor');
+    else this.lPlateSet.showOn(where === 'quad' && mine ? mine.quad.model : null, 'quad');
   }
 
   /** She walks over and has a go at starting and driving the tractor. */
@@ -2671,6 +2709,7 @@ export class Game {
     this.updateHayRide(dt, ridden);
     this.updateMudguard(dt, ridden);
     this.updateTractorGo(dt, ridden);
+    this.updateLPlates(dt);
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);
     this.updateHeadStart(dt, ridden);
