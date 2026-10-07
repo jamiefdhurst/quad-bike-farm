@@ -42,6 +42,18 @@ export function pinkLevel(heat, p) {
   return clamp01((heat - p.pinkFrom) / Math.max(0.01, 1 - p.pinkFrom));
 }
 
+/**
+ * 0..1 how much steam a hot engine gives off. Two causes: it's cooking (running over `steamFrom` heat), which is a thin wisp, and
+ * rain falling on (or wet ground splashing) a hot engine out in the open: the more rain and the hotter the metal (the greater of its
+ * running heat and what it's soaked up), the more it steams, running or just switched off. Under cover there's no rain to boil off.
+ */
+export function hotSteam({ running, heat, soak, rain = 0, wet = 0, covered = false }, p) {
+  const cooking = running ? clamp01((heat - p.steamFrom) / Math.max(0.01, 1 - p.steamFrom)) * p.steamCooking : 0;
+  const wetness = covered ? 0 : Math.max(clamp01(rain), clamp01(wet) * p.steamWetGround);
+  const hot = clamp01((Math.max(clamp01(heat), clamp01(soak)) - p.steamWetFrom) / Math.max(0.01, 1 - p.steamWetFrom));
+  return clamp01(Math.max(cooking, wetness * hot * p.steamWet));
+}
+
 /** Where the dash gauge's red zone pushes to: poor lubrication, or this heat (shown weakly on the water-cooled). */
 export function gaugeHeat(overheat, heat, p, coolant = 1) {
   // With the coolant gone the gauge shows the water-cooled engine's heat in full.

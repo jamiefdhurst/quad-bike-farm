@@ -1576,6 +1576,14 @@ Settled with Jamie before building: a second, small trailer (the bale trailer st
 - No new lines: they use `mudBoard`, `utvBoard` and `utvBedGo`. The girls don't drive the UTV yet, so there is no UTV version of the join; it comes with item 37.
 - Checked: unit tests for all of it (`tests/mudguardRide.test.js`, `tests/utvRide.test.js`). Not run in the game: the walk over and climb, the driver's wait for her, and how often it happens in real play.
 
+## Steam from hot engines (2026-10-07)
+
+Chosen without asking: the item gives no cause, so I used the two real ones, an engine cooking and rain on hot metal.
+
+- `hotSteam` (`engine/heat.js`, pure, tested) gives 0..1. Cooking: a running engine over heat 0.7 (`steamFrom`) makes a thin wisp, up to 0.5 of the orange radiator's full steam (`steamCooking`), so it shows just as the pinking is getting bad. Rain: falling rain, or wet ground counted at 0.4 of it (`steamWetGround`), on metal hotter than 0.3 (the greater of running heat and soak, `steamWetFrom`) gives up to 0.9 (`steamWet`), running or switched off, so a quad you've just worked hard steams in a shower and stops as it cools; an engine only idling (soak 0.25) never does. Under the barn roof there is no rain to boil off. All the params are in the engine's Heat group in the tuning panel.
+- `QuadUnit.updateHotSteam` draws it with a second `ExhaustSmoke` in the orange's steam look (pale, quick, rising), made the first time any is wanted so the quads that never get hot don't carry one, from the rider anchor (under the seat on a quad) or the exhaust. That means it comes from under the seat on the tractor, UTV and Land Rover too rather than the bonnet; their engine spots weren't worked out. Diesels have heat and soak like the rest, so they steam in the rain after work. The orange's radiator steam is separate and unchanged.
+- Checked: unit tests for the levels. Not looked at in the game: how it reads against the exhaust smoke, the spot it comes from on each vehicle, or how often it shows in a real shower.
+
 ## Where things start (2026-10-07)
 
 - The jump leads now start on the workbench, in the place they go back to (`LAYOUT.benchLeads`), instead of on the ground by the hose.

@@ -230,6 +230,11 @@ export const DEFAULT_ENGINE_PARAMS = {
   pinkRoughness: 0.3, // roughness at full pinking
   pinkPowerLoss: 0.25, // power lost at full pinking
   pinkRate: 14, // rattles a second at full pinking under load
+  steamFrom: 0.7, // running heat from which a wisp of steam shows
+  steamCooking: 0.5, // how much steam a fully cooking engine gives (1 is as much as the orange's boil-over)
+  steamWetFrom: 0.3, // metal heat (running heat or soak) from which rain steams off it: just idling doesn't
+  steamWet: 0.9, // steam from rain on fully hot metal
+  steamWetGround: 0.4, // wet ground counts for this much of falling rain
   heatGaugeWater: 0.25, // how much of its heat the water-cooled one's gauge shows
   soakIdle: 0.25, // heat held in the metal by an engine just idling, against 1 flat out
   soakRiseSeconds: 60, // how fast the metal heats up
@@ -500,6 +505,11 @@ export const ENGINE_PARAM_RANGES = {
   pinkRoughness: [0, 1, 0.01],
   pinkPowerLoss: [0, 1, 0.01],
   pinkRate: [0, 40, 1],
+  steamFrom: [0, 1, 0.01],
+  steamCooking: [0, 1, 0.01],
+  steamWetFrom: [0, 1, 0.01],
+  steamWet: [0, 1, 0.01],
+  steamWetGround: [0, 1, 0.01],
   heatGaugeWater: [0, 1, 0.01],
   soakIdle: [0, 1, 0.01],
   soakRiseSeconds: [5, 600, 5],

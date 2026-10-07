@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
-import { heatTarget, pinkLevel, gaugeHeat, stepSoak, coolTickRate, hotStartRich, airflow } from '../src/engine/heat.js';
+import { hotSteam, heatTarget, pinkLevel, gaugeHeat, stepSoak, coolTickRate, hotStartRich, airflow } from '../src/engine/heat.js';
 import { Weather, WEATHER_KINDS } from '../src/world/weather.js';
 import { QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
 import { tempGaugeFraction, HOT_FROM } from '../src/vehicle/tempGauge.js';
@@ -200,5 +200,44 @@ describe('the day\'s warmth', () => {
     const wet = new Weather('sunny', () => 0.5);
     wet.rain = 1;
     expect(wet.warmth).toBeLessThan(0.3);
+  });
+});
+
+describe('steam off a hot engine', () => {
+  const P = DEFAULT_ENGINE_PARAMS;
+  const base = { running: true, heat: 0, soak: 0, rain: 0, wet: 0, covered: false };
+
+  it('is none for an engine that is not hot', () => {
+    expect(hotSteam(base, P)).toBe(0);
+    expect(hotSteam({ ...base, heat: 0.5, soak: 0.5 }, P)).toBe(0);
+  });
+
+  it('shows a thin wisp from one that is cooking, thicker the hotter, and only while it runs', () => {
+    const warm = hotSteam({ ...base, heat: 0.8 }, P);
+    const cooking = hotSteam({ ...base, heat: 1 }, P);
+    expect(warm).toBeGreaterThan(0);
+    expect(cooking).toBeGreaterThan(warm);
+    expect(cooking).toBeLessThanOrEqual(P.steamCooking + 1e-9);
+    expect(hotSteam({ ...base, running: false, heat: 1 }, P)).toBe(0);
+  });
+
+  it('steams when rain falls on hot metal, running or just switched off, more with more rain and more heat', () => {
+    const light = hotSteam({ ...base, soak: 0.8, rain: 0.3 }, P);
+    expect(light).toBeGreaterThan(0);
+    expect(hotSteam({ ...base, soak: 0.8, rain: 0.9 }, P)).toBeGreaterThan(light);
+    expect(hotSteam({ ...base, soak: 1, rain: 0.3 }, P)).toBeGreaterThan(light);
+    expect(hotSteam({ ...base, running: false, soak: 0.8, rain: 0.9 }, P)).toBeGreaterThan(0);
+  });
+
+  it('does not steam from a merely idling engine in the rain, or out of the rain, or under cover', () => {
+    expect(hotSteam({ ...base, soak: P.soakIdle, rain: 1 }, P)).toBe(0);
+    expect(hotSteam({ ...base, soak: 1 }, P)).toBe(0);
+    expect(hotSteam({ ...base, soak: 1, rain: 1, covered: true }, P)).toBe(0);
+  });
+
+  it('counts wet ground for less than falling rain', () => {
+    const ground = hotSteam({ ...base, soak: 1, wet: 1 }, P);
+    expect(ground).toBeGreaterThan(0);
+    expect(ground).toBeLessThan(hotSteam({ ...base, soak: 1, rain: 1 }, P));
   });
 });

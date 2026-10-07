@@ -24,6 +24,8 @@ import { buildUtvModel, UTV_LAYOUT, UTV_GROUND_OFFSET, UTV_PROXY } from './utvMo
 import { buildLandRoverModel, LANDY_LAYOUT, LANDY_GROUND_OFFSET, LANDY_PROXY } from './landRoverModel.js';
 import { CrankHandle, DEFAULT_CRANK_PARAMS, CRANK_PARAM_RANGES } from './crankHandle.js';
 
+import { hotSteam } from '../engine/heat.js';
+
 // Where steam leaves the orange's radiator, in the model's own space, and what the steam looks like: pale, quick and rising.
 const RADIATOR_AT = { x: 0, y: 0.68, z: 0.86 };
 const STEAM_SMOKE = { opacity: 1.2, maxPerSecond: 40, lifeMin: 0.8, lifeMax: 2.4, startSize: 0.1, endSize: 1.0, exitSpeed: 1.6, drag: 1.4, buoyancy: 1.1 };
@@ -118,6 +120,9 @@ export class QuadUnit {
       this.steam = new ExhaustSmoke(scene, (x, z) => world.heightAt(x, z), { ...DEFAULT_SMOKE_PARAMS, ...STEAM_SMOKE });
       this.radiator = new THREE.Vector3();
     }
+    this.scene = scene;
+    this.world = world;
+    this.engineAt = new THREE.Vector3(); // scratch: where a hot engine's steam leaves
     this.mud = new QuadMud({ scene, world, quad: this.quad, sport: spec.style?.startsWith('sport'), params: { ...DEFAULT_MUD_PARAMS, ...spec.mud } });
     // The mud coat swaps every body material for a copy, so the seat's frost has to tint that copy.
     const seat = this.quad.model.userData.seatMaterial;
@@ -176,15 +181,37 @@ export class QuadUnit {
       this.quad.model.localToWorld(this.radiator.set(RADIATOR_AT.x, RADIATOR_AT.y, RADIATOR_AT.z));
       this.steam.steam(dt, this.radiator, this.engine.steam, this.quad.velocity);
     }
+    this.updateHotSteam(dt);
     this.mud.update(dt);
     this.audio.onBoard = this.listenerOnBoard;
     this.audio.update(dt, this.engine, this.quad.position);
     this.ride.update(dt);
   }
 
+  /**
+   * Steam off a hot engine (engine/heat.js hotSteam): a wisp when it's cooking, and more when rain falls on a hot one out in the open.
+   * It has its own smoke system, made the first time any is wanted so the quads that never get hot don't carry one.
+   */
+  updateHotSteam(dt) {
+    const e = this.engine;
+    const w = this.world.weather;
+    const level = hotSteam({ running: e.isRunning, heat: e.heat, soak: e.soak, rain: w?.rain ?? 0, wet: w?.wet ?? 0, covered: !!this.world.covered?.(this.quad.position.x, this.quad.position.z) }, e.params);
+    if (level <= 0.005 && !this.heatSteam) return;
+    if (!this.heatSteam) {
+      this.heatSteam = new ExhaustSmoke(this.scene, (x, z) => this.world.heightAt(x, z), { ...DEFAULT_SMOKE_PARAMS, ...STEAM_SMOKE });
+      if (this.viewport) this.heatSteam.setViewport(...this.viewport);
+    }
+    // From under the seat, where the engine sits on a quad; the exhaust end for the ones with no seat anchor.
+    (this.quad.riderAnchor ?? this.quad.exhaustTip ?? this.quad.model).getWorldPosition(this.engineAt);
+    this.engineAt.y += 0.1;
+    this.heatSteam.steam(dt, this.engineAt, level, this.quad.velocity);
+  }
+
   setViewport(heightPx, fovDeg) {
     this.smoke.setViewport(heightPx, fovDeg);
     this.steam?.setViewport(heightPx, fovDeg);
+    this.heatSteam?.setViewport(heightPx, fovDeg);
+    this.viewport = [heightPx, fovDeg];
     this.mud.setViewport(heightPx, fovDeg);
   }
 
