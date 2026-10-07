@@ -177,7 +177,7 @@ function attachToBone(rig, mesh, boneName) {
  * `wear(p, bone, i)` and `offset(p, bone)` get root-space rest-pose positions; `bone`
  * is the name of the bone the vertex follows most and `i` its index in the body mesh.
  */
-function skinnedGarment(rig, name, color, wear, offset, { smooth = false, soft = false, shape = null, shade = null } = {}) {
+function skinnedGarment(rig, name, color, wear, offset, { smooth = false, soft = false, shape = null, shade = null, smoothEdge = null } = {}) {
   const body = bodyMesh(rig);
   if (!body) return null;
   const g = body.geometry;
@@ -256,6 +256,36 @@ function skinnedGarment(rig, name, color, wear, offset, { smooth = false, soft =
       }
     }
     out.push(remap.get(id));
+  }
+  // Smooth an open edge (`smoothEdge(rootPos)` picks which): the garment stops at whole triangles of a coarse body, so its edge
+  // saw-tooths. Each point on that edge moves towards the middle of its two neighbours along it, a few times over.
+  if (smoothEdge && soft) {
+    const edges = new Map();
+    for (let t = 0; t < out.length; t += 3) {
+      for (const [a, b] of [[out[t], out[t + 1]], [out[t + 1], out[t + 2]], [out[t + 2], out[t]]]) {
+        const k = a < b ? `${a},${b}` : `${b},${a}`;
+        edges.set(k, (edges.get(k) ?? 0) + 1);
+      }
+    }
+    const ids = [...remap.keys()];
+    const restOf = (v) => rootPos[tris.find((i) => (soft ? key(i) : i) === ids[v])];
+    const along = new Map();
+    for (const [k, n] of edges) {
+      if (n !== 1) continue;
+      const [a, b] = k.split(',').map(Number);
+      if (!smoothEdge(restOf(a)) || !smoothEdge(restOf(b))) continue;
+      along.set(a, [...(along.get(a) ?? []), b]);
+      along.set(b, [...(along.get(b) ?? []), a]);
+    }
+    for (let pass = 0; pass < 6; pass++) {
+      const next = new Map();
+      for (const [v, ns] of along) {
+        if (ns.length !== 2) continue;
+        const [a, b] = ns;
+        next.set(v, [0, 1, 2].map((c) => 0.5 * P[v * 3 + c] + 0.25 * (P[a * 3 + c] + P[b * 3 + c])));
+      }
+      for (const [v, q] of next) for (let c = 0; c < 3; c++) P[v * 3 + c] = q[c];
+    }
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
@@ -690,12 +720,15 @@ function addJumper(rig, color, shirtHex) {
   // The hem hangs over the shorts' waistband, which is at her spine bone.
   const hem = (rig.bones.Spine ? bonePos(rig, 'Spine') : bonePos(rig, 'Hips')).y - 0.1;
   const scoop = top - 0.045; // the crew neck at the front and back: just low enough to show the collar and the top button
-  const wide = 0.08; // beyond this far from the middle of her neck it goes right up over the shoulders
   const band = 0.03; // depth of the ribbed neck and hem
   const sleeve = /Shoulder|Arm/; // Arm also matches ForeArm; the hand is left bare
   const hands = ['LeftHand', 'RightHand'].filter((n) => rig.bones[n]).map((n) => bonePos(rig, n));
   const nearHand = (p) => Math.min(...hands.map((h) => h.distanceTo(p)));
-  const neckLine = (p) => (Math.abs(p.x - neck.x) > wide ? top : scoop);
+  // A round neck: a smooth curve round her neck, lowest at the front, a little low at the back, up over the shoulders between.
+  const neckLine = (p) => {
+    const c = Math.cos(Math.atan2(p.x - neck.x, p.z - neck.z));
+    return top - 0.01 - (top - 0.01 - scoop) * Math.max(0, c) ** 1.5 - 0.012 * Math.max(0, -c) ** 2;
+  };
   const rib = (p, bone) => {
     if (sleeve.test(bone)) return smooth01((0.11 - nearHand(p)) / 0.03); // the cuff, its last few centimetres
     return Math.max(smooth01((p.y - (neckLine(p) - band)) / 0.01), smooth01((hem + band - p.y) / 0.01));
@@ -752,6 +785,7 @@ function addJumper(rig, color, shirtHex) {
         return q.z < hang ? new THREE.Vector3(q.x, q.y, q.z + Math.min(0.05, hang - q.z) * sides) : q;
       },
       shade: (p, bone) => 1 - 0.24 * rib(p, bone),
+      smoothEdge: (p) => p.y > hem + 0.1 && Math.hypot(p.x - neck.x, p.z - neck.z) < 0.16,
     },
   );
 }
