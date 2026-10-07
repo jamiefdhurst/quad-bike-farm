@@ -5,6 +5,7 @@ import { band } from './skills.js';
 import { Speech } from '../audio/companionAudio.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
 import { girlKnows, historyTopics } from '../vehicle/history.js';
+import { applicableQuirks, featuresOf, girlKnowsQuirks } from '../vehicle/quirks.js';
 import { engineCondition, guessCondition } from './diagnosis.js';
 import { guessPlug } from '../workshop/benchJobs.js';
 import { isThrashed } from '../engine/wearLedger.js';
@@ -520,6 +521,7 @@ export class CompanionVoice {
       this.watchThrash(dt, unit, view, near || hers);
       this.watchBlame(dt, unit, w, view);
       this.watchHistory(dt, unit, w, view);
+      this.watchQuirks(dt, unit, w, view);
       // Cranking on and on without it catching.
       if (e.state === 'cranking' && w.cranking > 5 && near) {
         this.say(this.crankHint(unit), { chance: 0.02 });
@@ -628,6 +630,28 @@ export class CompanionVoice {
     if (!topic || !this.sayQuad(topic, unit.id, { chance: c.params.historyChance * dt })) return;
     w.historySaid.add(topic);
     w.historyUntil = this.chatter.time + 90; // one at a time, so she doesn't read out the whole file
+  }
+
+  /**
+   * Stood by a quad, or as you get on it, she warns you of a quirk she knows it has (quirks.js), once each. What she knows is
+   * settled once per quad as well as her `diagnoseAccuracy` lets her, so Jess misses some and sometimes swears to one it hasn't got.
+   */
+  watchQuirks(dt, unit, w, view) {
+    const c = this.companion;
+    const kinds = unit.quad.quirks.kinds;
+    const away = unit.quad.position.distanceTo(this.head);
+    const boarding = unit === view.ridden && away < 10;
+    if (!boarding && !(c.fsm.is('idle', 'resting') && away < 6)) return;
+    if (this.chatter.time < (w.quirkUntil ?? 0)) return;
+    this.quirkBeliefs ??= {};
+    const known = (this.quirkBeliefs[unit.id] ??= girlKnowsQuirks(kinds, applicableQuirks(featuresOf(unit.spec, true)), c.params.diagnoseAccuracy, Math.random));
+    w.quirkSaid ??= new Set();
+    const kind = known.find((k) => !w.quirkSaid.has(k));
+    if (!kind) return;
+    const situation = `quirk${kind[0].toUpperCase()}${kind.slice(1)}`;
+    if (!this.say(situation, { chance: c.params.quirkChance * dt * (boarding ? 3 : 1) })) return;
+    w.quirkSaid.add(kind);
+    w.quirkUntil = this.chatter.time + 60;
   }
 
   /** Which kind of "it won't start" remark fits what she can see. */

@@ -294,6 +294,37 @@ export class RideAudio {
     g.setTargetAtTime(on ? this.hornLevel * this.hub.params.hornVolume * 0.5 : 0, t, on ? 0.008 : 0.02);
   }
 
+  /** A squealing brake (quirks.js): a thin, high, slightly wobbling whistle while it's braked hard enough, lower as it slows. Built when first needed. */
+  updateSqueal(level, speed) {
+    if (!this.squealGain) {
+      if (level <= 0) return;
+      const ctx = this.hub.ctx;
+      const tone = ctx.createBiquadFilter();
+      tone.type = 'bandpass';
+      tone.frequency.value = 2600;
+      tone.Q.value = 6;
+      const gain = ctx.createGain();
+      gain.gain.value = 0;
+      tone.connect(gain).connect(this.out);
+      const oscs = [1, 1.51].map((ratio) => {
+        const o = ctx.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.value = 1800 * ratio;
+        o.connect(tone);
+        o.start();
+        return o;
+      });
+      this.squealGain = gain;
+      this.squealTone = tone;
+      this.squealOscs = oscs;
+    }
+    const now = this.hub.ctx.currentTime;
+    const wobble = 1 + 0.03 * Math.sin(now * 37) + 0.02 * Math.sin(now * 91);
+    this.squealOscs.forEach((o, i) => o.frequency.setTargetAtTime((1500 + 150 * speed) * (i ? 1.51 : 1) * wobble, now, 0.03));
+    this.squealTone.frequency.setTargetAtTime(2000 + 150 * speed, now, 0.05);
+    this.squealGain.gain.setTargetAtTime(this.hub.params.rideVolume * 0.12 * level, now, level > 0 ? 0.03 : 0.08);
+  }
+
   /** Every frame, after the engine sound has updated (it owns the sound path). */
   update(dt) {
     if (!this.built && !this.build()) {
@@ -310,6 +341,8 @@ export class RideAudio {
     const v = clamp(speed / p.rideFullSpeed, 0, 1.6);
     const level = p.rideVolume;
     const set = (param, value, tau = 0.06) => param.setTargetAtTime(value, now, tau);
+
+    this.updateSqueal(quad.quirks.squeal(quad.brake, Math.abs(speed)), Math.abs(speed));
 
     // Grass catches the tyres unevenly.
     this.flutter += (0.55 + Math.random() * 0.9 - this.flutter) * Math.min(1, dt * 12);

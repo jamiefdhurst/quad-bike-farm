@@ -22,6 +22,7 @@ import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
 import { CHARACTERS } from './npc/characters.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { pickHistory, pickFaultChance } from './vehicle/history.js';
+import { QuirkSet, DEFAULT_QUIRK_PARAMS, QUIRK_PARAM_RANGES, featuresOf, pickQuirks } from './vehicle/quirks.js';
 import { captureStock, tuneTarget, stockSettings, clampSettings, applyTune } from './vehicle/tuneUp.js';
 import { WearLedger, LEDGER_PARAM_RANGES } from './engine/wearLedger.js';
 import { Pranks, PRANK_PARAM_RANGES } from './npc/pranks.js';
@@ -221,6 +222,15 @@ export class Game {
       const kind = this.podRack.podOn(unit.id);
       if (kind) unit.quad.fitPod(this.pods[kind]);
     }
+    // One to three quirks each, from the parts the quad has (a gauge quirk needs a dash or pod that shows it, so this comes after the pods).
+    this.quirkParams = { ...DEFAULT_QUIRK_PARAMS };
+    registerTuning('Quirks', this.quirkParams, QUIRK_PARAM_RANGES);
+    const quirkRandom = createRandom(this.seed ^ 0x9a1c);
+    for (const unit of this.units) {
+      const kinds = pickQuirks(featuresOf(unit.spec, !!this.podRack.podOn(unit.id)), quirkRandom, this.quirkParams);
+      unit.quad.quirks = new QuirkSet(kinds, this.quirkParams);
+    }
+    console.info(`Quirks: ${this.units.map((u) => `${u.name} ${u.quad.quirks.kinds.join(', ')}`).join('; ')}`);
     console.info(`Pods: ${this.podRack.describe((id) => this.units.find((u) => u.id === id).name)}`);
     // The tractor stands in the yard whatever the fleet is. It's a unit like the quads (you ride it, fuel it, hear it), but `girlUnits` is what
     // the girls know about: they leave it alone for now.
@@ -1077,6 +1087,21 @@ export class Game {
   }
 
   /** One manual vehicle (a quad or the tractor) has a worn gearbox this game: a gear that jumps out under load on a climb. Seeded. */
+  /** A split seat soaks up the rain, and soaks you if you sit on it wet; the nearest girl has something to say. */
+  updateQuirks(dt, ridden) {
+    const raining = this.weather.rain > 0.25;
+    for (const u of this.units) {
+      const q = u.quad;
+      q.quirks.seatStep(dt, { raining, covered: !!this.world.covered?.(q.position.x, q.position.z) });
+    }
+    if (ridden === this.lastRiddenForSeat) return;
+    this.lastRiddenForSeat = ridden;
+    if (!ridden?.quad.quirks.sitOn()) return;
+    this.hud.toast('The seat is split and soaked: your trousers are wet through', 3);
+    const near = this.companions.filter((c) => c.quad.position.distanceTo(ridden.quad.position) < 10);
+    near[Math.floor(Math.random() * near.length)]?.voice.say('seatSoaked', { force: true });
+  }
+
   /** Gives a quad its past: wear, any starting faults and any tinkering left in (the toolbox opens on it as it is, with stock the factory's). */
   applyHistory(unit, random, faultChance) {
     const [lo, hi] = unit.spec.hoursRange ?? [0, 0];
@@ -1702,7 +1727,9 @@ export class Game {
   // Horns --------------------------------------------------------------------
 
   updateHorns(dt, ridden) {
-    const honking = !!ridden && !this.menu.isOpen && this.input.isDown('KeyL');
+    // A horn that works when it likes only sounds some of the time you hold it, and the girls only answer what they hear.
+    const held = !!ridden && !this.menu.isOpen && this.input.isDown('KeyL');
+    const honking = ridden ? ridden.quad.quirks.horn(dt, held) : false;
     const girls = this.companions.map((c) => {
       const driving = c.fsm.is('driving');
       return { id: c.character.id, x: c.root.position.x, z: c.root.position.z, yaw: c.quad.yaw, speed: Math.abs(c.quad.speed), driving, canHonk: driving || c.fsm.is('seated') };
@@ -1716,7 +1743,7 @@ export class Game {
     }
     for (const u of this.units) {
       const c = this.companions.find((o) => o.quad === u.quad);
-      u.ride.setHorn(u === ridden ? honking : !!c && this.horns.beeping(c.character.id));
+      u.ride.setHorn(u === ridden ? honking : u.quad.quirks.horn(dt, !!c && this.horns.beeping(c.character.id)));
     }
   }
 
@@ -2731,6 +2758,7 @@ export class Game {
     this.talkFloor.left = Math.max(0, this.talkFloor.left - dt);
     this.updateFavour(dt, ridden);
     this.updateWearLedger();
+    this.updateQuirks(dt, ridden);
     this.skills.update(dt);
     this.updateRequests(dt, ridden);
     this.updatePlaces(dt);
@@ -2849,7 +2877,7 @@ export class Game {
     }
     // Anything the tractor has to say (the starter in gear, a gear change without the clutch) to whoever's at it.
     for (const u of this.units) {
-      const note = u.quad.manual ? u.quad.takeNote() : null;
+      const note = u.quad.takeNote();
       if (note && (u === this.riddenUnit || u.quad.position.distanceTo(this.player.position) < 6)) this.hud.toast(note, 2.2);
     }
     this.hud.update(dt);

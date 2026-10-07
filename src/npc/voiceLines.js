@@ -20,6 +20,7 @@ import { AMY_SILENCER_LINES } from './silencerLines.js';
 import { AMY_DIAGNOSIS_LINES } from './diagnosisLines.js';
 import { AMY_THRASH_LINES } from './thrashLines.js';
 import { AMY_HISTORY_LINES } from './historyLines.js';
+import { AMY_QUIRK_LINES } from './quirkLines.js';
 import { AMY_REVOFF_LINES } from './revOffLines.js';
 import { AMY_HORN_LINES } from './hornLines.js';
 import { AMY_TRACTOR_LINES } from './tractorLines.js';
@@ -1397,6 +1398,7 @@ export const VOICE_LINES = {
   // Thrashing a cold engine, and who wore it out (thrashLines.js).
   ...AMY_THRASH_LINES,
   ...AMY_HISTORY_LINES,
+  ...AMY_QUIRK_LINES,
   // Rev-offs (revOffLines.js).
   ...AMY_REVOFF_LINES,
   // Horns (hornLines.js).

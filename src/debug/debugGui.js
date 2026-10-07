@@ -107,6 +107,9 @@ export class DebugGui {
       get wear() {
         return unit().engine.wear;
       },
+      get quirks() {
+        return unit().quad.quirks.kinds.join(', ') || 'none';
+      },
       get hours() {
         return Math.round(unit().quad.usage.hours * 100) / 100;
       },

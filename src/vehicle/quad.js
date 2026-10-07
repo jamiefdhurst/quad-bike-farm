@@ -3,6 +3,7 @@ import { buildQuadModel, poseSuspension, setHeadlights } from './quadModel.js';
 import { FuelSystem } from './fuelSystem.js';
 import { QuadPhysics, QUAD_LAYOUT } from './quadPhysics.js';
 import { Drivetrain } from './drivetrain.js';
+import { QuirkSet } from './quirks.js';
 import { ManualDrivetrain, gearLabel } from './manualDrivetrain.js';
 import { AutoShifter } from './autoShifter.js';
 import { poseTractorControls } from './tractorModel.js';
@@ -117,6 +118,7 @@ export class Quad {
     this.shifter = new AutoShifter(); // what the girls do with the clutch and lever when one of them drives
     this.drivetrain = this.manual ? new ManualDrivetrain(params, gearbox) : new Drivetrain(params);
     this.handSetting = gearbox?.handStart ?? 0; // the tractor's hand throttle, 0..1: it stays where it was put, even with nobody on it
+    this.quirks = new QuirkSet(); // this game's oddities (quirks.js); the game gives it the ones it picked
     this.note = null; // something to tell whoever's at the controls, taken by the game (see takeNote)
     this.bog = new Bog(); // how far it's sunk into a bog (bog.js)
     this.towed = false; // on the end of the winch: brakes off
@@ -324,7 +326,10 @@ export class Quad {
     if (!input) return;
     if (this.input) input.takeWheelSteps();
     if (input.wasPressed('KeyK')) this.engine.toggleIgnition();
-    if (input.wasPressed('KeyF') && !this.fuel.params.noTap) this.fuel.cycleTap();
+    if (input.wasPressed('KeyF') && !this.fuel.params.noTap) {
+      if (this.quirks.pressTap()) this.fuel.cycleTap();
+      else this.say('The fuel tap is stiff: keep working it');
+    }
     if (this.manual) this.manualKeys(input);
     if (!this.tractor) {
       this.chokeKey(dt, input, CHOKE_MORE_KEY, 1);
@@ -571,7 +576,7 @@ export class Quad {
     this.physics.applyControls({
       driveForce: Math.sign(drive) * Math.max(0, Math.abs(drive) * this.faults.driveFactor - hold),
       brake,
-      steer: this.steer + this.faults.steerPull,
+      steer: this.steer + this.faults.steerPull + this.quirks.brakePull(this.brake),
       mudAt: (x, z) => Math.max(this.world.mudAt(x, z), this.churn),
       puddleAt: (x, z) => this.world.puddleAt?.(x, z) ?? 0,
       bogAt: (x, z) => this.world.bogAt?.(x, z) ?? 0,
@@ -668,6 +673,7 @@ export class Quad {
     this.handlebars.rotation.set(0, this.steer * 0.85 + (v ? v.bars.yaw : 0), v ? v.bars.roll : 0);
 
     this.updateDash(dt);
+    this.updateQuirks(dt, vibration);
     if (this.note && (this.note.left -= dt) <= 0) this.note = null;
     this.updateFlap(dt);
   }
@@ -702,6 +708,14 @@ export class Quad {
     return pod;
   }
 
+  /** The quirks that act on the quad itself: the choke creeping on with the shake, the tap's press window. */
+  updateQuirks(dt, vibration) {
+    const q = this.quirks;
+    q.update(dt);
+    const step = q.chokeCreep(dt, { running: this.engine.isRunning, shake: vibration?.intensity ?? 0, choke: this.choke });
+    if (step) this.choke = Math.round((this.choke + step) * 10) / 10;
+  }
+
   updateDash(dt) {
     const e = this.engine;
     const speed = Math.abs(this.forwardSpeed);
@@ -714,11 +728,9 @@ export class Quad {
       maxRpm: e.params.maxRpm,
       redline: e.params.redlineRpm,
       speedMph: speed > 0.2 ? speed * 2.237 : 0,
-      fuelLevel: f.level,
+      ...this.quirks.dash({ fuelLevel: f.level, temperature: e.temperature, overheat: e.gaugeHeat }, dt, speed > 1),
       reserveLevel: f.params.reserveLitres / f.params.tankCapacity,
       tap: f.tap,
-      temperature: e.temperature,
-      overheat: e.gaugeHeat,
       coldBelow: e.params.warmLightThreshold,
       ignition: e.hasPower, // the dash goes dark on a flat battery
       keyOn: e.ignitionOn,
@@ -738,7 +750,7 @@ export class Quad {
     this.lamps = lampStates(state); // what the dash's warning lamps show, for the girl on the back to read out
     this.dash.update(state);
     this.pod?.update(state);
-    setHeadlights(this.model, e.ignitionOn);
+    setHeadlights(this.model, e.ignitionOn, this.quirks.headlight(dt));
 
     if (this.tractor) poseTractorControls(this.model, { gear: this.drivetrain.gear, hand: this.handSetting, pedal: this.drivetrain.pedal });
     this.displayChoke += (this.choke - this.displayChoke) * Math.min(1, 12 * dt);
