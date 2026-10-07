@@ -19,12 +19,12 @@ function texture() {
 
 export function buildLPlate() {
   const g = new THREE.Group();
-  const face = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.2), new THREE.MeshStandardMaterial({ map: texture(), roughness: 0.6, side: THREE.DoubleSide }));
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.17), new THREE.MeshStandardMaterial({ map: texture(), roughness: 0.6, side: THREE.DoubleSide }));
   g.add(face);
   const tape = new THREE.MeshStandardMaterial({ color: 0xcfc9b4, roughness: 0.8 });
   for (const s of [-1, 1]) {
-    const t = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.03, 0.004), tape);
-    t.position.set(s * 0.085, 0.1, 0.002);
+    const t = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.025, 0.004), tape);
+    t.position.set(s * 0.07, 0.085, 0.002);
     t.rotation.z = s * 0.4;
     g.add(t);
   }
@@ -32,9 +32,9 @@ export function buildLPlate() {
   return g;
 }
 
-/** Where the plate stands on a quad's model (its back, on the rear rack's edge) and on the tractor's (the front of the grille), facing out. */
+/** Where the plate stands on a quad's model (the back of the body, between the tail lights) and on the tractor's (the front of the grille), facing out. */
 export const LPLATE_PLACES = {
-  quad: { x: 0, y: 0.9, z: -1.075, ry: Math.PI },
+  quad: { x: 0, y: 0.685, z: -1.074, ry: Math.PI },
   tractor: { x: 0.12, y: 0.98, z: 1.475, ry: 0 },
 };
 
