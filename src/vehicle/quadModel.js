@@ -1002,7 +1002,7 @@ function buildFrame(root, sport) {
 const TAP_PLACE = {
   left: { pos: [0.18, 0.8, 0.3], handle: 'lever', colour: 'chrome' },
   right: { pos: [-0.18, 0.8, 0.3], handle: 'lever', colour: 'black' },
-  under: { pos: [0.09, 0.672, 0.3], handle: 'knob', colour: 0xb03020 },
+  under: { pos: [0.12, 0.688, 0.3], handle: 'knob', colour: 0xb03020 },
   lowLeft: { pos: [0.185, 0.74, 0.2], handle: 'tee', colour: 'chrome' },
   lowRight: { pos: [-0.185, 0.74, 0.2], handle: 'knob', colour: 0x2a6fb0 },
 };
