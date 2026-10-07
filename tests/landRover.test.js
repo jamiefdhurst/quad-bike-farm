@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { LAND_ROVER_SPEC as L } from '../src/vehicle/quadSpecs.js';
 import { DASH_STYLES } from '../src/vehicle/dash.js';
 import { canTow } from '../src/vehicle/tipTrailer.js';
@@ -31,9 +32,21 @@ describe('the Land Rover', () => {
     expect(L.fuel.noTap).toBe(true);
   });
 
-  it('idles near the speed of the old Jeep it is recorded from', () => {
-    expect(L.idleRange[0]).toBeGreaterThan(470);
-    expect(L.idleRange[1]).toBeLessThan(620);
+  it('idles at the pace of the old Jeep it is recorded from, so its beats play at their own speed', () => {
+    const bank = JSON.parse(readFileSync('public/audio/engine-bank-landy.json', 'utf8'));
+    const rpms = bank.grains.filter((g) => g.kind === 'idle' && g.ok !== false).map((g) => g.rpm / 4).sort((a, b) => a - b);
+    const recorded = rpms[Math.floor(rpms.length / 2)];
+    expect(L.idleRange[0]).toBeGreaterThan(recorded * 0.92);
+    expect(L.idleRange[1]).toBeLessThan(recorded * 1.05);
+    expect(L.engine.idleRpmWarm).toBeGreaterThanOrEqual(L.idleRange[0]);
+    expect(L.engine.idleRpmWarm).toBeLessThanOrEqual(L.idleRange[1]);
+  });
+
+  it('runs out of puff at 50 to 55 mph in top', () => {
+    const mph = (ms) => ms * 2.237;
+    expect(mph(L.gearbox.topSpeed4)).toBeGreaterThan(50);
+    expect(mph(L.gearbox.topSpeed4)).toBeLessThan(58);
+    expect(L.vehicle.maxSpeed).toBeGreaterThanOrEqual(L.gearbox.topSpeed4);
   });
 
   it('can tow the little trailer from its own towing jaw', () => {

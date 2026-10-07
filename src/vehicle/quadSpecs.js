@@ -1056,7 +1056,7 @@ export const LAND_ROVER_SPEC = {
   odoRange: [60000, 140000], // miles on the clock
   wearRange: [0.04, 0.12], // old and well used, but four cylinders hide it: a quad's wear would make it lumpy
   safeIdle: 420,
-  idleRange: [520, 580], // a 2.25 petrol ticks over slowly; the Jeep in its sound recording runs at about 500
+  idleRange: [470, 510], // a 2.25 petrol ticks over slowly; the Jeep in its sound recording runs at 500 (474 to 528), so its beats play at their own pace
   roughnessRange: [0.04, 0.1],
   fuelRange: [12, 40], // 45 litre tank, 5 litre reserve
   topRpmRange: [4100, 4300],
@@ -1065,10 +1065,10 @@ export const LAND_ROVER_SPEC = {
     gears: 4,
     crashGears: 2, // no synchromesh on first and second: they crunch if you go into them on the move
     crashSpeed: 1,
-    topSpeed1: 2.6,
-    topSpeed2: 5,
-    topSpeed3: 9,
-    topSpeed4: 14.5, // about 32 mph, flat out in the yard
+    topSpeed1: 4.5, // about 10 mph: the gears step up evenly, about 1.75 each, like the real box's
+    topSpeed2: 8,
+    topSpeed3: 14,
+    topSpeed4: 24, // flat out it settles just short of this, about 52 mph (the drive fades to nothing at it)
     topSpeedReverse: 2.6,
     torque1: 1,
     torque2: 0.72,
@@ -1092,7 +1092,7 @@ export const LAND_ROVER_SPEC = {
     pullGoodMin: 0.35,
     pullGoodMax: 0.9,
     pullLateMax: 1.5,
-    idleRpmWarm: 550,
+    idleRpmWarm: 490,
     maxRpm: 4200,
     redlineRpm: 4000,
     stallRpm: 300,
@@ -1128,11 +1128,11 @@ export const LAND_ROVER_SPEC = {
     mudFrictionSlip: 0.8,
     fourWheelDrive: 0, // the transfer lever decides
     maxDriveForce: 7000,
-    maxSpeed: 14.5,
+    maxSpeed: 24,
     maxReverseSpeed: 2.6,
     maxSteerDeg: 32,
     steerRate: 2.2, // heavy steering, no power assistance
-    steerSpeedReduction: 0.05,
+    steerSpeedReduction: 0.08, // a heavy, tall thing at 50 mph: about 11 degrees of lock
     engineBrakeForce: 1100,
     maxBrake: 48,
     parkingBrake: 22,
@@ -1141,7 +1141,7 @@ export const LAND_ROVER_SPEC = {
   },
   vibration: {
     firingsPerCycle: 1, // the engine already fires four times a cycle (engine.cylinders): one kick each
-    idleRpm: 520,
+    idleRpm: 490,
     smoothRpmRange: 1500,
     pulseGain: 1.2,
     heaveFreq: 5.5,
@@ -1156,7 +1156,7 @@ export const LAND_ROVER_SPEC = {
   audio: {
     recBank: 'engine-bank-landy', // an old Jeep's four-cylinder petrol idling (craigsmith), and a car started on a handle
     recIdleSource: 'quad',
-    pulseRefRpm: 550,
+    pulseRefRpm: 490,
     pulseRevLoudness: 0.3,
     pulsePitchFollow: 0.25, // one recorded beat per firing, at about its own speed: the beats come faster as it revs, the note barely rises
     recVolume: 0.6,
