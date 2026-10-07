@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { headlightLook, DEFAULT_HEADLIGHT_PARAMS as P } from '../src/vehicle/headlight.js';
+import { headlightLook, taillightLevel, DEFAULT_HEADLIGHT_PARAMS as P } from '../src/vehicle/headlight.js';
 import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC } from '../src/vehicle/quadSpecs.js';
 
 const run = (over = {}) => ({ keyOn: true, running: true, cranking: false, rpm: 1100, idle: 1100, max: 6000, roughness: 0.05, erratic: 0, steady: false, time: 0, ...over });
@@ -48,5 +48,20 @@ describe('headlightLook', () => {
   it('is only the loan quad and the tractor that have a battery for it', () => {
     expect([...QUAD_SPECS, ...EXTRA_SPECS].filter((s) => s.steadyLights).map((s) => s.id)).toEqual(['loan']);
     expect(TRACTOR_SPEC.steadyLights).toBe(true);
+  });
+});
+
+describe('taillightLevel', () => {
+  it('shares the headlight supply: dimmer than it running, out with it', () => {
+    expect(taillightLevel(1, false)).toBeCloseTo(P.tailShare);
+    expect(taillightLevel(0.3, false)).toBeLessThan(taillightLevel(1, false));
+    expect(taillightLevel(0, false)).toBe(0);
+  });
+
+  it('braking lifts it to the brake light, up to full as the supply does, but not without a supply', () => {
+    expect(taillightLevel(0.3, true)).toBeGreaterThan(taillightLevel(0.3, false));
+    expect(taillightLevel(0.3, true)).toBeGreaterThanOrEqual(P.brakeBase);
+    expect(taillightLevel(1, true)).toBeCloseTo(1);
+    expect(taillightLevel(0, true)).toBe(0);
   });
 });

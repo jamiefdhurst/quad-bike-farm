@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { MAT, STYLE, add, rbox, tube, pipe, buildHandlebars, addHeadlightBeams } from './quadModel.js';
+import { MAT, STYLE, add, rbox, tube, pipe, buildHandlebars, addHeadlightBeams, addTailLights } from './quadModel.js';
 import { mergeStatic } from './quadGeometry.js';
 
 // The mini moto: a 50cc pit bike, procedural like the quads. Same named parts as a quad's model so Quad drives it unchanged (see
@@ -176,6 +176,7 @@ export function buildMiniMotoModel({ bodyColor = 0xd0d4d8, dashStyle = 'kidsKey'
   }
 
   addHeadlightBeams(quad);
+  addTailLights(quad);
   mergeStatic(root);
   mergeStatic(bars);
   quad.traverse((o) => {

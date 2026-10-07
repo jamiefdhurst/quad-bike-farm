@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { buildQuadModel, poseSuspension, setHeadlights } from './quadModel.js';
+import { buildQuadModel, poseSuspension, setHeadlights, setTaillights } from './quadModel.js';
 import { FuelSystem } from './fuelSystem.js';
 import { QuadPhysics, QUAD_LAYOUT } from './quadPhysics.js';
 import { Drivetrain } from './drivetrain.js';
 import { QuirkSet } from './quirks.js';
-import { headlightLook } from './headlight.js';
+import { headlightLook, taillightLevel } from './headlight.js';
 import { TyreSet } from './tyres.js';
 import { frostAfter, frostedColour, DEFAULT_FROST_PARAMS } from './seatFrost.js';
 import { ManualDrivetrain, gearLabel } from './manualDrivetrain.js';
@@ -835,7 +835,10 @@ export class Quad {
       steady: this.steadyLights,
       time: this.lightTime,
     });
-    setHeadlights(this.model, e.ignitionOn && !this.noHeadlight, look.level * this.quirks.headlight(dt), look.colour);
+    const lit = e.ignitionOn && !this.noHeadlight;
+    const level = look.level * this.quirks.headlight(dt);
+    setHeadlights(this.model, lit, level, look.colour);
+    setTaillights(this.model, lit ? taillightLevel(level, this.brake > 0.1) : 0); // the same supply, so a brake light needs it too
 
     if (this.tractor) poseTractorControls(this.model, { gear: this.drivetrain.gear, hand: this.handSetting, pedal: this.drivetrain.pedal });
     this.displayChoke += (this.choke - this.displayChoke) * Math.min(1, 12 * dt);

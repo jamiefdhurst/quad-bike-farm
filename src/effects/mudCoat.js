@@ -143,7 +143,7 @@ export class MudCoat {
       uWashed: { value: 0 },
     };
     const model = quad.model;
-    const skip = new Set([model.userData.lensMaterial]);
+    const skip = new Set([model.userData.lensMaterial, model.userData.tailMaterial]);
     const bodyCopies = new Map();
     const wheelCopies = new Map();
     const bars = model.getObjectByName('handlebars');

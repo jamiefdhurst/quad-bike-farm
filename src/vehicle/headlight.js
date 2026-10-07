@@ -12,6 +12,8 @@ export const DEFAULT_HEADLIGHT_PARAMS = {
   flickerRate: 16, // flicker speed, rad/s
   warmColour: 0xffb347, // dim: yellow
   coolColour: 0xfff2cc, // bright: nearly white
+  tailShare: 0.4, // the tail light's running brightness, as a share of the headlight's
+  brakeBase: 0.6, // braking: the tail light's brightness when the headlight is barely lit (it goes up to full as the headlight does)
 };
 
 export const HEADLIGHT_PARAM_RANGES = {
@@ -22,6 +24,8 @@ export const HEADLIGHT_PARAM_RANGES = {
   flickerSpan: [0.05, 1, 0.01],
   flickerDepth: [0, 1, 0.01],
   flickerRate: [1, 60, 1],
+  tailShare: [0, 1, 0.05],
+  brakeBase: [0, 1, 0.05],
 };
 
 export const HEADLIGHT_PARAMS = { ...DEFAULT_HEADLIGHT_PARAMS }; // shared by every quad, registered once in the tuning panel
@@ -58,4 +62,15 @@ export function headlightLook(s, P = HEADLIGHT_PARAMS) {
     level *= 1 - P.flickerDepth * rough * wobble * wobble;
   }
   return { level, colour: mixColour(P.warmColour, P.coolColour, t) };
+}
+
+/**
+ * The tail light's brightness, 0..1, from the headlight's `headLevel` (so it shares its supply: dim at idle, brighter with revs,
+ * flickering when the engine runs rough, out when it stalls or the key's off). Braking lifts it to the brake light, which needs the
+ * same supply: with none (headLevel 0) it stays dark.
+ */
+export function taillightLevel(headLevel, braking, P = HEADLIGHT_PARAMS) {
+  if (headLevel <= 0) return 0;
+  const run = headLevel * P.tailShare;
+  return braking ? Math.max(run, P.brakeBase + (1 - P.brakeBase) * headLevel) : run;
 }

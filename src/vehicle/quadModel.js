@@ -1457,6 +1457,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     }
   }
   addHeadlightBeams(quad);
+  addTailLights(quad);
   mergeStatic(root);
   mergeStatic(bars);
   quad.traverse((o) => {
@@ -1536,6 +1537,49 @@ export function addHeadlightBeams(quad) {
   quad.userData.beamMaterial = beamMat;
   quad.userData.haloMaterial = haloMat;
   quad.userData.beams = lights;
+}
+
+/**
+ * Gives the quad its own tail light material (the shared one can't differ between quads) and a red halo on each lamp. Dark red when off.
+ * Call with addHeadlightBeams, before the model is merged. A quad whose model has no tail light is left alone.
+ */
+export function addTailLights(quad) {
+  const mat = new THREE.MeshStandardMaterial({ color: 0x3c0b08, roughness: 0.25, emissive: 0x000000 });
+  const haloMat = new THREE.SpriteMaterial({ map: glowTexture(), color: 0xff2a1a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+  quad.updateMatrixWorld(true);
+  const lamps = [];
+  quad.traverse((o) => {
+    if (o.isMesh && o.material === MAT.tail) lamps.push(o);
+  });
+  if (!lamps.length) return;
+  const halos = [];
+  for (const lamp of lamps) {
+    lamp.material = mat;
+    lamp.geometry.computeBoundingBox();
+    const box = lamp.geometry.boundingBox;
+    const at = new THREE.Vector3((box.min.x + box.max.x) / 2, (box.min.y + box.max.y) / 2, box.min.z).applyMatrix4(lamp.matrix);
+    const halo = new THREE.Sprite(haloMat);
+    halo.name = 'taillightHalo';
+    halo.userData.keep = true;
+    halo.position.copy(at);
+    halo.position.z -= 0.03;
+    halo.scale.setScalar(0.3);
+    lamp.parent.add(halo);
+    halos.push(halo);
+  }
+  quad.userData.tailMaterial = mat;
+  quad.userData.tailHaloMaterial = haloMat;
+  quad.userData.tailHalos = halos;
+}
+
+/** Lights the tail lamps: level 0..1 (taillightLevel in headlight.js), glowing red against the dark lens they have when off. */
+export function setTaillights(quad, level) {
+  const mat = quad.userData.tailMaterial;
+  if (!mat) return;
+  mat.emissive.setHex(level > 0 ? 0xff1208 : 0x000000);
+  mat.emissiveIntensity = LENS_GLOW * level;
+  quad.userData.tailHaloMaterial.opacity = 0.8 * level;
+  for (const h of quad.userData.tailHalos) h.visible = level > 0.02;
 }
 
 export function setHeadlights(quad, on, level = 1, colour = 0xfff2cc) {
