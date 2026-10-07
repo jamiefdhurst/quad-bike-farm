@@ -12,6 +12,7 @@
 //   roughnessRange: [min, max] how lumpy it runs once warm (baseRoughness, 0 to 1).
 //     Cold, rich, lean and fouled running add to this.
 //   hoursRange, odoRange: [min, max] engine hours and odometer miles the dash shows at the start.
+//   topRpmRange: [min, max] full-throttle rpm (maxRpm; the redline keeps its gap below it). The toolbox's rev limiter moves it from there.
 //   fuelRange: [min, max] litres in the tank at the start. Below the reserve
 //     (reserveLitres) it'll only run on RESERVE.
 
@@ -31,6 +32,7 @@ export const QUAD_SPECS = [
     idleRange: [1050, 1150],
     roughnessRange: [0.04, 0.12],
     fuelRange: [2.5, 11], // 12 litre tank, 2 litre reserve
+    topRpmRange: [5950, 6450], // full-throttle revs this game, about 4% either side of the engine's own
     manual: true, // a clutch (Shift) and a four-speed gearbox in place of the CVT (src/vehicle/manualDrivetrain.js)
     gearbox: { gears: 4, topSpeed1: 4.5, topSpeed2: 8.5, topSpeed3: 12.5, topSpeed4: 17, topSpeedReverse: 3.5, torque1: 1, torque2: 0.85, torque3: 0.7, torque4: 0.6, torqueReverse: 0.9, launchLoad1: 0.15, launchLoad2: 0.7, launchLoad3: 0.9, launchLoad4: 1, lugSpeed: 0.6 },
     fuel: {},
@@ -62,6 +64,7 @@ export const QUAD_SPECS = [
     idleRange: [1400, 1550],
     roughnessRange: [0.2, 0.3],
     fuelRange: [1.2, 8], // 11 litre tank, 1.8 litre reserve: some games it starts on its reserve
+    topRpmRange: [6550, 7050], // full-throttle revs this game, about 4% either side of the engine's own
     fuel: { tankCapacity: 11, reserveLitres: 1.8 },
     engine: {
       idleRpmWarm: 1450,
@@ -119,6 +122,7 @@ export const QUAD_SPECS = [
     idleRange: [1500, 1800],
     roughnessRange: [0.35, 0.5],
     fuelRange: [1.5, 8], // 9 litre tank, 1.5 litre reserve
+    topRpmRange: [10100, 10900], // full-throttle revs this game, about 4% either side of the engine's own
     manual: true, // a clutch (Shift) and a four-speed gearbox in place of the CVT (src/vehicle/manualDrivetrain.js)
     gearbox: { gears: 4, topSpeed1: 5, topSpeed2: 9.5, topSpeed3: 14.5, topSpeed4: 20, topSpeedReverse: 3.5, torque1: 1, torque2: 0.85, torque3: 0.7, torque4: 0.6, torqueReverse: 0.9, launchLoad1: 0.15, launchLoad2: 0.7, launchLoad3: 0.9, launchLoad4: 1, lugSpeed: 0.6 },
     fuel: { tankCapacity: 9, startOil: 0.02, reserveLitres: 1.5, burnPerRev: 0.000032, idleBurnFraction: 0.45 },
@@ -210,6 +214,7 @@ export const QUAD_SPECS = [
     idleRange: [800, 900],
     roughnessRange: [0.55, 0.7],
     fuelRange: [3, 13], // 14 litre tank, 2.5 litre reserve
+    topRpmRange: [5400, 5800], // full-throttle revs this game, about 4% either side of the engine's own
     manual: true, // a clutch (Shift) and a four-speed gearbox in place of the CVT (src/vehicle/manualDrivetrain.js)
     gearbox: { gears: 4, topSpeed1: 4, topSpeed2: 7.5, topSpeed3: 11, topSpeed4: 15, topSpeedReverse: 3, torque1: 1, torque2: 0.9, torque3: 0.75, torque4: 0.65, torqueReverse: 1, launchLoad1: 0.1, launchLoad2: 0.6, launchLoad3: 0.85, launchLoad4: 1, lugSpeed: 0.6 },
     fuel: { tankCapacity: 14, reserveLitres: 2.5, burnPerRev: 0.000085 },
@@ -276,6 +281,7 @@ export const QUAD_SPECS = [
     idleRange: [2000, 2300],
     roughnessRange: [0.75, 0.9],
     fuelRange: [1.5, 7.5], // 8 litre tank, 1.2 litre reserve
+    topRpmRange: [11050, 11950], // full-throttle revs this game, about 4% either side of the engine's own
     fuel: { tankCapacity: 8, startOil: 0.02, reserveLitres: 1.2, burnPerRev: 0.000036, idleBurnFraction: 0.45 },
     engine: {
       strokes: 2,
@@ -372,6 +378,7 @@ export const EXTRA_SPECS = [
     idleRange: [1100, 1300],
     roughnessRange: [0.3, 0.5],
     fuelRange: [0.4, 2.2], // 2.5 litre tank, 0.4 litre reserve
+    topRpmRange: [9400, 10200], // full-throttle revs this game, about 4% either side of the engine's own
     fuel: { tankCapacity: 2.5, startOil: 0.02, reserveLitres: 0.4, burnPerRev: 0.000032, idleBurnFraction: 0.45 },
     engine: {
       strokes: 2,
@@ -461,6 +468,7 @@ export const EXTRA_SPECS = [
     idleRange: [1100, 1200],
     roughnessRange: [0, 0.015],
     fuelRange: [9, 11], // 12 litre tank, brought full
+    topRpmRange: [6900, 7100], // full-throttle revs this game, about 4% either side of the engine's own
     fuel: { tankCapacity: 12, reserveLitres: 1.8, burnPerRev: 0.000075 },
     engine: {
       idleRpmWarm: 1150,
@@ -521,6 +529,7 @@ export const TRACTOR_SPEC = {
   idleRange: [430, 470], // a big diesel tickovers slowly
   roughnessRange: [0.05, 0.08], // a diesel ticks over steadily
   fuelRange: [12, 34], // 45 litre tank, 4 litre reserve
+  topRpmRange: [2150, 2250], // full-throttle revs this game, about 4% either side of the engine's own
   fuel: { tankCapacity: 45, reserveLitres: 4, startDiesel: 1, noTap: true, startTap: 'on', burnPerRev: 0.0003, idleBurnFraction: 0.3, bowlCapacity: 0.05, bowlFillRate: 0.06 },
   engine: {
     compressionIgnition: true, // glow plugs, no choke, the key doesn't stop it, a knob does (src/engine/compression.js)

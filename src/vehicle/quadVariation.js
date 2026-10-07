@@ -40,6 +40,19 @@ export function applyIdle(engineParams, vehicleParams, idle) {
 }
 
 /**
+ * Picks this game's full-throttle revs from the spec's topRpmRange, if it has
+ * one, and applies them. The redline keeps its gap below the top, so the dash
+ * and the engine agree. Changes the params in place and returns the top rpm.
+ */
+export function applyTopRpm(spec, engineParams, random) {
+  if (!spec.topRpmRange) return engineParams.maxRpm;
+  const gap = engineParams.maxRpm - engineParams.redlineRpm;
+  engineParams.maxRpm = pickInRange(spec.topRpmRange, random, 50);
+  engineParams.redlineRpm = engineParams.maxRpm - gap;
+  return engineParams.maxRpm;
+}
+
+/**
  * Picks this game's roughness and starting fuel from the spec's ranges, if it
  * has them, and applies them. Returns what was picked.
  */

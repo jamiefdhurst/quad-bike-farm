@@ -1,5 +1,5 @@
 // Tinkering with a quad from the toolbox: the idle screw, the carb mixture, the
-// throttle stop (the speed limiter), the clutch springs and the tyre pressures.
+// throttle stop (the speed limiter), the rev limiter, the clutch springs and the tyre pressures.
 // Pure logic, no DOM or Three.js.
 //
 // A quad's settings are always applied from the stock values it had when you
@@ -33,6 +33,11 @@ export const DEFAULT_TUNE_PARAMS = {
   limiterRpm: 0.02, // full-throttle revs gained per turn
   limiterDrive: 0.03, // drive gained per turn, so it still pulls near the new top speed
   limiterFuel: 0.07, // extra fuel per turn (per revolution, so more again per hour at the higher revs)
+
+  // Rev limiter, in clicks either side of stock (the redline moves with it)
+  revDownClicks: 3,
+  revUpClicks: 3,
+  revStep: 200, // rpm of full-throttle revs per click
 
   // Clutch springs, in clicks softer (negative) or stiffer
   clutchSoftClicks: 2,
@@ -68,6 +73,9 @@ export const TUNE_PARAM_RANGES = {
   limiterRpm: [0, 0.1, 0.005],
   limiterDrive: [0, 0.2, 0.005],
   limiterFuel: [0, 0.2, 0.005],
+  revDownClicks: [0, 6, 1],
+  revUpClicks: [0, 6, 1],
+  revStep: [50, 500, 10],
   clutchSoftClicks: [0, 5, 1],
   clutchStiffClicks: [0, 6, 1],
   clutchStep: [50, 400, 10],
@@ -83,7 +91,7 @@ export const TUNE_PARAM_RANGES = {
 
 // What tinkering touches, so stock can be put back exactly.
 const STOCK_KEYS = {
-  engine: ['idleRpmWarm', 'stallRpm', 'loadDragRpm', 'mixtureTrim', 'maxRpm', 'warmUpSeconds'],
+  engine: ['idleRpmWarm', 'stallRpm', 'loadDragRpm', 'mixtureTrim', 'maxRpm', 'redlineRpm', 'warmUpSeconds'],
   vehicle: [
     'clutchEngageRpm',
     'clutchFullRpm',
@@ -132,7 +140,7 @@ export function captureStock(target) {
 
 /** Settings that leave the quad as it was. */
 export function stockSettings(stock, P = DEFAULT_TUNE_PARAMS) {
-  return { idle: stock.engine.idleRpmWarm, mixture: 0, limiter: 0, clutch: 0, tyres: P.stockPsi };
+  return { idle: stock.engine.idleRpmWarm, mixture: 0, limiter: 0, revs: 0, clutch: 0, tyres: P.stockPsi };
 }
 
 export function isStock(settings, stock, P = DEFAULT_TUNE_PARAMS) {
@@ -164,6 +172,8 @@ export function limits(key, settings, stock, P = DEFAULT_TUNE_PARAMS) {
       return [-P.leanClicks, P.richClicks, 1];
     case 'limiter':
       return [0, P.limiterTurns, 1];
+    case 'revs':
+      return [-P.revDownClicks, P.revUpClicks, 1];
     case 'clutch': {
       // The clutch has to bite at least CLUTCH_MARGIN_RPM above the idle.
       const need = Math.ceil((settings.idle + CLUTCH_MARGIN_RPM - stock.vehicle.clutchEngageRpm) / P.clutchStep);
@@ -179,7 +189,7 @@ export function limits(key, settings, stock, P = DEFAULT_TUNE_PARAMS) {
 /** The settings with each one brought within its limits, in dependency order. */
 export function clampSettings(settings, stock, P = DEFAULT_TUNE_PARAMS) {
   const s = { ...stockSettings(stock, P), ...settings };
-  for (const key of ['mixture', 'limiter', 'tyres', 'idle', 'clutch']) {
+  for (const key of ['mixture', 'limiter', 'revs', 'tyres', 'idle', 'clutch']) {
     const [lo, hi] = limits(key, s, stock, P);
     s[key] = clamp(s[key], lo, hi);
   }
@@ -228,7 +238,10 @@ export function applyTune(target, stock, settings, P = DEFAULT_TUNE_PARAMS) {
   let drive = 1 + P.limiterDrive * s.limiter;
   let fuel = 1 + P.limiterFuel * s.limiter;
   v.maxSpeed = sv.maxSpeed * (1 + P.limiterSpeed * s.limiter);
-  e.maxRpm = Math.round(se.maxRpm * (1 + P.limiterRpm * s.limiter));
+  // The rev limiter sits on top of that, and takes the redline with it.
+  const revs = s.revs * P.revStep;
+  e.maxRpm = Math.round(se.maxRpm * (1 + P.limiterRpm * s.limiter)) + revs;
+  e.redlineRpm = se.redlineRpm + revs;
 
   // Mixture.
   const lean = Math.max(0, -s.mixture);

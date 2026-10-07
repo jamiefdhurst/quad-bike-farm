@@ -10,7 +10,7 @@ import { DEFAULT_PLAYER_PARAMS, PLAYER_PARAM_RANGES } from './player/playerParam
 import { QuadUnit } from './vehicle/quadUnit.js';
 import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC } from './vehicle/quadSpecs.js';
 import { pickFleet } from './vehicle/fleet.js';
-import { applyIdle, applyVariation, pickIdle } from './vehicle/quadVariation.js';
+import { applyIdle, applyTopRpm, applyVariation, pickIdle } from './vehicle/quadVariation.js';
 import { AudioHub } from './audio/engineAudio.js';
 import { RideWind } from './audio/rideAudio.js';
 import { DEFAULT_SOUND_PARAMS, SOUND_PARAM_RANGES } from './audio/audioParams.js';
@@ -187,9 +187,12 @@ export class Game {
     for (const unit of this.units) {
       unit.variation = applyVariation(unit.spec, unit.engine.params, unit.quad.fuel, random);
     }
+    // Each quad's top revs, on their own stream so a seed keeps everything above.
+    const topRpmRandom = createRandom(this.seed ^ 0x70b5);
+    for (const unit of this.units) unit.topRpm = applyTopRpm(unit.spec, unit.engine.params, topRpmRandom);
     console.info(
       `This game: ${this.units
-        .map((u, i) => `${u.name} ${spawns[i].where}, idle ${u.idleRpm} rpm, roughness ${u.variation.roughness.toFixed(2)}, ${u.variation.litres.toFixed(1)} L`)
+        .map((u, i) => `${u.name} ${spawns[i].where}, idle ${u.idleRpm} rpm, top ${u.topRpm} rpm, roughness ${u.variation.roughness.toFixed(2)}, ${u.variation.litres.toFixed(1)} L`)
         .join('; ')}`,
     );
     // What the hour meters and odometers show, the dash clock, and where the two accessory pods start. Each has its own seeded
@@ -1046,6 +1049,7 @@ export class Game {
     });
     unit.idleRpm = applyIdle(unit.engine.params, unit.quad.params, pickIdle(TRACTOR_SPEC.idleRange, random));
     unit.variation = applyVariation(TRACTOR_SPEC, unit.engine.params, unit.quad.fuel, random);
+    unit.topRpm = applyTopRpm(TRACTOR_SPEC, unit.engine.params, createRandom(this.seed ^ 0x70b6));
     unit.quad.usage.hours = pickReading(TRACTOR_SPEC.hoursRange, random);
     this.units = [...this.units, unit];
     console.info(`Tractor: idle ${unit.idleRpm} rpm, ${unit.variation.litres.toFixed(1)} L of red diesel`);
