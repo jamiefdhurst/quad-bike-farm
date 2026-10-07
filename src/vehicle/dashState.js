@@ -81,3 +81,8 @@ export const setDashClock = (clock) => {
   shared = clock;
 };
 export const dashClock = () => shared;
+
+/** The gear a digital dash shows: the gear number on a manual quad (R, N, 1..4), otherwise R, N or D for an automatic's drive. */
+export function gearShown(s) {
+  return s.gear ?? (s.reverse ? 'R' : s.neutral ? 'N' : 'D');
+}

@@ -52,3 +52,14 @@ describe('dash state', () => {
     expect(pickReading([10, 20], () => 0.5)).toBe(15);
   });
 });
+
+describe('gearShown', () => {
+  it('shows the gear on a manual quad and D, N or R on an automatic', async () => {
+    const { gearShown } = await import('../src/vehicle/dashState.js');
+    expect(gearShown({ gear: '3', neutral: false, reverse: false })).toBe('3');
+    expect(gearShown({ gear: 'N', neutral: true })).toBe('N');
+    expect(gearShown({ gear: null, neutral: false, reverse: false })).toBe('D');
+    expect(gearShown({ gear: null, neutral: true, reverse: false })).toBe('N');
+    expect(gearShown({ gear: null, reverse: true })).toBe('R');
+  });
+});

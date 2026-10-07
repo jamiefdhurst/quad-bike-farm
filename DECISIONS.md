@@ -1154,3 +1154,19 @@ Item 3; the item settled what happens, so I chose the key and numbers without as
 - **Creeping up:** Jess driving between 2 and 9 m behind Amy's rear arc (dot product 0.7 or more), with Amy driving at 2 m/s or more, has a 15% chance per second of blasting the horn for 0.7 s. First one no earlier than 120 s into a game, then 240 s apart. Amy "jumps" 0.12 s in, which is only her line (`hornJump`) for now: her quad doesn't swerve. The tunables are under "Horns".
 - **Not done:** the quirk for a horn that works when it likes is item 6. No battery cost for the horn.
 - **Checked:** unit tests only (answers, ranges, creep-up geometry and timing, voices, lines). **Not checked:** what the horns sound like in the running game, or how often Jess gets into position.
+
+## L plates (TODO 4)
+
+Item 4; the item settled what happens, so I chose the numbers and what "confident" means without asking.
+
+- **Logic:** `src/npc/lPlates.js` (pure, `tests/lPlates.test.js`). Plates are in one of three places: nowhere, on Amy's own quad (the one she claims, `claimedSpec`), or on the tractor for good.
+- **Jess tapes:** from 120 s in, at 5% a second while she's idle and Amy has a quad. **Amy peels:** the plates have to be on and Amy idle within 4 m of the quad; she then takes 25 to 90 s to do it. **Back again:** 120 to 360 s later Jess tapes them to Amy's quad again, as many times as it takes.
+- **Confident:** Amy's mean skill (starting, choke, cornering, mud, `skills.js`) reaching 0.7. She starts at 0.44, and each right-moment piece of coaching is worth 0.12, so it takes about eight good pieces of advice across the four skills. Her own practice gets there far more slowly. Once Jess has made them at least once, Amy idle and the tractor free, she sticks them on at 10% a second. They then stay put.
+- **Look:** one plate, a white square with a red L and tape at the top corners (`src/vehicle/lPlateModel.js`), on the back edge of the rear rack, or the front of the tractor's grille. Only one set exists, so they are never on both. The kids' quad and any quad with an odd rear may not line up exactly.
+- **Lines:** `lPlateLines.js`: Jess `lplateTape`, `lplateCheek`, `lplateTractor`; Amy `lplateFound`, `lplatePeel`, `lplateStick`. The other girl answers a few seconds later.
+- **Left out:** Jess doesn't take them off the tractor, and the plates don't turn up on a quad Amy has stopped claiming until she next claims one. Checked: unit tests only. **Not checked:** how the plate sits on each quad's rack, or the pacing in a real session.
+
+
+## Gear on the digital pods
+
+A digital pod fitted to a manual quad (red, green, yellow) showed "D" when in gear. Both digital pods now show the real gear (R, N, 1 to 4) from the dash state, and keep R, N and D on the automatics (`gearShown` in `src/vehicle/dashState.js`, unit tested). Not checked by eye in the running game.

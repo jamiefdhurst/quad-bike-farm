@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { HOT_FROM, tempGaugeFraction, coldZoneEnd } from './tempGauge.js';
-import { lampStates, counterDigits, counterText, cycleIndex } from './dashState.js';
+import { lampStates, counterDigits, counterText, cycleIndex, gearShown } from './dashState.js';
 import {
   blackMat, steel, changeGate, mmPanel, housing, chromeRing, text, ticks, labels, arc, needle, drum, lamp, segText, speedText, LAMP,
 } from './dashParts.js';
@@ -206,7 +206,7 @@ function buildDigital() {
     }
     text(ctx, 'FUEL', x + 10.5, y + 66, 3.4, AMBER, { align: 'center' });
     text(ctx, 'TEMP', x + w - 10.5, y + 66, 3.4, AMBER, { align: 'center' });
-    const gear = s.reverse ? 'R' : s.neutral ? 'N' : 'D';
+    const gear = gearShown(s);
     if (gear) text(ctx, gear, x + w - 30, y + 36, 11, AMBER, { align: 'center', weight: 'bold' });
     segText(ctx, s.clock, x + w - 22, y + 43.4, 4.55, AMBER);
     ctx.strokeStyle = AMBER_GHOST;

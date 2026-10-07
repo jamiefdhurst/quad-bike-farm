@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { tempGaugeFraction } from './tempGauge.js';
-import { lampStates, counterDigits, counterText, cycleIndex } from './dashState.js';
+import { lampStates, counterDigits, counterText, cycleIndex, gearShown } from './dashState.js';
 import {
   plastic, charcoal, blackMat, gloss, chromeMat, changeGate, mmPanel, housing, chromeRing, text, ticks, labels, arc, needle, drum, lamp, keySwitch,
   segText, speedText, LAMP,
@@ -161,7 +161,7 @@ function buildGrizzly() {
       ctx.strokeStyle = on;
       ctx.lineWidth = 0.6;
       ctx.strokeRect(x + 4, y + 14, 11, 14);
-      text(ctx, s.reverse ? 'R' : s.neutral ? 'N' : 'D', x + 9.5, y + 25, 10, on, { align: 'center', weight: 'bold' });
+      text(ctx, gearShown(s), x + 9.5, y + 25, 10, on, { align: 'center', weight: 'bold' });
       text(ctx, 'MPH', x + w / 2 + 17, y + 35, 4.4, on);
       segText(ctx, L.speed, x + w / 2 + 14, y + 18, 18, on, ghost);
       segText(ctx, s.clock, x + w - 5, y + 16, 5.2, on);
