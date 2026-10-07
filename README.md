@@ -392,7 +392,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 8.  Put the jump leads on the bench, start all the jerry cans in random places, not just the petrol one. **Done.** See DECISIONS.md, "Where things start".
 9.  Steam from hot engines. **Done.** See DECISIONS.md, "Steam from hot engines".
 10. Raise and lower hand throttle when not on tractor. **Done.** Stood looking at the tractor (or the Land Rover) with nobody driving it, the same keys as on the seat raise and lower its hand throttle (`Q` `Z` on the tractor, `]` `[` on the Land Rover). See DECISIONS.md, "Hand throttle from the ground".
-11. Remove reverse lever prompt from UTV when not in it.
+11. Remove reverse lever prompt from UTV when not in it. **Done.** Looking at the UTV from the ground no longer lists the reverse lever (it only works from the seat); the tip lever still shows. See DECISIONS.md, "UTV prompt".
 12. When Jess revs the quad, Amy doesn't turn it off.
 13. Tractor noise sometimes sounds OK, sometimes has something over it, like a heavy noise.
 14. An old Land Rover. **Done.** See "The Land Rover" above: a Series III 88-inch petrol pick-up in the yard with a bench for three, a four-speed with no synchromesh on first and second, 4WD and a diff lock, a hand throttle, a starting handle that can kick back, a towing jaw for the little trailer, a Series dash and a petrol quad's wear, faults, quirks and toolbox. The girls ride beside you, not in the back.

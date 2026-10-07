@@ -1576,6 +1576,10 @@ Settled with Jamie before building: a second, small trailer (the bale trailer st
 - No new lines: they use `mudBoard`, `utvBoard` and `utvBedGo`. The girls don't drive the UTV yet, so there is no UTV version of the join; it comes with item 37.
 - Checked: unit tests for all of it (`tests/mudguardRide.test.js`, `tests/utvRide.test.js`). Not run in the game: the walk over and climb, the driver's wait for her, and how often it happens in real play.
 
+## UTV prompt (2026-10-07)
+
+- The key chips shown when you look at the UTV from the ground listed `B` Reverse lever, but the lever is on the dash and `B` only works from the seat (`driveKeys` needs a rider). It's gone from that row; the tip lever (`T`), key, start and dipstick remain. Checked: nothing automated, since it is a prompt string; not looked at in the game.
+
 ## Hand throttle from the ground (2026-10-07)
 
 - Looking at the tractor, or the Land Rover, with nobody on it or driving it, its hand throttle moves with the keys it has on the seat (`Q` up and `Z` down on the tractor, `]` out and `[` in on the Land Rover's dash knob), at the same 0.35 a second (`stepHand` in `vehicle/handLever.js`, pure and tested, now also used by the seat code). The prompt chip row for the tractor lists Q Z. It stays where it is left, as before, so you can raise the revs to warm it or let it creep off.

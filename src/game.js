@@ -630,7 +630,7 @@ export class Game {
             keys: quad.tractor
               ? [['K', 'Key'], ['R', 'Start'], ['Q Z', 'Hand throttle'], ['O', 'Stop knob'], ['Y', 'Dipstick'], ...(this.chain.state === 'stowed' && !this.player.isRiding ? [['X', 'Tow chain']] : [])]
               : unit.spec.utv
-                ? [['K', 'Key'], ['R', 'Start'], ['B', 'Reverse lever'], ['T', 'Tip the bed'], ['Y', 'Dipstick']]
+                ? [['K', 'Key'], ['R', 'Start'], ['T', 'Tip the bed'], ['Y', 'Dipstick']] // the reverse lever is on the dash: only from the seat
                 : unit.spec.landRover
                   ? [['K', 'Key'], ['R', 'Start'], ['Shift 1-4', 'Clutch, gears'], ['B', 'Reverse'], ['Q Z', 'Choke'], ['[ ]', 'Hand throttle'], ['G', '4WD'], ['U', 'Diff lock'], ['Y', 'Dipstick'], ['P', 'Starting handle (at the front)']]
                 : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.manual ? [['Shift 1-4', 'Clutch, gears']] : []), ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(quad.sump ? [['Y', 'Dipstick']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : []), ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
