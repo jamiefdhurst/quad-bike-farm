@@ -43,6 +43,8 @@ import { HeadStart, HEADSTART_PARAM_RANGES } from './npc/headStart.js';
 import { Gossip, GOSSIP_PARAM_RANGES } from './npc/gossip.js';
 import { ThrottleGrab, GRAB_PARAM_RANGES } from './npc/throttleGrab.js';
 import { SmokeSense, SMOKE_PARAM_RANGES } from './npc/smokeSense.js';
+import { Haze, HAZE_PARAM_RANGES } from './world/haze.js';
+import { HazeLayer } from './effects/hazeLayer.js';
 import { Race, RACE_PARAM_RANGES, planLap } from './npc/race.js';
 import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
 import { Convoy, CONVOY_PARAM_RANGES } from './npc/convoy.js';
@@ -212,6 +214,9 @@ export class Game {
     this.weather = new Weather(forced ?? pickWeatherKind(random), random);
     this.world.setWeather(this.weather);
     this.rain = new Rain(this.scene);
+    // Smoke hanging over the yard on a still day (world/haze.js, effects/hazeLayer.js).
+    this.haze = new Haze(this.world.layout.yard);
+    this.hazeLayer = new HazeLayer(this.scene, this.world.layout.yard, this.world.layout.yard.radius, createRandom(this.seed ^ 0x4a2e));
     console.info(`Weather: ${this.weather.name}`);
     // She starts beside a random quad in the yard; the player starts facing it.
     this.homeUnit = this.units[home];
@@ -687,6 +692,7 @@ export class Game {
     registerTuning('Talking about you', this.gossip.p, GOSSIP_PARAM_RANGES);
     registerTuning('Hand on the throttle', this.throttleGrab.p, GRAB_PARAM_RANGES);
     registerTuning('Two-stroke smoke', this.smokeSense.p, SMOKE_PARAM_RANGES);
+    registerTuning('Yard haze', this.haze.p, HAZE_PARAM_RANGES);
     registerTuning('Racing', this.race.p, RACE_PARAM_RANGES);
     registerTuning('Follow the leader', this.convoy.p, CONVOY_PARAM_RANGES);
     registerTuning('Doughnuts', this.doughnutWatch.p, DOUGHNUT_PARAM_RANGES);
@@ -1693,6 +1699,23 @@ export class Game {
     }
   }
 
+  /** Idling in the yard builds a haze that still air keeps; the girls stood in it cough and wave it away. */
+  updateHaze(dt) {
+    const w = this.weather;
+    const smoke = this.girlUnits[0].smoke.params;
+    const engines = this.units.map((u) => {
+      const e = u.quad.engine;
+      return { x: u.quad.position.x, z: u.quad.position.z, running: e.isRunning, throttle: e.throttle, twoStroke: e.params.strokes === 2, diesel: !!e.params.runsOnDiesel };
+    });
+    const girls = this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.fsm.is('idle') && !this.menu.isOpen }));
+    for (const e of this.haze.update(dt, { wind: w.wind, rain: w.rain, engines, girls })) {
+      const c = this.companions.find((o) => o.character.id === e.girl);
+      c.waveOff(this.haze.p.waveFor);
+      c.voice.say('hazeCough', { urgent: true });
+    }
+    this.hazeLayer.update(dt, this.haze.level, smoke.windX, smoke.windZ, (x, z) => this.world.heightAt(x, z));
+  }
+
   // Reading the dash out -----------------------------------------------------
 
   updateDashReading(dt, ridden) {
@@ -2562,6 +2585,7 @@ export class Game {
     this.updateDashReading(dt, ridden);
     if (!this.recalling) this.updateRace(dt, ridden);
     this.updateSmokeSense(dt);
+    this.updateHaze(dt);
     this.updateThrottleGrab(dt, ridden);
     this.updateRockPrank(dt);
     this.updateBanter(dt, ridden);
