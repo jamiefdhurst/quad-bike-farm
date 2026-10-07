@@ -102,7 +102,7 @@ export class MudSpray {
    * @param {Quad} quad
    * @param {number} spinSlip  Driven tyres' surface speed over the ground, m/s.
    */
-  update(dt, quad, spinSlip) {
+  update(dt, quad, spinSlip, water = 0) {
     const p = this.params;
     this.budget = Math.min(this.budget + p.maxPerSecond * dt, p.maxPerSecond * 0.1);
     const q = quad.model.quaternion;
@@ -142,7 +142,23 @@ export class MudSpray {
         else this.spawnFling(_centre, carrier, speed, w);
       }
     }
+    this.drip(dt, quad, water);
     this.simulate(dt);
+  }
+
+  /** A drowned engine sheds water: drips fall off the quad's underside until it has drained, so you can see why it won't start. */
+  drip(dt, quad, water) {
+    if (water < 0.03) {
+      this.dripCarry = 0;
+      return;
+    }
+    this.dripCarry = (this.dripCarry ?? 0) + this.params.dripRate * (0.25 + water) * dt;
+    while (this.dripCarry >= 1) {
+      this.dripCarry -= 1;
+      _centre.set((Math.random() - 0.5) * 0.7, 0.28 + Math.random() * 0.1, -0.5 + Math.random() * 1.2);
+      quad.model.localToWorld(_centre);
+      this.emit(_centre.x, _centre.y, _centre.z, (Math.random() - 0.5) * 0.3, -0.2, (Math.random() - 0.5) * 0.3, this.params.dropSize * (0.6 + Math.random() * 0.6), true);
+    }
   }
 
   /** Clumps leaving the back of a rolling tyre: up, and lagging behind the quad. */

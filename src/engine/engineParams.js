@@ -204,17 +204,17 @@ export const DEFAULT_ENGINE_PARAMS = {
   runOnCyclesMax: 15, // and at the most (the worse it is, the longer)
 
   // Drowning it: a deep puddle taken too fast (see water.js)
-  waterDepthFrom: 0.35, // puddle depth (0..1) under the wheels below which no water gets in
-  waterSafeSpeed: 3, // m/s: slower than this it wades through without a drop
+  waterDepthFrom: 0.55, // puddle depth (0..1) under the wheels below which no water gets in (small puddles are shallower than this)
+  waterSafeSpeed: 4, // m/s: slower than this it wades through without a drop
   waterFullSpeed: 10, // m/s at which it takes in the most
-  waterGulpRate: 6, // water taken in per second at full depth and speed (a puddle is only about a quarter of a second long at speed)
+  waterGulpRate: 3.5, // water taken in per second at full depth and speed (a puddle is only about a quarter of a second long at speed)
   waterDrainRunning: 0.03, // per second it drains while running (it blows out)
   waterDrainThrottle: 0.05, // extra per second with the throttle wide open
   waterDrainOff: 0.022, // per second it drains standing about, so about 45 s to clear
   waterRoughness: 0.9, // roughness added by a full load of water
   waterPowerLoss: 0.7, // power lost to it
   waterMisfire: 0.6, // extra chance of a misfire on each firing at full water
-  waterStallAt: 0.65, // above this it may stall
+  waterStallAt: 0.75, // above this it may stall
   waterStallChance: 0.25, // chance of stalling on each firing once past that
   waterNoStart: 0.15, // wetter than this it won't catch (fades out to nothing at this level)
 

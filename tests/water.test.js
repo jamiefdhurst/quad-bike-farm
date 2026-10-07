@@ -91,3 +91,11 @@ describe('a drowned engine', () => {
     expect(crank(10)).toBe(true);
   });
 });
+
+describe('small puddles', () => {
+  it('never stall a quad, and a steady pace through a deep one stays well short of stalling', () => {
+    expect(cross(12, 0.5)).toBe(0);
+    expect(cross(6, 1)).toBeLessThan(P.waterStallAt / 2);
+    expect(cross(10, 1)).toBeGreaterThan(P.waterStallAt);
+  });
+});

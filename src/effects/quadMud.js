@@ -16,6 +16,7 @@ export const DEFAULT_MUD_PARAMS = {
   rollRate: 5, // clumps per second per wheel for each m/s, rolling through mud
   spinRate: 22, // clumps per second per wheel for each m/s of wheelspin
   puddleRate: 18, // drops per second per wheel for each m/s, through a puddle
+  dripRate: 14, // drips a second off a waterlogged quad at full water, falling from under the front and the seat until it has drained
   splashCount: 60, // drops per wheel driving into a puddle at speed
   flingLift: 0.32, // how hard clumps leave the tyre upwards, per m/s of speed
   clumpSize: 0.045, // metres
@@ -48,6 +49,7 @@ export const MUD_PARAM_RANGES = {
   rollRate: [0, 40, 0.5],
   spinRate: [0, 100, 1],
   puddleRate: [0, 100, 1],
+  dripRate: [0, 60, 1],
   splashCount: [0, 120, 1],
   flingLift: [0, 1.5, 0.01],
   clumpSize: [0.005, 0.2, 0.005],
@@ -108,7 +110,7 @@ export class QuadMud {
     const spinSlip = quad.physics.spinSlip;
     updateMudBuildUp(this.state, dt, info, quad.speed, spinSlip, this.params);
     this.coat.update(this.state);
-    this.spray.update(dt, quad, spinSlip);
+    this.spray.update(dt, quad, spinSlip, quad.engine.water ?? 0);
     for (let i = 0; i < quad.wheels.length; i++) {
       const r = this.rutWheels[i];
       quad.wheels[i].object.getWorldPosition(_p);
