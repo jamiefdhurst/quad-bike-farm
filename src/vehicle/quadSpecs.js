@@ -499,8 +499,8 @@ export const EXTRA_SPECS = [
     wearRange: [0.05, 0.2], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
     tinkers: false, // nobody leaves the throttle stop out on a bike this size
     solo: true, // no room for anyone on the back
-    safeIdle: 800,
-    idleRange: [1200, 1500],
+    safeIdle: 1400, // a pit bike tickovers fast; it's the idle range's floor, so lower both to settle it down
+    idleRange: [1800, 2200],
     roughnessRange: [0.3, 0.55],
     fuelRange: [0.4, 1.6], // 1.8 litre tank, 0.3 litre reserve
     topRpmRange: [9400, 10200], // full-throttle revs this game, about 4% either side of the engine's own
@@ -510,14 +510,14 @@ export const EXTRA_SPECS = [
       popProne: 0.7, // two-strokes crackle and bang on the overrun
       pullStart: true,
       noStarter: true, // no key start, only the cord
-      idleRpmWarm: 1350,
+      idleRpmWarm: 2000,
       maxRpm: 9800,
       redlineRpm: 9200,
       rpmRiseRate: 14,
       rpmFallRate: 11,
       warmUpSeconds: 60,
       coldEnrichmentNeed: 1.0,
-      chokeIdleRpm: 1450,
+      chokeIdleRpm: 2300,
       catchChance: 0.5,
       coldRoughness: 0.6,
       coldPowerLoss: 0.85,
@@ -543,9 +543,9 @@ export const EXTRA_SPECS = [
       maxSteerDeg: 38,
       steerSpeedReduction: 0.02, // a bike keeps its steering at speed
       spinSideLoss: 0.5, // and the driven rear steps out when you pour the power on mid-corner
-      clutchEngageRpm: 2200,
-      clutchFullRpm: 4000,
-      couplingRpm: 3000,
+      clutchEngageRpm: 3200, // a centrifugal clutch well above the idle
+      clutchFullRpm: 5000,
+      couplingRpm: 3800,
       engineBrakeForce: 40,
       powerbandRpm: 6000,
       torqueBelowBand: 0.5,
@@ -553,7 +553,7 @@ export const EXTRA_SPECS = [
     },
     vibration: {
       pulseGain: 0.8,
-      idleRpm: 1350,
+      idleRpm: 2000,
       barsFreq: 28,
       barsGain: 0.25,
       heaveFreq: 12,
@@ -565,7 +565,7 @@ export const EXTRA_SPECS = [
       recBank: 'engine-bank-50',
       engineSound: 'pulse',
       recIdleSource: 'quad',
-      pulseRefRpm: 1200,
+      pulseRefRpm: 1800,
       recBlendLo: 3200,
       recBlendHi: 4200,
       recToneClosed: 9500,
