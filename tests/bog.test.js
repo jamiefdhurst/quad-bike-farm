@@ -49,3 +49,17 @@ describe('a bog', () => {
     expect(b.sink).toBe(0);
   });
 });
+
+describe('a quad sunk too deep for the winch', () => {
+  it('is held harder than the green winch can pull, but not harder than the tow chain', async () => {
+    const { DEFAULT_WINCH_PARAMS } = await import('../src/items/winch.js');
+    const { DEFAULT_CHAIN_PARAMS } = await import('../src/items/chain.js');
+    const stuck = new Bog();
+    stuck.sink = 0.6;
+    expect(stuck.holdForce(300)).toBeLessThan(DEFAULT_WINCH_PARAMS.maxPull);
+    const deep = new Bog();
+    deep.sink = 1;
+    expect(deep.holdForce(300)).toBeGreaterThan(DEFAULT_WINCH_PARAMS.maxPull);
+    expect(deep.holdForce(300)).toBeLessThan(DEFAULT_CHAIN_PARAMS.maxPull);
+  });
+});

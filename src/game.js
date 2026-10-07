@@ -73,6 +73,8 @@ import { Toolbox } from './items/toolbox.js';
 import { JumpLeads, JUMP_LEAD_PARAM_RANGES } from './items/jumpLeads.js';
 import { Hose, HOSE_PARAM_RANGES } from './items/hose.js';
 import { Winch, WINCH_PARAM_RANGES } from './items/winch.js';
+import { Chain, CHAIN_PARAM_RANGES } from './items/chain.js';
+import { TRACTOR_GROUND_OFFSET } from './vehicle/tractorModel.js';
 import { Weather, pickWeatherKind } from './world/weather.js';
 import { Rain } from './effects/rain.js';
 
@@ -417,6 +419,12 @@ export class Game {
             return `Hook the winch cable on the ${unit.label}${quad.bog.stuck ? ' (it\'s stuck)' : ''}   ·   X put it back`;
           }
           if (winch?.state === 'hooked' && winch.target === quad) return 'Unhook the winch   ·   hold X by the green quad to wind in';
+          const chain = this.chain;
+          if (chain.state === 'carried') {
+            if (unit === this.tractorUnit) return { text: 'X put the tow chain back' };
+            return `Hook the tractor's chain on the ${unit.label}${quad.bog.stuck ? ' (it\'s stuck)' : ''}   ·   X put it back`;
+          }
+          if (chain.state === 'hooked' && chain.target === quad) return 'Unhook the tow chain';
           if (this.hose.held) {
             const muddy = Math.round(Math.max(unit.mud.state.body, unit.mud.state.wheels) * 100);
             return { text: muddy > 0 ? `Hold E to wash the ${unit.label} (${muddy}% muddy)   ·   G put the hose back` : `The ${unit.label} is clean   ·   G put the hose back` };
@@ -435,7 +443,7 @@ export class Game {
           return {
             action: `Ride the ${unit.label}`,
             keys: quad.tractor
-              ? [['K', 'Key'], ['R', 'Start'], ['X', 'Stop knob']]
+              ? [['K', 'Key'], ['R', 'Start'], ['X', 'Stop knob'], ...(this.chain.state === 'stowed' && !this.player.isRiding ? [['X', 'Tow chain']] : [])]
               : [['K', 'Ignition'], ['R', 'Start'], ...(quad.manual ? [['Shift 1-4', 'Clutch, gears']] : []), ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
           };
         },
@@ -448,6 +456,14 @@ export class Game {
           }
           if (this.winch?.state === 'hooked' && this.winch.target === quad) {
             this.winch.unhook(this.camera);
+            return;
+          }
+          if (this.chain.state === 'carried') {
+            if (unit !== this.tractorUnit) this.chain.hookOn(quad);
+            return;
+          }
+          if (this.chain.state === 'hooked' && this.chain.target === quad) {
+            this.chain.unhook(this.camera);
             return;
           }
           if (this.can.held || this.hose.held) return; // E is for pouring or spraying while you're holding those
@@ -587,6 +603,8 @@ export class Game {
     const winchUnit = this.units.find((u) => u.spec.winch);
     this.winch = winchUnit ? new Winch({ scene: this.scene, unit: winchUnit }) : null;
     this.winchReel = false;
+    // The tractor's tow chain (items/chain.js), for a quad sunk too deep for the winch or a dead one to tow home.
+    this.chain = new Chain({ scene: this.scene, tractor: this.tractorUnit.quad, anchor: (q) => q.localToWorld(0, TRACTOR_GROUND_OFFSET + 0.52, -1.5) });
     this.interaction.add({
       target: this.hose.proxy,
       isAvailable: () => !this.handsFull,
@@ -678,6 +696,7 @@ export class Game {
     registerTuning('Hayloft', this.loftParams, LOFT_PARAM_RANGES);
     registerTuning('Favours asked', this.requests.p, REQUEST_PARAM_RANGES);
     if (this.winch) registerTuning('Winch', this.winch.params, WINCH_PARAM_RANGES);
+    registerTuning('Tow chain', this.chain.params, CHAIN_PARAM_RANGES);
     registerTuning('Player', this.player.params, PLAYER_PARAM_RANGES);
     for (const c of this.companions) {
       registerTuning(c.name, c.params, COMPANION_PARAM_RANGES, { onChange: () => c.refreshFigure() });
@@ -741,6 +760,7 @@ export class Game {
     const unit = this.tractorUnit;
     const t = this.trailer;
     if (this.riddenUnit !== unit) return;
+    if (this.chain.state !== 'stowed') return this.hud.toast('The tow chain is on the drawbar', 2);
     if (t.hitched) {
       if (unit.quad.speed > 0.5) return this.hud.toast('Stop before you unhitch the trailer', 2);
       t.unhitch();
@@ -1146,7 +1166,18 @@ export class Game {
   }
 
   get handsFull() {
-    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.winch?.state === 'carried';
+    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.winch?.state === 'carried' || this.chain.state === 'carried';
+  }
+
+  /** The tow chain: it comes out of your hand if you go further than it reaches, or when you get on something. */
+  updateChain() {
+    const c = this.chain;
+    if (c.state === 'carried' && this.player.isRiding) c.stow();
+    if (c.state === 'carried' && c.distanceFrom(this.player.position) > c.params.length) {
+      c.stow();
+      this.hud.toast('The chain won\'t reach any further: the hook pulled out of your hand');
+    }
+    c.update();
   }
 
   /** The winch: the cable's reach, and winding in while X is held by the green (or on it). */
@@ -2415,6 +2446,14 @@ export class Game {
         if (w.state === 'stowed' && focused?.unit === w.unit && !this.handsFull) w.take(this.camera);
         else if (w.state === 'carried') w.stow();
       }
+      // The tow chain: X takes it off the tractor's drawbar (looking at the tractor), or puts it back.
+      if (input.wasPressed('KeyX') && !this.player.isRiding) {
+        const c = this.chain;
+        if (c.state === 'stowed' && focused?.unit === this.tractorUnit && !this.handsFull) {
+          if (this.trailer.hitched) this.hud.toast('Unhitch the trailer first: the chain goes on the same drawbar', 2.4);
+          else c.take(this.camera);
+        } else if (c.state === 'carried') c.stow();
+      }
       if (this.hose.held && input.wasPressed('KeyG')) this.hose.putBack();
       else if (this.can.held && input.wasPressed('KeyG')) this.putCanDown();
       else if (this.toolbox.held && input.wasPressed('KeyG')) this.putToolboxDown();
@@ -2489,6 +2528,7 @@ export class Game {
     this.dieselCan.update(dt);
     this.updateHose(dt);
     this.updateWinch();
+    this.updateChain();
     this.workshop.update(dt);
     this.bench.update(dt);
     this.updateLoft(dt);
@@ -2506,6 +2546,7 @@ export class Game {
   fixedUpdate(dt) {
     this.player.fixedUpdate(dt);
     this.winch?.fixedUpdate(dt, this.winchReel);
+    this.chain.fixedUpdate(dt);
     if (this.leads.update(dt, this.camera.position) === 'pulledOff') this.hud.toast('The jump leads came off');
     for (const unit of this.units) unit.fixedUpdate(dt);
     this.physics.step();
@@ -2526,7 +2567,9 @@ export class Game {
     if (onBack) p = '';
     this.hud.setPrompt(typeof p === 'string' ? (p ? { action: p } : null) : p.action ? p : p.text);
     // No readout for the quad: its dash is all you get.
-    if (this.winch?.state === 'carried') {
+    if (this.chain.state === 'carried') {
+      this.hud.setStatus('Tow chain\nE on a quad to hook it on, X to put it back\nThen drive the tractor off, forwards');
+    } else if (this.winch?.state === 'carried') {
       this.hud.setStatus('Winch hook\nE on a quad to hook it on, X to put it back');
     } else if (this.hose.held) {
       this.hud.setStatus('Hose\nHold E to spray, G to put it back');

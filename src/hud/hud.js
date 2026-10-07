@@ -24,6 +24,7 @@ const HELP_HTML = `
   <div><kbd>E</kbd> pick up a jerry can, hold <kbd>E</kbd> at a quad to pour or at the tank to refill, <kbd>G</kbd> put it down</div>
   <div>Hose: <kbd>E</kbd> pick up, hold <kbd>E</kbd> to wash. Toolbox: <kbd>E</kbd> pick up, <kbd>E</kbd> on a quad to tinker</div>
   <div>Green quad's winch: <kbd>X</kbd> take the hook, <kbd>E</kbd> on a quad to hook it, hold <kbd>X</kbd> to wind in</div>
+  <div>Tractor's tow chain: <kbd>X</kbd> looking at the tractor to take it, <kbd>E</kbd> on a quad to hook it, then back the tractor up and drive off</div>
   <div>Hayloft ladder and workbench in the barn: <kbd>E</kbd></div>
   <h3>Other</h3>
   <div><kbd>H</kbd> help, <kbd>N</kbd> call the girls, <kbd>M</kbd> mute, <kbd>\`</kbd> tuning panel</div>

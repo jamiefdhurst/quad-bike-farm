@@ -20,6 +20,8 @@ export const DEFAULT_BOG_PARAMS = {
   rockLimit: 0.85, // ...but only while it's sunk less than this
   sinkDepth: 0.16, // metres the quad sits lower when fully sunk
   drag: 1.0, // mud dragging at the tyres: newtons per kg per m/s in the middle of a bog
+  deepAt: 0.8, // sunk this far the mud's grip climbs past what the green's winch can pull (the tractor's chain can)
+  deepSuction: 2.8, // extra holding force at full sink, as a fraction of the quad's weight
 };
 
 export const BOG_PARAM_RANGES = {
@@ -34,6 +36,8 @@ export const BOG_PARAM_RANGES = {
   rockLimit: [0.1, 1, 0.01],
   sinkDepth: [0, 0.5, 0.01],
   drag: [0, 3, 0.05],
+  deepAt: [0.5, 1, 0.01],
+  deepSuction: [0, 6, 0.1],
 };
 
 /** Grip multiplier for a wheel in a bog this deep (0 none, 1 the middle). */
@@ -91,6 +95,7 @@ export class Bog {
   /** Newtons of suction holding it in, for a quad of `mass` kg. */
   holdForce(mass) {
     const s = this.sink / this.p.stuckAt;
-    return this.p.suction * mass * 9.81 * Math.min(1, s * s);
+    const deep = clamp((this.sink - this.p.deepAt) / Math.max(0.01, 1 - this.p.deepAt), 0, 1);
+    return mass * 9.81 * (this.p.suction * Math.min(1, s * s) + this.p.deepSuction * deep);
   }
 }
