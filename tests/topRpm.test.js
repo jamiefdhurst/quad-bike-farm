@@ -75,11 +75,11 @@ describe('the rev limiter in the toolbox', () => {
     let s = nudge(stockSettings(stock), 'revs', 1, stock);
     expect(s.revs).toBe(1);
     applyTune(t, stock, s);
-    expect(t.engine.maxRpm).toBe(top + P.revStep);
+    expect(t.engine.maxRpm).toBe(top + Math.round(top * P.revStep));
     expect(t.engine.maxRpm - t.engine.redlineRpm).toBe(gap);
     s = nudge(nudge(s, 'revs', -1, stock), 'revs', -1, stock);
     applyTune(t, stock, s);
-    expect(t.engine.maxRpm).toBe(top - P.revStep);
+    expect(t.engine.maxRpm).toBe(top + Math.round(top * -P.revStep));
   });
 
   it('stops at its limits and puts stock back exactly', () => {
@@ -99,6 +99,6 @@ describe('the rev limiter in the toolbox', () => {
     const t = target();
     const stock = captureStock(t);
     applyTune(t, stock, { ...stockSettings(stock), limiter: 3, revs: 2 });
-    expect(t.engine.maxRpm).toBe(Math.round(stock.engine.maxRpm * (1 + P.limiterRpm * 3)) + 2 * P.revStep);
+    expect(t.engine.maxRpm).toBe(Math.round(stock.engine.maxRpm * (1 + P.limiterRpm * 3)) + Math.round(stock.engine.maxRpm * 2 * P.revStep));
   });
 });

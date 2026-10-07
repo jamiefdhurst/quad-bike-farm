@@ -35,9 +35,9 @@ export const DEFAULT_TUNE_PARAMS = {
   limiterFuel: 0.07, // extra fuel per turn (per revolution, so more again per hour at the higher revs)
 
   // Rev limiter, in clicks either side of stock (the redline moves with it)
-  revDownClicks: 3,
-  revUpClicks: 3,
-  revStep: 200, // rpm of full-throttle revs per click
+  revDownClicks: 6,
+  revUpClicks: 6,
+  revStep: 0.05, // full-throttle revs per click, as a fraction of the quad's own top (6 clicks is about 30%)
 
   // Clutch springs, in clicks softer (negative) or stiffer
   clutchSoftClicks: 2,
@@ -73,9 +73,9 @@ export const TUNE_PARAM_RANGES = {
   limiterRpm: [0, 0.1, 0.005],
   limiterDrive: [0, 0.2, 0.005],
   limiterFuel: [0, 0.2, 0.005],
-  revDownClicks: [0, 6, 1],
-  revUpClicks: [0, 6, 1],
-  revStep: [50, 500, 10],
+  revDownClicks: [0, 10, 1],
+  revUpClicks: [0, 10, 1],
+  revStep: [0.01, 0.1, 0.005],
   clutchSoftClicks: [0, 5, 1],
   clutchStiffClicks: [0, 6, 1],
   clutchStep: [50, 400, 10],
@@ -239,7 +239,7 @@ export function applyTune(target, stock, settings, P = DEFAULT_TUNE_PARAMS) {
   let fuel = 1 + P.limiterFuel * s.limiter;
   v.maxSpeed = sv.maxSpeed * (1 + P.limiterSpeed * s.limiter);
   // The rev limiter sits on top of that, and takes the redline with it.
-  const revs = s.revs * P.revStep;
+  const revs = Math.round(se.maxRpm * s.revs * P.revStep);
   e.maxRpm = Math.round(se.maxRpm * (1 + P.limiterRpm * s.limiter)) + revs;
   e.redlineRpm = se.redlineRpm + revs;
 

@@ -88,7 +88,7 @@ const ROWS = [
       'The ignition cuts out at a set number of revs. Raise it and the engine pulls on a bit higher before it runs out of breath, and revs harder (and louder) flat out. Lower it and it is calmer and kinder to itself. The redline on the dash moves with it. It leaves the top speed alone: that is the throttle stop.',
     value: (s, P, unit) => rpm(unit.engine.params.maxRpm),
     stock: (st, stock) => rpm(stock.engine.maxRpm),
-    effect: (s, P) => (s.revs === 0 ? 'as it came' : `${s.revs > 0 ? '+' : '−'}${Math.abs(s.revs * P.revStep)} rpm flat out`),
+    effect: (s, P) => (s.revs === 0 ? 'as it came' : `${pct(s.revs * P.revStep)} revs flat out`),
   },
   {
     key: 'clutch',
