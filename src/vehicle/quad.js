@@ -189,6 +189,11 @@ export class Quad {
     return Math.atan2(fwd.x, fwd.z);
   }
 
+  /** Sine of the climb: how far its nose points up (negative downhill). */
+  get climb() {
+    return new THREE.Vector3(0, 0, 1).applyQuaternion(this.currQuat).y;
+  }
+
   /** True while all four wheels are off the ground. */
   get airborne() {
     return this.physics.airborne;
@@ -240,7 +245,7 @@ export class Quad {
     const d = this.drivetrain;
     const out = this.shifter.update(dt, { gear: d.gear, gears: this.gearbox.gears, topSpeed: (g) => d.topSpeed(g), speed: Math.abs(fwd), throttle, brake, reverse: !!this.driver?.controls.reverse });
     this.clutchHeld = out.clutch;
-    if (out.gear !== d.gear) d.select(out.gear);
+    if (out.gear !== d.gear) d.select(out.gear, true);
     return throttle * (out.throttleScale ?? 1); // a novice sometimes comes off the throttle as the clutch bites
   }
 
@@ -329,7 +334,9 @@ export class Quad {
     if (!this.input) return; // standing beside it you can reach the knob but not the lever
     for (const [code, gear] of Object.entries(GEAR_KEYS)) {
       if (!input.wasPressed(code)) continue;
-      if (this.drivetrain.select(gear) === 'clutch') this.say('Clutch in (hold Shift) to change gear');
+      const r = this.drivetrain.select(gear);
+      if (r === 'clutch') this.say('Clutch in (hold Shift) to change gear');
+      else if (r === 'missed') this.say('Missed the gear: it is in neutral. Clutch down a moment longer');
     }
   }
 
@@ -493,11 +500,13 @@ export class Quad {
       throttle: this.throttle,
       brake: this.brake,
       forwardSpeed: fwd,
+      slope: this.climb,
       reverse: this.reverse,
       maxRpm: e.params.maxRpm,
       lugDrop: e.isRunning ? Math.max(0, e.freeTargetRpm - e.targetRpm) : 0,
     });
     if (this.manual) this.reverse = this.drivetrain.gear < 0; // the lever decides, not S held at a stop
+    if (this.manual && this.drivetrain.takeEvent() === 'jumped') this.say('It jumped out of gear');
     const d = this.drivetrain;
     this.engineLoad.update(dt, {
       throttle: this.throttle,

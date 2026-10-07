@@ -28,6 +28,11 @@ export const DEFAULT_GEARBOX_PARAMS = {
   handStart: 0.15, // where the hand throttle is left when the game starts (about 710 rpm); it moves in steps of 0.35 a second from there
   gears: 3, // forward gears: 3 on the tractor, 4 on the manual quads
   changeClutch: 0.7, // the pedal has to be this far down to change gear (neutral can always be found)
+  rushTime: 0.2, // s the pedal must have been down before the lever goes in cleanly; sooner than that you can miss the gear
+  falseNeutralChance: 0.45, // chance of missing the gear (landing in a false neutral) when the change is rushed
+  jumpSlope: 0.1, // how steep a climb has to be (sine of the angle, about 6 degrees) before a worn gear can jump out
+  jumpThrottle: 0.5, // and how much throttle it needs: a worn gear only jumps out under load
+  jumpRate: 0.6, // chance a second, for a fully worn gear, of it jumping out while it is under that load
 };
 
 export const GEARBOX_PARAM_RANGES = {
@@ -52,6 +57,11 @@ export const GEARBOX_PARAM_RANGES = {
   handStart: [0, 1, 0.01],
   gears: [3, 4, 1],
   changeClutch: [0.1, 1, 0.05],
+  rushTime: [0, 1, 0.01],
+  falseNeutralChance: [0, 1, 0.01],
+  jumpSlope: [0, 0.5, 0.01],
+  jumpThrottle: [0, 1, 0.05],
+  jumpRate: [0, 3, 0.05],
 };
 
 export const GEARS = [-1, 0, 1, 2, 3, 4];
@@ -67,10 +77,26 @@ export function gearLabel(gear) {
   return gear < 0 ? 'R' : gear === 0 ? 'N' : String(gear);
 }
 
+/**
+ * Which manual vehicle has a worn gearbox this game, and in which gear. One of them, from its own random stream, so a seed repeats
+ * it: it's a forward gear above first (first is the one you climb the bank in, so it would be unfair there), and how worn is 0.5 to 1.
+ * @param {{id: string, gears: number}[]} candidates
+ * @returns {{id: string, gear: number, wear: number}|null}
+ */
+export function pickWornGearbox(candidates, random) {
+  if (!candidates.length) return null;
+  const c = candidates[Math.floor(random() * candidates.length)];
+  return { id: c.id, gear: 2 + Math.floor(random() * (c.gears - 1)), wear: 0.5 + 0.5 * random() };
+}
+
 export class ManualDrivetrain {
-  constructor(params, gearbox = DEFAULT_GEARBOX_PARAMS) {
+  constructor(params, gearbox = DEFAULT_GEARBOX_PARAMS, random = Math.random) {
     this.params = params;
     this.gearbox = gearbox;
+    this.random = random;
+    this.pedalDown = 0; // s the pedal has been down far enough to change gear
+    this.worn = null; // { gear, wear }: a gear that jumps out of mesh under load on a climb
+    this.event = null; // 'jumped' when a worn gear has just jumped out, taken by takeEvent
     this.gear = 0; // -1 reverse, 0 neutral, 1 to 3
     this.pedal = 0; // 0 up (clutch engaged) to 1 fully down
     this.clutch = 0; // how hard the clutch bites, 0..1
@@ -119,14 +145,32 @@ export class ManualDrivetrain {
 
   /**
    * Moves the lever to a gear (-1 to 3). Neutral can always be found; the others need the clutch down.
-   * @returns {'ok'|'clutch'|'same'}
+   * Rushing it (the pedal only just down) can miss the gear and leave the lever in a false neutral; `careful` is for a driver who
+   * never does (the girls' shifter holds the clutch down for each change itself).
+   * @returns {'ok'|'clutch'|'same'|'missed'}
    */
-  select(gear) {
+  select(gear, careful = false) {
     if (!GEARS.includes(gear) || gear > this.gearbox.gears) return 'same';
     if (gear === this.gear) return 'same';
     if (gear !== 0 && !this.canChange) return 'clutch';
+    if (gear !== 0 && !careful && this.pedalDown < this.gearbox.rushTime && this.random() < this.gearbox.falseNeutralChance) {
+      this.gear = 0;
+      return 'missed';
+    }
     this.gear = gear;
     return 'ok';
+  }
+
+  /** Marks a gear as worn: it jumps out under load on a climb, in proportion to `wear` (0 to 1). */
+  wear(gear, wear) {
+    this.worn = { gear, wear };
+  }
+
+  /** 'jumped' once after a worn gear has jumped out, else null. */
+  takeEvent() {
+    const e = this.event;
+    this.event = null;
+    return e;
   }
 
   /**
@@ -141,14 +185,25 @@ export class ManualDrivetrain {
    * @param {number} s.forwardSpeed  m/s, signed.
    * @param {number} [s.rpm]         Used by the two-stroke's power band only.
    * @param {number} [s.lugDrop]
+   * @param {number} [s.slope]       Sine of the climb: positive pointing uphill.
    */
-  update({ dt = 0, clutchHeld = false, power, running, throttle, brake, forwardSpeed, rpm = 0, lugDrop = 0 }) {
+  update({ dt = 0, clutchHeld = false, power, running, throttle, brake, forwardSpeed, rpm = 0, lugDrop = 0, slope = 0 }) {
     const p = this.params;
     const gb = this.gearbox;
     const speed = Math.abs(forwardSpeed);
     const rate = clutchHeld ? gb.clutchPressRate : gb.clutchReleaseRate;
     this.pedal = clamp(this.pedal + (clutchHeld ? 1 : -1) * rate * dt, 0, 1);
     this.clutch = smoothstep(0, 1, 1 - this.pedal);
+    this.pedalDown = this.pedal >= gb.changeClutch ? this.pedalDown + dt : 0;
+
+    // A worn gear jumps out of mesh when it's pulling hard up a bank (not with the clutch down: that's just changing gear).
+    if (this.worn && this.gear === this.worn.gear && running && this.clutch > 0.8 && throttle >= gb.jumpThrottle && slope >= gb.jumpSlope) {
+      const rate = gb.jumpRate * this.worn.wear * Math.min(2, slope / gb.jumpSlope);
+      if (this.random() < 1 - Math.exp(-rate * dt)) {
+        this.gear = 0;
+        this.event = 'jumped';
+      }
+    }
 
     const g = this.gear;
     const inGear = g !== 0 && running;

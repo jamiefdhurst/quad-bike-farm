@@ -86,6 +86,7 @@ import { washMud } from './effects/mudBuildUp.js';
 import { Workshop } from './workshop/workshop.js';
 import { PodRack } from './vehicle/pods.js';
 import { buildPod } from './vehicle/dashPod.js';
+import { pickWornGearbox } from './vehicle/manualDrivetrain.js';
 import { DashClock, CLOCK_START_RANGE, pickReading, setDashClock } from './vehicle/dashState.js';
 import { Bench } from './workshop/bench.js';
 import { Interaction } from './interaction/interaction.js';
@@ -209,6 +210,7 @@ export class Game {
     // the girls know about: they leave it alone for now.
     this.girlUnits = this.units;
     this.tractorUnit = this.addTractor();
+    this.wearGearbox();
     this.updateSmokeScale();
     // This game's weather, picked after everything else so a seed keeps its layout (?weather=rain forces one).
     const forced = new URLSearchParams(location.search).get('weather');
@@ -966,6 +968,15 @@ export class Game {
         c.abortBoarding();
       }
     }
+  }
+
+  /** One manual vehicle (a quad or the tractor) has a worn gearbox this game: a gear that jumps out under load on a climb. Seeded. */
+  wearGearbox() {
+    const manual = this.units.filter((u) => u.quad.manual);
+    const pick = pickWornGearbox(manual.map((u) => ({ id: u.id, gears: u.quad.gearbox.gears })), createRandom(this.seed ^ 0x6ea4));
+    if (!pick) return;
+    this.units.find((u) => u.id === pick.id).quad.drivetrain.wear(pick.gear, pick.wear);
+    console.info(`Worn gearbox: ${pick.id} jumps out of gear ${pick.gear} (wear ${pick.wear.toFixed(2)})`);
   }
 
   /** Builds the tractor, with its own seeded idle, roughness, fuel and hours, and adds it to `units` (not `girlUnits`). */
