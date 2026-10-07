@@ -22,6 +22,7 @@ import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
 import { CHARACTERS } from './npc/characters.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { pickHistory, pickFaultChance } from './vehicle/history.js';
+import { describeVehicle } from './debug/startReport.js';
 import { QuirkSet, DEFAULT_QUIRK_PARAMS, QUIRK_PARAM_RANGES, featuresOf, pickQuirks } from './vehicle/quirks.js';
 import { captureStock, tuneTarget, stockSettings, clampSettings, applyTune } from './vehicle/tuneUp.js';
 import { WearLedger, LEDGER_PARAM_RANGES } from './engine/wearLedger.js';
@@ -196,11 +197,7 @@ export class Game {
     // Each quad's top revs, on their own stream so a seed keeps everything above.
     const topRpmRandom = createRandom(this.seed ^ 0x70b5);
     for (const unit of this.units) unit.topRpm = applyTopRpm(unit.spec, unit.engine.params, topRpmRandom);
-    console.info(
-      `This game: ${this.units
-        .map((u, i) => `${u.name} ${spawns[i].where}, idle ${u.idleRpm} rpm, top ${u.topRpm} rpm, roughness ${u.variation.roughness.toFixed(2)}, ${u.variation.litres.toFixed(1)} L`)
-        .join('; ')}`,
-    );
+    this.units.forEach((u, i) => (u.where = spawns[i].where));
     // What the hour meters and odometers show, the dash clock, and where the two accessory pods start. Each has its own seeded
     // stream, so a seed keeps its layout and these repeat too.
     const usageRandom = createRandom(this.seed ^ 0xd45b);
@@ -213,7 +210,6 @@ export class Game {
     const historyRandom = createRandom(this.seed ^ 0x4157);
     const faultChance = pickFaultChance(historyRandom);
     for (const unit of this.units) this.applyHistory(unit, historyRandom, faultChance);
-    console.info(`History: ${this.units.map((u) => this.describeHistory(u)).join('; ')}`);
     setDashClock(new DashClock(pickReading(CLOCK_START_RANGE, createRandom(this.seed ^ 0xc10c))));
     this.podRack = new PodRack(this.units.map((u) => u.id));
     this.podRack.place(createRandom(this.seed ^ 0x90d5));
@@ -230,13 +226,12 @@ export class Game {
       const kinds = pickQuirks(featuresOf(unit.spec, !!this.podRack.podOn(unit.id)), quirkRandom, this.quirkParams);
       unit.quad.quirks = new QuirkSet(kinds, this.quirkParams);
     }
-    console.info(`Quirks: ${this.units.map((u) => `${u.name} ${u.quad.quirks.kinds.join(', ')}`).join('; ')}`);
-    console.info(`Pods: ${this.podRack.describe((id) => this.units.find((u) => u.id === id).name)}`);
     // The tractor stands in the yard whatever the fleet is. It's a unit like the quads (you ride it, fuel it, hear it), but `girlUnits` is what
     // the girls know about: they leave it alone for now.
     this.girlUnits = this.units;
     this.tractorUnit = this.addTractor();
     this.wearGearbox();
+    this.logStart();
     this.updateSmokeScale();
     // This game's weather, picked after everything else so a seed keeps its layout (?weather=rain forces one).
     const forced = new URLSearchParams(location.search).get('weather');
@@ -1116,11 +1111,38 @@ export class Game {
     this.history.quads[unit.id] = h;
   }
 
-  describeHistory(unit) {
-    const h = this.history.quads[unit.id];
-    const bits = [`wear ${h.wear}`, ...h.faults.map((f) => `${f.kind} ${f.level}`)];
-    if (h.tinker) bits.push(`stop ${h.tinker.limiter} turns, mixture +${h.tinker.mixture}`);
-    return `${unit.name} ${bits.join(', ')}, last out: ${h.lastRider ?? 'nobody'}`;
+  /** One readable block per vehicle of everything dealt out at random at the start (debug/startReport.js). */
+  logStart() {
+    for (const unit of this.units) {
+      const h = this.history.quads[unit.id];
+      const q = unit.quad;
+      const worn = q.drivetrain.worn;
+      console.info(
+        describeVehicle({
+          name: unit.name,
+          where: unit.where,
+          plate: unit.spec.plateNumber,
+          idle: unit.idleRpm,
+          top: unit.topRpm,
+          redline: unit.engine.params.redlineRpm,
+          roughness: unit.variation.roughness,
+          litres: unit.variation.litres,
+          tap: q.fuel.tap,
+          hours: q.usage.hours,
+          odo: q.usage.odoMiles,
+          trip: q.tripMiles,
+          pod: this.podRack.podOn(unit.id),
+          wear: unit.engine.wear,
+          faults: h?.faults ?? [],
+          tinker: h?.tinker ?? null,
+          lastRider: h?.lastRider ?? null,
+          hasHistory: !!h,
+          quirks: q.quirks.kinds,
+          wornGear: worn ? { gear: worn.gear, wear: worn.wear } : null,
+          hand: unit.spec.tractor ? q.handSetting : null,
+        }),
+      );
+    }
   }
 
   wearGearbox() {
@@ -1128,7 +1150,6 @@ export class Game {
     const pick = pickWornGearbox(manual.map((u) => ({ id: u.id, gears: u.quad.gearbox.gears })), createRandom(this.seed ^ 0x6ea4));
     if (!pick) return;
     this.units.find((u) => u.id === pick.id).quad.drivetrain.wear(pick.gear, pick.wear);
-    console.info(`Worn gearbox: ${pick.id} jumps out of gear ${pick.gear} (wear ${pick.wear.toFixed(2)})`);
   }
 
   /** Builds the tractor, with its own seeded idle, roughness, fuel and hours, and adds it to `units` (not `girlUnits`). */
@@ -1152,7 +1173,7 @@ export class Game {
     unit.quad.usage.odoMiles = pickRelatedReading(TRACTOR_SPEC.odoRange, (unit.quad.usage.hours - hoursLo) / (hoursHi - hoursLo), random);
     unit.quad.handSetting = pickReading(TRACTOR_SPEC.handStartRange, random); // the last driver left the hand throttle wherever
     this.units = [...this.units, unit];
-    console.info(`Tractor: idle ${unit.idleRpm} rpm, ${unit.variation.litres.toFixed(1)} L of red diesel`);
+    unit.where = 'in the yard';
     return unit;
   }
 
