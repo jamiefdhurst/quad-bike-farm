@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 // A pair of L plates taped on by Jess: a white square with a red L, and a strip of tape at each top corner (npc/lPlates.js). One plate
-// stands at the back of a quad's rear rack, one on the front of the tractor's grille; `showOn` moves it between them.
+// is stuck on the back of a quad's bodywork, one on the front of the tractor's grille; `showOn` moves it between them.
 
 function texture() {
   const c = document.createElement('canvas');
