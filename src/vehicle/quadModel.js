@@ -1030,14 +1030,17 @@ function buildFuelTap(root, tapStyle) {
   }
 }
 
-// The carb choke plunger, under the tank on the left: a knob you pull down, on a shaft out of a housing on the carb.
+// The carb choke plunger, on a bracket out to the left of the tank where you can see it looking down: a bright knob on a shaft you pull
+// down out of a housing on the carb.
 function buildChokePlunger(root, choke) {
-  rbox(0.03, 0.03, 0.03, 0.008, MAT.engineDark, 0.1, 0.665, 0.3, root, 'chokeHousing', 1);
-  choke.position.set(0.1, 0.65, 0.3);
+  const x = 0.235;
+  tube([0.18, 0.66, 0.2], [x, 0.66, 0.2], 0.008, MAT.frame, root);
+  rbox(0.036, 0.04, 0.036, 0.008, MAT.engineDark, x, 0.675, 0.2, root, 'chokeHousing', 1);
+  choke.position.set(x, 0.65, 0.2);
   choke.userData.baseY = choke.position.y;
   root.add(choke);
-  tube([0, 0, 0], [0, 0.04, 0], 0.005, MAT.chrome, choke);
-  add(new THREE.CylinderGeometry(0.016, 0.016, 0.012, 14), new THREE.MeshStandardMaterial({ color: 0xd8c020, roughness: 0.5 }), choke, 'chokeKnob').position.set(0, -0.006, 0);
+  tube([0, 0, 0], [0, 0.04, 0], 0.006, MAT.chrome, choke);
+  add(new THREE.CylinderGeometry(0.02, 0.02, 0.016, 14), new THREE.MeshStandardMaterial({ color: 0xf0d020, roughness: 0.5 }), choke, 'chokeKnob').position.set(0, -0.008, 0);
 }
 
 export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', style = 'utility', solo = false, plateNumber = '7', chokeStyle = 'thumb', tapStyle = 'left' } = {}) {
