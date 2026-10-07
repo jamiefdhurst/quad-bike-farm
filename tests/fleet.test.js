@@ -31,6 +31,7 @@ describe('the fleet', () => {
     expect(games.some((f) => f.some((s) => s.id === 'kids'))).toBe(true);
     expect(games.some((f) => f.some((s) => s.id === 'loan'))).toBe(true);
     expect(games.some((f) => f.some((s) => s.id === 'moto'))).toBe(true);
+    expect(games.some((f) => f.some((s) => s.id === 'atc'))).toBe(true);
     expect(games.some((f) => f.filter((s) => EXTRA_SPECS.includes(s)).length === EXTRA_SPECS.length)).toBe(true);
     expect(games.some((f) => regulars(f) < QUAD_SPECS.length && f.length > regulars(f))).toBe(true);
   });
@@ -40,7 +41,7 @@ describe('the fleet', () => {
   });
 
   it('caps a full house at the parking slots', () => {
-    const f = pickFleet(QUAD_SPECS, EXTRA_SPECS, () => 0.01, { ...DEFAULT_FLEET_PARAMS, extraChances: [0, 0, 0, 1], missingChances: [1, 0, 0] });
+    const f = pickFleet(QUAD_SPECS, EXTRA_SPECS, () => 0.01, { ...DEFAULT_FLEET_PARAMS, extraChances: [0, 0, 0, 0, 1], missingChances: [1, 0, 0] });
     expect(f).toHaveLength(DEFAULT_FLEET_PARAMS.maxVehicles);
     expect(f.filter((s) => EXTRA_SPECS.includes(s))).toHaveLength(EXTRA_SPECS.length);
   });
@@ -93,5 +94,23 @@ describe('extra vehicles', () => {
     expect(out).toHaveLength(2);
     for (const w of out) expect(w.driven).toBe(false);
     for (const w of MOTO_LAYOUT.wheels.filter((w) => !w.outrigger)) expect(w.x).toBe(0);
+  });
+
+  it('makes the old three-wheeler a worn, solo, cord-start two-stroke with a manual box and three wheels that can tip', async () => {
+    const atc = EXTRA_SPECS.find((s) => s.id === 'atc');
+    const yellow = QUAD_SPECS.find((s) => s.id === 'yellow');
+    expect(atc.solo).toBe(true);
+    expect(atc.manual).toBe(true);
+    expect(atc.engine.strokes).toBe(2);
+    expect(atc.engine.pullStart).toBe(true);
+    expect(atc.engine.noStarter).toBe(true);
+    expect(atc.wearRange[0]).toBeGreaterThanOrEqual(yellow.wearRange[1]);
+    expect(atc.audio.recBank).toBe(yellow.audio.recBank); // the yellow's sound for now
+    expect(atc.idleRange[0]).toBeGreaterThanOrEqual(1300); // a realistic two-stroke tickover
+    expect(atc.idleRange[1]).toBeLessThanOrEqual(1800);
+    const { ATC_LAYOUT } = await import('../src/vehicle/atcModel.js');
+    expect(ATC_LAYOUT.wheels).toHaveLength(3);
+    expect(ATC_LAYOUT.wheels.filter((w) => w.front)).toHaveLength(1);
+    expect(atc.vehicle.centreOfMassY).toBeGreaterThan(-0.08); // higher than a quad's default, so it can tip
   });
 });

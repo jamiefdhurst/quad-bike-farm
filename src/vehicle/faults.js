@@ -66,6 +66,7 @@ export class Faults {
     this.random = random;
     this.tyre = -1; // which wheel has the puncture
     this.tyreWheels = [0, 1, 2, 3]; // the wheels one can land on (the mini moto's outriggers can't go flat)
+    this.wheelSides = null; // per wheel { side, front } when the layout isn't a plain four-wheeler's (set by Quad)
     this.levels = { puncture: 0, belt: 0, cable: 0, carb: 0 }; // 0 none, rising to 1 at their worst
     this.started = { puncture: false, belt: false, cable: false, carb: false };
     this.caps = { puncture: 1, belt: 1, cable: 1, carb: 1 }; // a rough fix leaves it from getting any worse than this
@@ -165,7 +166,10 @@ export class Faults {
   /** Radians the bars are pulled to one side (positive is left). */
   get steerPull() {
     if (!this.started.puncture) return 0;
-    return tyreSide(this.tyre) * (tyreIsFront(this.tyre) ? 1 : 0.5) * this.params.puncturePull * this.levels.puncture;
+    const w = this.wheelSides?.[this.tyre];
+    const side = w ? w.side : tyreSide(this.tyre);
+    const front = w ? w.front : tyreIsFront(this.tyre);
+    return side * (front ? 1 : 0.5) * this.params.puncturePull * this.levels.puncture;
   }
 
   /** Multiplier on the drive force at the wheels. */

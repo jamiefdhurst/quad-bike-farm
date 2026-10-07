@@ -13,6 +13,7 @@ export const QUAD_PHRASES = {
   kids: "the kids' quad",
   loan: 'the loan quad',
   moto: 'the mini moto',
+  atc: 'the old three-wheeler',
 };
 
 // Two to pick from for each, so a game gets one of them. Each reads in "That's ___" and "Come on, ___".
@@ -25,6 +26,7 @@ export const NICKNAMES = {
   kids: ['Tiddler', 'the pram'],
   loan: ['Lucky', 'the loaner'],
   moto: ['Pogo', 'the bumblebee'],
+  atc: ['the tripod', 'Wobbles'],
 };
 
 export const DEFAULT_NAME_PARAMS = {

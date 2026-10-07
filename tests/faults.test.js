@@ -255,3 +255,17 @@ describe('a puncture on a bike with outrigger wheels', () => {
     expect(g.tyre).toBe(0);
   });
 });
+
+describe('a flat tyre on a three-wheeler', () => {
+  it('pulls by the wheel that is flat, from the layout', () => {
+    const f = new Faults(undefined, () => 0);
+    f.tyreWheels = [0, 1, 2];
+    f.wheelSides = [{ side: 1, front: true }, { side: 1, front: false }, { side: -1, front: false }];
+    f.tyre = 2;
+    f.started.puncture = true;
+    f.levels.puncture = 1;
+    expect(f.steerPull).toBeLessThan(0);
+    f.tyre = 0;
+    expect(f.steerPull).toBeCloseTo(f.params.puncturePull, 5);
+  });
+});

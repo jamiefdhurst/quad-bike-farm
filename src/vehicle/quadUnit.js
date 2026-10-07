@@ -16,6 +16,7 @@ import { DEFAULT_FUEL_PARAMS, FUEL_PARAM_RANGES } from './fuelSystem.js';
 import { DEFAULT_CONTROLS_PARAMS, CONTROLS_PARAM_RANGES } from './controls.js';
 import { DEFAULT_GEARBOX_PARAMS, GEARBOX_PARAM_RANGES } from './manualDrivetrain.js';
 import { SHIFTER_PARAM_RANGES } from './autoShifter.js';
+import { buildAtcModel, ATC_LAYOUT, ATC_GROUND_OFFSET, ATC_PROXY } from './atcModel.js';
 import { buildMiniMotoModel, MOTO_LAYOUT, MOTO_GROUND_OFFSET, MOTO_PROXY } from './miniMotoModel.js';
 import { buildTractorModel, TRACTOR_LAYOUT, TRACTOR_GROUND_OFFSET, TRACTOR_PROXY } from './tractorModel.js';
 
@@ -59,6 +60,13 @@ export class QuadUnit {
         layout: MOTO_LAYOUT,
         groundOffset: MOTO_GROUND_OFFSET,
         proxy: MOTO_PROXY,
+        wheelShake: spec.wheelShake,
+      }),
+      ...(spec.threeWheeler && {
+        build: ({ dashStyle }) => buildAtcModel({ bodyColor: spec.bodyColor, dashStyle, chokeStyle: spec.chokeStyle }),
+        layout: ATC_LAYOUT,
+        groundOffset: ATC_GROUND_OFFSET,
+        proxy: ATC_PROXY,
         wheelShake: spec.wheelShake,
       }),
       ...(spec.tractor && {

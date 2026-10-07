@@ -77,7 +77,10 @@ export class Quad {
     this.fuel = new FuelSystem(fuelParams);
     this.faults = new Faults();
     // A layout's outrigger wheels (the mini moto's) are never the flat one.
-    if (layout.wheels.some((w) => w.outrigger)) this.faults.tyreWheels = layout.wheels.flatMap((w, i) => (w.outrigger ? [] : [i]));
+    if (layout.wheels.some((w) => w.outrigger) || layout.wheels.length !== 4) {
+      this.faults.tyreWheels = layout.wheels.flatMap((w, i) => (w.outrigger ? [] : [i]));
+      this.faults.wheelSides = layout.wheels.map((w) => ({ side: w.x >= 0 ? 1 : -1, front: !!w.front }));
+    }
     this.filter = new AirFilter(); // clogs with mud and puddles; cleaned at the toolbox
     this.tripMiles = 0;
     this.usage = { hours: 0, odoMiles: 0 }; // what the hour meter and odometer show; the game sets the starting readings
@@ -132,6 +135,7 @@ export class Quad {
     this.shownFrost = 0;
     this.tyres = new TyreSet(); // pressures, brands and tread (tyres.js); the game deals this game's
     this.physics.tyres = this.tyres;
+    this.tyres.useLayout(layout.wheels);
     this.physics.applyParams();
     // The tractor has a clutch pedal and a gearbox rather than a CVT; everything reads the same drivetrain fields.
     this.manual = !!gearbox; // a clutch and gearbox: the tractor and the manual quads

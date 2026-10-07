@@ -95,10 +95,19 @@ export class TyreSet {
     this.tread = { ...set.tread };
     this.P = P;
     this.tune = tune;
+    this.wheels = null; // [{ i, name, front }] when the vehicle isn't a plain four-wheeler (see useLayout)
+  }
+
+  /** A bike or a three-wheeler has fewer tyres than four: the gauge and the front/rear split follow its real wheels (outriggers have none). */
+  useLayout(layoutWheels) {
+    if (layoutWheels.length === 4 && !layoutWheels.some((w) => w.outrigger)) return;
+    const list = layoutWheels.map((w, i) => ({ i, w })).filter(({ w }) => !w.outrigger);
+    this.wheels = list.map(({ i, w }) => ({ i, front: !!w.front, name: (w.front ? 'F' : 'R') + (Math.abs(w.x) < 0.05 ? '' : w.x > 0 ? 'L' : 'R') }));
   }
 
   get meanPsi() {
-    return this.psi.reduce((a, b) => a + b, 0) / this.psi.length;
+    const psi = this.wheels ? this.wheels.map((w) => this.psi[w.i]) : this.psi;
+    return psi.reduce((a, b) => a + b, 0) / psi.length;
   }
 
   /** Pumps (or lets down) every tyre to the same pressure: the toolbox's setting. */
@@ -119,7 +128,7 @@ export class TyreSet {
   grip(i, mud = 0, puddle = 0) {
     const t = this.tune;
     const m = clamp(Math.max(mud, puddle), 0, 1);
-    const axle = isFront(i) ? 'front' : 'rear';
+    const axle = (this.wheels ? this.wheels.find((w) => w.i === i)?.front : isFront(i)) ? 'front' : 'rear';
     const brand = BRANDS[this.brand[axle]];
     const tread = this.tread[axle];
     const pressure = 1 - lerp(t.psiGrip, t.psiMudGrip, m) * (this.psi[i] - t.stockPsi);
@@ -137,9 +146,11 @@ export class TyreSet {
     return 1 + this.tune.psiStiffness * (this.psi[i] - this.tune.stockPsi);
   }
 
-  /** "FL 3.8  FR 4.3  RL 4.0  RR 4.1 psi" */
+  /** "FL 3.8  FR 4.3  RL 4.0  RR 4.1 psi" (a bike's reads "F 3.8  R 4.0 psi") */
   gauge(punctureWheel = -1, level = 0) {
-    return `${this.reading(punctureWheel, level).map((v, i) => `${WHEEL_NAMES[i]} ${v.toFixed(1)}`).join('  ')} psi`;
+    const r = this.reading(punctureWheel, level);
+    const shown = this.wheels ?? r.map((_, i) => ({ i, name: WHEEL_NAMES[i] }));
+    return `${shown.map((w) => `${w.name} ${r[w.i].toFixed(1)}`).join('  ')} psi`;
   }
 
   /** "front Mudclaw, tread 0.82; rear Roadrunner, tread 0.30" */

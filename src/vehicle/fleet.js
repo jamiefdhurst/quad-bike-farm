@@ -1,9 +1,9 @@
-// Which vehicles are on the farm this game. The five regular quads are sometimes joined by the kids' quad, the loan quad or the mini moto, and one
+// Which vehicles are on the farm this game. The five regular quads are sometimes joined by the kids' quad, the loan quad, the mini moto or the old three-wheeler, and one
 // or two of the regulars are sometimes missing, so no two games have quite the same line-up. Pure logic.
 
 export const DEFAULT_FLEET_PARAMS = {
   missingChances: [0.35, 0.4, 0.25], // chance that none, one or two of the regular quads are away
-  extraChances: [0.3, 0.4, 0.2, 0.1], // chance that none, one, two or all three of the extra vehicles turn up
+  extraChances: [0.28, 0.35, 0.22, 0.1, 0.05], // chance that none, one, two, three or all four of the extra vehicles turn up
   maxVehicles: 7, // and never more than there are parking slots (LAYOUT.spawn.quads)
   minVehicles: 3, // never fewer than this, so there's always something to ride and something for her to ride
 };

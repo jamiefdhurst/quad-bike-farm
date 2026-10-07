@@ -583,6 +583,111 @@ export const EXTRA_SPECS = [
     },
   },
   {
+    // The neighbour's beaten-up three-wheeler, an old ATC: a 200cc two-stroke with one front wheel and two fat tyres at the back, a
+    // pull-start only (no starter motor), a clutch (Shift) and a four-speed box, and a tall, narrow stance that tips if you throw it round
+    // a corner. Worn out, hard to start and rough. Built by atcModel.js, with the yellow's sound until it gets its own. Solo.
+    id: 'atc',
+    threeWheeler: true,
+    label: 'old three-wheeler',
+    name: 'Old three-wheeler',
+    bodyColor: 0xb4553f, // a chalky, sun-bleached Honda red
+    style: 'sport', // the quad body styles are unused (the model is its own), but the spec must name one that exists
+    dashStyle: 'kidsKey',
+    reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
+    chokeStyle: 'knob', // where the choke is and what it takes to reach it
+    tapStyle: 'left', // where the fuel tap sits
+    hoursRange: [800, 2400], // engine hours showing when the game starts
+    odoRange: [3000, 9000], // odometer miles showing when the game starts
+    wearRange: [0.35, 0.65], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
+    tinkers: false, // nobody leaves a throttle stop out on this
+    solo: true, // no room for anyone on the back
+    wheelShake: 0.9, // old and loose, so its wheels shake a bit more than the quads'
+    // A lumpy two-stroke idle, between the yellow's and the kids' quad's.
+    safeIdle: 900,
+    idleRange: [1300, 1800],
+    roughnessRange: [0.45, 0.7],
+    fuelRange: [1, 5], // 6 litre tank, 1 litre reserve
+    topRpmRange: [8900, 9700], // full-throttle revs this game, about 4% either side of the engine's own
+    manual: true, // a clutch (Shift) and a four-speed gearbox in place of the CVT (src/vehicle/manualDrivetrain.js)
+    gearbox: { gears: 4, topSpeed1: 4, topSpeed2: 8, topSpeed3: 12, topSpeed4: 16, topSpeedReverse: 3, torque1: 1, torque2: 0.85, torque3: 0.7, torque4: 0.6, torqueReverse: 0.9, launchLoad1: 0.15, launchLoad2: 0.7, launchLoad3: 0.9, launchLoad4: 1, lugSpeed: 0.6 },
+    fuel: { tankCapacity: 6, startOil: 0.02, reserveLitres: 1, burnPerRev: 0.000032, idleBurnFraction: 0.45 },
+    engine: {
+      loadDragRpm: 28000, // a manual: slowing in a high gear drags it down and stalls it (manualDrivetrain.js)
+      strokes: 2,
+      popProne: 0.7, // two-strokes crackle and bang on the overrun
+      pullStart: true,
+      noStarter: true, // no key start, only the cord
+      idleRpmWarm: 1550,
+      maxRpm: 9300,
+      redlineRpm: 8600,
+      rpmRiseRate: 10,
+      rpmFallRate: 8,
+      warmUpSeconds: 110,
+      coldEnrichmentNeed: 1.1,
+      chokeIdleRpm: 1100,
+      catchChance: 0.45,
+      coldRoughness: 0.65,
+      coldPowerLoss: 0.8,
+      skipChance: 0.4,
+      skipThrottle: 0.15,
+      skipRpm: 3800,
+      idleFoulRate: 0.0025,
+      misfireRpmDrop: 170,
+    },
+    vehicle: {
+      mass: 215, // bike plus rider
+      centreOfMassY: -0.06, // a bit higher than the quads' -0.08 default, with the rider up on top: that, and one front wheel, is what tips it
+      steerSpeedReduction: 0.12, // less lock at speed, or it trips itself on a single front wheel
+      rollInertia: 38,
+      pitchInertia: 70,
+      yawInertia: 80,
+      wheelRadius: 0.3,
+      suspensionRestLength: 0.2,
+      maxSuspensionTravel: 0.15,
+      maxDriveForce: 1800,
+      maxSpeed: 16,
+      maxSteerDeg: 34,
+      clutchEngageRpm: 2500,
+      clutchFullRpm: 4200,
+      couplingRpm: 3300,
+      engineBrakeForce: 60,
+      powerbandRpm: 5500,
+      torqueBelowBand: 0.5,
+      fourWheelDrive: 0, // the two rear wheels on a solid axle
+    },
+    vibration: {
+      pulseGain: 1.1,
+      idleRpm: 1550,
+      barsFreq: 20,
+      barsGain: 0.3,
+      heaveGain: 0.16,
+      pitchGain: 0.3,
+    },
+    // The yellow's sound until it gets its own.
+    audio: {
+      recBank: 'engine-bank-2t',
+      pulseRefRpm: 1500,
+      pulseRevLoudness: 1.1, // a two-stroke gets louder faster as it revs
+      pulseLoudnessCap: 2,
+      recRevGain: 1,
+      recIdleSource: 'quad',
+      recBlendLo: 2600,
+      recBlendHi: 3600,
+      recToneClosed: 8000,
+      recVolume: 0.55,
+      pipeLength: 0.95,
+      mufflerFreqA: 210,
+      densityRefRpm: 2400,
+    },
+    smoke: {
+      warmDensity: 0.45,
+      coldDensity: 0.85,
+      warmGray: 0.8,
+      coldGray: 0.9,
+      tint: '#dde6ff',
+    },
+  },
+  {
     // A smart new quad on loan for the day: the Yamaha's body in neutral silver, fuel injected so it hardly wants any choke, starts on
     // the button, idles smooth and quiet and has almost no wear. Full tank, and a bit more power than the old farm quads.
     id: 'loan',

@@ -97,7 +97,7 @@ export class QuadPhysics {
     for (let i = 0; i < this.wheels.length; i++) {
       this.vehicle.setWheelRadius(i, this.wheels[i].radius ?? p.wheelRadius);
       this.vehicle.setWheelSuspensionRestLength(i, p.suspensionRestLength);
-      this.vehicle.setWheelSuspensionStiffness(i, p.suspensionStiffness * (this.tyres?.stiffness(i) ?? 1));
+      this.vehicle.setWheelSuspensionStiffness(i, p.suspensionStiffness * (this.wheels[i].stiffness ?? 1) * (this.tyres?.stiffness(i) ?? 1));
       this.vehicle.setWheelSuspensionCompression(i, p.suspensionCompression);
       this.vehicle.setWheelSuspensionRelaxation(i, p.suspensionRelaxation);
       this.vehicle.setWheelMaxSuspensionTravel(i, p.maxSuspensionTravel);

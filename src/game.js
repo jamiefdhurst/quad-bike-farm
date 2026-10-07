@@ -227,7 +227,10 @@ export class Game {
     this.tyreParams = { ...DEFAULT_TYRE_PARAMS };
     registerTuning('Tyres', this.tyreParams, TYRE_PARAM_RANGES);
     const tyreRandom = createRandom(this.seed ^ 0x7e55);
-    for (const unit of this.units) unit.quad.tyres = new TyreSet(dealTyres(tyreRandom, 4, this.tyreParams), this.tyreParams);
+    for (const unit of this.units) {
+      unit.quad.tyres = new TyreSet(dealTyres(tyreRandom, 4, this.tyreParams), this.tyreParams);
+      unit.quad.tyres.useLayout(unit.quad.layout.wheels);
+    }
     // Every quad starts parked properly, with its brake on; after that it's down to whoever gets off one (vehicle/handbrake.js).
     for (const unit of this.units) unit.quad.parkBrake = true;
     this.handbrakeParams = { ...DEFAULT_HANDBRAKE_PARAMS };
