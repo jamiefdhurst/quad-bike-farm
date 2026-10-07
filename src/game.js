@@ -29,6 +29,8 @@ import { HayRide, HAYRIDE_PARAM_RANGES } from './npc/hayRide.js';
 import { MudguardRide, MUDGUARD_PARAM_RANGES } from './npc/mudguardRide.js';
 import { TractorMount } from './vehicle/tractorMount.js';
 import { TractorGo, TRACTORGO_PARAM_RANGES } from './npc/tractorGo.js';
+import { TractorRunaway, TRACTOR_RUNAWAY_PARAM_RANGES } from './npc/tractorRunaway.js';
+import { DEFAULT_CREEP_PARAMS, CREEP_PARAM_RANGES, distanceToHedge } from './vehicle/creep.js';
 import { DEFAULT_TRACTOR_GO_DRIVE, TRACTOR_GO_DRIVE_RANGES } from './npc/companionDriving.js';
 import { DEFAULT_TRACTOR_START_PARAMS, TRACTOR_START_PARAM_RANGES } from './npc/tractorStart.js';
 import { DEFAULT_NOVICE_PARAMS, NOVICE_PARAM_RANGES } from './vehicle/autoShifter.js';
@@ -344,6 +346,9 @@ export class Game {
     this.revOff = new RevOff();
     // What they say about the tractor: the key that doesn't stop it, waiting for the glow plugs, it catching (npc/tractorWatch.js).
     this.tractorWatch = new TractorWatch(undefined, createRandom(this.seed ^ 0x7a7c));
+    // The tractor creeping off on its own, and the girl who runs after it (npc/tractorRunaway.js, vehicle/creep.js).
+    this.tractorRunaway = new TractorRunaway(undefined, createRandom(this.seed ^ 0x7c4e));
+    this.runawayJob = null; // { girl, time }: she's running after it
     // The bale trailer in the yard, and the girls riding on it (vehicle/hayTrailer.js, npc/hayRide.js, npc/companionHayRide.js).
     this.trailer = new HayTrailer({ scene: this.scene, world: this.world });
     const tl = this.world.layout.trailer;
@@ -682,6 +687,8 @@ export class Game {
     registerTuning('Pranks', this.pranks.p, PRANK_PARAM_RANGES);
     registerTuning('Rev-offs', this.revOff.p, REVOFF_PARAM_RANGES);
     registerTuning('Tractor remarks', this.tractorWatch.p, TRACTOR_WATCH_PARAM_RANGES);
+    registerTuning('Tractor creep', DEFAULT_CREEP_PARAMS, CREEP_PARAM_RANGES);
+    registerTuning('Tractor runaway', this.tractorRunaway.p, TRACTOR_RUNAWAY_PARAM_RANGES);
     registerTuning('Hay ride', this.hayRide.p, HAYRIDE_PARAM_RANGES);
     registerTuning('Mudguard ride', this.mudguard.p, MUDGUARD_PARAM_RANGES);
     registerTuning('Tractor go', this.tractorGo.p, TRACTORGO_PARAM_RANGES);
@@ -749,6 +756,52 @@ export class Game {
       if (!locked) this.closeMenu();
     });
     this.renderer.setAnimationLoop(() => this.frame());
+  }
+
+  /** The tractor walking off on its own: they remark on it, one runs after it and stops it, or it reaches the hedge (npc/tractorRunaway.js). */
+  updateTractorRunaway(dt, ridden) {
+    const unit = this.tractorUnit;
+    const q = unit.quad;
+    const girlOf = (id) => this.companions.find((c) => c.character.id === id);
+    const stalled = q.creepStalled;
+    q.creepStalled = false;
+    const job = this.runawayJob;
+    if (job) {
+      const c = job.girl;
+      job.time += dt;
+      const caught = c.root.position.distanceTo(q.position) < 2.4;
+      if (caught && q.creeping) {
+        // Up beside the seat: the hand throttle shut, out of gear and the stop knob pulled.
+        q.handSetting = 0;
+        q.drivetrain.setGear(0);
+        q.engine.stopKnob();
+        c.voice.say('tractorRunawayStopped', { urgent: true });
+      }
+      if (caught || !q.creeping || ridden === unit || job.time > 40) {
+        c.paceBoost = 1;
+        this.runawayJob = null;
+      } else if (c.fsm.is('idle')) c.fsm.transition('walking', { goal: 'stand', target: () => c.standPoint(undefined, q) });
+    }
+    const girls = this.companions.map((c) => ({
+      id: c.character.id,
+      free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob,
+      dist: c.root.position.distanceTo(q.position),
+    }));
+    const half = this.world.layout.fieldHalf - this.world.layout.hedgeThickness;
+    const ctx = { creeping: q.creeping, stalled, trailer: this.trailer.hitched, hedge: distanceToHedge(q.position.x, q.position.z, q.yaw, half), girls };
+    for (const ev of this.tractorRunaway.update(dt, ctx)) {
+      const c = girlOf(ev.girl);
+      if (ev.type === 'note') c.voice.say(ev.trailer ? 'tractorCreepTrailer' : 'tractorCreepNote', { urgent: true });
+      else if (ev.type === 'chase' && !this.runawayJob) {
+        c.paceBoost = 2.4; // running, not walking
+        this.runawayJob = { girl: c, time: 0 };
+        c.fsm.transition('walking', { goal: 'stand', target: () => c.standPoint(undefined, q) });
+        c.voice.say('tractorRunaway', { urgent: true });
+      } else if (ev.type === 'hedge') {
+        c.voice.say('tractorHedge', { urgent: true });
+        this.hayLater.push({ left: 2, girl: c.others()[0], key: 'tractorHedgeBlame' });
+      }
+    }
   }
 
   /** The girls' remarks on the tractor (npc/tractorWatch.js). */
@@ -2584,6 +2637,7 @@ export class Game {
     this.updatePranks(dt, ridden);
     this.updateRevOff(dt, ridden);
     this.updateTractorWatch(dt);
+    this.updateTractorRunaway(dt, ridden);
     this.updateHayRide(dt, ridden);
     this.updateMudguard(dt, ridden);
     this.updateTractorGo(dt, ridden);

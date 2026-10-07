@@ -24,6 +24,7 @@ import { AMY_TRACTOR_LINES } from './tractorLines.js';
 import { AMY_HAYRIDE_LINES } from './hayRideLines.js';
 import { AMY_MUDGUARD_LINES } from './mudguardLines.js';
 import { AMY_TRACTORGO_LINES } from './tractorGoLines.js';
+import { AMY_TRACTORRUNAWAY_LINES } from './tractorRunawayLines.js';
 import { AMY_QUAD_LINES } from './quadLines.js';
 import { AMY_WARMING_LINES } from './warmingLines.js';
 import { AMY_HEADSTART_LINES } from './headStartLines.js';
@@ -1402,6 +1403,8 @@ export const VOICE_LINES = {
   ...AMY_MUDGUARD_LINES,
   // Having a go on the tractor, or refusing (tractorGoLines.js).
   ...AMY_TRACTORGO_LINES,
+  // The tractor creeping off by itself, and the hedge (tractorRunawayLines.js).
+  ...AMY_TRACTORRUNAWAY_LINES,
   // Quad nicknames, whose is whose, and placing a quad by ear (quadLines.js).
   ...AMY_QUAD_LINES,
   // Warming their hands over an idling engine (warmingLines.js).

@@ -21,6 +21,7 @@ import { JESS_TRACTOR_LINES } from './tractorLines.js';
 import { JESS_HAYRIDE_LINES } from './hayRideLines.js';
 import { JESS_MUDGUARD_LINES } from './mudguardLines.js';
 import { JESS_TRACTORGO_LINES } from './tractorGoLines.js';
+import { JESS_TRACTORRUNAWAY_LINES } from './tractorRunawayLines.js';
 import { JESS_QUAD_LINES } from './quadLines.js';
 import { JESS_WARMING_LINES } from './warmingLines.js';
 import { JESS_HEADSTART_LINES } from './headStartLines.js';
@@ -377,6 +378,7 @@ export const JESS_LINES = {
   ...JESS_HAYRIDE_LINES,
   ...JESS_MUDGUARD_LINES,
   ...JESS_TRACTORGO_LINES,
+  ...JESS_TRACTORRUNAWAY_LINES,
   ...JESS_QUAD_LINES,
   ...JESS_WARMING_LINES,
   // Starting your usual quad for you, or pointedly not (headStartLines.js).

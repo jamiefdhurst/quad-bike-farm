@@ -186,8 +186,9 @@ export class ManualDrivetrain {
    * @param {number} [s.rpm]         Used by the two-stroke's power band only.
    * @param {number} [s.lugDrop]
    * @param {number} [s.slope]       Sine of the climb: positive pointing uphill.
+   * @param {number} [s.speedLimit]  A lower top speed than the gear's, m/s (the tractor creeping with nobody on it).
    */
-  update({ dt = 0, clutchHeld = false, power, running, throttle, brake, forwardSpeed, rpm = 0, lugDrop = 0, slope = 0 }) {
+  update({ dt = 0, clutchHeld = false, power, running, throttle, brake, forwardSpeed, rpm = 0, lugDrop = 0, slope = 0, speedLimit = Infinity }) {
     const p = this.params;
     const gb = this.gearbox;
     const speed = Math.abs(forwardSpeed);
@@ -207,7 +208,7 @@ export class ManualDrivetrain {
 
     const g = this.gear;
     const inGear = g !== 0 && running;
-    const top = this.topSpeed(g);
+    const top = Math.min(this.topSpeed(g), speedLimit);
     const dir = g < 0 ? -1 : 1;
 
     this.coupled = inGear && this.clutch > 0.5 && speed > p.coupledReleaseSpeed;

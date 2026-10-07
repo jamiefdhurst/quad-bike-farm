@@ -10,6 +10,7 @@ import { EngineLoad } from './engineLoad.js';
 import { waterGulp } from '../engine/water.js';
 import { AirFilter } from './airFilter.js';
 import { CruiseControl } from './cruise.js';
+import { Creep, mayCreep, DEFAULT_CREEP_PARAMS } from './creep.js';
 import { Bog } from './bog.js';
 import { Faults } from './faults.js';
 import { advanceUsage, isNeutral, dashClock, lampStates } from './dashState.js';
@@ -121,6 +122,10 @@ export class Quad {
     this.towed = false; // on the end of the winch: brakes off
     this.engineLoad = new EngineLoad(params);
     this.cruise = new CruiseControl(params);
+    this.creep = new Creep(DEFAULT_CREEP_PARAMS); // the tractor walking off by itself in first (creep.js)
+    this.creeping = false;
+    this.creepLimit = 0;
+    this.creepStalled = false; // it has just stalled against something while creeping: the game reads this and clears it
 
     // Controls, set by the rider.
     this.rider = null;
@@ -463,6 +468,18 @@ export class Quad {
     // The hand throttle holds the engine up wherever it was left, ridden or not.
     if (this.tractor) throttleInput = Math.max(throttleInput, this.handSetting);
 
+    // Left in first with the hand throttle open and nobody on it, the tractor walks off by itself; against a hedge it stalls.
+    if (this.tractor) {
+      const c = this.creep.update(dt, {
+        allowed: mayCreep({ attended: !!(this.input || this.driver), running: this.engine.isRunning, gear: this.drivetrain.gear, hand: this.handSetting, parkBrake: this.parkBrake, tipped: this.isTipped, towed: this.towed }),
+        hand: this.handSetting,
+        speed: fwd,
+      });
+      this.creeping = c.creeping;
+      this.creepLimit = c.limit;
+      if (c.stall && this.engine.stopKnob()) this.creepStalled = true;
+    }
+
     // The recoil pull-start (the two-strokes): hold P to draw the cord, let go to yank.
     const pullDown = this.input ? this.input.isDown('KeyP') : (!!this.remoteInput && this.remoteInput.isDown('KeyP')) || this.helperPull;
     if (pullDown) this.pullHeld += dt;
@@ -501,6 +518,7 @@ export class Quad {
       brake: this.brake,
       forwardSpeed: fwd,
       slope: this.climb,
+      speedLimit: this.creeping ? this.creepLimit : Infinity,
       reverse: this.reverse,
       maxRpm: e.params.maxRpm,
       lugDrop: e.isRunning ? Math.max(0, e.freeTargetRpm - e.targetRpm) : 0,
@@ -537,7 +555,7 @@ export class Quad {
 
     let brake = this.brake * p.maxBrake;
     // Nobody on it (and not carrying on by itself): the parking brake holds it. Not while it's being winched.
-    const idle = !this.towed && ((!this.input && !this.ghost && !this.driver) || (throttleInput === 0 && Math.abs(fwd) < 0.5));
+    const idle = !this.towed && ((!this.input && !this.ghost && !this.driver && !this.creeping) || (throttleInput === 0 && Math.abs(fwd) < 0.5));
     if (this.driver) this.parkBrake = false; // she takes it off before she sets off
     if (idle) brake = Math.max(brake, p.parkingBrake);
     if (this.parkBrake && (this.input || this.ghost)) brake = p.maxBrake; // a stuck throttle with nobody on it doesn't undo it
