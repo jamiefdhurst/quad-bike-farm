@@ -28,10 +28,21 @@ export class Bench {
     return !!this.unit;
   }
 
-  /** The quad parked in the bay, if there's one. */
+  /** The quad parked in the bay, if there's one. Failing that, the barn find: it can't be driven, so it's worked on where it stands. */
   unitInBay() {
     const bay = this.game.world.layout.bay;
-    return this.game.girlUnits.find((u) => !u.quad.driver && inBay(bay, u.quad.position.x, u.quad.position.z, this.params.bayMargin)) ?? null;
+    const parked = this.game.girlUnits.find((u) => !u.quad.driver && inBay(bay, u.quad.position.x, u.quad.position.z, this.params.bayMargin));
+    const rusty = this.game.rustyUnit;
+    return parked ?? (rusty && !rusty.barnFind.ready ? rusty : null);
+  }
+
+  /** The jobs listed for a quad: the barn find's own (the tarp, then what it needs), or the usual ones. */
+  kindsFor(unit) {
+    return unit.barnFind ? unit.barnFind.kinds : JOB_KINDS;
+  }
+
+  canBegin(kind, unit) {
+    return unit.barnFind ? unit.barnFind.available(kind) : jobAvailable(kind, unit.engine);
   }
 
   toolboxHere() {
@@ -74,7 +85,7 @@ export class Bench {
   }
 
   begin(kind) {
-    if (!jobAvailable(kind, this.unit.engine)) return;
+    if (!this.canBegin(kind, this.unit)) return;
     this.job = new BenchJob(kind, this.params);
     this.render();
   }
@@ -95,11 +106,18 @@ export class Bench {
         const unit = this.unit;
         this.game.hud.toast(finishJob(job, { engine: unit.engine, faults: unit.quad.faults, fuel: unit.quad.fuel, tyres: unit.quad.tyres, sump: unit.quad.sump }, this.params));
         this.say(job.botched ? 'botched' : 'done');
+        if (unit.barnFind) this.foundJobDone(unit, job.kind);
         this.game.notebook.note(unit, { kind: 'job', job: job.kind, botched: job.botched }, { by: 'you' });
         this.job = null;
       }
     }
     if (events.length) this.render();
+  }
+
+  /** A job on the barn find is finished: the girls say something about the tarp coming off. */
+  foundJobDone(unit, kind) {
+    unit.barnFind.finish(kind);
+    if (kind === 'tarp') for (const c of this.game.companions) c.voice.onBench?.('tarp');
   }
 
   /** Keys while it's open: 1 to 4 pick a job, E does the steps, G steps away. */
@@ -113,7 +131,7 @@ export class Bench {
     }
     const job = this.job;
     if (!job) {
-      JOB_KINDS.forEach((kind, i) => {
+      this.kindsFor(this.unit).forEach((kind, i) => {
         if (input.wasPressed(`Digit${i + 1}`) || input.wasPressed(`Numpad${i + 1}`)) this.begin(kind);
       });
       return;
@@ -169,9 +187,13 @@ export class Bench {
     const job = this.job;
     if (!job) {
       this.holdEl.style.display = 'none';
-      this.bodyEl.innerHTML = JOB_KINDS.map((k, i) => {
-        const ok = jobAvailable(k, unit.engine);
-        return `<div class="bn-row${ok ? '' : ' off'}"><span class="key">${i + 1}</span>${JOBS[k].name}${ok ? '' : k === 'sump' ? ' (petrol four-strokes only)' : ' (two-strokes only)'}</div>`;
+      const find = unit.barnFind;
+      this.bodyEl.innerHTML = this.kindsFor(unit).map((k, i) => {
+        const ok = this.canBegin(k, unit);
+        let note = '';
+        if (find) note = find.isDone(k) ? ' ✓' : k === 'battery' && find.charging ? ` (charging: ${Math.round(find.chargeProgress * 100)}%)` : ok ? '' : ' (take the tarp off first)';
+        else if (!ok) note = k === 'sump' ? ' (petrol four-strokes only)' : ' (two-strokes only)';
+        return `<div class="bn-row${ok ? '' : ' off'}"><span class="key">${i + 1}</span>${JOBS[k].name}${note}</div>`;
       }).join('');
       this.keysEl.textContent = 'Press a number to start   ·   G step away';
       return;

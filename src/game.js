@@ -111,6 +111,8 @@ import { buildPod } from './vehicle/dashPod.js';
 import { pickWornGearbox } from './vehicle/manualDrivetrain.js';
 import { DashClock, CLOCK_START_RANGE, pickReading, pickRelatedReading, setDashClock } from './vehicle/dashState.js';
 import { Bench } from './workshop/bench.js';
+import { pickBarnFind, BarnFind, DEFAULT_BARN_FIND_PARAMS, BARN_FIND_RANGES, RUSTY_ID } from './vehicle/barnFind.js';
+import { weatherModel, buildTarp } from './vehicle/rustyLook.js';
 import { Notebook } from './workshop/notebook.js';
 import { Interaction } from './interaction/interaction.js';
 import { Wheel } from './interaction/wheel.js';
@@ -268,6 +270,10 @@ export class Game {
     // the girls know about: they leave it alone for now.
     this.girlUnits = this.units;
     this.tractorUnit = this.addTractor();
+    // Perhaps an old quad under a tarp at the back of the barn (vehicle/barnFind.js): a unit like the tractor, not one of the girls' quads.
+    this.barnFindParams = { ...DEFAULT_BARN_FIND_PARAMS };
+    registerTuning('Barn find', this.barnFindParams, BARN_FIND_RANGES);
+    this.rustyUnit = this.addRusty();
     // A sticky float on some of the quads (vehicle/carbDrip.js): a parked one with the tap on drips petrol and floods. Own random stream.
     this.carbDrip = new CarbDrip(this.units.filter((u) => !u.quad.fuel.params.noTap && u !== this.tractorUnit).map((u) => u.id), createRandom(this.seed ^ 0x5d1f));
     registerTuning('Dripping carb', this.carbDrip.p, DRIP_PARAM_RANGES);
@@ -508,6 +514,7 @@ export class Game {
         unit,
         target: quad.proxy,
         prompt: () => {
+          if (unit.barnFind && !unit.barnFind.tarpOff) return { text: 'The rusty quad: an old shape under a tarp   ·   take it off at the workbench' };
           if (this.tooFastToMount(quad) && this.herDriving(quad)) return `Ask ${this.herDriving(quad).name} to stop and let you on`;
           if (this.tooFastToMount(quad)) {
             return { text: `The ${unit.label} is going too fast to get on   ·   K ignition` };
@@ -549,6 +556,7 @@ export class Game {
           };
         },
         interact: () => {
+          if (unit.barnFind && !unit.barnFind.tarpOff) return;
           if (this.leads.held) return this.clampLeads(quad);
           if (this.leads.ends.includes(quad)) return this.leads.unclamp(this.camera);
           if (this.winch?.state === 'carried') {
@@ -1301,6 +1309,89 @@ export class Game {
     this.units = [...this.units, unit];
     unit.where = 'in the yard';
     return unit;
+  }
+
+  /** The barn find, if this game has one: a brown copy of a regular quad, under a tarp, with its jobs picked from the seed. Returns its unit or null. */
+  addRusty() {
+    const plan = pickBarnFind(createRandom(this.seed ^ 0xba2f), QUAD_SPECS, this.barnFindParams);
+    if (!plan) return null;
+    const P = this.barnFindParams;
+    const random = createRandom(this.seed ^ 0xba30);
+    const spec = {
+      ...plan.donor,
+      id: RUSTY_ID,
+      label: 'rusty quad',
+      name: 'Rusty quad',
+      bodyColor: 0x6b4426, // brown, with the rust coming through
+      hoursRange: P.hours,
+      odoRange: P.odoMiles,
+      wearRange: P.wear,
+      owner: undefined,
+      plateNumber: undefined,
+    };
+    const unit = new QuadUnit({ spec, spawn: this.world.layout.rusty, scene: this.scene, physics: this.physics, RAPIER: this.RAPIER, world: this.world, audioHub: this.audioHub });
+    unit.idleRpm = applyIdle(unit.engine.params, unit.quad.params, pickIdle(spec.idleRange ?? [unit.engine.params.idleRpmWarm, unit.engine.params.idleRpmWarm], random));
+    unit.variation = applyVariation(spec, unit.engine.params, unit.quad.fuel, random);
+    unit.topRpm = applyTopRpm(spec, unit.engine.params, random);
+    unit.quad.usage.hours = pickReading(P.hours, random);
+    unit.quad.usage.odoMiles = pickReading(P.odoMiles, random);
+    unit.engine.wear = P.wear[0] + (P.wear[1] - P.wear[0]) * random();
+    unit.quad.tyres = new TyreSet(dealTyres(random, 4, this.tyreParams), this.tyreParams);
+    unit.quad.tyres.useLayout(unit.quad.layout.wheels);
+    unit.quad.parkBrake = true;
+    unit.quad.seatFrost = 0;
+    unit.where = 'at the back of the barn';
+    // What's wrong with it. The engine can't catch until every job is done (startBlocked); the rest shows as it would on any quad.
+    unit.barnFind = new BarnFind(plan, P);
+    unit.engine.startBlocked = true;
+    unit.engine.battery = P.startBattery;
+    if (plan.jobs.includes('tyre')) {
+      unit.quad.faults.begin('puncture');
+      unit.quad.faults.levels.puncture = 0.9;
+      unit.quad.tyres.level(1);
+    }
+    if (plan.jobs.includes('fuel')) unit.engine.fouling = 0.35; // the varnish: it would only foul the plug
+    if (plan.jobs.includes('carb')) {
+      unit.quad.faults.begin('carb');
+      unit.quad.faults.levels.carb = 0.9;
+    }
+    // Dust and rust, and the tarp over the lot.
+    weatherModel(unit.quad.model);
+    unit.tarp = buildTarp();
+    unit.quad.bodyRoot.add(unit.tarp);
+    this.units = [...this.units, unit];
+    return unit;
+  }
+
+  /** The barn find's slow jobs: the charger going, the seized brake holding it, and the first start. */
+  updateBarnFind(dt) {
+    const unit = this.rustyUnit;
+    const find = unit?.barnFind;
+    if (!find) return;
+    const e = unit.engine;
+    unit.tarp.visible = !find.tarpOff;
+    if (find.brakeSeized) unit.quad.parkBrake = true;
+    if (find.charging && !find.charged) e.battery = Math.max(e.battery, find.batteryLevel);
+    if (find.update(dt) === 'charged') {
+      this.hud.toast('The charger light has gone green: the battery is full');
+      this.notebook.note(unit, { kind: 'job', job: 'battery' }, { by: 'you' });
+    }
+    e.startBlocked = find.startBlocked;
+    // Cranking it before it's ready: it tells you why.
+    const cranking = e.state === 'cranking';
+    if (cranking && !this.rustyWasCranking && find.startBlocked && find.tarpOff) this.hud.toast(find.blockedReason(), 3.2);
+    this.rustyWasCranking = cranking;
+    // The first start: smoke everywhere, and both girls cheer.
+    if (e.isRunning && find.ready && !find.started) {
+      find.started = true;
+      find.smokeLeft = find.params.smokeSeconds;
+      this.hud.toast('It runs! The first start in years');
+      for (const c of this.companions) c.voice.onBench('runs');
+    }
+    if (find.smokeLeft > 0) {
+      find.smokeLeft -= dt;
+      unit.smoke.burst = 1;
+    }
   }
 
   // Which quad -------------------------------------------------------------
@@ -3180,6 +3271,7 @@ export class Game {
     this.updateChain();
     this.workshop.update(dt);
     this.bench.update(dt);
+    this.updateBarnFind(dt);
     this.notebook.update(dt);
     this.updateLoft(dt);
     this.audioHub.setPouring(pouring, dt);

@@ -43,6 +43,7 @@ export class EngineModel {
     this.rpm = 0;
     this.temperature = clamp(this.params.initialTemperature, 0, 1);
     this.fouling = 0;
+    this.startBlocked = false; // won't catch however it's cranked (the barn find, until its jobs are done)
 
     // Last inputs, kept for readouts.
     this.choke = 0;
@@ -553,6 +554,7 @@ export class EngineModel {
         chance = p.catchChance * lerp(p.catchColdFactor, 1, this.temperature) * compressionCatchFactor(this.glow, this.temperature, p) * (1 - this.fouling) * clamp(speed, 0, 1) * (this.fuel > 0.02 ? 1 : 0);
       }
 
+      if (this.startBlocked) chance = 0;
       if (this.random() < chance) {
         this.state = EngineState.RUNNING;
         this.rpm = Math.max(this.rpm, p.catchRpm);

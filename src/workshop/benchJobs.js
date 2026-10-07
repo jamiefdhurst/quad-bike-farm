@@ -97,6 +97,40 @@ export const JOBS = {
       { id: 'close', text: 'Filler cap on', kind: 'press' },
     ],
   },
+  // The barn find's own jobs (vehicle/barnFind.js): only the rusty quad has them.
+  tarp: {
+    name: 'Take the tarp off',
+    steps: [
+      { id: 'ropes', text: 'Untie the old ropes', kind: 'press' },
+      { id: 'drag', text: 'Drag the tarp off, and mind the dust', kind: 'hold', need: 1.2 },
+      { id: 'fold', text: 'Fold it up out of the way', kind: 'press' },
+    ],
+  },
+  fuel: {
+    name: 'Drain the varnished fuel',
+    steps: [
+      { id: 'tray', text: 'Put a tray under the tank', kind: 'press' },
+      { id: 'drain', text: 'Open the drain: let the brown varnish run out', kind: 'hold', need: 1.5 },
+      { id: 'flush', text: 'Flush it with a splash of fresh petrol: not too much', kind: 'hold', need: 0.6, limit: 1.4 },
+      { id: 'shut', text: 'Close the drain and refit the pipe', kind: 'press' },
+    ],
+  },
+  brake: {
+    name: 'Free the seized brake',
+    steps: [
+      { id: 'soak', text: 'Soak the caliper in penetrating oil', kind: 'press' },
+      { id: 'wait', text: 'Leave it to soak a minute, then tap it with the hammer', kind: 'press' },
+      { id: 'work', text: 'Work the caliper free with the spanner: firm, not forced', kind: 'hold', need: 0.9, limit: 1.8 },
+      { id: 'lever', text: 'Squeeze the lever: it moves', kind: 'press' },
+    ],
+  },
+  battery: {
+    name: 'Charge the battery',
+    steps: [
+      { id: 'lift', text: 'Lift the seat and the flat battery out', kind: 'press' },
+      { id: 'clip', text: 'Clip on the charger and switch it on', kind: 'press' },
+    ],
+  },
 };
 
 export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing'];
@@ -269,6 +303,13 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     if (target.sump) target.sump.level = short ? Math.max(target.sump.level, P.sumpShort) : 1;
     return short ? 'Oil topped up, though it is a touch under the top mark' : 'Oil up to the top mark';
   }
+  if (job.kind === 'tarp') return 'The tarp is off, and the dust is everywhere';
+  if (job.kind === 'fuel') {
+    engine.fouling = botched ? P.plugLeftFouling : 0;
+    return botched ? 'Drained, though the tank still smells of varnish' : 'Tank drained and flushed: clean petrol only';
+  }
+  if (job.kind === 'brake') return botched ? 'The brake is free, but it is a bit stiff' : 'The brake is free and moves properly';
+  if (job.kind === 'battery') return 'The charger is on: it will be about five minutes';
   const how = job.outcome('pour');
   fuel.oil = how === 'short' ? P.oilShort : how === 'over' ? P.oilOver : P.oilGood;
   return how === 'short' ? 'Oil topped up, though it looks a bit light' : how === 'over' ? 'Oil topped up, with a good glug too much' : 'Oil topped up to 50:1';
@@ -278,6 +319,7 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
 export function jobAvailable(kind, engine) {
   if (kind === 'oil') return engine.params.strokes === 2;
   if (kind === 'packing') return engine.params.strokes === 2;
+  if (kind === 'tarp' || kind === 'fuel' || kind === 'brake' || kind === 'battery') return true;
   if (kind === 'sump') return engine.params.strokes !== 2 && !engine.params.runsOnDiesel;
   return true;
 }

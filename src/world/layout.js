@@ -45,6 +45,8 @@ export const LAYOUT = {
   jumperRail: { x: -61.2, z: 63.2, y: 1.7, length: 1.3, stand: { x: -60.0, z: 63.2 }, door: { in: [{ x: -56.5, z: 60 }, { x: -59.8, z: 60 }], out: { x: -56.5, z: 60 } } },
   // The bay painted on the barn floor in front of the bench: park a quad here to work on it at the bench (workshop/bench.js).
   bay: { x: -62.3, z: 58.5, halfX: 1.5, halfZ: 1.1, yaw: 0 },
+  // Where the barn find stands under its tarp (vehicle/barnFind.js), at the back of the barn: clear of the bay, the bales and the ladder.
+  rusty: { x: -66.7, z: 59.9, yaw: 0.15 },
   yard: { x: -54, z: 58, radius: 20 },
   paddock: { x: -66, z: 34, half: 7 },
   gate: { x: -30, side: 'south', width: 4.2 },

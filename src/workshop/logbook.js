@@ -63,6 +63,10 @@ const JOB_TEXT = {
   oil: 'two-stroke oil topped up',
   packing: 'silencer repacked',
   sump: 'engine oil topped up',
+  tarp: 'tarp off',
+  fuel: 'old fuel drained',
+  brake: 'seized brake freed',
+  battery: 'battery on the charger',
 };
 
 /** "Blue quad" is just "Blue" in a notebook; "Mini moto" stays as it is. */
