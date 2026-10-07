@@ -8,7 +8,7 @@ import { World } from './world/world.js';
 import { Player, PLAYER_CAPSULE } from './player/player.js';
 import { DEFAULT_PLAYER_PARAMS, PLAYER_PARAM_RANGES } from './player/playerParams.js';
 import { QuadUnit } from './vehicle/quadUnit.js';
-import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC } from './vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC } from './vehicle/quadSpecs.js';
 import { pickFleet } from './vehicle/fleet.js';
 import { applyIdle, applyTopRpm, applyVariation, pickIdle } from './vehicle/quadVariation.js';
 import { AudioHub } from './audio/engineAudio.js';
@@ -40,6 +40,10 @@ import { TractorWatch, TRACTOR_WATCH_PARAM_RANGES } from './npc/tractorWatch.js'
 import { HayRide, HAYRIDE_PARAM_RANGES } from './npc/hayRide.js';
 import { MudguardRide, MUDGUARD_PARAM_RANGES } from './npc/mudguardRide.js';
 import { TractorMount } from './vehicle/tractorMount.js';
+import { UtvMount } from './vehicle/utvMount.js';
+import { UtvBed, UTV_BED_PARAM_RANGES } from './vehicle/utvBed.js';
+import { poseUtvBed, poseUtvControls } from './vehicle/utvModel.js';
+import { UtvRide, UTV_RIDE_PARAM_RANGES } from './npc/utvRide.js';
 import { TractorGo, TRACTORGO_PARAM_RANGES } from './npc/tractorGo.js';
 import { LPlates, LPLATE_PARAM_RANGES, meanSkill } from './npc/lPlates.js';
 import { LPlateSet } from './vehicle/lPlateModel.js';
@@ -270,6 +274,8 @@ export class Game {
     // the girls know about: they leave it alone for now.
     this.girlUnits = this.units;
     this.tractorUnit = this.addTractor();
+    // The diesel UTV by the paddock (vehicle/quadSpecs.js UTV_SPEC): another unit that isn't one of the girls' quads, which they ride in but don't drive.
+    this.utvUnit = this.addUtv();
     // Perhaps an old quad under a tarp at the back of the barn (vehicle/barnFind.js): a unit like the tractor, not one of the girls' quads.
     this.barnFindParams = { ...DEFAULT_BARN_FIND_PARAMS };
     registerTuning('Barn find', this.barnFindParams, BARN_FIND_RANGES);
@@ -438,6 +444,13 @@ export class Game {
     // A girl on the tractor's wheel arch (npc/mudguardRide.js, vehicle/tractorMount.js); the tractor is built above.
     this.mudguard = new MudguardRide(undefined, createRandom(this.seed ^ 0x3d6a));
     this.tractorMount = new TractorMount(this.tractorUnit.quad, (x, z) => this.world.heightAt(x, z));
+    // The UTV's tipping bed, and the girls in its seats and bed (vehicle/utvBed.js, npc/utvRide.js, vehicle/utvMount.js).
+    this.utvBed = new UtvBed();
+    registerTuning('UTV bed', this.utvBed.p, UTV_BED_PARAM_RANGES);
+    this.utvRide = new UtvRide(undefined, createRandom(this.seed ^ 0x07c9));
+    registerTuning('UTV riders', this.utvRide.p, UTV_RIDE_PARAM_RANGES);
+    this.utvMount = new UtvMount(this.utvUnit.quad, (x, z) => this.world.heightAt(x, z));
+    this.utvPetrolSaid = false; // the girls have remarked on it running badly on petrol
     // Having a go on the tractor: Jess takes it, Amy won't until her day (npc/tractorGo.js). The girls' own numbers are shared objects.
     this.tractorGo = new TractorGo(undefined, createRandom(this.seed ^ 0x70c0));
     this.tractorDrive = { ...DEFAULT_TRACTOR_GO_DRIVE };
@@ -537,7 +550,10 @@ export class Game {
             const muddy = Math.round(Math.max(unit.mud.state.body, unit.mud.state.wheels) * 100);
             return { text: muddy > 0 ? `Hold E to wash the ${unit.label} (${muddy}% muddy)   ·   G put the hose back` : `The ${unit.label} is clean   ·   G put the hose back` };
           }
-          if (this.toolbox.held) return unit.spec.tractor ? { text: 'The toolbox is for the quads: the tractor is too much for it   ·   G put it down' } : this.workshop.prompt(unit);
+          if (this.toolbox.held) {
+            if (unit.spec.utv) return this.utvToolboxPrompt(unit);
+            return unit.spec.tractor ? { text: 'The toolbox is for the quads: the tractor is too much for it   ·   G put it down' } : this.workshop.prompt(unit);
+          }
           if (this.can.held) {
             const pct = Math.round(quad.fuel.level * 100);
             if (quad.fuel.space < 0.01) return { text: `The ${unit.label} is full   ·   G put the can down` };
@@ -552,7 +568,9 @@ export class Game {
             action: `Ride the ${unit.label}`,
             keys: quad.tractor
               ? [['K', 'Key'], ['R', 'Start'], ['O', 'Stop knob'], ...(this.chain.state === 'stowed' && !this.player.isRiding ? [['X', 'Tow chain']] : [])]
-              : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.manual ? [['Shift 1-4', 'Clutch, gears']] : []), ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(quad.sump ? [['Y', 'Dipstick']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : []), ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
+              : unit.spec.utv
+                ? [['K', 'Key'], ['R', 'Start'], ['B', 'Reverse lever'], ['T', 'Tip the bed']]
+                : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.manual ? [['Shift 1-4', 'Clutch, gears']] : []), ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(quad.sump ? [['Y', 'Dipstick']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : []), ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
           };
         },
         interact: () => {
@@ -576,7 +594,10 @@ export class Game {
             return;
           }
           if (this.can.held || this.hose.held) return; // E is for pouring or spraying while you're holding those
-          if (this.toolbox.held) return unit.spec.tractor ? undefined : this.workshop.open(unit);
+          if (this.toolbox.held) {
+            if (unit.spec.utv) return this.utvDrain(unit);
+            return unit.spec.tractor ? undefined : this.workshop.open(unit);
+          }
           if (this.tooFastToMount(quad) && this.herDriving(quad)) {
             // She pulls up and moves onto the back for you.
             const c = this.herDriving(quad);
@@ -1004,8 +1025,9 @@ export class Game {
       if (!c.hayLanded || c.hayLandedSaid) c.hayLandedSaid &&= c.hayLanded;
       else {
         c.hayLandedSaid = true;
-        say(c, 'hayFall');
-        this.hayLater.push({ left: 1.2, girl: c.others()[0], key: 'hayFallOther' });
+        const fromUtv = c.trailer === this.utvMount;
+        say(c, fromUtv ? 'utvTipOut' : 'hayFall');
+        this.hayLater.push({ left: 1.2, girl: c.others()[0], key: fromUtv ? 'utvTipLaugh' : 'hayFallOther' });
       }
     }
     for (const l of this.hayLater) l.left -= dt;
@@ -1161,6 +1183,139 @@ export class Game {
         c.abortBoarding();
       }
     }
+  }
+
+  /** Builds the UTV, with its own seeded idle, roughness, fuel and hours, and adds it to `units` (not `girlUnits`). */
+  addUtv() {
+    const random = createRandom(this.seed ^ 0x07c5);
+    const unit = new QuadUnit({
+      spec: UTV_SPEC,
+      spawn: this.world.layout.utv,
+      scene: this.scene,
+      physics: this.physics,
+      RAPIER: this.RAPIER,
+      world: this.world,
+      audioHub: this.audioHub,
+    });
+    unit.idleRpm = applyIdle(unit.engine.params, unit.quad.params, pickIdle(UTV_SPEC.idleRange, random));
+    unit.variation = applyVariation(UTV_SPEC, unit.engine.params, unit.quad.fuel, random);
+    unit.topRpm = applyTopRpm(UTV_SPEC, unit.engine.params, createRandom(this.seed ^ 0x07c6));
+    unit.quad.usage.hours = pickReading(UTV_SPEC.hoursRange, random);
+    const [hoursLo, hoursHi] = UTV_SPEC.hoursRange;
+    unit.quad.usage.odoMiles = pickRelatedReading(UTV_SPEC.odoRange, (unit.quad.usage.hours - hoursLo) / (hoursHi - hoursLo), random);
+    unit.quad.parkBrake = true;
+    this.units = [...this.units, unit];
+    unit.where = 'by the paddock';
+    return unit;
+  }
+
+  /** The UTV's tank has petrol in it, or its engine is soaked with it: worth pumping out. */
+  utvTainted(unit) {
+    const q = unit.quad;
+    return q.engine.dieselSoak > 0.02 || (q.fuel.litres > 0.05 && q.fuel.diesel < 0.98);
+  }
+
+  /** The toolbox held up to the UTV: it has nothing to tinker with, but it can pump petrol out of the tank. */
+  utvToolboxPrompt(unit) {
+    if (this.utvTainted(unit)) return { text: `Pump the petrol out of the ${unit.label}'s tank   ·   E pump it out   ·   G put it down` };
+    return { text: `The toolbox is for the quads: nothing in it fits a diesel ${unit.label}   ·   G put it down` };
+  }
+
+  /** E with the toolbox held: the tank and carb emptied, and the soak cleared. */
+  utvDrain(unit) {
+    if (!this.utvTainted(unit)) return;
+    const lost = unit.quad.drainFuel();
+    this.utvPetrolSaid = false;
+    this.hud.toast(`Tank drained: ${lost.toFixed(1)} L gone. It needs red diesel`);
+  }
+
+  /** The UTV: its tip lever and tailgate, the girls in its seats and bed, and what they say (npc/utvRide.js, vehicle/utvBed.js). */
+  updateUtv(dt, ridden, input) {
+    const unit = this.utvUnit;
+    const q = unit.quad;
+    const mount = this.utvMount;
+    const bed = this.utvBed;
+    mount.update(dt);
+    const riding = ridden === unit;
+    const girlOf = (id) => this.companions.find((c) => c.character.id === id);
+    const seatOf = (c) => (c.onHayRide && c.trailer === mount ? c.traSlot?.name ?? null : null);
+    const say = (c, key) => c?.voice.say(key, { urgent: true });
+
+    // T pulls the tip lever, from the seat or standing by the bed.
+    const near = riding || (!this.player.isRiding && this.player.position.distanceTo(q.position) < 3.2);
+    if (near && input.wasPressed('KeyT') && !q.isTipped && !this.handsFull) {
+      const note = bed.toggle(q.speed);
+      if (note) this.hud.toast(note, 2);
+    }
+    bed.update(dt, { speed: q.speed, gateDown: mount.bedBusy });
+    poseUtvBed(q.model, bed);
+    poseUtvControls(q.model, { reverse: q.reverse });
+
+    const girls = this.companions.map((c) => ({
+      id: c.character.id,
+      free: c.fsm.is('idle') && !c.hayFell && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob,
+      seat: seatOf(c),
+      dist: c.root.position.distanceTo(q.position),
+    }));
+    const ctx = { active: riding && q.engine.isRunning, riding, speed: q.speed, slide: bed.sliding, girls };
+    for (const ev of this.utvRide.update(dt, ctx)) {
+      const c = girlOf(ev.girl);
+      if (ev.type === 'board') {
+        const slot = mount.slots[ev.seat];
+        if (!slot || slot.girl || (ev.seat === 'bed' && bed.tip > 0.02) || !c.boardTrailer(mount, slot)) continue;
+        if (ev.seat === 'bed') say(c, 'utvBedGo');
+        else if (ev.squabble?.winner === ev.girl) {
+          say(c, 'utvMiddleWin');
+          this.hayLater.push({ left: 2.6, girl: girlOf(ev.squabble.loser), key: 'utvMiddleLose' });
+        } else if (!ev.squabble) say(c, 'utvBoard');
+      } else if (ev.type === 'bedTell') say(c, 'utvBedTell');
+      else if (ev.type === 'bedShout') say(c, 'utvBedShout');
+      else if (ev.type === 'slide') {
+        if (c.slideOffTrailer(1, new THREE.Vector3(0, 0, -1))) this.utvRide.clear(ev.girl);
+      } else if (ev.type === 'leave') {
+        if (ev.bored) this.utvRide.dismiss(ev.girl);
+        c.leaveTrailer();
+        c.abortBoarding();
+      }
+    }
+    // Petrol in the diesel: it runs badly, and whoever is near says so, once until it's been put right.
+    const soaked = q.engine.dieselSoak > 0.2 && q.engine.isRunning;
+    if (!soaked && q.engine.dieselSoak < 0.05) this.utvPetrolSaid = false;
+    else if (soaked && !this.utvPetrolSaid) {
+      const speaker = this.companions.filter((c) => c.root.position.distanceTo(q.position) < 20).sort((a, b) => a.root.position.distanceTo(q.position) - b.root.position.distanceTo(q.position))[0];
+      if (speaker) {
+        this.utvPetrolSaid = true;
+        say(speaker, 'utvPetrol');
+      }
+    }
+  }
+
+  /** The wheel's "UTV" slice for a girl: get in (she picks her own seat), ride in the bed, or get out again. */
+  utvWheelOption(c) {
+    const mount = this.utvMount;
+    const children = [];
+    if (c.fsm.is('onTrailer') && c.trailer === mount) children.push({ label: 'Get out of the UTV', run: () => (this.utvRide.dismiss(c.character.id), c.leaveTrailer()) });
+    else if (c.fsm.is('idle') && this.utvFree()) {
+      if (mount.freeSlot(c.root.position)) children.push({ label: 'Get in the UTV', run: () => this.askIntoUtv(c, false) });
+      if (!mount.bedBusy && this.utvBed.tip < 0.02) children.push({ label: 'Ride in the bed', run: () => this.askIntoUtv(c, true) });
+    }
+    return { label: 'UTV', color: this.utvUnit.spec.bodyColor, children };
+  }
+
+  /** Nobody is driving the UTV and it is standing still. */
+  utvFree() {
+    const q = this.utvUnit.quad;
+    return !q.rider && !q.driver && q.speed < this.utvRide.p.stopSpeed;
+  }
+
+  /** You asked her into the UTV: she goes at once and stays until you ask her out. Amy won't ride in the bed. */
+  askIntoUtv(c, inBed) {
+    const mount = this.utvMount;
+    if (inBed && c.character.id === 'amy') return void c.voice.say('utvBedRefuse', { force: true });
+    const slot = inBed ? mount.slots.bed : mount.freeSlot(c.root.position);
+    if (!slot || slot.girl || !c.boardTrailer(mount, slot)) return this.hud.toast('She can\'t just now');
+    this.utvRide.ask(c.character.id);
+    c.voice.say(inBed ? 'utvBedGo' : 'utvBoard', { force: true });
   }
 
   /** One manual vehicle (a quad or the tractor) has a worn gearbox this game: a gear that jumps out under load on a climb. Seeded. */
@@ -1583,6 +1738,7 @@ export class Game {
 
   /** Pouring this can into that quad is a mistake: 'straight' petrol in a two-stroke, 'premix' in a four-stroke. */
   mixWrongFor(quad, can) {
+    if (quad.engine.params.petrolFussy) return can.diesel < 0.95 ? 'petrol' : null; // the UTV is a diesel too, but fussy about it
     if (quad.engine.params.runsOnDiesel) return null; // the tractor takes red diesel; what else goes in it isn't modelled
     if (can.diesel > 0.05) return 'diesel';
     if (quad.engine.params.strokes === 2) return can.oil < 0.002 ? 'straight' : null;
@@ -2826,6 +2982,12 @@ export class Game {
       this.player.moveEnabled = false;
       return;
     }
+    if (c.fsm.is('onTrailer') && c.trailer === this.utvMount) {
+      this.openWheel(`Ask ${c.name} to`, [this.utvWheelOption(c)], c);
+      this.player.lookEnabled = false;
+      this.player.moveEnabled = false;
+      return;
+    }
     const actions = c.getActions(this.girlUnits.map((u) => u.quad));
     if (!actions.length) {
       this.hud.toast('She\'s busy');
@@ -2838,6 +3000,8 @@ export class Game {
     const options = actions.filter((a) => !a.quad).map((a) => ({ label: a.label, run: answer(a) }));
     const tractor = this.tractorWheelOption(c);
     if (tractor.children.length) options.push(tractor);
+    const utv = this.utvWheelOption(c);
+    if (utv.children.length) options.push(utv);
     for (const unit of [...new Set(actions.filter((a) => a.quad).map((a) => a.quad.unit))]) {
       const own = actions.filter((a) => a.quad === unit.quad);
       options.push({
@@ -3214,6 +3378,7 @@ export class Game {
     this.updateTractorRunaway(dt, ridden);
     this.updateHayRide(dt, ridden);
     this.updateMudguard(dt, ridden);
+    this.updateUtv(dt, ridden, input);
     this.updateTractorGo(dt, ridden);
     this.updateLPlates(dt);
     this.updateQuadTalk(dt, ridden);

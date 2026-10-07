@@ -262,7 +262,7 @@ export class CompanionVoice {
     // Pouring petrol right by her.
     if (view.pouring && view.wrongMix && distance < 8 && !this.warnedMix) {
       this.warnedMix = true;
-      this.say(view.wrongMix === 'straight' ? 'oilStraight' : view.wrongMix === 'diesel' ? 'dieselWarn' : 'oilPremixFour', { urgent: true });
+      this.say(view.wrongMix === 'straight' ? 'oilStraight' : view.wrongMix === 'diesel' ? 'dieselWarn' : view.wrongMix === 'petrol' ? 'utvPetrolWarn' : 'oilPremixFour', { urgent: true });
     }
     if (!view.pouring) this.warnedMix = false;
     if (view.pouring && distance < 6 && !this.pouredNear) {

@@ -18,6 +18,7 @@ import {
 //   quadracer: orange. A RUN / OFF kill switch on the left bar and its lanyard.
 //   kidsKey:   kids' quad. A key switch under the bar clamp.
 //   tractor:   the tractor. Three round dials in chrome bezels (water temperature, a rev counter with an hour meter and the PTO speed marked, fuel), GLOW, CHARGE and OIL lamps and the key.
+//   utv:       the UTV. A big speedo with an hour meter, fuel and water dials, GLOW, CHARGE and OIL lamps, R / N / D lamps and the key.
 //
 // buildDash(style) returns { group, update(state), mount } where state is { rpm, maxRpm, redline, speedMph, fuelLevel, reserveLevel,
 // tap, temperature, overheat, coldBelow, ignition (has power), keyOn, tripMiles, odoMiles, hours, reverse, neutral, clock, seconds }.
@@ -478,8 +479,94 @@ function buildTractor() {
   };
 }
 
+// The UTV -------------------------------------------------------------------------------
+
+function buildUtv() {
+  const group = new THREE.Group();
+  group.name = 'dash';
+  const O = { ox: 180, oy: 60 };
+  // A black moulded binnacle: a big speedo in a chrome-edged window with the hour meter in it, small fuel and water dials either
+  // side, and a row of lamps (glow, charge, oil and the drive direction) with the key on the end.
+  housing(group, { x: 70, y: 14, w: 220, h: 92, r: 14, ...O, material: plastic });
+  const face = mmPanel({ x: 70, y: 14, w: 220, h: 92, ...O });
+  group.add(face.mesh);
+  const big = { cx: 180, cy: 52, r: 33 };
+  const left = { cx: 110, cy: 44, r: 18 };
+  const right = { cx: 250, cy: 44, r: 18 };
+  for (const d of [big, left, right]) chromeRing(group, { ...d, r: d.r + 1, ...O });
+  const gate = changeGate();
+  let shownMph = 0;
+  let shownFuel = 0;
+  let shownTemp = 0;
+
+  function small(ctx, d, frac, label, lo, hi, redEnd = false) {
+    ctx.fillStyle = '#0a0a0a';
+    ctx.beginPath();
+    ctx.arc(d.cx, d.cy, d.r, 0, Math.PI * 2);
+    ctx.fill();
+    ticks(ctx, d.cx, d.cy, d.r - 5, d.r - 1.5, 150, 30, 6, '#ece6d2', 0.8);
+    if (redEnd) arc(ctx, d.cx, d.cy, d.r - 2.5, 50, 30, '#d8402e', 2.2);
+    text(ctx, lo, d.cx - d.r * 0.6, d.cy + d.r * 0.5, 4.4, '#ece6d2', { align: 'center' });
+    text(ctx, hi, d.cx + d.r * 0.6, d.cy + d.r * 0.5, 4.4, redEnd ? '#ff6a5a' : '#ece6d2', { align: 'center' });
+    text(ctx, label, d.cx, d.cy + d.r * 0.58, 3.6, '#bbb', { align: 'center' });
+    needle(ctx, d.cx, d.cy, d.r - 3, 150 - 120 * frac, '#f0f0e0', 1);
+  }
+
+  function draw(ctx, s, L) {
+    ctx.fillStyle = '#0a0a0a';
+    ctx.beginPath();
+    ctx.arc(big.cx, big.cy, big.r, 0, Math.PI * 2);
+    ctx.fill();
+    // 0 to 30 mph round 280 degrees: a green work band up to 15 and white beyond, as on a vehicle that mostly crawls about a farm.
+    ticks(ctx, big.cx, big.cy, big.r - 6, big.r - 1.5, 230, -50, 30, '#ece6d2', 0.5);
+    ticks(ctx, big.cx, big.cy, big.r - 9, big.r - 1.5, 230, -50, 6, '#ece6d2', 1);
+    labels(ctx, big.cx, big.cy, big.r - 14.5, 230, -50, ['0', '5', '10', '15', '20', '25', '30'], '#ece6d2', 4.6);
+    text(ctx, 'MPH', big.cx, big.cy - 9, 3.6, '#ccc', { align: 'center' });
+    const h = counterDigits(s.hours, 4);
+    drum(ctx, big.cx - 11.5, big.cy + 12, h.whole, h.tenth, 6);
+    text(ctx, 'HOURS', big.cx, big.cy + 25, 3, '#aaa', { align: 'center' });
+    needle(ctx, big.cx, big.cy, big.r - 2, 230 - (280 * Math.min(30, L.mph)) / 30, '#ff7a2a', 1.3);
+    small(ctx, left, L.fuel, 'FUEL', 'E', 'F');
+    small(ctx, right, L.temp, 'WATER', 'C', 'H', true);
+    // The lamps along the bottom: the plugs, the charge, the oil, then which way it will go.
+    lamp(ctx, 96, 94, LAMP.amber, 'GLOW', L.glow, { r: 3.2 });
+    lamp(ctx, 118, 94, LAMP.red, 'CHARGE', L.charge, { r: 3.2 });
+    lamp(ctx, 140, 94, LAMP.red, 'OIL', L.oil, { r: 3.2 });
+    lamp(ctx, 196, 94, LAMP.amber, 'R', L.lamps.r, { r: 3.2, shape: 'rect' });
+    lamp(ctx, 216, 94, LAMP.green, 'N', L.lamps.n, { r: 3.2, shape: 'rect' });
+    lamp(ctx, 236, 94, LAMP.green, 'D', L.drive, { r: 3.2, shape: 'rect' });
+    keySwitch(ctx, 268, 92, s.keyOn);
+  }
+
+  return {
+    group,
+    mount: null,
+    update(s) {
+      shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
+      shownFuel += ((s.ignition ? s.fuelLevel : 0) - shownFuel) * 0.2;
+      shownTemp += ((s.ignition ? tempGaugeFraction(s.temperature, true, s.overheat) : 0) - shownTemp) * 0.1;
+      const running = s.rpm > 300;
+      const lamps = lampStates(s);
+      const L = {
+        mph: shownMph,
+        fuel: shownFuel,
+        temp: shownTemp,
+        lamps,
+        glow: !!s.ignition && !!s.glow,
+        charge: !!s.ignition && !running,
+        oil: !!s.ignition && !running,
+        drive: !!s.ignition && !lamps.r && !lamps.n,
+      };
+      const hh = counterDigits(s.hours, 4);
+      if (gate([s.ignition, s.keyOn, L.glow, L.charge, L.drive, lamps.r, lamps.n, Math.round(shownMph * 4), Math.round(shownFuel * 20), Math.round(shownTemp * 20), hh.whole + hh.tenth].join('|'))) {
+        face.redraw((ctx) => draw(ctx, s, L));
+      }
+    },
+  };
+}
+
 /** Dash styles buildDash knows: every quad spec must name one of these. */
-export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey', 'tractor'];
+export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey', 'tractor', 'utv'];
 
 /** Where each dash sits on the bars (metres, in the bars' frame) and how far it tilts back. A nacelle quad carries its own on its top. */
 export const DASH_PLACE = {
@@ -491,6 +578,7 @@ export const DASH_PLACE = {
   quadracer: { pos: [0.225, 0.085, -0.035], tilt: 0.9 },
   kidsKey: { pos: [0, 0.075, 0.0], tilt: 0.9 },
   tractor: { pos: [0, 0, 0], tilt: 1.05 }, // the tractor's model places it on its scuttle itself
+  utv: { pos: [0, 0, 0], tilt: 0.9 }, // so does the UTV's
 };
 
 const BUILDERS = {
@@ -502,6 +590,7 @@ const BUILDERS = {
   quadracer: buildQuadracer,
   kidsKey: buildKidsKey,
   tractor: buildTractor,
+  utv: buildUtv,
 };
 
 export function buildDash(style = 'foreman') {

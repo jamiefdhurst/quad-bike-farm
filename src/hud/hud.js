@@ -22,6 +22,10 @@ const HELP_HTML = `
   <div><kbd>Q</kbd> <kbd>Z</kbd> hand throttle (it has no fuel tap), <kbd>W</kbd> foot throttle, <kbd>S</kbd> brake, <kbd>O</kbd> stop knob (the key won't stop it)</div>
   <div>Leave it running in first gear with the hand throttle open and get off, and it creeps off on its own: the more throttle, the faster (a trickle to a brisk walk)</div>
   <div><kbd>J</kbd> hook the bale trailer on when the drawbar is at its ring, or take it off when you're stopped. The girls climb on once you're stopped</div>
+  <h3>The UTV</h3>
+  <div><kbd>K</kbd> key (wait for the GLOW lamp to go out), hold <kbd>R</kbd> to crank; the key stops it again. It is a diesel: red diesel only</div>
+  <div><kbd>W</kbd> throttle, <kbd>S</kbd> brake, <kbd>A</kbd><kbd>D</kbd> steer. Stopped, <kbd>B</kbd> flips the dash lever to reverse, then <kbd>S</kbd> backs up</div>
+  <div><kbd>T</kbd> tip the bed (stopped, from the seat or beside it), again to lower it. Stop with it running and the girls may climb in. Ask them from the wheel too</div>
   <h3>Fuel and tools</h3>
   <div><kbd>E</kbd> pick up a jerry can, hold <kbd>E</kbd> at a quad to pour or at the tank to refill, <kbd>G</kbd> put it down</div>
   <div>Hose: <kbd>E</kbd> pick up, hold <kbd>E</kbd> to wash. Toolbox: <kbd>E</kbd> pick up, <kbd>E</kbd> on a quad to tinker</div>

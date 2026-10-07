@@ -885,3 +885,140 @@ export const TRACTOR_SPEC = {
     tint: '#c9ccd0',
   },
 };
+
+// The UTV: always on the farm, parked in the yard (like the tractor it isn't in the fleet and isn't one of the girls' quads). A
+// Gator-style side-by-side on red diesel: a three-cylinder with glow plugs and a key that stops it, an automatic (the quads' CVT
+// drivetrain, with a forward and reverse lever on the dash), a steering wheel on the right, a bench seat for three and a tipping bed.
+// Built as a QuadUnit like the rest (QuadUnit reads `utv`). Unlike the tractor it is fussy about its fuel: petrol in it soaks the
+// engine the way diesel soaks the quads' (engine/diesel.js, `petrolFussy`). The girls ride in it (npc/utvRide.js) but don't drive it yet.
+// Its sound borrows the tractor's recordings, played faster.
+export const UTV_SPEC = {
+  id: 'utv',
+  label: 'UTV',
+  name: 'UTV',
+  utv: true,
+  steadyLights: true, // a battery runs its lamps
+  wheelShake: 0.9,
+  bodyColor: 0x367c2b, // a deep farm green
+  dashStyle: 'utv',
+  reverseStyle: 'dashLever', // the forward and reverse lever on the dash wants it stopped (controls.js)
+  hoursRange: [900, 2600], // engine hours showing when the game starts
+  odoRange: [4000, 11000], // odometer miles, kept for the dash's hour meter's company (it has no odometer drum)
+  safeIdle: 700,
+  idleRange: [830, 880],
+  roughnessRange: [0.06, 0.1], // a small diesel ticks over steadily, with a touch of rattle
+  fuelRange: [10, 24], // 30 litre tank, 3 litre reserve
+  topRpmRange: [3150, 3250], // full-throttle revs this game, about 2% either side of the engine's own
+  fuel: { tankCapacity: 30, reserveLitres: 3, startDiesel: 1, noTap: true, startTap: 'on', burnPerRev: 0.00012, idleBurnFraction: 0.3, bowlCapacity: 0.05, bowlFillRate: 0.06 },
+  engine: {
+    compressionIgnition: true, // glow plugs, no choke (src/engine/compression.js)
+    runsOnDiesel: true,
+    keyStops: true, // the key stops it, there is no knob
+    petrolFussy: true, // petrol in the tank soaks it the way diesel soaks a petrol quad
+    idleRpmWarm: 850,
+    maxRpm: 3200,
+    redlineRpm: 3100,
+    stallRpm: 450,
+    crankRpm: 260,
+    catchRpm: 1300,
+    rpmRiseRate: 4.2,
+    rpmFallRate: 3.4,
+    warmUpSeconds: 200,
+    coldEnrichmentNeed: 0, // no mixture to enrich
+    chokeIdleRpm: 0,
+    catchChance: 0.85,
+    catchColdFactor: 0.9,
+    coldRoughness: 0.14,
+    coldPowerLoss: 0.35,
+    lugDepth: 0.3, // a lot of low-down torque: it hardly sags under load
+    popProne: 0,
+    roughHunt: 0,
+    erraticHunt: 0,
+    huntRpm: 0,
+    stumbleRate: 0,
+    misfireBase: 0,
+    misfireRoughness: 0.02,
+    cycleJitter: 0.03,
+    pulseStrengthJitter: 0.1,
+    wearPerMinute: 0.0007,
+  },
+  vehicle: {
+    mass: 760, // with its driver
+    centreOfMassY: -0.1,
+    rollInertia: 170,
+    pitchInertia: 380,
+    yawInertia: 420,
+    wheelRadius: 0.34,
+    suspensionRestLength: 0.2,
+    maxSuspensionTravel: 0.22,
+    suspensionStiffness: 26,
+    suspensionCompression: 2.8,
+    suspensionRelaxation: 2.4,
+    maxSuspensionForce: 60000,
+    mudFrictionSlip: 0.85, // chunky farm tyres
+    fourWheelDrive: 1,
+    maxDriveForce: 4300,
+    maxSpeed: 11.2, // 25 mph, what they are limited to
+    maxReverseSpeed: 3.4,
+    maxSteerDeg: 32,
+    steerRate: 3,
+    steerSpeedReduction: 0.05,
+    clutchEngageRpm: 1150, // an idling diesel creeps away on the lever
+    clutchFullRpm: 2100,
+    couplingRpm: 1700,
+    idleTorque: 0.2,
+    drivePowerFloor: 0.5,
+    engineBrakeForce: 700,
+    maxBrake: 32,
+    parkingBrake: 14,
+    rollingResistance: 0.8,
+    cvtShiftSpeed: 2.5,
+    launchLoad: 0.6,
+    mudLoad: 0.1,
+    revHoldMin: 2, // getting off never leaves it revving
+  },
+  vibration: {
+    firingsPerCycle: 3, // a three-cylinder: a quick, even shudder
+    idleRpm: 700,
+    smoothRpmRange: 1200,
+    pulseGain: 1.4,
+    heaveFreq: 7,
+    pitchFreq: 6,
+    rollFreq: 6.5,
+    heaveGain: 0.16,
+    pitchGain: 0.22,
+    heaveDamping: 0.3,
+    barsFreq: 16,
+    barsGain: 0.09,
+  },
+  audio: {
+    recBank: 'engine-bank-tractor',
+    recIdleSource: 'quad',
+    pulseRefRpm: 850,
+    pulseRevLoudness: 0.25,
+    recVolume: 0.5,
+    recToneClosed: 4200,
+    pipeLength: 1.2,
+    densityRefRpm: 1200,
+  },
+  smoke: {
+    opacity: 1.8,
+    maxPerSecond: 90,
+    lifeMax: 6,
+    warmDensity: 0.25, // a faint grey at idle
+    coldDensity: 0.7,
+    throttleBurst: 2.5,
+    throttleDensity: 1.0, // and black when it's working hard
+    throttleBlack: 0.7,
+    burstBlack: 0.9,
+    catchBlack: 1,
+    coldGray: 0.3,
+    warmGray: 0.2,
+    startSize: 0.12,
+    endSize: 2.8,
+    exitSpeed: 3,
+    throttleExitSpeed: 4.5,
+    buoyancy: 0.9,
+    tint: '#c9ccd0',
+  },
+};

@@ -729,7 +729,7 @@ export class Quad {
     this.body.rotation.set((v ? v.body.pitch : 0) + lift, 0, (v ? v.body.roll : 0) + this.leanShown);
     this.handlebars.position.copy(this.handlebarsBase);
     if (v) this.handlebars.position.add(new THREE.Vector3(v.bars.x, v.bars.y, 0));
-    this.handlebars.rotation.set(0, this.steer * 0.85 + (v ? v.bars.yaw : 0), v ? v.bars.roll : 0);
+    this.handlebars.rotation.set(0, this.steer * (this.model.userData.steerGain ?? 0.85) + (v ? v.bars.yaw : 0), v ? v.bars.roll : 0);
 
     this.updateDash(dt);
     this.updateQuirks(dt, vibration);

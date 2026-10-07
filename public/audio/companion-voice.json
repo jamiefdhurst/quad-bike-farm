@@ -7370,968 +7370,1100 @@
    "start": 4305.27,
    "dur": 2.73
   },
-  "Jess, would you like a race round the track? Loser makes the tea.": {
+  "Room for one more? Right, I am in.": {
    "start": 4308.08,
+   "dur": 2.39
+  },
+  "Go on then, I will come with you.": {
+   "start": 4310.55,
+   "dur": 1.5
+  },
+  "Lovely. Proper seats for once.": {
+   "start": 4312.13,
+   "dur": 2.13
+  },
+  "I am sitting in the middle. I sat there first.": {
+   "start": 4314.34,
+   "dur": 2.49
+  },
+  "Middle seat for me. It is the warmest.": {
+   "start": 4316.91,
+   "dur": 2.3
+  },
+  "You do not mind if I sit by you, do you? Good.": {
+   "start": 4319.29,
+   "dur": 2.53
+  },
+  "Fine. I will have the window. It has a better view anyway.": {
+   "start": 4321.9,
+   "dur": 3.12
+  },
+  "Jess always does this. I am not arguing about it again.": {
+   "start": 4325.1,
+   "dur": 3.18
+  },
+  "All right, all right. Window it is.": {
+   "start": 4328.36,
+   "dur": 2.48
+  },
+  "I am going in the back. Just this once.": {
+   "start": 4330.92,
+   "dur": 2.11
+  },
+  "Only for a minute. Do not tell anyone.": {
+   "start": 4333.11,
+   "dur": 2.28
+  },
+  "Move up. No, I am fine in the bed.": {
+   "start": 4335.47,
+   "dur": 2.6
+  },
+  "Get out of the back! You are not allowed in there, you know that.": {
+   "start": 4338.15,
+   "dur": 2.93
+  },
+  "That bed is for tools and bales, not for people. Honestly.": {
+   "start": 4341.16,
+   "dur": 3.6
+  },
+  "You will fall off the back and then I will have to explain it. Get in a seat.": {
+   "start": 4344.84,
+   "dur": 4.23
+  },
+  "I should not be in here! This is awful!": {
+   "start": 4349.15,
+   "dur": 2.08
+  },
+  "Slow down! My teeth are rattling!": {
+   "start": 4351.31,
+   "dur": 2.32
+  },
+  "It is very bumpy back here! Mind the bumps!": {
+   "start": 4353.71,
+   "dur": 2.48
+  },
+  "You tipped the bed with me on it! I am sitting in the dirt!": {
+   "start": 4356.27,
+   "dur": 2.93
+  },
+  "I could have been hurt! Ow!": {
+   "start": 4359.28,
+   "dur": 1.94
+  },
+  "You see? You see? That is why it is not allowed.": {
+   "start": 4361.3,
+   "dur": 3.32
+  },
+  "Oh dear. Are you all right? I did tell you.": {
+   "start": 4364.7,
+   "dur": 2.57
+  },
+  "That was entirely preventable.": {
+   "start": 4367.35,
+   "dur": 1.61
+  },
+  "I will not laugh. I will not laugh. Sorry.": {
+   "start": 4369.04,
+   "dur": 2.65
+  },
+  "No. That is not a seat, it is a bed. I am riding properly.": {
+   "start": 4371.77,
+   "dur": 3.89
+  },
+  "I will not ride in the back. It is against the rules.": {
+   "start": 4375.74,
+   "dur": 2.83
+  },
+  "Not a chance. Ask Jess.": {
+   "start": 4378.65,
+   "dur": 1.83
+  },
+  "Stop! That is petrol. The UTV is a diesel!": {
+   "start": 4380.56,
+   "dur": 3.22
+  },
+  "No, no, no. Red diesel only for that one.": {
+   "start": 4383.86,
+   "dur": 3.09
+  },
+  "That is the wrong can. Petrol will ruin it.": {
+   "start": 4387.03,
+   "dur": 2.84
+  },
+  "It is running terribly. Did someone put petrol in the diesel?": {
+   "start": 4389.95,
+   "dur": 3.28
+  },
+  "That does not sound right. It is a diesel, it does not like petrol.": {
+   "start": 4393.31,
+   "dur": 3.96
+  },
+  "It is coughing. Check what went in the tank.": {
+   "start": 4397.35,
+   "dur": 2.31
+  },
+  "Jess, would you like a race round the track? Loser makes the tea.": {
+   "start": 4399.74,
    "dur": 3.5
   },
   "I will race you round the track, Jess. If you dare.": {
-   "start": 4311.66,
+   "start": 4403.32,
    "dur": 2.94
   },
   "Fine. I will race you. Prepare to lose.": {
-   "start": 4314.68,
+   "start": 4406.34,
    "dur": 2.65
   },
   "You are on. And I am not going through the bog.": {
-   "start": 4317.41,
+   "start": 4409.07,
    "dur": 2.66
   },
   "Ready? Three, two, one, go!": {
-   "start": 4320.15,
+   "start": 4411.81,
    "dur": 3.16
   },
   "I won! I actually won!": {
-   "start": 4323.39,
+   "start": 4415.05,
    "dur": 2.04
   },
   "Told you. Slow and steady.": {
-   "start": 4325.51,
+   "start": 4417.17,
    "dur": 1.72
   },
   "That was a good one. Better luck next time, Jess.": {
-   "start": 4327.31,
+   "start": 4418.97,
    "dur": 2.66
   },
   "It was the quad, not me. It would not pull.": {
-   "start": 4330.05,
+   "start": 4421.71,
    "dur": 2.84
   },
   "You cheated. You must have cut a corner.": {
-   "start": 4332.97,
+   "start": 4424.63,
    "dur": 2.04
   },
   "I was being careful. Somebody has to be.": {
-   "start": 4335.09,
+   "start": 4426.75,
    "dur": 2.32
   },
   "Oh no, it has died. That does not count!": {
-   "start": 4337.49,
+   "start": 4429.15,
    "dur": 3.85
   },
   "I am stuck. Stop the race, I am stuck!": {
-   "start": 4341.42,
+   "start": 4433.08,
    "dur": 2.68
   },
   "Alright, I am coming.": {
-   "start": 4344.18,
+   "start": 4435.84,
    "dur": 1.27
   },
   "Coming! Give me a minute.": {
-   "start": 4345.53,
+   "start": 4437.19,
    "dur": 1.62
   },
   "Your fuel is on the red. We should fill up soon.": {
-   "start": 4347.23,
+   "start": 4438.89,
    "dur": 2.3
   },
   "The fuel light is on, you know.": {
-   "start": 4349.61,
+   "start": 4441.27,
    "dur": 1.25
   },
   "You are into the reserve. Do not go far.": {
-   "start": 4350.94,
+   "start": 4442.6,
    "dur": 2.86
   },
   "It is still cold. Go easy on it.": {
-   "start": 4353.88,
+   "start": 4445.54,
    "dur": 2.08
   },
   "The engine has not warmed up yet. Gently, please.": {
-   "start": 4356.04,
+   "start": 4447.7,
    "dur": 2.85
   },
   "The temperature gauge is still down. Give it a minute.": {
-   "start": 4358.97,
+   "start": 4450.63,
    "dur": 2.74
   },
   "The temperature light is on. Ease off.": {
-   "start": 4361.79,
+   "start": 4453.45,
    "dur": 1.75
   },
   "It is running hot. Slow down a bit.": {
-   "start": 4363.62,
+   "start": 4455.28,
    "dur": 2.21
   },
   "The engine is getting too hot. Maybe a rest?": {
-   "start": 4365.91,
+   "start": 4457.57,
    "dur": 2.71
   },
   "Sorry, I will just squeeze past!": {
-   "start": 4368.7,
+   "start": 4460.36,
    "dur": 1.88
   },
   "Excuse me, coming through.": {
-   "start": 4370.66,
+   "start": 4462.32,
    "dur": 1.22
   },
   "My turn at the front.": {
-   "start": 4371.96,
+   "start": 4463.62,
    "dur": 1.69
   },
   "There you are. I did say I would wait.": {
-   "start": 4373.73,
+   "start": 4465.39,
    "dur": 2.1
   },
   "Took your time!": {
-   "start": 4375.91,
+   "start": 4467.57,
    "dur": 0.82
   },
   "Shall we go for a drive together? I will lead.": {
-   "start": 4376.81,
+   "start": 4468.47,
    "dur": 2.35
   },
   "Jess, follow me. Nice and steady.": {
-   "start": 4379.24,
+   "start": 4470.9,
    "dur": 2.25
   },
   "Go on then. Do not go too fast.": {
-   "start": 4381.57,
+   "start": 4473.23,
    "dur": 2.18
   },
   "Fine. But I am not going through any mud.": {
-   "start": 4383.83,
+   "start": 4475.49,
    "dur": 2.31
   },
   "I am just going to do one little circle.": {
-   "start": 4386.22,
+   "start": 4477.88,
    "dur": 1.93
   },
   "Hold on, hold on, hold on!": {
-   "start": 4388.23,
+   "start": 4479.89,
    "dur": 1.51
   },
   "Oh, that is a bit much!": {
-   "start": 4389.82,
+   "start": 4481.48,
    "dur": 1.48
   },
   "Jess, stop it! You are ruining the field.": {
-   "start": 4391.38,
+   "start": 4483.04,
    "dur": 2.6
   },
   "That is going to take weeks to grow back.": {
-   "start": 4394.06,
+   "start": 4485.72,
    "dur": 1.83
   },
   "Honestly. Look at the state of that grass.": {
-   "start": 4395.97,
+   "start": 4487.63,
    "dur": 2.67
   },
   "Jess, the farmer is going to see that.": {
-   "start": 4398.72,
+   "start": 4490.38,
    "dur": 2.27
   },
   "Oh, give it here. I am doing one too.": {
-   "start": 4401.07,
+   "start": 4492.73,
    "dur": 2.24
   },
   "Right. That looks like fun. Move over.": {
-   "start": 4403.39,
+   "start": 4495.05,
    "dur": 2.86
   },
   "Fine. Just one. Do not tell anyone.": {
-   "start": 4406.33,
+   "start": 4497.99,
    "dur": 2.91
   },
   "I am going to have a go at the ramp. Once.": {
-   "start": 4409.32,
+   "start": 4500.98,
    "dur": 2.19
   },
   "Right. The jump. Jess has been going on about it.": {
-   "start": 4411.59,
+   "start": 4503.25,
    "dur": 3.15
   },
   "Okay, okay, okay.": {
-   "start": 4414.82,
+   "start": 4506.48,
    "dur": 1.15
   },
   "Do not look at me.": {
-   "start": 4416.05,
+   "start": 4507.71,
    "dur": 1.19
   },
   "Straight, Amy. Stay straight.": {
-   "start": 4417.32,
+   "start": 4508.98,
    "dur": 1.59
   },
   "Oh no oh no oh no!": {
-   "start": 4418.99,
+   "start": 4510.65,
    "dur": 2.53
   },
   "This is a terrible idea!": {
-   "start": 4421.6,
+   "start": 4513.26,
    "dur": 2.34
   },
   "Whoaaa!": {
-   "start": 4424.02,
+   "start": 4515.68,
    "dur": 0.41
   },
   "Did you see that?! I flew!": {
-   "start": 4424.51,
+   "start": 4516.17,
    "dur": 1.84
   },
   "Oh my goodness. I did that.": {
-   "start": 4426.43,
+   "start": 4518.09,
    "dur": 1.99
   },
   "Right. That was fine. That was completely fine.": {
-   "start": 4428.5,
+   "start": 4520.16,
    "dur": 2.91
   },
   "Still alive. Good.": {
-   "start": 4431.49,
+   "start": 4523.15,
    "dur": 2.7
   },
   "Ow. My teeth.": {
-   "start": 4434.27,
+   "start": 4525.93,
    "dur": 1.36
   },
   "That was a lot harder than it looked.": {
-   "start": 4435.71,
+   "start": 4527.37,
    "dur": 1.8
   },
   "I am fine! The quad is fine! Probably!": {
-   "start": 4437.59,
+   "start": 4529.25,
    "dur": 2.88
   },
   "Nobody saw that.": {
-   "start": 4440.55,
+   "start": 4532.21,
    "dur": 1.03
   },
   "I did not really leave the ground, did I.": {
-   "start": 4441.66,
+   "start": 4533.32,
    "dur": 1.76
   },
   "Hm. Barely a hop. I will go faster.": {
-   "start": 4443.5,
+   "start": 4535.16,
    "dur": 2.77
   },
   "Oh, that was really good, Jess. Annoyingly good.": {
-   "start": 4446.35,
+   "start": 4538.01,
    "dur": 3.06
   },
   "Ten out of ten. Do not let it go to your head.": {
-   "start": 4449.49,
+   "start": 4541.15,
    "dur": 2.59
   },
   "Not bad, Jess. Seven out of ten.": {
-   "start": 4452.16,
+   "start": 4543.82,
    "dur": 1.95
   },
   "That was decent. Land it flatter next time.": {
-   "start": 4454.19,
+   "start": 4545.85,
    "dur": 2.75
   },
   "That landing was terrifying to watch.": {
-   "start": 4457.02,
+   "start": 4548.68,
    "dur": 1.89
   },
   "Four out of ten, and I am being kind.": {
-   "start": 4458.99,
+   "start": 4550.65,
    "dur": 1.79
   },
   "Jess! Are you all right?": {
-   "start": 4460.86,
+   "start": 4552.52,
    "dur": 1.56
   },
   "Oh, you went over. Do not move. Are you hurt?": {
-   "start": 4462.5,
+   "start": 4554.16,
    "dur": 2.82
   },
   "Is that all? You did not even leave the ground.": {
-   "start": 4465.4,
+   "start": 4557.06,
    "dur": 2.38
   },
   "That was a speed bump, not a jump.": {
-   "start": 4467.86,
+   "start": 4559.52,
    "dur": 1.95
   },
   "Right, my go. Move out of the way.": {
-   "start": 4469.89,
+   "start": 4561.55,
    "dur": 2.15
   },
   "Fine. I will show you how it is done.": {
-   "start": 4472.12,
+   "start": 4563.78,
    "dur": 2.14
   },
   "I am going to show you something. Do not laugh.": {
-   "start": 4474.34,
+   "start": 4566.0,
    "dur": 2.78
   },
   "Right, watch. I have been practising.": {
-   "start": 4477.2,
+   "start": 4568.86,
    "dur": 2.27
   },
   "Look, look, look!": {
-   "start": 4479.55,
+   "start": 4571.21,
    "dur": 0.99
   },
   "Are you watching?": {
-   "start": 4480.62,
+   "start": 4572.28,
    "dur": 0.68
   },
   "Here we go.": {
-   "start": 4481.38,
+   "start": 4573.04,
    "dur": 0.62
   },
   "Did you see that? I did that on purpose.": {
-   "start": 4482.08,
+   "start": 4573.74,
    "dur": 2.34
   },
   "There. Not bad, is it?": {
-   "start": 4484.5,
+   "start": 4576.16,
    "dur": 1.34
   },
   "Good. I wanted you to see that.": {
-   "start": 4485.92,
+   "start": 4577.58,
    "dur": 1.93
   },
   "You were not even looking. Right. Again.": {
-   "start": 4487.93,
+   "start": 4579.59,
    "dur": 2.88
   },
   "Hang on, you missed it. I will go again.": {
-   "start": 4490.89,
+   "start": 4582.55,
    "dur": 1.95
   },
   "Oh, come on. Look this time.": {
-   "start": 4492.92,
+   "start": 4584.58,
    "dur": 2.14
   },
   "Never mind. I am not doing it a fourth time.": {
-   "start": 4495.14,
+   "start": 4586.8,
    "dur": 2.22
   },
   "Fine. Be like that. It was brilliant.": {
-   "start": 4497.44,
+   "start": 4589.1,
    "dur": 2.19
   },
   "I am just borrowing this for a minute.": {
-   "start": 4499.71,
+   "start": 4591.37,
    "dur": 1.63
   },
   "Ha! Look at me go.": {
-   "start": 4501.42,
+   "start": 4593.08,
    "dur": 1.4
   },
   "Jess! That is not yours!": {
-   "start": 4502.9,
+   "start": 4594.56,
    "dur": 1.8
   },
   "Jess, you cannot just take it. Come back!": {
-   "start": 4504.78,
+   "start": 4596.44,
    "dur": 2.87
   },
   "Oh, here we go. Jess, put it back!": {
-   "start": 4507.73,
+   "start": 4599.39,
    "dur": 2.59
   },
   "Look at the state of it. Now you have to clean it.": {
-   "start": 4510.4,
+   "start": 4602.06,
    "dur": 2.7
   },
   "Right. This yard is a state. I am putting the quads in a row.": {
-   "start": 4513.18,
+   "start": 4604.84,
    "dur": 3.44
   },
   "I cannot stand them all pointing different ways. Give me a minute.": {
-   "start": 4516.7,
+   "start": 4608.36,
    "dur": 3.17
   },
   "I am just going to park this one properly.": {
-   "start": 4519.95,
+   "start": 4611.61,
    "dur": 1.78
   },
   "There. Straight. Was that so hard?": {
-   "start": 4521.81,
+   "start": 4613.47,
    "dur": 2.56
   },
   "Honestly. Look at the angle of that.": {
-   "start": 4524.45,
+   "start": 4616.11,
    "dur": 2.1
   },
   "Jess! You parked that crooked on purpose!": {
-   "start": 4526.63,
+   "start": 4618.29,
    "dur": 2.82
   },
   "I can see that, you know. Do not think I cannot see that.": {
-   "start": 4529.53,
+   "start": 4621.19,
    "dur": 3.0
   },
   "I will just leave my tea here for a minute.": {
-   "start": 4532.61,
+   "start": 4624.27,
    "dur": 1.86
   },
   "My tea can sit on the rack. Nobody touch it.": {
-   "start": 4534.55,
+   "start": 4626.21,
    "dur": 2.3
   },
   "There is my tea. Still warm. Just.": {
-   "start": 4536.93,
+   "start": 4628.59,
    "dur": 2.67
   },
   "Mmm. A proper cup of tea.": {
-   "start": 4539.68,
+   "start": 4631.34,
    "dur": 1.95
   },
   "My tea! You have driven off with my tea on the back!": {
-   "start": 4541.71,
+   "start": 4633.37,
    "dur": 2.79
   },
   "Oh, you did not look! My tea is all over the ground!": {
-   "start": 4544.58,
+   "start": 4636.24,
    "dur": 2.8
   },
   "That was my tea! Honestly. Look behind you next time.": {
-   "start": 4547.46,
+   "start": 4639.12,
    "dur": 3.05
   },
   "It is freezing. I suppose I will have to wear this thing.": {
-   "start": 4550.59,
+   "start": 4642.25,
    "dur": 2.99
   },
   "It is far too big, and grey. But it is warm.": {
-   "start": 4553.66,
+   "start": 4645.32,
    "dur": 3.13
   },
   "I hate this jumper. I am wearing it anyway.": {
-   "start": 4556.87,
+   "start": 4648.53,
    "dur": 2.36
   },
   "That is better. Back on the hook you go.": {
-   "start": 4559.31,
+   "start": 4650.97,
    "dur": 2.32
   },
   "It is warm enough now. Thank goodness, I looked like a sack.": {
-   "start": 4561.71,
+   "start": 4653.37,
    "dur": 3.18
   },
   "Right, jumper off. Nobody saw that.": {
-   "start": 4564.97,
+   "start": 4656.63,
    "dur": 2.47
   },
   "Right, let's have a proper look at it. I'll hold the torch.": {
-   "start": 4567.52,
+   "start": 4659.18,
    "dur": 3.17
   },
   "Good idea. Spanners are in the red box.": {
-   "start": 4570.77,
+   "start": 4662.43,
    "dur": 2.1
   },
   "Take your time. It is better done slowly.": {
-   "start": 4572.95,
+   "start": 4664.61,
    "dur": 2.34
   },
   "Go steady with that one.": {
-   "start": 4575.37,
+   "start": 4667.03,
    "dur": 1.13
   },
   "That is it. Nearly there.": {
-   "start": 4576.58,
+   "start": 4668.24,
    "dur": 1.28
   },
   "Keep it level, or you will spill something.": {
-   "start": 4577.94,
+   "start": 4669.6,
    "dur": 2.2
   },
   "The spanner with the red handle is the right one.": {
-   "start": 4580.22,
+   "start": 4671.88,
    "dur": 2.12
   },
   "That did not feel right. It wants to be snug, not tight.": {
-   "start": 4582.42,
+   "start": 4674.08,
    "dur": 3.33
   },
   "Oh, you let go too soon. That will not hold.": {
-   "start": 4585.83,
+   "start": 4677.49,
    "dur": 2.79
   },
   "Careful. You will strip the thread.": {
-   "start": 4588.7,
+   "start": 4680.36,
    "dur": 2.04
   },
   "Hmm. I think that needs doing again.": {
-   "start": 4590.82,
+   "start": 4682.48,
    "dur": 1.91
   },
   "That is much better. Well done.": {
-   "start": 4592.81,
+   "start": 4684.47,
    "dur": 2.28
   },
   "Spotless. You can start it now.": {
-   "start": 4595.17,
+   "start": 4686.83,
    "dur": 2.07
   },
   "That is a proper job. I am impressed.": {
-   "start": 4597.32,
+   "start": 4688.98,
    "dur": 2.47
   },
   "It will do, but I would not trust it.": {
-   "start": 4599.87,
+   "start": 4691.53,
    "dur": 2.06
   },
   "I think you will be back at that bench soon.": {
-   "start": 4602.01,
+   "start": 4693.67,
    "dur": 1.76
   },
   "It is not quite right, is it? Never mind.": {
-   "start": 4603.85,
+   "start": 4695.51,
    "dur": 2.2
   },
   "That is a lovely plug. Nice and tan, so it has been running right.": {
-   "start": 4606.13,
+   "start": 4697.79,
    "dur": 3.64
   },
   "Tan and dry. Nothing wrong with that one.": {
-   "start": 4609.85,
+   "start": 4701.51,
    "dur": 2.55
   },
   "Black and sooty. It has been running too rich.": {
-   "start": 4612.48,
+   "start": 4704.14,
    "dur": 3.12
   },
   "That is soot. Too much choke, or the mixture is too rich.": {
-   "start": 4615.68,
+   "start": 4707.34,
    "dur": 3.72
   },
   "White like that means it has been running lean. That can burn a hole in a piston.": {
-   "start": 4619.48,
+   "start": 4711.14,
    "dur": 4.1
   },
   "Look at the white on it. Too lean, and that gets hot.": {
-   "start": 4623.66,
+   "start": 4715.32,
    "dur": 3.27
   },
   "Wet and oily. That two-stroke is tired, or it has had too much oil.": {
-   "start": 4627.01,
+   "start": 4718.67,
    "dur": 4.2
   },
   "Oil all over the thread. It is wearing, that one.": {
-   "start": 4631.29,
+   "start": 4722.95,
    "dur": 2.91
   },
   "Tan is fine, but the electrode is worn right down. It has done a lot of hours.": {
-   "start": 4634.28,
+   "start": 4725.94,
    "dur": 4.43
   },
   "It has been running well enough, but the engine is getting old.": {
-   "start": 4638.79,
+   "start": 4730.45,
    "dur": 3.07
   },
   "At least mine fits, Jess.": {
-   "start": 4641.94,
+   "start": 4733.6,
    "dur": 1.33
   },
   "I'm going on the back next. I asked first.": {
-   "start": 4643.35,
+   "start": 4735.01,
    "dur": 2.38
   },
   "I asked in my head.": {
-   "start": 4645.81,
+   "start": 4737.47,
    "dur": 1.32
   },
   "Bet you're not.": {
-   "start": 4647.21,
+   "start": 4738.87,
    "dur": 0.9
   },
   "Some of us actually help around here.": {
-   "start": 4648.19,
+   "start": 4739.85,
    "dur": 1.68
   },
   "At least I've never put one in a hedge.": {
-   "start": 4649.95,
+   "start": 4741.61,
    "dur": 1.53
   },
   "I made everyone a cup of tea earlier.": {
-   "start": 4651.56,
+   "start": 4743.22,
    "dur": 1.55
   },
   "Well. Not you.": {
-   "start": 4653.19,
+   "start": 4744.85,
    "dur": 1.08
   },
   "And yours looks like you've been dragged through that hedge.": {
-   "start": 4654.35,
+   "start": 4746.01,
    "dur": 2.32
   },
   "You're standing very close, Jess.": {
-   "start": 4656.75,
+   "start": 4748.41,
    "dur": 1.5
   },
   "Course you hadn't.": {
-   "start": 4658.33,
+   "start": 4749.99,
    "dur": 1.76
   },
   "Is that what you call it?": {
-   "start": 4660.17,
+   "start": 4751.83,
    "dur": 1.06
   },
   "I'll have you know I've been coming here for years.": {
-   "start": 4661.31,
+   "start": 4752.97,
    "dur": 2.34
   },
   "It floods. Everyone knows it floods.": {
-   "start": 4663.73,
+   "start": 4755.39,
    "dur": 2.78
   },
   "It's called making an effort, Jess.": {
-   "start": 4666.59,
+   "start": 4758.25,
    "dur": 1.84
   },
   "Don't you have somewhere else to be, Jess?": {
-   "start": 4668.51,
+   "start": 4760.17,
    "dur": 1.69
   },
   "Don't answer that.": {
-   "start": 4670.28,
+   "start": 4761.94,
    "dur": 0.91
   },
   "I brought biscuits, if anyone nice wants one.": {
-   "start": 4671.27,
+   "start": 4762.93,
    "dur": 2.49
   },
   "I said nice.": {
-   "start": 4673.84,
+   "start": 4765.5,
    "dur": 2.06
   },
   "That's not how this works, Jess.": {
-   "start": 4675.98,
+   "start": 4767.64,
    "dur": 1.48
   },
   "Oh, did I get the last ride? Silly me.": {
-   "start": 4677.54,
+   "start": 4769.2,
    "dur": 2.2
   },
   "Just a bit.": {
-   "start": 4679.82,
+   "start": 4771.48,
    "dur": 0.66
   },
   "Maybe try being nicer, Jess.": {
-   "start": 4680.56,
+   "start": 4772.22,
    "dur": 1.39
   },
   "I've saved you a seat, Jess. Right at the back.": {
-   "start": 4682.03,
+   "start": 4773.69,
    "dur": 2.29
   },
   "Of course you will, Jess.": {
-   "start": 4684.4,
+   "start": 4776.06,
    "dur": 1.1
   },
   "Gloat quietly, please.": {
-   "start": 4685.58,
+   "start": 4777.24,
    "dur": 1.64
   },
   "It won't last, you know.": {
-   "start": 4687.3,
+   "start": 4778.96,
    "dur": 1.03
   },
   "I'm not sulking. I'm resting my face.": {
-   "start": 4688.41,
+   "start": 4780.07,
    "dur": 2.09
   },
   "I made the tea and everything.": {
-   "start": 4690.58,
+   "start": 4782.24,
    "dur": 1.36
   },
   "Oh, shut up.": {
-   "start": 4692.02,
+   "start": 4783.68,
    "dur": 1.17
   },
   "Yes. Me again.": {
-   "start": 4693.27,
+   "start": 4784.93,
    "dur": 1.05
   },
   "That's not the boast you think it is.": {
-   "start": 4694.4,
+   "start": 4786.06,
    "dur": 1.68
   },
   "This is my normal voice.": {
-   "start": 4696.16,
+   "start": 4787.82,
    "dur": 1.32
   },
   "Don't let her talk you into anything daft.": {
-   "start": 4697.56,
+   "start": 4789.22,
    "dur": 1.91
   },
   "I'm right here, you know.": {
-   "start": 4699.55,
+   "start": 4791.21,
    "dur": 1.11
   },
   "Whatever she says, I said it first.": {
-   "start": 4700.74,
+   "start": 4792.4,
    "dur": 1.86
   },
   "Don't let her lean on you like that!": {
-   "start": 4702.68,
+   "start": 4794.34,
    "dur": 1.63
   },
   "Hope you fall off!": {
-   "start": 4704.39,
+   "start": 4796.05,
    "dur": 1.01
   },
   "It's my turn after this!": {
-   "start": 4705.48,
+   "start": 4797.14,
    "dur": 1.51
   },
   "I will not scream!": {
-   "start": 4707.07,
+   "start": 4798.73,
    "dur": 1.21
   },
   "Wave to Jess!": {
-   "start": 4708.36,
+   "start": 4800.02,
    "dur": 1.35
   },
   "Says who?": {
-   "start": 4709.79,
+   "start": 4801.45,
    "dur": 0.58
   },
   "Have a nice time, did we?": {
-   "start": 4710.45,
+   "start": 4802.11,
    "dur": 1.25
   },
   "You say that every time.": {
-   "start": 4711.78,
+   "start": 4803.44,
    "dur": 2.36
   },
   "You were gone ages.": {
-   "start": 4714.22,
+   "start": 4805.88,
    "dur": 1.46
   },
   "No.": {
-   "start": 4715.76,
+   "start": 4807.42,
    "dur": 0.38
   },
   "Too late. I already have.": {
-   "start": 4716.22,
+   "start": 4807.88,
    "dur": 1.88
   },
   "That was lovely. Very gentle.": {
-   "start": 4718.18,
+   "start": 4809.84,
    "dur": 2.07
   },
   "I haven't even got off yet!": {
-   "start": 4720.33,
+   "start": 4811.99,
    "dur": 1.32
   },
   "I'm being careful!": {
-   "start": 4721.73,
+   "start": 4813.39,
    "dur": 1.0
   },
   "There is no hedge, Jess!": {
-   "start": 4722.81,
+   "start": 4814.47,
    "dur": 1.35
   },
   "Ha ha.": {
-   "start": 4724.24,
+   "start": 4815.9,
    "dur": 0.81
   },
   "Slow down! You'll break it!": {
-   "start": 4725.13,
+   "start": 4816.79,
    "dur": 1.97
   },
   "Show off!": {
-   "start": 4727.18,
+   "start": 4818.84,
    "dur": 0.49
   },
   "I'd rather not.": {
-   "start": 4727.75,
+   "start": 4819.41,
    "dur": 1.13
   },
   "Not from you!": {
-   "start": 4728.96,
+   "start": 4820.62,
    "dur": 0.81
   },
   "Don't you dare!": {
-   "start": 4729.85,
+   "start": 4821.51,
    "dur": 0.94
   },
   "Best driver on the farm, was it?": {
-   "start": 4730.87,
+   "start": 4822.53,
    "dur": 1.54
   },
   "Oh no. Anyway.": {
-   "start": 4732.49,
+   "start": 4824.15,
    "dur": 2.13
   },
   "Say please.": {
-   "start": 4734.7,
+   "start": 4826.36,
    "dur": 1.73
   },
   "You don't have to go round every corner like that.": {
-   "start": 4736.51,
+   "start": 4828.17,
    "dur": 2.27
   },
   "Just drive.": {
-   "start": 4738.86,
+   "start": 4830.52,
    "dur": 0.82
   },
   "It doesn't have gears, Jess.": {
-   "start": 4739.76,
+   "start": 4831.42,
    "dur": 1.29
   },
   "Stop wriggling, you'll have us over.": {
-   "start": 4741.13,
+   "start": 4832.79,
    "dur": 1.95
   },
   "No, Jess. It's cold. Listen to how it's running.": {
-   "start": 4743.16,
+   "start": 4834.82,
    "dur": 2.81
   },
   "We will see.": {
-   "start": 4746.05,
+   "start": 4837.71,
    "dur": 1.05
   },
   "It's only cold. It hasn't warmed up yet.": {
-   "start": 4747.18,
+   "start": 4838.84,
    "dur": 2.13
   },
   "Listen properly, Jess.": {
-   "start": 4749.39,
+   "start": 4841.05,
    "dur": 1.24
   },
   "You have not listened once.": {
-   "start": 4750.71,
+   "start": 4842.37,
    "dur": 1.34
   },
   "Fine. Be wrong.": {
-   "start": 4752.13,
+   "start": 4843.79,
    "dur": 1.07
   },
   "No, it's running rich. Hear it hunting?": {
-   "start": 4753.28,
+   "start": 4844.94,
    "dur": 2.66
   },
   "It's rich, Jess. It's too much fuel.": {
-   "start": 4756.02,
+   "start": 4847.68,
    "dur": 2.31
   },
   "No, that plug is fouled. It's missing.": {
-   "start": 4758.41,
+   "start": 4850.07,
    "dur": 2.31
   },
   "It's the plug, Jess. It's sooty.": {
-   "start": 4760.8,
+   "start": 4852.46,
    "dur": 1.93
   },
   "No, that one's worn. Listen to the rattle.": {
-   "start": 4762.81,
+   "start": 4854.47,
    "dur": 2.44
   },
   "It's tired, Jess. That's wear, not that.": {
-   "start": 4765.33,
+   "start": 4856.99,
    "dur": 2.73
   },
   "There's nothing wrong with it, Jess.": {
-   "start": 4768.14,
+   "start": 4859.8,
    "dur": 1.5
   },
   "That's a healthy engine. You're imagining it.": {
-   "start": 4769.72,
+   "start": 4861.38,
    "dur": 2.4
   },
   "That was a very nice drive, if I say so myself.": {
-   "start": 4772.2,
+   "start": 4863.86,
    "dur": 2.25
   },
   "I took the racing line.": {
-   "start": 4774.53,
+   "start": 4866.19,
    "dur": 1.22
   },
   "Of course. I will win that too.": {
-   "start": 4775.83,
+   "start": 4867.49,
    "dur": 2.01
   },
   "Do not worry, Jess. Second is a perfectly good place.": {
-   "start": 4777.92,
+   "start": 4869.58,
    "dur": 3.08
   },
   "You were lucky. The ground was in your favour.": {
-   "start": 4781.08,
+   "start": 4872.74,
    "dur": 2.21
   },
   "I was just being careful.": {
-   "start": 4783.37,
+   "start": 4875.03,
    "dur": 1.25
   },
   "That was not in the rules.": {
-   "start": 4784.7,
+   "start": 4876.36,
    "dur": 1.36
   },
   "Wait until the next one.": {
-   "start": 4786.14,
+   "start": 4877.8,
    "dur": 1.11
   },
   "I am only letting you win to be kind.": {
-   "start": 4787.33,
+   "start": 4878.99,
    "dur": 2.26
   },
   "Do you want me to read out the scores again?": {
-   "start": 4789.67,
+   "start": 4881.33,
    "dur": 1.59
   },
   "Twice is not a fluke, Jess.": {
-   "start": 4791.34,
+   "start": 4883.0,
    "dur": 1.39
   },
   "Some of us obey the speed limit.": {
-   "start": 4792.81,
+   "start": 4884.47,
    "dur": 1.51
   },
   "You are going far too fast!": {
-   "start": 4794.4,
+   "start": 4886.06,
    "dur": 1.37
   },
   "Is this a good speed for you, Jess?": {
-   "start": 4795.85,
+   "start": 4887.51,
    "dur": 1.49
   },
   "Maybe because you have not been.": {
-   "start": 4797.42,
+   "start": 4889.08,
    "dur": 1.57
   },
   "Did you see the way our friend took that corner earlier?": {
-   "start": 4799.07,
+   "start": 4890.73,
    "dur": 2.33
   },
   "Near the hedge. Be kind.": {
-   "start": 4801.48,
+   "start": 4893.14,
    "dur": 1.38
   },
   "Do not be silly.": {
-   "start": 4802.94,
+   "start": 4894.6,
    "dur": 1.1
   },
   "Someone has been riding the blue one like it owes money.": {
-   "start": 4804.12,
+   "start": 4895.78,
    "dur": 2.57
   },
   "I am not asking.": {
-   "start": 4806.77,
+   "start": 4898.43,
    "dur": 1.06
   },
   "Do not say anything, but the choke is getting better.": {
-   "start": 4807.91,
+   "start": 4899.57,
    "dur": 2.74
   },
   "Keep your voice down.": {
-   "start": 4810.73,
+   "start": 4902.39,
    "dur": 1.03
   },
   "It is nice having someone to ride with, though.": {
-   "start": 4811.84,
+   "start": 4903.5,
    "dur": 1.94
   },
   "I am only saying.": {
-   "start": 4813.86,
+   "start": 4905.52,
    "dur": 1.48
   }
  }

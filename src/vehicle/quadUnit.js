@@ -19,6 +19,7 @@ import { SHIFTER_PARAM_RANGES } from './autoShifter.js';
 import { buildAtcModel, ATC_LAYOUT, ATC_GROUND_OFFSET, ATC_PROXY } from './atcModel.js';
 import { buildMiniMotoModel, MOTO_LAYOUT, MOTO_GROUND_OFFSET, MOTO_PROXY } from './miniMotoModel.js';
 import { buildTractorModel, TRACTOR_LAYOUT, TRACTOR_GROUND_OFFSET, TRACTOR_PROXY } from './tractorModel.js';
+import { buildUtvModel, UTV_LAYOUT, UTV_GROUND_OFFSET, UTV_PROXY } from './utvModel.js';
 
 /**
  * Everything one quad needs, built from a spec in quadSpecs.js: the engine
@@ -78,6 +79,14 @@ export class QuadUnit {
         wheelShake: spec.wheelShake,
         steadyLights: spec.steadyLights,
         noHeadlight: spec.noHeadlight,
+      }),
+      ...(spec.utv && {
+        build: ({ dashStyle }) => buildUtvModel({ bodyColor: spec.bodyColor, dashStyle }),
+        layout: UTV_LAYOUT,
+        groundOffset: UTV_GROUND_OFFSET,
+        proxy: UTV_PROXY,
+        wheelShake: spec.wheelShake,
+        steadyLights: spec.steadyLights,
       }),
     });
     this.quad.unit = this;

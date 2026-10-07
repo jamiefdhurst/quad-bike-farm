@@ -45,6 +45,7 @@ import { AMY_PILLION_COACH_LINES } from './pillionCoachLines.js';
 import { AMY_SMOKE_LINES } from './smokeLines.js';
 import { AMY_FUMES_LINES } from './fumesLines.js';
 import { AMY_RUSTY_LINES } from './rustyLines.js';
+import { AMY_UTV_LINES } from './utvLines.js';
 import { AMY_RACE_LINES } from './raceLines.js';
 import { AMY_RECALL_LINES } from './recallLines.js';
 import { AMY_READING_LINES } from './readingLines.js';
@@ -1452,6 +1453,8 @@ export const VOICE_LINES = {
   ...AMY_SMOKE_LINES,
   ...AMY_FUMES_LINES,
   ...AMY_RUSTY_LINES,
+  // The UTV: climbing in, the middle seat, the bed, tipping it, petrol in the tank (utvLines.js).
+  ...AMY_UTV_LINES,
   // Racing each other (raceLines.js).
   ...AMY_RACE_LINES,
   // Called back to the barn (recallLines.js).

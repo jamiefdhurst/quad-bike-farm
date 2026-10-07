@@ -47,7 +47,7 @@ export const hayRideMethods = {
     this.trailer = trailer;
     this.traSlot = slot;
     this.paceBoost = chase ? this.hay.chaseSpeed : 1;
-    this.fsm.transition('walking', { goal: 'board', target: () => trailer.standPoint(slot.side) });
+    this.fsm.transition('walking', { goal: 'board', target: () => trailer.standPoint(slot.side, slot) });
     return true;
   },
 
@@ -88,10 +88,10 @@ export const hayRideMethods = {
     if (this.fsm.is('onTrailer')) this.hayFlailT = 0.7;
   },
 
-  /** Off the side into the mud, on `side` (+1 left). */
-  slideOffTrailer(side) {
+  /** Off the side into the mud, on `side` (+1 left). `out` is which way she goes in the trailer's own frame, if not straight out sideways (off the back of the UTV's bed). */
+  slideOffTrailer(side, out = null) {
     if (!this.fsm.is('onTrailer')) return false;
-    this.fsm.transition('sliding', { side });
+    this.fsm.transition('sliding', { side, out });
     return true;
   },
 
@@ -198,7 +198,7 @@ export const hayRideStates = {
       this.root.rotation.set(0, e.y, 0);
       // Where she lands: out from the middle of the trailer on her side.
       const side = data.side;
-      const out = new THREE.Vector3(side, 0, 0).applyQuaternion(this.trailer.model.getWorldQuaternion(new THREE.Quaternion())).setY(0).normalize();
+      const out = (data.out ? data.out.clone() : new THREE.Vector3(side, 0, 0)).applyQuaternion(this.trailer.model.getWorldQuaternion(new THREE.Quaternion())).setY(0).normalize();
       const mid = this.trailer.model.position;
       this.landing = new THREE.Vector3(mid.x + out.x * this.hay.fallOut, 0, mid.z + out.z * this.hay.fallOut);
       this.landing.y = this.world.heightAt(this.landing.x, this.landing.z);
@@ -268,7 +268,7 @@ export function finishClimbDown(c, data) {
     c.root.rotation.set(0, e.y, 0);
     data.fromHeading = e.y;
   }
-  const stand = c.trailer.standPoint(c.traSlot.side);
+  const stand = c.trailer.standPoint(c.traSlot.side, c.traSlot);
   c.root.position.lerpVectors(data.fromWorld, stand.position, k);
   c.root.position.y += Math.sin(Math.PI * k) * (c.traSlot.lift ?? p.climbLift) * 0.5;
   c.heading = data.fromHeading + angleTo(data.fromHeading, stand.facing) * k;

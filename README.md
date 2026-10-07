@@ -49,7 +49,7 @@ Other scripts:
 | `C` (hold) or middle mouse | Look back over your shoulder |
 | `V` (hold) | Lean in and look closely at the dash, and the pod if one's fitted |
 | `F` | Fuel tap: ON, RESERVE, OFF |
-| `T` | Right the quad if it's tipped over |
+| `T` | Right the quad if it's tipped over. On the UTV, tip its bed (stopped) |
 | Mouse | Look around from the seat |
 
 **Talking to her**
@@ -174,6 +174,16 @@ Each quad has a fuel tank and a fuel tap, and a fuel gauge on the loan quad's an
 **The mini moto.** In about half of games a 50cc pit bike is parked with the quads, a sun-faded blue one: two wheels, one seat, a thumb choke, a fuel tap on the left of the tank and a pull-start (`P`) as well as the starter. It's a two-stroke on pre-mix, so it has no reverse (get off and push) and the same hold-and-yank cord as the yellow. It tops out at about 12 m/s and leans into corners; you or either girl can ride it, but nobody rides on the back. Its sound is the kids' quad's for now. It's built in `src/vehicle/miniMotoModel.js`.
 
 **The old three-wheeler.** Now and then (about one game in three) the neighbour's old ATC is parked with the quads: a chalky sun-bleached red three-wheeler with one front wheel, two fat tyres at the back, a taped seat and a rusty silencer. It's a worn-out two-stroke with a pull-start only (no starter, `P`), a clutch (Shift) and a four-speed box, a pull-knob choke and a lumpy, smoky idle. It's solo, tops out at about 16 m/s and has no reverse (get off and push). It also **tips**: its single front wheel and tall seat mean a hard turn at speed, over about 12 m/s with the lock on, will roll it, while 9 m/s is fine. The girls will drive it. It uses the yellow's sound for now. It's built in `src/vehicle/atcModel.js`.
+
+## The UTV
+
+A green Gator-style side-by-side stands by the paddock, always, on red diesel. Look at it and press `E` to ride it from the right-hand seat, under its roll cage.
+
+- **Starting.** It is a diesel with glow plugs, like the tractor: `K` for the key, wait for the GLOW lamp on the dash to go out, then hold `R`. Unlike the tractor the key stops it. The dash has a speedo (with an hour meter), fuel and water dials and lamps for glow, charge, oil and R / N / D.
+- **Driving.** An automatic: `W` is the throttle, `S` the brake, `A` `D` steer with a proper steering wheel that turns a lot further than the wheels do. It tops out at 25 mph (11 m/s). Reverse is a lever on the dash: stopped, press `B`, then `S` backs it up. It's heavy next to a quad, so it brakes and corners like it.
+- **Fuel.** Red diesel from the bowser and the dark green can. Petrol does to it what diesel does to a quad: a tenth in the tank makes it run rough, a fifth stalls it for good. Amy and Jess both shout when you pour petrol in. To put it right, pick up the toolbox, look at the UTV and press `E` to pump the tank out, then fill it again with red diesel.
+- **The bed.** `T` tips the bed on its ram, only when you've stopped, from the seat or standing beside it. The tailgate drops as it goes up, and the ram lets it down by itself if you drive off with it raised.
+- **The girls.** Stop with the engine running and a girl stood about may walk over and climb in, or both come. They squabble over the middle of the bench: Jess usually wins, and the loser sits at the window, or sulks off to ride in the bed. The bed is against the rules: she sits on the open tailgate with her legs hanging, the other girl tells her off, and she complains when you go fast and over the bumps. Tip the bed with her on it and she slides off the back into the mud. You can also ask either of them from her wheel ("UTV": get in, ride in the bed, get out), though Amy won't ride in the bed. They don't drive it yet.
 
 ## The dashes
 
@@ -335,7 +345,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 ## TODO
 
 1.  A barn find. In some games (picked from the seed, so `?seed=` repeats it), an old brown quad stands under a tarp in the back of the barn, not run for years. It's a copy of one of the others (which one also comes from the seed), with its own dust and rust. It comes back to life over a session at the bench: drain the varnished fuel, clean the carb, a new plug, free the seized brake, pump up the tyres, charge the battery, with which jobs it needs also picked from the seed. Then the first start, smoke everywhere, and both girls cheering. **Done.** In about one game in five an old brown quad (the "rusty quad") stands under a tarp at the back of the barn, a dusty, rusty copy of one of the regular quads. The bench takes the tarp off first, then the three or four of fuel, carb, plug, brake, tyres and a five-minute battery charge that the seed says it needs; only when all are done will it start, with a smoky first start and both girls cheering.
-2.  A diesel UTV. A Mule or Gator-style side-by-side that runs on the red diesel, properly this time: a steering wheel, a bench seat for three and a tipping bed. The girls squabble over the middle seat, and one rides in the bed against the rules.
+2.  A diesel UTV. A Mule or Gator-style side-by-side that runs on the red diesel, properly this time: a steering wheel, a bench seat for three and a tipping bed. The girls squabble over the middle seat, and one rides in the bed against the rules. **Done.** A green Gator-style UTV stands by the paddock in every game, with a diesel and its own dash, a steering wheel on the right, a bench seat for three and a tipping bed with a drop-down tailgate. The girls climb in when you stop, squabble over the middle seat, and one of them sometimes rides in the bed; tipping the bed with her on the tailgate slides her off the back. Petrol in its tank soaks the engine the way diesel does a quad's. They don't drive it yet.
 3.  2WD and 4WD. The farm quads get a 2WD / 4WD switch (and a diff lock on the blue). 2WD is the default and lighter on the steering; 4WD is for mud. The girls forget to put it in 4WD and get stuck, and Amy tells Jess.
 4.  Jetting the two-strokes. A jet kit in the toolbox for the yellow and orange. They want leaner jets on a hot day and richer on a cold one (goes with 26), and jetted lean on a cold day they seize the way straight petrol does now. Get it right and it's the cleanest power in the game.
 5.  Coolant on the orange. The water-cooled one gets a slow coolant leak: a damp patch under it first, then steam off the radiator and a boil-over that makes the girls jump back. Topped up at the bench.
