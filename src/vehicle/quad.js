@@ -837,7 +837,7 @@ export class Quad {
       glow: e.glowLit,
       parkBrake: this.parkBrake, // the UTV's dash has a lamp for it
       fourWd: this.drive ? this.drive.frontDriven : null, // the 4WD lamp on the red and blue's dashes (null: no switch)
-      diffLock: this.drive ? this.drive.locked : false,
+      diffLock: this.drive?.hasLock ? this.drive.locked : null, // null: no diff lock to show
       hand: this.handSetting,
       clock: clock.text(),
       seconds: clock.seconds(),

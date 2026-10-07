@@ -125,6 +125,19 @@ function buildAnalogue() {
       lamp(ctx, x, 122, c, name, lit, { r: 3.8, labelBelow: false });
       text(ctx, name, x, 132, 3, '#aaa', { align: 'center' });
     });
+    // The 2WD / 4WD switch's lamps (driveMode.js), only on a quad that has one; the diff lock's only on one that has that too.
+    if (s.fourWd !== null) {
+      const extra = [[148, LAMP.green, '4WD', s.ignition && s.fourWd]];
+      if (s.diffLock !== null) extra.push([52, LAMP.red, 'LOCK', s.ignition && s.diffLock]);
+      for (const [x, c, name, lit] of extra) {
+        ctx.fillStyle = CHROME;
+        ctx.beginPath();
+        ctx.arc(x, 122, 5.6, 0, Math.PI * 2);
+        ctx.fill();
+        lamp(ctx, x, 122, c, name, lit, { r: 3.8, labelBelow: false });
+        text(ctx, name, x, 132, 3, '#aaa', { align: 'center' });
+      }
+    }
   }
 
   return {
@@ -137,7 +150,7 @@ function buildAnalogue() {
       const key = [
         s.ignition, l.r, l.n, l.temp, l.fuel, l.oil, Math.round(s.speedMph * 3), Math.round(s.rpm / 40), Math.round(s.redline / 100),
         Math.round(s.fuelLevel * 60), Math.round(s.reserveLevel * 100), Math.round(tempGaugeFraction(s.temperature, s.ignition, s.overheat) * 60),
-        o.whole + o.tenth, t.whole + t.tenth, h.whole + h.tenth,
+        o.whole + o.tenth, t.whole + t.tenth, h.whole + h.tenth, s.fourWd, s.diffLock,
       ].join('|');
       if (gate(key)) face.redraw((ctx) => draw(ctx, s));
     },
@@ -207,6 +220,14 @@ function buildDigital() {
     }
     text(ctx, 'FUEL', x + 10.5, y + 66, 3.4, AMBER, { align: 'center' });
     text(ctx, 'TEMP', x + w - 10.5, y + 66, 3.4, AMBER, { align: 'center' });
+    // The 2WD / 4WD switch (driveMode.js), on a quad that has one; a bar under it while the diff lock is in.
+    if (s.fourWd !== null) {
+      text(ctx, '4WD', x + 38, y + 40, 4.6, s.fourWd ? AMBER : AMBER_GHOST, { align: 'center', weight: 'bold' });
+      if (s.diffLock) {
+        ctx.fillStyle = AMBER;
+        ctx.fillRect(x + 30, y + 42, 16, 1.2);
+      }
+    }
     const gear = gearShown(s);
     if (gear) text(ctx, gear, x + w - 30, y + 36, 11, AMBER, { align: 'center', weight: 'bold' });
     segText(ctx, s.clock, x + w - 22, y + 43.4, 4.55, AMBER);
@@ -229,7 +250,7 @@ function buildDigital() {
       const f = segmentCounts(s, 6, 6);
       const key = [
         s.ignition, L.speed, Math.round((s.rpm / REV_MAX) * BARS), Math.round((s.redline / REV_MAX) * BARS), f.fuel, f.temp, L.lamps.r, L.lamps.n,
-        L.lamps.temp, L.lamps.fuel, L.lamps.oil, s.reverse, s.neutral, s.clock, line.join(' '),
+        L.lamps.temp, L.lamps.fuel, L.lamps.oil, s.reverse, s.neutral, s.clock, line.join(' '), s.fourWd, s.diffLock,
       ].join('|');
       if (gate(key)) face.redraw((ctx) => draw(ctx, s, L));
     },

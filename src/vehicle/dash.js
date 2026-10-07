@@ -91,12 +91,11 @@ function buildForeman() {
     // Lamps and the key, on a small panel under the window.
     ctx.fillStyle = '#18191b';
     ctx.beginPath();
-    ctx.roundRect(122, 104, 76, 26, 3);
+    ctx.roundRect(126, 104, 68, 26, 3);
     ctx.fill();
-    lamp(ctx, 132, 114, LAMP.amber, 'R', L.lamps.r, { shape: 'rect' });
-    lamp(ctx, 150, 114, LAMP.green, 'N', L.lamps.n, { shape: 'rect' });
-    lamp(ctx, 168, 114, LAMP.red, 'OIL', L.lamps.oil, { shape: 'rect' });
-    lamp(ctx, 186, 114, LAMP.green, '4WD', !!s.fourWd, { shape: 'rect' }); // the switch on the bars (driveMode.js)
+    lamp(ctx, 138, 114, LAMP.amber, 'R', L.lamps.r, { shape: 'rect' });
+    lamp(ctx, 160, 114, LAMP.green, 'N', L.lamps.n, { shape: 'rect' });
+    lamp(ctx, 182, 114, LAMP.red, 'OIL', L.lamps.oil, { shape: 'rect' });
     keySwitch(ctx, 222, 118, s.keyOn);
   }
 
@@ -109,7 +108,7 @@ function buildForeman() {
       const L = { lamps: lampStates(s), mph: shownMph };
       const o = counterDigits(s.odoMiles, 4);
       const h = counterDigits(s.hours, 4);
-      if (gate(lookKey(s, [Math.round(shownMph * 4), o.whole + o.tenth, h.whole + h.tenth, s.fourWd]))) face.redraw((ctx) => draw(ctx, s, L));
+      if (gate(lookKey(s, [Math.round(shownMph * 4), o.whole + o.tenth, h.whole + h.tenth]))) face.redraw((ctx) => draw(ctx, s, L));
     },
   };
 }
@@ -164,12 +163,6 @@ function buildGrizzly() {
       ctx.lineWidth = 0.6;
       ctx.strokeRect(x + 4, y + 14, 11, 14);
       text(ctx, gearShown(s), x + 9.5, y + 25, 10, on, { align: 'center', weight: 'bold' });
-      // The 2WD / 4WD switch's indicator under the gear letter (driveMode.js), with a bar under it while the diff lock is in.
-      text(ctx, '4WD', x + 3.5, y + 36, 4, s.fourWd ? on : ghost, { weight: 'bold' });
-      if (s.diffLock) {
-        ctx.fillStyle = on;
-        ctx.fillRect(x + 3.5, y + 38.5, 12, 1.2);
-      }
       text(ctx, 'MPH', x + w / 2 + 17, y + 35, 4.4, on);
       segText(ctx, L.speed, x + w / 2 + 14, y + 18, 18, on, ghost);
       segText(ctx, s.clock, x + w - 5, y + 16, 5.2, on);
@@ -206,7 +199,7 @@ function buildGrizzly() {
       const c = segmentCounts(s, 6, 5);
       const line = bottomLine(s, 4, 5);
       const L = { lamps: lampStates(s), speed: speedText(s.speedMph), line };
-      const key = lookKey(s, [L.speed, c.fuel, c.temp, s.reverse, s.neutral, s.clock, line.join(' '), s.fourWd, s.diffLock]);
+      const key = lookKey(s, [L.speed, c.fuel, c.temp, s.reverse, s.neutral, s.clock, line.join(' ')]);
       if (gate(key)) face.redraw((ctx) => draw(ctx, s, L));
     },
   };
