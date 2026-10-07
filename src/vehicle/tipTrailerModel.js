@@ -42,6 +42,7 @@ export const CARGO_FOOTPRINTS = {
   jerryCan: { w: 0.36, d: 0.165 },
   toolbox: { w: 0.508, d: 0.228 },
   jumpLeads: { w: 0.36, d: 0.5 },
+  oilBottle: { w: 0.16, d: 0.16 },
 };
 
 /** Where she stands to climb in or out, beside the wheel on the left, as trailer-local metres. */

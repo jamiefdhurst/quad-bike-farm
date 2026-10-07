@@ -132,6 +132,7 @@ export const LAYOUT = {
   jerryCanJitter: 0.8, // metres of extra random shift around the chosen spot
   // The toolbox for tinkering with the quads, on the workbench in the barn.
   toolbox: { x: -62.9, z: 56.1, yaw: 0.1, lift: 0.92 }, // on the barn workbench
+  benchOil: { x: -62.05, z: 56.1, yaw: 0.2 }, // the oil bottle's place on the workbench
   oilBottle: { x: -59.3, z: 52.9, yaw: 0.3 }, // two-stroke oil, by the petrol tank
   premixCan: { x: -58.9, z: 53.5, yaw: 1.1 }, // the pre-mix can starts here
   jumpLeads: { x: -59.6, z: 48.6, yaw: 0.6 }, // jump leads on the ground by the hose

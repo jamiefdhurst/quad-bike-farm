@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 
-// A bottle of two-stroke oil on the ground by the petrol tank. Hold E on it with a
-// jerry can in your hands to add oil to the can (see jerryCan.addOil).
+// A bottle of engine oil on the ground by the petrol tank. Hold E on it with a jerry can in your hands
+// to add oil to the can (see jerryCan.addOil); the same bottle tops up a four-stroke's sump (Y at the
+// quad, near it). Pick it up with E (empty-handed) to carry it about, stand it in the trailer or on the
+// workbench, or put it down with G.
 
 export const DEFAULT_OIL_BOTTLE_PARAMS = {
   pourRate: 0.04, // litres of oil per second into a can (0.4 L makes 20 L of 50:1 pre-mix: ten seconds)
@@ -39,11 +41,32 @@ export class OilBottle {
   constructor({ scene, world, position, yaw = 0, params = { ...DEFAULT_OIL_BOTTLE_PARAMS } }) {
     this.params = params;
     this.model = buildModel();
-    this.model.position.set(position.x, world.heightAt(position.x, position.z) + 0.005, position.z);
-    this.model.rotation.y = yaw;
-    scene.add(this.model);
+    this.scene = scene;
+    this.world = world;
+    this.held = false;
+    this.putDown(position, yaw);
     this.proxy = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.4), new THREE.MeshBasicMaterial({ visible: false }));
     this.proxy.position.y = 0.2;
     this.model.add(this.proxy);
+  }
+
+  putDown(position, yaw) {
+    this.held = false;
+    this.scene.add(this.model);
+    this.model.position.set(position.x, this.world.heightAt(position.x, position.z) + 0.005, position.z);
+    this.model.rotation.set(0, yaw, 0);
+  }
+
+  /** Carried low in front of the camera, to the right, where the cans go. */
+  pickUp(camera) {
+    this.held = true;
+    camera.add(this.model);
+    this.model.position.set(0.38, -0.62, -0.7);
+    this.model.rotation.set(0.1, 0.5, 0);
+  }
+
+  /** Where it is in the world, held or not. */
+  worldPosition() {
+    return this.model.getWorldPosition(new THREE.Vector3());
   }
 }

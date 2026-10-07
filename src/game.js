@@ -745,12 +745,16 @@ export class Game {
     }
     this.interaction.add({
       target: this.oilBottle.proxy,
+      isAvailable: () => !this.oilBottle.held,
       prompt: () => {
-        if (!this.can.held) return { text: 'Two-stroke oil: bring a jerry can to add some' };
+        if (!this.handsFull) return 'Pick up the oil bottle';
+        if (!this.can.held) return { text: 'Engine oil: bring a jerry can to add some to the pre-mix' };
         if (this.can.space < 0.01) return { text: 'The jerry can is full' };
         return { text: `Hold E to add oil to the can (${fuelText(this.can.oil, this.can.diesel)})` };
       },
-      interact: () => {},
+      interact: () => {
+        if (!this.handsFull) this.oilBottle.pickUp(this.camera);
+      },
       hold: (dt) => this.can.held && this.can.addOil(this.oilBottle.params.pourRate * dt) > 0,
     });
     this.interaction.add({
@@ -1349,22 +1353,22 @@ export class Game {
     }
   }
 
-  /** Whichever jerry can, the toolbox or the jump leads you are holding, or null. */
+  /** Whichever jerry can, the toolbox, the jump leads or the oil bottle you are holding, or null. */
   heldLoad() {
-    return [this.petrolCan, this.premixCan, this.dieselCan, this.toolbox, this.leads].find((i) => i.held) ?? null;
+    return [this.petrolCan, this.premixCan, this.dieselCan, this.toolbox, this.leads, this.oilBottle].find((i) => i.held) ?? null;
   }
 
   tipTrailerPrompt() {
     const item = this.heldLoad();
     const t = this.tipTrailer;
     if (!item) return { text: t.cargo.length || t.bed.tip > 0.02 ? 'T to tip the trailer' : 'The little tipping trailer   ·   T to tip it' };
-    const what = item === this.toolbox ? 'toolbox' : item === this.leads ? 'jump leads' : 'jerry can';
+    const what = item === this.toolbox ? 'toolbox' : item === this.leads ? 'jump leads' : item === this.oilBottle ? 'oil bottle' : 'jerry can';
     if (t.bed.tip > 0.02) return { text: `The tub is up   ·   G put the ${what} down` };
     if (t.freeCargoSpot() === null) return { text: `The trailer is full   ·   G put the ${what} down` };
     return `Put the ${what} in the trailer`;
   }
 
-  /** E at the trailer with a can, the toolbox or the jump leads in your hands: stand it in the tub. */
+  /** E at the trailer with a can, the toolbox, the jump leads or the oil bottle in your hands: stand it in the tub. */
   loadTipTrailer() {
     const item = this.heldLoad();
     if (item) this.tipTrailer.load(item);
@@ -1913,7 +1917,7 @@ export class Game {
   }
 
   get handsFull() {
-    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.winch?.state === 'carried' || this.chain.state === 'carried';
+    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.oilBottle.held || this.winch?.state === 'carried' || this.chain.state === 'carried';
   }
 
   /** The tow chain: it comes out of your hand if you go further than it reaches, or when you get on something. */
@@ -3659,10 +3663,10 @@ export class Game {
     }
     this.yHeld = (this.yHeld ?? 0) + dt;
     if (this.yHeld < 0.5) return;
-    const bottle = this.oilBottle.model.position;
+    const bottle = this.oilBottle.worldPosition();
     const q = unit.quad.position;
     if (Math.hypot(q.x - bottle.x, q.z - bottle.z) > this.sumpParams.bottleRange) {
-      if (this.yHeld < 0.6) this.hud.toast('The oil bottle is by the petrol tank: bring it here', 2.5);
+      if (this.yHeld < 0.6) this.hud.toast('The oil bottle is by the petrol tank: pick it up and bring it here', 2.5);
       return;
     }
     if (sump.pour(dt) > 0) this.hud.setStatus(`Topping up the oil: ${readStick(sump.level, 0, this.sumpParams).text}`);
@@ -3730,11 +3734,12 @@ export class Game {
     this.leads.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7), yaw);
   }
 
-  /** The toolbox or the jump leads in your hands, which the workbench has a place for: { name, item, spot }, or null. */
+  /** The toolbox, jump leads or oil bottle in your hands, which the workbench has a place for: { name, item, spot }, or null. */
   benchItem() {
     const L = this.world.layout;
     if (this.toolbox.held) return { name: 'toolbox', item: this.toolbox, spot: L.toolbox };
     if (this.leads.held) return { name: 'jump leads', item: this.leads, spot: L.benchLeads };
+    if (this.oilBottle.held) return { name: 'oil bottle', item: this.oilBottle, spot: L.benchOil };
     return null;
   }
 
@@ -3742,6 +3747,12 @@ export class Game {
   putOnBench({ item, spot }) {
     item.putDown(new THREE.Vector3(spot.x, 0, spot.z), spot.yaw);
     item.model.position.y += this.world.layout.bench.height;
+  }
+
+  putOilBottleDown() {
+    const p = this.player.position;
+    const yaw = this.player.yaw;
+    this.oilBottle.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7), yaw);
   }
 
   putToolboxDown() {
@@ -3836,6 +3847,7 @@ export class Game {
       else if (this.can.held && input.wasPressed('KeyG')) this.putCanDown();
       else if (this.toolbox.held && input.wasPressed('KeyG')) this.putToolboxDown();
       else if (this.leads.held && input.wasPressed('KeyG')) this.putLeadsDown();
+      else if (this.oilBottle.held && input.wasPressed('KeyG')) this.putOilBottleDown();
     }
 
     this.accumulator += dt;
@@ -3979,6 +3991,8 @@ export class Game {
       this.hud.setStatus('Hose\nHold E to spray, G to put it back');
     } else if (this.leads.held) {
       this.hud.setStatus('Jump leads\nE on a quad to clamp one end, then another quad for the other\nG to put them down');
+    } else if (this.oilBottle.held) {
+      this.hud.setStatus('Oil bottle\nY at a four-stroke to top up its oil, near it\nG to put it down');
     } else if (this.toolbox.held) {
       this.hud.setStatus('Toolbox\nTake it to a quad that is switched off\nG to put it down');
     } else if (this.can.held) {

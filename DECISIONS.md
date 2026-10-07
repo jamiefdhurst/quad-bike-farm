@@ -1576,6 +1576,12 @@ Settled with Jamie before building: a second, small trailer (the bale trailer st
 - No new lines: they use `mudBoard`, `utvBoard` and `utvBedGo`. The girls don't drive the UTV yet, so there is no UTV version of the join; it comes with item 37.
 - Checked: unit tests for all of it (`tests/mudguardRide.test.js`, `tests/utvRide.test.js`). Not run in the game: the walk over and climb, the driver's wait for her, and how often it happens in real play.
 
+## Carrying the oil bottle (2026-10-07)
+
+- The oil bottle is a pick-up item now (`E` empty-handed, with the same hold-to-pour onto a jerry can when you have one). It is carried low on the right, goes down with `G`, stands in the tipping trailer (a fourth kind of load, `CARGO_FOOTPRINTS` has its size) and goes back in its own place on the workbench (`LAYOUT.benchOil`, between the toolbox and the logbook). Those are all the places the other things can go today; the UTV's bed waits for item 38.
+- Topping up a sump (`Y`) measures from the bottle wherever it is, held, in the trailer or on the bench, so carrying it to the quad works as well as parking the quad by the petrol tank. The range is still `bottleRange` (8 m). The hint now says to pick it up.
+- Checked: the unit tests (bench places, trailer footprints). Not looked at in the game: how the bottle sits in your hand, in the trailer and on the bench, or the pick-up prompt next to the jerry-can pour one.
+
 ## Back on the bench (2026-10-07)
 
 - Holding the toolbox or the jump leads and looking at the workbench, `E` puts them in their own places on top of it: the toolbox where it starts (`LAYOUT.toolbox`) and the leads at `LAYOUT.benchLeads` (x -63.55, the far end, clear of the toolbox and Amy's logbook; a test checks the places sit on the bench and apart). Before, `G` only dropped them on the floor at your feet. The leads still start by the hose; I took "back" to mean returning them, not moving where they begin.
