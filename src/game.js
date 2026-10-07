@@ -10,6 +10,7 @@ import { DEFAULT_PLAYER_PARAMS, PLAYER_PARAM_RANGES } from './player/playerParam
 import { QuadUnit } from './vehicle/quadUnit.js';
 import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC } from './vehicle/quadSpecs.js';
 import { LANDY_STAND } from './vehicle/landRoverModel.js';
+import { clearOfChassis } from './vehicle/dismount.js';
 import { pickFleet } from './vehicle/fleet.js';
 import { applyIdle, applyTopRpm, applyVariation, pickIdle } from './vehicle/quadVariation.js';
 import { AudioHub } from './audio/engineAudio.js';
@@ -3718,7 +3719,8 @@ export class Game {
     const RAPIER = this.RAPIER;
     const shape = new RAPIER.Capsule(PLAYER_CAPSULE.halfHeight, PLAYER_CAPSULE.radius);
     const terrain = this.world.terrain.collider;
-    for (const [lx, lz] of candidates) {
+    for (const c of candidates) {
+      const [lx, lz] = clearOfChassis(c, quad.physics.layout?.chassis, quad.scale, PLAYER_CAPSULE.radius);
       const p = quad.localToWorld(lx, 0, lz);
       const feetY = this.world.heightAt(p.x, p.z) + 0.05 + lift;
       const centre = { x: p.x, y: feetY + PLAYER_CAPSULE.feetToCentre + 0.05, z: p.z };
