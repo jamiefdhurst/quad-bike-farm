@@ -121,6 +121,7 @@ export const LAYOUT = {
   tractor: { x: -41, z: 70.5, yaw: 2.7 }, // the old tractor, parked towards the field gate, clear of the barn and the quads' rows (Jess kept getting stuck by the barn) (vehicle/quadSpecs.js TRACTOR_SPEC)
   utv: { x: -52.5, z: 40.5, yaw: 0.5 }, // the UTV, parked between the paddock and the quads' rows, where you start can see it (vehicle/quadSpecs.js UTV_SPEC)
   trailer: { x: -44.5, z: 77.9, yaw: 2.7 }, // the bale trailer's axle, 8 m behind the tractor and pointing at it, so you reverse the drawbar up to it
+  tipTrailer: { x: -49, z: 33.5, yaw: 0.2 }, // the little tipping trailer's axle, in the clear by the paddock with its tongue towards the yard, for a quad to back up to
   dieselBowser: { x: -61, z: 45.6, yaw: Math.PI / 2 }, // red diesel for the tractor, south of the petrol tank (and the hose)
   dieselCan: { x: -58.9, z: 46.2, yaw: 0.5 }, // the dark green diesel can stands by it
   jerryCanJitter: 0.8, // metres of extra random shift around the chosen spot

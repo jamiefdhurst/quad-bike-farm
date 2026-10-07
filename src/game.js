@@ -44,6 +44,9 @@ import { MudguardRide, MUDGUARD_PARAM_RANGES } from './npc/mudguardRide.js';
 import { TractorMount } from './vehicle/tractorMount.js';
 import { UtvMount } from './vehicle/utvMount.js';
 import { UtvBed, UTV_BED_PARAM_RANGES } from './vehicle/utvBed.js';
+import { TipTrailer, canTow, TIP_TRAILER_PARAM_RANGES } from './vehicle/tipTrailer.js';
+import { DEFAULT_TOW_PARAMS, TOW_PARAM_RANGES, towLoad, towEffect } from './vehicle/towing.js';
+import { TrailerRide, TRAILER_RIDE_PARAM_RANGES } from './npc/trailerRide.js';
 import { poseUtvBed, poseUtvControls } from './vehicle/utvModel.js';
 import { UtvRide, UTV_RIDE_PARAM_RANGES } from './npc/utvRide.js';
 import { TractorGo, TRACTORGO_PARAM_RANGES } from './npc/tractorGo.js';
@@ -466,7 +469,24 @@ export class Game {
     registerTuning('UTV riders', this.utvRide.p, UTV_RIDE_PARAM_RANGES);
     this.utvMount = new UtvMount(this.utvUnit.quad, (x, z) => this.world.heightAt(x, z));
     this.utvPetrolSaid = false; // the girls have remarked on it running badly on petrol
-    // Having a go on the tractor: Jess takes it, Amy won't until her day (npc/tractorGo.js). The girls' own numbers are shared objects.
+    // The little tipping trailer behind any quad with a rack (or the tractor), and the girl who rides in it (vehicle/tipTrailer.js, npc/trailerRide.js).
+    this.tipTrailer = new TipTrailer({ scene: this.scene, world: this.world });
+    const tt = this.world.layout.tipTrailer;
+    this.tipTrailer.place(tt.x, tt.z, tt.yaw);
+    this.tipRide = new TrailerRide(undefined, createRandom(this.seed ^ 0x71b7));
+    this.towParams = { ...DEFAULT_TOW_PARAMS };
+    this.tipPuller = null; // the Quad whose drive and brakes the trailer is taking from
+    registerTuning('Tipping trailer', this.tipTrailer.p, TIP_TRAILER_PARAM_RANGES);
+    registerTuning('Trailer tub', this.tipTrailer.bed.p, UTV_BED_PARAM_RANGES);
+    registerTuning('Trailer riders', this.tipRide.p, TRAILER_RIDE_PARAM_RANGES);
+    registerTuning('Towing', this.towParams, TOW_PARAM_RANGES);
+    this.interaction.add({
+      target: this.tipTrailer.proxy,
+      priority: -1, // a can or the toolbox standing in the tub wins when you look at it
+      isAvailable: () => !!this.heldLoad() || (!this.handsFull && !this.player.isRiding),
+      prompt: () => this.tipTrailerPrompt(),
+      interact: () => this.loadTipTrailer(),
+    });    // Having a go on the tractor: Jess takes it, Amy won't until her day (npc/tractorGo.js). The girls' own numbers are shared objects.
     this.tractorGo = new TractorGo(undefined, createRandom(this.seed ^ 0x70c0));
     this.tractorDrive = { ...DEFAULT_TRACTOR_GO_DRIVE };
     this.tractorStartParams = { ...DEFAULT_TRACTOR_START_PARAMS };
@@ -972,22 +992,29 @@ export class Game {
     }
   }
 
-  /** J on the tractor: hook the trailer on when the drawbar is at its ring, or take it off when you're stopped. */
+  /** J on the tractor or a quad with a rack: hook a trailer on when the hitch is at its ring, or take it off when you're stopped. */
   toggleHitch() {
-    const unit = this.tractorUnit;
-    const t = this.trailer;
-    if (this.riddenUnit !== unit) return;
-    if (this.chain.state !== 'stowed') return this.hud.toast('The tow chain is on the drawbar', 2);
-    if (t.hitched) {
-      if (unit.quad.speed > 0.5) return this.hud.toast('Stop before you unhitch the trailer', 2);
-      t.unhitch();
+    const unit = this.riddenUnit;
+    if (!unit || !canTow(unit.quad)) return;
+    const q = unit.quad;
+    const tractor = unit === this.tractorUnit;
+    const hay = tractor ? this.trailer : null;
+    const tip = this.tipTrailer;
+    const mine = [hay, tip].filter(Boolean);
+    if (tractor && this.chain.state !== 'stowed') return this.hud.toast('The tow chain is on the drawbar', 2);
+    const on = mine.find((t) => t.hitched && (t === hay || t.puller === q));
+    if (on) {
+      if (q.speed > 0.5) return this.hud.toast('Stop before you unhitch the trailer', 2);
+      on.unhitch();
       return this.hud.toast('Trailer unhitched', 1.6);
     }
-    if (t.canHitch(unit.quad)) {
-      t.hitch(unit.quad);
+    const can = mine.find((t) => t.canHitch(q));
+    if (can) {
+      can.hitch(q);
       return this.hud.toast('Trailer hitched', 1.6);
     }
-    this.hud.toast(t.gap(unit.quad) < 8 ? 'Back the drawbar up to the trailer\'s ring' : 'No trailer behind you', 2);
+    const near = Math.min(...mine.filter((t) => !t.hitched).map((t) => t.gap(q)));
+    this.hud.toast(near < 8 ? 'Back the hitch up to the trailer\'s ring' : 'No trailer behind you', 2);
   }
 
   /** The hay ride: the trailer follows the tractor, and the girls climb on, bounce about, lie back, fall off and climb down (npc/hayRide.js). */
@@ -1040,9 +1067,9 @@ export class Game {
       if (!c.hayLanded || c.hayLandedSaid) c.hayLandedSaid &&= c.hayLanded;
       else {
         c.hayLandedSaid = true;
-        const fromUtv = c.trailer === this.utvMount;
-        say(c, fromUtv ? 'utvTipOut' : 'hayFall');
-        this.hayLater.push({ left: 1.2, girl: c.others()[0], key: fromUtv ? 'utvTipLaugh' : 'hayFallOther' });
+        const [own, other] = c.trailer === this.utvMount ? ['utvTipOut', 'utvTipLaugh'] : c.trailer === this.tipTrailer ? ['trailerTipOut', 'trailerTipLaugh'] : ['hayFall', 'hayFallOther'];
+        say(c, own);
+        this.hayLater.push({ left: 1.2, girl: c.others()[0], key: other });
       }
     }
     for (const l of this.hayLater) l.left -= dt;
@@ -1303,6 +1330,89 @@ export class Game {
         say(speaker, 'utvPetrol');
       }
     }
+  }
+
+  /** Whichever jerry can or the toolbox you are holding, or null. */
+  heldLoad() {
+    return [this.petrolCan, this.premixCan, this.dieselCan, this.toolbox].find((i) => i.held) ?? null;
+  }
+
+  tipTrailerPrompt() {
+    const item = this.heldLoad();
+    const t = this.tipTrailer;
+    if (!item) return { text: t.cargo.length || t.bed.tip > 0.02 ? 'T to tip the trailer' : 'The little tipping trailer   ·   T to tip it' };
+    const what = item === this.toolbox ? 'toolbox' : 'jerry can';
+    if (t.bed.tip > 0.02) return { text: `The tub is up   ·   G put the ${what} down` };
+    if (t.freeCargoSpot() === null) return { text: `The trailer is full   ·   G put the ${what} down` };
+    return `Put the ${what} in the trailer`;
+  }
+
+  /** E at the trailer with a can or the toolbox in your hands: stand it in the tub. */
+  loadTipTrailer() {
+    const item = this.heldLoad();
+    if (item) this.tipTrailer.load(item, this.player.yaw);
+  }
+
+  /** The tipping trailer: its tub, its weight on whatever pulls it, and the girl who rides in it (vehicle/tipTrailer.js, npc/trailerRide.js). */
+  updateTipTrailer(dt, ridden, input) {
+    const t = this.tipTrailer;
+    t.update(dt);
+    // What it takes from the quad (or tractor) in front of it.
+    if (this.tipPuller && this.tipPuller !== t.puller) Object.assign(this.tipPuller.tow, { driveFactor: 1, brakeFactor: 1 });
+    this.tipPuller = t.puller;
+    if (t.puller) Object.assign(t.puller.tow, towEffect(towLoad(t.girlCount, t.cargo.length, this.towParams), !!t.puller.tractor, this.towParams));
+
+    const riding = !!ridden && t.hitched && ridden.quad === t.puller;
+    // T tips the tub, from the seat of whatever pulls it or standing by it.
+    const near = riding || (!this.player.isRiding && this.player.position.distanceTo(t.model.position) < 3);
+    if (near && input.wasPressed('KeyT') && !this.handsFull && !(ridden && !riding) && !(riding && ridden.quad.isTipped)) {
+      const note = t.toggleTip();
+      if (note) this.hud.toast(note.replace('the bed', 'the tub'), 2);
+    }
+
+    const girlOf = (id) => this.companions.find((c) => c.character.id === id);
+    const say = (c, key) => c?.voice.say(key, { urgent: true });
+    const girls = this.companions.map((c) => ({
+      id: c.character.id,
+      free: c.fsm.is('idle') && !c.hayFell && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob,
+      aboard: c.onHayRide && c.trailer === t,
+      dist: c.root.position.distanceTo(t.model.position),
+    }));
+    const ctx = { riding, active: riding && ridden.quad.engine.isRunning, speed: t.motion.speed, jolt: t.motion.jolt, slide: t.bed.sliding, girls };
+    for (const ev of this.tipRide.update(dt, ctx)) {
+      const c = girlOf(ev.girl);
+      if (ev.type === 'board') {
+        const slot = t.freeSlot();
+        if (slot && c.boardTrailer(t, slot)) say(c, 'trailerBoard');
+      } else if (ev.type === 'tell') say(c, 'trailerTell');
+      else if (ev.type === 'bump') say(c, 'trailerBump');
+      else if (ev.type === 'shout') say(c, 'trailerShout');
+      else if (ev.type === 'slide') {
+        if (c.slideOffTrailer(1, new THREE.Vector3(0, 0, -1))) this.tipRide.clear(ev.girl);
+      } else if (ev.type === 'leave') {
+        if (ev.bored) this.tipRide.dismiss(ev.girl);
+        c.leaveTrailer();
+        c.abortBoarding();
+      }
+    }
+  }
+
+  /** The wheel's "Trailer" slice for a girl: climb into the tipping trailer, or out again. */
+  tipTrailerWheelOption(c) {
+    const t = this.tipTrailer;
+    const children = [];
+    if (c.fsm.is('onTrailer') && c.trailer === t) children.push({ label: 'Get out of the trailer', run: () => (this.tipRide.dismiss(c.character.id), c.leaveTrailer()) });
+    else if (c.fsm.is('idle') && t.freeSlot()) children.push({ label: 'Get in the trailer', run: () => this.askIntoTipTrailer(c) });
+    return { label: 'Trailer', color: 0x9aa3a6, children };
+  }
+
+  /** You asked her into the trailer: she goes at once and stays until you ask her out. */
+  askIntoTipTrailer(c) {
+    const t = this.tipTrailer;
+    const slot = t.freeSlot();
+    if (!slot || !c.boardTrailer(t, slot)) return this.hud.toast('She can\'t just now');
+    this.tipRide.ask(c.character.id);
+    c.voice.say('trailerAsked', { force: true });
   }
 
   /** The wheel's "UTV" slice for a girl: get in (she picks her own seat), ride in the bed, or get out again. */
@@ -2142,7 +2252,7 @@ export class Game {
         hasPillion: u.quad.hasPillion,
         pillion: this.companions.find((c) => c.isSeated && c.quad === u.quad && c.seatKind !== 'rider')?.character.id ?? null,
       })),
-      can: { x: this.petrolCan.model.position.x, z: this.petrolCan.model.position.z, held: this.petrolCan.held },
+      can: { ...this.petrolCan.model.getWorldPosition(new THREE.Vector3()), held: this.petrolCan.held }, // it may be standing in the trailer
       bales: this.bales,
     };
   }
@@ -2943,7 +3053,8 @@ export class Game {
 
   /** What the prank logic needs to know about the farm right now. */
   prankContext(ridden) {
-    const item = (thing, name) => ({ x: thing.model.position.x, z: thing.model.position.z, held: thing.held, home: this.itemHome[name] ?? thing.model.position });
+    const at = (thing) => thing.model.getWorldPosition(new THREE.Vector3()); // it may be standing in the trailer
+    const item = (thing, name) => ({ x: at(thing).x, z: at(thing).z, held: thing.held, home: this.itemHome[name] ?? thing.model.position });
     return {
       you: { x: this.player.position.x, z: this.player.position.z, riding: ridden?.spec.id ?? null },
       girls: this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !this.menu.isOpen, mood: this.favour.mood(c.character.id) })),
@@ -3043,6 +3154,12 @@ export class Game {
       this.player.moveEnabled = false;
       return;
     }
+    if (c.fsm.is('onTrailer') && c.trailer === this.tipTrailer) {
+      this.openWheel(`Ask ${c.name} to`, [this.tipTrailerWheelOption(c)], c);
+      this.player.lookEnabled = false;
+      this.player.moveEnabled = false;
+      return;
+    }
     if (c.fsm.is('onTrailer') && c.trailer === this.utvMount) {
       this.openWheel(`Ask ${c.name} to`, [this.utvWheelOption(c)], c);
       this.player.lookEnabled = false;
@@ -3063,6 +3180,8 @@ export class Game {
     if (tractor.children.length) options.push(tractor);
     const utv = this.utvWheelOption(c);
     if (utv.children.length) options.push(utv);
+    const tipTrailer = this.tipTrailerWheelOption(c);
+    if (tipTrailer.children.length) options.push(tipTrailer);
     for (const unit of [...new Set(actions.filter((a) => a.quad).map((a) => a.quad.unit))]) {
       const own = actions.filter((a) => a.quad === unit.quad);
       options.push({
@@ -3442,6 +3561,7 @@ export class Game {
     this.updateHayRide(dt, ridden);
     this.updateMudguard(dt, ridden);
     this.updateUtv(dt, ridden, input);
+    this.updateTipTrailer(dt, ridden, input);
     this.updateTractorGo(dt, ridden);
     this.updateLPlates(dt);
     this.updateQuadTalk(dt, ridden);
@@ -3552,6 +3672,10 @@ export class Game {
       this.hud.setStatus(`Jerry can  ${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel)}\nG to put it down`);
     } else if (this.riddenUnit === this.tractorUnit && this.trailer.canHitch(this.tractorUnit.quad)) {
       this.hud.setStatus('The drawbar is at the trailer\'s ring\nJ to hitch it on');
+    } else if (this.riddenUnit && this.tipTrailer.canHitch(this.riddenUnit.quad)) {
+      this.hud.setStatus('The hitch is at the trailer\'s ring\nJ to hitch it on');
+    } else if (this.riddenUnit && this.tipTrailer.puller === this.riddenUnit.quad && this.riddenUnit.quad.speed < 0.8) {
+      this.hud.setStatus('Trailer hitched\nT to tip it, J to unhitch');
     } else {
       this.hud.setStatus('');
     }
