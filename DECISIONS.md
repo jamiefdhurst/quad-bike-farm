@@ -1422,3 +1422,13 @@ The item settled the idea, so I chose the details without asking.
 
 Starting entries (added after Jamie asked for them): `startingCandidates` and `startingEntries` in `logbook.js` pick `startMin` to `startMax` (2 to 5) from what is true of each vehicle at the start: history faults, tinkering, quirks and the last rider. Each is kept with `startKnows` (0.85), so she misses some and never writes what isn't true, and at most one note of who had a quad out is kept because nearly every quad has one. They come from the seed (`seed ^ 0x109b`), show as "Yesterday", and don't count towards the two-minute repeat rule, so a walk-round finding of the same fault is still written. Plug readings aren't pre-written, since the plug is read at the bench. Decided with Jamie: quirks are included, and Jess writes none. Checked: unit tests only; not how it reads in the running game.
 
+
+## Fumes in the barn (TODO 21)
+
+The item settled it; I chose the details without asking. It copies the yard haze (TODO 15) but for the barn's own air.
+
+- `src/world/barnFumes.js` (pure, tests in `tests/barnFumes.test.js`; tunables under "Fumes in the barn"). One level, 0..1, fed only by running engines whose position is inside the barn's walls, with the same output shape as the yard haze (throttle, two-stroke 1.5 times, diesel 1.4 times). `fillRate` 0.03 is the same number as the yard's but the barn is a small box, so one idler passes the cough level (0.35) in about 40 s. It clears out of the open doors at `clearBase` 0.012 a second plus a little wind: from full it takes a few minutes to go. Rain doesn't clear it, being under a roof.
+- Girls: one stood about or resting inside, with the level at `coughAt` for 3 s, coughs (`fumesCough`) and walks out to the yard in front of the doors, not again for 40 s. Girls driving or doing something else aren't moved.
+- Amy: at `switchAt` 0.5 she walks to just outside the doors and, 3.5 s later, switches off the engine ("reaches in"), but only if nobody is on it or starting it; if that changes on the way she stops. If every running engine in there has someone on it (you), she says `fumesTell` instead, at most once a minute. Jess only coughs.
+- Look: the yard's `HazeLayer` again, with a `look` option for blob size, height and wander: 14 blobs 3.5 to 6.5 m across, 2.6 to 4.8 m up, inside the barn, opacity up to 0.3. The walls hide them from outside, so it shows through the doorway. It doesn't drift out of the doors.
+- Checked: unit tests and a production build only. Not checked in the running game: the look of the haze, Amy's walk to the doorway, or the timings. The new lines are recorded in the background and use browser speech until the banks are committed.

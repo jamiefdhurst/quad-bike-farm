@@ -39,6 +39,7 @@ import { JESS_GOSSIP_LINES } from './gossipLines.js';
 import { JESS_THROTTLE_LINES } from './throttleLines.js';
 import { JESS_PILLION_COACH_LINES } from './pillionCoachLines.js';
 import { JESS_SMOKE_LINES } from './smokeLines.js';
+import { JESS_FUMES_LINES } from './fumesLines.js';
 import { JESS_RACE_LINES } from './raceLines.js';
 import { JESS_RECALL_LINES } from './recallLines.js';
 import { JESS_READING_LINES } from './readingLines.js';
@@ -409,6 +410,7 @@ export const JESS_LINES = {
   ...JESS_THROTTLE_LINES,
   ...JESS_PILLION_COACH_LINES,
   ...JESS_SMOKE_LINES,
+  ...JESS_FUMES_LINES,
   ...JESS_RACE_LINES,
   ...JESS_RECALL_LINES,
   ...JESS_READING_LINES,

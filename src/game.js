@@ -62,6 +62,8 @@ import { PillionCoach, PILLION_COACH_PARAM_RANGES } from './npc/pillionCoach.js'
 import { SmokeSense, SMOKE_PARAM_RANGES } from './npc/smokeSense.js';
 import { Haze, HAZE_PARAM_RANGES } from './world/haze.js';
 import { HazeLayer } from './effects/hazeLayer.js';
+import { BarnFumes, FUMES_PARAM_RANGES } from './world/barnFumes.js';
+import { barnShape } from './world/barn.js';
 import { Race, RACE_PARAM_RANGES, planLap } from './npc/race.js';
 import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
 import { Convoy, CONVOY_PARAM_RANGES } from './npc/convoy.js';
@@ -285,6 +287,10 @@ export class Game {
     // Smoke hanging over the yard on a still day (world/haze.js, effects/hazeLayer.js).
     this.haze = new Haze(this.world.layout.yard);
     this.hazeLayer = new HazeLayer(this.scene, this.world.layout.yard, this.world.layout.yard.radius, createRandom(this.seed ^ 0x4a2e));
+    // Fumes under the barn roof from engines run indoors (world/barnFumes.js); the same blobs, smaller and higher.
+    this.barnFumes = new BarnFumes();
+    const bs = barnShape(this.world.layout);
+    this.barnFumesLayer = new HazeLayer(this.scene, { x: bs.x, z: bs.z }, 2.8, createRandom(this.seed ^ 0x51c3), { size: [3.5, 3], height: [2.6, 2.2], wander: 0.8 });
     console.info(`Weather: ${this.weather.name}, ${this.weather.temperature} °C (${this.weather.band}), chill ${this.weather.chill.toFixed(2)}, frost ${this.weather.frost.toFixed(2)} (add ?temp=<degrees> to the URL to force it)`);
     // She starts beside a random quad in the yard; the player starts facing it.
     this.homeUnit = this.units[home];
@@ -798,6 +804,7 @@ export class Game {
     registerTuning('Hand on the throttle', this.throttleGrab.p, GRAB_PARAM_RANGES);
     registerTuning('Two-stroke smoke', this.smokeSense.p, SMOKE_PARAM_RANGES);
     registerTuning('Yard haze', this.haze.p, HAZE_PARAM_RANGES);
+    registerTuning('Fumes in the barn', this.barnFumes.p, FUMES_PARAM_RANGES);
     registerTuning('Racing', this.race.p, RACE_PARAM_RANGES);
     registerTuning('Follow the leader', this.convoy.p, CONVOY_PARAM_RANGES);
     registerTuning('Doughnuts', this.doughnutWatch.p, DOUGHNUT_PARAM_RANGES);
@@ -2139,6 +2146,42 @@ export class Game {
     this.hazeLayer.update(dt, this.haze.level, smoke.windX, smoke.windZ, (x, z) => this.world.heightAt(x, z));
   }
 
+  /** An engine run in the barn fills it with fumes; free girls inside cough and walk out, and Amy switches it off from the doorway (world/barnFumes.js). */
+  updateBarnFumes(dt) {
+    const w = this.weather;
+    const bs = barnShape(this.world.layout);
+    const engines = this.units.map((u) => {
+      const q = u.quad;
+      const e = q.engine;
+      const starter = this.companions.some((c) => c.fsm.is('starting') && c.quad === q);
+      return {
+        id: u.id, running: e.isRunning, throttle: e.throttle, twoStroke: e.params.strokes === 2, diesel: !!e.params.runsOnDiesel,
+        inside: this.world.inBarn(q.position.x, q.position.z), attended: !!(q.rider || q.driver || q.passenger || starter),
+      };
+    });
+    const amy = this.companions.find((c) => c.character.id === 'amy');
+    const girls = this.companions.map((c) => ({
+      id: c.character.id, free: (c.fsm.is('idle') || c.fsm.is('resting')) && !this.menu.isOpen, inside: this.world.inBarn(c.root.position.x, c.root.position.z),
+    }));
+    const events = this.barnFumes.update(dt, { wind: w.wind, engines, girls, amyFree: !!amy && amy.fsm.is('idle') && !this.menu.isOpen });
+    const out = new THREE.Vector3(bs.door.x + 1.4, 0, bs.z);
+    for (const e of events) {
+      const c = this.companions.find((o) => o.character.id === (e.girl ?? 'amy'));
+      if (e.type === 'cough') {
+        // Out of the barn doors and into the yard, coughing; a girl on her way to switch it off stays put.
+        if (!(e.girl === 'amy' && this.barnFumes.going)) c.recall(new THREE.Vector3(out.x + 2, this.world.heightAt(out.x + 2, out.z), out.z), Math.PI / 2);
+        c.voice.say('fumesCough', { urgent: true });
+      } else if (e.type === 'amyGoes') {
+        c.recall(new THREE.Vector3(out.x, this.world.heightAt(out.x, out.z), out.z), -Math.PI / 2);
+        c.voice.say('fumesSwitchOff', { urgent: true });
+      } else if (e.type === 'switchOff') {
+        this.units.find((u) => u.id === e.engine)?.quad.engine.setIgnition(false);
+      } else if (e.type === 'tell') c.voice.say('fumesTell', { urgent: true });
+    }
+    const smoke = this.girlUnits[0].smoke.params;
+    this.barnFumesLayer.update(dt, this.barnFumes.level, Math.max(0, smoke.windX) + 0.3, 0, (x, z) => this.world.heightAt(x, z), 0.3);
+  }
+
   // Reading the dash out -----------------------------------------------------
 
   updateDashReading(dt, ridden) {
@@ -3097,6 +3140,7 @@ export class Game {
     if (!this.recalling) this.updateRace(dt, ridden);
     this.updateSmokeSense(dt);
     this.updateHaze(dt);
+    this.updateBarnFumes(dt);
     this.updateThrottleGrab(dt, ridden);
     this.updateRockPrank(dt);
     this.updateDrownOut(dt);
