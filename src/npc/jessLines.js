@@ -17,6 +17,7 @@ import { JESS_SILENCER_LINES } from './silencerLines.js';
 import { JESS_DIAGNOSIS_LINES } from './diagnosisLines.js';
 import { JESS_THRASH_LINES } from './thrashLines.js';
 import { JESS_REVOFF_LINES } from './revOffLines.js';
+import { JESS_HORN_LINES } from './hornLines.js';
 import { JESS_TRACTOR_LINES } from './tractorLines.js';
 import { JESS_HAYRIDE_LINES } from './hayRideLines.js';
 import { JESS_MUDGUARD_LINES } from './mudguardLines.js';
@@ -374,6 +375,7 @@ export const JESS_LINES = {
   ...JESS_DIAGNOSIS_LINES,
   ...JESS_THRASH_LINES,
   ...JESS_REVOFF_LINES,
+  ...JESS_HORN_LINES,
   ...JESS_TRACTOR_LINES,
   ...JESS_HAYRIDE_LINES,
   ...JESS_MUDGUARD_LINES,

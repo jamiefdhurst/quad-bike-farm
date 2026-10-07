@@ -24,6 +24,7 @@ import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { WearLedger, LEDGER_PARAM_RANGES } from './engine/wearLedger.js';
 import { Pranks, PRANK_PARAM_RANGES } from './npc/pranks.js';
 import { RevOff, REVOFF_PARAM_RANGES } from './npc/revOff.js';
+import { Horns, HORN_PARAM_RANGES } from './npc/horns.js';
 import { TractorWatch, TRACTOR_WATCH_PARAM_RANGES } from './npc/tractorWatch.js';
 import { HayRide, HAYRIDE_PARAM_RANGES } from './npc/hayRide.js';
 import { MudguardRide, MUDGUARD_PARAM_RANGES } from './npc/mudguardRide.js';
@@ -347,6 +348,8 @@ export class Game {
     this.pranks = new Pranks();
     // Rev-offs: blip the throttle near a girl sat on a running quad and she may blip back (npc/revOff.js).
     this.revOff = new RevOff();
+    // Horns: your beep (L) and the girls' answers and Jess's creep-up (npc/horns.js).
+    this.horns = new Horns();
     // What they say about the tractor: the key that doesn't stop it, waiting for the glow plugs, it catching (npc/tractorWatch.js).
     this.tractorWatch = new TractorWatch(undefined, createRandom(this.seed ^ 0x7a7c));
     // The tractor creeping off on its own, and the girl who runs after it (npc/tractorRunaway.js, vehicle/creep.js).
@@ -689,6 +692,7 @@ export class Game {
     registerTuning('Who wore it out', this.wearLedger.p, LEDGER_PARAM_RANGES);
     registerTuning('Pranks', this.pranks.p, PRANK_PARAM_RANGES);
     registerTuning('Rev-offs', this.revOff.p, REVOFF_PARAM_RANGES);
+    registerTuning('Horns', this.horns.p, HORN_PARAM_RANGES);
     registerTuning('Tractor remarks', this.tractorWatch.p, TRACTOR_WATCH_PARAM_RANGES);
     registerTuning('Tractor creep', DEFAULT_CREEP_PARAMS, CREEP_PARAM_RANGES);
     registerTuning('Tractor runaway', this.tractorRunaway.p, TRACTOR_RUNAWAY_PARAM_RANGES);
@@ -1621,6 +1625,27 @@ export class Game {
           girl.voice.say('revStall', { force: true });
         }
       }
+    }
+  }
+
+  // Horns --------------------------------------------------------------------
+
+  updateHorns(dt, ridden) {
+    const honking = !!ridden && !this.menu.isOpen && this.input.isDown('KeyL');
+    const girls = this.companions.map((c) => {
+      const driving = c.fsm.is('driving');
+      return { id: c.character.id, x: c.root.position.x, z: c.root.position.z, yaw: c.quad.yaw, speed: Math.abs(c.quad.speed), driving, canHonk: driving || c.fsm.is('seated') };
+    });
+    const events = this.horns.update(dt, { you: { x: this.player.position.x, z: this.player.position.z, honking }, girls });
+    const girl = (id) => this.companions.find((c) => c.character.id === id);
+    for (const e of events) {
+      if (e.type === 'answer') girl(e.girl)?.voice.say('hornAnswer', { force: true });
+      else if (e.type === 'creep') girl('jess')?.voice.say('hornJump', { force: true });
+      else if (e.type === 'jump') girl(e.girl)?.voice.say('hornJump', { force: true });
+    }
+    for (const u of this.units) {
+      const c = this.companions.find((o) => o.quad === u.quad);
+      u.ride.setHorn(u === ridden ? honking : !!c && this.horns.beeping(c.character.id));
     }
   }
 
@@ -2640,6 +2665,7 @@ export class Game {
     this.updatePlaces(dt);
     this.updatePranks(dt, ridden);
     this.updateRevOff(dt, ridden);
+    this.updateHorns(dt, ridden);
     this.updateTractorWatch(dt);
     this.updateTractorRunaway(dt, ridden);
     this.updateHayRide(dt, ridden);

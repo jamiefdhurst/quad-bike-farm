@@ -14,6 +14,7 @@ const HELP_HTML = `
   <div>Red, green and yellow have a clutch: hold <kbd>Shift</kbd> to change gear with <kbd>1</kbd> to <kbd>4</kbd>, <kbd>B</kbd> reverse, <kbd>0</kbd> neutral</div>
   <div><kbd>W</kbd> throttle, <kbd>S</kbd> brake / reverse, <kbd>A</kbd><kbd>D</kbd> steer</div>
   <div><kbd>Space</kbd> parking brake, <kbd>T</kbd> right it if it tips, <kbd>E</kbd> get off</div>
+  <div>Hold <kbd>L</kbd> for the horn: the girls beep back</div>
   <div>Hold <kbd>C</kbd> to look back, <kbd>V</kbd> to lean in to the dash</div>
   <h3>The old tractor</h3>
   <div><kbd>K</kbd> key (heats the glow plugs: wait for the GLOW lamp), hold <kbd>R</kbd> to crank</div>

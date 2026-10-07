@@ -1143,3 +1143,14 @@ Item 2; the item settled everything, so I chose the details without asking.
 - The toast on the look step now gives only the colour. What it means is for you to work out, or for a girl to say. This replaces the old four-step fouling description, which said "it was drowning" outright.
 - Girls: `onPlug` in `companionVoice.js` runs when you look at the plug, within her voice range. She names the true reading with probability `diagnoseAccuracy` (Amy 0.9, Jess 0.5, the same measure as listening to a running engine), otherwise one of the other four (`guessPlug`). Both say it, so Jess can contradict Amy. Five new lines each in `benchLines.js` (`plugHealthy`, `plugRich`, `plugLean`, `plugOily`, `plugWorn`), recorded.
 - Left out: a four-stroke worn plug and a healthy one look alike to anyone but Amy, by design. Nothing sticks the reading to the quad afterwards (a logbook is item 20). Checked: unit tests only. Not checked: how it reads in the running game, or how often a quad actually turns up lean enough to read white (lean mostly comes from a clogged air filter or starved fuel, so it may be rare).
+
+## Horns (TODO 3)
+
+Item 3; the item settled what happens, so I chose the key and numbers without asking.
+
+- **Key:** hold `L` (free, and `H` is help). It works on any quad and the tractor, with the engine off too. Held down, the horn sounds; the sound is built the first time a horn is used (`setHorn` in `rideAudio.js`) and goes through the quad's own sound path, so a girl's beep has distance, Doppler and the barn's echo like her engine.
+- **Voices:** `hornVoice` in `src/npc/horns.js`. Quads: two buzzy sawtooth tones near 620 and 780 Hz, quiet (0.22), low-passed at 2.6 kHz, with a 95 Hz wobble on the level; each quad's pitch is shifted up to 10% by its id so they don't all match. The tractor: 196 and 247 Hz, 0.55, less buzz. A spec can give its own `horn`. `hornVolume` sits in the Sound tuning.
+- **Answers:** a fresh press (quiet for 0.15 s first) within 35 m of a girl sat on or driving a quad makes her beep back after 0.4 to 1.1 s, one or two beeps, then she won't answer again for 3 s. Jess always answers, Amy 60% of the time. Holding the button down is one beep, not a stream of them.
+- **Creeping up:** Jess driving between 2 and 9 m behind Amy's rear arc (dot product 0.7 or more), with Amy driving at 2 m/s or more, has a 15% chance per second of blasting the horn for 0.7 s. First one no earlier than 120 s into a game, then 240 s apart. Amy "jumps" 0.12 s in, which is only her line (`hornJump`) for now: her quad doesn't swerve. The tunables are under "Horns".
+- **Not done:** the quirk for a horn that works when it likes is item 6. No battery cost for the horn.
+- **Checked:** unit tests only (answers, ranges, creep-up geometry and timing, voices, lines). **Not checked:** what the horns sound like in the running game, or how often Jess gets into position.

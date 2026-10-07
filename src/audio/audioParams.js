@@ -35,6 +35,7 @@ export const DEFAULT_SOUND_PARAMS = {
   rattleChance: 0.5, // chance a full-size bump rattles them
   rideWindVolume: 0.3, // wind past the rider's ears at rideWindFullSpeed (only on the quad you ride)
   rideWindFullSpeed: 15, // m/s
+  hornVolume: 1, // every horn, on top of its own level (npc/horns.js says how loud each is)
 
   // When the suspension makes a sound (rideEvents.js)
   knockThreshold: 0.5, // m/s of suspension compression before it knocks
@@ -79,6 +80,7 @@ export const SOUND_PARAM_RANGES = {
   rattleChance: [0, 1, 0.01],
   rideWindVolume: [0, 2, 0.01],
   rideWindFullSpeed: [2, 40, 0.5],
+  hornVolume: [0, 2, 0.05],
   knockThreshold: [0.05, 5, 0.05],
   knockFullSpeed: [0.2, 10, 0.1],
   knockCooldown: [0, 0.5, 0.01],

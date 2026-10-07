@@ -11,6 +11,7 @@
 // through the same path as its engine (propagation.js), so they pass by with
 // the same Doppler shift.
 
+import { hornVoice } from '../npc/horns.js';
 import { RideEvents, createSurfaceSampler } from './rideEvents.js';
 
 const TWO_PI = Math.PI * 2;
@@ -252,6 +253,45 @@ export class RideAudio {
     white.connect(this.waterFilter).connect(this.waterGain);
     this.built = true;
     return true;
+  }
+
+  /** Hold the horn down (or let go). It's built the first time it's sounded: two buzzy tones through a low-pass, switched by a gain. */
+  setHorn(on) {
+    if (on === !!this.hornOn && (this.hornGain || !on)) return;
+    this.hornOn = on;
+    if (!this.hornGain) {
+      if (!on || !this.built) return;
+      const ctx = this.hub.ctx;
+      const v = hornVoice(this.unit.spec);
+      this.hornLevel = v.level;
+      const gain = ctx.createGain();
+      gain.gain.value = 0;
+      const tone = ctx.createBiquadFilter();
+      tone.type = 'lowpass';
+      tone.frequency.value = v.bright;
+      // A buzz: a slow-ish wobble on the level, which is most of what makes a cheap horn sound cheap.
+      const buzz = ctx.createOscillator();
+      buzz.frequency.value = 95;
+      const depth = ctx.createGain();
+      depth.gain.value = v.buzz * 0.5;
+      const swing = ctx.createGain();
+      swing.gain.value = 1 - v.buzz * 0.5;
+      buzz.connect(depth).connect(swing.gain);
+      for (const f of v.freqs) {
+        const o = ctx.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.value = f;
+        o.connect(swing);
+        o.start();
+      }
+      buzz.start();
+      swing.connect(tone).connect(gain).connect(this.out);
+      this.hornGain = gain;
+    }
+    const g = this.hornGain.gain;
+    const t = this.hub.ctx.currentTime;
+    g.cancelScheduledValues(t);
+    g.setTargetAtTime(on ? this.hornLevel * this.hub.params.hornVolume * 0.5 : 0, t, on ? 0.008 : 0.02);
   }
 
   /** Every frame, after the engine sound has updated (it owns the sound path). */
