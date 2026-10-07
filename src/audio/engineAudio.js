@@ -337,7 +337,7 @@ export class EngineAudio {
         cranking: engine.state === 'cranking',
         fan: engine.fan,
         loud: engine.exhaustLoud,
-        revsPerCycle: engine.revsPerCycle,
+        revsPerCycle: engine.revsPerFiring, // the synth's 'cycle' is the gap between firings
       },
       events,
     });

@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
-import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC } from '../src/vehicle/quadSpecs.js';
 import { AUDIO_PARAM_RANGES } from '../src/audio/audioParams.js';
 
 describe('engine banks', () => {
   it('every quad names a bank that is listed, loads in the hub and exists on disk', () => {
-    for (const spec of [...QUAD_SPECS, ...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC]) {
+    for (const spec of [...QUAD_SPECS, ...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC]) {
       const bank = spec.audio?.recBank;
       if (!bank) continue;
       expect(AUDIO_PARAM_RANGES.recBank, spec.id).toContain(bank);
@@ -70,6 +70,19 @@ describe('engine banks', () => {
       expect(g.dur).toBeGreaterThan(0.11);
       expect(g.dur).toBeLessThan(0.135);
     }
+  });
+
+  it("cuts the Land Rover's Jeep idle into one beat per cylinder, in order, each lasting one of its engine's firings", () => {
+    const bank = JSON.parse(readFileSync('public/audio/engine-bank-landy.json', 'utf8'));
+    expect(bank.readThrough).toBe(true);
+    const idle = bank.grains.filter((g) => g.kind === 'idle');
+    idle.forEach((g, i) => expect(g.slice).toBe(i % 4));
+    expect(LAND_ROVER_SPEC.engine.cylinders).toBe(4);
+    // The bank's rpm (120 / beat length) is four times the engine's: each beat plays near its own speed at the Land Rover's idle.
+    const ok = idle.filter((g) => g.ok !== false).map((g) => g.rpm / 4).sort((a, b) => a - b);
+    const median = ok[Math.floor(ok.length / 2)];
+    expect(median).toBeGreaterThan(LAND_ROVER_SPEC.idleRange[0] * 0.85);
+    expect(median).toBeLessThan(LAND_ROVER_SPEC.idleRange[1] * 1.1);
   });
 
   // The moto's Derbi bangs every other turn at idle (two slices a lump), the ATC's Ape about every third (three).

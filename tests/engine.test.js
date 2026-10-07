@@ -226,6 +226,40 @@ describe('firing pulses', () => {
     expect(fires).toBeCloseTo((avgRpm / 120) * seconds, -1);
   });
 
+  it('fires once per cylinder, evenly, with a four-cylinder (the Land Rover), each firing a quarter of the cycle', () => {
+    const engine = makeEngine({ temperature: 1, params: { cylinders: 4 } });
+    crank(engine, 3);
+    run(engine, 2);
+    let fires = 0;
+    let rpmSum = 0;
+    const periods = [];
+    const seconds = 5;
+    run(engine, seconds, (e) => {
+      const firings = e.pulses.filter((p) => p.type === 'fire' || p.type === 'misfire');
+      fires += firings.length;
+      periods.push(...firings.map((p) => p.period * e.rpm));
+      rpmSum += e.rpm;
+      return {};
+    });
+    const avgRpm = rpmSum / Math.round(seconds / DT);
+    expect(fires / ((avgRpm / 120) * seconds)).toBeCloseTo(4, 0);
+    // Each firing's period is a quarter of the cycle's 120 / rpm.
+    for (const x of periods) expect(x).toBeCloseTo(30, -1);
+  });
+
+  it('holds a steadier idle with four cylinders than one, as rough as each other', () => {
+    const spread = (cylinders) => {
+      const engine = makeEngine({ temperature: 1, seed: 7, params: { cylinders, baseRoughness: 0.5, roughHunt: 0 } });
+      crank(engine, 3);
+      run(engine, 3);
+      const rpms = [];
+      run(engine, 10, (e) => (rpms.push(e.rpm), {}));
+      const mean = rpms.reduce((a, b) => a + b, 0) / rpms.length;
+      return Math.sqrt(rpms.reduce((a, b) => a + (b - mean) ** 2, 0) / rpms.length);
+    };
+    expect(spread(4)).toBeLessThan(spread(1) * 0.7);
+  });
+
   it('warms up only while running and cools when off', () => {
     const engine = makeEngine({ temperature: 0.5 });
     run(engine, 30);

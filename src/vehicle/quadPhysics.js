@@ -57,7 +57,7 @@ export class QuadPhysics {
         { x: 0, y: -1, z: 0 },
         { x: -1, y: 0, z: 0 },
         params.suspensionRestLength,
-        w.radius ?? params.wheelRadius,
+        w.radius ? w.radius * scale : params.wheelRadius, // a layout's own wheel is model-sized, like its mount: scaled with it
       );
     }
     // What each wheel is standing on, refreshed every step (see applyControls).
@@ -74,6 +74,12 @@ export class QuadPhysics {
     this.traction = new Traction(this.wheels.length);
     this.driveSign = 1;
     this.applyParams();
+  }
+
+  /** Wheel i's radius in the physics: the layout's own (scaled with the chassis), or the vehicle's. */
+  wheelRadius(i) {
+    const r = this.wheels[i].radius;
+    return r ? r * this.scale : this.params.wheelRadius;
   }
 
   /** While parked, a nearly stationary quad is held where it is (see update). */
@@ -95,7 +101,7 @@ export class QuadPhysics {
       { x: 0, y: 0, z: 0, w: 1 },
     );
     for (let i = 0; i < this.wheels.length; i++) {
-      this.vehicle.setWheelRadius(i, this.wheels[i].radius ?? p.wheelRadius);
+      this.vehicle.setWheelRadius(i, this.wheelRadius(i));
       this.vehicle.setWheelSuspensionRestLength(i, p.suspensionRestLength);
       this.vehicle.setWheelSuspensionStiffness(i, p.suspensionStiffness * (this.wheels[i].stiffness ?? 1) * (this.tyres?.stiffness(i) ?? 1));
       this.vehicle.setWheelSuspensionCompression(i, p.suspensionCompression);
@@ -171,7 +177,7 @@ export class QuadPhysics {
     // Spinning wheels turn faster than the ground goes by.
     const spin = (this.driveSign * this.spinSlip * dt) / this.params.wheelRadius;
     this.wheelInfo.forEach((w, i) => {
-      if (w.driven) w.spinAngle = (w.spinAngle + (spin * this.params.wheelRadius) / (this.wheels[i].radius ?? this.params.wheelRadius)) % (Math.PI * 2);
+      if (w.driven) w.spinAngle = (w.spinAngle + (spin * this.params.wheelRadius) / this.wheelRadius(i)) % (Math.PI * 2);
     });
     // The raycast wheels' brakes can't quite hold it on a slope: it creeps a metre
     // or so a minute. Parked and all but still, its sideways and along-the-ground

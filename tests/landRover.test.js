@@ -7,8 +7,19 @@ import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { AUDIO_PARAM_RANGES } from '../src/audio/audioParams.js';
 import { LAYOUT } from '../src/world/layout.js';
+import { LANDY_LAYOUT, LANDY_GROUND_OFFSET } from '../src/vehicle/landRoverModel.js';
 
 describe('the Land Rover', () => {
+  it('stands on its tyres at its size: the physics puts the ground where the model draws it, not inside the wheels', () => {
+    const k = L.scale;
+    for (const w of LANDY_LAYOUT.wheels) {
+      // Mount, down the suspension at rest, down the (scaled) wheel: the ground, in chassis space.
+      const ground = w.y * k - L.vehicle.suspensionRestLength - w.radius * k;
+      expect(ground).toBeCloseTo(LANDY_GROUND_OFFSET * k, 2);
+    }
+    expect(L.vehicle.wheelRadius).toBeCloseTo(LANDY_LAYOUT.wheels[0].radius * k, 2);
+  });
+
   it('is a petrol four-speed manual with no synchromesh on first and second, a 4WD lever, a diff lock and no fuel tap', () => {
     expect(DASH_STYLES).toContain(L.dashStyle);
     expect(AUDIO_PARAM_RANGES.recBank).toContain(L.audio.recBank);

@@ -252,9 +252,13 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
     rbox(0.04, 1.2, 0.12, 0.01, paint, s * 0.82, 1.22, -0.5, root); // the B pillar
     rbox(0.04, 0.42, 0.2, 0.01, paint, s * 0.82, 0.75, -0.62, root); // the cab side behind the door
   }
-  rbox(1.62, 1.1, 0.04, 0.01, paint, 0, 1.17, -0.62, root, 'cabBack');
+  // The cab's rear panel in four pieces round a real opening, with the glass set in the middle of it: glass laid on a whole
+  // panel's face fights it for the same depth and flickers.
+  rbox(1.62, 0.73, 0.04, 0.01, paint, 0, 0.985, -0.62, root, 'cabBack'); // below the window
+  rbox(1.62, 0.07, 0.04, 0.01, paint, 0, 1.685, -0.62, root); // above it
+  for (const s of [-1, 1]) rbox(0.36, 0.3, 0.04, 0.01, paint, s * 0.63, 1.5, -0.62, root); // either side
   const rear = add(new THREE.PlaneGeometry(0.9, 0.3), MAT.glass, root);
-  rear.position.set(0, 1.5, -0.6);
+  rear.position.set(0, 1.5, -0.62);
   // The roof: Limestone, with a gentle rise to its middle and a lip all round.
   rbox(1.7, 0.06, 1.3, 0.03, MAT.roof, 0, 1.75, -0.02, root, 'roof');
   rbox(1.6, 0.03, 1.2, 0.015, MAT.roof, 0, 1.79, -0.02, root);
@@ -266,7 +270,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   rbox(0.36, 0.22, 0.6, 0.04, MAT.black, 0, 0.73, 0.25, root); // the tunnel
   for (const seat of [LANDY_SEATS.driver, LANDY_SEATS.mid, LANDY_SEATS.left]) {
     rbox(0.42, 0.1, 0.46, 0.04, MAT.seat, seat.x, 0.9, seat.z, root);
-    const back = rbox(0.42, 0.48, 0.08, 0.04, MAT.seat, seat.x, 1.18, -0.54, root);
+    const back = rbox(0.42, 0.48, 0.08, 0.04, MAT.seat, seat.x, 1.18, -0.5, root); // clear of the cab's rear panel, even leant back
     back.rotation.x = -0.08;
   }
 

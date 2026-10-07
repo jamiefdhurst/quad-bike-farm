@@ -1118,8 +1118,8 @@ export const LAND_ROVER_SPEC = {
     rollInertia: 320,
     pitchInertia: 760,
     yawInertia: 820,
-    wheelRadius: 0.38,
-    suspensionRestLength: 0.2,
+    wheelRadius: 0.437, // 0.38 m tyres at the model's 1.15 scale
+    suspensionRestLength: 0.23, // the model's 0.2 m at its 1.15 scale, so the tyres stand on the ground rather than in it
     maxSuspensionTravel: 0.16, // leaf springs: not much travel
     suspensionStiffness: 32,
     suspensionCompression: 3,
