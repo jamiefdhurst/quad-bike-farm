@@ -605,8 +605,7 @@ export class Game {
             return { text: muddy > 0 ? `Hold E to wash the ${unit.label} (${muddy}% muddy)   ·   G put the hose back` : `The ${unit.label} is clean   ·   G put the hose back` };
           }
           if (this.toolbox.held) {
-            if (unit.spec.utv) return this.utvToolboxPrompt(unit);
-            return unit.spec.tractor ? { text: 'The toolbox is for the quads: the tractor is too much for it   ·   G put it down' } : this.workshop.prompt(unit);
+            return this.workshop.prompt(unit);
           }
           if (this.can.held) {
             const pct = Math.round(quad.fuel.level * 100);
@@ -621,9 +620,9 @@ export class Game {
           return {
             action: `Ride the ${unit.label}`,
             keys: quad.tractor
-              ? [['K', 'Key'], ['R', 'Start'], ['O', 'Stop knob'], ...(this.chain.state === 'stowed' && !this.player.isRiding ? [['X', 'Tow chain']] : [])]
+              ? [['K', 'Key'], ['R', 'Start'], ['O', 'Stop knob'], ['Y', 'Dipstick'], ...(this.chain.state === 'stowed' && !this.player.isRiding ? [['X', 'Tow chain']] : [])]
               : unit.spec.utv
-                ? [['K', 'Key'], ['R', 'Start'], ['B', 'Reverse lever'], ['T', 'Tip the bed']]
+                ? [['K', 'Key'], ['R', 'Start'], ['B', 'Reverse lever'], ['T', 'Tip the bed'], ['Y', 'Dipstick']]
                 : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.manual ? [['Shift 1-4', 'Clutch, gears']] : []), ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(quad.sump ? [['Y', 'Dipstick']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : []), ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
           };
         },
@@ -649,8 +648,7 @@ export class Game {
           }
           if (this.can.held || this.hose.held) return; // E is for pouring or spraying while you're holding those
           if (this.toolbox.held) {
-            if (unit.spec.utv) return this.utvDrain(unit);
-            return unit.spec.tractor ? undefined : this.workshop.open(unit);
+            return this.workshop.open(unit);
           }
           if (this.tooFastToMount(quad) && this.herDriving(quad)) {
             // She pulls up and moves onto the back for you.
@@ -1287,20 +1285,6 @@ export class Game {
   utvTainted(unit) {
     const q = unit.quad;
     return q.engine.dieselSoak > 0.02 || (q.fuel.litres > 0.05 && q.fuel.diesel < 0.98);
-  }
-
-  /** The toolbox held up to the UTV: it has nothing to tinker with, but it can pump petrol out of the tank. */
-  utvToolboxPrompt(unit) {
-    if (this.utvTainted(unit)) return { text: `Pump the petrol out of the ${unit.label}'s tank   ·   E pump it out   ·   G put it down` };
-    return { text: `The toolbox is for the quads: nothing in it fits a diesel ${unit.label}   ·   G put it down` };
-  }
-
-  /** E with the toolbox held: the tank and carb emptied, and the soak cleared. */
-  utvDrain(unit) {
-    if (!this.utvTainted(unit)) return;
-    const lost = unit.quad.drainFuel();
-    this.utvPetrolSaid = false;
-    this.hud.toast(`Tank drained: ${lost.toFixed(1)} L gone. It needs red diesel`);
   }
 
   /** The UTV: its tip lever and tailgate, the girls in its seats and bed, and what they say (npc/utvRide.js, vehicle/utvBed.js). */

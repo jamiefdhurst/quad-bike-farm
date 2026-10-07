@@ -39,9 +39,9 @@ export const SUMP_PARAM_RANGES = {
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const lerp = (a, b, t) => a + (b - a) * t;
 
-/** Whether a vehicle has a sump to speak of: the four-stroke quads (the two-strokes mix theirs in the petrol, the tractor is out of scope). */
-export function hasSump({ strokes = 4, runsOnDiesel = false, tractor = false }) {
-  return !tractor && strokes !== 2 && !runsOnDiesel;
+/** Whether a vehicle has a sump to speak of: every four-stroke, petrol or diesel (the two-strokes mix theirs in the petrol). */
+export function hasSump({ strokes = 4 }) {
+  return strokes !== 2;
 }
 
 /** Which of the quads with a sump burns oil this game: one, picked from the seed's random. Returns the id, or null if there are none. */

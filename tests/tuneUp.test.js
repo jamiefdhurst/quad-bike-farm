@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, TRACTOR_SPEC, UTV_SPEC } from '../src/vehicle/quadSpecs.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { DEFAULT_VEHICLE_PARAMS } from '../src/vehicle/vehicleParams.js';
 import { DEFAULT_FUEL_PARAMS } from '../src/vehicle/fuelSystem.js';
@@ -16,8 +16,7 @@ import {
 } from '../src/vehicle/tuneUp.js';
 
 /** A quad's params as the game sets them up, with this game's idle. */
-function quad(index, idle) {
-  const spec = QUAD_SPECS[index];
+function quad(index, idle, spec = QUAD_SPECS[index]) {
   const target = {
     engine: { ...DEFAULT_ENGINE_PARAMS, ...spec.engine },
     vehicle: { ...DEFAULT_VEHICLE_PARAMS, ...spec.vehicle },
@@ -144,4 +143,24 @@ describe('tune-up', () => {
     expect(s.tyres).toBe(P.minPsi);
     expect(stock.vehicle.clutchEngageRpm + s.clutch * P.clutchStep).toBeGreaterThanOrEqual(s.idle + CLUTCH_MARGIN_RPM);
   });
+});
+
+describe('tune-up on the diesels', () => {
+  for (const [name, spec] of [['tractor', TRACTOR_SPEC], ['UTV', UTV_SPEC]]) {
+    it(`takes the ${name}'s idle screw up and down within its safe range and puts stock back`, () => {
+      const t = quad(0, undefined, spec);
+      const before = snapshot(t);
+      const stock = captureStock(t);
+      const [lo, hi] = limits('idle', stockSettings(stock), stock);
+      expect(hi).toBeGreaterThan(lo);
+      let s = stockSettings(stock);
+      for (let i = 0; i < 30; i++) s = nudge(s, 'idle', 1, stock);
+      applyTune(t, stock, s);
+      expect(s.idle).toBeLessThanOrEqual(hi);
+      for (let i = 0; i < 60; i++) s = nudge(s, 'idle', -1, stock);
+      expect(s.idle).toBeGreaterThanOrEqual(lo);
+      applyTune(t, stock, stockSettings(stock));
+      expect(snapshot(t)).toBe(before);
+    });
+  }
 });

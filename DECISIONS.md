@@ -1576,6 +1576,17 @@ Settled with Jamie before building: a second, small trailer (the bale trailer st
 - No new lines: they use `mudBoard`, `utvBoard` and `utvBedGo`. The girls don't drive the UTV yet, so there is no UTV version of the join; it comes with item 37.
 - Checked: unit tests for all of it (`tests/mudguardRide.test.js`, `tests/utvRide.test.js`). Not run in the game: the walk over and climb, the driver's wait for her, and how often it happens in real play.
 
+## Servicing the tractor and UTV (2026-10-07)
+
+Settled with Jamie: the toolbox in place, a sump for the diesels that can burn oil, no girls involved.
+
+- **The toolbox opens on both.** The panel (`workshop.js`) used to be refused with "nothing in it fits a diesel". It now opens, and shows only what a diesel has: idle screw, clutch springs and tyre pressures (rows marked `petrolOnly`: mixture, throttle stop and rev limiter are left out, as the jet already is on a four-stroke), the service, air filter, strip down, throttle cable and puncture jobs. Hidden: carb clean (no carb), the silencer, the pods (they fit the quads; the tractor gets them in item 31), and the belt on the tractor. The UTV keeps its CVT belt. The tuning maths (`tuneUp.js`) was already generic, and a test now puts both through the idle screw and back to stock.
+- **Petrol pump-out** moved into the panel as the same button, relabelled ("Pump the petrol out of the tank"), enabled by the old `utvTainted` test. The separate UTV-only toolbox prompt is gone.
+- **Sumps.** `hasSump` is every four-stroke, so the tractor and UTV each have oil, start somewhere between 0.55 and the top mark like the quads, lose a trickle as they work, tick when low and seize if run dry (the engine's lubrication no longer skips diesels). They are in the draw for the game's one oil burner, so one game in about three the burner is a diesel, with blue smoke on the overrun. `Y` reads the dipstick and, by the oil bottle, tops up. Both now show the Y chip.
+- **A diesel's service** also fills the sump, because they can't go on the bench (the quads' oil is the dipstick or the bench). The button says "Service it (oil, wear)" and counts as not done while the oil is under the top mark.
+- **The tractor no longer gets the belt fault**, since it has a clutch and gearbox and the panel has no belt button for it.
+- Not done, and left for later: the diesels' own jobs on the bench (glow plugs, fuel filter, bleeding), and the girls knowing about their oil. Checked: unit tests only (sump, tune-up on the tractor and UTV). Not opened in the game: the panel on either vehicle, how the hidden rows and buttons look, the dipstick from beside the tractor.
+
 ## Pods on the rusty quad (2026-10-07)
 
 - The pod rack was built from the girls' quads before the barn find existed, so it refused to fit a pod to the rusty quad (the bench did the three seconds, then nothing happened). `PodRack.allow` registers it afterwards. It never starts with a pod, so the seeded placement is unchanged. Checked: unit tests only; not tried at the bench in the running game.

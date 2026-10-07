@@ -495,14 +495,12 @@ export class EngineModel {
     const running = this.state === EngineState.RUNNING;
     const rpmNorm = clamp((this.rpm - p.idleRpmWarm) / (p.maxRpm - p.idleRpmWarm), 0, 1);
     const work = this.lubeWork;
-    // A two-stroke is oiled by its petrol; a four-stroke by its sump (the tractor's is out of scope: it stays full).
+    // A two-stroke is oiled by its petrol; a four-stroke, petrol or diesel, by its sump.
     const lube = p.strokes === 2 ? undefined : sumpLube(this.sump, p.sumpOkLevel);
-    if (p.strokes === 2 || !p.runsOnDiesel) {
-      if (stepLube(this, h, { oil: this.oil, lube, running, work }, p)) {
-        this.rpm = 0;
-        this.stall('seized');
-        this.emit('seized');
-      }
+    if (stepLube(this, h, { oil: this.oil, lube, running, work }, p)) {
+      this.rpm = 0;
+      this.stall('seized');
+      this.emit('seized');
     }
     // Jetted too lean for the day, a two-stroke runs hot and scuffs the way it does on straight petrol, only slower.
     const jetStarve = p.strokes === 2 ? leanStarve(this.jetErr, p) : 0;
@@ -516,7 +514,7 @@ export class EngineModel {
         this.emit('seized');
       }
     }
-    this.tick = p.strokes === 2 || p.runsOnDiesel ? 0 : clamp((p.sumpTickFrom - this.sump) / Math.max(0.01, p.sumpTickFrom - p.sumpTickFull), 0, 1);
+    this.tick = p.strokes === 2 ? 0 : clamp((p.sumpTickFrom - this.sump) / Math.max(0.01, p.sumpTickFrom - p.sumpTickFull), 0, 1);
     if (running && this.tick > 0 && this.random() < this.tick * p.tickRate * h * (0.5 + 0.5 * rpmNorm)) this.emit('coolTick', this.random() * h);
     this.nip = nipping(this.scuff, p.nipFrom);
     this.oilRich = oilExcess(this.oil, p.strokes, p);

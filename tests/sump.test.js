@@ -25,12 +25,11 @@ function ride(sump, seconds, { throttle = 0.9, driveLoad = 0.5 } = {}) {
 }
 
 describe('which vehicles have a sump', () => {
-  it('is the petrol four-strokes only', () => {
+  it('is every four-stroke, petrol or diesel', () => {
     expect(hasSump({ strokes: 4 })).toBe(true);
     expect(hasSump({})).toBe(true);
     expect(hasSump({ strokes: 2 })).toBe(false);
-    expect(hasSump({ runsOnDiesel: true })).toBe(false);
-    expect(hasSump({ strokes: 4, tractor: true })).toBe(false);
+    expect(hasSump({ strokes: 4, runsOnDiesel: true })).toBe(true);
   });
   it('picks one burner from the seed, or none with no four-strokes', () => {
     const ids = ['red', 'blue', 'green', 'loan'];
@@ -155,15 +154,22 @@ describe('a four-stroke on a low sump', () => {
     expect(e.freeSeized()).toBe(true);
     expect(e.seized).toBe(false);
   });
-  it('a two-stroke ignores the sump and the tractor is left alone', () => {
+  it('a two-stroke ignores the sump', () => {
     const two = new EngineModel({ strokes: 2 }, { random: seeded(3) });
     two.setTemperature(1);
     two.setIgnition(true);
     for (let t = 0; t < 120; t += 1 / 60) two.update(1 / 60, { starter: !two.isRunning, throttle: 0.9, driveLoad: 0.5, oil: 0.02, sump: 0 });
     expect(two.scuff).toBe(0);
+  });
+  it('a diesel needs its oil like any four-stroke: it ticks when the sump is low and seizes if run dry', () => {
     const diesel = new EngineModel({ runsOnDiesel: true }, { random: seeded(3) });
     diesel.update(1 / 60, { sump: 0 });
-    expect(diesel.tick).toBe(0);
+    expect(diesel.tick).toBeGreaterThan(0);
+    const e = new EngineModel({ runsOnDiesel: true, compressionIgnition: true }, { random: seeded(7) });
+    e.setTemperature(1);
+    e.setIgnition(true);
+    for (let t = 0; t < 900 && !e.seized; t += 1 / 60) e.update(1 / 60, { starter: !e.isRunning, glowReady: true, throttle: e.isRunning ? 0.9 : 0, driveLoad: 0.5, sump: 0, diesel: 1 });
+    expect(e.seized).toBe(true);
   });
   it('passes the burner\'s smoke on to the exhaust', () => {
     const e = fourStroke();

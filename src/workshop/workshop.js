@@ -56,6 +56,7 @@ const ROWS = [
   },
   {
     key: 'mixture',
+    petrolOnly: true,
     name: 'Carb mixture',
     explain:
       'Leaner gives a touch more go and uses less petrol, but it runs hotter, wants more choke from cold and can stumble and miss. Richer is happier from cold, but smokier and thirstier, and right at the end it slowly fouls its plug.',
@@ -92,6 +93,7 @@ const ROWS = [
   },
   {
     key: 'limiter',
+    petrolOnly: true,
     name: 'Throttle stop (speed limiter)',
     explain:
       'Farm quads leave the factory with a stop screw so the throttle never opens all the way. Wind it out and it goes faster and revs a bit higher, but it drinks more and everything comes at you quicker over the bumps.',
@@ -101,6 +103,7 @@ const ROWS = [
   },
   {
     key: 'revs',
+    petrolOnly: true,
     name: 'Rev limiter',
     explain:
       'The ignition cuts out at a set number of revs. Raise it and the engine revs harder (and louder) flat out, but anything over the revs it was built for wears it out faster. Lower it and it is calmer and kinder to itself. The redline on the dash moves with it. It leaves the top speed alone: that is the throttle stop.',
@@ -161,6 +164,7 @@ export class Workshop {
     const e = unit.engine;
     if (e.isRunning || e.state === 'cranking') return { text: `Switch the ${unit.label} off first   ·   K ignition   ·   G put the toolbox down` };
     if (unit.quad.speed > 0.5) return { text: `Wait for the ${unit.label} to stop` };
+    if (unit.engine.params.runsOnDiesel && this.game.utvTainted(unit)) return `Get the spanners out on the ${unit.label}: there's petrol in it   ·   G put the toolbox down`;
     return `Get the spanners out on the ${unit.label}   ·   G put the toolbox down`;
   }
 
@@ -240,6 +244,8 @@ export class Workshop {
     unit.engine.silencerBlown = 0;
     const best = unit.spec.roughnessRange?.[0];
     if (best !== undefined) unit.engine.params.baseRoughness = Math.min(unit.engine.params.baseRoughness, best);
+    // A diesel can't go on the bench, so its service is the oil change too (a quad's oil is topped up at the dipstick or done at the bench).
+    if (unit.engine.params.runsOnDiesel) unit.quad.sump?.fill();
     this.render();
     for (const c of this.game.companions) c.voice.onTinker?.('service');
   }
@@ -274,13 +280,17 @@ export class Workshop {
     const unit = this.unit;
     if (!unit || !this.canDrain(unit)) return;
     const lost = unit.quad.drainFuel();
-    this.game.hud.toast(`Tank and carb drained: ${lost.toFixed(1)} L gone`);
+    if (this.isDiesel) {
+      this.game.utvPetrolSaid = false;
+      this.game.hud.toast(`Tank drained: ${lost.toFixed(1)} L gone. It needs red diesel`);
+    } else this.game.hud.toast(`Tank and carb drained: ${lost.toFixed(1)} L gone`);
     this.render();
     for (const c of this.game.companions) c.voice.onTinker?.('service');
   }
 
-  /** Worth draining: there's diesel in the fuel or the engine is soaked with it. */
+  /** Worth draining: there's diesel in a petrol quad's fuel or its engine is soaked with it, or petrol in a diesel's. */
   canDrain(unit) {
+    if (unit.engine.params.runsOnDiesel) return this.game.utvTainted(unit); // red diesel is its fuel: it's petrol in the tank that's wrong
     return unit.quad.fuel.diesel > 0.005 || unit.quad.fuel.bowlDiesel > 0.005 || unit.engine.dieselSoak > 0.005;
   }
 
@@ -298,11 +308,18 @@ export class Workshop {
    */
   repair(kind) {
     const unit = this.unit;
-    if (!unit) return;
+    if (!unit || !this.repairShown(kind)) return;
     if (kind === 'puncture') this.levelTyres(unit); // pumping up is pumping up, whether or not there was a puncture
     const done = unit.quad.faults.fix(kind, { rough: true });
     this.game.hud.toast(done ? REPAIR_DONE[kind] : REPAIR_NOTHING[kind]);
     if (done) for (const c of this.game.companions) c.voice.onTinker?.('service');
+  }
+
+  /** Whether a quick job is on the panel: a diesel has no carb, and the tractor no belt. */
+  repairShown(kind) {
+    if (kind === 'carb') return !this.isDiesel;
+    if (kind === 'belt') return !this.unit?.quad.tractor;
+    return true;
   }
 
   /** Pumps (or lets down) all four tyres to the pressure the toolbox is set to. */
@@ -315,7 +332,7 @@ export class Workshop {
   /** Takes the silencer off, or puts it back. */
   toggleSilencer() {
     const unit = this.unit;
-    if (!unit) return;
+    if (!unit || this.isDiesel) return;
     unit.engine.silencerOff = !unit.engine.silencerOff;
     this.game.hud.toast(unit.engine.silencerOff ? SILENCER_OFF : SILENCER_ON);
     this.render();
@@ -326,7 +343,7 @@ export class Workshop {
   startPod(action, kind) {
     const unit = this.unit;
     const rack = this.game.podRack;
-    if (!unit || !rack || this.podJob) return;
+    if (!unit || !rack || this.podJob || this.isDiesel) return; // the pods fit the quads
     if (action === 'fit') {
       if (rack.podOn(unit.id)) return this.game.hud.toast(`There's already a ${POD_NAMES[rack.podOn(unit.id)]} on it`);
       if (!rack.inToolbox(kind)) return this.game.hud.toast(`The ${POD_NAMES[kind]} is on another quad`);
@@ -356,6 +373,7 @@ export class Workshop {
 
   isServiced(unit) {
     const best = unit.spec.roughnessRange?.[0] ?? unit.engine.params.baseRoughness;
+    if (unit.engine.params.runsOnDiesel && unit.quad.sump && unit.quad.sump.level < 0.995) return false;
     return unit.engine.wear < 0.005 && unit.engine.silencerBlown < 0.005 && unit.engine.params.baseRoughness <= best + 0.001;
   }
 
@@ -430,9 +448,15 @@ export class Workshop {
     return false;
   }
 
-  /** Whether a row is on the panel for this quad: the jet only shows on a two-stroke. */
+  /** Whether a row is on the panel for this quad: the jet only shows on a two-stroke, and the diesels leave out the petrol carb's settings. */
   rowShown(i) {
+    if (ROWS[i].petrolOnly && this.isDiesel) return false;
     return !ROWS[i].twoStrokeOnly || this.unit?.engine.params.strokes === 2;
+  }
+
+  /** The tractor and UTV: a diesel has no carb mixture, throttle stop or rev limiter to fiddle with, no belt on the tractor, and no pods or silencer to swap. */
+  get isDiesel() {
+    return !!this.unit?.engine.params.runsOnDiesel;
   }
 
   /** The row above (-1) or below (1) the selected one, skipping any that aren't shown. */
@@ -587,12 +611,17 @@ export class Workshop {
     this.el.querySelector('.ws-cond').textContent = `Running ${word}: roughness ${rough.toFixed(2)}${e.wear >= 0.005 ? ` (${e.wear.toFixed(2)} of it wear)` : ''}. A service clears the wear.`;
     this.el.querySelector('.ws-service').disabled = this.isServiced(unit);
     this.el.querySelector('.ws-drain').disabled = !this.canDrain(unit);
+    this.el.querySelector('.ws-drain').lastChild.textContent = this.isDiesel ? 'Pump the petrol out of the tank' : 'Pump out the tank and carb';
+    this.el.querySelector('.ws-silencer').style.display = this.isDiesel ? 'none' : '';
+    this.el.querySelector('.ws-pods').style.display = this.isDiesel ? 'none' : '';
+    for (const b of this.el.querySelectorAll('.ws-fix')) b.style.display = this.repairShown(b.dataset.fix) ? '' : 'none';
+    this.el.querySelector('.ws-service').lastChild.textContent = this.isDiesel ? 'Service it (oil, wear)' : 'Service it';
     const filter = unit.quad.filter;
     const filterBtn = this.el.querySelector('.ws-filter');
     filterBtn.disabled = filter.isClean;
     filterBtn.lastChild.textContent = this.filterHeld > 0 ? `Cleaning the air filter... ${Math.round((this.filterHeld / filter.p.cleanSeconds) * 100)}%` : `Hold to clean the air filter (${filter.state})`;
     // The pods: what's on this quad, what's in the toolbox, and the job in hand.
-    const rack = this.game.podRack;
+    const rack = this.isDiesel ? null : this.game.podRack;
     if (rack) {
       const fitted = rack.podOn(unit.id);
       const loose = ['analogue', 'digital'].filter((k) => rack.inToolbox(k)).map((k) => POD_NAMES[k]);
