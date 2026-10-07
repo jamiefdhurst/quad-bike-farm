@@ -19,7 +19,7 @@ export const DEFAULT_DRAG_PARAMS = {
   blipFrom: 0.15, // your throttle has to be below this and then go above `blipSnap` to count as a blip
   blipSnap: 0.6,
   jessChooses: 0.6, // chance it's Jess, not Amy, when you ask from the line
-  nearStrip: 25, // metres from the start line you count as there to ask
+  nearStrip: 15, // metres from the start line you count as there to ask
   laneOffset: 2, // metres either side of the middle each lane is
   gridBack: 1, // metres behind the line the grid point is (the quad's middle: its front wheels are at the line)
   gridRadius: 2.5, // metres from your grid point you count as lined up

@@ -3031,7 +3031,13 @@ export class Game {
   askForRace(ridden) {
     const you = this.raceYou(ridden);
     if (!you.riding) return this.hud.toast('You need to be on a quad to ask for a race', 2);
-    if (this.dragYou(ridden).near) return this.askForDrag(ridden);
+    // The two start lines can be within reach of each other: whichever you are nearer to is the one you mean.
+    const lapLine = this.world.track.sample(this.raceStart);
+    const q = ridden.quad;
+    const toLap = Math.hypot(q.position.x - lapLine.x, q.position.z - lapLine.z);
+    const strip = this.world.layout.dragStrip;
+    const toStrip = Math.hypot(q.position.x - strip.x, q.position.z - strip.z);
+    if (this.dragYou(ridden).near && (toStrip < toLap || !you.near)) return this.askForDrag(ridden);
     if (!you.near) return this.hud.toast('Ride up to the start line by the yard first', 2);
     if (this.race.active) return this.hud.toast('There is a race on already', 1.6);
     this.race.forced = true;
