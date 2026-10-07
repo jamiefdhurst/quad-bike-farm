@@ -16,6 +16,8 @@ export const DEFAULT_TUNE_PARAMS = {
   idleHeadroom: 250, // rpm the warm idle can go above the top of the quad's idleRange
 
   // Carb mixture (needle clip and jet), in clicks either side of stock
+  jetSmaller: 3, // main jet sizes smaller than stock in the jet kit (two-strokes)
+  jetBigger: 3, // and bigger
   leanClicks: 2,
   richClicks: 3,
   leanTrim: 0.04, // mixture per click lean: lean running drops the idle a little, roughens it and costs some power...
@@ -58,6 +60,8 @@ export const DEFAULT_TUNE_PARAMS = {
 export const TUNE_PARAM_RANGES = {
   idleStep: [10, 200, 10],
   idleHeadroom: [0, 800, 10],
+  jetSmaller: [0, 5, 1],
+  jetBigger: [0, 5, 1],
   leanClicks: [0, 5, 1],
   richClicks: [0, 5, 1],
   leanTrim: [0, 0.2, 0.005],
@@ -91,7 +95,7 @@ export const TUNE_PARAM_RANGES = {
 
 // What tinkering touches, so stock can be put back exactly.
 const STOCK_KEYS = {
-  engine: ['idleRpmWarm', 'stallRpm', 'loadDragRpm', 'mixtureTrim', 'maxRpm', 'redlineRpm', 'warmUpSeconds'],
+  engine: ['idleRpmWarm', 'stallRpm', 'loadDragRpm', 'mixtureTrim', 'jet', 'strokes', 'maxRpm', 'redlineRpm', 'warmUpSeconds'],
   vehicle: [
     'clutchEngageRpm',
     'clutchFullRpm',
@@ -140,7 +144,7 @@ export function captureStock(target) {
 
 /** Settings that leave the quad as it was. */
 export function stockSettings(stock, P = DEFAULT_TUNE_PARAMS) {
-  return { idle: stock.engine.idleRpmWarm, mixture: 0, limiter: 0, revs: 0, clutch: 0, tyres: P.stockPsi };
+  return { idle: stock.engine.idleRpmWarm, mixture: 0, jet: 0, limiter: 0, revs: 0, clutch: 0, tyres: P.stockPsi };
 }
 
 export function isStock(settings, stock, P = DEFAULT_TUNE_PARAMS) {
@@ -170,6 +174,9 @@ export function limits(key, settings, stock, P = DEFAULT_TUNE_PARAMS) {
     }
     case 'mixture':
       return [-P.leanClicks, P.richClicks, 1];
+    case 'jet':
+      // Only the two-strokes have a jet to change; for the others the range is a single point.
+      return stock.engine.strokes === 2 ? [-P.jetSmaller, P.jetBigger, 1] : [0, 0, 1];
     case 'limiter':
       return [0, P.limiterTurns, 1];
     case 'revs':
@@ -189,7 +196,7 @@ export function limits(key, settings, stock, P = DEFAULT_TUNE_PARAMS) {
 /** The settings with each one brought within its limits, in dependency order. */
 export function clampSettings(settings, stock, P = DEFAULT_TUNE_PARAMS) {
   const s = { ...stockSettings(stock, P), ...settings };
-  for (const key of ['mixture', 'limiter', 'revs', 'tyres', 'idle', 'clutch']) {
+  for (const key of ['mixture', 'jet', 'limiter', 'revs', 'tyres', 'idle', 'clutch']) {
     const [lo, hi] = limits(key, s, stock, P);
     s[key] = clamp(s[key], lo, hi);
   }
@@ -242,6 +249,8 @@ export function applyTune(target, stock, settings, P = DEFAULT_TUNE_PARAMS) {
   const revs = Math.round(se.maxRpm * s.revs * P.revStep);
   e.maxRpm = Math.round(se.maxRpm * (1 + P.limiterRpm * s.limiter)) + revs;
   e.redlineRpm = se.redlineRpm + revs;
+
+  e.jet = se.jet + s.jet;
 
   // Mixture.
   const lean = Math.max(0, -s.mixture);

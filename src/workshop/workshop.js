@@ -1,4 +1,5 @@
 import './workshop.css';
+import { jetError, leanStarve, jetTrue, jetText, adviceText } from '../engine/jetting.js';
 import { registerTuning } from '../core/tuning.js';
 import {
   DEFAULT_TUNE_PARAMS,
@@ -70,6 +71,23 @@ const ROWS = [
       const leanLoss = (1 - floor) * e.leanPowerLoss * P.leanTrim * lean;
       const pull = (1 + P.leanDrive * lean - P.richDrive * rich) * (1 - leanLoss) - 1;
       return `pull ${pct(pull)}, fuel ${pct(P.richFuel * rich - P.leanFuel * lean)}`;
+    },
+  },
+  {
+    key: 'jet',
+    name: 'Main jet (jet kit)',
+    twoStrokeOnly: true,
+    explain:
+      "A two-stroke breathes thick cold air and thin hot air, so it wants a bigger jet on a cold day and a smaller one on a hot day. Jetted right for the day it is the cleanest power it makes. Too small on a cold day and it runs hot, scuffs and seizes, the way straight petrol does. Too big and it is sluggish, smoky and fouls its plug. The jet that came with it is right at 12 °C.",
+    value: (s) => jetText(s.jet),
+    stock: () => 'stock jet',
+    effect: (s, P, unit) => {
+      const e = unit.engine;
+      const p = e.params;
+      const day = e.dayTemp;
+      const err = jetError(s.jet, day, p);
+      const word = leanStarve(err, p) > 0 ? 'too lean, it will run hot and scuff' : jetTrue(err, p) > 0.85 ? 'spot on for the day' : err < 0 ? 'a bit lean' : 'a bit rich';
+      return `${adviceText(day, p)}: ${word}`;
     },
   },
   {
@@ -162,6 +180,7 @@ export class Workshop {
       })());
     }
     this.unit = unit;
+    if (!this.rowShown(this.selected)) this.selected = 0; // the jet row isn't there on a four-stroke
     this.repeat = {};
     this.render();
     this.el.style.display = 'flex';
@@ -202,7 +221,14 @@ export class Workshop {
     if (Object.keys(next).every((k) => next[k] === q.settings[k])) return false;
     const raisedLimiter = key === 'limiter' && next.limiter > q.settings.limiter;
     this.apply(next);
-    for (const c of this.game.companions) c.voice.onTinker?.(raisedLimiter ? 'limiter' : 'adjust');
+    let kind = raisedLimiter ? 'limiter' : 'adjust';
+    if (key === 'jet') {
+      const p = this.unit.engine.params;
+      const err = jetError(p.jet, this.unit.engine.dayTemp, p);
+      if (leanStarve(err, p) > 0) kind = 'jetLean';
+      else if (jetTrue(err, p) > 0.85) kind = 'jetRight';
+    }
+    for (const c of this.game.companions) c.voice.onTinker?.(kind);
     return true;
   }
 
@@ -367,8 +393,8 @@ export class Workshop {
     for (let i = 0; i < ROWS.length; i++) {
       if (pressed(`Digit${i + 1}`, `Numpad${i + 1}`)) this.select(i);
     }
-    if (pressed('ArrowUp', 'KeyW')) this.select((this.selected + ROWS.length - 1) % ROWS.length);
-    if (pressed('ArrowDown', 'KeyS')) this.select((this.selected + 1) % ROWS.length);
+    if (pressed('ArrowUp', 'KeyW')) this.select(this.nextRow(-1));
+    if (pressed('ArrowDown', 'KeyS')) this.select(this.nextRow(1));
     if (pressed('KeyB', 'Backspace')) this.backToStock();
     this.filterKey = input.isDown(FILTER_KEY) || this.filterButton;
     if (pressed('KeyV')) this.service();
@@ -404,8 +430,21 @@ export class Workshop {
     return false;
   }
 
+  /** Whether a row is on the panel for this quad: the jet only shows on a two-stroke. */
+  rowShown(i) {
+    return !ROWS[i].twoStrokeOnly || this.unit?.engine.params.strokes === 2;
+  }
+
+  /** The row above (-1) or below (1) the selected one, skipping any that aren't shown. */
+  nextRow(direction) {
+    let i = this.selected;
+    do i = (i + direction + ROWS.length) % ROWS.length;
+    while (!this.rowShown(i));
+    return i;
+  }
+
   select(i) {
-    if (i === this.selected) return;
+    if (i === this.selected || !this.rowShown(i)) return;
     this.selected = i;
     this.render();
   }
@@ -524,6 +563,7 @@ export class Workshop {
     this.explainEl.textContent = ROWS[this.selected].explain;
     ROWS.forEach((r, i) => {
       const rowEl = this.rowEls[i];
+      rowEl.style.display = this.rowShown(i) ? '' : 'none';
       rowEl.classList.toggle('selected', i === this.selected);
       const changed = settings[r.key] !== st[r.key];
       rowEl.classList.toggle('changed', changed);

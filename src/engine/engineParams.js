@@ -68,6 +68,7 @@ export const DEFAULT_ENGINE_PARAMS = {
   chokeEnrichment: 1.0, // enrichment from full choke
   throttleChokeRelief: 0.3, // opening the throttle dilutes the choke this much
   richTolerance: 0.25, // rich mixture tolerated before it starts fouling
+  jet: 0, // two-strokes: main jet size fitted, in whole sizes from stock (the jet kit in the toolbox), positive bigger
   mixtureTrim: 0, // carburettor jetting: added to the mixture all the time, positive richer (set from the toolbox)
 
   // Idle target
@@ -142,6 +143,17 @@ export const DEFAULT_ENGINE_PARAMS = {
   skipRpm: 4000, // and below these revs
   idleFoulRate: 0, // plug fouling per second while idling (oily two-stroke plugs load up); throttle clears it
 
+  // Jetting a two-stroke (see jetting.js). Sizes are jet sizes either side of stock.
+  jetRefCelsius: 12, // the stock jet is right at this temperature
+  jetPerDegree: 0.12, // sizes bigger the day wants per degree colder (smaller per degree hotter)
+  jetMixture: 0.06, // mixture added per size too big (taken per size too small)
+  jetLeanSafe: 1, // sizes too small before it's lean enough to hurt
+  jetLeanFull: 3, // sizes too small at which it's as lean as it gets
+  jetSeizeSeconds: 160, // flat out at full lean, it seizes in about this long (idling takes lubeIdleWork times longer)
+  jetTrueWithin: 0.25, // sizes either way of the right one that count as spot on
+  jetTrueFade: 1, // sizes out at which the spot-on bonus has gone
+  jetPower: 0.06, // power gained when spot on, on top of everything else
+  jetRoughness: 0.05, // roughness taken off when spot on
   // Oil in the petrol (see lubrication.js). The fraction is of the tank: 0.02 is 50:1.
   oilGood: 0.02, // a two-stroke is fully lubricated at this fraction of oil in its fuel
   oilRichFrom: 0.04, // a two-stroke starts to smoke and foul above this
@@ -314,6 +326,17 @@ export const ENGINE_PARAM_RANGES = {
   throttleChokeRelief: [0, 1, 0.01],
   richTolerance: [0, 1, 0.01],
   mixtureTrim: [-0.5, 0.5, 0.01],
+  jet: [-3, 3, 1],
+  jetRefCelsius: [0, 25, 0.5],
+  jetPerDegree: [0, 0.4, 0.01],
+  jetMixture: [0, 0.3, 0.005],
+  jetLeanSafe: [0, 3, 0.1],
+  jetLeanFull: [0.5, 5, 0.1],
+  jetSeizeSeconds: [20, 600, 10],
+  jetTrueWithin: [0, 1, 0.05],
+  jetTrueFade: [0.1, 3, 0.05],
+  jetPower: [0, 0.2, 0.005],
+  jetRoughness: [0, 0.3, 0.005],
   chokeIdleRpm: [0, 3000, 10],
   chokeIdleColdFactor: [0, 1, 0.01],
   leanIdleDrop: [0, 3000, 10],

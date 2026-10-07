@@ -14,6 +14,7 @@ import { stepWater, waterCatchFactor } from './water.js';
 import { stepDieselSoak, dieselCatchFactor, contaminant } from './diesel.js';
 import { stepGlow, glowReady, compressionCatchFactor } from './compression.js';
 import { offTemperature } from '../world/barn.js';
+import { jetError, leanStarve, jetTrue, jetMixture } from './jetting.js';
 import { stepHeat, stepSoak, pinkLevel, gaugeHeat, coolTickRate, hotStartRich } from './heat.js';
 
 export const EngineState = Object.freeze({
@@ -76,6 +77,9 @@ export class EngineModel {
     this.soak = 0; // 0..1 heat held in the metal after work; ticks as it cools, and a hot carb starts rich
     this.speed = 0; // ground speed in m/s, for the airflow
     this.ambient = 0.5; // 0..1 how warm a day it is
+    this.dayTemp = 12; // the day's temperature in degrees C: what a two-stroke's jet is matched against
+    this.jetErr = 0; // two-strokes: fitted jet size less the right one for the day, negative lean (see jetting.js)
+    this.jetOn = 0; // 0..1 how spot on the jetting is
     this.chill = 0; // 0..1 how cold a day it is: more choke, slower warm-up, faster battery drain (chill* params)
     this.sheltered = false; // parked under the barn roof: it cools slowly and never goes stone cold
     this.pink = 0; // 0..1 how badly it's pinking
@@ -224,7 +228,7 @@ export class EngineModel {
    * @param {number}  [controls.ambient] 0..1 how warm the day is (sun on the engine).
    * @param {number}  [controls.overrunRpm] rpm above idle the wheels turn it over at with the throttle shut.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, clog = 0, gulp = 0, diesel = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0 } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, clog = 0, gulp = 0, diesel = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12 } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -245,6 +249,7 @@ export class EngineModel {
     this.speed = Math.abs(speed);
     this.ambient = clamp(ambient, 0, 1);
     this.chill = clamp(chill, 0, 1);
+    this.dayTemp = dayTemp;
     this.sheltered = sheltered;
     this.knack.update(dt, this.throttle, this.state === EngineState.RUNNING);
     this.driveLoad = clamp(driveLoad, 0, 1);
@@ -461,6 +466,18 @@ export class EngineModel {
         this.emit('seized');
       }
     }
+    // Jetted too lean for the day, a two-stroke runs hot and scuffs the way it does on straight petrol, only slower.
+    const jetStarve = p.strokes === 2 ? leanStarve(this.jetErr, p) : 0;
+    if (jetStarve > 0 && running && !this.seized) {
+      this.overheat = Math.max(this.overheat, jetStarve * work);
+      this.scuff = Math.min(1, this.scuff + (h * jetStarve * jetStarve * work) / p.jetSeizeSeconds);
+      if (this.scuff >= 1) {
+        this.seized = true;
+        this.rpm = 0;
+        this.stall('seized');
+        this.emit('seized');
+      }
+    }
     this.tick = p.strokes === 2 || p.runsOnDiesel ? 0 : clamp((p.sumpTickFrom - this.sump) / Math.max(0.01, p.sumpTickFrom - p.sumpTickFull), 0, 1);
     if (running && this.tick > 0 && this.random() < this.tick * p.tickRate * h * (0.5 + 0.5 * rpmNorm)) this.emit('coolTick', this.random() * h);
     this.nip = nipping(this.scuff, p.nipFrom);
@@ -475,7 +492,9 @@ export class EngineModel {
     const starve = clamp((p.fuelStarveLevel - this.fuel) / p.fuelStarveLevel, 0, 1);
     // A heat-soaked carburettor boils its fuel, so a hot engine that isn't running starts rich; the throttle open clears it.
     const hot = this.state === EngineState.RUNNING ? 0 : hotStartRich(this.soak, this.throttle, p);
-    this.mixture = supplied - need - p.starveLean * starve + p.mixtureTrim + p.clogRich * this.clog + hot;
+    this.jetErr = p.strokes === 2 ? jetError(p.jet, this.dayTemp, p) : 0;
+    this.jetOn = p.strokes === 2 ? jetTrue(this.jetErr, p) : 0;
+    this.mixture = jetMixture(this.jetErr, p) + supplied - need - p.starveLean * starve + p.mixtureTrim + p.clogRich * this.clog + hot;
     this.lean = Math.max(0, -this.mixture);
     this.rich = Math.max(0, this.mixture - p.richTolerance);
 
@@ -497,7 +516,8 @@ export class EngineModel {
         p.dirtRoughness * this.dirt +
         p.pinkRoughness * this.pink +
         p.waterRoughness * this.water +
-        p.dieselRoughness * this.dieselSoak,
+        p.dieselRoughness * this.dieselSoak -
+        p.jetRoughness * this.jetOn,
       0,
       1,
     );
@@ -511,6 +531,7 @@ export class EngineModel {
       1,
     );
     this.power *= 1 - p.nipPowerLoss * this.nip;
+    this.power *= 1 + p.jetPower * this.jetOn;
     this.erratic = Math.max(this.erratic, this.nip * this.nip, this.dirt ** 1.5);
     this.power *= 1 - p.dirtPowerLoss * this.dirt;
     // A clogged filter can't feed the revs: it's the top end that goes.
