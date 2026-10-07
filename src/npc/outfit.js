@@ -317,9 +317,10 @@ function shirtVertices(rig, body, hex) {
 }
 
 // The polo's neckline: how high it sits above her neck bone round the sides and back, where her neck meets her shoulders, and
-// how much lower it dips at the front, where the placket starts.
+// how much lower it dips at the front, where the placket starts. A gentle dip: a deeper one cuts across a ledge of the model's
+// old roll neck at her throat and breaks up into a slash of skin.
 const NECK_SIDE = 0.036;
-const NECK_DIP = 0.04;
+const NECK_DIP = 0.015;
 const NECK_SPAN = 0.14; // metres of height the neckline strip covers, half below the neckline and half above
 
 /** Height of the neckline at an angle round her neck (0 is the front). */
@@ -443,97 +444,10 @@ function shirtColour(hex) {
   return new THREE.Color().setRGB(lin.r, lin.g, lin.b, THREE.SRGBColorSpace);
 }
 
-const COLLAR_GAP = 0.12; // half-angle of the opening at the front, radians: the two ends meet over the top of the placket
-
-/**
- * Cross-section of the folded collar: [height above the neckline, distance off the body], from the neck outwards: up a short
- * stand, over the crease (the collar's top edge, a centimetre above the neckline) and back down on to the shirt. `tip` (0 to 1)
- * is how close to the front opening it is: the flap runs longer there, so it ends in a point.
- */
-export function collarSection(tip) {
-  return [
-    [-0.003, 0.003], // inside, hugging the neck just under the neckline
-    [0.007, 0.005], // top of the stand
-    [0.011, 0.01], // the crease, the collar's top edge
-    [0.004, 0.019], // outer face coming down
-    [-0.016 - 0.014 * tip, 0.024], // the flap resting on the shirt
-  ];
-}
-
-// How much lighter than the shirt each row is: the stand is close to it, the flap lighter so the fold shows.
-const COLLAR_SHADE = [1.3, 1.3, 1.7, 1.9, 1.9];
-const COLLAR_REACH = 0.036; // the flap lies back at most this far from where the collar leaves the neck
-
-/** Height of the body's top surface at a point, found by a ray straight down from just above `from`; the highest hit below it. */
-function surfaceHeight(rig, mesh, x, z, from) {
-  const root = rig.root;
-  const origin = root.localToWorld(new THREE.Vector3(x, from, z));
-  const down = new THREE.Vector3(0, -1, 0).transformDirection(root.matrixWorld);
-  raycaster.set(origin, down);
-  raycaster.far = 0.15;
-  const hit = raycaster.intersectObject(mesh, false)[0];
-  return hit ? root.worldToLocal(hit.point.clone()).y : null;
-}
-
-/**
- * A polo collar on the neckline cut by cutNeckline: a short stand round the base of her neck, folded over at a crease a
- * centimetre above the neckline, and a narrow flap lying back on the shirt, ending in points that meet over the top of the
- * placket. Returns the height at the front where the placket starts.
- */
-function addCollar(rig, color) {
-  const body = bodyMesh(rig);
-  if (!body || !rig.bones.Neck || !rig.bones.Spine2) return;
-  const neck = bonePos(rig, 'Neck');
-  const shirt = shirtColour(color);
-  const segments = 36;
-  const rows = collarSection(0).length;
-  const positions = [];
-  const colors = [];
-  for (let i = 0; i <= segments; i++) {
-    const ang = COLLAR_GAP + (i / segments) * (Math.PI * 2 - 2 * COLLAR_GAP);
-    const dir = new THREE.Vector3(Math.sin(ang), 0, Math.cos(ang));
-    // 1 at the ends beside the opening, falling to 0 a little way round.
-    const edge = Math.min(ang - COLLAR_GAP, Math.PI * 2 - COLLAR_GAP - ang);
-    const tip = 1 - smooth01(edge / 0.5);
-    const base = necklineAt(neck, ang);
-    const at = (y) => surfaceDistance(rig, body, new THREE.Vector3(neck.x, y, neck.z), dir);
-    const baseR = at(base) ?? 0.06;
-    for (const [dy, off] of collarSection(tip)) {
-      let y = base + dy;
-      let r;
-      if (dy >= 0 || off < 0.015) {
-        // Up the stand: hug the neck at that height.
-        r = (at(y) ?? baseR) + off;
-      } else {
-        // The flap: no further out than COLLAR_REACH, lying on whatever is under it there (her shoulders rise at the sides).
-        r = Math.min(baseR + off, baseR + COLLAR_REACH);
-        const ground = surfaceHeight(rig, body, neck.x + dir.x * r, neck.z + dir.z * r, base + 0.005);
-        if (ground !== null) y = Math.max(y, ground + 0.005);
-      }
-      positions.push(neck.x + dir.x * r, y, neck.z + dir.z * r);
-    }
-    for (const k of COLLAR_SHADE) colors.push(shirt.r * k, shirt.g * k, shirt.b * k);
-  }
-  const index = [];
-  for (let i = 0; i < segments; i++) {
-    for (let r = 0; r < rows - 1; r++) {
-      const p0 = i * rows + r;
-      const p1 = (i + 1) * rows + r;
-      index.push(p0, p1, p0 + 1, p1, p1 + 1, p0 + 1);
-    }
-  }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-  geo.setIndex(index);
-  geo.computeVertexNormals();
-  const fold = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, side: THREE.DoubleSide, flatShading: true }));
-  fold.name = 'collarFold';
-  fold.castShadow = true;
-  rig.root.add(fold);
-  rig.bones.Spine2.attach(fold);
-  rig.outfitParts.push(fold);
-  return necklineAt(neck, 0);
+/** Where the polo's placket starts: the top of the shirt at the front, on the neckline cut by cutNeckline. */
+function shirtFrontTop(rig) {
+  if (!rig.bones.Neck) return undefined;
+  return necklineAt(bonePos(rig, 'Neck'), 0);
 }
 
 /**
@@ -631,7 +545,7 @@ function addPoloFront(rig, color, neckline) {
   const samples = 10;
   const lift = 0.007;
   const half = 0.011;
-  const top = neckline - 0.006; // just under the collar's front ends, which meet over it
+  const top = neckline; // from the top of the shirt
   const length = 0.12;
   const hits = [];
   for (let k = 0; k <= samples; k++) {
@@ -656,9 +570,9 @@ function addPoloFront(rig, color, neckline) {
   geo.computeVertexNormals();
   group.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: placketColor, roughness: 0.85, side: THREE.DoubleSide })));
 
-  // Three buttons, one right at the top, standing on the ribbon.
+  // Three buttons standing on the ribbon, all done up: the top one just under the neckline.
   const buttonMat = new THREE.MeshStandardMaterial({ color: 0xf2f2ee, roughness: 0.4 });
-  for (const t of [0.12, 0.45, 0.78]) {
+  for (const t of [0.1, 0.45, 0.8]) {
     const f = t * samples;
     const k = Math.min(samples - 1, Math.floor(f));
     const a = hits[k];
@@ -813,7 +727,7 @@ function addJumper(rig, color, shirtHex) {
 }
 
 function addGarments(rig, outfit) {
-  if (outfit.collar) addPoloFront(rig, outfit.collar, addCollar(rig, outfit.collar));
+  if (outfit.collar) addPoloFront(rig, outfit.collar, shirtFrontTop(rig));
   if (outfit.jumper) addJumper(rig, outfit.jumper, outfit.colors?.shirt);
   if (outfit.shorts) addShorts(rig, outfit.shorts);
   if (outfit.wellies) addWellies(rig, outfit.wellies);
