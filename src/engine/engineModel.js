@@ -146,6 +146,15 @@ export class EngineModel {
     return this.params.strokes === 2 ? 1 : 2;
   }
 
+  /** Crank revolutions between firings: the cycle shared between the cylinders. */
+  get revsPerFiring() {
+    return this.revsPerCycle / this.cylinders;
+  }
+
+  get cylinders() {
+    return Math.max(1, Math.round(this.params.cylinders ?? 1));
+  }
+
   get ignitionOn() {
     return this.state !== EngineState.OFF && !this.keyOff && !this.keyPulled;
   }
@@ -207,7 +216,7 @@ export class EngineModel {
       if (chance > 0 && this.random() < chance) {
         // Hot, worn or lean, it keeps firing for a few beats, rougher and slower, before it dies.
         this.keyOff = true;
-        this.runOnLeft = Math.round(this.params.runOnCyclesMin + chance * this.random() * (this.params.runOnCyclesMax - this.params.runOnCyclesMin));
+        this.runOnLeft = this.cylinders * Math.round(this.params.runOnCyclesMin + chance * this.random() * (this.params.runOnCyclesMax - this.params.runOnCyclesMin));
         this.emit('ignitionOff');
         return;
       }
@@ -627,6 +636,7 @@ export class EngineModel {
         chance = p.catchChance * lerp(p.catchColdFactor, 1, this.temperature) * compressionCatchFactor(this.glow, this.temperature, p) * (1 - this.fouling) * clamp(speed, 0, 1) * (this.fuel > 0.02 ? 1 : 0);
       }
 
+      chance /= this.cylinders; // a chance every firing, so about the same each turn of the engine
       if (this.startBlocked) chance = 0;
       if (this.random() < chance) {
         this.state = EngineState.RUNNING;
@@ -700,12 +710,14 @@ export class EngineModel {
 
     if (this.advanceCycle(h)) {
       const t = this.cycleT;
+      // Several cylinders: each firing is a share of the cycle, so its chances and its kick to the revs are shared out too.
+      const share = 1 / this.cylinders;
       // Too much water in it: it may just give up.
-      if (this.water > p.waterStallAt && this.random() < p.waterStallChance) {
+      if (this.water > p.waterStallAt && this.random() < p.waterStallChance * share) {
         this.stall('water');
         return;
       }
-      if (this.dieselSoak > p.dieselStallAt && this.random() < p.dieselStallChance) {
+      if (this.dieselSoak > p.dieselStallAt && this.random() < p.dieselStallChance * share) {
         this.stall('diesel');
         return;
       }
@@ -713,14 +725,14 @@ export class EngineModel {
       if (this.throttle < p.popThrottle && this.rpm > p.popFromRpm) {
         const rpmK = clamp((this.rpm - p.popFromRpm) / Math.max(1, p.maxRpm - p.popFromRpm), 0, 1);
         const propensity = popPropensity(this, p);
-        if (propensity > 0 && this.random() < p.popBase * propensity * (0.3 + rpmK)) {
+        if (propensity > 0 && this.random() < p.popBase * share * propensity * (0.3 + rpmK)) {
           this.events.push({ type: 'overrunPop', t, strength: 0.5 + 0.5 * this.random() });
         }
       }
       // Running on with the key off: it labours, misfires and slows until the beats run out.
       if (this.keyOff) {
         this.runOnLeft--;
-        this.rpm -= p.misfireRpmDrop * 0.6;
+        this.rpm -= p.misfireRpmDrop * share * 0.6;
         if (this.runOnLeft <= 0) {
           this.stall('runOn');
           return;
@@ -737,11 +749,11 @@ export class EngineModel {
         this.random() < p.skipChance;
       const k = this.erratic;
       // Its stumbles and surges come so many times a second, however fast it's firing.
-      const perCycle = 1 / Math.max(1, this.rpm / this.revsPerCycle / 60);
+      const perCycle = 1 / Math.max(1, this.rpm / this.revsPerFiring / 60);
       if (this.stumbleLeft > 0) {
         // In the middle of a stumble: another dead cycle.
         this.stumbleLeft--;
-        this.rpm -= p.misfireRpmDrop * 1.2;
+        this.rpm -= p.misfireRpmDrop * share * 1.2;
         this.pushPulse(t, 'misfire', 0.1);
         if (this.stumbleLeft === 0 && this.dying) {
           this.dying = false;
@@ -750,24 +762,24 @@ export class EngineModel {
         }
         if (this.stumbleLeft === 0 && this.random() < p.backfireChance) {
           // It catches again with a bang, the unburnt charge going off.
-          this.rpm += p.pulseRpmKick * 3;
+          this.rpm += p.pulseRpmKick * share * 3;
           this.pushPulse(t, 'fire', 2.6);
           this.emit('backfire', t);
         }
       } else if (k > 0 && this.random() < p.stumbleRate * k * perCycle) {
         this.stumbleLeft = Math.round(p.stumbleRunMin + this.random() * (p.stumbleRunMax - p.stumbleRunMin)) - 1;
         this.dying = this.random() < p.stumbleStallChance * k;
-        this.rpm -= p.misfireRpmDrop * 1.2;
+        this.rpm -= p.misfireRpmDrop * share * 1.2;
         this.pushPulse(t, 'misfire', 0.1);
       } else if (skip) {
-        this.rpm -= p.misfireRpmDrop * 0.25;
+        this.rpm -= p.misfireRpmDrop * share * 0.25;
         this.pushPulse(t, 'misfire', 0.3);
       } else if (this.random() < misfireChance) {
-        this.rpm -= p.misfireRpmDrop;
+        this.rpm -= p.misfireRpmDrop * share;
         this.pushPulse(t, 'misfire', 0.15);
       } else {
         const strength = 1 + (this.random() * 2 - 1) * p.pulseStrengthJitter * this.roughness;
-        this.rpm += (strength - 1) * p.pulseRpmKick;
+        this.rpm += (strength - 1) * p.pulseRpmKick * share;
         this.pushPulse(t, 'fire', strength);
         if (k > 0 && this.random() < p.surgeRate * k * perCycle) this.surge = p.surgeRpm * p.idleRpmWarm * (0.5 + 0.5 * this.random());
       }
@@ -797,10 +809,10 @@ export class EngineModel {
     }
   }
 
-  /** Advances the four-stroke cycle; returns true if a cycle completed this step. */
+  /** Advances the cycle to the next firing (one a cycle, or one per cylinder); returns true if one came due this step. */
   advanceCycle(h) {
     // One power stroke every revolution on a two-stroke, every two on a four-stroke.
-    const cyclesPerSecond = this.rpm / this.revsPerCycle / 60;
+    const cyclesPerSecond = this.rpm / this.revsPerFiring / 60;
     const before = this.cyclePhase;
     this.cyclePhase += (h * cyclesPerSecond) / this.cycleLength;
     if (this.cyclePhase < 1) return false;
@@ -819,7 +831,7 @@ export class EngineModel {
    * fitted to the cycle it belongs to.
    */
   pushPulse(t, type, strength) {
-    this.pulses.push({ t, type, strength, period: (this.cycleLength * 60 * this.revsPerCycle) / Math.max(this.rpm, 60) });
+    this.pulses.push({ t, type, strength, period: (this.cycleLength * 60 * this.revsPerFiring) / Math.max(this.rpm, 60) });
   }
 
   stall(reason) {

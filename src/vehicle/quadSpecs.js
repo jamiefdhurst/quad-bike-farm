@@ -1054,10 +1054,10 @@ export const LAND_ROVER_SPEC = {
   chokeStyle: 'knob', // a pull-out knob on the dash
   hoursRange: [0, 0], // no hour meter
   odoRange: [60000, 140000], // miles on the clock
-  wearRange: [0.2, 0.45], // old and well used
+  wearRange: [0.04, 0.12], // old and well used, but four cylinders hide it: a quad's wear would make it lumpy
   safeIdle: 420,
   idleRange: [520, 580], // a 2.25 petrol ticks over slowly; the Jeep in its sound recording runs at about 500
-  roughnessRange: [0.1, 0.2],
+  roughnessRange: [0.04, 0.1],
   fuelRange: [12, 40], // 45 litre tank, 5 litre reserve
   topRpmRange: [4100, 4300],
   manual: true, // a clutch (Shift) and a four-speed gearbox (src/vehicle/manualDrivetrain.js)
@@ -1102,15 +1102,15 @@ export const LAND_ROVER_SPEC = {
     rpmFallRate: 2.8,
     warmUpSeconds: 300,
     lugDepth: 0.4, // plenty of low-down pull
-    wearPerMinute: 0.0006,
-    // Four cylinders, not one: a misfire loses a quarter of the beat and the others carry it, so roughness shows far less than on a
-    // single. About 40% of the quads' effects.
-    misfireRoughness: 0.06,
-    cycleJitter: 0.07,
-    pulseStrengthJitter: 0.18,
-    roughHunt: 0.12,
-    erraticHunt: 0.07,
-    stumbleRate: 0.2,
+    wearPerMinute: 0.0003,
+    cylinders: 4, // fires four times a cycle, evenly: a misfire or a weak beat is one of four, and the others carry it
+    // Each firing varies a little, but four of them a cycle average out: an old petrol four ticks over steadily, it doesn't lope.
+    misfireRoughness: 0.03,
+    cycleJitter: 0.04,
+    pulseStrengthJitter: 0.1,
+    roughHunt: 0.04,
+    erraticHunt: 0.03,
+    stumbleRate: 0.1,
   },
   vehicle: {
     mass: 1350, // with its driver
@@ -1140,7 +1140,7 @@ export const LAND_ROVER_SPEC = {
     revHoldMin: 2, // getting off never leaves it revving
   },
   vibration: {
-    firingsPerCycle: 4, // a four-cylinder: an even rumble
+    firingsPerCycle: 1, // the engine already fires four times a cycle (engine.cylinders): one kick each
     idleRpm: 520,
     smoothRpmRange: 1500,
     pulseGain: 1.2,
@@ -1158,7 +1158,7 @@ export const LAND_ROVER_SPEC = {
     recIdleSource: 'quad',
     pulseRefRpm: 550,
     pulseRevLoudness: 0.3,
-    pulsePitchFollow: 1, // each recorded cycle is all four beats: squeeze it into the engine's cycle as it revs, so all four sound
+    pulsePitchFollow: 0.25, // one recorded beat per firing, at about its own speed: the beats come faster as it revs, the note barely rises
     recVolume: 0.6,
     recToneClosed: 5000,
     pipeLength: 1.4,

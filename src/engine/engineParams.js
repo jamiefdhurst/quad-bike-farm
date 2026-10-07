@@ -9,6 +9,7 @@ export const DEFAULT_ENGINE_PARAMS = {
 
   // Cycle: 4 fires every two revolutions, 2 fires every revolution.
   strokes: 4,
+  cylinders: 1, // firings per cycle, evenly spaced: each one a pulse (the Land Rover's four), so a misfire or a lumpy beat is one of them, not the whole cycle
 
   // Speeds
   maxRpm: 6200, // full throttle: through the CVT a utility quad holds its revs around here under load
@@ -325,6 +326,7 @@ export const DEFAULT_ENGINE_PARAMS = {
 export const ENGINE_PARAM_RANGES = {
   ...KNACK_RANGES,
   strokes: [2, 4, 2],
+  cylinders: [1, 8, 1],
   skipChance: [0, 1, 0.01],
   skipThrottle: [0, 1, 0.01],
   skipRpm: [500, 10000, 50],

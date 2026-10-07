@@ -2449,7 +2449,7 @@ export class Game {
     }
   }
 
-  /** Jess sat on a running quad blips it over Amy mid-sentence; Amy cuts off and switches it off (npc/drownOut.js). */
+  /** Jess sat on a running quad blips it over Amy mid-sentence; Amy cuts off and tells her to switch it off, and Jess does (npc/drownOut.js). */
   updateDrownOut(dt) {
     const jess = this.companions.find((c) => c.character.id === 'jess');
     const amy = this.companions.find((c) => c.character.id === 'amy');
@@ -2459,7 +2459,6 @@ export class Game {
     const ch = amy.voice.chatter;
     const ctx = {
       jessCanRev: !!quad && !busy && !this.menu.isOpen,
-      amyFree: amy.fsm.is('idle'),
       amyLeft: Math.max(0, ch.speakingUntil - ch.time),
       distance: jess.root.position.distanceTo(amy.root.position),
     };
@@ -2470,9 +2469,8 @@ export class Game {
         amy.voice.cut();
         jess.voice.say('drownRev', { force: true });
       } else if (e.type === 'switchOff') {
-        quad.engine.setIgnition(false);
-        if (e.by === 'amy') amy.voice.say('drownSwitchOff', { force: true });
-        else amy.voice.say('drownTellOff', { force: true });
+        quad.engine.setIgnition(false); // Jess does it herself: Amy never reaches over
+        amy.voice.say('drownTellOff', { force: true });
         jess.voice.say('drownProtest', { force: true });
       }
     }

@@ -3,7 +3,7 @@ import { DrownOut, DEFAULT_DROWNOUT_PARAMS as P } from '../src/npc/drownOut.js';
 import { AMY_DROWNOUT_LINES, JESS_DROWNOUT_LINES } from '../src/npc/drownOutLines.js';
 import { VOICE_LINES } from '../src/npc/voiceLines.js';
 
-const ctx = (over = {}) => ({ jessCanRev: true, amyFree: true, amyLeft: 3, distance: 3, ...over });
+const ctx = (over = {}) => ({ jessCanRev: true, amyLeft: 3, distance: 3, ...over });
 const always = () => 0;
 
 describe('drowning her out', () => {
@@ -18,24 +18,16 @@ describe('drowning her out', () => {
     }
   });
 
-  it('holds the throttle for a while, then Amy switches it off if she is in reach', () => {
-    const d = new DrownOut({ ...P }, always);
-    d.update(0.1, ctx());
-    expect(d.throttleFor()).toBe(0);
-    d.update(P.revDelay + 0.1, ctx());
-    expect(d.throttleFor()).toBe(1);
-    const events = d.update(P.switchOffAfter, ctx());
-    expect(events).toEqual([{ type: 'switchOff', by: 'amy' }]);
-    expect(d.throttleFor()).toBe(0);
-  });
-
-  it('has Jess switch it off herself when Amy is out of reach or busy', () => {
-    const far = new DrownOut({ ...P }, always);
-    far.update(0.1, ctx());
-    expect(far.update(P.switchOffAfter, ctx({ distance: P.reachRange + 1 }))).toEqual([{ type: 'switchOff', by: 'jess' }]);
-    const busy = new DrownOut({ ...P }, always);
-    busy.update(0.1, ctx());
-    expect(busy.update(P.switchOffAfter, ctx({ amyFree: false }))).toEqual([{ type: 'switchOff', by: 'jess' }]);
+  it('holds the throttle for a while, then Jess switches it off, whoever is in reach: Amy never does', () => {
+    for (const over of [{}, { distance: 1 }, { distance: 6 }]) {
+      const d = new DrownOut({ ...P }, always);
+      d.update(0.1, ctx(over));
+      expect(d.throttleFor()).toBe(0);
+      d.update(P.revDelay + 0.1, ctx(over));
+      expect(d.throttleFor()).toBe(1);
+      expect(d.update(P.switchOffAfter, ctx(over))).toEqual([{ type: 'switchOff' }]);
+      expect(d.throttleFor()).toBe(0);
+    }
   });
 
   it('gives up quietly if Jess is no longer on a running quad', () => {

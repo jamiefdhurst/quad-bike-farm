@@ -1576,6 +1576,12 @@ Settled with Jamie before building: a second, small trailer (the bale trailer st
 - No new lines: they use `mudBoard`, `utvBoard` and `utvBedGo`. The girls don't drive the UTV yet, so there is no UTV version of the join; it comes with item 37.
 - Checked: unit tests for all of it (`tests/mudguardRide.test.js`, `tests/utvRide.test.js`). Not run in the game: the walk over and climb, the driver's wait for her, and how often it happens in real play.
 
+## Amy never turns it off (2026-10-07)
+
+- Jamie's rule: when Jess revs a quad, Amy does not switch it off. The only place she did was Jess drowning her out (`drownOut.js`): if Amy was within 3.5 m and on her feet she reached over and switched it off ("Right. Off."). That branch is gone, with the `reachRange` tunable, the `amyFree` input and the three `drownSwitchOff` lines. Now Amy always tells her ("Jess! Switch it off!") and Jess switches it off herself, grumbling, 1.9 s after she starts.
+- Unchanged: in the rev-offs and the rock prank Amy never touched the ignition (she only tells you both off, or sulks), and her switching off engines left running in the barn is a different thing (the fumes) and stays. The recorded bank still has audio for the removed lines until the voices are next re-recorded; nothing plays it.
+- Checked: unit tests (`tests/drownOut.test.js`); not in the game.
+
 ## UTV prompt (2026-10-07)
 
 - The key chips shown when you look at the UTV from the ground listed `B` Reverse lever, but the lever is on the dash and `B` only works from the seat (`driveKeys` needs a rider). It's gone from that row; the tip lever (`T`), key, start and dipstick remain. Checked: nothing automated, since it is a prompt string; not looked at in the game.

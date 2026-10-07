@@ -1,10 +1,9 @@
-// Drowning her out (drownOut.js). Jess revs over Amy mid-sentence and pretends she can't hear; Amy tells her to stop and
-// switches it off. Merged into the main line sets (voiceLines.js, jessLines.js), so they're recorded with the rest.
+// Drowning her out (drownOut.js). Jess revs over Amy mid-sentence and pretends she can't hear; Amy tells her to switch it off
+// (she never does it herself). Merged into the main line sets (voiceLines.js, jessLines.js), so they're recorded with the rest.
 
 const line = (cooldown, lines) => ({ cooldown, lines });
 
 export const AMY_DROWNOUT_LINES = {
-  drownSwitchOff: line(30, ['Right. Off.', 'No. Give me that. Off.', 'Jess, I am talking. Off.']),
   drownTellOff: line(30, ['Jess! Switch it off!', 'Jess, I was talking! Turn it off!']),
 };
 

@@ -224,7 +224,7 @@ export class ExhaustSmoke {
       if (pulse.type === 'fire' || pulse.type === 'sputter') a = density * pulse.strength;
       else if (pulse.type === 'misfire') a = density * 1.5 + p.richDensity * 0.2; // unburnt fuel
       else if (pulse.type === 'compression') a = engine.state === 'cranking' ? p.crankDensity : p.crankDensity * 0.5;
-      this.pendingAlpha += a;
+      this.pendingAlpha += a / (engine.cylinders ?? 1); // several cylinders share the cycle's smoke between their firings
       if (this.spawnBudget >= 1 && this.pendingAlpha > 0.005) {
         this.spawnBudget -= 1;
         const exit = p.exitSpeed + p.throttleExitSpeed * engine.throttle;
