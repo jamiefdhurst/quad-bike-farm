@@ -52,6 +52,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   placedPatienceMax: 420,
   boredGetOffChance: 0.6, // sat on the back by her own choice and bored of it, the chance she gets off (each time she gets bored)
   boredDoughnutChance: 0, // the chance, when bored, she takes a quad off and spins doughnuts in the field (Jess)
+  boredJumpChance: 0, // the chance, when bored, she takes a quad off to jump the ramp in the field (jumps.js)
   boredLineUpChance: 0.1, // the chance, when bored, she moves the quads into a neat row in front of the barn (lineUp.js)
   lineUpCrookedChance: 0, // when she does, the chance it is just the one quad, parked crooked on purpose (Jess)
   nickChance: 0, // how much she is the sort to nick a quad you got off with the engine running (Jess), times nicking.js's chance
@@ -224,6 +225,7 @@ export const COMPANION_PARAM_RANGES = {
   placedPatienceMax: [10, 3600, 5],
   boredGetOffChance: [0, 1, 0.05],
   boredDoughnutChance: [0, 1, 0.05],
+  boredJumpChance: [0, 1, 0.05],
   boredLineUpChance: [0, 1, 0.05],
   lineUpCrookedChance: [0, 1, 0.05],
   nickChance: [0, 1, 0.05],

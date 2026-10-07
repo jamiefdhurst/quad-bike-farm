@@ -187,6 +187,16 @@ export class Quad {
     return Math.atan2(fwd.x, fwd.z);
   }
 
+  /** True while all four wheels are off the ground. */
+  get airborne() {
+    return this.physics.airborne;
+  }
+
+  /** How upright it is: 1 level, 0 on its side. */
+  get upY() {
+    return new THREE.Vector3(0, 1, 0).applyQuaternion(this.currQuat).y;
+  }
+
   /** True when the bike is on its side or roof. */
   get isTipped() {
     const up = new THREE.Vector3(0, 1, 0).applyQuaternion(this.currQuat);

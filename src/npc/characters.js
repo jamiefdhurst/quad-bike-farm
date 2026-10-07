@@ -42,6 +42,7 @@ export const CHARACTERS = [
       rockPrankChance: 0.02,
       boredStartChance: 0.25,
       boredDoughnutChance: 0.12, // spins doughnuts in the field when she's bored
+      boredJumpChance: 0.12, // rides at the ramp in the field when she's bored
       boredLineUpChance: 0.06, // now and then parks one quad crooked on purpose, to wind Amy up
       lineUpCrookedChance: 1,
       nickChance: 1, // hops on a quad you've left running and rides off with it (nicking.js)

@@ -191,6 +191,12 @@ export class QuadPhysics {
     return this.wheelLoadState;
   }
 
+  /** True while none of the wheels is on the ground (off a ramp, over a crest). */
+  get airborne() {
+    for (let i = 0; i < this.wheels.length; i++) if (this.vehicle.wheelIsInContact(i)) return false;
+    return true;
+  }
+
   /** Signed speed along the chassis forward axis, m/s. */
   get forwardSpeed() {
     return this.vehicle.currentVehicleSpeed();

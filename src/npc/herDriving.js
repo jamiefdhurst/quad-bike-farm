@@ -13,6 +13,7 @@ import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 import { TractorStartAttempt } from './tractorStart.js';
 import { COACHING, mistake, mistakeChance, successChance } from './skills.js';
 import { doughnutControl } from './doughnuts.js';
+import { JumpRun } from './jumps.js';
 import { slotHeading, slotOffsets } from './lineUp.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -155,11 +156,13 @@ export class HerDrive {
    *   waypoint), with no pauses and no tiring or scaring of herself.
    * @param {object} [opts.doughnut]  { centre, radius, dir, seconds, p }: instead of her loops she drives to the circle and spins
    *   round it for `seconds`, tearing the ground up (quad.churn), then pulls up.
+   * @param {object} [opts.jump]  { ramp, p }: instead of her loops she rides at the ramp (jumps.js) a few times, taking it as fast as she
+   *   likes, and pulls up after each; each landing is rated (a 'jumpRated' event with the result in `lastJump`).
    * @param {object} [opts.park]  { route }: drive the route (in line with a slot, then the slot) slowly, and stop on the last point.
    * @param {function} [opts.follow]  () => the quad she's following (yours), or null. Following, she keeps
    *   behind it at its pace rather than doing her own loop, and doesn't tire of it.
    */
-  constructor(quad, { tractorStarting = undefined, params, probe, isClear, random = Math.random, startingParams, momentWindow = 5, skill = { starting: 0.5, choke: 0.5, cornering: 0.5, mud: 0.5 }, passenger = () => false, waitForPassenger = false, tires = false, follow = null, friend = () => null, race = null, doughnut = null, park = null }) {
+  constructor(quad, { tractorStarting = undefined, params, probe, isClear, random = Math.random, startingParams, momentWindow = 5, skill = { starting: 0.5, choke: 0.5, cornering: 0.5, mud: 0.5 }, passenger = () => false, waitForPassenger = false, tires = false, follow = null, friend = () => null, race = null, doughnut = null, jump = null, park = null }) {
     this.quad = quad;
     this.tractorStarting = tractorStarting; // how she goes about starting the tractor (tractorStart.js), when it is one
     this.p = params;
@@ -184,6 +187,8 @@ export class HerDrive {
     this.follow = follow;
     this.race = race;
     this.doughnut = doughnut; // spinning doughnuts: { centre, radius, dir, seconds, p } (doughnuts.js)
+    this.jump = jump ? { run: new JumpRun(jump.ramp, jump.p, random) } : null; // riding at the ramp (jumps.js)
+    this.lastJump = null; // the last landing rated: { rating, air, upY, impact }
     this.park = park; // tidying a quad into the row (lineUp.js): { route: [stage, slot] }; she drives in line with the slot, stops on it
     this.pass = null; // overtaking whoever she's following (passTarget)
     this.slowFor = 0;
@@ -709,6 +714,7 @@ export class HerDrive {
     const c = this.controls;
     c.reverse = false;
     if (this.doughnut) return this.driveDoughnut(dt, speed);
+    if (this.jump) return this.driveJump(dt, speed);
 
     if (this.time > this.driveFor && !this.carrying && !this.race && !this.park) {
       this.stop(this.random() < p.driveScaredChance ? 'scared' : 'bored');
@@ -927,6 +933,43 @@ export class HerDrive {
     c.throttle = k.throttle;
     c.brake = 0;
     q.churn = d.p.churn;
+  }
+
+  /** Riding at the ramp: JumpRun steers and says how fast, and this turns that into the pedals and tells the game what happened. */
+  driveJump(dt, speed) {
+    const q = this.quad;
+    const c = this.controls;
+    const v = q.velocity;
+    const r = this.jump.run.step(dt, { pos: q.position, yaw: q.yaw, speed, airborne: q.airborne, vy: v.y, upY: q.upY, tipped: q.isTipped }, this.p.driveSteerGain);
+    for (const e of r.events) {
+      if (typeof e === 'string') this.events.push(e);
+      else {
+        this.lastJump = e;
+        this.events.push('jumpRated');
+      }
+    }
+    if (r.done) {
+      this.stop(this.jump.run.lastRating === 'bail' ? 'scared' : 'bored');
+      return;
+    }
+    c.steer = r.steer;
+    const phase = this.jump.run.phase;
+    if (phase === 'air' || phase === 'landing') {
+      // Hands off the pedals: nothing to do but hold on.
+      c.throttle = 0;
+      c.brake = 0;
+    } else if (r.brake) {
+      c.throttle = 0;
+      c.brake = 0.6;
+    } else if (phase === 'run' && speed < r.targetSpeed - 0.5) {
+      // The run-up: flat out until she's at speed (the quads are slow off the mark, and the ramp takes it out of them).
+      c.throttle = 1;
+      c.brake = 0;
+    } else {
+      const pedals = pedalsFor(speed, r.targetSpeed, this.integral, this.p);
+      c.throttle = pedals.throttle;
+      c.brake = pedals.brake;
+    }
   }
 
   /**

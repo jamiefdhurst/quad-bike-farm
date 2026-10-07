@@ -47,6 +47,7 @@ import { Race, RACE_PARAM_RANGES, planLap } from './npc/race.js';
 import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
 import { Convoy, CONVOY_PARAM_RANGES } from './npc/convoy.js';
 import { DoughnutWatch, DOUGHNUT_PARAM_RANGES } from './npc/doughnuts.js';
+import { JumpWatch, JUMP_PARAM_RANGES, rampPoint } from './npc/jumps.js';
 import { Nicking, NICK_PARAM_RANGES } from './npc/nicking.js';
 import { DEFAULT_LINEUP_PARAMS, LINEUP_PARAM_RANGES } from './npc/lineUp.js';
 import { Tea, TEA_PARAM_RANGES } from './npc/tea.js';
@@ -365,6 +366,11 @@ export class Game {
     this.dashReader = new DashReader(); // the girl on the back reads the dash out (npc/dashReading.js)
     this.doughnutWatch = new DoughnutWatch(); // Amy watches Jess's doughnuts and has a go (npc/doughnuts.js)
     for (const c of this.companions) c.doughnutParams = this.doughnutWatch.p;
+    this.jumpWatch = new JumpWatch(); // the girls take turns at the ramp and rate each other's landings (npc/jumps.js)
+    for (const c of this.companions) {
+      c.jumpParams = this.jumpWatch.p;
+      c.jumpClear = (ramp, jp) => this.jumpLineClear(c, ramp, jp);
+    }
     this.lineUpParams = { ...DEFAULT_LINEUP_PARAMS }; // the row in front of the barn (npc/lineUp.js)
     for (const c of this.companions) c.lineUpParams = this.lineUpParams;
     this.tea = new Tea(); // tea left on the rear rack (npc/tea.js)
@@ -684,6 +690,7 @@ export class Game {
     registerTuning('Racing', this.race.p, RACE_PARAM_RANGES);
     registerTuning('Follow the leader', this.convoy.p, CONVOY_PARAM_RANGES);
     registerTuning('Doughnuts', this.doughnutWatch.p, DOUGHNUT_PARAM_RANGES);
+    registerTuning('The jump', this.jumpWatch.p, JUMP_PARAM_RANGES);
     registerTuning('Nicking your quad', this.nicking.p, NICK_PARAM_RANGES);
     registerTuning('Lining them up', this.lineUpParams, LINEUP_PARAM_RANGES);
     registerTuning('Tea on the rack', this.tea.p, TEA_PARAM_RANGES);
@@ -1914,6 +1921,63 @@ export class Game {
     }
   }
 
+  // The jump ------------------------------------------------------------------
+
+  /** Whether the line from the run-up to well past the landing is free of parked quads, you and the other girl (not the quad she's going to take). */
+  jumpLineClear(girl, ramp, jp) {
+    const others = [...this.girlUnits.map((u) => u.quad.position), this.player.position, ...this.companions.filter((o) => o !== girl).map((o) => o.root.position)];
+    for (let along = -jp.runUp; along <= ramp.length + 24; along += 3) {
+      const pt = rampPoint(ramp, along);
+      if (others.some((o) => Math.hypot(o.x - pt.x, o.z - pt.z) < 3)) return false;
+    }
+    return true;
+  }
+
+  updateJumps(dt) {
+    const ramp = this.world.layout.jumpRamp;
+    if (!ramp) return;
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    const jumper = this.companions.find((c) => c.fsm.is('driving') && c.drive?.jump);
+    // New landings: the jumper has her own thing to say, the other girl rates it a moment later.
+    for (const c of this.companions) {
+      const run = c.fsm.is('driving') ? c.drive?.jump?.run : null;
+      if (!run) {
+        c.jumpSeen = 0;
+        continue;
+      }
+      for (; (c.jumpSeen ?? 0) < run.results.length; c.jumpSeen = (c.jumpSeen ?? 0) + 1) {
+        const r = run.results[c.jumpSeen];
+        this.jumpWatch.landed(c.character.id, r.rating);
+        this.lastJump = { girl: c.character.id, ...r };
+        c.voice.say(`jumpLand_${r.rating}`, { urgent: true, force: r.rating === 'bail' });
+      }
+    }
+    const girls = this.companions.map((c) => ({
+      id: c.character.id,
+      free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt,
+      distance: Math.hypot(c.root.position.x - ramp.x, c.root.position.z - ramp.z),
+    }));
+    for (const e of this.jumpWatch.update(dt, { jumper: jumper?.character.id ?? null, girls })) {
+      const c = byId[e.girl];
+      if (e.type === 'rate') c.voice.say(`jumpRate_${e.rating}`, { urgent: true });
+      else if (e.type === 'turn') this.sendToRamp(c, 'jumpTurn');
+    }
+  }
+
+  /** Sends a girl (who is stood about) to take a quad to the ramp. Returns whether she went. */
+  sendToRamp(c, line) {
+    if (!c.fsm.is('idle')) return false;
+    const quads = this.girlUnits.filter((u) => c.mayRide(u.quad) && c.canDrive(u.quad) && !u.quad.tractor && !c.takenByOther(u.quad) && !this.herOn(u.quad) && u !== this.riddenUnit).map((u) => u.quad);
+    quads.sort((a, b) => (c.ownsQuad(b) ? 1 : 0) - (c.ownsQuad(a) ? 1 : 0) || a.position.distanceTo(c.root.position) - b.position.distanceTo(c.root.position));
+    const plan = c.jumpPlan();
+    if (!quads.length || !plan) return false;
+    if (line) c.voice.say(line, { force: true });
+    setTimeout(() => {
+      if (c.fsm.is('idle')) c.requestDrive(quads[0], { jump: plan });
+    }, 2000);
+    return true;
+  }
+
   // Doughnuts ----------------------------------------------------------------
 
   updateDoughnuts(dt) {
@@ -2488,6 +2552,7 @@ export class Game {
     this.updateWarming(dt);
     this.updateHeadStart(dt, ridden);
     this.updateDoughnuts(dt);
+    this.updateJumps(dt);
     this.updateNicking(dt, ridden);
     this.updateTea(dt, ridden);
     this.updateJumpers(dt);

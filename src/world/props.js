@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { enableShadows, instanceModel, modelBounds } from './assets.js';
 import { patchAt } from './terrain.js';
 import { buildBarnShed } from './barnBuild.js';
+import { buildJumpRamp } from './jumpRamp.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -41,7 +42,8 @@ export function buildProps(ctx) {
   buildGrass(c);
   buildPuddles(c);
   buildBogs(c);
-  return { barn };
+  const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
+  return { barn, jumpRamp };
 }
 
 function buildBarn(c) {

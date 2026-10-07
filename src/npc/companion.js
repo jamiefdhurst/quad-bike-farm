@@ -11,6 +11,7 @@ import { restingMethods, restingStates } from './companionResting.js';
 import { warmingMethods } from './companionWarming.js';
 import { wavingMethods } from './companionWaving.js';
 import { DEFAULT_DOUGHNUT_PARAMS, ringPoints } from './doughnuts.js';
+import { DEFAULT_JUMP_PARAMS } from './jumps.js';
 import { DEFAULT_LINEUP_PARAMS, nextJob, assignSlots, rowSlots, crookedSlot, parkRoute, nudgePose } from './lineUp.js';
 import { PillionPose } from './pillionPose.js';
 import { canRideRack } from './rackSeat.js';
@@ -327,10 +328,12 @@ export class Companion {
     const drivable = this.quads.filter((q) => near(q) && this.canDrive(q));
     // Doughnuts want a clear stretch of field to spin in, found now so she only picks it when there is one.
     const doughnutPlan = p.boredDoughnutChance > 0 && drivable.length ? this.doughnutPlan() : null;
+    const jumpPlan = p.boredJumpChance > 0 && drivable.length ? this.jumpPlan() : null;
     const lineUpJob = p.boredLineUpChance > 0 ? this.planLineUp() : null;
     const options = {
       lineUp: lineUpJob ? [lineUpJob.quad] : [],
       doughnuts: doughnutPlan ? drivable : [],
+      jumps: jumpPlan ? drivable.filter((q) => !q.tractor) : [],
       join: this.quads.filter((q) => q.position.distanceTo(here) < 25 && q.speed < 0.5 && !q.rider && settingOff(q) && (this.canRidePillion(q) || this.canRideRackOn(q))),
       mount: this.quads.filter((q) => near(q) && q.hasPillion),
       start: this.quads.filter((q) => near(q) && !q.engine.isRunning),
@@ -354,6 +357,7 @@ export class Companion {
     else if (choice === 'start') this.requestStart(pick(options.start));
     else if (borrowed) this.requestDrive(borrowed);
     else if (choice === 'lineUp') this.startLineUp(lineUpJob);
+    else if (choice === 'jumps') this.requestDrive(pick(options.jumps), { jump: jumpPlan });
     else if (choice === 'doughnuts') this.requestDrive(pick(options.doughnuts), { doughnut: doughnutPlan });
     else if (choice === 'drive') this.requestDrive(pick(options.drive.some((q) => this.ownsQuad(q)) ? options.drive.filter((q) => this.ownsQuad(q)) : options.drive));
     else if (choice === 'rest') this.goRest(pick(options.rest), { stay: this.restStayFor?.() });
@@ -484,6 +488,16 @@ export class Companion {
       return { centre, radius, dir: Math.random() < 0.5 ? 1 : -1, seconds: this.randomBetween(dp.forMin, dp.forMax), p: { ...dp, throttle: dp.throttle * (scale > 1 ? 0.85 : 1) } };
     }
     return null;
+  }
+
+  /** Her next go at the ramp in the field (jumps.js): { ramp, p }, or null if there isn't one or its run-up and landing are blocked. */
+  jumpPlan() {
+    const ramp = this.world.layout.jumpRamp;
+    if (!ramp) return null;
+    const jp = this.jumpParams ?? DEFAULT_JUMP_PARAMS;
+    // Nothing standing on the line (a quad, you, the other girl) from the run-up to the end of the landing.
+    const clear = this.jumpClear?.(ramp, jp) ?? true;
+    return clear ? { ramp, p: jp } : null;
   }
 
   /** Walks to a point and stands there, facing `facing`, dropping whatever else she was up to. */

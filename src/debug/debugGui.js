@@ -1,6 +1,7 @@
 import GUI from 'lil-gui';
 import { getTuningGroups, exportTuning } from '../core/tuning.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
+import { rampPoint } from '../npc/jumps.js';
 
 /**
  * lil-gui panel built from the tuning registry, plus live engine readouts and
@@ -244,6 +245,19 @@ export class DebugGui {
     Object.defineProperty(live, 'Follow the leader', { enumerable: true, get: () => (g.convoy.active ? `${g.convoy.phase}: ${g.convoy.leader} leads, ${g.convoy.swapsDone} swaps` : 'idle') });
     Object.defineProperty(live, 'Race score', { enumerable: true, get: () => g.companions.map((c) => `${cap(c.character.id)} ${g.race.tally[c.character.id]?.wins ?? 0}-${g.race.tally[c.character.id]?.losses ?? 0}`).join(', ') });
     Object.defineProperty(live, 'Throttle grab', { enumerable: true, get: () => g.throttleGrab.grab?.girl ? `${g.throttleGrab.grab.girl} (${g.throttleGrab.grab.phase})` : g.throttleGrab.forced ? `${g.throttleGrab.forced} waiting` : 'none' });
+    Object.defineProperty(live, 'Jump', {
+      enumerable: true,
+      get: () => {
+        const c = g.companions.find((o) => o.fsm.is('driving') && o.drive?.jump);
+        const run = c?.drive.jump.run;
+        return run ? `${c.character.id}: ${run.phase}, go ${run.went + 1} of ${run.goes}` : 'nobody';
+      },
+    });
+    Object.defineProperty(live, 'Last jump', {
+      enumerable: true,
+      get: () => (g.lastJump ? `${g.lastJump.girl}: ${g.lastJump.rating} (air ${g.lastJump.air.toFixed(2)} s, level ${g.lastJump.upY.toFixed(2)}, down ${g.lastJump.impact.toFixed(1)} m/s)` : 'none yet'),
+    });
+    Object.defineProperty(live, 'Jump score', { enumerable: true, get: () => g.companions.map((c) => { const s = g.jumpWatch.score[c.character.id]; return `${cap(c.character.id)} ${s ? `${s.jumps} jumps, ${s.great} great, ${s.bails} bails` : 'none'}`; }).join('; ') });
     for (const c of g.companions) Object.defineProperty(live, `${cap(c.character.id)} tidying`, { enumerable: true, get: () => c.lineUpStatus });
     for (const key of Object.keys(live)) f.add(live, key).listen().disable();
     const actions = {
@@ -331,6 +345,27 @@ export class DebugGui {
       g.hud.toast(`Jess is off with the ${quads[0].label}`);
     };
     f.add(actions, 'doughnuts').name('Jess does doughnuts');
+    for (const id of ['jess', 'amy']) {
+      const name = id[0].toUpperCase() + id.slice(1);
+      actions[`jump_${id}`] = () => {
+        const c = girl(id);
+        if (!free(c)) return;
+        c.selfEvents.push('jumps');
+        if (!g.sendToRamp(c)) g.hud.toast(`${name} cannot find a free quad, or the line to the ramp is blocked`);
+        else g.hud.toast(`${name} is off to jump the ramp (the other girl may take a turn after)`);
+      };
+      f.add(actions, `jump_${id}`).name(`${name} jumps the ramp`);
+    }
+    actions.toRamp = () => {
+      const r = g.world.layout.jumpRamp;
+      if (!r) return;
+      // Stood beside the lip, looking back down the run-up, off the line.
+      const at = rampPoint(r, r.length * 0.6, 3.5);
+      if (g.riddenUnit) return g.hud.toast('Get off first');
+      g.player.moveTo({ x: at.x, y: g.world.heightAt(at.x, at.z) + 0.5, z: at.z });
+      g.hud.toast('At the ramp');
+    };
+    f.add(actions, 'toRamp').name('Take me to the jump');
     f.add(actions, 'nick').name('Jess nicks the nearest quad');
     f.add(actions, 'race').name('Start a race now');
     f.add(actions, 'diesel').name('Jess pours red diesel into a quad');
