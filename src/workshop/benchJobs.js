@@ -111,7 +111,7 @@ export const JOBS = {
     steps: [
       { id: 'tray', text: 'Put a tray under the tank', kind: 'press' },
       { id: 'drain', text: 'Open the drain: let the brown varnish run out', kind: 'hold', need: 1.5 },
-      { id: 'flush', text: 'Flush it with a splash of fresh petrol: not too much', kind: 'hold', need: 0.6, limit: 1.4 },
+      { id: 'flush', text: 'Flush it through: not too much', kind: 'hold', need: 0.6, limit: 1.4 },
       { id: 'shut', text: 'Close the drain and refit the pipe', kind: 'press' },
     ],
   },
@@ -306,7 +306,12 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
   if (job.kind === 'tarp') return 'The tarp is off, and the dust is everywhere';
   if (job.kind === 'fuel') {
     engine.fouling = botched ? P.plugLeftFouling : 0;
-    return botched ? 'Drained, though the tank still smells of varnish' : 'Tank drained and flushed: clean petrol only';
+    // The old fuel is gone, oil and all: it has to be filled again (petrol, or the pre-mix can for a two-stroke).
+    if (fuel?.drain) {
+      fuel.drain();
+      fuel.oil = 0;
+    }
+    return botched ? 'Drained, though the tank still smells of varnish. It needs fuel' : 'Tank drained and flushed. It needs fuel now';
   }
   if (job.kind === 'brake') return botched ? 'The brake is free, but it is a bit stiff' : 'The brake is free and moves properly';
   if (job.kind === 'battery') return 'The charger is on: it will be about five minutes';

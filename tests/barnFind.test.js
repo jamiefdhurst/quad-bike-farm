@@ -3,6 +3,7 @@ import { pickBarnFind, BarnFind, jobsFor, RUSTY_JOBS, DEFAULT_BARN_FIND_PARAMS a
 import { QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { BenchJob, JOBS, finishJob, jobAvailable } from '../src/workshop/benchJobs.js';
+import { FuelSystem, DEFAULT_FUEL_PARAMS } from '../src/vehicle/fuelSystem.js';
 import { createRandom } from '../src/core/random.js';
 
 const plan = { donor: QUAD_SPECS[0], jobs: ['fuel', 'plug', 'battery'] };
@@ -127,6 +128,20 @@ describe('its jobs at the bench', () => {
     job.flaws.push({ step: 'flush', how: 'over' });
     finishJob(job, { engine }, undefined);
     expect(engine.fouling).toBeGreaterThan(0);
+  });
+});
+
+describe('draining the tank', () => {
+  it('empties it, oil and all, so it has to be filled again', () => {
+    const fuel = new FuelSystem({ ...DEFAULT_FUEL_PARAMS, startLitres: 2, startOil: 0.02 });
+    expect(fuel.litres).toBeGreaterThan(0);
+    finishJob(new BenchJob('fuel'), { engine: { fouling: 0, params: {} }, fuel });
+    expect(fuel.litres).toBe(0);
+    expect(fuel.bowl).toBe(0);
+    expect(fuel.oil).toBe(0);
+    fuel.add(1, 0.02);
+    expect(fuel.litres).toBe(1);
+    expect(fuel.oil).toBeCloseTo(0.02);
   });
 });
 
