@@ -3,7 +3,7 @@ import { QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
 import { QuirkSet, QUIRK_KINDS, DEFAULT_QUIRK_PARAMS as P, featuresOf, applicableQuirks, pickQuirks, girlKnowsQuirks } from '../src/vehicle/quirks.js';
 import { createRandom } from '../src/core/random.js';
 import { AMY_QUIRK_LINES, JESS_QUIRK_LINES } from '../src/npc/quirkLines.js';
-import { setHeadlights } from '../src/vehicle/quadModel.js';
+import { setHeadlights, LENS_GLOW } from '../src/vehicle/quadModel.js';
 
 const all = featuresOf({ dashStyle: 'grizzly' });
 const many = (n, f) => Array.from({ length: n }, (_, i) => f(createRandom(i + 1)));
@@ -193,9 +193,9 @@ describe('the headlight', () => {
     const lens = { emissive: { setHex() {} }, emissiveIntensity: 0 };
     const model = { userData: { lensMaterial: lens } };
     setHeadlights(model, true, 0.5);
-    expect(lens.emissiveIntensity).toBeCloseTo(0.6);
+    expect(lens.emissiveIntensity).toBeCloseTo(LENS_GLOW / 2);
     setHeadlights(model, true);
-    expect(lens.emissiveIntensity).toBeCloseTo(1.2);
+    expect(lens.emissiveIntensity).toBeCloseTo(LENS_GLOW);
     setHeadlights(model, false, 1);
     expect(lens.emissiveIntensity).toBe(0);
   });
@@ -226,5 +226,24 @@ describe('quirk lines', () => {
       expect(JESS_QUIRK_LINES[k].length, k).toBeGreaterThan(0);
       for (const l of [...AMY_QUIRK_LINES[k].lines, ...JESS_QUIRK_LINES[k]]) expect(l).not.toMatch(/—|\b(he|she)\b/i);
     }
+  });
+});
+
+describe('the lit headlight beam', () => {
+  it('shows only while the lamp is lit, in its colour', () => {
+    const mat = () => ({ color: { setHex(h) { this.hex = h; } }, opacity: 0 });
+    const beam = mat();
+    const halo = mat();
+    const parts = [{ visible: false }, { visible: false }];
+    const model = { userData: { lensMaterial: { emissive: { setHex() {} }, emissiveIntensity: 0 }, beamMaterial: beam, haloMaterial: halo, beams: parts } };
+    setHeadlights(model, true, 1, 0xabcdef);
+    expect(beam.opacity).toBeGreaterThan(0);
+    expect(beam.color.hex).toBe(0xabcdef);
+    expect(parts.every((p) => p.visible)).toBe(true);
+    setHeadlights(model, true, 0);
+    expect(beam.opacity).toBe(0);
+    expect(parts.some((p) => p.visible)).toBe(false);
+    setHeadlights(model, false, 1);
+    expect(halo.opacity).toBe(0);
   });
 });

@@ -67,6 +67,7 @@ export class EngineModel {
     this.overheat = 0; // 0..1 extra heat from poor lubrication, on top of the temperature
     this.scuff = 0; // 0..1 damage from running without oil; at 1 it seizes
     this.nip = 0; // 0..1 how far it's nipping up
+    this.silencerBlown = 0; // 0..1 how much of a two-stroke's silencer packing has blown out: louder and raspier, until it's repacked at the bench
     this.silencerOff = false; // a toolbox job: louder, a bit stronger, crackles more
     this.seized = false; // locked solid: nothing turns it until it's stripped down
     this.heat = 0; // 0..1 running too hot (see heat.js)
@@ -325,6 +326,11 @@ export class EngineModel {
     return lerp(p.weakCrankFactor, 1, t);
   }
 
+  /** How loud and bright the exhaust is, 0..1: a silencer off is full, a blown one part of it. */
+  get exhaustLoud() {
+    return this.silencerOff ? 1 : this.silencerBlown * this.params.silencerBlownLoud;
+  }
+
   /** Whether the dash has power to light. */
   get hasPower() {
     return this.ignitionOn && this.battery > this.params.batteryDashOutBelow;
@@ -386,6 +392,7 @@ export class EngineModel {
       const coldThrash = clamp(1 - this.temperature / p.wearColdBelow, 0, 1) * rpmNorm;
       // Revved past the top it was built for (the toolbox's rev limiter, or the throttle stop out) it wears much faster.
       const overRev = p.designRpm > 0 ? Math.max(0, this.rpm / p.designRpm - 1) : 0;
+      if (p.strokes === 2) this.silencerBlown = Math.min(1, this.silencerBlown + (h / 60) * p.silencerBlowPerMinute * (0.33 + 0.67 * rpmNorm));
       this.wear = Math.min(
         p.wearMax,
         this.wear + (h / 60) * p.wearPerMinute * (1 + p.wearWorkBoost * rpmNorm + p.wearColdBoost * coldThrash + p.wearOverRevBoost * overRev),

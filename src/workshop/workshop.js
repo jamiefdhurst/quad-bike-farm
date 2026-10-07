@@ -211,6 +211,7 @@ export class Workshop {
     const unit = this.unit;
     if (!unit || this.isServiced(unit)) return;
     unit.engine.wear = 0;
+    unit.engine.silencerBlown = 0;
     const best = unit.spec.roughnessRange?.[0];
     if (best !== undefined) unit.engine.params.baseRoughness = Math.min(unit.engine.params.baseRoughness, best);
     this.render();
@@ -329,7 +330,7 @@ export class Workshop {
 
   isServiced(unit) {
     const best = unit.spec.roughnessRange?.[0] ?? unit.engine.params.baseRoughness;
-    return unit.engine.wear < 0.005 && unit.engine.params.baseRoughness <= best + 0.001;
+    return unit.engine.wear < 0.005 && unit.engine.silencerBlown < 0.005 && unit.engine.params.baseRoughness <= best + 0.001;
   }
 
   backToStock() {

@@ -190,3 +190,17 @@ describe('the bay', () => {
     expect(inBay(bay, 1.3, 0, 0.35)).toBe(false);
   });
 });
+
+describe('repacking the silencer', () => {
+  it('is for two-strokes, and sets the packing right unless botched', () => {
+    expect(jobAvailable('packing', { params: { strokes: 2 } })).toBe(true);
+    expect(jobAvailable('packing', { params: { strokes: 4 } })).toBe(false);
+    const done = (opts) => {
+      const t = { ...target(), engine: { ...target().engine, silencerBlown: 0.9 } };
+      finishJob(doJob(new BenchJob('packing'), opts), t);
+      return t.engine.silencerBlown;
+    };
+    expect(done()).toBe(0);
+    expect(done({ flawAt: 'wrap' })).toBe(P.packingBotched);
+  });
+});

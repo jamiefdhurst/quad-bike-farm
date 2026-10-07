@@ -1385,3 +1385,19 @@ The item settled it; I chose the details without asking.
 - A girl idling or resting within `dripSmellRange` 4 m of a patch of 0.08 or more says `dripSmell` at `dripSmellChance` 0.15 a second, once per quad every four minutes (lines in `dripLines.js`). Amy tells you to turn the tap off; Jess blames the tap, then Amy.
 - Left out: a girl turning the tap off herself, Amy's walk-round noticing it, and blame going into a tally. All easy to add on top.
 - Checked: unit tests only. Not checked in the running game: how the patch looks, or how often a float sticks in a real session.
+
+## Silencer packing blows out on the two-strokes (TODO 18)
+
+The item settled it; I chose the details without asking.
+
+- `engine.silencerBlown` (0..1), only on engines with `strokes === 2`. It grows while running at `silencerBlowPerMinute` 0.05 times 0.33 to 1 by how far up the revs it is, so about 20 minutes at full revs and an hour idling. `engine.exhaustLoud` is what the audio gets for its `loud` flag: 1 with the silencer off, otherwise blown times `silencerBlownLoud` 0.6. The existing `silencerLoud` and `silencerBright` sound params do the rest, so louder and raspier together.
+- Repacking: a bench job `packing` (hold to undo the silencer, pull the old packing, stuff the new one in a window, bolt on), two-strokes only. Botched, it leaves `packingBotched` 0.3. A toolbox service (`V`) also clears it, and a quad isn't counted as serviced until it's repacked.
+- At the start of the game a two-stroke's blown level is 0.8 of its wear, up to 0.6.
+- The girls (`silencerLines.js`, `silencerBlown`): once per quad every five minutes, near it while it runs. Amy notices at `blownNoticeAt` 0.25 and wants it repacked; Jess only at 0.6 and loves it.
+- Checked: unit tests only. Not checked: how the blown level sounds, or whether 20 minutes is the right pace.
+
+## The headlights, more obviously on (TODO 19, follow-up)
+
+- The lens colour is now dark smoky (0x2c302c) instead of pale, so it's dull when off. Lit, its glow is `LENS_GLOW` 2.4 (was 1.2).
+- `addHeadlightBeams` (quadModel.js, called before the model is merged, for all four builders) puts a faked beam on each front lamp: an open cone 7 m long and 0.9 m across at the far end, additive and unlit, fading out with distance by vertex colour, plus an additive halo sprite. Opacity follows the lamp's brightness and colour, so a dim idle light gives a dim beam and a flickering one flickers. No real light: one per quad would be costly, and changing the light count recompiles the shaders.
+- Checked headless: the game loads without errors, and a tractor with the key on shows the beam on the grass. Not checked: the quads (old ones only light when running), the halo, or how it looks at night or in fog; in full sun the beam is faint by design.

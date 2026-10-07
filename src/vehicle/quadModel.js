@@ -1051,7 +1051,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   const quad = new THREE.Group();
   quad.name = 'quad';
   const paint = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.3, metalness: 0.0, side: THREE.DoubleSide });
-  const lensMat = new THREE.MeshStandardMaterial({ color: 0xe8e8dc, roughness: 0.05, emissive: 0x000000 });
+  const lensMat = new THREE.MeshStandardMaterial({ color: 0x2c302c, roughness: 0.08, metalness: 0.2, emissive: 0x000000 });
   const seatMat =
     style === 'utility2'
       ? new THREE.MeshStandardMaterial({ color: 0x3b3e42, roughness: 0.55 })
@@ -1456,6 +1456,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
       for (let o = root.getObjectByName(name); o; o = root.getObjectByName(name)) o.removeFromParent();
     }
   }
+  addHeadlightBeams(quad);
   mergeStatic(root);
   mergeStatic(bars);
   quad.traverse((o) => {
@@ -1467,10 +1468,89 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   return quad;
 }
 
+let haloTexture = null;
+/** A soft round glow, drawn once: the bloom round a lit lamp. */
+function glowTexture() {
+  if (haloTexture) return haloTexture;
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.25, 'rgba(255,255,255,0.45)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 64, 64);
+  haloTexture = new THREE.CanvasTexture(c);
+  return haloTexture;
+}
+
+export const LENS_GLOW = 2.4; // emissive intensity of a lit lens at full level, bright against the dark one it has when off
+const BEAM_LENGTH = 7; // metres the faked beam reaches
+const BEAM_SPREAD = 0.9; // metres across at the far end, from each lamp
+
+/**
+ * Gives each front lamp a faked beam (a cone that fades with distance) and a halo, both additive and unlit, so a lit lamp is
+ * obvious even in daylight and throws a visible shaft in the barn, fog and cloud. No real light: a light per quad would cost every
+ * frame and recompile the shaders whenever the count changed. Call before the model is merged (merging would lose the lamps' positions).
+ */
+export function addHeadlightBeams(quad) {
+  const lensMat = quad.userData.lensMaterial;
+  const cone = new THREE.ConeGeometry(BEAM_SPREAD / 2, BEAM_LENGTH, 16, 1, true);
+  cone.rotateX(-Math.PI / 2);
+  cone.translate(0, 0, BEAM_LENGTH / 2);
+  const pos = cone.attributes.position;
+  const fade = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) fade.fill(1 - pos.getZ(i) / BEAM_LENGTH, i * 3, i * 3 + 3);
+  cone.setAttribute('color', new THREE.BufferAttribute(fade, 3));
+  const beamMat = new THREE.MeshBasicMaterial({ vertexColors: true, color: 0xfff2cc, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false });
+  const haloMat = new THREE.SpriteMaterial({ map: glowTexture(), color: 0xfff2cc, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+  quad.updateMatrixWorld(true);
+  const lamps = [];
+  quad.traverse((o) => {
+    if (o.isMesh && o.material === lensMat) lamps.push(o);
+  });
+  const lights = [];
+  for (const lamp of lamps) {
+    lamp.geometry.computeBoundingBox();
+    const box = lamp.geometry.boundingBox;
+    const at = new THREE.Vector3((box.min.x + box.max.x) / 2, (box.min.y + box.max.y) / 2, box.max.z).applyMatrix4(lamp.matrix);
+    if (quad.worldToLocal(lamp.parent.localToWorld(at.clone())).z < 0.3) continue; // a tail light
+    const beam = new THREE.Mesh(cone, beamMat);
+    beam.name = 'headlightBeam';
+    beam.userData.keep = true;
+    beam.position.copy(at);
+    beam.rotation.x = 0.05; // dips a little towards the ground
+    beam.renderOrder = 2;
+    Object.defineProperty(beam, 'castShadow', { get: () => false, set: () => {} }); // the shadow pass would otherwise be given a cone
+    Object.defineProperty(beam, 'receiveShadow', { get: () => false, set: () => {} });
+    const halo = new THREE.Sprite(haloMat);
+    halo.name = 'headlightHalo';
+    halo.userData.keep = true;
+    halo.position.copy(at);
+    halo.position.z += 0.03;
+    halo.scale.setScalar(0.5);
+    lamp.parent.add(beam, halo);
+    lights.push(beam, halo);
+  }
+  quad.userData.beamMaterial = beamMat;
+  quad.userData.haloMaterial = haloMat;
+  quad.userData.beams = lights;
+}
+
 export function setHeadlights(quad, on, level = 1, colour = 0xfff2cc) {
   const lens = quad.userData.lensMaterial;
-  lens.emissive.setHex(on && level > 0 ? colour : 0x000000);
-  lens.emissiveIntensity = on ? 1.2 * level : 0;
+  const lit = on && level > 0;
+  lens.emissive.setHex(lit ? colour : 0x000000);
+  lens.emissiveIntensity = on ? LENS_GLOW * level : 0;
+  const beam = quad.userData.beamMaterial;
+  if (!beam) return;
+  beam.color.setHex(colour);
+  beam.opacity = lit ? 0.1 * level : 0;
+  quad.userData.haloMaterial.color.setHex(colour);
+  quad.userData.haloMaterial.opacity = lit ? 0.9 * level : 0;
+  const show = lit && level > 0.02;
+  for (const o of quad.userData.beams) o.visible = show;
 }
 
 // For the mini moto's model (miniMotoModel.js), which builds on the same parts.

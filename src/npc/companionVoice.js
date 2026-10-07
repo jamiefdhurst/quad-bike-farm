@@ -546,6 +546,9 @@ export class CompanionVoice {
       this.watchHeat(unit, near || hers);
       this.watchDiesel(unit, near || hers);
       if (e.silencerOff && e.isRunning && (near || hers)) this.say('silencerLoud', { chance: 0.015 });
+      if (e.silencerBlown >= this.companion.params.blownNoticeAt && e.isRunning && (near || hers) && this.chatter.time >= (w.blownUntil ?? 0)) {
+        if (this.say('silencerBlown', { chance: 0.02 })) w.blownUntil = this.chatter.time + 300;
+      }
       this.watchFaults(unit, w, near || hers);
       this.watchDiagnosis(dt, unit, w);
       this.watchThrash(dt, unit, view, near || hers);

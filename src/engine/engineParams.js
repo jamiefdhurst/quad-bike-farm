@@ -205,6 +205,8 @@ export const DEFAULT_ENGINE_PARAMS = {
 
   // Silencer off (a toolbox job)
   silencerPower: 0.08, // power gained with the silencer off
+  silencerBlowPerMinute: 0.05, // two-strokes only: how much of the silencer's packing blows out per minute at full revs (a third of that idling)
+  silencerBlownLoud: 0.6, // how loud a fully blown silencer is, as a share of one taken off
   silencerPop: 0.5, // overrun propensity added with it off (open pipe, so it crackles)
 
   // Run-on: switched off hot, worn or lean, it chugs on for a few beats
@@ -415,6 +417,8 @@ export const ENGINE_PARAM_RANGES = {
   popLean: [0, 3, 0.05],
   popWear: [0, 3, 0.05],
   silencerPower: [0, 0.3, 0.01],
+  silencerBlowPerMinute: [0, 0.5, 0.005],
+  silencerBlownLoud: [0, 1, 0.05],
   silencerPop: [0, 2, 0.01],
   popHeat: [0, 3, 0.05],
   runOnBase: [0, 1, 0.01],

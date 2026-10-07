@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { buildDash } from './dash.js';
+import { addHeadlightBeams } from './quadModel.js';
 import { loftGeometry, mergeStatic, rod } from './quadGeometry.js';
 
 // The old farm tractor, procedural like the quads: a Fergie-sized diesel with a bonnet, a pan seat between two big rear wheels, a
@@ -156,7 +157,7 @@ function buildWheel(w, rimMat) {
 export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' } = {}) {
   const paint = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.5, side: THREE.DoubleSide });
   const grey = new THREE.MeshStandardMaterial({ color: 0xa9aaa4, roughness: 0.55, side: THREE.DoubleSide }); // the faded grey of the wheels and the body
-  const lensMat = new THREE.MeshStandardMaterial({ color: 0xe8e8dc, roughness: 0.05, emissive: 0x000000 });
+  const lensMat = new THREE.MeshStandardMaterial({ color: 0x2c302c, roughness: 0.08, metalness: 0.2, emissive: 0x000000 });
 
   const quad = new THREE.Group();
   quad.name = 'quad';
@@ -353,6 +354,7 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
     quad.add(wheelModel);
   }
 
+  addHeadlightBeams(quad);
   mergeStatic(root);
   quad.traverse((o) => {
     if (o.isMesh) {

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { MAT, STYLE, add, rbox, tube, pipe, buildHandlebars } from './quadModel.js';
+import { MAT, STYLE, add, rbox, tube, pipe, buildHandlebars, addHeadlightBeams } from './quadModel.js';
 import { mergeStatic, loftGeometry, shellGeometry } from './quadGeometry.js';
 
 // The neighbour's old three-wheeler: a sun-bleached ATC with one front wheel, two fat balloon tyres at the back, a flat seat and a tall,
@@ -72,7 +72,7 @@ function buildWheel(w, paint) {
 
 export function buildAtcModel({ bodyColor = 0xb4553f, dashStyle = 'kidsKey', chokeStyle = 'knob' } = {}) {
   const paint = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.6, side: THREE.DoubleSide }); // chalky from years in the sun
-  const lensMat = new THREE.MeshStandardMaterial({ color: 0xe8e8dc, roughness: 0.05, emissive: 0x000000 });
+  const lensMat = new THREE.MeshStandardMaterial({ color: 0x2c302c, roughness: 0.08, metalness: 0.2, emissive: 0x000000 });
   const seatMat = new THREE.MeshStandardMaterial({ color: 0x1c1b1a, roughness: 0.7 }); // its own, so frost on one seat is not on them all
   const quad = new THREE.Group();
   quad.name = 'quad';
@@ -196,6 +196,7 @@ export function buildAtcModel({ bodyColor = 0xb4553f, dashStyle = 'kidsKey', cho
     quad.add(wheel);
   }
 
+  addHeadlightBeams(quad);
   mergeStatic(root);
   mergeStatic(bars);
   quad.traverse((o) => {

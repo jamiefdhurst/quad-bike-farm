@@ -33,3 +33,34 @@ describe('silencer off', () => {
     expect(diff).toBeCloseTo(P.silencerPop, 5);
   });
 });
+
+describe('a blown silencer', () => {
+  const run = (strokes, seconds, throttle) => {
+    let seed = 7;
+    const random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const e = new EngineModel({ initialTemperature: 1 }, { random });
+    e.setIgnition(true);
+    for (let i = 0; i < 600 && !e.isRunning; i++) e.update(1 / 60, { starter: true, choke: 0.3 });
+    expect(e.isRunning).toBe(true);
+    e.params.strokes = strokes;
+    for (let t = 0; t < seconds; t += 1 / 60) e.update(1 / 60, { throttle });
+    return e;
+  };
+
+  it('only a two-stroke blows its packing out, and faster with revs', () => {
+    expect(run(4, 120, 1).silencerBlown).toBe(0);
+    const idle = run(2, 120, 0).silencerBlown;
+    const hard = run(2, 120, 1).silencerBlown;
+    expect(idle).toBeGreaterThan(0);
+    expect(hard).toBeGreaterThan(idle);
+  });
+
+  it('is louder the more it has gone, up to a share of a silencer taken off', () => {
+    const e = make();
+    expect(e.exhaustLoud).toBe(0);
+    e.silencerBlown = 1;
+    expect(e.exhaustLoud).toBeCloseTo(P.silencerBlownLoud);
+    e.silencerOff = true;
+    expect(e.exhaustLoud).toBe(1);
+  });
+});

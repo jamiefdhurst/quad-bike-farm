@@ -1208,6 +1208,7 @@ export class Game {
     const [lo, hi] = unit.spec.hoursRange ?? [0, 0];
     const h = pickHistory(unit.spec, random, { faultChance, hoursT: hi > lo ? (unit.quad.usage.hours - lo) / (hi - lo) : 0.5 });
     unit.engine.wear = h.wear;
+    if (unit.engine.params.strokes === 2) unit.engine.silencerBlown = Math.min(0.6, h.wear * 0.8); // an old two-stroke's packing has started to go
     for (const f of h.faults) unit.quad.faults.leave(f.kind, f.level);
     if (h.tinker) {
       const stock = captureStock(tuneTarget(unit));

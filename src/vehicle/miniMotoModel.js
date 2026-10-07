@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { MAT, STYLE, add, rbox, tube, pipe, buildHandlebars } from './quadModel.js';
+import { MAT, STYLE, add, rbox, tube, pipe, buildHandlebars, addHeadlightBeams } from './quadModel.js';
 import { mergeStatic } from './quadGeometry.js';
 
 // The mini moto: a 50cc pit bike, procedural like the quads. Same named parts as a quad's model so Quad drives it unchanged (see
@@ -68,7 +68,7 @@ function buildWheel(w, paint) {
 
 export function buildMiniMotoModel({ bodyColor = 0xd0d4d8, dashStyle = 'kidsKey' } = {}) {
   const paint = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.35, side: THREE.DoubleSide });
-  const lensMat = new THREE.MeshStandardMaterial({ color: 0xe8e8dc, roughness: 0.05, emissive: 0x000000 });
+  const lensMat = new THREE.MeshStandardMaterial({ color: 0x2c302c, roughness: 0.08, metalness: 0.2, emissive: 0x000000 });
   const seatMat = MAT.seat.clone(); // its own, so frost on one seat is not on them all
   const quad = new THREE.Group();
   quad.name = 'quad';
@@ -175,6 +175,7 @@ export function buildMiniMotoModel({ bodyColor = 0xd0d4d8, dashStyle = 'kidsKey'
     quad.add(wheel);
   }
 
+  addHeadlightBeams(quad);
   mergeStatic(root);
   mergeStatic(bars);
   quad.traverse((o) => {

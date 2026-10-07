@@ -17,6 +17,7 @@ export const DEFAULT_BENCH_PARAMS = {
   plugWornWear: 0.4, // wear at which a four-stroke's old plug has an electrode worn round
   sumpShort: 0.75, // sump level when the pour was too short (a bit under the top mark)
   oilOver: 0.05, // and when it was too much (about 20:1, smokes and fouls)
+  packingBotched: 0.3, // silencer blown-out level left after a badly packed one (too loose or stuffed too tight)
 };
 
 export const BENCH_PARAM_RANGES = {
@@ -29,6 +30,7 @@ export const BENCH_PARAM_RANGES = {
   oilGood: [0, 0.1, 0.002],
   sumpShort: [0.3, 1, 0.01],
   oilOver: [0, 0.2, 0.002],
+  packingBotched: [0, 1, 0.05],
   plugRichFouling: [0, 1, 0.05],
   plugLean: [0, 0.5, 0.01],
   plugOilyWear: [0, 1, 0.05],
@@ -77,6 +79,15 @@ export const JOBS = {
       { id: 'close', text: 'Cap on', kind: 'press' },
     ],
   },
+  packing: {
+    name: 'Repack the silencer',
+    steps: [
+      { id: 'off', text: 'Undo the silencer and take it off', kind: 'hold', need: 1 },
+      { id: 'old', text: 'Pull out the burnt packing', kind: 'press' },
+      { id: 'wrap', text: 'Stuff in new packing: firm, not rammed', kind: 'hold', need: 1, limit: 2 },
+      { id: 'refit', text: 'Bolt the silencer back on', kind: 'press' },
+    ],
+  },
   sump: {
     name: 'Top up the engine oil',
     steps: [
@@ -88,7 +99,7 @@ export const JOBS = {
   },
 };
 
-export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump'];
+export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing'];
 
 /** What each reading means, the way Amy would say it. Order is the order Jess can be wrong in. */
 export const PLUG_KINDS = ['healthy', 'rich', 'lean', 'oily', 'worn'];
@@ -249,6 +260,10 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     if (botched) faults.leave('puncture', P.botchedLevel);
     return botched ? 'Wheel is back on, but the tyre is not holding' : 'Tyre patched, pumped and holding';
   }
+  if (job.kind === 'packing') {
+    engine.silencerBlown = botched ? P.packingBotched : 0;
+    return botched ? 'Silencer packed, though it is not quite right and still a bit loud' : 'Silencer repacked: quiet again';
+  }
   if (job.kind === 'sump') {
     const short = job.outcome('pour') === 'short';
     if (target.sump) target.sump.level = short ? Math.max(target.sump.level, P.sumpShort) : 1;
@@ -262,6 +277,7 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
 /** Which jobs a quad can have done: the pre-mix oil is for the two-strokes, the sump's for the petrol four-strokes. */
 export function jobAvailable(kind, engine) {
   if (kind === 'oil') return engine.params.strokes === 2;
+  if (kind === 'packing') return engine.params.strokes === 2;
   if (kind === 'sump') return engine.params.strokes !== 2 && !engine.params.runsOnDiesel;
   return true;
 }

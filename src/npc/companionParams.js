@@ -110,6 +110,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   blameChance: 0.02, // per second stood by a worn quad, that she says who did it
   leftRunningChance: 0.05, // per second stood by a quad left running, that she says who left it
   leftRunningRange: 8, // metres: how near she has to be to take notice of it
+  blownNoticeAt: 0.4, // how blown out a running two-stroke's silencer packing has to be before she says it's getting loud (Amy notices first)
   dripSmellChance: 0.15, // per second stood by a quad with a dripping carb, that she says she can smell petrol
   dripSmellRange: 4, // metres: how near she has to be to smell it
   joyRise: 0.15, // per second her mood follows more of the quads running...
@@ -342,6 +343,7 @@ export const COMPANION_PARAM_RANGES = {
   blameChance: [0, 0.3, 0.005],
   leftRunningChance: [0, 0.5, 0.01],
   leftRunningRange: [2, 30, 1],
+  blownNoticeAt: [0, 1, 0.05],
   dripSmellChance: [0, 1, 0.01],
   dripSmellRange: [1, 15, 0.5],
   joyRise: [0, 1, 0.01],
