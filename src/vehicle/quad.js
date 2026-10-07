@@ -53,7 +53,7 @@ export class Quad {
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS }) {
     this.reverseStyle = reverseStyle; // where its reverse is and what it takes (controls.js)
     this.chokeStyle = chokeStyle;
     this.tapStyle = tapStyle;
@@ -61,6 +61,7 @@ export class Quad {
     this.handOff = 1; // how much steering you keep while a hand is off the bars for the choke
     this.pushDir = 0; // set by the game while someone on foot shoves it along: +1 forwards, -1 backwards, 0 not
     this.pushLeft = 0; // seconds since it was last pushed, counting down: the roll watch doesn't blame anyone for a quad being pushed
+    this.noHeadlight = noHeadlight; // the lamp is only for show (the yellow and orange): it never lights
     this.steadyLights = steadyLights; // a battery runs the headlight, so it doesn't follow the engine (headlight.js)
     this.wheelShake = wheelShake; // how much of the body's vibration the wheels share (the tractor's shake more than the quads', which share about 0.6 of it)
     this.scale = scale; // 1, or smaller for the kids' quad: the model and the physics chassis both shrink by this
@@ -834,7 +835,7 @@ export class Quad {
       steady: this.steadyLights,
       time: this.lightTime,
     });
-    setHeadlights(this.model, e.ignitionOn, look.level * this.quirks.headlight(dt), look.colour);
+    setHeadlights(this.model, e.ignitionOn && !this.noHeadlight, look.level * this.quirks.headlight(dt), look.colour);
 
     if (this.tractor) poseTractorControls(this.model, { gear: this.drivetrain.gear, hand: this.handSetting, pedal: this.drivetrain.pedal });
     this.displayChoke += (this.choke - this.displayChoke) * Math.min(1, 12 * dt);

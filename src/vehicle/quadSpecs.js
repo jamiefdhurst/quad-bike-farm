@@ -14,6 +14,7 @@
 //   hoursRange, odoRange: [min, max] engine hours and odometer miles the dash shows at the start.
 //   wearRange: [min, max] engine wear (0 new, 1 shot) it comes with, higher the more hours it shows (history.js). tinkers: false keeps leftover
 //     tinkering off it.
+//   noHeadlight: true if the lamp is only for show and never lights (the orange).
 //   steadyLights: true if a battery runs its headlight (the loan quad and the tractor); the others' follow the engine's revs (headlight.js).
 //   topRpmRange: [min, max] full-throttle rpm (maxRpm; the redline keeps its gap below it). The toolbox's rev limiter moves it from there.
 //   fuelRange: [min, max] litres in the tank at the start. Below the reserve
@@ -288,6 +289,7 @@ export const QUAD_SPECS = [
     // her), barely any engine braking, and smokes like a chimney. Its idle is a
     // different two-stroke from the yellow's.
     id: 'orange',
+    noHeadlight: true, // no lighting set on the orange: its lamp never shines
     label: 'orange quad',
     name: 'Orange quad',
     bodyColor: 0xe86a12,

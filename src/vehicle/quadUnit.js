@@ -77,6 +77,7 @@ export class QuadUnit {
         proxy: TRACTOR_PROXY,
         wheelShake: spec.wheelShake,
         steadyLights: spec.steadyLights,
+        noHeadlight: spec.noHeadlight,
       }),
     });
     this.quad.unit = this;
