@@ -251,23 +251,24 @@ class RecordedEngine {
    * short crossfade when the next firing starts. The exhaust's resonances stay
    * where they are in the recording and only the firing rate climbs, which is
    * how a real engine behaves; resampling whole grains up shifts the
-   * resonances too.
+   * resonances too. pulseStretch below 1 stretches a firing recorded faster
+   * than the engine turns only part of the way, leaving a gap before the next.
    */
-  playPulse(g, cycleRpm, gain, period, attackGain, p) {
+  playPulse(g, cycleRpm, gain, period, attackGain, p, layer = 'low') {
     if (!g || gain <= 0.0005) return;
     const cycle = period > 0 ? period * sampleRate : (120 / cycleRpm) * sampleRate;
     const target = cycle * (1 + this.overlap);
     const natural = g.len / target;
-    const rate = natural <= 1 ? Math.max(0.45, natural) : Math.pow(natural, p.pulsePitchFollow);
+    const rate = natural <= 1 ? Math.max(0.45, Math.pow(natural, p.pulseStretch)) : Math.pow(natural, p.pulsePitchFollow);
     const xfade = Math.max(0.0015 * sampleRate, Math.min(0.008 * sampleRate, cycle * p.pulseCrossfade));
     // Length in recorded samples: the whole grain, or as much as fits before the next firing.
     const len = natural <= 1 ? g.len + g.tail : Math.min(g.len + g.tail, (target + xfade) * rate);
     for (const v of this.voices) {
-      if (v.layer === 'low' && !v.releaseLeft) v.releaseLeft = v.releaseLen = xfade;
+      if (v.layer === layer && !v.releaseLeft) v.releaseLeft = v.releaseLen = xfade;
     }
-    this.cursor.low = g;
+    this.cursor[layer] = g;
     this.voices.push({
-      layer: 'low',
+      layer,
       pos: 0,
       start: g.start,
       len,
@@ -278,6 +279,11 @@ class RecordedEngine {
       attackGain,
       attackLen: g.len * 0.3,
     });
+  }
+
+  /** How far the pulse sound has blended into real rev firings at this rpm: 0 without any, or where the quad sets no range. */
+  pulseRevBlend(p, rpm) {
+    return p.pulseRevHi > p.pulseRevLo && this.byKind.accel ? smoothstep(p.pulseRevLo, p.pulseRevHi, rpm) : 0;
   }
 
   /** Pulls a grain's loudness part of the way toward its kind's typical level. */
@@ -319,14 +325,24 @@ class RecordedEngine {
           // An idle cut in slices (the moto's and ATC's two-strokes) bangs every other turn or so, as the recording does. Well
           // above the recorded idle a two-stroke cleans up and fires every turn, so from there only the bang slices play.
           const leads = this.leads[idleKinds[0]];
-          let g;
-          if (leads && cycleRpm > p.pulseCleanUp * this.medianRpm[idleKinds[0]]) {
-            g = this.pickFrom([...leads], cycleRpm);
-          } else {
-            const next = this.readThrough ? this.cursor.low?.next : null;
-            g = next?.ok && idleKinds.includes(next.kind) ? next : this.pick(idleKinds, cycleRpm);
+          // Where the bank has real rev firings and the quad says where to use them (pulseRevLo to pulseRevHi), blend from
+          // idle firings into them as the revs rise, each still at its own speed: up the range it's that engine revving.
+          const revW = this.pulseRevBlend(p, rpm);
+          if (revW < 0.999) {
+            let g;
+            if (leads && cycleRpm > p.pulseCleanUp * this.medianRpm[idleKinds[0]]) {
+              g = this.pickFrom([...leads], cycleRpm);
+            } else {
+              const next = this.readThrough ? this.cursor.low?.next : null;
+              g = next?.ok && idleKinds.includes(next.kind) ? next : this.pick(idleKinds, cycleRpm);
+            }
+            this.playPulse(g, cycleRpm, gain * louder * (1 - revW), ev.period, attack, p);
           }
-          this.playPulse(g, cycleRpm, gain * louder, ev.period, attack, p);
+          if (revW > 0.001) {
+            // Open throttle mostly plays revs rising, a shut one revs falling, where the bank has both.
+            const rising = !this.byKind.decel || Math.random() < smoothstep(0.08, 0.45, throttle);
+            this.playPulse(this.pick([rising ? 'accel' : 'decel'], cycleRpm), cycleRpm, gain * louder * revW * p.pulseRevGain, ev.period, attack, p, 'high');
+          }
           return true;
         }
         const w = smoothstep(p.recBlendLo, p.recBlendHi, rpm);
@@ -816,7 +832,8 @@ class EngineProcessor extends AudioWorkletProcessor {
       this.pulseLow ??= new Biquad();
       this.pulseMid ??= new Biquad();
       if ((this.blockCount & 7) === 1) {
-        const rev = smoothstep(p.pulseRefRpm, p.pulseRefRpm + p.pulseEqRange, this.rpm);
+        // The EQ makes idle firings sound like revs; real rev firings blended in already do.
+        const rev = smoothstep(p.pulseRefRpm, p.pulseRefRpm + p.pulseEqRange, this.rpm) * (1 - (this.recorded?.pulseRevBlend(p, this.rpm) ?? 0));
         this.pulseLow.set('lowshelf', 160, 0.7, sr, -p.pulseLowCut * rev);
         this.pulseMid.set('peaking', p.pulseMidFreq, p.pulseMidQ, sr, p.pulseMidBoost * rev);
       }

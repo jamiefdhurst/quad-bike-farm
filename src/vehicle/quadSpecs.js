@@ -193,7 +193,11 @@ export const QUAD_SPECS = [
       pitchGain: 0.28,
     },
     audio: {
-      recBank: 'engine-bank-2t',
+      recBank: 'engine-bank-yellow', // a Yamaha DT 125 idling, into a Honda CR85 flat out as it revs
+      pulseRevLo: 3500, // from here it blends into the CR85's own firings
+      pulseRevHi: 5000,
+      pulseRevGain: 1.4, // revs as loud as its old sound's
+      pulseTone: 9000, // the CR85's rasp is in its top end: don't smooth it off as much as the default
       pulseRefRpm: 1800,
       pulseRevLoudness: 1.1, // a two-stroke gets louder faster as it revs
       pulseLoudnessCap: 2,
@@ -275,10 +279,15 @@ export const QUAD_SPECS = [
       barsFreq: 12,
     },
     audio: {
-      recIdleSource: 'third',
+      recBank: 'engine-bank-green', // a Yamaha Ténéré 250 idling, into kyles's Honda ATV as it revs
+      recIdleSource: 'quad',
+      pulseStretch: 0.5, // its idle firings are twice as quick as its tickover: stretch them half way and leave a gap, a big lazy single
+      pulseRevLo: 1600, // from here it blends into the Honda ATV's own firings
+      pulseRevHi: 2600,
+      pulseRevGain: 1.45, // revs as loud as its old sound's, which was fitted to real engines
       pulseRefRpm: 1050,
       pulseRevLoudness: 0.05, // its recorded pulses are already punchy when cut short; it hardly needs to get louder
-      recVolume: 0.5,
+      recVolume: 0.58, // idles as loud as it did on the CRF250
       recToneClosed: 5200,
       pipeLength: 1.3,
     },

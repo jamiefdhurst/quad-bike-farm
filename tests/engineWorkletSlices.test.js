@@ -65,3 +65,54 @@ describe('a two-stroke idle cut in slices', () => {
     expect(played.every((s) => s === 0)).toBe(true);
   });
 });
+
+// A bank with idle firings at 1,750 rpm and real rev firings at 3,000 to 6,000, as the green's has.
+function revBank() {
+  const grains = [];
+  let t = 0;
+  for (let i = 0; i < 20; i++, t += 0.068) grains.push({ kind: 'idle', start: t, dur: 0.068, tail: 0, rpm: 1750, src: 'ten', rms: 0.2 });
+  for (let rpm = 3000; rpm <= 6000; rpm += 150) {
+    const dur = 120 / rpm;
+    grains.push({ kind: 'accel', start: t, dur, tail: 0, rpm, src: 'honda', rms: 0.2 });
+    t += dur;
+  }
+  return { data: new Float32Array(44100 * 4).fill(0.1), sourceGain: { ten: 1, honda: 1 }, crankRpm: 300, grains, oneshots: {} };
+}
+
+describe('real rev firings in the pulse sound', () => {
+  const params = { ...PARAMS, pulseStretch: 1, pulseRevLo: 1600, pulseRevHi: 2600, pulseRevGain: 1 };
+  const kindsAt = (rec, rpm, p) => {
+    rec.voices = [];
+    rec.trigger({ type: 'fire', strength: 1, period: 120 / rpm }, p, rpm, 1);
+    return rec.voices.map((v) => rec.byKind.idle.some((g) => g.start === v.start) ? 'idle' : 'accel').sort();
+  };
+
+  it('plays only idle firings below pulseRevLo, only rev firings above pulseRevHi, and both between', () => {
+    const { RecordedEngine } = loadWorklet(44100);
+    const rec = new RecordedEngine(revBank());
+    expect(kindsAt(rec, 1000, params)).toEqual(['idle']);
+    expect(kindsAt(rec, 4000, params)).toEqual(['accel']);
+    expect(kindsAt(rec, 2100, params)).toEqual(['accel', 'idle']);
+  });
+
+  it('stays on idle firings when the quad sets no range, however high the revs', () => {
+    const { RecordedEngine } = loadWorklet(44100);
+    const rec = new RecordedEngine(revBank());
+    expect(kindsAt(rec, 5000, { ...params, pulseRevLo: 0, pulseRevHi: 0 })).toEqual(['idle']);
+  });
+
+  it('stretches a quick idle firing only part way with pulseStretch below 1, leaving a gap', () => {
+    const { RecordedEngine } = loadWorklet(44100);
+    const rec = new RecordedEngine(revBank());
+    const rateAt = (stretch) => {
+      rec.voices = [];
+      rec.trigger({ type: 'fire', strength: 1, period: 120 / 850 }, { ...params, pulseStretch: stretch }, 850, 0);
+      return rec.voices[0].rate;
+    };
+    // 1,750 rpm firings at 850 rpm: filling the cycle plays them at about half speed (an octave down); half way, about 0.7.
+    expect(rateAt(1)).toBeLessThan(0.5);
+    expect(rateAt(0.5)).toBeGreaterThan(0.65);
+    expect(rateAt(0.5)).toBeLessThan(0.75);
+    expect(rateAt(0)).toBe(1);
+  });
+});

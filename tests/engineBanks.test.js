@@ -43,6 +43,17 @@ describe('engine banks', () => {
     expect(EXTRA_SPECS.find((s) => s.id === 'kids').audio.recBank).toBe('engine-bank-50');
   });
 
+  it('gives the green and the yellow their own banks, blending into real rev firings as they rev', () => {
+    for (const [id, bank] of [['green', 'engine-bank-green'], ['yellow', 'engine-bank-yellow']]) {
+      const spec = QUAD_SPECS.find((s) => s.id === id);
+      expect(spec.audio.recBank, id).toBe(bank);
+      expect(spec.audio.pulseRevHi, id).toBeGreaterThan(spec.audio.pulseRevLo);
+      const grains = JSON.parse(readFileSync(`public/audio/${bank}.json`, 'utf8')).grains.filter((g) => g.ok !== false);
+      expect(grains.filter((g) => g.kind === 'idle').length, id).toBeGreaterThan(100);
+      expect(grains.filter((g) => g.kind === 'accel').length, id).toBeGreaterThan(100);
+    }
+  });
+
   it('gives the mini moto, the ATC and the UTV their own banks', () => {
     expect(EXTRA_SPECS.find((s) => s.id === 'moto').audio.recBank).toBe('engine-bank-moto');
     expect(EXTRA_SPECS.find((s) => s.id === 'atc').audio.recBank).toBe('engine-bank-atc');

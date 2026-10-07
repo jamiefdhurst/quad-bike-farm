@@ -100,7 +100,7 @@ export const DEFAULT_AUDIO_PARAMS = {
   engineSound: 'pulse', // 'pulse' (revs built from recorded idle firings), 'recorded' (idle and rev recordings) or 'synth' (fully synthesised)
 
   // Recorded engine
-  recBank: 'engine-bank', // which recordings: 'engine-bank' (four-stroke quads), 'engine-bank-2t' (two-stroke dirt bikes), 'engine-bank-50' (the kids' 50cc scooter two-stroke), 'engine-bank-tractor' (the diesel tractor), 'engine-bank-moto' (the mini moto's Derbi 50), 'engine-bank-atc' (the ATC's Piaggio Ape) or 'engine-bank-utv' (the UTV's Gator diesel)
+  recBank: 'engine-bank', // which recordings: 'engine-bank' (four-stroke quads), 'engine-bank-2t' (two-stroke dirt bikes), 'engine-bank-50' (the kids' 50cc scooter two-stroke), 'engine-bank-tractor' (the diesel tractor), 'engine-bank-moto' (the mini moto's Derbi 50), 'engine-bank-atc' (the ATC's Piaggio Ape), 'engine-bank-utv' (the UTV's Gator diesel), 'engine-bank-green' (a Ténéré 250 into a Honda ATV) or 'engine-bank-yellow' (a DT 125 into a CR85)
   recIdleSource: 'quad', // which recorded idle: 'quad' (the main quad), 'rev' (the ATV rev recording, or the CRM250 in the two-stroke bank) or 'third' (the CRF250, four-stroke bank)
   recVolume: 0.6,
   recThrottleLoudness: 0.15, // extra loudness with the throttle open (the rev recording is already louder up the range)
@@ -127,6 +127,10 @@ export const DEFAULT_AUDIO_PARAMS = {
   pulseMidQ: 0.4, // narrower above 1, wider below
   pulseTone: 6000, // Hz low-pass, which tames the edges where firings are cut short
   pulseCrossfade: 0.4, // fraction of a cycle each firing fades out over as the next starts
+  pulseStretch: 1, // a firing recorded faster than the engine turns is stretched to fill its cycle by natural ** this: 1 fills it (lower pitch), 0 plays it at its own speed with a gap
+  pulseRevLo: 0, // rpm where the pulse sound starts blending into the bank's real rev firings (0 with pulseRevHi: revs only from idle)
+  pulseRevHi: 0, // rpm where they've fully taken over
+  pulseRevGain: 1, // level of those rev firings against the idle ones
   pulseCleanUp: 1.3, // idles cut in slices (the moto's and ATC's two-strokes): above this multiple of the recorded idle speed only the bangs play, so it fires every turn
   pulseDrive: 0.6, // extra drive into the soft clipper at full throttle
   recStarterVolume: 0.9,
@@ -210,9 +214,13 @@ export const AUDIO_PARAM_RANGES = {
   pulseMidQ: [0.2, 4, 0.01],
   pulseTone: [1000, 20000, 100],
   pulseCrossfade: [0.05, 1, 0.01],
+  pulseStretch: [0, 1, 0.01],
+  pulseRevLo: [0, 12000, 50],
+  pulseRevHi: [0, 12000, 50],
+  pulseRevGain: [0, 3, 0.01],
   pulseCleanUp: [1, 4, 0.05],
   pulseDrive: [0, 4, 0.01],
-  recBank: ['engine-bank', 'engine-bank-2t', 'engine-bank-50', 'engine-bank-tractor', 'engine-bank-moto', 'engine-bank-atc', 'engine-bank-utv'],
+  recBank: ['engine-bank', 'engine-bank-2t', 'engine-bank-50', 'engine-bank-tractor', 'engine-bank-moto', 'engine-bank-atc', 'engine-bank-utv', 'engine-bank-green', 'engine-bank-yellow'],
   recIdleSource: ['quad', 'rev', 'third'],
   recVolume: [0, 3, 0.01],
   recThrottleLoudness: [0, 3, 0.01],

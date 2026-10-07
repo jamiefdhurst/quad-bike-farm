@@ -49,6 +49,22 @@ Quaternius: https://quaternius.com
 | Idle pulses, revs and shutdown | old throaty rattly tractor, close beside it | kyles | https://freesound.org/people/kyles/sounds/637890/ | CC0 1.0 |
 | A second idle, starter and cranking | the same tractor starting, revving and almost stalling | kyles | https://freesound.org/people/kyles/sounds/637891/ | CC0 1.0 |
 
+`public/audio/engine-bank-green.wav` and `engine-bank-green.json` (the green quad) are cut from:
+
+| Used for | Recording | Author | Source | Licence |
+| --- | --- | --- | --- | --- |
+| Idle pulses | Motorcycle_Yamaha_Tenere_250CC_Enduro_Idle.wav | Singular_Estudio | https://freesound.org/people/Singular_Estudio/sounds/510231/ | CC0 1.0 |
+| Revs | Honda ATV start drive off nearby.flac | kyles | https://freesound.org/people/kyles/sounds/450136/ | CC0 1.0 |
+| Starter and shutdown | Quad Bike_ATV Engine.wav (as above) | Alex Fitzwater | https://freesound.org/people/Alex_hears_things/sounds/379915/ | CC0 1.0 |
+
+`public/audio/engine-bank-yellow.wav` and `engine-bank-yellow.json` (the yellow quad) are cut from:
+
+| Used for | Recording | Author | Source | Licence |
+| --- | --- | --- | --- | --- |
+| Idle pulses | Motocross bike starting and ticking over (a Yamaha DT 125) | kristian321 | https://freesound.org/people/kristian321/sounds/175964/ | CC0 1.0 |
+| Revs | HONDA_85CR.wav | Olympia_94 | https://freesound.org/people/Olympia_94/sounds/704792/ | CC0 1.0 |
+| Starter and shutdown | Quad Bike_ATV Engine.wav (as above) | Alex Fitzwater | https://freesound.org/people/Alex_hears_things/sounds/379915/ | CC0 1.0 |
+
 `public/audio/engine-bank-moto.wav` and `engine-bank-moto.json` (the mini moto) are cut from:
 
 | Used for | Recording | Author | Source | Licence |

@@ -235,6 +235,55 @@ BANKS = {
         'revTail': 0.75,
         'revOdd': 0.3,
     },
+    'engine-bank-green': {
+        # The green: a Yamaha Ténéré 250 four-stroke single idling, studio-close (Singular_Estudio, Freesound 510231), about
+        # 1,750 rpm. Revs from kyles's Honda ATV pulling away (450136), about 2,400 to 7,000 rpm, which the pulse sound blends
+        # into as the revs rise (pulseRevLo / pulseRevHi). Starter and shutdown borrow the quad recording.
+        'segments': [
+            ('idle', 'ten', 1.0, 15.0, (0.055, 0.085)),
+            ('idle', 'ten', 42.0, 52.0, (0.055, 0.085)),
+            ('accel', 'honda', 10.0, 14.0, (0.028, 0.055)),
+            ('accel', 'honda', 14.0, 21.0, (0.025, 0.033)),
+            ('accel', 'honda', 21.0, 30.0, (0.019, 0.025)),
+        ],
+        'oneshots': [
+            ('starterEngage', 'quad', 0.08, 0.365),
+            ('crankLoop', 'quad', 0.365, 1.329),
+            ('shutdown', 'quad', 20.22, 21.2),
+        ],
+        'level': [('idle', 'idle', 'ten'), ('idle', 'accel', 'honda')],
+        'fixedGain': {'quad': 1.014},  # as in engine-bank, which the green used before
+        'periodCheck': True,
+        'revTail': 0.75,
+        'revOdd': 0.3,
+    },
+    'engine-bank-yellow': {
+        # The yellow: a Yamaha DT 125 two-stroke (kristian321, Freesound 175964) idling at about 1,900 rpm (4 to 6.3 s) and
+        # holding a high idle near 3,300 (6.5 to 14.5 s; its blip after that is left out). Both are idle grains at their own
+        # speed, so the pulse sound plays whichever is nearest the revs. Revs from a Honda CR85 ridden flat out onboard
+        # (Olympia_94, 704792), about 5,000 to 12,000 rpm, blended in as the revs rise (pulseRevLo / pulseRevHi).
+        'segments': [
+            ('idle', 'dt', 4.0, 6.3, (0.025, 0.04)),
+            ('idle', 'dt', 6.5, 14.5, (0.013, 0.022)),
+            ('accel', 'cr', 13.0, 28.0, (0.0055, 0.016)),
+            ('accel', 'cr', 31.0, 40.0, (0.0045, 0.0075)),
+            ('accel', 'cr', 50.0, 58.0, (0.0045, 0.0075)),
+            ('decel', 'cr', 60.0, 70.0, (0.0055, 0.014)),
+        ],
+        'oneshots': [
+            ('starterEngage', 'quad', 0.08, 0.365),
+            ('crankLoop', 'quad', 0.365, 1.329),
+            ('shutdown', 'quad', 20.22, 21.2),
+        ],
+        'level': [('idle', 'idle', 'dt'), ('idle', 'accel', 'cr')],
+        'fixedGain': {'quad': 6.283},  # as in engine-bank-2t, which the yellow used before
+        'periodCheck': True,
+        # The DT 125 is recorded in a courtyard and its firings are blurred: be more forgiving cutting its idle.
+        'idleTail': 1.0,
+        'idleOdd': 0.4,
+        'revTail': 0.75,
+        'revOdd': 0.3,
+    },
     'engine-bank-utv': {
         # The UTV: a John Deere Gator idling, recorded on the vehicle (videog, Freesound 149193). A small three-cylinder
         # diesel at about 970 rpm with one sharp beat per cycle, so it's cut into whole cycles like the tractor. Revs from a
