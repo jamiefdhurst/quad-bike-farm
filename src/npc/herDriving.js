@@ -152,7 +152,7 @@ export class HerDrive {
    * @param {function} [opts.passenger]  () => whether someone's riding on the back; then she doesn't tire of it.
    * @param {boolean} [opts.tires]  Her own idea to take you out: she gets bored with you aboard like any drive, and gives up if you never get on.
    * @param {boolean} [opts.waitForPassenger]  Started it to give you a ride: she waits for you to get on.
-   * @param {object} [opts.race]  A race (npc/race.js): { route, gridIndex, gridYaw, cruise, go(), alive(), onGrid(), onFinish(), onAbort(), blip(), keepDriving, after }. She
+   * @param {object} [opts.race]  A race (npc/race.js): { route, gridIndex, gridYaw, cruise, go(), alive(), onGrid(), onFinish(), onAbort(), blip(), keepDriving }. She
    *   drives to the grid waypoint, waits for go(), then flat out round the rest of the route and over the line (the last
    *   waypoint), with no pauses and no tiring or scaring of herself.
    * @param {object} [opts.doughnut]  { centre, radius, dir, seconds, p }: instead of her loops she drives to the circle and spins
@@ -165,7 +165,7 @@ export class HerDrive {
    * @param {function} [opts.follow]  () => the quad she's following (yours), or null. Following, she keeps
    *   behind it at its pace rather than doing her own loop, and doesn't tire of it.
    */
-  constructor(quad, { tractorStarting = undefined, params, probe, isClear, random = Math.random, startingParams, momentWindow = 5, skill = { starting: 0.5, choke: 0.5, cornering: 0.5, mud: 0.5 }, passenger = () => false, waitForPassenger = false, tires = false, follow = null, friend = () => null, race = null, doughnut = null, jump = null, park = null, showOff = null }) {
+  constructor(quad, { tractorStarting = undefined, params, probe, isClear, random = Math.random, startingParams, momentWindow = 5, skill = { starting: 0.5, choke: 0.5, cornering: 0.5, mud: 0.5 }, passenger = () => false, waitForPassenger = false, tires = false, follow = null, friend = () => null, after = null, race = null, doughnut = null, jump = null, park = null, showOff = null }) {
     this.quad = quad;
     this.tractorStarting = tractorStarting; // how she goes about starting the tractor (tractorStart.js), when it is one
     this.p = params;
@@ -189,6 +189,7 @@ export class HerDrive {
     this.cruiseScale = 1; // you asked her to go faster or slower
     this.follow = follow;
     this.race = race;
+    this.after = after; // her ordinary driving settings, for carrying on once an activity is over (carryOn)
     this.doughnut = doughnut; // spinning doughnuts: { centre, radius, dir, seconds, p } (doughnuts.js)
     this.jump = jump ? { run: new JumpRun(jump.ramp, jump.p, random) } : null; // riding at the ramp (jumps.js)
     this.showOff = showOff ? { run: new ShowOffRun(showOff.trick, showOff.p, random, isClear), you: showOff.you } : null; // showing off to you (showOff.js)
@@ -682,17 +683,32 @@ export class HerDrive {
     if (before > 0 && q.choke === 0) this.events.push('practice:choke');
   }
 
-  /** Over the line, and she doesn't pull up: back to her ordinary driving (her usual speed and nerves) for a drive of the usual length, then she gets off as normal. */
+  /**
+   * An activity is over (the race, doughnuts, the ramp, showing off, a convoy) and she doesn't pull up: back to her ordinary driving, with her usual
+   * speed and nerves, a drive of the usual length from now, and the usual dismount at the end.
+   */
   carryOn() {
-    Object.assign(this.p, this.race.after ?? {});
+    Object.assign(this.p, this.after ?? {});
+    if (this.doughnut) this.quad.churn = 0;
+    this.quad.wheelie = 0;
     this.race = null;
+    this.doughnut = null;
+    this.jump = null;
+    this.showOff = null;
+    this.follow = null;
     this.waypoints = [];
     this.index = 0;
     this.time = 0;
     this.driveFor = this.between(this.p.driveForMin, this.p.driveForMax);
     this.cruise = this.pickCruise();
     this.setPhase('drive');
-    this.events.push('raceCarryOn');
+    this.events.push('carryOn');
+  }
+
+  /** An activity of hers is finished: sometimes she carries on with an ordinary drive (`keepRidingAfter`), otherwise she pulls up. */
+  endActivity() {
+    if (this.random() < this.p.keepRidingAfter) this.carryOn();
+    else this.stop('bored');
   }
 
   /** Swaps the race she's in for another on the same quad (the drag race challenge: she pulled up beside you, now it's to the strip). */
@@ -964,7 +980,7 @@ export class HerDrive {
     d.t += dt;
     if (d.t > d.seconds) {
       q.churn = 0;
-      this.stop('bored');
+      this.endActivity();
       return;
     }
     const k = doughnutControl(pos, q.yaw, d.centre, d.radius, d.dir, d.p, this.p.driveSteerGain);
@@ -984,7 +1000,8 @@ export class HerDrive {
     q.wheelie = r.wheelie * so.run.p.wheelieLift;
     if (r.done) {
       if (so.run.result === 'noRoom') this.events.push('noRoom');
-      this.stop('bored');
+      if (so.run.result === 'noRoom') this.stop('bored');
+      else this.endActivity();
       return;
     }
     c.steer = r.steer;
@@ -1028,7 +1045,8 @@ export class HerDrive {
       }
     }
     if (r.done) {
-      this.stop(this.jump.run.lastRating === 'bail' ? 'scared' : 'bored');
+      if (this.jump.run.lastRating === 'bail') this.stop('scared');
+      else this.endActivity();
       return;
     }
     c.steer = r.steer;

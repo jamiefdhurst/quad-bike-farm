@@ -90,6 +90,8 @@ export const drivingStates = {
       this.parkWanted = null;
       const params = driveMood(this.params, this.driveMood);
       params.driveSpeedMaxBase = this.params.driveSpeedMax;
+      // What she goes back to if she carries on driving when an activity is over (HerDrive.carryOn).
+      const after = Object.fromEntries(['driveMaxThrottle', 'driveScareSpeed', 'drivePauseChance', 'driveForMin', 'driveForMax', 'driveLoopRadiusMin', 'driveLoopRadiusMax'].map((k) => [k, params[k]]));
       if (offered) {
         params.driveForMin = this.params.offerRideForMin;
         params.driveForMax = this.params.offerRideForMax;
@@ -118,7 +120,6 @@ export const drivingStates = {
         params.drivePauseChance = 0;
       }
       if (race) {
-        race.after = { driveMaxThrottle: params.driveMaxThrottle, driveScareSpeed: params.driveScareSpeed, drivePauseChance: params.drivePauseChance }; // what she goes back to if she carries on after the finish
         // Racing: flat out, no pauses, nothing frightens her off.
         params.driveMaxThrottle = race.throttle;
         params.driveScareSpeed = 99;
@@ -138,6 +139,7 @@ export const drivingStates = {
         momentWindow: this.skillMomentWindow?.(),
         friend: () => this.friendOnBack(),
         waitForPassenger: ride,
+        after,
         race,
         park,
         doughnut: doughnut ? { ...doughnut, spinning: false, t: 0 } : null,

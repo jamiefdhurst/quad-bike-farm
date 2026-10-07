@@ -95,7 +95,8 @@ describe('a run at you', () => {
   it('brakes if something is in the way', () => {
     const d = Object.create(HerDrive.prototype);
     Object.assign(d, {
-      p: { ...DEFAULT_COMPANION_PARAMS },
+      p: { ...DEFAULT_COMPANION_PARAMS, keepRidingAfter: 0 }, // always pulls up
+      random: () => 0.5,
       quad: { position: { x: 0, z: 40 }, yaw: Math.PI, wheelie: 0 },
       showOff: { run: new ShowOffRun('skid', { ...P }, () => 0.9), you: () => you() },
       events: [],
@@ -123,7 +124,8 @@ describe('her drive mode', () => {
   it('passes the controls and the nose lift on, and stops when the run is over', () => {
     const d = Object.create(HerDrive.prototype);
     Object.assign(d, {
-      p: { ...DEFAULT_COMPANION_PARAMS },
+      p: { ...DEFAULT_COMPANION_PARAMS, keepRidingAfter: 0 }, // always pulls up
+      random: () => 0.5,
       quad: { position: { x: 0, z: 40 }, yaw: Math.PI, wheelie: 0 },
       showOff: { run: new ShowOffRun('skid', { ...P }, () => 0.9), you: () => you() },
       events: [],

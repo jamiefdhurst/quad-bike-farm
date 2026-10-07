@@ -42,7 +42,8 @@ describe('her doughnut drive', () => {
   function spinner(extra = {}) {
     const d = Object.create(HerDrive.prototype);
     Object.assign(d, {
-      p: { ...DEFAULT_COMPANION_PARAMS },
+      p: { ...DEFAULT_COMPANION_PARAMS, keepRidingAfter: 0 }, // always pulls up
+      random: () => 0.5,
       quad: { position: { x: 20, z: 0 }, yaw: 0, forwardSpeed: 0, churn: 0 },
       doughnut: { centre: { x: 0, z: 0 }, radius: 5, dir: 1, seconds: 10, p: { ...P }, spinning: false, t: 0 },
       events: [],

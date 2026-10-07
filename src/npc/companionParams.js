@@ -149,6 +149,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   startPullWhenFlat: 0, // chance that on a flat battery she has a go at the pull-start (two-strokes) instead of giving up
   driveForgetChokeChance: 0.45, // she pushes the choke off as she sets off, cold or not
   raceGridRadius: 3.5, // metres from the grid point at which she counts as on it, in a race (wider than a waypoint, so she doesn't circle it)
+  keepRidingAfter: 0.3, // chance she carries on driving when doughnuts, the ramp, showing off or a convoy is over, instead of pulling up and getting off
   raceGridYaw: 0.6, // radians off the track's direction she may be pointing on the grid before she goes round again to face it
   backOffsToGiveUp: 5, // backing off the same thing this many times in a row and she gives up and gets off
   backOffRadius: 6, // metres: backing off again within this of the last time counts as the same spot
@@ -387,6 +388,7 @@ export const COMPANION_PARAM_RANGES = {
   startPullWhenFlat: [0, 1, 0.05],
   driveForgetChokeChance: [0, 1, 0.05],
   raceGridRadius: [1, 10, 0.5],
+  keepRidingAfter: [0, 1, 0.05],
   raceGridYaw: [0.1, 1.5, 0.05],
   backOffsToGiveUp: [2, 12, 1],
   backOffRadius: [1, 20, 0.5],

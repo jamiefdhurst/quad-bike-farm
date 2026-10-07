@@ -2992,7 +2992,7 @@ export class Game {
         const f = byId[e.follower];
         if (!f.drive?.startPass()) cv.passFailed();
       } else if (e.type === 'end') {
-        for (const c of this.companions) if (c.fsm.is('driving') && c.drive && !c.drive.done) c.drive.stop('bored');
+        for (const c of this.companions) if (c.fsm.is('driving') && c.drive && !c.drive.done) c.drive.endActivity();
       }
     }
   }
