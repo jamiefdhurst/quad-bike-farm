@@ -63,10 +63,10 @@ export function buildDragStrip(scene, heightAt, strip) {
       const edge = t < 0 ? leftEdge[r] : rightEdge[r];
       const across = t * (half + edge * 0.9) + (random() - 0.5) * 0.35;
       const p = stripPoint(strip, along + (random() - 0.5) * 0.5, across);
-      // Edge and end vertices sink into the grass and go earthy, so it blends in.
+      // Edge and end vertices go earthy, so it blends in.
       const edgeness = Math.min(1, Math.max(0, (Math.abs(t) - 0.55) / 0.45));
       const blend = Math.min(1, edgeness * 0.85 + (1 - endFade) * 0.7 + random() * 0.15);
-      positions.push(p.x, heightAt(p.x, p.z) + 0.03 - blend * 0.05, p.z);
+      positions.push(p.x, heightAt(p.x, p.z) + 0.07 - blend * 0.025, p.z); // always above the ground (the visual terrain is coarser than heightAt), or its edges shimmer as you move
       uvs.push((c / cols) * (strip.width / 3), (r / rows) * (total / 3));
       const col = gravel.clone().lerp(earth, blend);
       colours.push(col.r, col.g, col.b);
@@ -85,7 +85,7 @@ export function buildDragStrip(scene, heightAt, strip) {
   geo.setAttribute('color', new THREE.Float32BufferAttribute(colours, 3));
   geo.setIndex(index);
   geo.computeVertexNormals();
-  const surface = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: gravelTexture(), vertexColors: true, roughness: 1, polygonOffset: true, polygonOffsetFactor: -2 }));
+  const surface = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: gravelTexture(), vertexColors: true, roughness: 1, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }));
   surface.receiveShadow = true;
   group.add(surface);
 

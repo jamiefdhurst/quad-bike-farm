@@ -62,7 +62,7 @@ Look at her and press `E`. Pick an option with the number keys, or scroll to hig
 | Key | Action |
 | --- | --- |
 | `H` | Show or hide the controls |
-| `Enter` | On a quad near the start line by the yard: ask the girls for a race, with you in it |
+| `Enter` | On a quad near the start line by the yard: ask the girls for a race, with you in it. Near the drag strip in the field: ask for a drag race against one of them |
 | `N` | Call the girls back: they stop whatever they're doing (driving, racing, warming up, sat on a bale) and gather in front of the barn doors |
 | `M` | Mute |
 | `` ` `` | Tuning panel |
@@ -264,6 +264,8 @@ The wheel only offers what makes sense: no "get on" while she's already on, no "
 
 **Impatient follower.** Jess following you (see "Follow me") who's stuck behind a slow pace (under about 13 mph) for twenty seconds or more may get fed up, go round you on one side, pull up well ahead and wait, looking pleased with herself ("Took your time!"). When you've gone by she tails you again. Amy doesn't (`overtakeChance` in the Companion folder is 0 for her).
 
+**Drag racing.** A rough gravel straight in the middle of the field, inside the track and clear of the mud, marked only by cones at the start and the finish (the ground under it is levelled, about 56 m from line to line). Two ways in. Ride up to the start and press `Enter`: Jess or Amy takes the other lane, and you line up on yours, stopped and pointing along the strip. Or sit still on a quad with the engine running for ten seconds or more and Jess may ride over, pull up beside you and blip her throttle: blip back (snap yours open from closed) and she leads you to the strip; ignore her and she calls you chicken. Both lined up, there is a count-down; roll over the line early and it's a false start (you line up again, and the third one calls it off). First over the finish wins, with the wins and losses kept alongside the lap races. In `src/npc/drag.js`; the "Drag race" folder in the tuning panel, with a "Start a drag race now" button in "Girls (live)".
+
 **Follow the leader.** Two and a half minutes into a game or later, when both girls have been stood about for twenty seconds or so, one (Jess more often) suggests going for a ride together. Each takes a quad: one leads in big loops, the other waits for her to set off, then follows at her pace, like following you. After a minute or two the follower overtakes, goes ahead and waits, and the one she passed follows her; they bicker about the pace. After two swaps and a last stretch they stop and get off. Not while a race is on, and `N` ends it. In `src/npc/convoy.js`; the "Follow the leader" folder.
 
 **Doughnuts.** Bored, Jess sometimes takes a quad off to a clear bit of field and spins doughnuts for 18 to 32 seconds, tearing it up (it acts as mud under the wheels, throws clods, and leaves ruts that last four minutes instead of forty seconds). Amy, if she's about and stood still, disapproves out loud now and then, and afterwards often has a go herself on a bigger, gentler circle. In `src/npc/doughnuts.js`; the "Doughnuts" folder, and `boredDoughnutChance` in the Companion folder.
@@ -358,7 +360,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 ## TODO
 
 1.  Race them. You can join the girls' races, three on the start line: ask for one from the wheel, or Jess dares you. The score keeps a third name, and both have plenty to say about losing to you. **Done.**
-2.  Drag race. A proper straight to race on, with a start line, that you can ask for a race on (the current racing is a bit janky, so this wants a sturdier race setup first). Jess also pulls up beside you at a standstill and blips her throttle: blip back and it's a drag race to the end, ignore her and she calls you chicken.
+2.  Drag race. A proper straight to race on, with a start line, that you can ask for a race on (the current racing is a bit janky, so this wants a sturdier race setup first). Jess also pulls up beside you at a standstill and blips her throttle: blip back and it's a drag race to the end, ignore her and she calls you chicken. **Done.**
 3.  Amy won't ride it. When Amy knows about a fault (from her walk-round, her logbook or hearing it), she won't ride that quad until it's fixed ("Not on that, it's got a soft tyre"). Jess rides it anyway. The hidden faults start changing what the girls do, not just what they say.
 4.  The ground changes. Where everyone drives a lot, the ruts deepen until a new soft patch forms and then a small bog. Rain swells the bogs and dry spells shrink them. Late in a long game the track isn't the one you started with, and the girls' own driving made it so.
 5.  Running in. A freshly rebuilt engine (a two-stroke stripped after a seizure, the barn find, the big-bore kit) wants ten minutes or so of gentle running before it's thrashed. Thrash it early and it wears several times faster and never runs quite as sweetly; the mechanical sympathy tally records who did it.

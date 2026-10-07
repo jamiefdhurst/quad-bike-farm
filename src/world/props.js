@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { stripFrame } from './layout.js';
 import { enableShadows, instanceModel, modelBounds } from './assets.js';
 import { patchAt } from './terrain.js';
 import { buildBarnShed } from './barnBuild.js';
@@ -350,7 +351,7 @@ function buildGrass({ scene, layout, heights, random }) {
     count,
   );
   const F = layout.fieldHalf - 1.5;
-  const { yard } = layout;
+  const { yard, dragStrip: strip } = layout;
   const col = new THREE.Color();
   let placed = 0;
   let tries = 0;
@@ -359,6 +360,11 @@ function buildGrass({ scene, layout, heights, random }) {
     const z = (random() * 2 - 1) * F;
     if (heights.mudAt(x, z) > 0.02) continue;
     if (Math.hypot(x - yard.x, z - yard.z) < yard.radius * 0.75) continue;
+    if (strip) {
+      // None growing through the gravel of the drag strip.
+      const f = stripFrame(strip, x, z);
+      if (f.along > -3 && f.along < strip.length + strip.runOff + 3 && Math.abs(f.across) < strip.width / 2 + 2) continue;
+    }
     const s = 0.6 + random() * 0.8;
     mesh.setMatrixAt(placed, matrixAt(x, heights.heightAt(x, z) - 0.02, z, random() * 6.28, s, s * (0.7 + random() * 0.6), s));
     col.setHSL(0.2 + random() * 0.05, 0.3 + random() * 0.15, 0.55 + random() * 0.2);
