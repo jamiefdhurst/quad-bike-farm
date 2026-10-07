@@ -217,10 +217,6 @@ function buildDigital() {
     ctx.stroke();
     text(ctx, L.line[0], x + 22, y + 71, 4.6, AMBER, { weight: 'bold' });
     segText(ctx, L.line[1], x + w - 22, y + 65.5, 5.95, AMBER);
-    // Warning labels under the display.
-    [[LAMP.green, 'N', L.lamps.n], [LAMP.amber, 'R', L.lamps.r], [LAMP.red, 'TEMP', L.lamps.temp], [LAMP.amber, 'FUEL', L.lamps.fuel]].forEach(([c, name, lit], i) => {
-      text(ctx, name, 54 + i * 30, 104, 3.6, lit ? c : '#5a5a5a', { align: 'center' });
-    });
   }
 
   return {
