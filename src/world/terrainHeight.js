@@ -17,6 +17,7 @@ export function baseHeight(x, z) {
 }
 
 import { floorBlend } from './barn.js';
+import { stripFrame } from './layout.js';
 
 export function createTerrainHeight(layout, track) {
   const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf } = layout;
@@ -24,6 +25,9 @@ export function createTerrainHeight(layout, track) {
   const puddles = layout.puddles.map((u) => track.sample(u));
   const bogs = (layout.bogs ?? []).map((b) => (b.track !== undefined ? { ...track.sample(b.track), radius: b.radius } : { ...b }));
   const trackReach = trackHalfWidth + 1.5;
+  // The drag strip is level: the average of the ground along it, blended back into the field over its shoulders.
+  const strip = layout.dragStrip;
+  const stripLevel = strip ? [0, 0.25, 0.5, 0.75, 1].reduce((sum, t) => sum + baseHeight(strip.x + Math.sin(strip.yaw) * strip.length * t, strip.z + Math.cos(strip.yaw) * strip.length * t), 0) / 5 : 0;
 
   function heightAt(x, z) {
     let h = baseHeight(x, z);
@@ -38,6 +42,15 @@ export function createTerrainHeight(layout, track) {
 
     // And level under the barn, so its floor is flat.
     if (layout.barn) h += (yardHeight - h) * floorBlend(layout, x, z);
+
+    // Level under the drag strip, with a shoulder to ease it back into the field.
+    if (strip) {
+      const f = stripFrame(strip, x, z);
+      const outAcross = Math.abs(f.across) - strip.width / 2;
+      const outAlong = Math.max(-8 - f.along, f.along - (strip.length + strip.runOff), 0);
+      const k = 1 - smoothstep(0, 6, Math.max(outAcross, outAlong));
+      if (k > 0) h += (stripLevel - h) * k;
+    }
 
     // Dished dirt track with softened shoulders.
     const d = track.distanceTo(x, z, trackReach);

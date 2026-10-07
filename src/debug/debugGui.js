@@ -332,6 +332,11 @@ export class DebugGui {
         g.race.forced = true;
         g.hud.toast('A race will start as soon as both girls are stood about (and not on a quad)');
       },
+      drag: () => {
+        if (g.race.active || g.drag.active) return g.hud.toast('A race is already on');
+        g.drag.forced = true;
+        g.hud.toast('A drag race will start as soon as both girls are stood about, with you on a quad');
+      },
       grabJess: () => {
         g.throttleGrab.forced = 'jess';
         g.hud.toast('Ride with Jess on the back (moving): she will grab the throttle');
@@ -445,6 +450,7 @@ export class DebugGui {
     f.add(actions, 'toRamp').name('Take me to the jump');
     f.add(actions, 'nick').name('Jess nicks the nearest quad');
     f.add(actions, 'race').name('Start a race now');
+    f.add(actions, 'drag').name('Start a drag race now');
     f.add(actions, 'diesel').name('Jess pours red diesel into a quad');
     f.add(actions, 'jumper_amy').name('Amy fetches or hangs up a jumper');
     f.add(actions, 'jumper_jess').name('Jess fetches or hangs up a jumper');

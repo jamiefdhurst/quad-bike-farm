@@ -152,7 +152,7 @@ export class HerDrive {
    * @param {function} [opts.passenger]  () => whether someone's riding on the back; then she doesn't tire of it.
    * @param {boolean} [opts.tires]  Her own idea to take you out: she gets bored with you aboard like any drive, and gives up if you never get on.
    * @param {boolean} [opts.waitForPassenger]  Started it to give you a ride: she waits for you to get on.
-   * @param {object} [opts.race]  A race (npc/race.js): { route, gridIndex, gridYaw, cruise, go(), alive(), onGrid(), onFinish(), onAbort() }. She
+   * @param {object} [opts.race]  A race (npc/race.js): { route, gridIndex, gridYaw, cruise, go(), alive(), onGrid(), onFinish(), onAbort(), blip() }. She
    *   drives to the grid waypoint, waits for go(), then flat out round the rest of the route and over the line (the last
    *   waypoint), with no pauses and no tiring or scaring of herself.
    * @param {object} [opts.doughnut]  { centre, radius, dir, seconds, p }: instead of her loops she drives to the circle and spins
@@ -583,6 +583,8 @@ export class HerDrive {
         this.hold(c);
         if (q.forwardSpeed > 0.4) c.brake = this.p.driveBrakeFirm;
         this.tendChoke();
+        // Blipping the throttle on the spot (a drag race challenge): the brake stays on, so it only revs.
+        if (this.race.blip?.()) c.throttle = 1;
         if (this.race.go()) {
           this.setPhase('drive');
           this.events.push('raceGo');
@@ -678,6 +680,15 @@ export class HerDrive {
     const before = q.choke;
     q.choke = Math.round(clamp(want, 0, q.choke) * 10) / 10;
     if (before > 0 && q.choke === 0) this.events.push('practice:choke');
+  }
+
+  /** Swaps the race she's in for another on the same quad (the drag race challenge: she pulled up beside you, now it's to the strip). */
+  reroute(race) {
+    this.race = race;
+    this.waypoints = race.route.map((pt) => ({ ...pt }));
+    this.index = 0;
+    this.regrids = 0;
+    this.setPhase('drive');
   }
 
   plan() {

@@ -56,6 +56,11 @@ export const LAYOUT = {
   // behind it and the landing ahead is level to within about 40 cm (a test checks), clear of the track, the bogs and the puddles.
   jumpRamp: { x: 16, z: -8, yaw: 2.36, length: 7, width: 3.2, height: 1.2 },
 
+  // The drag strip (world/dragStrip.js, npc/drag.js): a level gravel straight in the middle of the field, inside the track (that is as long as the room between the track, the bogs, the bales and the ramp allows). x, z is the start line's
+  // middle, yaw the way you ride along it (the same sense as a quad's yaw), `length` metres to the finish line and `runOff` more beyond it to pull
+  // up, `width` across. The ground is levelled under it (terrainHeight.js); a test checks it is clear of the track, the bogs, the bales and the ramp.
+  dragStrip: { x: -30, z: 19, yaw: Math.PI / 2 - 0.2, length: 56, runOff: 8, width: 10 },
+
   // Closed loop of control points for the dirt track (x, z).
   trackPoints: [
     [-30, 40],
@@ -167,3 +172,22 @@ export const LAYOUT = {
     ],
   },
 };
+
+/**
+ * Where (x, z) is on the drag strip: `along` metres from the start line (negative behind it) and `across` metres from its middle line, positive to the
+ * side the same way the girls' race lanes count it (to the left of the way you ride, seen from above with z towards you).
+ */
+export function stripFrame(strip, x, z) {
+  const dx = x - strip.x;
+  const dz = z - strip.z;
+  const sin = Math.sin(strip.yaw);
+  const cos = Math.cos(strip.yaw);
+  return { along: dx * sin + dz * cos, across: -dx * cos + dz * sin };
+}
+
+/** The point `along` and `across` the drag strip, the inverse of stripFrame. */
+export function stripPoint(strip, along, across) {
+  const sin = Math.sin(strip.yaw);
+  const cos = Math.cos(strip.yaw);
+  return { x: strip.x + along * sin - across * cos, z: strip.z + along * cos + across * sin };
+}

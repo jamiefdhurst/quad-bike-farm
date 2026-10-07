@@ -74,6 +74,9 @@ import { HazeLayer } from './effects/hazeLayer.js';
 import { BarnFumes, FUMES_PARAM_RANGES } from './world/barnFumes.js';
 import { barnShape } from './world/barn.js';
 import { Race, RACE_PARAM_RANGES, planLap, YouRun, youOnGrid } from './npc/race.js';
+import { Drag, DRAG_PARAM_RANGES, onDragGrid } from './npc/drag.js';
+import { buildDragStrip } from './world/dragStrip.js';
+import { stripFrame, stripPoint } from './world/layout.js';
 import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
 import { Convoy, CONVOY_PARAM_RANGES } from './npc/convoy.js';
 import { DoughnutWatch, DOUGHNUT_PARAM_RANGES } from './npc/doughnuts.js';
@@ -537,6 +540,10 @@ export class Game {
     this.raceIdle = {}; // seconds each racer has been doing nothing about it
     this.raceStart = nearestTrackFraction(this.world.track, this.world.layout.yard.x, this.world.layout.yard.z);
     buildStartLine(this.scene, (x, z) => this.world.heightAt(x, z), this.world.track, this.raceStart, this.world.layout.trackHalfWidth);
+    this.drag = new Drag(); // a drag race down the straight, against one girl (npc/drag.js)
+    this.dragIdle = 0; // seconds the girl racing you has been doing nothing about it
+    this.dragBlipSaid = false;
+    buildDragStrip(this.scene, (x, z) => this.world.heightAt(x, z), this.world.layout.dragStrip);
     this.warming = new Warming(); // hands over an idling engine on a cold day (npc/warming.js)
     this.nicking = new Nicking(undefined, createRandom(this.seed ^ 0x61c3)); // Jess taking a quad you left running (npc/nicking.js)
     this.headStart = new HeadStart(undefined, createRandom(this.seed ^ 0x4ead)); // starting your usual quad for you (npc/headStart.js)
@@ -872,6 +879,7 @@ export class Game {
     registerTuning('Yard haze', this.haze.p, HAZE_PARAM_RANGES);
     registerTuning('Fumes in the barn', this.barnFumes.p, FUMES_PARAM_RANGES);
     registerTuning('Racing', this.race.p, RACE_PARAM_RANGES);
+    registerTuning('Drag race', this.drag.p, DRAG_PARAM_RANGES);
     registerTuning('Follow the leader', this.convoy.p, CONVOY_PARAM_RANGES);
     registerTuning('Doughnuts', this.doughnutWatch.p, DOUGHNUT_PARAM_RANGES);
     registerTuning('Showing off', this.showOffParams, SHOWOFF_PARAM_RANGES);
@@ -2624,6 +2632,7 @@ export class Game {
   /** Stop whatever they're doing and gather by the barn doors. */
   recallGirls() {
     this.race.stand();
+    this.drag.stand();
     this.convoy.stand();
     this.recalling = { left: 120, spots: this.companions.map((c, i) => this.recallSpot(i)), said: false };
     this.hud.toast('Girls: stop what you are doing and come to the barn');
@@ -2971,7 +2980,7 @@ export class Game {
         cv.passFailed();
       }
     } else this.convoyIdle = {};
-    for (const e of cv.update(dt, { girls, options, claims: this.ownership.claims, busy: this.race.active || !!this.recalling })) {
+    for (const e of cv.update(dt, { girls, options, claims: this.ownership.claims, busy: this.race.active || this.drag.active || !!this.recalling })) {
       if (e.type === 'invite') {
         byId[e.leader].voice.say('convoyInvite', { force: true });
         later(3500, () => byId[e.follower]?.voice.say('convoyAccept', { force: true }));
@@ -3022,6 +3031,7 @@ export class Game {
   askForRace(ridden) {
     const you = this.raceYou(ridden);
     if (!you.riding) return this.hud.toast('You need to be on a quad to ask for a race', 2);
+    if (this.dragYou(ridden).near) return this.askForDrag(ridden);
     if (!you.near) return this.hud.toast('Ride up to the start line by the yard first', 2);
     if (this.race.active) return this.hud.toast('There is a race on already', 1.6);
     this.race.forced = true;
@@ -3057,6 +3067,7 @@ export class Game {
   }
 
   updateRace(dt, ridden) {
+    if (this.drag.active && !this.race.active) return; // one race at a time
     const p = this.race.p;
     const free = (c) => c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot;
     const girls = this.companions.map((c) => ({ id: c.character.id, free: free(c) }));
@@ -3114,6 +3125,145 @@ export class Game {
         if (e.girl === 'you') this.hud.toast('You are out of the race', 2.5);
         else byId[e.girl]?.voice.say('raceOut', { force: true });
       } else if (e.type === 'result' && e.winner && e.loser) this.raceResult = { winner: e.winner, loser: e.loser };
+    }
+  }
+
+  // Drag racing --------------------------------------------------------------
+
+  /** Where you are for the drag race: on a quad or not, how near the start line, how still, your throttle and which side of the strip's middle. */
+  dragYou(ridden) {
+    const q = ridden?.quad;
+    if (!q || !this.girlUnits.includes(ridden)) return { riding: null, near: false, still: false, stalled: true, throttle: 0, across: 0 };
+    const strip = this.world.layout.dragStrip;
+    const f = stripFrame(strip, q.position.x, q.position.z);
+    return {
+      riding: ridden.spec.id,
+      near: Math.hypot(f.along, f.across) < this.drag.p.nearStrip,
+      still: Math.abs(q.forwardSpeed) < 1 && q.engine.isRunning,
+      stalled: !q.engine.isRunning,
+      throttle: q.throttle ?? 0,
+      across: f.across,
+    };
+  }
+
+  /** You ask one of the girls for a drag race, from the saddle near the strip's start. */
+  askForDrag(ridden) {
+    if (this.race.active || this.drag.active) return this.hud.toast('There is a race on already', 1.6);
+    if (!this.dragYou(ridden).riding) return;
+    this.drag.forced = true;
+    this.hud.toast('Asking for a drag race', 2);
+  }
+
+  /** The route for a girl in the drag race: the staging point behind the line, her grid point, then down the strip and past the finish. */
+  dragRoute(lane) {
+    const s = this.world.layout.dragStrip;
+    const back = this.drag.p.gridBack;
+    return [stripPoint(s, -back - 10, lane), stripPoint(s, -back, lane), stripPoint(s, s.length + s.runOff * 0.7, lane)];
+  }
+
+  /** Your part in the drag race: lined up on your side of the grid, then how far down the strip you are. */
+  updateDragYou(ridden) {
+    const drag = this.drag;
+    if (drag.phase !== 'gather' && drag.phase !== 'countdown') return;
+    const q = ridden?.quad;
+    const s = this.world.layout.dragStrip;
+    const point = stripPoint(s, -drag.p.gridBack, -drag.lane * drag.p.laneOffset);
+    const dist = q ? Math.hypot(q.position.x - point.x, q.position.z - point.z) : Infinity;
+    // Once lined up you may roll a little on a slope; the count-down only drops you if you really move off.
+    const speed = q ? (drag.ready.has('you') && Math.abs(q.forwardSpeed) < 2 ? 0 : q.forwardSpeed) : 9;
+    const on = !!q && ridden.spec.id === drag.picks.you && onDragGrid({ dist, speed, yaw: q.yaw }, s.yaw, drag.p);
+    if (on && !drag.ready.has('you')) {
+      drag.grid('you');
+      this.hud.toast('On the line. Waiting for her', 2);
+    } else if (!on) drag.ungrid('you');
+  }
+
+  updateDrag(dt, ridden) {
+    const drag = this.drag;
+    const s = this.world.layout.dragStrip;
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    const later = (ms, fn) => setTimeout(fn, ms);
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot }));
+    const options = {};
+    for (const c of this.companions) {
+      options[c.character.id] = this.girlUnits.filter((u) => u !== ridden && c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && !u.quad.bog.stuck).map((u) => u.spec.id);
+    }
+    // The girl racing you has stopped doing anything about it (told to do something else, say): she's out.
+    if (drag.active && drag.phase !== 'over' && drag.girl) {
+      const c = byId[drag.girl];
+      const busy = c.fsm.is('walking', 'mounting', 'driving', 'shuffling', 'dismounting') || !!c.drive?.race;
+      this.dragIdle = busy ? 0 : this.dragIdle + dt;
+      if (this.dragIdle > 4) drag.abort(drag.girl);
+    } else this.dragIdle = 0;
+    if (!drag.active) this.dragBlipSaid = false;
+    else if (drag.phase === 'blip' && !this.dragBlipSaid) {
+      this.dragBlipSaid = true;
+      byId[drag.girl]?.voice.say('dragBlip', { force: true });
+    }
+    this.updateDragYou(ridden);
+    const along = {};
+    if (drag.phase === 'countdown' || drag.phase === 'race') {
+      const mine = ridden?.quad;
+      if (mine) along.you = stripFrame(s, mine.position.x, mine.position.z).along;
+      const spec = drag.picks?.[drag.girl];
+      const hers = this.girlUnits.find((u) => u.spec.id === spec)?.quad;
+      if (hers) along[drag.girl] = stripFrame(s, hers.position.x, hers.position.z).along;
+    }
+    const race = (id, lane, spec) => ({
+      route: this.dragRoute(lane),
+      gridIndex: 1,
+      gridYaw: s.yaw,
+      cruise: 30, // flat out: the quad's power decides
+      throttle: 1,
+      go: () => drag.go(),
+      alive: () => drag.active,
+      onGrid: () => drag.grid(id),
+      onFinish: () => drag.finish(id),
+      onAbort: () => drag.abort(id),
+    });
+    for (const e of drag.update(dt, { girls, options, claims: this.ownership.claims, busy: this.race.active, you: this.dragYou(ridden), along, length: s.length })) {
+      if (e.type === 'approach') {
+        // Jess drives over to sit beside you.
+        const q = ridden.quad;
+        const side = { x: -Math.cos(q.yaw), z: Math.sin(q.yaw) };
+        const beside = { x: q.position.x + side.x * 3.2, z: q.position.z + side.z * 3.2 };
+        const quad = this.girlUnits.find((u) => u.spec.id === e.pick).quad;
+        byId[e.girl].requestDrive(quad, {
+          race: {
+            route: [beside],
+            gridIndex: 0,
+            cruise: 9,
+            throttle: 0.7,
+            go: () => false,
+            alive: () => drag.active,
+            onGrid: () => drag.grid(e.girl),
+            onFinish: () => {},
+            onAbort: () => drag.abort(e.girl),
+            blip: () => drag.blipping(),
+          },
+        });
+      } else if (e.type === 'chicken') byId[e.girl]?.voice.say('dragChicken', { force: true });
+      else if (e.type === 'invite') {
+        const c = byId[e.girl];
+        c.voice.say(e.blipped ? 'dragAccepted' : 'dragAsked', { force: true });
+        this.hud.toast('Drag race: line up on your side of the start line, pointing along the strip', 4);
+        const r = race(e.girl, e.lane * drag.p.laneOffset);
+        const quad = this.girlUnits.find((u) => u.spec.id === e.picks[e.girl]).quad;
+        if (c.fsm.is('driving') && c.drive && c.quad === quad) c.drive.reroute(r);
+        else c.requestDrive(quad, { race: r });
+      } else if (e.type === 'countdown') byId[drag.girl]?.voice.say('dragCount', { force: true });
+      else if (e.type === 'falseStart') {
+        byId[e.girl]?.voice.say('dragFalseStart', { force: true });
+        this.hud.toast('False start. Back on the line', 2.5);
+      } else if (e.type === 'go') this.hud.toast('Go!', 1.2);
+      else if (e.type === 'finish') {
+        if (e.id === 'you') this.hud.toast(e.place === 1 ? 'You won!' : 'She won', 3);
+        else if (e.place === 1) byId[e.id]?.voice.say('dragWin', { force: true });
+        else later(2000, () => byId[e.id]?.voice.say('dragLose', { force: true }));
+      } else if (e.type === 'out') {
+        if (e.id === 'you') this.hud.toast('You are out of the race', 2.5);
+        else byId[e.id]?.voice.say('dragOut', { force: true });
+      } else if (e.type === 'cancel') this.hud.toast('Drag race called off', 2);
     }
   }
 
@@ -3646,6 +3796,7 @@ export class Game {
     if (!this.recalling) this.updateConvoy(dt, ridden);
     this.updateDashReading(dt, ridden);
     if (!this.recalling) this.updateRace(dt, ridden);
+    if (!this.recalling) this.updateDrag(dt, ridden);
     this.updateSmokeSense(dt);
     this.updateHaze(dt);
     this.updateBarnFumes(dt);

@@ -47,6 +47,7 @@ import { JESS_RUSTY_LINES } from './rustyLines.js';
 import { JESS_UTV_LINES } from './utvLines.js';
 import { JESS_TRAILER_LINES } from './trailerLines.js';
 import { JESS_RACE_LINES } from './raceLines.js';
+import { JESS_DRAG_LINES } from './dragLines.js';
 import { JESS_RECALL_LINES } from './recallLines.js';
 import { JESS_READING_LINES } from './readingLines.js';
 import { JESS_PASS_LINES } from './passLines.js';
@@ -424,6 +425,7 @@ export const JESS_LINES = {
   ...JESS_UTV_LINES,
   ...JESS_TRAILER_LINES,
   ...JESS_RACE_LINES,
+  ...JESS_DRAG_LINES,
   ...JESS_RECALL_LINES,
   ...JESS_READING_LINES,
   ...JESS_PASS_LINES,
