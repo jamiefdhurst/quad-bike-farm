@@ -4,6 +4,7 @@ import { VOICE_LINES } from './voiceLines.js';
 import { band } from './skills.js';
 import { Speech } from '../audio/companionAudio.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
+import { girlKnows, historyTopics } from '../vehicle/history.js';
 import { engineCondition, guessCondition } from './diagnosis.js';
 import { guessPlug } from '../workshop/benchJobs.js';
 import { isThrashed } from '../engine/wearLedger.js';
@@ -518,6 +519,7 @@ export class CompanionVoice {
       this.watchDiagnosis(dt, unit, w);
       this.watchThrash(dt, unit, view, near || hers);
       this.watchBlame(dt, unit, w, view);
+      this.watchHistory(dt, unit, w, view);
       // Cranking on and on without it catching.
       if (e.state === 'cranking' && w.cranking > 5 && near) {
         this.say(this.crankHint(unit), { chance: 0.02 });
@@ -607,6 +609,25 @@ export class CompanionVoice {
     if (!culprit) return;
     if (!this.say(`blame${culprit.who === 'you' ? 'You' : culprit.who === 'amy' ? 'Amy' : 'Jess'}`, { chance: c.params.blameChance * dt })) return;
     w.blamedUntil = this.chatter.time + 180;
+  }
+
+  /**
+   * Stood by a quad, she brings up what she knows of how it came to be as it is (history.js): who had it out, a fault it had
+   * already, tinkering left in. What she knows is settled once, as well as her `diagnoseAccuracy` lets her, so Jess is often
+   * wrong about who and misses things. Each topic once per quad, and only while it's still true.
+   */
+  watchHistory(dt, unit, w, view) {
+    const history = view.history?.quads[unit.id];
+    const c = this.companion;
+    if (!history || !c.fsm.is('idle', 'resting') || unit.quad.position.distanceTo(this.head) > 6) return;
+    if (this.chatter.time < (w.historyUntil ?? 0)) return;
+    this.beliefs ??= {};
+    const knows = (this.beliefs[unit.id] ??= girlKnows(history, c.params.diagnoseAccuracy, Math.random));
+    w.historySaid ??= new Set();
+    const [topic] = historyTopics(knows, history, { faultsNow: (kind) => unit.quad.faults.has(kind), settingsNow: view.history.settingsFor(unit) }, w.historySaid);
+    if (!topic || !this.sayQuad(topic, unit.id, { chance: c.params.historyChance * dt })) return;
+    w.historySaid.add(topic);
+    w.historyUntil = this.chatter.time + 90; // one at a time, so she doesn't read out the whole file
   }
 
   /** Which kind of "it won't start" remark fits what she can see. */

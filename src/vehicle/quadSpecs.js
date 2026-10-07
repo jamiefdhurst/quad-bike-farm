@@ -12,6 +12,8 @@
 //   roughnessRange: [min, max] how lumpy it runs once warm (baseRoughness, 0 to 1).
 //     Cold, rich, lean and fouled running add to this.
 //   hoursRange, odoRange: [min, max] engine hours and odometer miles the dash shows at the start.
+//   wearRange: [min, max] engine wear (0 new, 1 shot) it comes with, higher the more hours it shows (history.js). tinkers: false keeps leftover
+//     tinkering off it.
 //   topRpmRange: [min, max] full-throttle rpm (maxRpm; the redline keeps its gap below it). The toolbox's rev limiter moves it from there.
 //   fuelRange: [min, max] litres in the tank at the start. Below the reserve
 //     (reserveLitres) it'll only run on RESERVE.
@@ -27,6 +29,7 @@ export const QUAD_SPECS = [
     dashStyle: 'foreman',
     hoursRange: [600, 1500], // engine hours showing when the game starts
     odoRange: [1500, 3750], // odometer miles showing when the game starts
+    wearRange: [0.1, 0.35], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
     // The smooth one: a steady idle and a gentle shake.
     safeIdle: 650,
     idleRange: [1050, 1150],
@@ -59,6 +62,7 @@ export const QUAD_SPECS = [
     dashStyle: 'grizzly',
     hoursRange: [400, 1100], // engine hours showing when the game starts
     odoRange: [1000, 2750], // odometer miles showing when the game starts
+    wearRange: [0.08, 0.3], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
     // Fast, keen idle; a medium, quicker buzz.
     safeIdle: 950,
     idleRange: [1400, 1550],
@@ -117,6 +121,7 @@ export const QUAD_SPECS = [
     dashStyle: 'blaster',
     hoursRange: [150, 600], // engine hours showing when the game starts
     odoRange: [600, 2400], // odometer miles showing when the game starts
+    wearRange: [0.1, 0.35], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
     // Ring-ding idle; a fine high-frequency buzz through the bars more than the body.
     safeIdle: 900,
     idleRange: [1500, 1800],
@@ -209,6 +214,7 @@ export const QUAD_SPECS = [
     dashStyle: 'bayou',
     hoursRange: [1800, 3500], // engine hours showing when the game starts
     odoRange: [4500, 8750], // odometer miles showing when the game starts
+    wearRange: [0.25, 0.55], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
     // Slow and lumpy; a big slow heave, like a tractor.
     safeIdle: 800,
     idleRange: [800, 900],
@@ -276,6 +282,7 @@ export const QUAD_SPECS = [
     dashStyle: 'quadracer',
     hoursRange: [100, 400], // engine hours showing when the game starts
     odoRange: [400, 1600], // odometer miles showing when the game starts
+    wearRange: [0.04, 0.2], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
     // A nervous, hunting idle; harsh and hard.
     safeIdle: 1600,
     idleRange: [2000, 2300],
@@ -370,6 +377,8 @@ export const EXTRA_SPECS = [
     dashStyle: 'kidsKey',
     hoursRange: [30, 200], // engine hours showing when the game starts
     odoRange: [100, 800], // odometer miles showing when the game starts
+    wearRange: [0.02, 0.12], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
+    tinkers: false, // nobody leaves the throttle stop out on a child's quad
     scale: 0.65,
     solo: true, // no room for anyone on the back
     owner: 'jess', // Amy won't ride it, and Jess goes for it first
@@ -463,6 +472,7 @@ export const EXTRA_SPECS = [
     dashStyle: 'kodiak',
     hoursRange: [2, 25], // engine hours showing when the game starts
     odoRange: [5, 60], // odometer miles showing when the game starts
+    wearRange: [0, 0.04], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
     // Smooth and refined; a small, quick buzz.
     safeIdle: 700,
     idleRange: [1100, 1200],

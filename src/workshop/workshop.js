@@ -154,8 +154,11 @@ export class Workshop {
     }
     if (unit.quad.speed > 0.5) return;
     if (!this.quads.has(unit)) {
-      const stock = captureStock(tuneTarget(unit));
-      this.quads.set(unit, { stock, settings: stockSettings(stock, this.params) });
+      // A quad that came with someone's tinkering left in (history.js) opens as it is, with stock the factory settings.
+      this.quads.set(unit, unit.leftovers ?? (() => {
+        const stock = captureStock(tuneTarget(unit));
+        return { stock, settings: stockSettings(stock, this.params) };
+      })());
     }
     this.unit = unit;
     this.repeat = {};

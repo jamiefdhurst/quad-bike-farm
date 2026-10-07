@@ -1174,3 +1174,17 @@ A digital pod fitted to a manual quad (red, green, yellow) showed "D" when in ge
 ## Wider yard spacing
 
 The girls kept getting stuck on the parked quads. The yard slots in `LAYOUT.spawn.quads` are now two rows 6.7 m apart with 4.4 m between quads along each (before, 3.4 m, with a second row only 3.8 m away), listed alternately so a smaller fleet uses both rows, and the random shift (`quadJitter`) drops from 2.5 m to 1.4 m so neighbours can't be nudged into each other. Nothing else is placed near the new spots. Checked: unit tests only; not by eye or by watching the girls.
+
+## A history (TODO 5)
+
+Settled with Jamie: the hour meters and odometers already exist (every quad has them whether or not a pod is fitted), so this item only seeds the rest. Starting wear is a per-quad range, faults at the start are fairly random, one to two of them.
+
+- Pure logic in `src/vehicle/history.js` (tests in `tests/history.test.js`), seeded from `seed ^ 0x4157` so `?seed=` repeats it. `game.js` `applyHistory` applies it after the usage readings, so it doesn't disturb the layout or the other seeded streams.
+- Wear: each spec has a `wearRange` (red 0.1 to 0.35, blue 0.08 to 0.3, yellow 0.1 to 0.35, green 0.25 to 0.55, orange 0.04 to 0.2, kids 0.02 to 0.12, loan 0 to 0.04, all under the 0.8 where an engine turns erratic). Seventy per cent of where it lands follows where the quad's hour meter sits in its range, the rest is luck. The wear ledger counts it as nobody's, as before. The tractor has none yet.
+- Faults: one roll per game picks the fleet's chance of a starting fault between 0.15 and 0.6, so some games are mostly sound and some a mess. Each quad then rolls against it, gets one fault (a second, different one 25% of the time) at a level of 0.15 to 0.55, using `Faults.leave`. They behave and get fixed like the ones that develop.
+- Tinkering: a quarter of quads (not the kids') come with the throttle stop out 1 to 3 turns, the mixture 1 to 3 clicks rich, or both. It is applied through the toolbox's own `applyTune`, and `unit.leftovers` seeds the workshop, so opening the toolbox shows the quad as it is with stock meaning the factory settings, and Reset undoes it.
+- Who had it out: 10% nobody, otherwise Jess about half the time and Amy the rest.
+- What the girls know: each girl settles once per quad what she believes, right with her `diagnoseAccuracy` (Amy 0.9, Jess 0.5). A wrong rider swaps to the other girl; a missed fault or tinkering is simply never mentioned. Stood by a quad, `watchHistory` brings up one topic at a time (90 s apart, each once per quad, `historyChance` 0.02 a second) and only while it is still true: a fixed fault or put-back stop isn't mentioned. Lines are in `historyLines.js`, written for the colour and each nickname like the other quad lines.
+- The `DEFAULT_HISTORY_PARAMS` apply once at the start of a game, so they aren't in the live tuning panel (`HISTORY_PARAM_RANGES` is there for when a debug "new game" exists).
+- Meters: checked in the code that the hours (engine running), odometer (distance) and trip all advance in `Quad.updateDash` for every unit every frame, ridden or not. The debug panel's engine folder now shows hours, odometer, trip and the quad's history for the quad you're on or looking at.
+- Not checked in the running game: how the girls' history lines land, whether the starting faults feel right on a first ride, or that the debug readouts move (unit tests and a production build only). The voice banks needed re-recording for about 340 new lines.

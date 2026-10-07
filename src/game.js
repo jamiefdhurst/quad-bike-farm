@@ -21,6 +21,8 @@ import { DEFAULT_COMPANION_PARAMS, COMPANION_PARAM_RANGES } from './npc/companio
 import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
 import { CHARACTERS } from './npc/characters.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
+import { pickHistory, pickFaultChance } from './vehicle/history.js';
+import { captureStock, tuneTarget, stockSettings, clampSettings, applyTune } from './vehicle/tuneUp.js';
 import { WearLedger, LEDGER_PARAM_RANGES } from './engine/wearLedger.js';
 import { Pranks, PRANK_PARAM_RANGES } from './npc/pranks.js';
 import { RevOff, REVOFF_PARAM_RANGES } from './npc/revOff.js';
@@ -205,6 +207,12 @@ export class Game {
       unit.quad.usage.hours = pickReading(unit.spec.hoursRange ?? [0, 0], usageRandom);
       unit.quad.usage.odoMiles = pickReading(unit.spec.odoRange ?? [0, 0], usageRandom);
     }
+    // Where each quad has been: some wear already on it, perhaps a fault starting, perhaps the last person's tinkering left in.
+    this.history = { quads: {}, settingsFor: (unit) => this.workshop?.settingsFor(unit) ?? unit.leftovers?.settings ?? null };
+    const historyRandom = createRandom(this.seed ^ 0x4157);
+    const faultChance = pickFaultChance(historyRandom);
+    for (const unit of this.units) this.applyHistory(unit, historyRandom, faultChance);
+    console.info(`History: ${this.units.map((u) => this.describeHistory(u)).join('; ')}`);
     setDashClock(new DashClock(pickReading(CLOCK_START_RANGE, createRandom(this.seed ^ 0xc10c))));
     this.podRack = new PodRack(this.units.map((u) => u.id));
     this.podRack.place(createRandom(this.seed ^ 0x90d5));
@@ -1069,6 +1077,27 @@ export class Game {
   }
 
   /** One manual vehicle (a quad or the tractor) has a worn gearbox this game: a gear that jumps out under load on a climb. Seeded. */
+  /** Gives a quad its past: wear, any starting faults and any tinkering left in (the toolbox opens on it as it is, with stock the factory's). */
+  applyHistory(unit, random, faultChance) {
+    const [lo, hi] = unit.spec.hoursRange ?? [0, 0];
+    const h = pickHistory(unit.spec, random, { faultChance, hoursT: hi > lo ? (unit.quad.usage.hours - lo) / (hi - lo) : 0.5 });
+    unit.engine.wear = h.wear;
+    for (const f of h.faults) unit.quad.faults.leave(f.kind, f.level);
+    if (h.tinker) {
+      const stock = captureStock(tuneTarget(unit));
+      const settings = applyTune(tuneTarget(unit), stock, clampSettings({ ...stockSettings(stock), ...h.tinker }, stock));
+      unit.leftovers = { stock, settings };
+    }
+    this.history.quads[unit.id] = h;
+  }
+
+  describeHistory(unit) {
+    const h = this.history.quads[unit.id];
+    const bits = [`wear ${h.wear}`, ...h.faults.map((f) => `${f.kind} ${f.level}`)];
+    if (h.tinker) bits.push(`stop ${h.tinker.limiter} turns, mixture +${h.tinker.mixture}`);
+    return `${unit.name} ${bits.join(', ')}, last out: ${h.lastRider ?? 'nobody'}`;
+  }
+
   wearGearbox() {
     const manual = this.units.filter((u) => u.quad.manual);
     const pick = pickWornGearbox(manual.map((u) => ({ id: u.id, gears: u.quad.gearbox.gears })), createRandom(this.seed ^ 0x6ea4));
@@ -2742,6 +2771,7 @@ export class Game {
         units: this.girlUnits,
         drivers: this.drivers,
         ledger: this.wearLedger,
+        history: this.history,
         menuOpen: this.menu.isOpen,
         talkingToHer: this.menu.isOpen && this.talkingTo === c,
         weather: this.weather,

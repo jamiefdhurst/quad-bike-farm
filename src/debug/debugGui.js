@@ -107,6 +107,18 @@ export class DebugGui {
       get wear() {
         return unit().engine.wear;
       },
+      get hours() {
+        return Math.round(unit().quad.usage.hours * 100) / 100;
+      },
+      get odometer() {
+        return `${unit().quad.usage.odoMiles.toFixed(2)} mi`;
+      },
+      get trip() {
+        return `${unit().quad.tripMiles.toFixed(2)} mi`;
+      },
+      get history() {
+        return g.describeHistory(unit());
+      },
       get erratic() {
         return unit().engine.erratic;
       },
