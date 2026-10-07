@@ -38,7 +38,7 @@ const smooth = (t) => t * t * (3 - 2 * t);
 
 /** Whether a quad can pull it: the tractor, or a quad with a rear rack (its mug anchor is where the rack is). */
 export function canTow(quad) {
-  return !!(quad.tractor || quad.mugAnchor);
+  return !!(quad.tractor || quad.mugAnchor || quad.towHitch);
 }
 
 /**
@@ -79,6 +79,11 @@ export class TipTrailer {
   /** The hitch of a quad (or the tractor's drawbar pin), on the ground plan, and its height above the ground reference. */
   pinOf(quad) {
     const p = this.p;
+    if (quad.towHitch) {
+      // A towing jaw of its own (the Land Rover's): where it is, in the world.
+      const w = quad.towHitch.getWorldPosition(new THREE.Vector3());
+      return { x: w.x, z: w.z, y: w.y - TIP_TRAILER_SPEC.ringHeight };
+    }
     const w = quad.tractor
       ? quad.localToWorld(0, TRACTOR_GROUND_OFFSET + 0.52, -p.tractorBack)
       : quad.localToWorld(0, GROUND_OFFSET + p.quadHitchHeight, -p.quadBack);

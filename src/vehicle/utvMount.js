@@ -7,19 +7,22 @@ const BED_LIFT = 0.45; // up onto the tailgate from behind
 /**
  * The UTV's seats as somewhere to ride, with the same face as the bale trailer and the tractor's mudguards (`model`, `motion`, `slots`,
  * `standPoint`, `freeSlot`) so the girls' climb on, sit and climb down states (npc/companionHayRide.js) work on all three. The slots
- * are named `left` and `mid` (the bench) and `bed` (the open tailgate); the driver's seat is yours.
+ * are named `left` and `mid` (the bench) and `bed` (the open tailgate); the driver's seat is yours. The Land Rover's bench works the same,
+ * with its own stand points (`stand`) and no bed (its model has no `bedSeat`).
  */
 export class UtvMount {
-  constructor(quad, ground) {
+  constructor(quad, ground, stand = UTV_STAND) {
     this.quad = quad;
     this.ground = ground;
     this.model = quad.model;
+    this.stand = stand;
     this.motion = { jolt: 0, omega: 0, speed: 0 }; // `speed` is how fast the girls wait for it to be going before they climb in
     this.slots = {
       left: { name: 'left', side: 1, anchor: this.model.getObjectByName('seatLeft'), girl: null, lift: CLIMB_LIFT },
       mid: { name: 'mid', side: 1, anchor: this.model.getObjectByName('seatMid'), girl: null, lift: CLIMB_LIFT },
-      bed: { name: 'bed', side: 1, anchor: this.model.getObjectByName('bedSeat'), girl: null, lift: BED_LIFT },
     };
+    const bedSeat = this.model.getObjectByName('bedSeat');
+    if (bedSeat) this.slots.bed = { name: 'bed', side: 1, anchor: bedSeat, girl: null, lift: BED_LIFT };
     this.lastYaw = quad.yaw;
   }
 
@@ -37,7 +40,7 @@ export class UtvMount {
 
   /** Where she stands on the ground to climb in or out, and the way she faces (toward the UTV). `side` is unused: the seat decides. */
   standPoint(side, slot) {
-    const l = UTV_STAND[slot?.name ?? 'left'];
+    const l = this.stand[slot?.name ?? 'left'];
     const p = this.model.localToWorld(new THREE.Vector3(l.x, 0, l.z));
     p.y = this.ground(p.x, p.z);
     const c = this.model.position;
@@ -46,7 +49,7 @@ export class UtvMount {
 
   /** Whether somebody is on the tailgate or climbing onto it. */
   get bedBusy() {
-    return !!this.slots.bed.girl;
+    return !!this.slots.bed?.girl;
   }
 
   /** The nearest free bench seat to `from`, or null. The bed is never picked this way: a girl has to want it. */

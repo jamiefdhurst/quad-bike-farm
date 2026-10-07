@@ -1044,6 +1044,7 @@ export const LAND_ROVER_SPEC = {
   label: 'Land Rover',
   name: 'Land Rover',
   landRover: true,
+  scale: 1.15, // the model and its physics, a size up: built to a real Series's measurements it looked small beside the girls
   steadyLights: true, // a battery runs its lamps
   wheelShake: 0.8,
   bodyColor: 0x3b4a36, // Bronze Green
@@ -1056,7 +1057,7 @@ export const LAND_ROVER_SPEC = {
   wearRange: [0.2, 0.45], // old and well used
   safeIdle: 420,
   idleRange: [520, 580], // a 2.25 petrol ticks over slowly; the Jeep in its sound recording runs at about 500
-  roughnessRange: [0.15, 0.3],
+  roughnessRange: [0.1, 0.2],
   fuelRange: [12, 40], // 45 litre tank, 5 litre reserve
   topRpmRange: [4100, 4300],
   manual: true, // a clutch (Shift) and a four-speed gearbox (src/vehicle/manualDrivetrain.js)
@@ -1102,6 +1103,14 @@ export const LAND_ROVER_SPEC = {
     warmUpSeconds: 300,
     lugDepth: 0.4, // plenty of low-down pull
     wearPerMinute: 0.0006,
+    // Four cylinders, not one: a misfire loses a quarter of the beat and the others carry it, so roughness shows far less than on a
+    // single. About 40% of the quads' effects.
+    misfireRoughness: 0.06,
+    cycleJitter: 0.07,
+    pulseStrengthJitter: 0.18,
+    roughHunt: 0.12,
+    erraticHunt: 0.07,
+    stumbleRate: 0.2,
   },
   vehicle: {
     mass: 1350, // with its driver

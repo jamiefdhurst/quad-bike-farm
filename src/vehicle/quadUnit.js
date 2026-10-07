@@ -21,6 +21,8 @@ import { buildAtcModel, ATC_LAYOUT, ATC_GROUND_OFFSET, ATC_PROXY } from './atcMo
 import { buildMiniMotoModel, MOTO_LAYOUT, MOTO_GROUND_OFFSET, MOTO_PROXY } from './miniMotoModel.js';
 import { buildTractorModel, TRACTOR_LAYOUT, TRACTOR_GROUND_OFFSET, TRACTOR_PROXY } from './tractorModel.js';
 import { buildUtvModel, UTV_LAYOUT, UTV_GROUND_OFFSET, UTV_PROXY } from './utvModel.js';
+import { buildLandRoverModel, LANDY_LAYOUT, LANDY_GROUND_OFFSET, LANDY_PROXY } from './landRoverModel.js';
+import { CrankHandle, DEFAULT_CRANK_PARAMS, CRANK_PARAM_RANGES } from './crankHandle.js';
 
 // Where steam leaves the orange's radiator, in the model's own space, and what the steam looks like: pale, quick and rising.
 const RADIATOR_AT = { x: 0, y: 0.68, z: 0.86 };
@@ -94,6 +96,17 @@ export class QuadUnit {
         wheelShake: spec.wheelShake,
         steadyLights: spec.steadyLights,
       }),
+      ...(spec.landRover && {
+        build: ({ dashStyle }) => buildLandRoverModel({ bodyColor: spec.bodyColor, dashStyle }),
+        layout: LANDY_LAYOUT,
+        groundOffset: LANDY_GROUND_OFFSET,
+        proxy: LANDY_PROXY,
+        wheelShake: spec.wheelShake,
+        steadyLights: spec.steadyLights,
+        landRover: true,
+        handLever: true, // the hand throttle knob on its dash
+        crank: new CrankHandle({ ...DEFAULT_CRANK_PARAMS }),
+      }),
     });
     this.quad.unit = this;
     this.torqueRock = new TorqueRock();
@@ -124,6 +137,7 @@ export class QuadUnit {
     registerTuning(`${folder}/Mud on it`, this.mud.state, MUD_STATE_RANGES);
     registerTuning(`${folder}/Fuel`, this.quad.fuel.params, FUEL_PARAM_RANGES);
     registerTuning(`${folder}/Faults`, this.quad.faults.params, FAULT_PARAM_RANGES);
+    if (this.quad.crank) registerTuning(`${folder}/Starting handle`, this.quad.crank.p, CRANK_PARAM_RANGES);
     if (this.quad.manual) {
       registerTuning(`${folder}/Gearbox`, this.quad.gearbox, GEARBOX_PARAM_RANGES);
       if (!this.quad.tractor) registerTuning(`${folder}/Her gear changes`, this.quad.shifter.params, SHIFTER_PARAM_RANGES);

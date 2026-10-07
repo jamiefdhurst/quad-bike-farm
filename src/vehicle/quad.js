@@ -10,6 +10,7 @@ import { frostAfter, frostedColour, DEFAULT_FROST_PARAMS } from './seatFrost.js'
 import { ManualDrivetrain, gearLabel } from './manualDrivetrain.js';
 import { AutoShifter } from './autoShifter.js';
 import { poseTractorControls } from './tractorModel.js';
+import { poseLandyControls } from './landRoverModel.js';
 import { EngineLoad } from './engineLoad.js';
 import { waterGulp } from '../engine/water.js';
 import { AirFilter } from './airFilter.js';
@@ -38,6 +39,9 @@ const HAND_THROTTLE_RATE = 0.35; // per second the hand throttle moves while its
 const HAND_THROTTLE_UP_KEY = 'KeyQ';
 const HAND_THROTTLE_DOWN_KEY = 'KeyZ';
 const STOP_KNOB_KEY = 'KeyO'; // not X (the tow chain and winch) or C (look back)
+// The Land Rover's hand throttle, a knob on the dash: Q and Z are its choke, so the brackets open and close it.
+const HAND_KNOB_OUT_KEY = 'BracketRight';
+const HAND_KNOB_IN_KEY = 'BracketLeft';
 const NOTE_SECONDS = 2.5;
 
 /**
@@ -54,12 +58,17 @@ export class Quad {
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null, handLever = false, crank = null, landRover = false }) {
     this.reverseStyle = reverseStyle; // where its reverse is and what it takes (controls.js)
     this.chokeStyle = chokeStyle;
     this.tapStyle = tapStyle;
     this.controlsParams = controlsParams;
     this.drive = drive ? new DriveSwitch(drive) : null; // the 2WD / 4WD switch (and diff lock), on the red and blue only (driveMode.js)
+    this.handLever = handLever; // a hand throttle knob as well as the tractor's lever (the Land Rover's, on its dash)
+    this.crank = crank; // the Land Rover's starting handle (crankHandle.js), worked from the front
+    this.atCrank = false; // set by the game while you stand at the front, looking at it
+    this.kicked = false; // the handle has just kicked back (the game reads and clears it)
+    this.landRover = landRover;
     this.driveParams = DEFAULT_DRIVE_PARAMS;
     this.driveShown = 0; // the switch's rocker, eased towards the mode: 0 for 2WD, 1 for 4WD
     this.driveEffects = driveEffects('4wd', this.driveParams); // what the mode does this step; a quad with no switch keeps its own drive
@@ -123,6 +132,8 @@ export class Quad {
     // Wheel centre heights in bodyRoot space, for posing the suspension arms.
     this.wheelHeights = this.wheels.map(() => 0);
     this.exhaustFlap = part('exhaustFlap') ?? null; // the tractor's upright exhaust has a flap that lifts with each beat
+    this.towHitch = part('towHitch') ?? null; // a towing jaw at the back (the Land Rover's), for the little trailer
+    this.crankHole = part('crankHole') ?? null; // the starting handle's hole in the front bumper
     this.flap = 0; // how far it's lifted, 0..1
 
     // Invisible box used for "look at it and press E". Reaches about 1.45 m
@@ -366,6 +377,11 @@ export class Quad {
     if (!input) return;
     if (this.input) input.takeWheelSteps();
     if (input.wasPressed('KeyK')) this.engine.toggleIgnition();
+    if (this.crank && !this.input && this.atCrank) {
+      // The starting handle's grip: 1 thumb round it (the natural way, and the one that kicks back), 2 thumb alongside the fingers.
+      if (input.wasPressed('Digit1')) this.crank.setGrip('round');
+      if (input.wasPressed('Digit2')) this.crank.setGrip('along');
+    }
     if (input.wasPressed('KeyF') && !this.fuel.params.noTap) {
       if (this.quirks.pressTap()) this.fuel.cycleTap();
       else this.say('The fuel tap is stiff: keep working it');
@@ -397,8 +413,9 @@ export class Quad {
         const ok = this.reverseCheck(input);
         if (!ok) continue;
       }
-      const r = this.drivetrain.select(gear);
-      if (r === 'clutch') this.say('Clutch in (hold Shift) to change gear');
+      const r = this.drivetrain.select(gear, false, this.forwardSpeed);
+      if (r === 'crunch') this.say('Crunch! No synchromesh on first or second: nearly stop before you go into them');
+      else if (r === 'clutch') this.say('Clutch in (hold Shift) to change gear');
       else if (r === 'missed') this.say('Missed the gear: it is in neutral. Clutch down a moment longer');
     }
   }
@@ -489,6 +506,13 @@ export class Quad {
       steerInput = (input.isDown('KeyA') ? 1 : 0) - (input.isDown('KeyD') ? 1 : 0);
       this.starter = input.isDown('KeyR') && this.starterAllowed();
       if (this.manual) this.clutchHeld = CLUTCH_KEYS.some((k) => input.isDown(k));
+      if (this.handLever) {
+        this.handSetting = THREE.MathUtils.clamp(
+          this.handSetting + ((input.isDown(HAND_KNOB_OUT_KEY) ? 1 : 0) - (input.isDown(HAND_KNOB_IN_KEY) ? 1 : 0)) * HAND_THROTTLE_RATE * dt,
+          0,
+          1,
+        );
+      }
 
       if (this.manual) {
         // The lever decides which way it goes: W is throttle and S the brake, never reverse.
@@ -531,7 +555,7 @@ export class Quad {
     }
 
     // The hand throttle holds the engine up wherever it was left, ridden or not.
-    if (this.tractor) throttleInput = Math.max(throttleInput, this.handSetting);
+    if (this.tractor || this.handLever) throttleInput = Math.max(throttleInput, this.handSetting);
 
     // Left in first with the hand throttle open and nobody on it, the tractor walks off by itself; against a hedge it stalls.
     if (this.tractor) {
@@ -545,13 +569,23 @@ export class Quad {
       if (c.stall && this.engine.stopKnob()) this.creepStalled = true;
     }
 
-    // The recoil pull-start (the two-strokes): hold P to draw the cord, let go to yank.
-    const pullDown = this.input ? this.input.isDown('KeyP') : (!!this.remoteInput && this.remoteInput.isDown('KeyP')) || this.helperPull;
+    // The recoil pull-start (the two-strokes): hold P to draw the cord, let go to yank. The Land Rover's starting handle works the same
+    // way, but only from the front of it, and not while you're nursing your hand.
+    const pullDown = this.crank
+      ? !!this.remoteInput && this.atCrank && this.crank.ready && this.remoteInput.isDown('KeyP')
+      : this.input ? this.input.isDown('KeyP') : (!!this.remoteInput && this.remoteInput.isDown('KeyP')) || this.helperPull;
     if (pullDown) this.pullHeld += dt;
     else if (this.pullHeld > 0) {
-      this.engine.pull(this.pullHeld);
+      const swung = this.engine.pull(this.pullHeld);
       this.pullHeld = 0;
+      if (swung !== null && this.crank?.swing() === 'kick') {
+        // Thumb round the handle: it caught a compression and spun back. No turn, and a sore hand.
+        this.engine.pullLeft = 0;
+        this.kicked = true;
+        this.say('Ow! It kicked back. Thumb alongside your fingers, not round the handle (2)');
+      }
     }
+    this.crank?.update(dt);
 
     // Faults that develop: a sticking cable holds the throttle open, a flat tyre pulls the bars over.
     this.faults.update(dt, { running: this.engine.isRunning, speed: Math.abs(fwd), throttle: throttleInput });
@@ -851,6 +885,7 @@ export class Quad {
       fourWd: this.drive ? this.drive.frontDriven : null, // the 4WD lamp on the red and blue's dashes (null: no switch)
       diffLock: this.drive?.hasLock ? this.drive.locked : null, // null: no diff lock to show
       hand: this.handSetting,
+      choke: this.choke, // the Land Rover's dash has a lamp for it
       clock: clock.text(),
       seconds: clock.seconds(),
     };
@@ -877,6 +912,7 @@ export class Quad {
     setTaillights(this.model, lit ? taillightLevel(level, this.brake > 0.1) : 0); // the same supply, so a brake light needs it too
 
     if (this.tractor) poseTractorControls(this.model, { gear: this.drivetrain.gear, hand: this.handSetting, pedal: this.drivetrain.pedal });
+    if (this.landRover) poseLandyControls(this.model, { gear: this.drivetrain.gear, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, choke: this.choke, hand: this.handSetting });
     this.displayChoke += (this.choke - this.displayChoke) * Math.min(1, 12 * dt);
     // Off: lever forward. Full: pulled back towards the rider.
     if (this.chokeStyle === 'knob') this.chokeLever.position.z = this.chokeLever.userData.baseZ - this.displayChoke * 0.05; // pulled out towards you

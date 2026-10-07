@@ -81,6 +81,14 @@ Quaternius: https://quaternius.com
 | Revs | Vespa Scooter PX 200 GS old exhaust wav | druki | https://freesound.org/people/druki/sounds/158891/ | CC0 1.0 |
 | Starter and shutdown | Quad Bike_ATV Engine.wav (as above) | Alex Fitzwater | https://freesound.org/people/Alex_hears_things/sounds/379915/ | CC0 1.0 |
 
+`public/audio/engine-bank-landy.wav` and `engine-bank-landy.json` (the Land Rover) are cut from:
+
+| Used for | Recording | Author | Source | Licence |
+| --- | --- | --- | --- | --- |
+| Idle pulses, revs and shutdown | G15-10-Jeep Rumbling Idle.wav | craigsmith | https://freesound.org/people/craigsmith/sounds/438105/ | CC0 1.0 |
+| The starting handle's swing | G13.1-06-Car Crank, Idle, Car Doors.wav | craigsmith | https://freesound.org/people/craigsmith/sounds/438033/ | CC0 1.0 |
+| Starter | Quad Bike_ATV Engine.wav (as above) | Alex Fitzwater | https://freesound.org/people/Alex_hears_things/sounds/379915/ | CC0 1.0 |
+
 `public/audio/engine-bank-utv.wav` and `engine-bank-utv.json` (the UTV) are cut from:
 
 | Used for | Recording | Author | Source | Licence |
@@ -133,6 +141,7 @@ These have no external source:
 - **Round bales** (straw and black-wrapped silage) and the **five-bar field gate**: primitives in `src/world/props.js`, with canvas-drawn straw textures.
 - **Jerry can** and **petrol tank**: primitives in `src/items/`.
 - **Quad body styles** (utility, utility with brush guard, two-stroke sport): all primitives in `src/vehicle/quadModel.js`.
+- **The Land Rover**: primitives in `src/vehicle/landRoverModel.js`, with its Series dash drawn on canvas in `src/vehicle/dash.js`.
 - **Dashes**: drawn on canvas in `src/vehicle/dash.js`.
 - **Terrain, track, grass tufts, distant trees and sky**: generated in `src/world/`.
 - **Synthesised engine sound** (selectable in the tuning panel), relay clicks, fuel pump, pouring and wind: synthesised at runtime in `src/audio/`.

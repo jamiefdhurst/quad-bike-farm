@@ -318,7 +318,7 @@ export class Workshop {
   /** Whether a quick job is on the panel: a diesel has no carb, and the tractor no belt. */
   repairShown(kind) {
     if (kind === 'carb') return !this.isDiesel;
-    if (kind === 'belt') return !this.unit?.quad.tractor;
+    if (kind === 'belt') return !this.unit?.quad.tractor && !this.unit?.quad.landRover; // the Land Rover has a clutch
     return true;
   }
 

@@ -124,6 +124,7 @@ export const LAYOUT = {
     { x: -32.8, z: 77.6, yaw: 0.9, where: 'by the field gate' },
   ],
   tractor: { x: -41, z: 70.5, yaw: 2.7 }, // the old tractor, parked towards the field gate, clear of the barn and the quads' rows (Jess kept getting stuck by the barn) (vehicle/quadSpecs.js TRACTOR_SPEC)
+  landRover: { x: -54, z: 71.5, yaw: 2.3 }, // the old Land Rover, in the open north of the barn doors, clear of the straw bale at (-50, 66) and the tractor (vehicle/quadSpecs.js LAND_ROVER_SPEC)
   utv: { x: -52.5, z: 40.5, yaw: 0.5 }, // the UTV, parked between the paddock and the quads' rows, where you start can see it (vehicle/quadSpecs.js UTV_SPEC)
   trailer: { x: -44.5, z: 77.9, yaw: 2.7 }, // the bale trailer's axle, 8 m behind the tractor and pointing at it, so you reverse the drawbar up to it
   tipTrailer: { x: -49, z: 33.5, yaw: 0.2 }, // the little tipping trailer's axle, in the clear by the paddock with its tongue towards the yard, for a quad to back up to
