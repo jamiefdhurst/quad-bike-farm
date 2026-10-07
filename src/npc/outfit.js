@@ -444,10 +444,40 @@ function shirtColour(hex) {
   return new THREE.Color().setRGB(lin.r, lin.g, lin.b, THREE.SRGBColorSpace);
 }
 
-/** Where the polo's placket starts: the top of the shirt at the front, on the neckline cut by cutNeckline. */
-function shirtFrontTop(rig) {
-  if (!rig.bones.Neck) return undefined;
-  return necklineAt(bonePos(rig, 'Neck'), 0);
+/**
+ * Where the polo's placket starts: where the shirt meets her skin down the middle of her front. Measured, not worked out from
+ * the neckline: walking down her front, the first point whose colour on the body is the shirt's. (The cut's line is bent by
+ * how far out from her neck each corner is, so at the front the boundary sits below necklineAt.)
+ */
+function shirtFrontTop(rig, hex) {
+  const body = bodyMesh(rig);
+  if (!body || !rig.bones.Neck || !body.material.map?.image) return undefined;
+  const neck = bonePos(rig, 'Neck');
+  const img = body.material.map.image;
+  const canvas = document.createElement('canvas');
+  canvas.width = img.width;
+  canvas.height = img.height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  const px = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  const flip = body.material.map.flipY;
+  // The recolour writes the linear value as the pixel, so that is what to look for.
+  const want = new THREE.Color(hex).toArray().map((c) => c * 255);
+  const isShirt = (uv) => {
+    const x = Math.min(canvas.width - 1, Math.floor(uv.x * canvas.width));
+    const y = Math.min(canvas.height - 1, Math.floor((flip ? 1 - uv.y : uv.y) * canvas.height));
+    const k = (y * canvas.width + x) * 4;
+    return Math.abs(px[k] - want[0]) < 6 && Math.abs(px[k + 1] - want[1]) < 6 && Math.abs(px[k + 2] - want[2]) < 6;
+  };
+  const root = rig.root;
+  const back = new THREE.Vector3(0, 0, -1).transformDirection(root.matrixWorld);
+  for (let y = necklineAt(neck, 0) + 0.02; y > neck.y - 0.1; y -= 0.0015) {
+    raycaster.set(root.localToWorld(new THREE.Vector3(neck.x, y, 0.6)), back);
+    raycaster.far = 1;
+    const hit = raycaster.intersectObject(body, false)[0];
+    if (hit?.uv && isShirt(hit.uv)) return y;
+  }
+  return necklineAt(neck, 0);
 }
 
 /**
@@ -545,7 +575,7 @@ function addPoloFront(rig, color, neckline) {
   const samples = 10;
   const lift = 0.007;
   const half = 0.011;
-  const top = neckline; // from the top of the shirt
+  const top = neckline - 0.001; // from where the shirt meets her skin
   const length = 0.12;
   const hits = [];
   for (let k = 0; k <= samples; k++) {
@@ -727,7 +757,7 @@ function addJumper(rig, color, shirtHex) {
 }
 
 function addGarments(rig, outfit) {
-  if (outfit.collar) addPoloFront(rig, outfit.collar, shirtFrontTop(rig));
+  if (outfit.collar) addPoloFront(rig, outfit.collar, shirtFrontTop(rig, outfit.collar));
   if (outfit.jumper) addJumper(rig, outfit.jumper, outfit.colors?.shirt);
   if (outfit.shorts) addShorts(rig, outfit.shorts);
   if (outfit.wellies) addWellies(rig, outfit.wellies);
