@@ -17,6 +17,7 @@ import { CruiseControl } from './cruise.js';
 import { Creep, mayCreep, DEFAULT_CREEP_PARAMS } from './creep.js';
 import { Bog } from './bog.js';
 import { Faults } from './faults.js';
+import { reverseAllowed, chokeReach, DEFAULT_CONTROLS_PARAMS } from './controls.js';
 import { advanceUsage, isNeutral, dashClock, lampStates } from './dashState.js';
 
 // Height of the ground below the chassis origin with the bike at rest.
@@ -51,7 +52,14 @@ export class Quad {
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0, steadyLights = false }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS }) {
+    this.reverseStyle = reverseStyle; // where its reverse is and what it takes (controls.js)
+    this.chokeStyle = chokeStyle;
+    this.tapStyle = tapStyle;
+    this.controlsParams = controlsParams;
+    this.handOff = 1; // how much steering you keep while a hand is off the bars for the choke
+    this.pushDir = 0; // set by the game while someone on foot shoves it along: +1 forwards, -1 backwards, 0 not
+    this.pushLeft = 0; // seconds since it was last pushed, counting down: the roll watch doesn't blame anyone for a quad being pushed
     this.steadyLights = steadyLights; // a battery runs the headlight, so it doesn't follow the engine (headlight.js)
     this.wheelShake = wheelShake; // how much of the body's vibration the wheels share (the tractor's wheels shake with it; the quads' don't)
     this.scale = scale; // 1, or smaller for the kids' quad: the model and the physics chassis both shrink by this
@@ -63,7 +71,7 @@ export class Quad {
 
     this.layout = layout;
     this.groundOffset = groundOffset; // chassis origin to ground, at rest
-    this.model = build ? build({ dashStyle }) : buildQuadModel({ bodyColor, dashStyle, style, solo, plateNumber });
+    this.model = build ? build({ dashStyle }) : buildQuadModel({ bodyColor, dashStyle, style, solo, plateNumber, chokeStyle, tapStyle });
     this.model.scale.setScalar(scale);
     this.dash = this.model.userData.dash;
     this.fuel = new FuelSystem(fuelParams);
@@ -161,7 +169,6 @@ export class Quad {
     this.brake = 0;
     this.steer = 0;
     this.reverse = false;
-    this.reverseTimer = 0;
     this.choke = 0;
     this.starter = false;
     this.displayChoke = 0;
@@ -344,9 +351,17 @@ export class Quad {
       else this.say('The fuel tap is stiff: keep working it');
     }
     if (this.manual) this.manualKeys(input);
+    // An automatic's reverse is a button, pressed with the brake held (the two-strokes have none).
+    if (this.input && !this.manual && !this.tractor && input.wasPressed('KeyB') && this.reverseCheck(input)) this.reverse = true;
+    this.handOff = 1;
     if (!this.tractor) {
-      this.chokeKey(dt, input, CHOKE_MORE_KEY, 1);
-      this.chokeKey(dt, input, CHOKE_LESS_KEY, -1);
+      const reach = chokeReach(this.chokeStyle, Math.abs(this.forwardSpeed), !!this.input, this.controlsParams);
+      const keys = [CHOKE_MORE_KEY, CHOKE_LESS_KEY];
+      if (reach.ok) {
+        if (keys.some((k) => input.isDown(k))) this.handOff = reach.steer; // a hand is off the bars while you reach for it
+        this.chokeKey(dt, input, CHOKE_MORE_KEY, 1);
+        this.chokeKey(dt, input, CHOKE_LESS_KEY, -1);
+      } else if (keys.some((k) => input.wasPressed(k))) this.say(reach.why);
     }
     if (input.wasPressed('KeyT') && this.isTipped) this.rightItself();
   }
@@ -357,10 +372,21 @@ export class Quad {
     if (!this.input) return; // standing beside it you can reach the knob but not the lever
     for (const [code, gear] of Object.entries(GEAR_KEYS)) {
       if (!input.wasPressed(code)) continue;
+      if (gear < 0) {
+        const ok = this.reverseCheck(input);
+        if (!ok) continue;
+      }
       const r = this.drivetrain.select(gear);
       if (r === 'clutch') this.say('Clutch in (hold Shift) to change gear');
       else if (r === 'missed') this.say('Missed the gear: it is in neutral. Clutch down a moment longer');
     }
+  }
+
+  /** Whether this quad's reverse can be engaged right now by whoever is at it; says why not if it can't (controls.js). */
+  reverseCheck(input) {
+    const r = reverseAllowed(this.reverseStyle, { speed: Math.abs(this.forwardSpeed), steering: input.isDown('KeyA') || input.isDown('KeyD'), braking: input.isDown('KeyS') }, this.controlsParams);
+    if (!r.ok) this.say(r.why);
+    return r.ok;
   }
 
   /** A manual's starter interlock: in neutral or with the clutch down, never in gear with the pedal up. The girls just take it out of gear. */
@@ -448,17 +474,9 @@ export class Quad {
           }
         }
         if (s) {
-          if (!this.reverse && fwd > 0.5) {
-            brakeInput = 1;
-            this.reverseTimer = 0;
-          } else {
-            this.reverseTimer += dt;
-            if (this.reverseTimer > p.reverseDelay) this.reverse = true;
-            if (this.reverse) throttleInput = p.reverseThrottle;
-            else brakeInput = 1;
-          }
-        } else {
-          this.reverseTimer = 0;
+          // With the reverse button pressed (handleFrameInput) S backs it up; otherwise S is only the brake.
+          if (this.reverse) throttleInput = p.reverseThrottle;
+          else brakeInput = 1;
         }
       }
       if (!this.reverse && !brakeInput) throttleInput = Math.max(throttleInput, this.handThrottle);
@@ -522,7 +540,7 @@ export class Quad {
       // Someone sat on the front rack makes the bars a little heavier.
       const rackLoad = this.rackRider ? 1 - p.rackSteerLoss : 1;
       const maxSteer = (((p.maxSteerDeg * Math.PI) / 180) * rackLoad) / (1 + p.steerSpeedReduction * Math.abs(fwd));
-      this.steer += (steerInput * maxSteer - this.steer) * Math.min(1, p.steerRate * dt);
+      this.steer += (steerInput * this.handOff * maxSteer - this.steer) * Math.min(1, p.steerRate * dt);
     }
 
     const e = this.engine;
@@ -599,6 +617,13 @@ export class Quad {
       wet,
       dt,
     });
+    // Someone on foot shoving it along its length (the game sets pushDir while they hold the key); not with the parking brake on.
+    this.pushLeft = Math.max(0, this.pushLeft - dt);
+    if (this.pushDir && !this.input && !this.driver && !this.parkBrake && !this.isTipped && !this.towed) {
+      this.pushLeft = 1;
+      this.physics.setParked(false);
+      this.physics.pushAlong(this.pushDir * this.controlsParams.pushSpeed, dt);
+    }
     this.physics.update(dt);
   }
 
@@ -797,7 +822,9 @@ export class Quad {
     if (this.tractor) poseTractorControls(this.model, { gear: this.drivetrain.gear, hand: this.handSetting, pedal: this.drivetrain.pedal });
     this.displayChoke += (this.choke - this.displayChoke) * Math.min(1, 12 * dt);
     // Off: lever forward. Full: pulled back towards the rider.
-    this.chokeLever.rotation.x = 0.5 - this.displayChoke * 1.45;
+    if (this.chokeStyle === 'knob') this.chokeLever.position.z = this.chokeLever.userData.baseZ - this.displayChoke * 0.05; // pulled out towards you
+    else if (this.chokeStyle === 'plunger') this.chokeLever.position.y = this.chokeLever.userData.baseY - this.displayChoke * 0.045; // pulled down
+    else this.chokeLever.rotation.x = 0.5 - this.displayChoke * 1.45;
     // Fuel tap: forward for ON, down for RESERVE, back for OFF.
     const tapAngle = { on: 0, reserve: Math.PI / 2, off: Math.PI }[f.tap];
     this.fuelTap.rotation.x += (tapAngle - this.fuelTap.rotation.x) * Math.min(1, 15 * dt);

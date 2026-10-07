@@ -182,6 +182,19 @@ export class QuadPhysics {
     }
   }
 
+  /** Shoves it along its own length towards `target` m/s (negative is backwards), the way someone pushing it on foot would. */
+  pushAlong(target, dt) {
+    const q = this.body.rotation();
+    // Its forward axis (+z) in the world, flattened onto the ground.
+    const fx = 2 * (q.x * q.z + q.w * q.y);
+    const fz = 1 - 2 * (q.x * q.x + q.y * q.y);
+    const n = Math.hypot(fx, fz) || 1;
+    const v = this.body.linvel();
+    const gap = target - (v.x * fx + v.z * fz) / n;
+    const k = Math.min(1, 6 * dt);
+    this.body.setLinvel({ x: v.x + (fx / n) * gap * k, y: v.y, z: v.z + (fz / n) * gap * k }, true);
+  }
+
   /** How hard each wheel is pressed into the ground (N), how muddy it is there, and whether it's touching. */
   wheelLoads() {
     for (let i = 0; i < this.wheels.length; i++) {

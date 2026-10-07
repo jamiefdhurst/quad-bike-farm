@@ -44,7 +44,6 @@ export const DEFAULT_VEHICLE_PARAMS = {
   maxSpeed: 17, // m/s forwards (about 38 mph)
   maxReverseSpeed: 4, // m/s
   reverseThrottle: 0.5, // fraction of throttle available in reverse
-  reverseDelay: 0.35, // seconds holding S at a stop before it reverses
   clutchEngageRpm: 1900, // clutch starts to bite
   clutchFullRpm: 3400, // clutch fully locked
   couplingRpm: 2600, // above this with the bike moving, the drivetrain drags on the engine
@@ -118,7 +117,6 @@ export const VEHICLE_PARAM_RANGES = {
   maxSpeed: [3, 40, 0.5],
   maxReverseSpeed: [1, 10, 0.1],
   reverseThrottle: [0.1, 1, 0.05],
-  reverseDelay: [0, 2, 0.05],
   clutchEngageRpm: [800, 5000, 50],
   clutchFullRpm: [1000, 7000, 50],
   couplingRpm: [800, 6000, 50],

@@ -370,7 +370,7 @@ export function poseSuspension(quad, wheelY) {
 
 // Handlebars -----------------------------------------------------------------
 
-function buildHandlebars(dashStyle, cfg) {
+function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb') {
   const bars = new THREE.Group();
   bars.name = 'handlebars';
   bars.userData.keep = true;
@@ -401,16 +401,29 @@ function buildHandlebars(dashStyle, cfg) {
   // Where an accessory pod stands: on top of the dash, or (set by the model, for the bare bars) on the crossbar pad or bar clamp.
   bars.userData.podMount = dash.mount ?? null;
 
-  // Choke lever on the left bar, inboard of the grip. Rotates about X.
-  const chokeHousing = rbox(0.03, 0.026, 0.032, 0.008, MAT.plastic, 0.29, 0.07, -0.03, bars, 'chokeHousing');
-  chokeHousing.rotation.y = 0.2;
+  // The choke, by style (controls.js): a thumb lever on the left bar that rotates about X, or a pull knob under the dash that slides
+  // towards the rider. The plunger style lives on the carb under the tank (buildChokePlunger), not here.
   const choke = new THREE.Group();
   choke.name = 'chokeLever';
   choke.userData.keep = true;
-  choke.position.set(0.29, 0.085, -0.03);
-  bars.add(choke);
-  rbox(0.01, 0.055, 0.012, 0.004, MAT.chrome, 0, 0.026, 0, choke, 'chokeLeverArm', 1);
-  rbox(0.018, 0.012, 0.016, 0.005, new THREE.MeshStandardMaterial({ color: 0xd8c020, roughness: 0.5 }), 0, 0.055, 0, choke, 'chokeLeverKnob', 1);
+  if (chokeStyle === 'knob') {
+    rbox(0.034, 0.03, 0.04, 0.008, MAT.plastic, 0.13, 0.036, 0.045, bars, 'chokeHousing');
+    choke.position.set(0.13, 0.036, -0.02);
+    choke.userData.baseZ = choke.position.z;
+    bars.add(choke);
+    tube([0, 0, 0], [0, 0, 0.1], 0.005, MAT.chrome, choke);
+    add(new THREE.SphereGeometry(0.019, 12, 8), new THREE.MeshStandardMaterial({ color: 0xd8c020, roughness: 0.5 }), choke, 'chokeKnob').position.set(0, 0, -0.012);
+  } else if (chokeStyle === 'thumb') {
+    const chokeHousing = rbox(0.03, 0.026, 0.032, 0.008, MAT.plastic, 0.29, 0.07, -0.03, bars, 'chokeHousing');
+    chokeHousing.rotation.y = 0.2;
+    choke.position.set(0.29, 0.085, -0.03);
+    bars.add(choke);
+    rbox(0.01, 0.055, 0.012, 0.004, MAT.chrome, 0, 0.026, 0, choke, 'chokeLeverArm', 1);
+    rbox(0.018, 0.012, 0.016, 0.005, new THREE.MeshStandardMaterial({ color: 0xd8c020, roughness: 0.5 }), 0, 0.055, 0, choke, 'chokeLeverKnob', 1);
+  } else {
+    bars.userData.chokeElsewhere = true; // buildQuadModel fits it under the tank and parents this empty group there
+  }
+  bars.userData.chokeGroup = choke;
 
   // Thumb throttle and its housing on the right.
   rbox(0.04, 0.036, 0.042, 0.01, MAT.plastic, -0.3, 0.066, -0.032, bars);
@@ -984,7 +997,50 @@ function buildFrame(root, sport) {
  *   'sport2'   Suzuki-style two-stroke race quad: lower and longer, big front plate, angular plastics, water-cooled,
  *              wide nerf bars, a big chamber on the right, white rims, one long race seat with a slim pillion pad.
  */
-export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', style = 'utility', solo = false, plateNumber = '7' } = {}) {
+// Where each fuel tap sits (x is mirrored for the right-hand ones) and what its handle looks like, by tapStyle (controls.js). All of them
+// turn about X, the handle pointing forward for ON, down for RES and back for OFF.
+const TAP_PLACE = {
+  left: { pos: [0.18, 0.8, 0.3], handle: 'lever', colour: 'chrome' },
+  right: { pos: [-0.18, 0.8, 0.3], handle: 'lever', colour: 'black' },
+  under: { pos: [0.09, 0.672, 0.3], handle: 'knob', colour: 0xb03020 },
+  lowLeft: { pos: [0.185, 0.74, 0.2], handle: 'tee', colour: 'chrome' },
+  lowRight: { pos: [-0.185, 0.74, 0.2], handle: 'knob', colour: 0x2a6fb0 },
+};
+
+function buildFuelTap(root, tapStyle) {
+  const place = TAP_PLACE[tapStyle] ?? TAP_PLACE.left;
+  const [x, y, z] = place.pos;
+  const side = Math.sign(x);
+  rbox(0.06, 0.03, 0.035, 0.008, MAT.plastic, x, y, z, root, 'fuelTapBody', 1);
+  const tap = new THREE.Group();
+  tap.name = 'fuelTap';
+  tap.userData.keep = true;
+  tap.position.set(x + side * 0.033, y, z);
+  root.add(tap);
+  const mat = place.colour === 'chrome' ? MAT.chrome : place.colour === 'black' ? MAT.plastic : new THREE.MeshStandardMaterial({ color: place.colour, roughness: 0.5 });
+  if (place.handle === 'knob') {
+    // A round knob with a pointer, so you can see which way it is turned.
+    add(new THREE.CylinderGeometry(0.017, 0.017, 0.01, 14).rotateZ(Math.PI / 2), mat, tap);
+    add(new RoundedBoxGeometry(0.012, 0.007, 0.032, 1, 0.002), mat, tap).position.z = 0.02;
+  } else if (place.handle === 'tee') {
+    add(new RoundedBoxGeometry(0.008, 0.012, 0.045, 1, 0.003), mat, tap).position.z = 0.02;
+    add(new RoundedBoxGeometry(0.03, 0.008, 0.008, 1, 0.002), mat, tap).position.z = 0.043;
+  } else {
+    add(new RoundedBoxGeometry(0.008, 0.012, 0.045, 1, 0.003), mat, tap).position.z = 0.02;
+  }
+}
+
+// The carb choke plunger, under the tank on the left: a knob you pull down, on a shaft out of a housing on the carb.
+function buildChokePlunger(root, choke) {
+  rbox(0.03, 0.03, 0.03, 0.008, MAT.engineDark, 0.1, 0.665, 0.3, root, 'chokeHousing', 1);
+  choke.position.set(0.1, 0.65, 0.3);
+  choke.userData.baseY = choke.position.y;
+  root.add(choke);
+  tube([0, 0, 0], [0, 0.04, 0], 0.005, MAT.chrome, choke);
+  add(new THREE.CylinderGeometry(0.016, 0.016, 0.012, 14), new THREE.MeshStandardMaterial({ color: 0xd8c020, roughness: 0.5 }), choke, 'chokeKnob').position.set(0, -0.006, 0);
+}
+
+export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', style = 'utility', solo = false, plateNumber = '7', chokeStyle = 'thumb', tapStyle = 'left' } = {}) {
   const race = style === 'sport2';
   const farm = style === 'utility3';
   const sport = style === 'sport' || race; // two-stroke chassis
@@ -1192,14 +1248,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
         { z: 0.5, w: 0.2, y0: 0.72, y1: 0.84 },
       ];
   add(loftGeometry(tankStations, { exponent: style === 'utility2' || farm ? 5 : race ? 6 : 3.2 }), paint, root, 'tank');
-  rbox(0.06, 0.03, 0.035, 0.008, MAT.plastic, 0.18, 0.8, 0.3, root, 'fuelTapBody', 1);
-  const tap = new THREE.Group();
-  tap.name = 'fuelTap';
-  tap.userData.keep = true;
-  tap.position.set(0.213, 0.8, 0.3);
-  root.add(tap);
-  const tapLever = add(new RoundedBoxGeometry(0.008, 0.012, 0.045, 1, 0.003), MAT.chrome, tap);
-  tapLever.position.z = 0.02;
+  buildFuelTap(root, tapStyle);
   const tankCap = add(lathe([[0.036, -0.012], [0.036, 0.004], [0.03, 0.012], [0.001, 0.012]], 18), MAT.chrome, root);
   tankCap.position.set(0, race ? 0.908 : 0.928, race ? 0.38 : 0.36);
 
@@ -1317,7 +1366,8 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   else footwells(root);
 
   // Handlebars.
-  const bars = buildHandlebars(dashStyle, cfg);
+  const bars = buildHandlebars(dashStyle, cfg, chokeStyle);
+  if (chokeStyle === 'plunger') buildChokePlunger(root, bars.userData.chokeGroup);
   if (sport) {
     // Motocross bars with a padded crossbar, ahead of the dash so it doesn't block the display.
     for (const s of [-1, 1]) tube([s * 0.2, 0.065, -0.01], [s * 0.17, 0.18, 0.08], 0.01, MAT.alloy, bars);

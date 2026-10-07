@@ -28,6 +28,9 @@ export const QUAD_SPECS = [
     bodyColor: 0xa8271f,
     style: 'utility',
     dashStyle: 'foreman',
+    reverseStyle: 'bars', // where the reverse is and what it takes to use it (controls.js)
+    chokeStyle: 'thumb', // where the choke is and what it takes to reach it
+    tapStyle: 'left', // where the fuel tap sits
     hoursRange: [600, 1500], // engine hours showing when the game starts
     odoRange: [1500, 3750], // odometer miles showing when the game starts
     wearRange: [0.1, 0.35], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
@@ -61,6 +64,9 @@ export const QUAD_SPECS = [
     bodyColor: 0x1d4fa3,
     style: 'utility2',
     dashStyle: 'grizzly',
+    reverseStyle: 'button', // where the reverse is and what it takes to use it (controls.js)
+    chokeStyle: 'plunger', // where the choke is and what it takes to reach it
+    tapStyle: 'right', // where the fuel tap sits
     hoursRange: [400, 1100], // engine hours showing when the game starts
     odoRange: [1000, 2750], // odometer miles showing when the game starts
     wearRange: [0.08, 0.3], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
@@ -120,6 +126,9 @@ export const QUAD_SPECS = [
     bodyColor: 0xe9c21b,
     style: 'sport',
     dashStyle: 'blaster',
+    reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
+    chokeStyle: 'thumb', // where the choke is and what it takes to reach it
+    tapStyle: 'lowLeft', // where the fuel tap sits
     hoursRange: [150, 600], // engine hours showing when the game starts
     odoRange: [600, 2400], // odometer miles showing when the game starts
     wearRange: [0.1, 0.35], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
@@ -213,6 +222,9 @@ export const QUAD_SPECS = [
     style: 'utility3',
     winch: true, // its front winch works (src/items/winch.js)
     dashStyle: 'bayou',
+    reverseStyle: 'knee', // where the reverse is and what it takes to use it (controls.js)
+    chokeStyle: 'knob', // where the choke is and what it takes to reach it
+    tapStyle: 'under', // where the fuel tap sits
     hoursRange: [1800, 3500], // engine hours showing when the game starts
     odoRange: [4500, 8750], // odometer miles showing when the game starts
     wearRange: [0.25, 0.55], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
@@ -281,6 +293,9 @@ export const QUAD_SPECS = [
     bodyColor: 0xe86a12,
     style: 'sport2', // a single race seat: no room for her on the back
     dashStyle: 'quadracer',
+    reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
+    chokeStyle: 'knob', // where the choke is and what it takes to reach it
+    tapStyle: 'lowRight', // where the fuel tap sits
     hoursRange: [100, 400], // engine hours showing when the game starts
     odoRange: [400, 1600], // odometer miles showing when the game starts
     wearRange: [0.04, 0.2], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
@@ -376,6 +391,9 @@ export const EXTRA_SPECS = [
     style: 'sport',
     plateNumbers: '123456890', // front plate digits it might wear, one picked each game (never the yellow's 7)
     dashStyle: 'kidsKey',
+    reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
+    chokeStyle: 'thumb', // where the choke is and what it takes to reach it
+    tapStyle: 'left', // where the fuel tap sits
     hoursRange: [30, 200], // engine hours showing when the game starts
     odoRange: [100, 800], // odometer miles showing when the game starts
     wearRange: [0.02, 0.12], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
@@ -472,6 +490,9 @@ export const EXTRA_SPECS = [
     bodyColor: 0xaeb4ba, // a neutral silver
     style: 'utility2',
     dashStyle: 'kodiak',
+    reverseStyle: 'button', // where the reverse is and what it takes to use it (controls.js)
+    chokeStyle: 'thumb', // where the choke is and what it takes to reach it
+    tapStyle: 'right', // where the fuel tap sits
     hoursRange: [2, 25], // engine hours showing when the game starts
     odoRange: [5, 60], // odometer miles showing when the game starts
     wearRange: [0, 0.04], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js

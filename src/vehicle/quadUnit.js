@@ -13,6 +13,7 @@ import { Quad } from './quad.js';
 import { DEFAULT_VEHICLE_PARAMS, VEHICLE_PARAM_RANGES } from './vehicleParams.js';
 import { FAULT_PARAM_RANGES } from './faults.js';
 import { DEFAULT_FUEL_PARAMS, FUEL_PARAM_RANGES } from './fuelSystem.js';
+import { DEFAULT_CONTROLS_PARAMS, CONTROLS_PARAM_RANGES } from './controls.js';
 import { DEFAULT_GEARBOX_PARAMS, GEARBOX_PARAM_RANGES } from './manualDrivetrain.js';
 import { SHIFTER_PARAM_RANGES } from './autoShifter.js';
 import { buildTractorModel, TRACTOR_LAYOUT, TRACTOR_GROUND_OFFSET, TRACTOR_PROXY } from './tractorModel.js';
@@ -46,6 +47,10 @@ export class QuadUnit {
       scale: spec.scale,
       solo: spec.solo,
       plateNumber: spec.plateNumber,
+      reverseStyle: spec.reverseStyle,
+      chokeStyle: spec.chokeStyle,
+      tapStyle: spec.tapStyle,
+      controlsParams: { ...DEFAULT_CONTROLS_PARAMS },
       fuelParams: { ...DEFAULT_FUEL_PARAMS, ...spec.fuel },
       ...((spec.tractor || spec.manual) && { gearbox: { ...DEFAULT_GEARBOX_PARAMS, ...spec.gearbox } }),
       ...(spec.tractor && {
@@ -73,6 +78,7 @@ export class QuadUnit {
 
     const folder = this.name;
     registerTuning(`${folder}/Engine`, this.engine.params, ENGINE_PARAM_RANGES);
+    registerTuning(`${folder}/Controls`, this.quad.controlsParams, CONTROLS_PARAM_RANGES);
     registerTuning(`${folder}/Vibration`, this.vibration.params, VIBRATION_PARAM_RANGES);
     registerTuning(`${folder}/Audio`, this.audio.params, AUDIO_PARAM_RANGES);
     registerTuning(`${folder}/Smoke`, this.smoke.params, SMOKE_PARAM_RANGES);

@@ -23,6 +23,7 @@ import { CHARACTERS } from './npc/characters.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { pickHistory, pickFaultChance } from './vehicle/history.js';
 import { TyreSet, dealTyres, DEFAULT_TYRE_PARAMS, TYRE_PARAM_RANGES } from './vehicle/tyres.js';
+import { pushDirection, localAlong } from './vehicle/controls.js';
 import { RollWatch, rollReactions, DEFAULT_HANDBRAKE_PARAMS, HANDBRAKE_PARAM_RANGES } from './vehicle/handbrake.js';
 import { HEADLIGHT_PARAMS, HEADLIGHT_PARAM_RANGES } from './vehicle/headlight.js';
 import { describeVehicle } from './debug/startReport.js';
@@ -230,6 +231,7 @@ export class Game {
     // Every quad starts parked properly, with its brake on; after that it's down to whoever gets off one (vehicle/handbrake.js).
     for (const unit of this.units) unit.quad.parkBrake = true;
     this.handbrakeParams = { ...DEFAULT_HANDBRAKE_PARAMS };
+    this.pushing = null; // the unit you're shoving along on foot (pushOnFoot)
     registerTuning('Handbrake', this.handbrakeParams, HANDBRAKE_PARAM_RANGES);
     this.rollWatch = new RollWatch(this.handbrakeParams);
     registerTuning('Headlights', HEADLIGHT_PARAMS, HEADLIGHT_PARAM_RANGES);
@@ -511,7 +513,7 @@ export class Game {
             action: `Ride the ${unit.label}`,
             keys: quad.tractor
               ? [['K', 'Key'], ['R', 'Start'], ['O', 'Stop knob'], ...(this.chain.state === 'stowed' && !this.player.isRiding ? [['X', 'Tow chain']] : [])]
-              : [['K', 'Ignition'], ['R', 'Start'], ...(quad.manual ? [['Shift 1-4', 'Clutch, gears']] : []), ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
+              : [['K', 'Ignition'], ['R', 'Start'], ...(quad.manual ? [['Shift 1-4', 'Clutch, gears']] : []), ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : []), ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
           };
         },
         interact: () => {
@@ -1109,13 +1111,37 @@ export class Game {
   }
 
   /** One manual vehicle (a quad or the tractor) has a worn gearbox this game: a gear that jumps out under load on a climb. Seeded. */
+  /** Hold V by a quad to shove it along its length, away from you (or backwards from the side): how you reverse one that has no reverse. */
+  pushOnFoot(input, looked) {
+    if (!input.isDown('KeyV') || this.handsFull) {
+      this.pushing = null;
+      return;
+    }
+    // Keep hold of the one you started on as it rolls, even when your eyes move off it.
+    const unit = looked && !looked.spec.tractor ? looked : this.pushing;
+    if (!unit || unit.spec.tractor || this.player.isRiding) return;
+    const q = unit.quad;
+    const p = q.controlsParams;
+    const d = this.player.position.clone().sub(q.position);
+    if (d.length() > p.pushRange + 1.5) {
+      this.pushing = null;
+      return;
+    }
+    if (q.parkBrake) {
+      q.say('The parking brake is on (Space to take it off)');
+      return;
+    }
+    this.pushing = unit;
+    q.pushDir = pushDirection(localAlong(d.x, d.z, q.yaw), p);
+  }
+
   /** An empty quad that's rolling off with its brake off: the girls near it say whose fault it was (a real tally, vehicle/handbrake.js). */
   updateHandbrake(dt) {
     const quads = this.units
       .filter((u) => !u.spec.tractor)
       .map((u) => {
         const q = u.quad;
-        return { id: u.id, attended: !!(q.input || q.ghost || q.driver || q.creeping || q.towed || q.passenger), braked: q.parkBrake, speed: Math.hypot(q.velocity.x, q.velocity.z), left: q.lastLeft };
+        return { id: u.id, attended: !!(q.input || q.ghost || q.driver || q.creeping || q.towed || q.passenger || q.pushLeft > 0), braked: q.parkBrake, speed: Math.hypot(q.velocity.x, q.velocity.z), left: q.lastLeft };
       });
     for (const e of this.rollWatch.update(dt, quads)) {
       const at = this.units.find((u) => u.id === e.id).quad.position;
@@ -2760,7 +2786,10 @@ export class Game {
       this.hud.toast(this.audioHub.params.muted ? 'Sound off' : 'Sound on', 1.2);
     }
 
-    for (const unit of this.units) unit.quad.setRemote(null);
+    for (const unit of this.units) {
+      unit.quad.setRemote(null);
+      unit.quad.pushDir = 0;
+    }
     let pouring = false;
     this.washing = null;
     if (this.menu.isOpen) {
@@ -2798,6 +2827,7 @@ export class Game {
         this.lastUnit = focused.unit;
       }
       if (focused && input.wasPressed('KeyE')) focused.interact();
+      this.pushOnFoot(input, focused?.unit);
       // B: sit on the back of a quad with nobody driving; sooner or later a girl comes and takes you for a ride.
       if (focused?.unit && input.wasPressed('KeyB') && this.canSitOnBack(focused.unit.quad)) this.mountPillion(focused.unit);
       // Holding E pours fuel or fills the can.

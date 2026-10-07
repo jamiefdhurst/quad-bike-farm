@@ -5,14 +5,14 @@ const HELP_HTML = `
   <h3>On foot</h3>
   <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move, mouse to look, <kbd>Shift</kbd> jog</div>
   <div><kbd>E</kbd> interact with what you're looking at</div>
-  <div>At a quad: <kbd>K</kbd> <kbd>R</kbd> <kbd>Q</kbd> <kbd>Z</kbd> <kbd>F</kbd> work its engine, <kbd>B</kbd> sit on the back</div>
+  <div>At a quad: <kbd>K</kbd> <kbd>R</kbd> <kbd>Q</kbd> <kbd>Z</kbd> <kbd>F</kbd> work its engine, <kbd>B</kbd> sit on the back, hold <kbd>V</kbd> to push it (the yellow, orange and kids' quads have no reverse)</div>
   <h3>On the back while she drives</h3>
   <div><kbd>E</kbd> talk to her (mouse and click): stop, slower, faster, let me off, let me drive, coach her</div>
   <h3>On the quad</h3>
   <div><kbd>K</kbd> ignition, hold <kbd>R</kbd> to crank, <kbd>P</kbd> pull-start (yellow and orange)</div>
-  <div><kbd>Q</kbd> more choke, <kbd>Z</kbd> less, <kbd>F</kbd> fuel tap</div>
-  <div>Red, green and yellow have a clutch: hold <kbd>Shift</kbd> to change gear with <kbd>1</kbd> to <kbd>4</kbd>, <kbd>B</kbd> reverse, <kbd>0</kbd> neutral</div>
-  <div><kbd>W</kbd> throttle, <kbd>S</kbd> brake / reverse, <kbd>A</kbd><kbd>D</kbd> steer</div>
+  <div><kbd>Q</kbd> more choke, <kbd>Z</kbd> less, <kbd>F</kbd> fuel tap. Each quad's choke, tap and reverse are in a different place: look down for them, and some need you stopped or a hand off the bars</div>
+  <div>Red, green and yellow have a clutch: hold <kbd>Shift</kbd> to change gear with <kbd>1</kbd> to <kbd>4</kbd>, <kbd>B</kbd> reverse (red: turn the bars as you press it; green: stopped), <kbd>0</kbd> neutral</div>
+  <div><kbd>W</kbd> throttle, <kbd>S</kbd> brake (blue and loan: hold it and press <kbd>B</kbd> for reverse, then <kbd>S</kbd> backs up), <kbd>A</kbd><kbd>D</kbd> steer</div>
   <div><kbd>Space</kbd> parking brake, <kbd>T</kbd> right it if it tips, <kbd>E</kbd> get off</div>
   <div>Hold <kbd>L</kbd> for the horn: the girls beep back</div>
   <div>Hold <kbd>C</kbd> to look back, <kbd>V</kbd> to lean in to the dash</div>
