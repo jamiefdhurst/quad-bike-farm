@@ -18,7 +18,7 @@ import {
 //   quadracer: orange. A RUN / OFF kill switch on the left bar and its lanyard.
 //   kidsKey:   kids' quad. A key switch under the bar clamp.
 //   tractor:   the tractor. Three round dials in chrome bezels (water temperature, a rev counter with an hour meter and the PTO speed marked, fuel), GLOW, CHARGE and OIL lamps and the key.
-//   utv:       the UTV. A big speedo with an hour meter, fuel and water dials, GLOW, CHARGE and OIL lamps, R / N / D lamps and the key.
+//   utv:       the UTV. A big speedo with an hour meter, fuel and water dials, GLOW, CHARGE, OIL and PARK (parking brake) lamps, R / N / D lamps and the key.
 //
 // buildDash(style) returns { group, update(state), mount } where state is { rpm, maxRpm, redline, speedMph, fuelLevel, reserveLevel,
 // tap, temperature, overheat, coldBelow, ignition (has power), keyOn, tripMiles, odoMiles, hours, reverse, neutral, clock, seconds }.
@@ -532,6 +532,7 @@ function buildUtv() {
     lamp(ctx, 96, 94, LAMP.amber, 'GLOW', L.glow, { r: 3.2 });
     lamp(ctx, 118, 94, LAMP.red, 'CHARGE', L.charge, { r: 3.2 });
     lamp(ctx, 140, 94, LAMP.red, 'OIL', L.oil, { r: 3.2 });
+    lamp(ctx, 164, 94, LAMP.red, 'PARK', L.park, { r: 3.2 });
     lamp(ctx, 196, 94, LAMP.amber, 'R', L.lamps.r, { r: 3.2, shape: 'rect' });
     lamp(ctx, 216, 94, LAMP.green, 'N', L.lamps.n, { r: 3.2, shape: 'rect' });
     lamp(ctx, 236, 94, LAMP.green, 'D', L.drive, { r: 3.2, shape: 'rect' });
@@ -555,10 +556,11 @@ function buildUtv() {
         glow: !!s.ignition && !!s.glow,
         charge: !!s.ignition && !running,
         oil: !!s.ignition && !running,
+        park: !!s.ignition && !!s.parkBrake,
         drive: !!s.ignition && !lamps.r && !lamps.n,
       };
       const hh = counterDigits(s.hours, 4);
-      if (gate([s.ignition, s.keyOn, L.glow, L.charge, L.drive, lamps.r, lamps.n, Math.round(shownMph * 4), Math.round(shownFuel * 20), Math.round(shownTemp * 20), hh.whole + hh.tenth].join('|'))) {
+      if (gate([s.ignition, s.keyOn, L.glow, L.charge, L.park, L.drive, lamps.r, lamps.n, Math.round(shownMph * 4), Math.round(shownFuel * 20), Math.round(shownTemp * 20), hh.whole + hh.tenth].join('|'))) {
         face.redraw((ctx) => draw(ctx, s, L));
       }
     },

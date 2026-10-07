@@ -814,6 +814,7 @@ export class Quad {
         : isNeutral({ ignition: e.hasPower && e.ignitionOn, reverse: this.reverse, speedMps: this.forwardSpeed, rpm: e.rpm, clutchEngageRpm: this.params.clutchEngageRpm }),
       gear: this.manual ? gearLabel(this.drivetrain.gear) : null,
       glow: e.glowLit,
+      parkBrake: this.parkBrake, // the UTV's dash has a lamp for it
       hand: this.handSetting,
       clock: clock.text(),
       seconds: clock.seconds(),

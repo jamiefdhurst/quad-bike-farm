@@ -240,34 +240,33 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   for (const x of [-0.04, 0.1]) add(new THREE.CylinderGeometry(0.026, 0.026, 0.002, 14), MAT.plastic, root).position.set(x, 1.075, 0.46);
 
   // The bench: a base, a cushion and a split backrest, in grey cloth, with the three seat belts stowed down the back.
-  rbox(1.38, 0.3, 0.46, 0.04, MAT.plastic, 0, 0.55, -0.2, root); // the base it sits on, with the engine under it
-  rbox(1.4, 0.1, 0.5, 0.05, seatMat, 0, 0.71, -0.19, root, 'seatCushion');
-  const back = rbox(1.4, 0.56, 0.1, 0.05, seatMat, 0, 1.06, -0.48, root, 'seatBack');
+  rbox(1.12, 0.3, 0.46, 0.04, MAT.plastic, 0, 0.55, -0.2, root); // the base it sits on, with the engine under it
+  rbox(1.14, 0.1, 0.5, 0.05, seatMat, 0, 0.71, -0.19, root, 'seatCushion');
+  const back = rbox(1.14, 0.56, 0.1, 0.05, seatMat, 0, 1.06, -0.48, root, 'seatBack');
   back.rotation.x = -0.12; // leans back a touch
-  for (const x of [-0.235, 0.235]) {
+  for (const x of [-0.19, 0.19]) {
     rbox(0.012, 0.02, 0.5, 0.004, MAT.plastic, x, 0.762, -0.19, root); // the seams
     const seam = rbox(0.012, 0.56, 0.02, 0.004, MAT.plastic, x, 1.06, -0.43, root);
     seam.rotation.x = -0.12;
   }
-  for (const x of [-0.46, 0, 0.46]) {
-    const belt = rbox(0.045, 0.5, 0.012, 0.004, MAT.belt, x, 1.1, -0.425, root);
+  for (const x of [-0.38, 0, 0.38]) {
+    const belt = rbox(0.045, 0.5, 0.012, 0.004, MAT.belt, x, 1.1, -0.405, root); // stood off the cloth so it doesn't fight it
     belt.rotation.x = -0.12;
-    rbox(0.05, 0.06, 0.02, 0.006, MAT.steel, x, 0.88, -0.42, root).rotation.x = -0.12; // the tongue
+    rbox(0.05, 0.06, 0.02, 0.006, MAT.steel, x, 0.88, -0.4, root).rotation.x = -0.12; // the tongue
   }
 
   // The roll cage: two hoops joined by roof rails, a cab guard behind the seat, and a bar along each side. Black tube all through.
   const post = 0.03;
-  const hoop = (z0, z1) => add(bentTube([[-0.62, 0.78, z0], [-0.58, 1.9, z1], [0.58, 1.9, z1], [0.62, 0.78, z0]], post, { bend: 0.1, radial: 8 }), MAT.frame, root);
+  const hoop = (z0, z1) => add(bentTube([[-0.62, 0.5, z0], [-0.58, 1.9, z1], [0.58, 1.9, z1], [0.62, 0.5, z0]], post, { bend: 0.1, radial: 8 }), MAT.frame, root);
   hoop(0.58, 0.2);
-  hoop(-0.64, -0.64);
+  hoop(-0.58, -0.58);
   for (const s of [-1, 1]) {
-    tube([s * 0.58, 1.9, 0.2], [s * 0.58, 1.9, -0.64], post, MAT.frame, root);
-    tube([s * 0.62, 1.02, 0.52], [s * 0.64, 1.02, -0.6], 0.02, MAT.frame, root); // the side bar
-    tube([s * 0.64, 0.82, -0.6], [s * 0.64, 1.02, -0.6], 0.02, MAT.frame, root);
-    tube([s * 0.6, 1.9, -0.2], [s * 0.6, 1.2, -0.62], 0.018, MAT.frame, root); // a brace down to the guard
+    tube([s * 0.58, 1.9, 0.2], [s * 0.58, 1.9, -0.58], post, MAT.frame, root);
+    tube([s * 0.62, 1.02, 0.52], [s * 0.62, 1.02, -0.58], 0.02, MAT.frame, root); // the side bar
+    tube([s * 0.6, 1.9, -0.2], [s * 0.6, 1.2, -0.58], 0.018, MAT.frame, root); // a brace down to the guard
   }
-  tube([-0.6, 1.45, -0.64], [0.6, 1.45, -0.64], 0.02, MAT.frame, root);
-  for (const x of [-0.4, -0.2, 0, 0.2, 0.4]) tube([x, 1.45, -0.64], [x, 1.12, -0.64], 0.012, MAT.frame, root); // the cab guard's bars
+  tube([-0.6, 1.45, -0.58], [0.6, 1.45, -0.58], 0.02, MAT.frame, root);
+  for (const x of [-0.4, -0.2, 0, 0.2, 0.4]) tube([x, 1.45, -0.58], [x, 1.12, -0.58], 0.012, MAT.frame, root); // the cab guard's bars
   // The roof: a moulded panel in the paint, with a slight dome and an overhang front and back.
   add(loftGeometry([
     { z: 0.34, w: 1.4, y0: 1.9, y1: 1.945 },
@@ -324,10 +323,11 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   const fnr = new THREE.Group();
   fnr.name = 'driveLever';
   fnr.userData.keep = true;
-  fnr.position.set(-0.08, 1.04, 0.5);
-  tube([0, 0, 0], [0, 0.07, -0.06], 0.008, MAT.steel, fnr);
-  add(new THREE.SphereGeometry(0.016, 10, 8), MAT.knob, fnr).position.set(0, 0.075, -0.065);
+  fnr.position.set(-0.1, 1.085, 0.48);
+  tube([0, 0, 0], [0, 0.08, -0.03], 0.008, MAT.steel, fnr);
+  add(new THREE.SphereGeometry(0.017, 10, 8), MAT.knob, fnr).position.set(0, 0.085, -0.033);
   root.add(fnr);
+  rbox(0.08, 0.02, 0.09, 0.008, MAT.floor, -0.1, 1.07, 0.48, root); // the gate it sits in, stood on the dash
   rbox(0.1, 0.016, 0.08, 0.005, MAT.plastic, -0.42, 0.37, 0.3, root).rotation.x = -0.5; // the brake, wide
   rbox(0.05, 0.016, 0.12, 0.005, MAT.plastic, -0.27, 0.37, 0.3, root).rotation.x = -0.5; // the accelerator, narrow
   tube([-0.62, 0.68, 0.08], [-0.58, 0.88, -0.02], 0.01, MAT.steel, root); // the parking brake handle
@@ -353,9 +353,8 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   tip.name = 'exhaustTip';
   tip.position.set(exX, 0.36, -1.7); // smoke leaves along its -Z, which is straight back
   root.add(tip);
-  // The rear: a hitch receiver tube and the tail lamps on the frame.
+  // The rear: a hitch receiver tube (the tail lamps are on the bed).
   rbox(0.07, 0.07, 0.3, 0.015, MAT.frame, 0, 0.42, -1.7, root);
-  for (const s of [-1, 1]) rbox(0.12, 0.06, 0.03, 0.01, MAT.tail, s * 0.62, 0.52, -1.66, root);
 
   // The seats' anchors: hips on the cushion's top. The driver's is yours; the other two are where the girls sit.
   for (const [name, seat] of [['riderAnchor', UTV_SEATS.driver], ['seatMid', UTV_SEATS.mid], ['seatLeft', UTV_SEATS.left]]) {
@@ -382,8 +381,10 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   for (const s of [-1, 1]) {
     rbox(0.05, 0.3, 1.2, 0.02, MAT.bed, s * 0.76, yc(0.89), zc(-1.2), bed); // side
     rbox(0.08, 0.04, 1.2, 0.02, MAT.bed, s * 0.76, yc(1.05), zc(-1.2), bed); // its rolled top edge
-    rbox(0.3, 0.3, 0.92, 0.05, MAT.bed, s * 0.6, yc(0.9), zc(-0.98), bed); // the wheel well
-    rbox(0.3, 0.02, 0.9, 0.01, MAT.floor, s * 0.6, yc(1.06), zc(-0.98), bed);
+    rbox(0.3, 0.3, 0.74, 0.05, MAT.bed, s * 0.6, yc(0.9), zc(-1.08), bed); // the wheel well
+    rbox(0.3, 0.02, 0.72, 0.01, MAT.floor, s * 0.6, yc(1.06), zc(-1.08), bed);
+    rbox(0.06, 0.1, 0.12, 0.02, MAT.plastic, s * 0.815, yc(0.9), zc(-1.74), bed); // the tail lamp's housing, bolted to the end of the side
+    rbox(0.055, 0.08, 0.02, 0.01, MAT.tail, s * 0.815, yc(0.9), zc(-1.81), bed); // and its lens
     for (const z of [-0.8, -1.6]) add(new THREE.TorusGeometry(0.025, 0.006, 6, 10), MAT.steel, bed).position.set(s * 0.8, yc(1.02), zc(z)); // tie-downs
   }
   // The tailgate, hinged along its bottom edge: shut, it stands up; open, it lies flat behind the bed (where a girl can sit).
