@@ -65,6 +65,7 @@ import { DEFAULT_SHOWOFF_PARAMS, SHOWOFF_PARAM_RANGES } from './npc/showOff.js';
 import { JumpWatch, JUMP_PARAM_RANGES, rampPoint } from './npc/jumps.js';
 import { Nicking, NICK_PARAM_RANGES } from './npc/nicking.js';
 import { DEFAULT_LINEUP_PARAMS, LINEUP_PARAM_RANGES } from './npc/lineUp.js';
+import { DEFAULT_HOME_PARAMS, HOME_PARAM_RANGES } from './npc/homeParking.js';
 import { Tea, TEA_PARAM_RANGES } from './npc/tea.js';
 import { Jumpers, JUMPER_PARAM_RANGES, JUMPERS } from './npc/jumpers.js';
 import { JumperRail } from './world/jumperRail.js';
@@ -431,6 +432,8 @@ export class Game {
     }
     this.lineUpParams = { ...DEFAULT_LINEUP_PARAMS }; // the row in front of the barn (npc/lineUp.js)
     for (const c of this.companions) c.lineUpParams = this.lineUpParams;
+    this.homeParams = { ...DEFAULT_HOME_PARAMS }; // bringing a quad back near the barn when done, and jogging (npc/homeParking.js)
+    for (const c of this.companions) c.homeParams = this.homeParams;
     this.tea = new Tea(); // tea left on the rear rack (npc/tea.js)
     this.dieselMistake = new DieselMistake(); // Jess pours red diesel into a quad (npc/dieselMistake.js)
     this.dieselJob = null; // her pouring: { spec, left }
@@ -762,6 +765,7 @@ export class Game {
     registerTuning('The jump', this.jumpWatch.p, JUMP_PARAM_RANGES);
     registerTuning('Nicking your quad', this.nicking.p, NICK_PARAM_RANGES);
     registerTuning('Lining them up', this.lineUpParams, LINEUP_PARAM_RANGES);
+    registerTuning('Home and jogging', this.homeParams, HOME_PARAM_RANGES);
     registerTuning('Tea on the rack', this.tea.p, TEA_PARAM_RANGES);
     registerTuning('Jumpers', this.jumpers.p, JUMPER_PARAM_RANGES);
     registerTuning('Red diesel mistake', this.dieselMistake.p, DIESEL_MISTAKE_PARAM_RANGES);

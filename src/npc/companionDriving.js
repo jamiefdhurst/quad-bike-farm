@@ -3,6 +3,7 @@ import { driveMood, pickConfidence, afterDrive } from './driveMood.js';
 import { HerDrive } from './herDriving.js';
 import { DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 import { DEFAULT_LINEUP_PARAMS, parkRoute } from './lineUp.js';
+import { DEFAULT_HOME_PARAMS, bringsItHome, pickHomeSpot } from './homeParking.js';
 import { solveTwoBone, orientHand } from './armIK.js';
 import { AutoShifter, NoviceShifter, DEFAULT_SHIFTER_PARAMS, DEFAULT_NOVICE_PARAMS } from '../vehicle/autoShifter.js';
 import { DEFAULT_TRACTOR_START_PARAMS } from './tractorStart.js';
@@ -307,7 +308,7 @@ export const drivingMethods = {
     const exit = this.driveExit;
     this.driveExit = null;
     this.driveEvents.push(`done:${d.result}`);
-    if (d.park && !d.park.nick && d.result !== 'parked') this.endLineUp(`the drive ended: ${d.result}`);
+    if (d.park && !d.park.nick && !d.park.home && d.result !== 'parked') this.endLineUp(`the drive ended: ${d.result}`);
     const nick = this.nickJob;
     if (nick?.phase === 'away' && !exit && d.result === 'bored') {
       // Had her fun: back to where you left it, still driving.
@@ -321,6 +322,20 @@ export const drivingMethods = {
     this.driveConfidence = afterDrive(this.driveConfidence ?? p.driveConfidence, d.result);
     let how = exit?.how;
     if (!how) how = d.result === 'parked' || d.result === 'gaveUp' || d.result === 'noRoom' || Math.random() >= p.driveBackChance ? 'off' : 'back';
+    // Done, and getting off: most of the time she drives it back near the barn first, into clear ground east of the row.
+    if (how === 'off' && !d.park && !nick && !q.tractor) {
+      const home = this.homeParams ?? DEFAULT_HOME_PARAMS;
+      const lp = this.lineUpParams ?? DEFAULT_LINEUP_PARAMS;
+      const wants = bringsItHome({ result: d.result, pos: q.position, hasPassenger: !!q.passenger, asked: !!exit }, Math.random, home, lp);
+      const spot = wants ? pickHomeSpot(this.quads.filter((o) => o !== q).map((o) => ({ x: o.position.x, z: o.position.z })), Math.random, home, lp) : null;
+      if (spot) {
+        this.parkWanted = { route: parkRoute(spot, lp), yaw: spot.yaw, crooked: false, home: true };
+        this.driveEvents.push('bringHome');
+        q.setDriver(null);
+        this.fsm.transition('driving');
+        return;
+      }
+    }
     q.setDriver(null);
     if (how === 'back' && q.hasPillion && !q.passenger && !this.takenByOther(q, 'pillion')) {
       if (!exit) this.driveEvents.push('toBack');
@@ -340,6 +355,7 @@ export const drivingMethods = {
 
   /** She has put a quad in its place in the row: if it was left crooked on purpose her friend notices, otherwise she goes on to the next. */
   finishParking(park) {
+    if (park.home) return; // brought it home and left it: nothing more to do
     if (park.nick) {
       this.nickJob = null;
       this.selfEvents.push('nickBack');

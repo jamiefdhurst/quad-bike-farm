@@ -14,6 +14,7 @@ import { DEFAULT_DOUGHNUT_PARAMS, ringPoints } from './doughnuts.js';
 import { DEFAULT_SHOWOFF_PARAMS, pickTrick } from './showOff.js';
 import { DEFAULT_JUMP_PARAMS } from './jumps.js';
 import { DEFAULT_LINEUP_PARAMS, nextJob, assignSlots, rowSlots, crookedSlot, parkRoute, nudgePose } from './lineUp.js';
+import { DEFAULT_HOME_PARAMS, jogging } from './homeParking.js';
 import { PillionPose } from './pillionPose.js';
 import { canRideRack } from './rackSeat.js';
 import { nextBoredWait, driftRestlessness, pickBoredChoice } from './boredom.js';
@@ -117,6 +118,8 @@ export class Companion {
     this.hay = { ...DEFAULT_HAYSEAT_PARAMS };
     this.trailer = null;
     this.traSlot = null;
+    this.mayJog = false; // the walking state says whether this walk is one she'd jog (homeParking.js)
+    this.jogging = false;
     this.paceBoost = 1; // times her walking speed: more when she's running after the trailer
     this.hayFell = false; // she has come off the trailer and wants to catch it up
     this.hayLanded = false;
@@ -818,12 +821,15 @@ export class Companion {
     this.heading += angleTo(this.heading, desired) * Math.min(1, p.turnRate * dt);
     // Slow down when turning sharply and near the end.
     const turnFactor = Math.max(0.2, Math.cos(angleTo(this.heading, desired)));
-    const speed = p.walkSpeed * this.paceBoost * turnFactor * Math.min(1, dist / 0.6 + 0.3);
+    // A way to go and she jogs (not when sneaking up on someone or wandering about, which the walking state says).
+    this.jogging = this.mayJog && jogging(this.jogging, dist, this.homeParams ?? DEFAULT_HOME_PARAMS);
+    const jog = this.jogging ? (this.homeParams ?? DEFAULT_HOME_PARAMS).jogBoost : 1;
+    const speed = p.walkSpeed * this.paceBoost * jog * turnFactor * Math.min(1, dist / 0.6 + 0.3);
     pos.x += Math.sin(this.heading) * speed * dt;
     pos.z += Math.cos(this.heading) * speed * dt;
     pos.y = this.world.heightAt(pos.x, pos.z);
     this.root.rotation.y = this.heading;
-    this.rig.setTimeScale(speed / p.walkAnimSpeed);
+    this.rig.setTimeScale(Math.min(speed / p.walkAnimSpeed, this.jogging ? (this.homeParams ?? DEFAULT_HOME_PARAMS).jogAnimMax : Infinity));
 
     // Track progress so she can push through if she gets wedged.
     if (pos.distanceTo(this.lastPos) < 0.3 * dt) this.stuckTimer += dt;
@@ -1009,8 +1015,14 @@ const STATES = {
     enter() {
       this.rig.play('Walking', { fade: 0.25 });
       this.stuckTimer = 0;
+      this.jogging = false;
+    },
+    exit() {
+      this.mayJog = false;
+      this.jogging = false;
     },
     update(dt, data) {
+      this.mayJog = data.goal !== 'prank' && data.goal !== 'wander';
       const t = data.target();
       // Hold back near a moving quad until it stops.
       if ((data.goal === 'mount' || data.goal === 'drive') && this.quad.speed > this.params.maxMountSpeed) {
