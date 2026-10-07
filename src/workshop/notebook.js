@@ -19,7 +19,7 @@ export class Notebook {
     this.model = new THREE.Group();
     const cover = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.02, 0.28), new THREE.MeshStandardMaterial({ color: 0x7a1f1f, roughness: 0.8 }));
     const pages = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.016, 0.26), new THREE.MeshStandardMaterial({ color: 0xe8e2d0, roughness: 0.9 }));
-    pages.position.set(0.01, 0.002, 0);
+    pages.position.set(0.01, 0.008, 0); // top face 4 mm above the cover's, or the two z-fight
     this.model.add(cover, pages);
     this.model.position.set(b.x + 0.9, top + 0.01, b.z + 0.05);
     this.model.rotation.y = 0.35;
