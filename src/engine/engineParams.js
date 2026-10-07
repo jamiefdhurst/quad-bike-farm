@@ -174,6 +174,12 @@ export const DEFAULT_ENGINE_PARAMS = {
   jetTrueFade: 1, // sizes out at which the spot-on bonus has gone
   jetPower: 0.06, // power gained when spot on, on top of everything else
   jetRoughness: 0.05, // roughness taken off when spot on
+  // The big-bore kit (see bigBore.js), fitted at the bench. Only the yellow has one to fit.
+  boreKit: 0, // 1 if a big-bore kit is made for this engine
+  borePower: 0.18, // power gained with the kit fitted well
+  boreHeat: 0.45, // extra heat from working, as a share (heat load of work is this much more)
+  boreWear: 1.6, // extra wear: it wears this much faster again (2.6 times the usual)
+  boreJet: 0.6, // sizes bigger a jet it wants for the day, on top of what the weather wants
   // Oil in the petrol (see lubrication.js). The fraction is of the tank: 0.02 is 50:1.
   oilGood: 0.02, // a two-stroke is fully lubricated at this fraction of oil in its fuel
   oilRichFrom: 0.04, // a two-stroke starts to smoke and foul above this
@@ -347,6 +353,10 @@ export const ENGINE_PARAM_RANGES = {
   richTolerance: [0, 1, 0.01],
   mixtureTrim: [-0.5, 0.5, 0.01],
   jet: [-3, 3, 1],
+  borePower: [0, 0.5, 0.01],
+  boreHeat: [0, 2, 0.05],
+  boreWear: [0, 6, 0.1],
+  boreJet: [0, 3, 0.1],
   coolantLeakRun: [0, 0.005, 0.00005],
   coolantParkedLeak: [0, 1, 0.05],
   coolantWeepSoak: [0, 1, 0.05],

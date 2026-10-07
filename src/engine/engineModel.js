@@ -14,6 +14,7 @@ import { stepWater, waterCatchFactor } from './water.js';
 import { stepDieselSoak, dieselCatchFactor, contaminant } from './diesel.js';
 import { stepGlow, glowReady, compressionCatchFactor } from './compression.js';
 import { offTemperature } from '../world/barn.js';
+import { boreWearFactor, borePowerFactor } from './bigBore.js';
 import { jetError, leanStarve, jetTrue, jetMixture } from './jetting.js';
 import { coolingEffect, leakRate, stepPuddle, steamLevel, boilsOver } from './coolant.js';
 import { stepHeat, stepSoak, pinkLevel, gaugeHeat, coolTickRate, hotStartRich } from './heat.js';
@@ -87,6 +88,8 @@ export class EngineModel {
     this.dayTemp = 12; // the day's temperature in degrees C: what a two-stroke's jet is matched against
     this.jetErr = 0; // two-strokes: fitted jet size less the right one for the day, negative lean (see jetting.js)
     this.jetOn = 0; // 0..1 how spot on the jetting is
+    this.bore = 0; // 1 once a big-bore kit is fitted at the bench (bigBore.js), else 0
+    this.boreFit = 1; // 0..1 how well it was fitted: a botched fit gives less of the power but all of the wear
     this.chill = 0; // 0..1 how cold a day it is: more choke, slower warm-up, faster battery drain (chill* params)
     this.sheltered = false; // parked under the barn roof: it cools slowly and never goes stone cold
     this.pink = 0; // 0..1 how badly it's pinking
@@ -408,7 +411,7 @@ export class EngineModel {
       if (p.strokes === 2) this.silencerBlown = Math.min(1, this.silencerBlown + (h / 60) * p.silencerBlowPerMinute * (0.33 + 0.67 * rpmNorm));
       this.wear = Math.min(
         p.wearMax,
-        this.wear + (h / 60) * p.wearPerMinute * (1 + p.wearWorkBoost * rpmNorm + p.wearColdBoost * coldThrash + p.wearOverRevBoost * overRev),
+        this.wear + (h / 60) * p.wearPerMinute * (1 + p.wearWorkBoost * rpmNorm + p.wearColdBoost * coldThrash + p.wearOverRevBoost * overRev) * boreWearFactor(this.bore, p),
       );
     } else {
       this.temperature = offTemperature(this.temperature, h, p.coolDownSeconds, this.sheltered, { warmFloor: p.barnWarmFloor, coolFactor: p.barnCoolFactor });
@@ -428,7 +431,7 @@ export class EngineModel {
     const p = this.params;
     const running = this.state === EngineState.RUNNING;
     if (p.waterCooled) this.updateCoolant(h, running);
-    stepHeat(this, h, { running, ambient: this.ambient, work: this.work, speed: this.speed, coolant: p.waterCooled ? coolingEffect(this.coolant, p) : 1 }, p);
+    stepHeat(this, h, { running, ambient: this.ambient, work: this.work, speed: this.speed, coolant: p.waterCooled ? coolingEffect(this.coolant, p) : 1, bore: this.bore }, p);
     this.soak = stepSoak(this.soak, h, { running, work: this.work, heat: this.heat }, p);
     this.pink = running && !p.waterCooled ? pinkLevel(this.heat, p) : 0;
     // Rattling under load; the audio plays what's owed (ticks a second, so they land at random times).
@@ -517,7 +520,7 @@ export class EngineModel {
     const starve = clamp((p.fuelStarveLevel - this.fuel) / p.fuelStarveLevel, 0, 1);
     // A heat-soaked carburettor boils its fuel, so a hot engine that isn't running starts rich; the throttle open clears it.
     const hot = this.state === EngineState.RUNNING ? 0 : hotStartRich(this.soak, this.throttle, p);
-    this.jetErr = p.strokes === 2 ? jetError(p.jet, this.dayTemp, p) : 0;
+    this.jetErr = p.strokes === 2 ? jetError(p.jet, this.dayTemp, p, this.bore) : 0;
     this.jetOn = p.strokes === 2 ? jetTrue(this.jetErr, p) : 0;
     this.mixture = jetMixture(this.jetErr, p) + supplied - need - p.starveLean * starve + p.mixtureTrim + p.clogRich * this.clog + hot;
     this.lean = Math.max(0, -this.mixture);
@@ -557,6 +560,7 @@ export class EngineModel {
     );
     this.power *= 1 - p.nipPowerLoss * this.nip;
     this.power *= 1 + p.jetPower * this.jetOn;
+    this.power *= borePowerFactor(this.bore, this.boreFit, p);
     this.erratic = Math.max(this.erratic, this.nip * this.nip, this.dirt ** 1.5);
     this.power *= 1 - p.dirtPowerLoss * this.dirt;
     // A clogged filter can't feed the revs: it's the top end that goes.

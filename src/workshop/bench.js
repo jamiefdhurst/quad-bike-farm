@@ -68,7 +68,7 @@ export class Bench {
     this.el.style.display = 'block';
     document.body.classList.add('bench-open');
     this.game.player.moveEnabled = false;
-    this.say('start');
+    this.say(unit.engine.params.boreKit && !unit.engine.bore ? 'catalogue' : 'start');
   }
 
   close() {
@@ -105,7 +105,7 @@ export class Bench {
         const job = this.job;
         const unit = this.unit;
         this.game.hud.toast(finishJob(job, { engine: unit.engine, faults: unit.quad.faults, fuel: unit.quad.fuel, tyres: unit.quad.tyres, sump: unit.quad.sump }, this.params));
-        this.say(job.botched ? 'botched' : 'done');
+        this.say(job.kind === 'bore' ? (job.botched ? 'boreBotched' : 'boreDone') : job.botched ? 'botched' : 'done');
         if (unit.barnFind) this.foundJobDone(unit, job.kind);
         this.game.notebook.note(unit, { kind: 'job', job: job.kind, botched: job.botched }, { by: 'you' });
         this.job = null;
@@ -192,7 +192,7 @@ export class Bench {
         const ok = this.canBegin(k, unit);
         let note = '';
         if (find) note = find.isDone(k) ? ' ✓' : k === 'battery' && find.charging ? ` (charging: ${Math.round(find.chargeProgress * 100)}%)` : ok ? '' : ' (take the tarp off first)';
-        else if (!ok) note = k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : ' (two-strokes only)';
+        else if (!ok) note = k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : ' (two-strokes only)';
         return `<div class="bn-row${ok ? '' : ' off'}"><span class="key">${i + 1}</span>${JOBS[k].name}${note}</div>`;
       }).join('');
       this.keysEl.textContent = 'Press a number to start   ·   G step away';

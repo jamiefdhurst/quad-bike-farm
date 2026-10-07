@@ -3,6 +3,8 @@
 // have a window: let go too early and it's loose, hold on too long and it's over-done, and either leaves
 // the job botched, so it works but not as well. Pure logic, no Three.js or DOM.
 
+import { canFitBore, fitBore } from '../engine/bigBore.js';
+
 export const DEFAULT_BENCH_PARAMS = {
   holdScale: 1, // multiplier on how long every hold takes, so the whole bench can be quicker or slower
   bayMargin: 0.35, // a quad counts as in the bay when its middle is this far inside the painted lines
@@ -19,6 +21,8 @@ export const DEFAULT_BENCH_PARAMS = {
   oilOver: 0.05, // and when it was too much (about 20:1, smokes and fouls)
   coolantShort: 0.7, // coolant level left when the pour was too short
   coolantLeakLeft: 0.4, // share of its leak left after a badly tightened clip
+  boreWearRemoved: 0.2, // wear a new piston and rings take away, with the big-bore kit
+  boreBotchedFit: 0.55, // share of the kit's power left after a badly fitted one
   packingBotched: 0.3, // silencer blown-out level left after a badly packed one (too loose or stuffed too tight)
 };
 
@@ -33,6 +37,8 @@ export const BENCH_PARAM_RANGES = {
   sumpShort: [0.3, 1, 0.01],
   oilOver: [0, 0.2, 0.002],
   packingBotched: [0, 1, 0.05],
+  boreWearRemoved: [0, 1, 0.05],
+  boreBotchedFit: [0, 1, 0.05],
   coolantShort: [0.3, 1, 0.05],
   coolantLeakLeft: [0, 1, 0.05],
   plugRichFouling: [0, 1, 0.05],
@@ -110,6 +116,16 @@ export const JOBS = {
       { id: 'bleed', text: 'Squeeze the top hose to bleed the air out, then cap on', kind: 'press' },
     ],
   },
+  bore: {
+    name: 'Fit the big-bore kit',
+    steps: [
+      { id: 'head', text: 'Undo the head nuts and lift the head off', kind: 'hold', need: 1 },
+      { id: 'barrel', text: 'Slide the old barrel and piston off', kind: 'press' },
+      { id: 'rings', text: 'Put the rings on the new piston and oil the bore', kind: 'press' },
+      { id: 'fit', text: 'Fit the new barrel, easing it over the rings', kind: 'hold', need: 1.1 },
+      { id: 'tight', text: 'Do the head nuts up evenly: snug, not tight', kind: 'hold', need: 0.8, limit: 1.6 },
+    ],
+  },
   // The barn find's own jobs (vehicle/barnFind.js): only the rusty quad has them.
   tarp: {
     name: 'Take the tarp off',
@@ -146,7 +162,7 @@ export const JOBS = {
   },
 };
 
-export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant'];
+export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore'];
 
 /** What each reading means, the way Amy would say it. Order is the order Jess can be wrong in. */
 export const PLUG_KINDS = ['healthy', 'rich', 'lean', 'oily', 'worn'];
@@ -327,6 +343,10 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     if (target.sump) target.sump.level = short ? Math.max(target.sump.level, P.sumpShort) : 1;
     return short ? 'Oil topped up, though it is a touch under the top mark' : 'Oil up to the top mark';
   }
+  if (job.kind === 'bore') {
+    fitBore(engine, botched ? P.boreBotchedFit : 1, P);
+    return botched ? 'Kit fitted, but the head is not torqued evenly: it will not pull as it should' : 'Big-bore kit fitted: it should pull much harder, and run hotter';
+  }
   if (job.kind === 'tarp') return 'The tarp is off, and the dust is everywhere';
   if (job.kind === 'fuel') {
     engine.fouling = botched ? P.plugLeftFouling : 0;
@@ -349,6 +369,7 @@ export function jobAvailable(kind, engine) {
   if (kind === 'oil') return engine.params.strokes === 2;
   if (kind === 'packing') return engine.params.strokes === 2;
   if (kind === 'coolant') return !!engine.params.waterCooled;
+  if (kind === 'bore') return canFitBore(engine);
   if (kind === 'tarp' || kind === 'fuel' || kind === 'brake' || kind === 'battery') return true;
   if (kind === 'sump') return engine.params.strokes !== 2 && !engine.params.runsOnDiesel;
   return true;

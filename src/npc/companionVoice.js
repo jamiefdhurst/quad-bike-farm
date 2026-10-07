@@ -111,7 +111,7 @@ export class CompanionVoice {
 
   /** You working at the barn bench: 'start', 'step', 'flaw', 'done' (done right) or 'botched', and for the barn find 'tarp' (it's off) and 'runs' (its first start). */
   onBench(kind) {
-    const [situation, chance] = { start: ['benchStart', 0.6], step: ['benchStep', 0.12], flaw: ['benchFlaw', 0.8], done: ['benchDone', 0.7], botched: ['benchBotched', 0.8], tarp: ['rustyTarp', 0.95], runs: ['rustyRuns', 1] }[kind] ?? [];
+    const [situation, chance] = { start: ['benchStart', 0.6], step: ['benchStep', 0.12], flaw: ['benchFlaw', 0.8], done: ['benchDone', 0.7], botched: ['benchBotched', 0.8], catalogue: ['boreCatalogue', 0.9], boreDone: ['boreDone', 1], boreBotched: ['boreBotched', 1], tarp: ['rustyTarp', 0.95], runs: ['rustyRuns', 1] }[kind] ?? [];
     if (!situation || this.head.distanceTo(this.listener) > Math.min(15, this.params.voiceRange)) return null;
     return this.say(situation, { urgent: true, chance });
   }

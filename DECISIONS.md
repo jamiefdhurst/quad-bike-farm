@@ -1485,6 +1485,16 @@ The item settled the behaviour; I chose the numbers and where it lives without a
 - Girls (`jetLines.js`): `jetLean` when you step to a jet that's too lean for the day (Amy warns, Jess shrugs it off), `jetRight` when you hit it. Recorded.
 - Left out: the bench job version of changing a jet, and any dash or sound for a lean engine beyond what lean running already gives. Checked: unit tests only. Not checked: how the row looks in the panel, how a lean two-stroke or a spot-on one feels and sounds, or whether the seize times are the right pace. All the numbers are first guesses.
 
+## The yellow's big-bore kit (TODO 7)
+
+The item settled the behaviour; I chose the numbers and the form without asking. It's a bench job, not a toolbox row, because "fitted at the bench" is a one-way change and the toolbox's rows are all dials you can turn back.
+
+- Pure logic in `src/engine/bigBore.js` (tests in `tests/bigBore.test.js`; tunables under "The big-bore kit" in `engineParams.js`, so in the tuning panel). The engine has `bore` (0 or 1) and `boreFit` (1 for a good fit, `boreBotchedFit` 0.55 for a botched one). Only the yellow has `boreKit: 1` in its spec, so only it can be offered the job. Fitted once; there's no taking it out.
+- Effects: power times `1 + borePower (0.18) * boreFit`; heat load of working times `1 + boreHeat (0.45)`, so it runs hotter but still only pinks and overheats the way the air-cooled quads do; wear rate times `1 + boreWear (1.6)`, 2.6 times the usual; and the right jet for the day moves `boreJet` 0.6 sizes bigger, so the stock jet is a little lean on it and the toolbox's jet row and its advice take that into account. A botched fit keeps all the wear and heat, which is the point of botching it. The kit's new piston and rings take `boreWearRemoved` 0.2 off the existing wear.
+- Bench: job `bore`, five steps (head off, old barrel off, rings on, new barrel over the rings, head nuts up evenly in a window), the eighth in the list. Shown on every quad's list, "(yellow only)" on the others and "fitted" once done. The logbook writes "big-bore kit fitted".
+- Girls (in `benchLines.js`): opening the bench on the yellow with the kit still to fit makes a girl say something about the catalogue (`boreCatalogue`, Amy disapproving, Jess pushing it); `boreDone` (Jess thrilled, Amy warning about the heat and wear) and `boreBotched`. Recorded.
+- Left out: a catalogue prop on the bench (it's only in the lines), the kit's sound (the exhaust note doesn't change), and the girls knowing it's fitted when they ride it. Checked: unit tests only. Not checked in the running game: how the bench job reads, whether 18% power and 2.6 times the wear are good numbers, or how the lines sound. All the numbers are first guesses.
+
 ## The orange's coolant leak (TODO 5)
 
 The item settled the symptoms; I chose the rest without asking. The item says "as a quirk", but quirks (`quirks.js`) are permanent and nobody fixes them, and this is fixed at the bench, so it isn't one of the ten: it has its own seeded chance instead.

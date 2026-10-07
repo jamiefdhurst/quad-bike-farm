@@ -85,9 +85,9 @@ const ROWS = [
       const e = unit.engine;
       const p = e.params;
       const day = e.dayTemp;
-      const err = jetError(s.jet, day, p);
+      const err = jetError(s.jet, day, p, e.bore);
       const word = leanStarve(err, p) > 0 ? 'too lean, it will run hot and scuff' : jetTrue(err, p) > 0.85 ? 'spot on for the day' : err < 0 ? 'a bit lean' : 'a bit rich';
-      return `${adviceText(day, p)}: ${word}`;
+      return `${adviceText(day, p, e.bore)}: ${word}`;
     },
   },
   {
@@ -224,7 +224,7 @@ export class Workshop {
     let kind = raisedLimiter ? 'limiter' : 'adjust';
     if (key === 'jet') {
       const p = this.unit.engine.params;
-      const err = jetError(p.jet, this.unit.engine.dayTemp, p);
+      const err = jetError(p.jet, this.unit.engine.dayTemp, p, this.unit.engine.bore);
       if (leanStarve(err, p) > 0) kind = 'jetLean';
       else if (jetTrue(err, p) > 0.85) kind = 'jetRight';
     }

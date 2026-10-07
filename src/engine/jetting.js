@@ -9,13 +9,14 @@
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
 /** The jet size (in sizes from stock, fractional) the day wants: 0 at the reference temperature, bigger in the cold, smaller in the heat. */
-export function idealJet(celsius, p) {
-  return (p.jetRefCelsius - celsius) * p.jetPerDegree;
+export function idealJet(celsius, p, bore = 0) {
+  // A big-bore barrel breathes more, so it wants a richer jet again (see bigBore.js).
+  return (p.jetRefCelsius - celsius) * p.jetPerDegree + bore * (p.boreJet ?? 0);
 }
 
 /** How far the fitted jet is from the right one for the day: negative lean, positive rich. */
-export function jetError(jet, celsius, p) {
-  return jet - idealJet(celsius, p);
+export function jetError(jet, celsius, p, bore = 0) {
+  return jet - idealJet(celsius, p, bore);
 }
 
 /** 0..1 how lean it is enough to hurt: nothing inside `jetLeanSafe` sizes, full at `jetLeanFull`. */
@@ -41,8 +42,8 @@ export function jetText(jet) {
 }
 
 /** What it says it needs for the day, the way the box on the kit would: "leaner" or "richer". */
-export function adviceText(celsius, p) {
-  const ideal = idealJet(celsius, p);
+export function adviceText(celsius, p, bore = 0) {
+  const ideal = idealJet(celsius, p, bore);
   if (Math.abs(ideal) < 0.5) return 'the stock jet suits this weather';
   const sizes = Math.round(Math.abs(ideal));
   return `${celsius} °C wants about ${sizes} size${sizes === 1 ? '' : 's'} ${ideal > 0 ? 'bigger' : 'smaller'}`;

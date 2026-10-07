@@ -166,6 +166,7 @@ export const QUAD_SPECS = [
       skipRpm: 3800,
       idleFoulRate: 0.002,
       misfireRpmDrop: 160,
+      boreKit: 1, // Jess's dream: a big-bore kit that fits at the bench (engine/bigBore.js)
     },
     vehicle: {
       mass: 260,

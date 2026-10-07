@@ -63,6 +63,7 @@ const JOB_TEXT = {
   oil: 'two-stroke oil topped up',
   packing: 'silencer repacked',
   coolant: 'coolant topped up',
+  bore: 'big-bore kit fitted',
   sump: 'engine oil topped up',
   tarp: 'tarp off',
   fuel: 'old fuel drained',

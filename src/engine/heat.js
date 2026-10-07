@@ -15,10 +15,10 @@ export function airflow(speed, p) {
 }
 
 /** The heat it's heading for: the sun and its work, less what the air (and the fan) carries off. 0..1. */
-export function heatTarget({ ambient, work, speed, fan, coolant = 1 }, p) {
+export function heatTarget({ ambient, work, speed, fan, coolant = 1, bore = 0 }, p) {
   // Low on coolant, the radiator does less: the water-cooled engine feels more of the load and the fan carries off less.
   const scale = p.waterCooled ? 1 + (p.heatWaterScale - 1) * coolant : 1;
-  const load = (p.heatSun * clamp01(ambient) + p.heatWork * clamp01(work)) * scale;
+  const load = (p.heatSun * clamp01(ambient) + p.heatWork * clamp01(work) * (1 + (p.boreHeat ?? 0) * bore)) * scale; // a big bore makes more heat working
   const cooling = p.heatAirCool * airflow(speed, p) + (fan ? p.fanCooling * coolant : 0);
   return clamp01(load - cooling);
 }
@@ -27,12 +27,12 @@ export function heatTarget({ ambient, work, speed, fan, coolant = 1 }, p) {
  * One step of running heat. state is { heat, fan }; the fan (water-cooled only) cuts in above fanOnAt and out
  * below fanOffAt. Off, the engine just sheds its heat.
  */
-export function stepHeat(state, h, { running, ambient, work, speed, coolant = 1 }, p) {
+export function stepHeat(state, h, { running, ambient, work, speed, coolant = 1, bore = 0 }, p) {
   if (p.waterCooled && running) {
     if (state.heat > p.fanOnAt) state.fan = true;
     else if (state.heat < p.fanOffAt) state.fan = false;
   } else state.fan = false;
-  const target = running ? heatTarget({ ambient, work, speed, fan: state.fan, coolant }, p) : 0;
+  const target = running ? heatTarget({ ambient, work, speed, fan: state.fan, coolant, bore }, p) : 0;
   const seconds = target > state.heat ? p.heatRiseSeconds : p.heatFallSeconds;
   state.heat = clamp01(state.heat + ((target - state.heat) * h) / Math.max(1, seconds));
 }
