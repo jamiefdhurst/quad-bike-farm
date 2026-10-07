@@ -20,7 +20,7 @@ const HELP_HTML = `
   <h3>The old tractor</h3>
   <div><kbd>K</kbd> key (heats the glow plugs: wait for the GLOW lamp to go out), hold <kbd>R</kbd> to crank</div>
   <div>Hold <kbd>Shift</kbd> for the clutch: <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> gears, <kbd>B</kbd> reverse, <kbd>0</kbd> neutral</div>
-  <div><kbd>Q</kbd> <kbd>Z</kbd> hand throttle (it has no fuel tap), <kbd>W</kbd> foot throttle, <kbd>S</kbd> brake, <kbd>O</kbd> stop knob (the key won't stop it)</div>
+  <div><kbd>Q</kbd> <kbd>Z</kbd> hand throttle (it has no fuel tap; they work from the ground beside it too), <kbd>W</kbd> foot throttle, <kbd>S</kbd> brake, <kbd>O</kbd> stop knob (the key won't stop it)</div>
   <div>Leave it running in first gear with the hand throttle open and get off, and it creeps off on its own: the more throttle, the faster (a trickle to a brisk walk)</div>
   <div><kbd>J</kbd> hook the bale trailer on when the drawbar is at its ring, or take it off when you're stopped. The girls climb on once you're stopped</div>
   <h3>The little tipping trailer</h3>

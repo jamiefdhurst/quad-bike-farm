@@ -628,7 +628,7 @@ export class Game {
           return {
             action: `Ride the ${unit.label}`,
             keys: quad.tractor
-              ? [['K', 'Key'], ['R', 'Start'], ['O', 'Stop knob'], ['Y', 'Dipstick'], ...(this.chain.state === 'stowed' && !this.player.isRiding ? [['X', 'Tow chain']] : [])]
+              ? [['K', 'Key'], ['R', 'Start'], ['Q Z', 'Hand throttle'], ['O', 'Stop knob'], ['Y', 'Dipstick'], ...(this.chain.state === 'stowed' && !this.player.isRiding ? [['X', 'Tow chain']] : [])]
               : unit.spec.utv
                 ? [['K', 'Key'], ['R', 'Start'], ['B', 'Reverse lever'], ['T', 'Tip the bed'], ['Y', 'Dipstick']]
                 : unit.spec.landRover

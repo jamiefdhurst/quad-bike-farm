@@ -18,6 +18,7 @@ import { CruiseControl } from './cruise.js';
 import { Creep, mayCreep, DEFAULT_CREEP_PARAMS } from './creep.js';
 import { Bog } from './bog.js';
 import { Sump, hasSump, oilPressureLamp } from './sump.js';
+import { stepHand } from './handLever.js';
 import { Faults } from './faults.js';
 import { DriveSwitch, driveEffects, DEFAULT_DRIVE_PARAMS } from './driveMode.js';
 import { reverseAllowed, chokeReach, DEFAULT_CONTROLS_PARAMS } from './controls.js';
@@ -35,7 +36,6 @@ const CHOKE_REPEAT_INTERVAL = 0.12;
 // automatic drive aside: Q and Z move its hand throttle and O pulls its stop knob.
 const CLUTCH_KEYS = ['ShiftLeft', 'ShiftRight'];
 const GEAR_KEYS = { Digit1: 1, Digit2: 2, Digit3: 3, Digit4: 4, Digit0: 0, KeyB: -1 };
-const HAND_THROTTLE_RATE = 0.35; // per second the hand throttle moves while its key is held
 const HAND_THROTTLE_UP_KEY = 'KeyQ';
 const HAND_THROTTLE_DOWN_KEY = 'KeyZ';
 const STOP_KNOB_KEY = 'KeyO'; // not X (the tow chain and winch) or C (look back)
@@ -493,11 +493,7 @@ export class Quad {
       throttleInput = input.isDown('KeyW') ? 1 : 0;
       brakeInput = input.isDown('KeyS') ? 1 : 0;
       this.clutchHeld = CLUTCH_KEYS.some((k) => input.isDown(k));
-      this.handSetting = THREE.MathUtils.clamp(
-        this.handSetting + ((input.isDown(HAND_THROTTLE_UP_KEY) ? 1 : 0) - (input.isDown(HAND_THROTTLE_DOWN_KEY) ? 1 : 0)) * HAND_THROTTLE_RATE * dt,
-        0,
-        1,
-      );
+      this.handSetting = stepHand(this.handSetting, input.isDown(HAND_THROTTLE_UP_KEY), input.isDown(HAND_THROTTLE_DOWN_KEY), dt);
       this.starter = input.isDown('KeyR') && this.starterAllowed();
     } else if (this.input) {
       const input = this.input;
@@ -507,11 +503,7 @@ export class Quad {
       this.starter = input.isDown('KeyR') && this.starterAllowed();
       if (this.manual) this.clutchHeld = CLUTCH_KEYS.some((k) => input.isDown(k));
       if (this.handLever) {
-        this.handSetting = THREE.MathUtils.clamp(
-          this.handSetting + ((input.isDown(HAND_KNOB_OUT_KEY) ? 1 : 0) - (input.isDown(HAND_KNOB_IN_KEY) ? 1 : 0)) * HAND_THROTTLE_RATE * dt,
-          0,
-          1,
-        );
+        this.handSetting = stepHand(this.handSetting, input.isDown(HAND_KNOB_OUT_KEY), input.isDown(HAND_KNOB_IN_KEY), dt);
       }
 
       if (this.manual) {
@@ -537,6 +529,10 @@ export class Quad {
       // Someone beside the bike can still hold the starter.
       this.starter = ((!!this.remoteInput && this.remoteInput.isDown('KeyR')) || this.helperStarter) && this.starterAllowed();
       this.clutchHeld = false;
+      // And the hand throttle can be raised and lowered from the ground beside it, with the keys it has on the seat.
+      const beside = this.remoteInput;
+      if (beside && !this.driver && this.tractor) this.handSetting = stepHand(this.handSetting, beside.isDown(HAND_THROTTLE_UP_KEY), beside.isDown(HAND_THROTTLE_DOWN_KEY), dt);
+      else if (beside && !this.driver && this.handLever) this.handSetting = stepHand(this.handSetting, beside.isDown(HAND_KNOB_OUT_KEY), beside.isDown(HAND_KNOB_IN_KEY), dt);
       throttleInput = this.helperThrottle;
       if (this.driver) {
         const c = this.driver.controls;

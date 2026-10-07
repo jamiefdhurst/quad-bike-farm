@@ -391,7 +391,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 7.  How do I put oil in the 4-strokes? I can't pick the oil bottle up. Make sure I can put this where every other picked up item can go today. **Done.** See DECISIONS.md, "Carrying the oil bottle".
 8.  Put the jump leads on the bench, start all the jerry cans in random places, not just the petrol one. **Done.** See DECISIONS.md, "Where things start".
 9.  Steam from hot engines. **Done.** See DECISIONS.md, "Steam from hot engines".
-10. Raise and lower hand throttle when not on tractor.
+10. Raise and lower hand throttle when not on tractor. **Done.** Stood looking at the tractor (or the Land Rover) with nobody driving it, the same keys as on the seat raise and lower its hand throttle (`Q` `Z` on the tractor, `]` `[` on the Land Rover). See DECISIONS.md, "Hand throttle from the ground".
 11. Remove reverse lever prompt from UTV when not in it.
 12. When Jess revs the quad, Amy doesn't turn it off.
 13. Tractor noise sometimes sounds OK, sometimes has something over it, like a heavy noise.

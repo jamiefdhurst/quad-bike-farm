@@ -1576,6 +1576,11 @@ Settled with Jamie before building: a second, small trailer (the bale trailer st
 - No new lines: they use `mudBoard`, `utvBoard` and `utvBedGo`. The girls don't drive the UTV yet, so there is no UTV version of the join; it comes with item 37.
 - Checked: unit tests for all of it (`tests/mudguardRide.test.js`, `tests/utvRide.test.js`). Not run in the game: the walk over and climb, the driver's wait for her, and how often it happens in real play.
 
+## Hand throttle from the ground (2026-10-07)
+
+- Looking at the tractor, or the Land Rover, with nobody on it or driving it, its hand throttle moves with the keys it has on the seat (`Q` up and `Z` down on the tractor, `]` out and `[` in on the Land Rover's dash knob), at the same 0.35 a second (`stepHand` in `vehicle/handLever.js`, pure and tested, now also used by the seat code). The prompt chip row for the tractor lists Q Z. It stays where it is left, as before, so you can raise the revs to warm it or let it creep off.
+- Not changed: the Land Rover's chip row (it is the other session's, and has its own keys). A girl driving owns the lever; you can't move it from the ground then. Checked: unit tests for the lever; not tried in the game.
+
 ## Steam from hot engines (2026-10-07)
 
 Chosen without asking: the item gives no cause, so I used the two real ones, an engine cooking and rain on hot metal.
