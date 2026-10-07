@@ -16,7 +16,7 @@ import { AirFilter } from './airFilter.js';
 import { CruiseControl } from './cruise.js';
 import { Creep, mayCreep, DEFAULT_CREEP_PARAMS } from './creep.js';
 import { Bog } from './bog.js';
-import { Sump, hasSump, oilLowLamp } from './sump.js';
+import { Sump, hasSump, oilPressureLamp } from './sump.js';
 import { Faults } from './faults.js';
 import { reverseAllowed, chokeReach, DEFAULT_CONTROLS_PARAMS } from './controls.js';
 import { advanceUsage, isNeutral, dashClock, lampStates } from './dashState.js';
@@ -799,7 +799,7 @@ export class Quad {
       speedMph: speed > 0.2 ? speed * 2.237 : 0,
       ...this.quirks.dash({ fuelLevel: f.level, temperature: e.temperature, overheat: e.gaugeHeat }, dt, speed > 1),
       reserveLevel: f.params.reserveLitres / f.params.tankCapacity,
-      oilLow: !!this.sump && oilLowLamp({ running: e.isRunning, level: this.sump.level, rpm: e.rpm, idleRpm: e.params.idleRpmWarm, t: this.sumpClock }),
+      oilLow: !!this.sump && oilPressureLamp({ running: e.isRunning, level: this.sump.level, rpm: e.rpm, idleRpm: e.params.idleRpmWarm, t: this.sumpClock }),
       tap: f.tap,
       coldBelow: e.params.warmLightThreshold,
       ignition: e.hasPower, // the dash goes dark on a flat battery

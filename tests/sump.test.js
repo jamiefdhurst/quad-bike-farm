@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { sumpLube } from '../src/engine/lubrication.js';
-import { Sump, DEFAULT_SUMP_PARAMS as P, hasSump, pickBurner, startLevel, oilLowLamp, readStick } from '../src/vehicle/sump.js';
+import { Sump, DEFAULT_SUMP_PARAMS as P, hasSump, pickBurner, startLevel, oilPressureLamp, readStick } from '../src/vehicle/sump.js';
 import { createRandom } from '../src/core/random.js';
 
 const seeded = (seed) => () => {
@@ -107,15 +107,15 @@ describe('the dipstick and the lamp', () => {
     expect(readStick(0).text).toBe('Nothing on the stick at all');
     expect(Math.abs(readStick(0.5, 1).reading - 0.5)).toBeLessThanOrEqual(P.readNoise + 1e-9);
   });
-  it('lights the OIL lamp only when it is running low, flickering at idle', () => {
+  it('lights the OIL lamp with the key on and the engine stopped, then only when it is running low, flickering at idle', () => {
     const base = { running: true, rpm: 1500, idleRpm: 1500, t: 0 };
-    expect(oilLowLamp({ ...base, level: 0.6 })).toBe(false);
-    expect(oilLowLamp({ ...base, level: 0.1, running: false })).toBe(false);
+    expect(oilPressureLamp({ ...base, level: 0.6 })).toBe(false);
+    expect(oilPressureLamp({ ...base, level: 0.9, running: false })).toBe(true); // key on, not running: no pressure yet
     const idle = [];
-    for (let t = 0; t < 4; t += 0.05) idle.push(oilLowLamp({ ...base, level: 0.1, t }));
+    for (let t = 0; t < 4; t += 0.05) idle.push(oilPressureLamp({ ...base, level: 0.1, t }));
     expect(idle.includes(true) && idle.includes(false)).toBe(true);
-    expect(oilLowLamp({ ...base, level: 0.15, rpm: 4000 })).toBe(false); // revved, it goes out unless it's very low
-    expect(oilLowLamp({ ...base, level: 0.05, rpm: 4000 })).toBe(true);
+    expect(oilPressureLamp({ ...base, level: 0.15, rpm: 4000 })).toBe(false); // revved, it goes out unless it's very low
+    expect(oilPressureLamp({ ...base, level: 0.05, rpm: 4000 })).toBe(true);
   });
 });
 

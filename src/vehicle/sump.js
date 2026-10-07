@@ -96,11 +96,13 @@ export class Sump {
 }
 
 /**
- * The low-oil lamp (the red's OIL light): lit while it's running with the sump low. Pressure is lowest at idle, so there it
- * flickers, and once it's revved the lamp goes out unless the sump is very low. `t` is the time in seconds, for the flicker.
+ * The oil pressure lamp: lit with the ignition on and the engine not running (no pressure yet), and while it's running with the sump
+ * low. Pressure is lowest at idle, so there it flickers, and once it's revved the lamp goes out unless the sump is very low.
+ * `t` is the time in seconds, for the flicker. The dash adds the ignition: it's dark with the key off.
  */
-export function oilLowLamp({ running, level, rpm, idleRpm, t }, P = DEFAULT_SUMP_PARAMS) {
-  if (!running || level >= P.lampFrom) return false;
+export function oilPressureLamp({ running, level, rpm, idleRpm, t }, P = DEFAULT_SUMP_PARAMS) {
+  if (!running) return true;
+  if (level >= P.lampFrom) return false;
   if (rpm > idleRpm * 1.6) return level < P.lampFrom * 0.6;
   return Math.sin(t * 9) + Math.sin(t * 5.3) > -0.6;
 }

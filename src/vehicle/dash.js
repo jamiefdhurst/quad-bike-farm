@@ -94,7 +94,7 @@ function buildForeman() {
     ctx.fill();
     lamp(ctx, 138, 114, LAMP.amber, 'R', L.lamps.r, { shape: 'rect' });
     lamp(ctx, 160, 114, LAMP.green, 'N', L.lamps.n, { shape: 'rect' });
-    lamp(ctx, 182, 114, LAMP.red, 'OIL °C', L.lamps.temp || L.lamps.oil, { shape: 'rect' });
+    lamp(ctx, 182, 114, LAMP.red, 'OIL', L.lamps.oil, { shape: 'rect' });
     keySwitch(ctx, 222, 118, s.keyOn);
   }
 
