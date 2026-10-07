@@ -107,6 +107,8 @@ export const DEFAULT_ENGINE_PARAMS = {
   wearWorkBoost: 2, // flat out it wears this much faster again
   wearColdBoost: 6, // revved hard while it's cold, it wears this much faster again
   wearColdBelow: 0.5, // engine temperature (0 cold, 1 warm) under which revving it counts as thrashing it
+  wearOverRevBoost: 30, // per unit of revs over designRpm: flat out, 10% over wears twice as fast as at its design top, 30% over four times
+  designRpm: 0, // the full-throttle revs it was built for (set each game from its top); 0 means maxRpm, so no over-rev wear
   wearMax: 1, // run long and hard enough, any engine wears to fully rough
   // Badly in need of a service it turns erratic, from erraticFrom up to fully
   // rough (its condition: build roughness plus wear, not cold or mixture):
@@ -325,6 +327,8 @@ export const ENGINE_PARAM_RANGES = {
   wearWorkBoost: [0, 10, 0.1],
   wearColdBoost: [0, 10, 0.1],
   wearColdBelow: [0.1, 1, 0.05],
+  wearOverRevBoost: [0, 40, 0.5],
+  designRpm: [0, 12000, 100],
   wearMax: [0, 1, 0.01],
   erraticFrom: [0, 1, 0.01],
   stumbleRate: [0, 3, 0.01],

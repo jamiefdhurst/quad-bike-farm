@@ -127,7 +127,7 @@ Pick up the red toolbox from the workbench in the barn (`E`), take it to a quad 
 - **Idle screw**: the warm idle, within safe limits.
 - **Carb mixture**: leaner pulls a bit harder and uses less fuel but runs rougher; richer is easier from cold but smokier and thirstier, and fully rich slowly fouls the plug.
 - **Throttle stop (speed limiter)**: farm quads come with it screwed in. Each turn out adds about 7% top speed (fully off is about +20%: the red goes from 35 to 42 mph), plus a few more revs and more fuel.
-- **Rev limiter**: 5% a click, six clicks either way (about 30% up or down). Raise it and it revs on higher and louder flat out, with the dash redline moving too; the top speed is the throttle stop's job. Each game a quad's full-throttle revs also start a few per cent either side of its usual (about 4%; `?seed=` repeats them), so the panel shows what this one came with.
+- **Rev limiter**: 5% a click, six clicks either way (about 30% up or down). Raise it and it revs on higher and louder flat out, with the dash redline moving too, but revs past what the engine was built for wear it faster (flat out, 10% over wears it about twice as fast, 30% over about four times, so it needs a service sooner); the top speed is the throttle stop's job. Each game a quad's full-throttle revs also start a few per cent either side of its usual (about 4%; `?seed=` repeats them), so the panel shows what this one came with.
 - **Clutch springs**: softer bites sooner, stiffer later; it always bites above the idle.
 - **Tyre pressures**: softer grips better (especially in mud) but bounces more.
 

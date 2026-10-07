@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { EngineModel } from '../src/engine/engineModel.js';
+import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 
 function seededRandom(seed) {
   return () => {
@@ -10,8 +11,8 @@ function seededRandom(seed) {
   };
 }
 
-function running(throttle, minutes) {
-  const e = new EngineModel({ initialTemperature: 1 }, { random: seededRandom(1) });
+function running(throttle, minutes, params = {}) {
+  const e = new EngineModel({ initialTemperature: 1, ...params }, { random: seededRandom(1) });
   e.setIgnition(true);
   for (let i = 0; i < 300 && !e.isRunning; i++) e.update(1 / 60, { starter: true });
   for (let i = 0; i < minutes * 60 * 20; i++) e.update(1 / 20, { throttle });
@@ -28,6 +29,17 @@ describe('wear', () => {
     const worn = running(1, 90).wear;
     expect(worn).toBeGreaterThan(0.85);
     expect(worn).toBeLessThanOrEqual(idle.params.wearMax);
+  });
+
+  it('wears faster when revved past the top it was built for, and not at all more when it is not', () => {
+    const base = DEFAULT_ENGINE_PARAMS.maxRpm;
+    const built = running(1, 3, { designRpm: base }).wear;
+    const stockUnset = running(1, 3).wear; // designRpm 0: no over-rev wear
+    const over = running(1, 3, { designRpm: base, maxRpm: Math.round(base * 1.3) }).wear;
+    const under = running(1, 3, { designRpm: base, maxRpm: Math.round(base * 0.8) }).wear;
+    expect(built).toBeCloseTo(stockUnset, 6);
+    expect(over).toBeGreaterThan(built * 3.5);
+    expect(under).toBeLessThanOrEqual(built);
   });
 
   it('makes it run rougher, and clears when serviced', () => {

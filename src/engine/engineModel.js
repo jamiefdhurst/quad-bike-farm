@@ -369,7 +369,12 @@ export class EngineModel {
       // And it wears: plug, filter and carb slowly go off, faster when it's worked hard.
       // Revving it hard before it's warm is the worst of it.
       const coldThrash = clamp(1 - this.temperature / p.wearColdBelow, 0, 1) * rpmNorm;
-      this.wear = Math.min(p.wearMax, this.wear + (h / 60) * p.wearPerMinute * (1 + p.wearWorkBoost * rpmNorm + p.wearColdBoost * coldThrash));
+      // Revved past the top it was built for (the toolbox's rev limiter, or the throttle stop out) it wears much faster.
+      const overRev = p.designRpm > 0 ? Math.max(0, this.rpm / p.designRpm - 1) : 0;
+      this.wear = Math.min(
+        p.wearMax,
+        this.wear + (h / 60) * p.wearPerMinute * (1 + p.wearWorkBoost * rpmNorm + p.wearColdBoost * coldThrash + p.wearOverRevBoost * overRev),
+      );
     } else {
       this.temperature = offTemperature(this.temperature, h, p.coolDownSeconds, this.sheltered, { warmFloor: p.barnWarmFloor, coolFactor: p.barnCoolFactor });
     }

@@ -45,10 +45,14 @@ export function applyIdle(engineParams, vehicleParams, idle) {
  * and the engine agree. Changes the params in place and returns the top rpm.
  */
 export function applyTopRpm(spec, engineParams, random) {
-  if (!spec.topRpmRange) return engineParams.maxRpm;
+  if (!spec.topRpmRange) {
+    engineParams.designRpm = engineParams.maxRpm;
+    return engineParams.maxRpm;
+  }
   const gap = engineParams.maxRpm - engineParams.redlineRpm;
   engineParams.maxRpm = pickInRange(spec.topRpmRange, random, 50);
   engineParams.redlineRpm = engineParams.maxRpm - gap;
+  engineParams.designRpm = engineParams.maxRpm; // what it was built for: revving past it later (the rev limiter) wears it
   return engineParams.maxRpm;
 }
 
