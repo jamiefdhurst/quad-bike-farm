@@ -31,6 +31,7 @@ import { QuirkSet, DEFAULT_QUIRK_PARAMS, QUIRK_PARAM_RANGES, featuresOf, pickQui
 import { captureStock, tuneTarget, stockSettings, clampSettings, applyTune } from './vehicle/tuneUp.js';
 import { WearLedger, LEDGER_PARAM_RANGES } from './engine/wearLedger.js';
 import { LeftRunning, LEFT_PARAM_RANGES } from './npc/leftRunning.js';
+import { CarbDrip, DRIP_PARAM_RANGES } from './vehicle/carbDrip.js';
 import { Pranks, PRANK_PARAM_RANGES } from './npc/pranks.js';
 import { RevOff, REVOFF_PARAM_RANGES } from './npc/revOff.js';
 import { DrownOut, DROWNOUT_PARAM_RANGES } from './npc/drownOut.js';
@@ -264,6 +265,10 @@ export class Game {
     // the girls know about: they leave it alone for now.
     this.girlUnits = this.units;
     this.tractorUnit = this.addTractor();
+    // A sticky float on some of the quads (vehicle/carbDrip.js): a parked one with the tap on drips petrol and floods. Own random stream.
+    this.carbDrip = new CarbDrip(this.units.filter((u) => !u.quad.fuel.params.noTap && u !== this.tractorUnit).map((u) => u.id), createRandom(this.seed ^ 0x5d1f));
+    registerTuning('Dripping carb', this.carbDrip.p, DRIP_PARAM_RANGES);
+    this.dripPatches = new Map(); // quad id -> the dark patch on the ground where it dripped
     this.wearGearbox();
     this.logStart();
     this.updateSmokeScale();
@@ -1658,6 +1663,31 @@ export class Game {
     }
   }
 
+  /** Each frame: a parked quad with a sticky float and the tap on drips petrol (vehicle/carbDrip.js), leaving a damp patch and a flooded carb. */
+  updateCarbDrip(dt) {
+    for (const unit of this.units) {
+      if (!this.carbDrip.state.has(unit.id)) continue;
+      const q = unit.quad;
+      const starter = this.companions.some((c) => c.fsm.is('starting') && c.quad === q);
+      const parked = !unit.engine.isRunning && !(q.rider || q.driver || q.passenger || starter);
+      const res = this.carbDrip.update(unit.id, dt, { parked, tapOpen: q.fuel.tap !== 'off', litres: q.fuel.litres });
+      q.fuel.litres -= res.lost;
+      if (parked) unit.engine.fouling = Math.max(unit.engine.fouling, this.carbDrip.floodFouling(unit.id));
+      let patch = this.dripPatches.get(unit.id);
+      if (!patch && (res.stuck || this.carbDrip.puddle(unit.id) > 0)) {
+        patch = new THREE.Mesh(new THREE.CircleGeometry(0.5, 20).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x2a2418, roughness: 0.15, transparent: true, opacity: 0.65, depthWrite: false }));
+        patch.renderOrder = 1;
+        this.scene.add(patch);
+        this.dripPatches.set(unit.id, patch);
+      }
+      if (!patch) continue;
+      if (res.stuck) patch.position.set(q.position.x, this.world.heightAt(q.position.x, q.position.z) + 0.03, q.position.z); // where it started to drip
+      const size = this.carbDrip.puddle(unit.id);
+      patch.visible = size > 0.01;
+      patch.scale.setScalar(0.15 + 0.85 * size);
+    }
+  }
+
   /** Each frame: scores fade, and the girl giving you a ride earns it while her friend, left on foot, notices. */
   updateFavour(dt, ridden) {
     this.favour.update(dt);
@@ -3019,6 +3049,7 @@ export class Game {
     this.talkFloor.left = Math.max(0, this.talkFloor.left - dt);
     this.updateFavour(dt, ridden);
     this.updateWearLedger(dt);
+    this.updateCarbDrip(dt);
     this.updateQuirks(dt, ridden);
     this.updateOilChecks();
     this.updateHandbrake(dt);
@@ -3069,6 +3100,7 @@ export class Game {
         drivers: this.drivers,
         ledger: this.wearLedger,
         left: this.leftRunning,
+        drip: this.carbDrip,
         history: this.history,
         menuOpen: this.menu.isOpen,
         talkingToHer: this.menu.isOpen && this.talkingTo === c,

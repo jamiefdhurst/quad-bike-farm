@@ -551,6 +551,7 @@ export class CompanionVoice {
       this.watchThrash(dt, unit, view, near || hers);
       this.watchBlame(dt, unit, w, view);
       this.watchLeftRunning(dt, unit, w, view);
+      this.watchDrip(dt, unit, w, view);
       this.watchHistory(dt, unit, w, view);
       this.watchQuirks(dt, unit, w, view);
       // Cranking on and on without it catching.
@@ -643,6 +644,15 @@ export class CompanionVoice {
     if (!culprit) return;
     if (!this.say(`blame${culprit.who === 'you' ? 'You' : culprit.who === 'amy' ? 'Amy' : 'Jess'}`, { chance: c.params.blameChance * dt })) return;
     w.blamedUntil = this.chatter.time + 180;
+  }
+
+  /** Stood by a parked quad whose carb has been dripping, she smells the petrol (carbDrip.js). Once per quad every four minutes. */
+  watchDrip(dt, unit, w, view) {
+    const c = this.companion;
+    if (!view.drip || !c.fsm.is('idle', 'resting') || unit.quad.position.distanceTo(this.head) > c.params.dripSmellRange) return;
+    if (!view.drip.smells(unit.id) || this.chatter.time < (w.dripUntil ?? 0)) return;
+    if (!this.say('dripSmell', { chance: c.params.dripSmellChance * dt })) return;
+    w.dripUntil = this.chatter.time + 240;
   }
 
   /** Come across a quad idling with nobody on it, she says who left it running, going by who really did (leftRunning.js). */
