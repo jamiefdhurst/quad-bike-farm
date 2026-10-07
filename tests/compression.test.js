@@ -138,3 +138,16 @@ describe('a diesel engine', () => {
     expect(e.stopKnob()).toBe(false);
   });
 });
+
+describe('a diesel and a rich mixture', () => {
+  it('never fouls a plug, however choked its air filter or flooded its start', () => {
+    const e = new EngineModel(diesel({ mixtureTrim: 0.6 }), { random: seeded(8) });
+    e.setIgnition(true);
+    e.fouling = 0.9;
+    crank(e, 8, { glowReady: true });
+    settle(e, 120, { diesel: 1 });
+    expect(e.rich).toBeGreaterThan(0);
+    expect(e.fouling).toBe(0);
+    expect(e.isRunning).toBe(true);
+  });
+});

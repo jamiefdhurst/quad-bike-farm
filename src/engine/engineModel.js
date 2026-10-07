@@ -308,7 +308,8 @@ export class EngineModel {
         this.stepStopped(h);
     }
 
-    this.fouling = clamp(this.fouling, 0, 1);
+    // A diesel has no spark plug to foul: a rich mixture (a choked filter, too much oil) still smokes and costs power, but never floods it.
+    this.fouling = p.compressionIgnition ? 0 : clamp(this.fouling, 0, 1);
     this.rpm = clamp(this.rpm, 0, p.maxRpm);
   }
 
