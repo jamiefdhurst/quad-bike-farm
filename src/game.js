@@ -104,6 +104,7 @@ import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES, PREMIX_CAN_
 import { OilBottle, OIL_BOTTLE_PARAM_RANGES } from './items/oilBottle.js';
 import { ratioText } from './engine/lubrication.js';
 import { walkRound, DEFAULT_WALK_PARAMS, WALK_PARAM_RANGES } from './npc/walkRound.js';
+import { FaultKnowledge, DEFAULT_WONT_PARAMS, WONT_PARAM_RANGES, WONT_LINE } from './npc/wontRide.js';
 import { Sump, DEFAULT_SUMP_PARAMS, SUMP_PARAM_RANGES, pickBurner, startLevel, readStick } from './vehicle/sump.js';
 import { fuelText } from './engine/diesel.js';
 import { FuelTank } from './items/fuelTank.js';
@@ -278,6 +279,8 @@ export class Game {
     registerTuning('Engine oil', this.sumpParams, SUMP_PARAM_RANGES);
     this.walkParams = { ...DEFAULT_WALK_PARAMS };
     registerTuning('Amy walk-round', this.walkParams, WALK_PARAM_RANGES);
+    this.wontParams = { ...DEFAULT_WONT_PARAMS }; // Amy refusing a quad she knows is faulty (npc/wontRide.js)
+    registerTuning('Amy won\'t ride', this.wontParams, WONT_PARAM_RANGES);
     const sumpRandom = createRandom(this.seed ^ 0x0115);
     const sumpUnits = this.units.filter((u) => u.quad.sump);
     const burnerId = pickBurner(sumpUnits.map((u) => u.spec.id), sumpRandom);
@@ -525,6 +528,10 @@ export class Game {
     }
     this.lineUpParams = { ...DEFAULT_LINEUP_PARAMS }; // the row in front of the barn (npc/lineUp.js)
     for (const c of this.companions) c.lineUpParams = this.lineUpParams;
+    for (const c of this.companions) {
+      c.walkParams = this.walkParams;
+      c.knows = new FaultKnowledge(Math.random, this.wontParams);
+    }
     this.homeParams = { ...DEFAULT_HOME_PARAMS }; // bringing a quad back near the barn when done, and jogging (npc/homeParking.js)
     for (const c of this.companions) c.homeParams = this.homeParams;
     this.tea = new Tea(); // tea left on the rear rack (npc/tea.js)
@@ -3656,7 +3663,17 @@ export class Game {
       if (c.character.id !== 'amy') continue;
       if (Math.random() < this.walkParams.amyWalks) {
         c.walkFound = walkRound({ tyres: c.quad.tyres, faults: c.quad.faults }, this.walkParams);
-        c.walkFound.forEach((key, i) => c.voice.say(key, { urgent: i === 0, chance: 1 }));
+        if (driven) c.knows.learn(driven.spec.id, c.walkFound);
+        const refused = driven ? c.wontRide(c.quad) : null;
+        if (refused && !this.eventOn()) {
+          // Not on that: she says why instead of the usual remark, pulls up and gets off.
+          c.voice.say(WONT_LINE[refused], { urgent: true, chance: 1 });
+          c.requestStandBeside(c.quad);
+          if (driven) for (const finding of c.walkFound) this.notebook.note(driven, { kind: 'walk', finding }, { saw: true });
+          continue;
+        } else {
+          c.walkFound.forEach((key, i) => c.voice.say(key, { urgent: i === 0, chance: 1 }));
+        }
         if (driven) for (const finding of c.walkFound) this.notebook.note(driven, { kind: 'walk', finding }, { saw: true });
       }
       const sump = c.quad.sump;
@@ -3669,6 +3686,11 @@ export class Game {
         c.voice.say('oilFine', { chance: 0.35 });
       }
     }
+  }
+
+  /** A race, drag race, follow the leader or recall is on, so a girl shouldn't walk out of it. */
+  eventOn() {
+    return this.race.active || this.drag.active || this.convoy.active || !!this.recalling;
   }
 
   /** E on a quad with the jump leads in hand. */

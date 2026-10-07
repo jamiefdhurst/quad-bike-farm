@@ -386,7 +386,13 @@ export const drivingMethods = {
 
   /** A quad she could have a drive on: nobody on it, upright and parked. */
   canDrive(q) {
-    return !q.rider && !q.isTipped && !q.isGhostRiding && q.speed < 0.5;
+    return !q.rider && !q.isTipped && !q.isGhostRiding && q.speed < 0.5 && !this.wontRide(q);
+  },
+
+  /** The fault (a walk-round finding) she knows this quad has and won't ride it for, or null. Only Amy ever has any (wontRide.js). */
+  wontRide(q) {
+    const id = q.unit?.spec.id;
+    return id && this.knows ? this.knows.blocking(id, q, this.walkParams) : null;
   },
 
   /** Where she climbs onto the front seat from, beside the footboard on her nearer side. */

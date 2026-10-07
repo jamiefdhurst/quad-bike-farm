@@ -1,6 +1,7 @@
 import './notebook.css';
 import * as THREE from 'three';
 import { registerTuning } from '../core/tuning.js';
+import { FINDING_OF_FAULT } from '../npc/wontRide.js';
 import { Logbook, DEFAULT_LOGBOOK_PARAMS, LOGBOOK_PARAM_RANGES, shortName, formatEntry, startingCandidates, startingEntries } from './logbook.js';
 import { createRandom } from '../core/random.js';
 
@@ -17,7 +18,14 @@ export class Notebook {
     registerTuning('Logbook', this.params, LOGBOOK_PARAM_RANGES);
     // What she had already written down before the game: some of what is true of the quads at the start, from the seed.
     const candidates = game.units.flatMap((u) => startingCandidates({ name: u.name, history: game.history.quads[u.id], quirks: u.quad.quirks.kinds }));
-    this.book.seed(startingEntries(candidates, createRandom(game.seed ^ 0x109b), this.params));
+    const starting = startingEntries(candidates, createRandom(game.seed ^ 0x109b), this.params);
+    this.book.seed(starting);
+    // Faults she wrote down are faults she knows about, so she won't ride those quads until they're put right (npc/wontRide.js).
+    const amy = game.companions.find((c) => c.character.id === 'amy');
+    for (const e of starting) {
+      const unit = e.what.kind === 'fault' && game.units.find((u) => shortName(u.name) === e.quad);
+      if (unit && amy?.knows) amy.knows.learn(unit.spec.id, [FINDING_OF_FAULT[e.what.fault]]);
+    }
     const b = game.world.layout.bench;
     const top = game.world.heightAt(b.x, b.z) + b.height;
     this.model = new THREE.Group();
