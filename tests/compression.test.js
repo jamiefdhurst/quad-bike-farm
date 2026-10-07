@@ -51,14 +51,18 @@ describe('glow plugs', () => {
 });
 
 describe('a diesel engine', () => {
-  it('heats its plugs with the key on and lights the lamp when they are ready', () => {
+  it('heats its plugs with the key on, the lamp lit while they heat and out when they are ready', () => {
     const e = new EngineModel(diesel(), { random: seeded(3) });
+    expect(e.glowLit).toBe(false); // key off
     e.setIgnition(true);
-    expect(e.glowLamp).toBe(false);
+    expect(e.glowHot).toBe(false);
+    expect(e.glowLit).toBe(true);
     settle(e, P.glowSeconds + 1);
-    expect(e.glowLamp).toBe(true);
+    expect(e.glowHot).toBe(true);
+    expect(e.glowLit).toBe(false);
     e.setIgnition(false);
-    expect(e.glowLamp).toBe(false);
+    expect(e.glowHot).toBe(false);
+    expect(e.glowLit).toBe(false);
   });
 
   it('starts cold on hot plugs and almost never without them', () => {
@@ -130,7 +134,7 @@ describe('a diesel engine', () => {
     e.setIgnition(true);
     e.setIgnition(false);
     expect(e.keyPulled).toBe(false);
-    expect(e.glowLamp).toBe(false);
+    expect(e.glowHot).toBe(false);
     expect(e.stopKnob()).toBe(false);
   });
 });

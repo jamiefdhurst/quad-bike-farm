@@ -124,9 +124,14 @@ export class EngineModel {
     return this.state !== EngineState.OFF && !this.keyOff && !this.keyPulled;
   }
 
-  /** The glow lamp: a cold diesel with the key on, not running, and the plugs hot enough to start. */
-  get glowLamp() {
+  /** A cold diesel with the key on, not running, and the plugs hot enough to start. */
+  get glowHot() {
     return this.params.compressionIgnition && this.ignitionOn && this.state !== EngineState.RUNNING && glowReady(this.glow, this.temperature, this.params);
+  }
+
+  /** The dash's glow lamp, which is lit while the plugs heat and goes out when they're ready (and stays out on a warm engine or a running one). */
+  get glowLit() {
+    return this.params.compressionIgnition && this.ignitionOn && this.state !== EngineState.RUNNING && !glowReady(this.glow, this.temperature, this.params);
   }
 
   /** The pull-out stop knob: shuts a diesel off whatever the key says. Returns false if it wasn't running. */

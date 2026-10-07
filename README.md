@@ -373,3 +373,4 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 55. Better sound for the orange quad
 56. Debug window overhaul - consolidate windows and make it easier to know what's going on
 57. Console, separate to the debug window - set and get all values, reset positions and states of vehicles, girls, etc., set weather, flight mode, turn the girls' autonomy and speech on and off, etc.
+58. Pods on the tractor. The two accessory pods (analogue and digital) can only be fitted to the quads now. Let them go on the tractor too, reading its hours and the odometer it now starts with in the background.

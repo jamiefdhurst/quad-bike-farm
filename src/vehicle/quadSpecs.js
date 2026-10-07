@@ -533,7 +533,8 @@ export const TRACTOR_SPEC = {
   bodyColor: 0xa82a20, // a faded red bonnet
   dashStyle: 'tractor',
   hoursRange: [3500, 7500], // engine hours showing when the game starts
-  odoRange: [0, 0], // no odometer
+  odoRange: [5000, 15000], // odometer miles it has done, kept in the background (its dash has no odometer, a pod could show it); follows the hours
+  handStartRange: [0.05, 0.45], // where the hand throttle is left when the game starts (the gearbox's handStart is the fallback)
   // A big lazy diesel: low, lumpy tickover and a slow heave.
   safeIdle: 400,
   idleRange: [430, 470], // a big diesel tickovers slowly

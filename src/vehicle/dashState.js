@@ -12,6 +12,11 @@ export function pickReading(range, random) {
   return lo + (hi - lo) * random();
 }
 
+/** Like `pickReading`, but pulled towards where a related reading sits in its own range (`t`, 0 low to 1 high), `weight` of the way. */
+export function pickRelatedReading(range, t, random, weight = 0.7) {
+  return pickReading(range, () => weight * t + (1 - weight) * random());
+}
+
 /** Running hours and odometer, advanced by one frame. Hours count only while the engine runs. */
 export function advanceUsage(usage, { running, speedMps, dt }) {
   if (running) usage.hours += dt / 3600;

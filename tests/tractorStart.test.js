@@ -8,7 +8,7 @@ function fakeEngine({ lampAfter = 5, catchesCold = false, crankFor = 1 } = {}) {
     isRunning: false,
     t: 0,
     cranked: 0,
-    get glowLamp() {
+    get glowHot() {
       return this.ignitionOn && !this.isRunning && this.t >= lampAfter;
     },
     setIgnition(on) {
@@ -20,7 +20,7 @@ function fakeEngine({ lampAfter = 5, catchesCold = false, crankFor = 1 } = {}) {
     if (e.ignitionOn) e.t += dt;
     if (starter) {
       e.cranked += dt;
-      if (e.cranked > crankFor && (catchesCold || e.glowLamp)) e.isRunning = true;
+      if (e.cranked > crankFor && (catchesCold || e.glowHot)) e.isRunning = true;
     } else e.cranked = 0;
   };
   return e;

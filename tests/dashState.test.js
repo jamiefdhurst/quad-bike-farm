@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { advanceUsage, isNeutral, lampStates, counterDigits, counterText, DashClock, cycleIndex, pickReading } from '../src/vehicle/dashState.js';
+import { pickRelatedReading, advanceUsage, isNeutral, lampStates, counterDigits, counterText, DashClock, cycleIndex, pickReading } from '../src/vehicle/dashState.js';
 
 describe('dash state', () => {
   it('adds hours only while the engine runs, and miles at speed', () => {
@@ -47,6 +47,12 @@ describe('dash state', () => {
     expect([0, 3.9, 4, 8, 12].map((s) => cycleIndex(s, 3))).toEqual([0, 0, 1, 2, 0]);
   });
 
+  it('picks a related reading towards where the other one sits', () => {
+    expect(pickRelatedReading([100, 200], 1, () => 0, 0.7)).toBeCloseTo(170);
+    expect(pickRelatedReading([100, 200], 0, () => 1, 0.7)).toBeCloseTo(130);
+    expect(pickRelatedReading([100, 200], 0.5, () => 0.5)).toBeCloseTo(150);
+  });
+
   it('picks readings within a range', () => {
     expect(pickReading([10, 20], () => 0)).toBe(10);
     expect(pickReading([10, 20], () => 0.5)).toBe(15);
@@ -61,5 +67,17 @@ describe('gearShown', () => {
     expect(gearShown({ gear: null, neutral: false, reverse: false })).toBe('D');
     expect(gearShown({ gear: null, neutral: true, reverse: false })).toBe('N');
     expect(gearShown({ gear: null, reverse: true })).toBe('R');
+  });
+});
+
+describe('the tractor spec', () => {
+  it('starts with an odometer in the background and a hand throttle range inside 0..1', async () => {
+    const { TRACTOR_SPEC } = await import('../src/vehicle/quadSpecs.js');
+    expect(TRACTOR_SPEC.odoRange[0]).toBeGreaterThan(0);
+    expect(TRACTOR_SPEC.odoRange[1]).toBeGreaterThan(TRACTOR_SPEC.odoRange[0]);
+    const [lo, hi] = TRACTOR_SPEC.handStartRange;
+    expect(lo).toBeGreaterThanOrEqual(0);
+    expect(hi).toBeLessThanOrEqual(1);
+    expect(hi).toBeGreaterThan(lo);
   });
 });

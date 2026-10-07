@@ -7,7 +7,7 @@ const line = (cooldown, lines) => ({ cooldown, lines });
 
 export const AMY_TRACTOR_LINES = {
   tractorKey: line(90, ['You have turned the key off and it is still going. It has a knob for that.', 'That is not how you stop a tractor. Pull the knob.', 'It has not noticed the key is off. It never does.']),
-  tractorGlow: line(45, ['Wait for the glow light first. It is a diesel, it needs warming.', 'Give it a minute while the plugs heat. Light first, then the starter.', 'Not yet. Wait for the light.']),
+  tractorGlow: line(45, ['Wait for the glow light to go out. It is a diesel, it needs warming.', 'Give it a minute while the plugs heat. Light out, then the starter.', 'Not yet. Wait for the light to go out.']),
   tractorCaught: line(50, ['There it goes. Lovely, in a smoky sort of way.', 'That is a lot of smoke, even for that tractor.', 'It is going. Give it a minute to settle.']),
 };
 

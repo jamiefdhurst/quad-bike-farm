@@ -94,7 +94,7 @@ import { Workshop } from './workshop/workshop.js';
 import { PodRack } from './vehicle/pods.js';
 import { buildPod } from './vehicle/dashPod.js';
 import { pickWornGearbox } from './vehicle/manualDrivetrain.js';
-import { DashClock, CLOCK_START_RANGE, pickReading, setDashClock } from './vehicle/dashState.js';
+import { DashClock, CLOCK_START_RANGE, pickReading, pickRelatedReading, setDashClock } from './vehicle/dashState.js';
 import { Bench } from './workshop/bench.js';
 import { Interaction } from './interaction/interaction.js';
 import { Wheel } from './interaction/wheel.js';
@@ -484,7 +484,7 @@ export class Game {
           return {
             action: `Ride the ${unit.label}`,
             keys: quad.tractor
-              ? [['K', 'Key'], ['R', 'Start'], ['X', 'Stop knob'], ...(this.chain.state === 'stowed' && !this.player.isRiding ? [['X', 'Tow chain']] : [])]
+              ? [['K', 'Key'], ['R', 'Start'], ['O', 'Stop knob'], ...(this.chain.state === 'stowed' && !this.player.isRiding ? [['X', 'Tow chain']] : [])]
               : [['K', 'Ignition'], ['R', 'Start'], ...(quad.manual ? [['Shift 1-4', 'Clutch, gears']] : []), ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
           };
         },
@@ -840,7 +840,7 @@ export class Game {
       z: unit.quad.position.z,
       running: e.isRunning,
       keyOn: e.ignitionOn,
-      glowWaiting: this.riddenUnit === unit && e.ignitionOn && !e.isRunning && !e.glowLamp && e.temperature < e.params.glowWarmAbove,
+      glowWaiting: this.riddenUnit === unit && e.ignitionOn && !e.isRunning && !e.glowHot && e.temperature < e.params.glowWarmAbove,
       caught: e.events.some((ev) => ev.type === 'caught'),
     };
     for (const ev of this.tractorWatch.update(dt, { tractor, girls })) {
@@ -1122,6 +1122,10 @@ export class Game {
     unit.variation = applyVariation(TRACTOR_SPEC, unit.engine.params, unit.quad.fuel, random);
     unit.topRpm = applyTopRpm(TRACTOR_SPEC, unit.engine.params, createRandom(this.seed ^ 0x70b6));
     unit.quad.usage.hours = pickReading(TRACTOR_SPEC.hoursRange, random);
+    // Its odometer isn't on the dash, but it counts from a start that goes with its hours (more hours, more miles).
+    const [hoursLo, hoursHi] = TRACTOR_SPEC.hoursRange;
+    unit.quad.usage.odoMiles = pickRelatedReading(TRACTOR_SPEC.odoRange, (unit.quad.usage.hours - hoursLo) / (hoursHi - hoursLo), random);
+    unit.quad.handSetting = pickReading(TRACTOR_SPEC.handStartRange, random); // the last driver left the hand throttle wherever
     this.units = [...this.units, unit];
     console.info(`Tractor: idle ${unit.idleRpm} rpm, ${unit.variation.litres.toFixed(1)} L of red diesel`);
     return unit;

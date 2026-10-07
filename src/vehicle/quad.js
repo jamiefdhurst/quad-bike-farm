@@ -24,13 +24,13 @@ const CHOKE_LESS_KEY = 'KeyZ';
 const CHOKE_REPEAT_DELAY = 0.35;
 const CHOKE_REPEAT_INTERVAL = 0.12;
 // The manual controls: Shift is the clutch, 1 to 4 the gears, 0 neutral and B reverse. The tractor also sets the quads' choke keys and
-// automatic drive aside: Q and Z move its hand throttle and X pulls its stop knob.
+// automatic drive aside: Q and Z move its hand throttle and O pulls its stop knob.
 const CLUTCH_KEYS = ['ShiftLeft', 'ShiftRight'];
 const GEAR_KEYS = { Digit1: 1, Digit2: 2, Digit3: 3, Digit4: 4, Digit0: 0, KeyB: -1 };
 const HAND_THROTTLE_RATE = 0.35; // per second the hand throttle moves while its key is held
 const HAND_THROTTLE_UP_KEY = 'KeyQ';
 const HAND_THROTTLE_DOWN_KEY = 'KeyZ';
-const STOP_KNOB_KEY = 'KeyX';
+const STOP_KNOB_KEY = 'KeyO'; // not X (the tow chain and winch) or C (look back)
 const NOTE_SECONDS = 2.5;
 
 /**
@@ -730,7 +730,7 @@ export class Quad {
         ? e.hasPower && this.drivetrain.neutral
         : isNeutral({ ignition: e.hasPower && e.ignitionOn, reverse: this.reverse, speedMps: this.forwardSpeed, rpm: e.rpm, clutchEngageRpm: this.params.clutchEngageRpm }),
       gear: this.manual ? gearLabel(this.drivetrain.gear) : null,
-      glow: e.glowLamp,
+      glow: e.glowLit,
       hand: this.handSetting,
       clock: clock.text(),
       seconds: clock.seconds(),

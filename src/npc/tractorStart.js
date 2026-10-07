@@ -3,7 +3,7 @@
 // face (update, abandon, phase, done, result, starter, events), which HerDrive uses in its place for the tractor. Pure logic.
 
 export const DEFAULT_TRACTOR_START_PARAMS = {
-  rushChance: 0.5, // chance she cranks before the glow lamp is lit, on her first go
+  rushChance: 0.5, // chance she cranks before the glow lamp has gone out, on her first go
   burstMin: 2.5, // seconds on the starter each go
   burstMax: 4.5,
   pauseMin: 1.5, // seconds between goes
@@ -75,7 +75,7 @@ export class TractorStartAttempt {
       case 'glow':
         // Waiting for the lamp: she cranks regardless if she's the sort who can't wait (once).
         if (engine.isRunning) return this.caught();
-        if (engine.glowLamp) return this.startBurst();
+        if (engine.glowHot) return this.startBurst();
         if (!this.waited) {
           this.waited = true;
           this.events.push('glowWait');
