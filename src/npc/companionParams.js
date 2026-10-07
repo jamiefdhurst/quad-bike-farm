@@ -110,6 +110,31 @@ export const DEFAULT_COMPANION_PARAMS = {
   blameChance: 0.02, // per second stood by a worn quad, that she says who did it
   leftRunningChance: 0.05, // per second stood by a quad left running, that she says who left it
   leftRunningRange: 8, // metres: how near she has to be to take notice of it
+  joyRise: 0.15, // per second her mood follows more of the quads running...
+  joyFall: 0.05, // ...and fewer
+  sadOnStall: 0.4, // how much a stall she saw dampens her (0..1)...
+  sadOnStallRiding: 0.8, // ...or one under her
+  sadFade: 0.012, // per second she gets over it
+  stallConfidenceKnock: 0.04, // what a stall under her does to her driving confidence
+  startUrge: 1.5, // extra keenness to start a quad that's off, when none are running (the bored 'start' weight is times 1 plus this times the share not running)
+  keyOffCut: 0.8, // how far her happiness at a running quad cuts the chance she switches an idling one off
+  likeRunningChance: 0.08, // per second near a running quad, with most going, that she says she likes it
+  wishRunningChance: 0.04, // the same, with most of them off, wishing they were all going
+  buzzFrom: 0.5, // body-shake level at which the seat feels good to her
+  buzzCap: 2, // the most shake that counts, so a rattling quad isn't worth unlimited
+  buzzSaysAfter: 25, // shake-seconds on a quad before she says she loves it
+  buzzSwitchLead: 40, // shake-seconds one quad must lead her favourite by to take over as her favourite
+  sideSaddleChance: 0.35, // each time she gets on the back, that she sits side-saddle
+  sideSaddleTurn: 1.0, // radians her hips turn towards the side her legs hang
+  sideSaddleTwist: 0.8, // fraction of that turn her back twists back to face forward
+  slipMinSpeed: 3, // m/s under which she can't slip
+  slipLateral: 5, // m/s^2 of sideways push she takes before she starts to slide, side-saddle with nothing to hold
+  slipBump: 25, // m/s^2 up a bump or landing she takes the same way
+  slipBackedOff: 0.5, // how much of a push counts when it's the way she has the seat behind her
+  slipHoldingGrip: 1.6, // times the limits when her arms are round you
+  slipRate: 0.8, // per second, per unit over the limit, that she slides
+  slipRecover: 0.5, // per second she gets herself back
+  slipWobbleAt: 0.5, // slip at which she yelps
   quirkChance: 0.04, // per second stood by a quad she knows a quirk of (three times that as you get on it), that she warns you of it
   historyChance: 0.02, // per second stood by a quad, that she brings up something she knows of its history (who had it, a fault, tinkering)
   diagnoseWearFrom: 0.2, // how worn the engine has to be before it sounds tired
@@ -315,6 +340,31 @@ export const COMPANION_PARAM_RANGES = {
   blameChance: [0, 0.3, 0.005],
   leftRunningChance: [0, 0.5, 0.01],
   leftRunningRange: [2, 30, 1],
+  joyRise: [0, 1, 0.01],
+  joyFall: [0, 1, 0.01],
+  sadOnStall: [0, 1, 0.05],
+  sadOnStallRiding: [0, 1, 0.05],
+  sadFade: [0, 0.2, 0.002],
+  stallConfidenceKnock: [0, 0.3, 0.01],
+  startUrge: [0, 5, 0.1],
+  keyOffCut: [0, 1, 0.05],
+  likeRunningChance: [0, 0.5, 0.01],
+  wishRunningChance: [0, 0.5, 0.01],
+  buzzFrom: [0, 2, 0.05],
+  buzzCap: [0.5, 5, 0.1],
+  buzzSaysAfter: [0, 300, 5],
+  buzzSwitchLead: [0, 600, 10],
+  sideSaddleChance: [0, 1, 0.05],
+  sideSaddleTurn: [0, 1.5, 0.05],
+  sideSaddleTwist: [0, 1, 0.05],
+  slipMinSpeed: [0, 15, 0.5],
+  slipLateral: [1, 20, 0.5],
+  slipBump: [5, 80, 1],
+  slipBackedOff: [0, 1, 0.05],
+  slipHoldingGrip: [1, 4, 0.1],
+  slipRate: [0.05, 5, 0.05],
+  slipRecover: [0, 3, 0.05],
+  slipWobbleAt: [0.1, 0.95, 0.05],
   quirkChance: [0, 0.5, 0.005],
   historyChance: [0, 0.3, 0.005],
   startPullWhenFlat: [0, 1, 0.05],

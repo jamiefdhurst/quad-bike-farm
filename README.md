@@ -254,6 +254,9 @@ On the back she holds on round your waist (look down and you'll see her hands), 
 She talks, now and then, with captions at the bottom of the screen:
 
 - Riding pillion she reacts to the ride: "Oh, this is fun!" on a smooth run, "This is a bit rough." over bumps, "Careful!" when you go too fast, a gasp when you brake hard, and something when it stalls or runs out of petrol.
+- She likes the quads running. A quad that stalls where she can see it gets her down (worse if it was under her, and a stall while she's driving knocks her nerve a little), and she's relieved when it catches again. With all of them going she says how much she likes it; with most off she wishes they were, is keener to go and start one, and is slower to switch an idling one off.
+- She likes the seat shaking her: the harder it shakes, the more she enjoys it. Sat on a buzzing quad she admits to it, and over the game her favourite quad moves to whichever one has shaken her most.
+- Sometimes (Amy more than Jess) she sits side-saddle on the back instead of astride, with both legs over one side. She holds on less well that way: a hard corner or a big bump or landing makes her yelp and, if it goes on, slide off and be left behind. Her arms round you, when you're the one riding in front, help a lot.
 - If you crank a quad near her for a while without it starting, she has a guess at why: the choke if it's cold, flooding if it's rich, the fuel tap if the carburettor is dry.
 - Left waiting she sighs, hums, yawns and asks if you're going. Ride off without her and she'll shout after you.
 - Sat on the back of a parked quad, every few minutes she asks if she can get off; the menu then has "Yes, hop off" and "No, stay there" (she grumbles and stays). If you don't answer, after several minutes she lets herself off. On the back by her own choice (after one of her drives, or bored), she gets bored of it sooner and gets off. On a long ride together she sometimes asks if you can stop soon.

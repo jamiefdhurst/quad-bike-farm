@@ -42,10 +42,10 @@ export function driveAppetite(confidence) {
  * the bored*Chance params (wandering gets what's left), each scaled by a whim
  * (log-normal, `boredWhim` wide) and driving by her appetite for it.
  */
-export function pickBoredChoice(p, { confidence = 0.5, can = {}, sulk = 1 } = {}, random = Math.random) {
+export function pickBoredChoice(p, { confidence = 0.5, can = {}, sulk = 1, startUrge = 1 } = {}, random = Math.random) {
   const base = {
     mount: p.boredMountChance,
-    start: p.boredStartChance,
+    start: p.boredStartChance * startUrge, // more keen the fewer quads are running (contentment.js)
     drive: p.boredDriveChance * driveAppetite(confidence) * sulk, // sulk: a neglected girl takes a quad off on her own
     rest: p.boredRestChance ?? 0, // sits on the bales or the fence: only on a fine day
     doughnuts: p.boredDoughnutChance ?? 0, // spins doughnuts in the field (Jess)

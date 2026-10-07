@@ -9,6 +9,8 @@ import { drivingStates, drivingMethods } from './companionDriving.js';
 import { hayRideStates, hayRideMethods, DEFAULT_HAYSEAT_PARAMS } from './companionHayRide.js';
 import { restingMethods, restingStates } from './companionResting.js';
 import { warmingMethods } from './companionWarming.js';
+import { Contentment } from './contentment.js';
+import { SideSaddleSlip, pickSideSaddle } from './sideSaddle.js';
 import { wavingMethods } from './companionWaving.js';
 import { DEFAULT_DOUGHNUT_PARAMS, ringPoints } from './doughnuts.js';
 import { DEFAULT_SHOWOFF_PARAMS, pickTrick } from './showOff.js';
@@ -19,6 +21,7 @@ import { PillionPose } from './pillionPose.js';
 import { canRideRack } from './rackSeat.js';
 import { nextBoredWait, driftRestlessness, pickBoredChoice } from './boredom.js';
 
+const AXIS_Y = new THREE.Vector3(0, 1, 0);
 const CAPSULE_HALF_HEIGHT = 0.55;
 const CAPSULE_RADIUS = 0.25;
 const UP = new THREE.Vector3(0, 1, 0);
@@ -108,6 +111,11 @@ export class Companion {
     this.gripReach = 0; // how far her hands are on the grips, 0..1
     // Holding on, leaning and looking about while she rides pillion.
     this.pillion = new PillionPose(this);
+    this.content = new Contentment(); // what she likes about the quads: them running, the seat shaking her (contentment.js)
+    this.sideSaddle = 0; // which way her legs hang on the back this ride: 0 astride, +1 her left, -1 her right (sideSaddle.js)
+    this.sideBlend = 0; // 0..1: how far she's turned round to sit that way
+    this.sideSlip = new SideSaddleSlip();
+    this.slipping = false; // she's coming off the back because she slid
     this.rig.posers.push((dt) => this.pillion.apply(dt));
     // Hands on the bars while she's driving (companionDriving.js).
     this.rig.posers.push((dt) => this.poseDriving(dt));
@@ -304,6 +312,9 @@ export class Companion {
     if (this.fsm.is('seated')) return;
     this.quad = quad;
     this.seatKind = seat;
+    this.sideSaddle = seat === 'pillion' ? pickSideSaddle(this.params) : 0;
+    this.sideBlend = 0;
+    this.sideSlip.reset();
     this.fsm.transition('walking', { goal: 'mount', target: () => this.mountPoint() });
   }
 
@@ -350,7 +361,7 @@ export class Companion {
     };
     const can = Object.fromEntries(Object.entries(options).map(([k, list]) => [k, list.length > 0]));
     const favour = this.favourView();
-    const choice = pickBoredChoice(p, { confidence: this.driveConfidence ?? p.driveConfidence, can, sulk: favour.sulk });
+    const choice = pickBoredChoice(p, { confidence: this.driveConfidence ?? p.driveConfidence, can, sulk: favour.sulk, startUrge: this.content.startUrge(p) });
     const pick = (list) => list[Math.floor(Math.random() * list.length)];
     // Neglected and off on a quad alone: she makes a point of it.
     // Jess now and then takes her friend's quad, to wind her up (ownership.js).
@@ -686,6 +697,34 @@ export class Companion {
   }
 
   /**
+   * Side-saddle on the back: she eases round to sit that way, and holds on less well than astride, so a hard corner or a big
+   * bump can have her slide (sideSaddle.js): a yelp first, and then she's off, left where she landed.
+   */
+  watchSideSaddle(dt) {
+    const p = this.params;
+    if (this.seatKind !== 'pillion' || !this.sideSaddle) return;
+    if (this.sideBlend === 0) this.selfEvents.push('sideOn');
+    this.sideBlend = Math.min(1, this.sideBlend + dt / 0.6);
+    this.root.rotation.y = this.sideAngle;
+    const q = this.quad;
+    const a = this.pillion.dynamics.accel;
+    const event = this.sideSlip.update(dt, { speed: q.speed, lateral: a.left, up: a.up, side: this.sideSaddle, holding: !!q.rider }, p);
+    if (event === 'wobble') this.selfEvents.push('sideWobble');
+    else if (event === 'off') {
+      this.selfEvents.push('sideSlip');
+      this.slipping = true;
+      this.fsm.transition('dismounting');
+    }
+  }
+
+  /** Where she ends up on the ground when she slides off: beside the quad on the side her legs hang, where it was. */
+  slipSpot() {
+    const p = this.quad.localToWorld(this.sideSaddle * 1.1, 0, -0.4);
+    p.y = this.world.heightAt(p.x, p.z);
+    return { position: p, facing: this.startHeading };
+  }
+
+  /**
    * Sat on the back of a quad left running with nobody driving it, now and then
    * (rarely) she leans forward after a while and switches it off.
    */
@@ -697,7 +736,7 @@ export class Companion {
       return;
     }
     // Decided once each time she's left sitting there.
-    this.keyOffIn ??= Math.random() < this.params.keyOffChance ? this.randomBetween(this.params.keyOffAfterMin, this.params.keyOffAfterMax) : Infinity;
+    this.keyOffIn ??= Math.random() < this.params.keyOffChance * this.content.keyOffFactor(this.params) ? this.randomBetween(this.params.keyOffAfterMin, this.params.keyOffAfterMax) : Infinity;
     this.keyOffIn -= dt;
     if (this.keyOffIn <= 0) {
       this.keyOffIn = null;
@@ -779,11 +818,18 @@ export class Companion {
     const p = this.params;
     if (!front && this.seatKind === 'rack') return new THREE.Vector3(-this.sitHips.x, -this.sitHips.y + p.rackSeatRaise, -this.sitHips.z + p.rackSeatForward);
     if (front) return new THREE.Vector3(-this.sitHips.x, -this.sitHips.y + p.driveSeatRaise, -this.sitHips.z + p.driveSeatForward);
-    return new THREE.Vector3(-this.sitHips.x, -this.sitHips.y + p.seatRaise, -this.sitHips.z + p.seatForward);
+    // Turned to one side, her hips swing round with her, so she's put back on the seat by the same amount.
+    return new THREE.Vector3(-this.sitHips.x, -this.sitHips.y + p.seatRaise, -this.sitHips.z + p.seatForward).applyAxisAngle(AXIS_Y, this.sideAngle);
+  }
+
+  /** How far she's turned about the vertical to sit side-saddle, in radians (positive towards her left). */
+  get sideAngle() {
+    return this.seatKind === 'pillion' ? this.sideSaddle * this.sideBlend * this.params.sideSaddleTurn : 0;
   }
 
   /** The legs' spread for the back seat she's in: astride the pillion, nearly together on the front rack. */
   seatSpread() {
+    if (this.seatKind === 'pillion' && this.sideSaddle) return 0; // both legs over one side
     return this.params.legSpread * (this.seatKind === 'rack' ? this.params.rackLegSpread : 1);
   }
 
@@ -1141,6 +1187,7 @@ const STATES = {
         return;
       }
       this.pillion.update(dt);
+      this.watchSideSaddle(dt);
       this.mindTheEngine(dt);
       this.askToGetOff(dt);
       this.boredOnTheBack(dt);
@@ -1167,20 +1214,23 @@ const STATES = {
       this.root.rotation.set(0, e.y, 0);
       this.startHeading = e.y;
       this.target = this.standPoint(this.dismountSide);
+      this.slipTarget = this.slipping ? this.slipSpot() : null;
+      this.slipping = false;
       this.rig.play('Sitting', { once: true, timeScale: -1, fade: 0.2 });
     },
     update() {
       const p = this.params;
       const t = Math.min(1, this.fsm.time / p.dismountDuration);
       const k = smooth(t);
-      this.target = this.standPoint(this.dismountSide);
+      this.target = this.slipTarget ?? this.standPoint(this.dismountSide);
       this.root.position.lerpVectors(this.startPos, this.target.position, k);
       this.root.position.y += Math.sin(Math.PI * k) * 0.12;
       this.heading = this.startHeading + angleTo(this.startHeading, this.target.facing) * k;
       this.root.rotation.y = this.heading;
-      this.rig.legSpread = (this.dismountingFrom === 'rack' ? this.seatSpread() : p.legSpread) * (1 - k);
+      this.rig.legSpread = (this.dismountingFrom === 'rack' || (this.dismountingFrom === 'pillion' && this.sideSaddle) ? this.seatSpread() : p.legSpread) * (1 - k);
       if (t >= 1) {
         this.rig.legSpread = 0;
+        this.slipTarget = null;
         this.setColliderEnabled(true);
         if (this.dismountingFrom === 'rider') {
           if (Math.random() < p.parkBrakeChance) this.quad.parkBrake = true;

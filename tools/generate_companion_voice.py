@@ -81,13 +81,14 @@ FEELS = {
 }
 FEEL = {
     **dict.fromkeys(['rideGentle', 'rideLong', 'nearbyWarm', 'mountedTogether', 'waitingSeated', 'likeRed', 'likeBlue',
-                     'likeYellow', 'likeGreen', 'likeOrange', 'seatedShakingLong', 'drivePause', 'startWarm'], 'calm'),
+                     'likeYellow', 'likeGreen', 'likeOrange', 'seatedShakingLong', 'drivePause', 'startWarm', 'stallSad', 'buzzLove',
+                     'sideSaddleOn'], 'calm'),
     **dict.fromkeys(['rideFun', 'ghostRidingFun', 'ghostStoppedFun', 'driveHappy', 'startCaught', 'caughtAfterStruggle',
                      'ackFaster', 'ackGiveRide', 'ackDrive', 'tunedFast', 'driveSetOffConfident', 'ackFollow',
-                     'tinkerLimiter', 'selfDrive', 'ackGoAgain'], 'excited'),
+                     'tinkerLimiter', 'selfDrive', 'ackGoAgain', 'stallRelief', 'likeAllRunning'], 'excited'),
     **dict.fromkeys(['rideFast', 'hardBrake', 'ghostRiding', 'driveTooFast', 'driveOverSteer', 'driveBump',
                      'driveRollBack', 'driveObstacle', 'sprayedHer', 'leftBehind', 'fallingBehind', 'takeOverStop',
-                     'takeOverDrive', 'driveScared', 'driveNervous', 'rideRough', 'rideShaking'], 'scared'),
+                     'takeOverDrive', 'driveScared', 'driveNervous', 'rideRough', 'rideShaking', 'sideSaddleWobble', 'sideSaddleSlip'], 'scared'),
     **dict.fromkeys(['ghostStopped', 'ackKeepOn', 'driveTaken', 'ackStopDrive', 'ackBack', 'driveGaveUp',
                      'startGaveUp', 'stalledRiding', 'outOfFuel', 'selfGetOffWaited', 'askOff', 'askStop'], 'cross'),
     'banter': 'snide',  # the girls bickering (banterLines.js)

@@ -227,7 +227,10 @@ export class PillionPose {
     const roll = (d.roll.x + this.head.lean * (1 - lb)) * W;
     // She sits up off your back to look at you when you turn round.
     const pitch = (d.pitch.x + hold * p.hugLean * (1 - 0.6 * lb) - d.heave.x * p.bounceSlump) * W;
+    // Side-saddle her hips are turned to one side (companion.sideAngle); the back twists round to face forward again.
+    const twist = -this.companion.sideAngle * this.companion.params.sideSaddleTwist * W;
     for (const [name, share] of SPINE) {
+      rig.rotateAboutRootAxis(b[name], AXIS_Y, twist * share);
       rig.rotateAboutRootAxis(b[name], AXIS_X, pitch * share);
       // Positive roll leans to her left (+X), which is a negative turn about Z.
       rig.rotateAboutRootAxis(b[name], AXIS_Z, -roll * share);

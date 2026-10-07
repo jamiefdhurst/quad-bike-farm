@@ -226,6 +226,12 @@ export class CompanionVoice {
     const sick = (view.units ?? []).find((u) => u.engine.isRunning && u.engine.erratic > 0.25 && (u.quad === c.quad && !c.fsm.is('idle', 'walking') ? true : u.quad.position.distanceTo(this.head) < 6));
     if (sick) this.say('engineSick', { chance: 0.05 });
 
+    // Near the quads: she likes them all going, and misses it when they aren't.
+    if (c.fsm.is('idle', 'resting') && !view.menuOpen && (view.units ?? []).some((u) => u.engine.isRunning && u.quad.position.distanceTo(this.head) < 8)) {
+      if (c.content.share >= 0.7) this.say('likeAllRunning', { chance: p.likeRunningChance * step });
+      else if (c.content.share <= 0.5) this.say('wishAllRunning', { chance: p.wishRunningChance * step });
+    }
+
     // Stood next to you, both on foot: the odd warm word.
     const standing = c.fsm.is('idle');
     const close = standing && !ridden && distance < 4 && !view.menuOpen;
@@ -286,6 +292,7 @@ export class CompanionVoice {
       this.seatedShakeTime = 0;
       if (!c.isSeated) {
         this.seatTime = 0;
+        this.buzzSaid = false;
         this.favouriteSaid = false;
       }
       return;
@@ -293,7 +300,18 @@ export class CompanionVoice {
     const b = unit.vibration.body;
     const now = Math.hypot(b.heave * 100, b.pitch * 57.3, b.roll * 57.3);
     this.shake += (now * now - this.shake) * Math.min(1, dt / 1.5);
-    const bad = Math.sqrt(this.shake) > p.voiceShakeLevel;
+    const level = Math.sqrt(this.shake);
+    c.content.feel(dt, unit.spec.id, level, p);
+    // Whichever quad shakes her most, she comes to like best.
+    const fav = c.content.favourite(this.favourite, p, (id) => !!this.chatter.lines[`like${cap(id)}`] && view.units.some((u) => u.spec.id === id && c.mayRide(u.quad)));
+    if (fav !== this.favourite) {
+      this.favourite = fav;
+      this.favouriteSaid = false;
+    }
+    if (together && !this.buzzSaid && c.content.enjoyed(unit.spec.id, p) && level >= p.buzzFrom) {
+      if (this.say('buzzLove', { chance: 0.01 })) this.buzzSaid = true;
+    }
+    const bad = level > p.voiceShakeLevel;
     this.shakeTime = bad ? this.shakeTime + dt : 0;
     this.seatedShakeTime = bad && !together ? this.seatedShakeTime + dt : together ? 0 : this.seatedShakeTime;
     if (together) {
@@ -352,7 +370,7 @@ export class CompanionVoice {
   watchOwnMind() {
     const events = this.companion.selfEvents;
     // Switching a quad off is rare, so she always mentions it.
-    for (const e of events) this.say({ wander: 'selfWander', restGo: 'restGo', loftGo: 'loftGo', restRain: 'restRain', restLeave: 'restLeave', join: 'selfJoin', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive', sulkOff: 'sulkOff', offerRide: 'offerRide', borrow: 'borrow', doughnuts: 'selfDoughnuts', jumps: 'selfJumps', showOff: 'selfShowOff', nickGo: 'nickGo', nickBack: 'nickBack', lineUp: 'selfLineUp', lineUpCrooked: 'selfCrooked', straighten: 'lineUpStraighten', lineUpNotice: 'lineUpNotice', keyOff: 'selfKeyOff', askOff: 'askOff', askStop: 'askStop', getOff: 'selfGetOff', getOffWaited: 'selfGetOffWaited', takeOverStop: 'takeOverStop', takeOverDrive: 'takeOverDrive' }[e], { urgent: true, chance: e === 'keyOff' || e === 'askOff' || e === 'offerRide' || e === 'sulkOff' || e === 'borrow' || e.startsWith('nick') || e.startsWith('takeOver') ? 1 : 0.8 });
+    for (const e of events) this.say({ wander: 'selfWander', restGo: 'restGo', loftGo: 'loftGo', restRain: 'restRain', restLeave: 'restLeave', join: 'selfJoin', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive', sulkOff: 'sulkOff', offerRide: 'offerRide', borrow: 'borrow', doughnuts: 'selfDoughnuts', jumps: 'selfJumps', showOff: 'selfShowOff', nickGo: 'nickGo', nickBack: 'nickBack', lineUp: 'selfLineUp', lineUpCrooked: 'selfCrooked', straighten: 'lineUpStraighten', lineUpNotice: 'lineUpNotice', keyOff: 'selfKeyOff', askOff: 'askOff', askStop: 'askStop', getOff: 'selfGetOff', getOffWaited: 'selfGetOffWaited', takeOverStop: 'takeOverStop', takeOverDrive: 'takeOverDrive', sideOn: 'sideSaddleOn', sideWobble: 'sideSaddleWobble', sideSlip: 'sideSaddleSlip' }[e], { urgent: true, chance: e === 'keyOff' || e === 'askOff' || e === 'offerRide' || e === 'sulkOff' || e === 'borrow' || e.startsWith('nick') || e.startsWith('takeOver') || e === 'sideWobble' || e === 'sideSlip' ? 1 : 0.8 });
     events.length = 0;
   }
 
@@ -492,6 +510,8 @@ export class CompanionVoice {
   watchEngines(dt, view, together, distance) {
     const c = this.companion;
     let coldNear = false;
+    const content = c.content;
+    content.update(dt, view.units.filter((u) => u.engine.isRunning).length / Math.max(1, view.units.length), c.params);
     for (const unit of view.units) {
       const e = unit.engine;
       const w = this.engineWatch.get(unit) ?? { state: e.state, cranking: 0 };
@@ -505,7 +525,16 @@ export class CompanionVoice {
       if (w.state === 'running' && e.state === 'stalled' && (hers || (near && c.quad === unit.quad))) {
         this.say(e.lastStallReason === 'noFuel' ? 'outOfFuel' : e.lastStallReason === 'diesel' ? 'dieselDied' : 'stalledRiding', { urgent: true, chance: 0.8 });
       }
+      // A quad stalling where she can see it gets her down, more so if it was under her; the one she was driving knocks her nerve.
+      if (w.state === 'running' && e.state === 'stalled' && unit.quad.position.distanceTo(this.head) < c.params.voiceRange) {
+        const onIt = c.quad === unit.quad && !c.fsm.is('idle', 'walking');
+        content.stalled(onIt, c.params);
+        if (onIt && c.fsm.is('driving')) c.driveConfidence = Math.max(0, (c.driveConfidence ?? c.params.driveConfidence) - c.params.stallConfidenceKnock);
+        if (!hers && !(near && c.quad === unit.quad)) this.say('stallSad', { urgent: true, chance: 0.8 });
+      }
       if (w.state !== 'running' && e.isRunning) {
+        // And a bit of relief when it's going again.
+        if (content.sad > 0.15 && near) this.say('stallRelief', { urgent: true, chance: 0.7 });
         if (w.cranking > 5 && near) this.say('caughtAfterStruggle', { urgent: true, chance: 0.8 });
         w.cranking = 0;
       }
