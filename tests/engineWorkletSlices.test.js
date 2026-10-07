@@ -135,3 +135,16 @@ describe('pulseDivide', () => {
     expect(v.rate).toBeLessThan(0.55);
   });
 });
+
+describe('pulseSlowest', () => {
+  it('lets a beat stretch far enough to fill a slow third-pace slot, rather than stopping short and leaving a gap', () => {
+    const { RecordedEngine } = loadWorklet(44100);
+    const rec = new RecordedEngine(slicedBank());
+    // A 30 ms slice given three 32 ms firings: about 0.3 of its speed fills the slot.
+    for (const [slowest, expected] of [[0.45, 0.45], [0.25, 0.3]]) {
+      const params = { ...PARAMS, pulseDivide: 3, pulseStretch: 1, pulseSlowest: slowest };
+      for (let i = 0; i < 3; i++) rec.trigger({ type: 'fire', strength: 1, period: 0.032 }, params, 2000, 0);
+      expect(rec.voices[rec.voices.length - 1].rate).toBeCloseTo(expected, 1);
+    }
+  });
+});

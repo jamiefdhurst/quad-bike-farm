@@ -259,7 +259,7 @@ class RecordedEngine {
     const cycle = period > 0 ? period * sampleRate : (120 / cycleRpm) * sampleRate;
     const target = cycle * (1 + this.overlap);
     const natural = g.len / target;
-    const rate = natural <= 1 ? Math.max(0.45, Math.pow(natural, p.pulseStretch)) : Math.pow(natural, p.pulsePitchFollow);
+    const rate = natural <= 1 ? Math.max(p.pulseSlowest ?? 0.45, Math.pow(natural, p.pulseStretch)) : Math.pow(natural, p.pulsePitchFollow);
     const xfade = Math.max(0.0015 * sampleRate, Math.min(0.008 * sampleRate, cycle * p.pulseCrossfade));
     // Length in recorded samples: the whole grain, or as much as fits before the next firing.
     const len = natural <= 1 ? g.len + g.tail : Math.min(g.len + g.tail, (target + xfade) * rate);

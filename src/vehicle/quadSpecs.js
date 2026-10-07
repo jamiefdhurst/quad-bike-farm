@@ -1158,6 +1158,7 @@ export const LAND_ROVER_SPEC = {
     recIdleSource: 'quad',
     pulseRefRpm: 490,
     pulseDivide: 3, // Jamie: at its own pace the Jeep's idle sounded far too quick for it; a third of the pace, one beat every third firing
+    pulseSlowest: 0.25, // each 61 ms beat stretched to fill three firings (about 190 ms at idle) with no gap after it
     pulseRevLoudness: 0.3,
     pulsePitchFollow: 0.25, // one recorded beat per firing, at about its own speed: the beats come faster as it revs, the note barely rises
     recVolume: 0.6,

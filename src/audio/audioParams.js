@@ -130,6 +130,7 @@ export const DEFAULT_AUDIO_PARAMS = {
   pulseStretch: 1, // a firing recorded faster than the engine turns is stretched to fill its cycle by natural ** this: 1 fills it (lower pitch), 0 plays it at its own speed with a gap
   pulseRevLo: 0, // rpm where the pulse sound starts blending into the bank's real rev firings (0 with pulseRevHi: revs only from idle)
   pulseRevHi: 0, // rpm where they've fully taken over
+  pulseSlowest: 0.45, // the slowest a firing is ever stretched to; any slower and it stops short of the next, leaving a gap
   pulseDivide: 1, // sound only every Nth firing, stretched over N: 2 plays the recording at half its pace and an octave down
   pulseRevGain: 1, // level of those rev firings against the idle ones
   pulseCleanUp: 1.3, // idles cut in slices (the moto's and ATC's two-strokes): above this multiple of the recorded idle speed only the bangs play, so it fires every turn
@@ -219,6 +220,7 @@ export const AUDIO_PARAM_RANGES = {
   pulseStretch: [0, 1, 0.01],
   pulseRevLo: [0, 12000, 50],
   pulseRevHi: [0, 12000, 50],
+  pulseSlowest: [0.1, 1, 0.01],
   pulseDivide: [1, 4, 1],
   pulseRevGain: [0, 3, 0.01],
   pulseCleanUp: [1, 4, 0.05],
