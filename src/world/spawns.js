@@ -41,9 +41,17 @@ export function randomiseQuadSpawns(spawn, count, random) {
   return { placed: slots.map((s) => ({ ...s, where: 'in the yard' })), home };
 }
 
+/** Where `count` jerry cans start: each at a different one of the layout's spots, picked at random, with a little jitter. */
+export function randomJerryCanSpots(layout, random, count) {
+  const left = [...layout.jerryCanSpots];
+  return Array.from({ length: Math.min(count, left.length) }, () => jerryCanSpotAt(layout, left.splice(Math.floor(random() * left.length), 1)[0], random));
+}
+
 export function randomJerryCanSpot(layout, random) {
-  const spots = layout.jerryCanSpots;
-  const spot = spots[Math.floor(random() * spots.length)];
+  return randomJerryCanSpots(layout, random, 1)[0];
+}
+
+function jerryCanSpotAt(layout, spot, random) {
   const j = layout.jerryCanJitter;
   return {
     x: spot.x + (random() * 2 - 1) * j,

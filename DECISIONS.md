@@ -1576,6 +1576,12 @@ Settled with Jamie before building: a second, small trailer (the bale trailer st
 - No new lines: they use `mudBoard`, `utvBoard` and `utvBedGo`. The girls don't drive the UTV yet, so there is no UTV version of the join; it comes with item 37.
 - Checked: unit tests for all of it (`tests/mudguardRide.test.js`, `tests/utvRide.test.js`). Not run in the game: the walk over and climb, the driver's wait for her, and how often it happens in real play.
 
+## Where things start (2026-10-07)
+
+- The jump leads now start on the workbench, in the place they go back to (`LAYOUT.benchLeads`), instead of on the ground by the hose.
+- All three jerry cans (petrol, pre-mix, diesel) start at different ones of the five `jerryCanSpots`, picked at random with the usual jitter (`randomJerryCanSpots`, tested). The petrol can's draw is the same as before for a given seed, so it stays where it was; the other two draw after it. The pre-mix and diesel cans no longer start beside the oil bottle and the bowser, so you may have to go looking for them: the bowser and the oil bottle still stay put.
+- The unused `premixCan`, `dieselCan` and `jumpLeads` layout entries are gone. Checked: unit tests only; not looked at in the game, so a can sitting somewhere awkward (against a bale or a fence) is possible.
+
 ## Carrying the oil bottle (2026-10-07)
 
 - The oil bottle is a pick-up item now (`E` empty-handed, with the same hold-to-pour onto a jerry can when you have one). It is carried low on the right, goes down with `G`, stands in the tipping trailer (a fourth kind of load, `CARGO_FOOTPRINTS` has its size) and goes back in its own place on the workbench (`LAYOUT.benchOil`, between the toolbox and the logbook). Those are all the places the other things can go today; the UTV's bed waits for item 38.

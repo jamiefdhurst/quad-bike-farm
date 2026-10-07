@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Input } from './core/input.js';
 import { createRandom, startSeed } from './core/random.js';
-import { randomiseQuadSpawns, randomJerryCanSpot } from './world/spawns.js';
+import { randomiseQuadSpawns, randomJerryCanSpots } from './world/spawns.js';
 import { registerTuning } from './core/tuning.js';
 import { loadModels } from './world/assets.js';
 import { World } from './world/world.js';
@@ -693,7 +693,7 @@ export class Game {
       position: L.fuelTank,
       yaw: L.fuelTank.yaw,
     });
-    const canSpot = randomJerryCanSpot(L, random);
+    const [canSpot, premixSpot, dieselSpot] = randomJerryCanSpots(L, random, 3); // the three cans start in different places
     this.petrolCan = new JerryCan({
       scene: this.scene,
       world: this.world,
@@ -705,8 +705,8 @@ export class Game {
     this.premixCan = new JerryCan({
       scene: this.scene,
       world: this.world,
-      position: L.premixCan,
-      yaw: L.premixCan.yaw,
+      position: premixSpot,
+      yaw: premixSpot.yaw,
       params: { ...DEFAULT_JERRY_CAN_PARAMS, startLitres: 12, startOil: 0.02 },
       colours: PREMIX_CAN_COLOURS,
       name: 'premixCan',
@@ -728,8 +728,8 @@ export class Game {
     this.dieselCan = new JerryCan({
       scene: this.scene,
       world: this.world,
-      position: L.dieselCan,
-      yaw: L.dieselCan.yaw,
+      position: dieselSpot,
+      yaw: dieselSpot.yaw,
       params: { ...DEFAULT_JERRY_CAN_PARAMS, startLitres: 10, startDiesel: 1 },
       colours: DIESEL_CAN_COLOURS,
       name: 'dieselCan',
@@ -804,7 +804,8 @@ export class Game {
       interact: () => this.hose.pickUp(this.camera),
     });
     // Jump leads, for a flat battery: a running quad charges it.
-    this.leads = new JumpLeads({ scene: this.scene, world: this.world, position: L.jumpLeads, yaw: L.jumpLeads.yaw });
+    this.leads = new JumpLeads({ scene: this.scene, world: this.world, position: L.benchLeads, yaw: L.benchLeads.yaw });
+    this.leads.model.position.y += L.bench.height; // they start on the workbench
     this.interaction.add({
       target: this.leads.proxy,
       isAvailable: () => !this.handsFull && !this.leads.held,

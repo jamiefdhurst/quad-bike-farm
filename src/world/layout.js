@@ -114,7 +114,7 @@ export const LAYOUT = {
   ],
   baleSeat: 1.52, // how high her hips sit above the ground on a straw bale (the top is at 1.44, and her hips want to be a little above it)
 
-  // Petrol tank by the barn. The jerry can starts at one of these spots, picked at random.
+  // Petrol tank by the barn. Each of the three jerry cans (petrol, pre-mix, diesel) starts at a different one of these spots, picked at random.
   fuelTank: { x: -61, z: 52.3, yaw: Math.PI / 2 }, // labelled side facing the yard
   jerryCanSpots: [
     { x: -58.6, z: 51.6, yaw: 0.4, where: 'by the petrol tank' },
@@ -128,15 +128,12 @@ export const LAYOUT = {
   trailer: { x: -44.5, z: 77.9, yaw: 2.7 }, // the bale trailer's axle, 8 m behind the tractor and pointing at it, so you reverse the drawbar up to it
   tipTrailer: { x: -49, z: 33.5, yaw: 0.2 }, // the little tipping trailer's axle, in the clear by the paddock with its tongue towards the yard, for a quad to back up to
   dieselBowser: { x: -61, z: 45.6, yaw: Math.PI / 2 }, // red diesel for the tractor, south of the petrol tank (and the hose)
-  dieselCan: { x: -58.9, z: 46.2, yaw: 0.5 }, // the dark green diesel can stands by it
   jerryCanJitter: 0.8, // metres of extra random shift around the chosen spot
   // The toolbox for tinkering with the quads, on the workbench in the barn.
   toolbox: { x: -62.9, z: 56.1, yaw: 0.1, lift: 0.92 }, // on the barn workbench
   benchOil: { x: -62.05, z: 56.1, yaw: 0.2 }, // the oil bottle's place on the workbench
   oilBottle: { x: -59.3, z: 52.9, yaw: 0.3 }, // two-stroke oil, by the petrol tank
-  premixCan: { x: -58.9, z: 53.5, yaw: 1.1 }, // the pre-mix can starts here
-  jumpLeads: { x: -59.6, z: 48.6, yaw: 0.6 }, // jump leads on the ground by the hose
-  benchLeads: { x: -63.55, z: 56.1, yaw: 0.4 }, // where the jump leads go when you put them back on the workbench (the toolbox's place is `toolbox`)
+  benchLeads: { x: -63.55, z: 56.1, yaw: 0.4 }, // where the jump leads lie on the workbench, at the start and when you put them back (the toolbox's place is `toolbox`)
   hose: { x: -61.2, z: 49.4, yaw: 0.2 }, // hose reel at the south end of the petrol tank
 
   spawn: {
