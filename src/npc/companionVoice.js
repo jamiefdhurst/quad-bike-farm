@@ -9,6 +9,7 @@ import { applicableQuirks, featuresOf, girlKnowsQuirks } from '../vehicle/quirks
 import { engineCondition, guessCondition } from './diagnosis.js';
 import { guessPlug } from '../workshop/benchJobs.js';
 import { isThrashed } from '../engine/wearLedger.js';
+import { leftRunningSituation } from './leftRunning.js';
 import { quadKey } from './quadNames.js';
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
@@ -520,6 +521,7 @@ export class CompanionVoice {
       this.watchDiagnosis(dt, unit, w);
       this.watchThrash(dt, unit, view, near || hers);
       this.watchBlame(dt, unit, w, view);
+      this.watchLeftRunning(dt, unit, w, view);
       this.watchHistory(dt, unit, w, view);
       this.watchQuirks(dt, unit, w, view);
       // Cranking on and on without it catching.
@@ -612,6 +614,17 @@ export class CompanionVoice {
     if (!culprit) return;
     if (!this.say(`blame${culprit.who === 'you' ? 'You' : culprit.who === 'amy' ? 'Amy' : 'Jess'}`, { chance: c.params.blameChance * dt })) return;
     w.blamedUntil = this.chatter.time + 180;
+  }
+
+  /** Come across a quad idling with nobody on it, she says who left it running, going by who really did (leftRunning.js). */
+  watchLeftRunning(dt, unit, w, view) {
+    const c = this.companion;
+    if (!view.left || !c.fsm.is('idle', 'resting') || unit.quad.position.distanceTo(this.head) > c.params.leftRunningRange) return;
+    if (!unit.engine.isRunning || this.chatter.time < (w.leftUntil ?? 0)) return;
+    const who = view.left.culprit(unit.id);
+    if (!who) return;
+    if (!this.say(leftRunningSituation(who, view.left.times(who), view.left.p), { chance: c.params.leftRunningChance * dt })) return;
+    w.leftUntil = this.chatter.time + 240;
   }
 
   /**

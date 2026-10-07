@@ -1352,3 +1352,12 @@ The item settled the shape, so I chose the details without asking.
 - Only Jess does it, and only to Amy: Amy is the one who is always mid-sentence about something useful, and it keeps Jess's cheek in one direction.
 - Lines in `drownOutLines.js` (`drownRev`, `drownProtest` Jess only; `drownSwitchOff`, `drownTellOff` Amy). Tunables in the "Drowning out" folder.
 - Not checked in the running game: only unit tests. Whether the rev is audible over Amy, and how often it fires, are first guesses.
+
+## Left running (TODO 15)
+
+The item settled it; I chose the details without asking. Nothing new makes a girl wander off: after she starts a quad (head start, or you ask her to) she already goes idle with it running, and the heat and fuel work already finish the job. What was missing was anyone noticing, and being right.
+
+- `src/npc/leftRunning.js` (pure, tests in `tests/leftRunning.test.js`; tunables under "Left running"). The game says each frame, for each quad, whether it's running, whether anyone is on it or starting it, and who is at the controls (you, a girl driving, or a girl having a go at starting it). The last of those to have it is the one to blame, so a girl who starts it for you and goes off is the culprit, and so are you if you step off without switching it off. A passenger alone doesn't change the blame. After `askAfter` 75 s running unattended it counts as left, once per stretch, in a tally per person.
+- A girl stood about or resting within `leftRunningRange` 8 m says who did it (`leftRunningYou`, `leftRunningYouAgain` once your tally reaches `againAfter` 3, `leftRunningAmy`, `leftRunningJess`), at `leftRunningChance` 0.05 a second, once per quad every four minutes. Same shape as the wear blame: each girl has her own table, and the situation named for her own name is her owning up. Amy minds the petrol; Jess is unbothered and tells on Amy with relish.
+- Left out: a girl switching it off herself, and the tally feeding into who she favours. Both are easy to add on top.
+- Checked: unit tests only. Not checked in the running game: how long 75 s feels, how often the lines fire, or how they sound.

@@ -16,6 +16,7 @@ import { JESS_HEAT_LINES } from './heatLines.js';
 import { JESS_SILENCER_LINES } from './silencerLines.js';
 import { JESS_DIAGNOSIS_LINES } from './diagnosisLines.js';
 import { JESS_THRASH_LINES } from './thrashLines.js';
+import { JESS_LEFT_LINES } from './leftRunningLines.js';
 import { JESS_HISTORY_LINES } from './historyLines.js';
 import { JESS_QUIRK_LINES } from './quirkLines.js';
 import { JESS_TEMPERATURE_LINES } from './temperatureLines.js';
@@ -382,6 +383,7 @@ export const JESS_LINES = {
   ...JESS_FAULT_LINES,
   ...JESS_DIAGNOSIS_LINES,
   ...JESS_THRASH_LINES,
+  ...JESS_LEFT_LINES,
   ...JESS_HISTORY_LINES,
   ...JESS_QUIRK_LINES,
   ...JESS_TEMPERATURE_LINES,

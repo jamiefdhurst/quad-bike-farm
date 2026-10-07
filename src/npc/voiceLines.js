@@ -20,6 +20,7 @@ import { AMY_HEAT_LINES } from './heatLines.js';
 import { AMY_SILENCER_LINES } from './silencerLines.js';
 import { AMY_DIAGNOSIS_LINES } from './diagnosisLines.js';
 import { AMY_THRASH_LINES } from './thrashLines.js';
+import { AMY_LEFT_LINES } from './leftRunningLines.js';
 import { AMY_HISTORY_LINES } from './historyLines.js';
 import { AMY_QUIRK_LINES } from './quirkLines.js';
 import { AMY_TEMPERATURE_LINES } from './temperatureLines.js';
@@ -1404,6 +1405,8 @@ export const VOICE_LINES = {
   ...AMY_DIAGNOSIS_LINES,
   // Thrashing a cold engine, and who wore it out (thrashLines.js).
   ...AMY_THRASH_LINES,
+  // Finding a quad left running (leftRunningLines.js).
+  ...AMY_LEFT_LINES,
   ...AMY_HISTORY_LINES,
   ...AMY_QUIRK_LINES,
   ...AMY_TEMPERATURE_LINES,

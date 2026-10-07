@@ -108,6 +108,8 @@ export const DEFAULT_COMPANION_PARAMS = {
   thrashChance: 0.15, // per second she can see a quad being thrashed cold, that she says something
   blameWearFrom: 0.15, // wear a quad needs before she says who's worn it out
   blameChance: 0.02, // per second stood by a worn quad, that she says who did it
+  leftRunningChance: 0.05, // per second stood by a quad left running, that she says who left it
+  leftRunningRange: 8, // metres: how near she has to be to take notice of it
   quirkChance: 0.04, // per second stood by a quad she knows a quirk of (three times that as you get on it), that she warns you of it
   historyChance: 0.02, // per second stood by a quad, that she brings up something she knows of its history (who had it, a fault, tinkering)
   diagnoseWearFrom: 0.2, // how worn the engine has to be before it sounds tired
@@ -311,6 +313,8 @@ export const COMPANION_PARAM_RANGES = {
   thrashChance: [0, 1, 0.01],
   blameWearFrom: [0, 0.9, 0.05],
   blameChance: [0, 0.3, 0.005],
+  leftRunningChance: [0, 0.5, 0.01],
+  leftRunningRange: [2, 30, 1],
   quirkChance: [0, 0.5, 0.005],
   historyChance: [0, 0.3, 0.005],
   startPullWhenFlat: [0, 1, 0.05],

@@ -30,6 +30,7 @@ import { describeVehicle } from './debug/startReport.js';
 import { QuirkSet, DEFAULT_QUIRK_PARAMS, QUIRK_PARAM_RANGES, featuresOf, pickQuirks } from './vehicle/quirks.js';
 import { captureStock, tuneTarget, stockSettings, clampSettings, applyTune } from './vehicle/tuneUp.js';
 import { WearLedger, LEDGER_PARAM_RANGES } from './engine/wearLedger.js';
+import { LeftRunning, LEFT_PARAM_RANGES } from './npc/leftRunning.js';
 import { Pranks, PRANK_PARAM_RANGES } from './npc/pranks.js';
 import { RevOff, REVOFF_PARAM_RANGES } from './npc/revOff.js';
 import { DrownOut, DROWNOUT_PARAM_RANGES } from './npc/drownOut.js';
@@ -755,6 +756,8 @@ export class Game {
     registerTuning('Favour', this.favour.p, FAVOUR_PARAM_RANGES);
     this.wearLedger ??= new WearLedger();
     registerTuning('Who wore it out', this.wearLedger.p, LEDGER_PARAM_RANGES);
+    this.leftRunning ??= new LeftRunning();
+    registerTuning('Left running', this.leftRunning.p, LEFT_PARAM_RANGES);
     registerTuning('Pranks', this.pranks.p, PRANK_PARAM_RANGES);
     registerTuning('Rev-offs', this.revOff.p, REVOFF_PARAM_RANGES);
     registerTuning('Drowning out', this.drownOut.p, DROWNOUT_PARAM_RANGES);
@@ -1635,14 +1638,23 @@ export class Game {
   }
 
   /** Each frame: who's at the controls of each quad (you, or a girl's id), and the wear that lands on them. */
-  updateWearLedger() {
+  updateWearLedger(dt) {
     this.wearLedger ??= new WearLedger();
+    this.leftRunning ??= new LeftRunning();
     this.drivers = new Map();
     for (const unit of this.girlUnits) {
       const girl = this.companions.find((c) => c.fsm.is('driving') && c.quad === unit.quad);
       const who = unit === this.riddenUnit ? 'you' : girl ? girl.character.id : null;
       if (who) this.drivers.set(unit, who);
       this.wearLedger.record(unit.id, unit.engine.wear, who);
+      // A girl having a go at starting it has it too, so when she wanders off the blame is hers.
+      const starter = this.companions.find((c) => c.fsm.is('starting') && c.quad === unit.quad);
+      const q = unit.quad;
+      this.leftRunning.record(unit.id, dt, {
+        running: unit.engine.isRunning,
+        attended: !!(q.rider || q.driver || q.passenger || starter),
+        who: who ?? starter?.character.id ?? null,
+      });
     }
   }
 
@@ -3006,7 +3018,7 @@ export class Game {
     const ridden = this.riddenUnit;
     this.talkFloor.left = Math.max(0, this.talkFloor.left - dt);
     this.updateFavour(dt, ridden);
-    this.updateWearLedger();
+    this.updateWearLedger(dt);
     this.updateQuirks(dt, ridden);
     this.updateOilChecks();
     this.updateHandbrake(dt);
@@ -3056,6 +3068,7 @@ export class Game {
         units: this.girlUnits,
         drivers: this.drivers,
         ledger: this.wearLedger,
+        left: this.leftRunning,
         history: this.history,
         menuOpen: this.menu.isOpen,
         talkingToHer: this.menu.isOpen && this.talkingTo === c,
