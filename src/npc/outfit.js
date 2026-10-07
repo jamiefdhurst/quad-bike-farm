@@ -177,7 +177,7 @@ function attachToBone(rig, mesh, boneName) {
  * `wear(p, bone, i)` and `offset(p, bone)` get root-space rest-pose positions; `bone`
  * is the name of the bone the vertex follows most and `i` its index in the body mesh.
  */
-function skinnedGarment(rig, name, color, wear, offset, { smooth = false } = {}) {
+function skinnedGarment(rig, name, color, wear, offset, { smooth = false, soft = false, shape = null, shade = null } = {}) {
   const body = bodyMesh(rig);
   if (!body) return null;
   const g = body.geometry;
@@ -188,6 +188,7 @@ function skinnedGarment(rig, name, color, wear, offset, { smooth = false } = {})
   const boneNames = body.skeleton.bones.map((b) => b.name);
   const root = rig.root;
   const toRoot = (v) => root.worldToLocal(body.localToWorld(v.clone()));
+  const fromRoot = (v) => body.worldToLocal(root.localToWorld(v.clone()));
   // Mesh units per metre of root space, for the offset.
   const unit = 1 / toRoot(new THREE.Vector3(1, 0, 0)).sub(toRoot(new THREE.Vector3())).length();
   const n = pos.count;
@@ -206,9 +207,9 @@ function skinnedGarment(rig, name, color, wear, offset, { smooth = false } = {})
   // The body is flat shaded, so the vertices on a corner each carry their own face's normal. A big offset along those pulls
   // the faces apart into cracks; `smooth` pushes every vertex at the same spot along their average instead.
   const pushDir = [];
-  if (smooth) {
+  const key = (i) => `${Math.round(pos.getX(i) * 1e4)},${Math.round(pos.getY(i) * 1e4)},${Math.round(pos.getZ(i) * 1e4)}`;
+  if (smooth || soft) {
     const sums = new Map();
-    const key = (i) => `${Math.round(pos.getX(i) * 1e4)},${Math.round(pos.getY(i) * 1e4)},${Math.round(pos.getZ(i) * 1e4)}`;
     for (let i = 0; i < n; i++) {
       const k = key(i);
       const sum = sums.get(k) ?? new THREE.Vector3();
@@ -224,34 +225,48 @@ function skinnedGarment(rig, name, color, wear, offset, { smooth = false } = {})
     if (keep[a] && keep[b] && keep[c]) tris.push(a, b, c);
   }
   if (!tris.length) return null;
-  // Compact the vertices used, pushed out along their normals.
+  // Compact the vertices used, pushed out along their normals. A `soft` garment welds the corners that share a spot into one
+  // vertex, so it's one smooth shell shaded softly rather than a set of facets; `shape` then moves each vertex in root space
+  // (to drape it) and `shade` darkens or lightens it (ribbing).
   const remap = new Map();
   const P = [];
   const N = [];
+  const C = [];
   const SI = [];
   const SW = [];
   const out = [];
+  const tint = new THREE.Color(color);
   for (const i of tris) {
-    if (!remap.has(i)) {
-      remap.set(i, P.length / 3);
+    const id = soft ? key(i) : i;
+    if (!remap.has(id)) {
+      remap.set(id, P.length / 3);
       const d = offset(rootPos[i], boneOf[i]) * unit;
-      const push = smooth ? pushDir[i] : { x: nrm.getX(i), y: nrm.getY(i), z: nrm.getZ(i) };
-      P.push(pos.getX(i) + push.x * d, pos.getY(i) + push.y * d, pos.getZ(i) + push.z * d);
+      const push = smooth || soft ? pushDir[i] : { x: nrm.getX(i), y: nrm.getY(i), z: nrm.getZ(i) };
+      let q = new THREE.Vector3(pos.getX(i) + push.x * d, pos.getY(i) + push.y * d, pos.getZ(i) + push.z * d);
+      if (shape) q = fromRoot(shape(toRoot(q), rootPos[i], boneOf[i]));
+      P.push(q.x, q.y, q.z);
       N.push(nrm.getX(i), nrm.getY(i), nrm.getZ(i));
+      if (shade) {
+        const k = shade(rootPos[i], boneOf[i]);
+        C.push(tint.r * k, tint.g * k, tint.b * k);
+      }
       for (let k = 0; k < 4; k++) {
         SI.push(si.getComponent(i, k));
         SW.push(sw.getComponent(i, k));
       }
     }
-    out.push(remap.get(i));
+    out.push(remap.get(id));
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
   geo.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3));
+  if (shade) geo.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
   geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(SI, 4));
   geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(SW, 4));
   geo.setIndex(out);
-  const mesh = new THREE.SkinnedMesh(geo, new THREE.MeshStandardMaterial({ color, roughness: 0.88, side: THREE.DoubleSide, flatShading: true }));
+  if (soft) geo.computeVertexNormals();
+  const material = new THREE.MeshStandardMaterial({ color: shade ? 0xffffff : color, vertexColors: !!shade, roughness: soft ? 0.97 : 0.88, side: THREE.DoubleSide, flatShading: !soft });
+  const mesh = new THREE.SkinnedMesh(geo, material);
   mesh.name = name;
   mesh.castShadow = true;
   mesh.frustumCulled = false;
@@ -299,6 +314,64 @@ function shirtVertices(rig, body, hex) {
     shirt.push(Math.abs(px[k] - want[0]) < 6 && Math.abs(px[k + 1] - want[1]) < 6 && Math.abs(px[k + 2] - want[2]) < 6);
   }
   return { positions, shirt };
+}
+
+const NECKLINE_LIFT = 0.03; // how far above the neck bone the shirt may reach up her neck before it turns to skin
+
+/** The palette cell (uv) of a band in the model's original texture: the first vertex whose texel is that colour. */
+function paletteUv(body) {
+  const img = (body.material.userData.baseMap ?? body.material.map)?.image;
+  if (!img) return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = img.width;
+  canvas.height = img.height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  const px = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  const map = body.material.userData.baseMap ?? body.material.map;
+  const uv = body.geometry.attributes.uv;
+  const texel = (i) => {
+    const x = Math.min(canvas.width - 1, Math.floor(uv.getX(i) * canvas.width));
+    const y = Math.min(canvas.height - 1, Math.floor((map.flipY ? 1 - uv.getY(i) : uv.getY(i)) * canvas.height));
+    return (y * canvas.width + x) * 4;
+  };
+  return { texel, px, is: (i, c) => { const k = texel(i); return Math.abs(px[k] - c[0]) < 3 && Math.abs(px[k + 1] - c[1]) < 3 && Math.abs(px[k + 2] - c[2]) < 3; } };
+}
+
+/**
+ * The model's shirt comes up her neck like a roll neck, to within a few centimetres of her jaw, so the polo collar fitted to its
+ * top sat far too high. The model is low-poly: those triangles run from the tops of her shoulders up on to her neck. Any that
+ * touches her neck and reaches more than NECKLINE_LIFT above the neck bone takes the skin's palette cell instead, so the shirt,
+ * and the collar on it, stop where her neck leaves her shoulders; the collar's flap covers the shoulder ends of those
+ * triangles. Only at the front and sides: behind, they reach too far over her shoulders for the flap to hide, and a polo collar
+ * sits higher at the back anyway. Once per body geometry: the girls share it.
+ */
+function lowerNeckline(rig, body) {
+  const g = body.geometry;
+  if (g.userData.necklineLowered || !rig.bones.Neck) return;
+  const pal = paletteUv(body);
+  if (!pal) return;
+  const uv = g.attributes.uv;
+  const pos = g.attributes.position;
+  let skin = -1;
+  for (let i = 0; i < uv.count && skin < 0; i++) if (pal.is(i, PALETTE.skin)) skin = i;
+  if (skin < 0) return;
+  const neck = bonePos(rig, 'Neck');
+  const root = rig.root;
+  const at = (i) => root.worldToLocal(body.localToWorld(new THREE.Vector3().fromBufferAttribute(pos, i)));
+  const index = g.index ? g.index.array : [...Array(pos.count).keys()];
+  for (let t = 0; t < index.length; t += 3) {
+    const tri = [index[t], index[t + 1], index[t + 2]];
+    if (!tri.every((i) => pal.is(i, PALETTE.shirt))) continue;
+    const ps = tri.map(at);
+    const r = ps.map((q) => Math.hypot(q.x - neck.x, q.z - neck.z));
+    const z = (ps[0].z + ps[1].z + ps[2].z) / 3;
+    if (z > neck.z - 0.015 && Math.min(...r) < 0.075 && Math.max(...r) < 0.105 && Math.max(...ps.map((q) => q.y)) > neck.y + NECKLINE_LIFT) {
+      for (const i of tri) uv.setXY(i, uv.getX(skin), uv.getY(skin));
+    }
+  }
+  uv.needsUpdate = true;
+  g.userData.necklineLowered = true;
 }
 
 /** The shirt's own colour as a material colour (the texture holds the linear value as if it were sRGB). */
@@ -360,16 +433,32 @@ function addCollar(rig, color) {
   const rows = collarSection(0).length;
   const positions = [];
   const colors = [];
+  const angleAt = (i) => COLLAR_GAP + (i / segments) * (Math.PI * 2 - 2 * COLLAR_GAP);
+  // The neckline's height all the way round: the top of the shirt within a slice of angle, smoothed, so the collar sits low at
+  // the front and a little higher at the back, as a polo collar does.
+  let heights = [];
   for (let i = 0; i <= segments; i++) {
-    const ang = COLLAR_GAP + (i / segments) * (Math.PI * 2 - 2 * COLLAR_GAP);
+    const ang = angleAt(i);
+    let h = -Infinity;
+    info.positions.forEach((p, k) => {
+      if (!info.shirt[k] || Math.hypot(p.x - neck.x, p.z - neck.z) >= 0.1) return;
+      const d = Math.atan2(Math.sin(Math.atan2(p.x - neck.x, p.z - neck.z) - ang), Math.cos(Math.atan2(p.x - neck.x, p.z - neck.z) - ang));
+      if (Math.abs(d) < 0.45) h = Math.max(h, p.y);
+    });
+    heights.push(Number.isFinite(h) ? h : top);
+  }
+  for (let pass = 0; pass < 3; pass++) heights = heights.map((h, i) => (heights[Math.max(0, i - 1)] + 2 * h + heights[Math.min(segments, i + 1)]) / 4);
+  for (let i = 0; i <= segments; i++) {
+    const ang = angleAt(i);
     const dir = new THREE.Vector3(Math.sin(ang), 0, Math.cos(ang));
     // 1 at the ends beside the opening, falling to 0 a little way round.
     const edge = Math.min(ang - COLLAR_GAP, Math.PI * 2 - COLLAR_GAP - ang);
     const tip = 1 - smooth01(edge / 0.6);
+    const base = heights[i];
     // Radius of the neck at the neckline, used up the stand; the flap follows the shoulders and chest.
-    const neckR = surfaceDistance(rig, body, new THREE.Vector3(neck.x, top, neck.z), dir) ?? 0.05;
+    const neckR = surfaceDistance(rig, body, new THREE.Vector3(neck.x, base, neck.z), dir) ?? 0.05;
     for (const [dy, off] of collarSection(tip)) {
-      const y = top + dy;
+      const y = base + dy;
       const r = dy > 0 ? neckR : surfaceDistance(rig, body, new THREE.Vector3(neck.x, y, neck.z), dir) ?? neckR;
       positions.push(neck.x + dir.x * (r + off), y, neck.z + dir.z * (r + off));
     }
@@ -554,6 +643,8 @@ export function applyOutfit(rig, outfit) {
     mat.roughness = 0.85;
     mat.needsUpdate = true;
   });
+  const body = bodyMesh(rig);
+  if (body && outfit.collar) lowerNeckline(rig, body);
   addGarments(rig, outfit);
 }
 
@@ -584,43 +675,90 @@ export function reshirt(rig, outfit, color) {
 }
 
 /**
- * A jumper, deliberately too big: her torso and arms down to the wrist, standing well off her body, with a wide round neck
- * that shows the polo's collar and placket, and a hem that hangs over her hips.
+ * A jumper, a size too big: her torso and arms down to the wrist as one soft shell, with a crew neck low enough to show the
+ * polo's collar and top button. It doesn't cling: below her bust it falls straight to a snug ribbed hem over her hips, and the
+ * neck, cuffs and hem are ribbed bands a shade darker.
  */
 function addJumper(rig, color, shirtHex) {
   const body = bodyMesh(rig);
   if (!body || !rig.bones.Neck || !rig.bones.Hips || !rig.bones.LeftUpLeg) return;
   const info = shirtHex ? shirtVertices(rig, body, shirtHex) : null;
   const neck = bonePos(rig, 'Neck');
-  let top = neck.y + 0.03;
+  let top = neck.y + 0.02;
   if (info) {
-    // The shirt's own neckline, up the middle of the neck, so the jumper's neck sits where the polo's did.
+    // The shirt's own neckline, up the middle of the neck, so the jumper's neck sits round the polo's.
     let found = -Infinity;
     info.positions.forEach((p, i) => {
       if (info.shirt[i] && Math.hypot(p.x - neck.x, p.z - neck.z) < 0.1) found = Math.max(found, p.y);
     });
     if (Number.isFinite(found)) top = found;
   }
-  // The hem hangs well over the shorts' waistband, which is at her spine bone.
-  const hem = (rig.bones.Spine ? bonePos(rig, 'Spine') : bonePos(rig, 'Hips')).y - 0.11;
-  const neckBand = 0.035;
-  const scoop = top - 0.06; // the neckline at the front and back: just low enough to show the collar and the top button
-  const wide = 0.075; // beyond this far from the middle of her neck the jumper goes right up over the shoulders
-  const hemBand = 0.04;
+  // The hem hangs over the shorts' waistband, which is at her spine bone.
+  const hem = (rig.bones.Spine ? bonePos(rig, 'Spine') : bonePos(rig, 'Hips')).y - 0.1;
+  const scoop = top - 0.045; // the crew neck at the front and back: just low enough to show the collar and the top button
+  const wide = 0.08; // beyond this far from the middle of her neck it goes right up over the shoulders
+  const band = 0.03; // depth of the ribbed neck and hem
   const sleeve = /Shoulder|Arm/; // Arm also matches ForeArm; the hand is left bare
+  const hands = ['LeftHand', 'RightHand'].filter((n) => rig.bones[n]).map((n) => bonePos(rig, n));
+  const nearHand = (p) => Math.min(...hands.map((h) => h.distanceTo(p)));
+  const neckLine = (p) => (Math.abs(p.x - neck.x) > wide ? top : scoop);
+  const rib = (p, bone) => {
+    if (sleeve.test(bone)) return smooth01((0.11 - nearHand(p)) / 0.03); // the cuff, its last few centimetres
+    return Math.max(smooth01((p.y - (neckLine(p) - band)) / 0.01), smooth01((hem + band - p.y) / 0.01));
+  };
+
+  // Where her bust stands furthest forward, across her chest, so the knit can fall straight down from it.
+  const step = 0.02;
+  const front = new Map(); // x bin -> { z, y } of the furthest-forward point of her chest
+  const pos = body.geometry.attributes.position;
+  const si = body.geometry.attributes.skinIndex;
+  const sw = body.geometry.attributes.skinWeight;
+  const torso = (i) => {
+    let best = 0;
+    for (let k = 1; k < 4; k++) if (sw.getComponent(i, k) > sw.getComponent(i, best)) best = k;
+    return /Spine|Hips/.test(body.skeleton.bones[si.getComponent(i, best)]?.name ?? '');
+  };
+  for (let i = 0; i < pos.count; i++) {
+    const p = rig.root.worldToLocal(body.localToWorld(new THREE.Vector3().fromBufferAttribute(pos, i)));
+    if (!torso(i) || p.z <= neck.z || p.y > top - 0.08 || p.y < hem + 0.12 || Math.abs(p.x - neck.x) > 0.14) continue;
+    const k = Math.round((p.x - neck.x) / step);
+    const f = front.get(k);
+    if (!f || p.z > f.z) front.set(k, { z: p.z, y: p.y });
+  }
+  // Across her chest the knit bridges between the two, so take the furthest-forward point a few bins either side.
+  const ledge = (x) => {
+    const k = Math.round((x - neck.x) / step);
+    let best = null;
+    for (let d = -3; d <= 3; d++) {
+      const f = front.get(k + d);
+      if (f && (!best || f.z > best.z)) best = f;
+    }
+    return best;
+  };
+
   skinnedGarment(
     rig,
     'jumper',
     color,
-    (p, bone) => (sleeve.test(bone) ? true : !/Leg|Foot|Toe|Hand|Head|Neck/.test(bone) && p.y <= (Math.abs(p.x - neck.x) > wide ? top : scoop) && p.y >= hem),
+    (p, bone) => (sleeve.test(bone) ? nearHand(p) > 0.075 : !/Leg|Foot|Toe|Hand|Head|Neck/.test(bone) && p.y <= neckLine(p) && p.y >= hem),
     (p, bone) => {
-      if (sleeve.test(bone)) return 0.024;
-      // Baggy through the body, a snug-ish rib at the neck and a hem that hangs out a touch.
-      const rib = 0.008 * smooth01((p.y - (scoop - neckBand)) / neckBand);
-      const flare = 0.006 * smooth01((hem + hemBand - p.y) / hemBand);
-      return 0.03 + rib + flare;
+      const r = rib(p, bone);
+      if (sleeve.test(bone)) return 0.021 - 0.012 * r; // loose sleeves gathered into a snug cuff
+      return 0.026 - 0.01 * smooth01((hem + band - p.y) / band) + 0.004 * smooth01((p.y - (neckLine(p) - band)) / band);
     },
-    { smooth: true },
+    {
+      soft: true,
+      // Below the bust the front hangs straight, easing back a little towards the hem, instead of following her under it.
+      shape: (q, p, bone) => {
+        if (!/Spine|Hips/.test(bone) || q.z <= neck.z || Math.abs(p.x - neck.x) > 0.14) return q;
+        const f = ledge(p.x);
+        if (!f || p.y >= f.y) return q;
+        const hang = f.z + 0.02 - 0.18 * (f.y - p.y) - 0.012 * smooth01((hem + band - p.y) / band);
+        const sides = 1 - smooth01((Math.abs(p.x - neck.x) - 0.1) / 0.06); // not at her sides, which are already vertical
+        return q.z < hang ? new THREE.Vector3(q.x, q.y, q.z + Math.min(0.05, hang - q.z) * sides) : q;
+      },
+      shade: (p, bone) => 1 - 0.24 * rib(p, bone),
+    },
   );
 }
 
