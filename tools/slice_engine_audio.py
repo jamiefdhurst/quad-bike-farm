@@ -285,12 +285,13 @@ BANKS = {
         'revOdd': 0.3,
     },
     'engine-bank-landy': {
-        # The Land Rover: craigsmith's old Jeep rumbling at idle (Freesound 438105), a four-cylinder petrol beating every 60 ms in a
-        # group of four, so about 500 rpm; cut into whole cycles, each split into its four beats, and read in order. Its pull-away
-        # for the recorded sound's revs. The starter borrows the quad recording; the starting handle's clunk is craigsmith's old car cranked by hand
-        # (438033), one swing; the shutdown is the Jeep stopping.
+        # The Land Rover: craigsmith's old Jeep rumbling at idle (Freesound 438105), beating every 61 ms. Only its steadiest three
+        # seconds (15.4 to 18.4 s): elsewhere the beat and the level wander, and from 21 s it speeds up and dips. There the beats
+        # fall in groups of three, so it's cut into those and each split into its beats, read in order. Its pull-away for the
+        # recorded sound's revs. The starter borrows the quad recording; the starting handle's clunk is craigsmith's old car
+        # cranked by hand (438033), one swing; the shutdown is the Jeep stopping.
         'segments': [
-            ('idle', 'jeep', 3.0, 27.0, (0.21, 0.27)),
+            ('idle', 'jeep', 15.4, 18.4, (0.17, 0.2)),
             ('accel', 'jeep', 29.0, 45.0, (0.12, 0.16)),
             ('decel', 'jeep', 37.0, 45.0, (0.12, 0.16)),
         ],
@@ -303,7 +304,7 @@ BANKS = {
         'level': [('idle', 'idle', 'jeep'), ('idle', 'accel', 'jeep')],
         'fixedGain': {'quad': 1.014},  # the quads' starter, as loud as on the farm quads
         'idleCycles': True,
-        'cycleSplit': 4,  # one slice per cylinder's beat: the engine fires four times a cycle (engine.cylinders)
+        'cycleSplit': 3,  # one slice per beat, each played for one of the engine's firings
         'revTail': 0.9,
         'revOdd': 0.3,
     },

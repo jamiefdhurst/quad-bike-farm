@@ -72,11 +72,16 @@ describe('engine banks', () => {
     }
   });
 
-  it("cuts the Land Rover's Jeep idle into one beat per cylinder, in order, each lasting one of its engine's firings", () => {
+  it("cuts the Land Rover's Jeep idle into single beats from its steady stretch, in order, each lasting one of its engine's firings", () => {
     const bank = JSON.parse(readFileSync('public/audio/engine-bank-landy.json', 'utf8'));
     expect(bank.readThrough).toBe(true);
     const idle = bank.grains.filter((g) => g.kind === 'idle');
-    idle.forEach((g, i) => expect(g.slice).toBe(i % 4));
+    idle.forEach((g, i) => expect(g.slice).toBe(i % 3)); // in groups of three, as the steady stretch repeats
+    expect(idle.length).toBeGreaterThan(40);
+    for (const g of idle.filter((g) => g.ok !== false)) {
+      expect(g.dur).toBeGreaterThan(0.05);
+      expect(g.dur).toBeLessThan(0.07);
+    }
     expect(LAND_ROVER_SPEC.engine.cylinders).toBe(4);
     // The bank's rpm (120 / beat length) is four times the engine's: each beat plays near its own speed at the Land Rover's idle.
     const ok = idle.filter((g) => g.ok !== false).map((g) => g.rpm / 4).sort((a, b) => a - b);
