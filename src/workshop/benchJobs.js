@@ -11,6 +11,10 @@ export const DEFAULT_BENCH_PARAMS = {
   botchedLevel: 0.2, // a carb or tyre botched at the bench: the fault comes back at this level
   oilShort: 0.012, // oil fraction of the tank mix when the pour was too short (about 80:1, runs hot)
   oilGood: 0.02, // and when it was right (50:1)
+  plugRichFouling: 0.3, // fouling at which the old plug looks sooty (rich running)
+  plugLean: 0.15, // how lean it last ran (mixture below minus this) for the old plug to look white
+  plugOilyWear: 0.35, // wear at which a two-stroke's old plug is wet with oil
+  plugWornWear: 0.4, // wear at which a four-stroke's old plug has an electrode worn round
   oilOver: 0.05, // and when it was too much (about 20:1, smokes and fouls)
 };
 
@@ -23,6 +27,10 @@ export const BENCH_PARAM_RANGES = {
   oilShort: [0, 0.1, 0.002],
   oilGood: [0, 0.1, 0.002],
   oilOver: [0, 0.2, 0.002],
+  plugRichFouling: [0, 1, 0.05],
+  plugLean: [0, 0.5, 0.01],
+  plugOilyWear: [0, 1, 0.05],
+  plugWornWear: [0, 1, 0.05],
 };
 
 // need: seconds to hold. limit: if set, it's a window (let go between need and limit), and
@@ -71,12 +79,42 @@ export const JOBS = {
 
 export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil'];
 
-/** The old plug, in words, for the inspect step. */
-export function plugCondition(fouling) {
-  if (fouling < 0.1) return 'pale and dry: a healthy plug';
-  if (fouling < 0.4) return 'sooty';
-  if (fouling < 0.75) return 'black and oily';
-  return 'wet and black: it was drowning';
+/** What each reading means, the way Amy would say it. Order is the order Jess can be wrong in. */
+export const PLUG_KINDS = ['healthy', 'rich', 'lean', 'oily', 'worn'];
+
+const PLUG_LOOKS = {
+  healthy: 'a pale tan, clean and dry',
+  rich: 'black and sooty',
+  lean: 'white and blistered',
+  oily: 'wet and oily, black on the thread',
+  worn: 'tan, but the electrode is worn round',
+};
+
+/**
+ * Reads the old plug from how the engine has been running. `mixture` is where it last ran (it keeps
+ * its last value switched off). An oil-wet plug is a worn or over-oiled two-stroke; black soot is rich;
+ * white is lean; a worn four-stroke shows in the electrode. Returns { kind, look }.
+ */
+export function readPlug(engine, P = DEFAULT_BENCH_PARAMS) {
+  const twoStroke = engine.params.strokes === 2;
+  let kind = 'healthy';
+  if (twoStroke && (engine.wear >= P.plugOilyWear || engine.oilRich >= 0.3)) kind = 'oily';
+  else if (engine.fouling >= P.plugRichFouling || engine.rich >= 0.2) kind = 'rich';
+  else if (engine.mixture <= -P.plugLean) kind = 'lean';
+  else if (!twoStroke && engine.wear >= P.plugWornWear) kind = 'worn';
+  return { kind, look: PLUG_LOOKS[kind] };
+}
+
+/** A girl's reading of it: right with probability `accuracy`, otherwise she names some other kind. */
+export function guessPlug(truth, accuracy, random = Math.random) {
+  if (random() < accuracy) return truth;
+  const wrong = PLUG_KINDS.filter((k) => k !== truth);
+  return wrong[Math.floor(random() * wrong.length)];
+}
+
+/** What the plug looks like, for the toast: just the colour, you work out what it means. */
+export function plugCondition(engine, P = DEFAULT_BENCH_PARAMS) {
+  return readPlug(engine, P).look;
 }
 
 /**

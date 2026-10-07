@@ -1,6 +1,7 @@
 // What the girls say while you work at the barn bench (workshop/bench.js): benchStart (you begin a job),
 // benchStep (a step done), benchFlaw (a slip), benchDone (a job done right) and benchBotched (done, but
-// not well). Amy helps and corrects; Jess heckles. Merged into the main line sets (voiceLines.js,
+// not well), and plugHealthy / plugRich / plugLean / plugOily / plugWorn (what she makes of the old plug
+// you've pulled; Amy is mostly right, Jess often isn't). Amy helps and corrects; Jess heckles. Merged into the main line sets (voiceLines.js,
 // jessLines.js), so they're recorded with the rest.
 
 const line = (cooldown, lines) => ({ cooldown, lines });
@@ -11,6 +12,11 @@ export const AMY_BENCH_LINES = {
   benchFlaw: line(20, ['That did not feel right. It wants to be snug, not tight.', 'Oh, you let go too soon. That will not hold.', 'Careful. You will strip the thread.', 'Hmm. I think that needs doing again.']),
   benchDone: line(40, ['That is much better. Well done.', 'Spotless. You can start it now.', 'That is a proper job. I am impressed.']),
   benchBotched: line(40, ['It will do, but I would not trust it.', 'I think you will be back at that bench soon.', 'It is not quite right, is it? Never mind.']),
+  plugHealthy: line(20, ['That is a lovely plug. Nice and tan, so it has been running right.', 'Tan and dry. Nothing wrong with that one.']),
+  plugRich: line(20, ['Black and sooty. It has been running too rich.', 'That is soot. Too much choke, or the mixture is too rich.']),
+  plugLean: line(20, ['White like that means it has been running lean. That can burn a hole in a piston.', 'Look at the white on it. Too lean, and that gets hot.']),
+  plugOily: line(20, ['Wet and oily. That two-stroke is tired, or it has had too much oil.', 'Oil all over the thread. It is wearing, that one.']),
+  plugWorn: line(20, ['Tan is fine, but the electrode is worn right down. It has done a lot of hours.', 'It has been running well enough, but the engine is getting old.']),
 };
 
 export const JESS_BENCH_LINES = {
@@ -19,4 +25,9 @@ export const JESS_BENCH_LINES = {
   benchFlaw: ['Ha! You have broken it.', "That's not meant to go like that.", 'Oops.'],
   benchDone: ['Look at you, a proper grease monkey.', 'Can I start it? Please?'],
   benchBotched: ["I'm not getting on that.", "Bit of tape and it'll be fine."],
+  plugHealthy: ["Perfect. Boring, but perfect.", 'Looks fine to me. Brown is good.'],
+  plugRich: ['Black! It is flooded, definitely.', 'Ooh, sooty. Somebody left the choke on.'],
+  plugLean: ['White. That is boiling hot, that is.', 'It has gone white. Too much air, I reckon.'],
+  plugOily: ['Eurgh, oily. Needs a new engine.', 'That is greasy. Too much oil, I bet.'],
+  plugWorn: ['The little bit has gone all stumpy.', 'That plug has seen better days.'],
 };

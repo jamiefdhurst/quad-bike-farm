@@ -5,6 +5,7 @@ import { band } from './skills.js';
 import { Speech } from '../audio/companionAudio.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
 import { engineCondition, guessCondition } from './diagnosis.js';
+import { guessPlug } from '../workshop/benchJobs.js';
 import { isThrashed } from '../engine/wearLedger.js';
 import { quadKey } from './quadNames.js';
 
@@ -110,6 +111,13 @@ export class CompanionVoice {
     const [situation, chance] = { start: ['benchStart', 0.6], step: ['benchStep', 0.12], flaw: ['benchFlaw', 0.8], done: ['benchDone', 0.7], botched: ['benchBotched', 0.8] }[kind] ?? [];
     if (!situation || this.head.distanceTo(this.listener) > Math.min(15, this.params.voiceRange)) return null;
     return this.say(situation, { urgent: true, chance });
+  }
+
+  /** You've pulled the old plug: she says what she makes of it, as accurately as `diagnoseAccuracy` (Amy 0.9, Jess 0.5). */
+  onPlug(kind) {
+    if (this.head.distanceTo(this.listener) > Math.min(15, this.params.voiceRange)) return null;
+    const guess = guessPlug(kind, this.companion.params.diagnoseAccuracy);
+    return this.say(`plug${guess[0].toUpperCase()}${guess.slice(1)}`, { urgent: true, chance: 0.85 });
   }
 
   /**

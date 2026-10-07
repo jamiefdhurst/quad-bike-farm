@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { BenchJob, JOBS, JOB_KINDS, finishJob, jobAvailable, inBay, plugCondition, DEFAULT_BENCH_PARAMS as P } from '../src/workshop/benchJobs.js';
+import { BenchJob, JOBS, JOB_KINDS, finishJob, jobAvailable, inBay, plugCondition, readPlug, PLUG_KINDS, DEFAULT_BENCH_PARAMS as P } from '../src/workshop/benchJobs.js';
 import { Faults, DEFAULT_FAULT_PARAMS } from '../src/vehicle/faults.js';
 
 /** Does every step of a job right: taps for presses, holds for the middle of any window. */
@@ -128,9 +128,24 @@ describe('what a finished job does', () => {
     expect(jobAvailable('plug', { params: { strokes: 4 } })).toBe(true);
   });
 
-  it('the old plug tells you how it was', () => {
-    expect(plugCondition(0)).toMatch(/healthy/);
-    expect(plugCondition(0.9)).toMatch(/drowning/);
+  it('the old plug shows how the engine ran', () => {
+    const e = (over = {}) => ({ params: { strokes: 4 }, fouling: 0, wear: 0, oilRich: 0, rich: 0, mixture: 0, ...over });
+    expect(readPlug(e()).kind).toBe('healthy');
+    expect(readPlug(e({ fouling: 0.6 })).kind).toBe('rich');
+    expect(readPlug(e({ rich: 0.3 })).kind).toBe('rich');
+    expect(readPlug(e({ mixture: -0.3 })).kind).toBe('lean');
+    expect(readPlug(e({ wear: 0.6 })).kind).toBe('worn');
+    expect(readPlug(e({ wear: 0.6, params: { strokes: 2 } })).kind).toBe('oily');
+    expect(readPlug(e({ oilRich: 0.5, params: { strokes: 2 } })).kind).toBe('oily');
+    expect(plugCondition(e({ mixture: -0.3 }))).toMatch(/white/);
+  });
+
+  it('every kind of plug has a look', () => {
+    for (const kind of PLUG_KINDS) {
+      const found = [{}, { fouling: 1 }, { mixture: -1 }, { wear: 1 }, { wear: 1, params: { strokes: 2 } }]
+        .map((o) => readPlug({ params: { strokes: 4 }, fouling: 0, wear: 0, oilRich: 0, rich: 0, mixture: 0, ...o }).kind);
+      expect(found).toContain(kind);
+    }
   });
 });
 

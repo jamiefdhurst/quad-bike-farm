@@ -1,7 +1,7 @@
 import './bench.css';
 import * as THREE from 'three';
 import { registerTuning } from '../core/tuning.js';
-import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, BenchJob, finishJob, jobAvailable, inBay, plugCondition } from './benchJobs.js';
+import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, BenchJob, finishJob, jobAvailable, inBay, plugCondition, readPlug } from './benchJobs.js';
 
 /**
  * The barn bench: park a quad in the painted bay, switch it off and work on it here. Each job is a few
@@ -81,7 +81,11 @@ export class Bench {
 
   /** Reacts to what a tap, hold or release did. */
   handle(events, inspected) {
-    if (inspected) this.game.hud.toast(`The old plug is ${plugCondition(this.unit.engine.fouling)}`);
+    if (inspected) {
+      const reading = readPlug(this.unit.engine, this.params);
+      this.game.hud.toast(`The old plug is ${plugCondition(this.unit.engine, this.params)}`);
+      for (const c of this.game.companions) c.voice.onPlug?.(reading.kind);
+    }
     for (const e of events) {
       if (e.type === 'flaw') this.say('flaw');
       else if (e.type === 'step') this.say('step');
