@@ -418,11 +418,12 @@ export class Quad {
     return false;
   }
 
-  /** G flips between 2WD and 4WD; U puts the diff lock in and out where there is one. A switch on the bars, so always in reach. */
+  /** G flips between 2WD and 4WD; U puts the diff lock in and out where there is one. A switch on the bars, so always in reach. It says
+   * nothing: you look at the switch, or the pod if one's fitted. */
   driveKeys(input) {
     const d = this.drive;
-    if (input.wasPressed('KeyG')) this.say(d.toggle() === '2wd' ? '2WD' : '4WD');
-    if (d.hasLock && input.wasPressed('KeyU')) this.say(d.toggleLock() === 'lock' ? '4WD, diff lock in' : '4WD, diff lock out');
+    if (input.wasPressed('KeyG')) d.toggle();
+    if (d.hasLock && input.wasPressed('KeyU')) d.toggleLock();
   }
 
   /** Tells whoever's at the controls something, for a moment; the game shows it (takeNote). */
