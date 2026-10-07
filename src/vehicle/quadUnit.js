@@ -16,6 +16,7 @@ import { DEFAULT_FUEL_PARAMS, FUEL_PARAM_RANGES } from './fuelSystem.js';
 import { DEFAULT_CONTROLS_PARAMS, CONTROLS_PARAM_RANGES } from './controls.js';
 import { DEFAULT_GEARBOX_PARAMS, GEARBOX_PARAM_RANGES } from './manualDrivetrain.js';
 import { SHIFTER_PARAM_RANGES } from './autoShifter.js';
+import { buildMiniMotoModel, MOTO_LAYOUT, MOTO_GROUND_OFFSET, MOTO_PROXY } from './miniMotoModel.js';
 import { buildTractorModel, TRACTOR_LAYOUT, TRACTOR_GROUND_OFFSET, TRACTOR_PROXY } from './tractorModel.js';
 
 /**
@@ -53,6 +54,12 @@ export class QuadUnit {
       controlsParams: { ...DEFAULT_CONTROLS_PARAMS },
       fuelParams: { ...DEFAULT_FUEL_PARAMS, ...spec.fuel },
       ...((spec.tractor || spec.manual) && { gearbox: { ...DEFAULT_GEARBOX_PARAMS, ...spec.gearbox } }),
+      ...(spec.miniMoto && {
+        build: ({ dashStyle }) => buildMiniMotoModel({ bodyColor: spec.bodyColor, dashStyle }),
+        layout: MOTO_LAYOUT,
+        groundOffset: MOTO_GROUND_OFFSET,
+        proxy: MOTO_PROXY,
+      }),
       ...(spec.tractor && {
         tractor: true,
         build: ({ dashStyle }) => buildTractorModel({ bodyColor: spec.bodyColor, dashStyle }),

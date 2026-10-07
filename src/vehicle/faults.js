@@ -65,6 +65,7 @@ export class Faults {
     this.params = params;
     this.random = random;
     this.tyre = -1; // which wheel has the puncture
+    this.tyreWheels = [0, 1, 2, 3]; // the wheels one can land on (the mini moto's outriggers can't go flat)
     this.levels = { puncture: 0, belt: 0, cable: 0, carb: 0 }; // 0 none, rising to 1 at their worst
     this.started = { puncture: false, belt: false, cable: false, carb: false };
     this.caps = { puncture: 1, belt: 1, cable: 1, carb: 1 }; // a rough fix leaves it from getting any worse than this
@@ -102,7 +103,7 @@ export class Faults {
     if (this.started[kind]) return false;
     this.started[kind] = true;
     this.levels[kind] = 0.15;
-    if (kind === 'puncture') this.tyre = Math.floor(this.random() * 4);
+    if (kind === 'puncture') this.tyre = this.tyreWheels[Math.floor(this.random() * this.tyreWheels.length)];
     this.events.push({ type: 'start', kind });
     return true;
   }
@@ -207,7 +208,7 @@ export class Faults {
     this.started[kind] = true;
     this.levels[kind] = Math.min(level, cap);
     this.caps[kind] = cap;
-    if (kind === 'puncture' && this.tyre < 0) this.tyre = Math.floor(this.random() * 4);
+    if (kind === 'puncture' && this.tyre < 0) this.tyre = this.tyreWheels[Math.floor(this.random() * this.tyreWheels.length)];
   }
 }
 

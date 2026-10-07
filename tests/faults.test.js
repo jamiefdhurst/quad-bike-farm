@@ -242,3 +242,16 @@ describe('each quad is dealt its own luck', () => {
     expect(g.levels.cable).toBeGreaterThan(f.levels.cable);
   });
 });
+
+describe('a puncture on a bike with outrigger wheels', () => {
+  it('only lands on the wheels it can', () => {
+    const f = new Faults(undefined, () => 0.99);
+    f.tyreWheels = [0, 3];
+    f.begin('puncture');
+    expect(f.tyre).toBe(3);
+    const g = new Faults(undefined, () => 0);
+    g.tyreWheels = [0, 3];
+    g.begin('puncture');
+    expect(g.tyre).toBe(0);
+  });
+});

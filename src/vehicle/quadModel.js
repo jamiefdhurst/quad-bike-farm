@@ -1472,3 +1472,6 @@ export function setHeadlights(quad, on, level = 1, colour = 0xfff2cc) {
   lens.emissive.setHex(on && level > 0 ? colour : 0x000000);
   lens.emissiveIntensity = on ? 1.2 * level : 0;
 }
+
+// For the mini moto's model (miniMotoModel.js), which builds on the same parts.
+export { MAT, STYLE, add, rbox, tube, pipe, buildHandlebars };

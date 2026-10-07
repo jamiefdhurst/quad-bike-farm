@@ -76,6 +76,8 @@ export class Quad {
     this.dash = this.model.userData.dash;
     this.fuel = new FuelSystem(fuelParams);
     this.faults = new Faults();
+    // A layout's outrigger wheels (the mini moto's) are never the flat one.
+    if (layout.wheels.some((w) => w.outrigger)) this.faults.tyreWheels = layout.wheels.flatMap((w, i) => (w.outrigger ? [] : [i]));
     this.filter = new AirFilter(); // clogs with mud and puddles; cleaned at the toolbox
     this.tripMiles = 0;
     this.usage = { hours: 0, odoMiles: 0 }; // what the hour meter and odometer show; the game sets the starting readings
@@ -709,7 +711,10 @@ export class Quad {
     // Vibration rocks the sprung body and shakes the bars on top of steering.
     const v = vibration;
     this.body.position.set(0, (v ? v.body.heave : 0) + rearZ * lift, 0);
-    this.body.rotation.set((v ? v.body.pitch : 0) + lift, 0, v ? v.body.roll : 0);
+    // A two-wheeler leans into the corner (for show: the outriggers keep it up).
+    const lean = this.model.userData.leans ? -this.steer * Math.min(1, Math.abs(this.speed) / 6) * 0.3 : 0;
+    this.leanShown = (this.leanShown ?? 0) + (lean - (this.leanShown ?? 0)) * Math.min(1, dt * 5);
+    this.body.rotation.set((v ? v.body.pitch : 0) + lift, 0, (v ? v.body.roll : 0) + this.leanShown);
     this.handlebars.position.copy(this.handlebarsBase);
     if (v) this.handlebars.position.add(new THREE.Vector3(v.bars.x, v.bars.y, 0));
     this.handlebars.rotation.set(0, this.steer * 0.85 + (v ? v.bars.yaw : 0), v ? v.bars.roll : 0);

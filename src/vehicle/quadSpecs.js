@@ -481,6 +481,105 @@ export const EXTRA_SPECS = [
     },
   },
   {
+    // A 50cc two-stroke pit bike (the "mini moto"): two wheels, one seat, a pull-start as well as the starter, and the kids' quad's
+    // sound for now. Built by miniMotoModel.js: it rides on the quad physics with two hidden outrigger wheels to hold it upright, and
+    // leans into corners for show. Anyone can ride it (it's nobody's), but there's no room on the back.
+    id: 'moto',
+    miniMoto: true,
+    label: 'mini moto',
+    name: 'Mini moto',
+    bodyColor: 0x3f6fa8, // a sun-faded blue
+    style: 'sport', // the quad body styles are unused (the model is its own), but the spec must name one that exists
+    dashStyle: 'kidsKey',
+    reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
+    chokeStyle: 'thumb', // where the choke is and what it takes to reach it
+    tapStyle: 'left', // where the fuel tap sits
+    hoursRange: [20, 150], // engine hours showing when the game starts
+    odoRange: [60, 500], // odometer miles showing when the game starts
+    wearRange: [0.05, 0.2], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
+    tinkers: false, // nobody leaves the throttle stop out on a bike this size
+    solo: true, // no room for anyone on the back
+    safeIdle: 800,
+    idleRange: [1200, 1500],
+    roughnessRange: [0.3, 0.55],
+    fuelRange: [0.4, 1.6], // 1.8 litre tank, 0.3 litre reserve
+    topRpmRange: [9400, 10200], // full-throttle revs this game, about 4% either side of the engine's own
+    fuel: { tankCapacity: 1.8, startOil: 0.02, reserveLitres: 0.3, burnPerRev: 0.000032, idleBurnFraction: 0.45 },
+    engine: {
+      strokes: 2,
+      popProne: 0.7, // two-strokes crackle and bang on the overrun
+      pullStart: true,
+      idleRpmWarm: 1350,
+      maxRpm: 9800,
+      redlineRpm: 9200,
+      rpmRiseRate: 14,
+      rpmFallRate: 11,
+      warmUpSeconds: 60,
+      coldEnrichmentNeed: 1.0,
+      chokeIdleRpm: 1450,
+      catchChance: 0.5,
+      coldRoughness: 0.6,
+      coldPowerLoss: 0.85,
+      skipChance: 0.35,
+      skipThrottle: 0.15,
+      skipRpm: 4600,
+      idleFoulRate: 0.0025,
+      misfireRpmDrop: 150,
+    },
+    vehicle: {
+      mass: 105, // bike plus rider
+      centreOfMassY: -0.22, // low, and the outriggers stiff and wide, so it stays up without a rider balancing it
+      suspensionStiffness: 60,
+      rollInertia: 12,
+      pitchInertia: 28,
+      yawInertia: 30,
+      wheelRadius: 0.22,
+      suspensionRestLength: 0.12,
+      maxSuspensionTravel: 0.1,
+      maxSuspensionForce: 12000,
+      maxDriveForce: 650,
+      maxSpeed: 12,
+      maxSteerDeg: 38,
+      clutchEngageRpm: 2200,
+      clutchFullRpm: 4000,
+      couplingRpm: 3000,
+      engineBrakeForce: 40,
+      powerbandRpm: 6000,
+      torqueBelowBand: 0.5,
+      fourWheelDrive: 0,
+    },
+    vibration: {
+      pulseGain: 0.8,
+      idleRpm: 1350,
+      barsFreq: 28,
+      barsGain: 0.25,
+      heaveFreq: 12,
+      pitchFreq: 10,
+      heaveDamping: 0.16,
+    },
+    // The kids' quad's sound until it gets its own.
+    audio: {
+      recBank: 'engine-bank-50',
+      engineSound: 'pulse',
+      recIdleSource: 'quad',
+      pulseRefRpm: 1200,
+      recBlendLo: 3200,
+      recBlendHi: 4200,
+      recToneClosed: 9500,
+      recVolume: 0.5,
+      pipeLength: 0.55,
+      mufflerFreqA: 300,
+      densityRefRpm: 2600,
+    },
+    smoke: {
+      warmDensity: 0.3,
+      coldDensity: 0.75,
+      warmGray: 0.85,
+      coldGray: 0.9,
+      tint: '#dde6ff',
+    },
+  },
+  {
     // A smart new quad on loan for the day: the Yamaha's body in neutral silver, fuel injected so it hardly wants any choke, starts on
     // the button, idles smooth and quiet and has almost no wear. Full tank, and a bit more power than the old farm quads.
     id: 'loan',

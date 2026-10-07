@@ -67,7 +67,7 @@ export function featuresOf(spec, hasPod = false) {
     tempGauge: gauge,
     choke: !spec.tractor,
     tap: !spec.fuel?.noTap,
-    seat: !spec.tractor && spec.id !== 'kids',
+    seat: !spec.tractor && spec.id !== 'kids' && spec.id !== 'moto',
     horn: true,
     brakes: true,
     headlight: true,

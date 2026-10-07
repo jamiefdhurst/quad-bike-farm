@@ -30,11 +30,19 @@ describe('the fleet', () => {
     expect(games.some((f) => f.length === regulars(f))).toBe(true);
     expect(games.some((f) => f.some((s) => s.id === 'kids'))).toBe(true);
     expect(games.some((f) => f.some((s) => s.id === 'loan'))).toBe(true);
+    expect(games.some((f) => f.some((s) => s.id === 'moto'))).toBe(true);
+    expect(games.some((f) => f.filter((s) => EXTRA_SPECS.includes(s)).length === EXTRA_SPECS.length)).toBe(true);
     expect(games.some((f) => regulars(f) < QUAD_SPECS.length && f.length > regulars(f))).toBe(true);
   });
 
   it('has no duplicates', () => {
     for (const f of games) expect(new Set(f).size).toBe(f.length);
+  });
+
+  it('caps a full house at the parking slots', () => {
+    const f = pickFleet(QUAD_SPECS, EXTRA_SPECS, () => 0.01, { ...DEFAULT_FLEET_PARAMS, extraChances: [0, 0, 0, 1], missingChances: [1, 0, 0] });
+    expect(f).toHaveLength(DEFAULT_FLEET_PARAMS.maxVehicles);
+    expect(f.filter((s) => EXTRA_SPECS.includes(s))).toHaveLength(EXTRA_SPECS.length);
   });
 
   it('keeps the regulars if only the minimum would be left', () => {
@@ -69,5 +77,20 @@ describe('extra vehicles', () => {
     for (const s of QUAD_SPECS) expect(kids.vehicle.maxSpeed).toBeLessThan(s.vehicle.maxSpeed ?? 17);
     for (const s of QUAD_SPECS) expect(loan.engine.wearPerMinute).toBeLessThan((s.engine?.wearPerMinute ?? 0.012) / 5);
     for (const s of QUAD_SPECS) expect(loan.roughnessRange[1]).toBeLessThanOrEqual(s.roughnessRange[0] + 0.001);
+  });
+
+  it('makes the mini moto a solo two-stroke with a pull-start, anyone may ride, and hidden outriggers that never go flat', async () => {
+    const moto = EXTRA_SPECS.find((s) => s.id === 'moto');
+    expect(moto.solo).toBe(true);
+    expect(moto.owner).toBeUndefined();
+    expect(moto.engine.strokes).toBe(2);
+    expect(moto.engine.pullStart).toBe(true);
+    expect(moto.vehicle.fourWheelDrive).toBe(0);
+    for (const s of QUAD_SPECS) expect(moto.vehicle.maxSpeed).toBeLessThan(s.vehicle.maxSpeed ?? 17);
+    const { MOTO_LAYOUT } = await import('../src/vehicle/miniMotoModel.js');
+    const out = MOTO_LAYOUT.wheels.filter((w) => w.outrigger);
+    expect(out).toHaveLength(2);
+    for (const w of out) expect(w.driven).toBe(false);
+    for (const w of MOTO_LAYOUT.wheels.filter((w) => !w.outrigger)) expect(w.x).toBe(0);
   });
 });
