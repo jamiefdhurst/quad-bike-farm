@@ -37,7 +37,7 @@ export function segmentCounts(s, fuelSegs, tempSegs) {
 /** Everything a face needs about a state that changes how it looks, as a string: redraw only when it changes. */
 function lookKey(s, extra = []) {
   const l = lampStates(s);
-  return [s.ignition, s.keyOn, l.r, l.n, l.temp, l.fuel, ...extra].join('|');
+  return [s.ignition, s.keyOn, l.r, l.n, l.temp, l.fuel, l.oil, ...extra].join('|');
 }
 
 /** A pod's mounting point: a child of the dash, leaning the pod back about 20 degrees whatever the dash's tilt. */
@@ -94,7 +94,7 @@ function buildForeman() {
     ctx.fill();
     lamp(ctx, 138, 114, LAMP.amber, 'R', L.lamps.r, { shape: 'rect' });
     lamp(ctx, 160, 114, LAMP.green, 'N', L.lamps.n, { shape: 'rect' });
-    lamp(ctx, 182, 114, LAMP.red, 'OIL °C', L.lamps.temp, { shape: 'rect' });
+    lamp(ctx, 182, 114, LAMP.red, 'OIL °C', L.lamps.temp || L.lamps.oil, { shape: 'rect' });
     keySwitch(ctx, 222, 118, s.keyOn);
   }
 

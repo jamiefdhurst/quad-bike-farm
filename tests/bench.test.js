@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { BenchJob, JOBS, JOB_KINDS, finishJob, jobAvailable, inBay, plugCondition, readPlug, PLUG_KINDS, DEFAULT_BENCH_PARAMS as P } from '../src/workshop/benchJobs.js';
 import { Faults, DEFAULT_FAULT_PARAMS } from '../src/vehicle/faults.js';
+import { Sump } from '../src/vehicle/sump.js';
 
 /** Does every step of a job right: taps for presses, holds for the middle of any window. */
 function doJob(job, { flawAt } = {}) {
@@ -120,6 +121,22 @@ describe('what a finished job does', () => {
     };
     expect(oil()).toBe(P.oilGood);
     expect(oil({ flawAt: 'pour' })).toBe(P.oilShort);
+  });
+
+  it('the sump job fills a four-stroke to the top mark, or just under after a short pour', () => {
+    const level = (opts) => {
+      const t = { ...target(), sump: new Sump({ level: 0.2 }) };
+      finishJob(doJob(new BenchJob('sump'), opts), t);
+      return t.sump.level;
+    };
+    expect(level()).toBe(1);
+    expect(level({ flawAt: 'pour' })).toBe(P.sumpShort);
+  });
+
+  it('the sump job is for petrol four-strokes only', () => {
+    expect(jobAvailable('sump', { params: { strokes: 4 } })).toBe(true);
+    expect(jobAvailable('sump', { params: { strokes: 2 } })).toBe(false);
+    expect(jobAvailable('sump', { params: { strokes: 4, runsOnDiesel: true } })).toBe(false);
   });
 
   it('the oil job is for two-strokes only', () => {

@@ -92,7 +92,7 @@ export class Bench {
       else if (e.type === 'done') {
         const job = this.job;
         const unit = this.unit;
-        this.game.hud.toast(finishJob(job, { engine: unit.engine, faults: unit.quad.faults, fuel: unit.quad.fuel, tyres: unit.quad.tyres }, this.params));
+        this.game.hud.toast(finishJob(job, { engine: unit.engine, faults: unit.quad.faults, fuel: unit.quad.fuel, tyres: unit.quad.tyres, sump: unit.quad.sump }, this.params));
         this.say(job.botched ? 'botched' : 'done');
         this.job = null;
       }
@@ -169,7 +169,7 @@ export class Bench {
       this.holdEl.style.display = 'none';
       this.bodyEl.innerHTML = JOB_KINDS.map((k, i) => {
         const ok = jobAvailable(k, unit.engine);
-        return `<div class="bn-row${ok ? '' : ' off'}"><span class="key">${i + 1}</span>${JOBS[k].name}${ok ? '' : ' (two-strokes only)'}</div>`;
+        return `<div class="bn-row${ok ? '' : ' off'}"><span class="key">${i + 1}</span>${JOBS[k].name}${ok ? '' : k === 'sump' ? ' (petrol four-strokes only)' : ' (two-strokes only)'}</div>`;
       }).join('');
       this.keysEl.textContent = 'Press a number to start   ·   G step away';
       return;

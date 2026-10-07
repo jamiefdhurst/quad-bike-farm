@@ -5,7 +5,7 @@ const HELP_HTML = `
   <h3>On foot</h3>
   <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move, mouse to look, <kbd>Shift</kbd> jog</div>
   <div><kbd>E</kbd> interact with what you're looking at</div>
-  <div>At a quad: <kbd>K</kbd> <kbd>R</kbd> <kbd>Q</kbd> <kbd>Z</kbd> <kbd>F</kbd> work its engine, <kbd>B</kbd> sit on the back, hold <kbd>V</kbd> to push it (the yellow, orange and kids' quads have no reverse)</div>
+  <div>At a quad: <kbd>K</kbd> <kbd>R</kbd> <kbd>Q</kbd> <kbd>Z</kbd> <kbd>F</kbd> work its engine, <kbd>Y</kbd> pull the dipstick on a four-stroke (hold it by the oil bottle to top up), <kbd>B</kbd> sit on the back, hold <kbd>V</kbd> to push it (the yellow, orange and kids' quads have no reverse)</div>
   <h3>On the back while she drives</h3>
   <div><kbd>E</kbd> talk to her (mouse and click): stop, slower, faster, let me off, let me drive, coach her</div>
   <h3>On the quad</h3>

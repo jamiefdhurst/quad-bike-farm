@@ -15,6 +15,7 @@ export const DEFAULT_BENCH_PARAMS = {
   plugLean: 0.15, // how lean it last ran (mixture below minus this) for the old plug to look white
   plugOilyWear: 0.35, // wear at which a two-stroke's old plug is wet with oil
   plugWornWear: 0.4, // wear at which a four-stroke's old plug has an electrode worn round
+  sumpShort: 0.75, // sump level when the pour was too short (a bit under the top mark)
   oilOver: 0.05, // and when it was too much (about 20:1, smokes and fouls)
 };
 
@@ -26,6 +27,7 @@ export const BENCH_PARAM_RANGES = {
   botchedLevel: [0, 1, 0.05],
   oilShort: [0, 0.1, 0.002],
   oilGood: [0, 0.1, 0.002],
+  sumpShort: [0.3, 1, 0.01],
   oilOver: [0, 0.2, 0.002],
   plugRichFouling: [0, 1, 0.05],
   plugLean: [0, 0.5, 0.01],
@@ -75,9 +77,18 @@ export const JOBS = {
       { id: 'close', text: 'Cap on', kind: 'press' },
     ],
   },
+  sump: {
+    name: 'Top up the engine oil',
+    steps: [
+      { id: 'stick', text: 'Pull the dipstick and wipe it', kind: 'press' },
+      { id: 'pour', text: 'Pour the oil in: stop at the top mark', kind: 'hold', need: 0.9, limit: 1.7 },
+      { id: 'recheck', text: 'Wait a minute, then dip it again', kind: 'press' },
+      { id: 'close', text: 'Filler cap on', kind: 'press' },
+    ],
+  },
 };
 
-export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil'];
+export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump'];
 
 /** What each reading means, the way Amy would say it. Order is the order Jess can be wrong in. */
 export const PLUG_KINDS = ['healthy', 'rich', 'lean', 'oily', 'worn'];
@@ -238,14 +249,21 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     if (botched) faults.leave('puncture', P.botchedLevel);
     return botched ? 'Wheel is back on, but the tyre is not holding' : 'Tyre patched, pumped and holding';
   }
+  if (job.kind === 'sump') {
+    const short = job.outcome('pour') === 'short';
+    if (target.sump) target.sump.level = short ? Math.max(target.sump.level, P.sumpShort) : 1;
+    return short ? 'Oil topped up, though it is a touch under the top mark' : 'Oil up to the top mark';
+  }
   const how = job.outcome('pour');
   fuel.oil = how === 'short' ? P.oilShort : how === 'over' ? P.oilOver : P.oilGood;
   return how === 'short' ? 'Oil topped up, though it looks a bit light' : how === 'over' ? 'Oil topped up, with a good glug too much' : 'Oil topped up to 50:1';
 }
 
-/** Which jobs a quad can have done: the oil is for the two-strokes. */
+/** Which jobs a quad can have done: the pre-mix oil is for the two-strokes, the sump's for the petrol four-strokes. */
 export function jobAvailable(kind, engine) {
-  return kind !== 'oil' || engine.params.strokes === 2;
+  if (kind === 'oil') return engine.params.strokes === 2;
+  if (kind === 'sump') return engine.params.strokes !== 2 && !engine.params.runsOnDiesel;
+  return true;
 }
 
 /** Is a quad's middle inside the bay painted on the floor? */

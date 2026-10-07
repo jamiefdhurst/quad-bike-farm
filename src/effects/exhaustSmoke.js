@@ -207,9 +207,9 @@ export class ExhaustSmoke {
     const coldness = 1 - engine.temperature;
     const rich = Math.max(0, engine.mixture - engine.params.richTolerance);
     const density =
-      p.warmDensity + p.coldDensity * coldness + p.richDensity * rich + p.foulDensity * engine.fouling + p.oilDensity * engine.oilRich + p.waterDensity * (engine.water ?? 0) + p.dieselDensity * (engine.dieselSoak ?? 0) + p.throttleBurst * this.burst + p.throttleDensity * engine.throttle;
+      p.warmDensity + p.coldDensity * coldness + p.richDensity * rich + p.foulDensity * engine.fouling + p.oilDensity * (engine.oilRich + (engine.oilBurn ?? 0)) + p.waterDensity * (engine.water ?? 0) + p.dieselDensity * (engine.dieselSoak ?? 0) + p.throttleBurst * this.burst + p.throttleDensity * engine.throttle;
     // Colour: vapour-white when cold, sooty when rich or bursting.
-    const sooty = Math.min(1, rich * 1.5 + engine.fouling + engine.oilRich * 0.6 + this.burst * 0.5);
+    const sooty = Math.min(1, rich * 1.5 + engine.fouling + (engine.oilRich + (engine.oilBurn ?? 0)) * 0.6 + this.burst * 0.5);
     const base = p.warmGray + (p.coldGray - p.warmGray) * coldness;
     const steamy = Math.min(1, (engine.water ?? 0) * 3); // water's steam is white whatever else is going on
     const dieselly = Math.min(1, (engine.dieselSoak ?? 0) * 2); // diesel smoke is grey, over the sootiness

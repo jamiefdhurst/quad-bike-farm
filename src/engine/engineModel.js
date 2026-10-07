@@ -8,7 +8,7 @@
 
 import { DEFAULT_ENGINE_PARAMS } from './engineParams.js';
 import { Knack } from './knack.js';
-import { oilExcess, stepLube, nipping } from './lubrication.js';
+import { oilExcess, stepLube, nipping, sumpLube } from './lubrication.js';
 import { runOnChance, popPropensity } from './runOn.js';
 import { stepWater, waterCatchFactor } from './water.js';
 import { stepDieselSoak, dieselCatchFactor } from './diesel.js';
@@ -61,6 +61,9 @@ export class EngineModel {
     this.clog = 0; // 0..1 how clogged the air filter is
     this.oil = this.params.strokes === 2 ? this.params.oilGood : 0; // oil fraction of the fuel it's being fed
     this.oilRich = 0; // 0..1 how much more oil than it can burn clean
+    this.sump = 1; // 0..1 how far up its mark the engine oil is (a four-stroke's; see vehicle/sump.js)
+    this.oilBurn = 0; // 0..1 oil going past the rings on the overrun: blue smoke from a quad that burns it
+    this.tick = 0; // 0..1 how loud the tappets tick from a low sump
     this.overheat = 0; // 0..1 extra heat from poor lubrication, on top of the temperature
     this.scuff = 0; // 0..1 damage from running without oil; at 1 it seizes
     this.nip = 0; // 0..1 how far it's nipping up
@@ -219,7 +222,7 @@ export class EngineModel {
    * @param {number}  [controls.ambient] 0..1 how warm the day is (sun on the engine).
    * @param {number}  [controls.overrunRpm] rpm above idle the wheels turn it over at with the throttle shut.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, oil = this.oil, slip = 0, dirt = 0, clog = 0, gulp = 0, diesel = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0 } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, clog = 0, gulp = 0, diesel = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0 } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -230,6 +233,8 @@ export class EngineModel {
     this.load = clamp(load, 0, 1);
     this.fuel = clamp(fuel, 0, 1);
     this.oil = Math.max(0, oil);
+    this.sump = clamp(sump, 0, 1);
+    this.oilBurn = clamp(oilBurn, 0, 1);
     this.slip = clamp(slip, 0, 1);
     this.dirt = clamp(dirt, 0, 1);
     this.clog = clamp(clog, 0, 1);
@@ -426,19 +431,30 @@ export class EngineModel {
     return gaugeHeat(this.overheat, this.heat, this.params);
   }
 
+  /** How hard the engine works its oil, 0..1: idling is a little, flat out with the throttle open is all of it. */
+  get lubeWork() {
+    const p = this.params;
+    const rpmNorm = clamp((this.rpm - p.idleRpmWarm) / (p.maxRpm - p.idleRpmWarm), 0, 1);
+    return p.lubeIdleWork + (1 - p.lubeIdleWork) * Math.max(rpmNorm, this.driveLoad * this.throttle);
+  }
+
   /** Oil in the fuel: heat and scuffing on straight petrol, smoke and a fouling plug on too much. */
   updateLube(h) {
     const p = this.params;
     const running = this.state === EngineState.RUNNING;
     const rpmNorm = clamp((this.rpm - p.idleRpmWarm) / (p.maxRpm - p.idleRpmWarm), 0, 1);
-    const work = p.lubeIdleWork + (1 - p.lubeIdleWork) * Math.max(rpmNorm, this.driveLoad * this.throttle);
-    if (p.strokes === 2) {
-      if (stepLube(this, h, { oil: this.oil, running, work }, p)) {
+    const work = this.lubeWork;
+    // A two-stroke is oiled by its petrol; a four-stroke by its sump (the tractor's is out of scope: it stays full).
+    const lube = p.strokes === 2 ? undefined : sumpLube(this.sump, p.sumpOkLevel);
+    if (p.strokes === 2 || !p.runsOnDiesel) {
+      if (stepLube(this, h, { oil: this.oil, lube, running, work }, p)) {
         this.rpm = 0;
         this.stall('seized');
         this.emit('seized');
       }
     }
+    this.tick = p.strokes === 2 || p.runsOnDiesel ? 0 : clamp((p.sumpTickFrom - this.sump) / Math.max(0.01, p.sumpTickFrom - p.sumpTickFull), 0, 1);
+    if (running && this.tick > 0 && this.random() < this.tick * p.tickRate * h * (0.5 + 0.5 * rpmNorm)) this.emit('coolTick', this.random() * h);
     this.nip = nipping(this.scuff, p.nipFrom);
     this.oilRich = oilExcess(this.oil, p.strokes, p);
   }
@@ -468,6 +484,7 @@ export class EngineModel {
         p.richRoughness * this.rich +
         p.foulRoughness * this.fouling +
         p.nipRoughness * this.nip +
+        p.tickRoughness * this.tick +
         p.oilRichRoughness * this.oilRich +
         p.dirtRoughness * this.dirt +
         p.pinkRoughness * this.pink +

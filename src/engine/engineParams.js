@@ -148,6 +148,11 @@ export const DEFAULT_ENGINE_PARAMS = {
   oilRichFull: 0.1, // and is as bad as it gets here
   oilFourStrokeFrom: 0.004, // a four-stroke burning any oil smokes and fouls from here
   oilFourStrokeFull: 0.02, // and is as bad as it gets here
+  sumpOkLevel: 0.25, // a four-stroke is fully lubricated with its sump this far up (1 is the top mark); under it, it's starved like a two-stroke on straight petrol
+  sumpTickFrom: 0.28, // under this sump level the tappets start to tick...
+  sumpTickFull: 0.1, // ...and tick as loud as they get at this
+  tickRoughness: 0.12, // roughness when the tappets tick as loud as they get (a low sump)
+  tickRate: 9, // tappet ticks a second at full tick, at idle
   oilFoulRate: 0.15, // plug fouling per second at full excess oil, on top of any other
   oilRichRoughness: 0.2, // roughness at full excess oil
   seizeSeconds: 70, // flat out on straight petrol it seizes in about this long (idling takes lubeIdleWork times longer)
@@ -360,6 +365,11 @@ export const ENGINE_PARAM_RANGES = {
   oilRichFull: [0.01, 0.3, 0.001],
   oilFourStrokeFrom: [0, 0.05, 0.001],
   oilFourStrokeFull: [0.005, 0.1, 0.001],
+  sumpOkLevel: [0.02, 0.6, 0.01],
+  sumpTickFrom: [0.05, 0.6, 0.01],
+  sumpTickFull: [0.01, 0.4, 0.01],
+  tickRoughness: [0, 0.5, 0.01],
+  tickRate: [0, 30, 0.5],
   oilFoulRate: [0, 1, 0.01],
   oilRichRoughness: [0, 1, 0.01],
   seizeSeconds: [5, 600, 5],

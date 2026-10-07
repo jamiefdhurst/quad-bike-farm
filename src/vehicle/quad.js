@@ -16,6 +16,7 @@ import { AirFilter } from './airFilter.js';
 import { CruiseControl } from './cruise.js';
 import { Creep, mayCreep, DEFAULT_CREEP_PARAMS } from './creep.js';
 import { Bog } from './bog.js';
+import { Sump, hasSump, oilLowLamp } from './sump.js';
 import { Faults } from './faults.js';
 import { reverseAllowed, chokeReach, DEFAULT_CONTROLS_PARAMS } from './controls.js';
 import { advanceUsage, isNeutral, dashClock, lampStates } from './dashState.js';
@@ -76,6 +77,8 @@ export class Quad {
     this.dash = this.model.userData.dash;
     this.fuel = new FuelSystem(fuelParams);
     this.faults = new Faults();
+    this.sump = hasSump({ ...engine.params, tractor }) ? new Sump() : null; // the four-strokes' engine oil; the game deals each its level (sump.js)
+    this.sumpClock = 0;
     // A layout's outrigger wheels (the mini moto's) are never the flat one.
     if (layout.wheels.some((w) => w.outrigger) || layout.wheels.length !== 4) {
       this.faults.tyreWheels = layout.wheels.flatMap((w, i) => (w.outrigger ? [] : [i]));
@@ -647,6 +650,8 @@ export class Quad {
   updateFuel(dt) {
     const e = this.engine;
     this.fuel.update(dt, { rpm: e.rpm, throttle: e.throttle, choke: e.choke, running: e.isRunning });
+    this.sump?.step(dt, { running: e.isRunning, work: e.lubeWork });
+    this.sumpClock += dt;
   }
 
   /** The toolbox drain after red diesel: tank and carb emptied, the engine's soak cleared. Returns the litres lost. */
@@ -674,6 +679,8 @@ export class Quad {
       overrunRpm: this.engineLoad.overrunRpm,
       fuel: this.fuel.bowlLevel,
       oil: this.fuel.oil,
+      sump: this.sump?.level ?? 1,
+      oilBurn: this.sump ? this.sump.burnSmoke(this.engine.throttle, Math.max(0, this.engine.rpm - this.engine.params.idleRpmWarm)) : 0,
       slip: this.faults.slip,
       dirt: this.faults.dirt,
       clog: this.filter.clog,
@@ -792,6 +799,7 @@ export class Quad {
       speedMph: speed > 0.2 ? speed * 2.237 : 0,
       ...this.quirks.dash({ fuelLevel: f.level, temperature: e.temperature, overheat: e.gaugeHeat }, dt, speed > 1),
       reserveLevel: f.params.reserveLitres / f.params.tankCapacity,
+      oilLow: !!this.sump && oilLowLamp({ running: e.isRunning, level: this.sump.level, rpm: e.rpm, idleRpm: e.params.idleRpmWarm, t: this.sumpClock }),
       tap: f.tap,
       coldBelow: e.params.warmLightThreshold,
       ignition: e.hasPower, // the dash goes dark on a flat battery

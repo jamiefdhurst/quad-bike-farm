@@ -148,6 +148,15 @@ export class DebugGui {
       get seized() {
         return unit().engine.seized;
       },
+      get sump() {
+        return unit().quad.sump ? Math.round(unit().quad.sump.level * 100) / 100 : 0;
+      },
+      set sump(v) {
+        if (unit().quad.sump) unit().quad.sump.level = Math.min(1, Math.max(0, Number(v) || 0));
+      },
+      get burnsOil() {
+        return !!unit().quad.sump?.burner;
+      },
 
       get temperature() {
         return unit().engine.temperature;
@@ -164,11 +173,12 @@ export class DebugGui {
     };
     const f = this.gui.addFolder('Engine (live): the quad you are on or looking at');
     for (const key of Object.keys(Object.getOwnPropertyDescriptors(live))) {
-      if (key === 'temperature' || key === 'battery') continue;
+      if (key === 'temperature' || key === 'battery' || key === 'sump') continue;
       f.add(live, key).listen().disable();
     }
     f.add(live, 'temperature', 0, 1, 0.01).name('temperature (drag to set)').listen();
     f.add(live, 'battery', 0, 1, 0.01).name('battery (drag to set)').listen();
+    f.add(live, 'sump', 0, 1, 0.01).name('engine oil (drag to set; 0 on a two-stroke)').listen();
 
     // The faults that develop (vehicle/faults.js): each shows its level (0 is none), and dragging it starts or clears one.
     const faults = {};

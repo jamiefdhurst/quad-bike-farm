@@ -85,6 +85,7 @@ import { BanterWatch } from './npc/banterWatch.js';
 import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES, PREMIX_CAN_COLOURS, DIESEL_CAN_COLOURS } from './items/jerryCan.js';
 import { OilBottle, OIL_BOTTLE_PARAM_RANGES } from './items/oilBottle.js';
 import { ratioText } from './engine/lubrication.js';
+import { Sump, DEFAULT_SUMP_PARAMS, SUMP_PARAM_RANGES, pickBurner, startLevel, readStick } from './vehicle/sump.js';
 import { fuelText } from './engine/diesel.js';
 import { FuelTank } from './items/fuelTank.js';
 import { Toolbox } from './items/toolbox.js';
@@ -246,6 +247,13 @@ export class Game {
       const kinds = pickQuirks(featuresOf(unit.spec, !!this.podRack.podOn(unit.id)), quirkRandom, this.quirkParams);
       unit.quad.quirks = new QuirkSet(kinds, this.quirkParams);
     }
+    // Engine oil: each four-stroke's sump starts at its own level, and one of them burns oil this game (vehicle/sump.js).
+    this.sumpParams = { ...DEFAULT_SUMP_PARAMS };
+    registerTuning('Engine oil', this.sumpParams, SUMP_PARAM_RANGES);
+    const sumpRandom = createRandom(this.seed ^ 0x0115);
+    const sumpUnits = this.units.filter((u) => u.quad.sump);
+    const burnerId = pickBurner(sumpUnits.map((u) => u.spec.id), sumpRandom);
+    for (const u of sumpUnits) u.quad.sump = new Sump({ level: startLevel(u.spec.id === burnerId, sumpRandom, this.sumpParams), burner: u.spec.id === burnerId, params: this.sumpParams });
     // The tractor stands in the yard whatever the fleet is. It's a unit like the quads (you ride it, fuel it, hear it), but `girlUnits` is what
     // the girls know about: they leave it alone for now.
     this.girlUnits = this.units;
@@ -516,7 +524,7 @@ export class Game {
             action: `Ride the ${unit.label}`,
             keys: quad.tractor
               ? [['K', 'Key'], ['R', 'Start'], ['O', 'Stop knob'], ...(this.chain.state === 'stowed' && !this.player.isRiding ? [['X', 'Tow chain']] : [])]
-              : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.manual ? [['Shift 1-4', 'Clutch, gears']] : []), ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : []), ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
+              : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.manual ? [['Shift 1-4', 'Clutch, gears']] : []), ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(quad.sump ? [['Y', 'Dipstick']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : []), ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
           };
         },
         interact: () => {
@@ -1218,6 +1226,7 @@ export class Game {
           lastRider: h?.lastRider ?? null,
           hasHistory: !!h,
           quirks: q.quirks.kinds,
+          sump: q.sump ? { level: q.sump.level, burner: q.sump.burner } : null,
           tyres: q.tyres,
           parkBrake: q.parkBrake,
           wornGear: worn ? { gear: worn.gear, wear: worn.wear } : null,
@@ -2754,6 +2763,62 @@ export class Game {
     this.can.putDown(spot, yaw + Math.PI / 2);
   }
 
+  /**
+   * Stood looking at a four-stroke: Y pulls the dipstick and says where the oil is; holding it near the oil bottle (by the petrol tank)
+   * pours some in, up to the top mark.
+   */
+  dipstick(unit, input, dt) {
+    const sump = unit.quad.sump;
+    if (!sump) {
+      if (input.wasPressed('KeyY')) this.hud.toast('A two-stroke has no dipstick: its oil goes in with the petrol');
+      return;
+    }
+    if (input.wasPressed('KeyY')) {
+      this.yHeld = 0;
+      const { text } = readStick(sump.level, Math.random() * 2 - 1, this.sumpParams);
+      sump.checked = true;
+      this.hud.toast(`Dipstick: ${text}${sump.low ? '. Hold Y beside the oil bottle to top it up' : ''}`, 3);
+      return;
+    }
+    if (!input.isDown('KeyY')) {
+      this.yHeld = 0;
+      return;
+    }
+    this.yHeld = (this.yHeld ?? 0) + dt;
+    if (this.yHeld < 0.5) return;
+    const bottle = this.oilBottle.model.position;
+    const q = unit.quad.position;
+    if (Math.hypot(q.x - bottle.x, q.z - bottle.z) > this.sumpParams.bottleRange) {
+      if (this.yHeld < 0.6) this.hud.toast('The oil bottle is by the petrol tank: bring it here', 2.5);
+      return;
+    }
+    if (sump.pour(dt) > 0) this.hud.setStatus(`Topping up the oil: ${readStick(sump.level, 0, this.sumpParams).text}`);
+    else if (this.yHeld < 0.6) this.hud.toast('Up to the top mark');
+  }
+
+  /**
+   * Amy checks the dipstick before she rides a quad, and tops it up if it wants some; Jess never has. Once per ride.
+   */
+  updateOilChecks() {
+    for (const c of this.companions) {
+      const driving = c.fsm.is('driving');
+      if (!driving) {
+        c.oilChecked = null;
+        continue;
+      }
+      const sump = c.quad?.sump;
+      if (!sump || c.oilChecked === c.quad) continue;
+      c.oilChecked = c.quad;
+      if (c.character.id !== 'amy' || Math.random() > this.sumpParams.amyChecks) continue;
+      if (sump.level < this.sumpParams.minMark + this.sumpParams.amyTopUpMargin) {
+        sump.fill();
+        c.voice.say('oilTopUp', { urgent: true, chance: 1 });
+      } else {
+        c.voice.say('oilFine', { chance: 0.35 });
+      }
+    }
+  }
+
   /** E on a quad with the jump leads in hand. */
   clampLeads(quad) {
     const result = this.leads.clamp(quad);
@@ -2827,6 +2892,7 @@ export class Game {
       if (focused?.unit) {
         focused.unit.quad.setRemote(input);
         focused.unit.quad.handleFrameInput(dt);
+        this.dipstick(focused.unit, input, dt);
         this.lastUnit = focused.unit;
       }
       if (focused && input.wasPressed('KeyE')) focused.interact();
@@ -2872,6 +2938,7 @@ export class Game {
     this.updateFavour(dt, ridden);
     this.updateWearLedger();
     this.updateQuirks(dt, ridden);
+    this.updateOilChecks();
     this.updateHandbrake(dt);
     this.skills.update(dt);
     this.updateRequests(dt, ridden);

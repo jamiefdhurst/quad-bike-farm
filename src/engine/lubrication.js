@@ -32,10 +32,11 @@ export function oilExcess(oil, strokes, p) {
 /**
  * One step of a two-stroke's lubrication. state is { overheat, scuff, seized }:
  * overheat 0..1 is extra heat on top of the normal warm-up, scuff 0..1 is damage that
- * stays until it's stripped down. Returns whether it seized on this step.
+ * stays until it's stripped down. `lube` (0..1) is how well it's oiled where that isn't the fuel's oil: a four-stroke's sump.
+ * Returns whether it seized on this step.
  */
-export function stepLube(state, h, { oil, running, work }, p) {
-  const starved = 1 - lubeFactor(oil, p.oilGood);
+export function stepLube(state, h, { oil, lube, running, work }, p) {
+  const starved = 1 - (lube ?? lubeFactor(oil, p.oilGood));
   const target = running ? starved * work : 0;
   state.overheat += (target - state.overheat) * Math.min(1, h / p.overheatSeconds);
   if (running && !state.seized) state.scuff = Math.min(1, state.scuff + (h * starved * starved * work) / p.seizeSeconds);
@@ -44,6 +45,11 @@ export function stepLube(state, h, { oil, running, work }, p) {
     return true;
   }
   return false;
+}
+
+/** How well lubricated a four-stroke is from the oil in its sump: fine from `okLevel` of the way up, starved below it. */
+export function sumpLube(level, okLevel) {
+  return Math.min(1, Math.max(0, level / Math.max(0.01, okLevel)));
 }
 
 /** How far into nipping up it is, 0..1: it starts to tighten from nipFrom of the way to seizing. */

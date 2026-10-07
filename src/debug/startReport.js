@@ -23,6 +23,7 @@ const n = (v, digits = 1) => Number(v).toFixed(digits);
  * @param {string|null} v.lastRider
  * @param {boolean} [v.parkBrake]  whether its parking brake starts on
  * @param {object} [v.tyres]       a TyreSet: pressures, brands and tread
+ * @param {{level: number, burner: boolean}|null} [v.sump] a four-stroke's engine oil level, and whether it burns oil
  * @param {string[]} v.quirks
  * @param {{gear: number, wear: number}|null} v.wornGear
  * @param {number|null} v.hand    the tractor's hand throttle at the start
@@ -43,6 +44,7 @@ export function describeVehicle(v) {
   }
   if (v.tyres) lines.push(`  tyres:    ${v.tyres.gauge()}; ${v.tyres.describe()}`);
   if (v.parkBrake !== undefined) lines.push(`  parking brake: ${v.parkBrake ? 'on' : 'off'}`);
+  if (v.sump) lines.push(`  oil:      sump ${n(v.sump.level, 2)}${v.sump.burner ? ', burns oil' : ''}`);
   lines.push(`  quirks:   ${v.quirks.length ? v.quirks.join(', ') : 'none'}`);
   if (v.wornGear) lines.push(`  gearbox:  jumps out of gear ${v.wornGear.gear} (worn ${n(v.wornGear.wear, 2)})`);
   return lines.join('\n');

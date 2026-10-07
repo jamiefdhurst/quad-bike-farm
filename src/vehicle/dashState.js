@@ -37,6 +37,7 @@ export function lampStates(s) {
     n: on && !!s.neutral,
     temp: on && tempGaugeFraction(s.temperature, true, s.overheat) >= HOT_FROM,
     fuel: on && s.fuelLevel <= s.reserveLevel,
+    oil: on && !!s.oilLow,
   };
 }
 

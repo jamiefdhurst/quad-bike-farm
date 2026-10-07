@@ -533,7 +533,7 @@ export class CompanionVoice {
     if (this.coldNearTime > 10) this.say('coldIdleNearby', { chance: 0.01 });
   }
 
-  /** A two-stroke with too little oil running hot, tightening up and seizing, or one that's smoking from too much. */
+  /** An engine with too little oil ticking, running hot, tightening up and seizing (a two-stroke's mix or a four-stroke's sump), or a two-stroke smoking from too much. */
   watchOil(dt, unit, w, listening) {
     const e = unit.engine;
     if (!listening) return;
@@ -541,6 +541,7 @@ export class CompanionVoice {
     if (!e.isRunning) return;
     if (e.nip > 0.3) this.say('engineNipping', { urgent: true, chance: 0.05 });
     else if (e.overheat > 0.45) this.say('engineHot', { chance: 0.02 });
+    else if (e.tick > 0.4) this.say('engineTicking', { chance: 0.015 });
     if (e.oilRich > 0.5) this.say('oilSmoky', { chance: 0.01 });
   }
 

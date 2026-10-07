@@ -257,7 +257,7 @@ export class Workshop {
     return unit.quad.fuel.diesel > 0.005 || unit.quad.fuel.bowlDiesel > 0.005 || unit.engine.dieselSoak > 0.005;
   }
 
-  /** Strip a nipped-up or seized two-stroke down and free it. */
+  /** Strip a nipped-up or seized engine down and free it (top the oil up first, or it goes again). */
   stripDown() {
     const unit = this.unit;
     if (!unit || !unit.engine.freeSeized()) return;
@@ -562,9 +562,9 @@ export class Workshop {
       for (const b of this.el.querySelectorAll('.ws-pod')) b.disabled = !!job || !!fitted || !rack.inToolbox(b.dataset.pod);
       this.el.querySelector('.ws-podoff').disabled = !!job || !fitted;
     }
-    // Only a two-stroke that's scuffed or seized has anything to strip.
+    // Only an engine that's scuffed or seized has anything to strip.
     const strip = this.el.querySelector('.ws-strip');
-    strip.style.display = e.params.strokes === 2 && (e.seized || e.scuff >= 0.05) ? '' : 'none';
+    strip.style.display = (e.seized || e.scuff >= 0.05) ? '' : 'none';
     if (e.seized) this.el.querySelector('.ws-cond').textContent = 'Seized solid: it needs stripping down before it will turn over.';
   }
 }
