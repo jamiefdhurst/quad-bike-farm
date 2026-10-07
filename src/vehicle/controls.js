@@ -3,11 +3,12 @@
 //
 //   reverse: 'bars' a lever on the left bar you push down while turning the bars; 'button' a button you press while holding the brake
 //     (automatics); 'knee' a lever by your left knee, which wants the quad stopped; 'none' no reverse at all, so you get off and push.
+//   (also 'dashLever', the UTV's forward and reverse lever on the dash, which wants it stopped)
 //   choke: 'thumb' a lever by the left grip, always in reach; 'knob' a pull knob on the dash, a hand off the bars; 'plunger' a plunger on
 //     the carb under the tank, which you can only reach with the quad all but stopped, and with a hand off the bars even then.
 //   tap: where the fuel tap sits (the model places it, quadModel.js) and what its handle looks like.
 
-export const REVERSE_STYLES = ['bars', 'button', 'knee', 'none'];
+export const REVERSE_STYLES = ['bars', 'button', 'knee', 'dashLever', 'none'];
 export const CHOKE_STYLES = ['thumb', 'knob', 'plunger'];
 export const TAP_STYLES = ['left', 'right', 'rearLeft', 'lowLeft', 'lowRight'];
 
@@ -15,6 +16,7 @@ export const DEFAULT_CONTROLS_PARAMS = {
   barsMaxSpeed: 1.5, // m/s: the bar lever can be pushed down while it's creeping, not at a run
   buttonMaxSpeed: 0.4, // m/s: the reverse button wants it stopped
   kneeMaxSpeed: 0.5, // m/s: the knee lever too
+  leverMaxSpeed: 0.5, // m/s: the UTV's dash lever wants it stopped too
   knobMaxSpeed: 7, // m/s: the dash knob can be reached at a fair pace, one handed
   knobSteer: 0.45, // how much of the steering you have while a hand is off the bars for the knob
   plungerMaxSpeed: 1, // m/s: the carb plunger can only be reached with it all but stopped
@@ -28,6 +30,7 @@ export const CONTROLS_PARAM_RANGES = {
   barsMaxSpeed: [0.2, 6, 0.1],
   buttonMaxSpeed: [0.05, 2, 0.05],
   kneeMaxSpeed: [0.05, 2, 0.05],
+  leverMaxSpeed: [0.05, 2, 0.05],
   knobMaxSpeed: [1, 15, 0.5],
   knobSteer: [0, 1, 0.05],
   plungerMaxSpeed: [0.2, 4, 0.1],
@@ -51,6 +54,9 @@ export function reverseAllowed(style, ctx, p = DEFAULT_CONTROLS_PARAMS) {
       return { ok: true };
     case 'button':
       if (!ctx.braking || ctx.speed > p.buttonMaxSpeed) return { ok: false, why: 'Stop and hold the brake (S) while you press the reverse button' };
+      return { ok: true };
+    case 'dashLever':
+      if (ctx.speed > p.leverMaxSpeed) return { ok: false, why: 'Stop first: the forward and reverse lever is on the dash' };
       return { ok: true };
     case 'knee':
       if (ctx.speed > p.kneeMaxSpeed) return { ok: false, why: 'Stop first: the reverse lever is down by your left knee' };

@@ -235,6 +235,8 @@ export const DEFAULT_ENGINE_PARAMS = {
   // A diesel (the tractor): see compression.js
   compressionIgnition: false, // true: catches on glow plugs and compression rather than the mixture, the key doesn't stop it, a knob does
   runsOnDiesel: false, // red diesel is its fuel, so it doesn't soak it up like a petrol engine
+  keyStops: false, // a diesel whose key stops it (the UTV's), where the tractor's carries on until its knob is pulled
+  petrolFussy: false, // a diesel that soaks up petrol the way the quads soak up diesel (the UTV's): the same soak numbers below, from the petrol share of the tank
   glowSeconds: 7, // seconds the glow plugs take to heat from cold, on a stone cold engine
   glowCoolSeconds: 14, // seconds they take to cool again
   glowWarmAbove: 0.6, // engine temperature above which it needs no glow at all

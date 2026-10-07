@@ -11,7 +11,7 @@ import { Knack } from './knack.js';
 import { oilExcess, stepLube, nipping, sumpLube } from './lubrication.js';
 import { runOnChance, popPropensity } from './runOn.js';
 import { stepWater, waterCatchFactor } from './water.js';
-import { stepDieselSoak, dieselCatchFactor } from './diesel.js';
+import { stepDieselSoak, dieselCatchFactor, contaminant } from './diesel.js';
 import { stepGlow, glowReady, compressionCatchFactor } from './compression.js';
 import { offTemperature } from '../world/barn.js';
 import { stepHeat, stepSoak, pinkLevel, gaugeHeat, coolTickRate, hotStartRich } from './heat.js';
@@ -160,7 +160,7 @@ export class EngineModel {
 
   setIgnition(on) {
     if (on === this.ignitionOn) return;
-    if (this.params.compressionIgnition) {
+    if (this.params.compressionIgnition && !this.params.keyStops) {
       // A diesel's key is only the plugs and the dash: turned off with it running, it carries on.
       if (!on && this.state === EngineState.RUNNING) {
         this.keyPulled = true;
@@ -183,7 +183,7 @@ export class EngineModel {
       this.state = EngineState.IGNITION;
       this.emit('ignitionOn');
     } else {
-      const chance = this.state === EngineState.RUNNING ? runOnChance(this, this.params) : 0;
+      const chance = this.state === EngineState.RUNNING && !this.params.compressionIgnition ? runOnChance(this, this.params) : 0;
       if (chance > 0 && this.random() < chance) {
         // Hot, worn or lean, it keeps firing for a few beats, rougher and slower, before it dies.
         this.keyOff = true;
@@ -241,7 +241,7 @@ export class EngineModel {
     this.dirt = clamp(dirt, 0, 1);
     this.clog = clamp(clog, 0, 1);
     this.gulp = Math.max(0, gulp);
-    this.diesel = this.params.runsOnDiesel ? 0 : clamp(diesel, 0, 1);
+    this.diesel = contaminant(this.params, diesel);
     this.speed = Math.abs(speed);
     this.ambient = clamp(ambient, 0, 1);
     this.chill = clamp(chill, 0, 1);
