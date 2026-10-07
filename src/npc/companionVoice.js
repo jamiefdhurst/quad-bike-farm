@@ -555,6 +555,7 @@ export class CompanionVoice {
       this.watchBlame(dt, unit, w, view);
       this.watchLeftRunning(dt, unit, w, view);
       this.watchDrip(dt, unit, w, view);
+      this.watchCoolant(dt, unit, w, view);
       this.watchHistory(dt, unit, w, view);
       this.watchQuirks(dt, unit, w, view);
       // Cranking on and on without it catching.
@@ -656,6 +657,29 @@ export class CompanionVoice {
     if (!view.drip.smells(unit.id) || this.chatter.time < (w.dripUntil ?? 0)) return;
     if (!this.say('dripSmell', { chance: c.params.dripSmellChance * dt })) return;
     w.dripUntil = this.chatter.time + 240;
+  }
+
+  /**
+   * The orange's coolant leak (engine/coolant.js): she notices the damp patch under it when it's parked, says so when it steams, and a
+   * boil-over makes her jump back and shout (the steam is a scald, so she gets well clear).
+   */
+  watchCoolant(dt, unit, w, view) {
+    const e = unit.engine;
+    if (!e.params.waterCooled) return;
+    const c = this.companion;
+    const dist = unit.quad.position.distanceTo(this.head);
+    if (e.events.some((x) => x.type === 'boilOver') && dist < c.params.coolantJumpRange && !c.isSeated && !c.fsm.is('driving')) {
+      c.jumpBack(unit.quad.position);
+      this.say('coolantBoil', { urgent: true, chance: 1 });
+      return;
+    }
+    if (dist > c.params.coolantSeeRange || this.chatter.time < (w.coolantUntil ?? 0)) return;
+    const patch = view.coolantPatches?.get(unit.id);
+    if (e.steam > 0.25 && e.isRunning) {
+      if (this.say('coolantSteam', { chance: 0.05 })) w.coolantUntil = this.chatter.time + 90;
+    } else if (!e.isRunning && patch?.visible && c.fsm.is('idle', 'resting')) {
+      if (this.say('coolantDamp', { chance: c.params.dripSmellChance * dt })) w.coolantUntil = this.chatter.time + 240;
+    }
   }
 
   /** Come across a quad idling with nobody on it, she says who left it running, going by who really did (leftRunning.js). */

@@ -15,10 +15,11 @@ export function airflow(speed, p) {
 }
 
 /** The heat it's heading for: the sun and its work, less what the air (and the fan) carries off. 0..1. */
-export function heatTarget({ ambient, work, speed, fan }, p) {
-  const scale = p.waterCooled ? p.heatWaterScale : 1;
+export function heatTarget({ ambient, work, speed, fan, coolant = 1 }, p) {
+  // Low on coolant, the radiator does less: the water-cooled engine feels more of the load and the fan carries off less.
+  const scale = p.waterCooled ? 1 + (p.heatWaterScale - 1) * coolant : 1;
   const load = (p.heatSun * clamp01(ambient) + p.heatWork * clamp01(work)) * scale;
-  const cooling = p.heatAirCool * airflow(speed, p) + (fan ? p.fanCooling : 0);
+  const cooling = p.heatAirCool * airflow(speed, p) + (fan ? p.fanCooling * coolant : 0);
   return clamp01(load - cooling);
 }
 
@@ -26,12 +27,12 @@ export function heatTarget({ ambient, work, speed, fan }, p) {
  * One step of running heat. state is { heat, fan }; the fan (water-cooled only) cuts in above fanOnAt and out
  * below fanOffAt. Off, the engine just sheds its heat.
  */
-export function stepHeat(state, h, { running, ambient, work, speed }, p) {
+export function stepHeat(state, h, { running, ambient, work, speed, coolant = 1 }, p) {
   if (p.waterCooled && running) {
     if (state.heat > p.fanOnAt) state.fan = true;
     else if (state.heat < p.fanOffAt) state.fan = false;
   } else state.fan = false;
-  const target = running ? heatTarget({ ambient, work, speed, fan: state.fan }, p) : 0;
+  const target = running ? heatTarget({ ambient, work, speed, fan: state.fan, coolant }, p) : 0;
   const seconds = target > state.heat ? p.heatRiseSeconds : p.heatFallSeconds;
   state.heat = clamp01(state.heat + ((target - state.heat) * h) / Math.max(1, seconds));
 }
@@ -42,8 +43,9 @@ export function pinkLevel(heat, p) {
 }
 
 /** Where the dash gauge's red zone pushes to: poor lubrication, or this heat (shown weakly on the water-cooled). */
-export function gaugeHeat(overheat, heat, p) {
-  return Math.max(overheat, clamp01(heat) * (p.waterCooled ? p.heatGaugeWater : 1));
+export function gaugeHeat(overheat, heat, p, coolant = 1) {
+  // With the coolant gone the gauge shows the water-cooled engine's heat in full.
+  return Math.max(overheat, clamp01(heat) * (p.waterCooled ? 1 + (p.heatGaugeWater - 1) * coolant : 1));
 }
 
 /** The heat in the metal after work: it follows what the engine's doing while it runs, and soaks away when it's off. */

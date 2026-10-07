@@ -15,6 +15,7 @@ import { stepDieselSoak, dieselCatchFactor, contaminant } from './diesel.js';
 import { stepGlow, glowReady, compressionCatchFactor } from './compression.js';
 import { offTemperature } from '../world/barn.js';
 import { jetError, leanStarve, jetTrue, jetMixture } from './jetting.js';
+import { coolingEffect, leakRate, stepPuddle, steamLevel, boilsOver } from './coolant.js';
 import { stepHeat, stepSoak, pinkLevel, gaugeHeat, coolTickRate, hotStartRich } from './heat.js';
 
 export const EngineState = Object.freeze({
@@ -74,6 +75,12 @@ export class EngineModel {
     this.seized = false; // locked solid: nothing turns it until it's stripped down
     this.heat = 0; // 0..1 running too hot (see heat.js)
     this.fan = false; // the radiator fan's on (water-cooled only)
+    this.coolant = 1; // water-cooled only: 1 full, 0 dry (see coolant.js); the game sets it and the leak
+    this.coolantLeak = 0; // this game's leak, as a multiple of the usual rate; 0 for none
+    this.coolantPuddle = 0; // 0..1 the damp patch under it
+    this.boiled = false; // it has boiled over since it was last topped up
+    this.boil = 0; // 0..1 steam left from a boil-over, dying away
+    this.steam = 0; // 0..1 how much steam is coming off the radiator
     this.soak = 0; // 0..1 heat held in the metal after work; ticks as it cools, and a hot carb starts rich
     this.speed = 0; // ground speed in m/s, for the airflow
     this.ambient = 0.5; // 0..1 how warm a day it is
@@ -420,7 +427,8 @@ export class EngineModel {
   updateHeat(h) {
     const p = this.params;
     const running = this.state === EngineState.RUNNING;
-    stepHeat(this, h, { running, ambient: this.ambient, work: this.work, speed: this.speed }, p);
+    if (p.waterCooled) this.updateCoolant(h, running);
+    stepHeat(this, h, { running, ambient: this.ambient, work: this.work, speed: this.speed, coolant: p.waterCooled ? coolingEffect(this.coolant, p) : 1 }, p);
     this.soak = stepSoak(this.soak, h, { running, work: this.work, heat: this.heat }, p);
     this.pink = running && !p.waterCooled ? pinkLevel(this.heat, p) : 0;
     // Rattling under load; the audio plays what's owed (ticks a second, so they land at random times).
@@ -439,9 +447,26 @@ export class EngineModel {
     }
   }
 
+  /** The leak, the damp patch, the steam and the boil-over (coolant.js). */
+  updateCoolant(h, running) {
+    const p = this.params;
+    const rate = leakRate({ running, soak: this.soak, leak: this.coolantLeak }, p);
+    this.coolant = Math.max(0, this.coolant - rate * h);
+    this.coolantPuddle = stepPuddle(this.coolantPuddle, h, { leaking: rate > 0, level: this.coolant }, p);
+    this.boil = Math.max(0, this.boil - h / p.coolantBoilSteamSeconds);
+    if (this.coolant > p.coolantOkAt) this.boiled = false; // topped up
+    if (running && boilsOver(this.coolant, this.heat, this.boiled, p)) {
+      this.boiled = true;
+      this.coolant = Math.min(this.coolant, p.coolantBoilLeft);
+      this.boil = 1;
+      this.emit('boilOver', 0);
+    }
+    this.steam = steamLevel(this.coolant, this.heat, this.boil, p);
+  }
+
   /** What the dash gauge shows above the normal band: poor lubrication, or running hot. */
   get gaugeHeat() {
-    return gaugeHeat(this.overheat, this.heat, this.params);
+    return gaugeHeat(this.overheat, this.heat, this.params, this.params.waterCooled ? coolingEffect(this.coolant, this.params) : 1);
   }
 
   /** How hard the engine works its oil, 0..1: idling is a little, flat out with the throttle open is all of it. */

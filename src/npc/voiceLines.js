@@ -19,6 +19,7 @@ import { AMY_DIESEL_LINES } from './dieselLines.js';
 import { AMY_HEAT_LINES } from './heatLines.js';
 import { AMY_SILENCER_LINES } from './silencerLines.js';
 import { AMY_JET_LINES } from './jetLines.js';
+import { AMY_COOLANT_LINES } from './coolantLines.js';
 import { AMY_DIAGNOSIS_LINES } from './diagnosisLines.js';
 import { AMY_THRASH_LINES } from './thrashLines.js';
 import { AMY_LEFT_LINES } from './leftRunningLines.js';
@@ -1408,6 +1409,8 @@ export const VOICE_LINES = {
   ...AMY_SILENCER_LINES,
   // Jetting a two-stroke (jetLines.js).
   ...AMY_JET_LINES,
+  // The orange's coolant leak (coolantLines.js).
+  ...AMY_COOLANT_LINES,
   // Faults that develop (faultLines.js).
   ...AMY_FAULT_LINES,
   // Listening to a running quad (diagnosisLines.js).

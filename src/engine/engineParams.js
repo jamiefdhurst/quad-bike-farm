@@ -143,6 +143,26 @@ export const DEFAULT_ENGINE_PARAMS = {
   skipRpm: 4000, // and below these revs
   idleFoulRate: 0, // plug fouling per second while idling (oily two-stroke plugs load up); throttle clears it
 
+  // The orange's coolant leak (see coolant.js). Levels run 1 full to 0 dry.
+  coolantLeakRun: 0.00035, // level lost a second while running at a leak multiplier of 1 (about 48 minutes from full to dry)
+  coolantParkedLeak: 0.25, // the share of that it weeps while parked with the metal still hot
+  coolantWeepSoak: 0.3, // soak over which a parked engine is still hot enough to weep
+  coolantLeakChance: 0.5, // the chance of the orange having a leak at all in a given game
+  coolantLeakMin: 0.6, // the leak this game is this many times the rate, at least...
+  coolantLeakMax: 1.4, // ...and at most
+  coolantStartMin: 0.55, // it starts the game this full, at least...
+  coolantStartMax: 0.95, // ...and at most
+  coolantPuddleFrom: 0.92, // level under which a damp patch grows while it leaks
+  coolantPuddleGrow: 0.01, // patch growth a second while leaking, as a fraction of full size
+  coolantPuddleFade: 0.003, // and how fast it dries
+  coolantOkAt: 0.5, // level at and above which the radiator does all its cooling
+  coolantEmptyAt: 0.1, // level at which it does none
+  coolantSteamBelow: 0.4, // level under which it can steam when it's hot
+  coolantSteamHeat: 0.35, // heat from which steam shows
+  coolantBoilHeat: 0.5, // heat over which a low engine boils over...
+  coolantBoilEffect: 0.5, // ...once the radiator's down to this share of its cooling
+  coolantBoilLeft: 0.06, // level left after a boil-over
+  coolantBoilSteamSeconds: 14, // how long the steam from a boil-over takes to die away
   // Jetting a two-stroke (see jetting.js). Sizes are jet sizes either side of stock.
   jetRefCelsius: 12, // the stock jet is right at this temperature
   jetPerDegree: 0.12, // sizes bigger the day wants per degree colder (smaller per degree hotter)
@@ -327,6 +347,25 @@ export const ENGINE_PARAM_RANGES = {
   richTolerance: [0, 1, 0.01],
   mixtureTrim: [-0.5, 0.5, 0.01],
   jet: [-3, 3, 1],
+  coolantLeakRun: [0, 0.005, 0.00005],
+  coolantParkedLeak: [0, 1, 0.05],
+  coolantWeepSoak: [0, 1, 0.05],
+  coolantLeakChance: [0, 1, 0.05],
+  coolantLeakMin: [0, 3, 0.1],
+  coolantLeakMax: [0, 3, 0.1],
+  coolantStartMin: [0, 1, 0.05],
+  coolantStartMax: [0, 1, 0.05],
+  coolantPuddleFrom: [0, 1, 0.01],
+  coolantPuddleGrow: [0, 0.1, 0.001],
+  coolantPuddleFade: [0, 0.05, 0.0005],
+  coolantOkAt: [0, 1, 0.05],
+  coolantEmptyAt: [0, 1, 0.05],
+  coolantSteamBelow: [0, 1, 0.05],
+  coolantSteamHeat: [0, 1, 0.05],
+  coolantBoilHeat: [0, 1, 0.05],
+  coolantBoilEffect: [0, 1, 0.05],
+  coolantBoilLeft: [0, 0.3, 0.01],
+  coolantBoilSteamSeconds: [1, 60, 1],
   jetRefCelsius: [0, 25, 0.5],
   jetPerDegree: [0, 0.4, 0.01],
   jetMixture: [0, 0.3, 0.005],

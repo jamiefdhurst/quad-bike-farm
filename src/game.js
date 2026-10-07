@@ -33,6 +33,7 @@ import { captureStock, tuneTarget, stockSettings, clampSettings, applyTune } fro
 import { WearLedger, LEDGER_PARAM_RANGES } from './engine/wearLedger.js';
 import { LeftRunning, LEFT_PARAM_RANGES } from './npc/leftRunning.js';
 import { CarbDrip, DRIP_PARAM_RANGES } from './vehicle/carbDrip.js';
+import { pickLeak, levelText } from './engine/coolant.js';
 import { Pranks, PRANK_PARAM_RANGES } from './npc/pranks.js';
 import { RevOff, REVOFF_PARAM_RANGES } from './npc/revOff.js';
 import { DrownOut, DROWNOUT_PARAM_RANGES } from './npc/drownOut.js';
@@ -288,6 +289,16 @@ export class Game {
     this.carbDrip = new CarbDrip(this.units.filter((u) => !u.quad.fuel.params.noTap && u !== this.tractorUnit).map((u) => u.id), createRandom(this.seed ^ 0x5d1f));
     registerTuning('Dripping carb', this.carbDrip.p, DRIP_PARAM_RANGES);
     this.dripPatches = new Map(); // quad id -> the dark patch on the ground where it dripped
+    // The orange's coolant leaks (engine/coolant.js): how fast and how full it starts are picked from the seed, on their own stream.
+    this.coolantPatches = new Map(); // quad id -> the damp patch under a leaking radiator
+    const coolantRandom = createRandom(this.seed ^ 0x2b6d);
+    for (const u of this.units) {
+      if (!u.engine.params.waterCooled) continue;
+      const pick = pickLeak(coolantRandom, u.engine.params);
+      u.engine.coolantLeak = pick.leak;
+      u.engine.coolant = pick.level;
+      console.info(pick.leak > 0 ? `${u.name}: leaking coolant, ${levelText(pick.level)} (${pick.level.toFixed(2)}) at ${pick.leak.toFixed(2)} times the usual rate` : `${u.name}: coolant fine this game`);
+    }
     this.wearGearbox();
     this.logStart();
     this.updateSmokeScale();
@@ -1980,6 +1991,28 @@ export class Game {
     }
   }
 
+  /** Each frame: a leaking radiator leaves a damp patch under a parked water-cooled quad (engine/coolant.js), where it first showed. */
+  updateCoolantLeak(dt) {
+    for (const unit of this.units) {
+      if (!unit.engine.params.waterCooled) continue;
+      const q = unit.quad;
+      const size = unit.engine.coolantPuddle;
+      let patch = this.coolantPatches.get(unit.id);
+      if (!patch && size > 0) {
+        patch = new THREE.Mesh(new THREE.CircleGeometry(0.5, 20).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x4f7a4a, roughness: 0.1, transparent: true, opacity: 0.4, depthWrite: false }));
+        patch.renderOrder = 1;
+        patch.userData.fresh = true;
+        this.scene.add(patch);
+        this.coolantPatches.set(unit.id, patch);
+      }
+      if (!patch) continue;
+      // It drips where it stands, so the patch follows a parked quad while it's small and stays put once it's grown.
+      if (size < 0.1 && !unit.engine.isRunning) patch.position.set(q.position.x, this.world.heightAt(q.position.x, q.position.z) + 0.03, q.position.z);
+      patch.visible = size > 0.01;
+      patch.scale.setScalar(0.12 + 0.7 * size);
+    }
+  }
+
   /** Each frame: scores fade, and the girl giving you a ride earns it while her friend, left on foot, notices. */
   updateFavour(dt, ridden) {
     this.favour.update(dt);
@@ -3392,6 +3425,7 @@ export class Game {
     this.updateFavour(dt, ridden);
     this.updateWearLedger(dt);
     this.updateCarbDrip(dt);
+    this.updateCoolantLeak(dt);
     this.updateQuirks(dt, ridden);
     this.updateOilChecks();
     this.updateHandbrake(dt);
@@ -3446,6 +3480,7 @@ export class Game {
         ledger: this.wearLedger,
         left: this.leftRunning,
         drip: this.carbDrip,
+        coolantPatches: this.coolantPatches,
         history: this.history,
         menuOpen: this.menu.isOpen,
         talkingToHer: this.menu.isOpen && this.talkingTo === c,

@@ -99,6 +99,7 @@ export class Companion {
     this.quads = [quad]; // every quad on the farm, for doing things on her own (set by the game)
     this.others = () => []; // the other companions, whose quads she leaves alone (set by the game)
     this.idleFor = 0;
+    this.recoil = null; // a jump back from a boil-over, while it lasts (jumpBack)
     this.restlessness = 0.7 + Math.random() * 0.8; // drifts while she's about (boredom.js)
     this.boredAfter = nextBoredWait(params, this.restlessness);
     this.nickJob = null; // a quad of yours she has taken off: { quad, phase: 'away' | 'back', ... } (nicking.js)
@@ -931,6 +932,7 @@ export class Companion {
   update(dt, vibration, viewer) {
     this.viewer = viewer; // who's watching, for showing off to (showOffYou)
     this.fsm.update(dt);
+    this.updateRecoil(dt);
     this.updateBoredom(dt, viewer);
     this.updateLineUp(dt);
     if (viewer) this.updateGlance(dt, viewer);
@@ -959,6 +961,28 @@ Object.assign(Companion.prototype, wavingMethods);
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(restingMethods));
 
 // Idle behaviour -------------------------------------------------------------
+
+/** Jumps back from something (a boil-over): a quick hop away from `from`, arms up. */
+Companion.prototype.jumpBack = function (from) {
+  const here = this.root.position;
+  const dx = here.x - from.x;
+  const dz = here.z - from.z;
+  const d = Math.hypot(dx, dz) || 1;
+  this.recoil = { vx: (dx / d) * this.params.recoilSpeed, vz: (dz / d) * this.params.recoilSpeed, t: 0, k: 1 };
+};
+
+Companion.prototype.updateRecoil = function (dt) {
+  const r = this.recoil;
+  if (!r) return;
+  r.t += dt;
+  const left = Math.max(0, 1 - r.t / this.params.recoilSeconds);
+  r.k = left;
+  if (this.fsm.is('idle', 'resting', 'walking')) {
+    this.root.position.x += r.vx * left * dt;
+    this.root.position.z += r.vz * left * dt;
+  }
+  if (left <= 0) this.recoil = null;
+};
 
 Companion.prototype.updateGlance = function (dt, viewer) {
   const p = this.params;
@@ -1000,6 +1024,7 @@ Companion.prototype.updateFidget = function (dt) {
   const p = this.params;
   const offsets = this.rig.offsets;
   for (const key in offsets) offsets[key] = 0;
+  if (this.recoil) Object.assign(offsets, { leftArmOut: 0.8 * this.recoil.k, rightArmOut: 0.8 * this.recoil.k, leftElbow: 0.6 * this.recoil.k, rightElbow: 0.6 * this.recoil.k, spinePitch: -0.25 * this.recoil.k });
 
   // Reaching for the key and the starter while she gets a quad going.
   const a = this.attempt;

@@ -192,7 +192,7 @@ export class Bench {
         const ok = this.canBegin(k, unit);
         let note = '';
         if (find) note = find.isDone(k) ? ' ✓' : k === 'battery' && find.charging ? ` (charging: ${Math.round(find.chargeProgress * 100)}%)` : ok ? '' : ' (take the tarp off first)';
-        else if (!ok) note = k === 'sump' ? ' (petrol four-strokes only)' : ' (two-strokes only)';
+        else if (!ok) note = k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : ' (two-strokes only)';
         return `<div class="bn-row${ok ? '' : ' off'}"><span class="key">${i + 1}</span>${JOBS[k].name}${note}</div>`;
       }).join('');
       this.keysEl.textContent = 'Press a number to start   ·   G step away';

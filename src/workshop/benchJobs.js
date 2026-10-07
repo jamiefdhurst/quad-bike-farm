@@ -17,6 +17,8 @@ export const DEFAULT_BENCH_PARAMS = {
   plugWornWear: 0.4, // wear at which a four-stroke's old plug has an electrode worn round
   sumpShort: 0.75, // sump level when the pour was too short (a bit under the top mark)
   oilOver: 0.05, // and when it was too much (about 20:1, smokes and fouls)
+  coolantShort: 0.7, // coolant level left when the pour was too short
+  coolantLeakLeft: 0.4, // share of its leak left after a badly tightened clip
   packingBotched: 0.3, // silencer blown-out level left after a badly packed one (too loose or stuffed too tight)
 };
 
@@ -31,6 +33,8 @@ export const BENCH_PARAM_RANGES = {
   sumpShort: [0.3, 1, 0.01],
   oilOver: [0, 0.2, 0.002],
   packingBotched: [0, 1, 0.05],
+  coolantShort: [0.3, 1, 0.05],
+  coolantLeakLeft: [0, 1, 0.05],
   plugRichFouling: [0, 1, 0.05],
   plugLean: [0, 0.5, 0.01],
   plugOilyWear: [0, 1, 0.05],
@@ -97,6 +101,15 @@ export const JOBS = {
       { id: 'close', text: 'Filler cap on', kind: 'press' },
     ],
   },
+  coolant: {
+    name: 'Top up the coolant and mend the leak',
+    steps: [
+      { id: 'cool', text: 'Let it cool, then undo the radiator cap', kind: 'press' },
+      { id: 'clip', text: 'Find the weeping hose joint and nip the clip up: snug, not tight', kind: 'hold', need: 0.7, limit: 1.5 },
+      { id: 'pour', text: 'Pour in coolant: stop at the line', kind: 'hold', need: 0.9, limit: 1.8 },
+      { id: 'bleed', text: 'Squeeze the top hose to bleed the air out, then cap on', kind: 'press' },
+    ],
+  },
   // The barn find's own jobs (vehicle/barnFind.js): only the rusty quad has them.
   tarp: {
     name: 'Take the tarp off',
@@ -133,7 +146,7 @@ export const JOBS = {
   },
 };
 
-export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing'];
+export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant'];
 
 /** What each reading means, the way Amy would say it. Order is the order Jess can be wrong in. */
 export const PLUG_KINDS = ['healthy', 'rich', 'lean', 'oily', 'worn'];
@@ -298,6 +311,17 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     engine.silencerBlown = botched ? P.packingBotched : 0;
     return botched ? 'Silencer packed, though it is not quite right and still a bit loud' : 'Silencer repacked: quiet again';
   }
+  if (job.kind === 'coolant') {
+    // The clip is the fix: nipped right the leak stops, too loose or too tight and some of it's left.
+    const clip = job.outcome('clip') !== 'good';
+    const short = job.outcome('pour') === 'short';
+    if (clip) engine.coolantLeak *= P.coolantLeakLeft;
+    else engine.coolantLeak = 0;
+    engine.coolant = short ? P.coolantShort : 1;
+    engine.coolantPuddle = Math.min(engine.coolantPuddle, 0.3);
+    if (clip) return 'Topped up, though the clip is not right and it will weep a bit still';
+    return short ? 'Mended, though the coolant is a touch under the line' : 'Hose joint mended and coolant up to the line';
+  }
   if (job.kind === 'sump') {
     const short = job.outcome('pour') === 'short';
     if (target.sump) target.sump.level = short ? Math.max(target.sump.level, P.sumpShort) : 1;
@@ -324,6 +348,7 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
 export function jobAvailable(kind, engine) {
   if (kind === 'oil') return engine.params.strokes === 2;
   if (kind === 'packing') return engine.params.strokes === 2;
+  if (kind === 'coolant') return !!engine.params.waterCooled;
   if (kind === 'tarp' || kind === 'fuel' || kind === 'brake' || kind === 'battery') return true;
   if (kind === 'sump') return engine.params.strokes !== 2 && !engine.params.runsOnDiesel;
   return true;

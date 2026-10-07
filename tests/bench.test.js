@@ -204,3 +204,25 @@ describe('repacking the silencer', () => {
     expect(done({ flawAt: 'wrap' })).toBe(P.packingBotched);
   });
 });
+
+describe('topping up the coolant', () => {
+  it('is for the water-cooled quad only', () => {
+    expect(jobAvailable('coolant', { params: { waterCooled: true } })).toBe(true);
+    expect(jobAvailable('coolant', { params: { waterCooled: false } })).toBe(false);
+  });
+
+  it('fills it and stops the leak, unless the clip or the pour was botched', () => {
+    const done = (opts) => {
+      const t = { ...target(), engine: { ...target().engine, coolant: 0.2, coolantLeak: 1, coolantPuddle: 0.8 } };
+      finishJob(doJob(new BenchJob('coolant'), opts), t);
+      return t.engine;
+    };
+    const good = done();
+    expect(good.coolant).toBe(1);
+    expect(good.coolantLeak).toBe(0);
+    expect(good.coolantPuddle).toBeLessThanOrEqual(0.3);
+    const loose = done({ flawAt: 'clip' });
+    expect(loose.coolantLeak).toBe(P.coolantLeakLeft);
+    expect(done({ flawAt: 'pour' }).coolant).toBe(P.coolantShort);
+  });
+});

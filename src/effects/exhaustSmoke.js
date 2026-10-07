@@ -256,6 +256,22 @@ export class ExhaustSmoke {
     this.flash.scale.setScalar(0.12 + 0.2 * this.flashLeft);
   }
 
+  /**
+   * Steam from the radiator, for a second ExhaustSmoke kept for it: `level` 0..1 puffs a second at `pos` (world), white,
+   * carried along with the quad. Does the simulating too, so call it every frame.
+   */
+  steam(dt, pos, level, carrierVel) {
+    const p = this.params;
+    this.tipPos.copy(pos);
+    this.tipDir.set(0, 1, 0.25).normalize();
+    this.spawnBudget = Math.min(this.spawnBudget + p.maxPerSecond * level * dt, 3);
+    while (this.spawnBudget >= 1) {
+      this.spawnBudget -= 1;
+      this.spawn(0.35 + 0.5 * level, 0.97, p.exitSpeed * (0.6 + level), carrierVel, 0);
+    }
+    this.simulate(dt);
+  }
+
   spawn(alpha, gray, exit, carrierVel, preAge) {
     const p = this.params;
     const i = this.next;

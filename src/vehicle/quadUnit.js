@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { registerTuning } from '../core/tuning.js';
 import { EngineModel } from '../engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS, ENGINE_PARAM_RANGES } from '../engine/engineParams.js';
@@ -20,6 +21,10 @@ import { buildAtcModel, ATC_LAYOUT, ATC_GROUND_OFFSET, ATC_PROXY } from './atcMo
 import { buildMiniMotoModel, MOTO_LAYOUT, MOTO_GROUND_OFFSET, MOTO_PROXY } from './miniMotoModel.js';
 import { buildTractorModel, TRACTOR_LAYOUT, TRACTOR_GROUND_OFFSET, TRACTOR_PROXY } from './tractorModel.js';
 import { buildUtvModel, UTV_LAYOUT, UTV_GROUND_OFFSET, UTV_PROXY } from './utvModel.js';
+
+// Where steam leaves the orange's radiator, in the model's own space, and what the steam looks like: pale, quick and rising.
+const RADIATOR_AT = { x: 0, y: 0.68, z: 0.86 };
+const STEAM_SMOKE = { opacity: 1.2, maxPerSecond: 40, lifeMin: 0.8, lifeMax: 2.4, startSize: 0.1, endSize: 1.0, exitSpeed: 1.6, drag: 1.4, buoyancy: 1.1 };
 
 /**
  * Everything one quad needs, built from a spec in quadSpecs.js: the engine
@@ -94,6 +99,11 @@ export class QuadUnit {
     this.torqueRock = new TorqueRock();
     this.vibration = new VibrationModel({ ...DEFAULT_VIBRATION_PARAMS, ...spec.vibration });
     this.smoke = new ExhaustSmoke(scene, (x, z) => world.heightAt(x, z), { ...DEFAULT_SMOKE_PARAMS, ...spec.smoke });
+    // The orange's radiator steams when it's low on coolant (a second smoke system, white, rising from the front).
+    if (this.engine.params.waterCooled) {
+      this.steam = new ExhaustSmoke(scene, (x, z) => world.heightAt(x, z), { ...DEFAULT_SMOKE_PARAMS, ...STEAM_SMOKE });
+      this.radiator = new THREE.Vector3();
+    }
     this.mud = new QuadMud({ scene, world, quad: this.quad, sport: spec.style?.startsWith('sport'), params: { ...DEFAULT_MUD_PARAMS, ...spec.mud } });
     // The mud coat swaps every body material for a copy, so the seat's frost has to tint that copy.
     const seat = this.quad.model.userData.seatMaterial;
@@ -143,6 +153,10 @@ export class QuadUnit {
     this.vibration.update(dt, this.engine, this.quad.rider || this.quad.driver || this.quad.passenger ? 0 : this.quad.speed);
     this.quad.update(dt, alpha, this.vibration);
     this.smoke.update(dt, this.engine, this.quad.exhaustTip, this.quad.velocity);
+    if (this.steam) {
+      this.quad.model.localToWorld(this.radiator.set(RADIATOR_AT.x, RADIATOR_AT.y, RADIATOR_AT.z));
+      this.steam.steam(dt, this.radiator, this.engine.steam, this.quad.velocity);
+    }
     this.mud.update(dt);
     this.audio.onBoard = this.listenerOnBoard;
     this.audio.update(dt, this.engine, this.quad.position);
@@ -151,6 +165,7 @@ export class QuadUnit {
 
   setViewport(heightPx, fovDeg) {
     this.smoke.setViewport(heightPx, fovDeg);
+    this.steam?.setViewport(heightPx, fovDeg);
     this.mud.setViewport(heightPx, fovDeg);
   }
 

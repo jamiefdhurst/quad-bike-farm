@@ -113,6 +113,10 @@ export const DEFAULT_COMPANION_PARAMS = {
   leftRunningRange: 8, // metres: how near she has to be to take notice of it
   blownNoticeAt: 0.4, // how blown out a running two-stroke's silencer packing has to be before she says it's getting loud (Amy notices first)
   dripSmellChance: 0.15, // per second stood by a quad with a dripping carb, that she says she can smell petrol
+  recoilSpeed: 3.2, // m/s she jumps back from a boil-over, easing off over recoilSeconds
+  recoilSeconds: 0.5, // how long the jump back takes
+  coolantSeeRange: 6, // metres: how near she has to be to notice a damp patch under the orange, or steam off it
+  coolantJumpRange: 7, // metres: how near she has to be to a boil-over to jump back from it
   dripSmellRange: 4, // metres: how near she has to be to smell it
   joyRise: 0.15, // per second her mood follows more of the quads running...
   joyFall: 0.05, // ...and fewer
@@ -347,6 +351,10 @@ export const COMPANION_PARAM_RANGES = {
   leftRunningRange: [2, 30, 1],
   blownNoticeAt: [0, 1, 0.05],
   dripSmellChance: [0, 1, 0.01],
+  recoilSpeed: [0, 8, 0.1],
+  recoilSeconds: [0.1, 2, 0.05],
+  coolantSeeRange: [1, 15, 0.5],
+  coolantJumpRange: [1, 15, 0.5],
   dripSmellRange: [1, 15, 0.5],
   joyRise: [0, 1, 0.01],
   joyFall: [0, 1, 0.01],
