@@ -224,6 +224,7 @@ export class EngineModel {
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
     this.pendingEvents.length = 0;
+    if (this.params.noStarter) starter = false;
     this.throttle = clamp(throttle, 0, 1);
     this.choke = clamp(choke, 0, 1);
     this.load = clamp(load, 0, 1);

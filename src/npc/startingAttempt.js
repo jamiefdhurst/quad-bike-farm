@@ -182,6 +182,12 @@ export class StartingAttempt {
       this.saidKnack = true;
       return;
     }
+    // No starter motor: straight to the cord, whatever the battery.
+    if (ep.noStarter) {
+      this.phase = 'pull';
+      this.beginPull();
+      return;
+    }
     // A flat battery: it only clicks. She says so, then either has a go at the cord or gives up.
     if (engine.battery < ep.batteryDeadBelow) {
       this.events.push('flat');

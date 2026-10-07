@@ -59,6 +59,7 @@ export class QuadUnit {
         layout: MOTO_LAYOUT,
         groundOffset: MOTO_GROUND_OFFSET,
         proxy: MOTO_PROXY,
+        wheelShake: spec.wheelShake,
       }),
       ...(spec.tractor && {
         tractor: true,

@@ -28,6 +28,7 @@ export const DEFAULT_ENGINE_PARAMS = {
   weakCrankFactor: 0.4, // the starter's speed, as a fraction of normal, just above dead
   batteryDashOutBelow: 0.1, // below this the dash lights go out
   pullStart: false, // has a recoil pull-start as well as the starter (the two-strokes)
+  noStarter: false, // no starter motor at all, only the cord (the mini moto)
   pullSeconds: 0.9, // how long one good yank turns it over
   pullRpmFactor: 1.1, // a perfect yank's speed, as a fraction of the starter's
   pullGoodMin: 0.45, // seconds holding the cord before the yank that count as a proper pull...

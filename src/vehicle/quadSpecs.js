@@ -509,6 +509,7 @@ export const EXTRA_SPECS = [
       strokes: 2,
       popProne: 0.7, // two-strokes crackle and bang on the overrun
       pullStart: true,
+      noStarter: true, // no key start, only the cord
       idleRpmWarm: 1350,
       maxRpm: 9800,
       redlineRpm: 9200,
@@ -540,6 +541,8 @@ export const EXTRA_SPECS = [
       maxDriveForce: 650,
       maxSpeed: 12,
       maxSteerDeg: 38,
+      steerSpeedReduction: 0.02, // a bike keeps its steering at speed
+      spinSideLoss: 0.5, // and the driven rear steps out when you pour the power on mid-corner
       clutchEngageRpm: 2200,
       clutchFullRpm: 4000,
       couplingRpm: 3000,

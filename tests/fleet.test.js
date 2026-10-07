@@ -85,6 +85,7 @@ describe('extra vehicles', () => {
     expect(moto.owner).toBeUndefined();
     expect(moto.engine.strokes).toBe(2);
     expect(moto.engine.pullStart).toBe(true);
+    expect(moto.engine.noStarter).toBe(true);
     expect(moto.vehicle.fourWheelDrive).toBe(0);
     for (const s of QUAD_SPECS) expect(moto.vehicle.maxSpeed).toBeLessThan(s.vehicle.maxSpeed ?? 17);
     const { MOTO_LAYOUT } = await import('../src/vehicle/miniMotoModel.js');

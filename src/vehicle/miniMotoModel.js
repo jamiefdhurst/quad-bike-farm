@@ -20,8 +20,8 @@ const OUT_X = 0.38; // the outriggers' half track
 export const MOTO_LAYOUT = {
   wheels: [
     { name: 'wheel_fl', x: 0, z: FRONT_Z, front: true },
-    { name: 'wheel_fr', x: -OUT_X, z: 0.05, front: false, driven: false, outrigger: true, gripScale: 0.35 },
-    { name: 'wheel_rl', x: OUT_X, z: 0.05, front: false, driven: false, outrigger: true, gripScale: 0.35 },
+    { name: 'wheel_fr', x: -OUT_X, z: 0.05, front: false, driven: false, outrigger: true, gripScale: 0.05 },
+    { name: 'wheel_rl', x: OUT_X, z: 0.05, front: false, driven: false, outrigger: true, gripScale: 0.05 },
     { name: 'wheel_rr', x: 0, z: REAR_Z, front: false },
   ],
   topY: wheelY,
@@ -106,8 +106,9 @@ export function buildMiniMotoModel({ bodyColor = 0xd0d4d8, dashStyle = 'kidsKey'
   rbox(0.19, 0.075, 0.5, 0.03, seatMat, 0, 0.7, -0.2, root);
   rbox(0.14, 0.02, 0.2, 0.01, paint, 0, 0.66, -0.55, root).rotation.x = 0.25;
   rbox(0.07, 0.03, 0.01, 0.004, MAT.tail, 0, 0.67, -0.65, root);
-  // Side panels.
-  for (const s of [-1, 1]) rbox(0.015, 0.12, 0.26, 0.01, paint, s * 0.1, 0.55, -0.15, root);
+  // The airbox cover under the seat, joining the seat to the frame and the tank to the tail.
+  rbox(0.17, 0.12, 0.34, 0.03, paint, 0, 0.6, -0.22, root);
+  rbox(0.15, 0.1, 0.1, 0.03, paint, 0, 0.62, -0.02, root);
 
   // Foot pegs and the brake pedal.
   for (const s of [-1, 1]) {
@@ -136,8 +137,18 @@ export function buildMiniMotoModel({ bodyColor = 0xd0d4d8, dashStyle = 'kidsKey'
   const bars = buildHandlebars(dashStyle, STYLE.sport, 'thumb');
   bars.scale.setScalar(0.85);
   bars.position.set(0, 0.84, 0.34);
-  add(new THREE.CylinderGeometry(0.06, 0.06, 0.05, 18).rotateX(Math.PI / 2), MAT.chrome, bars).position.set(0, -0.02, 0.15);
-  add(new THREE.CylinderGeometry(0.05, 0.05, 0.03, 18).rotateX(Math.PI / 2), lensMat, bars).position.set(0, -0.02, 0.18);
+  // A lamp shell on two brackets from the fork tops, a chrome rim and the lens in front.
+  add(new THREE.CylinderGeometry(0.055, 0.055, 0.1, 18).rotateX(Math.PI / 2), MAT.plastic, bars).position.set(0, -0.02, 0.12);
+  add(new THREE.CylinderGeometry(0.06, 0.06, 0.02, 18).rotateX(Math.PI / 2), MAT.chrome, bars).position.set(0, -0.02, 0.17);
+  add(new THREE.CylinderGeometry(0.05, 0.05, 0.02, 18).rotateX(Math.PI / 2), lensMat, bars).position.set(0, -0.02, 0.18);
+  for (const x of [-0.06, 0.06]) tube([x, -0.04, -0.02], [x * 0.8, -0.02, 0.1], 0.012, MAT.steel, bars);
+  // A pod stands on the bar clamp, where the key switch is, leaning back towards the rider.
+  const mount = new THREE.Object3D();
+  mount.name = 'podMount';
+  mount.position.set(0, 0.095, 0.0);
+  mount.rotation.x = 0.35;
+  bars.add(mount);
+  bars.userData.podMount = mount;
   root.add(bars);
   quad.userData.dash = bars.userData.dash;
   quad.userData.podMount = bars.userData.podMount;
