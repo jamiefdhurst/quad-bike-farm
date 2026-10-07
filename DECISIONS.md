@@ -1578,8 +1578,8 @@ Settled with Jamie before building: a second, small trailer (the bale trailer st
 
 ## Amy never turns it off (2026-10-07)
 
-- Jamie's rule: when Jess revs a quad, Amy does not switch it off. The only place she did was Jess drowning her out (`drownOut.js`): if Amy was within 3.5 m and on her feet she reached over and switched it off ("Right. Off."). That branch is gone, with the `reachRange` tunable, the `amyFree` input and the three `drownSwitchOff` lines. Now Amy always tells her ("Jess! Switch it off!") and Jess switches it off herself, grumbling, 1.9 s after she starts.
-- Unchanged: in the rev-offs and the rock prank Amy never touched the ignition (she only tells you both off, or sulks), and her switching off engines left running in the barn is a different thing (the fumes) and stays. The recorded bank still has audio for the removed lines until the voices are next re-recorded; nothing plays it.
+- Jamie's rule, in two steps: when Jess revs a quad, Amy does not switch it off, and Jess doesn't either; the girls shouldn't stop engines often. The only place a girl did it was Jess drowning Amy out (`drownOut.js`), where Amy reached over and switched it off, and then (first fix) Jess did. Now the engine stays running: the throttle is held for `revFor` 1.1 s, Amy tells her to stop `tellAfter` 1.0 s in ("Jess! Stop revving it!", `drownTellOff`), Jess lets go and protests ("Fine. Fine! Stopped.", `drownProtest`). The `reachRange`, `amyFree` and `switchOffAfter` bits and the "Right. Off." lines are gone; `drownTellOff` and `drownProtest` lines were reworded and re-recorded.
+- Unchanged: in the rev-offs and the rock prank no girl touches the ignition. Other places girls do stop engines, left alone because they are about something else: Amy switching off an engine nobody is sat on that is filling the barn with fumes, a girl who leaves a quad after a drive (`driveKeyOffChance`), and the engine's own stall when a rev-off goes on too long with a cold or worn engine. Say if any of those should go too.
 - Checked: unit tests (`tests/drownOut.test.js`); not in the game.
 
 ## UTV prompt (2026-10-07)

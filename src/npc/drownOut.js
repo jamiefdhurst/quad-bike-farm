@@ -1,6 +1,6 @@
 // Drowning her out. Jess, sat on a running quad near Amy while Amy is mid-sentence, blips the throttle so nobody can hear
-// a word; Amy cuts herself off and tells her to switch it off, and Jess does, grumbling. Amy never touches the ignition
-// herself. Pure logic: the game says who is where and who is talking, and sets Jess's quad throttle from
+// a word; Amy cuts herself off and tells her to stop, and Jess does, grumbling. Nobody touches the ignition: the engine
+// stays running. Pure logic: the game says who is where and who is talking, and sets Jess's quad throttle from
 // `throttleFor`.
 
 export const DEFAULT_DROWNOUT_PARAMS = {
@@ -9,8 +9,8 @@ export const DEFAULT_DROWNOUT_PARAMS = {
   hearRange: 7, // metres between the girls for it to count as drowning her out
   amyLeftMin: 0.8, // seconds Amy must still have to say, so it really is mid-sentence
   revDelay: 0.3, // seconds between Jess deciding and the throttle opening
-  revFor: 1.6, // seconds the throttle is held
-  switchOffAfter: 1.9, // seconds after the rev starts that the engine goes off
+  revFor: 1.1, // seconds the throttle is held
+  tellAfter: 1.0, // seconds after the rev starts that Amy tells her to stop (she lets go a moment later)
 };
 
 export const DROWNOUT_PARAM_RANGES = {
@@ -20,7 +20,7 @@ export const DROWNOUT_PARAM_RANGES = {
   amyLeftMin: [0, 5, 0.1],
   revDelay: [0, 2, 0.05],
   revFor: [0.3, 5, 0.1],
-  switchOffAfter: [0.5, 8, 0.1],
+  tellAfter: [0.3, 8, 0.1],
 };
 
 export class DrownOut {
@@ -45,7 +45,7 @@ export class DrownOut {
    *   jessCanRev: she's sat on a running quad nobody else is at the controls of, and isn't busy with something else
    *   amyLeft: seconds of Amy's current line still to run (0 when she's quiet)
    *   distance: metres between the two of them
-   * Returns events: { type: 'rev' }, { type: 'switchOff' } (Jess does it, Amy having told her to).
+   * Returns events: { type: 'rev' }, { type: 'tellOff' } (Amy tells her; Jess lets go of the throttle).
    */
   update(dt, ctx) {
     const p = this.p;
@@ -54,12 +54,16 @@ export class DrownOut {
     if (a) {
       const t = this.clock - a.start;
       if (!ctx.jessCanRev) {
-        this.active = null; // she got off, or it stalled by itself: nothing left to switch off
+        this.active = null; // she got off, or it stalled by itself: nothing left to stop
         return [];
       }
-      if (t >= p.switchOffAfter) {
+      if (t >= p.revDelay + p.revFor) {
         this.active = null;
-        return [{ type: 'switchOff' }];
+        return [];
+      }
+      if (t >= p.tellAfter && !a.told) {
+        a.told = true;
+        return [{ type: 'tellOff' }];
       }
       return [];
     }

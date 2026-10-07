@@ -2449,7 +2449,7 @@ export class Game {
     }
   }
 
-  /** Jess sat on a running quad blips it over Amy mid-sentence; Amy cuts off and tells her to switch it off, and Jess does (npc/drownOut.js). */
+  /** Jess sat on a running quad blips it over Amy mid-sentence; Amy cuts off and tells her to stop, and Jess does; the engine keeps running (npc/drownOut.js). */
   updateDrownOut(dt) {
     const jess = this.companions.find((c) => c.character.id === 'jess');
     const amy = this.companions.find((c) => c.character.id === 'amy');
@@ -2468,8 +2468,7 @@ export class Game {
       if (e.type === 'rev') {
         amy.voice.cut();
         jess.voice.say('drownRev', { force: true });
-      } else if (e.type === 'switchOff') {
-        quad.engine.setIgnition(false); // Jess does it herself: Amy never reaches over
+      } else if (e.type === 'tellOff') {
         amy.voice.say('drownTellOff', { force: true });
         jess.voice.say('drownProtest', { force: true });
       }

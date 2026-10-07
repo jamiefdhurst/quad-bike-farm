@@ -18,29 +18,29 @@ describe('drowning her out', () => {
     }
   });
 
-  it('holds the throttle for a while, then Jess switches it off, whoever is in reach: Amy never does', () => {
-    for (const over of [{}, { distance: 1 }, { distance: 6 }]) {
-      const d = new DrownOut({ ...P }, always);
-      d.update(0.1, ctx(over));
-      expect(d.throttleFor()).toBe(0);
-      d.update(P.revDelay + 0.1, ctx(over));
-      expect(d.throttleFor()).toBe(1);
-      expect(d.update(P.switchOffAfter, ctx(over))).toEqual([{ type: 'switchOff' }]);
-      expect(d.throttleFor()).toBe(0);
-    }
+  it('holds the throttle for a while, Amy tells her to stop once, and then she lets go: nobody switches anything off', () => {
+    const d = new DrownOut({ ...P }, always);
+    d.update(0.1, ctx());
+    expect(d.throttleFor()).toBe(0);
+    d.update(P.revDelay + 0.1, ctx());
+    expect(d.throttleFor()).toBe(1);
+    expect(d.update(P.tellAfter, ctx())).toEqual([{ type: 'tellOff' }]);
+    expect(d.update(0.1, ctx())).toEqual([]); // said once
+    d.update(P.revDelay + P.revFor, ctx());
+    expect(d.throttleFor()).toBe(0);
   });
 
   it('gives up quietly if Jess is no longer on a running quad', () => {
     const d = new DrownOut({ ...P }, always);
     d.update(0.1, ctx());
-    expect(d.update(P.switchOffAfter, ctx({ jessCanRev: false }))).toEqual([]);
+    expect(d.update(P.tellAfter, ctx({ jessCanRev: false }))).toEqual([]);
     expect(d.throttleFor()).toBe(0);
   });
 
   it('waits out the cooldown before doing it again', () => {
     const d = new DrownOut({ ...P }, always);
     d.update(0.1, ctx());
-    d.update(P.switchOffAfter, ctx());
+    d.update(P.revDelay + P.revFor + 0.1, ctx());
     expect(d.update(1, ctx())).toEqual([]);
     d.update(P.cooldown, ctx({ amyLeft: 0 }));
     expect(d.update(0.1, ctx())).toEqual([{ type: 'rev' }]);
