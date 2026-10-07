@@ -4,6 +4,8 @@ import { createTerrainHeight } from './terrainHeight.js';
 import { createTerrain } from './terrain.js';
 import { buildProps } from './props.js';
 import { DEFAULT_BARN_PARAMS, BARN_PARAM_RANGES, underRoof, insideBarn, indoorLevel } from './barn.js';
+import { GroundWear, DEFAULT_WEAR_PARAMS, WEAR_PARAM_RANGES } from './groundWear.js';
+import { stripFrame } from './layout.js';
 import { Sky, SKY_PARAMS, SKY_RANGES } from './sky.js';
 import { registerTuning } from '../core/tuning.js';
 import * as THREE from 'three';
@@ -21,7 +23,20 @@ export class World {
     this.sky = new Sky(scene, renderer, { ...SKY_PARAMS });
     registerTuning('Sky', this.sky.params, SKY_RANGES);
 
-    const ctx = { scene, physics, RAPIER, renderer, models, layout, heights: this.heights, track: this.track };
+    // Tyres wear the field (groundWear.js); the yard, the drag strip and the barn floor are hard and never do.
+    const strip = layout.dragStrip;
+    const exempt = (x, z) => {
+      if (Math.hypot(x - layout.yard.x, z - layout.yard.z) < layout.yard.radius) return true;
+      if (this.inBarn(x, z, 1)) return true;
+      if (!strip) return false;
+      const f = stripFrame(strip, x, z);
+      return Math.abs(f.across) < strip.width / 2 + 1 && f.along > -8 && f.along < strip.length + strip.runOff;
+    };
+    this.wearParams = { ...DEFAULT_WEAR_PARAMS };
+    registerTuning('Ground wear', this.wearParams, WEAR_PARAM_RANGES);
+    this.wear = new GroundWear({ half: layout.fieldHalf, exempt, params: this.wearParams });
+
+    const ctx = { scene, physics, RAPIER, renderer, models, layout, heights: this.heights, track: this.track, wear: this.wear };
     this.terrain = createTerrain(ctx);
     this.props = buildProps(ctx);
   }
@@ -30,12 +45,19 @@ export class World {
     return this.heights.heightAt(x, z);
   }
 
+  /** How muddy it is: the track and the bogs, and any ground the tyres have worn soft. */
   mudAt(x, z) {
-    return this.heights.mudAt(x, z);
+    return Math.max(this.heights.mudAt(x, z), this.wear.softAt(x, z) * 0.8, Math.min(1, this.wear.bogAt(x, z, this.wet) * 1.5));
   }
 
+  /** How deep a bog: the three on the farm, and any the wear has made. */
   bogAt(x, z) {
-    return this.heights.bogAt(x, z);
+    return Math.max(this.heights.bogAt(x, z), this.wear.bogAt(x, z, this.wet));
+  }
+
+  /** Bogs for the girls to plan round: the three on the farm and the ones wear has made. */
+  bogHazards() {
+    return [...(this.heights.bogs ?? []).map((b) => ({ x: b.x, z: b.z, radius: b.radius })), ...this.wear.hazards(this.wet)];
   }
 
   puddleAt(x, z) {
@@ -96,6 +118,9 @@ export class World {
   }
 
   update(dt, focus, camera) {
+    this.wear.update(dt, this.wet);
+    if (this.wear.packed) this.terrain.wearTexture.needsUpdate = true;
+    this.wear.packed = false;
     if (this.weather) {
       Object.assign(this.sky.params, this.weather.update(dt).skyParams());
       // Wet ground looks darker, and a little glossier.

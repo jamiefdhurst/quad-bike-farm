@@ -650,6 +650,13 @@ export class Quad {
       wet,
       dt,
     });
+    // Every wheel on the move wears the ground under it, more with wheelspin, more in the wet (world/groundWear.js).
+    if (this.world.wear && groundSpeed + this.physics.spinSlip > 0.3) {
+      const weight = Math.min(2, Math.max(0.6, p.mass / 300));
+      for (const w of this.physics.wheelInfo) {
+        if (w.contact) this.world.wear.trample(w.point.x, w.point.z, groundSpeed * dt, { spin: w.driven ? this.physics.spinSlip : 0, wet, dt, weight });
+      }
+    }
     // Someone on foot shoving it along its length (the game sets pushDir while they hold the key); not with the parking brake on.
     this.pushLeft = Math.max(0, this.pushLeft - dt);
     if (this.pushDir && !this.input && !this.driver && !this.parkBrake && !this.isTipped && !this.towed) {

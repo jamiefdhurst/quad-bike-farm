@@ -5,7 +5,7 @@ import { createGroundCanvas, createDetailCanvas } from './groundTexture.js';
  * Builds the detailed field terrain (visual mesh plus Rapier heightfield) and a
  * coarser patchwork ring of neighbouring fields out to the horizon.
  */
-export function createTerrain({ scene, physics, RAPIER, layout, heights, track, renderer }) {
+export function createTerrain({ scene, physics, RAPIER, layout, heights, track, renderer, wear }) {
   const { terrainSize: size, terrainSegments: segs } = layout;
   const half = size / 2;
   const step = size / segs;
@@ -70,7 +70,11 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
   detailTex.wrapS = detailTex.wrapT = THREE.RepeatWrapping;
 
   const mat = new THREE.MeshStandardMaterial({ map: groundTex, vertexColors: true, roughness: 0.95 });
-  addDetailLayer(mat, detailTex, 0.45);
+  // Worn ground, from the wear grid (groundWear.js): one texel a grid point, soft in red and bog in green.
+  const wearTex = new THREE.DataTexture(wear.data, wear.n, wear.n, THREE.RGBAFormat);
+  wearTex.magFilter = wearTex.minFilter = THREE.LinearFilter;
+  wearTex.needsUpdate = true;
+  addDetailLayer(mat, detailTex, 0.45, { map: wearTex, size: wear.n * wear.cell, half: wear.half });
 
   const mesh = new THREE.Mesh(geo, mat);
   mesh.receiveShadow = true;
@@ -79,7 +83,7 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
 
   scene.add(createOuterRing(layout, heights));
 
-  return { mesh, collider, meshHeightAt: (x, z) => gridHeight(grid, n, step, half, x, z) };
+  return { mesh, collider, wearTexture: wearTex, meshHeightAt: (x, z) => gridHeight(grid, n, step, half, x, z) };
 }
 
 /**
@@ -105,21 +109,34 @@ function gridHeight(grid, n, step, half, x, z) {
 }
 
 /** Multiplies a tiling greyscale texture over the diffuse colour in world space. */
-function addDetailLayer(material, detailTex, scale) {
+function addDetailLayer(material, detailTex, scale, wear) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.detailMap = { value: detailTex };
+    shader.uniforms.wearMap = { value: wear.map };
+    shader.uniforms.wearSize = { value: wear.size };
+    shader.uniforms.wearHalf = { value: wear.half };
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec2 vWorldXZ;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWorldXZ = (modelMatrix * vec4(transformed, 1.0)).xz;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;\nvarying vec2 vWorldXZ;')
+      .replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;\nuniform sampler2D wearMap;\nuniform float wearSize;\nuniform float wearHalf;\nvarying vec2 vWorldXZ;')
       .replace(
         '#include <map_fragment>',
         `#include <map_fragment>
         float detail = texture2D(detailMap, vWorldXZ * ${scale.toFixed(3)}).r;
         float detail2 = texture2D(detailMap, vWorldXZ * ${(scale * 0.13).toFixed(3)}).r;
-        diffuseColor.rgb *= mix(0.72, 1.28, detail) * mix(0.85, 1.15, detail2);`,
-      );
+        diffuseColor.rgb *= mix(0.72, 1.28, detail) * mix(0.85, 1.15, detail2);
+        // Ground the tyres have worn: churned brown where it's soft, dark and glossy where it's a bog, ragged at the edges.
+        vec2 wearUv = (vWorldXZ + wearHalf) / wearSize;
+        float wearIn = step(0.0, wearUv.x) * step(wearUv.x, 1.0) * step(0.0, wearUv.y) * step(wearUv.y, 1.0);
+        vec2 worn = texture2D(wearMap, wearUv).rg * wearIn;
+        float rag = (texture2D(detailMap, vWorldXZ * 0.9).r - 0.5) * 0.4;
+        float wornSoft = smoothstep(0.15, 0.55, worn.r + rag);
+        float wornBog = smoothstep(0.25, 0.65, worn.g + rag);
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.19, 0.14, 0.085), wornSoft * 0.75);
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.085, 0.06, 0.036), wornBog * 0.9);`,
+      )
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n        roughnessFactor *= 1.0 - 0.4 * wornBog;');
   };
 }
 

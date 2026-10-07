@@ -3013,7 +3013,7 @@ export class Game {
   raceRoute(lateral) {
     const L = this.world.layout;
     const h = this.world.heights;
-    const hazards = [...(h.bogs ?? []).map((b) => ({ x: b.x, z: b.z, radius: b.radius })), ...(h.puddles ?? []).map((p) => ({ x: p.x, z: p.z, radius: L.puddleRadius + 1.5 }))]; // a puddle at speed drowns the engine, so well clear
+    const hazards = [...this.world.bogHazards(), ...(h.puddles ?? []).map((p) => ({ x: p.x, z: p.z, radius: L.puddleRadius + 1.5 }))]; // a puddle at speed drowns the engine, so well clear
     const track = this.world.track;
     const at = (back) => {
       const s = track.sample(this.raceStart - back / track.totalLength);
