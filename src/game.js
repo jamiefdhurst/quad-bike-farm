@@ -1233,7 +1233,17 @@ export class Game {
       aboard: on(c),
       dist: c.root.position.distanceTo(mount.model.position),
     }));
-    const ctx = { active: riding && unit.quad.engine.isRunning, riding, trailer: this.trailer.hitched, speed: unit.quad.speed, girls };
+    const driver = this.companions.find((c) => c.quad === unit.quad && c.fsm.is('mounting', 'driving'));
+    const settingOff = !!driver && (driver.fsm.is('mounting') || ['start', 'settle'].includes(driver.drive?.phase));
+    const ctx = {
+      active: riding && unit.quad.engine.isRunning,
+      riding,
+      drivenBy: driver?.character.id ?? null,
+      settingOff,
+      trailer: this.trailer.hitched,
+      speed: unit.quad.speed,
+      girls,
+    };
     for (const ev of this.mudguard.update(dt, ctx)) {
       const c = girlOf(ev.girl);
       if (ev.type === 'board') {

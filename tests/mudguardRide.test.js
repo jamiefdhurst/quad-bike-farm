@@ -115,3 +115,46 @@ describe('getting down', () => {
     expect(events.filter((e) => e.type === 'leave')).toEqual([]);
   });
 });
+
+describe('a girl driving the tractor', () => {
+  const driven = (over = {}) => ctx({ active: false, riding: false, drivenBy: 'jess', settingOff: true, ...over });
+
+  it('may have her friend hop up on the arch as she gets going, quickly enough to beat her setting off', () => {
+    const boards = run(make(), 4, driven()).filter((e) => e.type === 'board');
+    expect(boards).toEqual([{ type: 'board', girl: 'amy', join: true }]);
+  });
+
+  it('never sends the driver up beside herself', () => {
+    const c = driven({ girls: [girl('jess', { free: false })] });
+    expect(run(make(), 10, c)).toEqual([]);
+  });
+
+  it('rolls once per go: a no means no, however long she takes', () => {
+    expect(run(make(() => 0.99), 30, driven())).toEqual([]);
+  });
+
+  it('waits for the tractor to be stopped and for the driver to be getting going', () => {
+    expect(run(make(), 6, driven({ speed: 2 }))).toEqual([]);
+    expect(run(make(), 6, driven({ settingOff: false }))).toEqual([]);
+  });
+
+  it('does not send her with a trailer on or the arch taken', () => {
+    expect(run(make(), 6, driven({ trailer: true }))).toEqual([]);
+    expect(run(make(), 6, driven({ girls: [girl('jess'), girl('amy', { aboard: true })] })).filter((e) => e.type === 'board')).toEqual([]);
+  });
+
+  it('keeps her up there while the go lasts, and takes her down once it is over', () => {
+    const m = make();
+    const aboard = [girl('jess'), girl('amy', { aboard: true, free: false })];
+    expect(run(m, 5, driven({ girls: aboard, settingOff: false, speed: 3 })).filter((e) => e.type === 'leave')).toEqual([]);
+    const after = run(m, 3, ctx({ riding: false, active: false, drivenBy: null, girls: aboard })).filter((e) => e.type === 'leave');
+    expect(new Set(after.map((e) => e.girl))).toEqual(new Set(['amy'])); // repeated until the game has her down
+  });
+
+  it('rolls again on the next go', () => {
+    const m = make();
+    expect(run(m, 4, driven()).filter((e) => e.type === 'board')).toHaveLength(1);
+    run(m, 1, driven({ drivenBy: null }));
+    expect(run(m, 4, driven()).filter((e) => e.type === 'board')).toHaveLength(1);
+  });
+});

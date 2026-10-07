@@ -370,6 +370,9 @@ export const drivingMethods = {
 
   /** Her friend on the back of the quad she's driving: 'on', 'coming' (on her way to get on), or null. */
   friendOnBack() {
+    // Up on the tractor's wheel arch counts as the back of it.
+    const up = this.others().find((o) => o.onHayRide && o.trailer?.quad === this.quad);
+    if (up) return up.fsm.is('onTrailer') ? 'on' : 'coming';
     const o = this.others().find((o) => o.claimedQuad === this.quad && ['pillion', 'rack'].includes(o.claimedSeat));
     if (!o) return null;
     if (o.fsm.is('seated')) return 'on';

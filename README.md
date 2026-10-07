@@ -380,33 +380,28 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 9.  Steam from hot engines.
 10. Raise and lower hand throttle when not on tractor.
 11. Remove reverse lever prompt from UTV when not in it.
-12. Diesel roughness needs to be different to the petrols - perhaps not as pronounced, it doesn't match up - what should be the characteristics here?
-13. When Jess revs the quad, Amy doesn't turn it off.
-14. An old Land Rover. A Series Land Rover in the yard, started with a crank handle when the battery's flat: thumb on the same side as your fingers, or it kicks back and you spend a few seconds nursing your hand. A four-speed box with no synchromesh on the bottom gears, and the girls ride in the back on the wheel arches. Its sound, picked by ear (`docs/briefs/vehicle-sounds.md`): idle on craigsmith's Jeep rumbling idle (https://freesound.org/s/438105/, idle 3 to 27 s, pulls away 27 to 46 s, stops at 56 s); for the crank handle, craigsmith's old car with a crank (https://freesound.org/s/438033/).
-15. A bigger field. Grow the farm (`terrainSize` and `fieldHalf` in `src/world/layout.js`; the physics terrain is 200 m square and the hedged field 160 m across now), keeping the track, bogs, bales and yard where they are. Add some tarmac somewhere (a stretch of farm road, which could be the straight for the drag race in 50: more grip, tyres that squeal, and mud carried onto it off the field) and some stubble fields beside the grass one, fast and dusty when dry. Check the girls' drives still make sense in the bigger space. A separate area through the gate (a green lane, a ford, a wooded hill) comes later.
-16. Dust. On the stubble fields from 57, dry, the quads throw up a dust cloud. Following in it is horrible (Amy drops well back; Jess tucks in and coughs), and it clogs the air filter several times faster than mud does, as dust really does.
-17. Falling out. After a bad race, a stolen quad or one dig too many, the girls fall out: for a while they won't share a quad, convoy or stand together, each tells you her side, and the banter turns sharper. They make up on their own after a while, or sooner if you get them together.
-18. Moving over to the bales for the girls doesn't work well - they either need to give you enough time to respond, and get on a quad if you get on one, follow you, etc., otherwise it won't work
-19. Better models for a bunch of stuff: hay bales, the bench in the workshop, the ramp, etc. - some things look very low poly and we should do slightly better
-20. When a girl likes you a lot, she should invite you behind the barn to make out. If we manage to do that a couple of times, she'll ask you to do it on her favourite quad while she's sitting on it, and from this point you won't ever lose her favour this game unless you do something really bad (I need an idea for this)
-21. Achievements each game so you get a score - getting both girls to like you, ramp achievements, getting all quads going, riding all of them, etc. - ticking off everything you can do in the game
-22. Better animations for the girls getting on and off things, and better seated and otherwise positions for them in everything they do. Better idle animations for them if they're standing around too.
-23. Fix the hedges and bushes around the side, they're not working properly.
-24. Fix some of the race positioning, especially when starting.
-25. Pick a different voice for Jess, her current one makes her sound too old.
-26. Check over the lines for the girls and make sure they're for their personality, and add any missing emotion to certain statements.
-27. The girls hold items properly, like the jerry can.
-28. Better tractor model
-29. The girls bump into the quads and move them around, they need to be a bit more aware, and shouldn't be able to bump the quads and move them
-30. Better sound for the green quad. **Done.** It idles on a Yamaha Ténéré 250 (its quick firings stretched half way to its slow tickover, `pulseStretch` 0.5) and blends into kyles's Honda ATV pulling away from 1,600 to 2,600 rpm. See DECISIONS.md, "The green's and yellow's own sounds".
-31. Better sound for the orange quad. **Done.** Kept as it is: its rough sound suits it. The CR85 picked for it went to the yellow instead.
-32. Pods on the tractor. The two accessory pods (analogue and digital) can only be fitted to the quads now. Let them go on the tractor too, reading its hours and the odometer it now starts with in the background.
-33. A proper two-wheeler model for the mini moto and the ATC. The mini moto rides on the quad physics with hidden outrigger wheels, so it turns like a quad: the steering yaws it directly and power doesn't change the line. Make it ride like a bike: lean drives the turn, power mid-corner pushes the rear out and the front tucks if you grab the brake, with a real roll angle, leaning in and out of corners and a fall if it goes too far. The ATC's tip-over (when it comes) wants the same machinery.
-34. Debug window overhaul - consolidate windows and make it easier to know what's going on
-35. Console, separate to the debug window - set and get all values, reset positions and states of vehicles, girls, etc., set weather, flight mode, turn the girls' autonomy and speech on and off, etc.
-36. Passenger seats in the UTV. You can ride in the UTV's other seats while a girl drives it, looking out from the middle or the left of the bench, with the camera anchored to the seat and the same on and off as the quads' pillion.
-37. Better UTV model.
-38. The girls drive the UTV. Either girl can take the wheel of the UTV, start it on the glow plugs, work the dash lever for reverse, and drive it with you (and the other girl) on the bench or in the bed. Jess takes it for a go, Amy has her day, as with the tractor. Wants the passenger seats from 37 for you to sit in.
-39. Things in the UTV's bed. The pick-up items (jerry cans, the toolbox, jump leads, the hose and so on) can be put in the bed and ride along, tip out when the bed tips, and be picked up again from it. Bales too, if they become pick-up items.
-40. Better sound for the yellow quad. **Done.** It idles on a Yamaha DT 125 (its idle and high idle, without its blip) and blends into a Honda CR85 ridden flat out from 3,500 to 5,000 rpm. See DECISIONS.md, "The green's and yellow's own sounds".
-41. They don't see the trailers as obstacles when driving and they don't have collision
+12. When Jess revs the quad, Amy doesn't turn it off.
+13. An old Land Rover. A Series Land Rover in the yard, started with a crank handle when the battery's flat: thumb on the same side as your fingers, or it kicks back and you spend a few seconds nursing your hand. A four-speed box with no synchromesh on the bottom gears, and the girls ride in the back on the wheel arches. Its sound, picked by ear (`docs/briefs/vehicle-sounds.md`): idle on craigsmith's Jeep rumbling idle (https://freesound.org/s/438105/, idle 3 to 27 s, pulls away 27 to 46 s, stops at 56 s); for the crank handle, craigsmith's old car with a crank (https://freesound.org/s/438033/).
+14. A bigger field. Grow the farm (`terrainSize` and `fieldHalf` in `src/world/layout.js`; the physics terrain is 200 m square and the hedged field 160 m across now), keeping the track, bogs, bales and yard where they are. Add some tarmac somewhere (a stretch of farm road, which could be the straight for the drag race in 50: more grip, tyres that squeal, and mud carried onto it off the field) and some stubble fields beside the grass one, fast and dusty when dry. Check the girls' drives still make sense in the bigger space. A separate area through the gate (a green lane, a ford, a wooded hill) comes later.
+15. Dust. On the stubble fields from 57, dry, the quads throw up a dust cloud. Following in it is horrible (Amy drops well back; Jess tucks in and coughs), and it clogs the air filter several times faster than mud does, as dust really does.
+16. Falling out. After a bad race, a stolen quad or one dig too many, the girls fall out: for a while they won't share a quad, convoy or stand together, each tells you her side, and the banter turns sharper. They make up on their own after a while, or sooner if you get them together.
+17. Moving over to the bales for the girls doesn't work well - they either need to give you enough time to respond, and get on a quad if you get on one, follow you, etc., otherwise it won't work
+18. Better models for a bunch of stuff: hay bales, the bench in the workshop, the ramp, etc. - some things look very low poly and we should do slightly better
+19. When a girl likes you a lot, she should invite you behind the barn to make out. If we manage to do that a couple of times, she'll ask you to do it on her favourite quad while she's sitting on it, and from this point you won't ever lose her favour this game unless you do something really bad (I need an idea for this)
+20. Achievements each game so you get a score - getting both girls to like you, ramp achievements, getting all quads going, riding all of them, etc. - ticking off everything you can do in the game
+21. Better animations for the girls getting on and off things, and better seated and otherwise positions for them in everything they do. Better idle animations for them if they're standing around too.
+22. Fix the hedges and bushes around the side, they're not working properly.
+23. Pick a different voice for Jess, her current one makes her sound too old.
+24. Check over the lines for the girls and make sure they're for their personality, and add any missing emotion to certain statements.
+25. The girls hold items properly, like the jerry can.
+26. Better tractor model
+27. The girls bump into the quads and move them around, they need to be a bit more aware, and shouldn't be able to bump the quads and move them
+28. Pods on the tractor. The two accessory pods (analogue and digital) can only be fitted to the quads now. Let them go on the tractor too, reading its hours and the odometer it now starts with in the background.
+29. A proper two-wheeler model for the mini moto and the ATC. The mini moto rides on the quad physics with hidden outrigger wheels, so it turns like a quad: the steering yaws it directly and power doesn't change the line. Make it ride like a bike: lean drives the turn, power mid-corner pushes the rear out and the front tucks if you grab the brake, with a real roll angle, leaning in and out of corners and a fall if it goes too far. The ATC's tip-over (when it comes) wants the same machinery.
+30. Debug window overhaul - consolidate windows and make it easier to know what's going on
+31. Console, separate to the debug window - set and get all values, reset positions and states of vehicles, girls, etc., set weather, flight mode, turn the girls' autonomy and speech on and off, etc.
+32. Passenger seats in the UTV. You can ride in the UTV's other seats while a girl drives it, looking out from the middle or the left of the bench, with the camera anchored to the seat and the same on and off as the quads' pillion.
+33. Better UTV model.
+34. The girls drive the UTV. Either girl can take the wheel of the UTV, start it on the glow plugs, work the dash lever for reverse, and drive it with you (and the other girl) on the bench or in the bed. Jess takes it for a go, Amy has her day, as with the tractor. Wants the passenger seats from 37 for you to sit in.
+35. Things in the UTV's bed. The pick-up items (jerry cans, the toolbox, jump leads, the hose and so on) can be put in the bed and ride along, tip out when the bed tips, and be picked up again from it. Bales too, if they become pick-up items.
+36. They don't see the trailers as obstacles when driving and they don't have collision

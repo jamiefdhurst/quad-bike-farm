@@ -3,6 +3,7 @@
 //
 //   board   you've stopped with the engine running and no trailer on: one girl who's stood about may walk over and climb up
 //   shout   she's up there with the diesel going: now and then she yells something across at you
+//   join    she's driving the tractor herself and her friend may hop up on the arch as she gets it going
 //   leave   you got off, the engine's off, or a trailer went on: she climbs down
 
 export const DEFAULT_MUDGUARD_PARAMS = {
@@ -12,6 +13,9 @@ export const DEFAULT_MUDGUARD_PARAMS = {
   boardDelayMax: 5,
   boardChance: 0.55, // chance a given stop gets a girl climbing up at all
   jessChance: 0.6, // chance it's Jess, when both would
+  joinChance: 0.5, // chance a girl's go at driving the tractor gets her friend climbing up beside her
+  joinDelayMin: 0.5, // seconds before the friend sets off: short, so she's walking over before the driver is ready to go
+  joinDelayMax: 2,
   maxAboard: 1, // girls on the mudguards at once (one each side at most)
   shoutMin: 18, // seconds between her shouts while it's moving
   shoutMax: 40,
@@ -28,6 +32,9 @@ export const MUDGUARD_PARAM_RANGES = {
   boardDelayMax: [0, 20, 0.5],
   boardChance: [0, 1, 0.05],
   jessChance: [0, 1, 0.05],
+  joinChance: [0, 1, 0.05],
+  joinDelayMin: [0, 5, 0.1],
+  joinDelayMax: [0, 8, 0.1],
   maxAboard: [1, 2, 1],
   shoutMin: [3, 120, 1],
   shoutMax: [3, 240, 1],
@@ -45,6 +52,8 @@ export class MudguardRide {
     this.rolled = false; // this stop has had its chance already
     this.pick = null; // the girl chosen for this stop, or null
     this.boardIn = null;
+    this.joinRolled = false; // this go at driving has had its chance of a friend joining already
+    this.joinPick = null; // { id, in }
     this.girls = {}; // id -> { shoutIn, leaveIn }
     this.asked = new Set(); // girls you asked up there from the wheel: they stay until you ask them down, even with you off the tractor
   }
@@ -60,6 +69,8 @@ export class MudguardRide {
   /**
    * One step. `ctx`:
    *   active: you're on the tractor, its engine is running and no trailer is hitched
+   *   drivenBy: id of the girl driving it, or null
+   *   settingOff: she's getting on, starting it or letting it tick over, about to go (the moment her friend may hop up)
    *   riding: you're on the tractor (so a girl stays up there while it's stopped to start it)
    *   speed: the tractor's ground speed
    *   girls: [{ id, free, aboard, dist }]  free: stood about with nothing to do; aboard: on or climbing onto a mudguard
@@ -73,6 +84,11 @@ export class MudguardRide {
     this.bore(dt, ctx, events); // an asked girl with you off the tractor gets bored too
     if (ctx.trailer) this.asked.clear(); // the bales are the ride now
     // Climbing down: you got off, or something changed.
+    if (!ctx.drivenBy) {
+      this.joinRolled = false;
+      this.joinPick = null;
+    }
+    if (ctx.drivenBy && !ctx.riding && !ctx.trailer) return this.girlDriving(dt, ctx, aboard, events);
     if (!ctx.riding || ctx.trailer) {
       this.stopped = false;
       this.rolled = false;
@@ -136,6 +152,31 @@ export class MudguardRide {
       if (s.shoutIn <= 0) {
         s.shoutIn = null;
         events.push({ type: 'shout', girl: g.id });
+      }
+    }
+    return events;
+  }
+
+  /**
+   * A girl is driving the tractor and you aren't on it. Her friend who's stood about may hop up on the arch as she gets going (one
+   * roll per go), and stays up there until the go is over (the usual rules take her down then, or boredom does).
+   */
+  girlDriving(dt, ctx, aboard, events) {
+    const p = this.p;
+    for (const g of ctx.girls) this.girl(g.id).leaveIn = null;
+    if (ctx.settingOff && ctx.speed < p.stopSpeed && !this.joinRolled && aboard.length < p.maxAboard) {
+      const friend = ctx.girls.find((g) => g.id !== ctx.drivenBy && g.free && !g.aboard && g.dist <= p.boardRange);
+      if (friend) {
+        this.joinRolled = true;
+        if (this.random() < p.joinChance) this.joinPick = { id: friend.id, in: this.between(p.joinDelayMin, p.joinDelayMax) };
+      }
+    }
+    if (this.joinPick) {
+      const g = ctx.girls.find((x) => x.id === this.joinPick.id);
+      if (!g || !g.free || g.aboard) this.joinPick = null; // she's been called away
+      else if ((this.joinPick.in -= dt) <= 0) {
+        this.joinPick = null;
+        events.push({ type: 'board', girl: g.id, join: true });
       }
     }
     return events;
