@@ -133,18 +133,19 @@ export const LAYOUT = {
     // Parking slots in the yard. Each start the quads are shuffled between them and
     // nudged (quadJitter metres, quadYawJitter radians), and sometimes parked the
     // other way round (quadFlipChance).
-    quadJitter: 2.5,
+    quadJitter: 1.4,
     quadYawJitter: 0.8,
     quadFlipChance: 0.25,
+    // Two rows about 6.7 m apart, 4.4 m between quads along each, so a girl can get a quad out without catching its neighbour (they kept
+    // getting stuck). Listed alternately, so a smaller fleet still uses both rows.
     quads: [
-      { x: -44, z: 52, yaw: Math.PI * 0.62 },
-      { x: -42.6, z: 55.2, yaw: Math.PI * 0.62 },
-      { x: -41.2, z: 58.4, yaw: Math.PI * 0.62 },
-      { x: -39.8, z: 61.6, yaw: Math.PI * 0.62 },
-      { x: -38.4, z: 64.8, yaw: Math.PI * 0.62 },
-      // A second, shorter row for the days there are more than five vehicles.
-      { x: -40.2, z: 52.4, yaw: Math.PI * 0.62 },
-      { x: -38.8, z: 55.6, yaw: Math.PI * 0.62 },
+      { x: -44.5, z: 50, yaw: Math.PI * 0.62 },
+      { x: -37.8, z: 52, yaw: Math.PI * 0.62 },
+      { x: -43.4, z: 54.4, yaw: Math.PI * 0.62 },
+      { x: -36.7, z: 56.4, yaw: Math.PI * 0.62 },
+      { x: -42.3, z: 58.8, yaw: Math.PI * 0.62 },
+      { x: -41.2, z: 63.2, yaw: Math.PI * 0.62 },
+      { x: -35.6, z: 60.8, yaw: Math.PI * 0.62 },
     ],
     // Every quad but the one she's standing by has this chance of having been left
     // somewhere else on the farm instead, at any angle, within awayJitter metres of

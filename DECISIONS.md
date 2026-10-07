@@ -1170,3 +1170,7 @@ Item 4; the item settled what happens, so I chose the numbers and what "confiden
 ## Gear on the digital pods
 
 A digital pod fitted to a manual quad (red, green, yellow) showed "D" when in gear. Both digital pods now show the real gear (R, N, 1 to 4) from the dash state, and keep R, N and D on the automatics (`gearShown` in `src/vehicle/dashState.js`, unit tested). Not checked by eye in the running game.
+
+## Wider yard spacing
+
+The girls kept getting stuck on the parked quads. The yard slots in `LAYOUT.spawn.quads` are now two rows 6.7 m apart with 4.4 m between quads along each (before, 3.4 m, with a second row only 3.8 m away), listed alternately so a smaller fleet uses both rows, and the random shift (`quadJitter`) drops from 2.5 m to 1.4 m so neighbours can't be nudged into each other. Nothing else is placed near the new spots. Checked: unit tests only; not by eye or by watching the girls.
