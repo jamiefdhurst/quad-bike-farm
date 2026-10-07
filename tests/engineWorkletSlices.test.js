@@ -116,3 +116,22 @@ describe('real rev firings in the pulse sound', () => {
     expect(rateAt(0)).toBe(1);
   });
 });
+
+describe('pulseDivide', () => {
+  it('sounds every other firing at 2, each given two firings\' time, so the recording plays at about half its pace', () => {
+    const { RecordedEngine } = loadWorklet(44100);
+    const rec = new RecordedEngine(slicedBank());
+    const params = { ...PARAMS, pulseDivide: 2, pulseStretch: 1 };
+    let played = 0;
+    for (let i = 0; i < 12; i++) {
+      const before = rec.voices.length;
+      rec.trigger({ type: 'fire', strength: 1, period: 0.03 }, params, 2000, 0);
+      if (rec.voices.length > before) played++;
+    }
+    expect(played).toBe(6);
+    // A 30 ms slice given 60 ms is stretched to fill it: about half speed.
+    const v = rec.voices[rec.voices.length - 1];
+    expect(v.rate).toBeGreaterThan(0.45);
+    expect(v.rate).toBeLessThan(0.55);
+  });
+});

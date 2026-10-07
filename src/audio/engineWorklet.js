@@ -321,6 +321,12 @@ class RecordedEngine {
         const idleKinds = [{ rev: 'idle2', third: 'idle3' }[p.recIdleSource] ?? 'idle'];
         if (p.engineSound === 'pulse') {
           // Revs built from idle: every firing is a recorded idle firing, cut off when the next one fires.
+          // pulseDivide N sounds only every Nth firing, given N firings' time: the recording slowed to 1 / N.
+          const every = Math.max(1, Math.round(p.pulseDivide ?? 1));
+          this.pulseCount = ((this.pulseCount ?? 0) + 1) % every;
+          if (this.pulseCount !== 0) return true;
+          const period = ev.period * every;
+          const cycleRpm = period > 0 ? 120 / period : rpm / every;
           const louder = Math.min(p.pulseLoudnessCap, Math.pow(Math.max(1, rpm / p.pulseRefRpm), p.pulseRevLoudness));
           // An idle cut in slices (the moto's and ATC's two-strokes) bangs every other turn or so, as the recording does. Well
           // above the recorded idle a two-stroke cleans up and fires every turn, so from there only the bang slices play.
@@ -336,12 +342,12 @@ class RecordedEngine {
               const next = this.readThrough ? this.cursor.low?.next : null;
               g = next?.ok && idleKinds.includes(next.kind) ? next : this.pick(idleKinds, cycleRpm);
             }
-            this.playPulse(g, cycleRpm, gain * louder * (1 - revW), ev.period, attack, p);
+            this.playPulse(g, cycleRpm, gain * louder * (1 - revW), period, attack, p);
           }
           if (revW > 0.001) {
             // Open throttle mostly plays revs rising, a shut one revs falling, where the bank has both.
             const rising = !this.byKind.decel || Math.random() < smoothstep(0.08, 0.45, throttle);
-            this.playPulse(this.pick([rising ? 'accel' : 'decel'], cycleRpm), cycleRpm, gain * louder * revW * p.pulseRevGain, ev.period, attack, p, 'high');
+            this.playPulse(this.pick([rising ? 'accel' : 'decel'], cycleRpm), cycleRpm, gain * louder * revW * p.pulseRevGain, period, attack, p, 'high');
           }
           return true;
         }

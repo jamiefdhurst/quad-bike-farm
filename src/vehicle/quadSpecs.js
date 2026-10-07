@@ -1157,6 +1157,7 @@ export const LAND_ROVER_SPEC = {
     recBank: 'engine-bank-landy', // an old Jeep's four-cylinder petrol idling (craigsmith), and a car started on a handle
     recIdleSource: 'quad',
     pulseRefRpm: 490,
+    pulseDivide: 2, // Jamie: at its own pace the Jeep's idle sounded far too quick for it; half pace, one beat every other firing
     pulseRevLoudness: 0.3,
     pulsePitchFollow: 0.25, // one recorded beat per firing, at about its own speed: the beats come faster as it revs, the note barely rises
     recVolume: 0.6,
