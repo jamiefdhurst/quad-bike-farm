@@ -11,6 +11,7 @@ import { restingMethods, restingStates } from './companionResting.js';
 import { warmingMethods } from './companionWarming.js';
 import { wavingMethods } from './companionWaving.js';
 import { DEFAULT_DOUGHNUT_PARAMS, ringPoints } from './doughnuts.js';
+import { DEFAULT_SHOWOFF_PARAMS, pickTrick } from './showOff.js';
 import { DEFAULT_JUMP_PARAMS } from './jumps.js';
 import { DEFAULT_LINEUP_PARAMS, nextJob, assignSlots, rowSlots, crookedSlot, parkRoute, nudgePose } from './lineUp.js';
 import { PillionPose } from './pillionPose.js';
@@ -329,10 +330,14 @@ export class Companion {
     // Doughnuts want a clear stretch of field to spin in, found now so she only picks it when there is one.
     const doughnutPlan = p.boredDoughnutChance > 0 && drivable.length ? this.doughnutPlan() : null;
     const jumpPlan = p.boredJumpChance > 0 && drivable.length ? this.jumpPlan() : null;
+    // Showing off wants you near enough to see her and a girl sure enough of herself; a wheelie wants a two-stroke.
+    const showParams = this.showOffParams ?? DEFAULT_SHOWOFF_PARAMS;
+    const showable = p.boredShowOffChance > 0 && (this.driveConfidence ?? p.driveConfidence) >= 0.5 && viewer && viewer.position.distanceTo(here) < showParams.planRange;
     const lineUpJob = p.boredLineUpChance > 0 ? this.planLineUp() : null;
     const options = {
       lineUp: lineUpJob ? [lineUpJob.quad] : [],
       doughnuts: doughnutPlan ? drivable : [],
+      showOff: showable ? drivable.filter((q) => !q.tractor) : [],
       jumps: jumpPlan ? drivable.filter((q) => !q.tractor) : [],
       join: this.quads.filter((q) => q.position.distanceTo(here) < 25 && q.speed < 0.5 && !q.rider && settingOff(q) && (this.canRidePillion(q) || this.canRideRackOn(q))),
       mount: this.quads.filter((q) => near(q) && q.hasPillion),
@@ -357,7 +362,10 @@ export class Companion {
     else if (choice === 'start') this.requestStart(pick(options.start));
     else if (borrowed) this.requestDrive(borrowed);
     else if (choice === 'lineUp') this.startLineUp(lineUpJob);
-    else if (choice === 'jumps') this.requestDrive(pick(options.jumps), { jump: jumpPlan });
+    else if (choice === 'showOff') {
+      const q = pick(options.showOff);
+      this.requestDrive(q, { showOff: { trick: pickTrick(q.engine.params.strokes === 2, showParams), p: showParams } });
+    } else if (choice === 'jumps') this.requestDrive(pick(options.jumps), { jump: jumpPlan });
     else if (choice === 'doughnuts') this.requestDrive(pick(options.doughnuts), { doughnut: doughnutPlan });
     else if (choice === 'drive') this.requestDrive(pick(options.drive.some((q) => this.ownsQuad(q)) ? options.drive.filter((q) => this.ownsQuad(q)) : options.drive));
     else if (choice === 'rest') this.goRest(pick(options.rest), { stay: this.restStayFor?.() });
@@ -491,6 +499,13 @@ export class Companion {
   }
 
   /** Her next go at the ramp in the field (jumps.js): { ramp, p }, or null if there isn't one or its run-up and landing are blocked. */
+  /** Where you are and which way your eyes point, for her showing off to you: { x, z, fx, fz }. */
+  showOffYou() {
+    const v = this.viewer;
+    if (!v) return { x: this.root.position.x, z: this.root.position.z, fx: 0, fz: 0 };
+    return { x: v.position.x, z: v.position.z, fx: v.forward?.x ?? 0, fz: v.forward?.z ?? 0 };
+  }
+
   jumpPlan() {
     const ramp = this.world.layout.jumpRamp;
     if (!ramp) return null;
@@ -862,6 +877,7 @@ export class Companion {
    * @param {object} viewer  { position: world position of the player's eyes, isRiding, talking }
    */
   update(dt, vibration, viewer) {
+    this.viewer = viewer; // who's watching, for showing off to (showOffYou)
     this.fsm.update(dt);
     this.updateBoredom(dt, viewer);
     this.updateLineUp(dt);

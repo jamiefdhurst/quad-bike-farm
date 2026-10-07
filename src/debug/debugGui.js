@@ -1,5 +1,6 @@
 import GUI from 'lil-gui';
 import { getTuningGroups, exportTuning } from '../core/tuning.js';
+import { pickTrick } from '../npc/showOff.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
 import { rampPoint } from '../npc/jumps.js';
 
@@ -344,7 +345,18 @@ export class DebugGui {
       g.startNick(c, quads[0]);
       g.hud.toast(`Jess is off with the ${quads[0].label}`);
     };
+    actions.showOff = () => {
+      const c = girl('jess');
+      if (!free(c)) return;
+      const quads = g.girlUnits.map((u) => u.quad).filter((q) => !q.tractor && c.mayRide(q) && c.canDrive(q) && !c.takenByOther(q) && !q.rider);
+      quads.sort((a, b) => (b.engine.params.strokes === 2) - (a.engine.params.strokes === 2) || a.position.distanceTo(c.root.position) - b.position.distanceTo(c.root.position));
+      if (!quads.length) return g.hud.toast('No free quad');
+      c.selfEvents.push('showOff');
+      c.requestDrive(quads[0], { showOff: { trick: pickTrick(quads[0].engine.params.strokes === 2, g.showOffParams), p: g.showOffParams } });
+      g.hud.toast(`Jess is off to show off on the ${quads[0].label}`);
+    };
     f.add(actions, 'doughnuts').name('Jess does doughnuts');
+    f.add(actions, 'showOff').name('Jess shows off to you');
     for (const id of ['jess', 'amy']) {
       const name = id[0].toUpperCase() + id.slice(1);
       actions[`jump_${id}`] = () => {

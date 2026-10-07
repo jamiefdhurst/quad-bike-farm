@@ -83,6 +83,8 @@ export const drivingStates = {
       this.doughnutWanted = null;
       const jump = this.jumpWanted;
       this.jumpWanted = null;
+      const showOff = this.showOffWanted;
+      this.showOffWanted = null;
       const park = this.parkWanted;
       this.parkWanted = null;
       const params = driveMood(this.params, this.driveMood);
@@ -102,7 +104,7 @@ export const drivingStates = {
         params.driveLoopRadiusMin *= this.params.rideLoopScale;
         params.driveLoopRadiusMax *= this.params.rideLoopScale;
       }
-      if (doughnut || jump) {
+      if (doughnut || jump || showOff) {
         params.driveMaxThrottle = 1;
         params.driveScareSpeed = 99; // she's not frightened by the speed, only by tipping over
       }
@@ -138,6 +140,7 @@ export const drivingStates = {
         park,
         doughnut: doughnut ? { ...doughnut, spinning: false, t: 0 } : null,
         jump,
+        showOff: showOff ? { ...showOff, you: () => this.showOffYou() } : null,
         tires: offered,
         follow: following ? () => {
           const lead = (followWho ?? this.followTarget)?.();
@@ -242,7 +245,7 @@ export const drivingMethods = {
   },
 
   /** Walks to the front of a quad, gets on and has a little drive; with `giveRide`, waits for you on the back. */
-  requestDrive(quad, { giveRide = false, follow = false, race = null, followWho = null, convoyLead = false, doughnut = null, jump = null, park = null } = {}) {
+  requestDrive(quad, { giveRide = false, follow = false, race = null, followWho = null, convoyLead = false, doughnut = null, jump = null, park = null, showOff = null } = {}) {
     this.giveRide = giveRide;
     this.offeredRide = false;
     this.followWanted = follow;
@@ -250,10 +253,11 @@ export const drivingMethods = {
     this.followWhoWanted = followWho; // following something other than you: a convoy (npc/convoy.js)
     this.convoyLeadWanted = convoyLead; // leading one
     this.doughnutWanted = doughnut; // spinning doughnuts (npc/doughnuts.js)
+    this.showOffWanted = showOff; // riding at you to do a wheelie or a skid (npc/showOff.js)
     this.jumpWanted = jump; // riding at the ramp in the field (npc/jumps.js)
     this.parkWanted = park; // moving it into the row in front of the barn (npc/lineUp.js)
     if (this.fsm.is('driving')) {
-      if (quad !== this.quad) this.stopDriving('off', () => this.requestDrive(quad, { giveRide, follow, race, followWho, convoyLead, doughnut, jump, park }));
+      if (quad !== this.quad) this.stopDriving('off', () => this.requestDrive(quad, { giveRide, follow, race, followWho, convoyLead, doughnut, jump, park, showOff }));
       return;
     }
     if (this.fsm.is('shuffling', 'dismounting')) return;
@@ -262,7 +266,7 @@ export const drivingMethods = {
       return;
     }
     if (this.fsm.is('seated', 'mounting')) {
-      this.afterDismount = () => this.requestDrive(quad, { giveRide, follow, race, followWho, convoyLead, doughnut, jump, park });
+      this.afterDismount = () => this.requestDrive(quad, { giveRide, follow, race, followWho, convoyLead, doughnut, jump, park, showOff });
       this.fsm.transition('dismounting');
       return;
     }

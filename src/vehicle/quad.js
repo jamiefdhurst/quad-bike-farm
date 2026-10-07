@@ -131,6 +131,8 @@ export class Quad {
     this.parkBrake = false; // the parking brake: wheels locked, so the throttle only revs the engine (toggled with Space)
     this.helperThrottle = 0; // she's blipping the throttle (a quad's starting knack)
     this.churn = 0; // 0..1 the ground torn up under the wheels, whatever it is (a girl's doughnuts: npc/doughnuts.js): it acts as mud
+    this.wheelie = 0; // radians she wants the nose up, a girl showing off (npc/showOff.js); wheelieShown eases towards it
+    this.wheelieShown = 0;
     this.handThrottle = 0; // a girl on the back reaching round to open it over your hand (npc/throttleGrab.js)
     this.pullHeld = 0; // seconds the cord's been held, until it's let go (the yank)
     this.passenger = null; // you, riding on the back while she drives
@@ -610,6 +612,10 @@ export class Quad {
     this.model.position.y -= this.bog.sink * this.bog.p.sinkDepth;
     this.model.quaternion.slerpQuaternions(this.prevQuat, this.currQuat, alpha);
 
+    // A wheelie is only for show: the body and front wheels tip up about the rear axle.
+    this.wheelieShown += (this.wheelie - this.wheelieShown) * Math.min(1, dt * (this.wheelie > this.wheelieShown ? 3 : 2));
+    const lift = this.wheelieShown;
+    const rearZ = this.rearAxleZ ??= Math.max(...this.wheels.map((w) => w.z));
     for (let i = 0; i < this.wheels.length; i++) {
       const w = this.wheels[i];
       const st = this.physics.wheelState(i);
@@ -619,6 +625,7 @@ export class Quad {
         const b = vibration.body;
         w.object.position.y += this.wheelShake * (b.heave - w.z * b.pitch + w.x * b.roll);
       }
+      w.object.position.y += (rearZ - w.z) * lift;
       w.object.rotation.y = st.steering;
       w.spin.rotation.x = st.rotation;
       this.wheelHeights[i] = w.object.position.y - this.groundOffset;
@@ -627,8 +634,8 @@ export class Quad {
 
     // Vibration rocks the sprung body and shakes the bars on top of steering.
     const v = vibration;
-    this.body.position.set(0, v ? v.body.heave : 0, 0);
-    this.body.rotation.set(v ? v.body.pitch : 0, 0, v ? v.body.roll : 0);
+    this.body.position.set(0, (v ? v.body.heave : 0) + rearZ * lift, 0);
+    this.body.rotation.set((v ? v.body.pitch : 0) + lift, 0, v ? v.body.roll : 0);
     this.handlebars.position.copy(this.handlebarsBase);
     if (v) this.handlebars.position.add(new THREE.Vector3(v.bars.x, v.bars.y, 0));
     this.handlebars.rotation.set(0, this.steer * 0.85 + (v ? v.bars.yaw : 0), v ? v.bars.roll : 0);

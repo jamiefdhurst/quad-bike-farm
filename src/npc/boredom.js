@@ -50,6 +50,7 @@ export function pickBoredChoice(p, { confidence = 0.5, can = {}, sulk = 1 } = {}
     rest: p.boredRestChance ?? 0, // sits on the bales or the fence: only on a fine day
     doughnuts: p.boredDoughnutChance ?? 0, // spins doughnuts in the field (Jess)
     jumps: p.boredJumpChance ?? 0, // rides at the ramp in the field (npc/jumps.js)
+    showOff: p.boredShowOffChance ?? 0, // rides at you to wheelie past or skid to a stop beside you (npc/showOff.js)
     lineUp: p.boredLineUpChance ?? 0, // moves the quads into a row by the barn (Amy), or parks one crooked (Jess)
   };
   base.wander = Math.max(0.1, 1 - p.boredMountChance - p.boredStartChance - p.boredDriveChance);

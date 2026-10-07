@@ -49,6 +49,7 @@ import { Race, RACE_PARAM_RANGES, planLap } from './npc/race.js';
 import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
 import { Convoy, CONVOY_PARAM_RANGES } from './npc/convoy.js';
 import { DoughnutWatch, DOUGHNUT_PARAM_RANGES } from './npc/doughnuts.js';
+import { DEFAULT_SHOWOFF_PARAMS, SHOWOFF_PARAM_RANGES } from './npc/showOff.js';
 import { JumpWatch, JUMP_PARAM_RANGES, rampPoint } from './npc/jumps.js';
 import { Nicking, NICK_PARAM_RANGES } from './npc/nicking.js';
 import { DEFAULT_LINEUP_PARAMS, LINEUP_PARAM_RANGES } from './npc/lineUp.js';
@@ -371,6 +372,9 @@ export class Game {
     this.dashReader = new DashReader(); // the girl on the back reads the dash out (npc/dashReading.js)
     this.doughnutWatch = new DoughnutWatch(); // Amy watches Jess's doughnuts and has a go (npc/doughnuts.js)
     for (const c of this.companions) c.doughnutParams = this.doughnutWatch.p;
+    this.viewForward = new THREE.Vector3(); // which way your eyes point, for the girls showing off (npc/showOff.js)
+    this.showOffParams = { ...DEFAULT_SHOWOFF_PARAMS };
+    for (const c of this.companions) c.showOffParams = this.showOffParams;
     this.jumpWatch = new JumpWatch(); // the girls take turns at the ramp and rate each other's landings (npc/jumps.js)
     for (const c of this.companions) {
       c.jumpParams = this.jumpWatch.p;
@@ -696,6 +700,7 @@ export class Game {
     registerTuning('Racing', this.race.p, RACE_PARAM_RANGES);
     registerTuning('Follow the leader', this.convoy.p, CONVOY_PARAM_RANGES);
     registerTuning('Doughnuts', this.doughnutWatch.p, DOUGHNUT_PARAM_RANGES);
+    registerTuning('Showing off', this.showOffParams, SHOWOFF_PARAM_RANGES);
     registerTuning('The jump', this.jumpWatch.p, JUMP_PARAM_RANGES);
     registerTuning('Nicking your quad', this.nicking.p, NICK_PARAM_RANGES);
     registerTuning('Lining them up', this.lineUpParams, LINEUP_PARAM_RANGES);
@@ -2592,6 +2597,7 @@ export class Game {
     for (const c of this.companions) {
       c.update(dt, c.quad.unit.vibration, {
         position: this.camera.position,
+        forward: this.camera.getWorldDirection(this.viewForward),
         isRiding: this.player.isRiding,
         talking: this.menu.isOpen && this.talkingTo === c,
       });
