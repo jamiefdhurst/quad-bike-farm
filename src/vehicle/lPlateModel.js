@@ -35,7 +35,7 @@ export function buildLPlate() {
 /** Where the plate stands on a quad's model (the back of the body, between the tail lights) and on the tractor's (the front of the grille), facing out. */
 export const LPLATE_PLACES = {
   quad: { x: 0, y: 0.685, z: -1.074, ry: Math.PI },
-  tractor: { x: 0.12, y: 0.98, z: 1.475, ry: 0 },
+  tractor: { x: 0, y: 0.98, z: 1.475, ry: 0 },
 };
 
 export class LPlateSet {
@@ -44,7 +44,7 @@ export class LPlateSet {
     this.parent = null;
   }
 
-  /** Put the plate on `model` (a quad's or the tractor's, `kind` 'quad' or 'tractor'), or take it off with null. */
+  /** Put the plate on `model` (a quad's or the tractor's bodyRoot, `kind` 'quad' or 'tractor'), or take it off with null. */
   showOn(model, kind = 'quad') {
     if (this.parent === model && this.kind === kind) return;
     this.plate.removeFromParent();

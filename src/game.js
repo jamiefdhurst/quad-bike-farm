@@ -973,8 +973,8 @@ export class Game {
       }
     }
     const where = this.lPlates.where;
-    if (where === 'tractor') this.lPlateSet.showOn(this.tractorUnit.quad.model, 'tractor');
-    else this.lPlateSet.showOn(where === 'quad' && mine ? mine.quad.model : null, 'quad');
+    if (where === 'tractor') this.lPlateSet.showOn(this.tractorUnit.quad.bodyRoot, 'tractor');
+    else this.lPlateSet.showOn(where === 'quad' && mine ? mine.quad.bodyRoot : null, 'quad');
   }
 
   /** She walks over and has a go at starting and driving the tractor. */
