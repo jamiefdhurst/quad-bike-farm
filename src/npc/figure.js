@@ -20,13 +20,15 @@ const smoothstep = (a, b, x) => {
 const BUST = {
   reach: 0.16, // sideways radius of each breast's region from its apex
   reachUp: 0.2, // above the apex
-  reachDown: 0.27, // below it, a bit further so the shirt hangs from the bust
+  reachDown: 0.22, // below it, a bit further so the shirt hangs from the bust
   forward: 0.1, // the whole region moves forward this much
   swell: 0.25, // and swells by this fraction away from a point inside the chest
   depth: 0.17, // that point is this far behind the apex
   drop: 0.03, // a fuller bust sits a little lower
   frontFrom: 0.0, // only the front of the body moves: none at z = frontFrom,
   frontTo: 0.15, // fully at z = frontTo
+  dome: 0.55, // the forward push follows (1 - e) to this power: under 1 a rounder dome, full across the middle and falling away
+  // at the edge, rather than tapering to a point at the apex
 };
 // Each fades out over `reach` above and below its height `y`; the other
 // numbers are the fraction it narrows or widens by at full strength.
@@ -53,11 +55,14 @@ export function figureOffset(x, y, z, apex, { bust = 0, waist = 0, hips = 0 }) {
     const e = (across / BUST.reach) ** 2 + ((y - apex.y) / ry) ** 2;
     if (e < 1) {
       const t = 1 - e;
-      const w = t * t * (3 - 2 * t) * smoothstep(BUST.frontFrom, BUST.frontTo, z) * bust;
+      const front = smoothstep(BUST.frontFrom, BUST.frontTo, z) * bust;
+      const w = t * t * (3 - 2 * t) * front;
+      // The forward push is domed, so the breast is round rather than conical; it still meets the body smoothly at the edge.
+      const dome = t ** BUST.dome * smoothstep(0, 0.35, t) * front;
       // No sideways swell on the midline, so the two halves meet.
       dx += side * across * BUST.swell * w * smoothstep(0, apex.x, Math.abs(x));
       dy += ((y - apex.y) * BUST.swell - BUST.drop) * w;
-      dz += (BUST.forward + (z - apex.z + BUST.depth) * BUST.swell) * w;
+      dz += BUST.forward * dome + (z - apex.z + BUST.depth) * BUST.swell * w;
     }
   }
 

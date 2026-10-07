@@ -316,11 +316,21 @@ function shirtVertices(rig, body, hex) {
   return { positions, shirt };
 }
 
-const NECKLINE_LIFT = 0.03; // how far above the neck bone the shirt may reach up her neck before it turns to skin
+// The polo's neckline: how high it sits above her neck bone round the sides and back, where her neck meets her shoulders, and
+// how much lower it dips at the front, where the placket starts.
+const NECK_SIDE = 0.036;
+const NECK_DIP = 0.04;
+const NECK_SPAN = 0.14; // metres of height the neckline strip covers, half below the neckline and half above
 
-/** The palette cell (uv) of a band in the model's original texture: the first vertex whose texel is that colour. */
+/** Height of the neckline at an angle round her neck (0 is the front). */
+function necklineAt(neck, ang) {
+  return neck.y + NECK_SIDE - NECK_DIP * Math.max(0, Math.cos(ang)) ** 1.5;
+}
+
+/** Reads a body vertex's colour in the model's original texture: `is(i, rgb)` says whether vertex i is that palette colour. */
 function paletteUv(body) {
-  const img = (body.material.userData.baseMap ?? body.material.map)?.image;
+  const map = body.material.userData.baseMap ?? body.material.map;
+  const img = map?.image;
   if (!img) return null;
   const canvas = document.createElement('canvas');
   canvas.width = img.width;
@@ -328,50 +338,103 @@ function paletteUv(body) {
   const ctx = canvas.getContext('2d');
   ctx.drawImage(img, 0, 0);
   const px = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-  const map = body.material.userData.baseMap ?? body.material.map;
   const uv = body.geometry.attributes.uv;
   const texel = (i) => {
     const x = Math.min(canvas.width - 1, Math.floor(uv.getX(i) * canvas.width));
     const y = Math.min(canvas.height - 1, Math.floor((map.flipY ? 1 - uv.getY(i) : uv.getY(i)) * canvas.height));
     return (y * canvas.width + x) * 4;
   };
-  return { texel, px, is: (i, c) => { const k = texel(i); return Math.abs(px[k] - c[0]) < 3 && Math.abs(px[k + 1] - c[1]) < 3 && Math.abs(px[k + 2] - c[2]) < 3; } };
+  return {
+    is: (i, c) => {
+      const k = texel(i);
+      return Math.abs(px[k] - c[0]) < 3 && Math.abs(px[k + 1] - c[1]) < 3 && Math.abs(px[k + 2] - c[2]) < 3;
+    },
+  };
+}
+
+const strips = new WeakMap(); // original texture -> a copy twice as wide, with the neckline strip in its right half
+const stripTextures = new WeakSet();
+// Geometries already cut. Not a flag in geometry.userData: a cloned geometry shares that object with the one it came from.
+const cutGeometries = new WeakSet();
+
+/**
+ * The texture with a strip added beside it: shirt colour in one half of its height and skin in the other. A triangle mapped
+ * across the strip by height changes from shirt to skin exactly where the neckline crosses it, however coarse the triangle.
+ * The colours are the original palette's, so recolouring the shirt recolours the strip too.
+ */
+function withNecklineStrip(texture) {
+  if (stripTextures.has(texture)) return texture;
+  if (strips.has(texture)) return strips.get(texture);
+  const img = texture.image;
+  const w = img.width;
+  const h = img.height;
+  const canvas = document.createElement('canvas');
+  canvas.width = w * 2;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  // Below the neckline (v under 0.5) is shirt; which rows that is depends on flipY.
+  const shirtRows = texture.flipY ? [Math.ceil(h / 2), h] : [0, Math.floor(h / 2)];
+  ctx.fillStyle = `rgb(${PALETTE.skin.join(',')})`;
+  ctx.fillRect(w, 0, w, h);
+  ctx.fillStyle = `rgb(${PALETTE.shirt.join(',')})`;
+  ctx.fillRect(w, shirtRows[0], w, shirtRows[1] - shirtRows[0]);
+  const tex = new THREE.CanvasTexture(canvas);
+  for (const key of ['flipY', 'colorSpace', 'wrapS', 'wrapT', 'magFilter', 'minFilter', 'generateMipmaps']) tex[key] = texture[key];
+  tex.needsUpdate = true;
+  strips.set(texture, tex);
+  stripTextures.add(tex);
+  return tex;
 }
 
 /**
- * The model's shirt comes up her neck like a roll neck, to within a few centimetres of her jaw, so the polo collar fitted to its
- * top sat far too high. The model is low-poly: those triangles run from the tops of her shoulders up on to her neck. Any that
- * touches her neck and reaches more than NECKLINE_LIFT above the neck bone takes the skin's palette cell instead, so the shirt,
- * and the collar on it, stop where her neck leaves her shoulders; the collar's flap covers the shoulder ends of those
- * triangles. Only at the front and sides: behind, they reach too far over her shoulders for the flap to hide, and a polo collar
- * sits higher at the back anyway. Once per body geometry: the girls share it.
+ * The model's shirt comes up her neck like a roll neck, to within a few centimetres of her jaw, and the model is too coarse for
+ * whole triangles to give a clean line lower down. So the texture gets a neckline strip (withNecklineStrip), every other UV is
+ * squeezed into its left half, and each shirt triangle round her neck that reaches the neckline is mapped across the strip by
+ * its height above the neckline at that angle: shirt below, skin above. Once per geometry; each girl has her own.
  */
-function lowerNeckline(rig, body) {
-  const g = body.geometry;
-  if (g.userData.necklineLowered || !rig.bones.Neck) return;
-  const pal = paletteUv(body);
-  if (!pal) return;
-  const uv = g.attributes.uv;
-  const pos = g.attributes.position;
-  let skin = -1;
-  for (let i = 0; i < uv.count && skin < 0; i++) if (pal.is(i, PALETTE.skin)) skin = i;
-  if (skin < 0) return;
+function cutNeckline(rig, body) {
+  const original = body.material.userData.baseMap ?? body.material.map;
+  if (!original?.image || !rig.bones.Neck) return;
+  const strip = withNecklineStrip(original);
   const neck = bonePos(rig, 'Neck');
-  const root = rig.root;
-  const at = (i) => root.worldToLocal(body.localToWorld(new THREE.Vector3().fromBufferAttribute(pos, i)));
-  const index = g.index ? g.index.array : [...Array(pos.count).keys()];
-  for (let t = 0; t < index.length; t += 3) {
-    const tri = [index[t], index[t + 1], index[t + 2]];
-    if (!tri.every((i) => pal.is(i, PALETTE.shirt))) continue;
-    const ps = tri.map(at);
-    const r = ps.map((q) => Math.hypot(q.x - neck.x, q.z - neck.z));
-    const z = (ps[0].z + ps[1].z + ps[2].z) / 3;
-    if (z > neck.z - 0.015 && Math.min(...r) < 0.075 && Math.max(...r) < 0.105 && Math.max(...ps.map((q) => q.y)) > neck.y + NECKLINE_LIFT) {
-      for (const i of tri) uv.setXY(i, uv.getX(skin), uv.getY(skin));
+  // Every mesh on that texture (her hair can be its own mesh on the same material), found before any is changed.
+  const users = [];
+  rig.model.traverse((o) => {
+    if (o.isMesh && (o.material.userData.baseMap ?? o.material.map) === original) users.push(o);
+  });
+  for (const o of users) {
+    const g = o.geometry;
+    if (!cutGeometries.has(g)) {
+      const uv = g.attributes.uv;
+      // Which triangles to cut, read from the original texture and UVs.
+      const cut = [];
+      if (o === body) {
+        const pal = paletteUv(body);
+        const pos = g.attributes.position;
+        const at = (i) => rig.root.worldToLocal(body.localToWorld(new THREE.Vector3().fromBufferAttribute(pos, i)));
+        const index = g.index ? g.index.array : [...Array(pos.count).keys()];
+        for (let t = 0; t < index.length; t += 3) {
+          const tri = [index[t], index[t + 1], index[t + 2]];
+          if (!tri.every((i) => pal.is(i, PALETTE.shirt))) continue;
+          const ps = tri.map(at);
+          const r = ps.map((q) => Math.hypot(q.x - neck.x, q.z - neck.z));
+          // Height above the neckline; anything further out than her neck counts as further below it, so the line stays round
+          // her neck and the tops of her shoulders stay shirt.
+          const d = ps.map((q, k) => q.y - necklineAt(neck, Math.atan2(q.x - neck.x, q.z - neck.z)) - 5 * Math.max(0, r[k] - 0.065));
+          if (Math.min(...r) < 0.075 && Math.max(...r) < 0.15 && Math.max(...d) > -0.01) tri.forEach((i, k) => cut.push([i, d[k]]));
+        }
+      }
+      for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) / 2);
+      for (const [i, d] of cut) uv.setXY(i, 0.75, 0.5 + Math.max(-0.49, Math.min(0.49, d / NECK_SPAN)));
+      uv.needsUpdate = true;
+      cutGeometries.add(g);
     }
   }
-  uv.needsUpdate = true;
-  g.userData.necklineLowered = true;
+  for (const o of users) {
+    o.material.userData.baseMap = strip;
+    o.material.map = strip;
+  }
 }
 
 /** The shirt's own colour as a material colour (the texture holds the linear value as if it were sRGB). */
@@ -380,87 +443,74 @@ function shirtColour(hex) {
   return new THREE.Color().setRGB(lin.r, lin.g, lin.b, THREE.SRGBColorSpace);
 }
 
-const COLLAR_GAP = 0.22; // half-angle of the opening at the front, radians
+const COLLAR_GAP = 0.12; // half-angle of the opening at the front, radians: the two ends meet over the top of the placket
 
 /**
- * Cross-section of the folded collar: [height above the neckline, distance off the body], from the
- * neck outwards: up the stand, over the crease and back down on to the shirt. `tip` (0 to 1) is how
- * close to the front opening it is: the flap runs longer there, so it ends in a point.
+ * Cross-section of the folded collar: [height above the neckline, distance off the body], from the neck outwards: up a short
+ * stand, over the crease (the collar's top edge, a centimetre above the neckline) and back down on to the shirt. `tip` (0 to 1)
+ * is how close to the front opening it is: the flap runs longer there, so it ends in a point.
  */
 export function collarSection(tip) {
   return [
-    [0, 0.004], // inside, hugging the neck at the neckline
-    [0.012, 0.007], // top of the stand
-    [0.016, 0.014], // the crease
-    [0.004, 0.026], // outer face coming down
-    [-0.032 - 0.036 * tip, 0.016], // the flap resting on the shirt
+    [-0.003, 0.003], // inside, hugging the neck just under the neckline
+    [0.007, 0.005], // top of the stand
+    [0.011, 0.01], // the crease, the collar's top edge
+    [0.004, 0.019], // outer face coming down
+    [-0.016 - 0.014 * tip, 0.024], // the flap resting on the shirt
   ];
 }
 
 // How much lighter than the shirt each row is: the stand is close to it, the flap lighter so the fold shows.
 const COLLAR_SHADE = [1.3, 1.3, 1.7, 1.9, 1.9];
+const COLLAR_REACH = 0.036; // the flap lies back at most this far from where the collar leaves the neck
+
+/** Height of the body's top surface at a point, found by a ray straight down from just above `from`; the highest hit below it. */
+function surfaceHeight(rig, mesh, x, z, from) {
+  const root = rig.root;
+  const origin = root.localToWorld(new THREE.Vector3(x, from, z));
+  const down = new THREE.Vector3(0, -1, 0).transformDirection(root.matrixWorld);
+  raycaster.set(origin, down);
+  raycaster.far = 0.15;
+  const hit = raycaster.intersectObject(mesh, false)[0];
+  return hit ? root.worldToLocal(hit.point.clone()).y : null;
+}
 
 /**
- * A polo collar: the shirt's own neckline thickened into a band, and a folded collar round it,
- * a stand and a flap that lies back on the shirt and ends in points either side of the opening.
+ * A polo collar on the neckline cut by cutNeckline: a short stand round the base of her neck, folded over at a crease a
+ * centimetre above the neckline, and a narrow flap lying back on the shirt, ending in points that meet over the top of the
+ * placket. Returns the height at the front where the placket starts.
  */
 function addCollar(rig, color) {
   const body = bodyMesh(rig);
   if (!body || !rig.bones.Neck || !rig.bones.Spine2) return;
-  const info = shirtVertices(rig, body, color);
-  if (!info) return;
   const neck = bonePos(rig, 'Neck');
-  // The neckline is the top of the shirt up the middle of the neck, not the neck bone.
-  let top = -Infinity;
-  let frontTop = -Infinity; // the neckline dips at the front, and that is where the placket starts
-  info.positions.forEach((p, i) => {
-    if (!info.shirt[i] || Math.abs(p.x - neck.x) >= 0.07 || Math.hypot(p.x - neck.x, p.z - neck.z) >= 0.1) return;
-    top = Math.max(top, p.y);
-    if (p.z > neck.z && Math.abs(p.x - neck.x) < 0.025) frontTop = Math.max(frontTop, p.y);
-  });
-  if (!Number.isFinite(top)) return;
-
   const shirt = shirtColour(color);
-  skinnedGarment(
-    rig,
-    'collar',
-    shirt,
-    (p, bone, i) => info.shirt[i] && !isArm(bone) && p.y > top - 0.035 && Math.hypot(p.x - neck.x, p.z - neck.z) < (p.z > neck.z ? 0.12 : 0.1),
-    (p) => 0.003 + 0.006 * smooth01((p.y - (top - 0.035)) / 0.035),
-  );
-
-  const segments = 30;
+  const segments = 36;
   const rows = collarSection(0).length;
   const positions = [];
   const colors = [];
-  const angleAt = (i) => COLLAR_GAP + (i / segments) * (Math.PI * 2 - 2 * COLLAR_GAP);
-  // The neckline's height all the way round: the top of the shirt within a slice of angle, smoothed, so the collar sits low at
-  // the front and a little higher at the back, as a polo collar does.
-  let heights = [];
   for (let i = 0; i <= segments; i++) {
-    const ang = angleAt(i);
-    let h = -Infinity;
-    info.positions.forEach((p, k) => {
-      if (!info.shirt[k] || Math.hypot(p.x - neck.x, p.z - neck.z) >= 0.1) return;
-      const d = Math.atan2(Math.sin(Math.atan2(p.x - neck.x, p.z - neck.z) - ang), Math.cos(Math.atan2(p.x - neck.x, p.z - neck.z) - ang));
-      if (Math.abs(d) < 0.45) h = Math.max(h, p.y);
-    });
-    heights.push(Number.isFinite(h) ? h : top);
-  }
-  for (let pass = 0; pass < 3; pass++) heights = heights.map((h, i) => (heights[Math.max(0, i - 1)] + 2 * h + heights[Math.min(segments, i + 1)]) / 4);
-  for (let i = 0; i <= segments; i++) {
-    const ang = angleAt(i);
+    const ang = COLLAR_GAP + (i / segments) * (Math.PI * 2 - 2 * COLLAR_GAP);
     const dir = new THREE.Vector3(Math.sin(ang), 0, Math.cos(ang));
     // 1 at the ends beside the opening, falling to 0 a little way round.
     const edge = Math.min(ang - COLLAR_GAP, Math.PI * 2 - COLLAR_GAP - ang);
-    const tip = 1 - smooth01(edge / 0.6);
-    const base = heights[i];
-    // Radius of the neck at the neckline, used up the stand; the flap follows the shoulders and chest.
-    const neckR = surfaceDistance(rig, body, new THREE.Vector3(neck.x, base, neck.z), dir) ?? 0.05;
+    const tip = 1 - smooth01(edge / 0.5);
+    const base = necklineAt(neck, ang);
+    const at = (y) => surfaceDistance(rig, body, new THREE.Vector3(neck.x, y, neck.z), dir);
+    const baseR = at(base) ?? 0.06;
     for (const [dy, off] of collarSection(tip)) {
-      const y = base + dy;
-      const r = dy > 0 ? neckR : surfaceDistance(rig, body, new THREE.Vector3(neck.x, y, neck.z), dir) ?? neckR;
-      positions.push(neck.x + dir.x * (r + off), y, neck.z + dir.z * (r + off));
+      let y = base + dy;
+      let r;
+      if (dy >= 0 || off < 0.015) {
+        // Up the stand: hug the neck at that height.
+        r = (at(y) ?? baseR) + off;
+      } else {
+        // The flap: no further out than COLLAR_REACH, lying on whatever is under it there (her shoulders rise at the sides).
+        r = Math.min(baseR + off, baseR + COLLAR_REACH);
+        const ground = surfaceHeight(rig, body, neck.x + dir.x * r, neck.z + dir.z * r, base + 0.005);
+        if (ground !== null) y = Math.max(y, ground + 0.005);
+      }
+      positions.push(neck.x + dir.x * r, y, neck.z + dir.z * r);
     }
     for (const k of COLLAR_SHADE) colors.push(shirt.r * k, shirt.g * k, shirt.b * k);
   }
@@ -483,7 +533,7 @@ function addCollar(rig, color) {
   rig.root.add(fold);
   rig.bones.Spine2.attach(fold);
   rig.outfitParts.push(fold);
-  return Number.isFinite(frontTop) ? frontTop : top;
+  return necklineAt(neck, 0);
 }
 
 /**
@@ -581,7 +631,7 @@ function addPoloFront(rig, color, neckline) {
   const samples = 10;
   const lift = 0.007;
   const half = 0.011;
-  const top = neckline - 0.03; // the neck rises almost vertically above this, so a higher start would run up it
+  const top = neckline - 0.006; // just under the collar's front ends, which meet over it
   const length = 0.12;
   const hits = [];
   for (let k = 0; k <= samples; k++) {
@@ -631,6 +681,8 @@ function addPoloFront(rig, color, neckline) {
 export function applyOutfit(rig, outfit) {
   rig.root.updateMatrixWorld(true);
   rig.outfitParts = [];
+  const body = bodyMesh(rig);
+  if (body && outfit.collar) cutNeckline(rig, body);
   rig.model.traverse((o) => {
     if (!o.isMesh) return;
     const mat = o.material;
@@ -643,8 +695,6 @@ export function applyOutfit(rig, outfit) {
     mat.roughness = 0.85;
     mat.needsUpdate = true;
   });
-  const body = bodyMesh(rig);
-  if (body && outfit.collar) lowerNeckline(rig, body);
   addGarments(rig, outfit);
 }
 

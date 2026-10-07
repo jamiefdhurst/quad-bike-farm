@@ -5,11 +5,17 @@ describe('collarSection', () => {
   it('stands up from the neckline, folds over and comes back down', () => {
     const rows = collarSection(0);
     const heights = rows.map(([h]) => h);
-    expect(heights[0]).toBe(0);
-    expect(Math.max(...heights)).toBeGreaterThan(0.01);
+    expect(Math.abs(heights[0])).toBeLessThan(0.005); // starts at the neckline, tucked just under it
+    expect(Math.max(...heights)).toBeGreaterThan(0.008);
     expect(heights[heights.length - 1]).toBeLessThan(0);
     // Moves outwards over the crease so the flap lies outside the stand.
     expect(rows[3][1]).toBeGreaterThan(rows[1][1]);
+  });
+
+  it('sits low and narrow: its top edge about a centimetre above the neckline, the fold lying back less than 3 cm', () => {
+    const rows = collarSection(0);
+    expect(Math.max(...rows.map(([h]) => h))).toBeLessThan(0.015);
+    expect(Math.max(...rows.map(([, off]) => off))).toBeLessThan(0.03);
   });
 
   it('runs the flap longer towards the opening so it ends in a point', () => {
