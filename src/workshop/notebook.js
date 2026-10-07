@@ -1,7 +1,8 @@
 import './notebook.css';
 import * as THREE from 'three';
 import { registerTuning } from '../core/tuning.js';
-import { Logbook, DEFAULT_LOGBOOK_PARAMS, LOGBOOK_PARAM_RANGES, shortName, formatEntry } from './logbook.js';
+import { Logbook, DEFAULT_LOGBOOK_PARAMS, LOGBOOK_PARAM_RANGES, shortName, formatEntry, startingCandidates, startingEntries } from './logbook.js';
+import { createRandom } from '../core/random.js';
 
 /**
  * Amy's logbook: the notebook lying on the workbench, and the page you read when you look at it and press E. What goes in it is decided
@@ -14,6 +15,9 @@ export class Notebook {
     this.book = new Logbook(this.params);
     this.told = false; // the one-off toast saying where her notes go
     registerTuning('Logbook', this.params, LOGBOOK_PARAM_RANGES);
+    // What she had already written down before the game: some of what is true of the quads at the start, from the seed.
+    const candidates = game.units.flatMap((u) => startingCandidates({ name: u.name, history: game.history.quads[u.id], quirks: u.quad.quirks.kinds }));
+    this.book.seed(startingEntries(candidates, createRandom(game.seed ^ 0x109b), this.params));
     const b = game.world.layout.bench;
     const top = game.world.heightAt(b.x, b.z) + b.height;
     this.model = new THREE.Group();

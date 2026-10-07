@@ -6,15 +6,38 @@ export const DEFAULT_LOGBOOK_PARAMS = {
   maxEntries: 40, // the page is full after this many: the oldest entries are dropped
   repeatSeconds: 120, // she won't write the same thing about the same quad again inside this long
   writeRange: 15, // how close (m) you have to be for her to see a bench job or a plug and write it up
+  startMin: 2, // the fewest entries already in the book when the game starts (fewer if there is little to write)
+  startMax: 5, // the most
+  startKnows: 0.85, // chance each thing that is true at the start is something she has already written down
 };
 
 export const LOGBOOK_PARAM_RANGES = {
   maxEntries: [10, 100, 1],
   repeatSeconds: [0, 600, 10],
   writeRange: [3, 40, 1],
+  startMin: [0, 10, 1],
+  startMax: [0, 15, 1],
+  startKnows: [0, 1, 0.05],
 };
 
 /** What she writes for each walk-round finding (the keys of WALK_FINDINGS in walkRound.js). */
+const FAULT_TEXT = { puncture: 'slow puncture', belt: 'belt slipping', cable: 'throttle sticking', carb: 'carb dirty' };
+
+const TINKER_TEXT = { limiter: 'throttle stop wound out', mixture: 'mixture left rich' };
+
+const QUIRK_TEXT = {
+  fuelHigh: 'fuel gauge reads high',
+  fuelSticks: 'fuel gauge sticks',
+  tempCold: 'temperature needle stuck on cold',
+  chokeCreeps: 'choke creeps back on',
+  tapStiff: 'fuel tap stiff',
+  seatSplit: 'seat split',
+  hornFlaky: 'horn works when it likes',
+  brakesPull: 'brakes pull',
+  brakeSqueal: 'brakes squeal',
+  headlightFlicker: 'headlight flickers',
+};
+
 const WALK_TEXT = {
   walkPuncture: 'slow puncture',
   walkSoftTyre: 'tyre soft',
@@ -47,7 +70,10 @@ export function shortName(name) {
   return name.replace(/ quad$/, '');
 }
 
-/** The text of an entry: { kind: 'walk', finding } | { kind: 'plug', reading } | { kind: 'job', job, botched } | { kind: 'oil' } */
+/**
+ * The text of an entry: { kind: 'walk', finding } | { kind: 'plug', reading } | { kind: 'job', job, botched } | { kind: 'oil' }
+ * | the ones she may have written before the game: { kind: 'fault', fault } | { kind: 'tinker', tinker } | { kind: 'quirk', quirk } | { kind: 'rider', rider }
+ */
 export function entryText(what) {
   switch (what.kind) {
     case 'walk':
@@ -60,6 +86,14 @@ export function entryText(what) {
     }
     case 'oil':
       return 'engine oil topped up';
+    case 'fault':
+      return FAULT_TEXT[what.fault] ?? null;
+    case 'tinker':
+      return TINKER_TEXT[what.tinker] ?? null;
+    case 'quirk':
+      return QUIRK_TEXT[what.quirk] ?? null;
+    case 'rider':
+      return what.rider === 'jess' ? 'out with Jess' : what.rider === 'amy' ? 'out with Amy' : null;
     default:
       return null;
   }
@@ -83,12 +117,17 @@ export class Logbook {
   write({ quad, what, by = null }) {
     const text = entryText(what);
     if (!text) return null;
-    const recent = this.entries.some((e) => e.quad === quad && e.text === text && this.clock - e.time < this.params.repeatSeconds);
+    const recent = this.entries.some((e) => !e.old && e.quad === quad && e.text === text && this.clock - e.time < this.params.repeatSeconds);
     if (recent) return null;
     const entry = { time: this.clock, quad, text, by };
     this.entries.push(entry);
     while (this.entries.length > this.params.maxEntries) this.entries.shift();
     return entry;
+  }
+
+  /** Fills the page with what she wrote before the game began (`startingEntries`): all shown as "Yesterday". */
+  seed(entries) {
+    for (const e of entries) this.entries.push({ time: -1, quad: e.quad, text: entryText(e.what), by: e.by ?? null, old: true });
   }
 
   /** The page as lines, newest last: "0:42  Blue, belt slipping." */
@@ -98,10 +137,48 @@ export class Logbook {
 }
 
 export function formatClock(seconds) {
+  if (seconds < 0) return 'Yesterday';
   const s = Math.floor(seconds);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
 export function formatEntry(e) {
   return `${formatClock(e.time)}  ${e.quad}, ${e.text}${e.by ? ` (${e.by})` : ''}.`;
+}
+
+/**
+ * What is true of one vehicle at the start of the game that she could have written down before it: the faults it already has, tinkering
+ * left in, its quirks, who had it out last. The plug is read at the bench, so it isn't here.
+ * @param {{ name: string, history?: object, quirks?: string[] }} v
+ * @returns {{ quad: string, what: object, by?: string }[]}
+ */
+export function startingCandidates({ name, history, quirks = [] }) {
+  const quad = shortName(name);
+  const out = [];
+  for (const f of history?.faults ?? []) out.push({ quad, what: { kind: 'fault', fault: f.kind } });
+  if (history?.tinker?.limiter > 0) out.push({ quad, what: { kind: 'tinker', tinker: 'limiter' } });
+  if (history?.tinker?.mixture > 0) out.push({ quad, what: { kind: 'tinker', tinker: 'mixture' } });
+  for (const quirk of quirks) out.push({ quad, what: { kind: 'quirk', quirk } });
+  if (history?.lastRider) out.push({ quad, what: { kind: 'rider', rider: history.lastRider } });
+  return out;
+}
+
+/**
+ * Which of those she had already written in the book: each with probability `startKnows` (she misses some, and never writes what isn't
+ * true, and at most one note of who had a quad out), then between `startMin` and `startMax` of them, in a shuffled order.
+ */
+export function startingEntries(candidates, random, P = DEFAULT_LOGBOOK_PARAMS) {
+  const shuffled = [...candidates];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  let rider = false; // nearly every quad has a last rider, so one such note is plenty or they crowd out the faults
+  const known = shuffled.filter((c) => {
+    if (random() >= P.startKnows) return false;
+    if (c.what.kind !== 'rider') return true;
+    return !rider && (rider = true);
+  });
+  const count = P.startMin + Math.floor(random() * (Math.max(P.startMax, P.startMin) - P.startMin + 1));
+  return known.slice(0, count);
 }
