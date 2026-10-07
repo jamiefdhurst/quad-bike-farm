@@ -361,7 +361,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 43. When a girl likes you a lot, she should invite you behind the barn to make out. If we manage to do that a couple of times, she'll ask you to do it on her favourite quad while she's sitting on it, and from this point you won't ever lose her favour this game unless you do something really bad (I need an idea for this)
 44. Achievements each game so you get a score - getting both girls to like you, ramp achievements, getting all quads going, riding all of them, etc. - ticking off everything you can do in the game
 45. Better animations for the girls getting on and off things, and better seated and otherwise positions for them in everything they do. Better idle animations for them if they're standing around too.
-46. When standing still I sometimes move if I stop on a slope.
+46. When standing still I sometimes move if I stop on a slope. **Done.** Stood still on a slope you no longer creep down it: with no key down and all but stopped, you're held where you are.
 47. Fix the hedges and bushes around the side, they're not working properly.
 48. Fix some of the race positioning, especially when starting.
 49. Pick a different voice for Jess, her current one makes her sound too old.

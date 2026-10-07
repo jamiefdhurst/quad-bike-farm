@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { DEFAULT_PLAYER_PARAMS } from './playerParams.js';
+import { standing } from './standing.js';
 
 const CAPSULE_HALF_HEIGHT = 0.55;
 const CAPSULE_RADIUS = 0.3;
@@ -149,7 +150,13 @@ export class Player {
       this.velocity.z += (targetZ - this.velocity.z) * k;
     }
 
-    this.verticalSpeed = this.grounded ? -1 : this.verticalSpeed - p.gravity * dt;
+    // Stood still on the ground: held where you are, not pressed into the slope, which would slide you down it (standing.js).
+    const stand = standing({ moving: len > 0, speed: Math.hypot(this.velocity.x, this.velocity.z), grounded: this.grounded, stumbling });
+    if (stand.still) {
+      this.velocity.x = 0;
+      this.velocity.z = 0;
+    }
+    this.verticalSpeed = this.grounded ? stand.pressDown : this.verticalSpeed - p.gravity * dt;
 
     const desired = {
       x: this.velocity.x * dt,
@@ -159,6 +166,10 @@ export class Player {
     const filter = this.ignoreCollider ? this.ignoreFilter : undefined;
     this.controller.computeColliderMovement(this.collider, desired, undefined, undefined, filter);
     const move = this.controller.computedMovement();
+    if (stand.still && this.controller.computedGrounded()) {
+      move.x = 0;
+      move.z = 0;
+    }
     const wasGrounded = this.grounded;
     this.grounded = this.controller.computedGrounded();
     if (this.landing && this.grounded && !wasGrounded) this.land();

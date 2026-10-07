@@ -1257,3 +1257,9 @@ Settled with Jamie, all as recommended: only empty quads lose the automatic hold
 - Flicker: from engine roughness plus erratic over 0.2, up to 0.6 above that, the light dips by up to 70% with two wobbles at different rates, so it stutters rather than pulses. It multiplies with the flickering-headlight quirk's dips.
 - Steady: specs with `steadyLights: true` (the loan quad, and the tractor) stay full and white whenever the key is on.
 - The lights are still only a glowing lens material, with no light cast, so "shows in the barn gloom, under heavy cloud and in fog" is just the lens being more or less visible there. A real beam would be its own item. Not checked in the running game: how the dimness reads in daylight (it may be hard to see at idle in the sun) or the flicker rate.
+
+## Standing still on a slope (TODO 46)
+
+- Cause, found with a scratch Rapier run (the player's character controller settings on a heightfield slope, no input, 120 Hz): while grounded the player asks for a downward speed of 1 m/s each step to stay on the ground, and Rapier slides the controller a little along the slope in answer. It is a steady creep, about 2 mm/s at 10 degrees, 6 mm/s at 30 and 9 mm/s at 50, so 0.1 to 0.5 m over a minute standing there.
+- Fix: `src/player/standing.js` (pure, tested): grounded, no movement key down, not stumbling and under 0.05 m/s horizontally counts as standing still. Then the horizontal speed is zeroed, no downward push is asked for, and any horizontal movement the controller computes is thrown away (the height still follows the ground). The same run with that gave no drift on any slope from 10 to 55 degrees. Walking, jogging, stumbling, landing and being in the air are untouched.
+- Not checked in the running game: that standing on the jump ramp or on a quad's collider feels right, which only the scratch run covered in the open.
