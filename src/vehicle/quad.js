@@ -84,6 +84,7 @@ export class Quad {
     this.dash = this.model.userData.dash;
     this.fuel = new FuelSystem(fuelParams);
     this.faults = new Faults();
+    if (engine.params.compressionIgnition) this.faults.prone.carb = 0; // a diesel has no carb to get dirty
     this.sump = hasSump({ ...engine.params, tractor }) ? new Sump() : null; // the four-strokes' engine oil; the game deals each its level (sump.js)
     this.sumpClock = 0;
     // A layout's outrigger wheels (the mini moto's) are never the flat one.

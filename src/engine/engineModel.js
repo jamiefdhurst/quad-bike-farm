@@ -443,7 +443,7 @@ export class EngineModel {
     if (p.waterCooled) this.updateCoolant(h, running);
     stepHeat(this, h, { running, ambient: this.ambient, work: this.work, speed: this.speed, coolant: p.waterCooled ? coolingEffect(this.coolant, p) : 1, bore: this.bore }, p);
     this.soak = stepSoak(this.soak, h, { running, work: this.work, heat: this.heat }, p);
-    this.pink = running && !p.waterCooled ? pinkLevel(this.heat, p) : 0;
+    this.pink = running && !p.waterCooled && !p.compressionIgnition ? pinkLevel(this.heat, p) : 0;
     // Rattling under load; the audio plays what's owed (ticks a second, so they land at random times).
     if (this.pink > 0) this.pinkLeft += p.pinkRate * this.pink * (0.2 + 0.8 * this.throttle) * h;
     while (this.pinkLeft >= 1) {

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { glowNeeded, stepGlow, glowReady, compressionCatchFactor } from '../src/engine/compression.js';
 import { EngineModel, EngineState } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS as P } from '../src/engine/engineParams.js';
+import { Faults, DEFAULT_FAULT_PARAMS } from '../src/vehicle/faults.js';
 
 const seeded = (seed) => () => {
   seed = (seed * 16807) % 2147483647;
@@ -149,5 +150,28 @@ describe('a diesel and a rich mixture', () => {
     expect(e.rich).toBeGreaterThan(0);
     expect(e.fouling).toBe(0);
     expect(e.isRunning).toBe(true);
+  });
+});
+
+describe('a diesel and the petrol engines\' faults', () => {
+  const hot = (params) => {
+    const e = new EngineModel(params, { random: seeded(8) });
+    e.setIgnition(true);
+    crank(e, 8, { glowReady: true, starter: true });
+    e.heat = 1;
+    settle(e, 5, { diesel: 1, throttle: 0.8 });
+    return e;
+  };
+
+  it('never pinks, however hot it gets', () => {
+    expect(hot(diesel()).isRunning).toBe(true);
+    expect(hot(diesel()).pink).toBe(0);
+  });
+
+  it('never gets a dirty carb, because it has none', () => {
+    const q = new Faults({ ...DEFAULT_FAULT_PARAMS, carbEvery: 1 }, seeded(3));
+    q.prone.carb = 0;
+    for (let i = 0; i < 600; i++) q.update(0.1, { running: true, speed: 0, throttle: 0 });
+    expect(q.has('carb')).toBe(false);
   });
 });
