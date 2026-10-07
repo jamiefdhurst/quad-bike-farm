@@ -22,6 +22,7 @@ import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
 import { CHARACTERS } from './npc/characters.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { pickHistory, pickFaultChance } from './vehicle/history.js';
+import { TyreSet, dealTyres, DEFAULT_TYRE_PARAMS, TYRE_PARAM_RANGES } from './vehicle/tyres.js';
 import { describeVehicle } from './debug/startReport.js';
 import { QuirkSet, DEFAULT_QUIRK_PARAMS, QUIRK_PARAM_RANGES, featuresOf, pickQuirks } from './vehicle/quirks.js';
 import { captureStock, tuneTarget, stockSettings, clampSettings, applyTune } from './vehicle/tuneUp.js';
@@ -218,6 +219,11 @@ export class Game {
       const kind = this.podRack.podOn(unit.id);
       if (kind) unit.quad.fitPod(this.pods[kind]);
     }
+    // Tyres: pressures a bit off, mismatched brands, a worn rear (the toolbox's psi tunables are given to them once it exists, below).
+    this.tyreParams = { ...DEFAULT_TYRE_PARAMS };
+    registerTuning('Tyres', this.tyreParams, TYRE_PARAM_RANGES);
+    const tyreRandom = createRandom(this.seed ^ 0x7e55);
+    for (const unit of this.units) unit.quad.tyres = new TyreSet(dealTyres(tyreRandom, 4, this.tyreParams), this.tyreParams);
     // One to three quirks each, from the parts the quad has (a gauge quirk needs a dash or pod that shows it, so this comes after the pods).
     this.quirkParams = { ...DEFAULT_QUIRK_PARAMS };
     registerTuning('Quirks', this.quirkParams, QUIRK_PARAM_RANGES);
@@ -642,6 +648,11 @@ export class Game {
     this.toolbox = new Toolbox({ scene: this.scene, world: this.world, position: L.toolbox, yaw: L.toolbox.yaw });
     this.toolbox.model.position.y += L.toolbox.lift ?? 0; // up on the barn workbench
     this.workshop = new Workshop(this);
+    for (const unit of this.units) {
+      unit.quad.tyres.tune = this.workshop.params; // the psi effects stay tunable in the toolbox's panel
+      unit.quad.physics.tyres = unit.quad.tyres;
+      unit.quad.physics.applyParams();
+    }
     this.bench = new Bench(this);
     // A hosepipe for washing the mud off.
     this.hose = new Hose({ scene: this.scene, world: this.world, position: L.hose, yaw: L.hose.yaw });
@@ -1138,6 +1149,7 @@ export class Game {
           lastRider: h?.lastRider ?? null,
           hasHistory: !!h,
           quirks: q.quirks.kinds,
+          tyres: q.tyres,
           wornGear: worn ? { gear: worn.gear, wear: worn.wear } : null,
           hand: unit.spec.tractor ? q.handSetting : null,
         }),

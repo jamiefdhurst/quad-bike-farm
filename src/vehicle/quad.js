@@ -4,6 +4,7 @@ import { FuelSystem } from './fuelSystem.js';
 import { QuadPhysics, QUAD_LAYOUT } from './quadPhysics.js';
 import { Drivetrain } from './drivetrain.js';
 import { QuirkSet } from './quirks.js';
+import { TyreSet } from './tyres.js';
 import { ManualDrivetrain, gearLabel } from './manualDrivetrain.js';
 import { AutoShifter } from './autoShifter.js';
 import { poseTractorControls } from './tractorModel.js';
@@ -111,6 +112,9 @@ export class Quad {
       z: s.z,
       yaw: s.yaw,
     }, scale, layout);
+    this.tyres = new TyreSet(); // pressures, brands and tread (tyres.js); the game deals this game's
+    this.physics.tyres = this.tyres;
+    this.physics.applyParams();
     // The tractor has a clutch pedal and a gearbox rather than a CVT; everything reads the same drivetrain fields.
     this.manual = !!gearbox; // a clutch and gearbox: the tractor and the manual quads
     this.tractor = tractor; // the tractor's own controls and body on top of that
@@ -564,14 +568,15 @@ export class Quad {
     if (this.driver) this.parkBrake = false; // she takes it off before she sets off
     if (idle) brake = Math.max(brake, p.parkingBrake);
     if (this.parkBrake && (this.input || this.ghost)) brake = p.maxBrake; // a stuck throttle with nobody on it doesn't undo it
-    brake = Math.max(brake, p.rollingResistance);
+    const rolling = p.rollingResistance * this.tyres.rollingFactor; // harder tyres roll easier
+    brake = Math.max(brake, rolling);
     // Wheel brakes alone let a parked quad creep down a slope, so a stationary one is held.
     this.physics.setParked((idle && throttleInput === 0 && Math.abs(fwd) < 0.3) || (this.parkBrake && Math.abs(fwd) < 0.3));
 
     // Rapier's raycast wheels ignore the brake on a wheel with any engine force
     // (even engine braking on the overrun), so braking drops the drive. The bog's
     // hold takes its share of the drive first.
-    const drive = brake > p.rollingResistance ? 0 : this.drivetrain.driveForce;
+    const drive = brake > rolling ? 0 : this.drivetrain.driveForce;
     this.physics.hold = hold + this.bog.dragForce(inBog, p.mass, groundSpeed);
     this.physics.applyControls({
       driveForce: Math.sign(drive) * Math.max(0, Math.abs(drive) * this.faults.driveFactor - hold),

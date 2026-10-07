@@ -97,7 +97,7 @@ export class QuadPhysics {
     for (let i = 0; i < this.wheels.length; i++) {
       this.vehicle.setWheelRadius(i, this.wheels[i].radius ?? p.wheelRadius);
       this.vehicle.setWheelSuspensionRestLength(i, p.suspensionRestLength);
-      this.vehicle.setWheelSuspensionStiffness(i, p.suspensionStiffness);
+      this.vehicle.setWheelSuspensionStiffness(i, p.suspensionStiffness * (this.tyres?.stiffness(i) ?? 1));
       this.vehicle.setWheelSuspensionCompression(i, p.suspensionCompression);
       this.vehicle.setWheelSuspensionRelaxation(i, p.suspensionRelaxation);
       this.vehicle.setWheelMaxSuspensionTravel(i, p.maxSuspensionTravel);
@@ -135,6 +135,8 @@ export class QuadPhysics {
       w.grip = surfaceGrip(p, w.mud, w.puddle) * (w.contact && bogAt ? bogGrip(bogAt(w.point.x, w.point.z)) : 1);
       // Wet ground is slipperier, and wet mud more so.
       w.grip *= 1 - wet * (0.15 + 0.15 * w.mud);
+      // This wheel's tyre: its pressure, brand and tread (tyres.js).
+      if (this.tyres) w.grip *= this.tyres.grip(i, w.mud, w.puddle);
       // Puddles are mud too, as far as the engine's concerned.
       this.wheelMud[i] = Math.max(w.mud, w.puddle);
       w.driven = isDriven(p, this.wheels[i].front);

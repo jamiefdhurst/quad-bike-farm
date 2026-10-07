@@ -104,11 +104,12 @@ const ROWS = [
     name: 'Tyre pressures',
     explain:
       'Softer tyres grip better in mud and on slopes but squash and bounce about. Harder ones roll easier and feel sharper on the track, but slide about in the wet.',
-    value: (s) => `${s.tyres.toFixed(1)} psi`,
-    stock: (st) => `${st.tyres.toFixed(1)} psi`,
-    effect: (s, P) => {
-      const grip = -P.psiGrip * (s.tyres - P.stockPsi);
-      return grip === 0 ? 'as it came' : `grip ${pct(grip)}, ${grip > 0 ? 'bouncier' : 'firmer'}`;
+    // The gauge reads each wheel. The setting levels all four to one pressure, so the readings change as you adjust.
+    value: (s, P, unit) => unit.quad.tyres.gauge(unit.quad.faults.tyre, unit.quad.faults.started.puncture ? unit.quad.faults.levels.puncture : 0),
+    stock: (st) => `all ${st.tyres.toFixed(1)} psi`,
+    effect: (s, P, unit) => {
+      const grip = -P.psiGrip * (unit.quad.tyres.meanPsi - P.stockPsi);
+      return Math.abs(grip) < 0.005 ? 'about as it should be' : `average grip ${pct(grip)}, ${grip > 0 ? 'bouncier' : 'firmer'}`;
     },
   },
 ];
@@ -271,9 +272,17 @@ export class Workshop {
   repair(kind) {
     const unit = this.unit;
     if (!unit) return;
+    if (kind === 'puncture') this.levelTyres(unit); // pumping up is pumping up, whether or not there was a puncture
     const done = unit.quad.faults.fix(kind, { rough: true });
     this.game.hud.toast(done ? REPAIR_DONE[kind] : REPAIR_NOTHING[kind]);
     if (done) for (const c of this.game.companions) c.voice.onTinker?.('service');
+  }
+
+  /** Pumps (or lets down) all four tyres to the pressure the toolbox is set to. */
+  levelTyres(unit) {
+    const q = this.quads.get(unit);
+    unit.quad.tyres.level(q?.settings.tyres ?? this.params.stockPsi);
+    unit.quad.physics.applyParams();
   }
 
   /** Takes the silencer off, or puts it back. */
@@ -329,13 +338,16 @@ export class Workshop {
     if (isStock(q.settings, q.stock, this.params) && !e.silencerOff) return;
     e.silencerOff = false;
     this.apply(stockSettings(q.stock, this.params));
+    this.levelTyres(this.unit);
     for (const c of this.game.companions) c.voice.onTinker?.('stock');
   }
 
   apply(settings) {
     const unit = this.unit;
     const q = this.quads.get(unit);
+    const before = q.settings.tyres;
     q.settings = applyTune(tuneTarget(unit), q.stock, settings, this.params);
+    if (q.settings.tyres !== before) this.levelTyres(unit); // moving the setting pumps all four to it, which levels them out
     unit.quad.physics.applyParams();
     unit.idleRpm = q.settings.idle;
     this.render();

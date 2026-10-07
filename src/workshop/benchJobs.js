@@ -234,6 +234,7 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
   }
   if (job.kind === 'tyre') {
     faults.fix('puncture');
+    target.tyres?.level(target.tyres.tune.stockPsi); // pumped up to the pressure it should be
     if (botched) faults.leave('puncture', P.botchedLevel);
     return botched ? 'Wheel is back on, but the tyre is not holding' : 'Tyre patched, pumped and holding';
   }

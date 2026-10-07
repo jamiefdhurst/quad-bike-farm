@@ -2,6 +2,7 @@ import GUI from 'lil-gui';
 import { getTuningGroups, exportTuning } from '../core/tuning.js';
 import { pickTrick } from '../npc/showOff.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
+import { BRANDS, WHEEL_NAMES } from '../vehicle/tyres.js';
 import { rampPoint } from '../npc/jumps.js';
 
 /**
@@ -199,6 +200,31 @@ export class DebugGui {
     }
     Object.defineProperty(faults, 'tyre', { enumerable: false, get: () => unit().quad.faults.tyre });
     ff.add(faults, 'tyre').name('flat tyre (wheel, -1 none)').listen().disable();
+
+    // The tyres (vehicle/tyres.js): what the gauge reads on each wheel (drag to set the real pressure), and the brand, tread and grip.
+    const tyres = {};
+    WHEEL_NAMES.forEach((name, i) => {
+      Object.defineProperty(tyres, `${name} psi`, {
+        enumerable: true,
+        get: () => Math.round(unit().quad.tyres.psi[i] * 10) / 10,
+        set: (v) => {
+          unit().quad.tyres.psi[i] = v;
+          unit().quad.physics.applyParams();
+        },
+      });
+    });
+    const info = (name, get) => Object.defineProperty(tyres, name, { enumerable: false, get });
+    info('gauge (what the toolbox reads)', () => {
+      const fl = unit().quad.faults;
+      return unit().quad.tyres.gauge(fl.tyre, fl.started.puncture ? fl.levels.puncture : 0);
+    });
+    info('front tyres', () => `${BRANDS[unit().quad.tyres.brand.front].label}, tread ${unit().quad.tyres.tread.front.toFixed(2)}`);
+    info('rear tyres', () => `${BRANDS[unit().quad.tyres.brand.rear].label}, tread ${unit().quad.tyres.tread.rear.toFixed(2)}`);
+    info('grip on grass (per wheel)', () => [0, 1, 2, 3].map((i) => unit().quad.tyres.grip(i, 0, 0).toFixed(2)).join('  '));
+    info('grip in mud (per wheel)', () => [0, 1, 2, 3].map((i) => unit().quad.tyres.grip(i, 1, 0).toFixed(2)).join('  '));
+    const tf = this.gui.addFolder('Tyres (live): the quad you are on or looking at');
+    for (const name of WHEEL_NAMES) tf.add(tyres, `${name} psi`, 1.5, 7, 0.1).listen();
+    for (const key of ['gauge (what the toolbox reads)', 'front tyres', 'rear tyres', 'grip on grass (per wheel)', 'grip in mud (per wheel)']) tf.add(tyres, key).listen().disable();
   }
 
   /** Who you favour: each girl's score, where she stands against her friend, and buttons to push it either way. */
