@@ -1569,6 +1569,13 @@ Settled with Jamie before building: a second, small trailer (the bale trailer st
 - Pinking is a petrol engine's detonation, but the tractor and UTV are air-cooled in the model so they pinked in the heat like the quads. It is now held at 0 for a compression-ignition engine (`updateHeat`). They still get hot, they just don't rattle or lose power from it.
 - A diesel has no carb, so its dirty-carb fault never starts (`faults.prone.carb = 0` in `Quad`). The sticky-float drip (`carbDrip.js`) now leaves out the UTV as well as the tractor, by `compressionIgnition` rather than by name. Checked: unit tests only (`tests/compression.test.js`).
 
+## Girls on the tractor and in the UTV by themselves (2026-10-07)
+
+- The quads already let a bored girl sit on one or hop on the back of her friend's as it sets off. The UTV and tractor only took a girl when you were driving. Now, with nobody in or on the vehicle, a girl stood about within 30 m climbs into a parked UTV or up on a parked tractor by herself (`idleBoardRate` 0.004 a second per girl, about once in four minutes; tuning panel under UTV riders and Mudguard ride). She is marked as asked, so she stays put with you off it, until the usual boredom takes her down (UTV 120 to 300 s, mudguard 90 to 240 s). Get in and drive and she's already aboard. The UTV seat comes from the same `planSeats` as when you stop for her. The tractor needs no trailer hitched; the UTV's bed must not be tipped.
+- A girl driving the tractor herself: her friend, if stood about, climbs up on the arch as the driver is getting on, starting it or ticking over, with `joinChance` 0.5 (one roll per go, `MudguardRide.girlDriving`), after 0.5 to 2 s so she is walking over before the driver is ready to go. The driver waits for her (`friendOnBack` counts a girl boarding or sitting on the arch, so the "friend coming" pause and the "friendOn" line apply). She comes down when the go ends.
+- No new lines: they use `mudBoard`, `utvBoard` and `utvBedGo`. The girls don't drive the UTV yet, so there is no UTV version of the join; it comes with item 37.
+- Checked: unit tests for all of it (`tests/mudguardRide.test.js`, `tests/utvRide.test.js`). Not run in the game: the walk over and climb, the driver's wait for her, and how often it happens in real play.
+
 ## Pods on the rusty quad (2026-10-07)
 
 - The pod rack was built from the girls' quads before the barn find existed, so it refused to fit a pod to the rusty quad (the bench did the three seconds, then nothing happened). `PodRack.allow` registers it afterwards. It never starts with a pod, so the seeded placement is unchanged. Checked: unit tests only; not tried at the bench in the running game.
