@@ -908,7 +908,7 @@ export const UTV_SPEC = {
   hoursRange: [900, 2600], // engine hours showing when the game starts
   odoRange: [4000, 11000], // odometer miles, kept for the dash's hour meter's company (it has no odometer drum)
   safeIdle: 700,
-  idleRange: [830, 880],
+  idleRange: [940, 1000], // about where the Gator in its sound recording ticks over (970), so the recording plays at its own speed
   roughnessRange: [0.06, 0.1], // a small diesel ticks over steadily, with a touch of rattle
   fuelRange: [10, 24], // 30 litre tank, 3 litre reserve
   topRpmRange: [3150, 3250], // full-throttle revs this game, about 2% either side of the engine's own
@@ -918,7 +918,7 @@ export const UTV_SPEC = {
     runsOnDiesel: true,
     keyStops: true, // the key stops it, there is no knob
     petrolFussy: true, // petrol in the tank soaks it the way diesel soaks a petrol quad
-    idleRpmWarm: 850,
+    idleRpmWarm: 970,
     maxRpm: 3200,
     redlineRpm: 3100,
     stallRpm: 450,
@@ -997,7 +997,7 @@ export const UTV_SPEC = {
   audio: {
     recBank: 'engine-bank-utv', // a John Deere Gator's three-cylinder diesel, recorded on the vehicle
     recIdleSource: 'quad',
-    pulseRefRpm: 850,
+    pulseRefRpm: 970,
     pulseRevLoudness: 0.25,
     recVolume: 0.72, // the Gator's bank plays quieter than the tractor's did: this keeps its loudness
     recToneClosed: 4200,
