@@ -33,6 +33,7 @@ import { JESS_WARMING_LINES } from './warmingLines.js';
 import { JESS_HEADSTART_LINES } from './headStartLines.js';
 import { JESS_GOSSIP_LINES } from './gossipLines.js';
 import { JESS_THROTTLE_LINES } from './throttleLines.js';
+import { JESS_PILLION_COACH_LINES } from './pillionCoachLines.js';
 import { JESS_SMOKE_LINES } from './smokeLines.js';
 import { JESS_RACE_LINES } from './raceLines.js';
 import { JESS_RECALL_LINES } from './recallLines.js';
@@ -398,6 +399,7 @@ export const JESS_LINES = {
   // Caught talking about you (gossipLines.js).
   ...JESS_GOSSIP_LINES,
   ...JESS_THROTTLE_LINES,
+  ...JESS_PILLION_COACH_LINES,
   ...JESS_SMOKE_LINES,
   ...JESS_RACE_LINES,
   ...JESS_RECALL_LINES,

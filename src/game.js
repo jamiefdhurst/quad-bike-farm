@@ -55,6 +55,7 @@ import { Warming, WARMING_PARAM_RANGES, isChilly } from './npc/warming.js';
 import { HeadStart, HEADSTART_PARAM_RANGES } from './npc/headStart.js';
 import { Gossip, GOSSIP_PARAM_RANGES } from './npc/gossip.js';
 import { ThrottleGrab, GRAB_PARAM_RANGES } from './npc/throttleGrab.js';
+import { PillionCoach, PILLION_COACH_PARAM_RANGES } from './npc/pillionCoach.js';
 import { SmokeSense, SMOKE_PARAM_RANGES } from './npc/smokeSense.js';
 import { Haze, HAZE_PARAM_RANGES } from './world/haze.js';
 import { HazeLayer } from './effects/hazeLayer.js';
@@ -432,6 +433,7 @@ export class Game {
     this.quadNames = new QuadNames(this.girlUnits.map((u) => u.spec.id), { random: createRandom(this.seed ^ 0x6a3e) });
     this.ownership = new Ownership(undefined, createRandom(this.seed ^ 0x0c1a));
     this.hearing = new Hearing();
+    this.pillionCoach = new PillionCoach(); // the girl on the back coaching the girl driving (npc/pillionCoach.js)
     this.throttleGrab = new ThrottleGrab(); // a girl on the back opening it over your hand (npc/throttleGrab.js)
     this.smokeSense = new SmokeSense(); // Amy coughs at two-stroke smoke, Jess loves it (npc/smokeSense.js)
     // Racing: the girls race a lap of the track from a start line by the yard (npc/race.js).
@@ -771,6 +773,7 @@ export class Game {
     registerTuning('Warming hands', this.warming.p, WARMING_PARAM_RANGES);
     registerTuning('Head start', this.headStart.p, HEADSTART_PARAM_RANGES);
     registerTuning('Talking about you', this.gossip.p, GOSSIP_PARAM_RANGES);
+    registerTuning('Girls coaching each other', this.pillionCoach.p, PILLION_COACH_PARAM_RANGES);
     registerTuning('Hand on the throttle', this.throttleGrab.p, GRAB_PARAM_RANGES);
     registerTuning('Two-stroke smoke', this.smokeSense.p, SMOKE_PARAM_RANGES);
     registerTuning('Yard haze', this.haze.p, HAZE_PARAM_RANGES);
@@ -1545,21 +1548,45 @@ export class Game {
 
   /** You tell her how to do something from the back. She learns if it's the right moment; at the wrong one, or again too soon, she doesn't. */
   coachHer(c, key) {
+    this.applyCoaching(c, key, true);
+  }
+
+  /**
+   * Coaching lands on her by the same rules whoever gives it. `byYou` earns or costs you her favour; when the other girl
+   * coaches her there's no favour, and the driver answers after the coach has finished speaking.
+   */
+  applyCoaching(c, key, byYou) {
     const { skill } = COACHING[key];
     const id = c.character.id;
     const fitting = !!c.drive?.isMoment(skill);
     const result = this.skills.coach(id, skill, fitting);
+    const say = (situation) => (byYou ? c.voice.say(situation, { force: true }) : setTimeout(() => c.voice.say(situation, { force: true }), 2500));
     if (result === 'taught') {
-      this.favour.add(id, this.skills.p.taughtFavour);
+      if (byYou) this.favour.add(id, this.skills.p.taughtFavour);
       // She does it right away where she can.
       if (skill === 'choke' && c.quad.choke > 0) c.quad.choke = 0;
       if (skill === 'mud' && c.drive) c.drive.boost = 2;
-      c.voice.say(`taught_${skill}`, { force: true });
+      say(`taught_${skill}`);
     } else if (result === 'nagged') {
-      this.favour.add(id, this.skills.p.nagFavour);
-      c.voice.say('coachNagged', { force: true });
+      if (byYou) this.favour.add(id, this.skills.p.nagFavour);
+      say('coachNagged');
     } else {
-      c.voice.say('coachWrongTime', { force: true });
+      say('coachWrongTime');
+    }
+  }
+
+  /** A girl on the back of a quad the other girl is driving coaches her, and it teaches by the same rules as yours. */
+  updatePillionCoach(dt) {
+    let share = null;
+    for (const driver of this.companions) {
+      if (!driver.fsm.is('driving') || !driver.drive || driver.drive.done || driver.drive.phase === 'stop') continue;
+      const coach = this.companions.find((o) => o !== driver && o.quad === driver.quad && o.fsm.is('seated') && o.seatKind === 'pillion');
+      if (coach) share = { coach: coach.character.id, driver: driver.character.id, moments: driver.drive.coachable(), from: coach, to: driver };
+      break;
+    }
+    for (const e of this.pillionCoach.update(dt, share)) {
+      share.from.voice.say(`coachGive_${e.key}`, { force: true });
+      this.applyCoaching(share.to, e.key, false);
     }
   }
 
@@ -2951,6 +2978,7 @@ export class Game {
     this.updateOilChecks();
     this.updateHandbrake(dt);
     this.skills.update(dt);
+    this.updatePillionCoach(dt);
     this.updateRequests(dt, ridden);
     this.updatePlaces(dt);
     this.updatePranks(dt, ridden);
