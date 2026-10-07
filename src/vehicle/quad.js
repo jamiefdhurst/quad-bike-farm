@@ -4,6 +4,7 @@ import { FuelSystem } from './fuelSystem.js';
 import { QuadPhysics, QUAD_LAYOUT } from './quadPhysics.js';
 import { Drivetrain } from './drivetrain.js';
 import { QuirkSet } from './quirks.js';
+import { headlightLook } from './headlight.js';
 import { TyreSet } from './tyres.js';
 import { frostAfter, frostedColour, DEFAULT_FROST_PARAMS } from './seatFrost.js';
 import { ManualDrivetrain, gearLabel } from './manualDrivetrain.js';
@@ -50,7 +51,8 @@ export class Quad {
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0 }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0, steadyLights = false }) {
+    this.steadyLights = steadyLights; // a battery runs the headlight, so it doesn't follow the engine (headlight.js)
     this.wheelShake = wheelShake; // how much of the body's vibration the wheels share (the tractor's wheels shake with it; the quads' don't)
     this.scale = scale; // 1, or smaller for the kids' quad: the model and the physics chassis both shrink by this
     this.world = world;
@@ -113,6 +115,7 @@ export class Quad {
       z: s.z,
       yaw: s.yaw,
     }, scale, layout);
+    this.lightTime = 0;
     this.seatFrost = 0; // 0 bare to 1 white over; the game sets it on a freezing day, and sitting on it clears it (seatFrost.js)
     this.seatMaterial = this.model.userData.seatMaterial ?? null;
     this.seatBase = this.seatMaterial ? { color: this.seatMaterial.color.getHex(), roughness: this.seatMaterial.roughness } : null;
@@ -775,7 +778,21 @@ export class Quad {
     this.lamps = lampStates(state); // what the dash's warning lamps show, for the girl on the back to read out
     this.dash.update(state);
     this.pod?.update(state);
-    setHeadlights(this.model, e.ignitionOn, this.quirks.headlight(dt));
+    // The light follows the engine (headlight.js) unless this quad has a battery for it, and the flickering-headlight quirk dips it further.
+    this.lightTime += dt;
+    const look = headlightLook({
+      keyOn: e.ignitionOn,
+      running: e.isRunning,
+      cranking: e.state === 'cranking',
+      rpm: e.rpm,
+      idle: e.params.idleRpmWarm,
+      max: e.params.maxRpm,
+      roughness: e.roughness,
+      erratic: e.erratic,
+      steady: this.steadyLights,
+      time: this.lightTime,
+    });
+    setHeadlights(this.model, e.ignitionOn, look.level * this.quirks.headlight(dt), look.colour);
 
     if (this.tractor) poseTractorControls(this.model, { gear: this.drivetrain.gear, hand: this.handSetting, pedal: this.drivetrain.pedal });
     this.displayChoke += (this.choke - this.displayChoke) * Math.min(1, 12 * dt);

@@ -14,6 +14,7 @@
 //   hoursRange, odoRange: [min, max] engine hours and odometer miles the dash shows at the start.
 //   wearRange: [min, max] engine wear (0 new, 1 shot) it comes with, higher the more hours it shows (history.js). tinkers: false keeps leftover
 //     tinkering off it.
+//   steadyLights: true if a battery runs its headlight (the loan quad and the tractor); the others' follow the engine's revs (headlight.js).
 //   topRpmRange: [min, max] full-throttle rpm (maxRpm; the redline keeps its gap below it). The toolbox's rev limiter moves it from there.
 //   fuelRange: [min, max] litres in the tank at the start. Below the reserve
 //     (reserveLitres) it'll only run on RESERVE.
@@ -465,6 +466,7 @@ export const EXTRA_SPECS = [
     // A smart new quad on loan for the day: the Yamaha's body in neutral silver, fuel injected so it hardly wants any choke, starts on
     // the button, idles smooth and quiet and has almost no wear. Full tank, and a bit more power than the old farm quads.
     id: 'loan',
+    steadyLights: true, // a battery runs its headlight, so it doesn't follow the revs like the old quads' (headlight.js)
     label: 'loan quad',
     name: 'Loan quad',
     bodyColor: 0xaeb4ba, // a neutral silver
@@ -526,6 +528,7 @@ export const EXTRA_SPECS = [
 // (QuadUnit reads `tractor`). Runs on red diesel, so it doesn't mind it. Its sound is kyles's old tractor recordings.
 export const TRACTOR_SPEC = {
   id: 'tractor',
+  steadyLights: true, // a battery runs its lights
   label: 'tractor',
   name: 'Tractor',
   tractor: true,

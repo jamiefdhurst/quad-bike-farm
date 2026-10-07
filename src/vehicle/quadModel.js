@@ -1414,8 +1414,8 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   return quad;
 }
 
-export function setHeadlights(quad, on, level = 1) {
+export function setHeadlights(quad, on, level = 1, colour = 0xfff2cc) {
   const lens = quad.userData.lensMaterial;
-  lens.emissive.setHex(on ? 0xfff2cc : 0x000000);
+  lens.emissive.setHex(on && level > 0 ? colour : 0x000000);
   lens.emissiveIntensity = on ? 1.2 * level : 0;
 }

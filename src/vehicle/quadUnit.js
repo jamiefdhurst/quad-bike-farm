@@ -55,6 +55,7 @@ export class QuadUnit {
         groundOffset: TRACTOR_GROUND_OFFSET,
         proxy: TRACTOR_PROXY,
         wheelShake: spec.wheelShake,
+        steadyLights: spec.steadyLights,
       }),
     });
     this.quad.unit = this;

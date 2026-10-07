@@ -24,6 +24,7 @@ import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { pickHistory, pickFaultChance } from './vehicle/history.js';
 import { TyreSet, dealTyres, DEFAULT_TYRE_PARAMS, TYRE_PARAM_RANGES } from './vehicle/tyres.js';
 import { RollWatch, rollReactions, DEFAULT_HANDBRAKE_PARAMS, HANDBRAKE_PARAM_RANGES } from './vehicle/handbrake.js';
+import { HEADLIGHT_PARAMS, HEADLIGHT_PARAM_RANGES } from './vehicle/headlight.js';
 import { describeVehicle } from './debug/startReport.js';
 import { QuirkSet, DEFAULT_QUIRK_PARAMS, QUIRK_PARAM_RANGES, featuresOf, pickQuirks } from './vehicle/quirks.js';
 import { captureStock, tuneTarget, stockSettings, clampSettings, applyTune } from './vehicle/tuneUp.js';
@@ -230,6 +231,7 @@ export class Game {
     this.handbrakeParams = { ...DEFAULT_HANDBRAKE_PARAMS };
     registerTuning('Handbrake', this.handbrakeParams, HANDBRAKE_PARAM_RANGES);
     this.rollWatch = new RollWatch(this.handbrakeParams);
+    registerTuning('Headlights', HEADLIGHT_PARAMS, HEADLIGHT_PARAM_RANGES);
     // One to three quirks each, from the parts the quad has (a gauge quirk needs a dash or pod that shows it, so this comes after the pods).
     this.quirkParams = { ...DEFAULT_QUIRK_PARAMS };
     registerTuning('Quirks', this.quirkParams, QUIRK_PARAM_RANGES);
