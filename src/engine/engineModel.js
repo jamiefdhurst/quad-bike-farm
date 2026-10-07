@@ -335,7 +335,8 @@ export class EngineModel {
     this.motorOn = motor;
     if ((motor || pulling) && canCrank) {
       this.state = EngineState.CRANKING;
-      this.emit('starterOn');
+      // A swing on the starting handle is a clunk over compression, not the starter motor's whirr.
+      this.emit(!motor && p.crankHandle ? 'handCrankOn' : 'starterOn');
     } else if (!motor && !pulling && this.state === EngineState.CRANKING) {
       this.state = EngineState.IGNITION;
       this.emit('starterOff');

@@ -33,9 +33,13 @@ export const DEFAULT_GEARBOX_PARAMS = {
   jumpSlope: 0.1, // how steep a climb has to be (sine of the angle, about 6 degrees) before a worn gear can jump out
   jumpThrottle: 0.5, // and how much throttle it needs: a worn gear only jumps out under load
   jumpRate: 0.6, // chance a second, for a fully worn gear, of it jumping out while it is under that load
+  crashGears: 0, // how many of the bottom gears have no synchromesh (the Land Rover's first and second)
+  crashSpeed: 1, // m/s: going faster than this, a gear with no synchromesh crunches and won't go in
 };
 
 export const GEARBOX_PARAM_RANGES = {
+  crashGears: [0, 4, 1],
+  crashSpeed: [0, 5, 0.1],
   topSpeed1: [0.5, 8, 0.1],
   topSpeed2: [1, 12, 0.1],
   topSpeed3: [2, 20, 0.1],
@@ -146,13 +150,15 @@ export class ManualDrivetrain {
   /**
    * Moves the lever to a gear (-1 to 3). Neutral can always be found; the others need the clutch down.
    * Rushing it (the pedal only just down) can miss the gear and leave the lever in a false neutral; `careful` is for a driver who
-   * never does (the girls' shifter holds the clutch down for each change itself).
-   * @returns {'ok'|'clutch'|'same'|'missed'}
+   * never does (the girls' shifter holds the clutch down for each change itself). `speed` (m/s) matters for a gear with no synchromesh
+   * (`crashGears`): moving faster than `crashSpeed`, it crunches and won't go in.
+   * @returns {'ok'|'clutch'|'same'|'missed'|'crunch'}
    */
-  select(gear, careful = false) {
+  select(gear, careful = false, speed = 0) {
     if (!GEARS.includes(gear) || gear > this.gearbox.gears) return 'same';
     if (gear === this.gear) return 'same';
     if (gear !== 0 && !this.canChange) return 'clutch';
+    if (gear > 0 && gear <= (this.gearbox.crashGears ?? 0) && Math.abs(speed) > (this.gearbox.crashSpeed ?? 1)) return 'crunch';
     if (gear !== 0 && !careful && this.pedalDown < this.gearbox.rushTime && this.random() < this.gearbox.falseNeutralChance) {
       this.gear = 0;
       return 'missed';

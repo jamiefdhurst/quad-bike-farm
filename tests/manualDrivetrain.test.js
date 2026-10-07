@@ -265,3 +265,30 @@ describe('which gearbox is worn', () => {
     expect(pickWornGearbox([], createRandom(1))).toBe(null);
   });
 });
+
+describe('gears with no synchromesh (the Land Rover)', () => {
+  const landy = { ...G, gears: 4, crashGears: 2, crashSpeed: 1 };
+
+  it('crunches and stays put going into first or second on the move, but takes third and fourth', () => {
+    const d = new ManualDrivetrain(V, landy);
+    run(d, 0.5, { clutchHeld: true });
+    expect(d.select(3, true, 6)).toBe('ok');
+    expect(d.select(2, true, 4)).toBe('crunch');
+    expect(d.gear).toBe(3);
+    expect(d.select(1, true, 4)).toBe('crunch');
+    expect(d.select(4, true, 6)).toBe('ok');
+  });
+
+  it('goes into first or second nearly stopped', () => {
+    const d = new ManualDrivetrain(V, landy);
+    run(d, 0.5, { clutchHeld: true });
+    expect(d.select(1, true, 0.5)).toBe('ok');
+    expect(d.select(2, true, 0.8)).toBe('ok');
+  });
+
+  it('leaves a box with synchromesh alone however fast it is going', () => {
+    const d = new ManualDrivetrain(V, { ...G, gears: 4 });
+    run(d, 0.5, { clutchHeld: true });
+    expect(d.select(1, true, 8)).toBe('ok');
+  });
+});

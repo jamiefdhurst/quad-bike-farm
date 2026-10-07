@@ -3,7 +3,7 @@ import { TrailerMotion } from './trailer.js';
 import { UtvBed, DEFAULT_UTV_BED_PARAMS } from './utvBed.js';
 import { TRACTOR_GROUND_OFFSET } from './tractorModel.js';
 import { GROUND_OFFSET } from './quad.js';
-import { buildTipTrailerModel, poseTipTrailer, TIP_TRAILER_SPEC, TIP_STAND, CARGO_SPOTS } from './tipTrailerModel.js';
+import { buildTipTrailerModel, poseTipTrailer, TIP_TRAILER_SPEC, TIP_STAND, CARGO_SPOTS, CARGO_YAWS, CARGO_YAW } from './tipTrailerModel.js';
 
 export const DEFAULT_TIP_TRAILER_PARAMS = {
   drawLength: TIP_TRAILER_SPEC.drawLength, // metres from the hitch ring to the axle
@@ -136,14 +136,14 @@ export class TipTrailer {
     return free >= 0 ? free : null;
   }
 
-  /** Stands a held jerry can or the toolbox in the tub. Returns whether there was room (and the tub was down). */
-  load(item, yaw = 0) {
+  /** Stands a held jerry can, the toolbox or the jump leads in the tub, turned along it. Returns whether there was room (and the tub was down). */
+  load(item) {
     const spot = this.freeCargoSpot();
     if (spot === null || this.bed.tip > 0.02) return false;
     item.putDown(this.model.position, 0); // drops the held state and its camera parent
     this.anchors[spot].add(item.model);
     item.model.position.set(0, 0, 0);
-    item.model.rotation.set(0, yaw, 0);
+    item.model.rotation.set(0, CARGO_YAWS[item.model.name] ?? CARGO_YAW, 0);
     item.model.userData.spot = spot;
     item.model.userData.cargo = item;
     return true;

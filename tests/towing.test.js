@@ -24,3 +24,22 @@ describe('towing', () => {
     expect(towEffect(kg, true).driveFactor).toBeGreaterThan(0.9);
   });
 });
+
+describe('what stands in the tipping trailer', () => {
+  it('fits between the sides and the front wall, and clear of its neighbours, whichever item is in whichever spot', async () => {
+    const { CARGO_SPOTS, CARGO_YAWS, CARGO_YAW, CARGO_FOOTPRINTS, TIP_TRAILER_SPEC: S } = await import('../src/vehicle/tipTrailerModel.js');
+    const inner = S.halfWidth - 0.04; // the side wall is 0.04 thick
+    const front = S.frontZ - 0.04;
+    const turned = ([name, { w, d }]) => (Math.abs(Math.sin(CARGO_YAWS[name] ?? CARGO_YAW)) > 0.5 ? { w: d, d: w } : { w, d });
+    const prints = Object.entries(CARGO_FOOTPRINTS).map(turned);
+    for (const spot of CARGO_SPOTS) {
+      for (const f of prints) {
+        expect(Math.abs(spot.x) + f.w / 2).toBeLessThanOrEqual(inner);
+        expect(spot.z + f.d / 2).toBeLessThanOrEqual(front);
+      }
+    }
+    // The two widest things that could be side by side (three cans, the toolbox and the leads between them) need the spots' spacing.
+    const widths = [...Array(3).fill(prints[0].w), prints[1].w, prints[2].w].sort((x, y) => y - x);
+    for (let i = 1; i < CARGO_SPOTS.length; i++) expect(CARGO_SPOTS[i].x - CARGO_SPOTS[i - 1].x).toBeGreaterThanOrEqual((widths[0] + widths[1]) / 2);
+  });
+});

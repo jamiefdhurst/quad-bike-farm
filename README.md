@@ -204,7 +204,7 @@ A green Gator-style side-by-side stands by the paddock, always, on red diesel. L
 
 ## The little tipping trailer
 
-A small steel tipping trailer stands by the paddock. Back the tractor, or any quad with a rack (the red, blue and green), up to its ring and press `J` to hook it on; `J` again, stopped, takes it off. It's a drag on the quad: less pull and weaker brakes, more so with a girl and things in it (the tractor hardly notices). With a jerry can or the toolbox in your hands, `E` at the tub stands it inside, and you pick it up again as usual. `T` tips the tub when you're stopped, from the seat or standing beside it, and everything in it slides out behind. Stop with it hitched and Jess may climb in against the rules (Amy hardly ever): the other girl tells her off, she shrieks at the bumps and complains when you go fast, and tipping the tub with her in it puts her in the mud. Ask either girl in or out from her wheel ("Trailer"). Bales will come when they're items you can pick up.
+A small steel tipping trailer stands by the paddock. Back the tractor, or any quad with a rack (the red, blue and green), up to its ring and press `J` to hook it on; `J` again, stopped, takes it off. It's a drag on the quad: less pull and weaker brakes, more so with a girl and things in it (the tractor hardly notices). With a jerry can, the toolbox or the jump leads in your hands, `E` at the tub stands it inside, in a row across the front well clear of the sides, and you pick it up again as usual. `T` tips the tub when you're stopped, from the seat or standing beside it, and everything in it slides out behind. Stop with it hitched and Jess may climb in against the rules (Amy hardly ever): the other girl tells her off, she shrieks at the bumps and complains when you go fast, and tipping the tub with her in it puts her in the mud. Ask either girl in or out from her wheel ("Trailer"). Bales will come when they're items you can pick up.
 
 ## The dashes
 
@@ -375,7 +375,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 2.  As well as the girls occasionally getting on the backs of quads, they should get in the UTV or get on the tractor. **Done.** Stood about, a girl now and then gets into a parked UTV or climbs up on a parked tractor by herself and sits there until she's bored, and a girl taking the tractor for a go may have her friend climb up beside her. See DECISIONS.md, "Girls on the tractor and in the UTV by themselves".
 3.  Need to be able to service the UTV and the tractor at least, a little bit. **Done.** See DECISIONS.md, "Servicing the tractor and UTV".
 4.  Toolbox menu is a mess, it needs fixed positions for all of the button options, they're jumping around. **Done.** See DECISIONS.md, "A steady toolbox panel".
-5.  Jump leads need to be able to go in the back of the trailer too. The items in the trailer need to be further in, they're overlapping with the sides.
+5.  Jump leads need to be able to go in the back of the trailer too. The items in the trailer need to be further in, they're overlapping with the sides. **Done.** See DECISIONS.md, "The trailer's cargo".
 6.  Put toolbox back on bench, and jump leads.
 7.  How do I put oil in the 4-strokes? I can't pick the oil bottle up. Make sure I can put this where every other picked up item can go today.
 8.  Tractor noise sometimes sounds OK, sometimes has something over it, like a heavy noise.

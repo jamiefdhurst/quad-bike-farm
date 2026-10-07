@@ -27,11 +27,22 @@ export const TIP_TRAILER_SPEC = {
 
 // Where things go inside the tub, in tub-local metres (z is from the axle; the tub pivots at the rear edge).
 export const SEAT_AT = { x: 0, y: 0.1, z: -0.3 };
+// Things stand in a row across the front, the long ones (cans, the toolbox) turned a quarter turn so their long side is along the tub:
+// nothing is then wider than the gap between the sides (halfWidth 0.56, less the 0.04 of wall), and the front wall is 0.61 from the axle.
 export const CARGO_SPOTS = [
-  { x: -0.3, z: 0.5 },
-  { x: 0.3, z: 0.5 },
-  { x: 0, z: 0.22 },
+  { x: -0.32, z: 0.3 },
+  { x: 0, z: 0.3 },
+  { x: 0.32, z: 0.3 },
 ];
+export const CARGO_YAWS = { jumpLeads: 0 }; // by the item's model name; the leads are roundish
+export const CARGO_YAW = Math.PI / 2; // and everything else (the cans have names of their own)
+// The footprints (across, along) of what goes in, as the models are built, before the quarter turn: a jerry can with its ribs, the
+// toolbox, and the jump leads' coil with the clamps out front.
+export const CARGO_FOOTPRINTS = {
+  jerryCan: { w: 0.36, d: 0.165 },
+  toolbox: { w: 0.508, d: 0.228 },
+  jumpLeads: { w: 0.36, d: 0.5 },
+};
 
 /** Where she stands to climb in or out, beside the wheel on the left, as trailer-local metres. */
 export const TIP_STAND = { x: 1.15, z: -0.3 };

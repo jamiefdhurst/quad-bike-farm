@@ -1576,6 +1576,12 @@ Settled with Jamie before building: a second, small trailer (the bale trailer st
 - No new lines: they use `mudBoard`, `utvBoard` and `utvBedGo`. The girls don't drive the UTV yet, so there is no UTV version of the join; it comes with item 37.
 - Checked: unit tests for all of it (`tests/mudguardRide.test.js`, `tests/utvRide.test.js`). Not run in the game: the walk over and climb, the driver's wait for her, and how often it happens in real play.
 
+## The trailer's cargo (2026-10-07)
+
+- The jump leads can be stood in the tipping trailer like a can or the toolbox (`heldLoad` includes them; they tip out with the rest).
+- Things were overlapping the sides because each was set down at the angle you were facing, and the toolbox is 0.5 m long in a tub 1.04 m wide inside. Now they all stand in a fixed row across the front (x -0.32, 0, 0.32, 0.3 m from the axle, `CARGO_SPOTS`), the cans and toolbox turned a quarter turn so their long side runs along the tub and the roundish leads left square (`CARGO_YAWS`). The footprints are in `CARGO_FOOTPRINTS`, and a test (`tests/towing.test.js`) checks that any item in any spot stays inside the walls and the front, and that the widest two neighbours clear each other. The girl's seat at the back is untouched.
+- Checked: that test only. Not looked at in the game, so the clamps on the leads against the front wall and the look of three things in a row are unchecked.
+
 ## A steady toolbox panel (2026-10-07)
 
 - The buttons were a wrapping flex row with `display: none` for the ones that didn't apply and labels that changed length, and the card was centred on the screen, so anything appearing or changing (strip down, the filter percentage, the pods, the condition line wrapping) shifted the rest.

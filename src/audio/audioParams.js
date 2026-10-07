@@ -100,7 +100,7 @@ export const DEFAULT_AUDIO_PARAMS = {
   engineSound: 'pulse', // 'pulse' (revs built from recorded idle firings), 'recorded' (idle and rev recordings) or 'synth' (fully synthesised)
 
   // Recorded engine
-  recBank: 'engine-bank', // which recordings: 'engine-bank' (four-stroke quads), 'engine-bank-2t' (two-stroke dirt bikes), 'engine-bank-50' (the kids' 50cc scooter two-stroke), 'engine-bank-tractor' (the diesel tractor), 'engine-bank-moto' (the mini moto's Derbi 50), 'engine-bank-atc' (the ATC's Piaggio Ape), 'engine-bank-utv' (the UTV's Gator diesel), 'engine-bank-green' (a Ténéré 250 into a Honda ATV) or 'engine-bank-yellow' (a DT 125 into a CR85)
+  recBank: 'engine-bank', // which recordings: 'engine-bank' (four-stroke quads), 'engine-bank-2t' (two-stroke dirt bikes), 'engine-bank-50' (the kids' 50cc scooter two-stroke), 'engine-bank-tractor' (the diesel tractor), 'engine-bank-moto' (the mini moto's Derbi 50), 'engine-bank-atc' (the ATC's Piaggio Ape), 'engine-bank-utv' (the UTV's Gator diesel), 'engine-bank-green' (a Ténéré 250 into a Honda ATV) 'engine-bank-yellow' (a DT 125 into a CR85) or 'engine-bank-landy' (the Land Rover's old four)
   recIdleSource: 'quad', // which recorded idle: 'quad' (the main quad), 'rev' (the ATV rev recording, or the CRM250 in the two-stroke bank) or 'third' (the CRF250, four-stroke bank)
   recVolume: 0.6,
   recThrottleLoudness: 0.15, // extra loudness with the throttle open (the rev recording is already louder up the range)
@@ -221,7 +221,7 @@ export const AUDIO_PARAM_RANGES = {
   pulseRevGain: [0, 3, 0.01],
   pulseCleanUp: [1, 4, 0.05],
   pulseDrive: [0, 4, 0.01],
-  recBank: ['engine-bank', 'engine-bank-2t', 'engine-bank-50', 'engine-bank-tractor', 'engine-bank-moto', 'engine-bank-atc', 'engine-bank-utv', 'engine-bank-green', 'engine-bank-yellow'],
+  recBank: ['engine-bank', 'engine-bank-2t', 'engine-bank-50', 'engine-bank-tractor', 'engine-bank-moto', 'engine-bank-atc', 'engine-bank-utv', 'engine-bank-green', 'engine-bank-yellow', 'engine-bank-landy'],
   recIdleSource: ['quad', 'rev', 'third'],
   recVolume: [0, 3, 0.01],
   recThrottleLoudness: [0, 3, 0.01],

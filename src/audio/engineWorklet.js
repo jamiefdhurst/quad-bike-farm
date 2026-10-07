@@ -373,6 +373,10 @@ class RecordedEngine {
         this.crankVoice = { pos: -(engage ? engage.len - 0.01 * sampleRate : 0), gain: 0, target: p.recStarterVolume };
         return true;
       }
+      case 'handCrankOn':
+        // The Land Rover's starting handle: one clunk per swing, from its own recording.
+        this.playOneshot('handCrank', p.recStarterVolume);
+        return true;
       case 'starterOff':
       case 'caught':
         if (this.crankVoice) this.crankVoice.target = 0;

@@ -23,7 +23,7 @@ export const DEFAULT_FUEL_PARAMS = {
 };
 
 export const FUEL_PARAM_RANGES = {
-  tankCapacity: [2, 40, 0.5],
+  tankCapacity: [2, 60, 0.5],
   reserveLitres: [0, 10, 0.1],
   startLitres: [0, 40, 0.1],
   startOil: [0, 0.2, 0.001],

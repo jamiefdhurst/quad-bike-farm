@@ -1034,3 +1034,129 @@ export const UTV_SPEC = {
     tint: '#c9ccd0',
   },
 };
+
+// The old Land Rover in the yard: a Series 88-inch pick-up with a 2.25 litre petrol four, in Bronze Green with a white cab roof. Built
+// like the UTV (a unit you drive, with a bench for three across the front) but treated like a petrol quad: wear, faults, the battery, a
+// choke, the toolbox. A four-speed manual with no synchromesh on first and second, a transfer lever for 2WD and 4WD and a diff lock, a
+// hand throttle on the dash, a towing hitch, and a starting handle at the front for when the battery won't (vehicle/crankHandle.js).
+export const LAND_ROVER_SPEC = {
+  id: 'landrover',
+  label: 'Land Rover',
+  name: 'Land Rover',
+  landRover: true,
+  steadyLights: true, // a battery runs its lamps
+  wheelShake: 0.8,
+  bodyColor: 0x3b4a36, // Bronze Green
+  dashStyle: 'series',
+  driveSwitch: true, // the yellow-knobbed transfer lever: 2WD (rear only) or 4WD (driveMode.js)
+  diffLock: true, // and a diff lock
+  chokeStyle: 'knob', // a pull-out knob on the dash
+  hoursRange: [0, 0], // no hour meter
+  odoRange: [60000, 140000], // miles on the clock
+  wearRange: [0.2, 0.45], // old and well used
+  safeIdle: 420,
+  idleRange: [520, 580], // a 2.25 petrol ticks over slowly; the Jeep in its sound recording runs at about 500
+  roughnessRange: [0.15, 0.3],
+  fuelRange: [12, 40], // 45 litre tank, 5 litre reserve
+  topRpmRange: [4100, 4300],
+  manual: true, // a clutch (Shift) and a four-speed gearbox (src/vehicle/manualDrivetrain.js)
+  gearbox: {
+    gears: 4,
+    crashGears: 2, // no synchromesh on first and second: they crunch if you go into them on the move
+    crashSpeed: 1,
+    topSpeed1: 2.6,
+    topSpeed2: 5,
+    topSpeed3: 9,
+    topSpeed4: 14.5, // about 32 mph, flat out in the yard
+    topSpeedReverse: 2.6,
+    torque1: 1,
+    torque2: 0.72,
+    torque3: 0.5,
+    torque4: 0.38,
+    torqueReverse: 0.95,
+    launchLoad1: 0.15, // a heavy flywheel: it pulls away in first without any throttle
+    launchLoad2: 0.45,
+    launchLoad3: 0.85,
+    launchLoad4: 1.1,
+    lugSpeed: 0.7,
+    handStart: 0, // the hand throttle, pushed in
+  },
+  fuel: { tankCapacity: 45, reserveLitres: 5, noTap: true, startTap: 'on', burnPerRev: 0.0003, idleBurnFraction: 0.3 },
+  engine: {
+    loadDragRpm: 6000, // a manual: slowing in a high gear drags it down and stalls it
+    pullStart: true, // the starting handle (vehicle/crankHandle.js): a swing is the engine's pull
+    crankHandle: true,
+    pullSeconds: 0.7, // one swing turns it over about once
+    pullRpmFactor: 0.6, // more slowly than the starter
+    pullGoodMin: 0.35,
+    pullGoodMax: 0.9,
+    pullLateMax: 1.5,
+    idleRpmWarm: 550,
+    maxRpm: 4200,
+    redlineRpm: 4000,
+    stallRpm: 300,
+    crankRpm: 170,
+    catchRpm: 700,
+    rpmRiseRate: 3.5, // a heavy flywheel: slow to rev up and slow to fall
+    rpmFallRate: 2.8,
+    warmUpSeconds: 300,
+    lugDepth: 0.4, // plenty of low-down pull
+    wearPerMinute: 0.0006,
+  },
+  vehicle: {
+    mass: 1350, // with its driver
+    centreOfMassY: -0.05,
+    rollInertia: 320,
+    pitchInertia: 760,
+    yawInertia: 820,
+    wheelRadius: 0.38,
+    suspensionRestLength: 0.2,
+    maxSuspensionTravel: 0.16, // leaf springs: not much travel
+    suspensionStiffness: 32,
+    suspensionCompression: 3,
+    suspensionRelaxation: 2.6,
+    maxSuspensionForce: 90000,
+    mudFrictionSlip: 0.8,
+    fourWheelDrive: 0, // the transfer lever decides
+    maxDriveForce: 7000,
+    maxSpeed: 14.5,
+    maxReverseSpeed: 2.6,
+    maxSteerDeg: 32,
+    steerRate: 2.2, // heavy steering, no power assistance
+    steerSpeedReduction: 0.05,
+    engineBrakeForce: 1100,
+    maxBrake: 48,
+    parkingBrake: 22,
+    rollingResistance: 1.0,
+    revHoldMin: 2, // getting off never leaves it revving
+  },
+  vibration: {
+    firingsPerCycle: 4, // a four-cylinder: an even rumble
+    idleRpm: 520,
+    smoothRpmRange: 1500,
+    pulseGain: 1.2,
+    heaveFreq: 5.5,
+    pitchFreq: 5,
+    rollFreq: 5.5,
+    heaveGain: 0.14,
+    pitchGain: 0.2,
+    heaveDamping: 0.32,
+    barsFreq: 14,
+    barsGain: 0.1,
+  },
+  audio: {
+    recBank: 'engine-bank-landy', // an old Jeep's four-cylinder petrol idling (craigsmith), and a car started on a handle
+    recIdleSource: 'quad',
+    pulseRefRpm: 550,
+    pulseRevLoudness: 0.3,
+    pulsePitchFollow: 1, // each recorded cycle is all four beats: squeeze it into the engine's cycle as it revs, so all four sound
+    recVolume: 0.6,
+    recToneClosed: 5000,
+    pipeLength: 1.4,
+    densityRefRpm: 900,
+  },
+  smoke: {
+    warmDensity: 0.15,
+    coldDensity: 0.5,
+  },
+};

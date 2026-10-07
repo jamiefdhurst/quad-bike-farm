@@ -284,6 +284,28 @@ BANKS = {
         'revTail': 0.75,
         'revOdd': 0.3,
     },
+    'engine-bank-landy': {
+        # The Land Rover: craigsmith's old Jeep rumbling at idle (Freesound 438105), a four-cylinder petrol beating every 60 ms in a
+        # group of four, so about 500 rpm; cut into whole cycles and read in order, like the tractor. Its pull-away for the recorded
+        # sound's revs. The starter borrows the quad recording; the starting handle's clunk is craigsmith's old car cranked by hand
+        # (438033), one swing; the shutdown is the Jeep stopping.
+        'segments': [
+            ('idle', 'jeep', 3.0, 27.0, (0.21, 0.27)),
+            ('accel', 'jeep', 29.0, 45.0, (0.12, 0.16)),
+            ('decel', 'jeep', 37.0, 45.0, (0.12, 0.16)),
+        ],
+        'oneshots': [
+            ('starterEngage', 'quad', 0.08, 0.365),
+            ('crankLoop', 'quad', 0.365, 1.329),
+            ('handCrank', 'crank', 31.95, 32.45),
+            ('shutdown', 'jeep', 55.2, 57.0),
+        ],
+        'level': [('idle', 'idle', 'jeep'), ('idle', 'accel', 'jeep')],
+        'fixedGain': {'quad': 1.014},  # the quads' starter, as loud as on the farm quads
+        'idleCycles': True,
+        'revTail': 0.9,
+        'revOdd': 0.3,
+    },
     'engine-bank-utv': {
         # The UTV: a John Deere Gator idling, recorded on the vehicle (videog, Freesound 149193). A small three-cylinder
         # diesel at about 970 rpm with one sharp beat per cycle, so it's cut into whole cycles like the tractor. Revs from a

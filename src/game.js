@@ -1349,25 +1349,25 @@ export class Game {
     }
   }
 
-  /** Whichever jerry can or the toolbox you are holding, or null. */
+  /** Whichever jerry can, the toolbox or the jump leads you are holding, or null. */
   heldLoad() {
-    return [this.petrolCan, this.premixCan, this.dieselCan, this.toolbox].find((i) => i.held) ?? null;
+    return [this.petrolCan, this.premixCan, this.dieselCan, this.toolbox, this.leads].find((i) => i.held) ?? null;
   }
 
   tipTrailerPrompt() {
     const item = this.heldLoad();
     const t = this.tipTrailer;
     if (!item) return { text: t.cargo.length || t.bed.tip > 0.02 ? 'T to tip the trailer' : 'The little tipping trailer   ·   T to tip it' };
-    const what = item === this.toolbox ? 'toolbox' : 'jerry can';
+    const what = item === this.toolbox ? 'toolbox' : item === this.leads ? 'jump leads' : 'jerry can';
     if (t.bed.tip > 0.02) return { text: `The tub is up   ·   G put the ${what} down` };
     if (t.freeCargoSpot() === null) return { text: `The trailer is full   ·   G put the ${what} down` };
     return `Put the ${what} in the trailer`;
   }
 
-  /** E at the trailer with a can or the toolbox in your hands: stand it in the tub. */
+  /** E at the trailer with a can, the toolbox or the jump leads in your hands: stand it in the tub. */
   loadTipTrailer() {
     const item = this.heldLoad();
-    if (item) this.tipTrailer.load(item, this.player.yaw);
+    if (item) this.tipTrailer.load(item);
   }
 
   /** The tipping trailer: its tub, its weight on whatever pulls it, and the girl who rides in it (vehicle/tipTrailer.js, npc/trailerRide.js). */
