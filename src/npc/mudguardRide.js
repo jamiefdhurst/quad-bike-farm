@@ -4,6 +4,7 @@
 //   board   you've stopped with the engine running and no trailer on: one girl who's stood about may walk over and climb up
 //   shout   she's up there with the diesel going: now and then she yells something across at you
 //   join    she's driving the tractor herself and her friend may hop up on the arch as she gets it going
+//   idle    nobody's on or driving it and a girl who's stood about climbs up to sit, as she does on the back of a quad
 //   leave   you got off, the engine's off, or a trailer went on: she climbs down
 
 export const DEFAULT_MUDGUARD_PARAMS = {
@@ -16,6 +17,7 @@ export const DEFAULT_MUDGUARD_PARAMS = {
   joinChance: 0.5, // chance a girl's go at driving the tractor gets her friend climbing up beside her
   joinDelayMin: 0.5, // seconds before the friend sets off: short, so she's walking over before the driver is ready to go
   joinDelayMax: 2,
+  idleBoardRate: 0.004, // per second, per girl stood about nearby, that she climbs up on a parked tractor by herself (about once in four minutes)
   maxAboard: 1, // girls on the mudguards at once (one each side at most)
   shoutMin: 18, // seconds between her shouts while it's moving
   shoutMax: 40,
@@ -35,6 +37,7 @@ export const MUDGUARD_PARAM_RANGES = {
   joinChance: [0, 1, 0.05],
   joinDelayMin: [0, 5, 0.1],
   joinDelayMax: [0, 8, 0.1],
+  idleBoardRate: [0, 0.05, 0.001],
   maxAboard: [1, 2, 1],
   shoutMin: [3, 120, 1],
   shoutMax: [3, 240, 1],
@@ -69,6 +72,7 @@ export class MudguardRide {
   /**
    * One step. `ctx`:
    *   active: you're on the tractor, its engine is running and no trailer is hitched
+   *   parked: nobody is on or driving it, so a girl may climb up by herself
    *   drivenBy: id of the girl driving it, or null
    *   settingOff: she's getting on, starting it or letting it tick over, about to go (the moment her friend may hop up)
    *   riding: you're on the tractor (so a girl stays up there while it's stopped to start it)
@@ -89,6 +93,13 @@ export class MudguardRide {
       this.joinPick = null;
     }
     if (ctx.drivenBy && !ctx.riding && !ctx.trailer) return this.girlDriving(dt, ctx, aboard, events);
+    if (ctx.parked && !ctx.trailer && ctx.speed < p.stopSpeed && !aboard.length) {
+      const g = ctx.girls.find((x) => x.free && x.dist <= p.boardRange && this.random() < p.idleBoardRate * dt);
+      if (g) {
+        this.ask(g.id); // she stays put until she's bored of it, even with you not on it
+        events.push({ type: 'board', girl: g.id, idle: true });
+      }
+    }
     if (!ctx.riding || ctx.trailer) {
       this.stopped = false;
       this.rolled = false;

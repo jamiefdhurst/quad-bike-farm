@@ -137,3 +137,22 @@ describe('UtvRide', () => {
     expect(ride.girl('amy').aboardFor).toBe(0);
   });
 });
+
+describe('a parked UTV', () => {
+  const parked = { active: false, riding: false, parked: true, speed: 0, slide: false };
+
+  it('has a girl who is stood about get in by herself now and then, and stay put', () => {
+    const ride = new UtvRide({ ...P }, always(0));
+    const events = run(ride, () => ({ ...parked, girls: [girl('amy')] }), 1);
+    const board = events.find((e) => e.type === 'board');
+    expect(board).toMatchObject({ girl: 'amy' });
+    expect(['mid', 'left', 'bed']).toContain(board.seat);
+    const aboard = { ...parked, girls: [girl('amy', { seat: 'mid', free: false })] };
+    expect(run(ride, () => aboard, 20).filter((e) => e.type === 'leave')).toEqual([]);
+  });
+
+  it('does nothing with a low chance, or when somebody is in it', () => {
+    expect(run(new UtvRide({ ...P }, always(0.5)), () => ({ ...parked, girls: [girl('amy')] }), 60)).toEqual([]);
+    expect(run(new UtvRide({ ...P }, always(0)), () => ({ ...parked, parked: false, girls: [girl('amy')] }), 2)).toEqual([]);
+  });
+});

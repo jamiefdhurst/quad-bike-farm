@@ -158,3 +158,22 @@ describe('a girl driving the tractor', () => {
     expect(run(m, 4, driven()).filter((e) => e.type === 'board')).toHaveLength(1);
   });
 });
+
+describe('a parked tractor', () => {
+  const parked = (over = {}) => ctx({ active: false, riding: false, parked: true, drivenBy: null, ...over });
+
+  it('has a girl who is stood about climb up by herself now and then, and stay till she is bored', () => {
+    const m = make(() => 0);
+    const events = run(m, 1, parked());
+    expect(events.filter((e) => e.type === 'board')[0]).toMatchObject({ girl: 'amy', idle: true });
+    const aboard = [girl('amy', { aboard: true, free: false }), girl('jess')];
+    expect(run(m, 60, parked({ girls: aboard })).filter((e) => e.type === 'leave')).toEqual([]);
+  });
+
+  it('does nothing with a low chance, a trailer on, someone aboard, or when it is not parked', () => {
+    expect(run(make(() => 0.5), 60, parked())).toEqual([]);
+    expect(run(make(() => 0), 2, parked({ trailer: true }))).toEqual([]);
+    expect(run(make(() => 0), 2, parked({ girls: [girl('amy', { aboard: true }), girl('jess')] })).filter((e) => e.type === 'board')).toEqual([]);
+    expect(run(make(() => 0), 2, parked({ parked: false }))).toEqual([]);
+  });
+});

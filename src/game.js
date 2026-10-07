@@ -1238,6 +1238,7 @@ export class Game {
     const ctx = {
       active: riding && unit.quad.engine.isRunning,
       riding,
+      parked: !riding && !unit.quad.rider && !driver,
       drivenBy: driver?.character.id ?? null,
       settingOff,
       trailer: this.trailer.hitched,
@@ -1330,7 +1331,8 @@ export class Game {
       seat: seatOf(c),
       dist: c.root.position.distanceTo(q.position),
     }));
-    const ctx = { active: riding && q.engine.isRunning, riding, speed: q.speed, slide: bed.sliding, girls };
+    const parked = !riding && !q.rider && !q.driver;
+    const ctx = { active: riding && q.engine.isRunning, riding, parked, speed: q.speed, slide: bed.sliding, girls };
     for (const ev of this.utvRide.update(dt, ctx)) {
       const c = girlOf(ev.girl);
       if (ev.type === 'board') {

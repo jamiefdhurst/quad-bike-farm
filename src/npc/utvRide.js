@@ -6,6 +6,7 @@
 //   bedTell   a girl is riding in the bed against the rules, and the other one says so
 //   bedShout  she's in the bed and you're going fast: she complains about the bouncing
 //   slide     the bed has tipped up with her on the tailgate: she goes off the back
+//   idle      nobody's driving and a girl who's stood about wanders over and gets in to sit, as she does on the back of a quad
 //   leave     you got off, or she's been in long enough: she climbs out
 
 export const UTV_SEAT_NAMES = ['mid', 'left', 'bed'];
@@ -34,6 +35,7 @@ export const DEFAULT_UTV_RIDE_PARAMS = {
   bedShoutMin: 18, // seconds between her complaints
   bedShoutMax: 40,
   leaveDelayMax: 0.9, // seconds she takes to start climbing out once you've got off
+  idleBoardRate: 0.004, // per second, per girl stood about nearby, that she gets in a parked UTV by herself (about once in four minutes)
   stayMin: 120, // seconds in there before she gets bored and climbs out (asked in or not)...
   stayMax: 300, // ...somewhere between these
 };
@@ -62,6 +64,7 @@ export const UTV_RIDE_PARAM_RANGES = {
   bedShoutMin: [3, 120, 1],
   bedShoutMax: [3, 240, 1],
   leaveDelayMax: [0, 5, 0.1],
+  idleBoardRate: [0, 0.05, 0.001],
   stayMin: [10, 900, 5],
   stayMax: [10, 1200, 5],
 };
@@ -135,6 +138,7 @@ export class UtvRide {
    *   active: you're driving it and its engine is running
    *   riding: you're in it (so a girl stays put while it's stopped to start)
    *   speed: its ground speed
+   *   parked: nobody is in or driving it, so a girl may get in by herself
    *   slide: the bed is tipped high enough that a girl on the tailgate goes
    *   girls: [{ id, free, seat, dist }]  free: stood about with nothing to do; seat: 'mid' | 'left' | 'bed' if she's in or climbing in
    * Returns events: { type: 'board', girl, seat, squabble }, { type: 'bedTell', girl, target }, { type: 'bedShout', girl },
@@ -164,6 +168,14 @@ export class UtvRide {
 
     // You've got off (or never got on): whoever's up there climbs out, unless you asked her to stay.
     if (!ctx.riding) {
+      if (ctx.parked && ctx.speed < p.stopSpeed && !aboard.length && !this.queue.length) {
+        const g = ctx.girls.find((x) => x.free && x.dist <= p.boardRange && this.random() < p.idleBoardRate * dt);
+        const seat = g && planSeats([g.id], this.taken(ctx), this.random, p).seats[0];
+        if (seat) {
+          this.ask(g.id); // she stays put until she's bored of it, even with you not in it
+          events.push({ type: 'board', girl: g.id, seat: seat.seat, squabble: null });
+        }
+      }
       this.rolled = false;
       this.queue = [];
       for (const g of ctx.girls) {
