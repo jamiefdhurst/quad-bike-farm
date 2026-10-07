@@ -1576,6 +1576,13 @@ Settled with Jamie before building: a second, small trailer (the bale trailer st
 - No new lines: they use `mudBoard`, `utvBoard` and `utvBedGo`. The girls don't drive the UTV yet, so there is no UTV version of the join; it comes with item 37.
 - Checked: unit tests for all of it (`tests/mudguardRide.test.js`, `tests/utvRide.test.js`). Not run in the game: the walk over and climb, the driver's wait for her, and how often it happens in real play.
 
+## A steady toolbox panel (2026-10-07)
+
+- The buttons were a wrapping flex row with `display: none` for the ones that didn't apply and labels that changed length, and the card was centred on the screen, so anything appearing or changing (strip down, the filter percentage, the pods, the condition line wrapping) shifted the rest.
+- Now the buttons are a two-column grid in a fixed order (service, air filter, tyres, belt, cable, carb, pump out the tank, strip down, silencer, back to stock, done), each in its own cell. One that doesn't apply (no carb on a diesel, no belt on the tractor, nothing to strip, no silencer) is `visibility: hidden`, so its cell stays empty and the rest don't move. The pods are a three-column grid with short fixed labels, and hide the same way on a diesel. Long labels and readings cut off with an ellipsis rather than wrapping, the condition line has room for two lines, and the card is pinned to the top of the screen, so a change in height never moves what's above it.
+- The rows themselves still differ by vehicle (the jet only on a two-stroke, the petrol settings not on a diesel), but that is fixed for as long as the panel is open.
+- Checked: unit tests only, which don't cover this. Not looked at in the game, so the grid widths and the cut-off labels are unchecked.
+
 ## Servicing the tractor and UTV (2026-10-07)
 
 Settled with Jamie: the toolbox in place, a sump for the diesels that can burn oil, no girls involved.

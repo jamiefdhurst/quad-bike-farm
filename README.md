@@ -374,7 +374,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 1.  Tractor and UTV shouldn't pink, and can't get carb issues. **Done.** See DECISIONS.md, "Diesels don't pink or get a dirty carb".
 2.  As well as the girls occasionally getting on the backs of quads, they should get in the UTV or get on the tractor. **Done.** Stood about, a girl now and then gets into a parked UTV or climbs up on a parked tractor by herself and sits there until she's bored, and a girl taking the tractor for a go may have her friend climb up beside her. See DECISIONS.md, "Girls on the tractor and in the UTV by themselves".
 3.  Need to be able to service the UTV and the tractor at least, a little bit. **Done.** See DECISIONS.md, "Servicing the tractor and UTV".
-4.  Toolbox menu is a mess, it needs fixed positions for all of the button options, they're jumping around.
+4.  Toolbox menu is a mess, it needs fixed positions for all of the button options, they're jumping around. **Done.** See DECISIONS.md, "A steady toolbox panel".
 5.  Jump leads need to be able to go in the back of the trailer too. The items in the trailer need to be further in, they're overlapping with the sides.
 6.  Put toolbox back on bench, and jump leads.
 7.  How do I put oil in the 4-strokes? I can't pick the oil bottle up. Make sure I can put this where every other picked up item can go today.

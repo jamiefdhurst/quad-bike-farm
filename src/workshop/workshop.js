@@ -513,23 +513,23 @@ export class Workshop {
         <div class="ws-rows"></div>
         <div class="ws-explain"></div>
         <div class="ws-foot">
-          <button type="button" class="ws-btn ws-reset"><span class="key">B</span>Back to stock</button>
-          <button type="button" class="ws-btn ws-drain"><span class="key">P</span>Pump out the tank and carb</button>
-          <button type="button" class="ws-btn ws-strip"><span class="key">F</span>Strip it down</button>
-          <button type="button" class="ws-btn ws-silencer"><span class="key">X</span>Take the silencer off</button>
           <button type="button" class="ws-btn ws-service"><span class="key">V</span>Service it</button>
           <button type="button" class="ws-btn ws-filter"><span class="key">I</span>Hold to clean the air filter</button>
           <button type="button" class="ws-btn ws-fix" data-fix="puncture"><span class="key">T</span>Pump and patch tyres</button>
           <button type="button" class="ws-btn ws-fix" data-fix="belt"><span class="key">R</span>Check the belt</button>
           <button type="button" class="ws-btn ws-fix" data-fix="cable"><span class="key">L</span>Oil the throttle cable</button>
           <button type="button" class="ws-btn ws-fix" data-fix="carb"><span class="key">C</span>Clean the carb</button>
+          <button type="button" class="ws-btn ws-drain"><span class="key">P</span>Pump out the tank and carb</button>
+          <button type="button" class="ws-btn ws-strip"><span class="key">F</span>Strip it down</button>
+          <button type="button" class="ws-btn ws-silencer"><span class="key">X</span>Take the silencer off</button>
+          <button type="button" class="ws-btn ws-reset"><span class="key">B</span>Back to stock</button>
           <button type="button" class="ws-btn ws-done"><span class="key">E</span>Done</button>
         </div>
         <div class="ws-pods">
           <div class="ws-podline"></div>
-          <button type="button" class="ws-btn ws-pod" data-pod="analogue"><span class="key">Y</span>Fit the analogue pod</button>
-          <button type="button" class="ws-btn ws-pod" data-pod="digital"><span class="key">U</span>Fit the digital pod</button>
-          <button type="button" class="ws-btn ws-podoff"><span class="key">O</span>Take the pod off</button>
+          <button type="button" class="ws-btn ws-pod" data-pod="analogue"><span class="key">Y</span>Fit analogue pod</button>
+          <button type="button" class="ws-btn ws-pod" data-pod="digital"><span class="key">U</span>Fit digital pod</button>
+          <button type="button" class="ws-btn ws-podoff"><span class="key">O</span>Pod off</button>
         </div>
         <div class="ws-keys">↑ ↓ choose   ·   ← → adjust (hold to keep going)   ·   V service   ·   hold I air filter   ·   X silencer   ·   F strip down   ·   P pump out the fuel   ·   Y U O pods   ·   T tyres   ·   R belt   ·   L cable   ·   C carb   ·   or use the mouse</div>
       </div>`;
@@ -612,14 +612,14 @@ export class Workshop {
     this.el.querySelector('.ws-service').disabled = this.isServiced(unit);
     this.el.querySelector('.ws-drain').disabled = !this.canDrain(unit);
     this.el.querySelector('.ws-drain').lastChild.textContent = this.isDiesel ? 'Pump the petrol out of the tank' : 'Pump out the tank and carb';
-    this.el.querySelector('.ws-silencer').style.display = this.isDiesel ? 'none' : '';
-    this.el.querySelector('.ws-pods').style.display = this.isDiesel ? 'none' : '';
-    for (const b of this.el.querySelectorAll('.ws-fix')) b.style.display = this.repairShown(b.dataset.fix) ? '' : 'none';
+    this.el.querySelector('.ws-silencer').style.visibility = this.isDiesel ? 'hidden' : '';
+    this.el.querySelector('.ws-pods').style.visibility = this.isDiesel ? 'hidden' : '';
+    for (const b of this.el.querySelectorAll('.ws-fix')) b.style.visibility = this.repairShown(b.dataset.fix) ? '' : 'hidden';
     this.el.querySelector('.ws-service').lastChild.textContent = this.isDiesel ? 'Service it (oil, wear)' : 'Service it';
     const filter = unit.quad.filter;
     const filterBtn = this.el.querySelector('.ws-filter');
     filterBtn.disabled = filter.isClean;
-    filterBtn.lastChild.textContent = this.filterHeld > 0 ? `Cleaning the air filter... ${Math.round((this.filterHeld / filter.p.cleanSeconds) * 100)}%` : `Hold to clean the air filter (${filter.state})`;
+    filterBtn.lastChild.textContent = this.filterHeld > 0 ? `Cleaning... ${Math.round((this.filterHeld / filter.p.cleanSeconds) * 100)}%` : `Hold: clean air filter (${filter.state})`;
     // The pods: what's on this quad, what's in the toolbox, and the job in hand.
     const rack = this.isDiesel ? null : this.game.podRack;
     if (rack) {
@@ -634,7 +634,7 @@ export class Workshop {
     }
     // Only an engine that's scuffed or seized has anything to strip.
     const strip = this.el.querySelector('.ws-strip');
-    strip.style.display = (e.seized || e.scuff >= 0.05) ? '' : 'none';
+    strip.style.visibility = (e.seized || e.scuff >= 0.05) ? '' : 'hidden'; // keeps its place, so the others don't move
     if (e.seized) this.el.querySelector('.ws-cond').textContent = 'Seized solid: it needs stripping down before it will turn over.';
   }
 }
