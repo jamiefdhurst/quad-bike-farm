@@ -70,6 +70,7 @@ import { Gossip, GOSSIP_PARAM_RANGES } from './npc/gossip.js';
 import { ThrottleGrab, GRAB_PARAM_RANGES } from './npc/throttleGrab.js';
 import { PillionCoach, PILLION_COACH_PARAM_RANGES } from './npc/pillionCoach.js';
 import { SmokeSense, SMOKE_PARAM_RANGES } from './npc/smokeSense.js';
+import { FaultShout, SHOUT_PARAM_RANGES } from './npc/shoutFault.js';
 import { Haze, HAZE_PARAM_RANGES } from './world/haze.js';
 import { HazeLayer } from './effects/hazeLayer.js';
 import { BarnFumes, FUMES_PARAM_RANGES } from './world/barnFumes.js';
@@ -516,6 +517,7 @@ export class Game {
     this.throttleGrab = new ThrottleGrab(); // a girl on the back opening it over your hand (npc/throttleGrab.js)
     this.smokeSense = new SmokeSense(); // Amy coughs at two-stroke smoke, Jess loves it (npc/smokeSense.js)
     // Racing: the girls race a lap of the track from a start line by the yard (npc/race.js).
+    this.faultShout = new FaultShout(); // a girl behind or beside you shouts what she can see wrong with your quad (npc/shoutFault.js)
     this.dashReader = new DashReader(); // the girl on the back reads the dash out (npc/dashReading.js)
     this.doughnutWatch = new DoughnutWatch(); // Amy watches Jess's doughnuts and has a go (npc/doughnuts.js)
     for (const c of this.companions) c.doughnutParams = this.doughnutWatch.p;
@@ -884,6 +886,7 @@ export class Game {
     registerTuning('Girls coaching each other', this.pillionCoach.p, PILLION_COACH_PARAM_RANGES);
     registerTuning('Hand on the throttle', this.throttleGrab.p, GRAB_PARAM_RANGES);
     registerTuning('Two-stroke smoke', this.smokeSense.p, SMOKE_PARAM_RANGES);
+    registerTuning('Shouting a fault', this.faultShout.p, SHOUT_PARAM_RANGES);
     registerTuning('Yard haze', this.haze.p, HAZE_PARAM_RANGES);
     registerTuning('Fumes in the barn', this.barnFumes.p, FUMES_PARAM_RANGES);
     registerTuning('Racing', this.race.p, RACE_PARAM_RANGES);
@@ -2566,6 +2569,26 @@ export class Game {
     }
   }
 
+  /** A girl behind or beside you sees smoke, steam, a soft tyre or a loose silencer on your quad and shouts it (npc/shoutFault.js). */
+  updateFaultShout(dt) {
+    const unit = this.riddenUnit;
+    const q = unit?.quad;
+    const e = q?.engine;
+    const girls = this.companions.map((c) => ({
+      id: c.character.id,
+      x: c.root.position.x,
+      z: c.root.position.z,
+      // Not on your quad, and not busy at the menu or climbing on or off something.
+      watching: !this.menu.isOpen && !(c.quad === q && (c.isSeated || c.fsm.is('mounting'))) && c.fsm.is('idle', 'walking', 'driving', 'seated', 'resting'),
+    }));
+    const signs = q && e.isRunning ? { oil: e.oilRich, steam: e.steam, diesel: e.dieselSoak, tyre: q.faults.levels.puncture, hanging: e.silencerBlown } : {};
+    const ctx = { quad: q && e.isRunning ? { x: q.position.x, z: q.position.z, yaw: q.yaw, speed: q.forwardSpeed } : null, signs, girls };
+    for (const ev of this.faultShout.update(dt, ctx)) {
+      const c = this.companions.find((o) => o.character.id === ev.girl);
+      c?.voice.say(`shout${ev.what[0].toUpperCase()}${ev.what.slice(1)}`, { urgent: true });
+    }
+  }
+
   /** Idling in the yard builds a haze that still air keeps; the girls stood in it cough and wave it away. */
   updateHaze(dt) {
     const w = this.weather;
@@ -3854,6 +3877,7 @@ export class Game {
     if (!this.recalling) this.updateDrag(dt, ridden);
     this.helpOnGrid(dt);
     this.updateSmokeSense(dt);
+    this.updateFaultShout(dt);
     this.updateHaze(dt);
     this.updateBarnFumes(dt);
     this.updateThrottleGrab(dt, ridden);

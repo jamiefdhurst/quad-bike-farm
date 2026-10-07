@@ -47,6 +47,7 @@ import { AMY_GOSSIP_LINES } from './gossipLines.js';
 import { AMY_THROTTLE_LINES } from './throttleLines.js';
 import { AMY_PILLION_COACH_LINES } from './pillionCoachLines.js';
 import { AMY_SMOKE_LINES } from './smokeLines.js';
+import { AMY_SHOUT_LINES } from './shoutFaultLines.js';
 import { AMY_FUMES_LINES } from './fumesLines.js';
 import { AMY_RUSTY_LINES } from './rustyLines.js';
 import { AMY_UTV_LINES } from './utvLines.js';
@@ -1464,6 +1465,8 @@ export const VOICE_LINES = {
   ...AMY_PILLION_COACH_LINES,
   // Two-stroke smoke (smokeLines.js).
   ...AMY_SMOKE_LINES,
+  // Calling out a fault she can see on your quad as you ride (shoutFaultLines.js).
+  ...AMY_SHOUT_LINES,
   ...AMY_FUMES_LINES,
   ...AMY_RUSTY_LINES,
   // The UTV: climbing in, the middle seat, the bed, tipping it, petrol in the tank (utvLines.js).

@@ -43,6 +43,7 @@ import { JESS_GOSSIP_LINES } from './gossipLines.js';
 import { JESS_THROTTLE_LINES } from './throttleLines.js';
 import { JESS_PILLION_COACH_LINES } from './pillionCoachLines.js';
 import { JESS_SMOKE_LINES } from './smokeLines.js';
+import { JESS_SHOUT_LINES } from './shoutFaultLines.js';
 import { JESS_FUMES_LINES } from './fumesLines.js';
 import { JESS_RUSTY_LINES } from './rustyLines.js';
 import { JESS_UTV_LINES } from './utvLines.js';
@@ -409,6 +410,7 @@ export const JESS_LINES = {
   ...JESS_DROWNOUT_LINES,
   ...JESS_HORN_LINES,
   ...JESS_TRACTOR_LINES,
+  ...JESS_SHOUT_LINES,
   ...JESS_HAYRIDE_LINES,
   ...JESS_MUDGUARD_LINES,
   ...JESS_TRACTORGO_LINES,
