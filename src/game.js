@@ -3072,6 +3072,29 @@ export class Game {
     }
   }
 
+  /**
+   * The girls struggled to get onto the start line and face along it, so once one has arrived and is holding on the grid she is eased onto her
+   * exact point and round to face the right way, over about a second, until the start. (Used by both the lap race and the drag race.)
+   */
+  helpOnGrid(dt) {
+    if (!(this.race.phase === 'gather' || this.race.phase === 'countdown' || this.drag.phase === 'gather' || this.drag.phase === 'countdown')) return;
+    for (const c of this.companions) {
+      const race = c.drive?.race;
+      if (!race || race.assistYaw === undefined || c.drive.phase !== 'grid') continue;
+      const q = c.quad;
+      const target = race.route[race.gridIndex];
+      if (!q || !target || Math.abs(q.forwardSpeed) > 1.5) continue;
+      const k = Math.min(1, dt * 2.5);
+      const dx = target.x - q.position.x;
+      const dz = target.z - q.position.z;
+      const dist = Math.hypot(dx, dz);
+      const off = Math.atan2(Math.sin(race.assistYaw - q.yaw), Math.cos(race.assistYaw - q.yaw));
+      if (dist < 0.05 && Math.abs(off) < 0.02) continue;
+      if (dist > 5) continue; // she's nowhere near it: not for this to fix
+      q.placeAt(q.position.x + dx * k, q.position.z + dz * k, q.yaw + off * k);
+    }
+  }
+
   updateRace(dt, ridden) {
     if (this.drag.active && !this.race.active) return; // one race at a time
     const p = this.race.p;
@@ -3107,7 +3130,7 @@ export class Game {
           const race = {
             route: this.raceRoute((e.youIn ? p.gridSpacing : 1.5) * side),
             gridIndex: 1,
-            gridYaw: Math.atan2(this.world.track.sample(this.raceStart).tx, this.world.track.sample(this.raceStart).tz),
+            assistYaw: Math.atan2(this.world.track.sample(this.raceStart).tx, this.world.track.sample(this.raceStart).tz), // eased round on the grid (helpOnGrid), not driven round again
             cruise: p.cruiseBase + p.cruiseConfidence * confidence + (Math.random() * 2 - 1) * p.cruiseSpread,
             throttle: p.throttle,
             go: () => this.race.go(),
@@ -3218,7 +3241,7 @@ export class Game {
     const race = (id, lane, spec) => ({
       route: this.dragRoute(lane),
       gridIndex: 1,
-      gridYaw: s.yaw,
+      assistYaw: s.yaw,
       cruise: 30, // flat out: the quad's power decides
       throttle: 1,
       go: () => drag.go(),
@@ -3803,6 +3826,7 @@ export class Game {
     this.updateDashReading(dt, ridden);
     if (!this.recalling) this.updateRace(dt, ridden);
     if (!this.recalling) this.updateDrag(dt, ridden);
+    this.helpOnGrid(dt);
     this.updateSmokeSense(dt);
     this.updateHaze(dt);
     this.updateBarnFumes(dt);
