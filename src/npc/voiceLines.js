@@ -25,6 +25,7 @@ import { AMY_QUIRK_LINES } from './quirkLines.js';
 import { AMY_TEMPERATURE_LINES } from './temperatureLines.js';
 import { AMY_HANDBRAKE_LINES } from './handbrakeLines.js';
 import { AMY_REVOFF_LINES } from './revOffLines.js';
+import { AMY_DROWNOUT_LINES } from './drownOutLines.js';
 import { AMY_HORN_LINES } from './hornLines.js';
 import { AMY_TRACTOR_LINES } from './tractorLines.js';
 import { AMY_HAYRIDE_LINES } from './hayRideLines.js';
@@ -1409,6 +1410,8 @@ export const VOICE_LINES = {
   ...AMY_HANDBRAKE_LINES,
   // Rev-offs (revOffLines.js).
   ...AMY_REVOFF_LINES,
+  // Jess revving over her (drownOutLines.js).
+  ...AMY_DROWNOUT_LINES,
   // Horns (hornLines.js).
   ...AMY_HORN_LINES,
   // The tractor: the key that doesn't stop it, waiting for the glow plugs, and it catching (tractorLines.js).

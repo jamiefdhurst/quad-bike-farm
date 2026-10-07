@@ -1344,3 +1344,11 @@ The item settled the shape, so I chose the details without asking.
 - Amy gives the choke, starter and cornering advice, 0.5 chance a second while she sees the moment. Jess gives mud only, 0.7 a second, and is bad at it on purpose: 1.5% a second she pipes up with any of the four when nothing's wrong (nearly always the wrong moment), and 35% of the time she says it again 4 s later (nagging). So Jess teaches mud, loudly, and sometimes costs Amy a slip of patience.
 - Lines are `coachGive_<advice>` in `src/npc/pillionCoachLines.js`, 3 or 4 per piece of advice, Amy patient and Jess bossy, 4 new situations each. Tunables are in the "Girls coaching each other" tuning folder.
 - Not checked in the running game: only unit tests. The pacing (20 s gap, 12 s lead-in) is a first guess.
+
+## Revving over her (TODO 14)
+
+- `src/npc/drownOut.js` (pure, tested). While Amy is mid-sentence (at least `amyLeftMin` 0.8 s of her line still to run) and Jess is sat on a running quad with nobody at its controls within `hearRange` 7 m, Jess has a `chance` of 0.25 a second to start. Her throttle (the `helperThrottle` the rev-offs use) opens after 0.3 s and stays open 1.6 s, Amy's line is cut off, and Jess says she can't hear. `cooldown` 120 s before it can happen again.
+- 1.9 s in, the engine goes off through the ignition. If Amy is free on her feet within `reachRange` 3.5 m she reaches over and does it ("Right. Off."); otherwise she shouts at Jess to do it, and Jess does, with a grumble. It gives up quietly if Jess has got off or the engine died, and doesn't start while Jess is answering one of your rev-offs or doing the rock prank.
+- Only Jess does it, and only to Amy: Amy is the one who is always mid-sentence about something useful, and it keeps Jess's cheek in one direction.
+- Lines in `drownOutLines.js` (`drownRev`, `drownProtest` Jess only; `drownSwitchOff`, `drownTellOff` Amy). Tunables in the "Drowning out" folder.
+- Not checked in the running game: only unit tests. Whether the rev is audible over Amy, and how often it fires, are first guesses.

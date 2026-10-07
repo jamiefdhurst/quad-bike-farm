@@ -32,6 +32,7 @@ import { captureStock, tuneTarget, stockSettings, clampSettings, applyTune } fro
 import { WearLedger, LEDGER_PARAM_RANGES } from './engine/wearLedger.js';
 import { Pranks, PRANK_PARAM_RANGES } from './npc/pranks.js';
 import { RevOff, REVOFF_PARAM_RANGES } from './npc/revOff.js';
+import { DrownOut, DROWNOUT_PARAM_RANGES } from './npc/drownOut.js';
 import { Horns, HORN_PARAM_RANGES } from './npc/horns.js';
 import { TractorWatch, TRACTOR_WATCH_PARAM_RANGES } from './npc/tractorWatch.js';
 import { HayRide, HAYRIDE_PARAM_RANGES } from './npc/hayRide.js';
@@ -399,6 +400,8 @@ export class Game {
     this.pranks = new Pranks();
     // Rev-offs: blip the throttle near a girl sat on a running quad and she may blip back (npc/revOff.js).
     this.revOff = new RevOff();
+    // Jess revving over Amy mid-sentence until Amy switches it off (npc/drownOut.js).
+    this.drownOut = new DrownOut();
     // Horns: your beep (L) and the girls' answers and Jess's creep-up (npc/horns.js).
     this.horns = new Horns();
     // What they say about the tractor: the key that doesn't stop it, waiting for the glow plugs, it catching (npc/tractorWatch.js).
@@ -754,6 +757,7 @@ export class Game {
     registerTuning('Who wore it out', this.wearLedger.p, LEDGER_PARAM_RANGES);
     registerTuning('Pranks', this.pranks.p, PRANK_PARAM_RANGES);
     registerTuning('Rev-offs', this.revOff.p, REVOFF_PARAM_RANGES);
+    registerTuning('Drowning out', this.drownOut.p, DROWNOUT_PARAM_RANGES);
     registerTuning('Horns', this.horns.p, HORN_PARAM_RANGES);
     registerTuning('Tractor remarks', this.tractorWatch.p, TRACTOR_WATCH_PARAM_RANGES);
     registerTuning('Tractor creep', DEFAULT_CREEP_PARAMS, CREEP_PARAM_RANGES);
@@ -1837,6 +1841,35 @@ export class Game {
       c.voice.say('rockPrank', { force: true });
       friend.voice.say('rockPrankAmy', { force: true });
       return;
+    }
+  }
+
+  /** Jess sat on a running quad blips it over Amy mid-sentence; Amy cuts off and switches it off (npc/drownOut.js). */
+  updateDrownOut(dt) {
+    const jess = this.companions.find((c) => c.character.id === 'jess');
+    const amy = this.companions.find((c) => c.character.id === 'amy');
+    if (!jess || !amy) return;
+    const quad = this.revOffQuad(jess);
+    const busy = this.revOff.answering('jess') || quad === this.rockPrank?.quad;
+    const ch = amy.voice.chatter;
+    const ctx = {
+      jessCanRev: !!quad && !busy && !this.menu.isOpen,
+      amyFree: amy.fsm.is('idle'),
+      amyLeft: Math.max(0, ch.speakingUntil - ch.time),
+      distance: jess.root.position.distanceTo(amy.root.position),
+    };
+    const events = this.drownOut.update(dt, ctx);
+    if (quad && !busy) quad.helperThrottle = this.drownOut.throttleFor();
+    for (const e of events) {
+      if (e.type === 'rev') {
+        amy.voice.cut();
+        jess.voice.say('drownRev', { force: true });
+      } else if (e.type === 'switchOff') {
+        quad.engine.setIgnition(false);
+        if (e.by === 'amy') amy.voice.say('drownSwitchOff', { force: true });
+        else amy.voice.say('drownTellOff', { force: true });
+        jess.voice.say('drownProtest', { force: true });
+      }
     }
   }
 
@@ -3007,6 +3040,7 @@ export class Game {
     this.updateHaze(dt);
     this.updateThrottleGrab(dt, ridden);
     this.updateRockPrank(dt);
+    this.updateDrownOut(dt);
     this.updateBanter(dt, ridden);
     for (const c of this.companions) {
       c.update(dt, c.quad.unit.vibration, {
