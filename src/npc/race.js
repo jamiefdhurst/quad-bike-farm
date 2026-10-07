@@ -19,6 +19,7 @@ export const DEFAULT_RACE_PARAMS = {
   cruiseConfidence: 4, // more for each 1 of confidence
   cruiseSpread: 1.5, // +/- random per race
   throttle: 1, // most throttle she'll use
+  keepRidingChance: 0.5, // chance a girl carries on driving after the finish instead of pulling up and getting off (the drag race uses it too)
   youWait: 30, // seconds you get to line up on the grid once asked, before they race without you
   dareStill: 4, // seconds you've sat still on a quad near the line before Jess may dare you
   dareChance: 0.05, // per second after that, when the girls are free and it's been long enough
@@ -47,6 +48,7 @@ export const RACE_PARAM_RANGES = {
   cruiseConfidence: [0, 10, 0.5],
   cruiseSpread: [0, 5, 0.1],
   throttle: [0.3, 1, 0.05],
+  keepRidingChance: [0, 1, 0.05],
   youWait: [5, 120, 5],
   dareStill: [0, 30, 1],
   dareChance: [0, 0.5, 0.01],

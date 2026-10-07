@@ -118,6 +118,7 @@ export const drivingStates = {
         params.drivePauseChance = 0;
       }
       if (race) {
+        race.after = { driveMaxThrottle: params.driveMaxThrottle, driveScareSpeed: params.driveScareSpeed, drivePauseChance: params.drivePauseChance }; // what she goes back to if she carries on after the finish
         // Racing: flat out, no pauses, nothing frightens her off.
         params.driveMaxThrottle = race.throttle;
         params.driveScareSpeed = 99;

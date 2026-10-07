@@ -3133,6 +3133,7 @@ export class Game {
             assistYaw: Math.atan2(this.world.track.sample(this.raceStart).tx, this.world.track.sample(this.raceStart).tz), // eased round on the grid (helpOnGrid), not driven round again
             cruise: p.cruiseBase + p.cruiseConfidence * confidence + (Math.random() * 2 - 1) * p.cruiseSpread,
             throttle: p.throttle,
+            keepDriving: Math.random() < p.keepRidingChance,
             go: () => this.race.go(),
             alive: () => this.race.active,
             onGrid: () => this.race.grid(id),
@@ -3244,6 +3245,7 @@ export class Game {
       assistYaw: s.yaw,
       cruise: 30, // flat out: the quad's power decides
       throttle: 1,
+      keepDriving: Math.random() < this.race.p.keepRidingChance,
       go: () => drag.go(),
       alive: () => drag.active,
       onGrid: () => drag.grid(id),

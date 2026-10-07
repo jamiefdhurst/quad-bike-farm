@@ -364,3 +364,30 @@ describe('where the strip is', () => {
     }
   });
 });
+
+describe('after the finish', () => {
+  const quad = { engine: { isRunning: true, temperature: 1 }, position: { x: 0, z: 40 }, yaw: 0, forwardSpeed: 12, choke: 0 };
+  function finishing(keepDriving) {
+    const after = { driveMaxThrottle: 0.6, driveScareSpeed: 9, drivePauseChance: 0.3 };
+    const race = { route: [{ x: 0, z: 0 }, { x: 0, z: 40 }], gridIndex: 0, go: () => true, alive: () => true, onFinish() {}, keepDriving, after, cruise: 30 };
+    const d = Object.create(HerDrive.prototype);
+    Object.assign(d, { p: { ...DEFAULT_COMPANION_PARAMS, driveMaxThrottle: 1, driveScareSpeed: 99, drivePauseChance: 0 }, race, quad, events: [], controls: { throttle: 0, brake: 0, steer: 0, reverse: false }, index: 1, waypoints: race.route, forgetsChoke: true, origin: { x: 0, z: 0 }, maxDistance: 0, clock: 0, noted: {}, timer: 0, running: true, stalls: 0, friend: () => null, friendAboard: false, regrids: 0, time: 50, driveFor: 10, phase: 'drive', passenger: () => false });
+    d.random = () => 0;
+    d.pickCruise = () => 8;
+    return d;
+  }
+
+  it('pulls up as before, or carries on driving as herself, as decided', () => {
+    const stop = finishing(false);
+    stop.update(0.1);
+    expect(stop.phase).toBe('stop');
+    const go = finishing(true);
+    go.update(0.1);
+    expect(go.events).toContain('raceCarryOn');
+    expect(go.race).toBeNull();
+    expect(go.phase).toBe('drive');
+    expect(go.p).toMatchObject({ driveMaxThrottle: 0.6, driveScareSpeed: 9, drivePauseChance: 0.3 });
+    expect(go.time).toBe(0);
+    expect(go.cruise).toBe(8);
+  });
+});

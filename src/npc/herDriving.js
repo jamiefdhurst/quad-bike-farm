@@ -152,7 +152,7 @@ export class HerDrive {
    * @param {function} [opts.passenger]  () => whether someone's riding on the back; then she doesn't tire of it.
    * @param {boolean} [opts.tires]  Her own idea to take you out: she gets bored with you aboard like any drive, and gives up if you never get on.
    * @param {boolean} [opts.waitForPassenger]  Started it to give you a ride: she waits for you to get on.
-   * @param {object} [opts.race]  A race (npc/race.js): { route, gridIndex, gridYaw, cruise, go(), alive(), onGrid(), onFinish(), onAbort(), blip() }. She
+   * @param {object} [opts.race]  A race (npc/race.js): { route, gridIndex, gridYaw, cruise, go(), alive(), onGrid(), onFinish(), onAbort(), blip(), keepDriving, after }. She
    *   drives to the grid waypoint, waits for go(), then flat out round the rest of the route and over the line (the last
    *   waypoint), with no pauses and no tiring or scaring of herself.
    * @param {object} [opts.doughnut]  { centre, radius, dir, seconds, p }: instead of her loops she drives to the circle and spins
@@ -682,6 +682,19 @@ export class HerDrive {
     if (before > 0 && q.choke === 0) this.events.push('practice:choke');
   }
 
+  /** Over the line, and she doesn't pull up: back to her ordinary driving (her usual speed and nerves) for a drive of the usual length, then she gets off as normal. */
+  carryOn() {
+    Object.assign(this.p, this.race.after ?? {});
+    this.race = null;
+    this.waypoints = [];
+    this.index = 0;
+    this.time = 0;
+    this.driveFor = this.between(this.p.driveForMin, this.p.driveForMax);
+    this.cruise = this.pickCruise();
+    this.setPhase('drive');
+    this.events.push('raceCarryOn');
+  }
+
   /** Swaps the race she's in for another on the same quad (the drag race challenge: she pulled up beside you, now it's to the strip). */
   reroute(race) {
     this.race = race;
@@ -816,6 +829,7 @@ export class HerDrive {
           // Over the line: that's the race, and she pulls up.
           this.events.push('raceFinish');
           this.race.onFinish?.();
+          if (this.race.keepDriving) return void this.carryOn();
           this.stop('raced');
         }
         return;
