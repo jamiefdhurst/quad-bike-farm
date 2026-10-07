@@ -44,3 +44,16 @@ describe('PodRack', () => {
     }
   });
 });
+
+describe('PodRack.allow', () => {
+  it('lets a quad added later take a pod without changing where they started', () => {
+    const rack = new PodRack(IDS);
+    const before = { ...rack.place(createRandom(3)) };
+    rack.allow('rusty');
+    expect(rack.at).toEqual(before);
+    expect(rack.podOn('rusty')).toBe(null);
+    for (const kind of POD_KINDS) rack.at[kind] = TOOLBOX;
+    expect(rack.fit('analogue', 'rusty')).toBe(true);
+    expect(rack.podOn('rusty')).toBe('analogue');
+  });
+});

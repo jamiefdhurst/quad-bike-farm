@@ -24,6 +24,11 @@ export class PodRack {
     return { ...this.at };
   }
 
+  /** Lets a quad added after the pods were placed (the barn find) take one. It never starts with one, so the seeded placement is unchanged. */
+  allow(quadId) {
+    if (!this.quadIds.includes(quadId)) this.quadIds.push(quadId);
+  }
+
   /** The kind of pod fitted to this quad, or null. */
   podOn(quadId) {
     return POD_KINDS.find((k) => this.at[k] === quadId) ?? null;

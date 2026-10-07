@@ -288,6 +288,7 @@ export class Game {
     this.barnFindParams = { ...DEFAULT_BARN_FIND_PARAMS };
     registerTuning('Barn find', this.barnFindParams, BARN_FIND_RANGES);
     this.rustyUnit = this.addRusty();
+    if (this.rustyUnit) this.podRack.allow(this.rustyUnit.id); // placed after the pods were dealt, but you can fit one at the bench
     // A sticky float on some of the quads (vehicle/carbDrip.js): a parked one with the tap on drips petrol and floods. Own random stream.
     this.carbDrip = new CarbDrip(this.units.filter((u) => !u.quad.fuel.params.noTap && u !== this.tractorUnit).map((u) => u.id), createRandom(this.seed ^ 0x5d1f));
     registerTuning('Dripping carb', this.carbDrip.p, DRIP_PARAM_RANGES);

@@ -1539,3 +1539,7 @@ Settled with Jamie before building: a second, small trailer (the bale trailer st
 
 - The tractor (and the diesel UTV) could stall "flooded" and refuse to start with a fouled plug, because the engine model's fouling followed a rich mixture (a choked air filter, too much oil, a drip-flooded carb) whatever the engine. A compression-ignition engine now has its fouling held at 0 each step. Rich running still does what it does to a diesel otherwise (black smoke, hunting, lost power), it just can't drown it.
 - Left alone: the bench plug job and the girls' "flooded" and plug lines still exist for a diesel's glow plugs if something sends them there; nothing in the model produces a fouled reading any more. Checked: unit tests only (new case in `tests/compression.test.js`).
+
+## Pods on the rusty quad (2026-10-07)
+
+- The pod rack was built from the girls' quads before the barn find existed, so it refused to fit a pod to the rusty quad (the bench did the three seconds, then nothing happened). `PodRack.allow` registers it afterwards. It never starts with a pod, so the seeded placement is unchanged. Checked: unit tests only; not tried at the bench in the running game.
