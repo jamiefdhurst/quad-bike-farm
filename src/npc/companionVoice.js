@@ -9,6 +9,7 @@ import { applicableQuirks, featuresOf, girlKnowsQuirks } from '../vehicle/quirks
 import { engineCondition, guessCondition } from './diagnosis.js';
 import { guessPlug } from '../workshop/benchJobs.js';
 import { isThrashed } from '../engine/wearLedger.js';
+import { isThrashedRunningIn } from '../engine/runningIn.js';
 import { leftRunningSituation } from './leftRunning.js';
 import { quadKey } from './quadNames.js';
 
@@ -634,8 +635,12 @@ export class CompanionVoice {
   /** Somebody caning a quad before it's warm: Amy tells off whoever it is (Jess cheers you on). */
   watchThrash(dt, unit, view, listening) {
     const who = view.drivers?.get(unit);
-    if (!listening || !who || who === this.companion.character.id || !isThrashed(unit.engine, this.companion.params)) return;
-    const situation = who === 'you' ? 'thrashColdYou' : 'thrashCold';
+    if (!listening || !who || who === this.companion.character.id) return;
+    const p = this.companion.params;
+    // A freshly rebuilt engine being caning before it's run in is worse than a cold one, so it's what she picks up on first.
+    const runningIn = isThrashedRunningIn(unit.engine, p.thrashWork, unit.engine.params);
+    if (!runningIn && !isThrashed(unit.engine, p)) return;
+    const situation = (runningIn ? 'thrashRunIn' : 'thrashCold') + (who === 'you' ? 'You' : '');
     this.say(situation, { chance: this.companion.params.thrashChance * dt });
   }
 

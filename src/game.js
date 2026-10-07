@@ -30,6 +30,7 @@ import { HEADLIGHT_PARAMS, HEADLIGHT_PARAM_RANGES } from './vehicle/headlight.js
 import { describeVehicle } from './debug/startReport.js';
 import { QuirkSet, DEFAULT_QUIRK_PARAMS, QUIRK_PARAM_RANGES, featuresOf, pickQuirks } from './vehicle/quirks.js';
 import { captureStock, tuneTarget, stockSettings, clampSettings, applyTune } from './vehicle/tuneUp.js';
+import { startRunningIn } from './engine/runningIn.js';
 import { WearLedger, LEDGER_PARAM_RANGES } from './engine/wearLedger.js';
 import { LeftRunning, LEFT_PARAM_RANGES } from './npc/leftRunning.js';
 import { CarbDrip, DRIP_PARAM_RANGES } from './vehicle/carbDrip.js';
@@ -1705,6 +1706,7 @@ export class Game {
     // The first start: smoke everywhere, and both girls cheer.
     if (e.isRunning && find.ready && !find.started) {
       find.started = true;
+      startRunningIn(e); // not run for years, and now it wants running in
       find.smokeLeft = find.params.smokeSeconds;
       this.hud.toast('It runs! The first start in years');
       for (const c of this.companions) c.voice.onBench('runs');

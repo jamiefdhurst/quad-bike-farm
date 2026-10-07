@@ -115,6 +115,13 @@ export const DEFAULT_ENGINE_PARAMS = {
   wearColdBelow: 0.5, // engine temperature (0 cold, 1 warm) under which revving it counts as thrashing it
   wearOverRevBoost: 30, // per unit of revs over designRpm: flat out, 10% over wears twice as fast as at its design top, 30% over four times
   designRpm: 0, // the full-throttle revs it was built for (set each game from its top); 0 means maxRpm, so no over-rev wear
+  runInSeconds: 600, // a rebuilt engine wants this long running before it's thrashed (idling counts for runInIdleShare of it)
+  runInIdleShare: 0.5, // how much of the running-in clock ticks while it only idles
+  runInGentleRpm: 0.6, // revs (0 idle, 1 flat out) up to which it's still being run in gently
+  runInWearBoost: 5, // thrashed flat out while it's new, it wears this much faster again
+  runInScarPerMinute: 0.012, // permanent roughness left per minute of thrashing it while it's new
+  runInScarMax: 0.1, // the most roughness a thrashed running-in leaves behind for good (a service doesn't clear it)
+  runInNoticeFrom: 0.15, // the girls only say something while it still has this much of its running in to do
   wearMax: 1, // run long and hard enough, any engine wears to fully rough
   // Badly in need of a service it turns erratic, from erraticFrom up to fully
   // rough (its condition: build roughness plus wear, not cold or mixture):
@@ -416,6 +423,13 @@ export const ENGINE_PARAM_RANGES = {
   wearPerMinute: [0, 0.2, 0.001],
   wearWorkBoost: [0, 10, 0.1],
   wearColdBoost: [0, 10, 0.1],
+  runInSeconds: [30, 1800, 30],
+  runInIdleShare: [0, 1, 0.05],
+  runInGentleRpm: [0.2, 0.95, 0.05],
+  runInWearBoost: [0, 12, 0.5],
+  runInScarPerMinute: [0, 0.1, 0.002],
+  runInScarMax: [0, 0.3, 0.01],
+  runInNoticeFrom: [0, 1, 0.05],
   wearColdBelow: [0.1, 1, 0.05],
   wearOverRevBoost: [0, 40, 0.5],
   designRpm: [0, 12000, 100],

@@ -14,6 +14,7 @@ import { stepWater, waterCatchFactor } from './water.js';
 import { stepDieselSoak, dieselCatchFactor, contaminant } from './diesel.js';
 import { stepGlow, glowReady, compressionCatchFactor } from './compression.js';
 import { offTemperature } from '../world/barn.js';
+import { runInWearFactor, startRunningIn, stepRunningIn } from './runningIn.js';
 import { boreWearFactor, borePowerFactor } from './bigBore.js';
 import { jetError, leanStarve, jetTrue, jetMixture } from './jetting.js';
 import { coolingEffect, leakRate, stepPuddle, steamLevel, boilsOver } from './coolant.js';
@@ -73,6 +74,8 @@ export class EngineModel {
     this.nip = 0; // 0..1 how far it's nipping up
     this.silencerBlown = 0; // 0..1 how much of a two-stroke's silencer packing has blown out: louder and raspier, until it's repacked at the bench
     this.silencerOff = false; // a toolbox job: louder, a bit stronger, crackles more
+    this.runIn = 0; // 0..1 how much running in a rebuilt engine still wants (see runningIn.js); 0 once it's run in
+    this.scar = 0; // 0..1 roughness left for good by thrashing it while it was running in: a service doesn't clear it
     this.seized = false; // locked solid: nothing turns it until it's stripped down
     this.heat = 0; // 0..1 running too hot (see heat.js)
     this.fan = false; // the radiator fan's on (water-cooled only)
@@ -357,6 +360,7 @@ export class EngineModel {
   freeSeized() {
     if (this.scuff < 0.05 && !this.seized) return false;
     if (this.seized) this.wear = Math.min(this.params.wearMax, this.wear + this.params.seizeWear);
+    if (this.seized) startRunningIn(this); // rebuilt after a seizure: it wants running in
     this.seized = false;
     this.scuff = 0;
     this.overheat = 0;
@@ -412,8 +416,9 @@ export class EngineModel {
       if (p.strokes === 2) this.silencerBlown = Math.min(1, this.silencerBlown + (h / 60) * p.silencerBlowPerMinute * (0.33 + 0.67 * rpmNorm));
       this.wear = Math.min(
         p.wearMax,
-        this.wear + (h / 60) * p.wearPerMinute * (1 + p.wearWorkBoost * rpmNorm + p.wearColdBoost * coldThrash + p.wearOverRevBoost * overRev) * boreWearFactor(this.bore, p),
+        this.wear + (h / 60) * p.wearPerMinute * (1 + p.wearWorkBoost * rpmNorm + p.wearColdBoost * coldThrash + p.wearOverRevBoost * overRev) * boreWearFactor(this.bore, p) * runInWearFactor(this.runIn, rpmNorm, p),
       );
+      stepRunningIn(this, h, rpmNorm, p);
     } else {
       this.temperature = offTemperature(this.temperature, h, p.coolDownSeconds, this.sheltered, { warmFloor: p.barnWarmFloor, coolFactor: p.barnCoolFactor });
     }
@@ -529,12 +534,13 @@ export class EngineModel {
 
     const coldness = 1 - this.temperature;
     // How badly it needs a service: its build roughness plus wear. Past erraticFrom it turns erratic, steeply.
-    const condition = clamp(p.baseRoughness + this.wear, 0, 1);
+    const condition = clamp(p.baseRoughness + this.wear + this.scar, 0, 1);
     const e = clamp((condition - p.erraticFrom) / Math.max(0.01, 1 - p.erraticFrom), 0, 1);
     this.erratic = e * e * (3 - 2 * e) * e;
     this.roughness = clamp(
       p.baseRoughness +
         this.wear +
+        this.scar +
         p.coldRoughness * coldness +
         p.leanRoughness * this.lean +
         p.richRoughness * this.rich +
