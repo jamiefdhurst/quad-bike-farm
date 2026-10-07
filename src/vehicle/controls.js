@@ -9,7 +9,7 @@
 
 export const REVERSE_STYLES = ['bars', 'button', 'knee', 'none'];
 export const CHOKE_STYLES = ['thumb', 'knob', 'plunger'];
-export const TAP_STYLES = ['left', 'right', 'under', 'lowLeft', 'lowRight'];
+export const TAP_STYLES = ['left', 'right', 'rearLeft', 'lowLeft', 'lowRight'];
 
 export const DEFAULT_CONTROLS_PARAMS = {
   barsMaxSpeed: 1.5, // m/s: the bar lever can be pushed down while it's creeping, not at a run

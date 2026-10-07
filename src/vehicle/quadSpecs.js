@@ -224,7 +224,7 @@ export const QUAD_SPECS = [
     dashStyle: 'bayou',
     reverseStyle: 'knee', // where the reverse is and what it takes to use it (controls.js)
     chokeStyle: 'knob', // where the choke is and what it takes to reach it
-    tapStyle: 'under', // where the fuel tap sits
+    tapStyle: 'rearLeft', // where the fuel tap sits
     hoursRange: [1800, 3500], // engine hours showing when the game starts
     odoRange: [4500, 8750], // odometer miles showing when the game starts
     wearRange: [0.25, 0.55], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js

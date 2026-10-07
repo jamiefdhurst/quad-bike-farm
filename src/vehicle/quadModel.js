@@ -1002,7 +1002,7 @@ function buildFrame(root, sport) {
 const TAP_PLACE = {
   left: { pos: [0.18, 0.8, 0.3], handle: 'lever', colour: 'chrome' },
   right: { pos: [-0.18, 0.8, 0.3], handle: 'lever', colour: 'black' },
-  under: { pos: [0.09, 0.672, 0.17], handle: 'knob', colour: 0xb03020 },
+  rearLeft: { pos: [0.17, 0.79, 0.17], handle: 'knob', colour: 0xb03020 }, // on the side of the tank towards the rider, in plain view
   lowLeft: { pos: [0.185, 0.74, 0.2], handle: 'tee', colour: 'chrome' },
   lowRight: { pos: [-0.185, 0.74, 0.2], handle: 'knob', colour: 0x2a6fb0 },
 };
