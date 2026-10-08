@@ -73,6 +73,8 @@ export const LAYOUT = {
   // The barn (world/barn.js): a hollow shed with its big doors open on the +x side, facing the yard. halfX and halfZ are the outside
   // half-sizes, wall the thickness, wallHeight the eaves and ridge the top of the roof along its length (x). The door is centred on z.
   barn: { x: -64, z: 60, halfX: 5.2, halfZ: 4.6, wall: 0.2, wallHeight: 4.2, ridge: 6.3, door: { halfWidth: 2.3, height: 3.2 } },
+  // The bell on its post just north of the barn's north door leaf, arm out towards the yard (world/bellBuild.js): ring it to call the girls back.
+  bell: { x: -58.1, z: 65.5, yaw: 0 },
   // Straw bales inside the barn, [x, z, yaw] (she sits facing yaw, climbing up from behind it): somewhere dry to sit out of the rain.
   barnBaleSpots: [
     [-66.4, 57.3, Math.PI / 2],

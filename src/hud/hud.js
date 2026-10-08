@@ -38,8 +38,9 @@ const HELP_HTML = `
   <div>Green quad's winch: <kbd>X</kbd> take the hook, <kbd>E</kbd> on a quad to hook it, hold <kbd>X</kbd> to wind in</div>
   <div>Tractor's tow chain: <kbd>X</kbd> looking at the tractor to take it, <kbd>E</kbd> on a quad to hook it, then back the tractor up and drive off</div>
   <div>Hayloft ladder, workbench and Amy's logbook in the barn: <kbd>E</kbd></div>
+  <div>The bell by the barn doors: <kbd>E</kbd> to ring it and call the girls back</div>
   <h3>Other</h3>
-  <div><kbd>H</kbd> help, <kbd>N</kbd> call the girls, <kbd>Enter</kbd> ask for a race (on a quad, by the yard or at the drag strip), <kbd>M</kbd> mute, <kbd>\`</kbd> tuning panel</div>
+  <div><kbd>H</kbd> help, <kbd>Enter</kbd> ask for a race (on a quad, by the yard or at the drag strip), <kbd>M</kbd> mute, <kbd>\`</kbd> tuning panel</div>
 `;
 
 export class Hud {

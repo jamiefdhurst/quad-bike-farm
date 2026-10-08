@@ -353,7 +353,7 @@ export class DebugGui {
       },
     };
     actions.recall = () => g.recallGirls();
-    f.add(actions, 'recall').name('Call the girls back to the barn (N)');
+    f.add(actions, 'recall').name('Call the girls back to the barn (as the bell does)');
     actions.convoy = () => {
       if (g.convoy.active) return g.hud.toast('They are already out');
       g.convoy.forced = true;
@@ -375,7 +375,7 @@ export class DebugGui {
       g.hud.toast('Jess will fill a parked quad from the diesel can as soon as she is stood about');
     };
     const girl = (id) => g.companions.find((c) => c.character.id === id);
-    const free = (c) => (c.fsm.is('idle') ? true : g.hud.toast(`${cap(c.character.id)} is busy: call her back to the barn first (N)`) && false);
+    const free = (c) => (c.fsm.is('idle') ? true : g.hud.toast(`${cap(c.character.id)} is busy: call her back to the barn first (the bell)`) && false);
     actions.lineUp = () => {
       const c = girl('amy');
       if (!free(c)) return;

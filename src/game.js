@@ -112,6 +112,8 @@ import { FaultKnowledge, DEFAULT_WONT_PARAMS, WONT_PARAM_RANGES, WONT_LINE } fro
 import { Sump, DEFAULT_SUMP_PARAMS, SUMP_PARAM_RANGES, pickBurner, startLevel, readStick } from './vehicle/sump.js';
 import { fuelText } from './engine/diesel.js';
 import { FuelTank } from './items/fuelTank.js';
+import { Bell } from './world/bellBuild.js';
+import { BELL_PARAM_RANGES } from './world/bell.js';
 import { Toolbox } from './items/toolbox.js';
 import { JumpLeads, JUMP_LEAD_PARAM_RANGES } from './items/jumpLeads.js';
 import { Hose, HOSE_PARAM_RANGES } from './items/hose.js';
@@ -789,6 +791,14 @@ export class Game {
       hold: (dt) => this.can.held && this.can.fill(this.can.params.fillRate * dt, 0, 1) > 0,
     });
 
+    // The bell beside the barn doors: ring it and the girls come back to the barn, wherever they are.
+    this.bell = new Bell({ scene: this.scene, physics: this.physics, RAPIER: this.RAPIER, world: this.world, audioHub: this.audioHub, position: L.bell, yaw: L.bell.yaw });
+    this.interaction.add({
+      target: this.bell.proxy,
+      prompt: () => (this.recalling ? 'Ring the bell again' : 'Ring the bell to call the girls back'),
+      interact: () => this.ringBell(),
+    });
+
     // A toolbox by the petrol tank, for tinkering with the quads (see workshop.js).
     this.toolbox = new Toolbox({ scene: this.scene, world: this.world, position: L.toolbox, yaw: L.toolbox.yaw });
     this.toolbox.model.position.y += L.toolbox.lift ?? 0; // up on the barn workbench
@@ -870,6 +880,7 @@ export class Game {
     registerTuning('Diesel can', this.dieselCan.params, JERRY_CAN_PARAM_RANGES);
     registerTuning('Oil bottle', this.oilBottle.params, OIL_BOTTLE_PARAM_RANGES);
     registerTuning('Hose', this.hose.params, HOSE_PARAM_RANGES);
+    registerTuning('Bell', this.bell.params, BELL_PARAM_RANGES);
     registerTuning('Favour', this.favour.p, FAVOUR_PARAM_RANGES);
     this.wearLedger ??= new WearLedger();
     registerTuning('Who wore it out', this.wearLedger.p, LEDGER_PARAM_RANGES);
@@ -2775,6 +2786,24 @@ export class Game {
     this.hud.toast('Girls: stop what you are doing and come to the barn');
   }
 
+  /**
+   * The bell: they hear it anywhere on the farm. Rung while they're already on their way, it just gives them longer to get
+   * there, and one who isn't there yet may tell you she heard it the first time.
+   */
+  ringBell() {
+    this.bell.ring();
+    const r = this.recalling;
+    if (!r) return this.recallGirls();
+    r.left = 120;
+    if (!r.said) return;
+    const late = this.companions.filter((c, i) => !this.recallArrived(c, r.spots[i]));
+    late[Math.floor(Math.random() * late.length)]?.voice.say('bellAgain', { chance: 0.6 });
+  }
+
+  recallArrived(c, spot) {
+    return c.fsm.is('idle') && c.root.position.distanceTo(spot.point) < 2.5;
+  }
+
   /** Keeps at it until each is there (a girl mid-change gets another nudge), or two minutes have gone. */
   updateRecall(dt) {
     const r = this.recalling;
@@ -2783,11 +2812,9 @@ export class Game {
     r.nudge = (r.nudge ?? 0) - dt;
     let waiting = false;
     this.companions.forEach((c, i) => {
-      const { point, facing } = r.spots[i];
-      const arrived = c.fsm.is('idle') && c.root.position.distanceTo(point) < 2.5;
-      if (arrived) return;
+      if (this.recallArrived(c, r.spots[i])) return;
       waiting = true;
-      if (r.nudge <= 0) c.recall(point, facing);
+      if (r.nudge <= 0) c.recall(r.spots[i].point, r.spots[i].facing);
     });
     if (r.nudge <= 0) {
       r.nudge = 0.7;
@@ -3879,7 +3906,6 @@ export class Game {
     if (input.wasPressed('KeyH')) this.hud.toggleHelp();
     if (input.wasPressed('Backquote')) this.debugGui.toggle();
     if (input.wasPressed('KeyJ')) this.toggleHitch();
-    if (input.wasPressed('KeyN')) this.recallGirls();
     if (input.wasPressed('Enter') && !this.menu.isOpen && this.player.isRiding) this.askForRace(this.riddenUnit);
     if (input.wasPressed('KeyM')) {
       this.audioHub.params.muted = !this.audioHub.params.muted;
@@ -4004,6 +4030,7 @@ export class Game {
     this.updateTea(dt, ridden);
     this.updateJumpers(dt);
     this.updateDieselMistake(dt, ridden);
+    this.bell.update(dt);
     this.updateRecall(dt);
     if (!this.recalling) this.updateConvoy(dt, ridden);
     this.updateDashReading(dt, ridden);
