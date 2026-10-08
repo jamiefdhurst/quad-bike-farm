@@ -398,33 +398,30 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 
 ## TODO
 
-1.  A cattle grid in the road's gateway instead of an open gap: a rumble you hear and feel through the quad as you cross it. **Done.** See DECISIONS.md, "The cattle grid".
-2.  The girls on the tarmac. They ride faster on the road and remark on it: Jess egging you on, Amy telling you off for squealing the tyres. A handful of new lines each. **Done.** See DECISIONS.md, "The girls on the tarmac".
-3.  Dust. On the stubble fields from 2, dry, the quads throw up a dust cloud. Following in it is horrible (Amy drops well back; Jess tucks in and coughs), and it clogs the air filter several times faster than mud does, as dust really does. **Done.** See DECISIONS.md, "Dust off the stubble".
-4.  Falling out. After a bad race, a stolen quad or one dig too many, the girls fall out: for a while they won't share a quad, convoy or stand together, each tells you her side, and the banter turns sharper. They make up on their own after a while, or sooner if you get them together. **Done.** See DECISIONS.md
-5.  Moving over to the bales for the girls doesn't work well - they either need to give you enough time to respond, and get on a quad if you get on one, follow you, etc., otherwise it won't work. **Done.** See DECISIONS.md, "Favours".
-6.  When a girl likes you a lot, she should invite you behind the barn to make out. If we manage to do that a couple of times, she'll ask you to do it on her favourite quad while she's sitting on the back while you're standing next to her, and from this point you won't ever lose her favour this game unless you do something really bad (I need an idea for this) **Done.** See DECISIONS.md, "Round the back of the barn".
-7.  Land Rover's shake is too random for a 4-cylinder, needs to be more predictable - less like the quads.
-8.  Better models for a bunch of stuff: hay bales, the bench in the workshop, the ramp, etc. - some things look very low poly and we should do slightly better
-9.  Achievements each game so you get a score - getting both girls to like you, ramp achievements, getting all quads going, riding all of them, etc. - ticking off everything you can do in the game
-10. Better animations for the girls getting on and off things, and better seated and otherwise positions for them in everything they do. Better idle animations for them if they're standing around too.
-11. Pick a different voice for Jess, her current one makes her sound too old.
-12. Check over the lines for the girls and make sure they're for their personality, and add any missing emotion to certain statements.
-13. The girls hold items properly, like the jerry can.
-14. Better tractor model
-15. The girls bump into the quads and move them around, they need to be a bit more aware, and shouldn't be able to bump the quads and move them
-16. Pods on the tractor. The two accessory pods (analogue and digital) can only be fitted to the quads now. Let them go on the tractor too, reading its hours and the odometer it now starts with in the background.
-17. A proper two-wheeler model for the mini moto and the ATC. The mini moto rides on the quad physics with hidden outrigger wheels, so it turns like a quad: the steering yaws it directly and power doesn't change the line. Make it ride like a bike: lean drives the turn, power mid-corner pushes the rear out and the front tucks if you grab the brake, with a real roll angle, leaning in and out of corners and a fall if it goes too far. The ATC's tip-over (when it comes) wants the same machinery.
-18. Debug window overhaul - consolidate windows and make it easier to know what's going on, and make sure we set this up so future skills follow this correctly
-19. Console, separate to the debug window - set and get all values, reset positions and states of vehicles, girls, etc., set weather, flight mode, turn the girls' autonomy and speech on and off, etc.
-20. Passenger seats in the UTV. You can ride in the UTV's other seats while a girl drives it, looking out from the middle or the left of the bench, with the camera anchored to the seat and the same on and off as the quads' pillion.
-21. Better UTV model.
-22. The girls drive the UTV and the Land Rover. Either girl can take the wheel of the UTV, start it on the glow plugs, work the dash lever for reverse, and drive it with you (and the other girl) on the bench or in the bed. Jess takes it for a go, Amy has her day, as with the tractor.
-23. Things in the UTV's bed. The pick-up items (jerry cans, the toolbox, jump leads, the hose and so on) can be put in the bed and ride along, tip out when the bed tips, and be picked up again from it. Bales too, if they become pick-up items.
-24. They don't see the trailers as obstacles when driving and they don't have collision
-25. Better trailer models (large and small)
-26. Improve Land Rover model (girls head also sticks out of middle seat)
-27. Better starter noises for the UTV and Land Rover
-28. Better frost on the ground and on the seats
-29. Indicators on the Land Rover and the UTV, and a reverse light on the outside
-30. Visible parking brake controls on the quads, remove the HUD when it goes on and off
+1.  Land Rover's shake is too random for a 4-cylinder, needs to be more predictable - less like the quads. **Done.** See DECISIONS.md, "A steadier four-cylinder shake".
+2.  Scale issue sometimes when the girls get in the Land Rover, they end up too big, and this compounds ove time, probably related to a scaling issue somewhere
+3.  Some things are impossible to start in the frost (e.g. green quad) and some are stalling too readily under braking (Land Rover, UTV)
+4.  Green quad's sound isn't right at higher revs
+5.  Better models for a bunch of stuff: hay bales, the bench in the workshop, the ramp, etc. - some things look very low poly and we should do slightly better
+6.  Achievements each game so you get a score - getting both girls to like you, ramp achievements, getting all quads going, riding all of them, etc. - ticking off everything you can do in the game
+7.  Better animations for the girls getting on and off things, and better seated and otherwise positions for them in everything they do. Better idle animations for them if they're standing around too.
+8.  Pick a different voice for Jess, her current one makes her sound too old.
+9.  Check over the lines for the girls and make sure they're for their personality, and add any missing emotion to certain statements.
+10. The girls hold items properly, like the jerry can.
+11. Better tractor model
+12. The girls bump into the quads and move them around, they need to be a bit more aware, and shouldn't be able to bump the quads and move them
+13. Pods on the tractor. The two accessory pods (analogue and digital) can only be fitted to the quads now. Let them go on the tractor too, reading its hours and the odometer it now starts with in the background.
+14. A proper two-wheeler model for the mini moto and the ATC. The mini moto rides on the quad physics with hidden outrigger wheels, so it turns like a quad: the steering yaws it directly and power doesn't change the line. Make it ride like a bike: lean drives the turn, power mid-corner pushes the rear out and the front tucks if you grab the brake, with a real roll angle, leaning in and out of corners and a fall if it goes too far. The ATC's tip-over (when it comes) wants the same machinery.
+15. Debug window overhaul - consolidate windows and make it easier to know what's going on, and make sure we set this up so future skills follow this correctly
+16. Console, separate to the debug window - set and get all values, reset positions and states of vehicles, girls, etc., set weather, flight mode, turn the girls' autonomy and speech on and off, etc.
+17. Passenger seats in the UTV. You can ride in the UTV's other seats while a girl drives it, looking out from the middle or the left of the bench, with the camera anchored to the seat and the same on and off as the quads' pillion.
+18. Better UTV model.
+19. The girls drive the UTV and the Land Rover. Either girl can take the wheel of the UTV, start it on the glow plugs, work the dash lever for reverse, and drive it with you (and the other girl) on the bench or in the bed. Jess takes it for a go, Amy has her day, as with the tractor.
+20. Things in the UTV's bed. The pick-up items (jerry cans, the toolbox, jump leads, the hose and so on) can be put in the bed and ride along, tip out when the bed tips, and be picked up again from it. Bales too, if they become pick-up items.
+21. They don't see the trailers as obstacles when driving and they don't have collision
+22. Better trailer models (large and small)
+23. Improve Land Rover model
+24. Better starter noises for the UTV and Land Rover
+25. Better frost on the ground and on the seats
+26. Indicators on the Land Rover and the UTV, and a reverse light on the outside
+27. Visible parking brake controls on the quads, remove the HUD when it goes on and off

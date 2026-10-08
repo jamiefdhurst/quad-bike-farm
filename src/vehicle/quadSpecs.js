@@ -1145,6 +1145,7 @@ export const LAND_ROVER_SPEC = {
     revHoldMin: 2, // getting off never leaves it revving
   },
   vibration: {
+    steadiness: 0.85, // an old four ticks over in a regular rock, unlike the quads' random kicks
     firingsPerCycle: 1, // the engine already fires four times a cycle (engine.cylinders): one kick each
     idleRpm: 490,
     smoothRpmRange: 1500,

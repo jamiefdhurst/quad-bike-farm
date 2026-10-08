@@ -55,6 +55,7 @@ export class VibrationModel {
     this.groundDistance = 0; // metres travelled since the last ground jolt
     this.gridPhase = 0; // knocks owed from the cattle grid, in whole knocks
     this.jolts = []; // sizes of this update's ground jolts (in groundGain units), for the ride sounds
+    this.rock = 1; // which way the next firing's side-to-side kicks go when the engine is steady (steadiness)
     this.pending = []; // a multi-cylinder's later firings from a pulse, due after this update (times from the start of the update that queued them)
   }
 
@@ -153,8 +154,11 @@ export class VibrationModel {
     const bars = base * barsFactor;
     const j = p.directionJitter;
     // Mostly the same direction each time with some variation, plus random sign on the side-to-side parts.
-    const vary = () => 1 - j * 0.5 + j * r();
-    const side = () => (r() * 2 - 1) * (0.4 + 0.6 * j);
+    // Steadiness pulls both towards a fixed pattern: every kick the same size, the side-to-side ones rocking left and right in turn.
+    const st = clamp(p.steadiness ?? 0, 0, 1);
+    this.rock = -this.rock;
+    const vary = () => 1 - j * 0.5 + j * (r() * (1 - st) + 0.5 * st);
+    const side = () => ((r() * 2 - 1) * (1 - st) + this.rock * 0.7 * st) * (0.4 + 0.6 * j);
 
     const o = this.osc;
     o.heave.kick(body * p.heaveGain * vary());

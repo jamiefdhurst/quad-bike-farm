@@ -17,6 +17,7 @@ export const DEFAULT_VIBRATION_PARAMS = {
   sputterScale: 0.8,
   misfireScale: 0.3, // a misfire is a missing beat, so only a small jolt
   directionJitter: 0.6, // how much each kick's direction varies (0 = always the same)
+  steadiness: 0, // 0 = every kick a little random; 1 = every kick alike, rocking left and right in turn (a smooth multi-cylinder)
   firingsPerCycle: 1, // cylinders: a four-cylinder (the tractor) kicks four times, evenly, in each engine cycle
 
   // Jolts from uneven ground while moving with nobody on it.
@@ -66,6 +67,7 @@ export const VIBRATION_PARAM_RANGES = {
   sputterScale: [0, 2, 0.05],
   misfireScale: [0, 2, 0.05],
   directionJitter: [0, 1, 0.01],
+  steadiness: [0, 1, 0.05],
   firingsPerCycle: [1, 8, 1],
   groundGain: [0, 6, 0.05],
   groundFullSpeed: [1, 25, 0.5],
