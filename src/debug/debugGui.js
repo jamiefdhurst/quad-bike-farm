@@ -2,6 +2,8 @@ import GUI from 'lil-gui';
 import { getTuningGroups, exportTuning } from '../core/tuning.js';
 import { pickTrick } from '../npc/showOff.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
+import { applicableQuirks, featuresOf } from '../vehicle/quirks.js';
+import { setQuirk, setFault, clearFaults, fixEverything, problemSummary, quirkLabel } from './vehicleDebug.js';
 import { BRANDS, WHEEL_NAMES } from '../vehicle/tyres.js';
 import { rampPoint } from '../npc/jumps.js';
 
@@ -12,17 +14,25 @@ import { rampPoint } from '../npc/jumps.js';
 export class DebugGui {
   constructor(game) {
     this.game = game;
-    this.gui = new GUI({ title: 'Tuning  ( ` to hide )', width: 320 });
+    this.gui = new GUI({ title: 'Debug  ( ` to hide )', width: 340 });
     this.gui.hide();
     this.visible = false;
+    this.pickedId = null; // the vehicle chosen on the Vehicles tab; null follows whichever you are on or looking at
+    this.tabs = { Vehicles: [], Girls: [], Tune: [], Actions: [] };
+    this.tab = 'Vehicles';
+    this.search = { text: '' };
+    this.vehicleTuning = {}; // each vehicle's own registered tuning folders, shown for the picked one
+    const unitNames = new Set(game.units.map((u) => u.name));
 
-    this.buildLive();
+    this.buildVehicles();
     this.buildFavour();
     this.buildFallingOut();
     this.buildSkills();
     this.buildLPlates();
     this.buildGirls();
     this.buildActions();
+    this.searchFolder = this.addFolder('Tune', 'Search');
+    this.searchFolder.add(this.search, 'text').name('Find a folder').onChange(() => this.applyVisibility());
     const folders = {};
     // "Red quad/Engine" becomes an Engine folder inside a Red quad folder.
     const folderFor = (path) => {
@@ -30,6 +40,11 @@ export class DebugGui {
       const cut = path.lastIndexOf('/');
       const parent = cut < 0 ? this.gui : folderFor(path.slice(0, cut));
       const f = parent.addFolder(path.slice(cut + 1));
+      if (cut < 0) {
+        if (unitNames.has(path)) this.vehicleTuning[path] = f;
+        else this.tabs.Tune.push(f);
+        if (unitNames.has(path)) this.tabs.Vehicles.push(f);
+      }
       f.close();
       folders[path] = f;
       return f;
@@ -54,198 +69,178 @@ export class DebugGui {
       }
       folder.close();
     }
+    this.buildTabBar();
+    this.showTab('Vehicles');
   }
 
-  buildLive() {
-    const g = this.game;
-    const unit = () => g.inspectedUnit();
-    const live = {
-      get quad() {
-        return unit().name;
-      },
-      get state() {
-        return unit().engine.state;
-      },
-      get rpm() {
-        return Math.round(unit().engine.rpm);
-      },
-      get water() {
-        return Math.round(unit().engine.water * 100) / 100;
-      },
-      get mixture() {
-        return unit().engine.mixture;
-      },
-      get roughness() {
-        return unit().engine.roughness;
-      },
-      get power() {
-        return unit().engine.power;
-      },
-      get fouling() {
-        return unit().engine.fouling;
-      },
-      get load() {
-        return unit().engine.load;
-      },
-      get lug() {
-        return unit().engine.lug;
-      },
-      get choke() {
-        return unit().quad.choke;
-      },
-      get shake() {
-        return unit().vibration.intensity;
-      },
-      get speed() {
-        return Math.round(unit().quad.speed * 10) / 10;
-      },
-      get fuel() {
-        const f = unit().quad.fuel;
-        return `${f.litres.toFixed(1)} L, tap ${f.tap}`;
-      },
-      get oil() {
-        return Math.round(unit().engine.oil * 1000) / 1000;
-      },
-      get wear() {
-        return unit().engine.wear;
-      },
-      get parkingBrake() {
-        const q = unit().quad;
-        return `${q.parkBrake ? 'on' : 'off'}, last left by ${q.lastLeft ? `${q.lastLeft.who} (${q.lastLeft.braked ? 'braked' : 'brake off'})` : 'nobody yet'}`;
-      },
-      get quirks() {
-        return unit().quad.quirks.kinds.join(', ') || 'none';
-      },
-      get hours() {
-        return Math.round(unit().quad.usage.hours * 100) / 100;
-      },
-      get odometer() {
-        return `${unit().quad.usage.odoMiles.toFixed(2)} mi`;
-      },
-      get trip() {
-        return `${unit().quad.tripMiles.toFixed(2)} mi`;
-      },
-      get erratic() {
-        return unit().engine.erratic;
-      },
-      get heat() {
-        return unit().engine.heat;
-      },
-      get pinking() {
-        return unit().engine.pink;
-      },
-      get fan() {
-        return unit().engine.fan;
-      },
-      get soak() {
-        return unit().engine.soak;
-      },
-      get scuff() {
-        return unit().engine.scuff;
-      },
-      get nip() {
-        return unit().engine.nip;
-      },
-      get seized() {
-        return unit().engine.seized;
-      },
-      get sump() {
-        return unit().quad.sump ? Math.round(unit().quad.sump.level * 100) / 100 : 0;
-      },
-      set sump(v) {
-        if (unit().quad.sump) unit().quad.sump.level = Math.min(1, Math.max(0, Number(v) || 0));
-      },
-      get burnsOil() {
-        return !!unit().quad.sump?.burner;
-      },
+  /** The vehicle the Vehicles tab is about: the one picked, or else whichever you're on or looking at. */
+  unit() {
+    return this.game.units.find((u) => u.id === this.pickedId) ?? this.game.inspectedUnit();
+  }
 
-      get temperature() {
-        return unit().engine.temperature;
+  /** A folder on a tab. Tabs show and hide their folders; the Tune tab's folders can also be searched. */
+  addFolder(tab, title) {
+    const f = this.gui.addFolder(title);
+    (this.tabs[tab] ??= []).push(f);
+    return f;
+  }
+
+  /** A row of buttons across the top, one per tab. */
+  buildTabBar() {
+    const bar = document.createElement('div');
+    bar.style.cssText = 'display:flex;gap:2px;padding:4px;background:#1a1a1a;position:sticky;top:0;z-index:2';
+    this.tabButtons = {};
+    for (const name of Object.keys(this.tabs)) {
+      const b = document.createElement('button');
+      b.textContent = name;
+      b.style.cssText = 'flex:1;padding:4px 0;border:0;cursor:pointer;font:inherit;color:#ddd;background:#333';
+      b.onclick = () => this.showTab(name);
+      bar.appendChild(b);
+      this.tabButtons[name] = b;
+    }
+    this.gui.$children.prepend(bar);
+  }
+
+  showTab(name) {
+    this.tab = name;
+    for (const [tab, folders] of Object.entries(this.tabs)) for (const f of folders) f.show(tab === name);
+    for (const [tab, b] of Object.entries(this.tabButtons)) b.style.background = tab === name ? '#2c7be5' : '#333';
+    this.applyVisibility();
+  }
+
+  /** On the Vehicles tab only the picked vehicle's own tuning shows; on the Tune tab the search narrows the folders. */
+  applyVisibility() {
+    const u = this.unit();
+    if (this.tab === 'Vehicles') for (const [name, f] of Object.entries(this.vehicleTuning)) f.show(name === u.name);
+    if (this.tab === 'Tune') {
+      const q = this.search.text.trim().toLowerCase();
+      for (const f of this.tabs.Tune) if (f !== this.searchFolder) f.show(!q || f._title.toLowerCase().includes(q));
+    }
+  }
+
+  /** Every control that follows the picked vehicle is rebuilt when it changes, so it only lists what that vehicle has. */
+  buildVehicles() {
+    const g = this.game;
+    const self = this;
+    const pick = { vehicle: '' };
+    const options = { 'Follow me (the one I am on or looking at)': '' };
+    for (const u of g.units) options[`${u.name} (${u.label})`] = u.id;
+    const f = this.addFolder('Vehicles', 'Which vehicle');
+    f.add(pick, 'vehicle', options).name('Vehicle').onChange((v) => {
+      this.pickedId = v || null;
+      this.rebuildVehicle();
+    });
+    this.vehicleHeading = {
+      get now() {
+        return `${self.unit().name}${self.pickedId ? '' : ' (following you)'}`;
       },
-      set temperature(v) {
-        unit().engine.setTemperature(v);
-      },
-      get battery() {
-        return Math.round(unit().engine.battery * 100) / 100;
-      },
-      set battery(v) {
-        unit().engine.battery = v;
+      get problems() {
+        return problemSummary(self.unit());
       },
     };
-    const f = this.gui.addFolder('Engine (live): the quad you are on or looking at');
-    for (const key of Object.keys(Object.getOwnPropertyDescriptors(live))) {
-      if (key === 'temperature' || key === 'battery' || key === 'sump') continue;
-      f.add(live, key).listen().disable();
-    }
-    f.add(live, 'temperature', 0, 1, 0.01).name('temperature (drag to set)').listen();
-    f.add(live, 'battery', 0, 1, 0.01).name('battery (drag to set)').listen();
-    f.add(live, 'sump', 0, 1, 0.01).name('engine oil (drag to set; 0 on a two-stroke)').listen();
+    f.add(this.vehicleHeading, 'now').name('Showing').listen().disable();
+    f.add(this.vehicleHeading, 'problems').name('Wrong with it').listen().disable();
+    this.vehicleFolders = {
+      running: this.addFolder('Vehicles', 'Running'),
+      problems: this.addFolder('Vehicles', 'Problems (drag to set, 0 clears)'),
+      quirks: this.addFolder('Vehicles', 'Quirks (untick to remove)'),
+      tyres: this.addFolder('Vehicles', 'Tyres'),
+      character: this.addFolder('Vehicles', 'How this one was dealt'),
+    };
+    this.rebuildVehicle();
+  }
 
-    // The faults that develop (vehicle/faults.js): each shows its level (0 is none), and dragging it starts or clears one.
-    const faults = {};
-    for (const kind of FAULT_KINDS) {
-      Object.defineProperty(faults, kind, {
-        enumerable: true,
-        get: () => (unit().quad.faults.started[kind] ? Math.round(unit().quad.faults.levels[kind] * 100) / 100 : 0),
-        set: (v) => {
-          const fl = unit().quad.faults;
-          if (v <= 0) fl.fix(kind);
-          else {
-            fl.begin(kind);
-            fl.levels[kind] = v;
-            fl.caps[kind] = 1;
-          }
-        },
-      });
+  rebuildVehicle() {
+    const u = this.unit();
+    this.builtFor = u.id;
+    for (const folder of Object.values(this.vehicleFolders)) {
+      for (const c of [...folder.controllers]) c.destroy();
     }
-    // How prone the quad is to each, dealt once a game: [times as often it starts, times as fast it worsens].
-    for (const kind of FAULT_KINDS) {
-      Object.defineProperty(faults, `${kind} luck`, {
-        enumerable: false,
-        get: () => {
-          const f = unit().quad.faults;
-          return `x${f.prone[kind].toFixed(2)} often, x${f.worsens[kind].toFixed(2)} fast`;
-        },
-      });
-    }
-    const ff = this.gui.addFolder('Faults (live): drag to start, set or clear one');
-    for (const kind of FAULT_KINDS) {
-      ff.add(faults, kind, 0, 1, 0.01).listen();
-      ff.add(faults, `${kind} luck`).listen().disable();
-    }
-    Object.defineProperty(faults, 'tyre', { enumerable: false, get: () => unit().quad.faults.tyre });
-    ff.add(faults, 'tyre').name('flat tyre (wheel, -1 none)').listen().disable();
+    const unit = () => this.unit();
+    const e = u.engine;
+    const round = (v, n = 2) => Math.round(v * 10 ** n) / 10 ** n;
+    // A read-only line, or a slider that writes back, over whichever vehicle is picked.
+    const show = (f, label, get) => f.add({ get v() { return get(); } }, 'v').name(label).listen().disable();
+    const set = (f, label, get, put, min, max, step = 0.01) =>
+      f.add({ get v() { return get(); }, set v(x) { put(x); } }, 'v', min, max, step).name(label).listen();
+    const tick = (f, label, get, put) => f.add({ get v() { return get(); }, set v(x) { put(x); } }, 'v').name(label).listen();
 
-    // The tyres (vehicle/tyres.js): what the gauge reads on each wheel (drag to set the real pressure), and the brand, tread and grip.
-    const tyres = {};
-    WHEEL_NAMES.forEach((name, i) => {
-      Object.defineProperty(tyres, `${name} psi`, {
-        enumerable: true,
-        get: () => Math.round(unit().quad.tyres.psi[i] * 10) / 10,
-        set: (v) => {
-          unit().quad.tyres.psi[i] = v;
-          unit().quad.physics.applyParams();
-        },
-      });
-    });
-    const info = (name, get) => Object.defineProperty(tyres, name, { enumerable: false, get });
-    info('gauge (what the toolbox reads)', () => {
-      const fl = unit().quad.faults;
-      return unit().quad.tyres.gauge(fl.tyre, fl.started.puncture ? fl.levels.puncture : 0);
-    });
-    info('front tyres', () => `${BRANDS[unit().quad.tyres.brand.front].label}, tread ${unit().quad.tyres.tread.front.toFixed(2)}`);
-    info('rear tyres', () => `${BRANDS[unit().quad.tyres.brand.rear].label}, tread ${unit().quad.tyres.tread.rear.toFixed(2)}`);
-    info('grip on grass (per wheel)', () => [0, 1, 2, 3].map((i) => unit().quad.tyres.grip(i, 0, 0).toFixed(2)).join('  '));
-    info('grip in mud (per wheel)', () => [0, 1, 2, 3].map((i) => unit().quad.tyres.grip(i, 1, 0).toFixed(2)).join('  '));
-    const tf = this.gui.addFolder('Tyres (live): the quad you are on or looking at');
-    for (const name of WHEEL_NAMES) tf.add(tyres, `${name} psi`, 1.5, 7, 0.1).listen();
-    for (const key of ['gauge (what the toolbox reads)', 'front tyres', 'rear tyres', 'grip on grass (per wheel)', 'grip in mud (per wheel)']) tf.add(tyres, key).listen().disable();
+    const r = this.vehicleFolders.running;
+    show(r, 'state', () => unit().engine.state);
+    show(r, 'rpm', () => Math.round(unit().engine.rpm));
+    show(r, 'speed (mph)', () => round(unit().quad.speed * 2.237, 1));
+    show(r, 'throttle', () => round(unit().engine.throttle));
+    show(r, 'load / lug', () => `${round(unit().engine.load)} / ${round(unit().engine.lug)}`);
+    show(r, 'power', () => round(unit().engine.power));
+    show(r, 'mixture', () => round(unit().engine.mixture));
+    show(r, 'roughness', () => round(unit().engine.roughness));
+    show(r, 'erratic (needs a service)', () => round(unit().engine.erratic));
+    show(r, 'shake', () => round(unit().vibration.intensity));
+    set(r, 'temperature', () => round(unit().engine.temperature), (v) => unit().engine.setTemperature(v), 0, 1);
+    show(r, 'overheating', () => round(unit().engine.heat));
+    set(r, 'battery', () => round(unit().engine.battery), (v) => (unit().engine.battery = v), 0, 1);
+    set(r, 'fuel (litres)', () => round(unit().quad.fuel.litres, 1), (v) => (unit().quad.fuel.litres = v), 0, u.quad.fuel.params.tankCapacity, 0.1);
+    show(r, 'fuel tap', () => unit().quad.fuel.tap);
+    if (!u.quad.fuel.params.noTap) show(r, 'choke', () => round(unit().quad.choke));
+    if (u.quad.sump) set(r, 'engine oil', () => round(unit().quad.sump.level), (v) => (unit().quad.sump.level = v), 0, 1);
+    if (e.params.waterCooled) {
+      set(r, 'coolant', () => round(unit().engine.coolant), (v) => (unit().engine.coolant = v), 0, 1);
+      show(r, 'radiator fan', () => (unit().engine.fan ? 'on' : 'off'));
+    }
+    show(r, 'hours', () => round(unit().quad.usage.hours));
+    show(r, 'odometer / trip (mi)', () => `${unit().quad.usage.odoMiles.toFixed(2)} / ${unit().quad.tripMiles.toFixed(2)}`);
+    tick(r, 'parking brake', () => !!unit().quad.parkBrake, (v) => (unit().quad.parkBrake = v));
+
+    const p = this.vehicleFolders.problems;
+    for (const kind of FAULT_KINDS) {
+      set(p, kind, () => (unit().quad.faults.started[kind] ? round(unit().quad.faults.levels[kind]) : 0), (v) => setFault(unit().quad.faults, kind, v), 0, 1);
+    }
+    show(p, 'flat tyre (wheel)', () => unit().quad.faults.tyre);
+    set(p, 'plug fouling', () => round(unit().engine.fouling), (v) => (unit().engine.fouling = v), 0, 1);
+    set(p, 'air filter clogged', () => round(unit().engine.clog), (v) => (unit().engine.clog = v), 0, 1);
+    set(p, 'wear (a service clears it)', () => round(unit().engine.wear), (v) => (unit().engine.wear = v), 0, e.params.wearMax ?? 1);
+    set(p, 'scuffing (1 seizes it)', () => round(unit().engine.scuff), (v) => (unit().engine.scuff = v), 0, 1);
+    tick(p, 'seized', () => unit().engine.seized, (v) => (unit().engine.seized = v));
+    set(p, 'water in it', () => round(unit().engine.water), (v) => (unit().engine.water = v), 0, 1);
+    set(p, 'diesel soaked', () => round(unit().engine.dieselSoak), (v) => (unit().engine.dieselSoak = v), 0, 1);
+    if (e.params.strokes === 2) set(p, 'silencer blown', () => round(unit().engine.silencerBlown), (v) => (unit().engine.silencerBlown = v), 0, 1);
+    show(p, 'running in / scar', () => `${round(unit().engine.runIn)} / ${round(unit().engine.scar)}`);
+    const buttons = {
+      clearFaults: () => clearFaults(unit().quad.faults),
+      fix: () => fixEverything(unit()),
+    };
+    p.add(buttons, 'clearFaults').name('Clear the four faults');
+    p.add(buttons, 'fix').name('Put everything right (not quirks)');
+
+    const qf = this.vehicleFolders.quirks;
+    const applicable = applicableQuirks(featuresOf(u.spec, !!this.game.podRack.podOn(u.id)));
+    for (const kind of applicable) tick(qf, quirkLabel(kind), () => unit().quad.quirks.has(kind), (v) => setQuirk(unit().quad.quirks, kind, v));
+    qf.add({ none: () => [...unit().quad.quirks.kinds].forEach((k) => setQuirk(unit().quad.quirks, k, false)) }, 'none').name('Remove them all');
+    if (applicable.includes('tapStiff')) set(qf, 'tap stiffness (1 stuck, 0 free)', () => round(unit().quad.quirks.tapStiff), (v) => (unit().quad.quirks.tapStiff = v), 0, 1);
+    if (applicable.includes('seatSplit')) set(qf, 'seat wetness', () => round(unit().quad.quirks.seatWet), (v) => (unit().quad.quirks.seatWet = v), 0, 1);
+
+    const t = this.vehicleFolders.tyres;
+    WHEEL_NAMES.forEach((name, i) => set(t, `${name} psi`, () => round(unit().quad.tyres.psi[i], 1), (v) => { unit().quad.tyres.psi[i] = v; unit().quad.physics.applyParams(); }, 1.5, 7, 0.1));
+    show(t, 'front tyres', () => `${BRANDS[unit().quad.tyres.brand.front].label}, tread ${unit().quad.tyres.tread.front.toFixed(2)}`);
+    show(t, 'rear tyres', () => `${BRANDS[unit().quad.tyres.brand.rear].label}, tread ${unit().quad.tyres.tread.rear.toFixed(2)}`);
+    show(t, 'grip on grass (per wheel)', () => [0, 1, 2, 3].map((i) => unit().quad.tyres.grip(i, 0, 0).toFixed(2)).join('  '));
+    show(t, 'grip in mud (per wheel)', () => [0, 1, 2, 3].map((i) => unit().quad.tyres.grip(i, 1, 0).toFixed(2)).join('  '));
+
+    // What this game dealt it, which doesn't change while you play.
+    const c = this.vehicleFolders.character;
+    show(c, 'idle (rpm)', () => Math.round(unit().idleRpm ?? 0));
+    show(c, 'top revs (rpm)', () => Math.round(unit().topRpm ?? 0));
+    for (const kind of FAULT_KINDS) {
+      show(c, `${kind} luck`, () => `x${unit().quad.faults.prone[kind].toFixed(2)} often, x${unit().quad.faults.worsens[kind].toFixed(2)} fast`);
+    }
+    show(c, 'where it started', () => unit().where ?? '');
+    this.applyVisibility?.();
   }
 
   /** Who you favour: each girl's score, where she stands against her friend, and buttons to push it either way. */
   buildFavour() {
     const favour = this.game.favour;
-    const f = this.gui.addFolder('Favour (live): how each girl rates you');
+    const f = this.addFolder('Girls', 'Favour (live): how each girl rates you');
     const live = {};
     const nudges = {};
     for (const id of favour.ids) {
@@ -264,7 +259,7 @@ export class DebugGui {
   /** Whether the girls are fallen out, how much friction there is, and buttons to start or end one (npc/fallingOut.js). */
   buildFallingOut() {
     const fo = this.game.fallingOut;
-    const f = this.gui.addFolder('Falling out (live): the girls and each other');
+    const f = this.addFolder('Girls', 'Falling out (live): the girls and each other');
     const live = {};
     Object.defineProperty(live, 'fallen out', { enumerable: true, get: () => (fo.active ? `yes, ${fo.cause.kind} (${fo.fault} at fault)` : 'no') });
     Object.defineProperty(live, 'friction', { enumerable: true, get: () => Math.round(fo.friction * 10) / 10 });
@@ -280,7 +275,7 @@ export class DebugGui {
   /** Buttons to put the L plates on Amy's quad or the tractor, or take them off, so you can see them (npc/lPlates.js). */
   buildLPlates() {
     const l = this.game.lPlates;
-    const f = this.gui.addFolder('L plates (live)');
+    const f = this.addFolder('Girls', 'L plates (live)');
     f.add(l, 'where').listen().disable();
     const actions = { quad: () => l.put('quad'), tractor: () => l.put('tractor'), off: () => l.put('none') };
     f.add(actions, 'quad').name("Put them on Amy's quad");
@@ -291,7 +286,7 @@ export class DebugGui {
   /** What each girl is good at, live, with buttons to push a skill up or down. */
   buildSkills() {
     const skills = this.game.skills;
-    const f = this.gui.addFolder('Skills (live): what each girl is good at');
+    const f = this.addFolder('Girls', 'Skills (live): what each girl is good at');
     for (const id of skills.ids) {
       for (const skill of Object.keys(skills.levels[id])) {
         const row = {
@@ -310,7 +305,7 @@ export class DebugGui {
   /** Whose quad is whose, what the quads are called, the race score, and buttons to start things that are otherwise left to chance. */
   buildGirls() {
     const g = this.game;
-    const f = this.gui.addFolder('Girls (live): quads, names, racing');
+    const f = this.addFolder('Girls', 'Girls (live): quads, names, racing');
     const live = {};
     const cap = (s) => s[0].toUpperCase() + s.slice(1);
     for (const c of g.companions) {
@@ -481,9 +476,9 @@ export class DebugGui {
   buildActions() {
     const g = this.game;
     const actions = {
-      warm: () => g.inspectedUnit().engine.setTemperature(1),
-      cold: () => g.inspectedUnit().engine.setTemperature(0),
-      clearFouling: () => (g.inspectedUnit().engine.fouling = 0),
+      warm: () => this.unit().engine.setTemperature(1),
+      cold: () => this.unit().engine.setTemperature(0),
+      clearFouling: () => (this.unit().engine.fouling = 0),
       warmAll: () => g.units.forEach((u) => u.engine.setTemperature(1)),
       startAll: () => {
         // Straight to running and warm, as if each had been started and left a while (no cranking).
@@ -517,7 +512,7 @@ export class DebugGui {
         g.hud.toast('Tuning values copied');
       },
     };
-    const f = this.gui.addFolder('Shortcuts');
+    const f = this.addFolder('Actions', 'Shortcuts');
     f.add(actions, 'warm').name('Warm this engine');
     f.add(actions, 'cold').name('Cool this engine');
     f.add(actions, 'warmAll').name('Warm every engine');
@@ -528,11 +523,19 @@ export class DebugGui {
     f.add(actions, 'copy').name('Copy all values as JSON');
   }
 
+  /** While the panel is open and following you, rebuild the Vehicles tab when the vehicle you are on or looking at changes. */
+  watch() {
+    if (!this.visible) return;
+    if (!this.pickedId && this.unit().id !== this.builtFor) this.rebuildVehicle();
+    requestAnimationFrame(() => this.watch());
+  }
+
   toggle() {
     this.visible = !this.visible;
     if (this.visible) {
       this.gui.show();
       this.game.input.exitPointerLock();
+      this.watch();
     } else {
       this.gui.hide();
       this.game.input.requestPointerLock();
