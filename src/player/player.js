@@ -288,6 +288,8 @@ export class Player {
       pitch += c.pitch * k;
       roll += c.roll * k;
     }
+    // On a leaning bike the view stays part way level (leaning left is a roll the other way about the camera's own axis).
+    if (this.seat === 'rider' && this.vehicle.bike) roll -= this.vehicle.bike.lean * p.bikeCameraLevel;
     // The camera looks down -Z; the bike faces +Z.
     this.tmpEuler.set(pitch, yaw + Math.PI, roll, 'YXZ');
     this.camera.quaternion.copy(this.tmpQuat).multiply(new THREE.Quaternion().setFromEuler(this.tmpEuler));

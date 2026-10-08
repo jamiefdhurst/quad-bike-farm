@@ -165,7 +165,7 @@ export class QuadPhysics {
       v.setWheelEngineForce(i, t.forces[i]);
       v.setWheelBrake(i, brake);
       v.setWheelSteering(i, this.wheels[i].front ? steer : 0);
-      v.setWheelFrictionSlip(i, t.grips[i] * (this.wheels[i].gripScale ?? 1));
+      v.setWheelFrictionSlip(i, t.grips[i] * (this.wheels[i].gripScale ?? 1) * (this.gripMul?.[i] ?? 1));
     }
   }
 
@@ -257,6 +257,24 @@ export class QuadPhysics {
     const up = { x: 2 * (r.x * r.y - r.w * r.z), y: 1 - 2 * (r.x * r.x + r.z * r.z), z: 2 * (r.y * r.z + r.w * r.x) };
     const t = toppleTorque(up, load);
     this.body.applyTorqueImpulse({ x: t.x * dt, y: 0, z: t.z * dt }, true);
+  }
+
+  /** How far over it is leaning, radians, positive to the left, and how fast it is going over (a two-wheeler's balance, bikeLean.js). */
+  lean() {
+    const r = this.body.rotation();
+    // The chassis's left (+x) axis and forward (+z) axis in the world.
+    const left = { x: 1 - 2 * (r.y * r.y + r.z * r.z), y: 2 * (r.x * r.y + r.w * r.z), z: 2 * (r.x * r.z - r.w * r.y) };
+    const fwd = { x: 2 * (r.x * r.z + r.w * r.y), y: 2 * (r.y * r.z - r.w * r.x), z: 1 - 2 * (r.x * r.x + r.y * r.y) };
+    const w = this.body.angvel();
+    // World up seen from the chassis points to its right when it leans left, so the lean is minus the up-axis's left component.
+    return { lean: -Math.asin(Math.max(-1, Math.min(1, left.y))), rate: -(w.x * fwd.x + w.y * fwd.y + w.z * fwd.z), fwd };
+  }
+
+  /** Rolls the chassis about its own forward axis: `torque` N m, positive leaning it left, for one step of `dt`. */
+  rollTorque(torque, dt) {
+    const { fwd } = this.lean();
+    const t = -torque * dt; // leaning left is a turn the other way about +z
+    this.body.applyTorqueImpulse({ x: fwd.x * t, y: fwd.y * t, z: fwd.z * t }, true);
   }
 
   /** Puts the bike back on its wheels at a spot, e.g. after a rollover. */

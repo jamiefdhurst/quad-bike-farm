@@ -89,7 +89,7 @@ describe('extra vehicles', () => {
     for (const s of QUAD_SPECS) expect(loan.roughnessRange[1]).toBeLessThanOrEqual(s.roughnessRange[0] + 0.001);
   });
 
-  it('makes the mini moto a solo two-stroke with a pull-start, anyone may ride, and hidden outriggers that never go flat', async () => {
+  it('makes the mini moto a solo two-stroke with a pull-start, anyone may ride, and two wheels in a line', async () => {
     const moto = EXTRA_SPECS.find((s) => s.id === 'moto');
     expect(moto.solo).toBe(true);
     expect(moto.owner).toBeUndefined();
@@ -99,10 +99,8 @@ describe('extra vehicles', () => {
     expect(moto.vehicle.fourWheelDrive).toBe(0);
     for (const s of QUAD_SPECS) expect(moto.vehicle.maxSpeed).toBeLessThan(s.vehicle.maxSpeed ?? 17);
     const { MOTO_LAYOUT } = await import('../src/vehicle/miniMotoModel.js');
-    const out = MOTO_LAYOUT.wheels.filter((w) => w.outrigger);
-    expect(out).toHaveLength(2);
-    for (const w of out) expect(w.driven).toBe(false);
-    for (const w of MOTO_LAYOUT.wheels.filter((w) => !w.outrigger)) expect(w.x).toBe(0);
+    expect(MOTO_LAYOUT.wheels).toHaveLength(2);
+    for (const w of MOTO_LAYOUT.wheels) expect(w.x).toBe(0);
   });
 
   it('makes the old three-wheeler a worn, solo, cord-start two-stroke with a manual box and three wheels that can tip', async () => {

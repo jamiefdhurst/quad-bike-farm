@@ -960,6 +960,7 @@ export const VOICE_LINES = {
   ackStopHere: { cooldown: 0, lines: ['Stopping!', 'Here? Okay.', 'Brakes, brakes.', 'Righto.'] },
   ackSlower: { cooldown: 0, lines: ['Sorry! Slowing down.', 'Too fast? Okay.', "Fine, Grandad.", 'Gently, gently.'] },
   ackFaster: { cooldown: 0, lines: ['Ooh, you asked for it!', 'Faster? Okay!', 'Hold on, then!', "Don't blame me if we fall off."] },
+  youCameOff: { cooldown: 0, shout: true, lines: ['Are you okay?!', 'Oh no! You came off!', 'Ooh, that looked sore!', 'You went right over!', 'Told you to ease off the brake!'] },
   ackGoAgain: { cooldown: 0, lines: ['Off we go!', 'Round again!', 'Okay, hold on.'] },
   ackSwap: {
     cooldown: 0,

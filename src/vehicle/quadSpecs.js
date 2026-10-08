@@ -501,8 +501,8 @@ export const EXTRA_SPECS = [
   },
   {
     // A 50cc two-stroke pit bike (the "mini moto"): two wheels, one seat, a pull-start as well as the starter, and the kids' quad's
-    // sound for now. Built by miniMotoModel.js: it rides on the quad physics with two hidden outrigger wheels to hold it upright, and
-    // leans into corners for show. Anyone can ride it (it's nobody's), but there's no room on the back.
+    // sound for now. Built by miniMotoModel.js: it rides on the quad physics with two wheels and the lean model (bikeLean.js) holding it up, and
+    // leaning into corners. Anyone can ride it (it's nobody's), but there's no room on the back.
     id: 'moto',
     miniMoto: true,
     label: 'mini moto',
@@ -548,8 +548,8 @@ export const EXTRA_SPECS = [
     },
     vehicle: {
       mass: 105, // bike plus rider
-      centreOfMassY: -0.22, // low, and the outriggers stiff and wide, so it stays up without a rider balancing it
-      riderTopple: 0, // its outriggers are tuned with the rider in the mass; a proper two-wheeler model is TODO 23
+      centreOfMassY: -0.22, // low, so the lean balance (bikeLean.js) has little to hold up
+      riderTopple: 0, // the rider is in the mass; its tipping is the lean model's (bikeLean.js)
       suspensionStiffness: 60,
       rollInertia: 12,
       pitchInertia: 28,

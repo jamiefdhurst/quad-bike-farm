@@ -3,8 +3,8 @@ import { MAT, STYLE, add, rbox, tube, pipe, buildHandlebars, addHeadlightBeams, 
 import { mergeStatic } from './quadGeometry.js';
 
 // The mini moto: a 50cc pit bike, procedural like the quads. Same named parts as a quad's model so Quad drives it unchanged (see
-// quadModel.js). It has two wheels in a line plus two hidden outrigger wheels either side, which only exist to keep the physics upright;
-// the body leans into corners for show (`userData.leans`, see quad.js update).
+// quadModel.js). It has two wheels in a line and really leans: the
+// chassis rolls under the balance in bikeLean.js (`userData.bike` tells Quad to run it).
 //
 // +Z is forward and +X is the rider's left.
 
@@ -14,15 +14,12 @@ const REST = 0.12; // suspension rest length: matches the spec's suspensionRestL
 const wheelY = R + REST + MOTO_GROUND_OFFSET; // where each suspension mount sits in the chassis frame
 const FRONT_Z = 0.5;
 const REAR_Z = -0.45;
-const OUT_X = 0.38; // the outriggers' half track
 
-/** Where the wheels, their mounts and the bodywork box are, for QuadPhysics. The outriggers don't drive and grip lightly. */
+/** Where the wheels, their mounts and the bodywork box are, for QuadPhysics. Two wheels in a line; bikeLean.js holds it up. */
 export const MOTO_LAYOUT = {
   wheels: [
     { name: 'wheel_fl', x: 0, z: FRONT_Z, front: true },
-    { name: 'wheel_fr', x: -OUT_X, z: 0.05, front: false, driven: false, outrigger: true, gripScale: 0.05 },
-    { name: 'wheel_rl', x: OUT_X, z: 0.05, front: false, driven: false, outrigger: true, gripScale: 0.05 },
-    { name: 'wheel_rr', x: 0, z: REAR_Z, front: false },
+    { name: 'wheel_rl', x: 0, z: REAR_Z, front: false },
   ],
   topY: wheelY,
   chassis: { hx: 0.17, hy: 0.22, hz: 0.7, y: 0.2 },
@@ -52,7 +49,6 @@ function buildWheel(w, paint) {
   spin.name = 'spin';
   spin.userData.keep = true;
   wheel.add(spin);
-  if (w.outrigger) return wheel; // nothing to see
   tyreAndRim(wheel, spin, MAT.alloy);
   if (w.front) {
     // The fork legs and a mudguard turn with the wheel; the legs reach up to the bars.
@@ -74,7 +70,7 @@ export function buildMiniMotoModel({ bodyColor = 0xd0d4d8, dashStyle = 'kidsKey'
   quad.name = 'quad';
   quad.userData.lensMaterial = lensMat;
   quad.userData.seatMaterial = seatMat;
-  quad.userData.leans = true;
+  quad.userData.bike = true;
   const body = new THREE.Group();
   body.name = 'body';
   quad.add(body);

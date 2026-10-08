@@ -11,6 +11,7 @@ import { QuadUnit } from './vehicle/quadUnit.js';
 import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC } from './vehicle/quadSpecs.js';
 import { LANDY_STAND } from './vehicle/landRoverModel.js';
 import { clearOfChassis } from './vehicle/dismount.js';
+import { DEFAULT_BIKE_PARAMS, BIKE_PARAM_RANGES } from './vehicle/bikeLean.js';
 import { pickFleet } from './vehicle/fleet.js';
 import { applyIdle, applyTopRpm, applyVariation, pickIdle } from './vehicle/quadVariation.js';
 import { AudioHub } from './audio/engineAudio.js';
@@ -296,6 +297,7 @@ export class Game {
     registerTuning('2WD and 4WD', DEFAULT_DRIVE_PARAMS, DRIVE_PARAM_RANGES);
     this.fourWdState = new Map(); // companion -> { quad: the switched quad she's driving or null, watch }
     registerTuning('Headlights', HEADLIGHT_PARAMS, HEADLIGHT_PARAM_RANGES);
+    registerTuning('Two-wheeler lean', DEFAULT_BIKE_PARAMS, BIKE_PARAM_RANGES);
     // One to three quirks each, from the parts the quad has (a gauge quirk needs a dash or pod that shows it, so this comes after the pods).
     this.quirkParams = { ...DEFAULT_QUIRK_PARAMS };
     registerTuning('Quirks', this.quirkParams, QUIRK_PARAM_RANGES);
@@ -4157,6 +4159,30 @@ export class Game {
     this.player.dismount(spot, quad.yaw + Math.PI);
   }
 
+  /** A two-wheeler has gone down under you (bikeLean.js): thrown clear to the side it fell, the engine dead, and whoever's near has a word. */
+  throwOff(unit) {
+    const quad = unit.quad;
+    const side = quad.bike.fallSide;
+    const spot = this.findDismountSpot(quad, [[side * 1.1, -0.15], [-side * 1.1, -0.15], [0, -1.8]], 0.3);
+    this.hud.toast(`You came off the ${unit.label}`, 2.5);
+    if (!spot) return; // nowhere clear to land: you stay put, and T rights it
+    const push = new THREE.Vector3(spot.x - quad.position.x, 0, spot.z - quad.position.z).normalize();
+    const look = this.camera.getWorldDirection(new THREE.Vector3());
+    const carry = quad.velocity;
+    quad.setRider(null, null);
+    quad.lastLeft = { who: 'you', braked: false };
+    this.player.leapOff(spot, {
+      yaw: Math.atan2(-look.x, -look.z),
+      pitch: Math.asin(THREE.MathUtils.clamp(look.y, -1, 1)),
+      carry,
+      push,
+      speed: Math.max(quad.speed, 6),
+      collider: quad.physics.collider,
+    });
+    const near = this.companions.filter((c) => c.root.position.distanceTo(quad.position) < 40).sort((a, b) => a.root.position.distanceTo(quad.position) - b.root.position.distanceTo(quad.position))[0];
+    near?.voice.say('youCameOff', { urgent: true });
+  }
+
   /**
    * Getting off at speed: jump clear to the outside of the turn (or whichever
    * side is free) and let the quad carry on without you, throttle and bars
@@ -4439,8 +4465,11 @@ export class Game {
     } else if (this.player.isRiding) {
       this.interaction.clear();
       this.riddenUnit.quad.handleFrameInput(dt);
-      if (input.wasPressed('Space')) this.toggleParkBrake(this.riddenUnit.quad);
-      if (input.wasPressed('KeyE')) this.tryDismount();
+      if (this.riddenUnit.quad.bike?.takeFall()) this.throwOff(this.riddenUnit);
+      else {
+        if (input.wasPressed('Space')) this.toggleParkBrake(this.riddenUnit.quad);
+        if (input.wasPressed('KeyE')) this.tryDismount();
+      }
     } else if (this.workshop.isOpen) {
       this.workshop.handleInput(input);
     } else if (this.bench.isOpen) {

@@ -300,6 +300,7 @@ export const JESS_LINES = {
   ackStopHere: ['Here? Fine.', 'Stopping!'],
   ackSlower: ['Spoilsport.', 'Fine, granny pace.', 'Okay, slowing down. Boring.'],
   ackFaster: ['Now you are talking!', 'Ha! Hold on!', "You asked for it!"],
+  youCameOff: ['Ha! Oh. Are you alive?', 'That was brilliant! Are you hurt?', 'Wheee, thud. Do it again!', 'You fell off! Properly fell off!', 'Too much brake, genius.'],
   ackGoAgain: ['Round again!', 'Here we go!'],
   ackSwap: ["Fine. Don't crash it.", 'Your go. Try to keep up with me.'],
   ackStart: ["I'll show you how it's done.", 'Watch and learn.', 'Easy.'],

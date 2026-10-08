@@ -23,6 +23,7 @@ export const DEFAULT_PLAYER_PARAMS = {
   ridePitchUp: 60,
   ridePitchDown: 65,
   rideCameraShake: 1.0, // multiplier on the vibration camera output
+  bikeCameraLevel: 0.45, // how much of a two-wheeler's lean the view stays level against (0 leans with the bike, 1 stays level)
   lookBackYaw: 205, // degrees you turn round (past 180 to see back across the seat from out over your shoulder) holding C (or the middle mouse button) while riding
   lookBackPitch: -10, // degrees, a little down toward a passenger
   lookBackShift: 0.28, // metres your head moves out over the shoulder as you twist round
@@ -58,6 +59,7 @@ export const PLAYER_PARAM_RANGES = {
   ridePitchUp: [10, 89, 1],
   ridePitchDown: [10, 89, 1],
   rideCameraShake: [0, 3, 0.05],
+  bikeCameraLevel: [0, 1, 0.05],
   lookBackYaw: [60, 240, 1],
   lookBackPitch: [-60, 30, 1],
   lookBackShift: [0, 0.4, 0.01],

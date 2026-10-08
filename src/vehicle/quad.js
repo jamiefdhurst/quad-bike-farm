@@ -22,6 +22,7 @@ import { Sump, hasSump, oilPressureLamp } from './sump.js';
 import { stepHand } from './handLever.js';
 import { Faults } from './faults.js';
 import { toppleLoad } from './topple.js';
+import { BikeLean, DEFAULT_BIKE_PARAMS } from './bikeLean.js';
 import { holdsItself } from './handbrake.js';
 import { DriveSwitch, driveEffects, DEFAULT_DRIVE_PARAMS } from './driveMode.js';
 import { reverseAllowed, chokeReach, DEFAULT_CONTROLS_PARAMS } from './controls.js';
@@ -165,6 +166,7 @@ export class Quad {
     this.shownFrost = 0;
     this.tyres = new TyreSet(); // pressures, brands and tread (tyres.js); the game deals this game's
     this.physics.tyres = this.tyres;
+    this.bike = this.model.userData.bike ? new BikeLean(DEFAULT_BIKE_PARAMS) : null; // a two-wheeler's balance and lean (bikeLean.js)
     this.tyres.useLayout(layout.wheels);
     this.physics.applyParams();
     // The tractor has a clutch pedal and a gearbox rather than a CVT; everything reads the same drivetrain fields.
@@ -272,7 +274,7 @@ export class Quad {
   /** True when the bike is on its side or roof. */
   get isTipped() {
     const up = new THREE.Vector3(0, 1, 0).applyQuaternion(this.currQuat);
-    return up.y < 0.45;
+    return up.y < 0.45 || !!this.bike?.fallen; // a bike that has gone down may be lying at a lean it could otherwise ride at
   }
 
   setRider(rider, input) {
@@ -684,10 +686,12 @@ export class Quad {
       this.physics.traction.gripScale = this.driveEffects.gripScale;
     }
     this.physics.hold = hold + this.bog.dragForce(inBog, p.mass, groundSpeed);
+    let wheelSteer = this.steer + this.faults.steerPull + this.quirks.brakePull(this.brake);
+    if (this.bike) wheelSteer = this.balanceBike(dt, wheelSteer);
     this.physics.applyControls({
       driveForce: Math.sign(drive) * Math.max(0, Math.abs(drive) * this.faults.driveFactor * this.tow.driveFactor * (this.drive ? this.driveEffects.driveScale : 1) - hold),
       brake,
-      steer: this.steer + this.faults.steerPull + this.quirks.brakePull(this.brake),
+      steer: wheelSteer,
       mudAt: (x, z) => Math.max(this.world.mudAt(x, z), this.churn),
       puddleAt: (x, z) => this.world.puddleAt?.(x, z) ?? 0,
       bogAt: (x, z) => this.world.bogAt?.(x, z) ?? 0,
@@ -721,7 +725,36 @@ export class Quad {
     // Whoever's aboard, sat up on it, leans it further over on a slope (vehicle/topple.js).
     const load = toppleLoad(p, { front: !!(this.rider || this.driver), back: !!(this.passenger || this.backRider) });
     if (load > 0) this.physics.topple(load, dt);
+    if (this.bike) this.physics.rollTorque(this.bike.out.rollTorque, dt);
     this.physics.update(dt);
+  }
+
+  /**
+   * A two-wheeler's balance for this step (bikeLean.js): returns the front wheel's angle and sets the tyres' grip; the roll torque it asks
+   * for is applied just before the physics steps. Only you can come off it: a girl riding asks for a gentle lean and one with nobody on
+   * it holds itself up.
+   */
+  balanceBike(dt, barAngle) {
+    const p = this.params;
+    const { lean, rate } = this.physics.lean();
+    const live = this.physics.wheelInfo.filter((w) => w.contact);
+    const grip = live.length ? live.reduce((a, w) => a + w.grip, 0) / live.length / p.grassFrictionSlip : 1;
+    const wasFallen = this.bike.fallen;
+    const out = this.bike.update(dt, {
+      lean,
+      leanRate: rate,
+      speed: this.physics.forwardSpeed,
+      bars: Math.max(-1, Math.min(1, this.steer / ((p.maxSteerDeg * Math.PI) / 180))),
+      barAngle,
+      throttle: this.throttle,
+      brake: this.brake,
+      grip,
+      safe: !this.input,
+      gentle: !!this.driver,
+    });
+    this.physics.gripMul = this.physics.wheels.map((w) => (w.front ? out.frontGrip : out.rearGrip));
+    if (!wasFallen && this.bike.fallen) this.engine.setIgnition(false); // it stalls, or you kill it, on the way down
+    return out.steer;
   }
 
   /** Record the chassis transform after the physics step, for interpolation. */
@@ -811,13 +844,10 @@ export class Quad {
     // Vibration rocks the sprung body and shakes the bars on top of steering.
     const v = vibration;
     this.body.position.set(0, (v ? v.body.heave : 0) + rearZ * lift, 0);
-    // A two-wheeler leans into the corner (for show: the outriggers keep it up).
-    const lean = this.model.userData.leans ? -this.steer * Math.min(1, Math.abs(this.speed) / 6) * 0.3 : 0;
-    this.leanShown = (this.leanShown ?? 0) + (lean - (this.leanShown ?? 0)) * Math.min(1, dt * 5);
-    this.body.rotation.set((v ? v.body.pitch : 0) + lift, 0, (v ? v.body.roll : 0) + this.leanShown);
+    this.body.rotation.set((v ? v.body.pitch : 0) + lift, 0, v ? v.body.roll : 0);
     this.handlebars.position.copy(this.handlebarsBase);
     if (v) this.handlebars.position.add(new THREE.Vector3(v.bars.x, v.bars.y, 0));
-    this.handlebars.rotation.set(0, this.steer * (this.model.userData.steerGain ?? 0.85) + (v ? v.bars.yaw : 0), v ? v.bars.roll : 0);
+    this.handlebars.rotation.set(0, (this.bike ? this.bike.out.steer : this.steer) * (this.model.userData.steerGain ?? 0.85) + (v ? v.bars.yaw : 0), v ? v.bars.roll : 0);
 
     this.updateDash(dt);
     this.updateQuirks(dt, vibration);
@@ -961,6 +991,7 @@ export class Quad {
   }
 
   rightItself() {
+    this.bike?.recover();
     const p = this.currPos;
     const yaw = this.yaw;
     this.physics.reset(p.x, this.world.heightAt(p.x, p.z) - this.groundOffset * this.scale + 0.3 * this.scale, p.z, yaw);
