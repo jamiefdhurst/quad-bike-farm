@@ -1,36 +1,38 @@
-// Which vehicles are on the farm this game. The five regular quads are sometimes joined by the kids' quad, the loan quad, the mini moto or the old three-wheeler, and one
-// or two of the regulars are sometimes missing, so no two games have quite the same line-up. Pure logic.
+// Which vehicles are on the farm this game. Every vehicle is in one pool (the five regular quads, the kids' quad, the loan quad, the mini moto, the old
+// three-wheeler, the tractor, the UTV and the Land Rover) and each game has between four and all of them, so no two games have quite the same
+// line-up. Pure logic.
 
 export const DEFAULT_FLEET_PARAMS = {
-  missingChances: [0.35, 0.4, 0.25], // chance that none, one or two of the regular quads are away
-  extraChances: [0.28, 0.35, 0.22, 0.1, 0.05], // chance that none, one, two, three or all four of the extra vehicles turn up
-  maxVehicles: 7, // and never more than there are parking slots (LAYOUT.spawn.quads)
-  minVehicles: 3, // never fewer than this, so there's always something to ride and something for her to ride
+  minVehicles: 4, // never fewer than this
+  spread: 2, // how many dice the count is averaged over: 1 is any number from the minimum to the lot equally, more bunches games towards the middle
+  minRegulars: 2, // and at least this many of the regular quads, so there's always one for each girl
 };
 
-function pickCount(chances, random) {
-  let r = random();
-  for (let n = 0; n < chances.length; n++) {
-    r -= chances[n];
-    if (r < 0) return n;
-  }
-  return chances.length - 1;
-}
-
-/** Picks `n` of `list` at random, keeping their order. */
-function pick(list, n, random) {
-  const left = list.slice();
-  while (left.length > n) left.splice(Math.floor(random() * left.length), 1);
-  return left;
+/** How many vehicles this game has, from `min` to `max`, weighted towards the middle. */
+export function pickCount(min, max, random, spread = DEFAULT_FLEET_PARAMS.spread) {
+  let t = 0;
+  for (let i = 0; i < spread; i++) t += random();
+  return Math.min(max, min + Math.floor((t / spread) * (max - min + 1)));
 }
 
 /**
- * This game's vehicles, as specs: the regulars that stayed, then the extras that turned up. The same random numbers give the same fleet.
+ * This game's vehicles, as specs, in the pool's order (`regulars`, then `others`). The same random numbers give the same fleet.
  */
-export function pickFleet(regulars, extras, random, params = DEFAULT_FLEET_PARAMS) {
-  const missing = Math.min(pickCount(params.missingChances, random), regulars.length - 1);
-  const extraCount = Math.min(pickCount(params.extraChances, random), extras.length);
-  // Too few would leave an empty farm, so fewer regulars go missing.
-  const staying = Math.min(Math.max(regulars.length - missing, params.minVehicles - extraCount), params.maxVehicles - extraCount);
-  return [...pick(regulars, Math.min(staying, regulars.length), random), ...pick(extras, extraCount, random)];
+export function pickFleet(regulars, others, random, params = DEFAULT_FLEET_PARAMS) {
+  const pool = [...regulars, ...others];
+  const n = pickCount(Math.min(params.minVehicles, pool.length), pool.length, random, params.spread);
+  const left = pool.slice();
+  const chosen = [];
+  while (chosen.length < n) chosen.push(left.splice(Math.floor(random() * left.length), 1)[0]);
+  // Too few quads would leave nothing for the girls to ride: swap some of the others out for regulars that missed out.
+  const want = Math.min(params.minRegulars, regulars.length, n);
+  while (chosen.filter((s) => regulars.includes(s)).length < want) {
+    const out = chosen.filter((s) => !regulars.includes(s));
+    chosen.splice(chosen.indexOf(out[Math.floor(random() * out.length)]), 1);
+    const back = left.filter((s) => regulars.includes(s));
+    const pick = back[Math.floor(random() * back.length)];
+    left.splice(left.indexOf(pick), 1);
+    chosen.push(pick);
+  }
+  return pool.filter((s) => chosen.includes(s));
 }

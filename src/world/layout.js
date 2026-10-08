@@ -192,10 +192,8 @@ export const LAYOUT = {
     { x: 177.2, z: -8.6, yaw: 2.4, where: 'by the Dutch barn' }, // by its front corner stanchion, under the eaves
     { x: 92.9, z: -69.6, yaw: -0.5, where: 'by the field shed' }, // against its wall, beside the doorway
   ],
-  tractor: { x: -41, z: 70.5, yaw: 2.7 }, // the old tractor, parked towards the field gate, clear of the barn and the quads' rows (Jess kept getting stuck by the barn) (vehicle/quadSpecs.js TRACTOR_SPEC)
-  landRover: { x: -54, z: 71.5, yaw: 2.3 }, // the old Land Rover, in the open north of the barn doors, clear of the straw bale at (-50, 66) and the tractor (vehicle/quadSpecs.js LAND_ROVER_SPEC)
-  utv: { x: -52.5, z: 40.5, yaw: 0.5 }, // the UTV, parked between the paddock and the quads' rows, where you start can see it (vehicle/quadSpecs.js UTV_SPEC)
-  trailer: { x: -44.5, z: 77.9, yaw: 2.7 }, // the bale trailer's axle, 8 m behind the tractor and pointing at it, so you reverse the drawbar up to it
+  // The tractor, UTV and Land Rover have no spot of their own: each game they're dealt a parking slot or an open spot like the quads (spawn, below).
+  trailer: { x: -42.5, z: 72.5, yaw: 2.7 }, // the bale trailer's axle, in the open towards the field gate with its drawbar to the yard, 7 m clear of the north hedge (it was in it). The tractor is wherever the game put it
   tipTrailer: { x: -49, z: 33.5, yaw: 0.2 }, // the little tipping trailer's axle, in the clear by the paddock with its tongue towards the yard, for a quad to back up to
   dieselBowser: { x: -61, z: 45.6, yaw: Math.PI / 2 }, // red diesel for the tractor, south of the petrol tank (and the hose)
   jerryCanJitter: 0.8, // metres of extra random shift around the chosen spot
@@ -238,9 +236,9 @@ export const LAYOUT = {
       { x: -46, z: -30, where: 'by the bottom of the track' },
       { x: 4, z: -32, where: 'in the middle of the field' },
       { x: -68, z: 8, where: 'by the west hedge' },
-      // Out in the east fields. A spot's own `jitter` (metres) is for a tight one: the Dutch barn's open bay.
-      { x: 181, z: -13.6, jitter: 0.8, where: 'in the Dutch barn' },
-      { x: 104, z: 2, jitter: 1, where: 'along the road' },
+      // Out in the east fields. A spot's own `jitter` (metres) is for a tight one: the Dutch barn's open bay. `tight` keeps the tractor, UTV and Land Rover out.
+      { x: 181, z: -13.6, jitter: 0.8, tight: true, where: 'in the Dutch barn' },
+      { x: 104, z: 2, jitter: 1, tight: true, where: 'along the road' },
       { x: 112, z: -40, where: 'out in the barley field' },
       { x: 150, z: 44, where: 'out in the wheat field' },
       { x: 95, z: -65, jitter: 2, where: 'by the field shed' },

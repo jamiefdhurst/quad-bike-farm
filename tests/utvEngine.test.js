@@ -6,7 +6,6 @@ import { DASH_STYLES } from '../src/vehicle/dash.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { FuelSystem, DEFAULT_FUEL_PARAMS } from '../src/vehicle/fuelSystem.js';
-import { LAYOUT } from '../src/world/layout.js';
 
 const seeded = (seed) => () => {
   seed = (seed * 16807) % 2147483647;
@@ -88,10 +87,9 @@ describe('the UTV engine', () => {
 });
 
 describe('the UTV spec', () => {
-  it('names a dash that exists and a reverse style that exists, and is parked on the farm', () => {
+  it('names a dash that exists and a reverse style that exists, and is not one of the quads', () => {
     expect(DASH_STYLES).toContain(UTV_SPEC.dashStyle);
     expect(REVERSE_STYLES).toContain(UTV_SPEC.reverseStyle);
-    expect(LAYOUT.utv).toMatchObject({ x: expect.any(Number), z: expect.any(Number), yaw: expect.any(Number) });
     expect(QUAD_SPECS.some((s) => s.id === UTV_SPEC.id)).toBe(false);
   });
 

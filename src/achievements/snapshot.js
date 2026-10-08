@@ -50,7 +50,7 @@ export function achievementSnapshot(game, ridden) {
   const idOf = (quad) => game.units.find((u) => u.quad === quad)?.id;
   const pulling = [];
   if (game.winch?.state === 'hooked' && game.winch.target) pulling.push({ id: idOf(game.winch.target), by: 'winch' });
-  if (game.chain.state === 'hooked' && game.chain.target) pulling.push({ id: idOf(game.chain.target), by: 'chain' });
+  if (game.chain?.state === 'hooked' && game.chain.target) pulling.push({ id: idOf(game.chain.target), by: 'chain' });
   const quads = game.units.filter((u) => !NOT_QUADS.includes(u.id));
   return {
     riding,

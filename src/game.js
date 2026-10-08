@@ -221,8 +221,16 @@ export class Game {
     const random = createRandom(this.seed);
     console.info(`Layout seed ${this.seed} (add ?seed=${this.seed} to the URL to repeat it)`);
     // Which vehicles are here this game (its own random stream, so the rest of a seed's layout doesn't depend on it).
-    const fleet = pickFleet(QUAD_SPECS, EXTRA_SPECS, createRandom(this.seed ^ 0x51ee7));
-    const { placed: spawns, home } = randomiseQuadSpawns(this.world.spawn, fleet.length, random);
+    // The tractor, UTV and Land Rover are in the same pool as the quads and are dealt a place the same way, but they aren't the girls' quads (`girlUnits`).
+    const isBig = (spec) => spec.tractor || spec.utv || spec.landRover;
+    const chosen = pickFleet(QUAD_SPECS, [...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC], createRandom(this.seed ^ 0x51ee7));
+    const fleet = chosen.filter((s) => !isBig(s));
+    const bigSpecs = chosen.filter(isBig);
+    const { placed: spawns, home } = randomiseQuadSpawns(this.world.spawn, chosen.length, random, {
+      homeCount: fleet.length,
+      big: chosen.map((_, i) => i >= fleet.length),
+    });
+    const bigSpawn = (spec) => spawns[fleet.length + bigSpecs.indexOf(spec)];
 
     const plateRandom = createRandom(this.seed ^ 0x91a7e);
     this.units = fleet.map(
@@ -307,14 +315,14 @@ export class Game {
     const sumpUnits = this.units.filter((u) => u.quad.sump);
     const burnerId = pickBurner(sumpUnits.map((u) => u.spec.id), sumpRandom);
     for (const u of sumpUnits) u.quad.sump = new Sump({ level: startLevel(u.spec.id === burnerId, sumpRandom, this.sumpParams), burner: u.spec.id === burnerId, params: this.sumpParams });
-    // The tractor stands in the yard whatever the fleet is. It's a unit like the quads (you ride it, fuel it, hear it), but `girlUnits` is what
-    // the girls know about: they leave it alone for now.
+    // The tractor, if it's here this game. It's a unit like the quads (you ride it, fuel it, hear it), but `girlUnits` is what the girls know about:
+    // they leave it alone for now. Each of the three is null when it isn't on the farm, and everything that uses it checks.
     this.girlUnits = this.units;
-    this.tractorUnit = this.addTractor();
-    // The diesel UTV by the paddock (vehicle/quadSpecs.js UTV_SPEC): another unit that isn't one of the girls' quads, which they ride in but don't drive.
-    this.utvUnit = this.addUtv();
-    // The old Land Rover in the yard (LAND_ROVER_SPEC): a unit like the UTV that the girls ride in but don't drive, with a petrol quad's quirks.
-    this.landyUnit = this.addLandRover();
+    this.tractorUnit = bigSpecs.includes(TRACTOR_SPEC) ? this.addTractor(bigSpawn(TRACTOR_SPEC)) : null;
+    // The diesel UTV (vehicle/quadSpecs.js UTV_SPEC): another unit that isn't one of the girls' quads, which they ride in but don't drive.
+    this.utvUnit = bigSpecs.includes(UTV_SPEC) ? this.addUtv(bigSpawn(UTV_SPEC)) : null;
+    // The old Land Rover (LAND_ROVER_SPEC): a unit like the UTV that the girls ride in but don't drive, with a petrol quad's quirks.
+    this.landyUnit = bigSpecs.includes(LAND_ROVER_SPEC) ? this.addLandRover(bigSpawn(LAND_ROVER_SPEC)) : null;
     // Perhaps an old quad under a tarp at the back of the barn (vehicle/barnFind.js): a unit like the tractor, not one of the girls' quads.
     this.barnFindParams = { ...DEFAULT_BARN_FIND_PARAMS };
     registerTuning('Barn find', this.barnFindParams, BARN_FIND_RANGES);
@@ -510,18 +518,18 @@ export class Game {
     for (const c of this.companions) Object.assign(c, { moveParams: this.moveParams, idlePoseParams: this.idlePoseParams });
     // A girl on the tractor's wheel arch (npc/mudguardRide.js, vehicle/tractorMount.js); the tractor is built above.
     this.mudguard = new MudguardRide(undefined, createRandom(this.seed ^ 0x3d6a));
-    this.tractorMount = new TractorMount(this.tractorUnit.quad, (x, z) => this.world.heightAt(x, z));
+    this.tractorMount = this.tractorUnit ? new TractorMount(this.tractorUnit.quad, (x, z) => this.world.heightAt(x, z)) : null;
     // The UTV's tipping bed, and the girls in its seats and bed (vehicle/utvBed.js, npc/utvRide.js, vehicle/utvMount.js).
     this.utvBed = new UtvBed();
     registerTuning('UTV bed', this.utvBed.p, UTV_BED_PARAM_RANGES);
     this.utvRide = new UtvRide(undefined, createRandom(this.seed ^ 0x07c9));
     registerTuning('UTV riders', this.utvRide.p, UTV_RIDE_PARAM_RANGES);
-    this.utvMount = new UtvMount(this.utvUnit.quad, (x, z) => this.world.heightAt(x, z));
+    this.utvMount = this.utvUnit ? new UtvMount(this.utvUnit.quad, (x, z) => this.world.heightAt(x, z)) : null;
     this.utvPetrolSaid = false; // the girls have remarked on it running badly on petrol
     // The Land Rover's bench: the same riding as the UTV's, with no bed to ride in (vehicle/utvMount.js, npc/utvRide.js).
     this.landyRide = new UtvRide({ ...DEFAULT_UTV_RIDE_PARAMS, jessBedChance: 0, amyBedChance: 0, jessBedLoseChance: 0, amyBedLoseChance: 0 }, createRandom(this.seed ^ 0x1a4d));
     registerTuning('Land Rover riders', this.landyRide.p, UTV_RIDE_PARAM_RANGES);
-    this.landyMount = new UtvMount(this.landyUnit.quad, (x, z) => this.world.heightAt(x, z), LANDY_STAND);
+    this.landyMount = this.landyUnit ? new UtvMount(this.landyUnit.quad, (x, z) => this.world.heightAt(x, z), LANDY_STAND) : null;
     // The little tipping trailer behind any quad with a rack (or the tractor), and the girl who rides in it (vehicle/tipTrailer.js, npc/trailerRide.js).
     this.tipTrailer = new TipTrailer({ scene: this.scene, world: this.world });
     const tt = this.world.layout.tipTrailer;
@@ -640,11 +648,11 @@ export class Game {
           }
           if (winch?.state === 'hooked' && winch.target === quad) return 'Unhook the winch   ·   hold X by the green quad to wind in';
           const chain = this.chain;
-          if (chain.state === 'carried') {
+          if (chain?.state === 'carried') {
             if (unit === this.tractorUnit) return { text: 'X put the tow chain back' };
             return `Hook the tractor's chain on the ${unit.label}${quad.bog.stuck ? ' (it\'s stuck)' : ''}   ·   X put it back`;
           }
-          if (chain.state === 'hooked' && chain.target === quad) return 'Unhook the tow chain';
+          if (chain?.state === 'hooked' && chain.target === quad) return 'Unhook the tow chain';
           if (this.hose.held) {
             const muddy = Math.round(Math.max(unit.mud.state.body, unit.mud.state.wheels) * 100);
             return { text: muddy > 0 ? `Hold E to wash the ${unit.label} (${muddy}% muddy)   ·   G put the hose back` : `The ${unit.label} is clean   ·   G put the hose back` };
@@ -666,7 +674,7 @@ export class Game {
           return {
             action: `Ride the ${unit.label}`,
             keys: quad.tractor
-              ? [['K', 'Key'], ['R', 'Start'], ['Q Z', 'Hand throttle'], ['O', 'Stop knob'], ['Y', 'Dipstick'], ...(this.chain.state === 'stowed' && !this.player.isRiding ? [['X', 'Tow chain']] : [])]
+              ? [['K', 'Key'], ['R', 'Start'], ['Q Z', 'Hand throttle'], ['O', 'Stop knob'], ['Y', 'Dipstick'], ...(this.chain?.state === 'stowed' && !this.player.isRiding ? [['X', 'Tow chain']] : [])]
               : unit.spec.utv
                 ? [['K', 'Key'], ['R', 'Start'], ['T', 'Tip the bed'], ['Y', 'Dipstick']] // the reverse lever is on the dash: only from the seat
                 : unit.spec.landRover
@@ -686,11 +694,11 @@ export class Game {
             this.winch.unhook(this.camera);
             return;
           }
-          if (this.chain.state === 'carried') {
+          if (this.chain?.state === 'carried') {
             if (unit !== this.tractorUnit) this.chain.hookOn(quad);
             return;
           }
-          if (this.chain.state === 'hooked' && this.chain.target === quad) {
+          if (this.chain?.state === 'hooked' && this.chain.target === quad) {
             this.chain.unhook(this.camera);
             return;
           }
@@ -856,7 +864,7 @@ export class Game {
     this.winch = winchUnit ? new Winch({ scene: this.scene, unit: winchUnit }) : null;
     this.winchReel = false;
     // The tractor's tow chain (items/chain.js), for a quad sunk too deep for the winch or a dead one to tow home.
-    this.chain = new Chain({ scene: this.scene, tractor: this.tractorUnit.quad, anchor: (q) => q.localToWorld(0, TRACTOR_GROUND_OFFSET + 0.52, -1.5) });
+    this.chain = this.tractorUnit ? new Chain({ scene: this.scene, tractor: this.tractorUnit.quad, anchor: (q) => q.localToWorld(0, TRACTOR_GROUND_OFFSET + 0.52, -1.5) }) : null; // no tractor, no chain
     this.interaction.add({
       target: this.hose.proxy,
       isAvailable: () => !this.handsFull,
@@ -985,7 +993,7 @@ export class Game {
     registerTuning('Hayloft', this.loftParams, LOFT_PARAM_RANGES);
     registerTuning('Favours asked', this.requests.p, REQUEST_PARAM_RANGES);
     if (this.winch) registerTuning('Winch', this.winch.params, WINCH_PARAM_RANGES);
-    registerTuning('Tow chain', this.chain.params, CHAIN_PARAM_RANGES);
+    if (this.chain) registerTuning('Tow chain', this.chain.params, CHAIN_PARAM_RANGES);
     registerTuning('Player', this.player.params, PLAYER_PARAM_RANGES);
     for (const c of this.companions) {
       registerTuning(c.name, c.params, COMPANION_PARAM_RANGES, { onChange: () => c.refreshFigure() });
@@ -1096,11 +1104,11 @@ export class Game {
     const unit = this.riddenUnit;
     if (!unit || !canTow(unit.quad)) return;
     const q = unit.quad;
-    const tractor = unit === this.tractorUnit;
+    const tractor = !!this.tractorUnit && unit === this.tractorUnit;
     const hay = tractor ? this.trailer : null;
     const tip = this.tipTrailer;
     const mine = [hay, tip].filter(Boolean);
-    if (tractor && this.chain.state !== 'stowed') return this.hud.toast('The tow chain is on the drawbar', 2);
+    if (tractor && this.chain?.state !== 'stowed') return this.hud.toast('The tow chain is on the drawbar', 2);
     const on = mine.find((t) => t.hitched && (t === hay || t.puller === q));
     if (on) {
       if (q.speed > 0.5) return this.hud.toast('Stop before you unhitch the trailer', 2);
@@ -1122,7 +1130,7 @@ export class Game {
     const t = this.trailer;
     t.update(dt);
     const m = t.motion;
-    const active = t.hitched && ridden === this.tractorUnit;
+    const active = t.hitched && !!ridden && ridden === this.tractorUnit;
     const free = (c) => c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob;
     const girlOf = (id) => this.companions.find((c) => c.character.id === id);
     const say = (c, key) => c?.voice.say(key, { urgent: true });
@@ -1167,7 +1175,7 @@ export class Game {
       if (!c.hayLanded || c.hayLandedSaid) c.hayLandedSaid &&= c.hayLanded;
       else {
         c.hayLandedSaid = true;
-        const [own, other] = c.trailer === this.utvMount ? ['utvTipOut', 'utvTipLaugh'] : c.trailer === this.tipTrailer ? ['trailerTipOut', 'trailerTipLaugh'] : ['hayFall', 'hayFallOther'];
+        const [own, other] = c.trailer && c.trailer === this.utvMount ? ['utvTipOut', 'utvTipLaugh'] : c.trailer === this.tipTrailer ? ['trailerTipOut', 'trailerTipLaugh'] : ['hayFall', 'hayFallOther'];
         say(c, own);
         this.hayLater.push({ left: 1.2, girl: c.others()[0], key: other });
       }
@@ -1191,6 +1199,7 @@ export class Game {
 
   /** Nobody's on the tractor or on their way to it, it's stopped, and nothing is hitched to it. */
   tractorFree() {
+    if (!this.tractorUnit) return false;
     const q = this.tractorUnit.quad;
     const busy = (c) => (c.quad === q && (c.fsm.is('driving', 'mounting', 'dismounting', 'shuffling') || (c.fsm.is('walking') && c.fsm.data?.goal === 'drive'))) || (c.onHayRide && c.trailer === this.tractorMount);
     return !q.rider && q.speed < 0.5 && !this.trailer.hitched && !this.companions.some(busy);
@@ -1232,7 +1241,7 @@ export class Game {
       }
     }
     const where = this.lPlates.where;
-    if (where === 'tractor') this.lPlateSet.showOn(this.tractorUnit.quad.bodyRoot, 'tractor');
+    if (where === 'tractor' && this.tractorUnit) this.lPlateSet.showOn(this.tractorUnit.quad.bodyRoot, 'tractor');
     else this.lPlateSet.showOn(where === 'quad' && mine ? mine.quad.bodyRoot : null, 'quad');
   }
 
@@ -1249,7 +1258,7 @@ export class Game {
     const q = this.tractorUnit.quad;
     const girlsFree = {};
     for (const c of this.companions) girlsFree[c.character.id] = c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob && !c.hayFell;
-    for (const ev of this.tractorGo.update(dt, { free: girlsFree, tractorFree: this.tractorFree(), youOnTractor: ridden === this.tractorUnit })) {
+    for (const ev of this.tractorGo.update(dt, { free: girlsFree, tractorFree: this.tractorFree(), youOnTractor: !!ridden && ridden === this.tractorUnit })) {
       const c = this.companions.find((o) => o.character.id === ev.girl);
       if (ev.type === 'amyDay') c.voice.say('tractorDay', { force: true });
       else c.voice.say('tractorGoAsk', { force: true });
@@ -1339,11 +1348,11 @@ export class Game {
   }
 
   /** Builds the UTV, with its own seeded idle, roughness, fuel and hours, and adds it to `units` (not `girlUnits`). */
-  addUtv() {
+  addUtv(spawn) {
     const random = createRandom(this.seed ^ 0x07c5);
     const unit = new QuadUnit({
       spec: UTV_SPEC,
-      spawn: this.world.layout.utv,
+      spawn,
       scene: this.scene,
       physics: this.physics,
       RAPIER: this.RAPIER,
@@ -1358,7 +1367,7 @@ export class Game {
     unit.quad.usage.odoMiles = pickRelatedReading(UTV_SPEC.odoRange, (unit.quad.usage.hours - hoursLo) / (hoursHi - hoursLo), random);
     unit.quad.parkBrake = true;
     this.units = [...this.units, unit];
-    unit.where = 'by the paddock';
+    unit.where = spawn.where;
     return unit;
   }
 
@@ -1543,11 +1552,11 @@ export class Game {
     c.voice.say(inBed ? 'utvBedGo' : 'utvBoard', { force: true });
   }
 
-  /** Builds the old Land Rover in the yard: a unit like the UTV (not one of the girls'), with a petrol quad's wear, faults, quirks and oil. */
-  addLandRover() {
+  /** Builds the old Land Rover: a unit like the UTV (not one of the girls'), with a petrol quad's wear, faults, quirks and oil. */
+  addLandRover(spawn) {
     const spec = LAND_ROVER_SPEC;
     const random = createRandom(this.seed ^ 0x1a4c);
-    const unit = new QuadUnit({ spec, spawn: this.world.layout.landRover, scene: this.scene, physics: this.physics, RAPIER: this.RAPIER, world: this.world, audioHub: this.audioHub });
+    const unit = new QuadUnit({ spec, spawn, scene: this.scene, physics: this.physics, RAPIER: this.RAPIER, world: this.world, audioHub: this.audioHub });
     unit.idleRpm = applyIdle(unit.engine.params, unit.quad.params, pickIdle(spec.idleRange, random));
     unit.variation = applyVariation(spec, unit.engine.params, unit.quad.fuel, random);
     unit.topRpm = applyTopRpm(spec, unit.engine.params, createRandom(this.seed ^ 0x1a4e));
@@ -1561,7 +1570,7 @@ export class Game {
     unit.quad.faults.prone.belt = 0; // a clutch, not a belt
     unit.quad.parkBrake = true;
     this.units = [...this.units, unit];
-    unit.where = 'in the yard';
+    unit.where = spawn.where;
     return unit;
   }
 
@@ -1786,11 +1795,11 @@ export class Game {
   }
 
   /** Builds the tractor, with its own seeded idle, roughness, fuel and hours, and adds it to `units` (not `girlUnits`). */
-  addTractor() {
+  addTractor(spawn) {
     const random = createRandom(this.seed ^ 0x7ac70);
     const unit = new QuadUnit({
       spec: TRACTOR_SPEC,
-      spawn: this.world.layout.tractor,
+      spawn,
       scene: this.scene,
       physics: this.physics,
       RAPIER: this.RAPIER,
@@ -1806,7 +1815,7 @@ export class Game {
     unit.quad.usage.odoMiles = pickRelatedReading(TRACTOR_SPEC.odoRange, (unit.quad.usage.hours - hoursLo) / (hoursHi - hoursLo), random);
     unit.quad.handSetting = pickReading(TRACTOR_SPEC.handStartRange, random); // the last driver left the hand throttle wherever
     this.units = [...this.units, unit];
-    unit.where = 'in the yard';
+    unit.where = spawn.where;
     return unit;
   }
 
@@ -2343,12 +2352,13 @@ export class Game {
   }
 
   get handsFull() {
-    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.oilBottle.held || this.winch?.state === 'carried' || this.chain.state === 'carried';
+    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.oilBottle.held || this.winch?.state === 'carried' || this.chain?.state === 'carried';
   }
 
   /** The tow chain: it comes out of your hand if you go further than it reaches, or when you get on something. */
   updateChain() {
     const c = this.chain;
+    if (!c) return;
     if (c.state === 'carried' && this.player.isRiding) c.stow();
     if (c.state === 'carried' && c.distanceFrom(this.player.position) > c.params.length) {
       c.stow();
@@ -4018,7 +4028,7 @@ export class Game {
       return;
     }
     // Up on the tractor's wheel arch already: the one thing to ask is to come down.
-    if (c.fsm.is('onTrailer') && c.trailer === this.tractorMount) {
+    if (c.fsm.is('onTrailer') && this.tractorMount && c.trailer === this.tractorMount) {
       this.openWheel(`Ask ${c.name} to`, [this.tractorWheelOption(c)], c);
       this.player.lookEnabled = false;
       this.player.moveEnabled = false;
@@ -4030,7 +4040,7 @@ export class Game {
       this.player.moveEnabled = false;
       return;
     }
-    if (c.fsm.is('onTrailer') && (c.trailer === this.utvMount || c.trailer === this.landyMount)) {
+    if (c.fsm.is('onTrailer') && c.trailer && (c.trailer === this.utvMount || c.trailer === this.landyMount)) {
       this.openWheel(`Ask ${c.name} to`, [c.trailer === this.utvMount ? this.utvWheelOption(c) : this.landyWheelOption(c)], c);
       this.player.lookEnabled = false;
       this.player.moveEnabled = false;
@@ -4046,12 +4056,12 @@ export class Game {
     // On the wheel: anything not about a particular quad, then a slice for each
     // quad (nearest her first) opening a ring of what she could do with it.
     const options = actions.filter((a) => !a.quad).map((a) => ({ label: a.label, run: answer(a) }));
-    const tractor = this.tractorWheelOption(c);
-    if (tractor.children.length) options.push(tractor);
-    const utv = this.utvWheelOption(c);
-    if (utv.children.length) options.push(utv);
-    const landy = this.landyWheelOption(c);
-    if (landy.children.length) options.push(landy);
+    const tractor = this.tractorUnit && this.tractorWheelOption(c);
+    if (tractor?.children.length) options.push(tractor);
+    const utv = this.utvUnit && this.utvWheelOption(c);
+    if (utv?.children.length) options.push(utv);
+    const landy = this.landyUnit && this.landyWheelOption(c);
+    if (landy?.children.length) options.push(landy);
     const tipTrailer = this.tipTrailerWheelOption(c);
     if (tipTrailer.children.length) options.push(tipTrailer);
     for (const unit of [...new Set(actions.filter((a) => a.quad).map((a) => a.quad.unit))]) {
@@ -4472,7 +4482,9 @@ export class Game {
       // The tow chain: X takes it off the tractor's drawbar (looking at the tractor), or puts it back.
       if (input.wasPressed('KeyX') && !this.player.isRiding) {
         const c = this.chain;
-        if (c.state === 'stowed' && focused?.unit === this.tractorUnit && !this.handsFull) {
+        if (!c) {
+          // no tractor this game
+        } else if (c.state === 'stowed' && focused?.unit === this.tractorUnit && !this.handsFull) {
           if (this.trailer.hitched) this.hud.toast('Unhitch the trailer first: the chain goes on the same drawbar', 2.4);
           else c.take(this.camera);
         } else if (c.state === 'carried') c.stow();
@@ -4512,14 +4524,14 @@ export class Game {
     this.updatePranks(dt, ridden);
     this.updateRevOff(dt, ridden);
     this.updateHorns(dt, ridden);
-    this.updateTractorWatch(dt);
-    this.updateTractorRunaway(dt, ridden);
+    if (this.tractorUnit) this.updateTractorWatch(dt);
+    if (this.tractorUnit) this.updateTractorRunaway(dt, ridden);
     this.updateHayRide(dt, ridden);
-    this.updateMudguard(dt, ridden);
-    this.updateUtv(dt, ridden, input);
-    this.updateLandRover(dt, ridden);
+    if (this.tractorUnit) this.updateMudguard(dt, ridden);
+    if (this.utvUnit) this.updateUtv(dt, ridden, input);
+    if (this.landyUnit) this.updateLandRover(dt, ridden);
     this.updateTipTrailer(dt, ridden, input);
-    this.updateTractorGo(dt, ridden);
+    if (this.tractorUnit) this.updateTractorGo(dt, ridden);
     this.updateLPlates(dt);
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);
@@ -4603,7 +4615,7 @@ export class Game {
   fixedUpdate(dt) {
     this.player.fixedUpdate(dt);
     this.winch?.fixedUpdate(dt, this.winchReel);
-    this.chain.fixedUpdate(dt);
+    this.chain?.fixedUpdate(dt);
     if (this.leads.update(dt, this.camera.position) === 'pulledOff') this.hud.toast('The jump leads came off');
     for (const unit of this.units) {
       unit.quad.backRider = !!this.herOnBack(unit.quad);
@@ -4627,7 +4639,7 @@ export class Game {
     if (onBack) p = '';
     this.hud.setPrompt(typeof p === 'string' ? (p ? { action: p } : null) : p.action ? p : p.text);
     // No readout for the quad: its dash is all you get.
-    if (this.chain.state === 'carried') {
+    if (this.chain?.state === 'carried') {
       this.hud.setStatus('Tow chain\nE on a quad to hook it on, X to put it back\nThen drive the tractor off, forwards');
     } else if (this.winch?.state === 'carried') {
       this.hud.setStatus('Winch hook\nE on a quad to hook it on, X to put it back');
@@ -4641,7 +4653,7 @@ export class Game {
       this.hud.setStatus('Toolbox\nTake it to a quad that is switched off\nG to put it down');
     } else if (this.can.held) {
       this.hud.setStatus(`Jerry can  ${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel)}\nG to put it down`);
-    } else if (this.riddenUnit === this.tractorUnit && this.trailer.canHitch(this.tractorUnit.quad)) {
+    } else if (this.tractorUnit && this.riddenUnit === this.tractorUnit && this.trailer.canHitch(this.tractorUnit.quad)) {
       this.hud.setStatus('The drawbar is at the trailer\'s ring\nJ to hitch it on');
     } else if (this.riddenUnit && this.tipTrailer.canHitch(this.riddenUnit.quad)) {
       this.hud.setStatus('The hitch is at the trailer\'s ring\nJ to hitch it on');
