@@ -16,7 +16,7 @@ export const DEFAULT_PRANK_PARAMS = {
   foundRange: 6, // metres from where the item should be before you notice it's gone
   foundAfter: 3, // seconds on a pranked quad before the culprit gives herself away
   neglectedBoost: 2, // a neglected girl pranks this much more often
-  sneakGiveUp: 90, // seconds she gets to reach the thing before the prank lapses
+  sneakGiveUp: 150, // seconds she gets to reach the thing, carry it off and set it down before the prank lapses
   warmAbove: 0.5, // engine temperature (0..1) above which the choke counts as a prank on a warm engine
 };
 

@@ -97,6 +97,7 @@ import { Nicking, NICK_PARAM_RANGES } from './npc/nicking.js';
 import { DEFAULT_LINEUP_PARAMS, LINEUP_PARAM_RANGES } from './npc/lineUp.js';
 import { DEFAULT_HOME_PARAMS, HOME_PARAM_RANGES } from './npc/homeParking.js';
 import { Tea, TEA_PARAM_RANGES } from './npc/tea.js';
+import { carryParams, CARRY_PARAM_RANGES, carryWeight } from './npc/carrying.js';
 import { Jumpers, JUMPER_PARAM_RANGES, JUMPERS } from './npc/jumpers.js';
 import { JumperRail } from './world/jumperRail.js';
 import { DieselMistake, DIESEL_MISTAKE_PARAM_RANGES } from './npc/dieselMistake.js';
@@ -789,7 +790,7 @@ export class Game {
     for (const can of [this.petrolCan, this.premixCan, this.dieselCan]) {
       this.interaction.add({
         target: can.proxy,
-        isAvailable: () => !this.handsFull,
+        isAvailable: () => !this.handsFull && !can.carried,
         prompt: () => `Pick up the ${can === this.premixCan ? 'yellow' : can === this.dieselCan ? 'dark green' : 'red'} jerry can (${can.litres.toFixed(1)} L, ${fuelText(can.oil, can.diesel)})`,
         interact: () => can.pickUp(this.camera),
       });
@@ -878,7 +879,7 @@ export class Game {
     this.interaction.add({
       target: this.toolbox.proxy,
       priority: 1, // it sits on the bench, whose box would otherwise be hit first
-      isAvailable: () => !this.handsFull,
+      isAvailable: () => !this.handsFull && !this.toolbox.carried,
       prompt: () => 'Pick up the toolbox',
       interact: () => this.toolbox.pickUp(this.camera),
     });
@@ -974,6 +975,7 @@ export class Game {
     registerTuning('Lining them up', this.lineUpParams, LINEUP_PARAM_RANGES);
     registerTuning('Home and jogging', this.homeParams, HOME_PARAM_RANGES);
     registerTuning('Tea on the rack', this.tea.p, TEA_PARAM_RANGES);
+    registerTuning('Girls carrying things', carryParams, CARRY_PARAM_RANGES);
     registerTuning('Jumpers', this.jumpers.p, JUMPER_PARAM_RANGES);
     registerTuning('Red diesel mistake', this.dieselMistake.p, DIESEL_MISTAKE_PARAM_RANGES);
     registerTuning('Reading the dash', this.dashReader.p, READING_PARAM_RANGES);
@@ -3164,7 +3166,7 @@ export class Game {
 
   updateTea(dt, ridden) {
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
-    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot, x: c.root.position.x, z: c.root.position.z }));
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !c.carrying && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot, x: c.root.position.x, z: c.root.position.z }));
     const quads = this.girlUnits.map((u) => {
       const q = u.quad;
       return { id: u.spec.id, x: q.position.x, z: q.position.z, speed: Math.abs(q.speed), rider: u === ridden, driver: this.quadUser(u, ridden) !== 'you' ? this.quadUser(u, ridden) : null, tipped: q.isTipped, hasRack: !!q.mugAnchor };
@@ -3177,27 +3179,57 @@ export class Game {
       const side = c.nearSide(quad);
       const p = quad.localToWorld(side * 0.85, 0, -0.95);
       const spot = { x: p.x, z: p.z };
-      if (!c.sneakTo(spot, act)) this.tea.cancel(girl);
+      if (c.sneakTo(spot, act)) return true;
+      this.tea.cancel(girl);
+      return false;
     };
     for (const e of this.tea.update(dt, { girls, quads })) {
       const c = byId[e.girl];
       if (e.type === 'place') {
-        sendTo(e.girl, e.spec, () => {
+        // She brings a mug from the house in her hand, walks round to the back of the quad and sets it on the rack.
+        const colour = e.girl === 'amy' ? 0x3a6ea5 : 0xb8322a;
+        const mug = this.mugs.make(colour);
+        mug.position.copy(c.root.position);
+        if (!c.startCarry('mug', mug, carryWeight('mug'), { inHand: true })) {
+          this.mugs.remove(mug);
+          this.tea.cancel(e.girl);
+          continue;
+        }
+        const going = sendTo(e.girl, e.spec, () => {
           const u = unitOf(e.spec);
           const free = !u.quad.rider && !u.quad.driver && Math.abs(u.quad.speed) < 0.3;
-          const mug = free ? this.mugs.put(u.quad, e.girl === 'amy' ? 0x3a6ea5 : 0xb8322a) : null;
-          if (!mug) return this.tea.cancel(e.girl);
-          this.teaMugs[e.girl] = mug;
-          this.tea.placed(e.girl, e.spec);
-          c.voice.say('teaPlace', { urgent: true, chance: 0.9 });
+          const rack = free && u.quad.mugAnchor?.getWorldPosition(new THREE.Vector3());
+          if (!rack) {
+            c.endCarry();
+            this.mugs.remove(mug);
+            return this.tea.cancel(e.girl);
+          }
+          c.putDownCarry(rack, 0, () => {
+            if (!this.mugs.putMug(u.quad, mug)) return this.mugs.remove(mug);
+            this.teaMugs[e.girl] = mug;
+            this.tea.placed(e.girl, e.spec);
+            c.voice.say('teaPlace', { urgent: true, chance: 0.9 });
+          });
         });
+        if (!going) {
+          c.endCarry();
+          this.mugs.remove(mug);
+        }
       } else if (e.type === 'collect') {
         sendTo(e.girl, e.spec, () => {
           const u = unitOf(e.spec);
-          if (u.quad.rider || u.quad.driver || Math.abs(u.quad.speed) > 0.3) return this.tea.cancel(e.girl);
-          this.mugs.remove(this.teaMugs[e.girl]);
+          const mug = this.teaMugs[e.girl];
+          if (u.quad.rider || u.quad.driver || Math.abs(u.quad.speed) > 0.3 || !mug) return this.tea.cancel(e.girl);
+          // She lifts it off the rack, has a drink, and that's the end of it.
           delete this.teaMugs[e.girl];
           this.tea.collected(e.girl);
+          c.startCarry('mug', mug, carryWeight('mug'), {
+            sip: true,
+            onSipped: () => {
+              const side = c.root.localToWorld(new THREE.Vector3(-0.35, 0, 0.3));
+              c.putDownCarry(side, 0, () => this.mugs.remove(mug));
+            },
+          });
           c.voice.say('teaCollect', { urgent: true, chance: 0.8 });
         });
       } else if (e.type === 'fall') {
@@ -3214,7 +3246,7 @@ export class Game {
 
   updateJumpers(dt) {
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
-    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot, x: c.root.position.x, z: c.root.position.z }));
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !c.carrying && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot, x: c.root.position.x, z: c.root.position.z }));
     const rail = this.world.layout.jumperRail;
     for (const e of this.jumpers.update(dt, { weather: this.weather, girls, rail })) {
       const c = byId[e.girl];
@@ -3839,10 +3871,10 @@ export class Game {
   /** What the prank logic needs to know about the farm right now. */
   prankContext(ridden) {
     const at = (thing) => thing.model.getWorldPosition(new THREE.Vector3()); // it may be standing in the trailer
-    const item = (thing, name) => ({ x: at(thing).x, z: at(thing).z, held: thing.held, home: this.itemHome[name] ?? thing.model.position });
+    const item = (thing, name) => ({ x: at(thing).x, z: at(thing).z, held: thing.held || !!thing.carried, home: this.itemHome[name] ?? thing.model.position });
     return {
       you: { x: this.player.position.x, z: this.player.position.z, riding: ridden?.spec.id ?? null },
-      girls: this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !this.menu.isOpen, mood: this.favour.mood(c.character.id) })),
+      girls: this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !c.carrying && !this.menu.isOpen, mood: this.favour.mood(c.character.id) })),
       quads: this.girlUnits.map((u) => ({
         id: u.spec.id,
         x: u.quad.position.x,
@@ -3867,13 +3899,27 @@ export class Game {
       else if (e.type === 'restore') {
         const thing = a.item === 'can' ? this.petrolCan : this.toolbox;
         const home = this.itemHome[a.item];
-        if (home && !thing.held) {
-          thing.putDown(home, home.yaw);
-          if (home.y !== undefined) thing.model.position.y = home.y; // back on the bench, not under it
-        }
+        if (home && !thing.held && !thing.carried) this.restoreItem(girl, thing, a.item, home);
       }
       if (e.type === 'resolved' || e.type === 'restore') delete this.itemHome[a.item];
     }
+  }
+
+  /** Time's up: she goes and fetches it back to where it was, or just puts it back if she's busy. */
+  restoreItem(girl, thing, kind, home) {
+    const put = () => {
+      thing.putDown(home, home.yaw);
+      if (home.y !== undefined) thing.model.position.y = home.y; // back on the bench, not under it
+    };
+    const at = thing.model.position;
+    const from = girl?.root.position;
+    const d = from ? Math.hypot(from.x - at.x, from.z - at.z) || 1 : 1;
+    const spot = from ? { x: at.x + ((from.x - at.x) / d) * 0.55, z: at.z + ((from.z - at.z) / d) * 0.55 } : null;
+    const act = () => {
+      if (thing.held || thing.carried) return;
+      if (!this.carryThing(girl, thing, kind, home, null)) put();
+    };
+    if (!girl || !spot || !girl.sneakTo(spot, act)) put();
   }
 
   /** She sets off to do it; it only happens if it's still fair game when she gets there. */
@@ -3882,23 +3928,59 @@ export class Game {
     const quad = a.quad ? this.girlUnits.find((u) => u.spec.id === a.quad).quad : null;
     const thing = a.item === 'can' ? this.petrolCan : a.item === 'toolbox' ? this.toolbox : null;
     const at = quad ? quad.position : thing.model.position;
-    // Stops short of it, on her side.
+    // Stops short of it, on her side (an arm's length from an item she's to pick up).
     const from = girl.root.position;
     const d = Math.hypot(from.x - at.x, from.z - at.z) || 1;
-    const spot = { x: at.x + ((from.x - at.x) / d) * 1.3, z: at.z + ((from.z - at.z) / d) * 1.3 };
+    const gap = quad ? 1.3 : 0.55;
+    const spot = { x: at.x + ((from.x - at.x) / d) * gap, z: at.z + ((from.z - at.z) / d) * gap };
     const act = () => {
       if (quad) {
         if (quad.rider || quad.engine.isRunning) return this.pranks.cancel(a);
         if (a.kind === 'tap') quad.fuel.tap = 'off';
         else quad.choke = 1;
-      } else {
-        if (thing.held) return this.pranks.cancel(a);
-        this.itemHome[a.item] = { x: thing.model.position.x, z: thing.model.position.z, yaw: thing.model.rotation.y, y: thing.model.position.y };
-        thing.putDown(a.spot, Math.random() * Math.PI * 2);
+        this.pranks.apply(a);
+        return;
       }
-      this.pranks.apply(a);
+      if (thing.held || thing.carried) return this.pranks.cancel(a);
+      this.itemHome[a.item] = { x: thing.model.position.x, z: thing.model.position.z, yaw: thing.model.rotation.y, y: thing.model.position.y };
+      // She picks it up, carries it to where she's hiding it and sets it down there.
+      const ok = this.carryThing(girl, thing, a.item, { x: a.spot.x, z: a.spot.z, yaw: Math.random() * Math.PI * 2 }, () => {
+        if (this.pranks.active.includes(a)) this.pranks.apply(a);
+        else delete this.itemHome[a.item];
+      });
+      if (!ok) this.pranks.cancel(a);
     };
     if (!girl.sneakTo(spot, act)) this.pranks.cancel(a);
+  }
+
+  /** The item as a girl carries it: 'can' or 'toolbox'. */
+  carryWeightOf(thing, kind) {
+    return kind === 'can' ? carryWeight('can', thing.litres, thing.params.capacity) : carryWeight('toolbox');
+  }
+
+  /**
+   * She's at `thing` (a jerry can or the toolbox, standing on the ground): she picks it up, walks it to `dest` ({ x, z, yaw, y? }) and sets it down,
+   * then `onDown()`. False if she can't take it. If she's called away on the way it's set down where she is.
+   */
+  carryThing(girl, thing, kind, dest, onDown) {
+    const down = (pos, yaw) => {
+      thing.carried = false;
+      thing.putDown(pos, yaw);
+      if (dest.y !== undefined && Math.hypot(pos.x - dest.x, pos.z - dest.z) < 0.01) thing.model.position.y = dest.y;
+      onDown?.();
+    };
+    const started = girl.startCarry(kind, thing.model, this.carryWeightOf(thing, kind), {
+      onLowered: down,
+      onRaised: () => {
+        // Walks up to it from wherever she is, stopping just short, and bends to set it down.
+        const here = girl.root.position;
+        const d = Math.hypot(here.x - dest.x, here.z - dest.z) || 1;
+        const near = { x: dest.x + ((here.x - dest.x) / d) * 0.55, z: dest.z + ((here.z - dest.z) / d) * 0.55 };
+        if (!girl.carryTo(near, () => girl.putDownCarry({ x: dest.x, y: dest.y, z: dest.z }, dest.yaw))) girl.dropCarry();
+      },
+    });
+    if (started) thing.carried = true;
+    return started;
   }
 
   /**

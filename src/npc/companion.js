@@ -10,6 +10,8 @@ import { drivingStates, drivingMethods } from './companionDriving.js';
 import { hayRideStates, hayRideMethods, DEFAULT_HAYSEAT_PARAMS } from './companionHayRide.js';
 import { restingMethods, restingStates } from './companionResting.js';
 import { warmingMethods } from './companionWarming.js';
+import { carryingMethods } from './companionCarrying.js';
+import { carryParams } from './carrying.js';
 import { Contentment } from './contentment.js';
 import { SideSaddleSlip, pickSideSaddle } from './sideSaddle.js';
 import { wavingMethods } from './companionWaving.js';
@@ -134,6 +136,11 @@ export class Companion {
     // Hands over a running engine on a cold day (companionWarming.js).
     this.warmingAt = null;
     this.rig.posers.push((dt) => this.poseWarming(dt));
+    // Something in her right hand: the jerry can, the toolbox, a mug (companionCarrying.js).
+    this.carry = null;
+    this.carryParams = carryParams;
+    this.carryPace = 1; // times her walking speed while she carries something heavy
+    this.rig.posers.push((dt) => this.poseCarrying(dt));
     // Riding on the bale trailer (companionHayRide.js).
     this.hay = { ...DEFAULT_HAYSEAT_PARAMS };
     this.trailer = null;
@@ -595,6 +602,15 @@ export class Companion {
     return true;
   }
 
+  /** Walks to `spot` ({ x, z }) with something in her hand and calls `arrive()` when she's there (to put it down). Only when she's stood about or pranking. */
+  carryTo(spot, arrive) {
+    if (!this.fsm.is('idle', 'pranking')) return false;
+    const target = new THREE.Vector3(spot.x, this.world.heightAt(spot.x, spot.z), spot.z);
+    const facing = Math.atan2(spot.x - this.root.position.x, spot.z - this.root.position.z);
+    this.fsm.transition('walking', { goal: 'carry', target: () => ({ position: target, facing }), arrive });
+    return true;
+  }
+
   /** A stroll to somewhere nearby on the farm, staying inside the hedges of the field she's in. */
   wander() {
     const p = this.params;
@@ -908,7 +924,7 @@ export class Companion {
     // A way to go and she jogs (not when sneaking up on someone or wandering about, which the walking state says).
     this.jogging = this.mayJog && jogging(this.jogging, dist, this.homeParams ?? DEFAULT_HOME_PARAMS);
     const jog = this.jogging ? (this.homeParams ?? DEFAULT_HOME_PARAMS).jogBoost : 1;
-    const speed = p.walkSpeed * this.paceBoost * jog * turnFactor * Math.min(1, dist / 0.6 + 0.3);
+    const speed = p.walkSpeed * this.paceBoost * this.carryPace * jog * turnFactor * Math.min(1, dist / 0.6 + 0.3);
     pos.x += Math.sin(this.heading) * speed * dt;
     pos.z += Math.cos(this.heading) * speed * dt;
     pos.y = this.world.heightAt(pos.x, pos.z);
@@ -974,6 +990,7 @@ export class Companion {
     this.updateLineUp(dt);
     if (viewer) this.updateGlance(dt, viewer);
     this.updateFidget(dt);
+    this.updateCarry(dt);
     this.updatePose(dt);
     if (this.root.parent === this.scene) this.syncCollider();
 
@@ -994,6 +1011,7 @@ Object.assign(Companion.prototype, drivingMethods);
 // (hayRideMethods has a getter too.)
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(hayRideMethods));
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(warmingMethods));
+Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(carryingMethods));
 Object.assign(Companion.prototype, wavingMethods);
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(moveMethods));
 // (restingMethods has getters, so copy its descriptors rather than assigning.)
@@ -1157,7 +1175,10 @@ const STATES = {
         // If you've beaten her to the front seat, she gets on the back.
         else if (data.goal === 'drive') this.fsm.transition('mounting', { side: t.side, seat: this.quad.rider ? 'pillion' : 'rider' });
         else if (data.goal === 'start') this.fsm.transition('starting', { facing: t.facing, side: t.side });
-        else if (data.goal === 'prank') this.fsm.transition('pranking', { facing: t.facing, act: data.act, stay: data.stay, out: data.out });
+        else if (data.goal === 'carry') {
+          this.fsm.transition('idle', { facing: t.facing });
+          data.arrive();
+        } else if (data.goal === 'prank') this.fsm.transition('pranking', { facing: t.facing, act: data.act, stay: data.stay, out: data.out });
         else if (data.goal === 'rest') this.fsm.transition('resting', { spot: data.spot, stay: data.stay });
         else if (data.goal === 'warm') {
           this.fsm.transition('idle', { facing: t.facing });

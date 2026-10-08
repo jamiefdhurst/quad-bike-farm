@@ -35,6 +35,13 @@ export class Mugs {
     this.stainMat = new THREE.MeshStandardMaterial({ color: 0x4a2b14, roughness: 0.2, transparent: true, opacity: 0.8, depthWrite: false });
   }
 
+  /** A new mug in the scene, for a girl to carry. */
+  make(colour) {
+    const mug = buildMug(colour);
+    this.scene.add(mug);
+    return mug;
+  }
+
   /** A mug on this quad's rear rack, if it has a place for one. Returns the mug, or null. */
   put(quad, colour) {
     const anchor = quad.mugAnchor;
@@ -42,6 +49,16 @@ export class Mugs {
     const mug = buildMug(colour);
     anchor.add(mug);
     return mug;
+  }
+
+  /** A mug she has been carrying, set down on this quad's rack. */
+  putMug(quad, mug) {
+    const anchor = quad.mugAnchor;
+    if (!anchor) return false;
+    anchor.add(mug);
+    mug.position.set(0, 0, 0);
+    mug.rotation.set(0, 0, 0);
+    return true;
   }
 
   /** Takes it off the rack (someone picked it up). */
