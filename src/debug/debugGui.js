@@ -2,6 +2,7 @@ import GUI from 'lil-gui';
 import { getTuningGroups, exportTuning } from '../core/tuning.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
 import { applicableQuirks, featuresOf } from '../vehicle/quirks.js';
+import { categoryOf, sortTuneGroups } from './tuneCategories.js';
 import { buildGirlsTab } from './girlsTab.js';
 import { setQuirk, setFault, clearFaults, fixEverything, problemSummary, quirkLabel } from './vehicleDebug.js';
 import { BRANDS, WHEEL_NAMES } from '../vehicle/tyres.js';
@@ -45,18 +46,27 @@ export class DebugGui {
       )
       .name('Copy all values as JSON');
     const folders = {};
+    // The Tune tab: groups gathered under categories (tuneCategories.js), sorted, so it reads the same every time.
+    this.tuneCategories = {};
+    const categoryFolder = (name) => {
+      if (!this.tuneCategories[name]) {
+        const f = this.addFolder('Tune', name);
+        f.close();
+        this.tuneCategories[name] = f;
+      }
+      return this.tuneCategories[name];
+    };
     // "Red quad/Engine" becomes an Engine folder inside a Red quad folder.
     const folderFor = (path) => {
       if (folders[path]) return folders[path];
       const cut = path.lastIndexOf('/');
-      const parent = cut < 0 ? (unitNames.has(path) ? this.tuningParent : this.gui) : folderFor(path.slice(0, cut));
+      const parent = cut < 0 ? (unitNames.has(path) ? this.tuningParent : categoryFolder(categoryOf(path))) : folderFor(path.slice(0, cut));
       const f = parent.addFolder(path.slice(cut + 1));
-      if (cut < 0 && !unitNames.has(path)) this.tabs.Tune.push(f);
       f.close();
       folders[path] = f;
       return f;
     };
-    for (const group of getTuningGroups()) {
+    for (const group of sortTuneGroups(getTuningGroups())) {
       const folder = folderFor(group.name);
       for (const [key, range] of Object.entries(group.ranges)) {
         let c;
@@ -115,11 +125,20 @@ export class DebugGui {
     this.applyVisibility();
   }
 
-  /** On the Vehicles tab only the picked vehicle's own tuning shows; on the Tune tab the search narrows the folders. */
+  /** On the Tune tab the search narrows the folders (and opens the categories that still have some). */
   applyVisibility() {
-    if (this.tab === 'Tune') {
-      const q = this.search.text.trim().toLowerCase();
-      for (const f of this.tabs.Tune) if (f !== this.searchFolder) f.show(!q || f._title.toLowerCase().includes(q));
+    if (this.tab !== 'Tune') return;
+    const q = this.search.text.trim().toLowerCase();
+    for (const cat of Object.values(this.tuneCategories)) {
+      const kids = cat.folders;
+      let any = false;
+      for (const k of kids) {
+        const hit = !q || k._title.toLowerCase().includes(q) || cat._title.toLowerCase().includes(q);
+        k.show(hit);
+        any ||= hit;
+      }
+      cat.show(any);
+      if (q && any) cat.open();
     }
   }
 
