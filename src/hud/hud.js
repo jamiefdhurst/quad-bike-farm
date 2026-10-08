@@ -58,6 +58,13 @@ export class Hud {
     this.help.innerHTML = HELP_HTML;
     this.help.style.display = 'none';
     this.toastTimer = 0;
+    this.fadeEl = this.el('div', 'fade');
+    this.fadeEl.style.opacity = 0;
+  }
+
+  /** The black screen for a cut away (0 clear, 1 black). */
+  setFade(v) {
+    this.fadeEl.style.opacity = v;
   }
 
   el(tag, cls) {

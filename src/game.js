@@ -24,6 +24,7 @@ import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
 import { CHARACTERS } from './npc/characters.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { FallingOut, FALLING_OUT_PARAM_RANGES } from './npc/fallingOut.js';
+import { Romance, Tryst, ROMANCE_PARAM_RANGES } from './npc/romance.js';
 import { pickHistory, pickFaultChance } from './vehicle/history.js';
 import { TyreSet, dealTyres, DEFAULT_TYRE_PARAMS, TYRE_PARAM_RANGES } from './vehicle/tyres.js';
 import { pushDirection, localAlong } from './vehicle/controls.js';
@@ -409,6 +410,12 @@ export class Game {
     this.fallingOutEvents = []; // banter moments waiting to be raised: fellOut, madeUp
     this.fallingOutApartAt = {}; // girl id -> clock when she was last sent off from her friend
     for (const c of this.companions) c.fallenOut = () => this.fallingOut.active;
+    // A girl who likes you a lot asks you round the back of the barn, then onto her favourite quad (npc/romance.js).
+    this.romance = new Romance(CHARACTERS.map((ch) => ch.id));
+    this.tryst = null; // the scene while it plays: { scene: Tryst, girl }
+    this.sharedQuad = null; // the quad you're on with the girl you're locked in with, to catch the moment you tip it
+    this.sharedFor = 0;
+    this.sharedTipped = false;
 
     // What each girl is good at, and coaching her from the back (npc/skills.js); her driving reads the live levels.
     this.skills = new Skills(CHARACTERS.map((ch) => ch.id));
@@ -904,6 +911,7 @@ export class Game {
     registerTuning('Bell', this.bell.params, BELL_PARAM_RANGES);
     registerTuning('Favour', this.favour.p, FAVOUR_PARAM_RANGES);
     registerTuning('Falling out', this.fallingOut.p, FALLING_OUT_PARAM_RANGES);
+    registerTuning('Romance', this.romance.p, ROMANCE_PARAM_RANGES);
     this.wearLedger ??= new WearLedger();
     registerTuning('Who wore it out', this.wearLedger.p, LEDGER_PARAM_RANGES);
     this.leftRunning ??= new LeftRunning();
@@ -2068,6 +2076,159 @@ export class Game {
         c.walkTo(target, Math.atan2(from.x - target.x, from.z - target.z));
       }
     }
+  }
+
+  // Round the back of the barn, and her quad ------------------------------------
+
+  /** The quad she likes best, if it is one she could be sat on the back of right now with nobody else on it. */
+  romanceQuad(c) {
+    const unit = this.girlUnits.find((u) => u.spec.id === c.voice.favourite);
+    const q = unit?.quad;
+    if (!q || !q.hasPillion || q.isTipped || q.rider || q.driver || q.passenger || q.isGhostRiding || q.speed > 0.5) return null;
+    if (this.herOn(q) || !c.canRidePillion(q)) return null;
+    return unit;
+  }
+
+  /** Is she sat on her favourite quad and you stood on foot beside it? */
+  onHerQuad(c) {
+    const q = c.quad;
+    return c.fsm.is('seated') && c.seatKind === 'pillion' && q.unit.spec.id === c.voice.favourite && !this.player.isRiding
+      && this.player.position.distanceTo(q.position) < this.romance.p.quadRange;
+  }
+
+  updateRomance(dt) {
+    this.watchTippedQuads(dt);
+    if (this.tryst) return this.updateTryst(dt);
+    const you = this.player.position;
+    const youFree = !this.player.isRiding && !this.menu.isOpen && !this.hiding.active && !this.climb && !this.race.active && !this.drag.active && !this.recalling;
+    const girls = this.companions.map((c) => {
+      const id = c.character.id;
+      return {
+        id,
+        score: this.favour.scores[id],
+        favoured: this.favour.mood(id) === 'favoured',
+        free: c.fsm.is('idle') && !c.warmingAt && !c.pendingSpot,
+        distance: c.root.position.distanceTo(you),
+        fallenOut: this.fallingOut.active,
+        quadOk: !!this.romanceQuad(c),
+      };
+    });
+    for (const e of this.romance.update(dt, { girls, youFree })) {
+      const c = this.companions.find((o) => o.character.id === e.girl);
+      if (e.type === 'invite') {
+        const unit = e.kind === 'quad' ? this.romanceQuad(c) : null;
+        if (e.kind === 'quad' && !unit) {
+          this.romance.cancel(e.girl);
+          continue;
+        }
+        c.voice.say(e.kind === 'quad' ? 'inviteQuad' : 'inviteBarn', { force: true });
+        if (unit) c.requestMount(unit.quad);
+        this.hud.toast(`${c.name} wants a word: talk to her`, 3);
+      } else if (e.type === 'lapsed') {
+        c.voice.say('inviteLapsed', { force: true });
+        if (e.kind === 'quad' && c.fsm.is('seated', 'mounting')) c.requestStandBeside();
+      }
+    }
+  }
+
+  /** Her wheel options while she's asked: yes, or not now. */
+  romanceWheelOptions(c) {
+    const id = c.character.id;
+    const ask = this.romance.pendingFor(id);
+    if (!ask || this.tryst) return [];
+    const no = {
+      label: 'Not now',
+      run: () => {
+        this.romance.decline(id);
+        c.voice.say('inviteDeclined', { force: true });
+        if (ask.kind === 'quad' && c.fsm.is('seated', 'mounting')) c.requestStandBeside();
+      },
+    };
+    if (ask.kind === 'barn') return [{ label: 'Go round the back of the barn', run: () => this.startTryst(c, 'barn') }, no];
+    return this.onHerQuad(c) ? [{ label: 'Stand next to her on the quad', run: () => this.startTryst(c, 'quad') }, no] : [no];
+  }
+
+  startTryst(c, kind) {
+    if (kind === 'barn' && !c.fsm.is('idle')) return this.hud.toast(`${c.name} is busy`, 1.6);
+    this.closeMenu();
+    this.romance.accept(c.character.id);
+    this.tryst = { scene: new Tryst(c.character.id, kind, this.romance.p), girl: c };
+    this.player.moveEnabled = false;
+    this.player.lookEnabled = false;
+  }
+
+  /** Turns you to look at her. */
+  lookAtHer(c) {
+    const from = this.player.position;
+    const to = c.root.getWorldPosition(c.tmpV.clone());
+    this.player.yaw = Math.atan2(-(to.x - from.x), -(to.z - from.z));
+    this.player.pitch = 0;
+  }
+
+  updateTryst(dt) {
+    const { scene, girl: c } = this.tryst;
+    const id = c.character.id;
+    const kind = scene.kind;
+    for (const e of scene.update(dt)) {
+      if (e === 'place') {
+        if (kind === 'barn') {
+          // Behind the barn, you facing her.
+          const b = this.world.layout.barn;
+          const x = b.x - b.halfX - 3.2;
+          const you = { x, y: this.world.heightAt(x, b.z), z: b.z };
+          this.player.moveTo(you);
+          const hx = x + 1.2;
+          c.root.position.set(hx, this.world.heightAt(hx, b.z), b.z);
+          c.heading = -Math.PI / 2;
+          c.root.rotation.y = c.heading;
+        }
+        this.lookAtHer(c);
+      } else if (e === 'moment') {
+        this.lookAtHer(c);
+        c.voice.say(kind === 'quad' ? 'trystQuad' : 'trystBarn', { force: true });
+      } else if (e === 'back') {
+        c.voice.say(kind === 'quad' ? 'afterQuad' : 'afterBarn', { force: true });
+      } else if (e === 'done') this.endTryst(c, kind);
+    }
+    this.hud.setFade(scene.fade);
+  }
+
+  endTryst(c, kind) {
+    const id = c.character.id;
+    this.tryst = null;
+    this.hud.setFade(0);
+    this.player.moveEnabled = true;
+    this.player.lookEnabled = true;
+    const friend = this.companions.find((o) => o !== c);
+    const result = this.romance.complete(id);
+    this.favour.add(id, 2);
+    if (result.type === 'lockedIn') {
+      this.favour.lock(id, this.romance.p.lockScore);
+      if (friend) setTimeout(() => friend.voice.say('sulkLockedOut', { force: true }), 6000);
+    } else if (friend && Math.random() < 0.6) setTimeout(() => friend.voice.say('teaseRomance', { force: true }), 8000);
+    if (kind === 'quad') c.requestStandBeside();
+  }
+
+  /** The one thing she won't forgive: you tip a quad over with her on it. */
+  watchTippedQuads(dt) {
+    const locked = this.companions.find((c) => c.character.id === this.romance.lockedGirl);
+    const q = this.riddenUnit?.quad;
+    if (q && locked && !q.isTipped && this.herOn(q) === locked) {
+      this.sharedQuad = q;
+      this.sharedFor = 0;
+    } else if (this.sharedQuad) {
+      this.sharedFor += dt; // a tip throws you off first, so give it a few seconds
+      if (!locked || this.sharedFor > 4) this.sharedQuad = null;
+    }
+    const tipped = this.sharedQuad?.isTipped;
+    if (tipped && !this.sharedTipped) {
+      const id = locked.character.id;
+      this.romance.betray(id);
+      this.favour.unlock(id, this.romance.p.betrayScore);
+      locked.voice.say('betrayed', { force: true });
+      this.sharedQuad = null;
+    }
+    this.sharedTipped = !!tipped;
   }
 
   /** The wheel's two extras while they're fallen out and she's told you her side: take her side, or tell her to make up. */
@@ -3784,6 +3945,7 @@ export class Game {
       });
     }
     options.push(...this.fallingOutWheelOptions(c));
+    options.push(...this.romanceWheelOptions(c));
     this.openWheel(`Ask ${c.name} to`, options, c);
     this.player.lookEnabled = false;
     this.player.moveEnabled = false;
@@ -4114,7 +4276,7 @@ export class Game {
     } else if (this.notebook.isOpen) {
       this.interaction.clear();
       this.notebook.handleInput(input);
-    } else if (this.climb) {
+    } else if (this.climb || this.tryst) {
       this.interaction.clear();
       input.takeWheelSteps();
     } else if (this.hiding.active) {
@@ -4223,13 +4385,14 @@ export class Game {
     this.updateRockPrank(dt);
     this.updateDrownOut(dt);
     this.updateFallingOut(dt);
+    this.updateRomance(dt);
     this.updateBanter(dt, ridden);
     for (const c of this.companions) {
       c.update(dt, c.quad.unit.vibration, {
         position: this.camera.position,
         forward: this.camera.getWorldDirection(this.viewForward),
         isRiding: this.player.isRiding,
-        talking: this.menu.isOpen && this.talkingTo === c,
+        talking: (this.menu.isOpen && this.talkingTo === c) || this.tryst?.girl === c,
       });
       c.sounds.ensure();
       c.voice.update(dt, {

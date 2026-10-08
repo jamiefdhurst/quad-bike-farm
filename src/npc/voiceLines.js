@@ -41,6 +41,7 @@ import { AMY_TRACTORGO_LINES } from './tractorGoLines.js';
 import { AMY_LPLATE_LINES } from './lPlateLines.js';
 import { AMY_TRACTORRUNAWAY_LINES } from './tractorRunawayLines.js';
 import { AMY_FALLINGOUT_LINES } from './fallingOutLines.js';
+import { AMY_ROMANCE_LINES } from './romanceLines.js';
 import { AMY_QUAD_LINES } from './quadLines.js';
 import { AMY_WARMING_LINES } from './warmingLines.js';
 import { AMY_HEADSTART_LINES } from './headStartLines.js';
@@ -1458,6 +1459,8 @@ export const VOICE_LINES = {
   ...AMY_TRACTORRUNAWAY_LINES,
   // Falling out with Jess: her side, being sided with, being nudged (fallingOutLines.js).
   ...AMY_FALLINGOUT_LINES,
+  // Asking you round the back of the barn, and onto her quad (romanceLines.js).
+  ...AMY_ROMANCE_LINES,
   // Quad nicknames, whose is whose, and placing a quad by ear (quadLines.js).
   ...AMY_QUAD_LINES,
   // Warming their hands over an idling engine (warmingLines.js).

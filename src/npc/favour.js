@@ -49,17 +49,35 @@ export class Favour {
     this.p = params;
     this.ids = ids;
     this.scores = Object.fromEntries(ids.map((id) => [id, 0]));
+    this.locked = {}; // girl id -> the score her favour never drops below (romance.js: she is yours for the rest of the game)
+  }
+
+  /** Locks her favour in: it stays at or above `floor`, nothing takes it away, and she always stands as favoured. */
+  lock(id, floor) {
+    this.locked[id] = floor;
+    this.scores[id] = Math.max(this.scores[id], floor);
+  }
+
+  /** Lets her favour go again, to `score`. */
+  unlock(id, score) {
+    delete this.locked[id];
+    if (score !== undefined) this.scores[id] = score;
   }
 
   /** `amount` of score for her, kept within bounds (it can go below nothing). */
   add(id, amount) {
     if (!(id in this.scores)) return;
+    if (id in this.locked && amount < 0) return;
     this.scores[id] = clamp(this.scores[id] + amount, -this.p.maxScore, this.p.maxScore);
   }
 
   /** Scores drift back towards nothing. */
   update(dt) {
     for (const id of this.ids) {
+      if (id in this.locked) {
+        this.scores[id] = Math.max(this.scores[id], this.locked[id]);
+        continue;
+      }
       const s = this.scores[id];
       const step = this.p.decayPerSecond * dt * Math.sign(s);
       this.scores[id] = Math.abs(step) >= Math.abs(s) ? 0 : s - step;
@@ -68,6 +86,7 @@ export class Favour {
 
   /** How she stands against the others: -1 neglected, 0 even, 1 favoured. */
   standing(id) {
+    if (id in this.locked) return 1; // locked in: always fully favoured
     const others = this.ids.filter((o) => o !== id);
     if (!others.length) return 0;
     const rest = others.reduce((sum, o) => sum + this.scores[o], 0) / others.length;
