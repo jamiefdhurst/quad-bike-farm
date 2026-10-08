@@ -11,8 +11,12 @@ Two engines:
               Reference voices, in tools/voices/:
                 amy-ref.wav   Piper's "cori" voice (trained on public-domain
                               LibriVox recordings), so Amy sounds as she did
-                jess-ref.wav  Ruth Golding reading in RP, from LibriVox's
-                              public-domain Dialect and Accent Collection Vol. 1
+                jess-ref.wav  Kokoro's "bf_lily" voice (Apache 2.0) saying
+                              something excited and cheeky, so Jess comes out
+                              young and lively: "Oh my god, did you see that?
+                              Ha! That was brilliant! No, no, slow down, slow
+                              down! Right, my turn. Give me the keys. Go on, I
+                              dare you!"
   piper       The older engine: Piper with its "cori" voice. Flat, but quick.
 
 Neither engine ships with the game; they're only used here.
@@ -97,8 +101,11 @@ FEEL = {
                      'startGaveUp', 'stalledRiding', 'outOfFuel', 'selfGetOffWaited', 'askOff', 'askStop'], 'cross'),
     'banter': 'snide',  # the girls bickering (banterLines.js)
 }
-# How much more (or less) emotional each character is than the feel says.
-CHARACTER_LIFT = {'amy': 0.0, 'jess': 0.1}
+# How much more (or less) emotional each character is than the feel says, and
+# for some, a cfg weight that replaces the feel's (lower runs freer). Jess's were
+# picked by ear from a sweep: a lift of 0.6 with cfg 0.25 is lively without babbling.
+CHARACTER_LIFT = {'amy': 0.0, 'jess': 0.6}
+CHARACTER_CFG = {'jess': 0.25}
 
 # What to actually say where the written line doesn't come out right.
 SPOKEN = {
@@ -131,7 +138,7 @@ def character_lines(character):
 def feel_for(situations, character):
     """The strongest feel of the situations a line is said in, lifted for the character."""
     exag, cfg = max((FEELS[FEEL.get(s, 'chat')] for s in situations), key=lambda f: f[0])
-    return round(min(1.0, exag + CHARACTER_LIFT.get(character, 0)), 2), cfg
+    return round(min(2.0, exag + CHARACTER_LIFT.get(character, 0)), 2), CHARACTER_CFG.get(character, cfg)
 
 
 def words(text):
