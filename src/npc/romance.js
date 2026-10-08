@@ -10,8 +10,9 @@ export const DEFAULT_ROMANCE_PARAMS = {
   nearRange: 9, // metres: she only asks when you're stood about this close, on foot
   cooldown: 420, // seconds between her invitations
   declineCooldown: 600, // seconds before she asks again after you say not now
-  lapseAfter: 75, // seconds an invitation stays open (the quad one gets lapseQuadExtra more, she has to walk there)
-  lapseQuadExtra: 60,
+  lapseAfter: 75, // seconds an invitation stays open (the quad one gets lapseQuadExtra more)
+  settleAt: 0.75, // engine warmth (0..1) at which she leaves a quad she has started to idle and gets on, rather than minding it until fully warm
+  lapseQuadExtra: 200, // she walks to the quad, starts it if it isn't running, then gets on
   visitsForQuad: 2, // trips round the back before she asks for the quad
   lockScore: 15, // once locked in her favour never drops below this
   betrayScore: -8, // her favour when you throw her off a quad
@@ -34,6 +35,7 @@ export const ROMANCE_PARAM_RANGES = {
   cooldown: [30, 1800, 10],
   declineCooldown: [30, 3600, 10],
   lapseAfter: [10, 300, 5],
+  settleAt: [0.3, 0.95, 0.05],
   lapseQuadExtra: [0, 300, 5],
   visitsForQuad: [1, 6, 1],
   lockScore: [0, 20, 0.5],

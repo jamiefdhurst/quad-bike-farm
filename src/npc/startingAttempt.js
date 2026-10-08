@@ -151,6 +151,11 @@ export class StartingAttempt {
         const want = engine.temperature > 0.9 ? 0 : 1.15 - engine.temperature;
         this.quad.choke = Math.round(clamp(want, 0, this.quad.choke) * 10) / 10;
         if (engine.temperature > 0.95 && this.quad.choke === 0) this.finish('running');
+        else if (this.p.settleAt != null && engine.temperature >= this.p.settleAt) {
+          // Needed on the road: she takes the choke off and leaves it to idle, rather than minding it until it is fully warm.
+          this.quad.choke = 0;
+          this.finish('running');
+        }
         break;
     }
     return this.events;

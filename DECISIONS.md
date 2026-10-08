@@ -2107,3 +2107,10 @@ Feedback: most actions belong with the vehicles, the settings were in a poor ord
 
 - The Tune tab groups the registered tuning under seven categories (driving and towing; engines, fuel and faults; items and workshop; world, weather and sound; and the girls in three: moving about, how they feel about you, things they do) plus the girls' own builds. Groups sort by category then name, so registration order no longer matters. Search narrows the folders and opens the categories that still have some.
 - The list is `src/debug/tuneCategories.js`. A test scans the source for every `registerTuning('Name'` and fails if one isn't listed, or if a listed name no longer exists, so the tab stays ordered. CLAUDE.md now has a "Debug panel" section saying how new things are added to each tab.
+
+### The quad invitation starts the quad first (romance)
+
+- Request: when she asks you over to her favourite quad, it has to be running; if it isn't she starts it first.
+- `Game.romanceGetOnQuad`: if the quad isn't running she walks to it and has a go at starting it (the same attempt as the "Start it" wheel option), trying again up to three times if it won't catch, then gets on the back. She doesn't mind the choke until it's fully warm: at `settleAt` 0.75 engine warmth she takes the choke off and gets on (`Romance` params, in the panel). The invitation's extra time went from 60 to 200 s, because a cold start and warm-up takes most of a minute or more. If you get on it, it goes over or the invitation lapses meanwhile, she stops and the ask is cancelled (a minute's cooldown).
+- `Companion.requestStart` takes `then` (called with whether it's running) and `settleAt`; `StartingAttempt` has `settleAt` in its params (unset: she tends it until warm, as before).
+- Checked headless once: with every engine off, "asks you for the quad" had her start the yellow, tend it, and sit on the back once it passed 0.75. Not checked: a failed start, or the scene itself afterwards.

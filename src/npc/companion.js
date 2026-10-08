@@ -792,14 +792,16 @@ export class Companion {
   }
 
   /** Walks to the bars of a quad and has a go at starting it. */
-  requestStart(quad) {
-    if (this.stopDriving('off', () => this.requestStart(quad))) return;
+  requestStart(quad, { then = null, settleAt = null } = {}) {
+    if (this.stopDriving('off', () => this.requestStart(quad, { then, settleAt }))) return;
     if (this.fsm.is('seated', 'mounting')) {
-      this.afterDismount = () => this.requestStart(quad);
+      this.afterDismount = () => this.requestStart(quad, { then, settleAt });
       this.fsm.transition('dismounting');
       return;
     }
     this.quad = quad;
+    this.startSettleAt = settleAt; // temperature (0..1) at which she stops minding the choke and leaves it, or null to wait until it's fully warm
+    this.afterStart = then; // called with whether it's running when she's done (not if something else interrupts her first)
     this.fsm.transition('walking', { goal: 'start', target: () => this.startPoint() });
   }
 
@@ -1215,7 +1217,7 @@ const STATES = {
   starting: {
     enter(data) {
       this.rig.play('Idle', { fade: 0.3 });
-      this.attempt = new StartingAttempt(this.quad, { params: { ...DEFAULT_STARTING_PARAMS, pullWhenFlat: this.params.startPullWhenFlat } });
+      this.attempt = new StartingAttempt(this.quad, { params: { ...DEFAULT_STARTING_PARAMS, pullWhenFlat: this.params.startPullWhenFlat, settleAt: this.startSettleAt } });
       this.reachSide = data.side ?? 1;
     },
     update(dt, data) {
@@ -1227,11 +1229,16 @@ const STATES = {
       this.quad.helperStarter = a.starter;
       if (a.done) {
         if (a.result === 'running' && !this.quad.rider) this.startEvents.push('warmedUp');
+        const then = this.afterStart;
+        const ran = this.quad.engine.isRunning;
+        this.afterStart = null;
         this.fsm.transition('idle', { facing: data.facing });
+        then?.(ran);
       }
     },
     exit() {
       this.quad.helperStarter = false;
+      this.afterStart = null;
       this.attempt = null;
     },
   },

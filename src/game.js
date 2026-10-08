@@ -2163,13 +2163,29 @@ export class Game {
         return false;
       }
       c.voice.say(e.kind === 'quad' ? 'inviteQuad' : 'inviteBarn', { force: true });
-      if (unit) c.requestMount(unit.quad);
+      if (unit) this.romanceGetOnQuad(c, unit, 3);
       this.hud.toast(`${c.name} wants a word: talk to her`, 3);
     } else if (e.type === 'lapsed') {
       c.voice.say('inviteLapsed', { force: true });
       if (e.kind === 'quad' && c.fsm.is('seated', 'mounting')) c.requestStandBeside();
     }
     return true;
+  }
+
+  /** She starts her favourite quad first if it isn't running (trying again if it won't catch), then gets on the back of it. */
+  romanceGetOnQuad(c, unit, tries) {
+    const q = unit.quad;
+    if (q.engine.isRunning) return c.requestMount(q);
+    c.requestStart(q, {
+      settleAt: this.romance.p.settleAt,
+      then: (ran) => {
+        if (!this.romance.pendingFor(c.character.id)) return; // it lapsed or you said no while she was at it
+        if (!this.romanceQuad(c)) return this.romance.cancel(c.character.id); // you got on it, or it's gone over
+        if (ran) c.requestMount(q);
+        else if (tries > 1) this.romanceGetOnQuad(c, unit, tries - 1);
+        else this.romance.cancel(c.character.id);
+      },
+    });
   }
 
   /** Her wheel options while she's asked: yes, or not now. */
