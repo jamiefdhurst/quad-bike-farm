@@ -45,7 +45,7 @@ export class World {
     };
     this.wearParams = { ...DEFAULT_WEAR_PARAMS };
     registerTuning('Ground wear', this.wearParams, WEAR_PARAM_RANGES);
-    this.wear = new GroundWear({ bounds: this.fields.farm, exempt, params: this.wearParams });
+    this.wear = new GroundWear({ bounds: this.fields.farm, exempt, soak: this.fields.soakAt, params: this.wearParams });
 
     // Mud the tyres carry onto the road (roadMud.js), on a fine grid over the tarmac.
     this.roadMudParams = { ...DEFAULT_ROAD_MUD_PARAMS };

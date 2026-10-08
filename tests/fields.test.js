@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { LAYOUT } from '../src/world/layout.js';
-import { createFields, outsideRect } from '../src/world/fields.js';
+import { createFields, createFieldShape, outsideRect } from '../src/world/fields.js';
+import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
 
 const f = createFields(LAYOUT);
@@ -96,5 +97,31 @@ describe('the farm fields', () => {
     expect(f.inFarm(198, 0, 6)).toBe(false);
     expect(outsideRect(f.farm, 210, 0)).toBeCloseTo(10);
     expect(outsideRect(f.farm, 0, 0)).toBe(0);
+  });
+
+  it('gives the two stubble fields their own lie: a wet hollow in the north, a rise to the south', () => {
+    const shape = createFieldShape(LAYOUT);
+    const h = LAYOUT.stubbleFields.north.hollow;
+    expect(shape(h.x, h.z).lift).toBeCloseTo(-h.depth);
+    expect(shape(h.x, h.z).soak).toBe(1);
+    expect(shape(h.x + h.rx + 1, h.z)).toEqual({ lift: 0, soak: 0 });
+    expect(shape(150, LAYOUT.farm.maxZ - 1).lift).toBeGreaterThan(LAYOUT.stubbleFields.south.rise * 0.95);
+    expect(shape(150, road.z).lift).toBe(0); // not the road
+    expect(shape(0, 60).lift).toBe(0); // nor the grass field
+    expect(f.soakAt(h.x, h.z)).toBe(1);
+    expect(f.stubbleField('north').crop).toBe('barley');
+    expect(f.stubbleField('south').rows).not.toBe(f.stubbleField('north').rows);
+  });
+
+  it('leaves no step in the ground at the hedges round the fields, or on the road', () => {
+    const heights = createTerrainHeight(LAYOUT, new Track(LAYOUT.trackPoints));
+    // Across the grass field's east hedge and the south field's far hedge, a metre each side.
+    for (let z = 10; z < 80; z += 5) expect(Math.abs(heights.heightAt(81, z) - heights.heightAt(79, z))).toBeLessThan(0.3);
+    for (let x = 82; x < 200; x += 6) expect(Math.abs(heights.heightAt(x, 81) - heights.heightAt(x, 79))).toBeLessThan(0.3);
+    // Steady along the road, and flat across it.
+    for (let x = road.fromX; x < road.toX; x += 2) {
+      expect(Math.abs(heights.heightAt(x + 2, road.z) - heights.heightAt(x, road.z))).toBeLessThan(0.15);
+      expect(Math.abs(heights.heightAt(x, road.z + road.halfWidth) - heights.heightAt(x, road.z - road.halfWidth))).toBeLessThan(0.02);
+    }
   });
 });

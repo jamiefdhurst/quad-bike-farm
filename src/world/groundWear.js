@@ -22,6 +22,7 @@ export const DEFAULT_WEAR_PARAMS = {
   bogDry: 0.7, // the wetness factor on bone dry ground: below bogFrom, so a bog never forms (and shrinks away) in a long dry spell
   bogWetGain: 0.5, // the wetness factor's gain at full wetness: heavy rain means a bog from much less wear
   hazardAt: 0.35, // bog depth above which the girls steer clear of a cell
+  soakGain: 1, // how much wetter ground that holds the wet (a hollow) counts: there, half-wet ground bogs as if soaked
 };
 
 export const WEAR_PARAM_RANGES = {
@@ -37,6 +38,7 @@ export const WEAR_PARAM_RANGES = {
   bogDry: [0, 1, 0.01],
   bogWetGain: [0, 1, 0.01],
   hazardAt: [0, 1, 0.01],
+  soakGain: [0, 3, 0.05],
 };
 
 export class GroundWear {
@@ -46,8 +48,9 @@ export class GroundWear {
    * @param {number} [o.half]      ... or metres from the middle that it covers each way.
    * @param {number} [o.cell]      Metres between grid points (a patch of worn ground is about two of these across).
    * @param {(x:number, z:number) => boolean} [o.exempt]  Ground that never wears (the yard, the drag strip, the barn, the road).
+   * @param {(x:number, z:number) => number} [o.soak]  0..1 how much of the wet the ground holds (a hollow): it bogs sooner in the rain.
    */
-  constructor({ bounds, half, cell = 2, exempt = () => false, params = { ...DEFAULT_WEAR_PARAMS } }) {
+  constructor({ bounds, half, cell = 2, exempt = () => false, soak = null, params = { ...DEFAULT_WEAR_PARAMS } }) {
     this.p = params;
     this.cell = cell;
     const b = bounds ?? { minX: -half, maxX: half, minZ: -half, maxZ: half };
@@ -57,6 +60,10 @@ export class GroundWear {
     this.minX = (b.minX + b.maxX) / 2 - (this.nx * cell) / 2;
     this.minZ = (b.minZ + b.maxZ) / 2 - (this.nz * cell) / 2;
     this.exempt = exempt;
+    this.soak = soak;
+    // How much of the wet each grid point holds, fixed by the lie of the land.
+    this.soaks = new Float32Array(this.nx * this.nz);
+    if (soak) for (let ix = 0; ix < this.nx; ix++) for (let iz = 0; iz < this.nz; iz++) this.soaks[ix * this.nz + iz] = soak(this.minX + (ix + 0.5) * cell, this.minZ + (iz + 0.5) * cell);
     this.wear = new Float32Array(this.nx * this.nz); // wear[ix * nz + iz], 0..1; node i sits at min + (i + 0.5) * cell
     // r soft, g bog, for the ground shader: a texture nx wide and nz high, so row iz, column ix, as the shader samples it by (x, z).
     this.data = new Uint8Array(this.nx * this.nz * 4);
@@ -140,7 +147,12 @@ export class GroundWear {
 
   /** 0..1 how deep a bog the wear has made here, in this wetness. */
   bogAt(x, z, wet = 0) {
-    return this.#bog(this.wearAt(x, z), wet);
+    return this.#bog(this.wearAt(x, z), this.#soaked(wet, this.soak ? this.soak(x, z) : 0));
+  }
+
+  /** The wetness ground that holds `soak` of the wet feels. */
+  #soaked(wet, soak) {
+    return Math.min(1, clamp(wet, 0, 1) * (1 + this.p.soakGain * soak));
   }
 
   #soft(w) {
@@ -160,7 +172,7 @@ export class GroundWear {
         const v = w[ix * nz + iz];
         const o = (iz * nx + ix) * 4;
         this.data[o] = Math.round(this.#soft(v) * 255);
-        this.data[o + 1] = Math.round(this.#bog(v, wet) * 255);
+        this.data[o + 1] = Math.round(this.#bog(v, this.#soaked(wet, this.soaks[ix * nz + iz])) * 255);
         this.data[o + 3] = 255;
       }
     }
@@ -176,7 +188,7 @@ export class GroundWear {
       for (let iz = 0; iz < this.nz; iz++) {
         const w = this.wear[ix * this.nz + iz];
         if (w < 0.4) continue;
-        const depth = this.#bog(w, wet);
+        const depth = this.#bog(w, this.#soaked(wet, this.soaks[ix * this.nz + iz]));
         if (depth >= this.p.hazardAt) out.push({ x: this.minX + (ix + 0.5) * this.cell, z: this.minZ + (iz + 0.5) * this.cell, radius: r, depth });
       }
     }

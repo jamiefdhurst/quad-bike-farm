@@ -120,4 +120,16 @@ describe('ground wear', () => {
     const o = (Math.round((-30 - g.minZ) / g.cell - 0.5) * g.nx + Math.round((150 - g.minX) / g.cell - 0.5)) * 4;
     expect(g.data[o + 3]).toBe(255);
   });
+
+  it('bogs sooner in a hollow that holds the wet, and no sooner in the dry', () => {
+    const hollow = (x) => (x > 0 ? 1 : 0);
+    const g = new GroundWear({ half: 80, soak: hollow });
+    // Worn to about 0.68: short of a bog on ordinary half-wet ground, enough for one in the hollow.
+    pass(g, 20, 0, 0.5, 17);
+    pass(g, -20, 0, 0.5, 17);
+    expect(g.bogAt(-20, 0, 0.5)).toBe(0);
+    expect(g.wearAt(20, 0)).toBeCloseTo(g.wearAt(-20, 0), 5);
+    expect(g.bogAt(20, 0, 0.5)).toBeGreaterThan(g.bogAt(-20, 0, 0.5));
+    expect(g.bogAt(20, 0, 0)).toBe(g.bogAt(-20, 0, 0));
+  });
 });

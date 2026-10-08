@@ -17,6 +17,18 @@ export const LAYOUT = {
   // `hedgeTo` is where the hedges either side of it stop, `verge` the grass between the tarmac and those hedges, `gaps` the open gateways in them
   // into the stubble fields (x of each, `gapWidth` wide), north side then south.
   road: { z: 2, fromX: 78, toX: 184, halfWidth: 2.3, verge: 2.8, hedgeTo: 176, pad: { x: 188, radius: 8 }, gaps: { north: [112, 152], south: [128, 166] }, gapWidth: 6 },
+  // How each stubble field looks and lies (world/fields.js, groundTexture.js, props.js). `rows` is the way it was drilled (rows along x or z,
+  // half a metre apart), `tramlines` the metres between the sprayer's wheel lines, `ground` the straw's colour on the ground, `stalk` the
+  // stalks' tip and base colours, `stalkHeight` their cut height range and `density` how thick they stand (1 is the wheat's). The north field,
+  // barley, sits in a shallow hollow (`hollow`, an ellipse `depth` m deep in the middle) that holds the wet; the south, wheat, rises `rise` m
+  // towards its far hedge.
+  stubbleFields: {
+    north: {
+      crop: 'barley', rows: 'z', tramlines: 20, ground: '#a7a07c', stalk: [[0.72, 0.68, 0.52], [0.45, 0.42, 0.3]], stalkHeight: [0.05, 0.1], density: 1.6,
+      hollow: { x: 140, z: -44, rx: 26, rz: 16, depth: 1.3 },
+    },
+    south: { crop: 'wheat', rows: 'x', tramlines: 24, ground: '#b3a06a', stalk: [[0.8, 0.66, 0.38], [0.5, 0.4, 0.22]], stalkHeight: [0.08, 0.16], density: 1, rise: 4 },
+  },
   hedgeThickness: 1.8,
   hedgeHeight: 2.4,
 

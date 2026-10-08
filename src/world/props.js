@@ -388,62 +388,77 @@ function buildGrass({ scene, layout, heights, random }) {
   scene.add(mesh);
 }
 
-/** Cut straw stalks standing in the stubble fields, in the drill rows (half a metre apart along x), off the tarmac and clear of the hedges. */
+/**
+ * Cut straw stalks standing in the stubble fields, in the drill rows (half a metre apart, the way each field was drilled), off the tarmac and
+ * clear of the hedges: each field's own crop (layout.stubbleFields), the barley shorter, greyer and thicker than the wheat.
+ */
 function buildStubble({ scene, fields, heights, random }) {
-  const stalks = 6;
-  const pos = [];
-  const colors = [];
-  for (let i = 0; i < stalks; i++) {
-    // Along the row, a hand's width of stalks, cut square at 8 to 16 cm and leaning a little.
-    const bx = (random() - 0.5) * 0.14;
-    const bz = (random() - 0.5) * 0.03;
-    const w = 0.006;
-    const h = 0.08 + random() * 0.08;
-    const lx = (random() - 0.5) * 0.04;
-    const lz = (random() - 0.5) * 0.04;
-    const a = [bx - w, 0, bz];
-    const b = [bx + w, 0, bz];
-    const c = [bx + lx + w, h, bz + lz];
-    const d = [bx + lx - w, h, bz + lz];
-    // Each face twice, once each way round, drawn front side only: lit the same from either side (a double-sided material would flip the
-    // up-pointing normal on the back and draw it dark).
-    for (const tri of [[a, b, c], [a, c, d], [a, c, b], [a, d, c]]) {
-      for (const v of tri) {
-        pos.push(...v);
-        colors.push(...(v[1] > 0 ? [0.8, 0.66, 0.38] : [0.5, 0.4, 0.22]));
+  const areas = ['north', 'south'].filter((k) => fields.areas[k]);
+  if (!areas.length) return;
+  const perArea = (r) => (r.maxX - r.minX) * (r.maxZ - r.minZ);
+  const fieldsList = areas.map((k) => ({ r: fields.areas[k], f: fields.stubbleField(k) ?? {} }));
+  const weight = fieldsList.map(({ r, f }) => perArea(r) * (f.density ?? 1));
+  const total = 60000;
+  for (let n = 0; n < fieldsList.length; n++) {
+    const { r, f } = fieldsList[n];
+    const [lowH, highH] = f.stalkHeight ?? [0.08, 0.16];
+    const [tip, base] = f.stalk ?? [[0.8, 0.66, 0.38], [0.5, 0.4, 0.22]];
+    const stalks = 6;
+    const pos = [];
+    const colors = [];
+    for (let i = 0; i < stalks; i++) {
+      // Along the row, a hand's width of stalks, cut square and leaning a little.
+      const bx = (random() - 0.5) * 0.14;
+      const bz = (random() - 0.5) * 0.03;
+      const w = 0.006;
+      const h = lowH + random() * (highH - lowH);
+      const lx = (random() - 0.5) * 0.04;
+      const lz = (random() - 0.5) * 0.04;
+      const a = [bx - w, 0, bz];
+      const b = [bx + w, 0, bz];
+      const c = [bx + lx + w, h, bz + lz];
+      const d = [bx + lx - w, h, bz + lz];
+      // Each face twice, once each way round, drawn front side only: lit the same from either side (a double-sided material would flip the
+      // up-pointing normal on the back and draw it dark).
+      for (const tri of [[a, b, c], [a, c, d], [a, c, b], [a, d, c]]) {
+        for (const v of tri) {
+          pos.push(...v);
+          colors.push(...(v[1] > 0 ? tip : base));
+        }
       }
     }
-  }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-  geo.computeVertexNormals();
-  const normals = geo.getAttribute('normal');
-  for (let i = 0; i < normals.count; i++) normals.setXYZ(i, 0, 1, 0);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geo.computeVertexNormals();
+    const normals = geo.getAttribute('normal');
+    for (let i = 0; i < normals.count; i++) normals.setXYZ(i, 0, 1, 0);
 
-  const fieldsList = ['north', 'south'].map((k) => fields.areas[k]).filter(Boolean);
-  if (!fieldsList.length) return;
-  const count = 45000;
-  const mesh = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }), count);
-  const col = new THREE.Color();
-  let placed = 0;
-  let tries = 0;
-  while (placed < count && tries++ < count * 3) {
-    const r = fieldsList[placed % fieldsList.length];
-    const x = r.minX + random() * (r.maxX - r.minX);
-    const row = Math.floor(random() * ((r.maxZ - r.minZ) / 0.5));
-    const z = r.minZ + 0.25 + row * 0.5 + (random() - 0.5) * 0.06;
-    if (fields.stubbleAt(x, z) < 0.99 || fields.hedgeDistance(x, z) < 1.5) continue;
-    const s = 0.8 + random() * 0.5;
-    mesh.setMatrixAt(placed, matrixAt(x, heights.heightAt(x, z) - 0.01, z, (random() - 0.5) * 0.3, s, s * (0.7 + random() * 0.6), s));
-    col.setHSL(0.11 + random() * 0.03, 0.45 + random() * 0.15, 0.5 + random() * 0.12);
-    mesh.setColorAt(placed, col);
-    placed++;
+    const count = Math.round((total * weight[n]) / weight.reduce((a, b) => a + b, 0));
+    const mesh = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }), count);
+    const alongX = f.rows !== 'z';
+    const col = new THREE.Color();
+    let placed = 0;
+    let tries = 0;
+    while (placed < count && tries++ < count * 3) {
+      const span = alongX ? r.maxZ - r.minZ : r.maxX - r.minX;
+      const row = (alongX ? r.minZ : r.minX) + 0.25 + Math.floor(random() * (span / 0.5)) * 0.5 + (random() - 0.5) * 0.06;
+      const along = alongX ? r.minX + random() * (r.maxX - r.minX) : r.minZ + random() * (r.maxZ - r.minZ);
+      const x = alongX ? along : row;
+      const z = alongX ? row : along;
+      if (fields.stubbleAt(x, z) < 0.99 || fields.hedgeDistance(x, z) < 1.5) continue;
+      const sc = 0.8 + random() * 0.5;
+      const yaw = (alongX ? 0 : Math.PI / 2) + (random() - 0.5) * 0.3;
+      mesh.setMatrixAt(placed, matrixAt(x, heights.heightAt(x, z) - 0.01, z, yaw, sc, sc * (0.7 + random() * 0.6), sc));
+      col.setHSL(0.11 + random() * 0.03, (f.crop === 'barley' ? 0.25 : 0.45) + random() * 0.15, 0.5 + random() * 0.12);
+      mesh.setColorAt(placed, col);
+      placed++;
+    }
+    mesh.count = placed;
+    mesh.receiveShadow = true;
+    mesh.name = `stubble-${areas[n]}`;
+    scene.add(mesh);
   }
-  mesh.count = placed;
-  mesh.receiveShadow = true;
-  mesh.name = 'stubble';
-  scene.add(mesh);
 }
 
 /** A bog's surface: wet, shiny, nearly black mud with a ragged edge, sitting in its dip. */

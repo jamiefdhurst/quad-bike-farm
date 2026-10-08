@@ -18,11 +18,12 @@ export function baseHeight(x, z) {
 
 import { floorBlend } from './barn.js';
 import { stripFrame } from './layout.js';
-import { outsideRect } from './fields.js';
+import { outsideRect, createFieldShape } from './fields.js';
 
 export function createTerrainHeight(layout, track) {
   const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf, road } = layout;
   const farm = layout.farm ?? { minX: -fieldHalf, maxX: fieldHalf, minZ: -fieldHalf, maxZ: fieldHalf };
+  const fieldShape = createFieldShape(layout);
   const yardHeight = baseHeight(yard.x, yard.z);
   const puddles = layout.puddles.map((u) => track.sample(u));
   const bogs = (layout.bogs ?? []).map((b) => (b.track !== undefined ? { ...track.sample(b.track), radius: b.radius } : { ...b }));
@@ -36,6 +37,9 @@ export function createTerrainHeight(layout, track) {
 
     // Land rises gently beyond the farm's hedges towards distant hills.
     h += smoothstep(10, 300, outsideRect(farm, x, z)) * 22 * (0.6 + 0.4 * Math.sin(x * 0.01 + z * 0.013));
+
+    // The stubble fields' own lie: the north one's hollow, the south one's rise.
+    h += fieldShape(x, z).lift;
 
     // The farm road is laid level across, following the lie of the land along its middle, with a 3 m shoulder each side; the
     // hardstanding at its end is flat.

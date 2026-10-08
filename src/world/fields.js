@@ -16,6 +16,34 @@ export function outsideRect(r, x, z) {
   return Math.hypot(dx, dz);
 }
 
+/**
+ * The lie of the stubble fields: how far each lifts or drops the ground at (x, z), and how much of the wet it holds (0..1, 1 at the bottom of
+ * the north field's hollow). The south field's rise starts a few metres off the road and fades in over its first 25 m from the grass field,
+ * so neither the road nor the hedge between them has a step in it; past the far hedge it stays up, and the farmland beyond carries on from it.
+ */
+export function createFieldShape(layout) {
+  const sf = layout.stubbleFields;
+  const road = layout.road;
+  const F = layout.fieldHalf;
+  if (!sf || !road) return () => ({ lift: 0, soak: 0 });
+  const roadEdge = road.z + road.halfWidth + road.verge;
+  const farEdge = layout.farm?.maxZ ?? F;
+  return function shapeAt(x, z) {
+    let lift = 0;
+    let soak = 0;
+    const h = sf.north?.hollow;
+    if (h) {
+      const r = Math.hypot((x - h.x) / h.rx, (z - h.z) / h.rz);
+      if (r < 1) {
+        lift -= h.depth * (1 - smoothstep(0, 1, r));
+        soak = 1 - smoothstep(0.3, 1, r);
+      }
+    }
+    if (sf.south?.rise && x > F && z > roadEdge) lift += sf.south.rise * smoothstep(roadEdge + 3, farEdge, z) * smoothstep(F, F + 25, x);
+    return { lift, soak };
+  };
+}
+
 export function createFields(layout) {
   const F = layout.fieldHalf;
   const farm = layout.farm ?? { minX: -F, maxX: F, minZ: -F, maxZ: F };
@@ -181,5 +209,15 @@ export function createFields(layout) {
     return { x: clamp(x, r.minX + m, r.maxX - m), z: clamp(z, r.minZ + m, r.maxZ - m) };
   }
 
-  return { farm, grass, areas, hedges, gateways, areaOf, hedgeDistance, hedgeAhead, tarmacAt, stubbleAt, route, nextWaypoint, inFarm, clampToArea, inGap };
+  const shape = createFieldShape(layout);
+
+  /** 0..1 how much of the wet the ground holds here (the north field's hollow), for the wear's bogs. */
+  function soakAt(x, z) {
+    return shape(x, z).soak;
+  }
+
+  /** The stubble field's own settings (layout.stubbleFields) for 'north' or 'south'. */
+  const stubbleField = (area) => layout.stubbleFields?.[area] ?? null;
+
+  return { farm, grass, areas, hedges, gateways, soakAt, stubbleField, areaOf, hedgeDistance, hedgeAhead, tarmacAt, stubbleAt, route, nextWaypoint, inFarm, clampToArea, inGap };
 }

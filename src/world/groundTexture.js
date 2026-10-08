@@ -213,20 +213,22 @@ function paintPatchwork(ctx, size, worldSize, fields) {
 }
 
 /**
- * The stubble fields: pale straw with darker drill rows along the field (x) every half metre, the odd bare or weedy patch, and the
- * tramlines (the sprayer's wheel lines, two dark stripes 1.8 m apart every 24 m) that every British arable field has.
+ * The stubble fields, each as layout.stubbleFields has it: its straw colour with darker drill rows every half metre the way it was drilled,
+ * the odd bare or weedy patch, and the tramlines (the sprayer's wheel lines, two dark stripes 1.8 m apart) every British arable field has.
+ * The north field's hollow is damper: darker, with more green coming through.
  */
 function paintStubble(ctx, toPx, s, fields, random) {
   for (const key of ['north', 'south']) {
     const r = fields.areas[key];
     if (!r) continue;
+    const f = fields.stubbleField(key) ?? { rows: 'x', tramlines: 24, ground: '#b3a06a' };
     const [x0, z0] = toPx(r.minX, r.minZ);
     const [x1, z1] = toPx(r.maxX, r.maxZ);
     ctx.save();
     ctx.beginPath();
     ctx.rect(x0, z0, x1 - x0, z1 - z0);
     ctx.clip();
-    ctx.fillStyle = '#b3a06a';
+    ctx.fillStyle = f.ground;
     ctx.fillRect(x0, z0, x1 - x0, z1 - z0);
     // Blotches: a little greener where it's weedy, browner where the combine left it thin.
     for (let i = 0; i < 900; i++) {
@@ -241,28 +243,42 @@ function paintStubble(ctx, toPx, s, fields, random) {
       ctx.fillStyle = g;
       ctx.fillRect(px - rad, pz - rad, rad * 2, rad * 2);
     }
-    // Drill rows.
-    ctx.strokeStyle = 'rgba(110,95,55,0.35)';
-    ctx.lineWidth = Math.max(1, 0.12 * s);
-    for (let z = r.minZ + 0.25; z < r.maxZ; z += 0.5) {
-      const [, pz] = toPx(0, z);
-      ctx.beginPath();
-      ctx.moveTo(x0, pz);
-      ctx.lineTo(x1, pz);
-      ctx.stroke();
+    // The hollow: damp ground, darker, with weeds coming through.
+    if (f.hollow) {
+      const [hx, hz] = toPx(f.hollow.x, f.hollow.z);
+      ctx.save();
+      ctx.translate(hx, hz);
+      ctx.scale(f.hollow.rx * s, f.hollow.rz * s);
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+      g.addColorStop(0, 'rgba(92,96,58,0.6)');
+      g.addColorStop(0.55, 'rgba(110,108,68,0.35)');
+      g.addColorStop(1, 'rgba(110,108,68,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(-1, -1, 2, 2);
+      ctx.restore();
     }
-    // Tramlines, from 12 m in from the field's edge.
-    ctx.strokeStyle = 'rgba(105,90,58,0.75)';
-    ctx.lineWidth = 0.45 * s;
-    for (let z = r.minZ + 12; z < r.maxZ - 6; z += 24) {
-      for (const off of [-0.9, 0.9]) {
-        const [, pz] = toPx(0, z + off);
-        ctx.beginPath();
+    // Drill rows, and tramlines from 12 m in from the field's edge, both running the way it was drilled.
+    const alongX = f.rows !== 'z';
+    const line = (at) => {
+      ctx.beginPath();
+      if (alongX) {
+        const [, pz] = toPx(0, at);
         ctx.moveTo(x0, pz);
         ctx.lineTo(x1, pz);
-        ctx.stroke();
+      } else {
+        const [px] = toPx(at, 0);
+        ctx.moveTo(px, z0);
+        ctx.lineTo(px, z1);
       }
-    }
+      ctx.stroke();
+    };
+    const [lo, hi] = alongX ? [r.minZ, r.maxZ] : [r.minX, r.maxX];
+    ctx.strokeStyle = 'rgba(110,95,55,0.35)';
+    ctx.lineWidth = Math.max(1, 0.12 * s);
+    for (let a = lo + 0.25; a < hi; a += 0.5) line(a);
+    ctx.strokeStyle = 'rgba(105,90,58,0.75)';
+    ctx.lineWidth = 0.45 * s;
+    for (let a = lo + 12; a < hi - 6; a += f.tramlines) for (const off of [-0.9, 0.9]) line(a + off);
     ctx.restore();
   }
 }
