@@ -9,6 +9,7 @@ import { EngineAudio } from '../audio/engineAudio.js';
 import { RideAudio } from '../audio/rideAudio.js';
 import { DEFAULT_AUDIO_PARAMS, AUDIO_PARAM_RANGES } from '../audio/audioParams.js';
 import { ExhaustSmoke, DEFAULT_SMOKE_PARAMS, SMOKE_PARAM_RANGES } from '../effects/exhaustSmoke.js';
+import { DustCloud } from '../effects/dustCloud.js';
 import { QuadMud, DEFAULT_MUD_PARAMS, MUD_PARAM_RANGES, MUD_STATE_RANGES } from '../effects/quadMud.js';
 import { Quad } from './quad.js';
 import { DEFAULT_VEHICLE_PARAMS, VEHICLE_PARAM_RANGES } from './vehicleParams.js';
@@ -123,6 +124,8 @@ export class QuadUnit {
     this.scene = scene;
     this.world = world;
     this.engineAt = new THREE.Vector3(); // scratch: where a hot engine's steam leaves
+    this.dustAt = new THREE.Vector3(); // scratch: where dust lifts, behind the quad
+    this.dustCloud = new DustCloud(scene, (x, z) => world.heightAt(x, z), world.dustParams);
     this.mud = new QuadMud({ scene, world, quad: this.quad, sport: spec.style?.startsWith('sport'), params: { ...DEFAULT_MUD_PARAMS, ...spec.mud } });
     // The mud coat swaps every body material for a copy, so the seat's frost has to tint that copy.
     const seat = this.quad.model.userData.seatMaterial;
@@ -185,6 +188,7 @@ export class QuadUnit {
     }
     this.updateHotSteam(dt);
     this.mud.update(dt);
+    this.updateDust(dt);
     this.audio.onBoard = this.listenerOnBoard;
     this.audio.update(dt, this.engine, this.quad.position);
     this.ride.update(dt);
@@ -209,12 +213,20 @@ export class QuadUnit {
     this.heatSteam.steam(dt, this.engineAt, level, this.quad.velocity);
   }
 
+  /** Dust lifted off dry stubble behind the quad (world/dust.js). */
+  updateDust(dt) {
+    const q = this.quad;
+    this.dustAt.set(q.position.x - Math.sin(q.yaw) * 0.9, 0, q.position.z - Math.cos(q.yaw) * 0.9);
+    this.dustCloud.update(dt, q.dust, this.dustAt, q.velocity);
+  }
+
   setViewport(heightPx, fovDeg) {
     this.smoke.setViewport(heightPx, fovDeg);
     this.steam?.setViewport(heightPx, fovDeg);
     this.heatSteam?.setViewport(heightPx, fovDeg);
     this.viewport = [heightPx, fovDeg];
     this.mud.setViewport(heightPx, fovDeg);
+    this.dustCloud.setViewport(heightPx, fovDeg);
   }
 
   /** Puts the bike back where it started, on its wheels. */

@@ -406,6 +406,8 @@ export class CompanionVoice {
       stuckInBog: ['stuckInBog', 1],
       followDriveOn: ['followDriveOn', 1],
       followSmoke: ['followSmoke', 0.8],
+      followDust: ['followDust', 0.8],
+      dustCough: ['dustCough', 0.6],
       hillWait: ['hillWait', 1],
       doughnuts: ['doughnutSpin', 0.7],
       onRoad: ['roadOn', 0.6],

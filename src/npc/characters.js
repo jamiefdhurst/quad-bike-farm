@@ -65,6 +65,7 @@ export const CHARACTERS = [
       voiceMinGap: 6,
       overtakeChance: 0.04, // bored of your pace, she goes round you and waits
       followSmokeGap: 0.7, // right up behind a two-stroke: she loves the smoke
+      followDustGap: 0.6, // tucked in behind a dusty quad, coughing and laughing
       followGiveUpMin: 15,
       followGiveUpMax: 50,
       followDriveOnChance: 0.5,

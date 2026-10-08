@@ -14,6 +14,7 @@ import { poseLandyControls } from './landRoverModel.js';
 import { EngineLoad } from './engineLoad.js';
 import { waterGulp } from '../engine/water.js';
 import { AirFilter } from './airFilter.js';
+import { dustLevel } from '../world/dust.js';
 import { CruiseControl } from './cruise.js';
 import { Creep, mayCreep, DEFAULT_CREEP_PARAMS } from './creep.js';
 import { Bog } from './bog.js';
@@ -104,7 +105,9 @@ export class Quad {
       this.faults.tyreWheels = layout.wheels.flatMap((w, i) => (w.outrigger ? [] : [i]));
       this.faults.wheelSides = layout.wheels.map((w) => ({ side: w.x >= 0 ? 1 : -1, front: !!w.front }));
     }
-    this.filter = new AirFilter(); // clogs with mud and puddles; cleaned at the toolbox
+    this.filter = new AirFilter(); // clogs with mud, puddles and dust; cleaned at the toolbox
+    this.dust = 0; // 0..1 how much dust it is throwing up (fast over dry stubble)
+    this.dustIn = 0; // 0..1 the thickest cloud of another quad's it is in (the game sets it)
     this.tripMiles = 0;
     this.usage = { hours: 0, odoMiles: 0 }; // what the hour meter and odometer show; the game sets the starting readings
     this.pod = null; // the accessory pod fitted to the bars, if any (see pods.js)
@@ -589,7 +592,8 @@ export class Quad {
 
     // Faults that develop: a sticking cable holds the throttle open, a flat tyre pulls the bars over.
     this.faults.update(dt, { running: this.engine.isRunning, speed: Math.abs(fwd), throttle: throttleInput });
-    this.filter.update(dt, { running: this.engine.isRunning, speed: fwd, mud: Math.max(...this.physics.wheelInfo.map((w) => w.mud ?? 0)), puddle: Math.max(...this.physics.wheelInfo.map((w) => w.puddle ?? 0)) });
+    this.dust = this.world.dustParams ? dustLevel(this.world.dustParams, this.world.stubbleAt?.(this.position.x, this.position.z) ?? 0, this.world.wet ?? 0, fwd) : 0;
+    this.filter.update(dt, { running: this.engine.isRunning, speed: fwd, dust: Math.max(this.dust, this.dustIn) * (this.world.dustParams?.filterBoost ?? 1), mud: Math.max(...this.physics.wheelInfo.map((w) => w.mud ?? 0)), puddle: Math.max(...this.physics.wheelInfo.map((w) => w.puddle ?? 0)) });
     // She has the sense to switch off a quad whose throttle has stuck open.
     if (this.driver && this.faults.stuck && this.engine.isRunning && this.faults.heldThrottle > 0.3) this.engine.setIgnition(false);
     this.throttle = this.faults.stickThrottle(dt, throttleInput, this.engine.isRunning);

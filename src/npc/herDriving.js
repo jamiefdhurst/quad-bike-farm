@@ -270,11 +270,19 @@ export class HerDrive {
     const fz = Math.cos(lead.yaw);
     // Behind a two-stroke she hangs back (or, if she likes the smoke, in close).
     const smoky = lead.engine?.params?.strokes === 2;
-    const want = p.followGap * (smoky ? p.followSmokeGap ?? 1 : 1);
+    // Behind a quad throwing up dust she does the same: Amy drops well back, Jess tucks in and coughs.
+    const dusty = (lead.dust ?? 0) >= p.followDustLevel;
+    const want = p.followGap * (smoky ? p.followSmokeGap ?? 1 : 1) * (dusty ? p.followDustGap ?? 1 : 1);
     if (smoky && !this.smokeNoted) {
       this.smokeNoted = true;
       this.events.push('followSmoke');
     }
+    if (dusty && !this.dustNoted) {
+      this.dustNoted = true;
+      this.events.push('followDust');
+    }
+    if (!dusty) this.dustNoted = false; // she has something to say about the next cloud too
+    if (dusty && Math.hypot(lp.x - pos.x, lp.z - pos.z) < p.dustCoughWithin) this.events.push('dustCough');
     let point = { x: lp.x - fx * want - fz * 1.2, z: lp.z - fz * want + fx * 1.2 };
     const way = this.followWay?.(pos, point, lp);
     if (way?.wait) {

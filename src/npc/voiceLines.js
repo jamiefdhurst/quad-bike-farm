@@ -61,6 +61,7 @@ import { AMY_PASS_LINES } from './passLines.js';
 import { AMY_CONVOY_LINES } from './convoyLines.js';
 import { AMY_DOUGHNUT_LINES } from './doughnutLines.js';
 import { AMY_TARMAC_LINES } from './tarmacLines.js';
+import { AMY_DUST_LINES } from './dustLines.js';
 import { AMY_JUMP_LINES } from './jumpLines.js';
 import { AMY_SHOWOFF_LINES } from './showOffLines.js';
 import { AMY_NICK_LINES } from './nickLines.js';
@@ -1492,6 +1493,8 @@ export const VOICE_LINES = {
   ...AMY_DOUGHNUT_LINES,
   // On the tarmac (tarmacLines.js).
   ...AMY_TARMAC_LINES,
+  // Following through dust (dustLines.js).
+  ...AMY_DUST_LINES,
   // The jump (jumpLines.js).
   ...AMY_JUMP_LINES,
   ...AMY_SHOWOFF_LINES,

@@ -71,6 +71,7 @@ import { HeadStart, HEADSTART_PARAM_RANGES } from './npc/headStart.js';
 import { Gossip, GOSSIP_PARAM_RANGES } from './npc/gossip.js';
 import { ThrottleGrab, GRAB_PARAM_RANGES } from './npc/throttleGrab.js';
 import { PillionCoach, PILLION_COACH_PARAM_RANGES } from './npc/pillionCoach.js';
+import { dustExposure } from './world/dust.js';
 import { SmokeSense, SMOKE_PARAM_RANGES } from './npc/smokeSense.js';
 import { FaultShout, SHOUT_PARAM_RANGES } from './npc/shoutFault.js';
 import { Haze, HAZE_PARAM_RANGES } from './world/haze.js';
@@ -2680,6 +2681,18 @@ export class Game {
 
   // Two-stroke smoke ---------------------------------------------------------
 
+  /** A quad in another's dust cloud breathes it (world/dust.js): sets how thick, for its air filter. */
+  updateDustClouds() {
+    const clouds = this.units.map((u) => ({ x: u.quad.position.x, z: u.quad.position.z, yaw: u.quad.yaw, dust: u.quad.dust }));
+    if (!clouds.some((c) => c.dust > 0)) {
+      for (const u of this.units) u.quad.dustIn = 0;
+      return;
+    }
+    this.units.forEach((u, i) => {
+      u.quad.dustIn = dustExposure(u.quad.position, clouds, this.world.dustParams, clouds[i]);
+    });
+  }
+
   updateSmokeSense(dt) {
     const smoke = this.girlUnits[0].smoke.params;
     const girls = this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.fsm.is('idle') && !this.menu.isOpen }));
@@ -4078,6 +4091,7 @@ export class Game {
     if (!this.recalling) this.updateDrag(dt, ridden);
     this.helpOnGrid(dt);
     this.updateSmokeSense(dt);
+    this.updateDustClouds();
     this.updateFaultShout(dt);
     this.updateHaze(dt);
     this.updateBarnFumes(dt);

@@ -57,6 +57,7 @@ import { JESS_PASS_LINES } from './passLines.js';
 import { JESS_CONVOY_LINES } from './convoyLines.js';
 import { JESS_DOUGHNUT_LINES } from './doughnutLines.js';
 import { JESS_TARMAC_LINES } from './tarmacLines.js';
+import { JESS_DUST_LINES } from './dustLines.js';
 import { JESS_JUMP_LINES } from './jumpLines.js';
 import { JESS_SHOWOFF_LINES } from './showOffLines.js';
 import { JESS_NICK_LINES } from './nickLines.js';
@@ -439,6 +440,7 @@ export const JESS_LINES = {
   ...JESS_CONVOY_LINES,
   ...JESS_DOUGHNUT_LINES,
   ...JESS_TARMAC_LINES,
+  ...JESS_DUST_LINES,
   ...JESS_JUMP_LINES,
   ...JESS_SHOWOFF_LINES,
   ...JESS_NICK_LINES,

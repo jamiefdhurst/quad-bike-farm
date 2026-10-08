@@ -11,6 +11,7 @@ import { Sky, SKY_PARAMS, SKY_RANGES } from './sky.js';
 import { createFields } from './fields.js';
 import { createOutbuildings } from './outbuildings.js';
 import { RoadMud, DEFAULT_ROAD_MUD_PARAMS, ROAD_MUD_PARAM_RANGES } from './roadMud.js';
+import { DEFAULT_DUST_PARAMS, DUST_PARAM_RANGES } from './dust.js';
 import { surfaceFeel, DEFAULT_SURFACE_PARAMS, SURFACE_PARAM_RANGES } from './surfaces.js';
 import { DEFAULT_SQUEAL_PARAMS, SQUEAL_PARAM_RANGES } from '../vehicle/tyreSqueal.js';
 import { registerTuning } from '../core/tuning.js';
@@ -28,6 +29,8 @@ export class World {
 
     this.surfaceParams = { ...DEFAULT_SURFACE_PARAMS };
     registerTuning('Surfaces', this.surfaceParams, SURFACE_PARAM_RANGES);
+    this.dustParams = { ...DEFAULT_DUST_PARAMS }; // the cloud a quad throws up on dry stubble (dust.js)
+    registerTuning('Dust', this.dustParams, DUST_PARAM_RANGES);
     this.squealParams = { ...DEFAULT_SQUEAL_PARAMS }; // tyres squealing on the tarmac (vehicle/tyreSqueal.js), for the ride sounds
     registerTuning('Tyre squeal', this.squealParams, SQUEAL_PARAM_RANGES);
 

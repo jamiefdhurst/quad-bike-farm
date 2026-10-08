@@ -164,6 +164,9 @@ export const DEFAULT_COMPANION_PARAMS = {
   followGap: 8, // metres behind you she likes to be, following you on another quad
   followMinGap: 4, // closer than this she stops
   followSmokeGap: 1.8, // her gap behind a two-stroke, as a multiple of followGap (Amy hates the smoke; Jess is under 1)
+  followDustGap: 2.2, // her gap behind a quad throwing up dust, as a multiple of followGap (Amy drops well back; Jess is under 1)
+  followDustLevel: 0.25, // how thick (0..1) the lead's dust has to be before she minds
+  dustCoughWithin: 12, // metres: closer than this behind a dusty quad she coughs (the voice spaces it out)
   followCatchUp: 0.6, // m/s faster per metre further back than that
   followMaxSpeed: 10, // m/s she'll go to keep up at middling confidence (careful slower, confident quicker)
   followMaxThrottle: 0.9,
@@ -283,6 +286,9 @@ export const COMPANION_PARAM_RANGES = {
   followGap: [2, 40, 0.5],
   followMinGap: [1, 20, 0.5],
   followSmokeGap: [0.3, 4, 0.05],
+  followDustGap: [0.3, 4, 0.05],
+  followDustLevel: [0, 1, 0.05],
+  dustCoughWithin: [0, 40, 0.5],
   followCatchUp: [0, 3, 0.05],
   followMaxSpeed: [1, 25, 0.5],
   followMaxThrottle: [0.1, 1, 0.01],
