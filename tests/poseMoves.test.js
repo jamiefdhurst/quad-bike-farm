@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
 import {
-  BONES, MOVES, SEAT_POSES, STANDING_IDLES, EMPTY_POSE, DEFAULT_IDLE_POSE_PARAMS,
-  mirrorPose, addPose, sampleMove, shareOf, idlePose, StandingIdles,
+  BONES, MOVES, SEAT_POSES, STANDING_IDLES, SEATED_IDLES, EMPTY_POSE, DEFAULT_IDLE_POSE_PARAMS,
+  mirrorPose, addPose, sampleMove, shareOf, idlePose, StandingIdles, seatedIdlesFor,
 } from '../src/npc/poseMoves.js';
 import { moveMethods, DEFAULT_MOVE_PARAMS } from '../src/npc/companionMoves.js';
 import { CHARACTERS } from '../src/npc/characters.js';
@@ -14,9 +14,9 @@ function allPoses() {
   const out = [];
   for (const [name, move] of Object.entries(MOVES)) move.keys.forEach((k, i) => k.pose && out.push([`${name} key ${i}`, k.pose]));
   for (const [name, pose] of Object.entries(SEAT_POSES)) out.push([`seat ${name}`, pose]);
-  for (const [name, idle] of Object.entries(STANDING_IDLES)) {
+  for (const [name, idle] of [...Object.entries(STANDING_IDLES), ...Object.entries(SEATED_IDLES)]) {
     out.push([`idle ${name}`, idle.hold]);
-    if (idle.wave) out.push([`idle ${name} wave`, { bones: idle.wave.bones }]);
+    for (const w of [idle.wave ?? []].flat()) out.push([`idle ${name} wave`, { bones: w.bones }]);
   }
   return out;
 }
@@ -70,6 +70,14 @@ describe('pose data', () => {
     for (const c of CHARACTERS) {
       expect(c.idles.length, c.id).toBeGreaterThan(1);
       for (const n of c.idles) expect(STANDING_IDLES[n], `${c.id} ${n}`).toBeDefined();
+    }
+  });
+
+  it('gives each girl more than one way of sitting a while, on a bench and perched', () => {
+    for (const c of CHARACTERS) {
+      for (const n of c.seatedIdles) expect(SEATED_IDLES[n], `${c.id} ${n}`).toBeDefined();
+      expect(seatedIdlesFor(c.seatedIdles, 'bench').length, c.id).toBeGreaterThan(1);
+      expect(seatedIdlesFor(c.seatedIdles, 'perch').length, c.id).toBeGreaterThan(1);
     }
   });
 });
@@ -185,6 +193,43 @@ describe('StandingIdles', () => {
     expect(a.bones.Hips?.[0] ?? 0).toBeCloseTo(0);
     expect(b.bones.Hips[0]).toBeCloseTo(STANDING_IDLES.rock.wave.bones.Hips[0]);
     expect(idlePose('nonsense', 1)).toBe(EMPTY_POSE);
+  });
+});
+
+describe('seated idles', () => {
+  it('suit the seat: no leaning back on a bench, no slouching on a perch, an elbow out only by a door', () => {
+    const all = Object.keys(SEATED_IDLES);
+    expect(seatedIdlesFor(all, 'bench')).not.toContain('leanBack');
+    expect(seatedIdlesFor(all, 'bench')).not.toContain('swingLegs');
+    expect(seatedIdlesFor(all, 'perch')).not.toContain('slouch');
+    expect(seatedIdlesFor(all, 'bench')).not.toContain('elbowOut');
+    expect(seatedIdlesFor(all, 'bench', true)).toContain('elbowOut');
+    expect(seatedIdlesFor(['nonsense', 'folded'], 'perch')).toEqual(['folded']);
+  });
+
+  it('swings her legs out of step', () => {
+    const t = SEATED_IDLES.swingLegs.wave[0].period / 4;
+    const pose = idlePose('swingLegs', t, 1, 1, SEATED_IDLES);
+    expect(pose.bones.LeftLeg[0]).toBeCloseTo(0.3);
+    expect(pose.bones.RightLeg[0]).toBeCloseTo(-0.3);
+  });
+
+  it('keeps an elbow on the door side however it was picked', () => {
+    const pose = idlePose('elbowOut', 0, -1, 1, SEATED_IDLES);
+    expect(pose.hands.left.at[0]).toBeGreaterThan(0);
+    expect(pose.hands.right).toBeUndefined();
+  });
+
+  it('eases out one that no longer suits when the seat changes', () => {
+    const p = { ...DEFAULT_IDLE_POSE_PARAMS, idlePoseGapMin: 0.5, idlePoseGapMax: 0.5, idlePoseHoldMin: 20, idlePoseHoldMax: 20, idlePoseBlend: 0.5 };
+    const s = new StandingIdles(['swingLegs'], p, () => 0.5, SEATED_IDLES);
+    for (let t = 0; t < 2; t += 0.05) s.update(0.05, true);
+    expect(s.name).toBe('swingLegs');
+    s.setNames(['folded']);
+    for (let t = 0; t < 0.7; t += 0.05) s.update(0.05, true);
+    expect(s.name).toBe(null);
+    for (let t = 0; t < 1.5; t += 0.05) s.update(0.05, true);
+    expect(s.name).toBe('folded');
   });
 });
 

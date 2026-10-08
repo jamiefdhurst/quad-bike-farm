@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import { MOVES, sampleMove, shareOf, addPose, mirrorPose, SEAT_POSES, EMPTY_POSE, StandingIdles, DEFAULT_IDLE_POSE_PARAMS } from './poseMoves.js';
+import {
+  MOVES, sampleMove, shareOf, addPose, mirrorPose, SEAT_POSES, EMPTY_POSE, StandingIdles, DEFAULT_IDLE_POSE_PARAMS, SEATED_IDLES, seatedIdlesFor,
+} from './poseMoves.js';
 
 // Getting on and off things along a move from poseMoves.js, and the poses layered on her while she sits and stands about. As
 // Companion methods, mixed in by companion.js; the boarding states in companionHayRide.js use the same runner.
@@ -152,6 +154,18 @@ export const moveMethods = {
     this.standingIdles ??= new StandingIdles(this.character?.idles ?? [], this.idlePoseParams ?? DEFAULT_IDLE_POSE_PARAMS);
     const standing = this.fsm.is('idle') && !this.warmingAt && !this.waving && !this.recoil && !this.attempt;
     let pose = this.standingIdles.update(dt, standing);
+    // Sat a while somewhere nothing else is posing her: her own ways of sitting, to suit the seat.
+    this.seatedIdles ??= new StandingIdles([], this.idlePoseParams ?? DEFAULT_IDLE_POSE_PARAMS, Math.random, SEATED_IDLES);
+    const seat = this.seatIdleContext();
+    if (seat) {
+      const names = seatedIdlesFor(this.character?.seatedIdles ?? [], seat.kind, seat.window);
+      const key = names.join();
+      if (key !== this.seatedIdleKey) {
+        this.seatedIdleKey = key;
+        this.seatedIdles.setNames(names);
+      }
+    }
+    pose = addPose(pose, this.seatedIdles.update(dt, !!seat));
     const f = this.moveFrame;
     if (f) {
       pose = addPose(pose, f.pose);
@@ -161,6 +175,23 @@ export const moveMethods = {
       pose = addPose(pose, this.sidedSeatPose(this.sittingPose));
     }
     this.rig.pose = pose === EMPTY_POSE ? EMPTY_POSE : pose;
+  },
+
+  /**
+   * The seat she's sat a while on, for her ways of sitting: { kind: 'bench' | 'perch', window }, or null where something else has
+   * her (getting on or off, lying back on the bales, thrown about, the pillion and the front seat, where she holds on).
+   */
+  seatIdleContext() {
+    if (this.moving) return null;
+    if (this.fsm.is('onTrailer')) {
+      const d = this.fsm.data;
+      const slot = this.traSlot;
+      if (!slot || d.lie || d.leaving || d.fromWorld || (d.leanK ?? 0) > 0.02 || (this.hayFlailT ?? 0) > 0) return null;
+      if ((this.trailer?.motion.jolt ?? 0) > 0.6) return null;
+      return slot.move === 'stepIn' ? { kind: 'bench', window: slot.name === 'left' } : { kind: 'perch', window: false };
+    }
+    if (this.fsm.is('seated') && this.seatKind === 'rack') return { kind: 'perch', window: false };
+    return null;
   },
 
   /** A seat pose, mirrored for side-saddle on her right. */

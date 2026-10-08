@@ -257,8 +257,9 @@ export const SEAT_POSES = {
   bench: { bones: { Spine: [-0.06, 0, 0], LeftUpLeg: [0, 0, 0.06], RightUpLeg: [0, 0, -0.06] } },
 };
 
-// Ways of standing about. `hold` is the pose while it lasts; `wave` adds a slow swing (amplitudes over `period` seconds), and
-// `short` ones only last a few seconds. Authored with her left as the busy side, mirrored at random.
+// Ways of standing about. `hold` is the pose while it lasts; `wave` adds a swing (amplitudes over `period` seconds, a list of them
+// for limbs out of step with each other, each with its `phase` as a fraction of a period), and `short` ones only last a few
+// seconds. Authored with her left as the busy side, mirrored at random unless `fixedSide`.
 export const STANDING_IDLES = {
   // Arms folded across her chest.
   folded: {
@@ -334,13 +335,93 @@ export const STANDING_IDLES = {
   },
 };
 
-/** A standing idle's pose at `time` seconds into it, by weight, mirrored when `side` is -1. */
-export function idlePose(name, time, side = 1, weight = 1) {
-  const idle = STANDING_IDLES[name];
+// Ways of sitting a while, on top of the sitting clip and the seat's pose: on a bench (the UTV, the Land Rover), or perched with
+// her legs hanging (the bales, the tip trailer's tub, the UTV's tailgate, a quad's front rack, the tractor's arch). Hands in the
+// hips frame are placed for the sitting clip, her thighs out level in front of her.
+export const SEATED_IDLES = {
+  // Arms folded, as stood.
+  folded: { hold: { hands: STANDING_IDLES.folded.hold.hands }, wave: { period: 6, bones: { Spine1: [0.02, 0, 0] } } },
+  // Hands resting on her knees.
+  handsOnKnees: {
+    hold: {
+      bones: { Spine: [0.08, 0, 0] },
+      hands: {
+        left: { frame: 'hips', at: [0.12, 0.02, 0.3], pole: [0.5, 0.1, -0.2], fingers: [0, -0.3, 1], palm: [0, -1, 0], w: 1 },
+        right: { frame: 'hips', at: [-0.12, 0.02, 0.3], pole: [-0.5, 0.1, -0.2], fingers: [0, -0.3, 1], palm: [0, -1, 0], w: 1 },
+      },
+    },
+  },
+  // One ankle over the other, knees together.
+  anklesCrossed: {
+    hold: { bones: { LeftUpLeg: [0, 0, -0.07], RightUpLeg: [0, 0, 0.05], LeftLeg: [0.12, 0, 0], RightLeg: [-0.05, 0, 0], LeftFoot: [0, 0, -0.1] } },
+  },
+  // Leant back on her hands, behind her on the seat.
+  leanBack: {
+    hold: {
+      bones: { Spine: [-0.22, 0, 0], Spine1: [-0.06, 0, 0], Head: [0.12, 0, 0] },
+      hands: {
+        left: { frame: 'hips', at: [0.22, -0.06, -0.22], pole: [0.5, 0.3, 0.2], fingers: [0.1, 0, -1], palm: [0, -1, 0], w: 1 },
+        right: { frame: 'hips', at: [-0.22, -0.06, -0.22], pole: [-0.5, 0.3, 0.2], fingers: [-0.1, 0, -1], palm: [0, -1, 0], w: 1 },
+      },
+    },
+    perch: true, // needs a seat with no back to it
+  },
+  // Hands behind her head, elbows out, leant back.
+  handsBehindHead: {
+    hold: {
+      bones: { Spine: [-0.12, 0, 0], Head: [-0.05, 0, 0] },
+      hands: {
+        left: { frame: 'chest', at: [0.07, 0.3, -0.14], pole: [0.7, 0.3, 0.15], fingers: [-1, 0.2, 0], palm: [0, 0, 1], w: 1 },
+        right: { frame: 'chest', at: [-0.07, 0.3, -0.14], pole: [-0.7, 0.3, 0.15], fingers: [1, 0.2, 0], palm: [0, 0, 1], w: 1 },
+      },
+    },
+    wave: { period: 7, bones: { Head: [0, 0.08, 0] } },
+  },
+  // Jiggling one knee, restless.
+  kneeJiggle: {
+    hold: { bones: { LeftLeg: [0.1, 0, 0], LeftFoot: [-0.25, 0, 0] } },
+    wave: { period: 0.28, bones: { LeftUpLeg: [-0.035, 0, 0] } },
+  },
+  // Swinging her legs, out of step.
+  swingLegs: {
+    hold: { bones: { Spine: [0.05, 0, 0] } },
+    wave: [
+      { period: 1.5, bones: { LeftLeg: [0.3, 0, 0] } },
+      { period: 1.5, phase: 0.5, bones: { RightLeg: [0.3, 0, 0] } },
+    ],
+    perch: true, // only with her legs hanging free
+  },
+  // Slouched down on the bench, legs out.
+  slouch: {
+    hold: { bones: { Spine: [-0.18, 0, 0], Spine1: [0.06, 0, 0], Head: [0.1, 0, 0], LeftLeg: [-0.25, 0, 0], RightLeg: [-0.25, 0, 0], LeftUpLeg: [0.08, 0, 0.05], RightUpLeg: [0.08, 0, -0.05] } },
+    bench: true,
+  },
+  // An elbow out on the door top, at the window seat.
+  elbowOut: {
+    hold: {
+      bones: { Spine: [0, 0, -0.08] },
+      hands: { left: { frame: 'hips', at: [0.3, 0.24, 0.3], pole: [0.8, -0.2, -0.3], fingers: [0.2, 0, 1], palm: [0, -1, 0], w: 1 } },
+    },
+    fixedSide: true,
+    window: true, // only by a door
+  },
+};
+
+/** An idle's pose at `time` seconds into it, by weight, mirrored when `side` is -1. */
+export function idlePose(name, time, side = 1, weight = 1, library = STANDING_IDLES) {
+  const idle = library[name];
   if (!idle || weight <= 0) return EMPTY_POSE;
   let pose = addPose(EMPTY_POSE, idle.hold, weight);
-  if (idle.wave) pose = addPose(pose, { bones: idle.wave.bones }, weight * Math.sin((time / idle.wave.period) * Math.PI * 2));
-  return side < 0 ? mirrorPose(pose) : pose;
+  for (const w of [idle.wave ?? []].flat()) pose = addPose(pose, { bones: w.bones }, weight * Math.sin((time / w.period + (w.phase ?? 0)) * Math.PI * 2));
+  return side < 0 && !idle.fixedSide ? mirrorPose(pose) : pose;
+}
+
+/** Of a list of seated idles, the ones that suit a seat: `kind` 'bench' or 'perch', and whether it's beside a door. */
+export function seatedIdlesFor(names, kind, window = false) {
+  return names.filter((n) => {
+    const idle = SEATED_IDLES[n];
+    return idle && !(idle.perch && kind !== 'perch') && !(idle.bench && kind !== 'bench') && !(idle.window && !window);
+  });
 }
 
 export const DEFAULT_IDLE_POSE_PARAMS = {
@@ -363,11 +444,12 @@ export const IDLE_POSE_PARAM_RANGES = {
 
 /**
  * Picks her ways of standing about from her own list while she's stood still: a gap, eased into one, held, eased out, another gap.
- * Anything else she does (walking off, warming her hands) eases it out quickly.
+ * Anything else she does (walking off, warming her hands) eases it out quickly. With SEATED_IDLES for `library`, ways of sitting.
  */
 export class StandingIdles {
-  constructor(names, params = DEFAULT_IDLE_POSE_PARAMS, random = Math.random) {
-    this.names = names.filter((n) => STANDING_IDLES[n]);
+  constructor(names, params = DEFAULT_IDLE_POSE_PARAMS, random = Math.random, library = STANDING_IDLES) {
+    this.library = library;
+    this.names = names.filter((n) => library[n]);
     this.params = params;
     this.random = random;
     this.name = null;
@@ -404,9 +486,15 @@ export class StandingIdles {
       this.last = this.name;
       this.side = this.random() < 0.5 ? -1 : 1;
       this.time = 0;
-      this.left = STANDING_IDLES[this.name].short ? p.idlePoseShortHold : this.between(p.idlePoseHoldMin, p.idlePoseHoldMax);
+      this.left = this.library[this.name].short ? p.idlePoseShortHold : this.between(p.idlePoseHoldMin, p.idlePoseHoldMax);
     }
     if (this.name) this.time += dt;
-    return this.name ? idlePose(this.name, this.time, this.side, smooth(this.weight)) : EMPTY_POSE;
+    return this.name ? idlePose(this.name, this.time, this.side, smooth(this.weight), this.library) : EMPTY_POSE;
+  }
+
+  /** Changes her list (a different seat); one that no longer suits is eased out. */
+  setNames(names) {
+    this.names = names.filter((n) => this.library[n]);
+    if (this.name && !this.names.includes(this.name)) this.left = Math.min(this.left, 0);
   }
 }

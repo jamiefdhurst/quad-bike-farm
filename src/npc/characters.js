@@ -24,6 +24,7 @@ export const CHARACTERS = [
     params: { outfit: 'farmPolo', boredShowOffChance: 0.04, sideSaddleChance: 0.4, blownNoticeAt: 0.25, remembers4wd: 0.65 }, // sits side-saddle on the back, ladylike
     lines: VOICE_LINES,
     idles: ['folded', 'clasped', 'weight'], // her ways of standing about (STANDING_IDLES in poseMoves.js): tidy and patient
+    seatedIdles: ['folded', 'handsOnKnees', 'anklesCrossed', 'leanBack', 'elbowOut'], // and of sitting a while (SEATED_IDLES)
     voiceBank: 'companion-voice', // public/audio/<voiceBank>.json, recorded by tools/generate_companion_voice.py
     soundRate: 1, // her sighs and laughs, played at this speed (a shade higher pitched above 1)
   },
@@ -78,6 +79,7 @@ export const CHARACTERS = [
       placedPatienceMax: 300,
     },
     idles: ['hips', 'rock', 'scuff', 'stretch', 'pocket'], // fidgety
+    seatedIdles: ['kneeJiggle', 'handsBehindHead', 'swingLegs', 'slouch', 'leanBack', 'elbowOut'],
     lines: linesFor(JESS_LINES),
     voiceBank: 'companion-voice-jess',
     soundRate: 1.06,
