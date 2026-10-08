@@ -7,6 +7,10 @@ import { DEFAULT_BARN_PARAMS, BARN_PARAM_RANGES, underRoof, insideBarn, indoorLe
 import { GroundWear, DEFAULT_WEAR_PARAMS, WEAR_PARAM_RANGES } from './groundWear.js';
 import { stripFrame } from './layout.js';
 import { Sky, SKY_PARAMS, SKY_RANGES } from './sky.js';
+import { createFields } from './fields.js';
+import { RoadMud, DEFAULT_ROAD_MUD_PARAMS, ROAD_MUD_PARAM_RANGES } from './roadMud.js';
+import { surfaceFeel, DEFAULT_SURFACE_PARAMS, SURFACE_PARAM_RANGES } from './surfaces.js';
+import { DEFAULT_SQUEAL_PARAMS, SQUEAL_PARAM_RANGES } from '../vehicle/tyreSqueal.js';
 import { registerTuning } from '../core/tuning.js';
 import * as THREE from 'three';
 
@@ -16,6 +20,12 @@ export class World {
     this.layout = layout;
     this.track = new Track(layout.trackPoints);
     this.heights = createTerrainHeight(layout, this.track);
+    this.fields = createFields(layout);
+
+    this.surfaceParams = { ...DEFAULT_SURFACE_PARAMS };
+    registerTuning('Surfaces', this.surfaceParams, SURFACE_PARAM_RANGES);
+    this.squealParams = { ...DEFAULT_SQUEAL_PARAMS }; // tyres squealing on the tarmac (vehicle/tyreSqueal.js), for the ride sounds
+    registerTuning('Tyre squeal', this.squealParams, SQUEAL_PARAM_RANGES);
 
     this.barnParams = { ...DEFAULT_BARN_PARAMS };
     registerTuning('Barn', this.barnParams, BARN_PARAM_RANGES);
@@ -23,10 +33,11 @@ export class World {
     this.sky = new Sky(scene, renderer, { ...SKY_PARAMS });
     registerTuning('Sky', this.sky.params, SKY_RANGES);
 
-    // Tyres wear the field (groundWear.js); the yard, the drag strip and the barn floor are hard and never do.
+    // Tyres wear the fields (groundWear.js); the yard, the drag strip, the barn floor and the road are hard and never do.
     const strip = layout.dragStrip;
     const exempt = (x, z) => {
       if (Math.hypot(x - layout.yard.x, z - layout.yard.z) < layout.yard.radius) return true;
+      if (this.fields.tarmacAt(x, z) > 0.3) return true;
       if (this.inBarn(x, z, 1)) return true;
       if (!strip) return false;
       const f = stripFrame(strip, x, z);
@@ -34,9 +45,22 @@ export class World {
     };
     this.wearParams = { ...DEFAULT_WEAR_PARAMS };
     registerTuning('Ground wear', this.wearParams, WEAR_PARAM_RANGES);
-    this.wear = new GroundWear({ half: layout.fieldHalf, exempt, params: this.wearParams });
+    this.wear = new GroundWear({ bounds: this.fields.farm, exempt, params: this.wearParams });
 
-    const ctx = { scene, physics, RAPIER, renderer, models, layout, heights: this.heights, track: this.track, wear: this.wear };
+    // Mud the tyres carry onto the road (roadMud.js), on a fine grid over the tarmac.
+    this.roadMudParams = { ...DEFAULT_ROAD_MUD_PARAMS };
+    registerTuning('Road mud', this.roadMudParams, ROAD_MUD_PARAM_RANGES);
+    const road = layout.road;
+    const reach = (road?.pad?.radius ?? road?.halfWidth ?? 0) + 1;
+    this.roadMud = road
+      ? new RoadMud({
+          bounds: { minX: road.fromX - 1, maxX: (road.pad?.x ?? road.toX) + reach, minZ: road.z - reach, maxZ: road.z + reach },
+          tarmacAt: this.fields.tarmacAt,
+          params: this.roadMudParams,
+        })
+      : null;
+
+    const ctx = { scene, physics, RAPIER, renderer, models, layout, heights: this.heights, track: this.track, wear: this.wear, fields: this.fields, roadMud: this.roadMud };
     this.terrain = createTerrain(ctx);
     this.props = buildProps(ctx);
   }
@@ -45,9 +69,29 @@ export class World {
     return this.heights.heightAt(x, z);
   }
 
-  /** How muddy it is: the track and the bogs, and any ground the tyres have worn soft. */
+  /** How muddy it is: the track and the bogs, any ground the tyres have worn soft, and mud they've carried onto the road. */
   mudAt(x, z) {
-    return Math.max(this.heights.mudAt(x, z), this.wear.softAt(x, z) * 0.8, Math.min(1, this.wear.bogAt(x, z, this.wet) * 1.5));
+    const m = Math.max(this.heights.mudAt(x, z), this.wear.softAt(x, z) * 0.8, Math.min(1, this.wear.bogAt(x, z, this.wet) * 1.5));
+    return this.roadMud ? Math.max(m, this.roadMud.mudAt(x, z)) : m;
+  }
+
+  /** 0..1 tarmac (the farm road) and stubble (the fields either side of it) under (x, z); the rest is grass. */
+  tarmacAt(x, z) {
+    return this.fields.tarmacAt(x, z);
+  }
+
+  stubbleAt(x, z) {
+    return this.fields.stubbleAt(x, z);
+  }
+
+  /** Grip and rolling drag here as factors on grass, in today's wetness (surfaces.js). */
+  surfaceFeelAt(x, z) {
+    return surfaceFeel(this.surfaceParams, this.fields.tarmacAt(x, z), this.fields.stubbleAt(x, z), this.wet);
+  }
+
+  /** The next point on the way from `from` to `to` that doesn't go through a hedge (fields.js): `to` itself in the same field. */
+  nextWaypoint(from, to) {
+    return this.fields.nextWaypoint(from, to);
   }
 
   /** How deep a bog: the three on the farm, and any the wear has made. */
@@ -121,6 +165,11 @@ export class World {
     this.wear.update(dt, this.wet);
     if (this.wear.packed) this.terrain.wearTexture.needsUpdate = true;
     this.wear.packed = false;
+    if (this.roadMud) {
+      this.roadMud.update(dt, this.weather?.rain ?? 0);
+      if (this.roadMud.packed) this.terrain.roadMudTexture.needsUpdate = true;
+      this.roadMud.packed = false;
+    }
     if (this.weather) {
       Object.assign(this.sky.params, this.weather.update(dt).skyParams());
       // Wet ground looks darker, and a little glossier.

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { stripFrame } from './layout.js';
 import { enableShadows, instanceModel, modelBounds } from './assets.js';
 import { patchAt } from './terrain.js';
+import { outsideRect } from './fields.js';
 import { buildBarnShed } from './barnBuild.js';
 import { buildJumpRamp } from './jumpRamp.js';
 
@@ -41,6 +42,7 @@ export function buildProps(ctx) {
   buildTrees(c);
   buildDistantTrees(c);
   buildGrass(c);
+  buildStubble(c);
   buildPuddles(c);
   buildBogs(c);
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
@@ -51,29 +53,28 @@ function buildBarn(c) {
   return buildBarnShed(c);
 }
 
-function buildHedges({ scene, models, layout, heights, fixedBox, random }) {
-  const { fieldHalf: F, hedgeThickness: T, hedgeHeight: H, gate } = layout;
+function buildHedges({ scene, models, layout, heights, fields, fixedBox, random }) {
+  const { hedgeThickness: T, hedgeHeight: H } = layout;
   const hedgeSize = modelBounds(models.hedge.scene).getSize(new THREE.Vector3());
   const bushSize = modelBounds(models.bush.scene).getSize(new THREE.Vector3());
-  const seg = 2.1;
-  const gateHalf = gate.width / 2 + 0.35;
   const hedgeMatrices = [];
   const bushMatrices = [];
+  const hy = H / 2 + 0.5;
+  const cy = (x, z) => heights.heightAt(x, z) + H / 2 - 0.3;
 
-  // Overlapping, randomly turned blocks of varying height read as an
-  // irregular hedgerow rather than a row of cubes.
-  const sides = [
-    { along: 'x', at: -F },
-    { along: 'x', at: F, gate: true },
-    { along: 'z', at: -F },
-    { along: 'z', at: F },
-  ];
-  for (const side of sides) {
-    for (let s = -F - 1; s <= F + 1; s += 1.1 + random() * 0.5) {
-      if (side.gate && Math.abs(s - gate.x) < gateHalf + 0.9) continue;
+  // Overlapping, randomly turned blocks of varying height read as an irregular hedgerow rather than a row of cubes. Each hedge line
+  // (fields.js) runs a metre past its ends so the corners close.
+  for (const h of fields.hedges) {
+    const lo = h.alongX ? h.x1 : h.z1;
+    const hi = lo + h.length;
+    const at = h.alongX ? h.z1 : h.x1;
+    // The gate's leaf needs a little more room than an open gap.
+    const skip = (s) => h.gaps.some((g) => Math.abs(s - g.at) < g.half + (g.gate ? 0.9 : 0.4));
+    for (let s = lo - 1; s <= hi + 1; s += 1.1 + random() * 0.5) {
+      if (skip(s)) continue;
       const wobble = (random() - 0.5) * 0.6;
-      const x = side.along === 'x' ? s : side.at + wobble;
-      const z = side.along === 'x' ? side.at + wobble : s;
+      const x = h.alongX ? s : at + wobble;
+      const z = h.alongX ? at + wobble : s;
       const y = heights.heightAt(x, z) - 0.2;
       const width = T * (0.95 + random() * 0.4);
       hedgeMatrices.push(
@@ -89,29 +90,32 @@ function buildHedges({ scene, models, layout, heights, fixedBox, random }) {
       );
       if (random() < 0.3) {
         const off = (random() - 0.5) * T * 0.8;
-        const bx = side.along === 'x' ? s + (random() - 0.5) : side.at + off;
-        const bz = side.along === 'x' ? side.at + off : s + (random() - 0.5);
+        const bx = h.alongX ? s + (random() - 0.5) : at + off;
+        const bz = h.alongX ? at + off : s + (random() - 0.5);
         const bs = (2.3 + random() * 1.6) / bushSize.y;
         bushMatrices.push(matrixAt(bx, heights.heightAt(bx, bz) - 0.3, bz, random() * Math.PI * 2, bs));
+      }
+    }
+
+    // Colliders: boxes between the gaps, at most 20 m long so they follow the rise and fall of the ground.
+    const cuts = [lo - 2, ...h.gaps.flatMap((g) => [g.at - g.half, g.at + g.half]).sort((a, b) => a - b), hi + 2];
+    for (let i = 0; i < cuts.length; i += 2) {
+      const a = cuts[i];
+      const b = cuts[i + 1];
+      const pieces = Math.max(1, Math.ceil((b - a) / 20));
+      for (let k = 0; k < pieces; k++) {
+        const pa = a + ((b - a) * k) / pieces;
+        const pb = a + ((b - a) * (k + 1)) / pieces;
+        const mid = (pa + pb) / 2;
+        const half = (pb - pa) / 2;
+        if (h.alongX) fixedBox(mid, cy(mid, at), at, half, hy, T / 2);
+        else fixedBox(at, cy(at, mid), mid, T / 2, hy, half);
       }
     }
   }
   // Hedges don't cast shadows: there are hundreds of instances and the shadow pass would double their cost.
   scene.add(instanceModel(models.hedge.scene, hedgeMatrices, { castShadow: false }));
   scene.add(instanceModel(models.bush.scene, bushMatrices, { castShadow: false }));
-
-  // Colliders: one long box per side, split around the gate.
-  const hy = H / 2 + 0.5;
-  const cy = (x, z) => heights.heightAt(x, z) + H / 2 - 0.3;
-  fixedBox(0, cy(0, -F), -F, F + 2, hy, T / 2);
-  fixedBox(-F, cy(-F, 0), 0, T / 2, hy, F + 2);
-  fixedBox(F, cy(F, 0), 0, T / 2, hy, F + 2);
-  const leftEnd = gate.x - gateHalf;
-  const rightStart = gate.x + gateHalf;
-  const lMid = (-F - 2 + leftEnd) / 2;
-  const rMid = (rightStart + F + 2) / 2;
-  fixedBox(lMid, cy(lMid, F), F, (leftEnd + F + 2) / 2, hy, T / 2);
-  fixedBox(rMid, cy(rMid, F), F, (F + 2 - rightStart) / 2, hy, T / 2);
 }
 
 function buildGate({ scene, layout, heights, fixedBox }) {
@@ -258,14 +262,19 @@ function buildBales({ scene, layout, heights, track, physics, RAPIER, random }) 
 function buildTrees({ scene, models, layout, heights, physics, RAPIER, random }) {
   const F = layout.fieldHalf;
   const spots = [];
-  // Tree line along the north boundary, two staggered rows.
-  for (let x = -115; x <= 115; x += 7 + random() * 5) {
+  const farm = layout.farm ?? { maxX: F, maxZ: F };
+  // Tree line along the north boundary, two staggered rows, the length of the farm.
+  for (let x = -115; x <= farm.maxX + 35; x += 7 + random() * 5) {
     spots.push([x, -F - 8 - random() * 4]);
     if (random() < 0.7) spots.push([x + 3, -F - 15 - random() * 6]);
   }
-  // Hedgerow oaks on the east and south hedges.
+  // Hedgerow oaks on the east and south hedges (the grass field's east hedge is now between it and the stubble), and the farm's far ones.
   for (const z of [-58, -18, 24, 62]) spots.push([F + 0.5, z + (random() - 0.5) * 6]);
   for (const x of [10, 52]) spots.push([x, F + 0.5]);
+  if (layout.farm) {
+    for (const z of [-46, 34, 66]) spots.push([farm.maxX + 0.5, z + (random() - 0.5) * 6]);
+    for (const x of [104, 148, 186]) spots.push([x + (random() - 0.5) * 6, farm.maxZ + 0.5]);
+  }
   // Behind the barn.
   spots.push([-76, 72], [-84, 52], [-86, 20], [-90, -14]);
 
@@ -283,15 +292,17 @@ function buildTrees({ scene, models, layout, heights, physics, RAPIER, random })
 }
 
 /** Cheap low-poly tree clumps along the distant hedgerows for depth on the horizon. */
-function buildDistantTrees({ scene, layout, heights, random }) {
+function buildDistantTrees({ scene, layout, heights, fields, random }) {
   const trunks = [];
   const crowns = [];
-  const inner = layout.terrainSize / 2 + 8;
+  const reach = layout.outerSize / 2 - 20;
   let tries = 0;
-  while (crowns.length < 420 && tries++ < 20000) {
-    const x = (random() * 2 - 1) * 380;
-    const z = (random() * 2 - 1) * 380;
-    if (Math.max(Math.abs(x), Math.abs(z)) < inner) continue;
+  while (crowns.length < 520 && tries++ < 25000) {
+    const x = (random() * 2 - 1) * reach;
+    const z = (random() * 2 - 1) * reach;
+    // Well clear of the farm's hedges, and none on the ground through the south gate, which is kept for the hill (TODO 3).
+    if (outsideRect(fields.farm, x, z) < 40) continue;
+    if (x > -100 && x < 100 && z > fields.farm.maxZ && z < layout.terrainSize / 2 + 10) continue;
     if (patchAt(x, z).border > 4 && random() > 0.04) continue;
     const s = 0.8 + random() * 0.9;
     const y = heights.heightAt(x, z);
@@ -374,6 +385,64 @@ function buildGrass({ scene, layout, heights, random }) {
   mesh.count = placed;
   mesh.receiveShadow = true;
   mesh.name = 'grass';
+  scene.add(mesh);
+}
+
+/** Cut straw stalks standing in the stubble fields, in the drill rows (half a metre apart along x), off the tarmac and clear of the hedges. */
+function buildStubble({ scene, fields, heights, random }) {
+  const stalks = 6;
+  const pos = [];
+  const colors = [];
+  for (let i = 0; i < stalks; i++) {
+    // Along the row, a hand's width of stalks, cut square at 8 to 16 cm and leaning a little.
+    const bx = (random() - 0.5) * 0.14;
+    const bz = (random() - 0.5) * 0.03;
+    const w = 0.006;
+    const h = 0.08 + random() * 0.08;
+    const lx = (random() - 0.5) * 0.04;
+    const lz = (random() - 0.5) * 0.04;
+    const a = [bx - w, 0, bz];
+    const b = [bx + w, 0, bz];
+    const c = [bx + lx + w, h, bz + lz];
+    const d = [bx + lx - w, h, bz + lz];
+    // Each face twice, once each way round, drawn front side only: lit the same from either side (a double-sided material would flip the
+    // up-pointing normal on the back and draw it dark).
+    for (const tri of [[a, b, c], [a, c, d], [a, c, b], [a, d, c]]) {
+      for (const v of tri) {
+        pos.push(...v);
+        colors.push(...(v[1] > 0 ? [0.8, 0.66, 0.38] : [0.5, 0.4, 0.22]));
+      }
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geo.computeVertexNormals();
+  const normals = geo.getAttribute('normal');
+  for (let i = 0; i < normals.count; i++) normals.setXYZ(i, 0, 1, 0);
+
+  const fieldsList = ['north', 'south'].map((k) => fields.areas[k]).filter(Boolean);
+  if (!fieldsList.length) return;
+  const count = 45000;
+  const mesh = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }), count);
+  const col = new THREE.Color();
+  let placed = 0;
+  let tries = 0;
+  while (placed < count && tries++ < count * 3) {
+    const r = fieldsList[placed % fieldsList.length];
+    const x = r.minX + random() * (r.maxX - r.minX);
+    const row = Math.floor(random() * ((r.maxZ - r.minZ) / 0.5));
+    const z = r.minZ + 0.25 + row * 0.5 + (random() - 0.5) * 0.06;
+    if (fields.stubbleAt(x, z) < 0.99 || fields.hedgeDistance(x, z) < 1.5) continue;
+    const s = 0.8 + random() * 0.5;
+    mesh.setMatrixAt(placed, matrixAt(x, heights.heightAt(x, z) - 0.01, z, (random() - 0.5) * 0.3, s, s * (0.7 + random() * 0.6), s));
+    col.setHSL(0.11 + random() * 0.03, 0.45 + random() * 0.15, 0.5 + random() * 0.12);
+    mesh.setColorAt(placed, col);
+    placed++;
+  }
+  mesh.count = placed;
+  mesh.receiveShadow = true;
+  mesh.name = 'stubble';
   scene.add(mesh);
 }
 

@@ -42,20 +42,35 @@ export const WEAR_PARAM_RANGES = {
 export class GroundWear {
   /**
    * @param {object} o
-   * @param {number} o.half        Metres from the middle that the grid covers each way.
+   * @param {object} [o.bounds]    { minX, maxX, minZ, maxZ }: the ground the grid covers (the farm's fields) ...
+   * @param {number} [o.half]      ... or metres from the middle that it covers each way.
    * @param {number} [o.cell]      Metres between grid points (a patch of worn ground is about two of these across).
-   * @param {(x:number, z:number) => boolean} [o.exempt]  Ground that never wears (the yard, the drag strip, the barn).
+   * @param {(x:number, z:number) => boolean} [o.exempt]  Ground that never wears (the yard, the drag strip, the barn, the road).
    */
-  constructor({ half, cell = 2, exempt = () => false, params = { ...DEFAULT_WEAR_PARAMS } }) {
+  constructor({ bounds, half, cell = 2, exempt = () => false, params = { ...DEFAULT_WEAR_PARAMS } }) {
     this.p = params;
     this.cell = cell;
-    this.n = Math.max(2, Math.ceil((half * 2) / cell));
-    this.half = (this.n * cell) / 2; // the grid is a whole number of cells, a little over `half` if that doesn't divide
+    const b = bounds ?? { minX: -half, maxX: half, minZ: -half, maxZ: half };
+    // The grid is a whole number of cells, a little over the bounds if they don't divide.
+    this.nx = Math.max(2, Math.ceil((b.maxX - b.minX) / cell));
+    this.nz = Math.max(2, Math.ceil((b.maxZ - b.minZ) / cell));
+    this.minX = (b.minX + b.maxX) / 2 - (this.nx * cell) / 2;
+    this.minZ = (b.minZ + b.maxZ) / 2 - (this.nz * cell) / 2;
     this.exempt = exempt;
-    this.wear = new Float32Array(this.n * this.n); // wear[ix * n + iz], 0..1; node i sits at -half + (i + 0.5) * cell
-    this.data = new Uint8Array(this.n * this.n * 4); // r soft, g bog, for the ground shader
+    this.wear = new Float32Array(this.nx * this.nz); // wear[ix * nz + iz], 0..1; node i sits at min + (i + 0.5) * cell
+    // r soft, g bog, for the ground shader: a texture nx wide and nz high, so row iz, column ix, as the shader samples it by (x, z).
+    this.data = new Uint8Array(this.nx * this.nz * 4);
     this.dirty = false;
     this.packClock = 0;
+  }
+
+  /** Metres the grid covers along x and z. */
+  get sizeX() {
+    return this.nx * this.cell;
+  }
+
+  get sizeZ() {
+    return this.nz * this.cell;
   }
 
   /** Wheels rolling `dist` metres (and spinning at `spin` m/s) at (x, z): wears the four grid points round it, by `weight` (1 a quad). */
@@ -64,8 +79,8 @@ export class GroundWear {
     const p = this.p;
     const add = (Math.max(0, dist) * p.wearRate * (1 + p.wetWear * clamp(wet, 0, 1)) + Math.max(0, spin) * p.spinRate * dt) * weight;
     if (add <= 0) return;
-    const gx = (x + this.half) / this.cell - 0.5;
-    const gz = (z + this.half) / this.cell - 0.5;
+    const gx = (x - this.minX) / this.cell - 0.5;
+    const gz = (z - this.minZ) / this.cell - 0.5;
     const ix = Math.floor(gx);
     const iz = Math.floor(gz);
     const fx = gx - ix;
@@ -80,8 +95,8 @@ export class GroundWear {
   }
 
   #bump(ix, iz, amount) {
-    if (ix < 0 || iz < 0 || ix >= this.n || iz >= this.n) return;
-    const i = ix * this.n + iz;
+    if (ix < 0 || iz < 0 || ix >= this.nx || iz >= this.nz) return;
+    const i = ix * this.nz + iz;
     this.wear[i] = Math.min(1, this.wear[i] + amount);
   }
 
@@ -107,14 +122,14 @@ export class GroundWear {
 
   /** Wear here (bilinear between grid points), 0 off the grid. */
   wearAt(x, z) {
-    const gx = (x + this.half) / this.cell - 0.5;
-    const gz = (z + this.half) / this.cell - 0.5;
+    const gx = (x - this.minX) / this.cell - 0.5;
+    const gz = (z - this.minZ) / this.cell - 0.5;
     const ix = Math.floor(gx);
     const iz = Math.floor(gz);
-    if (ix < -1 || iz < -1 || ix >= this.n || iz >= this.n) return 0;
+    if (ix < -1 || iz < -1 || ix >= this.nx || iz >= this.nz) return 0;
     const fx = gx - ix;
     const fz = gz - iz;
-    const at = (a, b) => (a < 0 || b < 0 || a >= this.n || b >= this.n ? 0 : this.wear[a * this.n + b]);
+    const at = (a, b) => (a < 0 || b < 0 || a >= this.nx || b >= this.nz ? 0 : this.wear[a * this.nz + b]);
     return at(ix, iz) * (1 - fx) * (1 - fz) + at(ix + 1, iz) * fx * (1 - fz) + at(ix, iz + 1) * (1 - fx) * fz + at(ix + 1, iz + 1) * fx * fz;
   }
 
@@ -139,11 +154,15 @@ export class GroundWear {
 
   /** Fills `data` (r soft, g bog) for the ground shader. */
   pack(wet = 0) {
-    const w = this.wear;
-    for (let i = 0; i < w.length; i++) {
-      this.data[i * 4] = Math.round(this.#soft(w[i]) * 255);
-      this.data[i * 4 + 1] = Math.round(this.#bog(w[i], wet) * 255);
-      this.data[i * 4 + 3] = 255;
+    const { wear: w, nx, nz } = this;
+    for (let ix = 0; ix < nx; ix++) {
+      for (let iz = 0; iz < nz; iz++) {
+        const v = w[ix * nz + iz];
+        const o = (iz * nx + ix) * 4;
+        this.data[o] = Math.round(this.#soft(v) * 255);
+        this.data[o + 1] = Math.round(this.#bog(v, wet) * 255);
+        this.data[o + 3] = 255;
+      }
     }
     this.dirty = false;
     this.packed = true;
@@ -153,12 +172,12 @@ export class GroundWear {
   hazards(wet = 0, max = 24) {
     const out = [];
     const r = this.cell * 1.5;
-    for (let ix = 0; ix < this.n; ix++) {
-      for (let iz = 0; iz < this.n; iz++) {
-        const w = this.wear[ix * this.n + iz];
+    for (let ix = 0; ix < this.nx; ix++) {
+      for (let iz = 0; iz < this.nz; iz++) {
+        const w = this.wear[ix * this.nz + iz];
         if (w < 0.4) continue;
         const depth = this.#bog(w, wet);
-        if (depth >= this.p.hazardAt) out.push({ x: -this.half + (ix + 0.5) * this.cell, z: -this.half + (iz + 0.5) * this.cell, radius: r, depth });
+        if (depth >= this.p.hazardAt) out.push({ x: this.minX + (ix + 0.5) * this.cell, z: this.minZ + (iz + 0.5) * this.cell, radius: r, depth });
       }
     }
     return out.sort((a, b) => b.depth - a.depth).slice(0, max);

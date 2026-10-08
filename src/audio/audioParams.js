@@ -22,6 +22,7 @@ export const DEFAULT_SOUND_PARAMS = {
   rideVolume: 1, // all of them together
   rideFullSpeed: 12, // m/s at which the tyre sounds reach their set levels
   rollVolume: 0.35, // low rumble of the tyres on any surface
+  tyreSquealVolume: 0.5, // tyres squealing on the tarmac, sliding or braking hard
   grassVolume: 0.05, // grass swishing past
   dirtVolume: 0.5, // grit and crunch on the track and the yard
   mudVolume: 0.7, // squelches round the puddles
@@ -67,6 +68,7 @@ export const SOUND_PARAM_RANGES = {
   rideVolume: [0, 3, 0.01],
   rideFullSpeed: [2, 30, 0.5],
   rollVolume: [0, 2, 0.01],
+  tyreSquealVolume: [0, 2, 0.01],
   grassVolume: [0, 1, 0.005],
   dirtVolume: [0, 2, 0.01],
   mudVolume: [0, 2, 0.01],

@@ -189,6 +189,7 @@ export class Quad {
     this.lastLeft = null; // who last got off it and whether they set the parking brake: { who: 'you' | a girl's id, braked } (handbrake.js)
     this.parkBrake = false; // the parking brake: wheels locked, so the throttle only revs the engine (toggled with Space)
     this.helperThrottle = 0; // she's blipping the throttle (a quad's starting knack)
+    this.tyreMud = []; // 0..1 per wheel, mud the tyre is carrying (world/roadMud.js)
     this.churn = 0; // 0..1 the ground torn up under the wheels, whatever it is (a girl's doughnuts: npc/doughnuts.js): it acts as mud
     this.wheelie = 0; // radians she wants the nose up, a girl showing off (npc/showOff.js); wheelieShown eases towards it
     this.wheelieShown = 0;
@@ -657,7 +658,10 @@ export class Quad {
     if (this.driver) this.parkBrake = false; // she takes it off before she sets off
     if (idle) brake = Math.max(brake, p.parkingBrake);
     if (this.parkBrake && (this.input || this.ghost)) brake = p.maxBrake; // a stuck throttle with nobody on it doesn't undo it
-    const rolling = p.rollingResistance * this.tyres.rollingFactor; // harder tyres roll easier
+    // Stubble and tarmac roll easier than grass (world/surfaces.js), judged where the quad is.
+    const feel = this.world.surfaceFeelAt?.(this.position.x, this.position.z) ?? { roll: 1 };
+    this.physics.setGroundDrag(feel.roll);
+    const rolling = p.rollingResistance * this.tyres.rollingFactor * feel.roll; // harder tyres roll easier
     brake = Math.max(brake, rolling);
     // Wheel brakes alone let a parked quad creep down a slope, so a stationary one is held.
     this.physics.setParked((idle && throttleInput === 0 && Math.abs(fwd) < 0.3) || (this.parkBrake && Math.abs(fwd) < 0.3));
@@ -679,9 +683,19 @@ export class Quad {
       mudAt: (x, z) => Math.max(this.world.mudAt(x, z), this.churn),
       puddleAt: (x, z) => this.world.puddleAt?.(x, z) ?? 0,
       bogAt: (x, z) => this.world.bogAt?.(x, z) ?? 0,
+      feelAt: this.world.surfaceFeelAt ? (x, z) => this.world.surfaceFeelAt(x, z) : undefined,
+      tarmacAt: this.world.tarmacAt ? (x, z) => this.world.tarmacAt(x, z) : undefined,
       wet,
       dt,
     });
+    // Mud on the tyres: picked up on the track and in bogs, wiped off on grass, left on the road (world/roadMud.js).
+    if (this.world.roadMud) {
+      const wheels = this.physics.wheelInfo;
+      for (let i = 0; i < wheels.length; i++) {
+        const w = wheels[i];
+        if (w.contact) this.tyreMud[i] = this.world.roadMud.roll(this.tyreMud[i] ?? 0, w.point.x, w.point.z, groundSpeed * dt, Math.max(w.mud, w.puddle * 0.7));
+      }
+    }
     // Every wheel on the move wears the ground under it, more with wheelspin, more in the wet (world/groundWear.js).
     if (this.world.wear && groundSpeed + this.physics.spinSlip > 0.3) {
       const weight = Math.min(2, Math.max(0.6, p.mass / 300));

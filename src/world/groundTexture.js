@@ -1,5 +1,8 @@
-// Paints the field's ground texture on a canvas: grass with blotchy variation,
-// the muddy track with ruts and puddles, and worn patches in the yard and gateway.
+// Paints the farm's ground texture on a canvas: grass with blotchy variation, the neighbouring farmland beyond the hedges, the stubble
+// fields and the tarmac road, the muddy track with ruts and puddles, and worn patches in the yard and gateways.
+
+import { patchColor, patchBlend } from './patchwork.js';
+import { outsideRect } from './fields.js';
 
 function rand(seed) {
   return () => {
@@ -55,7 +58,7 @@ export function createDetailCanvas(size = 256) {
  * @param {object} opts.layout
  * @param {object[]} opts.puddles   Puddle centres from the height model.
  */
-export function createGroundCanvas({ size, worldSize, track, layout, puddles, bogs = [] }) {
+export function createGroundCanvas({ size, worldSize, track, layout, fields, puddles, bogs = [] }) {
   const random = rand(42);
   const c = document.createElement('canvas');
   c.width = c.height = size;
@@ -77,6 +80,12 @@ export function createGroundCanvas({ size, worldSize, track, layout, puddles, bo
   const fine = noiseCanvas(1024, random, (v) => (v > 0.5 ? [140, 160, 80, 40] : [30, 50, 20, 50]));
   ctx.drawImage(fine, 0, 0, size, size);
 
+  if (fields) {
+    paintPatchwork(ctx, size, worldSize, fields);
+    paintStubble(ctx, toPx, s, fields, random);
+    paintTarmac(ctx, toPx, s, layout, fields, random);
+  }
+
   // Worn yard and gateway.
   const wear = (x, z, r, color) => {
     const [px, pz] = toPx(x, z);
@@ -90,6 +99,7 @@ export function createGroundCanvas({ size, worldSize, track, layout, puddles, bo
   wear(yard.x, yard.z, yard.radius * 0.8, 'rgba(105,92,66,0.85)');
   wear(yard.x - 4, yard.z + 2, yard.radius * 0.45, 'rgba(92,80,58,0.7)');
   wear(gate.x, fieldHalf - 3, 7, 'rgba(90,72,48,0.8)');
+  if (layout.road) wear(fieldHalf - 4, layout.road.z, 6, 'rgba(90,72,48,0.6)'); // the quads cut the corner onto the road
 
   // Track.
   const pts = track.points;
@@ -174,4 +184,148 @@ export function createGroundCanvas({ size, worldSize, track, layout, puddles, bo
   }
 
   return c;
+}
+
+/** The neighbouring farmland beyond the farm's hedges, at 2 m a pixel, fading in from the grass a few metres out (as the outer ring does). */
+function paintPatchwork(ctx, size, worldSize, fields) {
+  const n = Math.ceil(worldSize / 2);
+  const c = document.createElement('canvas');
+  c.width = c.height = n;
+  const pctx = c.getContext('2d');
+  const img = pctx.createImageData(n, n);
+  for (let j = 0; j < n; j++) {
+    for (let i = 0; i < n; i++) {
+      const x = -worldSize / 2 + (i + 0.5) * (worldSize / n);
+      const z = -worldSize / 2 + (j + 0.5) * (worldSize / n);
+      const blend = patchBlend(outsideRect(fields.farm, x, z));
+      const o = (j * n + i) * 4;
+      if (blend <= 0) continue;
+      const col = patchColor(x, z, 1);
+      img.data[o] = col[0] * 255;
+      img.data[o + 1] = col[1] * 255;
+      img.data[o + 2] = col[2] * 255;
+      img.data[o + 3] = blend * 215; // the grass's own blotches still show through a little
+    }
+  }
+  pctx.putImageData(img, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(c, 0, 0, size, size);
+}
+
+/**
+ * The stubble fields: pale straw with darker drill rows along the field (x) every half metre, the odd bare or weedy patch, and the
+ * tramlines (the sprayer's wheel lines, two dark stripes 1.8 m apart every 24 m) that every British arable field has.
+ */
+function paintStubble(ctx, toPx, s, fields, random) {
+  for (const key of ['north', 'south']) {
+    const r = fields.areas[key];
+    if (!r) continue;
+    const [x0, z0] = toPx(r.minX, r.minZ);
+    const [x1, z1] = toPx(r.maxX, r.maxZ);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x0, z0, x1 - x0, z1 - z0);
+    ctx.clip();
+    ctx.fillStyle = '#b3a06a';
+    ctx.fillRect(x0, z0, x1 - x0, z1 - z0);
+    // Blotches: a little greener where it's weedy, browner where the combine left it thin.
+    for (let i = 0; i < 900; i++) {
+      const x = r.minX + random() * (r.maxX - r.minX);
+      const z = r.minZ + random() * (r.maxZ - r.minZ);
+      const [px, pz] = toPx(x, z);
+      const rad = (1.5 + random() * 5) * s;
+      const g = ctx.createRadialGradient(px, pz, 0, px, pz, rad);
+      const tint = random() < 0.35 ? '120,130,70' : random() < 0.5 ? '150,125,80' : '205,190,140';
+      g.addColorStop(0, `rgba(${tint},0.35)`);
+      g.addColorStop(1, `rgba(${tint},0)`);
+      ctx.fillStyle = g;
+      ctx.fillRect(px - rad, pz - rad, rad * 2, rad * 2);
+    }
+    // Drill rows.
+    ctx.strokeStyle = 'rgba(110,95,55,0.35)';
+    ctx.lineWidth = Math.max(1, 0.12 * s);
+    for (let z = r.minZ + 0.25; z < r.maxZ; z += 0.5) {
+      const [, pz] = toPx(0, z);
+      ctx.beginPath();
+      ctx.moveTo(x0, pz);
+      ctx.lineTo(x1, pz);
+      ctx.stroke();
+    }
+    // Tramlines, from 12 m in from the field's edge.
+    ctx.strokeStyle = 'rgba(105,90,58,0.75)';
+    ctx.lineWidth = 0.45 * s;
+    for (let z = r.minZ + 12; z < r.maxZ - 6; z += 24) {
+      for (const off of [-0.9, 0.9]) {
+        const [, pz] = toPx(0, z + off);
+        ctx.beginPath();
+        ctx.moveTo(x0, pz);
+        ctx.lineTo(x1, pz);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+}
+
+/** The farm road and its hardstanding: dark grey tarmac, speckled, a little lighter where the wheels run, with crumbling edges. */
+function paintTarmac(ctx, toPx, s, layout, fields, random) {
+  const road = layout.road;
+  if (!road) return;
+  const shape = (grow) => {
+    ctx.beginPath();
+    const [ax, az] = toPx(road.fromX - grow, road.z - road.halfWidth - grow);
+    const [bx, bz] = toPx(road.toX + grow, road.z + road.halfWidth + grow);
+    ctx.rect(ax, az, bx - ax, bz - az);
+    if (road.pad) {
+      const [px, pz] = toPx(road.pad.x, road.z);
+      ctx.moveTo(px + (road.pad.radius + grow) * s, pz);
+      ctx.arc(px, pz, (road.pad.radius + grow) * s, 0, Math.PI * 2);
+    }
+  };
+  // A worn, gritty margin where the edge has broken up into the verge.
+  ctx.fillStyle = 'rgba(95,88,70,0.6)';
+  shape(0.25);
+  ctx.fill();
+  ctx.fillStyle = '#4b4a47';
+  shape(0);
+  ctx.fill();
+  ctx.save();
+  shape(0);
+  ctx.clip();
+  // Speckle: the stone in the tarmac.
+  const minX = road.fromX;
+  const maxX = road.pad ? road.pad.x + road.pad.radius : road.toX;
+  const reach = road.pad ? road.pad.radius : road.halfWidth;
+  const area = (maxX - minX) * reach * 2;
+  for (let i = 0; i < area * 6; i++) {
+    const x = minX + random() * (maxX - minX);
+    const z = road.z + (random() * 2 - 1) * reach;
+    if (fields.tarmacAt(x, z) < 0.5) continue;
+    const [px, pz] = toPx(x, z);
+    ctx.fillStyle = random() < 0.5 ? 'rgba(120,118,112,0.5)' : 'rgba(35,35,34,0.5)';
+    ctx.fillRect(px, pz, Math.max(1, 0.08 * s), Math.max(1, 0.08 * s));
+  }
+  // Polished a little lighter where the wheels run, about 1.6 m apart.
+  ctx.strokeStyle = 'rgba(120,118,110,0.18)';
+  ctx.lineWidth = 0.5 * s;
+  for (const off of [-0.8, 0.8]) {
+    const [ax, az] = toPx(road.fromX, road.z + off);
+    const [bx] = toPx(road.toX, road.z + off);
+    ctx.beginPath();
+    ctx.moveTo(ax, az);
+    ctx.lineTo(bx, az);
+    ctx.stroke();
+  }
+  ctx.restore();
+  // Bites out of the edge.
+  for (let x = road.fromX; x < road.toX; x += 1.5 + random() * 4) {
+    for (const side of [-1, 1]) {
+      if (random() < 0.5) continue;
+      const [px, pz] = toPx(x, road.z + side * (road.halfWidth + 0.05));
+      ctx.fillStyle = 'rgba(95,88,70,0.8)';
+      ctx.beginPath();
+      ctx.ellipse(px, pz, (0.2 + random() * 0.5) * s, (0.08 + random() * 0.15) * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
 }

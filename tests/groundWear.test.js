@@ -88,10 +88,12 @@ describe('ground wear', () => {
     const g = fresh();
     pass(g, 20, -10, 0.6, 40);
     g.pack(0.6);
-    const idx = (x, z) => (Math.round((x + g.half) / g.cell - 0.5) * g.n + Math.round((z + g.half) / g.cell - 0.5)) * 4;
+    // Laid out as the shader samples it: u along x (the column), v along z (the row).
+    const idx = (x, z) => (Math.round((z - g.minZ) / g.cell - 0.5) * g.nx + Math.round((x - g.minX) / g.cell - 0.5)) * 4;
     expect(g.data[idx(20, -10)]).toBe(255);
     expect(g.data[idx(20, -10) + 1]).toBeGreaterThan(200);
     expect(g.data[idx(-40, 30)]).toBe(0);
+    expect(g.data[idx(-10, 20)]).toBe(0); // not drawn mirrored across the diagonal
     const h = g.hazards(0.6);
     expect(h.length).toBeGreaterThan(0);
     expect(h.every((b) => Math.hypot(b.x - 20, b.z + 10) < 6)).toBe(true);
@@ -105,5 +107,17 @@ describe('ground wear', () => {
     expect(g.packed).toBeUndefined();
     g.update(0.5, 0);
     expect(g.packed).toBe(true);
+  });
+
+  it('covers a rectangle of fields, not just a square', () => {
+    const g = new GroundWear({ bounds: { minX: -80, maxX: 200, minZ: -80, maxZ: 80 } });
+    expect(g.nx).toBe(140);
+    expect(g.nz).toBe(80);
+    pass(g, 150, -30, 0, 10);
+    expect(g.wearAt(150, -30)).toBeGreaterThan(0.1);
+    expect(g.wearAt(-30, 150)).toBe(0);
+    g.pack();
+    const o = (Math.round((-30 - g.minZ) / g.cell - 0.5) * g.nx + Math.round((150 - g.minX) / g.cell - 0.5)) * 4;
+    expect(g.data[o + 3]).toBe(255);
   });
 });

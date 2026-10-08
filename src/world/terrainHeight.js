@@ -18,9 +18,11 @@ export function baseHeight(x, z) {
 
 import { floorBlend } from './barn.js';
 import { stripFrame } from './layout.js';
+import { outsideRect } from './fields.js';
 
 export function createTerrainHeight(layout, track) {
-  const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf } = layout;
+  const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf, road } = layout;
+  const farm = layout.farm ?? { minX: -fieldHalf, maxX: fieldHalf, minZ: -fieldHalf, maxZ: fieldHalf };
   const yardHeight = baseHeight(yard.x, yard.z);
   const puddles = layout.puddles.map((u) => track.sample(u));
   const bogs = (layout.bogs ?? []).map((b) => (b.track !== undefined ? { ...track.sample(b.track), radius: b.radius } : { ...b }));
@@ -32,9 +34,22 @@ export function createTerrainHeight(layout, track) {
   function heightAt(x, z) {
     let h = baseHeight(x, z);
 
-    // Land rises gently beyond the hedges towards distant hills.
-    const edge = Math.max(Math.abs(x), Math.abs(z));
-    h += smoothstep(fieldHalf + 10, 380, edge) * 22 * (0.6 + 0.4 * Math.sin(x * 0.01 + z * 0.013));
+    // Land rises gently beyond the farm's hedges towards distant hills.
+    h += smoothstep(10, 300, outsideRect(farm, x, z)) * 22 * (0.6 + 0.4 * Math.sin(x * 0.01 + z * 0.013));
+
+    // The farm road is laid level across, following the lie of the land along its middle, with a 3 m shoulder each side; the
+    // hardstanding at its end is flat.
+    if (road) {
+      const along = Math.max(road.fromX - 2 - x, 0, x - road.toX);
+      const dRoad = Math.hypot(along, z - road.z) - road.halfWidth;
+      const dPad = road.pad ? Math.hypot(x - road.pad.x, z - road.z) - road.pad.radius : Infinity;
+      const k = 1 - smoothstep(0, 3, Math.min(dRoad, dPad));
+      if (k > 0) {
+        const padK = road.pad ? 1 - smoothstep(-4, 2, dPad) : 0;
+        const level = baseHeight(Math.min(x, road.toX), road.z) * (1 - padK) + baseHeight(road.pad?.x ?? x, road.z) * padK;
+        h += (level - h) * k;
+      }
+    }
 
     // Flatten the yard around the barn.
     const yd = Math.hypot(x - yard.x, z - yard.z);

@@ -1,11 +1,15 @@
 import * as THREE from 'three';
 import { createGroundCanvas, createDetailCanvas } from './groundTexture.js';
+import { patchColor, patchBlend } from './patchwork.js';
+import { outsideRect } from './fields.js';
+
+export { patchAt } from './patchwork.js';
 
 /**
  * Builds the detailed field terrain (visual mesh plus Rapier heightfield) and a
  * coarser patchwork ring of neighbouring fields out to the horizon.
  */
-export function createTerrain({ scene, physics, RAPIER, layout, heights, track, renderer, wear }) {
+export function createTerrain({ scene, physics, RAPIER, layout, heights, track, renderer, wear, fields, roadMud }) {
   const { terrainSize: size, terrainSegments: segs } = layout;
   const half = size / 2;
   const step = size / segs;
@@ -36,8 +40,7 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
       positions.set([x, grid[i], z], i * 3);
       uvs.set([ix / segs, iz / segs], i * 2);
       // Low-frequency tint, a little darker in the hedge shadow.
-      const edge = Math.max(Math.abs(x), Math.abs(z));
-      const shade = edge > layout.fieldHalf - 4 && edge < layout.fieldHalf + 4 ? 0.82 : 1;
+      const shade = fields.hedgeDistance(x, z) < 4 ? 0.82 : 1;
       const v = (0.92 + 0.08 * Math.sin(x * 0.05 + 1.3) * Math.cos(z * 0.06)) * shade;
       colors.set([v, v, v], i * 3);
     }
@@ -60,7 +63,8 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
   geo.computeVertexNormals();
 
   const groundTex = new THREE.CanvasTexture(
-    createGroundCanvas({ size: 2048, worldSize: size, track, layout, puddles: heights.puddles, bogs: heights.bogs }),
+    // About 10 pixels a metre, as it was on the old 200 m square at 2048.
+    createGroundCanvas({ size: 4096, worldSize: size, track, layout, fields, puddles: heights.puddles, bogs: heights.bogs }),
   );
   groundTex.flipY = false;
   groundTex.colorSpace = THREE.SRGBColorSpace;
@@ -71,19 +75,27 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
 
   const mat = new THREE.MeshStandardMaterial({ map: groundTex, vertexColors: true, roughness: 0.95 });
   // Worn ground, from the wear grid (groundWear.js): one texel a grid point, soft in red and bog in green.
-  const wearTex = new THREE.DataTexture(wear.data, wear.n, wear.n, THREE.RGBAFormat);
+  const wearTex = new THREE.DataTexture(wear.data, wear.nx, wear.nz, THREE.RGBAFormat);
   wearTex.magFilter = wearTex.minFilter = THREE.LinearFilter;
   wearTex.needsUpdate = true;
-  addDetailLayer(mat, detailTex, 0.45, { map: wearTex, size: wear.n * wear.cell, half: wear.half });
+  // Mud carried onto the road (roadMud.js): one texel a grid point, the smear in red.
+  const mudData = roadMud ?? { data: new Uint8Array(4), nx: 1, nz: 1, minX: 0, minZ: 0, sizeX: 1, sizeZ: 1 };
+  const roadMudTex = new THREE.DataTexture(mudData.data, mudData.nx, mudData.nz, THREE.RGBAFormat);
+  roadMudTex.magFilter = roadMudTex.minFilter = THREE.LinearFilter;
+  roadMudTex.needsUpdate = true;
+  addDetailLayer(mat, detailTex, 0.45, {
+    wear: { map: wearTex, origin: new THREE.Vector2(wear.minX, wear.minZ), size: new THREE.Vector2(wear.sizeX, wear.sizeZ) },
+    roadMud: { map: roadMudTex, origin: new THREE.Vector2(mudData.minX, mudData.minZ), size: new THREE.Vector2(mudData.sizeX, mudData.sizeZ) },
+  });
 
   const mesh = new THREE.Mesh(geo, mat);
   mesh.receiveShadow = true;
   mesh.name = 'terrain';
   scene.add(mesh);
 
-  scene.add(createOuterRing(layout, heights));
+  scene.add(createOuterRing(layout, heights, fields));
 
-  return { mesh, collider, wearTexture: wearTex, meshHeightAt: (x, z) => gridHeight(grid, n, step, half, x, z) };
+  return { mesh, collider, wearTexture: wearTex, roadMudTexture: roadMudTex, meshHeightAt: (x, z) => gridHeight(grid, n, step, half, x, z) };
 }
 
 /**
@@ -108,18 +120,21 @@ function gridHeight(grid, n, step, half, x, z) {
   return d + (b - d) * (1 - fx) + (c - d) * (1 - fz);
 }
 
-/** Multiplies a tiling greyscale texture over the diffuse colour in world space. */
-function addDetailLayer(material, detailTex, scale, wear) {
+/** Multiplies a tiling greyscale texture over the diffuse colour in world space, and lays the worn ground and the road's mud over it. */
+function addDetailLayer(material, detailTex, scale, { wear, roadMud }) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.detailMap = { value: detailTex };
     shader.uniforms.wearMap = { value: wear.map };
+    shader.uniforms.wearOrigin = { value: wear.origin };
     shader.uniforms.wearSize = { value: wear.size };
-    shader.uniforms.wearHalf = { value: wear.half };
+    shader.uniforms.roadMudMap = { value: roadMud.map };
+    shader.uniforms.roadMudOrigin = { value: roadMud.origin };
+    shader.uniforms.roadMudSize = { value: roadMud.size };
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec2 vWorldXZ;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWorldXZ = (modelMatrix * vec4(transformed, 1.0)).xz;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;\nuniform sampler2D wearMap;\nuniform float wearSize;\nuniform float wearHalf;\nvarying vec2 vWorldXZ;')
+      .replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;\nuniform sampler2D wearMap;\nuniform vec2 wearOrigin;\nuniform vec2 wearSize;\nuniform sampler2D roadMudMap;\nuniform vec2 roadMudOrigin;\nuniform vec2 roadMudSize;\nvarying vec2 vWorldXZ;')
       .replace(
         '#include <map_fragment>',
         `#include <map_fragment>
@@ -127,50 +142,26 @@ function addDetailLayer(material, detailTex, scale, wear) {
         float detail2 = texture2D(detailMap, vWorldXZ * ${(scale * 0.13).toFixed(3)}).r;
         diffuseColor.rgb *= mix(0.72, 1.28, detail) * mix(0.85, 1.15, detail2);
         // Ground the tyres have worn: churned brown where it's soft, dark and glossy where it's a bog, ragged at the edges.
-        vec2 wearUv = (vWorldXZ + wearHalf) / wearSize;
+        vec2 wearUv = (vWorldXZ - wearOrigin) / wearSize;
         float wearIn = step(0.0, wearUv.x) * step(wearUv.x, 1.0) * step(0.0, wearUv.y) * step(wearUv.y, 1.0);
         vec2 worn = texture2D(wearMap, wearUv).rg * wearIn;
         float rag = (texture2D(detailMap, vWorldXZ * 0.9).r - 0.5) * 0.4;
         float wornSoft = smoothstep(0.15, 0.55, worn.r + rag);
         float wornBog = smoothstep(0.25, 0.65, worn.g + rag);
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.19, 0.14, 0.085), wornSoft * 0.75);
-        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.085, 0.06, 0.036), wornBog * 0.9);`,
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.085, 0.06, 0.036), wornBog * 0.9);
+        // Mud the tyres have carried onto the road: brown smears along their lines, broken up at the edges, the thick ones darker.
+        vec2 mudUv = (vWorldXZ - roadMudOrigin) / roadMudSize;
+        float mudIn = step(0.0, mudUv.x) * step(mudUv.x, 1.0) * step(0.0, mudUv.y) * step(mudUv.y, 1.0);
+        float smear = texture2D(roadMudMap, mudUv).r * mudIn;
+        float onRoad = smoothstep(0.04, 0.3, smear + rag * 0.5) * smoothstep(0.0, 0.03, smear);
+        diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.3, 0.23, 0.15), vec3(0.17, 0.12, 0.075), smoothstep(0.3, 0.9, smear)), onRoad * 0.85);`,
       )
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n        roughnessFactor *= 1.0 - 0.4 * wornBog;');
   };
 }
 
-// Patchwork of neighbouring fields as vertex colours, with dark lines where
-// the hedgerows between them would be.
-const PATCH_COLORS = [
-  [0.36, 0.48, 0.22],
-  [0.42, 0.54, 0.26],
-  [0.33, 0.44, 0.2],
-  [0.52, 0.54, 0.28],
-  [0.42, 0.35, 0.26],
-  [0.6, 0.56, 0.36],
-  [0.39, 0.5, 0.24],
-];
-
-function hash2(a, b) {
-  let h = (a * 374761393 + b * 668265263) | 0;
-  h = Math.imul(h ^ (h >>> 13), 1274126177);
-  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
-}
-
-export function patchAt(x, z) {
-  const cell = 85;
-  const wx = x + 14 * Math.sin(z * 0.017);
-  const wz = z + 14 * Math.sin(x * 0.019);
-  const cx = Math.floor(wx / cell);
-  const cz = Math.floor(wz / cell);
-  const fx = wx / cell - cx;
-  const fz = wz / cell - cz;
-  const border = Math.min(fx, 1 - fx, fz, 1 - fz) * cell;
-  return { id: hash2(cx, cz), border };
-}
-
-function createOuterRing(layout, heights) {
+function createOuterRing(layout, heights, fields) {
   const { outerSize: size, outerSegments: segs, terrainSize } = layout;
   const half = size / 2;
   const inner = terrainSize / 2;
@@ -184,17 +175,8 @@ function createOuterRing(layout, heights) {
       const x = -half + ix * step;
       const z = -half + iz * step;
       positions.set([x, heights.heightAt(x, z), z], i * 3);
-      const { id, border } = patchAt(x, z);
-      let col = PATCH_COLORS[Math.floor(id * PATCH_COLORS.length)];
-      if (border < 3) col = [0.17, 0.25, 0.11];
-      // Fade to the near field's grass colour close to the hedges.
-      const edge = Math.max(Math.abs(x), Math.abs(z));
-      const blend = Math.min(1, Math.max(0, (edge - inner) / 40));
-      const near = [0.37, 0.49, 0.23];
-      colors.set(
-        [0, 1, 2].map((k) => near[k] + (col[k] - near[k]) * blend),
-        i * 3,
-      );
+      // Fading from the farm's grass just beyond its hedges, as the ground texture does (groundTexture.js).
+      colors.set(patchColor(x, z, patchBlend(outsideRect(fields.farm, x, z))), i * 3);
     }
   }
   const indices = [];

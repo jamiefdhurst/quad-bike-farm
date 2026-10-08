@@ -8,9 +8,13 @@
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
-/** Grip coefficient (Rapier friction slip) for a mix of grass, mud and puddle, each 0..1. */
-export function surfaceGrip(p, mud, puddle) {
-  const ground = p.grassFrictionSlip + (p.mudFrictionSlip - p.grassFrictionSlip) * clamp(mud, 0, 1);
+/**
+ * Grip coefficient (Rapier friction slip) for a mix of grass, mud and puddle, each 0..1. `firm` scales the grip of the ground under the mud:
+ * more on tarmac, less on wet stubble (world/surfaces.js).
+ */
+export function surfaceGrip(p, mud, puddle, firm = 1) {
+  const firmGrip = p.grassFrictionSlip * firm;
+  const ground = firmGrip + (p.mudFrictionSlip - firmGrip) * clamp(mud, 0, 1);
   return ground + (p.puddleFrictionSlip - ground) * clamp(puddle, 0, 1);
 }
 

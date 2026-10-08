@@ -89,10 +89,17 @@ export class QuadPhysics {
     this.parked = parked;
   }
 
+  /** The ground's drag as a factor on grass (stubble and tarmac roll easier): scales the body's linear damping. */
+  setGroundDrag(factor) {
+    if (Math.abs(factor - (this.groundDrag ?? 1)) < 0.02) return;
+    this.groundDrag = factor;
+    this.body.setLinearDamping(this.params.linearDamping * factor);
+  }
+
   /** Pushes the current params into Rapier; call after tuning. */
   applyParams() {
     const p = this.params;
-    this.body.setLinearDamping(p.linearDamping);
+    this.body.setLinearDamping(p.linearDamping * (this.groundDrag ?? 1));
     this.body.setAngularDamping(p.angularDamping);
     this.collider.setMassProperties(
       p.mass,
@@ -120,9 +127,11 @@ export class QuadPhysics {
    * @param {number} c.steer       Radians, positive turns left.
    * @param {(x:number, z:number) => number} [c.mudAt]     Surface lookup for per-wheel grip, 0..1.
    * @param {(x:number, z:number) => number} [c.puddleAt]  Standing water, 0..1.
+   * @param {(x:number, z:number) => {grip:number}} [c.feelAt]  The ground's grip as a factor on grass (tarmac, stubble: world/surfaces.js).
+   * @param {(x:number, z:number) => number} [c.tarmacAt]  0..1 tarmac, kept per wheel for the tyre squeal.
    * @param {number} [c.dt]
    */
-  applyControls({ driveForce, brake, steer, mudAt, puddleAt, bogAt, wet = 0, dt = 1 / 60 }) {
+  applyControls({ driveForce, brake, steer, mudAt, puddleAt, bogAt, feelAt, tarmacAt, wet = 0, dt = 1 / 60 }) {
     const p = this.params;
     const v = this.vehicle;
     // Grip under each wheel, from where it touched down last step.
@@ -138,7 +147,9 @@ export class QuadPhysics {
       w.mud = w.contact && mudAt ? mudAt(w.point.x, w.point.z) : 0;
       w.puddle = w.contact && puddleAt ? puddleAt(w.point.x, w.point.z) : 0;
       w.load = w.contact ? (v.wheelSuspensionForce(i) ?? 0) : 0;
-      w.grip = surfaceGrip(p, w.mud, w.puddle) * (w.contact && bogAt ? bogGrip(bogAt(w.point.x, w.point.z)) : 1);
+      w.tarmac = w.contact && tarmacAt ? tarmacAt(w.point.x, w.point.z) : 0;
+      const firm = w.contact && feelAt ? feelAt(w.point.x, w.point.z).grip : 1;
+      w.grip = surfaceGrip(p, w.mud, w.puddle, firm) * (w.contact && bogAt ? bogGrip(bogAt(w.point.x, w.point.z)) : 1);
       // Wet ground is slipperier, and wet mud more so.
       w.grip *= 1 - wet * (0.15 + 0.15 * w.mud);
       // This wheel's tyre: its pressure, brand and tread (tyres.js).

@@ -11,6 +11,7 @@
 // through the same path as its engine (propagation.js), so they pass by with
 // the same Doppler shift.
 
+import { squealLevel, slipAngle, DEFAULT_SQUEAL_PARAMS } from '../vehicle/tyreSqueal.js';
 import { hornVoice } from '../npc/horns.js';
 import { RideEvents, createSurfaceSampler } from './rideEvents.js';
 
@@ -153,9 +154,10 @@ export class RideAudio {
     this.unit = unit;
     this.surfaceAt = createSurfaceSampler(world);
     this.events = new RideEvents(hub.params);
-    this.surface = { grass: 1, dirt: 0, mud: 0, water: 0 };
+    this.surface = { grass: 1, dirt: 0, mud: 0, water: 0, tarmac: 0 };
     this.contact = 0; // share of wheels on the ground
-    this.wheelSurface = [0, 1, 2, 3].map(() => ({ grass: 1, dirt: 0, mud: 0, water: 0 }));
+    this.wheelSurface = [0, 1, 2, 3].map(() => ({ grass: 1, dirt: 0, mud: 0, water: 0, tarmac: 0 }));
+    this.squealParams = world.squealParams ?? DEFAULT_SQUEAL_PARAMS;
     this.surfaceTimer = 0;
     this.squelchTimer = 0;
     this.sloshTimer = 0;
@@ -175,7 +177,7 @@ export class RideAudio {
     this.surfaceTimer -= dt;
     const refresh = speed > 0.3 && this.surfaceTimer <= 0;
     if (refresh) this.surfaceTimer = clamp(0.5 / speed, 1 / 60, 0.1);
-    const avg = { grass: 0, dirt: 0, mud: 0, water: 0 };
+    const avg = { grass: 0, dirt: 0, mud: 0, water: 0, tarmac: 0 };
     for (let i = 0; i < 4; i++) {
       const contact = ph.vehicle.wheelIsInContact(i);
       if (refresh && contact) {
@@ -189,6 +191,7 @@ export class RideAudio {
         avg.dirt += s.dirt;
         avg.mud += s.mud;
         avg.water += s.water;
+        avg.tarmac += s.tarmac ?? 0;
       }
       wheels.push({ suspension: ph.vehicle.wheelSuspensionLength(i) ?? 0, contact, water: s.water });
     }
@@ -325,6 +328,66 @@ export class RideAudio {
     this.squealGain.gain.setTargetAtTime(this.hub.params.rideVolume * 0.12 * level, now, level > 0 ? 0.03 : 0.08);
   }
 
+  /** 0..1 how hard the tyres are squealing on the tarmac (vehicle/tyreSqueal.js): sliding, braking hard or spinning up. */
+  tyreSquealLevel(quad, speed, contact) {
+    const tarmac = (this.surface.tarmac ?? 0) * contact;
+    if (tarmac <= 0) return 0;
+    const v = quad.physics.body.linvel();
+    const yaw = quad.yaw;
+    const forward = v.x * Math.sin(yaw) + v.z * Math.cos(yaw);
+    const sideways = v.x * Math.cos(yaw) - v.z * Math.sin(yaw);
+    return squealLevel(this.squealParams, { tarmac, slip: slipAngle(forward, sideways), speed, brake: quad.brake ?? 0, spin: quad.physics.traction?.spin ?? 0 });
+  }
+
+  /**
+   * Tyres squealing on tarmac: a rubbery, wavering cry, noise through two resonances plus a pair of slightly detuned tones, the pitch
+   * wandering as the tyre grips and lets go. Built when first needed.
+   */
+  updateTyreSqueal(level, speed) {
+    if (!this.tyreSquealGain) {
+      if (level <= 0) return;
+      const ctx = this.hub.ctx;
+      const gain = ctx.createGain();
+      gain.gain.value = 0;
+      gain.connect(this.out);
+      const noise = ctx.createBufferSource();
+      const buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      noise.buffer = buf;
+      noise.loop = true;
+      const bands = [950, 1900].map((f) => {
+        const b = ctx.createBiquadFilter();
+        b.type = 'bandpass';
+        b.frequency.value = f;
+        b.Q.value = 9;
+        noise.connect(b).connect(gain);
+        return b;
+      });
+      const tones = ctx.createGain();
+      tones.gain.value = 0.05;
+      tones.connect(gain);
+      const oscs = [1, 1.012].map((ratio) => {
+        const o = ctx.createOscillator();
+        o.type = 'triangle';
+        o.frequency.value = 900 * ratio;
+        o.connect(tones);
+        o.start();
+        return o;
+      });
+      noise.start();
+      this.tyreSquealGain = gain;
+      this.tyreSquealBands = bands;
+      this.tyreSquealOscs = oscs;
+    }
+    const now = this.hub.ctx.currentTime;
+    const wander = 1 + 0.06 * Math.sin(now * 23) + 0.04 * Math.sin(now * 61) + 0.03 * (Math.random() - 0.5);
+    const pitch = (850 + 25 * speed) * wander;
+    this.tyreSquealBands.forEach((b, i) => b.frequency.setTargetAtTime(pitch * (i ? 2.05 : 1), now, 0.02));
+    this.tyreSquealOscs.forEach((o, i) => o.frequency.setTargetAtTime(pitch * (i ? 1.012 : 1), now, 0.02));
+    this.tyreSquealGain.gain.setTargetAtTime(this.hub.params.rideVolume * this.hub.params.tyreSquealVolume * level, now, level > 0 ? 0.04 : 0.1);
+  }
+
   /** Every frame, after the engine sound has updated (it owns the sound path). */
   update(dt) {
     if (!this.built && !this.build()) {
@@ -343,11 +406,12 @@ export class RideAudio {
     const set = (param, value, tau = 0.06) => param.setTargetAtTime(value, now, tau);
 
     this.updateSqueal(quad.quirks.squeal(quad.brake, Math.abs(speed)), Math.abs(speed));
+    this.updateTyreSqueal(this.tyreSquealLevel(quad, speed, on), Math.abs(speed));
 
     // Grass catches the tyres unevenly.
     this.flutter += (0.55 + Math.random() * 0.9 - this.flutter) * Math.min(1, dt * 12);
 
-    const surfaceRumble = s.grass * 0.55 + s.dirt + s.mud * 0.8 + s.water * 0.5;
+    const surfaceRumble = s.grass * 0.55 + s.dirt + s.mud * 0.8 + s.water * 0.5 + (s.tarmac ?? 0) * 0.4;
     set(this.rollGain.gain, level * p.rollVolume * on * surfaceRumble * Math.pow(v, 1.3));
     set(this.rollFilter.frequency, 70 + 22 * speed);
     set(this.grassGain.gain, level * p.grassVolume * on * s.grass * Math.pow(v, 1.5) * this.flutter, 0.03);

@@ -8,7 +8,8 @@ const smoothstep = (a, b, x) => {
 
 /**
  * Surface under a point, as shares that add up to 1: grass, dirt (the track
- * and the worn yard), mud (the wet ground round a puddle) and water (in one).
+ * and the worn yard), mud (the wet ground round a puddle), water (in one) and
+ * tarmac (the farm road, unless it's under mud). Stubble counts as grass.
  * @param {object} world  Anything with mudAt(x, z), heights.puddles and layout.
  */
 export function createSurfaceSampler(world) {
@@ -25,7 +26,8 @@ export function createSurfaceSampler(world) {
     let dirt = world.mudAt(x, z);
     if (yard) dirt = Math.max(dirt, 1 - smoothstep(yard.radius * 0.45, yard.radius * 0.75, Math.hypot(x - yard.x, z - yard.z)));
     const dry = 1 - water - mud;
-    return { grass: (1 - dirt) * dry, dirt: dirt * dry, mud, water };
+    const tarmac = world.tarmacAt?.(x, z) ?? 0;
+    return { grass: (1 - dirt) * dry * (1 - tarmac), dirt: dirt * dry, mud, water, tarmac: (1 - dirt) * dry * tarmac };
   };
 }
 
@@ -115,7 +117,8 @@ export class RideEvents {
     if (jolts) {
       for (const k of jolts) this.push('bump', Math.min(1.5, k));
     } else if (anyContact && speed > 0.5) {
-      const perMetre = p.bumpsPerMetreGrass + (p.bumpsPerMetreTrack - p.bumpsPerMetreGrass) * (surface.dirt + surface.mud);
+      // Tarmac is smooth: hardly anything to knock.
+      const perMetre = (p.bumpsPerMetreGrass + (p.bumpsPerMetreTrack - p.bumpsPerMetreGrass) * (surface.dirt + surface.mud)) * (1 - 0.85 * (surface.tarmac ?? 0));
       this.distance += speed * dt * perMetre;
       const size = Math.min(1.2, speed / p.bumpFullSpeed);
       while (this.distance >= 1) {

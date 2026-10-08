@@ -2,15 +2,21 @@
 // rearranged or extended without hunting through the builders.
 
 export const LAYOUT = {
-  // Physics terrain and the detailed visual terrain cover this square.
-  terrainSize: 200,
-  terrainSegments: 200,
+  // Physics terrain and the detailed visual terrain cover this square, centred: the farm, and the ground through the south gate.
+  terrainSize: 420,
+  terrainSegments: 420,
   // A coarser visual ring extends out to this size for the horizon.
-  outerSize: 800,
-  outerSegments: 200,
+  outerSize: 1000,
+  outerSegments: 250,
 
-  // The field is bounded by hedges on this square.
+  // The grass field (the track, the yard and the barn are in it) is bounded by hedges on this square.
   fieldHalf: 80,
+  // The whole farm inside its outer hedges: the grass field and, to the east, two stubble fields either side of the farm road (world/fields.js).
+  farm: { minX: -80, maxX: 200, minZ: -80, maxZ: 80 },
+  // The tarmac farm road: from just inside the grass field's east gateway, straight east along `z` to a round hardstanding (`pad`) at the far end.
+  // `hedgeTo` is where the hedges either side of it stop, `verge` the grass between the tarmac and those hedges, `gaps` the open gateways in them
+  // into the stubble fields (x of each, `gapWidth` wide), north side then south.
+  road: { z: 2, fromX: 78, toX: 184, halfWidth: 2.3, verge: 2.8, hedgeTo: 176, pad: { x: 188, radius: 8 }, gaps: { north: [112, 152], south: [128, 166] }, gapWidth: 6 },
   hedgeThickness: 1.8,
   hedgeHeight: 2.4,
 
