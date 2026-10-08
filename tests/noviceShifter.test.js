@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { NoviceShifter, DEFAULT_SHIFTER_PARAMS, DEFAULT_NOVICE_PARAMS as N } from '../src/vehicle/autoShifter.js';
+import { NoviceShifter, AutoShifter, grindsGear, DEFAULT_SHIFTER_PARAMS, DEFAULT_NOVICE_PARAMS as N } from '../src/vehicle/autoShifter.js';
 
 const tops = { 1: 2.4, 2: 4.8, 3: 8.5 };
 const state = (over = {}) => ({ gear: 0, gears: 3, topSpeed: (g) => tops[g], speed: 0, throttle: 0.5, brake: 0, reverse: false, ...over });
@@ -44,5 +44,21 @@ describe('the novice', () => {
   it('does not misbehave in first, or once she is rolling', () => {
     const s = new NoviceShifter(DEFAULT_SHIFTER_PARAMS, { ...N, skipFirstChance: 0, hopChance: 0, cutChance: 1 }, () => 0);
     expect(setOff(s, 3).every((l) => l.throttleScale === 1)).toBe(true);
+  });
+});
+
+describe('grinding the Land Rover\'s gears', () => {
+  const box = { crashGears: 2, crashSpeed: 1 };
+  it('Jess grinds first and second while it is moving, not third or from a standstill', () => {
+    const jess = new NoviceShifter();
+    expect(grindsGear(jess, box, 2, 3)).toBe(true);
+    expect(grindsGear(jess, box, 1, -3)).toBe(true);
+    expect(grindsGear(jess, box, 2, 0.5)).toBe(false);
+    expect(grindsGear(jess, box, 3, 6)).toBe(false);
+    expect(grindsGear(jess, box, 0, 6)).toBe(false);
+  });
+  it('Amy double-declutches, and the tractor has no crash gears to grind', () => {
+    expect(grindsGear(new AutoShifter(), box, 2, 3)).toBe(false);
+    expect(grindsGear(new NoviceShifter(), {}, 2, 3)).toBe(false);
   });
 });

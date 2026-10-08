@@ -8,7 +8,7 @@ import { headlightLook, taillightLevel } from './headlight.js';
 import { TyreSet } from './tyres.js';
 import { frostAfter, frostedColour, DEFAULT_FROST_PARAMS } from './seatFrost.js';
 import { ManualDrivetrain, gearLabel } from './manualDrivetrain.js';
-import { AutoShifter } from './autoShifter.js';
+import { AutoShifter, grindsGear } from './autoShifter.js';
 import { poseTractorControls } from './tractorModel.js';
 import { poseLandyControls } from './landRoverModel.js';
 import { EngineLoad } from './engineLoad.js';
@@ -62,7 +62,7 @@ export class Quad {
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null, handLever = false, crank = null, landRover = false }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null, handLever = false, crank = null, landRover = false, driverStand = null }) {
     this.reverseStyle = reverseStyle; // where its reverse is and what it takes (controls.js)
     this.chokeStyle = chokeStyle;
     this.tapStyle = tapStyle;
@@ -73,6 +73,7 @@ export class Quad {
     this.atCrank = false; // set by the game while you stand at the front, looking at it
     this.kicked = false; // the handle has just kicked back (the game reads and clears it)
     this.landRover = landRover;
+    this.driverStand = driverStand; // where a girl climbs in to drive from, on the model's right: the UTV and Land Rover step in through a door ({ x, z } in the model's frame, x negative: the right)
     this.driveParams = DEFAULT_DRIVE_PARAMS;
     this.driveShown = 0; // the switch's rocker, eased towards the mode: 0 for 2WD, 1 for 4WD
     this.driveEffects = driveEffects('4wd', this.driveParams); // what the mode does this step; a quad with no switch keeps its own drive
@@ -192,7 +193,9 @@ export class Quad {
     this.input = null;
     this.remoteInput = null; // set while someone on foot is looking at the bike
     this.helperStarter = false; // she's holding the starter button
-    this.helperPull = false; // she's holding the pull-start cord
+    this.helperPull = false; // she's holding the pull-start cord (or the Land Rover's starting handle)
+    this.helperGrip = 'along'; // how she holds the starting handle: 'round' (it can kick back) or 'along'
+    this.pullByHer = false;
     this.lastLeft = null; // who last got off it and whether they set the parking brake: { who: 'you' | a girl's id, braked } (handbrake.js)
     this.parkBrake = false; // the parking brake: wheels locked, so the throttle only revs the engine (toggled with Space)
     this.helperThrottle = 0; // she's blipping the throttle (a quad's starting knack)
@@ -298,7 +301,7 @@ export class Quad {
     this.driver = driver;
     this.ghost = null;
     if (!driver) this.churn = 0;
-    if (!driver && this.tractor) this.shifter = new AutoShifter(); // Jess's go leaves her clumsy shifter behind
+    if (!driver && (this.tractor || this.landRover)) this.shifter = new AutoShifter(); // Jess's go leaves her clumsy shifter behind
     if (!driver && this.manual && !this.input) this.parkInNeutral(); // she leaves it in neutral when she gets off
     if (!driver && !this.input) {
       this.throttle = 0;
@@ -312,7 +315,11 @@ export class Quad {
     const d = this.drivetrain;
     const out = this.shifter.update(dt, { gear: d.gear, gears: this.gearbox.gears, topSpeed: (g) => d.topSpeed(g), speed: Math.abs(fwd), throttle, brake, reverse: !!this.driver?.controls.reverse });
     this.clutchHeld = out.clutch;
-    if (out.gear !== d.gear) d.select(out.gear, true);
+    if (out.gear !== d.gear) {
+      // Jess forces first and second without the speed matched, and grinds them (a gearbox with no synchromesh on those); Amy double-declutches.
+      if (grindsGear(this.shifter, this.gearbox, out.gear, fwd)) this.shifter.crunches++;
+      d.select(out.gear, true);
+    }
     return throttle * (out.throttleScale ?? 1); // a novice sometimes comes off the throttle as the clutch bites
   }
 
@@ -576,18 +583,23 @@ export class Quad {
 
     // The recoil pull-start (the two-strokes): hold P to draw the cord, let go to yank. The Land Rover's starting handle works the same
     // way, but only from the front of it, and not while you're nursing your hand.
+    // A girl swinging it (helperPull) holds it her own way (helperGrip): Jess wraps her thumb round it, Amy never does.
+    const byYou = !!this.remoteInput && this.atCrank && this.crank?.ready && this.remoteInput.isDown('KeyP');
+    const byHer = this.helperPull && this.crank?.ready;
     const pullDown = this.crank
-      ? !!this.remoteInput && this.atCrank && this.crank.ready && this.remoteInput.isDown('KeyP')
+      ? byYou || byHer
       : this.input ? this.input.isDown('KeyP') : (!!this.remoteInput && this.remoteInput.isDown('KeyP')) || this.helperPull;
-    if (pullDown) this.pullHeld += dt;
-    else if (this.pullHeld > 0) {
+    if (pullDown) {
+      this.pullHeld += dt;
+      this.pullByHer = !!this.crank && !byYou;
+    } else if (this.pullHeld > 0) {
       const swung = this.engine.pull(this.pullHeld);
       this.pullHeld = 0;
-      if (swung !== null && this.crank?.swing() === 'kick') {
+      if (swung !== null && this.crank?.swing(this.pullByHer ? this.helperGrip : undefined) === 'kick') {
         // Thumb round the handle: it caught a compression and spun back. No turn, and a sore hand.
         this.engine.pullLeft = 0;
-        this.kicked = true;
-        this.say('Ow! It kicked back. Thumb alongside your fingers, not round the handle (2)');
+        if (!this.pullByHer) this.kicked = true; // hers is the girl's own business (crankAttempt.js)
+        if (!this.pullByHer) this.say('Ow! It kicked back. Thumb alongside your fingers, not round the handle (2)');
       }
     }
     this.crank?.update(dt);

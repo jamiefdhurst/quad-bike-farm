@@ -67,9 +67,30 @@ export function girlActions(g) {
       run: (id, u) => {
         const c = girl(id);
         if (!free(id)) return;
+        // The tractor, the UTV and the Land Rover are her "go": same as asking from the wheel, so the bookkeeping (her own quad, Amy's day) is the game's.
+        const kind = g.goKindOf?.(u.quad);
+        if (kind) {
+          if (!g.goFree(kind) || !c.canDrive(u.quad)) return toast(`${c.name} can't or won't drive the ${u.name} right now`);
+          g.startGo(c, kind);
+          return toast(`${c.name} is off to drive the ${u.name}`);
+        }
         if (!c.mayRide(u.quad) || !c.canDrive(u.quad) || c.takenByOther(u.quad) || u.quad.rider) return toast(`${c.name} can't or won't drive the ${u.name} right now`);
         c.requestDrive(u.quad);
         toast(`${c.name} is off to drive the ${u.name}`);
+      },
+    },
+    {
+      verb: 'start',
+      label: '% starts the vehicle picked on the Vehicles tab (the starting handle on a flat Land Rover)',
+      vehicle: true,
+      run: (id, u) => {
+        const c = girl(id);
+        if (!free(id)) return;
+        const kind = g.goKindOf?.(u.quad);
+        const ok = kind ? g.canAskStart(c, kind) : !u.quad.engine.isRunning && !u.quad.rider && !u.quad.isTipped;
+        if (!ok) return toast(`${c.name} can't start the ${u.name} right now`);
+        c.requestStart(u.quad);
+        toast(`${c.name} is off to start the ${u.name}`);
       },
     },
     {

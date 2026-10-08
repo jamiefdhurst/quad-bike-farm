@@ -197,6 +197,9 @@ export class QuadPhysics {
     if (this.parked) {
       const v = this.body.linvel();
       if (Math.hypot(v.x, v.z) < this.params.parkedHoldSpeed) this.body.setLinvel({ x: 0, y: v.y, z: 0 }, true);
+      // And it doesn't slowly turn on the spot either (a heavy one on a slope, wheels locked, would swing round a few degrees a minute).
+      const w = this.body.angvel();
+      if (Math.abs(w.y) < PARKED_YAW_HOLD && Math.hypot(v.x, v.z) < this.params.parkedHoldSpeed) this.body.setAngvel({ x: w.x, y: 0, z: w.z }, true);
     }
   }
 
@@ -285,6 +288,8 @@ export class QuadPhysics {
     this.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
   }
 }
+
+const PARKED_YAW_HOLD = 0.6; // rad/s: a parked quad turning slower than this is stopped
 
 function yawQuat(yaw) {
   return { x: 0, y: Math.sin(yaw / 2), z: 0, w: Math.cos(yaw / 2) };

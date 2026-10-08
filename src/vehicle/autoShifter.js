@@ -18,6 +18,14 @@ export const SHIFTER_PARAM_RANGES = {
   clutchBrakeSpeed: [0.2, 1.5, 0.05],
 };
 
+/**
+ * Whether this change of gear is ground: the shifter forces it (Jess) into a crash gear (no synchromesh, `crashGears` of them) while
+ * the vehicle is moving faster than `crashSpeed`. Amy double-declutches, so hers never is.
+ */
+export function grindsGear(shifter, gearbox, gear, speed) {
+  return !!shifter.grinds && gear > 0 && gear <= (gearbox.crashGears ?? 0) && Math.abs(speed) > (gearbox.crashSpeed ?? 1);
+}
+
 export class AutoShifter {
   constructor(params = DEFAULT_SHIFTER_PARAMS) {
     this.params = params;
@@ -122,6 +130,8 @@ export class NoviceShifter extends AutoShifter {
     this.cutLeft = 0;
     this.inSecond = false; // she set off in second this time
     this.hops = 0; // kangaroos so far, for whoever's counting
+    this.crunches = 0; // gears ground so far (a box with crash gears: the quad counts them)
+    this.grinds = true; // she doesn't match the speed to the gear
   }
 
   reset() {

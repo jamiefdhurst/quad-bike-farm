@@ -8,6 +8,7 @@ import { DEFAULT_HOME_PARAMS, bringsItHome, pickHomeSpot } from './homeParking.j
 import { solveTwoBone, orientHand } from './armIK.js';
 import { AutoShifter, NoviceShifter, DEFAULT_SHIFTER_PARAMS, DEFAULT_NOVICE_PARAMS } from '../vehicle/autoShifter.js';
 import { DEFAULT_TRACTOR_START_PARAMS } from './tractorStart.js';
+import { CrankAttempt, DEFAULT_CRANK_ATTEMPT_PARAMS } from './crankAttempt.js';
 import { onTarmac } from './tarmac.js';
 
 // Her driving a quad herself, as Companion states and methods: getting on the
@@ -38,15 +39,41 @@ export const TRACTOR_GO_DRIVE_RANGES = {
   jessMaxStalls: [0, 15, 1],
 };
 
+/** The UTV's go: an automatic, so no clutch to fumble; quicker than the tractor, and neither of them frightened by the speed. */
+export const DEFAULT_UTV_GO_DRIVE = {
+  jessSpeedMin: 2,
+  jessSpeedMax: 5,
+  amySpeedMin: 3,
+  amySpeedMax: 6,
+  forMin: 40,
+  forMax: 70,
+  maxThrottle: 0.8,
+  jessMaxStalls: 6,
+};
+
+/** The Land Rover's go: a four-speed with a heavy clutch, so Jess stays in second (8 m/s) and Amy goes up to third. */
+export const DEFAULT_LANDY_GO_DRIVE = {
+  jessSpeedMin: 2,
+  jessSpeedMax: 6,
+  amySpeedMin: 3,
+  amySpeedMax: 8,
+  forMin: 40,
+  forMax: 70,
+  maxThrottle: 0.7,
+  jessMaxStalls: 6,
+};
+
 const smooth = (t) => t * t * (3 - 2 * t);
 const SHUFFLE_DURATION = 0.9; // seconds to slide between the front seat and the back
 
 const _target = new THREE.Vector3();
+const _hole = new THREE.Vector3();
 const _pole = new THREE.Vector3();
 const _fingers = new THREE.Vector3();
 const _palm = new THREE.Vector3();
 const _q = new THREE.Quaternion();
 const AXIS_X = new THREE.Vector3(1, 0, 0);
+const AXIS_Y = new THREE.Vector3(0, 1, 0);
 const AXIS_Z = new THREE.Vector3(0, 0, 1);
 const ARMS = [
   { side: 1, arm: 'LeftArm', fore: 'LeftForeArm', hand: 'LeftHand', finger: 'LeftHandIndex1', thumb: 'LeftHandThumb1', grip: 'gripLeft' },
@@ -63,7 +90,7 @@ export const drivingStates = {
       this.root.position.copy(this.seatOffset(true));
       this.root.quaternion.identity();
       this.rig.play('SitIdle', { fade: 0.4 });
-      this.rig.legSpread = this.params.legSpread;
+      this.rig.legSpread = q.driverStand ? 0 : this.params.legSpread;
       this.sittingPose = this.seatPoseName(true);
       this.driveExit = null;
       // How she feels about it this time: careful, confident or somewhere between.
@@ -135,7 +162,7 @@ export const drivingStates = {
         params.driveLoopRadiusMin *= this.params.rideLoopScale;
         params.driveLoopRadiusMax *= this.params.rideLoopScale;
       }
-      if (q.tractor) this.tractorGoParams(params);
+      if (q.tractor || q.driverStand) this.goParams(params);
       this.drive = new HerDrive(q, {
         params,
         tractorStarting: this.tractorStartParams ?? DEFAULT_TRACTOR_START_PARAMS,
@@ -150,7 +177,7 @@ export const drivingStates = {
         park,
         doughnut: doughnut ? { ...doughnut, spinning: false, t: 0 } : null,
         jump,
-        tarmac: this.tarmacParams && this.world.layout.road && !q.tractor ? { at: (x, z) => onTarmac(this.world.layout.road, x, z), p: this.tarmacParams } : null,
+        tarmac: this.tarmacParams && this.world.layout.road && !q.tractor && !q.driverStand ? { at: (x, z) => onTarmac(this.world.layout.road, x, z), p: this.tarmacParams } : null,
         showOff: showOff ? { ...showOff, you: () => this.showOffYou() } : null,
         tires: offered,
         follow: following ? () => {
@@ -167,7 +194,7 @@ export const drivingStates = {
       const q = this.quad;
       const d = this.drive;
       this.root.position.copy(this.seatOffset(true));
-      this.rig.legSpread = this.params.legSpread;
+      this.rig.legSpread = q.driverStand ? 0 : this.params.legSpread;
 
       // You've got on: she moves onto the back (or off, if there's no back).
       if (q.rider) {
@@ -196,6 +223,36 @@ export const drivingStates = {
     exit() {
       this.sittingPose = null;
       if (this.quad.driver === this.drive) this.quad.setDriver(null);
+    },
+  },
+
+  // At the front of the Land Rover with its starting handle in the bumper, swinging it because the battery is flat (crankAttempt.js).
+  cranking: {
+    enter() {
+      this.rig.play('Idle', { fade: 0.3 });
+      this.crankAttempt = new CrankAttempt(this.quad, this.character.id, { params: this.crankParams ?? DEFAULT_CRANK_ATTEMPT_PARAMS });
+      this.crankReach = 0;
+    },
+    update(dt, data) {
+      this.turnToward(dt, data.facing);
+      const a = this.crankAttempt;
+      const q = this.quad;
+      if (q.rider) a.abandon(); // you've got in: she leaves it to you
+      for (const e of a.update(dt)) this.crankEvents.push(e);
+      if (a.done) {
+        const ran = q.engine.isRunning;
+        const then = this.afterCrank;
+        this.afterCrank = null;
+        if (!ran) this.crankEvents.push('noLuck');
+        this.fsm.transition('idle', { facing: data.facing });
+        if (ran) then?.();
+      }
+    },
+    exit() {
+      if (this.crankAttempt && !this.crankAttempt.done) this.crankAttempt.abandon();
+      this.crankAttempt = null;
+      this.afterCrank = null;
+      this.quad.helperPull = false;
     },
   },
 
@@ -245,12 +302,14 @@ export const drivingStates = {
 
 export const drivingMethods = {
   /**
-   * Her go on the tractor: slow and steady, not scared off by speed, and her own way with the clutch: Jess's is the novice's (stays
-   * in the low gears, kangaroos, stalls it), Amy's is a good driver's. `params` is her drive params for this go, changed in place.
+   * Her go on the tractor, the UTV or the Land Rover: slow and steady, not scared off by speed, and (on the two with a clutch) her own
+   * way with it: Jess's is the novice's (stays in the low gears, kangaroos, stalls it, grinds the Land Rover's first and second),
+   * Amy's is a good driver's. `params` is her drive params for this go, changed in place.
    */
-  tractorGoParams(params) {
+  goParams(params) {
     const jess = this.character.id === 'jess';
-    const t = this.tractorGo ?? DEFAULT_TRACTOR_GO_DRIVE;
+    const q = this.quad;
+    const t = q.tractor ? this.tractorGo ?? DEFAULT_TRACTOR_GO_DRIVE : q.landRover ? this.landyGo ?? DEFAULT_LANDY_GO_DRIVE : this.utvGo ?? DEFAULT_UTV_GO_DRIVE;
     params.driveSpeedMin = jess ? t.jessSpeedMin : t.amySpeedMin;
     params.driveSpeedMax = jess ? t.jessSpeedMax : t.amySpeedMax;
     params.driveForMin = t.forMin;
@@ -258,7 +317,7 @@ export const drivingMethods = {
     params.driveMaxThrottle = t.maxThrottle;
     params.driveScareSpeed = 99;
     params.driveMaxStalls = jess ? t.jessMaxStalls : params.driveMaxStalls;
-    this.quad.shifter = jess ? new NoviceShifter(DEFAULT_SHIFTER_PARAMS, this.noviceParams ?? DEFAULT_NOVICE_PARAMS) : new AutoShifter();
+    if (q.manual) this.quad.shifter = jess ? new NoviceShifter(DEFAULT_SHIFTER_PARAMS, this.noviceParams ?? DEFAULT_NOVICE_PARAMS) : new AutoShifter();
   },
 
   /** Walks to the front of a quad, gets on and has a little drive; with `giveRide`, waits for you on the back. */
@@ -288,7 +347,62 @@ export const drivingMethods = {
       return;
     }
     this.quad = quad;
+    if (this.needsHandle(quad)) {
+      // A flat battery on the Land Rover: the handle first, then she gets in.
+      this.afterCrank = () => this.requestDrive(quad, { giveRide, follow, race, followWho, convoyLead, doughnut, jump, park, showOff });
+      this.fsm.transition('walking', { goal: 'crank', target: () => this.crankPoint(quad) });
+      return;
+    }
     this.fsm.transition('walking', { goal: 'drive', target: () => this.driveMountPoint() });
+  },
+
+  /** The Land Rover's battery is too flat for the starter and it is not running: she will have to swing the handle. */
+  needsHandle(quad) {
+    const e = quad.engine;
+    return !!quad.crank && !e.isRunning && e.battery < (e.params.batteryDeadBelow ?? 0);
+  },
+
+  /** Where she stands to swing the starting handle: in front of the bumper, facing the hole. */
+  crankPoint(quad = this.quad) {
+    const hole = quad.crankHole.getWorldPosition(new THREE.Vector3());
+    const fx = Math.sin(quad.yaw);
+    const fz = Math.cos(quad.yaw);
+    const p = new THREE.Vector3(hole.x + fx * 0.8, 0, hole.z + fz * 0.8);
+    p.y = this.world.heightAt(p.x, p.z);
+    return { position: p, facing: Math.atan2(-fx, -fz) };
+  },
+
+  /** Bent forward to the handle in the bumper, both hands on it, turning it while the engine turns over. Runs as a rig poser. */
+  poseCranking(dt) {
+    if (!this.crankAttempt) {
+      this.crankReach = 0;
+      return;
+    }
+    const on = this.fsm.is('cranking') && !this.crankAttempt.done;
+    this.crankReach = (this.crankReach ?? 0) + ((on ? 1 : 0) - (this.crankReach ?? 0)) * Math.min(1, dt * 5);
+    if (this.crankReach < 0.01) return;
+    const k = smooth(Math.min(1, this.crankReach));
+    const q = this.quad;
+    const rig = this.rig;
+    const b = rig.bones;
+    rig.rotateAboutRootAxis(b.Spine, AXIS_X, 0.35 * k);
+    rig.rotateAboutRootAxis(b.Spine1, AXIS_X, 0.25 * k);
+    const hole = q.crankHole.getWorldPosition(_hole);
+    // The handle goes round in a circle across the front of the car while she swings.
+    this.crankAngle = (this.crankAngle ?? 0) + (this.crankAttempt.turning ? dt * 9 : 0);
+    const r = this.crankAttempt.holding ? 0.03 : 0.12;
+    _palm.set(Math.cos(this.crankAngle) * r, Math.sin(this.crankAngle) * r + 0.05, 0).applyAxisAngle(AXIS_Y, q.yaw);
+    hole.add(_palm);
+    const cx = hole.x;
+    const cy = hole.y;
+    const cz = hole.z;
+    for (const a of ARMS) {
+      b[a.arm].getWorldPosition(_pole);
+      _pole.add(_fingers.set(a.side * 0.3, -0.3, 0.1));
+      _fingers.set(a.side * 0.04, 0, 0).applyAxisAngle(AXIS_Y, q.yaw);
+      _target.set(cx + _fingers.x, cy, cz + _fingers.z);
+      solveTwoBone(b[a.arm], b[a.fore], b[a.hand], _target, _pole, k);
+    }
   },
 
   /** You're sat on the back of this parked quad with nobody driving it: she goes over, gets on the front and takes you for a ride. */
@@ -339,7 +453,7 @@ export const drivingMethods = {
     let how = exit?.how;
     if (!how) how = d.result === 'parked' || d.result === 'gaveUp' || d.result === 'noRoom' || Math.random() >= p.driveBackChance ? 'off' : 'back';
     // Done, and getting off: most of the time she drives it back near the barn first, into clear ground east of the row.
-    if (how === 'off' && !d.park && !nick && !q.tractor) {
+    if (how === 'off' && !d.park && !nick && !q.tractor && !q.driverStand) {
       const home = this.homeParams ?? DEFAULT_HOME_PARAMS;
       const lp = this.lineUpParams ?? DEFAULT_LINEUP_PARAMS;
       const wants = bringsItHome({ result: d.result, pos: q.position, hasPassenger: !!q.passenger, asked: !!exit }, Math.random, home, lp);
@@ -413,6 +527,7 @@ export const drivingMethods = {
 
   /** Where she climbs onto the front seat from, beside the footboard on her nearer side. */
   driveMountPoint() {
+    if (this.quad.driverStand) return this.driverDoor();
     const side = this.root.parent === this.scene ? this.nearSide() : 1;
     const p = this.quad.localToWorld(side * 0.85, 0, 0.1);
     p.y = this.world.heightAt(p.x, p.z);
@@ -428,7 +543,8 @@ export const drivingMethods = {
     const dz = Math.cos(heading);
     let best = Infinity;
     // Down the middle and either side, about the width of the quad.
-    for (const off of [-0.6, 0, 0.6]) {
+    const half = q.driverStand ? 0.95 : 0.6; // the UTV and the Land Rover are wider
+    for (const off of [-half, 0, half]) {
       const hit = this.castFrom(pos.x + dz * off, y, pos.z - dx * off, dx, dz, distance, q);
       if (hit < best) best = hit;
     }
@@ -462,7 +578,7 @@ export const drivingMethods = {
     const ux = dx / len;
     const uz = dz / len;
     const y = this.world.heightAt(a.x, a.z) + 0.55;
-    for (const off of [-0.9, 0, 0.9]) {
+    for (const off of this.quad.driverStand ? [-1.2, 0, 1.2] : [-0.9, 0, 0.9]) {
       if (this.castFrom(a.x + uz * off, y, a.z - ux * off, ux, uz, len + 1.5, this.quad) < Infinity) return false;
     }
     // Not through a bog: she's seen what happens.

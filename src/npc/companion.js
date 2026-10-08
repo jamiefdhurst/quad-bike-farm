@@ -6,6 +6,7 @@ import { DEFAULT_COMPANION_PARAMS } from './companionParams.js';
 import { applyOutfit, refitOutfit, reshirt, withJumper, OUTFITS } from './outfit.js';
 import { shapeFigure } from './figure.js';
 import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
+import { TractorStartAttempt, DEFAULT_TRACTOR_START_PARAMS } from './tractorStart.js';
 import { drivingStates, drivingMethods } from './companionDriving.js';
 import { hayRideStates, hayRideMethods, DEFAULT_HAYSEAT_PARAMS } from './companionHayRide.js';
 import { restingMethods, restingStates } from './companionResting.js';
@@ -126,6 +127,7 @@ export class Companion {
     this.seatKind = 'pillion'; // which seat she's after or in on the back: 'pillion', or 'rack' (sat on the front rack)
     this.drive = null; // her go at driving, while she's on the front seat (herDriving.js)
     this.driveEvents = []; // what's happened while she's driving, for her voice
+    this.crankEvents = []; // what's happened at the Land Rover's starting handle ('keyOn', 'swing', 'kick', 'caught', 'noLuck'), for the game to say something about
     this.gripReach = 0; // how far her hands are on the grips, 0..1
     // Holding on, leaning and looking about while she rides pillion.
     this.pillion = new PillionPose(this);
@@ -137,6 +139,7 @@ export class Companion {
     this.rig.posers.push((dt) => this.pillion.apply(dt));
     // Hands on the bars while she's driving (companionDriving.js).
     this.rig.posers.push((dt) => this.poseDriving(dt));
+    this.rig.posers.push((dt) => this.poseCranking(dt));
     // Hands over a running engine on a cold day (companionWarming.js).
     this.warmingAt = null;
     this.rig.posers.push((dt) => this.poseWarming(dt));
@@ -800,6 +803,12 @@ export class Companion {
       return;
     }
     this.quad = quad;
+    if (this.needsHandle(quad)) {
+      // The Land Rover on a flat battery: the handle, and she is done once it is running.
+      this.afterCrank = () => then?.(true);
+      this.fsm.transition('walking', { goal: 'crank', target: () => this.crankPoint(quad) });
+      return;
+    }
     this.startSettleAt = settleAt; // temperature (0..1) at which she stops minding the choke and leaves it, or null to wait until it's fully warm
     this.afterStart = then; // called with whether it's running when she's done (not if something else interrupts her first)
     this.fsm.transition('walking', { goal: 'start', target: () => this.startPoint() });
@@ -826,6 +835,7 @@ export class Companion {
 
   /** Standing spot beside the pillion seat, facing the bike. */
   standPoint(side, quad = this.quad) {
+    if (quad.driverStand && (!this.fsm?.is('dismounting') || this.dismountingFrom === 'rider')) return this.driverDoor(quad);
     const auto = side === undefined;
     if (auto) side = this.root.parent === this.scene ? this.nearSide(quad) : 1;
     // Off the front rack she lands beside the front, not the back.
@@ -838,6 +848,15 @@ export class Companion {
     return { position: p, facing: Math.atan2(c.x - p.x, c.z - p.z) };
   }
 
+  /** The driver's door of the UTV or Land Rover, on the right: where she steps in from and down to, facing the cab. Side is always -1. */
+  driverDoor(quad = this.quad) {
+    const d = quad.driverStand;
+    const p = quad.model.localToWorld(new THREE.Vector3(d.x, 0, d.z));
+    p.y = this.world.heightAt(p.x, p.z);
+    const c = quad.position;
+    return { position: p, facing: Math.atan2(c.x - p.x, c.z - p.z), side: -1 };
+  }
+
   /** Where she climbs on from: beside the footboard, in front of the back wheel, for the back; beside the front for the rack. */
   mountPoint() {
     const side = this.nearSide();
@@ -848,6 +867,7 @@ export class Companion {
 
   /** Beside the handlebars on her nearer side, facing them, within reach of the key and starter. */
   startPoint(quad = this.quad) {
+    if (quad.driverStand) return this.driverDoor(quad); // reaching in for the key
     const side = this.root.parent === this.scene ? this.nearSide(quad) : 1;
     const p = quad.localToWorld(side * 0.8, 0, 0.3);
     p.y = this.world.heightAt(p.x, p.z);
@@ -873,6 +893,7 @@ export class Companion {
   seatOffset(front = false) {
     const p = this.params;
     if (!front && this.seatKind === 'rack') return new THREE.Vector3(-this.sitHips.x, -this.sitHips.y + p.rackSeatRaise, -this.sitHips.z + p.rackSeatForward);
+    if (front && this.quad?.driverStand) return this.haySeatOffset(); // sat on a bench, as the girls in the UTV and Land Rover are
     if (front) return new THREE.Vector3(-this.sitHips.x, -this.sitHips.y + p.driveSeatRaise, -this.sitHips.z + p.driveSeatForward);
     // Turned to one side, her hips swing round with her, so she's put back on the seat by the same amount.
     return new THREE.Vector3(-this.sitHips.x, -this.sitHips.y + p.seatRaise, -this.sitHips.z + p.seatForward).applyAxisAngle(AXIS_Y, this.sideAngle);
@@ -1181,6 +1202,7 @@ const STATES = {
         // If you've beaten her to the front seat, she gets on the back.
         else if (data.goal === 'drive') this.fsm.transition('mounting', { side: t.side, seat: this.quad.rider ? 'pillion' : 'rider' });
         else if (data.goal === 'start') this.fsm.transition('starting', { facing: t.facing, side: t.side });
+        else if (data.goal === 'crank') this.fsm.transition('cranking', { facing: t.facing });
         else if (data.goal === 'carry') {
           this.fsm.transition('idle', { facing: t.facing });
           data.arrive();
@@ -1217,7 +1239,9 @@ const STATES = {
   starting: {
     enter(data) {
       this.rig.play('Idle', { fade: 0.3 });
-      this.attempt = new StartingAttempt(this.quad, { params: { ...DEFAULT_STARTING_PARAMS, pullWhenFlat: this.params.startPullWhenFlat, settleAt: this.startSettleAt } });
+      // The diesels (the tractor, the UTV) have a key and glow plugs rather than a tap and a choke.
+      if (this.quad.tractor || this.quad.engine.params?.compressionIgnition) this.attempt = new TractorStartAttempt(this.quad, { params: this.tractorStartParams ?? DEFAULT_TRACTOR_START_PARAMS });
+      else this.attempt = new StartingAttempt(this.quad, { params: { ...DEFAULT_STARTING_PARAMS, pullWhenFlat: this.params.startPullWhenFlat, settleAt: this.startSettleAt } });
       this.reachSide = data.side ?? 1;
     },
     update(dt, data) {
@@ -1258,7 +1282,7 @@ const STATES = {
       const kind = this.quadMoveKind(front);
       this.movingSeatPose = this.seatPoseName(front);
       this.beginMove({
-        kind, side, dir: 1, duration: this.params.mountDuration, seat: this.seatAnchor(front),
+        kind, side, dir: 1, duration: front && this.quad.driverStand ? this.hay.stepSeconds : this.params.mountDuration, seat: this.seatAnchor(front),
         seatEnd: () => this.quadSeatEnd(front), standEnd: () => this.standPoint(side),
         twistTo: kind === 'hopOn' ? this.quad.yaw + (side * Math.PI) / 2 : undefined,
       });
@@ -1268,7 +1292,7 @@ const STATES = {
     update(dt, data) {
       const done = this.stepMove(dt);
       const f = this.moveFrame;
-      const spread = data.front ? this.params.legSpread : this.seatSpread();
+      const spread = data.front ? (this.quad.driverStand ? 0 : this.params.legSpread) : this.seatSpread();
       this.rig.legSpread = spread * (this.moving.kind === 'legOver' ? f.spread : f.sit);
       if (done) {
         data.done = true;
@@ -1333,6 +1357,7 @@ const STATES = {
       // Off on the left, unless her friend's getting off or standing there; side-saddle, off the side her legs are.
       this.dismountSide = this.others().some((o) => o.root.position.distanceTo(this.standPoint(1).position) < 0.9 || (o.quad === this.quad && o.fsm.is('dismounting') && o.dismountSide === 1)) ? -1 : 1;
       if (this.dismountingFrom === 'pillion' && this.sideSaddle) this.dismountSide = this.sideSaddle;
+      if (front && this.quad.driverStand) this.dismountSide = -1; // out of the driver's door
       if (im) this.dismountSide = im.side;
       // Back into the world, keeping her current world transform.
       attachKeepingSize(this.scene, this.root);
@@ -1346,7 +1371,7 @@ const STATES = {
       const kind = im?.kind ?? this.quadMoveKind(front);
       this.movingSeatPose = this.seatPoseName(front);
       this.beginMove({
-        kind, side, dir: -1, from: im ? im.k : 1, duration: this.params.dismountDuration, seat: this.seatAnchor(front),
+        kind, side, dir: -1, from: im ? im.k : 1, duration: front && this.quad.driverStand ? this.hay.stepSeconds : this.params.dismountDuration, seat: this.seatAnchor(front),
         seatEnd: () => this.quadSeatEnd(front), standEnd: () => (this.target = this.slipTarget ?? (kind === 'legOver' ? this.stepOffPoint(side, front) : this.standPoint(side))),
         twistTo: kind === 'hopOn' ? this.quad.yaw + (side * Math.PI) / 2 : undefined,
       });
@@ -1355,7 +1380,7 @@ const STATES = {
       const p = this.params;
       const done = this.stepMove(dt);
       const f = this.moveFrame;
-      const spread = this.dismountingFrom === 'rack' || (this.dismountingFrom === 'pillion' && this.sideSaddle) ? this.seatSpread() : p.legSpread;
+      const spread = (this.dismountingFrom === 'rider' && this.quad.driverStand) ? 0 : this.dismountingFrom === 'rack' || (this.dismountingFrom === 'pillion' && this.sideSaddle) ? this.seatSpread() : p.legSpread;
       this.rig.legSpread = spread * (this.moving.kind === 'legOver' ? f.spread : f.sit);
       if (done) {
         this.endMove();
@@ -1364,7 +1389,7 @@ const STATES = {
         this.slipTarget = null;
         this.setColliderEnabled(true);
         if (this.dismountingFrom === 'rider') {
-          if (Math.random() < p.parkBrakeChance) this.quad.parkBrake = true;
+          if (Math.random() < p.parkBrakeChance || this.quad.driverStand) this.quad.parkBrake = true; // a car's handbrake: always, or it creeps on the slope
           this.quad.lastLeft = { who: this.character.id, braked: this.quad.parkBrake };
         }
         this.fsm.transition('idle', { facing: this.target.facing });

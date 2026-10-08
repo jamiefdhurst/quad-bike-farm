@@ -56,6 +56,7 @@ export const LANDY_SEATS = {
 export const LANDY_STAND = {
   left: { x: 1.45, z: 0 },
   mid: { x: 1.45, z: 0 }, // the middle seat is reached through the passenger's door, as in the real thing
+  driver: { x: -1.45, z: 0 }, // the driver's door, on the right
 };
 
 /** The starting handle's hole in the front bumper, in the model's frame: where you stand to swing it, and the towing jaw behind. */

@@ -22,6 +22,7 @@ export const TUNE_CATEGORIES = {
   'Girls: things they do': [
     'Racing', 'Drag race', 'Follow the leader', 'Doughnuts', 'Tarmac', 'Showing off', 'The jump', 'Hay ride', 'Hay ride seat', 'Mudguard ride',
     'Tractor remarks', 'Tractor go', 'Tractor go drive', 'Tractor go start', 'Tractor go novice',
+    'UTV go drive', 'Land Rover go drive', 'Land Rover go handle',
   ],
 };
 

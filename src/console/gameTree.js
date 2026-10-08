@@ -101,7 +101,7 @@ export function buildGameTree(g, host) {
         topRpm: ro(() => u().topRpm ?? 0, 'rpm', 'dealt at the start'),
         tune: tuningTree((n) => n.startsWith(`${u().name}/`), `${u().name}/`),
       };
-      if (!q().fuel.params.noTap) out.choke = ro(() => q().choke);
+      if (!q().fuel.params.noTap || q().landRover) out.choke = num(() => q().choke, (v) => (q().choke = v), 0, 1); // the Land Rover has a choke but no tap
       if (e().params.waterCooled) out.coolant = num(() => e().coolant, (v) => (e().coolant = v), 0, 1);
       if (q().sump) out.oil = num(() => q().sump.level, (v) => (q().sump.level = v), 0, 1, '', 'engine oil level');
 

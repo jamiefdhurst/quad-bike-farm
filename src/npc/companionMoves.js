@@ -124,14 +124,14 @@ export const moveMethods = {
 
   /** Which way she gets on a quad's seat: astride, or sat back onto it side-saddle or on the rack; up into a tractor's seat. */
   quadMoveKind(front) {
-    if (front) return this.quad.tractor ? 'climbUp' : 'legOver';
+    if (front) return this.quad.driverStand ? 'stepIn' : this.quad.tractor ? 'climbUp' : 'legOver';
     if (this.seatKind === 'rack' || this.sideSaddle) return 'hopOn';
     return 'legOver';
   },
 
   /** The pose for how she sits on the seat she's on (SEAT_POSES), or null. */
   seatPoseName(front) {
-    if (this.quad?.tractor && front) return 'bench';
+    if ((this.quad?.tractor || this.quad?.driverStand) && front) return 'bench';
     if (front) return 'astride';
     if (this.seatKind === 'rack') return 'rack';
     if (this.sideSaddle) return 'side';

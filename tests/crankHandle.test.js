@@ -39,4 +39,13 @@ describe('the starting handle', () => {
     c.setGrip('backwards');
     expect(c.grip).toBe('round');
   });
+
+  it('a girl swinging it holds it her own way, whatever your own grip is', () => {
+    const c = new CrankHandle({ ...DEFAULT_CRANK_PARAMS, kickChance: 1 }, createRandom(3));
+    c.setGrip('along');
+    expect(c.swing('round')).toBe('kick'); // Jess
+    c.update(10);
+    c.setGrip('round');
+    expect(c.swing('along')).toBe('turn'); // Amy
+  });
 });

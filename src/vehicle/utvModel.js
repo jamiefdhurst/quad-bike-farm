@@ -61,6 +61,7 @@ export const UTV_STAND = {
   left: { x: 1.35, z: -0.1 },
   mid: { x: 1.35, z: -0.1 }, // the middle seat is reached from the left, over the other girl's knees, or from the left when she's not there
   bed: { x: 0, z: -2.75 },
+  driver: { x: -1.35, z: -0.1 }, // the wheel is on the right, so a girl driving climbs in from that side (x is negative)
 };
 
 /** The most the bed tips, and the tailgate's open angle (radians). */

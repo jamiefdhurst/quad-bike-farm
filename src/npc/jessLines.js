@@ -34,6 +34,7 @@ import { JESS_TRACTOR_LINES } from './tractorLines.js';
 import { JESS_HAYRIDE_LINES } from './hayRideLines.js';
 import { JESS_MUDGUARD_LINES } from './mudguardLines.js';
 import { JESS_TRACTORGO_LINES } from './tractorGoLines.js';
+import { JESS_VEHICLEGO_LINES } from './vehicleGoLines.js';
 import { JESS_LPLATE_LINES } from './lPlateLines.js';
 import { JESS_TRACTORRUNAWAY_LINES } from './tractorRunawayLines.js';
 import { JESS_FALLINGOUT_LINES } from './fallingOutLines.js';
@@ -420,6 +421,7 @@ export const JESS_LINES = {
   ...JESS_HAYRIDE_LINES,
   ...JESS_MUDGUARD_LINES,
   ...JESS_TRACTORGO_LINES,
+  ...JESS_VEHICLEGO_LINES,
   ...JESS_TRACTORRUNAWAY_LINES,
   ...JESS_FALLINGOUT_LINES,
   ...JESS_ROMANCE_LINES,

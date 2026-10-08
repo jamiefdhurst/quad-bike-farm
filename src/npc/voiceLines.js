@@ -38,6 +38,7 @@ import { AMY_TRACTOR_LINES } from './tractorLines.js';
 import { AMY_HAYRIDE_LINES } from './hayRideLines.js';
 import { AMY_MUDGUARD_LINES } from './mudguardLines.js';
 import { AMY_TRACTORGO_LINES } from './tractorGoLines.js';
+import { AMY_VEHICLEGO_LINES } from './vehicleGoLines.js';
 import { AMY_LPLATE_LINES } from './lPlateLines.js';
 import { AMY_TRACTORRUNAWAY_LINES } from './tractorRunawayLines.js';
 import { AMY_FALLINGOUT_LINES } from './fallingOutLines.js';
@@ -1454,6 +1455,8 @@ export const VOICE_LINES = {
   ...AMY_MUDGUARD_LINES,
   // Having a go on the tractor, or refusing (tractorGoLines.js).
   ...AMY_TRACTORGO_LINES,
+  // Having a go at the UTV or the Land Rover (vehicleGoLines.js).
+  ...AMY_VEHICLEGO_LINES,
   // The L plates Jess tapes to her quad, and the tractor they end up on (lPlateLines.js).
   ...AMY_LPLATE_LINES,
   // The tractor creeping off by itself, and the hedge (tractorRunawayLines.js).

@@ -35,9 +35,9 @@ export class CrankHandle {
     return this.hurt <= 0;
   }
 
-  /** A swing the engine took: 'kick' if it kicked back (and your hand hurts now), else 'turn'. */
-  swing() {
-    if (this.grip === 'round' && this.random() < this.p.kickChance) {
+  /** A swing the engine took: 'kick' if it kicked back (and your hand hurts now), else 'turn'. A girl swinging passes her own `grip`. */
+  swing(grip = this.grip) {
+    if (grip === 'round' && this.random() < this.p.kickChance) {
       this.hurt = this.p.hurtSeconds;
       return 'kick';
     }

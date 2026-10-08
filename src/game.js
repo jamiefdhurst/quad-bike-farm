@@ -60,7 +60,8 @@ import { LPlates, LPLATE_PARAM_RANGES, meanSkill } from './npc/lPlates.js';
 import { LPlateSet } from './vehicle/lPlateModel.js';
 import { TractorRunaway, TRACTOR_RUNAWAY_PARAM_RANGES } from './npc/tractorRunaway.js';
 import { DEFAULT_CREEP_PARAMS, CREEP_PARAM_RANGES } from './vehicle/creep.js';
-import { DEFAULT_TRACTOR_GO_DRIVE, TRACTOR_GO_DRIVE_RANGES } from './npc/companionDriving.js';
+import { DEFAULT_TRACTOR_GO_DRIVE, TRACTOR_GO_DRIVE_RANGES, DEFAULT_UTV_GO_DRIVE, DEFAULT_LANDY_GO_DRIVE } from './npc/companionDriving.js';
+import { DEFAULT_CRANK_ATTEMPT_PARAMS, CRANK_ATTEMPT_PARAM_RANGES } from './npc/crankAttempt.js';
 import { DEFAULT_TRACTOR_START_PARAMS, TRACTOR_START_PARAM_RANGES } from './npc/tractorStart.js';
 import { DEFAULT_NOVICE_PARAMS, NOVICE_PARAM_RANGES } from './vehicle/autoShifter.js';
 import { HAYSEAT_PARAM_RANGES, DEFAULT_HAYSEAT_PARAMS } from './npc/companionHayRide.js';
@@ -557,7 +558,11 @@ export class Game {
     this.tractorDrive = { ...DEFAULT_TRACTOR_GO_DRIVE };
     this.tractorStartParams = { ...DEFAULT_TRACTOR_START_PARAMS };
     this.noviceParams = { ...DEFAULT_NOVICE_PARAMS };
-    for (const c of this.companions) Object.assign(c, { tractorGo: this.tractorDrive, tractorStartParams: this.tractorStartParams, noviceParams: this.noviceParams });
+    this.utvDrive = { ...DEFAULT_UTV_GO_DRIVE }; // and the same for the UTV and the Land Rover (the same ranges)
+    this.landyDrive = { ...DEFAULT_LANDY_GO_DRIVE };
+    this.crankParams = { ...DEFAULT_CRANK_ATTEMPT_PARAMS };
+    this.goJoins = []; // the other girl on her way to climb in beside a driver: { left, girl, kind, driver }
+    for (const c of this.companions) Object.assign(c, { tractorGo: this.tractorDrive, utvGo: this.utvDrive, landyGo: this.landyDrive, crankParams: this.crankParams, tractorStartParams: this.tractorStartParams, noviceParams: this.noviceParams });
     // Jess tapes L plates to Amy's quad; Amy peels them off, and once she's confident they go on the tractor (npc/lPlates.js).
     this.lPlates = new LPlates(undefined, createRandom(this.seed ^ 0x1b1a));
     this.lPlateSet = new LPlateSet();
@@ -959,6 +964,9 @@ export class Game {
     registerTuning('Tractor go', this.tractorGo.p, TRACTORGO_PARAM_RANGES);
     registerTuning('L plates', this.lPlates.p, LPLATE_PARAM_RANGES);
     registerTuning('Tractor go drive', this.tractorDrive, TRACTOR_GO_DRIVE_RANGES);
+    registerTuning('UTV go drive', this.utvDrive, TRACTOR_GO_DRIVE_RANGES);
+    registerTuning('Land Rover go drive', this.landyDrive, TRACTOR_GO_DRIVE_RANGES);
+    registerTuning('Land Rover go handle', this.crankParams, CRANK_ATTEMPT_PARAM_RANGES);
     registerTuning('Tractor go start', this.tractorStartParams, TRACTOR_START_PARAM_RANGES);
     registerTuning('Tractor go novice', this.noviceParams, NOVICE_PARAM_RANGES);
     registerTuning('Hay ride seat', this.haySeat, HAYSEAT_PARAM_RANGES);
@@ -1233,6 +1241,7 @@ export class Game {
     else if (c.fsm.is('idle')) {
       if (!this.trailer.hitched && this.tractorMount.freeSlot(c.root.position)) children.push({ label: 'Climb up on the mudguard', run: () => this.askOntoTractor(c) });
       if (this.tractorFree() && c.canDrive(unit.quad)) children.push({ label: 'Drive it', run: () => this.askDriveTractor(c) });
+      if (this.canAskStart(c, 'tractor')) children.push({ label: 'Start it', run: () => c.requestStart(unit.quad) });
     }
     return { label: 'Tractor', color: unit.spec.bodyColor, children };
   }
@@ -1247,10 +1256,47 @@ export class Game {
 
   /** You ask her for a go on the tractor: Jess is thrilled, and Amy says no until her day has come. */
   askDriveTractor(c) {
+    this.askDriveVehicle(c, 'tractor');
+  }
+
+  /** The tractor, the UTV and the Land Rover as the girls' goes know them: { unit, free(), ask line, refuse line }. */
+  goVehicle(kind) {
+    return { tractor: this.tractorUnit, utv: this.utvUnit, landy: this.landyUnit }[kind] ?? null;
+  }
+
+  /** Which of the three this unit is, or null. */
+  goKindOf(quad) {
+    return ['tractor', 'utv', 'landy'].find((k) => this.goVehicle(k)?.quad === quad) ?? null;
+  }
+
+  /** Nobody is in or on it or on their way to it, it's stopped, and (for the tractor) nothing is hitched; for the UTV the bed is down and empty. */
+  goFree(kind) {
+    const unit = this.goVehicle(kind);
+    if (!unit) return false;
+    if (kind === 'tractor') return this.tractorFree();
+    const q = unit.quad;
+    const mount = kind === 'utv' ? this.utvMount : this.landyMount;
+    const busy = (c) => (c.quad === q && (c.fsm.is('driving', 'mounting', 'dismounting', 'shuffling', 'cranking') || (c.fsm.is('walking') && ['drive', 'crank'].includes(c.fsm.data?.goal)))) || (c.onHayRide && c.trailer === mount);
+    if (kind === 'utv' && (this.utvBed.tip > 0.02 || mount.bedBusy)) return false;
+    return !q.rider && !q.driver && !q.isTipped && q.speed < 0.5 && !this.companions.some(busy);
+  }
+
+  /**
+   * She can be asked to start it: stood about, it isn't running and nobody's on it or going to it. Either girl will, Amy too (she won't drive
+   * them until her day, but she'll start them); on the Land Rover with a flat battery that means the starting handle.
+   */
+  canAskStart(c, kind) {
+    const q = this.goVehicle(kind)?.quad;
+    return !!q && c.fsm.is('idle') && !q.engine.isRunning && this.goFree(kind);
+  }
+
+  /** You ask her for a go: Jess is thrilled, and Amy says no until her day has come. */
+  askDriveVehicle(c, kind) {
     const id = c.character.id;
-    if (this.tractorGo.ask(id) === 'refuse') return void c.voice.say('tractorRefuse', { force: true });
-    this.startTractorGo(c);
-    c.voice.say('tractorGoAsk', { force: true });
+    const line = { tractor: ['tractorRefuse', 'tractorGoAsk'], utv: ['utvRefuse', 'utvGoAsk'], landy: ['landyRefuse', 'landyGoAsk'] }[kind];
+    if (this.tractorGo.ask(id) === 'refuse') return void c.voice.say(line[0], { force: true });
+    this.startGo(c, kind);
+    c.voice.say(line[1], { force: true });
   }
 
   /** Jess tapes L plates to Amy's quad, Amy peels them off, and once she's confident she tapes them to the tractor (npc/lPlates.js). */
@@ -1285,57 +1331,118 @@ export class Game {
     else this.lPlateSet.showOn(where === 'quad' && mine ? mine.quad.bodyRoot : null, 'quad');
   }
 
-  /** She walks over and has a go at starting and driving the tractor. */
-  startTractorGo(c) {
-    if (!c.homeQuad && c.quad !== this.tractorUnit.quad) c.homeQuad = c.quad;
+  /** She walks over and has a go at starting and driving the tractor, the UTV or the Land Rover. */
+  startGo(c, kind) {
+    const unit = this.goVehicle(kind);
+    if (!c.homeQuad && c.quad !== unit.quad) c.homeQuad = c.quad;
     this.tractorGo.started(c.character.id);
-    this.tractorSeen[c.character.id] = { stalls: 0, hops: 0, setOff: false, wasDriving: false };
-    c.requestDrive(this.tractorUnit.quad);
+    this.tractorSeen[c.character.id] = { stalls: 0, hops: 0, crunches: 0, setOff: false, wasDriving: false, kind, joinRolled: false, joined: null };
+    c.requestDrive(unit.quad);
   }
 
-  /** Jess takes it now and then, Amy has her day, and each of them says what's happening on her go (npc/tractorGo.js, tractorGoLines.js). */
+  /**
+   * Jess takes one now and then, Amy has her day, and each of them says what's happening on her go (npc/tractorGo.js, tractorGoLines.js,
+   * vehicleGoLines.js). On the UTV and the Land Rover the other girl may climb in beside her; on the Land Rover with a flat battery she
+   * swings the starting handle first (npc/crankAttempt.js).
+   */
   updateTractorGo(dt, ridden) {
-    const q = this.tractorUnit.quad;
     const girlsFree = {};
     for (const c of this.companions) girlsFree[c.character.id] = c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob && !c.hayFell;
-    for (const ev of this.tractorGo.update(dt, { free: girlsFree, tractorFree: this.tractorFree(), youOnTractor: !!ridden && ridden === this.tractorUnit })) {
+    const youOn = ['tractor', 'utv', 'landy'].some((k) => !!ridden && ridden === this.goVehicle(k));
+    const vehicles = ['tractor', 'utv', 'landy'].filter((k) => this.goFree(k) && ridden !== this.goVehicle(k));
+    for (const ev of this.tractorGo.update(dt, { free: girlsFree, vehicles: youOn ? [] : vehicles })) {
       const c = this.companions.find((o) => o.character.id === ev.girl);
+      const ask = { tractor: 'tractorGoAsk', utv: 'utvGoAsk', landy: 'landyGoAsk' }[ev.vehicle];
       if (ev.type === 'amyDay') c.voice.say('tractorDay', { force: true });
-      else c.voice.say('tractorGoAsk', { force: true });
-      this.startTractorGo(c);
+      else c.voice.say(ask, { force: true });
+      this.startGo(c, ev.vehicle);
     }
     for (const c of this.companions) {
       const id = c.character.id;
-      const seen = (this.tractorSeen[id] ??= { stalls: 0, hops: 0, setOff: false, wasDriving: false });
+      const seen = (this.tractorSeen[id] ??= { stalls: 0, hops: 0, crunches: 0, setOff: false, wasDriving: false, kind: 'tractor', joinRolled: false, joined: null });
       const other = c.others()[0];
+      const kind = seen.kind;
+      const q = this.goVehicle(kind)?.quad;
+      if (!q) continue;
+      const pre = { tractor: 'tractorGo', utv: 'utvGo', landy: 'landyGo' }[kind];
+      // The starting handle, on a flat battery.
+      for (const e of c.crankEvents.splice(0)) {
+        if (e === 'swing') c.voice.say('landyGoSwing', { urgent: true });
+        else if (e === 'kick') {
+          c.voice.say('landyGoKick', { urgent: true });
+          this.hayLater.push({ left: 1.5, girl: other, key: 'landyGoKickWatch' });
+        } else if (e === 'noLuck') {
+          c.voice.say('landyGoNoLuck', { urgent: true });
+          seen.wasDriving = false;
+        }
+      }
+      // The other girl may climb in beside her as she gets in (the tractor's is the mudguard ride's).
+      if (kind !== 'tractor' && !seen.joinRolled && c.quad === q && c.fsm.is('mounting')) {
+        seen.joinRolled = true;
+        const g = this.tractorGo;
+        if (g.random() < g.p.joinChance && other && other.fsm.is('idle') && other.root.position.distanceTo(q.position) < 30) {
+          this.goJoins.push({ left: g.p.joinDelayMin + g.random() * (g.p.joinDelayMax - g.p.joinDelayMin), girl: other, kind, driver: id });
+          seen.joined = other.character.id;
+        }
+      }
       const driving = c.quad === q && c.fsm.is('driving');
       if (driving) {
         const d = c.drive;
         seen.wasDriving = true;
         if (d.phase === 'drive' && !seen.setOff) {
           seen.setOff = true;
-          c.voice.say('tractorGoSetOff', { urgent: true });
-          this.hayLater.push({ left: 4, girl: other, key: 'tractorGoWatch' });
+          c.voice.say(`${pre}SetOff`, { urgent: true });
+          this.hayLater.push({ left: 4, girl: other, key: `${pre}Watch` });
         }
         if (d.stalls > seen.stalls) {
           seen.stalls = d.stalls;
-          c.voice.say('tractorGoStall', { urgent: true });
+          if (kind === 'tractor') c.voice.say('tractorGoStall', { urgent: true });
         }
         if ((q.shifter.hops ?? 0) > (seen.hops ?? 0)) {
           seen.hops = q.shifter.hops;
           c.voice.say('tractorGoLurch', { urgent: true });
           if (other.root.position.distanceTo(q.position) < 30) this.hayLater.push({ left: 1.4, girl: other, key: 'tractorGoLurch' });
         }
+        if ((q.shifter.crunches ?? 0) > seen.crunches) {
+          seen.crunches = q.shifter.crunches;
+          c.voice.say('landyGoCrunch', { urgent: true });
+          if (other.root.position.distanceTo(q.position) < 30) this.hayLater.push({ left: 1.2, girl: other, key: 'landyGoCrunchWatch' });
+        }
       } else if (seen.wasDriving) {
         seen.wasDriving = false;
-        if (c.drive?.result !== 'gaveUp') c.voice.say('tractorGoDone', { urgent: true });
+        if (c.drive?.result !== 'gaveUp') c.voice.say(`${pre}Done`, { urgent: true });
+        this.endJoin(seen, kind);
       }
-      // Back to her own quad once she's off the tractor, so everything else that looks at her quad finds one of the girls'.
+      // Back to her own quad once she's off it, so everything else that looks at her quad finds one of the girls'.
       if (c.homeQuad && c.quad === q && c.fsm.is('idle')) {
         c.quad = c.homeQuad;
         c.homeQuad = null;
       }
     }
+    // The other girl setting off to climb in.
+    for (const j of this.goJoins) j.left -= dt;
+    for (const j of this.goJoins.filter((x) => x.left <= 0)) {
+      const mount = j.kind === 'utv' ? this.utvMount : this.landyMount;
+      const ride = j.kind === 'utv' ? this.utvRide : this.landyRide;
+      const slot = j.girl.fsm.is('idle') ? mount.freeSlot(j.girl.root.position) : null;
+      if (slot && j.girl.boardTrailer(mount, slot)) {
+        ride.ask(j.girl.character.id); // she stays until the driver's done
+        j.girl.voice.say('utvBoard', { urgent: true });
+      }
+    }
+    this.goJoins = this.goJoins.filter((x) => x.left > 0);
+  }
+
+  /** The driver is done: the girl who climbed in beside her climbs out. */
+  endJoin(seen, kind) {
+    const id = seen.joined;
+    seen.joined = null;
+    const c = id && this.companions.find((o) => o.character.id === id);
+    const mount = kind === 'utv' ? this.utvMount : this.landyMount;
+    if (!c || c.trailer !== mount) return;
+    (kind === 'utv' ? this.utvRide : this.landyRide).dismiss(id);
+    c.leaveTrailer();
+    c.abortBoarding();
   }
 
   /** You asked her to climb up on the tractor's wheel arch: she goes at once and stays until you ask her down. */
@@ -1571,6 +1678,8 @@ export class Game {
     if (c.fsm.is('onTrailer') && c.trailer === mount) children.push({ label: 'Get out of the UTV', run: () => (this.utvRide.dismiss(c.character.id), c.leaveTrailer()) });
     else if (c.fsm.is('idle') && this.utvFree()) {
       if (mount.freeSlot(c.root.position)) children.push({ label: 'Get in the UTV', run: () => this.askIntoUtv(c, false) });
+      if (this.goFree('utv') && c.canDrive(this.utvUnit.quad)) children.push({ label: 'Drive it', run: () => this.askDriveVehicle(c, 'utv') });
+      if (this.canAskStart(c, 'utv')) children.push({ label: 'Start it', run: () => c.requestStart(this.utvUnit.quad) });
       if (!mount.bedBusy && this.utvBed.tip < 0.02) children.push({ label: 'Ride in the bed', run: () => this.askIntoUtv(c, true) });
     }
     return { label: 'UTV', color: this.utvUnit.spec.bodyColor, children };
@@ -1675,6 +1784,8 @@ export class Game {
     else if (c.fsm.is('idle') && !q.rider && !q.driver && q.speed < this.landyRide.p.stopSpeed && mount.freeSlot(c.root.position)) {
       children.push({ label: 'Get in the Land Rover', run: () => this.askIntoLandy(c) });
     }
+    if (c.fsm.is('idle') && this.goFree('landy') && c.canDrive(q)) children.push({ label: 'Drive it', run: () => this.askDriveVehicle(c, 'landy') });
+    if (this.canAskStart(c, 'landy')) children.push({ label: 'Start it', run: () => c.requestStart(q) });
     return { label: 'Land Rover', color: this.landyUnit.spec.bodyColor, children };
   }
 
@@ -4623,7 +4734,7 @@ export class Game {
     if (this.utvUnit) this.updateUtv(dt, ridden, input);
     if (this.landyUnit) this.updateLandRover(dt, ridden);
     this.updateTipTrailer(dt, ridden, input);
-    if (this.tractorUnit && auto) this.updateTractorGo(dt, ridden);
+    if ((this.tractorUnit || this.utvUnit || this.landyUnit) && auto) this.updateTractorGo(dt, ridden);
     this.updateLPlates(dt);
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);

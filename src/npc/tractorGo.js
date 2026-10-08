@@ -1,8 +1,9 @@
-// The girls and a go on the tractor. Jess is desperate to drive it and, now and then, just takes it. Amy won't go near it, until one
-// day (about twenty minutes in, once Jess has had a go) she has a go herself and is annoyingly good, after which you can ask her.
-// Pure logic: the game says who is free, and acts on the events. Tested in tests/tractorGo.test.js.
+// The girls and a go on the tractor, the UTV or the Land Rover. Jess is desperate to drive them and, now and then, just takes one. Amy
+// won't go near them, until one day (about twenty minutes in, once Jess has had a go) she has a go herself and is annoyingly good, after
+// which you can ask her, for any of the three. Pure logic: the game says who is free and which of the three are free to take, and acts
+// on the events. Tested in tests/tractorGo.test.js.
 //
-//   jessGo   Jess walks over, climbs on and has a go
+//   jessGo   Jess walks over, climbs on and has a go (`vehicle` is the one she picked)
 //   amyDay   Amy's day: she has a go, and from now on she'll do it when asked
 
 export const DEFAULT_TRACTORGO_PARAMS = {
@@ -12,6 +13,9 @@ export const DEFAULT_TRACTORGO_PARAMS = {
   amyDayAfter: 1200, // seconds into the game before Amy's day can come...
   amyDayJessGoes: 1, // ...and not until Jess has had this many goes
   amyDayGap: 90, // seconds after the last go before Amy's day
+  joinChance: 0.5, // chance the other girl, if she's stood about, climbs in beside her on a go at the UTV or Land Rover (the tractor's is under Mudguard ride)
+  joinDelayMin: 0.5, // seconds after the driver starts getting in before the other one sets off
+  joinDelayMax: 2,
 };
 
 export const TRACTORGO_PARAM_RANGES = {
@@ -21,6 +25,9 @@ export const TRACTORGO_PARAM_RANGES = {
   amyDayAfter: [0, 7200, 30],
   amyDayJessGoes: [0, 10, 1],
   amyDayGap: [0, 600, 10],
+  joinChance: [0, 1, 0.05],
+  joinDelayMin: [0, 5, 0.1],
+  joinDelayMax: [0, 8, 0.1],
 };
 
 export class TractorGo {
@@ -34,20 +41,29 @@ export class TractorGo {
   }
 
   /**
-   * One step. `ctx`: { free: { amy, jess }, tractorFree: nobody's on it or going to it, youOnTractor }.
-   * Returns events: { type: 'jessGo' | 'amyDay', girl }.
+   * One step. `ctx`: { free: { amy, jess }, vehicles: the ones free to take (nobody on them or going to them), youOnTractor }. A
+   * `tractorFree` boolean instead of `vehicles` means just the tractor.
+   * Returns events: { type: 'jessGo' | 'amyDay', girl, vehicle: 'tractor' | 'utv' | 'landy' }.
    */
   update(dt, ctx) {
     this.clock += dt;
     const p = this.p;
-    if (!ctx.tractorFree || ctx.youOnTractor) return [];
+    const vehicles = ctx.vehicles ?? (ctx.tractorFree ? ['tractor'] : []);
+    if (!vehicles.length || ctx.youOnTractor) return [];
     const since = this.clock - this.lastGo;
     if (!this.amyCan && ctx.free.amy && this.clock >= p.amyDayAfter && this.goes.jess >= p.amyDayJessGoes && since >= p.amyDayGap) {
       this.amyCan = true;
-      return [{ type: 'amyDay', girl: 'amy' }];
+      return [{ type: 'amyDay', girl: 'amy', vehicle: this.pick(vehicles) }];
     }
-    if (ctx.free.jess && this.clock >= p.jessAfter && since >= p.jessEvery && this.random() < p.jessRate * dt) return [{ type: 'jessGo', girl: 'jess' }];
+    if (ctx.free.jess && this.clock >= p.jessAfter && since >= p.jessEvery && this.random() < p.jessRate * dt) {
+      return [{ type: 'jessGo', girl: 'jess', vehicle: this.pick(vehicles) }];
+    }
     return [];
+  }
+
+  /** One of the free vehicles, at random. */
+  pick(vehicles) {
+    return vehicles[Math.min(vehicles.length - 1, Math.floor(this.random() * vehicles.length))];
   }
 
   /** A go has begun (however it came about). */

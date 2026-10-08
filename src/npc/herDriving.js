@@ -454,8 +454,8 @@ export class HerDrive {
   }
 
   beginStart() {
-    // The tractor's a diesel: no tap or choke, but a key and glow plugs to wait for (Jess doesn't always).
-    if (this.quad.tractor) this.attempt = new TractorStartAttempt(this.quad, { random: this.random, params: this.tractorStarting });
+    // The tractor and the UTV are diesels: no tap or choke, but a key and glow plugs to wait for (Jess doesn't always).
+    if (this.quad.tractor || this.quad.engine.params?.compressionIgnition) this.attempt = new TractorStartAttempt(this.quad, { random: this.random, params: this.tractorStarting });
     else this.attempt = new StartingAttempt(this.quad, { random: this.random, params: this.skilledStarting() });
     this.setPhase('start');
   }

@@ -21,8 +21,8 @@ import { SHIFTER_PARAM_RANGES } from './autoShifter.js';
 import { buildAtcModel, ATC_LAYOUT, ATC_GROUND_OFFSET, ATC_PROXY } from './atcModel.js';
 import { buildMiniMotoModel, MOTO_LAYOUT, MOTO_GROUND_OFFSET, MOTO_PROXY } from './miniMotoModel.js';
 import { buildTractorModel, TRACTOR_LAYOUT, TRACTOR_GROUND_OFFSET, TRACTOR_PROXY } from './tractorModel.js';
-import { buildUtvModel, UTV_LAYOUT, UTV_GROUND_OFFSET, UTV_PROXY } from './utvModel.js';
-import { buildLandRoverModel, LANDY_LAYOUT, LANDY_GROUND_OFFSET, LANDY_PROXY } from './landRoverModel.js';
+import { buildUtvModel, UTV_LAYOUT, UTV_GROUND_OFFSET, UTV_PROXY, UTV_STAND } from './utvModel.js';
+import { buildLandRoverModel, LANDY_LAYOUT, LANDY_GROUND_OFFSET, LANDY_PROXY, LANDY_STAND } from './landRoverModel.js';
 import { CrankHandle, DEFAULT_CRANK_PARAMS, CRANK_PARAM_RANGES } from './crankHandle.js';
 
 import { hotSteam } from '../engine/heat.js';
@@ -98,6 +98,7 @@ export class QuadUnit {
         proxy: UTV_PROXY,
         wheelShake: spec.wheelShake,
         steadyLights: spec.steadyLights,
+        driverStand: UTV_STAND.driver,
       }),
       ...(spec.landRover && {
         build: ({ dashStyle }) => buildLandRoverModel({ bodyColor: spec.bodyColor, dashStyle }),
@@ -107,6 +108,7 @@ export class QuadUnit {
         wheelShake: spec.wheelShake,
         steadyLights: spec.steadyLights,
         landRover: true,
+        driverStand: LANDY_STAND.driver,
         handLever: true, // the hand throttle knob on its dash
         crank: new CrankHandle({ ...DEFAULT_CRANK_PARAMS }),
       }),
