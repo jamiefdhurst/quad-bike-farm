@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { attachKeepingSize } from './attachKeepingSize.js';
 import { StateMachine } from './stateMachine.js';
 import { CharacterRig } from './characterRig.js';
 import { DEFAULT_COMPANION_PARAMS } from './companionParams.js';
@@ -1256,7 +1257,7 @@ const STATES = {
       // Off on the left, unless her friend's getting off or standing there.
       this.dismountSide = this.others().some((o) => o.root.position.distanceTo(this.standPoint(1).position) < 0.9 || (o.quad === this.quad && o.fsm.is('dismounting') && o.dismountSide === 1)) ? -1 : 1;
       // Back into the world, keeping her current world transform.
-      this.scene.attach(this.root);
+      attachKeepingSize(this.scene, this.root);
       this.startPos = this.root.position.clone();
       const e = new THREE.Euler().setFromQuaternion(this.root.quaternion, 'YXZ');
       this.root.rotation.set(0, e.y, 0);

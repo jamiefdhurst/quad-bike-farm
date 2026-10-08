@@ -731,7 +731,7 @@ export class Quad {
     const t = this.physics.body.translation();
     const r = this.physics.body.rotation();
     this.currPos.set(t.x, t.y, t.z);
-    this.currQuat.set(r.x, r.y, r.z, r.w);
+    this.currQuat.set(r.x, r.y, r.z, r.w).normalize(); // a drifted length would stretch whatever is attached to the model
   }
 
   /** Burns fuel for this frame and refills the float bowl from the tank. */

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { attachKeepingSize } from './attachKeepingSize.js';
 
 // A girl on the bale trailer (hayRide.js decides when): walking over, climbing on, sitting up on the bales and holding on, lying back,
 // and going off the side into the mud. As Companion states and methods, mixed in by companion.js.
@@ -190,7 +191,7 @@ export const hayRideStates = {
   // Off the side: a slide, a tumble, a moment in the mud, and up again.
   sliding: {
     enter(data) {
-      this.scene.attach(this.root); // keeps where she is
+      attachKeepingSize(this.scene, this.root); // keeps where she is
       this.hayPivot?.rotation.set(0, 0, 0);
       this.startPos = this.root.position.clone();
       const e = new THREE.Euler().setFromQuaternion(this.root.quaternion, 'YXZ');
@@ -262,7 +263,7 @@ export function finishClimbDown(c, data) {
   const k = smooth(t);
   if (!data.fromWorld) {
     data.fromWorld = c.root.getWorldPosition(new THREE.Vector3());
-    c.scene.attach(c.root);
+    attachKeepingSize(c.scene, c.root);
     const e = new THREE.Euler().setFromQuaternion(c.root.quaternion, 'YXZ');
     c.heading = e.y;
     c.root.rotation.set(0, e.y, 0);

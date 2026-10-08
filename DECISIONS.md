@@ -1926,3 +1926,9 @@ Decided with you: she asks when she likes you a lot (an absolute score as well a
 - The engine side was already calm (`pulseStrengthJitter` 0.1, `cycleJitter` 0.04), so only the vibration needed changing. A test shows the spread of the body's roll is under 60% of the random default's.
 - Not changed: the tractor and UTV, which are also multi-cylinder; say if they want it too. Not checked in the running game, only in unit tests.
 - The UTV (a three-cylinder) has `steadiness` 0.6, a tad rougher than the Land Rover's 0.85, at Jamie's request. The tractor is still random.
+
+## Girls staying full size
+
+- Report: after getting in the Land Rover the girls sometimes ended up too big, and more so each time.
+- Cause (found by reading, not reproduced): climbing off uses `Object3D.attach`, which keeps the world transform, so any stretch in the vehicle's chain is baked into the girl's own scale. The vehicle's rotation comes straight from Rapier as a quaternion that is never renormalised, and a slightly long one stretches its matrix; the girl then carries that stretch and takes it into the next vehicle too, so it multiplies.
+- Fix: `attachKeepingSize` (`src/npc/attachKeepingSize.js`, tested) attaches and puts her scale back to one, used for every attach of a girl (getting off, sliding off a trailer, shuffling on a quad). The chassis quaternion is also normalised when recorded (`recordTransform`). I didn't confirm the drift in the running game, so if it comes back the cause is somewhere else.

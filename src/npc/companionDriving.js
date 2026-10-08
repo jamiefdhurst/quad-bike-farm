@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { attachKeepingSize } from './attachKeepingSize.js';
 import { driveMood, pickConfidence, afterDrive } from './driveMood.js';
 import { HerDrive } from './herDriving.js';
 import { DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
@@ -201,7 +202,7 @@ export const drivingStates = {
     enter(data) {
       const q = this.quad;
       if (data.to === 'pillion' && q.driver === this.drive) q.setDriver(null);
-      q.model.attach(this.root);
+      attachKeepingSize(q.model, this.root);
       this.shuffleFrom = this.root.position.clone();
     },
     update(dt, data) {
