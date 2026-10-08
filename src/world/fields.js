@@ -1,6 +1,9 @@
 // The shape of the farm: the grass field, the farm road east out of it and the stubble fields either side, the hedges between them with
 // their gateways, what the ground is (grass, stubble or tarmac) and a way round from one field to another through the gateways.
+// Through the south gate, the green lane and the hill pasture (world/hill.js) are fields too.
 // Pure: built from the layout (layout.js), used by the terrain, the props, the tyres and the girls.
+
+import { createHill } from './hill.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const smoothstep = (a, b, x) => {
@@ -50,6 +53,7 @@ export function createFields(layout) {
   const road = layout.road;
   const gate = layout.gate;
   const grass = { minX: -F, maxX: F, minZ: -F, maxZ: F };
+  const hill = createHill(layout);
 
   // The road's corridor between its hedges, and the two stubble fields either side of it.
   const corridor = road ? { lo: road.z - road.halfWidth - road.verge, hi: road.z + road.halfWidth + road.verge } : null;
@@ -61,16 +65,33 @@ export function createFields(layout) {
     areas.road = { minX: F, maxX: road.hedgeTo, minZ: corridor.lo, maxZ: corridor.hi };
     areas.end = { minX: road.hedgeTo, maxX: farm.maxX, minZ: corridor.lo, maxZ: corridor.hi }; // round the hardstanding, open to both fields
   }
+  if (hill) {
+    areas.lane = { ...hill.laneRect, minZ: F };
+    areas.hill = { ...hill.pasture };
+  }
+  // On foot, a girl wandering about the hill pasture keeps to the bottom of it, over the stream from the lane: this rect, less the 6 m margin
+  // clampToArea is given, is the strip just past the water and short of the foot, 8 m either side of the lane.
+  const wanderAreas = {};
+  if (hill) {
+    let lo = -Infinity;
+    let hi = Infinity;
+    for (let x = hill.lane.x - 8; x <= hill.lane.x + 8; x += 0.5) {
+      lo = Math.max(lo, hill.farEdge(x) + 1);
+      hi = Math.min(hi, hill.farEdge(x) + layout.hill.foot - 0.5);
+    }
+    wanderAreas.hill = { minX: hill.lane.x - 14, maxX: hill.lane.x + 14, minZ: lo - 6, maxZ: Math.max(lo, hi) + 6 };
+  }
 
-  /** Which field (x, z) is in: 'grass', 'road', 'end', 'north', 'south', or 'out' beyond the farm's hedges. */
+  /** Which field (x, z) is in: 'grass', 'road', 'end', 'north', 'south', 'lane', 'hill', or 'out' beyond the hedges. */
   function areaOf(x, z) {
     if (inRect(grass, x, z)) return 'grass';
-    for (const k of ['road', 'end', 'north', 'south']) if (areas[k] && inRect(areas[k], x, z)) return k;
+    for (const k of ['road', 'end', 'north', 'south', 'lane', 'hill']) if (areas[k] && inRect(areas[k], x, z)) return k;
     return 'out';
   }
 
-  // Hedge lines, each straight along x or z from (x1, z1) to (x2, z2), with gaps { at, half } along it. The south gate is a gap with a gate in it.
-  const gateGap = { at: gate.x, half: gate.width / 2 + 0.35, gate: true };
+  // Hedge lines, each straight along x or z from (x1, z1) to (x2, z2), with gaps { at, half } along it. A gap with a gate in it is `gate`,
+  // and `shut` if the gate is (the south gate is tied open; the big gate at the end of the road is shut). `height` is a taller hedge's own.
+  const gateGap = { at: gate.x, half: gate.width / 2 + 0.35, gate: true, shut: !gate.open };
   const hedges = [
     { x1: -F, z1: -F, x2: F, z2: -F, gaps: [] },
     { x1: -F, z1: F, x2: F, z2: F, gaps: [gateGap] },
@@ -82,9 +103,21 @@ export function createFields(layout) {
     hedges.push(
       { x1: F, z1: farm.minZ, x2: farm.maxX, z2: farm.minZ, gaps: [] },
       { x1: F, z1: farm.maxZ, x2: farm.maxX, z2: farm.maxZ, gaps: [] },
-      { x1: farm.maxX, z1: farm.minZ, x2: farm.maxX, z2: farm.maxZ, gaps: road.gate ? [{ at: road.z, half: road.gate.width / 2 + 0.35, gate: true }] : [] },
+      { x1: farm.maxX, z1: farm.minZ, x2: farm.maxX, z2: farm.maxZ, gaps: road.gate ? [{ at: road.z, half: road.gate.width / 2 + 0.35, gate: true, shut: true }] : [] },
       { x1: F, z1: corridor.lo, x2: road.hedgeTo, z2: corridor.lo, gaps: gaps(road.gaps.north) },
       { x1: F, z1: corridor.hi, x2: road.hedgeTo, z2: corridor.hi, gaps: gaps(road.gaps.south) },
+    );
+  }
+  if (hill) {
+    // The lane's tall hedges on top of its banks, from the gate to the pasture, and the pasture's own all round, open where the lane comes in.
+    const { lane, pasture: p } = hill;
+    const lx = [lane.x - lane.hedgeOff, lane.x + lane.hedgeOff];
+    for (const x of lx) hedges.push({ x1: x, z1: F, x2: x, z2: lane.toZ, gaps: [], height: lane.hedgeHeight });
+    hedges.push(
+      { x1: p.minX, z1: p.minZ, x2: p.maxX, z2: p.minZ, gaps: [{ at: lane.x, half: lane.hedgeOff }] },
+      { x1: p.minX, z1: p.maxZ, x2: p.maxX, z2: p.maxZ, gaps: [] },
+      { x1: p.minX, z1: p.minZ, x2: p.minX, z2: p.maxZ, gaps: [] },
+      { x1: p.maxX, z1: p.minZ, x2: p.maxX, z2: p.maxZ, gaps: [] },
     );
   }
   for (const h of hedges) {
@@ -105,7 +138,7 @@ export function createFields(layout) {
     return best;
   }
 
-  /** Metres along `yaw` (0 is +z) from (x, z) to the first hedge or closed gate it would hit, not counting the open gaps; Infinity if none. */
+  /** Metres along `yaw` (0 is +z) from (x, z) to the first hedge or shut gate it would hit, not counting the open gaps; Infinity if none. */
   function hedgeAhead(x, z, yaw) {
     const dx = Math.sin(yaw);
     const dz = Math.cos(yaw);
@@ -115,7 +148,7 @@ export function createFields(layout) {
       if (d < 0 || d >= best) continue;
       const s = h.alongX ? x + dx * d : z + dz * d;
       const lo = h.alongX ? h.x1 : h.z1;
-      if (s < lo || s > lo + h.length || h.gaps.some((g) => !g.gate && Math.abs(s - g.at) < g.half)) continue;
+      if (s < lo || s > lo + h.length || h.gaps.some((g) => !g.shut && Math.abs(s - g.at) < g.half)) continue;
       best = d;
     }
     return best;
@@ -142,7 +175,8 @@ export function createFields(layout) {
   // Gateways: a point either side of each gap (2 m out), joining the two fields it's between. The open sides round the hardstanding count too.
   const gateways = [];
   const link = (a, pa, b, pb) => gateways.push({ a, pa, b, pb });
-  link('grass', { x: gate.x, z: F - 2.5 }, 'out', { x: gate.x, z: F + 2.5 });
+  link('grass', { x: gate.x, z: F - 2.5 }, hill ? 'lane' : 'out', { x: gate.x, z: F + 2.5 });
+  if (hill) link('lane', { x: hill.lane.x, z: hill.lane.toZ - 2 }, 'hill', { x: hill.lane.x, z: hill.lane.toZ + 2 });
   if (road) {
     link('grass', { x: F - 2.5, z: road.z }, 'road', { x: F + 2.5, z: road.z });
     for (const x of road.gaps.north) link('road', { x, z: corridor.lo + 1.5 }, 'north', { x, z: corridor.lo - 2.5 });
@@ -201,9 +235,9 @@ export function createFields(layout) {
     return inRect(farm, x, z, margin);
   }
 
-  /** (x, z) pulled inside the field `area` (as areaOf names it), `margin` metres in from its edges. */
+  /** (x, z) pulled inside the field `area` (as areaOf names it), `margin` metres in from its edges; in the hill pasture, its bottom. */
   function clampToArea(area, x, z, margin = 0) {
-    const r = areas[area];
+    const r = wanderAreas[area] ?? areas[area];
     if (!r) return { x, z };
     const m = Math.min(margin, (r.maxX - r.minX) / 2, (r.maxZ - r.minZ) / 2);
     return { x: clamp(x, r.minX + m, r.maxX - m), z: clamp(z, r.minZ + m, r.maxZ - m) };
@@ -219,5 +253,11 @@ export function createFields(layout) {
   /** The stubble field's own settings (layout.stubbleFields) for 'north' or 'south'. */
   const stubbleField = (area) => layout.stubbleFields?.[area] ?? null;
 
-  return { farm, grass, areas, hedges, gateways, soakAt, stubbleField, areaOf, hedgeDistance, hedgeAhead, tarmacAt, stubbleAt, route, nextWaypoint, inFarm, clampToArea, inGap };
+  /** Metres (x, z) is outside the farm and the hill's hedges: how far into the neighbours' farmland (0 inside). */
+  function outsideAll(x, z) {
+    const d = outsideRect(farm, x, z);
+    return hill ? Math.min(d, hill.outside(x, z)) : d;
+  }
+
+  return { farm, hill, outside: outsideAll, grass, areas, hedges, gateways, soakAt, stubbleField, areaOf, hedgeDistance, hedgeAhead, tarmacAt, stubbleAt, route, nextWaypoint, inFarm, clampToArea, inGap };
 }

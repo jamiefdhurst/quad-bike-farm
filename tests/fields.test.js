@@ -15,7 +15,9 @@ describe('the farm fields', () => {
     expect(f.areaOf(130, -40)).toBe('north');
     expect(f.areaOf(130, 40)).toBe('south');
     expect(f.areaOf(road.pad.x, road.z)).toBe('end');
-    expect(f.areaOf(-30, 100)).toBe('out');
+    expect(f.areaOf(-30, 100)).toBe('lane');
+    expect(f.areaOf(0, 170)).toBe('hill');
+    expect(f.areaOf(0, 100)).toBe('out');
     expect(f.areaOf(220, 0)).toBe('out');
   });
 
@@ -58,8 +60,10 @@ describe('the farm fields', () => {
     const far = f.hedges.find((h) => !h.alongX && h.x1 === LAYOUT.farm.maxX);
     expect(f.inGap(far, road.z)).toBe(true);
     expect(f.tarmacAt(LAYOUT.farm.maxX - 1, road.z)).toBe(1); // the tarmac runs up to it
-    // Straight at the south gate: that's shut too.
-    expect(f.hedgeAhead(LAYOUT.gate.x, 0, 0)).toBeCloseTo(LAYOUT.fieldHalf);
+    // Straight at the south gate: it's tied open, so down the lane and up the hill pasture to its far hedge.
+    expect(f.hedgeAhead(LAYOUT.gate.x, 0, 0)).toBeCloseTo(LAYOUT.hill.pasture.maxZ);
+    // Beside the gate, the hedge.
+    expect(f.hedgeAhead(LAYOUT.gate.x + 6, 0, 0)).toBeCloseTo(LAYOUT.fieldHalf);
     expect(f.hedgeDistance(0, 79)).toBeCloseTo(1);
   });
 

@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { createGroundCanvas, createDetailCanvas } from './groundTexture.js';
 import { patchColor, patchBlend } from './patchwork.js';
-import { outsideRect } from './fields.js';
 
 export { patchAt } from './patchwork.js';
 
@@ -176,7 +175,7 @@ function createOuterRing(layout, heights, fields) {
       const z = -half + iz * step;
       positions.set([x, heights.heightAt(x, z), z], i * 3);
       // Fading from the farm's grass just beyond its hedges, as the ground texture does (groundTexture.js).
-      colors.set(patchColor(x, z, patchBlend(outsideRect(fields.farm, x, z))), i * 3);
+      colors.set(patchColor(x, z, patchBlend(fields.outside(x, z))), i * 3);
     }
   }
   const indices = [];

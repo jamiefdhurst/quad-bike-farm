@@ -19,11 +19,13 @@ export function baseHeight(x, z) {
 import { floorBlend } from './barn.js';
 import { stripFrame } from './layout.js';
 import { outsideRect, createFieldShape } from './fields.js';
+import { createHill } from './hill.js';
 
 export function createTerrainHeight(layout, track) {
   const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf, road } = layout;
   const farm = layout.farm ?? { minX: -fieldHalf, maxX: fieldHalf, minZ: -fieldHalf, maxZ: fieldHalf };
   const fieldShape = createFieldShape(layout);
+  const hill = createHill(layout);
   const yardHeight = baseHeight(yard.x, yard.z);
   const puddles = layout.puddles.map((u) => track.sample(u));
   const bogs = (layout.bogs ?? []).map((b) => (b.track !== undefined ? { ...track.sample(b.track), radius: b.radius } : { ...b }));
@@ -35,8 +37,11 @@ export function createTerrainHeight(layout, track) {
   function heightAt(x, z) {
     let h = baseHeight(x, z);
 
-    // Land rises gently beyond the farm's hedges towards distant hills.
-    h += smoothstep(10, 300, outsideRect(farm, x, z)) * 22 * (0.6 + 0.4 * Math.sin(x * 0.01 + z * 0.013));
+    // Land rises gently beyond the farm's hedges towards distant hills; through the south gate, the lane and the hill pasture have their own
+    // shape (world/hill.js), fading back into it beyond their hedges.
+    const w = hill ? hill.weight(x, z) : 0;
+    h += smoothstep(10, 300, outsideRect(farm, x, z)) * 22 * (0.6 + 0.4 * Math.sin(x * 0.01 + z * 0.013)) * (1 - w);
+    if (w > 0) h += w * hill.profile(x, z);
 
     // The stubble fields' own lie: the north one's hollow, the south one's rise.
     h += fieldShape(x, z).lift;
@@ -105,12 +110,12 @@ export function createTerrainHeight(layout, track) {
   /** 0..1, how muddy the surface is here (1 on the track centre, and in a bog). */
   function mudAt(x, z) {
     const d = track.distanceTo(x, z, trackReach);
-    return Math.max(1 - smoothstep(trackHalfWidth * 0.7, trackHalfWidth + 0.6, d), Math.min(1, bogAt(x, z) * 1.5));
+    return Math.max(1 - smoothstep(trackHalfWidth * 0.7, trackHalfWidth + 0.6, d), Math.min(1, bogAt(x, z) * 1.5), hill ? hill.mudAt(x, z) : 0);
   }
 
-  /** 0..1, how much standing water there is here (1 in the middle of a puddle). */
+  /** 0..1, how much standing water there is here (1 in the middle of a puddle, or in the stream). */
   function puddleAt(x, z) {
-    let w = 0;
+    let w = hill ? hill.waterAt(x, z) : 0;
     for (const p of puddles) {
       const pd = Math.hypot(x - p.x, z - p.z);
       if (pd < puddleRadius) w = Math.max(w, 1 - smoothstep(puddleRadius * 0.45, puddleRadius * 0.85, pd));
@@ -118,5 +123,5 @@ export function createTerrainHeight(layout, track) {
     return w;
   }
 
-  return { heightAt, mudAt, puddleAt, bogAt, puddles, bogs };
+  return { heightAt, mudAt, puddleAt, bogAt, puddles, bogs, hill };
 }

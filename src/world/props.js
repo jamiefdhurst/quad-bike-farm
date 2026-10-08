@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import { stripFrame } from './layout.js';
 import { enableShadows, instanceModel, modelBounds } from './assets.js';
 import { patchAt } from './terrain.js';
-import { outsideRect } from './fields.js';
 import { buildBarnShed } from './barnBuild.js';
 import { buildJumpRamp } from './jumpRamp.js';
+import { buildHill } from './hillProps.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -46,6 +46,7 @@ export function buildProps(ctx) {
   buildStubble(c);
   buildPuddles(c);
   buildBogs(c);
+  if (ctx.fields.hill) buildHill(c);
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
   return { barn, jumpRamp };
 }
@@ -55,17 +56,18 @@ function buildBarn(c) {
 }
 
 function buildHedges({ scene, models, layout, heights, fields, fixedBox, random }) {
-  const { hedgeThickness: T, hedgeHeight: H } = layout;
+  const { hedgeThickness: T } = layout;
   const hedgeSize = modelBounds(models.hedge.scene).getSize(new THREE.Vector3());
   const bushSize = modelBounds(models.bush.scene).getSize(new THREE.Vector3());
   const hedgeMatrices = [];
   const bushMatrices = [];
-  const hy = H / 2 + 0.5;
-  const cy = (x, z) => heights.heightAt(x, z) + H / 2 - 0.3;
 
   // Overlapping, randomly turned blocks of varying height read as an irregular hedgerow rather than a row of cubes. Each hedge line
-  // (fields.js) runs a metre past its ends so the corners close.
+  // (fields.js) runs a metre past its ends so the corners close. The lane's hedges are taller than the rest.
   for (const h of fields.hedges) {
+    const H = h.height ?? layout.hedgeHeight;
+    const hy = H / 2 + 0.5;
+    const cy = (x, z) => heights.heightAt(x, z) + H / 2 - 0.3;
     const lo = h.alongX ? h.x1 : h.z1;
     const hi = lo + h.length;
     const at = h.alongX ? h.z1 : h.x1;
@@ -98,12 +100,20 @@ function buildHedges({ scene, models, layout, heights, fields, fixedBox, random 
       }
     }
 
-    // Colliders: boxes between the gaps, at most 20 m long so they follow the rise and fall of the ground.
+    // Colliders: boxes between the gaps, at most 20 m long and shorter where the ground climbs (the hill's), so they follow it to within
+    // about half a metre.
     const cuts = [lo - 2, ...h.gaps.flatMap((g) => [g.at - g.half, g.at + g.half]).sort((a, b) => a - b), hi + 2];
+    const groundAt = (s) => (h.alongX ? heights.heightAt(s, at) : heights.heightAt(at, s));
     for (let i = 0; i < cuts.length; i += 2) {
       const a = cuts[i];
       const b = cuts[i + 1];
-      const pieces = Math.max(1, Math.ceil((b - a) / 20));
+      let lowest = Infinity;
+      let highest = -Infinity;
+      for (let s = a; s <= b; s += 2) {
+        lowest = Math.min(lowest, groundAt(s));
+        highest = Math.max(highest, groundAt(s));
+      }
+      const pieces = Math.max(1, Math.ceil((b - a) / 20), Math.ceil((highest - lowest) / 0.5));
       for (let k = 0; k < pieces; k++) {
         const pa = a + ((b - a) * k) / pieces;
         const pb = a + ((b - a) * (k + 1)) / pieces;
@@ -133,10 +143,12 @@ function buildGate({ scene, layout, heights, fixedBox }) {
     post.position.set((sx * w) / 2, 0.75, 0);
     g.add(post);
   }
-  // Five-bar gate leaf.
+  // Five-bar gate leaf, hung on the west post. Open (layout.gate.open), it's swung back into the field and tied to a stake.
   const leafW = w - 0.3;
   const leaf = new THREE.Group();
   leaf.position.set(-w / 2 + 0.15, 0, 0);
+  const swing = gate.open ? Math.PI / 2 + 0.08 : 0;
+  leaf.rotation.y = swing;
   const box = (bw, bh, bd, x, yy, rotZ = 0) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), wood);
     m.position.set(x, yy, 0);
@@ -150,9 +162,26 @@ function buildGate({ scene, layout, heights, fixedBox }) {
   const diag = Math.hypot(leafW - 0.2, 0.94);
   box(diag, 0.09, 0.05, leafW / 2, 0.68, Math.atan2(0.94, leafW - 0.2));
   g.add(leaf);
+  if (gate.open) {
+    // The stake it's tied to, by the closing end, and a loop of orange baler twine round the two.
+    const end = new THREE.Vector3(leafW, 0, 0).applyAxisAngle(UP, swing).add(leaf.position);
+    const stake = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.3, 0.1), postMat);
+    stake.position.set(end.x - 0.12, 0.5, end.z);
+    g.add(stake);
+    const twine = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.012, 5, 10), new THREE.MeshStandardMaterial({ color: 0xe0782a, roughness: 0.8 }));
+    twine.position.set(end.x - 0.06, 0.92, end.z);
+    twine.rotation.x = Math.PI / 2;
+    g.add(twine);
+  }
   enableShadows(g);
   scene.add(g);
-  fixedBox(gate.x, y + 0.8, F, w / 2 + 0.2, 0.9, 0.2);
+  if (gate.open) {
+    // Only the leaf, standing out into the field.
+    const mid = new THREE.Vector3(leafW / 2, 0, 0).applyAxisAngle(UP, swing).add(leaf.position);
+    fixedBox(gate.x + mid.x, y + 0.7, F + mid.z, leafW / 2, 0.7, 0.08, swing);
+  } else {
+    fixedBox(gate.x, y + 0.8, F, w / 2 + 0.2, 0.9, 0.2);
+  }
 }
 
 /**
@@ -361,7 +390,7 @@ function buildDistantTrees({ scene, layout, heights, fields, random }) {
     const x = (random() * 2 - 1) * reach;
     const z = (random() * 2 - 1) * reach;
     // Well clear of the farm's hedges, and none on the ground through the south gate, which is kept for the hill (TODO 3).
-    if (outsideRect(fields.farm, x, z) < 40) continue;
+    if (fields.outside(x, z) < 40) continue;
     if (x > -100 && x < 100 && z > fields.farm.maxZ && z < layout.terrainSize / 2 + 10) continue;
     if (patchAt(x, z).border > 4 && random() > 0.04) continue;
     const s = 0.8 + random() * 0.9;

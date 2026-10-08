@@ -30,6 +30,31 @@ export const LAYOUT = {
     },
     south: { crop: 'wheat', rows: 'x', tramlines: 24, ground: '#b3a06a', stalk: [[0.8, 0.66, 0.38], [0.5, 0.4, 0.22]], stalkHeight: [0.08, 0.16], density: 1, rise: 4 },
   },
+  // The hill through the south gate (world/hill.js): a green lane sunk between tall hedges (`lane`: its bed `halfWidth` m either side of x,
+  // falling to the valley floor and `sink` m deeper along its middle, the hedges `hedgeOff` m out on top of its banks and `hedgeHeight`
+  // tall) runs south from the gate to `toZ`, where it opens into a rough hill pasture (`pasture`, hedged all round). Across the bottom runs
+  // a shallow stream (`stream`: its line wanders `wander` m either side of z, `halfWidth` across, `depth` deep with `water` m of water in
+  // it), crossed at the lane by a wider, shallower ford. The ground falls `valley` m from the gate to the stream, then climbs in banks, each
+  // `rise` m over `width` m, centred `at` m up from the stream's far edge (wandering with x); towards the east end every bank spreads out to
+  // `gentle` times as wide, the easy way up. A small wood on the west flank (`wood`), gorse on the banks and bracken in the rough. The
+  // girls' drives stop at the `foot`.
+  hill: {
+    lane: { x: -30, toZ: 134, halfWidth: 2.1, sink: 1, hedgeOff: 4.6, hedgeHeight: 3.3 },
+    pasture: { minX: -96, maxX: 34, minZ: 134, maxZ: 203 },
+    stream: { z: 140, wander: 2.5, halfWidth: 1.6, depth: 0.75, water: 0.32, ford: { halfWidth: 3.4, depth: 0.42, reach: 6 } },
+    valley: 2.5,
+    banks: [
+      { at: 6, rise: 1.2, width: 9 },
+      { at: 16, rise: 5, width: 11 },
+      { at: 25, rise: 1.5, width: 8 },
+      { at: 35, rise: 5.5, width: 12 },
+      { at: 44, rise: 2, width: 8 },
+      { at: 51, rise: 3, width: 9 },
+    ],
+    gentle: { fromX: -12, toX: 24, factor: 2.4 },
+    wood: { minX: -94, maxX: -66, minZ: 150, maxZ: 201 },
+    foot: 7, // metres past the stream's far edge: the bottom of the pasture, where the girls stop driving
+  },
   hedgeThickness: 1.8,
   hedgeHeight: 2.4,
 
@@ -68,7 +93,7 @@ export const LAYOUT = {
   rusty: { x: -66.7, z: 59.9, yaw: 0.15 },
   yard: { x: -54, z: 58, radius: 20 },
   paddock: { x: -66, z: 34, half: 7 },
-  gate: { x: -30, side: 'south', width: 4.2 },
+  gate: { x: -30, side: 'south', width: 4.2, open: true }, // swung back into the field and tied, onto the lane to the hill
 
   // The jump (world/jumpRamp.js): a plank ramp in the flat middle of the field. x, z is the foot of the slope, yaw the way you ride up it (the
   // same sense as a quad's yaw), then it rises `height` m over `length` m to a square lip, `width` wide. The ground for the 22 m run-up
@@ -140,7 +165,7 @@ export const LAYOUT = {
     { x: -57.6, z: 56.6, yaw: 1.2, where: 'by the barn doors' },
     { x: -58.4, z: 38.5, yaw: 2.1, where: 'by the paddock' },
     { x: -61.5, z: 67.8, yaw: -0.6, where: 'by the silage bales' },
-    { x: -32.8, z: 77.6, yaw: 0.9, where: 'by the field gate' },
+    { x: -35.2, z: 77.4, yaw: 0.9, where: 'by the field gate' }, // clear of the gate, swung open into the field
   ],
   tractor: { x: -41, z: 70.5, yaw: 2.7 }, // the old tractor, parked towards the field gate, clear of the barn and the quads' rows (Jess kept getting stuck by the barn) (vehicle/quadSpecs.js TRACTOR_SPEC)
   landRover: { x: -54, z: 71.5, yaw: 2.3 }, // the old Land Rover, in the open north of the barn doors, clear of the straw bale at (-50, 66) and the tractor (vehicle/quadSpecs.js LAND_ROVER_SPEC)

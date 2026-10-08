@@ -2,7 +2,6 @@
 // fields and the tarmac road, the muddy track with ruts and puddles, and worn patches in the yard and gateways.
 
 import { patchColor, patchBlend } from './patchwork.js';
-import { outsideRect } from './fields.js';
 
 function rand(seed) {
   return () => {
@@ -84,6 +83,7 @@ export function createGroundCanvas({ size, worldSize, track, layout, fields, pud
     paintPatchwork(ctx, size, worldSize, fields);
     paintStubble(ctx, toPx, s, fields, random);
     paintTarmac(ctx, toPx, s, layout, fields, random);
+    if (fields.hill) paintHill(ctx, toPx, s, fields, random);
   }
 
   // Worn yard and gateway.
@@ -186,6 +186,86 @@ export function createGroundCanvas({ size, worldSize, track, layout, fields, pud
   return c;
 }
 
+/**
+ * The hill through the south gate (world/hill.js): the pasture's rough, coarser and yellower than the grass field, browner under the
+ * bracken; leaf litter in the wood; the lane's two worn wheel tracks with grass up the middle, muddy down to the ford; and the stream's bed,
+ * dark silt along it and pale gravel where the ford is.
+ */
+function paintHill(ctx, toPx, s, fields, random) {
+  const hill = fields.hill;
+  const p = hill.pasture;
+  const cell = (x, z, w, h, color) => {
+    const [px, pz] = toPx(x, z);
+    ctx.fillStyle = color;
+    ctx.fillRect(px, pz, w * s, h * s);
+  };
+  for (let x = p.minX; x < p.maxX; x += 1) {
+    for (let z = p.minZ; z < p.maxZ; z += 1) {
+      const v = random();
+      cell(x, z, 1, 1, `rgba(${130 + v * 40},${128 + v * 30},${60 + v * 20},0.22)`);
+      const b = hill.brackenAt(x + 0.5, z + 0.5);
+      if (b > 0) cell(x, z, 1, 1, `rgba(${88 + v * 30},${80 + v * 20},${42},${0.45 * b})`);
+      if (hill.gorseAt(x + 0.5, z + 0.5) > 0.3) cell(x, z, 1, 1, 'rgba(50,62,30,0.35)');
+    }
+  }
+  // Tussocks: little dark and light clumps.
+  for (let i = 0; i < 9000; i++) {
+    const x = p.minX + random() * (p.maxX - p.minX);
+    const z = p.minZ + random() * (p.maxZ - p.minZ);
+    const [px, pz] = toPx(x, z);
+    ctx.fillStyle = random() < 0.5 ? 'rgba(45,60,25,0.35)' : 'rgba(170,165,95,0.3)';
+    ctx.beginPath();
+    ctx.ellipse(px, pz, (0.2 + random() * 0.3) * s, (0.15 + random() * 0.2) * s, random() * Math.PI, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // The wood's floor, its edge ragged.
+  const wood = hill.inWood;
+  for (let x = p.minX; x < p.maxX; x += 0.5) {
+    for (let z = p.minZ; z < p.maxZ; z += 0.5) {
+      if (!wood(x, z, -2 + random() * 4)) continue;
+      const v = random();
+      cell(x, z, 0.5, 0.5, `rgba(${70 + v * 30},${52 + v * 20},${30 + v * 12},0.7)`);
+    }
+  }
+
+  // The lane: two wheel tracks the length of it, worn bare, with the grass between; mud towards the ford.
+  const lane = hill.lane;
+  const end = hill.farEdge(lane.x) + 3;
+  for (let z = hill.top - 2; z < end; z += 0.25) {
+    for (const off of [-0.75, 0.75]) {
+      const muddy = Math.min(1, Math.max(0, (z - (hill.streamZ(lane.x) - 12)) / 8));
+      const [px, pz] = toPx(lane.x + off + (random() - 0.5) * 0.1, z);
+      ctx.fillStyle = muddy > 0.2 ? `rgba(60,45,28,${0.75 + 0.2 * muddy})` : 'rgba(110,92,62,0.8)';
+      ctx.beginPath();
+      ctx.ellipse(px, pz, (0.32 + random() * 0.1) * s, 0.2 * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // The stream's bed: silt along it, the ford's gravel pale and stony.
+  for (let x = p.minX - 3; x < p.maxX + 3; x += 0.5) {
+    const sz = hill.streamZ(x);
+    const half = hill.halfAt(x);
+    for (let z = sz - half - 1; z < sz + half + 1; z += 0.5) {
+      const r = Math.abs(z - sz) / (half + 1);
+      const ford = Math.abs(x - lane.x) < lane.halfWidth + 2.5;
+      const v = random();
+      const color = ford ? `rgba(${120 + v * 40},${110 + v * 35},${90 + v * 30},${0.9 - r * 0.4})` : `rgba(${50 + v * 20},${42 + v * 15},${30 + v * 10},${0.95 - r * 0.5})`;
+      cell(x, z, 0.5, 0.5, color);
+    }
+  }
+  // Stones in the ford.
+  for (let i = 0; i < 500; i++) {
+    const x = lane.x + (random() - 0.5) * (lane.halfWidth * 2 + 5);
+    const z = hill.streamZ(x) + (random() - 0.5) * hill.halfAt(x) * 2.2;
+    const [px, pz] = toPx(x, z);
+    ctx.fillStyle = random() < 0.5 ? 'rgba(165,155,135,0.8)' : 'rgba(85,78,65,0.7)';
+    ctx.beginPath();
+    ctx.ellipse(px, pz, (0.05 + random() * 0.1) * s, (0.04 + random() * 0.08) * s, random() * Math.PI, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
 /** The neighbouring farmland beyond the farm's hedges, at 2 m a pixel, fading in from the grass a few metres out (as the outer ring does). */
 function paintPatchwork(ctx, size, worldSize, fields) {
   const n = Math.ceil(worldSize / 2);
@@ -197,7 +277,7 @@ function paintPatchwork(ctx, size, worldSize, fields) {
     for (let i = 0; i < n; i++) {
       const x = -worldSize / 2 + (i + 0.5) * (worldSize / n);
       const z = -worldSize / 2 + (j + 0.5) * (worldSize / n);
-      const blend = patchBlend(outsideRect(fields.farm, x, z));
+      const blend = patchBlend(fields.outside(x, z));
       const o = (j * n + i) * 4;
       if (blend <= 0) continue;
       const col = patchColor(x, z, 1);
