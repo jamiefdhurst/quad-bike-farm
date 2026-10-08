@@ -15,6 +15,20 @@ export const HANDBRAKE_PARAM_RANGES = {
   hearRange: [3, 60, 1],
 };
 
+/**
+ * Whether a quad holds itself still this step (the `parkingBrake` drag and the physics' parked hold). Being towed, never. With somebody at
+ * the controls, stopped with no throttle, only on ground gentler than `selfHoldSlope` (the sine of how far its nose is up or down): an
+ * automatic's clutch lets go at idle, so on the hill's banks it rolls back unless they brake. The farm's slopes are all gentler, where the
+ * tyres' rolling resistance would hold it anyway and the hold only stops the physics creeping. A gearbox in gear (the tractor, the manual
+ * quads) holds on any slope. With nobody at the controls, only with the parking brake set (or the tractor).
+ */
+export function holdsItself({ towed = false, attended, throttle, speed, parkBrake, tractor = false, manual = false, climb = 0 }, selfHoldSlope = 1) {
+  if (towed) return false;
+  if (!attended) return parkBrake || tractor;
+  if (throttle !== 0 || Math.abs(speed) >= 0.5) return false;
+  return parkBrake || manual || Math.abs(climb) < selfHoldSlope;
+}
+
 export class RollWatch {
   constructor(P = DEFAULT_HANDBRAKE_PARAMS) {
     this.P = P;

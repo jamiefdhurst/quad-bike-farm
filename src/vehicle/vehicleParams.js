@@ -74,6 +74,7 @@ export const DEFAULT_VEHICLE_PARAMS = {
   maxBrake: 13, // Rapier wheel brake impulse
   parkingBrake: 6,
   parkedHoldSpeed: 0.15, // m/s; parked and slower than this, it's held still so it doesn't creep down slopes
+  selfHoldSlope: 0.1, // sine of the slope (about 6 degrees) past which an automatic with someone on it, stopped off the throttle, rolls back
   rollingResistance: 0.4, // brake impulse always applied, so it coasts to a stop
 
   // Nobody on it: jump off at speed and it carries on, holding speed and steering
@@ -144,6 +145,7 @@ export const VEHICLE_PARAM_RANGES = {
   maxBrake: [0, 100, 0.5],
   parkingBrake: [0, 50, 0.5],
   parkedHoldSpeed: [0, 1, 0.01],
+  selfHoldSlope: [0, 1, 0.01],
   rollingResistance: [0, 3, 0.05],
   cruiseGain: [0, 2, 0.01],
   cruiseIntegral: [0, 1, 0.01],

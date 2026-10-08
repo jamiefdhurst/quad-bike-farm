@@ -21,6 +21,7 @@ import { Sump, hasSump, oilPressureLamp } from './sump.js';
 import { stepHand } from './handLever.js';
 import { Faults } from './faults.js';
 import { toppleLoad } from './topple.js';
+import { holdsItself } from './handbrake.js';
 import { DriveSwitch, driveEffects, DEFAULT_DRIVE_PARAMS } from './driveMode.js';
 import { reverseAllowed, chokeReach, DEFAULT_CONTROLS_PARAMS } from './controls.js';
 import { advanceUsage, isNeutral, dashClock, lampStates } from './dashState.js';
@@ -653,10 +654,11 @@ export class Quad {
     const hold = this.bog.holdForce(p.mass);
 
     let brake = this.brake * p.maxBrake * this.tow.brakeFactor;
-    // Someone at the controls with nothing pressed and stopped: it holds itself. With nobody on it (and not carrying on by itself) it only
-    // holds if the parking brake was set, or it rolls off down a slope; the tractor still holds itself. Not while it's being winched.
+    // Someone at the controls with nothing pressed and stopped: it holds itself, unless it's an automatic on a steep slope, which rolls back.
+    // With nobody on it (and not carrying on by itself) it only holds if the parking brake was set, or it rolls off down a slope; the tractor
+    // still holds itself. Not while it's being winched (vehicle/handbrake.js).
     const attended = !!(this.input || this.ghost || this.driver || this.creeping);
-    const idle = !this.towed && (attended ? throttleInput === 0 && Math.abs(fwd) < 0.5 : this.parkBrake || this.tractor);
+    const idle = holdsItself({ towed: this.towed, attended, throttle: throttleInput, speed: fwd, parkBrake: this.parkBrake, tractor: this.tractor, manual: this.manual, climb: this.climb }, p.selfHoldSlope);
     if (this.driver) this.parkBrake = false; // she takes it off before she sets off
     if (idle) brake = Math.max(brake, p.parkingBrake);
     if (this.parkBrake && (this.input || this.ghost)) brake = p.maxBrake; // a stuck throttle with nobody on it doesn't undo it

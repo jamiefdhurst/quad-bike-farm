@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { RollWatch, rollReactions, DEFAULT_HANDBRAKE_PARAMS as P } from '../src/vehicle/handbrake.js';
+import { RollWatch, rollReactions, holdsItself, DEFAULT_HANDBRAKE_PARAMS as P } from '../src/vehicle/handbrake.js';
+import { DEFAULT_VEHICLE_PARAMS } from '../src/vehicle/vehicleParams.js';
 import { AMY_HANDBRAKE_LINES, JESS_HANDBRAKE_LINES } from '../src/npc/handbrakeLines.js';
 import { describeVehicle } from '../src/debug/startReport.js';
 
@@ -88,5 +89,31 @@ describe('handbrake lines and report', () => {
     const base = { name: 'Red quad', idle: 1000, top: 6000, redline: 5800, roughness: 0.05, litres: 5, tap: 'off', hours: 1, odo: 1, trip: 0, pod: null, wear: 0.1, faults: [], tinker: null, lastRider: null, quirks: [], wornGear: null, hand: null };
     expect(describeVehicle({ ...base, parkBrake: true })).toContain('parking brake: on');
     expect(describeVehicle(base)).not.toContain('parking brake');
+  });
+});
+
+describe('a quad holding itself still', () => {
+  const slope = DEFAULT_VEHICLE_PARAMS.selfHoldSlope;
+  const sat = (over = {}) => ({ attended: true, throttle: 0, speed: 0, parkBrake: false, climb: 0, ...over });
+
+  it('holds with you on it, stopped and off the throttle, anywhere on the farm', () => {
+    expect(holdsItself(sat(), slope)).toBe(true);
+    expect(holdsItself(sat({ climb: -0.08 }), slope)).toBe(true); // the yard's steepest, about 8%
+    expect(holdsItself(sat({ throttle: 0.3 }), slope)).toBe(false);
+    expect(holdsItself(sat({ speed: 2 }), slope)).toBe(false);
+  });
+
+  it('rolls back on a steep bank unless braked or in gear', () => {
+    expect(holdsItself(sat({ climb: 0.3 }), slope)).toBe(false);
+    expect(holdsItself(sat({ climb: -0.3 }), slope)).toBe(false);
+    expect(holdsItself(sat({ climb: 0.3, parkBrake: true }), slope)).toBe(true);
+    expect(holdsItself(sat({ climb: 0.3, manual: true }), slope)).toBe(true);
+  });
+
+  it('holds an empty one only with its parking brake on, and never while towed', () => {
+    expect(holdsItself(sat({ attended: false }), slope)).toBe(false);
+    expect(holdsItself(sat({ attended: false, parkBrake: true }), slope)).toBe(true);
+    expect(holdsItself(sat({ attended: false, tractor: true }), slope)).toBe(true);
+    expect(holdsItself(sat({ towed: true, parkBrake: true }), slope)).toBe(false);
   });
 });
