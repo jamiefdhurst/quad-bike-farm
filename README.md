@@ -460,3 +460,18 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 49. Amy's phone. It rings now and then; she wanders off to take it and comes back with news, or in a mood that takes a while to lift. Flavour for boredom and contentment; Jess gets one too, with different calls.
 50. Record and replay. Keep the seed and your inputs for the last couple of minutes, save them on a key, and play them back the same way, so a bug hit while playing can be reproduced exactly. Check first that Rapier stays deterministic within a build with the same step.
 51. A live trace on the Vehicles tab. Revs, speed, wheel slip and throttle over the last ten seconds as a small graph under Running, for tuning feel without long simulation runs.
+52. Crash damage. Hitting a gatepost hard or landing the ramp badly can bend a track rod or a rim: the quad pulls to one side and the wheel visibly wobbles. Straighten the rod or swap the wheel at the bench. In Problems on the Vehicles tab, cleared by "Put it right".
+53. Fuel starvation on the banks. With the tank low, a quad coughs and dies nose-up on a steep bank as the fuel runs away from the tap, and picks up again when it levels out. The girls notice whose quad it was.
+54. Carb icing. On a cold, damp day (the day's temperature and the weather roll) a carburettor quad loses power at steady part throttle; a blip or a stop clears it. Amy knows what it is, Jess thinks it's broken. Not on the diesels.
+55. A quad towing a quad. A rope between them, a girl on the dead one steering and braking: she shouts if you snatch the rope, and runs into your back if she doesn't brake. Either girl can be asked; an action button for each.
+56. A spares shelf that runs out. Plugs, belts, inner tubes and jets are counted on a shelf in the workshop; use them up and the bench job can't be done. Order more and they come in the post van (item 44) later in the game.
+57. A trickle charger on the bench. Take a flat battery off, put it on charge, and watch the needle climb over a few minutes before it goes back on.
+58. The ford rising after rain. It gets deeper and runs faster after rain, so drowning a quad in it is likelier, then drops back over a dry spell. The girls say it's up.
+59. A bale spike on the Fergie's lift arms. Raise and lower the linkage, spear a bale, carry it and stack it. A front loader could come later.
+60. Background sounds. Rooks in the oaks, a distant shotgun, a dog barking at the neighbour's, the odd light aircraft, a church bell some mornings. Procedural or CC0, quiet, and never over the engines.
+61. A bonfire at dusk. Drag the hedge cuttings into a pile, light it, and the girls sit round it with the flask (item 35); smoke on the wind (item 42), sparks and a glow on faces. Goes with item 30.
+62. Jess runs dry on the hill. Her quad runs out of fuel out on the pasture; she rings you (item 49) and you take a jerry can out. How grateful she is depends on how long you took. Amy can do it too, less often and crosser about it.
+63. Small kindnesses. A girl who likes you leaves a mug of tea on your quad's rack, warms your seat, or tells you she's sorted your quad's tyre. Rarer and different for each girl.
+64. The girls keep score too. They tick bucket-list things themselves (shown in the notebook in their colour), and Jess gets to "jump the bales" first and doesn't let it go.
+65. Named start scenes. `?scene=bogged-on-hill`, `?scene=frosty-flat-battery` and the like start the game in that setup, for checking how something feels in seconds. May belong in the console (item 9).
+66. A frame-time readout. A breakdown per system (physics, girls, audio, effects, rendering) on the debug panel, before the farm grows any more.
