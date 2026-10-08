@@ -40,7 +40,9 @@ Usage (needs node; for Chatterbox a Python 3.11 venv with
   python tools/generate_companion_voice.py --character amy --engine piper --model en_GB-cori-high.onnx
 
 With --cache, each line's recording is kept and reused while its text, voice and
-settings are unchanged, so only new or edited lines are recorded again.
+settings are unchanged, so only new or edited lines are recorded again. For a
+whole new voice, --workers 2 records with two copies of the model at once,
+about 1.7 times as fast; more than two is no quicker on one GPU.
 """
 
 import argparse
@@ -52,6 +54,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 import wave
 
 import numpy as np
@@ -61,6 +64,7 @@ TARGET_RMS = 0.1  # loudness of each line's speech
 PAD = 0.04  # seconds of quiet kept either side
 GAP = 0.08  # seconds of silence between lines in the bank
 TRIES = 4  # recordings of a line before settling for the best
+S3_TOKEN_RATE = 25  # Chatterbox's speech tokens a second
 MATCH = 0.8  # how closely Whisper's transcript has to match the text (0..1)
 FALLBACK_BELOW = 0.6  # with --fallback, a Chatterbox take this far off is tried again with Piper
 
@@ -150,10 +154,23 @@ class Chatterbox:
         self.model = ChatterboxTTS.from_pretrained(device=device)
         self.model.prepare_conditionals(ref)
         self.sr = self.model.sr
+        # Chatterbox lets every take run to 1000 speech tokens (40 s). Now and
+        # then a short line runs on that far, and decoding 40 s at once took
+        # over 40 GB and twenty minutes here. Stop a take just past the longest
+        # the line could be, so it's thrown out as ran on (see max_seconds).
+        inference = self.model.t3.inference
+        self.model.t3.inference = lambda *a, **k: inference(*a, **{**k, 'max_new_tokens': self.max_tokens})
+        self.max_tokens = 1000
 
     def say(self, text, exag, cfg, seed):
+        self.max_tokens = int(S3_TOKEN_RATE * (max_seconds(text) + 1))
         self.torch.manual_seed(seed)
         wav = self.model.generate(text, exaggeration=exag, cfg_weight=cfg)
+        if self.torch.backends.mps.is_available():
+            # PyTorch keeps each line's scratch memory on the GPU for reuse, but
+            # lines differ in length, so it piles up: from 4 GB to over 10 GB in
+            # three lines. Handing it back keeps a run at about the model's size.
+            self.torch.mps.empty_cache()
         return wav.squeeze(0).cpu().numpy().astype(np.float32)
 
 
@@ -230,7 +247,42 @@ def main():
     ap.add_argument('--cache', default=None)
     ap.add_argument('--no-check', action='store_true', help="don't check recordings with Whisper")
     ap.add_argument('--limit', type=int, help='only the first N lines (for trying settings out); writes nothing to public/')
+    ap.add_argument('--workers', type=int, default=1, help='record with this many copies of the model at once (needs --cache)')
+    ap.add_argument('--shard', help='K/N: only record every Nth line from the Kth into the cache, and write no bank (used by --workers)')
+    ap.add_argument('--batch', type=int, default=25, help='with --workers, each copy records this many lines, then a fresh one carries on')
     args = ap.parse_args()
+
+    if args.workers > 1 and not args.shard:
+        # Two copies side by side share the GPU well enough to record about 1.7
+        # times as fast (on an M4 Max); more just queue for it. Each records its
+        # share into the cache, and the bank is then put together from the cache.
+        # A long run grew one copy past 50 GB, so each records a batch of lines
+        # and exits (code 3: more to do), and a fresh copy picks up from the cache.
+        if not args.cache:
+            sys.exit('--workers needs --cache')
+        argv, rest = iter(sys.argv[1:]), []
+        for a in argv:
+            if a == '--workers':
+                next(argv)
+            elif not a.startswith('--workers='):
+                rest.append(a)
+        def start(k, again=False):
+            # Once the models are downloaded, later batches load them offline
+            # rather than asking Hugging Face for updates every time.
+            env = dict(os.environ, HF_HUB_OFFLINE='1') if again else None
+            return subprocess.Popen([sys.executable, '-u', __file__, *rest, '--shard', f'{k}/{args.workers}'], env=env)
+        procs = {k: start(k) for k in range(args.workers)}
+        while procs:
+            for k, p in list(procs.items()):
+                code = p.poll()
+                if code == 3:
+                    procs[k] = start(k, again=True)
+                elif code == 0:
+                    del procs[k]
+                elif code is not None:
+                    sys.exit(f'worker {k} failed')
+            time.sleep(1)
+    shard = tuple(int(n) for n in args.shard.split('/')) if args.shard else None
 
     info = character_lines(args.character)
     texts = info['lines']
@@ -254,6 +306,8 @@ def main():
     sr = None
     cursor = recorded = 0
     for i, (text, situations) in enumerate(texts.items()):
+        if shard and i % shard[1] != shard[0]:
+            continue
         spoken = SPOKEN.get(text, text)
         exag, cfg = feel_for(situations, args.character) if args.engine == 'chatterbox' else (0, 0)
         key = hashlib.sha1(f'{voice_id}|{exag}|{cfg}|{spoken}'.encode()).hexdigest()[:16]
@@ -288,6 +342,9 @@ def main():
                 json.dump(meta, open(meta_path, 'w'))
             recorded += 1
             print(f'[{i + 1}/{len(texts)}] {score:.2f} x{attempt + 1} e{exag} "{text}" heard "{heard}"', flush=True)
+            if shard and recorded >= args.batch:
+                print(f'shard {args.shard}: batch of {recorded} done', flush=True)
+                sys.exit(3)
         # Chatterbox made a mess of it: the same voice from Piper, if that's clearer.
         if fallback and meta.get('score', 1) < FALLBACK_BELOW and not meta.get('fallback'):
             import librosa
@@ -327,6 +384,9 @@ def main():
         out += [x, np.zeros(int(GAP * sr), dtype=np.float32)]
         cursor += len(x) + int(GAP * sr)
 
+    if shard:
+        print(f'shard {args.shard}: {recorded} newly recorded', flush=True)
+        return
     audio = np.clip(np.concatenate(out), -1, 1)
     bank = info['bank']
     base = os.path.join(cache if args.limit else os.path.join(ROOT, 'public', 'audio'), bank)

@@ -29,7 +29,7 @@ First-person British farm quad-bike game: Three.js, Vite, ES modules, Rapier phy
 ## Voice lines
 
 - Spoken lines are recorded into `public/audio/companion-voice*.mp3` by `tools/generate_companion_voice.py` (see the "voice-generation-setup" memory). After adding or editing lines, re-record in the background (cached, so only new lines take time):
-  - `TQDM_DISABLE=1 PYTHONWARNINGS=ignore .scratch/cb/bin/python tools/generate_companion_voice.py --character amy --cache .scratch/voice-cache --fallback .scratch/piper/en_GB-cori-high.onnx --piper .scratch/venv/bin/piper`
+  - `TQDM_DISABLE=1 PYTHONWARNINGS=ignore .scratch/cb/bin/python tools/generate_companion_voice.py --character amy --cache .scratch/voice-cache --fallback .scratch/piper/en_GB-cori-high.onnx --piper .scratch/venv/bin/piper` (for a whole new voice or settings, add `--workers 2`, about 1.7 times as fast, and run it under `caffeinate -i` so the Mac does not sleep)
   - the same with `--character jess` and no fallback.
 - Unrecorded lines fall back to browser speech, so the game works before recording finishes; commit the banks when it's done.
 
