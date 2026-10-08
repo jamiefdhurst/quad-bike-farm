@@ -117,6 +117,38 @@ describe('real rev firings in the pulse sound', () => {
   });
 });
 
+describe('reading on through the rev recording', () => {
+  const params = { ...PARAMS, pulseStretch: 1, pulseRevLo: 1600, pulseRevHi: 2600, pulseRevGain: 1 };
+  // The start of each rev firing played over a run of firings at a steady rpm.
+  const played = (rec, p, rpm, firings) => {
+    const starts = [];
+    for (let i = 0; i < firings; i++) {
+      rec.trigger({ type: 'fire', strength: 1, period: 120 / rpm }, p, rpm, 1);
+      starts.push(rec.voices[rec.voices.length - 1].start);
+    }
+    return starts;
+  };
+
+  it('plays the firing after the last one while it is near the revs, with pulseRevFollow', () => {
+    const { RecordedEngine } = loadWorklet(44100);
+    const rec = new RecordedEngine(revBank());
+    const accel = rec.byKind.accel.map((g) => g.start);
+    // The bank's rev firings step up 150 rpm at a time from 3,000 to 6,000; within 0.3 (log) of 4,500 it reads on through them.
+    const starts = played(rec, { ...params, pulseRevFollow: 0.3 }, 4500, 3);
+    expect(accel.indexOf(starts[1])).toBe(accel.indexOf(starts[0]) + 1);
+    expect(accel.indexOf(starts[2])).toBe(accel.indexOf(starts[1]) + 1);
+  });
+
+  it('picks each firing afresh without it, as the yellow does', () => {
+    const { RecordedEngine } = loadWorklet(44100);
+    const rec = new RecordedEngine(revBank());
+    const accel = rec.byKind.accel.map((g) => g.start);
+    const starts = played(rec, { ...params, pulseRevFollow: 0 }, 4500, 12);
+    const onwards = starts.slice(1).filter((s, i) => accel.indexOf(s) === accel.indexOf(starts[i]) + 1).length;
+    expect(onwards).toBeLessThan(8);
+  });
+});
+
 describe('pulseDivide', () => {
   it('sounds every other firing at 2, each given two firings\' time, so the recording plays at about half its pace', () => {
     const { RecordedEngine } = loadWorklet(44100);

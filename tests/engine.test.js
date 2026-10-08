@@ -247,6 +247,27 @@ describe('firing pulses', () => {
     for (const x of periods) expect(x).toBeCloseTo(30, -1);
   });
 
+  it('evens out a rough single as it revs with roughRevFade (the green stuttered flat out), but not at tickover', () => {
+    // How much each firing's period strays from the median, flat out on a warm engine as rough as the green's.
+    const strays = (roughRevFade) => {
+      const engine = makeEngine({ temperature: 1, seed: 3, params: { baseRoughness: 0.62, roughRevFade, roughRevSmoothRpm: 3200 } });
+      crank(engine, 3);
+      run(engine, 3, { throttle: 1 });
+      const periods = [];
+      run(engine, 4, (e) => (periods.push(...e.pulses.filter((p) => p.type === 'fire').map((p) => p.period)), { throttle: 1 }));
+      const mid = [...periods].sort((a, b) => a - b)[periods.length >> 1];
+      return periods.reduce((a, p) => a + Math.abs(p / mid - 1), 0) / periods.length;
+    };
+    expect(strays(0.8)).toBeLessThan(strays(0) * 0.4);
+
+    const engine = makeEngine({ params: { baseRoughness: 0.6, roughRevFade: 0.8, roughRevSmoothRpm: 3200 } });
+    Object.assign(engine, { roughness: 0.9, wear: 0, scar: 0, rpm: 1000 });
+    expect(engine.firingRoughness()).toBe(0.9);
+    // Revved up, its build roughness mostly goes; the 0.3 that's from something wrong (cold, say) stays.
+    engine.rpm = 5000;
+    expect(engine.firingRoughness()).toBeCloseTo(0.9 - 0.6 * 0.8, 5);
+  });
+
   it('holds a steadier idle with four cylinders than one, as rough as each other', () => {
     const spread = (cylinders) => {
       const engine = makeEngine({ temperature: 1, seed: 7, params: { cylinders, baseRoughness: 0.5, roughHunt: 0 } });

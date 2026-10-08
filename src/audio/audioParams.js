@@ -137,6 +137,7 @@ export const DEFAULT_AUDIO_PARAMS = {
   pulseSlowest: 0.45, // the slowest a firing is ever stretched to; any slower and it stops short of the next, leaving a gap
   pulseDivide: 1, // sound only every Nth firing, stretched over N: 2 plays the recording at half its pace and an octave down
   pulseRevGain: 1, // level of those rev firings against the idle ones
+  pulseRevFollow: 0, // read on through the rev recording while its next firing is within this rpm ratio (log); 0 picks each afresh
   pulseCleanUp: 1.3, // idles cut in slices (the moto's and ATC's two-strokes): above this multiple of the recorded idle speed only the bangs play, so it fires every turn
   pulseDrive: 0.6, // extra drive into the soft clipper at full throttle
   pulseBoomCut: 0, // dB taken out of a boom in the recording itself (a body resonance), at every rpm; 0 leaves it alone
@@ -229,6 +230,7 @@ export const AUDIO_PARAM_RANGES = {
   pulseSlowest: [0.1, 1, 0.01],
   pulseDivide: [1, 4, 1],
   pulseRevGain: [0, 3, 0.01],
+  pulseRevFollow: [0, 0.4, 0.005],
   pulseCleanUp: [1, 4, 0.05],
   pulseDrive: [0, 4, 0.01],
   pulseBoomCut: [0, 18, 0.5],

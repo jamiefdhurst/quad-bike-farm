@@ -34,6 +34,9 @@ Usage (needs numpy, and matplotlib for --plot):
   afconvert ... 637890.mp3 t0.wav;  afconvert ... 637891.mp3 t1.wav
   python3 tools/slice_engine_audio.py engine-bank-tractor t0=t0.wav t1=t1.wav
   python3 tools/slice_engine_audio.py engine-bank-tractor-eq t0=t0.wav t1=t1.wav
+
+  afconvert ... 510231.mp3 ten.wav;  afconvert ... 450136.mp3 honda.wav
+  python3 tools/slice_engine_audio.py engine-bank-green ten=ten.wav honda=honda.wav quad=quad.wav
 """
 
 import argparse
@@ -269,9 +272,9 @@ BANKS = {
         'segments': [
             ('idle', 'ten', 1.0, 15.0, (0.055, 0.085)),
             ('idle', 'ten', 42.0, 52.0, (0.055, 0.085)),
-            ('accel', 'honda', 10.0, 14.0, (0.028, 0.055)),
-            ('accel', 'honda', 14.0, 21.0, (0.025, 0.033)),
-            ('accel', 'honda', 21.0, 30.0, (0.019, 0.025)),
+            ('accel', 'honda', 10.0, 14.0, (0.028, 0.06)),
+            ('accel', 'honda', 14.0, 21.0, (0.025, 0.036)),
+            ('accel', 'honda', 21.0, 30.0, (0.019, 0.03)),
         ],
         'oneshots': [
             ('starterEngage', 'quad', 0.08, 0.365),
@@ -281,7 +284,8 @@ BANKS = {
         'level': [('idle', 'idle', 'ten'), ('idle', 'accel', 'honda')],
         'fixedGain': {'quad': 1.014},  # as in engine-bank, which the green used before
         'periodCheck': True,
-        'revTail': 0.75,
+        'revTrack': True,  # its revs are cut along their smoothed rise (follow_track), so the tail check can go
+        'revTail': None,
         'revOdd': 0.3,
     },
     'engine-bank-yellow': {
@@ -393,6 +397,38 @@ def find_peaks(env, lo, hi):
             break
         peaks.append(a + int(np.argmax(env[a:b])))
     return np.array(peaks) / ENV_RATE
+
+
+def follow_track(env, peaks, passes=2):
+    """Re-places peaks along the smoothed period of the rev rise. find_peaks searches a wide window, so in a busy stretch it
+    sometimes lands on an echo: one firing short and the next long by as much, which no engine does. Here each peak is the
+    loudest point within 12% of the median of the nine periods around it."""
+    for _ in range(passes):
+        d = np.diff(peaks)
+        track = np.array([np.median(d[max(0, i - 4) : i + 5]) for i in range(len(d))])
+        placed = [peaks[0]]
+        for i, p in enumerate(track):
+            a = int((placed[-1] + 0.88 * p) * ENV_RATE)
+            b = int((placed[-1] + 1.12 * p) * ENV_RATE) + 1
+            if b >= len(env):
+                break
+            placed.append((a + int(np.argmax(env[a:b]))) / ENV_RATE)
+        peaks = np.array(placed)
+    return peaks
+
+
+def steady_cuts(x, peaks, cuts):
+    """Cuts at a steady distance before each followed peak: the median of how far cut_points put the nine cuts around it,
+    snapped to the nearest rising zero crossing. In a busy rev stretch cut_points' quietest spot jumps about within the gap,
+    which would give firings of uneven lengths from an even rhythm."""
+    lead = np.array([int(p * SR) for p in peaks]) - np.array(cuts)
+    out = []
+    for i, p in enumerate(peaks):
+        q = min(len(x) - 1, max(0, int(p * SR) - int(np.median(lead[max(0, i - 4) : i + 5]))))
+        lo, hi = max(1, q - int(0.0008 * SR)), min(len(x) - 1, q + int(0.0008 * SR))
+        zc = [k for k in range(lo, hi) if x[k - 1] <= 0 < x[k]]
+        out.append(min(zc, key=lambda k: abs(k - q)) if zc else q)
+    return out
 
 
 def cut_points(x, peaks, smooth_env):
@@ -559,8 +595,14 @@ def main():
             if config.get('cycleSplit', 1) > 1:
                 cuts = split_cycles(x, cuts, config['cycleSplit'])
         else:
-            peaks = find_peaks(envelope(x, 0.0012), lo, hi)
+            env = envelope(x, 0.0012)
+            peaks = find_peaks(env, lo, hi)
+            tracked = config.get('revTrack') and kind in ('accel', 'decel')
+            if tracked:
+                peaks = follow_track(env, peaks)
             cuts = cut_points(x, peaks, fine_env)
+            if tracked:
+                cuts = steady_cuts(x, peaks, cuts)
         flat = config.get('flatten')
         if flat and src in flat['sources']:
             x = flatten(x, cuts, flat['rms3000'], flat['slope'], flat['headroom'])
@@ -585,8 +627,9 @@ def main():
                 reason = 'out of range'  # the tracker slipped: no real pulse is this long or short here
             elif abs(dur - med) / med > odd_limit:
                 reason = 'odd length'
-            elif not whole and seg_env[int(n * 0.8) :].max() > tail_limit * seg_env[: int(n * 0.4)].max():
-                # (A whole cycle has its other cylinders' beats in it, so this check doesn't apply.)
+            elif not whole and tail_limit and seg_env[int(n * 0.8) :].max() > tail_limit * seg_env[: int(n * 0.4)].max():
+                # (A whole cycle has its other cylinders' beats in it, so this check doesn't apply. Nor does it where revTail is
+                # None: a single at high revs never goes quiet before its next firing, and followed peaks can't carry it.)
                 reason = 'next thump in tail'
             if reason:
                 rejected[reason] = rejected.get(reason, 0) + 1

@@ -347,7 +347,12 @@ class RecordedEngine {
           if (revW > 0.001) {
             // Open throttle mostly plays revs rising, a shut one revs falling, where the bank has both.
             const rising = !this.byKind.decel || Math.random() < smoothstep(0.08, 0.45, throttle);
-            this.playPulse(this.pick([rising ? 'accel' : 'decel'], cycleRpm), cycleRpm, gain * louder * revW * p.pulseRevGain, period, attack, p, 'high');
+            const kind = rising ? 'accel' : 'decel';
+            // With pulseRevFollow, carry on to the firing after the last one while it's near enough the revs, so the
+            // recording plays as one engine revving; a firing picked afresh each time, from anywhere, sounds gritty.
+            const next = this.cursor.high?.next;
+            const follow = next?.kind === kind && Math.abs(Math.log(next.rpm / cycleRpm)) < (p.pulseRevFollow ?? 0);
+            this.playPulse(follow ? next : this.pick([kind], cycleRpm), cycleRpm, gain * louder * revW * p.pulseRevGain, period, attack, p, 'high');
           }
           return true;
         }

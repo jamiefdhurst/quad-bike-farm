@@ -33,6 +33,17 @@ describe('engine banks', () => {
     }
   });
 
+  it("cuts the green's revs along their rise, so nearly every firing is usable and each is about as long as the next", () => {
+    // Its rev firings were cut where the exhaust went quietest, which wandered: two thirds failed the checks, those left were
+    // picked one at a time from all over the recording, which stuttered, and 63% were more than 15% off the one before.
+    const bank = JSON.parse(readFileSync('public/audio/engine-bank-green.json', 'utf8'));
+    const revs = bank.grains.filter((g) => g.kind === 'accel');
+    expect(revs.filter((g) => g.ok !== false).length / revs.length).toBeGreaterThan(0.95);
+    let uneven = 0;
+    for (let i = 1; i < revs.length; i++) if (Math.abs(Math.log(revs[i].dur / revs[i - 1].dur)) > 0.15) uneven++;
+    expect(uneven / revs.length).toBeLessThan(0.15);
+  });
+
   it('gives the tractor its own bank', () => {
     expect(TRACTOR_SPEC.audio.recBank).toBe('engine-bank-tractor');
   });

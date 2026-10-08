@@ -144,6 +144,8 @@ export const DEFAULT_ENGINE_PARAMS = {
   misfireBase: 0.002, // misfire chance per cycle when smooth
   misfireRoughness: 0.18, // extra misfire chance at full roughness (scaled by roughness squared)
   misfireRpmDrop: 140, // rpm lost on a misfire
+  roughRevFade: 0, // share of its build and wear roughness its firings lose once revved up: a lumpy single evens out (faults don't)
+  roughRevSmoothRpm: 3500, // rpm by which that's done, easing in from its idle
   pulseRpmKick: 90, // rpm swing from pulse strength variation
 
   // Two-stroke character (leave at 0 for a four-stroke)
@@ -467,6 +469,8 @@ export const ENGINE_PARAM_RANGES = {
   misfireBase: [0, 0.1, 0.001],
   misfireRoughness: [0, 1, 0.01],
   misfireRpmDrop: [0, 600, 5],
+  roughRevFade: [0, 1, 0.01],
+  roughRevSmoothRpm: [1000, 10000, 50],
   pulseRpmKick: [0, 400, 5],
   oilGood: [0.005, 0.1, 0.001],
   oilRichFrom: [0, 0.2, 0.001],

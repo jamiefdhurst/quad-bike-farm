@@ -260,6 +260,8 @@ export const QUAD_SPECS = [
       knackBlips: 0, // it used to only fire cold after the throttle had been blipped twice (set to 2 to bring that back); the girls couldn't start it
       coldRoughness: 0.7,
       coldPowerLoss: 0.85,
+      roughRevFade: 0.8, // lumpy at tickover, but its firings even out as it pulls (it stuttered flat out)
+      roughRevSmoothRpm: 3200,
     },
     vehicle: {
       mass: 340,
@@ -285,6 +287,7 @@ export const QUAD_SPECS = [
       pulseRevLo: 1600, // from here it blends into the Honda ATV's own firings
       pulseRevHi: 2600,
       pulseRevGain: 1.45, // revs as loud as its old sound's, which was fitted to real engines
+      pulseRevFollow: 0.08, // reads on through the Honda's pull-away, not a firing from anywhere each time
       pulseRefRpm: 1050,
       pulseRevLoudness: 0.05, // its recorded pulses are already punchy when cut short; it hardly needs to get louder
       recVolume: 0.58, // idles as loud as it did on the CRF250

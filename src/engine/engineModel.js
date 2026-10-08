@@ -530,6 +530,18 @@ export class EngineModel {
     this.oilRich = oilExcess(this.oil, p.strokes, p);
   }
 
+  /**
+   * The roughness its firings show: uneven timing, strength and misfires. With roughRevFade, the part that's its build and
+   * wear evens out as it revs, as a big single's lumpy tickover does; cold, lean, fouled and the rest still stutter at any revs.
+   */
+  firingRoughness() {
+    const p = this.params;
+    if (!p.roughRevFade) return this.roughness;
+    const condition = Math.min(this.roughness, p.baseRoughness + this.wear + this.scar);
+    const r = clamp((this.rpm - p.idleRpmWarm) / Math.max(1, p.roughRevSmoothRpm - p.idleRpmWarm), 0, 1);
+    return this.roughness - condition * p.roughRevFade * r * r * (3 - 2 * r);
+  }
+
   /** A lean, cold engine with the throttle snapped open can spit back through the carb (spitBack.js). */
   updateSpit(dt) {
     const p = this.params;
@@ -738,7 +750,7 @@ export class EngineModel {
           return;
         }
       }
-      const misfireChance = this.keyOff ? 0.45 : p.misfireBase + p.misfireRoughness * this.roughness ** 2 + p.waterMisfire * this.water + p.dieselMisfire * this.dieselSoak;
+      const misfireChance = this.keyOff ? 0.45 : p.misfireBase + p.misfireRoughness * this.firingRoughness() ** 2 + p.waterMisfire * this.water + p.dieselMisfire * this.dieselSoak;
       // Two-strokes at light load skip alternate firings: the ring-ding.
       this.cycleCount = (this.cycleCount ?? 0) + 1;
       const skip =
@@ -778,7 +790,7 @@ export class EngineModel {
         this.rpm -= p.misfireRpmDrop * share;
         this.pushPulse(t, 'misfire', 0.15);
       } else {
-        const strength = 1 + (this.random() * 2 - 1) * p.pulseStrengthJitter * this.roughness;
+        const strength = 1 + (this.random() * 2 - 1) * p.pulseStrengthJitter * this.firingRoughness();
         this.rpm += (strength - 1) * p.pulseRpmKick * share;
         this.pushPulse(t, 'fire', strength);
         if (k > 0 && this.random() < p.surgeRate * k * perCycle) this.surge = p.surgeRpm * p.idleRpmWarm * (0.5 + 0.5 * this.random());
@@ -821,7 +833,7 @@ export class EngineModel {
     const frac = (1 - before) / (this.cyclePhase - before);
     this.cycleT = this.stepT + frac * h;
     this.cyclePhase -= 1;
-    this.cycleLength = 1 + (this.random() * 2 - 1) * this.params.cycleJitter * this.roughness;
+    this.cycleLength = 1 + (this.random() * 2 - 1) * this.params.cycleJitter * this.firingRoughness();
     return true;
   }
 
