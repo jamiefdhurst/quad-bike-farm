@@ -146,29 +146,31 @@ function buildWheel(w, rimMat) {
   const rear = !w.front;
   add(cached(rear ? 'rearTyre' : 'frontTyre', rear ? rearTyre : frontTyre), MAT.rubber, spin);
   if (rear) add(cached('rearDrum', rearDrum), MAT.mud, spin);
-  // The rim stands proud of the tyre's sides with a flange each side, and the outside is closed by a dished disc with cast spokes
-  // standing off it, so the gaps between them read as the cut-outs of an old pressed wheel.
+  // Plain pressed steel, as on an old Fergie: the rim with a flange each side, a dished disc closing the outside with a ring of
+  // punched holes (the dark of the tyre's inside shows through), a cast hub and plain bolts. Painted, with the paint rubbed off the rim.
   const rimR = rear ? 0.42 : 0.24;
   const tyreW = rear ? 0.38 : 0.15;
   axleCyl(rimR, tyreW + 0.06, rimMat, 0, 0, 0, spin);
   for (const f of [-1, 1]) axleCyl(rimR * 1.07, 0.02, rimMat, f * (tyreW / 2 + 0.03), 0, 0, spin);
-  const out = side * (tyreW / 2 + 0.04);
-  axleCyl(rimR * 0.97, 0.02, MAT.castDark, out, 0, 0, spin);
-  const spokes = rear ? 6 : 5;
-  for (let i = 0; i < spokes; i++) {
-    const a = (i / spokes) * Math.PI * 2;
-    const len = rimR * 0.78;
-    const sp = rbox(0.03, len, rear ? 0.1 : 0.06, 0.01, rimMat, out + side * 0.015, 0, 0, spin);
-    sp.geometry.translate(0, len / 2 + rimR * 0.12, 0);
-    sp.rotation.x = a;
+  axleCyl(rimR * 1.075, 0.022, MAT.rustPatch, side * (tyreW / 2 + 0.03), 0, 0, spin); // bare, rusty outer flange
+  const out = side * (tyreW / 2 + 0.035);
+  const dish = add(new THREE.CylinderGeometry(rimR * 0.5, rimR * 0.97, 0.05, 28).rotateZ(Math.PI / 2), rimMat, spin); // the dished centre
+  dish.position.set(out - side * 0.012, 0, 0);
+  dish.scale.x = side; // the dish bulges outwards
+  const holes = rear ? 6 : 5;
+  for (let i = 0; i < holes; i++) {
+    const a = (i / holes) * Math.PI * 2;
+    const r = rimR * 0.68;
+    const h = add(new THREE.CylinderGeometry(rimR * 0.13, rimR * 0.13, 0.012, 14).rotateZ(Math.PI / 2), MAT.black, spin);
+    h.position.set(out + side * 0.016, Math.sin(a) * r, Math.cos(a) * r);
   }
   axleCyl(rear ? 0.11 : 0.07, 0.1, MAT.cast, side * (tyreW / 2 + 0.07), 0, 0, spin);
-  axleCyl(rear ? 0.06 : 0.04, 0.03, MAT.chrome, side * (tyreW / 2 + 0.13), 0, 0, spin);
+  axleCyl(rear ? 0.07 : 0.045, 0.03, MAT.castDark, side * (tyreW / 2 + 0.13), 0, 0, spin);
   const nuts = rear ? 6 : 5;
   const nutR = rear ? 0.17 : 0.1;
   for (let i = 0; i < nuts; i++) {
     const a = ((i + 0.5) / nuts) * Math.PI * 2;
-    const n = add(new THREE.CylinderGeometry(0.016, 0.016, 0.03, 6).rotateZ(Math.PI / 2), MAT.chrome, spin);
+    const n = add(new THREE.CylinderGeometry(0.018, 0.018, 0.03, 6).rotateZ(Math.PI / 2), MAT.steel, spin);
     n.position.set(side * (tyreW / 2 + 0.065), Math.sin(a) * nutR, Math.cos(a) * nutR);
   }
   if (!rear) {
@@ -270,7 +272,12 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   for (const s of [-1, 1]) {
     const g = new THREE.CylinderGeometry(REAR_R + 0.17, REAR_R + 0.17, 0.58, 28, 1, true, -0.12, Math.PI + 0.24).rotateZ(Math.PI / 2);
     add(g, paint, root).position.set(s * 0.88, REAR_R, -0.95);
-    tube([s * 0.62, 1.0, -0.95], [s * 0.64, 1.45, -0.95], 0.016, MAT.steel, root);
+    // Bolted to a bracket on the final drive housing, with a stay up to the shell's inner edge and a brace each way from it.
+    const onShell = (theta) => [s * 0.6, REAR_R + (REAR_R + 0.17) * Math.sin(theta), -0.95 + (REAR_R + 0.17) * Math.cos(theta)];
+    rbox(0.14, 0.05, 0.26, 0.015, MAT.castDark, s * 0.56, 0.91, -0.95, root); // the bracket, on top of the housing
+    tube([s * 0.56, 0.92, -0.95], onShell(Math.PI / 2), 0.02, MAT.steel, root);
+    for (const t of [Math.PI / 2 - 0.75, Math.PI / 2 + 0.75]) tube([s * 0.55, 0.92, -0.95 + Math.sign(Math.cos(t)) * 0.1], onShell(t), 0.014, MAT.steel, root);
+    rbox(0.06, 0.02, 0.1, 0.006, MAT.steel, s * 0.6, REAR_R + REAR_R + 0.17 - 0.01, -0.95, root); // the plate it bolts to under the shell
     // A torus is in XY about Z; turned about Y it lies in YZ, and phi = pi - theta matches the shell's angle theta.
     const lip = (from, to, mat, r, edge) => {
       const arc = new THREE.TorusGeometry(REAR_R + 0.17, r, 6, 24, to - from).rotateZ(Math.PI - to).rotateY(Math.PI / 2);
