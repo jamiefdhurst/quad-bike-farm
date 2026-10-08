@@ -101,6 +101,8 @@ import { Jumpers, JUMPER_PARAM_RANGES, JUMPERS } from './npc/jumpers.js';
 import { JumperRail } from './world/jumperRail.js';
 import { DieselMistake, DIESEL_MISTAKE_PARAM_RANGES } from './npc/dieselMistake.js';
 import { Mugs } from './items/mug.js';
+import { Achievements, DEFAULT_ACHIEVEMENT_PARAMS, ACHIEVEMENT_PARAM_RANGES } from './achievements/achievements.js';
+import { achievementSnapshot } from './achievements/snapshot.js';
 import { buildStartLine, nearestTrackFraction } from './world/startLine.js';
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
 import { StrawFall } from './effects/strawFall.js';
@@ -315,6 +317,7 @@ export class Game {
     this.barnFindParams = { ...DEFAULT_BARN_FIND_PARAMS };
     registerTuning('Barn find', this.barnFindParams, BARN_FIND_RANGES);
     this.rustyUnit = this.addRusty();
+    this.achievements = new Achievements({ params: { ...DEFAULT_ACHIEVEMENT_PARAMS } }); // the bucket list; its fleet is set once every vehicle is added
     if (this.rustyUnit) this.podRack.allow(this.rustyUnit.id); // placed after the pods were dealt, but you can fit one at the bench
     // A sticky float on some of the quads (vehicle/carbDrip.js): a parked one with the tap on drips petrol and floods. Own random stream.
     this.carbDrip = new CarbDrip(this.units.filter((u) => !u.quad.fuel.params.noTap && !u.quad.engine.params.compressionIgnition).map((u) => u.id), createRandom(this.seed ^ 0x5d1f));
@@ -691,6 +694,7 @@ export class Game {
           }
           if (this.can.held || this.hose.held) return; // E is for pouring or spraying while you're holding those
           if (this.toolbox.held) {
+            this.achievements.note('toolbox');
             return this.workshop.open(unit);
           }
           if (this.tooFastToMount(quad) && this.herDriving(quad)) {
@@ -720,7 +724,10 @@ export class Game {
           if (!this.can.held || this.tooFastToMount(quad)) return false;
           const wanted = Math.min(this.can.params.pourRate * dt, quad.fuel.space);
           const poured = quad.fuel.add(this.can.take(wanted), this.can.oil, this.can.diesel) > 0;
-          if (poured) this.wrongMix = this.mixWrongFor(quad, this.can);
+          if (poured) {
+            this.wrongMix = this.mixWrongFor(quad, this.can);
+            this.achievements.note('fuelPoured');
+          }
           return poured;
         },
       });
@@ -879,7 +886,7 @@ export class Game {
       target: this.bench.proxy,
       isAvailable: () => !this.handsFull || !!this.benchItem(),
       prompt: () => (this.benchItem() ? `Put the ${this.benchItem().name} back on the bench` : this.bench.prompt()),
-      interact: () => (this.benchItem() ? this.putOnBench(this.benchItem()) : this.bench.open()),
+      interact: () => (this.benchItem() ? this.putOnBench(this.benchItem()) : (this.achievements.note('bench'), this.bench.open())),
     });
     this.interaction.add({
       target: this.notebook.proxy,
@@ -916,6 +923,9 @@ export class Game {
     registerTuning('Hose', this.hose.params, HOSE_PARAM_RANGES);
     registerTuning('Bell', this.bell.params, BELL_PARAM_RANGES);
     registerTuning('Favour', this.favour.p, FAVOUR_PARAM_RANGES);
+    registerTuning('Achievements', this.achievements.p, ACHIEVEMENT_PARAM_RANGES);
+    this.achievements.fleet = [...this.units.map((u) => u.id), ...(this.rustyUnit ? ['rusty'] : [])];
+    this.achievements.onUnlock((a) => this.achievementUnlocked(a));
     registerTuning('Falling out', this.fallingOut.p, FALLING_OUT_PARAM_RANGES);
     registerTuning('Romance', this.romance.p, ROMANCE_PARAM_RANGES);
     this.wearLedger ??= new WearLedger();
@@ -1097,6 +1107,7 @@ export class Game {
     const can = mine.find((t) => t.canHitch(q));
     if (can) {
       can.hitch(q);
+      this.achievements.note('hitched');
       return this.hud.toast('Trailer hitched', 1.6);
     }
     const near = Math.min(...mine.filter((t) => !t.hitched).map((t) => t.gap(q)));
@@ -1370,6 +1381,7 @@ export class Game {
     const near = riding || (!this.player.isRiding && this.player.position.distanceTo(q.position) < 3.2);
     if (near && input.wasPressed('KeyT') && !q.isTipped && !this.handsFull) {
       const note = bed.toggle(q.speed);
+      if (note) this.achievements.note('tipped');
       if (note) this.hud.toast(note, 2);
     }
     bed.update(dt, { speed: q.speed, gateDown: mount.bedBusy });
@@ -1451,6 +1463,7 @@ export class Game {
     const near = riding || (!this.player.isRiding && this.player.position.distanceTo(t.model.position) < 3);
     if (near && input.wasPressed('KeyT') && !this.handsFull && !(ridden && !riding) && !(riding && ridden.quad.isTipped)) {
       const note = t.toggleTip();
+      if (note) this.achievements.note('tipped');
       if (note) this.hud.toast(note.replace('the bed', 'the tub'), 2);
     }
 
@@ -1870,6 +1883,7 @@ export class Game {
       startRunningIn(e); // not run for years, and now it wants running in
       find.smokeLeft = find.params.smokeSeconds;
       this.hud.toast('It runs! The first start in years');
+      this.achievements.note('barnFind');
       for (const c of this.companions) c.voice.onBench('runs');
     }
     if (find.smokeLeft > 0) {
@@ -2574,6 +2588,7 @@ export class Game {
   startClimb() {
     if (this.climb || this.player.isRiding) return;
     const up = !this.youOnLoft();
+    if (up) this.achievements.note('loft');
     const p = this.player.position;
     const lf = this.loft;
     const from = { x: p.x, y: p.y, z: p.z };
@@ -2585,6 +2600,7 @@ export class Game {
   }
 
   startHiding() {
+    this.achievements.note('hid');
     const h = this.world.layout.loft.hideSpot;
     const p = this.player.position;
     this.hiddenFrom = { x: p.x, y: p.y, z: p.z };
@@ -2826,7 +2842,10 @@ export class Game {
     const events = this.horns.update(dt, { you: { x: this.player.position.x, z: this.player.position.z, honking }, girls });
     const girl = (id) => this.companions.find((c) => c.character.id === id);
     for (const e of events) {
-      if (e.type === 'answer') girl(e.girl)?.voice.say('hornAnswer', { force: true });
+      if (e.type === 'answer') {
+        girl(e.girl)?.voice.say('hornAnswer', { force: true });
+        if (ridden) this.achievements.note('hornAnswered');
+      }
       else if (e.type === 'creep') girl('jess')?.voice.say('hornJump', { force: true });
       else if (e.type === 'jump') girl(e.girl)?.voice.say('hornJump', { force: true });
     }
@@ -3105,6 +3124,7 @@ export class Game {
    */
   ringBell() {
     this.bell.ring();
+    this.achievements.note('bell');
     const r = this.recalling;
     if (!r) return this.recallGirls();
     r.left = 120;
@@ -3652,6 +3672,10 @@ export class Game {
         if (this.race.picks.you) this.hud.toast('Go!', 1.2);
       } else if (e.type === 'youDropped') this.hud.toast('The girls are going without you', 2.5);
       else if (e.type === 'finish') {
+        if (e.girl === 'you') {
+          this.achievements.note('races');
+          if (e.place === 1) this.achievements.note('raceWins');
+        }
         if (e.girl === 'you') this.hud.toast(['', 'You won!', 'You came second', 'You came third'][e.place] ?? `You finished`, 3);
         else if (e.place === 1) byId[e.girl].voice.say(e.youIn ? 'raceBeatYou' : 'raceWin', { force: true });
         else later(2500, () => byId[e.girl]?.voice.say(e.ahead.includes('you') ? 'raceLoseToYou' : 'raceLose', { force: true }));
@@ -3795,6 +3819,10 @@ export class Game {
         this.hud.toast('False start. Back on the line', 2.5);
       } else if (e.type === 'go') this.hud.toast('Go!', 1.2);
       else if (e.type === 'finish') {
+        if (e.id === 'you') {
+          this.achievements.note('drags');
+          if (e.place === 1) this.achievements.note('dragWins');
+        }
         if (e.id === 'you') this.hud.toast(e.place === 1 ? 'You won!' : 'She won', 3);
         else if (e.place === 1) byId[e.id]?.voice.say('dragWin', { force: true });
         else later(2000, () => byId[e.id]?.voice.say('dragLose', { force: true }));
@@ -3989,6 +4017,7 @@ export class Game {
 
   toggleParkBrake(quad) {
     quad.parkBrake = !quad.parkBrake;
+    if (quad.parkBrake) this.achievements.note('parkBrake');
     this.hud.toast(quad.parkBrake ? 'Parking brake on' : 'Parking brake off', 1.2);
   }
 
@@ -4134,6 +4163,7 @@ export class Game {
       this.yHeld = 0;
       const { text } = readStick(sump.level, Math.random() * 2 - 1, this.sumpParams);
       sump.checked = true;
+      this.achievements.note('dipstick');
       this.hud.toast(`Dipstick: ${text}${sump.low ? '. Hold Y beside the oil bottle to top it up' : ''}`, 3);
       return;
     }
@@ -4149,8 +4179,10 @@ export class Game {
       if (this.yHeld < 0.6) this.hud.toast('The oil bottle is by the petrol tank: pick it up and bring it here', 2.5);
       return;
     }
-    if (sump.pour(dt) > 0) this.hud.setStatus(`Topping up the oil: ${readStick(sump.level, 0, this.sumpParams).text}`);
-    else if (this.yHeld < 0.6) this.hud.toast('Up to the top mark');
+    if (sump.pour(dt) > 0) {
+      this.achievements.note('oilPoured');
+      this.hud.setStatus(`Topping up the oil: ${readStick(sump.level, 0, this.sumpParams).text}`);
+    } else if (this.yHeld < 0.6) this.hud.toast('Up to the top mark');
   }
 
   /**
@@ -4203,6 +4235,7 @@ export class Game {
 
   /** E on a quad with the jump leads in hand. */
   clampLeads(quad) {
+    this.achievements.note('leads');
     const result = this.leads.clamp(quad);
     if (result === 'first') this.hud.toast('Clamped on. Now the other end on a running quad');
     else if (result === 'joined') this.hud.toast('Leads on: a running quad charges a flat one. Keep them close, nose to nose');
@@ -4241,6 +4274,27 @@ export class Game {
     this.toolbox.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7), yaw);
   }
 
+  // The bucket list ----------------------------------------------------------
+
+  achievementUnlocked(a) {
+    this.hud.toast(`\u2713 ${a.name}  (+${a.points})`, 3.5);
+    this.audioHub.chime();
+    if (this.hud.bucketOpen) this.showBucketList();
+  }
+
+  showBucketList() {
+    this.hud.showBucket(this.achievements.entries(), this.achievements.score());
+  }
+
+  toggleBucketList() {
+    if (this.hud.bucketOpen) this.hud.hideBucket();
+    else this.showBucketList();
+  }
+
+  updateAchievements(dt, ridden) {
+    this.achievements.update(dt, achievementSnapshot(this, ridden));
+  }
+
   // Loop -----------------------------------------------------------------
 
   frame() {
@@ -4252,7 +4306,11 @@ export class Game {
     if (input.wasPressed('Backquote')) this.debugGui.toggle();
     if (input.wasPressed('KeyJ')) this.toggleHitch();
     if (input.wasPressed('Enter') && !this.menu.isOpen && this.player.isRiding) this.askForRace(this.riddenUnit);
-    if (input.wasPressed('KeyM')) this.farmMap.toggle();
+    if (input.wasPressed('KeyM')) {
+      this.farmMap.toggle();
+      this.achievements.note('map');
+    }
+    if (input.wasPressed('Tab')) this.toggleBucketList();
     if (input.wasPressed('KeyN')) {
       this.audioHub.params.muted = !this.audioHub.params.muted;
       this.hud.toast(this.audioHub.params.muted ? 'Sound off' : 'Sound on', 1.2);
@@ -4439,6 +4497,7 @@ export class Game {
     this.rideWind.update(dt, board ? board.quad.speed : 0);
     this.world.update(dt, board ? board.quad.position : this.player.position, this.camera);
     this.updateWeather(dt);
+    this.updateAchievements(dt, ridden);
     this.updateHud(dt);
 
     this.renderer.render(this.scene, this.camera);

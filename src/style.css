@@ -347,3 +347,79 @@ body {
   pointer-events: none;
   z-index: 15;
 }
+
+.bucket {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(720px, 92vw);
+  max-height: 86vh;
+  overflow-y: auto;
+  padding: 14px 20px;
+  background: rgba(0, 0, 0, 0.72);
+  border-radius: 8px;
+  font-size: 14px;
+  columns: 2 300px;
+  column-gap: 28px;
+}
+
+.bucket h2 {
+  column-span: all;
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.bucket h2 span {
+  float: right;
+  font-size: 13px;
+  font-weight: normal;
+  opacity: 0.75;
+}
+
+.bucket h3 {
+  margin: 12px 0 4px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.65;
+  break-after: avoid;
+}
+
+.bucket-item {
+  display: flex;
+  gap: 8px;
+  padding: 2px 0;
+  break-inside: avoid;
+  opacity: 0.7;
+}
+
+.bucket-item.done {
+  opacity: 1;
+}
+
+.bucket-item b {
+  width: 1.2em;
+  flex: none;
+}
+
+.bucket-item.done b {
+  color: #9be28b;
+}
+
+.bucket-item span {
+  flex: 1;
+}
+
+.bucket-item small {
+  display: block;
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+.bucket-item i {
+  flex: none;
+  font-style: normal;
+  font-size: 12px;
+  opacity: 0.6;
+}

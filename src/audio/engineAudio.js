@@ -167,6 +167,26 @@ export class AudioHub {
     this.ready = true;
   }
 
+  /** A soft two-note chime for an achievement (a fifth up, bell-like: sines with a quick attack and a slow fade). */
+  chime() {
+    if (!this.ready || this.params.muted) return;
+    const ctx = this.ctx;
+    const t0 = ctx.currentTime + 0.02;
+    [[784, 0], [1175, 0.13]].forEach(([freq, delay]) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const t = t0 + delay;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.12, t + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+      osc.connect(gain).connect(this.master);
+      osc.start(t);
+      osc.stop(t + 1.2);
+    });
+  }
+
   /** Call every frame with whether fuel is being poured. */
   /** The hose spraying; `onTarget` when it's hitting something close (it patters lower). */
   setSpraying(active, onTarget = false) {

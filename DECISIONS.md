@@ -1997,3 +1997,15 @@ Jamie liked the idea of seated idles, from the end of TODO 7.
 - Not on the pillion or the front seat, where the holding-on and grip poses own her arms; not while getting on or off, lying back on the bales, flailing, or when the ride is jolting hard (`jolt` over 0.6).
 - Waves can now be a list with phases, so her legs swing out of step.
 - Checked: unit tests, and headless shots of each in the UTV's window seat and on its tailgate, and the elbow on the Land Rover's door. Hands behind the head first sat on top of it, and the elbow first put her hand by her face; both lowered. Not checked: the bales, the tub, the arches and the rack.
+
+## The bucket list (TODO 6)
+
+Decided with you: shown as a list you open with a key (not `H`) that works like a bucket list, with unticked ones showing what to do; nothing persists between games; about 50 or more; each worth 1 to 3 points with a total; a toast and a chime, and no spoken reactions from the girls.
+
+- `src/achievements/achievements.js` (pure, tested). An achievement is a test over the stats, so a new one is one line in `ACHIEVEMENTS`. About 60 in groups: Ride, Tricks, Mud, Company, Places, Jobs. `src/achievements/snapshot.js` reads the running game into a small snapshot each frame, and `Achievements.update` works out the rest itself (riding, distance, top speed, ramp jumps and landings, doughnuts, bogs and how they ended, rolling and righting, time with a girl on the back). One-off events (the bell, the dipstick, a race won) are `achievements.note(...)` calls at the spot in `game.js` where they happen.
+- `Tab` opens the list (it was already stopped from moving focus). The panel is in `hud.js`; it refreshes while open when something unlocks. The chime is `AudioHub.chime()`: two soft sine notes, silent when muted.
+- The line-up changes each game, so an achievement can name a vehicle it `needs`. If that vehicle isn't on the farm, it is left off the list and out of the total (so "of y" is always achievable). "Full set" means every vehicle on the farm that game, not counting the barn find.
+- Jumps: any air time of half a second or more that passes within 30 m of the ramp's lip is a jump; a clean landing is staying upright for 1.2 s after it. A doughnut is turning a full circle (6.28 rad) in one direction at over 2 m/s without the turn stopping. The numbers are in the tuning panel's "Achievements" folder.
+- Winning a girl over means being clearly favoured by her at some point (favour.js), so "Everyone's friend" is the two in turn. Romance is not an achievement.
+- Not checked: the speed targets (14 and 22 m/s were picked without measuring what each vehicle reaches, so flat out may be out of reach for the slower ones), the doughnut and landing detection by hand on a quad, and how the list looks on a small window. Checked once headless that the game loads and the panel builds with the right count (61 on seed 3), with no page errors, without clicking past the overlay.
+
