@@ -23,6 +23,7 @@ First-person British farm quad-bike game: Three.js, Vite, ES modules, Rapier phy
 - `npm test` (Vitest) must pass before every commit. Add or update unit tests for any logic you change.
 - Don't do headless browser checks. They are slow and costly, and screenshots keep coming out showing the "Click to play" overlay instead of the game. The only exception is a check where you have worked out how to get past the overlay (click it, every time the page loads) and can confirm that in the screenshot. Otherwise rely on unit tests, and say in your summary what you didn't verify. No long simulation runs, no repeated tuning loops: pick sensible values.
 - If you do use the exception above, the headless setup (see the "headless-browser-checks" memory): puppeteer-core in `.scratch/pp` (untracked) with system Chrome; existing scripts there to copy from (`errs.mjs` checks the game loads without errors). Run your own dev server with `npx vite --port 5180` in the background; Jamie's is on 5173. Editing source while a headless check runs reloads the page under it.
+- Engine sound: `node tools/render_engine_sound.mjs <vehicle id> out.wav` renders it offline through the real engine model and worklet (idle, full throttle, idle, half, full) in seconds, no browser. Use it to compare banks or settings (`--bank`, `--set`), and leave the WAVs in `.scratch/` for Jamie to listen to.
 - Never make sound in tests: stub `speechSynthesis.speak` and set `game.audioHub.params.muted = true`.
 
 ## Voice lines

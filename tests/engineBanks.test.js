@@ -38,14 +38,17 @@ describe('engine banks', () => {
   });
 
   it("cuts the tractor's idle into whole, matching cycles to be played in order, so its tickover stays even", () => {
-    const bank = JSON.parse(readFileSync('public/audio/engine-bank-tractor.json', 'utf8'));
-    expect(bank.readThrough).toBe(true);
-    const idle = bank.grains.filter((g) => g.kind === 'idle' && g.ok !== false);
-    expect(idle.length).toBeGreaterThan(100);
-    // A four-cylinder at about 1,000 rpm: every grain one 0.12 s cycle, none a beat short or long (0.09 or 0.15 s).
-    for (const g of idle) {
-      expect(g.dur).toBeGreaterThan(0.105);
-      expect(g.dur).toBeLessThan(0.135);
+    // engine-bank-tractor has 637891's 4.4 s of steady running; engine-bank-tractor-eq 637890's 15 s, EQ'd.
+    for (const [name, least] of [['engine-bank-tractor', 30], ['engine-bank-tractor-eq', 100]]) {
+      const bank = JSON.parse(readFileSync(`public/audio/${name}.json`, 'utf8'));
+      expect(bank.readThrough).toBe(true);
+      const idle = bank.grains.filter((g) => g.kind === 'idle' && g.ok !== false);
+      expect(idle.length, name).toBeGreaterThan(least);
+      // A four-cylinder at about 1,000 rpm: every grain one 0.12 s cycle, none a beat short or long (0.09 or 0.15 s).
+      for (const g of idle) {
+        expect(g.dur).toBeGreaterThan(0.105);
+        expect(g.dur).toBeLessThan(0.135);
+      }
     }
   });
 

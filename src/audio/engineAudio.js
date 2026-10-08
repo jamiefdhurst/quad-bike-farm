@@ -12,7 +12,8 @@ import { DEFAULT_AUDIO_PARAMS, DEFAULT_SOUND_PARAMS } from './audioParams.js';
 import { SoundPath } from './propagation.js';
 import { rainHeard } from '../world/barn.js';
 
-// Recorded pulse banks in public/audio/, made by tools/slice_engine_audio.py.
+// Recorded pulse banks in public/audio/, made by tools/slice_engine_audio.py, loaded as the sound starts. Any other bank in
+// the tuning panel's list (engine-bank-tractor-eq) loads the first time a voice asks for it.
 const BANK_NAMES = ['engine-bank', 'engine-bank-2t', 'engine-bank-50', 'engine-bank-tractor', 'engine-bank-moto', 'engine-bank-atc', 'engine-bank-utv', 'engine-bank-green', 'engine-bank-yellow', 'engine-bank-landy'];
 
 /** The echo of the barn: a couple of seconds of noise that dies away fast, duller as it goes (tin and brick, not a cathedral). */
@@ -83,7 +84,7 @@ export class AudioHub {
     this.loading = this.ctx.audioWorklet
       .addModule(workletUrl)
       .then(() => this.build())
-      .then(() => Promise.all(BANK_NAMES.map((name) => this.loadBank(name))))
+      .then(() => Promise.all(BANK_NAMES.map((name) => this.requestBank(name))))
       .catch((err) => console.error('Engine audio failed to load', err));
     return this.loading;
   }
@@ -201,6 +202,13 @@ export class AudioHub {
     }
   }
 
+  /** Starts loading a bank unless it's loaded or on its way. */
+  requestBank(name) {
+    this.pending ??= {};
+    if (!this.banks[name] && !this.pending[name]) this.pending[name] = this.loadBank(name);
+    return this.pending[name];
+  }
+
   /** Loads one bank of recorded engine pulses (see tools/slice_engine_audio.py). Until then, or if it fails, voices use the synth. */
   async loadBank(name) {
     const base = import.meta.env?.BASE_URL ?? '/';
@@ -279,6 +287,7 @@ export class EngineAudio {
       this.nextFrameTime = 0;
     }
     const bank = hub.banks[this.params.recBank];
+    if (!bank) hub.requestBank(this.params.recBank);
     if (this.bankSent !== this.params.recBank && bank) {
       // Each voice gets its own copy; the worklet keeps it until it's replaced.
       const data = new Float32Array(bank.data);

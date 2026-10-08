@@ -33,6 +33,7 @@ Usage (needs numpy, and matplotlib for --plot):
 
   afconvert ... 637890.mp3 t0.wav;  afconvert ... 637891.mp3 t1.wav
   python3 tools/slice_engine_audio.py engine-bank-tractor t0=t0.wav t1=t1.wav
+  python3 tools/slice_engine_audio.py engine-bank-tractor-eq t0=t0.wav t1=t1.wav
 """
 
 import argparse
@@ -134,13 +135,13 @@ BANKS = {
         'revOdd': 0.3,
     },
     'engine-bank-tractor': {
-        # The old tractor: kyles's throaty, rattly diesel (Freesound 637890 and 637891), recorded close beside it. The idle is its
-        # steady running (about 1,000 rpm by the pulse-rate measure, with one beat in each cycle stronger); the revs are the pulled-
-        # away stretches, which are lower and lumpier. Starter and shutdown come from the same two recordings. The idle is 637890's
-        # only: 637891's (6 to 11 s) has a heavy boom at 70 to 100 Hz the other hasn't, and its cycles are recorded slightly
-        # faster, so from about 1,100 rpm up the pulse sound picked them nearly every time and played the boom over the tractor.
+        # The old tractor: kyles's throaty, rattly diesel (Freesound 637890 and 637891), recorded close beside it. The idle is
+        # 637891's steady running after its revs (about 1,000 rpm by the pulse-rate measure, with one beat in each cycle
+        # stronger). 637890's longer idle has a drone at 256 to 310 Hz that sounded like a heavy noise over the tractor; it is
+        # engine-bank-tractor-eq below, EQ'd to sound like this one. The revs are 637890's pulled-away stretches (lower and
+        # lumpier; the pulse sound doesn't play them). Starter and shutdown come from the same two recordings.
         'segments': [
-            ('idle', 't0', 14.8, 30.6, (0.09, 0.16)),
+            ('idle', 't1', 6.0, 11.0, (0.09, 0.14)),
             ('accel', 't0', 34.0, 44.0, (0.12, 0.24)),
             ('accel', 't0', 46.0, 60.5, (0.12, 0.24)),
             ('decel', 't0', 34.0, 44.0, (0.12, 0.24)),
@@ -157,7 +158,31 @@ BANKS = {
         'idleOdd': 0.06,
         'revTail': 0.9,
         'revOdd': 0.3,
-        'fixedGain': {'t1': 1.042},  # the starter's level when 637891's idle set it
+        # The level 637891 played at when it shared the idle with 637890: Jamie picked it at that level, quieter than 637890's.
+        'fixedGain': {'t1': 1.042},
+    },
+    'engine-bank-tractor-eq': {
+        # Another old tractor, for later: 637890's 15 s of steady running, EQ'd to 637891's tonal balance (its drone at 256 to
+        # 310 Hz down 12 dB, 80 to 120 Hz up 6 to 8). Longer than engine-bank-tractor's idle, so it doesn't loop, but it keeps
+        # 637890's rattle. Same sources, revs, starter and shutdown as engine-bank-tractor.
+        'segments': [
+            ('idle', 't0', 14.8, 30.6, (0.09, 0.16)),
+            ('accel', 't0', 34.0, 44.0, (0.12, 0.24)),
+            ('accel', 't0', 46.0, 60.5, (0.12, 0.24)),
+            ('decel', 't0', 34.0, 44.0, (0.12, 0.24)),
+        ],
+        'oneshots': [
+            ('starterEngage', 't1', 1.1, 1.4),
+            ('crankLoop', 't1', 1.4, 2.9),
+            ('shutdown', 't0', 61.4, 63.6),
+        ],
+        'level': [('idle', 'accel', 't0')],
+        'eqMatch': {'source': 't0', 'span': (14.8, 30.6), 'like': ('t1', 6.0, 11.0)},
+        'idleCycles': True,
+        'idleOdd': 0.06,
+        'revTail': 0.9,
+        'revOdd': 0.3,
+        'fixedGain': {'t1': 1.042},
     },
     'engine-bank-50': {
         # The kids' 50cc quad: a Gilera Runner SP50 scooter two-stroke, recorded an inch
@@ -466,6 +491,34 @@ def flatten(x, cuts, rms3000, slope, headroom):
     return x * np.interp(np.arange(len(x)), centres, gains).astype(np.float32)
 
 
+def eq_match(x, span, ref, max_db=12):
+    """EQs a whole recording so its stretch `span` has the long-term tonal balance of `ref` (another recording's stretch):
+    third-octave smoothed spectra, their ratio as a fixed filter, within max_db either way, flat outside 30 Hz to 8 kHz and at
+    the same overall level, with peaks kept below full scale."""
+    n = 8192
+    f = np.fft.rfftfreq(n, 1 / SR)
+
+    def third_octave(y):
+        p = np.mean([np.abs(np.fft.rfft(y[i : i + n] * np.hanning(n))) ** 2 for i in range(0, len(y) - n, n // 2)], 0)
+        out = p.copy()
+        for i, fi in enumerate(f[1:], 1):
+            out[i] = p[(f >= fi / 2 ** (1 / 6)) & (f <= fi * 2 ** (1 / 6))].mean()
+        return out
+
+    pa = third_octave(x[int(span[0] * SR) : int(span[1] * SR)])
+    pb = third_octave(ref)
+    ratio = np.sqrt(pb / pa)
+    ratio /= np.sqrt((ratio**2 * pa).sum() / pa.sum())
+    db = np.clip(20 * np.log10(ratio), -max_db, max_db)
+    db[f < 30] = db[np.searchsorted(f, 30)]
+    db[f > 8000] = db[np.searchsorted(f, 8000)]
+    size = 1 << int(np.ceil(np.log2(len(x) + n)))
+    gain = 10 ** (np.interp(np.fft.rfftfreq(size, 1 / SR), f, db) / 20)
+    y = np.fft.irfft(np.fft.rfft(x, size) * gain, size)[: len(x)]
+    # A boosted band can push peaks over full scale; keep it below, and the source gain puts the level back.
+    return (y * min(1, 0.95 / np.abs(y).max())).astype(np.float32)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('bank', choices=sorted(BANKS))
@@ -477,6 +530,10 @@ def main():
     for item in args.sources:
         name, path = item.split('=', 1)
         sources[name] = load(path)
+    if 'eqMatch' in config:
+        eq = config['eqMatch']
+        ref_src, r0, r1 = eq['like']
+        sources[eq['source']] = eq_match(sources[eq['source']], eq['span'], sources[ref_src][int(r0 * SR) : int(r1 * SR)])
 
     out = []  # concatenated audio
     cursor = 0
