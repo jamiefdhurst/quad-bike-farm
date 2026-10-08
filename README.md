@@ -475,3 +475,18 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 64. The girls keep score too. They tick bucket-list things themselves (shown in the notebook in their colour), and Jess gets to "jump the bales" first and doesn't let it go.
 65. Named start scenes. `?scene=bogged-on-hill`, `?scene=frosty-flat-battery` and the like start the game in that setup, for checking how something feels in seconds. May belong in the console (item 9).
 66. A frame-time readout. A breakdown per system (physics, girls, audio, effects, rendering) on the debug panel, before the farm grows any more.
+67. Mud on the lens. Riding through the wet track behind another quad, a puddle at speed or the ford splatters your view; a key wipes it, smearing at first. Goggles (item 68) keep most of it off.
+68. Helmets and goggles. Hooks by the barn door. Amy always wears hers and nags you if you don't; Jess wears hers pushed back on her head. Goggles keep the mud off your view (item 67).
+69. An air leak at the carb boot. A split or loose intake boot makes the idle hunt up and down and pop on the overrun. Heard rather than shown, fixed at the bench, in Problems on the Vehicles tab.
+70. Clutch wear on the manual quads. Slipping it at the bite on the hill or creeping in low wears it; a worn clutch slips under power, the revs flare without the speed, and it smells hot. The manual quads' version of the slipping belt.
+71. A thunderstorm, as a rare weather roll. The sky goes dark, lightning and thunder roll in from the hills, heavy rain, and the girls run for the nearest barn. Amy won't ride in it, Jess wants to.
+72. Mist in the barley hollow and rainbows. Ground mist sits in the damp north field early in the game and burns off as it warms; a passing shower can leave a rainbow.
+73. Waterproofs and getting cold. In the rain the girls pull their hoods up or fetch coats from the barn, and their hair goes wet. A girl who gets soaked gets cold: she shivers, wants the Land Rover's heater or borrows your jumper.
+74. A barn cat. It sleeps on a warm engine or a sunny seat and has to be shooed off, and runs from a revving quad. Jess talks to it; Amy pretends not to like it.
+75. North of the farm. DECISIONS.md left the tree line "for later": a wood with a rutted track through it, a pond that ices over on frosty days, and fallen branches to pick a line through.
+76. The dog, before the sheep. Split out of item 31: a collie that follows you about, rides on the rack, chases quads and the girls' boots. Worth having before there is anything to herd.
+77. Buy a wreck from the neighbour. A non-runner turns up on a trailer and becomes a restoration over several games: parts, rust, a first start. Needs item 37.
+78. Amy's cone course. She lays out cones that can be knocked over (unlike the race cones) and times you round them with penalties for each one down. Jess knocks them all over on purpose.
+79. A piggyback over the ford. A girl on foot won't wade the ford; she asks to be carried, or climbs onto whatever is nearest.
+80. "Why" on the Girls tab. Show what she is thinking of doing next and what is behind it (bored, cold, favour, which quad is hers), not only what she is doing now.
+81. A check for unrecorded voice lines. If there isn't one already: a script or test that lists every line with no recording in the banks, so nothing falls back to browser speech without anyone knowing.
