@@ -993,6 +993,7 @@ export const UTV_SPEC = {
     revHoldMin: 2, // getting off never leaves it revving
   },
   vibration: {
+    steadiness: 0.6, // a small diesel three: a regular rock, but rougher than the Land Rover's petrol four (0.85)
     firingsPerCycle: 3, // a three-cylinder: a quick, even shudder
     idleRpm: 700,
     smoothRpmRange: 1200,
