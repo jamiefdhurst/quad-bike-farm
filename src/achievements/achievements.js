@@ -62,7 +62,7 @@ const RIDE_NAMES = {
   landrover: 'the Land Rover',
 };
 
-const rideOf = (id) => ({ id: `ride-${id}`, group: 'Ride', name: `Ride ${RIDE_NAMES[id]}`, hint: 'Drive it, not just sit on it', points: 1, needs: id, test: (s) => s.has('rode', id) });
+const rideOf = (id) => ({ id: `ride-${id}`, group: 'Ride', name: `Ride ${RIDE_NAMES[id]}`, hint: 'Take it for a drive', points: 1, needs: id, test: (s) => s.has('rode', id) });
 
 // Each: id, group, name, hint (what to do), points (1 easy, 2 takes a while, 3 hard), test(s) and optionally needs (a vehicle id).
 export const ACHIEVEMENTS = [

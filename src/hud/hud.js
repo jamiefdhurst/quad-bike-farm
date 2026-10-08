@@ -1,6 +1,8 @@
 // DOM overlay: crosshair, interaction prompt, riding status, toasts, her captions and the
 // controls help panel.
 
+import { spreads } from '../achievements/pages.js';
+
 const HELP_HTML = `
   <h3>On foot</h3>
   <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move, mouse to look, <kbd>Shift</kbd> jog</div>
@@ -40,7 +42,7 @@ const HELP_HTML = `
   <div>Hayloft ladder, workbench and Amy's logbook in the barn: <kbd>E</kbd></div>
   <div>The bell by the barn doors: <kbd>E</kbd> to ring it and call the girls back</div>
   <h3>Other</h3>
-  <div><kbd>H</kbd> help, <kbd>Tab</kbd> bucket list, <kbd>Enter</kbd> ask for a race (on a quad, by the yard or at the drag strip), <kbd>M</kbd> farm map, <kbd>N</kbd> mute, <kbd>\`</kbd> tuning panel</div>
+  <div><kbd>H</kbd> help, <kbd>Tab</kbd> bucket list (<kbd>&larr;</kbd><kbd>&rarr;</kbd> turn the page), <kbd>Enter</kbd> ask for a race (on a quad, by the yard or at the drag strip), <kbd>M</kbd> farm map, <kbd>N</kbd> mute, <kbd>\`</kbd> tuning panel</div>
 `;
 
 export class Hud {
@@ -131,21 +133,32 @@ export class Hud {
     this.help.style.display = show ? 'block' : 'none';
   }
 
-  /** The bucket list: every achievement with a tick or its hint, grouped, and the score. `entries` and `score` come from Achievements. */
-  showBucket(entries, score) {
+  /**
+   * The bucket list as a notebook open at one spread (two pages), items crossed off in pen. `pages` come from achievements/pages.js
+   * and `score` from Achievements; returns the spread it showed (clamped) and how many there are.
+   */
+  showBucket(pages, score, spread = 0) {
     const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
-    let html = `<h2>Bucket list <span>${score.count} of ${score.totalCount} &middot; ${score.points} of ${score.total} points</span></h2>`;
-    let group = null;
-    for (const e of entries) {
-      if (!e.available) continue;
-      if (e.group !== group) {
-        group = e.group;
-        html += `${group === entries[0].group ? '' : '</div>'}<h3>${esc(group)}</h3><div>`;
-      }
-      html += `<div class="bucket-item${e.done ? ' done' : ''}"><b>${e.done ? '&#10003;' : '&#9744;'}</b><span>${esc(e.name)}<small>${esc(e.hint)}</small></span><i>${e.points}</i></div>`;
-    }
-    this.bucket.innerHTML = `${html}</div>`;
+    const all = spreads(pages);
+    const at = Math.max(0, Math.min(spread, all.length - 1));
+    const page = (pg, n) => {
+      if (!pg) return '<div class="nb-page"></div>';
+      const lines = pg.lines
+        .map((l) =>
+          l.heading
+            ? `<h3>${esc(l.heading)}</h3>`
+            : `<div class="nb-item${l.entry.done ? ' done' : ''}"><b></b><span>${esc(l.entry.name)}<small>${esc(l.entry.hint)}</small></span><i>${l.entry.points}</i></div>`,
+        )
+        .join('');
+      return `<div class="nb-page">${lines}<em>${n}</em></div>`;
+    };
+    const [left, right] = all[at] ?? [null, null];
+    this.bucket.innerHTML =
+      `<div class="nb-title"><h2>Bucket list</h2><span>${score.count} of ${score.totalCount} done &middot; ${score.points} of ${score.total} points</span></div>` +
+      `<div class="nb-foot">${at > 0 ? '&larr; ' : ''}turn the page${at < all.length - 1 ? ' &rarr;' : ''} &middot; Tab to close</div>` +
+      `<div class="nb-spread">${page(left, at * 2 + 1)}${page(right, at * 2 + 2)}</div>`;
     this.bucket.style.display = 'block';
+    return { spread: at, count: all.length };
   }
 
   hideBucket() {

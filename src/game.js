@@ -102,6 +102,7 @@ import { JumperRail } from './world/jumperRail.js';
 import { DieselMistake, DIESEL_MISTAKE_PARAM_RANGES } from './npc/dieselMistake.js';
 import { Mugs } from './items/mug.js';
 import { Achievements, DEFAULT_ACHIEVEMENT_PARAMS, ACHIEVEMENT_PARAM_RANGES } from './achievements/achievements.js';
+import { paginate } from './achievements/pages.js';
 import { achievementSnapshot } from './achievements/snapshot.js';
 import { buildStartLine, nearestTrackFraction } from './world/startLine.js';
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
@@ -4283,7 +4284,16 @@ export class Game {
   }
 
   showBucketList() {
-    this.hud.showBucket(this.achievements.entries(), this.achievements.score());
+    this.bucketPages = paginate(this.achievements.entries());
+    const shown = this.hud.showBucket(this.bucketPages, this.achievements.score(), this.bucketSpread ?? 0);
+    this.bucketSpread = shown.spread;
+    this.bucketSpreads = shown.count;
+  }
+
+  /** Turns the notebook's page (+1 forward, -1 back). */
+  turnBucketPage(by) {
+    this.bucketSpread = Math.max(0, Math.min((this.bucketSpread ?? 0) + by, (this.bucketSpreads ?? 1) - 1));
+    this.showBucketList();
   }
 
   toggleBucketList() {
@@ -4311,6 +4321,10 @@ export class Game {
       this.achievements.note('map');
     }
     if (input.wasPressed('Tab')) this.toggleBucketList();
+    if (this.hud.bucketOpen) {
+      if (input.wasPressed('ArrowRight')) this.turnBucketPage(1);
+      if (input.wasPressed('ArrowLeft')) this.turnBucketPage(-1);
+    }
     if (input.wasPressed('KeyN')) {
       this.audioHub.params.muted = !this.audioHub.params.muted;
       this.hud.toast(this.audioHub.params.muted ? 'Sound off' : 'Sound on', 1.2);
