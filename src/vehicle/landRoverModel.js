@@ -397,6 +397,13 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   cameraAnchor.name = 'cameraAnchor';
   cameraAnchor.position.set(LANDY_SEATS.driver.x, LANDY_SEATS.driver.y + 0.72, LANDY_SEATS.driver.z + 0.02);
   root.add(cameraAnchor);
+  // Where your eyes are riding in the middle or the left of the bench.
+  for (const [name, seat] of [['cameraMid', LANDY_SEATS.mid], ['cameraLeft', LANDY_SEATS.left]]) {
+    const a = new THREE.Object3D();
+    a.name = name;
+    a.position.set(seat.x, seat.y + 0.72, seat.z + 0.02);
+    root.add(a);
+  }
 
   for (const w of LANDY_LAYOUT.wheels) {
     const wheelModel = buildWheel(w);

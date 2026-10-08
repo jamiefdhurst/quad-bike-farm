@@ -62,7 +62,7 @@ export class Quad {
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null, handLever = false, crank = null, landRover = false, driverStand = null }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null, handLever = false, crank = null, landRover = false, driverStand = null, benchStand = null }) {
     this.reverseStyle = reverseStyle; // where its reverse is and what it takes (controls.js)
     this.chokeStyle = chokeStyle;
     this.tapStyle = tapStyle;
@@ -74,6 +74,7 @@ export class Quad {
     this.kicked = false; // the handle has just kicked back (the game reads and clears it)
     this.landRover = landRover;
     this.driverStand = driverStand; // where a girl climbs in to drive from, on the model's right: the UTV and Land Rover step in through a door ({ x, z } in the model's frame, x negative: the right)
+    this.benchStand = benchStand; // where you get in and out beside the bench, on the model's left (the other side from the driver's door), same frame as above
     this.driveParams = DEFAULT_DRIVE_PARAMS;
     this.driveShown = 0; // the switch's rocker, eased towards the mode: 0 for 2WD, 1 for 4WD
     this.driveEffects = driveEffects('4wd', this.driveParams); // what the mode does this step; a quad with no switch keeps its own drive
@@ -127,6 +128,7 @@ export class Quad {
     this.riderHands = part('riderHands');
     this.cameraAnchor = part('cameraAnchor');
     this.pillionCameraAnchor = part('pillionCameraAnchor');
+    this.benchCameras = { left: part('cameraLeft') ?? null, mid: part('cameraMid') ?? null }; // your eyes in the UTV's and Land Rover's other seats
     this.pillionAnchor = part('pillionAnchor') ?? null; // every spec's model has one
     this.rackAnchor = part('rackAnchor') ?? null; // only quads with a front rack
     this.mugAnchor = part('mugAnchor') ?? null; // the same quads' rear rack: where a girl leaves her tea (items/mug.js)
@@ -232,6 +234,11 @@ export class Quad {
 
   get hasRack() {
     return !!this.rackAnchor;
+  }
+
+  /** The UTV and Land Rover: you can ride in the bench's other seats while a girl drives. */
+  get hasBench() {
+    return !!this.benchCameras.left;
   }
 
   get hasPillion() {

@@ -99,6 +99,7 @@ export class QuadUnit {
         wheelShake: spec.wheelShake,
         steadyLights: spec.steadyLights,
         driverStand: UTV_STAND.driver,
+        benchStand: UTV_STAND.left,
       }),
       ...(spec.landRover && {
         build: ({ dashStyle }) => buildLandRoverModel({ bodyColor: spec.bodyColor, dashStyle }),
@@ -109,6 +110,7 @@ export class QuadUnit {
         steadyLights: spec.steadyLights,
         landRover: true,
         driverStand: LANDY_STAND.driver,
+        benchStand: LANDY_STAND.left,
         handLever: true, // the hand throttle knob on its dash
         crank: new CrankHandle({ ...DEFAULT_CRANK_PARAMS }),
       }),

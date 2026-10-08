@@ -130,6 +130,7 @@ export class UtvRide {
     const set = new Set();
     for (const g of ctx.girls) if (g.seat) set.add(g.seat);
     for (const q of this.queue) set.add(q.seat);
+    if (ctx.playerSeat) set.add(ctx.playerSeat); // you, riding beside her
     return set;
   }
 
@@ -140,6 +141,7 @@ export class UtvRide {
    *   speed: its ground speed
    *   parked: nobody is in or driving it, so a girl may get in by herself
    *   slide: the bed is tipped high enough that a girl on the tailgate goes
+   *   playerSeat: 'mid' | 'left' when you are riding in one, else null
    *   girls: [{ id, free, seat, dist }]  free: stood about with nothing to do; seat: 'mid' | 'left' | 'bed' if she's in or climbing in
    * Returns events: { type: 'board', girl, seat, squabble }, { type: 'bedTell', girl, target }, { type: 'bedShout', girl },
    * { type: 'slide', girl }, { type: 'leave', girl, bored }.

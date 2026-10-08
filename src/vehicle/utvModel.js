@@ -369,6 +369,13 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   cameraAnchor.name = 'cameraAnchor';
   cameraAnchor.position.set(UTV_SEATS.driver.x, UTV_SEATS.driver.y + 0.7, UTV_SEATS.driver.z - 0.04); // eyes 0.7 m above the cushion
   root.add(cameraAnchor);
+  // Where your eyes are riding in the middle or the left of the bench.
+  for (const [name, seat] of [['cameraMid', UTV_SEATS.mid], ['cameraLeft', UTV_SEATS.left]]) {
+    const a = new THREE.Object3D();
+    a.name = name;
+    a.position.set(seat.x, seat.y + 0.7, seat.z - 0.04);
+    root.add(a);
+  }
 
   // The bed: black plastic with ribs, a front wall, low sides with the wheel wells in them and tie-down hooks, on a hinge at the back.
   const bed = new THREE.Group();

@@ -49,6 +49,7 @@ import { HayRide, HAYRIDE_PARAM_RANGES } from './npc/hayRide.js';
 import { MudguardRide, MUDGUARD_PARAM_RANGES } from './npc/mudguardRide.js';
 import { TractorMount } from './vehicle/tractorMount.js';
 import { UtvMount } from './vehicle/utvMount.js';
+import { BENCH_SEATS, benchDismountSpots, pickBenchSeat } from './vehicle/benchSeat.js';
 import { UtvBed, UTV_BED_PARAM_RANGES } from './vehicle/utvBed.js';
 import { TipTrailer, canTow, TIP_TRAILER_PARAM_RANGES } from './vehicle/tipTrailer.js';
 import { DEFAULT_TOW_PARAMS, TOW_PARAM_RANGES, towLoad, towEffect } from './vehicle/towing.js';
@@ -156,6 +157,9 @@ import { MapView } from './hud/mapView.js';
 import { farmMapFeatures, DEFAULT_MAP_PARAMS, MAP_PARAM_RANGES } from './hud/farmMap.js';
 import { DebugGui } from './debug/debugGui.js';
 import { GameConsole } from './console/gameConsole.js';
+
+/** Stands in a bench slot's `girl` while you are in that seat, so the girls' seat picking leaves it alone. */
+const YOU_ABOARD = { you: true };
 
 const BARN_BULB = 30; // candela of the bulb in the barn, scaled by how far in you are and how gloomy the day is
 
@@ -645,7 +649,7 @@ export class Game {
         target: quad.proxy,
         prompt: () => {
           if (unit.barnFind && !unit.barnFind.tarpOff) return { text: 'The rusty quad: an old shape under a tarp   ·   take it off at the workbench' };
-          if (this.tooFastToMount(quad) && this.herDriving(quad)) return `Ask ${this.herDriving(quad).name} to stop and let you on`;
+          if (this.tooFastToMount(quad) && this.herDriving(quad) && !quad.hasBench) return `Ask ${this.herDriving(quad).name} to stop and let you on`;
           if (this.tooFastToMount(quad)) {
             return { text: `The ${unit.label} is going too fast to get on   ·   K ignition` };
           }
@@ -678,6 +682,8 @@ export class Game {
           }
           if (unit === this.landyUnit && quad.atCrank && !this.player.isRiding) return { text: this.crankPrompt(quad) };
           if (quad.isTipped) return `Right the ${unit.label}`;
+          if (this.canRideBench(quad)) return `Get in beside ${this.herAtTheFront(quad).name} (she's driving)`;
+          if (quad.hasBench && this.herAtTheFront(quad) && !quad.passenger && !this.benchSeatFor(quad)) return { text: `${this.herAtTheFront(quad).name}'s driving and the bench is full` };
           if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger && this.herOnBack(quad)) return { text: `${this.herAtTheFront(quad).name}'s driving and ${this.herOnBack(quad).name}'s on the back: no room` };
           if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger) return `Get on the back (${this.herAtTheFront(quad).name}'s driving)`;
           const winchKey = this.winch?.unit === unit && this.winch.state === 'stowed' ? '   X winch cable' : '';
@@ -717,7 +723,7 @@ export class Game {
             this.achievements.note('toolbox');
             return this.workshop.open(unit);
           }
-          if (this.tooFastToMount(quad) && this.herDriving(quad)) {
+          if (this.tooFastToMount(quad) && this.herDriving(quad) && !quad.hasBench) {
             // She pulls up and moves onto the back for you.
             const c = this.herDriving(quad);
             c.requestMount(quad);
@@ -726,6 +732,8 @@ export class Game {
           }
           if (this.tooFastToMount(quad)) return;
           if (quad.isTipped) quad.rightItself();
+          else if (this.canRideBench(quad)) this.mountBench(unit);
+          else if (quad.hasBench && this.herAtTheFront(quad)) return; // she's driving and the bench is full
           else if (this.herAtTheFront(quad) && this.herOnBack(quad)) return;
           else if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger) this.mountPillion(unit);
           else this.mount(unit);
@@ -1278,7 +1286,7 @@ export class Game {
     const mount = kind === 'utv' ? this.utvMount : this.landyMount;
     const busy = (c) => (c.quad === q && (c.fsm.is('driving', 'mounting', 'dismounting', 'shuffling', 'cranking') || (c.fsm.is('walking') && ['drive', 'crank'].includes(c.fsm.data?.goal)))) || (c.onHayRide && c.trailer === mount);
     if (kind === 'utv' && (this.utvBed.tip > 0.02 || mount.bedBusy)) return false;
-    return !q.rider && !q.driver && !q.isTipped && q.speed < 0.5 && !this.companions.some(busy);
+    return !q.rider && !q.driver && !q.passenger && !q.isTipped && q.speed < 0.5 && !this.companions.some(busy);
   }
 
   /**
@@ -1553,8 +1561,8 @@ export class Game {
       seat: seatOf(c),
       dist: c.root.position.distanceTo(q.position),
     }));
-    const parked = !riding && !q.rider && !q.driver;
-    const ctx = { active: riding && q.engine.isRunning, riding, parked, speed: q.speed, slide: bed.sliding, girls };
+    const parked = !riding && !q.rider && !q.driver && !q.passenger;
+    const ctx = { active: riding && q.engine.isRunning, riding, parked, playerSeat: this.player.isRiding && q.passenger ? this.player.benchSeat : null, speed: q.speed, slide: bed.sliding, girls };
     for (const ev of this.utvRide.update(dt, ctx)) {
       const c = girlOf(ev.girl);
       if (ev.type === 'board') {
@@ -1757,8 +1765,8 @@ export class Game {
       seat: c.onHayRide && c.trailer === mount ? c.traSlot?.name ?? null : null,
       dist: c.root.position.distanceTo(q.position),
     }));
-    const parked = !riding && !q.rider && !q.driver;
-    for (const ev of this.landyRide.update(dt, { active: riding && q.engine.isRunning, riding, parked, speed: q.speed, slide: false, girls })) {
+    const parked = !riding && !q.rider && !q.driver && !q.passenger;
+    for (const ev of this.landyRide.update(dt, { active: riding && q.engine.isRunning, riding, parked, playerSeat: q.passenger ? this.player.benchSeat : null, speed: q.speed, slide: false, girls })) {
       const c = girlOf(ev.girl);
       if (ev.type === 'board') {
         const slot = mount.slots[ev.seat];
@@ -2113,7 +2121,7 @@ export class Game {
     }
     if (this.hiding.active) return; // they can't find you to offer
     const unit = this.boardUnit;
-    const waiting = !!unit && this.player.seat === 'pillion' && unit.quad.speed < 0.5 && !this.menu.isOpen && !this.passengerPlan && !this.herOn(unit.quad);
+    const waiting = !!unit && this.player.seat === 'pillion' && !unit.quad.hasBench && unit.quad.speed < 0.5 && !this.menu.isOpen && !this.passengerPlan && !this.herOn(unit.quad);
     if (!offer.update(dt, waiting)) return;
     const girls = this.companions
       .filter((c) => c.canOfferRide(unit.quad))
@@ -2129,6 +2137,36 @@ export class Game {
     if (this.player.isRiding) return;
     this.player.mount(unit.quad, 'pillion');
     this.favourQuad(unit, this.favour.p.favouriteQuad);
+    unit.quad.passenger = this.player;
+    this.lastUnit = unit;
+    this.input.takeWheelSteps();
+    this.herAtTheFront(unit.quad)?.voice.onRequest('passengerOn');
+  }
+
+  /** The UTV's or Land Rover's seats as somewhere to ride (vehicle/utvMount.js), or null for anything else. */
+  benchMountOf(quad) {
+    return quad === this.utvUnit?.quad ? this.utvMount : quad === this.landyUnit?.quad ? this.landyMount : null;
+  }
+
+  /** The bench seat you would take, or null if it's full. Girls aboard or on their way count as taking one. */
+  benchSeatFor(quad) {
+    const mount = this.benchMountOf(quad);
+    if (!mount) return null;
+    return pickBenchSeat(BENCH_SEATS.filter((s) => mount.slots[s].girl));
+  }
+
+  /** You could get in beside the girl driving the UTV or Land Rover: she's at the wheel, the seat is free and you're not in the middle of something. */
+  canRideBench(quad) {
+    return quad.hasBench && !!this.herAtTheFront(quad) && !quad.passenger && !quad.rider && !quad.isTipped && !this.handsFull && !!this.benchSeatFor(quad);
+  }
+
+  /** In the UTV's or Land Rover's other seat while she drives (the quads' pillion, on a bench). */
+  mountBench(unit) {
+    if (this.player.isRiding) return;
+    const seat = this.benchSeatFor(unit.quad);
+    if (!seat) return;
+    this.player.mount(unit.quad, 'pillion', seat);
+    this.benchMountOf(unit.quad).slots[seat].girl = YOU_ABOARD;
     unit.quad.passenger = this.player;
     this.lastUnit = unit;
     this.input.takeWheelSteps();
@@ -2560,15 +2598,22 @@ export class Game {
       this.hud.toast('Ask her to stop first');
       return false;
     }
-    const spot = this.findDismountSpot(quad, [
-      [1.05, -0.6],
-      [-1.05, -0.6],
-      [0, -1.9],
-    ]);
+    const spot = this.findDismountSpot(
+      quad,
+      quad.hasBench
+        ? benchDismountSpots(quad.benchStand)
+        : [
+            [1.05, -0.6],
+            [-1.05, -0.6],
+            [0, -1.9],
+          ],
+    );
     if (!spot) {
       this.hud.toast('No room to get off here');
       return false;
     }
+    const slot = this.benchMountOf(quad)?.slots[this.player.benchSeat];
+    if (slot?.girl === YOU_ABOARD) slot.girl = null;
     quad.passenger = null;
     this.player.dismount(spot, quad.yaw + Math.PI);
     return true;
@@ -2578,6 +2623,7 @@ export class Game {
   openPassengerMenu() {
     const c = this.herAtTheFront(this.boardUnit.quad) ?? this.herOn(this.boardUnit.quad);
     if (!c) return void this.getOffBack(); // sat on the back by yourself: E just gets you off
+    const quad0 = this.boardUnit.quad;
     this.passengerHer = c; // who any plan below is with, even once she's off the front
     const drive = c.fsm.is('driving') ? c.drive : null;
     const stopped = !drive || drive.phase === 'parked' || drive.done;
@@ -2591,7 +2637,7 @@ export class Game {
       ask('faster', 'Go a bit faster', () => drive.setCruiseScale(drive.cruiseScale * 1.25));
     }
     if (drive && drive.phase === 'parked') ask('goAgain', 'Off we go again', () => drive.resume());
-    if (c.fsm.is('driving')) ask('swap', 'Let me drive', () => ((this.passengerPlan = 'swap'), drive?.park()));
+    if (c.fsm.is('driving') && !quad0.hasBench) ask('swap', 'Let me drive', () => ((this.passengerPlan = 'swap'), drive?.park()));
     // Advice that fits what she's just got wrong (or is about to): only those are on the wheel.
     const coaching = drive && !stopped ? drive.coachable() : [];
     if (coaching.length) actions.push({ label: 'Coach her', children: coaching.map((key) => ({ label: COACHING[key].label, run: () => this.coachHer(c, key) })) });

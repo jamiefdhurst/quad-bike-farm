@@ -72,7 +72,8 @@ export class Player {
 
     this.mode = 'foot';
     this.vehicle = null;
-    this.seat = 'rider'; // or 'pillion', riding on the back while she drives
+    this.seat = 'rider'; // or 'pillion', riding on the back while she drives (or in the UTV's or Land Rover's bench)
+    this.benchSeat = null; // 'left' or 'mid' when the pillion seat is on a bench, else null
     this.rideYaw = 0;
     this.ridePitch = 0;
     this.lookEnabled = true;
@@ -284,7 +285,7 @@ export class Player {
 
   updateRidingCamera(vibration) {
     const p = this.params;
-    const anchor = this.seat === 'pillion' ? this.vehicle.pillionCameraAnchor : this.vehicle.cameraAnchor;
+    const anchor = this.seat === 'pillion' ? (this.benchSeat && this.vehicle.benchCameras[this.benchSeat]) || this.vehicle.pillionCameraAnchor : this.vehicle.cameraAnchor;
     anchor.updateWorldMatrix(true, false);
     anchor.getWorldPosition(this.camera.position);
     anchor.getWorldQuaternion(this.tmpQuat);
@@ -339,9 +340,10 @@ export class Player {
   // Riding -----------------------------------------------------------------
 
   /** Gets on: at the controls ('rider') or on the back ('pillion'). */
-  mount(vehicle, seat = 'rider') {
+  mount(vehicle, seat = 'rider', benchSeat = null) {
     this.mode = 'riding';
     this.seat = seat;
+    this.benchSeat = benchSeat;
     this.stumbleLeft = 0;
     this.landing = false;
     this.camDip = this.camDipVel = this.camRoll = this.camRollVel = 0;
@@ -373,6 +375,7 @@ export class Player {
     this.velocity.set(0, 0, 0);
     this.mode = 'foot';
     this.vehicle = null;
+    this.benchSeat = null;
     this.lookBackTurn = 0;
     const centre = { x: feet.x, y: feet.y + FEET_TO_CENTRE, z: feet.z };
     this.body.setTranslation(centre, true);
