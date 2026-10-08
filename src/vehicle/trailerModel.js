@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { squareBaleGeometry, squareBaleMaterials } from '../world/squareBale.js';
+import { createRandom } from '../core/random.js';
 
 // The bale trailer, procedural like the tractor: a flat bed on one axle with two wheels, a tongue to the tractor's drawbar, and
 // bales stacked on it, two high at the back (to lean on) and at the front, with a well between where legs hang down.
@@ -44,13 +46,22 @@ function box(w, h, d, mat, x, y, z, parent) {
   return m;
 }
 
+// A bale is 1 m across the trailer, 0.45 along it: two across fill the bed. They share one geometry and one set of textures (twine and all).
+let baleGeo;
+let baleMats;
+
 function bale(x, y, z, parent, shade) {
-  // A bale is 1 m across the trailer, 0.45 along it: two across fill the bed, and a couple of bands of twine show.
-  const g = new THREE.Group();
-  g.position.set(x, y, z);
-  box(0.98, 0.38, 0.44, shade ? MAT.hayDark : MAT.hay, 0, 0, 0, g);
-  for (const s of [-0.28, 0.28]) box(0.02, 0.4, 0.46, MAT.twine, s, 0, 0, g);
-  parent.add(g);
+  if (!baleGeo) {
+    baleGeo = squareBaleGeometry(0.98, 0.38, 0.44);
+    const light = squareBaleMaterials(createRandom(77));
+    // The darker bales share the textures but are tinted, so there are two sets of materials rather than one per bale.
+    const tinted = new Map([...new Set(light)].map((mat) => [mat, Object.assign(mat.clone(), { color: new THREE.Color(0xe3d3ac) })]));
+    baleMats = { light, dark: light.map((mat) => tinted.get(mat)) };
+  }
+  const m = new THREE.Mesh(baleGeo, shade ? baleMats.dark : baleMats.light);
+  m.position.set(x, y, z);
+  m.castShadow = m.receiveShadow = true;
+  parent.add(m);
 }
 
 export function buildTrailerModel() {

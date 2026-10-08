@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { barnShape, wallBoxes } from './barn.js';
 import { loftShape } from './loft.js';
+import { squareBaleGeometry, squareBaleMaterials, strawClumpGeometry } from './squareBale.js';
 
 // Draws the barn (the shape and numbers are in barn.js): board walls, a tin gable roof on timber ties, the big
 // sliding doors pushed back open on the yard side, a concrete floor and the workbench along the north wall.
@@ -290,14 +291,34 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
     add(brace, b.x + sx * legX, floorY + 0.5, b.z);
   }
   for (let i = 0; i < 4; i++) add(box(b.length - 0.1, 0.03, (b.depth - 0.1) / 4 - 0.01, timber), b.x, floorY + 0.3, b.z - (b.depth - 0.1) / 2 + ((b.depth - 0.1) / 4) * (i + 0.5));
-  // Vice at the right-hand end: a steel body, a moving jaw and its handle.
+  // Vice at the right-hand end, bolted to the front edge: a cast iron body with a fixed jaw, a moving jaw on a slide bar, a screw
+  // running out of the back and a T handle with ball ends, the jaws open a hand's width.
   const vx = b.x + b.length / 2 - 0.3;
-  const vz = b.z + b.depth / 2 - 0.12;
-  add(box(0.14, 0.12, 0.2, steel), vx, benchTop + 0.06, vz);
-  add(box(0.12, 0.07, 0.04, steel), vx, benchTop + 0.14, vz + 0.12);
-  const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.22, 6), steel);
-  handle.rotation.z = Math.PI / 2;
-  add(handle, vx, benchTop + 0.1, vz + 0.2);
+  const vz = b.z + b.depth / 2 - 0.1;
+  const vice = new THREE.Group();
+  const iron = new THREE.MeshStandardMaterial({ color: 0x2f4a5c, roughness: 0.55, metalness: 0.55 });
+  const jawFace = new THREE.MeshStandardMaterial({ color: 0x8a8d90, roughness: 0.6, metalness: 0.8 });
+  const part = (geo, mat, x, y, z, rot) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    if (rot) m.rotation.set(...rot);
+    m.castShadow = m.receiveShadow = true;
+    vice.add(m);
+    return m;
+  };
+  part(new THREE.BoxGeometry(0.16, 0.025, 0.2), iron, 0, 0.0125, 0); // base plate with four bolt heads
+  for (const [bx, bz] of [[-0.06, -0.08], [0.06, -0.08], [-0.06, 0.08], [0.06, 0.08]]) part(new THREE.CylinderGeometry(0.01, 0.01, 0.008, 6), steel, bx, 0.029, bz);
+  part(new THREE.BoxGeometry(0.12, 0.09, 0.16), iron, -0.02, 0.07, 0); // the body and fixed jaw
+  part(new THREE.BoxGeometry(0.03, 0.05, 0.14), iron, -0.095, 0.115, 0); // fixed jaw standing proud of the body
+  part(new THREE.BoxGeometry(0.006, 0.04, 0.12), jawFace, -0.078, 0.115, 0);
+  part(new THREE.BoxGeometry(0.03, 0.05, 0.14), iron, -0.02 + 0.2 * 0.5 - 0.02, 0.115, 0); // moving jaw, a hand's width off the fixed one
+  part(new THREE.BoxGeometry(0.006, 0.04, 0.12), jawFace, -0.02 + 0.2 * 0.5 - 0.037, 0.115, 0);
+  part(new THREE.CylinderGeometry(0.012, 0.012, 0.2, 8), steel, 0.03, 0.095, 0, [0, 0, Math.PI / 2]); // slide bar
+  part(new THREE.CylinderGeometry(0.009, 0.009, 0.12, 8), steel, 0.15, 0.115, 0, [0, 0, Math.PI / 2]); // the screw, out the back
+  part(new THREE.CylinderGeometry(0.006, 0.006, 0.26, 6), steel, 0.2, 0.115, 0, [Math.PI / 2, 0, 0]); // T handle across it
+  for (const sz of [-1, 1]) part(new THREE.SphereGeometry(0.014, 8, 6), steel, 0.2, 0.115, sz * 0.13);
+  vice.position.set(vx, benchTop, vz);
+  group.add(vice);
   // Things on the top: an oil can, two jars of screws and a dark rag.
   const redPaint = new THREE.MeshStandardMaterial({ color: 0xb3201a, roughness: 0.55 });
   const glass = new THREE.MeshStandardMaterial({ color: 0xbfd6d0, roughness: 0.15, transparent: true, opacity: 0.55 });
@@ -346,10 +367,13 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   const lz = (lf.minZ + lf.maxZ) / 2;
   const lw = lf.maxX - lf.minX;
   const ld = lf.maxZ - lf.minZ;
-  add(box(lw, 0.1, ld, plankMat), lx, lf.top - 0.05, lz);
+  // Planks, joists and beam run 5 cm into the walls, or their ends share a plane with the wall faces and flicker.
+  const lwIn = lw + 0.05;
+  const ldIn = ld + 0.1;
+  add(box(lwIn, 0.1, ldIn, plankMat), lx + 0.025, lf.top - 0.05, lz);
   fixedBox(lx, lf.top - 0.06, lz, lw / 2, 0.06, ld / 2);
-  for (let z = lf.minZ + 0.6; z < lf.maxZ; z += 1.2) add(box(lw, 0.18, 0.1, timber), lx, lf.top - 0.19, z, { cast: false });
-  add(box(0.14, 0.26, ld, timber), lf.edgeX + 0.07, lf.top - 0.23, lz); // the beam under the open edge
+  for (let z = lf.minZ + 0.6; z < lf.maxZ; z += 1.2) add(box(lwIn, 0.18, 0.1, timber), lx + 0.025, lf.top - 0.19, z, { cast: false });
+  add(box(0.14, 0.26, ldIn, timber), lf.edgeX + 0.07, lf.top - 0.23, lz); // the beam under the open edge
   for (const z of [lf.minZ + 0.1, lz, lf.maxZ - 0.1]) add(box(0.14, l.floor - 0.1, 0.14, timber), lf.edgeX + 0.1, floorY + (l.floor - 0.1) / 2, z); // and its posts
   // Rail: two rails and posts in each span, each with a collider you can't climb over.
   for (const span of lf.railSpans) {
@@ -390,37 +414,81 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   ladderProxy.position.set((foot.x + lf.edgeX) / 2, foot.y + (lf.top - foot.y + 0.6) / 2, foot.z);
   group.add(ladderProxy);
 
-  // Hay: a stack down each side of the walkable band (the north one is the one you hide in), each a base with loose heaps on top and a
-  // tall collider, and the bale a girl sits on at the edge.
-  const hayA = new THREE.MeshStandardMaterial({ color: 0xc9a54a, roughness: 1 });
-  const hayB = new THREE.MeshStandardMaterial({ color: 0xb08d3a, roughness: 1 });
+  // Hay: a stack of square bales down each side of the walkable band (the north one is the one you hide in), stepping down towards the
+  // eaves so none reaches the roof, with a tall collider each, loose straw on top, and the bale a girl sits on at the edge.
+  const strawMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 }); // tinted per clump
   const hy = l.hay;
   const stacks = [
     { x: hy.x, z: hy.z, hx: hy.halfX, hz: hy.halfZ },
     { x: hy.x, z: (lf.walkMaxZ + lf.maxZ) / 2, hx: hy.halfX, hz: (lf.maxZ - lf.walkMaxZ) / 2 },
   ];
+  const BALE = { w: 0.9, h: 0.36, d: 0.46 };
+  const baleMats = squareBaleMaterials(random);
+  const baleGeo = squareBaleGeometry(BALE.w, BALE.h, BALE.d);
+  const roofAt = (z) => floorY + wallHeight + (ridge - wallHeight) * (1 - Math.abs(z - shape.z) / (sizeZ / 2)); // the roof's underside-ish, above the barn floor
+  const spots = [];
+  const nook = { x: l.hideSpot.x, z: l.hideSpot.z, hx: 0.75, hz: 0.5 }; // left hollow so you can hide in it
   for (const st of stacks) {
-    add(box(st.hx * 2 - 0.1, 0.8, st.hz * 2 - 0.1, hayB), st.x, lf.top + 0.4, st.z);
-    for (let i = 0; i < 9; i++) {
-      const w = 0.7 + random() * 0.6;
-      const hgt = 0.3 + random() * 0.3;
-      const x = st.x + (random() - 0.5) * (st.hx * 2 - w);
-      const z = st.z + (random() - 0.5) * (st.hz * 2 - w);
-      add(box(w, hgt, w * (0.8 + random() * 0.5), i % 2 ? hayA : hayB), x, lf.top + 0.8 + hgt / 2 - 0.05 + (i % 3) * 0.1, z).rotation.y = (random() - 0.5) * 0.6;
+    const cols = Math.floor((st.hz * 2) / BALE.d);
+    const z0 = st.z - (cols * BALE.d) / 2;
+    const rows = Math.floor((st.hx * 2) / BALE.w);
+    const x0 = st.x - (rows * BALE.w) / 2;
+    for (let c = 0; c < cols; c++) {
+      const zc = z0 + (c + 0.5) * BALE.d;
+      // The column's height is whatever fits under the roof at its edge nearer the eaves, with a hand's width to spare.
+      const edge = zc + Math.sign(zc - shape.z) * BALE.d / 2;
+      const layers = Math.max(0, Math.min(4, Math.floor((roofAt(edge) - lf.top - 0.25) / BALE.h)));
+      for (let k = 0; k < layers; k++) {
+        for (let r = 0; r < rows; r++) {
+          // Alternate layers are shifted half a bale, as they are laid, trimming the ends to fit.
+          const shift = k % 2 ? BALE.w / 2 : 0;
+          const xc = x0 + (r + 0.5) * BALE.w + shift;
+          if (xc + BALE.w / 2 > st.x + st.hx + 0.01) continue;
+          if (k < 2 && Math.abs(xc - nook.x) < nook.hx + BALE.w / 2 - 0.15 && Math.abs(zc - nook.z) < nook.hz + BALE.d / 2 - 0.1) continue;
+          spots.push({ x: xc, y: lf.top + (k + 0.5) * BALE.h, z: zc, k, turn: (random() - 0.5) * 0.04 });
+        }
+      }
     }
     fixedBox(st.x, lf.top + 1.1, st.z, st.hx, 1.1, st.hz); // taller than the hay: the roof is too low to walk there
   }
+  const hayBales = new THREE.InstancedMesh(baleGeo, baleMats, spots.length);
+  const tint = new THREE.Color();
+  spots.forEach((sp, i) => {
+    m4.compose(new THREE.Vector3(sp.x, sp.y, sp.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), sp.turn), new THREE.Vector3(1, 1, 1));
+    hayBales.setMatrixAt(i, m4);
+    hayBales.setColorAt(i, tint.setHSL(0.12, 0.2, 0.82 + random() * 0.18));
+  });
+  hayBales.castShadow = hayBales.receiveShadow = true;
+  group.add(hayBales);
+  // A bale to sit on at the edge, where the girl sits.
   const seat = l.seat;
-  add(box(1.2, 0.46, 0.55, hayA), seat.x - Math.sin(seat.yaw) * 0.1, lf.top + 0.23, seat.z).rotation.y = seat.yaw + Math.PI / 2;
+  const seatBale = new THREE.Mesh(baleGeo, baleMats);
+  seatBale.position.set(seat.x - Math.sin(seat.yaw) * 0.1, lf.top + BALE.h / 2, seat.z);
+  seatBale.rotation.y = seat.yaw + Math.PI / 2;
+  seatBale.castShadow = seatBale.receiveShadow = true;
+  group.add(seatBale);
   const hayProxy = new THREE.Mesh(new THREE.BoxGeometry(hy.halfX * 2 + 1.2, 1.6, hy.halfZ * 2 + 1.2), new THREE.MeshBasicMaterial({ visible: false }));
   hayProxy.position.set(hy.x, lf.top + 0.8, hy.z);
   group.add(hayProxy);
-  // A loose scatter of straw on the planks.
-  for (let i = 0; i < 22; i++) {
-    const x = lf.minX + 0.4 + random() * (lw - 0.8);
-    const z = lf.walkMinZ + random() * (lf.walkMaxZ - lf.walkMinZ);
-    add(box(0.4 + random() * 0.4, 0.015, 0.05, hayB), x, lf.top + 0.01, z, { cast: false }).rotation.y = random() * 3;
+  // Loose straw on the planks, in clumps: thick against the stacks and the edge of the bales, thinner across the walkway. Plus a few on top of the stacks.
+  const clumpGeo = strawClumpGeometry(random, 7);
+  const clumps = [];
+  for (let i = 0; i < 90; i++) {
+    const x = lf.minX + 0.3 + random() * (lw - 0.5);
+    const nearStack = random() < 0.6;
+    const side = random() < 0.5 ? lf.walkMinZ : lf.walkMaxZ;
+    const z = nearStack ? side + (side === lf.walkMinZ ? -1 : 1) * random() * 0.5 : lf.walkMinZ + random() * (lf.walkMaxZ - lf.walkMinZ);
+    clumps.push([x, lf.top + 0.006, z]);
   }
+  for (const sp of spots) if (sp.k >= 1 && random() < 0.25) clumps.push([sp.x + (random() - 0.5) * 0.5, sp.y + BALE.h / 2 + 0.006, sp.z + (random() - 0.5) * 0.2]);
+  const straw = new THREE.InstancedMesh(clumpGeo, strawMat, clumps.length);
+  clumps.forEach(([x, y, z], i) => {
+    m4.compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), random() * Math.PI * 2), new THREE.Vector3(1, 1, 1));
+    straw.setMatrixAt(i, m4);
+    straw.setColorAt(i, tint.setHSL(0.12, 0.6, 0.38 + random() * 0.16));
+  });
+  straw.receiveShadow = true;
+  group.add(straw);
 
   // A bare bulb on a flex from the ridge, which comes on in the gloom.
   const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 8), new THREE.MeshBasicMaterial({ color: 0xfff1c9 }));

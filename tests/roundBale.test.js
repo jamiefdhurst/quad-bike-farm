@@ -25,3 +25,15 @@ describe('roundBaleGeometry', () => {
     expect(geo.groups.length).toBe(3);
   });
 });
+
+describe('squareBaleGeometry', () => {
+  it('keeps the bale\'s size and bulges only a little', async () => {
+    const { squareBaleGeometry } = await import('../src/world/squareBale.js');
+    const geo = squareBaleGeometry(0.9, 0.36, 0.46);
+    geo.computeBoundingBox();
+    expect(geo.boundingBox.max.x).toBeCloseTo(0.45, 5);
+    expect(geo.boundingBox.max.y).toBeGreaterThan(0.18);
+    expect(geo.boundingBox.max.y).toBeLessThan(0.18 * 1.04);
+    expect(geo.boundingBox.max.z).toBeLessThan(0.23 * 1.04);
+  });
+});

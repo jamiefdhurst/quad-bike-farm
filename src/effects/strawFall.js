@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { strawClumpGeometry } from '../world/squareBale.js';
 
 // A handful of straw tipped on your head from the hayloft: a few dozen short stalks that drift down over a second or two
 // and stay on the floor. Cosmetic only.
@@ -10,11 +11,12 @@ export class StrawFall {
   constructor(scene) {
     this.group = new THREE.Group();
     this.group.visible = false;
-    const geo = new THREE.BoxGeometry(0.35, 0.012, 0.03);
+    // Each bit is a little fan of stalks rather than one, so it reads as a pinch of straw and not a splinter.
+    const geos = [0, 1, 2].map(() => strawClumpGeometry(Math.random, 4));
     const mats = [0xc9a54a, 0xb08d3a].map((color) => new THREE.MeshStandardMaterial({ color, roughness: 1 }));
     this.bits = [];
     for (let i = 0; i < COUNT; i++) {
-      const mesh = new THREE.Mesh(geo, mats[i % 2]);
+      const mesh = new THREE.Mesh(geos[i % 3], mats[i % 2]);
       this.group.add(mesh);
       this.bits.push({ mesh, v: new THREE.Vector3(), spin: 0 });
     }

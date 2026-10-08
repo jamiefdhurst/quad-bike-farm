@@ -1960,3 +1960,15 @@ You answered "yes, propose others" and "procedural" to the two questions. All th
 - Jump ramp (`jumpRamp.js`): eight separate boards in four tones over a dark body, a cheek board down each edge and a steel angle on the lip with six bolt heads. The collider hull is unchanged, so the jump behaves as before.
 - Others I'd propose, not done: the fences, the water trough and the outbuilding props are still plain boxes.
 - Checked: unit tests, and once headless that the game loads with no errors. Not checked: how any of it looks in the running game, so the bale rim depth (12%), board tones and the twine lines are first guesses.
+
+### Second pass (2026-10-08)
+
+Jamie asked for the vice, Amy's notebook, the hayloft bales and straw, the hayloft edge flicker, the trailer bales and the jerry cans to be done properly.
+
+- Square bales (`src/world/squareBale.js`): a 0.9 by 0.36 by 0.46 m bale with a soft edge, a 3% bulge between two loops of blue twine, and cut-straw ends. The hayloft and the trailer share them (the trailer's are 0.98 by 0.38 by 0.44 as before, so its seats and colliders are unchanged).
+- Hayloft stacks: real bales in layers, alternate layers shifted half a bale, one instanced mesh. Each column is as tall as fits under the roof at its eaves-side edge with 0.25 m to spare (at most four layers), which fixes the old boxes poking through the tin. The hiding nook is left hollow in the bottom two layers. Colliders and the hide proxy are unchanged. Loose straw is clumps of stalks (also an instanced mesh), thick beside the stacks, and Jess's falling straw uses the same clumps.
+- Edge flicker: the planks, joists and edge beam were exactly as long as the gap between the walls, so their ends shared a plane with the wall faces. They now run 5 cm into the walls.
+- Bench vice: a cast-iron body on a bolted base, fixed and moving jaws with steel faces on a slide bar, a screw and a T handle with ball ends.
+- Notebook (`src/workshop/notebookModel.js`): a hardback with a rounded spine, lined page edges, a label, an elastic band, a ribbon and a pencil. Same footprint as before, so the look-at box is unchanged.
+- Jerry cans: bevelled shell, pressed frame and X, one moulded handle with three finger slots, a neck, cap and chain, and a label (PETROL, MIX 50:1 or DIESEL).
+- Checked: unit tests, and headless screenshots of the loft stacks, the bench with vice and notebook, the trailer bales and the diesel can. Not checked: the south loft stack, the petrol and pre-mix cans up close, or the hide nook from inside.
