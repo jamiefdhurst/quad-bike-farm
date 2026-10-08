@@ -524,3 +524,4 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 93. Remappable keys. The control list is long now; let them be changed on the help screen.
 94. "New since last time". A card on the title overlay listing what changed since the build you last played, from the commit messages, so you know what to go and try.
 95. Shape checks for the procedural models. Record each vehicle's and girl's mesh counts and bounding sizes in a test, so a change that shrinks a girl or moves a wheel by accident fails cheaply, without a screenshot.
+96. New models for the girls. The current body can't take clothes (DECISIONS.md, "New models for the girls, a viewer test"). Parked until there's a free body of the right build: Quaternius's Regular female is paid, the free Superhero one is too muscular. Otherwise MakeHuman (MPFB2) driven by script.
