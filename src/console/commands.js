@@ -84,7 +84,7 @@ export function buildCommands(host) {
           return [`${c.usage}${c.aliases?.length ? `   (also ${c.aliases.join(', ')})` : ''}`, `  ${c.help}`, ...(c.examples ?? []).map((e) => `  e.g. ${e}`)];
         }
         const out = [
-          'Type a command and press Enter. Tab completes (and goes through the choices), the arrow keys bring back old lines, Esc shuts this.',
+          'Type a command and press Enter. Tab completes (and goes through the choices), the arrow keys bring back old lines, backslash shuts this.',
           'Values live in a tree: vehicle.red.temperature, girl.amy.favour, weather.rain, tune.engine... Type a value\'s path alone to read it,',
           'or the path and a number (vehicle.red.temperature 0.5) to set it. help topics explains the tree and positions.',
         ];

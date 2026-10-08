@@ -23,7 +23,7 @@ export class GameConsole {
     this.recall = -1; // where the up arrow has got to in the history
     this.draft = '';
     this.build();
-    this.print('Console. help lists every command, Tab completes, Esc shuts it.', 'info');
+    this.print('Console. help lists every command, Tab completes, backslash or Esc shuts it.', 'info');
   }
 
   build() {
@@ -64,13 +64,30 @@ export class GameConsole {
     this.out.scrollTop = this.out.scrollHeight;
   }
 
+  /**
+   * The mouse stays locked while it is open (typing still works), so the game carries on and shuts again without a click. Esc is the
+   * browser's own key for letting go of the mouse and can't be held back or followed by a re-lock, so when that happens the console
+   * shuts and the overlay shows only its small hint, as it does for the debug panel, instead of "Ready to play".
+   */
   open() {
     if (this.visible || document.activeElement?.tagName === 'INPUT') return;
     this.visible = true;
     this.root.style.display = 'block';
-    this.game.input.exitPointerLock();
-    document.getElementById('overlay').classList.add('tuning');
     setTimeout(() => this.input.focus(), 0); // after the key that opened it has finished typing
+    if (!this.listening) {
+      this.listening = true;
+      this.game.input.on('lockchange', (locked) => this.onLock(locked));
+    }
+  }
+
+  onLock(locked) {
+    const overlay = document.getElementById('overlay');
+    if (locked) {
+      if (!this.game.debugGui?.visible) overlay.classList.remove('tuning');
+    } else if (this.visible) {
+      this.close();
+      overlay.classList.add('tuning');
+    }
   }
 
   close() {
@@ -78,13 +95,11 @@ export class GameConsole {
     this.visible = false;
     this.root.style.display = 'none';
     this.input.blur();
-    document.getElementById('overlay').classList.toggle('tuning', !!this.game.debugGui?.visible);
-    if (!this.game.debugGui?.visible) this.game.input.requestPointerLock();
   }
 
   onKey(e) {
     e.stopPropagation();
-    if (e.key === 'Escape') {
+    if (e.key === 'Escape' || e.key === '\\') {
       e.preventDefault();
       return this.close();
     }

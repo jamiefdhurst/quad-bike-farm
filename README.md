@@ -349,7 +349,7 @@ Their lines are recorded offline with Chatterbox, a text-to-speech engine that c
 
 ## Console
 
-Backslash (the key left of Z, or the `#` key on a UK keyboard) opens a command line along the bottom of the screen, separate from the debug panel. Esc shuts it. Tab completes whatever you are typing (commands, paths, vehicles, girls, places, values) and goes through the choices if there are several, Shift+Tab goes back, the up and down arrows bring back old lines. `help` lists every command, `help <command>` gives examples, `help topics` explains the tree.
+Backslash (the key left of Z, or the `#` key on a UK keyboard) opens a command line along the bottom of the screen, separate from the debug panel. Backslash again shuts it (the mouse stays locked while it is open, so the game carries on and you do not need to click). Esc also shuts it, but the browser takes Esc to release the mouse, so you click the game to carry on. Tab completes whatever you are typing (commands, paths, vehicles, girls, places, values) and goes through the choices if there are several, Shift+Tab goes back, the up and down arrows bring back old lines. `help` lists every command, `help <command>` gives examples, `help topics` explains the tree.
 
 Every value is at a dotted path. Type the path alone to read it, or the path and a value to set it:
 
