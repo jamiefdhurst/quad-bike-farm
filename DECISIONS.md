@@ -2166,3 +2166,11 @@ Nothing needed asking: the item settled it. Built as the quads' pillion on a ben
 - **Getting off.** Once stopped, you step down on the left, by the passenger door (`benchStand`, from `UTV_STAND.left` and `LANDY_STAND.left`), trying further out and then fore and aft if it's blocked (`benchDismountSpots`).
 - **No new tunables, so nothing new in the panel**: the girls' go and ride tuning are as before. No new lines: she says her `passengerOn` line as you get in.
 - **Checked:** `npm test` (seat choice, dismount spots, your seat counted as taken by `UtvRide`). Not run in the game: how the camera sits at each seat (height, how much of the door and window show), the step down on a slope, and the other girl and you sharing the bench in a go.
+
+## Reverse is always S, and the prompt shows only what works from the ground (2026-10-08)
+
+From Jamie: some vehicles backed up on S and some on W, which was confusing, and the prompt over a vehicle listed keys that only work from the seat.
+
+- **Reverse.** The automatics already backed up on S after the reverse button. The manuals (red, green, yellow, tractor, Land Rover) used W as the throttle in reverse gear. Now in reverse gear on a manual S is the throttle and W the brake (`pedals()` in `quad.js`, tested), so S means backwards everywhere. W stays forwards; on an automatic in reverse W still brakes, then drops out of reverse. Chosen because S was already the answer on two vehicles and it is what most games do. The girls drive through the controls object, not keys, so nothing changes for them.
+- **Prompt.** Looking at a vehicle from the ground no longer lists the clutch and gears, the Land Rover's reverse, 4WD and diff lock: only keys that work from beside it (ignition, start, choke, fuel tap, dipstick, pull-start, hand throttle, push, sit on the back, winch and chain). The help text in `hud.js` and the README were reworded for reverse.
+- Checked: unit tests only; not driven in the game.

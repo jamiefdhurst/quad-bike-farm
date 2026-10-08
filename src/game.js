@@ -694,8 +694,8 @@ export class Game {
               : unit.spec.utv
                 ? [['K', 'Key'], ['R', 'Start'], ['T', 'Tip the bed'], ['Y', 'Dipstick'], ...(this.canSitOnBack(quad) ? [['B', 'Sit in the passenger seat']] : [])] // the reverse lever is on the dash: only from the seat
                 : unit.spec.landRover
-                  ? [['K', 'Key'], ['R', 'Start'], ['Shift 1-4', 'Clutch, gears'], ['B', 'Reverse'], ['Q Z', 'Choke'], ['[ ]', 'Hand throttle'], ['G', '4WD'], ['U', 'Diff lock'], ['Y', 'Dipstick'], ['P', 'Starting handle (at the front)'], ...(this.canSitOnBack(quad) ? [['B', 'Sit in the passenger seat']] : [])]
-                : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.manual ? [['Shift 1-4', 'Clutch, gears']] : []), ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(quad.sump ? [['Y', 'Dipstick']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : []), ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
+                  ? [['K', 'Key'], ['R', 'Start'], ['Q Z', 'Choke'], ['[ ]', 'Hand throttle'], ['Y', 'Dipstick'], ['P', 'Starting handle (at the front)'], ...(this.canSitOnBack(quad) ? [['B', 'Sit in the passenger seat']] : [])]
+                : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(quad.sump ? [['Y', 'Dipstick']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : []), ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
           };
         },
         interact: () => {

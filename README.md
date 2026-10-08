@@ -41,7 +41,7 @@ Other scripts:
 | `R` (hold) | Crank the starter |
 | `Q` / `Z` | Choke more / less, in 10% steps. Hold to keep stepping |
 | `W` | Throttle |
-| `S` | Brake. On the blue and loan quads, hold it at a standstill and press `B` for reverse, and then `S` backs it up; on the manual quads it is only the brake |
+| `S` | Brake, and backwards once reverse is on, on every vehicle. On the blue and loan quads, hold it at a standstill and press `B` for reverse; on the manual ones reverse is a gear, and in it `S` is the throttle and `W` the brake |
 | `Shift` (hold), `1` to `4`, `B`, `0` | The red, green and yellow have a clutch and a four-speed gearbox: hold `Shift` to change gear with `1` to `4`, `B` for reverse (the red wants the bars turned as you press it, the green wants it stopped, the yellow has none), `0` for neutral. The starter won't turn in gear unless you hold the clutch |
 | `A` / `D` | Steer |
 | `E` | Get off. Above walking pace you jump off and the quad carries on by itself at the same speed and steering until it crashes, tips, stalls or runs dry. To stop a runaway, look at it and press `K`, or catch it once it's below a jog (3 m/s) to get back on. Get off stood still with the throttle open (15% or more) and it stays revving as if the cable had stuck, until it stalls or runs dry, you get back on, or you switch it off (`K`). |
@@ -225,7 +225,7 @@ A green Gator-style side-by-side is on the farm in about two games in three, on 
 An old Series III 88-inch pick-up is on the farm in about two games in three, parked anywhere a quad might be: Bronze Green with a white cab roof, the spare wheel on the bonnet, a 2.25 litre petrol four and a lot of miles on the clock. Look at it and press `E` to drive it from the right-hand seat.
 
 - **Starting.** `K` for the key and hold `R` for the starter, with the choke (`Q` and `Z`, a knob on the dash) when it's cold. When the battery is too flat for the starter, use the starting handle: stand at the front bumper and the prompt shows your grip. `1` holds it with your thumb round the handle, the natural way, and now and then the engine kicks back and spins the handle the wrong way: you spend a few seconds nursing your hand, and whoever is near says so. `2` holds it with your thumb alongside your fingers, which is safe. Hold `P` and let go to swing it, the same timing as a pull-start: each good swing turns it over once.
-- **Driving.** A four-speed manual: hold `Shift` for the clutch, `1` to `4` for the gears, `B` reverse and `0` neutral. First and second have no synchromesh, so going into them faster than walking pace crunches and they won't go in: nearly stop first. `G` is the yellow-knobbed lever for 4WD and `U` the diff lock, both shown on the dash. The hand throttle is a knob on the dash: `]` pulls it out and `[` pushes it in, and it holds the revs wherever it's left. It's heavy and slow to steer, with leaf springs and not much travel.
+- **Driving.** A four-speed manual: hold `Shift` for the clutch, `1` to `4` for the gears, `B` reverse (then `S` backs up, as everywhere) and `0` neutral. First and second have no synchromesh, so going into them faster than walking pace crunches and they won't go in: nearly stop first. `G` is the yellow-knobbed lever for 4WD and `U` the diff lock, both shown on the dash. The hand throttle is a knob on the dash: `]` pulls it out and `[` pushes it in, and it holds the revs wherever it's left. It's heavy and slow to steer, with leaf springs and not much travel.
 - **The dash.** A Series binnacle in front of you: a speedo to 90 mph with its odometer, a combined fuel and water gauge, and IGN, OIL, CHOKE, BRAKE, 4WD and DIFF lamps.
 - **Like a quad.** It wears and needs servicing, can get a slow puncture, a sticking throttle cable or a dirty carb, has a battery that goes flat, engine oil to check with the dipstick (`Y`), and one to three quirks of its own. The toolbox works on it as on a petrol quad (no belt: it has a clutch). It has no fuel tap, so it never drips.
 - **Towing.** Its towing jaw at the back takes the little tipping trailer: back up to the trailer's ring and press `J`. It feels the load less than a quad does, as the tractor does.
@@ -442,11 +442,11 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 9.  Console, separate to the debug window - set and get all values, reset positions and states of vehicles, girls, etc., set weather, flight mode, turn the girls' autonomy and speech on and off, etc. **Done.** See DECISIONS.md, "The console".
 10. The girls drive the UTV and the Land Rover. Either girl can take the wheel of the UTV, start it on the glow plugs, work the dash lever for reverse, and drive it with you (and the other girl) on the bench or in the bed. Jess takes it for a go, Amy has her day, as with the tractor. **Done.** See DECISIONS.md, "The girls drive the UTV and the Land Rover". (You on the bench with a girl driving is item 11, also done.)
 11. Passenger seats in the UTV and Land Rover. You can ride in the UTV's other seats while a girl drives it, looking out from the middle or the left of the bench, with the camera anchored to the seat and the same on and off as the quads' pillion. **Done.** See DECISIONS.md, "Riding beside her in the UTV and the Land Rover".
-12. Better UTV model. Moved to item 108.
+12. Better UTV model. 
 13. Things in the UTV's bed. The pick-up items (jerry cans, the toolbox, jump leads, the hose and so on) can be put in the bed and ride along, tip out when the bed tips, and be picked up again from it. Bales too, if they become pick-up items.
 14. The girls should see the trailers as obstacles when driving and they should have collision logic, and have better collision avoidance logic when they're walking around the vehicles, they frequently bump into them.
 15. Better trailer models (large and small). Moved to item 110.
-16. Improve Land Rover model. Moved to item 109.
+16. Improve Land Rover model.
 17. Better starter noises for the UTV and Land Rover
 18. Better frost on the ground and on the seats
 19. Indicators on the Land Rover and the UTV, and a reverse light on the outside

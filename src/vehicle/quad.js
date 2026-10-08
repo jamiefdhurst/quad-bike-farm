@@ -52,6 +52,13 @@ const NOTE_SECONDS = 2.5;
  * The quad as a game object: rider controls, drivetrain, Rapier physics and
  * the visual model, with the engine model plugged in from outside.
  */
+/** Throttle and brake from W and S on a manual: forwards W goes and S stops; in reverse gear S goes (backwards) and W stops. */
+export function pedals(w, s, reverse) {
+  const go = reverse ? s : w;
+  const stop = reverse ? w : s;
+  return [go ? 1 : 0, stop ? 1 : 0];
+}
+
 export class Quad {
   /**
    * @param {object} opts
@@ -513,8 +520,8 @@ export class Quad {
       // The tractor: foot throttle and brake, a hand throttle that stays put, a clutch pedal and a gear lever.
       const input = this.input;
       steerInput = (input.isDown('KeyA') ? 1 : 0) - (input.isDown('KeyD') ? 1 : 0);
-      throttleInput = input.isDown('KeyW') ? 1 : 0;
-      brakeInput = input.isDown('KeyS') ? 1 : 0;
+      // In reverse gear S is the throttle (backwards) and W the brake, as on every other vehicle.
+      [throttleInput, brakeInput] = pedals(input.isDown('KeyW'), input.isDown('KeyS'), this.reverse);
       this.clutchHeld = CLUTCH_KEYS.some((k) => input.isDown(k));
       this.handSetting = stepHand(this.handSetting, input.isDown(HAND_THROTTLE_UP_KEY), input.isDown(HAND_THROTTLE_DOWN_KEY), dt);
       this.starter = input.isDown('KeyR') && this.starterAllowed();
@@ -530,9 +537,8 @@ export class Quad {
       }
 
       if (this.manual) {
-        // The lever decides which way it goes: W is throttle and S the brake, never reverse.
-        throttleInput = w ? 1 : 0;
-        brakeInput = s ? 1 : 0;
+        // The lever decides which way it goes. In reverse gear S is the throttle (backwards) and W the brake, as on the automatics.
+        [throttleInput, brakeInput] = pedals(w, s, this.reverse);
       } else {
         if (w) {
           if (this.reverse && fwd < -0.3) brakeInput = 1;

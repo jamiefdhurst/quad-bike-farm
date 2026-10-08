@@ -14,7 +14,7 @@ const HELP_HTML = `
   <div><kbd>K</kbd> ignition, hold <kbd>R</kbd> to crank, <kbd>P</kbd> pull-start (yellow and orange)</div>
   <div><kbd>Q</kbd> more choke, <kbd>Z</kbd> less, <kbd>F</kbd> fuel tap. Each quad's choke, tap and reverse are in a different place: look down for them, and some need you stopped or a hand off the bars</div>
   <div>Red, green and yellow have a clutch: hold <kbd>Shift</kbd> to change gear with <kbd>1</kbd> to <kbd>4</kbd>, <kbd>B</kbd> reverse (red: turn the bars as you press it; green: stopped), <kbd>0</kbd> neutral</div>
-  <div><kbd>W</kbd> throttle, <kbd>S</kbd> brake (blue and loan: hold it and press <kbd>B</kbd> for reverse, then <kbd>S</kbd> backs up), <kbd>A</kbd><kbd>D</kbd> steer</div>
+  <div><kbd>W</kbd> throttle, <kbd>S</kbd> brake, and backwards once reverse is on (blue and loan: hold it and press <kbd>B</kbd>; red, green: <kbd>B</kbd> with the clutch in), <kbd>A</kbd><kbd>D</kbd> steer</div>
   <div>Red and blue: <kbd>G</kbd> 2WD or 4WD (4WD for the mud; the rocker on the bars), blue: <kbd>U</kbd> diff lock</div>
   <div><kbd>Space</kbd> parking brake, <kbd>T</kbd> right it if it tips, <kbd>E</kbd> get off</div>
   <div>Hold <kbd>L</kbd> for the horn: the girls beep back</div>
@@ -22,7 +22,7 @@ const HELP_HTML = `
   <h3>The old tractor</h3>
   <div><kbd>K</kbd> key (heats the glow plugs: wait for the GLOW lamp to go out), hold <kbd>R</kbd> to crank</div>
   <div>Hold <kbd>Shift</kbd> for the clutch: <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> gears, <kbd>B</kbd> reverse, <kbd>0</kbd> neutral</div>
-  <div><kbd>Q</kbd> <kbd>Z</kbd> hand throttle (it has no fuel tap; they work from the ground beside it too), <kbd>W</kbd> foot throttle, <kbd>S</kbd> brake, <kbd>O</kbd> stop knob (the key won't stop it)</div>
+  <div><kbd>Q</kbd> <kbd>Z</kbd> hand throttle (it has no fuel tap; they work from the ground beside it too), <kbd>W</kbd> foot throttle, <kbd>S</kbd> brake (<kbd>S</kbd> goes backwards, <kbd>W</kbd> brakes, in reverse gear), <kbd>O</kbd> stop knob (the key won't stop it)</div>
   <div>Leave it running in first gear with the hand throttle open and get off, and it creeps off on its own: the more throttle, the faster (a trickle to a brisk walk)</div>
   <div><kbd>J</kbd> hook the bale trailer on when the drawbar is at its ring, or take it off when you're stopped. The girls climb on once you're stopped</div>
   <h3>The little tipping trailer</h3>
@@ -33,7 +33,7 @@ const HELP_HTML = `
   <div><kbd>T</kbd> tip the bed (stopped, from the seat or beside it), again to lower it. Stop with it running and the girls may climb in. Ask them from the wheel too</div>
   <h3>The Land Rover</h3>
   <div><kbd>K</kbd> key, hold <kbd>R</kbd> to start. Battery flat? Stand at the front: <kbd>1</kbd> thumb round the handle (it can kick back) or <kbd>2</kbd> thumb alongside your fingers, then hold <kbd>P</kbd> and let go to swing the starting handle</div>
-  <div>Hold <kbd>Shift</kbd> for the clutch, <kbd>1</kbd>-<kbd>4</kbd> gears, <kbd>B</kbd> reverse, <kbd>0</kbd> neutral: first and second crunch on the move. <kbd>Q</kbd><kbd>Z</kbd> choke, <kbd>]</kbd><kbd>[</kbd> hand throttle out and in, <kbd>G</kbd> 4WD, <kbd>U</kbd> diff lock</div>
+  <div>Hold <kbd>Shift</kbd> for the clutch, <kbd>1</kbd>-<kbd>4</kbd> gears, <kbd>B</kbd> reverse (then <kbd>S</kbd> backs up), <kbd>0</kbd> neutral: first and second crunch on the move. <kbd>Q</kbd><kbd>Z</kbd> choke, <kbd>]</kbd><kbd>[</kbd> hand throttle out and in, <kbd>G</kbd> 4WD, <kbd>U</kbd> diff lock</div>
   <h3>Fuel and tools</h3>
   <div><kbd>E</kbd> pick up a jerry can, hold <kbd>E</kbd> at a quad to pour or at the tank to refill, <kbd>G</kbd> put it down</div>
   <div>Hose: <kbd>E</kbd> pick up, hold <kbd>E</kbd> to wash. Toolbox: <kbd>E</kbd> pick up, <kbd>E</kbd> on a quad to tinker</div>
