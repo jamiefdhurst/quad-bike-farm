@@ -4073,7 +4073,10 @@ export class Game {
     this.winch?.fixedUpdate(dt, this.winchReel);
     this.chain.fixedUpdate(dt);
     if (this.leads.update(dt, this.camera.position) === 'pulledOff') this.hud.toast('The jump leads came off');
-    for (const unit of this.units) unit.fixedUpdate(dt);
+    for (const unit of this.units) {
+      unit.quad.backRider = !!this.herOnBack(unit.quad);
+      unit.fixedUpdate(dt);
+    }
     this.physics.step();
     for (const unit of this.units) unit.recordTransform();
   }

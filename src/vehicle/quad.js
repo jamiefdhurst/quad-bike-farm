@@ -20,6 +20,7 @@ import { Bog } from './bog.js';
 import { Sump, hasSump, oilPressureLamp } from './sump.js';
 import { stepHand } from './handLever.js';
 import { Faults } from './faults.js';
+import { toppleLoad } from './topple.js';
 import { DriveSwitch, driveEffects, DEFAULT_DRIVE_PARAMS } from './driveMode.js';
 import { reverseAllowed, chokeReach, DEFAULT_CONTROLS_PARAMS } from './controls.js';
 import { advanceUsage, isNeutral, dashClock, lampStates } from './dashState.js';
@@ -196,6 +197,7 @@ export class Quad {
     this.handThrottle = 0; // a girl on the back reaching round to open it over your hand (npc/throttleGrab.js)
     this.pullHeld = 0; // seconds the cord's been held, until it's let go (the yank)
     this.passenger = null; // you, riding on the back while she drives
+    this.backRider = false; // a girl on the back (the game sets it each step), for the toppling weight
     this.driver = null; // someone else at the controls (her), see setDriver()
     this.throttle = 0;
     this.brake = 0;
@@ -710,6 +712,9 @@ export class Quad {
       this.physics.setParked(false);
       this.physics.pushAlong(this.pushDir * this.controlsParams.pushSpeed, dt);
     }
+    // Whoever's aboard, sat up on it, leans it further over on a slope (vehicle/topple.js).
+    const load = toppleLoad(p, { front: !!(this.rider || this.driver), back: !!(this.passenger || this.backRider) });
+    if (load > 0) this.physics.topple(load, dt);
     this.physics.update(dt);
   }
 

@@ -3,6 +3,7 @@
 
 import { Traction, surfaceGrip, isDriven } from './traction.js';
 import { bogGrip } from './bog.js';
+import { toppleTorque } from './topple.js';
 
 // Wheel layout in chassis space (+Z forward, +X to the rider's left).
 export const WHEELS = [
@@ -247,6 +248,15 @@ export class QuadPhysics {
       steering: this.vehicle.wheelSteering(i) ?? 0,
       contact: this.vehicle.wheelIsInContact(i),
     };
+  }
+
+  /** The riders' weight leaning it further over on a slope: `load` kg m (vehicle/topple.js), applied for one step of `dt`. */
+  topple(load, dt) {
+    const r = this.body.rotation();
+    // The chassis's up vector: the quaternion applied to (0, 1, 0).
+    const up = { x: 2 * (r.x * r.y - r.w * r.z), y: 1 - 2 * (r.x * r.x + r.z * r.z), z: 2 * (r.y * r.z + r.w * r.x) };
+    const t = toppleTorque(up, load);
+    this.body.applyTorqueImpulse({ x: t.x * dt, y: 0, z: t.z * dt }, true);
   }
 
   /** Puts the bike back on its wheels at a spot, e.g. after a rollover. */

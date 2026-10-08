@@ -447,6 +447,7 @@ export const EXTRA_SPECS = [
     vehicle: {
       mass: 110,
       centreOfMassY: -0.06,
+      riderTopple: 40, // a grown-up on a kids' quad is top-heavy, but the full weight would tip it at 17 degrees
       rollInertia: 20,
       pitchInertia: 35,
       yawInertia: 42,
@@ -545,6 +546,7 @@ export const EXTRA_SPECS = [
     vehicle: {
       mass: 105, // bike plus rider
       centreOfMassY: -0.22, // low, and the outriggers stiff and wide, so it stays up without a rider balancing it
+      riderTopple: 0, // its outriggers are tuned with the rider in the mass; a proper two-wheeler model is TODO 23
       suspensionStiffness: 60,
       rollInertia: 12,
       pitchInertia: 28,
@@ -652,6 +654,7 @@ export const EXTRA_SPECS = [
     vehicle: {
       mass: 215, // bike plus rider
       centreOfMassY: -0.06, // a bit higher than the quads' -0.08 default, with the rider up on top: that, and one front wheel, is what tips it
+      riderTopple: 0, // its tipping is tuned with the rider in the centre of mass already
       steerSpeedReduction: 0.12, // less lock at speed, or it trips itself on a single front wheel
       rollInertia: 38,
       pitchInertia: 70,

@@ -9,6 +9,8 @@ export const DEFAULT_VEHICLE_PARAMS = {
   yawInertia: 115,
   linearDamping: 0.05,
   angularDamping: 0.6,
+  riderTopple: 90, // kg m: the rider's weight up on the seat, toppling it on a slope (vehicle/topple.js); 0 where the chassis already has it
+  backTopple: 0.8, // someone on the back adds this much of the rider's toppling again
 
   // Suspension and wheels
   wheelRadius: 0.3,
@@ -90,6 +92,8 @@ export const VEHICLE_PARAM_RANGES = {
   yawInertia: [10, 300, 1],
   linearDamping: [0, 1, 0.01],
   angularDamping: [0, 5, 0.05],
+  riderTopple: [0, 300, 5],
+  backTopple: [0, 2, 0.05],
   wheelRadius: [0.2, 0.45, 0.01],
   suspensionRestLength: [0.05, 0.5, 0.01],
   suspensionStiffness: [5, 100, 0.5],
