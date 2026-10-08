@@ -20,6 +20,7 @@ export const CHARACTERS = [
   {
     id: 'amy',
     name: 'Amy',
+    mapColour: '#3a5690', // her blue polo, for her dot on the farm map
     params: { outfit: 'farmPolo', boredShowOffChance: 0.04, sideSaddleChance: 0.4, blownNoticeAt: 0.25, remembers4wd: 0.65 }, // sits side-saddle on the back, ladylike
     lines: VOICE_LINES,
     voiceBank: 'companion-voice', // public/audio/<voiceBank>.json, recorded by tools/generate_companion_voice.py
@@ -28,6 +29,7 @@ export const CHARACTERS = [
   {
     id: 'jess',
     name: 'Jess',
+    mapColour: '#8e2238', // her burgundy polo
     // Cheekier: braver behind the bars, chattier, bored sooner (usually after
     // about 45 s rather than 60) and more likely to do something about it, and
     // she likes being left on a runaway.

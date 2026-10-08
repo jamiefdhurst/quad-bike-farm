@@ -136,6 +136,8 @@ import { Notebook } from './workshop/notebook.js';
 import { Interaction } from './interaction/interaction.js';
 import { Wheel } from './interaction/wheel.js';
 import { Hud } from './hud/hud.js';
+import { MapView } from './hud/mapView.js';
+import { farmMapFeatures, DEFAULT_MAP_PARAMS, MAP_PARAM_RANGES } from './hud/farmMap.js';
 import { DebugGui } from './debug/debugGui.js';
 
 const BARN_BULB = 30; // candela of the bulb in the barn, scaled by how far in you are and how gloomy the day is
@@ -827,6 +829,10 @@ export class Game {
     // Jump leads, for a flat battery: a running quad charges it.
     this.leads = new JumpLeads({ scene: this.scene, world: this.world, position: L.benchLeads, yaw: L.benchLeads.yaw });
     this.leads.model.position.y += L.bench.height; // they start on the workbench
+    // The farm map on M (hud/farmMap.js, mapView.js).
+    this.mapParams = { ...DEFAULT_MAP_PARAMS };
+    registerTuning('Map', this.mapParams, MAP_PARAM_RANGES);
+    this.farmMap = new MapView(document.getElementById('hud'), farmMapFeatures(L, this.world.fields, this.world.track), this.mapParams);
     this.interaction.add({
       target: this.leads.proxy,
       isAvailable: () => !this.handsFull && !this.leads.held,
@@ -3907,7 +3913,8 @@ export class Game {
     if (input.wasPressed('Backquote')) this.debugGui.toggle();
     if (input.wasPressed('KeyJ')) this.toggleHitch();
     if (input.wasPressed('Enter') && !this.menu.isOpen && this.player.isRiding) this.askForRace(this.riddenUnit);
-    if (input.wasPressed('KeyM')) {
+    if (input.wasPressed('KeyM')) this.farmMap.toggle();
+    if (input.wasPressed('KeyN')) {
       this.audioHub.params.muted = !this.audioHub.params.muted;
       this.hud.toast(this.audioHub.params.muted ? 'Sound off' : 'Sound on', 1.2);
     }
@@ -4151,6 +4158,51 @@ export class Game {
       if (note && (u === this.riddenUnit || u.quad.position.distanceTo(this.player.position) < 6)) this.hud.toast(note, 2.2);
     }
     this.hud.update(dt);
+    if (this.farmMap.isOpen) this.farmMap.draw(this.mapMarkers());
+  }
+
+  /** You, the girls, the vehicles, the trailers and the things you carry about, for the farm map. */
+  mapMarkers() {
+    const v = this.mapVec ??= new THREE.Vector3();
+    const d = this.mapDir ??= new THREE.Vector3();
+    const at = (obj) => obj.getWorldPosition(v);
+    const yawOf = (obj) => (obj.getWorldDirection(d), Math.atan2(d.x, d.z));
+    const hex = (n) => `#${n.toString(16).padStart(6, '0')}`;
+    const markers = [];
+    this.camera.getWorldPosition(v);
+    this.camera.getWorldDirection(d);
+    markers.push({ kind: 'you', x: v.x, z: v.z, yaw: Math.atan2(d.x, d.z), label: 'You' });
+    this.companions.forEach((c, i) => {
+      const ch = CHARACTERS[i];
+      at(c.root);
+      markers.push({ kind: 'girl', x: v.x, z: v.z, colour: ch.mapColour, label: ch.name, short: ch.name[0] });
+    });
+    const big = new Set(['tractor', 'utv', 'landrover']);
+    for (const u of this.units) {
+      const q = u.quad;
+      const hidden = u.barnFind && !u.barnFind.tarpOff;
+      markers.push({
+        kind: 'vehicle', x: q.position.x, z: q.position.z, yaw: q.yaw, big: big.has(u.spec.id),
+        colour: hidden ? '#8b8270' : hex(u.spec.bodyColor), label: hidden ? 'Under the tarp' : u.spec.name,
+      });
+    }
+    for (const [t, label] of [[this.trailer, 'Bale trailer'], [this.tipTrailer, 'Tipping trailer']]) {
+      at(t.model);
+      markers.push({ kind: 'trailer', x: v.x, z: v.z, yaw: yawOf(t.model), colour: '#9a9a96', label });
+    }
+    const items = [
+      [this.petrolCan, '#b8241c', 'Petrol can'],
+      [this.premixCan, hex(PREMIX_CAN_COLOURS.colour), 'Pre-mix can'],
+      [this.dieselCan, hex(DIESEL_CAN_COLOURS.colour), 'Diesel can'],
+      [this.toolbox, '#c8452c', 'Toolbox'],
+      [this.leads, '#222222', 'Jump leads'],
+      [this.oilBottle, '#e8e2c8', 'Oil bottle'],
+    ];
+    for (const [item, colour, label] of items) {
+      at(item.model);
+      markers.push({ kind: 'item', x: v.x, z: v.z, colour, label });
+    }
+    return markers;
   }
 
   onResize() {

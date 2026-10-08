@@ -326,3 +326,14 @@ body {
 .lil-gui.root {
   z-index: 30;
 }
+
+/* The farm map on M (hud/mapView.js), over the middle of the screen. */
+.farm-map {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 4px;
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
