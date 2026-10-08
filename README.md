@@ -413,7 +413,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 2.  The girls hold items properly, like the jerry can. **Done.** See DECISIONS.md, "Girls carrying things".
 3.  Make all the vehicles random - make it so each game we have between 4 and all of them, every single vehicle is in the random pool and can spawn anywhere. **Done.** See DECISIONS.md, "Every vehicle in the random pool".
 4.  Better tractor model. **Done.** See DECISIONS.md, "A better tractor model".
-5.  The girls bump into the quads and move them around, they need to be a bit more aware, and shouldn't be able to bump the quads and move them
+5.  The girls bump into the quads and move them around, they need to be a bit more aware, and shouldn't be able to bump the quads and move them **Done.** See DECISIONS.md, "The girls no longer shove the quads".
 6.  Pods on the tractor. The two accessory pods (analogue and digital) can only be fitted to the quads now. Let them go on the tractor too, reading its hours and the odometer it now starts with in the background.
 7.  A proper two-wheeler model for the mini moto and the ATC. The mini moto rides on the quad physics with hidden outrigger wheels, so it turns like a quad: the steering yaws it directly and power doesn't change the line. Make it ride like a bike: lean drives the turn, power mid-corner pushes the rear out and the front tucks if you grab the brake, with a real roll angle, leaning in and out of corners and a fall if it goes too far. The ATC's tip-over (when it comes) wants the same machinery.
 8.  Debug window overhaul - consolidate windows and make it easier to know what's going on, and make sure we set this up so future skills follow this correctly

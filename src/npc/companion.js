@@ -27,6 +27,7 @@ import { moveMethods, DEFAULT_MOVE_PARAMS } from './companionMoves.js';
 import { DEFAULT_IDLE_POSE_PARAMS } from './poseMoves.js';
 
 const AXIS_Y = new THREE.Vector3(0, 1, 0);
+const NO_CONTACT_FORCES = 0xffff0000; // in every solver group, pushes against none
 const CAPSULE_HALF_HEIGHT = 0.55;
 const CAPSULE_RADIUS = 0.25;
 const UP = new THREE.Vector3(0, 1, 0);
@@ -87,6 +88,9 @@ export class Companion {
 
     this.body = physics.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased());
     this.collider = physics.createCollider(RAPIER.ColliderDesc.capsule(CAPSULE_HALF_HEIGHT, CAPSULE_RADIUS), this.body);
+    // She's moved by hand, so she can end up overlapping a quad; a kinematic body then shoves it away. Pushing against nothing
+    // (as the player's does when stumbling) keeps the quads where they are; the player's controller still can't walk through her.
+    this.collider.setSolverGroups(NO_CONTACT_FORCES);
 
     this.tmpV = new THREE.Vector3();
     this.avoidSide = 1;
