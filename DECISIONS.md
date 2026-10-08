@@ -2063,3 +2063,9 @@ Settled with Jamie: it stays an old Fergie (red and grey, no cab, since the soun
 - Fix: her collider has solver groups `0xffff0000` (the same as the player's while stumbling): it makes no contact forces, so it can't move anything. The player's controller still treats her as solid, and her ray probes still see the quads, so her routing is unchanged. The cost is that a quad driven into her passes through rather than stopping.
 - `tests/companionNoShove.test.js` shows in Rapier itself that a hand-moved kinematic capsule shoves a dynamic box by default and doesn't with these groups.
 - Not done: no extra avoidance logic. The existing probes already stop her walking into quads; the shoving was the contact response when she ended up touching one. **Not checked:** in the running game.
+
+## Pods on the tractor (TODO 6)
+
+- Both pods now fit the tractor. Its model has a `podMount` on a short steel post on the scuttle, to the right of the binnacle so the dials stay clear, leaning back 20 degrees to you. The pod reads the tractor's state like any quad's, so it shows the hours and the odometer the tractor already starts with (the odometer was kept in the background for this).
+- Like the rusty quad, the tractor is added after the pods are dealt, so it never starts with one (the seeded placement is unchanged); `PodRack.allow` lets you fit one at the bench. The toolbox shows the pod buttons whenever the vehicle has a mount (`canPod`), so the tractor has them and the UTV still doesn't.
+- Not checked: unit tests only. I haven't looked at where the pod sits against the dash and the steering wheel in the running game, or its fit with the lean-in key.

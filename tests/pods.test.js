@@ -56,4 +56,12 @@ describe('PodRack.allow', () => {
     expect(rack.fit('analogue', 'rusty')).toBe(true);
     expect(rack.podOn('rusty')).toBe('analogue');
   });
+
+  it('lets a vehicle added after the pods were dealt (the tractor) take one', () => {
+    const rack = new PodRack(IDS);
+    expect(rack.fit('digital', 'tractor')).toBe(false);
+    rack.allow('tractor');
+    expect(rack.fit('digital', 'tractor')).toBe(true);
+    expect(rack.podOn('tractor')).toBe('digital');
+  });
 });

@@ -343,7 +343,7 @@ export class Workshop {
   startPod(action, kind) {
     const unit = this.unit;
     const rack = this.game.podRack;
-    if (!unit || !rack || this.podJob || this.isDiesel) return; // the pods fit the quads
+    if (!unit || !rack || this.podJob || !this.canPod) return; // the pods fit the quads and the tractor
     if (action === 'fit') {
       if (rack.podOn(unit.id)) return this.game.hud.toast(`There's already a ${POD_NAMES[rack.podOn(unit.id)]} on it`);
       if (!rack.inToolbox(kind)) return this.game.hud.toast(`The ${POD_NAMES[kind]} is on another quad`);
@@ -454,7 +454,12 @@ export class Workshop {
     return !ROWS[i].twoStrokeOnly || this.unit?.engine.params.strokes === 2;
   }
 
-  /** The tractor and UTV: a diesel has no carb mixture, throttle stop or rev limiter to fiddle with, no belt on the tractor, and no pods or silencer to swap. */
+  /** Whether this vehicle has a place to mount a pod (the quads and the tractor; not the UTV). */
+  get canPod() {
+    return !!this.unit?.quad.model.userData.podMount;
+  }
+
+  /** The tractor and UTV: a diesel has no carb mixture, throttle stop or rev limiter to fiddle with, no belt on the tractor, and no silencer to swap (and no pods on the UTV). */
   get isDiesel() {
     return !!this.unit?.engine.params.runsOnDiesel;
   }
@@ -613,7 +618,7 @@ export class Workshop {
     this.el.querySelector('.ws-drain').disabled = !this.canDrain(unit);
     this.el.querySelector('.ws-drain').lastChild.textContent = this.isDiesel ? 'Pump the petrol out of the tank' : 'Pump out the tank and carb';
     this.el.querySelector('.ws-silencer').style.visibility = this.isDiesel ? 'hidden' : '';
-    this.el.querySelector('.ws-pods').style.visibility = this.isDiesel ? 'hidden' : '';
+    this.el.querySelector('.ws-pods').style.visibility = this.canPod ? '' : 'hidden';
     for (const b of this.el.querySelectorAll('.ws-fix')) b.style.visibility = this.repairShown(b.dataset.fix) ? '' : 'hidden';
     this.el.querySelector('.ws-service').lastChild.textContent = this.isDiesel ? 'Service it (oil, wear)' : 'Service it';
     const filter = unit.quad.filter;
@@ -621,7 +626,7 @@ export class Workshop {
     filterBtn.disabled = filter.isClean;
     filterBtn.lastChild.textContent = this.filterHeld > 0 ? `Cleaning... ${Math.round((this.filterHeld / filter.p.cleanSeconds) * 100)}%` : `Hold: clean air filter (${filter.state})`;
     // The pods: what's on this quad, what's in the toolbox, and the job in hand.
-    const rack = this.isDiesel ? null : this.game.podRack;
+    const rack = this.canPod ? this.game.podRack : null;
     if (rack) {
       const fitted = rack.podOn(unit.id);
       const loose = ['analogue', 'digital'].filter((k) => rack.inToolbox(k)).map((k) => POD_NAMES[k]);

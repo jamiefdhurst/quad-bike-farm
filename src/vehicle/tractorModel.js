@@ -382,7 +382,18 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   dash.group.userData.keep = true;
   root.add(dash.group);
   quad.userData.dash = dash;
-  quad.userData.podMount = null;
+  // An accessory pod stands on a short steel post on the scuttle beside the binnacle (its right, so the dials stay clear), leaning back to you.
+  const podPost = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.016, 0.06, 10), new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.6, metalness: 0.5 }));
+  podPost.position.set(-0.27, 1.45, 0.3);
+  podPost.userData.keep = true;
+  root.add(podPost);
+  const podMount = new THREE.Object3D();
+  podMount.name = 'podMount';
+  podMount.position.set(-0.27, 1.48, 0.3);
+  podMount.rotation.x = 0.35;
+  podMount.userData.keep = true;
+  root.add(podMount);
+  quad.userData.podMount = podMount;
 
   // The stop knob, pulled out to stop it; the hand throttle on the right of the column; (there's no fuel tap).
   const stopKnob = new THREE.Group();
