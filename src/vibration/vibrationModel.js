@@ -6,6 +6,7 @@
 // visibly bounces along when it's driving itself. Pure logic, no Three.js.
 
 import { DEFAULT_VIBRATION_PARAMS } from './vibrationParams.js';
+import { gridRumble } from '../world/cattleGrid.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const SUBSTEP = 1 / 600;
@@ -52,6 +53,7 @@ export class VibrationModel {
     this.camera = { x: 0, y: 0, z: 0, pitch: 0, roll: 0 };
     this.intensity = 0; // smoothed 0..1-ish shake level, handy for HUD and debugging
     this.groundDistance = 0; // metres travelled since the last ground jolt
+    this.gridPhase = 0; // knocks owed from the cattle grid, in whole knocks
     this.jolts = []; // sizes of this update's ground jolts (in groundGain units), for the ride sounds
     this.pending = []; // a multi-cylinder's later firings from a pulse, due after this update (times from the start of the update that queued them)
   }
@@ -168,6 +170,35 @@ export class VibrationModel {
     o.camPitch.kick(body * p.cameraRotGain * side());
     o.camRoll.kick(body * p.cameraRotGain * side());
     return body;
+  }
+
+  /**
+   * The cattle grid: a fast run of small knocks while `share` (0..1) of the wheels are on the bars, which the springs turn into a buzz.
+   * Unlike the ground jolts it shows when you're on board, and it isn't added to `jolts` (the ride sounds make their own).
+   */
+  gridJolts(dt, speed, share, pitch) {
+    const p = this.params;
+    const { rate, size } = gridRumble(speed, share, pitch, p);
+    if (rate <= 0) {
+      this.gridPhase = 0;
+      return;
+    }
+    this.gridPhase += rate * dt;
+    const o = this.osc;
+    const r = this.random;
+    while (this.gridPhase >= 1) {
+      this.gridPhase -= 1;
+      const k = size * (0.7 + r() * 0.6);
+      const sign = this.gridPhase < 0.5 ? 1 : -1;
+      o.heave.kick(k * p.heaveGain * sign);
+      o.pitch.kick(k * p.pitchGain * 0.6 * (r() < 0.5 ? -1 : 1));
+      o.roll.kick(k * p.rollGain * (r() < 0.5 ? -1 : 1));
+      o.barsX.kick(k * p.barsGain * 0.5 * (r() < 0.5 ? -1 : 1));
+      o.barsRoll.kick(k * p.barsRotGain * 0.5 * (r() < 0.5 ? -1 : 1));
+      o.camY.kick(k * p.cameraGain * sign);
+      o.camPitch.kick(k * p.cameraRotGain * (r() < 0.5 ? -1 : 1));
+      o.camRoll.kick(k * p.cameraRotGain * (r() < 0.5 ? -1 : 1));
+    }
   }
 
   /**

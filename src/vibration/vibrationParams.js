@@ -24,6 +24,11 @@ export const DEFAULT_VIBRATION_PARAMS = {
   groundFullSpeed: 10, // m/s
   groundJoltsPerMetre: 1.2,
 
+  // Rolling over the cattle grid (world/cattleGrid.js), ridden or not.
+  gridGain: 2.5, // knock size at gridFullSpeed with every wheel on it, in pulse kicks
+  gridFullSpeed: 8, // m/s
+  gridMaxRate: 28, // knocks a second at the most; the springs can't tell more bars apart
+
   // Sprung body on its suspension.
   heaveFreq: 9, // Hz
   heaveDamping: 0.22, // damping ratio
@@ -65,6 +70,9 @@ export const VIBRATION_PARAM_RANGES = {
   groundGain: [0, 6, 0.05],
   groundFullSpeed: [1, 25, 0.5],
   groundJoltsPerMetre: [0.1, 5, 0.05],
+  gridGain: [0, 6, 0.05],
+  gridFullSpeed: [1, 25, 0.5],
+  gridMaxRate: [4, 60, 1],
   heaveFreq: [1, 30, 0.5],
   heaveDamping: [0.02, 1, 0.01],
   heaveGain: [0, 0.3, 0.005],

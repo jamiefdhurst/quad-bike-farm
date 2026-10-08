@@ -1,3 +1,4 @@
+import { createCattleGrid } from './cattleGrid.js';
 import { LAYOUT } from './layout.js';
 import { Track } from './track.js';
 import { createTerrainHeight } from './terrainHeight.js';
@@ -22,6 +23,7 @@ export class World {
     this.track = new Track(layout.trackPoints);
     this.heights = createTerrainHeight(layout, this.track);
     this.fields = createFields(layout);
+    this.cattleGrid = createCattleGrid(layout); // across the road in the grass field's east gateway, or null
     this.outbuildings = createOutbuildings(layout); // the Dutch barn, the field shed, the muck heap and the trough out east
 
     this.surfaceParams = { ...DEFAULT_SURFACE_PARAMS };
@@ -62,7 +64,7 @@ export class World {
         })
       : null;
 
-    const ctx = { scene, physics, RAPIER, renderer, models, layout, heights: this.heights, track: this.track, wear: this.wear, fields: this.fields, roadMud: this.roadMud };
+    const ctx = { scene, physics, RAPIER, renderer, models, layout, grid: this.cattleGrid, heights: this.heights, track: this.track, wear: this.wear, fields: this.fields, roadMud: this.roadMud };
     this.terrain = createTerrain(ctx);
     this.props = buildProps(ctx);
   }

@@ -30,6 +30,7 @@ export const DEFAULT_SOUND_PARAMS = {
   splashVolume: 0.9, // hitting a puddle
   knockVolume: 0.5, // suspension knocking over a bump or a wheel touching down
   bumpVolume: 0.18, // small knocks from uneven ground
+  gridVolume: 1.2, // the cattle grid's rumble and bar knocks, over the road's own rumble
   landVolume: 0.4, // coming down after a jump
   rattleVolume: 0.06, // racks and bodywork rattling
   rattleThreshold: 0.3, // knocks harder than this rattle the racks
@@ -76,6 +77,7 @@ export const SOUND_PARAM_RANGES = {
   splashVolume: [0, 3, 0.01],
   knockVolume: [0, 2, 0.01],
   bumpVolume: [0, 2, 0.01],
+  gridVolume: [0, 4, 0.05],
   landVolume: [0, 3, 0.01],
   rattleVolume: [0, 1, 0.005],
   rattleThreshold: [0, 2, 0.01],

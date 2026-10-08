@@ -14,6 +14,7 @@
 import { squealLevel, slipAngle, DEFAULT_SQUEAL_PARAMS } from '../vehicle/tyreSqueal.js';
 import { hornVoice } from '../npc/horns.js';
 import { RideEvents, createSurfaceSampler } from './rideEvents.js';
+import { gridRumble } from '../world/cattleGrid.js';
 
 const TWO_PI = Math.PI * 2;
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -153,6 +154,9 @@ export class RideAudio {
     this.hub = hub;
     this.unit = unit;
     this.surfaceAt = createSurfaceSampler(world);
+    this.grid = world.cattleGrid ?? null;
+    this.gridShare = 0; // share of wheels on the cattle grid
+    this.gridTimer = 0;
     this.events = new RideEvents(hub.params);
     this.surface = { grass: 1, dirt: 0, mud: 0, water: 0, tarmac: 0 };
     this.contact = 0; // share of wheels on the ground
@@ -194,6 +198,27 @@ export class RideAudio {
         avg.tarmac += s.tarmac ?? 0;
       }
       wheels.push({ suspension: ph.vehicle.wheelSuspensionLength(i) ?? 0, contact, water: s.water });
+    }
+    // The cattle grid: which wheels are over the bars (only looked at near it, where the wheel positions cost a call each).
+    const g = this.grid;
+    let onGrid = 0;
+    if (g && Math.abs(quad.position.x - g.x) < 8 && Math.abs(quad.position.z - g.z) < 8) {
+      for (let i = 0; i < 4; i++) {
+        const c = ph.vehicle.wheelIsInContact(i) ? ph.vehicle.wheelContactPoint(i) : null;
+        if (c && g.onGrid(c.x, c.z)) onGrid++;
+      }
+    }
+    this.gridShare = onGrid / 4;
+    if (this.gridShare > 0 && speed > 0.3) {
+      // A knock for the bars, the rate the vibration model uses.
+      this.gridTimer -= dt;
+      if (this.gridTimer <= 0) {
+        const { rate, size } = gridRumble(speed, this.gridShare, g.pitch, this.unit.vibration.params);
+        this.gridTimer = 1 / Math.max(1, rate);
+        this.events.push('grid', Math.min(1.2, size / 4));
+      }
+    } else {
+      this.gridTimer = 0;
     }
     if (contacts) for (const k in avg) this.surface[k] = avg[k] / contacts;
     this.contact = contacts / 4;
@@ -411,9 +436,9 @@ export class RideAudio {
     // Grass catches the tyres unevenly.
     this.flutter += (0.55 + Math.random() * 0.9 - this.flutter) * Math.min(1, dt * 12);
 
-    const surfaceRumble = s.grass * 0.55 + s.dirt + s.mud * 0.8 + s.water * 0.5 + (s.tarmac ?? 0) * 0.4;
+    const surfaceRumble = s.grass * 0.55 + s.dirt + s.mud * 0.8 + s.water * 0.5 + (s.tarmac ?? 0) * 0.4 + this.gridShare * p.gridVolume;
     set(this.rollGain.gain, level * p.rollVolume * on * surfaceRumble * Math.pow(v, 1.3));
-    set(this.rollFilter.frequency, 70 + 22 * speed);
+    set(this.rollFilter.frequency, 70 + 22 * speed + this.gridShare * 260); // the bars ring higher than the road
     set(this.grassGain.gain, level * p.grassVolume * on * s.grass * Math.pow(v, 1.5) * this.flutter, 0.03);
     set(this.grassFilter.frequency, 1500 + 160 * speed);
     // The grit loop plays faster with speed: more stones a second, and brighter.
@@ -462,6 +487,11 @@ export class RideAudio {
         this.playKnock(level * p.bumpVolume * Math.pow(k, 1.5), 1 + Math.random() * 0.4, jitter);
         if (Math.random() < k * p.rattleChance) this.playRattle(level * p.rattleVolume * k * 0.6, jitter + 0.01);
         if (this.surface.dirt > 0.5 && Math.random() < 0.5) this.playClip('thud', level * p.bumpVolume * 0.5 * k * this.surface.dirt, 1.2 + Math.random() * 0.4, jitter);
+        break;
+      case 'grid':
+        // A bar under a tyre: a hard, short knock, higher than a bump, and the odd clang of the steel.
+        this.playKnock(level * p.gridVolume * 0.3 * k, 1.5 + Math.random() * 0.5, jitter);
+        if (Math.random() < 0.35) this.playRattle(level * p.rattleVolume * 1.5 * k, jitter);
         break;
       case 'land': {
         // The suspension bottoming, the tyres hitting the dirt, everything on the racks jumping.

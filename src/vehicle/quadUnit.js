@@ -171,6 +171,8 @@ export class QuadUnit {
     this.vibration.torqueKick(this.torqueRock.update(dt, q.throttle || q.helperThrottle, this.engine.isRunning && Math.abs(q.speed) < 0.5 && standing, this.vibration.params));
     // Ground jolts only show from outside: with you on it, it shakes as it always has.
     this.vibration.update(dt, this.engine, this.quad.rider || this.quad.driver || this.quad.passenger ? 0 : this.quad.speed);
+    // The cattle grid shakes it ridden or not.
+    if (this.ride?.grid) this.vibration.gridJolts(dt, this.quad.speed, this.ride.gridShare, this.ride.grid.pitch);
     this.quad.update(dt, alpha, this.vibration);
     this.smoke.update(dt, this.engine, this.quad.exhaustTip, this.quad.velocity);
     for (const e of this.engine.events) {
