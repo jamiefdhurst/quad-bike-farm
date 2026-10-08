@@ -325,6 +325,7 @@ body {
 
 .lil-gui.root {
   z-index: 30;
+  max-height: 100vh;
 }
 
 /* The farm map on M (hud/mapView.js), over the middle of the screen. */

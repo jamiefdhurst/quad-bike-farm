@@ -105,6 +105,15 @@ export class Romance {
     return events;
   }
 
+  /** She asks you now, whatever her score or the cooldown (the debug panel). Returns the invite event, or null if one is already open or she is locked in. */
+  invite(id, kind = this.nextKind(id)) {
+    const g = this.girls[id];
+    if (!g || g.pending) return null;
+    const extra = kind === 'quad' ? this.p.lapseQuadExtra : 0;
+    g.pending = { kind, until: this.clock + this.p.lapseAfter + extra };
+    return { type: 'invite', girl: id, kind };
+  }
+
   /** You said yes: the invitation can't lapse in the middle of it. */
   accept(id) {
     const g = this.girls[id];

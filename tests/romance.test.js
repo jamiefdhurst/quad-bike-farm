@@ -167,3 +167,14 @@ describe('romance lines', () => {
     for (const l of all) expect(l).not.toMatch(/—| he | she | they |\bhim\b|\bher\b/i);
   });
 });
+
+describe('asking on demand (debug panel)', () => {
+  it('opens an invitation whatever her score, once', () => {
+    const r = new Romance(['amy', 'jess']);
+    expect(r.invite('amy', 'barn')).toEqual({ type: 'invite', girl: 'amy', kind: 'barn' });
+    expect(r.pendingFor('amy').kind).toBe('barn');
+    expect(r.invite('amy', 'quad')).toBeNull();
+    r.accept('amy');
+    expect(r.complete('amy')).toEqual({ type: 'visit', visits: 1 });
+  });
+});

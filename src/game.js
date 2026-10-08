@@ -2150,22 +2150,26 @@ export class Game {
         quadOk: !!this.romanceQuad(c),
       };
     });
-    for (const e of this.romance.update(dt, { girls, youFree })) {
-      const c = this.companions.find((o) => o.character.id === e.girl);
-      if (e.type === 'invite') {
-        const unit = e.kind === 'quad' ? this.romanceQuad(c) : null;
-        if (e.kind === 'quad' && !unit) {
-          this.romance.cancel(e.girl);
-          continue;
-        }
-        c.voice.say(e.kind === 'quad' ? 'inviteQuad' : 'inviteBarn', { force: true });
-        if (unit) c.requestMount(unit.quad);
-        this.hud.toast(`${c.name} wants a word: talk to her`, 3);
-      } else if (e.type === 'lapsed') {
-        c.voice.say('inviteLapsed', { force: true });
-        if (e.kind === 'quad' && c.fsm.is('seated', 'mounting')) c.requestStandBeside();
+    for (const e of this.romance.update(dt, { girls, youFree })) this.handleRomanceEvent(e);
+  }
+
+  /** What an invitation or a lapsed one does: she says so, and for the quad one goes to sit on it. */
+  handleRomanceEvent(e) {
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    if (e.type === 'invite') {
+      const unit = e.kind === 'quad' ? this.romanceQuad(c) : null;
+      if (e.kind === 'quad' && !unit) {
+        this.romance.cancel(e.girl);
+        return false;
       }
+      c.voice.say(e.kind === 'quad' ? 'inviteQuad' : 'inviteBarn', { force: true });
+      if (unit) c.requestMount(unit.quad);
+      this.hud.toast(`${c.name} wants a word: talk to her`, 3);
+    } else if (e.type === 'lapsed') {
+      c.voice.say('inviteLapsed', { force: true });
+      if (e.kind === 'quad' && c.fsm.is('seated', 'mounting')) c.requestStandBeside();
     }
+    return true;
   }
 
   /** Her wheel options while she's asked: yes, or not now. */
