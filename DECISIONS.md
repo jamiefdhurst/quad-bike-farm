@@ -1922,6 +1922,6 @@ Decided with you: she asks when she likes you a lot (an absolute score as well a
 ## A steadier four-cylinder shake
 
 - Request: the Land Rover's shake was too random for a four-cylinder, too like the quads.
-- Each firing kicked the body, bars and head with a random size and a random left or right sign, which suits a lumpy single and not an even four. A new vibration param, `steadiness` (0 to 1, default 0 so the quads and the others are unchanged), pulls the kicks towards a fixed pattern: every kick the same size, the side-to-side parts rocking left then right in turn. The Land Rover has 0.85, so at idle it shudders in a regular rock at the firing rate (about 33 a second at 490 rpm) rather than jittering.
+- Each firing kicked the body, bars and head with a random size and a random left or right sign, which suits a lumpy single and not an even four. A new vibration param, `steadiness` (0 to 1, default 0 so the quads and the others are unchanged), pulls the kicks towards a fixed pattern: every kick the same size, the side-to-side parts rocking left then right in turn. The Land Rover has 0.85, so at idle it shudders in a regular rock at the firing rate (about 16 a second at 490 rpm) rather than jittering.
 - The engine side was already calm (`pulseStrengthJitter` 0.1, `cycleJitter` 0.04), so only the vibration needed changing. A test shows the spread of the body's roll is under 60% of the random default's.
 - Not changed: the tractor and UTV, which are also multi-cylinder; say if they want it too. Not checked in the running game, only in unit tests.
