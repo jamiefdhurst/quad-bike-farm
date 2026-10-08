@@ -510,3 +510,17 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 79. A piggyback over the ford. A girl on foot won't wade the ford; she asks to be carried, or climbs onto whatever is nearest.
 80. "Why" on the Girls tab. Show what she is thinking of doing next and what is behind it (bored, cold, favour, which quad is hers), not only what she is doing now.
 81. A check for unrecorded voice lines. If there isn't one already: a script or test that lists every line with no recording in the banks, so nothing falls back to browser speech without anyone knowing.
+82. Ice on the puddles. On frosty mornings the puddles have a skin of ice that cracks and crunches under the wheels, and grips like glass until it breaks.
+83. Diesel waxing in a hard frost. On the coldest days the tractor, the UTV and the Land Rover struggle and die as the fuel gels. Kept in the barn they're fine; a can of additive from the shelf sorts the others.
+84. A burnt leg on the exhaust. A girl who gets off a hot quad on the exhaust side catches her calf on the pipe. Jess yelps, and does it again later; Amy always gets off the other side.
+85. The Land Rover's crash gearbox. First and second have no synchromesh, so they crunch unless you stop or double-declutch. Amy can do it; Jess grinds every time.
+86. Reversing a trailer. It jack-knifes the way trailers do. Amy guides you back ("left hand down") and gets cross when you go the wrong way; she can do it herself, Jess can't.
+87. Who sits in front. In the Land Rover and the UTV the girls race for the front seat, keep a running tally and argue about whose turn it is.
+88. The Land Rover's radio. Crackly, static between stations, more talk than music (CC0 or procedural). Jess turns it up, Amy turns it off.
+89. Dozing in the sun. On a warm afternoon a girl sat on the bales nods off. Wake her gently, or rev a quad beside her and live with it.
+90. The end of the day. When you call it a day, Amy reads back her logbook, the bucket list is totted up, and each girl says how the day went for her. Goes with item 30.
+91. Stars and a moon after dark. Part of item 30: a proper dark sky away from town, the moon bright enough to ride by.
+92. Autumn in the wood. Leaves coming down, conkers under the trees for Jess to throw at you, and wet leaves slippery on the track. Goes with item 75.
+93. Remappable keys. The control list is long now; let them be changed on the help screen.
+94. "New since last time". A card on the title overlay listing what changed since the build you last played, from the commit messages, so you know what to go and try.
+95. Shape checks for the procedural models. Record each vehicle's and girl's mesh counts and bounding sizes in a test, so a change that shrinks a girl or moves a wheel by accident fails cheaply, without a screenshot.
