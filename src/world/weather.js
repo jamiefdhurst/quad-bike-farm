@@ -148,6 +148,17 @@ export class Weather {
     return WEATHER_KINDS[this.kind];
   }
 
+  /** Changes the day's weather at once (the console): the rain and the wet ground jump to what that kind is. Returns false if there is no such kind. */
+  setKind(kind) {
+    const k = WEATHER_KINDS[kind];
+    if (!k) return false;
+    this.kind = kind;
+    this.rain = this.target = k.rain;
+    this.wet = Math.max(this.wet, k.wet);
+    this.nextChange = this.spell();
+    return true;
+  }
+
   get name() {
     return this.def.name;
   }

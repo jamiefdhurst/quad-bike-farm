@@ -28,6 +28,7 @@ Backtick opens it. It has three tabs, each with a job; keep them that way, and k
 - Actions live with the thing they act on (vehicle actions on Vehicles, girl actions on her folder), never in a separate pile.
 - Buttons and settable values call the real game methods (as the in-game action does), so what you see in the panel is what the game does. Anything pure the buttons need goes in a tested module, not inline.
 - Not persisted: no saved tabs, folders or values.
+- The console (backslash, `src/console`) is the same state by typed path. A new vehicle state, girl value or world setting that goes in the panel goes in `gameTree.js` too (tuning groups appear on their own), and a new on-demand girl action goes in `src/debug/girlActions.js`, which both the Girls tab and `girl <name> <verb>` use. Commands are tested in `tests/consoleShell.test.js` against a stand-in host.
 
 ## Testing (keep it cheap)
 

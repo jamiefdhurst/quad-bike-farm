@@ -4,7 +4,7 @@ import { FAULT_KINDS } from '../vehicle/faults.js';
 import { applicableQuirks, featuresOf } from '../vehicle/quirks.js';
 import { categoryOf, sortTuneGroups } from './tuneCategories.js';
 import { buildGirlsTab } from './girlsTab.js';
-import { setQuirk, setFault, clearFaults, fixEverything, problemSummary, quirkLabel } from './vehicleDebug.js';
+import { setQuirk, setFault, clearFaults, fixEverything, problemSummary, quirkLabel, startWarm, switchOff } from './vehicleDebug.js';
 import { BRANDS, WHEEL_NAMES } from '../vehicle/tyres.js';
 
 /**
@@ -267,24 +267,8 @@ export class DebugGui {
   /** Things to do to the picked vehicle, then to all of them. */
   buildVehicleActions() {
     const g = this.game;
-    const startOne = (u) => {
-      // Straight to running and warm, as if started and left a while (no cranking).
-      const e = u.engine;
-      const f = u.quad.fuel;
-      f.tap = 'on';
-      if (f.litres > 0) f.bowl = f.params.bowlCapacity;
-      e.setIgnition(true);
-      e.setTemperature(1);
-      if (!e.isRunning) {
-        e.state = 'running';
-        e.rpm = Math.max(e.rpm, e.params.catchRpm);
-      }
-    };
-    const stopOne = (u) => {
-      u.engine.setIgnition(false);
-      u.engine.stopKnob(); // a diesel runs on with the key off
-      u.quad.fuel.tap = 'off';
-    };
+    const startOne = startWarm;
+    const stopOne = switchOff;
     const one = this.addFolder('Vehicles', 'Do something to this vehicle');
     const row = (f, label, fn) => f.add({ fn }, 'fn').name(label);
     row(one, 'Start it (warm, fuel on)', () => startOne(this.unit()));

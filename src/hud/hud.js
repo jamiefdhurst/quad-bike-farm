@@ -42,7 +42,7 @@ const HELP_HTML = `
   <div>Hayloft ladder, workbench and Amy's logbook in the barn: <kbd>E</kbd></div>
   <div>The bell by the barn doors: <kbd>E</kbd> to ring it and call the girls back</div>
   <h3>Other</h3>
-  <div><kbd>H</kbd> help, <kbd>Tab</kbd> bucket list (<kbd>&larr;</kbd><kbd>&rarr;</kbd> turn the page), <kbd>Enter</kbd> ask for a race (on a quad, by the yard or at the drag strip), <kbd>M</kbd> farm map, <kbd>N</kbd> mute, <kbd>\`</kbd> tuning panel</div>
+  <div><kbd>H</kbd> help, <kbd>Tab</kbd> bucket list (<kbd>&larr;</kbd><kbd>&rarr;</kbd> turn the page), <kbd>Enter</kbd> ask for a race (on a quad, by the yard or at the drag strip), <kbd>M</kbd> farm map, <kbd>N</kbd> mute, <kbd>\`</kbd> tuning panel, <kbd>\\</kbd> console</div>
 `;
 
 export class Hud {

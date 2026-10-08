@@ -154,6 +154,7 @@ import { Hud } from './hud/hud.js';
 import { MapView } from './hud/mapView.js';
 import { farmMapFeatures, DEFAULT_MAP_PARAMS, MAP_PARAM_RANGES } from './hud/farmMap.js';
 import { DebugGui } from './debug/debugGui.js';
+import { GameConsole } from './console/gameConsole.js';
 
 const BARN_BULB = 30; // candela of the bulb in the barn, scaled by how far in you are and how gloomy the day is
 
@@ -187,6 +188,7 @@ export class Game {
     this.menu = new Wheel(document.getElementById('hud')); // the companion wheel
     this.timer = new THREE.Timer();
     this.accumulator = 0;
+    this.girlsAuto = true; // console: girls.autonomy
 
     window.addEventListener('resize', () => this.onResize());
   }
@@ -1003,9 +1005,44 @@ export class Game {
       registerTuning(`${c.name} pillion`, c.pillion.params, PILLION_PARAM_RANGES);
     }
     this.debugGui = new DebugGui(this);
+    this.console = new GameConsole(this);
 
     this.applyDebugCamera();
     if (import.meta.env.DEV) window.game = this;
+  }
+
+  // The console's switches (src/console) ---------------------------------------------------------------
+
+  /** Changes the weather to a kind at once, with the sky, the rain and the frost on the seats following. */
+  setWeatherKind(kind) {
+    if (!this.weather.setKind(kind)) return false;
+    this.world.setWeather(this.weather);
+    for (const unit of this.units) unit.quad.seatFrost = this.weather.frost;
+    return true;
+  }
+
+  /** How hard it is raining now, 0 to 1 (it settles back to what the weather would do in time). */
+  setRain(amount) {
+    this.weather.rain = this.weather.target = Math.max(0, Math.min(1, amount));
+  }
+
+  /** The day's temperature in degrees C. */
+  setTemperature(celsius) {
+    this.weather.temperature = celsius;
+    for (const unit of this.units) unit.quad.seatFrost = this.weather.frost;
+  }
+
+  /** On: the girls start things on their own as usual. Off: nothing new starts; they follow, ride and answer you. */
+  setGirlsAuto(on) {
+    this.girlsAuto = on;
+    for (const c of this.companions) c.params.ownMind = on;
+  }
+
+  /** Free-fly for the player (flight.js). */
+  setFlying(on) {
+    if (on && this.player.isRiding) return this.hud.toast('Get off first');
+    this.player.flying = on;
+    this.hud.toast(on ? 'Flying: WASD, Space up, C down, Shift fast' : 'Walking', 1.6);
   }
 
   /** ?cam=x,y,z,yawDeg,pitchDeg places the camera, for screenshots while developing. */
@@ -4453,6 +4490,7 @@ export class Game {
 
     if (input.wasPressed('KeyH')) this.hud.toggleHelp();
     if (input.wasPressed('Backquote')) this.debugGui.toggle();
+    if ((input.wasPressed('Backslash') || input.wasPressed('IntlBackslash')) && !this.console.visible) this.console.open();
     if (input.wasPressed('KeyJ')) this.toggleHitch();
     if (input.wasPressed('Enter') && !this.menu.isOpen && this.player.isRiding) this.askForRace(this.riddenUnit);
     if (input.wasPressed('KeyM')) {
@@ -4569,10 +4607,14 @@ export class Game {
     this.updateFourWd(dt);
     this.skills.update(dt);
     this.updatePillionCoach(dt);
-    this.updateRequests(dt, ridden);
-    this.updatePlaces(dt);
-    this.updatePranks(dt, ridden);
-    this.updateRevOff(dt, ridden);
+    // With the girls' autonomy off (console: girls.autonomy) nothing new starts on their own; what is under way carries on.
+    const auto = this.girlsAuto;
+    if (auto) {
+      this.updateRequests(dt, ridden);
+      this.updatePlaces(dt);
+      this.updatePranks(dt, ridden);
+      this.updateRevOff(dt, ridden);
+    }
     this.updateHorns(dt, ridden);
     if (this.tractorUnit) this.updateTractorWatch(dt);
     if (this.tractorUnit) this.updateTractorRunaway(dt, ridden);
@@ -4581,24 +4623,24 @@ export class Game {
     if (this.utvUnit) this.updateUtv(dt, ridden, input);
     if (this.landyUnit) this.updateLandRover(dt, ridden);
     this.updateTipTrailer(dt, ridden, input);
-    if (this.tractorUnit) this.updateTractorGo(dt, ridden);
+    if (this.tractorUnit && auto) this.updateTractorGo(dt, ridden);
     this.updateLPlates(dt);
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);
-    this.updateHeadStart(dt, ridden);
+    if (auto) this.updateHeadStart(dt, ridden);
     this.updateDoughnuts(dt);
     this.updateTarmac(dt);
     this.updateJumps(dt);
-    this.updateNicking(dt, ridden);
-    this.updateTea(dt, ridden);
-    this.updateJumpers(dt);
-    this.updateDieselMistake(dt, ridden);
+    if (auto) this.updateNicking(dt, ridden);
+    if (auto || this.tea.forced) this.updateTea(dt, ridden);
+    if (auto) this.updateJumpers(dt);
+    if (auto || this.dieselMistake.forced) this.updateDieselMistake(dt, ridden);
     this.bell.update(dt);
     this.updateRecall(dt);
-    if (!this.recalling) this.updateConvoy(dt, ridden);
+    if (!this.recalling && (auto || this.convoy.active || this.convoy.forced)) this.updateConvoy(dt, ridden);
     this.updateDashReading(dt, ridden);
-    if (!this.recalling) this.updateRace(dt, ridden);
-    if (!this.recalling) this.updateDrag(dt, ridden);
+    if (!this.recalling && (auto || this.race.active || this.race.forced)) this.updateRace(dt, ridden);
+    if (!this.recalling && (auto || this.drag.active || this.drag.forced)) this.updateDrag(dt, ridden);
     this.helpOnGrid(dt);
     this.updateSmokeSense(dt);
     this.updateDustClouds();
@@ -4606,10 +4648,10 @@ export class Game {
     this.updateHaze(dt);
     this.updateBarnFumes(dt);
     this.updateThrottleGrab(dt, ridden);
-    this.updateRockPrank(dt);
+    if (auto) this.updateRockPrank(dt);
     this.updateDrownOut(dt);
-    this.updateFallingOut(dt);
-    this.updateRomance(dt);
+    if (auto || this.fallingOut.active) this.updateFallingOut(dt);
+    if (auto || this.tryst) this.updateRomance(dt);
     this.updateBanter(dt, ridden);
     for (const c of this.companions) {
       c.update(dt, c.quad.unit.vibration, {

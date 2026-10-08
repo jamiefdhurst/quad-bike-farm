@@ -1,0 +1,201 @@
+// The game as the console sees it: a tree of values (vehicle.red.temperature, girl.amy.favour, weather.rain, tune.<group>.<key>...)
+// built over the live game. Every value reads and writes through the same fields and methods the debug panel uses.
+import { group, value, slug } from './shell.js';
+import { getTuningGroups } from '../core/tuning.js';
+import { FAULT_KINDS } from '../vehicle/faults.js';
+import { applicableQuirks, featuresOf } from '../vehicle/quirks.js';
+import { WHEEL_NAMES } from '../vehicle/tyres.js';
+import { setFault, setQuirk } from '../debug/vehicleDebug.js';
+import { TAP_POSITIONS } from '../vehicle/fuelSystem.js';
+import { WEATHER_KINDS } from '../world/weather.js';
+
+const DEG = 180 / Math.PI;
+const round = (v, n = 3) => Math.round(v * 10 ** n) / 10 ** n;
+
+// Small makers, so the tree below reads as a list of what exists.
+const num = (get, set, min, max, unit = '', help = '') => value({ type: 'number', get: () => round(get()), set, min, max, unit, help });
+const ro = (get, unit = '', help = '') => value({ type: 'number', get: () => round(get()), unit, help });
+const flag = (get, set, help = '') => value({ type: 'bool', get, set, help });
+const text = (get, help = '') => value({ type: 'text', get, help });
+const choice = (choices, get, set, help = '') => value({ type: 'choice', choices, get, set, help });
+
+/**
+ * The registered tuning groups as nested folders. "Red quad/Engine" becomes red-quad then engine. `only` picks groups by name and
+ * `strip` is the part of the name to leave off ("Red quad/"); a group whose whole name is stripped puts its values straight in.
+ */
+export function tuningTree(only = () => true, strip = '') {
+  const root = {};
+  for (const g of getTuningGroups()) {
+    if (!only(g.name)) continue;
+    const rest = strip && g.name.startsWith(strip) ? g.name.slice(strip.length) : g.name;
+    let at = root;
+    for (const part of rest.split('/').filter(Boolean).map(slug)) at = at[part] ??= {};
+    at.$groups = [...(at.$groups ?? []), g];
+  }
+  return foldersOf(root);
+}
+
+function foldersOf(map) {
+  return group(() => {
+    const out = {};
+    for (const [name, sub] of Object.entries(map)) {
+      if (name === '$groups') continue;
+      out[name] = foldersOf(sub);
+    }
+    for (const g of map.$groups ?? []) Object.assign(out, valuesOf(g));
+    return out;
+  });
+}
+
+/** The values of one registered group: every ranged number or choice, and every boolean. */
+function valuesOf({ params, ranges, onChange }) {
+  const out = {};
+  const changed = () => onChange?.();
+  for (const [key, range] of Object.entries(ranges)) {
+    if (typeof range[0] === 'string') out[key] = choice(range, () => params[key], (v) => ((params[key] = v), changed()));
+    else if (typeof params[key] === 'number') out[key] = num(() => params[key], (v) => ((params[key] = v), changed()), range[0], range[1]);
+  }
+  for (const [key, v] of Object.entries(params)) if (typeof v === 'boolean') out[key] = flag(() => params[key], (b) => ((params[key] = b), changed()));
+  return out;
+}
+
+/** @param {import('../game.js').Game} g @param {object} host  gameHost's position helpers */
+export function buildGameTree(g, host) {
+  const unitOf = (id) => g.units.find((u) => u.id === id);
+
+  const where = (thing) => ({
+    x: num(() => host.locate(thing).x, (v) => host.put(thing, { x: v, z: host.locate(thing).z }), -500, 500, 'm', 'east'),
+    z: num(() => host.locate(thing).z, (v) => host.put(thing, { x: host.locate(thing).x, z: v }), -500, 500, 'm', 'south'),
+    y: ro(() => host.locate(thing).y, 'm', 'height'),
+    heading: num(() => host.locate(thing).heading, (v) => host.put(thing, { ...host.locate(thing), heading: v }), -360, 360, '°', '0 faces +z, 90 faces +x'),
+  });
+
+  // Vehicles ---------------------------------------------------------------------------------------------------------------
+  const vehicle = (id) => {
+    const u = () => unitOf(id);
+    const e = () => u().engine;
+    const q = () => u().quad;
+    return group(() => {
+      const spec = u().spec;
+      const out = {
+        state: text(() => e().state),
+        ...where(id),
+        speed: ro(() => q().speed * 2.237, 'mph'),
+        rpm: ro(() => e().rpm),
+        throttle: ro(() => e().throttle),
+        load: ro(() => e().load),
+        temperature: num(() => e().temperature, (v) => e().setTemperature(v), 0, 1, '', '0 cold, 1 warm'),
+        overheating: ro(() => e().heat),
+        battery: num(() => e().battery, (v) => (e().battery = v), 0, 1),
+        fuel: num(() => q().fuel.litres, (v) => (q().fuel.litres = v), 0, q().fuel.params.tankCapacity, 'litres'),
+        tap: choice(TAP_POSITIONS, () => q().fuel.tap, (v) => (q().fuel.tap = v), 'the fuel tap'),
+        hours: num(() => q().usage.hours, (v) => (q().usage.hours = v), 0, 5000),
+        odometer: num(() => q().usage.odoMiles, (v) => (q().usage.odoMiles = v), 0, 100000, 'miles'),
+        trip: num(() => q().tripMiles, (v) => (q().tripMiles = v), 0, 1000, 'miles'),
+        parkbrake: flag(() => !!q().parkBrake, (v) => (q().parkBrake = v)),
+        ignition: flag(() => e().ignitionOn, (v) => e().setIgnition(v)),
+        mixture: ro(() => e().mixture),
+        roughness: ro(() => e().roughness),
+        shake: ro(() => u().vibration.intensity),
+        idle: ro(() => u().idleRpm ?? 0, 'rpm', 'dealt at the start'),
+        topRpm: ro(() => u().topRpm ?? 0, 'rpm', 'dealt at the start'),
+        tune: tuningTree((n) => n.startsWith(`${u().name}/`), `${u().name}/`),
+      };
+      if (!q().fuel.params.noTap) out.choke = ro(() => q().choke);
+      if (e().params.waterCooled) out.coolant = num(() => e().coolant, (v) => (e().coolant = v), 0, 1);
+      if (q().sump) out.oil = num(() => q().sump.level, (v) => (q().sump.level = v), 0, 1, '', 'engine oil level');
+
+      const faults = {};
+      for (const kind of FAULT_KINDS) faults[kind] = num(() => (q().faults.started[kind] ? q().faults.levels[kind] : 0), (v) => setFault(q().faults, kind, v), 0, 1, '', '0 clears it');
+      out.faults = group(() => faults, 'the four faults');
+
+      out.engineHealth = group(() => ({
+        plugFouling: num(() => e().fouling, (v) => (e().fouling = v), 0, 1),
+        airFilterClog: num(() => e().clog, (v) => (e().clog = v), 0, 1),
+        wear: num(() => e().wear, (v) => (e().wear = v), 0, e().params.wearMax ?? 1),
+        scuffing: num(() => e().scuff, (v) => (e().scuff = v), 0, 1, '', '1 seizes it'),
+        seized: flag(() => e().seized, (v) => (e().seized = v)),
+        water: num(() => e().water, (v) => (e().water = v), 0, 1),
+        dieselSoak: num(() => e().dieselSoak, (v) => (e().dieselSoak = v), 0, 1),
+        ...(e().params.strokes === 2 ? { silencerBlown: num(() => e().silencerBlown, (v) => (e().silencerBlown = v), 0, 1) } : {}),
+      }));
+
+      const quirks = {};
+      for (const kind of applicableQuirks(featuresOf(spec, !!g.podRack.podOn(id)))) quirks[kind] = flag(() => q().quirks.has(kind), (v) => setQuirk(q().quirks, kind, v));
+      out.quirks = group(() => quirks, 'tick one to give it that quirk');
+
+      const tyres = {};
+      WHEEL_NAMES.forEach((name, i) => {
+        tyres[`${slug(name)}Psi`] = num(() => q().tyres.psi[i], (v) => { q().tyres.psi[i] = v; q().physics.applyParams(); }, 1.5, 7, 'psi');
+      });
+      out.tyres = group(() => tyres);
+      return out;
+    }, `${u().name}`);
+  };
+  const vehicles = group(() => Object.fromEntries(g.units.map((u) => [u.id, vehicle(u.id)])), 'every vehicle in this game');
+
+  // Girls ------------------------------------------------------------------------------------------------------------------
+  const girl = (id) => {
+    const c = () => g.companions.find((o) => o.character.id === id);
+    return group(() => ({
+      state: text(() => c().state),
+      ...where(id),
+      favour: num(() => g.favour.scores[id], (v) => (g.favour.scores[id] = v), -30, 30, '', 'how she rates you'),
+      standing: ro(() => g.favour.standing(id)),
+      mood: text(() => g.favour.mood(id)),
+      autonomy: flag(() => c().params.ownMind, (v) => (c().params.ownMind = v), 'does things on her own when left standing about'),
+      speech: flag(() => c().params.voice, (v) => (c().params.voice = v), 'talks at all'),
+      tripsRoundTheBack: num(() => g.romance.girls[id].visits, (v) => (g.romance.girls[id].visits = Math.round(v)), 0, 6),
+      lockedIn: flag(() => g.romance.girls[id].locked, (v) => {
+        g.romance.girls[id].locked = v;
+        if (v) g.favour.lock(id, g.romance.p.lockScore);
+        else g.favour.unlock(id);
+      }),
+      skills: group(() => Object.fromEntries(Object.keys(g.skills.levels[id]).map((s) => [s, num(() => g.skills.level(id, s), (v) => g.skills.set(id, s, v), 0, 1)]))),
+      tune: girlTune(c().name),
+    }), id);
+  };
+  /** Her own build and her pillion riding, side by side: "Amy" straight in, "Amy pillion" in a folder. */
+  const girlTune = (name) => {
+    const own = getTuningGroups().find((x) => x.name === name);
+    const pillion = getTuningGroups().find((x) => x.name === `${name} pillion`);
+    return group(() => ({ ...(own ? valuesOf(own) : {}), ...(pillion ? { pillion: group(() => valuesOf(pillion)) } : {}) }));
+  };
+  const girls = group(() => Object.fromEntries(g.companions.map((c) => [c.character.id, girl(c.character.id)])), 'Amy and Jess');
+
+  // You, the day, sound --------------------------------------------------------------------------------------------------
+  const player = group(() => ({
+    ...where('me'),
+    pitch: num(() => g.player.pitch * DEG, (v) => (g.player.pitch = v / DEG), -88, 88, '°', 'up is positive'),
+    flying: flag(() => !!g.player.flying, (v) => g.setFlying(v), 'free-fly: no gravity, no walls'),
+    riding: text(() => (g.riddenUnit ? g.riddenUnit.id : 'on foot')),
+  }), 'you');
+
+  const w = () => g.weather;
+  const weather = group(() => ({
+    kind: choice(Object.keys(WEATHER_KINDS), () => w().kind, (v) => g.setWeatherKind(v)),
+    rain: num(() => w().rain, (v) => g.setRain(v), 0, 1, '', 'falling now'),
+    wet: num(() => w().wet, (v) => (w().wet = v), 0, 1, '', 'how wet the ground is'),
+    temperature: num(() => w().temperature, (v) => g.setTemperature(v), -15, 35, '°C'),
+    frost: ro(() => w().frost),
+    chill: ro(() => w().chill),
+    band: text(() => w().band),
+    wind: ro(() => w().wind),
+  }), 'the day');
+
+  const gAll = group(() => ({
+    autonomy: flag(() => g.girlsAuto, (v) => g.setGirlsAuto(v), 'off: they start nothing on their own, but follow and answer you'),
+    speech: flag(() => g.companions.every((c) => c.params.voice), (v) => g.companions.forEach((c) => (c.params.voice = v)), 'off: they say nothing out loud'),
+  }), 'both girls');
+  const audio = group(() => ({ sound: flag(() => !g.audioHub.params.muted, (v) => (g.audioHub.params.muted = !v), 'all game sound') }));
+
+  return group(() => ({
+    vehicle: vehicles,
+    girl: girls,
+    girls: gAll,
+    player,
+    weather,
+    audio,
+    tune: tuningTree(),
+  }));
+}

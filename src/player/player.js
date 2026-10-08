@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { DEFAULT_PLAYER_PARAMS } from './playerParams.js';
 import { standing } from './standing.js';
+import { flightVelocity } from './flight.js';
 
 const CAPSULE_HALF_HEIGHT = 0.55;
 const CAPSULE_RADIUS = 0.3;
@@ -76,6 +77,7 @@ export class Player {
     this.ridePitch = 0;
     this.lookEnabled = true;
     this.moveEnabled = true;
+    this.flying = false; // free-fly from the console (flight.js)
     // Turning round on the seat to look back over a shoulder (0 facing forward, 1 turned round).
     this.lookBackTurn = 0;
     this.lookBackSide = 1; // +1 over the left shoulder, -1 the right
@@ -112,6 +114,7 @@ export class Player {
     const p = this.params;
     const input = this.input;
 
+    if (this.flying) return this.flyStep(dt);
     this.updateIgnore(dt);
     const stumbling = this.stumbleLeft > 0;
     if (stumbling) this.stumbleLeft -= dt;
@@ -188,6 +191,22 @@ export class Player {
     this.bobPhase += horiz * p.headBobRate * Math.PI;
     const bobTarget = horiz / dt > 0.3 && this.grounded ? (jogging ? p.headBobJog : p.headBobWalk) : 0;
     this.bobAmount += (bobTarget - this.bobAmount) * Math.min(1, 8 * dt);
+  }
+
+  /** Free-fly (console `fly`): straight through everything, at the speed flight.js gives for the keys held. */
+  flyStep(dt) {
+    const input = this.input;
+    const key = (plus, minus) => (this.moveEnabled ? (input.isDown(plus) ? 1 : 0) - (input.isDown(minus) ? 1 : 0) : 0);
+    const v = flightVelocity({ forward: key('KeyW', 'KeyS'), right: key('KeyD', 'KeyA'), up: key('Space', 'KeyC') }, this.yaw, this.pitch, input.isDown('ShiftLeft') || input.isDown('ShiftRight'));
+    const t = this.body.translation();
+    const next = { x: t.x + v.x * dt, y: t.y + v.y * dt, z: t.z + v.z * dt };
+    this.body.setNextKinematicTranslation(next);
+    this.velocity.set(0, 0, 0);
+    this.verticalSpeed = 0;
+    this.grounded = false;
+    this.bobAmount = 0;
+    this.prevPos.copy(this.currPos);
+    this.currPos.set(next.x, next.y - FEET_TO_CENTRE, next.z);
   }
 
   // Every frame -----------------------------------------------------------

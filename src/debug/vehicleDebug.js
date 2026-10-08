@@ -53,6 +53,27 @@ export function fixEverything(unit) {
   unit.quad.quirks.tapStiff = 0;
 }
 
+/** Straight to running and warm with the fuel on, as if started and left a while (no cranking). */
+export function startWarm(unit) {
+  const e = unit.engine;
+  const f = unit.quad.fuel;
+  f.tap = 'on';
+  if (f.litres > 0) f.bowl = f.params.bowlCapacity;
+  e.setIgnition(true);
+  e.setTemperature(1);
+  if (!e.isRunning) {
+    e.state = 'running';
+    e.rpm = Math.max(e.rpm, e.params.catchRpm);
+  }
+}
+
+/** Ignition off (and a diesel's stop knob out), fuel tap off. */
+export function switchOff(unit) {
+  unit.engine.setIgnition(false);
+  unit.engine.stopKnob(); // a diesel runs on with the key off
+  unit.quad.fuel.tap = 'off';
+}
+
 /** One line saying what is wrong with a quad, for the summary at the top of the Vehicles tab. */
 export function problemSummary(unit) {
   const e = unit.engine;

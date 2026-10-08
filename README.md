@@ -347,6 +347,26 @@ She talks, now and then, with captions at the bottom of the screen:
 
 Their lines are recorded offline with Chatterbox, a text-to-speech engine that copies a voice from a short reference recording and can be made more or less emotional: each kind of situation has a feel (calm, chatty, cross, excited or scared), so a fright sounds frightened. Amy's reference is the Piper "cori" voice she had before; Jess's is Kokoro's young "Lily" voice saying something excitable, recorded with the emotion turned up further than Amy's. Every line is checked with a speech recogniser and recorded again if it doesn't come out right; a few of Amy's short shouts that Chatterbox can't manage are recorded with Piper instead, and anything still wrong is left to the browser's voice. Lines play from where she is, like her sighs, hums and laughs, which are real recordings (Jess's a shade quicker and higher). After changing the lines in `src/npc/voiceLines.js` or `src/npc/jessLines.js`, re-record them with `tools/generate_companion_voice.py --character amy` (or `jess`; usage at the top of the script). Until then, a new line uses the browser's speech, but only with a voice known to be a woman's (Flo or Shelley on a Mac, Google UK English Female in Chrome, Sonia or Libby in Edge); with none of those she just shows the caption. Her figure (bust, waist, hips) can be adjusted live in the Companion folder of the tuning panel. How chatty she is, her volume, speech rate and pitch, captions and the thresholds she reacts to are in the Companion folder of the tuning panel. The lines are in `src/npc/voiceLines.js`.
 
+## Console
+
+Backslash (the key left of Z, or the `#` key on a UK keyboard) opens a command line along the bottom of the screen, separate from the debug panel. Esc shuts it. Tab completes whatever you are typing (commands, paths, vehicles, girls, places, values) and goes through the choices if there are several, Shift+Tab goes back, the up and down arrows bring back old lines. `help` lists every command, `help <command>` gives examples, `help topics` explains the tree.
+
+Every value is at a dotted path. Type the path alone to read it, or the path and a value to set it:
+
+- `vehicle.red.temperature 0.4`, `vehicle.red.faults.carb 0.3`, `vehicle.red.tyres.flPsi 2`, `vehicle.red.quirks.<kind> on`: each vehicle's running state, faults, engine health, quirks, tyres, position, and `vehicle.red.tune.*` for its own engine and controls.
+- `girl.amy.favour 10`, `girl.jess.autonomy off`, `girl.amy.skills.*`, `girl.amy.tune.*`.
+- `weather.kind rain`, `weather.rain`, `weather.wet`, `weather.temperature -4`.
+- `player.x`, `player.heading`, `player.flying`; `girls.autonomy`, `girls.speech`, `audio.sound`.
+- `tune.<group>.<key>`: every number in the Tune tab.
+
+`list`, `find psi`, `get`, `range`, `set`, `add`, `toggle`, `dump` (copies JSON) read and write them. Positions are x east, z south, y up, heading in degrees (0 faces +z, 90 faces +x), the same for you, vehicles, girls and items:
+
+- `tp red barn`, `tp me 100 20`, `tp amy to jess`, `tp tractor here`, `tp petrol-can 10 10 90`, then `nudge`, `face`, `where`, `places`.
+- `reset red`, `reset vehicles`, `reset girls`, `reset all`.
+- `start|stop|warm|cool|fill|fix <vehicle|all>`, `vehicles`, `girls`.
+- `girl amy drive red`, `girl jess doughnuts`, `girl amy invite-barn`: the same things as the Girls tab buttons.
+- `weather rain`, `fly`, `autonomy off` (the girls start nothing on their own, but follow and answer you), `speech off`, `sound off`.
+
 ## Tuning panel
 
 Press `` ` `` to open it. It releases the mouse so you can use the panel; click the game to carry on. Each quad has its own folder (Engine, Vibration, Audio, Smoke, Vehicle), alongside Sound, Player, Companion and Sky. The live engine readouts (state, rpm, mixture, roughness, fouling) and the shortcuts (warm or cool the engine, clear a flood) follow the quad you're on or looking at. There's also a shortcut to put both quads back in the yard and one to copy every value as JSON.
@@ -416,13 +436,13 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 5.  The girls bump into the quads and move them around, they need to be a bit more aware, and shouldn't be able to bump the quads and move them **Done.** See DECISIONS.md, "The girls no longer shove the quads".
 6.  Pods on the tractor. The two accessory pods (analogue and digital) can only be fitted to the quads now. Let them go on the tractor too, reading its hours and the odometer it now starts with in the background. **Done.** See DECISIONS.md, "Pods on the tractor".
 7.  A proper two-wheeler model for the mini moto and the ATC. The mini moto rides on the quad physics with hidden outrigger wheels, so it turns like a quad: the steering yaws it directly and power doesn't change the line. Make it ride like a bike: lean drives the turn, power mid-corner pushes the rear out and the front tucks if you grab the brake, with a real roll angle, leaning in and out of corners and a fall if it goes too far. The ATC's tip-over (when it comes) wants the same machinery. **Done.** For the mini moto; the ATC's tip-over is still to come. See DECISIONS.md, "A real two-wheeler model".
-8.  Debug window overhaul - consolidate windows and make it easier to know what's going on, and make sure we set this up so future skills follow this correctly. **In progress:** stage 1 (the Vehicles tab) is built, see DECISIONS.md, "Debug panel, stage 1". Girls, Tune and Actions tabs still to be reworked one by one.
-9.  Console, separate to the debug window - set and get all values, reset positions and states of vehicles, girls, etc., set weather, flight mode, turn the girls' autonomy and speech on and off, etc.
-10. Passenger seats in the UTV. You can ride in the UTV's other seats while a girl drives it, looking out from the middle or the left of the bench, with the camera anchored to the seat and the same on and off as the quads' pillion.
-11. Better UTV model.
-12. The girls drive the UTV and the Land Rover. Either girl can take the wheel of the UTV, start it on the glow plugs, work the dash lever for reverse, and drive it with you (and the other girl) on the bench or in the bed. Jess takes it for a go, Amy has her day, as with the tractor.
+8.  Debug window overhaul - consolidate windows and make it easier to know what's going on, and make sure we set this up so future skills follow this correctly. **Done.** See DECISIONS.md, "Debug panel, stage 1" and the stages after it.
+9.  Console, separate to the debug window - set and get all values, reset positions and states of vehicles, girls, etc., set weather, flight mode, turn the girls' autonomy and speech on and off, etc. **Done.** See DECISIONS.md, "The console".
+10. The girls drive the UTV and the Land Rover. Either girl can take the wheel of the UTV, start it on the glow plugs, work the dash lever for reverse, and drive it with you (and the other girl) on the bench or in the bed. Jess takes it for a go, Amy has her day, as with the tractor.
+11. Passenger seats in the UTV. You can ride in the UTV's other seats while a girl drives it, looking out from the middle or the left of the bench, with the camera anchored to the seat and the same on and off as the quads' pillion.
+12. Better UTV model.
 13. Things in the UTV's bed. The pick-up items (jerry cans, the toolbox, jump leads, the hose and so on) can be put in the bed and ride along, tip out when the bed tips, and be picked up again from it. Bales too, if they become pick-up items.
-14. They don't see the trailers as obstacles when driving and they don't have collision
+14. They should see the trailers as obstacles when driving and they don't have collision
 15. Better trailer models (large and small)
 16. Improve Land Rover model
 17. Better starter noises for the UTV and Land Rover
