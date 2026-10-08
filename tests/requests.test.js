@@ -96,3 +96,32 @@ describe('Requests', () => {
     expect(r.refuseChance('amy')).toBe(0);
   });
 });
+
+describe('Requests.joiner', () => {
+  const open = () => {
+    const r = make();
+    r.open.push({ girl: 'amy', kind: 'bales', since: 0 });
+    return r;
+  };
+  const c = (over = {}) => ({ you: { x: 0, z: 0 }, girls: [girl()], ridden: { id: 'red', hasPillion: true, pillion: null }, ...over });
+  it('sends the girl who asked once you have been on the quad a moment', () => {
+    const r = open();
+    expect(r.joiner(0.5, c())).toBe(null);
+    expect(r.joiner(P.joinDelay, c())).toBe('amy');
+    expect(r.joiner(1, c())).toBe(null); // only once per quad
+  });
+  it('does nothing on foot, with a taken seat, a busy or distant girl, or no open request', () => {
+    expect(open().joiner(5, c({ ridden: null }))).toBe(null);
+    expect(open().joiner(5, c({ ridden: { id: 'red', hasPillion: true, pillion: 'jess' } }))).toBe(null);
+    expect(open().joiner(5, c({ ridden: { id: 'red', hasPillion: false, pillion: null } }))).toBe(null);
+    expect(open().joiner(5, c({ girls: [girl({ free: false })] }))).toBe(null);
+    expect(open().joiner(5, c({ girls: [girl({ x: 100 })] }))).toBe(null);
+    expect(make().joiner(5, c())).toBe(null);
+  });
+  it('sends her again on a different quad', () => {
+    const r = open();
+    r.joiner(5, c());
+    r.joiner(1, c({ ridden: null }));
+    expect(r.joiner(5, c({ ridden: { id: 'blue', hasPillion: true, pillion: null } }))).toBe('amy');
+  });
+});

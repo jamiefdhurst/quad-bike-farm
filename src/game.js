@@ -2521,7 +2521,16 @@ export class Game {
 
   updateRequests(dt, ridden) {
     if (this.hiding.active) return; // nobody to ask
-    for (const e of this.requests.update(dt, this.requestContext(ridden))) {
+    const ctx = this.requestContext(ridden);
+    // She asked to go to the bales and you've got on a quad: she comes and climbs on the back, rather than waiting to be told.
+    const ru = ctx.quads.find((q) => q.ridden);
+    const joiner = this.requests.joiner(dt, { you: ctx.you, girls: ctx.girls, ridden: ru && this.player.isRiding ? ru : null });
+    if (joiner) {
+      const c = this.companions.find((o) => o.character.id === joiner);
+      c?.requestMount(ridden.quad);
+      c?.voice.say('remindBales', { force: true });
+    }
+    for (const e of this.requests.update(dt, ctx)) {
       const r = e.request;
       const girl = this.companions.find((c) => c.character.id === r.girl);
       const kind = r.kind[0].toUpperCase() + r.kind.slice(1);

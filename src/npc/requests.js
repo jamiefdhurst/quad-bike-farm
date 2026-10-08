@@ -21,6 +21,8 @@ export const DEFAULT_REQUEST_PARAMS = {
   balesRange: 7, // metres from the straw bales that counts as having taken her over
   canRange: 3, // metres from her the jerry can must be (held or put down) to count as fetched
   stopSpeed: 0.8, // m/s: the quad counts as stopped below this
+  joinDelay: 1.5, // seconds after you get on a quad before the girl who asked for the bales sets off to climb on the back
+  joinRange: 30, // metres she'll come from to get on the back of the quad you're on
 };
 
 export const REQUEST_PARAM_RANGES = {
@@ -39,6 +41,8 @@ export const REQUEST_PARAM_RANGES = {
   balesRange: [2, 20, 0.5],
   canRange: [1, 10, 0.5],
   stopSpeed: [0.1, 3, 0.1],
+  joinDelay: [0, 10, 0.5],
+  joinRange: [5, 80, 1],
 };
 
 export const REQUEST_KINDS = ['wash', 'bales', 'can'];
@@ -54,6 +58,36 @@ export class Requests {
     this.lastAsk = {}; // girl id -> time
     this.open = []; // { girl, kind, quad?, since }
     this.grudges = {}; // girl id -> { kind, until, told }
+    this.rideTime = 0; // how long you've been on the current quad
+    this.rideQuad = null;
+  }
+
+  /**
+   * The girl who asked to go to the bales, if she should now come and get on the
+   * back of the quad you've just got on: she's still waiting, free, in range, and
+   * the quad has a free pillion seat. She waits `joinDelay` after you mount so
+   * you've time to see she's coming, and is only sent once per quad.
+   * `ctx.ridden`: { id, hasPillion, pillion } for the quad you're on, or null.
+   * Returns the girl's id, or null.
+   */
+  joiner(dt, ctx) {
+    const q = ctx.ridden;
+    if (!q) {
+      this.rideQuad = null;
+      this.rideTime = 0;
+      return null;
+    }
+    if (this.rideQuad !== q.id) {
+      this.rideQuad = q.id;
+      this.rideTime = 0;
+      this.sentFor = null;
+    }
+    this.rideTime += dt;
+    if (this.rideTime < this.p.joinDelay || this.sentFor === q.id || !q.hasPillion || q.pillion) return null;
+    const r = this.open.find((o) => o.kind === 'bales' && ctx.girls.some((g) => g.id === o.girl && g.free && dist(g, ctx.you) <= this.p.joinRange));
+    if (!r) return null;
+    this.sentFor = q.id;
+    return r.girl;
   }
 
   /** The request she's waiting on, if any. */
