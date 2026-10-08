@@ -5,6 +5,7 @@ import { patchAt } from './terrain.js';
 import { buildBarnShed } from './barnBuild.js';
 import { buildJumpRamp } from './jumpRamp.js';
 import { buildHill } from './hillProps.js';
+import { buildOutbuildings } from './outbuildingProps.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -39,7 +40,8 @@ export function buildProps(ctx) {
   buildGate(c);
   buildRoadGate(c);
   buildPaddock(c);
-  buildBales(c);
+  const bale = buildBales(c);
+  buildOutbuildings({ ...c, bale });
   buildTrees(c);
   buildDistantTrees(c);
   buildGrass(c);
@@ -344,6 +346,7 @@ function buildBales({ scene, layout, heights, track, physics, RAPIER, random }) 
     if (track.distanceTo(x, z, 10) < layout.trackHalfWidth + 3) continue;
     place(x, z, { yaw });
   }
+  return { geo, straw }; // for the Dutch barn's stack (outbuildingProps.js)
 }
 
 // Trees ---------------------------------------------------------------------

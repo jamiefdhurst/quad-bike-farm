@@ -4,6 +4,7 @@
 // Pure: built from the layout (layout.js), used by the terrain, the props, the tyres and the girls.
 
 import { createHill } from './hill.js';
+import { createOutbuildings } from './outbuildings.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const smoothstep = (a, b, x) => {
@@ -54,6 +55,7 @@ export function createFields(layout) {
   const gate = layout.gate;
   const grass = { minX: -F, maxX: F, minZ: -F, maxZ: F };
   const hill = createHill(layout);
+  const built = createOutbuildings(layout);
 
   // The road's corridor between its hedges, and the two stubble fields either side of it.
   const corridor = road ? { lo: road.z - road.halfWidth - road.verge, hi: road.z + road.halfWidth + road.verge } : null;
@@ -164,11 +166,11 @@ export function createFields(layout) {
     return Math.max(onRoad, onPad);
   }
 
-  /** 0..1 how much of (x, z) is stubble: the two fields either side of the road, up to the tarmac. */
+  /** 0..1 how much of (x, z) is stubble: the two fields either side of the road, up to the tarmac, and not under the buildings out there. */
   function stubbleAt(x, z) {
     if (!road) return 0;
     const a = areaOf(x, z);
-    if (a !== 'north' && a !== 'south') return 0;
+    if ((a !== 'north' && a !== 'south') || built.builtAt(x, z)) return 0;
     return 1 - tarmacAt(x, z);
   }
 

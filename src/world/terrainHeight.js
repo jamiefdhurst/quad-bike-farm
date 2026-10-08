@@ -20,12 +20,14 @@ import { floorBlend } from './barn.js';
 import { stripFrame } from './layout.js';
 import { outsideRect, createFieldShape } from './fields.js';
 import { createHill } from './hill.js';
+import { createOutbuildings } from './outbuildings.js';
 
 export function createTerrainHeight(layout, track) {
   const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf, road } = layout;
   const farm = layout.farm ?? { minX: -fieldHalf, maxX: fieldHalf, minZ: -fieldHalf, maxZ: fieldHalf };
   const fieldShape = createFieldShape(layout);
   const hill = createHill(layout);
+  const outbuildings = createOutbuildings(layout);
   const yardHeight = baseHeight(yard.x, yard.z);
   const puddles = layout.puddles.map((u) => track.sample(u));
   const bogs = (layout.bogs ?? []).map((b) => (b.track !== undefined ? { ...track.sample(b.track), radius: b.radius } : { ...b }));
@@ -66,6 +68,10 @@ export function createTerrainHeight(layout, track) {
 
     // And level under the barn, so its floor is flat.
     if (layout.barn) h += (yardHeight - h) * floorBlend(layout, x, z);
+
+    // And under the Dutch barn and the field shed, to the lie of the land at their middles.
+    const floor = outbuildings.floorAt(x, z, (fx, fz) => baseHeight(fx, fz) + fieldShape(fx, fz).lift);
+    if (floor) h += (floor.level - h) * floor.k;
 
     // Level under the drag strip, with a shoulder to ease it back into the field.
     if (strip) {

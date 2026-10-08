@@ -774,7 +774,7 @@ export class Quad {
       ambient: this.world.warmth ?? 0.5,
       chill: this.world.chill ?? 0,
       dayTemp: this.world.temperature ?? 12,
-      sheltered: this.world.covered?.(this.position.x, this.position.z) ?? false,
+      sheltered: this.world.warmCover?.(this.position.x, this.position.z) ?? false,
     };
   }
 

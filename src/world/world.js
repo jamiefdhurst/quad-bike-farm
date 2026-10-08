@@ -8,6 +8,7 @@ import { GroundWear, DEFAULT_WEAR_PARAMS, WEAR_PARAM_RANGES } from './groundWear
 import { stripFrame } from './layout.js';
 import { Sky, SKY_PARAMS, SKY_RANGES } from './sky.js';
 import { createFields } from './fields.js';
+import { createOutbuildings } from './outbuildings.js';
 import { RoadMud, DEFAULT_ROAD_MUD_PARAMS, ROAD_MUD_PARAM_RANGES } from './roadMud.js';
 import { surfaceFeel, DEFAULT_SURFACE_PARAMS, SURFACE_PARAM_RANGES } from './surfaces.js';
 import { DEFAULT_SQUEAL_PARAMS, SQUEAL_PARAM_RANGES } from '../vehicle/tyreSqueal.js';
@@ -21,6 +22,7 @@ export class World {
     this.track = new Track(layout.trackPoints);
     this.heights = createTerrainHeight(layout, this.track);
     this.fields = createFields(layout);
+    this.outbuildings = createOutbuildings(layout); // the Dutch barn, the field shed, the muck heap and the trough out east
 
     this.surfaceParams = { ...DEFAULT_SURFACE_PARAMS };
     registerTuning('Surfaces', this.surfaceParams, SURFACE_PARAM_RANGES);
@@ -33,12 +35,12 @@ export class World {
     this.sky = new Sky(scene, renderer, { ...SKY_PARAMS });
     registerTuning('Sky', this.sky.params, SKY_RANGES);
 
-    // Tyres wear the fields (groundWear.js); the yard, the drag strip, the barn floor and the road are hard and never do.
+    // Tyres wear the fields (groundWear.js); the yard, the drag strip, the barn floors and the road are hard and never do.
     const strip = layout.dragStrip;
     const exempt = (x, z) => {
       if (Math.hypot(x - layout.yard.x, z - layout.yard.z) < layout.yard.radius) return true;
       if (this.fields.tarmacAt(x, z) > 0.3) return true;
-      if (this.inBarn(x, z, 1)) return true;
+      if (this.inBarn(x, z, 1) || this.outbuildings.builtAt(x, z, 0.5)) return true;
       if (!strip) return false;
       const f = stripFrame(strip, x, z);
       return Math.abs(f.across) < strip.width / 2 + 1 && f.along > -8 && f.along < strip.length + strip.runOff;
@@ -114,8 +116,13 @@ export class World {
     return Number.isNaN(h) ? this.heights.heightAt(x, z) : h;
   }
 
-  /** Under the barn roof: out of the rain, and a quad parked here keeps its warmth. */
+  /** Under a roof (the barn's, the Dutch barn's or the field shed's): out of the rain. */
   covered(x, z) {
+    return underRoof(this.layout, x, z) || this.outbuildings.covered(x, z);
+  }
+
+  /** In the barn: a quad parked here keeps its warmth (the open-sided Dutch barn and the draughty shed don't). */
+  warmCover(x, z) {
     return underRoof(this.layout, x, z);
   }
 

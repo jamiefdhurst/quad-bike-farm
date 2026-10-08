@@ -2,6 +2,7 @@
 // fields and the tarmac road, the muddy track with ruts and puddles, and worn patches in the yard and gateways.
 
 import { patchColor, patchBlend } from './patchwork.js';
+import { createOutbuildings } from './outbuildings.js';
 
 function rand(seed) {
   return () => {
@@ -100,6 +101,7 @@ export function createGroundCanvas({ size, worldSize, track, layout, fields, pud
   wear(yard.x - 4, yard.z + 2, yard.radius * 0.45, 'rgba(92,80,58,0.7)');
   wear(gate.x, fieldHalf - 3, 7, 'rgba(90,72,48,0.8)');
   if (layout.road) wear(fieldHalf - 4, layout.road.z, 6, 'rgba(90,72,48,0.6)'); // the quads cut the corner onto the road
+  paintOutbuildings(ctx, toPx, s, layout, rand(77), wear); // its own draws, leaving the rest of the ground as it was
 
   // Track.
   const pts = track.points;
@@ -311,7 +313,7 @@ function paintStubble(ctx, toPx, s, fields, random) {
     ctx.fillStyle = f.ground;
     ctx.fillRect(x0, z0, x1 - x0, z1 - z0);
     // Blotches: a little greener where it's weedy, browner where the combine left it thin.
-    for (let i = 0; i < 900; i++) {
+    for (let i = 0; i < 450; i++) {
       const x = r.minX + random() * (r.maxX - r.minX);
       const z = r.minZ + random() * (r.maxZ - r.minZ);
       const [px, pz] = toPx(x, z);
@@ -360,6 +362,65 @@ function paintStubble(ctx, toPx, s, fields, random) {
     ctx.lineWidth = 0.45 * s;
     for (let a = lo + 12; a < hi - 6; a += f.tramlines) for (const off of [-0.9, 0.9]) line(a + off);
     ctx.restore();
+  }
+}
+
+/**
+ * The ground at the buildings out east (outbuildings.js): the Dutch barn's floor bare and trodden, littered with straw, worn out onto the
+ * hardstanding; the field shed's earth floor and its doorway; a dark stain round the muck heap; and the ground poached round the trough.
+ */
+function paintOutbuildings(ctx, toPx, s, layout, random, wear) {
+  const ob = createOutbuildings(layout);
+  const floor = (r, color) => {
+    const [x0, z0] = toPx(r.minX, r.minZ);
+    const [x1, z1] = toPx(r.maxX, r.maxZ);
+    ctx.fillStyle = color;
+    ctx.fillRect(x0, z0, x1 - x0, z1 - z0);
+  };
+  if (ob.barn) {
+    const r = ob.barn.outer;
+    floor({ minX: r.minX - 0.3, maxX: r.maxX + 0.3, minZ: r.minZ - 0.3, maxZ: r.maxZ + 0.3 }, 'rgba(112,100,78,0.75)');
+    floor(r, 'rgba(98,86,66,0.8)');
+    const a = ob.apron;
+    floor(a, 'rgba(108,94,70,0.55)');
+    for (let i = 0; i < 30; i++) wear(a.minX + 1 + random() * (a.maxX - a.minX - 2), a.minZ + random() * (a.maxZ - a.minZ), 1.5 + random() * 2, 'rgba(100,86,62,0.5)');
+    for (let i = 0; i < 450; i++) {
+      const x = r.minX + random() * (r.maxX - r.minX);
+      const z = r.minZ + random() * (r.maxZ - r.minZ + 1.5);
+      const [px, pz] = toPx(x, z);
+      const a = random() * Math.PI;
+      const len = (0.1 + random() * 0.25) * s;
+      ctx.strokeStyle = `rgba(${190 + random() * 30},${160 + random() * 30},${90 + random() * 30},${0.2 + random() * 0.3})`;
+      ctx.lineWidth = Math.max(1, 0.02 * s);
+      ctx.beginPath();
+      ctx.moveTo(px, pz);
+      ctx.lineTo(px + Math.cos(a) * len, pz + Math.sin(a) * len);
+      ctx.stroke();
+    }
+  }
+  if (ob.shed) {
+    floor(ob.shed.inner, 'rgba(78,66,50,0.9)');
+    wear((ob.shed.door.minX + ob.shed.door.maxX) / 2, ob.shed.door.z + 1.2, 2.8, 'rgba(88,74,52,0.9)');
+  }
+  const m = layout.muckHeap;
+  if (m) {
+    const [hx, hz] = toPx(m.x, m.z);
+    ctx.save();
+    ctx.translate(hx, hz);
+    ctx.scale((m.halfX + 1.6) * s, (m.halfZ + 1.6) * s);
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+    g.addColorStop(0, 'rgba(60,46,30,0.95)');
+    g.addColorStop(0.7, 'rgba(70,56,36,0.7)');
+    g.addColorStop(1, 'rgba(70,56,36,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(-1, -1, 2, 2);
+    ctx.restore();
+  }
+  const t = layout.trough;
+  if (t) {
+    // On the field side, where the cattle stand to drink (the hedge is behind it).
+    wear(t.x, t.z - 1, 3.2, 'rgba(84,66,44,0.9)');
+    wear(t.x + 0.6, t.z - 1.3, 1.8, 'rgba(66,50,32,0.8)');
   }
 }
 

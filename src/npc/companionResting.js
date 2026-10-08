@@ -33,7 +33,14 @@ export const restingMethods = {
     this.restSpot = spot;
     this.pendingSpot = null;
     const stand = this.restStandPoint(spot);
-    this.fsm.transition('walking', { goal: 'rest', spot, stay, target: () => ({ position: stand, facing: spot.yaw }) });
+    // A spot inside a building has a `door`, a point outside the way in, to walk to first (unless she's nearer in than that already).
+    const door = spot.door ? new THREE.Vector3(spot.door.x, this.world.heightAt(spot.door.x, spot.door.z), spot.door.z) : null;
+    let through = !door || this.root.position.distanceTo(stand) < door.distanceTo(stand);
+    const target = () => {
+      if (!through && door.distanceTo(this.root.position) < 0.9) through = true;
+      return { position: through ? stand : door, facing: spot.yaw };
+    };
+    this.fsm.transition('walking', { goal: 'rest', spot, stay, target });
     return true;
   },
 

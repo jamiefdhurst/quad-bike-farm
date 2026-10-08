@@ -19,9 +19,10 @@ export function randomiseQuadSpawns(spawn, count, random) {
     const placed = order.map((slot, i) => {
       if (i !== home && random() < spawn.awayChance) {
         const a = awaySpots.pop();
+        const j = a.jitter ?? spawn.awayJitter; // a tight spot has its own
         return {
-          x: a.x + (random() * 2 - 1) * spawn.awayJitter,
-          z: a.z + (random() * 2 - 1) * spawn.awayJitter,
+          x: a.x + (random() * 2 - 1) * j,
+          z: a.z + (random() * 2 - 1) * j,
           yaw: random() * Math.PI * 2,
           where: a.where,
         };

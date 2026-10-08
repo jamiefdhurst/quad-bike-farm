@@ -58,6 +58,18 @@ export const LAYOUT = {
   hedgeThickness: 1.8,
   hedgeHeight: 2.4,
 
+  // Out in the east fields (world/outbuildings.js, outbuildingProps.js). The Dutch barn stands at the far end of the road, in the barley
+  // field's corner by the hardstanding: open along its front (+z, facing the hardstanding) and its west end, clad at the back and the east
+  // end, a curved tin roof on steel stanchions `bays` bays long, `eaves` m up to the eaves and `rise` m more to the top of the curve. Round
+  // bales are stacked `layers` high in the east bays, leaving the west bay (`openBays`) clear to park in. The stone field shed is in the
+  // barley field's far corner by the grass field, its doorway (`door`, `halfWidth` m either side of x) in its south wall. The muck heap
+  // is in the wheat field by its first gateway, a long heap `halfX` by `halfZ` and `height` high, and the water trough by the barley
+  // field's second gateway, along the hedge.
+  dutchBarn: { x: 186, z: -14, halfX: 7.5, halfZ: 4.5, bays: 3, eaves: 5.4, rise: 1.6, overhang: 0.4, openBays: 1, layers: 3 },
+  fieldShed: { x: 89, z: -73, halfX: 3.2, halfZ: 2.2, wall: 0.5, wallHeight: 2.3, ridge: 3.5, door: { halfWidth: 0.9, height: 1.9 } },
+  muckHeap: { x: 118, z: 15.2, halfX: 3.6, halfZ: 2.3, height: 1.5 },
+  trough: { x: 146.8, z: -5.5, length: 2.4, width: 0.65, height: 0.6 },
+
   // The barn (world/barn.js): a hollow shed with its big doors open on the +x side, facing the yard. halfX and halfZ are the outside
   // half-sizes, wall the thickness, wallHeight the eaves and ridge the top of the roof along its length (x). The door is centred on z.
   barn: { x: -64, z: 60, halfX: 5.2, halfZ: 4.6, wall: 0.2, wallHeight: 4.2, ridge: 6.3, door: { halfWidth: 2.3, height: 3.2 } },
@@ -146,6 +158,8 @@ export const LAYOUT = {
     [64, -63.4, 0.25],
     [-70, -68, 0.9],
     [-50, 66, 0.1],
+    [173.2, -13.4, 1.4], // two out of the stack, beside the Dutch barn
+    [174.6, -16.2, 1.1],
   ],
 
   // Places the girls sit or shelter (npc/places.js). yaw is the way she faces; seat is how high up she sits (none: she stands).
@@ -155,6 +169,12 @@ export const LAYOUT = {
     { id: 'fenceSouth', kind: 'fence', x: -69.5, z: 41, yaw: Math.PI, seat: 1.05 },
     { id: 'fenceEast', kind: 'fence', x: -59, z: 30.5, yaw: -Math.PI / 2, seat: 1.05 },
     { id: 'fenceWest', kind: 'fence', x: -73, z: 37.5, yaw: Math.PI / 2, seat: 1.05 },
+    // Out of the rain in the east fields. Under the Dutch barn, sat on the two round bales on the ground at the front, facing out, going in between
+    // them (`door`) to climb up from behind. In the field shed, stood just inside the doorway, going in through it.
+    { id: 'dutchBarn0', kind: 'shelter', x: 184.8, z: -11.4, yaw: 0, seat: 1.52, door: { x: 186.7, z: -12.6 } },
+    { id: 'dutchBarn1', kind: 'shelter', x: 188.6, z: -11.4, yaw: 0, seat: 1.52, door: { x: 186.7, z: -12.6 } },
+    { id: 'fieldShed0', kind: 'shelter', x: 88.1, z: -72.2, yaw: 0.15, door: { x: 89, z: -69.4 } },
+    { id: 'fieldShed1', kind: 'shelter', x: 90.4, z: -72.9, yaw: -0.3, door: { x: 89, z: -69.4 } },
   ],
   baleSeat: 1.52, // how high her hips sit above the ground on a straw bale (the top is at 1.44, and her hips want to be a little above it)
 
@@ -166,6 +186,8 @@ export const LAYOUT = {
     { x: -58.4, z: 38.5, yaw: 2.1, where: 'by the paddock' },
     { x: -61.5, z: 67.8, yaw: -0.6, where: 'by the silage bales' },
     { x: -35.2, z: 77.4, yaw: 0.9, where: 'by the field gate' }, // clear of the gate, swung open into the field
+    { x: 177.2, z: -8.6, yaw: 2.4, where: 'by the Dutch barn' }, // by its front corner stanchion, under the eaves
+    { x: 92.9, z: -69.6, yaw: -0.5, where: 'by the field shed' }, // against its wall, beside the doorway
   ],
   tractor: { x: -41, z: 70.5, yaw: 2.7 }, // the old tractor, parked towards the field gate, clear of the barn and the quads' rows (Jess kept getting stuck by the barn) (vehicle/quadSpecs.js TRACTOR_SPEC)
   landRover: { x: -54, z: 71.5, yaw: 2.3 }, // the old Land Rover, in the open north of the barn doors, clear of the straw bale at (-50, 66) and the tractor (vehicle/quadSpecs.js LAND_ROVER_SPEC)
@@ -213,6 +235,12 @@ export const LAYOUT = {
       { x: -46, z: -30, where: 'by the bottom of the track' },
       { x: 4, z: -32, where: 'in the middle of the field' },
       { x: -68, z: 8, where: 'by the west hedge' },
+      // Out in the east fields. A spot's own `jitter` (metres) is for a tight one: the Dutch barn's open bay.
+      { x: 181, z: -13.6, jitter: 0.8, where: 'in the Dutch barn' },
+      { x: 104, z: 2, jitter: 1, where: 'along the road' },
+      { x: 112, z: -40, where: 'out in the barley field' },
+      { x: 150, z: 44, where: 'out in the wheat field' },
+      { x: 95, z: -65, jitter: 2, where: 'by the field shed' },
     ],
   },
 };
