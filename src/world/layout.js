@@ -15,8 +15,9 @@ export const LAYOUT = {
   farm: { minX: -80, maxX: 200, minZ: -80, maxZ: 80 },
   // The tarmac farm road: from just inside the grass field's east gateway, straight east along `z` to a round hardstanding (`pad`) at the far end.
   // `hedgeTo` is where the hedges either side of it stop, `verge` the grass between the tarmac and those hedges, `gaps` the open gateways in them
-  // into the stubble fields (x of each, `gapWidth` wide), north side then south.
-  road: { z: 2, fromX: 78, toX: 184, halfWidth: 2.3, verge: 2.8, hedgeTo: 176, pad: { x: 188, radius: 8 }, gaps: { north: [112, 152], south: [128, 166] }, gapWidth: 6 },
+  // into the stubble fields (x of each, `gapWidth` wide), north side then south. The tarmac runs on across the hardstanding to a big double
+  // gate (`gate`, `width` m across) in the farm's east hedge, closed.
+  road: { z: 2, fromX: 78, toX: 199.5, halfWidth: 2.3, verge: 2.8, hedgeTo: 176, pad: { x: 188, radius: 8 }, gaps: { north: [112, 152], south: [128, 166] }, gapWidth: 6, gate: { width: 7 } },
   // How each stubble field looks and lies (world/fields.js, groundTexture.js, props.js). `rows` is the way it was drilled (rows along x or z,
   // half a metre apart), `tramlines` the metres between the sprayer's wheel lines, `ground` the straw's colour on the ground, `stalk` the
   // stalks' tip and base colours, `stalkHeight` their cut height range and `density` how thick they stand (1 is the wheat's). The north field,

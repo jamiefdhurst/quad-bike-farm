@@ -82,7 +82,7 @@ export function createFields(layout) {
     hedges.push(
       { x1: F, z1: farm.minZ, x2: farm.maxX, z2: farm.minZ, gaps: [] },
       { x1: F, z1: farm.maxZ, x2: farm.maxX, z2: farm.maxZ, gaps: [] },
-      { x1: farm.maxX, z1: farm.minZ, x2: farm.maxX, z2: farm.maxZ, gaps: [] },
+      { x1: farm.maxX, z1: farm.minZ, x2: farm.maxX, z2: farm.maxZ, gaps: road.gate ? [{ at: road.z, half: road.gate.width / 2 + 0.35, gate: true }] : [] },
       { x1: F, z1: corridor.lo, x2: road.hedgeTo, z2: corridor.lo, gaps: gaps(road.gaps.north) },
       { x1: F, z1: corridor.hi, x2: road.hedgeTo, z2: corridor.hi, gaps: gaps(road.gaps.south) },
     );
@@ -105,7 +105,7 @@ export function createFields(layout) {
     return best;
   }
 
-  /** Metres along `yaw` (0 is +z) from (x, z) to the first hedge it would hit, not counting the gaps; Infinity if none. */
+  /** Metres along `yaw` (0 is +z) from (x, z) to the first hedge or closed gate it would hit, not counting the open gaps; Infinity if none. */
   function hedgeAhead(x, z, yaw) {
     const dx = Math.sin(yaw);
     const dz = Math.cos(yaw);
@@ -115,7 +115,7 @@ export function createFields(layout) {
       if (d < 0 || d >= best) continue;
       const s = h.alongX ? x + dx * d : z + dz * d;
       const lo = h.alongX ? h.x1 : h.z1;
-      if (s < lo || s > lo + h.length || inGap(h, s)) continue;
+      if (s < lo || s > lo + h.length || h.gaps.some((g) => !g.gate && Math.abs(s - g.at) < g.half)) continue;
       best = d;
     }
     return best;

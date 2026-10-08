@@ -310,7 +310,7 @@ function paintTarmac(ctx, toPx, s, layout, fields, random) {
   ctx.clip();
   // Speckle: the stone in the tarmac.
   const minX = road.fromX;
-  const maxX = road.pad ? road.pad.x + road.pad.radius : road.toX;
+  const maxX = Math.max(road.toX, road.pad ? road.pad.x + road.pad.radius : road.toX);
   const reach = road.pad ? road.pad.radius : road.halfWidth;
   const area = (maxX - minX) * reach * 2;
   for (let i = 0; i < area * 6; i++) {
@@ -337,6 +337,7 @@ function paintTarmac(ctx, toPx, s, layout, fields, random) {
   for (let x = road.fromX; x < road.toX; x += 1.5 + random() * 4) {
     for (const side of [-1, 1]) {
       if (random() < 0.5) continue;
+      if (fields.tarmacAt(x, road.z + side * (road.halfWidth + 0.4)) > 0.5) continue; // across the hardstanding, there's no edge
       const [px, pz] = toPx(x, road.z + side * (road.halfWidth + 0.05));
       ctx.fillStyle = 'rgba(95,88,70,0.8)';
       ctx.beginPath();

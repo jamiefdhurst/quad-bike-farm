@@ -53,10 +53,13 @@ describe('the farm fields', () => {
   it('measures the way to the hedge ahead, through the gaps', () => {
     expect(f.hedgeAhead(0, 0, 0)).toBeCloseTo(LAYOUT.fieldHalf); // south, to the grass field's hedge
     expect(f.hedgeAhead(0, 30, Math.PI / 2)).toBeCloseTo(LAYOUT.fieldHalf); // east
-    // East along the road: out of the gateway, past the road's hedges, to the far hedge.
+    // East along the road: out of the gateway, past the road's hedges, to the big gate at its end, which is shut.
     expect(f.hedgeAhead(0, road.z, Math.PI / 2)).toBeCloseTo(LAYOUT.farm.maxX);
-    // Straight at the south gate: on through it.
-    expect(f.hedgeAhead(LAYOUT.gate.x, 0, 0)).toBe(Infinity);
+    const far = f.hedges.find((h) => !h.alongX && h.x1 === LAYOUT.farm.maxX);
+    expect(f.inGap(far, road.z)).toBe(true);
+    expect(f.tarmacAt(LAYOUT.farm.maxX - 1, road.z)).toBe(1); // the tarmac runs up to it
+    // Straight at the south gate: that's shut too.
+    expect(f.hedgeAhead(LAYOUT.gate.x, 0, 0)).toBeCloseTo(LAYOUT.fieldHalf);
     expect(f.hedgeDistance(0, 79)).toBeCloseTo(1);
   });
 

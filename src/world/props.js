@@ -37,6 +37,7 @@ export function buildProps(ctx) {
   const barn = buildBarn(c);
   buildHedges(c);
   buildGate(c);
+  buildRoadGate(c);
   buildPaddock(c);
   buildBales(c);
   buildTrees(c);
@@ -152,6 +153,65 @@ function buildGate({ scene, layout, heights, fixedBox }) {
   enableShadows(g);
   scene.add(g);
   fixedBox(gate.x, y + 0.8, F, w / 2 + 0.2, 0.9, 0.2);
+}
+
+/**
+ * The big gate at the end of the farm road (layout.road.gate), in the farm's east hedge: a pair of galvanised steel field gates on heavy
+ * timber posts, shut, meeting in the middle with a chain round them. Seven tubular rails each, closer together towards the bottom, with a
+ * diagonal brace from the foot of the hinge end.
+ */
+function buildRoadGate({ scene, layout, heights, fixedBox }) {
+  const road = layout.road;
+  if (!road?.gate || !layout.farm) return;
+  const x = layout.farm.maxX;
+  const w = road.gate.width;
+  const y = heights.heightAt(x, road.z);
+  const steel = new THREE.MeshStandardMaterial({ color: 0xa8adaf, metalness: 0.6, roughness: 0.45 });
+  const timber = new THREE.MeshStandardMaterial({ color: 0x5e4c38, roughness: 0.95 });
+  const g = new THREE.Group();
+  g.position.set(x, y, road.z);
+  g.rotation.y = Math.PI / 2; // the gate's length (its local x) along the hedge
+
+  for (const sx of [-1, 1]) {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2.1, 0.3), timber);
+    post.position.set((sx * (w / 2 + 0.15)), 0.75, 0);
+    g.add(post);
+  }
+  const tube = (len, r, x0, y0, x1, y1) => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 8), steel);
+    m.position.set((x0 + x1) / 2, (y0 + y1) / 2, 0);
+    m.rotation.z = Math.atan2(x0 - x1, y1 - y0);
+    return m;
+  };
+  const leafW = w / 2 - 0.05;
+  const rails = [0.12, 0.26, 0.41, 0.57, 0.75, 0.95, 1.18];
+  for (const side of [-1, 1]) {
+    const leaf = new THREE.Group();
+    leaf.position.set(side * (w / 2), 0, 0); // hung from its post
+    const along = (d) => -side * d; // from the hinge towards the middle
+    for (const ry of rails) {
+      const r = ry === rails[rails.length - 1] ? 0.03 : 0.018; // a heavier top rail
+      leaf.add(tube(leafW, r, along(0), ry, along(leafW), ry));
+    }
+    leaf.add(tube(1.12, 0.025, along(0.03), 0.1, along(0.03), 1.2)); // hinge stile
+    leaf.add(tube(1.12, 0.022, along(leafW - 0.03), 0.1, along(leafW - 0.03), 1.2)); // closing stile
+    leaf.add(tube(Math.hypot(leafW * 0.55, 1.05), 0.018, along(0.05), 0.14, along(leafW * 0.55), 1.17)); // brace
+    // Hinges: two straps round the post.
+    for (const hy of [0.26, 1.1]) {
+      const strap = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 0.08), steel);
+      strap.position.set(along(-0.02), hy, 0);
+      leaf.add(strap);
+    }
+    g.add(leaf);
+  }
+  // The chain round the two closing stiles.
+  const chain = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.012, 6, 12), new THREE.MeshStandardMaterial({ color: 0x55504a, metalness: 0.5, roughness: 0.6 }));
+  chain.position.set(0, 0.95, 0);
+  chain.rotation.y = Math.PI / 2;
+  g.add(chain);
+  enableShadows(g);
+  scene.add(g);
+  fixedBox(x, y + 0.8, road.z, 0.2, 0.9, w / 2 + 0.3);
 }
 
 function buildPaddock({ scene, models, layout, heights, fixedBox }) {

@@ -54,7 +54,7 @@ export class World {
     const reach = (road?.pad?.radius ?? road?.halfWidth ?? 0) + 1;
     this.roadMud = road
       ? new RoadMud({
-          bounds: { minX: road.fromX - 1, maxX: (road.pad?.x ?? road.toX) + reach, minZ: road.z - reach, maxZ: road.z + reach },
+          bounds: { minX: road.fromX - 1, maxX: Math.max(road.toX + 1, (road.pad?.x ?? 0) + reach), minZ: road.z - reach, maxZ: road.z + reach },
           tarmacAt: this.fields.tarmacAt,
           params: this.roadMudParams,
         })
