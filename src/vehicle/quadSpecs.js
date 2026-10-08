@@ -1008,7 +1008,9 @@ export const UTV_SPEC = {
     recIdleSource: 'quad',
     pulseRefRpm: 970,
     pulseRevLoudness: 0.25,
-    recVolume: 0.72, // the Gator's bank plays quieter than the tractor's did: this keeps its loudness
+    recVolume: 1.12, // the Gator's bank plays quieter than the tractor's did, and the boom cut takes more: this keeps its idle as loud
+    pulseBoomCut: 14, // Jamie's pick: the Gator was recorded on the vehicle, with a boom at 80 to 140 Hz from its body
+    pulseBoomFreq: 110,
     recToneClosed: 4200,
     pipeLength: 1.2,
     densityRefRpm: 1200,

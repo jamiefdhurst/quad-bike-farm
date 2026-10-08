@@ -1781,3 +1781,11 @@ Jamie: the tractor sometimes sounds right and sometimes has a heavy noise over i
 - **Offline renders.** `node tools/render_engine_sound.mjs <vehicle id> out.wav [--bank ...] [--set param=value]` runs the real engine model and worklet in Node through idle, full throttle, idle, half and full again, in a few seconds and without a browser. It feeds a diesel its diesel and takes the middle of the spec's roughness range, as the UTV's renders found they must.
 - A test checks that every bank takes each kind of idle from one recording. All the others already did.
 - Checked: unit tests and renders (`.scratch/tractor-sound/heavy-noise/`, untracked). Not checked: the tractor in the game by ear.
+
+## The UTV's boom (2026-10-08)
+
+Jamie found the UTV boomy too. Rendered with `tools/render_engine_sound.mjs`, its idle matches the raw Gator recording (149193) almost exactly (spectral centroid 309 against 311 Hz), so the boom is in the recording: it was made on the vehicle and has a broad hump from 80 to 140 Hz, centred near 110 Hz and about 10 dB above 160 to 250 Hz.
+
+- New audio params `pulseBoomCut` (dB, default 0, so nothing else changed) and `pulseBoomFreq` (Hz, 110): a peaking cut (Q 1.4) on the pulse sound at every rpm. A test plays a recorded tone through the worklet: 12 dB at 110 Hz leaves under 0.4 of it, and a 600 Hz tone is barely touched.
+- Rendered at 6, 10 and 14 dB, each with `recVolume` raised so it idles as loud as before (rms 0.14). Jamie picked 14: `recVolume` 1.12 (was 0.72). Centroid at idle 530 Hz (was 309), at full throttle 716 (was 498); full throttle is about 1 dB louder than before.
+- Not changed: as it revs, each firing plays only the loudest beat of a Gator cycle, so it can sound like a big single ("The UTV idles at its recording's speed"). Not checked: the UTV in the game by ear.
