@@ -1,9 +1,25 @@
 import * as THREE from 'three';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { BONES, EMPTY_POSE } from './poseMoves.js';
+import { rotateBoneWorld, solveTwoBone, orientHand } from './armIK.js';
 
 const AXIS_X = new THREE.Vector3(1, 0, 0);
 const AXIS_Y = new THREE.Vector3(0, 1, 0);
 const AXIS_Z = new THREE.Vector3(0, 0, 1);
+const HAND_BONES = {
+  left: ['LeftArm', 'LeftForeArm', 'LeftHand', 'LeftHandIndex1', 'LeftHandThumb1'],
+  right: ['RightArm', 'RightForeArm', 'RightHand', 'RightHandIndex1', 'RightHandThumb1'],
+};
+const _fingers = new THREE.Vector3();
+const _palm = new THREE.Vector3();
+const _e = new THREE.Euler(0, 0, 0, 'XZY');
+const _qe = new THREE.Quaternion();
+const _qa = new THREE.Quaternion();
+const _qr = new THREE.Quaternion();
+const _qri = new THREE.Quaternion();
+const _origin = new THREE.Vector3();
+const _target = new THREE.Vector3();
+const _pole = new THREE.Vector3();
 
 /**
  * Wraps a skinned glTF character: scaling, animation cross-fades by short clip
@@ -59,6 +75,11 @@ export class CharacterRig {
     this.lookLimits = { yaw: 1.2, pitch: 0.5 };
     // Extra procedural offsets in radians about the character's own axes, set by behaviour code.
     this.offsets = { headYaw: 0, spineRoll: 0, spinePitch: 0, leftArmOut: 0, rightArmOut: 0, leftElbow: 0, rightElbow: 0 };
+    // Bone turns and hand placings (poseMoves.js) set by behaviour code each frame, applied before the offsets; `poseSeat` is the
+    // seat a 'seat' frame hand is placed against.
+    this.pose = EMPTY_POSE;
+    this.poseSeat = null;
+    this.carried = new Map();
     // Further posing layered on by behaviour modules, each called as fn(dt) after the offsets.
     this.posers = [];
     this.tmpQ = new THREE.Quaternion();
@@ -81,6 +102,17 @@ export class CharacterRig {
   play(name, { fade = 0.3, once = false, timeScale = 1 } = {}) {
     const next = this.actions[name];
     if (!next) return;
+    // Already blended in by mix(): carry on from where it is and let the rest fade, rather than starting it again from nothing.
+    if (this.mixed && this.mixed.includes(next) && !once && next.isRunning()) {
+      this.mixed = null;
+      next.stopFading();
+      next.setEffectiveWeight(1);
+      next.timeScale = timeScale;
+      for (const a of Object.values(this.actions)) if (a !== next && a.isRunning()) a.fadeOut(fade);
+      this.currentAction = next;
+      return;
+    }
+    this.mixed = null;
     next.reset();
     next.setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat, Infinity);
     next.clampWhenFinished = once;
@@ -91,6 +123,34 @@ export class CharacterRig {
     next.play();
     if (this.currentAction && this.currentAction !== next) this.currentAction.crossFadeTo(next, fade, false);
     this.currentAction = next;
+  }
+
+  /**
+   * Holds two looping clips blended by `w` (0 all of `a`, 1 all of `b`), as getting on blends standing into sitting. Anything else
+   * playing fades out. A later play() of either carries on from the blend.
+   */
+  mix(a, b, w) {
+    const A = this.actions[a];
+    const B = this.actions[b];
+    if (!A || !B) return;
+    if (!this.mixed || this.mixed[0] !== A || this.mixed[1] !== B) {
+      for (const act of Object.values(this.actions)) if (act !== A && act !== B && act.isRunning()) act.fadeOut(0.25);
+      for (const act of [A, B]) {
+        if (!act.isRunning() || act.loop !== THREE.LoopRepeat) {
+          act.reset();
+          act.setLoop(THREE.LoopRepeat, Infinity);
+          act.clampWhenFinished = false;
+          act.play();
+        }
+        act.timeScale = 1;
+        act.stopFading();
+        act.enabled = true;
+      }
+      this.mixed = [A, B];
+    }
+    A.setEffectiveWeight(1 - w);
+    B.setEffectiveWeight(w);
+    this.currentAction = w < 0.5 ? A : B;
   }
 
   setTimeScale(s) {
@@ -162,6 +222,8 @@ export class CharacterRig {
       spine.rotateZ(this.spineSway.roll);
     }
 
+    this.applyPose(this.pose);
+
     const o = this.offsets;
     const b = this.bones;
     this.rotateAboutRootAxis(b.Spine1, AXIS_Z, o.spineRoll);
@@ -173,6 +235,68 @@ export class CharacterRig {
     this.rotateAboutRootAxis(b.RightForeArm, AXIS_X, -o.rightElbow);
     for (const fn of this.posers) fn(dt);
     this.applyLook();
+  }
+
+  /**
+   * Layers a pose (poseMoves.js) on: each bone turned about her own axes as its parents' turns left them, then the hands placed.
+   */
+  applyPose(pose) {
+    if (pose === EMPTY_POSE) return;
+    const bones = pose.bones ?? {};
+    const hands = pose.hands ?? {};
+    const any = Object.keys(bones).length || Object.values(hands).some((h) => h.w > 1e-3);
+    if (!any) return;
+    this.root.updateMatrixWorld(true);
+    this.root.getWorldQuaternion(_qr);
+    _qri.copy(_qr).invert();
+    const carried = this.carried;
+    carried.clear();
+    for (const name of BONES) {
+      const bone = this.bones[name];
+      const turn = bones[name];
+      if (!bone) continue;
+      const parent = carried.get(bone.parent);
+      if (!turn || (Math.abs(turn[0]) < 1e-5 && Math.abs(turn[1]) < 1e-5 && Math.abs(turn[2]) < 1e-5)) {
+        if (parent) carried.set(bone, parent);
+        continue;
+      }
+      _qe.setFromEuler(_e.set(turn[0], turn[1], turn[2], 'XZY'));
+      // In her own frame, the turn about the axes as the parents left them: P * e * P^-1; then into the world.
+      _qa.copy(_qe);
+      if (parent) _qa.premultiply(parent).multiply(_qe.clone().copy(parent).invert());
+      _qa.premultiply(_qr).multiply(_qri);
+      rotateBoneWorld(bone, _qa);
+      const own = new THREE.Quaternion().setFromEuler(_e);
+      carried.set(bone, parent ? parent.clone().multiply(own) : own);
+    }
+    for (const [side, h] of Object.entries(hands)) {
+      if (!h || h.w <= 1e-3 || !HAND_BONES[side]) continue;
+      const [arm, fore, hand, finger, thumb] = HAND_BONES[side].map((n) => this.bones[n]);
+      if (!arm || !fore || !hand) continue;
+      const frame = this.handFrame(h.frame);
+      if (!frame) continue;
+      _target.set(...h.at).applyQuaternion(frame.q).add(frame.origin);
+      _pole.set(...h.pole).applyQuaternion(frame.q).add(frame.origin);
+      solveTwoBone(arm, fore, hand, _target, _pole, Math.min(1, h.w));
+      if (h.fingers && h.palm && finger && thumb) {
+        _fingers.set(...h.fingers).applyQuaternion(frame.q);
+        _palm.set(...h.palm).applyQuaternion(frame.q);
+        orientHand(hand, finger, thumb, _fingers, _palm, side === 'left' ? 1 : -1, Math.min(1, h.w));
+      }
+    }
+  }
+
+  /** Where a hand frame is in the world: its origin and its turn. */
+  handFrame(name) {
+    if (name === 'seat') {
+      if (!this.poseSeat) return null;
+      this.poseSeat.getWorldPosition(_origin);
+      return { origin: _origin, q: this.poseSeat.getWorldQuaternion(new THREE.Quaternion()) };
+    }
+    const bone = this.bones[name === 'chest' ? 'Spine2' : 'Hips'];
+    if (!bone) return null;
+    bone.getWorldPosition(_origin);
+    return { origin: _origin, q: _qr };
   }
 
   /** Turns neck and head toward lookTarget, shared between them, plus any headYaw offset. */

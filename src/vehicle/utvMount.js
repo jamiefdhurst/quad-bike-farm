@@ -18,8 +18,9 @@ export class UtvMount {
     this.stand = stand;
     this.motion = { jolt: 0, omega: 0, speed: 0 }; // `speed` is how fast the girls wait for it to be going before they climb in
     this.slots = {
-      left: { name: 'left', side: 1, anchor: this.model.getObjectByName('seatLeft'), girl: null, lift: CLIMB_LIFT },
-      mid: { name: 'mid', side: 1, anchor: this.model.getObjectByName('seatMid'), girl: null, lift: CLIMB_LIFT },
+      // Stepped into, under the roof (npc/poseMoves.js); the bed is climbed up onto.
+      left: { name: 'left', side: 1, anchor: this.model.getObjectByName('seatLeft'), girl: null, lift: CLIMB_LIFT, move: 'stepIn' },
+      mid: { name: 'mid', side: 1, anchor: this.model.getObjectByName('seatMid'), girl: null, lift: CLIMB_LIFT, move: 'stepIn' },
     };
     const bedSeat = this.model.getObjectByName('bedSeat');
     if (bedSeat) this.slots.bed = { name: 'bed', side: 1, anchor: bedSeat, girl: null, lift: BED_LIFT };

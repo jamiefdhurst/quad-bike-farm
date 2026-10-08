@@ -21,6 +21,8 @@ import { DEFAULT_HOME_PARAMS, jogging } from './homeParking.js';
 import { PillionPose } from './pillionPose.js';
 import { canRideRack } from './rackSeat.js';
 import { nextBoredWait, driftRestlessness, pickBoredChoice } from './boredom.js';
+import { moveMethods, DEFAULT_MOVE_PARAMS } from './companionMoves.js';
+import { DEFAULT_IDLE_POSE_PARAMS } from './poseMoves.js';
 
 const AXIS_Y = new THREE.Vector3(0, 1, 0);
 const CAPSULE_HALF_HEIGHT = 0.55;
@@ -64,6 +66,13 @@ export class Companion {
 
     // Where her hips sit in the sitting pose, so she can be placed on the seat.
     this.sitHips = this.rig.measureHips('SitIdle', 0);
+    // And standing, so getting on can carry her hips from one to the other (companionMoves.js).
+    this.standHips = this.rig.measureHips('Idle', 0);
+    this.moveParams = { ...DEFAULT_MOVE_PARAMS }; // the game shares one set between them, for tuning
+    this.idlePoseParams = { ...DEFAULT_IDLE_POSE_PARAMS };
+    this.moving = null; // getting on or off, while she is (companionMoves.js)
+    this.sittingPose = null; // how she sits on the seat she's on (SEAT_POSES in poseMoves.js)
+    this.movingSeatPose = null; // and on the one she's getting on or off
     this.rig.play('Idle', { fade: 0 });
 
     // Invisible proxy for "look at her and press E".
@@ -719,7 +728,8 @@ export class Companion {
   watchSideSaddle(dt) {
     const p = this.params;
     if (this.seatKind !== 'pillion' || !this.sideSaddle) return;
-    if (this.sideBlend === 0) this.selfEvents.push('sideOn');
+    if (this.sideOnPending) this.selfEvents.push('sideOn');
+    this.sideOnPending = false;
     this.sideBlend = Math.min(1, this.sideBlend + dt / 0.6);
     this.root.rotation.y = this.sideAngle;
     const q = this.quad;
@@ -806,10 +816,10 @@ export class Companion {
     return { position: p, facing: Math.atan2(c.x - p.x, c.z - p.z) };
   }
 
-  /** Where she climbs on from, just beside the pillion footrest. */
+  /** Where she climbs on from: beside the footboard, in front of the back wheel, for the back; beside the front for the rack. */
   mountPoint() {
     const side = this.nearSide();
-    const p = this.quad.localToWorld(side * 0.85, 0, this.seatKind === 'rack' ? 0.75 : -0.5);
+    const p = this.quad.localToWorld(side * 0.85, 0, this.seatKind === 'rack' ? 0.75 : 0);
     p.y = this.world.heightAt(p.x, p.z);
     return { position: p, facing: this.quad.yaw, side };
   }
@@ -821,6 +831,14 @@ export class Companion {
     p.y = this.world.heightAt(p.x, p.z);
     const bars = quad.localToWorld(0, 0, 0.35);
     return { position: p, facing: Math.atan2(bars.x - p.x, bars.z - p.z), side };
+  }
+
+  /** Where she steps down to off a seat she was astride: by the footboard, clear of the wheels, facing the quad. */
+  stepOffPoint(side, front) {
+    const p = this.quad.localToWorld(side * 0.9, 0, front ? 0.1 : 0);
+    p.y = this.world.heightAt(p.x, p.z);
+    const c = this.quad.position;
+    return { position: p, facing: Math.atan2(c.x - p.x, c.z - p.z) };
   }
 
   isStandingBeside(quad = this.quad) {
@@ -956,6 +974,7 @@ export class Companion {
     this.updateLineUp(dt);
     if (viewer) this.updateGlance(dt, viewer);
     this.updateFidget(dt);
+    this.updatePose(dt);
     if (this.root.parent === this.scene) this.syncCollider();
 
     // Seated riders shake with the bike; the rig adds a little upper-body lag.
@@ -976,6 +995,7 @@ Object.assign(Companion.prototype, drivingMethods);
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(hayRideMethods));
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(warmingMethods));
 Object.assign(Companion.prototype, wavingMethods);
+Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(moveMethods));
 // (restingMethods has getters, so copy its descriptors rather than assigning.)
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(restingMethods));
 
@@ -1191,27 +1211,44 @@ const STATES = {
     },
   },
 
+  // Getting on: astride with a leg over, or sat back onto the seat side-saddle or on the rack (companionMoves.js).
   mounting: {
-    enter() {
+    enter(data) {
       this.setColliderEnabled(false);
-      this.startPos = this.root.position.clone();
-      this.startHeading = this.heading;
-      this.rig.play('Sitting', { once: true, fade: 0.3 });
+      const front = data.seat === 'rider';
+      const side = data.side ?? this.nearSide();
+      // Side-saddle, her legs go over the side she got on from.
+      if (!front && this.seatKind === 'pillion' && this.sideSaddle) {
+        this.sideSaddle = side;
+        this.sideBlend = 1;
+        this.sideOnPending = true;
+      }
+      const kind = this.quadMoveKind(front);
+      this.movingSeatPose = this.seatPoseName(front);
+      this.beginMove({
+        kind, side, dir: 1, duration: this.params.mountDuration, seat: this.seatAnchor(front),
+        seatEnd: () => this.quadSeatEnd(front), standEnd: () => this.standPoint(side),
+        twistTo: kind === 'hopOn' ? this.quad.yaw + (side * Math.PI) / 2 : undefined,
+      });
+      data.front = front;
+      data.side = side;
     },
     update(dt, data) {
-      const p = this.params;
-      const t = Math.min(1, this.fsm.time / p.mountDuration);
-      const k = smooth(t);
-      // Blend from the ground to the seat, swinging round to face forward.
-      const front = data.seat === 'rider';
-      const seat = this.seatAnchor(front).localToWorld(this.seatOffset(front));
-      this.root.position.lerpVectors(this.startPos, seat, k);
-      // Lift over the seat rather than sliding through it.
-      this.root.position.y += Math.sin(Math.PI * k) * 0.15;
-      this.heading = this.startHeading + angleTo(this.startHeading, this.quad.yaw) * k;
-      this.root.rotation.y = this.heading;
-      this.rig.legSpread = (front ? p.legSpread : this.seatSpread()) * k;
-      if (t >= 1) this.fsm.transition(front ? 'driving' : 'seated');
+      const done = this.stepMove(dt);
+      const f = this.moveFrame;
+      const spread = data.front ? this.params.legSpread : this.seatSpread();
+      this.rig.legSpread = spread * (this.moving.kind === 'legOver' ? f.spread : f.sit);
+      if (done) {
+        data.done = true;
+        this.fsm.transition(data.front ? 'driving' : 'seated');
+      }
+    },
+    exit() {
+      const d = this.fsm.data;
+      // Called off part-way (asked to get down): getting off runs this back from where she'd got to.
+      this.interruptedMount = d.done ? null : { k: this.moveK, kind: this.moving?.kind, side: d.side, front: d.front };
+      this.endMove();
+      this.movingSeatPose = null;
     },
   },
 
@@ -1221,8 +1258,10 @@ const STATES = {
       this.seatAnchor(false).add(this.root);
       this.root.position.copy(this.seatOffset());
       this.root.quaternion.identity();
+      this.root.rotation.y = this.sideAngle;
       this.rig.play('SitIdle', { fade: 0.4 });
       this.rig.legSpread = this.seatSpread();
+      this.sittingPose = this.seatPoseName(false);
       // On the rack there's nobody to hold on to: the sitting clip's hands on her lap will do.
       if (rack) this.quad.rackRider = this;
       else this.pillion.engage();
@@ -1244,6 +1283,7 @@ const STATES = {
       this.afterFriendsRide(dt);
     },
     exit() {
+      this.sittingPose = null;
       this.askedToGetOff = false;
       this.askIn = null;
       if (this.quad.rackRider === this) this.quad.rackRider = null;
@@ -1253,31 +1293,41 @@ const STATES = {
 
   dismounting: {
     enter() {
-      this.dismountingFrom = this.root.parent === this.quad.riderAnchor ? 'rider' : this.root.parent === this.quad.rackAnchor ? 'rack' : 'pillion';
-      // Off on the left, unless her friend's getting off or standing there.
+      const im = this.interruptedMount;
+      this.interruptedMount = null;
+      const parent = this.root.parent;
+      this.dismountingFrom = im ? (im.front ? 'rider' : this.seatKind === 'rack' ? 'rack' : 'pillion') : parent === this.quad.riderAnchor ? 'rider' : parent === this.quad.rackAnchor ? 'rack' : 'pillion';
+      const front = this.dismountingFrom === 'rider';
+      // Off on the left, unless her friend's getting off or standing there; side-saddle, off the side her legs are.
       this.dismountSide = this.others().some((o) => o.root.position.distanceTo(this.standPoint(1).position) < 0.9 || (o.quad === this.quad && o.fsm.is('dismounting') && o.dismountSide === 1)) ? -1 : 1;
+      if (this.dismountingFrom === 'pillion' && this.sideSaddle) this.dismountSide = this.sideSaddle;
+      if (im) this.dismountSide = im.side;
       // Back into the world, keeping her current world transform.
       attachKeepingSize(this.scene, this.root);
-      this.startPos = this.root.position.clone();
       const e = new THREE.Euler().setFromQuaternion(this.root.quaternion, 'YXZ');
       this.root.rotation.set(0, e.y, 0);
-      this.startHeading = e.y;
+      this.heading = this.startHeading = e.y;
       this.target = this.standPoint(this.dismountSide);
       this.slipTarget = this.slipping ? this.slipSpot() : null;
       this.slipping = false;
-      this.rig.play('Sitting', { once: true, timeScale: -1, fade: 0.2 });
+      const side = this.dismountSide;
+      const kind = im?.kind ?? this.quadMoveKind(front);
+      this.movingSeatPose = this.seatPoseName(front);
+      this.beginMove({
+        kind, side, dir: -1, from: im ? im.k : 1, duration: this.params.dismountDuration, seat: this.seatAnchor(front),
+        seatEnd: () => this.quadSeatEnd(front), standEnd: () => (this.target = this.slipTarget ?? (kind === 'legOver' ? this.stepOffPoint(side, front) : this.standPoint(side))),
+        twistTo: kind === 'hopOn' ? this.quad.yaw + (side * Math.PI) / 2 : undefined,
+      });
     },
-    update() {
+    update(dt) {
       const p = this.params;
-      const t = Math.min(1, this.fsm.time / p.dismountDuration);
-      const k = smooth(t);
-      this.target = this.slipTarget ?? this.standPoint(this.dismountSide);
-      this.root.position.lerpVectors(this.startPos, this.target.position, k);
-      this.root.position.y += Math.sin(Math.PI * k) * 0.12;
-      this.heading = this.startHeading + angleTo(this.startHeading, this.target.facing) * k;
-      this.root.rotation.y = this.heading;
-      this.rig.legSpread = (this.dismountingFrom === 'rack' || (this.dismountingFrom === 'pillion' && this.sideSaddle) ? this.seatSpread() : p.legSpread) * (1 - k);
-      if (t >= 1) {
+      const done = this.stepMove(dt);
+      const f = this.moveFrame;
+      const spread = this.dismountingFrom === 'rack' || (this.dismountingFrom === 'pillion' && this.sideSaddle) ? this.seatSpread() : p.legSpread;
+      this.rig.legSpread = spread * (this.moving.kind === 'legOver' ? f.spread : f.sit);
+      if (done) {
+        this.endMove();
+        this.movingSeatPose = null;
         this.rig.legSpread = 0;
         this.slipTarget = null;
         this.setColliderEnabled(true);
@@ -1291,6 +1341,10 @@ const STATES = {
         this.afterDismount = null;
         next?.();
       }
+    },
+    exit() {
+      if (this.moving) this.endMove();
+      this.movingSeatPose = null;
     },
   },
 };

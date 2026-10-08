@@ -4,14 +4,14 @@ import { attachKeepingSize } from './attachKeepingSize.js';
 // A girl on the bale trailer (hayRide.js decides when): walking over, climbing on, sitting up on the bales and holding on, lying back,
 // and going off the side into the mud. As Companion states and methods, mixed in by companion.js.
 
-const angleTo = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - from));
 const smooth = (t) => t * t * (3 - 2 * t);
 const UP = new THREE.Vector3(0, 1, 0);
 
 export const DEFAULT_HAYSEAT_PARAMS = {
   seatRaise: 0.06, // metres: fine-tunes how high she sits on the bales
-  climbSeconds: 0.9, // getting up onto the bed
-  climbLift: 0.55, // how high she lifts over the edge on the way
+  climbSeconds: 1.8, // climbing up onto the bed, an arch or the bales, or down again
+  stepSeconds: 2.0, // stepping into the UTV's or Land Rover's bench, or out again
+  climbLift: 0.55, // how high she lifts over the edge on the way, unless the seat says otherwise
   leanBack: 1.15, // radians she lies back from sitting
   leanSpeed: 1.6, // how fast she goes down or comes up, per second
   chaseSpeed: 1.7, // times her walking speed, after a trailer she's fallen off
@@ -23,7 +23,8 @@ export const DEFAULT_HAYSEAT_PARAMS = {
 
 export const HAYSEAT_PARAM_RANGES = {
   seatRaise: [-0.3, 0.3, 0.005],
-  climbSeconds: [0.2, 3, 0.05],
+  climbSeconds: [0.2, 4, 0.05],
+  stepSeconds: [0.2, 4, 0.05],
   climbLift: [0, 1.2, 0.05],
   leanBack: [0, 1.5, 0.05],
   leanSpeed: [0.3, 6, 0.1],
@@ -39,6 +40,30 @@ export const hayRideMethods = {
   haySeatOffset() {
     const p = this.hay;
     return new THREE.Vector3(-this.sitHips.x, -this.sitHips.y + p.seatRaise, -this.sitHips.z);
+  },
+
+  /** Where her root goes sat on the seat she's riding, and the way it faces (world), for getting on and off. */
+  haySeatEnd() {
+    const anchor = this.traSlot.anchor;
+    const root = anchor.localToWorld(this.haySeatOffset());
+    const heading = new THREE.Euler().setFromQuaternion(anchor.getWorldQuaternion(new THREE.Quaternion()), 'YXZ').y;
+    return { root, heading };
+  },
+
+  /** Starts climbing onto (`dir` 1) or off (-1) her seat: stepping into a bench, or climbing up onto anything else (companionMoves.js). */
+  beginBoardMove(dir) {
+    const slot = this.traSlot;
+    const kind = slot.move ?? 'climbUp';
+    const stand = () => this.trailer.standPoint(slot.side, slot);
+    // Which side of it she's on, so the move is mirrored to suit.
+    const local = this.trailer.model.worldToLocal(stand().position.clone());
+    const side = local.x >= 0 ? 1 : -1;
+    this.movingSeatPose = kind === 'stepIn' ? 'bench' : null;
+    this.beginMove({
+      kind, side, dir, seat: slot.anchor, seatEnd: () => this.haySeatEnd(), standEnd: stand,
+      duration: kind === 'stepIn' ? this.hay.stepSeconds : this.hay.climbSeconds,
+      lift: kind === 'climbUp' ? slot.lift ?? this.hay.climbLift : undefined,
+    });
   },
 
   /** Walks over to the trailer to climb on. Only when she's stood about; returns whether she set off. */
@@ -118,24 +143,16 @@ export const hayRideStates = {
   boarding: {
     enter() {
       this.setColliderEnabled(false);
-      this.startPos = this.root.position.clone();
-      this.startHeading = this.heading;
-      this.rig.play('Sitting', { once: true, fade: 0.3 });
       this.paceBoost = 1;
       this.hayFell = false;
+      this.beginBoardMove(1);
     },
-    update() {
-      const p = this.hay;
-      const t = Math.min(1, this.fsm.time / p.climbSeconds);
-      const k = smooth(t);
-      const anchor = this.traSlot.anchor;
-      const seat = anchor.localToWorld(this.haySeatOffset());
-      this.root.position.lerpVectors(this.startPos, seat, k);
-      this.root.position.y += Math.sin(Math.PI * k) * (this.traSlot.lift ?? p.climbLift);
-      const yaw = new THREE.Euler().setFromQuaternion(anchor.getWorldQuaternion(new THREE.Quaternion()), 'YXZ').y;
-      this.heading = this.startHeading + angleTo(this.startHeading, yaw) * k;
-      this.root.rotation.y = this.heading;
-      if (t >= 1) this.fsm.transition('onTrailer');
+    update(dt) {
+      if (this.stepMove(dt)) this.fsm.transition('onTrailer');
+    },
+    exit() {
+      this.endMove();
+      this.movingSeatPose = null;
     },
   },
 
@@ -152,6 +169,7 @@ export const hayRideStates = {
       this.root.quaternion.identity();
       this.rig.play('SitIdle', { fade: 0.4 });
       this.rig.legSpread = 0;
+      this.sittingPose = this.traSlot.move === 'stepIn' ? 'bench' : null;
       data.leanK = 0;
       data.lie = false;
       data.phase = 'up';
@@ -159,7 +177,7 @@ export const hayRideStates = {
     },
     update(dt, data) {
       const p = this.hay;
-      if (data.fromWorld) return this.climbDown(data); // already down on the ground, walking to her spot
+      if (data.fromWorld) return this.climbDown(data, dt); // on her way down
       this.hayFlailT = Math.max(0, (this.hayFlailT ?? 0) - dt);
       this.root.position.copy(this.haySeatOffset());
       const want = data.lie && !data.leaving ? 1 : 0;
@@ -173,18 +191,16 @@ export const hayRideStates = {
       this.rig.spineSway.pitch = 0;
       this.rig.spineSway.roll = 0;
       if (data.leaving && data.leanK < 0.02) {
-        if (data.phase === 'up') {
-          data.phase = 'down';
-          data.downAt = this.fsm.time;
-          this.rig.play('Sitting', { once: true, timeScale: -1, fade: 0.2 });
-        }
-        this.climbDown(data);
+        this.climbDown(data, dt);
       }
     },
     exit() {
       this.hayPivot.rotation.set(0, 0, 0);
       this.hayPivot.position.set(0, 0, 0);
       this.rig.legSpread = 0;
+      this.sittingPose = null;
+      if (this.moving) this.endMove();
+      this.movingSeatPose = null;
     },
   },
 
@@ -256,32 +272,27 @@ export const hayRideStates = {
   },
 };
 
-/** The last part of leaving: from the seat to the ground beside the trailer, then she's stood about. */
-export function finishClimbDown(c, data) {
-  const p = c.hay;
-  const t = Math.min(1, (c.fsm.time - data.downAt) / p.climbSeconds);
-  const k = smooth(t);
+/** Leaving: off the seat and down beside it, run back through the move she got on with, then she's stood about. */
+export function finishClimbDown(c, data, dt) {
   if (!data.fromWorld) {
-    data.fromWorld = c.root.getWorldPosition(new THREE.Vector3());
+    data.fromWorld = true;
+    c.hayPivot?.rotation.set(0, 0, 0);
     attachKeepingSize(c.scene, c.root);
     const e = new THREE.Euler().setFromQuaternion(c.root.quaternion, 'YXZ');
     c.heading = e.y;
     c.root.rotation.set(0, e.y, 0);
-    data.fromHeading = e.y;
+    c.beginBoardMove(-1);
+    return;
   }
-  const stand = c.trailer.standPoint(c.traSlot.side, c.traSlot);
-  c.root.position.lerpVectors(data.fromWorld, stand.position, k);
-  c.root.position.y += Math.sin(Math.PI * k) * (c.traSlot.lift ?? p.climbLift) * 0.5;
-  c.heading = data.fromHeading + angleTo(data.fromHeading, stand.facing) * k;
-  c.root.rotation.y = c.heading;
-  if (t >= 1) {
-    c.setColliderEnabled(true);
-    const facing = stand.facing;
-    c.freeTrailerSlot();
-    c.fsm.transition('idle', { facing });
-  }
+  if (!c.stepMove(dt)) return;
+  c.endMove();
+  c.movingSeatPose = null;
+  c.setColliderEnabled(true);
+  const facing = c.trailer.standPoint(c.traSlot.side, c.traSlot).facing;
+  c.freeTrailerSlot();
+  c.fsm.transition('idle', { facing });
 }
 
-hayRideMethods.climbDown = function (data) {
-  finishClimbDown(this, data);
+hayRideMethods.climbDown = function (data, dt) {
+  finishClimbDown(this, data, dt);
 };

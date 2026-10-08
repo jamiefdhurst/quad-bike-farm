@@ -63,6 +63,8 @@ import { DEFAULT_TRACTOR_GO_DRIVE, TRACTOR_GO_DRIVE_RANGES } from './npc/compani
 import { DEFAULT_TRACTOR_START_PARAMS, TRACTOR_START_PARAM_RANGES } from './npc/tractorStart.js';
 import { DEFAULT_NOVICE_PARAMS, NOVICE_PARAM_RANGES } from './vehicle/autoShifter.js';
 import { HAYSEAT_PARAM_RANGES, DEFAULT_HAYSEAT_PARAMS } from './npc/companionHayRide.js';
+import { DEFAULT_MOVE_PARAMS, MOVE_PARAM_RANGES } from './npc/companionMoves.js';
+import { DEFAULT_IDLE_POSE_PARAMS, IDLE_POSE_PARAM_RANGES } from './npc/poseMoves.js';
 import { HayTrailer } from './vehicle/hayTrailer.js';
 import { TRAILER_PARAM_RANGES } from './vehicle/trailer.js';
 import { QuadNames, NAME_PARAM_RANGES, quadKey } from './npc/quadNames.js';
@@ -497,6 +499,10 @@ export class Game {
     this.hayRide = new HayRide(undefined, createRandom(this.seed ^ 0x4a71));
     this.haySeat = { ...DEFAULT_HAYSEAT_PARAMS };
     for (const c of this.companions) c.hay = this.haySeat;
+    // How they get on and off things, and stand about (npc/companionMoves.js, npc/poseMoves.js): one set for both.
+    this.moveParams = { ...DEFAULT_MOVE_PARAMS };
+    this.idlePoseParams = { ...DEFAULT_IDLE_POSE_PARAMS };
+    for (const c of this.companions) Object.assign(c, { moveParams: this.moveParams, idlePoseParams: this.idlePoseParams });
     // A girl on the tractor's wheel arch (npc/mudguardRide.js, vehicle/tractorMount.js); the tractor is built above.
     this.mudguard = new MudguardRide(undefined, createRandom(this.seed ^ 0x3d6a));
     this.tractorMount = new TractorMount(this.tractorUnit.quad, (x, z) => this.world.heightAt(x, z));
@@ -931,6 +937,8 @@ export class Game {
     registerTuning('Tractor go start', this.tractorStartParams, TRACTOR_START_PARAM_RANGES);
     registerTuning('Tractor go novice', this.noviceParams, NOVICE_PARAM_RANGES);
     registerTuning('Hay ride seat', this.haySeat, HAYSEAT_PARAM_RANGES);
+    registerTuning('Getting on and off', this.moveParams, MOVE_PARAM_RANGES);
+    registerTuning('Standing about', this.idlePoseParams, IDLE_POSE_PARAM_RANGES);
     registerTuning('Trailer', this.trailer.p, TRAILER_PARAM_RANGES);
     registerTuning('Quad names', this.quadNames.p, NAME_PARAM_RANGES);
     registerTuning('Whose quad', this.ownership.p, OWNERSHIP_PARAM_RANGES);

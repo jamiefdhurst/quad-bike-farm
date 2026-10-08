@@ -64,6 +64,7 @@ export const drivingStates = {
       this.root.quaternion.identity();
       this.rig.play('SitIdle', { fade: 0.4 });
       this.rig.legSpread = this.params.legSpread;
+      this.sittingPose = this.seatPoseName(true);
       this.driveExit = null;
       // How she feels about it this time: careful, confident or somewhere between.
       this.driveConfidence ??= this.params.driveConfidence;
@@ -193,6 +194,7 @@ export const drivingStates = {
       if (d.done) this.endDrive();
     },
     exit() {
+      this.sittingPose = null;
       if (this.quad.driver === this.drive) this.quad.setDriver(null);
     },
   },
@@ -204,6 +206,10 @@ export const drivingStates = {
       if (data.to === 'pillion' && q.driver === this.drive) q.setDriver(null);
       attachKeepingSize(q.model, this.root);
       this.shuffleFrom = this.root.position.clone();
+      this.sittingPose = 'astride';
+    },
+    exit() {
+      this.sittingPose = null;
     },
     update(dt, data) {
       const q = this.quad;
@@ -408,7 +414,7 @@ export const drivingMethods = {
   /** Where she climbs onto the front seat from, beside the footboard on her nearer side. */
   driveMountPoint() {
     const side = this.root.parent === this.scene ? this.nearSide() : 1;
-    const p = this.quad.localToWorld(side * 0.85, 0, -0.1);
+    const p = this.quad.localToWorld(side * 0.85, 0, 0.1);
     p.y = this.world.heightAt(p.x, p.z);
     return { position: p, facing: this.quad.yaw, side };
   },

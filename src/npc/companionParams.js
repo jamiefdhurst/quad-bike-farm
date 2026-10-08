@@ -11,8 +11,8 @@ export const DEFAULT_COMPANION_PARAMS = {
   arriveRadius: 0.18, // metres
   probeDistance: 1.4, // how far ahead to look for obstacles
   standOffset: 1.15, // metres to the side of the quad when standing next to it
-  mountDuration: 1.2, // seconds to climb on
-  dismountDuration: 1.0,
+  mountDuration: 1.8, // seconds to get on a quad: a leg over, or sat back onto it
+  dismountDuration: 1.4,
   legSpread: 0.38, // radians each thigh swings out to straddle the seat
   seatRaise: 0.06, // metres, fine-tunes how high she sits on the pillion
   seatForward: 0.0, // metres, fine-tunes where she sits along the seat
