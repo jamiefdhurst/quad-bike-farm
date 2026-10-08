@@ -86,8 +86,11 @@ export const drivingStates = {
       this.jumpWanted = null;
       const showOff = this.showOffWanted;
       this.showOffWanted = null;
-      const park = this.parkWanted;
+      let park = this.parkWanted;
       this.parkWanted = null;
+      // From another field, by the gateways (world/fields.js): the way to the first point of her route, without it.
+      const via = park && this.world.fields ? this.world.fields.route(this.quad.position, park.route[0]).slice(0, -1) : [];
+      if (via.length) park = { ...park, route: [...via.map((p) => ({ x: p.x, z: p.z })), ...park.route] };
       const params = driveMood(this.params, this.driveMood);
       params.driveSpeedMaxBase = this.params.driveSpeedMax;
       // What she goes back to if she carries on driving when an activity is over (HerDrive.carryOn).
@@ -422,10 +425,14 @@ export const drivingMethods = {
     return best;
   },
 
-  /** Whether she could drive straight from a to b: inside the hedges, nothing in the way. */
+  /** Whether she could drive straight from a to b: inside the farm's hedges, nothing in the way (the hedges between fields included). */
   driveClear(a, b) {
-    const limit = this.world.layout.fieldHalf - 6;
-    if (Math.abs(b.x) > limit || Math.abs(b.z) > limit) return false;
+    if (this.world.fields) {
+      if (!this.world.fields.inFarm(b.x, b.z, 6)) return false;
+    } else {
+      const limit = this.world.layout.fieldHalf - 6;
+      if (Math.abs(b.x) > limit || Math.abs(b.z) > limit) return false;
+    }
     const dx = b.x - a.x;
     const dz = b.z - a.z;
     const len = Math.hypot(dx, dz);

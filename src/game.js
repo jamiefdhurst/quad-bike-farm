@@ -56,7 +56,7 @@ import { TractorGo, TRACTORGO_PARAM_RANGES } from './npc/tractorGo.js';
 import { LPlates, LPLATE_PARAM_RANGES, meanSkill } from './npc/lPlates.js';
 import { LPlateSet } from './vehicle/lPlateModel.js';
 import { TractorRunaway, TRACTOR_RUNAWAY_PARAM_RANGES } from './npc/tractorRunaway.js';
-import { DEFAULT_CREEP_PARAMS, CREEP_PARAM_RANGES, distanceToHedge } from './vehicle/creep.js';
+import { DEFAULT_CREEP_PARAMS, CREEP_PARAM_RANGES } from './vehicle/creep.js';
 import { DEFAULT_TRACTOR_GO_DRIVE, TRACTOR_GO_DRIVE_RANGES } from './npc/companionDriving.js';
 import { DEFAULT_TRACTOR_START_PARAMS, TRACTOR_START_PARAM_RANGES } from './npc/tractorStart.js';
 import { DEFAULT_NOVICE_PARAMS, NOVICE_PARAM_RANGES } from './vehicle/autoShifter.js';
@@ -986,8 +986,9 @@ export class Game {
       free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob,
       dist: c.root.position.distanceTo(q.position),
     }));
-    const half = this.world.layout.fieldHalf - this.world.layout.hedgeThickness;
-    const ctx = { creeping: q.creeping, stalled, trailer: this.trailer.hitched, hedge: distanceToHedge(q.position.x, q.position.z, q.yaw, half), girls };
+    // The first hedge it's heading for, through the gateways (world/fields.js), less the hedge's thickness.
+    const hedge = Math.max(0, this.world.fields.hedgeAhead(q.position.x, q.position.z, q.yaw) - this.world.layout.hedgeThickness);
+    const ctx = { creeping: q.creeping, stalled, trailer: this.trailer.hitched, hedge, girls };
     for (const ev of this.tractorRunaway.update(dt, ctx)) {
       const c = girlOf(ev.girl);
       if (ev.type === 'note') c.voice.say(ev.trailer ? 'tractorCreepTrailer' : 'tractorCreepNote', { urgent: true });

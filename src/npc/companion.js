@@ -577,18 +577,24 @@ export class Companion {
     return true;
   }
 
-  /** A stroll to somewhere nearby on the farm, staying inside the hedges. */
+  /** A stroll to somewhere nearby on the farm, staying inside the hedges of the field she's in. */
   wander() {
     const p = this.params;
     const here = this.root.position;
-    const limit = this.world.layout.fieldHalf - 6;
     const angle = Math.random() * Math.PI * 2;
     const dist = this.randomBetween(p.wanderMin, p.wanderMax) * (Math.random() < p.wanderFarChance ? 2.5 : 1);
-    const target = new THREE.Vector3(
-      Math.max(-limit, Math.min(limit, here.x + Math.sin(angle) * dist)),
-      0,
-      Math.max(-limit, Math.min(limit, here.z + Math.cos(angle) * dist)),
-    );
+    const target = new THREE.Vector3(here.x + Math.sin(angle) * dist, 0, here.z + Math.cos(angle) * dist);
+    const fields = this.world.fields;
+    const area = fields?.areaOf(here.x, here.z);
+    if (fields && area !== 'out') {
+      const c = fields.clampToArea(area, target.x, target.z, area === 'road' || area === 'end' ? 1.5 : 6);
+      target.x = c.x;
+      target.z = c.z;
+    } else {
+      const limit = this.world.layout.fieldHalf - 6;
+      target.x = Math.max(-limit, Math.min(limit, target.x));
+      target.z = Math.max(-limit, Math.min(limit, target.z));
+    }
     target.y = this.world.heightAt(target.x, target.z);
     const facing = Math.random() * Math.PI * 2;
     this.fsm.transition('walking', { goal: 'wander', target: () => ({ position: target, facing }) });
@@ -840,14 +846,18 @@ export class Companion {
   walkToward(dt, target) {
     const p = this.params;
     const pos = this.root.position;
-    const to = this.tmpV.set(target.x - pos.x, 0, target.z - pos.z);
-    const dist = to.length();
-    if (dist < p.arriveRadius) return true;
-    to.divideScalar(dist);
+    const final = Math.hypot(target.x - pos.x, target.z - pos.z);
+    if (final < p.arriveRadius) return true;
+    // In another field, she heads for the gateways on the way (world/fields.js) rather than straight at a hedge.
+    const via = this.world.nextWaypoint?.(pos, target) ?? target;
+    const to = this.tmpV.set(via.x - pos.x, 0, via.z - pos.z);
+    const leg = to.length(); // to the gateway, or the end if there's none on the way
+    const dist = final;
+    to.normalize();
 
     let desired = Math.atan2(to.x, to.z);
     this.avoidTimer -= dt;
-    if (this.stuckTimer < 5 && this.blocked(desired, Math.min(p.probeDistance, dist - 0.1))) {
+    if (this.stuckTimer < 5 && this.blocked(desired, Math.min(p.probeDistance, leg - 0.1))) {
       // Try angles either side, keeping to one side for a while so she doesn't dither.
       const offsets = [0.5, 1.0, 1.5, 2.0, 2.5];
       let found = null;
