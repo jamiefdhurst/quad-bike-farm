@@ -9,6 +9,7 @@
 // use in place of a rider's keys. Obstacles come from a probe callback, so the
 // game can answer with raycasts and tests with anything.
 
+import { settleBoost, boostFactor } from './tarmac.js';
 import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 import { TractorStartAttempt } from './tractorStart.js';
 import { COACHING, mistake, mistakeChance, successChance } from './skills.js';
@@ -161,13 +162,14 @@ export class HerDrive {
    *   likes, and pulls up after each; each landing is rated (a 'jumpRated' event with the result in `lastJump`).
    * @param {object} [opts.showOff]  { trick, p, you() }: instead of her loops she rides at you and does a wheelie past or a skid to a stop
    *   beside you (showOff.js), looks to see if you saw, and goes again if you didn't; `you()` is { x, z, fx, fz }, where you are and are facing.
+   * @param {object} [opts.tarmac]  { at(x, z), p }: whether a point is on the farm road, and the tarmac params; she rides faster there and the 'onRoad' event fires as she joins it.
    * @param {object} [opts.park]  { route }: drive the route (in line with a slot, then the slot) slowly, and stop on the last point.
    * @param {function} [opts.follow]  () => the quad she's following (yours), or null. Following, she keeps
    *   behind it at its pace rather than doing her own loop, and doesn't tire of it.
    * @param {function} [opts.followWay]  (her position, the point behind the lead, the lead's position) => { point, wait, to }: the way
    *   there through the gateways, or, with `wait`, to the foot of the hill (`to`) where she pulls up rather than go on up after you.
    */
-  constructor(quad, { tractorStarting = undefined, params, probe, isClear, random = Math.random, startingParams, momentWindow = 5, skill = { starting: 0.5, choke: 0.5, cornering: 0.5, mud: 0.5 }, passenger = () => false, waitForPassenger = false, tires = false, follow = null, followWay = null, friend = () => null, after = null, race = null, doughnut = null, jump = null, park = null, showOff = null }) {
+  constructor(quad, { tractorStarting = undefined, params, probe, isClear, random = Math.random, startingParams, momentWindow = 5, skill = { starting: 0.5, choke: 0.5, cornering: 0.5, mud: 0.5 }, passenger = () => false, waitForPassenger = false, tires = false, follow = null, followWay = null, friend = () => null, after = null, race = null, doughnut = null, jump = null, park = null, showOff = null, tarmac = null }) {
     this.quad = quad;
     this.tractorStarting = tractorStarting; // how she goes about starting the tractor (tractorStart.js), when it is one
     this.p = params;
@@ -189,6 +191,9 @@ export class HerDrive {
     this.waited = 0;
     this.waitedTotal = 0;
     this.cruiseScale = 1; // you asked her to go faster or slower
+    this.tarmac = tarmac; // { at(x, z) => on the road, p }: she goes faster on the tarmac (tarmac.js)
+    this.roadPace = 1; // multiplier on her cruising speed from the road
+    this.roadSettled = 0; // 0 off the road, 1 settled into its pace
     this.follow = follow;
     this.followWay = followWay;
     this.hillWaiting = false; // pulled up at the foot of the hill, you having gone on up it
@@ -785,7 +790,8 @@ export class HerDrive {
     }
     // Going faster than she likes (downhill, or her hand slipped): that's her done,
     // or with you on the back, she pulls up to collect herself.
-    if (speed > p.driveScareSpeed) {
+    const road = this.updateRoadPace(dt);
+    if (speed > p.driveScareSpeed * road.scare) {
       this.events.push('tooFast');
       if (this.carrying) this.park();
       else this.stop('scared');
@@ -951,7 +957,7 @@ export class HerDrive {
     const stopsHere = this.race ? this.index === this.race.gridIndex : !follow && (this.index === this.waypoints.length - 1 || this.pauseHere);
     const corner = cornerSpeed(error, dist, cornerAccel);
     const crowded = Math.max(2.5, this.clearAround * 1.2);
-    const target = targetSpeed(this.cruise, { error, toStop: stopsHere ? dist : Infinity, clear: this.clearAhead, corner: Math.min(corner, crowded) });
+    const target = targetSpeed(this.cruise * this.roadPace, { error, toStop: stopsHere ? dist : Infinity, clear: this.clearAhead, corner: Math.min(corner, crowded) });
     const short = target - speed;
     this.integral = clamp(this.integral + short * dt, -3, 8);
     const pedals = pedalsFor(speed, target, this.integral, p);
@@ -971,6 +977,21 @@ export class HerDrive {
       this.stuckTime = 0;
       this.unstick();
     }
+  }
+
+  /** Settles her pace to the road under her: faster on tarmac, with a remark as she joins it. Returns the multiplier on her scare speed. */
+  updateRoadPace(dt) {
+    const t = this.tarmac;
+    if (!t || this.race || this.park || this.follow) {
+      this.roadPace = 1;
+      return { scare: 1 };
+    }
+    const on = t.at(this.quad.position.x, this.quad.position.z);
+    const was = this.roadSettled;
+    this.roadSettled = settleBoost(was, on, dt, t.p);
+    if (on && was === 0 && this.roadSettled > 0) this.events.push('onRoad');
+    this.roadPace = boostFactor(this.roadSettled, t.p.speedBoost);
+    return { scare: boostFactor(this.roadSettled, t.p.scareBoost) };
   }
 
   /** Getting to the circle, then going round and round it until her time is up. */

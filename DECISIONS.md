@@ -1874,3 +1874,11 @@ Jamie found the UTV boomy too. Rendered with `tools/render_engine_sound.mjs`, it
 - Feel (`VibrationModel.gridJolts`, params `gridGain` 2.5, `gridFullSpeed` 8, `gridMaxRate` 28 in the Vibration folder): a run of small knocks into the same springs as the engine's shake, at the rate a wheel meets bars (speed over pitch) but never above 28 a second, since the springs can't tell faster ones apart; the size rises with speed and with the share of wheels on the bars. Unlike the ground jolts, which only show from outside, it shakes the camera and bars when you are riding. Every vehicle gets it.
 - Sound (`RideAudio`, `gridVolume` 1.2 in the audio settings): a high short knock for each knock-rate tick, the odd rattle, and the road roll louder and brighter while any wheel is on the bars.
 - Checked: unit tests only. Not checked: how it looks (the pit, kerbs and wings), or how the shake and the knocks feel and sound at different speeds; the numbers are guesses to tune by ear.
+
+## The girls on the tarmac (TODO 2)
+
+- Pure logic in `src/npc/tarmac.js` (tests in `tests/tarmac.test.js`), lines in `src/npc/tarmacLines.js`, tunables in the Tarmac folder. The tarmac is the road's carriageway only (`layout.road`, `halfWidth` either side of `z`, between `fromX` and `toX`), not the verge.
+- Pace: a girl driving on it settles (0.6 a second, so no jump) to 1.7 times her cruising speed, and the speed that frightens her rises 1.6 times, since a smooth straight road is easy. Off the road it eases back. Not applied to races (already flat out), parking, following you (she matches your pace) or the tractor. She remarks as she joins the road (`roadOn`, 60% of the time, both girls).
+- Jess egging you on (`roadEgg`, at most every 40 s): she is driving on the road within 45 m of you while you are on it, or she is on your back and you are doing over 7 m/s.
+- Amy telling you off (`roadScold`, at most every 30 s): your tyres squeal on the tarmac (the same `squealLevel` the ride sound uses, over 0.35) for half a second. She says it from your back, or from within 25 m if she is stood about and not driving. Only Amy scolds; Jess only encourages.
+- Checked: unit tests only. Not checked: how the faster pace looks and feels, or whether 1.7 times is right across confidence levels; the numbers are guesses to tune.

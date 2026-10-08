@@ -7,6 +7,7 @@ import { DEFAULT_HOME_PARAMS, bringsItHome, pickHomeSpot } from './homeParking.j
 import { solveTwoBone, orientHand } from './armIK.js';
 import { AutoShifter, NoviceShifter, DEFAULT_SHIFTER_PARAMS, DEFAULT_NOVICE_PARAMS } from '../vehicle/autoShifter.js';
 import { DEFAULT_TRACTOR_START_PARAMS } from './tractorStart.js';
+import { onTarmac } from './tarmac.js';
 
 // Her driving a quad herself, as Companion states and methods: getting on the
 // front, driving (the logic is HerDrive in herDriving.js), shuffling between
@@ -147,6 +148,7 @@ export const drivingStates = {
         park,
         doughnut: doughnut ? { ...doughnut, spinning: false, t: 0 } : null,
         jump,
+        tarmac: this.tarmacParams && this.world.layout.road && !q.tractor ? { at: (x, z) => onTarmac(this.world.layout.road, x, z), p: this.tarmacParams } : null,
         showOff: showOff ? { ...showOff, you: () => this.showOffYou() } : null,
         tires: offered,
         follow: following ? () => {

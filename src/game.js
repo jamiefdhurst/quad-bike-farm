@@ -84,6 +84,8 @@ import { stripFrame, stripPoint } from './world/layout.js';
 import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
 import { Convoy, CONVOY_PARAM_RANGES } from './npc/convoy.js';
 import { DoughnutWatch, DOUGHNUT_PARAM_RANGES } from './npc/doughnuts.js';
+import { TarmacWatch, TARMAC_PARAM_RANGES, onTarmac } from './npc/tarmac.js';
+import { squealLevel, slipAngle } from './vehicle/tyreSqueal.js';
 import { DEFAULT_SHOWOFF_PARAMS, SHOWOFF_PARAM_RANGES } from './npc/showOff.js';
 import { JumpWatch, JUMP_PARAM_RANGES, rampPoint } from './npc/jumps.js';
 import { Nicking, NICK_PARAM_RANGES } from './npc/nicking.js';
@@ -533,6 +535,8 @@ export class Game {
     this.dashReader = new DashReader(); // the girl on the back reads the dash out (npc/dashReading.js)
     this.doughnutWatch = new DoughnutWatch(); // Amy watches Jess's doughnuts and has a go (npc/doughnuts.js)
     for (const c of this.companions) c.doughnutParams = this.doughnutWatch.p;
+    this.tarmacWatch = new TarmacWatch(); // the girls ride faster on the farm road; Jess eggs you on, Amy scolds the squealing (npc/tarmac.js)
+    for (const c of this.companions) c.tarmacParams = this.tarmacWatch.p;
     this.viewForward = new THREE.Vector3(); // which way your eyes point, for the girls showing off (npc/showOff.js)
     this.showOffParams = { ...DEFAULT_SHOWOFF_PARAMS };
     for (const c of this.companions) c.showOffParams = this.showOffParams;
@@ -924,6 +928,7 @@ export class Game {
     registerTuning('Drag race', this.drag.p, DRAG_PARAM_RANGES);
     registerTuning('Follow the leader', this.convoy.p, CONVOY_PARAM_RANGES);
     registerTuning('Doughnuts', this.doughnutWatch.p, DOUGHNUT_PARAM_RANGES);
+    registerTuning('Tarmac', this.tarmacWatch.p, TARMAC_PARAM_RANGES);
     registerTuning('Showing off', this.showOffParams, SHOWOFF_PARAM_RANGES);
     registerTuning('The jump', this.jumpWatch.p, JUMP_PARAM_RANGES);
     registerTuning('Nicking your quad', this.nicking.p, NICK_PARAM_RANGES);
@@ -3066,6 +3071,33 @@ export class Game {
     return true;
   }
 
+  // The tarmac -----------------------------------------------------------------
+
+  /** Jess egging you on and Amy telling you off for squealing the tyres, while you ride the farm road. */
+  updateTarmac(dt) {
+    const road = this.world.layout.road;
+    const unit = this.riddenUnit;
+    const q = unit?.quad;
+    let you = null;
+    if (q && road) {
+      const v = q.physics.body.linvel();
+      const forward = v.x * Math.sin(q.yaw) + v.z * Math.cos(q.yaw);
+      const sideways = v.x * Math.cos(q.yaw) - v.z * Math.sin(q.yaw);
+      const on = onTarmac(road, q.position.x, q.position.z);
+      const speed = Math.abs(q.speed);
+      you = { onRoad: on, speed, squeal: on ? squealLevel(this.world.squealParams, { tarmac: 1, slip: slipAngle(forward, sideways), speed, brake: q.brake ?? 0, spin: q.physics.traction?.spin ?? 0 }) : 0 };
+    }
+    const girls = this.companions.map((c) => ({
+      id: c.character.id,
+      free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt,
+      role: c.fsm.is('driving') ? 'driving' : q && c.fsm.is('seated') && c.seatKind === 'pillion' && c.quad === q ? 'pillion' : null,
+      onRoad: onTarmac(road, c.root.position.x, c.root.position.z),
+      distance: q ? Math.hypot(c.root.position.x - q.position.x, c.root.position.z - q.position.z) : Infinity,
+    }));
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    for (const e of this.tarmacWatch.update(dt, { you, girls })) byId[e.girl].voice.say(e.type === 'egg' ? 'roadEgg' : 'roadScold', { urgent: true });
+  }
+
   // Doughnuts ----------------------------------------------------------------
 
   updateDoughnuts(dt) {
@@ -4032,6 +4064,7 @@ export class Game {
     this.updateWarming(dt);
     this.updateHeadStart(dt, ridden);
     this.updateDoughnuts(dt);
+    this.updateTarmac(dt);
     this.updateJumps(dt);
     this.updateNicking(dt, ridden);
     this.updateTea(dt, ridden);

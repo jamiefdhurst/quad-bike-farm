@@ -408,6 +408,7 @@ export class CompanionVoice {
       followSmoke: ['followSmoke', 0.8],
       hillWait: ['hillWait', 1],
       doughnuts: ['doughnutSpin', 0.7],
+      onRoad: ['roadOn', 0.6],
       showOffGo: ['showOffGo', 1],
       showOffSeen: ['showOffSeen', 1],
       showOffAgain: ['showOffAgain', 1],
