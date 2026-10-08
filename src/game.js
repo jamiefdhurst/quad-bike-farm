@@ -23,6 +23,7 @@ import { DEFAULT_COMPANION_PARAMS, COMPANION_PARAM_RANGES } from './npc/companio
 import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
 import { CHARACTERS } from './npc/characters.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
+import { FallingOut, FALLING_OUT_PARAM_RANGES } from './npc/fallingOut.js';
 import { pickHistory, pickFaultChance } from './vehicle/history.js';
 import { TyreSet, dealTyres, DEFAULT_TYRE_PARAMS, TYRE_PARAM_RANGES } from './vehicle/tyres.js';
 import { pushDirection, localAlong } from './vehicle/controls.js';
@@ -107,6 +108,9 @@ import { Banter } from './npc/banter.js';
 import { RideOffer, pickOfferer } from './npc/rideOffer.js';
 import { BANTER } from './npc/banterLines.js';
 import { BanterWatch } from './npc/banterWatch.js';
+
+// Bickers where they trade digs: each adds a little friction towards falling out (fallingOut.js).
+const FRICTION_BANTER = ['idle', 'favoured', 'rivals', 'watching', 'sharing', 'riding', 'corrected', 'swapped', 'stuck'];
 import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES, PREMIX_CAN_COLOURS, DIESEL_CAN_COLOURS } from './items/jerryCan.js';
 import { OilBottle, OIL_BOTTLE_PARAM_RANGES } from './items/oilBottle.js';
 import { ratioText } from './engine/lubrication.js';
@@ -399,6 +403,12 @@ export class Game {
       const id = c.character.id;
       c.favourView = () => ({ mood: this.favour.mood(id), warmth: this.favour.warmth(id), sulk: this.favour.sulkDrive(id) });
     }
+
+    // The girls falling out with each other (npc/fallingOut.js): friction from races, borrowed quads and digs.
+    this.fallingOut = new FallingOut(CHARACTERS.map((ch) => ch.id));
+    this.fallingOutEvents = []; // banter moments waiting to be raised: fellOut, madeUp
+    this.fallingOutApartAt = {}; // girl id -> clock when she was last sent off from her friend
+    for (const c of this.companions) c.fallenOut = () => this.fallingOut.active;
 
     // What each girl is good at, and coaching her from the back (npc/skills.js); her driving reads the live levels.
     this.skills = new Skills(CHARACTERS.map((ch) => ch.id));
@@ -893,6 +903,7 @@ export class Game {
     registerTuning('Hose', this.hose.params, HOSE_PARAM_RANGES);
     registerTuning('Bell', this.bell.params, BELL_PARAM_RANGES);
     registerTuning('Favour', this.favour.p, FAVOUR_PARAM_RANGES);
+    registerTuning('Falling out', this.fallingOut.p, FALLING_OUT_PARAM_RANGES);
     this.wearLedger ??= new WearLedger();
     registerTuning('Who wore it out', this.wearLedger.p, LEDGER_PARAM_RANGES);
     this.leftRunning ??= new LeftRunning();
@@ -1959,7 +1970,7 @@ export class Game {
     if (this.companions.length < 2) return;
     this.banter ??= new Banter(BANTER);
     this.banterWatch ??= new BanterWatch();
-    const triggers = this.banterWatch.triggers(dt, { companions: this.companions, ridden, you: this.camera.position, wheelOpen: this.menu.isOpen, rivalry: this.favour.rivalry() });
+    let triggers = this.banterWatch.triggers(dt, { companions: this.companions, ridden, you: this.camera.position, wheelOpen: this.menu.isOpen, rivalry: this.favour.rivalry() });
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
     // Jess has just guessed wrong about a running quad with Amy close by: she puts her right.
     const said = byId.jess?.voice?.lastDiagnosis;
@@ -1982,10 +1993,108 @@ export class Game {
     const rivals = this.race.rivalry();
     const [first, second] = this.companions;
     if (rivals && first.fsm.is('idle') && second.fsm.is('idle') && first.root.position.distanceTo(second.root.position) < 12) triggers.push({ when: 'rivals', roles: rivals });
+    // Fallen out: the friendly digs stop and the bickering turns sharp.
+    for (const t of this.fallingOutEvents.splice(0)) triggers.push(t);
+    if (this.fallingOut.active) {
+      const standingAbout = triggers.some((t) => t.when === 'idle');
+      triggers = triggers.filter((t) => !['idle', 'favoured', 'rivals'].includes(t.when));
+      if (standingAbout) triggers.push({ when: 'fallenOut' });
+    }
     const speak = (speaker, text, opts) => (byId[speaker]?.params.voice ? byId[speaker].voice.speak(text, opts) : 0);
-    this.banter.update(dt, triggers, speak, this.talkFloor.left <= 0 && !this.menu.isOpen && !this.gossip.busy);
+    const started = this.banter.update(dt, triggers, speak, this.talkFloor.left <= 0 && !this.menu.isOpen && !this.gossip.busy);
+    if (started && FRICTION_BANTER.includes(started.when)) this.noteFriction('digs');
     this.talkFloor.banter = this.banter.busy || this.gossip.busy;
     this.updateGossip(dt, byId, speak);
+  }
+
+  /** Something between the girls adds friction (fallingOut.js); `fault` is the girl most to blame, if she is one of them. */
+  noteFriction(kind, fault = null) {
+    const girl = this.companions.some((c) => c.character.id === fault) ? fault : null;
+    if (kind !== 'digs' && !girl) return;
+    this.handleFallingOut(this.fallingOut.add(kind, girl));
+  }
+
+  /** They've just fallen out or made up: the row (or the apology) is raised as a moment for the banter. */
+  handleFallingOut(event) {
+    if (!event) return;
+    if (event.type === 'fellOut') {
+      this.fallingOutEvents.push({ when: 'fellOut', edge: true, roles: { kind: event.kind, fault: event.fault } });
+      this.race.stand();
+      this.convoy.stand();
+    } else if (event.type === 'madeUp') this.fallingOutEvents.push({ when: 'madeUp', edge: true, roles: { sorry: event.sorry } });
+  }
+
+  /**
+   * While they're fallen out: each tells you her side the first time you come close, they keep their distance, and
+   * stood about together (near you) the falling out runs down faster. They make up on their own in the end.
+   */
+  updateFallingOut(dt) {
+    const fo = this.fallingOut;
+    const p = fo.p;
+    if (this.companions.length < 2) return;
+    const [a, b] = this.companions;
+    const here = (c) => c.root.getWorldPosition(c.tmpV.clone());
+    const apart = here(a).distanceTo(here(b));
+    const stood = (c) => c.fsm.is('idle', 'resting');
+    const you = this.player.position;
+    const together = fo.active && stood(a) && stood(b) && apart < p.togetherRange && here(a).distanceTo(you) < p.togetherNearYou && here(b).distanceTo(you) < p.togetherNearYou;
+    this.handleFallingOut(fo.update(dt, together));
+    if (!fo.active) return;
+    const floorFree = this.talkFloor.left <= 0 && !this.banter?.busy && !this.menu.isOpen;
+    for (const c of this.companions) {
+      const id = c.character.id;
+      if (fo.wantsToTell(id) && floorFree && stood(c) && here(c).distanceTo(you) < p.sideRange) {
+        fo.tell(id);
+        c.voice.say(`side${fo.cause.kind[0].toUpperCase()}${fo.cause.kind.slice(1)}`, { force: true });
+      }
+      // Too close to her friend: she goes and stands further off (not a headlong rush, and not every frame).
+      const clock = fo.clock;
+      if (stood(c) && apart < p.apartRange && clock - (this.fallingOutApartAt[id] ?? -Infinity) > 8 && !c.warmingAt && !c.pendingSpot) {
+        const friend = this.companions.find((o) => o !== c);
+        const from = here(friend);
+        const me = here(c);
+        const away = new THREE.Vector3(me.x - from.x, 0, me.z - from.z);
+        if (away.lengthSq() < 0.01) away.set(1, 0, 0);
+        away.normalize().multiplyScalar(p.apartRange + 3);
+        const target = new THREE.Vector3(me.x + away.x, 0, me.z + away.z);
+        const area = this.world.fields?.areaOf(me.x, me.z);
+        if (this.world.fields && area !== 'out') {
+          const clamped = this.world.fields.clampToArea(area, target.x, target.z, 4);
+          target.x = clamped.x;
+          target.z = clamped.z;
+        }
+        target.y = this.world.heightAt(target.x, target.z);
+        this.fallingOutApartAt[id] = clock;
+        c.walkTo(target, Math.atan2(from.x - target.x, from.z - target.z));
+      }
+    }
+  }
+
+  /** The wheel's two extras while they're fallen out and she's told you her side: take her side, or tell her to make up. */
+  fallingOutWheelOptions(c) {
+    const fo = this.fallingOut;
+    const id = c.character.id;
+    if (!fo.active || fo.wantsToTell(id)) return [];
+    const friend = this.companions.find((o) => o !== c);
+    return [
+      {
+        label: "You're right",
+        run: () => {
+          if (!fo.sideWith(id)) return;
+          this.favour.add(id, fo.p.sideFavour);
+          if (friend) this.favour.add(friend.character.id, -fo.p.sideFavour);
+          c.voice.say('sideThanks', { force: true });
+        },
+      },
+      {
+        label: 'Make it up',
+        run: () => {
+          const event = fo.nudge(id);
+          if (event) this.handleFallingOut(event);
+          else c.voice.say('nudged', { force: true });
+        },
+      },
+    ];
   }
 
   /** Talking about you while they think you can't hear (npc/gossip.js). */
@@ -2587,6 +2696,7 @@ export class Game {
 
     // Whose is whose.
     for (const e of this.ownership.update(dt, { you: { x: pos.x, z: pos.z, onFoot: !this.player.isRiding }, girls, quads })) {
+      if (e.type === 'upset') this.noteFriction('borrow', e.by);
       if (e.type === 'claim') byId[e.girl].voice.sayQuad('claim', e.spec, { urgent: true });
       else if (byId[e.girl].voice.say(`ownerUpset_${e.by}`, { force: true }) && e.by === 'jess' && Math.random() < this.ownership.p.teaseChance) {
         later(3500, () => byId.jess?.voice.say('borrowTease', { force: true }));
@@ -2798,7 +2908,8 @@ export class Game {
   recallSpot(i) {
     const b = this.world.layout.barn;
     const x = b.x + b.halfX + 3;
-    return { point: new THREE.Vector3(x, this.world.heightAt(x, b.z + (i === 0 ? -1.4 : 1.4)), b.z + (i === 0 ? -1.4 : 1.4)), facing: Math.PI / 2 };
+    const side = this.fallingOut.active ? 3.5 : 1.4; // fallen out, they keep their distance
+    return { point: new THREE.Vector3(x, this.world.heightAt(x, b.z + (i === 0 ? -side : side)), b.z + (i === 0 ? -side : side)), facing: Math.PI / 2 };
   }
 
   /** Stop whatever they're doing and gather by the barn doors. */
@@ -3195,7 +3306,7 @@ export class Game {
         cv.passFailed();
       }
     } else this.convoyIdle = {};
-    for (const e of cv.update(dt, { girls, options, claims: this.ownership.claims, busy: this.race.active || this.drag.active || !!this.recalling })) {
+    for (const e of cv.update(dt, { girls, options, claims: this.ownership.claims, busy: this.race.active || this.drag.active || !!this.recalling || this.fallingOut.active })) {
       if (e.type === 'invite') {
         byId[e.leader].voice.say('convoyInvite', { force: true });
         later(3500, () => byId[e.follower]?.voice.say('convoyAccept', { force: true }));
@@ -3369,7 +3480,10 @@ export class Game {
       } else if (e.type === 'out') {
         if (e.girl === 'you') this.hud.toast('You are out of the race', 2.5);
         else byId[e.girl]?.voice.say('raceOut', { force: true });
-      } else if (e.type === 'result' && e.winner && e.loser) this.raceResult = { winner: e.winner, loser: e.loser };
+      } else if (e.type === 'result' && e.winner && e.loser) {
+        this.raceResult = { winner: e.winner, loser: e.loser };
+        this.noteFriction('race', e.loser);
+      }
     }
   }
 
@@ -3660,6 +3774,7 @@ export class Game {
         children: own.map((a) => ({ label: a.short ?? a.label, run: answer(a) })),
       });
     }
+    options.push(...this.fallingOutWheelOptions(c));
     this.openWheel(`Ask ${c.name} to`, options, c);
     this.player.lookEnabled = false;
     this.player.moveEnabled = false;
@@ -4098,6 +4213,7 @@ export class Game {
     this.updateThrottleGrab(dt, ridden);
     this.updateRockPrank(dt);
     this.updateDrownOut(dt);
+    this.updateFallingOut(dt);
     this.updateBanter(dt, ridden);
     for (const c of this.companions) {
       c.update(dt, c.quad.unit.vibration, {

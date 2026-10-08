@@ -98,6 +98,7 @@ export class Companion {
     this.startEvents = []; // what she's done while starting a quad, for her voice to pick up
     this.quads = [quad]; // every quad on the farm, for doing things on her own (set by the game)
     this.others = () => []; // the other companions, whose quads she leaves alone (set by the game)
+    this.fallenOut = () => false; // she and her friend have fallen out, so they won't share a quad (set by the game, fallingOut.js)
     this.idleFor = 0;
     this.recoil = null; // a jump back from a boil-over, while it lasts (jumpBack)
     this.restlessness = 0.7 + Math.random() * 0.8; // drifts while she's about (boredom.js)
@@ -215,6 +216,11 @@ export class Companion {
     return !!this.character && (quad.unit?.spec.owner === this.character.id || quad.unit?.spec.id === this.claimedSpec);
   }
 
+  /** Fallen out, she won't get on a quad her friend is on or about to be on. */
+  avoidsFriendOn(quad) {
+    return this.fallenOut() && this.others().some((o) => o.claimedQuad === quad);
+  }
+
   /** The other girl driving this quad (or about to), if any. */
   friendDriving(quad) {
     return this.others().find((o) => o.claimedQuad === quad && o.claimedSeat === 'rider') ?? null;
@@ -226,6 +232,7 @@ export class Companion {
    * or giving you a ride), so she'll stop to let her on.
    */
   canRidePillion(quad) {
+    if (this.avoidsFriendOn(quad)) return false;
     if (!quad.hasPillion || quad.isTipped || quad.passenger || this.takenByOther(quad, 'pillion')) return false;
     const friend = this.friendDriving(quad);
     return !friend?.drive || (!friend.drive.follow && !friend.drive.waitForPassenger);
@@ -237,6 +244,7 @@ export class Companion {
    * asked her to, and nobody else is up there.
    */
   canRideRackOn(quad) {
+    if (this.avoidsFriendOn(quad)) return false;
     const friend = this.friendDriving(quad);
     return canRideRack({
       hasRack: quad.hasRack,

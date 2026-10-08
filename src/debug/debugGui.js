@@ -18,6 +18,7 @@ export class DebugGui {
 
     this.buildLive();
     this.buildFavour();
+    this.buildFallingOut();
     this.buildSkills();
     this.buildLPlates();
     this.buildGirls();
@@ -258,6 +259,22 @@ export class DebugGui {
     for (const key of Object.keys(nudges)) f.add(nudges, key);
     nudges['Reset both'] = () => favour.ids.forEach((id) => (favour.scores[id] = 0));
     f.add(nudges, 'Reset both');
+  }
+
+  /** Whether the girls are fallen out, how much friction there is, and buttons to start or end one (npc/fallingOut.js). */
+  buildFallingOut() {
+    const fo = this.game.fallingOut;
+    const f = this.gui.addFolder('Falling out (live): the girls and each other');
+    const live = {};
+    Object.defineProperty(live, 'fallen out', { enumerable: true, get: () => (fo.active ? `yes, ${fo.cause.kind} (${fo.fault} at fault)` : 'no') });
+    Object.defineProperty(live, 'friction', { enumerable: true, get: () => Math.round(fo.friction * 10) / 10 });
+    Object.defineProperty(live, 'seconds left', { enumerable: true, get: () => Math.round(fo.remaining) });
+    for (const key of Object.keys(live)) f.add(live, key).listen().disable();
+    const actions = {
+      'Fall out now': () => !fo.active && this.game.handleFallingOut(fo.begin('digs')),
+      'Make up now': () => fo.active && this.game.handleFallingOut(fo.end()),
+    };
+    for (const key of Object.keys(actions)) f.add(actions, key);
   }
 
   /** Buttons to put the L plates on Amy's quad or the tractor, or take them off, so you can see them (npc/lPlates.js). */

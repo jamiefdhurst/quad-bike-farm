@@ -395,7 +395,7 @@ export const drivingMethods = {
 
   /** A quad she could have a drive on: nobody on it, upright and parked. */
   canDrive(q) {
-    return !q.rider && !q.isTipped && !q.isGhostRiding && q.speed < 0.5 && !this.wontRide(q);
+    return !q.rider && !q.isTipped && !q.isGhostRiding && q.speed < 0.5 && !this.wontRide(q) && !this.avoidsFriendOn(q);
   },
 
   /** The fault (a walk-round finding) she knows this quad has and won't ride it for, or null. Only Amy ever has any (wontRide.js). */
