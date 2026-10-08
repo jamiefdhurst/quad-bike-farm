@@ -407,7 +407,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 
 1.  Pick a different voice for Jess, her current one makes her sound too old.
 2.  Check over the lines for the girls and make sure they're for their personality, and add any missing emotion to certain statements.
-3.  The girls hold items properly, like the jerry can.
+3.  The girls hold items properly, like the jerry can. **Done.** See DECISIONS.md, "Girls carrying things".
 4.  Better tractor model
 5.  The girls bump into the quads and move them around, they need to be a bit more aware, and shouldn't be able to bump the quads and move them
 6.  Pods on the tractor. The two accessory pods (analogue and digital) can only be fitted to the quads now. Let them go on the tractor too, reading its hours and the odometer it now starts with in the background.
