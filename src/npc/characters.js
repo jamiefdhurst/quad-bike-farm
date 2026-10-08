@@ -23,6 +23,7 @@ export const CHARACTERS = [
     mapColour: '#3a5690', // her blue polo, for her dot on the farm map
     params: { outfit: 'farmPolo', boredShowOffChance: 0.04, sideSaddleChance: 0.4, blownNoticeAt: 0.25, remembers4wd: 0.65 }, // sits side-saddle on the back, ladylike
     lines: VOICE_LINES,
+    idles: ['folded', 'clasped', 'weight'], // her ways of standing about (STANDING_IDLES in poseMoves.js): tidy and patient
     voiceBank: 'companion-voice', // public/audio/<voiceBank>.json, recorded by tools/generate_companion_voice.py
     soundRate: 1, // her sighs and laughs, played at this speed (a shade higher pitched above 1)
   },
@@ -76,6 +77,7 @@ export const CHARACTERS = [
       placedPatienceMin: 150,
       placedPatienceMax: 300,
     },
+    idles: ['hips', 'rock', 'scuff', 'stretch', 'pocket'], // fidgety
     lines: linesFor(JESS_LINES),
     voiceBank: 'companion-voice-jess',
     soundRate: 1.06,
