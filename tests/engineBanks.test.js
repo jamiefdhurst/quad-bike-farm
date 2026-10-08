@@ -23,6 +23,16 @@ describe('engine banks', () => {
     }
   });
 
+  it('takes each kind of idle from one recording, or picking by rpm swaps between machines as the revs change', () => {
+    // The tractor's idle once mixed two recordings: from about 1,100 rpm up it played the boomier one nearly all the time.
+    for (const name of AUDIO_PARAM_RANGES.recBank) {
+      const bank = JSON.parse(readFileSync(`public/audio/${name}.json`, 'utf8'));
+      const sources = {};
+      for (const g of bank.grains) if (g.kind.startsWith('idle')) (sources[g.kind] ??= new Set()).add(g.src);
+      for (const [kind, srcs] of Object.entries(sources)) expect([...srcs], `${name} ${kind}`).toHaveLength(1);
+    }
+  });
+
   it('gives the tractor its own bank', () => {
     expect(TRACTOR_SPEC.audio.recBank).toBe('engine-bank-tractor');
   });

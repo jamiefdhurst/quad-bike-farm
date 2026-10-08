@@ -136,10 +136,11 @@ BANKS = {
     'engine-bank-tractor': {
         # The old tractor: kyles's throaty, rattly diesel (Freesound 637890 and 637891), recorded close beside it. The idle is its
         # steady running (about 1,000 rpm by the pulse-rate measure, with one beat in each cycle stronger); the revs are the pulled-
-        # away stretches, which are lower and lumpier. Starter and shutdown come from the same two recordings.
+        # away stretches, which are lower and lumpier. Starter and shutdown come from the same two recordings. The idle is 637890's
+        # only: 637891's (6 to 11 s) has a heavy boom at 70 to 100 Hz the other hasn't, and its cycles are recorded slightly
+        # faster, so from about 1,100 rpm up the pulse sound picked them nearly every time and played the boom over the tractor.
         'segments': [
             ('idle', 't0', 14.8, 30.6, (0.09, 0.16)),
-            ('idle', 't1', 6.0, 11.0, (0.09, 0.14)),
             ('accel', 't0', 34.0, 44.0, (0.12, 0.24)),
             ('accel', 't0', 46.0, 60.5, (0.12, 0.24)),
             ('decel', 't0', 34.0, 44.0, (0.12, 0.24)),
@@ -156,6 +157,7 @@ BANKS = {
         'idleOdd': 0.06,
         'revTail': 0.9,
         'revOdd': 0.3,
+        'fixedGain': {'t1': 1.042},  # the starter's level when 637891's idle set it
     },
     'engine-bank-50': {
         # The kids' 50cc quad: a Gilera Runner SP50 scooter two-stroke, recorded an inch
