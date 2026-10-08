@@ -21,6 +21,7 @@ export const DEFAULT_ENGINE_PARAMS = {
   batteryCrankDrain: 0.0125, // lost per second on the starter (about 8 s of cranking per 10%)
   batteryChargeRate: 0.0017, // gained per second while it runs (flat to full in about 10 minutes)
   chillChoke: 0.5, // extra choke a cold engine needs on the coldest day (times 1 + this), see Weather.chill
+  chillChokeFlow: 0.9, // share of that extra the choke can deliver, so full choke still starts a frozen engine (1 = as easily as a mild cold one)
   chillWarmUp: 0.6, // longer a cold engine takes to warm up on the coldest day (times 1 + this)
   chillBattery: 1, // faster the battery drains (ignition and starter) on the coldest day (times 1 + this)
   chillGlow: 0.5, // longer the glow plugs take on the coldest day (times 1 + this)
@@ -341,6 +342,7 @@ export const ENGINE_PARAM_RANGES = {
   batteryIgnitionDrain: [0, 0.02, 0.0001],
   batteryCrankDrain: [0, 0.1, 0.0005],
   chillChoke: [0, 2, 0.05],
+  chillChokeFlow: [0, 1, 0.05],
   chillWarmUp: [0, 3, 0.05],
   chillBattery: [0, 4, 0.05],
   chillGlow: [0, 3, 0.05],

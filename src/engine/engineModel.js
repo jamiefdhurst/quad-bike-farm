@@ -558,7 +558,7 @@ export class EngineModel {
   updateMixture() {
     const p = this.params;
     const need = p.coldEnrichmentNeed * (1 + p.chillChoke * this.chill) * (1 - this.temperature);
-    const supplied = p.chokeEnrichment * this.choke * (1 - p.throttleChokeRelief * this.throttle);
+    const supplied = p.chokeEnrichment * (1 + p.chillChoke * p.chillChokeFlow * this.chill) * this.choke * (1 - p.throttleChokeRelief * this.throttle);
     // A draining float bowl leans the mixture out, whatever the choke is doing.
     const starve = clamp((p.fuelStarveLevel - this.fuel) / p.fuelStarveLevel, 0, 1);
     // A heat-soaked carburettor boils its fuel, so a hot engine that isn't running starts rich; the throttle open clears it.

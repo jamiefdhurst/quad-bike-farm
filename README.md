@@ -400,7 +400,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 
 1.  Land Rover's shake is too random for a 4-cylinder, needs to be more predictable - less like the quads. **Done.** See DECISIONS.md, "A steadier four-cylinder shake".
 2.  Scale issue sometimes when the girls get in the Land Rover, they end up too big, and this compounds ove time, probably related to a scaling issue somewhere **Done.** See DECISIONS.md, "Girls staying full size".
-3.  Some things are impossible to start in the frost (e.g. green quad) and some are stalling too readily under braking (Land Rover, UTV)
+3.  Some things are impossible to start in the frost (e.g. green quad) and some are stalling too readily under braking (Land Rover, UTV) **Done.** See DECISIONS.md, "Frost starts and braking stalls".
 4.  Green quad's sound isn't right at higher revs **Done.** See DECISIONS.md, "The green's stutter at high revs".
 5.  Better models for a bunch of stuff: hay bales, the bench in the workshop, the ramp, etc. - some things look very low poly and we should do slightly better
 6.  Achievements each game so you get a score - getting both girls to like you, ramp achievements, getting all quads going, riding all of them, etc. - ticking off everything you can do in the game

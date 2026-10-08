@@ -937,6 +937,7 @@ export const UTV_SPEC = {
     maxRpm: 3200,
     redlineRpm: 3100,
     stallRpm: 450,
+    loadDragRpm: 1500, // a diesel three with a heavy flywheel: a hard stop doesn't stall it warm (the quads' 4000 did, every time); stone cold it still can
     crankRpm: 260,
     catchRpm: 1300,
     rpmRiseRate: 4.2,
@@ -1088,12 +1089,12 @@ export const LAND_ROVER_SPEC = {
     launchLoad2: 0.45,
     launchLoad3: 0.85,
     launchLoad4: 1.1,
-    lugSpeed: 0.7,
+    lugSpeed: 0.15, // braking only drags it down below this share of the gear's top speed, where the revs would be near idle
     handStart: 0, // the hand throttle, pushed in
   },
   fuel: { tankCapacity: 45, reserveLitres: 5, noTap: true, startTap: 'on', burnPerRev: 0.0003, idleBurnFraction: 0.3 },
   engine: {
-    loadDragRpm: 6000, // a manual: slowing in a high gear drags it down and stalls it
+    loadDragRpm: 2200, // a manual: slowing in third or fourth with the clutch out stalls it; first and second hold on (a heavy flywheel)
     pullStart: true, // the starting handle (vehicle/crankHandle.js): a swing is the engine's pull
     crankHandle: true,
     pullSeconds: 0.7, // one swing turns it over about once
