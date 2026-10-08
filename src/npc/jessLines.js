@@ -43,6 +43,7 @@ import { JESS_GOSSIP_LINES } from './gossipLines.js';
 import { JESS_THROTTLE_LINES } from './throttleLines.js';
 import { JESS_PILLION_COACH_LINES } from './pillionCoachLines.js';
 import { JESS_SMOKE_LINES } from './smokeLines.js';
+import { JESS_HILL_LINES } from './hillLines.js';
 import { JESS_SHOUT_LINES } from './shoutFaultLines.js';
 import { JESS_FUMES_LINES } from './fumesLines.js';
 import { JESS_RUSTY_LINES } from './rustyLines.js';
@@ -424,6 +425,7 @@ export const JESS_LINES = {
   ...JESS_THROTTLE_LINES,
   ...JESS_PILLION_COACH_LINES,
   ...JESS_SMOKE_LINES,
+  ...JESS_HILL_LINES,
   ...JESS_FUMES_LINES,
   ...JESS_RUSTY_LINES,
   ...JESS_UTV_LINES,

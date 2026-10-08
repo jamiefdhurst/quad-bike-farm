@@ -171,6 +171,8 @@ export class CompanionVoice {
       // Bogged down with her on the back.
       if (quad.bog?.stuck && !this.stuckSaid) this.stuckSaid = !!this.say('stuckRiding', { urgent: true });
       if (!quad.bog?.stuck) this.stuckSaid = false;
+      // Leaning or pitched over on a steep slope (the hill's banks): world/hill.js, vehicle/topple.js.
+      if (quad.upY < p.voiceSteepUpY && speed > 0.5 && !quad.isTipped) this.say('hillSteep', { urgent: true, chance: 0.8 });
       if (this.decel > 6 && speed > 4) this.say('hardBrake', { urgent: true });
       else if (this.jolt > p.voiceRoughAccel && speed > 2) this.say('rideRough', { chance: 0.6 });
 
@@ -404,6 +406,7 @@ export class CompanionVoice {
       stuckInBog: ['stuckInBog', 1],
       followDriveOn: ['followDriveOn', 1],
       followSmoke: ['followSmoke', 0.8],
+      hillWait: ['hillWait', 1],
       doughnuts: ['doughnutSpin', 0.7],
       showOffGo: ['showOffGo', 1],
       showOffSeen: ['showOffSeen', 1],

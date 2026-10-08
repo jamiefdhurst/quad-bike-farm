@@ -164,8 +164,10 @@ export class HerDrive {
    * @param {object} [opts.park]  { route }: drive the route (in line with a slot, then the slot) slowly, and stop on the last point.
    * @param {function} [opts.follow]  () => the quad she's following (yours), or null. Following, she keeps
    *   behind it at its pace rather than doing her own loop, and doesn't tire of it.
+   * @param {function} [opts.followWay]  (her position, the point behind the lead, the lead's position) => { point, wait, to }: the way
+   *   there through the gateways, or, with `wait`, to the foot of the hill (`to`) where she pulls up rather than go on up after you.
    */
-  constructor(quad, { tractorStarting = undefined, params, probe, isClear, random = Math.random, startingParams, momentWindow = 5, skill = { starting: 0.5, choke: 0.5, cornering: 0.5, mud: 0.5 }, passenger = () => false, waitForPassenger = false, tires = false, follow = null, friend = () => null, after = null, race = null, doughnut = null, jump = null, park = null, showOff = null }) {
+  constructor(quad, { tractorStarting = undefined, params, probe, isClear, random = Math.random, startingParams, momentWindow = 5, skill = { starting: 0.5, choke: 0.5, cornering: 0.5, mud: 0.5 }, passenger = () => false, waitForPassenger = false, tires = false, follow = null, followWay = null, friend = () => null, after = null, race = null, doughnut = null, jump = null, park = null, showOff = null }) {
     this.quad = quad;
     this.tractorStarting = tractorStarting; // how she goes about starting the tractor (tractorStart.js), when it is one
     this.p = params;
@@ -188,6 +190,8 @@ export class HerDrive {
     this.waitedTotal = 0;
     this.cruiseScale = 1; // you asked her to go faster or slower
     this.follow = follow;
+    this.followWay = followWay;
+    this.hillWaiting = false; // pulled up at the foot of the hill, you having gone on up it
     this.race = race;
     this.after = after; // her ordinary driving settings, for carrying on once an activity is over (carryOn)
     this.doughnut = doughnut; // spinning doughnuts: { centre, radius, dir, seconds, p } (doughnuts.js)
@@ -266,7 +270,19 @@ export class HerDrive {
       this.smokeNoted = true;
       this.events.push('followSmoke');
     }
-    const point = { x: lp.x - fx * want - fz * 1.2, z: lp.z - fz * want + fx * 1.2 };
+    let point = { x: lp.x - fx * want - fz * 1.2, z: lp.z - fz * want + fx * 1.2 };
+    const way = this.followWay?.(pos, point, lp);
+    if (way?.wait) {
+      // You've gone on up the hill: she goes as far as its foot and waits there.
+      if (!this.hillWaiting) this.events.push('hillWait');
+      this.hillWaiting = true;
+      const d = Math.hypot(way.to.x - pos.x, way.to.z - pos.z);
+      if (d < p.followMinGap) return { point: way.to, speed: 0, gap: d, stopped: true };
+      const top = p.followMaxSpeed * (p.driveSpeedMax / p.driveSpeedMaxBase);
+      return { point: way.point, speed: clamp(d * 0.4, 1.5, top), gap: d, stopped: false };
+    }
+    this.hillWaiting = false;
+    if (way) point = way.point;
     const gap = Math.hypot(lp.x - pos.x, lp.z - pos.z);
     const leadSpeed = Math.max(0, lead.forwardSpeed);
     if (leadSpeed < 0.8 && gap < want * 1.4) return { point, speed: 0, gap, stopped: true };

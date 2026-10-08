@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { HerDrive } from '../src/npc/herDriving.js';
 import { DEFAULT_COMPANION_PARAMS } from '../src/npc/companionParams.js';
+import { drivingMethods } from '../src/npc/companionDriving.js';
+import { createFields } from '../src/world/fields.js';
+import { LAYOUT } from '../src/world/layout.js';
 
 /** Just the follow maths, without a quad to drive. */
 function follower(lead) {
@@ -184,5 +187,44 @@ describe('overtaking out of impatience', () => {
     lead.position.z = 20; // you've gone by
     expect(e.passTarget(0.1)).toBeNull();
     lead.position.z = 0;
+  });
+});
+
+describe('following you out to the hill', () => {
+  const fields = createFields(LAYOUT);
+  const hill = fields.hill;
+  const her = { world: { fields } };
+  const way = (pos, point, lead) => drivingMethods.followWay.call(her, pos, point, lead);
+  const lead = { position: { x: 0, z: 0 }, yaw: 0, forwardSpeed: 5 };
+  const follower2 = () => {
+    const d = follower(lead);
+    d.events = [];
+    d.followWay = way;
+    return d;
+  };
+
+  it('goes by the gate and down the lane after you, rather than at the hedge', () => {
+    lead.position = { x: LAYOUT.hill.lane.x, z: 110 };
+    const t = follower2().followTarget({ x: -10, z: 60 });
+    // Heading for the gateway into the lane first.
+    expect(t.point.z).toBeLessThan(LAYOUT.fieldHalf);
+    expect(Math.abs(t.point.x - LAYOUT.gate.x)).toBeLessThan(0.5);
+    expect(t.stopped).toBe(false);
+  });
+
+  it('pulls up at the foot of the hill and waits while you go on up', () => {
+    lead.position = { x: 0, z: 185 };
+    const d = follower2();
+    const coming = d.followTarget({ x: LAYOUT.hill.lane.x, z: 120 });
+    expect(coming.stopped).toBe(false);
+    expect(d.events).toEqual(['hillWait']);
+    // Through the lane's end towards the ford, not up the bank after you.
+    expect(hill.pastFoot(coming.point.x, coming.point.z)).toBe(false);
+    const there = d.followTarget({ ...hill.waitSpot });
+    expect(there.stopped).toBe(true);
+    expect(d.events).toEqual(['hillWait']); // said once
+    // You come back down: she's following again.
+    lead.position = { x: LAYOUT.hill.lane.x, z: 125 };
+    expect(d.followTarget({ ...hill.waitSpot }).point).not.toEqual(hill.waitSpot);
   });
 });

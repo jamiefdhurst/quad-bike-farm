@@ -153,6 +153,7 @@ export const drivingStates = {
           const lead = (followWho ?? this.followTarget)?.();
           return lead && lead !== q ? lead : null;
         } : null,
+        followWay: following && this.world.fields ? (pos, point, lead) => this.followWay(pos, point, lead) : null,
         probe: (heading, distance) => this.driveProbe(heading, distance),
         isClear: (a, b) => this.driveClear(a, b),
       });
@@ -423,6 +424,18 @@ export const drivingMethods = {
       if (hit < best) best = hit;
     }
     return best;
+  },
+
+  /**
+   * Following, the way to the point behind the lead: through the gateways (world/fields.js), passing a gateway point within 3 m (she's
+   * moving), and, once the lead is up the hill past its foot (world/hill.js), only as far as the foot, where she waits.
+   */
+  followWay(pos, point, lead) {
+    const fields = this.world.fields;
+    const hill = fields.hill;
+    const wait = !!hill && hill.pastFoot(lead.x, lead.z) && !hill.pastFoot(pos.x, pos.z);
+    const to = wait ? hill.waitSpot : point;
+    return { point: fields.nextWaypoint(pos, to, 3), wait, to };
   },
 
   /** Whether she could drive straight from a to b: inside the farm's hedges, nothing in the way (the hedges between fields included). */
