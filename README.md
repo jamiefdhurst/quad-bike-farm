@@ -402,7 +402,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 2.  Scale issue sometimes when the girls get in the Land Rover, they end up too big, and this compounds ove time, probably related to a scaling issue somewhere **Done.** See DECISIONS.md, "Girls staying full size".
 3.  Some things are impossible to start in the frost (e.g. green quad) and some are stalling too readily under braking (Land Rover, UTV) **Done.** See DECISIONS.md, "Frost starts and braking stalls".
 4.  Green quad's sound isn't right at higher revs **Done.** See DECISIONS.md, "The green's stutter at high revs".
-5.  Better models for a bunch of stuff: hay bales, the bench in the workshop, the ramp, etc. - some things look very low poly and we should do slightly better
+5.  Better models for a bunch of stuff: hay bales, the bench in the workshop, the ramp, etc. - some things look very low poly and we should do slightly better **Done.** See DECISIONS.md, "Better bales, bench and ramp".
 6.  Achievements each game so you get a score - getting both girls to like you, ramp achievements, getting all quads going, riding all of them, etc. - ticking off everything you can do in the game
 7.  Better animations for the girls getting on and off things, and better seated and otherwise positions for them in everything they do. Better idle animations for them if they're standing around too.
 8.  Pick a different voice for Jess, her current one makes her sound too old.

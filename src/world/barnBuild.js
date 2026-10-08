@@ -270,12 +270,60 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   const b = layout.bench;
   const benchMat = new THREE.MeshStandardMaterial({ color: 0x7a5a3a, roughness: 0.85 });
   const benchTop = floorY + b.height;
-  add(box(b.length, 0.06, b.depth, benchMat), b.x, benchTop - 0.03, b.z);
-  add(box(b.length - 0.1, 0.04, b.depth - 0.08, timber), b.x, floorY + 0.3, b.z);
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) add(box(0.07, b.height - 0.06, 0.07, timber), b.x + sx * (b.length / 2 - 0.08), floorY + (b.height - 0.06) / 2, b.z + sz * (b.depth / 2 - 0.08));
-  add(box(0.14, 0.12, 0.2, steel), b.x + b.length / 2 - 0.3, benchTop + 0.06, b.z + b.depth / 2 - 0.12);
+  // The top is separate planks with a hairline between them, on a frame of rails; legs have a cross brace and the shelf is slatted.
+  const plankMats = [0x7a5a3a, 0x72532f, 0x82623f].map((color) => new THREE.MeshStandardMaterial({ color, roughness: 0.85 }));
+  const planks = 5;
+  const plankD = b.depth / planks;
+  for (let i = 0; i < planks; i++) {
+    add(box(b.length + 0.06, 0.055, plankD - 0.006, plankMats[i % 3]), b.x, benchTop - 0.0275, b.z - b.depth / 2 + plankD * (i + 0.5));
+  }
+  const legX = b.length / 2 - 0.08;
+  const legZ = b.depth / 2 - 0.08;
+  add(box(b.length - 0.1, 0.1, 0.04, timber), b.x, benchTop - 0.1, b.z + legZ); // front and back aprons
+  add(box(b.length - 0.1, 0.1, 0.04, timber), b.x, benchTop - 0.1, b.z - legZ);
+  for (const sx of [-1, 1]) {
+    add(box(0.04, 0.1, b.depth - 0.12, timber), b.x + sx * legX, benchTop - 0.1, b.z); // end rails
+    for (const sz of [-1, 1]) add(box(0.08, b.height - 0.06, 0.08, timber), b.x + sx * legX, floorY + (b.height - 0.06) / 2, b.z + sz * legZ);
+    // Diagonal brace between the legs at each end.
+    const brace = box(0.035, 0.6, 0.035, timber);
+    brace.rotation.x = Math.atan2(b.depth - 0.2, 0.45);
+    add(brace, b.x + sx * legX, floorY + 0.5, b.z);
+  }
+  for (let i = 0; i < 4; i++) add(box(b.length - 0.1, 0.03, (b.depth - 0.1) / 4 - 0.01, timber), b.x, floorY + 0.3, b.z - (b.depth - 0.1) / 2 + ((b.depth - 0.1) / 4) * (i + 0.5));
+  // Vice at the right-hand end: a steel body, a moving jaw and its handle.
+  const vx = b.x + b.length / 2 - 0.3;
+  const vz = b.z + b.depth / 2 - 0.12;
+  add(box(0.14, 0.12, 0.2, steel), vx, benchTop + 0.06, vz);
+  add(box(0.12, 0.07, 0.04, steel), vx, benchTop + 0.14, vz + 0.12);
+  const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.22, 6), steel);
+  handle.rotation.z = Math.PI / 2;
+  add(handle, vx, benchTop + 0.1, vz + 0.2);
+  // Things on the top: an oil can, two jars of screws and a dark rag.
+  const redPaint = new THREE.MeshStandardMaterial({ color: 0xb3201a, roughness: 0.55 });
+  const glass = new THREE.MeshStandardMaterial({ color: 0xbfd6d0, roughness: 0.15, transparent: true, opacity: 0.55 });
+  const can = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.14, 12), redPaint);
+  add(can, b.x - b.length / 2 + 0.35, benchTop + 0.07, b.z - 0.1);
+  const spout = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.012, 0.09, 6), steel);
+  spout.rotation.z = -0.9;
+  add(spout, b.x - b.length / 2 + 0.4, benchTop + 0.18, b.z - 0.1, { cast: false });
+  for (let i = 0; i < 2; i++) {
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.11, 12), glass), b.x - 0.5 + i * 0.16, benchTop + 0.055, b.z - 0.2, { cast: false });
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.047, 0.047, 0.015, 12), steel), b.x - 0.5 + i * 0.16, benchTop + 0.118, b.z - 0.2, { cast: false });
+  }
+  const rag = box(0.22, 0.015, 0.16, new THREE.MeshStandardMaterial({ color: 0x3a3c3e, roughness: 1 }));
+  rag.rotation.y = 0.4;
+  add(rag, b.x + 0.5, benchTop + 0.008, b.z + 0.05, { cast: false });
   // Pegboard above it with a few tools hung up.
   add(box(b.length, 0.9, 0.03, new THREE.MeshStandardMaterial({ color: 0x9c8a66, roughness: 0.9 })), b.x, benchTop + 1.1, inner.minZ + 0.03, { cast: false });
+  // A grid of holes across the pegboard, as dark dots.
+  const holeMat = new THREE.MeshBasicMaterial({ color: 0x3b3224 });
+  const holes = new THREE.InstancedMesh(new THREE.CircleGeometry(0.008, 6), holeMat, Math.floor(b.length / 0.1) * 8);
+  const m4 = new THREE.Matrix4();
+  let hi = 0;
+  for (let ix = 0; ix < Math.floor(b.length / 0.1); ix++) {
+    for (let iy = 0; iy < 8; iy++) holes.setMatrixAt(hi++, m4.makeTranslation(b.x - b.length / 2 + 0.05 + ix * 0.1, benchTop + 0.7 + iy * 0.1, inner.minZ + 0.047));
+  }
+  group.add(holes);
   for (let i = 0; i < 7; i++) {
     const tool = box(0.03, 0.2 + random() * 0.25, 0.03, i % 2 ? steel : new THREE.MeshStandardMaterial({ color: 0xb3201a, roughness: 0.6 }));
     add(tool, b.x - b.length / 2 + 0.3 + i * ((b.length - 0.6) / 6), benchTop + 1.2 + random() * 0.15, inner.minZ + 0.08, { cast: false });

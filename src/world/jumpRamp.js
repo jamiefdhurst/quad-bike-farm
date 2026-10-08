@@ -38,18 +38,42 @@ export function buildJumpRamp({ scene, physics, RAPIER, layout, heights }) {
   // Plank joins across the slope, and a strip of lighter wood along the lip.
   const slope = Math.hypot(r.length, r.height);
   const pitch = Math.atan2(r.height, r.length);
-  const dark = new THREE.MeshStandardMaterial({ color: 0x4d3a26, roughness: 1 });
-  for (let i = 1; i < 7; i++) {
-    const slat = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.02, r.width + 0.01), dark);
-    const t = (i / 7) * slope;
-    slat.position.set(Math.cos(pitch) * t, Math.sin(pitch) * t + 0.025, 0);
-    slat.rotation.z = pitch;
-    group.add(slat);
+  // Decking: boards laid across the slope (each its own colour, with a gap showing the dark body between them), a side cheek board
+  // down each edge, and a steel angle on the lip with bolt heads.
+  const boardMats = [0x8c6b45, 0x7f6140, 0x987549, 0x86673f].map((color) => new THREE.MeshStandardMaterial({ color, roughness: 0.9 }));
+  const dark = new THREE.MeshStandardMaterial({ color: 0x3a2b1b, roughness: 1 });
+  body.material = dark;
+  const boards = 8;
+  const boardLen = (slope - 0.2) / boards;
+  const nx = -Math.sin(pitch); // the slope's normal in the profile plane
+  const ny = Math.cos(pitch);
+  for (let i = 0; i < boards; i++) {
+    const board = new THREE.Mesh(new THREE.BoxGeometry(boardLen - 0.015, 0.045, r.width - 0.12), boardMats[i % boardMats.length]);
+    const t = 0.02 + (i + 0.5) * boardLen;
+    const lift = 0.02;
+    board.position.set(Math.cos(pitch) * t + nx * lift, Math.sin(pitch) * t + ny * lift + 0.02, 0);
+    board.rotation.z = pitch;
+    group.add(board);
   }
-  const lip = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, r.width + 0.02), new THREE.MeshStandardMaterial({ color: 0xb98c52, roughness: 0.8 }));
-  lip.position.set(r.length - 0.05, r.height - 0.03, 0);
+  const cheekMat = new THREE.MeshStandardMaterial({ color: 0x6e5438, roughness: 0.9 });
+  for (const side of [-1, 1]) {
+    const cheek = new THREE.Mesh(new THREE.BoxGeometry(slope, 0.1, 0.06), cheekMat);
+    cheek.position.set(Math.cos(pitch) * slope / 2 + nx * 0.03, Math.sin(pitch) * slope / 2 + ny * 0.03 + 0.03, side * (hw - 0.03));
+    cheek.rotation.z = pitch;
+    group.add(cheek);
+  }
+  const steel = new THREE.MeshStandardMaterial({ color: 0x5b5f62, roughness: 0.5, metalness: 0.7 });
+  const lip = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, r.width + 0.02), steel);
+  lip.position.set(r.length - 0.04, r.height - 0.01, 0);
   lip.rotation.z = pitch;
   group.add(lip);
+  const bolts = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.015, 0.015, 0.012, 6), steel, 6);
+  const m4 = new THREE.Matrix4();
+  for (let i = 0; i < 6; i++) {
+    m4.compose(new THREE.Vector3(r.length - 0.04, r.height + 0.02, -hw + 0.25 + (i / 5) * (r.width - 0.5)), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, pitch)), new THREE.Vector3(1, 1, 1));
+    bolts.setMatrixAt(i, m4);
+  }
+  group.add(bolts);
   enableShadows(group);
   // The group's x is along the ramp: turn it so that is the way the ramp points.
   group.rotation.y = r.yaw - Math.PI / 2;

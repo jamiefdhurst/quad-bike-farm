@@ -338,6 +338,15 @@ function strawCanvas(random, ends) {
   const ctx = c.getContext('2d');
   ctx.fillStyle = '#c9a94f';
   ctx.fillRect(0, 0, 256, 256);
+  if (!ends) {
+    // Baler twine: loops round the middle of the bale in a few turns, a darker line with a lighter edge.
+    for (const y of [64, 78, 178, 192]) {
+      ctx.fillStyle = 'rgba(70,45,15,0.55)';
+      ctx.fillRect(0, y, 256, 3);
+      ctx.fillStyle = 'rgba(250,225,150,0.35)';
+      ctx.fillRect(0, y + 3, 256, 1);
+    }
+  }
   if (ends) {
     for (let r = 4; r < 128; r += 3 + random() * 3) {
       ctx.strokeStyle = random() < 0.5 ? 'rgba(120,90,30,0.45)' : 'rgba(240,215,130,0.4)';
@@ -364,14 +373,63 @@ function strawCanvas(random, ends) {
   return tex;
 }
 
+/** Silage wrap: bands of film overlapping round the bale, a little lighter where one layer lies over the next. */
+function wrapCanvas(random) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#16181a';
+  ctx.fillRect(0, 0, 256, 256);
+  for (let y = 0; y < 256; y += 32) {
+    ctx.fillStyle = `rgba(255,255,255,${0.04 + random() * 0.05})`;
+    ctx.fillRect(0, y, 256, 4);
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.fillRect(0, y + 4, 256, 2);
+  }
+  for (let i = 0; i < 40; i++) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.beginPath();
+    const x = random() * 256;
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x + (random() - 0.5) * 30, 256);
+    ctx.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/** A round bale body: a cylinder with a rounded rim and a slight belly, so it stops looking like a tin. Axis along y, three material groups. */
+export function roundBaleGeometry(R, W) {
+  const geo = new THREE.CylinderGeometry(R, R, W, 32, 14);
+  const pos = geo.attributes.position;
+  const half = W / 2;
+  const rim = 0.2; // how much of each end is rounded off
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    const ay = Math.abs(y);
+    let k = 1 + 0.025 * (1 - (y / half) ** 2); // belly
+    if (ay > half - rim) {
+      const t = (ay - (half - rim)) / rim;
+      k *= 1 - 0.12 * t * t; // the end ring is 12% narrower, eased in over the rim
+    }
+    pos.setX(i, x * k);
+    pos.setZ(i, z * k);
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+
 function buildBales({ scene, layout, heights, track, physics, RAPIER, random }) {
   const R = 0.75;
   const W = 1.2;
-  const geo = new THREE.CylinderGeometry(R, R, W, 28, 1);
+  const geo = roundBaleGeometry(R, W);
   const strawSide = new THREE.MeshStandardMaterial({ map: strawCanvas(random, false), roughness: 1 });
   const strawEnd = new THREE.MeshStandardMaterial({ map: strawCanvas(random, true), roughness: 1 });
   const straw = [strawSide, strawEnd, strawEnd];
-  const wrapSide = new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.32, metalness: 0.0 });
+  const wrapSide = new THREE.MeshStandardMaterial({ color: 0xffffff, map: wrapCanvas(random), roughness: 0.32, metalness: 0.0 });
   const wrapEnd = new THREE.MeshStandardMaterial({ color: 0x1b1b1b, roughness: 0.4 });
   const wrap = [wrapSide, wrapEnd, wrapEnd];
 
