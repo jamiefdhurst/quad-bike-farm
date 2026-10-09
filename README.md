@@ -453,7 +453,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 12. Better UTV model. **Done.** An interim Gator-style body, a digital cluster, and a centre console (gears, 4WD, diff lock, lights, tipper, horn). See DECISIONS.md, "A more Gator-like UTV". Item 108 still takes it all the way.
 13. Things in the UTV's bed. The pick-up items (jerry cans, the toolbox, jump leads, the hose and so on) can be put in the bed and ride along, tip out when the bed tips, and be picked up again from it. Bales too, if they become pick-up items. **Done.** See DECISIONS.md, "Things in the UTV's bed".
 14. The girls should see the trailers as obstacles when driving and they should have collision logic, and have better collision avoidance logic when they're walking around the vehicles, they frequently bump into them. **Done.** See DECISIONS.md, "The girls see the trailers".
-15. Better trailer models (large and small).
+15. Better trailer models (large and small). **Done.** Both are properly dressed now; see DECISIONS.md, "Better trailer models".
 16. Improve Land Rover model.
 17. Better starter noises for the UTV and Land Rover
 18. Better frost on the ground and on the seats

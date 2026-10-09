@@ -2270,3 +2270,12 @@ TODO 13. It copies the little tipping trailer's tub rather than inventing anythi
 - `Companion.blocked` now casts three rays (her middle and 0.4 m out either side, `probeWidth`) when looking more than a metre; close to a destination it is the middle only, so she can still walk up beside a quad to get on. `probeDistance` went from 1.4 to 2.2 m, and the angles tried either side are finer (0.4 rad steps, out to 2.5).
 - Once she finds a way round she keeps that heading for `avoidHold` (2 s) while it stays clear, rather than turning back in at the first gap. Both are in the "Moving about" tuning.
 - Not tested in unit tests (it needs a whole companion in Rapier); **not checked in the running game**, so the numbers are first guesses.
+
+## Better trailer models (TODO 15)
+
+Item taken as looks only: no change to sizes, seats, cargo spots, colliders or hitch points, so nothing that uses them moves.
+
+- **Shared parts** (`src/vehicle/trailerParts.js`): a wheel with rounded tyre shoulders, a ring of 14 tread blocks, a dished rim, a hub cap and five nuts (the `spin` group is still what the game turns); a curved mudguard (an open arc of cylinder, double-sided) with a rolled lip and a black flap; a jockey wheel wound up 0.18 m off the ground; rear lamps with amber reflectors.
+- **The bale trailer**: planked deck with darker gaps and worn planks, main rails and cross members, low side boards with capping and stakes, a low back board, a headboard with uprights, an axle with a leaf spring each side, an A-frame drawbar with a coupling, chain and jockey wheel, rear lamps and a plate. Green chassis paint.
+- **The tipping trailer**: ribbed tub sides and front, corner posts, hinge lugs at the pivot, latches, chains and a rib on the tailgate, an axle with leaf springs, a coupling body and a jockey wheel.
+- **Checked:** `npm test`, and the tipping trailer's model builds with its wheels, spin groups and cargo anchors. **Not checked:** how either looks in the game (in particular the mudguard arcs sitting the right way over the wheels, and the bales against the new side boards and headboard), and the big model's build outside the game (it needs the bale textures' canvas).
