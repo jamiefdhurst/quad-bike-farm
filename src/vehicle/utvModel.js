@@ -87,8 +87,47 @@ const MAT = {
   glove: new THREE.MeshStandardMaterial({ color: 0x2d3a26, roughness: 0.8 }),
   rust: new THREE.MeshStandardMaterial({ color: 0x4b3a2e, roughness: 0.7, metalness: 0.5 }),
   orange: new THREE.MeshStandardMaterial({ color: 0xd9531e, roughness: 0.5 }), // the diff lock button
+  indicator: new THREE.MeshStandardMaterial({ color: 0xee6a0c, roughness: 0.3 }), // the indicator lenses, front and back: orange, not lit yet
+  buckleRed: new THREE.MeshStandardMaterial({ color: 0xc8261e, roughness: 0.45 }), // the red release button on a seat belt buckle
   grille: new THREE.MeshStandardMaterial({ color: 0x141516, roughness: 0.6 }),
 };
+
+/** Where each seat's belt anchors (shoulder, x) and buckles (x): the driver's from the right, the others' from the left. */
+export const BELTS = {
+  driver: { anchor: -0.5, buckle: -0.2 },
+  mid: { anchor: 0.17, buckle: -0.12 },
+  left: { anchor: 0.5, buckle: 0.2 },
+};
+
+/** A grey cloth weave with dark flecks, drawn once and tiled over the seat. */
+let cloth = null;
+function clothTexture() {
+  if (cloth) return cloth;
+  const size = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  g.fillStyle = '#9a9c9a';
+  g.fillRect(0, 0, size, size);
+  for (let i = 0; i < size; i += 4) {
+    // Warp and weft threads, a shade lighter and darker in turn.
+    g.fillStyle = i % 8 ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.16)';
+    g.fillRect(i, 0, 2, size);
+    g.fillRect(0, i, size, 2);
+  }
+  let seed = 7;
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < 380; i++) {
+    g.fillStyle = rand() > 0.5 ? 'rgba(20,20,20,0.35)' : 'rgba(230,230,230,0.25)';
+    g.fillRect(Math.floor(rand() * size), Math.floor(rand() * size), 2, 2);
+  }
+  cloth = new THREE.CanvasTexture(c);
+  cloth.wrapS = cloth.wrapT = THREE.RepeatWrapping;
+  cloth.repeat.set(3, 3);
+  cloth.colorSpace = THREE.SRGBColorSpace;
+  cloth.anisotropy = 4;
+  return cloth;
+}
 
 // The made-up maker on the badges and decals (never a real one's name or logo).
 const MAKER = 'DEERFIELD';
@@ -206,7 +245,7 @@ function buildWheel(w) {
 
 export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) {
   const paint = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.42, side: THREE.DoubleSide });
-  const seatMat = new THREE.MeshStandardMaterial({ color: 0x2a2b2a, roughness: 0.85 });
+  const seatMat = new THREE.MeshStandardMaterial({ color: 0x6a6c6a, roughness: 0.9, map: clothTexture() }); // grey cloth: the colour multiplies the weave
   const lensMat = new THREE.MeshStandardMaterial({ color: 0x2c302c, roughness: 0.08, metalness: 0.2, emissive: 0x000000 });
 
   const quad = new THREE.Group();
@@ -244,28 +283,28 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   // The bonnet: a long low hood that swells at the cowl, with a yellow stripe along each flank; a front bumper and the grille.
   add(loftGeometry([
     { z: 0.5, w: 1.18, y0: 0.5, y1: 1.0 },
-    { z: 0.95, w: 1.1, y0: 0.5, y1: 0.93 },
-    { z: 1.36, w: 0.94, y0: 0.5, y1: 0.84 },
-  ], { exponent: 3.2 }), paint, root, 'bonnet');
+    { z: 0.95, w: 1.14, y0: 0.5, y1: 0.93 },
+    { z: 1.36, w: 1.08, y0: 0.5, y1: 0.86 },
+  ], { exponent: 4.4 }), paint, root, 'bonnet'); // squarer and wider at the nose, so the lamps sit in it rather than past it
   // The hood's raised centre with its two vents, a seam down each side, and the maker's name along the flanks in yellow.
   rbox(0.46, 0.03, 0.34, 0.014, paint, 0, 0.935, 0.94, root).rotation.x = 0.15;
   for (const s of [-1, 1]) {
     for (let i = 0; i < 4; i++) rbox(0.1, 0.008, 0.012, 0.003, MAT.grille, s * 0.3, 0.925 - i * 0.012, 0.66 + i * 0.05, root); // louvres
-    const name = stick(decal(0.5, 0.07, (g, w, h) => text(g, MAKER, w / 2, h / 2, h * 0.78, '#f1c40f')), root, [s * 0.545, 0.72, 0.92], s > 0 ? '+x' : '-x');
-    name.rotation.y += -s * 0.1; // the hood narrows towards the front, so the lettering follows it
+    const name = stick(decal(0.5, 0.07, (g, w, h) => text(g, MAKER, w / 2, h / 2, h * 0.78, '#f1c40f')), root, [s * 0.565, 0.72, 0.92], s > 0 ? '+x' : '-x');
+    name.rotation.y += -s * 0.04; // the hood narrows a little towards the front, so the lettering follows it
   }
   // The front: a squarer fascia with a horizontal-slatted grille between the lamps, the badge above it, and a black bumper under.
-  rbox(0.54, 0.24, 0.05, 0.02, MAT.grille, 0, 0.7, 1.37, root); // grille surround
-  for (let i = 0; i < 5; i++) rbox(0.5, 0.02, 0.03, 0.006, MAT.steel, 0, 0.62 + i * 0.045, 1.4, root);
-  rbox(0.58, 0.04, 0.06, 0.015, paint, 0, 0.84, 1.37, root); // the cap above it
+  rbox(0.46, 0.24, 0.05, 0.02, MAT.grille, 0, 0.7, 1.37, root); // grille surround
+  for (let i = 0; i < 5; i++) rbox(0.42, 0.02, 0.03, 0.006, MAT.steel, 0, 0.62 + i * 0.045, 1.4, root);
+  rbox(0.5, 0.04, 0.06, 0.015, paint, 0, 0.84, 1.37, root); // the cap above it
   stick(decal(0.22, 0.05, (g, w, h) => text(g, MAKER, w / 2, h / 2, h * 0.7, '#f1c40f')), root, [0, 0.86, 1.4], '+z').rotation.x = 0.1;
   bumper(root);
   // Headlamps in the front corners: a black housing with a chrome bezel, and a lens that lights up.
   for (const s of [-1, 1]) {
-    rbox(0.24, 0.15, 0.07, 0.03, MAT.plastic, s * 0.4, 0.78, 1.34, root);
-    rbox(0.21, 0.12, 0.012, 0.02, MAT.chrome, s * 0.4, 0.78, 1.372, root); // the bezel
-    rbox(0.18, 0.09, 0.02, 0.02, lensMat, s * 0.4, 0.78, 1.378, root);
-    rbox(0.07, 0.03, 0.04, 0.012, MAT.yellow, s * 0.4, 0.7, 1.37, root); // amber side-light under it
+    rbox(0.22, 0.15, 0.07, 0.03, MAT.plastic, s * 0.37, 0.78, 1.34, root);
+    rbox(0.19, 0.12, 0.012, 0.02, MAT.chrome, s * 0.37, 0.78, 1.372, root); // the bezel
+    rbox(0.16, 0.09, 0.02, 0.02, lensMat, s * 0.37, 0.78, 1.378, root);
+    rbox(0.12, 0.04, 0.04, 0.012, MAT.indicator, s * 0.37, 0.685, 1.365, root); // the indicator under it
   }
   // The front fenders: wheel arches in the paint, with flat flanks joining them to the bonnet.
   for (const s of [-1, 1]) {
@@ -288,7 +327,8 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   ], { exponent: 3 }), MAT.plastic, root);
   rbox(0.42, 0.2, 0.05, 0.02, MAT.floor, 0.3, 0.9, 0.33, root); // glovebox door
   rbox(0.1, 0.02, 0.02, 0.008, MAT.steel, 0.3, 0.98, 0.31, root);
-  add(bentTube([[0.12, 1.06, 0.36], [0.12, 1.2, 0.34], [0.52, 1.2, 0.34], [0.52, 1.06, 0.36]], 0.014, { bend: 0.03, radial: 6 }), MAT.steel, root); // the passenger's grab handle
+  add(bentTube([[0.14, 1.0, 0.37], [0.14, 1.2, 0.34], [0.52, 1.2, 0.34], [0.52, 1.0, 0.37]], 0.014, { bend: 0.03, radial: 6 }), MAT.steel, root); // the passenger's grab handle, its feet down into the dash
+  for (const x of [0.14, 0.52]) rbox(0.05, 0.016, 0.05, 0.006, MAT.steel, x, 1.04, 0.37, root); // with a plate bolted over each
   for (const x of [0.22, 0.33]) add(new THREE.CylinderGeometry(0.03, 0.026, 0.02, 14), MAT.floor, root).position.set(x, 1.065, 0.46); // cup holders
   for (const x of [0.22, 0.33]) add(new THREE.CylinderGeometry(0.026, 0.026, 0.002, 14), MAT.plastic, root).position.set(x, 1.075, 0.46);
 
@@ -302,10 +342,31 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
     const seam = rbox(0.012, 0.56, 0.02, 0.004, MAT.plastic, x, 1.06, -0.43, root);
     seam.rotation.x = -0.12;
   }
-  for (const x of [-0.38, 0, 0.38]) {
-    const belt = rbox(0.045, 0.5, 0.012, 0.004, MAT.belt, x, 1.1, -0.405, root); // stood off the cloth so it doesn't fight it
-    belt.rotation.x = -0.12;
-    rbox(0.05, 0.06, 0.02, 0.006, MAT.steel, x, 0.88, -0.4, root).rotation.x = -0.12; // the tongue
+  // The seat belts. Each seat's shoulder anchor is on its outboard side for the driver (the right) and on the left for the others, and
+  // the buckle is on the other side of the seat: two between the driver and the middle, one between the middle and the left. A belt
+  // is either stowed (hanging down the backrest with its tongue) or worn across whoever is sitting there (poseUtvBelts).
+  for (const [seat, belt] of Object.entries(BELTS)) {
+    const group = new THREE.Group();
+    group.name = `belt_${seat}`;
+    group.userData.keep = true;
+    const stowed = new THREE.Group();
+    stowed.name = 'stowed';
+    const strap = rbox(0.045, 0.46, 0.012, 0.004, MAT.belt, belt.anchor, 1.12, -0.405, stowed); // stood off the cloth so it doesn't fight it
+    strap.rotation.x = -0.12;
+    rbox(0.05, 0.06, 0.02, 0.006, MAT.steel, belt.anchor, 0.88, -0.4, stowed).rotation.x = -0.12; // the tongue, hanging loose
+    const worn = new THREE.Group();
+    worn.name = 'worn';
+    worn.visible = false;
+    // The sash from the shoulder anchor over the shoulder and across the chest to the buckle, and the lap strap from the outboard hip.
+    const across = (t) => belt.anchor + (belt.buckle - belt.anchor) * t;
+    add(bentTube([[belt.anchor, 1.3, -0.5], [belt.anchor + (belt.buckle - belt.anchor) * 0.1, 1.27, -0.3], [across(0.6), 1.0, -0.1], [belt.buckle, 0.84, -0.12]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
+    add(bentTube([[belt.anchor, 0.76, -0.38], [across(0.45), 0.82, -0.08], [belt.buckle, 0.84, -0.12]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
+    rbox(0.05, 0.05, 0.03, 0.008, MAT.steel, belt.buckle, 0.84, -0.12, worn); // the tongue, latched
+    group.add(stowed, worn);
+    root.add(group);
+    // The buckle: a steel stalk standing up out of the seat's crease with a red release button on top.
+    rbox(0.034, 0.075, 0.03, 0.008, MAT.steel, belt.buckle, 0.78, -0.37, root);
+    rbox(0.026, 0.02, 0.022, 0.006, MAT.buckleRed, belt.buckle, 0.828, -0.37, root);
   }
 
   // The roll cage: two hoops joined by roof rails, a cab guard behind the seat, and a bar along each side. Black tube all through.
@@ -375,12 +436,9 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
 
   buildConsole(root);
 
-  // Controls: the brake and accelerator on the floor, the parking brake handle by the door.
+  // Controls: the brake and accelerator on the floor.
   rbox(0.1, 0.016, 0.08, 0.005, MAT.plastic, -0.42, 0.37, 0.3, root).rotation.x = -0.5; // the brake, wide
   rbox(0.05, 0.016, 0.12, 0.005, MAT.plastic, -0.27, 0.37, 0.3, root).rotation.x = -0.5; // the accelerator, narrow
-  rbox(0.07, 0.05, 0.12, 0.012, MAT.steel, -0.64, 0.545, 0.1, root); // the parking brake's bracket, bolted to the sill's top
-  tube([-0.64, 0.55, 0.1], [-0.6, 0.86, 0.0], 0.01, MAT.steel, root); // its handle
-  add(new THREE.SphereGeometry(0.02, 8, 6), MAT.knob, root).position.set(-0.6, 0.87, 0.0);
   // Quad still poses these two; neither belongs on a diesel with no tap and no choke.
   const tap = new THREE.Group();
   tap.name = 'fuelTap';
@@ -441,8 +499,9 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
     rbox(0.08, 0.04, 1.2, 0.02, MAT.bed, s * 0.76, yc(1.05), zc(-1.2), bed); // its rolled top edge
     rbox(0.3, 0.3, 0.74, 0.05, MAT.bed, s * 0.6, yc(0.9), zc(-1.08), bed); // the wheel well
     rbox(0.3, 0.02, 0.72, 0.01, MAT.floor, s * 0.6, yc(1.06), zc(-1.08), bed);
-    rbox(0.06, 0.1, 0.12, 0.02, MAT.plastic, s * 0.815, yc(0.9), zc(-1.74), bed); // the tail lamp's housing, bolted to the end of the side
-    rbox(0.055, 0.08, 0.02, 0.01, MAT.tail, s * 0.815, yc(0.9), zc(-1.81), bed); // and its lens
+    rbox(0.07, 0.18, 0.12, 0.02, MAT.plastic, s * 0.815, yc(0.89), zc(-1.74), bed); // the tail lamp's housing, bolted to the end of the side
+    rbox(0.055, 0.07, 0.02, 0.01, MAT.tail, s * 0.815, yc(0.93), zc(-1.81), bed); // its tail and brake lens above
+    rbox(0.055, 0.06, 0.02, 0.01, MAT.indicator, s * 0.815, yc(0.85), zc(-1.81), bed); // and the indicator's under it, orange and not lit yet
     for (const z of [-0.8, -1.6]) add(new THREE.TorusGeometry(0.025, 0.006, 6, 10), MAT.steel, bed).position.set(s * 0.8, yc(1.02), zc(z)); // tie-downs
   }
   // The tailgate, hinged along its bottom edge: shut, it stands up; open, it lies flat behind the bed (where a girl can sit).
@@ -495,107 +554,100 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
 
 // The centre console -----------------------------------------------------------
 
-const CONSOLE = { x: -0.02, z: 0.48, top: 1.095, w: 0.29, d: 0.21 }; // a raised pod on the dash, between the driver and the glovebox
-const GEAR = { x: -0.12, zNear: 0.41, zFar: 0.55 }; // the forward / neutral / reverse lever and its gate
-const SWITCHES = { z: 0.55, fourWd: -0.025, lock: 0.025, lights: 0.075 }; // the far row
-const TIP = { x: 0.05, z: 0.42 };
+// A small pod on the dash, tilted up to the driver like the cluster, with its controls standing out of the face. In the pod's own frame:
+// +x is the driver's left, +y up the slope of the face and -z out of it, towards the driver.
+const POD = { x: -0.06, y: 1.04, z: 0.44, tilt: 0.95, w: 0.28, h: 0.13, d: 0.07 };
+const FACE = -POD.d / 2 - 0.001; // the face, where the controls come out
+const CTRL = {
+  gear: { x: -0.1, y: 0.065 }, // a lever in a vertical slot: F at the top, N, R at the bottom
+  fourWd: { x: -0.035, y: 0.088 },
+  lock: { x: 0.018, y: 0.088 },
+  lights: { x: 0.07, y: 0.088 },
+  tip: { x: 0.1, y: 0.03 },
+};
 
-/** The legend printed on the console's top: the gate, the switches' names and the bed icon. */
-function consoleLegend(g, w, h) {
-  const px = (x) => w / 2 - (x - CONSOLE.x); // the driver reads it looking forward: +x (his left) is the picture's left
-  const py = (z) => h / 2 - (z - CONSOLE.z);
+/** The legend printed on the pod's face: the gear slot, the switches' names and the bed lever's. */
+function podLegend(g, w, h) {
+  const px = (x) => w / 2 - x; // the picture's right is the driver's right, which is -x
+  const py = (y) => h - y;
   g.fillStyle = '#0e0f10';
   g.fillRect(0, 0, w, h);
-  // The gear gate: a slot with F at the far end, N in the middle and R near.
   g.fillStyle = '#050505';
   g.beginPath();
-  g.roundRect(px(GEAR.x) - 0.012, py(GEAR.zFar) - 0.012, 0.024, GEAR.zFar - GEAR.zNear + 0.024, 0.012);
+  g.roundRect(px(CTRL.gear.x) - 0.011, py(CTRL.gear.y + 0.045), 0.022, 0.09, 0.011);
   g.fill();
-  text(g, 'F', px(GEAR.x + 0.04), py(GEAR.zFar), 0.022, '#e9e9e9');
-  text(g, 'N', px(GEAR.x + 0.04), py((GEAR.zFar + GEAR.zNear) / 2), 0.022, '#e9e9e9');
-  text(g, 'R', px(GEAR.x + 0.04), py(GEAR.zNear), 0.022, '#ff7a5a');
-  // The switches along the far edge, each with its name under it.
-  text(g, '4WD', px(SWITCHES.fourWd), py(SWITCHES.z - 0.038), 0.016, '#e9e9e9');
-  text(g, '2WD', px(SWITCHES.fourWd), py(SWITCHES.z + 0.038), 0.012, '#9a9a9a', { weight: 'normal' });
-  text(g, 'DIFF', px(SWITCHES.lock), py(SWITCHES.z - 0.04), 0.013, '#e9e9e9');
-  text(g, 'LOCK', px(SWITCHES.lock), py(SWITCHES.z - 0.056), 0.013, '#e9e9e9');
-  // The light switch: off at the near end, a dipped-beam lamp in the middle, a main-beam lamp at the far end.
-  const lx = px(SWITCHES.lights);
-  const lamp = (cx, cy, colour, beams) => {
+  text(g, 'F', px(CTRL.gear.x - 0.03), py(CTRL.gear.y + 0.035), 0.019, '#e9e9e9');
+  text(g, 'N', px(CTRL.gear.x - 0.03), py(CTRL.gear.y), 0.019, '#e9e9e9');
+  text(g, 'R', px(CTRL.gear.x - 0.03), py(CTRL.gear.y - 0.035), 0.019, '#ff7a5a');
+  // The switches along the top: the selected half of a rocker goes in. 2WD above 4WD; off below, dipped and main beam above.
+  text(g, '2WD', px(CTRL.fourWd.x), py(CTRL.fourWd.y + 0.026), 0.011, '#9a9a9a', { weight: 'normal' });
+  text(g, '4WD', px(CTRL.fourWd.x), py(CTRL.fourWd.y - 0.026), 0.013, '#e9e9e9');
+  text(g, 'DIFF LOCK', px(CTRL.lock.x), py(CTRL.lock.y - 0.026), 0.0105, '#e9e9e9');
+  text(g, 'LIGHTS', px(CTRL.lights.x), py(CTRL.lights.y - 0.034), 0.011, '#e9e9e9');
+  text(g, 'OFF', px(CTRL.lights.x), py(CTRL.lights.y - 0.023), 0.0085, '#9a9a9a', { weight: 'normal' });
+  const lx = px(CTRL.lights.x);
+  const beam = (cx, cy, colour, slant) => {
     g.strokeStyle = colour;
-    g.lineWidth = 0.0025;
+    g.lineWidth = 0.0022;
     g.beginPath();
-    g.arc(cx - 0.006, cy, 0.007, -Math.PI / 2, Math.PI / 2);
+    g.arc(cx - 0.005, cy, 0.0055, -Math.PI / 2, Math.PI / 2);
     g.closePath();
     g.stroke();
     for (let i = 0; i < 3; i++) {
       g.beginPath();
-      g.moveTo(cx + 0.001, cy - 0.006 + i * 0.006);
-      g.lineTo(cx + 0.012, cy - 0.006 + i * 0.006 + (beams === 'low' ? 0.004 : 0));
+      g.moveTo(cx + 0.001, cy - 0.005 + i * 0.005);
+      g.lineTo(cx + 0.01, cy - 0.005 + i * 0.005 + slant);
       g.stroke();
     }
   };
-  lamp(lx, py(SWITCHES.z + 0.036), '#5ab0ff', 'high');
-  lamp(lx - 0.026, py(SWITCHES.z), '#e9e9e9', 'low'); // beside the rocker, which covers the middle
-  text(g, 'OFF', lx, py(SWITCHES.z - 0.036), 0.011, '#9a9a9a', { weight: 'normal' });
-  text(g, 'LIGHTS', lx, py(SWITCHES.z - 0.056), 0.013, '#e9e9e9');
-  // The bed's tip lever, with a little tipper icon beside it.
-  text(g, 'BED', px(TIP.x), py(TIP.z - 0.04), 0.015, '#e9e9e9');
-  const bx = px(TIP.x + 0.045);
-  const by = py(TIP.z);
-  g.strokeStyle = '#e9e9e9';
-  g.lineWidth = 0.0025;
-  g.beginPath();
-  g.moveTo(bx - 0.012, by + 0.006);
-  g.lineTo(bx + 0.012, by + 0.006);
-  g.lineTo(bx + 0.012, by - 0.01);
-  g.lineTo(bx - 0.008, by - 0.002);
-  g.closePath();
-  g.stroke();
+  beam(lx, py(CTRL.lights.y + 0.026), '#5ab0ff', 0);
+  beam(lx - 0.026, py(CTRL.lights.y), '#e9e9e9', 0.004); // the dipped lamp, beside the rocker
+  text(g, 'BED', px(CTRL.tip.x - 0.035), py(CTRL.tip.y), 0.012, '#e9e9e9');
 }
 
 function buildConsole(root) {
-  const { x, z, top, w, d } = CONSOLE;
-  rbox(w + 0.02, 0.06, d + 0.02, 0.02, MAT.plastic, x, top - 0.03, z, root);
-  stick(decal(w, d, consoleLegend, { px: 1800, transparent: false }), root, [x, top + 0.0012, z], 'up');
+  const pod = new THREE.Group();
+  pod.name = 'consolePod';
+  pod.position.set(POD.x, POD.y, POD.z);
+  pod.rotation.x = POD.tilt;
+  root.add(pod);
+  rbox(POD.w + 0.02, POD.h + 0.02, POD.d, 0.02, MAT.plastic, 0, POD.h / 2, 0, pod);
+  stick(decal(POD.w, POD.h, podLegend, { px: 2200, transparent: false }), pod, [0, POD.h / 2, FACE], '-z');
 
-  // The F / N / R lever in its gate, with a rubber gaiter round its foot.
+  // The F / N / R lever: a stalk out of the face in its slot, swung up for forward and down for reverse.
   const lever = new THREE.Group();
   lever.name = 'driveLever';
   lever.userData.keep = true;
-  lever.position.set(GEAR.x, top, (GEAR.zNear + GEAR.zFar) / 2);
-  tube([0, 0, 0], [0, 0.085, 0], 0.007, MAT.steel, lever);
-  add(new THREE.SphereGeometry(0.017, 10, 8), MAT.knob, lever).position.y = 0.09;
-  add(new THREE.CylinderGeometry(0.012, 0.02, 0.014, 10), MAT.rubber, lever).position.y = 0.007;
-  root.add(lever);
+  lever.position.set(CTRL.gear.x, CTRL.gear.y, FACE);
+  tube([0, 0, 0], [0, 0, -0.05], 0.006, MAT.steel, lever);
+  add(new THREE.SphereGeometry(0.014, 10, 8), MAT.knob, lever).position.z = -0.055;
+  pod.add(lever);
 
-  // The 2WD / 4WD rocker (the Quad rocks it with the mode), the diff lock button and the light switch's rocker.
-  const rocker = (name, px, wide) => {
+  // The two rockers (2WD / 4WD and the lights) and the diff lock button.
+  const rocker = (name, c, h) => {
     const g = new THREE.Group();
     g.name = name;
     g.userData.keep = true;
-    g.position.set(px, top + 0.006, SWITCHES.z);
-    rbox(wide, 0.012, 0.034, 0.004, MAT.knob, 0, 0.002, 0, g);
-    root.add(g);
+    g.position.set(c.x, c.y, FACE);
+    rbox(0.026, h, 0.012, 0.004, MAT.knob, 0, 0, -0.004, g);
+    pod.add(g);
     return g;
   };
-  rbox(0.034, 0.01, 0.046, 0.004, MAT.grille, SWITCHES.fourWd, top + 0.003, SWITCHES.z, root);
-  rocker('driveSwitchRocker', SWITCHES.fourWd, 0.026);
-  const button = add(new THREE.CylinderGeometry(0.011, 0.011, 0.012, 14), MAT.orange, root, 'diffLockButton');
-  button.position.set(SWITCHES.lock, top + 0.006, SWITCHES.z);
-  button.userData.baseY = button.position.y;
+  rocker('utvFourWd', CTRL.fourWd, 0.034);
+  rocker('lightRocker', CTRL.lights, 0.05);
+  const button = add(new THREE.CylinderGeometry(0.011, 0.011, 0.012, 14).rotateX(Math.PI / 2), MAT.orange, pod, 'utvLockButton');
+  button.position.set(CTRL.lock.x, CTRL.lock.y, FACE - 0.004);
+  button.userData.baseZ = button.position.z;
   button.userData.keep = true;
-  rbox(0.03, 0.01, 0.06, 0.004, MAT.grille, SWITCHES.lights, top + 0.003, SWITCHES.z, root);
-  rocker('lightRocker', SWITCHES.lights, 0.026).children[0].scale.z = 1.5;
 
-  // The bed's tip lever: back to raise it, forward to let it down.
+  // The bed's tip lever: a short stalk out of the face, up to raise the bed and down to lower it.
   const tip = new THREE.Group();
   tip.name = 'tipLever';
   tip.userData.keep = true;
-  tip.position.set(TIP.x, top, TIP.z);
-  tube([0, 0, 0], [0, 0.07, 0], 0.006, MAT.steel, tip);
-  rbox(0.03, 0.016, 0.02, 0.006, MAT.orange, 0, 0.078, 0, tip);
-  root.add(tip);
+  tip.position.set(CTRL.tip.x, CTRL.tip.y, FACE);
+  tube([0, 0, 0], [0, 0, -0.045], 0.005, MAT.steel, tip);
+  rbox(0.026, 0.014, 0.016, 0.006, MAT.orange, 0, 0, -0.05, tip);
+  pod.add(tip);
 }
 
 function bumper(root) {
@@ -609,20 +661,36 @@ function bumper(root) {
 export function poseUtvBed(model, { tip, gate }) {
   model.getObjectByName('bed').rotation.x = -BED_MAX_TIP * tip;
   model.getObjectByName('tailgate').rotation.x = TAILGATE_OPEN * gate;
-  model.getObjectByName('tipLever').rotation.x = -0.6 * tip;
+  model.getObjectByName('tipLever').rotation.x = -0.45 + 0.9 * tip;
 }
 
 /**
- * Poses the console: the F / N / R lever (forward is pushed away from the driver, reverse pulled back), the light switch's rocker (front
- * pressed for main beam, back for off) and the horn pad on the wheel. The 4WD rocker and the diff lock button are posed by Quad.
+ * Poses the console: the F / N / R lever (up for forward, down for reverse), the 2WD / 4WD rocker (the selected half goes in: 2WD the top,
+ * 4WD the bottom), the light switch's rocker (main beam the top, off the bottom), the diff lock button and the horn pad on the wheel.
  */
-export function poseUtvControls(model, { reverse, neutral, lights, horn }) {
+export function poseUtvControls(model, { reverse, neutral, lights, horn, fourWd, locked }) {
   const parts = (model.userData.controls ??= {
     lever: model.getObjectByName('driveLever'),
+    fourWd: model.getObjectByName('utvFourWd'),
+    lock: model.getObjectByName('utvLockButton'),
     lights: model.getObjectByName('lightRocker'),
     horn: model.getObjectByName('hornPad'),
   });
-  parts.lever.rotation.x = reverse ? -0.38 : neutral ? 0 : 0.38;
+  parts.lever.rotation.x = reverse ? -0.45 : neutral ? 0 : 0.45;
+  parts.fourWd.rotation.x = fourWd ? -0.3 : 0.3;
+  parts.lock.position.z = parts.lock.userData.baseZ + (locked ? 0.005 : 0);
   parts.lights.rotation.x = { off: -0.3, low: 0, high: 0.3 }[lights] ?? 0;
   parts.horn.position.y = horn ? -0.008 : 0;
+}
+
+/** Shows each seat's belt worn (across whoever is in it) or stowed down the backrest. `belted` is { driver, mid, left } of booleans. */
+export function poseUtvBelts(model, belted) {
+  const parts = (model.userData.belts ??= Object.fromEntries(Object.keys(BELTS).map((seat) => {
+    const g = model.getObjectByName(`belt_${seat}`);
+    return [seat, { stowed: g.getObjectByName('stowed'), worn: g.getObjectByName('worn') }];
+  })));
+  for (const [seat, p] of Object.entries(parts)) {
+    p.worn.visible = !!belted[seat];
+    p.stowed.visible = !belted[seat];
+  }
 }

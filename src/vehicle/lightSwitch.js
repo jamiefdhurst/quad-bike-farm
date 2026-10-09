@@ -14,8 +14,6 @@ export const DEFAULT_LIGHT_SWITCH_PARAMS = {
   highHalo: 1.6, // and the bloom round each lamp
   lowColour: 0xffeec4, // halogen: a warm white
   highColour: 0xf2f6ff, // main beam: whiter, a touch blue
-  reminderSeconds: 6, // the seat belt lamp flashes for this long after the key goes on
-  flashRate: 2, // and flashes this many times a second
 };
 
 export const LIGHT_SWITCH_PARAM_RANGES = {
@@ -25,8 +23,6 @@ export const LIGHT_SWITCH_PARAM_RANGES = {
   highSpread: [1, 3, 0.1],
   highGlare: [1, 4, 0.1],
   highHalo: [1, 3, 0.1],
-  reminderSeconds: [0, 20, 1],
-  flashRate: [0.5, 6, 0.5],
 };
 
 export const LIGHT_SWITCH_PARAMS = { ...DEFAULT_LIGHT_SWITCH_PARAMS }; // shared by the UTV (and anything else that gets the switch), registered once
@@ -65,20 +61,4 @@ export function lightLook(mode, powered, P = LIGHT_SWITCH_PARAMS) {
 export function lightLamps(mode, powered) {
   const lit = !!powered && mode !== 'off';
   return { lights: lit, main: lit && mode === 'high' };
-}
-
-/**
- * The seat belt lamp: flashing for `reminderSeconds` after the key goes on, then out. `sinceKeyOn` is how long the key has been on
- * (null with it off). The dash flashes it at `flashRate`, so a caller asks `beltLampLit` for each frame.
- */
-export function beltLampMode(sinceKeyOn, P = LIGHT_SWITCH_PARAMS) {
-  if (sinceKeyOn == null) return 'off';
-  return sinceKeyOn < P.reminderSeconds ? 'flash' : 'off';
-}
-
-/** Whether a lamp in `mode` is lit at `seconds` (any steadily running clock). */
-export function beltLampLit(mode, seconds, P = LIGHT_SWITCH_PARAMS) {
-  if (mode === 'on') return true;
-  if (mode !== 'flash') return false;
-  return Math.floor(seconds * P.flashRate * 2) % 2 === 0;
 }

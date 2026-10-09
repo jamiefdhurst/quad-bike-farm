@@ -18,8 +18,8 @@ import {
 //   quadracer: orange. A RUN / OFF kill switch on the left bar and its lanyard.
 //   kidsKey:   kids' quad. A key switch under the bar clamp.
 //   tractor:   the tractor. Three round dials in chrome bezels (water temperature, a rev counter with an hour meter and the PTO speed marked, fuel), GLOW, CHARGE and OIL lamps and the key.
-//   utv:       the UTV. A digital cluster: speed in big digits, the gear letter (F, N, R), fuel and water bars, hours and the clock, 4WD and LOCK
-//              tags, and lamps for GLOW, CHARGE, OIL, PARK (parking brake), BELT (flashes after the key goes on), LIGHTS, MAIN (beam, blue) and the key.
+//   utv:       the UTV. A basic LCD (speed, five fuel and four water blocks, F / N / R, hours and a 4WD note) over lamps for GLOW, CHARGE, OIL, PARK
+//              (parking brake), BELT (flashes while someone sits unbelted), LIGHTS, MAIN (beam, blue) and the key.
 //   series:    the Land Rover. A Series III binnacle: a big speedo to 90 mph with its odometer, a combined fuel and water gauge,
 //              IGN, OIL, CHOKE and BRAKE lamps, a 4WD and a DIFF lamp, and the key.
 //
@@ -488,9 +488,8 @@ function buildUtv() {
   const group = new THREE.Group();
   group.name = 'dash';
   const O = { ox: 180, oy: 60 };
-  // A black moulded binnacle in front of the driver: a grey-green LCD with the speed in big digits, the gear letter, fuel and water bars,
-  // the hours and the clock, and under it a row of warning lamps (glow, charge, oil, parking brake, seat belt, lights and main beam)
-  // with the key on the end.
+  // A plain black binnacle for an older machine: a small grey-green LCD with the speed, fuel and water bars, the F / N / R gear and the
+  // hours, over a row of warning lamps (glow, charge, oil, parking brake, seat belt, lights and main beam) with the key beside it.
   housing(group, { x: 70, y: 14, w: 220, h: 92, r: 14, ...O, material: plastic });
   const face = mmPanel({ x: 70, y: 14, w: 220, h: 92, ...O });
   group.add(face.mesh);
@@ -499,69 +498,52 @@ function buildUtv() {
   let shownFuel = 0;
   let shownTemp = 0;
   const BLUE = '#4aa8ff';
-
-  /** A boxed word on the LCD: dark when lit, a faint ghost when not. */
-  function tag(ctx, str, x, y, w, lit) {
-    const { on, ghost } = LCD;
-    ctx.strokeStyle = lit ? on : ghost;
-    ctx.lineWidth = 0.5;
-    if (lit) {
-      ctx.fillStyle = on;
-      ctx.fillRect(x, y, w, 8);
-    } else ctx.strokeRect(x, y, w, 8);
-    text(ctx, str, x + w / 2, y + 6.2, 4.4, lit ? LCD.bg : ghost, { align: 'center', weight: 'bold' });
-  }
+  const [X, Y, W, H] = [88, 22, 136, 46]; // the LCD
 
   function draw(ctx, s, L) {
     const { on, ghost } = LCD;
-    ctx.fillStyle = '#050606'; // the window the LCD sits in
-    ctx.beginPath();
-    ctx.roundRect(78, 18, 204, 68, 6);
-    ctx.fill();
     ctx.fillStyle = LCD.bg;
-    ctx.beginPath();
-    ctx.roundRect(82, 21, 196, 62, 3);
-    ctx.fill();
+    ctx.fillRect(X, Y, W, H);
     if (s.ignition) {
-      // Fuel and water bars along the top.
-      text(ctx, 'E', 88, 29, 3.8, on);
-      for (let i = 0; i < 8; i++) {
+      // Fuel and water, five and four blocks.
+      text(ctx, 'E', X + 4, Y + 8, 3.6, on);
+      for (let i = 0; i < 5; i++) {
         ctx.fillStyle = i < L.fuelSegs ? on : ghost;
-        ctx.fillRect(93 + i * 6, 25, 4.6, 5.2);
+        ctx.fillRect(X + 9 + i * 6, Y + 4, 4.6, 5);
       }
-      text(ctx, 'F', 143, 29, 3.8, on);
-      text(ctx, 'C', 188, 29, 3.8, on);
-      for (let i = 0; i < 6; i++) {
+      text(ctx, 'F', X + 40, Y + 8, 3.6, on);
+      text(ctx, 'C', X + 62, Y + 8, 3.6, on);
+      for (let i = 0; i < 4; i++) {
         ctx.fillStyle = i < L.tempSegs ? on : ghost;
-        ctx.fillRect(193 + i * 6, 25, 4.6, 5.2);
+        ctx.fillRect(X + 67 + i * 6, Y + 4, 4.6, 5);
       }
-      text(ctx, 'H', 231, 29, 3.8, on);
-      // The gear, boxed.
-      ctx.strokeStyle = on;
-      ctx.lineWidth = 0.7;
-      ctx.strokeRect(88, 35, 26, 30);
-      text(ctx, L.gear, 101, 59, 22, on, { align: 'center', weight: 'bold' });
-      // The speed.
-      segText(ctx, L.speed, 196, 36, 28, on, ghost);
-      text(ctx, 'MPH', 199, 62, 4.6, on);
-      // The clock and hours.
-      segText(ctx, s.clock, 272, 34, 7.5, on);
-      text(ctx, 'HOURS', 216, 52, 3.8, on);
-      segText(ctx, L.hours, 272, 54, 9, on, ghost);
-      tag(ctx, '4WD', 88, 70, 22, !!s.fourWd);
-      tag(ctx, 'LOCK', 114, 70, 24, !!s.diffLock);
+      text(ctx, 'H', X + 93, Y + 8, 3.6, on);
+      // The gear: F, N and R down the right-hand side with the current one boxed.
+      ['F', 'N', 'R'].forEach((g, i) => {
+        const lit = g === L.gear;
+        if (lit) {
+          ctx.fillStyle = on;
+          ctx.fillRect(X + W - 22, Y + 4 + i * 12, 14, 11);
+        }
+        text(ctx, g, X + W - 15, Y + 13 + i * 12, 8, lit ? LCD.bg : ghost, { align: 'center', weight: 'bold' });
+      });
+      segText(ctx, L.speed, X + 82, Y + 15, 18, on, ghost);
+      text(ctx, 'MPH', X + 86, Y + 32, 4, on);
+      text(ctx, 'HRS', X + 5, Y + 42, 3.6, on);
+      segText(ctx, L.hours, X + 52, Y + 36, 6.5, on);
+      if (s.fourWd) text(ctx, s.diffLock ? '4WD LOCK' : '4WD', X + 66, Y + 42, 3.6, on);
     } else {
-      segText(ctx, '88', 196, 36, 28, ghost);
+      segText(ctx, '88', X + 82, Y + 15, 18, ghost);
     }
-    // The warning lamps under the window, and the key.
-    lamp(ctx, 90, 95, LAMP.amber, 'GLOW', L.glow, { r: 3.2 });
-    lamp(ctx, 114, 95, LAMP.red, 'CHARGE', L.charge, { r: 3.2 });
-    lamp(ctx, 138, 95, LAMP.red, 'OIL', L.oil, { r: 3.2 });
-    lamp(ctx, 160, 95, LAMP.red, 'PARK', L.park, { r: 3.2 });
-    lamp(ctx, 182, 95, LAMP.red, 'BELT', L.belt, { r: 3.2 });
-    lamp(ctx, 206, 95, LAMP.green, 'LIGHTS', L.lights, { r: 3.2 });
-    lamp(ctx, 232, 95, BLUE, 'MAIN', L.main, { r: 3.2 });
-    keySwitch(ctx, 266, 93, s.keyOn);
+    // The warning lamps under the LCD, and the key.
+    lamp(ctx, 92, 85, LAMP.amber, 'GLOW', L.glow, { r: 3.2 });
+    lamp(ctx, 116, 85, LAMP.red, 'CHARGE', L.charge, { r: 3.2 });
+    lamp(ctx, 140, 85, LAMP.red, 'OIL', L.oil, { r: 3.2 });
+    lamp(ctx, 162, 85, LAMP.red, 'PARK', L.park, { r: 3.2 });
+    lamp(ctx, 184, 85, LAMP.red, 'BELT', L.belt, { r: 3.2 });
+    lamp(ctx, 208, 85, LAMP.green, 'LIGHTS', L.lights, { r: 3.2 });
+    lamp(ctx, 234, 85, BLUE, 'MAIN', L.main, { r: 3.2 });
+    keySwitch(ctx, 262, 46, s.keyOn);
   }
 
   return {
@@ -575,8 +557,8 @@ function buildUtv() {
       const lamps = lampStates(s);
       const L = {
         speed: speedText(shownMph),
-        fuelSegs: Math.ceil(shownFuel * 8 - 0.001),
-        tempSegs: Math.ceil(shownTemp * 6 - 0.001),
+        fuelSegs: Math.ceil(shownFuel * 5 - 0.001),
+        tempSegs: Math.ceil(shownTemp * 4 - 0.001),
         gear: forwardGearShown(s),
         hours: counterText(s.hours, 4),
         glow: !!s.ignition && !!s.glow,
@@ -587,7 +569,7 @@ function buildUtv() {
         lights: !!s.lightLamps?.lights,
         main: !!s.lightLamps?.main,
       };
-      const key = [s.ignition, s.keyOn, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, !!s.fourWd, !!s.diffLock, L.gear, L.speed, L.fuelSegs, L.tempSegs, L.hours, s.clock];
+      const key = [s.ignition, s.keyOn, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, !!s.fourWd, !!s.diffLock, L.gear, L.speed, L.fuelSegs, L.tempSegs, L.hours];
       if (gate(key.join('|'))) face.redraw((ctx) => draw(ctx, s, L));
     },
   };

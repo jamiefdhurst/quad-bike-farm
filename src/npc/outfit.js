@@ -81,6 +81,50 @@ function bonePos(rig, name) {
 const raycaster = new THREE.Raycaster();
 
 /**
+ * A plain mesh of the body posed as it is now, for the fitting's rays. Casting at the skinned mesh itself re-poses every vertex of
+ * every triangle on every ray (about 4 s of loading for the two girls); this poses them once. Same triangles, same transform and
+ * material (so the same sides count), so every ray hits exactly where it would have.
+ */
+function posedCopy(mesh) {
+  const src = mesh.geometry;
+  const pos = src.attributes.position;
+  const posed = new Float32Array(pos.count * 3);
+  const v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    mesh.getVertexPosition(i, v);
+    posed[i * 3] = v.x;
+    posed[i * 3 + 1] = v.y;
+    posed[i * 3 + 2] = v.z;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(posed, 3));
+  // The rest as they are: a hit's uv and normal come from these, as on the skinned mesh (shirtFrontTop reads the shirt's colour by uv).
+  for (const [name, attr] of Object.entries(src.attributes)) if (name !== 'position') geo.setAttribute(name, attr);
+  if (src.index) geo.setIndex(src.index);
+  for (const g of src.groups) geo.addGroup(g.start, g.count, g.materialIndex);
+  const copy = new THREE.Mesh(geo, mesh.material);
+  copy.matrixAutoUpdate = false;
+  copy.matrixWorld.copy(mesh.matrixWorld);
+  return copy;
+}
+
+/** What the fitting casts at: the posed copy while one is in use (`withPosedBody`), otherwise the mesh. */
+const castAt = (rig, mesh) => (rig.posedBody?.source === mesh ? rig.posedBody.copy : mesh);
+
+/** Runs the garment fitting with the body posed once for all its rays. */
+function withPosedBody(rig, fn) {
+  const body = bodyMesh(rig);
+  rig.root.updateMatrixWorld(true);
+  rig.posedBody = body ? { source: body, copy: posedCopy(body) } : null;
+  try {
+    fn();
+  } finally {
+    rig.posedBody?.copy.geometry.dispose();
+    rig.posedBody = null;
+  }
+}
+
+/**
  * Distance from an axis point out to the body surface in a given direction,
  * found by casting a ray inward from `reach` away. By default the last hit
  * before the axis is used, so hair in front of the surface is ignored;
@@ -92,7 +136,7 @@ function surfaceDistance(rig, mesh, centre, dir, reach = 0.3, outermost = false)
   const target = root.localToWorld(centre.clone());
   raycaster.set(origin, target.clone().sub(origin).normalize());
   raycaster.far = origin.distanceTo(target);
-  const hits = raycaster.intersectObject(mesh, false);
+  const hits = raycaster.intersectObject(castAt(rig, mesh), false);
   if (!hits.length) return null;
   return raycaster.far - hits[outermost ? 0 : hits.length - 1].distance;
 }
@@ -504,7 +548,7 @@ function shirtFrontTop(rig, hex) {
   for (let y = necklineAt(neck, 0) + 0.02; y > neck.y - 0.1; y -= 0.0015) {
     raycaster.set(root.localToWorld(new THREE.Vector3(neck.x, y, 0.6)), back);
     raycaster.far = 1;
-    const hit = raycaster.intersectObject(body, false)[0];
+    const hit = raycaster.intersectObject(castAt(rig, body), false)[0];
     if (hit?.uv && isShirt(hit.uv)) return y;
   }
   return necklineAt(neck, 0);
@@ -587,7 +631,7 @@ function chestPoint(rig, mesh, x, y) {
   const root = rig.root;
   const origin = root.localToWorld(new THREE.Vector3(x, y, 0.6));
   const dir = new THREE.Vector3(0, 0, -1).transformDirection(root.matrixWorld);
-  const hit = new THREE.Raycaster(origin, dir, 0, 1).intersectObject(mesh, false)[0];
+  const hit = new THREE.Raycaster(origin, dir, 0, 1).intersectObject(castAt(rig, mesh), false)[0];
   if (!hit) return null;
   const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld).transformDirection(root.matrixWorld.clone().invert());
   return { point: root.worldToLocal(hit.point.clone()), normal };
@@ -791,6 +835,10 @@ function addJumper(rig, color, shirtHex) {
 }
 
 function addGarments(rig, outfit) {
+  withPosedBody(rig, () => addEachGarment(rig, outfit));
+}
+
+function addEachGarment(rig, outfit) {
   if (outfit.collar) addPoloFront(rig, outfit.collar, shirtFrontTop(rig, outfit.collar));
   if (outfit.jumper) addJumper(rig, outfit.jumper, outfit.colors?.shirt);
   if (outfit.shorts) addShorts(rig, outfit.shorts);

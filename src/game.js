@@ -34,6 +34,7 @@ import { RollWatch, rollReactions, DEFAULT_HANDBRAKE_PARAMS, HANDBRAKE_PARAM_RAN
 import { DEFAULT_DRIVE_PARAMS, DRIVE_PARAM_RANGES, StuckWatch, forgotReaction } from './vehicle/driveMode.js';
 import { HEADLIGHT_PARAMS, HEADLIGHT_PARAM_RANGES } from './vehicle/headlight.js';
 import { LIGHT_SWITCH_PARAMS, LIGHT_SWITCH_PARAM_RANGES } from './vehicle/lightSwitch.js';
+import { SEAT_BELT_PARAMS, SEAT_BELT_PARAM_RANGES } from './vehicle/seatBelts.js';
 import { describeVehicle } from './debug/startReport.js';
 import { QuirkSet, DEFAULT_QUIRK_PARAMS, QUIRK_PARAM_RANGES, featuresOf, pickQuirks } from './vehicle/quirks.js';
 import { captureStock, tuneTarget, stockSettings, clampSettings, applyTune } from './vehicle/tuneUp.js';
@@ -307,6 +308,7 @@ export class Game {
     this.fourWdState = new Map(); // companion -> { quad: the switched quad she's driving or null, watch }
     registerTuning('Headlights', HEADLIGHT_PARAMS, HEADLIGHT_PARAM_RANGES);
     registerTuning('UTV lights', LIGHT_SWITCH_PARAMS, LIGHT_SWITCH_PARAM_RANGES);
+    registerTuning('Seat belts', SEAT_BELT_PARAMS, SEAT_BELT_PARAM_RANGES);
     registerTuning('Two-wheeler lean', DEFAULT_BIKE_PARAMS, BIKE_PARAM_RANGES);
     // One to three quirks each, from the parts the quad has (a gauge quirk needs a dash or pod that shows it, so this comes after the pods).
     this.quirkParams = { ...DEFAULT_QUIRK_PARAMS };
@@ -1602,6 +1604,20 @@ export class Game {
     }
     bed.update(dt, { speed: q.speed, gateDown: mount.bedBusy });
     poseUtvBed(q.model, bed);
+
+    // The seat belts: who is in which seat, `;` for yours, and the girls do their own (vehicle/seatBelts.js).
+    const youSeat = riding ? 'driver' : this.player.isRiding && q.passenger ? this.player.benchSeat : null;
+    const sitting = { driver: null, mid: null, left: null };
+    if (youSeat) sitting[youSeat] = 'you';
+    for (const c of this.companions) {
+      const seat = c.fsm.is('driving') && c.quad === q ? 'driver' : seatOf(c);
+      if (seat && seat in sitting) sitting[seat] = 'girl';
+    }
+    if (youSeat && input.wasPressed('Semicolon')) {
+      const done = q.belts.toggle(youSeat);
+      if (done) this.hud.toast(done === 'on' ? 'Seat belt on' : 'Seat belt off', 1.5);
+    }
+    if (q.belts.update(dt, sitting, q.engine.ignitionOn)) this.audioHub.beltBing();
 
     const girls = this.companions.map((c) => ({
       id: c.character.id,

@@ -5,14 +5,15 @@ import { QuadPhysics, QUAD_LAYOUT } from './quadPhysics.js';
 import { Drivetrain } from './drivetrain.js';
 import { QuirkSet } from './quirks.js';
 import { headlightLook, taillightLevel } from './headlight.js';
-import { LightSwitch, lightLook, lightLamps, beltLampMode, beltLampLit } from './lightSwitch.js';
+import { LightSwitch, lightLook, lightLamps } from './lightSwitch.js';
+import { SeatBelts, beltLampMode, beltLampLit } from './seatBelts.js';
 import { TyreSet } from './tyres.js';
 import { frostAfter, frostedColour, DEFAULT_FROST_PARAMS } from './seatFrost.js';
 import { ManualDrivetrain, gearLabel } from './manualDrivetrain.js';
 import { AutoShifter, grindsGear } from './autoShifter.js';
 import { poseTractorControls } from './tractorModel.js';
 import { poseLandyControls } from './landRoverModel.js';
-import { poseUtvControls } from './utvModel.js';
+import { poseUtvControls, poseUtvBelts } from './utvModel.js';
 import { EngineLoad } from './engineLoad.js';
 import { waterGulp } from '../engine/water.js';
 import { AirFilter } from './airFilter.js';
@@ -85,7 +86,7 @@ export class Quad {
     this.utv = utv;
     this.hornHeld = false; // set by the game while the horn sounds (the UTV's wheel pad sinks)
     this.lights = lightSwitch ? new LightSwitch() : null; // the UTV's three-way light switch: off, dipped, main beam (lightSwitch.js)
-    this.keyOnFor = null; // seconds the key has been on, for the seat belt lamp (null: key off)
+    this.belts = lightSwitch ? new SeatBelts() : null; // the UTV's seat belts (seatBelts.js)
     this.driverStand = driverStand; // where a girl climbs in to drive from, on the model's right: the UTV and Land Rover step in through a door ({ x, z } in the model's frame, x negative: the right)
     this.benchStand = benchStand; // where you get in and out beside the bench, on the model's left (the other side from the driver's door), same frame as above
     this.driveParams = DEFAULT_DRIVE_PARAMS;
@@ -972,7 +973,7 @@ export class Quad {
       hand: this.handSetting,
       choke: this.choke, // the Land Rover's dash has a lamp for it
       lightLamps: this.lights ? lightLamps(this.lights.mode, e.hasPower) : null, // the UTV's lights and main beam lamps (null: no switch)
-      beltLamp: this.lights ? beltLampLit(beltLampMode(this.keyOnFor), clock.seconds()) : null, // and its seat belt lamp
+      beltLamp: this.belts ? beltLampLit(beltLampMode(e.ignitionOn, this.belts.anyUnbelted), clock.seconds()) : null, // and its seat belt lamp, flashing while someone sits unbelted
       clock: clock.text(),
       seconds: clock.seconds(),
     };
@@ -981,7 +982,6 @@ export class Quad {
     this.pod?.update(state);
     // The light follows the engine (headlight.js) unless this quad has a battery for it, and the flickering-headlight quirk dips it further.
     this.lightTime += dt;
-    this.keyOnFor = e.ignitionOn ? (this.keyOnFor ?? 0) + dt : null;
     const look = headlightLook({
       keyOn: e.ignitionOn,
       running: e.isRunning,
@@ -1002,7 +1002,10 @@ export class Quad {
     setTaillights(this.model, lit ? taillightLevel(level, this.brake > 0.1) : 0); // the same supply, so a brake light needs it too
 
     if (this.tractor) poseTractorControls(this.model, { gear: this.drivetrain.gear, hand: this.handSetting, pedal: this.drivetrain.pedal });
-    if (this.utv) poseUtvControls(this.model, { reverse: this.reverse, neutral: state.neutral, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, lights: this.lights.mode, horn: this.hornHeld });
+    if (this.utv) {
+      poseUtvControls(this.model, { reverse: this.reverse, neutral: state.neutral, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, lights: this.lights.mode, horn: this.hornHeld });
+      poseUtvBelts(this.model, this.belts.worn());
+    }
     if (this.landRover) poseLandyControls(this.model, { gear: this.drivetrain.gear, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, choke: this.choke, hand: this.handSetting });
     this.displayChoke += (this.choke - this.displayChoke) * Math.min(1, 12 * dt);
     // Off: lever forward. Full: pulled back towards the rider.

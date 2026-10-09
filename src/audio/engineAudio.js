@@ -212,6 +212,23 @@ export class AudioHub {
     });
   }
 
+  /** The UTV's seat belt reminder: one short, quiet, high ping. */
+  beltBing() {
+    if (!this.ready || this.params.muted) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime + 0.02;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 1320;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(this.params.beltBingVolume, t + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+    osc.connect(gain).connect(this.master);
+    osc.start(t);
+    osc.stop(t + 0.4);
+  }
+
   /** Call every frame with whether fuel is being poured. */
   /** The hose spraying; `onTarget` when it's hitting something close (it patters lower). */
   setSpraying(active, onTarget = false) {

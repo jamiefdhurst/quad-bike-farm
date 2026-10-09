@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { LightSwitch, LIGHT_MODES, lightLook, lightLamps, beltLampMode, beltLampLit, DEFAULT_LIGHT_SWITCH_PARAMS as P } from '../src/vehicle/lightSwitch.js';
+import { LightSwitch, LIGHT_MODES, lightLook, lightLamps, DEFAULT_LIGHT_SWITCH_PARAMS as P } from '../src/vehicle/lightSwitch.js';
 import { UTV_SPEC } from '../src/vehicle/quadSpecs.js';
 import { forwardGearShown } from '../src/vehicle/dashState.js';
 
@@ -45,24 +45,6 @@ describe('lightLamps', () => {
 
   it('is dark with no power', () => {
     expect(lightLamps('high', false)).toEqual({ lights: false, main: false });
-  });
-});
-
-describe('the seat belt lamp', () => {
-  it('is off with the key off, flashes for the reminder and then goes out', () => {
-    expect(beltLampMode(null)).toBe('off');
-    expect(beltLampMode(0)).toBe('flash');
-    expect(beltLampMode(P.reminderSeconds - 0.1)).toBe('flash');
-    expect(beltLampMode(P.reminderSeconds)).toBe('off');
-  });
-
-  it('flashes on and off at the flash rate', () => {
-    const period = 1 / P.flashRate;
-    expect(beltLampLit('flash', 0)).toBe(true);
-    expect(beltLampLit('flash', period * 0.6)).toBe(false);
-    expect(beltLampLit('flash', period * 1.1)).toBe(true);
-    expect(beltLampLit('off', 0)).toBe(false);
-    expect(beltLampLit('on', 5)).toBe(true);
   });
 });
 

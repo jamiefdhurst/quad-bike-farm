@@ -28,6 +28,7 @@ export const DEFAULT_SOUND_PARAMS = {
   mudVolume: 0.7, // squelches round the puddles
   waterVolume: 0.08, // water churning round the wheels in a puddle
   splashVolume: 0.9, // hitting a puddle
+  beltBingVolume: 0.05, // the UTV's seat belt reminder, a quiet ping
   knockVolume: 0.5, // suspension knocking over a bump or a wheel touching down
   bumpVolume: 0.18, // small knocks from uneven ground
   gridVolume: 1.2, // the cattle grid's rumble and bar knocks, over the road's own rumble
@@ -75,6 +76,7 @@ export const SOUND_PARAM_RANGES = {
   mudVolume: [0, 2, 0.01],
   waterVolume: [0, 1, 0.005],
   splashVolume: [0, 3, 0.01],
+  beltBingVolume: [0, 0.3, 0.005],
   knockVolume: [0, 2, 0.01],
   bumpVolume: [0, 2, 0.01],
   gridVolume: [0, 4, 0.05],
