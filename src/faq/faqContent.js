@@ -473,6 +473,16 @@ export const FAQ_SECTIONS = [
         a: `Yes. Stop with the engine running and they may climb in, squabbling over the middle seat. Jess may ride in the UTV's bed, which is against the rules.
           They drive both too (Amy only once she's had her day on the tractor), and you can ride beside the driver.`,
       },
+      {
+        q: 'Do I have to wear a seat belt in the UTV or the Land Rover?',
+        a: `Not to drive, but both nag. Sit in a seat with the key on and your belt off and the BELT lamp flashes and it bongs every couple of seconds until you
+          press <kbd>;</kbd> to do it up. The girls always buckle up a moment after they sit down. In the Land Rover the driver's and the left-hand seat have
+          a belt from the pillar, and the middle one a lap belt.`,
+      },
+      {
+        q: 'How do I put the Land Rover\'s handbrake on?',
+        a: `<kbd>Space</kbd>, as on any vehicle. The lever between the seats comes up and the red BRAKE lamp on the dash lights; <kbd>Space</kbd> again lets it off.`,
+      },
     ],
   },
   {

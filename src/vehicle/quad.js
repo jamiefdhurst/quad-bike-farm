@@ -86,7 +86,7 @@ export class Quad {
     this.utv = utv;
     this.hornHeld = false; // set by the game while the horn sounds (the UTV's wheel pad sinks)
     this.lights = lightSwitch ? new LightSwitch() : null; // the UTV's three-way light switch: off, dipped, main beam (lightSwitch.js)
-    this.belts = lightSwitch ? new SeatBelts() : null; // the UTV's seat belts (seatBelts.js)
+    this.belts = lightSwitch || landRover ? new SeatBelts() : null; // the UTV's and the Land Rover's seat belts (seatBelts.js)
     this.driverStand = driverStand; // where a girl climbs in to drive from, on the model's right: the UTV and Land Rover step in through a door ({ x, z } in the model's frame, x negative: the right)
     this.benchStand = benchStand; // where you get in and out beside the bench, on the model's left (the other side from the driver's door), same frame as above
     this.driveParams = DEFAULT_DRIVE_PARAMS;
@@ -1006,7 +1006,10 @@ export class Quad {
       poseUtvControls(this.model, { reverse: this.reverse, neutral: state.neutral, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, lights: this.lights.mode, horn: this.hornHeld, park: this.parkBrake });
       poseUtvBelts(this.model, this.belts.worn());
     }
-    if (this.landRover) poseLandyControls(this.model, { gear: this.drivetrain.gear, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, choke: this.choke, hand: this.handSetting });
+    if (this.landRover) {
+      poseLandyControls(this.model, { gear: this.drivetrain.gear, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, choke: this.choke, hand: this.handSetting, park: this.parkBrake });
+      poseUtvBelts(this.model, this.belts.worn()); // the same belt names as the UTV's
+    }
     this.displayChoke += (this.choke - this.displayChoke) * Math.min(1, 12 * dt);
     // Off: lever forward. Full: pulled back towards the rider.
     if (this.chokeStyle === 'knob') this.chokeLever.position.z = this.chokeLever.userData.baseZ - this.displayChoke * 0.05; // pulled out towards you

@@ -661,13 +661,14 @@ function buildSeries() {
   const group = new THREE.Group();
   group.name = 'dash';
   const O = { ox: 180, oy: 60 };
-  // A black binnacle in front of the driver: the speedo on the left, the fuel and water gauge on the right, the lamps along the
-  // bottom and the key at the end.
-  housing(group, { x: 80, y: 14, w: 200, h: 92, r: 10, ...O, material: plastic });
+  // A black binnacle in front of the driver, squarer than a quad's.
+  housing(group, { x: 80, y: 14, w: 200, h: 92, r: 4, ...O, material: plastic });
   const face = mmPanel({ x: 80, y: 14, w: 200, h: 92, ...O });
   group.add(face.mesh);
-  const speedo = { cx: 140, cy: 50, r: 34 };
-  const combo = { cx: 222, cy: 48, r: 25 };
+  // A Series III binnacle: a flat black moulding with a strip of warning lamps along its top, the big speedometer at the left, the
+  // combined fuel and water gauge at the right, and the ignition switch at the far end.
+  const speedo = { cx: 138, cy: 66, r: 30 };
+  const combo = { cx: 222, cy: 68, r: 23 };
   for (const d of [speedo, combo]) chromeRing(group, { ...d, r: d.r + 1, ...O });
   const gate = changeGate();
   let shownMph = 0;
@@ -675,17 +676,32 @@ function buildSeries() {
   let shownTemp = 0;
 
   function draw(ctx, s, L) {
+    // The lamp strip: ignition and oil in red, the handbrake red, the belts red, then the choke, 4WD and diff lock under their words.
+    ctx.fillStyle = '#121213';
+    ctx.beginPath();
+    ctx.roundRect(88, 18, 184, 17, 3);
+    ctx.fill();
+    warnSymbol(ctx, 'charge', 104, 26.5, LAMP.red, L.charge);
+    warnSymbol(ctx, 'oil', 126, 26.5, LAMP.red, L.oil);
+    warnSymbol(ctx, 'park', 148, 26.5, LAMP.red, L.park);
+    warnSymbol(ctx, 'belt', 170, 26.5, LAMP.red, L.belt);
+    lamp(ctx, 192, 26.5, LAMP.amber, '', L.choke, { r: 2.6 });
+    text(ctx, 'CHOKE', 192, 33.8, 3, '#bbb', { align: 'center' });
+    lamp(ctx, 220, 26.5, LAMP.green, '', L.fourWd, { r: 2.6, shape: 'rect' });
+    text(ctx, '4WD', 220, 33.8, 3, '#bbb', { align: 'center' });
+    lamp(ctx, 246, 26.5, LAMP.amber, '', L.lock, { r: 2.6, shape: 'rect' });
+    text(ctx, 'DIFF', 246, 33.8, 3, '#bbb', { align: 'center' });
     // The speedo: 0 to 90 mph round 260 degrees, white on black, with the odometer's drums under the boss.
     ctx.fillStyle = '#0b0b0b';
     ctx.beginPath();
     ctx.arc(speedo.cx, speedo.cy, speedo.r, 0, Math.PI * 2);
     ctx.fill();
-    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 6, speedo.r - 1.5, 220, -40, 18, '#ece6d2', 0.5);
-    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 9, speedo.r - 1.5, 220, -40, 9, '#ece6d2', 1);
-    labels(ctx, speedo.cx, speedo.cy, speedo.r - 15, 220, -40, ['0', '10', '20', '30', '40', '50', '60', '70', '80', '90'], '#ece6d2', 4.2);
-    text(ctx, 'MPH', speedo.cx, speedo.cy - 10, 3.6, '#ccc', { align: 'center' });
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 5, speedo.r - 1.5, 220, -40, 18, '#ece6d2', 0.5);
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 8, speedo.r - 1.5, 220, -40, 9, '#ece6d2', 1);
+    labels(ctx, speedo.cx, speedo.cy, speedo.r - 13, 220, -40, ['0', '10', '20', '30', '40', '50', '60', '70', '80', '90'], '#ece6d2', 3.8);
+    text(ctx, 'MPH', speedo.cx, speedo.cy - 8, 3.4, '#ccc', { align: 'center' });
     const odo = counterDigits(s.odoMiles, 5);
-    drum(ctx, speedo.cx - 14, speedo.cy + 12, odo.whole, odo.tenth, 6);
+    drum(ctx, speedo.cx - 14, speedo.cy + 10, odo.whole, odo.tenth, 6);
     needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 220 - (260 * Math.min(90, L.mph)) / 90, '#f0eadc', 1.2);
     // The combination gauge: fuel along its top half, water temperature along its bottom, each with its own needle.
     ctx.fillStyle = '#0b0b0b';
@@ -695,22 +711,15 @@ function buildSeries() {
     ticks(ctx, combo.cx, combo.cy, combo.r - 5, combo.r - 1.5, 150, 30, 4, '#ece6d2', 0.8);
     ticks(ctx, combo.cx, combo.cy, combo.r - 5, combo.r - 1.5, 210, 330, 4, '#ece6d2', 0.8);
     arc(ctx, combo.cx, combo.cy, combo.r - 2.5, 315, 330, '#d8402e', 2.2);
-    text(ctx, 'FUEL', combo.cx, combo.cy - 9, 3.4, '#bbb', { align: 'center' });
-    text(ctx, 'TEMP', combo.cx, combo.cy + 12, 3.4, '#bbb', { align: 'center' });
-    text(ctx, 'E', combo.cx - combo.r * 0.62, combo.cy - 6, 3.8, '#ece6d2', { align: 'center' });
-    text(ctx, 'F', combo.cx + combo.r * 0.62, combo.cy - 6, 3.8, '#ece6d2', { align: 'center' });
-    text(ctx, 'C', combo.cx - combo.r * 0.62, combo.cy + 9, 3.8, '#ece6d2', { align: 'center' });
-    text(ctx, 'H', combo.cx + combo.r * 0.62, combo.cy + 9, 3.8, '#ff6a5a', { align: 'center' });
+    text(ctx, 'FUEL', combo.cx, combo.cy - 8, 3.2, '#bbb', { align: 'center' });
+    text(ctx, 'TEMP', combo.cx, combo.cy + 11, 3.2, '#bbb', { align: 'center' });
+    text(ctx, 'E', combo.cx - combo.r * 0.62, combo.cy - 5, 3.6, '#ece6d2', { align: 'center' });
+    text(ctx, 'F', combo.cx + combo.r * 0.62, combo.cy - 5, 3.6, '#ece6d2', { align: 'center' });
+    text(ctx, 'C', combo.cx - combo.r * 0.62, combo.cy + 8, 3.6, '#ece6d2', { align: 'center' });
+    text(ctx, 'H', combo.cx + combo.r * 0.62, combo.cy + 8, 3.6, '#ff6a5a', { align: 'center' });
     needle(ctx, combo.cx, combo.cy, combo.r - 4, 150 - 120 * L.fuel, '#f0eadc', 1);
     needle(ctx, combo.cx, combo.cy, combo.r - 4, 210 + 120 * L.temp, '#f0eadc', 1);
-    // The lamps along the bottom, then the key.
-    lamp(ctx, 100, 95, LAMP.red, 'IGN', L.charge, { r: 3.2 });
-    lamp(ctx, 122, 95, LAMP.amber, 'OIL', L.oil, { r: 3.2 });
-    lamp(ctx, 144, 95, LAMP.amber, 'CHOKE', L.choke, { r: 3.2 });
-    lamp(ctx, 166, 95, LAMP.red, 'BRAKE', L.park, { r: 3.2 });
-    lamp(ctx, 190, 95, LAMP.green, '4WD', L.fourWd, { r: 3.2, shape: 'rect' });
-    lamp(ctx, 212, 95, LAMP.amber, 'DIFF', L.lock, { r: 3.2, shape: 'rect' });
-    keySwitch(ctx, 256, 92, s.keyOn);
+    keySwitch(ctx, 262, 80, s.keyOn);
   }
 
   return {
@@ -730,11 +739,12 @@ function buildSeries() {
         oil: on && (!running || !!s.oilLow),
         choke: on && (s.choke ?? 0) > 0.05,
         park: on && !!s.parkBrake,
+        belt: on && !!s.beltLamp,
         fourWd: on && !!s.fourWd,
         lock: on && !!s.diffLock,
       };
       const odo = counterDigits(s.odoMiles, 5);
-      if (gate([on, s.keyOn, L.charge, L.oil, L.choke, L.park, L.fourWd, L.lock, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
+      if (gate([on, s.keyOn, L.charge, L.oil, L.choke, L.park, L.belt, L.fourWd, L.lock, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
         face.redraw((ctx) => draw(ctx, s, L));
       }
     },

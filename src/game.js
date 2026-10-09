@@ -1860,7 +1860,7 @@ export class Game {
   }
 
   /** The Land Rover: where you stand for its starting handle and what a kick-back gets you, and the girls on its bench (npc/utvRide.js). */
-  updateLandRover(dt, ridden) {
+  updateLandRover(dt, ridden, input) {
     const unit = this.landyUnit;
     const q = unit.quad;
     const mount = this.landyMount;
@@ -1877,6 +1877,17 @@ export class Game {
       const near = this.companions.filter((c) => c.root.position.distanceTo(q.position) < 15).sort((a, b) => a.root.position.distanceTo(q.position) - b.root.position.distanceTo(q.position))[0];
       say(near, 'landyKick');
     }
+
+    // The seat belts, as the UTV's: `;` for yours, and the girls do their own (vehicle/seatBelts.js).
+    const youSeat = riding ? 'driver' : this.player.isRiding && q.passenger ? this.player.benchSeat : null;
+    const sitting = { driver: null, mid: null, left: null };
+    if (youSeat) sitting[youSeat] = 'you';
+    for (const c of this.companions) {
+      const seat = c.fsm.is('driving') && c.quad === q ? 'driver' : c.fsm.is('onTrailer') && c.trailer === mount ? c.traSlot?.name ?? null : null;
+      if (seat && seat in sitting) sitting[seat] = 'girl';
+    }
+    if (youSeat && input.wasPressed('Semicolon')) q.belts.toggle(youSeat);
+    if (q.belts.update(dt, sitting, q.engine.ignitionOn, dashClock().seconds())) this.audioHub.beltBing();
 
     const girls = this.companions.map((c) => ({
       id: c.character.id,
@@ -4910,7 +4921,7 @@ export class Game {
     this.updateHayRide(dt, ridden);
     if (this.tractorUnit) this.updateMudguard(dt, ridden);
     if (this.utvUnit) this.updateUtv(dt, ridden, input);
-    if (this.landyUnit) this.updateLandRover(dt, ridden);
+    if (this.landyUnit) this.updateLandRover(dt, ridden, input);
     this.updateTipTrailer(dt, ridden, input);
     if ((this.tractorUnit || this.utvUnit || this.landyUnit) && auto) this.updateTractorGo(dt, ridden);
     this.updateLPlates(dt);
