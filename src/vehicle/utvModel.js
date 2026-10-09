@@ -566,15 +566,15 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
 
 // A small pod on the dash, tilted up to the driver like the cluster, with its controls standing out of the face. In the pod's own frame:
 // +x is the driver's left, +y up the slope of the face and -z out of it, towards the driver.
-const POD = { x: -0.07, y: 1.045, z: 0.44, tilt: 0.95, w: 0.215, h: 0.09, d: 0.06 };
+const POD = { x: -0.07, y: 1.045, z: 0.44, tilt: 0.95, w: 0.215, h: 0.1, d: 0.06 };
 const FACE = -POD.d / 2 - 0.001; // the face, where the controls come out
 const CTRL = {
-  gear: { x: -0.082, y: 0.045 }, // a lever in a vertical slot: F at the top, N, R at the bottom
+  gear: { x: -0.082, y: 0.041 }, // a lever in a vertical slot: F at the top, N, R at the bottom
   // A bank of four matching rockers, each with its symbol on the cap, lit when it is on.
-  fourWd: { x: -0.036, y: 0.055 },
-  lock: { x: 0, y: 0.055 },
-  lights: { x: 0.036, y: 0.055 },
-  tip: { x: 0.072, y: 0.055 },
+  fourWd: { x: -0.036, y: 0.043 },
+  lock: { x: 0, y: 0.043 },
+  lights: { x: 0.036, y: 0.043 },
+  tip: { x: 0.072, y: 0.043 },
 };
 const CAP = { w: 0.027, h: 0.032, d: 0.011 };
 const OFF = '#6a6d70'; // an unlit symbol
@@ -588,14 +588,36 @@ function podLegend(g, w, h) {
   const py = (y) => h - y;
   g.fillStyle = '#0e0f10';
   g.fillRect(0, 0, w, h);
+  // The badge across the top: the maker's name (made up) and the model, with antlers either side.
+  const cx = w / 2;
+  text(g, MAKER, cx, py(0.089), 0.0105, '#f1c40f');
+  text(g, MODEL_NAME, cx, py(0.0785), 0.0066, '#9a9d9f');
+  g.strokeStyle = '#f1c40f';
+  g.lineWidth = 0.0012;
+  g.beginPath();
+  g.moveTo(0.012, py(0.0715));
+  g.lineTo(w - 0.012, py(0.0715));
+  g.stroke();
+  for (const side of [-1, 1]) {
+    const ax = cx + side * 0.074;
+    g.lineWidth = 0.0016;
+    g.beginPath();
+    g.moveTo(ax, py(0.082));
+    g.lineTo(ax, py(0.093));
+    g.moveTo(ax, py(0.086));
+    g.lineTo(ax - side * 0.007, py(0.0955));
+    g.moveTo(ax, py(0.09));
+    g.lineTo(ax + side * 0.005, py(0.0975));
+    g.stroke();
+  }
   g.fillStyle = '#050505';
   g.beginPath();
-  g.roundRect(px(CTRL.gear.x) - 0.009, py(CTRL.gear.y + 0.034), 0.018, 0.068, 0.009);
+  g.roundRect(px(CTRL.gear.x) - 0.009, py(CTRL.gear.y + 0.028), 0.018, 0.056, 0.009);
   g.fill();
   // F, N and R beside the slot, on the switches' side of it.
-  text(g, 'F', px(CTRL.gear.x + 0.024), py(CTRL.gear.y + 0.026), 0.012, '#e9e9e9');
+  text(g, 'F', px(CTRL.gear.x + 0.024), py(CTRL.gear.y + 0.021), 0.012, '#e9e9e9');
   text(g, 'N', px(CTRL.gear.x + 0.024), py(CTRL.gear.y), 0.012, '#e9e9e9');
-  text(g, 'R', px(CTRL.gear.x + 0.024), py(CTRL.gear.y - 0.026), 0.012, '#ff7a5a');
+  text(g, 'R', px(CTRL.gear.x + 0.024), py(CTRL.gear.y - 0.021), 0.012, '#ff7a5a');
   const name = (c, str, dy = 0) => text(g, str, px(c.x), py(c.y - 0.026 - dy), 0.0075, '#e9e9e9');
   name(CTRL.fourWd, '4WD');
   name(CTRL.lock, 'DIFF');
