@@ -1,7 +1,7 @@
 // What the bucket list needs to know about the game this frame, read off the running game (achievements.js says what each field means).
 // Kept apart from achievements.js so that stays pure; the places are plain boxes in the farm's layout.
 
-const NOT_QUADS = ['tractor', 'utv', 'landrover', 'rusty'];
+const NOT_QUADS = ['tractor', 'utv', 'landrover', 'landrover200', 'rusty'];
 
 const inBox = (p, minX, maxX, minZ, maxZ) => p.x >= minX && p.x <= maxX && p.z >= minZ && p.z <= maxZ;
 

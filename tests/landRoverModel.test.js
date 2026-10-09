@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import * as THREE from 'three';
 import { archPanel, buildLandRoverModel, poseLandyControls, gearLeverPose, LANDY_LAYOUT, LANDY_BELTS, TUB_FLOOR } from '../src/vehicle/landRoverModel.js';
 import { poseUtvBelts } from '../src/vehicle/utvModel.js';
+import { LAND_ROVER_SPEC, DEFENDER_SPEC } from '../src/vehicle/quadSpecs.js';
+import { DASH_STYLES } from '../src/vehicle/dash.js';
 
 // A canvas that accepts every drawing call and does nothing, so the model (whose dash and trim are drawn on canvases) builds in node.
 function fakeCanvas() {
@@ -108,5 +110,52 @@ describe('the gear lever\'s H', () => {
     expect(tip(1).x).toBeGreaterThan(tip(3).x); // first is on the driver's left
     expect(tip(1).z).toBeGreaterThan(tip(2).z); // and further forward than second
     expect(tip(-1).x).toBeGreaterThan(tip(1).x);
+  });
+});
+
+describe('the 200TDi', () => {
+  let series;
+  let defender;
+  beforeAll(() => {
+    vi.stubGlobal('document', { createElement: () => fakeCanvas() });
+    series = buildLandRoverModel({ variant: 'series' });
+    defender = buildLandRoverModel({ variant: 'defender', dashStyle: 'defender' });
+    for (const m of [series, defender]) m.updateMatrixWorld(true);
+  });
+
+  it('is a square back with a rear door, and keeps the Series\' tailgate and starting handle hole to the Series', () => {
+    expect(defender.getObjectByName('rearDoor')).toBeTruthy();
+    expect(defender.getObjectByName('tailgate')).toBeFalsy();
+    expect(series.getObjectByName('tailgate')).toBeTruthy();
+    expect(series.getObjectByName('crankHole')).toBeTruthy();
+    expect(defender.getObjectByName('crankHole')).toBeFalsy();
+  });
+
+  it('has everything the controls code looks up by name, including hidden knobs for the choke it hasn\'t got', () => {
+    for (const n of ['gearLever', 'transferKnob', 'diffLockKnob', 'parkBrakeLever', 'chokeKnob', 'handThrottleKnob', 'riderAnchor', 'seatMid', 'seatLeft', 'towHitch', 'exhaustTip']) {
+      expect(defender.getObjectByName(n), n).toBeTruthy();
+    }
+    expect(defender.getObjectByName('chokeKnob').visible).toBe(false);
+    poseLandyControls(defender, { gear: 3, park: true, choke: 1, hand: 1 }); // must not throw
+    for (const seat of Object.keys(LANDY_BELTS)) expect(defender.getObjectByName(`belt_${seat}`)).toBeTruthy();
+  });
+
+  it('carries the spare on the back door, behind the body, and not on the bonnet', () => {
+    const box = new THREE.Box3().setFromObject(defender);
+    expect(box.min.z).toBeLessThan(-2.1); // the spare sticks out past the rear panel (at -1.97)
+    const sBox = new THREE.Box3().setFromObject(series);
+    expect(sBox.min.z).toBeGreaterThan(-2.1);
+  });
+
+  it('has a spec the game can build: a dash that exists, a diesel with a clutch, synchromesh and no handle', () => {
+    expect(DASH_STYLES).toContain(DEFENDER_SPEC.dashStyle);
+    expect(DEFENDER_SPEC.landRover).toBe(true);
+    expect(DEFENDER_SPEC.engine.compressionIgnition).toBe(true);
+    expect(DEFENDER_SPEC.engine.crankHandle).toBeFalsy();
+    expect(DEFENDER_SPEC.manual).toBe(true);
+    expect(DEFENDER_SPEC.gearbox.crashGears).toBe(0);
+    expect(LAND_ROVER_SPEC.gearbox.crashGears).toBeGreaterThan(0);
+    expect(DEFENDER_SPEC.id).not.toBe(LAND_ROVER_SPEC.id);
+    expect(DEFENDER_SPEC.engine.idleRpmWarm).not.toBe(LAND_ROVER_SPEC.engine.idleRpmWarm);
   });
 });

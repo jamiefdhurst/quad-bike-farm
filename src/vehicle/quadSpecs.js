@@ -1053,8 +1053,8 @@ export const UTV_SPEC = {
 // hand throttle on the dash, a towing hitch, and a starting handle at the front for when the battery won't (vehicle/crankHandle.js).
 export const LAND_ROVER_SPEC = {
   id: 'landrover',
-  label: 'Land Rover',
-  name: 'Land Rover',
+  label: 'Series III',
+  name: 'Series III',
   landRover: true,
   scale: 1.15, // the model and its physics, a size up: built to a real Series's measurements it looked small beside the girls
   steadyLights: true, // a battery runs its lamps
@@ -1183,4 +1183,83 @@ export const LAND_ROVER_SPEC = {
     warmDensity: 0.15,
     coldDensity: 0.5,
   },
+};
+
+// The early-90s Land Rover 90 County station wagon, the 200TDi: a 2.5 litre turbo diesel, a square back with the spare on its rear door,
+// a newer dash (a rev counter, a belt lamp and bong) and centre console, in a faded pastel green. Built on the Series' model and
+// drive: a unit you drive with a clutch and a four-speed (synchro on all of them, unlike the Series), a transfer lever and a diff lock, a
+// bench for three. Its engine and sound borrow the UTV's diesel (a different idle and top end, much rattlier). It has glow plugs and the key
+// stops it, so no choke, no hand throttle and no starting handle.
+export const DEFENDER_SPEC = {
+  id: 'landrover200',
+  label: '200TDi',
+  name: '200TDi',
+  landRover: true,
+  defender: true,
+  scale: 1.15,
+  steadyLights: true,
+  wheelShake: 0.9,
+  bodyColor: 0x8aa38a, // a faded pastel green
+  dashStyle: 'defender',
+  driveSwitch: true,
+  diffLock: true,
+  hoursRange: [0, 0], // no hour meter
+  odoRange: [90000, 210000],
+  wearRange: [0.05, 0.14],
+  safeIdle: 650,
+  idleRange: [770, 830], // a 200TDi ticks over at about 800
+  roughnessRange: [0.1, 0.16], // a rattly old diesel
+  fuelRange: [14, 46], // 54 litre tank, 5 litre reserve
+  topRpmRange: [4350, 4450],
+  manual: true,
+  gearbox: {
+    ...LAND_ROVER_SPEC.gearbox,
+    crashGears: 0, // synchromesh on all of them
+    topSpeed1: 5.2,
+    topSpeed2: 9.5,
+    topSpeed3: 16.5,
+    topSpeed4: 28, // about 62 mph
+    torque1: 1,
+    torque2: 0.78,
+    torque3: 0.56,
+    torque4: 0.42,
+  },
+  fuel: { tankCapacity: 54, reserveLitres: 5, startDiesel: 1, noTap: true, startTap: 'on', burnPerRev: 0.00022, idleBurnFraction: 0.3, bowlCapacity: 0.05, bowlFillRate: 0.06 },
+  engine: {
+    ...UTV_SPEC.engine,
+    idleRpmWarm: 800,
+    maxRpm: 4400,
+    redlineRpm: 4300,
+    stallRpm: 350,
+    loadDragRpm: 2000, // a manual diesel: slowing in third or fourth with the clutch out stalls it
+    crankRpm: 230,
+    catchRpm: 1000,
+    rpmRiseRate: 3.8,
+    rpmFallRate: 3,
+    warmUpSeconds: 240,
+    misfireRoughness: 0.03,
+    cycleJitter: 0.05, // rattly: each firing varies more than the UTV's
+    pulseStrengthJitter: 0.16,
+    wearPerMinute: 0.0005,
+  },
+  vehicle: {
+    ...LAND_ROVER_SPEC.vehicle,
+    mass: 1750,
+    maxDriveForce: 8400, // a turbo diesel's torque
+    maxSpeed: 28,
+    engineBrakeForce: 1300,
+    maxBrake: 52,
+    suspensionStiffness: 36, // coil springs, a little more control than the Series' leaves
+    maxSuspensionTravel: 0.2,
+  },
+  vibration: {
+    ...LAND_ROVER_SPEC.vibration,
+    steadiness: 0.35, // a diesel four rattles and shakes: far less regular than the Series' petrol four
+    idleRpm: 800,
+    pulseGain: 1.9,
+    heaveGain: 0.2,
+    pitchGain: 0.26,
+  },
+  audio: { ...UTV_SPEC.audio, pulseRefRpm: 800 }, // the UTV's Gator diesel for now, at its own idle pace
+  smoke: { ...UTV_SPEC.smoke },
 };

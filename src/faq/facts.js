@@ -1,12 +1,12 @@
 // What the FAQ page says about each vehicle that can be read straight off its spec, so it changes when the spec does: the engine,
 // the gearbox, the tank and how it reverses. Pure.
 
-import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC } from '../vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC } from '../vehicle/quadSpecs.js';
 import { DEFAULT_FUEL_PARAMS } from '../vehicle/fuelSystem.js';
 import { DEFAULT_GEARBOX_PARAMS } from '../vehicle/manualDrivetrain.js';
 
 /** Every vehicle that can be on the farm, in the order the FAQ lists them. */
-export const ALL_VEHICLE_SPECS = [...QUAD_SPECS, ...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC];
+export const ALL_VEHICLE_SPECS = [...QUAD_SPECS, ...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC];
 
 const REVERSE = {
   none: 'None: get off and push it (hold V)',
@@ -40,7 +40,7 @@ export function vehicleFacts(spec) {
   if (engine.compressionIgnition) start.push('glow plugs and the key');
   else if (!engine.noStarter) start.push('the key and the starter');
   // The Land Rover's pullStart is its starting handle (a swing is the engine's pull).
-  if (spec.landRover) start.push('a starting handle (P) for a flat battery');
+  if (engine.crankHandle) start.push('a starting handle (P) for a flat battery');
   else if (spec.pullStart || engine.pullStart) start.push('a pull-start (P)');
   if (start.length) facts.push(['Starting', start.join(', ').replace(/^./, (c) => c.toUpperCase())]);
 

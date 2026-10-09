@@ -105,7 +105,7 @@ export function buildGameTree(g, host) {
       };
       if (q().lights) out.lights = choice(LIGHT_MODES, () => q().lights.mode, (v) => q().lights.set(v), 'the UTV light switch');
       if (q().drive) out.drive = choice(q().drive.hasLock ? DRIVE_MODES : ['2wd', '4wd'], () => q().drive.mode, (v) => (q().drive.mode = v), 'the 2WD / 4WD switch');
-      if (!q().fuel.params.noTap || q().landRover) out.choke = num(() => q().choke, (v) => (q().choke = v), 0, 1); // the Land Rover has a choke but no tap
+      if (!q().fuel.params.noTap || (q().landRover && !q().engine.params.compressionIgnition)) out.choke = num(() => q().choke, (v) => (q().choke = v), 0, 1); // the Land Rover has a choke but no tap
       if (e().params.waterCooled) out.coolant = num(() => e().coolant, (v) => (e().coolant = v), 0, 1);
       if (q().sump) out.oil = num(() => q().sump.level, (v) => (q().sump.level = v), 0, 1, '', 'engine oil level');
 

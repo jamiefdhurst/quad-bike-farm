@@ -40,7 +40,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Is it the same every game?',
-        a: `No. Which vehicles are on the farm (four to all twelve), where they're parked, how much fuel each has, the weather, the day's
+        a: `No. Which vehicles are on the farm (four to all thirteen), where they're parked, how much fuel each has, the weather, the day's
           temperature, each quad's faults, quirks and history, and even the girls' moods are dealt fresh each game. Nothing carries over
           from one game to the next.`,
       },
@@ -94,7 +94,7 @@ export const FAQ_SECTIONS = [
         a: `Three ways out. The yellow, orange, kids' quad, mini moto and old three-wheeler have a pull-start: with the ignition on, hold <kbd>P</kbd>
           for about half a second to a second and let go to yank (too short is weak, too long is botched). Or fetch the jump leads from the
           workbench, clamp the flat one (<kbd>E</kbd>) and then a running one (<kbd>E</kbd>), parked nose to nose since they only reach about
-          4.5 m. The Land Rover has a starting handle. Running an engine charges its battery again; leaving the key on with it stopped drains it
+          4.5 m. The Series III Land Rover has a starting handle too (the 200TDi hasn't: it wants the leads). Running an engine charges its battery again; leaving the key on with it stopped drains it
           flat in about eight minutes.`,
         tip: 'Leaving the key on with the engine off flattens the battery in about eight minutes.',
       },
@@ -113,11 +113,11 @@ export const FAQ_SECTIONS = [
           In the cold the plugs take longer to heat. The UTV's key stops it again; the tractor's doesn't, you pull its stop knob (<kbd>O</kbd>).`,
       },
       {
-        q: 'How does the Land Rover’s starting handle work?',
+        q: 'How does the Series III’s starting handle work?',
         a: `Stand at the front bumper. <kbd>1</kbd> holds the handle with your thumb round it, the natural way, and now and then the engine
           kicks back and you spend a few seconds nursing your hand. <kbd>2</kbd> holds it with your thumb alongside your fingers, which is safe.
           Then hold <kbd>P</kbd> and let go to swing it, with the same timing as a pull-start; each good swing turns it over once.`,
-        tip: 'On the Land Rover’s starting handle, keep your thumb alongside your fingers (2), not round the handle.',
+        tip: 'On the Series III’s starting handle, keep your thumb alongside your fingers (2), not round the handle.',
       },
     ],
   },
@@ -128,7 +128,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do the gears work?',
         a: `The blue, orange, kids' and loan quads, the mini moto and the UTV are automatics: <kbd>W</kbd> to go, <kbd>S</kbd> to brake.
-          The red, green and yellow quads, the old three-wheeler, the tractor and the Land Rover have a clutch: hold <kbd>Shift</kbd> and press
+          The red, green and yellow quads, the old three-wheeler, the tractor and both Land Rovers have a clutch: hold <kbd>Shift</kbd> and press
           <kbd>1</kbd> to <kbd>4</kbd> for a gear (the tractor has three), <kbd>B</kbd> for reverse and <kbd>0</kbd> for neutral. Pulling away
           in a high gear labours it and can stall it, and rushing a change can land you in a false neutral.`,
       },
@@ -136,7 +136,7 @@ export const FAQ_SECTIONS = [
         q: 'How do I reverse?',
         a: `It's different on each, as on the real machines. Blue and loan: stopped, hold <kbd>S</kbd> and press <kbd>B</kbd>, then <kbd>S</kbd>
           backs it up. Red: <kbd>B</kbd> with the clutch in and the bars turned. Green: <kbd>B</kbd> with the clutch in, stopped. UTV: stopped,
-          <kbd>B</kbd> flips the dash lever. Land Rover and tractor: reverse is a gear. The yellow, orange, kids' quad, mini moto and three-wheeler
+          <kbd>B</kbd> flips the dash lever. The Land Rovers and the tractor: reverse is a gear. The yellow, orange, kids' quad, mini moto and three-wheeler
           have no reverse at all: get off and hold <kbd>V</kbd> to push it. In reverse, <kbd>S</kbd> is the throttle and <kbd>W</kbd> the brake.`,
         tip: 'The two-strokes have no reverse: get off and hold V to push them.',
       },
@@ -226,7 +226,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I check the engine oil?',
-        a: `On a four-stroke (the red, blue, green and loan quads, the tractor, the UTV and the Land Rover), stand at it and press <kbd>Y</kbd> to pull the
+        a: `On a four-stroke (the red, blue, green and loan quads, the tractor, the UTV and both Land Rovers), stand at it and press <kbd>Y</kbd> to pull the
           dipstick. To top up, park near the oil bottle by the petrol tank and hold <kbd>Y</kbd>, or carry the bottle over. One of them burns oil each game
           and puffs smoke on the overrun. Run one low and the tappets tick, then it knocks, and dry it seizes.`,
         tip: 'Tappets ticking? Check the oil with Y. One four-stroke burns oil every game.',
@@ -435,7 +435,7 @@ export const FAQ_SECTIONS = [
   },
   {
     id: 'big',
-    title: 'The tractor, the UTV, the Land Rover and the trailers',
+    title: 'The tractor, the UTV, the Land Rovers and the trailers',
     entries: [
       {
         q: 'How do I drive the tractor?',
@@ -474,9 +474,17 @@ export const FAQ_SECTIONS = [
           They drive both too (Amy only once she's had her day on the tractor), and you can ride beside the driver.`,
       },
       {
-        q: 'Do I have to wear a seat belt in the UTV or the Land Rover?',
-        a: `Not to drive. The UTV nags: with the key on and your belt off (or nobody in the driver's seat at all) its BELT lamp flashes and it bongs every
-          couple of seconds until you press <kbd>;</kbd> to do it up. The Land Rover is old enough to have no lamp and no bong, but it has belts if you want
+        q: 'What is the other Land Rover, the 200TDi?',
+        a: `A faded pastel green early-90s 90 station wagon with a rattly turbo diesel, a square back and the spare wheel on its rear door. Either Land Rover,
+          both or neither may be on the farm. Start it like the UTV: <kbd>K</kbd>, wait for the GLOW lamp to go out, then hold <kbd>R</kbd>. It has the same
+          clutch and four gears as the old one but with synchromesh, so it never crunches, and it has no choke, hand throttle or starting handle. Its dash
+          has a rev counter and a flashing BELT lamp. It uses red diesel only.`,
+        tip: 'The 200TDi is a diesel: wait for the GLOW lamp to go out, then hold R. Red diesel only.',
+      },
+      {
+        q: 'Do I have to wear a seat belt in the UTV or a Land Rover?',
+        a: `Not to drive. The UTV and the 200TDi nag: with the key on and your belt off (or nobody in the driver's seat at all) the BELT lamp flashes and it bongs every
+          couple of seconds (quieter the further you are) until you press <kbd>;</kbd> to do it up. The Series III is old enough to have no lamp and no bong, but it has belts if you want
           one (<kbd>;</kbd> too): a diagonal and lap belt in the driver's and the left-hand seat, a lap belt in the middle. The girls buckle up a moment after
           they sit down in either.`
       },
@@ -604,6 +612,10 @@ export const VEHICLE_NOTES = {
   landrover: {
     blurb: 'An old Series III 88-inch pick-up in Bronze Green with a white roof: a 2.25 litre petrol four with a lot of miles on it.',
     tips: ['First and second crunch on the move: nearly stop first.', 'A starting handle for a flat battery.', '] and [ work the hand throttle.'],
+  },
+  landrover200: {
+    blurb: 'An early-90s Land Rover 90 station wagon in faded pastel green, the 200TDi: a rattly 2.5 litre turbo diesel, a square back with the spare on its door and a newer dash.',
+    tips: ['Wait for the GLOW lamp before cranking.', 'Every gear has synchromesh: no crunching.', 'The belt lamp flashes and it bongs until you do your belt up.'],
   },
 };
 

@@ -59,14 +59,15 @@ const RIDE_NAMES = {
   loan: 'the loan quad',
   tractor: 'the tractor',
   utv: 'the UTV',
-  landrover: 'the Land Rover',
+  landrover: 'the Series III',
+  landrover200: 'the 200TDi',
 };
 
 const rideOf = (id) => ({ id: `ride-${id}`, group: 'Ride', name: `Ride ${RIDE_NAMES[id]}`, hint: 'Take it for a drive', points: 1, needs: id, test: (s) => s.has('rode', id) });
 
 // Each: id, group, name, hint (what to do), points (1 easy, 2 takes a while, 3 hard), test(s) and optionally needs (a vehicle id).
 export const ACHIEVEMENTS = [
-  ...['red', 'blue', 'yellow', 'green', 'orange', 'kids', 'moto', 'atc', 'loan', 'tractor', 'utv', 'landrover'].map(rideOf),
+  ...['red', 'blue', 'yellow', 'green', 'orange', 'kids', 'moto', 'atc', 'loan', 'tractor', 'utv', 'landrover', 'landrover200'].map(rideOf),
   { id: 'ride-three', group: 'Ride', name: 'Getting about', hint: 'Ride three different vehicles', points: 1, test: (s) => s.count('rode') >= 3 },
   { id: 'ride-all', group: 'Ride', name: 'Full set', hint: 'Ride every vehicle on the farm this game', points: 3, test: (s) => s.fleet.some((id) => id !== 'rusty') && s.fleet.every((id) => id === 'rusty' || s.has('rode', id)) },
   { id: 'all-running', group: 'Ride', name: 'Everything going at once', hint: 'Get every quad on the farm running at the same time', points: 3, test: (s) => s.n('allRunning') > 0 },

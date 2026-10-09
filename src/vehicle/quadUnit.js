@@ -104,7 +104,7 @@ export class QuadUnit {
         utv: true,
       }),
       ...(spec.landRover && {
-        build: ({ dashStyle }) => buildLandRoverModel({ bodyColor: spec.bodyColor, dashStyle }),
+        build: ({ dashStyle }) => buildLandRoverModel({ bodyColor: spec.bodyColor, dashStyle, variant: spec.defender ? 'defender' : 'series' }),
         layout: LANDY_LAYOUT,
         groundOffset: LANDY_GROUND_OFFSET,
         proxy: LANDY_PROXY,
@@ -113,8 +113,8 @@ export class QuadUnit {
         landRover: true,
         driverStand: LANDY_STAND.driver,
         benchStand: LANDY_STAND.left,
-        handLever: true, // the hand throttle knob on its dash
-        crank: new CrankHandle({ ...DEFAULT_CRANK_PARAMS }),
+        handLever: !spec.defender, // the Series' hand throttle knob on its dash
+        crank: spec.defender ? null : new CrankHandle({ ...DEFAULT_CRANK_PARAMS }), // and its starting handle
       }),
     });
     this.quad.unit = this;
