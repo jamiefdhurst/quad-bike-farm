@@ -70,23 +70,48 @@ export class AudioHub {
     this.banks = {}; // recorded pulse banks by name, filled in as they load
   }
 
-  /** Must be called from a user gesture. Safe to call repeatedly. */
-  unlock() {
-    if (this.ctx) {
-      if (this.ctx.state === 'suspended') this.ctx.resume();
-      return this.loading;
-    }
+  /**
+   * Makes the audio context and loads everything (the worklet, then every recorded engine bank), behind the loading screen. A context
+   * made before any click starts suspended but decodes all the same, so the game never starts silent: the click only switches it on
+   * (`unlock`). `onBank(done, total)` is told as each bank arrives.
+   */
+  prepare(onBank = () => {}) {
+    if (this.ctx) return this.loading;
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) return null;
     this.ctx = new Ctx();
     // If the browser pauses the sound (it can, after a while, if it thinks nothing's playing) say so in the console and keep trying to resume it.
     this.ctx.onstatechange = () => console.warn(`Audio context ${this.ctx.state}`);
+    let done = 0;
     this.loading = this.ctx.audioWorklet
       .addModule(workletUrl)
       .then(() => this.build())
-      .then(() => Promise.all(BANK_NAMES.map((name) => this.requestBank(name))))
+      .then(() => Promise.all(BANK_NAMES.map((name) => this.requestBank(name).then(() => onBank(++done, BANK_NAMES.length)))))
       .catch((err) => console.error('Engine audio failed to load', err));
     return this.loading;
+  }
+
+  /** How many banks `prepare` loads, for the loading screen's count. */
+  get bankCount() {
+    return BANK_NAMES.length;
+  }
+
+  /** Must be called from a user gesture: switches the sound on (making and loading it first if `prepare` hasn't). Safe to call repeatedly. */
+  unlock() {
+    if (!this.ctx) this.prepare();
+    // Resumed here, inside the click, since some browsers only allow it then; if the game is still paused next frame, it suspends again.
+    if (this.ctx?.state === 'suspended') this.ctx.resume();
+    this.paused = false;
+    return this.loading;
+  }
+
+  /** The game is paused (the start or pause card is up): every sound stops where it is, and carries on from there afterwards. */
+  setPaused(on) {
+    if (this.paused === on) return;
+    this.paused = on;
+    if (!this.ctx) return;
+    if (on && this.ctx.state === 'running') this.ctx.suspend();
+    else if (!on && this.ctx.state === 'suspended') this.ctx.resume();
   }
 
   build() {

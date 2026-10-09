@@ -75,7 +75,7 @@ export const CONTROLS = [
   {
     title: 'Other',
     lines: [
-      `<kbd>H</kbd> help, <kbd>Tab</kbd> bucket list (<kbd>&larr;</kbd><kbd>&rarr;</kbd> turn the page), <kbd>Enter</kbd> ask for a race (on a quad, by the yard or at the drag strip), <kbd>M</kbd> farm map, <kbd>N</kbd> mute, <kbd>\`</kbd> tuning panel, <kbd>\\</kbd> console`,
+      `<kbd>H</kbd> help, <kbd>Tab</kbd> bucket list (<kbd>&larr;</kbd><kbd>&rarr;</kbd> turn the page), <kbd>Enter</kbd> ask for a race (on a quad, by the yard or at the drag strip), <kbd>M</kbd> farm map, <kbd>N</kbd> mute, <kbd>Esc</kbd> pause, <kbd>\`</kbd> tuning panel, <kbd>\\</kbd> console`,
     ],
   },
 ];

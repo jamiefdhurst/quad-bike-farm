@@ -25,8 +25,11 @@ export const FAQ_SECTIONS = [
         tip: 'Press H at any time for the controls.',
       },
       {
-        q: 'Esc let go of the mouse. How do I get back in?',
-        a: `Click the game. The browser always takes Esc to release the mouse; the game carries on underneath.`,
+        q: 'Does the game pause?',
+        a: `Yes. Press Esc and the mouse is let go and the card comes back: the whole farm stops where it is, sound and all, until you click
+          to carry on. Nothing happens behind the start screen either, so you can open this page from it without missing anything. The tuning
+          panel and the console are the exceptions: the game keeps running under those, so you can watch it.`,
+        tip: 'Esc pauses the game. Click to carry on.',
       },
       {
         q: 'Where is everything?',
@@ -518,7 +521,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Is there a way to see what’s going on under the bonnet?',
         a: `The tuning panel (<kbd>&#96;</kbd>, the key above Tab) shows each vehicle's live state and faults, each girl's mood and skills, and every tunable number,
-          with buttons to set things up or put them right. It releases the mouse; click the game to carry on.`,
+          with buttons to set things up or put them right. It releases the mouse but the game keeps running under it; click the game to carry on.`,
       },
       {
         q: 'Is there a console?',

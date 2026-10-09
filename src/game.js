@@ -15,7 +15,8 @@ import { DEFAULT_BIKE_PARAMS, BIKE_PARAM_RANGES } from './vehicle/bikeLean.js';
 import { pickFleet } from './vehicle/fleet.js';
 import { applyIdle, applyTopRpm, applyVariation, pickIdle } from './vehicle/quadVariation.js';
 import { AudioHub } from './audio/engineAudio.js';
-import { RideWind } from './audio/rideAudio.js';
+import { RideWind, rideBuffers } from './audio/rideAudio.js';
+import { overlayPauses } from './core/pause.js';
 import { DEFAULT_SOUND_PARAMS, SOUND_PARAM_RANGES } from './audio/audioParams.js';
 import { Companion } from './npc/companion.js';
 import { CompanionVoice } from './npc/companionVoice.js';
@@ -1027,6 +1028,52 @@ export class Game {
 
     this.applyDebugCamera();
     if (import.meta.env.DEV) window.game = this;
+    await this.loadSounds(report);
+  }
+
+  /**
+   * Every sound, loaded behind the loading screen so the game never starts silent: the engine worklet and its recorded banks, the ride
+   * sounds and both girls' voices. The context starts suspended (no click yet); clicking to play only switches it on (AudioHub.unlock).
+   */
+  async loadSounds(report) {
+    const hub = this.audioHub;
+    const jobs = [];
+    let done = 0;
+    const total = hub.bankCount + this.companions.length + 1; // the engine banks, each girl's voice, the ride sounds
+    const tick = () => report(`Loading sounds… ${done}/${total}`);
+    const engine = hub.prepare(() => {
+      done++;
+      tick();
+    });
+    if (!engine) return; // no Web Audio in this browser
+    await engine;
+    for (const c of this.companions) {
+      c.sounds.ensure();
+      jobs.push(c.sounds.loading);
+    }
+    jobs.push(rideBuffers(hub).loading);
+    tick();
+    await Promise.all(jobs.map((job) => Promise.resolve(job).then(() => {
+      done++;
+      tick();
+    })));
+  }
+
+  /** The start or pause card is up (not the small hint the tuning panel and console leave, nor the toolbox): the farm stands still. */
+  isPaused() {
+    const o = (this.overlayEl ??= document.getElementById('overlay'));
+    return !!o && overlayPauses(o.classList, o.style.display);
+  }
+
+  /** Stops or restarts everything that runs on its own: the sound and the browser's speech (the simulation is skipped in `frame`). */
+  setPaused(on) {
+    this.audioHub.setPaused(on); // every frame: a click can switch the sound back on while the card is still up
+    if (this.paused === on) return;
+    this.paused = on;
+    if (typeof speechSynthesis !== 'undefined') {
+      if (on) speechSynthesis.pause();
+      else speechSynthesis.resume();
+    }
   }
 
   // The console's switches (src/console) ---------------------------------------------------------------
@@ -4647,6 +4694,13 @@ export class Game {
     this.timer.update();
     const dt = Math.min(this.timer.getDelta(), MAX_FRAME_DT);
     const input = this.input;
+    // Paused: draw the farm as it stands behind the card and nothing else, so no time passes for anything.
+    this.setPaused(this.isPaused());
+    if (this.paused) {
+      this.renderer.render(this.scene, this.camera);
+      input.endFrame();
+      return;
+    }
 
     if (input.wasPressed('KeyH')) this.hud.toggleHelp();
     if (input.wasPressed('Backquote')) this.debugGui.toggle();

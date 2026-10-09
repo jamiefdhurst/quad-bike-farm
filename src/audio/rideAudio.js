@@ -131,7 +131,7 @@ export function rideBuffers(hub) {
   };
   hub.rideBuffers = b;
   const base = import.meta.env?.BASE_URL ?? '/';
-  fetch(`${base}audio/ride.json`)
+  b.loading = fetch(`${base}audio/ride.json`)
     .then((r) => r.json())
     .then(async (bank) => {
       const data = await (await fetch(base + bank.file)).arrayBuffer();
