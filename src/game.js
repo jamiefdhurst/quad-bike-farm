@@ -4710,9 +4710,10 @@ export class Game {
     this.timer.update();
     const dt = Math.min(this.timer.getDelta(), MAX_FRAME_DT);
     const input = this.input;
-    // Paused: draw the farm as it stands behind the card and nothing else, so no time passes for anything.
+    // Paused: draw the farm as it stands behind the card and nothing else, so no time passes for anything. The very first frame runs
+    // regardless, so the camera is put at your eyes and everything is placed before the start screen shows the farm behind it.
     this.setPaused(this.isPaused());
-    if (this.paused) {
+    if (this.paused && this.firstFrameDone) {
       this.renderer.render(this.scene, this.camera);
       input.endFrame();
       return;
@@ -4935,6 +4936,7 @@ export class Game {
 
     this.renderer.render(this.scene, this.camera);
     input.endFrame();
+    this.firstFrameDone = true;
   }
 
   fixedUpdate(dt) {
