@@ -343,11 +343,9 @@ BANKS = {
     'engine-bank-utv': {
         # The UTV: a John Deere Gator idling, recorded on the vehicle (videog, Freesound 149193). A small three-cylinder
         # diesel at about 970 rpm with one sharp beat per cycle, so it's cut into whole cycles like the tractor. Revs from a
-        # small Bobcat loader's diesel working (cognito perceptu, 174237). The shutdown borrows the tractor's. Two starters:
-        # the UTV's is a small tractor's quick diesel crank (radwoc, 256808), two compressions a loop at about 7 a second, a
-        # three-cylinder at the UTV's 260 rpm; the 200TDi's ('Tdi', recStarterSet) a Citroen Jumpy van's four-cylinder diesel
-        # (chlund, 500193), three compressions a loop at about 7.5 a second, a four at 230 rpm. Loops are cut in the quiet
-        # between compressions.
+        # small Bobcat loader's diesel working (cognito perceptu, 174237). The shutdown borrows the tractor's. The starter is a
+        # small tractor's quick diesel crank (radwoc, 256808), two compressions a loop at about 7 a second, a three-cylinder at
+        # the UTV's 260 rpm, cut in the quiet between compressions.
         'segments': [
             ('idle', 'gat', 0.2, 14.2, (0.11, 0.14)),
             ('accel', 'bob', 168.0, 184.0, (0.04, 0.07)),
@@ -356,14 +354,35 @@ BANKS = {
         'oneshots': [
             ('starterEngage', 'rad', 0.14, 0.415),
             ('crankLoop', 'rad', 0.415, 0.614, {'crankRpm': 260}),
-            ('starterEngageTdi', 'jumpy', 1.0, 1.273),
-            ('crankLoopTdi', 'jumpy', 1.273, 1.716, {'crankRpm': 230}),
             ('shutdown', 't0', 61.4, 63.6),
         ],
         'level': [('idle', 'idle', 'gat'), ('idle', 'accel', 'bob')],
         'fixedGain': {'t0': 1.503},  # as in engine-bank-tractor, which the UTV used before
         # Each starter as loud, against the bank's idle, as it is against its own engine's idle in its recording.
-        'oneshotLevel': {'rad': (2.0, 7.0), 'jumpy': (3.0, 10.0)},
+        'oneshotLevel': {'rad': (2.0, 7.0)},
+        'idleCycles': True,
+        'revTail': 0.9,
+        'revOdd': 0.3,
+    },
+    'engine-bank-tdi': {
+        # The 200TDi. Its idle is a Ford Transit's 2.5 litre direct-injection diesel ticking over (Mullumbimby, 622829), the
+        # same old clattery kind of four as a 200TDi, at about 960 rpm with its beats in groups of four: cut into whole cycles
+        # and read in order, from 8 s, past a belt screech at 6 to 7.8 s. Its revs are a Land Rover Safari diesel's (D.jones,
+        # 521892), rising from about 1,350 to 2,100 rpm at 10 to 14.5 s and falling back at 14.5 to 16.2 s. The starter and
+        # the shutdown are a Citroen Jumpy van's diesel (chlund, 500193): three compressions a loop at about 7.5 a second, a
+        # four at the 200TDi's 230 rpm, and the run-down at 16.2 to 17.4 s. The turbo is made in the worklet (turboSample).
+        'segments': [
+            ('idle', 'tra', 8.0, 26.0, (0.11, 0.145)),
+            ('accel', 'saf', 10.0, 14.5, (0.05, 0.095)),
+            ('decel', 'saf', 14.5, 16.2, (0.05, 0.095)),
+        ],
+        'oneshots': [
+            ('starterEngage', 'jumpy', 1.0, 1.273),
+            ('crankLoop', 'jumpy', 1.273, 1.716, {'crankRpm': 230}),
+            ('shutdown', 'jumpy', 16.2, 17.4),
+        ],
+        'level': [('idle', 'idle', 'tra'), ('idle', 'accel', 'saf')],
+        'oneshotLevel': {'jumpy': (3.0, 10.0)},  # the starter and run-down as loud against the bank's idle as against the van's own
         'idleCycles': True,
         'revTail': 0.9,
         'revOdd': 0.3,

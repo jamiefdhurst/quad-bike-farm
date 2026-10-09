@@ -89,7 +89,7 @@ Quaternius: https://quaternius.com
 | The starting handle's swing | G13.1-06-Car Crank, Idle, Car Doors.wav | craigsmith | https://freesound.org/people/craigsmith/sounds/438033/ | CC0 1.0 |
 | Starter | Ford Stake Bed Truck Ext Crank Start Idle Revs Off | D.jones | https://freesound.org/people/D.jones/sounds/521857/ | CC0 1.0 |
 
-`public/audio/engine-bank-utv.wav` and `engine-bank-utv.json` (the UTV, and the 200TDi for now) are cut from:
+`public/audio/engine-bank-utv.wav` and `engine-bank-utv.json` (the UTV) are cut from:
 
 | Used for | Recording | Author | Source | Licence |
 | --- | --- | --- | --- | --- |
@@ -97,7 +97,14 @@ Quaternius: https://quaternius.com
 | Revs | Bobcat.wav (a small loader at work) | cognito perceptu | https://freesound.org/people/cognito%20perceptu/sounds/174237/ | CC0 1.0 |
 | Shutdown | the tractor recordings (as above) | kyles | https://freesound.org/people/kyles/sounds/637890/ | CC0 1.0 |
 | The UTV's starter | tractor-engine-start.wav | radwoc | https://freesound.org/people/radwoc/sounds/256808/ | CC0 1.0 |
-| The 200TDi's starter | Diesel engine starting revving and stopping (a Citroën Jumpy van) | chlund | https://freesound.org/people/chlund/sounds/500193/ | CC0 1.0 |
+
+`public/audio/engine-bank-tdi.wav` and `engine-bank-tdi.json` (the 200TDi; its turbo is made in the engine sound, not recorded) are cut from:
+
+| Used for | Recording | Author | Source | Licence |
+| --- | --- | --- | --- | --- |
+| Idle pulses | Cold start of old diesel car (a Ford Transit 2.5 DI) | Mullumbimby | https://freesound.org/people/Mullumbimby/sounds/622829/ | CC0 1.0 |
+| Revs | Landrover--Safari Diesel_Engin | D.jones | https://freesound.org/people/D.jones/sounds/521892/ | CC0 1.0 |
+| Starter and shutdown | Diesel engine starting revving and stopping (a Citroën Jumpy van) | chlund | https://freesound.org/people/chlund/sounds/500193/ | CC0 1.0 |
 
 `public/audio/ride.wav` and `ride.json` (mud squelches, splashes and landing thuds) are cut from these by `tools/slice_ride_audio.py`, using Freesound's high-quality MP3 previews. The other ride sounds (tyre rumble, grass, gravel, water churn, knocks, rattles and the rider's wind) are made in code.
 

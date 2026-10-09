@@ -147,8 +147,17 @@ export const DEFAULT_AUDIO_PARAMS = {
   pulseBoomCut: 0, // dB taken out of a boom in the recording itself (a body resonance), at every rpm; 0 leaves it alone
   pulseBoomFreq: 110, // Hz, the middle of that boom
   recStarterVolume: 0.9,
-  recStarterSet: '', // which starter in the bank, by its suffix ('Tdi' picks starterEngageTdi and crankLoopTdi); '' is the bank's own
   recShutdownVolume: 0.9,
+  // A turbocharger (engineWorklet.js turboSample): off unless turboVolume is above 0 (the 200TDi).
+  turboVolume: 0, // level of its whistle and air at full boost
+  turboFromRpm: 1500, // rpm where it starts to make boost
+  turboFullRpm: 3400, // and where it makes all it will
+  turboSpoolUp: 0.9, // seconds it takes to come up to boost (the lag)
+  turboSpoolDown: 0.6, // and to run down again
+  turboMinHz: 2200, // the whistle's pitch with a little boost
+  turboMaxHz: 6800, // and at full boost
+  turboHiss: 0.6, // the rush of air under the whistle, against it
+  turboFlutter: 0.5, // the chatter back through it when you shut the throttle on boost
 
   // Everything below is the synthesised engine
 
@@ -240,7 +249,7 @@ export const AUDIO_PARAM_RANGES = {
   pulseDrive: [0, 4, 0.01],
   pulseBoomCut: [0, 18, 0.5],
   pulseBoomFreq: [40, 400, 5],
-  recBank: ['engine-bank', 'engine-bank-2t', 'engine-bank-50', 'engine-bank-tractor', 'engine-bank-moto', 'engine-bank-atc', 'engine-bank-utv', 'engine-bank-green', 'engine-bank-yellow', 'engine-bank-landy', 'engine-bank-tractor-eq'],
+  recBank: ['engine-bank', 'engine-bank-2t', 'engine-bank-50', 'engine-bank-tractor', 'engine-bank-moto', 'engine-bank-atc', 'engine-bank-utv', 'engine-bank-green', 'engine-bank-yellow', 'engine-bank-landy', 'engine-bank-tdi', 'engine-bank-tractor-eq'],
   recIdleSource: ['quad', 'rev', 'third'],
   recVolume: [0, 3, 0.01],
   recThrottleLoudness: [0, 3, 0.01],
@@ -256,8 +265,16 @@ export const AUDIO_PARAM_RANGES = {
   recMinGrainMs: [0, 120, 1],
   recOverlap: [0, 0.3, 0.005],
   recStarterVolume: [0, 3, 0.01],
-  recStarterSet: ['', 'Tdi'],
   recShutdownVolume: [0, 3, 0.01],
+  turboVolume: [0, 0.3, 0.002],
+  turboFromRpm: [500, 4000, 50],
+  turboFullRpm: [1000, 6000, 50],
+  turboSpoolUp: [0.05, 3, 0.05],
+  turboSpoolDown: [0.05, 3, 0.05],
+  turboMinHz: [500, 6000, 50],
+  turboMaxHz: [1000, 12000, 50],
+  turboHiss: [0, 2, 0.05],
+  turboFlutter: [0, 2, 0.05],
   exhaustVolume: [0, 3, 0.01],
   pulseBase: [0, 2, 0.01],
   throttlePressure: [0, 3, 0.01],

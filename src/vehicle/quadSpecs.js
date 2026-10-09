@@ -1272,8 +1272,23 @@ export const DEFENDER_SPEC = {
     pitchGain: 0.16,
     heaveDamping: 0.45,
   },
-  // The UTV's Gator diesel for now, at its own idle pace, with a van's diesel starter. The van's idle was quiet, so its starter at the
-  // van's own balance came out 5 dB over the 200TDi's rattly idle; 0.39 puts it about 2 dB under.
-  audio: { ...UTV_SPEC.audio, pulseRefRpm: 800, recStarterSet: 'Tdi', recStarterVolume: 0.39 },
+  // Its own bank (engine-bank-tdi): a Ford Transit 2.5 DI's clattery tickover, blending into a Land Rover Safari diesel's revs as
+  // it pulls, a Citroen Jumpy van's diesel starter and run-down, and a turbo made in the worklet (turboSample).
+  audio: {
+    recBank: 'engine-bank-tdi',
+    recIdleSource: 'quad',
+    pulseRefRpm: 960, // the Transit's tickover, where the rev loudness and EQ start
+    pulseRevLo: 1300, // from here it blends into the Land Rover's own firings
+    pulseRevHi: 2000,
+    pulseRevFollow: 0.08, // reading on through its pull-up, rather than a firing from anywhere each time
+    pulseRevLoudness: 0.25,
+    pulseRevGain: 1.25, // revs as loud as they were on the UTV's bank
+    recVolume: 0.72, // idles as loud as it did on the UTV's bank
+    recStarterVolume: 0.4, // the crank just under its idle (the van it was recorded on idled quietly, so its own balance came out louder)
+    recToneClosed: 4200,
+    pipeLength: 1.2,
+    densityRefRpm: 1200,
+    turboVolume: 0.14, // its whistle about 18 dB under the engine flat out: there on top, not over it
+  },
   smoke: { ...UTV_SPEC.smoke },
 };

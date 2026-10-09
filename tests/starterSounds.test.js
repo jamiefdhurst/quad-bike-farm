@@ -8,12 +8,11 @@ const allSpecs = Object.values(specs).flatMap((v) => (Array.isArray(v) ? v : [v]
 const bankOf = (spec) => JSON.parse(readFileSync(`public/audio/${spec.audio.recBank ?? DEFAULT_AUDIO_PARAMS.recBank}.json`, 'utf8'));
 
 describe('starter sounds', () => {
-  it('every vehicle has the starter it asks for in its bank', () => {
+  it('every vehicle has a starter in its bank', () => {
     for (const spec of allSpecs) {
-      const set = spec.audio.recStarterSet ?? '';
       const shots = bankOf(spec).oneshots;
-      expect(shots[`starterEngage${set}`], `${spec.id}: starterEngage${set}`).toBeTruthy();
-      expect(shots[`crankLoop${set}`], `${spec.id}: crankLoop${set}`).toBeTruthy();
+      expect(shots.starterEngage, `${spec.id}: starterEngage`).toBeTruthy();
+      expect(shots.crankLoop, `${spec.id}: crankLoop`).toBeTruthy();
     }
   });
 
@@ -21,13 +20,12 @@ describe('starter sounds', () => {
     const byId = Object.fromEntries(allSpecs.map((s) => [s.id, s]));
     for (const id of ['utv', 'landrover', 'landrover200']) {
       const spec = byId[id];
-      const loop = bankOf(spec).oneshots[`crankLoop${spec.audio.recStarterSet ?? ''}`];
+      const loop = bankOf(spec).oneshots.crankLoop;
       const crankRpm = spec.engine?.crankRpm ?? DEFAULT_ENGINE_PARAMS.crankRpm;
       expect(loop.crankRpm, id).toBe(crankRpm);
       expect(loop.gain, id).toBeGreaterThan(0);
     }
-    // Not each other's, nor a quad's.
-    const loops = ['utv', 'landrover200'].map((id) => bankOf(byId[id]).oneshots[`crankLoop${byId[id].audio.recStarterSet ?? ''}`].start);
-    expect(new Set(loops).size).toBe(2);
+    // Each from a bank of its own.
+    expect(new Set(['utv', 'landrover', 'landrover200'].map((id) => byId[id].audio.recBank)).size).toBe(3);
   });
 });

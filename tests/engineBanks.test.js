@@ -1,14 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
+import * as SPECS from '../src/vehicle/quadSpecs.js';
 import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC } from '../src/vehicle/quadSpecs.js';
 import { AUDIO_PARAM_RANGES } from '../src/audio/audioParams.js';
 
 describe('engine banks', () => {
-  it('every quad names a bank that is listed, loads in the hub and exists on disk', () => {
-    for (const spec of [...QUAD_SPECS, ...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC]) {
-      const bank = spec.audio?.recBank;
+  it('every vehicle names a bank that is listed, loads in the hub and exists on disk', () => {
+    // Every spec quadSpecs.js exports, so a new vehicle is checked without being added here. The hub's BANK_NAMES (which banks
+    // load while the game loads) is read from its source: engineAudio.js imports the worklet by URL, which only Vite understands.
+    const specs = Object.values(SPECS).flatMap((v) => (Array.isArray(v) ? v : [v])).filter((s) => s?.id && s?.audio);
+    const hub = JSON.parse(readFileSync('src/audio/engineAudio.js', 'utf8').match(/const BANK_NAMES = (\[[^\]]*\])/)[1].replace(/'/g, '"'));
+    expect(specs.length).toBeGreaterThan(12);
+    for (const spec of specs) {
+      const bank = spec.audio.recBank;
       if (!bank) continue;
       expect(AUDIO_PARAM_RANGES.recBank, spec.id).toContain(bank);
+      expect(hub, `${spec.id}: ${bank} in BANK_NAMES`).toContain(bank);
       expect(existsSync(`public/audio/${bank}.json`), spec.id).toBe(true);
     }
   });

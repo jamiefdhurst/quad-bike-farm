@@ -381,12 +381,9 @@ class RecordedEngine {
       case 'cough':
         return true; // covered by the crank loop and the shutdown recording
       case 'starterOn': {
-        // A bank can hold more than one starter (the UTV's has the 200TDi's too): recStarterSet picks one by its suffix.
-        const set = p.recStarterSet && this.oneshots[`starterEngage${p.recStarterSet}`] ? p.recStarterSet : '';
-        const engageName = `starterEngage${set}`;
-        this.playOneshot(engageName, p.recStarterVolume);
-        const engage = this.oneshots[engageName];
-        const loop = this.oneshots[`crankLoop${set}`];
+        this.playOneshot('starterEngage', p.recStarterVolume);
+        const engage = this.oneshots.starterEngage;
+        const loop = this.oneshots.crankLoop;
         this.crankVoice = { pos: -(engage ? engage.len - 0.01 * sampleRate : 0), gain: 0, target: p.recStarterVolume, loop, engage };
         return true;
       }
@@ -518,6 +515,13 @@ class EngineProcessor extends AudioWorkletProcessor {
     this.fanGain = 0; // the radiator fan's level, easing in and out
     this.fanLp = 0;
     this.fanPhase = 0;
+    // The turbo (turboSample): its boost 0..1, what's left to flutter back with the throttle shut, and its whistle's phases.
+    this.turboBoost = 0;
+    this.turboSurge = 0;
+    this.turboPhase = 0;
+    this.turboFlutterPhase = 0;
+    this.turboTick = 0;
+    this.turboAir = new Biquad();
     this.blockCount = 0;
 
     this.port.onmessage = (e) => this.onMessage(e.data);
@@ -531,6 +535,8 @@ class EngineProcessor extends AudioWorkletProcessor {
     for (const v of Object.values(this)) if (v instanceof Biquad) v.reset();
     this.pipe.fill(0);
     this.pipeLp = this.intakeIn = this.tickIn = this.fanLp = 0;
+    this.turboBoost = this.turboSurge = 0;
+    this.turboAir = new Biquad();
     this.active = [];
     if (this.recorded) {
       this.recorded.voices = [];
@@ -659,6 +665,36 @@ class EngineProcessor extends AudioWorkletProcessor {
     this.fanPhase += (TWO_PI * (170 + 40 * this.fanGain)) / sampleRate;
     if (this.fanPhase > TWO_PI * 1000) this.fanPhase -= TWO_PI * 1000;
     return this.fanGain * this.p.fanVolume * (this.fanLp * 1.6 + 0.25 * Math.sin(this.fanPhase));
+  }
+
+  /**
+   * A turbocharger, for the engines that have one (turboVolume above 0). The boost it heads for rises with the revs (from
+   * turboFromRpm to turboFullRpm) and more with the throttle open, and it gets there a moment behind (turboSpoolUp seconds) and
+   * runs down slower than it spools (turboSpoolDown). It whistles, the pitch rising with the boost, over a rush of air; shut the
+   * throttle with boost up and, with no blow-off valve on an old diesel, the air chatters back through the compressor (turboFlutter).
+   */
+  turboSample() {
+    const p = this.p;
+    if (!(p.turboVolume > 0)) return 0;
+    const sr = sampleRate;
+    const st = this.state;
+    const demand = st.running ? smoothstep(p.turboFromRpm, p.turboFullRpm, this.rpm) * (0.2 + 0.8 * this.throttle) : 0;
+    const rising = demand > this.turboBoost;
+    this.turboBoost += (demand - this.turboBoost) / (Math.max(0.05, rising ? p.turboSpoolUp : p.turboSpoolDown) * sr);
+    const b = this.turboBoost;
+    // Boost left over with the throttle shut is what flutters back.
+    this.turboSurge += ((!rising && this.throttle < 0.2 ? Math.max(0, b - demand) : 0) - this.turboSurge) * (1 / (0.05 * sr));
+    if (b < 0.0005 && this.turboSurge < 0.0005) return 0;
+    const f = p.turboMinHz + (p.turboMaxHz - p.turboMinHz) * b;
+    this.turboPhase += (TWO_PI * f * (1 + 0.004 * Math.sin(this.turboPhase * 0.0009))) / sr;
+    if (this.turboPhase > TWO_PI * 1000) this.turboPhase -= TWO_PI * 1000;
+    const whistle = Math.sin(this.turboPhase) + 0.3 * Math.sin(2.003 * this.turboPhase);
+    if ((this.turboTick++ & 63) === 0) this.turboAir.set('bandpass', 0.6 * f, 0.9, sr);
+    const air = this.turboAir.run(Math.random() * 2 - 1);
+    // The flutter: the air in bursts at about 14 a second, fading as the boost goes.
+    this.turboFlutterPhase += (TWO_PI * 14) / sr;
+    const flutter = this.turboSurge * Math.max(0, Math.sin(this.turboFlutterPhase)) ** 3 * air * 3;
+    return p.turboVolume * (b * b * (0.5 * whistle + p.turboHiss * air) + p.turboFlutter * flutter);
   }
 
   addExhaust(amp, cycleSamples, blow, turbulence) {
@@ -841,7 +877,7 @@ class EngineProcessor extends AudioWorkletProcessor {
         s += this.starterGain * p.starterVolume * (whine * 0.35 * speedNorm + brush * speedNorm + mesh);
       }
 
-      s += dry + this.fanSample();
+      s += dry + this.fanSample() + this.turboSample();
       s = this.dcBlock.run(s);
       out[i] = Math.tanh(s * p.drive) / Math.max(1, Math.tanh(p.drive));
       if (out[i] !== out[i]) out[i] = this.recover('synth');
@@ -913,7 +949,7 @@ class EngineProcessor extends AudioWorkletProcessor {
         x = this.pulseMid.run(this.pulseLow.run(x)) * drive;
         if (p.pulseBoomCut > 0) x = this.pulseBoom.run(x);
       }
-      const s = this.tone.run(x) * (1 + p.silencerLoud * (st.loud || 0)) + dry + this.fanSample();
+      const s = this.tone.run(x) * (1 + p.silencerLoud * (st.loud || 0)) + dry + this.fanSample() + this.turboSample();
       out[i] = Math.tanh(s);
       if (out[i] !== out[i]) out[i] = this.recover('recorded');
     }
