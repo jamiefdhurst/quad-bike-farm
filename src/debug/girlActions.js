@@ -96,6 +96,18 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'back-seat',
+      label: '% gets in the back of the 200TDi',
+      run: (id) => {
+        const c = girl(id);
+        const l = g.landys?.defender;
+        if (!l?.unit) return toast('The 200TDi isn\'t on the farm this game');
+        if (!free(id)) return;
+        g.askIntoLandy(c, l, { back: true }); // as asking from her wheel: it says if she can't
+        if (c.traSlot?.rear) toast(`${c.name} is getting in the back of the 200TDi`);
+      },
+    },
+    {
       verb: 'start',
       label: '% starts the vehicle picked on the Vehicles tab (the starting handle on a flat Land Rover)',
       vehicle: true,

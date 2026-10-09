@@ -855,11 +855,15 @@ export function poseUtvControls(model, { reverse, neutral, lights, horn, fourWd,
 
 /** Shows each seat's belt worn (across whoever is in it) or stowed down the backrest. `belted` is { driver, mid, left } of booleans. */
 export function poseUtvBelts(model, belted) {
-  const parts = (model.userData.belts ??= Object.fromEntries(Object.keys(BELTS).map((seat) => {
+  // Every seat in `belted` that has a belt in this model (the 200TDi's back bench has three more than the UTV), found once each.
+  const parts = (model.userData.belts ??= {});
+  for (const seat of Object.keys(belted)) {
+    if (seat in parts) continue;
     const g = model.getObjectByName(`belt_${seat}`);
-    return [seat, { stowed: g.getObjectByName('stowed'), worn: g.getObjectByName('worn') }];
-  })));
+    parts[seat] = g ? { stowed: g.getObjectByName('stowed'), worn: g.getObjectByName('worn') } : null;
+  }
   for (const [seat, p] of Object.entries(parts)) {
+    if (!p) continue;
     p.worn.visible = !!belted[seat];
     p.stowed.visible = !belted[seat];
   }

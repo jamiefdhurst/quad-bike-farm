@@ -5,7 +5,7 @@
 export const TUNE_CATEGORIES = {
   'Driving and towing': [
     '2WD and 4WD', 'Handbrake', 'Headlights', 'UTV lights', 'Indicators', 'Seat belts', 'Two-wheeler lean', 'Tyres', 'Tyre squeal', 'Towing', 'Tow chain', 'Trailer', 'Tipping trailer', 'Trailer tub',
-    'UTV bed', 'UTV load', 'UTV riders', 'Land Rover riders', '200TDi riders', 'Trailer riders', 'Tractor creep', 'Tractor runaway',
+    'UTV bed', 'UTV load', 'UTV riders', 'Land Rover riders', '200TDi riders', '200TDi back seats', 'Trailer riders', 'Tractor creep', 'Tractor runaway',
   ],
   'Engines, fuel and faults': ['Quirks', 'Engine oil', 'Dripping carb', 'Barn find', 'Red diesel mistake', 'Two-stroke smoke'],
   'Items and workshop': ['Toolbox', 'Logbook', 'Workshop bench', 'Jerry can', 'Pre-mix can', 'Diesel can', 'Oil bottle', 'Hose', 'Jump leads', 'Winch', 'Bell', 'Hayloft'],

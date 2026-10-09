@@ -213,6 +213,34 @@ export const MOVES = {
     ],
   },
 
+  // Into the 200TDi's back bench: in at the door past the tipped front seat, then back to the bench, ducking lower under the roof.
+  // The stepIn move, with the fore-and-aft part (`along`) held back until she's through the door.
+  stepInBack: {
+    liftFrom: 'step',
+    keys: [
+      { t: 0 },
+      {
+        t: 0.25, over: 0.15, along: 0.02, lift: 0.3, turn: 0.3,
+        pose: {
+          bones: { Spine: [0.35, 0, 0.1], Spine1: [0.25, 0, 0.05], Neck: [0.2, 0, 0], RightUpLeg: [-0.95, 0, -0.25], RightLeg: [1.25, 0, 0] },
+          hands: { right: { frame: 'seat', at: [0.1, 0.05, 0.25], pole: [0.6, 0.2, -0.3], w: 0.6 } },
+        },
+      },
+      {
+        t: 0.5, over: 0.6, along: 0.25, lift: 1, sit: 0.2, turn: 0.55,
+        pose: {
+          bones: { Spine: [0.45, 0, 0.1], Spine1: [0.3, 0, 0.05], Neck: [0.25, 0, 0], RightUpLeg: [-0.7, 0, -0.15], RightLeg: [1.0, 0, 0], LeftUpLeg: [0.25, 0, 0], LeftLeg: [0.5, 0, 0] },
+          hands: { right: { frame: 'seat', at: [-0.05, 0.02, 0.1], pole: [0.6, 0.2, -0.3], w: 1 } },
+        },
+      },
+      {
+        t: 0.78, over: 0.95, along: 0.85, lift: 0.4, sit: 0.85, turn: 0.95,
+        pose: { bones: { Spine: [0.25, 0, 0], Neck: [0.15, 0, 0], LeftUpLeg: [-0.5, 0, -0.2], LeftLeg: [1.0, 0, 0] } },
+      },
+      { t: 1, over: 1, along: 1, sit: 1, turn: 1 },
+    ],
+  },
+
   // Up onto something high (the bale trailer, the tractor's arch or seat, the UTV's bed): facing it, hands on the edge, a knee up,
   // hauled up, and turned round to sit.
   climbUp: {

@@ -75,6 +75,34 @@ export const LANDY_STAND = {
   driver: { x: -1.45, z: 0 }, // the driver's door, on the right
 };
 
+/**
+ * The 200TDi's back bench, three in a row facing forward behind the front ones, a little higher, with a footwell in front of it and the
+ * wheel boxes beside the outer seats. It is reached through a front door with that side's front seat tipped forward: the back's left
+ * and middle seats by the passenger's door (the left seat tips), the right one by the driver's (the driver's seat tips).
+ */
+export const LANDY_REAR_SEATS = {
+  rearLeft: { x: 0.38, y: 0.98, z: -1.0, door: 'left' },
+  rearMid: { x: 0, y: 0.98, z: -1.0, door: 'left' },
+  rearRight: { x: -0.38, y: 0.98, z: -1.0, door: 'driver' },
+};
+/** Where a girl stands to climb into the back: at the door, a little back from where she gets into the front. */
+export const LANDY_REAR_STAND = {
+  rearLeft: { x: 1.45, z: -0.2 },
+  rearMid: { x: 1.45, z: -0.2 },
+  rearRight: { x: -1.45, z: -0.2 },
+};
+/** Their belts: a diagonal and lap belt for the outer two from the body side, a lap belt for the middle (as LANDY_BELTS). */
+export const LANDY_REAR_BELTS = {
+  rearLeft: { anchor: 0.7, buckle: 0.2, diagonal: true },
+  rearMid: { anchor: -0.16, buckle: 0.16, diagonal: false },
+  rearRight: { anchor: -0.7, buckle: -0.2, diagonal: true },
+};
+/** How far a front seat's backrest tips forward (radians) to let someone into the back, and the seats that do. */
+export const SEAT_TIP = 0.95;
+export const TIPPING_SEATS = ['left', 'driver'];
+const REAR_DY = LANDY_REAR_SEATS.rearMid.y - LANDY_SEATS.mid.y; // the back bench against the front one
+const REAR_DZ = LANDY_REAR_SEATS.rearMid.z - LANDY_SEATS.mid.z;
+
 /** The starting handle's hole in the front bumper, in the model's frame: where you stand to swing it, and the towing jaw behind. */
 export const CRANK_HOLE = { x: 0, y: 0.56, z: 1.84 };
 export const TOW_HITCH = { x: 0, y: 0.56, z: -2.02 };
@@ -631,14 +659,27 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   rbox(1.56, 0.03, 1.1, 0.01, trim.floor, 0, 0.62, 0.05, root);
   rbox(1.56, 0.26, 0.5, 0.02, paint, 0, 0.76, -0.3, root, 'seatBox');
   rbox(D ? 0.4 : 0.36, D ? 0.26 : 0.22, 0.6, 0.04, D ? trim.dash : MAT.black, 0, D ? 0.75 : 0.73, 0.25, root); // the tunnel (the 200TDi's a moulded console)
-  for (const seat of [LANDY_SEATS.driver, LANDY_SEATS.mid, LANDY_SEATS.left]) {
+  for (const [name, seat] of Object.entries(LANDY_SEATS)) {
     rbox(0.42, 0.1, 0.46, 0.04, trim.seat, seat.x, 0.9, seat.z, root);
-    const back = rbox(0.42, 0.48, 0.08, 0.04, trim.seat, seat.x, 1.18, -0.5, root); // clear of the cab's rear panel, even leant back
+    // On the 200TDi the outer two backrests tip forward to let people into the back: each is its own part, hinged at its foot
+    // (`seatBack_<seat>`, posed by poseSeatTips). The Series' and the middle one are fixed.
+    const tips = D && TIPPING_SEATS.includes(name);
+    let holder = root;
+    let at = (x, y, z) => [x, y, z];
+    if (tips) {
+      holder = new THREE.Group();
+      holder.name = `seatBack_${name}`;
+      holder.userData.keep = true;
+      holder.position.set(seat.x, 0.94, -0.5);
+      root.add(holder);
+      at = (x, y, z) => [x - seat.x, y - 0.94, z + 0.5];
+    }
+    const back = rbox(0.42, 0.48, 0.08, 0.04, trim.seat, ...at(seat.x, 1.18, -0.5), holder); // clear of the cab's rear panel, even leant back
     back.rotation.x = -0.08;
-    if (D && seat !== LANDY_SEATS.mid) {
+    if (D && name !== 'mid') {
       // A headrest on two steel posts sunk into the top of the backrest (the middle seat has none).
-      rbox(0.24, 0.12, 0.07, 0.03, trim.seat, seat.x, 1.53, -0.52, root).rotation.x = -0.08;
-      for (const dx of [-0.06, 0.06]) rbox(0.016, 0.16, 0.016, 0.004, MAT.steel, seat.x + dx, 1.47, -0.515, root).rotation.x = -0.08;
+      rbox(0.24, 0.12, 0.07, 0.03, trim.seat, ...at(seat.x, 1.53, -0.52), holder).rotation.x = -0.08;
+      for (const dx of [-0.06, 0.06]) rbox(0.016, 0.16, 0.016, 0.004, MAT.steel, ...at(seat.x + dx, 1.47, -0.515), holder).rotation.x = -0.08;
     }
   }
   if (!D) {
@@ -805,12 +846,28 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   } else {
     // The 200TDi's square back: a carpeted load floor over the wheels, side bodywork with a window band and the wheel arches cut in
     // it, the rear door with its window and the spare wheel on it, and the same body panel below with the lamps and the plate.
-    rbox(1.6, 0.04, 1.3, 0.01, trim.floor, 0, TUB_FLOOR, -1.3, root);
+    // The back bench (LANDY_REAR_SEATS): a footwell at the front floor's height behind the front seats, a seat box with three seats
+    // facing forward on it, the wheel boxes beside the outer two, and the raised load floor only behind it.
+    rbox(1.56, 0.03, 0.32, 0.01, trim.floor, 0, 0.62, -0.66, root); // the footwell's floor
+    rbox(1.1, 0.26, 0.44, 0.02, paint, 0, 0.75, -1.02, root); // the seat box
+    rbox(1.1, 0.4, 0.03, 0.01, paint, 0, 0.82, -1.29, root); // its back, up to the load floor behind
+    for (const seat of Object.values(LANDY_REAR_SEATS)) {
+      rbox(0.36, 0.1, 0.42, 0.04, trim.seat, seat.x, 0.94, seat.z, root);
+      rbox(0.36, 0.5, 0.08, 0.04, trim.seat, seat.x, 1.24, -1.26, root).rotation.x = -0.1;
+      if (seat.x !== 0) rbox(0.22, 0.11, 0.07, 0.03, trim.seat, seat.x, 1.58, -1.29, root).rotation.x = -0.1; // the outer two have headrests
+    }
+    rbox(1.6, 0.04, 0.66, 0.01, trim.floor, 0, TUB_FLOOR, -1.62, root); // the load floor behind the bench
+    // Their belts, as the front ones, moved back to the bench: they pose by name (`belt_rearLeft` and so on).
+    const rearBelts = new THREE.Group();
+    rearBelts.position.set(0, REAR_DY, REAR_DZ);
+    root.add(rearBelts);
+    for (const [seat, belt] of Object.entries(LANDY_REAR_BELTS)) addBelt(rearBelts, seat, belt);
     for (const s of [-1, 1]) {
       archPanel(s * 0.82, 0.04, 0.78, 1.17, -1.95, -0.55, zR, paint, root); // the side below the windows, with the arch cut in it
       archFlare(s * 0.845, zR, MAT.black, root);
       rbox(0.2, 0.26, 0.02, 0.005, MAT.black, s * 0.7, 0.5, zR - 0.52, root); // the mudflap behind the wheel
-      rbox(0.34, 0.1, 0.84, 0.04, paint, s * 0.62, TUB_FLOOR + 0.06, zR, root); // the hump over the arch, clear of the tyre
+      rbox(0.24, 0.48, 0.86, 0.04, paint, s * 0.68, 0.86, zR, root); // the wheel box beside the bench, over the tyre
+      rbox(0.04, 0.2, 0.32, 0.01, paint, s * 0.8, 0.7, -0.66, root); // the side of the footwell, under the body side
       const glass = add(new THREE.PlaneGeometry(1.3, 0.46), MAT.glass, root);
       glass.rotation.y = Math.PI / 2;
       glass.position.set(s * 0.82, 1.4, -1.22);
@@ -870,6 +927,19 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
     a.position.set(seat.x, seat.y, seat.z);
     root.add(a);
   }
+  if (D) {
+    // The back bench's anchors (hips on the cushions) and where your eyes are in each of its seats.
+    const cap = (n) => n[0].toUpperCase() + n.slice(1);
+    for (const [name, seat] of Object.entries(LANDY_REAR_SEATS)) {
+      const a = new THREE.Object3D();
+      a.name = `seat${cap(name)}`;
+      a.position.set(seat.x, seat.y, seat.z);
+      const eyes = new THREE.Object3D();
+      eyes.name = `camera${cap(name)}`;
+      eyes.position.set(seat.x, seat.y + 0.69, seat.z + 0.02);
+      root.add(a, eyes);
+    }
+  }
   const cameraAnchor = new THREE.Object3D();
   cameraAnchor.name = 'cameraAnchor';
   cameraAnchor.position.set(LANDY_SEATS.driver.x, LANDY_SEATS.driver.y + 0.69, LANDY_SEATS.driver.z + 0.02);
@@ -902,6 +972,14 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
     }
   });
   return quad;
+}
+
+/** Tips the 200TDi's outer front backrests forward, 0 (upright) to 1 (right forward), by seat name ({ left, driver }). */
+export function poseSeatTips(model, tips) {
+  for (const name of TIPPING_SEATS) {
+    const back = model.getObjectByName(`seatBack_${name}`);
+    if (back) back.rotation.x = SEAT_TIP * Math.min(1, Math.max(0, tips[name] ?? 0));
+  }
 }
 
 /**

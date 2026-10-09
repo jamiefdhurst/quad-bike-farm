@@ -497,7 +497,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Can the girls ride in the UTV and the Land Rover?',
         a: `Yes. Stop with the engine running and they may climb in, squabbling over the middle seat. Jess may ride in the UTV's bed, which is against the rules.
-          They drive both too (Amy only once she's had her day on the tractor), and you can ride beside the driver.`,
+          They drive both too (Amy only once she's had her day on the tractor), and you can ride beside the driver. The 200TDi has a back bench as well: ask a girl to "Get in the back", or look at its back half and press <kbd>B</kbd> to sit there yourself.`,
       },
       {
         q: 'What is the other Land Rover, the 200TDi?',

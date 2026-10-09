@@ -188,7 +188,8 @@ export const moveMethods = {
       const slot = this.traSlot;
       if (!slot || d.lie || d.leaving || d.fromWorld || (d.leanK ?? 0) > 0.02 || (this.hayFlailT ?? 0) > 0) return null;
       if ((this.trailer?.motion.jolt ?? 0) > 0.6) return null;
-      return slot.move === 'stepIn' ? { kind: 'bench', window: slot.name === 'left' } : { kind: 'perch', window: false };
+      // The back bench is a bench, but none of it is by a door.
+      return slot.move === 'stepIn' || slot.move === 'stepInBack' ? { kind: 'bench', window: slot.name === 'left' } : { kind: 'perch', window: false };
     }
     if (this.fsm.is('seated') && this.seatKind === 'rack') return { kind: 'perch', window: false };
     return null;

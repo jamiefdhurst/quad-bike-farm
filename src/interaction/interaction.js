@@ -42,6 +42,7 @@ export class Interaction {
     let best = null;
     let bestDist = Infinity;
     let bestPriority = -Infinity;
+    let bestPoint = null;
     let coneBest = null;
     let coneBestCos = this.coneCos;
     for (const item of this.items) {
@@ -54,6 +55,7 @@ export class Interaction {
         best = item;
         bestDist = hits[0].distance;
         bestPriority = priority;
+        bestPoint = hits[0].point;
       }
       // Angle from the view ray to the nearest part of the object's bounds.
       this.box.setFromObject(item.target);
@@ -70,10 +72,13 @@ export class Interaction {
       }
     }
     this.focused = best ?? coneBest;
+    // Where the view ray met it (world space), when it did rather than only coming near: which half of a car you're looking at.
+    this.focusPoint = best ? bestPoint : null;
     return this.focused;
   }
 
   clear() {
     this.focused = null;
+    this.focusPoint = null;
   }
 }

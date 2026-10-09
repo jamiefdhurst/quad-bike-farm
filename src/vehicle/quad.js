@@ -8,14 +8,15 @@ import { QuirkSet } from './quirks.js';
 import { headlightLook, taillightLevel } from './headlight.js';
 import { LightSwitch, lightLook, lightLamps } from './lightSwitch.js';
 import { Indicators, INDICATOR_PARAMS } from './indicators.js';
-import { SeatBelts, beltLampMode, beltLampLit } from './seatBelts.js';
+import { SeatBelts, BELT_SEATS, beltLampMode, beltLampLit } from './seatBelts.js';
 import { TyreSet } from './tyres.js';
 import { frostTexture } from './frostTexture.js';
 import { frostAfter, frostedColour, DEFAULT_FROST_PARAMS } from './seatFrost.js';
 import { ManualDrivetrain, gearLabel } from './manualDrivetrain.js';
 import { AutoShifter, grindsGear } from './autoShifter.js';
 import { poseTractorControls } from './tractorModel.js';
-import { poseLandyControls } from './landRoverModel.js';
+import { poseLandyControls, poseSeatTips, LANDY_REAR_SEATS } from './landRoverModel.js';
+
 import { poseUtvControls, poseUtvBelts } from './utvModel.js';
 import { EngineLoad } from './engineLoad.js';
 import { waterGulp } from '../engine/water.js';
@@ -33,6 +34,8 @@ import { holdsItself } from './handbrake.js';
 import { DriveSwitch, driveEffects, DEFAULT_DRIVE_PARAMS } from './driveMode.js';
 import { reverseAllowed, chokeReach, DEFAULT_CONTROLS_PARAMS } from './controls.js';
 import { advanceUsage, isNeutral, dashClock, lampStates } from './dashState.js';
+
+const REAR_SEATS = Object.keys(LANDY_REAR_SEATS); // a back bench's seats, where a model has one (the 200TDi)
 
 // Height of the ground below the chassis origin with the bike at rest.
 const GROUND_OFFSET = -0.36;
@@ -148,6 +151,11 @@ export class Quad {
     this.cameraAnchor = part('cameraAnchor');
     this.pillionCameraAnchor = part('pillionCameraAnchor');
     this.benchCameras = { left: part('cameraLeft') ?? null, mid: part('cameraMid') ?? null }; // your eyes in the UTV's and Land Rover's other seats
+    // And in the 200TDi's back bench, which it alone has (its belts too).
+    this.rearSeats = REAR_SEATS.filter((s) => part(`camera${s[0].toUpperCase()}${s.slice(1)}`));
+    for (const s of this.rearSeats) this.benchCameras[s] = part(`camera${s[0].toUpperCase()}${s.slice(1)}`);
+    if (this.belts && this.rearSeats.length) this.belts = new SeatBelts(undefined, [...BELT_SEATS, ...this.rearSeats]);
+    this.seatTips = { left: 0, driver: 0 }; // the 200TDi's front backrests, tipped forward to let someone into the back (0..1)
     this.pillionAnchor = part('pillionAnchor') ?? null; // every spec's model has one
     this.rackAnchor = part('rackAnchor') ?? null; // only quads with a front rack
     this.mugAnchor = part('mugAnchor') ?? null; // the same quads' rear rack: where a girl leaves her tea (items/mug.js)
@@ -1041,6 +1049,7 @@ export class Quad {
     if (this.landRover) {
       poseLandyControls(this.model, { gear: this.drivetrain.gear, gears: this.gearbox.gears, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, choke: this.choke, hand: this.handSetting, park: this.parkBrake });
       poseUtvBelts(this.model, this.belts.worn()); // the same belt names as the UTV's
+      if (this.rearSeats.length) poseSeatTips(this.model, this.seatTips);
     }
     if (!this.utv && !this.landRover && !this.tractor) {
       this.displayPark += ((this.parkBrake ? 1 : 0) - this.displayPark) * Math.min(1, 14 * dt);

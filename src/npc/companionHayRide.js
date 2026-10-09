@@ -11,6 +11,7 @@ export const DEFAULT_HAYSEAT_PARAMS = {
   seatRaise: 0.06, // metres: fine-tunes how high she sits on the bales
   climbSeconds: 1.8, // climbing up onto the bed, an arch or the bales, or down again
   stepSeconds: 2.0, // stepping into the UTV's or Land Rover's bench, or out again
+  backStepScale: 1.4, // into the 200TDi's back bench takes this much longer, past the tipped front seat
   climbLift: 0.55, // how high she lifts over the edge on the way, unless the seat says otherwise
   leanBack: 1.15, // radians she lies back from sitting
   leanSpeed: 1.6, // how fast she goes down or comes up, per second
@@ -25,6 +26,7 @@ export const HAYSEAT_PARAM_RANGES = {
   seatRaise: [-0.3, 0.3, 0.005],
   climbSeconds: [0.2, 4, 0.05],
   stepSeconds: [0.2, 4, 0.05],
+  backStepScale: [1, 3, 0.05],
   climbLift: [0, 1.2, 0.05],
   leanBack: [0, 1.5, 0.05],
   leanSpeed: [0.3, 6, 0.1],
@@ -58,10 +60,11 @@ export const hayRideMethods = {
     // Which side of it she's on, so the move is mirrored to suit.
     const local = this.trailer.model.worldToLocal(stand().position.clone());
     const side = local.x >= 0 ? 1 : -1;
-    this.movingSeatPose = kind === 'stepIn' ? 'bench' : null;
+    const bench = kind === 'stepIn' || kind === 'stepInBack';
+    this.movingSeatPose = bench ? 'bench' : null;
     this.beginMove({
       kind, side, dir, seat: slot.anchor, seatEnd: () => this.haySeatEnd(), standEnd: stand,
-      duration: kind === 'stepIn' ? this.hay.stepSeconds : this.hay.climbSeconds,
+      duration: kind === 'stepInBack' ? this.hay.stepSeconds * this.hay.backStepScale : bench ? this.hay.stepSeconds : this.hay.climbSeconds,
       lift: kind === 'climbUp' ? slot.lift ?? this.hay.climbLift : undefined,
     });
   },
@@ -169,7 +172,7 @@ export const hayRideStates = {
       this.root.quaternion.identity();
       this.rig.play('SitIdle', { fade: 0.4 });
       this.rig.legSpread = 0;
-      this.sittingPose = this.traSlot.move === 'stepIn' ? 'bench' : null;
+      this.sittingPose = this.traSlot.move === 'stepIn' || this.traSlot.move === 'stepInBack' ? 'bench' : null;
       data.leanK = 0;
       data.lie = false;
       data.phase = 'up';

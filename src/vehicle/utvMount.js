@@ -11,7 +11,11 @@ const BED_LIFT = 0.45; // up onto the tailgate from behind
  * with its own stand points (`stand`) and no bed (its model has no `bedSeat`).
  */
 export class UtvMount {
-  constructor(quad, ground, stand = UTV_STAND) {
+  /**
+   * `rear`: the back bench's seats where there is one (the 200TDi's LANDY_REAR_SEATS, each with the `door` it's reached by), and `stand`
+   * then has a stand point for each door (`rearLeft` for the passenger's, `rearRight` for the driver's).
+   */
+  constructor(quad, ground, stand = UTV_STAND, rear = {}) {
     this.quad = quad;
     this.ground = ground;
     this.model = quad.model;
@@ -22,6 +26,11 @@ export class UtvMount {
       left: { name: 'left', side: 1, anchor: this.model.getObjectByName('seatLeft'), girl: null, lift: CLIMB_LIFT, move: 'stepIn' },
       mid: { name: 'mid', side: 1, anchor: this.model.getObjectByName('seatMid'), girl: null, lift: CLIMB_LIFT, move: 'stepIn' },
     };
+    // The back bench, stepped into past the tipped front seat (npc/poseMoves.js stepInBack).
+    for (const [name, seat] of Object.entries(rear)) {
+      const anchor = this.model.getObjectByName(`seat${name[0].toUpperCase()}${name.slice(1)}`);
+      if (anchor) this.slots[name] = { name, side: 1, anchor, girl: null, lift: CLIMB_LIFT, move: 'stepInBack', rear: true, door: seat.door };
+    }
     const bedSeat = this.model.getObjectByName('bedSeat');
     if (bedSeat) this.slots.bed = { name: 'bed', side: 1, anchor: bedSeat, girl: null, lift: BED_LIFT };
     this.lastYaw = quad.yaw;
@@ -39,9 +48,20 @@ export class UtvMount {
     this.motion.jolt = Math.min(1, speed / 11);
   }
 
+  /** The back bench's seats, if it has one. */
+  get rearSlots() {
+    return Object.values(this.slots).filter((s) => s.rear);
+  }
+
+  /** The door a back seat is reached by just now: its own, unless that's the driver's and somebody is at the wheel. */
+  doorOf(slot) {
+    return slot.door === 'driver' && (this.quad.driver || this.quad.rider) ? 'left' : slot.door;
+  }
+
   /** Where she stands on the ground to climb in or out, and the way she faces (toward the UTV). `side` is unused: the seat decides. */
   standPoint(side, slot) {
-    const l = this.stand[slot?.name ?? 'left'];
+    const key = slot?.rear ? (this.doorOf(slot) === 'driver' ? 'rearRight' : 'rearLeft') : slot?.name ?? 'left';
+    const l = this.stand[key];
     const p = this.model.localToWorld(new THREE.Vector3(l.x, 0, l.z));
     p.y = this.ground(p.x, p.z);
     const c = this.model.position;
@@ -56,6 +76,13 @@ export class UtvMount {
   /** The nearest free bench seat to `from`, or null. The bed is never picked this way: a girl has to want it. */
   freeSlot(from) {
     const free = [this.slots.left, this.slots.mid].filter((s) => !s.girl);
+    free.sort((a, b) => this.standPoint(a.side, a).position.distanceTo(from) - this.standPoint(b.side, b).position.distanceTo(from));
+    return free[0] ?? null;
+  }
+
+  /** The nearest free seat on the back bench to `from`, or null (or if there isn't one). */
+  freeRearSlot(from) {
+    const free = this.rearSlots.filter((s) => !s.girl);
     free.sort((a, b) => this.standPoint(a.side, a).position.distanceTo(from) - this.standPoint(b.side, b).position.distanceTo(from));
     return free[0] ?? null;
   }

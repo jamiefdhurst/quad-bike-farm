@@ -23,16 +23,17 @@ export const SEAT_BELT_PARAM_RANGES = {
 export const SEAT_BELT_PARAMS = { ...DEFAULT_SEAT_BELT_PARAMS }; // shared by the UTV (and anything else that gets belts), registered once
 
 export class SeatBelts {
-  constructor(p = SEAT_BELT_PARAMS) {
+  /** `seats`: the seats that have a belt (the 200TDi's back bench adds rearLeft, rearMid and rearRight). */
+  constructor(p = SEAT_BELT_PARAMS, seats = BELT_SEATS) {
     this.p = p;
-    this.seats = Object.fromEntries(BELT_SEATS.map((s) => [s, { who: null, sat: 0, belted: false }]));
+    this.seats = Object.fromEntries(seats.map((s) => [s, { who: null, sat: 0, belted: false }]));
     this.sinceBing = 0;
     this.wasLit = false;
     this.emptyFor = 0; // seconds the key has been on with nobody in the driver's seat
   }
 
   /**
-   * One step. `who` says who is in each seat ({ driver, mid, left }: 'you', 'girl' or null), `keyOn` whether the ignition is on and
+   * One step. `who` says who is in each seat ({ driver, mid, left, ... }: 'you', 'girl' or null), `keyOn` whether the ignition is on and
    * `seconds` the dash clock the lamp flashes by. A seat that empties lets its belt go. Returns true when the bong should sound: as the
    * lamp lights, once `bingEvery` has passed, so the sound and the flash go together.
    */
@@ -74,9 +75,9 @@ export class SeatBelts {
     return s.belted ? 'on' : 'off';
   }
 
-  /** Which belts are worn: { driver, mid, left }. */
+  /** Which belts are worn, by seat: { driver, mid, left, ... }. */
   worn() {
-    return Object.fromEntries(BELT_SEATS.map((s) => [s, this.seats[s].belted]));
+    return Object.fromEntries(Object.entries(this.seats).map(([s, seat]) => [s, seat.belted]));
   }
 
   /** Someone is sitting there with their belt off, or the driver's seat is empty (the dash lamp's cue, with the key on). */

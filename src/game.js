@@ -9,7 +9,8 @@ import { Player, PLAYER_CAPSULE } from './player/player.js';
 import { DEFAULT_PLAYER_PARAMS, PLAYER_PARAM_RANGES } from './player/playerParams.js';
 import { QuadUnit } from './vehicle/quadUnit.js';
 import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC } from './vehicle/quadSpecs.js';
-import { LANDY_STAND } from './vehicle/landRoverModel.js';
+import { LANDY_STAND, LANDY_REAR_STAND, LANDY_REAR_SEATS } from './vehicle/landRoverModel.js';
+import { DEFAULT_REAR_ACCESS_PARAMS, REAR_ACCESS_PARAM_RANGES, seatTipTargets, easeSeatTips, pickRearSeat, rearDoor } from './vehicle/rearAccess.js';
 import { clearOfChassis } from './vehicle/dismount.js';
 import { DEFAULT_BIKE_PARAMS, BIKE_PARAM_RANGES } from './vehicle/bikeLean.js';
 import { pickFleet } from './vehicle/fleet.js';
@@ -559,11 +560,16 @@ export class Game {
     // The Land Rovers' benches: the same riding as the UTV's, with no bed to ride in (vehicle/utvMount.js, npc/utvRide.js).
     for (const l of Object.values(this.landys)) {
       const series = l.kind === 'landy';
-      l.ride = new UtvRide({ ...DEFAULT_UTV_RIDE_PARAMS, jessBedChance: 0, amyBedChance: 0, jessBedLoseChance: 0, amyBedLoseChance: 0 }, createRandom(this.seed ^ (series ? 0x1a4d : 0x1a5d)));
+      // The 200TDi has a back bench too (LANDY_REAR_SEATS): the girls take it when the front's full, or now and then by choice.
+      const rear = series ? {} : LANDY_REAR_SEATS;
+      l.ride = new UtvRide({ ...DEFAULT_UTV_RIDE_PARAMS, jessBedChance: 0, amyBedChance: 0, jessBedLoseChance: 0, amyBedLoseChance: 0 }, createRandom(this.seed ^ (series ? 0x1a4d : 0x1a5d)), { rear: Object.keys(rear) });
       if (series) registerTuning('Land Rover riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
       else registerTuning('200TDi riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
-      l.mount = l.unit ? new UtvMount(l.unit.quad, (x, z) => this.world.heightAt(x, z), LANDY_STAND) : null;
+      l.mount = l.unit ? new UtvMount(l.unit.quad, (x, z) => this.world.heightAt(x, z), { ...LANDY_STAND, ...LANDY_REAR_STAND }, rear) : null;
+      if (l.unit) l.unit.quad.tipHold = { left: 0, driver: 0 }; // seconds a backrest stays tipped after you climb past it
     }
+    this.rearAccess = { ...DEFAULT_REAR_ACCESS_PARAMS };
+    registerTuning('200TDi back seats', this.rearAccess, REAR_ACCESS_PARAM_RANGES);
     // The little tipping trailer behind any quad with a rack (or the tractor), and the girl who rides in it (vehicle/tipTrailer.js, npc/trailerRide.js).
     this.tipTrailer = new TipTrailer({ scene: this.scene, world: this.world });
     const tt = this.world.layout.tipTrailer;
@@ -708,7 +714,7 @@ export class Game {
           }
           if (quad.crank && quad.atCrank && !this.player.isRiding) return { text: this.crankPrompt(quad) };
           if (quad.isTipped) return `Right the ${unit.label}`;
-          if (this.canRideBench(quad)) return `Get in beside ${this.herAtTheFront(quad).name} (she's driving)`;
+          if (this.canRideBench(quad)) return this.lookingAtBack(quad) ? `Get in the back (${this.herAtTheFront(quad).name}'s driving)` : `Get in beside ${this.herAtTheFront(quad).name} (she's driving)`;
           if (quad.hasBench && this.herAtTheFront(quad) && !quad.passenger && !this.benchSeatFor(quad)) return { text: `${this.herAtTheFront(quad).name}'s driving and the bench is full` };
           if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger && this.herOnBack(quad)) return { text: `${this.herAtTheFront(quad).name}'s driving and ${this.herOnBack(quad).name}'s on the back: no room` };
           if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger) return `Get on the back (${this.herAtTheFront(quad).name}'s driving)`;
@@ -720,7 +726,7 @@ export class Game {
               : unit.spec.utv
                 ? [['K', 'Key'], ['R', 'Start'], ['T', 'Tip the bed'], ['Y', 'Dipstick'], ...(this.canSitOnBack(quad) ? [['B', 'Sit in the passenger seat']] : [])] // the reverse lever is on the dash: only from the seat
                 : unit.spec.landRover
-                  ? [['K', 'Key'], ['R', 'Start'], ...(unit.spec.defender ? [] : [['Q Z', 'Choke'], ['[ ]', 'Hand throttle']]), ['Y', 'Dipstick'], ...(unit.spec.defender ? [] : [['P', 'Starting handle (at the front)']]), ...(this.canSitOnBack(quad) ? [['B', 'Sit in the passenger seat']] : [])]
+                  ? [['K', 'Key'], ['R', 'Start'], ...(unit.spec.defender ? [] : [['Q Z', 'Choke'], ['[ ]', 'Hand throttle']]), ['Y', 'Dipstick'], ...(unit.spec.defender ? [] : [['P', 'Starting handle (at the front)']]), ...(this.canSitOnBack(quad) ? [['B', this.lookingAtBack(quad) ? 'Sit in the back' : 'Sit in the passenger seat']] : [])]
                 : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(quad.sump ? [['Y', 'Dipstick']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : []), ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
           };
         },
@@ -1876,6 +1882,27 @@ export class Game {
     return unit;
   }
 
+  /**
+   * The 200TDi's front backrests: tipped forward while a girl climbs into or out of the back past one, or for a moment after you do,
+   * unless somebody's sat in it (vehicle/rearAccess.js).
+   */
+  updateSeatTips(dt, q, mount, sitting) {
+    const moving = [];
+    for (const c of this.companions) {
+      const slot = c.trailer === mount ? c.traSlot : null;
+      if (!slot?.rear) continue;
+      const near = c.fsm.is('walking') && c.fsm.data?.goal === 'board' && c.root.position.distanceTo(mount.standPoint(slot.side, slot).position) < 1.5;
+      const climbing = c.fsm.is('boarding') || (c.fsm.is('onTrailer') && (c.fsm.data.leaving || c.fsm.data.fromWorld));
+      if (near || climbing) moving.push(mount.doorOf(slot));
+    }
+    for (const k of Object.keys(q.tipHold)) {
+      q.tipHold[k] = Math.max(0, q.tipHold[k] - dt);
+      if (q.tipHold[k] > 0) moving.push(k);
+    }
+    const occupied = Object.keys(q.seatTips).filter((s) => sitting[s]);
+    easeSeatTips(q.seatTips, seatTipTargets(moving, occupied), dt, this.rearAccess.tipSpeed);
+  }
+
   /** What standing at the Land Rover's front says: the starting handle, how you're holding it, and whether your hand still hurts. */
   crankPrompt(quad) {
     const c = quad.crank;
@@ -1906,7 +1933,7 @@ export class Game {
 
     // The seat belts, as the UTV's: `;` for yours, and the girls do their own (vehicle/seatBelts.js). The 200TDi has the lamp and the bong; the old Series has neither.
     const youSeat = riding ? 'driver' : this.player.isRiding && q.passenger ? this.player.benchSeat : null;
-    const sitting = { driver: null, mid: null, left: null };
+    const sitting = Object.fromEntries(Object.keys(q.belts.seats).map((s) => [s, null])); // every seat with a belt, the back bench's too
     if (youSeat) sitting[youSeat] = 'you';
     for (const c of this.companions) {
       const seat = c.fsm.is('driving') && c.quad === q ? 'driver' : c.fsm.is('onTrailer') && c.trailer === mount ? c.traSlot?.name ?? null : null;
@@ -1914,6 +1941,7 @@ export class Game {
     }
     if (youSeat && input.wasPressed('Semicolon')) q.belts.toggle(youSeat);
     if (q.belts.update(dt, sitting, q.engine.ignitionOn, dashClock().seconds()) && unit.spec.defender) this.audioHub.beltBing(q.position);
+    if (mount.rearSlots.length) this.updateSeatTips(dt, q, mount, sitting);
 
     const girls = this.companions.map((c) => ({
       id: c.character.id,
@@ -1946,17 +1974,20 @@ export class Game {
     const name = l.spec.name;
     const children = [];
     if (c.fsm.is('onTrailer') && c.trailer === mount) children.push({ label: `Get out of the ${name}`, run: () => (ride.dismiss(c.character.id), c.leaveTrailer()) });
-    else if (c.fsm.is('idle') && !q.rider && !q.driver && q.speed < ride.p.stopSpeed && mount.freeSlot(c.root.position)) {
-      children.push({ label: `Get in the ${name}`, run: () => this.askIntoLandy(c, l) });
+    else if (c.fsm.is('idle') && !q.rider && !q.driver && q.speed < ride.p.stopSpeed) {
+      // "Get in" takes the front if there's room and the back if not; the 200TDi's slice also lets you send her to the back.
+      if (mount.freeSlot(c.root.position) || mount.freeRearSlot(c.root.position)) children.push({ label: `Get in the ${name}`, run: () => this.askIntoLandy(c, l) });
+      if (mount.freeRearSlot(c.root.position)) children.push({ label: 'Get in the back', run: () => this.askIntoLandy(c, l, { back: true }) });
     }
     if (c.fsm.is('idle') && this.goFree(kind) && c.canDrive(q)) children.push({ label: 'Drive it', run: () => this.askDriveVehicle(c, kind) });
     if (this.canAskStart(c, kind)) children.push({ label: 'Start it', run: () => c.requestStart(q) });
     return { label: name, color: l.spec.bodyColor, children };
   }
 
-  /** You asked her into a Land Rover: she goes at once and stays until you ask her out. */
-  askIntoLandy(c, l) {
-    const slot = l.mount.freeSlot(c.root.position);
+  /** You asked her into a Land Rover: she goes at once and stays until you ask her out. `back`: the 200TDi's back bench. */
+  askIntoLandy(c, l, { back = false } = {}) {
+    const from = c.root.position;
+    const slot = back ? l.mount.freeRearSlot(from) : l.mount.freeSlot(from) ?? l.mount.freeRearSlot(from);
     if (!slot || slot.girl || !c.boardTrailer(l.mount, slot)) return this.hud.toast('She can\'t just now');
     l.ride.ask(c.character.id);
     c.voice.say('utvBoard', { force: true });
@@ -2258,7 +2289,14 @@ export class Game {
 
   /** You could sit on the back of this quad: it's parked, upright and nobody's on it. */
   canSitOnBack(quad) {
-    return (quad.hasPillion || (quad.hasBench && !!this.benchSeatFor(quad))) && !quad.driver && !quad.isTipped && !quad.passenger && !quad.rider && !this.herOn(quad) && quad.speed < 0.5 && !this.handsFull;
+    return (quad.hasPillion || (quad.hasBench && !!this.benchSeatFor(quad, this.lookingAtBack(quad)))) && !quad.driver && !quad.isTipped && !quad.passenger && !quad.rider && !this.herOn(quad) && quad.speed < 0.5 && !this.handsFull;
+  }
+
+  /** Looking at the back half of a car with a back bench (the 200TDi), so B or E is for the back seats rather than the front. */
+  lookingAtBack(quad) {
+    const at = this.interaction.focusPoint;
+    if (!quad.rearSeats?.length || !at || this.interaction.focused?.unit?.quad !== quad) return false;
+    return quad.model.worldToLocal(at.clone()).z < this.rearAccess.backHalfZ;
   }
 
   /**
@@ -2305,25 +2343,34 @@ export class Game {
     return Object.values(this.landys).find((l) => l.unit?.quad === quad)?.mount ?? null;
   }
 
-  /** The bench seat you would take, or null if it's full. Girls aboard or on their way count as taking one. */
-  benchSeatFor(quad) {
+  /**
+   * The bench seat you would take, or null if it's full. Girls aboard or on their way count as taking one. `back`: one on the 200TDi's
+   * back bench instead, nearest the door on your side (the driver's door only with nobody at the wheel).
+   */
+  benchSeatFor(quad, back = false) {
     const mount = this.benchMountOf(quad);
     if (!mount) return null;
+    if (back) {
+      const driverSide = quad.model.worldToLocal(this.player.position.clone()).x < 0 && !quad.driver && !quad.rider;
+      return pickRearSeat(mount.rearSlots.filter((s) => s.girl).map((s) => s.name), driverSide);
+    }
     return pickBenchSeat(BENCH_SEATS.filter((s) => mount.slots[s].girl));
   }
 
   /** You could get in beside the girl driving the UTV or Land Rover: she's at the wheel, the seat is free and you're not in the middle of something. */
   canRideBench(quad) {
-    return quad.hasBench && !!this.herAtTheFront(quad) && !quad.passenger && !quad.rider && !quad.isTipped && !this.handsFull && !!this.benchSeatFor(quad);
+    return quad.hasBench && !!this.herAtTheFront(quad) && !quad.passenger && !quad.rider && !quad.isTipped && !this.handsFull && !!this.benchSeatFor(quad, this.lookingAtBack(quad));
   }
 
   /** In the UTV's or Land Rover's other seat while she drives (the quads' pillion, on a bench). */
   mountBench(unit) {
     if (this.player.isRiding) return;
-    const seat = this.benchSeatFor(unit.quad);
+    const back = this.lookingAtBack(unit.quad);
+    const seat = this.benchSeatFor(unit.quad, back);
     if (!seat) return;
     this.player.mount(unit.quad, 'pillion', seat);
     this.benchMountOf(unit.quad).slots[seat].girl = YOU_ABOARD;
+    if (back) unit.quad.tipHold[rearDoor(seat, !!(unit.quad.driver || unit.quad.rider))] = this.rearAccess.holdSeconds; // the front seat tips as you climb past
     unit.quad.passenger = this.player;
     this.lastUnit = unit;
     this.input.takeWheelSteps();
@@ -2755,10 +2802,13 @@ export class Game {
       this.hud.toast('Ask her to stop first');
       return false;
     }
+    // Out of the 200TDi's back by the door you'd have come in by, its front seat tipping as you go.
+    const backDoor = quad.rearSeats?.includes(this.player.benchSeat) ? rearDoor(this.player.benchSeat, !!(quad.driver || quad.rider)) : null;
+    if (backDoor) quad.tipHold[backDoor] = this.rearAccess.holdSeconds;
     const spot = this.findDismountSpot(
       quad,
       quad.hasBench
-        ? benchDismountSpots(quad.benchStand)
+        ? benchDismountSpots(backDoor === 'driver' && quad.driverStand ? quad.driverStand : quad.benchStand)
         : [
             [1.05, -0.6],
             [-1.05, -0.6],
