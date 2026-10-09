@@ -72,9 +72,9 @@ export function buildTipTrailerModel() {
   for (const s of [-0.38, 0.38]) box(0.06, 0.08, len, MAT.steel, s, S.floorY - 0.1, midZ, body);
   box(S.halfWidth * 2, 0.06, 0.08, MAT.steel, 0, S.floorY - 0.1, S.frontZ - 0.1, body);
   for (const s of [-1, 1]) {
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 1.25), MAT.steel);
-    leg.position.set(s * 0.2, S.ringHeight + 0.05, S.frontZ + 0.5);
-    leg.rotation.y = -s * 0.16;
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.95), MAT.steel);
+    leg.position.set(s * 0.2, S.ringHeight + 0.02, S.frontZ + 0.425); // ends on the coupling body
+    leg.rotation.y = -s * 0.32;
     leg.castShadow = true;
     body.add(leg);
   }
@@ -111,11 +111,11 @@ export function buildTipTrailerModel() {
   // Pressed ribs along the sides and across the front, corner posts, and the tipping pivot's hinge lugs at the back.
   for (const s of [-1, 1]) {
     for (const y of [0.12, 0.26]) box(0.012, 0.03, len - 0.1, MAT.tubInner, s * (S.halfWidth + 0.002), y, hz(midZ), tub);
-    box(0.06, S.sideHeight + 0.04, 0.06, MAT.steel, s * (S.halfWidth - 0.02), (S.sideHeight + 0.04) / 2, hz(S.frontZ) - 0.03, tub);
-    box(0.06, S.sideHeight + 0.04, 0.05, MAT.steel, s * (S.halfWidth - 0.02), (S.sideHeight + 0.04) / 2, 0.02, tub);
+    box(0.06, S.sideHeight + 0.04, 0.07, MAT.steel, s * (S.halfWidth - 0.02), (S.sideHeight + 0.04) / 2, hz(S.frontZ) - 0.025, tub); // proud of the wall, so no shared face
+    box(0.06, S.sideHeight + 0.04, 0.05, MAT.steel, s * (S.halfWidth - 0.02), (S.sideHeight + 0.04) / 2, 0.03, tub);
     box(0.07, 0.07, 0.1, MAT.steel, s * 0.3, -0.02, -0.04, tub);
   }
-  for (const y of [0.12, 0.26]) box(S.halfWidth * 2 - 0.1, 0.03, 0.012, MAT.tubInner, 0, y, hz(S.frontZ) + 0.004, tub);
+  for (const y of [0.12, 0.26]) box(S.halfWidth * 2 - 0.1, 0.03, 0.008, MAT.tubInner, 0, y, hz(S.frontZ) + 0.003, tub);
   const gate = new THREE.Group();
   gate.name = 'tailgate';
   gate.position.set(0, 0, 0.0);
