@@ -3,6 +3,7 @@ import { TrailerMotion } from './trailer.js';
 import { UtvBed, DEFAULT_UTV_BED_PARAMS } from './utvBed.js';
 import { TRACTOR_GROUND_OFFSET } from './tractorModel.js';
 import { GROUND_OFFSET } from './quad.js';
+import { TrailerObstacle, TIP_TRAILER_FOOTPRINT } from './trailerObstacle.js';
 import { buildTipTrailerModel, poseTipTrailer, TIP_TRAILER_SPEC, TIP_STAND, CARGO_SPOTS, CARGO_YAWS, CARGO_YAW } from './tipTrailerModel.js';
 
 export const DEFAULT_TIP_TRAILER_PARAMS = {
@@ -70,6 +71,12 @@ export class TipTrailer {
   }
 
   ground = (x, z) => this.world.heightAt(x, z);
+
+  /** Gives it a box the girls' probes can hit (vehicle/trailerObstacle.js). */
+  addObstacle(physics, RAPIER) {
+    this.obstacle = new TrailerObstacle({ physics, RAPIER, footprint: TIP_TRAILER_FOOTPRINT });
+    this.obstacle.sync(this.motion);
+  }
 
   place(x, z, yaw) {
     this.motion.place(x, z, yaw, this.ground);
@@ -218,5 +225,6 @@ export class TipTrailer {
     this.model.rotation.set(-m.pitch, m.yaw, m.roll, 'YXZ');
     this.body.position.y = m.heave;
     this.model.updateMatrixWorld(true);
+    this.obstacle?.sync(m);
   }
 }

@@ -2255,3 +2255,11 @@ TODO 13. It copies the little tipping trailer's tub rather than inventing anythi
 - **Tipping out:** items land 1.6 m behind plus up to half a metre, a little to one side, in 0.6 s (`UTV load` in the Tune tab).
 - **Left out:** the load adding to the UTV's weight (no effect on how it drives), and the girls putting things in it.
 - Not checked in the running game: the look of the items in the bed, the prompt wording, and the tip-out. Unit tests only.
+
+## The girls see the trailers (TODO 14)
+
+- Cause: the trailers follow the hitch and have no physics body, so the girls' ray probes (on foot in `Companion.blocked`, driving in `driveProbe` and `driveClear`) went straight through them.
+- Fix: each trailer gets a kinematic box (`src/vehicle/trailerObstacle.js`), moved with it every frame: the bed or tub footprint, 0.2 to 1.0 m above the axle's ground so a ray at knee height hits it between the wheels. Like the girls' own colliders it has solver groups `0xffff0000`, so it makes no contact forces: it can't shove a quad or the tractor towing it, and nothing is stopped by it. Only rays see it (and the player's character controller, so you can't walk through one).
+- A girl driving ignores the trailer she is towing (`towedBy`), otherwise her reverse probe would hit it and she would back off for ever.
+- Not done: the drawbar and swing of a trailer behind her (she sees only the bed, not the arc it sweeps on a tight turn), and a quad you drive into a trailer still passes through. Walking-round-vehicles avoidance is unchanged beyond the trailers; no new logic for the quads, which her probes already saw.
+- Tests: `tests/trailerObstacle.test.js` (box placement, which trailer is ignored, and in Rapier that a ray hits it and an overlapping quad isn't moved). **Not checked:** in the running game.

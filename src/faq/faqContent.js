@@ -455,6 +455,11 @@ export const FAQ_SECTIONS = [
           and tip it (<kbd>T</kbd>) when stopped. Jess may climb in against the rules.`,
       },
       {
+        q: 'Will the girls drive into a trailer?',
+        a: `No. Both trailers are solid to them now: on foot they walk round one, and driving they steer round a trailer parked in the way (but not the one
+          they are pulling). You can't walk through them either. Quads and the tractor still pass through an empty trailer if you drive them into it.`,
+      },
+      {
         q: "Can I carry things in the UTV's bed?",
         a: `Yes. Hold a jerry can, the toolbox, the jump leads or the oil bottle, look into the bed and press <kbd>E</kbd> (the bed has to be down). It holds six.
           They ride along, and you pick one up again the same way as from the floor. Tip the bed (<kbd>T</kbd>, stopped) and everything slides out of the back.`,

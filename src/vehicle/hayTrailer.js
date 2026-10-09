@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { TrailerMotion, DEFAULT_TRAILER_PARAMS } from './trailer.js';
 import { TRACTOR_GROUND_OFFSET } from './tractorModel.js';
+import { TrailerObstacle, BALE_TRAILER_FOOTPRINT } from './trailerObstacle.js';
 import { buildTrailerModel, TRAILER_SPEC, trailerStandLocal } from './trailerModel.js';
 
 const PIN_BACK = 1.5; // the tractor's drawbar pin, metres behind its origin
@@ -28,6 +29,12 @@ export class HayTrailer {
   }
 
   ground = (x, z) => this.world.heightAt(x, z);
+
+  /** Gives it a box the girls' probes can hit (vehicle/trailerObstacle.js). */
+  addObstacle(physics, RAPIER) {
+    this.obstacle = new TrailerObstacle({ physics, RAPIER, footprint: BALE_TRAILER_FOOTPRINT });
+    this.obstacle.sync(this.motion);
+  }
 
   /** Stands it with its axle at (x, z), pointing `yaw` (toward the tractor). */
   place(x, z, yaw) {
@@ -101,5 +108,6 @@ export class HayTrailer {
     this.model.rotation.set(-m.pitch, m.yaw, m.roll, 'YXZ');
     this.body.position.y = m.heave;
     this.model.updateMatrixWorld(true);
+    this.obstacle?.sync(m);
   }
 }

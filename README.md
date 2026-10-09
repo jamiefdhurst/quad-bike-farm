@@ -452,7 +452,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 11. Passenger seats in the UTV and Land Rover. You can ride in the UTV's other seats while a girl drives it, looking out from the middle or the left of the bench, with the camera anchored to the seat and the same on and off as the quads' pillion. **Done.** See DECISIONS.md, "Riding beside her in the UTV and the Land Rover".
 12. Better UTV model. **Done.** An interim Gator-style body, a digital cluster, and a centre console (gears, 4WD, diff lock, lights, tipper, horn). See DECISIONS.md, "A more Gator-like UTV". Item 108 still takes it all the way.
 13. Things in the UTV's bed. The pick-up items (jerry cans, the toolbox, jump leads, the hose and so on) can be put in the bed and ride along, tip out when the bed tips, and be picked up again from it. Bales too, if they become pick-up items. **Done.** See DECISIONS.md, "Things in the UTV's bed".
-14. The girls should see the trailers as obstacles when driving and they should have collision logic, and have better collision avoidance logic when they're walking around the vehicles, they frequently bump into them.
+14. The girls should see the trailers as obstacles when driving and they should have collision logic, and have better collision avoidance logic when they're walking around the vehicles, they frequently bump into them. **Done.** See DECISIONS.md, "The girls see the trailers".
 15. Better trailer models (large and small).
 16. Improve Land Rover model.
 17. Better starter noises for the UTV and Land Rover

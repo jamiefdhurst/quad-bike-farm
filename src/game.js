@@ -403,6 +403,7 @@ export class Game {
       c.character = character;
       c.quads = this.girlUnits.map((u) => u.quad);
       c.others = () => this.companions.filter((o) => o !== c);
+      c.trailers = () => [this.trailer, this.tipTrailer]; // obstacles on foot and on wheels (vehicle/trailerObstacle.js)
       c.followTarget = () => this.riddenUnit?.quad ?? null;
       c.sounds = new CompanionSounds(this.audioHub, { voiceBank: character.voiceBank, rate: character.soundRate });
       c.voice = new CompanionVoice({
@@ -525,6 +526,7 @@ export class Game {
     // The bale trailer in the yard, and the girls riding on it (vehicle/hayTrailer.js, npc/hayRide.js, npc/companionHayRide.js).
     this.trailer = new HayTrailer({ scene: this.scene, world: this.world });
     const tl = this.world.layout.trailer;
+    this.trailer.addObstacle(this.physics, this.RAPIER);
     this.trailer.place(tl.x, tl.z, tl.yaw);
     this.hayRide = new HayRide(undefined, createRandom(this.seed ^ 0x4a71));
     this.haySeat = { ...DEFAULT_HAYSEAT_PARAMS };
@@ -551,6 +553,7 @@ export class Game {
     // The little tipping trailer behind any quad with a rack (or the tractor), and the girl who rides in it (vehicle/tipTrailer.js, npc/trailerRide.js).
     this.tipTrailer = new TipTrailer({ scene: this.scene, world: this.world });
     const tt = this.world.layout.tipTrailer;
+    this.tipTrailer.addObstacle(this.physics, this.RAPIER);
     this.tipTrailer.place(tt.x, tt.z, tt.yaw);
     this.tipRide = new TrailerRide(undefined, createRandom(this.seed ^ 0x71b7));
     this.towParams = { ...DEFAULT_TOW_PARAMS };

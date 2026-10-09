@@ -10,6 +10,7 @@ import { AutoShifter, NoviceShifter, DEFAULT_SHIFTER_PARAMS, DEFAULT_NOVICE_PARA
 import { DEFAULT_TRACTOR_START_PARAMS } from './tractorStart.js';
 import { CrankAttempt, DEFAULT_CRANK_ATTEMPT_PARAMS } from './crankAttempt.js';
 import { onTarmac } from './tarmac.js';
+import { towedBy } from '../vehicle/trailerObstacle.js';
 
 // Her driving a quad herself, as Companion states and methods: getting on the
 // front, driving (the logic is HerDrive in herDriving.js), shuffling between
@@ -594,7 +595,7 @@ export const drivingMethods = {
     const bike = quad.physics.collider.handle;
     const hit = this.physics.castRay(ray, distance, true, undefined, undefined, undefined, undefined, (c) => {
       // Following you, your quad isn't an obstacle: she keeps her gap from it anyway.
-      return c.handle !== terrain && c.handle !== own && c.handle !== bike && c.handle !== this.probeIgnore;
+      return c.handle !== terrain && c.handle !== own && c.handle !== bike && c.handle !== this.probeIgnore && !towedBy(this.trailers?.() ?? [], c.handle, quad);
     });
     return hit ? (hit.timeOfImpact ?? hit.toi) : Infinity;
   },
