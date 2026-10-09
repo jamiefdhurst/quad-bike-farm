@@ -658,7 +658,6 @@ function podLegend(g, w, h) {
   name(CTRL.lock, 'LOCK', 0.0075);
   name(CTRL.lights, 'LIGHTS');
   name(CTRL.tip, 'BED');
-  name(CTRL.hazard, 'HAZARD');
 }
 
 // The symbols on the rocker caps. Each is drawn on a small canvas (in 0..1 across the cap) and redrawn only when what it shows changes.
