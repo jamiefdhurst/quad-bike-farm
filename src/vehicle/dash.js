@@ -480,7 +480,7 @@ function buildTractor() {
     ticks(ctx, t.cx, t.cy, t.r - 6, t.r - 1.5, 170, 10, 30, '#cdbf98', 0.5);
     ticks(ctx, t.cx, t.cy, t.r - 9, t.r - 1.5, 170, 10, 6, '#cdbf98', 1);
     labels(ctx, t.cx, t.cy, t.r - 14.5, 170, 10, ['0', '5', '10', '15', '20', '25', '30'], '#cdbf98', 4.6);
-    text(ctx, 'PTO', t.cx + 8, t.cy - 16.5, 3.2, '#6fd18a', { align: 'center' });
+    text(ctx, 'PTO', t.cx, t.cy - 4, 3.2, '#6fd18a', { align: 'center' }); // in the clear middle, off the figures
     text(ctx, 'R.P.M. x 100', t.cx, t.cy + 10, 3.4, '#a89f84', { align: 'center' });
     const h = counterDigits(s.hours, 4);
     drum(ctx, t.cx - 11.5, t.cy + 14, h.whole, h.tenth, 6);
