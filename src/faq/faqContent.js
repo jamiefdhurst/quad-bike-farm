@@ -140,8 +140,8 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why does it spin its wheels in the mud?',
         a: `The red and blue start every game in 2WD. <kbd>G</kbd> switches to 4WD (the rocker on the bars), which grips in the mud at the cost of a
-          little steering. The blue's diff lock (<kbd>U</kbd>) pulls hardest of all in the mud but pushes wide on grass. The green, loan quad and UTV
-          are always four-wheel drive; the yellow and orange are rear-wheel drive only.`,
+          little steering. The blue's diff lock (<kbd>U</kbd>) pulls hardest of all in the mud but pushes wide on grass; the UTV and the Land Rover have
+          a 4WD lever and a diff lock too. The green and the loan quad are always four-wheel drive; the yellow and orange are rear-wheel drive only.`,
         tip: 'The red and blue start in 2WD. Press G for 4WD before the mud, not in it.',
       },
       {

@@ -45,7 +45,10 @@ body {
 }
 
 #overlay.tuning .overlay-card h1,
-#overlay.tuning .overlay-hint {
+#overlay.tuning .overlay-hint,
+#overlay.tuning .start-logo,
+#overlay.tuning .start-tip,
+#overlay.tuning .start-faq {
   display: none;
 }
 
@@ -55,10 +58,50 @@ body {
 
 .overlay-card {
   text-align: center;
-  padding: 28px 40px;
-  background: rgba(20, 22, 20, 0.75);
-  border-radius: 10px;
-  max-width: 440px;
+  padding: 24px 36px 22px;
+  background: rgba(20, 22, 20, 0.78);
+  border-radius: 12px;
+  width: min(560px, calc(100vw - 32px));
+}
+
+/* The start screen: the painted sign (src/start/logo.js), a tip from the FAQ and the link to it. */
+.start-logo svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 auto 6px;
+}
+
+.start-tip {
+  min-height: 2.6em;
+  margin: 12px 0 4px !important;
+  font-size: 14px;
+  color: #e6dcbc;
+}
+
+.start-faq {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #355f37;
+  color: #efe4c4;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.start-faq:hover {
+  background: #427545;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .overlay-card h1 {

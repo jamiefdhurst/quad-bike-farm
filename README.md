@@ -13,6 +13,8 @@ npm run dev
 
 Open the URL Vite prints (usually http://localhost:5173), click the page to lock the mouse, and you're in. Press `H` to show or hide the controls.
 
+The start screen shows the game's sign, a tip that changes every few seconds, and a link to **How to play, and the FAQ** (`faq.html`), which opens in a new tab so the game keeps going. It answers the questions a player asks (why won't it start, how do I get out of a bog, what does Amy want), with the secrets folded away behind a click, and a search box. The controls, every vehicle's engine, gearbox, tank and reverse, the girls, the whole bucket list and a "Recently changed" list (from the commit messages) are read from the game itself, so they're always current.
+
 Other scripts:
 
 - `npm test` runs the engine and fuel tests with Vitest.
@@ -390,7 +392,9 @@ src/
   player/              walking and seated first-person player
   npc/                 state machine, character rig, companion behaviour, her voice lines
   interaction/         look-at interaction and the context menu
-  hud/                 crosshair, prompts, notes for carried items, help
+  hud/                 crosshair, prompts, notes for carried items, help (controls.js is the controls list)
+  start/               the start screen and the logo
+  faq/                 the FAQ page: hand-written answers (faqContent.js) and the parts generated from the game
   world/               terrain, track, sky, props, layout
   debug/               lil-gui tuning panel
 tests/                 engine state machine and fuel tests

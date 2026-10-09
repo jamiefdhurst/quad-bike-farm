@@ -12,7 +12,7 @@ First-person British farm quad-bike game: Three.js, Vite, ES modules, Rapier phy
 
 ## Code
 
-- `src/game.js` wires everything together. Behaviour lives in modules: `src/npc` (companions: `companion.js` state machine, `companionDriving.js`, `herDriving.js` her driving brain, `companionVoice.js` + `voiceLines.js` + `jessLines.js` + `banterLines.js` what they say, `characters.js` who they are), `src/vehicle` (`quadSpecs.js` the five quads, `quad.js`, `quadPhysics.js`, `quadModel.js` procedural bodies, `bog.js`), `src/engine` (engine model and params), `src/audio`, `src/effects` (smoke, mud, rain), `src/world` (terrain, layout, weather), `src/items` (jerry can, hose, toolbox, winch), `src/workshop` (toolbox tuning), `src/debug` (the debug panel).
+- `src/game.js` wires everything together. `src/start` and `src/faq` are the start screen and the FAQ page (below). Behaviour lives in modules: `src/npc` (companions: `companion.js` state machine, `companionDriving.js`, `herDriving.js` her driving brain, `companionVoice.js` + `voiceLines.js` + `jessLines.js` + `banterLines.js` what they say, `characters.js` who they are), `src/vehicle` (`quadSpecs.js` the five quads, `quad.js`, `quadPhysics.js`, `quadModel.js` procedural bodies, `bog.js`), `src/engine` (engine model and params), `src/audio`, `src/effects` (smoke, mud, rain), `src/world` (terrain, layout, weather), `src/items` (jerry can, hose, toolbox, winch), `src/workshop` (toolbox tuning), `src/debug` (the debug panel).
 - Keep logic pure and testable where you can (no Three.js or DOM), with a test in `tests/`. Look at `boredom.js`, `bog.js`, `banter.js` for the pattern.
 - New tunables go in the module's `DEFAULT_*_PARAMS` with a one-line comment, plus a `[min, max, step]` entry in its ranges, registered with `registerTuning` so they show in the debug panel (see "Debug panel" below).
 - Match the surrounding style: single quotes, about 140-column lines, comments that say why. There's no prettier or eslint config; don't run either over existing files.
@@ -29,6 +29,17 @@ Backtick opens it. It has three tabs, each with a job; keep them that way, and k
 - Buttons and settable values call the real game methods (as the in-game action does), so what you see in the panel is what the game does. Anything pure the buttons need goes in a tested module, not inline.
 - Not persisted: no saved tabs, folders or values.
 - The console (backslash, `src/console`) is the same state by typed path. A new vehicle state, girl value or world setting that goes in the panel goes in `gameTree.js` too (tuning groups appear on their own), and a new on-demand girl action goes in `src/debug/girlActions.js`, which both the Girls tab and `girl <name> <verb>` use. Commands are tested in `tests/consoleShell.test.js` against a stand-in host.
+
+## The FAQ and the start screen
+
+The start screen (`index.html`, `src/start/startScreen.js`, the logo in `src/start/logo.js`) links to `faq.html`, the how-to page for a player, which should always be the best place to learn the game. Half of it is generated from the game's data so it can't go stale: the controls (`src/hud/controls.js`), each vehicle's facts (`src/faq/facts.js`, from its spec), the girls (`characters.js`), the bucket list (`achievements.js`) and "Recently changed" (the commit messages, via `vite.config.js`; `src/faq/changes.js` drops housekeeping ones). The other half is hand-written in `src/faq/faqContent.js`.
+
+- Every item that changes what a player sees or does updates the FAQ: add the questions a player would ask about it ("How do I...", "Why won't...") with answers, and fix any existing answer it makes wrong (search `faqContent.js` for the feature's words). Better one more question than a longer answer.
+- A new vehicle needs a `VEHICLE_NOTES` entry and a new girl a `GIRL_NOTES` entry; `tests/faq.test.js` fails until they have one. If a vehicle fact the page shows is wrong, fix `facts.js` rather than the note.
+- Mark anything the game deliberately hides (a secret, a hidden mechanic, a romance beat) `spoiler: true` so it folds away. Give useful short answers a `tip` (under 140 characters, never a spoiler): the start screen shows them.
+- When Jamie asks how something works, or something turns out to be confusing, add it to the FAQ as well as answering.
+- The page is for a player: what to do and what happens, not file names or tuning numbers (those go in "For tinkerers" if anywhere). Same prose rules as the rest: British English, no em dashes, the player is "you".
+- The logo is drawn in code. Keep "by Jamie Hurst" on it.
 
 ## Testing (keep it cheap)
 
@@ -48,7 +59,7 @@ Backtick opens it. It has three tabs, each with a job; keep them that way, and k
 ## Finishing an item
 
 1. `npm test` passes.
-2. Debug panel: anything new that can be tuned, watched, set or started is in the panel as above. Docs: README.md describes the feature for a player (controls in the help text in `src/hud/hud.js` too); add a short section to DECISIONS.md with what was decided and why, and numbers where you measured something; credit any asset in ASSETS.md. Mark the item **Done.** in the README TODO list (keep its number).
-3. Commit in sensible chunks with plain messages saying what changed for the player ("Let the girls share a quad, one driving and one on the back"). No AI attribution of any kind: no Co-Authored-By, session links or "Generated with" lines.
+2. Debug panel: anything new that can be tuned, watched, set or started is in the panel as above. Docs: README.md describes the feature for a player (new or changed keys go in `src/hud/controls.js`, which the in-game help and the FAQ both read); the FAQ gets an answer for it (see "The FAQ and the start screen" below); add a short section to DECISIONS.md with what was decided and why, and numbers where you measured something; credit any asset in ASSETS.md. Mark the item **Done.** in the README TODO list (keep its number).
+3. Commit in sensible chunks with plain messages saying what changed for the player ("Let the girls share a quad, one driving and one on the back"): they become the FAQ's "Recently changed" list as written. No AI attribution of any kind: no Co-Authored-By, session links or "Generated with" lines. Other sessions may be working in the same tree, so stage only the files (or lines) you changed, by name: never `git add -A`, `git add .` or `git commit -a`.
 4. `git push origin main`.
 5. Tell Jamie in a few lines what changed, what you checked and what you didn't.
