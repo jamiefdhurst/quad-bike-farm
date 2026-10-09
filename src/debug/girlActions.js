@@ -61,6 +61,22 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'shelter',
+      label: '% gets into the nearest cab out of the rain',
+      run: (id) => {
+        if (!free(id)) return;
+        toast(g.sendToCab(id, 'rain') ? `${nameOf(id)} is off to the nearest cab` : `No cab free for ${nameOf(id)}`);
+      },
+    },
+    {
+      verb: 'warm-up',
+      label: '% starts a Land Rover and sits in it to get warm',
+      run: (id) => {
+        if (!free(id)) return;
+        toast(g.sendToCab(id, 'cold') ? `${nameOf(id)} is off to a Land Rover` : `No Land Rover free for ${nameOf(id)}`);
+      },
+    },
+    {
       verb: 'drive',
       label: '% drives the vehicle picked on the Vehicles tab',
       vehicle: true,

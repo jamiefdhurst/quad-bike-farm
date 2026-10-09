@@ -45,6 +45,7 @@ import { AMY_FALLINGOUT_LINES } from './fallingOutLines.js';
 import { AMY_ROMANCE_LINES } from './romanceLines.js';
 import { AMY_QUAD_LINES } from './quadLines.js';
 import { AMY_WARMING_LINES } from './warmingLines.js';
+import { AMY_CAB_LINES } from './cabShelterLines.js';
 import { AMY_HEADSTART_LINES } from './headStartLines.js';
 import { AMY_GOSSIP_LINES } from './gossipLines.js';
 import { AMY_THROTTLE_LINES } from './throttleLines.js';
@@ -1469,6 +1470,7 @@ export const VOICE_LINES = {
   ...AMY_QUAD_LINES,
   // Warming their hands over an idling engine (warmingLines.js).
   ...AMY_WARMING_LINES,
+  ...AMY_CAB_LINES,
   // Starting your usual quad for you, or pointedly not (headStartLines.js).
   ...AMY_HEADSTART_LINES,
   // Caught talking about you (gossipLines.js).

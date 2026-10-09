@@ -41,6 +41,7 @@ import { JESS_FALLINGOUT_LINES } from './fallingOutLines.js';
 import { JESS_ROMANCE_LINES } from './romanceLines.js';
 import { JESS_QUAD_LINES } from './quadLines.js';
 import { JESS_WARMING_LINES } from './warmingLines.js';
+import { JESS_CAB_LINES } from './cabShelterLines.js';
 import { JESS_HEADSTART_LINES } from './headStartLines.js';
 import { JESS_GOSSIP_LINES } from './gossipLines.js';
 import { JESS_THROTTLE_LINES } from './throttleLines.js';
@@ -427,6 +428,7 @@ export const JESS_LINES = {
   ...JESS_ROMANCE_LINES,
   ...JESS_QUAD_LINES,
   ...JESS_WARMING_LINES,
+  ...JESS_CAB_LINES,
   // Starting your usual quad for you, or pointedly not (headStartLines.js).
   ...JESS_HEADSTART_LINES,
   // Caught talking about you (gossipLines.js).

@@ -416,8 +416,14 @@ export const FAQ_SECTIONS = [
       {
         q: 'What do they do when I leave them alone?',
         a: `All sorts: wander off for a look round, start a quad, take one for a drive, race each other, go for a ride together, spin doughnuts, show off to you,
-          line the quads up by the barn, leave a mug of tea on a rack, sit on the bales or the paddock fence on a fine day, run for the barn when it rains,
-          warm their hands over a running engine, or fetch jumpers when it's cold.`,
+          line the quads up by the barn, leave a mug of tea on a rack, sit on the bales or the paddock fence on a fine day, run for the barn or climb into a Land Rover when it rains,
+          warm their hands over a running engine, start a Land Rover and sit in it to warm up, or fetch jumpers when it's cold.`,
+      },
+      {
+        q: 'Why is a girl sitting in the Land Rover?',
+        a: `She's sheltering. When it rains, a girl stood about sometimes climbs into the UTV or a Land Rover (they have roofs) instead of running for the barn.
+          On a cold day she may walk over to a Land Rover, start it and sit in it for a minute or two with the engine running. When the weather turns or she has had enough
+          she gets out again, and switches off an engine she started herself. If you want the vehicle, just get in: she shuffles up and comes along.`,
       },
       {
         q: 'Can I hide from them?',

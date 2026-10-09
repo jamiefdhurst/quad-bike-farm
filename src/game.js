@@ -79,6 +79,7 @@ import { QuadNames, NAME_PARAM_RANGES, quadKey } from './npc/quadNames.js';
 import { Ownership, OWNERSHIP_PARAM_RANGES } from './npc/ownership.js';
 import { Hearing, EAR_PARAM_RANGES } from './npc/earing.js';
 import { Warming, WARMING_PARAM_RANGES, isChilly } from './npc/warming.js';
+import { CabShelter, CAB_SHELTER_PARAM_RANGES } from './npc/cabShelter.js';
 import { HeadStart, HEADSTART_PARAM_RANGES } from './npc/headStart.js';
 import { Gossip, GOSSIP_PARAM_RANGES } from './npc/gossip.js';
 import { ThrottleGrab, GRAB_PARAM_RANGES } from './npc/throttleGrab.js';
@@ -646,6 +647,7 @@ export class Game {
     this.dragBlipSaid = false;
     buildDragStrip(this.scene, (x, z) => this.world.heightAt(x, z), this.world.layout.dragStrip);
     this.warming = new Warming(); // hands over an idling engine on a cold day (npc/warming.js)
+    this.cabShelter = new CabShelter(undefined, createRandom(this.seed ^ 0x0cab)); // into a Land Rover or the UTV out of the rain or cold (npc/cabShelter.js)
     this.nicking = new Nicking(undefined, createRandom(this.seed ^ 0x61c3)); // Jess taking a quad you left running (npc/nicking.js)
     this.headStart = new HeadStart(undefined, createRandom(this.seed ^ 0x4ead)); // starting your usual quad for you (npc/headStart.js)
     this.gossip = new Gossip(BANTER.filter((e) => e.when === 'gossip'), undefined, createRandom(this.seed ^ 0x6055)); // talking about you (npc/gossip.js)
@@ -1009,6 +1011,7 @@ export class Game {
     registerTuning('Whose quad', this.ownership.p, OWNERSHIP_PARAM_RANGES);
     registerTuning('Hearing a quad', this.hearing.p, EAR_PARAM_RANGES);
     registerTuning('Warming hands', this.warming.p, WARMING_PARAM_RANGES);
+    registerTuning('Shelter in a cab', this.cabShelter.p, CAB_SHELTER_PARAM_RANGES);
     registerTuning('Head start', this.headStart.p, HEADSTART_PARAM_RANGES);
     registerTuning('Talking about you', this.gossip.p, GOSSIP_PARAM_RANGES);
     registerTuning('Girls coaching each other', this.pillionCoach.p, PILLION_COACH_PARAM_RANGES);
@@ -3296,6 +3299,80 @@ export class Game {
     }
   }
 
+  // Sheltering in a cab --------------------------------------------------
+
+  /** The UTV and the Land Rovers as somewhere to get in out of the weather: where each is, whether it is free to climb into, and how many seats. */
+  cabContext() {
+    return ['utv', 'landy', 'defender'].filter((k) => this.goVehicle(k)).map((kind) => {
+      const q = this.goVehicle(kind).quad;
+      const mount = this.mountOfKind(kind);
+      const busy = (c) => c.quad === q && (c.fsm.is('driving', 'mounting', 'dismounting', 'shuffling', 'cranking') || (c.fsm.is('walking') && ['drive', 'crank', 'start'].includes(c.fsm.data?.goal)));
+      const open = !q.rider && !q.driver && !q.passenger && !q.isTipped && q.speed < 0.5 && !this.companions.some(busy) && !(kind === 'utv' && (this.utvBed.tip > 0.02 || mount.bedBusy));
+      const seats = [mount.slots.left, mount.slots.mid].filter((s) => s && !s.girl).length;
+      return { id: kind, x: q.position.x, z: q.position.z, open, seats, running: q.engine.isRunning, warm: kind !== 'utv' };
+    });
+  }
+
+  /** She climbs into this cab (when she's stood about). Returns whether she set off. */
+  boardCab(c, kind) {
+    const mount = this.mountOfKind(kind);
+    const slot = mount.freeSlot(c.root.position);
+    if (!slot || slot.girl || !c.boardTrailer(mount, slot)) return false;
+    this.rideOfKind(kind).ask(c.character.id); // she stays until the weather turns or she's bored
+    return true;
+  }
+
+  /** What the cab shelter needs to know about the girls and cabs right now. */
+  cabShelterContext() {
+    const cabKinds = ['utv', 'landy', 'defender'];
+    return {
+      rain: this.weather.rain,
+      warmth: this.weather.warmth,
+      cabs: this.cabContext(),
+      girls: this.companions.map((c) => ({
+        id: c.character.id,
+        x: c.root.position.x,
+        z: c.root.position.z,
+        free: c.fsm.is('idle') && !c.hayFell && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob && !c.isResting,
+        cab: cabKinds.find((k) => this.goVehicle(k) && c.onHayRide && c.trailer === this.mountOfKind(k)) ?? null,
+      })),
+    };
+  }
+
+  /** Acts on what the cab shelter decided (also the debug panel's button, through `sendToCab`). */
+  handleCabEvent(e) {
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    if (e.type === 'go') {
+      const unit = this.goVehicle(e.cab);
+      const go = () => {
+        if (!this.boardCab(c, e.cab)) this.cabShelter.drop(e.girl, []);
+      };
+      c.voice.say(e.reason === 'cold' ? 'cabColdGo' : 'cabRainGo', { urgent: true, chance: 0.9 });
+      if (e.start) {
+        c.requestStart(unit.quad, { settleAt: 0.5, then: (ran) => (ran || unit.quad.engine.isRunning ? go() : this.cabShelter.drop(e.girl, [])) });
+      } else go();
+    } else if (e.type === 'in') c.voice.say('cabIn', { chance: 0.8 });
+    else if (e.type === 'out') {
+      this.rideOfKind(e.cab).dismiss(e.girl);
+      c.leaveTrailer();
+      c.voice.say('cabOut', { chance: 0.6 });
+    } else if (e.type === 'switchOff') {
+      const q = this.goVehicle(e.cab).quad;
+      if (q.engine.isRunning && !q.rider && !q.driver && !q.passenger && !this.companions.some((o) => o.onHayRide && o.trailer === this.mountOfKind(e.cab))) q.engine.setIgnition(false);
+    }
+  }
+
+  updateCabShelter(dt) {
+    for (const e of this.cabShelter.update(dt, this.cabShelterContext())) this.handleCabEvent(e);
+  }
+
+  /** The debug panel's and the console's way to send a girl to a cab now. Returns whether she set off. */
+  sendToCab(id, reason = 'rain', cab = null) {
+    const e = this.cabShelter.force(id, this.cabShelterContext(), reason, cab);
+    if (e) this.handleCabEvent(e);
+    return !!e;
+  }
+
   // Warming their hands --------------------------------------------------
 
   updateWarming(dt) {
@@ -4956,6 +5033,7 @@ export class Game {
     this.updateLPlates(dt);
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);
+    if (auto) this.updateCabShelter(dt);
     if (auto) this.updateHeadStart(dt, ridden);
     this.updateDoughnuts(dt);
     this.updateTarmac(dt);
