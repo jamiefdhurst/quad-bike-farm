@@ -3,7 +3,7 @@ import { tempGaugeFraction } from './tempGauge.js';
 import { lampStates, counterDigits, counterText, cycleIndex, gearShown, forwardGearShown } from './dashState.js';
 import {
   plastic, charcoal, blackMat, gloss, chromeMat, changeGate, mmPanel, housing, chromeRing, text, ticks, labels, arc, needle, drum, lamp, keySwitch,
-  segText, speedText, LAMP,
+  segText, speedText, warnSymbol, LAMP,
 } from './dashParts.js';
 
 // The stock dashes. Each quad's own dash is close to the real machine it's modelled on, which for most means very little: the
@@ -89,7 +89,6 @@ function buildForeman() {
     text(ctx, 'ODOMETER', 128, 57, 3.6, '#ccc');
     const o = counterDigits(s.odoMiles, 4);
     drum(ctx, 128, 60, o.whole, o.tenth);
-    text(ctx, 'HONDA', 128, 86, 6.5, '#e8e8e8', { weight: 'bold', spacing: 1 });
     needle(ctx, cx, cy, r - 2, 170 - (160 * Math.min(45, L.mph)) / 45, '#e8541e');
     // Lamps and the key, on a small panel under the window.
     ctx.fillStyle = '#18191b';
@@ -98,7 +97,7 @@ function buildForeman() {
     ctx.fill();
     lamp(ctx, 138, 114, LAMP.amber, 'R', L.lamps.r, { shape: 'rect' });
     lamp(ctx, 160, 114, LAMP.green, 'N', L.lamps.n, { shape: 'rect' });
-    lamp(ctx, 182, 114, LAMP.red, 'OIL', L.lamps.oil, { shape: 'rect' });
+    warnSymbol(ctx, 'oil', 182, 114, LAMP.red, L.lamps.oil, 0.85);
     keySwitch(ctx, 222, 118, s.keyOn);
   }
 
@@ -184,8 +183,8 @@ function buildGrizzly() {
     // Lamps either side, and the two buttons under the LCD.
     lamp(ctx, 86, 44, LAMP.green, 'N', L.lamps.n, { r: 4.2 });
     lamp(ctx, 86, 72, LAMP.amber, 'R', L.lamps.r, { r: 4.2 });
-    lamp(ctx, 244, 44, LAMP.red, 'TEMP', L.lamps.temp, { r: 4.2 });
-    lamp(ctx, 244, 72, LAMP.amber, 'FUEL', L.lamps.fuel, { r: 4.2 });
+    warnSymbol(ctx, 'temp', 244, 44, LAMP.red, L.lamps.temp);
+    warnSymbol(ctx, 'fuel', 244, 72, LAMP.amber, L.lamps.fuel);
     ctx.fillStyle = '#444';
     ctx.beginPath();
     ctx.roundRect(146, 100, 14, 6, 2);
@@ -264,7 +263,7 @@ function buildKodiak() {
         ctx.fillRect(x + w - 12, y + 46 - i * 6, 7, 4.4);
       }
       text(ctx, '°C', x + w - 8.5, y + 56, 3.6, on, { align: 'center' });
-      text(ctx, '4WD', x + w - 30, y + 20, 4.6, on, { weight: 'bold' }); // the loan quad's is always in four-wheel drive
+      warnSymbol(ctx, '4wd', x + w - 26, y + 17, on, true, 0.8, false); // the loan quad's is always in four-wheel drive
       segText(ctx, s.clock, x + w - 18, y + 25.8, 5.25, on);
       ctx.strokeStyle = ghost;
       ctx.lineWidth = 0.5;
@@ -283,8 +282,8 @@ function buildKodiak() {
     ctx.fill();
     lamp(ctx, 74, 50, LAMP.amber, 'R', L.lamps.r, { r: 3.6 });
     lamp(ctx, 74, 76, LAMP.green, 'N', L.lamps.n, { r: 3.6 });
-    lamp(ctx, 266, 50, LAMP.red, 'TEMP', L.lamps.temp, { r: 3.6 });
-    lamp(ctx, 266, 76, LAMP.amber, 'FUEL', L.lamps.fuel, { r: 3.6 });
+    warnSymbol(ctx, 'temp', 266, 50, LAMP.red, L.lamps.temp);
+    warnSymbol(ctx, 'fuel', 266, 76, LAMP.amber, L.lamps.fuel);
   }
 
   return {
@@ -428,7 +427,7 @@ function buildTractor() {
   let shownTemp = 0;
 
   /** A small dial: a cream-on-black arc scale from 150 to 30 degrees with a needle. */
-  function small(ctx, d, frac, label, lo, hi, redEnd = false) {
+  function small(ctx, d, frac, symbol, lo, hi, redEnd = false) {
     ctx.fillStyle = '#0a0a0a';
     ctx.beginPath();
     ctx.arc(d.cx, d.cy, d.r, 0, Math.PI * 2);
@@ -437,7 +436,7 @@ function buildTractor() {
     if (redEnd) arc(ctx, d.cx, d.cy, d.r - 2.5, 50, 30, '#d8402e', 2.2);
     text(ctx, lo, d.cx - d.r * 0.62, d.cy + d.r * 0.5, 4.4, '#ece6d2', { align: 'center' });
     text(ctx, hi, d.cx + d.r * 0.62, d.cy + d.r * 0.5, 4.4, redEnd ? '#ff6a5a' : '#ece6d2', { align: 'center' });
-    text(ctx, label, d.cx, d.cy + d.r * 0.55, 3.6, '#bbb', { align: 'center' });
+    warnSymbol(ctx, symbol, d.cx, d.cy + d.r * 0.4, '#bbb', true, 0.55);
     needle(ctx, d.cx, d.cy, d.r - 3, 150 - 120 * frac, '#f0f0e0', 1);
   }
 
@@ -457,12 +456,12 @@ function buildTractor() {
     const h = counterDigits(s.hours, 4);
     drum(ctx, t.cx - 11.5, t.cy + 14, h.whole, h.tenth, 6);
     needle(ctx, t.cx, t.cy, t.r - 2, 170 - (160 * Math.min(3000, L.rpm)) / 3000, '#f0f0e0', 1.3);
-    small(ctx, dials[0], L.temp, 'WATER', 'C', 'H', true);
-    small(ctx, dials[2], L.fuel, 'FUEL', 'E', 'F');
+    small(ctx, dials[0], L.temp, 'temp', 'C', 'H', true);
+    small(ctx, dials[2], L.fuel, 'fuel', 'E', 'F');
     // The lamps along the bottom, and the key.
-    lamp(ctx, 150, 105, LAMP.amber, 'GLOW', L.glow, { r: 3.4 });
-    lamp(ctx, 172, 105, LAMP.red, 'CHARGE', L.charge, { r: 3.4 });
-    lamp(ctx, 194, 105, LAMP.red, 'OIL', L.oil, { r: 3.4 });
+    warnSymbol(ctx, 'glow', 150, 105, LAMP.amber, L.glow, 0.7);
+    warnSymbol(ctx, 'charge', 172, 105, LAMP.red, L.charge, 0.7);
+    warnSymbol(ctx, 'oil', 194, 105, LAMP.red, L.oil, 0.7);
     keySwitch(ctx, 236, 100, s.keyOn);
   }
 
@@ -483,112 +482,6 @@ function buildTractor() {
 }
 
 // The UTV -------------------------------------------------------------------------------
-
-/** The UTV's warning symbols, drawn in millimetres about (x, y): lit in `colour` with a glow behind, or dull when out. */
-function warnSymbol(ctx, kind, x, y, colour, lit) {
-  const c = lit ? colour : '#3c3f42';
-  if (lit) {
-    ctx.fillStyle = colour;
-    ctx.globalAlpha = 0.22;
-    ctx.beginPath();
-    ctx.arc(x, y, 8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-  }
-  ctx.strokeStyle = c;
-  ctx.fillStyle = c;
-  ctx.lineWidth = 1.1;
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  if (kind === 'glow') {
-    // A glow plug's coil.
-    ctx.moveTo(x - 7, y + 1);
-    for (let i = 0; i <= 28; i++) ctx.lineTo(x - 7 + i * 0.5, y + Math.sin(i * 0.9) * 3.2 * (i < 3 || i > 25 ? 0.3 : 1));
-    ctx.stroke();
-  } else if (kind === 'charge') {
-    // A battery with its two terminals and a plus and a minus.
-    ctx.strokeRect(x - 6.5, y - 3, 13, 7.5);
-    ctx.fillRect(x - 4.5, y - 5.2, 2.6, 2.2);
-    ctx.fillRect(x + 2, y - 5.2, 2.6, 2.2);
-    ctx.lineWidth = 0.9;
-    ctx.moveTo(x - 4.2, y + 0.8);
-    ctx.lineTo(x - 1.4, y + 0.8);
-    ctx.moveTo(x - 2.8, y - 0.6);
-    ctx.lineTo(x - 2.8, y + 2.2);
-    ctx.moveTo(x + 1.6, y + 0.8);
-    ctx.lineTo(x + 4.6, y + 0.8);
-    ctx.stroke();
-  } else if (kind === 'oil') {
-    // An oil can with its spout and a drop.
-    ctx.moveTo(x - 5, y - 1);
-    ctx.lineTo(x + 3.5, y - 1);
-    ctx.lineTo(x + 3.5, y + 4);
-    ctx.lineTo(x - 5, y + 4);
-    ctx.closePath();
-    ctx.moveTo(x - 5, y);
-    ctx.lineTo(x - 8.5, y - 3);
-    ctx.moveTo(x - 1.5, y - 1);
-    ctx.lineTo(x - 1.5, y - 3.2);
-    ctx.lineTo(x + 2, y - 3.2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(x + 6.2, y + 2.6, 1.1, 0, Math.PI * 2);
-    ctx.fill();
-  } else if (kind === 'choke') {
-    // A choke: the carb's throat with its flap closed across it and an arrow of air coming in.
-    ctx.moveTo(x - 7, y - 4);
-    ctx.lineTo(x + 7, y - 4);
-    ctx.moveTo(x - 7, y + 4);
-    ctx.lineTo(x + 7, y + 4);
-    ctx.moveTo(x + 2.5, y - 4);
-    ctx.lineTo(x - 2.5, y + 4);
-    ctx.moveTo(x - 7, y);
-    ctx.lineTo(x - 4, y);
-    ctx.moveTo(x - 5.4, y - 1.6);
-    ctx.lineTo(x - 3.8, y);
-    ctx.lineTo(x - 5.4, y + 1.6);
-    ctx.stroke();
-  } else if (kind === 'park') {
-    // A P in a circle.
-    ctx.arc(x, y, 5.4, 0, Math.PI * 2);
-    ctx.stroke();
-    text(ctx, 'P', x, y + 2.8, 7.4, c, { align: 'center', weight: 'bold' });
-  } else if (kind === 'belt') {
-    // Someone seated with the belt across them.
-    ctx.arc(x - 1.5, y - 4, 1.9, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(x - 1.5, y - 1.6);
-    ctx.lineTo(x - 1.5, y + 2.4);
-    ctx.lineTo(x + 3.6, y + 2.4);
-    ctx.moveTo(x - 5.2, y - 2.6);
-    ctx.lineTo(x + 3.4, y + 3.6);
-    ctx.stroke();
-  } else if (kind === 'beam') {
-    // A headlamp with its main beam: four straight rays.
-    ctx.arc(x - 3, y, 4.2, -Math.PI / 2, Math.PI / 2);
-    ctx.closePath();
-    ctx.fill();
-    ctx.beginPath();
-    for (let i = 0; i < 4; i++) {
-      ctx.moveTo(x + 2.2, y - 4.5 + i * 3);
-      ctx.lineTo(x + 8, y - 4.5 + i * 3);
-    }
-    ctx.stroke();
-  } else if (kind === 'lights') {
-    // A headlamp with its beams.
-    ctx.arc(x - 2, y, 4.2, -Math.PI / 2, Math.PI / 2);
-    ctx.closePath();
-    ctx.fill();
-    ctx.beginPath();
-    for (let i = 0; i < 3; i++) {
-      ctx.moveTo(x + 3.2, y - 3.6 + i * 3.6);
-      ctx.lineTo(x + 8, y - 3.6 + i * 3.6);
-    }
-    ctx.stroke();
-  }
-}
 
 function buildUtv() {
   const group = new THREE.Group();
@@ -637,7 +530,7 @@ function buildUtv() {
       text(ctx, 'MPH', X + 86, Y + 32, 4, on);
       text(ctx, 'HRS', X + 5, Y + 42, 3.6, on);
       segText(ctx, L.hours, X + 52, Y + 36, 6.5, on);
-      if (s.fourWd) text(ctx, s.diffLock ? '4WD LOCK' : '4WD', X + 66, Y + 42, 3.6, on);
+      if (s.fourWd) warnSymbol(ctx, s.diffLock ? 'lock' : '4wd', X + 70, Y + 40.5, on, true, 0.5, false);
     } else {
       segText(ctx, '88', X + 82, Y + 15, 18, ghost);
     }
@@ -731,8 +624,8 @@ function buildSeries() {
     ticks(ctx, combo.cx, combo.cy, combo.r - 5, combo.r - 1.5, 150, 30, 4, '#ece6d2', 0.8);
     ticks(ctx, combo.cx, combo.cy, combo.r - 5, combo.r - 1.5, 210, 330, 4, '#ece6d2', 0.8);
     arc(ctx, combo.cx, combo.cy, combo.r - 2.5, 315, 330, '#d8402e', 2.2);
-    text(ctx, 'FUEL', combo.cx, combo.cy - 8, 3.2, '#bbb', { align: 'center' });
-    text(ctx, 'TEMP', combo.cx, combo.cy + 11, 3.2, '#bbb', { align: 'center' });
+    warnSymbol(ctx, 'fuel', combo.cx, combo.cy - 9, '#bbb', true, 0.5);
+    warnSymbol(ctx, 'temp', combo.cx, combo.cy + 9, '#bbb', true, 0.5);
     text(ctx, 'E', combo.cx - combo.r * 0.62, combo.cy - 5, 3.6, '#ece6d2', { align: 'center' });
     text(ctx, 'F', combo.cx + combo.r * 0.62, combo.cy - 5, 3.6, '#ece6d2', { align: 'center' });
     text(ctx, 'C', combo.cx - combo.r * 0.62, combo.cy + 8, 3.6, '#ece6d2', { align: 'center' });
@@ -832,8 +725,8 @@ function buildDefender() {
     const odo = counterDigits(s.odoMiles, 6);
     drum(ctx, speedo.cx - 17, speedo.cy + 12, odo.whole, odo.tenth, 6);
     needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 220 - (260 * Math.min(SPEEDO_MAX, L.mph)) / SPEEDO_MAX, NEEDLE, 1.2);
-    small(ctx, temp, L.temp, 'TEMP', 'C', 'H', true);
-    small(ctx, fuel, L.fuel, 'FUEL', 'E', 'F', false);
+    small(ctx, temp, L.temp, 'temp', 'C', 'H', true);
+    small(ctx, fuel, L.fuel, 'fuel', 'E', 'F', false);
     // The lamps along the bottom: glow plugs, charge, oil, handbrake, seat belts, side lights and main beam. The key at the end.
     ctx.fillStyle = '#121213';
     ctx.beginPath();

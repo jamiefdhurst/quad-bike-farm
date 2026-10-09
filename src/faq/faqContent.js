@@ -332,6 +332,12 @@ export const FAQ_SECTIONS = [
         a: `Two accessory dashes, one analogue and one digital, that show revs, fuel and temperature for whatever they're fitted to. At a switched-off quad
           or the tractor with the toolbox, <kbd>Y</kbd> fits the analogue one, <kbd>U</kbd> the digital one and <kbd>O</kbd> takes it off.`,
       },
+      {
+        q: 'What do the little pictures on the dash and pods mean?',
+        a: `A thermometer in water is the engine temperature, a petrol pump is fuel, an oil can is the oil, and two axles joined by a shaft is four-wheel drive
+          (with a ring in the middle when the diff lock is in). A coil is the glow plugs, a battery is charging, a P in a circle is the handbrake. They light
+          when something needs your attention and are dull grey otherwise. N and R stay as letters.`,
+      },
     ],
   },
   {

@@ -210,6 +210,172 @@ export function lamp(ctx, x, y, colour, label, lit, { r = 3.4, shape = 'circle',
   if (label && labelBelow) text(ctx, label, x, y + r + 5, 3.6, labelColour, { align: 'center' });
 }
 
+/**
+ * A warning symbol, drawn in millimetres about (x, y): lit in `colour` with a glow behind, or dull when out. `scale` shrinks it for a
+ * dial face, and `glow` false drops the glow (for an LCD). Every dash and pod uses these in place of words on its lamps and gauges.
+ */
+export function warnSymbol(ctx, kind, x, y, colour, lit, scale = 1, glow = true) {
+  if (scale !== 1) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    warnSymbol(ctx, kind, 0, 0, colour, lit, 1, glow);
+    ctx.restore();
+    return;
+  }
+  const c = lit ? colour : '#3c3f42';
+  if (lit && glow) {
+    ctx.fillStyle = colour;
+    ctx.globalAlpha = 0.22;
+    ctx.beginPath();
+    ctx.arc(x, y, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  ctx.strokeStyle = c;
+  ctx.fillStyle = c;
+  ctx.lineWidth = 1.1;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  if (kind === 'glow') {
+    // A glow plug's coil.
+    ctx.moveTo(x - 7, y + 1);
+    for (let i = 0; i <= 28; i++) ctx.lineTo(x - 7 + i * 0.5, y + Math.sin(i * 0.9) * 3.2 * (i < 3 || i > 25 ? 0.3 : 1));
+    ctx.stroke();
+  } else if (kind === 'charge') {
+    // A battery with its two terminals and a plus and a minus.
+    ctx.strokeRect(x - 6.5, y - 3, 13, 7.5);
+    ctx.fillRect(x - 4.5, y - 5.2, 2.6, 2.2);
+    ctx.fillRect(x + 2, y - 5.2, 2.6, 2.2);
+    ctx.lineWidth = 0.9;
+    ctx.moveTo(x - 4.2, y + 0.8);
+    ctx.lineTo(x - 1.4, y + 0.8);
+    ctx.moveTo(x - 2.8, y - 0.6);
+    ctx.lineTo(x - 2.8, y + 2.2);
+    ctx.moveTo(x + 1.6, y + 0.8);
+    ctx.lineTo(x + 4.6, y + 0.8);
+    ctx.stroke();
+  } else if (kind === 'oil') {
+    // An oil can with its spout and a drop.
+    ctx.moveTo(x - 5, y - 1);
+    ctx.lineTo(x + 3.5, y - 1);
+    ctx.lineTo(x + 3.5, y + 4);
+    ctx.lineTo(x - 5, y + 4);
+    ctx.closePath();
+    ctx.moveTo(x - 5, y);
+    ctx.lineTo(x - 8.5, y - 3);
+    ctx.moveTo(x - 1.5, y - 1);
+    ctx.lineTo(x - 1.5, y - 3.2);
+    ctx.lineTo(x + 2, y - 3.2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x + 6.2, y + 2.6, 1.1, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (kind === 'choke') {
+    // A choke: the carb's throat with its flap closed across it and an arrow of air coming in.
+    ctx.moveTo(x - 7, y - 4);
+    ctx.lineTo(x + 7, y - 4);
+    ctx.moveTo(x - 7, y + 4);
+    ctx.lineTo(x + 7, y + 4);
+    ctx.moveTo(x + 2.5, y - 4);
+    ctx.lineTo(x - 2.5, y + 4);
+    ctx.moveTo(x - 7, y);
+    ctx.lineTo(x - 4, y);
+    ctx.moveTo(x - 5.4, y - 1.6);
+    ctx.lineTo(x - 3.8, y);
+    ctx.lineTo(x - 5.4, y + 1.6);
+    ctx.stroke();
+  } else if (kind === 'park') {
+    // A P in a circle.
+    ctx.arc(x, y, 5.4, 0, Math.PI * 2);
+    ctx.stroke();
+    text(ctx, 'P', x, y + 2.8, 7.4, c, { align: 'center', weight: 'bold' });
+  } else if (kind === 'belt') {
+    // Someone seated with the belt across them.
+    ctx.arc(x - 1.5, y - 4, 1.9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x - 1.5, y - 1.6);
+    ctx.lineTo(x - 1.5, y + 2.4);
+    ctx.lineTo(x + 3.6, y + 2.4);
+    ctx.moveTo(x - 5.2, y - 2.6);
+    ctx.lineTo(x + 3.4, y + 3.6);
+    ctx.stroke();
+  } else if (kind === 'beam') {
+    // A headlamp with its main beam: four straight rays.
+    ctx.arc(x - 3, y, 4.2, -Math.PI / 2, Math.PI / 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    for (let i = 0; i < 4; i++) {
+      ctx.moveTo(x + 2.2, y - 4.5 + i * 3);
+      ctx.lineTo(x + 8, y - 4.5 + i * 3);
+    }
+    ctx.stroke();
+  } else if (kind === 'fuel') {
+    // A fuel pump: the cabinet with its window, a base line and the hose looping off the side.
+    ctx.strokeRect(x - 5, y - 5, 6.4, 10);
+    ctx.strokeRect(x - 3.8, y - 3.8, 4, 2.8);
+    ctx.moveTo(x - 6.4, y + 5);
+    ctx.lineTo(x + 2.8, y + 5);
+    ctx.moveTo(x + 1.4, y - 3);
+    ctx.lineTo(x + 4.4, y - 3);
+    ctx.lineTo(x + 4.4, y + 2.6);
+    ctx.stroke();
+  } else if (kind === 'temp') {
+    // A thermometer standing in two wavy lines of coolant.
+    ctx.moveTo(x - 3.4, y - 5);
+    ctx.lineTo(x - 3.4, y + 1.4);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x - 3.4, y + 3.4, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    for (const wy of [-1.2, 3.4]) {
+      ctx.moveTo(x + 0.4, wy + y);
+      ctx.quadraticCurveTo(x + 2, wy + y - 1.6, x + 3.6, wy + y);
+      ctx.quadraticCurveTo(x + 5.2, wy + y + 1.6, x + 6.8, wy + y);
+    }
+    ctx.stroke();
+  } else if (kind === '4wd' || kind === 'lock') {
+    // Two axles joined by a shaft to a wheel at each end; the diff lock's has a locked centre ring.
+    for (const ay of [-3.6, 3.6]) {
+      ctx.moveTo(x - 5, y + ay);
+      ctx.lineTo(x + 5, y + ay);
+      ctx.fillRect(x - 7.2, y + ay - 2, 2.4, 4);
+      ctx.fillRect(x + 4.8, y + ay - 2, 2.4, 4);
+    }
+    ctx.moveTo(x, y - 3.6);
+    ctx.lineTo(x, y + 3.6);
+    ctx.stroke();
+    if (kind === 'lock') {
+      ctx.beginPath();
+      ctx.arc(x, y, 2.4, 0, Math.PI * 2);
+      ctx.fillStyle = '#101010';
+      ctx.fill();
+      ctx.stroke();
+    }
+  } else if (kind === 'lights') {
+    // A headlamp with its beams.
+    ctx.arc(x - 2, y, 4.2, -Math.PI / 2, Math.PI / 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    for (let i = 0; i < 3; i++) {
+      ctx.moveTo(x + 3.2, y - 3.6 + i * 3.6);
+      ctx.lineTo(x + 8, y - 3.6 + i * 3.6);
+    }
+    ctx.stroke();
+  }
+}
+
+/** A round lamp with a letter on it (N, R): lit in its colour with a glow, or dull. */
+export function letterLamp(ctx, x, y, colour, letter, lit, r = 4) {
+  lamp(ctx, x, y, colour, '', lit, { r });
+  text(ctx, letter, x, y + r * 0.42, r * 1.25, lit ? '#101010' : '#777', { align: 'center', weight: 'bold' });
+}
+
 /** The ignition key in its barrel: upright for on, turned a quarter for off. */
 export function keySwitch(ctx, x, y, on, ring = '#9a9a9a') {
   ctx.fillStyle = '#111';

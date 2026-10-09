@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { HOT_FROM, tempGaugeFraction, coldZoneEnd } from './tempGauge.js';
 import { lampStates, counterDigits, counterText, cycleIndex, gearShown } from './dashState.js';
 import {
-  blackMat, steel, changeGate, mmPanel, housing, chromeRing, text, ticks, labels, arc, needle, drum, lamp, segText, speedText, LAMP,
+  blackMat, steel, changeGate, mmPanel, housing, chromeRing, text, ticks, labels, arc, needle, drum, letterLamp, warnSymbol, segText, speedText, LAMP,
 } from './dashParts.js';
 import { segmentCounts } from './dash.js';
 
@@ -14,7 +14,7 @@ const INK = '#1d1d1b';
 const CREAM = '#efe6cf';
 const CHROME = '#cfd2d5';
 
-// Analogue: two cream dials, two small ones and four lamps -----------------------------------
+// Analogue: a row of four cream dials (a big one at each end, fuel and temperature small between them) with the lamps along the top -----------------------------------
 
 const SPEED_MAX_MPH = 60;
 const REV_MAX = 12000;
@@ -24,6 +24,14 @@ const dialAngle = (fraction) => DIAL_START + (DIAL_END - DIAL_START) * Math.min(
 const MINI_START = 160;
 const MINI_END = 20;
 const miniAngle = (fraction) => MINI_START + (MINI_END - MINI_START) * Math.min(1, Math.max(0, fraction));
+
+// Where the dials and lamps sit on the face, in mm.
+const DIAL_Y = 72;
+const LAMP_Y = 17;
+const BIG_R = 28;
+const BIG_X = [40, 170];
+const MINI_R = 12;
+const MINI_X = [90, 120];
 
 function bigDial(ctx, cx, cy, r, kind, s, on) {
   ctx.fillStyle = CHROME;
@@ -81,14 +89,14 @@ function miniDial(ctx, cx, cy, r, kind, s, on) {
   ticks(ctx, cx, cy, r - 5, r - 1.5, MINI_START, MINI_END, 4, INK, 0.7);
   if (kind === 'fuel') {
     arc(ctx, cx, cy, r - 3, MINI_START, miniAngle(s.reserveLevel), '#d2321e', 2); // the red reserve sector
-    labels(ctx, cx, cy, r - 9, MINI_START, MINI_END, ['E', '', '', '', 'F'], INK, 3.8);
-    text(ctx, 'FUEL', cx, cy + 9, 3, INK, { align: 'center' });
+    labels(ctx, cx, cy, r - 7, MINI_START, MINI_END, ['E', '', '', '', 'F'], INK, 3.4);
+    warnSymbol(ctx, 'fuel', cx, cy + 5.5, INK, true, 0.5, false);
     needle(ctx, cx, cy, r - 2, miniAngle(on ? s.fuelLevel : 0), '#d2321e', 0.9);
   } else {
     arc(ctx, cx, cy, r - 3, MINI_START, miniAngle(coldZoneEnd(s.coldBelow)), '#2f6fd6', 2);
     arc(ctx, cx, cy, r - 3, miniAngle(HOT_FROM), MINI_END, '#d2321e', 2);
-    labels(ctx, cx, cy, r - 9, MINI_START, MINI_END, ['C', '', '', '', 'H'], INK, 3.8);
-    text(ctx, 'TEMP', cx, cy + 9, 3, INK, { align: 'center' });
+    labels(ctx, cx, cy, r - 7, MINI_START, MINI_END, ['C', '', '', '', 'H'], INK, 3.4);
+    warnSymbol(ctx, 'temp', cx, cy + 5.5, INK, true, 0.5, false);
     needle(ctx, cx, cy, r - 2, miniAngle(tempGaugeFraction(s.temperature, on, s.overheat)), '#d2321e', 0.9);
   }
 }
@@ -96,7 +104,7 @@ function miniDial(ctx, cx, cy, r, kind, s, on) {
 function buildAnalogue() {
   const group = new THREE.Group();
   group.name = 'podAnalogue';
-  const O = { ox: 100, oy: 172 };
+  const O = { ox: 105, oy: 134 };
   // Stem and bar clamp, then the black steel bracket plate.
   const stem = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.026, 0.016), steel);
   stem.position.set(0, 0.012, 0.012);
@@ -104,45 +112,44 @@ function buildAnalogue() {
   const clamp = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.06, 12).rotateZ(Math.PI / 2), steel);
   clamp.position.set(0, 0, 0.012);
   group.add(clamp);
-  housing(group, { x: 12, y: 12, w: 176, h: 138, r: 28, ...O, material: blackMat });
-  for (const cx of [55, 145]) chromeRing(group, { cx, cy: 58, r: 38, ...O, tube: 0.0035 });
-  const face = mmPanel({ x: 12, y: 12, w: 176, h: 138, ...O });
+  housing(group, { x: 0, y: 0, w: 210, h: 112, r: 24, ...O, material: blackMat });
+  for (const cx of BIG_X) chromeRing(group, { cx, cy: DIAL_Y, r: BIG_R + 5, ...O, tube: 0.0035 });
+  for (const cx of MINI_X) chromeRing(group, { cx, cy: DIAL_Y, r: MINI_R + 2.5, ...O, tube: 0.0028 });
+  const face = mmPanel({ x: 0, y: 0, w: 210, h: 112, ...O });
   group.add(face.mesh);
   const gate = changeGate();
+  let shownMph = 0;
+  let shownRpm = 0;
 
   function draw(ctx, s) {
     const on = s.ignition;
-    bigDial(ctx, 55, 58, 34, 'speed', s, on);
-    bigDial(ctx, 145, 58, 34, 'revs', s, on);
-    miniDial(ctx, 40, 125, 15, 'fuel', s, on);
-    miniDial(ctx, 160, 125, 15, 'temp', s, on);
+    bigDial(ctx, BIG_X[0], DIAL_Y, BIG_R, 'speed', s, on);
+    bigDial(ctx, BIG_X[1], DIAL_Y, BIG_R, 'revs', s, on);
+    miniDial(ctx, MINI_X[0], DIAL_Y, MINI_R, 'fuel', s, on);
+    miniDial(ctx, MINI_X[1], DIAL_Y, MINI_R, 'temp', s, on);
+    // The lamps along the top, centred: symbols, with N and R as letters. The drive lamps only on a quad with the switch.
     const l = lampStates(s);
-    [[68, LAMP.green, 'N', l.n], [84, LAMP.amber, 'R', l.r], [100, LAMP.red, 'TEMP', l.temp], [116, LAMP.amber, 'FUEL', l.fuel], [132, LAMP.red, 'OIL', l.oil]].forEach(([x, c, name, lit]) => {
-      ctx.fillStyle = CHROME;
-      ctx.beginPath();
-      ctx.arc(x, 122, 5.6, 0, Math.PI * 2);
-      ctx.fill();
-      lamp(ctx, x, 122, c, name, lit, { r: 3.8, labelBelow: false });
-      text(ctx, name, x, 132, 3, '#aaa', { align: 'center' });
-    });
-    // The 2WD / 4WD switch's lamps (driveMode.js), only on a quad that has one; the diff lock's only on one that has that too.
+    const lamps = [
+      ['n', LAMP.green, l.n], ['r', LAMP.amber, l.r], ['temp', LAMP.red, l.temp], ['fuel', LAMP.amber, l.fuel], ['oil', LAMP.red, l.oil],
+    ];
     if (s.fourWd !== null) {
-      const extra = [[148, LAMP.green, '4WD', s.ignition && s.fourWd]];
-      if (s.diffLock !== null) extra.push([52, LAMP.red, 'LOCK', s.ignition && s.diffLock]);
-      for (const [x, c, name, lit] of extra) {
-        ctx.fillStyle = CHROME;
-        ctx.beginPath();
-        ctx.arc(x, 122, 5.6, 0, Math.PI * 2);
-        ctx.fill();
-        lamp(ctx, x, 122, c, name, lit, { r: 3.8, labelBelow: false });
-        text(ctx, name, x, 132, 3, '#aaa', { align: 'center' });
-      }
+      lamps.push(['4wd', LAMP.green, s.ignition && s.fourWd]);
+      if (s.diffLock !== null) lamps.push(['lock', LAMP.red, s.ignition && s.diffLock]);
     }
+    lamps.forEach(([kind, colour, lit], i) => {
+      const x = 105 + (i - (lamps.length - 1) / 2) * 22;
+      if (kind === 'n' || kind === 'r') letterLamp(ctx, x, LAMP_Y, colour, kind.toUpperCase(), lit, 4.6);
+      else warnSymbol(ctx, kind, x, LAMP_Y, colour, lit, 0.9);
+    });
   }
 
   return {
     group,
-    update(s) {
+    update(real) {
+      // The needles follow with a little lag, as the stock dashes' do, so they settle and swing instead of snapping.
+      shownMph += (real.speedMph - shownMph) * 0.4;
+      shownRpm += (real.rpm - shownRpm) * 0.3;
+      const s = { ...real, speedMph: shownMph, rpm: shownRpm };
       const o = counterDigits(s.odoMiles, 4);
       const t = counterDigits(s.tripMiles, 3);
       const h = counterDigits(s.hours, 4);
@@ -210,7 +217,7 @@ function buildDigital() {
     segText(ctx, L.speed, x + 92, y + 31, 21, on ? AMBER : ghost, ghost);
     if (!on) return;
     text(ctx, 'MPH', x + 95, y + 50, 5, AMBER);
-    text(ctx, 'OIL', x + 38, y + 50, 4.6, L.lamps.oil ? AMBER_RED : AMBER_GHOST, { align: 'center', weight: 'bold' }); // the low-oil lamp, dark until the sump is low
+    warnSymbol(ctx, 'oil', x + 38, y + 47.5, L.lamps.oil ? AMBER_RED : AMBER_GHOST, true, 0.7, false); // the low-oil lamp, dark until the sump is low
     const f = segmentCounts(s, 6, 6);
     for (let i = 0; i < 6; i++) {
       ctx.fillStyle = i < f.fuel ? (L.lamps.fuel ? AMBER_RED : AMBER) : AMBER_GHOST;
@@ -218,11 +225,11 @@ function buildDigital() {
       ctx.fillStyle = i < f.temp ? (i === 5 ? AMBER_RED : AMBER) : AMBER_GHOST;
       ctx.fillRect(x + w - 15, y + 56 - i * 6, 9, 4.6);
     }
-    text(ctx, 'FUEL', x + 10.5, y + 66, 3.4, AMBER, { align: 'center' });
-    text(ctx, 'TEMP', x + w - 10.5, y + 66, 3.4, AMBER, { align: 'center' });
+    warnSymbol(ctx, 'fuel', x + 10.5, y + 65, AMBER, true, 0.55, false);
+    warnSymbol(ctx, 'temp', x + w - 10.5, y + 65, AMBER, true, 0.55, false);
     // The 2WD / 4WD switch (driveMode.js), on a quad that has one; a bar under it while the diff lock is in.
     if (s.fourWd !== null) {
-      text(ctx, '4WD', x + 38, y + 40, 4.6, s.fourWd ? AMBER : AMBER_GHOST, { align: 'center', weight: 'bold' });
+      warnSymbol(ctx, '4wd', x + 38, y + 37.5, s.fourWd ? AMBER : AMBER_GHOST, true, 0.7, false);
       if (s.diffLock) {
         ctx.fillStyle = AMBER;
         ctx.fillRect(x + 30, y + 42, 16, 1.2);

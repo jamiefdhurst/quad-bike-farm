@@ -260,15 +260,15 @@ A small steel tipping trailer stands by the paddock. Back the tractor, or any qu
 
 Each quad's own dash is close to the real machine it's modelled on, which for most of them means very little:
 
-- **Red** (after a Honda Foreman): a rectangular 0 to 45 mph speedo with an hour meter and an odometer, three lamps (R, N, OIL °C) and the key. No rev counter, fuel or temperature gauge.
-- **Blue** (after a Yamaha Grizzly): a grey-green LCD in a charcoal pod: fuel and temperature bars, a gear letter (D, R or N), big speed digits, a clock and a bottom line that shows trip, odometer and hours four seconds each. N, R, TEMP and FUEL lamps either side. No rev counter.
+- **Red** (after a Honda Foreman): a rectangular 0 to 45 mph speedo with an hour meter and an odometer, three lamps (R, N and an oil can) and the key. No rev counter, fuel or temperature gauge.
+- **Blue** (after a Yamaha Grizzly): a grey-green LCD in a charcoal pod: fuel and temperature bars, a gear letter (D, R or N), big speed digits, a clock and a bottom line that shows trip, odometer and hours four seconds each. N and R lamps and a thermometer and a fuel pump lamp either side. No rev counter.
 - **Loan quad** (after a newer Yamaha Kodiak): the same idea, wider and glossier, with a crisper LCD, a gear column and a fuel sweep.
 - **Green** (after a Kawasaki Bayou): a small cover on top of the headlight nacelle with N and R lamps and the key. Nothing else.
 - **Yellow** (after a Yamaha Blaster): the back of a headlamp shell on the bars with one red lamp that lights with the ignition, and the key.
 - **Orange** (after a Suzuki LT250R): bare race bars and a RUN / OFF kill switch with its lanyard on the left bar.
 - **Kids' quad**, **mini moto** and **old three-wheeler**: a key switch and nothing else.
 
-To make up for it there are **two accessory pods**, and there's only one of each: an older **analogue** pod (a cream speedo and rev counter with drum counters, small fuel and temperature dials, four lamps) and a new **digital** one (amber on black: a bar-graph rev counter, speed, fuel and temperature blocks, gear letter, clock and a line cycling odometer, trip and hours). Each shows everything for whichever quad it's fitted to, with its rev counter's red band starting at that quad's own redline. Each game they start in the toolbox or on a random quad (the console says where), and you move them with the toolbox (see above). The K key still turns the key on every quad; the dashes go dark with the ignition off or the battery flat.
+To make up for it there are **two accessory pods**, and there's only one of each: an older **analogue** pod (a cream speedo and rev counter with drum counters, small fuel and temperature dials set between them, a row of lamps along the top) and a new **digital** one (amber on black: a bar-graph rev counter, speed, fuel and temperature blocks, gear letter, clock and a line cycling odometer, trip and hours). Each shows everything for whichever quad it's fitted to, with its rev counter's red band starting at that quad's own redline. Each game they start in the toolbox or on a random quad (the console says where), and you move them with the toolbox (see above). The K key still turns the key on every quad; the dashes go dark with the ignition off or the battery flat.
 
 Every quad starts each game with some hours and miles on it (the Blaster and the loan quad low, the green's well into four figures), and they add up as you run and ride.
 
@@ -469,7 +469,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 15. Better trailer models (large and small). **Done.** Both are properly dressed now; see DECISIONS.md, "Better trailer models".
 16. Improve Land Rover model. **Done.** Real wheel arches with rolled flares, mudflaps, number plates, bumper ends, roof gutters and bonnet hinges. See DECISIONS.md, "A better Land Rover model".
 17. The girls get bigger when they go into a Land Rover, I don't think this is correct. They should remain their usual size. The scaling for the model is probably causing this, do we need it? Or can the size just be right? **Done.** The bench seats' anchors kept the model's 1.15 scale; see DECISIONS.md, "Girls stay full size in the Land Rover".
-18. Better instrument pods for red, blue, tractor, analogue and digital
+18. Better instrument pods for red, blue, tractor, analogue and digital. **Done.** See DECISIONS.md, "Better instrument pods".
 19. Better starter noises for the UTV and Land Rovers
 20. Better frost on the ground and on the seats
 21. Indicators on the Land Rovers and the UTV, and a reverse light on the outside

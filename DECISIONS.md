@@ -2344,3 +2344,13 @@ Jamie's list after trying it.
 
 - **The cause.** Both Land Rovers (and the UTV) are drawn at 1.15 times, and the model's scale passes down to anything hung under it. The quads already cancelled that on their seat anchors (`1 / scale`), but the bench seats (`seatLeft`, `seatMid`) and the UTV's `bedSeat` were left out, so a girl in the back or on the bench came out 15% taller than on the ground.
 - **The fix.** `src/vehicle/unscaleAnchors.js` holds one list of every seat anchor and undoes the scale on each; `quad.js` calls it. A new seat anchor goes on that list. The model's scale stays, since it sizes the vehicle to the girls.
+
+## Better instrument pods (TODO 18)
+
+Settled with Jamie: all five (the red and blue dashes, the tractor's, and both accessory pods); looks and behaviour only, no new readouts; words on lamps and gauges become symbols; "HONDA" comes off the red's dash; the pods keep their mounts.
+
+- **Symbols instead of words.** `warnSymbol` moved from `dash.js` to `dashParts.js` (it was the UTV's) and gained four symbols: a fuel pump, a thermometer in water, two axles with a shaft for 4WD and the same with a locked ring for the diff lock. It takes a `scale` for dial faces and `glow: false` for the LCDs. Oil, temperature and fuel lamps on the red, blue, loan, tractor and both pods, the tractor's WATER and FUEL dial labels, the Land Rover's combined gauge, and the 4WD notes on the loan quad's and the UTV's LCDs now use them. N and R stay as letters (`letterLamp` for the pod). Units stay as words (MPH, ODO, TRIP, HRS), as on a real dial.
+- **Analogue pod.** One row of four: the speedo and rev counter large at each end, fuel and temperature small between them, each in its own chrome bezel, with the lamps along the top (N, R, temperature, fuel, oil, then 4WD and diff lock on a quad that has them, centred). The housing is wider (210 mm against 176) and a little shorter. Fixed positions are `DIAL_Y`, `BIG_X`, `MINI_X` at the top of `dashPod.js`.
+- **Digital pod.** Its OIL, FUEL, TEMP and 4WD words are symbols too.
+- Not done, as agreed: backlighting (item 33's dusk), new readouts. The analogue pod's needles now lag the real speed and revs (0.4 and 0.3 of the gap per frame, like the stock dashes) instead of snapping; a key-on sweep is not done.
+- Checked: unit tests, and a headless run (clicking through the overlay) of the red quad with each pod, the tractor with the analogue pod and the tractor's and loan quad's stock dashes. Not checked: the blue's own dash by eye (it wasn't dealt that game), the Land Rover's combined gauge, or the pods while moving.
