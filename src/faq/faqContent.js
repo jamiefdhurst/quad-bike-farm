@@ -133,6 +133,14 @@ export const FAQ_SECTIONS = [
           in a high gear labours it and can stall it, and rushing a change can land you in a false neutral.`,
       },
       {
+        q: 'Why do the revs follow my speed on the clutch vehicles?',
+        a: `With the clutch up and a gear in, the engine is tied to the road: its revs are your speed in that gear (full revs at the gear's top speed),
+          whatever the throttle does, so they climb as you speed up and fall as you slow, and each gear gives a different note. The throttle only
+          decides how hard it pulls. Press <kbd>Shift</kbd> and they come free of the road, and you can rev it in neutral. It's the red, green and yellow
+          quads, the old three-wheeler, the tractor and both Land Rovers; the automatics hold their revs in a band, like a CVT.`,
+        tip: 'On a clutch vehicle the revs follow your speed in the gear you are in. Change up to bring them down.',
+      },
+      {
         q: 'How do I reverse?',
         a: `It's different on each, as on the real machines. Blue and loan: stopped, hold <kbd>S</kbd> and press <kbd>B</kbd>, then <kbd>S</kbd>
           backs it up. Red: <kbd>B</kbd> with the clutch in and the bars turned. Green: <kbd>B</kbd> with the clutch in, stopped. UTV: stopped,

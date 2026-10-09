@@ -1148,6 +1148,7 @@ export const LAND_ROVER_SPEC = {
     engineBrakeForce: 1100,
     maxBrake: 48,
     parkingBrake: 22,
+    parkedHoldSpeed: 0.4, // a parked one creeping slower than this is held still: heavy, it could slide on at 0.3 m/s on a slope and never be caught at the quads' 0.15
     rollingResistance: 1.0,
     revHoldMin: 2, // getting off never leaves it revving
   },
@@ -1254,6 +1255,7 @@ export const DEFENDER_SPEC = {
     maxSpeed: 32,
     engineBrakeForce: 1300,
     maxBrake: 52,
+    parkingBrake: 30, // 1,750 kg to hold on a slope (the Series' 22 is for 1,350)
     suspensionStiffness: 32, // coil springs, but not bouncy: Jamie found the first go too bouncy
     suspensionCompression: 4.4, // damped harder than the Series' (3) so it settles after a bump instead of rocking
     suspensionRelaxation: 3.8, // (2.6)

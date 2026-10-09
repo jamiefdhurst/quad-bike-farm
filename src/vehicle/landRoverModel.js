@@ -49,6 +49,7 @@ const PLATE_200 = 'H471 DKP'; // and the 200TDi's (an H, 1990)
 
 /** Where the wheels, their mounts and the bodywork box are, for QuadPhysics. */
 export const LANDY_LAYOUT = {
+  spawnSag: 0.128, // how far the springs sink under its weight in the first moments, measured: it starts already sunk, so it doesn't settle in front of you
   wheels: [
     { name: 'wheel_fl', x: TRACK / 2, z: WHEELBASE / 2, front: true, radius: R, y: wheelY },
     { name: 'wheel_fr', x: -TRACK / 2, z: WHEELBASE / 2, front: true, radius: R, y: wheelY },

@@ -172,7 +172,7 @@ export class Quad {
     const s = spawn;
     this.physics = new QuadPhysics(physics, RAPIER, params, {
       x: s.x,
-      y: world.heightAt(s.x, s.z) - this.groundOffset * scale + 0.05 * scale,
+      y: world.heightAt(s.x, s.z) - this.groundOffset * scale + 0.05 * scale - (layout.spawnSag ?? 0), // already sunk on its springs, if it has any to sink on
       z: s.z,
       yaw: s.yaw,
     }, scale, layout);
@@ -825,7 +825,13 @@ export class Quad {
 
   /** Engine controls for this frame. */
   engineControls() {
+    // A manual in gear with the clutch up turns at the road's pace: its speed over the gear's top speed times its full-throttle revs.
+    const d = this.drivetrain;
+    const geared = this.manual && d.gear !== 0;
+    const gearTop = geared ? d.topSpeed(d.gear) : 0;
     return {
+      gearRpm: geared && gearTop > 0 ? (Math.abs(this.forwardSpeed) / gearTop) * this.engine.params.maxRpm : 0,
+      gearLock: geared ? d.clutch : 0,
       starter: this.starter,
       throttle: this.throttle,
       choke: this.choke,

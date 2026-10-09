@@ -30,6 +30,7 @@ const wheelY = (r) => r + REST + TRACTOR_GROUND_OFFSET; // where each wheel's su
 
 /** Where the wheels, their mounts and the bodywork box are, for QuadPhysics. */
 export const TRACTOR_LAYOUT = {
+  spawnSag: 0.155, // how far the springs sink under its weight when it first lands, measured: it starts already sunk
   wheels: [
     { name: 'wheel_fl', x: 0.66, z: 0.95, front: true, radius: FRONT_R, y: wheelY(FRONT_R) },
     { name: 'wheel_fr', x: -0.66, z: 0.95, front: true, radius: FRONT_R, y: wheelY(FRONT_R) },

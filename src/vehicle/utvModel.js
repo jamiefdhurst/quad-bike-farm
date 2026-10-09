@@ -34,6 +34,7 @@ const wheelY = R + REST + UTV_GROUND_OFFSET; // where each wheel's suspension mo
 
 /** Where the wheels, their mounts and the bodywork box are, for QuadPhysics. */
 export const UTV_LAYOUT = {
+  spawnSag: 0.14, // how far the springs sink under its weight when it first lands, measured: it starts already sunk
   wheels: [
     { name: 'wheel_fl', x: 0.66, z: 0.98, front: true, radius: R, y: wheelY },
     { name: 'wheel_fr', x: -0.66, z: 0.98, front: true, radius: R, y: wheelY },

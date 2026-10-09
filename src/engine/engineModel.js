@@ -31,6 +31,10 @@ export const EngineState = Object.freeze({
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const lerp = (a, b, t) => a + (b - a) * t;
+const smoothstep = (a, b, x) => {
+  const t = clamp((x - a) / (b - a), 0, 1);
+  return t * t * (3 - 2 * t);
+};
 
 export class EngineModel {
   /**
@@ -57,6 +61,8 @@ export class EngineModel {
     this.driveLoad = 0;
     this.resistLoad = 0;
     this.overrunRpm = 0;
+    this.gearRpm = 0; // the revs the road speed turns it at in the gear it is in (a manual with the clutch up)
+    this.gearLock = 0; // 0..1 how far the clutch ties it to that: 0 free, 1 locked
     this.fuel = 1; // float bowl level, 0..1
     this.battery = 1; // charge, 0..1: drained by the ignition and the starter, charged while it runs
     this.pullLeft = 0; // seconds left of a yank on the pull-start
@@ -252,8 +258,10 @@ export class EngineModel {
    * @param {number}  [controls.speed] ground speed in m/s: the air that cools it.
    * @param {number}  [controls.ambient] 0..1 how warm the day is (sun on the engine).
    * @param {number}  [controls.overrunRpm] rpm above idle the wheels turn it over at with the throttle shut.
+   * @param {number}  [controls.gearRpm] a manual's revs at this road speed in this gear (speed over the gear's top speed, times full-throttle revs).
+   * @param {number}  [controls.gearLock] 0..1 how far the clutch ties the engine to those revs: the throttle then only decides the torque.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, clog = 0, gulp = 0, diesel = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12 } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, clog = 0, gulp = 0, diesel = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12 } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -281,6 +289,8 @@ export class EngineModel {
     this.driveLoad = clamp(driveLoad, 0, 1);
     this.resistLoad = clamp(resistLoad, 0, this.driveLoad);
     this.overrunRpm = Math.max(0, overrunRpm);
+    this.gearRpm = Math.max(0, gearRpm);
+    this.gearLock = clamp(gearLock, 0, 1);
     if (dt <= 0) return;
 
     const steps = Math.max(1, Math.ceil(dt / this.params.maxStep));
@@ -702,6 +712,13 @@ export class EngineModel {
     // A slipping belt lets the engine run away from the wheels as soon as there's throttle.
     this.targetRpm = Math.min(p.maxRpm, this.targetRpm + p.beltFlareRpm * this.slip * this.throttle);
     if (this.overrunRpm > 0) this.targetRpm = Math.max(this.targetRpm, this.idleTarget + this.overrunRpm);
+    // A manual with the clutch up is tied to the road: its revs are the road speed's in that gear whatever the throttle does (the throttle
+    // decides the torque), so they climb and fall with the speed instead of leaping to the throttle's. Below idle's worth of road speed
+    // nothing is tied: the clutch is slipping or it is about to stall, as the load already says.
+    if (this.gearLock > 0 && this.gearRpm > this.idleTarget) {
+      const grab = smoothstep(this.idleTarget, this.idleTarget + 250, this.gearRpm) * this.gearLock;
+      this.targetRpm += (Math.min(p.maxRpm, this.gearRpm) - this.targetRpm) * grab;
+    }
     // A cold engine labouring runs lumpier.
     this.roughness = clamp(this.roughness + p.lugRoughness * this.lug * (1 - T), 0, 1);
 
