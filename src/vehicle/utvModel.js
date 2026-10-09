@@ -566,17 +566,17 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
 
 // A small pod on the dash, tilted up to the driver like the cluster, with its controls standing out of the face. In the pod's own frame:
 // +x is the driver's left, +y up the slope of the face and -z out of it, towards the driver.
-const POD = { x: -0.06, y: 1.04, z: 0.44, tilt: 0.95, w: 0.28, h: 0.13, d: 0.07 };
+const POD = { x: -0.07, y: 1.045, z: 0.44, tilt: 0.95, w: 0.215, h: 0.09, d: 0.06 };
 const FACE = -POD.d / 2 - 0.001; // the face, where the controls come out
 const CTRL = {
-  gear: { x: -0.1, y: 0.065 }, // a lever in a vertical slot: F at the top, N, R at the bottom
+  gear: { x: -0.082, y: 0.045 }, // a lever in a vertical slot: F at the top, N, R at the bottom
   // A bank of four matching rockers, each with its symbol on the cap, lit when it is on.
-  fourWd: { x: -0.045, y: 0.078 },
-  lock: { x: 0, y: 0.078 },
-  lights: { x: 0.045, y: 0.078 },
-  tip: { x: 0.09, y: 0.078 },
+  fourWd: { x: -0.036, y: 0.055 },
+  lock: { x: 0, y: 0.055 },
+  lights: { x: 0.036, y: 0.055 },
+  tip: { x: 0.072, y: 0.055 },
 };
-const CAP = { w: 0.03, h: 0.036, d: 0.012 };
+const CAP = { w: 0.027, h: 0.032, d: 0.011 };
 const OFF = '#6a6d70'; // an unlit symbol
 const GREEN = '#6fe08a';
 const BLUE = '#5ab0ff';
@@ -590,15 +590,16 @@ function podLegend(g, w, h) {
   g.fillRect(0, 0, w, h);
   g.fillStyle = '#050505';
   g.beginPath();
-  g.roundRect(px(CTRL.gear.x) - 0.011, py(CTRL.gear.y + 0.045), 0.022, 0.09, 0.011);
+  g.roundRect(px(CTRL.gear.x) - 0.009, py(CTRL.gear.y + 0.034), 0.018, 0.068, 0.009);
   g.fill();
-  text(g, 'F', px(CTRL.gear.x - 0.029), py(CTRL.gear.y + 0.035), 0.014, '#e9e9e9');
-  text(g, 'N', px(CTRL.gear.x - 0.029), py(CTRL.gear.y), 0.014, '#e9e9e9');
-  text(g, 'R', px(CTRL.gear.x - 0.029), py(CTRL.gear.y - 0.035), 0.014, '#ff7a5a');
-  const name = (c, str, dy = 0) => text(g, str, px(c.x), py(c.y - 0.03 - dy), 0.0085, '#e9e9e9');
+  // F, N and R beside the slot, on the switches' side of it.
+  text(g, 'F', px(CTRL.gear.x + 0.024), py(CTRL.gear.y + 0.026), 0.012, '#e9e9e9');
+  text(g, 'N', px(CTRL.gear.x + 0.024), py(CTRL.gear.y), 0.012, '#e9e9e9');
+  text(g, 'R', px(CTRL.gear.x + 0.024), py(CTRL.gear.y - 0.026), 0.012, '#ff7a5a');
+  const name = (c, str, dy = 0) => text(g, str, px(c.x), py(c.y - 0.026 - dy), 0.0075, '#e9e9e9');
   name(CTRL.fourWd, '4WD');
   name(CTRL.lock, 'DIFF');
-  name(CTRL.lock, 'LOCK', 0.009);
+  name(CTRL.lock, 'LOCK', 0.0075);
   name(CTRL.lights, 'LIGHTS');
   name(CTRL.tip, 'BED');
 }
@@ -718,8 +719,8 @@ function buildConsole(root) {
   lever.name = 'driveLever';
   lever.userData.keep = true;
   lever.position.set(CTRL.gear.x, CTRL.gear.y, FACE);
-  tube([0, 0, 0], [0, 0, -0.05], 0.006, MAT.steel, lever);
-  add(new THREE.SphereGeometry(0.014, 10, 8), MAT.knob, lever).position.z = -0.055;
+  tube([0, 0, 0], [0, 0, -0.04], 0.005, MAT.steel, lever);
+  add(new THREE.SphereGeometry(0.012, 10, 8), MAT.knob, lever).position.z = -0.045;
   pod.add(lever);
 
   // The bank of rockers: 4WD, diff lock, lights and the bed. All alike, each with its symbol on the cap and the selected half pushed in.

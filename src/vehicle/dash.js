@@ -18,8 +18,8 @@ import {
 //   quadracer: orange. A RUN / OFF kill switch on the left bar and its lanyard.
 //   kidsKey:   kids' quad. A key switch under the bar clamp.
 //   tractor:   the tractor. Three round dials in chrome bezels (water temperature, a rev counter with an hour meter and the PTO speed marked, fuel), GLOW, CHARGE and OIL lamps and the key.
-//   utv:       the UTV. A basic LCD (speed, five fuel and four water blocks, F / N / R, hours and a 4WD note) over lamps for GLOW, CHARGE, OIL, PARK
-//              (parking brake), BELT (flashes while someone sits unbelted), LIGHTS (green, blue for main beam) and the key.
+//   utv:       the UTV. A basic LCD (speed, five fuel and four water blocks, F / N / R, hours and a 4WD note) over symbols for glow, charge, oil, park
+//              (parking brake), a belted figure (flashes while someone sits unbelted), a headlamp (green, blue for main beam) and the key.
 //   series:    the Land Rover. A Series III binnacle: a big speedo to 90 mph with its odometer, a combined fuel and water gauge,
 //              IGN, OIL, CHOKE and BRAKE lamps, a 4WD and a DIFF lamp, and the key.
 //
@@ -484,12 +484,93 @@ function buildTractor() {
 
 // The UTV -------------------------------------------------------------------------------
 
+/** The UTV's warning symbols, drawn in millimetres about (x, y): lit in `colour` with a glow behind, or dull when out. */
+function warnSymbol(ctx, kind, x, y, colour, lit) {
+  const c = lit ? colour : '#3c3f42';
+  if (lit) {
+    ctx.fillStyle = colour;
+    ctx.globalAlpha = 0.22;
+    ctx.beginPath();
+    ctx.arc(x, y, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  ctx.strokeStyle = c;
+  ctx.fillStyle = c;
+  ctx.lineWidth = 1.1;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  if (kind === 'glow') {
+    // A glow plug's coil.
+    ctx.moveTo(x - 7, y + 1);
+    for (let i = 0; i <= 28; i++) ctx.lineTo(x - 7 + i * 0.5, y + Math.sin(i * 0.9) * 3.2 * (i < 3 || i > 25 ? 0.3 : 1));
+    ctx.stroke();
+  } else if (kind === 'charge') {
+    // A battery with its two terminals and a plus and a minus.
+    ctx.strokeRect(x - 6.5, y - 3, 13, 7.5);
+    ctx.fillRect(x - 4.5, y - 5.2, 2.6, 2.2);
+    ctx.fillRect(x + 2, y - 5.2, 2.6, 2.2);
+    ctx.lineWidth = 0.9;
+    ctx.moveTo(x - 4.2, y + 0.8);
+    ctx.lineTo(x - 1.4, y + 0.8);
+    ctx.moveTo(x - 2.8, y - 0.6);
+    ctx.lineTo(x - 2.8, y + 2.2);
+    ctx.moveTo(x + 1.6, y + 0.8);
+    ctx.lineTo(x + 4.6, y + 0.8);
+    ctx.stroke();
+  } else if (kind === 'oil') {
+    // An oil can with its spout and a drop.
+    ctx.moveTo(x - 5, y - 1);
+    ctx.lineTo(x + 3.5, y - 1);
+    ctx.lineTo(x + 3.5, y + 4);
+    ctx.lineTo(x - 5, y + 4);
+    ctx.closePath();
+    ctx.moveTo(x - 5, y);
+    ctx.lineTo(x - 8.5, y - 3);
+    ctx.moveTo(x - 1.5, y - 1);
+    ctx.lineTo(x - 1.5, y - 3.2);
+    ctx.lineTo(x + 2, y - 3.2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x + 6.2, y + 2.6, 1.1, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (kind === 'park') {
+    // A P in a circle.
+    ctx.arc(x, y, 5.4, 0, Math.PI * 2);
+    ctx.stroke();
+    text(ctx, 'P', x, y + 2.8, 7.4, c, { align: 'center', weight: 'bold' });
+  } else if (kind === 'belt') {
+    // Someone seated with the belt across them.
+    ctx.arc(x - 1.5, y - 4, 1.9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x - 1.5, y - 1.6);
+    ctx.lineTo(x - 1.5, y + 2.4);
+    ctx.lineTo(x + 3.6, y + 2.4);
+    ctx.moveTo(x - 5.2, y - 2.6);
+    ctx.lineTo(x + 3.4, y + 3.6);
+    ctx.stroke();
+  } else if (kind === 'lights') {
+    // A headlamp with its beams.
+    ctx.arc(x - 2, y, 4.2, -Math.PI / 2, Math.PI / 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    for (let i = 0; i < 3; i++) {
+      ctx.moveTo(x + 3.2, y - 3.6 + i * 3.6);
+      ctx.lineTo(x + 8, y - 3.6 + i * 3.6);
+    }
+    ctx.stroke();
+  }
+}
+
 function buildUtv() {
   const group = new THREE.Group();
   group.name = 'dash';
   const O = { ox: 180, oy: 60 };
   // A plain black binnacle for an older machine: a small grey-green LCD with the speed, fuel and water bars, the F / N / R gear and the
-  // hours, over a row of warning lamps (glow, charge, oil, parking brake, seat belt and lights) with the key beside it.
+  // hours, over a row of warning symbols (glow plug, battery, oil can, parking brake, seat belt and headlamp) with the key beside it.
   housing(group, { x: 70, y: 14, w: 220, h: 92, r: 14, ...O, material: plastic });
   const face = mmPanel({ x: 70, y: 14, w: 220, h: 92, ...O });
   group.add(face.mesh);
@@ -535,13 +616,13 @@ function buildUtv() {
     } else {
       segText(ctx, '88', X + 82, Y + 15, 18, ghost);
     }
-    // The warning lamps under the LCD, and the key.
-    lamp(ctx, 92, 85, LAMP.amber, 'GLOW', L.glow, { r: 3.2 });
-    lamp(ctx, 116, 85, LAMP.red, 'CHARGE', L.charge, { r: 3.2 });
-    lamp(ctx, 140, 85, LAMP.red, 'OIL', L.oil, { r: 3.2 });
-    lamp(ctx, 162, 85, LAMP.red, 'PARK', L.park, { r: 3.2 });
-    lamp(ctx, 184, 85, LAMP.red, 'BELT', L.belt, { r: 3.2 });
-    lamp(ctx, 210, 85, L.main ? BLUE : LAMP.green, 'LIGHTS', L.lights, { r: 3.2 }); // one lamp for the headlights: green for dipped, blue for main beam
+    // The warning symbols under the LCD (each lit in its colour, or dull), and the key.
+    warnSymbol(ctx, 'glow', 94, 84, LAMP.amber, L.glow);
+    warnSymbol(ctx, 'charge', 118, 84, LAMP.red, L.charge);
+    warnSymbol(ctx, 'oil', 142, 84, LAMP.red, L.oil);
+    warnSymbol(ctx, 'park', 166, 84, LAMP.red, L.park);
+    warnSymbol(ctx, 'belt', 190, 84, LAMP.red, L.belt);
+    warnSymbol(ctx, 'lights', 214, 84, L.main ? BLUE : LAMP.green, L.lights); // the headlights: green for dipped, blue for main beam
     keySwitch(ctx, 262, 46, s.keyOn);
   }
 
