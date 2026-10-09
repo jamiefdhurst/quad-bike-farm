@@ -263,9 +263,14 @@ export const FAQ_SECTIONS = [
           clean first, then the bodywork. <kbd>G</kbd> puts the hose back. Mind where you point it.`,
       },
       {
+        q: 'Why is everything white, and how do I get the frost off the seat?',
+        a: `On a freezing morning the grass has a frost on it and so do the seats. Drive or ride across the grass and your tyres melt a dark track
+          through it, which stays melted. A seat clears when someone sits on it, in a few seconds, though it is a cold start to the day.`,
+      },
+      {
         q: 'Does the weather matter?',
         a: `Yes. Rain wets the ground, and wet grass and especially wet mud are slipperier and the bogs worse. Cold days want more choke, longer to warm
-          up and drain batteries faster; frost whitens the seats. Dry stubble throws up dust that clogs air filters fast. Hot, sunny days make the
+          up and drain batteries faster; a hard frost whitens the grass and the seats (your tyres melt a track through the grass, and sitting on a seat clears it). Dry stubble throws up dust that clogs air filters fast. Hot, sunny days make the
           air-cooled quads overheat if you idle them or crawl through mud.`,
       },
       {

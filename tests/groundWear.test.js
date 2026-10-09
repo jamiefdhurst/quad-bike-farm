@@ -132,4 +132,18 @@ describe('ground wear', () => {
     expect(g.bogAt(20, 0, 0.5)).toBeGreaterThan(g.bogAt(-20, 0, 0.5));
     expect(g.bogAt(20, 0, 0)).toBe(g.bogAt(-20, 0, 0));
   });
+
+  it('thaws frost along the tyres in a pass or two, and the frost does not come back as the wear recovers', () => {
+    const g = fresh();
+    expect(g.thawAt(5, 5)).toBe(0);
+    pass(g, 5, 5);
+    expect(g.thawAt(5, 5)).toBeGreaterThan(0.9);
+    expect(g.thawAt(40, 40)).toBe(0);
+    g.update(100000, 0);
+    expect(g.wearAt(5, 5)).toBe(0);
+    expect(g.thawAt(5, 5)).toBeGreaterThan(0.9);
+    g.pack();
+    const o = (Math.floor((5 - g.minZ) / g.cell) * g.nx + Math.floor((5 - g.minX) / g.cell)) * 4;
+    expect(g.data[o + 2]).toBeGreaterThan(200);
+  });
 });

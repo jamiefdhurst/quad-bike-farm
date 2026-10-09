@@ -2375,3 +2375,12 @@ The item was clear (the UTV and both Land Rovers wanted better starter sounds), 
 - **Loudness**, measured on offline renders (`render_engine_sound.mjs`, which now has `--start` and `--no-catch`; WAVs in `.scratch/starters/`, old and new): with `recStarterVolume` set to each vehicle's `recVolume`, so the recording's own balance holds, the UTV cranks 8.9 dB under its idle and the Series 0.2 dB under. The Jumpy's quiet modern idle put its crank 5 dB over the 200TDi's rattly one, so its starter volume is 0.39, 1 dB under. Before: UTV -10.3 dB, Series -3.2, 200TDi -10.5, on the wrong starters.
 - **Tests.** `tests/starterSounds.test.js`: every vehicle's bank has the starter its spec asks for, and these three loop at their own cranking speed. The FAQ's vehicle list (`src/faq/facts.js`) now comes from every spec `quadSpecs.js` exports, so a new vehicle can't be left off the page or its note.
 - Not checked: listening (Jamie's ears; the renders are there), and the starters in the running game.
+
+## Better frost (TODO 20)
+
+On a freezing day (`Weather.frost`, see "The day's temperature") the frost is now on the ground as well as the seats, and looks like frost.
+
+- Ground: the terrain shader (`terrain.js`, `addDetailLayer`) whitens the grass by `uFrost`, patchy over the field, with a glitter of crystals from the detail texture and a little less gloss. It lies half as thick on the road. Churned ground (soft mud) has none.
+- Thaw: `GroundWear` keeps a `thaw` grid next to wear, set from the same tyre passes (`thawAt` param, 0.006 of wear, so about two metres of one tyre melts a cell) and sent to the shader in the wear texture's blue. Unlike wear it never recovers: frost does not regrow in a day that does not move on. Footprints do not thaw it (the girls do not trample the grid).
+- Seats: the tint is kept, with a speckled bump map (`frostTexture.js`, shared) and a faint cold glow so it reads in the shade. The tractor's seat now has its own material, so it frosts too (it was left out before). Sitting on any of them still clears it over 4 seconds.
+- Not measured: the look in the running game, and what the extra shader work costs the frame rate (a few texture reads on the terrain). The sun does not melt the frost, as the day does not advance; that waits for item 33.

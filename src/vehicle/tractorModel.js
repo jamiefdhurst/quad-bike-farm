@@ -303,10 +303,12 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
     const a = (i / 5) * Math.PI * 2;
     add(new THREE.CylinderGeometry(0.014, 0.014, 0.034, 8), MAT.black, root).position.set(Math.sin(a) * 0.09, 1.12, -0.8 + Math.cos(a) * 0.09);
   }
-  const pad = add(new THREE.SphereGeometry(0.17, 16, 8), MAT.seat, root);
+  const seatMat = MAT.seat.clone(); // its own, so the frost on this seat is not on anything else's
+  quad.userData.seatMaterial = seatMat;
+  const pad = add(new THREE.SphereGeometry(0.17, 16, 8), seatMat, root);
   pad.scale.set(1, 0.3, 1.05);
   pad.position.set(0, 1.15, -0.8);
-  rbox(0.3, 0.2, 0.05, 0.02, MAT.seat, 0, 1.3, -0.97, root);
+  rbox(0.3, 0.2, 0.05, 0.02, seatMat, 0, 1.3, -0.97, root);
   tube([0, 1.1, -0.95], [0, 1.22, -0.97], 0.015, MAT.steel, root);
 
   // Years of use: oil weeping from the joints and the sump, and mud flung up under the body.

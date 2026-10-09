@@ -5,6 +5,8 @@ export const DEFAULT_FROST_PARAMS = {
   clearSeconds: 4, // seconds someone sat on a frosted seat takes to clear it
   frostColour: 0xdfe9ee, // the frost, a bluish white
   frostRoughness: 0.9, // frost is matte
+  bumpScale: 1.2, // how coarse the ice grain looks at full frost
+  glow: 0x1c2428, // the faint cold light of frost, so it reads in the shade (scaled by the frost)
 };
 
 export const FROST_PARAM_RANGES = {

@@ -183,6 +183,7 @@ export class World {
       this.roadMud.packed = false;
     }
     if (this.weather) {
+      this.terrain.frost.value = this.weather.frost;
       Object.assign(this.sky.params, this.weather.update(dt).skyParams());
       // Wet ground looks darker, and a little glossier.
       const m = this.terrain.mesh.material;

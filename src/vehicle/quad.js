@@ -9,6 +9,7 @@ import { headlightLook, taillightLevel } from './headlight.js';
 import { LightSwitch, lightLook, lightLamps } from './lightSwitch.js';
 import { SeatBelts, beltLampMode, beltLampLit } from './seatBelts.js';
 import { TyreSet } from './tyres.js';
+import { frostTexture } from './frostTexture.js';
 import { frostAfter, frostedColour, DEFAULT_FROST_PARAMS } from './seatFrost.js';
 import { ManualDrivetrain, gearLabel } from './manualDrivetrain.js';
 import { AutoShifter, grindsGear } from './autoShifter.js';
@@ -936,6 +937,13 @@ export class Quad {
     this.shownFrost = this.seatFrost;
     this.seatMaterial.color.setHex(frostedColour(this.seatBase.color, this.seatFrost));
     this.seatMaterial.roughness = this.seatBase.roughness + (DEFAULT_FROST_PARAMS.frostRoughness - this.seatBase.roughness) * this.seatFrost;
+    // The grain of the ice: a speckled bump, and a faint cold glow so it still reads in the shade. The map is added once (a recompile).
+    if (this.seatFrost > 0 && !this.seatMaterial.bumpMap) {
+      this.seatMaterial.bumpMap = frostTexture();
+      this.seatMaterial.needsUpdate = true;
+    }
+    this.seatMaterial.bumpScale = DEFAULT_FROST_PARAMS.bumpScale * this.seatFrost;
+    this.seatMaterial.emissive.setHex(DEFAULT_FROST_PARAMS.glow).multiplyScalar(this.seatFrost);
   }
 
   /** The quirks that act on the quad itself: the choke creeping on with the shake, the tap's press window. */

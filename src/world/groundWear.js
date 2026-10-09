@@ -22,6 +22,7 @@ export const DEFAULT_WEAR_PARAMS = {
   bogDry: 0.7, // the wetness factor on bone dry ground: below bogFrom, so a bog never forms (and shrinks away) in a long dry spell
   bogWetGain: 0.5, // the wetness factor's gain at full wetness: heavy rain means a bog from much less wear
   hazardAt: 0.35, // bog depth above which the girls steer clear of a cell
+  thawAt: 0.006, // wear laid down at a spot that thaws its frost for good: about two metres of one tyre rolling over it
   soakGain: 1, // how much wetter ground that holds the wet (a hollow) counts: there, half-wet ground bogs as if soaked
 };
 
@@ -38,6 +39,7 @@ export const WEAR_PARAM_RANGES = {
   bogDry: [0, 1, 0.01],
   bogWetGain: [0, 1, 0.01],
   hazardAt: [0, 1, 0.01],
+  thawAt: [0.001, 0.1, 0.001],
   soakGain: [0, 3, 0.05],
 };
 
@@ -67,6 +69,8 @@ export class GroundWear {
     this.wear = new Float32Array(this.nx * this.nz); // wear[ix * nz + iz], 0..1; node i sits at min + (i + 0.5) * cell
     // r soft, g bog, for the ground shader: a texture nx wide and nz high, so row iz, column ix, as the shader samples it by (x, z).
     this.data = new Uint8Array(this.nx * this.nz * 4);
+    // Frost the tyres have melted (b in the texture), 0..1. Unlike wear it never goes back: frost does not regrow in the same day.
+    this.thaw = new Float32Array(this.nx * this.nz);
     this.dirty = false;
     this.packClock = 0;
   }
@@ -105,6 +109,7 @@ export class GroundWear {
     if (ix < 0 || iz < 0 || ix >= this.nx || iz >= this.nz) return;
     const i = ix * this.nz + iz;
     this.wear[i] = Math.min(1, this.wear[i] + amount);
+    this.thaw[i] = Math.min(1, Math.max(this.thaw[i], this.wear[i] / this.p.thawAt));
   }
 
   /** Grass grows back, quicker when it's dry. `wet` is 0..1 how wet the ground is; refreshes `data` about twice a second if anything moved. */
@@ -140,6 +145,18 @@ export class GroundWear {
     return at(ix, iz) * (1 - fx) * (1 - fz) + at(ix + 1, iz) * fx * (1 - fz) + at(ix, iz + 1) * (1 - fx) * fz + at(ix + 1, iz + 1) * fx * fz;
   }
 
+  /** 0..1 how much of the frost has melted here (bilinear between grid points; 0 off the grid). */
+  thawAt(x, z) {
+    const gx = (x - this.minX) / this.cell - 0.5;
+    const gz = (z - this.minZ) / this.cell - 0.5;
+    const ix = Math.floor(gx);
+    const iz = Math.floor(gz);
+    const fx = gx - ix;
+    const fz = gz - iz;
+    const at = (a, b) => (a < 0 || b < 0 || a >= this.nx || b >= this.nz ? 0 : this.thaw[a * this.nz + b]);
+    return at(ix, iz) * (1 - fx) * (1 - fz) + at(ix + 1, iz) * fx * (1 - fz) + at(ix, iz + 1) * (1 - fx) * fz + at(ix + 1, iz + 1) * fx * fz;
+  }
+
   /** 0..1 how soft (muddy) the ground is from wear alone. */
   softAt(x, z) {
     return this.#soft(this.wearAt(x, z));
@@ -164,7 +181,7 @@ export class GroundWear {
     return smoothstep(p.bogFrom, p.bogTo, w * (p.bogDry + p.bogWetGain * clamp(wet, 0, 1)));
   }
 
-  /** Fills `data` (r soft, g bog) for the ground shader. */
+  /** Fills `data` (r soft, g bog, b thawed) for the ground shader. */
   pack(wet = 0) {
     const { wear: w, nx, nz } = this;
     for (let ix = 0; ix < nx; ix++) {
@@ -173,6 +190,7 @@ export class GroundWear {
         const o = (iz * nx + ix) * 4;
         this.data[o] = Math.round(this.#soft(v) * 255);
         this.data[o + 1] = Math.round(this.#bog(v, this.#soaked(wet, this.soaks[ix * nz + iz])) * 255);
+        this.data[o + 2] = Math.round(this.thaw[ix * nz + iz] * 255);
         this.data[o + 3] = 255;
       }
     }

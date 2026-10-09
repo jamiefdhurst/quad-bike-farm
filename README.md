@@ -471,7 +471,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 17. The girls get bigger when they go into a Land Rover, I don't think this is correct. They should remain their usual size. The scaling for the model is probably causing this, do we need it? Or can the size just be right? **Done.** The bench seats' anchors kept the model's 1.15 scale; see DECISIONS.md, "Girls stay full size in the Land Rover".
 18. Better instrument pods for red, blue, tractor, analogue and digital. **Done.** See DECISIONS.md, "Better instrument pods".
 19. Better starter noises for the UTV and Land Rovers **Done.** See DECISIONS.md, "Starters of their own".
-20. Better frost on the ground and on the seats
+20. Better frost on the ground and on the seats **Done.** See DECISIONS.md, "Better frost".
 21. Indicators on the Land Rovers and the UTV, and a reverse light on the outside
 22. Visible parking brake controls on the quads, remove the HUD when it goes on and off
 23. The girls can also get in the LRs or UTV if it is raining, to shelter, and will get in the LRs and start the to stay warm when it is cold sometimes
