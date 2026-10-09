@@ -243,6 +243,32 @@ export class AudioHub {
     });
   }
 
+  /**
+   * The indicator relay's tick and tock: a short dry click, a little higher when the lamp comes on than when it goes off. `at` is where it
+   * sounds from, so it fades as you walk away.
+   */
+  indicatorClick(on, at = null) {
+    if (!this.ready || this.params.muted) return;
+    const ctx = this.ctx;
+    const l = this.listenerPosition;
+    const distance = at && l ? Math.hypot(at.x - l.x, at.y - l.y, at.z - l.z) : 0;
+    const near = distanceLevel(distance, DEFAULT_AUDIO_PARAMS.refDistance, DEFAULT_AUDIO_PARAMS.rolloff);
+    if (near < 0.002) return;
+    const t = ctx.currentTime + 0.01;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.value = on ? 1900 : 1500;
+    gain.gain.setValueAtTime(this.params.indicatorVolume * near, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.025);
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = Math.min(4500, airCutoff(distance, this.params.airAbsorptionDistance));
+    osc.connect(gain).connect(filter).connect(this.master);
+    osc.start(t);
+    osc.stop(t + 0.04);
+  }
+
   /** Call every frame with whether fuel is being poured. */
   /** The hose spraying; `onTarget` when it's hitting something close (it patters lower). */
   setSpraying(active, onTarget = false) {

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { buildDash } from './dash.js';
-import { addHeadlightBeams } from './quadModel.js';
+import { addHeadlightBeams, addSignalLamps } from './quadModel.js';
 import { bentTube, mergeStatic, rod } from './quadGeometry.js';
 
 // The old Land Rover: a Series III 88-inch pick-up, procedural like the UTV. Ladder chassis on leaf springs and live axles, flat-topped
@@ -784,6 +784,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
       for (const z of [-0.8, -1.8]) add(new THREE.TorusGeometry(0.02, 0.005, 6, 10), MAT.galv, root).position.set(s * 0.8, 1.32, z); // rope hooks
       rbox(0.08, 0.1, 0.03, 0.01, tailMat, s * 0.74, 0.86, -1.97, root); // the tail lamp
       rbox(0.08, 0.05, 0.03, 0.01, MAT.amber, s * 0.74, 0.77, -1.97, root); // and the indicator under it
+      rbox(0.08, 0.04, 0.03, 0.01, MAT.clear, s * 0.74, 0.69, -1.97, root); // and a clear reverse lens under that
       tube([s * 0.78, 1.34, -1.94], [s * 0.8, 1.14, -1.95], 0.004, MAT.galv, root, 4); // the tailgate's chains
       rbox(0.05, 0.06, 0.05, 0.008, MAT.galv, s * 0.7, 0.99, -1.96, root); // the tailgate's hinges
     }
@@ -880,6 +881,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   }
 
   addHeadlightBeams(quad);
+  addSignalLamps(quad, MAT.amber, MAT.clear);
   // Its own tail lamp material, which setTaillights lights (no halos).
   quad.userData.tailMaterial = tailMat;
   quad.userData.tailHaloMaterial = new THREE.SpriteMaterial({ transparent: true, opacity: 0 });

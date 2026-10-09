@@ -1590,6 +1590,47 @@ export function addTailLights(quad, tailMaterial = MAT.tail) {
   quad.userData.tailHalos = halos;
 }
 
+/**
+ * Gives the quad its own indicator lenses (left and right, front and back together) and a reverse lens, in place of the shared ones, so
+ * each can be lit alone. A lens on the driver's left (positive x) is the left indicator. Call before the model is merged.
+ * `indicatorMat` is the material the model's indicator lenses use and `reverseMat` the one its reverse lenses use (or null: none).
+ */
+export function addSignalLamps(quad, indicatorMat, reverseMat = null) {
+  const make = (hex) => new THREE.MeshStandardMaterial({ color: hex, roughness: 0.3, emissive: 0x000000 });
+  const mats = { left: make(indicatorMat.color.getHex()), right: make(indicatorMat.color.getHex()), reverse: make(reverseMat ? reverseMat.color.getHex() : 0xdfe4e6) };
+  quad.updateMatrixWorld(true);
+  const found = [];
+  quad.traverse((o) => {
+    if (!o.isMesh) return;
+    if (o.material === indicatorMat) found.push([o, 'indicator']);
+    else if (reverseMat && o.material === reverseMat) found.push([o, 'reverse']);
+  });
+  for (const [lamp, kind] of found) {
+    if (kind === 'reverse') {
+      lamp.material = mats.reverse;
+      continue;
+    }
+    lamp.geometry.computeBoundingBox();
+    const box = lamp.geometry.boundingBox;
+    const x = new THREE.Vector3((box.min.x + box.max.x) / 2, 0, 0).applyMatrix4(lamp.matrix).x;
+    lamp.material = x > 0 ? mats.left : mats.right;
+  }
+  quad.userData.signalMaterials = mats;
+}
+
+/** Lights the indicators and the reverse lamp: `left` and `right` are whether each side's lens is lit, `reverse` the reverse lens's 0..1. */
+export function setSignalLamps(quad, { left, right, reverse }) {
+  const mats = quad.userData.signalMaterials;
+  if (!mats) return;
+  const glow = (m, hex, level) => {
+    m.emissive.setHex(level > 0 ? hex : 0x000000);
+    m.emissiveIntensity = LENS_GLOW * level;
+  };
+  glow(mats.left, 0xff8a10, left ? 1 : 0);
+  glow(mats.right, 0xff8a10, right ? 1 : 0);
+  glow(mats.reverse, 0xf4f8ff, reverse);
+}
+
 /** Lights the tail lamps: level 0..1 (taillightLevel in headlight.js), glowing red against the dark lens they have when off. */
 export function setTaillights(quad, level) {
   const mat = quad.userData.tailMaterial;

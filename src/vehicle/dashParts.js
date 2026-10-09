@@ -304,6 +304,16 @@ export function warnSymbol(ctx, kind, x, y, colour, lit, scale = 1, glow = true)
     ctx.moveTo(x - 5.2, y - 2.6);
     ctx.lineTo(x + 3.4, y + 3.6);
     ctx.stroke();
+  } else if (kind === 'turn') {
+    // The indicator tell-tale: a pair of arrows pointing out, left and right.
+    for (const d of [-1, 1]) {
+      ctx.moveTo(x + d * 1.4, y);
+      ctx.lineTo(x + d * 8, y);
+      ctx.moveTo(x + d * 5, y - 3);
+      ctx.lineTo(x + d * 1.6, y);
+      ctx.lineTo(x + d * 5, y + 3);
+    }
+    ctx.stroke();
   } else if (kind === 'beam') {
     // A headlamp with its main beam: four straight rays.
     ctx.arc(x - 3, y, 4.2, -Math.PI / 2, Math.PI / 2);

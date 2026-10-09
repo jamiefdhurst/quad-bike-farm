@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { buildDash } from './dash.js';
-import { addHeadlightBeams, addTailLights } from './quadModel.js';
+import { addHeadlightBeams, addTailLights, addSignalLamps } from './quadModel.js';
 import { bentTube, loftGeometry, mergeStatic, rod, springGeometry } from './quadGeometry.js';
 
 // The farm UTV: a Gator-style side-by-side, procedural like the quads and the tractor. A diesel, open-sided, with a bench seat for
@@ -99,7 +99,8 @@ const MAT = {
   glove: new THREE.MeshStandardMaterial({ color: 0x2d3a26, roughness: 0.8 }),
   rust: new THREE.MeshStandardMaterial({ color: 0x4b3a2e, roughness: 0.7, metalness: 0.5 }),
   orange: new THREE.MeshStandardMaterial({ color: 0xd9531e, roughness: 0.5 }), // the diff lock button
-  indicator: new THREE.MeshStandardMaterial({ color: 0xee6a0c, roughness: 0.3 }), // the indicator lenses, front and back: orange, not lit yet
+  indicator: new THREE.MeshStandardMaterial({ color: 0xee6a0c, roughness: 0.3 }), // the indicator lenses, front and back: orange (addSignalLamps gives each side its own)
+  reverse: new THREE.MeshStandardMaterial({ color: 0xdfe4e6, roughness: 0.2 }), // the reverse lens on each tail lamp: clear
   buckleRed: new THREE.MeshStandardMaterial({ color: 0xc8261e, roughness: 0.45 }), // the red release button on a seat belt buckle
   grille: new THREE.MeshStandardMaterial({ color: 0x141516, roughness: 0.6 }),
 };
@@ -522,8 +523,9 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
     rbox(0.3, 0.3, 0.74, 0.05, MAT.bed, s * 0.6, yc(0.9), zc(-1.08), bed); // the wheel well
     rbox(0.3, 0.02, 0.72, 0.01, MAT.floor, s * 0.6, yc(1.06), zc(-1.08), bed);
     rbox(0.07, 0.18, 0.12, 0.02, MAT.plastic, s * 0.815, yc(0.89), zc(-1.74), bed); // the tail lamp's housing, bolted to the end of the side
-    rbox(0.055, 0.07, 0.02, 0.01, MAT.tail, s * 0.815, yc(0.93), zc(-1.81), bed); // its tail and brake lens above
-    rbox(0.055, 0.06, 0.02, 0.01, MAT.indicator, s * 0.815, yc(0.85), zc(-1.81), bed); // and the indicator's under it, orange and not lit yet
+    rbox(0.055, 0.05, 0.02, 0.01, MAT.tail, s * 0.815, yc(0.94), zc(-1.81), bed); // its tail and brake lens above
+    rbox(0.055, 0.05, 0.02, 0.01, MAT.indicator, s * 0.815, yc(0.885), zc(-1.81), bed); // the indicator's under it
+    rbox(0.055, 0.05, 0.02, 0.01, MAT.reverse, s * 0.815, yc(0.83), zc(-1.81), bed); // and the reverse lens at the bottom, clear
     for (const z of [-0.8, -1.6]) add(new THREE.TorusGeometry(0.025, 0.006, 6, 10), MAT.steel, bed).position.set(s * 0.8, yc(1.02), zc(z)); // tie-downs
   }
   // The tailgate, hinged along its bottom edge: shut, it stands up; open, it lies flat behind the bed (where a girl can sit).
@@ -544,6 +546,7 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   for (const s of [-1, 1]) {
     stick(decal(0.4, 0.07, (g, w, h) => text(g, MODEL_NAME, w / 2, h / 2, h * 0.75, '#8b8e90')), bed, [s * 0.787, yc(0.9), zc(-1.2)], s > 0 ? '+x' : '-x');
   }
+  addSignalLamps(quad, MAT.indicator, MAT.reverse);
   addTailLights(quad, MAT.tail); // before the bed is merged: its lamps become the quad's own tail material, lit by the headlight supply
   // The tailgate's seat: hips on its middle when it's down, facing backwards (a girl riding where she shouldn't).
   const bedSeat = new THREE.Object3D();

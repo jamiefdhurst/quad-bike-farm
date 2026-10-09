@@ -7,6 +7,7 @@ import { buildGirlsTab } from './girlsTab.js';
 import { setQuirk, setFault, clearFaults, fixEverything, problemSummary, quirkLabel, startWarm, switchOff } from './vehicleDebug.js';
 import { BRANDS, WHEEL_NAMES } from '../vehicle/tyres.js';
 import { LIGHT_MODES } from '../vehicle/lightSwitch.js';
+import { SIGNAL_MODES } from '../vehicle/indicators.js';
 import { DRIVE_MODES } from '../vehicle/driveMode.js';
 
 /**
@@ -218,6 +219,7 @@ export class DebugGui {
     tick(r, 'parking brake', () => !!unit().quad.parkBrake, (v) => (unit().quad.parkBrake = v));
     // The UTV's light switch, and the 2WD / 4WD switch where there is one.
     if (u.quad.lights) r.add({ get v() { return unit().quad.lights?.mode; }, set v(x) { unit().quad.lights?.set(x); } }, 'v', LIGHT_MODES).name('lights').listen();
+    if (u.quad.signals) r.add({ get v() { return unit().quad.signals?.mode; }, set v(x) { unit().quad.signals?.set(x); } }, 'v', SIGNAL_MODES).name('indicators').listen();
     if (u.quad.drive) r.add({ get v() { return unit().quad.drive?.mode; }, set v(x) { if (unit().quad.drive) unit().quad.drive.mode = x; } }, 'v', u.quad.drive.hasLock ? DRIVE_MODES : ['2wd', '4wd']).name('drive').listen();
     show(r, 'mixture', () => round(unit().engine.mixture));
     show(r, 'roughness', () => round(unit().engine.roughness));

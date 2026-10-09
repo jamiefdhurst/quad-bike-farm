@@ -34,6 +34,7 @@ import { RollWatch, rollReactions, DEFAULT_HANDBRAKE_PARAMS, HANDBRAKE_PARAM_RAN
 import { DEFAULT_DRIVE_PARAMS, DRIVE_PARAM_RANGES, StuckWatch, forgotReaction } from './vehicle/driveMode.js';
 import { HEADLIGHT_PARAMS, HEADLIGHT_PARAM_RANGES } from './vehicle/headlight.js';
 import { LIGHT_SWITCH_PARAMS, LIGHT_SWITCH_PARAM_RANGES } from './vehicle/lightSwitch.js';
+import { INDICATOR_PARAMS, INDICATOR_PARAM_RANGES } from './vehicle/indicators.js';
 import { SEAT_BELT_PARAMS, SEAT_BELT_PARAM_RANGES } from './vehicle/seatBelts.js';
 import { describeVehicle } from './debug/startReport.js';
 import { QuirkSet, DEFAULT_QUIRK_PARAMS, QUIRK_PARAM_RANGES, featuresOf, pickQuirks } from './vehicle/quirks.js';
@@ -313,6 +314,7 @@ export class Game {
     this.fourWdState = new Map(); // companion -> { quad: the switched quad she's driving or null, watch }
     registerTuning('Headlights', HEADLIGHT_PARAMS, HEADLIGHT_PARAM_RANGES);
     registerTuning('UTV lights', LIGHT_SWITCH_PARAMS, LIGHT_SWITCH_PARAM_RANGES);
+    registerTuning('Indicators', INDICATOR_PARAMS, INDICATOR_PARAM_RANGES);
     registerTuning('Seat belts', SEAT_BELT_PARAMS, SEAT_BELT_PARAM_RANGES);
     registerTuning('Two-wheeler lean', DEFAULT_BIKE_PARAMS, BIKE_PARAM_RANGES);
     // One to three quirks each, from the parts the quad has (a gauge quirk needs a dash or pod that shows it, so this comes after the pods).
@@ -3236,6 +3238,10 @@ export class Game {
       const sounding = u === ridden ? honking : u.quad.quirks.horn(dt, !!c && this.horns.beeping(c.character.id));
       u.ride.setHorn(sounding);
       u.quad.hornHeld = sounding; // a wheel pad that sinks while it sounds
+      if (u.quad.signalClick) {
+        this.audioHub.indicatorClick(u.quad.signalClick === 'on', u.quad.position); // the relay, fading with distance
+        u.quad.signalClick = null;
+      }
     }
   }
 

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildQuadModel, poseSuspension, setHeadlights, setTaillights } from './quadModel.js';
+import { buildQuadModel, poseSuspension, setHeadlights, setTaillights, setSignalLamps } from './quadModel.js';
 import { FuelSystem } from './fuelSystem.js';
 import { QuadPhysics, QUAD_LAYOUT } from './quadPhysics.js';
 import { unscaleAnchors } from './unscaleAnchors.js';
@@ -7,6 +7,7 @@ import { Drivetrain } from './drivetrain.js';
 import { QuirkSet } from './quirks.js';
 import { headlightLook, taillightLevel } from './headlight.js';
 import { LightSwitch, lightLook, lightLamps } from './lightSwitch.js';
+import { Indicators, INDICATOR_PARAMS } from './indicators.js';
 import { SeatBelts, beltLampMode, beltLampLit } from './seatBelts.js';
 import { TyreSet } from './tyres.js';
 import { frostTexture } from './frostTexture.js';
@@ -88,6 +89,8 @@ export class Quad {
     this.utv = utv;
     this.hornHeld = false; // set by the game while the horn sounds (the UTV's wheel pad sinks)
     this.lights = lightSwitch ? new LightSwitch() : null; // the UTV's and the Land Rovers' three-way light switch: off, dipped, main beam (lightSwitch.js)
+    this.signals = lightSwitch ? new Indicators() : null; // and their indicators and hazards (indicators.js)
+    this.signalClick = null; // the relay's tick: 'on' or 'off' on the frame the lamp changes (the game plays it and clears it)
     this.belts = lightSwitch || landRover ? new SeatBelts() : null; // the UTV's and the Land Rover's seat belts (seatBelts.js)
     this.driverStand = driverStand; // where a girl climbs in to drive from, on the model's right: the UTV and Land Rover step in through a door ({ x, z } in the model's frame, x negative: the right)
     this.benchStand = benchStand; // where you get in and out beside the bench, on the model's left (the other side from the driver's door), same frame as above
@@ -427,6 +430,11 @@ export class Quad {
     }
     if (this.drive && this.input) this.driveKeys(input);
     if (this.lights && this.input && input.wasPressed('KeyP')) this.lights.cycle();
+    if (this.signals && this.input) {
+      if (input.wasPressed('Comma')) this.signals.press('left');
+      if (input.wasPressed('Period')) this.signals.press('right');
+      if (input.wasPressed('Slash')) this.signals.press('hazard');
+    }
     if (this.manual) this.manualKeys(input);
     // An automatic's reverse is a button, pressed with the brake held (the two-strokes have none).
     if (this.input && !this.manual && !this.tractor && input.wasPressed('KeyB') && this.reverseCheck(input)) this.reverse = true;
@@ -987,6 +995,7 @@ export class Quad {
       diffLock: this.drive?.hasLock ? this.drive.locked : null, // null: no diff lock to show
       hand: this.handSetting,
       choke: this.choke, // the Land Rover's dash has a lamp for it
+      indicatorLamp: this.signals ? this.signals.tellTale : null, // the green arrows (null: no indicators)
       lightLamps: this.lights ? lightLamps(this.lights.mode, e.hasPower) : null, // the UTV's lights and main beam lamps (null: no switch)
       beltLamp: this.belts ? beltLampLit(beltLampMode(e.ignitionOn, this.belts.anyUnbelted), clock.seconds()) : null, // and its seat belt lamp, flashing while someone sits unbelted
       clock: clock.text(),
@@ -1014,6 +1023,11 @@ export class Quad {
     const beams = this.lights ? lightLook(this.lights.mode, e.hasPower) : null;
     const level = (beams ? beams.level : look.level) * this.quirks.headlight(dt);
     setHeadlights(this.model, lit, level, beams ? beams.colour : look.colour, beams);
+    if (this.signals) {
+      const sides = this.signals.update(dt, Math.max(-1, Math.min(1, this.steer / ((this.params.maxSteerDeg * Math.PI) / 180))), e.hasPower && e.ignitionOn);
+      if (this.signals.click) this.signalClick = this.signals.click;
+      setSignalLamps(this.model, { ...sides, reverse: this.reverse && e.hasPower && e.ignitionOn ? INDICATOR_PARAMS.reverseGlow : 0 });
+    }
     setTaillights(this.model, lit ? taillightLevel(level, this.brake > 0.1) : 0); // the same supply, so a brake light needs it too
 
     if (this.tractor) poseTractorControls(this.model, { gear: this.drivetrain.gear, hand: this.handSetting, pedal: this.drivetrain.pedal });
