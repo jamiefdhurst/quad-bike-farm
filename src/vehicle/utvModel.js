@@ -436,9 +436,12 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
 
   buildConsole(root);
 
-  // Controls: the brake and accelerator on the floor.
+  // Controls: the brake and accelerator on the floor, the parking brake handle by the door.
   rbox(0.1, 0.016, 0.08, 0.005, MAT.plastic, -0.42, 0.37, 0.3, root).rotation.x = -0.5; // the brake, wide
   rbox(0.05, 0.016, 0.12, 0.005, MAT.plastic, -0.27, 0.37, 0.3, root).rotation.x = -0.5; // the accelerator, narrow
+  rbox(0.07, 0.05, 0.12, 0.012, MAT.steel, -0.64, 0.545, 0.1, root); // the parking brake's bracket, bolted to the sill's top
+  tube([-0.64, 0.55, 0.1], [-0.6, 0.86, 0.0], 0.01, MAT.steel, root); // its handle
+  add(new THREE.SphereGeometry(0.02, 8, 6), MAT.knob, root).position.set(-0.6, 0.87, 0.0);
   // Quad still poses these two; neither belongs on a diesel with no tap and no choke.
   const tap = new THREE.Group();
   tap.name = 'fuelTap';
