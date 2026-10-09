@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { tempGaugeFraction } from './tempGauge.js';
 import { lampStates, counterDigits, counterText, cycleIndex, gearShown, forwardGearShown } from './dashState.js';
 import {
-  plastic, charcoal, blackMat, gloss, chromeMat, changeGate, mmPanel, housing, chromeRing, text, ticks, labels, arc, needle, drum, lamp, keySwitch,
+  plastic, charcoal, blackMat, agedSteel, agedBlack, gloss, chromeMat, changeGate, mmPanel, housing, chromeRing, text, ticks, labels, arc, needle, drum, lamp, glyphLetter, keySwitch,
   segText, speedText, warnSymbol, LAMP,
 } from './dashParts.js';
 
@@ -95,8 +95,8 @@ function buildForeman() {
     ctx.beginPath();
     ctx.roundRect(126, 104, 68, 26, 3);
     ctx.fill();
-    lamp(ctx, 138, 114, LAMP.amber, 'R', L.lamps.r, { shape: 'rect' });
-    lamp(ctx, 160, 114, LAMP.green, 'N', L.lamps.n, { shape: 'rect' });
+    glyphLetter(ctx, 138, 114, LAMP.amber, 'R', L.lamps.r, 9);
+    glyphLetter(ctx, 160, 114, LAMP.green, 'N', L.lamps.n, 9);
     warnSymbol(ctx, 'oil', 182, 114, LAMP.red, L.lamps.oil, 0.85);
     keySwitch(ctx, 222, 118, s.keyOn);
   }
@@ -181,8 +181,8 @@ function buildGrizzly() {
       segText(ctx, '88', x + w / 2 + 14, y + 18, 18, ghost);
     }
     // Lamps either side, and the two buttons under the LCD.
-    lamp(ctx, 86, 44, LAMP.green, 'N', L.lamps.n, { r: 4.2 });
-    lamp(ctx, 86, 72, LAMP.amber, 'R', L.lamps.r, { r: 4.2 });
+    glyphLetter(ctx, 86, 44, LAMP.green, 'N', L.lamps.n, 9);
+    glyphLetter(ctx, 86, 72, LAMP.amber, 'R', L.lamps.r, 9);
     warnSymbol(ctx, 'temp', 244, 44, LAMP.red, L.lamps.temp);
     warnSymbol(ctx, 'fuel', 244, 72, LAMP.amber, L.lamps.fuel);
     ctx.fillStyle = '#444';
@@ -280,8 +280,8 @@ function buildKodiak() {
     ctx.beginPath();
     for (const bx of [126, 162, 198]) ctx.roundRect(bx, 100, 18, 7, 2.5);
     ctx.fill();
-    lamp(ctx, 74, 50, LAMP.amber, 'R', L.lamps.r, { r: 3.6 });
-    lamp(ctx, 74, 76, LAMP.green, 'N', L.lamps.n, { r: 3.6 });
+    glyphLetter(ctx, 74, 50, LAMP.amber, 'R', L.lamps.r, 8.5);
+    glyphLetter(ctx, 74, 76, LAMP.green, 'N', L.lamps.n, 8.5);
     warnSymbol(ctx, 'temp', 266, 50, LAMP.red, L.lamps.temp);
     warnSymbol(ctx, 'fuel', 266, 76, LAMP.amber, L.lamps.fuel);
   }
@@ -316,8 +316,8 @@ function buildBayou() {
       const l = lampStates(s);
       if (gate(lookKey(s)))
         face.redraw((ctx) => {
-          lamp(ctx, 132, 26, LAMP.green, 'N', l.n, { r: 4.6, shape: 'rect' });
-          lamp(ctx, 156, 26, LAMP.amber, 'R', l.r, { r: 4.6, shape: 'rect' });
+          glyphLetter(ctx, 132, 26, LAMP.green, 'N', l.n, 10);
+          glyphLetter(ctx, 156, 26, LAMP.amber, 'R', l.r, 10);
           keySwitch(ctx, 182, 28, s.keyOn);
         });
     },
@@ -407,62 +407,92 @@ function buildKidsKey() {
 
 // The tractor ------------------------------------------------------------------------------
 
+/** A dial face for the old tractor: brown-black, with the paint gone dull. */
+function agedFace(ctx, d) {
+  ctx.fillStyle = '#16120d';
+  ctx.beginPath();
+  ctx.arc(d.cx, d.cy, d.r, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/** Years of yellowed glass over a dial: a warm haze, a few scratches and dust specks (fixed, so they don't shimmer). */
+function agedGlass(ctx, d) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(d.cx, d.cy, d.r, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.fillStyle = 'rgba(176, 148, 82, 0.13)';
+  ctx.fillRect(d.cx - d.r, d.cy - d.r, d.r * 2, d.r * 2);
+  ctx.strokeStyle = 'rgba(230, 220, 190, 0.22)';
+  ctx.lineWidth = 0.25;
+  for (let i = 0; i < 4; i++) {
+    const a = 0.7 + i * 1.9 + d.r * 0.1;
+    ctx.beginPath();
+    ctx.moveTo(d.cx + Math.cos(a) * d.r * 0.9, d.cy + Math.sin(a) * d.r * 0.9);
+    ctx.lineTo(d.cx + Math.cos(a + 0.9) * d.r * 0.5, d.cy + Math.sin(a + 0.9) * d.r * 0.7);
+    ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(120, 90, 50, 0.35)';
+  for (let i = 0; i < 9; i++) {
+    const a = i * 2.4 + d.r;
+    const rr = d.r * (0.35 + ((i * 37) % 10) / 16);
+    ctx.fillRect(d.cx + Math.cos(a) * rr, d.cy + Math.sin(a) * rr, 0.5, 0.5);
+  }
+  ctx.restore();
+}
+
 function buildTractor() {
   const group = new THREE.Group();
   group.name = 'dash';
   const O = { ox: 180, oy: 70 };
-  // A black pressed-steel binnacle with three round dials in chrome bezels: water temperature, the rev counter and fuel.
-  housing(group, { x: 80, y: 22, w: 200, h: 96, r: 12, ...O, material: blackMat });
+  // An old pressed-steel binnacle, its paint worn through to the metal, with three round dials in dull, pitted bezels: the big rev counter on
+  // the left, water temperature and fuel side by side on the right, and the lamps and the key in a line under them.
+  housing(group, { x: 80, y: 22, w: 200, h: 96, r: 12, ...O, material: agedBlack });
   const face = mmPanel({ x: 80, y: 22, w: 200, h: 96, ...O });
   group.add(face.mesh);
   const dials = [
-    { cx: 118, cy: 58, r: 20 },
-    { cx: 180, cy: 62, r: 31 },
-    { cx: 242, cy: 58, r: 20 },
+    { cx: 200, cy: 53, r: 19 }, // water temperature
+    { cx: 132, cy: 70, r: 34 }, // the rev counter
+    { cx: 252, cy: 53, r: 19 }, // fuel
   ];
-  for (const d of dials) chromeRing(group, { ...d, r: d.r + 1, ...O });
+  for (const d of dials) chromeRing(group, { ...d, r: d.r + 1, ...O, material: agedSteel });
   const gate = changeGate();
   let shownRpm = 0;
   let shownFuel = 0;
   let shownTemp = 0;
 
-  /** A small dial: a cream-on-black arc scale from 150 to 30 degrees with a needle. */
-  function small(ctx, d, frac, symbol, lo, hi, redEnd = false) {
-    ctx.fillStyle = '#0a0a0a';
-    ctx.beginPath();
-    ctx.arc(d.cx, d.cy, d.r, 0, Math.PI * 2);
-    ctx.fill();
-    ticks(ctx, d.cx, d.cy, d.r - 5, d.r - 1.5, 150, 30, 6, '#ece6d2', 0.8);
+  /** A small dial: a faded cream-on-brown-black arc scale from 150 to 30 degrees with a needle. */
+  function small(ctx, d, frac, lo, hi, redEnd = false) {
+    agedFace(ctx, d);
+    ticks(ctx, d.cx, d.cy, d.r - 5, d.r - 1.5, 150, 30, 6, '#cdbf98', 0.8);
     if (redEnd) arc(ctx, d.cx, d.cy, d.r - 2.5, 50, 30, '#d8402e', 2.2);
-    text(ctx, lo, d.cx - d.r * 0.62, d.cy + d.r * 0.5, 4.4, '#ece6d2', { align: 'center' });
-    text(ctx, hi, d.cx + d.r * 0.62, d.cy + d.r * 0.5, 4.4, redEnd ? '#ff6a5a' : '#ece6d2', { align: 'center' });
-    warnSymbol(ctx, symbol, d.cx, d.cy + d.r * 0.4, '#bbb', true, 0.55);
-    needle(ctx, d.cx, d.cy, d.r - 3, 150 - 120 * frac, '#f0f0e0', 1);
+    text(ctx, lo, d.cx - d.r * 0.62, d.cy + d.r * 0.5, 4.4, '#cdbf98', { align: 'center' });
+    text(ctx, hi, d.cx + d.r * 0.62, d.cy + d.r * 0.5, 4.4, redEnd ? '#ff6a5a' : '#cdbf98', { align: 'center' });
+    needle(ctx, d.cx, d.cy, d.r - 3, 150 - 120 * frac, '#d8cfae', 1);
+    agedGlass(ctx, d);
   }
 
   function draw(ctx, s, L) {
     // The rev counter, 0 to 3,000 rpm in hundreds, with the PTO speed marked in green.
     const t = dials[1];
-    ctx.fillStyle = '#0a0a0a';
-    ctx.beginPath();
-    ctx.arc(t.cx, t.cy, t.r, 0, Math.PI * 2);
-    ctx.fill();
+    agedFace(ctx, t);
     arc(ctx, t.cx, t.cy, t.r - 3, 170 - 160 * (1500 / 3000), 170 - 160 * (1800 / 3000), '#3fb85a', 3);
-    ticks(ctx, t.cx, t.cy, t.r - 6, t.r - 1.5, 170, 10, 30, '#ece6d2', 0.5);
-    ticks(ctx, t.cx, t.cy, t.r - 9, t.r - 1.5, 170, 10, 6, '#ece6d2', 1);
-    labels(ctx, t.cx, t.cy, t.r - 14.5, 170, 10, ['0', '5', '10', '15', '20', '25', '30'], '#ece6d2', 4.6);
+    ticks(ctx, t.cx, t.cy, t.r - 6, t.r - 1.5, 170, 10, 30, '#cdbf98', 0.5);
+    ticks(ctx, t.cx, t.cy, t.r - 9, t.r - 1.5, 170, 10, 6, '#cdbf98', 1);
+    labels(ctx, t.cx, t.cy, t.r - 14.5, 170, 10, ['0', '5', '10', '15', '20', '25', '30'], '#cdbf98', 4.6);
     text(ctx, 'PTO', t.cx + 8, t.cy - 16.5, 3.2, '#6fd18a', { align: 'center' });
-    text(ctx, 'R.P.M. x 100', t.cx, t.cy + 10, 3.4, '#ccc', { align: 'center' });
+    text(ctx, 'R.P.M. x 100', t.cx, t.cy + 10, 3.4, '#a89f84', { align: 'center' });
     const h = counterDigits(s.hours, 4);
     drum(ctx, t.cx - 11.5, t.cy + 14, h.whole, h.tenth, 6);
-    needle(ctx, t.cx, t.cy, t.r - 2, 170 - (160 * Math.min(3000, L.rpm)) / 3000, '#f0f0e0', 1.3);
-    small(ctx, dials[0], L.temp, 'temp', 'C', 'H', true);
-    small(ctx, dials[2], L.fuel, 'fuel', 'E', 'F');
+    needle(ctx, t.cx, t.cy, t.r - 2, 170 - (160 * Math.min(3000, L.rpm)) / 3000, '#d8cfae', 1.3);
+    agedGlass(ctx, t);
+    small(ctx, dials[0], L.temp, 'C', 'H', true);
+    small(ctx, dials[2], L.fuel, 'E', 'F');
     // The lamps along the bottom, and the key.
-    warnSymbol(ctx, 'glow', 150, 105, LAMP.amber, L.glow, 0.7);
-    warnSymbol(ctx, 'charge', 172, 105, LAMP.red, L.charge, 0.7);
-    warnSymbol(ctx, 'oil', 194, 105, LAMP.red, L.oil, 0.7);
-    keySwitch(ctx, 236, 100, s.keyOn);
+    warnSymbol(ctx, 'glow', 196, 93, LAMP.amber, L.glow, 0.7);
+    warnSymbol(ctx, 'charge', 216, 93, LAMP.red, L.charge, 0.7);
+    warnSymbol(ctx, 'oil', 236, 93, LAMP.red, L.oil, 0.7);
+    keySwitch(ctx, 262, 98, s.keyOn);
   }
 
   return {

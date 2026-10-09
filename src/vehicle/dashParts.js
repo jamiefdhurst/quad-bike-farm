@@ -10,6 +10,8 @@ export const charcoal = new THREE.MeshStandardMaterial({ color: 0x2b2d30, roughn
 export const blackMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.6 });
 export const gloss = new THREE.MeshStandardMaterial({ color: 0x1b1c1e, roughness: 0.25, metalness: 0.1 });
 export const chromeMat = new THREE.MeshStandardMaterial({ color: 0xd8dadc, roughness: 0.15, metalness: 1.0 });
+export const agedSteel = new THREE.MeshStandardMaterial({ color: 0x77715f, roughness: 0.8, metalness: 0.45 }); // a bezel gone dull and pitted
+export const agedBlack = new THREE.MeshStandardMaterial({ color: 0x24201a, roughness: 0.85 }); // old pressed steel, its paint worn
 export const steel = new THREE.MeshStandardMaterial({ color: 0x555a5e, roughness: 0.5, metalness: 0.7 });
 
 /** Redraws only when what's shown has changed. */
@@ -94,8 +96,8 @@ export function housing(group, { x, y, w, h, r = 8, ox, oy, material = plastic, 
 }
 
 /** A chrome ring standing a little proud of a face, centred on mockup point (cx, cy). */
-export function chromeRing(group, { cx, cy, r, ox, oy, z = -0.0365, tube = 0.0028 }) {
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(r * MM, tube, 8, 40), chromeMat);
+export function chromeRing(group, { cx, cy, r, ox, oy, z = -0.0365, tube = 0.0028, material = chromeMat }) {
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(r * MM, tube, 8, 40), material);
   ring.position.set(-(cx - ox) * MM, -(cy - oy) * MM, z);
   group.add(ring);
   return ring;
@@ -370,10 +372,17 @@ export function warnSymbol(ctx, kind, x, y, colour, lit, scale = 1, glow = true)
   }
 }
 
-/** A round lamp with a letter on it (N, R): lit in its colour with a glow, or dull. */
-export function letterLamp(ctx, x, y, colour, letter, lit, r = 4) {
-  lamp(ctx, x, y, colour, '', lit, { r });
-  text(ctx, letter, x, y + r * 0.42, r * 1.25, lit ? '#101010' : '#777', { align: 'center', weight: 'bold' });
+/** A lit-up letter (N, R) with no lamp behind it: coloured with a glow when lit, dull when not. */
+export function glyphLetter(ctx, x, y, colour, letter, lit, size = 7) {
+  if (lit) {
+    ctx.fillStyle = colour;
+    ctx.globalAlpha = 0.22;
+    ctx.beginPath();
+    ctx.arc(x, y, size * 0.85, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  text(ctx, letter, x, y + size * 0.36, size, lit ? colour : '#3c3f42', { align: 'center', weight: 'bold' });
 }
 
 /** The ignition key in its barrel: upright for on, turned a quarter for off. */

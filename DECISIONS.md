@@ -2354,3 +2354,12 @@ Settled with Jamie: all five (the red and blue dashes, the tractor's, and both a
 - **Digital pod.** Its OIL, FUEL, TEMP and 4WD words are symbols too.
 - Not done, as agreed: backlighting (item 33's dusk), new readouts. The analogue pod's needles now lag the real speed and revs (0.4 and 0.3 of the gap per frame, like the stock dashes) instead of snapping; a key-on sweep is not done.
 - Checked: unit tests, and a headless run (clicking through the overlay) of the red quad with each pod, the tractor with the analogue pod and the tractor's and loan quad's stock dashes. Not checked: the blue's own dash by eye (it wasn't dealt that game), the Land Rover's combined gauge, or the pods while moving.
+
+### Better instrument pods, second pass (Jamie's feedback)
+
+- **Analogue pod:** the big dials are larger (35 mm, was 28) so the pod is only as tall as they are, and the lamps are small and sit in a row over the two small dials between them. The centre text (MPH, ×1000 r/min) moved up and shrank, the odometer, trip and hour drums sit lower, and the ODO / TRIP / HRS words beside the drums are gone (they collided with the 60 and 0). All seven lamps are always on the face (N, R, temperature, fuel, oil, 4WD, diff lock); on a quad with no drive switch the last two just stay out.
+- **Digital pod:** the 4WD and diff lock symbols are always drawn, dim when out or when the quad has no switch.
+- **N and R** are lit-up letters (`glyphLetter`, no lamp behind them) on the red, blue, loan and green dashes and the analogue pod, to match the symbols. The `letterLamp` helper from the first pass went.
+- **Tractor dash:** the rev counter is the big dial on the left, water temperature and fuel side by side on the right, and the GLOW, CHARGE and OIL symbols and the key in a line under them. The dial symbols are gone (an old tractor wouldn't have them; C / H and E / F are enough). It looks old: a worn dark housing, dull pitted bezels (`agedSteel`), brown-black faces with faded cream figures, and yellowed glass with a haze, scratches and specks over each dial (`agedGlass`, fixed so nothing shimmers).
+- **Debug panel:** the repeated `reading 'mode'` page error was the Vehicles tab's `lights` and `drive` controls reading `quad.lights` and `quad.drive` on a picked vehicle that has neither; both now read through `?.`.
+- Checked: unit tests and a headless run (past the overlay) of both pods on the red quad and the tractor's stock dash. Not checked: the blue's dash, or the analogue pod on the tractor after this pass.

@@ -217,8 +217,8 @@ export class DebugGui {
     show(r, 'odometer / trip (mi)', () => `${unit().quad.usage.odoMiles.toFixed(2)} / ${unit().quad.tripMiles.toFixed(2)}`);
     tick(r, 'parking brake', () => !!unit().quad.parkBrake, (v) => (unit().quad.parkBrake = v));
     // The UTV's light switch, and the 2WD / 4WD switch where there is one.
-    if (u.quad.lights) r.add({ get v() { return unit().quad.lights.mode; }, set v(x) { unit().quad.lights.set(x); } }, 'v', LIGHT_MODES).name('lights').listen();
-    if (u.quad.drive) r.add({ get v() { return unit().quad.drive.mode; }, set v(x) { unit().quad.drive.mode = x; } }, 'v', u.quad.drive.hasLock ? DRIVE_MODES : ['2wd', '4wd']).name('drive').listen();
+    if (u.quad.lights) r.add({ get v() { return unit().quad.lights?.mode; }, set v(x) { unit().quad.lights?.set(x); } }, 'v', LIGHT_MODES).name('lights').listen();
+    if (u.quad.drive) r.add({ get v() { return unit().quad.drive?.mode; }, set v(x) { if (unit().quad.drive) unit().quad.drive.mode = x; } }, 'v', u.quad.drive.hasLock ? DRIVE_MODES : ['2wd', '4wd']).name('drive').listen();
     show(r, 'mixture', () => round(unit().engine.mixture));
     show(r, 'roughness', () => round(unit().engine.roughness));
     show(r, 'erratic (needs a service)', () => round(unit().engine.erratic));

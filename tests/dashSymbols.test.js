@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { warnSymbol, letterLamp } from '../src/vehicle/dashParts.js';
+import { warnSymbol, glyphLetter } from '../src/vehicle/dashParts.js';
 
 // A canvas context that accepts any call, and records the drawing calls made.
 function stubContext() {
@@ -31,7 +31,7 @@ describe('dash symbols', () => {
     }
   });
 
-  it('draws a letter lamp', () => {
-    expect(() => letterLamp(stubContext(), 5, 5, '#0f0', 'N', true)).not.toThrow();
+  it('draws a lit-up letter', () => {
+    expect(() => glyphLetter(stubContext(), 5, 5, '#0f0', 'N', true)).not.toThrow();
   });
 });

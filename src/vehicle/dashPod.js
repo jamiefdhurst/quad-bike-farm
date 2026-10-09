@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { HOT_FROM, tempGaugeFraction, coldZoneEnd } from './tempGauge.js';
 import { lampStates, counterDigits, counterText, cycleIndex, gearShown } from './dashState.js';
 import {
-  blackMat, steel, changeGate, mmPanel, housing, chromeRing, text, ticks, labels, arc, needle, drum, letterLamp, warnSymbol, segText, speedText, LAMP,
+  blackMat, steel, changeGate, mmPanel, housing, chromeRing, text, ticks, labels, arc, needle, drum, glyphLetter, warnSymbol, segText, speedText, LAMP,
 } from './dashParts.js';
 import { segmentCounts } from './dash.js';
 
@@ -26,12 +26,15 @@ const MINI_END = 20;
 const miniAngle = (fraction) => MINI_START + (MINI_END - MINI_START) * Math.min(1, Math.max(0, fraction));
 
 // Where the dials and lamps sit on the face, in mm.
-const DIAL_Y = 72;
-const LAMP_Y = 17;
-const BIG_R = 28;
-const BIG_X = [40, 170];
-const MINI_R = 12;
-const MINI_X = [90, 120];
+const POD_W = 244;
+const POD_H = 90;
+const DIAL_Y = 45;
+const BIG_R = 35;
+const BIG_X = [45, 199];
+const MINI_R = 14;
+const MINI_Y = 55;
+const MINI_X = [105, 139];
+const LAMP_Y = 19; // the lamps sit over the small dials, between the big ones
 
 function bigDial(ctx, cx, cy, r, kind, s, on) {
   ctx.fillStyle = CHROME;
@@ -52,24 +55,21 @@ function bigDial(ctx, cx, cy, r, kind, s, on) {
   if (kind === 'speed') {
     ticks(ctx, cx, cy, r - 6, r - 1, DIAL_START, DIAL_END, 12, INK, 0.9);
     ticks(ctx, cx, cy, r - 3.5, r - 1, DIAL_START, DIAL_END, 24, INK, 0.5);
-    labels(ctx, cx, cy, r - 12, DIAL_START, DIAL_END, ['0', '10', '20', '30', '40', '50', '60'], INK, 5);
-    text(ctx, 'MPH', cx, cy - 12, 4, INK, { align: 'center' });
+    labels(ctx, cx, cy, r - 10, DIAL_START, DIAL_END, ['0', '10', '20', '30', '40', '50', '60'], INK, 4.6);
+    text(ctx, 'MPH', cx, cy - 6, 3.4, INK, { align: 'center' });
     const o = counterDigits(s.odoMiles, 4);
-    drum(ctx, cx - 11.5, cy + 15, o.whole, o.tenth, 6);
-    text(ctx, 'ODO', cx + 13, cy + 20, 3, '#555');
+    drum(ctx, cx - 11.5, cy + 8, o.whole, o.tenth, 6);
     const t = counterDigits(s.tripMiles, 3);
-    drum(ctx, cx - 9.2, cy + 24, t.whole, t.tenth, 6);
-    text(ctx, 'TRIP', cx + 13, cy + 29, 3, '#555');
+    drum(ctx, cx - 9.2, cy + 17, t.whole, t.tenth, 6);
     needle(ctx, cx, cy, r - 3, dialAngle(on ? s.speedMph / SPEED_MAX_MPH : 0), '#d2321e', 1.3);
   } else {
     // The red band starts at the fitted quad's own redline.
     arc(ctx, cx, cy, r - 3.5, dialAngle(s.redline / REV_MAX), DIAL_END, '#d2321e', 5);
     ticks(ctx, cx, cy, r - 6, r - 1, DIAL_START, DIAL_END, 12, INK, 0.9);
-    labels(ctx, cx, cy, r - 12, DIAL_START, DIAL_END, Array.from({ length: 13 }, (_, i) => String(i)), INK, 4.2);
-    text(ctx, '×1000 r/min', cx, cy - 12, 3.6, INK, { align: 'center' });
+    labels(ctx, cx, cy, r - 10, DIAL_START, DIAL_END, Array.from({ length: 13 }, (_, i) => String(i)), INK, 3.8);
+    text(ctx, '×1000 r/min', cx, cy - 6, 3, INK, { align: 'center' });
     const h = counterDigits(s.hours, 4);
-    drum(ctx, cx - 11.5, cy + 17, h.whole, h.tenth, 6);
-    text(ctx, 'HRS', cx + 13, cy + 22, 3, '#555');
+    drum(ctx, cx - 11.5, cy + 12, h.whole, h.tenth, 6);
     needle(ctx, cx, cy, r - 3, dialAngle(on ? s.rpm / REV_MAX : 0), '#d2321e', 1.3);
   }
 }
@@ -104,7 +104,7 @@ function miniDial(ctx, cx, cy, r, kind, s, on) {
 function buildAnalogue() {
   const group = new THREE.Group();
   group.name = 'podAnalogue';
-  const O = { ox: 105, oy: 134 };
+  const O = { ox: 122, oy: 112 };
   // Stem and bar clamp, then the black steel bracket plate.
   const stem = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.026, 0.016), steel);
   stem.position.set(0, 0.012, 0.012);
@@ -112,10 +112,10 @@ function buildAnalogue() {
   const clamp = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.06, 12).rotateZ(Math.PI / 2), steel);
   clamp.position.set(0, 0, 0.012);
   group.add(clamp);
-  housing(group, { x: 0, y: 0, w: 210, h: 112, r: 24, ...O, material: blackMat });
+  housing(group, { x: 0, y: 0, w: POD_W, h: POD_H, r: 22, ...O, material: blackMat });
   for (const cx of BIG_X) chromeRing(group, { cx, cy: DIAL_Y, r: BIG_R + 5, ...O, tube: 0.0035 });
-  for (const cx of MINI_X) chromeRing(group, { cx, cy: DIAL_Y, r: MINI_R + 2.5, ...O, tube: 0.0028 });
-  const face = mmPanel({ x: 0, y: 0, w: 210, h: 112, ...O });
+  for (const cx of MINI_X) chromeRing(group, { cx, cy: MINI_Y, r: MINI_R + 2.5, ...O, tube: 0.0028 });
+  const face = mmPanel({ x: 0, y: 0, w: POD_W, h: POD_H, ...O });
   group.add(face.mesh);
   const gate = changeGate();
   let shownMph = 0;
@@ -125,21 +125,19 @@ function buildAnalogue() {
     const on = s.ignition;
     bigDial(ctx, BIG_X[0], DIAL_Y, BIG_R, 'speed', s, on);
     bigDial(ctx, BIG_X[1], DIAL_Y, BIG_R, 'revs', s, on);
-    miniDial(ctx, MINI_X[0], DIAL_Y, MINI_R, 'fuel', s, on);
-    miniDial(ctx, MINI_X[1], DIAL_Y, MINI_R, 'temp', s, on);
-    // The lamps along the top, centred: symbols, with N and R as letters. The drive lamps only on a quad with the switch.
+    miniDial(ctx, MINI_X[0], MINI_Y, MINI_R, 'fuel', s, on);
+    miniDial(ctx, MINI_X[1], MINI_Y, MINI_R, 'temp', s, on);
+    // Every lamp is always there, in a row over the small dials; one that doesn't apply to the fitted quad (the drive lamps on a quad with
+    // no switch) just stays out.
     const l = lampStates(s);
     const lamps = [
       ['n', LAMP.green, l.n], ['r', LAMP.amber, l.r], ['temp', LAMP.red, l.temp], ['fuel', LAMP.amber, l.fuel], ['oil', LAMP.red, l.oil],
+      ['4wd', LAMP.green, s.ignition && !!s.fourWd], ['lock', LAMP.red, s.ignition && !!s.diffLock],
     ];
-    if (s.fourWd !== null) {
-      lamps.push(['4wd', LAMP.green, s.ignition && s.fourWd]);
-      if (s.diffLock !== null) lamps.push(['lock', LAMP.red, s.ignition && s.diffLock]);
-    }
     lamps.forEach(([kind, colour, lit], i) => {
-      const x = 105 + (i - (lamps.length - 1) / 2) * 22;
-      if (kind === 'n' || kind === 'r') letterLamp(ctx, x, LAMP_Y, colour, kind.toUpperCase(), lit, 4.6);
-      else warnSymbol(ctx, kind, x, LAMP_Y, colour, lit, 0.9);
+      const x = (MINI_X[0] + MINI_X[1]) / 2 + (i - (lamps.length - 1) / 2) * 9.6;
+      if (kind === 'n' || kind === 'r') glyphLetter(ctx, x, LAMP_Y, colour, kind.toUpperCase(), lit, 6.5);
+      else warnSymbol(ctx, kind, x, LAMP_Y, colour, lit, 0.62);
     });
   }
 
@@ -217,7 +215,8 @@ function buildDigital() {
     segText(ctx, L.speed, x + 92, y + 31, 21, on ? AMBER : ghost, ghost);
     if (!on) return;
     text(ctx, 'MPH', x + 95, y + 50, 5, AMBER);
-    warnSymbol(ctx, 'oil', x + 38, y + 47.5, L.lamps.oil ? AMBER_RED : AMBER_GHOST, true, 0.7, false); // the low-oil lamp, dark until the sump is low
+    // The oil lamp is dark until the sump is low; the drive symbols are always there and dim when out or when the quad has no switch.
+    warnSymbol(ctx, 'oil', x + 38, y + 47.5, L.lamps.oil ? AMBER_RED : AMBER_GHOST, true, 0.7, false);
     const f = segmentCounts(s, 6, 6);
     for (let i = 0; i < 6; i++) {
       ctx.fillStyle = i < f.fuel ? (L.lamps.fuel ? AMBER_RED : AMBER) : AMBER_GHOST;
@@ -227,14 +226,8 @@ function buildDigital() {
     }
     warnSymbol(ctx, 'fuel', x + 10.5, y + 65, AMBER, true, 0.55, false);
     warnSymbol(ctx, 'temp', x + w - 10.5, y + 65, AMBER, true, 0.55, false);
-    // The 2WD / 4WD switch (driveMode.js), on a quad that has one; a bar under it while the diff lock is in.
-    if (s.fourWd !== null) {
-      warnSymbol(ctx, '4wd', x + 38, y + 37.5, s.fourWd ? AMBER : AMBER_GHOST, true, 0.7, false);
-      if (s.diffLock) {
-        ctx.fillStyle = AMBER;
-        ctx.fillRect(x + 30, y + 42, 16, 1.2);
-      }
-    }
+    warnSymbol(ctx, '4wd', x + 26, y + 37.5, s.fourWd ? AMBER : AMBER_GHOST, true, 0.7, false);
+    warnSymbol(ctx, 'lock', x + 50, y + 37.5, s.diffLock ? AMBER_RED : AMBER_GHOST, true, 0.7, false);
     const gear = gearShown(s);
     if (gear) text(ctx, gear, x + w - 30, y + 36, 11, AMBER, { align: 'center', weight: 'bold' });
     segText(ctx, s.clock, x + w - 22, y + 43.4, 4.55, AMBER);
