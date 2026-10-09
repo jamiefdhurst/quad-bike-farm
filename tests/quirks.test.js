@@ -234,12 +234,20 @@ describe('the lit headlight beam', () => {
     const mat = () => ({ color: { setHex(h) { this.hex = h; } }, opacity: 0 });
     const beam = mat();
     const halo = mat();
-    const parts = [{ visible: false }, { visible: false }];
+    const shaft = { visible: false, scale: { set(x, y, z) { Object.assign(this, { x, y, z }); } } };
+    const bloom = { visible: false, isSprite: true, scale: { setScalar(v) { this.v = v; } } };
+    const parts = [shaft, bloom];
     const model = { userData: { lensMaterial: { emissive: { setHex() {} }, emissiveIntensity: 0 }, beamMaterial: beam, haloMaterial: halo, beams: parts } };
     setHeadlights(model, true, 1, 0xabcdef);
     expect(beam.opacity).toBeGreaterThan(0);
     expect(beam.color.hex).toBe(0xabcdef);
     expect(parts.every((p) => p.visible)).toBe(true);
+    expect([shaft.scale.z, bloom.scale.v]).toEqual([1, 0.5]); // the usual beam
+    setHeadlights(model, true, 1, 0xabcdef, { reach: 2, spread: 1.5, glare: 2, halo: 1.6 });
+    expect(shaft.scale.z).toBe(2);
+    expect(shaft.scale.x).toBe(1.5);
+    expect(bloom.scale.v).toBeCloseTo(0.8);
+    expect(beam.opacity).toBeCloseTo(0.2); // a main beam is brighter than the dipped one's 0.1
     setHeadlights(model, true, 0);
     expect(beam.opacity).toBe(0);
     expect(parts.some((p) => p.visible)).toBe(false);

@@ -7,6 +7,8 @@ import { applicableQuirks, featuresOf } from '../vehicle/quirks.js';
 import { WHEEL_NAMES } from '../vehicle/tyres.js';
 import { setFault, setQuirk } from '../debug/vehicleDebug.js';
 import { TAP_POSITIONS } from '../vehicle/fuelSystem.js';
+import { LIGHT_MODES } from '../vehicle/lightSwitch.js';
+import { DRIVE_MODES } from '../vehicle/driveMode.js';
 import { WEATHER_KINDS } from '../world/weather.js';
 
 const DEG = 180 / Math.PI;
@@ -101,6 +103,8 @@ export function buildGameTree(g, host) {
         topRpm: ro(() => u().topRpm ?? 0, 'rpm', 'dealt at the start'),
         tune: tuningTree((n) => n.startsWith(`${u().name}/`), `${u().name}/`),
       };
+      if (q().lights) out.lights = choice(LIGHT_MODES, () => q().lights.mode, (v) => q().lights.set(v), 'the UTV light switch');
+      if (q().drive) out.drive = choice(q().drive.hasLock ? DRIVE_MODES : ['2wd', '4wd'], () => q().drive.mode, (v) => (q().drive.mode = v), 'the 2WD / 4WD switch');
       if (!q().fuel.params.noTap || q().landRover) out.choke = num(() => q().choke, (v) => (q().choke = v), 0, 1); // the Land Rover has a choke but no tap
       if (e().params.waterCooled) out.coolant = num(() => e().coolant, (v) => (e().coolant = v), 0, 1);
       if (q().sump) out.oil = num(() => q().sump.level, (v) => (q().sump.level = v), 0, 1, '', 'engine oil level');

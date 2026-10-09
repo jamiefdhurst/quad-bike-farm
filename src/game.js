@@ -32,6 +32,7 @@ import { pushDirection, localAlong } from './vehicle/controls.js';
 import { RollWatch, rollReactions, DEFAULT_HANDBRAKE_PARAMS, HANDBRAKE_PARAM_RANGES } from './vehicle/handbrake.js';
 import { DEFAULT_DRIVE_PARAMS, DRIVE_PARAM_RANGES, StuckWatch, forgotReaction } from './vehicle/driveMode.js';
 import { HEADLIGHT_PARAMS, HEADLIGHT_PARAM_RANGES } from './vehicle/headlight.js';
+import { LIGHT_SWITCH_PARAMS, LIGHT_SWITCH_PARAM_RANGES } from './vehicle/lightSwitch.js';
 import { describeVehicle } from './debug/startReport.js';
 import { QuirkSet, DEFAULT_QUIRK_PARAMS, QUIRK_PARAM_RANGES, featuresOf, pickQuirks } from './vehicle/quirks.js';
 import { captureStock, tuneTarget, stockSettings, clampSettings, applyTune } from './vehicle/tuneUp.js';
@@ -54,7 +55,7 @@ import { UtvBed, UTV_BED_PARAM_RANGES } from './vehicle/utvBed.js';
 import { TipTrailer, canTow, TIP_TRAILER_PARAM_RANGES } from './vehicle/tipTrailer.js';
 import { DEFAULT_TOW_PARAMS, TOW_PARAM_RANGES, towLoad, towEffect } from './vehicle/towing.js';
 import { TrailerRide, TRAILER_RIDE_PARAM_RANGES } from './npc/trailerRide.js';
-import { poseUtvBed, poseUtvControls } from './vehicle/utvModel.js';
+import { poseUtvBed } from './vehicle/utvModel.js';
 import { UtvRide, UTV_RIDE_PARAM_RANGES, DEFAULT_UTV_RIDE_PARAMS } from './npc/utvRide.js';
 import { TractorGo, TRACTORGO_PARAM_RANGES } from './npc/tractorGo.js';
 import { LPlates, LPLATE_PARAM_RANGES, meanSkill } from './npc/lPlates.js';
@@ -304,6 +305,7 @@ export class Game {
     registerTuning('2WD and 4WD', DEFAULT_DRIVE_PARAMS, DRIVE_PARAM_RANGES);
     this.fourWdState = new Map(); // companion -> { quad: the switched quad she's driving or null, watch }
     registerTuning('Headlights', HEADLIGHT_PARAMS, HEADLIGHT_PARAM_RANGES);
+    registerTuning('UTV lights', LIGHT_SWITCH_PARAMS, LIGHT_SWITCH_PARAM_RANGES);
     registerTuning('Two-wheeler lean', DEFAULT_BIKE_PARAMS, BIKE_PARAM_RANGES);
     // One to three quirks each, from the parts the quad has (a gauge quirk needs a dash or pod that shows it, so this comes after the pods).
     this.quirkParams = { ...DEFAULT_QUIRK_PARAMS };
@@ -1553,7 +1555,6 @@ export class Game {
     }
     bed.update(dt, { speed: q.speed, gateDown: mount.bedBusy });
     poseUtvBed(q.model, bed);
-    poseUtvControls(q.model, { reverse: q.reverse });
 
     const girls = this.companions.map((c) => ({
       id: c.character.id,
@@ -3081,7 +3082,9 @@ export class Game {
     }
     for (const u of this.units) {
       const c = this.companions.find((o) => o.quad === u.quad);
-      u.ride.setHorn(u === ridden ? honking : u.quad.quirks.horn(dt, !!c && this.horns.beeping(c.character.id)));
+      const sounding = u === ridden ? honking : u.quad.quirks.horn(dt, !!c && this.horns.beeping(c.character.id));
+      u.ride.setHorn(sounding);
+      u.quad.hornHeld = sounding; // a wheel pad that sinks while it sounds
     }
   }
 

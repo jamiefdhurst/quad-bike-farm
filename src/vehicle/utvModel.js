@@ -2,19 +2,20 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { buildDash } from './dash.js';
-import { addHeadlightBeams } from './quadModel.js';
+import { addHeadlightBeams, addTailLights } from './quadModel.js';
 import { bentTube, loftGeometry, mergeStatic, rod, springGeometry } from './quadGeometry.js';
 
 // The farm UTV: a Gator-style side-by-side, procedural like the quads and the tractor. A diesel, open-sided, with a bench seat for
-// three under a roll cage and roof, a steering wheel on the right (it's British), a pedal pair on the floor, a forward and reverse
-// lever on the dash, and a black tipping bed behind the seat with a drop-down tailgate. Same named parts as a quad's model so Quad
+// three under a roll cage and roof, a steering wheel on the right (it's British), a pedal pair on the floor, a centre console with the
+// forward and reverse lever, the 4WD and diff lock switches, the light switch and the bed's tip lever, and a black tipping bed behind the seat with a drop-down tailgate. Same named parts as a quad's model so Quad
 // drives it unchanged (see quadModel.js), plus the ones only it has:
 //
 //   quad
 //   ├── body                       rocked by vibration
 //   │   └── bodyRoot               ground-referenced: y = 0 is the ground at rest, so it sits at UTV_GROUND_OFFSET in the chassis
 //   │       ├── bonnet, fenders, dash panel, floor, bench seat (seatLeft, seatMid anchors), roll cage, roof, exhaust
-//   │       ├── dash                       on the dash panel in front of the driver, not turning with the wheel
+//   │       ├── dash                       the digital cluster, on the dash panel in front of the driver, not turning with the wheel
+//   │       ├── driveLever, driveSwitchRocker, diffLockButton, lightRocker, tipLever    the centre console (poseUtvControls, poseUtvBed)
 //   │       ├── steeringColumn > handlebars    the wheel; turns about the column's axis (and holds riderHands, gripLeft, gripRight)
 //   │       ├── bed                        hinged at the back: tips up (rotation.x negative). Holds bedSeat and the tailgate
 //   │       │   └── tailgate               hinged at its bottom edge: 0 shut, -pi/2 lying flat
@@ -85,7 +86,47 @@ const MAT = {
   knob: new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.4 }),
   glove: new THREE.MeshStandardMaterial({ color: 0x2d3a26, roughness: 0.8 }),
   rust: new THREE.MeshStandardMaterial({ color: 0x4b3a2e, roughness: 0.7, metalness: 0.5 }),
+  orange: new THREE.MeshStandardMaterial({ color: 0xd9531e, roughness: 0.5 }), // the diff lock button
+  grille: new THREE.MeshStandardMaterial({ color: 0x141516, roughness: 0.6 }),
 };
+
+// The made-up maker on the badges and decals (never a real one's name or logo).
+const MAKER = 'DEERFIELD';
+const MODEL_NAME = 'STAG 4x4';
+
+/** A flat printed label: a canvas drawn once, on a plane of w by h metres. Facing +Z; the caller turns it. Not merged (it has a map). */
+function decal(w, h, draw, { px = 400, transparent = true } = {}) {
+  const c = document.createElement('canvas');
+  c.width = Math.round(w * px);
+  c.height = Math.round(h * px);
+  const g = c.getContext('2d');
+  g.scale(px, px);
+  draw(g, w, h);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  const mat = new THREE.MeshStandardMaterial({ map: tex, transparent, roughness: 0.6, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  return new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+}
+
+/** Puts a decal on a flat face: `at` is its centre, `facing` the way it looks ('+x', '-x', '-z', '+z' or 'up'). */
+function stick(label, parent, at, facing) {
+  label.position.set(...at);
+  if (facing === '+x') label.rotation.y = Math.PI / 2;
+  else if (facing === '-x') label.rotation.y = -Math.PI / 2;
+  else if (facing === '-z') label.rotation.y = Math.PI;
+  else if (facing === 'up') label.rotation.set(-Math.PI / 2, 0, Math.PI); // lying flat, its top towards +Z so the driver reads it
+  parent.add(label);
+  return label;
+}
+
+function text(g, str, x, y, size, colour, { align = 'center', weight = 'bold' } = {}) {
+  g.fillStyle = colour;
+  g.font = `${weight} ${size}px Helvetica, Arial, sans-serif`;
+  g.textAlign = align;
+  g.textBaseline = 'middle';
+  g.fillText(str, x, y);
+}
 
 function add(geo, mat, parent, name) {
   const m = new THREE.Mesh(geo, mat);
@@ -206,14 +247,25 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
     { z: 0.95, w: 1.1, y0: 0.5, y1: 0.93 },
     { z: 1.36, w: 0.94, y0: 0.5, y1: 0.84 },
   ], { exponent: 3.2 }), paint, root, 'bonnet');
-  for (const s of [-1, 1]) rbox(0.012, 0.03, 0.8, 0.005, MAT.yellow, s * 0.572, 0.62, 0.92, root);
-  rbox(0.5, 0.2, 0.05, 0.02, MAT.plastic, 0, 0.7, 1.37, root); // grille
-  for (let i = -3; i <= 3; i++) rbox(0.012, 0.17, 0.02, 0.004, MAT.steel, i * 0.065, 0.7, 1.4, root);
-  bumper(root);
-  // Headlamps in the front corners: a black housing and a lens that lights up.
+  // The hood's raised centre with its two vents, a seam down each side, and the maker's name along the flanks in yellow.
+  rbox(0.46, 0.03, 0.34, 0.014, paint, 0, 0.935, 0.94, root).rotation.x = 0.15;
   for (const s of [-1, 1]) {
-    rbox(0.22, 0.13, 0.07, 0.03, MAT.plastic, s * 0.4, 0.78, 1.34, root);
-    rbox(0.18, 0.09, 0.02, 0.02, lensMat, s * 0.4, 0.78, 1.375, root);
+    for (let i = 0; i < 4; i++) rbox(0.1, 0.008, 0.012, 0.003, MAT.grille, s * 0.3, 0.925 - i * 0.012, 0.66 + i * 0.05, root); // louvres
+    const name = stick(decal(0.5, 0.07, (g, w, h) => text(g, MAKER, w / 2, h / 2, h * 0.78, '#f1c40f')), root, [s * 0.545, 0.72, 0.92], s > 0 ? '+x' : '-x');
+    name.rotation.y += -s * 0.1; // the hood narrows towards the front, so the lettering follows it
+  }
+  // The front: a squarer fascia with a horizontal-slatted grille between the lamps, the badge above it, and a black bumper under.
+  rbox(0.54, 0.24, 0.05, 0.02, MAT.grille, 0, 0.7, 1.37, root); // grille surround
+  for (let i = 0; i < 5; i++) rbox(0.5, 0.02, 0.03, 0.006, MAT.steel, 0, 0.62 + i * 0.045, 1.4, root);
+  rbox(0.58, 0.04, 0.06, 0.015, paint, 0, 0.84, 1.37, root); // the cap above it
+  stick(decal(0.22, 0.05, (g, w, h) => text(g, MAKER, w / 2, h / 2, h * 0.7, '#f1c40f')), root, [0, 0.86, 1.4], '+z').rotation.x = 0.1;
+  bumper(root);
+  // Headlamps in the front corners: a black housing with a chrome bezel, and a lens that lights up.
+  for (const s of [-1, 1]) {
+    rbox(0.24, 0.15, 0.07, 0.03, MAT.plastic, s * 0.4, 0.78, 1.34, root);
+    rbox(0.21, 0.12, 0.012, 0.02, MAT.chrome, s * 0.4, 0.78, 1.372, root); // the bezel
+    rbox(0.18, 0.09, 0.02, 0.02, lensMat, s * 0.4, 0.78, 1.378, root);
+    rbox(0.07, 0.03, 0.04, 0.012, MAT.yellow, s * 0.4, 0.7, 1.37, root); // amber side-light under it
   }
   // The front fenders: wheel arches in the paint, with flat flanks joining them to the bonnet.
   for (const s of [-1, 1]) {
@@ -237,8 +289,8 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   rbox(0.42, 0.2, 0.05, 0.02, MAT.floor, 0.3, 0.9, 0.33, root); // glovebox door
   rbox(0.1, 0.02, 0.02, 0.008, MAT.steel, 0.3, 0.98, 0.31, root);
   add(bentTube([[0.12, 1.06, 0.36], [0.12, 1.2, 0.34], [0.52, 1.2, 0.34], [0.52, 1.06, 0.36]], 0.014, { bend: 0.03, radial: 6 }), MAT.steel, root); // the passenger's grab handle
-  for (const x of [-0.04, 0.1]) add(new THREE.CylinderGeometry(0.03, 0.026, 0.02, 14), MAT.floor, root).position.set(x, 1.065, 0.46); // cup holders
-  for (const x of [-0.04, 0.1]) add(new THREE.CylinderGeometry(0.026, 0.026, 0.002, 14), MAT.plastic, root).position.set(x, 1.075, 0.46);
+  for (const x of [0.22, 0.33]) add(new THREE.CylinderGeometry(0.03, 0.026, 0.02, 14), MAT.floor, root).position.set(x, 1.065, 0.46); // cup holders
+  for (const x of [0.22, 0.33]) add(new THREE.CylinderGeometry(0.026, 0.026, 0.002, 14), MAT.plastic, root).position.set(x, 1.075, 0.46);
 
   // The bench: a base, a cushion and a split backrest, in grey cloth, with the three seat belts stowed down the back.
   rbox(1.12, 0.3, 0.46, 0.04, MAT.plastic, 0, 0.55, -0.2, root); // the base it sits on, with the engine under it
@@ -274,6 +326,7 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
     { z: -0.14, w: 1.44, y0: 1.9, y1: 1.975 },
     { z: -0.72, w: 1.4, y0: 1.9, y1: 1.945 },
   ], { exponent: 3 }), paint, root, 'roof');
+  rbox(1.34, 0.03, 0.12, 0.012, paint, 0, 1.9, 0.38, root); // a sun peak at the front
 
   // The steering wheel on its column, raked back to the driver (on the right). `handlebars` is the wheel itself, so it turns about the
   // column's axis; the dash sits on the column's shroud so it doesn't turn with it.
@@ -290,7 +343,7 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   wheel.position.set(0, 0.46, 0);
   column.add(wheel);
   add(new THREE.TorusGeometry(0.19, 0.017, 8, 32).rotateX(Math.PI / 2), MAT.plastic, wheel);
-  add(new THREE.CylinderGeometry(0.05, 0.05, 0.04, 14), MAT.plastic, wheel); // the horn pad
+  add(new THREE.CylinderGeometry(0.05, 0.05, 0.04, 14), MAT.plastic, wheel, 'hornPad'); // the horn pad, which sinks while it sounds
   for (let i = 0; i < 3; i++) {
     const a = (i / 3) * Math.PI * 2 + Math.PI / 2;
     tube([0, 0, 0], [Math.sin(a) * 0.19, 0, Math.cos(a) * 0.19], 0.013, MAT.plastic, wheel);
@@ -320,15 +373,9 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   quad.userData.dash = dash;
   quad.userData.podMount = null;
 
-  // Controls: the forward and reverse lever on the dash, the brake and accelerator on the floor, the parking brake handle by the door.
-  const fnr = new THREE.Group();
-  fnr.name = 'driveLever';
-  fnr.userData.keep = true;
-  fnr.position.set(-0.1, 1.085, 0.48);
-  tube([0, 0, 0], [0, 0.08, -0.03], 0.008, MAT.steel, fnr);
-  add(new THREE.SphereGeometry(0.017, 10, 8), MAT.knob, fnr).position.set(0, 0.085, -0.033);
-  root.add(fnr);
-  rbox(0.08, 0.02, 0.09, 0.008, MAT.floor, -0.1, 1.07, 0.48, root); // the gate it sits in, stood on the dash
+  buildConsole(root);
+
+  // Controls: the brake and accelerator on the floor, the parking brake handle by the door.
   rbox(0.1, 0.016, 0.08, 0.005, MAT.plastic, -0.42, 0.37, 0.3, root).rotation.x = -0.5; // the brake, wide
   rbox(0.05, 0.016, 0.12, 0.005, MAT.plastic, -0.27, 0.37, 0.3, root).rotation.x = -0.5; // the accelerator, narrow
   rbox(0.07, 0.05, 0.12, 0.012, MAT.steel, -0.64, 0.545, 0.1, root); // the parking brake's bracket, bolted to the sill's top
@@ -355,6 +402,8 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   tip.name = 'exhaustTip';
   tip.position.set(exX, 0.36, -1.7); // smoke leaves along its -Z, which is straight back
   root.add(tip);
+  // Mudflaps behind the rear wheels.
+  for (const s of [-1, 1]) rbox(0.3, 0.26, 0.012, 0.004, MAT.rubber, s * 0.66, 0.4, -1.34, root);
   // The rear: a hitch receiver tube (the tail lamps are on the bed).
   rbox(0.07, 0.07, 0.3, 0.015, MAT.frame, 0, 0.42, -1.7, root);
 
@@ -408,7 +457,13 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
     tube([s * 0.72, 0.28, 0.0], [s * 0.74, 0.0, 0.1], 0.006, MAT.steel, gate, 4); // the check chains
   }
   rbox(1.5, 0.03, 0.04, 0.01, MAT.steel, 0, -0.0, 0.0, gate); // the hinge pin
+  stick(decal(0.5, 0.09, (g, w, h) => text(g, MODEL_NAME, w / 2, h / 2, h * 0.7, '#8b8e90')), gate, [0, 0.15, -0.0215], '-z'); // moulded into the gate, picked out in grey
   bed.add(gate);
+  // The model name on each side of the bed.
+  for (const s of [-1, 1]) {
+    stick(decal(0.4, 0.07, (g, w, h) => text(g, MODEL_NAME, w / 2, h / 2, h * 0.75, '#8b8e90')), bed, [s * 0.787, yc(0.9), zc(-1.2)], s > 0 ? '+x' : '-x');
+  }
+  addTailLights(quad, MAT.tail); // before the bed is merged: its lamps become the quad's own tail material, lit by the headlight supply
   // The tailgate's seat: hips on its middle when it's down, facing backwards (a girl riding where she shouldn't).
   const bedSeat = new THREE.Object3D();
   bedSeat.name = 'bedSeat';
@@ -437,6 +492,112 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   return quad;
 }
 
+
+// The centre console -----------------------------------------------------------
+
+const CONSOLE = { x: -0.02, z: 0.48, top: 1.095, w: 0.29, d: 0.21 }; // a raised pod on the dash, between the driver and the glovebox
+const GEAR = { x: -0.12, zNear: 0.41, zFar: 0.55 }; // the forward / neutral / reverse lever and its gate
+const SWITCHES = { z: 0.55, fourWd: -0.025, lock: 0.025, lights: 0.075 }; // the far row
+const TIP = { x: 0.05, z: 0.42 };
+
+/** The legend printed on the console's top: the gate, the switches' names and the bed icon. */
+function consoleLegend(g, w, h) {
+  const px = (x) => w / 2 - (x - CONSOLE.x); // the driver reads it looking forward: +x (his left) is the picture's left
+  const py = (z) => h / 2 - (z - CONSOLE.z);
+  g.fillStyle = '#0e0f10';
+  g.fillRect(0, 0, w, h);
+  // The gear gate: a slot with F at the far end, N in the middle and R near.
+  g.fillStyle = '#050505';
+  g.beginPath();
+  g.roundRect(px(GEAR.x) - 0.012, py(GEAR.zFar) - 0.012, 0.024, GEAR.zFar - GEAR.zNear + 0.024, 0.012);
+  g.fill();
+  text(g, 'F', px(GEAR.x + 0.04), py(GEAR.zFar), 0.022, '#e9e9e9');
+  text(g, 'N', px(GEAR.x + 0.04), py((GEAR.zFar + GEAR.zNear) / 2), 0.022, '#e9e9e9');
+  text(g, 'R', px(GEAR.x + 0.04), py(GEAR.zNear), 0.022, '#ff7a5a');
+  // The switches along the far edge, each with its name under it.
+  text(g, '4WD', px(SWITCHES.fourWd), py(SWITCHES.z - 0.038), 0.016, '#e9e9e9');
+  text(g, '2WD', px(SWITCHES.fourWd), py(SWITCHES.z + 0.038), 0.012, '#9a9a9a', { weight: 'normal' });
+  text(g, 'DIFF', px(SWITCHES.lock), py(SWITCHES.z - 0.04), 0.013, '#e9e9e9');
+  text(g, 'LOCK', px(SWITCHES.lock), py(SWITCHES.z - 0.056), 0.013, '#e9e9e9');
+  // The light switch: off at the near end, a dipped-beam lamp in the middle, a main-beam lamp at the far end.
+  const lx = px(SWITCHES.lights);
+  const lamp = (cx, cy, colour, beams) => {
+    g.strokeStyle = colour;
+    g.lineWidth = 0.0025;
+    g.beginPath();
+    g.arc(cx - 0.006, cy, 0.007, -Math.PI / 2, Math.PI / 2);
+    g.closePath();
+    g.stroke();
+    for (let i = 0; i < 3; i++) {
+      g.beginPath();
+      g.moveTo(cx + 0.001, cy - 0.006 + i * 0.006);
+      g.lineTo(cx + 0.012, cy - 0.006 + i * 0.006 + (beams === 'low' ? 0.004 : 0));
+      g.stroke();
+    }
+  };
+  lamp(lx, py(SWITCHES.z + 0.036), '#5ab0ff', 'high');
+  lamp(lx - 0.026, py(SWITCHES.z), '#e9e9e9', 'low'); // beside the rocker, which covers the middle
+  text(g, 'OFF', lx, py(SWITCHES.z - 0.036), 0.011, '#9a9a9a', { weight: 'normal' });
+  text(g, 'LIGHTS', lx, py(SWITCHES.z - 0.056), 0.013, '#e9e9e9');
+  // The bed's tip lever, with a little tipper icon beside it.
+  text(g, 'BED', px(TIP.x), py(TIP.z - 0.04), 0.015, '#e9e9e9');
+  const bx = px(TIP.x + 0.045);
+  const by = py(TIP.z);
+  g.strokeStyle = '#e9e9e9';
+  g.lineWidth = 0.0025;
+  g.beginPath();
+  g.moveTo(bx - 0.012, by + 0.006);
+  g.lineTo(bx + 0.012, by + 0.006);
+  g.lineTo(bx + 0.012, by - 0.01);
+  g.lineTo(bx - 0.008, by - 0.002);
+  g.closePath();
+  g.stroke();
+}
+
+function buildConsole(root) {
+  const { x, z, top, w, d } = CONSOLE;
+  rbox(w + 0.02, 0.06, d + 0.02, 0.02, MAT.plastic, x, top - 0.03, z, root);
+  stick(decal(w, d, consoleLegend, { px: 1800, transparent: false }), root, [x, top + 0.0012, z], 'up');
+
+  // The F / N / R lever in its gate, with a rubber gaiter round its foot.
+  const lever = new THREE.Group();
+  lever.name = 'driveLever';
+  lever.userData.keep = true;
+  lever.position.set(GEAR.x, top, (GEAR.zNear + GEAR.zFar) / 2);
+  tube([0, 0, 0], [0, 0.085, 0], 0.007, MAT.steel, lever);
+  add(new THREE.SphereGeometry(0.017, 10, 8), MAT.knob, lever).position.y = 0.09;
+  add(new THREE.CylinderGeometry(0.012, 0.02, 0.014, 10), MAT.rubber, lever).position.y = 0.007;
+  root.add(lever);
+
+  // The 2WD / 4WD rocker (the Quad rocks it with the mode), the diff lock button and the light switch's rocker.
+  const rocker = (name, px, wide) => {
+    const g = new THREE.Group();
+    g.name = name;
+    g.userData.keep = true;
+    g.position.set(px, top + 0.006, SWITCHES.z);
+    rbox(wide, 0.012, 0.034, 0.004, MAT.knob, 0, 0.002, 0, g);
+    root.add(g);
+    return g;
+  };
+  rbox(0.034, 0.01, 0.046, 0.004, MAT.grille, SWITCHES.fourWd, top + 0.003, SWITCHES.z, root);
+  rocker('driveSwitchRocker', SWITCHES.fourWd, 0.026);
+  const button = add(new THREE.CylinderGeometry(0.011, 0.011, 0.012, 14), MAT.orange, root, 'diffLockButton');
+  button.position.set(SWITCHES.lock, top + 0.006, SWITCHES.z);
+  button.userData.baseY = button.position.y;
+  button.userData.keep = true;
+  rbox(0.03, 0.01, 0.06, 0.004, MAT.grille, SWITCHES.lights, top + 0.003, SWITCHES.z, root);
+  rocker('lightRocker', SWITCHES.lights, 0.026).children[0].scale.z = 1.5;
+
+  // The bed's tip lever: back to raise it, forward to let it down.
+  const tip = new THREE.Group();
+  tip.name = 'tipLever';
+  tip.userData.keep = true;
+  tip.position.set(TIP.x, top, TIP.z);
+  tube([0, 0, 0], [0, 0.07, 0], 0.006, MAT.steel, tip);
+  rbox(0.03, 0.016, 0.02, 0.006, MAT.orange, 0, 0.078, 0, tip);
+  root.add(tip);
+}
+
 function bumper(root) {
   // A black moulded bumper with a bar across it and the two tow loops below.
   rbox(1.3, 0.14, 0.12, 0.05, MAT.plastic, 0, 0.5, 1.43, root);
@@ -444,13 +605,24 @@ function bumper(root) {
   for (const s of [-1, 1]) add(new THREE.TorusGeometry(0.035, 0.008, 6, 12), MAT.steel, root).position.set(s * 0.3, 0.4, 1.46);
 }
 
-/** Poses the bed and tailgate: `tip` is how far the bed has risen (0..1), `gate` how open the tailgate is (0 shut, 1 flat). */
+/** Poses the bed and tailgate: `tip` is how far the bed has risen (0..1), `gate` how open the tailgate is (0 shut, 1 flat). The console's tip lever follows the bed. */
 export function poseUtvBed(model, { tip, gate }) {
   model.getObjectByName('bed').rotation.x = -BED_MAX_TIP * tip;
   model.getObjectByName('tailgate').rotation.x = TAILGATE_OPEN * gate;
+  model.getObjectByName('tipLever').rotation.x = -0.6 * tip;
 }
 
-/** Poses the dash lever: forward, or back for reverse. */
-export function poseUtvControls(model, { reverse }) {
-  model.getObjectByName('driveLever').rotation.x = reverse ? 0.5 : -0.2;
+/**
+ * Poses the console: the F / N / R lever (forward is pushed away from the driver, reverse pulled back), the light switch's rocker (front
+ * pressed for main beam, back for off) and the horn pad on the wheel. The 4WD rocker and the diff lock button are posed by Quad.
+ */
+export function poseUtvControls(model, { reverse, neutral, lights, horn }) {
+  const parts = (model.userData.controls ??= {
+    lever: model.getObjectByName('driveLever'),
+    lights: model.getObjectByName('lightRocker'),
+    horn: model.getObjectByName('hornPad'),
+  });
+  parts.lever.rotation.x = reverse ? -0.38 : neutral ? 0 : 0.38;
+  parts.lights.rotation.x = { off: -0.3, low: 0, high: 0.3 }[lights] ?? 0;
+  parts.horn.position.y = horn ? -0.008 : 0;
 }

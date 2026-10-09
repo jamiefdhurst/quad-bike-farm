@@ -1561,13 +1561,13 @@ export function addHeadlightBeams(quad) {
  * Gives the quad its own tail light material (the shared one can't differ between quads) and a red halo on each lamp. Dark red when off.
  * Call with addHeadlightBeams, before the model is merged. A quad whose model has no tail light is left alone.
  */
-export function addTailLights(quad) {
+export function addTailLights(quad, tailMaterial = MAT.tail) {
   const mat = new THREE.MeshStandardMaterial({ color: 0x3c0b08, roughness: 0.25, emissive: 0x000000 });
   const haloMat = new THREE.SpriteMaterial({ map: glowTexture(), color: 0xff2a1a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
   quad.updateMatrixWorld(true);
   const lamps = [];
   quad.traverse((o) => {
-    if (o.isMesh && o.material === MAT.tail) lamps.push(o);
+    if (o.isMesh && o.material === tailMaterial) lamps.push(o);
   });
   if (!lamps.length) return;
   const halos = [];
@@ -1600,19 +1600,28 @@ export function setTaillights(quad, level) {
   for (const h of quad.userData.tailHalos) h.visible = level > 0.02;
 }
 
-export function setHeadlights(quad, on, level = 1, colour = 0xfff2cc) {
+/**
+ * Lights the headlamps. `look` (lightLook in lightSwitch.js) stretches the faked beam and its bloom for a main beam; left out, the beam is
+ * the usual one.
+ */
+export function setHeadlights(quad, on, level = 1, colour = 0xfff2cc, look = null) {
   const lens = quad.userData.lensMaterial;
   const lit = on && level > 0;
   lens.emissive.setHex(lit ? colour : 0x000000);
   lens.emissiveIntensity = on ? LENS_GLOW * level : 0;
   const beam = quad.userData.beamMaterial;
   if (!beam) return;
+  const { reach = 1, spread = 1, glare = 1, halo = 1 } = look ?? {};
   beam.color.setHex(colour);
-  beam.opacity = lit ? 0.1 * level : 0;
+  beam.opacity = lit ? Math.min(1, 0.1 * level * glare) : 0;
   quad.userData.haloMaterial.color.setHex(colour);
-  quad.userData.haloMaterial.opacity = lit ? 0.9 * level : 0;
+  quad.userData.haloMaterial.opacity = lit ? Math.min(1, 0.9 * level) : 0;
   const show = lit && level > 0.02;
-  for (const o of quad.userData.beams) o.visible = show;
+  for (const o of quad.userData.beams) {
+    o.visible = show;
+    if (o.isSprite) o.scale.setScalar(0.5 * halo);
+    else o.scale.set(spread, spread, reach);
+  }
 }
 
 // For the mini moto's model (miniMotoModel.js), which builds on the same parts.

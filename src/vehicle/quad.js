@@ -5,12 +5,14 @@ import { QuadPhysics, QUAD_LAYOUT } from './quadPhysics.js';
 import { Drivetrain } from './drivetrain.js';
 import { QuirkSet } from './quirks.js';
 import { headlightLook, taillightLevel } from './headlight.js';
+import { LightSwitch, lightLook, lightLamps, beltLampMode, beltLampLit } from './lightSwitch.js';
 import { TyreSet } from './tyres.js';
 import { frostAfter, frostedColour, DEFAULT_FROST_PARAMS } from './seatFrost.js';
 import { ManualDrivetrain, gearLabel } from './manualDrivetrain.js';
 import { AutoShifter, grindsGear } from './autoShifter.js';
 import { poseTractorControls } from './tractorModel.js';
 import { poseLandyControls } from './landRoverModel.js';
+import { poseUtvControls } from './utvModel.js';
 import { EngineLoad } from './engineLoad.js';
 import { waterGulp } from '../engine/water.js';
 import { AirFilter } from './airFilter.js';
@@ -69,7 +71,7 @@ export class Quad {
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null, handLever = false, crank = null, landRover = false, driverStand = null, benchStand = null }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null, handLever = false, crank = null, landRover = false, utv = false, lightSwitch = false, driverStand = null, benchStand = null }) {
     this.reverseStyle = reverseStyle; // where its reverse is and what it takes (controls.js)
     this.chokeStyle = chokeStyle;
     this.tapStyle = tapStyle;
@@ -80,6 +82,10 @@ export class Quad {
     this.atCrank = false; // set by the game while you stand at the front, looking at it
     this.kicked = false; // the handle has just kicked back (the game reads and clears it)
     this.landRover = landRover;
+    this.utv = utv;
+    this.hornHeld = false; // set by the game while the horn sounds (the UTV's wheel pad sinks)
+    this.lights = lightSwitch ? new LightSwitch() : null; // the UTV's three-way light switch: off, dipped, main beam (lightSwitch.js)
+    this.keyOnFor = null; // seconds the key has been on, for the seat belt lamp (null: key off)
     this.driverStand = driverStand; // where a girl climbs in to drive from, on the model's right: the UTV and Land Rover step in through a door ({ x, z } in the model's frame, x negative: the right)
     this.benchStand = benchStand; // where you get in and out beside the bench, on the model's left (the other side from the driver's door), same frame as above
     this.driveParams = DEFAULT_DRIVE_PARAMS;
@@ -417,6 +423,7 @@ export class Quad {
       else this.say('The fuel tap is stiff: keep working it');
     }
     if (this.drive && this.input) this.driveKeys(input);
+    if (this.lights && this.input && input.wasPressed('KeyP')) this.lights.cycle();
     if (this.manual) this.manualKeys(input);
     // An automatic's reverse is a button, pressed with the brake held (the two-strokes have none).
     if (this.input && !this.manual && !this.tractor && input.wasPressed('KeyB') && this.reverseCheck(input)) this.reverse = true;
@@ -599,7 +606,9 @@ export class Quad {
     // A girl swinging it (helperPull) holds it her own way (helperGrip): Jess wraps her thumb round it, Amy never does.
     const byYou = !!this.remoteInput && this.atCrank && this.crank?.ready && this.remoteInput.isDown('KeyP');
     const byHer = this.helperPull && this.crank?.ready;
-    const pullDown = this.crank
+    const pullDown = this.lights
+      ? false // P is the UTV's light switch
+      : this.crank
       ? byYou || byHer
       : this.input ? this.input.isDown('KeyP') : (!!this.remoteInput && this.remoteInput.isDown('KeyP')) || this.helperPull;
     if (pullDown) {
@@ -962,6 +971,8 @@ export class Quad {
       diffLock: this.drive?.hasLock ? this.drive.locked : null, // null: no diff lock to show
       hand: this.handSetting,
       choke: this.choke, // the Land Rover's dash has a lamp for it
+      lightLamps: this.lights ? lightLamps(this.lights.mode, e.hasPower) : null, // the UTV's lights and main beam lamps (null: no switch)
+      beltLamp: this.lights ? beltLampLit(beltLampMode(this.keyOnFor), clock.seconds()) : null, // and its seat belt lamp
       clock: clock.text(),
       seconds: clock.seconds(),
     };
@@ -970,6 +981,7 @@ export class Quad {
     this.pod?.update(state);
     // The light follows the engine (headlight.js) unless this quad has a battery for it, and the flickering-headlight quirk dips it further.
     this.lightTime += dt;
+    this.keyOnFor = e.ignitionOn ? (this.keyOnFor ?? 0) + dt : null;
     const look = headlightLook({
       keyOn: e.ignitionOn,
       running: e.isRunning,
@@ -983,11 +995,14 @@ export class Quad {
       time: this.lightTime,
     });
     const lit = e.ignitionOn && !this.noHeadlight;
-    const level = look.level * this.quirks.headlight(dt);
-    setHeadlights(this.model, lit, level, look.colour);
+    // A UTV's lights are the switch's (the key must be on as well), not the engine's.
+    const beams = this.lights ? lightLook(this.lights.mode, e.hasPower) : null;
+    const level = (beams ? beams.level : look.level) * this.quirks.headlight(dt);
+    setHeadlights(this.model, lit, level, beams ? beams.colour : look.colour, beams);
     setTaillights(this.model, lit ? taillightLevel(level, this.brake > 0.1) : 0); // the same supply, so a brake light needs it too
 
     if (this.tractor) poseTractorControls(this.model, { gear: this.drivetrain.gear, hand: this.handSetting, pedal: this.drivetrain.pedal });
+    if (this.utv) poseUtvControls(this.model, { reverse: this.reverse, neutral: state.neutral, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, lights: this.lights.mode, horn: this.hornHeld });
     if (this.landRover) poseLandyControls(this.model, { gear: this.drivetrain.gear, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, choke: this.choke, hand: this.handSetting });
     this.displayChoke += (this.choke - this.displayChoke) * Math.min(1, 12 * dt);
     // Off: lever forward. Full: pulled back towards the rider.

@@ -92,3 +92,8 @@ export const dashClock = () => shared;
 export function gearShown(s) {
   return s.gear ?? (s.reverse ? 'R' : s.neutral ? 'N' : 'D');
 }
+
+/** The letter on a lever-and-forward-gear display (the UTV's): F, N or R. */
+export function forwardGearShown(s) {
+  return s.reverse ? 'R' : s.neutral ? 'N' : 'F';
+}

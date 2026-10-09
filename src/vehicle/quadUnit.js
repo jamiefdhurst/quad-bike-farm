@@ -100,6 +100,8 @@ export class QuadUnit {
         steadyLights: spec.steadyLights,
         driverStand: UTV_STAND.driver,
         benchStand: UTV_STAND.left,
+        lightSwitch: true, // P cycles off, dipped and main beam (lightSwitch.js)
+        utv: true,
       }),
       ...(spec.landRover && {
         build: ({ dashStyle }) => buildLandRoverModel({ bodyColor: spec.bodyColor, dashStyle }),

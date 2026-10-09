@@ -920,6 +920,8 @@ export const UTV_SPEC = {
   bodyColor: 0x367c2b, // a deep farm green
   dashStyle: 'utv',
   reverseStyle: 'dashLever', // the forward and reverse lever on the dash wants it stopped (controls.js)
+  driveSwitch: true, // the console's 2WD / 4WD switch (driveMode.js), as on the Land Rover
+  diffLock: true, // and its diff lock
   hoursRange: [900, 2600], // engine hours showing when the game starts
   odoRange: [4000, 11000], // odometer miles, kept for the dash's hour meter's company (it has no odometer drum)
   safeIdle: 700,
@@ -975,7 +977,7 @@ export const UTV_SPEC = {
     suspensionRelaxation: 2.4,
     maxSuspensionForce: 60000,
     mudFrictionSlip: 0.85, // chunky farm tyres
-    fourWheelDrive: 1,
+    fourWheelDrive: 0, // the console's 4WD switch decides
     maxDriveForce: 4300,
     maxSpeed: 11.2, // 25 mph, what they are limited to
     maxReverseSpeed: 3.4,
