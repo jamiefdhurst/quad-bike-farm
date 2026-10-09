@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { buildDash } from './dash.js';
-import { addHeadlightBeams, addSignalLamps, addSignalStalk, addHazardSwitch } from './quadModel.js';
+import { addHeadlightBeams, addSignalLamps, addSignalStalk, addHazardSwitch, faceAlong } from './quadModel.js';
 import { bentTube, mergeStatic, rod } from './quadGeometry.js';
 
 // The old Land Rover: a Series III 88-inch pick-up, procedural like the UTV. Ladder chassis on leaf springs and live axles, flat-topped
@@ -660,7 +660,14 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   column.rotation.x = -1.05;
   tube([0, 0, 0], [0, 0.5, 0], 0.024, MAT.black, column);
   root.add(column);
-  addSignalStalk(column, 0.34);
+  addSignalStalk(column, 0.34, MAT.black, { modern: D });
+  if (!D) {
+    // The Series' hazard button: on a small black shroud on top of the column, in front of the wheel, tipped up to face the driver.
+    rbox(0.06, 0.07, 0.05, 0.012, MAT.black, 0, 0.27, 0.03, column);
+    const top = new THREE.Vector3(0, 0.27, 0.058).applyEuler(column.rotation).add(column.position);
+    const hazard = addHazardSwitch(root, top.x, top.y, top.z);
+    faceAlong(hazard, new THREE.Vector3(0, 0.75, -0.66), new THREE.Vector3(0, 0.66, 0.75));
+  }
   const wheel = new THREE.Group();
   wheel.name = 'handlebars';
   wheel.userData.keep = true;
@@ -697,7 +704,6 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   // The dash: a flat painted panel across the cab under the screen, with the binnacle in front of the driver.
   rbox(1.56, 0.12, 0.2, 0.02, trim.dash, 0, 1.08, 0.5, root); // the padded dash top
   badge(root, { x: 0.3, y: 1.085, z: 0.396, facing: -1, w: 0.14, h: 0.056 }); // the maker's badge on the glovebox side of the dash
-  addHazardSwitch(root, -0.16, 1.14, 0.46, 0.15); // on the dash top, by the binnacle
   const dash = buildDash(dashStyle);
   dash.group.position.set(-0.42, 1.21, 0.48);
   dash.group.rotation.x = 0.55;
@@ -786,7 +792,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
       for (const z of [-0.8, -1.8]) add(new THREE.TorusGeometry(0.02, 0.005, 6, 10), MAT.galv, root).position.set(s * 0.8, 1.32, z); // rope hooks
       rbox(0.08, 0.1, 0.03, 0.01, tailMat, s * 0.74, 0.86, -1.97, root); // the tail lamp
       rbox(0.08, 0.05, 0.03, 0.01, MAT.amber, s * 0.74, 0.77, -1.97, root); // and the indicator under it
-      if (s < 0) add(new THREE.CylinderGeometry(0.04, 0.04, 0.03, 16).rotateX(Math.PI / 2), MAT.clear, root).position.set(s * 0.74, 0.69, -1.975); // a single round reverse lamp, on the driver's side only
+      if (s > 0) add(new THREE.CylinderGeometry(0.04, 0.04, 0.03, 16).rotateX(Math.PI / 2), MAT.clear, root).position.set(s * 0.74, 0.69, -1.975); // a single round reverse lamp, on the nearside (the driver sits on the right)
       tube([s * 0.78, 1.34, -1.94], [s * 0.8, 1.14, -1.95], 0.004, MAT.galv, root, 4); // the tailgate's chains
       rbox(0.05, 0.06, 0.05, 0.008, MAT.galv, s * 0.7, 0.99, -1.96, root); // the tailgate's hinges
     }

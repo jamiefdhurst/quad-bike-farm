@@ -1631,48 +1631,97 @@ export function setSignalLamps(quad, { left, right, reverse }) {
   glow(mats.reverse, 0xf4f8ff, reverse);
 }
 
-/** The indicator stalk on the left of a steering column (+x in the column's frame), a little behind the wheel. It swings in `poseSignalControls`. */
-export function addSignalStalk(column, y) {
+/** The small "<  >" symbol printed on a stalk's end, white on the stalk's own colour. Symmetrical, so it reads whichever way up it is seen. */
+let signalSymbolTexture = null;
+function signalSymbol() {
+  if (signalSymbolTexture) return signalSymbolTexture;
+  const c = document.createElement('canvas');
+  c.width = 128;
+  c.height = 64;
+  const g = c.getContext('2d');
+  g.fillStyle = '#f2f2f2';
+  for (const d of [-1, 1]) {
+    g.beginPath();
+    g.moveTo(64 + d * 8, 32);
+    g.lineTo(64 + d * 52, 6);
+    g.lineTo(64 + d * 52, 58);
+    g.closePath();
+    g.fill();
+  }
+  signalSymbolTexture = new THREE.CanvasTexture(c);
+  signalSymbolTexture.colorSpace = THREE.SRGBColorSpace;
+  return signalSymbolTexture;
+}
+
+/**
+ * The indicator stalk on the left of a steering column (+x in the column's frame), a little behind the wheel, in the column's own
+ * material, with the indicator symbol on its end where the driver sees it. `modern` is a chunkier moulded stalk with a wide end; without it
+ * a thin round old one with a button on the end. It swings in `poseSignalControls`: down towards the floor for left, up towards the roof for right.
+ */
+export function addSignalStalk(column, y, mat, { modern = false } = {}) {
   const stalk = new THREE.Group();
   stalk.name = 'signalStalk';
   stalk.userData.keep = true;
+  // Its swing axis, in the column's frame: the tip (+x) goes up towards the roof when turned about it, however the column is raked.
+  stalk.userData.axis = new THREE.Vector3(0, Math.sin(column.rotation.x), Math.cos(column.rotation.x));
   stalk.position.set(0.035, y, 0);
-  tube([0, 0, 0], [0.11, 0, 0], 0.006, MAT.black, stalk, 6);
-  add(new THREE.SphereGeometry(0.012, 8, 6), MAT.black, stalk).position.x = 0.115;
+  const plane = new THREE.PlaneGeometry(modern ? 0.04 : 0.026, modern ? 0.02 : 0.013).rotateX(-Math.PI / 2);
+  const face = new THREE.Mesh(plane, new THREE.MeshBasicMaterial({ map: signalSymbol(), transparent: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+  if (modern) {
+    rbox(0.1, 0.014, 0.024, 0.006, mat, 0.05, 0, 0, stalk); // a flat moulded arm
+    rbox(0.05, 0.026, 0.034, 0.01, mat, 0.12, 0, 0, stalk); // and a wide end, with the symbol on its face
+    face.position.set(0.12, 0.0136, 0);
+  } else {
+    tube([0, 0, 0], [0.1, 0, 0], 0.006, mat, stalk, 6);
+    add(new THREE.CylinderGeometry(0.016, 0.016, 0.014, 14), mat, stalk).position.set(0.115, 0, 0); // a round button on the end
+    face.position.set(0.115, 0.0075, 0);
+  }
+  stalk.add(face);
   column.add(stalk);
 }
 
 /**
- * The hazard switch: a square red button in a black plate with a white triangle on it, lit while the hazards flash. It faces +y, so tip
- * it with `rotation` to sit on a sloping dash or a console face.
+ * The hazard switch: a square red cap in a black plate with a white triangle on it, lit red while the hazards flash. It is built facing
+ * +z with the triangle's point up (+y), so the caller turns it to face the driver. `plate` false leaves out the black plate (for a
+ * console that has its own surround), `w` and `h` size the cap.
  */
-export function addHazardSwitch(parent, x, y, z, rotationX = 0) {
+export function addHazardSwitch(parent, x, y, z, { plate = true, w = 0.042, h = 0.034 } = {}) {
   const g = new THREE.Group();
   g.name = 'hazardSwitch';
   g.userData.keep = true;
   g.position.set(x, y, z);
-  g.rotation.x = rotationX;
-  rbox(0.056, 0.008, 0.046, 0.004, MAT.black, 0, 0.004, 0, g);
-  const mat = new THREE.MeshStandardMaterial({ color: 0x7a1510, roughness: 0.4, emissive: 0x000000 });
-  rbox(0.042, 0.01, 0.034, 0.004, mat, 0, 0.011, 0, g);
-  const tri = add(new THREE.RingGeometry(0.009, 0.013, 3).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xf2f2f2, side: THREE.DoubleSide }), g);
-  tri.position.y = 0.0165;
+  if (plate) rbox(w + 0.014, h + 0.012, 0.008, 0.004, MAT.black, 0, 0, 0.004, g);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x8c1812, roughness: 0.4, emissive: 0x000000 });
+  rbox(w, h, 0.01, 0.004, mat, 0, 0, plate ? 0.011 : 0.005, g);
+  const r = Math.min(w, h) * 0.34;
+  const tri = add(new THREE.RingGeometry(r * 0.72, r, 3), new THREE.MeshBasicMaterial({ color: 0xf2f2f2, side: THREE.DoubleSide }), g);
+  tri.rotation.z = Math.PI / 2; // a vertex up, so the flat edge is at the bottom
+  tri.position.z = plate ? 0.0166 : 0.0106;
+  g.userData.mat = mat; // found again by poseSignalControls, and kept out of the mud coat
   parent.add(g);
-  g.userData.mat = mat; // found again by poseSignalControls
   return g;
 }
 
-/** Poses the indicator stalk (down for left, up for right) and lights the hazard switch while the hazards flash. */
+/** Turns a group built facing +z with +y up (the hazard switch) so it faces along `normal` with its top towards `up` (both in the parent's frame). */
+export function faceAlong(group, normal, up) {
+  const z = normal.clone().normalize();
+  const x = new THREE.Vector3().crossVectors(up, z).normalize();
+  const y = new THREE.Vector3().crossVectors(z, x);
+  group.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
+}
+
+/** Poses the indicator stalk (down for left, up for right) and flashes the hazard switch red while the hazards flash. */
 export function poseSignalControls(model, { mode, lit }) {
   const parts = (model.userData.signalControls ??= { stalk: model.getObjectByName('signalStalk'), mat: model.getObjectByName('hazardSwitch')?.userData.mat });
   if (parts.stalk) {
     const target = mode === 'left' ? -0.3 : mode === 'right' ? 0.3 : 0;
-    parts.stalk.rotation.z += (target - parts.stalk.rotation.z) * 0.4;
+    parts.angle = (parts.angle ?? 0) + (target - (parts.angle ?? 0)) * 0.4;
+    parts.stalk.quaternion.setFromAxisAngle(parts.stalk.userData.axis, parts.angle);
   }
   if (parts.mat) {
     const on = mode === 'hazard' && lit;
-    parts.mat.emissive.setHex(on ? 0xff3a1c : 0x000000);
-    parts.mat.emissiveIntensity = on ? 1.6 : 0;
+    parts.mat.emissive.setHex(on ? 0xff2a14 : 0x000000);
+    parts.mat.emissiveIntensity = on ? LENS_GLOW : 0;
   }
 }
 

@@ -144,7 +144,7 @@ export class MudCoat {
     };
     const model = quad.model;
     const signals = model.userData.signalMaterials; // the indicator and reverse lenses light up, so they keep their own materials
-    const skip = new Set([model.userData.lensMaterial, model.userData.tailMaterial, ...(signals ? Object.values(signals) : [])]);
+    const skip = new Set([model.userData.lensMaterial, model.userData.tailMaterial, ...(signals ? Object.values(signals) : []), model.getObjectByName('hazardSwitch')?.userData.mat]);
     const bodyCopies = new Map();
     const wheelCopies = new Map();
     const bars = model.getObjectByName('handlebars');

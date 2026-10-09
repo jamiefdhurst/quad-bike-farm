@@ -995,6 +995,7 @@ export class Quad {
       diffLock: this.drive?.hasLock ? this.drive.locked : null, // null: no diff lock to show
       hand: this.handSetting,
       choke: this.choke, // the Land Rover's dash has a lamp for it
+      hazardLit: !!this.signals && this.signals.mode === 'hazard' && this.signals.lit, // the 200TDi's hazard button on its cluster flashes
       indicatorLamps: this.signals ? this.signals.sides : null, // the green arrows, { left, right } (null: no indicators)
       lightLamps: this.lights ? lightLamps(this.lights.mode, e.hasPower) : null, // the UTV's lights and main beam lamps (null: no switch)
       beltLamp: this.belts ? beltLampLit(beltLampMode(e.ignitionOn, this.belts.anyUnbelted), clock.seconds()) : null, // and its seat belt lamp, flashing while someone sits unbelted

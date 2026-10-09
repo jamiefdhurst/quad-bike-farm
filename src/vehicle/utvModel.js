@@ -173,11 +173,17 @@ function stick(label, parent, at, facing) {
 }
 
 function text(g, str, x, y, size, colour, { align = 'center', weight = 'bold' } = {}) {
+  // Drawn at the real pixel size: the decals draw in metres under a big scale, and a font a fraction of a pixel high is dropped by some
+  // browsers (Firefox), which left the console's legend blank.
+  const k = g.getTransform().a;
+  g.save();
+  g.setTransform(1, 0, 0, 1, 0, 0);
   g.fillStyle = colour;
-  g.font = `${weight} ${size}px Helvetica, Arial, sans-serif`;
+  g.font = `${weight} ${size * k}px Helvetica, Arial, sans-serif`;
   g.textAlign = align;
   g.textBaseline = 'middle';
-  g.fillText(str, x, y);
+  g.fillText(str, x * k, y * k);
+  g.restore();
 }
 
 function add(geo, mat, parent, name) {
@@ -413,7 +419,7 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   column.rotation.x = -0.95;
   tube([0, 0, 0], [0, 0.46, 0], 0.025, MAT.steel, column);
   root.add(column);
-  addSignalStalk(column, 0.28);
+  addSignalStalk(column, 0.28, MAT.steel, { modern: true });
   const wheel = new THREE.Group();
   wheel.name = 'handlebars';
   wheel.userData.keep = true;
@@ -593,15 +599,16 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
 
 // A small pod on the dash, tilted up to the driver like the cluster, with its controls standing out of the face. In the pod's own frame:
 // +x is the driver's left, +y up the slope of the face and -z out of it, towards the driver.
-const POD = { x: -0.07, y: 1.045, z: 0.44, tilt: 0.95, w: 0.215, h: 0.1, d: 0.06 };
+const POD = { x: -0.035, y: 1.045, z: 0.44, tilt: 0.95, w: 0.285, h: 0.1, d: 0.06 };
 const FACE = -POD.d / 2 - 0.001; // the face, where the controls come out
 const CTRL = {
-  gear: { x: -0.082, y: 0.041 }, // a lever in a vertical slot: F at the top, N, R at the bottom
+  gear: { x: -0.117, y: 0.041 }, // a lever in a vertical slot: F at the top, N, R at the bottom
   // A bank of four matching rockers, each with its symbol on the cap, lit when it is on.
-  fourWd: { x: -0.036, y: 0.043 },
-  lock: { x: 0, y: 0.043 },
-  lights: { x: 0.036, y: 0.043 },
-  tip: { x: 0.072, y: 0.043 },
+  fourWd: { x: -0.071, y: 0.043 },
+  lock: { x: -0.035, y: 0.043 },
+  lights: { x: 0.001, y: 0.043 },
+  tip: { x: 0.037, y: 0.043 },
+  hazard: { x: 0.075, y: 0.043 }, // and the hazard switch, red, at the end of the bank
 };
 const CAP = { w: 0.027, h: 0.032, d: 0.011 };
 const OFF = '#6a6d70'; // an unlit symbol
@@ -651,6 +658,7 @@ function podLegend(g, w, h) {
   name(CTRL.lock, 'LOCK', 0.0075);
   name(CTRL.lights, 'LIGHTS');
   name(CTRL.tip, 'BED');
+  name(CTRL.hazard, 'HAZARD');
 }
 
 // The symbols on the rocker caps. Each is drawn on a small canvas (in 0..1 across the cap) and redrawn only when what it shows changes.
@@ -793,7 +801,9 @@ function buildConsole(root) {
   rocker('lights', 'lights');
   rocker('tip', 'tip');
   pod.userData.icons = icons;
-  addHazardSwitch(pod, 0.036, -0.03, FACE, -Math.PI / 2); // under the lights rocker, on the pod's face
+  rbox(CAP.w + 0.006, CAP.h + 0.006, 0.004, 0.003, MAT.grille, CTRL.hazard.x, CTRL.hazard.y, FACE + 0.0005, pod); // the hazard switch sits in a surround like the rockers
+  const hazard = addHazardSwitch(pod, CTRL.hazard.x, CTRL.hazard.y, FACE, { plate: false, w: CAP.w, h: CAP.h });
+  hazard.rotation.y = Math.PI; // facing the driver (-z)
 }
 
 function bumper(root) {

@@ -778,6 +778,20 @@ function buildDefender() {
     warnSymbol(ctx, 'turnLeft', 232.5, 94.5, LAMP.green, L.turnLeft);
     warnSymbol(ctx, 'turnRight', 254, 94.5, LAMP.green, L.turnRight);
     keySwitch(ctx, 284, 50, s.keyOn);
+    // The hazard button above the key: a black surround round a red square with a white triangle, point up, flashing red with the hazards.
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(275, 19, 18, 16);
+    ctx.fillStyle = L.hazard ? '#ff3a22' : '#8c1812';
+    ctx.fillRect(277, 21, 14, 12);
+    ctx.strokeStyle = '#f2f2f2';
+    ctx.lineWidth = 1;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(284, 22.8);
+    ctx.lineTo(288.4, 30.6);
+    ctx.lineTo(279.6, 30.6);
+    ctx.closePath();
+    ctx.stroke();
   }
 
   return {
@@ -805,9 +819,10 @@ function buildDefender() {
         main: on && !!s.lightLamps?.main,
         turnLeft: on && !!s.indicatorLamps?.left,
         turnRight: on && !!s.indicatorLamps?.right,
+        hazard: !!s.hazardLit,
       };
       const odo = counterDigits(s.odoMiles, 6);
-      if (gate([on, s.keyOn, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, L.turnLeft, L.turnRight, Math.round(shownMph * 2), Math.round(shownRpm / 40), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
+      if (gate([on, s.keyOn, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, L.turnLeft, L.turnRight, L.hazard, Math.round(shownMph * 2), Math.round(shownRpm / 40), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
         face.redraw((ctx) => draw(ctx, s, L));
       }
     },
