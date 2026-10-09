@@ -1019,6 +1019,7 @@ export const UTV_SPEC = {
     pulseRefRpm: 970,
     pulseRevLoudness: 0.25,
     recVolume: 1.12, // the Gator's bank plays quieter than the tractor's did, and the boom cut takes more: this keeps its idle as loud
+    recStarterVolume: 1.12, // its starter as loud against its idle as in the recording (the bank's starter gain sets that against an idle of 1)
     pulseBoomCut: 14, // Jamie's pick: the Gator was recorded on the vehicle, with a boom at 80 to 140 Hz from its body
     pulseBoomFreq: 110,
     recToneClosed: 4200,
@@ -1176,6 +1177,7 @@ export const LAND_ROVER_SPEC = {
     pulseRevLoudness: 0.3,
     pulsePitchFollow: 0.25, // one recorded beat per firing, at about its own speed: the beats come faster as it revs, the note barely rises
     recVolume: 0.6,
+    recStarterVolume: 0.6, // as loud against its idle as the truck's starter was against its own
     recToneClosed: 5000,
     pipeLength: 1.4,
     densityRefRpm: 900,
@@ -1270,6 +1272,8 @@ export const DEFENDER_SPEC = {
     pitchGain: 0.16,
     heaveDamping: 0.45,
   },
-  audio: { ...UTV_SPEC.audio, pulseRefRpm: 800 }, // the UTV's Gator diesel for now, at its own idle pace
+  // The UTV's Gator diesel for now, at its own idle pace, with a van's diesel starter. The van's idle was quiet, so its starter at the
+  // van's own balance came out 5 dB over the 200TDi's rattly idle; 0.39 puts it about 2 dB under.
+  audio: { ...UTV_SPEC.audio, pulseRefRpm: 800, recStarterSet: 'Tdi', recStarterVolume: 0.39 },
   smoke: { ...UTV_SPEC.smoke },
 };

@@ -145,6 +145,7 @@ export const DEFAULT_AUDIO_PARAMS = {
   pulseBoomCut: 0, // dB taken out of a boom in the recording itself (a body resonance), at every rpm; 0 leaves it alone
   pulseBoomFreq: 110, // Hz, the middle of that boom
   recStarterVolume: 0.9,
+  recStarterSet: '', // which starter in the bank, by its suffix ('Tdi' picks starterEngageTdi and crankLoopTdi); '' is the bank's own
   recShutdownVolume: 0.9,
 
   // Everything below is the synthesised engine
@@ -253,6 +254,7 @@ export const AUDIO_PARAM_RANGES = {
   recMinGrainMs: [0, 120, 1],
   recOverlap: [0, 0.3, 0.005],
   recStarterVolume: [0, 3, 0.01],
+  recStarterSet: ['', 'Tdi'],
   recShutdownVolume: [0, 3, 0.01],
   exhaustVolume: [0, 3, 0.01],
   pulseBase: [0, 2, 0.01],

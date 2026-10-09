@@ -319,21 +319,22 @@ BANKS = {
         # The Land Rover: craigsmith's old Jeep rumbling at idle (Freesound 438105), beating every 61 ms. Only its steadiest three
         # seconds (15.4 to 18.4 s): elsewhere the beat and the level wander, and from 21 s it speeds up and dips. There the beats
         # fall in groups of three, so it's cut into those and each split into its beats, read in order. Its pull-away for the
-        # recorded sound's revs. The starter borrows the quad recording; the starting handle's clunk is craigsmith's old car
-        # cranked by hand (438033), one swing; the shutdown is the Jeep stopping.
+        # recorded sound's revs. The starter is an old Ford stake bed truck's (D.jones, 521857): a heavy, uneven crank about
+        # five compressions a second, the Series' slow 170 rpm; the starting handle's clunk is craigsmith's old car cranked by
+        # hand (438033), one swing; the shutdown is the Jeep stopping.
         'segments': [
             ('idle', 'jeep', 15.4, 18.4, (0.17, 0.2)),
             ('accel', 'jeep', 29.0, 45.0, (0.12, 0.16)),
             ('decel', 'jeep', 37.0, 45.0, (0.12, 0.16)),
         ],
         'oneshots': [
-            ('starterEngage', 'quad', 0.08, 0.365),
-            ('crankLoop', 'quad', 0.365, 1.329),
+            ('starterEngage', 'ford', 0.05, 0.444),
+            ('crankLoop', 'ford', 1.247, 2.388, {'crankRpm': 170}),
             ('handCrank', 'crank', 31.95, 32.45),
             ('shutdown', 'jeep', 55.2, 57.0),
         ],
         'level': [('idle', 'idle', 'jeep'), ('idle', 'accel', 'jeep')],
-        'fixedGain': {'quad': 1.014},  # the quads' starter, as loud as on the farm quads
+        'oneshotLevel': {'ford': (4.5, 9.0)},  # the starter as loud against the Jeep's idle as against the truck's own
         'idleCycles': True,
         'cycleSplit': 3,  # one slice per beat, each played for one of the engine's firings
         'revTail': 0.9,
@@ -342,19 +343,27 @@ BANKS = {
     'engine-bank-utv': {
         # The UTV: a John Deere Gator idling, recorded on the vehicle (videog, Freesound 149193). A small three-cylinder
         # diesel at about 970 rpm with one sharp beat per cycle, so it's cut into whole cycles like the tractor. Revs from a
-        # small Bobcat loader's diesel working (cognito perceptu, 174237). Starter and shutdown borrow the tractor's.
+        # small Bobcat loader's diesel working (cognito perceptu, 174237). The shutdown borrows the tractor's. Two starters:
+        # the UTV's is a small tractor's quick diesel crank (radwoc, 256808), two compressions a loop at about 7 a second, a
+        # three-cylinder at the UTV's 260 rpm; the 200TDi's ('Tdi', recStarterSet) a Citroen Jumpy van's four-cylinder diesel
+        # (chlund, 500193), three compressions a loop at about 7.5 a second, a four at 230 rpm. Loops are cut in the quiet
+        # between compressions.
         'segments': [
             ('idle', 'gat', 0.2, 14.2, (0.11, 0.14)),
             ('accel', 'bob', 168.0, 184.0, (0.04, 0.07)),
             ('decel', 'bob', 176.0, 184.0, (0.04, 0.07)),
         ],
         'oneshots': [
-            ('starterEngage', 't1', 1.1, 1.4),
-            ('crankLoop', 't1', 1.4, 2.9),
+            ('starterEngage', 'rad', 0.14, 0.415),
+            ('crankLoop', 'rad', 0.415, 0.614, {'crankRpm': 260}),
+            ('starterEngageTdi', 'jumpy', 1.0, 1.273),
+            ('crankLoopTdi', 'jumpy', 1.273, 1.716, {'crankRpm': 230}),
             ('shutdown', 't0', 61.4, 63.6),
         ],
         'level': [('idle', 'idle', 'gat'), ('idle', 'accel', 'bob')],
-        'fixedGain': {'t0': 1.503, 't1': 1.042},  # as in engine-bank-tractor, which the UTV used before
+        'fixedGain': {'t0': 1.503},  # as in engine-bank-tractor, which the UTV used before
+        # Each starter as loud, against the bank's idle, as it is against its own engine's idle in its recording.
+        'oneshotLevel': {'rad': (2.0, 7.0), 'jumpy': (3.0, 10.0)},
         'idleCycles': True,
         'revTail': 0.9,
         'revOdd': 0.3,
@@ -652,12 +661,18 @@ def main():
             grains.append(grain)
         plot_data.append((kind, src, t0, x, np.array(cuts) / SR))
 
-    for name, src, t0, t1 in config['oneshots']:
+    for name, src, t0, t1, *extra in config['oneshots']:
         x = sources[src][int(t0 * SR) : int(t1 * SR)].copy()
         if name == 'shutdown':
             fade = int(0.05 * SR)
             x[-fade:] *= np.linspace(1, 0, fade)
-        oneshots[name] = {'start': append(x) / SR, 'dur': round(len(x) / SR, 5)}
+        oneshots[name] = {'start': append(x) / SR, 'dur': round(len(x) / SR, 5), **(extra[0] if extra else {})}
+        # crankRpm on a crank loop: the cranking speed it plays at its recorded pace (the vehicle's own, on a good battery).
+        lvl = config.get('oneshotLevel', {}).get(src)
+        if lvl:
+            # Its own engine's idle, from the same recording, set to the bank's idle level: the starter keeps its loudness against it.
+            own = sources[src][int(lvl[0] * SR) : int(lvl[1] * SR)]
+            oneshots[name]['gain'] = round(TARGET_IDLE_RMS / float(np.sqrt(np.mean(own**2))), 3)
 
     audio = np.concatenate(out)
     # Level-match the two machines where they meet: the rev recording's idle against the quad's idle.

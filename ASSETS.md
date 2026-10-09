@@ -87,15 +87,17 @@ Quaternius: https://quaternius.com
 | --- | --- | --- | --- | --- |
 | Idle pulses, revs and shutdown | G15-10-Jeep Rumbling Idle.wav | craigsmith | https://freesound.org/people/craigsmith/sounds/438105/ | CC0 1.0 |
 | The starting handle's swing | G13.1-06-Car Crank, Idle, Car Doors.wav | craigsmith | https://freesound.org/people/craigsmith/sounds/438033/ | CC0 1.0 |
-| Starter | Quad Bike_ATV Engine.wav (as above) | Alex Fitzwater | https://freesound.org/people/Alex_hears_things/sounds/379915/ | CC0 1.0 |
+| Starter | Ford Stake Bed Truck Ext Crank Start Idle Revs Off | D.jones | https://freesound.org/people/D.jones/sounds/521857/ | CC0 1.0 |
 
-`public/audio/engine-bank-utv.wav` and `engine-bank-utv.json` (the UTV) are cut from:
+`public/audio/engine-bank-utv.wav` and `engine-bank-utv.json` (the UTV, and the 200TDi for now) are cut from:
 
 | Used for | Recording | Author | Source | Licence |
 | --- | --- | --- | --- | --- |
 | Idle pulses | tractor idling (a Gator, recorded on the vehicle) | videog | https://freesound.org/people/videog/sounds/149193/ | CC0 1.0 |
 | Revs | Bobcat.wav (a small loader at work) | cognito perceptu | https://freesound.org/people/cognito%20perceptu/sounds/174237/ | CC0 1.0 |
-| Starter, cranking and shutdown | the tractor recordings (as above) | kyles | https://freesound.org/people/kyles/sounds/637890/ | CC0 1.0 |
+| Shutdown | the tractor recordings (as above) | kyles | https://freesound.org/people/kyles/sounds/637890/ | CC0 1.0 |
+| The UTV's starter | tractor-engine-start.wav | radwoc | https://freesound.org/people/radwoc/sounds/256808/ | CC0 1.0 |
+| The 200TDi's starter | Diesel engine starting revving and stopping (a Citroën Jumpy van) | chlund | https://freesound.org/people/chlund/sounds/500193/ | CC0 1.0 |
 
 `public/audio/ride.wav` and `ride.json` (mud squelches, splashes and landing thuds) are cut from these by `tools/slice_ride_audio.py`, using Freesound's high-quality MP3 previews. The other ride sounds (tyre rumble, grass, gravel, water churn, knocks, rattles and the rider's wind) are made in code.
 

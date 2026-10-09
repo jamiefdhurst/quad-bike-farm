@@ -158,7 +158,9 @@ class RecordedEngine {
     this.oneshots = {};
     for (const [name, o] of Object.entries(bank.oneshots)) {
       const start = Math.min(Math.round(o.start * sr), end);
-      this.oneshots[name] = { start, len: Math.min(Math.round(o.dur * sr), end - start) };
+      // gain: how loud it plays against the bank's idle (1 if the bank doesn't say); crankRpm: on a crank loop, the cranking speed
+      // it plays at its recorded pace (the bank's crankRpm if it doesn't say).
+      this.oneshots[name] = { start, len: Math.min(Math.round(o.dur * sr), end - start), gain: o.gain ?? 1, crankRpm: o.crankRpm ?? bank.crankRpm };
     }
     this.voices = [];
     this.overlap = 0.05;
@@ -296,7 +298,7 @@ class RecordedEngine {
   playOneshot(name, gain, delaySamples = 0) {
     const o = this.oneshots[name];
     if (!o) return;
-    this.voices.push({ pos: -delaySamples, start: o.start, len: o.len, rate: 1, gain, fadeIn: 0.002 * sampleRate, fadeOut: 0.01 * sampleRate });
+    this.voices.push({ pos: -delaySamples, start: o.start, len: o.len, rate: 1, gain: gain * o.gain, fadeIn: 0.002 * sampleRate, fadeOut: 0.01 * sampleRate });
   }
 
   trigger(ev, p, rpmNow, throttle) {
@@ -379,9 +381,13 @@ class RecordedEngine {
       case 'cough':
         return true; // covered by the crank loop and the shutdown recording
       case 'starterOn': {
-        this.playOneshot('starterEngage', p.recStarterVolume);
-        const engage = this.oneshots.starterEngage;
-        this.crankVoice = { pos: -(engage ? engage.len - 0.01 * sampleRate : 0), gain: 0, target: p.recStarterVolume };
+        // A bank can hold more than one starter (the UTV's has the 200TDi's too): recStarterSet picks one by its suffix.
+        const set = p.recStarterSet && this.oneshots[`starterEngage${p.recStarterSet}`] ? p.recStarterSet : '';
+        const engageName = `starterEngage${set}`;
+        this.playOneshot(engageName, p.recStarterVolume);
+        const engage = this.oneshots[engageName];
+        const loop = this.oneshots[`crankLoop${set}`];
+        this.crankVoice = { pos: -(engage ? engage.len - 0.01 * sampleRate : 0), gain: 0, target: p.recStarterVolume, loop, engage };
         return true;
       }
       case 'handCrankOn':
@@ -391,7 +397,8 @@ class RecordedEngine {
       case 'starterOff':
       case 'caught':
         if (this.crankVoice) this.crankVoice.target = 0;
-        for (const v of this.voices) if (v.start === this.oneshots.starterEngage?.start) v.release = true;
+        const engaged = this.crankVoice?.engage ?? this.oneshots.starterEngage;
+        for (const v of this.voices) if (v.start === engaged?.start) v.release = true;
         return ev.type === 'caught';
       case 'stalled':
       case 'shutdown':
@@ -440,7 +447,7 @@ class RecordedEngine {
 
     // Starter loop, crossfaded at its seam, playing faster or slower with the cranking speed.
     const cv = this.crankVoice;
-    const loop = this.oneshots.crankLoop;
+    const loop = cv?.loop;
     if (cv && loop) {
       this.crankSpeed += ((state.cranking ? state.rpm : 0) - this.crankSpeed) * 0.0001;
       // The starter loop follows the engine, not just the 'starterOff' event: if that never arrives the loop would otherwise
@@ -452,7 +459,7 @@ class RecordedEngine {
         cv.pos += 1;
         cv.gain = 0;
       } else if (cv.gain > 0.0005 || cv.target > 0) {
-        const rate = Math.min(1.3, Math.max(0.6, this.crankSpeed / this.crankRpm || 1));
+        const rate = Math.min(1.3, Math.max(0.6, this.crankSpeed / loop.crankRpm || 1));
         const xf = Math.floor(0.03 * sampleRate);
         const len = loop.len;
         const i = Math.floor(cv.pos);
@@ -461,7 +468,7 @@ class RecordedEngine {
           const k = (i - (len - xf)) / xf;
           x = x * (1 - k) + d[loop.start + (i - (len - xf))] * k;
         }
-        s += x * cv.gain;
+        s += x * cv.gain * loop.gain;
         cv.pos += rate;
         if (cv.pos >= len) cv.pos -= len - xf;
       } else {

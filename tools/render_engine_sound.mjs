@@ -1,19 +1,21 @@
 // Renders a vehicle's engine sound offline to a WAV, through the real engine model and the real worklet, with no browser:
 // cheap enough to compare banks and settings by ear or by numbers.
 //
-//   node tools/render_engine_sound.mjs <vehicle id> <out.wav> [--bank path/to/bank.json] [--set param=value ...]
+//   node tools/render_engine_sound.mjs <vehicle id> <out.wav> [--bank path/to/bank.json] [--set param=value ...] [--start]
 //
 // The vehicle id is a spec's id (red, blue, tractor, utv, landrover, ...). --bank plays another bank (its WAV beside it, same
 // name) instead of the spec's recBank; --set overrides an audio param (numbers or strings). The engine starts warm and runs
 // one timeline, printed as it goes: idle 4 s, full throttle 7 s, idle 4 s, half throttle 4 s, full throttle 6 s, idle 3 s,
-// with no load (stood still, revving), its roughness the middle of its range and on its own fuel. Rendered at 48 kHz, written at half scale so the soft clipper's top isn't clipped again.
+// with no load (stood still, revving), its roughness the middle of its range and on its own fuel. --start records the start
+// first instead of skipping it: key on (glow plugs a few seconds), the starter until it catches, then a few seconds of tickover;
+// with --no-catch as well, the tank is empty, so it cranks for four seconds without catching. Rendered at 48 kHz, written at half scale so the soft clipper's top isn't clipped again.
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { DEFAULT_AUDIO_PARAMS } from '../src/audio/audioParams.js';
-import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC } from '../src/vehicle/quadSpecs.js';
 
 const SR = 48000;
 const DT = 1 / 60;
@@ -28,7 +30,7 @@ const PLAN = [
 
 const args = process.argv.slice(2);
 const [id, outPath] = args;
-const spec = [...QUAD_SPECS, ...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC].find((s) => s.id === id);
+const spec = [...QUAD_SPECS, ...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC].find((s) => s.id === id);
 if (!spec || !outPath) {
   console.error('usage: node tools/render_engine_sound.mjs <vehicle id> <out.wav> [--bank bank.json] [--set param=value ...]');
   process.exit(1);
@@ -91,23 +93,37 @@ const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 // The middle of its roughness range, and its own fuel: a diesel's engine reads a missing `diesel` as petrol and runs soaked in it.
 const rough = spec.roughnessRange ? { baseRoughness: (spec.roughnessRange[0] + spec.roughnessRange[1]) / 2 } : {};
 const engine = new EngineModel({ ...DEFAULT_ENGINE_PARAMS, ...spec.engine, ...rough, initialTemperature: 1 }, { random });
-const fuel = { fuel: 1, diesel: spec.fuel?.startDiesel ?? 0 };
+// --no-catch cranks on an empty tank, so the starter can be heard on its own for as long as it's held.
+const fuel = { fuel: process.argv.includes('--no-catch') ? 0 : 1, diesel: spec.fuel?.startDiesel ?? 0 };
+const recordStart = args.includes('--start');
+const GLOW = 3; // seconds with the key on before the starter (a diesel's glow plugs; a petrol engine doesn't mind)
 engine.setIgnition(true);
-// Glow plugs want a few seconds before the starter; petrol engines don't mind the wait.
-for (let t = 0; t < 30 && !engine.isRunning; t += DT) engine.update(DT, { ...fuel, starter: t > 8 });
-for (let t = 0; t < 3; t += DT) engine.update(DT, fuel);
-if (!engine.isRunning) throw new Error(`${id} never started`);
+if (!recordStart) {
+  for (let t = 0; t < 30 && !engine.isRunning; t += DT) engine.update(DT, { ...fuel, starter: t > 8 });
+  for (let t = 0; t < 3; t += DT) engine.update(DT, fuel);
+  if (!engine.isRunning) throw new Error(`${id} never started`);
+}
 
-const out = new Float32Array(Math.ceil(PLAN.reduce((a, [d]) => a + d, 0) * SR));
+// With --start: the key, the starter held until it catches (or 8 s), and a few seconds' tickover; otherwise the revving plan.
+const plan = recordStart ? [['glow', GLOW], ['crank', fuel.fuel ? 8 : 4], ['idle', fuel.fuel ? 4 : 1]] : PLAN.map(([d, throttle]) => ['plan', d, throttle]);
+const out = new Float32Array(Math.ceil(plan.reduce((a, [, d]) => a + d, 0) * SR));
 const block = new Float32Array(128);
 let frame = 0;
 let t = 0;
-for (const [dur, throttle] of PLAN) {
+for (const [step, dur, throttle = 0] of plan) {
   let top = 0;
+  let caughtAt = null;
+  const from = t;
   for (let s = 0; s < dur; s += DT) {
-    engine.update(DT, { ...fuel, throttle });
+    if (step === 'crank' && engine.isRunning) {
+      caughtAt ??= s;
+      if (s - caughtAt > 0.5) break;
+    }
+    engine.update(DT, { ...fuel, throttle, starter: step === 'crank' && !engine.isRunning });
     top = Math.max(top, engine.rpm);
     const start = (frame + 0.05 * SR) / SR; // a little latency, as in the game
+    const events = engine.pulses.map((p) => ({ time: start + p.t, type: p.type, strength: p.strength, period: p.period }));
+    for (const e of engine.events ?? []) events.push({ time: start + e.t, type: e.type });
     proc.onMessage({
       params,
       state: {
@@ -115,12 +131,12 @@ for (const [dur, throttle] of PLAN) {
         throttle: engine.throttle,
         roughness: engine.roughness,
         running: engine.isRunning,
-        cranking: false,
+        cranking: engine.state === 'cranking',
         fan: engine.fan,
         loud: engine.exhaustLoud,
         revsPerCycle: engine.revsPerFiring,
       },
-      events: engine.pulses.map((p) => ({ time: start + p.t, type: p.type, strength: p.strength, period: p.period })),
+      events,
     });
     t += DT;
     const end = Math.min(out.length, Math.round(t * SR));
@@ -131,7 +147,8 @@ for (const [dur, throttle] of PLAN) {
       frame += 128;
     }
   }
-  console.log(`${(t - dur).toFixed(0).padStart(2)} to ${t.toFixed(0).padStart(2)} s: throttle ${throttle}, up to ${Math.round(top)} rpm`);
+  const what = step === 'plan' ? `throttle ${throttle}` : step === 'crank' ? (caughtAt != null ? `cranking, caught after ${caughtAt.toFixed(2)} s` : 'cranking, never caught') : step;
+  console.log(`${from.toFixed(1).padStart(4)} s: ${what}, up to ${Math.round(top)} rpm`);
 }
 
 const wav = Buffer.alloc(44 + out.length * 2);

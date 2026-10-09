@@ -1,12 +1,23 @@
 // What the FAQ page says about each vehicle that can be read straight off its spec, so it changes when the spec does: the engine,
 // the gearbox, the tank and how it reverses. Pure.
 
-import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC } from '../vehicle/quadSpecs.js';
+import * as SPECS from '../vehicle/quadSpecs.js';
 import { DEFAULT_FUEL_PARAMS } from '../vehicle/fuelSystem.js';
 import { DEFAULT_GEARBOX_PARAMS } from '../vehicle/manualDrivetrain.js';
 
-/** Every vehicle that can be on the farm, in the order the FAQ lists them. */
-export const ALL_VEHICLE_SPECS = [...QUAD_SPECS, ...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC];
+/**
+ * Every vehicle that can be on the farm, in the order quadSpecs.js has them: every spec it exports, alone or in a list, so a new
+ * vehicle is on the page (and tests/faq.test.js asks for its note) without anyone having to add it here.
+ */
+export const ALL_VEHICLE_SPECS = (() => {
+  const isSpec = (s) => s && typeof s === 'object' && s.id && s.name && s.engine;
+  // A module's exports come in alphabetical order, so put them in the page's: the five quads, the other small ones, then the big
+  // machines, oldest first.
+  const lists = [SPECS.QUAD_SPECS, SPECS.EXTRA_SPECS, ...Object.values(SPECS).filter((v) => Array.isArray(v) && v !== SPECS.QUAD_SPECS && v !== SPECS.EXTRA_SPECS)];
+  const big = (s) => (s.tractor ? 0 : s.utv ? 1 : s.defender ? 3 : s.landRover ? 2 : 4);
+  const singles = Object.values(SPECS).filter((v) => !Array.isArray(v) && isSpec(v)).sort((a, b) => big(a) - big(b));
+  return [...lists.flat(), ...singles].filter(isSpec);
+})();
 
 const REVERSE = {
   none: 'None: get off and push it (hold V)',
