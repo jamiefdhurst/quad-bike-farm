@@ -9,7 +9,9 @@ export const DEFAULT_COMPANION_PARAMS = {
   walkAnimSpeed: 1.25, // m/s the walking clip looks right at, so its playback rate can match
   turnRate: 5, // 1/s
   arriveRadius: 0.18, // metres
-  probeDistance: 1.4, // how far ahead to look for obstacles
+  probeDistance: 2.2, // how far ahead to look for obstacles
+  probeWidth: 0.4, // how far out either side of her middle the extra probes go, so she clears a corner
+  avoidHold: 2, // seconds she keeps to a way round something before looking at the straight line again
   standOffset: 1.15, // metres to the side of the quad when standing next to it
   mountDuration: 1.8, // seconds to get on a quad: a leg over, or sat back onto it
   dismountDuration: 1.4,
@@ -236,6 +238,8 @@ export const COMPANION_PARAM_RANGES = {
   turnRate: [0.5, 20, 0.1],
   arriveRadius: [0.05, 1, 0.01],
   probeDistance: [0.3, 4, 0.05],
+  probeWidth: [0, 1, 0.05],
+  avoidHold: [0, 6, 0.1],
   standOffset: [0.6, 3, 0.05],
   mountDuration: [0.2, 4, 0.05],
   dismountDuration: [0.2, 4, 0.05],

@@ -96,6 +96,8 @@ export class Companion {
     this.tmpV = new THREE.Vector3();
     this.avoidSide = 1;
     this.avoidTimer = 0;
+    this.holdTimer = 0; // seconds left of keeping to a way round something
+    this.holdAngle = null;
     this.stuckTimer = 0;
 
     // Start beside the quad on its left, facing it.
@@ -927,22 +929,37 @@ export class Companion {
 
     let desired = Math.atan2(to.x, to.z);
     this.avoidTimer -= dt;
-    if (this.stuckTimer < 5 && this.blocked(desired, Math.min(p.probeDistance, leg - 0.1))) {
-      // Try angles either side, keeping to one side for a while so she doesn't dither.
-      const offsets = [0.5, 1.0, 1.5, 2.0, 2.5];
-      let found = null;
-      for (const o of offsets) {
-        for (const side of [this.avoidSide, -this.avoidSide]) {
-          if (found === null && !this.blocked(desired + side * o, p.probeDistance)) {
-            found = desired + side * o;
-            if (side !== this.avoidSide && this.avoidTimer <= 0) {
-              this.avoidSide = side;
-              this.avoidTimer = 1.5;
+    this.holdTimer -= dt;
+    if (this.stuckTimer < 5) {
+      const look = Math.min(p.probeDistance, leg - 0.1);
+      const straight = this.blocked(desired, look);
+      if (this.holdTimer > 0 && this.holdAngle !== null && this.angleClear(desired, this.holdAngle, p.probeDistance)) {
+        // Still going round: keep the heading she chose, even once the straight line looks clear, or she turns back in and clips the corner.
+        desired = this.holdAngle;
+      } else {
+        this.holdAngle = null;
+        if (straight) {
+          // Try angles either side, keeping to one side for a while so she doesn't dither.
+          const offsets = [0.4, 0.8, 1.2, 1.6, 2.0, 2.5];
+          let found = null;
+          for (const o of offsets) {
+            for (const side of [this.avoidSide, -this.avoidSide]) {
+              if (found === null && !this.blocked(desired + side * o, p.probeDistance)) {
+                found = desired + side * o;
+                if (side !== this.avoidSide && this.avoidTimer <= 0) {
+                  this.avoidSide = side;
+                  this.avoidTimer = 1.5;
+                }
+              }
             }
+          }
+          if (found !== null) {
+            desired = found;
+            this.holdAngle = found;
+            this.holdTimer = p.avoidHold;
           }
         }
       }
-      if (found !== null) desired = found;
     }
 
     this.heading += angleTo(this.heading, desired) * Math.min(1, p.turnRate * dt);
@@ -965,19 +982,28 @@ export class Companion {
     return false;
   }
 
+  /** Whether the way held at `angle` is still clear at the hold's reach, from the heading she wanted. */
+  angleClear(desired, angle, distance) {
+    return Math.abs(angleTo(desired, angle)) < 2.6 && !this.blocked(angle, distance);
+  }
+
+  /** Whether something is in the way along `angle`: down her middle and, with room to look, past each shoulder, so she clears a corner. */
   blocked(angle, distance) {
     if (distance <= 0.05) return false;
     const pos = this.root.position;
-    const ray = new this.RAPIER.Ray(
-      { x: pos.x, y: pos.y + 0.5, z: pos.z },
-      { x: Math.sin(angle), y: 0, z: Math.cos(angle) },
-    );
+    const dx = Math.sin(angle);
+    const dz = Math.cos(angle);
     const terrain = this.world.terrain.collider.handle;
     const own = this.collider.handle;
-    const hit = this.physics.castRay(ray, distance, true, undefined, undefined, undefined, undefined, (c) => {
-      return c.handle !== terrain && c.handle !== own;
-    });
-    return !!hit;
+    const offsets = distance > 1 ? [0, -this.params.probeWidth, this.params.probeWidth] : [0];
+    for (const off of offsets) {
+      const ray = new this.RAPIER.Ray({ x: pos.x + dz * off, y: pos.y + 0.5, z: pos.z - dx * off }, { x: dx, y: 0, z: dz });
+      const hit = this.physics.castRay(ray, distance, true, undefined, undefined, undefined, undefined, (c) => {
+        return c.handle !== terrain && c.handle !== own;
+      });
+      if (hit) return true;
+    }
+    return false;
   }
 
   turnToward(dt, facing) {

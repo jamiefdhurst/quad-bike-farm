@@ -2263,3 +2263,10 @@ TODO 13. It copies the little tipping trailer's tub rather than inventing anythi
 - A girl driving ignores the trailer she is towing (`towedBy`), otherwise her reverse probe would hit it and she would back off for ever.
 - Not done: the drawbar and swing of a trailer behind her (she sees only the bed, not the arc it sweeps on a tight turn), and a quad you drive into a trailer still passes through. Walking-round-vehicles avoidance is unchanged beyond the trailers; no new logic for the quads, which her probes already saw.
 - Tests: `tests/trailerObstacle.test.js` (box placement, which trailer is ignored, and in Rapier that a ray hits it and an overlapping quad isn't moved). **Not checked:** in the running game.
+
+### Walking round vehicles, a better way (follow-up to TODO 14)
+
+- Cause of the bumps: on foot she looked along one ray down her middle for 1.4 m, so a shoulder clipped any corner the ray missed, and the turn back toward her target began the moment the line looked clear.
+- `Companion.blocked` now casts three rays (her middle and 0.4 m out either side, `probeWidth`) when looking more than a metre; close to a destination it is the middle only, so she can still walk up beside a quad to get on. `probeDistance` went from 1.4 to 2.2 m, and the angles tried either side are finer (0.4 rad steps, out to 2.5).
+- Once she finds a way round she keeps that heading for `avoidHold` (2 s) while it stays clear, rather than turning back in at the first gap. Both are in the "Moving about" tuning.
+- Not tested in unit tests (it needs a whole companion in Rapier); **not checked in the running game**, so the numbers are first guesses.
