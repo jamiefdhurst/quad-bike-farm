@@ -3,9 +3,13 @@ import { SeatBelts, BELT_SEATS, beltLampMode, beltLampLit, DEFAULT_SEAT_BELT_PAR
 import { BELTS } from '../src/vehicle/utvModel.js';
 
 const nobody = { driver: null, mid: null, left: null };
+let clock = 0; // the dash clock the lamp flashes by, running on across calls
 const run = (belts, seconds, who, keyOn = true, step = 0.1) => {
   let bings = 0;
-  for (let t = 0; t < seconds; t += step) if (belts.update(step, who, keyOn)) bings++;
+  for (let t = 0; t < seconds; t += step) {
+    clock += step;
+    if (belts.update(step, who, keyOn, clock)) bings++;
+  }
   return bings;
 };
 
@@ -45,7 +49,7 @@ describe('SeatBelts', () => {
   it('flags someone sitting unbelted, for the lamp', () => {
     const b = new SeatBelts();
     expect(b.anyUnbelted).toBe(false);
-    b.update(0.1, { ...nobody, driver: 'you' }, true);
+    b.update(0.1, { ...nobody, driver: 'you' }, true, 0);
     expect(b.anyUnbelted).toBe(true);
     b.toggle('driver');
     expect(b.anyUnbelted).toBe(false);
@@ -71,6 +75,20 @@ describe('the bing', () => {
     const c = new SeatBelts();
     expect(run(c, 20, you, false)).toBe(0);
     expect(run(c, 20, nobody)).toBe(0);
+  });
+
+  it('sounds as the lamp lights, and no faster than the interval', () => {
+    const b = new SeatBelts();
+    const you = { ...nobody, driver: 'you' };
+    run(b, P.nagDelay, you);
+    const times = [];
+    for (let t = 0; t < 12; t += 0.05) {
+      clock += 0.05;
+      if (b.update(0.05, you, true, clock)) times.push(clock);
+    }
+    expect(times.length).toBeGreaterThanOrEqual(5);
+    for (const at of times) expect(beltLampLit('flash', at - 0.05 / 2 + 0.0001) || beltLampLit('flash', at)).toBe(true); // the lamp is lit at each
+    for (let i = 1; i < times.length; i++) expect(times[i] - times[i - 1]).toBeGreaterThanOrEqual(P.bingEvery - 0.15);
   });
 
   it('is not set off by a girl who has not yet buckled up', () => {

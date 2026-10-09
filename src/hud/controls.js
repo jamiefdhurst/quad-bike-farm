@@ -50,7 +50,7 @@ export const CONTROLS = [
     lines: [
       `<kbd>K</kbd> key (wait for the GLOW lamp to go out), hold <kbd>R</kbd> to crank; the key stops it again. It is a diesel: red diesel only`,
       `<kbd>W</kbd> throttle, <kbd>S</kbd> brake, <kbd>A</kbd><kbd>D</kbd> steer. Stopped, <kbd>B</kbd> moves the console's lever from F to R, then <kbd>S</kbd> backs up`,
-      `<kbd>G</kbd> 2WD or 4WD, <kbd>U</kbd> diff lock (the switches on the console), <kbd>P</kbd> lights: off, dipped, main beam (the blue MAIN lamp), <kbd>L</kbd> horn, <kbd>;</kbd> seat belt (leave it off with the key on and the BELT lamp flashes and it pings quietly; the girls always put theirs on)`,
+      `<kbd>G</kbd> 2WD or 4WD, <kbd>U</kbd> diff lock (the switches on the console), <kbd>P</kbd> lights: off, dipped, main beam (the LIGHTS lamp goes blue), <kbd>L</kbd> horn, <kbd>;</kbd> seat belt (leave it off with the key on and the BELT lamp flashes and it bongs every couple of seconds; the girls always put theirs on)`,
       `<kbd>T</kbd> tip the bed (stopped, from the seat or beside it), again to lower it. Stop with it running and the girls may climb in. Ask them from the wheel too`,
     ],
   },

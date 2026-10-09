@@ -568,13 +568,19 @@ const POD = { x: -0.06, y: 1.04, z: 0.44, tilt: 0.95, w: 0.28, h: 0.13, d: 0.07 
 const FACE = -POD.d / 2 - 0.001; // the face, where the controls come out
 const CTRL = {
   gear: { x: -0.1, y: 0.065 }, // a lever in a vertical slot: F at the top, N, R at the bottom
-  fourWd: { x: -0.035, y: 0.088 },
-  lock: { x: 0.018, y: 0.088 },
-  lights: { x: 0.07, y: 0.088 },
-  tip: { x: 0.1, y: 0.03 },
+  // A bank of four matching rockers, each with its symbol on the cap, lit when it is on.
+  fourWd: { x: -0.045, y: 0.078 },
+  lock: { x: 0, y: 0.078 },
+  lights: { x: 0.045, y: 0.078 },
+  tip: { x: 0.09, y: 0.078 },
 };
+const CAP = { w: 0.03, h: 0.036, d: 0.012 };
+const OFF = '#6a6d70'; // an unlit symbol
+const GREEN = '#6fe08a';
+const BLUE = '#5ab0ff';
+const AMBER = '#ffb52e';
 
-/** The legend printed on the pod's face: the gear slot, the switches' names and the bed lever's. */
+/** The legend printed on the pod's face: the gear slot and the names under the switches. */
 function podLegend(g, w, h) {
   const px = (x) => w / 2 - x; // the picture's right is the driver's right, which is -x
   const py = (y) => h - y;
@@ -587,30 +593,113 @@ function podLegend(g, w, h) {
   text(g, 'F', px(CTRL.gear.x - 0.027), py(CTRL.gear.y + 0.035), 0.011, '#e9e9e9');
   text(g, 'N', px(CTRL.gear.x - 0.027), py(CTRL.gear.y), 0.011, '#e9e9e9');
   text(g, 'R', px(CTRL.gear.x - 0.027), py(CTRL.gear.y - 0.035), 0.011, '#ff7a5a');
-  // The switches along the top: the selected half of a rocker goes in. 2WD above 4WD; off below, dipped and main beam above.
-  text(g, '2WD', px(CTRL.fourWd.x), py(CTRL.fourWd.y + 0.026), 0.011, '#9a9a9a', { weight: 'normal' });
-  text(g, '4WD', px(CTRL.fourWd.x), py(CTRL.fourWd.y - 0.026), 0.013, '#e9e9e9');
-  text(g, 'DIFF LOCK', px(CTRL.lock.x), py(CTRL.lock.y - 0.026), 0.0105, '#e9e9e9');
-  text(g, 'LIGHTS', px(CTRL.lights.x), py(CTRL.lights.y - 0.034), 0.011, '#e9e9e9');
-  text(g, 'OFF', px(CTRL.lights.x), py(CTRL.lights.y - 0.023), 0.0085, '#9a9a9a', { weight: 'normal' });
-  const lx = px(CTRL.lights.x);
-  const beam = (cx, cy, colour, slant) => {
-    g.strokeStyle = colour;
-    g.lineWidth = 0.0022;
+  const name = (c, str, dy = 0) => text(g, str, px(c.x), py(c.y - 0.03 - dy), 0.0085, '#e9e9e9');
+  name(CTRL.fourWd, '4WD');
+  name(CTRL.lock, 'DIFF');
+  name(CTRL.lock, 'LOCK', 0.009);
+  name(CTRL.lights, 'LIGHTS');
+  name(CTRL.tip, 'BED');
+}
+
+// The symbols on the rocker caps. Each is drawn on a small canvas (in 0..1 across the cap) and redrawn only when what it shows changes.
+const ICONS = {
+  // Four wheels with their axles: the rear one always, the front one and the drive shaft to it once 4WD is in.
+  fourWd: (g, on) => {
+    const c = on ? GREEN : OFF;
+    g.fillStyle = '#c8c8c8';
+    for (const x of [0.12, 0.72]) g.fillRect(x, 0.6, 0.16, 0.26);
+    g.fillRect(0.2, 0.72, 0.6, 0.04);
+    g.fillStyle = c;
+    for (const x of [0.12, 0.72]) g.fillRect(x, 0.14, 0.16, 0.26);
+    g.fillRect(0.2, 0.26, 0.6, 0.04);
+    g.fillRect(0.48, 0.3, 0.04, 0.44);
+  },
+  // Two wheels on one axle with the differential between them, and the lock bars across it when locked.
+  lock: (g, on) => {
+    const c = on ? AMBER : OFF;
+    g.fillStyle = '#c8c8c8';
+    for (const x of [0.06, 0.78]) g.fillRect(x, 0.3, 0.16, 0.4);
+    g.fillRect(0.2, 0.47, 0.6, 0.06);
+    g.strokeStyle = c;
+    g.fillStyle = '#101112';
+    g.lineWidth = 0.05;
     g.beginPath();
-    g.arc(cx - 0.005, cy, 0.0055, -Math.PI / 2, Math.PI / 2);
+    g.arc(0.5, 0.5, 0.17, 0, Math.PI * 2);
+    g.fill();
+    g.stroke();
+    if (on) {
+      g.fillStyle = c;
+      g.fillRect(0.33, 0.46, 0.34, 0.08);
+    }
+  },
+  // A headlamp with its beams: slanting down for dipped, level for main beam, dull when off.
+  lights: (g, mode) => {
+    const c = mode === 'high' ? BLUE : mode === 'low' ? GREEN : OFF;
+    g.strokeStyle = c;
+    g.fillStyle = c;
+    g.lineWidth = 0.05;
+    g.beginPath();
+    g.arc(0.38, 0.5, 0.2, -Math.PI / 2, Math.PI / 2);
     g.closePath();
     g.stroke();
+    if (mode !== 'off') g.fill();
+    g.fillStyle = c;
     for (let i = 0; i < 3; i++) {
+      const y = 0.32 + i * 0.18;
       g.beginPath();
-      g.moveTo(cx + 0.001, cy - 0.005 + i * 0.005);
-      g.lineTo(cx + 0.01, cy - 0.005 + i * 0.005 + slant);
+      g.moveTo(0.64, y);
+      g.lineTo(0.94, y + (mode === 'high' ? 0 : 0.08));
+      g.lineWidth = 0.05;
       g.stroke();
     }
+  },
+  // A tipping bed on its hinge with an arrow up, lit when the bed is raised.
+  tip: (g, on) => {
+    const c = on ? AMBER : OFF;
+    g.fillStyle = '#c8c8c8';
+    g.fillRect(0.1, 0.72, 0.8, 0.07);
+    g.save();
+    g.translate(0.9, 0.72);
+    g.rotate(-0.5);
+    g.fillStyle = c;
+    g.fillRect(-0.7, -0.22, 0.7, 0.2);
+    g.fillRect(-0.7, -0.22, 0.07, 0.34);
+    g.restore();
+    g.strokeStyle = c;
+    g.lineWidth = 0.05;
+    g.beginPath();
+    g.moveTo(0.22, 0.4);
+    g.lineTo(0.22, 0.12);
+    g.moveTo(0.12, 0.22);
+    g.lineTo(0.22, 0.1);
+    g.lineTo(0.32, 0.22);
+    g.stroke();
+  },
+};
+
+/** A symbol on a flat plane, redrawn through `set(state)` when the state changes. */
+function icon(kind) {
+  const c = document.createElement('canvas');
+  c.width = 96;
+  c.height = 112;
+  const g = c.getContext('2d');
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(CAP.w * 0.86, CAP.h * 0.86), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+  mesh.rotation.y = Math.PI; // looking out of the pod, towards the driver
+  let shown;
+  const set = (state) => {
+    if (state === shown) return;
+    shown = state;
+    g.clearRect(0, 0, c.width, c.height);
+    g.save();
+    g.scale(c.width, c.height);
+    ICONS[kind](g, state);
+    g.restore();
+    tex.needsUpdate = true;
   };
-  beam(lx, py(CTRL.lights.y + 0.026), '#5ab0ff', 0);
-  beam(lx - 0.026, py(CTRL.lights.y), '#e9e9e9', 0.004); // the dipped lamp, beside the rocker
-  text(g, 'BED', px(CTRL.tip.x - 0.035), py(CTRL.tip.y), 0.012, '#e9e9e9');
+  set(kind === 'lights' ? 'off' : false);
+  return { mesh, set };
 }
 
 function buildConsole(root) {
@@ -631,31 +720,27 @@ function buildConsole(root) {
   add(new THREE.SphereGeometry(0.014, 10, 8), MAT.knob, lever).position.z = -0.055;
   pod.add(lever);
 
-  // The two rockers (2WD / 4WD and the lights) and the diff lock button.
-  const rocker = (name, c, h) => {
+  // The bank of rockers: 4WD, diff lock, lights and the bed. All alike, each with its symbol on the cap and the selected half pushed in.
+  const icons = {};
+  const rocker = (name, kind) => {
+    const c = CTRL[name];
     const g = new THREE.Group();
-    g.name = name;
+    g.name = `utv_${name}`;
     g.userData.keep = true;
     g.position.set(c.x, c.y, FACE);
-    rbox(0.026, h, 0.012, 0.004, MAT.knob, 0, 0, -0.004, g);
+    rbox(CAP.w + 0.006, CAP.h + 0.006, 0.004, 0.003, MAT.grille, 0, 0, 0.0005, g); // the surround it sits in
+    rbox(CAP.w, CAP.h, CAP.d, 0.004, MAT.knob, 0, 0, -0.004, g);
+    const sym = icon(kind);
+    sym.mesh.position.z = -0.0102;
+    g.add(sym.mesh);
+    icons[name] = sym;
     pod.add(g);
-    return g;
   };
-  rocker('utvFourWd', CTRL.fourWd, 0.034);
-  rocker('lightRocker', CTRL.lights, 0.05);
-  const button = add(new THREE.CylinderGeometry(0.011, 0.011, 0.012, 14).rotateX(Math.PI / 2), MAT.orange, pod, 'utvLockButton');
-  button.position.set(CTRL.lock.x, CTRL.lock.y, FACE - 0.004);
-  button.userData.baseZ = button.position.z;
-  button.userData.keep = true;
-
-  // The bed's tip lever: a short stalk out of the face, up to raise the bed and down to lower it.
-  const tip = new THREE.Group();
-  tip.name = 'tipLever';
-  tip.userData.keep = true;
-  tip.position.set(CTRL.tip.x, CTRL.tip.y, FACE);
-  tube([0, 0, 0], [0, 0, -0.045], 0.005, MAT.steel, tip);
-  rbox(0.026, 0.014, 0.016, 0.006, MAT.orange, 0, 0, -0.05, tip);
-  pod.add(tip);
+  rocker('fourWd', 'fourWd');
+  rocker('lock', 'lock');
+  rocker('lights', 'lights');
+  rocker('tip', 'tip');
+  pod.userData.icons = icons;
 }
 
 function bumper(root) {
@@ -665,31 +750,43 @@ function bumper(root) {
   for (const s of [-1, 1]) add(new THREE.TorusGeometry(0.035, 0.008, 6, 12), MAT.steel, root).position.set(s * 0.3, 0.4, 1.46);
 }
 
-/** Poses the bed and tailgate: `tip` is how far the bed has risen (0..1), `gate` how open the tailgate is (0 shut, 1 flat). The console's tip lever follows the bed. */
+/** The console's parts, looked up once. */
+function consoleParts(model) {
+  return (model.userData.controls ??= {
+    lever: model.getObjectByName('driveLever'),
+    fourWd: model.getObjectByName('utv_fourWd'),
+    lock: model.getObjectByName('utv_lock'),
+    lights: model.getObjectByName('utv_lights'),
+    tip: model.getObjectByName('utv_tip'),
+    horn: model.getObjectByName('hornPad'),
+    park: model.getObjectByName('parkBrakeLever'),
+    icons: model.getObjectByName('consolePod').userData.icons,
+  });
+}
+
+/** Poses the bed and tailgate: `tip` is how far the bed has risen (0..1), `gate` how open the tailgate is (0 shut, 1 flat). The console's bed rocker follows the bed. */
 export function poseUtvBed(model, { tip, gate }) {
   model.getObjectByName('bed').rotation.x = -BED_MAX_TIP * tip;
   model.getObjectByName('tailgate').rotation.x = TAILGATE_OPEN * gate;
-  model.getObjectByName('tipLever').rotation.x = -0.45 + 0.9 * tip;
+  const parts = consoleParts(model);
+  parts.tip.rotation.x = 0.3 - 0.6 * tip; // the lower half goes in as the bed goes up
+  parts.icons.tip.set(tip > 0.02);
 }
 
 /**
- * Poses the console: the F / N / R lever (up for forward, down for reverse), the 2WD / 4WD rocker (the selected half goes in: 2WD the top,
- * 4WD the bottom), the light switch's rocker (main beam the top, off the bottom), the diff lock button, the horn pad on the wheel and
- * the parking brake handle.
+ * Poses the console: the F / N / R lever (up for forward, down for reverse), the four rockers (the selected half goes in: the lower half
+ * for 4WD, the lock and the bed up, and for the lights the top for off, the middle for dipped and the lower for main beam) with their
+ * symbols lit (the lamp green for dipped and blue for main beam), the horn pad on the wheel and the parking brake handle.
  */
 export function poseUtvControls(model, { reverse, neutral, lights, horn, fourWd, locked, park }) {
-  const parts = (model.userData.controls ??= {
-    lever: model.getObjectByName('driveLever'),
-    fourWd: model.getObjectByName('utvFourWd'),
-    lock: model.getObjectByName('utvLockButton'),
-    lights: model.getObjectByName('lightRocker'),
-    horn: model.getObjectByName('hornPad'),
-    park: model.getObjectByName('parkBrakeLever'),
-  });
+  const parts = consoleParts(model);
   parts.lever.rotation.x = reverse ? -0.45 : neutral ? 0 : 0.45;
   parts.fourWd.rotation.x = fourWd ? -0.3 : 0.3;
-  parts.lock.position.z = parts.lock.userData.baseZ + (locked ? 0.005 : 0);
-  parts.lights.rotation.x = { off: -0.3, low: 0, high: 0.3 }[lights] ?? 0;
+  parts.lock.rotation.x = locked ? -0.3 : 0.3;
+  parts.lights.rotation.x = { off: 0.3, low: 0, high: -0.3 }[lights] ?? 0;
+  parts.icons.fourWd.set(!!fourWd);
+  parts.icons.lock.set(!!locked);
+  parts.icons.lights.set(lights ?? 'off');
   parts.horn.position.y = horn ? -0.008 : 0;
   parts.park.rotation.x += ((park ? 0 : 0.7) - parts.park.rotation.x) * 0.3; // pulled up and back when on, let down forward when off, eased
 }

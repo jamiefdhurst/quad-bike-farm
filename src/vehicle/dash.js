@@ -19,7 +19,7 @@ import {
 //   kidsKey:   kids' quad. A key switch under the bar clamp.
 //   tractor:   the tractor. Three round dials in chrome bezels (water temperature, a rev counter with an hour meter and the PTO speed marked, fuel), GLOW, CHARGE and OIL lamps and the key.
 //   utv:       the UTV. A basic LCD (speed, five fuel and four water blocks, F / N / R, hours and a 4WD note) over lamps for GLOW, CHARGE, OIL, PARK
-//              (parking brake), BELT (flashes while someone sits unbelted), LIGHTS, MAIN (beam, blue) and the key.
+//              (parking brake), BELT (flashes while someone sits unbelted), LIGHTS (green, blue for main beam) and the key.
 //   series:    the Land Rover. A Series III binnacle: a big speedo to 90 mph with its odometer, a combined fuel and water gauge,
 //              IGN, OIL, CHOKE and BRAKE lamps, a 4WD and a DIFF lamp, and the key.
 //
@@ -489,7 +489,7 @@ function buildUtv() {
   group.name = 'dash';
   const O = { ox: 180, oy: 60 };
   // A plain black binnacle for an older machine: a small grey-green LCD with the speed, fuel and water bars, the F / N / R gear and the
-  // hours, over a row of warning lamps (glow, charge, oil, parking brake, seat belt, lights and main beam) with the key beside it.
+  // hours, over a row of warning lamps (glow, charge, oil, parking brake, seat belt and lights) with the key beside it.
   housing(group, { x: 70, y: 14, w: 220, h: 92, r: 14, ...O, material: plastic });
   const face = mmPanel({ x: 70, y: 14, w: 220, h: 92, ...O });
   group.add(face.mesh);
@@ -541,8 +541,7 @@ function buildUtv() {
     lamp(ctx, 140, 85, LAMP.red, 'OIL', L.oil, { r: 3.2 });
     lamp(ctx, 162, 85, LAMP.red, 'PARK', L.park, { r: 3.2 });
     lamp(ctx, 184, 85, LAMP.red, 'BELT', L.belt, { r: 3.2 });
-    lamp(ctx, 208, 85, LAMP.green, 'LIGHTS', L.lights, { r: 3.2 });
-    lamp(ctx, 234, 85, BLUE, 'MAIN', L.main, { r: 3.2 });
+    lamp(ctx, 210, 85, L.main ? BLUE : LAMP.green, 'LIGHTS', L.lights, { r: 3.2 }); // one lamp for the headlights: green for dipped, blue for main beam
     keySwitch(ctx, 262, 46, s.keyOn);
   }
 

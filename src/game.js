@@ -148,7 +148,7 @@ import { Workshop } from './workshop/workshop.js';
 import { PodRack } from './vehicle/pods.js';
 import { buildPod } from './vehicle/dashPod.js';
 import { pickWornGearbox } from './vehicle/manualDrivetrain.js';
-import { DashClock, CLOCK_START_RANGE, pickReading, pickRelatedReading, setDashClock } from './vehicle/dashState.js';
+import { DashClock, CLOCK_START_RANGE, pickReading, pickRelatedReading, setDashClock, dashClock } from './vehicle/dashState.js';
 import { Bench } from './workshop/bench.js';
 import { pickBarnFind, BarnFind, DEFAULT_BARN_FIND_PARAMS, BARN_FIND_RANGES, RUSTY_ID } from './vehicle/barnFind.js';
 import { weatherModel, buildTarp } from './vehicle/rustyLook.js';
@@ -167,6 +167,7 @@ const YOU_ABOARD = { you: true };
 const BARN_BULB = 30; // candela of the bulb in the barn, scaled by how far in you are and how gloomy the day is
 
 const FIXED_DT = 1 / 60;
+const SETTLE_SECONDS = 2; // physics run while loading so the vehicles are on their wheels before you can hear them (settleVehicles)
 const MAX_FRAME_DT = 0.1;
 const RACE_STAGE_BACK = 14; // metres behind the start line the girls stage before they come up to the grid
 
@@ -1030,7 +1031,20 @@ export class Game {
 
     this.applyDebugCamera();
     if (import.meta.env.DEV) window.game = this;
+    report('Settling…');
+    await new Promise((r) => setTimeout(r, 0));
+    this.settleVehicles();
     await this.loadSounds(report);
+  }
+
+  /**
+   * Every vehicle spawns a little above the ground. Left to drop once the game starts, they all land at once, thud and knock on
+   * their springs together and make a deafening crash. So the physics runs for a couple of seconds here, behind the loading screen,
+   * until they're sitting on their wheels, and the thuds that queued meanwhile are thrown away.
+   */
+  settleVehicles(seconds = SETTLE_SECONDS) {
+    for (let t = 0; t < seconds; t += FIXED_DT) this.fixedUpdate(FIXED_DT);
+    for (const unit of this.units) unit.ride?.events.take();
   }
 
   /**
@@ -1616,7 +1630,7 @@ export class Game {
     if (youSeat && input.wasPressed('Semicolon')) {
       q.belts.toggle(youSeat); // no message: you look at the belt and the lamp
     }
-    if (q.belts.update(dt, sitting, q.engine.ignitionOn)) this.audioHub.beltBing();
+    if (q.belts.update(dt, sitting, q.engine.ignitionOn, dashClock().seconds())) this.audioHub.beltBing();
 
     const girls = this.companions.map((c) => ({
       id: c.character.id,
