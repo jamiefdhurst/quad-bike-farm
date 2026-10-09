@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { buildQuadModel, poseSuspension, setHeadlights, setTaillights } from './quadModel.js';
 import { FuelSystem } from './fuelSystem.js';
 import { QuadPhysics, QUAD_LAYOUT } from './quadPhysics.js';
+import { unscaleAnchors } from './unscaleAnchors.js';
 import { Drivetrain } from './drivetrain.js';
 import { QuirkSet } from './quirks.js';
 import { headlightLook, taillightLevel } from './headlight.js';
@@ -149,7 +150,7 @@ export class Quad {
     this.rackRider = null; // the girl sitting on the front rack, if any
     this.riderAnchor = part('riderAnchor');
     // Whoever sits on a smaller quad is still full size: undo the model's scale on the anchors people hang from.
-    for (const a of [this.riderAnchor, this.pillionAnchor, this.rackAnchor, this.mugAnchor, this.cameraAnchor, this.pillionCameraAnchor]) a?.scale.setScalar(1 / scale);
+    unscaleAnchors(this.model, scale);
     this.exhaustTip = part('exhaustTip');
     this.wheels = layout.wheels.map((w) => ({ ...w, topY: w.y ?? layout.topY, object: part(w.name), spin: part(w.name).getObjectByName('spin') }));
     // Wheel centre heights in bodyRoot space, for posing the suspension arms.
