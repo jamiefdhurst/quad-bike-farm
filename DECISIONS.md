@@ -2280,3 +2280,12 @@ Item taken as looks only: no change to sizes, seats, cargo spots, colliders or h
 - **The tipping trailer**: ribbed tub sides and front, corner posts, hinge lugs at the pivot, latches, chains and a rib on the tailgate, an axle with leaf springs, a coupling body and a jockey wheel.
 - **Looked at** in a bare three.js page (no game, no overlay), from front, side and rear. That caught tread blocks turned the wrong way (they looked like paddle cleats), mudguards with nothing holding them (now a stay in to the bed or tub side) and lamps hanging in the air (now on a rear bar). Rims are a red dish with a metal lip, hub cap and five nuts.
 - **Checked:** `npm test`. **Not checked:** the trailers in the running game, hitched and moving.
+
+## A better Land Rover model (TODO 16)
+
+The Series III already had its chassis, leaf springs, grille, dash and tub, but its body panels were flat sheets with no wheel arches: the front wings' outer sides and the tub's sides sat over the tyres and hid them from the side.
+
+- **Wheel arches** (`archPanel` in `landRoverModel.js`, tested): the wings' outer sides and the tub's sides are now extruded shapes with a round arch (0.42 m, round a 0.38 m tyre) cut from the bottom edge, plus a rolled flare (`archFlare`) standing proud of the panel. The tyre shows through. The wing tops and inner sides are 0.05 m longer to meet the new panel. A test checks the panel's size and that no vertex falls inside the tyre.
+- **Small things**: mudflaps behind the rear wheels, front and rear number plates (white and yellow), turned-back bumper ends, rain gutters along the roof edges, and the bonnet's hinges at the screen end.
+- Not changed: the colliders, seats, controls and the sound. Not verified in the running game or by screenshot (the model needs a canvas for its dash, so only the arch geometry is unit tested); worth a look for z-fighting at the flares.
+

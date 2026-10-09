@@ -78,6 +78,8 @@ const MAT = {
   red: new THREE.MeshStandardMaterial({ color: 0xb02018, roughness: 0.35 }), // the diff lock's
   rust: new THREE.MeshStandardMaterial({ color: 0x4b3a2e, roughness: 0.7, metalness: 0.5 }),
   amber: new THREE.MeshStandardMaterial({ color: 0xd88a18, roughness: 0.3 }),
+  plateWhite: new THREE.MeshStandardMaterial({ color: 0xe9e6dc, roughness: 0.4 }),
+  plateYellow: new THREE.MeshStandardMaterial({ color: 0xe6c21c, roughness: 0.4 }),
 };
 
 function add(geo, mat, parent, name) {
@@ -90,6 +92,39 @@ function add(geo, mat, parent, name) {
 function rbox(w, h, d, r, mat, x, y, z, parent, name) {
   const m = add(new RoundedBoxGeometry(w, h, d, 2, Math.min(r, w / 2, h / 2, d / 2) * 0.999), mat, parent, name);
   m.position.set(x, y, z);
+  return m;
+}
+
+const ARCH_R = 0.42; // the wheel arches' radius, round a 0.38 m tyre
+const ARCH_Y = R + REST; // the wheel centre above the ground
+
+/**
+ * A body side panel (in the Y-Z plane, `thick` thick, centred on x) with a round wheel arch cut from its bottom edge, so the tyre shows
+ * through instead of being hidden behind a flat sheet. The arch is centred on `zc` at the wheel's height.
+ */
+export function archPanel(x, thick, yBottom, yTop, z0, z1, zc, mat, parent) {
+  const dy = ARCH_Y - yBottom;
+  const half = Math.sqrt(ARCH_R * ARCH_R - dy * dy);
+  const shape = new THREE.Shape();
+  shape.moveTo(z0, yBottom);
+  shape.lineTo(zc - half, yBottom);
+  const a = Math.asin(dy / ARCH_R); // the bottom edge is below the wheel's centre, so the arch runs from just under the horizontal
+  shape.absarc(zc, ARCH_Y, ARCH_R, Math.PI + a, -a, true);
+  shape.lineTo(z1, yBottom);
+  shape.lineTo(z1, yTop);
+  shape.lineTo(z0, yTop);
+  shape.closePath();
+  const g = new THREE.ExtrudeGeometry(shape, { depth: thick, bevelEnabled: false });
+  // Shape x is z and extrusion runs along +z: turn it so the extrusion runs along -x, then centre it on x.
+  g.rotateY(-Math.PI / 2);
+  g.translate(x + thick / 2, 0, 0);
+  return add(g, mat, parent);
+}
+
+/** The rolled lip round an arch, standing proud of the panel. */
+function archFlare(x, zc, mat, parent) {
+  const m = add(new THREE.TorusGeometry(ARCH_R + 0.012, 0.016, 6, 24, Math.PI).rotateY(Math.PI / 2), mat, parent);
+  m.position.set(x, ARCH_Y, zc);
   return m;
 }
 
@@ -194,6 +229,8 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   // The front: bumper with the starting-handle hole, the black grille panel between the wings, the flat-topped wings with the headlamps
   // in their faces, the bonnet with the spare wheel on it.
   rbox(1.62, 0.16, 0.12, 0.02, MAT.black, 0, 0.56, 1.78, root); // bumper
+  rbox(0.5, 0.11, 0.01, 0.003, MAT.plateWhite, 0.45, 0.56, 1.845, root); // the front number plate
+  for (const s of [-1, 1]) rbox(0.07, 0.17, 0.14, 0.02, MAT.chassis, s * 0.83, 0.56, 1.78, root); // the bumper's ends, turned back
   add(new THREE.TorusGeometry(0.035, 0.012, 8, 16), MAT.steel, root).position.set(CRANK_HOLE.x, CRANK_HOLE.y, CRANK_HOLE.z - 0.02); // the hole's ring
   add(new THREE.CircleGeometry(0.03, 14), MAT.knob, root).position.set(CRANK_HOLE.x, CRANK_HOLE.y, CRANK_HOLE.z - 0.025);
   for (const s of [-1, 1]) rbox(0.06, 0.12, 0.2, 0.01, MAT.chassis, s * 0.43, 0.56, 1.68, root); // its mounts to the rails
@@ -201,10 +238,11 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   for (let i = 0; i < 9; i++) rbox(0.6, 0.012, 0.02, 0.004, MAT.chassis, 0, 0.64 + i * 0.048, 1.635, root); // its slats
   for (const s of [-1, 1]) {
     const x = s * 0.6;
-    rbox(0.48, 0.03, 0.85, 0.01, paint, x, 1.06, 1.18, root, 'wingTop'); // the flat top, which you can stand a mug on
-    rbox(0.03, 0.34, 0.85, 0.01, paint, s * 0.84, 0.9, 1.18, root); // the outer side, above the wheel
+    rbox(0.48, 0.03, 0.9, 0.01, paint, x, 1.06, 1.15, root, 'wingTop'); // the flat top, which you can stand a mug on
+    archPanel(s * 0.84, 0.03, 0.75, 1.075, 0.7, 1.6, 1.115, paint, root); // the outer side, with the wheel arch cut in it
+    archFlare(s * 0.86, 1.115, paint, root);
     rbox(0.48, 0.36, 0.03, 0.01, paint, x, 0.88, 1.6, root); // the front face, with the lamp
-    rbox(0.03, 0.34, 0.85, 0.01, paint, s * 0.36, 0.9, 1.18, root); // the inner side, against the engine bay
+    rbox(0.03, 0.34, 0.9, 0.01, paint, s * 0.36, 0.9, 1.15, root); // the inner side, against the engine bay
     const bezel = add(new THREE.CylinderGeometry(0.1, 0.1, 0.04, 22).rotateX(Math.PI / 2), MAT.galv, root);
     bezel.position.set(x, 0.9, 1.62);
     const lamp = add(new THREE.CylinderGeometry(0.085, 0.085, 0.02, 22).rotateX(Math.PI / 2), lensMat, root);
@@ -263,6 +301,8 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   // The roof: Limestone, with a gentle rise to its middle and a lip all round.
   rbox(1.7, 0.06, 1.3, 0.03, MAT.roof, 0, 1.75, -0.02, root, 'roof');
   rbox(1.6, 0.03, 1.2, 0.015, MAT.roof, 0, 1.79, -0.02, root);
+  for (const s of [-1, 1]) rbox(0.03, 0.03, 1.3, 0.008, MAT.galv, s * 0.86, 1.72, -0.02, root); // the rain gutters along the roof edges
+  for (const s of [-1, 1]) rbox(0.1, 0.03, 0.04, 0.008, MAT.galv, s * 0.25, 1.09, 0.64, root); // the bonnet's hinges at the screen end
   for (let i = -3; i <= 3; i++) rbox(1.62, 0.012, 0.02, 0.004, MAT.roof, 0, 1.805, -0.02 + i * 0.16, root); // its ribs
 
   // Inside: the floor, the seat box with the bench on it (three in a row, black vinyl), the gearbox tunnel.
@@ -357,7 +397,9 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   // The tub: floor, sides with the wheel boxes inside, the drop tailgate with its chains, the rear lamps on the corners.
   rbox(1.6, 0.04, 1.3, 0.01, paint, 0, 0.78, -1.3, root);
   for (const s of [-1, 1]) {
-    rbox(0.04, 0.5, 1.3, 0.01, paint, s * 0.82, 1.03, -1.3, root); // side
+    archPanel(s * 0.82, 0.04, 0.78, 1.28, -1.95, -0.65, zR, paint, root); // side, with the wheel arch cut in it
+    archFlare(s * 0.845, zR, paint, root);
+    rbox(0.2, 0.26, 0.02, 0.005, MAT.black, s * 0.7, 0.5, zR - 0.52, root); // the mudflap behind the wheel
     rbox(0.08, 0.03, 1.3, 0.01, MAT.galv, s * 0.82, 1.29, -1.3, root); // its capping
     rbox(0.32, 0.32, 0.82, 0.04, paint, s * 0.6, 0.94, zR, root); // the wheel box
     for (const z of [-0.8, -1.8]) add(new THREE.TorusGeometry(0.02, 0.005, 6, 10), MAT.galv, root).position.set(s * 0.8, 1.22, z); // rope hooks
@@ -366,6 +408,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
     tube([s * 0.78, 1.24, -1.94], [s * 0.8, 1.04, -1.95], 0.004, MAT.galv, root, 4); // the tailgate's chains
   }
   rbox(1.6, 0.5, 0.04, 0.01, paint, 0, 1.03, -1.95, root, 'tailgate');
+  rbox(0.5, 0.11, 0.01, 0.003, MAT.plateYellow, 0, 0.7, -1.975, root); // the rear number plate, hung below the gate
   for (const y of [0.92, 1.12]) rbox(1.5, 0.02, 0.01, 0.004, paint, 0, y, -1.975, root); // its pressings
   // The rear crossmember with the towing jaw: a pin through a jaw, where the trailer's ring goes.
   rbox(1.0, 0.12, 0.1, 0.01, MAT.chassis, 0, 0.56, -1.95, root);
