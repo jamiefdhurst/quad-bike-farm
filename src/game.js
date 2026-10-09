@@ -57,7 +57,8 @@ import { UtvBed, UTV_BED_PARAM_RANGES } from './vehicle/utvBed.js';
 import { TipTrailer, canTow, TIP_TRAILER_PARAM_RANGES } from './vehicle/tipTrailer.js';
 import { DEFAULT_TOW_PARAMS, TOW_PARAM_RANGES, towLoad, towEffect } from './vehicle/towing.js';
 import { TrailerRide, TRAILER_RIDE_PARAM_RANGES } from './npc/trailerRide.js';
-import { poseUtvBed } from './vehicle/utvModel.js';
+import { poseUtvBed, BED_CARGO_SPOTS, BED_CARGO_YAWS, BED_CARGO_YAW } from './vehicle/utvModel.js';
+import { CargoHold, CARGO_PARAM_RANGES } from './vehicle/cargoHold.js';
 import { UtvRide, UTV_RIDE_PARAM_RANGES, DEFAULT_UTV_RIDE_PARAMS } from './npc/utvRide.js';
 import { TractorGo, TRACTORGO_PARAM_RANGES } from './npc/tractorGo.js';
 import { LPlates, LPLATE_PARAM_RANGES, meanSkill } from './npc/lPlates.js';
@@ -541,6 +542,7 @@ export class Game {
     this.utvRide = new UtvRide(undefined, createRandom(this.seed ^ 0x07c9));
     registerTuning('UTV riders', this.utvRide.p, UTV_RIDE_PARAM_RANGES);
     this.utvMount = this.utvUnit ? new UtvMount(this.utvUnit.quad, (x, z) => this.world.heightAt(x, z)) : null;
+    if (this.utvUnit) this.addUtvCargo(this.utvUnit.quad);
     this.utvPetrolSaid = false; // the girls have remarked on it running badly on petrol
     // The Land Rover's bench: the same riding as the UTV's, with no bed to ride in (vehicle/utvMount.js, npc/utvRide.js).
     this.landyRide = new UtvRide({ ...DEFAULT_UTV_RIDE_PARAMS, jessBedChance: 0, amyBedChance: 0, jessBedLoseChance: 0, amyBedLoseChance: 0 }, createRandom(this.seed ^ 0x1a4d));
@@ -1618,6 +1620,10 @@ export class Game {
     }
     bed.update(dt, { speed: q.speed, gateDown: mount.bedBusy });
     poseUtvBed(q.model, bed);
+    // Whatever is stood in the bed slides out behind once it is high enough, and goes with the UTV otherwise.
+    q.model.updateMatrixWorld(true);
+    if (bed.sliding && this.utvCargo.items.length) this.utvCargo.tipOut(new THREE.Vector3(0, 0, -1).transformDirection(q.model.matrixWorld).setY(0).normalize());
+    this.utvCargo.update(dt);
 
     // The seat belts: who is in which seat, `;` for yours, and the girls do their own (vehicle/seatBelts.js).
     const youSeat = riding ? 'driver' : this.player.isRiding && q.passenger ? this.player.benchSeat : null;
@@ -1678,11 +1684,43 @@ export class Game {
     return [this.petrolCan, this.premixCan, this.dieselCan, this.toolbox, this.leads, this.oilBottle].find((i) => i.held) ?? null;
   }
 
+  /** What to call whatever heldLoad() found. */
+  loadName(item) {
+    return item === this.toolbox ? 'toolbox' : item === this.leads ? 'jump leads' : item === this.oilBottle ? 'oil bottle' : 'jerry can';
+  }
+
+  /** The UTV's bed as somewhere to stand a can, the toolbox, the leads or the oil bottle (vehicle/cargoHold.js). They tip out with the bed. */
+  addUtvCargo(quad) {
+    const bed = quad.model.getObjectByName('bed');
+    this.utvCargo = new CargoHold({
+      scene: this.scene,
+      ground: (x, z) => this.world.heightAt(x, z),
+      anchors: BED_CARGO_SPOTS.map((_, i) => bed.getObjectByName(`bedCargo${i}`)),
+      yawFor: (item) => BED_CARGO_YAWS[item.model.name] ?? BED_CARGO_YAW,
+    });
+    registerTuning('UTV load', this.utvCargo.p, CARGO_PARAM_RANGES);
+    this.interaction.add({
+      target: bed.getObjectByName('bedProxy'),
+      priority: 1, // looking into the bed with something in your hands wins over the UTV as a whole (and its tank)
+      isAvailable: () => !!this.heldLoad() && !this.player.isRiding,
+      prompt: () => {
+        const what = this.loadName(this.heldLoad());
+        if (this.utvBed.tip > 0.02) return { text: `The bed is up   ·   G put the ${what} down` };
+        if (this.utvCargo.freeSpot() === null) return { text: `The bed is full   ·   G put the ${what} down` };
+        return `Put the ${what} in the UTV's bed`;
+      },
+      interact: () => {
+        const item = this.heldLoad();
+        if (item && this.utvBed.tip <= 0.02) this.utvCargo.load(item);
+      },
+    });
+  }
+
   tipTrailerPrompt() {
     const item = this.heldLoad();
     const t = this.tipTrailer;
     if (!item) return { text: t.cargo.length || t.bed.tip > 0.02 ? 'T to tip the trailer' : 'The little tipping trailer   ·   T to tip it' };
-    const what = item === this.toolbox ? 'toolbox' : item === this.leads ? 'jump leads' : item === this.oilBottle ? 'oil bottle' : 'jerry can';
+    const what = this.loadName(item);
     if (t.bed.tip > 0.02) return { text: `The tub is up   ·   G put the ${what} down` };
     if (t.freeCargoSpot() === null) return { text: `The trailer is full   ·   G put the ${what} down` };
     return `Put the ${what} in the trailer`;

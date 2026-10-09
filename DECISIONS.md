@@ -2243,3 +2243,15 @@ Jamie: the vehicles all dropping into place made a deafening noise when the game
 - **A smaller console pod and symbols on the dash (UTV):** the pod was mostly empty space, so it is now 0.215 by 0.09 m (from 0.28 by 0.13) with the rockers a little smaller (0.027 by 0.032) and closer (0.036 apart), the gear slot at the near end with F, N and R beside it, and the names printed small underneath. The cluster's warning bulbs are now symbols (`warnSymbol` in `dash.js`): a coil for the glow plugs, a battery, an oil can, a P in a circle, a seated figure with a belt across it, and a headlamp with beams. Out, each is dull grey; lit, each is in its colour with a soft glow behind it, and the belt figure flashes with the dash clock as the lamp did. Checked in screenshots from above; not at your eye level in a game.
 
 - **Badge on the switch pod (UTV):** the pod is 0.1 m tall now, with the maker's name (made up) and the model in a band across the top between two antlers, a yellow line under it, and the switches and gear slot moved down below it. Checked in a screenshot from above.
+
+## Things in the UTV's bed (2026-10-09)
+
+TODO 13. It copies the little tipping trailer's tub rather than inventing anything new.
+
+- **Who can go in:** the same four things the trailer takes (the three jerry cans, the toolbox, the jump leads, the oil bottle; `heldLoad()`). The hose is left out: it is a hose, not a thing you stand. Bales are not pick-up items, so they wait.
+- **How:** `CargoHold` (`vehicle/cargoHold.js`, tested) parents the item's model to a spot on the bed, so it tips with it, and unparents it to send it flying out when the bed is up past `slideAt`. Picking one up again just takes it off its spot; nothing has to be told. The UTV's own bed group carries six anchors and an invisible `bedProxy` (`utvModel.js`: `BED_CARGO_SPOTS`, `BED_PROXY`). I did not move the little trailer onto `CargoHold`; it has its own copy of the same code and a test, and can be moved over later.
+- **Spots:** two rows of three in the clear between the wheel wells (0.9 m between them), cans and the toolbox turned along the bed. The test checks every item fits every spot. The jump leads' coil is the widest and may overhang a well by a couple of centimetres at the outside spots.
+- **Looking:** the bed's box has priority 1 and is only there while your hands hold a load, so it beats the UTV's own box (which would try to fill its tank from a can). Empty-handed you look at the thing in the bed and take it.
+- **Tipping out:** items land 1.6 m behind plus up to half a metre, a little to one side, in 0.6 s (`UTV load` in the Tune tab).
+- **Left out:** the load adding to the UTV's weight (no effect on how it drives), and the girls putting things in it.
+- Not checked in the running game: the look of the items in the bed, the prompt wording, and the tip-out. Unit tests only.

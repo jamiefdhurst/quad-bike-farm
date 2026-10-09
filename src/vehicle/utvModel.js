@@ -65,6 +65,17 @@ export const UTV_STAND = {
   driver: { x: -1.35, z: -0.1 }, // the wheel is on the right, so a girl driving climbs in from that side (x is negative)
 };
 
+/**
+ * Where things stand in the bed, as the bed's own frame (x across, z from the hinge at the back, y up from its floor): two rows of three
+ * in the clear between the wheel wells (they take up |x| 0.45 to 0.75 for 0.71 to 1.45 m behind the cab), the long things turned along it.
+ */
+export const BED_CARGO_SPOTS = [-0.3, 0, 0.3].flatMap((x) => [0.81, 0.28].map((z) => ({ x, z })));
+export const BED_CARGO_YAWS = { jumpLeads: 0 }; // by the item's model name; the leads are roundish
+export const BED_CARGO_YAW = Math.PI / 2; // and everything else
+export const BED_FLOOR_Y = 0.085; // the top of the floor, in the bed's frame
+/** The invisible box you look at to put something in the bed, in the bed's frame. */
+export const BED_PROXY = { w: 1.5, h: 0.6, d: 1.15, x: 0, y: 0.3, z: 0.55 };
+
 /** The most the bed tips, and the tailgate's open angle (radians). */
 export const BED_MAX_TIP = 0.82;
 export const TAILGATE_OPEN = -Math.PI / 2 - 0.04;
@@ -542,6 +553,17 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   mergeStatic(gate);
   mergeStatic(bed);
   bed.userData.keep = true;
+  // Where a jerry can or the toolbox stands in the bed, and a box to look at to put one there. They ride the bed as it tips.
+  BED_CARGO_SPOTS.forEach((c, i) => {
+    const a = new THREE.Object3D();
+    a.name = `bedCargo${i}`;
+    a.position.set(c.x, BED_FLOOR_Y, c.z);
+    bed.add(a);
+  });
+  const bedProxy = new THREE.Mesh(new THREE.BoxGeometry(BED_PROXY.w, BED_PROXY.h, BED_PROXY.d), new THREE.MeshBasicMaterial({ visible: false }));
+  bedProxy.name = 'bedProxy';
+  bedProxy.position.set(BED_PROXY.x, BED_PROXY.y, BED_PROXY.z);
+  bed.add(bedProxy);
 
   // Wheels sit outside the body so they don't rock with it.
   for (const w of UTV_LAYOUT.wheels) {

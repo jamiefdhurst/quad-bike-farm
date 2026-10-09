@@ -455,6 +455,11 @@ export const FAQ_SECTIONS = [
           and tip it (<kbd>T</kbd>) when stopped. Jess may climb in against the rules.`,
       },
       {
+        q: "Can I carry things in the UTV's bed?",
+        a: `Yes. Hold a jerry can, the toolbox, the jump leads or the oil bottle, look into the bed and press <kbd>E</kbd> (the bed has to be down). It holds six.
+          They ride along, and you pick one up again the same way as from the floor. Tip the bed (<kbd>T</kbd>, stopped) and everything slides out of the back.`,
+      },
+      {
         q: 'How do I use the tow chain?',
         a: `Look at the tractor and press <kbd>X</kbd> to take the chain, <kbd>E</kbd> on a stuck quad to hook it, then back the tractor up and drive off.`,
       },
