@@ -433,7 +433,7 @@ export class Quad {
     if (this.signals && this.input) {
       if (input.wasPressed('Comma')) this.signals.press('left');
       if (input.wasPressed('Period')) this.signals.press('right');
-      if (input.wasPressed('Quote')) this.signals.press('hazard');
+      if (input.wasPressed('Equal')) this.signals.press('hazard');
     }
     if (this.manual) this.manualKeys(input);
     // An automatic's reverse is a button, pressed with the brake held (the two-strokes have none).
