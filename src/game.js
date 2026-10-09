@@ -1624,7 +1624,8 @@ export class Game {
     const sitting = { driver: null, mid: null, left: null };
     if (youSeat) sitting[youSeat] = 'you';
     for (const c of this.companions) {
-      const seat = c.fsm.is('driving') && c.quad === q ? 'driver' : seatOf(c);
+      // Only once she is actually in the seat (not while she walks over or climbs in) does she count as sitting there.
+      const seat = c.fsm.is('driving') && c.quad === q ? 'driver' : c.fsm.is('onTrailer') ? seatOf(c) : null;
       if (seat && seat in sitting) sitting[seat] = 'girl';
     }
     if (youSeat && input.wasPressed('Semicolon')) {

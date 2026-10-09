@@ -359,8 +359,10 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
     worn.visible = false;
     // The sash from the shoulder anchor over the shoulder and across the chest to the buckle, and the lap strap from the outboard hip.
     const across = (t) => belt.anchor + (belt.buckle - belt.anchor) * t;
-    add(bentTube([[belt.anchor, 1.3, -0.5], [belt.anchor + (belt.buckle - belt.anchor) * 0.1, 1.27, -0.3], [across(0.6), 1.0, -0.1], [belt.buckle, 0.86, -0.17], [belt.buckle, 0.82, -0.31]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
-    add(bentTube([[belt.anchor, 0.76, -0.38], [across(0.45), 0.82, -0.08], [belt.buckle, 0.82, -0.17], [belt.buckle, 0.82, -0.31]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
+    // (Measured on the girls sitting in the seats: their chests are at about z 0.04 and their waists at 0, so the belt lies in front of those.)
+    const at = (t, y, z) => [across(t), y, z];
+    add(bentTube([[belt.anchor, 1.32, -0.5], at(0.06, 1.3, -0.2), at(0.14, 1.2, 0.06), at(0.5, 1.02, 0.08), at(0.85, 0.88, 0.03), [belt.buckle, 0.84, -0.1], [belt.buckle, 0.82, -0.31]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
+    add(bentTube([[belt.anchor, 0.77, -0.4], at(0.06, 0.84, -0.12), at(0.45, 0.87, 0.03), [belt.buckle, 0.85, -0.05], [belt.buckle, 0.82, -0.31]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
     rbox(0.05, 0.05, 0.03, 0.008, MAT.steel, belt.buckle, 0.81, -0.335, worn); // the tongue, pushed home in the buckle
     group.add(stowed, worn);
     root.add(group);
@@ -428,7 +430,7 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   const dash = buildDash(dashStyle);
   dash.group.position.set(-0.34, 1.06, 0.44);
   dash.group.rotation.x = 0.95;
-  dash.group.scale.setScalar(1.2);
+  dash.group.scale.setScalar(0.95); // a small old-fashioned cluster, in proportion to the console's switches
   dash.group.userData.keep = true;
   root.add(dash.group);
   quad.userData.dash = dash;
@@ -590,9 +592,9 @@ function podLegend(g, w, h) {
   g.beginPath();
   g.roundRect(px(CTRL.gear.x) - 0.011, py(CTRL.gear.y + 0.045), 0.022, 0.09, 0.011);
   g.fill();
-  text(g, 'F', px(CTRL.gear.x - 0.027), py(CTRL.gear.y + 0.035), 0.011, '#e9e9e9');
-  text(g, 'N', px(CTRL.gear.x - 0.027), py(CTRL.gear.y), 0.011, '#e9e9e9');
-  text(g, 'R', px(CTRL.gear.x - 0.027), py(CTRL.gear.y - 0.035), 0.011, '#ff7a5a');
+  text(g, 'F', px(CTRL.gear.x - 0.029), py(CTRL.gear.y + 0.035), 0.014, '#e9e9e9');
+  text(g, 'N', px(CTRL.gear.x - 0.029), py(CTRL.gear.y), 0.014, '#e9e9e9');
+  text(g, 'R', px(CTRL.gear.x - 0.029), py(CTRL.gear.y - 0.035), 0.014, '#ff7a5a');
   const name = (c, str, dy = 0) => text(g, str, px(c.x), py(c.y - 0.03 - dy), 0.0085, '#e9e9e9');
   name(CTRL.fourWd, '4WD');
   name(CTRL.lock, 'DIFF');
