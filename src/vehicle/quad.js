@@ -1003,7 +1003,7 @@ export class Quad {
 
     if (this.tractor) poseTractorControls(this.model, { gear: this.drivetrain.gear, hand: this.handSetting, pedal: this.drivetrain.pedal });
     if (this.utv) {
-      poseUtvControls(this.model, { reverse: this.reverse, neutral: state.neutral, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, lights: this.lights.mode, horn: this.hornHeld });
+      poseUtvControls(this.model, { reverse: this.reverse, neutral: state.neutral, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, lights: this.lights.mode, horn: this.hornHeld, park: this.parkBrake });
       poseUtvBelts(this.model, this.belts.worn());
     }
     if (this.landRover) poseLandyControls(this.model, { gear: this.drivetrain.gear, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, choke: this.choke, hand: this.handSetting });

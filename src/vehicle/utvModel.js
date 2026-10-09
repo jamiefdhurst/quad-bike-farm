@@ -301,10 +301,10 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   bumper(root);
   // Headlamps in the front corners: a black housing with a chrome bezel, and a lens that lights up.
   for (const s of [-1, 1]) {
-    rbox(0.22, 0.15, 0.07, 0.03, MAT.plastic, s * 0.37, 0.78, 1.34, root);
-    rbox(0.19, 0.12, 0.012, 0.02, MAT.chrome, s * 0.37, 0.78, 1.372, root); // the bezel
-    rbox(0.16, 0.09, 0.02, 0.02, lensMat, s * 0.37, 0.78, 1.378, root);
-    rbox(0.12, 0.04, 0.04, 0.012, MAT.indicator, s * 0.37, 0.685, 1.365, root); // the indicator under it
+    rbox(0.22, 0.15, 0.07, 0.03, MAT.plastic, s * 0.37, 0.75, 1.34, root);
+    rbox(0.19, 0.12, 0.012, 0.02, MAT.chrome, s * 0.37, 0.75, 1.372, root); // the bezel
+    rbox(0.16, 0.09, 0.02, 0.02, lensMat, s * 0.37, 0.75, 1.378, root);
+    rbox(0.12, 0.04, 0.04, 0.012, MAT.indicator, s * 0.37, 0.655, 1.365, root); // the indicator under it
   }
   // The front fenders: wheel arches in the paint, with flat flanks joining them to the bonnet.
   for (const s of [-1, 1]) {
@@ -351,17 +351,17 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
     group.userData.keep = true;
     const stowed = new THREE.Group();
     stowed.name = 'stowed';
-    const strap = rbox(0.045, 0.46, 0.012, 0.004, MAT.belt, belt.anchor, 1.12, -0.405, stowed); // stood off the cloth so it doesn't fight it
+    const strap = rbox(0.045, 0.46, 0.012, 0.004, MAT.belt, belt.anchor, 1.12, -0.433, stowed); // lying on the cloth, just proud of it
     strap.rotation.x = -0.12;
-    rbox(0.05, 0.06, 0.02, 0.006, MAT.steel, belt.anchor, 0.88, -0.4, stowed).rotation.x = -0.12; // the tongue, hanging loose
+    rbox(0.05, 0.06, 0.02, 0.006, MAT.steel, belt.anchor, 0.88, -0.43, stowed).rotation.x = -0.12; // the tongue, hanging loose
     const worn = new THREE.Group();
     worn.name = 'worn';
     worn.visible = false;
     // The sash from the shoulder anchor over the shoulder and across the chest to the buckle, and the lap strap from the outboard hip.
     const across = (t) => belt.anchor + (belt.buckle - belt.anchor) * t;
-    add(bentTube([[belt.anchor, 1.3, -0.5], [belt.anchor + (belt.buckle - belt.anchor) * 0.1, 1.27, -0.3], [across(0.6), 1.0, -0.1], [belt.buckle, 0.84, -0.12]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
-    add(bentTube([[belt.anchor, 0.76, -0.38], [across(0.45), 0.82, -0.08], [belt.buckle, 0.84, -0.12]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
-    rbox(0.05, 0.05, 0.03, 0.008, MAT.steel, belt.buckle, 0.84, -0.12, worn); // the tongue, latched
+    add(bentTube([[belt.anchor, 1.3, -0.5], [belt.anchor + (belt.buckle - belt.anchor) * 0.1, 1.27, -0.3], [across(0.6), 1.0, -0.1], [belt.buckle, 0.86, -0.17], [belt.buckle, 0.82, -0.31]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
+    add(bentTube([[belt.anchor, 0.76, -0.38], [across(0.45), 0.82, -0.08], [belt.buckle, 0.82, -0.17], [belt.buckle, 0.82, -0.31]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
+    rbox(0.05, 0.05, 0.03, 0.008, MAT.steel, belt.buckle, 0.81, -0.335, worn); // the tongue, pushed home in the buckle
     group.add(stowed, worn);
     root.add(group);
     // The buckle: a steel stalk standing up out of the seat's crease with a red release button on top.
@@ -440,8 +440,13 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   rbox(0.1, 0.016, 0.08, 0.005, MAT.plastic, -0.42, 0.37, 0.3, root).rotation.x = -0.5; // the brake, wide
   rbox(0.05, 0.016, 0.12, 0.005, MAT.plastic, -0.27, 0.37, 0.3, root).rotation.x = -0.5; // the accelerator, narrow
   rbox(0.07, 0.05, 0.12, 0.012, MAT.steel, -0.64, 0.545, 0.1, root); // the parking brake's bracket, bolted to the sill's top
-  tube([-0.64, 0.55, 0.1], [-0.6, 0.86, 0.0], 0.01, MAT.steel, root); // its handle
-  add(new THREE.SphereGeometry(0.02, 8, 6), MAT.knob, root).position.set(-0.6, 0.87, 0.0);
+  const park = new THREE.Group(); // its handle, pivoting at the bracket: up and back when it is on, tipped forward when it is off (poseUtvControls)
+  park.name = 'parkBrakeLever';
+  park.userData.keep = true;
+  park.position.set(-0.64, 0.55, 0.1);
+  tube([0, 0, 0], [0.04, 0.31, -0.1], 0.01, MAT.steel, park);
+  add(new THREE.SphereGeometry(0.02, 8, 6), MAT.knob, park).position.set(0.04, 0.32, -0.1);
+  root.add(park);
   // Quad still poses these two; neither belongs on a diesel with no tap and no choke.
   const tap = new THREE.Group();
   tap.name = 'fuelTap';
@@ -579,9 +584,9 @@ function podLegend(g, w, h) {
   g.beginPath();
   g.roundRect(px(CTRL.gear.x) - 0.011, py(CTRL.gear.y + 0.045), 0.022, 0.09, 0.011);
   g.fill();
-  text(g, 'F', px(CTRL.gear.x - 0.03), py(CTRL.gear.y + 0.035), 0.019, '#e9e9e9');
-  text(g, 'N', px(CTRL.gear.x - 0.03), py(CTRL.gear.y), 0.019, '#e9e9e9');
-  text(g, 'R', px(CTRL.gear.x - 0.03), py(CTRL.gear.y - 0.035), 0.019, '#ff7a5a');
+  text(g, 'F', px(CTRL.gear.x - 0.027), py(CTRL.gear.y + 0.035), 0.011, '#e9e9e9');
+  text(g, 'N', px(CTRL.gear.x - 0.027), py(CTRL.gear.y), 0.011, '#e9e9e9');
+  text(g, 'R', px(CTRL.gear.x - 0.027), py(CTRL.gear.y - 0.035), 0.011, '#ff7a5a');
   // The switches along the top: the selected half of a rocker goes in. 2WD above 4WD; off below, dipped and main beam above.
   text(g, '2WD', px(CTRL.fourWd.x), py(CTRL.fourWd.y + 0.026), 0.011, '#9a9a9a', { weight: 'normal' });
   text(g, '4WD', px(CTRL.fourWd.x), py(CTRL.fourWd.y - 0.026), 0.013, '#e9e9e9');
@@ -669,21 +674,24 @@ export function poseUtvBed(model, { tip, gate }) {
 
 /**
  * Poses the console: the F / N / R lever (up for forward, down for reverse), the 2WD / 4WD rocker (the selected half goes in: 2WD the top,
- * 4WD the bottom), the light switch's rocker (main beam the top, off the bottom), the diff lock button and the horn pad on the wheel.
+ * 4WD the bottom), the light switch's rocker (main beam the top, off the bottom), the diff lock button, the horn pad on the wheel and
+ * the parking brake handle.
  */
-export function poseUtvControls(model, { reverse, neutral, lights, horn, fourWd, locked }) {
+export function poseUtvControls(model, { reverse, neutral, lights, horn, fourWd, locked, park }) {
   const parts = (model.userData.controls ??= {
     lever: model.getObjectByName('driveLever'),
     fourWd: model.getObjectByName('utvFourWd'),
     lock: model.getObjectByName('utvLockButton'),
     lights: model.getObjectByName('lightRocker'),
     horn: model.getObjectByName('hornPad'),
+    park: model.getObjectByName('parkBrakeLever'),
   });
   parts.lever.rotation.x = reverse ? -0.45 : neutral ? 0 : 0.45;
   parts.fourWd.rotation.x = fourWd ? -0.3 : 0.3;
   parts.lock.position.z = parts.lock.userData.baseZ + (locked ? 0.005 : 0);
   parts.lights.rotation.x = { off: -0.3, low: 0, high: 0.3 }[lights] ?? 0;
   parts.horn.position.y = horn ? -0.008 : 0;
+  parts.park.rotation.x += ((park ? 0 : 0.7) - parts.park.rotation.x) * 0.3; // pulled up and back when on, let down forward when off, eased
 }
 
 /** Shows each seat's belt worn (across whoever is in it) or stowed down the backrest. `belted` is { driver, mid, left } of booleans. */

@@ -1614,8 +1614,7 @@ export class Game {
       if (seat && seat in sitting) sitting[seat] = 'girl';
     }
     if (youSeat && input.wasPressed('Semicolon')) {
-      const done = q.belts.toggle(youSeat);
-      if (done) this.hud.toast(done === 'on' ? 'Seat belt on' : 'Seat belt off', 1.5);
+      q.belts.toggle(youSeat); // no message: you look at the belt and the lamp
     }
     if (q.belts.update(dt, sitting, q.engine.ignitionOn)) this.audioHub.beltBing();
 

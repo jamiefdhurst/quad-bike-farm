@@ -518,14 +518,14 @@ function buildUtv() {
         ctx.fillRect(X + 67 + i * 6, Y + 4, 4.6, 5);
       }
       text(ctx, 'H', X + 93, Y + 8, 3.6, on);
-      // The gear: F, N and R down the right-hand side with the current one boxed.
+      // The gear: a small F, N and R down the right-hand side, the current one in a box.
       ['F', 'N', 'R'].forEach((g, i) => {
         const lit = g === L.gear;
         if (lit) {
           ctx.fillStyle = on;
-          ctx.fillRect(X + W - 22, Y + 4 + i * 12, 14, 11);
+          ctx.fillRect(X + W - 15, Y + 13 + i * 8, 8, 7);
         }
-        text(ctx, g, X + W - 15, Y + 13 + i * 12, 8, lit ? LCD.bg : ghost, { align: 'center', weight: 'bold' });
+        text(ctx, g, X + W - 11, Y + 19 + i * 8, 5, lit ? LCD.bg : ghost, { align: 'center', weight: 'bold' });
       });
       segText(ctx, L.speed, X + 82, Y + 15, 18, on, ghost);
       text(ctx, 'MPH', X + 86, Y + 32, 4, on);
