@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildQuadModel, poseSuspension, setHeadlights, setTaillights, setSignalLamps } from './quadModel.js';
+import { buildQuadModel, poseSuspension, setHeadlights, setTaillights, setSignalLamps, poseSignalControls } from './quadModel.js';
 import { FuelSystem } from './fuelSystem.js';
 import { QuadPhysics, QUAD_LAYOUT } from './quadPhysics.js';
 import { unscaleAnchors } from './unscaleAnchors.js';
@@ -995,7 +995,7 @@ export class Quad {
       diffLock: this.drive?.hasLock ? this.drive.locked : null, // null: no diff lock to show
       hand: this.handSetting,
       choke: this.choke, // the Land Rover's dash has a lamp for it
-      indicatorLamp: this.signals ? this.signals.tellTale : null, // the green arrows (null: no indicators)
+      indicatorLamps: this.signals ? this.signals.sides : null, // the green arrows, { left, right } (null: no indicators)
       lightLamps: this.lights ? lightLamps(this.lights.mode, e.hasPower) : null, // the UTV's lights and main beam lamps (null: no switch)
       beltLamp: this.belts ? beltLampLit(beltLampMode(e.ignitionOn, this.belts.anyUnbelted), clock.seconds()) : null, // and its seat belt lamp, flashing while someone sits unbelted
       clock: clock.text(),
@@ -1026,6 +1026,7 @@ export class Quad {
     if (this.signals) {
       const sides = this.signals.update(dt, Math.max(-1, Math.min(1, this.steer / ((this.params.maxSteerDeg * Math.PI) / 180))), e.hasPower && e.ignitionOn);
       if (this.signals.click) this.signalClick = this.signals.click;
+      poseSignalControls(this.model, { mode: this.signals.mode, lit: this.signals.lit });
       setSignalLamps(this.model, { ...sides, reverse: this.reverse && e.hasPower && e.ignitionOn ? INDICATOR_PARAMS.reverseGlow : 0 });
     }
     setTaillights(this.model, lit ? taillightLevel(level, this.brake > 0.1) : 0); // the same supply, so a brake light needs it too

@@ -34,6 +34,16 @@ describe('Indicators', () => {
     expect(ind.update(0.01, 0, true)).toEqual({ left: true, right: true });
   });
 
+  it('keeps the sides it lit for the dash tell-tales', () => {
+    const ind = new Indicators();
+    ind.press('right');
+    ind.update(0.01, 0, true);
+    expect(ind.sides).toEqual({ left: false, right: true });
+    ind.set('off');
+    ind.update(0.01, 0, true);
+    expect(ind.sides).toEqual({ left: false, right: false });
+  });
+
   it('flashes at the set rate and clicks on each change', () => {
     const ind = new Indicators();
     ind.press('hazard');

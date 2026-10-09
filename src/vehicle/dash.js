@@ -571,8 +571,9 @@ function buildUtv() {
     warnSymbol(ctx, 'park', 166, 84, LAMP.red, L.park);
     warnSymbol(ctx, 'belt', 190, 84, LAMP.red, L.belt);
     warnSymbol(ctx, 'lights', 214, 84, L.main ? BLUE : LAMP.green, L.lights); // the headlights: green for dipped, blue for main beam
-    warnSymbol(ctx, 'turn', 240, 84, LAMP.green, L.turn);
-    keySwitch(ctx, 266, 46, s.keyOn);
+    warnSymbol(ctx, 'turnLeft', 234, 84, LAMP.green, L.turnLeft);
+    warnSymbol(ctx, 'turnRight', 254, 84, LAMP.green, L.turnRight);
+    keySwitch(ctx, 274, 46, s.keyOn);
   }
 
   return {
@@ -597,9 +598,10 @@ function buildUtv() {
         belt: !!s.ignition && !!s.beltLamp,
         lights: !!s.lightLamps?.lights,
         main: !!s.lightLamps?.main,
-        turn: !!s.ignition && !!s.indicatorLamp,
+        turnLeft: !!s.ignition && !!s.indicatorLamps?.left,
+        turnRight: !!s.ignition && !!s.indicatorLamps?.right,
       };
-      const key = [s.ignition, s.keyOn, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, L.turn, !!s.fourWd, !!s.diffLock, L.gear, L.speed, L.fuelSegs, L.tempSegs, L.hours];
+      const key = [s.ignition, s.keyOn, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, L.turnLeft, L.turnRight, !!s.fourWd, !!s.diffLock, L.gear, L.speed, L.fuelSegs, L.tempSegs, L.hours];
       if (gate(key.join('|'))) face.redraw((ctx) => draw(ctx, s, L));
     },
   };
@@ -636,7 +638,7 @@ function buildSeries() {
     warnSymbol(ctx, 'park', 172, 26.5, LAMP.red, L.park);
     warnSymbol(ctx, 'choke', 204, 26.5, LAMP.amber, L.choke);
     warnSymbol(ctx, 'beam', 232, 26.5, '#4aa8ff', L.main); // the main beam tell-tale: all a Series has for its lights
-    warnSymbol(ctx, 'turn', 258, 26.5, LAMP.green, L.turn); // and the indicators' arrows
+    warnSymbol(ctx, 'turn', 258, 26.5, LAMP.green, L.turn); // and the indicators' arrows, one lamp for both sides
     // The speedo: 0 to 90 mph round 260 degrees, white on black, with the odometer's drums under the boss.
     ctx.fillStyle = '#0b0b0b';
     ctx.beginPath();
@@ -686,7 +688,7 @@ function buildSeries() {
         choke: on && (s.choke ?? 0) > 0.05,
         park: on && !!s.parkBrake,
         main: on && !!s.lightLamps?.main,
-        turn: on && !!s.indicatorLamp,
+        turn: on && !!(s.indicatorLamps?.left || s.indicatorLamps?.right),
       };
       const odo = counterDigits(s.odoMiles, 5);
       if (gate([on, s.keyOn, L.charge, L.oil, L.choke, L.park, L.main, L.turn, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
@@ -766,14 +768,15 @@ function buildDefender() {
     ctx.beginPath();
     ctx.roundRect(66, 86, 208, 17, 2);
     ctx.fill();
-    warnSymbol(ctx, 'glow', 86, 94.5, LAMP.amber, L.glow);
-    warnSymbol(ctx, 'charge', 111, 94.5, LAMP.red, L.charge);
-    warnSymbol(ctx, 'oil', 136, 94.5, LAMP.red, L.oil);
-    warnSymbol(ctx, 'park', 161, 94.5, LAMP.red, L.park);
-    warnSymbol(ctx, 'belt', 186, 94.5, LAMP.red, L.belt);
-    warnSymbol(ctx, 'lights', 211, 94.5, LAMP.green, L.lights);
-    warnSymbol(ctx, 'beam', 236, 94.5, '#4aa8ff', L.main);
-    warnSymbol(ctx, 'turn', 261, 94.5, LAMP.green, L.turn);
+    warnSymbol(ctx, 'glow', 82, 94.5, LAMP.amber, L.glow);
+    warnSymbol(ctx, 'charge', 103.5, 94.5, LAMP.red, L.charge);
+    warnSymbol(ctx, 'oil', 125, 94.5, LAMP.red, L.oil);
+    warnSymbol(ctx, 'park', 146.5, 94.5, LAMP.red, L.park);
+    warnSymbol(ctx, 'belt', 168, 94.5, LAMP.red, L.belt);
+    warnSymbol(ctx, 'lights', 189.5, 94.5, LAMP.green, L.lights);
+    warnSymbol(ctx, 'beam', 211, 94.5, '#4aa8ff', L.main);
+    warnSymbol(ctx, 'turnLeft', 232.5, 94.5, LAMP.green, L.turnLeft);
+    warnSymbol(ctx, 'turnRight', 254, 94.5, LAMP.green, L.turnRight);
     keySwitch(ctx, 284, 50, s.keyOn);
   }
 
@@ -800,10 +803,11 @@ function buildDefender() {
         belt: on && !!s.beltLamp,
         lights: on && !!s.lightLamps?.lights,
         main: on && !!s.lightLamps?.main,
-        turn: on && !!s.indicatorLamp,
+        turnLeft: on && !!s.indicatorLamps?.left,
+        turnRight: on && !!s.indicatorLamps?.right,
       };
       const odo = counterDigits(s.odoMiles, 6);
-      if (gate([on, s.keyOn, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, L.turn, Math.round(shownMph * 2), Math.round(shownRpm / 40), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
+      if (gate([on, s.keyOn, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, L.turnLeft, L.turnRight, Math.round(shownMph * 2), Math.round(shownRpm / 40), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
         face.redraw((ctx) => draw(ctx, s, L));
       }
     },

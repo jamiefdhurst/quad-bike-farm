@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { buildDash } from './dash.js';
-import { addHeadlightBeams, addTailLights, addSignalLamps } from './quadModel.js';
+import { addHeadlightBeams, addTailLights, addSignalLamps, addSignalStalk, addHazardSwitch } from './quadModel.js';
 import { bentTube, loftGeometry, mergeStatic, rod, springGeometry } from './quadGeometry.js';
 
 // The farm UTV: a Gator-style side-by-side, procedural like the quads and the tractor. A diesel, open-sided, with a bench seat for
@@ -413,6 +413,7 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   column.rotation.x = -0.95;
   tube([0, 0, 0], [0, 0.46, 0], 0.025, MAT.steel, column);
   root.add(column);
+  addSignalStalk(column, 0.28);
   const wheel = new THREE.Group();
   wheel.name = 'handlebars';
   wheel.userData.keep = true;
@@ -792,6 +793,7 @@ function buildConsole(root) {
   rocker('lights', 'lights');
   rocker('tip', 'tip');
   pod.userData.icons = icons;
+  addHazardSwitch(pod, 0.036, -0.03, FACE, -Math.PI / 2); // under the lights rocker, on the pod's face
 }
 
 function bumper(root) {

@@ -1631,6 +1631,51 @@ export function setSignalLamps(quad, { left, right, reverse }) {
   glow(mats.reverse, 0xf4f8ff, reverse);
 }
 
+/** The indicator stalk on the left of a steering column (+x in the column's frame), a little behind the wheel. It swings in `poseSignalControls`. */
+export function addSignalStalk(column, y) {
+  const stalk = new THREE.Group();
+  stalk.name = 'signalStalk';
+  stalk.userData.keep = true;
+  stalk.position.set(0.035, y, 0);
+  tube([0, 0, 0], [0.11, 0, 0], 0.006, MAT.black, stalk, 6);
+  add(new THREE.SphereGeometry(0.012, 8, 6), MAT.black, stalk).position.x = 0.115;
+  column.add(stalk);
+}
+
+/**
+ * The hazard switch: a square red button in a black plate with a white triangle on it, lit while the hazards flash. It faces +y, so tip
+ * it with `rotation` to sit on a sloping dash or a console face.
+ */
+export function addHazardSwitch(parent, x, y, z, rotationX = 0) {
+  const g = new THREE.Group();
+  g.name = 'hazardSwitch';
+  g.userData.keep = true;
+  g.position.set(x, y, z);
+  g.rotation.x = rotationX;
+  rbox(0.056, 0.008, 0.046, 0.004, MAT.black, 0, 0.004, 0, g);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x7a1510, roughness: 0.4, emissive: 0x000000 });
+  rbox(0.042, 0.01, 0.034, 0.004, mat, 0, 0.011, 0, g);
+  const tri = add(new THREE.RingGeometry(0.009, 0.013, 3).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xf2f2f2, side: THREE.DoubleSide }), g);
+  tri.position.y = 0.0165;
+  parent.add(g);
+  g.userData.mat = mat; // found again by poseSignalControls
+  return g;
+}
+
+/** Poses the indicator stalk (down for left, up for right) and lights the hazard switch while the hazards flash. */
+export function poseSignalControls(model, { mode, lit }) {
+  const parts = (model.userData.signalControls ??= { stalk: model.getObjectByName('signalStalk'), mat: model.getObjectByName('hazardSwitch')?.userData.mat });
+  if (parts.stalk) {
+    const target = mode === 'left' ? -0.3 : mode === 'right' ? 0.3 : 0;
+    parts.stalk.rotation.z += (target - parts.stalk.rotation.z) * 0.4;
+  }
+  if (parts.mat) {
+    const on = mode === 'hazard' && lit;
+    parts.mat.emissive.setHex(on ? 0xff3a1c : 0x000000);
+    parts.mat.emissiveIntensity = on ? 1.6 : 0;
+  }
+}
+
 /** Lights the tail lamps: level 0..1 (taillightLevel in headlight.js), glowing red against the dark lens they have when off. */
 export function setTaillights(quad, level) {
   const mat = quad.userData.tailMaterial;

@@ -516,14 +516,14 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I use the indicators and hazard lights?',
-        a: `In the UTV or either Land Rover with the key on: <kbd>,</kbd> is left, <kbd>.</kbd> is right and <kbd>=</kbd> is the hazards (both sides). The lamps at the
-          front and back of that side flash orange, the relay ticks and a green pair of arrows flashes on the dash. Press the same key again to switch them off. A left or right
+        a: `In the UTV or either Land Rover with the key on: <kbd>,</kbd> is left, <kbd>.</kbd> is right and <kbd>=</kbd> is the hazards (both sides). There is also a stalk on the left of the steering column that drops down for left and goes up for right, and a red hazard button on the dash that flashes with the hazards. The lamps at the
+          front and back of that side flash orange and the relay ticks. The Series III has one green "<- ->" lamp on its dash; the UTV and the 200TDi have a separate arrow for each side. Press the same key again to switch them off. A left or right
           indicator also cancels itself once you have turned the wheel that way and straightened up, like a real stalk. The hazards stay on until you press <kbd>=</kbd>.`,
         tip: "Comma and full stop are the left and right indicators in the UTV and Land Rovers, equals the hazards.",
       },
       {
         q: 'Do the UTV and Land Rovers have a reverse light?',
-        a: `Yes. A clear lamp at the back of each lights up when you select reverse with the key on: the lever on the UTV's console, or reverse gear in a Land Rover.
+        a: `Yes. A clear lamp at the back lights up (the Series III has just the one, on the driver's side; the UTV and the 200TDi have one each side) when you select reverse with the key on: the lever on the UTV's console, or reverse gear in a Land Rover.
           Look over your shoulder (<kbd>C</kbd>) or watch someone else back up at dusk to see it.`,
       },
       {

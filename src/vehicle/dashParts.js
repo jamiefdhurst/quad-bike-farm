@@ -304,14 +304,17 @@ export function warnSymbol(ctx, kind, x, y, colour, lit, scale = 1, glow = true)
     ctx.moveTo(x - 5.2, y - 2.6);
     ctx.lineTo(x + 3.4, y + 3.6);
     ctx.stroke();
-  } else if (kind === 'turn') {
-    // The indicator tell-tale: a pair of arrows pointing out, left and right.
-    for (const d of [-1, 1]) {
-      ctx.moveTo(x + d * 1.4, y);
-      ctx.lineTo(x + d * 8, y);
-      ctx.moveTo(x + d * 5, y - 3);
-      ctx.lineTo(x + d * 1.6, y);
-      ctx.lineTo(x + d * 5, y + 3);
+  } else if (kind === 'turn' || kind === 'turnLeft' || kind === 'turnRight') {
+    // The indicator tell-tale: "<- ->" for the Series' single lamp, or one arrow (turnLeft, turnRight) for the lamps that come in a pair.
+    const single = kind !== 'turn';
+    for (const d of single ? [kind === 'turnLeft' ? -1 : 1] : [-1, 1]) {
+      const tail = single ? x - d * 6 : x + d * 1.4; // a single arrow is centred on its lamp, a pair sits either side of the middle
+      const tip = single ? x + d * 6 : x + d * 8.6;
+      ctx.moveTo(tail, y);
+      ctx.lineTo(tip, y);
+      ctx.moveTo(tip - d * 3.4, y - 3.2);
+      ctx.lineTo(tip, y);
+      ctx.lineTo(tip - d * 3.4, y + 3.2);
     }
     ctx.stroke();
   } else if (kind === 'beam') {

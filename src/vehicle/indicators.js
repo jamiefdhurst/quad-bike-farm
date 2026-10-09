@@ -28,6 +28,7 @@ export class Indicators {
     this.phase = 0; // 0..1 through the current flash
     this.turned = false; // the wheel has gone round the way the indicator points since it was switched on
     this.lit = false;
+    this.sides = { left: false, right: false }; // which tell-tales are lit this frame
     this.click = null; // 'on' or 'off' on the frame the lamp changes, for the relay's tick (cleared by the next update)
   }
 
@@ -57,11 +58,12 @@ export class Indicators {
    */
   update(dt, steer, powered, P = INDICATOR_PARAMS) {
     this.click = null;
+    const done = (left, right) => (this.sides = { left, right });
     if (this.mode === 'off' || !powered) {
       if (this.lit) this.click = 'off';
       this.lit = false;
       if (this.mode === 'off') this.phase = 0;
-      return { left: false, right: false };
+      return done(false, false);
     }
     if (this.mode === 'left' || this.mode === 'right') {
       const way = this.mode === 'left' ? 1 : -1;
@@ -71,18 +73,13 @@ export class Indicators {
         this.turned = false;
         if (this.lit) this.click = 'off';
         this.lit = false;
-        return { left: false, right: false };
+        return done(false, false);
       }
     }
     this.phase = (this.phase + dt * P.flashRate) % 1;
     const lit = this.phase < P.litShare;
     if (lit !== this.lit) this.click = lit ? 'on' : 'off';
     this.lit = lit;
-    return { left: lit && this.mode !== 'right', right: lit && this.mode !== 'left' };
-  }
-
-  /** The dash's green tell-tale: lit with the lamps, whichever side. */
-  get tellTale() {
-    return this.lit;
+    return done(lit && this.mode !== 'right', lit && this.mode !== 'left');
   }
 }
