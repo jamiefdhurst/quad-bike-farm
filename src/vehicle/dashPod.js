@@ -135,7 +135,7 @@ function buildAnalogue() {
       ['4wd', LAMP.green, s.ignition && !!s.fourWd], ['lock', LAMP.red, s.ignition && !!s.diffLock],
     ];
     lamps.forEach(([kind, colour, lit], i) => {
-      const x = (MINI_X[0] + MINI_X[1]) / 2 + (i - (lamps.length - 1) / 2) * 9.6;
+      const x = (MINI_X[0] + MINI_X[1]) / 2 + (i - (lamps.length - 1) / 2) * 12.5;
       if (kind === 'n' || kind === 'r') glyphLetter(ctx, x, LAMP_Y, colour, kind.toUpperCase(), lit, 6.5);
       else warnSymbol(ctx, kind, x, LAMP_Y, colour, lit, 0.62);
     });
