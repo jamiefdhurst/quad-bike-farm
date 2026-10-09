@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { dopplerFactor, TravelDelay, airCutoff, SPEED_OF_SOUND } from '../src/audio/propagation.js';
+import { dopplerFactor, TravelDelay, airCutoff, distanceLevel, SPEED_OF_SOUND } from '../src/audio/propagation.js';
 import { RideEvents, createSurfaceSampler } from '../src/audio/rideEvents.js';
 import { DEFAULT_SOUND_PARAMS } from '../src/audio/audioParams.js';
 
@@ -159,5 +159,15 @@ describe('ride events', () => {
     const r = new RideEvents(p);
     for (let k = 0; k < 120; k++) r.step(dt, { wheels: wheels(true), vy: 0, speed: 10, surface: grass, jolts: [] });
     expect(r.take()).toEqual([]);
+  });
+});
+
+describe('distanceLevel', () => {
+  it('is full up to the reference distance and fades beyond it, as the engines do', () => {
+    expect(distanceLevel(0, 2.5, 1.1)).toBe(1);
+    expect(distanceLevel(2.5, 2.5, 1.1)).toBe(1);
+    expect(distanceLevel(10, 2.5, 1.1)).toBeLessThan(0.4);
+    expect(distanceLevel(40, 2.5, 1.1)).toBeLessThan(0.1);
+    expect(distanceLevel(40, 2.5, 1.1)).toBeLessThan(distanceLevel(10, 2.5, 1.1));
   });
 });

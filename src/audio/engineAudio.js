@@ -9,7 +9,7 @@
 
 import workletUrl from './engineWorklet.js?url';
 import { DEFAULT_AUDIO_PARAMS, DEFAULT_SOUND_PARAMS } from './audioParams.js';
-import { SoundPath } from './propagation.js';
+import { SoundPath, distanceLevel, airCutoff } from './propagation.js';
 import { rainHeard } from '../world/barn.js';
 
 // Recorded pulse banks in public/audio/, made by tools/slice_engine_audio.py, loaded as the sound starts. Any other bank in
@@ -212,10 +212,22 @@ export class AudioHub {
     });
   }
 
-  /** The UTV's seat belt reminder: a soft, round "bong", a low note with an octave over it that rings for a moment. */
-  beltBing() {
+  /**
+   * The UTV's seat belt reminder: a soft, round "bong", a low note with an octave over it that rings for a moment. `at` is where it
+   * sounds from, so it fades and dulls as you walk away from the UTV like its engine does; left out, it plays at full level.
+   */
+  beltBing(at = null) {
     if (!this.ready || this.params.muted) return;
     const ctx = this.ctx;
+    const l = this.listenerPosition;
+    const distance = at && l ? Math.hypot(at.x - l.x, at.y - l.y, at.z - l.z) : 0;
+    const p = DEFAULT_AUDIO_PARAMS; // the same reference distance and rolloff as a vehicle's engine
+    const near = distanceLevel(distance, p.refDistance, p.rolloff);
+    if (near < 0.002) return;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = airCutoff(distance, this.params.airAbsorptionDistance);
+    filter.connect(this.master);
     const t = ctx.currentTime + 0.02;
     [[523, 1, 0.7], [1046, 0.35, 0.35]].forEach(([freq, level, ring]) => {
       const osc = ctx.createOscillator();
@@ -223,9 +235,9 @@ export class AudioHub {
       osc.type = 'sine';
       osc.frequency.value = freq;
       gain.gain.setValueAtTime(0.0001, t);
-      gain.gain.exponentialRampToValueAtTime(this.params.beltBingVolume * level, t + 0.012);
+      gain.gain.exponentialRampToValueAtTime(this.params.beltBingVolume * level * near, t + 0.012);
       gain.gain.exponentialRampToValueAtTime(0.0001, t + ring);
-      osc.connect(gain).connect(this.master);
+      osc.connect(gain).connect(filter);
       osc.start(t);
       osc.stop(t + ring + 0.05);
     });

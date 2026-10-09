@@ -44,6 +44,12 @@ export function airCutoff(distance, halfDistance, maxHz = 20000) {
   return maxHz / (1 + distance / halfDistance);
 }
 
+/** How loud a sound is at `distance` metres, 1 up to `refDistance` and fading as the inverse-distance panner does beyond it. */
+export function distanceLevel(distance, refDistance, rolloff) {
+  const d = Math.max(distance, refDistance);
+  return refDistance / (refDistance + rolloff * (d - refDistance));
+}
+
 /**
  * Travel time from a source to the listener, smoothed so jitter in the camera
  * and teleports (getting on and off) don't warble the pitch. Pure logic.

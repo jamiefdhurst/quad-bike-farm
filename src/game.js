@@ -1640,7 +1640,7 @@ export class Game {
     if (youSeat && input.wasPressed('Semicolon')) {
       q.belts.toggle(youSeat); // no message: you look at the belt and the lamp
     }
-    if (q.belts.update(dt, sitting, q.engine.ignitionOn, dashClock().seconds())) this.audioHub.beltBing();
+    if (q.belts.update(dt, sitting, q.engine.ignitionOn, dashClock().seconds())) this.audioHub.beltBing(q.position); // fading with distance, like its engine
 
     const girls = this.companions.map((c) => ({
       id: c.character.id,
