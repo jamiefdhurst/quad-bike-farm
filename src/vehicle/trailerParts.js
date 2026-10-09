@@ -52,8 +52,8 @@ export function buildWheel(name, x, radius, width) {
   const blocks = 14;
   for (let i = 0; i < blocks; i++) {
     const a = (i / blocks) * Math.PI * 2;
-    const b = box(width * 0.9, 0.035, radius * 0.2, PART_MAT.tread, 0, Math.cos(a) * (radius + 0.005), Math.sin(a) * (radius + 0.005), spin);
-    b.rotation.x = -a + Math.PI / 2 + (i % 2 ? 0.0 : 0);
+    const b = box(width * 0.9, 0.03, radius * 0.16, PART_MAT.tread, 0, Math.cos(a) * (radius - 0.025), Math.sin(a) * (radius - 0.025), spin);
+    b.rotation.x = a; // local y along the radius
     b.castShadow = false;
     b.receiveShadow = false;
   }
@@ -63,6 +63,12 @@ export function buildWheel(name, x, radius, width) {
   dish.rotation.z = Math.PI / 2;
   spin.add(dish);
   const side = Math.sign(x) || 1;
+  for (const e of [-1, 1]) {
+    const lip = new THREE.Mesh(new THREE.TorusGeometry(rimR, 0.012, 6, 20), PART_MAT.nut); // the rim's rolled edge
+    lip.rotation.y = Math.PI / 2;
+    lip.position.x = (e * width) / 2;
+    spin.add(lip);
+  }
   const cap = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.3, radius * 0.34, 0.05, 12), PART_MAT.nut);
   cap.rotation.z = Math.PI / 2;
   cap.position.x = side * (width / 2 + 0.01);
@@ -83,7 +89,7 @@ export function buildWheel(name, x, radius, width) {
 }
 
 /** A curved mudguard over a wheel at `x`, `radius` high, with a flap hanging off the back (+Z is towards the puller, so the back is -Z). */
-export function addMudguard(parent, x, radius, width, mat) {
+export function addMudguard(parent, x, radius, width, mat, stayFrom) {
   const r = radius + 0.07;
   const geo = new THREE.CylinderGeometry(r, r, width, 20, 1, true, Math.PI / 2 - 1.15, 2.3);
   geo.rotateZ(Math.PI / 2); // axis along X; height is r sin(theta), forward is r cos(theta)
@@ -98,12 +104,16 @@ export function addMudguard(parent, x, radius, width, mat) {
   lip.geometry.rotateZ(Math.PI / 2);
   lip.position.set(x + (lipSide * width) / 2, radius, 0);
   parent.add(lip);
+  // A stay from the guard's top in to the trailer, so it isn't floating.
+  const stay = box(Math.abs(x) - stayFrom, 0.03, 0.12, mat, Math.sign(x) * (stayFrom + (Math.abs(x) - stayFrom) / 2), radius + r - 0.01, 0, parent);
+  stay.castShadow = false;
   const flap = box(width * 0.9, radius * 0.7, 0.02, PART_MAT.flap, x, radius * 0.75, -Math.cos(Math.PI / 2 - 1.15) * r - 0.04, parent);
   flap.rotation.x = 0.08;
 }
 
 /** A pair of rear lamps (red), amber reflectors and a plate-shaped board, on a group at the back. `halfWidth` is where the lamps sit. */
 export function addRearLights(parent, halfWidth, y, z, withPlate = true) {
+  box(halfWidth * 2 + 0.1, 0.06, 0.05, PART_MAT.paint, 0, y - 0.01, z + 0.015, parent); // the bar they and the plate are mounted on
   for (const s of [-1, 1]) {
     box(0.1, 0.06, 0.04, PART_MAT.red, s * halfWidth, y, z, parent);
     box(0.05, 0.04, 0.03, PART_MAT.amber, s * halfWidth, y + 0.07, z, parent);

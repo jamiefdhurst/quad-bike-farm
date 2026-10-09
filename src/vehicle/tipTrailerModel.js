@@ -146,7 +146,7 @@ export function buildTipTrailerModel() {
   // Wheels, with a curved mudguard over each.
   for (const [name, side] of [['wheelLeft', 1], ['wheelRight', -1]]) {
     root.add(buildWheel(name, side * (S.halfWidth + 0.11), S.wheelRadius, 0.16));
-    addMudguard(root, side * (S.halfWidth + 0.11), S.wheelRadius, 0.22, MAT.tub);
+    addMudguard(root, side * (S.halfWidth + 0.11), S.wheelRadius, 0.22, MAT.tub, S.halfWidth);
   }
   return root;
 }
