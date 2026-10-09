@@ -516,10 +516,10 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I use the indicators and hazard lights?',
-        a: `In the UTV or either Land Rover with the key on: <kbd>,</kbd> is left, <kbd>.</kbd> is right and <kbd>/</kbd> is the hazards (both sides). The lamps at the
+        a: `In the UTV or either Land Rover with the key on: <kbd>,</kbd> is left, <kbd>.</kbd> is right and <kbd>'</kbd> is the hazards (both sides). The lamps at the
           front and back of that side flash orange, the relay ticks and a green pair of arrows flashes on the dash. Press the same key again to switch them off. A left or right
-          indicator also cancels itself once you have turned the wheel that way and straightened up, like a real stalk. The hazards stay on until you press <kbd>/</kbd>.`,
-        tip: ', and . are the left and right indicators in the UTV and Land Rovers, / the hazards.',
+          indicator also cancels itself once you have turned the wheel that way and straightened up, like a real stalk. The hazards stay on until you press <kbd>'</kbd>.`,
+        tip: ', and . are the left and right indicators in the UTV and Land Rovers, ' the hazards.',
       },
       {
         q: 'Do the UTV and Land Rovers have a reverse light?',

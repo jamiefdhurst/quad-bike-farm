@@ -2387,7 +2387,7 @@ On a freezing day (`Weather.frost`, see "The day's temperature") the frost is no
 
 ## Indicators and a reverse light (TODO 21)
 
-- Keys: `,` left, `.` right, `/` hazards, on the UTV and both Land Rovers (the quads have no indicators). Pressing the key for the mode already on switches it off. They need the key on and a charged battery, like the dash.
+- Keys: `,` left, `.` right, `'` hazards, on the UTV and both Land Rovers (the quads have no indicators). Pressing the key for the mode already on switches it off. They need the key on and a charged battery, like the dash.
 - Logic in `indicators.js` (pure, tested): 1.5 flashes a second with the lamp lit for 55% of each, which sits inside the legal 60 to 120 a minute. A left or right indicator cancels itself once the bars have gone beyond `cancelTurn` (0.35 of lock) the way it points and come back inside `cancelStraight` (0.12). Hazards never cancel. Tunables are in the Tune tab under "Indicators".
 - Lamps: `addSignalLamps` (`quadModel.js`) gives each vehicle its own left, right and reverse lens materials, sorting the model's existing orange lenses by which side of the middle they are on (front and back of a side flash together), so no model needed its lamps rebuilt. `setSignalLamps` lights them. The Series III and the UTV gained a clear reverse lens by the tail lamps (the 200TDi already had one, unlit until now). The reverse lamp lights when reverse is selected with the key on, from `quad.reverse`.
 - Dash: a green pair of arrows on the UTV's, the Series' and the 200TDi's (the 200TDi's lamps were respaced from 28 to 25 to fit it), flashing with the lamps. The quads' pods and the tractor have no indicators, so none.
