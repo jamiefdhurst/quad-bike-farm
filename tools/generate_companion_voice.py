@@ -28,8 +28,11 @@ and in <cache>/<character>-unclear.txt, to listen to.
 
 Writes, for the character's voiceBank in src/npc/characters.js:
 
-  public/audio/<voiceBank>.mp3   every line, back to back
-  public/audio/<voiceBank>.json  where each line starts and ends, keyed by its text
+  public/audio/<voiceBank>-NNN.mp3  every line, back to back, in files of about a minute each
+  public/audio/<voiceBank>.json     the files, and which file and where in it each line is, keyed by its text
+
+The game downloads every file while it loads but only decodes one when a line in it is first needed: one long file
+decoded whole came to about a gigabyte of memory per girl.
 
 Lines are keyed by their exact text, so after editing voiceLines.js, a
 character's own lines or banterLines.js (what the girls say to each other),
@@ -51,6 +54,7 @@ about 1.7 times as fast; more than two is no quicker on one GPU.
 
 import argparse
 import difflib
+import glob
 import hashlib
 import json
 import os
@@ -67,6 +71,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TARGET_RMS = 0.1  # loudness of each line's speech
 PAD = 0.04  # seconds of quiet kept either side
 GAP = 0.08  # seconds of silence between lines in the bank
+CHUNK_SECONDS = 60  # each bank file holds about this much; the game decodes a file only when a line in it is needed
+LEAD = 0.1  # seconds of silence at the start of each file, so the MP3 encoder's start-up never touches a line
 TRIES = 4  # recordings of a line before settling for the best
 S3_TOKEN_RATE = 25  # Chatterbox's speech tokens a second
 MATCH = 0.8  # how closely Whisper's transcript has to match the text (0..1)
@@ -253,6 +259,7 @@ def main():
     ap.add_argument('--piper', default='piper', help='the piper command')
     ap.add_argument('--cache', default=None)
     ap.add_argument('--no-check', action='store_true', help="don't check recordings with Whisper")
+    ap.add_argument('--bank-only', action='store_true', help='record nothing: rebuild the bank from what is cached (uncached lines are left out)')
     ap.add_argument('--limit', type=int, help='only the first N lines (for trying settings out); writes nothing to public/')
     ap.add_argument('--workers', type=int, default=1, help='record with this many copies of the model at once (needs --cache)')
     ap.add_argument('--shard', help='K/N: only record every Nth line from the Kth into the cache, and write no bank (used by --workers)')
@@ -323,6 +330,9 @@ def main():
         if os.path.exists(path):
             x, sr = sf.read(path, dtype='float32')
             meta = json.load(open(meta_path)) if os.path.exists(meta_path) else {}
+        elif args.bank_only:
+            unclear.append(f'0.00  "{text}"  not in the cache; left out (--bank-only)')
+            continue
         else:
             if engine is None:
                 engine = Chatterbox(ref)
@@ -353,7 +363,7 @@ def main():
                 print(f'shard {args.shard}: batch of {recorded} done', flush=True)
                 sys.exit(3)
         # Chatterbox made a mess of it: the same voice from Piper, if that's clearer.
-        if fallback and meta.get('score', 1) < FALLBACK_BELOW and not meta.get('fallback'):
+        if fallback and not args.bank_only and meta.get('score', 1) < FALLBACK_BELOW and not meta.get('fallback'):
             import librosa
 
             if ear is None:
@@ -387,22 +397,36 @@ def main():
         if meta.get('score', 1) < MATCH:
             unclear.append(f'{meta["score"]:.2f}  "{text}"  heard "{meta["heard"]}"')
         x = tidy(x, sr)
-        clips[text] = {'start': round(cursor / sr, 5), 'dur': round(len(x) / sr, 5)}
-        out += [x, np.zeros(int(GAP * sr), dtype=np.float32)]
+        # A new file once this one has about a minute in it, each starting with a moment's quiet.
+        if not out or cursor >= CHUNK_SECONDS * sr:
+            out.append([np.zeros(int(LEAD * sr), dtype=np.float32)])
+            cursor = int(LEAD * sr)
+        clips[text] = {'file': len(out) - 1, 'start': round(cursor / sr, 5), 'dur': round(len(x) / sr, 5)}
+        out[-1] += [x, np.zeros(int(GAP * sr), dtype=np.float32)]
         cursor += len(x) + int(GAP * sr)
 
     if shard:
         print(f'shard {args.shard}: {recorded} newly recorded', flush=True)
         return
-    audio = np.clip(np.concatenate(out), -1, 1)
     bank = info['bank']
-    base = os.path.join(cache if args.limit else os.path.join(ROOT, 'public', 'audio'), bank)
-    sf.write(base + '.mp3', audio, sr, format='MP3', subtype='MPEG_LAYER_III')
+    folder = cache if args.limit else os.path.join(ROOT, 'public', 'audio')
+    base = os.path.join(folder, bank)
+    # Clear out the old single file and any files left from a longer bank, then write this one's.
+    for old in glob.glob(base + '.mp3') + glob.glob(base + '-[0-9][0-9][0-9].mp3'):
+        os.remove(old)
+    files, seconds, peak = [], 0.0, 0.0
+    for n, parts in enumerate(out):
+        audio = np.clip(np.concatenate(parts), -1, 1)
+        name = f'{bank}-{n:03d}.mp3'
+        sf.write(os.path.join(folder, name), audio, sr, format='MP3', subtype='MPEG_LAYER_III')
+        files.append(f'audio/{name}')
+        seconds += len(audio) / sr
+        peak = max(peak, float(np.abs(audio).max()))
     with open(base + '.json', 'w') as f:
-        json.dump({'file': f'audio/{bank}.mp3', 'voice': voice_id, 'clips': clips}, f, indent=1)
+        json.dump({'files': files, 'voice': voice_id, 'clips': clips}, f, indent=1)
     with open(os.path.join(cache, f'{args.character}-unclear.txt'), 'w') as f:
         f.write('\n'.join(unclear) + '\n')
-    print(f'{len(clips)} lines ({recorded} newly recorded), {len(audio) / sr:.1f} s, peak {np.abs(audio).max():.2f}')
+    print(f'{len(clips)} lines ({recorded} newly recorded) in {len(files)} files, {seconds:.1f} s, peak {peak:.2f}')
     if unclear:
         print(f'{len(unclear)} lines never quite matched (listed in {cache}/{args.character}-unclear.txt):')
         print('\n'.join(unclear))

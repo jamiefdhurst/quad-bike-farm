@@ -4,6 +4,8 @@
 // Both play from where her head is. A line with no recording yet falls back to
 // the browser's speech synthesis, but only with a voice known to be a woman's.
 
+import { VoiceChunks, bankFiles, chunkOf } from './voiceChunks.js';
+
 // Most natural first. Matched against the start of each voice's name.
 const PREFERRED_VOICES = [
   'Google UK English Female',
@@ -91,20 +93,27 @@ export class CompanionSounds {
     this.active = null; // { source, panner }
   }
 
-  /** Loads both banks once the audio context exists. */
+  /**
+   * Loads both banks once the audio context exists: her sighs and laughs decoded whole (one small file), and every file of her
+   * recorded lines downloaded but each decoded only when a line in it is first said (voiceChunks.js).
+   */
   ensure() {
     const ctx = this.hub.ctx;
     if (!ctx || this.loading) return;
     const base = import.meta.env?.BASE_URL ?? '/';
-    const load = (name, file) =>
-      fetch(`${base}audio/${file}.json`)
-        .then((r) => r.json())
-        .then(async (bank) => {
-          const data = await (await fetch(base + bank.file)).arrayBuffer();
-          this.banks[name] = { buffer: await ctx.decodeAudioData(data), clips: bank.clips };
-        })
-        .catch((err) => console.error(`Companion ${name} failed to load`, err));
-    this.loading = Promise.all([load('sounds', 'companion'), load('voice', this.voiceBank)]);
+    const fetchBank = (file) => fetch(`${base}audio/${file}.json`).then((r) => r.json());
+    const sounds = fetchBank('companion').then(async (bank) => {
+      const data = await (await fetch(base + bank.file)).arrayBuffer();
+      this.banks.sounds = { buffer: await ctx.decodeAudioData(data), clips: bank.clips };
+    });
+    const voice = fetchBank(this.voiceBank).then(async (bank) => {
+      const bytes = await Promise.all(bankFiles(bank).map(async (file) => (await fetch(base + file)).arrayBuffer()));
+      // decodeAudioData takes the bytes it's given, so each decode gets a copy and the download is kept for next time.
+      const chunks = new VoiceChunks(bytes.length, (i) => ctx.decodeAudioData(bytes[i].slice(0)));
+      this.banks.voice = { clips: bank.clips, chunks };
+    });
+    const report = (name) => (err) => console.error(`Companion ${name} failed to load`, err);
+    this.loading = Promise.all([sounds.catch(report('sounds')), voice.catch(report('voice'))]);
   }
 
   /** Plays a random sound of a kind (sigh, hum...); returns its length in seconds, or 0. */
@@ -114,10 +123,26 @@ export class CompanionSounds {
     return this.start(this.banks.sounds.buffer, list[Math.floor(random() * list.length)], position, volume, rolloff, this.rate);
   }
 
-  /** Says a recorded line; returns its length in seconds, or 0 if it hasn't been recorded. */
+  /**
+   * Says a recorded line; returns its length in seconds, or 0 if it hasn't been recorded. If its file isn't decoded yet it starts as
+   * soon as it is (a few hundredths of a second), unless she's been stopped or has said something else meanwhile.
+   */
   say(text, position, volume = 1, { rolloff = 1.2 } = {}) {
-    const clip = this.banks.voice?.clips[text];
-    return clip ? this.start(this.banks.voice.buffer, clip, position, volume, rolloff) : 0;
+    const voice = this.banks.voice;
+    const clip = voice?.clips[text];
+    if (!clip) return 0;
+    const i = chunkOf(clip);
+    const buffer = voice.chunks.ready(i);
+    if (buffer) return this.start(buffer, clip, position, volume, rolloff);
+    this.stop();
+    const token = (this.waiting = {});
+    voice.chunks.get(i).then(
+      (buf) => {
+        if (this.waiting === token) this.start(buf, clip, this.lastPosition ?? position, volume, rolloff);
+      },
+      (err) => console.error('Companion voice failed to decode', err),
+    );
+    return clip.dur;
   }
 
   /** `rolloff` is how fast it fades with distance: lower carries further, as a shout does. */
@@ -148,6 +173,7 @@ export class CompanionSounds {
 
   /** Keeps a playing clip coming from her head as she moves. */
   setPosition(p) {
+    this.lastPosition = p;
     const pn = this.active?.panner;
     if (!pn) return;
     const t = this.hub.ctx.currentTime;
@@ -157,6 +183,7 @@ export class CompanionSounds {
   }
 
   stop() {
+    this.waiting = null; // a line still waiting for its file to decode won't start
     if (!this.active) return;
     try {
       this.active.source.stop();
