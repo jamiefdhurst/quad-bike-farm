@@ -662,10 +662,10 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   root.add(column);
   addSignalStalk(column, 0.34, MAT.black, { modern: D });
   if (!D) {
-    // The Series' hazard button: on a small black shroud on top of the column, in front of the wheel, tipped up to face the driver.
-    rbox(0.06, 0.07, 0.05, 0.012, MAT.black, 0, 0.27, 0.03, column);
-    const top = new THREE.Vector3(0, 0.27, 0.058).applyEuler(column.rotation).add(column.position);
-    const hazard = addHazardSwitch(root, top.x, top.y, top.z);
+    // The Series' hazard button: just the red switch, on top of the column in front of the wheel, tipped up to face the driver.
+    const top = new THREE.Vector3(0, 0.27, 0.03).applyEuler(column.rotation).add(column.position);
+    top.y += 0.02;
+    const hazard = addHazardSwitch(root, top.x, top.y, top.z, { plate: false });
     faceAlong(hazard, new THREE.Vector3(0, 0.75, -0.66), new THREE.Vector3(0, 0.66, 0.75));
   }
   const wheel = new THREE.Group();

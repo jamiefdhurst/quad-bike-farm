@@ -1631,26 +1631,36 @@ export function setSignalLamps(quad, { left, right, reverse }) {
   glow(mats.reverse, 0xf4f8ff, reverse);
 }
 
-/** The small "<  >" symbol printed on a stalk's end, white on the stalk's own colour. Symmetrical, so it reads whichever way up it is seen. */
-let signalSymbolTexture = null;
-function signalSymbol() {
-  if (signalSymbolTexture) return signalSymbolTexture;
+/**
+ * The indicator symbol printed on a stalk's end, the dash's own arrows in an unlit grey: "<- ->" as one symbol (the Series' lamp) or two
+ * separate arrows with a gap (the lamps that come in a pair). Symmetrical, so it reads whichever way up it is seen.
+ */
+const signalSymbols = {};
+function signalSymbol(pair) {
+  const key = pair ? 'pair' : 'one';
+  if (signalSymbols[key]) return signalSymbols[key];
   const c = document.createElement('canvas');
-  c.width = 128;
-  c.height = 64;
+  c.width = 256;
+  c.height = 128;
   const g = c.getContext('2d');
-  g.fillStyle = '#f2f2f2';
+  g.strokeStyle = '#9da1a4';
+  g.lineWidth = 11;
+  g.lineCap = 'round';
+  g.lineJoin = 'round';
+  const [tail, tip] = pair ? [24, 100] : [8, 100]; // from the middle: a pair's arrows keep apart, the one lamp's nearly touch
   for (const d of [-1, 1]) {
+    const x = (v) => 128 + d * v;
     g.beginPath();
-    g.moveTo(64 + d * 8, 32);
-    g.lineTo(64 + d * 52, 6);
-    g.lineTo(64 + d * 52, 58);
-    g.closePath();
-    g.fill();
+    g.moveTo(x(tail), 64);
+    g.lineTo(x(tip), 64);
+    g.moveTo(x(tip - 34), 64 - 32);
+    g.lineTo(x(tip), 64);
+    g.lineTo(x(tip - 34), 64 + 32);
+    g.stroke();
   }
-  signalSymbolTexture = new THREE.CanvasTexture(c);
-  signalSymbolTexture.colorSpace = THREE.SRGBColorSpace;
-  return signalSymbolTexture;
+  signalSymbols[key] = new THREE.CanvasTexture(c);
+  signalSymbols[key].colorSpace = THREE.SRGBColorSpace;
+  return signalSymbols[key];
 }
 
 /**
@@ -1664,17 +1674,17 @@ export function addSignalStalk(column, y, mat, { modern = false } = {}) {
   stalk.userData.keep = true;
   // Its swing axis, in the column's frame: the tip (+x) goes up towards the roof when turned about it, however the column is raked.
   stalk.userData.axis = new THREE.Vector3(0, Math.sin(column.rotation.x), Math.cos(column.rotation.x));
-  stalk.position.set(0.035, y, 0);
+  stalk.position.set(0, y, 0); // pivoting on the column's axis, with the arm starting inside the column so it is joined to it
   const plane = new THREE.PlaneGeometry(modern ? 0.04 : 0.026, modern ? 0.02 : 0.013).rotateX(-Math.PI / 2);
-  const face = new THREE.Mesh(plane, new THREE.MeshBasicMaterial({ map: signalSymbol(), transparent: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+  const face = new THREE.Mesh(plane, new THREE.MeshBasicMaterial({ map: signalSymbol(modern), transparent: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
   if (modern) {
-    rbox(0.1, 0.014, 0.024, 0.006, mat, 0.05, 0, 0, stalk); // a flat moulded arm
-    rbox(0.05, 0.026, 0.034, 0.01, mat, 0.12, 0, 0, stalk); // and a wide end, with the symbol on its face
-    face.position.set(0.12, 0.0136, 0);
+    rbox(0.12, 0.014, 0.024, 0.006, mat, 0.075, 0, 0, stalk); // a flat moulded arm
+    rbox(0.05, 0.026, 0.034, 0.01, mat, 0.155, 0, 0, stalk); // and a wide end, with the symbol on its face
+    face.position.set(0.155, 0.0136, 0);
   } else {
-    tube([0, 0, 0], [0.1, 0, 0], 0.006, mat, stalk, 6);
-    add(new THREE.CylinderGeometry(0.016, 0.016, 0.014, 14), mat, stalk).position.set(0.115, 0, 0); // a round button on the end
-    face.position.set(0.115, 0.0075, 0);
+    tube([0, 0, 0], [0.13, 0, 0], 0.006, mat, stalk, 6);
+    add(new THREE.CylinderGeometry(0.016, 0.016, 0.014, 14), mat, stalk).position.set(0.145, 0, 0); // a round button on the end
+    face.position.set(0.145, 0.0075, 0);
   }
   stalk.add(face);
   column.add(stalk);
