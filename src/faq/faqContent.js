@@ -157,7 +157,8 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'It rolled away on its own.',
-        a: `Every vehicle starts with its parking brake on, but if you get off without setting it (<kbd>Space</kbd>) it can roll on a slope, and
+        a: `Every vehicle starts with its parking brake on (on a quad it is the left brake lever, squeezed in and held by a red catch, so look at the
+          bars rather than for a message), but if you get off without setting it (<kbd>Space</kbd>) it can roll on a slope, and
           the girls will say whose fault it was. Stop on a bank off the throttle and it rolls back too: hold <kbd>S</kbd> or set the brake.`,
       },
       {

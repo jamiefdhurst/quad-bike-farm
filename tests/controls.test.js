@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { reverseAllowed, chokeReach, pushDirection, localAlong, REVERSE_STYLES, CHOKE_STYLES, TAP_STYLES, DEFAULT_CONTROLS_PARAMS as P } from '../src/vehicle/controls.js';
 import { QUAD_SPECS, EXTRA_SPECS } from '../src/vehicle/quadSpecs.js';
-import { buildQuadModel } from '../src/vehicle/quadModel.js';
+import { buildQuadModel, poseParkBrake } from '../src/vehicle/quadModel.js';
 
 const still = { speed: 0, steering: false, braking: false };
 
@@ -101,5 +101,20 @@ describe('the specs', () => {
         expect(m.getObjectByName('fuelTap'), `${tapStyle}`).toBeTruthy();
       }
     }
+  });
+});
+
+describe('the quads\' parking brake', () => {
+  it('is the left brake lever, squeezed in and held by a red catch', () => {
+    const m = buildQuadModel({ chokeStyle: 'thumb', tapStyle: TAP_STYLES[0] });
+    const lever = m.getObjectByName('parkBrakeLever');
+    const hold = m.getObjectByName('parkBrakeCatch');
+    expect(lever).toBeTruthy();
+    poseParkBrake(m, 0);
+    expect(lever.rotation.y).toBe(0);
+    expect(hold.visible).toBe(false);
+    poseParkBrake(m, 1);
+    expect(lever.rotation.y).toBeGreaterThan(0.1);
+    expect(hold.visible).toBe(true);
   });
 });

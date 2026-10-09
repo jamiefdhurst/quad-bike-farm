@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildQuadModel, poseSuspension, setHeadlights, setTaillights, setSignalLamps, poseSignalControls } from './quadModel.js';
+import { buildQuadModel, poseSuspension, setHeadlights, setTaillights, setSignalLamps, poseSignalControls, poseParkBrake } from './quadModel.js';
 import { FuelSystem } from './fuelSystem.js';
 import { QuadPhysics, QUAD_LAYOUT } from './quadPhysics.js';
 import { unscaleAnchors } from './unscaleAnchors.js';
@@ -236,6 +236,7 @@ export class Quad {
     this.choke = 0;
     this.starter = false;
     this.displayChoke = 0;
+    this.displayPark = 0; // the bar lever's squeeze, eased
     this.displayRpm = 0;
     // Set while it carries on with nobody on it: { steer, stuckTime }, see carryOn().
     this.ghost = null;
@@ -1040,6 +1041,10 @@ export class Quad {
     if (this.landRover) {
       poseLandyControls(this.model, { gear: this.drivetrain.gear, gears: this.gearbox.gears, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, choke: this.choke, hand: this.handSetting, park: this.parkBrake });
       poseUtvBelts(this.model, this.belts.worn()); // the same belt names as the UTV's
+    }
+    if (!this.utv && !this.landRover && !this.tractor) {
+      this.displayPark += ((this.parkBrake ? 1 : 0) - this.displayPark) * Math.min(1, 14 * dt);
+      poseParkBrake(this.model, this.displayPark);
     }
     this.displayChoke += (this.choke - this.displayChoke) * Math.min(1, 12 * dt);
     // Off: lever forward. Full: pulled back towards the rider.

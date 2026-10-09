@@ -4491,7 +4491,6 @@ export class Game {
   toggleParkBrake(quad) {
     quad.parkBrake = !quad.parkBrake;
     if (quad.parkBrake) this.achievements.note('parkBrake');
-    this.hud.toast(quad.parkBrake ? 'Parking brake on' : 'Parking brake off', 1.2);
   }
 
   mount(unit) {
@@ -4501,7 +4500,6 @@ export class Game {
     unit.quad.setRider(this.player, this.input);
     this.lastUnit = unit;
     this.input.takeWheelSteps();
-    if (unit.quad.parkBrake) this.hud.toast('Parking brake is on (Space)', 2);
   }
 
   /** A moving quad you can't catch hold of (whether or not anyone is on it). */

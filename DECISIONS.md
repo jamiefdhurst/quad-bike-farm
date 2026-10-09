@@ -2409,3 +2409,9 @@ The item was clear (a 2.5 litre turbo-diesel four, the clatter of an old direct-
 - **Undone from TODO 19**: the UTV's bank no longer holds the 200TDi's starter, and `recStarterSet` is gone, as nothing needs a second starter in one bank now.
 - **Guards**: `tests/engineBanks.test.js` now checks every exported spec (it had a hand-written list without the 200TDi) and that its bank is in the hub's `BANK_NAMES`, the list that loads while the game loads.
 - Renders in `.scratch/tdi/` for Jamie: `old.wav` (as it was on the UTV's bank) and `new.wav` through the revving timeline, `turbo-only.wav`, and `start-new.wav` and `crank-new.wav`. Not checked: listening, or the sound in the running game; the whistle is a clean tone and may want more air or less level by ear.
+
+## The quads' parking brake you can see (TODO 22)
+
+- On the quads and the two-wheelers the left brake lever is now the parking brake (`parkBrakeLever`, a pivot group on its perch): `Space` squeezes it in about 9 degrees, eased, and a small red catch (`parkBrakeCatch`) shows on the perch once it is nearly home. `poseParkBrake` in `quadModel.js`, called from `Quad` for anything that is not the tractor, UTV or a Land Rover (they have their own handles).
+- The "Parking brake on / off" toasts and the one on getting on are gone: the lever is the message. Kept: the hint on first getting off without it, and "The parking brake is on" when you try to push a braked quad, since those say something you can't see.
+- Checked by a unit test of the pose only; not by eye in the running game, so the lever's sweep direction and the catch's position on the perch want a look.

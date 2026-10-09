@@ -473,7 +473,7 @@ Design decisions and their reasons are logged in [DECISIONS.md](DECISIONS.md). A
 19. Better starter noises for the UTV and Land Rovers **Done.** See DECISIONS.md, "Starters of their own".
 20. Better frost on the ground and on the seats **Done.** See DECISIONS.md, "Better frost".
 21. Indicators on the Land Rovers and the UTV, and a reverse light on the outside **Done.** See DECISIONS.md, "Indicators and a reverse light".
-22. Visible parking brake controls on the quads, remove the HUD when it goes on and off
+22. **Done.** Visible parking brake controls on the quads, remove the HUD when it goes on and off
 23. The girls can also get in the LRs or UTV if it is raining, to shelter, and will get in the LRs and start the to stay warm when it is cold sometimes
 24. Bump-starting. DECISIONS.md left it out ("bump-starting left out for now"). With a flat battery on a manual quad, roll it down a bank in second with the clutch in and let it out to fire it; the girls can push it on the flat (Jess shouts when to drop the clutch), and the tractor can tow it with the chain. Two-strokes catch easily, a cold four-stroke wants choke and a long roll.
 25. Wet and binding brakes. After the ford the brakes barely bite for a few seconds until they dry. A quad that has stood all game has a brake that binds and frees with a clunk after a few metres. Both show in Running or Problems on the Vehicles tab.

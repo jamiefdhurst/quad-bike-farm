@@ -387,7 +387,23 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
     grip.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.sub(a).normalize());
     // Brake lever on a perch, curving out ahead of the grip.
     rbox(0.03, 0.026, 0.03, 0.008, MAT.engineDark, s * 0.262, 0.066, -0.018, bars);
-    pipe([[s * 0.262, 0.07, -0.012], [s * 0.29, 0.076, 0.0], [s * 0.4, 0.076, -0.028], [s * 0.418, 0.072, -0.04]], 0.0055, MAT.alloy, bars, { bend: 0.02 });
+    const lever = [[0, 0.004, 0.006], [s * 0.028, 0.01, 0.012], [s * 0.138, 0.01, -0.016], [s * 0.156, 0.006, -0.028]];
+    if (s > 0) {
+      // The left lever is also the parking brake: squeezed in and held by a red catch on the perch (poseParkBrake).
+      const pivot = new THREE.Group();
+      pivot.name = 'parkBrakeLever';
+      pivot.position.set(0.262, 0.066, -0.018);
+      bars.add(pivot);
+      pipe(lever, 0.0055, MAT.alloy, pivot, { bend: 0.02 });
+      const catchBar = rbox(0.012, 0.008, 0.026, 0.003, new THREE.MeshStandardMaterial({ color: 0xc01818, roughness: 0.5 }), 0.03, 0.02, 0.0, bars, 'parkBrakeCatch');
+      catchBar.position.set(0.292, 0.088, -0.012);
+      catchBar.visible = false;
+    } else {
+      const g = new THREE.Group();
+      g.position.set(s * 0.262, 0.066, -0.018);
+      bars.add(g);
+      pipe(lever, 0.0055, MAT.alloy, g, { bend: 0.02 });
+    }
   }
 
   // Dash pod in the middle, face tilted towards the rider.
@@ -1718,6 +1734,15 @@ export function faceAlong(group, normal, up) {
   const x = new THREE.Vector3().crossVectors(up, z).normalize();
   const y = new THREE.Vector3().crossVectors(z, x);
   group.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
+}
+
+/** Squeezes the left brake lever in (`amount` 0 to 1, eased by the caller) and shows the red catch that holds it once it is nearly there. */
+export function poseParkBrake(model, amount) {
+  const lever = model.getObjectByName('parkBrakeLever');
+  if (!lever) return; // the tractor, UTV and Land Rovers have their own handles
+  lever.rotation.y = amount * 0.16;
+  const hold = model.getObjectByName('parkBrakeCatch');
+  if (hold) hold.visible = amount > 0.85;
 }
 
 /** Poses the indicator stalk (down for left, up for right) and flashes the hazard switch red while the hazards flash. */
