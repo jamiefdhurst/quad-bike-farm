@@ -100,7 +100,7 @@ const MAT = {
   yellow: new THREE.MeshStandardMaterial({ color: 0xe0b020, roughness: 0.35 }), // the 4WD knob
   red: new THREE.MeshStandardMaterial({ color: 0xb02018, roughness: 0.35 }), // the diff lock's
   rust: new THREE.MeshStandardMaterial({ color: 0x4b3a2e, roughness: 0.7, metalness: 0.5 }),
-  belt: new THREE.MeshStandardMaterial({ color: 0x15191d, roughness: 0.9 }), // the webbing
+  belt: new THREE.MeshStandardMaterial({ color: 0x3a3d42, roughness: 0.9 }), // the webbing, dark grey so it shows on black vinyl
   amber: new THREE.MeshStandardMaterial({ color: 0xd88a18, roughness: 0.3 }),
 };
 
@@ -181,52 +181,60 @@ function seeded(seed) {
   return () => ((v = (v * 16807) % 2147483647) / 2147483647);
 }
 
-/** A flat label (plate, badge, rip) on a plane of w by h metres, facing +Z; the caller places and turns it. Has a map, so it isn't merged. */
+/**
+ * A flat label (plate, badge, rip) on a plane of w by h metres, facing +Z; the caller places and turns it. Has a map, so it isn't merged.
+ * `draw(g, W, H)` draws in pixels of a canvas `px` to the metre, because browsers mangle text set at a fraction of a pixel.
+ */
 function label(w, h, px, draw, parent) {
-  const tex = canvasTexture(Math.round(w * px), Math.round(h * px), (g, cw, ch) => {
-    g.scale(cw / w, ch / h);
-    draw(g, w, h);
-  });
+  const tex = canvasTexture(Math.round(w * px), Math.round(h * px), (g, cw, ch) => draw(g, cw, ch));
   const mat = new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.5, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
-  const m = add(new THREE.PlaneGeometry(w, h), mat, parent);
-  return m;
+  return add(new THREE.PlaneGeometry(w, h), mat, parent);
 }
 
-/** A number plate, white at the front and yellow at the back, with the registration in black. */
+/** Text of at most `size` pixels, shrunk until it is no wider than `maxW`, centred on (x, y). */
+function fitText(g, str, x, y, size, maxW, weight = 'bold') {
+  g.font = `${weight} ${size}px Helvetica, Arial, sans-serif`;
+  const w = g.measureText(str).width;
+  if (w > maxW) g.font = `${weight} ${size * (maxW / w)}px Helvetica, Arial, sans-serif`;
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText(str, x, y);
+}
+
+/** A number plate, white at the front and yellow at the back, with the registration in black, filling most of it. */
 function plate(text, bg, parent, { x, y, z, facing }) {
-  const m = label(0.5, 0.11, 600, (g, w, h) => {
+  const m = label(0.52, 0.13, 800, (g, W, H) => {
     g.fillStyle = bg;
-    g.fillRect(0, 0, w, h);
+    g.fillRect(0, 0, W, H);
     g.strokeStyle = '#111';
-    g.lineWidth = 0.004;
-    g.strokeRect(0.004, 0.004, w - 0.008, h - 0.008);
+    g.lineWidth = H * 0.04;
+    g.strokeRect(H * 0.03, H * 0.03, W - H * 0.06, H - H * 0.06);
     g.fillStyle = '#111';
-    g.font = 'bold 0.082px Helvetica, Arial, sans-serif';
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    g.fillText(text, w / 2, h / 2 + 0.004);
+    fitText(g, text, W / 2, H / 2 + H * 0.03, H * 0.72, W * 0.86);
   }, parent);
   m.position.set(x, y, z);
   if (facing < 0) m.rotation.y = Math.PI;
   return m;
 }
 
-/** A green oval badge with the name in white, as on the grille panel and the back door. */
-function badge(parent, { x, y, z, facing, w = 0.2 }) {
-  const m = label(w, w * 0.4, 500, (g, bw, bh) => {
-    g.fillStyle = '#d6d3c4';
-    g.beginPath();
-    g.ellipse(bw / 2, bh / 2, bw / 2 - 0.002, bh / 2 - 0.002, 0, 0, Math.PI * 2);
-    g.fill();
-    g.fillStyle = '#1f4a2c';
-    g.beginPath();
-    g.ellipse(bw / 2, bh / 2, bw / 2 - 0.009, bh / 2 - 0.009, 0, 0, Math.PI * 2);
-    g.fill();
+/** A green oval badge with the name in white, on one line or two ("LAND" over "ROVER", for the tailgate). */
+function badge(parent, { x, y, z, facing, w = 0.2, h = w * 0.4, twoLines = false, px = 700 }) {
+  const m = label(w, h, px, (g, W, H) => {
+    const oval = (inset, colour) => {
+      g.fillStyle = colour;
+      g.beginPath();
+      g.ellipse(W / 2, H / 2, W / 2 - inset, H / 2 - inset, 0, 0, Math.PI * 2);
+      g.fill();
+    };
+    oval(H * 0.02, '#d6d3c4');
+    oval(H * 0.1, '#1f4a2c');
     g.fillStyle = '#f2efe2';
-    g.font = `bold ${bh * 0.34}px Helvetica, Arial, sans-serif`;
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    g.fillText('LAND ROVER', bw / 2, bh / 2 + bh * 0.02);
+    if (twoLines) {
+      fitText(g, 'LAND', W / 2, H * 0.36, H * 0.3, W * 0.5);
+      fitText(g, 'ROVER', W / 2, H * 0.66, H * 0.3, W * 0.62);
+    } else {
+      fitText(g, 'LAND ROVER', W / 2, H / 2 + H * 0.02, H * 0.34, W * 0.78);
+    }
   }, parent);
   m.position.set(x, y, z);
   if (facing < 0) m.rotation.y = Math.PI;
@@ -320,7 +328,10 @@ function trimMaterials() {
 
 /** A tear in the driver's seat: the vinyl split open, the yellow foam showing, a strip of silver tape across one end. */
 function seatRip(parent) {
-  return label(0.2, 0.14, 700, (g, w, h) => {
+  return label(0.2, 0.14, 700, (g, W, H) => {
+    const w = 0.2;
+    const h = 0.14;
+    g.scale(W / w, H / h); // drawn in metres
     const rand = seeded(3);
     const edge = [[0.02, 0.07], [0.05, 0.03], [0.09, 0.045], [0.12, 0.02], [0.16, 0.04], [0.18, 0.075], [0.15, 0.105], [0.12, 0.1], [0.09, 0.125], [0.05, 0.1]];
     g.beginPath();
@@ -459,11 +470,11 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   badge(root, { x: 0, y: 0.89, z: 1.648, facing: 1, w: 0.2 }); // the maker's badge on the grille
   for (const s of [-1, 1]) {
     const x = s * 0.6;
-    rbox(0.48, 0.03, 0.9, 0.01, paint, x, 1.06, 1.15, root, 'wingTop'); // the flat top, which you can stand a mug on
-    archPanel(s * 0.84, 0.03, 0.75, 1.075, 0.7, 1.6, 1.115, paint, root); // the outer side, with the wheel arch cut in it
+    rbox(0.48, 0.03, 1.0, 0.01, paint, x, 1.06, 1.1, root, 'wingTop'); // the flat top, which you can stand a mug on
+    archPanel(s * 0.84, 0.03, 0.75, 1.075, 0.6, 1.6, 1.115, paint, root); // the outer side, with the wheel arch cut in it
     archFlare(s * 0.86, 1.115, paint, root);
     rbox(0.48, 0.36, 0.03, 0.01, paint, x, 0.88, 1.6, root); // the front face, with the lamp
-    rbox(0.03, 0.34, 0.9, 0.01, paint, s * 0.36, 0.9, 1.15, root); // the inner side, against the engine bay
+    rbox(0.03, 0.34, 1.0, 0.01, paint, s * 0.36, 0.9, 1.1, root); // the inner side, against the engine bay
     const bezel = add(new THREE.CylinderGeometry(0.1, 0.1, 0.04, 22).rotateX(Math.PI / 2), MAT.galv, root);
     bezel.position.set(x, 0.9, 1.62);
     const lamp = add(new THREE.CylinderGeometry(0.085, 0.085, 0.02, 22).rotateX(Math.PI / 2), lensMat, root);
@@ -519,8 +530,10 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
     glass.position.x = s * 0.82;
     rbox(0.03, 0.03, 0.1, 0.008, MAT.galv, s * 0.845, 1.07, -0.3, root); // the handle
     for (const z of [0.42, 0.18]) rbox(0.02, 0.06, 0.06, 0.005, MAT.galv, s * 0.84, 1.0, z, root); // the hinges, on the outside
-    rbox(0.04, 1.2, 0.12, 0.01, paint, s * 0.82, 1.22, -0.5, root); // the B pillar
+    rbox(0.04, 1.2, 0.22, 0.01, paint, s * 0.82, 1.22, -0.56, root); // the B pillar, out to the cab's rear panel
     rbox(0.04, 0.42, 0.2, 0.01, paint, s * 0.82, 0.75, -0.62, root); // the cab side behind the door
+    rbox(0.05, 0.09, 1.2, 0.01, MAT.chassis, s * 0.82, 0.55, 0.0, root); // the sill under the door, closing the gap to the chassis
+    rbox(0.04, 0.64, 0.14, 0.01, paint, s * 0.82, 0.87, 0.65, root); // the hinge pillar between the door and the wing
   }
   // The cab's rear panel in four pieces round a real opening, with the glass set in the middle of it: glass laid on a whole
   // panel's face fights it for the same depth and flickers.
@@ -569,6 +582,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   column.add(wheel);
   add(new THREE.TorusGeometry(0.21, 0.012, 8, 36).rotateX(Math.PI / 2), MAT.black, wheel);
   add(new THREE.CylinderGeometry(0.045, 0.045, 0.035, 14), MAT.black, wheel); // the boss
+  badge(wheel, { x: 0, y: 0.0185, z: 0, facing: 1, w: 0.07, h: 0.035, px: 1200 }).rotation.set(-Math.PI / 2, 0, Math.PI); // the badge in its centre, facing the driver
   for (let i = 0; i < 4; i++) {
     const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
     tube([0, 0, 0], [Math.sin(a) * 0.21, 0, Math.cos(a) * 0.21], 0.007, MAT.galv, wheel, 5);
@@ -588,6 +602,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
 
   // The dash: a flat painted panel across the cab under the screen, with the binnacle in front of the driver.
   rbox(1.56, 0.12, 0.2, 0.02, trim.dash, 0, 1.08, 0.5, root); // the padded dash top
+  badge(root, { x: 0.3, y: 1.085, z: 0.396, facing: -1, w: 0.14, h: 0.056 }); // the maker's badge on the glovebox side of the dash
   const dash = buildDash(dashStyle);
   dash.group.position.set(-0.42, 1.21, 0.48);
   dash.group.rotation.x = 0.55;
@@ -597,15 +612,16 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   quad.userData.dash = dash;
   quad.userData.podMount = null;
 
-  // Knobs on the dash under the binnacle: the choke and the hand throttle, each pulled out towards the driver on a long shaft that
+  // Knobs on the dash under the binnacle, over the edge of the gearbox tunnel where you see them past the wheel (the hand throttle on the
+  // left of the choke): the choke and the hand throttle, each pulled out towards the driver on a long shaft that
   // runs back into the dash, so it stays joined to it however far it is out (the pose moves the group by up to KNOB_TRAVEL).
-  for (const [name, x] of [['chokeKnob', -0.2], ['handThrottleKnob', -0.62]]) {
+  for (const [name, x, mat] of [['chokeKnob', -0.26, MAT.red], ['handThrottleKnob', -0.16, MAT.galv]]) {
     const knob = new THREE.Group();
     knob.name = name;
     knob.userData.keep = true;
-    knob.position.set(x, 1.04, KNOB_Z);
+    knob.position.set(x, 1.095, KNOB_Z);
     tube([0, 0, 0.16], [0, 0, -0.05], 0.005, MAT.galv, knob, 6);
-    add(new THREE.CylinderGeometry(0.016, 0.016, 0.026, 12).rotateX(Math.PI / 2), MAT.knob, knob).position.set(0, 0, -0.058);
+    add(new THREE.CylinderGeometry(0.02, 0.02, 0.028, 12).rotateX(Math.PI / 2), mat, knob).position.set(0, 0, -0.059); // light heads, to show on the black dash
     root.add(knob);
   }
   // The levers on the tunnel: the gear lever, the transfer lever with its yellow knob (4WD, pushed down) and a red knob for the diff lock.
@@ -662,10 +678,10 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   }
   rbox(1.6, 0.4, 0.04, 0.01, paint, 0, 1.18, -1.95, root, 'tailgate');
   rbox(1.6, 0.34, 0.04, 0.01, paint, 0, 0.8, -1.95, root); // the rear body panel under it
-  for (const y of [1.09, 1.27]) rbox(1.5, 0.02, 0.01, 0.004, paint, 0, y, -1.975, root); // the tailgate's pressings
-  rbox(0.1, 0.04, 0.02, 0.006, MAT.galv, 0, 1.12, -1.975, root); // its catch
+  for (const y of [1.03, 1.35]) rbox(1.5, 0.02, 0.01, 0.004, paint, 0, y, -1.975, root); // the tailgate's pressings
+  rbox(0.1, 0.04, 0.02, 0.006, MAT.galv, 0, 1.07, -1.975, root); // its catch
   plate(PLATE, '#e8c51c', root, { x: 0, y: 0.78, z: -1.9755, facing: -1 }); // the rear number plate
-  badge(root, { x: 0, y: 1.2, z: -1.9755, facing: -1, w: 0.26 }); // the maker's badge on the tailgate
+  badge(root, { x: 0, y: 1.2, z: -1.9755, facing: -1, w: 0.2, h: 0.14, twoLines: true }); // the maker's badge on the tailgate, on two lines
   // The rear crossmember with the towing jaw: a pin through a jaw, where the trailer's ring goes.
   rbox(1.0, 0.12, 0.1, 0.01, MAT.chassis, 0, 0.56, -1.95, root);
   rbox(0.08, 0.08, 0.1, 0.01, MAT.steel, TOW_HITCH.x, TOW_HITCH.y, TOW_HITCH.z + 0.02, root);
@@ -677,12 +693,13 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
     root.add(o);
   }
 
-  // The exhaust: a silencer under the right side and a tailpipe out behind the rear wheel.
-  add(new THREE.CylinderGeometry(0.07, 0.07, 0.6, 14).rotateX(Math.PI / 2), MAT.rust, root).position.set(-0.6, 0.38, -0.5);
-  tube([-0.6, 0.38, -0.8], [-0.65, 0.34, -1.6], 0.022, MAT.rust, root, 6);
+  // The exhaust: a silencer under the right side, inboard of the rail, and a tailpipe running well inside the rear wheel to come out under
+  // the back, clear of it so you can see it.
+  add(new THREE.CylinderGeometry(0.07, 0.07, 0.6, 14).rotateX(Math.PI / 2), MAT.rust, root).position.set(-0.34, 0.38, -0.6);
+  tube([-0.34, 0.38, -0.9], [-0.36, 0.34, -2.04], 0.022, MAT.rust, root, 6);
   const tip = new THREE.Object3D();
   tip.name = 'exhaustTip';
-  tip.position.set(-0.65, 0.34, -1.6);
+  tip.position.set(-0.36, 0.34, -2.04);
   root.add(tip);
 
   // The seats' anchors: hips on the cushions. The driver's is yours; the other two are where the girls sit.
@@ -726,16 +743,35 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
 }
 
 /**
+ * The gear lever's lean (radians) for a gear, in the usual H: first top-left, second below it, third top-right, fourth below that, and
+ * reverse top-left of first, with neutral in the middle. Top is forward, away from the driver; the driver's left is +x, so a lean to the
+ * left is a negative turn about z. `along` is the turn about x (positive leans forward).
+ */
+export function gearLeverPose(gear) {
+  const LEFT = -0.12;
+  const RIGHT = 0.12;
+  const FAR_LEFT = -0.3;
+  const FORWARD = 0.25;
+  const BACK = -0.25;
+  switch (gear) {
+    case -1: return { along: FORWARD, across: FAR_LEFT };
+    case 1: return { along: FORWARD, across: LEFT };
+    case 2: return { along: BACK, across: LEFT };
+    case 3: return { along: FORWARD, across: RIGHT };
+    case 4: return { along: BACK, across: RIGHT };
+    default: return { along: 0, across: 0 };
+  }
+}
+
+/**
  * Poses the levers and knobs: the gear lever leans with the gear (-1 reverse to 4), the yellow 4WD knob and the red diff lock knob go
  * down when engaged, the choke and hand throttle knobs pull out towards the driver, and the handbrake lever goes up with the brake.
  */
 export function poseLandyControls(model, { gear = 0, fourWd = false, locked = false, choke = 0, hand = 0, park = false }) {
   const g = model.getObjectByName('gearLever');
   if (!g) return;
-  // An H: first and second to the left, third and fourth to the right, reverse further left; odd gears forward.
-  const across = { '-1': 0.25, 0: 0, 1: 0.14, 2: 0.14, 3: -0.14, 4: -0.14 }[gear] ?? 0;
-  const along = gear === 0 ? 0 : gear % 2 !== 0 ? -0.25 : 0.25;
-  g.rotation.set(along, 0, across);
+  const pose = gearLeverPose(gear);
+  g.rotation.set(pose.along, 0, pose.across);
   model.getObjectByName('transferKnob').position.y = 0.84 - (fourWd ? 0.05 : 0);
   model.getObjectByName('diffLockKnob').position.y = 0.84 - (locked ? 0.05 : 0);
   model.getObjectByName('chokeKnob').position.z = KNOB_Z - KNOB_TRAVEL * choke;

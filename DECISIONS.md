@@ -2300,3 +2300,13 @@ The Series III already had its chassis, leaf springs, grille, dash and tub, but 
   - *Also*: a rear-view mirror, and hinges and a catch on the tailgate.
 - Not changed: the colliders, seats, controls and the sound. Not verified in the running game or by screenshot (the model needs a canvas for its dash, so only the arch geometry is unit tested); worth a look for z-fighting at the flares.
 
+## Land Rover, third pass, and the UTV's empty seat
+
+- **Gaps**: the B pillar was 0.12 m deep and the cab's rear panel starts 0.06 m behind it, leaving a slot you could see through; it is 0.22 m now. The wings' outer sides, tops and inner sides start at the bulkhead (z 0.6) instead of 0.7, and a hinge pillar and a sill under each door close the rest.
+- **Badges and plates**: label canvases are drawn in pixels now (the first pass drew text at a fraction of a pixel, which the browser spaced badly, so characters overlapped); the registration is sized to fill the plate. The tailgate badge is on two lines, LAND over ROVER. A small badge is on the dash and in the middle of the steering wheel.
+- **Dash**: four lamps, ignition, oil, handbrake and choke (with a choke symbol, drawn like the others). No belt lamp (a Series III had none), and no 4WD or diff lock lamps. The Land Rover's belts still work and the girls buckle up, but there is no bong either: `updateLandRover` ignores the nag.
+- **Knobs**: the hand throttle is on the left of the choke, both over the edge of the gearbox tunnel at the dash's face, raised to 1.095 m, with light heads (grey and red) so they show on the black dash.
+- **Gear lever** (`gearLeverPose`, tested): a normal H, first top-left (forward, away from you), second below it, third top-right, fourth below that, and reverse top-left of first. Before, the two columns were the wrong way round and first and third were back towards you.
+- **Exhaust**: the pipe ran through the rear wheel. The silencer is 0.34 m from the middle and the pipe runs straight back inside the wheel to come out under the tailgate, where it shows.
+- **UTV belt nag**: with the key on and nobody in the driver's seat the lamp flashes and the bong sounds after the usual 1.5 s (`SeatBelts.emptyFor`), whoever is nearby, since someone is expected to be sitting there. A girl who has just sat down is left her two seconds. The Land Rover's `SeatBelts` has the same logic but nothing reads it.
+

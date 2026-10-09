@@ -1878,7 +1878,7 @@ export class Game {
       say(near, 'landyKick');
     }
 
-    // The seat belts, as the UTV's: `;` for yours, and the girls do their own (vehicle/seatBelts.js).
+    // The seat belts, as the UTV's but without its lamp and bong: `;` for yours, and the girls do their own (vehicle/seatBelts.js).
     const youSeat = riding ? 'driver' : this.player.isRiding && q.passenger ? this.player.benchSeat : null;
     const sitting = { driver: null, mid: null, left: null };
     if (youSeat) sitting[youSeat] = 'you';
@@ -1887,7 +1887,7 @@ export class Game {
       if (seat && seat in sitting) sitting[seat] = 'girl';
     }
     if (youSeat && input.wasPressed('Semicolon')) q.belts.toggle(youSeat);
-    if (q.belts.update(dt, sitting, q.engine.ignitionOn, dashClock().seconds())) this.audioHub.beltBing();
+    q.belts.update(dt, sitting, q.engine.ignitionOn, dashClock().seconds()); // an old Land Rover has no belt lamp and doesn't bong
 
     const girls = this.companions.map((c) => ({
       id: c.character.id,

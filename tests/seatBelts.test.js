@@ -48,11 +48,17 @@ describe('SeatBelts', () => {
 
   it('flags someone sitting unbelted, for the lamp', () => {
     const b = new SeatBelts();
-    expect(b.anyUnbelted).toBe(false);
     b.update(0.1, { ...nobody, driver: 'you' }, true, 0);
     expect(b.anyUnbelted).toBe(true);
     b.toggle('driver');
     expect(b.anyUnbelted).toBe(false);
+  });
+
+  it('counts an empty driver\'s seat as unbelted too, since someone is expected in it', () => {
+    const b = new SeatBelts();
+    expect(b.anyUnbelted).toBe(true);
+    b.update(0.1, { ...nobody, mid: 'girl' }, true, 0);
+    expect(b.anyUnbelted).toBe(true);
   });
 });
 
@@ -66,7 +72,7 @@ describe('the bing', () => {
     expect(bings).toBeLessThanOrEqual(4);
   });
 
-  it('stops once you buckle up, and never sounds with the key off or with nobody there', () => {
+  it('stops once you buckle up, and never sounds with the key off', () => {
     const b = new SeatBelts();
     const you = { ...nobody, driver: 'you' };
     run(b, 5, you);
@@ -74,7 +80,15 @@ describe('the bing', () => {
     expect(run(b, 20, you)).toBe(0);
     const c = new SeatBelts();
     expect(run(c, 20, you, false)).toBe(0);
-    expect(run(c, 20, nobody)).toBe(0);
+    expect(run(c, 20, nobody, false)).toBe(0);
+  });
+
+  it('sounds with the key on and nobody in the driver\'s seat, after the delay, and stops when a girl takes it and buckles up', () => {
+    const b = new SeatBelts();
+    expect(run(b, P.nagDelay - 0.3, nobody)).toBe(0);
+    expect(run(b, P.bingEvery * 3, nobody)).toBeGreaterThanOrEqual(3);
+    expect(run(b, P.girlSeconds + 0.5, { ...nobody, driver: 'girl' }) <= 1).toBe(true); // at most the one already due
+    expect(run(b, 20, { ...nobody, driver: 'girl' })).toBe(0);
   });
 
   it('sounds as the lamp lights, and no faster than the interval', () => {
@@ -92,7 +106,7 @@ describe('the bing', () => {
   });
 
   it('is not set off by a girl who has not yet buckled up', () => {
-    expect(run(new SeatBelts(), 30, { ...nobody, mid: 'girl' }) <= 0).toBe(true);
+    expect(run(new SeatBelts(), 30, { ...nobody, driver: 'girl' }) <= 0).toBe(true);
   });
 });
 

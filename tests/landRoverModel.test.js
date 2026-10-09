@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import * as THREE from 'three';
-import { archPanel, buildLandRoverModel, poseLandyControls, LANDY_LAYOUT, LANDY_BELTS, TUB_FLOOR } from '../src/vehicle/landRoverModel.js';
+import { archPanel, buildLandRoverModel, poseLandyControls, gearLeverPose, LANDY_LAYOUT, LANDY_BELTS, TUB_FLOOR } from '../src/vehicle/landRoverModel.js';
 import { poseUtvBelts } from '../src/vehicle/utvModel.js';
 
 // A canvas that accepts every drawing call and does nothing, so the model (whose dash and trim are drawn on canvases) builds in node.
@@ -78,5 +78,35 @@ describe('Land Rover model', () => {
     // Fully out, the shaft's back end is still well inside the dash (the shelf's face is at z 0.4), so it never floats free.
     knob.updateMatrixWorld(true);
     expect(new THREE.Box3().setFromObject(knob).max.z).toBeGreaterThan(0.4 + 0.05);
+  });
+});
+
+describe('the gear lever\'s H', () => {
+  // Top is forward (a positive lean about x); the driver's left is +x, which is a negative lean about z.
+  const g = (n) => gearLeverPose(n);
+  it('puts first top-left, second below it, third top-right and fourth below that', () => {
+    expect(g(1).along).toBeGreaterThan(0);
+    expect(g(2).along).toBeLessThan(0);
+    expect(g(3).along).toBeGreaterThan(0);
+    expect(g(4).along).toBeLessThan(0);
+    expect(g(1).across).toBe(g(2).across);
+    expect(g(3).across).toBe(g(4).across);
+    expect(g(1).across).toBeLessThan(g(3).across); // the left column is further left
+  });
+  it('puts reverse top-left of first, and neutral in the middle', () => {
+    expect(g(-1).along).toBe(g(1).along);
+    expect(g(-1).across).toBeLessThan(g(1).across);
+    expect(g(0)).toEqual({ along: 0, across: 0 });
+  });
+  it('really moves the lever the way the maths says (left is +x for the driver)', () => {
+    const lever = new THREE.Object3D();
+    const tip = (gear) => {
+      lever.rotation.set(gearLeverPose(gear).along, 0, gearLeverPose(gear).across);
+      lever.updateMatrixWorld(true);
+      return new THREE.Vector3(0, 1, 0).applyMatrix4(lever.matrixWorld);
+    };
+    expect(tip(1).x).toBeGreaterThan(tip(3).x); // first is on the driver's left
+    expect(tip(1).z).toBeGreaterThan(tip(2).z); // and further forward than second
+    expect(tip(-1).x).toBeGreaterThan(tip(1).x);
   });
 });

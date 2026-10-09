@@ -50,7 +50,7 @@ export const CONTROLS = [
     lines: [
       `<kbd>K</kbd> key (wait for the GLOW lamp to go out), hold <kbd>R</kbd> to crank; the key stops it again. It is a diesel: red diesel only`,
       `<kbd>W</kbd> throttle, <kbd>S</kbd> brake, <kbd>A</kbd><kbd>D</kbd> steer. Stopped, <kbd>B</kbd> moves the console's lever from F to R, then <kbd>S</kbd> backs up`,
-      `<kbd>G</kbd> 2WD or 4WD, <kbd>U</kbd> diff lock (the switches on the console), <kbd>P</kbd> lights: off, dipped, main beam (the LIGHTS lamp goes blue), <kbd>L</kbd> horn, <kbd>;</kbd> seat belt (leave it off with the key on and the BELT lamp flashes and it bongs every couple of seconds; the girls always put theirs on)`,
+      `<kbd>G</kbd> 2WD or 4WD, <kbd>U</kbd> diff lock (the switches on the console), <kbd>P</kbd> lights: off, dipped, main beam (the LIGHTS lamp goes blue), <kbd>L</kbd> horn, <kbd>;</kbd> seat belt (leave it off, or leave the driver's seat empty, with the key on and the BELT lamp flashes and it bongs every couple of seconds; the girls always put theirs on)`,
       `<kbd>T</kbd> tip the bed (stopped, from the seat or beside it), again to lower it. Stop with it running and the girls may climb in. Ask them from the wheel too`,
     ],
   },
@@ -58,7 +58,7 @@ export const CONTROLS = [
     title: 'The Land Rover',
     lines: [
       `<kbd>K</kbd> key, hold <kbd>R</kbd> to start. Battery flat? Stand at the front: <kbd>1</kbd> thumb round the handle (it can kick back) or <kbd>2</kbd> thumb alongside your fingers, then hold <kbd>P</kbd> and let go to swing the starting handle`,
-      `Hold <kbd>Shift</kbd> for the clutch, <kbd>1</kbd>-<kbd>4</kbd> gears, <kbd>B</kbd> reverse (then <kbd>S</kbd> backs up), <kbd>0</kbd> neutral: first and second crunch on the move. <kbd>Q</kbd><kbd>Z</kbd> choke, <kbd>]</kbd><kbd>[</kbd> hand throttle out and in, <kbd>G</kbd> 4WD, <kbd>U</kbd> diff lock, <kbd>Space</kbd> handbrake, <kbd>;</kbd> seat belt (the BELT lamp flashes and it bongs while you sit unbelted with the key on)`,
+      `Hold <kbd>Shift</kbd> for the clutch, <kbd>1</kbd>-<kbd>4</kbd> gears, <kbd>B</kbd> reverse (then <kbd>S</kbd> backs up), <kbd>0</kbd> neutral: first and second crunch on the move. <kbd>Q</kbd><kbd>Z</kbd> choke, <kbd>]</kbd><kbd>[</kbd> hand throttle out and in, <kbd>G</kbd> 4WD, <kbd>U</kbd> diff lock, <kbd>Space</kbd> handbrake, <kbd>;</kbd> seat belt (optional: an old Land Rover has no lamp or bong)`,
     ],
   },
   {

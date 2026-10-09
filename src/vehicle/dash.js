@@ -535,6 +535,20 @@ function warnSymbol(ctx, kind, x, y, colour, lit) {
     ctx.beginPath();
     ctx.arc(x + 6.2, y + 2.6, 1.1, 0, Math.PI * 2);
     ctx.fill();
+  } else if (kind === 'choke') {
+    // A choke: the carb's throat with its flap closed across it and an arrow of air coming in.
+    ctx.moveTo(x - 7, y - 4);
+    ctx.lineTo(x + 7, y - 4);
+    ctx.moveTo(x - 7, y + 4);
+    ctx.lineTo(x + 7, y + 4);
+    ctx.moveTo(x + 2.5, y - 4);
+    ctx.lineTo(x - 2.5, y + 4);
+    ctx.moveTo(x - 7, y);
+    ctx.lineTo(x - 4, y);
+    ctx.moveTo(x - 5.4, y - 1.6);
+    ctx.lineTo(x - 3.8, y);
+    ctx.lineTo(x - 5.4, y + 1.6);
+    ctx.stroke();
   } else if (kind === 'park') {
     // A P in a circle.
     ctx.arc(x, y, 5.4, 0, Math.PI * 2);
@@ -676,21 +690,15 @@ function buildSeries() {
   let shownTemp = 0;
 
   function draw(ctx, s, L) {
-    // The lamp strip: ignition and oil in red, the handbrake red, the belts red, then the choke, 4WD and diff lock under their words.
+    // The lamp strip: ignition and oil in red, the handbrake red, the choke amber. A Series III has nothing else (no belt lamp, no 4WD lamp).
     ctx.fillStyle = '#121213';
     ctx.beginPath();
     ctx.roundRect(88, 18, 184, 17, 3);
     ctx.fill();
-    warnSymbol(ctx, 'charge', 104, 26.5, LAMP.red, L.charge);
-    warnSymbol(ctx, 'oil', 126, 26.5, LAMP.red, L.oil);
-    warnSymbol(ctx, 'park', 148, 26.5, LAMP.red, L.park);
-    warnSymbol(ctx, 'belt', 170, 26.5, LAMP.red, L.belt);
-    lamp(ctx, 192, 26.5, LAMP.amber, '', L.choke, { r: 2.6 });
-    text(ctx, 'CHOKE', 192, 33.8, 3, '#bbb', { align: 'center' });
-    lamp(ctx, 220, 26.5, LAMP.green, '', L.fourWd, { r: 2.6, shape: 'rect' });
-    text(ctx, '4WD', 220, 33.8, 3, '#bbb', { align: 'center' });
-    lamp(ctx, 246, 26.5, LAMP.amber, '', L.lock, { r: 2.6, shape: 'rect' });
-    text(ctx, 'DIFF', 246, 33.8, 3, '#bbb', { align: 'center' });
+    warnSymbol(ctx, 'charge', 118, 26.5, LAMP.red, L.charge);
+    warnSymbol(ctx, 'oil', 158, 26.5, LAMP.red, L.oil);
+    warnSymbol(ctx, 'park', 198, 26.5, LAMP.red, L.park);
+    warnSymbol(ctx, 'choke', 238, 26.5, LAMP.amber, L.choke);
     // The speedo: 0 to 90 mph round 260 degrees, white on black, with the odometer's drums under the boss.
     ctx.fillStyle = '#0b0b0b';
     ctx.beginPath();
@@ -739,12 +747,9 @@ function buildSeries() {
         oil: on && (!running || !!s.oilLow),
         choke: on && (s.choke ?? 0) > 0.05,
         park: on && !!s.parkBrake,
-        belt: on && !!s.beltLamp,
-        fourWd: on && !!s.fourWd,
-        lock: on && !!s.diffLock,
       };
       const odo = counterDigits(s.odoMiles, 5);
-      if (gate([on, s.keyOn, L.charge, L.oil, L.choke, L.park, L.belt, L.fourWd, L.lock, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
+      if (gate([on, s.keyOn, L.charge, L.oil, L.choke, L.park, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
         face.redraw((ctx) => draw(ctx, s, L));
       }
     },

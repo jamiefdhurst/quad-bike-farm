@@ -1,6 +1,7 @@
 // The UTV's seat belts. Whoever sits in the bench or the driver's seat has one: the girls always buckle up a moment after they sit down
 // and undo it when they get out, and you do it with a key (and are nagged if you don't: the dash lamp flashes and a quiet bing sounds
-// every few seconds while you are sat unbelted with the key on). Pure logic, so it is tested without the game
+// every few seconds while you are sat unbelted with the key on, or while the driver's seat is empty, since someone is expected in it).
+// Pure logic, so it is tested without the game
 // (tests/seatBelts.test.js); the model shows each belt stowed or worn (`poseUtvBelts` in utvModel.js).
 
 export const BELT_SEATS = ['driver', 'mid', 'left'];
@@ -27,6 +28,7 @@ export class SeatBelts {
     this.seats = Object.fromEntries(BELT_SEATS.map((s) => [s, { who: null, sat: 0, belted: false }]));
     this.sinceBing = 0;
     this.wasLit = false;
+    this.emptyFor = 0; // seconds the key has been on with nobody in the driver's seat
   }
 
   /**
@@ -47,7 +49,10 @@ export class SeatBelts {
       if (now === 'girl' && seat.sat >= this.p.girlSeconds) seat.belted = true;
     }
     const yours = Object.values(this.seats).find((s) => s.who === 'you');
-    const nagging = !!keyOn && !!yours && !yours.belted && yours.sat >= this.p.nagDelay;
+    // The driver's seat is expected to be filled and buckled whenever the key is on, so an empty one nags too (a girl who has just sat
+    // down is left to her two seconds).
+    this.emptyFor = keyOn && !this.seats.driver.who ? this.emptyFor + dt : 0;
+    const nagging = !!keyOn && ((!!yours && !yours.belted && yours.sat >= this.p.nagDelay) || this.emptyFor >= this.p.nagDelay);
     const lit = beltLampLit('flash', seconds, this.p);
     const edge = lit && !this.wasLit;
     this.wasLit = lit;
@@ -74,9 +79,9 @@ export class SeatBelts {
     return Object.fromEntries(BELT_SEATS.map((s) => [s, this.seats[s].belted]));
   }
 
-  /** Someone is sitting there with their belt off (the dash lamp's cue). */
+  /** Someone is sitting there with their belt off, or the driver's seat is empty (the dash lamp's cue, with the key on). */
   get anyUnbelted() {
-    return Object.values(this.seats).some((s) => s.who && !s.belted);
+    return Object.values(this.seats).some((s) => s.who && !s.belted) || !this.seats.driver.who;
   }
 }
 
