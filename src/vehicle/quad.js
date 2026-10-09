@@ -42,7 +42,7 @@ const CHOKE_REPEAT_INTERVAL = 0.12;
 // The manual controls: Shift is the clutch, 1 to 4 the gears, 0 neutral and B reverse. The tractor also sets the quads' choke keys and
 // automatic drive aside: Q and Z move its hand throttle and O pulls its stop knob.
 const CLUTCH_KEYS = ['ShiftLeft', 'ShiftRight'];
-const GEAR_KEYS = { Digit1: 1, Digit2: 2, Digit3: 3, Digit4: 4, Digit0: 0, KeyB: -1 };
+const GEAR_KEYS = { Digit1: 1, Digit2: 2, Digit3: 3, Digit4: 4, Digit5: 5, Digit0: 0, KeyB: -1 };
 const HAND_THROTTLE_UP_KEY = 'KeyQ';
 const HAND_THROTTLE_DOWN_KEY = 'KeyZ';
 const STOP_KNOB_KEY = 'KeyO'; // not X (the tow chain and winch) or C (look back)
@@ -85,7 +85,7 @@ export class Quad {
     this.landRover = landRover;
     this.utv = utv;
     this.hornHeld = false; // set by the game while the horn sounds (the UTV's wheel pad sinks)
-    this.lights = lightSwitch ? new LightSwitch() : null; // the UTV's three-way light switch: off, dipped, main beam (lightSwitch.js)
+    this.lights = lightSwitch ? new LightSwitch() : null; // the UTV's and the Land Rovers' three-way light switch: off, dipped, main beam (lightSwitch.js)
     this.belts = lightSwitch || landRover ? new SeatBelts() : null; // the UTV's and the Land Rover's seat belts (seatBelts.js)
     this.driverStand = driverStand; // where a girl climbs in to drive from, on the model's right: the UTV and Land Rover step in through a door ({ x, z } in the model's frame, x negative: the right)
     this.benchStand = benchStand; // where you get in and out beside the bench, on the model's left (the other side from the driver's door), same frame as above
@@ -607,10 +607,10 @@ export class Quad {
     // A girl swinging it (helperPull) holds it her own way (helperGrip): Jess wraps her thumb round it, Amy never does.
     const byYou = !!this.remoteInput && this.atCrank && this.crank?.ready && this.remoteInput.isDown('KeyP');
     const byHer = this.helperPull && this.crank?.ready;
-    const pullDown = this.lights
-      ? false // P is the UTV's light switch
-      : this.crank
-      ? byYou || byHer
+    const pullDown = this.crank
+      ? byYou || byHer // the Series' starting handle, from the front on foot (its lights are on P too, but only from the seat)
+      : this.lights
+      ? false // P is the UTV's and the 200TDi's light switch
       : this.input ? this.input.isDown('KeyP') : (!!this.remoteInput && this.remoteInput.isDown('KeyP')) || this.helperPull;
     if (pullDown) {
       this.pullHeld += dt;
@@ -1007,7 +1007,7 @@ export class Quad {
       poseUtvBelts(this.model, this.belts.worn());
     }
     if (this.landRover) {
-      poseLandyControls(this.model, { gear: this.drivetrain.gear, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, choke: this.choke, hand: this.handSetting, park: this.parkBrake });
+      poseLandyControls(this.model, { gear: this.drivetrain.gear, gears: this.gearbox.gears, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, choke: this.choke, hand: this.handSetting, park: this.parkBrake });
       poseUtvBelts(this.model, this.belts.worn()); // the same belt names as the UTV's
     }
     this.displayChoke += (this.choke - this.displayChoke) * Math.min(1, 12 * dt);

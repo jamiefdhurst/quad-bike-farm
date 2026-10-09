@@ -129,7 +129,7 @@ export const FAQ_SECTIONS = [
         q: 'How do the gears work?',
         a: `The blue, orange, kids' and loan quads, the mini moto and the UTV are automatics: <kbd>W</kbd> to go, <kbd>S</kbd> to brake.
           The red, green and yellow quads, the old three-wheeler, the tractor and both Land Rovers have a clutch: hold <kbd>Shift</kbd> and press
-          <kbd>1</kbd> to <kbd>4</kbd> for a gear (the tractor has three), <kbd>B</kbd> for reverse and <kbd>0</kbd> for neutral. Pulling away
+          <kbd>1</kbd> to <kbd>4</kbd> for a gear (the tractor has three, the 200TDi five), <kbd>B</kbd> for reverse and <kbd>0</kbd> for neutral. Pulling away
           in a high gear labours it and can stall it, and rushing a change can land you in a false neutral.`,
       },
       {
@@ -476,8 +476,8 @@ export const FAQ_SECTIONS = [
       {
         q: 'What is the other Land Rover, the 200TDi?',
         a: `A faded pastel green early-90s 90 station wagon with a rattly turbo diesel, a square back and the spare wheel on its rear door. Either Land Rover,
-          both or neither may be on the farm. Start it like the UTV: <kbd>K</kbd>, wait for the GLOW lamp to go out, then hold <kbd>R</kbd>. It has the same
-          clutch and four gears as the old one but with synchromesh, so it never crunches, and it has no choke, hand throttle or starting handle. Its dash
+          both or neither may be on the farm. Start it like the UTV: <kbd>K</kbd>, wait for the GLOW lamp to go out, then hold <kbd>R</kbd>. It has a clutch
+          and a five-speed gearbox (<kbd>1</kbd> to <kbd>5</kbd>) with synchromesh, so it never crunches, and it has no choke, hand throttle or starting handle. Its dash
           has a rev counter and a flashing BELT lamp. It uses red diesel only.`,
         tip: 'The 200TDi is a diesel: wait for the GLOW lamp to go out, then hold R. Red diesel only.',
       },
@@ -487,6 +487,13 @@ export const FAQ_SECTIONS = [
           couple of seconds (quieter the further you are) until you press <kbd>;</kbd> to do it up. The Series III is old enough to have no lamp and no bong, but it has belts if you want
           one (<kbd>;</kbd> too): a diagonal and lap belt in the driver's and the left-hand seat, a lap belt in the middle. The girls buckle up a moment after
           they sit down in either.`
+      },
+      {
+        q: 'How do I turn the lights on in the UTV or a Land Rover?',
+        a: `Sit in it with the key on and press <kbd>P</kbd>: dipped, then main beam, then off again. The UTV has one lamp on its dash that goes green for
+          dipped and blue for main beam. The 200TDi has a green lamp for the lights and a blue one for the main beam. The Series III has no lights lamp, only the
+          blue main beam one. The quads' lights come on with the engine and have no switch.`,
+        tip: 'P switches the lights in the UTV and both Land Rovers: dipped, main beam, off.',
       },
       {
         q: 'How do I put the Land Rover\'s handbrake on?',

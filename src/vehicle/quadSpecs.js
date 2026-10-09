@@ -1187,7 +1187,7 @@ export const LAND_ROVER_SPEC = {
 
 // The early-90s Land Rover 90 County station wagon, the 200TDi: a 2.5 litre turbo diesel, a square back with the spare on its rear door,
 // a newer dash (a rev counter, a belt lamp and bong) and centre console, in a faded pastel green. Built on the Series' model and
-// drive: a unit you drive with a clutch and a four-speed (synchro on all of them, unlike the Series), a transfer lever and a diff lock, a
+// drive: a unit you drive with a clutch and a five-speed (synchro on all of them, unlike the Series' four), a transfer lever and a diff lock, a
 // bench for three. Its engine and sound borrow the UTV's diesel (a different idle and top end, much rattlier). It has glow plugs and the key
 // stops it, so no choke, no hand throttle and no starting handle.
 export const DEFENDER_SPEC = {
@@ -1198,7 +1198,7 @@ export const DEFENDER_SPEC = {
   defender: true,
   scale: 1.15,
   steadyLights: true,
-  wheelShake: 0.9,
+  wheelShake: 0.55,
   bodyColor: 0x8aa38a, // a faded pastel green
   dashStyle: 'defender',
   driveSwitch: true,
@@ -1214,15 +1214,20 @@ export const DEFENDER_SPEC = {
   manual: true,
   gearbox: {
     ...LAND_ROVER_SPEC.gearbox,
+    gears: 5, // the LT77: a fifth to cruise in
     crashGears: 0, // synchromesh on all of them
-    topSpeed1: 5.2,
-    topSpeed2: 9.5,
-    topSpeed3: 16.5,
-    topSpeed4: 28, // about 62 mph
+    topSpeed1: 5.0,
+    topSpeed2: 8.6,
+    topSpeed3: 13.6,
+    topSpeed4: 21,
+    topSpeed5: 32, // about 72 mph flat out: the gears step up about 1.55 each, the top one a little longer
     torque1: 1,
-    torque2: 0.78,
-    torque3: 0.56,
-    torque4: 0.42,
+    torque2: 0.8,
+    torque3: 0.6,
+    torque4: 0.46,
+    torque5: 0.38,
+    launchLoad4: 1.15,
+    launchLoad5: 1.3,
   },
   fuel: { tankCapacity: 54, reserveLitres: 5, startDiesel: 1, noTap: true, startTap: 'on', burnPerRev: 0.00022, idleBurnFraction: 0.3, bowlCapacity: 0.05, bowlFillRate: 0.06 },
   engine: {
@@ -1246,19 +1251,22 @@ export const DEFENDER_SPEC = {
     ...LAND_ROVER_SPEC.vehicle,
     mass: 1750,
     maxDriveForce: 8400, // a turbo diesel's torque
-    maxSpeed: 28,
+    maxSpeed: 32,
     engineBrakeForce: 1300,
     maxBrake: 52,
-    suspensionStiffness: 36, // coil springs, a little more control than the Series' leaves
-    maxSuspensionTravel: 0.2,
+    suspensionStiffness: 32, // coil springs, but not bouncy: Jamie found the first go too bouncy
+    suspensionCompression: 4.4, // damped harder than the Series' (3) so it settles after a bump instead of rocking
+    suspensionRelaxation: 3.8, // (2.6)
+    maxSuspensionTravel: 0.18,
   },
   vibration: {
     ...LAND_ROVER_SPEC.vibration,
-    steadiness: 0.35, // a diesel four rattles and shakes: far less regular than the Series' petrol four
+    steadiness: 0.4, // a diesel four rattles and shakes: far less regular than the Series' petrol four
     idleRpm: 800,
-    pulseGain: 1.9,
-    heaveGain: 0.2,
-    pitchGain: 0.26,
+    pulseGain: 1.4, // (the first go had 1.9, 0.2 and 0.26 for these three: too much body motion at idle)
+    heaveGain: 0.12,
+    pitchGain: 0.16,
+    heaveDamping: 0.45,
   },
   audio: { ...UTV_SPEC.audio, pulseRefRpm: 800 }, // the UTV's Gator diesel for now, at its own idle pace
   smoke: { ...UTV_SPEC.smoke },

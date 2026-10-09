@@ -44,7 +44,8 @@ const HANDBRAKE_ON = -0.1;
 export const TUB_FLOOR = 1.02; // the tub's floor, clear of the wheel tops (0.96) when they ride up
 const KNOB_Z = 0.4; // the dash face the choke and hand throttle knobs come out of
 const KNOB_TRAVEL = 0.1; // how far a knob pulls out
-const PLATE = 'FRM 88L'; // the registration, front and back
+const PLATE = 'FRM 88L'; // the Series' registration, front and back (an L, 1972)
+const PLATE_200 = 'H471 DKP'; // and the 200TDi's (an H, 1990)
 
 /** Where the wheels, their mounts and the bodywork box are, for QuadPhysics. */
 export const LANDY_LAYOUT = {
@@ -103,6 +104,7 @@ const MAT = {
   rust: new THREE.MeshStandardMaterial({ color: 0x4b3a2e, roughness: 0.7, metalness: 0.5 }),
   belt: new THREE.MeshStandardMaterial({ color: 0x3a3d42, roughness: 0.9 }), // the webbing, dark grey so it shows on black vinyl
   amber: new THREE.MeshStandardMaterial({ color: 0xd88a18, roughness: 0.3 }),
+  clear: new THREE.MeshStandardMaterial({ color: 0xdfe4e6, roughness: 0.2 }), // the reverse lens
 };
 
 function add(geo, mat, parent, name) {
@@ -239,6 +241,19 @@ function badge(parent, { x, y, z, facing, w = 0.2, h = w * 0.4, twoLines = false
   }, parent);
   m.position.set(x, y, z);
   if (facing < 0) m.rotation.y = Math.PI;
+  return m;
+}
+
+/** The model's name in small silver letters on a black plate, facing the back. */
+function modelBadge(text, parent, { x, y, z }) {
+  const m = label(0.14, 0.04, 1000, (g, W, H) => {
+    g.fillStyle = '#17181a';
+    g.fillRect(0, 0, W, H);
+    g.fillStyle = '#d4d7da';
+    fitText(g, text, W / 2, H / 2 + H * 0.04, H * 0.72, W * 0.88);
+  }, parent);
+  m.position.set(x, y, z);
+  m.rotation.y = Math.PI;
   return m;
 }
 
@@ -508,7 +523,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   // The front: bumper with the starting-handle hole, the black grille panel between the wings, the flat-topped wings with the headlamps
   // in their faces, the bonnet with the spare wheel on it.
   rbox(1.62, 0.16, 0.12, 0.02, MAT.black, 0, 0.56, 1.78, root); // bumper
-  plate(PLATE, '#ece9de', root, { x: 0.45, y: 0.56, z: 1.8475, facing: 1 }); // the front number plate
+  plate(D ? PLATE_200 : PLATE, '#ece9de', root, { x: 0.45, y: 0.56, z: 1.8475, facing: 1 }); // the front number plate
   for (const s of [-1, 1]) rbox(0.07, 0.17, 0.14, 0.02, MAT.chassis, s * 0.83, 0.56, 1.78, root); // the bumper's ends, turned back
   if (!D) {
     add(new THREE.TorusGeometry(0.035, 0.012, 8, 16), MAT.steel, root).position.set(CRANK_HOLE.x, CRANK_HOLE.y, CRANK_HOLE.z - 0.02); // the hole's ring
@@ -619,7 +634,11 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
     rbox(0.42, 0.1, 0.46, 0.04, trim.seat, seat.x, 0.9, seat.z, root);
     const back = rbox(0.42, 0.48, 0.08, 0.04, trim.seat, seat.x, 1.18, -0.5, root); // clear of the cab's rear panel, even leant back
     back.rotation.x = -0.08;
-    if (D) rbox(0.24, 0.12, 0.07, 0.03, trim.seat, seat.x, 1.52, -0.52, root).rotation.x = -0.08; // a headrest
+    if (D && seat !== LANDY_SEATS.mid) {
+      // A headrest on two steel posts sunk into the top of the backrest (the middle seat has none).
+      rbox(0.24, 0.12, 0.07, 0.03, trim.seat, seat.x, 1.53, -0.52, root).rotation.x = -0.08;
+      for (const dx of [-0.06, 0.06]) rbox(0.016, 0.16, 0.016, 0.004, MAT.steel, seat.x + dx, 1.47, -0.515, root).rotation.x = -0.08;
+    }
   }
   if (!D) {
     // The driver's cushion is split: the foam showing, with a strip of tape over one end.
@@ -645,12 +664,20 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   wheel.userData.keep = true;
   wheel.position.set(0, 0.5, 0);
   column.add(wheel);
-  add(new THREE.TorusGeometry(0.21, 0.012, 8, 36).rotateX(Math.PI / 2), MAT.black, wheel);
-  add(new THREE.CylinderGeometry(D ? 0.06 : 0.045, D ? 0.06 : 0.045, 0.035, 14), MAT.black, wheel); // the boss
-  badge(wheel, { x: 0, y: 0.0185, z: 0, facing: 1, w: 0.07, h: 0.035, px: 1200 }).rotation.set(-Math.PI / 2, 0, Math.PI); // the badge in its centre, facing the driver
-  for (let i = 0; i < 4; i++) {
-    const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
-    tube([0, 0, 0], [Math.sin(a) * 0.21, 0, Math.cos(a) * 0.21], D ? 0.01 : 0.007, D ? MAT.black : MAT.galv, wheel, 5);
+  if (D) {
+    // The 200TDi's: a thicker, softer rim on two spokes with a padded hub.
+    add(new THREE.TorusGeometry(0.2, 0.02, 10, 40).rotateX(Math.PI / 2), MAT.black, wheel);
+    rbox(0.13, 0.05, 0.1, 0.03, MAT.black, 0, 0, 0, wheel); // the hub
+    for (const sx of [-1, 1]) rbox(0.13, 0.02, 0.05, 0.01, MAT.black, sx * 0.11, 0, 0, wheel); // the two spokes, left and right
+    badge(wheel, { x: 0, y: 0.0265, z: 0, facing: 1, w: 0.07, h: 0.035, px: 1200 }).rotation.set(-Math.PI / 2, 0, Math.PI);
+  } else {
+    add(new THREE.TorusGeometry(0.21, 0.012, 8, 36).rotateX(Math.PI / 2), MAT.black, wheel);
+    add(new THREE.CylinderGeometry(D ? 0.06 : 0.045, D ? 0.06 : 0.045, 0.035, 14), MAT.black, wheel); // the boss
+    badge(wheel, { x: 0, y: 0.0185, z: 0, facing: 1, w: 0.07, h: 0.035, px: 1200 }).rotation.set(-Math.PI / 2, 0, Math.PI); // the badge in its centre, facing the driver
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
+      tube([0, 0, 0], [Math.sin(a) * 0.21, 0, Math.cos(a) * 0.21], D ? 0.01 : 0.007, D ? MAT.black : MAT.galv, wheel, 5);
+    }
   }
   for (const side of [1, -1]) {
     const grip = new THREE.Object3D();
@@ -779,8 +806,12 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
       glass.position.set(s * 0.82, 1.4, -1.22);
       for (const z of [-0.58, -1.38, -1.9]) rbox(0.04, 0.58, 0.07, 0.008, paint, s * 0.82, 1.4, z, root); // the window posts
       rbox(0.04, 0.1, 1.4, 0.008, paint, s * 0.82, 1.675, -1.24, root); // above the glass, up to the roof
-      rbox(0.08, 0.1, 0.03, 0.01, tailMat, s * 0.74, 0.86, -1.97, root); // the tail lamp
-      rbox(0.08, 0.05, 0.03, 0.01, MAT.amber, s * 0.74, 0.77, -1.97, root); // and the indicator under it
+      // The 200TDi's newer rear lamp: a tall black housing on the corner with the red stop and tail lamp over the amber indicator over a
+      // clear reverse lens, instead of the Series' two small lamps.
+      rbox(0.1, 0.36, 0.035, 0.012, MAT.black, s * 0.74, 0.86, -1.968, root);
+      rbox(0.075, 0.13, 0.03, 0.008, tailMat, s * 0.74, 0.96, -1.975, root);
+      rbox(0.075, 0.09, 0.03, 0.008, MAT.amber, s * 0.74, 0.86, -1.975, root);
+      rbox(0.075, 0.09, 0.03, 0.008, MAT.clear, s * 0.74, 0.77, -1.975, root);
     }
     rbox(1.6, 0.34, 0.04, 0.01, paint, 0, 0.8, -1.95, root); // the rear body panel
     rbox(1.6, 0.3, 0.04, 0.01, paint, 0, 1.1, -1.95, root, 'rearDoor'); // the rear door, below its window
@@ -797,8 +828,9 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
     addWheelFace(spare, 1, MAT.rimGrey);
     root.add(spare);
     rbox(0.1, 0.3, 0.04, 0.01, MAT.black, 0, 1.27, -2.0, root);
-    plate(PLATE, '#e8c51c', root, { x: 0, y: 0.78, z: -1.9755, facing: -1 }); // the rear number plate
+    plate(PLATE_200, '#e8c51c', root, { x: 0, y: 0.78, z: -1.9755, facing: -1 }); // the rear number plate
     badge(root, { x: 0.55, y: 1.18, z: -1.9755, facing: -1, w: 0.16, h: 0.064, px: 900 }); // the maker's badge on the door
+    modelBadge('200Tdi', root, { x: -0.52, y: 1.17, z: -1.9755 }); // and the model's, the other side
   }
 
   // The rear crossmember with the towing jaw: a pin through a jaw, where the trailer's ring goes.
@@ -862,16 +894,22 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
 }
 
 /**
- * The gear lever's lean (radians) for a gear, in the usual H: first top-left, second below it, third top-right, fourth below that, and
- * reverse top-left of first, with neutral in the middle. Top is forward, away from the driver; the driver's left is +x, so a lean to the
- * left is a negative turn about z. `along` is the turn about x (positive leans forward).
+ * The gear lever's lean (radians) for a gear, in the usual H. Four-speed (the Series): first top-left, second below it, third top-right,
+ * fourth below that, and reverse top-left of first. Five-speed (the 200TDi): first and second on the left, third and fourth in the
+ * middle, fifth top-right and reverse below it. Neutral is the middle. Top is forward, away from the driver; the driver's left is +x, so a
+ * lean to the left is a negative turn about z. `along` is the turn about x (positive leans forward).
  */
-export function gearLeverPose(gear) {
+export function gearLeverPose(gear, gears = 4) {
+  const FORWARD = 0.25;
+  const BACK = -0.25;
+  if (gears >= 5) {
+    const across = { 1: -0.18, 2: -0.18, 3: 0, 4: 0, 5: 0.18, '-1': 0.18 }[gear];
+    if (across === undefined) return { along: 0, across: 0 };
+    return { along: gear === -1 || gear % 2 === 0 ? BACK : FORWARD, across };
+  }
   const LEFT = -0.12;
   const RIGHT = 0.12;
   const FAR_LEFT = -0.3;
-  const FORWARD = 0.25;
-  const BACK = -0.25;
   switch (gear) {
     case -1: return { along: FORWARD, across: FAR_LEFT };
     case 1: return { along: FORWARD, across: LEFT };
@@ -886,10 +924,10 @@ export function gearLeverPose(gear) {
  * Poses the levers and knobs: the gear lever leans with the gear (-1 reverse to 4), the yellow 4WD knob and the red diff lock knob go
  * down when engaged, the choke and hand throttle knobs pull out towards the driver, and the handbrake lever goes up with the brake.
  */
-export function poseLandyControls(model, { gear = 0, fourWd = false, locked = false, choke = 0, hand = 0, park = false }) {
+export function poseLandyControls(model, { gear = 0, gears = 4, fourWd = false, locked = false, choke = 0, hand = 0, park = false }) {
   const g = model.getObjectByName('gearLever');
   if (!g) return;
-  const pose = gearLeverPose(gear);
+  const pose = gearLeverPose(gear, gears);
   g.rotation.set(pose.along, 0, pose.across);
   model.getObjectByName('transferKnob').position.y = 0.84 - (fourWd ? 0.05 : 0);
   model.getObjectByName('diffLockKnob').position.y = 0.84 - (locked ? 0.05 : 0);

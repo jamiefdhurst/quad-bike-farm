@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { archPanel, buildLandRoverModel, poseLandyControls, gearLeverPose, LANDY_LAYOUT, LANDY_BELTS, TUB_FLOOR } from '../src/vehicle/landRoverModel.js';
 import { poseUtvBelts } from '../src/vehicle/utvModel.js';
 import { LAND_ROVER_SPEC, DEFENDER_SPEC } from '../src/vehicle/quadSpecs.js';
+import { ManualDrivetrain, DEFAULT_GEARBOX_PARAMS } from '../src/vehicle/manualDrivetrain.js';
 import { DASH_STYLES } from '../src/vehicle/dash.js';
 
 // A canvas that accepts every drawing call and does nothing, so the model (whose dash and trim are drawn on canvases) builds in node.
@@ -157,5 +158,43 @@ describe('the 200TDi', () => {
     expect(LAND_ROVER_SPEC.gearbox.crashGears).toBeGreaterThan(0);
     expect(DEFENDER_SPEC.id).not.toBe(LAND_ROVER_SPEC.id);
     expect(DEFENDER_SPEC.engine.idleRpmWarm).not.toBe(LAND_ROVER_SPEC.engine.idleRpmWarm);
+  });
+});
+
+describe('the 200TDi\'s five-speed', () => {
+  const g5 = (n) => gearLeverPose(n, 5);
+  it('has an H with first and second on the left, third and fourth in the middle, fifth top right and reverse below it', () => {
+    expect(g5(1).along).toBeGreaterThan(0);
+    expect(g5(2).along).toBeLessThan(0);
+    expect(g5(1).across).toBe(g5(2).across);
+    expect(g5(3).across).toBe(g5(4).across);
+    expect(g5(1).across).toBeLessThan(g5(3).across);
+    expect(g5(3).across).toBeLessThan(g5(5).across);
+    expect(g5(5).along).toBeGreaterThan(0);
+    expect(g5(-1).across).toBe(g5(5).across);
+    expect(g5(-1).along).toBeLessThan(0);
+    expect(g5(0)).toEqual({ along: 0, across: 0 });
+  });
+  it('is faster than the Series: five gears climbing evenly to a higher top speed, which the car can reach', () => {
+    const b = { ...DEFAULT_GEARBOX_PARAMS, ...DEFENDER_SPEC.gearbox };
+    expect(b.gears).toBe(5);
+    const tops = [b.topSpeed1, b.topSpeed2, b.topSpeed3, b.topSpeed4, b.topSpeed5];
+    for (let i = 1; i < 5; i++) expect(tops[i]).toBeGreaterThan(tops[i - 1] * 1.3);
+    expect(b.topSpeed5).toBeGreaterThan(LAND_ROVER_SPEC.gearbox.topSpeed4);
+    expect(DEFENDER_SPEC.vehicle.maxSpeed).toBeGreaterThanOrEqual(b.topSpeed5);
+    const torques = [b.torque1, b.torque2, b.torque3, b.torque4, b.torque5];
+    for (let i = 1; i < 5; i++) expect(torques[i]).toBeLessThan(torques[i - 1]);
+  });
+  it('takes fifth gear', () => {
+    const d = new ManualDrivetrain({ maxSpeed: 32, maxReverseSpeed: 2.6 }, { ...DEFAULT_GEARBOX_PARAMS, ...DEFENDER_SPEC.gearbox });
+    d.pedalDown = 1; // the clutch has been down long enough for a clean change
+    d.pedal = 1;
+    expect(d.select(5, true)).toBe('ok');
+    expect(d.gear).toBe(5);
+    expect(d.topSpeed(5)).toBe(32);
+    const four = new ManualDrivetrain({ maxSpeed: 24 }, { ...DEFAULT_GEARBOX_PARAMS, ...LAND_ROVER_SPEC.gearbox });
+    four.pedalDown = 1;
+    four.pedal = 1;
+    expect(four.select(5, true)).toBe('same'); // the Series has no fifth
   });
 });

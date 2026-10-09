@@ -111,6 +111,7 @@ export class QuadUnit {
         wheelShake: spec.wheelShake,
         steadyLights: spec.steadyLights,
         landRover: true,
+        lightSwitch: true, // P cycles off, dipped and main beam from the seat (lightSwitch.js)
         driverStand: LANDY_STAND.driver,
         benchStand: LANDY_STAND.left,
         handLever: !spec.defender, // the Series' hand throttle knob on its dash

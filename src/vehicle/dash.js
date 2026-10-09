@@ -565,6 +565,17 @@ function warnSymbol(ctx, kind, x, y, colour, lit) {
     ctx.moveTo(x - 5.2, y - 2.6);
     ctx.lineTo(x + 3.4, y + 3.6);
     ctx.stroke();
+  } else if (kind === 'beam') {
+    // A headlamp with its main beam: four straight rays.
+    ctx.arc(x - 3, y, 4.2, -Math.PI / 2, Math.PI / 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    for (let i = 0; i < 4; i++) {
+      ctx.moveTo(x + 2.2, y - 4.5 + i * 3);
+      ctx.lineTo(x + 8, y - 4.5 + i * 3);
+    }
+    ctx.stroke();
   } else if (kind === 'lights') {
     // A headlamp with its beams.
     ctx.arc(x - 2, y, 4.2, -Math.PI / 2, Math.PI / 2);
@@ -690,15 +701,16 @@ function buildSeries() {
   let shownTemp = 0;
 
   function draw(ctx, s, L) {
-    // The lamp strip: ignition and oil in red, the handbrake red, the choke amber. A Series III has nothing else (no belt lamp, no 4WD lamp).
+    // The lamp strip: ignition and oil in red, the handbrake red, the choke amber and the blue main beam. A Series III has nothing else (no belt lamp, no 4WD lamp, no side lights one).
     ctx.fillStyle = '#121213';
     ctx.beginPath();
     ctx.roundRect(88, 18, 184, 17, 3);
     ctx.fill();
-    warnSymbol(ctx, 'charge', 118, 26.5, LAMP.red, L.charge);
-    warnSymbol(ctx, 'oil', 158, 26.5, LAMP.red, L.oil);
-    warnSymbol(ctx, 'park', 198, 26.5, LAMP.red, L.park);
-    warnSymbol(ctx, 'choke', 238, 26.5, LAMP.amber, L.choke);
+    warnSymbol(ctx, 'charge', 108, 26.5, LAMP.red, L.charge);
+    warnSymbol(ctx, 'oil', 140, 26.5, LAMP.red, L.oil);
+    warnSymbol(ctx, 'park', 172, 26.5, LAMP.red, L.park);
+    warnSymbol(ctx, 'choke', 204, 26.5, LAMP.amber, L.choke);
+    warnSymbol(ctx, 'beam', 240, 26.5, '#4aa8ff', L.main); // the main beam tell-tale: all a Series has for its lights
     // The speedo: 0 to 90 mph round 260 degrees, white on black, with the odometer's drums under the boss.
     ctx.fillStyle = '#0b0b0b';
     ctx.beginPath();
@@ -747,9 +759,10 @@ function buildSeries() {
         oil: on && (!running || !!s.oilLow),
         choke: on && (s.choke ?? 0) > 0.05,
         park: on && !!s.parkBrake,
+        main: on && !!s.lightLamps?.main,
       };
       const odo = counterDigits(s.odoMiles, 5);
-      if (gate([on, s.keyOn, L.charge, L.oil, L.choke, L.park, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
+      if (gate([on, s.keyOn, L.charge, L.oil, L.choke, L.park, L.main, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
         face.redraw((ctx) => draw(ctx, s, L));
       }
     },
@@ -758,18 +771,23 @@ function buildSeries() {
 
 // The 200TDi ---------------------------------------------------------------------------------
 
-/** A early-90s Land Rover 90's dash: a rev counter, the speedometer and the fuel and water gauge, with a strip of warning lamps along the top. */
+/**
+ * An early-90s Land Rover 90's dash, in a different style from the Series': a flat grey moulding with white-on-black dials and orange
+ * needles, a rev counter, the speedometer, and fuel and water gauges stacked on the right, with a row of warning lamps along the bottom
+ * (glow plugs, charge, oil, handbrake, seat belts, side lights and main beam) and the key at the far end.
+ */
 function buildDefender() {
   const group = new THREE.Group();
   group.name = 'dash';
   const O = { ox: 180, oy: 60 };
-  housing(group, { x: 60, y: 14, w: 240, h: 92, r: 6, ...O, material: plastic });
+  housing(group, { x: 60, y: 14, w: 240, h: 92, r: 3, ...O, material: charcoal });
   const face = mmPanel({ x: 60, y: 14, w: 240, h: 92, ...O });
   group.add(face.mesh);
-  const tacho = { cx: 108, cy: 70, r: 25 };
-  const speedo = { cx: 178, cy: 68, r: 30 };
-  const combo = { cx: 248, cy: 70, r: 22 };
-  for (const d of [tacho, speedo, combo]) chromeRing(group, { ...d, r: d.r + 1, ...O });
+  const tacho = { cx: 98, cy: 50, r: 27 };
+  const speedo = { cx: 170, cy: 50, r: 30 };
+  const temp = { cx: 236, cy: 36, r: 14 };
+  const fuel = { cx: 236, cy: 66, r: 14 };
+  for (const d of [tacho, speedo, temp, fuel]) chromeRing(group, { ...d, r: d.r + 1, ...O, tube: 0.0018 });
   const gate = changeGate();
   let shownMph = 0;
   let shownRpm = 0;
@@ -777,57 +795,58 @@ function buildDefender() {
   let shownTemp = 0;
   const SPEEDO_MAX = 100;
   const TACHO_MAX = 5000;
+  const NEEDLE = '#ff8a1f'; // orange needles, white figures: the look of the newer instruments
+  const WHITE = '#ffffff';
   const dial = (ctx, d) => {
-    ctx.fillStyle = '#0b0b0b';
+    ctx.fillStyle = '#0c0d0e';
     ctx.beginPath();
     ctx.arc(d.cx, d.cy, d.r, 0, Math.PI * 2);
     ctx.fill();
   };
+  /** A small gauge: an arc scale from 150 to 30 degrees, labelled at its ends. */
+  const small = (ctx, d, frac, name, lo, hi, hotEnd) => {
+    dial(ctx, d);
+    ticks(ctx, d.cx, d.cy, d.r - 4, d.r - 1.5, 150, 30, 4, WHITE, 0.7);
+    if (hotEnd) arc(ctx, d.cx, d.cy, d.r - 2, 40, 30, '#d8402e', 1.8);
+    text(ctx, name, d.cx, d.cy + 1.5, 3, '#bbb', { align: 'center' });
+    text(ctx, lo, d.cx - d.r * 0.62, d.cy + d.r * 0.62, 3.4, WHITE, { align: 'center' });
+    text(ctx, hi, d.cx + d.r * 0.62, d.cy + d.r * 0.62, 3.4, hotEnd ? '#ff6a5a' : WHITE, { align: 'center' });
+    needle(ctx, d.cx, d.cy, d.r - 3, 150 - 120 * frac, NEEDLE, 1);
+  };
 
   function draw(ctx, s, L) {
-    // The lamp strip: glow plugs, charge, oil, handbrake, seat belts, diff lock.
-    ctx.fillStyle = '#121213';
-    ctx.beginPath();
-    ctx.roundRect(68, 18, 224, 17, 3);
-    ctx.fill();
-    warnSymbol(ctx, 'glow', 92, 26.5, LAMP.amber, L.glow);
-    warnSymbol(ctx, 'charge', 124, 26.5, LAMP.red, L.charge);
-    warnSymbol(ctx, 'oil', 156, 26.5, LAMP.red, L.oil);
-    warnSymbol(ctx, 'park', 188, 26.5, LAMP.red, L.park);
-    warnSymbol(ctx, 'belt', 220, 26.5, LAMP.red, L.belt);
-    lamp(ctx, 252, 26.5, LAMP.amber, '', L.lock, { r: 2.6, shape: 'rect' });
-    text(ctx, 'DIFF', 252, 33.8, 3, '#bbb', { align: 'center' });
     // The rev counter: 0 to 5,000 round 260 degrees, with the red zone from the redline.
     dial(ctx, tacho);
     arc(ctx, tacho.cx, tacho.cy, tacho.r - 2.5, -40, 220 - (260 * L.redline) / TACHO_MAX, '#d8402e', 2.2);
-    ticks(ctx, tacho.cx, tacho.cy, tacho.r - 4.5, tacho.r - 1.5, 220, -40, 10, '#ece6d2', 0.5);
-    ticks(ctx, tacho.cx, tacho.cy, tacho.r - 7, tacho.r - 1.5, 220, -40, 5, '#ece6d2', 1);
-    labels(ctx, tacho.cx, tacho.cy, tacho.r - 11.5, 220, -40, ['0', '1', '2', '3', '4', '5'], '#ece6d2', 3.8);
-    text(ctx, 'RPM x1000', tacho.cx, tacho.cy + 9, 3, '#ccc', { align: 'center' });
-    needle(ctx, tacho.cx, tacho.cy, tacho.r - 2, 220 - (260 * Math.min(TACHO_MAX, L.rpm)) / TACHO_MAX, '#f0eadc', 1.1);
+    ticks(ctx, tacho.cx, tacho.cy, tacho.r - 4.5, tacho.r - 1.5, 220, -40, 10, WHITE, 0.5);
+    ticks(ctx, tacho.cx, tacho.cy, tacho.r - 7, tacho.r - 1.5, 220, -40, 5, WHITE, 1);
+    labels(ctx, tacho.cx, tacho.cy, tacho.r - 11.5, 220, -40, ['0', '1', '2', '3', '4', '5'], WHITE, 3.8);
+    text(ctx, 'RPM x1000', tacho.cx, tacho.cy + 10, 3, '#ccc', { align: 'center' });
+    needle(ctx, tacho.cx, tacho.cy, tacho.r - 2, 220 - (260 * Math.min(TACHO_MAX, L.rpm)) / TACHO_MAX, NEEDLE, 1.1);
     // The speedometer: 0 to 100 mph with its odometer.
     dial(ctx, speedo);
-    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 5, speedo.r - 1.5, 220, -40, 20, '#ece6d2', 0.5);
-    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 8, speedo.r - 1.5, 220, -40, 10, '#ece6d2', 1);
-    labels(ctx, speedo.cx, speedo.cy, speedo.r - 13, 220, -40, ['0', '10', '20', '30', '40', '50', '60', '70', '80', '90', '100'], '#ece6d2', 3.3);
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 5, speedo.r - 1.5, 220, -40, 20, WHITE, 0.5);
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 8, speedo.r - 1.5, 220, -40, 10, WHITE, 1);
+    labels(ctx, speedo.cx, speedo.cy, speedo.r - 13, 220, -40, ['0', '10', '20', '30', '40', '50', '60', '70', '80', '90', '100'], WHITE, 3.3);
     text(ctx, 'MPH', speedo.cx, speedo.cy - 8, 3.4, '#ccc', { align: 'center' });
     const odo = counterDigits(s.odoMiles, 6);
-    drum(ctx, speedo.cx - 17, speedo.cy + 10, odo.whole, odo.tenth, 6);
-    needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 220 - (260 * Math.min(SPEEDO_MAX, L.mph)) / SPEEDO_MAX, '#f0eadc', 1.2);
-    // The combination gauge: fuel along its top half, water temperature along its bottom.
-    dial(ctx, combo);
-    ticks(ctx, combo.cx, combo.cy, combo.r - 5, combo.r - 1.5, 150, 30, 4, '#ece6d2', 0.8);
-    ticks(ctx, combo.cx, combo.cy, combo.r - 5, combo.r - 1.5, 210, 330, 4, '#ece6d2', 0.8);
-    arc(ctx, combo.cx, combo.cy, combo.r - 2.5, 315, 330, '#d8402e', 2.2);
-    text(ctx, 'FUEL', combo.cx, combo.cy - 8, 3.2, '#bbb', { align: 'center' });
-    text(ctx, 'TEMP', combo.cx, combo.cy + 11, 3.2, '#bbb', { align: 'center' });
-    text(ctx, 'E', combo.cx - combo.r * 0.62, combo.cy - 5, 3.6, '#ece6d2', { align: 'center' });
-    text(ctx, 'F', combo.cx + combo.r * 0.62, combo.cy - 5, 3.6, '#ece6d2', { align: 'center' });
-    text(ctx, 'C', combo.cx - combo.r * 0.62, combo.cy + 8, 3.6, '#ece6d2', { align: 'center' });
-    text(ctx, 'H', combo.cx + combo.r * 0.62, combo.cy + 8, 3.6, '#ff6a5a', { align: 'center' });
-    needle(ctx, combo.cx, combo.cy, combo.r - 4, 150 - 120 * L.fuel, '#f0eadc', 1);
-    needle(ctx, combo.cx, combo.cy, combo.r - 4, 210 + 120 * L.temp, '#f0eadc', 1);
-    keySwitch(ctx, 286, 94, s.keyOn);
+    drum(ctx, speedo.cx - 17, speedo.cy + 12, odo.whole, odo.tenth, 6);
+    needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 220 - (260 * Math.min(SPEEDO_MAX, L.mph)) / SPEEDO_MAX, NEEDLE, 1.2);
+    small(ctx, temp, L.temp, 'TEMP', 'C', 'H', true);
+    small(ctx, fuel, L.fuel, 'FUEL', 'E', 'F', false);
+    // The lamps along the bottom: glow plugs, charge, oil, handbrake, seat belts, side lights and main beam. The key at the end.
+    ctx.fillStyle = '#121213';
+    ctx.beginPath();
+    ctx.roundRect(66, 86, 208, 17, 2);
+    ctx.fill();
+    warnSymbol(ctx, 'glow', 86, 94.5, LAMP.amber, L.glow);
+    warnSymbol(ctx, 'charge', 114, 94.5, LAMP.red, L.charge);
+    warnSymbol(ctx, 'oil', 142, 94.5, LAMP.red, L.oil);
+    warnSymbol(ctx, 'park', 170, 94.5, LAMP.red, L.park);
+    warnSymbol(ctx, 'belt', 198, 94.5, LAMP.red, L.belt);
+    warnSymbol(ctx, 'lights', 226, 94.5, LAMP.green, L.lights);
+    warnSymbol(ctx, 'beam', 254, 94.5, '#4aa8ff', L.main);
+    keySwitch(ctx, 282, 50, s.keyOn);
   }
 
   return {
@@ -851,10 +870,11 @@ function buildDefender() {
         oil: on && (!running || !!s.oilLow),
         park: on && !!s.parkBrake,
         belt: on && !!s.beltLamp,
-        lock: on && !!s.diffLock,
+        lights: on && !!s.lightLamps?.lights,
+        main: on && !!s.lightLamps?.main,
       };
       const odo = counterDigits(s.odoMiles, 6);
-      if (gate([on, s.keyOn, L.glow, L.charge, L.oil, L.park, L.belt, L.lock, Math.round(shownMph * 2), Math.round(shownRpm / 40), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
+      if (gate([on, s.keyOn, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, Math.round(shownMph * 2), Math.round(shownRpm / 40), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
         face.redraw((ctx) => draw(ctx, s, L));
       }
     },

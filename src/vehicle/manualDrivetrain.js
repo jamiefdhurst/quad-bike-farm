@@ -11,22 +11,25 @@ export const DEFAULT_GEARBOX_PARAMS = {
   topSpeed2: 4.8, // in second
   topSpeed3: 8.5, // in third
   topSpeed4: 12, // in fourth (only the quads' four-speed boxes have one)
+  topSpeed5: 18, // in fifth (only the 200TDi's five-speed box has one)
   topSpeedReverse: 2.6,
   torque1: 1, // share of the vehicle's maxDriveForce in first...
   torque2: 0.68, // ...second
   torque3: 0.46, // ...third
   torque4: 0.4, // ...fourth
+  torque5: 0.35, // ...fifth
   torqueReverse: 0.9,
   launchLoad1: 0.25, // how hard pulling away from rest drags the engine down with the clutch fully out, in first...
   launchLoad2: 0.5, // ...second (about stalls an idling engine)
   launchLoad3: 0.95, // ...third (stalls it unless there's throttle)
   launchLoad4: 1.2, // ...fourth (always stalls it from rest without a lot of throttle)
+  launchLoad5: 1.3, // ...fifth
   lugSpeed: 1, // the drag fades out by this fraction of the gear's top speed: below it, a high gear labours the engine (1 is only from rest)
   launchRelief: 0.9, // fraction of that drag a fully open throttle takes away
   clutchPressRate: 8, // 1/s the pedal goes down at
   clutchReleaseRate: 1.6, // 1/s it comes up at, so about 0.6 s from down to fully engaged
   handStart: 0.15, // where the hand throttle is left when the game starts (about 710 rpm); it moves in steps of 0.35 a second from there
-  gears: 3, // forward gears: 3 on the tractor, 4 on the manual quads
+  gears: 3, // forward gears: 3 on the tractor, 4 on the manual quads, 5 on the 200TDi
   changeClutch: 0.7, // the pedal has to be this far down to change gear (neutral can always be found)
   rushTime: 0.2, // s the pedal must have been down before the lever goes in cleanly; sooner than that you can miss the gear
   falseNeutralChance: 0.45, // chance of missing the gear (landing in a false neutral) when the change is rushed
@@ -44,16 +47,19 @@ export const GEARBOX_PARAM_RANGES = {
   topSpeed2: [1, 12, 0.1],
   topSpeed3: [2, 20, 0.1],
   topSpeed4: [3, 30, 0.1],
+  topSpeed5: [4, 40, 0.1],
   topSpeedReverse: [0.5, 8, 0.1],
   torque1: [0.1, 2, 0.01],
   torque2: [0.1, 2, 0.01],
   torque3: [0.1, 2, 0.01],
   torque4: [0.1, 2, 0.01],
+  torque5: [0.1, 2, 0.01],
   torqueReverse: [0.1, 2, 0.01],
   launchLoad1: [0, 1.5, 0.01],
   launchLoad2: [0, 1.5, 0.01],
   launchLoad3: [0, 1.5, 0.01],
   launchLoad4: [0, 1.5, 0.01],
+  launchLoad5: [0, 1.5, 0.01],
   lugSpeed: [0.1, 1, 0.01],
   launchRelief: [0, 1, 0.01],
   clutchPressRate: [1, 30, 0.5],
@@ -68,7 +74,7 @@ export const GEARBOX_PARAM_RANGES = {
   jumpRate: [0, 3, 0.05],
 };
 
-export const GEARS = [-1, 0, 1, 2, 3, 4];
+export const GEARS = [-1, 0, 1, 2, 3, 4, 5];
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const smoothstep = (a, b, x) => {
@@ -117,19 +123,19 @@ export class ManualDrivetrain {
   /** The top speed of a gear, m/s. A gear can't pull past the vehicle's own top speed (a limiter, say), whatever its ratio. */
   topSpeed(gear = this.gear) {
     const g = this.gearbox;
-    const ratio = gear < 0 ? g.topSpeedReverse : [g.topSpeedReverse, 1, g.topSpeed1, g.topSpeed2, g.topSpeed3, g.topSpeed4][gear + 1];
+    const ratio = gear < 0 ? g.topSpeedReverse : [g.topSpeedReverse, 1, g.topSpeed1, g.topSpeed2, g.topSpeed3, g.topSpeed4, g.topSpeed5][gear + 1];
     return Math.min(ratio, gear < 0 ? this.params.maxReverseSpeed ?? Infinity : this.params.maxSpeed ?? Infinity);
   }
 
   /** Share of the drive force a gear has. */
   torque(gear = this.gear) {
     const g = this.gearbox;
-    return gear < 0 ? g.torqueReverse : [g.torqueReverse, 1, g.torque1, g.torque2, g.torque3, g.torque4][gear + 1];
+    return gear < 0 ? g.torqueReverse : [g.torqueReverse, 1, g.torque1, g.torque2, g.torque3, g.torque4, g.torque5][gear + 1];
   }
 
   launchLoad(gear = this.gear) {
     const g = this.gearbox;
-    return gear === 0 ? 0 : gear < 0 ? g.launchLoad1 : [0, 0, g.launchLoad1, g.launchLoad2, g.launchLoad3, g.launchLoad4][gear + 1];
+    return gear === 0 ? 0 : gear < 0 ? g.launchLoad1 : [0, 0, g.launchLoad1, g.launchLoad2, g.launchLoad3, g.launchLoad4, g.launchLoad5][gear + 1];
   }
 
   /** Whether the clutch is down far enough to change gear. */
