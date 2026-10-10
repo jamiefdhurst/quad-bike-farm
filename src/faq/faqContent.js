@@ -467,6 +467,13 @@ export const FAQ_SECTIONS = [
         tip: 'Rev a quad near the girls and watch them turn to look.',
       },
       {
+        q: 'Why did she cover her ears, or flinch?',
+        a: `They react to what happens near them. A backfire or a bang makes them flinch, a quad leaping forward right by them makes them hop
+          back, and revving flat out beside them makes Amy cover her ears (Jess likes the noise). A quad going over gets a gasp, a good jump a
+          cheer (Jess throws her arms up, Amy claps), and Amy turns away from two-stroke smoke.`,
+        tip: 'Land a jump where the girls can see it and Jess will cheer.',
+      },
+      {
         q: 'How do I talk to them?',
         a: `Look at one and press <kbd>E</kbd> to open her wheel. Move the mouse to a slice and click, or press its number. The first ring has a slice
           for each vehicle she could do something with; a vehicle's slice opens a second ring of what she could do with it. Right-click or Backspace

@@ -30,9 +30,13 @@ Backtick opens it. It has three tabs, each with a job; keep them that way, and k
 - Not persisted: no saved tabs, folders or values.
 - The console (backslash, `src/console`) is the same state by typed path. A new vehicle state, girl value or world setting that goes in the panel goes in `gameTree.js` too (tuning groups appear on their own), and a new on-demand girl action goes in `src/debug/girlActions.js`, which both the Girls tab and `girl <name> <verb>` use. Commands are tested in `tests/consoleShell.test.js` against a stand-in host.
 
-## The girls' attention
+## The girls' minds
 
-What a girl looks at is decided in one place, `src/npc/attention.js` (pure, tested), so the girls seem to notice the world. Never turn her head or set `rig.lookTarget` from a feature; anything new for the girls follows this pattern, and `tests/companionLooks.test.js` checks what it can:
+How the girls notice, react and decide is being rebuilt (TODO 130 to 137) so each part lives in one place and everything new plugs into it rather than bringing its own timers and dice. Follow every part below for anything new the girls do; `tests/companionLooks.test.js` and `tests/reactions.test.js` check what they can. Read DECISIONS.md's sections for TODO 130 onwards before changing any of it.
+
+### What she looks at (attention)
+
+Decided in one place, `src/npc/attention.js` (pure, tested). Never turn her head or set `rig.lookTarget` from a feature.
 
 - **Something happens that she would notice** (a sound, a crash, something worth turning to see): call `game.notice(kind, at, { key, strength })` where it happens. `kind` must be in `NOTICE_KINDS` (add it with its seconds, range, heard and interest, and its salience in `DEFAULT_NOTICE_PARAMS`, which is the "What catches the eye" tuning); the test fails for an unknown kind. Vehicle events (engine, horn, tipping, revving) come through `src/npc/noticeWatch.js`: add a new one there rather than calling notice from the vehicle.
 - **A new state** (in `companion.js`, `companionDriving.js`, `companionHayRide.js`, `companionResting.js` or a new state file) has a `look`: `'free'` (whatever catches her eye), `'own'` (another poser has her head, as the pillion pose does, and gets attention's pick to turn it), or a function returning a focus `{ x, y, z, weight }` (`lookAtVehicle`, `lookAhead`). The test fails until it has one.
@@ -40,6 +44,16 @@ What a girl looks at is decided in one place, `src/npc/attention.js` (pure, test
 - **Walking somewhere** needs nothing: from standing she looks at the target first (`lookLead`). A walk that mustn't pause puts `hurry: true` in the walking state's data.
 - **Something new that pins her where she stands** (hands on something, a pose) adds itself to `freeToTurn()`, so she doesn't turn round to look mid-way through it.
 - **Someone or something she should keep an eye on all the time** (not a one-off event) goes in `attentionWorld` in `game.watchNotices`.
+
+### How her body reacts (reactions)
+
+A flinch, a step back, hands over her ears or her mouth, a cheer, turning away from smoke: `src/npc/reactions.js` (pure, tested) says which and when, `src/npc/companionReacting.js` poses it (the last rig poser, so it shows over anything else). Never pose a startle, a recoil or a gesture of surprise inside a feature.
+
+- **A notice that should make her move**: add a rule to `NOTICE_REACTIONS` (which reaction, within how many metres, a chance or the name of her param holding it, `notOwn` for things she shouldn't react to on her own vehicle). Nothing else is needed: every notice is checked.
+- **A feature that makes her react directly** (a line that goes with a jump back, smoke she breathed): call `companion.react(type, { from, strength })`, and fall back to something smaller if it returns false (she wasn't free to).
+- **A new kind of reaction**: add it to `REACTIONS` (its timing and what it needs: `'any'`, `'feet'` or `'hands'`), its pose in `poseReacting`, check `mayReact` covers who may do it, and it gets a debug button for free from the list in `girlActions.js` (add it there). Look at it in a headless screenshot from in front of her (`.scratch/pp/reactshot.mjs`): IK targets are the wrists and the fingers reach on past them, so hands aimed at her middle cross.
+- **Something new that occupies her hands** (holding, carrying, a pose with the hands on something) makes `mayReact` say no to `'hands'` reactions while it lasts.
+- Per-girl differences go in her params (`reactEarsChance`, `reactCheerChance`, `reactCheerArms`, `reactFlinch` in `characters.js`), not in the rules.
 
 ## The FAQ and the start screen
 
@@ -72,7 +86,7 @@ The start screen (`index.html`, `src/start/startScreen.js`, the logo in `src/sta
 ## Finishing an item
 
 1. `npm test` passes.
-2. Debug panel: anything new that can be tuned, watched, set or started is in the panel as above. Docs: README.md describes the feature for a player (new or changed keys go in `src/hud/controls.js`, which the in-game help and the FAQ both read); the FAQ gets an answer for it (see "The FAQ and the start screen" below); add a short section to DECISIONS.md with what was decided and why, and numbers where you measured something; credit any asset in ASSETS.md. Mark the item **Done.** in the README TODO list (keep its number). Anything new the girls do or notice follows "The girls' attention" above.
+2. Debug panel: anything new that can be tuned, watched, set or started is in the panel as above. Docs: README.md describes the feature for a player (new or changed keys go in `src/hud/controls.js`, which the in-game help and the FAQ both read); the FAQ gets an answer for it (see "The FAQ and the start screen" below); add a short section to DECISIONS.md with what was decided and why, and numbers where you measured something; credit any asset in ASSETS.md. Mark the item **Done.** in the README TODO list (keep its number). Anything new the girls do, notice or react to follows "The girls' minds" above.
 3. Commit in sensible chunks with plain messages saying what changed for the player ("Let the girls share a quad, one driving and one on the back"): they become the FAQ's "Recently changed" list as written. No AI attribution of any kind: no Co-Authored-By, session links or "Generated with" lines. Other sessions may be working in the same tree, so stage only the files (or lines) you changed, by name: never `git add -A`, `git add .` or `git commit -a`.
 4. `git push origin main`.
 5. Tell Jamie in a few lines what changed, what you checked and what you didn't.
