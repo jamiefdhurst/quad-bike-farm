@@ -36,8 +36,9 @@ describe('battery', () => {
     const r = make();
     r.state = 'running';
     r.battery = 0.5;
+    r.rpm = 3000; // revved: the alternator gives its all, less what the ignition draws
     r.updateBattery(30);
-    expect(r.battery).toBeCloseTo(0.5 + P.batteryChargeRate * 30, 3);
+    expect(r.battery).toBeCloseTo(0.5 + (P.batteryChargeRate - P.batteryRunDraw) * 30, 3);
   });
   it('cranks slower on a weak battery', () => {
     const peak = (b) => {

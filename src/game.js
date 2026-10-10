@@ -3019,6 +3019,11 @@ export class Game {
       if (!c.fsm.is('idle') || Math.random() >= this.keepParams.goChance * dt) continue;
       const unit = this.girlUnits.find((u) => this.leftRunning.lastWho.get(u.id) === c.character.id);
       if (unit) this.sendToKeepAlive(c, unit);
+      else if (Math.random() < (c.character.id === 'jess' ? this.keepParams.chargeGoJess : 1)) {
+        // A running quad with a weak battery and nobody on it (after a jump, say) wants its revs kept up by whoever is free: Amy mostly.
+        const weak = this.girlUnits.find((u) => u.engine.isRunning && u.engine.battery < this.keepParams.weakBatteryBelow && c.root.position.distanceTo(u.quad.position) <= this.keepParams.goRange);
+        if (weak) this.sendToKeepAlive(c, weak);
+      }
     }
   }
 

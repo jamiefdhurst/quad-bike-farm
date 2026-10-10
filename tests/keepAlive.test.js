@@ -18,10 +18,12 @@ describe('what makes a quad sick', () => {
 
   it('a light cause alone is not enough, but two are', () => {
     expect(sickness({ ...well, fouling: 0.5 }).sick).toBe(false);
-    expect(sickness({ ...well, battery: 0.2 }).sick).toBe(false);
-    const both = sickness({ ...well, fouling: 0.5, battery: 0.2 });
+    expect(sickness({ ...well, fouling: 0.5, erratic: 0.1 }).sick).toBe(false);
+    const both = sickness({ ...well, fouling: 0.5, erratic: 0.4 });
     expect(both.sick).toBe(true);
-    expect(both.reasons).toEqual(['fouled', 'weakBattery']);
+    expect(both.reasons).toEqual(['fouled', 'erratic']);
+    expect(sickness({ ...well, battery: 0.2 }).reasons).toEqual(['weakBattery']); // and a weak battery is enough alone
+    expect(sickness({ ...well, battery: 0.2 }).sick).toBe(true);
   });
 
   it('is capped at 1', () => {
@@ -119,6 +121,51 @@ describe('the hand on the throttle', () => {
     const ka = new KeepAlive();
     expect(steps(ka, 5, ctx({ sick: false }))).toEqual([]);
     expect(ka.holding).toBe(false);
+  });
+});
+
+describe('charging a weak battery', () => {
+  const ctx = (o = {}) => ({ id: 'amy', running: true, sick: true, score: 0.5, unattended: true, rpm: 1500, idleRpm: 1150, youDistance: 20, battery: 0.3, ...o });
+  const until = (ka, seconds, c, type) => {
+    for (let t = 0; t < seconds; t += 0.5) {
+      const hit = ka.update(0.5, typeof c === 'function' ? c() : c).find((e) => e.type === type);
+      if (hit) return { hit, t };
+    }
+    return null;
+  };
+
+  it('sits for the charge, holding more revs than for a sick engine', () => {
+    const ka = new KeepAlive({ random: () => 0.99 });
+    const [sit] = ka.update(0.1, ctx());
+    expect(sit).toEqual({ type: 'sit', charging: true });
+    const charging = ka.throttle;
+    const other = new KeepAlive({ random: () => 0.99 });
+    const [s2] = other.update(0.1, ctx({ battery: 0.9 }));
+    expect(s2.charging).toBe(false);
+    expect(charging).toBeGreaterThan(other.throttle);
+  });
+
+  it('keeps going once it is no longer weak enough to be sick, until it is charged, then says so', () => {
+    const ka = new KeepAlive({ random: () => 0.99 });
+    ka.update(0.1, ctx());
+    expect(ka.update(0.1, ctx({ battery: 0.6, sick: false })).length).toBe(0);
+    expect(ka.holding).toBe(true);
+    const done = ka.update(0.1, ctx({ battery: 0.9, sick: false }));
+    expect(done).toEqual([{ type: 'charged' }]);
+    expect(ka.holding).toBe(false);
+  });
+
+  it('Amy sits it out for ten minutes or so, but Jess is bored in a minute and lets it idle', () => {
+    const amy = new KeepAlive({ random: () => 0.99 });
+    expect(until(amy, P.chargeBoredJess + 30, ctx(), 'giveUp')).toBeNull();
+    const amyEnds = until(amy, P.chargeHoldAmy, ctx(), 'giveUp');
+    expect(amyEnds).toBeTruthy();
+
+    const jess = new KeepAlive({ random: () => 0.99 });
+    const bored = until(jess, P.chargeBoredJess + 10, ctx({ id: 'jess' }), 'giveUp');
+    expect(bored).toBeTruthy();
+    expect(bored.hit.keyOff).toBe(false);
+    expect(bored.hit.stalls).toBe(false); // she leaves it to the battery, which is what flattens it again
   });
 });
 

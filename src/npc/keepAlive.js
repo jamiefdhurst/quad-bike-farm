@@ -10,7 +10,7 @@ export const DEFAULT_KEEPALIVE_PARAMS = {
   foulFrom: 0.3, // plug fouling past which it counts
   foulScore: 0.35,
   weakBatteryBelow: 0.45, // battery charge below which it counts
-  weakBatteryScore: 0.35,
+  weakBatteryScore: 0.5, // heavy enough alone: a jumped or flat battery is the main reason to hold the revs
   wornFrom: 0.5, // engine wear past which it is worn out
   wornScore: 0.5,
   chokeCreepScore: 0.5, // the choke-creeps quirk
@@ -27,6 +27,11 @@ export const DEFAULT_KEEPALIVE_PARAMS = {
   truthAfterJess: 40, // seconds sat there before Jess owns up to why she is really on the back
   truthAfterAmy: 90, // and before Amy would, if you are near enough to catch her
   truthRange: 4, // how near you have to be, in metres
+  chargeRevs: 2, // the revs she holds to charge a weak battery, as a multiple of idle (more than for a sick engine; the alternator wants revs)
+  chargeDone: 0.85, // she stops once the battery is back to this
+  chargeHoldAmy: 720, // seconds Amy sits there charging it, if it takes that long (ten minutes or so)
+  chargeBoredJess: 60, // seconds before Jess gets bored and lets it idle, so it goes flat again later
+  chargeGoJess: 0.3, // how readily Jess volunteers for a weak battery she did not have last, against Amy (1)
   giveUpAfter: 180, // seconds she sits there with nobody coming before she has had enough
   keyOffChance: 0.15, // when she gives up, the chance she switches it off (mostly she just gets off and leaves it to its luck)
   letGoStall: 0.6, // when she lets go of a sick one (you take it, or she gets off), the chance it dies, at full sickness
@@ -58,6 +63,11 @@ export const KEEPALIVE_PARAM_RANGES = {
   truthAfterJess: [5, 300, 5],
   truthAfterAmy: [5, 600, 5],
   truthRange: [1, 15, 0.5],
+  chargeRevs: [1, 4, 0.05],
+  chargeDone: [0.5, 1, 0.01],
+  chargeHoldAmy: [30, 1800, 10],
+  chargeBoredJess: [10, 600, 5],
+  chargeGoJess: [0, 1, 0.05],
   giveUpAfter: [20, 900, 10],
   keyOffChance: [0, 1, 0.01],
   letGoStall: [0, 1, 0.05],
@@ -121,7 +131,7 @@ export class KeepAlive {
     this.catching = 0; // seconds left of a handful of throttle
     this.sinceCatch = Infinity;
     this.saidTruth = false;
-    this.sat = false;
+    this.charging = false; // she is here to charge a weak battery, not (only) to hold a sick engine
   }
 
   /** Whether she would go over and sit on it: it is sick, running and unattended, she is free and not cooling off. */
@@ -137,10 +147,14 @@ export class KeepAlive {
   update(dt, ctx) {
     const p = this.p;
     const events = [];
-    const on = ctx.running && ctx.sick && ctx.unattended;
+    // A weak battery wants charging until it is back up, even once it is no longer weak enough to count as sick.
+    const weak = (ctx.battery ?? 1) < p.weakBatteryBelow;
+    const charging = ctx.running && ctx.unattended && (weak || (this.charging && (ctx.battery ?? 1) < p.chargeDone));
+    const on = ctx.running && ctx.unattended && (ctx.sick || charging);
     if (!on) {
       if (this.holding) {
-        if (!ctx.running && ctx.unattended) events.push({ type: 'died' });
+        if (this.charging && ctx.running && ctx.unattended && (ctx.battery ?? 1) >= p.chargeDone) events.push({ type: 'charged' });
+        else if (!ctx.running && ctx.unattended) events.push({ type: 'died' });
         else if (!ctx.unattended) events.push({ type: 'letGo', heldFor: this.heldFor, stalls: letGoStalls(ctx.score, this.heldFor, this.random, p) });
       }
       this.reset();
@@ -148,11 +162,17 @@ export class KeepAlive {
     }
     if (!this.holding) {
       this.holding = true;
-      events.push({ type: 'sit' });
+      this.charging = charging;
+      events.push({ type: 'sit', charging });
+    }
+    if (this.charging && (ctx.battery ?? 1) >= p.chargeDone) {
+      this.reset();
+      events.push({ type: 'charged' });
+      return events;
     }
     this.heldFor += dt;
     this.sinceCatch += dt;
-    const target = ctx.idleRpm * p.fastIdle;
+    const target = ctx.idleRpm * (this.charging ? p.chargeRevs : p.fastIdle);
     let t = p.holdBase + Math.max(0, (target - ctx.rpm) / target) * p.holdGain;
     if (this.catching > 0) {
       this.catching -= dt;
@@ -171,9 +191,10 @@ export class KeepAlive {
       this.saidTruth = true;
       events.push({ type: 'truth' });
     }
-    if (this.heldFor >= p.giveUpAfter) {
-      const keyOff = this.random() < p.keyOffChance;
-      const stalls = !keyOff && letGoStalls(ctx.score, this.heldFor, this.random, p);
+    const limit = this.charging ? (ctx.id === 'jess' ? p.chargeBoredJess : p.chargeHoldAmy) : p.giveUpAfter;
+    if (this.heldFor >= limit) {
+      const keyOff = !this.charging && this.random() < p.keyOffChance;
+      const stalls = !this.charging && !keyOff && letGoStalls(ctx.score, this.heldFor, this.random, p); // a charging one is left to the battery
       this.reset();
       this.coolFor = p.cooldown;
       events.push({ type: 'giveUp', keyOff, stalls });

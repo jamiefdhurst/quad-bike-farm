@@ -2,10 +2,14 @@
 // comments. Ranges are [min, max, step] for the debug panel.
 
 import { DEFAULT_KNACK_PARAMS, KNACK_RANGES } from './knack.js';
+import { DEFAULT_CHARGING_PARAMS, CHARGING_PARAM_RANGES } from './charging.js';
 
 export const DEFAULT_ENGINE_PARAMS = {
   // A quad's knack for starting (knack.js)
   ...DEFAULT_KNACK_PARAMS,
+
+  // What running does to the battery (charging.js)
+  ...DEFAULT_CHARGING_PARAMS,
 
   // Cycle: 4 fires every two revolutions, 2 fires every revolution.
   strokes: 4,
@@ -19,7 +23,7 @@ export const DEFAULT_ENGINE_PARAMS = {
   crankRpm: 320, // starter motor speed
   batteryIgnitionDrain: 0.0021, // battery (0..1) lost per second with the ignition on and the engine not running (flat in about 8 minutes)
   batteryCrankDrain: 0.0125, // lost per second on the starter (about 8 s of cranking per 10%)
-  batteryChargeRate: 0.0017, // gained per second while it runs (flat to full in about 10 minutes)
+  batteryChargeRate: 0.0017, // gained per second at full alternator output (flat to full in about 10 minutes revved; slower at idle, see charging.js)
   chillChoke: 0.5, // extra choke a cold engine needs on the coldest day (times 1 + this), see Weather.chill
   chillChokeFlow: 0.9, // share of that extra the choke can deliver, so full choke still starts a frozen engine (1 = as easily as a mild cold one)
   chillWarmUp: 0.6, // longer a cold engine takes to warm up on the coldest day (times 1 + this)
@@ -332,6 +336,7 @@ export const DEFAULT_ENGINE_PARAMS = {
 };
 
 export const ENGINE_PARAM_RANGES = {
+  ...CHARGING_PARAM_RANGES,
   ...KNACK_RANGES,
   strokes: [2, 4, 2],
   cylinders: [1, 8, 1],

@@ -94,8 +94,8 @@ export const FAQ_SECTIONS = [
         a: `Three ways out. The yellow, orange, kids' quad, mini moto and old three-wheeler have a pull-start: with the ignition on, hold <kbd>P</kbd>
           for about half a second to a second and let go to yank (too short is weak, too long is botched). Or fetch the jump leads from the
           workbench, clamp the flat one (<kbd>E</kbd>) and then a running one (<kbd>E</kbd>), parked nose to nose since they only reach about
-          4.5 m. The Series III Land Rover has a starting handle too (the 200TDi hasn't: it wants the leads). Running an engine charges its battery again; leaving the key on with it stopped drains it
-          flat in about eight minutes.`,
+          4.5 m. The Series III Land Rover has a starting handle too (the 200TDi hasn't: it wants the leads). Running an engine charges its battery again, but by the revs: about ten minutes revved, much longer at idle. A jumped petrol engine
+          with a weak battery dies again at the first stop unless you keep the revs up. Leaving the key on with it stopped drains it flat in about eight minutes.`,
         tip: 'Leaving the key on with the engine off flattens the battery in about eight minutes.',
       },
       {
@@ -330,6 +330,13 @@ export const FAQ_SECTIONS = [
         a: `Their engines sit on rubber mounts, so the engine rocks on its own: a shudder at idle, and a lurch as it starts and stops. That is normal. If it
           has got much worse and clonks when you go on or off the throttle, the mounts have perished. A quick fix with the toolbox (<kbd>M</kbd>) tightens them;
           the workbench renews them for good.`,
+      },
+      {
+        q: 'It started on the leads and then died again when I stopped. Why?',
+        a: `Idling hardly charges a battery, and under about 40% a petrol engine can't keep its spark going at idle. Keep the revs up for a few minutes
+          (a fast idle is enough to start with, more is better) and it charges; the loan quad's, tractor's, UTV's and Land Rover's lamps run off the battery
+          and slow it further, so switch them off. Amy will sit on the back and hold the revs for you. Jess will for a minute.`,
+        tip: 'After a jump start, keep the revs up for ten minutes or it dies again at the first stop.',
       },
       {
         q: 'Why is she sitting on the back of a quad that is running, with nobody riding it?',

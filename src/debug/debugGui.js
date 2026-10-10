@@ -5,6 +5,7 @@ import { applicableQuirks, featuresOf } from '../vehicle/quirks.js';
 import { categoryOf, sortTuneGroups } from './tuneCategories.js';
 import { buildGirlsTab } from './girlsTab.js';
 import { setQuirk, setFault, clearFaults, fixEverything, problemSummary, quirkLabel, startWarm, switchOff } from './vehicleDebug.js';
+import { netCharge } from '../engine/charging.js';
 import { sickness, sickEvidence } from '../npc/keepAlive.js';
 import { BRANDS, WHEEL_NAMES } from '../vehicle/tyres.js';
 import { LIGHT_MODES } from '../vehicle/lightSwitch.js';
@@ -216,6 +217,10 @@ export class DebugGui {
     if (!u.quad.fuel.params.noTap || (u.quad.landRover && !u.quad.engine.params.compressionIgnition)) set(r, 'choke', () => round(unit().quad.choke), (v) => (unit().quad.choke = v), 0, 1, 0.1);
     if (u.quad.sump) set(r, 'engine oil', () => round(unit().quad.sump.level), (v) => (unit().quad.sump.level = v), 0, 1);
     set(r, 'battery', () => round(unit().engine.battery), (v) => (unit().engine.battery = v), 0, 1);
+    show(r, 'charging (battery per minute)', () => {
+      const en = unit().engine;
+      return en.isRunning ? round(netCharge(en.rpm, en.params.idleRpmWarm, en.params.maxRpm, en.lightLoad, en.params.batteryChargeRate, en.params) * 60, 3) : 'not running';
+    });
     show(r, 'hours', () => round(unit().quad.usage.hours));
     show(r, 'odometer / trip (mi)', () => `${unit().quad.usage.odoMiles.toFixed(2)} / ${unit().quad.tripMiles.toFixed(2)}`);
     tick(r, 'parking brake', () => !!unit().quad.parkBrake, (v) => (unit().quad.parkBrake = v));

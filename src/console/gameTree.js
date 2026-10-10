@@ -1,5 +1,6 @@
 // The game as the console sees it: a tree of values (vehicle.red.temperature, girl.amy.favour, weather.rain, tune.<group>.<key>...)
 // built over the live game. Every value reads and writes through the same fields and methods the debug panel uses.
+import { netCharge } from '../engine/charging.js';
 import { group, value, slug } from './shell.js';
 import { getTuningGroups } from '../core/tuning.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
@@ -91,6 +92,7 @@ export function buildGameTree(g, host) {
         temperature: num(() => e().temperature, (v) => e().setTemperature(v), 0, 1, '', '0 cold, 1 warm'),
         overheating: ro(() => e().heat),
         battery: num(() => e().battery, (v) => (e().battery = v), 0, 1),
+        charging: ro(() => (e().isRunning ? netCharge(e().rpm, e().params.idleRpmWarm, e().params.maxRpm, e().lightLoad, e().params.batteryChargeRate, e().params) * 60 : 0), '/min', 'battery gained a minute at these revs and lamps'),
         fuel: num(() => q().fuel.litres, (v) => (q().fuel.litres = v), 0, q().fuel.params.tankCapacity, 'litres'),
         tap: choice(TAP_POSITIONS, () => q().fuel.tap, (v) => (q().fuel.tap = v), 'the fuel tap'),
         hours: num(() => q().usage.hours, (v) => (q().usage.hours = v), 0, 5000),

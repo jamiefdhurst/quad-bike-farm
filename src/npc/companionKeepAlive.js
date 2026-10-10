@@ -40,13 +40,15 @@ export const keepAliveMethods = {
       running: e.isRunning,
       sick: sick.sick,
       score: sick.score,
+      battery: e.battery,
       unattended: !q.rider && !q.driver && !q.isGhostRiding && q.speed < 0.3,
       rpm: e.rpm,
       idleRpm: e.params.idleRpmWarm,
       youDistance: you ? this.root.position.distanceTo(you) : Infinity,
     });
     for (const ev of events) {
-      if (ev.type === 'sit') this.selfEvents.push('keepSit');
+      if (ev.type === 'sit') this.selfEvents.push(ev.charging ? 'keepCharge' : 'keepSit');
+      else if (ev.type === 'charged') this.selfEvents.push('keepCharged');
       else if (ev.type === 'truth') this.selfEvents.push('keepTruth');
       else if (ev.type === 'died') this.selfEvents.push('keepDied');
       else if (ev.type === 'letGo' && ev.stalls) {

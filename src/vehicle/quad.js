@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { lampSupply } from '../engine/charging.js';
 import { buildQuadModel, poseSuspension, setHeadlights, setTaillights, setSignalLamps, poseSignalControls, poseParkBrake } from './quadModel.js';
 import { FuelSystem } from './fuelSystem.js';
 import { QuadPhysics, QUAD_LAYOUT } from './quadPhysics.js';
@@ -1047,7 +1048,11 @@ export class Quad {
     const lit = e.ignitionOn && !this.noHeadlight;
     // A UTV's lights are the switch's (the key must be on as well), not the engine's.
     const beams = this.lights ? lightLook(this.lights.mode, e.hasPower) : null;
-    const level = (beams ? beams.level : look.level) * this.quirks.headlight(dt);
+    // Lamps on the battery's supply load it, and dim when it is weak and the revs are low (engine/charging.js); the old quads' run off the magneto.
+    const onBattery = lit && (beams ? beams.level > 0 : this.steadyLights);
+    e.lightLoad = onBattery ? 1 : 0;
+    const supply = onBattery ? lampSupply(e.battery, e.rpm, e.params.idleRpmWarm, e.params.maxRpm, e.params.batteryWeakBelow) : 1;
+    const level = (beams ? beams.level : look.level) * this.quirks.headlight(dt) * supply;
     setHeadlights(this.model, lit, level, beams ? beams.colour : look.colour, beams);
     if (this.signals) {
       const sides = this.signals.update(dt, Math.max(-1, Math.min(1, this.steer / ((this.params.maxSteerDeg * Math.PI) / 180))), e.hasPower && e.ignitionOn);

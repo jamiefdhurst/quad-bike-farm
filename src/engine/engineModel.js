@@ -18,6 +18,7 @@ import { stepGlow, glowReady, compressionCatchFactor } from './compression.js';
 import { offTemperature } from '../world/barn.js';
 import { runInWearFactor, startRunningIn, stepRunningIn } from './runningIn.js';
 import { boreWearFactor, borePowerFactor } from './bigBore.js';
+import { netCharge, lowBatteryStallRate } from './charging.js';
 import { jetError, leanStarve, jetTrue, jetMixture } from './jetting.js';
 import { coolingEffect, leakRate, stepPuddle, steamLevel, boilsOver } from './coolant.js';
 import { stepHeat, stepSoak, pinkLevel, gaugeHeat, coolTickRate, hotStartRich } from './heat.js';
@@ -65,6 +66,7 @@ export class EngineModel {
     this.gearRpm = 0; // the revs the road speed turns it at in the gear it is in (a manual with the clutch up)
     this.gearLock = 0; // 0..1 how far the clutch ties it to that: 0 free, 1 locked
     this.fuel = 1; // float bowl level, 0..1
+    this.lightLoad = 0; // 0..1 of the lamps run off the battery, set by the vehicle (charging.js)
     this.battery = 1; // charge, 0..1: drained by the ignition and the starter, charged while it runs
     this.pullLeft = 0; // seconds left of a yank on the pull-start
     this.pullStrength = 0; // how good that yank was, 0..1
@@ -425,8 +427,14 @@ export class EngineModel {
   updateBattery(h) {
     const p = this.params;
     const cold = 1 + p.chillBattery * this.chill; // a cold battery gives less
-    if (this.state === EngineState.RUNNING) this.battery += p.batteryChargeRate * h;
-    else if (this.state === EngineState.CRANKING) {
+    if (this.state === EngineState.RUNNING) {
+      this.battery += netCharge(this.rpm, p.idleRpmWarm, p.maxRpm, this.lightLoad, p.batteryChargeRate, p) * h;
+      // A weak battery can't keep a spark ignition going at idle: it dies unless the revs are kept up (a diesel and a magneto don't care).
+      if (!p.compressionIgnition && !p.noStarter) {
+        const dies = lowBatteryStallRate(this.battery, this.rpm, p.idleRpmWarm, p) * h;
+        if (dies > 0 && this.random() < dies) this.stall('battery'); // (no draw from the random stream when it is well, so seeded runs don't shift)
+      }
+    } else if (this.state === EngineState.CRANKING) {
       if (this.motorOn) this.battery -= p.batteryCrankDrain * h * cold;
     } else if (this.state !== EngineState.OFF) this.battery -= p.batteryIgnitionDrain * h * cold;
     this.battery = clamp(this.battery, 0, 1);
