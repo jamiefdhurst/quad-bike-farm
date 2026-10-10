@@ -150,6 +150,7 @@ export function buildGameTree(g, host) {
     return group(() => ({
       state: text(() => c().state),
       lookingAt: text(() => c().attention.describe()),
+      reacting: text(() => c().reactingText),
       ...where(id),
       favour: num(() => g.favour.scores[id], (v) => (g.favour.scores[id] = v), -30, 30, '', 'how she rates you'),
       standing: ro(() => g.favour.standing(id)),

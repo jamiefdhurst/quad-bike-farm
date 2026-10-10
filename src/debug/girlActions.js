@@ -90,6 +90,26 @@ export function girlActions(g) {
         toast(`${nameOf(id)} is off to sit on the ${q.unit.name}`);
       },
     },
+    // Her reactions (npc/reactions.js), each from something 3 m in front of her.
+    ...[
+      ['flinch', '% flinches'],
+      ['stepBack', '% steps back from something'],
+      ['coverEars', '% covers her ears'],
+      ['gasp', '% gasps, hands to her mouth'],
+      ['cheer', '% cheers'],
+      ['turnAway', '% turns away from smoke'],
+    ].map(([type, label]) => ({
+      verb: type.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`),
+      label,
+      run: (id) => {
+        const c = girl(id);
+        const free = c.root.parent === g.scene;
+        const at = free ? c.root.position : c.quad.position;
+        const h = free ? c.heading : c.quad.yaw;
+        const from = { x: at.x + Math.sin(h) * 3, y: at.y + 0.8, z: at.z + Math.cos(h) * 3 };
+        if (!c.react(type, { from, force: true })) toast(`${nameOf(id)} can't do that now (it needs her ${type === 'stepBack' || type === 'turnAway' ? 'stood about' : 'hands free'})`);
+      },
+    })),
     {
       verb: 'bang',
       label: 'Make a bang behind % (she should turn and look)',
