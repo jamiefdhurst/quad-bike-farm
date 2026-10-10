@@ -1,6 +1,8 @@
 // The debug panel's Girls tab: one folder per girl (what she is doing and what you can make her do, her favour, the romance
 // and her skills), then one for the two of them and the farm. Actions come first in each, state after.
 import { girlActions } from './girlActions.js';
+import { NEEDS, NEED_LABELS } from '../npc/needs.js';
+import { describeMind } from '../npc/chooser.js';
 import { rampPoint } from '../npc/jumps.js';
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
@@ -38,6 +40,14 @@ export function buildGirlsTab(d) {
     show(f, 'tidying', () => c.lineUpStatus);
     show(f, 'race score', () => `${g.race.tally[id]?.wins ?? 0} won, ${g.race.tally[id]?.losses ?? 0} lost`);
     show(f, 'jump score', () => { const s = g.jumpWatch.score[id]; return s ? JSON.stringify(s) : 'none yet'; });
+
+    // --- Why she does what she does: what she wants (settable) and what she chose for it (npc/needs.js, npc/chooser.js).
+    const why = f.addFolder('Why');
+    for (const n of NEEDS) slider(why, `wants ${NEED_LABELS[n]}`, () => c.needs[n], (v) => (c.needs[n] = v), 0, 1, 0.01);
+    show(why, 'chose', () => describeMind(c.mind).chose);
+    show(why, 'nearly chose', () => describeMind(c.mind).nearly);
+    show(why, 'next', () => describeMind(c.mind).next);
+    button(why, 'Think now', () => (c.mind.thinkIn = 0));
 
     // --- How she rates you, and the romance.
     const fav = f.addFolder('Favour and romance');

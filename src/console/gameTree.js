@@ -1,6 +1,8 @@
 // The game as the console sees it: a tree of values (vehicle.red.temperature, girl.amy.favour, weather.rain, tune.<group>.<key>...)
 // built over the live game. Every value reads and writes through the same fields and methods the debug panel uses.
 import { netCharge } from '../engine/charging.js';
+import { NEEDS, NEED_LABELS } from '../npc/needs.js';
+import { describeMind } from '../npc/chooser.js';
 import { group, value, slug } from './shell.js';
 import { getTuningGroups } from '../core/tuning.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
@@ -151,6 +153,10 @@ export function buildGameTree(g, host) {
       state: text(() => c().state),
       free: text(() => { const a = c().availability(); return a.free ? 'yes' : `no: ${a.why}`; }),
       lookingAt: text(() => c().attention.describe()),
+      needs: group(() => Object.fromEntries(NEEDS.map((n) => [n, num(() => c().needs[n], (v) => (c().needs[n] = v), 0, 1, '', `how much she wants ${NEED_LABELS[n]} (0 met, 1 pressing)`)]))),
+      chose: text(() => describeMind(c().mind).chose),
+      nearlyChose: text(() => describeMind(c().mind).nearly),
+      thinking: text(() => describeMind(c().mind).next),
       reacting: text(() => c().reactingText),
       ...where(id),
       favour: num(() => g.favour.scores[id], (v) => (g.favour.scores[id] = v), -30, 30, '', 'how she rates you'),
