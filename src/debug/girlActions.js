@@ -69,6 +69,17 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'minds-fix',
+      label: '% minds that you fixed up her favourite (says her line now)',
+      run: (id) => {
+        const c = girl(id);
+        const fav = c.voice.favourite;
+        if (!fav) return toast(`${nameOf(id)} has no favourite yet`);
+        g.dontFix.force(id, fav);
+        toast(c.voice.onFixedFavourite() ? `${nameOf(id)} minds` : `${nameOf(id)} is too far away to say`);
+      },
+    },
+    {
       verb: 'warm-sit',
       label: '% starts the picked vehicle and sits on it while it warms (needs it off, and a seat)',
       vehicle: true,

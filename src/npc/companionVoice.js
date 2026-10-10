@@ -112,6 +112,12 @@ export class CompanionVoice {
     return this.say(situation, { urgent: true, chance });
   }
 
+  /** You've fixed up her favourite and it had gone rough (dontFixIt.js): she minds, as close as she is. Returns what she said, if anything. */
+  onFixedFavourite() {
+    if (this.head.distanceTo(this.listener) > Math.min(15, this.params.voiceRange)) return null;
+    return this.say('fixMinds', { urgent: true, force: true });
+  }
+
   /** You working at the barn bench: 'start', 'step', 'flaw', 'done' (done right) or 'botched', and for the barn find 'tarp' (it's off) and 'runs' (its first start). */
   onBench(kind) {
     const [situation, chance] = { start: ['benchStart', 0.6], step: ['benchStep', 0.12], flaw: ['benchFlaw', 0.8], done: ['benchDone', 0.7], botched: ['benchBotched', 0.8], catalogue: ['boreCatalogue', 0.9], boreDone: ['boreDone', 1], boreBotched: ['boreBotched', 1], tarp: ['rustyTarp', 0.95], runs: ['rustyRuns', 1] }[kind] ?? [];

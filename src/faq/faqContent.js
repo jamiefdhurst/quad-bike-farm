@@ -339,6 +339,12 @@ export const FAQ_SECTIONS = [
         tip: 'After a jump start, keep the revs up for ten minutes or it dies again at the first stop.',
       },
       {
+        q: 'Why does she not like it when I service her favourite quad?',
+        spoiler: true,
+        a: `A worn, rough engine shakes more, and the girls like the shake. If you service or put right the quad that is her favourite after it has gone rough, she
+          minds. Jess says you have made it boring. Amy wanted it fixed, but will miss it. It is only a remark: nothing is held against you.`,
+      },
+      {
         q: 'Why is she sat on my quad (or in the Land Rover) while it warms up?',
         a: `A cold engine shakes about twice as hard as a warm one, and the girls like that. When one starts your usual vehicle for you, she often sits on it while
           it warms (on the back of a quad, or in the passenger seat of a Land Rover or the UTV) and sometimes asks first. She is a little disappointed when it smooths out, and slow to get off

@@ -2542,3 +2542,12 @@ Decided with Jamie (as recommended, with changes): three times in four she sits 
 - While she sits nothing else revs her quad or switches it off (the `readyHolding` flag shared with item 123). The same invisible care as item 123 keeps a little choke and 0.15 throttle on until the engine is at `warmLightThreshold`, 0.65 (it was 0.5, which a headless run showed let the engine die just under warm; the sulker and the waiter now use 0.65 too).
 - Debug: "Sitting while it warms" in Tune (Girls: how they feel about you); each girl has "starts the picked vehicle and sits on it while it warms" (console `girl <name> warm-sit <vehicle>`). Lines in `warmSitLines.js`: `warmSitAsk`, `warmSitIn`, `warmSitSmoothing`, `warmSitSmooth`, `warmSitSlow`, `warmSitGiveUp`.
 - Checked headless once for the red quad and once for the Series III, with Jess moved near: she started it, sat on the back and in the passenger seat, and it kept running through the warm-up, with no page errors. Not checked: the ask wheel by hand, how the shake and her seated pose look, the real warm-up timing in the cold, or the lines by ear.
+
+## Don't fix it (TODO 126)
+
+Nothing was undecided; built as the item says.
+
+- `src/npc/dontFixIt.js` (pure, tested) watches every vehicle's engine wear each frame (what a service clears, and what the rough running and the girls' buzz already come from) and spots a fix: wear that was at least `roughFrom` 0.25 within the last `window` 3 s dropping by `dropBy` 0.15 or more. Watching the wear rather than hooking each service means every way of looking after a quad counts: the toolbox service, the quick repairs, a bench job, and "Put it right" in the panel. A slow decline in wear (it never really does that) does not count.
+- When it happens, the girl whose favourite it is (`voice.favourite`, which already drifts to the quad that buzzes most for her) and who is within `hearRange` 15 m of you says `fixMinds`; at most once per `cooldown` 60 s each. Jess: you've made it boring. Amy: it runs properly now, and she'll miss the buzz. A line only: no favour change.
+- Debug: "Minding a fix" in Tune (Girls: how they feel about you); each girl has "minds that you fixed up her favourite" (console `girl <name> minds-fix`).
+- Checked headless once: with the favourite's wear set to 0.6 and then to 0 near her, she said `fixMinds` and nothing else of the kind. Not checked: the lines by ear, or how it plays with a real service in the barn.
