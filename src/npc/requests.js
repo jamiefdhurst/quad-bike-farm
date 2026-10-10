@@ -1,5 +1,6 @@
 // Favours. Now and then a girl asks you for something: wash her favourite quad,
-// take her over to the straw bales, or fetch the jerry can. Doing it pleases her;
+// take her over to the straw bales, fetch the jerry can, take her over the cattle grid again, go the bumpy way, or start the tractor so she can sit on
+// its mudguard while it idles (the last three are the buzz: the girls like the shake). Doing it pleases her;
 // leaving it, the request lapses and she remembers (a grudge that makes her
 // short with you and more likely to say no). Nothing shows on screen: you have
 // to remember what she said, and she'll remind you if you talk to her. Pure
@@ -23,6 +24,7 @@ export const DEFAULT_REQUEST_PARAMS = {
   stopSpeed: 0.8, // m/s: the quad counts as stopped below this
   joinDelay: 1.5, // seconds after you get on a quad before the girl who asked for the bales sets off to climb on the back
   joinRange: 30, // metres she'll come from to get on the back of the quad you're on
+  bumpySlams: 4, // seat slams on the back of a quad you ride, with her on it, that count as having gone the bumpy way
 };
 
 export const REQUEST_PARAM_RANGES = {
@@ -43,9 +45,10 @@ export const REQUEST_PARAM_RANGES = {
   stopSpeed: [0.1, 3, 0.1],
   joinDelay: [0, 10, 0.5],
   joinRange: [5, 80, 1],
+  bumpySlams: [1, 20, 1],
 };
 
-export const REQUEST_KINDS = ['wash', 'bales', 'can'];
+export const REQUEST_KINDS = ['wash', 'bales', 'can', 'grid', 'bumpy', 'mudguard'];
 
 const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 
@@ -110,7 +113,9 @@ export class Requests {
    * One step. `ctx`:
    *   you: { x, z, onFoot }
    *   girls: [{ id, x, z, free, favourite }]       free: stood about, nothing on; favourite: her favourite quad's id
-   *   quads: [{ id, x, z, muddy, speed, ridden, hasPillion, pillion }]   pillion: id of the girl on the back (or front rack), if any
+   *   quads: [{ id, x, z, muddy, speed, ridden, hasPillion, pillion, onGrid, slams }]   pillion: id of the girl on the back (or front rack), if any;
+   *       onGrid: it is on the cattle grid; slams: how many times the pillion seat slammed this step
+   *   grid: whether there is a cattle grid; tractor: { exists, running, mudguard } (mudguard: id of the girl sat on its wheel arch)
    *   can: { x, z, held }
    *   bales: [{ x, z }]
    * Returns events: { type: 'ask' | 'done' | 'lapsed', request }.
@@ -153,6 +158,15 @@ export class Requests {
     return events;
   }
 
+  /** Opens a request of this kind now, whatever the dice (the debug buttons). Returns the 'ask' event, or null if she has one open already. */
+  force(girl, kind) {
+    if (this.openFor(girl)) return null;
+    const request = { girl, kind, since: this.clock };
+    this.open.push(request);
+    this.lastAsk[girl] = this.clock;
+    return { type: 'ask', request };
+  }
+
   /** Whether she could ask for this now, and what about. */
   target(kind, girl, ctx) {
     const p = this.p;
@@ -160,7 +174,11 @@ export class Requests {
       const q = ctx.quads.find((x) => x.id === girl.favourite);
       return q && q.muddy > p.muddyAbove ? { quad: q.id } : null;
     }
-    if (kind === 'bales') return ctx.bales.length && ctx.quads.some((q) => q.hasPillion && !q.pillion) ? {} : null;
+    const backFree = ctx.quads.some((q) => q.hasPillion && !q.pillion);
+    if (kind === 'bales') return ctx.bales.length && backFree ? {} : null;
+    if (kind === 'grid') return ctx.grid && backFree ? {} : null;
+    if (kind === 'bumpy') return backFree ? {} : null;
+    if (kind === 'mudguard') return ctx.tractor?.exists && !ctx.tractor.running && !ctx.tractor.mudguard ? {} : null;
     // The can: not already by her, and nobody holding it near her.
     return dist(ctx.can, girl) > p.canRange * 2 ? {} : null;
   }
@@ -171,6 +189,13 @@ export class Requests {
     if (!girl) return false;
     if (r.kind === 'wash') return (ctx.quads.find((q) => q.id === r.quad)?.muddy ?? 1) < p.cleanBelow;
     if (r.kind === 'can') return dist(ctx.can, girl) <= p.canRange && (ctx.can.held ? dist(ctx.you, girl) <= p.canRange : true);
+    if (r.kind === 'mudguard') return !!ctx.tractor?.running && ctx.tractor.mudguard === r.girl;
+    if (r.kind === 'grid') return ctx.quads.some((x) => x.pillion === r.girl && x.ridden && x.onGrid);
+    if (r.kind === 'bumpy') {
+      const on = ctx.quads.find((x) => x.pillion === r.girl && x.ridden);
+      if (on) r.bumps = (r.bumps ?? 0) + (on.slams ?? 0);
+      return (r.bumps ?? 0) >= p.bumpySlams;
+    }
     // Bales: on the back of a quad you're on, stopped near them.
     const q = ctx.quads.find((x) => x.pillion === r.girl && x.ridden);
     return !!q && Math.abs(q.speed) < p.stopSpeed && ctx.bales.some((b) => dist(b, q) <= p.balesRange);

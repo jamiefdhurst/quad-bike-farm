@@ -77,7 +77,8 @@ export class MudguardRide {
    *   settingOff: she's getting on, starting it or letting it tick over, about to go (the moment her friend may hop up)
    *   riding: you're on the tractor (so a girl stays up there while it's stopped to start it)
    *   speed: the tractor's ground speed
-   *   girls: [{ id, free, aboard, dist }]  free: stood about with nothing to do; aboard: on or climbing onto a mudguard
+   *   running: its engine is running
+   *   girls: [{ id, free, aboard, dist, wants }]  free: stood about with nothing to do; aboard: on or climbing onto a mudguard; wants: she asked to sit up there
    * Returns events: { type: 'board' | 'shout' | 'leave', girl }.
    */
   update(dt, ctx) {
@@ -94,7 +95,8 @@ export class MudguardRide {
     }
     if (ctx.drivenBy && !ctx.riding && !ctx.trailer) return this.girlDriving(dt, ctx, aboard, events);
     if (ctx.parked && !ctx.trailer && ctx.speed < p.stopSpeed && !aboard.length) {
-      const g = ctx.girls.find((x) => x.free && x.dist <= p.boardRange && this.random() < p.idleBoardRate * dt);
+      // One who asked to sit up there while it idles goes at once, once it is running (the favour in requests.js).
+      const g = ctx.girls.find((x) => x.free && x.dist <= p.boardRange && (x.wants ? ctx.running : this.random() < p.idleBoardRate * dt));
       if (g) {
         this.ask(g.id); // she stays put until she's bored of it, even with you not on it
         events.push({ type: 'board', girl: g.id, idle: true });

@@ -125,3 +125,64 @@ describe('Requests.joiner', () => {
     expect(r.joiner(5, c({ ridden: { id: 'blue', hasPillion: true, pillion: null } }))).toBe('amy');
   });
 });
+
+describe('the buzz-seeking requests', () => {
+  // A quad with a free back, no mud, no bales, the can by her and the cattle grid and tractor as asked.
+  const buzzCtx = (over = {}) => {
+    const c = ctx({ bales: [], can: { x: 0, z: 1, held: false }, grid: true, tractor: { exists: true, running: false, mudguard: null }, ...over });
+    c.quads[0].muddy = 0;
+    c.quads[0].hasPillion ??= true;
+    return c;
+  };
+  const ask = (kind, over = {}) => {
+    const r = new Requests({ ...P, chance: 1 }, () => 0);
+    // Only this kind possible: random picks the first of the options, so the others are made impossible by the context.
+    const events = wait(r, buzzCtx(over));
+    return { r, ask: events.find((e) => e.type === 'ask'), kind };
+  };
+
+  it('asks to go over the cattle grid when there is one and a quad with a free back, and not when there is not', () => {
+    const { ask: e } = ask('grid', { tractor: { exists: false } });
+    expect(e.request.kind).toBe('grid');
+    expect(wait(new Requests({ ...P, chance: 1 }, () => 0), buzzCtx({ grid: false, tractor: { exists: false }, quads: [{ id: 'red', x: 3, z: 3, muddy: 0, speed: 0, ridden: false, pillion: null, hasPillion: false }] }))).toEqual([]);
+  });
+
+  it('the cattle grid is done when you ride over it with her on the back', () => {
+    const r = new Requests({ ...P, chance: 1 }, () => 0);
+    wait(r, buzzCtx({ tractor: { exists: false } }));
+    expect(r.openFor('amy').kind).toBe('grid');
+    const on = buzzCtx({ tractor: { exists: false } });
+    on.quads[0] = { ...on.quads[0], ridden: true, pillion: 'amy', onGrid: false };
+    expect(r.update(1, on)).toEqual([]);
+    on.quads[0].onGrid = true;
+    expect(r.update(1, on)[0]).toMatchObject({ type: 'done', request: { kind: 'grid' } });
+  });
+
+  it('going the bumpy way is done after enough slams of her seat, riding with her on the back', () => {
+    const r = new Requests({ ...P, chance: 1 }, () => 0);
+    r.open.push({ girl: 'amy', kind: 'bumpy', since: 0 });
+    const c = buzzCtx();
+    c.quads[0] = { ...c.quads[0], ridden: true, pillion: 'amy', slams: 0 };
+    for (let i = 0; i < 20; i++) expect(r.update(0.5, c).filter((e) => e.type === 'done')).toEqual([]); // smooth riding does not count
+    c.quads[0].slams = 1;
+    let done = null;
+    for (let i = 0; i < P.bumpySlams && !done; i++) done = r.update(0.5, c).find((e) => e.type === 'done');
+    expect(done).toBeTruthy();
+    // Slams with nobody on the back, or on a quad you are not riding, do not count.
+    const r2 = new Requests({ ...P }, () => 0);
+    r2.open.push({ girl: 'amy', kind: 'bumpy', since: 0 });
+    const c2 = buzzCtx();
+    c2.quads[0] = { ...c2.quads[0], ridden: true, pillion: null, slams: 3 };
+    for (let i = 0; i < 10; i++) expect(r2.update(0.5, c2).filter((e) => e.type === 'done')).toEqual([]);
+  });
+
+  it('the tractor mudguard is asked only while it is off, and done when it runs with her up on it', () => {
+    const r = new Requests({ ...P, chance: 1 }, () => 0);
+    const stopped = buzzCtx({ grid: false, quads: [{ id: 'red', x: 3, z: 3, muddy: 0, speed: 0, ridden: false, pillion: null, hasPillion: false }] });
+    expect(wait(r, stopped)[0].request.kind).toBe('mudguard');
+    expect(r.update(1, { ...stopped, tractor: { exists: true, running: true, mudguard: null } })).toEqual([]);
+    expect(r.update(1, { ...stopped, tractor: { exists: true, running: true, mudguard: 'amy' } })[0]).toMatchObject({ type: 'done', request: { kind: 'mudguard' } });
+    const running = new Requests({ ...P, chance: 1 }, () => 0);
+    expect(wait(running, { ...stopped, tractor: { exists: true, running: true, mudguard: null } })).toEqual([]);
+  });
+});

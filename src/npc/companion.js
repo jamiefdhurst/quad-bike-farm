@@ -392,6 +392,7 @@ export class Companion {
       showOff: showable ? drivable.filter((q) => !q.tractor) : [],
       jumps: jumpPlan ? drivable.filter((q) => !q.tractor) : [],
       join: this.quads.filter((q) => q.position.distanceTo(here) < 25 && q.speed < 0.5 && !q.rider && settingOff(q) && (this.canRidePillion(q) || this.canRideRackOn(q))),
+      buzz: this.quads.filter((q) => near(q) && q.hasPillion && q.engine.wear >= p.buzzWear && this.canRidePillion(q)).sort((a, b) => b.engine.wear - a.engine.wear),
       mount: this.quads.filter((q) => near(q) && q.hasPillion),
       start: this.quads.filter((q) => near(q) && !q.engine.isRunning),
       drive: this.quads.filter((q) => near(q) && this.canDrive(q)),
@@ -410,7 +411,10 @@ export class Companion {
       const q = pick(options.join);
       this.requestMount(q, { ownChoice: true, seat: this.canRidePillion(q) ? 'pillion' : 'rack' });
     }
-    else if (choice === 'mount') this.requestMount(pick(options.mount), { ownChoice: true });
+    else if (choice === 'buzz') {
+      // The roughest one near her; started first if it is off, then she sits on the back and stays a while.
+      this.requestBuzzSit(options.buzz[0]);
+    } else if (choice === 'mount') this.requestMount(pick(options.mount), { ownChoice: true });
     else if (choice === 'start') this.requestStart(pick(options.start));
     else if (borrowed) this.requestDrive(borrowed);
     else if (choice === 'lineUp') this.startLineUp(lineUpJob);
@@ -801,6 +805,12 @@ export class Companion {
       q.engine.setIgnition(false);
       this.selfEvents.push('keyOff');
     }
+  }
+
+  /** Goes and sits on the back of a rough quad for the shake: started first if it is off. */
+  requestBuzzSit(q) {
+    if (q.engine.isRunning) this.requestMount(q, { ownChoice: true });
+    else this.requestStart(q, { then: (ran) => (ran ? this.requestMount(q, { ownChoice: true }) : null) });
   }
 
   /** Walks to the bars of a quad and has a go at starting it. */

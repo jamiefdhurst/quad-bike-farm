@@ -56,6 +56,8 @@ export const DEFAULT_COMPANION_PARAMS = {
   boredDoughnutChance: 0, // the chance, when bored, she takes a quad off and spins doughnuts in the field (Jess)
   boredJumpChance: 0, // the chance, when bored, she takes a quad off to jump the ramp in the field (jumps.js)
   boredShowOffChance: 0, // the chance, when bored and you're near, she takes a quad off to wheelie or skid past you (showOff.js)
+  boredBuzzChance: 0, // the chance, when bored, she goes and sits on the back of a rough quad for the shake (Jess readily, Amy rarely)
+  buzzWear: 0.3, // engine wear (0..1) from which a quad is rough enough for her to seek out
   boredLineUpChance: 0.1, // the chance, when bored, she moves the quads into a neat row in front of the barn (lineUp.js)
   lineUpCrookedChance: 0, // when she does, the chance it is just the one quad, parked crooked on purpose (Jess)
   nickChance: 0, // how much she is the sort to nick a quad you got off with the engine running (Jess), times nicking.js's chance
@@ -281,6 +283,8 @@ export const COMPANION_PARAM_RANGES = {
   boredDoughnutChance: [0, 1, 0.05],
   boredJumpChance: [0, 1, 0.05],
   boredShowOffChance: [0, 1, 0.05],
+  boredBuzzChance: [0, 1, 0.01],
+  buzzWear: [0, 1, 0.05],
   boredLineUpChance: [0, 1, 0.05],
   lineUpCrookedChance: [0, 1, 0.05],
   nickChance: [0, 1, 0.05],

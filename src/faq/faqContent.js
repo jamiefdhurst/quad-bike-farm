@@ -339,6 +339,18 @@ export const FAQ_SECTIONS = [
         tip: 'After a jump start, keep the revs up for ten minutes or it dies again at the first stop.',
       },
       {
+        q: 'Why does she want me to take her over the cattle grid, or the bumpy way, or start the tractor?',
+        a: `The girls like the shake. Now and then, when you are on foot near her, she asks you to take her over the cattle grid again (on the back of a quad you ride),
+          to go the bumpy way (a few good jolts on rough ground, with her on the back), or to start the tractor so she can sit on its mudguard while it idles.
+          Doing it pleases her; ignoring it is remembered, like the other favours.`,
+      },
+      {
+        q: 'Why does she go and sit on the worn-out quad?',
+        spoiler: true,
+        a: `A worn, rough engine shakes more, and she likes it. When she is bored she sometimes goes and sits on the back of the roughest quad near her, starting it
+          first if it is off. Jess admits it. Amy picks it just as often and never says why.`,
+      },
+      {
         q: 'Why does she not like it when I service her favourite quad?',
         spoiler: true,
         a: `A worn, rough engine shakes more, and the girls like the shake. If you service or put right the quad that is her favourite after it has gone rough, she

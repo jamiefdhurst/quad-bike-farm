@@ -1626,6 +1626,7 @@ export class Game {
       id: c.character.id,
       free: c.fsm.is('idle') && !c.hayFell && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob,
       aboard: on(c),
+      wants: this.requests.openFor(c.character.id)?.kind === 'mudguard', // she asked to sit up there while it idles
       dist: c.root.position.distanceTo(mount.model.position),
     }));
     const driver = this.companions.find((c) => c.quad === unit.quad && c.fsm.is('mounting', 'driving'));
@@ -1638,6 +1639,7 @@ export class Game {
       settingOff,
       trailer: this.trailer.hitched,
       speed: unit.quad.speed,
+      running: unit.quad.engine.isRunning,
       girls,
     };
     for (const ev of this.mudguard.update(dt, ctx)) {
@@ -3221,9 +3223,17 @@ export class Game {
         ridden: u === ridden,
         hasPillion: u.quad.hasPillion,
         pillion: this.companions.find((c) => c.isSeated && c.quad === u.quad && c.seatKind !== 'rider')?.character.id ?? null,
+        onGrid: (u.ride?.gridShare ?? 0) > 0,
+        slams: u.quad.seatSlams.filter((x) => x.kind === 'pillion').length,
       })),
       can: { ...this.petrolCan.model.getWorldPosition(new THREE.Vector3()), held: this.petrolCan.held }, // it may be standing in the trailer
       bales: this.bales,
+      grid: !!this.world.cattleGrid,
+      tractor: {
+        exists: !!this.tractorUnit,
+        running: !!this.tractorUnit?.engine.isRunning,
+        mudguard: this.tractorMount ? this.companions.find((c) => c.onHayRide && c.trailer === this.tractorMount)?.character.id ?? null : null,
+      },
     };
   }
 

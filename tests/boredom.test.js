@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { nextBoredWait, driftRestlessness, pickBoredChoice, driveAppetite } from '../src/npc/boredom.js';
 import { DEFAULT_COMPANION_PARAMS } from '../src/npc/companionParams.js';
+import { CHARACTERS } from '../src/npc/characters.js';
 
 const P = DEFAULT_COMPANION_PARAMS;
 
@@ -65,5 +66,20 @@ describe('her boredom', () => {
     const random = seeded(9);
     const picks = Array.from({ length: 400 }, () => pickBoredChoice(P, { confidence: 0.5, can: { mount: true, start: true, drive: true } }, random));
     for (const choice of ['mount', 'start', 'drive', 'wander']) expect(picks.filter((c) => c === choice).length).toBeGreaterThan(30);
+  });
+});
+
+describe('buzz-seeking', () => {
+  it('a girl keen on the shake picks a rough quad when one is about, and never when there is none', () => {
+    const p = { ...DEFAULT_COMPANION_PARAMS, boredBuzzChance: 5, boredMountChance: 0, boredStartChance: 0, boredDriveChance: 0, boredWhim: 0 };
+    let buzz = 0;
+    for (let i = 0; i < 200; i++) if (pickBoredChoice(p, { can: { buzz: true } }) === 'buzz') buzz++;
+    expect(buzz).toBeGreaterThan(150);
+    for (let i = 0; i < 200; i++) expect(pickBoredChoice(p, { can: { buzz: false } })).not.toBe('buzz');
+  });
+
+  it('Jess is keener than Amy, and the default is off', () => {
+    expect(CHARACTERS.find((c) => c.id === 'jess').params.boredBuzzChance).toBeGreaterThan(CHARACTERS.find((c) => c.id === 'amy').params.boredBuzzChance);
+    expect(DEFAULT_COMPANION_PARAMS.boredBuzzChance).toBe(0);
   });
 });

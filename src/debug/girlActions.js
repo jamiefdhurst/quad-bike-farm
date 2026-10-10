@@ -68,6 +68,28 @@ export function girlActions(g) {
         toast(g.sendToCab(id, 'rain') ? `${nameOf(id)} is off to the nearest cab` : `No cab free for ${nameOf(id)}`);
       },
     },
+    ...['grid', 'bumpy', 'mudguard'].map((kind) => ({
+      verb: `ask-${kind}`,
+      label: { grid: '% asks you to take her over the cattle grid again', bumpy: '% asks you to go the bumpy way', mudguard: '% asks you to start the tractor so she can sit on its mudguard' }[kind],
+      run: (id) => {
+        const e = g.requests.force(id, kind);
+        if (!e) return toast(`${nameOf(id)} has asked for something already`);
+        girl(id).voice.say(`ask${kind[0].toUpperCase()}${kind.slice(1)}`, { force: true });
+      },
+    })),
+    {
+      verb: 'buzz-sit',
+      label: '% goes and sits on the roughest quad near her for the shake',
+      run: (id) => {
+        if (!free(id)) return;
+        const c = girl(id);
+        const q = g.girlUnits.map((u) => u.quad).filter((x) => x.hasPillion && c.mayRide(x) && c.canRidePillion(x)).sort((a, b) => b.engine.wear - a.engine.wear)[0];
+        if (!q) return toast(`${nameOf(id)} has nowhere to sit`);
+        c.requestBuzzSit(q);
+        c.voice.say('selfBuzz', { force: true });
+        toast(`${nameOf(id)} is off to sit on the ${q.unit.name}`);
+      },
+    },
     {
       verb: 'minds-fix',
       label: '% minds that you fixed up her favourite (says her line now)',
