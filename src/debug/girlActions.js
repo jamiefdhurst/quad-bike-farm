@@ -69,6 +69,18 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'warm-sit',
+      label: '% starts the picked vehicle and sits on it while it warms (needs it off, and a seat)',
+      vehicle: true,
+      run: (id, unit) => {
+        if (!free(id)) return;
+        const c = girl(id);
+        if (unit.quad.engine.isRunning || !g.warmSitSpot(c, unit)) return toast(`${nameOf(id)} can't: it needs to be off, with a free seat for her`);
+        g.warmUpFor(c, unit, true);
+        toast(`${nameOf(id)} is off to start it and sit on it`);
+      },
+    },
+    {
       verb: 'wait-ready',
       label: '% gets a quad going and waits on the back for you, revving and tooting',
       run: (id) => {

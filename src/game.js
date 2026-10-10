@@ -86,6 +86,7 @@ import { Warming, WARMING_PARAM_RANGES, isChilly } from './npc/warming.js';
 import { CabShelter, CAB_SHELTER_PARAM_RANGES } from './npc/cabShelter.js';
 import { Sulking, SULK_PARAM_RANGES } from './npc/sulking.js';
 import { ReadyWaiting, READY_PARAM_RANGES } from './npc/readyWaiting.js';
+import { WarmSit, WARMSIT_PARAM_RANGES } from './npc/warmSit.js';
 import { DEFAULT_KEEPALIVE_PARAMS, KEEPALIVE_PARAM_RANGES } from './npc/keepAlive.js';
 import { HeadStart, HEADSTART_PARAM_RANGES } from './npc/headStart.js';
 import { Gossip, GOSSIP_PARAM_RANGES } from './npc/gossip.js';
@@ -665,6 +666,8 @@ export class Game {
     buildDragStrip(this.scene, (x, z) => this.world.heightAt(x, z), this.world.layout.dragStrip);
     this.warming = new Warming(); // hands over an idling engine on a cold day (npc/warming.js)
     this.readyWaiting = new ReadyWaiting(undefined, createRandom(this.seed ^ 0x2ead)); // sat on a running quad, revving and tooting, while you are a minute (npc/readyWaiting.js)
+    this.warmSit = new WarmSit(undefined, createRandom(this.seed ^ 0x3a2f)); // sat on your quad while it warms, for the shake (npc/warmSit.js)
+    this.warmSitQuads = new Map(); // girl id -> the quad she is sitting on
     this.readyQuads = new Map(); // girl id -> the quad she is getting ready or waiting on
     this.sulking = new Sulking(undefined, createRandom(this.seed ^ 0x5011)); // a girl sitting alone in a Land Rover after a row (npc/sulking.js)
     this.cabShelter = new CabShelter(undefined, createRandom(this.seed ^ 0x0cab)); // into a Land Rover or the UTV out of the rain or cold (npc/cabShelter.js)
@@ -1037,6 +1040,7 @@ export class Game {
     registerTuning('Whose quad', this.ownership.p, OWNERSHIP_PARAM_RANGES);
     registerTuning('Hearing a quad', this.hearing.p, EAR_PARAM_RANGES);
     registerTuning('Warming hands', this.warming.p, WARMING_PARAM_RANGES);
+    registerTuning('Sitting while it warms', this.warmSit.p, WARMSIT_PARAM_RANGES);
     registerTuning('Ready and waiting', this.readyWaiting.p, READY_PARAM_RANGES);
     registerTuning('Sulking in the cab', this.sulking.p, SULK_PARAM_RANGES);
     registerTuning('Shelter in a cab', this.cabShelter.p, CAB_SHELTER_PARAM_RANGES);
@@ -3551,7 +3555,7 @@ export class Game {
   updateReady(dt) {
     const w = this.readyWaiting;
     const ridden = this.riddenUnit;
-    for (const c of this.companions) c.readyHolding = w.waiting(c.character.id); // so nothing else revs her quad or she switches it off
+    for (const c of this.companions) c.readyHolding = w.waiting(c.character.id) || this.warmSit.sitting(c.character.id); // so nothing else revs her quad or she switches it off
     const girls = this.companions.filter((c) => w.has(c.character.id)).map((c) => {
       const q = this.readyQuads.get(c.character.id);
       return {
@@ -3582,9 +3586,9 @@ export class Game {
     }
     // Sat there she keeps a little choke and throttle on while it is cold, or it dies on her (as for the sulker in the cab).
     const cared = new Set();
-    for (const [id, q] of this.readyQuads) {
+    for (const [id, q] of [...this.readyQuads, ...this.warmSitQuads]) {
       const c = this.companions.find((o) => o.character.id === id);
-      if (c.fsm.is('starting') || !q.engine.isRunning || q.engine.temperature >= 0.5) continue; // (while she is starting it she minds the choke herself)
+      if (c.fsm.is('starting') || !q.engine.isRunning || q.engine.temperature >= q.engine.params.warmLightThreshold) continue; // (while she is starting it she minds the choke herself)
       cared.add(q);
       if (q.choke < 0.3) q.choke = 0.3;
       if (this.readyRev?.quad !== q) q.helperThrottle = 0.15;
@@ -3649,7 +3653,7 @@ export class Game {
     const sat = this.sulking.who && this.sulking.isIn(this.sulking.who) ? this.cabShelter.of(this.sulking.who) : null;
     if (sat) {
       const q = this.goVehicle(sat.cab).quad;
-      if (q.engine.isRunning && q.engine.temperature < 0.5) {
+      if (q.engine.isRunning && q.engine.temperature < q.engine.params.warmLightThreshold) {
         if (q.choke < 0.3) q.choke = 0.3;
         if (!this.sulkRev) q.helperThrottle = 0.15; // and a touch of throttle from the seat beside
         this.sulkChoke = q;
@@ -3746,8 +3750,108 @@ export class Game {
       const c = byId[e.girl];
       const quad = this.girlUnits.find((u) => u.spec.id === e.spec).quad;
       if (c.takenByOther(quad, 'rider')) continue;
+      if (e.type === 'warmFor') {
+        this.warmUpFor(c, quad.unit);
+        continue;
+      }
       c.requestStart(quad);
-      c.voice.say(e.type === 'warmFor' ? 'headStartGo' : 'snubGo', { urgent: true, force: true });
+      c.voice.say('snubGo', { urgent: true, force: true });
+    }
+  }
+
+  // Sitting on it while it warms ---------------------------------------------
+
+  /** Where she could sit while this vehicle warms: the back of a quad, or the passenger seat of a Land Rover or the UTV. null if there is nowhere. */
+  warmSitSpot(c, unit) {
+    const q = unit.quad;
+    const cab = ['utv', 'landy', 'defender'].find((k) => this.goVehicle(k) === unit);
+    if (cab) {
+      const slot = this.mountOfKind(cab).slots.left;
+      return slot && !slot.girl && !q.rider && !q.driver && !q.passenger ? { cab } : null;
+    }
+    if (q.tractor) return null;
+    return c.canRidePillion(q) ? { back: true } : null;
+  }
+
+  /** She is starting your usual vehicle for you: from beside it as ever, or (mostly) sitting on it while it warms, maybe asking first. */
+  warmUpFor(c, unit, forced = false) {
+    const q = unit.quad;
+    const spot = this.warmSitSpot(c, unit);
+    const near = c.root.position.distanceTo(this.player.position);
+    const mode = forced ? (spot ? 'sit' : 'beside') : this.warmSit.decide(!!spot, near);
+    if (mode === 'ask') {
+      c.voice.say('warmSitAsk', { urgent: true, force: true });
+      const ask = (this.warmAsk = { c, unit, spot, done: false });
+      const pick = (sit) => () => {
+        ask.done = true;
+        if (sit) this.warmSitGo(c, unit, spot);
+        else c.requestStart(q);
+      };
+      this.openWheel(`${c.name} asks`, [{ label: 'Go on', run: pick(true) }, { label: 'No, I\'ll take it', run: pick(false) }], null);
+      this.player.lookEnabled = false;
+      this.player.moveEnabled = false;
+      return;
+    }
+    c.voice.say('headStartGo', { urgent: true, force: true });
+    if (mode === 'sit') this.warmSitGo(c, unit, spot);
+    else c.requestStart(q);
+  }
+
+  /** She starts it (if it isn't running) and takes her seat to enjoy the warm-up. */
+  warmSitGo(c, unit, spot) {
+    const q = unit.quad;
+    const id = c.character.id;
+    if (!spot || !c.fsm.is('idle')) return c.requestStart(q);
+    this.warmSit.begin(id);
+    this.warmSitQuads.set(id, q);
+    const sit = () => {
+      if (spot.cab) {
+        if (!this.boardCab(c, spot.cab, { passenger: true })) this.warmSit.drop(id);
+      } else {
+        c.requestMount(q);
+        c.seatedByChoice = false; // and stays there until you come, or she gives up
+      }
+    };
+    if (q.engine.isRunning) sit();
+    else c.requestStart(q, { settleAt: 0.3, then: (ran) => (ran || q.engine.isRunning ? sit() : this.warmSit.drop(id)) });
+  }
+
+  /** Each frame: a girl sat on a warming vehicle. */
+  updateWarmSit(dt, ridden) {
+    const w = this.warmSit;
+    if (this.warmAsk && !this.warmAsk.done && !this.menu.isOpen) {
+      // The wheel was closed without an answer: she gets on with it as she always did.
+      const { c, unit } = this.warmAsk;
+      this.warmAsk.done = true;
+      c.requestStart(unit.quad);
+    }
+    const girls = this.companions.filter((c) => w.has(c.character.id)).map((c) => {
+      const id = c.character.id;
+      const q = this.warmSitQuads.get(id);
+      const cab = ['utv', 'landy', 'defender'].find((k) => this.goVehicle(k)?.quad === q);
+      const sat = cab ? c.onHayRide && c.trailer === this.mountOfKind(cab) : c.fsm.is('seated') && c.quad === q && c.seatKind === 'pillion';
+      return {
+        id,
+        ready: !!q && sat && q.engine.isRunning,
+        temperature: q?.engine.temperature ?? 0,
+        warm: !!q && q.engine.temperature >= q.engine.params.warmLightThreshold,
+        youDistance: c.root.position.distanceTo(this.player.position),
+        youOn: !!ridden && ridden.quad === q,
+      };
+    });
+    for (const e of w.update(dt, { girls })) {
+      const c = this.companions.find((o) => o.character.id === e.girl);
+      const q = this.warmSitQuads.get(e.girl);
+      const line = { in: 'warmSitIn', smoothing: 'warmSitSmoothing', smooth: 'warmSitSmooth', slow: 'warmSitSlow', giveUp: 'warmSitGiveUp' }[e.type];
+      if (line) c.voice.say(line, { force: true });
+      if (e.type === 'off' || e.type === 'giveUp') {
+        const cab = ['utv', 'landy', 'defender'].find((k) => this.goVehicle(k)?.quad === q);
+        if (cab) {
+          this.rideOfKind(cab).dismiss(e.girl);
+          c.leaveTrailer();
+        } else c.fsm.transition('dismounting');
+      }
+      if (e.type === 'off' || e.type === 'giveUp' || e.type === 'lost') this.warmSitQuads.delete(e.girl);
     }
   }
 
@@ -5361,6 +5465,7 @@ export class Game {
     if (auto || this.sulking.who) this.updateCabShelter(dt, !auto);
     if (auto || this.sulking.who) this.updateSulking(dt);
     this.updateReady(dt);
+    this.updateWarmSit(dt, ridden);
     this.updateSeatSlams();
     if (auto) this.updateKeepAlive(dt);
     if (auto) this.updateHeadStart(dt, ridden);

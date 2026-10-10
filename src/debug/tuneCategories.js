@@ -17,7 +17,7 @@ export const TUNE_CATEGORIES = {
   ],
   'Girls: how they feel about you': [
     'Favour', 'Favours asked', 'Falling out', 'Romance', 'Talking about you', 'Pranks', 'Achievements', 'Who wore it out', 'Skills', 'Nicking your quad', 'Sulking in the cab',
-    'Left running', 'Ready and waiting', 'Shouting a fault', 'Reading the dash', 'Rev-offs', 'Drowning out', 'Horns', 'Head start', 'Hand on the throttle', 'Girls coaching each other',
+    'Left running', 'Ready and waiting', 'Shouting a fault', 'Reading the dash', 'Rev-offs', 'Drowning out', 'Horns', 'Head start', 'Sitting while it warms', 'Hand on the throttle', 'Girls coaching each other',
   ],
   'Girls: things they do': [
     'Racing', 'Drag race', 'Follow the leader', 'Doughnuts', 'Tarmac', 'Showing off', 'The jump', 'Hay ride', 'Hay ride seat', 'Mudguard ride',

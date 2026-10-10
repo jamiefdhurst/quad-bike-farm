@@ -339,6 +339,12 @@ export const FAQ_SECTIONS = [
         tip: 'After a jump start, keep the revs up for ten minutes or it dies again at the first stop.',
       },
       {
+        q: 'Why is she sat on my quad (or in the Land Rover) while it warms up?',
+        a: `A cold engine shakes about twice as hard as a warm one, and the girls like that. When one starts your usual vehicle for you, she often sits on it while
+          it warms (on the back of a quad, or in the passenger seat of a Land Rover or the UTV) and sometimes asks first. She is a little disappointed when it smooths out, and slow to get off
+          when you arrive. Say "No, I'll take it" if you would rather she didn't.`,
+      },
+      {
         q: 'Why does the back seat of the Land Rover bounce so much?',
         a: `Each seat rides on its own spring, and the 200TDi's back bench is over the leaf springs: soft, bouncy and slow to settle, so it comes down hard on a
           big bump. The UTV's bed has no cushion at all, so a big bump (the cattle grid, say) can throw whoever is in it off the floor. The pillion pad and the
