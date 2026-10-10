@@ -99,6 +99,22 @@ export const FAQ_SECTIONS = [
         tip: 'Leaving the key on with the engine off flattens the battery in about eight minutes.',
       },
       {
+        q: 'How do I bump-start a quad or Land Rover?',
+        a: `Only a manual (the red, yellow, green and old three-wheeler, the tractor and the Land Rovers) can be bump-started, and it works with a flat
+          battery. Key on (<kbd>K</kbd>), hold the clutch (<kbd>Shift</kbd>), pick second gear, and get it rolling downhill, pushed by a girl or towed
+          on the chain. At a walking pace let the clutch out and the wheels turn the engine over until it fires. First gear turns it over at a
+          slower roll but is harder to get going; third wants more speed. A two-stroke catches easily. A four-stroke wants the choke when it is
+          cold, and a longer roll. If it does not catch, put the clutch back in and have another go.`,
+        tip: 'Flat battery on a manual? Key on, clutch in, second gear, roll it, then let the clutch out.',
+      },
+      {
+        q: 'Can the girls push me to start it?',
+        a: `Yes. Sit in a manual that is not running, with the clutch in and second gear selected, and talk to either girl: "Push start it".
+          She walks round to the back and pushes, switching the key on if you have not. When it is going fast enough Jess shouts "Now!" (Amy says
+          it more quietly): that is when you let the clutch out. Jess pushes harder, Amy tires sooner, and a Land Rover is slow to get moving. She
+          stops when it fires or when she has had enough.`,
+      },
+      {
         q: 'Why does it start badly when it’s hot?',
         a: `A hot engine boils the fuel in its carb, so it starts rich. Don't use the choke, and hold the throttle open while you crank.`,
       },

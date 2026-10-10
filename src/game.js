@@ -70,6 +70,7 @@ import { DEFAULT_CREEP_PARAMS, CREEP_PARAM_RANGES } from './vehicle/creep.js';
 import { DEFAULT_TRACTOR_GO_DRIVE, TRACTOR_GO_DRIVE_RANGES, DEFAULT_UTV_GO_DRIVE, DEFAULT_LANDY_GO_DRIVE } from './npc/companionDriving.js';
 import { DEFAULT_CRANK_ATTEMPT_PARAMS, CRANK_ATTEMPT_PARAM_RANGES } from './npc/crankAttempt.js';
 import { DEFAULT_TRACTOR_START_PARAMS, TRACTOR_START_PARAM_RANGES } from './npc/tractorStart.js';
+import { DEFAULT_PUSH_PARAMS, PUSH_PARAM_RANGES } from './npc/pushStart.js';
 import { DEFAULT_NOVICE_PARAMS, NOVICE_PARAM_RANGES } from './vehicle/autoShifter.js';
 import { HAYSEAT_PARAM_RANGES, DEFAULT_HAYSEAT_PARAMS } from './npc/companionHayRide.js';
 import { DEFAULT_MOVE_PARAMS, MOVE_PARAM_RANGES } from './npc/companionMoves.js';
@@ -597,9 +598,10 @@ export class Game {
     this.landyDrive = { ...DEFAULT_LANDY_GO_DRIVE };
     this.crankParams = { ...DEFAULT_CRANK_ATTEMPT_PARAMS };
     this.goJoins = []; // the other girl on her way to climb in beside a driver: { left, girl, kind, driver }
-    for (const c of this.companions) Object.assign(c, { tractorGo: this.tractorDrive, utvGo: this.utvDrive, landyGo: this.landyDrive, crankParams: this.crankParams, tractorStartParams: this.tractorStartParams, noviceParams: this.noviceParams });
+    for (const c of this.companions) Object.assign(c, { tractorGo: this.tractorDrive, utvGo: this.utvDrive, landyGo: this.landyDrive, crankParams: this.crankParams, pushParams: this.pushParams, tractorStartParams: this.tractorStartParams, noviceParams: this.noviceParams });
     // Jess tapes L plates to Amy's quad; Amy peels them off, and once she's confident they go on the tractor (npc/lPlates.js).
     this.lPlates = new LPlates(undefined, createRandom(this.seed ^ 0x1b1a));
+    this.pushParams = { ...DEFAULT_PUSH_PARAMS };
     this.lPlateSet = new LPlateSet();
     this.tractorSeen = {}; // girl id -> what we've already noticed about her go, for her lines
     this.hayLater = []; // lines to say in a moment: { left, girl, key }
@@ -1011,6 +1013,7 @@ export class Game {
     registerTuning('Tractor go novice', this.noviceParams, NOVICE_PARAM_RANGES);
     registerTuning('Hay ride seat', this.haySeat, HAYSEAT_PARAM_RANGES);
     registerTuning('Getting on and off', this.moveParams, MOVE_PARAM_RANGES);
+    registerTuning('Girl pushing a start', this.pushParams, PUSH_PARAM_RANGES);
     registerTuning('Standing about', this.idlePoseParams, IDLE_POSE_PARAM_RANGES);
     registerTuning('Trailer', this.trailer.p, TRAILER_PARAM_RANGES);
     registerTuning('Quad names', this.quadNames.p, NAME_PARAM_RANGES);
@@ -1459,6 +1462,27 @@ export class Game {
     const girlsFree = {};
     for (const c of this.companions) girlsFree[c.character.id] = c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob && !c.hayFell;
     const youOn = GO_KINDS.some((k) => !!ridden && ridden === this.goVehicle(k));
+  /** What a girl says as she pushes your vehicle for a bump-start (npc/pushStart.js, pushLines.js). */
+  updatePushStart() {
+    const mine = this.riddenUnit?.quad.engine;
+    if (mine?.caughtBy === 'roll' && mine.events.some((ev) => ev.type === 'caught')) this.achievements.note('bumpStart');
+    for (const c of this.companions) {
+      for (const e of c.pushEvents.splice(0)) {
+        if (e === 'start') c.voice.say('pushStart', { urgent: true });
+        else if (e === 'now') c.voice.say('pushNow', { urgent: true, force: true });
+        else if (e === 'caught') c.voice.say('pushCaught', { urgent: true });
+        else if (e === 'tired') c.voice.say('pushTired', { urgent: true });
+      }
+    }
+  }
+
+  /** The wheel's "Push start" slice: you're at the controls of a manual that won't start, and she's free to push it. */
+  pushStartOption(c) {
+    const unit = this.riddenUnit;
+    if (!unit || !c.fsm.is('idle') || !c.canPushStart(unit.quad)) return null;
+    return { label: 'Push start it', run: () => c.requestPush(unit.quad) };
+  }
+
     const vehicles = GO_KINDS.filter((k) => this.goFree(k) && ridden !== this.goVehicle(k));
     for (const ev of this.tractorGo.update(dt, { free: girlsFree, vehicles: youOn ? [] : vehicles })) {
       const c = this.companions.find((o) => o.character.id === ev.girl);
@@ -4566,6 +4590,8 @@ export class Game {
     const utv = this.utvUnit && this.utvWheelOption(c);
     if (utv?.children.length) options.push(utv);
     for (const l of Object.values(this.landys)) {
+    const push = this.pushStartOption(c);
+    if (push) options.push(push);
       const landy = l.unit && this.landyWheelOption(c, l);
       if (landy?.children.length) options.push(landy);
     }
@@ -5086,6 +5112,7 @@ export class Game {
     if (auto) this.updateCabShelter(dt);
     if (auto) this.updateHeadStart(dt, ridden);
     this.updateDoughnuts(dt);
+    this.updatePushStart();
     this.updateTarmac(dt);
     this.updateJumps(dt);
     if (auto) this.updateNicking(dt, ridden);

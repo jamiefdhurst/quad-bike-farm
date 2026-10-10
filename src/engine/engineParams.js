@@ -37,6 +37,11 @@ export const DEFAULT_ENGINE_PARAMS = {
   pullGoodMin: 0.45, // seconds holding the cord before the yank that count as a proper pull...
   pullGoodMax: 1.0, // ...up to here; shorter is weak, longer is a botched yank
   pullLateMax: 1.6, // held longer than this and it's the weakest it gets
+  rollMinFraction: 0.08, // bump-start: the wheels turn it over at all from this fraction of full-throttle revs in the gear (src/engine/bumpStart.js)
+  rollFullFraction: 0.35, // ...as fast as a starter would from this fraction (about 1.7 m/s in second on the quads)
+  rollClutchMin: 0.5, // the clutch has to be at least this far out for the wheels to turn it
+  rollCatchTwoStroke: 1, // how readily it fires turned by the wheels, against the starter: a two-stroke...
+  rollCatchFourStroke: 0.55, // ...a four-stroke
   crankSpinUpRate: 25, // 1/s, how quickly crank speed follows the starter (spin-up and compression dips)
   crankCompressionDip: 0.55, // fraction of crank speed lost heaving the piston over compression
   crankDipWidth: 0.08, // width of that slowdown, as a fraction of the cycle
@@ -351,6 +356,11 @@ export const ENGINE_PARAM_RANGES = {
   batteryDeadBelow: [0, 0.6, 0.01],
   weakCrankFactor: [0.05, 1, 0.01],
   batteryDashOutBelow: [0, 0.3, 0.01],
+  rollMinFraction: [0.01, 0.3, 0.01],
+  rollFullFraction: [0.1, 1, 0.01],
+  rollClutchMin: [0, 0.95, 0.05],
+  rollCatchTwoStroke: [0, 1.5, 0.05],
+  rollCatchFourStroke: [0, 1.5, 0.05],
   pullSeconds: [0.2, 3, 0.05],
   pullRpmFactor: [0.3, 2, 0.05],
   pullGoodMin: [0.1, 1.5, 0.05],

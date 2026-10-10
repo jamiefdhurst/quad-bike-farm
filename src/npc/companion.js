@@ -130,6 +130,7 @@ export class Companion {
     this.drive = null; // her go at driving, while she's on the front seat (herDriving.js)
     this.driveEvents = []; // what's happened while she's driving, for her voice
     this.crankEvents = []; // what's happened at the Land Rover's starting handle ('keyOn', 'swing', 'kick', 'caught', 'noLuck'), for the game to say something about
+    this.pushEvents = []; // what's happened while she pushes a vehicle for a bump-start ('start', 'now', 'caught', 'tired'), for the game to say something about
     this.gripReach = 0; // how far her hands are on the grips, 0..1
     // Holding on, leaning and looking about while she rides pillion.
     this.pillion = new PillionPose(this);
@@ -142,6 +143,7 @@ export class Companion {
     // Hands on the bars while she's driving (companionDriving.js).
     this.rig.posers.push((dt) => this.poseDriving(dt));
     this.rig.posers.push((dt) => this.poseCranking(dt));
+    this.rig.posers.push((dt) => this.posePushing(dt));
     // Hands over a running engine on a cold day (companionWarming.js).
     this.warmingAt = null;
     this.rig.posers.push((dt) => this.poseWarming(dt));
@@ -1229,6 +1231,7 @@ const STATES = {
         else if (data.goal === 'drive') this.fsm.transition('mounting', { side: t.side, seat: this.quad.rider ? 'pillion' : 'rider' });
         else if (data.goal === 'start') this.fsm.transition('starting', { facing: t.facing, side: t.side });
         else if (data.goal === 'crank') this.fsm.transition('cranking', { facing: t.facing });
+        else if (data.goal === 'push') this.fsm.transition('pushing');
         else if (data.goal === 'carry') {
           this.fsm.transition('idle', { facing: t.facing });
           data.arrive();

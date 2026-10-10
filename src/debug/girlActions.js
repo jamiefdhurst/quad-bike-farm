@@ -122,6 +122,18 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'push-start',
+      label: '% pushes the vehicle picked on the Vehicles tab to bump-start it (you in the seat, the clutch in)',
+      vehicle: true,
+      run: (id, u) => {
+        const c = girl(id);
+        if (!free(id)) return;
+        if (!c.canPushStart(u.quad)) return toast(`${c.name} can't push the ${u.name}: it needs a clutch, to be stopped, and you in the seat`);
+        c.requestPush(u.quad);
+        toast(`${c.name} is off to push the ${u.name}`);
+      },
+    },
+    {
       verb: 'ride',
       label: '% rides on the back of it',
       vehicle: true,

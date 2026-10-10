@@ -87,6 +87,7 @@ export function buildGameTree(g, host) {
         rpm: ro(() => e().rpm),
         throttle: ro(() => e().throttle),
         load: ro(() => e().load),
+        rolled: ro(() => e().rollSpeed, '', 'how fast the wheels turn it over (bump-start), 0 to 1 of a starter'),
         temperature: num(() => e().temperature, (v) => e().setTemperature(v), 0, 1, '', '0 cold, 1 warm'),
         overheating: ro(() => e().heat),
         battery: num(() => e().battery, (v) => (e().battery = v), 0, 1),

@@ -8,6 +8,7 @@
 
 import { DEFAULT_ENGINE_PARAMS } from './engineParams.js';
 import { Knack } from './knack.js';
+import { rollTurn, rollCatch } from './bumpStart.js';
 import { oilExcess, stepLube, nipping, sumpLube } from './lubrication.js';
 import { runOnChance, popPropensity } from './runOn.js';
 import { followThrottle, isSnap, spitChance } from './spitBack.js';
@@ -115,6 +116,8 @@ export class EngineModel {
     this.keyPulled = false; // a diesel's key switched off while it runs on: it keeps going until the stop knob
     this.pinkLeft = 0; // rattles owed to the audio
     this.tickLeft = 0; // cooling ticks owed to the audio
+    this.rollSpeed = 0; // how fast the wheels are turning it over, 0..1 of a starter's speed (bump-starting)
+    this.caughtBy = null; // what last fired it: 'starter', 'pull' or 'roll' (bump-starting)
     this.motorOn = false; // the starter motor is turning it (not just a yank on the cord)
 
     // Derived values, refreshed every step.
@@ -345,6 +348,9 @@ export class EngineModel {
     const canCrank = canTurn && !this.seized;
     const motor = starter && this.battery >= p.batteryDeadBelow && !this.seized;
     const pulling = this.pullLeft > 0;
+    // A manual rolling with the clutch out: the wheels turn it over (bump-starting). The key has to be on; the battery doesn't matter.
+    const roll = (canCrank || this.state === EngineState.CRANKING) && !this.seized && !motor && !pulling && this.ignitionOn ? rollTurn(this.gearRpm, this.gearLock, p) : 0;
+    this.rollSpeed = roll;
     // A dead battery: the solenoid clicks and nothing turns.
     if (starter && !motor && canTurn && !this.clickedDead) {
       this.clickedDead = true;
@@ -352,11 +358,12 @@ export class EngineModel {
     }
     if (!starter) this.clickedDead = false;
     this.motorOn = motor;
-    if ((motor || pulling) && canCrank) {
+    if ((motor || pulling || roll > 0) && canCrank) {
       this.state = EngineState.CRANKING;
+      if (roll > 0) return; // no starter whirr: the wheels are turning it
       // A swing on the starting handle is a clunk over compression, not the starter motor's whirr.
       this.emit(!motor && p.crankHandle ? 'handCrankOn' : 'starterOn');
-    } else if (!motor && !pulling && this.state === EngineState.CRANKING) {
+    } else if (!motor && !pulling && roll === 0 && this.state === EngineState.CRANKING) {
       this.state = EngineState.IGNITION;
       this.emit('starterOff');
     }
@@ -634,7 +641,8 @@ export class EngineModel {
     const toCompression = this.cyclePhase - 0.92;
     const dip = p.crankCompressionDip * Math.exp(-((toCompression / p.crankDipWidth) ** 2));
     // The starter turns slower on a weak battery; a yank on the cord goes by how good it was.
-    const speed = this.motorOn ? this.crankFactor : this.pullStrength * p.pullRpmFactor;
+    const speed = this.motorOn ? this.crankFactor : this.pullLeft > 0 ? this.pullStrength * p.pullRpmFactor : this.rollSpeed;
+    const catchScale = this.motorOn || this.pullLeft > 0 ? 1 : rollCatch(p);
     this.rpm += (p.crankRpm * speed * (1 - dip) - this.rpm) * Math.min(1, p.crankSpinUpRate * h);
     // Cranking rich floods it; cranking with the throttle open blows it clear.
     this.fouling += (this.rich * p.crankFoulRate - this.throttle * p.crankClearRate) * h;
@@ -651,11 +659,12 @@ export class EngineModel {
         Math.exp(-((this.mixture / width) ** 2)) *
         (1 - this.fouling) *
         clamp(speed, 0, 1) * // turned over too slowly, it won't fire
+        catchScale *
 
         (this.fuel > 0.02 ? 1 : 0);
       // A diesel doesn't care about the mixture: it wants hot plugs when it's cold, and turning over fast enough.
       if (p.compressionIgnition) {
-        chance = p.catchChance * lerp(p.catchColdFactor, 1, this.temperature) * compressionCatchFactor(this.glow, this.temperature, p) * (1 - this.fouling) * clamp(speed, 0, 1) * (this.fuel > 0.02 ? 1 : 0);
+        chance = p.catchChance * lerp(p.catchColdFactor, 1, this.temperature) * compressionCatchFactor(this.glow, this.temperature, p) * (1 - this.fouling) * clamp(speed, 0, 1) * catchScale * (this.fuel > 0.02 ? 1 : 0);
       }
 
       chance /= this.cylinders; // a chance every firing, so about the same each turn of the engine
@@ -664,6 +673,7 @@ export class EngineModel {
         this.state = EngineState.RUNNING;
         this.rpm = Math.max(this.rpm, p.catchRpm);
         this.pushPulse(t, 'fire', 1.2);
+        this.caughtBy = this.motorOn ? 'starter' : this.pullLeft > 0 ? 'pull' : 'roll';
         this.emit('caught', t);
       } else if (this.random() < Math.min(1, chance * 2)) {
         // Nearly caught: a weak, uneven fire that doesn't sustain.

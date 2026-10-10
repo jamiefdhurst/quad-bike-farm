@@ -202,6 +202,7 @@ export class DebugGui {
     show(r, 'throttle', () => round(unit().engine.throttle));
     show(r, 'load / lug', () => `${round(unit().engine.load)} / ${round(unit().engine.lug)}`);
     show(r, 'power', () => round(unit().engine.power));
+    if (u.quad.manual) show(r, 'turned by the wheels (bump-start)', () => round(unit().engine.rollSpeed));
     set(r, 'temperature', () => round(unit().engine.temperature), (v) => unit().engine.setTemperature(v), 0, 1);
     show(r, 'overheating', () => round(unit().engine.heat));
     if (e.params.waterCooled) {

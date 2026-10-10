@@ -121,6 +121,7 @@ export const ACHIEVEMENTS = [
   { id: 'toolbox', group: 'Jobs', name: 'Tinkerer', hint: 'Open the toolbox on a quad', points: 1, test: (s) => s.n('toolbox') >= 1 },
   { id: 'bench', group: 'Jobs', name: 'Workbench', hint: 'Use the bench in the barn', points: 1, test: (s) => s.n('bench') >= 1 },
   { id: 'leads', group: 'Jobs', name: 'Jump start', hint: 'Clamp the jump leads onto a quad', points: 1, test: (s) => s.n('leads') >= 1 },
+  { id: 'bump-start', group: 'Jobs', name: 'Bump start', hint: 'Get a manual going by rolling it and letting the clutch out', points: 2, test: (s) => s.n('bumpStart') >= 1 },
   { id: 'hitch', group: 'Jobs', name: 'Hitched', hint: 'Hook a trailer onto the tractor or a quad', points: 1, test: (s) => s.n('hitched') >= 1 },
   { id: 'tip', group: 'Jobs', name: 'Tipped out', hint: 'Tip a trailer or the UTV\'s bed', points: 1, test: (s) => s.n('tipped') >= 1 },
   { id: 'park-brake', group: 'Jobs', name: 'Handbrake on', hint: 'Put the parking brake on', points: 1, test: (s) => s.n('parkBrake') >= 1 },

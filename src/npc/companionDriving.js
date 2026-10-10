@@ -9,6 +9,7 @@ import { solveTwoBone, orientHand } from './armIK.js';
 import { AutoShifter, NoviceShifter, DEFAULT_SHIFTER_PARAMS, DEFAULT_NOVICE_PARAMS } from '../vehicle/autoShifter.js';
 import { DEFAULT_TRACTOR_START_PARAMS } from './tractorStart.js';
 import { CrankAttempt, DEFAULT_CRANK_ATTEMPT_PARAMS } from './crankAttempt.js';
+import { PushStart, DEFAULT_PUSH_PARAMS } from './pushStart.js';
 import { onTarmac } from './tarmac.js';
 import { towedBy } from '../vehicle/trailerObstacle.js';
 
@@ -257,6 +258,55 @@ export const drivingStates = {
     },
   },
 
+  // Behind a vehicle with a flat battery, leaning on the back and walking it along so you can drop the clutch and bump-start it (pushStart.js).
+  pushing: {
+    enter() {
+      this.rig.play('Idle', { fade: 0.3 });
+      this.pushWalking = false;
+      this.pushReach = 0;
+      this.setColliderEnabled(false);
+      const mass = this.quad.physics.body.mass();
+      this.pushAttempt = new PushStart(this.quad, this.character.id, mass, { params: this.pushParams ?? DEFAULT_PUSH_PARAMS });
+    },
+    update(dt) {
+      const a = this.pushAttempt;
+      const q = this.quad;
+      // You've got off (or never got on): she stops.
+      if (!q.rider && !a.done) a.abandon();
+      for (const e of a.update(dt)) this.pushEvents.push(e);
+      // She keeps to the back of it, a pace behind however it moves.
+      const t = this.pushPoint(q);
+      const pos = this.root.position;
+      const dx = t.position.x - pos.x;
+      const dz = t.position.z - pos.z;
+      const d = Math.hypot(dx, dz);
+      const step = Math.min(d, Math.max(3, q.speed + 2) * dt);
+      if (d > 0.001) {
+        pos.x += (dx / d) * step;
+        pos.z += (dz / d) * step;
+      }
+      pos.y = this.world.heightAt(pos.x, pos.z);
+      this.heading = q.yaw;
+      this.root.rotation.y = q.yaw;
+      if (a.accel > 0) {
+        const m = q.physics.body.mass() * a.accel * dt;
+        q.physics.body.applyImpulse({ x: Math.sin(q.yaw) * m, y: 0, z: Math.cos(q.yaw) * m }, true);
+      }
+      const walking = q.speed > 0.25 || d > 0.3;
+      if (walking !== this.pushWalking) {
+        this.pushWalking = walking;
+        this.rig.play(walking ? 'Walking' : 'Idle', { fade: 0.25 });
+      }
+      if (walking) this.rig.setTimeScale(Math.min(2, Math.max(0.6, q.speed / this.params.walkAnimSpeed)));
+      if (a.done) this.fsm.transition('idle', { facing: q.yaw });
+    },
+    exit() {
+      if (this.pushAttempt && !this.pushAttempt.done) this.pushAttempt.abandon();
+      this.pushAttempt = null;
+      this.setColliderEnabled(true);
+    },
+  },
+
   // Sliding back onto the pillion, or forward onto the front seat.
   shuffling: {
     enter(data) {
@@ -402,6 +452,51 @@ export const drivingMethods = {
       _pole.add(_fingers.set(a.side * 0.3, -0.3, 0.1));
       _fingers.set(a.side * 0.04, 0, 0).applyAxisAngle(AXIS_Y, q.yaw);
       _target.set(cx + _fingers.x, cy, cz + _fingers.z);
+      solveTwoBone(b[a.arm], b[a.fore], b[a.hand], _target, _pole, k);
+    }
+  },
+
+  /** The vehicle is one she could push-start: a manual (so there is a clutch to drop) that is not running, with you in the seat. */
+  canPushStart(quad) {
+    return !!quad.manual && !quad.engine.isRunning && !!quad.rider && !quad.isTipped;
+  },
+
+  /** Walks round to the back of the vehicle and starts pushing it. */
+  requestPush(quad) {
+    if (this.stopDriving('off', () => this.requestPush(quad))) return;
+    if (this.fsm.is('seated', 'mounting')) {
+      this.afterDismount = () => this.requestPush(quad);
+      this.fsm.transition('dismounting');
+      return;
+    }
+    this.quad = quad;
+    this.fsm.transition('walking', { goal: 'push', target: () => this.pushPoint(quad) });
+  },
+
+  /** Where she leans on it: a pace behind the back of the vehicle, facing the way it points. */
+  pushPoint(quad = this.quad) {
+    const rearZ = Math.min(...quad.wheels.map((w) => w.z));
+    const p = quad.localToWorld(0, 0, rearZ - 0.8);
+    p.y = this.world.heightAt(p.x, p.z);
+    return { position: p, facing: quad.yaw };
+  },
+
+  /** Bent into it, both hands on the back of the vehicle. Runs as a rig poser. */
+  posePushing(dt) {
+    const on = this.fsm.is('pushing') && this.pushAttempt && !this.pushAttempt.done;
+    this.pushReach = (this.pushReach ?? 0) + ((on && this.pushAttempt.pushing ? 1 : 0) - (this.pushReach ?? 0)) * Math.min(1, dt * 5);
+    if (this.pushReach < 0.01 || !this.pushAttempt) return;
+    const k = smooth(Math.min(1, this.pushReach));
+    const q = this.quad;
+    const rig = this.rig;
+    const b = rig.bones;
+    rig.rotateAboutRootAxis(b.Spine, AXIS_X, 0.3 * k);
+    rig.rotateAboutRootAxis(b.Spine1, AXIS_X, 0.2 * k);
+    const rearZ = Math.min(...q.wheels.map((w) => w.z));
+    for (const a of ARMS) {
+      b[a.arm].getWorldPosition(_pole);
+      _pole.add(_fingers.set(a.side * 0.3, -0.3, 0.1));
+      q.model.localToWorld(_target.set(a.side * 0.25, 0.95, rearZ - 0.1));
       solveTwoBone(b[a.arm], b[a.fore], b[a.hand], _target, _pole, k);
     }
   },
