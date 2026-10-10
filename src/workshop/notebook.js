@@ -93,6 +93,15 @@ export class Notebook {
     }
   }
 
+  /** Amy writes her ranking of the quads by their buzz (the girls comparing notes). */
+  noteRanking(names) {
+    const entry = this.book.writeRanking(names);
+    if (entry && !this.told) {
+      this.told = true;
+      this.game.hud.toast('Amy writes it in her logbook on the bench');
+    }
+  }
+
   build() {
     const el = document.createElement('div');
     el.className = 'notebook';

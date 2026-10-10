@@ -25,6 +25,8 @@ import { Speech, CompanionSounds } from './audio/companionAudio.js';
 import { DEFAULT_COMPANION_PARAMS, COMPANION_PARAM_RANGES } from './npc/companionParams.js';
 import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
 import { CHARACTERS } from './npc/characters.js';
+import { DEFAULT_NOTICE_PARAMS, NOTICE_PARAM_RANGES } from './npc/attention.js';
+import { NoticeWatch } from './npc/noticeWatch.js';
 import { girlsLeftOut } from './npc/leftOut.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { FallingOut, FALLING_OUT_PARAM_RANGES } from './npc/fallingOut.js';
@@ -88,6 +90,7 @@ import { Sulking, SULK_PARAM_RANGES } from './npc/sulking.js';
 import { ReadyWaiting, READY_PARAM_RANGES } from './npc/readyWaiting.js';
 import { WarmSit, WARMSIT_PARAM_RANGES } from './npc/warmSit.js';
 import { DontFixIt, DONTFIX_PARAM_RANGES } from './npc/dontFixIt.js';
+import { ComparingNotes, COMPARE_PARAM_RANGES } from './npc/comparingNotes.js';
 import { DEFAULT_NUMB_PARAMS, NUMB_PARAM_RANGES } from './npc/numbness.js';
 import { DEFAULT_KEEPALIVE_PARAMS, KEEPALIVE_PARAM_RANGES } from './npc/keepAlive.js';
 import { HeadStart, HEADSTART_PARAM_RANGES } from './npc/headStart.js';
@@ -166,6 +169,7 @@ import { Bench } from './workshop/bench.js';
 import { pickBarnFind, BarnFind, DEFAULT_BARN_FIND_PARAMS, BARN_FIND_RANGES, RUSTY_ID } from './vehicle/barnFind.js';
 import { weatherModel, buildTarp } from './vehicle/rustyLook.js';
 import { Notebook } from './workshop/notebook.js';
+import { shortName } from './workshop/logbook.js';
 import { Interaction } from './interaction/interaction.js';
 import { Wheel } from './interaction/wheel.js';
 import { Hud } from './hud/hud.js';
@@ -458,7 +462,7 @@ export class Game {
     this.favour = new Favour(CHARACTERS.map((ch) => ch.id));
     for (const c of this.companions) {
       const id = c.character.id;
-      c.favourView = () => ({ mood: this.favour.mood(id), warmth: this.favour.warmth(id), sulk: this.favour.sulkDrive(id) });
+      c.favourView = () => ({ mood: this.favour.mood(id), warmth: this.favour.warmth(id), sulk: this.favour.sulkDrive(id), standing: this.favour.standing(id) });
     }
 
     // The girls falling out with each other (npc/fallingOut.js): friction from races, borrowed quads and digs.
@@ -670,6 +674,7 @@ export class Game {
     this.readyWaiting = new ReadyWaiting(undefined, createRandom(this.seed ^ 0x2ead)); // sat on a running quad, revving and tooting, while you are a minute (npc/readyWaiting.js)
     this.warmSit = new WarmSit(undefined, createRandom(this.seed ^ 0x3a2f)); // sat on your quad while it warms, for the shake (npc/warmSit.js)
     this.numbParams = { ...DEFAULT_NUMB_PARAMS }; // legs gone tingly and a numb bum from a long sit on a shaking seat (npc/numbness.js)
+    this.comparing = new ComparingNotes(undefined, createRandom(this.seed ^ 0xc0de)); // the girls ranking the quads by their buzz (npc/comparingNotes.js)
     this.dontFix = new DontFixIt(); // a girl minding when her favourite is fixed up (npc/dontFixIt.js)
     this.warmSitQuads = new Map(); // girl id -> the quad she is sitting on
     this.readyQuads = new Map(); // girl id -> the quad she is getting ready or waiting on
@@ -1044,6 +1049,7 @@ export class Game {
     registerTuning('Whose quad', this.ownership.p, OWNERSHIP_PARAM_RANGES);
     registerTuning('Hearing a quad', this.hearing.p, EAR_PARAM_RANGES);
     registerTuning('Warming hands', this.warming.p, WARMING_PARAM_RANGES);
+    registerTuning('Comparing notes', this.comparing.p, COMPARE_PARAM_RANGES);
     registerTuning('Numb bum', this.numbParams, NUMB_PARAM_RANGES);
     registerTuning('Minding a fix', this.dontFix.p, DONTFIX_PARAM_RANGES);
     registerTuning('Sitting while it warms', this.warmSit.p, WARMSIT_PARAM_RANGES);
@@ -2318,6 +2324,38 @@ export class Game {
     return this.player.isRiding ? this.player.vehicle.unit : null;
   }
 
+  /**
+   * Tells the girls something happened that might catch their eye: `kind` (a NOTICE_KINDS key, attention.js), where (`at`, any
+   * { x, y, z }), and optionally `key` (what made it, so a repeat refreshes rather than piles up) and `strength` (1 usual). This is the
+   * one way anything in the world gets their attention; see CLAUDE.md, "The girls' attention".
+   */
+  notice(kind, at, { key = '', strength = 1 } = {}) {
+    for (const c of this.companions) c.notice({ kind, key, x: at.x, y: at.y, z: at.z, strength });
+  }
+
+  /** What the girls can see and hear this frame (attention.js): the people and moving vehicles about, and what the vehicles just did. */
+  watchNotices(dt) {
+    this.noticeWatch ??= new NoticeWatch(DEFAULT_NOTICE_PARAMS);
+    const vehicles = this.units.map((u) => {
+      const q = u.quad;
+      const p = q.position;
+      return { id: u.id, x: p.x, y: p.y + 0.8, z: p.z, events: u.engine.events.map((e) => e.type), rpm: u.engine.rpm, running: u.engine.isRunning, speed: Math.abs(q.forwardSpeed), horn: !!q.hornHeld, tipped: !!q.isTipped };
+    });
+    for (const n of this.noticeWatch.update(dt, vehicles)) this.notice(n.kind, n, { key: n.key, strength: n.strength });
+    const eye = this.camera.position;
+    this.attentionHeads ??= new Map();
+    const girls = this.companions.map((c) => {
+      const head = this.attentionHeads.get(c) ?? this.attentionHeads.set(c, new THREE.Vector3()).get(c);
+      c.root.getWorldPosition(head);
+      const ch = c.voice.chatter;
+      return { key: c.character.id, x: head.x, y: head.y + c.params.height * 0.93, z: head.z, speaking: ch.speakingUntil > ch.time };
+    });
+    this.attentionWorld = {
+      people: [{ key: 'you', x: eye.x, y: eye.y, z: eye.z }, ...girls],
+      vehicles: vehicles.filter((v) => v.speed > 0.5).map((v) => ({ key: v.id, x: v.x, y: v.y, z: v.z, speed: v.speed })),
+    };
+  }
+
   /** The first companion (for the debug console and test scripts). */
   get companion() {
     return this.companions[0];
@@ -2492,9 +2530,9 @@ export class Game {
       if (standingAbout) triggers.push({ when: 'fallenOut' });
     }
     const speak = (speaker, text, opts) => (byId[speaker]?.params.voice ? byId[speaker].voice.speak(text, opts) : 0);
-    const started = this.banter.update(dt, triggers, speak, this.talkFloor.left <= 0 && !this.menu.isOpen && !this.gossip.busy);
+    const started = this.banter.update(dt, triggers, speak, this.talkFloor.left <= 0 && !this.menu.isOpen && !this.gossip.busy && !this.comparing.busy);
     if (started && FRICTION_BANTER.includes(started.when)) this.noteFriction('digs');
-    this.talkFloor.banter = this.banter.busy || this.gossip.busy;
+    this.talkFloor.banter = this.banter.busy || this.gossip.busy || this.comparing.busy;
     this.updateGossip(dt, byId, speak);
   }
 
@@ -3878,6 +3916,39 @@ export class Game {
     const units = this.girlUnits.map((u) => ({ id: u.spec.id, wear: u.engine.wear }));
     const girls = this.companions.map((c) => ({ id: c.character.id, favourite: c.voice.favourite, distance: c.root.position.distanceTo(this.player.position) }));
     for (const e of this.dontFix.update(dt, { units, girls })) this.companions.find((c) => c.character.id === e.girl)?.voice.onFixedFavourite();
+  }
+
+  // Comparing notes --------------------------------------------------------
+
+  /** The girls compare which quads shake them most (npc/comparingNotes.js): each line, Amy's note in her logbook, and the swap to settle it. */
+  updateComparing(dt) {
+    const exists = (id) => this.girlUnits.some((u) => u.spec.id === id);
+    const ctx = {
+      girls: this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.fsm.is('idle') && !this.menu.isOpen, buzz: c.content.buzz })),
+      floorFree: this.talkFloor.left <= 0 && !this.banter?.busy && !this.gossip.busy && !this.menu.isOpen,
+      only: exists,
+    };
+    this.runComparing(this.comparing.update(dt, ctx));
+  }
+
+  runComparing(steps) {
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    for (const s of steps) {
+      if (s.type === 'say') {
+        if (s.spec) byId[s.girl]?.voice.sayQuad(s.kind, s.spec, { force: true });
+        else byId[s.girl]?.voice.say(s.kind, { force: true });
+      } else if (s.type === 'note') {
+        const names = (this.comparing.last?.ranking ?? []).map((id) => this.girlUnits.find((u) => u.spec.id === id)).filter(Boolean).map((u) => shortName(u.name));
+        this.notebook.noteRanking(names.slice(0, 3));
+      } else if (s.type === 'swap') {
+        // Each goes and sits on the other's pick, if she can.
+        for (const [id, spec] of Object.entries(s.picks)) {
+          const c = byId[id];
+          const q = this.girlUnits.find((u) => u.spec.id === spec)?.quad;
+          if (c && q && c.fsm.is('idle') && q.hasPillion && c.mayRide(q) && c.canRidePillion(q) && !c.takenByOther(q)) c.requestBuzzSit(q);
+        }
+      }
+    }
   }
 
   // Hand on the throttle ---------------------------------------------------
@@ -5492,6 +5563,7 @@ export class Game {
     this.updateReady(dt);
     this.updateWarmSit(dt, ridden);
     this.updateDontFix(dt);
+    if (auto) this.updateComparing(dt);
     this.updateSeatSlams();
     if (auto) this.updateKeepAlive(dt);
     if (auto) this.updateHeadStart(dt, ridden);
@@ -5520,8 +5592,10 @@ export class Game {
     if (auto || this.fallingOut.active) this.updateFallingOut(dt);
     if (auto || this.tryst) this.updateRomance(dt);
     this.updateBanter(dt, ridden);
+    this.watchNotices(dt);
     for (const c of this.companions) {
       c.update(dt, c.quad.unit.vibration, {
+        world: this.attentionWorld, // who and what is about, for what she looks at (attention.js)
         position: this.camera.position,
         forward: this.camera.getWorldDirection(this.viewForward),
         isRiding: this.player.isRiding,

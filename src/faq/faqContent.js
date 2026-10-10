@@ -339,6 +339,12 @@ export const FAQ_SECTIONS = [
         tip: 'After a jump start, keep the revs up for ten minutes or it dies again at the first stop.',
       },
       {
+        q: 'Why are the girls arguing about which quad shakes best?',
+        a: `Each girl keeps her own count of how much each quad has shaken her, so each has a favourite, and they do not always agree. Now and then, stood about together, they
+          compare: one asks, each names hers, and when they differ they argue and sometimes swap quads to settle it. Amy writes the two counts added together in her logbook on the
+          bench, as "Buzz ranking".`,
+      },
+      {
         q: 'Why has she got off the quad to walk about, saying her bum has gone numb?',
         a: `She has been sitting on the back of a running quad that shakes for a long time. The harder it shakes, the sooner her legs go tingly and her bum goes numb.
           She gets off, walks it off, stretches, and gets back on. A smooth warm engine takes a long time to do it; a cold or rough one is much quicker.`,

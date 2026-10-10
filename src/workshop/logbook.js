@@ -132,6 +132,19 @@ export class Logbook {
     return entry;
   }
 
+  /** Her ranking of the quads by how much they shake the girls: one line, replaced each time she works it out. `names` are the quads' short names, best first. */
+  writeRanking(names) {
+    if (!names.length) return null;
+    const text = `Buzz ranking: ${names.join(', ')}`;
+    const old = this.entries.findIndex((e) => e.ranking);
+    if (old >= 0 && this.entries[old].text === text) return null;
+    if (old >= 0) this.entries.splice(old, 1);
+    const entry = { time: this.clock, quad: null, text, by: null, ranking: true };
+    this.entries.push(entry);
+    while (this.entries.length > this.params.maxEntries) this.entries.shift();
+    return entry;
+  }
+
   /** Fills the page with what she wrote before the game began (`startingEntries`): all shown as "Yesterday". */
   seed(entries) {
     for (const e of entries) this.entries.push({ time: -1, quad: e.quad, text: entryText(e.what), by: e.by ?? null, old: true });
@@ -150,6 +163,7 @@ export function formatClock(seconds) {
 }
 
 export function formatEntry(e) {
+  if (!e.quad) return `${formatClock(e.time)}  ${e.text}.`; // a note about no one quad (the buzz ranking)
   return `${formatClock(e.time)}  ${e.quad}, ${e.text}${e.by ? ` (${e.by})` : ''}.`;
 }
 

@@ -99,6 +99,7 @@ export function buildGirlsTab(d) {
   button(both, 'Take the L plates off', () => g.lPlates.put('none'));
   const fo = g.fallingOut;
   show(both, 'fallen out', () => (fo.active ? `yes, ${fo.cause.kind} (${fo.fault} at fault), ${Math.round(fo.remaining)} s left` : `no, friction ${round(fo.friction, 1)}`));
+  show(both, 'comparing notes', () => (g.comparing.busy ? `${g.comparing.last?.first} and ${g.comparing.last?.second}, ${g.comparing.steps.length} steps to go` : 'no'));
   show(both, 'race', () => g.race.phase);
   show(both, 'follow the leader', () => (g.convoy.active ? `${g.convoy.phase}: ${g.convoy.leader} leads, ${g.convoy.swapsDone} swaps` : 'idle'));
   show(both, 'throttle grab', () => (g.throttleGrab.grab?.girl ? `${g.throttleGrab.grab.girl} (${g.throttleGrab.grab.phase})` : g.throttleGrab.forced ? `${g.throttleGrab.forced} waiting` : 'none'));

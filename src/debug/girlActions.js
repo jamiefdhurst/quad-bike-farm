@@ -96,6 +96,17 @@ export function girlActions(g) {
       run: (id) => toast(girl(id).forceNumb() ? `${nameOf(id)}'s bum has gone numb` : `${nameOf(id)} needs to be sat on the back of a quad`),
     },
     {
+      verb: 'compare',
+      label: 'Both girls compare which quads shake them most now (needs each to have felt some shake)',
+      run: () => {
+        const exists = (id) => g.girlUnits.some((u) => u.spec.id === id);
+        const plan = g.comparing.plan(g.companions.map((c) => ({ id: c.character.id, buzz: c.content.buzz })), exists, { force: false });
+        if (!plan) return toast('Neither girl has felt any shake yet: sit on a running quad for a while first');
+        g.runComparing(g.comparing.update(0, { girls: [], floorFree: false }));
+        toast(`${plan.first} and ${plan.second} compare notes${plan.agree ? ' (they agree)' : plan.swap ? ' (and swap)' : ' (and disagree)'}`);
+      },
+    },
+    {
       verb: 'minds-fix',
       label: '% minds that you fixed up her favourite (says her line now)',
       run: (id) => {

@@ -81,6 +81,7 @@ import { AMY_WARMSIT_LINES } from './warmSitLines.js';
 import { AMY_DONTFIX_LINES } from './dontFixLines.js';
 import { AMY_BUZZ_LINES } from './buzzLines.js';
 import { AMY_NUMB_LINES } from './numbLines.js';
+import { AMY_RANK_LINES } from './rankLines.js';
 import { AMY_FAULT_LINES } from './faultLines.js';
 import { AMY_BENCH_LINES } from './benchLines.js';
 
@@ -1445,6 +1446,7 @@ export const VOICE_LINES = {
   ...AMY_DONTFIX_LINES,
   ...AMY_BUZZ_LINES,
   ...AMY_NUMB_LINES,
+  ...AMY_RANK_LINES,
   // Listening to a running quad (diagnosisLines.js).
   ...AMY_DIAGNOSIS_LINES,
   // Thrashing a cold engine, and who wore it out (thrashLines.js).
