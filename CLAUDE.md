@@ -32,7 +32,17 @@ Backtick opens it. It has three tabs, each with a job; keep them that way, and k
 
 ## The girls' minds
 
-How the girls notice, react and decide is being rebuilt (TODO 130 to 137) so each part lives in one place and everything new plugs into it rather than bringing its own timers and dice. Follow every part below for anything new the girls do; `tests/girlsMinds.test.js`, `tests/reactions.test.js` and `tests/availability.test.js` check what they can. Read DECISIONS.md's sections for TODO 130 onwards before changing any of it.
+How the girls notice, react and decide is being rebuilt (TODO 130 to 137) so each part lives in one place and everything new plugs into it rather than bringing its own timers and dice. Follow every part below for anything new the girls do; `tests/girlsMinds.test.js`, `tests/reactions.test.js`, `tests/availability.test.js`, `tests/needs.test.js` and `tests/chooser.test.js` check what they can. Read DECISIONS.md's sections for TODO 130 onwards before changing any of it.
+
+### What she decides to do (needs and the chooser)
+
+What a girl does on her own follows from what she wants (`src/npc/needs.js`: warmth, company, excitement, rest, something to do) and is chosen in one place (`src/npc/chooser.js`, run by `updateMinds` in game.js every couple of seconds while she's free). Never give a new thing she does on her own its own timer and `random() < chance`.
+
+- **A new thing she decides to do on her own** is an offer: give it an `OFFER_KINDS` entry (a label, the needs it satisfies and by how much, `urgent` if she should stop something idle for it), have its pure module return `offers(ctx)` (whether she could do it now: weather, distance, cooldowns, room; with a `weight` param for how keen she is) and `take(offer)` (what the old start did, returning the event), handle that event in a game.js method the update loop shares, and add the module to `offersFor` in game.js. The module's update keeps everything after she's started, and never starts it itself (each moved module has a test for that). A debug-panel force may still start it directly.
+- **Something that should change what she wants** goes in `needsContext` in game.js (what moves the needs) or `Needs.update`, with its rate as a `need*` param. A new need goes in `NEEDS` with a label, and every offer that meets it says so.
+- **A new boredom choice** is an entry in `boredOdds` and an offer in `boredOffers` on the companion.
+- Personality is weights and rates in `characters.js` (Jess's restlessness, Amy's cold), not rules.
+- The Girls tab's "Why" folder shows her needs (settable), what she chose and for what, and what she nearly chose: use it, and `Think now`, to see a new offer working rather than waiting for chance. Features still on their own dice are listed in DECISIONS.md ("Needs and a chooser (TODO 133, with 134): what was built"); moving one is the same steps as a new offer.
 
 ### Is she free? (availability)
 

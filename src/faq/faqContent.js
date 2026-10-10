@@ -467,6 +467,15 @@ export const FAQ_SECTIONS = [
         tip: 'Rev a quad near the girls and watch them turn to look.',
       },
       {
+        q: 'Why does she do what she does?',
+        a: `Because of what she wants. Each girl gets cold on a dull or wet day, lonely with nobody about, restless for a bit of excitement,
+          tired from being on the go, and bored stood about with nothing to do. Every couple of seconds while she's free she weighs up what
+          she could do (warm her hands on an idling engine, get into a cab, sit on the bales, take a quad out, put the kettle on, ask you a
+          favour) against what she wants most, and does the best of it, with a whim now and then. Leave a quad idling near them on a cold
+          day and they'll come and warm their hands on it.`,
+        tip: 'On a cold day, leave a quad idling near the girls and they come to warm their hands.',
+      },
+      {
         q: 'Why did she cover her ears, or flinch?',
         a: `They react to what happens near them. A backfire or a bang makes them flinch, a quad leaping forward right by them makes them hop
           back, and revving flat out beside them makes Amy cover her ears (Jess likes the noise). A quad going over gets a gasp, a good jump a
