@@ -33,6 +33,7 @@ export const CHARACTERS = [
       reactEarsChance: 0.85, // covers her ears at revs beside her; claps a jump rather than cheering
       reactCheerChance: 0.45,
       reactCheerArms: 0.2,
+      needColdRise: 0.032, // feels the cold sooner (needs.js)
     },
     lines: VOICE_LINES,
     idles: ['folded', 'clasped', 'weight'], // her ways of standing about (STANDING_IDLES in poseMoves.js): tidy and patient
@@ -55,6 +56,7 @@ export const CHARACTERS = [
       reactCheerChance: 0.95,
       reactCheerArms: 1,
       reactFlinch: 0.7,
+      needThrillRise: 0.003, // gets restless for a bit of excitement sooner (needs.js)
       height: 1.53,
       walkSpeed: 1.4,
       boredAfterMin: 20,

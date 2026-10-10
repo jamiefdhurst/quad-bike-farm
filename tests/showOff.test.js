@@ -3,7 +3,8 @@ import { ShowOffRun, youSaw, pickTrick, DEFAULT_SHOWOFF_PARAMS as P } from '../s
 import { AMY_SHOWOFF_LINES, JESS_SHOWOFF_LINES, SHOWOFF_LINE_KEYS } from '../src/npc/showOffLines.js';
 import { HerDrive } from '../src/npc/herDriving.js';
 import { DEFAULT_COMPANION_PARAMS } from '../src/npc/companionParams.js';
-import { pickBoredChoice } from '../src/npc/boredom.js';
+import { boredOdds, BORED_NORM } from '../src/npc/boredom.js';
+import { choose } from '../src/npc/chooser.js';
 
 const you = (o = {}) => ({ x: 0, z: 0, fx: 0, fz: 1, ...o }); // at the origin, looking along +z
 
@@ -145,12 +146,19 @@ describe('her drive mode', () => {
   });
 });
 
+/** What the chooser picks for a girl bored through and through, offered these (her odds as weights, no whim). */
+const pickOf = (p, kinds) => {
+  const odds = boredOdds(p);
+  const offers = kinds.map((key) => ({ key, weight: odds[key] / BORED_NORM })).filter((o) => o.weight > 0);
+  return choose({ purpose: 1, excitement: 0.5 }, offers, { ...p, chooseWhim: 0, chooseMin: 0 }).pick?.key;
+};
+
 describe('deciding to', () => {
   it('only a girl with a chance for it picks it, and only when you are near enough', () => {
-    const base = { boredMountChance: 0, boredStartChance: 0, boredDriveChance: 0, boredWhim: 0, boredShowOffChance: 1 };
-    expect(pickBoredChoice(base, { can: { showOff: true } }, () => 0.5)).toBe('showOff');
-    expect(pickBoredChoice(base, { can: { showOff: false } }, () => 0.5)).toBe('wander');
-    expect(pickBoredChoice({ ...base, boredShowOffChance: 0 }, { can: { showOff: true } }, () => 0.5)).toBe('wander');
+    const base = { boredMountChance: 0, boredStartChance: 0, boredDriveChance: 0, boredShowOffChance: 1 };
+    expect(pickOf(base, ['showOff', 'wander'])).toBe('showOff');
+    expect(pickOf(base, ['wander'])).toBe('wander');
+    expect(pickOf({ ...base, boredShowOffChance: 0 }, ['showOff', 'wander'])).toBe('wander');
   });
 
   it('has lines for each moment, in neither em dashes nor "he", "she" or "they" about you', () => {

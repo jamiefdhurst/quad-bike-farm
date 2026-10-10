@@ -1,9 +1,7 @@
-// When she gets bored and what she does about it, so it never settles into a
-// pattern. How long she'll stand about is drawn from a wide spread around her
-// usual wait, shortened when she's restless, and her restlessness drifts up and
-// down on its own. Each time, the odds of what she does are reshuffled on a
-// whim, and the more confident a driver she is, the more often she picks
-// driving. Pure logic.
+// How soon she gets bored and how keen she is on each thing she might do about it, so it never settles into a pattern. Her usual wait
+// is drawn from a wide spread, shortened when she's restless, and her restlessness drifts up and down on its own; it sets how fast her
+// need for something to do builds (needs.js). The odds of each choice are her taste for it, and the more confident a driver she is,
+// the keener on driving. The choosing itself is the chooser's (chooser.js), with a whim, against everything else she could do. Pure.
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
@@ -35,36 +33,26 @@ export function driveAppetite(confidence) {
   return 0.3 + 2.4 * confidence * confidence;
 }
 
+/** The odds as weights are divided by this, so a typical one is about 1 for the chooser (chooser.js). */
+export const BORED_NORM = 0.25;
+
 /**
- * What she does this time: 'join' (hop on the back of her friend's quad as
- * she sets off), 'mount', 'start', 'drive', 'rest' (go and sit somewhere), 'buzz' (sit on a rough quad) or 'wander'. `can` says which are
- * possible right now (wandering always is). The usual chances are
- * the bored*Chance params (wandering gets what's left), each scaled by a whim
- * (log-normal, `boredWhim` wide) and driving by her appetite for it.
+ * How keen she is on each thing she might do out of boredom: her bored*Chance params (wandering gets what's left), starting scaled
+ * by `startUrge` (keener the fewer quads are running, contentment.js), driving by her appetite for it and by `sulk` (a neglected girl
+ * takes a quad off on her own). These are the weights of her boredom offers; the chooser adds the whim and picks.
  */
-export function pickBoredChoice(p, { confidence = 0.5, can = {}, sulk = 1, startUrge = 1 } = {}, random = Math.random) {
-  const base = {
+export function boredOdds(p, { confidence = 0.5, sulk = 1, startUrge = 1 } = {}) {
+  return {
     mount: p.boredMountChance,
-    start: p.boredStartChance * startUrge, // more keen the fewer quads are running (contentment.js)
-    drive: p.boredDriveChance * driveAppetite(confidence) * sulk, // sulk: a neglected girl takes a quad off on her own
+    start: p.boredStartChance * startUrge,
+    drive: p.boredDriveChance * driveAppetite(confidence) * sulk,
     rest: p.boredRestChance ?? 0, // sits on the bales or the fence: only on a fine day
     doughnuts: p.boredDoughnutChance ?? 0, // spins doughnuts in the field (Jess)
     jumps: p.boredJumpChance ?? 0, // rides at the ramp in the field (npc/jumps.js)
     showOff: p.boredShowOffChance ?? 0, // rides at you to wheelie past or skid to a stop beside you (npc/showOff.js)
     buzz: p.boredBuzzChance ?? 0, // goes and sits on a worn, rough quad for the shake (Jess readily, Amy rarely)
     lineUp: p.boredLineUpChance ?? 0, // moves the quads into a row by the barn (Amy), or parks one crooked (Jess)
+    wander: Math.max(0.1, 1 - p.boredMountChance - p.boredStartChance - p.boredDriveChance),
+    join: p.boredJoinChance ?? 0,
   };
-  base.wander = Math.max(0.1, 1 - p.boredMountChance - p.boredStartChance - p.boredDriveChance);
-  base.join = p.boredJoinChance ?? 0;
-  const weights = Object.entries(base).map(([choice, w]) => [
-    choice,
-    choice === 'wander' || can[choice] ? w * Math.exp(gaussian(random) * p.boredWhim) : 0,
-  ]);
-  const total = weights.reduce((sum, [, w]) => sum + w, 0);
-  let r = random() * total;
-  for (const [choice, w] of weights) {
-    r -= w;
-    if (r <= 0 && w > 0) return choice;
-  }
-  return 'wander';
 }

@@ -41,32 +41,30 @@ describe('restStay', () => {
 });
 
 describe('Places in the rain', () => {
-  it('sends an idle girl to the barn after a delay, once the rain has set in', () => {
+  it('offers an idle girl the barn once the rain has set in, and taking it sends her', () => {
     const pl = make();
     const ctx = { rain: 0.8, spots: [barn, bale], girls: girls() };
-    expect(run(pl, ctx, 2)).toEqual([]);
-    const acts = run(pl, ctx, 30);
-    expect(acts[0]).toMatchObject({ girl: 'amy', do: 'shelter', spot: { id: 'barn1' } });
+    const offers = pl.offers(ctx);
+    expect(offers).toEqual([{ key: 'shelterBarn', girl: 'amy', spot: barn, weight: P.shelterWeight }]);
+    expect(pl.take(offers[0])).toMatchObject({ girl: 'amy', do: 'shelter', spot: { id: 'barn1' } });
   });
-  it('does nothing for a drizzle below the threshold, or a girl who is busy', () => {
-    expect(run(make(), { rain: 0.1, spots: [barn], girls: girls() }, 60)).toEqual([]);
-    expect(run(make(), { rain: 0.8, spots: [barn], girls: girls({ state: 'busy' }) }, 60)).toEqual([]);
+  it('never sends her on its own: that is the chooser\'s', () => {
+    expect(run(make(), { rain: 0.8, spots: [barn], girls: girls() }, 60)).toEqual([]);
   });
-  it('moves a girl sitting out on a bale into the barn too', () => {
-    const acts = run(make(), { rain: 0.8, spots: [barn, bale], girls: girls({ state: 'resting', spot: bale }) }, 30);
-    expect(acts[0]).toMatchObject({ do: 'shelter' });
+  it('offers nothing for a drizzle below the threshold, or to a girl who is busy', () => {
+    expect(make().offers({ rain: 0.1, spots: [barn], girls: girls() })).toEqual([]);
+    expect(make().offers({ rain: 0.8, spots: [barn], girls: girls({ state: 'busy' }) })).toEqual([]);
   });
-  it('gives two girls different spots', () => {
-    const pl = make();
-    const ctx = { rain: 0.8, spots: [barn, barn2], girls: [{ id: 'amy', x: 5, z: 0, state: 'idle', spot: null }, { id: 'jess', x: 5, z: 1, state: 'idle', spot: null }] };
-    const acts = run(pl, ctx, 30);
-    expect(new Set(acts.map((a) => a.spot.id)).size).toBe(2);
+  it('offers a girl sitting out on a bale the barn too', () => {
+    expect(make().offers({ rain: 0.8, spots: [barn, bale], girls: girls({ state: 'resting', spot: bale }) })).toHaveLength(1);
   });
-  it('leaves her alone if there is nowhere to shelter', () => {
-    expect(run(make(), { rain: 0.8, spots: [bale], girls: girls() }, 60)).toEqual([]);
+  it('gives two girls different spots once one is taken', () => {
+    const ctx = { rain: 0.8, spots: [barn, barn2], girls: [{ id: 'amy', x: 5, z: 0, state: 'idle', spot: null }, { id: 'jess', x: 5, z: 1, state: 'idle', spot: barn }] };
+    expect(make().offers(ctx).map((o) => o.spot.id)).toEqual(['barn2']);
   });
-  it('does not ask a girl already at the barn to go again', () => {
-    expect(run(make(), { rain: 0.8, spots: [barn], girls: girls({ x: 0, state: 'resting', spot: barn }) }, 60)).toEqual([]);
+  it('offers nothing if there is nowhere to shelter, or to a girl already at the barn', () => {
+    expect(make().offers({ rain: 0.8, spots: [bale], girls: girls() })).toEqual([]);
+    expect(make().offers({ rain: 0.8, spots: [barn], girls: girls({ x: 0, state: 'resting', spot: barn }) })).toEqual([]);
   });
 });
 

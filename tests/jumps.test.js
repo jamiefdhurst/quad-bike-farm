@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { JumpRun, JumpWatch, rateLanding, rampFrame, rampPoint, DEFAULT_JUMP_PARAMS as P } from '../src/npc/jumps.js';
 import { JESS_JUMP_LINES, AMY_JUMP_LINES, JUMP_LINE_KEYS } from '../src/npc/jumpLines.js';
-import { pickBoredChoice } from '../src/npc/boredom.js';
+import { boredOdds, BORED_NORM } from '../src/npc/boredom.js';
+import { choose } from '../src/npc/chooser.js';
 import { LAYOUT } from '../src/world/layout.js';
 import { Track } from '../src/world/track.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
@@ -147,12 +148,19 @@ describe('the other girl watching', () => {
   });
 });
 
+/** What the chooser picks for a girl bored through and through, offered these (her odds as weights, no whim). */
+const pickOf = (p, kinds) => {
+  const odds = boredOdds(p);
+  const offers = kinds.map((key) => ({ key, weight: odds[key] / BORED_NORM })).filter((o) => o.weight > 0);
+  return choose({ purpose: 1, excitement: 0.5 }, offers, { ...p, chooseWhim: 0, chooseMin: 0 }).pick?.key;
+};
+
 describe('deciding to, and what they say', () => {
   it('only a girl with a chance for it picks it, and only when there is a clear ramp', () => {
-    const base = { boredMountChance: 0, boredStartChance: 0, boredDriveChance: 0, boredWhim: 0, boredJumpChance: 1 };
-    expect(pickBoredChoice(base, { can: { jumps: true } }, () => 0.5)).toBe('jumps');
-    expect(pickBoredChoice(base, { can: { jumps: false } }, () => 0.5)).toBe('wander');
-    expect(pickBoredChoice({ ...base, boredJumpChance: 0 }, { can: { jumps: true } }, () => 0.5)).toBe('wander');
+    const base = { boredMountChance: 0, boredStartChance: 0, boredDriveChance: 0, boredJumpChance: 1 };
+    expect(pickOf(base, ['jumps', 'wander'])).toBe('jumps');
+    expect(pickOf(base, ['wander'])).toBe('wander');
+    expect(pickOf({ ...base, boredJumpChance: 0 }, ['jumps', 'wander'])).toBe('wander');
   });
 
   it('both have a line for everything, and never call you he, she or they', () => {

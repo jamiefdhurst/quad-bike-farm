@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { Contentment } from '../src/npc/contentment.js';
 import { DEFAULT_COMPANION_PARAMS as P } from '../src/npc/companionParams.js';
-import { pickBoredChoice } from '../src/npc/boredom.js';
+import { boredOdds, BORED_NORM } from '../src/npc/boredom.js';
+import { choose } from '../src/npc/chooser.js';
 import { AMY_CONTENT_LINES, JESS_CONTENT_LINES } from '../src/npc/contentLines.js';
 import { VOICE_LINES } from '../src/npc/voiceLines.js';
 import { CHARACTERS } from '../src/npc/characters.js';
@@ -49,7 +50,9 @@ describe('liking them running', () => {
       let n = 0;
       let i = 0;
       const random = () => ((i++ * 0.61803398875) % 1);
-      for (let k = 0; k < 400; k++) if (pickBoredChoice({ ...P, boredWhim: 0 }, { can: { start: true, mount: true }, startUrge: urge }, random) === 'start') n++;
+      const odds = boredOdds(P, { startUrge: urge });
+      const offers = ['start', 'mount'].map((key) => ({ key, weight: odds[key] / BORED_NORM }));
+      for (let k = 0; k < 400; k++) if (choose({ purpose: 1, excitement: 0.2 }, offers, P, random).pick?.key === 'start') n++;
       return n;
     };
     expect(count(3)).toBeGreaterThan(count(1));

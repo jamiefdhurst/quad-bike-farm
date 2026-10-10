@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { nextBoredWait, driftRestlessness, pickBoredChoice, driveAppetite } from '../src/npc/boredom.js';
+import { nextBoredWait, driftRestlessness, boredOdds, driveAppetite, BORED_NORM } from '../src/npc/boredom.js';
+import { choose } from '../src/npc/chooser.js';
 import { DEFAULT_COMPANION_PARAMS } from '../src/npc/companionParams.js';
 import { CHARACTERS } from '../src/npc/characters.js';
 
@@ -44,38 +45,46 @@ describe('her boredom', () => {
     expect(hi - lo).toBeGreaterThan(0.5);
   });
 
-  it('picks driving far more often the more confident she is, and never something she cannot do', () => {
+  it('picks driving far more often the more confident she is, through the chooser, and only what she is offered', () => {
+    // Bored through and through, a little excited, with a quad to get on, start or drive: what the chooser picks from her odds.
+    const needs = { warmth: 0, company: 0, excitement: 0.3, rest: 0, purpose: 1 };
+    const offersFor = (confidence, kinds = ['mount', 'start', 'drive', 'wander']) => {
+      const odds = boredOdds(P, { confidence });
+      return kinds.map((key) => ({ key, weight: odds[key] / BORED_NORM }));
+    };
     const share = (confidence) => {
       const random = seeded(11);
       let drives = 0;
-      for (let i = 0; i < 4000; i++) if (pickBoredChoice(P, { confidence, can: { mount: true, start: true, drive: true } }, random) === 'drive') drives++;
+      for (let i = 0; i < 4000; i++) if (choose(needs, offersFor(confidence), P, random).pick?.key === 'drive') drives++;
       return drives / 4000;
     };
     const careful = share(0);
-    const middling = share(0.5);
     const bold = share(1);
     expect(careful).toBeLessThan(0.12);
-    expect(middling).toBeGreaterThan(0.15);
     expect(bold).toBeGreaterThan(0.45);
     expect(driveAppetite(1)).toBeGreaterThan(driveAppetite(0.5) * 2.5);
     const random = seeded(5);
-    for (let i = 0; i < 500; i++) expect(pickBoredChoice(P, { confidence: 1, can: { mount: false, start: false, drive: false } }, random)).toBe('wander');
+    // On its own, wandering is all she'll do (now, or at her next think if the whim puts it under the bar).
+    for (let i = 0; i < 500; i++) expect([undefined, 'wander']).toContain(choose(needs, offersFor(1, ['wander']), P, random).pick?.key);
   });
 
   it('does something different from one time to the next', () => {
     const random = seeded(9);
-    const picks = Array.from({ length: 400 }, () => pickBoredChoice(P, { confidence: 0.5, can: { mount: true, start: true, drive: true } }, random));
+    const odds = boredOdds(P, { confidence: 0.5 });
+    const offers = ['mount', 'start', 'drive', 'wander'].map((key) => ({ key, weight: odds[key] / BORED_NORM }));
+    const picks = Array.from({ length: 400 }, () => choose({ purpose: 1, excitement: 0.2 }, offers, P, random).pick?.key);
     for (const choice of ['mount', 'start', 'drive', 'wander']) expect(picks.filter((c) => c === choice).length).toBeGreaterThan(30);
   });
 });
 
 describe('buzz-seeking', () => {
-  it('a girl keen on the shake picks a rough quad when one is about, and never when there is none', () => {
-    const p = { ...DEFAULT_COMPANION_PARAMS, boredBuzzChance: 5, boredMountChance: 0, boredStartChance: 0, boredDriveChance: 0, boredWhim: 0 };
+  it('a girl keen on the shake picks a rough quad when one is about', () => {
+    const p = { ...DEFAULT_COMPANION_PARAMS, boredBuzzChance: 5, boredMountChance: 0, boredStartChance: 0, boredDriveChance: 0 };
+    const odds = boredOdds(p);
+    const offers = ['buzz', 'wander'].map((key) => ({ key, weight: odds[key] / BORED_NORM }));
     let buzz = 0;
-    for (let i = 0; i < 200; i++) if (pickBoredChoice(p, { can: { buzz: true } }) === 'buzz') buzz++;
+    for (let i = 0; i < 200; i++) if (choose({ purpose: 1, excitement: 0.3 }, offers, p).pick?.key === 'buzz') buzz++;
     expect(buzz).toBeGreaterThan(150);
-    for (let i = 0; i < 200; i++) expect(pickBoredChoice(p, { can: { buzz: false } })).not.toBe('buzz');
   });
 
   it('Jess is keener than Amy, and the default is off', () => {

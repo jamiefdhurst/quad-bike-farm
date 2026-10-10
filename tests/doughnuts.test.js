@@ -3,7 +3,8 @@ import { doughnutControl, ringPoints, DoughnutWatch, DEFAULT_DOUGHNUT_PARAMS as 
 import { HerDrive } from '../src/npc/herDriving.js';
 import { DEFAULT_COMPANION_PARAMS } from '../src/npc/companionParams.js';
 import { AMY_DOUGHNUT_LINES, JESS_DOUGHNUT_LINES } from '../src/npc/doughnutLines.js';
-import { pickBoredChoice } from '../src/npc/boredom.js';
+import { boredOdds, BORED_NORM } from '../src/npc/boredom.js';
+import { choose } from '../src/npc/chooser.js';
 
 describe('going round a circle', () => {
   // A little kinematic quad: forward at `v`, turning at up to v / minRadius.
@@ -99,12 +100,19 @@ describe('watching', () => {
   });
 });
 
+/** What the chooser picks for a girl bored through and through, offered these (her odds as weights, no whim). */
+const pickOf = (p, kinds) => {
+  const odds = boredOdds(p);
+  const offers = kinds.map((key) => ({ key, weight: odds[key] / BORED_NORM })).filter((o) => o.weight > 0);
+  return choose({ purpose: 1, excitement: 0.5 }, offers, { ...p, chooseWhim: 0, chooseMin: 0 }).pick?.key;
+};
+
 describe('deciding to', () => {
   it('only a girl with a chance for it picks it, and only when there is room', () => {
-    const base = { boredMountChance: 0, boredStartChance: 0, boredDriveChance: 0, boredWhim: 0, boredDoughnutChance: 1 };
-    expect(pickBoredChoice(base, { can: { doughnuts: true } }, () => 0.5)).toBe('doughnuts');
-    expect(pickBoredChoice(base, { can: { doughnuts: false } }, () => 0.5)).toBe('wander');
-    expect(pickBoredChoice({ ...base, boredDoughnutChance: 0 }, { can: { doughnuts: true } }, () => 0.5)).toBe('wander');
+    const base = { boredMountChance: 0, boredStartChance: 0, boredDriveChance: 0, boredDoughnutChance: 1 };
+    expect(pickOf(base, ['doughnuts', 'wander'])).toBe('doughnuts');
+    expect(pickOf(base, ['wander'])).toBe('wander');
+    expect(pickOf({ ...base, boredDoughnutChance: 0 }, ['doughnuts', 'wander'])).toBe('wander');
   });
 
   it('has lines for deciding, spinning, watching and joining', () => {

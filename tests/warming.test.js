@@ -16,27 +16,31 @@ describe('warming their hands', () => {
     expect(isChilly({ warmth: 0.9, rain: 0 }, P)).toBe(false);
   });
 
-  it('a free girl goes to a quad idling near her on a cold day', () => {
-    const events = make().update(0.1, ctx());
-    expect(events).toEqual([{ type: 'go', girl: 'amy', spec: 'red', join: false }]);
+  it('offers a free girl a quad idling near her on a cold day, and taking it sends her', () => {
+    const w = make();
+    expect(w.offers(ctx())).toEqual([{ key: 'warmHands', girl: 'amy', spec: 'red', join: false, weight: P.warmWeight }]);
+    expect(w.take(w.offers(ctx())[0])).toEqual({ type: 'go', girl: 'amy', spec: 'red', join: false });
   });
 
-  it('not on a warm day, not to a quad that is off or too far, not if she is busy, not before the start', () => {
-    expect(make().update(0.1, ctx({ weather: { warmth: 0.9, rain: 0 } }))).toEqual([]);
-    expect(make().update(0.1, ctx({ quads: [quad({ idling: false })] }))).toEqual([]);
-    expect(make().update(0.1, ctx({ quads: [quad({ x: 100 })] }))).toEqual([]);
-    expect(make().update(0.1, ctx({ girls: [girl('amy', { free: false })] }))).toEqual([]);
-    expect(new Warming({ ...P }, () => 0).update(0.1, ctx())).toEqual([]);
+  it('never starts her going on its own: that is the chooser\'s', () => {
+    expect(make().update(0.1, ctx())).toEqual([]);
   });
 
-  it('her friend is likelier to join, and no more than maxAtQuad stand round one engine', () => {
-    const w = make({ warmChance: 0, joinChance: 1, maxAtQuad: 2 });
+  it('offers nothing on a warm day, for a quad that is off or too far, to a busy girl, or before the start', () => {
+    expect(make().offers(ctx({ weather: { warmth: 0.9, rain: 0 } }))).toEqual([]);
+    expect(make().offers(ctx({ quads: [quad({ idling: false })] }))).toEqual([]);
+    expect(make().offers(ctx({ quads: [quad({ x: 100 })] }))).toEqual([]);
+    expect(make().offers(ctx({ girls: [girl('amy', { free: false })] }))).toEqual([]);
+    expect(new Warming({ ...P }, () => 0).offers(ctx())).toEqual([]);
+  });
+
+  it('offers joining her friend, weighted for it, and no more than maxAtQuad round one engine', () => {
+    const w = make({ maxAtQuad: 2 });
     const c = ctx({ girls: [girl('amy', { warmSpec: 'red' }), girl('jess')] });
-    const first = w.update(0.1, c);
-    expect(first).toContainEqual({ type: 'warm', girl: 'amy', spec: 'red' });
-    expect(first).toContainEqual({ type: 'go', girl: 'jess', spec: 'red', join: true });
-    const one = make({ maxAtQuad: 1, joinChance: 1 });
-    expect(one.update(0.1, c).filter((e) => e.type === 'go')).toEqual([]);
+    expect(w.update(0.1, c)).toContainEqual({ type: 'warm', girl: 'amy', spec: 'red' });
+    expect(w.offers(c)).toEqual([{ key: 'warmHandsJoin', girl: 'jess', spec: 'red', join: true, weight: P.joinWeight }]);
+    const one = make({ maxAtQuad: 1 });
+    expect(one.offers(c)).toEqual([]);
   });
 
   it('she stays a while, then leaves; switched off, she leaves and says so', () => {
@@ -55,7 +59,8 @@ describe('warming their hands', () => {
     const warming = ctx({ girls: [girl('amy', { warmSpec: 'red' })] });
     w.update(0.1, warming);
     w.update(2, warming);
-    expect(w.update(2.1, ctx()).filter((e) => e.type === 'go')).toEqual([]);
+    w.update(0.1, ctx());
+    expect(w.offers(ctx())).toEqual([]);
   });
 
   it('has lines for going, warming, joining and being switched off', () => {

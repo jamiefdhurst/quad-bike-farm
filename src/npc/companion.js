@@ -25,12 +25,13 @@ import { DEFAULT_LINEUP_PARAMS, nextJob, assignSlots, rowSlots, crookedSlot, par
 import { DEFAULT_HOME_PARAMS, jogging } from './homeParking.js';
 import { PillionPose } from './pillionPose.js';
 import { canRideRack } from './rackSeat.js';
-import { nextBoredWait, driftRestlessness, pickBoredChoice } from './boredom.js';
+import { nextBoredWait, driftRestlessness, boredOdds, BORED_NORM } from './boredom.js';
 import { moveMethods, DEFAULT_MOVE_PARAMS } from './companionMoves.js';
 import { DEFAULT_IDLE_POSE_PARAMS } from './poseMoves.js';
 import { Attention, DEFAULT_NOTICE_PARAMS } from './attention.js';
 import { reactingMethods } from './companionReacting.js';
 import { availabilityOf, JOBS } from './availability.js';
+import { Needs } from './needs.js';
 
 const AXIS_Y = new THREE.Vector3(0, 1, 0);
 const NO_CONTACT_FORCES = 0xffff0000; // in every solver group, pushes against none
@@ -122,6 +123,10 @@ export class Companion {
     this.lookTurn = null; // a heading to turn and face, when a look over her shoulder is held (idle uses it)
     this.attendHint = null; // a sub-activity's own focus: { x, y, z, weight, left } (attend())
     this.lookLeadLeft = 0; // seconds she still looks where she's going before setting off
+    // What she wants (needs.js), started a little different for each so they don't move in step, and what she last chose and nearly
+    // chose (chooser.js, run by the game's updateMinds; the debug panel's "why").
+    this.needs = new Needs({ purpose: Math.random() * 0.4, excitement: Math.random() * 0.3 });
+    this.mind = { thinkIn: Math.random() * 2, last: null, since: 0, scored: [], waiting: null };
     // Whether she's free (availability.js): features that have her for a while, and what on the farm holds both girls (set by the game).
     this.holds = new Map(); // key -> what she's doing for it
     this.worldHold = null; // () => why both girls are held, or null
@@ -131,7 +136,6 @@ export class Companion {
     this.quads = [quad]; // every quad on the farm, for doing things on her own (set by the game)
     this.others = () => []; // the other companions, whose quads she leaves alone (set by the game)
     this.fallenOut = () => false; // she and her friend have fallen out, so they won't share a quad (set by the game, fallingOut.js)
-    this.idleFor = 0;
     this.recoil = null; // a jump back from a boil-over, while it lasts (jumpBack)
     this.restlessness = 0.7 + Math.random() * 0.8; // drifts while she's about (boredom.js)
     this.boredAfter = nextBoredWait(params, this.restlessness);
@@ -378,14 +382,27 @@ export class Companion {
    * has a little drive of one.
    * Once she's sat on a quad she stays there until you ask her to get off.
    */
-  updateBoredom(dt, viewer) {
+  /**
+   * Her restlessness drifts, and how soon she'll want something to do: her need for it (needs.js, purpose) builds while she stands
+   * about, at a pace set by her boredom wait (boredom.js), drawn afresh each time she takes something up (chose()).
+   */
+  updateBoredom(dt) {
+    this.restlessness = driftRestlessness(this.restlessness, dt, this.params);
+    this.purposeRate = 1 / Math.max(1, this.boredAfter);
+  }
+
+  /** She's taken something up (the chooser picked for her): her next wait is drawn. */
+  chose() {
+    this.boredAfter = nextBoredWait(this.params, this.restlessness);
+  }
+
+  /**
+   * What she could do on her own, out of boredom (the old boredom choices), as offers for the chooser (chooser.js): each
+   * { key, weight, take }, weighted as the old odds were (her bored*Chance params, driving by her appetite for it, starting by how
+   * few are running), and taking one does what that choice always did.
+   */
+  boredOffers(viewer) {
     const p = this.params;
-    this.restlessness = driftRestlessness(this.restlessness, dt, p);
-    const waiting = this.fsm.is('idle') && !viewer?.talking && !this.warmingAt; // warming her hands isn't being bored
-    this.idleFor = waiting ? this.idleFor + dt : 0;
-    if (!p.ownMind || this.idleFor < this.boredAfter) return;
-    this.idleFor = 0;
-    this.boredAfter = nextBoredWait(p, this.restlessness);
     const here = this.root.position;
     const near = (q) => q.position.distanceTo(here) < 40 && this.mayRide(q) && !this.takenByOther(q) && !q.rider && !q.isTipped && !q.isGhostRiding && q.speed < 0.5;
     // Her friend about to set off on one (walking to it, getting on, starting it or about to go): she might hop on the back.
@@ -414,34 +431,38 @@ export class Companion {
       drive: this.quads.filter((q) => near(q) && this.canDrive(q)),
       rest: this.restSpotsNear?.(here) ?? [],
     };
-    const can = Object.fromEntries(Object.entries(options).map(([k, list]) => [k, list.length > 0]));
     const favour = this.favourView();
-    const choice = pickBoredChoice(p, { confidence: this.driveConfidence ?? p.driveConfidence, can, sulk: favour.sulk, startUrge: this.content.startUrge(p) });
+    const odds = boredOdds(p, { confidence: this.driveConfidence ?? p.driveConfidence, sulk: favour.sulk, startUrge: this.content.startUrge(p) });
     const pick = (list) => list[Math.floor(Math.random() * list.length)];
-    // Neglected and off on a quad alone: she makes a point of it.
-    // Jess now and then takes her friend's quad, to wind her up (ownership.js).
-    const borrowSpec = choice === 'drive' ? this.borrowPick?.(options.drive.map((q) => q.unit?.spec.id)) : null;
-    const borrowed = borrowSpec ? options.drive.find((q) => q.unit?.spec.id === borrowSpec) : null;
-    if (choice === 'rest') this.selfEvents.push(options.rest[0]?.kind === 'loft' ? 'loftGo' : 'restGo'); else this.selfEvents.push(borrowed ? 'borrow' : choice === 'drive' && favour.mood === 'neglected' ? 'sulkOff' : choice);
-    if (choice === 'join') {
+    const offer = (key, run, say = key) => ({ key, weight: odds[key] / BORED_NORM, take: () => { this.selfEvents.push(say); run(); } });
+    const out = [offer('wander', () => this.wander())];
+    if (options.join.length) out.push(offer('join', () => {
       const q = pick(options.join);
       this.requestMount(q, { ownChoice: true, seat: this.canRidePillion(q) ? 'pillion' : 'rack' });
-    }
-    else if (choice === 'buzz') {
-      // The roughest one near her; started first if it is off, then she sits on the back and stays a while.
-      this.requestBuzzSit(options.buzz[0]);
-    } else if (choice === 'mount') this.requestMount(pick(options.mount), { ownChoice: true });
-    else if (choice === 'start') this.requestStart(pick(options.start));
-    else if (borrowed) this.requestDrive(borrowed);
-    else if (choice === 'lineUp') this.startLineUp(lineUpJob);
-    else if (choice === 'showOff') {
+    }));
+    // The roughest one near her; started first if it is off, then she sits on the back and stays a while.
+    if (options.buzz.length) out.push(offer('buzz', () => this.requestBuzzSit(options.buzz[0])));
+    if (options.mount.length) out.push(offer('mount', () => this.requestMount(pick(options.mount), { ownChoice: true })));
+    if (options.start.length) out.push(offer('start', () => this.requestStart(pick(options.start))));
+    if (options.lineUp.length) out.push(offer('lineUp', () => this.startLineUp(lineUpJob)));
+    if (options.showOff.length) out.push(offer('showOff', () => {
       const q = pick(options.showOff);
       this.requestDrive(q, { showOff: { trick: pickTrick(q.engine.params.strokes === 2, showParams), p: showParams } });
-    } else if (choice === 'jumps') this.requestDrive(pick(options.jumps), { jump: jumpPlan });
-    else if (choice === 'doughnuts') this.requestDrive(pick(options.doughnuts), { doughnut: doughnutPlan });
-    else if (choice === 'drive') this.requestDrive(pick(options.drive.some((q) => this.ownsQuad(q)) ? options.drive.filter((q) => this.ownsQuad(q)) : options.drive));
-    else if (choice === 'rest') this.goRest(pick(options.rest), { stay: this.restStayFor?.() });
-    else this.wander();
+    }));
+    if (options.jumps.length) out.push(offer('jumps', () => this.requestDrive(pick(options.jumps), { jump: jumpPlan })));
+    if (options.doughnuts.length) out.push(offer('doughnuts', () => this.requestDrive(pick(options.doughnuts), { doughnut: doughnutPlan })));
+    if (options.drive.length) {
+      // Jess now and then takes her friend's quad, to wind her up (ownership.js); neglected, she takes one off alone to make a point.
+      const borrowSpec = this.borrowPick?.(options.drive.map((q) => q.unit?.spec.id));
+      const borrowed = borrowSpec ? options.drive.find((q) => q.unit?.spec.id === borrowSpec) : null;
+      const say = borrowed ? 'borrow' : favour.mood === 'neglected' ? 'sulkOff' : 'drive';
+      out.push(offer('drive', () => {
+        if (borrowed) this.requestDrive(borrowed);
+        else this.requestDrive(pick(options.drive.some((q) => this.ownsQuad(q)) ? options.drive.filter((q) => this.ownsQuad(q)) : options.drive));
+      }, say));
+    }
+    if (options.rest.length) out.push(offer('rest', () => this.goRest(pick(options.rest), { stay: this.restStayFor?.() }), options.rest[0]?.kind === 'loft' ? 'loftGo' : 'restGo'));
+    return out.filter((o) => o.weight > 0);
   }
 
   /**
@@ -1051,6 +1072,16 @@ export class Companion {
     return availabilityOf({ state: this.fsm.name, restingSat, jobs, holds: [...this.holds], held: this.worldHold?.() ?? null }, { asked, mine });
   }
 
+  /**
+   * Not free, but only doing something idle that something urgent (the rain) can take her from: sat resting, or one of the soft jobs
+   * (warming her hands, tidying, walking off a numb bum). The chooser offers her only urgent things then (chooser.js).
+   */
+  interruptible() {
+    const a = this.availability();
+    if (a.free) return false;
+    return (this.fsm.is('resting') && this.restPhase === 'sat') || (this.fsm.is('idle') && this.availability({ asked: true }).free && !a.held);
+  }
+
   /** A feature has her for a while (`why` says what for, for the debug panel): she isn't free until it lets her go. */
   hold(key, why) {
     this.holds.set(key, why);
@@ -1100,7 +1131,7 @@ export class Companion {
     this.updateNumbPlan(dt);
     this.updateRecoil(dt);
     this.updateReaction(dt);
-    this.updateBoredom(dt, viewer);
+    this.updateBoredom(dt);
     this.updateLineUp(dt);
     if (viewer) this.updateAttention(dt, viewer);
     this.updateFidget(dt);

@@ -72,7 +72,22 @@ export const DEFAULT_COMPANION_PARAMS = {
   boredWaitCeiling: 200,
   restlessDrift: 0.03, // how fast her restlessness (0.5 to 2, shortening the waits) wanders up and down
   boredJoinChance: 0.5, // her friend's about to set off on a quad: how much she fancies hopping on the back (weighed against the others)
-  boredWhim: 0.6, // how much the odds of what she does next are reshuffled each time (log scale)
+  // What she wants (needs.js), each 0 met to 1 pressing, and how she chooses what to do about it (chooser.js).
+  chooseWhim: 0.6, // how much the scores of what she might do are reshuffled each time she chooses (log scale)
+  chooseMin: 0.5, // she only takes the best thing she could do if it scores at least this
+  thinkEvery: 2, // seconds between her weighing up what to do, while she's free (a little more or less each time)
+  needColdRise: 0.025, // warmth: per second at the day's full chill, outside
+  needWetRise: 0.035, // and this much more per second when it's raining on her
+  needWarmFall: 0.06, // per second warming up (hands over an engine, a running cab, the barn roof); a third of it on a mild day anyway
+  needLonelyRise: 0.004, // company: per second with nobody within needLonelyRange
+  needLonelyRange: 15, // metres
+  needCompanyFall: 0.03, // per second with someone within needCloseRange (or riding with her)
+  needCloseRange: 6, // metres
+  needThrillRise: 0.002, // excitement: per second, all the time
+  needThrillFall: 0.06, // per second at full thrill (going fast, a hard shake)
+  needTireRise: 0.003, // rest: per second on the go
+  needRestFall: 0.03, // per second sitting down
+  needBusyFall: 0.05, // something to do: per second it fades while she's busy (it builds at her boredom wait's pace while she stands about)
   wanderFarChance: 0.25, // a longer stroll, two and a half times as far
   boredRestChance: 0.35, // on a fine day, goes and sits on the bales or the fence (weighed against the others; only when there's a spot)
   boredMountChance: 0.3, // gets on a quad to wait (she stays on it)
@@ -321,7 +336,21 @@ export const COMPANION_PARAM_RANGES = {
   boredWaitFloor: [1, 120, 1],
   boredWaitCeiling: [10, 900, 5],
   restlessDrift: [0, 0.2, 0.005],
-  boredWhim: [0, 2, 0.05],
+  chooseWhim: [0, 2, 0.05],
+  chooseMin: [0, 2, 0.01],
+  thinkEvery: [0.2, 10, 0.1],
+  needColdRise: [0, 0.2, 0.001],
+  needWetRise: [0, 0.2, 0.001],
+  needWarmFall: [0, 0.5, 0.005],
+  needLonelyRise: [0, 0.05, 0.0005],
+  needLonelyRange: [3, 60, 1],
+  needCompanyFall: [0, 0.3, 0.005],
+  needCloseRange: [1, 20, 0.5],
+  needThrillRise: [0, 0.05, 0.0005],
+  needThrillFall: [0, 0.5, 0.005],
+  needTireRise: [0, 0.05, 0.0005],
+  needRestFall: [0, 0.3, 0.005],
+  needBusyFall: [0, 0.5, 0.005],
   boredJoinChance: [0, 2, 0.05],
   wanderFarChance: [0, 1, 0.05],
   boredAfterMax: [5, 900, 1],

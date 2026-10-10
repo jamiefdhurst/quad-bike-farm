@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { Favour, DEFAULT_FAVOUR_PARAMS as P } from '../src/npc/favour.js';
 import { pickOfferer } from '../src/npc/rideOffer.js';
-import { pickBoredChoice } from '../src/npc/boredom.js';
+import { boredOdds, BORED_NORM } from '../src/npc/boredom.js';
+import { choose } from '../src/npc/chooser.js';
 import { DEFAULT_COMPANION_PARAMS } from '../src/npc/companionParams.js';
 import { BANTER } from '../src/npc/banterLines.js';
 import { CHARACTERS } from '../src/npc/characters.js';
@@ -101,7 +102,9 @@ describe('who you favour', () => {
       const random = seeded(11);
       let drives = 0;
       for (let i = 0; i < 2000; i++) {
-        if (pickBoredChoice(DEFAULT_COMPANION_PARAMS, { confidence: 0.5, can: { drive: true, mount: true, start: true }, sulk }, random) === 'drive') drives++;
+        const odds = boredOdds(DEFAULT_COMPANION_PARAMS, { confidence: 0.5, sulk });
+        const offers = ['drive', 'mount', 'start'].map((key) => ({ key, weight: odds[key] / BORED_NORM }));
+        if (choose({ purpose: 1, excitement: 0.2 }, offers, DEFAULT_COMPANION_PARAMS, random).pick?.key === 'drive') drives++;
       }
       return drives;
     };

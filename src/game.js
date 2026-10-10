@@ -27,6 +27,7 @@ import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
 import { CHARACTERS } from './npc/characters.js';
 import { DEFAULT_NOTICE_PARAMS, NOTICE_PARAM_RANGES } from './npc/attention.js';
 import { NoticeWatch } from './npc/noticeWatch.js';
+import { choose, mainNeed, OFFER_KINDS } from './npc/chooser.js';
 import { girlsLeftOut } from './npc/leftOut.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { FallingOut, FALLING_OUT_PARAM_RANGES } from './npc/fallingOut.js';
@@ -2336,6 +2337,91 @@ export class Game {
     for (const c of this.companions) c.notice({ kind, key, x: at.x, y: at.y, z: at.z, strength });
   }
 
+  /**
+   * The girls' minds (npc/needs.js, npc/chooser.js): each girl's needs move with what she's doing and where she is, and every couple of
+   * seconds while she's free she weighs what she could do against them and takes the best. With autonomy off nothing new starts. A
+   * girl only doing something idle (sat resting, warming her hands) weighs only the urgent things, like shelter from the rain.
+   */
+  updateMinds(dt, ridden) {
+    for (const c of this.companions) {
+      c.needs.update(dt, this.needsContext(c), c.params);
+      const m = c.mind;
+      m.since += dt;
+      if ((m.thinkIn -= dt) > 0) continue;
+      m.thinkIn = c.params.thinkEvery * (0.5 + Math.random());
+      if (!c.params.ownMind) {
+        m.waiting = 'her own mind is off';
+        continue;
+      }
+      const a = c.availability();
+      const urgentOnly = !a.free && c.interruptible();
+      if (!a.free && !urgentOnly) {
+        m.waiting = a.why;
+        continue;
+      }
+      m.waiting = null;
+      let offers = this.offersFor(c, ridden);
+      if (urgentOnly) offers = offers.filter((o) => OFFER_KINDS[o.key]?.urgent);
+      const { pick, scored } = choose(c.needs, offers, c.params);
+      // What she weighed and didn't take, for the debug panel's "nearly chose".
+      m.scored = scored.filter((s) => s.offer !== pick).slice(0, 4).map((s) => ({ key: s.offer.key, score: s.score }));
+      if (!pick) continue;
+      const need = mainNeed(pick, c.needs);
+      pick.take();
+      c.needs.met(OFFER_KINDS[pick.key].satisfies);
+      c.chose();
+      m.last = { key: pick.key, need, score: scored[0].score };
+      m.since = 0;
+    }
+  }
+
+  /** Everything this girl could choose to do now (npc/chooser.js): her boredom choices and what the moved features offer her. */
+  offersFor(c, ridden) {
+    const id = c.character.id;
+    const mine = (list, act) => list.filter((o) => o.girl === id).map((o) => ({ ...o, take: () => act(o) }));
+    const cabs = this.cabShelterContext();
+    return [
+      ...c.boredOffers(c.viewer),
+      ...mine(this.warming.offers(this.warmingContext()), (o) => this.handleWarmingEvent(this.warming.take(o))),
+      ...mine(this.cabShelter.offers(cabs), (o) => {
+        const e = this.cabShelter.take(o, cabs);
+        if (e) this.handleCabEvent(e);
+      }),
+      ...mine(this.places.offers(this.placesContext()), (o) => this.handlePlaceAction(this.places.take(o))),
+      ...mine(this.tea.offers(this.teaContext(ridden)), (o) => this.handleTeaEvent(this.tea.take(o))),
+      ...(this.hiding.active ? [] : mine(this.requests.offers(this.requestContext(ridden)), (o) => this.handleRequestEvent(this.requests.take(o)))),
+    ];
+  }
+
+  /** What moves a girl's needs this frame (npc/needs.js): the cold where she is, who's near, how fast she's going, what she's at. */
+  needsContext(c) {
+    const p = c.params;
+    const at = c.root.getWorldPosition(this.needsAt ??= new THREE.Vector3());
+    const inBarn = this.world.inBarn(at.x, at.z);
+    const inCab = this.cabShelter.of(c.character.id)?.state === 'in';
+    const covered = inBarn || inCab;
+    const w = this.weather;
+    // A dull or wet day feels cold (as warming hands always had it), and a cold one colder.
+    const dayChill = Math.min(1, Math.max(0, (0.6 - w.warmth) / 0.6) * 0.8 + w.chill * 0.5);
+    const onBoard = c.root.parent !== this.scene;
+    const ridingWith = onBoard && (this.riddenUnit?.quad === c.quad || c.others().some((o) => o.quad === c.quad && o.root.parent !== this.scene));
+    let near = Math.hypot(this.camera.position.x - at.x, this.camera.position.z - at.z);
+    for (const o of c.others()) near = Math.min(near, o.root.getWorldPosition(this.needsOther ??= new THREE.Vector3()).distanceTo(at));
+    const speed = onBoard && c.quad ? Math.abs(c.quad.speed) : 0;
+    return {
+      chill: covered ? 0 : dayChill,
+      wet: !covered && w.rain > 0.25,
+      warmed: !!c.warmingAt || inCab || inBarn,
+      alone: near > p.needLonelyRange && !ridingWith,
+      together: near < p.needCloseRange || ridingWith,
+      thrill: Math.min(1, speed / 12 + (onBoard && c.quad?.airborne ? 0.5 : 0)),
+      active: c.fsm.is('walking', 'driving', 'mounting', 'dismounting', 'starting', 'cranking', 'pushing', 'pranking', 'boarding', 'shuffling'),
+      sitting: c.fsm.is('resting', 'seated', 'onTrailer'),
+      idle: c.availability().free,
+      purposeRate: c.purposeRate ?? 0,
+    };
+  }
+
   /** What the girls can see and hear this frame (attention.js): the people and moving vehicles about, and what the vehicles just did. */
   watchNotices(dt) {
     this.noticeWatch ??= new NoticeWatch(DEFAULT_NOTICE_PARAMS);
@@ -3221,8 +3307,9 @@ export class Game {
   // Places to be ------------------------------------------------------------
 
   /** Rain sends them to the barn doorway; drying off lets them out. */
-  updatePlaces(dt) {
-    const ctx = {
+  /** What places to be needs to know (npc/places.js): the rain, the spots and where each girl is at. */
+  placesContext() {
+    return {
       rain: this.weather.rain,
       spots: this.restSpots,
       girls: this.companions.map((c) => {
@@ -3230,18 +3317,24 @@ export class Game {
         return { id: c.character.id, x: c.root.position.x, z: c.root.position.z, spot, state: c.fsm.is('idle') ? 'idle' : c.isResting && c.restPhase === 'sat' ? 'resting' : 'busy' };
       }),
     };
-    for (const a of this.places.update(dt, ctx)) {
-      const c = this.companions.find((o) => o.character.id === a.girl);
-      if (a.do === 'shelter') {
-        const go = () => {
-          if (c.goRest(a.spot)) c.selfEvents.push('restRain');
-          else c.pendingSpot = null;
-        };
-        c.pendingSpot = a.spot; // held for her while she gets up, so her friend picks another
-        if (c.isResting) c.leaveRest(go);
-        else go();
-      } else if (a.do === 'leave') c.leaveRest();
-    }
+  }
+
+  updatePlaces(dt) {
+    for (const a of this.places.update(dt, this.placesContext())) this.handlePlaceAction(a);
+  }
+
+  /** Acts on places to be (npc/places.js): running for the barn doorway (a choice she made), coming out once it's dry. */
+  handlePlaceAction(a) {
+    const c = this.companions.find((o) => o.character.id === a.girl);
+    if (a.do === 'shelter') {
+      const go = () => {
+        if (c.goRest(a.spot)) c.selfEvents.push('restRain');
+        else c.pendingSpot = null;
+      };
+      c.pendingSpot = a.spot; // held for her while she gets up, so her friend picks another
+      if (c.isResting) c.leaveRest(go);
+      else go();
+    } else if (a.do === 'leave') c.leaveRest();
   }
 
   // Favours she asks for ----------------------------------------------------
@@ -3292,19 +3385,22 @@ export class Game {
       c?.requestMount(ridden.quad);
       c?.voice.say('remindBales', { force: true });
     }
-    for (const e of this.requests.update(dt, ctx)) {
-      const r = e.request;
-      const girl = this.companions.find((c) => c.character.id === r.girl);
-      const kind = r.kind[0].toUpperCase() + r.kind.slice(1);
-      if (e.type === 'ask') girl?.voice.say(`ask${kind}`, { force: true });
-      else if (e.type === 'done') {
-        this.favour.add(r.girl, this.requests.p.doneFavour);
-        girl?.voice.say(`thanks${kind}`, { force: true });
-        // The favoured one crows if her friend's close enough to hear.
-        const friend = girl?.others().find((o) => o.root.position.distanceTo(girl.root.position) < 12);
-        if (friend && this.favour.mood(r.girl) === 'favoured' && Math.random() < 0.6) setTimeout(() => girl.voice.say('gloatFavour', { force: true }), 4000);
-      } else if (e.type === 'lapsed') this.favour.add(r.girl, this.requests.p.ignoredFavour);
-    }
+    for (const e of this.requests.update(dt, ctx)) this.handleRequestEvent(e);
+  }
+
+  /** Acts on favours (npc/requests.js): asking (a choice she made, or the debug panel's), done, lapsed. */
+  handleRequestEvent(e) {
+    const r = e.request;
+    const girl = this.companions.find((c) => c.character.id === r.girl);
+    const kind = r.kind[0].toUpperCase() + r.kind.slice(1);
+    if (e.type === 'ask') girl?.voice.say(`ask${kind}`, { force: true });
+    else if (e.type === 'done') {
+      this.favour.add(r.girl, this.requests.p.doneFavour);
+      girl?.voice.say(`thanks${kind}`, { force: true });
+      // The favoured one crows if her friend's close enough to hear.
+      const friend = girl?.others().find((o) => o.root.position.distanceTo(girl.root.position) < 12);
+      if (friend && this.favour.mood(r.girl) === 'favoured' && Math.random() < 0.6) setTimeout(() => girl.voice.say('gloatFavour', { force: true }), 4000);
+    } else if (e.type === 'lapsed') this.favour.add(r.girl, this.requests.p.ignoredFavour);
   }
 
   /** Talking to her: she reminds you of what she asked, or holds a lapsed one against you (once). */
@@ -3524,6 +3620,7 @@ export class Game {
         x: c.root.position.x,
         z: c.root.position.z,
         free: c.availability().free,
+        interruptible: c.interruptible(), // the rain can get her up off a seat, or away from warming her hands
         cab: cabKinds.find((k) => this.goVehicle(k) && c.onHayRide && c.trailer === this.mountOfKind(k)) ?? null,
       })),
     };
@@ -3757,8 +3854,8 @@ export class Game {
 
   // Warming their hands --------------------------------------------------
 
-  updateWarming(dt) {
-    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+  /** What warming hands needs to know (npc/warming.js): the weather, the girls and the idling quads. */
+  warmingContext() {
     const girls = this.companions.map((c) => ({
       id: c.character.id,
       x: c.root.position.x,
@@ -3771,15 +3868,22 @@ export class Game {
       const idling = q.engine.isRunning && !q.rider && !q.driver && !q.passenger && !q.isGhostRiding && q.speed < 0.3 && !this.herOn(q);
       return { id: u.spec.id, x: q.position.x, z: q.position.z, idling };
     });
-    for (const e of this.warming.update(dt, { weather: this.weather, girls, quads })) {
-      const c = byId[e.girl];
-      if (e.type === 'go') {
-        if (c.goWarm(this.girlUnits.find((u) => u.spec.id === e.spec).quad)) c.voice.say(e.join ? 'warmJoin' : 'warmGo', { urgent: true, chance: 0.8 });
-      } else if (e.type === 'warm') c.voice.say('warmHands', { chance: 0.8 });
-      else if (e.type === 'leave') {
-        c.stopWarming();
-        if (e.off) c.voice.say('warmOff', { force: true });
-      }
+    return { weather: this.weather, girls, quads };
+  }
+
+  updateWarming(dt) {
+    for (const e of this.warming.update(dt, this.warmingContext())) this.handleWarmingEvent(e);
+  }
+
+  /** Acts on warming hands (npc/warming.js): going (a choice she made), putting her hands out, leaving. */
+  handleWarmingEvent(e) {
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    if (e.type === 'go') {
+      if (c.goWarm(this.girlUnits.find((u) => u.spec.id === e.spec).quad)) c.voice.say(e.join ? 'warmJoin' : 'warmGo', { urgent: true, chance: 0.8 });
+    } else if (e.type === 'warm') c.voice.say('warmHands', { chance: 0.8 });
+    else if (e.type === 'leave') {
+      c.stopWarming();
+      if (e.off) c.voice.say('warmOff', { force: true });
     }
   }
 
@@ -4158,13 +4262,24 @@ export class Game {
 
   // Tea on the rack ----------------------------------------------------------
 
-  updateTea(dt, ridden) {
-    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+  /** What tea on the rack needs to know (npc/tea.js): the girls and the quads with racks. */
+  teaContext(ridden) {
     const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().free, x: c.root.position.x, z: c.root.position.z }));
     const quads = this.girlUnits.map((u) => {
       const q = u.quad;
       return { id: u.spec.id, x: q.position.x, z: q.position.z, speed: Math.abs(q.speed), rider: u === ridden, driver: this.quadUser(u, ridden) !== 'you' ? this.quadUser(u, ridden) : null, tipped: q.isTipped, hasRack: !!q.mugAnchor };
     });
+    return { girls, quads };
+  }
+
+  updateTea(dt, ridden) {
+    for (const e of this.tea.update(dt, this.teaContext(ridden))) this.handleTeaEvent(e);
+    this.mugs.update(dt);
+  }
+
+  /** Acts on tea on the rack (npc/tea.js): putting a mug down (a choice she made, or the debug panel's), collecting it, losing it. */
+  handleTeaEvent(e) {
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
     const unitOf = (spec) => this.girlUnits.find((u) => u.spec.id === spec);
     // A girl walks to the back of the quad, pauses, and does it (the same walk-up as for a prank).
     const sendTo = (girl, spec, act) => {
@@ -4177,64 +4292,62 @@ export class Game {
       this.tea.cancel(girl);
       return false;
     };
-    for (const e of this.tea.update(dt, { girls, quads })) {
-      const c = byId[e.girl];
-      if (e.type === 'place') {
-        // She brings a mug from the house in her hand, walks round to the back of the quad and sets it on the rack.
-        const colour = e.girl === 'amy' ? 0x3a6ea5 : 0xb8322a;
-        const mug = this.mugs.make(colour);
-        mug.position.copy(c.root.position);
-        if (!c.startCarry('mug', mug, carryWeight('mug'), { inHand: true })) {
-          this.mugs.remove(mug);
-          this.tea.cancel(e.girl);
-          continue;
-        }
-        const going = sendTo(e.girl, e.spec, () => {
-          const u = unitOf(e.spec);
-          const free = !u.quad.rider && !u.quad.driver && Math.abs(u.quad.speed) < 0.3;
-          const rack = free && u.quad.mugAnchor?.getWorldPosition(new THREE.Vector3());
-          if (!rack) {
-            c.endCarry();
-            this.mugs.remove(mug);
-            return this.tea.cancel(e.girl);
-          }
-          c.putDownCarry(rack, 0, () => {
-            if (!this.mugs.putMug(u.quad, mug)) return this.mugs.remove(mug);
-            this.teaMugs[e.girl] = mug;
-            this.tea.placed(e.girl, e.spec);
-            c.voice.say('teaPlace', { urgent: true, chance: 0.9 });
-          });
-        });
-        if (!going) {
+    const c = byId[e.girl];
+    if (e.type === 'place') {
+      // She brings a mug from the house in her hand, walks round to the back of the quad and sets it on the rack.
+      const colour = e.girl === 'amy' ? 0x3a6ea5 : 0xb8322a;
+      const mug = this.mugs.make(colour);
+      mug.position.copy(c.root.position);
+      if (!c.startCarry('mug', mug, carryWeight('mug'), { inHand: true })) {
+        this.mugs.remove(mug);
+        this.tea.cancel(e.girl);
+        return;
+      }
+      const going = sendTo(e.girl, e.spec, () => {
+        const u = unitOf(e.spec);
+        const free = !u.quad.rider && !u.quad.driver && Math.abs(u.quad.speed) < 0.3;
+        const rack = free && u.quad.mugAnchor?.getWorldPosition(new THREE.Vector3());
+        if (!rack) {
           c.endCarry();
           this.mugs.remove(mug);
+          return this.tea.cancel(e.girl);
         }
-      } else if (e.type === 'collect') {
-        sendTo(e.girl, e.spec, () => {
-          const u = unitOf(e.spec);
-          const mug = this.teaMugs[e.girl];
-          if (u.quad.rider || u.quad.driver || Math.abs(u.quad.speed) > 0.3 || !mug) return this.tea.cancel(e.girl);
-          // She lifts it off the rack, has a drink, and that's the end of it.
-          delete this.teaMugs[e.girl];
-          this.tea.collected(e.girl);
-          c.startCarry('mug', mug, carryWeight('mug'), {
-            sip: true,
-            onSipped: () => {
-              const side = c.root.localToWorld(new THREE.Vector3(-0.35, 0, 0.3));
-              c.putDownCarry(side, 0, () => this.mugs.remove(mug));
-            },
-          });
-          c.voice.say('teaCollect', { urgent: true, chance: 0.8 });
+        c.putDownCarry(rack, 0, () => {
+          if (!this.mugs.putMug(u.quad, mug)) return this.mugs.remove(mug);
+          this.teaMugs[e.girl] = mug;
+          this.tea.placed(e.girl, e.spec);
+          c.voice.say('teaPlace', { urgent: true, chance: 0.9 });
         });
-      } else if (e.type === 'fall') {
-        const q = unitOf(e.spec).quad;
-        this.mugs.drop(this.teaMugs[e.girl], q.velocity);
-        delete this.teaMugs[e.girl];
-        c.voice.say('teaFell', { force: true });
+      });
+      if (!going) {
+        c.endCarry();
+        this.mugs.remove(mug);
       }
+    } else if (e.type === 'collect') {
+      sendTo(e.girl, e.spec, () => {
+        const u = unitOf(e.spec);
+        const mug = this.teaMugs[e.girl];
+        if (u.quad.rider || u.quad.driver || Math.abs(u.quad.speed) > 0.3 || !mug) return this.tea.cancel(e.girl);
+        // She lifts it off the rack, has a drink, and that's the end of it.
+        delete this.teaMugs[e.girl];
+        this.tea.collected(e.girl);
+        c.startCarry('mug', mug, carryWeight('mug'), {
+          sip: true,
+          onSipped: () => {
+            const side = c.root.localToWorld(new THREE.Vector3(-0.35, 0, 0.3));
+            c.putDownCarry(side, 0, () => this.mugs.remove(mug));
+          },
+        });
+        c.voice.say('teaCollect', { urgent: true, chance: 0.8 });
+      });
+    } else if (e.type === 'fall') {
+      const q = unitOf(e.spec).quad;
+      this.mugs.drop(this.teaMugs[e.girl], q.velocity);
+      delete this.teaMugs[e.girl];
+      c.voice.say('teaFell', { force: true });
     }
-    this.mugs.update(dt);
   }
+
 
   // Jumpers from the barn ------------------------------------------------------
 
@@ -5601,6 +5714,7 @@ export class Game {
     if (auto || this.fallingOut.active) this.updateFallingOut(dt);
     if (auto || this.tryst) this.updateRomance(dt);
     this.updateBanter(dt, ridden);
+    this.updateMinds(dt, ridden);
     this.watchNotices(dt);
     for (const c of this.companions) {
       c.update(dt, c.quad.unit.vibration, {

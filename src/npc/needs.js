@@ -1,0 +1,55 @@
+// What a girl wants: five needs, each 0 (met) to 1 (pressing), that build and get met as she goes about the farm. The chooser
+// (chooser.js) weighs what she could do against them, so what she does next follows from how she feels rather than a roll of the dice.
+// Pure: the game says each frame what she's doing and what it's like where she is.
+//
+//   warmth      rises with the day's chill outside, faster when it's raining on her; met by an engine, a cab, the barn roof
+//   company     rises with nobody near her; met by being near you or her friend
+//   excitement  creeps up all the time; met by going fast and by a good shake
+//   rest        rises while she's on the go; met by sitting down
+//   purpose     rises while she stands about with nothing to do (at the old boredom wait's pace); met by starting anything she chose
+
+export const NEEDS = ['warmth', 'company', 'excitement', 'rest', 'purpose'];
+
+/** What each need is called in the debug panel. */
+export const NEED_LABELS = { warmth: 'warmth', company: 'company', excitement: 'excitement', rest: 'rest', purpose: 'something to do' };
+
+const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+export class Needs {
+  constructor(start = {}) {
+    for (const n of NEEDS) this[n] = start[n] ?? 0;
+  }
+
+  /**
+   * One step. `ctx`: chill (0..1, the day's cold where she is: 0 indoors or in a cab), wet (it's raining on her), warmed (warming up:
+   * hands over an engine, a running cab, the barn), alone (nobody within her lonely range), together (someone close, or riding with
+   * her), thrill (0..1: speed and shake), active (on the go: walking, driving, getting about), sitting, idle (stood about with nothing
+   * to do), purposeRate (per second while idle: 1 over her current boredom wait). `p` her params (the need* keys).
+   */
+  update(dt, ctx, p) {
+    this.warmth += dt * (ctx.chill * p.needColdRise + (ctx.wet ? p.needWetRise : 0));
+    if (ctx.warmed) this.warmth -= dt * p.needWarmFall;
+    else if (ctx.chill < 0.15 && !ctx.wet) this.warmth -= dt * p.needWarmFall * 0.3; // a mild day, she warms up anyway
+    if (ctx.alone) this.company += dt * p.needLonelyRise;
+    if (ctx.together) this.company -= dt * p.needCompanyFall;
+    this.excitement += dt * (p.needThrillRise - (ctx.thrill ?? 0) * p.needThrillFall);
+    if (ctx.active) this.rest += dt * p.needTireRise;
+    if (ctx.sitting) this.rest -= dt * p.needRestFall;
+    if (ctx.idle) this.purpose += dt * (ctx.purposeRate ?? 0);
+    else this.purpose -= dt * p.needBusyFall; // doing something, the itch to do something fades
+    for (const n of NEEDS) this[n] = clamp01(this[n]);
+  }
+
+  /** The most pressing need and how pressing: { need, level }. */
+  top() {
+    let best = NEEDS[0];
+    for (const n of NEEDS) if (this[n] > this[best]) best = n;
+    return { need: best, level: this[best] };
+  }
+
+  /** She got what she chose: the needs it meets drop by that much (purpose all the way, as she's off doing something). */
+  met(satisfies) {
+    for (const [n, amount] of Object.entries(satisfies)) if (NEEDS.includes(n)) this[n] = clamp01(this[n] - amount * 0.25);
+    this.purpose = 0;
+  }
+}

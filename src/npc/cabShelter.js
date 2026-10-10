@@ -1,19 +1,17 @@
 // Sheltering in a cab. When it rains a girl who's stood about may climb into the UTV or a Land Rover (they have roofs) instead of running for
 // the barn, and on a cold day she may go and get into a Land Rover, start it and sit with the heater of its engine going. When the weather
 // turns, or she's had enough, she climbs out, and switches off an engine she started. Pure logic: the game says who and what is where, this
-// says who goes, who comes out and what gets switched off. Tested in tests/cabShelter.test.js.
+// says which cab she could go to (offers, weighed by her needs in chooser.js against the barn doorway and everything else), who comes out
+// and what gets switched off. Tested in tests/cabShelter.test.js.
 
 export const DEFAULT_CAB_SHELTER_PARAMS = {
   rainAbove: 0.25, // rain above which a girl thinks of getting into a cab
   dryBelow: 0.08, // rain below which she thinks of getting out again
   coldBelow: 0.5, // weather warmth under which a dry day is cold enough to sit in a running Land Rover
   cabRange: 45, // metres: she'll walk this far to a cab
-  rainChance: 0.5, // chance, once per spell of rain, that she picks a cab rather than the barn
-  rainDelayMin: 2, // seconds after the rain sets in before she goes (the barn's delay starts at 4, so a cab is picked first)
-  rainDelayMax: 8,
+  rainWeight: 1.1, // how much she'd rather a cab than the barn doorway out of the rain (the barn is 1; chooser.js weighs them)
   rainStartChance: 0.35, // chance she starts a Land Rover that isn't running when she gets in out of the rain
-  coldCheckEvery: 3, // seconds between her thinking about a cold-day Land Rover
-  coldChance: 0.06, // each time, for a free girl near a Land Rover on a cold dry day
+  coldWeight: 0.6, // how much she cares for sitting in a Land Rover with the heater on, on a cold dry day (twice that if it's running)
   coldStayMin: 60, // seconds she sits warming up before she gets out
   coldStayMax: 170,
   rainStayMin: 40, // and the least she stays in once the rain has stopped (she waits for it to be properly dry as well)
@@ -30,12 +28,9 @@ export const CAB_SHELTER_PARAM_RANGES = {
   dryBelow: [0, 0.5, 0.01],
   coldBelow: [0, 1, 0.05],
   cabRange: [5, 150, 1],
-  rainChance: [0, 1, 0.05],
-  rainDelayMin: [0, 60, 1],
-  rainDelayMax: [0, 120, 1],
+  rainWeight: [0, 3, 0.05],
   rainStartChance: [0, 1, 0.05],
-  coldCheckEvery: [0.5, 30, 0.5],
-  coldChance: [0, 1, 0.01],
+  coldWeight: [0, 3, 0.05],
   coldStayMin: [5, 600, 5],
   coldStayMax: [5, 900, 5],
   rainStayMin: [0, 600, 5],
@@ -54,9 +49,6 @@ export class CabShelter {
     this.p = params;
     this.random = random;
     this.clock = 0;
-    this.nextCold = 0;
-    this.rainFor = {}; // girl id -> seconds it has rained on her while she's stood about
-    this.rainPlan = {}; // girl id -> { delay, cab: bool } rolled when the rain set in
     this.dryFor = {}; // girl id -> seconds it has been dry while she's in a cab
     this.delay = {}; // girl id -> how long after the weather turns before she gets out
     this.coolUntil = {}; // girl id -> time
@@ -114,8 +106,8 @@ export class CabShelter {
    *   girls: [{ id, x, z, free, cab }]   free: stood about; cab: the id of the cab she is in or walking to (by the game's own doing), or null
    *   cabs: [{ id, x, z, open, seats, running, warm }]   open: nobody driving, riding or going for it and it's still; seats: free seats;
    *       warm: it's a Land Rover (an engine to warm up by), not the UTV
-   * Returns events: { type: 'go', girl, cab, reason: 'rain' | 'cold', start }, { type: 'in', girl, cab, reason } (she's aboard), { type: 'out', girl, cab },
-   *   { type: 'switchOff', cab } (nobody left in a cab whose engine she started).
+   * Returns events: { type: 'in', girl, cab, reason } (she's aboard), { type: 'out', girl, cab },
+   *   { type: 'switchOff', cab } (nobody left in a cab whose engine she started). Going is an offer (offers, take), not decided here.
    */
   update(dt, ctx) {
     const p = this.p;
@@ -151,35 +143,6 @@ export class CabShelter {
       }
     }
 
-    // The rain sets in: she may pick a cab over the barn, once for the spell.
-    for (const g of ctx.girls) {
-      if (!raining) {
-        delete this.rainPlan[g.id];
-        this.rainFor[g.id] = 0;
-        continue;
-      }
-      if (this.mine.has(g.id) || !g.free || this.clock < p.startAfter || this.clock < (this.coolUntil[g.id] ?? 0)) continue;
-      this.rainFor[g.id] = (this.rainFor[g.id] ?? 0) + dt;
-      this.rainPlan[g.id] ??= { delay: between(this.random, p.rainDelayMin, p.rainDelayMax), cab: this.random() < p.rainChance };
-      const plan = this.rainPlan[g.id];
-      if (this.rainFor[g.id] < plan.delay) continue;
-      if (!plan.cab) continue;
-      plan.cab = false; // one try a spell
-      const cab = this.nearest(g, ctx);
-      if (cab) events.push(this.send(g, cab, 'rain', cab.warm && this.random() < p.rainStartChance));
-    }
-
-    // A cold dry day: a Land Rover to start and sit in.
-    if (cold && this.clock >= p.startAfter && this.clock >= this.nextCold) {
-      this.nextCold = this.clock + p.coldCheckEvery;
-      for (const g of ctx.girls) {
-        if (this.mine.has(g.id) || !g.free || this.clock < (this.coolUntil[g.id] ?? 0)) continue;
-        const cab = this.nearest(g, ctx, (c) => c.warm);
-        if (!cab || this.random() >= p.coldChance * (cab.running ? 2 : 1)) continue;
-        events.push(this.send(g, cab, 'cold', true));
-      }
-    }
-
     // An engine she started goes off when nobody she took there is left.
     for (const cab of [...this.startedBy.keys()]) {
       if (![...this.mine.values()].some((m) => m.cab === cab)) {
@@ -188,6 +151,40 @@ export class CabShelter {
       }
     }
     return events;
+  }
+
+  /**
+   * The cabs each girl could go to now (the same `ctx` as update; a girl's `interruptible` means the rain can get her up off a seat or
+   * away from something idle like warming her hands):
+   * [{ key: 'shelterCab' | 'warmCab', girl, cab, reason, weight }] for the chooser. In the rain the nearest cab with room, or on a cold
+   * dry day the nearest Land Rover, and not before the start, while she's in one, or straight after.
+   */
+  offers(ctx) {
+    const p = this.p;
+    if (this.clock < p.startAfter) return [];
+    const raining = ctx.rain > p.rainAbove;
+    const cold = !raining && ctx.warmth < p.coldBelow;
+    if (!raining && !cold) return [];
+    const out = [];
+    for (const g of ctx.girls) {
+      if (this.mine.has(g.id) || this.clock < (this.coolUntil[g.id] ?? 0)) continue;
+      if (raining && (g.free || g.interruptible)) {
+        const cab = this.nearest(g, ctx);
+        if (cab) out.push({ key: 'shelterCab', girl: g.id, cab: cab.id, reason: 'rain', weight: p.rainWeight });
+      } else if (cold && g.free) {
+        const cab = this.nearest(g, ctx, (c) => c.warm);
+        if (cab) out.push({ key: 'warmCab', girl: g.id, cab: cab.id, reason: 'cold', weight: p.coldWeight * (cab.running ? 2 : 1) });
+      }
+    }
+    return out;
+  }
+
+  /** She chose to go: books her seat and returns the 'go' event (null if it's gone in the meantime). In the rain she may start it. */
+  take(offer, ctx) {
+    const cab = ctx.cabs.find((c) => c.id === offer.cab);
+    if (!cab || this.mine.has(offer.girl)) return null;
+    const start = offer.reason === 'cold' ? true : cab.warm && this.random() < this.p.rainStartChance;
+    return this.send({ id: offer.girl }, cab, offer.reason, start);
   }
 
   drop(id, events) {

@@ -1,10 +1,11 @@
 // Tea on the rack. A girl stood about now and then fetches a mug of tea and leaves it on the rear rack of a parked quad.
 // Ride off without looking and the mug falls off, and its owner lets you know. Left alone, she comes back for it after a
-// minute or two. Pure logic: the game says who and what is where, this says who puts one down, collects one, or loses it.
+// minute or two. Pure logic: the game says who and what is where, this says where she could put one down (offers, weighed by her
+// needs in chooser.js), and who collects one or loses it.
 
 export const DEFAULT_TEA_PARAMS = {
   startAfter: 90, // seconds into the game before anyone does
-  chance: 0.01, // per second, for a free girl with no mug out and a quad with a rack near her
+  weight: 0.7, // how much she cares for a cup of tea (weighed against everything else she could do, chooser.js)
   cooldown: 120, // seconds after she's had one before she thinks of another
   range: 18, // metres: the quad is this close to her
   leaveMin: 90, // seconds before she comes back for it
@@ -16,7 +17,7 @@ export const DEFAULT_TEA_PARAMS = {
 
 export const TEA_PARAM_RANGES = {
   startAfter: [0, 600, 10],
-  chance: [0, 0.2, 0.002],
+  weight: [0, 3, 0.05],
   cooldown: [0, 900, 10],
   range: [3, 60, 1],
   leaveMin: [10, 900, 10],
@@ -91,15 +92,43 @@ export class Tea {
         }
         continue;
       }
-      if (!this.forced && (this.clock < p.startAfter || this.clock < (this.cooldownUntil[g.id] ?? 0) || this.random() >= p.chance * dt)) continue;
-      const taken = new Set([...this.mugs.map((m) => m.spec), ...Object.values(this.pending).map((j) => j.spec)]);
-      const options = ctx.quads.filter((q) => q.hasRack && !taken.has(q.id) && !q.rider && !q.driver && q.speed < 0.3 && Math.hypot(q.x - g.x, q.z - g.z) <= p.range);
-      if (!options.length) continue;
-      const q = options.reduce((a, b) => (Math.hypot(b.x - g.x, b.z - g.z) < Math.hypot(a.x - g.x, a.z - g.z) ? b : a));
+      // Putting one down is an offer (offers, take); only the debug panel's forced one starts here.
+      if (!this.forced) continue;
+      const q = this.rackFor(g, ctx);
+      if (!q) continue;
       this.forced = false;
-      this.pending[g.id] = { kind: 'place', spec: q.id, until: this.clock + p.placeTimeout };
-      events.push({ type: 'place', girl: g.id, spec: q.id });
+      events.push(this.take({ girl: g.id, spec: q.id }));
     }
     return events;
+  }
+
+  /** The nearest parked quad with a free rack within her range, or null. */
+  rackFor(g, ctx) {
+    const taken = new Set([...this.mugs.map((m) => m.spec), ...Object.values(this.pending).map((j) => j.spec)]);
+    const options = ctx.quads.filter((q) => q.hasRack && !taken.has(q.id) && !q.rider && !q.driver && q.speed < 0.3 && Math.hypot(q.x - g.x, q.z - g.z) <= this.p.range);
+    if (!options.length) return null;
+    return options.reduce((a, b) => (Math.hypot(b.x - g.x, b.z - g.z) < Math.hypot(a.x - g.x, a.z - g.z) ? b : a));
+  }
+
+  /**
+   * Where each free girl could put a mug of tea down now (the same `ctx` as update): [{ key: 'tea', girl, spec, weight }] for the
+   * chooser. Not before the start, while she has one out or on her way, or straight after her last.
+   */
+  offers(ctx) {
+    const p = this.p;
+    if (this.clock < p.startAfter) return [];
+    const out = [];
+    for (const g of ctx.girls) {
+      if (!g.free || this.pending[g.id] || this.mugOf(g.id) || this.clock < (this.cooldownUntil[g.id] ?? 0)) continue;
+      const q = this.rackFor(g, ctx);
+      if (q) out.push({ key: 'tea', girl: g.id, spec: q.id, weight: p.weight });
+    }
+    return out;
+  }
+
+  /** She chose to: books the rack and returns the event the game acts on, { type: 'place', girl, spec }. */
+  take(offer) {
+    this.pending[offer.girl] = { kind: 'place', spec: offer.spec, until: this.clock + this.p.placeTimeout };
+    return { type: 'place', girl: offer.girl, spec: offer.spec };
   }
 }

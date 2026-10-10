@@ -5,12 +5,12 @@
 // short with you and more likely to say no). Nothing shows on screen: you have
 // to remember what she said, and she'll remind you if you talk to her. Pure
 // logic; the game says what's where, and does the talking and the favour score.
+// When she asks is the chooser's (chooser.js): this offers what she could ask for.
 
 export const DEFAULT_REQUEST_PARAMS = {
   firstDelay: 180, // seconds into a game before anyone asks for anything
   cooldown: 240, // seconds after a girl asks (or a favour ends) before she asks again, at the soonest
-  checkEvery: 5, // seconds between each look for a chance
-  chance: 0.15, // chance per look, for a girl who's free, near you and due to ask
+  weight: 0.8, // how much she cares for asking you a favour (weighed against everything else she could do, chooser.js)
   askRange: 14, // metres she must be from you (you on foot) to ask
   expireAfter: 360, // seconds she waits before the request lapses
   grudgeFor: 600, // seconds she remembers a request you ignored
@@ -30,8 +30,7 @@ export const DEFAULT_REQUEST_PARAMS = {
 export const REQUEST_PARAM_RANGES = {
   firstDelay: [0, 1200, 10],
   cooldown: [0, 1800, 10],
-  checkEvery: [1, 30, 1],
-  chance: [0, 1, 0.01],
+  weight: [0, 3, 0.05],
   askRange: [3, 40, 1],
   expireAfter: [30, 1800, 10],
   grudgeFor: [30, 3600, 10],
@@ -57,7 +56,6 @@ export class Requests {
     this.p = params;
     this.random = random;
     this.clock = 0;
-    this.nextCheck = params.checkEvery;
     this.lastAsk = {}; // girl id -> time
     this.open = []; // { girl, kind, quad?, since }
     this.grudges = {}; // girl id -> { kind, until, told }
@@ -137,25 +135,34 @@ export class Requests {
         end('lapsed');
       }
     }
-    if (this.clock < this.nextCheck) return events;
-    this.nextCheck = this.clock + this.p.checkEvery;
-    if (this.clock < this.p.firstDelay || !ctx.you.onFoot) return events;
-    const options = [];
+    return events;
+  }
+
+  /**
+   * What each girl could ask you for now (the same `ctx` as update): [{ key: 'favour', girl, kind, quad, weight }] for the chooser, one
+   * for each thing she could ask. Not before the first delay, with you riding, to a girl who's busy, far from you, has one open or asked
+   * lately.
+   */
+  offers(ctx) {
+    if (this.clock < this.p.firstDelay || !ctx.you.onFoot) return [];
+    const out = [];
     for (const g of ctx.girls) {
       if (!g.free || this.openFor(g.id) || this.clock - (this.lastAsk[g.id] ?? -Infinity) < this.p.cooldown) continue;
       if (dist(g, ctx.you) > this.p.askRange) continue;
       for (const kind of REQUEST_KINDS) {
         const target = this.target(kind, g, ctx);
-        if (target) options.push({ girl: g.id, kind, ...target });
+        if (target) out.push({ key: 'favour', girl: g.id, kind, quad: target.quad, weight: this.p.weight });
       }
     }
-    if (!options.length || this.random() >= this.p.chance) return events;
-    const o = options[Math.floor(this.random() * options.length)];
-    const request = { girl: o.girl, kind: o.kind, quad: o.quad, since: this.clock };
+    return out;
+  }
+
+  /** She chose to ask: opens the request and returns the event the game acts on, { type: 'ask', request }. */
+  take(offer) {
+    const request = { girl: offer.girl, kind: offer.kind, quad: offer.quad, since: this.clock };
     this.open.push(request);
-    this.lastAsk[o.girl] = this.clock;
-    events.push({ type: 'ask', request });
-    return events;
+    this.lastAsk[offer.girl] = this.clock;
+    return { type: 'ask', request };
   }
 
   /** Opens a request of this kind now, whatever the dice (the debug buttons). Returns the 'ask' event, or null if she has one open already. */

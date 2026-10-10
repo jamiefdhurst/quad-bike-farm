@@ -11,15 +11,26 @@ const ctx = (over = {}) => ({
   bales: [{ x: 100, z: 100 }],
   ...over,
 });
-const make = () => new Requests({ ...P, chance: 1 }, () => 0);
-/** Steps to just past the first delay, returning events. */
+const make = () => new Requests({ ...P }, () => 0);
+/** Steps to just past the first delay, taking the first thing she's offered to ask each second (as a chooser that always says yes). */
 const wait = (r, c, seconds = P.firstDelay + 6) => {
   const events = [];
-  for (let t = 0; t < seconds; t++) events.push(...r.update(1, c));
+  for (let t = 0; t < seconds; t++) {
+    events.push(...r.update(1, c));
+    const offer = r.offers(c)[0];
+    if (offer) events.push(r.take(offer));
+  }
   return events.flat();
 };
 
 describe('Requests', () => {
+  it('never asks on its own: when is the chooser\'s', () => {
+    const r = make();
+    const events = [];
+    for (let t = 0; t < P.firstDelay + 60; t++) events.push(...r.update(1, ctx()));
+    expect(events).toEqual([]);
+    expect(r.offers(ctx())[0]).toMatchObject({ key: 'favour', girl: 'amy', kind: 'wash', quad: 'red', weight: P.weight });
+  });
   it('asks nothing before the first delay', () => {
     const r = make();
     expect(wait(r, ctx(), P.firstDelay - 10)).toEqual([]);
@@ -135,7 +146,7 @@ describe('the buzz-seeking requests', () => {
     return c;
   };
   const ask = (kind, over = {}) => {
-    const r = new Requests({ ...P, chance: 1 }, () => 0);
+    const r = new Requests({ ...P }, () => 0);
     // Only this kind possible: random picks the first of the options, so the others are made impossible by the context.
     const events = wait(r, buzzCtx(over));
     return { r, ask: events.find((e) => e.type === 'ask'), kind };
@@ -144,11 +155,11 @@ describe('the buzz-seeking requests', () => {
   it('asks to go over the cattle grid when there is one and a quad with a free back, and not when there is not', () => {
     const { ask: e } = ask('grid', { tractor: { exists: false } });
     expect(e.request.kind).toBe('grid');
-    expect(wait(new Requests({ ...P, chance: 1 }, () => 0), buzzCtx({ grid: false, tractor: { exists: false }, quads: [{ id: 'red', x: 3, z: 3, muddy: 0, speed: 0, ridden: false, pillion: null, hasPillion: false }] }))).toEqual([]);
+    expect(wait(new Requests({ ...P }, () => 0), buzzCtx({ grid: false, tractor: { exists: false }, quads: [{ id: 'red', x: 3, z: 3, muddy: 0, speed: 0, ridden: false, pillion: null, hasPillion: false }] }))).toEqual([]);
   });
 
   it('the cattle grid is done when you ride over it with her on the back', () => {
-    const r = new Requests({ ...P, chance: 1 }, () => 0);
+    const r = new Requests({ ...P }, () => 0);
     wait(r, buzzCtx({ tractor: { exists: false } }));
     expect(r.openFor('amy').kind).toBe('grid');
     const on = buzzCtx({ tractor: { exists: false } });
@@ -159,7 +170,7 @@ describe('the buzz-seeking requests', () => {
   });
 
   it('going the bumpy way is done after enough slams of her seat, riding with her on the back', () => {
-    const r = new Requests({ ...P, chance: 1 }, () => 0);
+    const r = new Requests({ ...P }, () => 0);
     r.open.push({ girl: 'amy', kind: 'bumpy', since: 0 });
     const c = buzzCtx();
     c.quads[0] = { ...c.quads[0], ridden: true, pillion: 'amy', slams: 0 };
@@ -177,12 +188,12 @@ describe('the buzz-seeking requests', () => {
   });
 
   it('the tractor mudguard is asked only while it is off, and done when it runs with her up on it', () => {
-    const r = new Requests({ ...P, chance: 1 }, () => 0);
+    const r = new Requests({ ...P }, () => 0);
     const stopped = buzzCtx({ grid: false, quads: [{ id: 'red', x: 3, z: 3, muddy: 0, speed: 0, ridden: false, pillion: null, hasPillion: false }] });
     expect(wait(r, stopped)[0].request.kind).toBe('mudguard');
     expect(r.update(1, { ...stopped, tractor: { exists: true, running: true, mudguard: null } })).toEqual([]);
     expect(r.update(1, { ...stopped, tractor: { exists: true, running: true, mudguard: 'amy' } })[0]).toMatchObject({ type: 'done', request: { kind: 'mudguard' } });
-    const running = new Requests({ ...P, chance: 1 }, () => 0);
+    const running = new Requests({ ...P }, () => 0);
     expect(wait(running, { ...stopped, tractor: { exists: true, running: true, mudguard: null } })).toEqual([]);
   });
 });
