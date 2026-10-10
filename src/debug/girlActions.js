@@ -69,6 +69,15 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'keep-alive',
+      label: '% sits on the back of the picked vehicle and keeps it alive (needs it running, nobody on it)',
+      vehicle: true,
+      run: (id, unit) => {
+        if (!free(id)) return;
+        toast(g.sendToKeepAlive(girl(id), unit, true) ? `${nameOf(id)} is off to sit on the back and hold the idle` : `${nameOf(id)} can't: it needs to be running with nobody on it, and a free seat`);
+      },
+    },
+    {
       verb: 'warm-up',
       label: '% starts a Land Rover and sits in it to get warm',
       run: (id) => {

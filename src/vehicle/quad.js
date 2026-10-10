@@ -228,6 +228,7 @@ export class Quad {
     this.pullByHer = false;
     this.lastLeft = null; // who last got off it and whether they set the parking brake: { who: 'you' | a girl's id, braked } (handbrake.js)
     this.parkBrake = false; // the parking brake: wheels locked, so the throttle only revs the engine (toggled with Space)
+    this.startTrouble = 0; // how many goes the last start by a girl took (npc/keepAlive.js reads it)
     this.helperThrottle = 0; // she's blipping the throttle (a quad's starting knack)
     this.tyreMud = []; // 0..1 per wheel, mud the tyre is carrying (world/roadMud.js)
     this.churn = 0; // 0..1 the ground torn up under the wheels, whatever it is (a girl's doughnuts: npc/doughnuts.js): it acts as mud

@@ -11,6 +11,7 @@ import { drivingStates, drivingMethods } from './companionDriving.js';
 import { hayRideStates, hayRideMethods, DEFAULT_HAYSEAT_PARAMS } from './companionHayRide.js';
 import { restingMethods, restingStates } from './companionResting.js';
 import { warmingMethods } from './companionWarming.js';
+import { keepAliveMethods } from './companionKeepAlive.js';
 import { carryingMethods } from './companionCarrying.js';
 import { carryParams } from './carrying.js';
 import { Contentment } from './contentment.js';
@@ -782,6 +783,10 @@ export class Companion {
    * (rarely) she leans forward after a while and switches it off.
    */
   mindTheEngine(dt) {
+    if (this.holdIdle(dt)) {
+      this.keyOffIn = null;
+      return;
+    }
     const q = this.quad;
     const idling = q.engine.isRunning && !q.rider && !q.driver && !q.isGhostRiding && q.speed < 0.3;
     if (!idling) {
@@ -1066,6 +1071,7 @@ Object.assign(Companion.prototype, drivingMethods);
 // (hayRideMethods has a getter too.)
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(hayRideMethods));
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(warmingMethods));
+Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(keepAliveMethods));
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(carryingMethods));
 Object.assign(Companion.prototype, wavingMethods);
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(moveMethods));
@@ -1281,6 +1287,7 @@ const STATES = {
       for (const e of a.update(dt)) this.startEvents.push(e);
       this.quad.helperStarter = a.starter;
       if (a.done) {
+        this.quad.startTrouble = a.result === 'running' ? (a.bursts ?? 0) + (a.pulls ?? 0) : 0; // how many goes it took, for keepAlive.js
         if (a.result === 'running' && !this.quad.rider) this.startEvents.push('warmedUp');
         const then = this.afterStart;
         const ran = this.quad.engine.isRunning;
@@ -1368,6 +1375,7 @@ const STATES = {
       this.afterFriendsRide(dt);
     },
     exit() {
+      this.releaseIdle();
       this.sittingPose = null;
       this.askedToGetOff = false;
       this.askIn = null;

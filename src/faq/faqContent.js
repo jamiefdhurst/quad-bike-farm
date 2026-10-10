@@ -332,6 +332,17 @@ export const FAQ_SECTIONS = [
           the workbench renews them for good.`,
       },
       {
+        q: 'Why is she sitting on the back of a quad that is running, with nobody riding it?',
+        a: `That quad is hard to keep going (it took a few goes to start, it is worn out, or its choke creeps on) and she does not dare switch it off, because it
+          might not start again. She holds a fast idle with a hand on the throttle and catches it if it falters. You can get on the front and ride it away, but
+          if it was properly sick it may die once she lets go. If nobody comes she gives up after a few minutes and gets off.`,
+      },
+      {
+        q: 'Why does she say she is on the back for the sound, when she is really enjoying the shaking?',
+        spoiler: true,
+        a: `It does buzz more on the back, and she knows it. Jess owns up if she sits there long enough. Amy only does if you come up to her after a long sit.`,
+      },
+      {
         q: 'How do I fix things?',
         a: `Pick up the red toolbox from the workbench, take it to a switched-off quad and press <kbd>E</kbd>. <kbd>T</kbd> pumps and patches the tyres,
           <kbd>R</kbd> swaps the belt, <kbd>L</kbd> oils the cable, <kbd>C</kbd> cleans the carb, <kbd>M</kbd> nips up the engine mounts, <kbd>I</kbd> (held) cleans the air filter, <kbd>V</kbd>

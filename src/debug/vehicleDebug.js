@@ -51,6 +51,7 @@ export function fixEverything(unit) {
   e.coolantLeak = 0;
   if (unit.quad.sump) unit.quad.sump.level = 1;
   unit.quad.quirks.tapStiff = 0;
+  unit.quad.startTrouble = 0;
 }
 
 /** Straight to running and warm with the fuel on, as if started and left a while (no cranking). */

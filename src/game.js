@@ -84,6 +84,7 @@ import { Ownership, OWNERSHIP_PARAM_RANGES } from './npc/ownership.js';
 import { Hearing, EAR_PARAM_RANGES } from './npc/earing.js';
 import { Warming, WARMING_PARAM_RANGES, isChilly } from './npc/warming.js';
 import { CabShelter, CAB_SHELTER_PARAM_RANGES } from './npc/cabShelter.js';
+import { DEFAULT_KEEPALIVE_PARAMS, KEEPALIVE_PARAM_RANGES } from './npc/keepAlive.js';
 import { HeadStart, HEADSTART_PARAM_RANGES } from './npc/headStart.js';
 import { Gossip, GOSSIP_PARAM_RANGES } from './npc/gossip.js';
 import { ThrottleGrab, GRAB_PARAM_RANGES } from './npc/throttleGrab.js';
@@ -603,8 +604,9 @@ export class Game {
     this.landyDrive = { ...DEFAULT_LANDY_GO_DRIVE };
     this.crankParams = { ...DEFAULT_CRANK_ATTEMPT_PARAMS };
     this.pushParams = { ...DEFAULT_PUSH_PARAMS };
+    this.keepParams = { ...DEFAULT_KEEPALIVE_PARAMS }; // keeping a sick one alive from the back (npc/keepAlive.js), shared by both girls
     this.goJoins = []; // the other girl on her way to climb in beside a driver: { left, girl, kind, driver }
-    for (const c of this.companions) Object.assign(c, { tractorGo: this.tractorDrive, utvGo: this.utvDrive, landyGo: this.landyDrive, crankParams: this.crankParams, pushParams: this.pushParams, tractorStartParams: this.tractorStartParams, noviceParams: this.noviceParams });
+    for (const c of this.companions) Object.assign(c, { tractorGo: this.tractorDrive, utvGo: this.utvDrive, landyGo: this.landyDrive, crankParams: this.crankParams, pushParams: this.pushParams, keepParams: this.keepParams, tractorStartParams: this.tractorStartParams, noviceParams: this.noviceParams });
     // Jess tapes L plates to Amy's quad; Amy peels them off, and once she's confident they go on the tractor (npc/lPlates.js).
     this.lPlates = new LPlates(undefined, createRandom(this.seed ^ 0x1b1a));
     this.lPlateSet = new LPlateSet();
@@ -1017,6 +1019,7 @@ export class Game {
     registerTuning('Land Rover go drive', this.landyDrive, TRACTOR_GO_DRIVE_RANGES);
     registerTuning('Land Rover go handle', this.crankParams, CRANK_ATTEMPT_PARAM_RANGES);
     registerTuning('Girl pushing a start', this.pushParams, PUSH_PARAM_RANGES);
+    registerTuning('Keeping it alive', this.keepParams, KEEPALIVE_PARAM_RANGES);
     registerTuning('Tractor go start', this.tractorStartParams, TRACTOR_START_PARAM_RANGES);
     registerTuning('Tractor go novice', this.noviceParams, NOVICE_PARAM_RANGES);
     registerTuning('Hay ride seat', this.haySeat, HAYSEAT_PARAM_RANGES);
@@ -2990,6 +2993,35 @@ export class Game {
     }
   }
 
+  /**
+   * A girl who got a sick quad going (npc/keepAlive.js) goes and sits on the back of it, instead of switching it off, while it runs with nobody
+   * on it. `forced` sends her whatever she thinks of it. Returns whether she set off.
+   */
+  sendToKeepAlive(c, unit, forced = false) {
+    const q = unit.quad;
+    if (!c.fsm.is('idle') || !q.engine.isRunning || q.rider || q.driver || q.passenger || q.isTipped || !c.canRidePillion(q)) return false;
+    if (forced) q.startTrouble = Math.max(q.startTrouble, this.keepParams.hardStartCranks);
+    else if (!c.keepAlive.wouldGo({ sick: c.quadSickness(q).sick, running: true, unattended: true, distance: c.root.position.distanceTo(q.position) })) return false;
+    c.requestMount(q);
+    return true;
+  }
+
+  /** Each frame: the girl who last had a sick, running quad with nobody on it may go and sit on it to keep it going. */
+  updateKeepAlive(dt) {
+    for (const unit of this.girlUnits) {
+      const q = unit.quad;
+      const starting = this.companions.some((c) => c.fsm.is('starting') && c.quad === q);
+      if (!unit.engine.isRunning && !starting) q.startTrouble = 0; // a hard start only counts while it is still running from it
+    }
+    if (this.menu.isOpen) return;
+    for (const c of this.companions) {
+      c.keepAlive.cool(dt);
+      if (!c.fsm.is('idle') || Math.random() >= this.keepParams.goChance * dt) continue;
+      const unit = this.girlUnits.find((u) => this.leftRunning.lastWho.get(u.id) === c.character.id);
+      if (unit) this.sendToKeepAlive(c, unit);
+    }
+  }
+
   /** Each frame: a parked quad with a sticky float and the tap on drips petrol (vehicle/carbDrip.js), leaving a damp patch and a flooded carb. */
   updateCarbDrip(dt) {
     for (const unit of this.units) {
@@ -3234,7 +3266,7 @@ export class Game {
     for (const c of this.companions) {
       const p = c.params;
       if (!p.rockPrankChance || !c.fsm.is('idle') || Math.random() >= p.rockPrankChance * dt) continue;
-      const friend = this.companions.find((o) => o !== c && this.revOffQuad(o) && c.root.position.distanceTo(o.quad.position) <= p.rockPrankRange);
+      const friend = this.companions.find((o) => o !== c && this.revOffQuad(o) && !o.holdingIdle && c.root.position.distanceTo(o.quad.position) <= p.rockPrankRange);
       if (!friend) continue;
       r.quad = friend.quad;
       r.until = this.revOff.clock + 0.4;
@@ -3252,7 +3284,7 @@ export class Game {
     const amy = this.companions.find((c) => c.character.id === 'amy');
     if (!jess || !amy) return;
     const quad = this.revOffQuad(jess);
-    const busy = this.revOff.answering('jess') || quad === this.rockPrank?.quad;
+    const busy = this.revOff.answering('jess') || quad === this.rockPrank?.quad || jess.holdingIdle;
     const ch = amy.voice.chatter;
     const ctx = {
       jessCanRev: !!quad && !busy && !this.menu.isOpen,
@@ -3274,18 +3306,18 @@ export class Game {
 
   updateRevOff(dt, ridden) {
     const q = ridden?.quad;
-    const girls = this.companions.map((c) => ({ id: c.character.id, canBlip: !!this.revOffQuad(c), x: c.root.position.x, z: c.root.position.z }));
+    const girls = this.companions.map((c) => ({ id: c.character.id, canBlip: !!this.revOffQuad(c) && !c.holdingIdle, x: c.root.position.x, z: c.root.position.z }));
     const you = { riding: !!q && !this.menu.isOpen, running: !!q?.engine.isRunning, speed: Math.abs(q?.speed ?? 0), throttle: q?.throttle ?? 0, x: this.player.position.x, z: this.player.position.z };
     const events = this.revOff.update(dt, { you, girls });
     for (const c of this.companions) {
       const quad = this.revOffQuad(c);
-      if (quad && quad !== this.rockPrank?.quad) quad.helperThrottle = this.revOff.throttleFor(c.character.id);
+      if (quad && quad !== this.rockPrank?.quad && !c.holdingIdle) quad.helperThrottle = this.revOff.throttleFor(c.character.id);
     }
     for (const e of events) {
       const girl = this.companions.find((c) => c.character.id === e.girl);
       if (!girl) continue;
       if (e.type === 'done') {
-        if (girl.quad.helperThrottle > 0) girl.quad.helperThrottle = 0;
+        if (girl.quad.helperThrottle > 0 && !girl.holdingIdle) girl.quad.helperThrottle = 0;
       } else if (e.type === 'answer') {
         girl.voice.say(e.round > 1 ? 'revAnswerMore' : 'revAnswer', { force: true });
       } else if (e.type === 'complain') {
@@ -5119,6 +5151,7 @@ export class Game {
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);
     if (auto) this.updateCabShelter(dt);
+    if (auto) this.updateKeepAlive(dt);
     if (auto) this.updateHeadStart(dt, ridden);
     this.updateDoughnuts(dt);
     this.updateTarmac(dt);

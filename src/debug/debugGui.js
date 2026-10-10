@@ -5,6 +5,7 @@ import { applicableQuirks, featuresOf } from '../vehicle/quirks.js';
 import { categoryOf, sortTuneGroups } from './tuneCategories.js';
 import { buildGirlsTab } from './girlsTab.js';
 import { setQuirk, setFault, clearFaults, fixEverything, problemSummary, quirkLabel, startWarm, switchOff } from './vehicleDebug.js';
+import { sickness, sickEvidence } from '../npc/keepAlive.js';
 import { BRANDS, WHEEL_NAMES } from '../vehicle/tyres.js';
 import { LIGHT_MODES } from '../vehicle/lightSwitch.js';
 import { SIGNAL_MODES } from '../vehicle/indicators.js';
@@ -226,11 +227,16 @@ export class DebugGui {
     show(r, 'roughness', () => round(unit().engine.roughness));
     show(r, 'erratic (needs a service)', () => round(unit().engine.erratic));
     show(r, 'shake', () => round(unit().vibration.intensity));
+    show(r, 'sick (the girls keep it going)', () => {
+      const k = sickness(sickEvidence(unit().quad), this.game.keepParams);
+      return k.sick ? `${round(k.score)}: ${k.reasons.join(', ')}` : `no (${round(k.score)})`;
+    });
 
     const p = this.vehicleFolders.problems;
     for (const kind of FAULT_KINDS) {
       set(p, kind, () => (unit().quad.faults.started[kind] ? round(unit().quad.faults.levels[kind]) : 0), (v) => setFault(unit().quad.faults, kind, v), 0, 1);
     }
+    set(p, 'hard start (goes it took)', () => unit().quad.startTrouble, (v) => (unit().quad.startTrouble = Math.round(v)), 0, 6, 1);
     show(p, 'flat tyre (wheel)', () => unit().quad.faults.tyre);
     set(p, 'plug fouling', () => round(unit().engine.fouling), (v) => (unit().engine.fouling = v), 0, 1);
     set(p, 'air filter clogged', () => round(unit().engine.clog), (v) => (unit().engine.clog = v), 0, 1);

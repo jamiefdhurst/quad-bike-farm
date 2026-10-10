@@ -5,7 +5,7 @@ import { Faults } from '../src/vehicle/faults.js';
 
 const unitWith = () => ({
   engine: { fouling: 0.5, clog: 0.6, wear: 0.4, scuff: 0.3, overheat: 0.2, seized: true, water: 0.4, dieselSoak: 0.4, silencerBlown: 0.5, boiled: true, coolant: 0.2, coolantLeak: 2, battery: 1 },
-  quad: { faults: new Faults(), quirks: new QuirkSet(['tapStiff']), sump: { level: 0.2 }, fuel: { litres: 5 } },
+  quad: { startTrouble: 3, faults: new Faults(), quirks: new QuirkSet(['tapStiff']), sump: { level: 0.2 }, fuel: { litres: 5 } },
 });
 
 describe('vehicle debug helpers', () => {
@@ -41,6 +41,7 @@ describe('vehicle debug helpers', () => {
     expect(u.quad.quirks.kinds).toEqual(['tapStiff']);
     expect(u.quad.quirks.tapStiff).toBe(0);
     expect(u.quad.sump.level).toBe(1);
+    expect(u.quad.startTrouble).toBe(0); // a hard start is a problem the girls keep a quad alive for
   });
 
   it('labels quirks readably', () => {
