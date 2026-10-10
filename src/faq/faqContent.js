@@ -459,6 +459,14 @@ export const FAQ_SECTIONS = [
     title: 'Amy and Jess',
     entries: [
       {
+        q: 'What are they looking at?',
+        a: `Whatever catches their eye: whoever is talking, a quad starting, stalling, backfiring or being revved nearby, a horn, something going
+          past or tipping over, and you now and then. With nothing going on they look about. A bang turns their heads at once, and if it goes
+          on behind them they turn round to see. Before they walk off anywhere they look where they are going first, and while they are busy
+          (starting a quad, driving) they mostly watch what they are doing.`,
+        tip: 'Rev a quad near the girls and watch them turn to look.',
+      },
+      {
         q: 'How do I talk to them?',
         a: `Look at one and press <kbd>E</kbd> to open her wheel. Move the mouse to a slice and click, or press its number. The first ring has a slice
           for each vehicle she could do something with; a vehicle's slice opens a second ring of what she could do with it. Right-click or Backspace
