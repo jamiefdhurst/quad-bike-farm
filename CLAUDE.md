@@ -32,7 +32,19 @@ Backtick opens it. It has three tabs, each with a job; keep them that way, and k
 
 ## The girls' minds
 
-How the girls notice, react and decide is being rebuilt (TODO 130 to 137) so each part lives in one place and everything new plugs into it rather than bringing its own timers and dice. Follow every part below for anything new the girls do; `tests/companionLooks.test.js` and `tests/reactions.test.js` check what they can. Read DECISIONS.md's sections for TODO 130 onwards before changing any of it.
+How the girls notice, react and decide is being rebuilt (TODO 130 to 137) so each part lives in one place and everything new plugs into it rather than bringing its own timers and dice. Follow every part below for anything new the girls do; `tests/girlsMinds.test.js`, `tests/reactions.test.js` and `tests/availability.test.js` check what they can. Read DECISIONS.md's sections for TODO 130 onwards before changing any of it.
+
+### Is she free? (availability)
+
+One answer, `companion.availability()` (`src/npc/availability.js`, pure, tested): `{ free, why, settled, held, canRemark }`. Never decide from `fsm.is('idle')` plus flags (a test fails on that in game.js).
+
+- **Giving her something to do on her own** (a feature starting something): `c.availability().free`.
+- **Something she'd only notice or remark on** (a smell, a quad going by): `c.availability().canRemark` (stood about or sat resting, and nothing holding both girls).
+- **You asking her** (the wheel, the debug panel, the console): `c.availability({ asked: true })`; soft jobs give way and the farm's holds don't count. Say `why` when she's busy.
+- **A feature checking its own girl mid-job**: pass `mine` (its job flag or hold key) so its own job doesn't count against her.
+- **A new thing she does that should keep other features off her**: a feature that has her for a while calls `c.hold(key, why)` and `c.release(key)`; a flag on her goes in `JOBS` (soft if your asking should interrupt it). Something that holds both girls at once goes in `worldHold` (set in game.js).
+- **A new state** gets a `STATE_WHY` entry (the test fails until it has one).
+- The request methods' own `fsm.is('idle')` guards stay: they're what the state machine can do from where she is, not whether she's free.
 
 ### What she looks at (attention)
 
