@@ -8,6 +8,7 @@ export class StateMachine {
     this.owner = owner;
     this.states = states;
     this.name = null;
+    this.previous = null; // the state before this one
     this.data = null;
     this.time = 0;
     this.transition(initial);
@@ -24,6 +25,7 @@ export class StateMachine {
   transition(name, data = {}) {
     if (!this.states[name]) throw new Error(`Unknown state: ${name}`);
     this.current?.exit?.call(this.owner);
+    this.previous = this.name;
     this.name = name;
     this.data = data;
     this.time = 0;

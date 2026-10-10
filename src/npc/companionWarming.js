@@ -64,6 +64,8 @@ export const warmingMethods = {
     const want = q && this.fsm.is('idle') && q.engine.isRunning ? 1 : 0;
     this.warmReach = (this.warmReach ?? 0) + (want - (this.warmReach ?? 0)) * Math.min(1, dt * 3);
     if (this.warmReach < 0.01) return;
+    // Watching her hands over the engine (attention.js), though a bang or a word still turns her head.
+    if (q && want) this.attend({ x: q.position.x, y: q.position.y + 0.7, z: q.position.z }, { weight: 1.5 });
     const k = smooth(Math.min(1, this.warmReach));
     const b = this.rig.bones;
     const model = q?.model ?? this.lastWarmModel;

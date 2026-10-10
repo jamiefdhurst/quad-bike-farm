@@ -72,7 +72,7 @@ export class CharacterRig {
     // Head turn toward a world point, blended in and out by lookWeight (0..1).
     this.lookTarget = new THREE.Vector3();
     this.lookWeight = 0;
-    this.lookLimits = { yaw: 1.2, pitch: 0.5 };
+    this.lookLimits = { yaw: 1.3, pitch: 0.5 };
     // Extra procedural offsets in radians about the character's own axes, set by behaviour code.
     this.offsets = { headYaw: 0, spineRoll: 0, spinePitch: 0, leftArmOut: 0, rightArmOut: 0, leftElbow: 0, rightElbow: 0 };
     // Bone turns and hand placings (poseMoves.js) set by behaviour code each frame, applied before the offsets; `poseSeat` is the

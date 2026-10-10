@@ -69,6 +69,7 @@ export const restingMethods = {
 
 export const restingStates = {
   resting: {
+    look: 'free',
     enter(data) {
       const sit = data.spot.seat !== undefined;
       this.restPhase = sit ? 'up' : 'sat';

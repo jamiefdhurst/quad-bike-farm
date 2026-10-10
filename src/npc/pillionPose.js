@@ -55,6 +55,7 @@ export class PillionPose {
     this.params = params;
     this.dynamics = new PillionDynamics(params);
     this.active = false;
+    this.attend = null; // what has caught her eye (attention.js), set by the companion each frame
     this.weight = 0; // overall, fades in on the seat and out when she gets off
     this.together = 0; // 0 alone on the back, 1 arms round you
     this.arms = SIDES.map((s) => ({ ...s, pos: new THREE.Vector3(), weight: 0, aim: 0 }));
@@ -200,6 +201,16 @@ export class PillionPose {
         g.left = p.glanceHoldMin + Math.random() * Math.max(0, p.glanceHoldMax - p.glanceHoldMin);
         g.timer = p.glanceEveryMin + Math.random() * Math.max(0, p.glanceEveryMax - p.glanceEveryMin);
       }
+    }
+    // Something has caught her eye (attention.js, set by the companion each frame): she turns to it instead, as far as sitting
+    // behind you lets her. You she sees by looking back (above); gazing about is these glances already.
+    const seen = this.attend;
+    if (seen && !['you', 'talking', 'about', 'focus', 'intent'].includes(seen.kind)) {
+      const root = this.rig.root;
+      const to = root.worldToLocal(_v.set(seen.x, seen.y, seen.z)).sub(root.worldToLocal(this.rig.bones.Head.getWorldPosition(_w)));
+      const yaw = clamp(Math.atan2(to.x, to.z), -1.1, 1.1);
+      g.side = yaw < 0 ? -1 : 1;
+      want = [Math.abs(yaw), clamp(Math.atan2(to.y, Math.hypot(to.x, to.z)), -0.4, 0.4), 0.12 * Math.min(1, Math.abs(yaw))];
     }
     const k = Math.min(1, dt * p.headSpeed);
     const h = this.head;

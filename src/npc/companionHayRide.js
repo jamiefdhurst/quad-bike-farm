@@ -144,6 +144,10 @@ export const hayRideMethods = {
 export const hayRideStates = {
   // Climbing from the ground up onto the bales.
   boarding: {
+    look() {
+      const t = this.trailer?.model?.position;
+      return t ? { x: t.x, y: t.y + 0.6, z: t.z, weight: 2 } : null;
+    },
     enter() {
       this.setColliderEnabled(false);
       this.paceBoost = 1;
@@ -161,6 +165,7 @@ export const hayRideStates = {
 
   // Sitting up on the bales (or lying back), bouncing with the trailer.
   onTrailer: {
+    look: 'free',
     enter(data) {
       const anchor = this.traSlot.anchor;
       this.hayPivot ??= new THREE.Object3D();
@@ -209,6 +214,7 @@ export const hayRideStates = {
 
   // Off the side: a slide, a tumble, a moment in the mud, and up again.
   sliding: {
+    look: 'free',
     enter(data) {
       attachKeepingSize(this.scene, this.root); // keeps where she is
       this.hayPivot?.rotation.set(0, 0, 0);

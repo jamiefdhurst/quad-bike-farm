@@ -28,6 +28,7 @@ import { canRideRack } from './rackSeat.js';
 import { nextBoredWait, driftRestlessness, pickBoredChoice } from './boredom.js';
 import { moveMethods, DEFAULT_MOVE_PARAMS } from './companionMoves.js';
 import { DEFAULT_IDLE_POSE_PARAMS } from './poseMoves.js';
+import { Attention, DEFAULT_NOTICE_PARAMS } from './attention.js';
 
 const AXIS_Y = new THREE.Vector3(0, 1, 0);
 const NO_CONTACT_FORCES = 0xffff0000; // in every solver group, pushes against none
@@ -112,8 +113,13 @@ export class Companion {
 
     this.fsm = new StateMachine(this, STATES, 'idle');
 
-    this.glanceTimer = this.randomBetween(params.glanceEveryMin, params.glanceEveryMax);
-    this.glanceLeft = 0;
+    // What she looks at (attention.js): who and what is about, what she's busy with, where she's off to, what just happened.
+    this.attention = new Attention(this.params, DEFAULT_NOTICE_PARAMS);
+    this.lookPick = null; // what attention picked this frame
+    this.lookPoint = null; // where her eyes are now, sweeping towards the pick
+    this.lookTurn = null; // a heading to turn and face, when a look over her shoulder is held (idle uses it)
+    this.attendHint = null; // a sub-activity's own focus: { x, y, z, weight, left } (attend())
+    this.lookLeadLeft = 0; // seconds she still looks where she's going before setting off
     this.fidgetTimer = this.randomBetween(params.fidgetEveryMin, params.fidgetEveryMax);
     this.fidget = null;
     this.startEvents = []; // what she's done while starting a quad, for her voice to pick up
@@ -1024,6 +1030,11 @@ export class Companion {
     return false;
   }
 
+  /** Stood about with nothing holding her in place (her hands over an engine, a wave, a start), so she may turn to look at something. */
+  freeToTurn() {
+    return this.fsm.is('idle') && !this.warmingAt && !this.waving && !this.recoil && !this.attempt;
+  }
+
   turnToward(dt, facing) {
     this.heading += angleTo(this.heading, facing) * Math.min(1, this.params.turnRate * dt);
     this.root.rotation.y = this.heading;
@@ -1060,7 +1071,7 @@ export class Companion {
     this.updateRecoil(dt);
     this.updateBoredom(dt, viewer);
     this.updateLineUp(dt);
-    if (viewer) this.updateGlance(dt, viewer);
+    if (viewer) this.updateAttention(dt, viewer);
     this.updateFidget(dt);
     this.updateCarry(dt);
     this.updatePose(dt);
@@ -1120,27 +1131,76 @@ Companion.prototype.updateRecoil = function (dt) {
   if (left <= 0) this.recoil = null;
 };
 
-Companion.prototype.updateGlance = function (dt, viewer) {
+/** Tells her something happened (a notice for attention.js: { kind, key, x, y, z, strength }); game.notice calls this. */
+Companion.prototype.notice = function (n) {
+  this.attention.notice(n);
+};
+
+/**
+ * For a sub-activity inside a state (warming her hands, carrying something, waving): look at `point` while doing it, as strongly as
+ * `weight` (1 is like a state's focus), for `seconds`. Call it each frame to keep it, or once to hold it a while.
+ */
+Companion.prototype.attend = function (point, { weight = 1, seconds = 0.2 } = {}) {
+  this.attendHint = { x: point.x, y: point.y, z: point.z, weight, left: seconds };
+};
+
+/** What her state says she looks at: a focus { x, y, z, weight, intent? }, 'own' (another poser has her head) or null. */
+Companion.prototype.stateLook = function () {
+  const def = this.fsm.current.look;
+  const look = typeof def === 'function' ? def.call(this, this.fsm.data) : def;
+  return look === 'free' ? null : look ?? null;
+};
+
+/** A point on a vehicle (`up` metres above its middle) to look at, as a focus. */
+Companion.prototype.lookAtVehicle = function (q, up = 0.8, weight = 1) {
+  return q ? { x: q.position.x, y: q.position.y + up, z: q.position.z, weight } : null;
+};
+
+/** The ground `metres` ahead of a vehicle, for watching where it's going, as a focus. */
+Companion.prototype.lookAhead = function (q, metres, weight = 1) {
+  if (!q) return null;
+  const yaw = q.yaw;
+  return { x: q.position.x + Math.sin(yaw) * metres, y: q.position.y, z: q.position.z + Math.cos(yaw) * metres, weight };
+};
+
+/** Each frame: what she looks at (attention.js), from the game's view of who and what is about (viewer.world), and her head following. */
+Companion.prototype.updateAttention = function (dt, viewer) {
   const p = this.params;
   const rig = this.rig;
-  // Riding together she's behind you, so there's nothing to look at.
-  const ridingTogether = viewer.isRiding && this.isSeated;
-  const near = this.root.getWorldPosition(this.tmpV).distanceTo(viewer.position) < p.glanceRange;
-  let want = 0;
-  if (viewer.talking && near) {
-    want = 1; // looks at you while you're talking to her
-  } else if (!ridingTogether && near && !this.fsm.is('mounting', 'dismounting')) {
-    if (this.glanceLeft > 0) {
-      this.glanceLeft -= dt;
-      want = 1;
-    } else if ((this.glanceTimer -= dt) <= 0) {
-      this.glanceLeft = this.randomBetween(p.glanceHoldMin, p.glanceHoldMax);
-      this.glanceTimer = this.randomBetween(p.glanceEveryMin, p.glanceEveryMax);
-    }
+  const look = this.stateLook();
+  const own = look === 'own';
+  const at = this.root.getWorldPosition(this.tmpV);
+  const dir = this.root.getWorldDirection(_dirV);
+  const self = { x: at.x, y: at.y + p.height * 0.93, z: at.z };
+  const id = this.character?.id;
+  const world = viewer.world ?? { people: [], vehicles: [] };
+  const fond = Math.max(-0.6, Math.min(1, this.favourView?.().standing ?? 0));
+  const people = world.people.filter((o) => o.key !== id).map((o) => (o.key === 'you' ? { ...o, talkingToMe: !!viewer.talking, warmth: fond } : o));
+  const onIt = this.root.parent !== this.scene ? this.quad?.unit?.id : null;
+  const vehicles = world.vehicles.filter((v) => v.key !== onIt);
+  // A sub-activity's own focus takes over from the state's while it lasts.
+  const hint = this.attendHint;
+  if (hint && (hint.left -= dt) <= 0) this.attendHint = null;
+  const focus = hint ?? (own || !look || look.intent ? null : look);
+  const intent = !own && look?.intent ? look : null;
+  const pick = this.attention.update(dt, { self, facing: Math.atan2(dir.x, dir.z), people, vehicles, focus, intent, noGaze: own });
+  this.lookPick = pick;
+  this.lookTurn = !own && pick ? pick.turnTo : null;
+  // On the back behind you the pillion pose has her head, and turns it to whatever catches her eye.
+  this.pillion.attend = own ? pick : null;
+  if (own || !pick) {
+    rig.lookWeight += (0 - rig.lookWeight) * Math.min(1, p.lookSpeed * dt);
+    return;
   }
-  rig.lookTarget.copy(viewer.position);
-  rig.lookWeight += (want - rig.lookWeight) * Math.min(1, p.lookSpeed * dt);
+  // Her eyes sweep to the next thing rather than jumping there.
+  if (!this.lookPoint) this.lookPoint = new THREE.Vector3(pick.x, pick.y, pick.z);
+  else this.lookPoint.lerp(_pickV.set(pick.x, pick.y, pick.z), Math.min(1, p.lookSweep * dt));
+  rig.lookTarget.copy(this.lookPoint);
+  rig.lookWeight += (1 - rig.lookWeight) * Math.min(1, p.lookSpeed * dt);
 };
+
+const _dirV = new THREE.Vector3();
+const _pickV = new THREE.Vector3();
 
 // Small movements, each with a shape over its life (0..1) and offsets to apply.
 const FIDGETS = {
@@ -1150,11 +1210,10 @@ const FIDGETS = {
   lean: (k, side) => ({ spineRoll: 0.24 * k * side, headYaw: -0.2 * k * side }),
   // Stretches back with both arms out a little.
   stretch: (k) => ({ spinePitch: -0.18 * k, leftArmOut: 0.35 * k, rightArmOut: 0.35 * k, leftElbow: 0.3 * k, rightElbow: 0.3 * k }),
-  // Looks out over the field to one side.
-  lookAround: (k, side) => ({ headYaw: 1.05 * k * side, spineRoll: 0.05 * k * side }),
 };
-const SEATED_FIDGETS = ['arm', 'lean', 'stretch', 'lookAround', 'arm', 'lookAround'];
-const STANDING_FIDGETS = ['lean', 'lookAround'];
+// (Looking about is attention.js's gazing, not a fidget.)
+const SEATED_FIDGETS = ['arm', 'lean', 'stretch', 'arm'];
+const STANDING_FIDGETS = ['lean'];
 
 Companion.prototype.updateFidget = function (dt) {
   const p = this.params;
@@ -1200,18 +1259,24 @@ Companion.prototype.updateFidget = function (dt) {
   Object.assign(offsets, FIDGETS[f.type](k, f.side));
 };
 
-// State definitions. `this` is the Companion.
-const STATES = {
+// State definitions. `this` is the Companion. Every state says what she looks at while in it (`look`, attention.js): 'free'
+// (nothing in particular, so whatever catches her eye), 'own' (another poser has her head), or a function of the state's data
+// returning a focus ({ x, y, z, weight }, or with intent: true for where she's about to go). tests/companionLooks.test.js fails until
+// a new state has one.
+export const STATES = {
   ...drivingStates,
   ...hayRideStates,
   ...restingStates,
 
   idle: {
+    look: 'free', // a sub-activity (warming her hands) says what it looks at with attend()
     enter() {
       this.rig.play('Idle');
     },
     update(dt, data) {
-      if (data.facing !== undefined) this.turnToward(dt, data.facing);
+      // Something held over her shoulder a while: she turns to face it, and back to what she was facing after (attention.js).
+      if (this.lookTurn !== null && this.freeToTurn()) this.turnToward(dt, this.lookTurn);
+      else if (data.facing !== undefined) this.turnToward(dt, data.facing);
     },
     exit() {
       this.warmingAt = null; // whatever she does next, the hands come down
@@ -1219,10 +1284,18 @@ const STATES = {
   },
 
   walking: {
-    enter() {
-      this.rig.play('Walking', { fade: 0.25 });
+    // Where she's going: first as her intent, looked at before she sets off from standing, then as what she watches as she goes.
+    look(data) {
+      const t = data.target?.()?.position;
+      if (!t) return null;
+      return this.lookLeadLeft > 0 ? { x: t.x, y: t.y + 0.9, z: t.z, intent: true } : { x: t.x, y: t.y + 0.9, z: t.z, weight: 0.8 };
+    },
+    enter(data) {
       this.stuckTimer = 0;
       this.jogging = false;
+      // From standing about she looks where she's going before she sets off, unless it's a hurry (attention.js).
+      this.lookLeadLeft = this.fsm.previous === 'idle' || this.fsm.previous === 'resting' ? (data.hurry ? 0 : this.params.lookLead) : 0;
+      if (this.lookLeadLeft <= 0) this.rig.play('Walking', { fade: 0.25 });
     },
     exit() {
       this.mayJog = false;
@@ -1230,6 +1303,10 @@ const STATES = {
     },
     update(dt, data) {
       this.mayJog = data.goal !== 'prank' && data.goal !== 'wander';
+      if (this.lookLeadLeft > 0) {
+        if ((this.lookLeadLeft -= dt) > 0) return;
+        this.rig.play('Walking', { fade: 0.25 });
+      }
       const t = data.target();
       // Hold back near a moving quad until it stops.
       if ((data.goal === 'mount' || data.goal === 'drive') && this.quad.speed > this.params.maxMountSpeed) {
@@ -1266,6 +1343,11 @@ const STATES = {
 
   // Up to no good: a quiet moment at the thing she's meddling with, then done.
   pranking: {
+    look(data) {
+      // Down at whatever she's meddling with, in front of her.
+      const r = this.root.position;
+      return { x: r.x + Math.sin(data.facing) * 1.2, y: r.y + 0.5, z: r.z + Math.cos(data.facing) * 1.2, weight: 2 };
+    },
     enter() {
       this.rig.play('Idle', { fade: 0.3 });
       this.prankDone = false;
@@ -1285,6 +1367,9 @@ const STATES = {
 
   // Having a go at starting the quad: key, tap, choke, starter, then minding the choke as it warms.
   starting: {
+    look() {
+      return this.lookAtVehicle(this.quad, 0.9, 2);
+    },
     enter(data) {
       this.rig.play('Idle', { fade: 0.3 });
       // The diesels (the tractor, the UTV) have a key and glow plugs rather than a tap and a choke.
@@ -1318,6 +1403,9 @@ const STATES = {
 
   // Getting on: astride with a leg over, or sat back onto the seat side-saddle or on the rack (companionMoves.js).
   mounting: {
+    look() {
+      return this.lookAtVehicle(this.quad, 0.7, 2);
+    },
     enter(data) {
       this.setColliderEnabled(false);
       const front = data.seat === 'rider';
@@ -1358,6 +1446,10 @@ const STATES = {
   },
 
   seated: {
+    // On the back the pillion pose has her head (and turns it to what catches her eye); on the rack she watches where it's going.
+    look() {
+      return this.seatKind === 'rack' ? this.lookAhead(this.quad, 12, 1.2) : 'own';
+    },
     enter() {
       const rack = this.seatKind === 'rack';
       this.seatAnchor(false).add(this.root);
@@ -1399,6 +1491,10 @@ const STATES = {
   },
 
   dismounting: {
+    look() {
+      const t = this.target?.position;
+      return t ? { x: t.x, y: t.y + 0.2, z: t.z, weight: 2 } : null;
+    },
     enter() {
       const im = this.interruptedMount;
       this.interruptedMount = null;

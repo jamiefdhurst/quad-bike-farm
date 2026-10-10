@@ -25,11 +25,32 @@ export const DEFAULT_COMPANION_PARAMS = {
   maxMountSpeed: 0.3, // m/s, waits for the quad to stop before climbing on
 
   // Glancing at the player
-  glanceEveryMin: 4, // seconds between glances
-  glanceEveryMax: 11,
-  glanceHoldMin: 1.5, // seconds she keeps looking
-  glanceHoldMax: 3.5,
-  glanceRange: 14, // metres; further than this she doesn't bother
+  // What she looks at (attention.js): each thing is scored, she looks at the best, holds it, tires of it and comes back to it.
+  attentionYou: 0.7, // how much you catch her eye close by...
+  attentionFavour: 0.8, // ...and that much more again (times her warmth, 0..1) the more she likes you
+  attentionFriend: 0.45, // the other girl
+  attentionSpeaker: 0.6, // extra for whoever is talking
+  attentionTalking: 3, // you talking to her: she looks at you and doesn't tire of it
+  attentionVehicles: 0.6, // a moving vehicle at full interest...
+  attentionVehicleSpeed: 4, // ...which is this fast (m/s) or more
+  attentionEngines: 1, // how much engine noises catch her ear (a start, a stall, a backfire, revving)
+  attentionFocus: 0.55, // what she's busy with (the quad she's starting, the road when driving), times the state's own weight
+  attentionIntent: 2, // where she's about to walk, just before she sets off
+  attentionIdle: 0.3, // gazing about at nothing in particular, when nothing else is worth more
+  attentionGazeSpread: 0.9, // radians either side of ahead that she gazes about
+  attentionMin: 0.12, // anything scoring less isn't worth turning her head for
+  attentionDwell: 0.8, // seconds she holds a look before something only a little better takes it
+  attentionSwitch: 0.3, // how much better (a fraction) something must be to take her eye after that
+  attentionStartle: 1.2, // a sudden thing this strong turns her head at once
+  attentionHabit: 3, // seconds of looking at one thing that halve her interest in it
+  attentionRecover: 10, // seconds for that tiredness to fade once she looks away
+  attentionFov: 1.1, // radians either side of ahead that she sees properly...
+  attentionBehind: 0.1, // ...falling to this share of interest straight behind her (sounds she hears from anywhere)
+  attentionRange: 30, // metres; people and moving vehicles further than this go unnoticed
+  attentionBodyAfter: 1.5, // seconds a look past her shoulder is held before she turns to face it (stood about)
+  attentionBodyYaw: 1.1, // radians off her facing that count as past her shoulder
+  lookLead: 0.6, // seconds she looks where she's going before setting off from standing
+  lookSweep: 7, // 1/s, how fast her eyes move from one thing to the next
   lookSpeed: 3, // 1/s, how fast her head turns in and out
 
   // Fidgeting while seated on the quad
@@ -257,11 +278,31 @@ export const COMPANION_PARAM_RANGES = {
   rackLegSpread: [0, 1, 0.01],
   rideBounce: [0, 4, 0.05],
   maxMountSpeed: [0, 3, 0.05],
-  glanceEveryMin: [0.5, 30, 0.5],
-  glanceEveryMax: [0.5, 60, 0.5],
-  glanceHoldMin: [0.2, 10, 0.1],
-  glanceHoldMax: [0.2, 15, 0.1],
-  glanceRange: [1, 50, 0.5],
+  attentionYou: [0, 3, 0.05],
+  attentionFavour: [0, 3, 0.05],
+  attentionFriend: [0, 3, 0.05],
+  attentionSpeaker: [0, 3, 0.05],
+  attentionTalking: [0, 6, 0.1],
+  attentionVehicles: [0, 3, 0.05],
+  attentionVehicleSpeed: [0.5, 15, 0.5],
+  attentionEngines: [0, 3, 0.05],
+  attentionFocus: [0, 3, 0.05],
+  attentionIntent: [0, 6, 0.1],
+  attentionIdle: [0, 2, 0.05],
+  attentionGazeSpread: [0, 1.6, 0.05],
+  attentionMin: [0, 1, 0.01],
+  attentionDwell: [0, 4, 0.05],
+  attentionSwitch: [0, 2, 0.05],
+  attentionStartle: [0.2, 4, 0.05],
+  attentionHabit: [0.5, 20, 0.5],
+  attentionRecover: [1, 60, 1],
+  attentionFov: [0.3, 3, 0.05],
+  attentionBehind: [0, 1, 0.05],
+  attentionRange: [5, 80, 1],
+  attentionBodyAfter: [0.2, 6, 0.1],
+  attentionBodyYaw: [0.3, 3, 0.05],
+  lookLead: [0, 2, 0.05],
+  lookSweep: [0.5, 20, 0.5],
   lookSpeed: [0.3, 10, 0.1],
   fidgetEveryMin: [0.5, 30, 0.5],
   fidgetEveryMax: [0.5, 60, 0.5],

@@ -85,6 +85,10 @@ const ARMS = [
 export const drivingStates = {
   // On the front seat with the quad hers: starting it, driving, stopping.
   driving: {
+    // The way she's going, strongly: a driver glances away now and then, or at a bang, but mostly watches the road (attention.js).
+    look() {
+      return this.lookAhead(this.quad, 10, 2);
+    },
     enter() {
       const q = this.quad;
       this.setColliderEnabled(false);
@@ -230,6 +234,9 @@ export const drivingStates = {
 
   // At the front of the Land Rover with its starting handle in the bumper, swinging it because the battery is flat (crankAttempt.js).
   cranking: {
+    look() {
+      return this.lookAtVehicle(this.quad, 0.6, 2);
+    },
     enter() {
       this.rig.play('Idle', { fade: 0.3 });
       this.crankAttempt = new CrankAttempt(this.quad, this.character.id, { params: this.crankParams ?? DEFAULT_CRANK_ATTEMPT_PARAMS });
@@ -260,6 +267,9 @@ export const drivingStates = {
 
   // Behind a vehicle with a flat battery, leaning on the back and walking it along so you can drop the clutch and bump-start it (pushStart.js).
   pushing: {
+    look() {
+      return this.lookAtVehicle(this.quad, 0.8, 1.5);
+    },
     enter() {
       this.rig.play('Idle', { fade: 0.3 });
       this.pushWalking = false;
@@ -309,6 +319,9 @@ export const drivingStates = {
 
   // Sliding back onto the pillion, or forward onto the front seat.
   shuffling: {
+    look() {
+      return this.lookAhead(this.quad, 6, 1.5);
+    },
     enter(data) {
       const q = this.quad;
       if (data.to === 'pillion' && q.driver === this.drive) q.setDriver(null);
