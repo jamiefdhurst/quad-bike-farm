@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { registerTuning } from '../core/tuning.js';
 import { EngineModel } from '../engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS, ENGINE_PARAM_RANGES } from '../engine/engineParams.js';
+import { SEAT_PARAM_RANGES } from './seatRide.js';
 import { TorqueRock } from '../vibration/torqueRock.js';
 import { VibrationModel } from '../vibration/vibrationModel.js';
 import { DEFAULT_VIBRATION_PARAMS, VIBRATION_PARAM_RANGES } from '../vibration/vibrationParams.js';
@@ -146,6 +147,7 @@ export class QuadUnit {
     registerTuning(`${folder}/Engine`, this.engine.params, ENGINE_PARAM_RANGES);
     registerTuning(`${folder}/Controls`, this.quad.controlsParams, CONTROLS_PARAM_RANGES);
     registerTuning(`${folder}/Vibration`, this.vibration.params, VIBRATION_PARAM_RANGES);
+    registerTuning(`${folder}/Seats`, this.quad.seatParams, SEAT_PARAM_RANGES);
     registerTuning(`${folder}/Audio`, this.audio.params, AUDIO_PARAM_RANGES);
     registerTuning(`${folder}/Smoke`, this.smoke.params, SMOKE_PARAM_RANGES);
     registerTuning(`${folder}/Mud`, this.mud.params, MUD_PARAM_RANGES);

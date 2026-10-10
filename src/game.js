@@ -3500,6 +3500,25 @@ export class Game {
     for (const e of this.cabShelter.update(dt, ctx)) this.handleCabEvent(e);
   }
 
+  // Seats that ride differently -----------------------------------------------
+
+  /** A seat slams (its spring bottomed out, or the bed threw her up): whoever is sat there reacts, now and then. */
+  updateSeatSlams() {
+    for (const unit of this.units) {
+      const q = unit.quad;
+      for (const slam of q.seatSlams) {
+        for (const c of this.companions) {
+          if (c.quad !== q) continue;
+          const slot = c.fsm.is('onTrailer') && c.trailer?.quad === q ? c.traSlot : null;
+          const kind = slot ? (slot.name === 'bed' ? 'bed' : slot.rear ? 'rear' : 'front') : c.fsm.is('seated') ? (c.seatKind === 'rack' ? 'rack' : 'pillion') : null;
+          if (kind !== slam.kind || (kind === 'front' && !slot)) continue;
+          const key = kind === 'bed' && slam.up ? 'seatBedAir' : { pillion: 'seatPillion', rack: 'seatRack', rear: 'seatRear', bed: 'seatBed' }[kind];
+          if (key && slam.strength > 0.3) c.voice.say(key, { chance: 0.6 });
+        }
+      }
+    }
+  }
+
   // Ready and waiting -----------------------------------------------------
 
   /** The quad she'll sit on for you: your usual one, then her favourite, then the nearest, anywhere she can get on the back of. */
@@ -5342,6 +5361,7 @@ export class Game {
     if (auto || this.sulking.who) this.updateCabShelter(dt, !auto);
     if (auto || this.sulking.who) this.updateSulking(dt);
     this.updateReady(dt);
+    this.updateSeatSlams();
     if (auto) this.updateKeepAlive(dt);
     if (auto) this.updateHeadStart(dt, ridden);
     this.updateDoughnuts(dt);

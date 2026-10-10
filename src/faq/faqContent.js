@@ -339,6 +339,13 @@ export const FAQ_SECTIONS = [
         tip: 'After a jump start, keep the revs up for ten minutes or it dies again at the first stop.',
       },
       {
+        q: 'Why does the back seat of the Land Rover bounce so much?',
+        a: `Each seat rides on its own spring, and the 200TDi's back bench is over the leaf springs: soft, bouncy and slow to settle, so it comes down hard on a
+          big bump. The UTV's bed has no cushion at all, so a big bump (the cattle grid, say) can throw whoever is in it off the floor. The pillion pad and the
+          front rack are firmer. The front seats are the smoothest. Whoever is sat in a seat that slams may say so.`,
+        tip: 'The 200TDi\'s back bench and the UTV\'s bed are the bumpiest seats; the front seats are the smoothest.',
+      },
+      {
         q: 'How do I get her to warm a quad up for me?',
         a: `Talk to her and choose "I'll be a minute". She starts your usual quad (or her favourite, or the nearest with a free back seat), sits on the back
           with it running and revs it now and then. If you take your time she starts sounding the horn, Jess sooner than Amy, and in the end she gives up and

@@ -33,6 +33,7 @@ import { Faults } from './faults.js';
 import { toppleLoad } from './topple.js';
 import { BikeLean, DEFAULT_BIKE_PARAMS } from './bikeLean.js';
 import { holdsItself } from './handbrake.js';
+import { SeatSpring, UpAccel, DEFAULT_SEAT_PARAMS } from './seatRide.js';
 import { DriveSwitch, driveEffects, DEFAULT_DRIVE_PARAMS } from './driveMode.js';
 import { reverseAllowed, chokeReach, DEFAULT_CONTROLS_PARAMS } from './controls.js';
 import { advanceUsage, isNeutral, dashClock, lampStates } from './dashState.js';
@@ -165,6 +166,21 @@ export class Quad {
     this.riderAnchor = part('riderAnchor');
     // Whoever sits on a smaller quad is still full size: undo the model's scale on the anchors people hang from.
     unscaleAnchors(this.model, scale);
+    // Each seat rides on its own spring (seatRide.js): the anchor, and your eyes if you sit there, move with it.
+    this.seatParams = { ...DEFAULT_SEAT_PARAMS };
+    this.seatUp = new UpAccel();
+    this.seatSlams = []; // { kind, strength, up } this step, for the girls sat there to react to
+    this.seatRides = [];
+    const seat = (kind, ...names) => {
+      const objs = names.map(part).filter(Boolean).map((o) => ({ o, y: o.position.y, z: o.position.z }));
+      if (objs.length) this.seatRides.push({ kind, spring: new SeatSpring(kind, this.seatParams), objs });
+    };
+    seat('pillion', 'pillionAnchor', 'pillionCameraAnchor');
+    seat('rack', 'rackAnchor');
+    seat('front', 'seatLeft', 'cameraLeft');
+    seat('front', 'seatMid', 'cameraMid');
+    for (const r of this.rearSeats) seat('rear', `seat${r[0].toUpperCase()}${r.slice(1)}`, `camera${r[0].toUpperCase()}${r.slice(1)}`);
+    seat('bed', 'bedSeat');
     this.exhaustTip = part('exhaustTip');
     this.wheels = layout.wheels.map((w) => ({ ...w, topY: w.y ?? layout.topY, object: part(w.name), spin: part(w.name).getObjectByName('spin') }));
     // Wheel centre heights in bodyRoot space, for posing the suspension arms.
@@ -926,11 +942,27 @@ export class Quad {
     if (v) this.handlebars.position.add(new THREE.Vector3(v.bars.x, v.bars.y, 0));
     this.handlebars.rotation.set(0, (this.bike ? this.bike.out.steer : this.steer) * (this.model.userData.steerGain ?? 0.85) + (v ? v.bars.yaw : 0), v ? v.bars.roll : 0);
 
+    this.updateSeats(dt, vibration);
     this.updateDash(dt);
     this.updateQuirks(dt, vibration);
     this.updateFrost(dt);
     if (this.note && (this.note.left -= dt) <= 0) this.note = null;
     this.updateFlap(dt);
+  }
+
+  /** Moves each seat on its own spring from the frame's bumps, and notes any that slam (seatRide.js). */
+  updateSeats(dt, vibration) {
+    this.seatSlams.length = 0;
+    if (!this.seatRides.length || dt <= 0) return;
+    const body = vibration?.body;
+    const accel = this.seatUp.update(dt, this.model.position.y + (body?.heave ?? 0), this.seatParams);
+    for (const r of this.seatRides) {
+      // Further behind the middle (the model's +z is the back) rides the pitch harder.
+      const lift = -r.objs[0].z * this.scale * (body?.pitch ?? 0) * r.spring.param('pitch');
+      const { offset, slam } = r.spring.update(dt, accel, lift);
+      for (const s of r.objs) s.o.position.y = s.y + offset / this.scale;
+      if (slam) this.seatSlams.push(slam);
+    }
   }
 
   /** The tractor's exhaust flap lifts with each firing beat and rattles as it falls back, so it chatters at idle and stands open when revved. */

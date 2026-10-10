@@ -76,6 +76,7 @@ import { AMY_JUMPER_LINES } from './jumperLines.js';
 import { AMY_KEEP_LINES } from './keepAliveLines.js';
 import { AMY_SULK_LINES } from './sulkLines.js';
 import { AMY_READY_LINES } from './readyLines.js';
+import { AMY_SEAT_LINES } from './seatLines.js';
 import { AMY_FAULT_LINES } from './faultLines.js';
 import { AMY_BENCH_LINES } from './benchLines.js';
 
@@ -1435,6 +1436,7 @@ export const VOICE_LINES = {
   ...AMY_KEEP_LINES,
   ...AMY_SULK_LINES,
   ...AMY_READY_LINES,
+  ...AMY_SEAT_LINES,
   // Listening to a running quad (diagnosisLines.js).
   ...AMY_DIAGNOSIS_LINES,
   // Thrashing a cold engine, and who wore it out (thrashLines.js).
