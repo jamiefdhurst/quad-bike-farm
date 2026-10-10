@@ -2,7 +2,7 @@
 // built over the live game. Every value reads and writes through the same fields and methods the debug panel uses.
 import { netCharge } from '../engine/charging.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
-import { describeMind } from '../npc/chooser.js';
+import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
 import { group, value, slug } from './shell.js';
 import { getTuningGroups } from '../core/tuning.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
@@ -157,6 +157,7 @@ export function buildGameTree(g, host) {
       chose: text(() => describeMind(c().mind).chose),
       nearlyChose: text(() => describeMind(c().mind).nearly),
       thinking: text(() => describeMind(c().mind).next),
+      setOn: text(() => c().intent.describe((k) => OFFER_KINDS[k]?.label ?? k)),
       reacting: text(() => c().reactingText),
       ...where(id),
       favour: num(() => g.favour.scores[id], (v) => (g.favour.scores[id] = v), -30, 30, '', 'how she rates you'),

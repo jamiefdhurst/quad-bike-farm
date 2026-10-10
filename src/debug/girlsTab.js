@@ -2,7 +2,7 @@
 // and her skills), then one for the two of them and the farm. Actions come first in each, state after.
 import { girlActions } from './girlActions.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
-import { describeMind } from '../npc/chooser.js';
+import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
 import { rampPoint } from '../npc/jumps.js';
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
@@ -47,6 +47,9 @@ export function buildGirlsTab(d) {
     show(why, 'chose', () => describeMind(c.mind).chose);
     show(why, 'nearly chose', () => describeMind(c.mind).nearly);
     show(why, 'next', () => describeMind(c.mind).next);
+    show(why, 'set on', () => c.intent.describe((k) => OFFER_KINDS[k]?.label ?? k));
+    show(why, 'pace', () => `${c.paceMul.toFixed(2)} times her walk${c.pace ? ` (${c.pace})` : ''}`);
+    button(why, 'Stop her on her way (as if you asked her something)', () => c.interrupt());
     button(why, 'Think now', () => (c.mind.thinkIn = 0));
 
     // --- How she rates you, and the romance.
