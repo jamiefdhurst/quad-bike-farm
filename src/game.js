@@ -68,7 +68,7 @@ import { LPlates, LPLATE_PARAM_RANGES, meanSkill } from './npc/lPlates.js';
 import { LPlateSet } from './vehicle/lPlateModel.js';
 import { TractorRunaway, TRACTOR_RUNAWAY_PARAM_RANGES } from './npc/tractorRunaway.js';
 import { DEFAULT_CREEP_PARAMS, CREEP_PARAM_RANGES } from './vehicle/creep.js';
-import { DEFAULT_BRAKE_KEY_PARAMS, BRAKE_KEY_PARAM_RANGES } from './vehicle/brakeKey.js';
+import { DEFAULT_BRAKE_KEY_PARAMS, DEFAULT_THROTTLE_KEY_PARAMS, PEDAL_KEY_PARAM_RANGES } from './vehicle/pedalKeys.js';
 import { DEFAULT_TRACTOR_GO_DRIVE, TRACTOR_GO_DRIVE_RANGES, DEFAULT_UTV_GO_DRIVE, DEFAULT_LANDY_GO_DRIVE } from './npc/companionDriving.js';
 import { DEFAULT_CRANK_ATTEMPT_PARAMS, CRANK_ATTEMPT_PARAM_RANGES } from './npc/crankAttempt.js';
 import { DEFAULT_PUSH_PARAMS, PUSH_PARAM_RANGES } from './npc/pushStart.js';
@@ -1005,7 +1005,8 @@ export class Game {
     registerTuning('Horns', this.horns.p, HORN_PARAM_RANGES);
     registerTuning('Tractor remarks', this.tractorWatch.p, TRACTOR_WATCH_PARAM_RANGES);
     registerTuning('Tractor creep', DEFAULT_CREEP_PARAMS, CREEP_PARAM_RANGES);
-    registerTuning('Brake key', DEFAULT_BRAKE_KEY_PARAMS, BRAKE_KEY_PARAM_RANGES);
+    registerTuning('Throttle key', DEFAULT_THROTTLE_KEY_PARAMS, PEDAL_KEY_PARAM_RANGES);
+    registerTuning('Brake key', DEFAULT_BRAKE_KEY_PARAMS, PEDAL_KEY_PARAM_RANGES);
     registerTuning('Tractor runaway', this.tractorRunaway.p, TRACTOR_RUNAWAY_PARAM_RANGES);
     registerTuning('Hay ride', this.hayRide.p, HAYRIDE_PARAM_RANGES);
     registerTuning('Mudguard ride', this.mudguard.p, MUDGUARD_PARAM_RANGES);

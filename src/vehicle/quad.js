@@ -24,7 +24,7 @@ import { AirFilter } from './airFilter.js';
 import { dustLevel } from '../world/dust.js';
 import { CruiseControl } from './cruise.js';
 import { Creep, mayCreep, DEFAULT_CREEP_PARAMS } from './creep.js';
-import { stepBrakeKey, DEFAULT_BRAKE_KEY_PARAMS } from './brakeKey.js';
+import { stepPedalKey, DEFAULT_BRAKE_KEY_PARAMS, DEFAULT_THROTTLE_KEY_PARAMS } from './pedalKeys.js';
 import { Bog } from './bog.js';
 import { Sump, hasSump, oilPressureLamp } from './sump.js';
 import { stepHand } from './handLever.js';
@@ -240,7 +240,8 @@ export class Quad {
     this.driver = null; // someone else at the controls (her), see setDriver()
     this.throttle = 0;
     this.brake = 0;
-    this.brakeKey = 0; // how far you've squeezed the brake on the keyboard (brakeKey.js)
+    this.throttleKey = 0; // how far you've opened the throttle on the keyboard (pedalKeys.js)
+    this.brakeKey = 0; // and squeezed the brake
     this.steer = 0;
     this.reverse = false;
     this.choke = 0;
@@ -538,6 +539,12 @@ export class Quad {
     }
   }
 
+  /** Your throttle from the keys (`target`: 1, or the automatics' gentler reverse), opened gradually while held (pedalKeys.js). */
+  squeezeThrottle(target, dt) {
+    this.throttleKey = stepPedalKey(this.throttleKey, target > 0, dt, DEFAULT_THROTTLE_KEY_PARAMS);
+    return target * this.throttleKey;
+  }
+
   fixedUpdate(dt) {
     const p = this.params;
     const fwd = this.forwardSpeed;
@@ -551,6 +558,7 @@ export class Quad {
       steerInput = (input.isDown('KeyA') ? 1 : 0) - (input.isDown('KeyD') ? 1 : 0);
       // In reverse gear S is the throttle (backwards) and W the brake, as on every other vehicle.
       [throttleInput, brakeInput] = pedals(input.isDown('KeyW'), input.isDown('KeyS'), this.reverse);
+      throttleInput = this.squeezeThrottle(throttleInput, dt);
       this.clutchHeld = CLUTCH_KEYS.some((k) => input.isDown(k));
       this.handSetting = stepHand(this.handSetting, input.isDown(HAND_THROTTLE_UP_KEY), input.isDown(HAND_THROTTLE_DOWN_KEY), dt);
       this.starter = input.isDown('KeyR') && this.starterAllowed();
@@ -582,6 +590,7 @@ export class Quad {
           else brakeInput = 1;
         }
       }
+      throttleInput = this.squeezeThrottle(throttleInput, dt);
       if (!this.reverse && !brakeInput) throttleInput = Math.max(throttleInput, this.handThrottle);
     } else {
       // Someone beside the bike can still hold the starter.
@@ -607,9 +616,10 @@ export class Quad {
       // A girl driving a manual works the clutch and lever herself. A runaway keeps whatever gear it was left in.
       if (this.driver && this.manual) throttleInput = this.shift(dt, throttleInput, brakeInput, fwd);
     }
-    // On the keyboard the brake squeezes in while the key is held rather than snatching full on (brakeKey.js).
-    this.brakeKey = this.input ? stepBrakeKey(this.brakeKey, brakeInput > 0, dt, DEFAULT_BRAKE_KEY_PARAMS) : 0;
+    // On the keyboard the brake squeezes in while the key is held rather than snatching full on (pedalKeys.js), as the throttle does.
+    this.brakeKey = this.input ? stepPedalKey(this.brakeKey, brakeInput > 0, dt, DEFAULT_BRAKE_KEY_PARAMS) : 0;
     if (this.input) brakeInput = this.brakeKey;
+    else this.throttleKey = 0;
 
     // The hand throttle holds the engine up wherever it was left, ridden or not.
     if (this.tractor || this.handLever) throttleInput = Math.max(throttleInput, this.handSetting);

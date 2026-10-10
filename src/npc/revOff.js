@@ -5,7 +5,7 @@
 // from `throttleFor`.
 
 export const DEFAULT_REVOFF_PARAMS = {
-  blipAt: 0.5, // your throttle must rise past this to count as a blip
+  blipAt: 0.3, // your throttle must rise past this to count as a blip (the throttle key opens gradually from 0.25, vehicle/pedalKeys.js)
   maxYourSpeed: 2, // m/s; you only rev it stood still (or near enough)
   hearRange: 16, // metres between you and the girl for her to answer
   complainRange: 40, // metres: how far off Amy can be and still tell you both off

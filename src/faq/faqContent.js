@@ -172,9 +172,15 @@ export const FAQ_SECTIONS = [
         tip: 'The red and blue start in 2WD. Press G for 4WD before the mud, not in it.',
       },
       {
+        q: 'How do I go gently, or just give it a little throttle?',
+        a: `Tap <kbd>W</kbd>. The throttle opens the longer you hold the key: a quarter at first, wide open a little over a second later, and it snaps shut
+          when you let go. Short taps creep you along or blip the engine; hold it down for everything it has.`,
+        tip: 'Tap W for a little throttle; hold it down for the lot.',
+      },
+      {
         q: 'How do I brake gently?',
         a: `Tap <kbd>S</kbd>. The brake squeezes in the longer you hold the key: the first moment is only a light brake, and it reaches full braking
-          a little over half a second later. Let go and it comes straight off. Short dabs slow you gently; hold it down to stop hard.`,
+          about a second later. Let go and it comes straight off. Short dabs slow you gently; hold it down to stop hard.`,
         tip: 'Tap S for a little brake; hold it down to stop hard.',
       },
       {

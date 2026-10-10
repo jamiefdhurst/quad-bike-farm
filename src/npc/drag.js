@@ -16,8 +16,9 @@ export const DEFAULT_DRAG_PARAMS = {
   blipGap: 0.45, // seconds between them
   blipPause: 1.2, // seconds she waits before the first, so you have noticed her
   blipWait: 8, // seconds after the last blip you have to blip back
-  blipFrom: 0.15, // your throttle has to be below this and then go above `blipSnap` to count as a blip
-  blipSnap: 0.6,
+  blipFrom: 0.15, // your throttle has to be below this and then go above `blipSnap` within `blipRise` seconds to count as a blip
+  blipSnap: 0.3, // (the throttle key opens gradually, vehicle/pedalKeys.js, so a blip is a rise, not a jump in one frame)
+  blipRise: 0.6,
   jessChooses: 0.6, // chance it's Jess, not Amy, when you ask from the line
   nearStrip: 15, // metres from the start line you count as there to ask
   laneOffset: 2, // metres either side of the middle each lane is
@@ -45,7 +46,8 @@ export const DRAG_PARAM_RANGES = {
   blipPause: [0, 5, 0.1],
   blipWait: [2, 30, 1],
   blipFrom: [0, 0.5, 0.05],
-  blipSnap: [0.3, 1, 0.05],
+  blipSnap: [0.2, 1, 0.05],
+  blipRise: [0.05, 2, 0.05],
   jessChooses: [0, 1, 0.05],
   nearStrip: [5, 80, 1],
   laneOffset: [1, 4, 0.25],
@@ -84,7 +86,7 @@ export class Drag {
     this.phaseClock = 0;
     this.raceClock = 0;
     this.blipClock = 0;
-    this.prevThrottle = 0;
+    this.sinceClosed = 0; // seconds since your throttle was last below blipFrom
     this.notStill = 0;
     this.falseStartCount = 0;
     this.youIdle = 0; // seconds you've been off the quad or stalled in the race
@@ -120,7 +122,7 @@ export class Drag {
       this.phase = 'blip';
       this.blipClock = 0;
       this.phaseClock = 0;
-      this.prevThrottle = 1; // so a throttle already open when she arrives doesn't count as an answer
+      this.sinceClosed = Infinity; // so a throttle already open when she arrives doesn't count as an answer
     } else if (this.phase === 'gather') this.ready.add(id);
   }
 
@@ -216,8 +218,10 @@ export class Drag {
       }
       this.blipClock += dt;
       const t = this.blipClock - p.blipPause;
-      const snapped = (you.throttle ?? 0) >= p.blipSnap && this.prevThrottle < p.blipFrom;
-      this.prevThrottle = you.throttle ?? 0;
+      const throttle = you.throttle ?? 0;
+      this.sinceClosed = throttle < p.blipFrom ? 0 : this.sinceClosed + dt;
+      const snapped = throttle >= p.blipSnap && this.sinceClosed <= p.blipRise;
+      if (snapped) this.sinceClosed = Infinity;
       if (t > 0 && snapped && you.still) {
         events.push({ type: 'answered' });
         const girl = this.girl;

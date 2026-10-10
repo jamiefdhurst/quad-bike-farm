@@ -214,6 +214,21 @@ describe('Jess pulling up and blipping', () => {
     expect(d.phase).toBe('gather');
   });
 
+  it('counts a throttle opened gradually from closed, as the throttle key does', () => {
+    const { d } = pulledUp();
+    step(d, 2, sat({ throttle: 0 }));
+    let types_ = [];
+    for (const t of [0.25, 0.27, 0.29, 0.31]) types_ = types_.concat(types(d.update(1 / 60, sat({ throttle: t }))));
+    expect(types_).toEqual(['answered', 'invite']);
+  });
+
+  it('does not count a throttle crept open too slowly to be a blip', () => {
+    const { d } = pulledUp();
+    step(d, 2, sat({ throttle: 0 }));
+    expect(step(d, P.blipRise + 0.2, sat({ throttle: 0.2 }))).toEqual([]);
+    expect(types(d.update(0.05, sat({ throttle: 0.4 })))).toEqual([]);
+  });
+
   it('does not count a throttle that was already open, or one when you are moving', () => {
     const { d } = pulledUp();
     expect(step(d, 1.5, sat({ throttle: 1 }))).toEqual([]);

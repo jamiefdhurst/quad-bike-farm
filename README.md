@@ -42,8 +42,8 @@ Other scripts:
 | `K` | Ignition on / off |
 | `R` (hold) | Crank the starter |
 | `Q` / `Z` | Choke more / less, in 10% steps. Hold to keep stepping |
-| `W` | Throttle |
-| `S` | Brake, and backwards once reverse is on, on every vehicle. The brake squeezes in while you hold the key (a light brake at first, full a little over half a second later) and comes off when you let go, so tap it to slow gently. On the blue and loan quads, hold it at a standstill and press `B` for reverse; on the manual ones reverse is a gear, and in it `S` is the throttle and `W` the brake |
+| `W` | Throttle. It opens while you hold the key (a quarter at first, wide open a little over a second later) and snaps shut when you let go, so tap it for a little. |
+| `S` | Brake, and backwards once reverse is on, on every vehicle. The brake squeezes in while you hold the key (a light brake at first, full about a second later) and comes off when you let go, so tap it to slow gently. On the blue and loan quads, hold it at a standstill and press `B` for reverse; on the manual ones reverse is a gear, and in it `S` is the throttle and `W` the brake |
 | `Shift` (hold), `1` to `4`, `B`, `0` | The red, green and yellow have a clutch and a four-speed gearbox: hold `Shift` to change gear with `1` to `4`, `B` for reverse (the red wants the bars turned as you press it, the green wants it stopped, the yellow has none), `0` for neutral. The starter won't turn in gear unless you hold the clutch |
 | `A` / `D` | Steer |
 | `E` | Get off. Above walking pace you jump off and the quad carries on by itself at the same speed and steering until it crashes, tips, stalls or runs dry. To stop a runaway, look at it and press `K`, or catch it once it's below a jog (3 m/s) to get back on. Get off stood still with the throttle open (15% or more) and it stays revving as if the cable had stuck, until it stalls or runs dry, you get back on, or you switch it off (`K`). |
