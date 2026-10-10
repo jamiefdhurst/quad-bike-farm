@@ -219,6 +219,10 @@ export const DEFAULT_COMPANION_PARAMS = {
   shoutGain: 1.6, // shouted lines (voiceLines.js `shout: true`) are this much louder again, and fade less with distance
   voiceFastSpeed: 13, // m/s riding pillion before she tells you to slow down (about 29 mph)
   voiceRoughAccel: 9, // m/s^2 of vertical jolting before she complains it's rough
+  voiceHardBrakeDecel: 6, // m/s^2 of slowing on the back that counts as braking hard...
+  voiceHardBrakeTime: 0.4, // ...kept up this many seconds...
+  voiceHardBrakeShed: 2.5, // ...and this many m/s lost, so a quick dab isn't one
+  voiceHardBrakeMinSpeed: 4, // m/s it has to start from
   voiceSteepUpY: 0.88, // on the back, the quad's up vector this far from upright (about 28 degrees) and she says it's too steep
   voiceWaitAfter: 25, // seconds of nothing happening before she gets bored
   takeOverAfterMin: 8, // left on a quad driving itself and hating it, seconds before she climbs forward to sort it out
@@ -433,6 +437,10 @@ export const COMPANION_PARAM_RANGES = {
   shoutGain: [1, 4, 0.05],
   voiceFastSpeed: [3, 25, 0.5],
   voiceRoughAccel: [1, 40, 0.5],
+  voiceHardBrakeDecel: [1, 20, 0.5],
+  voiceHardBrakeTime: [0, 2, 0.05],
+  voiceHardBrakeShed: [0, 10, 0.25],
+  voiceHardBrakeMinSpeed: [0, 15, 0.5],
   voiceSteepUpY: [0.6, 1, 0.01],
   voiceWaitAfter: [5, 120, 1],
   takeOverAfterMin: [1, 120, 1],

@@ -43,7 +43,7 @@ Other scripts:
 | `R` (hold) | Crank the starter |
 | `Q` / `Z` | Choke more / less, in 10% steps. Hold to keep stepping |
 | `W` | Throttle |
-| `S` | Brake, and backwards once reverse is on, on every vehicle. On the blue and loan quads, hold it at a standstill and press `B` for reverse; on the manual ones reverse is a gear, and in it `S` is the throttle and `W` the brake |
+| `S` | Brake, and backwards once reverse is on, on every vehicle. The brake squeezes in while you hold the key (a light brake at first, full a little over half a second later) and comes off when you let go, so tap it to slow gently. On the blue and loan quads, hold it at a standstill and press `B` for reverse; on the manual ones reverse is a gear, and in it `S` is the throttle and `W` the brake |
 | `Shift` (hold), `1` to `4`, `B`, `0` | The red, green and yellow have a clutch and a four-speed gearbox: hold `Shift` to change gear with `1` to `4`, `B` for reverse (the red wants the bars turned as you press it, the green wants it stopped, the yellow has none), `0` for neutral. The starter won't turn in gear unless you hold the clutch |
 | `A` / `D` | Steer |
 | `E` | Get off. Above walking pace you jump off and the quad carries on by itself at the same speed and steering until it crashes, tips, stalls or runs dry. To stop a runaway, look at it and press `K`, or catch it once it's below a jog (3 m/s) to get back on. Get off stood still with the throttle open (15% or more) and it stays revving as if the cable had stuck, until it stalls or runs dry, you get back on, or you switch it off (`K`). |
@@ -353,7 +353,7 @@ On the back she holds on round your waist (look down and you'll see her hands), 
 
 She talks, now and then, with captions at the bottom of the screen:
 
-- Riding pillion she reacts to the ride: "Oh, this is fun!" on a smooth run, "This is a bit rough." over bumps, "Careful!" when you go too fast, a gasp when you brake hard, and something when it stalls or runs out of petrol.
+- Riding pillion she reacts to the ride: "Oh, this is fun!" on a smooth run, "This is a bit rough." over bumps, "Careful!" when you go too fast, a gasp when you brake hard (kept on hard for a moment and losing a good bit of speed, not a quick dab; Amy notices sooner than Jess), and something when it stalls or runs out of petrol.
 - She likes the quads running. A quad that stalls where she can see it gets her down (worse if it was under her, and a stall while she's driving knocks her nerve a little), and she's relieved when it catches again. With all of them going she says how much she likes it; with most off she wishes they were, is keener to go and start one, and is slower to switch an idling one off.
 - She likes the seat shaking her: the harder it shakes, the more she enjoys it. Sat on a buzzing quad she admits to it, and over the game her favourite quad moves to whichever one has shaken her most.
 - Getting on and off, they climb properly rather than sliding into the seat. On a quad they step up from the footboard, a hand on the seat, and swing a leg over behind; side-saddle or on the front rack they turn their back to it and hop up; into the UTV or the Land Rover they put a foot up on the sill, duck under the roof and swing in; onto the bale trailer, the tractor or the UTV's bed they get a knee up and haul themselves on. Getting off is the same backwards. On a quad they sit with their feet back on the footrests, sat up.

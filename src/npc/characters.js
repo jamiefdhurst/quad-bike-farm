@@ -21,7 +21,15 @@ export const CHARACTERS = [
     id: 'amy',
     name: 'Amy',
     mapColour: '#3a5690', // her blue polo, for her dot on the farm map
-    params: { outfit: 'farmPolo', boredShowOffChance: 0.04, sideSaddleChance: 0.4, blownNoticeAt: 0.25, remembers4wd: 0.65 }, // sits side-saddle on the back, ladylike
+    params: {
+      outfit: 'farmPolo',
+      boredShowOffChance: 0.04,
+      sideSaddleChance: 0.4, // sits side-saddle on the back, ladylike
+      blownNoticeAt: 0.25,
+      remembers4wd: 0.65,
+      voiceHardBrakeDecel: 5.5, // notices hard braking a little sooner than Jess
+      voiceHardBrakeTime: 0.3,
+    },
     lines: VOICE_LINES,
     idles: ['folded', 'clasped', 'weight'], // her ways of standing about (STANDING_IDLES in poseMoves.js): tidy and patient
     seatedIdles: ['folded', 'handsOnKnees', 'anklesCrossed', 'leanBack', 'elbowOut'], // and of sitting a while (SEATED_IDLES)
@@ -37,6 +45,8 @@ export const CHARACTERS = [
     // she likes being left on a runaway.
     params: {
       outfit: 'jessPolo',
+      voiceHardBrakeDecel: 6.5, // takes a sharper stop before she calls it hard braking
+      voiceHardBrakeShed: 3,
       height: 1.53,
       walkSpeed: 1.4,
       boredAfterMin: 20,

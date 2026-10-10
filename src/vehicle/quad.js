@@ -24,6 +24,7 @@ import { AirFilter } from './airFilter.js';
 import { dustLevel } from '../world/dust.js';
 import { CruiseControl } from './cruise.js';
 import { Creep, mayCreep, DEFAULT_CREEP_PARAMS } from './creep.js';
+import { stepBrakeKey, DEFAULT_BRAKE_KEY_PARAMS } from './brakeKey.js';
 import { Bog } from './bog.js';
 import { Sump, hasSump, oilPressureLamp } from './sump.js';
 import { stepHand } from './handLever.js';
@@ -239,6 +240,7 @@ export class Quad {
     this.driver = null; // someone else at the controls (her), see setDriver()
     this.throttle = 0;
     this.brake = 0;
+    this.brakeKey = 0; // how far you've squeezed the brake on the keyboard (brakeKey.js)
     this.steer = 0;
     this.reverse = false;
     this.choke = 0;
@@ -605,6 +607,9 @@ export class Quad {
       // A girl driving a manual works the clutch and lever herself. A runaway keeps whatever gear it was left in.
       if (this.driver && this.manual) throttleInput = this.shift(dt, throttleInput, brakeInput, fwd);
     }
+    // On the keyboard the brake squeezes in while the key is held rather than snatching full on (brakeKey.js).
+    this.brakeKey = this.input ? stepBrakeKey(this.brakeKey, brakeInput > 0, dt, DEFAULT_BRAKE_KEY_PARAMS) : 0;
+    if (this.input) brakeInput = this.brakeKey;
 
     // The hand throttle holds the engine up wherever it was left, ridden or not.
     if (this.tractor || this.handLever) throttleInput = Math.max(throttleInput, this.handSetting);

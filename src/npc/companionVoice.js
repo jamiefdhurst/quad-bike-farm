@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Chatter } from './chatter.js';
+import { HardBrake } from './hardBrake.js';
 import { VOICE_LINES } from './voiceLines.js';
 import { band } from './skills.js';
 import { Speech } from '../audio/companionAudio.js';
@@ -47,6 +48,7 @@ export class CompanionVoice {
     this.checkTimer = 0;
     this.prevSpeed = 0;
     this.decel = 0;
+    this.hardBrake = new HardBrake(); // braking hard with her on the back, not a dab (hardBrake.js)
     this.prevVy = 0;
     this.jolt = 0;
     this.fastTime = 0;
@@ -173,7 +175,7 @@ export class CompanionVoice {
       if (!quad.bog?.stuck) this.stuckSaid = false;
       // Leaning or pitched over on a steep slope (the hill's banks): world/hill.js, vehicle/topple.js.
       if (quad.upY < p.voiceSteepUpY && speed > 0.5 && !quad.isTipped) this.say('hillSteep', { urgent: true, chance: 0.8 });
-      if (this.decel > 6 && speed > 4) this.say('hardBrake', { urgent: true });
+      if (this.hardBrake.update(dt, this.decel, speed, p)) this.say('hardBrake', { urgent: true });
       else if (this.jolt > p.voiceRoughAccel && speed > 2) this.say('rideRough', { chance: 0.6 });
 
       this.fastTime = speed > p.voiceFastSpeed ? this.fastTime + dt : 0;
@@ -190,6 +192,7 @@ export class CompanionVoice {
       this.prevVy = 0;
       this.jolt = 0;
       this.decel = 0;
+      this.hardBrake.reset();
       this.fastTime = 0;
       this.funTime = 0;
       this.gentleTime = 0;

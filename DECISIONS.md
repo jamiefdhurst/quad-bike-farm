@@ -2448,3 +2448,11 @@ Asked for by Jamie: a URL switch that leaves the girls out, with a name that mea
 
 - Nobody is built rather than built and hidden: `game.companions` is empty, so everything that loops over the girls has nothing to do, and autonomy is switched off so nothing that waits on a girl starts. The per-girl ledgers (favour, skills, falling out, romance) are still made for both, untouched, so code that reads them by name still works. Sitting on the back waiting for a ride (`updateRideOffer`) was the one place that needed the first girl and now just returns.
 - Checked headless on three seeds (one cold and wet): no girls, no errors, riding every vehicle there, sitting on a back, and every debug tab. Not checked: the console's `girl` commands, or every wheel and scripted moment by hand.
+
+## Braking on the keyboard
+
+Asked for by Jamie: a dab on `S` braked fully and the girls called it hard braking. Decided with Jamie (all as recommended):
+
+- The brake squeezes in on the keyboard (`src/vehicle/brakeKey.js`, pure, tested): the first instant of a press is `start` 0.35 of full brake, rising to full over `rise` 0.6 s while held, off at once when let go. Every vehicle you drive goes through it (they are all a `Quad`), including the tractor's brake pedal and `W` braking in reverse; the girls' own driving sets part-brakes itself and is untouched. The parking brake and the reverse button only ask whether the brake is held, so they are unaffected. Tuning: "Brake key" (Driving and towing).
+- What she calls hard braking (`src/npc/hardBrake.js`, pure, tested) was a smoothed deceleration over 6 m/s² above 4 m/s, hardcoded, so a quarter-second dab at speed crossed it. Now the slowing has to stay over `voiceHardBrakeDecel` for `voiceHardBrakeTime` and shed `voiceHardBrakeShed` m/s, from over `voiceHardBrakeMinSpeed`, once per stop. Defaults 6 m/s², 0.4 s, 2.5 m/s, 4 m/s; Amy 5.5 and 0.3 s (she notices sooner), Jess 6.5 and 3 m/s. In each girl's tuning.
+- Not checked in the running game: how a tap and a held stop feel on each vehicle, and whether 0.35 and 0.6 s are right by hand. Her lurching forward on the back follows the quad's real deceleration, so it should shrink on a tap without any change, but I didn't watch it.

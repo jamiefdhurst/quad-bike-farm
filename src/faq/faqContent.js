@@ -172,6 +172,12 @@ export const FAQ_SECTIONS = [
         tip: 'The red and blue start in 2WD. Press G for 4WD before the mud, not in it.',
       },
       {
+        q: 'How do I brake gently?',
+        a: `Tap <kbd>S</kbd>. The brake squeezes in the longer you hold the key: the first moment is only a light brake, and it reaches full braking
+          a little over half a second later. Let go and it comes straight off. Short dabs slow you gently; hold it down to stop hard.`,
+        tip: 'Tap S for a little brake; hold it down to stop hard.',
+      },
+      {
         q: 'It rolled away on its own.',
         a: `Every vehicle starts with its parking brake on (on a quad it is the left brake lever, squeezed in and held by a red catch, so look at the
           bars rather than for a message), but if you get off without setting it (<kbd>Space</kbd>) it can roll on a slope, and
@@ -376,6 +382,12 @@ export const FAQ_SECTIONS = [
         q: 'What can I ask them to do?',
         a: `Get on the back of a quad, start one, take you for a ride, follow you, drive one, stand by one, sit on the front rack, climb onto the tractor
           or into the UTV and the Land Rover, and more. The wheel only shows what makes sense at the time.`,
+      },
+      {
+        q: 'Why does she say I braked hard?',
+        a: `With a girl on the back, it counts as braking hard when you keep the brake on hard for a moment from more than walking pace and lose a
+          good bit of speed. A quick dab doesn't count, however sharp. Amy notices a little sooner than Jess. Tap <kbd>S</kbd> rather than holding it to
+          slow down gently.`,
       },
       {
         q: 'How do I get a girl to drive me about?',
