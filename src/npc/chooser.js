@@ -10,24 +10,25 @@ import { gaussian } from './boredom.js';
 
 /**
  * Each kind of thing she could choose: label (for the debug panel: "she chose to ..."), satisfies (need -> how much it meets it),
- * urgent (she'll stop something idle for it: get up off a seat, leave her hands over an engine; shelter from the rain).
+ * urgent (she'll stop something idle for it: get up off a seat, leave her hands over an engine; shelter from the rain), pace (how she
+ * walks there: 'hurry', 'brisk' or 'dawdle', intent.js; left out, she just walks).
  */
 export const OFFER_KINDS = {
-  wander: { label: 'wander off for a look round', satisfies: { purpose: 0.6 } },
+  wander: { label: 'wander off for a look round', satisfies: { purpose: 0.6 }, pace: 'dawdle' },
   mount: { label: 'get on a quad to wait', satisfies: { purpose: 0.5, rest: 0.4 } },
   start: { label: 'have a go at starting one', satisfies: { purpose: 0.6, excitement: 0.2, warmth: 0.3 } }, // an engine to warm her hands by
-  drive: { label: 'take one for a drive', satisfies: { purpose: 0.6, excitement: 0.8 } },
-  rest: { label: 'go and sit somewhere', satisfies: { purpose: 0.4, rest: 1 } },
-  join: { label: "hop on the back of her friend's", satisfies: { purpose: 0.5, company: 0.8, excitement: 0.4 } },
+  drive: { label: 'take one for a drive', satisfies: { purpose: 0.6, excitement: 0.8 }, pace: 'brisk' },
+  rest: { label: 'go and sit somewhere', satisfies: { purpose: 0.4, rest: 1 }, pace: 'dawdle' },
+  join: { label: "hop on the back of her friend's", satisfies: { purpose: 0.5, company: 0.8, excitement: 0.4 }, pace: 'hurry' },
   buzz: { label: 'sit on a rough one for the shake', satisfies: { purpose: 0.5, excitement: 0.7, rest: 0.3 } },
   lineUp: { label: 'tidy the quads', satisfies: { purpose: 0.9 } },
-  showOff: { label: 'show off to you', satisfies: { purpose: 0.5, excitement: 0.7, company: 0.5 } },
-  jumps: { label: 'jump the ramp', satisfies: { purpose: 0.5, excitement: 1 } },
-  doughnuts: { label: 'spin doughnuts', satisfies: { purpose: 0.5, excitement: 0.9 } },
+  showOff: { label: 'show off to you', satisfies: { purpose: 0.5, excitement: 0.7, company: 0.5 }, pace: 'brisk' },
+  jumps: { label: 'jump the ramp', satisfies: { purpose: 0.5, excitement: 1 }, pace: 'brisk' },
+  doughnuts: { label: 'spin doughnuts', satisfies: { purpose: 0.5, excitement: 0.9 }, pace: 'brisk' },
   warmHands: { label: 'warm her hands on an engine', satisfies: { warmth: 1 } },
   warmHandsJoin: { label: 'warm her hands with her friend', satisfies: { warmth: 1, company: 0.4 } },
-  shelterBarn: { label: 'shelter in the barn doorway', satisfies: { warmth: 0.8 }, urgent: true },
-  shelterCab: { label: 'shelter in a cab', satisfies: { warmth: 0.9, rest: 0.3 }, urgent: true },
+  shelterBarn: { label: 'shelter in the barn doorway', satisfies: { warmth: 0.8 }, urgent: true, pace: 'hurry' },
+  shelterCab: { label: 'shelter in a cab', satisfies: { warmth: 0.9, rest: 0.3 }, urgent: true, pace: 'hurry' },
   warmCab: { label: "sit in a Land Rover with the heater on", satisfies: { warmth: 1, rest: 0.4 } },
   tea: { label: 'make a cup of tea', satisfies: { warmth: 0.4, rest: 0.3, purpose: 0.5 } },
   favour: { label: 'ask you a favour', satisfies: { purpose: 0.5, company: 0.5 } },

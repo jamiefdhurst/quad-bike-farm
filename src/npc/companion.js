@@ -32,6 +32,7 @@ import { Attention, DEFAULT_NOTICE_PARAMS } from './attention.js';
 import { reactingMethods } from './companionReacting.js';
 import { availabilityOf, JOBS } from './availability.js';
 import { Needs } from './needs.js';
+import { Intent, walkPace } from './intent.js';
 
 const AXIS_Y = new THREE.Vector3(0, 1, 0);
 const NO_CONTACT_FORCES = 0xffff0000; // in every solver group, pushes against none
@@ -127,6 +128,11 @@ export class Companion {
     // chose (chooser.js, run by the game's updateMinds; the debug panel's "why").
     this.needs = new Needs({ purpose: Math.random() * 0.4, excitement: Math.random() * 0.3 });
     this.mind = { thinkIn: Math.random() * 2, last: null, since: 0, scored: [], waiting: null };
+    // What she's set on (intent.js): how she walks to it, and whether you've stopped her on her way.
+    this.intent = new Intent();
+    this.pace = null; // the chosen thing's pace for the walk to it ('hurry', 'brisk', 'dawdle'), cleared when the walk ends
+    this.paceMul = 1;
+    this.wetNow = false; // it's raining on her (the game sets it with her needs)
     // Whether she's free (availability.js): features that have her for a while, and what on the farm holds both girls (set by the game).
     this.holds = new Map(); // key -> what she's doing for it
     this.worldHold = null; // () => why both girls are held, or null
@@ -622,6 +628,7 @@ export class Companion {
    * mid-change (sliding between seats, getting off) it takes effect when that's done.
    */
   recall(point, facing) {
+    this.interrupt(); // on her way to something of her own, she says so
     const s = this.fsm;
     const go = () => this.walkTo(point, facing);
     if (s.is('walking') && s.data?.goal === 'stand' && this.recallTarget === point) return;
@@ -1022,7 +1029,7 @@ export class Companion {
     // A way to go and she jogs (not when sneaking up on someone or wandering about, which the walking state says).
     this.jogging = this.mayJog && jogging(this.jogging, dist, this.homeParams ?? DEFAULT_HOME_PARAMS);
     const jog = this.jogging ? (this.homeParams ?? DEFAULT_HOME_PARAMS).jogBoost : 1;
-    const speed = p.walkSpeed * this.paceBoost * this.carryPace * jog * turnFactor * Math.min(1, dist / 0.6 + 0.3);
+    const speed = p.walkSpeed * this.paceBoost * this.paceMul * this.carryPace * jog * turnFactor * Math.min(1, dist / 0.6 + 0.3);
     pos.x += Math.sin(this.heading) * speed * dt;
     pos.z += Math.cos(this.heading) * speed * dt;
     pos.y = this.world.heightAt(pos.x, pos.z);
@@ -1080,6 +1087,16 @@ export class Companion {
     const a = this.availability();
     if (a.free) return false;
     return (this.fsm.is('resting') && this.restPhase === 'sat') || (this.fsm.is('idle') && this.availability({ asked: true }).free && !a.held);
+  }
+
+  /**
+   * Something else has her now (you asked through the wheel, the bell): if she was on her way to something she'd chosen she says so,
+   * and it stays on her mind (intent.js). Returns what she was on her way to, or null.
+   */
+  interrupt() {
+    const key = this.intent.interrupt(this.params);
+    if (key) this.voice?.say('interrupted', { urgent: true, chance: 0.85 });
+    return key;
   }
 
   /** A feature has her for a while (`why` says what for, for the debug panel): she isn't free until it lets her go. */
@@ -1361,9 +1378,14 @@ export const STATES = {
     exit() {
       this.mayJog = false;
       this.jogging = false;
+      this.pace = null; // the walk's over; the next one has its own
+      this.paceMul = 1;
     },
     update(dt, data) {
-      this.mayJog = data.goal !== 'prank' && data.goal !== 'wander';
+      // How she walks: the pace of what she chose, the rain, how tired or keyed up she is (intent.js).
+      const pace = walkPace(this.pace, { wet: this.wetNow, tired: this.needs.rest, excited: this.needs.excitement }, this.params);
+      this.paceMul = pace.mul;
+      this.mayJog = pace.jog === 'auto' ? data.goal !== 'prank' && data.goal !== 'wander' : pace.jog === 'yes';
       if (this.lookLeadLeft > 0) {
         if ((this.lookLeadLeft -= dt) > 0) return;
         this.rig.play('Walking', { fade: 0.25 });

@@ -2344,7 +2344,10 @@ export class Game {
    */
   updateMinds(dt, ridden) {
     for (const c of this.companions) {
-      c.needs.update(dt, this.needsContext(c), c.params);
+      const ctx = this.needsContext(c);
+      c.needs.update(dt, ctx, c.params);
+      c.wetNow = ctx.wet;
+      c.intent.update(dt, `${c.fsm.name}:${c.fsm.data?.goal ?? ''}`);
       const m = c.mind;
       m.since += dt;
       if ((m.thinkIn -= dt) > 0) continue;
@@ -2360,7 +2363,8 @@ export class Game {
         continue;
       }
       m.waiting = null;
-      let offers = this.offersFor(c, ridden);
+      // Something you stopped her doing is still on her mind, so she's keener on it for a while (npc/intent.js).
+      let offers = this.offersFor(c, ridden).map((o) => ({ ...o, weight: o.weight * c.intent.boost(o.key, c.params) }));
       if (urgentOnly) offers = offers.filter((o) => OFFER_KINDS[o.key]?.urgent);
       const { pick, scored } = choose(c.needs, offers, c.params);
       // What she weighed and didn't take, for the debug panel's "nearly chose".
@@ -2370,6 +2374,9 @@ export class Game {
       pick.take();
       c.needs.met(OFFER_KINDS[pick.key].satisfies);
       c.chose();
+      // She walks to it at its pace, and on her way she can be stopped (npc/intent.js).
+      c.pace = OFFER_KINDS[pick.key].pace ?? null;
+      if (c.intent.chose(pick.key, `${c.fsm.name}:${c.fsm.data?.goal ?? ''}`)) c.voice.say('resumed', { urgent: true, chance: 0.8 });
       m.last = { key: pick.key, need, score: scored[0].score };
       m.since = 0;
     }
@@ -4303,6 +4310,7 @@ export class Game {
         this.tea.cancel(e.girl);
         return;
       }
+      c.voice.say('teaGo', { urgent: true, chance: 0.7 });
       const going = sendTo(e.girl, e.spec, () => {
         const u = unitOf(e.spec);
         const free = !u.quad.rider && !u.quad.driver && Math.abs(u.quad.speed) < 0.3;
@@ -5186,6 +5194,11 @@ export class Game {
   /** Opens the companion wheel, putting the help away so it isn't showing through. */
   openWheel(title, options, her = null) {
     this.hud.toggleHelp(false);
+    // Whatever you ask her takes her from what she was on her way to, and she says so (npc/intent.js).
+    if (her) {
+      const interrupting = (list) => list.map((o) => ({ ...o, ...(o.run ? { run: (...a) => (her.interrupt(), o.run(...a)) } : {}), ...(o.children ? { children: interrupting(o.children) } : {}) }));
+      options = interrupting(options);
+    }
     this.talkingTo = her; // only she answers, and only she stops what she was about to do
     if (her && this.banterWatch) this.banterWatch.noteTalk(her, this.companions);
     if (her) {

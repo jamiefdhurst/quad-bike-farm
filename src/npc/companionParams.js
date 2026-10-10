@@ -87,6 +87,13 @@ export const DEFAULT_COMPANION_PARAMS = {
   needThrillFall: 0.06, // per second at full thrill (going fast, a hard shake)
   needTireRise: 0.003, // rest: per second on the go
   needRestFall: 0.03, // per second sitting down
+  paceHurry: 1.25, // times her walking speed hurrying (out of the rain, after her friend; intent.js), and she may jog
+  paceBrisk: 1.1, // going briskly (off for a drive, a jump, to show off)
+  paceDawdle: 0.7, // dawdling (off for a look round, to sit down)
+  paceTired: 0.85, // times her speed when she's as tired as she gets
+  paceExcited: 1.1, // and when she's as keyed up as she gets
+  resumeFor: 120, // seconds she stays keen on something you stopped her on her way to
+  resumeBoost: 1.8, // and how much keener
   needBusyFall: 0.05, // something to do: per second it fades while she's busy (it builds at her boredom wait's pace while she stands about)
   wanderFarChance: 0.25, // a longer stroll, two and a half times as far
   boredRestChance: 0.35, // on a fine day, goes and sits on the bales or the fence (weighed against the others; only when there's a spot)
@@ -350,6 +357,13 @@ export const COMPANION_PARAM_RANGES = {
   needThrillFall: [0, 0.5, 0.005],
   needTireRise: [0, 0.05, 0.0005],
   needRestFall: [0, 0.3, 0.005],
+  paceHurry: [1, 2, 0.05],
+  paceBrisk: [1, 2, 0.05],
+  paceDawdle: [0.3, 1, 0.05],
+  paceTired: [0.3, 1, 0.05],
+  paceExcited: [1, 2, 0.05],
+  resumeFor: [0, 600, 10],
+  resumeBoost: [1, 5, 0.1],
   needBusyFall: [0, 0.5, 0.005],
   boredJoinChance: [0, 2, 0.05],
   wanderFarChance: [0, 1, 0.05],
