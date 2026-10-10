@@ -688,7 +688,7 @@ export class CompanionVoice {
     if (!unit.engine.events.some((x) => x.type === 'spitBack')) return;
     const c = this.companion;
     if (c.isSeated && c.quad === unit.quad) {
-      c.startle();
+      c.react('flinch', { from: unit.quad.position });
       this.say('spitBackOn', { urgent: true, chance: 1 });
     } else if (unit.quad.position.distanceTo(this.head) < c.params.spitHearRange) {
       this.say('spitBackNear', { chance: c.params.spitSayChance });
@@ -705,7 +705,7 @@ export class CompanionVoice {
     const c = this.companion;
     const dist = unit.quad.position.distanceTo(this.head);
     if (e.events.some((x) => x.type === 'boilOver') && dist < c.params.coolantJumpRange && !c.isSeated && !c.fsm.is('driving')) {
-      c.jumpBack(unit.quad.position);
+      c.react('stepBack', { from: unit.quad.position, force: true });
       this.say('coolantBoil', { urgent: true, chance: 1 });
       return;
     }

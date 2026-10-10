@@ -29,6 +29,7 @@ import { nextBoredWait, driftRestlessness, pickBoredChoice } from './boredom.js'
 import { moveMethods, DEFAULT_MOVE_PARAMS } from './companionMoves.js';
 import { DEFAULT_IDLE_POSE_PARAMS } from './poseMoves.js';
 import { Attention, DEFAULT_NOTICE_PARAMS } from './attention.js';
+import { reactingMethods } from './companionReacting.js';
 
 const AXIS_Y = new THREE.Vector3(0, 1, 0);
 const NO_CONTACT_FORCES = 0xffff0000; // in every solver group, pushes against none
@@ -173,6 +174,10 @@ export class Companion {
     // Waving two-stroke smoke away (companionWaving.js).
     this.waving = null;
     this.rig.posers.push((dt) => this.poseWaving(dt));
+    // A reaction (a flinch, hands over her ears, a cheer: companionReacting.js) shows over everything else, so it goes last.
+    this.reaction = null; // { type, t, from, strength }
+    this.reactTurn = null; // a heading to turn to while she turns away from something
+    this.rig.posers.push((dt) => this.poseReacting(dt));
   }
 
   figureAmounts() {
@@ -1069,6 +1074,7 @@ export class Companion {
     this.fsm.update(dt);
     this.updateNumbPlan(dt);
     this.updateRecoil(dt);
+    this.updateReaction(dt);
     this.updateBoredom(dt, viewer);
     this.updateLineUp(dt);
     if (viewer) this.updateAttention(dt, viewer);
@@ -1101,6 +1107,7 @@ Object.assign(Companion.prototype, wavingMethods);
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(moveMethods));
 // (restingMethods has getters, so copy its descriptors rather than assigning.)
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(restingMethods));
+Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(reactingMethods));
 
 // Idle behaviour -------------------------------------------------------------
 
@@ -1111,11 +1118,6 @@ Companion.prototype.jumpBack = function (from) {
   const dz = here.z - from.z;
   const d = Math.hypot(dx, dz) || 1;
   this.recoil = { vx: (dx / d) * this.params.recoilSpeed, vz: (dz / d) * this.params.recoilSpeed, t: 0, k: 1 };
-};
-
-/** A start without going anywhere (a quad spitting back under her): arms up for a moment. */
-Companion.prototype.startle = function () {
-  this.recoil = { vx: 0, vz: 0, t: 0, k: 1 };
 };
 
 Companion.prototype.updateRecoil = function (dt) {
@@ -1134,6 +1136,7 @@ Companion.prototype.updateRecoil = function (dt) {
 /** Tells her something happened (a notice for attention.js: { kind, key, x, y, z, strength }); game.notice calls this. */
 Companion.prototype.notice = function (n) {
   this.attention.notice(n);
+  this.reactToNotice(n); // and it may make her move (reactions.js)
 };
 
 /**
@@ -1274,8 +1277,10 @@ export const STATES = {
       this.rig.play('Idle');
     },
     update(dt, data) {
-      // Something held over her shoulder a while: she turns to face it, and back to what she was facing after (attention.js).
-      if (this.lookTurn !== null && this.freeToTurn()) this.turnToward(dt, this.lookTurn);
+      // Turning away from smoke (reactions.js); something held over her shoulder a while, she turns to face it (attention.js); either
+      // way she turns back to what she was facing after.
+      if (this.reactTurn !== null && !this.warmingAt && !this.attempt) this.turnToward(dt, this.reactTurn);
+      else if (this.lookTurn !== null && this.freeToTurn()) this.turnToward(dt, this.lookTurn);
       else if (data.facing !== undefined) this.turnToward(dt, data.facing);
     },
     exit() {

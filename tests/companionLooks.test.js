@@ -1,4 +1,4 @@
-// The pattern for the girls' attention (CLAUDE.md, "The girls' attention"): every state says what she looks at, and everything the
+// The pattern for the girls' attention (CLAUDE.md, "The girls' minds"): every state says what she looks at, and everything the
 // game tells her about is a kind attention.js knows. These fail until something new follows it.
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';

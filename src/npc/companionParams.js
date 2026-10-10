@@ -52,6 +52,11 @@ export const DEFAULT_COMPANION_PARAMS = {
   lookLead: 0.6, // seconds she looks where she's going before setting off from standing
   lookSweep: 7, // 1/s, how fast her eyes move from one thing to the next
   lookSpeed: 3, // 1/s, how fast her head turns in and out
+  // How she reacts with her body (reactions.js): the chances and the size of it.
+  reactEarsChance: 0.5, // revs right beside her: the chance she covers her ears
+  reactCheerChance: 0.6, // someone landing a jump she can see: the chance she cheers
+  reactCheerArms: 0.7, // how she cheers: under 0.5 a clap, above it arms up (and how high)
+  reactFlinch: 1, // how big her flinch is
 
   // Fidgeting while seated on the quad
   fidgetEveryMin: 3, // seconds between fidgets
@@ -304,6 +309,10 @@ export const COMPANION_PARAM_RANGES = {
   lookLead: [0, 2, 0.05],
   lookSweep: [0.5, 20, 0.5],
   lookSpeed: [0.3, 10, 0.1],
+  reactEarsChance: [0, 1, 0.05],
+  reactCheerChance: [0, 1, 0.05],
+  reactCheerArms: [0, 1, 0.05],
+  reactFlinch: [0, 2, 0.05],
   fidgetEveryMin: [0.5, 30, 0.5],
   fidgetEveryMax: [0.5, 60, 0.5],
   fidgetScale: [0, 3, 0.05],

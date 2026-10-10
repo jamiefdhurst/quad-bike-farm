@@ -2328,7 +2328,7 @@ export class Game {
   /**
    * Tells the girls something happened that might catch their eye: `kind` (a NOTICE_KINDS key, attention.js), where (`at`, any
    * { x, y, z }), and optionally `key` (what made it, so a repeat refreshes rather than piles up) and `strength` (1 usual). This is the
-   * one way anything in the world gets their attention; see CLAUDE.md, "The girls' attention".
+   * one way anything in the world gets their attention; see CLAUDE.md, "The girls' minds".
    */
   notice(kind, at, { key = '', strength = 1 } = {}) {
     for (const c of this.companions) c.notice({ kind, key, x: at.x, y: at.y, z: at.z, strength });
@@ -2340,7 +2340,7 @@ export class Game {
     const vehicles = this.units.map((u) => {
       const q = u.quad;
       const p = q.position;
-      return { id: u.id, x: p.x, y: p.y + 0.8, z: p.z, events: u.engine.events.map((e) => e.type), rpm: u.engine.rpm, running: u.engine.isRunning, speed: Math.abs(q.forwardSpeed), horn: !!q.hornHeld, tipped: !!q.isTipped };
+      return { id: u.id, x: p.x, y: p.y + 0.8, z: p.z, events: u.engine.events.map((e) => e.type), rpm: u.engine.rpm, running: u.engine.isRunning, speed: Math.abs(q.forwardSpeed), horn: !!q.hornHeld, tipped: !!q.isTipped, airborne: !!q.airborne };
     });
     for (const n of this.noticeWatch.update(dt, vehicles)) this.notice(n.kind, n, { key: n.key, strength: n.strength });
     const eye = this.camera.position;
@@ -3999,7 +3999,9 @@ export class Game {
     for (const e of this.smokeSense.update(dt, { wind: { x: smoke.windX, z: smoke.windZ }, girls, quads })) {
       const c = this.companions.find((o) => o.character.id === e.girl);
       if (e.type === 'cough') {
-        c.waveOff(this.smokeSense.p.waveFor);
+        // She turns away from it and waves it off (npc/reactions.js); if she can't turn, she just waves.
+        const from = this.girlUnits.find((u) => u.spec.id === e.spec)?.quad.position;
+        if (!from || !c.react('turnAway', { from })) c.waveOff(this.smokeSense.p.waveFor);
         c.voice.say('smokeCough', { urgent: true });
       } else c.voice.say('smokeLove', { urgent: true, chance: 0.8 });
     }
@@ -4036,7 +4038,11 @@ export class Game {
     const girls = this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.fsm.is('idle') && !this.menu.isOpen }));
     for (const e of this.haze.update(dt, { wind: w.wind, rain: w.rain, engines, girls })) {
       const c = this.companions.find((o) => o.character.id === e.girl);
-      c.waveOff(this.haze.p.waveFor);
+      // Turned away from where the wind brings it, if there is a wind to speak of; otherwise she just waves it off.
+      const wind = Math.hypot(smoke.windX, smoke.windZ);
+      const at = c.root.position;
+      const from = wind > 0.3 ? { x: at.x - (smoke.windX / wind) * 5, z: at.z - (smoke.windZ / wind) * 5 } : null;
+      if (!from || !c.react('turnAway', { from })) c.waveOff(this.haze.p.waveFor);
       c.voice.say('hazeCough', { urgent: true });
     }
     this.hazeLayer.update(dt, this.haze.level, smoke.windX, smoke.windZ, (x, z) => this.world.heightAt(x, z));

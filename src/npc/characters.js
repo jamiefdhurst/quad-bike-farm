@@ -30,6 +30,9 @@ export const CHARACTERS = [
       remembers4wd: 0.65,
       voiceHardBrakeDecel: 5.5, // notices hard braking a little sooner than Jess
       voiceHardBrakeTime: 0.3,
+      reactEarsChance: 0.85, // covers her ears at revs beside her; claps a jump rather than cheering
+      reactCheerChance: 0.45,
+      reactCheerArms: 0.2,
     },
     lines: VOICE_LINES,
     idles: ['folded', 'clasped', 'weight'], // her ways of standing about (STANDING_IDLES in poseMoves.js): tidy and patient
@@ -48,6 +51,10 @@ export const CHARACTERS = [
       outfit: 'jessPolo',
       voiceHardBrakeDecel: 6.5, // takes a sharper stop before she calls it hard braking
       voiceHardBrakeShed: 3,
+      reactEarsChance: 0.15, // loves the noise; cheers a jump with both arms up; flinches less
+      reactCheerChance: 0.95,
+      reactCheerArms: 1,
+      reactFlinch: 0.7,
       height: 1.53,
       walkSpeed: 1.4,
       boredAfterMin: 20,

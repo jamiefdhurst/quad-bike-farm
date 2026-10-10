@@ -4,7 +4,7 @@
 // flicking about, tires of a thing she has looked at for a while and comes back to it later (which is what makes her glance at you
 // now and then), and something startling turns her head at once. Pure: no Three.js. companion.js turns the pick into a head turn.
 //
-// The pattern for anything new the girls do (CLAUDE.md, "The girls' attention"): something that happens in the world calls
+// The pattern for anything new the girls do (CLAUDE.md, "The girls' minds"): something that happens in the world calls
 // game.notice(kind, ...) with a kind from NOTICE_KINDS; a state says what she looks at while in it (its `look`); a sub-activity
 // inside a state calls companion.attend(...); walking to somewhere looks there first on its own.
 
@@ -23,6 +23,8 @@ export const NOTICE_KINDS = {
   rev: { seconds: 1.2, range: 40, heard: true, interest: 'attentionEngines' }, // a stood engine blipped
   horn: { seconds: 2, range: 90, heard: true },
   tipped: { seconds: 4, range: 60, heard: true, interest: 'attentionVehicles' }, // a vehicle going over
+  lurch: { seconds: 1.5, range: 15, heard: false, interest: 'attentionVehicles' }, // a vehicle leaping forward from a standstill (a clutch dropped, a kangaroo hop)
+  jump: { seconds: 3, range: 50, heard: false, interest: 'attentionVehicles' }, // a vehicle landing after real air
   bang: { seconds: 2.5, range: 80, heard: true }, // anything else loud and sudden (and the debug panel's test noise)
 };
 
@@ -37,17 +39,27 @@ export const DEFAULT_NOTICE_PARAMS = {
   rev: 0.7,
   horn: 1.4,
   tipped: 1.8,
+  lurch: 1.3,
+  jump: 1.2,
   bang: 1.8,
-  revRate: 2500, // rpm per second of rise that counts as a vehicle being revved (stood still)
+  revRate: 2500, // rpm per second of rise that counts as a vehicle being revved: up and back down again while it stays put
   revEvery: 1.2, // seconds between rev notices from one vehicle
-  revMaxSpeed: 3, // m/s: faster than this it's being ridden, not revved
+  revMaxSpeed: 0.5, // m/s: moving faster than this during it, it was pulling away, not being revved
+  lurchAccel: 3.5, // m/s per second of sudden speeding up, from slow, that counts as a lurch
+  lurchMaxSpeed: 4, // m/s: only from slower than this
+  lurchEvery: 1, // seconds between lurch notices from one vehicle
+  jumpMinAir: 0.35, // seconds in the air for a landing to count as a jump
 };
 
 export const NOTICE_PARAM_RANGES = {
   ...Object.fromEntries(Object.keys(NOTICE_KINDS).map((k) => [k, [0, 4, 0.05]])),
   revRate: [200, 10000, 100],
   revEvery: [0.1, 5, 0.1],
-  revMaxSpeed: [0, 10, 0.5],
+  revMaxSpeed: [0, 5, 0.1],
+  lurchAccel: [0.5, 15, 0.5],
+  lurchMaxSpeed: [0.5, 10, 0.5],
+  lurchEvery: [0.1, 5, 0.1],
+  jumpMinAir: [0.05, 2, 0.05],
 };
 
 const TAU = Math.PI * 2;
