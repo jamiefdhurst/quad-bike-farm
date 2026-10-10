@@ -149,6 +149,7 @@ export function buildGameTree(g, host) {
     const c = () => g.companions.find((o) => o.character.id === id);
     return group(() => ({
       state: text(() => c().state),
+      lookingAt: text(() => c().attention.describe()),
       ...where(id),
       favour: num(() => g.favour.scores[id], (v) => (g.favour.scores[id] = v), -30, 30, '', 'how she rates you'),
       standing: ro(() => g.favour.standing(id)),

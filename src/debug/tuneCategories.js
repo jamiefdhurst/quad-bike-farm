@@ -12,7 +12,7 @@ export const TUNE_CATEGORIES = {
   'World, weather and sound': ['Surfaces', 'Dust', 'Ground wear', 'Road mud', 'Barn', 'Sky', 'Yard haze', 'Fumes in the barn', 'Map', 'Sound', 'Player'],
   'Girls: themselves': [], // each girl's own build and her riding pillion; named from the characters, see GIRL_GROUP
   'Girls: moving about': [
-    'Amy walk-round', "Amy won't ride", 'Getting on and off', 'Standing about', 'Hearing a quad', 'Warming hands', 'Shelter in a cab', 'Girls carrying things', 'Home and jogging',
+    'Amy walk-round', "Amy won't ride", 'Getting on and off', 'Standing about', 'What catches the eye', 'Hearing a quad', 'Warming hands', 'Shelter in a cab', 'Girls carrying things', 'Home and jogging',
     'Lining them up', 'Places', 'Tea on the rack', 'Jumpers', 'L plates', 'Quad names', 'Whose quad',
   ],
   'Girls: how they feel about you': [

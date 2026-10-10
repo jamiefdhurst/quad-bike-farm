@@ -91,6 +91,19 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'bang',
+      label: 'Make a bang behind % (she should turn and look)',
+      run: (id) => {
+        const c = girl(id);
+        // Eight metres behind her, wherever she is (on a seat she faces the way the vehicle does).
+        const free = c.root.parent === g.scene;
+        const at = free ? c.root.position : c.quad.position;
+        const h = free ? c.heading : c.quad.yaw;
+        g.notice('bang', { x: at.x - Math.sin(h) * 8, y: at.y + 0.5, z: at.z - Math.cos(h) * 8 }, { key: 'debug' });
+        toast(`A bang behind ${nameOf(id)}`);
+      },
+    },
+    {
       verb: 'numb',
       label: '% goes numb now: gets off, walks it off, stretches and gets back on (needs her on the back of a quad)',
       run: (id) => toast(girl(id).forceNumb() ? `${nameOf(id)}'s bum has gone numb` : `${nameOf(id)} needs to be sat on the back of a quad`),

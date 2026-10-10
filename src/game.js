@@ -1028,6 +1028,7 @@ export class Game {
     registerTuning('Tractor creep', DEFAULT_CREEP_PARAMS, CREEP_PARAM_RANGES);
     registerTuning('Throttle key', DEFAULT_THROTTLE_KEY_PARAMS, PEDAL_KEY_PARAM_RANGES);
     registerTuning('Brake key', DEFAULT_BRAKE_KEY_PARAMS, PEDAL_KEY_PARAM_RANGES);
+    registerTuning('What catches the eye', DEFAULT_NOTICE_PARAMS, NOTICE_PARAM_RANGES); // shared by both girls (npc/attention.js)
     registerTuning('Tractor runaway', this.tractorRunaway.p, TRACTOR_RUNAWAY_PARAM_RANGES);
     registerTuning('Hay ride', this.hayRide.p, HAYRIDE_PARAM_RANGES);
     registerTuning('Mudguard ride', this.mudguard.p, MUDGUARD_PARAM_RANGES);
