@@ -22,7 +22,7 @@ export const keepAliveMethods = {
 
   /** Whether she has a hand on the throttle right now. */
   get holdingIdle() {
-    return this._keepAlive?.holding ?? false;
+    return (this._keepAlive?.holding ?? false) || !!this.readyHolding;
   },
 
   /**
@@ -30,6 +30,7 @@ export const keepAliveMethods = {
    * She gets off after a long sit with nobody coming, and lets go (maybe losing it) when you take it.
    */
   holdIdle(dt) {
+    if (this.readyHolding) return true; // sat revving it for you (readyWaiting.js): she doesn't reach for the key
     const q = this.quad;
     const e = q.engine;
     const ka = this.keepAlive;

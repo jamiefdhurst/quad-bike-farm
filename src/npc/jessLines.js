@@ -71,6 +71,7 @@ import { JESS_TEA_LINES } from './teaLines.js';
 import { JESS_JUMPER_LINES } from './jumperLines.js';
 import { JESS_KEEP_LINES } from './keepAliveLines.js';
 import { JESS_SULK_LINES } from './sulkLines.js';
+import { JESS_READY_LINES } from './readyLines.js';
 import { JESS_FAULT_LINES } from './faultLines.js';
 import { JESS_BENCH_LINES } from './benchLines.js';
 
@@ -410,6 +411,7 @@ export const JESS_LINES = {
   ...JESS_FAULT_LINES,
   ...JESS_KEEP_LINES,
   ...JESS_SULK_LINES,
+  ...JESS_READY_LINES,
   ...JESS_DIAGNOSIS_LINES,
   ...JESS_THRASH_LINES,
   ...JESS_LEFT_LINES,

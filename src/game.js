@@ -85,6 +85,7 @@ import { Hearing, EAR_PARAM_RANGES } from './npc/earing.js';
 import { Warming, WARMING_PARAM_RANGES, isChilly } from './npc/warming.js';
 import { CabShelter, CAB_SHELTER_PARAM_RANGES } from './npc/cabShelter.js';
 import { Sulking, SULK_PARAM_RANGES } from './npc/sulking.js';
+import { ReadyWaiting, READY_PARAM_RANGES } from './npc/readyWaiting.js';
 import { DEFAULT_KEEPALIVE_PARAMS, KEEPALIVE_PARAM_RANGES } from './npc/keepAlive.js';
 import { HeadStart, HEADSTART_PARAM_RANGES } from './npc/headStart.js';
 import { Gossip, GOSSIP_PARAM_RANGES } from './npc/gossip.js';
@@ -663,6 +664,8 @@ export class Game {
     this.dragBlipSaid = false;
     buildDragStrip(this.scene, (x, z) => this.world.heightAt(x, z), this.world.layout.dragStrip);
     this.warming = new Warming(); // hands over an idling engine on a cold day (npc/warming.js)
+    this.readyWaiting = new ReadyWaiting(undefined, createRandom(this.seed ^ 0x2ead)); // sat on a running quad, revving and tooting, while you are a minute (npc/readyWaiting.js)
+    this.readyQuads = new Map(); // girl id -> the quad she is getting ready or waiting on
     this.sulking = new Sulking(undefined, createRandom(this.seed ^ 0x5011)); // a girl sitting alone in a Land Rover after a row (npc/sulking.js)
     this.cabShelter = new CabShelter(undefined, createRandom(this.seed ^ 0x0cab)); // into a Land Rover or the UTV out of the rain or cold (npc/cabShelter.js)
     this.nicking = new Nicking(undefined, createRandom(this.seed ^ 0x61c3)); // Jess taking a quad you left running (npc/nicking.js)
@@ -1034,6 +1037,7 @@ export class Game {
     registerTuning('Whose quad', this.ownership.p, OWNERSHIP_PARAM_RANGES);
     registerTuning('Hearing a quad', this.hearing.p, EAR_PARAM_RANGES);
     registerTuning('Warming hands', this.warming.p, WARMING_PARAM_RANGES);
+    registerTuning('Ready and waiting', this.readyWaiting.p, READY_PARAM_RANGES);
     registerTuning('Sulking in the cab', this.sulking.p, SULK_PARAM_RANGES);
     registerTuning('Shelter in a cab', this.cabShelter.p, CAB_SHELTER_PARAM_RANGES);
     registerTuning('Head start', this.headStart.p, HEADSTART_PARAM_RANGES);
@@ -3496,6 +3500,93 @@ export class Game {
     for (const e of this.cabShelter.update(dt, ctx)) this.handleCabEvent(e);
   }
 
+  // Ready and waiting -----------------------------------------------------
+
+  /** The quad she'll sit on for you: your usual one, then her favourite, then the nearest, anywhere she can get on the back of. */
+  readyQuadFor(c) {
+    const fit = (u) => u.quad.hasPillion && !u.quad.isTipped && !u.quad.rider && !u.quad.driver && !u.quad.passenger && c.mayRide(u.quad) && c.canRidePillion(u.quad) && !this.herOn(u.quad);
+    const free = this.girlUnits.filter(fit);
+    const byId = (id) => free.find((u) => u.spec.id === id);
+    return byId(this.headStart.usual())?.quad ?? byId(c.voice.favourite)?.quad ?? free.sort((a, b) => a.quad.position.distanceTo(c.root.position) - b.quad.position.distanceTo(c.root.position))[0]?.quad ?? null;
+  }
+
+  /** "I'll be a minute": she gets a quad going and sits on the back of it, revving and tooting, until you come. Returns whether she set off. */
+  askToWait(c, forced = false) {
+    const id = c.character.id;
+    const q = this.readyQuadFor(c);
+    this.closeMenu();
+    if (!q || !c.fsm.is('idle')) {
+      if (!forced) this.hud.toast(`${c.name} can't just now`);
+      return false;
+    }
+    this.readyWaiting.begin(id);
+    this.readyQuads.set(id, q);
+    c.voice.say('readyGo', { force: true });
+    const sit = () => (c.requestMount(q), c.seatedByChoice = false); // on the back, and she stays there until you come or give up
+    if (q.engine.isRunning) sit();
+    else c.requestStart(q, { settleAt: 0.3, then: (ran) => (ran || q.engine.isRunning ? sit() : this.readyWaiting.drop(id)) });
+    return true;
+  }
+
+  /** Each frame: the girls who are getting a quad ready for you, or sat on one revving and tooting. */
+  updateReady(dt) {
+    const w = this.readyWaiting;
+    const ridden = this.riddenUnit;
+    for (const c of this.companions) c.readyHolding = w.waiting(c.character.id); // so nothing else revs her quad or she switches it off
+    const girls = this.companions.filter((c) => w.has(c.character.id)).map((c) => {
+      const q = this.readyQuads.get(c.character.id);
+      return {
+        id: c.character.id,
+        ready: !!q && c.fsm.is('seated') && c.quad === q && c.seatKind === 'pillion' && q.engine.isRunning,
+        youDistance: c.root.position.distanceTo(this.player.position),
+        youOn: !!ridden && ridden.quad === q,
+      };
+    });
+    for (const e of w.update(dt, { girls })) {
+      const c = this.companions.find((o) => o.character.id === e.girl);
+      const q = this.readyQuads.get(e.girl);
+      if (e.type === 'rev') this.readyRev = { quad: q, left: e.seconds };
+      else if (e.type === 'toot') {
+        this.horns.toot(e.girl, e.length);
+        c.voice.say(e.impatient ? 'readyImpatient' : 'readyToot', { force: true });
+      } else if (e.type === 'here') c.voice.say('readyHere', { force: true });
+      else if (e.type === 'giveUp') {
+        if (e.keyOff) q.engine.setIgnition(false);
+        c.voice.say('readyGiveUp', { force: true });
+        c.fsm.transition('dismounting');
+      }
+      if (e.type === 'here' || e.type === 'giveUp' || e.type === 'lost') {
+        this.readyQuads.delete(e.girl);
+        if (this.readyRev?.quad === q) this.readyRev = null;
+        if (q && !this.companions.some((o) => o.quad === q && o.holdingIdle)) q.helperThrottle = 0;
+      }
+    }
+    // Sat there she keeps a little choke and throttle on while it is cold, or it dies on her (as for the sulker in the cab).
+    const cared = new Set();
+    for (const [id, q] of this.readyQuads) {
+      const c = this.companions.find((o) => o.character.id === id);
+      if (c.fsm.is('starting') || !q.engine.isRunning || q.engine.temperature >= 0.5) continue; // (while she is starting it she minds the choke herself)
+      cared.add(q);
+      if (q.choke < 0.3) q.choke = 0.3;
+      if (this.readyRev?.quad !== q) q.helperThrottle = 0.15;
+    }
+    for (const q of this.readyCare ?? []) {
+      if (!cared.has(q)) {
+        q.choke = 0;
+        if (this.readyRev?.quad !== q) q.helperThrottle = 0;
+      }
+    }
+    this.readyCare = cared;
+    if (this.readyRev) {
+      const r = this.readyRev;
+      r.left -= dt;
+      if (r.left <= 0 || !r.quad.engine.isRunning) {
+        r.quad.helperThrottle = 0;
+        this.readyRev = null;
+      } else r.quad.helperThrottle = 1;
+    }
+  }
+
   // Sulking in the cab ---------------------------------------------------
 
   /** The girl sulking in this vehicle (a Land Rover), if one is in it. */
@@ -4724,6 +4815,7 @@ export class Game {
     const options = actions.filter((a) => !a.quad).map((a) => ({ label: a.label, run: answer(a) }));
     const push = this.pushStartOption(c);
     if (push) options.push(push);
+    if (c.fsm.is('idle') && !this.readyWaiting.has(c.character.id)) options.push({ label: 'I\'ll be a minute', run: () => this.askToWait(c) });
     const tractor = this.tractorUnit && this.tractorWheelOption(c);
     if (tractor?.children.length) options.push(tractor);
     const utv = this.utvUnit && this.utvWheelOption(c);
@@ -5249,6 +5341,7 @@ export class Game {
     this.updateWarming(dt);
     if (auto || this.sulking.who) this.updateCabShelter(dt, !auto);
     if (auto || this.sulking.who) this.updateSulking(dt);
+    this.updateReady(dt);
     if (auto) this.updateKeepAlive(dt);
     if (auto) this.updateHeadStart(dt, ridden);
     this.updateDoughnuts(dt);

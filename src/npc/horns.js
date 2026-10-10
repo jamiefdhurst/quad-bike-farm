@@ -139,6 +139,14 @@ export class Horns {
     events.push({ type: 'answer', girl: g.id, beeps: count });
   }
 
+  /** She sounds the horn on her own account (waiting for you): one toot of this length now. */
+  toot(id, length) {
+    const b = this.beeps.get(id);
+    if (b) return false; // already at it
+    this.beeps.set(id, { segments: [[this.clock, this.clock + length]], end: this.clock + length });
+    return true;
+  }
+
   /** Is Jess close behind Amy, in her rear arc, with Amy driving along? */
   inPosition(jess, amy) {
     const p = this.p;

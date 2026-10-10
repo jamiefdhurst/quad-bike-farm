@@ -69,6 +69,14 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'wait-ready',
+      label: '% gets a quad going and waits on the back for you, revving and tooting',
+      run: (id) => {
+        if (!free(id)) return;
+        toast(g.askToWait(girl(id), true) ? `${nameOf(id)} is off to get a quad ready` : `${nameOf(id)} can't find a quad with a free back seat`);
+      },
+    },
+    {
       verb: 'sulk',
       label: '% sulks alone in a Land Rover (skips the row)',
       run: (id) => {

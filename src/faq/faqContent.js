@@ -339,6 +339,13 @@ export const FAQ_SECTIONS = [
         tip: 'After a jump start, keep the revs up for ten minutes or it dies again at the first stop.',
       },
       {
+        q: 'How do I get her to warm a quad up for me?',
+        a: `Talk to her and choose "I'll be a minute". She starts your usual quad (or her favourite, or the nearest with a free back seat), sits on the back
+          with it running and revs it now and then. If you take your time she starts sounding the horn, Jess sooner than Amy, and in the end she gives up and
+          gets off. Come back and take the front, and she is already on the back.`,
+        tip: 'Tell a girl "I\'ll be a minute" and she warms up your quad and waits on the back.',
+      },
+      {
         q: 'Why is she sat alone in the Land Rover with the engine running, and how do I get her out?',
         a: `She is sulking. It happens after a falling out goes badly for her, or when she feels you favour her friend. Look at the Land Rover and press <kbd>E</kbd>
           to knock on the window. Amy ignores the first knock, answers on the second and forgives you on the third. Jess revs the engine at you three times and then
