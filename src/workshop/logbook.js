@@ -59,6 +59,7 @@ const PLUG_TEXT = {
 const JOB_TEXT = {
   plug: 'new plug',
   carb: 'carb cleaned',
+  mounts: 'engine mounts renewed',
   tyre: 'tyre mended',
   oil: 'two-stroke oil topped up',
   packing: 'silencer repacked',

@@ -859,6 +859,9 @@ export const TRACTOR_SPEC = {
     revHoldMin: 2, // getting off never leaves it revving: the hand throttle does that
   },
   vibration: {
+    mountGain: 0.6, // a big diesel on its mounts: the whole bonnet rocks
+    mountFreq: 8.5,
+    mountDamping: 0.25,
     firingsPerCycle: 4, // a four-cylinder: a quick, even shudder at the firing rate (15 a second at idle), not one heave a cycle
     idleRpm: 600, // and it smooths out as the revs rise
     smoothRpmRange: 1000,
@@ -999,6 +1002,8 @@ export const UTV_SPEC = {
     revHoldMin: 2, // getting off never leaves it revving
   },
   vibration: {
+    mountGain: 0.55, // a small diesel on rubber mounts
+    mountFreq: 10.5,
     steadiness: 0.6, // a small diesel three: a regular rock, but rougher than the Land Rover's petrol four (0.85)
     firingsPerCycle: 3, // a three-cylinder: a quick, even shudder
     idleRpm: 700,
@@ -1154,6 +1159,8 @@ export const LAND_ROVER_SPEC = {
     revHoldMin: 2, // getting off never leaves it revving
   },
   vibration: {
+    mountGain: 0.7, // a four on soft rubber mounts: it shakes on them at idle and lurches as it stops (engineMounts.js)
+    mountFreq: 9.5,
     steadiness: 0.85, // an old four ticks over in a regular rock, unlike the quads' random kicks
     firingsPerCycle: 1, // the engine already fires four times a cycle (engine.cylinders): one kick each
     idleRpm: 490,

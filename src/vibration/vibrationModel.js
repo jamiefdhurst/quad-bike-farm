@@ -7,6 +7,7 @@
 
 import { DEFAULT_VIBRATION_PARAMS } from './vibrationParams.js';
 import { gridRumble } from '../world/cattleGrid.js';
+import { engineShare, passThrough, lurchKick, MountClonk } from './engineMounts.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const SUBSTEP = 1 / 600;
@@ -38,6 +39,8 @@ export class VibrationModel {
       pitch: new Oscillator(),
       roll: new Oscillator(),
       torque: new Oscillator(), // the slow sway from a blip of the throttle (torqueRock.js)
+      mountRoll: new Oscillator(), // the engine rocking on its mounts (engineMounts.js), and how much of it reaches the frame
+      mountPitch: new Oscillator(),
       barsX: new Oscillator(),
       barsY: new Oscillator(),
       barsYaw: new Oscillator(),
@@ -55,6 +58,9 @@ export class VibrationModel {
     this.groundDistance = 0; // metres travelled since the last ground jolt
     this.gridPhase = 0; // knocks owed from the cattle grid, in whole knocks
     this.jolts = []; // sizes of this update's ground jolts (in groundGain units), for the ride sounds
+    this.mountWear = 0; // 0..1, how worn the engine mounts are (set from the quad's faults)
+    this.mountClonk = new MountClonk();
+    this.wasRunning = false;
     this.rock = 1; // which way the next firing's side-to-side kicks go when the engine is steady (steadiness)
     this.pending = []; // a multi-cylinder's later firings from a pulse, due after this update (times from the start of the update that queued them)
   }
@@ -79,6 +85,7 @@ export class VibrationModel {
     // Roughness shakes it harder, much more so near the top of the range.
     const roughBoost = 1 + p.roughnessGain * engine.roughness + p.roughnessGainTop * engine.roughness ** 3;
     this.jolts.length = 0;
+    this.mountEvents(dt, engine);
 
     let pulseIndex = 0;
     const steps = Math.max(1, Math.ceil(dt / SUBSTEP));
@@ -99,8 +106,9 @@ export class VibrationModel {
 
     const o = this.osc;
     this.body.heave = o.heave.x;
-    this.body.pitch = o.pitch.x;
-    this.body.roll = o.roll.x + o.torque.x;
+    const pass = passThrough(this.mountWear, p);
+    this.body.pitch = o.pitch.x + o.mountPitch.x * pass;
+    this.body.roll = o.roll.x + o.torque.x + o.mountRoll.x * pass;
     this.bars.x = o.barsX.x;
     this.bars.y = o.barsY.x;
     this.bars.yaw = o.barsYaw.x;
@@ -108,8 +116,8 @@ export class VibrationModel {
     this.camera.x = o.camX.x;
     this.camera.y = o.camY.x;
     this.camera.z = o.camZ.x;
-    this.camera.pitch = o.camPitch.x;
-    this.camera.roll = o.camRoll.x + o.torque.x * p.torqueCamera;
+    this.camera.pitch = o.camPitch.x + o.mountPitch.x * pass * p.mountCamera;
+    this.camera.roll = o.camRoll.x + o.torque.x * p.torqueCamera + o.mountRoll.x * pass * p.mountCamera;
 
     const rate = dt > 0 ? kickSum / dt : 0;
     this.intensity += (clamp(rate / 20, 0, 2) - this.intensity) * Math.min(1, 4 * dt);
@@ -141,6 +149,22 @@ export class VibrationModel {
     this.osc.torque.kick(v);
   }
 
+  /** The engine lurching on its mounts as it stops or catches, and worn mounts clonking as the throttle goes on or off. */
+  mountEvents(dt, engine) {
+    const p = this.params;
+    const running = !!engine.isRunning;
+    if (running !== this.wasRunning && (p.mountGain > 0 || this.mountWear > 0)) {
+      this.osc.mountRoll.kick(lurchKick(this.mountWear, running, p) * (this.random() < 0.5 ? -1 : 1));
+      this.osc.mountPitch.kick(lurchKick(this.mountWear, running, p) * 0.6);
+    }
+    this.wasRunning = running;
+    const clonk = this.mountClonk.update(dt, running ? (engine.throttle ?? 0) : 0, running ? this.mountWear : 0, p);
+    if (clonk) {
+      this.osc.mountPitch.kick(clonk);
+      this.osc.mountRoll.kick(clonk * (this.random() < 0.5 ? -0.6 : 0.6));
+    }
+  }
+
   kick(pulse, bodyFactor, barsFactor, roughBoost) {
     const p = this.params;
     const r = this.random;
@@ -150,7 +174,10 @@ export class VibrationModel {
     else if (pulse.type === 'misfire') typeScale = p.misfireScale;
 
     const base = p.pulseGain * pulse.strength * typeScale * roughBoost;
-    const body = base * bodyFactor;
+    // The share the engine takes up on its mounts shakes it instead of the frame (engineMounts.js).
+    const mounted = engineShare(this.mountWear, p);
+    const frame = 1 - clamp(p.mountGain, 0, 1);
+    const body = base * bodyFactor * frame;
     const bars = base * barsFactor;
     const j = p.directionJitter;
     // Mostly the same direction each time with some variation, plus random sign on the side-to-side parts.
@@ -161,6 +188,11 @@ export class VibrationModel {
     const side = () => ((r() * 2 - 1) * (1 - st) + this.rock * 0.7 * st) * (0.4 + 0.6 * j);
 
     const o = this.osc;
+    if (mounted > 0) {
+      const engineKick = base * bodyFactor * mounted * p.mountKick;
+      o.mountPitch.kick(engineKick * p.pitchGain * vary());
+      o.mountRoll.kick(engineKick * p.rollGain * side());
+    }
     o.heave.kick(body * p.heaveGain * vary());
     o.pitch.kick(body * p.pitchGain * vary());
     o.roll.kick(body * p.rollGain * side());
@@ -241,6 +273,8 @@ export class VibrationModel {
     o.pitch.step(h, p.pitchFreq, p.pitchDamping);
     o.roll.step(h, p.rollFreq, p.rollDamping);
     o.torque.step(h, p.torqueFreq, p.torqueDamping);
+    o.mountRoll.step(h, p.mountFreq, p.mountDamping);
+    o.mountPitch.step(h, p.mountFreq * 0.85, p.mountDamping);
     o.barsX.step(h, p.barsFreq, p.barsDamping);
     o.barsY.step(h, p.barsFreq * 1.13, p.barsDamping);
     o.barsYaw.step(h, p.barsFreq * 0.8, p.barsDamping);

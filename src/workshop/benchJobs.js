@@ -10,7 +10,7 @@ export const DEFAULT_BENCH_PARAMS = {
   bayMargin: 0.35, // a quad counts as in the bay when its middle is this far inside the painted lines
   plugLeftFouling: 0.3, // a plug fitted badly: still fouled, as if it had never been changed
   plugWearRemoved: 0.15, // wear a new plug takes away
-  botchedLevel: 0.2, // a carb or tyre botched at the bench: the fault comes back at this level
+  botchedLevel: 0.2, // a carb, mount or tyre botched at the bench: the fault comes back at this level
   oilShort: 0.012, // oil fraction of the tank mix when the pour was too short (about 80:1, runs hot)
   oilGood: 0.02, // and when it was right (50:1)
   plugRichFouling: 0.3, // fouling at which the old plug looks sooty (rich running)
@@ -68,6 +68,16 @@ export const JOBS = {
       { id: 'jets', text: 'Blow through the jets', kind: 'hold', need: 1.2 },
       { id: 'refit', text: 'Put the bowl back', kind: 'press' },
       { id: 'tight', text: 'Do the bowl screws up: snug, not tight', kind: 'hold', need: 0.6, limit: 1.3 },
+    ],
+  },
+  mounts: {
+    name: 'Renew the engine mounts',
+    steps: [
+      { id: 'brace', text: 'Put the jack under the sump to take the engine weight', kind: 'press' },
+      { id: 'bolts', text: 'Undo the mount bolts with the spanner', kind: 'hold', need: 1 },
+      { id: 'swap', text: 'Pull out the perished rubbers and drop the new ones in', kind: 'press' },
+      { id: 'lower', text: 'Lower the engine back on to them', kind: 'press' },
+      { id: 'tight', text: 'Do the bolts up: snug, not tight, or you crush the rubber', kind: 'hold', need: 0.6, limit: 1.3 },
     ],
   },
   tyre: {
@@ -162,7 +172,7 @@ export const JOBS = {
   },
 };
 
-export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore'];
+export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts'];
 
 /** What each reading means, the way Amy would say it. Order is the order Jess can be wrong in. */
 export const PLUG_KINDS = ['healthy', 'rich', 'lean', 'oily', 'worn'];
@@ -316,6 +326,11 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     faults.fix('carb');
     if (botched) faults.leave('carb', P.botchedLevel);
     return botched ? 'Carb back together, but it still is not quite right' : 'Carb is spotless';
+  }
+  if (job.kind === 'mounts') {
+    faults.fix('mounts');
+    if (botched) faults.leave('mounts', P.botchedLevel);
+    return botched ? 'New mounts in, but one is crushed and the engine still rocks a bit' : 'New engine mounts in: it runs smoothly again';
   }
   if (job.kind === 'tyre') {
     faults.fix('puncture');

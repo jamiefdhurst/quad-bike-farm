@@ -23,19 +23,21 @@ const REPAIR_DONE = {
   belt: 'Turned the glazed belt round: it grips a bit better',
   cable: 'Squirted some oil on the cable: it is freer, but not right',
   carb: 'Gave the carb a clean with what is in the toolbox: better, not perfect',
+  mounts: 'Nipped up the engine mount bolts and packed a washer under the worst: it shakes less, but the rubber is still perished',
 };
 const REPAIR_NOTHING = {
   puncture: 'Pumped the tyres up: they were fine',
   belt: 'Drive belt looks fine',
   cable: 'Throttle cable runs freely',
   carb: 'Carb is clean',
+  mounts: 'Engine mounts look sound',
 };
 const SILENCER_OFF = 'Took the silencer off: it will be a lot louder, and a bit stronger';
 const SILENCER_ON = 'Put the silencer back on';
 const POD_JOB_SECONDS = 3; // fitting or taking off an accessory pod
 const FILTER_KEY = 'KeyI'; // hold to clean the air filter
 const POD_NAMES = { analogue: 'analogue pod', digital: 'digital pod' };
-const REPAIR_KEYS = { KeyT: 'puncture', KeyR: 'belt', KeyL: 'cable', KeyC: 'carb' };
+const REPAIR_KEYS = { KeyT: 'puncture', KeyR: 'belt', KeyL: 'cable', KeyC: 'carb', KeyM: 'mounts' };
 
 const rpm = (n) => `${Math.round(n).toLocaleString('en-GB')} rpm`;
 const pct = (f) => `${f >= 0 ? '+' : '−'}${Math.round(Math.abs(f) * 100)}%`;
@@ -303,7 +305,7 @@ export class Workshop {
   }
 
   /**
-   * The four quick jobs for faults that develop. Each does its job if there is one, and says so either way, so it doesn't give a fault away.
+   * The quick jobs for faults that develop. Each does its job if there is one, and says so either way, so it doesn't give a fault away.
    * In the yard it's only a rough fix (the fault stays, mildly); the barn bench does it properly.
    */
   repair(kind) {
@@ -524,6 +526,7 @@ export class Workshop {
           <button type="button" class="ws-btn ws-fix" data-fix="belt"><span class="key">R</span>Check the belt</button>
           <button type="button" class="ws-btn ws-fix" data-fix="cable"><span class="key">L</span>Oil the throttle cable</button>
           <button type="button" class="ws-btn ws-fix" data-fix="carb"><span class="key">C</span>Clean the carb</button>
+          <button type="button" class="ws-btn ws-fix" data-fix="mounts"><span class="key">M</span>Nip up the engine mounts</button>
           <button type="button" class="ws-btn ws-drain"><span class="key">P</span>Pump out the tank and carb</button>
           <button type="button" class="ws-btn ws-strip"><span class="key">F</span>Strip it down</button>
           <button type="button" class="ws-btn ws-silencer"><span class="key">X</span>Take the silencer off</button>
@@ -536,7 +539,7 @@ export class Workshop {
           <button type="button" class="ws-btn ws-pod" data-pod="digital"><span class="key">U</span>Fit digital pod</button>
           <button type="button" class="ws-btn ws-podoff"><span class="key">O</span>Pod off</button>
         </div>
-        <div class="ws-keys">↑ ↓ choose   ·   ← → adjust (hold to keep going)   ·   V service   ·   hold I air filter   ·   X silencer   ·   F strip down   ·   P pump out the fuel   ·   Y U O pods   ·   T tyres   ·   R belt   ·   L cable   ·   C carb   ·   or use the mouse</div>
+        <div class="ws-keys">↑ ↓ choose   ·   ← → adjust (hold to keep going)   ·   V service   ·   hold I air filter   ·   X silencer   ·   F strip down   ·   P pump out the fuel   ·   Y U O pods   ·   T tyres   ·   R belt   ·   L cable   ·   C carb   ·   M mounts   ·   or use the mouse</div>
       </div>`;
     document.body.appendChild(el);
     this.el = el;

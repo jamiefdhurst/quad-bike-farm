@@ -4980,7 +4980,7 @@ export class Game {
     if ((input.wasPressed('Backslash') || input.wasPressed('IntlBackslash')) && !this.console.visible) this.console.open();
     if (input.wasPressed('KeyJ')) this.toggleHitch();
     if (input.wasPressed('Enter') && !this.menu.isOpen && this.player.isRiding) this.askForRace(this.riddenUnit);
-    if (input.wasPressed('KeyM')) {
+    if (input.wasPressed('KeyM') && !this.workshop.isOpen) {
       this.farmMap.toggle();
       this.achievements.note('map');
     }

@@ -1,5 +1,5 @@
 // Faults that develop on a quad over time, separate from wear: a slow puncture, a
-// slipping drive belt, a sticking throttle cable and a dirty carb. Each starts
+// slipping drive belt, a sticking throttle cable, a dirty carb and worn engine mounts. Each starts
 // without warning, gets worse until it's put right at the toolbox, and has a
 // symptom you can feel or hear. Pure logic, no Three.js.
 
@@ -9,11 +9,13 @@ export const DEFAULT_FAULT_PARAMS = {
   beltEvery: 1800, // riding hard, with the throttle well open
   cableEvery: 7200, // engine running (was 2700: it stuck too often)
   carbEvery: 2400, // engine running
+  mountsEvery: 5400, // engine running: rubber perishing, so it comes on slower than the rest
   // How long each takes to go from just started to as bad as it gets.
   punctureSeconds: 120, // the tyre going flat
   beltSeconds: 300, // of hard riding
   cableSeconds: 600, // running
   carbSeconds: 900, // running
+  mountsSeconds: 1500, // running: the mounts going from sound to shot
   // What they do at their worst.
   puncturePull: 0.09, // radians the bars are pulled towards the flat tyre (half for a rear one)
   punctureDrag: 0.12, // drive lost to a flat tyre's rolling resistance
@@ -34,10 +36,12 @@ export const FAULT_PARAM_RANGES = {
   beltEvery: [60, 20000, 60],
   cableEvery: [60, 20000, 60],
   carbEvery: [60, 20000, 60],
+  mountsEvery: [60, 20000, 60],
   punctureSeconds: [10, 1200, 10],
   beltSeconds: [10, 1800, 10],
   cableSeconds: [10, 1800, 10],
   carbSeconds: [10, 3600, 10],
+  mountsSeconds: [10, 3600, 10],
   puncturePull: [0, 0.3, 0.005],
   punctureDrag: [0, 0.5, 0.01],
   beltDriveLoss: [0, 1, 0.01],
@@ -52,7 +56,7 @@ export const FAULT_PARAM_RANGES = {
   fieldFixCap: [0, 1, 0.01],
 };
 
-export const FAULT_KINDS = ['puncture', 'belt', 'cable', 'carb'];
+export const FAULT_KINDS = ['puncture', 'belt', 'cable', 'carb', 'mounts'];
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
@@ -67,12 +71,12 @@ export class Faults {
     this.tyre = -1; // which wheel has the puncture
     this.tyreWheels = [0, 1, 2, 3]; // the wheels one can land on (the mini moto's outriggers can't go flat)
     this.wheelSides = null; // per wheel { side, front } when the layout isn't a plain four-wheeler's (set by Quad)
-    this.levels = { puncture: 0, belt: 0, cable: 0, carb: 0 }; // 0 none, rising to 1 at their worst
-    this.started = { puncture: false, belt: false, cable: false, carb: false };
-    this.caps = { puncture: 1, belt: 1, cable: 1, carb: 1 }; // a rough fix leaves it from getting any worse than this
+    this.levels = { puncture: 0, belt: 0, cable: 0, carb: 0, mounts: 0 }; // 0 none, rising to 1 at their worst
+    this.started = { puncture: false, belt: false, cable: false, carb: false, mounts: false };
+    this.caps = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1 }; // a rough fix leaves it from getting any worse than this
     this.heldThrottle = 0; // what a sticking cable is still holding open
-    this.prone = { puncture: 1, belt: 1, cable: 1, carb: 1 }; // times as often it starts (see roll)
-    this.worsens = { puncture: 1, belt: 1, cable: 1, carb: 1 }; // times as fast it gets worse
+    this.prone = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1 }; // times as often it starts (see roll)
+    this.worsens = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1 }; // times as fast it gets worse
     this.events = []; // { type: 'start' | 'fixed', kind } this step
   }
 
@@ -126,6 +130,7 @@ export class Faults {
     if (hard && !this.started.belt && this.random() < chance(p.beltEvery, 'belt')) this.begin('belt');
     if (running && !this.started.cable && this.random() < chance(p.cableEvery, 'cable')) this.begin('cable');
     if (running && !this.started.carb && this.random() < chance(p.carbEvery, 'carb')) this.begin('carb');
+    if (running && !this.started.mounts && this.random() < chance(p.mountsEvery, 'mounts')) this.begin('mounts');
     const grow = (kind, on, seconds) => {
       if (this.started[kind] && on) this.levels[kind] = Math.min(this.caps[kind], this.levels[kind] + (dt * this.worsens[kind]) / seconds);
     };
@@ -133,6 +138,7 @@ export class Faults {
     grow('belt', hard, p.beltSeconds);
     grow('cable', running, p.cableSeconds);
     grow('carb', running, p.carbSeconds);
+    grow('mounts', running, p.mountsSeconds);
   }
 
   /** The cable has stuck for good: it won't close until you switch off (or it's fixed). */
@@ -184,6 +190,11 @@ export class Faults {
 
   get dirt() {
     return this.levels.carb;
+  }
+
+  /** 0..1 how worn the engine mounts are (for the vibration model). */
+  get mountWear() {
+    return this.started.mounts ? this.levels.mounts : 0;
   }
 
   /**

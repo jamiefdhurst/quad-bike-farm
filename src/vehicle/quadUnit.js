@@ -179,6 +179,7 @@ export class QuadUnit {
     const q = this.quad;
     const standing = q.parkBrake || (!q.rider && !q.driver);
     this.vibration.torqueKick(this.torqueRock.update(dt, q.throttle || q.helperThrottle, this.engine.isRunning && Math.abs(q.speed) < 0.5 && standing, this.vibration.params));
+    this.vibration.mountWear = q.faults.mountWear;
     // Ground jolts only show from outside: with you on it, it shakes as it always has.
     this.vibration.update(dt, this.engine, this.quad.rider || this.quad.driver || this.quad.passenger ? 0 : this.quad.speed);
     // The cattle grid shakes it ridden or not.

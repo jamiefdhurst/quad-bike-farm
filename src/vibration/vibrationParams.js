@@ -2,9 +2,11 @@
 // oscillators turn those kicks into motion. Ranges are [min, max, step].
 
 import { DEFAULT_TORQUE_PARAMS, TORQUE_PARAM_RANGES } from './torqueRock.js';
+import { DEFAULT_MOUNT_PARAMS, MOUNT_PARAM_RANGES } from './engineMounts.js';
 
 export const DEFAULT_VIBRATION_PARAMS = {
   ...DEFAULT_TORQUE_PARAMS,
+  ...DEFAULT_MOUNT_PARAMS,
   // How hard each firing pulse kicks, and how that changes with rpm.
   pulseGain: 1.6, // master gain
   idleRpm: 1700, // full shake at and below this
@@ -56,6 +58,7 @@ export const DEFAULT_VIBRATION_PARAMS = {
 
 export const VIBRATION_PARAM_RANGES = {
   ...TORQUE_PARAM_RANGES,
+  ...MOUNT_PARAM_RANGES,
   pulseGain: [0, 4, 0.05],
   idleRpm: [500, 4000, 50],
   smoothRpmRange: [100, 6000, 50],

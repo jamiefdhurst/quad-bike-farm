@@ -245,7 +245,7 @@ export class DebugGui {
       clearFaults: () => clearFaults(unit().quad.faults),
       fix: () => fixEverything(unit()),
     };
-    p.add(buttons, 'clearFaults').name('Clear the four faults');
+    p.add(buttons, 'clearFaults').name('Clear the faults');
     p.add(buttons, 'fix').name('Put everything right (not quirks)');
 
     const qf = this.vehicleFolders.quirks;
