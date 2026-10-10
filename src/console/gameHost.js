@@ -98,7 +98,8 @@ export function createHost(g, { copy = () => {} } = {}) {
         q.placeAt(x, z, rad ?? q.yaw);
       } else if (girlOf(thing)) {
         const c = girlOf(thing);
-        if (!c.fsm.is('idle')) throw new Error(`${c.name} is busy (${c.state}). Call her back with the bell, or wait until she is stood about`);
+        const a = c.availability({ asked: true });
+    if (!a.free) throw new Error(`${c.name} is busy (${a.why}). Call her back with the bell, or wait until she is stood about`);
         c.root.position.set(x, ground(x, z), z);
         if (rad !== undefined) {
           c.heading = rad;

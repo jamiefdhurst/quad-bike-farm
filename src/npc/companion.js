@@ -30,6 +30,7 @@ import { moveMethods, DEFAULT_MOVE_PARAMS } from './companionMoves.js';
 import { DEFAULT_IDLE_POSE_PARAMS } from './poseMoves.js';
 import { Attention, DEFAULT_NOTICE_PARAMS } from './attention.js';
 import { reactingMethods } from './companionReacting.js';
+import { availabilityOf, JOBS } from './availability.js';
 
 const AXIS_Y = new THREE.Vector3(0, 1, 0);
 const NO_CONTACT_FORCES = 0xffff0000; // in every solver group, pushes against none
@@ -121,6 +122,9 @@ export class Companion {
     this.lookTurn = null; // a heading to turn and face, when a look over her shoulder is held (idle uses it)
     this.attendHint = null; // a sub-activity's own focus: { x, y, z, weight, left } (attend())
     this.lookLeadLeft = 0; // seconds she still looks where she's going before setting off
+    // Whether she's free (availability.js): features that have her for a while, and what on the farm holds both girls (set by the game).
+    this.holds = new Map(); // key -> what she's doing for it
+    this.worldHold = null; // () => why both girls are held, or null
     this.fidgetTimer = this.randomBetween(params.fidgetEveryMin, params.fidgetEveryMax);
     this.fidget = null;
     this.startEvents = []; // what she's done while starting a quad, for her voice to pick up
@@ -1035,6 +1039,27 @@ export class Companion {
     return false;
   }
 
+  /**
+   * Whether she's free to be given something to do, and if not what has her (availability.js): { free, why, settled, held }. Every
+   * feature asks this rather than checking her state and flags. `asked`: you're asking her (the wheel, the debug panel); `mine`: the
+   * asking feature's own job (a JOBS flag or hold key), which doesn't count against her.
+   */
+  availability({ asked = false, mine = null } = {}) {
+    const jobs = {};
+    for (const [flag] of JOBS) jobs[flag] = this[flag];
+    const restingSat = this.fsm.is('resting') && this.restPhase === 'sat';
+    return availabilityOf({ state: this.fsm.name, restingSat, jobs, holds: [...this.holds], held: this.worldHold?.() ?? null }, { asked, mine });
+  }
+
+  /** A feature has her for a while (`why` says what for, for the debug panel): she isn't free until it lets her go. */
+  hold(key, why) {
+    this.holds.set(key, why);
+  }
+
+  release(key) {
+    this.holds.delete(key);
+  }
+
   /** Stood about with nothing holding her in place (her hands over an engine, a wave, a start), so she may turn to look at something. */
   freeToTurn() {
     return this.fsm.is('idle') && !this.warmingAt && !this.waving && !this.recoil && !this.attempt;
@@ -1264,7 +1289,7 @@ Companion.prototype.updateFidget = function (dt) {
 
 // State definitions. `this` is the Companion. Every state says what she looks at while in it (`look`, attention.js): 'free'
 // (nothing in particular, so whatever catches her eye), 'own' (another poser has her head), or a function of the state's data
-// returning a focus ({ x, y, z, weight }, or with intent: true for where she's about to go). tests/companionLooks.test.js fails until
+// returning a focus ({ x, y, z, weight }, or with intent: true for where she's about to go). tests/girlsMinds.test.js fails until
 // a new state has one.
 export const STATES = {
   ...drivingStates,

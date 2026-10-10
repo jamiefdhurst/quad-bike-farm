@@ -30,6 +30,7 @@ export function buildGirlsTab(d) {
 
     // --- What she is doing.
     show(f, 'doing', () => c.state + (c.quad && c.fsm.is('seated', 'mounting', 'driving', 'starting') ? ` (${c.quad.label})` : ''));
+    show(f, 'free', () => { const a = c.availability(); return a.free ? 'yes' : `no: ${a.why}`; });
     show(f, 'looking at', () => c.attention.describe());
     show(f, 'reacting', () => c.reactingText);
     show(f, 'numbness', () => (c.numbPlan ? `walking it off (${c.numbPlan.phase})` : `${round(c.numbness.value)} of 1`));

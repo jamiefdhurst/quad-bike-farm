@@ -462,6 +462,8 @@ export class Game {
     this.favour = new Favour(CHARACTERS.map((ch) => ch.id));
     for (const c of this.companions) {
       const id = c.character.id;
+      // What holds both girls at once (npc/availability.js): nobody starts anything while you're in a menu or the diesel job is on.
+      c.worldHold = () => (this.menu.isOpen ? 'you have a menu open' : this.dieselJob ? 'the red diesel job is on' : null);
       c.favourView = () => ({ mood: this.favour.mood(id), warmth: this.favour.warmth(id), sulk: this.favour.sulkDrive(id), standing: this.favour.standing(id) });
     }
 
@@ -1241,7 +1243,7 @@ export class Game {
     }
     const girls = this.companions.map((c) => ({
       id: c.character.id,
-      free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob,
+      free: c.availability().free,
       dist: c.root.position.distanceTo(q.position),
     }));
     // The first hedge it's heading for, through the gateways (world/fields.js), less the hedge's thickness.
@@ -1268,7 +1270,7 @@ export class Game {
     const e = unit.quad.engine;
     const girls = this.companions.map((c) => ({
       id: c.character.id,
-      free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob,
+      free: c.availability().free,
       x: c.root.position.x,
       z: c.root.position.z,
     }));
@@ -1318,7 +1320,7 @@ export class Game {
     t.update(dt);
     const m = t.motion;
     const active = t.hitched && !!ridden && ridden === this.tractorUnit;
-    const free = (c) => c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob;
+    const free = (c) => c.availability({ mine: 'hayFell' }).free; // a girl who fell off is still free to catch it up
     const girlOf = (id) => this.companions.find((c) => c.character.id === id);
     const say = (c, key) => c?.voice.say(key, { urgent: true });
 
@@ -1454,7 +1456,7 @@ export class Game {
     const jess = this.companions.find((c) => c.character.id === 'jess');
     if (!amy || !jess) return;
     const mine = this.girlUnits.find((u) => u.spec.id === amy.claimedSpec);
-    const free = (c) => c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob && !c.hayFell;
+    const free = (c) => c.availability().free;
     const near = mine ? Math.hypot(amy.root.position.x - mine.quad.position.x, amy.root.position.z - mine.quad.position.z) < 4 : false;
     for (const ev of this.lPlates.update(dt, {
       amyFree: free(amy),
@@ -1517,7 +1519,7 @@ export class Game {
 
   updateTractorGo(dt, ridden) {
     const girlsFree = {};
-    for (const c of this.companions) girlsFree[c.character.id] = c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob && !c.hayFell;
+    for (const c of this.companions) girlsFree[c.character.id] = c.availability().free;
     const youOn = GO_KINDS.some((k) => !!ridden && ridden === this.goVehicle(k));
     const vehicles = GO_KINDS.filter((k) => this.goFree(k) && ridden !== this.goVehicle(k));
     for (const ev of this.tractorGo.update(dt, { free: girlsFree, vehicles: youOn ? [] : vehicles })) {
@@ -1634,7 +1636,7 @@ export class Game {
     const on = (c) => c.onHayRide && c.trailer === mount;
     const girls = this.companions.map((c) => ({
       id: c.character.id,
-      free: c.fsm.is('idle') && !c.hayFell && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob,
+      free: c.availability().free,
       aboard: on(c),
       wants: this.requests.openFor(c.character.id)?.kind === 'mudguard', // she asked to sit up there while it idles
       dist: c.root.position.distanceTo(mount.model.position),
@@ -1738,7 +1740,7 @@ export class Game {
 
     const girls = this.companions.map((c) => ({
       id: c.character.id,
-      free: c.fsm.is('idle') && !c.hayFell && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob,
+      free: c.availability().free,
       seat: seatOf(c),
       dist: c.root.position.distanceTo(q.position),
     }));
@@ -1851,7 +1853,7 @@ export class Game {
     const say = (c, key) => c?.voice.say(key, { urgent: true });
     const girls = this.companions.map((c) => ({
       id: c.character.id,
-      free: c.fsm.is('idle') && !c.hayFell && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob,
+      free: c.availability().free,
       aboard: c.onHayRide && c.trailer === t,
       dist: c.root.position.distanceTo(t.model.position),
     }));
@@ -2007,7 +2009,7 @@ export class Game {
 
     const girls = this.companions.map((c) => ({
       id: c.character.id,
-      free: c.fsm.is('idle') && !c.hayFell && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob,
+      free: c.availability().free,
       seat: c.onHayRide && c.trailer === mount ? c.traSlot?.name ?? null : null,
       dist: c.root.position.distanceTo(q.position),
     }));
@@ -2630,7 +2632,7 @@ export class Game {
         id,
         score: this.favour.scores[id],
         favoured: this.favour.mood(id) === 'favoured',
-        free: c.fsm.is('idle') && !c.warmingAt && !c.pendingSpot,
+        free: c.availability().free,
         distance: c.root.position.distanceTo(you),
         fallenOut: this.fallingOut.active,
         quadOk: !!this.romanceQuad(c),
@@ -2807,7 +2809,7 @@ export class Game {
       id: c.character.id,
       x: c.root.position.x,
       z: c.root.position.z,
-      free: c.fsm.is('idle') && !c.warmingAt && !c.pendingSpot && !this.dieselJob,
+      free: c.availability().free,
     }));
     const loud = this.menu.isOpen || this.units.some((u) => u.quad.engine.isRunning && girls.some((g) => Math.hypot(u.quad.position.x - g.x, u.quad.position.z - g.z) < this.gossip.p.noticeRange));
     const v = this.player.velocity;
@@ -3253,7 +3255,7 @@ export class Game {
         id: c.character.id,
         x: c.root.position.x,
         z: c.root.position.z,
-        free: c.fsm.is('idle') && !this.menu.isOpen,
+        free: c.availability().free,
         favourite: c.voice.favourite,
       })),
       quads: this.girlUnits.map((u) => ({
@@ -3446,7 +3448,7 @@ export class Game {
 
   updateQuadTalk(dt, ridden) {
     const pos = this.player.position;
-    const girls = this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.fsm.is('idle') && !this.menu.isOpen }));
+    const girls = this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.availability().canRemark }));
     const quads = this.girlUnits.map((u) => {
       const user = this.quadUser(u, ridden);
       const q = u.quad;
@@ -3521,7 +3523,7 @@ export class Game {
         id: c.character.id,
         x: c.root.position.x,
         z: c.root.position.z,
-        free: c.fsm.is('idle') && !c.hayFell && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob && !c.isResting,
+        free: c.availability().free,
         cab: cabKinds.find((k) => this.goVehicle(k) && c.onHayRide && c.trailer === this.mountOfKind(k)) ?? null,
       })),
     };
@@ -3682,7 +3684,7 @@ export class Game {
       const m = this.cabShelter.of(c.character.id);
       return {
         id: c.character.id,
-        free: c.fsm.is('idle') && !c.hayFell && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob && !c.isResting,
+        free: c.availability().free,
         neglected: this.favour.mood(c.character.id) === 'neglected',
         cab: m?.reason === 'sulk' ? m.state : null,
       };
@@ -3761,7 +3763,7 @@ export class Game {
       id: c.character.id,
       x: c.root.position.x,
       z: c.root.position.z,
-      free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt,
+      free: c.availability().free,
       warmSpec: c.warmingAt?.unit.spec.id ?? null,
     }));
     const quads = this.girlUnits.map((u) => {
@@ -3790,7 +3792,7 @@ export class Game {
       id: c.character.id,
       x: c.root.position.x,
       z: c.root.position.z,
-      free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob,
+      free: c.availability().free,
       mood: this.favour.mood(c.character.id),
       own: c.claimedSpec,
     }));
@@ -3925,7 +3927,7 @@ export class Game {
   updateComparing(dt) {
     const exists = (id) => this.girlUnits.some((u) => u.spec.id === id);
     const ctx = {
-      girls: this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.fsm.is('idle') && !this.menu.isOpen, buzz: c.content.buzz })),
+      girls: this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.availability().free, buzz: c.content.buzz })),
       floorFree: this.talkFloor.left <= 0 && !this.banter?.busy && !this.gossip.busy && !this.menu.isOpen,
       only: exists,
     };
@@ -3991,7 +3993,7 @@ export class Game {
 
   updateSmokeSense(dt) {
     const smoke = this.girlUnits[0].smoke.params;
-    const girls = this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.fsm.is('idle') && !this.menu.isOpen }));
+    const girls = this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.availability().canRemark }));
     const quads = this.girlUnits.map((u) => {
       const q = u.quad;
       return { id: u.spec.id, x: q.position.x, z: q.position.z, yaw: q.yaw, twoStroke: q.engine.params.strokes === 2, running: q.engine.isRunning, throttle: q.throttle || q.helperThrottle, temperature: q.engine.temperature };
@@ -4035,7 +4037,7 @@ export class Game {
       const e = u.quad.engine;
       return { x: u.quad.position.x, z: u.quad.position.z, running: e.isRunning, throttle: e.throttle, twoStroke: e.params.strokes === 2, diesel: !!e.params.runsOnDiesel };
     });
-    const girls = this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.fsm.is('idle') && !this.menu.isOpen }));
+    const girls = this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.availability().canRemark }));
     for (const e of this.haze.update(dt, { wind: w.wind, rain: w.rain, engines, girls })) {
       const c = this.companions.find((o) => o.character.id === e.girl);
       // Turned away from where the wind brings it, if there is a wind to speak of; otherwise she just waves it off.
@@ -4063,9 +4065,9 @@ export class Game {
     });
     const amy = this.companions.find((c) => c.character.id === 'amy');
     const girls = this.companions.map((c) => ({
-      id: c.character.id, free: (c.fsm.is('idle') || c.fsm.is('resting')) && !this.menu.isOpen, inside: this.world.inBarn(c.root.position.x, c.root.position.z),
+      id: c.character.id, free: c.availability().canRemark, inside: this.world.inBarn(c.root.position.x, c.root.position.z),
     }));
-    const events = this.barnFumes.update(dt, { wind: w.wind, engines, girls, amyFree: !!amy && amy.fsm.is('idle') && !this.menu.isOpen });
+    const events = this.barnFumes.update(dt, { wind: w.wind, engines, girls, amyFree: !!amy && amy.availability().free });
     const out = new THREE.Vector3(bs.door.x + 1.4, 0, bs.z);
     for (const e of events) {
       const c = this.companions.find((o) => o.character.id === (e.girl ?? 'amy'));
@@ -4158,7 +4160,7 @@ export class Game {
 
   updateTea(dt, ridden) {
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
-    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !c.carrying && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot, x: c.root.position.x, z: c.root.position.z }));
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().free, x: c.root.position.x, z: c.root.position.z }));
     const quads = this.girlUnits.map((u) => {
       const q = u.quad;
       return { id: u.spec.id, x: q.position.x, z: q.position.z, speed: Math.abs(q.speed), rider: u === ridden, driver: this.quadUser(u, ridden) !== 'you' ? this.quadUser(u, ridden) : null, tipped: q.isTipped, hasRack: !!q.mugAnchor };
@@ -4238,7 +4240,7 @@ export class Game {
 
   updateJumpers(dt) {
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
-    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !c.carrying && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot, x: c.root.position.x, z: c.root.position.z }));
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().free, x: c.root.position.x, z: c.root.position.z }));
     const rail = this.world.layout.jumperRail;
     for (const e of this.jumpers.update(dt, { weather: this.weather, girls, rail })) {
       const c = byId[e.girl];
@@ -4269,7 +4271,7 @@ export class Game {
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
     const m = this.dieselMistake;
     const unitOf = (spec) => this.girlUnits.find((u) => u.spec.id === spec);
-    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob, x: c.root.position.x, z: c.root.position.z }));
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().free, x: c.root.position.x, z: c.root.position.z }));
     const quads = this.girlUnits.map((u) => {
       const q = u.quad;
       return { id: u.spec.id, x: q.position.x, z: q.position.z, speed: Math.abs(q.speed), rider: u === ridden, driver: this.quadUser(u, ridden) !== 'you' ? this.quadUser(u, ridden) : null, tipped: q.isTipped, space: q.fuel.space, level: q.fuel.level };
@@ -4332,7 +4334,7 @@ export class Game {
       id: c.character.id,
       x: c.root.position.x,
       z: c.root.position.z,
-      free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob,
+      free: c.availability().free,
       chance: c.params.nickChance ?? 0,
     }));
     const you = { x: this.player.position.x, z: this.player.position.z };
@@ -4394,7 +4396,7 @@ export class Game {
     }
     const girls = this.companions.map((c) => ({
       id: c.character.id,
-      free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt,
+      free: c.availability().free,
       distance: Math.hypot(c.root.position.x - ramp.x, c.root.position.z - ramp.z),
     }));
     for (const e of this.jumpWatch.update(dt, { jumper: jumper?.character.id ?? null, girls })) {
@@ -4436,7 +4438,7 @@ export class Game {
     }
     const girls = this.companions.map((c) => ({
       id: c.character.id,
-      free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt,
+      free: c.availability().free,
       role: c.fsm.is('driving') ? 'driving' : q && c.fsm.is('seated') && c.seatKind === 'pillion' && c.quad === q ? 'pillion' : null,
       onRoad: onTarmac(road, c.root.position.x, c.root.position.z),
       distance: q ? Math.hypot(c.root.position.x - q.position.x, c.root.position.z - q.position.z) : Infinity,
@@ -4451,7 +4453,7 @@ export class Game {
     const spinner = this.companions.find((c) => c.fsm.is('driving') && c.drive?.doughnut?.spinning);
     const girls = this.companions.map((c) => ({
       id: c.character.id,
-      free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt,
+      free: c.availability().free,
       distance: spinner ? c.root.position.distanceTo(spinner.root.position) : Infinity,
     }));
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
@@ -4482,7 +4484,7 @@ export class Game {
   // Follow the leader --------------------------------------------------------
 
   updateConvoy(dt, ridden) {
-    const free = (c) => c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot;
+    const free = (c) => c.availability().free;
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
     const girls = this.companions.map((c) => ({ id: c.character.id, free: free(c) }));
     this.updateRaceYou(dt, ridden);
@@ -4647,7 +4649,7 @@ export class Game {
   updateRace(dt, ridden) {
     if (this.drag.active && !this.race.active) return; // one race at a time
     const p = this.race.p;
-    const free = (c) => c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot;
+    const free = (c) => c.availability().free;
     const girls = this.companions.map((c) => ({ id: c.character.id, free: free(c) }));
     const options = {};
     for (const c of this.companions) {
@@ -4769,7 +4771,7 @@ export class Game {
     const s = this.world.layout.dragStrip;
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
     const later = (ms, fn) => setTimeout(fn, ms);
-    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot }));
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().free }));
     const options = {};
     for (const c of this.companions) {
       options[c.character.id] = this.girlUnits.filter((u) => u !== ridden && c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && !u.quad.bog.stuck).map((u) => u.spec.id);
@@ -4866,7 +4868,7 @@ export class Game {
     const item = (thing, name) => ({ x: at(thing).x, z: at(thing).z, held: thing.held || !!thing.carried, home: this.itemHome[name] ?? thing.model.position });
     return {
       you: { x: this.player.position.x, z: this.player.position.z, riding: ridden?.spec.id ?? null },
-      girls: this.companions.map((c) => ({ id: c.character.id, free: c.fsm.is('idle') && !c.carrying && !this.menu.isOpen, mood: this.favour.mood(c.character.id) })),
+      girls: this.companions.map((c) => ({ id: c.character.id, free: c.availability().free, mood: this.favour.mood(c.character.id) })),
       quads: this.girlUnits.map((u) => ({
         id: u.spec.id,
         x: u.quad.position.x,

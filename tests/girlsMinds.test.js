@@ -1,17 +1,29 @@
-// The pattern for the girls' attention (CLAUDE.md, "The girls' minds"): every state says what she looks at, and everything the
-// game tells her about is a kind attention.js knows. These fail until something new follows it.
+// The pattern for the girls' minds (CLAUDE.md, "The girls' minds"): every state says what she looks at and what it means for her being
+// free, everything the game tells her about is a kind attention.js knows, and nothing decides she's free except availability(). These
+// fail until something new follows it.
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { STATES } from '../src/npc/companion.js';
 import { NOTICE_KINDS } from '../src/npc/attention.js';
+import { STATE_WHY } from '../src/npc/availability.js';
 
-describe("the girls' attention pattern", () => {
+describe("the girls' minds pattern", () => {
   it('every state says what she looks at', () => {
     for (const [name, state] of Object.entries(STATES)) {
       const look = state.look;
       expect(look === 'free' || look === 'own' || typeof look === 'function', `state "${name}" needs a look ('free', 'own' or a function)`).toBe(true);
     }
+  });
+
+  it('every state says what it means for her being free', () => {
+    for (const name of Object.keys(STATES)) expect(name in STATE_WHY, `state "${name}" needs a STATE_WHY entry (availability.js)`).toBe(true);
+  });
+
+  it("no feature in game.js decides she's free from her state and flags rather than availability()", () => {
+    const src = readFileSync('src/game.js', 'utf8');
+    const own = [...src.matchAll(/\b\w+\.fsm\.is\('idle'\)\s*&&\s*!(this\.menu\.isOpen|this\.dieselJob|\w+\.(warmingAt|pendingSpot|nickJob|hayFell|carrying|numbPlan|lineUpJob))/g)];
+    expect(own.map((m) => m[0]), 'use c.availability() (npc/availability.js)').toEqual([]);
   });
 
   it('every notice the game sends is a kind attention knows', () => {

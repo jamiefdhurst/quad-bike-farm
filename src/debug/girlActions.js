@@ -16,11 +16,12 @@ export function girlActions(g) {
   const girl = (id) => g.companions.find((c) => c.character.id === id);
   const toast = (t) => g.hud.toast(t);
   const nameOf = (id) => girl(id).name;
-  /** She has to be stood about; otherwise says so and returns false. */
+  /** She has to be free when you ask (npc/availability.js); otherwise says what has her and returns false. */
   const free = (id) => {
     const c = girl(id);
-    if (c.fsm.is('idle')) return true;
-    toast(`${c.name} is busy: call her back to the barn first (the bell)`);
+    const a = c.availability({ asked: true });
+    if (a.free) return true;
+    toast(`${c.name} is busy (${a.why}): call her back to the barn first (the bell)`);
     return false;
   };
   /** The quads she could take now, nearest to `from` first. */

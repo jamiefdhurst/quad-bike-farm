@@ -149,6 +149,7 @@ export function buildGameTree(g, host) {
     const c = () => g.companions.find((o) => o.character.id === id);
     return group(() => ({
       state: text(() => c().state),
+      free: text(() => { const a = c().availability(); return a.free ? 'yes' : `no: ${a.why}`; }),
       lookingAt: text(() => c().attention.describe()),
       reacting: text(() => c().reactingText),
       ...where(id),

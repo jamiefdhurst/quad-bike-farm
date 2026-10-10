@@ -240,7 +240,7 @@ export class CompanionVoice {
     if (sick) this.say('engineSick', { chance: 0.05 });
 
     // Near the quads: she likes them all going, and misses it when they aren't.
-    if (c.fsm.is('idle', 'resting') && !view.menuOpen && (view.units ?? []).some((u) => u.engine.isRunning && u.quad.position.distanceTo(this.head) < 8)) {
+    if (c.availability().settled && !view.menuOpen && (view.units ?? []).some((u) => u.engine.isRunning && u.quad.position.distanceTo(this.head) < 8)) {
       if (c.content.share >= 0.7) this.say('likeAllRunning', { chance: p.likeRunningChance * step });
       else if (c.content.share <= 0.5) this.say('wishAllRunning', { chance: p.wishRunningChance * step });
     }
@@ -641,7 +641,7 @@ export class CompanionVoice {
   watchDiagnosis(dt, unit, w) {
     const c = this.companion;
     const e = unit.engine;
-    if (!e.isRunning || !c.fsm.is('idle', 'resting') || unit.quad.position.distanceTo(this.head) > 6) return;
+    if (!e.isRunning || !c.availability().settled || unit.quad.position.distanceTo(this.head) > 6) return;
     if (this.chatter.time < (w.diagnosedUntil ?? 0)) return;
     const p = c.params;
     const truth = engineCondition(e, p);
@@ -666,7 +666,7 @@ export class CompanionVoice {
   /** Stood by a quad that's worn, she says who she thinks did it, going by who was really riding it (wearLedger.js). */
   watchBlame(dt, unit, w, view) {
     const c = this.companion;
-    if (!view.ledger || !c.fsm.is('idle', 'resting') || unit.quad.position.distanceTo(this.head) > 6) return;
+    if (!view.ledger || !c.availability().settled || unit.quad.position.distanceTo(this.head) > 6) return;
     if (unit.engine.wear < c.params.blameWearFrom || this.chatter.time < (w.blamedUntil ?? 0)) return;
     const culprit = view.ledger.culprit(unit.id);
     if (!culprit) return;
@@ -677,7 +677,7 @@ export class CompanionVoice {
   /** Stood by a parked quad whose carb has been dripping, she smells the petrol (carbDrip.js). Once per quad every four minutes. */
   watchDrip(dt, unit, w, view) {
     const c = this.companion;
-    if (!view.drip || !c.fsm.is('idle', 'resting') || unit.quad.position.distanceTo(this.head) > c.params.dripSmellRange) return;
+    if (!view.drip || !c.availability().settled || unit.quad.position.distanceTo(this.head) > c.params.dripSmellRange) return;
     if (!view.drip.smells(unit.id) || this.chatter.time < (w.dripUntil ?? 0)) return;
     if (!this.say('dripSmell', { chance: c.params.dripSmellChance * dt })) return;
     w.dripUntil = this.chatter.time + 240;
@@ -713,7 +713,7 @@ export class CompanionVoice {
     const patch = view.coolantPatches?.get(unit.id);
     if (e.steam > 0.25 && e.isRunning) {
       if (this.say('coolantSteam', { chance: 0.05 })) w.coolantUntil = this.chatter.time + 90;
-    } else if (!e.isRunning && patch?.visible && c.fsm.is('idle', 'resting')) {
+    } else if (!e.isRunning && patch?.visible && c.availability().settled) {
       if (this.say('coolantDamp', { chance: c.params.dripSmellChance * dt })) w.coolantUntil = this.chatter.time + 240;
     }
   }
@@ -721,7 +721,7 @@ export class CompanionVoice {
   /** Come across a quad idling with nobody on it, she says who left it running, going by who really did (leftRunning.js). */
   watchLeftRunning(dt, unit, w, view) {
     const c = this.companion;
-    if (!view.left || !c.fsm.is('idle', 'resting') || unit.quad.position.distanceTo(this.head) > c.params.leftRunningRange) return;
+    if (!view.left || !c.availability().settled || unit.quad.position.distanceTo(this.head) > c.params.leftRunningRange) return;
     if (!unit.engine.isRunning || this.chatter.time < (w.leftUntil ?? 0)) return;
     const who = view.left.culprit(unit.id);
     if (!who) return;
@@ -737,7 +737,7 @@ export class CompanionVoice {
   watchHistory(dt, unit, w, view) {
     const history = view.history?.quads[unit.id];
     const c = this.companion;
-    if (!history || !c.fsm.is('idle', 'resting') || unit.quad.position.distanceTo(this.head) > 6) return;
+    if (!history || !c.availability().settled || unit.quad.position.distanceTo(this.head) > 6) return;
     if (this.chatter.time < (w.historyUntil ?? 0)) return;
     this.beliefs ??= {};
     const knows = (this.beliefs[unit.id] ??= girlKnows(history, c.params.diagnoseAccuracy, Math.random));
@@ -757,7 +757,7 @@ export class CompanionVoice {
     const kinds = unit.quad.quirks.kinds;
     const away = unit.quad.position.distanceTo(this.head);
     const boarding = unit === view.ridden && away < 10;
-    if (!boarding && !(c.fsm.is('idle', 'resting') && away < 6)) return;
+    if (!boarding && !(c.availability().settled && away < 6)) return;
     if (this.chatter.time < (w.quirkUntil ?? 0)) return;
     this.quirkBeliefs ??= {};
     const known = (this.quirkBeliefs[unit.id] ??= girlKnowsQuirks(kinds, applicableQuirks(featuresOf(unit.spec, true)), c.params.diagnoseAccuracy, Math.random));
