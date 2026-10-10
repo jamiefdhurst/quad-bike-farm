@@ -476,6 +476,11 @@ export const FAQ_SECTIONS = [
         tip: 'On a cold day, leave a quad idling near the girls and they come to warm their hands.',
       },
       {
+        q: 'Why did she say she was busy when I called her over?',
+        a: `She was on her way to something she'd decided to do: a sit down, a cup of tea, a drive. Whatever you ask her takes her from it, and
+          she says so. It stays on her mind for a couple of minutes, she's keener on it than before, and when she gets back to it she says so.`,
+      },
+      {
         q: 'Why did she cover her ears, or flinch?',
         a: `They react to what happens near them. A backfire or a bang makes them flinch, a quad leaping forward right by them makes them hop
           back, and revving flat out beside them makes Amy cover her ears (Jess likes the noise). A quad going over gets a gasp, a good jump a
