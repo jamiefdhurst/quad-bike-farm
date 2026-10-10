@@ -84,6 +84,7 @@ import { Ownership, OWNERSHIP_PARAM_RANGES } from './npc/ownership.js';
 import { Hearing, EAR_PARAM_RANGES } from './npc/earing.js';
 import { Warming, WARMING_PARAM_RANGES, isChilly } from './npc/warming.js';
 import { CabShelter, CAB_SHELTER_PARAM_RANGES } from './npc/cabShelter.js';
+import { Sulking, SULK_PARAM_RANGES } from './npc/sulking.js';
 import { DEFAULT_KEEPALIVE_PARAMS, KEEPALIVE_PARAM_RANGES } from './npc/keepAlive.js';
 import { HeadStart, HEADSTART_PARAM_RANGES } from './npc/headStart.js';
 import { Gossip, GOSSIP_PARAM_RANGES } from './npc/gossip.js';
@@ -662,6 +663,7 @@ export class Game {
     this.dragBlipSaid = false;
     buildDragStrip(this.scene, (x, z) => this.world.heightAt(x, z), this.world.layout.dragStrip);
     this.warming = new Warming(); // hands over an idling engine on a cold day (npc/warming.js)
+    this.sulking = new Sulking(undefined, createRandom(this.seed ^ 0x5011)); // a girl sitting alone in a Land Rover after a row (npc/sulking.js)
     this.cabShelter = new CabShelter(undefined, createRandom(this.seed ^ 0x0cab)); // into a Land Rover or the UTV out of the rain or cold (npc/cabShelter.js)
     this.nicking = new Nicking(undefined, createRandom(this.seed ^ 0x61c3)); // Jess taking a quad you left running (npc/nicking.js)
     this.headStart = new HeadStart(undefined, createRandom(this.seed ^ 0x4ead)); // starting your usual quad for you (npc/headStart.js)
@@ -722,6 +724,7 @@ export class Game {
             return { text: `Hold E to fill the ${unit.label} (${pct}%) with ${fuelText(this.can.oil, this.can.diesel)}   ·   G put the can down` };
           }
           if (quad.crank && quad.atCrank && !this.player.isRiding) return { text: this.crankPrompt(quad) };
+          if (this.sulkerIn(quad)) return { text: `${this.sulkerIn(quad).name} is sulking in the ${unit.label}   ·   E knock on the window` };
           if (quad.isTipped) return `Right the ${unit.label}`;
           if (this.canRideBench(quad)) return this.lookingAtBack(quad) ? `Get in the back (${this.herAtTheFront(quad).name}'s driving)` : `Get in beside ${this.herAtTheFront(quad).name} (she's driving)`;
           if (quad.hasBench && this.herAtTheFront(quad) && !quad.passenger && !this.benchSeatFor(quad)) return { text: `${this.herAtTheFront(quad).name}'s driving and the bench is full` };
@@ -772,6 +775,7 @@ export class Game {
             return;
           }
           if (this.tooFastToMount(quad)) return;
+          if (this.sulkerIn(quad)) return this.knockOnWindow(this.sulkerIn(quad));
           if (quad.isTipped) quad.rightItself();
           else if (this.canRideBench(quad)) this.mountBench(unit);
           else if (quad.hasBench && this.herAtTheFront(quad)) return; // she's driving and the bench is full
@@ -1030,6 +1034,7 @@ export class Game {
     registerTuning('Whose quad', this.ownership.p, OWNERSHIP_PARAM_RANGES);
     registerTuning('Hearing a quad', this.hearing.p, EAR_PARAM_RANGES);
     registerTuning('Warming hands', this.warming.p, WARMING_PARAM_RANGES);
+    registerTuning('Sulking in the cab', this.sulking.p, SULK_PARAM_RANGES);
     registerTuning('Shelter in a cab', this.cabShelter.p, CAB_SHELTER_PARAM_RANGES);
     registerTuning('Head start', this.headStart.p, HEADSTART_PARAM_RANGES);
     registerTuning('Talking about you', this.gossip.p, GOSSIP_PARAM_RANGES);
@@ -2489,6 +2494,7 @@ export class Game {
     if (!event) return;
     if (event.type === 'fellOut') {
       this.fallingOutEvents.push({ when: 'fellOut', edge: true, roles: { kind: event.kind, fault: event.fault } });
+      this.sulking.fellOut(event.kind, event.fault, this.companions.map((c) => c.character.id)); // the one who came off worse may go and sulk
       this.race.stand();
       this.convoy.stand();
     } else if (event.type === 'madeUp') this.fallingOutEvents.push({ when: 'madeUp', edge: true, roles: { sorry: event.sorry } });
@@ -3426,16 +3432,16 @@ export class Game {
       const q = this.goVehicle(kind).quad;
       const mount = this.mountOfKind(kind);
       const busy = (c) => c.quad === q && (c.fsm.is('driving', 'mounting', 'dismounting', 'shuffling', 'cranking') || (c.fsm.is('walking') && ['drive', 'crank', 'start'].includes(c.fsm.data?.goal)));
-      const open = !q.rider && !q.driver && !q.passenger && !q.isTipped && q.speed < 0.5 && !this.companions.some(busy) && !(kind === 'utv' && (this.utvBed.tip > 0.02 || mount.bedBusy));
+      const open = !q.rider && !q.driver && !q.passenger && !q.isTipped && q.speed < 0.5 && !this.companions.some(busy) && !this.cabShelter.isSulkCab(kind) && !(kind === 'utv' && (this.utvBed.tip > 0.02 || mount.bedBusy));
       const seats = [mount.slots.left, mount.slots.mid].filter((s) => s && !s.girl).length;
       return { id: kind, x: q.position.x, z: q.position.z, open, seats, running: q.engine.isRunning, warm: kind !== 'utv' };
     });
   }
 
   /** She climbs into this cab (when she's stood about). Returns whether she set off. */
-  boardCab(c, kind) {
+  boardCab(c, kind, { passenger = false } = {}) {
     const mount = this.mountOfKind(kind);
-    const slot = mount.freeSlot(c.root.position);
+    const slot = passenger ? mount.slots.left : mount.freeSlot(c.root.position); // sulking, she takes the passenger's seat
     if (!slot || slot.girl || !c.boardTrailer(mount, slot)) return false;
     this.rideOfKind(kind).ask(c.character.id); // she stays until the weather turns or she's bored
     return true;
@@ -3464,25 +3470,111 @@ export class Game {
     if (e.type === 'go') {
       const unit = this.goVehicle(e.cab);
       const go = () => {
-        if (!this.boardCab(c, e.cab)) this.cabShelter.drop(e.girl, []);
+        if (!this.boardCab(c, e.cab, { passenger: e.reason === 'sulk' })) this.cabShelter.drop(e.girl, []);
       };
-      c.voice.say(e.reason === 'cold' ? 'cabColdGo' : 'cabRainGo', { urgent: true, chance: 0.9 });
+      if (e.reason !== 'sulk') c.voice.say(e.reason === 'cold' ? 'cabColdGo' : 'cabRainGo', { urgent: true, chance: 0.9 });
       if (e.start) {
-        c.requestStart(unit.quad, { settleAt: 0.5, then: (ran) => (ran || unit.quad.engine.isRunning ? go() : this.cabShelter.drop(e.girl, [])) });
+        c.requestStart(unit.quad, { settleAt: e.reason === 'sulk' ? 0.3 : 0.5, then: (ran) => (ran || unit.quad.engine.isRunning ? go() : this.cabShelter.drop(e.girl, [])) });
       } else go();
-    } else if (e.type === 'in') c.voice.say('cabIn', { chance: 0.8 });
+    } else if (e.type === 'in') {
+      if (e.reason !== 'sulk') c.voice.say('cabIn', { chance: 0.8 });
+    }
     else if (e.type === 'out') {
       this.rideOfKind(e.cab).dismiss(e.girl);
       c.leaveTrailer();
-      c.voice.say('cabOut', { chance: 0.6 });
+      if (e.reason !== 'sulk') c.voice.say('cabOut', { chance: 0.6 });
     } else if (e.type === 'switchOff') {
       const q = this.goVehicle(e.cab).quad;
       if (q.engine.isRunning && !q.rider && !q.driver && !q.passenger && !this.companions.some((o) => o.onHayRide && o.trailer === this.mountOfKind(e.cab))) q.engine.setIgnition(false);
     }
   }
 
-  updateCabShelter(dt) {
-    for (const e of this.cabShelter.update(dt, this.cabShelterContext())) this.handleCabEvent(e);
+  /** `quiet`: autonomy is off, so only a sulk (sent by the button) carries on; no weather sends anyone to a cab. */
+  updateCabShelter(dt, quiet = false) {
+    const ctx = this.cabShelterContext();
+    if (quiet) Object.assign(ctx, { rain: 0, warmth: 1 });
+    for (const e of this.cabShelter.update(dt, ctx)) this.handleCabEvent(e);
+  }
+
+  // Sulking in the cab ---------------------------------------------------
+
+  /** The girl sulking in this vehicle (a Land Rover), if one is in it. */
+  sulkerIn(quad) {
+    const id = this.sulking.who;
+    if (!id || !this.sulking.isIn(id)) return null;
+    const c = this.companions.find((o) => o.character.id === id);
+    return c && c.quad === quad ? c : null;
+  }
+
+  /** She is cross: after a row or a slight she goes and sits alone in a Land Rover, engine on (npc/sulking.js). Each frame. */
+  updateSulking(dt) {
+    const s = this.sulking;
+    const girls = this.companions.map((c) => {
+      const m = this.cabShelter.of(c.character.id);
+      return {
+        id: c.character.id,
+        free: c.fsm.is('idle') && !c.hayFell && !this.menu.isOpen && !c.warmingAt && !c.pendingSpot && !this.dieselJob && !c.nickJob && !c.isResting,
+        neglected: this.favour.mood(c.character.id) === 'neglected',
+        cab: m?.reason === 'sulk' ? m.state : null,
+      };
+    });
+    for (const e of s.update(dt, { girls })) {
+      const c = this.companions.find((o) => o.character.id === e.girl);
+      if (e.type === 'go') {
+        if (this.sendToCab(e.girl, 'sulk')) c.voice.say('sulkGo', { force: true });
+        else s.drop(e.girl);
+      } else if (e.type === 'out') {
+        const m = this.cabShelter.of(e.girl);
+        if (m) {
+          this.handleCabEvent({ type: 'out', girl: e.girl, cab: m.cab, reason: 'sulk' });
+          this.cabShelter.drop(e.girl, []);
+        }
+        c.voice.say(e.why === 'round' ? 'sulkRound' : 'sulkOut', { force: true });
+      } else if (e.type === 'over') {
+        const m = this.cabShelter.of(e.girl);
+        if (m?.reason === 'sulk') this.cabShelter.drop(e.girl, []);
+      }
+    }
+    // She keeps a little choke and throttle on while a cold engine warms, or it dies on her once she's stopped minding it.
+    const sat = this.sulking.who && this.sulking.isIn(this.sulking.who) ? this.cabShelter.of(this.sulking.who) : null;
+    if (sat) {
+      const q = this.goVehicle(sat.cab).quad;
+      if (q.engine.isRunning && q.engine.temperature < 0.5) {
+        if (q.choke < 0.3) q.choke = 0.3;
+        if (!this.sulkRev) q.helperThrottle = 0.15; // and a touch of throttle from the seat beside
+        this.sulkChoke = q;
+      } else if (this.sulkChoke === q) {
+        q.choke = 0;
+        if (!this.sulkRev) q.helperThrottle = 0;
+        this.sulkChoke = null;
+      }
+    } else if (this.sulkChoke) {
+      this.sulkChoke.choke = 0;
+      this.sulkChoke.helperThrottle = 0;
+      this.sulkChoke = null;
+    }
+    // Jess's revving: the engine blipped open for a moment at a time.
+    if (this.sulkRev) {
+      this.sulkRev.left -= dt;
+      const q = this.sulkRev.quad;
+      if (this.sulkRev.left <= 0 || !q.engine.isRunning) {
+        q.helperThrottle = 0;
+        this.sulkRev = null;
+      } else q.helperThrottle = 1;
+    }
+  }
+
+  /** You knock on the window of a Land Rover with a sulking girl in it. */
+  knockOnWindow(c) {
+    const id = c.character.id;
+    const r = this.sulking.knock(id, { neglected: this.favour.mood(id) === 'neglected' });
+    if (!r) return;
+    this.hud.toast(r.kind === 'ignored' ? `You knock. ${c.name} doesn't look round` : 'You knock on the window', 1.5);
+    if (r.kind === 'answer') c.voice.say('sulkAnswer', { force: true });
+    else if (r.kind === 'rev') {
+      c.voice.say('sulkAnswer', { force: true });
+      this.sulkRev = { quad: c.quad, left: this.sulking.p.revSeconds };
+    } else if (r.kind === 'pushed') c.voice.say('sulkPushed', { force: true });
   }
 
   /** The debug panel's and the console's way to send a girl to a cab now. Returns whether she set off. */
@@ -5155,7 +5247,8 @@ export class Game {
     this.updatePushStart();
     this.updateQuadTalk(dt, ridden);
     this.updateWarming(dt);
-    if (auto) this.updateCabShelter(dt);
+    if (auto || this.sulking.who) this.updateCabShelter(dt, !auto);
+    if (auto || this.sulking.who) this.updateSulking(dt);
     if (auto) this.updateKeepAlive(dt);
     if (auto) this.updateHeadStart(dt, ridden);
     this.updateDoughnuts(dt);

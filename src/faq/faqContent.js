@@ -339,6 +339,13 @@ export const FAQ_SECTIONS = [
         tip: 'After a jump start, keep the revs up for ten minutes or it dies again at the first stop.',
       },
       {
+        q: 'Why is she sat alone in the Land Rover with the engine running, and how do I get her out?',
+        a: `She is sulking. It happens after a falling out goes badly for her, or when she feels you favour her friend. Look at the Land Rover and press <kbd>E</kbd>
+          to knock on the window. Amy ignores the first knock, answers on the second and forgives you on the third. Jess revs the engine at you three times and then
+          gives in. Don't knock too fast: three in a row and she is worse. Or leave her, and she gets out on her own after a few minutes.`,
+        tip: 'A girl sulking in the Land Rover? Knock on the window with E, but not too fast.',
+      },
+      {
         q: 'Why is she sitting on the back of a quad that is running, with nobody riding it?',
         a: `That quad is hard to keep going (it took a few goes to start, it is worn out, or its choke creeps on) and she does not dare switch it off, because it
           might not start again. She holds a fast idle with a hand on the throttle and catches it if it falters. You can get on the front and ride it away, but

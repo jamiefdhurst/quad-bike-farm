@@ -69,6 +69,15 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'sulk',
+      label: '% sulks alone in a Land Rover (skips the row)',
+      run: (id) => {
+        if (!free(id)) return;
+        if (!g.sulking.begin(id, 'forced')) return toast(`${nameOf(g.sulking.who)} is already sulking`);
+        toast(`${nameOf(id)} is off to sulk in a Land Rover`);
+      },
+    },
+    {
       verb: 'keep-alive',
       label: '% sits on the back of the picked vehicle and keeps it alive (needs it running, nobody on it)',
       vehicle: true,

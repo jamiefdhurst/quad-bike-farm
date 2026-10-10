@@ -64,26 +64,30 @@ export class CabShelter {
     this.startedBy = new Map(); // cab id -> true while an engine she started is running for her
   }
 
+  /** Whether a girl is sulking in this cab (or on her way to it), so nobody else gets in with her. */
+  isSulkCab(cab) {
+    return [...this.mine.values()].some((m) => m.reason === 'sulk' && m.cab === cab);
+  }
+
   /** Where this girl is in it: null, or { cab, reason, state }. */
   of(id) {
     return this.mine.get(id) ?? null;
   }
 
   /**
-   * Sends a girl to a cab at once (for the debug panel), without the weather or the dice. Returns the event, or null if there is nothing to go to.
+   * Sends a girl to a cab at once (for the debug panel, and to sulk), without the weather or the dice. Returns the event, or null if there is nothing to go to.
    * `ctx` is the same as for `update`; `cab` picks one by id, or the nearest with room.
    */
   force(id, ctx, reason = 'rain', cab = null) {
     const g = ctx.girls.find((x) => x.id === id);
     if (!g || this.mine.has(id)) return null;
-    const pick = this.nearest(g, ctx, cab ? (c) => c.id === cab : reason === 'cold' ? (c) => c.warm : () => true);
-    return pick ? this.send(g, pick, reason, reason === 'cold' || !pick.running) : null;
+    const pick = this.nearest(g, ctx, cab ? (c) => c.id === cab : reason === 'cold' || reason === 'sulk' ? (c) => c.warm : () => true, reason === 'sulk' ? 400 : this.p.cabRange); // she'll storm off a long way
+    return pick ? this.send(g, pick, reason, reason === 'cold' || reason === 'sulk' || !pick.running) : null;
   }
 
-  nearest(g, ctx, ok = () => true) {
-    const p = this.p;
+  nearest(g, ctx, ok = () => true, range = this.p.cabRange) {
     let best = null;
-    let bestD = p.cabRange;
+    let bestD = range;
     for (const c of ctx.cabs) {
       const going = [...this.mine.values()].filter((m) => m.cab === c.id).length;
       if (!c.open || c.seats - going <= 0 || !ok(c)) continue;
@@ -99,7 +103,7 @@ export class CabShelter {
   send(g, cab, reason, start) {
     const p = this.p;
     const startNow = start && !cab.running;
-    this.mine.set(g.id, { cab: cab.id, reason, state: 'going', until: this.clock + p.goTimeout, leaveAt: Infinity, started: startNow });
+    this.mine.set(g.id, { cab: cab.id, reason, state: 'going', until: this.clock + (reason === 'sulk' ? p.goTimeout * 3 : p.goTimeout), leaveAt: Infinity, started: startNow });
     if (startNow) this.startedBy.set(cab.id, true);
     return { type: 'go', girl: g.id, cab: cab.id, reason, start: startNow };
   }
@@ -137,6 +141,7 @@ export class CabShelter {
         this.drop(g.id, events); // you drove off with her, she was asked out, or she got bored (the ride's own timer)
         continue;
       }
+      if (m.reason === 'sulk') continue; // she leaves when sulking.js says (talked round, or time)
       const over = m.reason === 'cold' ? !cold : dry;
       this.dryFor[g.id] = over ? (this.dryFor[g.id] ?? 0) + dt : 0;
       this.delay[g.id] ??= between(this.random, p.dryDelayMin, p.dryDelayMax);
