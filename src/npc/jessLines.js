@@ -76,6 +76,7 @@ import { JESS_SEAT_LINES } from './seatLines.js';
 import { JESS_WARMSIT_LINES } from './warmSitLines.js';
 import { JESS_DONTFIX_LINES } from './dontFixLines.js';
 import { JESS_BUZZ_LINES } from './buzzLines.js';
+import { JESS_NUMB_LINES } from './numbLines.js';
 import { JESS_FAULT_LINES } from './faultLines.js';
 import { JESS_BENCH_LINES } from './benchLines.js';
 
@@ -420,6 +421,7 @@ export const JESS_LINES = {
   ...JESS_WARMSIT_LINES,
   ...JESS_DONTFIX_LINES,
   ...JESS_BUZZ_LINES,
+  ...JESS_NUMB_LINES,
   ...JESS_DIAGNOSIS_LINES,
   ...JESS_THRASH_LINES,
   ...JESS_LEFT_LINES,

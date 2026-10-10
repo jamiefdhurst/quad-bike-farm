@@ -88,6 +88,7 @@ import { Sulking, SULK_PARAM_RANGES } from './npc/sulking.js';
 import { ReadyWaiting, READY_PARAM_RANGES } from './npc/readyWaiting.js';
 import { WarmSit, WARMSIT_PARAM_RANGES } from './npc/warmSit.js';
 import { DontFixIt, DONTFIX_PARAM_RANGES } from './npc/dontFixIt.js';
+import { DEFAULT_NUMB_PARAMS, NUMB_PARAM_RANGES } from './npc/numbness.js';
 import { DEFAULT_KEEPALIVE_PARAMS, KEEPALIVE_PARAM_RANGES } from './npc/keepAlive.js';
 import { HeadStart, HEADSTART_PARAM_RANGES } from './npc/headStart.js';
 import { Gossip, GOSSIP_PARAM_RANGES } from './npc/gossip.js';
@@ -610,7 +611,7 @@ export class Game {
     this.pushParams = { ...DEFAULT_PUSH_PARAMS };
     this.keepParams = { ...DEFAULT_KEEPALIVE_PARAMS }; // keeping a sick one alive from the back (npc/keepAlive.js), shared by both girls
     this.goJoins = []; // the other girl on her way to climb in beside a driver: { left, girl, kind, driver }
-    for (const c of this.companions) Object.assign(c, { tractorGo: this.tractorDrive, utvGo: this.utvDrive, landyGo: this.landyDrive, crankParams: this.crankParams, pushParams: this.pushParams, keepParams: this.keepParams, tractorStartParams: this.tractorStartParams, noviceParams: this.noviceParams });
+    for (const c of this.companions) Object.assign(c, { tractorGo: this.tractorDrive, utvGo: this.utvDrive, landyGo: this.landyDrive, crankParams: this.crankParams, pushParams: this.pushParams, keepParams: this.keepParams, numbShared: this.numbParams, tractorStartParams: this.tractorStartParams, noviceParams: this.noviceParams });
     // Jess tapes L plates to Amy's quad; Amy peels them off, and once she's confident they go on the tractor (npc/lPlates.js).
     this.lPlates = new LPlates(undefined, createRandom(this.seed ^ 0x1b1a));
     this.lPlateSet = new LPlateSet();
@@ -668,6 +669,7 @@ export class Game {
     this.warming = new Warming(); // hands over an idling engine on a cold day (npc/warming.js)
     this.readyWaiting = new ReadyWaiting(undefined, createRandom(this.seed ^ 0x2ead)); // sat on a running quad, revving and tooting, while you are a minute (npc/readyWaiting.js)
     this.warmSit = new WarmSit(undefined, createRandom(this.seed ^ 0x3a2f)); // sat on your quad while it warms, for the shake (npc/warmSit.js)
+    this.numbParams = { ...DEFAULT_NUMB_PARAMS }; // legs gone tingly and a numb bum from a long sit on a shaking seat (npc/numbness.js)
     this.dontFix = new DontFixIt(); // a girl minding when her favourite is fixed up (npc/dontFixIt.js)
     this.warmSitQuads = new Map(); // girl id -> the quad she is sitting on
     this.readyQuads = new Map(); // girl id -> the quad she is getting ready or waiting on
@@ -1042,6 +1044,7 @@ export class Game {
     registerTuning('Whose quad', this.ownership.p, OWNERSHIP_PARAM_RANGES);
     registerTuning('Hearing a quad', this.hearing.p, EAR_PARAM_RANGES);
     registerTuning('Warming hands', this.warming.p, WARMING_PARAM_RANGES);
+    registerTuning('Numb bum', this.numbParams, NUMB_PARAM_RANGES);
     registerTuning('Minding a fix', this.dontFix.p, DONTFIX_PARAM_RANGES);
     registerTuning('Sitting while it warms', this.warmSit.p, WARMSIT_PARAM_RANGES);
     registerTuning('Ready and waiting', this.readyWaiting.p, READY_PARAM_RANGES);

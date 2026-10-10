@@ -12,6 +12,7 @@ import { hayRideStates, hayRideMethods, DEFAULT_HAYSEAT_PARAMS } from './compani
 import { restingMethods, restingStates } from './companionResting.js';
 import { warmingMethods } from './companionWarming.js';
 import { keepAliveMethods } from './companionKeepAlive.js';
+import { numbMethods } from './companionNumb.js';
 import { carryingMethods } from './companionCarrying.js';
 import { carryParams } from './carrying.js';
 import { Contentment } from './contentment.js';
@@ -1055,6 +1056,7 @@ export class Companion {
   update(dt, vibration, viewer) {
     this.viewer = viewer; // who's watching, for showing off to (showOffYou)
     this.fsm.update(dt);
+    this.updateNumbPlan(dt);
     this.updateRecoil(dt);
     this.updateBoredom(dt, viewer);
     this.updateLineUp(dt);
@@ -1082,6 +1084,7 @@ Object.assign(Companion.prototype, drivingMethods);
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(hayRideMethods));
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(warmingMethods));
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(keepAliveMethods));
+Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(numbMethods));
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(carryingMethods));
 Object.assign(Companion.prototype, wavingMethods);
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(moveMethods));
@@ -1380,6 +1383,7 @@ const STATES = {
       this.watchSideSaddle(dt);
       this.mindTheEngine(dt);
       this.askToGetOff(dt);
+      this.updateNumb(dt);
       this.boredOnTheBack(dt);
       this.watchRunaway(dt);
       this.afterFriendsRide(dt);

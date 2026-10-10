@@ -339,6 +339,11 @@ export const FAQ_SECTIONS = [
         tip: 'After a jump start, keep the revs up for ten minutes or it dies again at the first stop.',
       },
       {
+        q: 'Why has she got off the quad to walk about, saying her bum has gone numb?',
+        a: `She has been sitting on the back of a running quad that shakes for a long time. The harder it shakes, the sooner her legs go tingly and her bum goes numb.
+          She gets off, walks it off, stretches, and gets back on. A smooth warm engine takes a long time to do it; a cold or rough one is much quicker.`,
+      },
+      {
         q: 'Why does she want me to take her over the cattle grid, or the bumpy way, or start the tractor?',
         a: `The girls like the shake. Now and then, when you are on foot near her, she asks you to take her over the cattle grid again (on the back of a quad you ride),
           to go the bumpy way (a few good jolts on rough ground, with her on the back), or to start the tractor so she can sit on its mudguard while it idles.

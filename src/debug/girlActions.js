@@ -91,6 +91,11 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'numb',
+      label: '% goes numb now: gets off, walks it off, stretches and gets back on (needs her on the back of a quad)',
+      run: (id) => toast(girl(id).forceNumb() ? `${nameOf(id)}'s bum has gone numb` : `${nameOf(id)} needs to be sat on the back of a quad`),
+    },
+    {
       verb: 'minds-fix',
       label: '% minds that you fixed up her favourite (says her line now)',
       run: (id) => {

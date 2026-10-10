@@ -30,6 +30,7 @@ export function buildGirlsTab(d) {
 
     // --- What she is doing.
     show(f, 'doing', () => c.state + (c.quad && c.fsm.is('seated', 'mounting', 'driving', 'starting') ? ` (${c.quad.label})` : ''));
+    show(f, 'numbness', () => (c.numbPlan ? `walking it off (${c.numbPlan.phase})` : `${round(c.numbness.value)} of 1`));
     show(f, 'her quad', () => g.ownership.claims[id] ?? 'none');
     show(f, 'tidying', () => c.lineUpStatus);
     show(f, 'race score', () => `${g.race.tally[id]?.wins ?? 0} won, ${g.race.tally[id]?.losses ?? 0} lost`);
