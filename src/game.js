@@ -25,6 +25,7 @@ import { Speech, CompanionSounds } from './audio/companionAudio.js';
 import { DEFAULT_COMPANION_PARAMS, COMPANION_PARAM_RANGES } from './npc/companionParams.js';
 import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
 import { CHARACTERS } from './npc/characters.js';
+import { girlsLeftOut } from './npc/leftOut.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { FallingOut, FALLING_OUT_PARAM_RANGES } from './npc/fallingOut.js';
 import { Romance, Tryst, ROMANCE_PARAM_RANGES } from './npc/romance.js';
@@ -401,7 +402,10 @@ export class Game {
     const homes = [this.homeUnit, ...yard, ...this.girlUnits.filter((u) => u !== this.homeUnit && !yard.includes(u))];
     const floor = { left: 0, banter: false }; // so one waits for the other to finish before chattering, and both for a bicker
     this.talkFloor = floor;
-    this.companions = CHARACTERS.map((character, i) => {
+    // A game without the girls (npc/leftOut.js): nobody is built, and with autonomy off nothing waits on them to start.
+    const leftOut = girlsLeftOut(location.search);
+    if (leftOut) this.girlsAuto = false;
+    this.companions = (leftOut ? [] : CHARACTERS).map((character, i) => {
       const c = new Companion({
         scene: this.scene,
         physics: this.physics,
@@ -2329,6 +2333,7 @@ export class Game {
    * unasked). Afterwards nobody offers again for a good while.
    */
   updateRideOffer(dt) {
+    if (!this.companions.length) return;
     this.rideOffer ??= new RideOffer(this.companions[0].params);
     const offer = this.rideOffer;
     if (this.offeredBy) {
