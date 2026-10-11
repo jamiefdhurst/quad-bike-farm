@@ -319,6 +319,15 @@ export const FAQ_SECTIONS = [
         tip: 'After dark, rev an old quad and its headlights brighten.',
       },
       {
+        q: 'How do I get some light to work by in the dark?',
+        a: `Ask a girl: "Light me up" on her wheel, after dark. She fetches something with headlights (a Land Rover or the UTV if there's one
+          about, otherwise a quad), drives it round to a few metres off facing you, and leaves it running with the lights on. Most of the time
+          she then moves over to the passenger side (or onto the back of a quad); otherwise she gets out and stands by it. Amy does it without
+          being asked if she sees you working at a quad or a gate in the dark for a while. Ride off, walk away, or tell her "That'll do" on her
+          wheel and she puts it away.`,
+        tip: 'After dark, ask a girl to "Light me up" and she brings a Land Rover round to shine its lights on you.',
+      },
+      {
         q: 'Why do the girls want to go in?',
         a: `It's dark and getting cold. As the light goes they say so, and once it's dark they'd rather wait in the barn doorway or sit in a
           Land Rover with the heater on than stand about outside. Ask them out from their wheel and they'll still come.`,
