@@ -225,10 +225,28 @@ export function createFields(layout) {
     return path;
   }
 
-  /** The next point to head for on the way from `from` to `to`, skipping a gateway point she's already within `reach` metres of. */
-  function nextWaypoint(from, to, reach = 1.5) {
+  /**
+   * The next point to head for on the way from `from` to `to`, skipping a point she's already within `reach` metres of, or has already passed:
+   * on the far side of it along the way to the next point and (`lane` m) within a lane's width of that line. Without the second rule, a
+   * gateway point 2.5 m short of a gap drew her back as she walked on through it, once she was more than `reach` past it, and she stood
+   * dithering at the gap (the cattle grid's, mostly).
+   */
+  function nextWaypoint(from, to, reach = 1.5, lane = 1.5) {
     const path = route(from, to);
-    for (const p of path) if (Math.hypot(p.x - from.x, p.z - from.z) > reach) return p;
+    for (let i = 0; i < path.length; i++) {
+      const p = path[i];
+      if (Math.hypot(p.x - from.x, p.z - from.z) <= reach) continue;
+      const q = path[i + 1];
+      if (q) {
+        const dx = q.x - p.x;
+        const dz = q.z - p.z;
+        const len = Math.hypot(dx, dz) || 1;
+        const along = ((from.x - p.x) * dx + (from.z - p.z) * dz) / len;
+        const across = Math.abs(((from.x - p.x) * dz - (from.z - p.z) * dx) / len);
+        if (along > 0 && across <= lane) continue;
+      }
+      return p;
+    }
     return to;
   }
 

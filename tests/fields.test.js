@@ -98,6 +98,15 @@ describe('the farm fields', () => {
     expect(f.nextWaypoint({ x: gw.pb.x + 0.5, z: gw.pb.z }, to)).toEqual(gw.pa);
   });
 
+  it('does not turn her back to a gateway point she has walked on past (the cattle grid dither)', () => {
+    const to = { x: 188, z: road.z };
+    const gw = f.gateways.find((g) => g.a === 'grass' && g.b === 'road');
+    // Walking on through the gap from the point before it: at every step she is heading for the point after it, never back.
+    for (let x = gw.pa.x; x < gw.pb.x - 1; x += 0.25) expect(f.nextWaypoint({ x, z: gw.pa.z + 0.8 }, to).x, `at x ${x}`).toBeGreaterThanOrEqual(x > gw.pa.x + 1.5 ? gw.pb.x : gw.pa.x);
+    // Alongside the hedge but nowhere near the gap she still goes to the gap's point first.
+    expect(f.nextWaypoint({ x: gw.pa.x + 1, z: gw.pa.z + 12 }, to)).toEqual(gw.pa);
+  });
+
   it('pulls a point into a field', () => {
     expect(f.clampToArea('north', 130, 10, 6)).toEqual({ x: 130, z: f.areas.north.maxZ - 6 });
     expect(f.inFarm(150, 0, 6)).toBe(true);
