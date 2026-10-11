@@ -221,6 +221,12 @@ export function buildGameTree(g, host) {
     speech: flag(() => g.companions.every((c) => c.params.voice), (v) => g.companions.forEach((c) => (c.params.voice = v)), 'off: they say nothing out loud'),
     workLight: text(() => g.workLight.describe()),
   }), 'both girls');
+  const farm = group(() => ({
+    muck: num(() => g.muck.load, (v) => g.debugSetMuck(v), 0, 1, '', 'muck in the tipping trailer'),
+    laid: ro(() => g.muck.laid, '', 'patches laid on the stubble this job'),
+    muckDone: flag(() => g.muck.done, (v) => v && g.debugFinishMuck(), 'the muck job is done (ticks the board)'),
+    board: text(() => g.jobBoard.lines().map((l) => `${l.done ? '[x]' : '[ ]'} ${l.text}`).join('; ') || 'nothing on', "today's jobs on the barn door"),
+  }), 'farm jobs');
   const audio = group(() => ({ sound: flag(() => !g.audioHub.params.muted, (v) => (g.audioHub.params.muted = !v), 'all game sound') }));
 
   return group(() => ({
@@ -229,6 +235,7 @@ export function buildGameTree(g, host) {
     girls: gAll,
     player,
     weather,
+    farm,
     audio,
     tune: tuningTree(),
   }));

@@ -789,6 +789,24 @@ export const FAQ_SECTIONS = [
           and tip it (<kbd>T</kbd>) when stopped. Jess may climb in against the rules.`,
       },
       {
+        q: 'What is the chalkboard on the barn door?',
+        a: `Today's farm jobs. Walk up to the barn's sliding door and press <kbd>E</kbd> for a close look. Done jobs get a tick, and a bucket list
+          entry when you've cleared the lot. At the moment the only job is the muck, but the board lists up to two a day.`,
+        tip: 'The chalkboard on the barn door lists the day\'s farm jobs.',
+      },
+      {
+        q: 'How do I do the muck job?',
+        a: `Hitch the little trailer to the tractor or a quad with a rack and park it by the muck heap in the east wheat field (within about five metres).
+          Hold <kbd>E</kbd> at the trailer, empty-handed, to fork muck in: the girls will have something to say about the smell. Drive onto the stubble, stop,
+          tip the tub a little with <kbd>T</kbd> (not all the way) and drive off slowly. Muck runs out of the back in patches while you go slower than
+          a brisk walk, and the job ticks off the board once there's a good strip down. A full tub is a drag on whatever pulls it.`,
+      },
+      {
+        q: "Why won't the muck spread, or why did it all come out in a heap?",
+        a: `It only spreads with the tub tipped up a little and you moving slowly (not stopped, not quicker than a brisk walk, or the tub lowers itself).
+          It only counts on the stubble fields: on the road, the grass or the yard you waste it. Tip the tub right up while stood still and the whole load slides out in one heap.`,
+      },
+      {
         q: 'Will the girls drive into a trailer?',
         a: `No. Both trailers are solid to them now: on foot they walk round one, and driving they steer round a trailer parked in the way (but not the one
           they are pulling). You can't walk through them either. Quads and the tractor still pass through an empty trailer if you drive them into it.`,

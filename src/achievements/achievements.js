@@ -124,6 +124,8 @@ export const ACHIEVEMENTS = [
   { id: 'bump-start', group: 'Jobs', name: 'Bump start', hint: 'Get a manual going by rolling it and letting the clutch out', points: 2, test: (s) => s.n('bumpStart') >= 1 },
   { id: 'hitch', group: 'Jobs', name: 'Hitched', hint: 'Hook a trailer onto the tractor or a quad', points: 1, test: (s) => s.n('hitched') >= 1 },
   { id: 'tip', group: 'Jobs', name: 'Tipped out', hint: 'Tip a trailer or the UTV\'s bed', points: 1, test: (s) => s.n('tipped') >= 1 },
+  { id: 'muck', group: 'Jobs', name: 'Muck spreader', hint: 'Fork muck into the little trailer and spread it on the stubble', points: 2, test: (s) => s.n('muckSpread') >= 1 },
+  { id: 'job-board', group: 'Jobs', name: 'Board cleared', hint: 'Do everything on the chalkboard on the barn door', points: 2, test: (s) => s.n('boardCleared') >= 1 },
   { id: 'park-brake', group: 'Jobs', name: 'Handbrake on', hint: 'Put the parking brake on', points: 1, test: (s) => s.n('parkBrake') >= 1 },
   { id: 'map', group: 'Jobs', name: 'Where am I?', hint: 'Open the farm map', points: 1, test: (s) => s.n('map') >= 1 },
   { id: 'barn-find', group: 'Jobs', name: 'Barn find', hint: 'Get the old quad under the tarp running', points: 3, needs: 'rusty', test: (s) => s.n('barnFind') >= 1 },

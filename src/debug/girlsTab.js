@@ -135,6 +135,11 @@ export function buildGirlsTab(d) {
   slider(both, 'time of day (hours)', () => g.daylight.hour, (v) => g.setTime(v), 0, 30, 0.05);
   show(both, 'lights to work by', () => g.workLight.describe());
   show(both, 'the clock', () => `${g.daylight.text()}, ${Math.round(g.daylight.darkness * 100)}% dark, falling ${g.daylight.drop.toFixed(1)} °C into the night`);
+  show(both, 'muck in the tub', () => `${Math.round(g.muck.load * 100)}%, ${g.muck.laid} patches laid on the stubble${g.muck.done ? ', done' : ''}`);
+  show(both, 'the board', () => g.jobBoard.lines().map((l) => `${l.done ? '[x]' : '[ ]'} ${l.text}`).join('; ') || 'nothing on');
+  button(both, 'Fill the tipping trailer with muck', () => g.debugFillMuck());
+  button(both, 'Muck job done now', () => g.debugFinishMuck());
+  button(both, 'Empty the tub and clear the muck from the ground', () => g.debugResetMuck());
   for (const u of g.girlUnits) {
     const names = g.quadNames.names[u.spec.id];
     show(both, `${u.name} is`, () => `${g.ownership.ownerOf(u.spec.id) ?? 'nobody'}'s${names ? ` (${names}${g.quadNames.announced.has(u.spec.id) ? '' : ', not said yet'})` : ''}`);

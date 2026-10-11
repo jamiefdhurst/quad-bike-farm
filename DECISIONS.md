@@ -2861,3 +2861,17 @@ The item settled the shape, so I chose the details without asking.
 - Sound (`src/audio/sheepAudio.js`): `sheep-baa.wav` loads the first time a sheep within 130 m bleats, and plays from the sheep through a panner at each sheep's own rate (0.82 to 1.22), duller with distance, louder and a touch higher when frightened. A calm sheep calls every 12 to 40 s, a frightened one every few seconds. Credited in ASSETS.md. Not listened to.
 - Debug: the "Sheep" tuning group (World, weather and sound). No actions or console paths beyond that.
 - Checked: unit tests and two headless views of the flock on the pasture. Not checked: how it sounds, the frame rate with them, and riding into them.
+
+## Farm jobs: the chalkboard and the muck (TODO 10)
+
+Agreed with Jamie before building: this session does the chalkboard and the muck job only. Round bales to the trough and harrowing are follow-up items (183 and 184). Fork-by-hand, drive-and-spread, a close view of the board in the barn, two jobs a day from the ones that exist, and a line each from the girls.
+
+- **Pure logic** (`src/world/farmJobs.js`, tests in `tests/farmJobs.test.js`): `MuckLoad` holds the tub's load (0..1), the patches laid and whether it is done; `JobBoard` picks the day's jobs (`jobsPerDay`, 2, but only jobs the farm has what they need for) and ticks them off. `FARM_JOBS` is the registry, so the next job is one entry plus its own module.
+- **Forking.** Hold E at the trailer, empty-handed, with the tub down and the trailer within 5 m of the heap's edge: 12 s fills it. It is the tipping trailer's existing interaction (`hold`), so no new key, and the heap's own collider is untouched.
+- **Spreading.** Tub up past 0.3 (below the slide point of 0.5, so the tub's own cargo tip-out is not triggered) and moving between 0.4 and 2.2 m/s (the UTV bed's auto-lower is at 2 m/s, so the tub lowers itself above that); a patch every 1.8 m, 22 to a full tub, 14 on the stubble (`world.fields.stubbleAt`) to count. Patches off the stubble are wasted, with a toast. Stood still with the tub right up, the whole load goes in one heap and the job has to be started again.
+- **Drawing** (`src/world/muckView.js`): a squashed sphere in the tub that grows with the load, and one instanced mesh of 160 flat dark lumps for the ground (a ring, so the oldest goes). A normal lit material, so night dims it without help.
+- **The board** (`src/world/jobBoard.js`): drawn on a canvas and hung on the barn's sliding door leaf nearer the first wall segment, redrawn when a job ticks. A close view is a card like the logbook's (E or G to leave); the gamepad treats it as the notebook menu.
+- **Girls.** `src/npc/farmJobLines.js`: muckStart (nearest girl), muckFull (the farthest, so they don't talk over each other), muckDone (nearest). Amy is keen and tidy; Jess minds the smell. They need recording.
+- **Debug.** Tune: "Muck job", "Job board". Girls tab "Both girls and the farm": what's in the tub, the board, and fill / finish / reset buttons calling the same game methods. Console: `farm.muck`, `farm.laid`, `farm.muckDone`, `farm.board`.
+- **Weight.** A full tub counts as 3 things in the tow load (`towWeight`).
+- **Not checked in the running game:** only unit tests (and a load check, see the summary). Not seen: the board on the door by eye, the mound in the tub, whether 12 s of forking or 1.8 m patches feel right.

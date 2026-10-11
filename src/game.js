@@ -187,6 +187,9 @@ import { DEFAULT_FUEL_WATER_PARAMS, FUEL_WATER_RANGES, stepCanWater } from './ve
 import { pickBarnFind, BarnFind, DEFAULT_BARN_FIND_PARAMS, BARN_FIND_RANGES, RUSTY_ID } from './vehicle/barnFind.js';
 import { weatherModel, buildTarp } from './vehicle/rustyLook.js';
 import { Notebook } from './workshop/notebook.js';
+import { MuckLoad, DEFAULT_MUCK_PARAMS, MUCK_PARAM_RANGES, JobBoard, DEFAULT_JOB_BOARD_PARAMS, JOB_BOARD_PARAM_RANGES, availableJobs } from './world/farmJobs.js';
+import { JobBoardView } from './world/jobBoard.js';
+import { MuckView } from './world/muckView.js';
 import { shortName } from './workshop/logbook.js';
 import { Interaction } from './interaction/interaction.js';
 import { Wheel } from './interaction/wheel.js';
@@ -657,6 +660,7 @@ export class Game {
       isAvailable: () => !!this.heldLoad() || (!this.handsFull && !this.player.isRiding),
       prompt: () => this.tipTrailerPrompt(),
       interact: () => this.loadTipTrailer(),
+      hold: (dt) => this.forkMuck(dt),
     });    // Having a go on the tractor: Jess takes it, Amy won't until her day (npc/tractorGo.js). The girls' own numbers are shared objects.
     this.tractorGo = new TractorGo(undefined, createRandom(this.seed ^ 0x70c0));
     this.tractorDrive = { ...DEFAULT_TRACTOR_GO_DRIVE };
@@ -1045,6 +1049,22 @@ export class Game {
       interact: () => this.notebook.open(),
     });
 
+    // The farm jobs: the chalkboard on the barn door lists today's, and the muck job is forked into the tipping trailer (world/farmJobs.js).
+    this.muckParams = { ...DEFAULT_MUCK_PARAMS };
+    this.muck = new MuckLoad(this.muckParams);
+    this.muckView = new MuckView({ scene: this.scene, tub: this.tipTrailer.tub, heightAt: (x, z) => this.world.heightAt(x, z), random: createRandom(this.seed ^ 0x3a9c) });
+    this.jobBoardParams = { ...DEFAULT_JOB_BOARD_PARAMS };
+    this.jobBoard = new JobBoard({ ids: availableJobs(this.world.layout), random: createRandom(this.seed ^ 0x7ab0), params: this.jobBoardParams });
+    this.jobBoardView = new JobBoardView({ game: this, board: this.jobBoard });
+    registerTuning('Muck job', this.muckParams, MUCK_PARAM_RANGES);
+    registerTuning('Job board', this.jobBoardParams, JOB_BOARD_PARAM_RANGES);
+    this.interaction.add({
+      target: this.jobBoardView.proxy,
+      isAvailable: () => !this.handsFull && !this.player.isRiding,
+      prompt: () => this.jobBoardView.prompt(),
+      interact: () => this.jobBoardView.open(),
+    });
+
     // The hayloft: the ladder up and down, and the hay to hide in.
     this.interaction.add({
       target: this.loft.ladderProxy,
@@ -1309,7 +1329,7 @@ export class Game {
     if (this.menu.isOpen) return { mode: 'menu', menu: 'wheel' };
     if (this.workshop.isOpen) return { mode: 'menu', menu: 'workshop' };
     if (this.bench.isOpen) return { mode: 'menu', menu: 'bench' };
-    if (this.notebook.isOpen) return { mode: 'menu', menu: 'notebook' };
+    if (this.notebook.isOpen || this.jobBoardView.isOpen) return { mode: 'menu', menu: 'notebook' };
     if (this.player.isRiding) {
       const q = this.riddenUnit?.quad;
       return { mode: 'ride', seat: this.player.seat, bucketOpen, gear: q?.manual ? q.drivetrain.gear : null, gears: q?.gearbox?.gears ?? 0 };
@@ -2107,10 +2127,100 @@ export class Game {
     });
   }
 
+  /** Whether the trailer is by the muck heap with its tub down and room in it, and your hands are empty. */
+  canForkMuck() {
+    const m = this.tipTrailer.motion;
+    return !this.heldLoad() && this.muck.canFork(this.world.layout.muckHeap, m.x, m.z, this.tipTrailer.bed.tip) && !this.player.isRiding;
+  }
+
+  /** Holding E at the trailer by the heap: fork muck in, the girls remark as the job starts and as the tub fills. */
+  forkMuck(dt) {
+    if (!this.canForkMuck()) return false;
+    for (const e of this.muck.fork(dt)) {
+      if (e.type === 'start') this.saySomethingAboutJob('muckStart');
+      else if (e.type === 'full') this.saySomethingAboutJob('muckFull', true);
+    }
+    this.muckView.setLoad(this.muck.load);
+    return true;
+  }
+
+  /** One girl, the nearest who is free to remark (or the other one), says a line about the job. */
+  saySomethingAboutJob(key, other = false) {
+    const at = this.tipTrailer.model.position;
+    const ranked = this.companions
+      .filter((c) => c.availability().canRemark && c.root.position.distanceTo(at) < 30)
+      .sort((a, b) => a.root.position.distanceTo(at) - b.root.position.distanceTo(at));
+    ranked[other ? ranked.length - 1 : 0]?.voice.say(key);
+  }
+
+  /** The muck in the tub and what it leaves: patches behind the tub on the stubble (world/farmJobs.js). */
+  updateMuck(dt) {
+    const t = this.tipTrailer;
+    this.muckWrongCool = Math.max(0, (this.muckWrongCool ?? 0) - dt);
+    const yaw = t.model.rotation.y;
+    // Muck leaves over the tailgate, a little behind the axle.
+    const x = t.motion.x - Math.sin(yaw) * 1.2;
+    const z = t.motion.z - Math.cos(yaw) * 1.2;
+    const onStubble = this.world.fields.stubbleAt(x, z) > 0.5;
+    const events = this.muck.update(dt, { x, z, speed: Math.abs(t.signedSpeed), tip: t.bed.tip, slideAt: t.bed.p.slideAt, onStubble });
+    for (const e of events) {
+      if (e.type === 'patch') this.muckView.lay(e.x, e.z);
+      else if (e.type === 'pile') {
+        this.muckView.lay(e.x, e.z, 1.3);
+        this.hud.toast('The lot slid out in a heap', 2);
+      } else if (e.type === 'wrong') {
+        this.muckView.lay(e.x, e.z, 0.5);
+        if (this.muckWrongCool <= 0) {
+          this.hud.toast('Spread it on the stubble, not here', 2);
+          this.muckWrongCool = 6;
+        }
+      } else if (e.type === 'done') this.finishMuck();
+    }
+    if (events.length) this.muckView.setLoad(this.muck.load);
+  }
+
+  /** Debug panel and console: set how full the tub is. */
+  debugSetMuck(load) {
+    this.muck.load = Math.max(0, Math.min(1, load));
+    this.muck.started = this.muck.load > 0;
+    this.muckView.setLoad(this.muck.load);
+  }
+
+  debugFillMuck() {
+    this.debugSetMuck(1);
+    this.hud.toast('The tub is full of muck: tip it a little and drive slowly over the stubble', 3);
+  }
+
+  debugFinishMuck() {
+    this.muck.done = true;
+    this.muck.laid = Math.max(this.muck.laid, this.muckParams.patchesNeeded);
+    this.finishMuck();
+  }
+
+  debugResetMuck() {
+    this.muck.reset();
+    this.muckView.setLoad(0);
+    this.muckView.clear();
+  }
+
+  /** The strip is down: tick it off the board. */
+  finishMuck() {
+    this.achievements.note('muckSpread');
+    if (this.jobBoard.complete('muck')) {
+      this.hud.toast('Muck spread. Ticked off the board on the barn door', 3);
+      this.jobBoardView.refresh();
+      if (this.jobBoard.cleared) this.achievements.note('boardCleared');
+    }
+    this.saySomethingAboutJob('muckDone');
+  }
+
   tipTrailerPrompt() {
     const item = this.heldLoad();
     const t = this.tipTrailer;
-    if (!item) return { text: t.cargo.length || t.bed.tip > 0.02 ? 'T to tip the trailer' : 'The little tipping trailer   ·   T to tip it' };
+    if (!item) {
+      if (this.canForkMuck()) return { text: this.muck.full ? 'The tub is full of muck   ·   T to tip it' : 'Hold E to fork muck into the trailer' };
+      return { text: t.cargo.length || t.bed.tip > 0.02 || !this.muck.empty ? 'T to tip the trailer' : 'The little tipping trailer   ·   T to tip it' };
+    }
     const what = this.loadName(item);
     if (t.bed.tip > 0.02) return { text: `The tub is up   ·   G put the ${what} down` };
     if (t.freeCargoSpot() === null) return { text: `The trailer is full   ·   G put the ${what} down` };
@@ -2127,10 +2237,11 @@ export class Game {
   updateTipTrailer(dt, ridden, input) {
     const t = this.tipTrailer;
     t.update(dt);
+    this.updateMuck(dt);
     // What it takes from the quad (or tractor) in front of it.
     if (this.tipPuller && this.tipPuller !== t.puller) Object.assign(this.tipPuller.tow, { driveFactor: 1, brakeFactor: 1 });
     this.tipPuller = t.puller;
-    if (t.puller) Object.assign(t.puller.tow, towEffect(towLoad(t.girlCount, t.cargo.length, this.towParams), !!t.puller.tractor || !!t.puller.landRover, this.towParams));
+    if (t.puller) Object.assign(t.puller.tow, towEffect(towLoad(t.girlCount, t.cargo.length + this.muck.load * this.muckParams.towWeight, this.towParams), !!t.puller.tractor || !!t.puller.landRover, this.towParams));
 
     const riding = !!ridden && t.hitched && ridden.quad === t.puller;
     // T tips the tub, from the seat of whatever pulls it or standing by it.
@@ -6235,6 +6346,9 @@ export class Game {
     } else if (this.notebook.isOpen) {
       this.interaction.clear();
       this.notebook.handleInput(input);
+    } else if (this.jobBoardView.isOpen) {
+      this.interaction.clear();
+      this.jobBoardView.handleInput(input);
     } else if (this.climb || this.tryst) {
       this.interaction.clear();
       input.takeWheelSteps();
