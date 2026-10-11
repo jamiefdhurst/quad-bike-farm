@@ -3043,7 +3043,7 @@ export class Game {
       ...mine(this.convoy.offers(this.convoyContext(ridden)), (o) => this.handleConvoyEvent(this.convoy.take(o))),
       ...(this.drag.active || this.hillClimb.active ? [] : mine(this.race.offers(this.raceContext(ridden)), (o) => this.handleRaceEvent(this.race.take(o)))),
       ...(this.race.active || this.hillClimb.active ? [] : mine(this.drag.offers(this.dragContext(ridden)), (o) => this.dragApproach(this.drag.take(o), ridden))),
-      ...mine(this.hillClimb.offers(this.climbContext(ridden)), (o) => this.startClimb(this.hillClimb.take(o))),
+      ...mine(this.hillClimb.offers(this.climbContext(ridden)), (o) => this.startHillClimb(this.hillClimb.take(o))),
       ...mine(this.comparing.offers(compare), (o) => this.runComparing(this.comparing.take(o, compare))),
       ...mine(this.pair.offers(this.pairContext()), (o) => this.handlePairEvent(this.pair.take(o))),
     ];
@@ -6124,7 +6124,7 @@ export class Game {
   }
 
   /** She chose to climb: she drives her quad to the cones, waits a moment, then goes (HerDrive's race mode through the gates). */
-  startClimb(e) {
+  startHillClimb(e) {
     const c = this.companions.find((o) => o.character.id === e.girl);
     const unit = this.girlUnits.find((u) => u.spec.id === e.pick);
     if (!c || !unit) return this.hillClimb.stand();

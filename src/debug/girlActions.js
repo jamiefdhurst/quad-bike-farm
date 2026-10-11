@@ -429,7 +429,7 @@ export function girlActions(g) {
         const quads = freeQuads(c, g.player.position, (q) => !q.bog.stuck);
         if (!quads.length) return toast('No free quad');
         const unit = g.girlUnits.find((u) => u.quad === quads[0]);
-        g.startClimb(g.hillClimb.take({ key: 'climb', girl: id, pick: unit.spec.id }));
+        g.startHillClimb(g.hillClimb.take({ key: 'climb', girl: id, pick: unit.spec.id }));
         toast(`${nameOf(id)} sets off for the cones past the stream`);
       },
     },
