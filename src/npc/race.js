@@ -23,7 +23,7 @@ export const DEFAULT_RACE_PARAMS = {
   youWait: 30, // seconds you get to line up on the grid once asked, before they race without you (not counted once you are lined up: the girls may be slow to arrive)
   dareStill: 4, // seconds you've sat still on a quad near the line before Jess may dare you
   dareWeight: 1.5, // how keen Jess is to dare you after that, when the girls are free and it's been long enough
-  nearLine: 45, // metres from the start line you count as there (to be asked, or dared)
+  nearLine: 12, // metres from the start line you count as there (to be asked, or dared): on the line, not just near it
   gridSpacing: 3, // metres between lanes on the grid when you are racing (1.5 either side of the middle when you're not)
   youGridRadius: 5, // metres from your grid point you count as on the grid
   youGridYaw: 0.7, // radians off the track's direction you may be pointing and still count as lined up

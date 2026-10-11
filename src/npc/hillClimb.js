@@ -10,7 +10,7 @@ export const DEFAULT_CLIMB_PARAMS = {
   cooldown: 360, // seconds between the girls' climbs
   weightJess: 1.6, // how keen Jess is to climb the hill against the clock (chooser.js weighs it)
   weightAmy: 0.7, // and Amy
-  nearStart: 25, // metres from the start cones you count as there to ask
+  nearStart: 12, // metres from the start cones you count as there to ask
   armFor: 90, // seconds your ask lasts before you have to ask again
   gridBack: 3, // metres behind the start cones a girl waits for the go
   leaveAfter: 2.5, // seconds a girl waits on her grid point before setting off
