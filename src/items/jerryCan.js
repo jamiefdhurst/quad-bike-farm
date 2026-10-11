@@ -6,6 +6,7 @@ export const DEFAULT_JERRY_CAN_PARAMS = {
   startLitres: 20,
   startOil: 0, // oil fraction of what's in it: 0 for petrol, 0.02 (50:1) for the pre-mix can
   startDiesel: 0, // diesel fraction of what's in it: 1 for the red diesel can
+  startWater: 0, // water fraction of what's in it (it also climbs when the can is left out in the rain: see fuelWater.js)
   pourRate: 0.5, // litres per second into a quad
   fillRate: 0.8, // litres per second from the fuel tank
 };
@@ -15,6 +16,7 @@ export const JERRY_CAN_PARAM_RANGES = {
   startLitres: [0, 40, 0.5],
   startOil: [0, 0.2, 0.001],
   startDiesel: [0, 1, 0.01],
+  startWater: [0, 0.3, 0.005],
   pourRate: [0.05, 5, 0.05],
   fillRate: [0.05, 5, 0.05],
 };
@@ -162,6 +164,7 @@ export class JerryCan {
     this.litres = Math.min(params.startLitres, params.capacity);
     this.oil = params.startOil ?? 0; // oil fraction of what's in it
     this.diesel = params.startDiesel ?? 0; // diesel fraction of what's in it
+    this.water = params.startWater ?? 0; // water fraction of what's in it
     this.model = buildModel(colours?.colour, colours?.darkColour, colours?.text);
     this.model.name = name;
     this.proxy = new THREE.Mesh(
@@ -209,6 +212,7 @@ export class JerryCan {
     const added = Math.max(0, Math.min(litres, this.space));
     this.oil = mixOil(this.litres, this.oil, added, oil);
     this.diesel = mixOil(this.litres, this.diesel, added, diesel);
+    this.water = mixOil(this.litres, this.water, added, 0); // a tank's fuel is clean
     this.litres += added;
     return added;
   }
@@ -218,6 +222,7 @@ export class JerryCan {
     const added = Math.max(0, Math.min(litres, this.space));
     this.oil = mixOil(this.litres, this.oil, added, 1);
     this.diesel = mixOil(this.litres, this.diesel, added, 0);
+    this.water = mixOil(this.litres, this.water, added, 0);
     this.litres += added;
     return added;
   }

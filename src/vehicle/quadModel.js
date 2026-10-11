@@ -1041,11 +1041,33 @@ const TAP_PLACE = {
   lowRight: { pos: [-0.185, 0.74, 0.2], handle: 'knob', colour: 0x2a6fb0 },
 };
 
+/**
+ * The little glass sediment bowl under the fuel tap: water settles in it (fuelWater.js), brown and cloudy, and the quad scales `sedimentWater`
+ * with how full it is. It hangs under the tap body at (x, y, z).
+ */
+export function buildSedimentBowl(root, x, y, z) {
+  const bowl = new THREE.Group();
+  bowl.name = 'sedimentBowl';
+  bowl.userData.keep = true;
+  bowl.position.set(x, y - 0.034, z);
+  root.add(bowl);
+  add(new THREE.CylinderGeometry(0.0115, 0.0115, 0.002, 12), MAT.chrome, bowl).position.y = 0.019; // the collar it screws into
+  add(new THREE.CylinderGeometry(0.0125, 0.0125, 0.034, 12), new THREE.MeshStandardMaterial({ color: 0xcfe0e6, roughness: 0.1, transparent: true, opacity: 0.35 }), bowl);
+  const water = add(new THREE.CylinderGeometry(0.0105, 0.0105, 0.03, 12), new THREE.MeshStandardMaterial({ color: 0x6f6a52, roughness: 0.3, transparent: true, opacity: 0.85 }), bowl, 'sedimentWater');
+  water.userData.bottom = -0.016;
+  water.userData.full = 0.03;
+  water.position.y = water.userData.bottom;
+  water.scale.y = 0.001;
+  water.visible = false;
+  return bowl;
+}
+
 function buildFuelTap(root, tapStyle) {
   const place = TAP_PLACE[tapStyle] ?? TAP_PLACE.left;
   const [x, y, z] = place.pos;
   const side = Math.sign(x);
   rbox(0.06, 0.03, 0.035, 0.008, MAT.plastic, x, y, z, root, 'fuelTapBody', 1);
+  buildSedimentBowl(root, x, y, z);
   const tap = new THREE.Group();
   tap.name = 'fuelTap';
   tap.userData.keep = true;

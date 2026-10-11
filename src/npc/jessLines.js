@@ -14,6 +14,7 @@ import { JESS_MIND_LINES } from './mindLines.js';
 import { JESS_KNACK_LINES } from './knackLines.js';
 import { JESS_OIL_LINES } from './oilLines.js';
 import { JESS_DIESEL_LINES } from './dieselLines.js';
+import { JESS_WATER_LINES } from './waterLines.js';
 import { JESS_HEAT_LINES } from './heatLines.js';
 import { JESS_SILENCER_LINES } from './silencerLines.js';
 import { JESS_JET_LINES } from './jetLines.js';
@@ -412,6 +413,7 @@ export const JESS_LINES = {
   ...JESS_KNACK_LINES,
   ...JESS_OIL_LINES,
   ...JESS_DIESEL_LINES,
+  ...JESS_WATER_LINES,
   ...JESS_LPLATE_LINES,
   ...JESS_HEAT_LINES,
   ...JESS_SILENCER_LINES,

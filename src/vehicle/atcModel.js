@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { MAT, STYLE, add, rbox, tube, pipe, buildHandlebars, addHeadlightBeams, addTailLights } from './quadModel.js';
+import { MAT, STYLE, add, rbox, buildSedimentBowl, tube, pipe, buildHandlebars, addHeadlightBeams, addTailLights } from './quadModel.js';
 import { mergeStatic, loftGeometry, shellGeometry } from './quadGeometry.js';
 
 // The neighbour's old three-wheeler: a sun-bleached ATC with one front wheel, two fat balloon tyres at the back, a flat seat and a tall,
@@ -153,6 +153,7 @@ export function buildAtcModel({ bodyColor = 0xb4553f, dashStyle = 'kidsKey', cho
   tap.userData.keep = true;
   tap.position.set(0.2, 0.74, 0.2);
   rbox(0.04, 0.03, 0.035, 0.008, MAT.plastic, 0.18, 0.74, 0.2, root);
+  buildSedimentBowl(root, 0.18, 0.74, 0.2);
   rbox(0.008, 0.012, 0.045, 0.003, MAT.chrome, 0, 0, 0.02, tap, undefined, 1);
   root.add(tap);
 

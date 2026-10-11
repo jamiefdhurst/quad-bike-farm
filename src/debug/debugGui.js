@@ -224,6 +224,7 @@ export class DebugGui {
     show(r, 'hours', () => round(unit().quad.usage.hours));
     show(r, 'odometer / trip (mi)', () => `${unit().quad.usage.odoMiles.toFixed(2)} / ${unit().quad.tripMiles.toFixed(2)}`);
     show(r, 'brakes wet (0 dry)', () => round(unit().quad.brakes.wet));
+    show(r, 'water reaching the carb', () => round(unit().engine.fuelWater));
     tick(r, 'parking brake', () => !!unit().quad.parkBrake, (v) => (unit().quad.parkBrake = v));
     // The UTV's light switch, and the 2WD / 4WD switch where there is one.
     if (u.quad.lights) r.add({ get v() { return unit().quad.lights?.mode; }, set v(x) { unit().quad.lights?.set(x); } }, 'v', LIGHT_MODES).name('lights').listen();
@@ -252,6 +253,8 @@ export class DebugGui {
     set(p, 'scuffing (1 seizes it)', () => round(unit().engine.scuff), (v) => (unit().engine.scuff = v), 0, 1);
     tick(p, 'seized', () => unit().engine.seized, (v) => (unit().engine.seized = v));
     set(p, 'water in it', () => round(unit().engine.water), (v) => (unit().engine.water = v), 0, 1);
+    set(p, 'water in the fuel (fraction)', () => round(unit().quad.fuel.water), (v) => (unit().quad.fuel.water = v), 0, 0.3);
+    set(p, 'tap bowl full of water', () => round(unit().quad.fuel.sediment), (v) => (unit().quad.fuel.sediment = v), 0, 1);
     set(p, 'diesel soaked', () => round(unit().engine.dieselSoak), (v) => (unit().engine.dieselSoak = v), 0, 1);
     if (e.params.strokes === 2) set(p, 'silencer blown', () => round(unit().engine.silencerBlown), (v) => (unit().engine.silencerBlown = v), 0, 1);
     show(p, 'running in / scar', () => `${round(unit().engine.runIn)} / ${round(unit().engine.scar)}`);

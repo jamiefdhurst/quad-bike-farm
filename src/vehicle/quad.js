@@ -36,6 +36,7 @@ import { holdsItself } from './handbrake.js';
 import { BrakeState } from './brakeState.js';
 import { SeatSpring, UpAccel, DEFAULT_SEAT_PARAMS } from './seatRide.js';
 import { DriveSwitch, driveEffects, DEFAULT_DRIVE_PARAMS } from './driveMode.js';
+import { fuelWaterLevel } from './fuelWater.js';
 import { reverseAllowed, chokeReach, DEFAULT_CONTROLS_PARAMS } from './controls.js';
 import { advanceUsage, isNeutral, dashClock, lampStates } from './dashState.js';
 
@@ -149,6 +150,7 @@ export class Quad {
     this.handlebars = part('handlebars');
     this.handlebarsBase = this.handlebars.position.clone();
     this.fuelTap = part('fuelTap');
+    this.sedimentWater = part('sedimentWater'); // the water showing in the glass bowl under the tap (not on the diesels, which have no tap)
     this.chokeLever = part('chokeLever');
     this.driveRocker = part('driveSwitchRocker'); // the 2WD / 4WD rocker on the bars (the red and blue)
     this.diffLockButton = part('diffLockButton'); // the blue's diff lock button beside it
@@ -904,6 +906,7 @@ export class Quad {
       clog: this.filter.clog,
       gulp: this.waterGulp(),
       diesel: this.fuel.bowlDiesel,
+      fuelWater: fuelWaterLevel(this.fuel.bowlWater, this.fuel.waterParams),
       speed: this.forwardSpeed,
       ambient: this.world.warmth ?? 0.5,
       chill: this.world.chill ?? 0,
@@ -1128,6 +1131,13 @@ export class Quad {
     }
     // Fuel tap: forward for ON, down for RESERVE, back for OFF.
     const tapAngle = { on: 0, reserve: Math.PI / 2, off: Math.PI }[f.tap];
+    const bowl = this.sedimentWater;
+    if (bowl) {
+      const fill = f.sediment;
+      bowl.visible = fill > 0.03;
+      bowl.scale.y = Math.max(0.001, fill);
+      bowl.position.y = bowl.userData.bottom + fill * bowl.userData.full * 0.5; // settles at the bottom
+    }
     this.fuelTap.rotation.x += (tapAngle - this.fuelTap.rotation.x) * Math.min(1, 15 * dt);
   }
 

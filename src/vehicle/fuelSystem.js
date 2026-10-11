@@ -6,12 +6,14 @@
 // starve, which the engine model turns into a lean, misfiring stumble.
 
 import { mixOil } from '../engine/lubrication.js';
+import { DEFAULT_FUEL_WATER_PARAMS, settleWater } from './fuelWater.js';
 
 export const DEFAULT_FUEL_PARAMS = {
   tankCapacity: 12, // litres
   reserveLitres: 2, // only reachable with the tap on RESERVE
   startLitres: 7, // fuel in the tank at the start
   startDiesel: 0, // diesel fraction of that fuel: 1 on the tractor, which runs on red diesel
+  startWater: 0, // water fraction of that fuel (see fuelWater.js): the barn find's old tank, or a can left out in the rain
   startOil: 0, // oil fraction of that fuel: 0.02 (50:1 pre-mix) on the two-strokes, none on the four-strokes
   noTap: false, // no fuel tap (the tractor's): the fuel always flows and there's no reserve
   startTap: 'off', // tap position at the start: turn it ON before riding off
@@ -26,6 +28,7 @@ export const FUEL_PARAM_RANGES = {
   tankCapacity: [2, 60, 0.5],
   reserveLitres: [0, 10, 0.1],
   startLitres: [0, 40, 0.1],
+  startWater: [0, 0.3, 0.005],
   startOil: [0, 0.2, 0.001],
   bowlCapacity: [0.005, 0.3, 0.005],
   bowlFillRate: [0.001, 0.2, 0.001],
@@ -46,6 +49,10 @@ export class FuelSystem {
     this.oil = params.startOil ?? 0; // oil fraction of what's in the tank
     this.diesel = params.startDiesel ?? 0; // diesel fraction of what's in the tank (red diesel poured in by mistake, or the tractor's own fuel)
     this.bowlDiesel = this.diesel; // and of what's in the float bowl, which is what the engine is fed
+    this.water = params.startWater ?? 0; // water fraction of what's in the tank
+    this.bowlWater = this.water; // and of what's in the float bowl, which is what the engine is fed
+    this.sediment = 0; // 0..1 how full the sediment bowl on the tap is of water
+    this.waterParams = DEFAULT_FUEL_WATER_PARAMS;
     this.tap = params.startTap ?? 'on';
     this.burnRate = 0; // litres per second, last update
   }
@@ -84,11 +91,12 @@ export class FuelSystem {
     this.bowl = this.litres > 0 ? this.params.bowlCapacity : 0;
   }
 
-  /** Pours fuel in, with `oil` as its oil fraction and `diesel` as its diesel fraction; returns how much actually went in. */
-  add(litres, oil = 0, diesel = 0) {
+  /** Pours fuel in, with `oil` as its oil fraction, `diesel` as its diesel fraction and `water` as its water fraction; returns how much actually went in. */
+  add(litres, oil = 0, diesel = 0, water = 0) {
     const added = clamp(litres, 0, this.space);
     this.oil = mixOil(this.litres, this.oil, added, oil);
     this.diesel = mixOil(this.litres, this.diesel, added, diesel);
+    this.water = mixOil(this.litres, this.water, added, water);
     this.litres += added;
     return added;
   }
@@ -100,7 +108,30 @@ export class FuelSystem {
     this.bowl = 0;
     this.diesel = 0;
     this.bowlDiesel = 0;
+    this.water = 0;
+    this.bowlWater = 0;
+    this.sediment = 0;
     return lost;
+  }
+
+  /** Whether there is water to let out at the tap: in the bowl, the tank or the carb. */
+  get hasWater() {
+    return this.sediment > 0.02 || this.water > 0.002 || this.bowlWater > 0.002;
+  }
+
+  /** Opens the sediment bowl's drain: the water runs out of the bowl, the tank's bottom and the carb, with a little fuel. Returns the litres lost. */
+  drainSediment() {
+    const lost = Math.min(this.litres, this.waterParams.drainLoss);
+    this.litres -= lost;
+    this.clearWater();
+    return lost;
+  }
+
+  /** All the water gone from the tank, the carb and the bowl at once (the debug panel's "Put it right"). */
+  clearWater() {
+    this.water = 0;
+    this.bowlWater = 0;
+    this.sediment = 0;
   }
 
   /**
@@ -119,6 +150,9 @@ export class FuelSystem {
     const flow = Math.min(want, p.bowlFillRate * dt, this.reachable);
     if (flow > 0) {
       this.bowlDiesel = mixOil(this.bowl, this.bowlDiesel, flow, this.diesel);
+      const settled = settleWater(this.sediment, flow * this.water, this.waterParams);
+      this.sediment = settled.sediment;
+      this.bowlWater = mixOil(this.bowl, this.bowlWater, flow, settled.passed / flow);
       this.bowl += flow;
       this.litres -= flow;
     }

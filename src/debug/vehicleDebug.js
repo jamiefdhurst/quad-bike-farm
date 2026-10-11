@@ -33,7 +33,7 @@ export function clearFaults(faults) {
   for (const kind of FAULT_KINDS) faults.fix(kind);
 }
 
-/** Puts a quad right: faults, plug, filter, wear, scuffing, seizure, water, diesel, wet or binding brakes and the stiff tap. Quirks and the engine's age stay. */
+/** Puts a quad right: faults, plug, filter, wear, scuffing, seizure, water, water in the fuel, diesel, wet or binding brakes and the stiff tap. Quirks and the engine's age stay. */
 export function fixEverything(unit) {
   const e = unit.engine;
   clearFaults(unit.quad.faults);
@@ -45,6 +45,7 @@ export function fixEverything(unit) {
   e.seized = false;
   e.water = 0;
   e.dieselSoak = 0;
+  unit.quad.fuel.clearWater();
   e.silencerBlown = 0;
   e.boiled = false;
   e.coolant = 1;
@@ -88,6 +89,7 @@ export function problemSummary(unit) {
   if (e.wear > 0.1) bits.push(`worn ${e.wear.toFixed(2)}`);
   if (e.water > 0.05) bits.push('water in it');
   if (e.dieselSoak > 0.05) bits.push('diesel-soaked');
+  if (unit.quad.fuel.water > 0.005 || unit.quad.fuel.sediment > 0.05) bits.push(`water in the fuel ${unit.quad.fuel.water.toFixed(2)}, tap bowl ${unit.quad.fuel.sediment.toFixed(2)}`);
   if (e.battery < 0.25) bits.push('battery flat');
   if (unit.quad.brakes.wet > 0.1) bits.push(`brakes wet ${unit.quad.brakes.wet.toFixed(2)}`);
   if (unit.quad.brakes.binding) bits.push('brake binding');

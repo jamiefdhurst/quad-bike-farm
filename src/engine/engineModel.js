@@ -113,6 +113,7 @@ export class EngineModel {
     this.water = 0; // 0..1 water swallowed through the intake (see water.js); it drains, and it won't catch while wet
     this.gulp = 0; // water being taken in right now, per second
     this.diesel = 0; // diesel fraction of the fuel in the carb right now
+    this.fuelWater = 0; // 0..1 how much water is reaching the carb in the fuel (fuelWater.js); it clears when clean fuel arrives
     this.dieselSoak = 0; // 0..1 how soaked it is with diesel (see diesel.js); only a drain at the toolbox clears it
     this.glow = 0; // 0..1 how hot the glow plugs are (a diesel; see compression.js)
     this.keyPulled = false; // a diesel's key switched off while it runs on: it keeps going until the stop knob
@@ -266,7 +267,7 @@ export class EngineModel {
    * @param {number}  [controls.gearRpm] a manual's revs at this road speed in this gear (speed over the gear's top speed, times full-throttle revs).
    * @param {number}  [controls.gearLock] 0..1 how far the clutch ties the engine to those revs: the throttle then only decides the torque.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, clog = 0, gulp = 0, diesel = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12 } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, clog = 0, gulp = 0, diesel = 0, fuelWater = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12 } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -285,6 +286,7 @@ export class EngineModel {
     this.clog = clamp(clog, 0, 1);
     this.gulp = Math.max(0, gulp);
     this.diesel = contaminant(this.params, diesel);
+    this.fuelWater = clamp(fuelWater, 0, 1);
     this.speed = Math.abs(speed);
     this.ambient = clamp(ambient, 0, 1);
     this.chill = clamp(chill, 0, 1);
@@ -613,7 +615,8 @@ export class EngineModel {
         p.dirtRoughness * this.dirt +
         p.pinkRoughness * this.pink +
         p.waterRoughness * this.water +
-        p.dieselRoughness * this.dieselSoak -
+        p.dieselRoughness * this.dieselSoak +
+        p.fuelWaterRoughness * this.fuelWater -
         p.jetRoughness * this.jetOn,
       0,
       1,
@@ -637,6 +640,7 @@ export class EngineModel {
     this.power *= 1 - p.pinkPowerLoss * this.pink;
     this.power *= 1 - p.waterPowerLoss * this.water;
     this.power *= 1 - p.dieselPowerLoss * this.dieselSoak;
+    this.power *= 1 - p.fuelWaterPowerLoss * this.fuelWater;
     if (this.silencerOff) this.power *= 1 + p.silencerPower;
     // Stumbling, it's got almost nothing.
     if (this.stumbleLeft > 0) this.power *= p.stumblePower;
@@ -664,6 +668,7 @@ export class EngineModel {
         this.knack.catchFactor(this.temperature) *
         waterCatchFactor(this.water, p) *
         dieselCatchFactor(this.dieselSoak, p) *
+        clamp(1 - (this.fuelWater - p.fuelWaterStartFrom) / Math.max(0.01, 1 - p.fuelWaterStartFrom), 0.05, 1) *
         Math.exp(-((this.mixture / width) ** 2)) *
         (1 - this.fouling) *
         clamp(speed, 0, 1) * // turned over too slowly, it won't fire
@@ -764,6 +769,10 @@ export class EngineModel {
         this.stall('water');
         return;
       }
+      if (this.fuelWater > p.fuelWaterStallAt && this.random() < p.fuelWaterStallChance * share) {
+        this.stall('fuelWater');
+        return;
+      }
       if (this.dieselSoak > p.dieselStallAt && this.random() < p.dieselStallChance * share) {
         this.stall('diesel');
         return;
@@ -785,7 +794,7 @@ export class EngineModel {
           return;
         }
       }
-      const misfireChance = this.keyOff ? 0.45 : p.misfireBase + p.misfireRoughness * this.firingRoughness() ** 2 + p.waterMisfire * this.water + p.dieselMisfire * this.dieselSoak;
+      const misfireChance = this.keyOff ? 0.45 : p.misfireBase + p.misfireRoughness * this.firingRoughness() ** 2 + p.waterMisfire * this.water + p.dieselMisfire * this.dieselSoak + p.fuelWaterMisfire * this.fuelWater;
       // Two-strokes at light load skip alternate firings: the ring-ding.
       this.cycleCount = (this.cycleCount ?? 0) + 1;
       const skip =

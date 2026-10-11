@@ -323,6 +323,13 @@ export const DEFAULT_ENGINE_PARAMS = {
   dieselMisfire: 0.5, // extra chance of a misfire on each firing at full soak
   dieselStallAt: 0.5, // above this it may stall (past dieselNoStart, so a stalled one never restarts)
   dieselStallChance: 0.1, // chance of stalling on each firing once past that
+  // Water in the fuel that got past the sediment bowl (see fuelWater.js): worse as there is more, gone when a drain and clean fuel clear it
+  fuelWaterRoughness: 0.6, // roughness added by water at its worst
+  fuelWaterPowerLoss: 0.5, // power lost to it
+  fuelWaterMisfire: 0.45, // extra chance of a misfire on each firing at its worst
+  fuelWaterStallAt: 0.45, // above this it may cut out
+  fuelWaterStallChance: 0.08, // chance of cutting out on each firing once past that
+  fuelWaterStartFrom: 0.5, // from here a start gets harder
   dieselStartFrom: 0.15, // from here it starts to catch less
   dieselNoStart: 0.45, // soaked this far it won't catch at all
 
@@ -591,6 +598,12 @@ export const ENGINE_PARAM_RANGES = {
   dieselMisfire: [0, 1, 0.01],
   dieselStallAt: [0.1, 1, 0.01],
   dieselStallChance: [0, 1, 0.01],
+  fuelWaterRoughness: [0, 1, 0.01],
+  fuelWaterPowerLoss: [0, 1, 0.01],
+  fuelWaterMisfire: [0, 1, 0.01],
+  fuelWaterStallAt: [0.1, 1, 0.01],
+  fuelWaterStallChance: [0, 1, 0.01],
+  fuelWaterStartFrom: [0, 1, 0.01],
   dieselStartFrom: [0, 1, 0.01],
   dieselNoStart: [0.05, 1, 0.01],
   fuelStarveLevel: [0.05, 1, 0.01],

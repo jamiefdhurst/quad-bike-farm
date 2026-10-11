@@ -270,7 +270,19 @@ export const FAQ_SECTIONS = [
         q: 'What about red diesel?',
         a: `The dark green bowser holds red diesel, for the tractor and the UTV, with a dark green can somewhere about the farm. Diesel in a petrol quad
           is slow poison: it runs rougher and weaker, smokes grey and stalls for good at about a fifth diesel. Petrol in a diesel does the same the other
-          way. Take the toolbox to it and pump the tank out (<kbd>P</kbd> on a quad), then fill it with the right fuel.`,
+          way. Take the toolbox to it and pump the tank out (<kbd>P</kbd> on a quad), then fill it with the right fuel. Water in the fuel is a different job: that one drains at the tap.`,
+      },
+      {
+        q: 'Why is my quad coughing and cutting out, and what is the glass bowl on the tap?',
+        a: `Probably water in the fuel. A jerry can left out in the rain collects some, and an old tank can have it too; the can's prompt says when it has.
+          Water is heavier than petrol, so it settles in the little glass bowl under the fuel tap, which goes cloudy and brown as it fills. While there is
+          room in the bowl the quad runs fine; once it is full the water gets to the engine and it misses, loses power, is hard to start and cuts out.`,
+      },
+      {
+        q: 'How do I get water out of the fuel?',
+        a: `Take the toolbox to the quad and press <kbd>G</kbd> (Drain the water at the tap). It lets the water out of the bowl, the tank and the carb, with
+          a little petrol, and the quad runs again at once. Keep the cans under the barn roof or the lean-to when it rains and it will not happen. Amy
+          spots it and says so; Jess blames the quad. A diesel has no bowl and no tap, so there is nothing to drain.`,
       },
       {
         q: 'How do I check the engine oil?',

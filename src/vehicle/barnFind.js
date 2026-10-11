@@ -9,6 +9,8 @@ export const DEFAULT_BARN_FIND_PARAMS = {
   chargeSeconds: 300, // how long the battery takes on the charger once it's clipped on (you can get on with other things)
   startBattery: 0.03, // charge it comes with: flat
   chargedTo: 0.95, // charge it has when the charger's done
+  waterChance: 0.5, // chance its old tank has water in it, which the sediment bowl on the tap shows and a drain there clears
+  tankWater: 0.06, // water fraction of what is in it
   smokeSeconds: 4, // how long the first start smokes
   wear: [0.55, 0.8], // engine wear it comes with: a lot of years
   hours: [1900, 2800], // hour meter
@@ -22,6 +24,8 @@ export const BARN_FIND_RANGES = {
   chargeSeconds: [10, 900, 10],
   startBattery: [0, 0.2, 0.01],
   chargedTo: [0.5, 1, 0.01],
+  waterChance: [0, 1, 0.05],
+  tankWater: [0, 0.3, 0.005],
   smokeSeconds: [0, 12, 0.5],
 };
 

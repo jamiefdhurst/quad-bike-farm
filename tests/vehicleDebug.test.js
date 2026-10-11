@@ -3,10 +3,11 @@ import { setQuirk, setFault, clearFaults, fixEverything, problemSummary, quirkLa
 import { QuirkSet } from '../src/vehicle/quirks.js';
 import { BrakeState } from '../src/vehicle/brakeState.js';
 import { Faults } from '../src/vehicle/faults.js';
+import { FuelSystem, DEFAULT_FUEL_PARAMS } from '../src/vehicle/fuelSystem.js';
 
 const unitWith = () => ({
   engine: { fouling: 0.5, clog: 0.6, wear: 0.4, scuff: 0.3, overheat: 0.2, seized: true, water: 0.4, dieselSoak: 0.4, silencerBlown: 0.5, boiled: true, coolant: 0.2, coolantLeak: 2, battery: 1 },
-  quad: { startTrouble: 3, faults: new Faults(), quirks: new QuirkSet(['tapStiff']), sump: { level: 0.2 }, fuel: { litres: 5 }, brakes: Object.assign(new BrakeState(), { wet: 0.8, binding: true }) },
+  quad: { startTrouble: 3, faults: new Faults(), quirks: new QuirkSet(['tapStiff']), sump: { level: 0.2 }, fuel: Object.assign(new FuelSystem({ ...DEFAULT_FUEL_PARAMS }), { water: 0.05, sediment: 0.6 }), brakes: Object.assign(new BrakeState(), { wet: 0.8, binding: true }) },
 });
 
 describe('vehicle debug helpers', () => {
@@ -38,11 +39,13 @@ describe('vehicle debug helpers', () => {
     setFault(u.quad.faults, 'cable', 0.8);
     expect(problemSummary(u)).toContain('seized');
     expect(problemSummary(u)).toContain('brake binding');
+    expect(problemSummary(u)).toContain('water in the fuel');
     fixEverything(u);
     expect(problemSummary(u)).toBe('nothing wrong');
     expect(u.quad.quirks.kinds).toEqual(['tapStiff']);
     expect(u.quad.quirks.tapStiff).toBe(0);
     expect(u.quad.sump.level).toBe(1);
+    expect(u.quad.fuel.water + u.quad.fuel.sediment + u.quad.fuel.bowlWater).toBe(0);
     expect(u.quad.startTrouble).toBe(0); // a hard start is a problem the girls keep a quad alive for
   });
 

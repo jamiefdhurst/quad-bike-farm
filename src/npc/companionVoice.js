@@ -542,7 +542,7 @@ export class CompanionVoice {
 
       if (e.state === 'cranking') w.cranking += dt;
       if (w.state === 'running' && e.state === 'stalled' && (hers || (near && c.quad === unit.quad))) {
-        this.say(e.lastStallReason === 'noFuel' ? 'outOfFuel' : e.lastStallReason === 'diesel' ? 'dieselDied' : 'stalledRiding', { urgent: true, chance: 0.8 });
+        this.say(e.lastStallReason === 'noFuel' ? 'outOfFuel' : e.lastStallReason === 'diesel' ? 'dieselDied' : e.lastStallReason === 'fuelWater' ? 'waterDied' : 'stalledRiding', { urgent: true, chance: 0.8 });
       }
       // A quad stalling where she can see it gets her down, more so if it was under her; the one she was driving knocks her nerve.
       if (w.state === 'running' && e.state === 'stalled' && unit.quad.position.distanceTo(this.head) < c.params.voiceRange) {
@@ -564,6 +564,7 @@ export class CompanionVoice {
       if (unit.id === 'blue' && e.isRunning && unit.quad.choke > 0.3 && e.rich > 0.2 && (near || hers)) this.say('chokeOffBlue', { chance: 0.01 });
       this.watchHeat(unit, near || hers);
       this.watchDiesel(unit, near || hers);
+      this.watchWater(unit, near || hers);
       if (e.silencerOff && e.isRunning && (near || hers)) this.say('silencerLoud', { chance: 0.015 });
       if (e.silencerBlown >= this.companion.params.blownNoticeAt && e.isRunning && (near || hers) && this.chatter.time >= (w.blownUntil ?? 0)) {
         if (this.say('silencerBlown', { chance: 0.02 })) w.blownUntil = this.chatter.time + 300;
@@ -606,6 +607,14 @@ export class CompanionVoice {
     const e = unit.engine;
     if (!listening) return;
     if (e.isRunning && e.dieselSoak > 0.3) this.say('dieselRough', { chance: 0.02 });
+  }
+
+  /** A quad coughing on water in its fuel, or one standing with the sediment bowl on its tap full (when it cuts out, the stall remark above picks the line). */
+  watchWater(unit, listening) {
+    const e = unit.engine;
+    if (!listening) return;
+    if (e.isRunning && e.fuelWater > 0.3) this.say('waterRough', { chance: 0.02 });
+    else if (!e.isRunning && unit.quad.fuel.sediment > 0.9) this.say('waterBowl', { chance: 0.004 });
   }
 
   /** An air-cooled quad running too hot and pinking, or a hot one that's been switched off ticking as it cools. */
@@ -774,6 +783,7 @@ export class CompanionVoice {
   crankHint(unit) {
     const e = unit.engine;
     if (e.dieselSoak > 0.4) return 'dieselNoStart';
+    if (e.fuelWater > 0.5) return 'waterNoStart';
     if (e.battery < e.params.batteryWeakBelow) return 'crankStruggleBattery';
     if (e.knack && !e.knack.primed && e.temperature < e.params.knackColdBelow) return 'crankStruggleKnack';
     if (unit.quad.fuel.bowlLevel < 0.3) return 'crankStruggleNoFuel';

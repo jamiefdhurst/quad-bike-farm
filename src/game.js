@@ -174,6 +174,7 @@ import { buildPod } from './vehicle/dashPod.js';
 import { pickWornGearbox } from './vehicle/manualDrivetrain.js';
 import { DashClock, pickReading, pickRelatedReading, setDashClock, dashClock } from './vehicle/dashState.js';
 import { Bench } from './workshop/bench.js';
+import { DEFAULT_FUEL_WATER_PARAMS, FUEL_WATER_RANGES, stepCanWater } from './vehicle/fuelWater.js';
 import { pickBarnFind, BarnFind, DEFAULT_BARN_FIND_PARAMS, BARN_FIND_RANGES, RUSTY_ID } from './vehicle/barnFind.js';
 import { weatherModel, buildTarp } from './vehicle/rustyLook.js';
 import { Notebook } from './workshop/notebook.js';
@@ -336,6 +337,10 @@ export class Game {
     // Every quad starts parked properly, with its brake on; after that it's down to whoever gets off one (vehicle/handbrake.js).
     for (const unit of this.units) unit.quad.parkBrake = true;
     // Wet brakes after the ford, and the odd quad that has stood so long its brake binds until a few metres free it (vehicle/brakeState.js).
+    // Water in the fuel: cans left out in the rain collect it, and the sediment bowl on each tap catches it (vehicle/fuelWater.js).
+    this.fuelWaterParams = { ...DEFAULT_FUEL_WATER_PARAMS };
+    registerTuning('Water in the fuel', this.fuelWaterParams, FUEL_WATER_RANGES);
+    for (const unit of this.units) unit.quad.fuel.waterParams = this.fuelWaterParams;
     this.brakeParams = { ...DEFAULT_BRAKE_PARAMS };
     registerTuning('Brakes', this.brakeParams, BRAKE_PARAM_RANGES);
     const brakeRandom = createRandom(this.seed ^ 0xb4a7);
@@ -770,7 +775,7 @@ export class Game {
             const pct = Math.round(quad.fuel.level * 100);
             if (quad.fuel.space < 0.01) return { text: `The ${unit.label} is full   ·   G put the can down` };
             if (this.can.litres < 0.01) return { text: 'The can is empty   ·   G put the can down' };
-            return { text: `Hold E to fill the ${unit.label} (${pct}%) with ${fuelText(this.can.oil, this.can.diesel)}   ·   G put the can down` };
+            return { text: `Hold E to fill the ${unit.label} (${pct}%) with ${fuelText(this.can.oil, this.can.diesel, this.can.water)}   ·   G put the can down` };
           }
           if (quad.crank && quad.atCrank && !this.player.isRiding) return { text: this.crankPrompt(quad) };
           if (this.sulkerIn(quad)) return { text: `${this.sulkerIn(quad).name} is sulking in the ${unit.label}   ·   E knock on the window` };
@@ -845,7 +850,7 @@ export class Game {
           }
           if (!this.can.held || this.tooFastToMount(quad)) return false;
           const wanted = Math.min(this.can.params.pourRate * dt, quad.fuel.space);
-          const poured = quad.fuel.add(this.can.take(wanted), this.can.oil, this.can.diesel) > 0;
+          const poured = quad.fuel.add(this.can.take(wanted), this.can.oil, this.can.diesel, this.can.water) > 0;
           if (poured) {
             this.wrongMix = this.mixWrongFor(quad, this.can);
             this.achievements.note('fuelPoured');
@@ -911,7 +916,7 @@ export class Game {
       this.interaction.add({
         target: can.proxy,
         isAvailable: () => !this.handsFull && !can.carried,
-        prompt: () => `Pick up the ${can === this.premixCan ? 'yellow' : can === this.dieselCan ? 'dark green' : 'red'} jerry can (${can.litres.toFixed(1)} L, ${fuelText(can.oil, can.diesel)})`,
+        prompt: () => `Pick up the ${can === this.premixCan ? 'yellow' : can === this.dieselCan ? 'dark green' : 'red'} jerry can (${can.litres.toFixed(1)} L, ${fuelText(can.oil, can.diesel, can.water)})`,
         interact: () => can.pickUp(this.camera),
       });
     }
@@ -922,7 +927,7 @@ export class Game {
         if (!this.handsFull) return 'Pick up the oil bottle';
         if (!this.can.held) return { text: 'Engine oil: bring a jerry can to add some to the pre-mix' };
         if (this.can.space < 0.01) return { text: 'The jerry can is full' };
-        return { text: `Hold E to add oil to the can (${fuelText(this.can.oil, this.can.diesel)})` };
+        return { text: `Hold E to add oil to the can (${fuelText(this.can.oil, this.can.diesel, this.can.water)})` };
       },
       interact: () => {
         if (!this.handsFull) this.oilBottle.pickUp(this.camera);
@@ -934,7 +939,7 @@ export class Game {
       prompt: () => {
         if (!this.can.held) return { text: 'Petrol tank: bring the jerry can to fill it' };
         if (this.can.space < 0.01) return { text: 'The jerry can is full' };
-        return { text: `Hold E to fill the jerry can (${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel)})` };
+        return { text: `Hold E to fill the jerry can (${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel, this.can.water)})` };
       },
       interact: () => {},
       hold: (dt) => this.can.held && this.can.fill(this.can.params.fillRate * dt) > 0,
@@ -944,7 +949,7 @@ export class Game {
       prompt: () => {
         if (!this.can.held) return { text: 'Red diesel, for the tractor: bring a jerry can to fill it' };
         if (this.can.space < 0.01) return { text: 'The jerry can is full' };
-        return { text: `Hold E to fill the jerry can with red diesel (${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel)})` };
+        return { text: `Hold E to fill the jerry can with red diesel (${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel, this.can.water)})` };
       },
       interact: () => {},
       hold: (dt) => this.can.held && this.can.fill(this.can.params.fillRate * dt, 0, 1) > 0,
@@ -2325,6 +2330,8 @@ export class Game {
     // What's wrong with it. The engine can't catch until every job is done (startBlocked); the rest shows as it would on any quad.
     unit.barnFind = new BarnFind(plan, P);
     unit.engine.startBlocked = true;
+    unit.quad.fuel.waterParams = this.fuelWaterParams;
+    if (random() < P.waterChance) unit.quad.fuel.water = unit.quad.fuel.bowlWater = P.tankWater; // years of damp air have left water in the old tank
     unit.engine.battery = P.startBattery;
     if (plan.jobs.includes('tyre')) {
       unit.quad.faults.begin('puncture');
@@ -2342,6 +2349,15 @@ export class Game {
     unit.quad.bodyRoot.add(unit.tarp);
     this.units = [...this.units, unit];
     return unit;
+  }
+
+  /** A can left out in the rain, not held and not under cover, collects water (the barn's roof and the lean-to keep it off). */
+  updateCanWater(dt) {
+    for (const can of [this.petrolCan, this.premixCan, this.dieselCan]) {
+      const at = can.model.position;
+      const exposed = !can.held && !can.carried && !this.world.covered?.(at.x, at.z);
+      can.water = stepCanWater(can.water, dt, { rain: this.weather.rain, exposed }, this.fuelWaterParams);
+    }
   }
 
   /** The barn find's slow jobs: the charger going, the seized brake holding it, and the first start. */
@@ -6155,6 +6171,7 @@ export class Game {
     this.petrolCan.update(dt);
     this.premixCan.update(dt);
     this.dieselCan.update(dt);
+    this.updateCanWater(dt);
     this.updateHose(dt);
     this.updateWinch();
     this.updateChain();
@@ -6218,7 +6235,7 @@ export class Game {
     } else if (this.toolbox.held) {
       this.hud.setStatus('Toolbox\nTake it to a quad that is switched off\nG to put it down');
     } else if (this.can.held) {
-      this.hud.setStatus(`Jerry can  ${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel)}\nG to put it down`);
+      this.hud.setStatus(`Jerry can  ${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel, this.can.water)}\nG to put it down`);
     } else if (this.tractorUnit && this.riddenUnit === this.tractorUnit && this.trailer.canHitch(this.tractorUnit.quad)) {
       this.hud.setStatus('The drawbar is at the trailer\'s ring\nJ to hitch it on');
     } else if (this.riddenUnit && this.tipTrailer.canHitch(this.riddenUnit.quad)) {

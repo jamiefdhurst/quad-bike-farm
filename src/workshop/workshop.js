@@ -290,6 +290,21 @@ export class Workshop {
     for (const c of this.game.companions) c.voice.onTinker?.('service');
   }
 
+  /** Opens the drain on the sediment bowl under the fuel tap: the water runs out of the bowl, the tank's bottom and the carb. */
+  drainWater() {
+    const unit = this.unit;
+    if (!unit || !this.canDrainWater(unit)) return;
+    const lost = unit.quad.fuel.drainSediment();
+    this.game.hud.toast(`Drained at the tap: the water has run out with ${lost.toFixed(1)} L of fuel`);
+    this.render();
+    for (const c of this.game.companions) c.voice.onTinker?.('service');
+  }
+
+  /** Worth opening the tap's drain: there's water in the sediment bowl, the tank or the carb. The diesels have no tap or bowl. */
+  canDrainWater(unit) {
+    return !unit.quad.fuel.params.noTap && !unit.engine.params.runsOnDiesel && unit.quad.fuel.hasWater;
+  }
+
   /** Worth draining: there's diesel in a petrol quad's fuel or its engine is soaked with it, or petrol in a diesel's. */
   canDrain(unit) {
     if (unit.engine.params.runsOnDiesel) return this.game.utvTainted(unit); // red diesel is its fuel: it's petrol in the tank that's wrong
@@ -421,6 +436,7 @@ export class Workshop {
     if (pressed('KeyX')) this.toggleSilencer();
     if (pressed('KeyF')) this.stripDown();
     if (pressed('KeyP')) this.drainFuel();
+    if (pressed('KeyG')) this.drainWater();
     if (pressed('KeyY')) this.startPod('fit', 'analogue');
     if (pressed('KeyU')) this.startPod('fit', 'digital');
     if (pressed('KeyO')) this.startPod('off');
@@ -528,6 +544,7 @@ export class Workshop {
           <button type="button" class="ws-btn ws-fix" data-fix="carb"><span class="key">C</span>Clean the carb</button>
           <button type="button" class="ws-btn ws-fix" data-fix="mounts"><span class="key">M</span>Nip up the engine mounts</button>
           <button type="button" class="ws-btn ws-drain"><span class="key">P</span>Pump out the tank and carb</button>
+          <button type="button" class="ws-btn ws-water"><span class="key">G</span>Drain the water at the tap</button>
           <button type="button" class="ws-btn ws-strip"><span class="key">F</span>Strip it down</button>
           <button type="button" class="ws-btn ws-silencer"><span class="key">X</span>Take the silencer off</button>
           <button type="button" class="ws-btn ws-reset"><span class="key">B</span>Back to stock</button>
@@ -573,6 +590,7 @@ export class Workshop {
     el.querySelector('.ws-service').addEventListener('click', () => this.service());
     el.querySelector('.ws-strip').addEventListener('click', () => this.stripDown());
     el.querySelector('.ws-drain').addEventListener('click', () => this.drainFuel());
+    el.querySelector('.ws-water').addEventListener('click', () => this.drainWater());
     // The air filter takes a hold, with the key or the mouse button.
     const filterBtn = el.querySelector('.ws-filter');
     filterBtn.addEventListener('mousedown', () => (this.filterButton = true));
@@ -619,6 +637,8 @@ export class Workshop {
     this.el.querySelector('.ws-cond').textContent = `Running ${word}: roughness ${rough.toFixed(2)}${e.wear >= 0.005 ? ` (${e.wear.toFixed(2)} of it wear)` : ''}. A service clears the wear.`;
     this.el.querySelector('.ws-service').disabled = this.isServiced(unit);
     this.el.querySelector('.ws-drain').disabled = !this.canDrain(unit);
+    this.el.querySelector('.ws-water').disabled = !this.canDrainWater(unit);
+    this.el.querySelector('.ws-water').style.visibility = this.isDiesel ? 'hidden' : '';
     this.el.querySelector('.ws-drain').lastChild.textContent = this.isDiesel ? 'Pump the petrol out of the tank' : 'Pump out the tank and carb';
     this.el.querySelector('.ws-silencer').style.visibility = this.isDiesel ? 'hidden' : '';
     this.el.querySelector('.ws-pods').style.visibility = this.canPod ? '' : 'hidden';
