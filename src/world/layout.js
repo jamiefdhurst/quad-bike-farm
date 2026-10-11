@@ -61,7 +61,7 @@ export const LAYOUT = {
     // The hill climb (npc/hillClimb.js): cones mark a gate at each of `points` ([x, z]: the start just past the stream, two on the way up, the
     // finish near the top), each `gateHalf` m either side of the point and across the way to the next (cones stand just outside). The line between them is yours; the points
     // run up the gentler ground in the east of the pasture, where the banks spread out, so the girls can drive it too.
-    climb: { points: [[8, 152], [16, 168], [18, 182], [6, 197]], gateHalf: 4.5 },
+    climb: { points: [[8, 152], [16, 168], [12, 182], [-2, 196]], gateHalf: 4.5 },
   },
   hedgeThickness: 1.8,
   hedgeHeight: 2.4,
