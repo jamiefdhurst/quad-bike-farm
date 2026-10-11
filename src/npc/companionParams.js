@@ -72,6 +72,8 @@ export const DEFAULT_COMPANION_PARAMS = {
   boredWaitCeiling: 200,
   restlessDrift: 0.03, // how fast her restlessness (0.5 to 2, shortening the waits) wanders up and down
   boredJoinChance: 0.5, // her friend's about to set off on a quad: how much she fancies hopping on the back (weighed against the others)
+  pairWeight: 1, // how keen she is to go and stand with her friend when she wants company (pair.js; weighed against the others)
+  tagWeight: 1, // how keen she is to tag along when her friend sets off on foot for a look round, a sit or a cup of tea
   // What she wants (needs.js), each 0 met to 1 pressing, and how she chooses what to do about it (chooser.js).
   chooseWhim: 0.6, // how much the scores of what she might do are reshuffled each time she chooses (log scale)
   chooseMin: 0.5, // she only takes the best thing she could do if it scores at least this
@@ -366,6 +368,8 @@ export const COMPANION_PARAM_RANGES = {
   resumeBoost: [1, 5, 0.1],
   needBusyFall: [0, 0.5, 0.005],
   boredJoinChance: [0, 2, 0.05],
+  pairWeight: [0, 3, 0.05],
+  tagWeight: [0, 3, 0.05],
   wanderFarChance: [0, 1, 0.05],
   boredAfterMax: [5, 900, 1],
   boredRestChance: [0, 2, 0.05],

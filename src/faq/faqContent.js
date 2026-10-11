@@ -487,6 +487,19 @@ export const FAQ_SECTIONS = [
           she says so. It stays on her mind for a couple of minutes, she's keener on it than before, and when she gets back to it she says so.`,
       },
       {
+        q: 'Why do the girls go and stand together?',
+        a: `They're friends. A girl who wants company and sees her friend stood about a little way off goes over to her (and often says so),
+          and the two stand and talk, facing each other. When one sets off for a look round, a sit down or a cup of tea, the other may tag
+          along a step behind. Amy tends to follow Jess about to keep an eye on her; Jess can't stand on her own for long. Fallen out, they
+          keep apart.`,
+        tip: 'Walk up to the girls stood talking and they turn a little to let you in.',
+      },
+      {
+        q: 'Why do they turn when I walk up to them?',
+        a: `Stood talking together, the two open up to let you in: each turns a little from facing her friend towards you, so the three of you
+          face the middle. Walk off and they turn back to each other.`,
+      },
+      {
         q: 'Why did she cover her ears, or flinch?',
         a: `They react to what happens near them. A backfire or a bang makes them flinch, a quad leaping forward right by them makes them hop
           back, and revving flat out beside them makes Amy cover her ears (Jess likes the noise). A quad going over gets a gasp, a good jump a

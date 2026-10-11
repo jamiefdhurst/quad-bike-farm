@@ -49,6 +49,8 @@ export const OFFER_KINDS = {
   dragDare: { label: 'challenge you to a drag race', satisfies: { excitement: 1, company: 0.6, purpose: 0.4 }, pace: 'brisk' },
   compare: { label: 'compare notes on the shake', satisfies: { company: 0.7, purpose: 0.4 } },
   invite: { label: 'ask you round the back of the barn', satisfies: { company: 1 } },
+  pairUp: { label: 'go and stand with her friend', satisfies: { company: 0.9, purpose: 0.4 } },
+  tagAlong: { label: 'tag along with her friend', satisfies: { company: 0.8, purpose: 0.5 }, pace: 'brisk' },
 };
 
 /** How much this offer would do for her now: the needs it meets, weighted by how much she cares for it. */

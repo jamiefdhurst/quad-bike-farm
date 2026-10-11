@@ -1,6 +1,7 @@
 // Things you can make a girl do on demand, shared by the debug panel's Girls tab (a button each) and the console (`girl amy drive red`),
 // so both do exactly what the game does. Each action calls the real game methods and says what happened with a toast.
 import { pickTrick } from '../npc/showOff.js';
+import { standBy } from '../npc/pair.js';
 
 /**
  * @typedef {object} GirlAction
@@ -31,8 +32,35 @@ export function girlActions(g) {
       .filter((q) => c.mayRide(q) && c.canDrive(q) && !c.takenByOther(q) && !q.rider && extra(q))
       .sort((a, b) => a.position.distanceTo(from) - b.position.distanceTo(from));
 
+  /** Her friend (the other girl). */
+  const friendOf = (id) => g.companions.find((o) => o.character.id !== id);
+
   /** @type {GirlAction[]} */
   const actions = [
+    {
+      verb: 'pair-up',
+      label: '% goes and stands with her friend',
+      run: (id) => {
+        if (!free(id)) return;
+        const c = girl(id);
+        const f = friendOf(id);
+        if (g.fallingOut.active) return toast('They have fallen out: she keeps away from her');
+        g.handlePairEvent(g.pair.take({ key: 'pairUp', girl: id, friend: f.character.id, to: standBy(c.root.position, f.root.position, g.pair.p) }));
+      },
+    },
+    {
+      verb: 'tag-along',
+      label: 'Her friend wanders off and % tags along',
+      run: (id) => {
+        if (!free(id)) return;
+        const c = girl(id);
+        const f = friendOf(id);
+        if (g.fallingOut.active) return toast('They have fallen out: she keeps away from her');
+        if (!f.availability({ asked: true }).free) return toast(`${f.name} is busy, so there is nobody to follow`);
+        f.wander();
+        g.handlePairEvent(g.pair.take({ key: 'tagAlong', girl: id, friend: f.character.id, side: g.pair.sideOf({ x: c.root.position.x, z: c.root.position.z }, { x: f.root.position.x, z: f.root.position.z, heading: f.heading }) }));
+      },
+    },
     {
       verb: 'invite-barn',
       label: '% asks you round the back of the barn',

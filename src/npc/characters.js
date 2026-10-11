@@ -25,6 +25,7 @@ export const CHARACTERS = [
       outfit: 'farmPolo',
       boredShowOffChance: 0.04,
       boredBuzzChance: 0.03, // sits on a rough one now and then, and never says why
+      tagWeight: 1.2, // goes along with Jess to keep an eye on her
       sideSaddleChance: 0.4, // sits side-saddle on the back, ladylike
       blownNoticeAt: 0.25,
       remembers4wd: 0.65,
@@ -70,6 +71,7 @@ export const CHARACTERS = [
       boredJumpChance: 0.12, // rides at the ramp in the field when she's bored
       sideSaddleChance: 0.1, // it isn't her style
       boredBuzzChance: 0.14, // goes and sits on a rough one for the shake, and says so
+      pairWeight: 1.3, // can't stand about on her own for long
       boredShowOffChance: 0.12, // rides at you to wheelie or skid past, and looks to see you saw
       boredLineUpChance: 0.06, // now and then parks one quad crooked on purpose, to wind Amy up
       lineUpCrookedChance: 1,

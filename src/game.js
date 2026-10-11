@@ -27,6 +27,7 @@ import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
 import { CHARACTERS } from './npc/characters.js';
 import { DEFAULT_NOTICE_PARAMS, NOTICE_PARAM_RANGES } from './npc/attention.js';
 import { NoticeWatch } from './npc/noticeWatch.js';
+import { Pair, PAIR_PARAM_RANGES, pairFacing } from './npc/pair.js';
 import { choose, mainNeed, OFFER_KINDS } from './npc/chooser.js';
 import { girlsLeftOut } from './npc/leftOut.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
@@ -678,6 +679,7 @@ export class Game {
     this.warmSit = new WarmSit(undefined, createRandom(this.seed ^ 0x3a2f)); // sat on your quad while it warms, for the shake (npc/warmSit.js)
     this.numbParams = { ...DEFAULT_NUMB_PARAMS }; // legs gone tingly and a numb bum from a long sit on a shaking seat (npc/numbness.js)
     this.comparing = new ComparingNotes(undefined, createRandom(this.seed ^ 0xc0de)); // the girls ranking the quads by their buzz (npc/comparingNotes.js)
+    this.pair = new Pair(); // the two as a pair: going over to each other, tagging along, letting you in (npc/pair.js)
     this.dontFix = new DontFixIt(); // a girl minding when her favourite is fixed up (npc/dontFixIt.js)
     this.warmSitQuads = new Map(); // girl id -> the quad she is sitting on
     this.readyQuads = new Map(); // girl id -> the quad she is getting ready or waiting on
@@ -1054,6 +1056,7 @@ export class Game {
     registerTuning('Hearing a quad', this.hearing.p, EAR_PARAM_RANGES);
     registerTuning('Warming hands', this.warming.p, WARMING_PARAM_RANGES);
     registerTuning('Comparing notes', this.comparing.p, COMPARE_PARAM_RANGES);
+    registerTuning('The two as a pair', this.pair.p, PAIR_PARAM_RANGES);
     registerTuning('Numb bum', this.numbParams, NUMB_PARAM_RANGES);
     registerTuning('Minding a fix', this.dontFix.p, DONTFIX_PARAM_RANGES);
     registerTuning('Sitting while it warms', this.warmSit.p, WARMSIT_PARAM_RANGES);
@@ -2449,7 +2452,60 @@ export class Game {
       ...(this.drag.active ? [] : mine(this.race.offers(this.raceContext(ridden)), (o) => this.handleRaceEvent(this.race.take(o)))),
       ...(this.race.active ? [] : mine(this.drag.offers(this.dragContext(ridden)), (o) => this.dragApproach(this.drag.take(o), ridden))),
       ...mine(this.comparing.offers(compare), (o) => this.runComparing(this.comparing.take(o, compare))),
+      ...mine(this.pair.offers(this.pairContext()), (o) => this.handlePairEvent(this.pair.take(o))),
     ];
+  }
+
+  /** What the two as a pair needs to know (npc/pair.js): where each girl is, whether she's free, settled or setting off somewhere. */
+  pairContext() {
+    return {
+      fallenOut: this.fallingOut.active,
+      girls: this.companions.map((c) => {
+        const a = c.availability();
+        const leaving = c.fsm.is('walking') ? (c.intent.current?.key ?? null) : null;
+        const r = c.root.position;
+        return { id: c.character.id, x: r.x, z: r.z, heading: c.heading, free: a.free, settled: a.canRemark && c.fsm.is('idle'), leaving, pairWeight: c.params.pairWeight, tagWeight: c.params.tagWeight };
+      }),
+    };
+  }
+
+  /** One girl goes over to stand with the other, or tags along after her (npc/pair.js; the chooser's pick, or the debug panel's). */
+  handlePairEvent(e) {
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    const friend = this.companions.find((o) => o.character.id === e.friend);
+    if (!c || !friend) return;
+    if (e.type === 'pairUp') {
+      c.standWith(friend, this.pair.p);
+      c.voice.say('pairGo', { chance: 0.4 });
+    } else {
+      c.tagAlong(friend, e.side, this.pair.p);
+      c.voice.say('tagGo', { chance: 0.6 });
+    }
+  }
+
+  /** Whether this girl is with her friend, for the debug panel and the console. */
+  pairState(id) {
+    const c = this.companions.find((o) => o.character.id === id);
+    if (c?.fsm.is('walking') && c.fsm.data?.goal === 'follow') return `tagging along after ${c.fsm.data.friend.name}`;
+    if (c?.pairFacing != null) return `stood with ${c.others()[0]?.name ?? 'her friend'}`;
+    return 'no';
+  }
+
+  /**
+   * The two stood together (npc/pair.js): each faces the other, and opens up to you when you come over. Fallen out, or with either
+   * busy, neither is turned.
+   */
+  updatePair(dt) {
+    this.pair.update(dt);
+    const [a, b] = this.companions;
+    const eye = this.camera.position;
+    const you = this.player.isRiding ? null : { x: eye.x, z: eye.z };
+    const standing = (c) => c.freeToTurn() && c.availability().free;
+    const paired = a && b && !this.fallingOut.active && standing(a) && standing(b) && this.pair.together(a.root.position, b.root.position);
+    for (const [c, f] of [[a, b], [b, a]]) {
+      if (!c) continue;
+      c.pairFacing = paired ? pairFacing(c.root.position, f.root.position, you, this.pair.p) : null;
+    }
   }
 
   /** What moves a girl's needs this frame (npc/needs.js): the cold where she is, who's near, how fast she's going, what she's at. */
@@ -5861,6 +5917,7 @@ export class Game {
     if (auto || this.tryst) this.updateRomance(dt);
     this.updateBanter(dt, ridden);
     this.updateMinds(dt, ridden);
+    this.updatePair(dt);
     this.watchNotices(dt);
     for (const c of this.companions) {
       c.update(dt, c.quad.unit.vibration, {

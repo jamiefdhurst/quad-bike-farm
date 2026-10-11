@@ -159,6 +159,7 @@ export function buildGameTree(g, host) {
       thinking: text(() => describeMind(c().mind).next),
       setOn: text(() => c().intent.describe((k) => OFFER_KINDS[k]?.label ?? k)),
       reacting: text(() => c().reactingText),
+      pairedWith: text(() => g.pairState(id)),
       ...where(id),
       favour: num(() => g.favour.scores[id], (v) => (g.favour.scores[id] = v), -30, 30, '', 'how she rates you'),
       standing: ro(() => g.favour.standing(id)),

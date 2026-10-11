@@ -33,6 +33,7 @@ import { reactingMethods } from './companionReacting.js';
 import { availabilityOf, JOBS } from './availability.js';
 import { Needs } from './needs.js';
 import { Intent, walkPace } from './intent.js';
+import { standBy, tagPoint } from './pair.js';
 
 const AXIS_Y = new THREE.Vector3(0, 1, 0);
 const NO_CONTACT_FORCES = 0xffff0000; // in every solver group, pushes against none
@@ -620,6 +621,34 @@ export class Companion {
     this.waving = null;
     this.recallTarget = point;
     this.fsm.transition('walking', { goal: 'stand', target: () => ({ position: point, facing }) });
+  }
+
+  /** Goes over to stand with her friend at talking distance, facing her (pair.js), wherever her friend has got to by then. */
+  standWith(friend, p) {
+    this.warmingAt = null;
+    this.waving = null;
+    const target = () => {
+      const f = friend.root.position;
+      const at = standBy(this.root.position, f, p);
+      return { position: new THREE.Vector3(at.x, this.world.heightAt(at.x, at.z), at.z), facing: at.facing };
+    };
+    this.fsm.transition('walking', { goal: 'stand', target });
+  }
+
+  /**
+   * Tags along with her friend on foot (pair.js): a step behind and to `side` while her friend walks, then stood by her facing her
+   * once she gets there (or after `p.tagFor` seconds, whatever her friend is doing).
+   */
+  tagAlong(friend, side, p) {
+    this.warmingAt = null;
+    this.waving = null;
+    const going = () => friend.fsm.is('walking') && this.fsm.time < p.tagFor;
+    const target = () => {
+      const f = friend.root.position;
+      const at = going() ? tagPoint({ x: f.x, z: f.z, heading: friend.heading }, side, p) : standBy(this.root.position, f, p);
+      return { position: new THREE.Vector3(at.x, this.world.heightAt(at.x, at.z), at.z), facing: Math.atan2(f.x - at.x, f.z - at.z) };
+    };
+    this.fsm.transition('walking', { goal: 'follow', friend, going, target });
   }
 
   /**
@@ -1370,7 +1399,11 @@ export const STATES = {
       // way she turns back to what she was facing after.
       if (this.reactTurn !== null && !this.warmingAt && !this.attempt) this.turnToward(dt, this.reactTurn);
       else if (this.lookTurn !== null && this.freeToTurn()) this.turnToward(dt, this.lookTurn);
-      else if (data.facing !== undefined) this.turnToward(dt, data.facing);
+      else if (this.pairFacing != null && this.freeToTurn()) {
+        // Stood with her friend: facing her, opened up to you when you come over (pair.js). She keeps facing that way after.
+        data.facing = this.pairFacing;
+        this.turnToward(dt, data.facing);
+      } else if (data.facing !== undefined) this.turnToward(dt, data.facing);
     },
     exit() {
       this.warmingAt = null; // whatever she does next, the hands come down
@@ -1416,6 +1449,11 @@ export const STATES = {
       }
       // Wait for the trailer to slow down before climbing on, as she does for a quad.
       if (data.goal === 'board' && this.trailer.motion.speed > 1.2 && t.position.distanceTo(this.root.position) < 1.2) {
+        this.rig.setTimeScale(0);
+        return;
+      }
+      // Tagging along, she waits a step behind until her friend gets there.
+      if (data.goal === 'follow' && data.going() && t.position.distanceTo(this.root.position) < this.params.arriveRadius) {
         this.rig.setTimeScale(0);
         return;
       }

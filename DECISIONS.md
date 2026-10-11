@@ -2673,7 +2673,7 @@ The features left on their own dice at the end of stage one, sorted into two kin
 
 ## The two as a pair (TODO 136): the plan
 
-Written before any code; not built yet.
+Written before any code. The item became TODO 138 when two fixes were put in front of it; see "The two as a pair: as built" for what changed.
 
 - A pure `src/npc/pair.js` (tested): when both girls are free (`availability().free`), the one with the higher company need offers to go and stand with the other (`pairUp` in `OFFER_KINDS`: company 0.9, purpose 0.3, `pace: 'normal'`), walking to a point at talking distance (about 1.4 m) facing her friend; the other turns to face her (`attend` plus a `facing`). Not while they've fallen out (`fallingOut.active`): then a `pairApart` check keeps a free girl from choosing anything that ends within 10 m of the other.
 - Walking somewhere together: when one takes a walking offer (wander, rest, tea) and the other is free and paired (within 4 m), a `tagAlong` offer for the other follows her, 1.2 m behind and to one side, until she arrives (`followTarget` on foot; the companion already follows quads).
@@ -2694,4 +2694,17 @@ The girls' heads were on a swivel round idling quads. Revs were counted from how
 ## The girls' buttons folded away (TODO 137)
 
 Each girl's folder on the Girls tab opened with about thirty action buttons, so with both folders open her details were off the bottom of the screen. The buttons now sit in their own "Make her do" folder below "Why", closed, and the folder opens on what she is doing and why. Actions still live with the girl they act on (the panel's rule), only folded. The two buttons inside "Why" (stop her on her way, think now) stay there, as they are for watching the chooser.
+
+## The two as a pair: as built (TODO 138)
+
+Built to the plan above, with these differences:
+
+- `src/npc/pair.js` offers `pairUp` (company 0.9, something to do 0.4, no pace: an ordinary walk) and `tagAlong` (company 0.8, something to do 0.5, brisk, so she keeps up with a dawdling friend). Keenness is per girl: `pairWeight` (Jess 1.3, she can't stand about alone) and `tagWeight` (Amy 1.2, she keeps an eye on Jess).
+- She only goes over to a friend who is stood about (`canRemark` and idle), not sat on the bales: the spot at talking distance from a girl on the bales can be inside them. Her walk aims at her friend as she is now each frame (`standWith`), so a friend who shifts a step doesn't leave her stood 4 m off, which the first headless check showed with a fixed spot.
+- No `pairApart`: falling out already moves one off when they're within 4 m (`apartRange` in fallingOut.js), so pair.js only stops offering anything while they're fallen out.
+- Tagging along walks to a point 1.2 m behind and 0.7 m to the side she was already on (so she doesn't cross behind), waits there if she catches up, and once her friend stops (or after 90 s) stands by her. Only wander, rest and tea are tagged (`TAG_KINDS`): a drive or a race has its own way of including the other.
+- Facing: stood within 4 m of each other, both free and nothing turning them (`freeToTurn`), each faces the other (`pairFacing` in the idle state, after a turn to look at something). You within 5 m of the middle of them, each turns towards the middle of the three of you, by at most 0.6 rad (about 35 degrees), which for you stood at talking distance comes out near the plan's 30. Not while you're riding.
+- Lines: `pairGo` and `tagGo` in mindLines.js, said sometimes (0.4 and 0.6).
+- Debug: "goes and stands with her friend" and "her friend wanders off and she tags along" in each girl's "Make her do"; "with her friend" on the Girls tab and `girl <name> pairedWith` in the console; "The two as a pair" tuning under "Girls: moving about".
+- Checked once headless: going over ends 1.5 m apart facing each other; tagging along follows and stands together at the end. Opening the circle to you is checked by the unit tests only.
 
