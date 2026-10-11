@@ -722,8 +722,17 @@ export const FAQ_SECTIONS = [
         q: 'What’s beyond the grass field?',
         a: `East, over the cattle grid, a tarmac farm road between two stubble fields, a Dutch barn full of round bales, an old stone field shed, a muck heap and a
           water trough. South, through the field gate, a sunk green lane down to a ford and a rough hill pasture with gorse, bracken and a small oak wood, and a
-          view over the whole farm from the top.`,
+          view over the whole farm from the top. The sheep graze there.`,
         tip: 'Ride to the top of the hill pasture for a view over the whole farm.',
+      },
+      {
+        q: 'Are there any animals?',
+        a: `A flock of sheep on the hill pasture, past the stream. They graze, wander about, bunch up and call to each other now and then. Come close and they move off, further away the faster you are going, and the rest of the flock runs with them. You can't hurt them, and for now there's nothing to do with them but watch.`,
+        tip: 'Ride up the hill pasture to find the sheep. They move off from a quad.',
+      },
+      {
+        q: 'Why do the sheep run away?',
+        a: `They don't like quads, girls or you coming close, and a fast quad worries them from much further off than a slow one. Stop and keep quiet, and they go back to grazing within a few seconds.`,
       },
       {
         q: 'Do the girls go up the hill?',

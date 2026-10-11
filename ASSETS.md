@@ -154,3 +154,9 @@ These have no external source:
 - **Dashes**: drawn on canvas in `src/vehicle/dash.js`.
 - **Terrain, track, grass tufts, distant trees and sky**: generated in `src/world/`.
 - **Synthesised engine sound** (selectable in the tuning panel), relay clicks, fuel pump, pouring and wind: synthesised at runtime in `src/audio/`.
+
+## Sheep
+
+| Used for | Recording | Author | Source | Licence |
+| --- | --- | --- | --- | --- |
+| The flock's bleats (`public/audio/sheep-baa.wav`, normalised, pitched up and down per sheep in the game) | sheep_baa | AntumDeluge, from a recording by mikewest | https://opengameart.org/node/132779 | CC0 1.0 |

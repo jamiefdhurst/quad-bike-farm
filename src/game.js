@@ -163,6 +163,9 @@ import { Sump, DEFAULT_SUMP_PARAMS, SUMP_PARAM_RANGES, pickBurner, startLevel, r
 import { fuelText } from './engine/diesel.js';
 import { FuelTank } from './items/fuelTank.js';
 import { Bell } from './world/bellBuild.js';
+import { Flock, findFlockSpot, DEFAULT_FLOCK_PARAMS, FLOCK_PARAM_RANGES } from './world/flock.js';
+import { FlockView } from './world/flockView.js';
+import { SheepAudio } from './audio/sheepAudio.js';
 import { BELL_PARAM_RANGES } from './world/bell.js';
 import { Toolbox } from './items/toolbox.js';
 import { JumpLeads, JUMP_LEAD_PARAM_RANGES } from './items/jumpLeads.js';
@@ -971,6 +974,8 @@ export class Game {
       interact: () => {},
       hold: (dt) => this.can.held && this.can.fill(this.can.params.fillRate * dt, 0, 1) > 0,
     });
+
+    this.setUpFlock();
 
     // The bell beside the barn doors: ring it and the girls come back to the barn, wherever they are.
     this.bell = new Bell({ scene: this.scene, physics: this.physics, RAPIER: this.RAPIER, world: this.world, audioHub: this.audioHub, position: L.bell, yaw: L.bell.yaw });
@@ -6341,6 +6346,7 @@ export class Game {
     if (auto) this.updateJumpers(dt);
     if (auto || this.dieselMistake.forced) this.updateDieselMistake(dt, ridden);
     this.bell.update(dt);
+    this.updateFlock(dt);
     this.updateRecall(dt);
     if (!this.recalling && (auto || this.convoy.active || this.convoy.forced)) this.updateConvoy(dt, ridden);
     this.updateDashReading(dt, ridden);
@@ -6415,6 +6421,38 @@ export class Game {
     this.renderer.render(this.scene, this.camera);
     input.endFrame();
     this.firstFrameDone = true;
+  }
+
+  /** The flock on the hill pasture (world/flock.js): grazing on the gentler ground past the stream, out of the gorse, the wood and the water. */
+  setUpFlock() {
+    const hill = this.world.fields.hill;
+    this.flock = null;
+    if (!hill) return;
+    const allowed = (x, z) =>
+      hill.inPasture(x, z, 3) && z > hill.farEdge(x) + this.world.layout.hill.foot + 2 && !hill.inWood(x, z, -2) && hill.waterAt(x, z) < 0.05 &&
+      hill.gorseAt(x, z) < 0.25 && hill.climbSlope(x, z) < 0.45;
+    const p = hill.pasture;
+    const random = createRandom(this.seed ^ 0x5eed);
+    const spot = findFlockSpot(allowed, { minX: p.minX + 8, maxX: p.maxX - 8, minZ: p.minZ + 20, maxZ: p.maxZ - 8 }, random);
+    if (!spot) return;
+    this.flockParams = { ...DEFAULT_FLOCK_PARAMS };
+    registerTuning('Sheep', this.flockParams, FLOCK_PARAM_RANGES);
+    this.flock = new Flock({ allowed, random, params: this.flockParams });
+    this.flock.place(spot);
+    this.flockView = new FlockView(this.scene, this.flock, (x, z) => this.world.groundHeightAt(x, z));
+    this.sheepAudio = new SheepAudio(this.audioHub);
+  }
+
+  /** Moves the flock: it keeps clear of every vehicle that comes close (faster ones from further off), the girls and you. */
+  updateFlock(dt) {
+    if (!this.flock) return;
+    const threats = this.units.map((u) => ({ x: u.quad.position.x, z: u.quad.position.z, speed: u.quad.speed }));
+    threats.push({ x: this.player.position.x, z: this.player.position.z, speed: 0 });
+    for (const c of this.companions) threats.push({ x: c.root.position.x, z: c.root.position.z, speed: 0 });
+    for (const b of this.flock.update(dt, threats)) {
+      this.sheepAudio.bleat({ ...b, y: this.world.groundHeightAt(b.x, b.z) + 0.7 });
+    }
+    this.flockView.update();
   }
 
   fixedUpdate(dt) {
