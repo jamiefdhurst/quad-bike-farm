@@ -584,16 +584,17 @@ export const drivingMethods = {
     }
     if (!exit) this.driveEvents.push('getOff');
     // Getting off, she nearly always leaves it running (on the tractor, switching it off is the stop knob).
-    if (q.engine.isRunning && Math.random() < p.driveKeyOffChance) {
+    if (q.engine.isRunning && !d.park?.light && Math.random() < p.driveKeyOffChance) { // brought round to light you (workLight.js), it stays running
       if (q.tractor) q.engine.stopKnob();
       else q.engine.setIgnition(false);
     }
-    this.afterDismount = exit?.next ?? (d.park && d.result === 'parked' ? () => this.finishParking(d.park) : null);
+    this.afterDismount = exit?.next ?? (d.park && (d.result === 'parked' || d.park.then) ? () => this.finishParking(d.park, d.result) : null);
     this.fsm.transition('dismounting');
   },
 
   /** She has put a quad in its place in the row: if it was left crooked on purpose her friend notices, otherwise she goes on to the next. */
-  finishParking(park) {
+  finishParking(park, result = 'parked') {
+    if (park.then) return park.then(result); // brought round for something (lights to work by, workLight.js): the game carries on
     if (park.home) return; // brought it home and left it: nothing more to do
     if (park.nick) {
       this.nickJob = null;

@@ -412,6 +412,11 @@ export function girlActions(g) {
       },
     },
   ];
+  actions.push({
+    verb: 'light-me',
+    label: '% brings a vehicle round to light you up (after dark)',
+    run: (id) => g.askWorkLight(girl(id)),
+  });
   // Each way of waiting that fits what's about her (npc/waiting.js), started now.
   for (const [name, w] of Object.entries(WAITING_IDLES)) {
     actions.push({

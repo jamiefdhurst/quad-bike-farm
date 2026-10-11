@@ -122,7 +122,8 @@ import { squealLevel, slipAngle } from './vehicle/tyreSqueal.js';
 import { DEFAULT_SHOWOFF_PARAMS, SHOWOFF_PARAM_RANGES } from './npc/showOff.js';
 import { JumpWatch, JUMP_PARAM_RANGES, rampPoint } from './npc/jumps.js';
 import { Nicking, NICK_PARAM_RANGES } from './npc/nicking.js';
-import { DEFAULT_LINEUP_PARAMS, LINEUP_PARAM_RANGES } from './npc/lineUp.js';
+import { DEFAULT_LINEUP_PARAMS, LINEUP_PARAM_RANGES, parkRoute } from './npc/lineUp.js';
+import { WorkLight, WORK_LIGHT_PARAM_RANGES } from './npc/workLight.js';
 import { DEFAULT_HOME_PARAMS, HOME_PARAM_RANGES } from './npc/homeParking.js';
 import { Tea, TEA_PARAM_RANGES } from './npc/tea.js';
 import { carryParams, CARRY_PARAM_RANGES, carryWeight } from './npc/carrying.js';
@@ -698,6 +699,7 @@ export class Game {
     this.numbParams = { ...DEFAULT_NUMB_PARAMS }; // legs gone tingly and a numb bum from a long sit on a shaking seat (npc/numbness.js)
     this.comparing = new ComparingNotes(undefined, createRandom(this.seed ^ 0xc0de)); // the girls ranking the quads by their buzz (npc/comparingNotes.js)
     this.pair = new Pair(); // the two as a pair: going over to each other, tagging along, letting you in (npc/pair.js)
+    this.workLight = new WorkLight(undefined, createRandom(this.seed ^ 0x11e7)); // bringing a vehicle round to light what you're at, after dark (npc/workLight.js)
     this.dontFix = new DontFixIt(); // a girl minding when her favourite is fixed up (npc/dontFixIt.js)
     this.warmSitQuads = new Map(); // girl id -> the quad she is sitting on
     this.readyQuads = new Map(); // girl id -> the quad she is getting ready or waiting on
@@ -1078,6 +1080,7 @@ export class Game {
     registerTuning('Warming hands', this.warming.p, WARMING_PARAM_RANGES);
     registerTuning('Comparing notes', this.comparing.p, COMPARE_PARAM_RANGES);
     registerTuning('The two as a pair', this.pair.p, PAIR_PARAM_RANGES);
+    registerTuning('Lights to work by', this.workLight.p, WORK_LIGHT_PARAM_RANGES);
     registerTuning('Numb bum', this.numbParams, NUMB_PARAM_RANGES);
     registerTuning('Minding a fix', this.dontFix.p, DONTFIX_PARAM_RANGES);
     registerTuning('Sitting while it warms', this.warmSit.p, WARMSIT_PARAM_RANGES);
@@ -2449,6 +2452,10 @@ export class Game {
         if (e) this.handleCabEvent(e);
       }),
       ...mine(this.places.offers(this.placesContext()), (o) => this.handlePlaceAction(this.places.take(o))),
+      ...mine(this.workLight.offers(this.workLightContext(c)), (o) => {
+        c.voice.say('workLightOffer', { urgent: true, force: true });
+        this.handleWorkLight(this.workLight.take(o));
+      }),
       ...mine(this.tea.offers(this.teaContext(ridden)), (o) => this.handleTeaEvent(this.tea.take(o))),
       ...(this.hiding.active ? [] : mine(this.requests.offers(this.requestContext(ridden)), (o) => this.handleRequestEvent(this.requests.take(o)))),
       ...mine(this.jumpers.offers(this.jumpersContext()), (o) => this.handleJumperEvent(this.jumpers.take(o))),
@@ -3018,6 +3025,116 @@ export class Game {
   }
 
   /** The wheel's two extras while they're fallen out and she's told you her side: take her side, or tell her to make up. */
+  // Lights to work by -------------------------------------------------------
+
+  /**
+   * What lights to work by needs to know (npc/workLight.js), for girl `c`: how dark it is, where you are and what you're stood at (a
+   * quad or a gate), the girls, and the vehicles she could bring.
+   */
+  workLightContext(c) {
+    const p = this.workLight.p;
+    const cam = this.camera.position;
+    const you = { x: cam.x, z: cam.z, onFoot: !this.player.isRiding };
+    const L = this.world.layout;
+    const things = [...this.units.map((u) => u.quad).filter((q) => Math.abs(q.speed) < 0.5).map((q) => ({ x: q.position.x, z: q.position.z })), ...(L.gate ? [{ x: L.gate.x, z: L.fieldHalf }] : [])];
+    let workAt = null;
+    for (const t of things) if (Math.hypot(t.x - you.x, t.z - you.z) < p.workNear && (!workAt || Math.hypot(t.x - you.x, t.z - you.z) < Math.hypot(workAt.x - you.x, workAt.z - you.z))) workAt = t;
+    const lit = (q) => !q.noHeadlight && !!q.model?.userData.beams?.length;
+    return {
+      dark: this.daylight?.darkness ?? 0,
+      you,
+      workAt,
+      girls: this.companions.map((g) => ({ id: g.character.id, x: g.root.position.x, z: g.root.position.z, free: g.availability().free, weight: g.params.workLightWeight ?? 0 })),
+      vehicles: this.units.map((u) => {
+        const q = u.quad;
+        const free = !q.rider && !q.driver && !q.passenger && !q.isTipped && !q.isGhostRiding && c.mayRide(q) && c.canDrive(q) && !c.takenByOther(q, 'rider') && !this.herOn(q);
+        return { id: u.id, x: q.position.x, z: q.position.z, cab: ['utv', 'landy', 'defender'].includes(this.goKindOf(q)), lights: lit(q), free };
+      }),
+    };
+  }
+
+  /** Lights to work by on her wheel: "Light me up" after dark, or "That'll do" while she's at it. */
+  workLightWheelOptions(c) {
+    const job = this.workLight.job;
+    if (job?.girl === c.character.id) return [{ label: 'That\'ll do for light, thanks', run: () => this.handleWorkLight(this.workLight.finish('asked')) }];
+    if ((this.daylight?.darkness ?? 0) < this.workLight.p.darkAbove * 0.5 || job) return [];
+    return [{ label: 'Light me up', run: () => this.askWorkLight(c) }];
+  }
+
+  /** You asked her to light you up (the wheel, the debug panel, the console). Returns why not, or null. */
+  askWorkLight(c) {
+    const a = c.availability({ asked: true });
+    if (!a.free) return `she is busy (${a.why})`;
+    const plan = this.workLight.ask({ id: c.character.id, x: c.root.position.x, z: c.root.position.z }, this.workLightContext(c));
+    if (plan.why) {
+      c.voice.say('workLightCant', { force: true });
+      this.hud.toast(`${c.name} can't: ${plan.why}`);
+      return plan.why;
+    }
+    c.voice.say('workLightAsked', { urgent: true, force: true });
+    this.handleWorkLight(this.workLight.take({ girl: c.character.id, ...plan }));
+    return null;
+  }
+
+  /**
+   * Lights to work by (npc/workLight.js). 'bring': she drives the vehicle round to the spot, facing you, lights on; once it's there she
+   * moves over to the passenger side or gets out and stands by it, leaving it running. 'done': she gets out or off, and switches off
+   * what she brought.
+   */
+  handleWorkLight(e) {
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    const unit = this.units.find((u) => u.id === e.vehicle);
+    if (!c || !unit) return;
+    const q = unit.quad;
+    const kind = this.goKindOf(q);
+    if (e.type === 'bring') {
+      c.hold('workLight', 'lighting the way for you');
+      q.lights?.set('low');
+      const spot = this.clampedSpot(e.spot, e.target);
+      const then = (result) => {
+        if (!this.workLight.job || this.workLight.job.girl !== e.girl) return;
+        if (result !== 'parked' && Math.hypot(q.position.x - spot.x, q.position.z - spot.z) > 5) return this.handleWorkLight(this.workLight.finish('failed'));
+        this.workLight.arrived();
+        q.lights?.set('low');
+        c.voice.say('workLightThere', { chance: 0.9 });
+        if (this.workLight.job.passenger && kind && kind !== 'tractor') this.boardCab(c, kind, { passenger: true });
+        else if (this.workLight.job.passenger && q.hasPillion && c.canRidePillion(q)) c.requestMount(q, { seat: 'pillion' });
+        else c.requestStandBeside(q);
+      };
+      c.requestDrive(q, { park: { route: parkRoute(spot, this.lineUpParams), yaw: spot.yaw, crooked: false, home: true, light: true, then } });
+    } else if (e.type === 'done') {
+      c.release('workLight');
+      if (e.why !== 'failed') c.voice.say('workLightDone', { chance: e.why === 'asked' ? 1 : 0.7 });
+      if (kind && c.onHayRide && c.trailer === this.mountOfKind(kind)) {
+        this.rideOfKind(kind).dismiss(e.girl);
+        c.leaveTrailer();
+      } else if (c.quad === q && c.fsm.is('seated', 'mounting')) c.requestStandBeside(q);
+      else if (c.quad === q && c.fsm.is('driving')) c.stopDriving('off');
+      // Nobody else on it: off it goes.
+      if (q.engine.isRunning && !q.rider && !this.player.isRiding && !this.companions.some((o) => o !== c && this.herOn(q) === o)) {
+        q.engine.setIgnition(false);
+        q.lights?.set('off');
+      }
+    }
+  }
+
+  /** The spot she brings it to, kept inside the field she's in (as a wander is), facing what she's lighting. */
+  clampedSpot(spot, target) {
+    const fields = this.world.fields;
+    const area = fields?.areaOf(target.x, target.z);
+    if (!fields || area === 'out') return spot;
+    const c = fields.clampToArea(area, spot.x, spot.z, area === 'road' || area === 'end' ? 1.5 : 3);
+    return { x: c.x, z: c.z, yaw: Math.atan2(target.x - c.x, target.z - c.z) };
+  }
+
+  /** Each frame: whether it's over, and which vehicle the light pool should favour. */
+  updateWorkLight(dt) {
+    const ctx = { dark: this.daylight?.darkness ?? 0, ...this.workLightContext(this.companions[0]) };
+    for (const e of this.workLight.update(dt, ctx)) this.handleWorkLight(e);
+    const job = this.workLight.job;
+    this.lightingUnit = job ? this.units.find((u) => u.id === job.vehicle) ?? null : null;
+  }
+
   fallingOutWheelOptions(c) {
     const fo = this.fallingOut;
     const id = c.character.id;
@@ -3072,7 +3189,12 @@ export class Game {
     w.temperature = Math.round(d.temperature(w.peak) * 10) / 10;
     w.sunUp = d.sun.light;
     w.dark = d.darkness; // for what the girls say about it (companionVoice.watchWeather)
-    for (const unit of this.units) unit.quad.dayFrost = w.frost;
+    for (const unit of this.units) {
+      unit.quad.dayFrost = w.frost;
+      // A girl driving a cab in the dark puts its lights on.
+      const q = unit.quad;
+      if (q.lights && q.lights.mode === 'off' && d.darkness > 0.5 && this.companions.some((c) => c.quad === q && c.fsm.is('driving'))) q.lights.set('low');
+    }
     this.station.update(d.hour, w.temperature, w.kind, w.rain, w.target);
     const board = this.boardUnit ?? this.player.vehicle?.unit ?? null;
     this.vehicleLights.update(this.units, this.camera.position, board, this.lightingUnit ?? null, d.darkness);
@@ -5406,7 +5528,7 @@ export class Game {
     }
     const ridingLandy = c.fsm.is('onTrailer') && Object.values(this.landys).find((l) => l.mount && l.mount === c.trailer);
     if (c.fsm.is('onTrailer') && c.trailer && (c.trailer === this.utvMount || ridingLandy)) {
-      this.openWheel(`Ask ${c.name} to`, [c.trailer === this.utvMount ? this.utvWheelOption(c) : this.landyWheelOption(c, ridingLandy)], c);
+      this.openWheel(`Ask ${c.name} to`, [c.trailer === this.utvMount ? this.utvWheelOption(c) : this.landyWheelOption(c, ridingLandy), ...this.workLightWheelOptions(c)], c);
       this.player.lookEnabled = false;
       this.player.moveEnabled = false;
       return;
@@ -5443,6 +5565,7 @@ export class Game {
         children: own.map((a) => ({ label: a.short ?? a.label, run: answer(a) })),
       });
     }
+    options.push(...this.workLightWheelOptions(c));
     options.push(...this.fallingOutWheelOptions(c));
     options.push(...this.romanceWheelOptions(c));
     this.openWheel(`Ask ${c.name} to`, options, c);
@@ -6032,6 +6155,7 @@ export class Game {
     this.audioHub.setPouring(pouring, dt);
     this.audioHub.update(dt, this.camera);
     this.rideWind.update(dt, board ? board.quad.speed : 0);
+    this.updateWorkLight(dt);
     this.updateDaylight(dt);
     this.world.update(dt, board ? board.quad.position : this.player.position, this.camera);
     this.updateWeather(dt);

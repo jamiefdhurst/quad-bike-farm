@@ -26,6 +26,7 @@ export const CHARACTERS = [
       boredShowOffChance: 0.04,
       boredBuzzChance: 0.03, // sits on a rough one now and then, and never says why
       tagWeight: 1.2, // goes along with Jess to keep an eye on her
+      workLightWeight: 1.2, // brings the Land Rover round to light what you're at in the dark, unasked
       sideSaddleChance: 0.4, // sits side-saddle on the back, ladylike
       blownNoticeAt: 0.25,
       remembers4wd: 0.65,
