@@ -9,7 +9,7 @@ export const DEFAULT_DRAG_PARAMS = {
   startAfter: 90, // seconds into the game before Jess might challenge you
   cooldown: 240, // seconds between races
   blipStill: 10, // seconds you have sat still on a quad, engine running, before Jess may pull up beside you
-  blipChance: 0.03, // per second after that, when both girls are free
+  blipWeight: 1.5, // how keen Jess is to pull up and challenge you after that, when both girls are free (chooser.js weighs it)
   approachTimeout: 40, // seconds she has to reach you before she gives up
   blipCount: 2, // blips of the throttle
   blipLength: 0.4, // seconds each one is held
@@ -38,7 +38,7 @@ export const DRAG_PARAM_RANGES = {
   startAfter: [0, 900, 10],
   cooldown: [0, 1800, 10],
   blipStill: [1, 60, 1],
-  blipChance: [0, 0.5, 0.01],
+  blipWeight: [0, 5, 0.05],
   approachTimeout: [10, 120, 5],
   blipCount: [1, 5, 1],
   blipLength: [0.1, 1.5, 0.05],
@@ -169,6 +169,27 @@ export class Drag {
    *   { type: 'go' }, { type: 'finish', id, place, time, ahead }, { type: 'out', id },
    *   { type: 'result', winner, loser, margin }, { type: 'cancel' }.
    */
+  /**
+   * Jess pulling up beside you to challenge you (the same `ctx` as update, after update): [{ key: 'dragDare', girl: 'jess', pick,
+   * weight }] once you've sat still on a running quad a while, both girls are free, nothing else is on and the cooldown is up.
+   */
+  offers(ctx) {
+    const p = this.p;
+    if (this.phase !== 'idle' || ctx.busy || !ctx.you?.riding || ctx.girls.length < 2 || !ctx.girls.every((g) => g.free)) return [];
+    if (!ctx.girls.some((g) => g.id === 'jess') || this.clock < p.startAfter || this.clock - this.lastRace < p.cooldown || this.stillTime < p.blipStill) return [];
+    const pick = pickQuads({ jess: ctx.options.jess ?? [] }, ctx.claims, this.random);
+    return pick ? [{ key: 'dragDare', girl: 'jess', pick: pick.jess, weight: p.blipWeight }] : [];
+  }
+
+  /** She chose to: she rides over to you, and the event the game acts on, { type: 'approach', girl, pick }. */
+  take(o) {
+    this.girl = o.girl;
+    this.picks = { [o.girl]: o.pick };
+    this.phase = 'approach';
+    this.phaseClock = 0;
+    return { type: 'approach', girl: o.girl, pick: o.pick };
+  }
+
   update(dt, ctx) {
     const p = this.p;
     const events = [];
@@ -195,15 +216,7 @@ export class Drag {
         }
         return events;
       }
-      const gated = this.clock < p.startAfter || this.clock - this.lastRace < p.cooldown;
-      if (gated || this.stillTime < p.blipStill || !ids.includes('jess') || this.random() >= p.blipChance * dt) return events;
-      const pick = pickQuads({ jess: ctx.options.jess ?? [] }, ctx.claims, this.random);
-      if (!pick) return events;
-      this.girl = 'jess';
-      this.picks = { jess: pick.jess };
-      this.phase = 'approach';
-      this.phaseClock = 0;
-      events.push({ type: 'approach', girl: 'jess', pick: pick.jess });
+      // Jess pulling up to challenge you is an offer (offers, take).
       return events;
     }
 

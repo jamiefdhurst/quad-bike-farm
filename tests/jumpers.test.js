@@ -1,16 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import { Jumpers, DEFAULT_JUMPER_PARAMS, isJumperWeather, JUMPERS } from '../src/npc/jumpers.js';
 
-const P = { ...DEFAULT_JUMPER_PARAMS, startAfter: 0, coldFor: 5, warmFor: 10, chance: 1 };
+const P = { ...DEFAULT_JUMPER_PARAMS, startAfter: 0, coldFor: 5, warmFor: 10 };
 const rail = { x: 0, z: 0 };
 const girl = (id, over = {}) => ({ id, free: true, x: 10, z: 0, ...over });
 const cold = { warmth: 0.2, rain: 0 };
 const warm = { warmth: 0.9, rain: 0 };
 
-/** Steps for `secs` seconds and collects events. */
+/** Steps for `secs` seconds and collects events, taking the first jumper she's offered each second (as a chooser that always says yes). */
 function run(j, secs, ctx) {
   const out = [];
-  for (let t = 0; t < secs; t += 1) out.push(...j.update(1, ctx));
+  for (let t = 0; t < secs; t += 1) {
+    out.push(...j.update(1, ctx));
+    const offer = j.offers(ctx)[0];
+    if (offer) out.push(j.take(offer));
+  }
   return out;
 }
 
@@ -23,6 +27,14 @@ describe('isJumperWeather', () => {
 });
 
 describe('Jumpers', () => {
+  it('never sends her for one on its own: that is the chooser\'s', () => {
+    const j = new Jumpers({ ...P }, () => 0);
+    const out = [];
+    for (let t = 0; t < 30; t++) out.push(...j.update(1, { weather: cold, girls: [girl('amy')], rail }));
+    expect(out).toEqual([]);
+    expect(j.offers({ weather: cold, girls: [girl('amy')], rail })[0]).toMatchObject({ key: 'jumper', girl: 'amy', weight: P.weight });
+  });
+
   it('sends nobody for a jumper on a warm day', () => {
     const j = new Jumpers({ ...P }, () => 0);
     expect(run(j, 60, { weather: warm, girls: [girl('amy')], rail })).toEqual([]);

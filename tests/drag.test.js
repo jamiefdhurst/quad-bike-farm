@@ -10,10 +10,16 @@ import { createTerrainHeight } from '../src/world/terrainHeight.js';
 const free = [{ id: 'amy', free: true }, { id: 'jess', free: true }];
 const idleYou = { riding: 'green', still: true, stalled: false, throttle: 0, near: true, across: 1 };
 const ctx = (o = {}) => ({ girls: free, options: { amy: ['red', 'blue'], jess: ['red', 'blue', 'yellow'] }, claims: { amy: 'red', jess: 'yellow' }, you: idleYou, along: {}, length: 70, ...o });
-const make = (params = {}, random = () => 0) => new Drag({ ...P, startAfter: 0, blipChance: 1, ...params }, random);
+const make = (params = {}, random = () => 0) => new Drag({ ...P, startAfter: 0, ...params }, random);
+/** Time goes by, Jess taking the challenge she's offered (as a chooser that always says yes). */
 const step = (d, seconds, c = ctx(), dt = 0.25) => {
   const events = [];
-  for (let t = 0; t < seconds; t += dt) events.push(...d.update(dt, typeof c === 'function' ? c() : c));
+  for (let t = 0; t < seconds; t += dt) {
+    const x = typeof c === 'function' ? c() : c;
+    events.push(...d.update(dt, x));
+    const offer = d.offers(x)[0];
+    if (offer) events.push(d.take(offer));
+  }
   return events;
 };
 const types = (events) => events.map((e) => e.type);
@@ -179,6 +185,12 @@ describe('Jess pulling up and blipping', () => {
     expect(step(make({ blipStill: 3, startAfter: 100 }), 10, sat())).toEqual([]);
     expect(step(make({ blipStill: 3 }), 10, sat({ still: false }))).toEqual([]);
     expect(step(make({ blipStill: 3 }), 10, ctx({ busy: true, you: idleYou }))).toEqual([]);
+  });
+
+  it('never comes over on its own: that is the chooser\'s', () => {
+    const d = make({ blipStill: 3 });
+    for (let t = 0; t < 20; t++) expect(d.update(0.25, sat())).toEqual([]);
+    expect(d.offers(sat())).toEqual([{ key: 'dragDare', girl: 'jess', pick: 'yellow', weight: P.blipWeight }]);
   });
 
   it('is a ten second wait by default', () => {

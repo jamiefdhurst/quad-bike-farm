@@ -723,23 +723,39 @@ export class Companion {
    * off. On there by her own choice, that's after a minute or two; put there by
    * you, she's far more patient (and asks first), but not endlessly.
    */
+  /**
+   * Put on the back by you and left there: her patience runs out and she gets off (a reaction, on her own clock). Sat there by her own
+   * choice, getting off when she's bored of it is a choice like any other: an offer (seatOffers) weighed by the chooser.
+   */
   boredOnTheBack(dt) {
     const p = this.params;
     const q = this.quad;
-    if (q.rider || q.driver || q.passenger || !p.ownMind) {
+    if (this.seatedByChoice || q.rider || q.driver || q.passenger || !p.ownMind) {
       this.backBoredIn = null;
       return;
     }
-    this.backBoredIn ??= this.seatedByChoice
-      ? nextBoredWait(p, this.restlessness) * 1.5
-      : this.randomBetween(p.placedPatienceMin, p.placedPatienceMax);
+    this.backBoredIn ??= this.randomBetween(p.placedPatienceMin, p.placedPatienceMax);
     this.backBoredIn -= dt;
     if (this.backBoredIn > 0) return;
     this.backBoredIn = null;
-    if (!this.seatedByChoice || Math.random() < p.boredGetOffChance) {
-      this.selfEvents.push(this.seatedByChoice ? 'getOff' : 'getOffWaited');
+    this.selfEvents.push('getOffWaited');
+    this.requestStandBeside(q);
+  }
+
+  /** Sat on a parked quad by her own choice, with nobody at the front or on it with her: as good as stood about, for wanting something to do. */
+  sittingAbout() {
+    const q = this.quad;
+    return this.fsm.is('seated') && !!this.seatedByChoice && !q.rider && !q.driver && !q.passenger;
+  }
+
+  /** What she could choose to do from the seat she's sat about on (chooser.js): get off, as keen as her boredGetOffWeight says. */
+  seatOffers() {
+    if (!this.sittingAbout()) return [];
+    const q = this.quad;
+    return [{ key: 'getOff', girl: this.character?.id, weight: this.params.boredGetOffWeight, take: () => {
+      this.selfEvents.push('getOff');
       this.requestStandBeside(q);
-    }
+    } }];
   }
 
   /**

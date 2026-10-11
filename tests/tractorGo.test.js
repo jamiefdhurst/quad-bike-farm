@@ -3,13 +3,27 @@ import { TractorGo, DEFAULT_TRACTORGO_PARAMS as P } from '../src/npc/tractorGo.j
 
 const ctx = (over = {}) => ({ free: { amy: true, jess: true }, tractorFree: true, youOnTractor: false, ...over });
 const make = (random = () => 0, over = {}) => new TractorGo({ ...P, ...over }, random);
+/** Seconds go by; each one Jess takes a go if she's offered it (as a chooser that always says yes). */
 function run(g, seconds, c = ctx()) {
   const events = [];
-  for (let t = 0; t < seconds; t += 1) events.push(...g.update(1, c));
+  for (let t = 0; t < seconds; t += 1) {
+    events.push(...g.update(1, c));
+    const offer = g.offers(c)[0];
+    if (offer) {
+      events.push(g.take(offer));
+      g.started('jess');
+    }
+  }
   return events;
 }
 
 describe('Jess', () => {
+  it('never takes it on its own: that is the chooser\'s', () => {
+    const g = make();
+    for (let t = 0; t < P.jessAfter + 50; t++) expect(g.update(1, ctx())).toEqual([]);
+    expect(g.offers(ctx())).toEqual([{ key: 'bigGo', girl: 'jess', vehicle: 'tractor', weight: P.jessWeight }]);
+  });
+
   it('leaves it alone at first, then takes it', () => {
     const g = make();
     expect(run(g, P.jessAfter - 5)).toEqual([]);
@@ -42,14 +56,15 @@ describe('Amy', () => {
 
   it('has her day once enough time has gone and Jess has had a go, and only once', () => {
     const g = make(() => 1, { amyDayAfter: 100 });
-    expect(run(g, 150)).toEqual([]); // Jess has had no go yet
+    const jessBusy = ctx({ free: { amy: true, jess: false } });
+    expect(run(g, 150, jessBusy)).toEqual([]); // Jess has had no go yet
     g.started('jess');
-    run(g, 40); // not long enough since
+    run(g, 40, jessBusy); // not long enough since
     expect(g.amyCan).toBe(false);
-    const events = run(g, 100);
+    const events = run(g, 100, jessBusy);
     expect(events.filter((e) => e.type === 'amyDay')).toHaveLength(1);
     expect(g.amyCan).toBe(true);
-    expect(run(g, 500).filter((e) => e.type === 'amyDay')).toEqual([]);
+    expect(run(g, 500, jessBusy).filter((e) => e.type === 'amyDay')).toEqual([]);
   });
 
   it('does not have her day with you on the tractor or her busy', () => {
@@ -63,14 +78,14 @@ describe('the UTV and the Land Rover', () => {
   const vc = (vehicles) => ({ free: { amy: true, jess: true }, vehicles, youOnTractor: false });
 
   it('Jess picks one of the free vehicles', () => {
-    const picks = (random) => run(make(random, { jessRate: 1 }), P.jessAfter + 20, vc(['tractor', 'utv', 'landy'])).find((e) => e.type === 'jessGo')?.vehicle;
+    const picks = (random) => run(make(random), P.jessAfter + 20, vc(['tractor', 'utv', 'landy'])).find((e) => e.type === 'jessGo')?.vehicle;
     expect(picks(() => 0)).toBe('tractor');
     expect(picks(() => 0.5)).toBe('utv');
     expect(picks(() => 0.999)).toBe('landy');
   });
 
   it('only picks from the ones nobody is on', () => {
-    const e = run(make(() => 0.9, { jessRate: 1 }), P.jessAfter + 20, vc(['utv'])).find((x) => x.type === 'jessGo');
+    const e = run(make(() => 0.9), P.jessAfter + 20, vc(['utv'])).find((x) => x.type === 'jessGo');
     expect(e.vehicle).toBe('utv');
   });
 

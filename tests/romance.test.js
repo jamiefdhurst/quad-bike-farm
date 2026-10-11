@@ -6,58 +6,72 @@ import { AMY_ROMANCE_LINES, JESS_ROMANCE_LINES } from '../src/npc/romanceLines.j
 const make = () => new Romance(['amy', 'jess'], { ...DEFAULT_ROMANCE_PARAMS });
 const girl = (id, over = {}) => ({ id, score: 15, favoured: true, free: true, distance: 4, fallenOut: false, quadOk: true, ...over });
 const ctx = (girls, over = {}) => ({ girls, youFree: true, ...over });
+/** Time goes by and she asks if she's offered to (as a chooser that always says yes): the events. */
+const step = (r, dt, c) => {
+  const events = r.update(dt, c);
+  const offer = r.offers(c)[0];
+  const e = offer && r.take(offer);
+  if (e) events.push(e);
+  return events;
+};
 
 describe('romance invitations', () => {
+  it('never asks on its own: that is the chooser\'s', () => {
+    const r = make();
+    expect(r.update(400, ctx([girl('amy')]))).toEqual([]);
+    expect(r.offers(ctx([girl('amy')]))).toEqual([{ key: 'invite', girl: 'amy', kind: 'barn', weight: DEFAULT_ROMANCE_PARAMS.weight }]);
+  });
+
   it('waits for the grace period, then asks the favoured girl round the back of the barn', () => {
     const r = make();
-    expect(r.update(10, ctx([girl('amy')]))).toEqual([]);
-    const e = r.update(300, ctx([girl('amy')]));
+    expect(step(r, 10, ctx([girl('amy')]))).toEqual([]);
+    const e = step(r, 300, ctx([girl('amy')]));
     expect(e).toEqual([{ type: 'invite', girl: 'amy', kind: 'barn' }]);
     expect(r.pendingFor('amy').kind).toBe('barn');
   });
 
   it('needs her liking you a lot, being the favoured one, free, near, and you on foot', () => {
     const r = make();
-    r.update(400, ctx([]));
+    step(r, 400, ctx([]));
     for (const over of [{ score: 5 }, { favoured: false }, { free: false }, { distance: 30 }, { fallenOut: true }]) {
-      expect(r.update(1, ctx([girl('amy', over)]))).toEqual([]);
+      expect(step(r, 1, ctx([girl('amy', over)]))).toEqual([]);
     }
-    expect(r.update(1, ctx([girl('amy')], { youFree: false }))).toEqual([]);
-    expect(r.update(1, ctx([girl('amy')])).length).toBe(1);
+    expect(step(r, 1, ctx([girl('amy')], { youFree: false }))).toEqual([]);
+    expect(step(r, 1, ctx([girl('amy')])).length).toBe(1);
   });
 
   it('lapses, and then waits before asking again; saying not now waits longer', () => {
     const r = make();
-    r.update(400, ctx([]));
-    r.update(1, ctx([girl('amy')]));
-    expect(r.update(80, ctx([]))).toEqual([{ type: 'lapsed', girl: 'amy', kind: 'barn' }]);
-    expect(r.update(10, ctx([girl('amy')]))).toEqual([]);
-    expect(r.update(420, ctx([girl('amy')])).length).toBe(1);
+    step(r, 400, ctx([]));
+    step(r, 1, ctx([girl('amy')]));
+    expect(step(r, 80, ctx([]))).toEqual([{ type: 'lapsed', girl: 'amy', kind: 'barn' }]);
+    expect(step(r, 10, ctx([girl('amy')]))).toEqual([]);
+    expect(step(r, 420, ctx([girl('amy')])).length).toBe(1);
     r.decline('amy');
-    expect(r.update(420, ctx([girl('amy')]))).toEqual([]);
-    expect(r.update(200, ctx([girl('amy')])).length).toBe(1);
+    expect(step(r, 420, ctx([girl('amy')]))).toEqual([]);
+    expect(step(r, 200, ctx([girl('amy')])).length).toBe(1);
   });
 
   it('an accepted invitation does not lapse part way through', () => {
     const r = make();
-    r.update(400, ctx([]));
-    r.update(1, ctx([girl('amy')]));
+    step(r, 400, ctx([]));
+    step(r, 1, ctx([girl('amy')]));
     r.accept('amy');
-    expect(r.update(500, ctx([]))).toEqual([]);
+    expect(step(r, 500, ctx([]))).toEqual([]);
     expect(r.complete('amy')).toEqual({ type: 'visit', visits: 1 });
   });
 
   it('asks only one girl at a time', () => {
     const r = make();
-    r.update(400, ctx([]));
-    expect(r.update(1, ctx([girl('amy'), girl('jess')])).length).toBe(1);
-    expect(r.update(1, ctx([girl('jess')]))).toEqual([]);
+    step(r, 400, ctx([]));
+    expect(step(r, 1, ctx([girl('amy'), girl('jess')])).length).toBe(1);
+    expect(step(r, 1, ctx([girl('jess')]))).toEqual([]);
   });
 });
 
 describe('romance progress', () => {
   const visit = (r, id) => {
-    r.update(500, ctx([girl(id)]));
+    step(r, 500, ctx([girl(id)]));
     return r.complete(id);
   };
 
@@ -65,7 +79,7 @@ describe('romance progress', () => {
     const r = make();
     expect(visit(r, 'amy')).toEqual({ type: 'visit', visits: 1 });
     expect(visit(r, 'amy')).toEqual({ type: 'visit', visits: 2 });
-    const e = r.update(500, ctx([girl('amy')]));
+    const e = step(r, 500, ctx([girl('amy')]));
     expect(e).toEqual([{ type: 'invite', girl: 'amy', kind: 'quad' }]);
     expect(r.complete('amy')).toEqual({ type: 'lockedIn' });
     expect(r.lockedGirl).toBe('amy');
@@ -75,29 +89,29 @@ describe('romance progress', () => {
     const r = make();
     visit(r, 'amy');
     visit(r, 'amy');
-    expect(r.update(500, ctx([girl('amy', { quadOk: false })]))).toEqual([]);
+    expect(step(r, 500, ctx([girl('amy', { quadOk: false })]))).toEqual([]);
   });
 
   it('once one girl is locked in, the other stops asking, and neither asks again', () => {
     const r = make();
     visit(r, 'amy');
     visit(r, 'amy');
-    r.update(500, ctx([girl('amy')]));
+    step(r, 500, ctx([girl('amy')]));
     r.complete('amy');
-    expect(r.update(5000, ctx([girl('jess'), girl('amy')]))).toEqual([]);
+    expect(step(r, 5000, ctx([girl('jess'), girl('amy')]))).toEqual([]);
   });
 
   it('throwing her off undoes it, and it starts from nothing after a long wait', () => {
     const r = make();
     visit(r, 'amy');
     visit(r, 'amy');
-    r.update(500, ctx([girl('amy')]));
+    step(r, 500, ctx([girl('amy')]));
     r.complete('amy');
     expect(r.betray('amy')).toBe(true);
     expect(r.lockedGirl).toBeNull();
     expect(r.betray('amy')).toBe(false);
-    expect(r.update(1000, ctx([girl('amy')]))).toEqual([]);
-    expect(r.update(600, ctx([girl('amy')]))).toEqual([{ type: 'invite', girl: 'amy', kind: 'barn' }]);
+    expect(step(r, 1000, ctx([girl('amy')]))).toEqual([]);
+    expect(step(r, 600, ctx([girl('amy')]))).toEqual([{ type: 'invite', girl: 'amy', kind: 'barn' }]);
   });
 });
 

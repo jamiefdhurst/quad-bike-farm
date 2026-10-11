@@ -8,7 +8,7 @@ import { pickQuads } from './race.js';
 export const DEFAULT_CONVOY_PARAMS = {
   startAfter: 150, // seconds into the game before they might
   freeFor: 20, // seconds both have been stood about
-  chance: 0.012, // per second after that
+  weight: 1, // how keen she is on a ride together after that (chooser.js weighs it; either girl can suggest it)
   cooldown: 420, // seconds between convoys
   jessLeads: 0.6, // chance Jess is the one at the front to begin with
   formTimeout: 120, // seconds to get both going before it's called off
@@ -22,7 +22,7 @@ export const DEFAULT_CONVOY_PARAMS = {
 export const CONVOY_PARAM_RANGES = {
   startAfter: [0, 900, 10],
   freeFor: [0, 120, 1],
-  chance: [0, 0.2, 0.002],
+  weight: [0, 5, 0.05],
   cooldown: [0, 1800, 10],
   jessLeads: [0, 1, 0.05],
   formTimeout: [20, 400, 5],
@@ -93,6 +93,31 @@ export class Convoy {
     this.forced = false;
   }
 
+  /**
+   * A ride together, offered to each girl (the same `ctx` as update, after update): [{ key: 'convoy', girl, girls, picks, weight }] once
+   * both have been free a while, nothing else is on and the cooldown is up. Whichever takes it, who leads is decided as ever.
+   */
+  offers(ctx) {
+    const p = this.p;
+    if (this.phase !== 'idle' || ctx.busy || ctx.girls.length < 2 || !ctx.girls.every((g) => g.free)) return [];
+    if (this.clock < p.startAfter || this.clock - this.lastEnd < p.cooldown || this.freeTime < p.freeFor) return [];
+    const picks = pickQuads(ctx.options, ctx.claims, this.random);
+    if (!picks) return [];
+    const girls = ctx.girls.map((g) => g.id);
+    return girls.map((id) => ({ key: 'convoy', girl: id, girls, picks, weight: p.weight }));
+  }
+
+  /** One of them suggested it: who leads (Jess, usually), and the invite the game acts on. */
+  take(o) {
+    const ids = o.girls;
+    this.leader = ids.includes('jess') && this.random() < this.p.jessLeads ? 'jess' : ids.find((id) => id !== 'jess') ?? ids[0];
+    this.follower = ids.find((id) => id !== this.leader);
+    this.picks = o.picks;
+    this.phase = 'forming';
+    this.phaseClock = 0;
+    return { type: 'invite', leader: this.leader, follower: this.follower, picks: o.picks };
+  }
+
   finish() {
     this.lastEnd = this.clock;
     this.reset();
@@ -113,17 +138,12 @@ export class Convoy {
     if (this.phase === 'idle') {
       const bothFree = ctx.girls.length >= 2 && ctx.girls.every((g) => g.free) && !ctx.busy;
       this.freeTime = bothFree ? this.freeTime + dt : 0;
-      const wait = !this.forced && (this.clock < p.startAfter || this.clock - this.lastEnd < p.cooldown || this.freeTime < p.freeFor || this.random() >= p.chance * dt);
-      if (!bothFree || wait) return events;
+      // Starting one is an offer (offers, take); only the debug panel's forced one starts here.
+      if (!bothFree || !this.forced) return events;
       const picks = pickQuads(ctx.options, ctx.claims, this.random);
       if (!picks) return events;
       this.forced = false;
-      const ids = ctx.girls.map((g) => g.id);
-      this.leader = ids.includes('jess') && this.random() < p.jessLeads ? 'jess' : ids.find((id) => id !== 'jess') ?? ids[0];
-      this.follower = ids.find((id) => id !== this.leader);
-      this.picks = picks;
-      this.phase = 'forming';
-      events.push({ type: 'invite', leader: this.leader, follower: this.follower, picks });
+      events.push(this.take({ girls: ctx.girls.map((g) => g.id), picks }));
       return events;
     }
     this.phaseClock += dt;

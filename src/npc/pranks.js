@@ -2,20 +2,20 @@
 // off or puts the choke on a warm engine, and Amy hides the jerry can or the
 // toolbox. Nothing tells you: you find out when the quad won't run properly or
 // the thing isn't where you left it, and the culprit can't keep a straight face.
-// A favoured girl never pranks you; a neglected one does it more. Pure logic;
-// the game says what's where, sends the girl, and does the deed.
+// A favoured girl never pranks you; a neglected one is keener to. Pure logic;
+// the game says what's where, sends the girl, and does the deed. When she does
+// one is the chooser's (chooser.js): this offers what she could do.
 
 export const DEFAULT_PRANK_PARAMS = {
   firstDelay: 240, // seconds into a game before the first prank can happen
   cooldown: 600, // seconds between pranks, at the soonest
-  checkEvery: 5, // seconds between each look for a chance
-  chance: 0.12, // chance per look, once the cooldown is up and you're away from something
+  weight: 0.6, // how keen she is on a prank, once the cooldown is up and you're away from something (chooser.js weighs it)
   awayDistance: 30, // metres you must be from a quad (or a hidden item's place) for it to be fair game
   hideDistance: 40, // how far from its place a hidden item can go, at the most
   hideRestoreAfter: 600, // seconds before she puts a hidden thing back herself
   foundRange: 6, // metres from where the item should be before you notice it's gone
   foundAfter: 3, // seconds on a pranked quad before the culprit gives herself away
-  neglectedBoost: 2, // a neglected girl pranks this much more often
+  neglectedBoost: 2, // a neglected girl is this much keener
   sneakGiveUp: 150, // seconds she gets to reach the thing, carry it off and set it down before the prank lapses
   warmAbove: 0.5, // engine temperature (0..1) above which the choke counts as a prank on a warm engine
 };
@@ -23,8 +23,7 @@ export const DEFAULT_PRANK_PARAMS = {
 export const PRANK_PARAM_RANGES = {
   firstDelay: [0, 1200, 10],
   cooldown: [0, 1800, 10],
-  checkEvery: [1, 30, 1],
-  chance: [0, 1, 0.01],
+  weight: [0, 3, 0.05],
   awayDistance: [5, 100, 1],
   hideDistance: [10, 100, 1],
   hideRestoreAfter: [30, 1800, 10],
@@ -48,7 +47,6 @@ export class Pranks {
     this.p = params;
     this.random = random;
     this.clock = 0;
-    this.nextCheck = params.checkEvery;
     this.lastPrank = -Infinity;
     this.active = []; // { kind, girl, quad?, item?, spot?, since, found, confessed }
   }
@@ -76,34 +74,32 @@ export class Pranks {
     const events = [];
     this.clock += dt;
     this.watch(dt, ctx, events);
-    if (this.clock < this.nextCheck) return events;
-    this.nextCheck = this.clock + this.p.checkEvery;
-    if (this.clock < this.p.firstDelay || this.clock - this.lastPrank < this.p.cooldown) return events;
-    const prank = this.choose(ctx);
-    if (prank) {
-      this.lastPrank = this.clock;
-      this.active.push(prank);
-      events.push({ type: 'start', prank });
-    }
     return events;
   }
 
-  /** What she could do, if anything, and whether the dice say she does. */
-  choose(ctx) {
-    const options = [];
+  /**
+   * The pranks each free girl could play now (the same `ctx` as update): [{ key: 'prank', girl, kind, quad, item, spot, weight }] for
+   * the chooser. Not before the first delay or the cooldown, and never by a girl who favours you; a neglected one is keener.
+   */
+  offers(ctx) {
+    if (this.clock < this.p.firstDelay || this.clock - this.lastPrank < this.p.cooldown) return [];
+    const out = [];
     for (const g of ctx.girls) {
       if (!g.free || g.mood === 'favoured') continue;
-      const weight = g.mood === 'neglected' ? this.p.neglectedBoost : 1;
+      const weight = this.p.weight * (g.mood === 'neglected' ? this.p.neglectedBoost : 1);
       for (const kind of PRANKSTERS[g.id] ?? []) {
-        for (const target of this.targets(kind, ctx)) options.push({ girl: g.id, kind, weight, ...target });
+        for (const target of this.targets(kind, ctx)) out.push({ key: 'prank', girl: g.id, kind, weight, ...target });
       }
     }
-    if (!options.length) return null;
-    const weight = options.reduce((s, o) => s + o.weight, 0) / options.length;
-    if (this.random() >= Math.min(1, this.p.chance * weight)) return null;
-    let r = this.random() * options.reduce((s, o) => s + o.weight, 0);
-    const o = options.find((x) => (r -= x.weight) <= 0) ?? options[options.length - 1];
-    return { kind: o.kind, girl: o.girl, quad: o.quad, item: o.item, spot: o.spot, since: this.clock, applied: false, found: false, confessed: false, riddenFor: 0 };
+    return out;
+  }
+
+  /** She chose to: starts it and returns the event the game acts on, { type: 'start', prank }. */
+  take(o) {
+    const prank = { kind: o.kind, girl: o.girl, quad: o.quad, item: o.item, spot: o.spot, since: this.clock, applied: false, found: false, confessed: false, riddenFor: 0 };
+    this.lastPrank = this.clock;
+    this.active.push(prank);
+    return { type: 'start', prank };
   }
 
   /** Quads or things this kind of prank could be played on right now. */

@@ -64,7 +64,7 @@ export const CHARACTERS = [
       boredMountChance: 0.2,
       parkBrakeChance: 0.5, // leaves it in gear-less limbo half the time
       remembers4wd: 0.25, // and mostly forgets the 4WD switch
-      rockPrankChance: 0.02,
+      rockPrankWeight: 0.9,
       boredStartChance: 0.25,
       boredDoughnutChance: 0.12, // spins doughnuts in the field when she's bored
       boredJumpChance: 0.12, // rides at the ramp in the field when she's bored

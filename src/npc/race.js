@@ -6,7 +6,7 @@
 export const DEFAULT_RACE_PARAMS = {
   startAfter: 120, // seconds into the game before they might
   freeFor: 20, // seconds both have been stood about
-  chance: 0.015, // per second after that
+  weight: 1.1, // how keen she is on a race after that (chooser.js weighs it; either girl can suggest it)
   cooldown: 300, // seconds between races
   jessChallenges: 0.7, // chance it's Jess who dares Amy to it
   gatherTimeout: 100, // seconds to get both quads started and to the start line before it's called off
@@ -22,7 +22,7 @@ export const DEFAULT_RACE_PARAMS = {
   keepRidingChance: 0.5, // chance a girl carries on driving after the finish instead of pulling up and getting off (the drag race uses it too)
   youWait: 30, // seconds you get to line up on the grid once asked, before they race without you
   dareStill: 4, // seconds you've sat still on a quad near the line before Jess may dare you
-  dareChance: 0.05, // per second after that, when the girls are free and it's been long enough
+  dareWeight: 1.5, // how keen Jess is to dare you after that, when the girls are free and it's been long enough
   nearLine: 45, // metres from the start line you count as there (to be asked, or dared)
   gridSpacing: 3, // metres between lanes on the grid when you are racing (1.5 either side of the middle when you're not)
   youGridRadius: 5, // metres from your grid point you count as on the grid
@@ -35,7 +35,7 @@ export const DEFAULT_RACE_PARAMS = {
 export const RACE_PARAM_RANGES = {
   startAfter: [0, 900, 10],
   freeFor: [0, 120, 1],
-  chance: [0, 0.2, 0.005],
+  weight: [0, 5, 0.05],
   cooldown: [0, 1800, 10],
   jessChallenges: [0, 1, 0.05],
   gatherTimeout: [10, 300, 5],
@@ -51,7 +51,7 @@ export const RACE_PARAM_RANGES = {
   keepRidingChance: [0, 1, 0.05],
   youWait: [5, 120, 5],
   dareStill: [0, 30, 1],
-  dareChance: [0, 0.5, 0.01],
+  dareWeight: [0, 5, 0.05],
   nearLine: [10, 150, 5],
   gridSpacing: [2, 6, 0.5],
   youGridRadius: [2, 12, 0.5],
@@ -233,6 +233,40 @@ export class Race {
   }
 
   /**
+   * A race, offered to each girl (the same `ctx` as update, after update), once both have been free a while and the cooldown is up:
+   * [{ key: 'raceDare', girl: 'jess', ... }] first if you've sat still at the line long enough (Jess dares you), and
+   * [{ key: 'race', girl, ... }] for each of them. Each carries the quads picked and whether you're in.
+   */
+  offers(ctx) {
+    const p = this.p;
+    if (this.phase !== 'idle' || ctx.girls.length < 2 || !ctx.girls.every((g) => g.free)) return [];
+    if (this.clock < p.startAfter || this.clock - this.lastRace < p.cooldown || this.freeTime < p.freeFor) return [];
+    const picks = pickQuads(ctx.options, ctx.claims, this.random);
+    if (!picks) return [];
+    const you = ctx.you ?? {};
+    const youRiding = you.riding && you.near ? you.riding : null;
+    const girls = ctx.girls.map((g) => g.id);
+    const out = [];
+    if (this.stillTime >= p.dareStill && girls.includes('jess') && p.dareWeight > 0) out.push({ key: 'raceDare', girl: 'jess', girls, picks, dare: true, youRiding, weight: p.dareWeight });
+    if (p.weight > 0) for (const id of girls) out.push({ key: 'race', girl: id, girls, picks, dare: false, youRiding, weight: p.weight });
+    return out;
+  }
+
+  /** One of them suggested it (or Jess dared you): who challenges whom, and the invite the game acts on. */
+  take(o) {
+    const ids = o.girls;
+    // A dare to you is Jess's (or whoever's there); otherwise the usual.
+    this.challenger = o.dare && ids.includes('jess') ? 'jess' : ids.includes('jess') && this.random() < this.p.jessChallenges ? 'jess' : ids.find((id) => id !== 'jess') ?? ids[0];
+    const picks = { ...o.picks };
+    this.youIn = !!o.youRiding;
+    if (this.youIn) picks.you = o.youRiding;
+    this.picks = picks;
+    this.phase = 'gather';
+    this.phaseClock = 0;
+    return { type: 'invite', challenger: this.challenger, other: ids.find((id) => id !== this.challenger), picks, youIn: this.youIn, dare: o.dare };
+  }
+
+  /**
    * One step. `ctx`:
    *   girls: [{ id, free }]                       free: stood about, nothing on
    *   options: { girlId: [spec ids she could race now] }
@@ -251,27 +285,12 @@ export class Race {
     if (this.phase === 'idle') {
       const bothFree = ctx.girls.length >= 2 && ctx.girls.every((g) => g.free);
       this.freeTime = bothFree ? this.freeTime + dt : 0;
-      const gated = this.clock < p.startAfter || this.clock - this.lastRace < p.cooldown || this.freeTime < p.freeFor;
-      let dare = false;
-      if (!bothFree) return events;
-      if (!this.forced) {
-        if (gated) return events;
-        if (this.random() < p.chance * dt) { /* they fancy a race anyway */ }
-        else if (this.stillTime >= p.dareStill && this.random() < p.dareChance * dt) dare = true;
-        else return events;
-      }
+      // Starting one is an offer (offers, take); only the debug panel's forced one (or yours, asked for) starts here.
+      if (!bothFree || !this.forced) return events;
       const picks = pickQuads(ctx.options, ctx.claims, this.random);
       if (!picks) return events;
       this.forced = false;
-      const ids = ctx.girls.map((g) => g.id);
-      // A dare to you is Jess's (or whoever's there); otherwise the usual.
-      this.challenger = dare && ids.includes('jess') ? 'jess' : ids.includes('jess') && this.random() < p.jessChallenges ? 'jess' : ids.find((id) => id !== 'jess') ?? ids[0];
-      this.youIn = youHere;
-      if (this.youIn) picks.you = you.riding;
-      this.picks = picks;
-      this.phase = 'gather';
-      this.phaseClock = 0;
-      events.push({ type: 'invite', challenger: this.challenger, other: ids.find((id) => id !== this.challenger), picks, youIn: this.youIn, dare });
+      events.push(this.take({ girls: ctx.girls.map((g) => g.id), picks, dare: false, youRiding: youHere ? you.riding : null }));
       return events;
     }
 

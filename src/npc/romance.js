@@ -7,6 +7,7 @@
 export const DEFAULT_ROMANCE_PARAMS = {
   startAfter: 300, // seconds into the game before anyone asks
   minScore: 12, // her favour score must be at least this, and she must be the favoured one
+  weight: 2, // how keen she is to ask, once she would (chooser.js weighs it)
   nearRange: 9, // metres: she only asks when you're stood about this close, on foot
   cooldown: 420, // seconds between her invitations
   declineCooldown: 600, // seconds before she asks again after you say not now
@@ -78,7 +79,7 @@ export class Romance {
 
   /**
    * ctx.girls: [{ id, score, favoured, free, distance, fallenOut, quadOk }]; ctx.youFree: on foot with nothing else going on.
-   * Returns events: { type: 'invite', girl, kind } and { type: 'lapsed', girl, kind }.
+   * Returns events: { type: 'lapsed', girl, kind }. Asking is an offer (offers, take).
    */
   update(dt, ctx) {
     this.clock += dt;
@@ -91,20 +92,30 @@ export class Romance {
         g.pending = null;
       }
     }
-    if (this.clock < this.p.startAfter || !ctx.youFree || this.ids.some((id) => this.girls[id].pending)) return events;
-    const locked = this.lockedGirl;
+    return events;
+  }
+
+  /**
+   * Asking you round the back of the barn, or onto her favourite quad (the same `ctx` as update): [{ key: 'invite', girl, kind, weight }]
+   * for the favoured girl who likes you enough, is free and near, with you on foot and free, nobody's invitation open, and her cooldown up.
+   */
+  offers(ctx) {
+    if (this.clock < this.p.startAfter || !ctx.youFree || this.ids.some((id) => this.girls[id].pending) || this.lockedGirl) return [];
+    const out = [];
     for (const c of ctx.girls) {
       const g = this.girls[c.id];
-      if (!g || g.locked || locked || this.clock < g.nextInvite) continue;
+      if (!g || g.locked || this.clock < g.nextInvite) continue;
       if (!c.free || c.fallenOut || !c.favoured || c.score < this.p.minScore || c.distance > this.p.nearRange) continue;
       const kind = this.nextKind(c.id);
       if (kind === 'quad' && !c.quadOk) continue;
-      const extra = kind === 'quad' ? this.p.lapseQuadExtra : 0;
-      g.pending = { kind, until: this.clock + this.p.lapseAfter + extra };
-      events.push({ type: 'invite', girl: c.id, kind });
-      break;
+      out.push({ key: 'invite', girl: c.id, kind, weight: this.p.weight });
     }
-    return events;
+    return out;
+  }
+
+  /** She chose to ask: the invitation the game acts on, { type: 'invite', girl, kind } (null if one is open). */
+  take(o) {
+    return this.invite(o.girl, o.kind);
   }
 
   /** She asks you now, whatever her score or the cooldown (the debug panel). Returns the invite event, or null if one is already open or she is locked in. */

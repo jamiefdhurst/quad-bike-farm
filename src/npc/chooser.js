@@ -11,7 +11,7 @@ import { gaussian } from './boredom.js';
 /**
  * Each kind of thing she could choose: label (for the debug panel: "she chose to ..."), satisfies (need -> how much it meets it),
  * urgent (she'll stop something idle for it: get up off a seat, leave her hands over an engine; shelter from the rain), pace (how she
- * walks there: 'hurry', 'brisk' or 'dawdle', intent.js; left out, she just walks).
+ * walks there: 'hurry', 'brisk' or 'dawdle', intent.js; left out, she just walks), fromSeat (she can choose it sat about on a quad).
  */
 export const OFFER_KINDS = {
   wander: { label: 'wander off for a look round', satisfies: { purpose: 0.6 }, pace: 'dawdle' },
@@ -32,6 +32,23 @@ export const OFFER_KINDS = {
   warmCab: { label: "sit in a Land Rover with the heater on", satisfies: { warmth: 1, rest: 0.4 } },
   tea: { label: 'make a cup of tea', satisfies: { warmth: 0.4, rest: 0.3, purpose: 0.5 } },
   favour: { label: 'ask you a favour', satisfies: { purpose: 0.5, company: 0.5 } },
+  getOff: { label: 'get off the quad she was sat on', satisfies: { purpose: 0.8 }, fromSeat: true },
+  jumper: { label: 'fetch a jumper', satisfies: { warmth: 0.9 } },
+  refuel: { label: "top a quad up (from the wrong can)", satisfies: { purpose: 0.7 } },
+  prank: { label: 'play a prank on you', satisfies: { purpose: 0.5, excitement: 0.5, company: 0.3 } },
+  rockPrank: { label: "blip her friend's quad from beside it", satisfies: { excitement: 0.5, company: 0.4, purpose: 0.3 } },
+  headStart: { label: 'start your quad for you', satisfies: { company: 1, purpose: 0.6 }, pace: 'hurry' },
+  snub: { label: 'start her own instead of yours', satisfies: { purpose: 0.6 }, pace: 'brisk' },
+  nick: { label: 'nick your quad', satisfies: { excitement: 0.8, purpose: 0.5, company: 0.2 }, pace: 'hurry' },
+  bigGo: { label: 'take a big one for a go', satisfies: { excitement: 0.9, purpose: 0.6 }, pace: 'brisk' },
+  lPlates: { label: "tape L plates on Amy's quad", satisfies: { purpose: 0.5, excitement: 0.3, company: 0.3 } },
+  lPlatesTractor: { label: 'put the L plates on the tractor', satisfies: { purpose: 0.7 } },
+  convoy: { label: 'go for a ride together', satisfies: { company: 0.8, excitement: 0.6, purpose: 0.5 }, pace: 'brisk' },
+  race: { label: 'race her friend', satisfies: { excitement: 1, company: 0.4, purpose: 0.5 }, pace: 'brisk' },
+  raceDare: { label: 'dare you to a race', satisfies: { excitement: 1, company: 0.6, purpose: 0.5 }, pace: 'brisk' },
+  dragDare: { label: 'challenge you to a drag race', satisfies: { excitement: 1, company: 0.6, purpose: 0.4 }, pace: 'brisk' },
+  compare: { label: 'compare notes on the shake', satisfies: { company: 0.7, purpose: 0.4 } },
+  invite: { label: 'ask you round the back of the barn', satisfies: { company: 1 } },
 };
 
 /** How much this offer would do for her now: the needs it meets, weighted by how much she cares for it. */

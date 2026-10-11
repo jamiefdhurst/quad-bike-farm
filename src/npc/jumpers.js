@@ -7,7 +7,7 @@ export const DEFAULT_JUMPER_PARAMS = {
   startAfter: 40, // seconds into the game before anyone feels the cold
   coldFor: 25, // seconds a girl has felt cold (or wet) before she goes for one
   warmFor: 60, // seconds of warm, dry weather before she takes it off again
-  chance: 0.08, // per second, once she's cold enough to want one and is stood about
+  weight: 1, // how much she cares for fetching a jumper once she's cold enough to want one (chooser.js weighs it)
   coldBelow: 0.5, // weather warmth (0..1) under which it's cold (overcast, drizzle, rain, fog)
   wetAbove: 0.25, // rain (0..1) above which she's wet
   range: 140, // metres: how far she'll walk to the barn for it
@@ -18,7 +18,7 @@ export const JUMPER_PARAM_RANGES = {
   startAfter: [0, 600, 10],
   coldFor: [0, 300, 5],
   warmFor: [0, 600, 5],
-  chance: [0, 1, 0.01],
+  weight: [0, 3, 0.05],
   coldBelow: [0, 1, 0.05],
   wetAbove: [0, 1, 0.05],
   range: [10, 300, 5],
@@ -133,14 +133,31 @@ export class Jumpers {
         }
         continue;
       }
-      if (!this.forced && (this.clock < p.startAfter || this.coldFor[g.id] < p.coldFor || this.random() >= p.chance * dt)) continue;
-      if (Math.hypot(ctx.rail.x - g.x, ctx.rail.z - g.z) > p.range) continue;
-      const jumper = this.free()[0];
-      if (!jumper) continue;
+      // Fetching one is an offer (offers, take); only the debug panel's forced one starts here.
+      if (!this.forced || Math.hypot(ctx.rail.x - g.x, ctx.rail.z - g.z) > p.range || !this.free()[0]) continue;
       this.forced = false;
-      this.pending[g.id] = { kind: 'fetch', jumper: jumper.id, until: this.clock + p.timeout };
-      events.push({ type: 'fetch', girl: g.id, jumper: jumper.id });
+      events.push(this.take({ girl: g.id, jumper: this.free()[0].id }));
     }
     return events;
+  }
+
+  /**
+   * A jumper for each free girl who has been cold a while and has none on (the same `ctx` as update): [{ key: 'jumper', girl, jumper,
+   * weight }] for the chooser. Not before the start, nor for a girl too far from the rail or one on her way already.
+   */
+  offers(ctx) {
+    const p = this.p;
+    if (this.clock < p.startAfter || !this.free()[0]) return [];
+    return ctx.girls
+      .filter((g) => g.free && !this.pending[g.id] && !this.worn[g.id] && (this.coldFor[g.id] ?? 0) >= p.coldFor && Math.hypot(ctx.rail.x - g.x, ctx.rail.z - g.z) <= p.range)
+      .map((g) => ({ key: 'jumper', girl: g.id, jumper: this.free()[0].id, weight: p.weight }));
+  }
+
+  /** She chose to fetch one: books it and returns the event the game acts on, { type: 'fetch', girl, jumper }. */
+  take(offer) {
+    const jumper = this.free().find((j) => j.id === offer.jumper) ?? this.free()[0];
+    if (!jumper) return null;
+    this.pending[offer.girl] = { kind: 'fetch', jumper: jumper.id, until: this.clock + this.p.timeout };
+    return { type: 'fetch', girl: offer.girl, jumper: jumper.id };
   }
 }

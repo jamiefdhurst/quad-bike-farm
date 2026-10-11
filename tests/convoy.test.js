@@ -5,7 +5,14 @@ import { BANTER_TIMING } from '../src/npc/banter.js';
 
 const free = [{ id: 'amy', free: true }, { id: 'jess', free: true }];
 const ctx = (o = {}) => ({ girls: free, busy: false, options: { amy: ['red', 'blue'], jess: ['red', 'yellow'] }, claims: { amy: 'red', jess: 'yellow' }, ...o });
-const make = (params = {}, random = () => 0) => new Convoy({ ...P, startAfter: 0, freeFor: 0, chance: 1, ...params }, random);
+const make = (params = {}, random = () => 0) => new Convoy({ ...P, startAfter: 0, freeFor: 0, ...params }, random);
+/** A second goes by and one of them takes the ride she's offered (as a chooser that always says yes): the events. */
+const start = (c, x = ctx()) => {
+  const events = c.update(1, x);
+  const offer = c.offers(x)[0];
+  if (offer) events.push(c.take(offer));
+  return events;
+};
 const step = (c, seconds, x = ctx(), dt = 1) => {
   const events = [];
   for (let t = 0; t < seconds; t += dt) events.push(...c.update(dt, x));
@@ -13,7 +20,7 @@ const step = (c, seconds, x = ctx(), dt = 1) => {
 };
 function running(params) {
   const c = make(params);
-  const [invite] = c.update(1, ctx());
+  const [invite] = start(c);
   c.ready('amy');
   c.ready('jess');
   expect(c.update(1, ctx())[0]).toEqual({ type: 'running' });
@@ -22,16 +29,17 @@ function running(params) {
 
 describe('follow the leader', () => {
   it('starts when both are free and nothing else is on, with Jess usually in front', () => {
-    expect(make({ startAfter: 100 }).update(1, ctx())).toEqual([]);
-    expect(make().update(1, ctx({ busy: true }))).toEqual([]);
-    expect(make().update(1, ctx({ girls: [{ id: 'amy', free: true }, { id: 'jess', free: false }] }))).toEqual([]);
-    expect(make().update(1, ctx())[0]).toMatchObject({ type: 'invite', leader: 'jess', follower: 'amy', picks: { amy: 'red', jess: 'yellow' } });
-    expect(make({ chance: 0.5 }, () => 0.99).update(1, ctx({}))).toEqual([]); // the dice say no
+    expect(start(make({ startAfter: 100 }))).toEqual([]);
+    expect(start(make(), ctx({ busy: true }))).toEqual([]);
+    expect(start(make(), ctx({ girls: [{ id: 'amy', free: true }, { id: 'jess', free: false }] }))).toEqual([]);
+    expect(start(make())[0]).toMatchObject({ type: 'invite', leader: 'jess', follower: 'amy', picks: { amy: 'red', jess: 'yellow' } });
+    expect(make().update(1, ctx())).toEqual([]); // never on its own: that's the chooser's
+    expect(make().offers(ctx()).map((o) => o.girl)).toEqual(['amy', 'jess']); // either can suggest it
   });
 
   it('is called off if they have not both got going in time', () => {
     const c = make({ formTimeout: 30 });
-    c.update(1, ctx());
+    start(c);
     c.ready('amy');
     expect(step(c, 40).some((e) => e.type === 'cancel')).toBe(true);
     expect(c.active).toBe(false);

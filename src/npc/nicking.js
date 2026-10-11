@@ -1,12 +1,12 @@
 // Nicking your quad. Get off with it still running and, now and then, Jess hops on and rides off with it, laughing, and brings it
-// back eventually, muddier and with less fuel. Pure logic: when she goes (this file), what she does with it is Companion.nickQuad
+// back eventually, muddier and with less fuel. Pure logic: when she could (this file: an offer the chooser weighs, chooser.js), what she does with it is Companion.nickQuad
 // (a long drive, then HerDrive's park mode back to where you left it) and game.js's updateNicking.
 
 export const DEFAULT_NICK_PARAMS = {
   startAfter: 120, // seconds into the game before anyone does it
   minWait: 3, // seconds after you get off before she can have it: long enough for it to look like you've wandered off
   window: 30, // seconds after you get off she may take it; leave it longer and the moment has gone
-  chancePerSecond: 0.06, // while the window is open, per second, times her own nickChance (Jess 1, Amy 0)
+  weight: 1.5, // how keen she is while the window is open, times her own nickChance (Jess 1, Amy 0; chooser.js weighs it)
   minRange: 4, // metres: you're beyond this from the quad, so she isn't taking it from under you
   maxRange: 40, // metres: you're within this of it, so you can see it go
   girlRange: 35, // metres: she's this close to it
@@ -23,7 +23,7 @@ export const NICK_PARAM_RANGES = {
   startAfter: [0, 900, 5],
   minWait: [0, 30, 0.5],
   window: [5, 120, 1],
-  chancePerSecond: [0, 1, 0.01],
+  weight: [0, 5, 0.05],
   minRange: [0, 20, 1],
   maxRange: [10, 120, 1],
   girlRange: [5, 120, 1],
@@ -59,11 +59,12 @@ export class Nicking {
    *   you: { x, z }
    *   quads: [{ id, x, z, running, free }]      free: unattended, upright and nobody heading for it
    *   girls: [{ id, x, z, free, chance }]
-   * Returns events: { type: 'nick', girl, spec }.
+   * Returns no events: it watches for you getting off with it running, and while the moment lasts offers it (offers, take).
    */
   update(dt, ctx) {
     const p = this.p;
     this.clock += dt;
+    this.window = null;
     if (ctx.riding) {
       this.left = null;
     } else if (this.wasRiding) {
@@ -81,13 +82,28 @@ export class Nicking {
     if (!quad || !quad.running || !quad.free || since < p.minWait) return [];
     const d = dist(ctx.you, quad);
     if (d < p.minRange || d > p.maxRange) return [];
-    for (const g of ctx.girls) {
-      if (!g.free || !g.chance || this.clock < (this.coolUntil[g.id] ?? 0) || dist(g, quad) > p.girlRange) continue;
-      if (this.random() >= p.chancePerSecond * g.chance * dt) continue;
-      this.coolUntil[g.id] = this.clock + p.cooldown;
-      this.left = null; // once per getting off
-      return [{ type: 'nick', girl: g.id, spec: quad.id }];
-    }
+    this.window = quad; // it's there for the taking
     return [];
+  }
+
+  /**
+   * While the quad you got off is there for the taking (the same `ctx` as update, after update): [{ key: 'nick', girl, spec, weight }]
+   * for each free girl near it with a taste for it (her nickChance) and her cooldown up.
+   */
+  offers(ctx) {
+    const p = this.p;
+    const quad = this.window;
+    if (!quad) return [];
+    return ctx.girls
+      .filter((g) => g.free && g.chance && this.clock >= (this.coolUntil[g.id] ?? 0) && dist(g, quad) <= p.girlRange)
+      .map((g) => ({ key: 'nick', girl: g.id, spec: quad.id, weight: p.weight * g.chance }));
+  }
+
+  /** She chose to: once per getting off, and her cooldown starts. Returns the event the game acts on, { type: 'nick', girl, spec }. */
+  take(o) {
+    this.coolUntil[o.girl] = this.clock + this.p.cooldown;
+    this.left = null;
+    this.window = null;
+    return { type: 'nick', girl: o.girl, spec: o.spec };
   }
 }

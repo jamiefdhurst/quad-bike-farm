@@ -100,7 +100,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   boredMountChance: 0.3, // gets on a quad to wait (she stays on it)
   placedPatienceMin: 240, // seconds sat on the back where you put her (nobody riding) before she gives up and gets off
   placedPatienceMax: 420,
-  boredGetOffChance: 0.6, // sat on the back by her own choice and bored of it, the chance she gets off (each time she gets bored)
+  boredGetOffWeight: 1, // sat on the back by her own choice, how keen she is to get off once she wants something to do (chooser.js)
   boredDoughnutChance: 0, // the chance, when bored, she takes a quad off and spins doughnuts in the field (Jess)
   boredJumpChance: 0, // the chance, when bored, she takes a quad off to jump the ramp in the field (jumps.js)
   boredShowOffChance: 0, // the chance, when bored and you're near, she takes a quad off to wheelie or skid past you (showOff.js)
@@ -156,7 +156,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   thrashWork: 0.6, // how hard it's working (0..1) before she calls it thrashing
   parkBrakeChance: 0.9, // getting off a quad she was driving, the chance she pulls the parking brake on (an empty quad only holds on a slope if she does)
   remembers4wd: 0.4, // taking the wheel of a quad with a 2WD / 4WD switch left in 2WD, the chance she remembers to put it in 4WD (else she finds out in the mud)
-  rockPrankChance: 0, // per second stood next to a quad her friend is sat on running: the chance she reaches over and blips it
+  rockPrankWeight: 0, // how keen she is to reach over and blip the quad her friend is sat on running, stood next to it (0: never; chooser.js)
   rockPrankRange: 3.5, // metres from that quad she has to be
   thrashChance: 0.15, // per second she can see a quad being thrashed cold, that she says something
   blameWearFrom: 0.15, // wear a quad needs before she says who's worn it out
@@ -372,7 +372,7 @@ export const COMPANION_PARAM_RANGES = {
   boredMountChance: [0, 1, 0.05],
   placedPatienceMin: [10, 1800, 5],
   placedPatienceMax: [10, 3600, 5],
-  boredGetOffChance: [0, 1, 0.05],
+  boredGetOffWeight: [0, 3, 0.05],
   boredDoughnutChance: [0, 1, 0.05],
   boredJumpChance: [0, 1, 0.05],
   boredShowOffChance: [0, 1, 0.05],
@@ -458,7 +458,7 @@ export const COMPANION_PARAM_RANGES = {
   thrashWork: [0, 1, 0.05],
   parkBrakeChance: [0, 1, 0.05],
   remembers4wd: [0, 1, 0.05],
-  rockPrankChance: [0, 0.2, 0.005],
+  rockPrankWeight: [0, 3, 0.05],
   rockPrankRange: [1, 10, 0.5],
   thrashChance: [0, 1, 0.01],
   blameWearFrom: [0, 0.9, 0.05],

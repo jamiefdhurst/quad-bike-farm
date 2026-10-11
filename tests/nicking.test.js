@@ -1,7 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { Nicking, DEFAULT_NICK_PARAMS } from '../src/npc/nicking.js';
 
-const p = { ...DEFAULT_NICK_PARAMS, startAfter: 0, chancePerSecond: 1 };
+const p = { ...DEFAULT_NICK_PARAMS, startAfter: 0 };
+/** A step, taking what she's offered (as a chooser that always says yes). */
+const step = (n, dt, c) => {
+  const events = n.update(dt, c);
+  const offer = n.offers(c)[0];
+  if (offer) events.push(n.take(offer));
+  return events;
+};
 const quad = { id: 'red', x: 10, z: 0, running: true, free: true };
 const jess = { id: 'jess', x: 14, z: 3, free: true, chance: 1 };
 const amy = { id: 'amy', x: 14, z: 3, free: true, chance: 0 };
@@ -11,11 +18,18 @@ const ctx = (over = {}) => ({ riding: null, you: { x: 0, z: 0 }, quads: [quad], 
 function getOff(n, seconds, over = {}) {
   n.update(0.1, ctx({ riding: 'red' }));
   const events = [];
-  for (let t = 0; t < seconds; t++) events.push(...n.update(1, ctx(over)));
+  for (let t = 0; t < seconds; t++) events.push(...step(n, 1, ctx(over)));
   return events.flat();
 }
 
 describe('nicking your quad', () => {
+  it('never takes it on its own: that is the chooser\'s', () => {
+    const n = new Nicking(p, () => 0);
+    n.update(0.1, ctx({ riding: 'red' }));
+    for (let t = 0; t < 10; t++) expect(n.update(1, ctx())).toEqual([]);
+    expect(n.offers(ctx())).toEqual([{ key: 'nick', girl: 'jess', spec: 'red', weight: p.weight }]);
+  });
+
   it('has Jess take the quad you got off with still running', () => {
     const n = new Nicking(p, () => 0);
     expect(getOff(n, 5)).toEqual([{ type: 'nick', girl: 'jess', spec: 'red' }]);
@@ -38,16 +52,16 @@ describe('nicking your quad', () => {
   it('gives you a few seconds first, and only once per getting off', () => {
     const n = new Nicking(p, () => 0);
     n.update(0.1, ctx({ riding: 'red' }));
-    expect(n.update(1, ctx())).toEqual([]);
-    expect(n.update(3.5, ctx())).toHaveLength(1);
-    expect(n.update(1, ctx())).toEqual([]);
+    expect(step(n, 1, ctx())).toEqual([]);
+    expect(step(n, 3.5, ctx())).toHaveLength(1);
+    expect(step(n, 1, ctx())).toEqual([]);
   });
 
   it('lets the moment pass if you leave it a while', () => {
-    const n = new Nicking({ ...p, chancePerSecond: 0 }, () => 0.5);
-    getOff(n, 40);
-    n.p.chancePerSecond = 1;
-    expect(n.update(1, ctx())).toEqual([]);
+    const n = new Nicking(p, () => 0.5);
+    n.update(0.1, ctx({ riding: 'red' }));
+    for (let t = 0; t < 40; t++) n.update(1, ctx()); // nobody takes it up
+    expect(step(n, 1, ctx())).toEqual([]);
   });
 
   it('waits out its cooldown, and the start of the game', () => {

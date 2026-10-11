@@ -3,13 +3,24 @@ import { LPlates, DEFAULT_LPLATE_PARAMS as P, meanSkill } from '../src/npc/lPlat
 
 const ctx = (over = {}) => ({ amyFree: true, jessFree: true, amyByQuad: true, hasQuad: true, confidence: 0.4, tractorFree: true, ...over });
 const make = (random = () => 0, over = {}) => new LPlates({ ...P, ...over }, random);
+/** Seconds go by; each one, whatever is offered is taken (as a chooser that always says yes). */
 function run(l, seconds, c = ctx()) {
   const events = [];
-  for (let t = 0; t < seconds; t += 1) events.push(...l.update(1, c));
+  for (let t = 0; t < seconds; t += 1) {
+    events.push(...l.update(1, c));
+    const offer = l.offers(c)[0];
+    if (offer) events.push(l.take(offer));
+  }
   return events.map((e) => e.type);
 }
 
 describe('Jess making them', () => {
+  it('never does it on its own: that is the chooser\'s', () => {
+    const l = make();
+    for (let t = 0; t < P.firstAfter + 50; t++) expect(l.update(1, ctx())).toEqual([]);
+    expect(l.offers(ctx())).toEqual([{ key: 'lPlates', girl: 'jess', weight: P.tapeWeight }]);
+  });
+
   it('waits, then tapes them to Amy\'s quad', () => {
     const l = make(() => 0, { peelMin: 1000, peelMax: 1000 });
     expect(run(l, P.firstAfter - 5)).toEqual([]);

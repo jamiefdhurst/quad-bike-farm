@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { STATES } from '../src/npc/companion.js';
 import { NOTICE_KINDS } from '../src/npc/attention.js';
 import { STATE_WHY } from '../src/npc/availability.js';
+import { OFFER_KINDS } from '../src/npc/chooser.js';
 
 describe("the girls' minds pattern", () => {
   it('every state says what she looks at', () => {
@@ -40,5 +41,24 @@ describe("the girls' minds pattern", () => {
       for (const m of readFileSync(f, 'utf8').matchAll(/\bnotice\(\s*'([a-zA-Z]+)'/g)) used.add(m[1]);
     }
     for (const kind of used) expect(NOTICE_KINDS[kind], `notice kind "${kind}" is not in NOTICE_KINDS`).toBeTruthy();
+  });
+
+  it('every kind of offer the game makes is one the chooser knows', () => {
+    const files = [];
+    const walk = (dir) => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        if (e.isDirectory()) walk(join(dir, e.name));
+        else if (e.name.endsWith('.js')) files.push(join(dir, e.name));
+      }
+    };
+    walk('src');
+    const used = new Set();
+    for (const f of files) {
+      const src = readFileSync(f, 'utf8');
+      for (const m of src.matchAll(/\{ key: '([a-zA-Z]+)'[^}\n]*\bweight:/g)) used.add(m[1]);
+      for (const m of src.matchAll(/\boffer\('([a-zA-Z]+)'/g)) used.add(m[1]);
+    }
+    expect(used.size).toBeGreaterThan(20);
+    for (const k of used) expect(OFFER_KINDS[k], `offer kind "${k}" is not in OFFER_KINDS`).toBeTruthy();
   });
 });

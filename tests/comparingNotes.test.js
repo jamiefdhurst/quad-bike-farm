@@ -8,12 +8,17 @@ const girls = (a, j, o = {}) => [
   { id: 'amy', x: 0, z: 0, free: true, buzz: a, ...o.amy },
   { id: 'jess', x: 3, z: 0, free: true, buzz: j, ...o.jess },
 ];
+/** Seconds go by, one of them starting it when offered (as a chooser that always says yes). */
 const run = (c, seconds, ctx) => {
   const out = [];
-  for (let t = 0; t < seconds; t++) out.push(...c.update(1, ctx));
+  for (let t = 0; t < seconds; t++) {
+    out.push(...c.update(1, ctx));
+    const offer = c.offers(ctx)[0];
+    if (offer) out.push(...c.take(offer, ctx));
+  }
   return out;
 };
-const eager = (random = () => 0.1) => new ComparingNotes({ ...P, chance: 1, startAfter: 0 }, random);
+const eager = (random = () => 0.1) => new ComparingNotes({ ...P, startAfter: 0 }, random);
 
 describe('rankings', () => {
   it('orders the quads by what has shaken her, leaving out those she felt nothing on', () => {
@@ -28,9 +33,16 @@ describe('rankings', () => {
 describe('comparing notes', () => {
   const ctxOf = (a, j, o = {}) => ({ girls: girls(a, j, o.g), floorFree: true, only: () => true, ...o });
 
+  it('never starts on its own: that is the chooser\'s, and either can start it', () => {
+    const c = eager();
+    const ctx = ctxOf({ red: 100, green: 40 }, { red: 100, green: 40 });
+    for (let t = 0; t < 30; t++) expect(c.update(1, ctx)).toEqual([]);
+    expect(c.offers(ctx).map((o) => o.girl)).toEqual(['amy', 'jess']);
+  });
+
   it('waits for the game to get going, a ranking worth having, both of them free, and near each other', () => {
     const buzz = { red: 100, green: 40 };
-    const slow = new ComparingNotes({ ...P, chance: 1 }, () => 0);
+    const slow = new ComparingNotes({ ...P }, () => 0);
     expect(run(slow, P.startAfter - 5, ctxOf(buzz, buzz))).toEqual([]);
     expect(run(eager(), 30, ctxOf({ red: 10 }, buzz))).toEqual([]); // under minTotal
     expect(run(eager(), 30, ctxOf(buzz, buzz, { g: { jess: { free: false } } }))).toEqual([]);

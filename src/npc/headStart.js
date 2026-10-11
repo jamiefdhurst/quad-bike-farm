@@ -11,8 +11,8 @@ export const DEFAULT_HEADSTART_PARAMS = {
   girlRange: 40, // metres: she notices from this far
   startAfter: 90, // seconds into the game before anyone does it
   cooldown: 240, // seconds before the same girl does it again
-  favouredChance: 0.85, // once per approach: the favoured girl gets there first
-  snubChance: 0.7, // once per approach: the neglected girl starts her own instead
+  favouredWeight: 2.5, // how keen the favoured girl is to get there first (chooser.js weighs it, once per approach)
+  snubWeight: 1.5, // how keen the neglected girl is to start her own instead
 };
 
 export const HEADSTART_PARAM_RANGES = {
@@ -23,8 +23,8 @@ export const HEADSTART_PARAM_RANGES = {
   girlRange: [5, 120, 1],
   startAfter: [0, 600, 5],
   cooldown: [0, 1200, 10],
-  favouredChance: [0, 1, 0.05],
-  snubChance: [0, 1, 0.05],
+  favouredWeight: [0, 5, 0.05],
+  snubWeight: [0, 5, 0.05],
 };
 
 const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
@@ -64,14 +64,15 @@ export class HeadStart {
    *   you: { x, z, onFoot }
    *   girls: [{ id, x, z, free, mood, own }]     mood: 'favoured', 'neglected' or 'even'; own: the spec id of her quad
    *   quads: [{ id, x, z, startable }]           startable: off, unattended and not tipped, and she may have a go at it
-   * Returns events: { type: 'warmFor', girl, spec } (she's off to start yours) and
-   *   { type: 'snub', girl, spec, yours } (she's off to start her own, not yours).
+   * Returns no events: it watches you walk at your usual quad, and while you do, offers (offers, take) the favoured girl starting it
+   * for you and the neglected one starting her own instead.
    */
   update(dt, ctx) {
     const p = this.p;
     this.clock += dt;
     const usual = this.usual();
     const target = ctx.quads.find((q) => q.id === usual);
+    this.window = null;
     if (!target || !ctx.you.onFoot || !target.startable) {
       this.lastDist = null;
       this.closing = 0;
@@ -86,24 +87,39 @@ export class HeadStart {
     if (d > p.noticeRange * 1.5) this.rolled = false; // walked off: the next approach is a new one
     if (this.rolled || !ctx.cold || this.clock < p.startAfter) return [];
     if (d > p.noticeRange || d < p.minRange || this.closing < p.closeSpeed) return [];
-    this.rolled = true;
-    const events = [];
+    this.window = { target, d }; // you're walking at it: someone could get there first
+    return [];
+  }
+
+  /**
+   * While you walk at your usual quad on a cold day (the same `ctx` as update, after update): [{ key: 'headStart', girl, spec,
+   * weight }] for the favoured girl who can beat you to it, and [{ key: 'snub', girl, spec, yours, weight }] for the neglected one with
+   * her own to start. One of them per approach.
+   */
+  offers(ctx) {
+    const p = this.p;
+    const w = this.window;
+    if (!w || this.rolled) return [];
+    const out = [];
     for (const g of ctx.girls) {
       if (!g.free || this.clock < (this.coolUntil[g.id] ?? 0)) continue;
       if (g.mood === 'favoured') {
         // She has to be able to beat you to it.
-        if (dist(g, target) > p.girlRange || dist(g, target) > d + 2) continue;
-        if (this.random() >= p.favouredChance) continue;
-        this.coolUntil[g.id] = this.clock + p.cooldown;
-        events.push({ type: 'warmFor', girl: g.id, spec: target.id });
+        if (dist(g, w.target) > p.girlRange || dist(g, w.target) > w.d + 2) continue;
+        out.push({ key: 'headStart', girl: g.id, spec: w.target.id, weight: p.favouredWeight });
       } else if (g.mood === 'neglected') {
         const own = ctx.quads.find((q) => q.id === g.own);
-        if (!own || own.id === target.id || !own.startable || dist(g, own) > p.girlRange) continue;
-        if (this.random() >= p.snubChance) continue;
-        this.coolUntil[g.id] = this.clock + p.cooldown;
-        events.push({ type: 'snub', girl: g.id, spec: own.id, yours: target.id });
+        if (!own || own.id === w.target.id || !own.startable || dist(g, own) > p.girlRange) continue;
+        out.push({ key: 'snub', girl: g.id, spec: own.id, yours: w.target.id, weight: p.snubWeight });
       }
     }
-    return events;
+    return out;
+  }
+
+  /** She chose to: that's this approach's one, and her cooldown starts. Returns the event the game acts on. */
+  take(o) {
+    this.rolled = true;
+    this.coolUntil[o.girl] = this.clock + this.p.cooldown;
+    return o.key === 'snub' ? { type: 'snub', girl: o.girl, spec: o.spec, yours: o.yours } : { type: 'warmFor', girl: o.girl, spec: o.spec };
   }
 }

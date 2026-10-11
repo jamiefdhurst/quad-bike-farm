@@ -13,17 +13,24 @@ const ctx = (o = {}) => ({
   spots: [{ x: 30, z: 0 }],
   ...o,
 });
-// Runs until something happens (or gives up).
+// Runs until something happens (or gives up), taking the first prank offered each second (as a chooser that always says yes).
 function run(pranks, c, seconds = 2000) {
   for (let t = 0; t < seconds; t++) {
-    const e = pranks.update(1, c).find((x) => x.type === 'start');
-    if (e) return e.prank;
+    pranks.update(1, c);
+    const offer = pranks.offers(c)[0];
+    if (offer) return pranks.take(offer).prank;
   }
   return null;
 }
 const make = (params = {}, random = always) => new Pranks({ ...P, ...params }, random);
 
 describe('pranks', () => {
+  it('never plays one on its own: when is the chooser\'s', () => {
+    const p = make({ firstDelay: 0, cooldown: 0 });
+    for (let t = 0; t < 100; t++) expect(p.update(1, ctx()).filter((e) => e.type === 'start')).toEqual([]);
+    expect(p.offers(ctx())[0]).toMatchObject({ key: 'prank', girl: 'jess', kind: 'tap', quad: 'red', weight: P.weight });
+  });
+
   it('waits for the first delay and then the cooldown', () => {
     const p = make({ firstDelay: 100, cooldown: 300 });
     const first = run(p, ctx());
@@ -62,18 +69,15 @@ describe('pranks', () => {
     expect(run(make(), ctx({ girls: jess, quads: [quad({ running: true })] }), 1000)).toBeNull();
   });
 
-  it('a favoured girl never pranks you; a neglected one does it more', () => {
+  it('a favoured girl never pranks you; a neglected one is keener', () => {
     const jess = (mood) => ctx({ girls: [{ id: 'jess', free: true, mood }], items: { can: { x: 0, z: 0, held: true, home: {} }, toolbox: { x: 0, z: 0, held: true, home: {} } } });
     expect(run(make(), jess('favoured'), 1000)).toBeNull();
-    const count = (mood) => {
-      let seed = 3;
-      const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
-      const p = make({ firstDelay: 0, cooldown: 0, chance: 0.1 }, rnd);
-      let n = 0;
-      for (let t = 0; t < 4000; t++) for (const e of p.update(1, jess(mood))) if (e.type === 'start') { n++; p.cancel(e.prank); }
-      return n;
+    const keen = (mood) => {
+      const p = make({ firstDelay: 0, cooldown: 0 });
+      p.update(1, jess(mood));
+      return p.offers(jess(mood))[0].weight;
     };
-    expect(count('neglected')).toBeGreaterThan(count('even'));
+    expect(keen('neglected')).toBeGreaterThan(keen('even'));
   });
 
   it('is found by sitting on the quad, and the culprit owns up once spoken to', () => {

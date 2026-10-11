@@ -10,10 +10,15 @@ const make = (params = {}) => {
   h.ride('red', 100);
   return h;
 };
-/** Walks you at the quad from 20 m out, returning every event on the way. */
+/** Walks you at the quad from 20 m out, returning every event on the way: each step she takes the first thing offered (as a chooser that always says yes). */
 const approach = (h, ctx, { from = 20, speed = 2 } = {}) => {
   const out = [];
-  for (let x = from; x > 6; x -= speed * 0.1) out.push(...h.update(0.1, { cold: true, you: { x, z: 0, onFoot: true }, girls: [], quads: [], ...ctx }));
+  for (let x = from; x > 6; x -= speed * 0.1) {
+    const c = { cold: true, you: { x, z: 0, onFoot: true }, girls: [], quads: [], ...ctx };
+    out.push(...h.update(0.1, c));
+    const offer = h.offers(c)[0];
+    if (offer) out.push(h.take(offer));
+  }
   return out;
 };
 
@@ -26,6 +31,13 @@ describe('a head start on your usual quad', () => {
     h.ride('blue', 40);
     h.ride('red', 100);
     expect(h.usual()).toBe('red');
+  });
+
+  it('never sends anyone on its own: that is the chooser\'s, with the favoured girl keener than the snub', () => {
+    const h = make();
+    const c = { cold: true, you: { x: 15, z: 0, onFoot: true }, girls: [girl('amy', { mood: 'favoured' })], quads: [quad('red')] };
+    for (let x = 20; x > 6; x -= 0.2) expect(h.update(0.1, { ...c, you: { x, z: 0, onFoot: true } })).toEqual([]);
+    expect(P.favouredWeight).toBeGreaterThan(P.snubWeight);
   });
 
   it('the favoured girl goes to start it when you walk at it on a cold day', () => {

@@ -1,6 +1,7 @@
 // The L plates. Jess makes a pair for Amy and tapes them to her quad. Amy peels them off, and they keep turning up again, until
 // Amy is a confident driver (the mean of her four skills, npc/skills.js), when she tapes them to the tractor instead, Jess's
-// favourite. Pure logic: the game says who is free and where the plates are, and acts on the events. Tested in tests/lPlates.test.js.
+// favourite. Pure logic: the game says who is free and where the plates are, and acts on the events; Jess taping them on and Amy putting
+// them on the tractor are offers the chooser weighs (chooser.js). Tested in tests/lPlates.test.js.
 //
 //   jessTape   Jess tapes them to Amy's quad (the first time, and each time they've turned up again)
 //   amyPeel    Amy takes them off, and they're gone for a while
@@ -8,24 +9,24 @@
 
 export const DEFAULT_LPLATE_PARAMS = {
   firstAfter: 120, // seconds into the game before Jess first makes them
-  tapeRate: 0.05, // chance a second that Jess does it, once she can
+  tapeWeight: 1, // how keen Jess is to tape them on, once she can (chooser.js weighs it)
   peelMin: 25, // shortest seconds Amy leaves them on, once she's by her quad and free
   peelMax: 90, // longest
   backGapMin: 120, // shortest seconds before they turn up again
   backGapMax: 360, // longest
   confident: 0.7, // Amy's mean skill at which she's a confident driver and puts them on the tractor
-  stickRate: 0.1, // chance a second that she does it, once confident and free
+  stickWeight: 1.5, // how keen Amy is to put them on the tractor, once confident
 };
 
 export const LPLATE_PARAM_RANGES = {
   firstAfter: [0, 1800, 10],
-  tapeRate: [0, 0.5, 0.005],
+  tapeWeight: [0, 5, 0.05],
   peelMin: [0, 300, 5],
   peelMax: [0, 600, 5],
   backGapMin: [0, 900, 10],
   backGapMax: [0, 1800, 10],
   confident: [0.4, 1, 0.01],
-  stickRate: [0, 1, 0.01],
+  stickWeight: [0, 5, 0.05],
 };
 
 /** How good a driver she is overall: the mean of her skill levels ({ starting, choke, cornering, mud }). */
@@ -62,20 +63,8 @@ export class LPlates {
     this.clock += dt;
     const p = this.p;
     if (this.where === 'tractor') return [];
-    const confident = ctx.confidence >= p.confident && ctx.amyFree && ctx.tractorFree && this.tapes > 0;
-    if (confident && this.random() < p.stickRate * dt) {
-      this.where = 'tractor';
-      this.peelAt = Infinity;
-      return [{ type: 'amyStick', girl: 'amy' }];
-    }
-    if (this.where === 'none') {
-      if (ctx.hasQuad && ctx.jessFree && this.clock >= this.backAt && this.random() < p.tapeRate * dt) {
-        this.where = 'quad';
-        this.tapes += 1;
-        this.peelAt = Infinity; // the clock for peeling starts when she's by her quad
-        return [{ type: 'jessTape', girl: 'jess' }];
-      }
-    } else if (this.where === 'quad' && ctx.amyFree && ctx.amyByQuad) {
+    // Jess taping them on and Amy moving them to the tractor are offers (offers, take); Amy peeling them off is her reaction.
+    if (this.where === 'quad' && ctx.amyFree && ctx.amyByQuad) {
       if (this.peelAt === Infinity) this.peelAt = this.clock + p.peelMin + this.random() * (p.peelMax - p.peelMin);
       if (this.clock >= this.peelAt) {
         this.where = 'none';
@@ -86,5 +75,30 @@ export class LPlates {
       }
     }
     return [];
+  }
+
+  /**
+   * (The same `ctx` as update.) [{ key: 'lPlatesTractor', girl: 'amy', weight }] once Amy is confident and Jess has made them, and
+   * [{ key: 'lPlates', girl: 'jess', weight }] once they're off and due back and Amy has a quad.
+   */
+  offers(ctx) {
+    const p = this.p;
+    if (this.where === 'tractor') return [];
+    const out = [];
+    if (ctx.confidence >= p.confident && ctx.amyFree && ctx.tractorFree && this.tapes > 0) out.push({ key: 'lPlatesTractor', girl: 'amy', weight: p.stickWeight });
+    if (this.where === 'none' && ctx.hasQuad && ctx.jessFree && this.clock >= this.backAt) out.push({ key: 'lPlates', girl: 'jess', weight: p.tapeWeight });
+    return out;
+  }
+
+  /** She chose to: the plates move, and the event the game acts on is returned. */
+  take(o) {
+    this.peelAt = Infinity;
+    if (o.key === 'lPlatesTractor') {
+      this.where = 'tractor';
+      return { type: 'amyStick', girl: 'amy' };
+    }
+    this.where = 'quad';
+    this.tapes += 1; // the clock for peeling starts when she's by her quad
+    return { type: 'jessTape', girl: 'jess' };
   }
 }

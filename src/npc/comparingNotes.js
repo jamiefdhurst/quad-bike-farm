@@ -7,7 +7,7 @@ export const DEFAULT_COMPARE_PARAMS = {
   startAfter: 240, // seconds into the game before they compare
   minTotal: 60, // shake-seconds each girl must have felt across all the quads before she has a ranking worth arguing about
   together: 7, // metres: the two stood this close to each other
-  chance: 0.015, // per second once they could
+  weight: 1, // how keen she is to compare notes once they could (chooser.js weighs it; either girl can start it)
   cooldown: 300, // seconds between one comparison and the next
   stepGap: 4.5, // seconds between one line and the next (the lines are recorded, so their lengths aren't known here)
   jessFirst: 0.6, // chance Jess is the one who asks
@@ -19,7 +19,7 @@ export const COMPARE_PARAM_RANGES = {
   startAfter: [0, 1200, 10],
   minTotal: [0, 600, 10],
   together: [2, 20, 0.5],
-  chance: [0, 1, 0.005],
+  weight: [0, 5, 0.05],
   cooldown: [0, 1800, 10],
   stepGap: [1, 15, 0.5],
   jessFirst: [0, 1, 0.05],
@@ -94,20 +94,30 @@ export class ComparingNotes {
 
   /**
    * One step. `ctx`: { girls: [{ id, x, z, free, buzz }], floorFree, only }. Returns the steps now due (each { type, girl?, kind?, spec?, picks? }).
-   * Starts a comparison by itself when they are stood about together with something to compare.
+   * Starting one is an offer (offers, take).
    */
   update(dt, ctx) {
-    const p = this.p;
     this.clock += dt;
-    if (this.steps.length) {
-      this.time += dt;
-      return this.due();
-    }
-    if (ctx.girls.length < 2 || this.clock < p.startAfter || this.clock < this.coolUntil || !ctx.floorFree) return [];
+    if (!this.steps.length) return [];
+    this.time += dt;
+    return this.due();
+  }
+
+  /**
+   * Comparing notes, offered to each girl (the same `ctx` as update): [{ key: 'compare', girl, weight }] when they're stood about together,
+   * each with a ranking worth having, nobody else talking, and the cooldown up.
+   */
+  offers(ctx) {
+    const p = this.p;
+    if (this.steps.length || ctx.girls.length < 2 || this.clock < p.startAfter || this.clock < this.coolUntil || !ctx.floorFree) return [];
     const [a, b] = ctx.girls;
     if (!a.free || !b.free || dist(a, b) > p.together) return [];
     if (total(a.buzz) < p.minTotal || total(b.buzz) < p.minTotal) return [];
-    if (this.random() >= p.chance * dt) return [];
+    return ctx.girls.map((g) => ({ key: 'compare', girl: g.id, weight: p.weight }));
+  }
+
+  /** One of them started it: plans it and returns the first steps due (none if one of them has nothing to say). */
+  take(o, ctx) {
     return this.plan(ctx.girls, ctx.only) ? this.due() : [];
   }
 

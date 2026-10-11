@@ -1452,32 +1452,38 @@ export class Game {
   }
 
   /** Jess tapes L plates to Amy's quad, Amy peels them off, and once she's confident she tapes them to the tractor (npc/lPlates.js). */
-  updateLPlates(dt) {
+  /** What the L plates need to know (npc/lPlates.js), or null without both girls. */
+  lPlatesContext() {
     const amy = this.companions.find((c) => c.character.id === 'amy');
     const jess = this.companions.find((c) => c.character.id === 'jess');
-    if (!amy || !jess) return;
+    if (!amy || !jess) return null;
     const mine = this.girlUnits.find((u) => u.spec.id === amy.claimedSpec);
-    const free = (c) => c.availability().free;
     const near = mine ? Math.hypot(amy.root.position.x - mine.quad.position.x, amy.root.position.z - mine.quad.position.z) < 4 : false;
-    for (const ev of this.lPlates.update(dt, {
-      amyFree: free(amy),
-      jessFree: free(jess),
-      amyByQuad: near,
-      hasQuad: !!mine,
-      confidence: meanSkill(this.skills.levels.amy),
-      tractorFree: this.tractorFree(),
-    })) {
-      if (ev.type === 'jessTape') {
-        jess.voice.say('lplateTape', { force: true });
-        this.hayLater.push({ left: 4, girl: amy, key: 'lplateFound' });
-      } else if (ev.type === 'amyPeel') {
-        amy.voice.say('lplatePeel', { force: true });
-        this.hayLater.push({ left: 3.5, girl: jess, key: 'lplateCheek' });
-      } else if (ev.type === 'amyStick') {
-        amy.voice.say('lplateStick', { force: true });
-        this.hayLater.push({ left: 4, girl: jess, key: 'lplateTractor' });
-      }
+    return { amyFree: amy.availability().free, jessFree: jess.availability().free, amyByQuad: near, hasQuad: !!mine, confidence: meanSkill(this.skills.levels.amy), tractorFree: this.tractorFree() };
+  }
+
+  /** Acts on the L plates (npc/lPlates.js): Jess taping them on and Amy moving them to the tractor (their choices), Amy peeling them off. */
+  handleLPlateEvent(ev) {
+    const amy = this.companions.find((c) => c.character.id === 'amy');
+    const jess = this.companions.find((c) => c.character.id === 'jess');
+    if (ev.type === 'jessTape') {
+      jess.voice.say('lplateTape', { force: true });
+      this.hayLater.push({ left: 4, girl: amy, key: 'lplateFound' });
+    } else if (ev.type === 'amyPeel') {
+      amy.voice.say('lplatePeel', { force: true });
+      this.hayLater.push({ left: 3.5, girl: jess, key: 'lplateCheek' });
+    } else if (ev.type === 'amyStick') {
+      amy.voice.say('lplateStick', { force: true });
+      this.hayLater.push({ left: 4, girl: jess, key: 'lplateTractor' });
     }
+  }
+
+  updateLPlates(dt) {
+    const ctx = this.lPlatesContext();
+    if (!ctx) return;
+    for (const ev of this.lPlates.update(dt, ctx)) this.handleLPlateEvent(ev);
+    const amy = this.companions.find((c) => c.character.id === 'amy');
+    const mine = this.girlUnits.find((u) => u.spec.id === amy.claimedSpec);
     const where = this.lPlates.where;
     if (where === 'tractor' && this.tractorUnit) this.lPlateSet.showOn(this.tractorUnit.quad.bodyRoot, 'tractor');
     else this.lPlateSet.showOn(where === 'quad' && mine ? mine.quad.bodyRoot : null, 'quad');
@@ -1518,18 +1524,26 @@ export class Game {
     return { label: 'Push start it', run: () => c.requestPush(unit.quad) };
   }
 
-  updateTractorGo(dt, ridden) {
+  /** What a go on the big vehicles needs to know (npc/tractorGo.js): who is free and which of them are free to take. */
+  tractorGoContext(ridden) {
     const girlsFree = {};
     for (const c of this.companions) girlsFree[c.character.id] = c.availability().free;
     const youOn = GO_KINDS.some((k) => !!ridden && ridden === this.goVehicle(k));
     const vehicles = GO_KINDS.filter((k) => this.goFree(k) && ridden !== this.goVehicle(k));
-    for (const ev of this.tractorGo.update(dt, { free: girlsFree, vehicles: youOn ? [] : vehicles })) {
-      const c = this.companions.find((o) => o.character.id === ev.girl);
-      const ask = { tractor: 'tractorGoAsk', utv: 'utvGoAsk', landy: 'landyGoAsk', defender: 'landyGoAsk' }[ev.vehicle];
-      if (ev.type === 'amyDay') c.voice.say('tractorDay', { force: true });
-      else c.voice.say(ask, { force: true });
-      this.startGo(c, ev.vehicle);
-    }
+    return { free: girlsFree, vehicles: youOn ? [] : vehicles };
+  }
+
+  /** Acts on a go on the big vehicles (npc/tractorGo.js): Jess's go (her choice) or Amy's day. */
+  handleGoEvent(ev) {
+    const c = this.companions.find((o) => o.character.id === ev.girl);
+    const ask = { tractor: 'tractorGoAsk', utv: 'utvGoAsk', landy: 'landyGoAsk', defender: 'landyGoAsk' }[ev.vehicle];
+    if (ev.type === 'amyDay') c.voice.say('tractorDay', { force: true });
+    else c.voice.say(ask, { force: true });
+    this.startGo(c, ev.vehicle);
+  }
+
+  updateTractorGo(dt, ridden) {
+    for (const ev of this.tractorGo.update(dt, this.tractorGoContext(ridden))) this.handleGoEvent(ev);
     for (const c of this.companions) {
       const id = c.character.id;
       const seen = (this.tractorSeen[id] ??= { stalls: 0, hops: 0, crunches: 0, setOff: false, wasDriving: false, kind: 'tractor', joinRolled: false, joined: null });
@@ -2357,15 +2371,18 @@ export class Game {
         continue;
       }
       const a = c.availability();
-      const urgentOnly = !a.free && c.interruptible();
-      if (!a.free && !urgentOnly) {
+      // Sat about on a quad of her own choosing she can choose to get off; doing something idle, only something urgent takes her.
+      const sitting = !a.free && c.sittingAbout();
+      const urgentOnly = !a.free && !sitting && c.interruptible();
+      if (!a.free && !urgentOnly && !sitting) {
         m.waiting = a.why;
         continue;
       }
       m.waiting = null;
       // Something you stopped her doing is still on her mind, so she's keener on it for a while (npc/intent.js).
       let offers = this.offersFor(c, ridden).map((o) => ({ ...o, weight: o.weight * c.intent.boost(o.key, c.params) }));
-      if (urgentOnly) offers = offers.filter((o) => OFFER_KINDS[o.key]?.urgent);
+      if (sitting) offers = offers.filter((o) => OFFER_KINDS[o.key]?.fromSeat);
+      else if (urgentOnly) offers = offers.filter((o) => OFFER_KINDS[o.key]?.urgent);
       const { pick, scored } = choose(c.needs, offers, c.params);
       // What she weighed and didn't take, for the debug panel's "nearly chose".
       m.scored = scored.filter((s) => s.offer !== pick).slice(0, 4).map((s) => ({ key: s.offer.key, score: s.score }));
@@ -2397,6 +2414,41 @@ export class Game {
       ...mine(this.places.offers(this.placesContext()), (o) => this.handlePlaceAction(this.places.take(o))),
       ...mine(this.tea.offers(this.teaContext(ridden)), (o) => this.handleTeaEvent(this.tea.take(o))),
       ...(this.hiding.active ? [] : mine(this.requests.offers(this.requestContext(ridden)), (o) => this.handleRequestEvent(this.requests.take(o)))),
+      ...mine(this.jumpers.offers(this.jumpersContext()), (o) => this.handleJumperEvent(this.jumpers.take(o))),
+      ...mine(this.dieselMistake.offers(this.dieselContext(ridden)), (o) => this.handleDieselEvent(this.dieselMistake.take(o))),
+      ...mine(this.pranks.offers(this.prankContext(ridden)), (o) => this.handlePrankEvent(this.pranks.take(o))),
+      ...this.rockPrankOffers(c),
+      ...mine(this.headStart.offers(this.headStartContext()), (o) => this.handleHeadStartEvent(this.headStart.take(o))),
+      ...mine(this.nicking.offers(this.nickContext(ridden)), (o) => this.handleNickEvent(this.nicking.take(o))),
+      ...(GO_KINDS.some((k) => this.goVehicle(k)) ? mine(this.tractorGo.offers(this.tractorGoContext(ridden)), (o) => this.handleGoEvent(this.tractorGo.take(o))) : []),
+      ...this.lPlateOffers(id),
+      ...this.togetherOffers(c, ridden),
+      ...(this.tryst ? [] : mine(this.romance.offers(this.romanceContext()), (o) => {
+        const e = this.romance.take(o);
+        if (e) this.handleRomanceEvent(e);
+      })),
+      ...c.seatOffers(),
+    ];
+  }
+
+  /** The L plates, as offers for this girl (npc/lPlates.js). */
+  lPlateOffers(id) {
+    const ctx = this.lPlatesContext();
+    if (!ctx) return [];
+    return this.lPlates.offers(ctx).filter((o) => o.girl === id).map((o) => ({ ...o, take: () => this.handleLPlateEvent(this.lPlates.take(o)) }));
+  }
+
+  /** The things the two of them do together, as offers for this girl: a ride together, a race, Jess's drag dare, comparing notes. */
+  togetherOffers(c, ridden) {
+    if (this.recalling) return [];
+    const id = c.character.id;
+    const mine = (list, act) => list.filter((o) => o.girl === id).map((o) => ({ ...o, take: () => act(o) }));
+    const compare = this.comparingContext();
+    return [
+      ...mine(this.convoy.offers(this.convoyContext(ridden)), (o) => this.handleConvoyEvent(this.convoy.take(o))),
+      ...(this.drag.active ? [] : mine(this.race.offers(this.raceContext(ridden)), (o) => this.handleRaceEvent(this.race.take(o)))),
+      ...(this.race.active ? [] : mine(this.drag.offers(this.dragContext(ridden)), (o) => this.dragApproach(this.drag.take(o), ridden))),
+      ...mine(this.comparing.offers(compare), (o) => this.runComparing(this.comparing.take(o, compare))),
     ];
   }
 
@@ -2424,7 +2476,7 @@ export class Game {
       thrill: Math.min(1, speed / 12 + (onBoard && c.quad?.airborne ? 0.5 : 0)),
       active: c.fsm.is('walking', 'driving', 'mounting', 'dismounting', 'starting', 'cranking', 'pushing', 'pranking', 'boarding', 'shuffling'),
       sitting: c.fsm.is('resting', 'seated', 'onTrailer'),
-      idle: c.availability().free,
+      idle: c.availability().free || c.sittingAbout(), // sat about on a quad she chose is as good as stood about
       purposeRate: c.purposeRate ?? 0,
     };
   }
@@ -2717,8 +2769,13 @@ export class Game {
   updateRomance(dt) {
     this.watchTippedQuads(dt);
     if (this.tryst) return this.updateTryst(dt);
+    for (const e of this.romance.update(dt, this.romanceContext())) this.handleRomanceEvent(e);
+  }
+
+  /** What the romance needs to know (npc/romance.js): how each girl rates you, whether she's free and near, and whether you are. */
+  romanceContext() {
     const you = this.player.position;
-    const youFree = !this.player.isRiding && !this.menu.isOpen && !this.hiding.active && !this.climb && !this.race.active && !this.drag.active && !this.recalling;
+    const youFree = !this.player.isRiding && !this.menu.isOpen && !this.hiding.active && !this.climb && !this.race.active && !this.drag.active && !this.recalling && !this.tryst;
     const girls = this.companions.map((c) => {
       const id = c.character.id;
       return {
@@ -2731,7 +2788,7 @@ export class Game {
         quadOk: !!this.romanceQuad(c),
       };
     });
-    for (const e of this.romance.update(dt, { girls, youFree })) this.handleRomanceEvent(e);
+    return { girls, youFree };
   }
 
   /** What an invitation or a lapsed one does: she says so, and for the quad one goes to sit on it. */
@@ -3441,20 +3498,26 @@ export class Game {
       r.quad.helperThrottle = 0;
       r.quad = null;
     }
-    if (r.next > 0 || this.menu.isOpen) return;
-    for (const c of this.companions) {
-      const p = c.params;
-      if (!p.rockPrankChance || !c.fsm.is('idle') || Math.random() >= p.rockPrankChance * dt) continue;
-      const friend = this.companions.find((o) => o !== c && this.revOffQuad(o) && !o.holdingIdle && c.root.position.distanceTo(o.quad.position) <= p.rockPrankRange);
-      if (!friend) continue;
-      r.quad = friend.quad;
-      r.until = this.revOff.clock + 0.4;
-      r.next = 120;
-      friend.quad.helperThrottle = 1;
-      c.voice.say('rockPrank', { force: true });
-      friend.voice.say('rockPrankAmy', { force: true });
-      return;
-    }
+  }
+
+  /** Blipping her friend's quad from beside it (the rock prank), as an offer for the chooser: she's keen as her rockPrankWeight says. */
+  rockPrankOffers(c) {
+    const r = this.rockPrank;
+    const p = c.params;
+    if (!r || r.quad || r.next > 0 || !p.rockPrankWeight) return [];
+    const friend = this.companions.find((o) => o !== c && this.revOffQuad(o) && !o.holdingIdle && c.root.position.distanceTo(o.quad.position) <= p.rockPrankRange);
+    return friend ? [{ key: 'rockPrank', girl: c.character.id, weight: p.rockPrankWeight, take: () => this.rockPrankNow(c, friend) }] : [];
+  }
+
+  /** She reaches over and gives her friend's quad a handful. */
+  rockPrankNow(c, friend) {
+    const r = this.rockPrank;
+    r.quad = friend.quad;
+    r.until = this.revOff.clock + 0.4;
+    r.next = 120;
+    friend.quad.helperThrottle = 1;
+    c.voice.say('rockPrank', { force: true });
+    friend.voice.say('rockPrankAmy', { force: true });
   }
 
   /** Jess sat on a running quad blips it over Amy mid-sentence; Amy cuts off and tells her to stop, and Jess does; the engine keeps running (npc/drownOut.js). */
@@ -3896,9 +3959,8 @@ export class Game {
 
   // A head start on your usual quad ----------------------------------------
 
-  updateHeadStart(dt, ridden) {
-    if (ridden) this.headStart.ride(ridden.spec.id, dt);
-    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+  /** What the head start needs to know (npc/headStart.js): the day, where you are, the girls and which quads could be started. */
+  headStartContext() {
     const girls = this.companions.map((c) => ({
       id: c.character.id,
       x: c.root.position.x,
@@ -3913,18 +3975,22 @@ export class Game {
       const startable = !q.engine.isRunning && !q.rider && !q.driver && !q.passenger && !q.isTipped && !q.isGhostRiding && !this.herOn(q) && !claimed;
       return { id: u.spec.id, x: q.position.x, z: q.position.z, startable };
     });
-    const events = this.headStart.update(dt, { cold: isChilly(this.weather, this.warming.p), you: { x: this.player.position.x, z: this.player.position.z, onFoot: !this.player.isRiding }, girls, quads });
-    for (const e of events) {
-      const c = byId[e.girl];
-      const quad = this.girlUnits.find((u) => u.spec.id === e.spec).quad;
-      if (c.takenByOther(quad, 'rider')) continue;
-      if (e.type === 'warmFor') {
-        this.warmUpFor(c, quad.unit);
-        continue;
-      }
-      c.requestStart(quad);
-      c.voice.say('snubGo', { urgent: true, force: true });
-    }
+    return { cold: isChilly(this.weather, this.warming.p), you: { x: this.player.position.x, z: this.player.position.z, onFoot: !this.player.isRiding }, girls, quads };
+  }
+
+  updateHeadStart(dt, ridden) {
+    if (ridden) this.headStart.ride(ridden.spec.id, dt);
+    this.headStart.update(dt, this.headStartContext());
+  }
+
+  /** Acts on the head start (npc/headStart.js): the favoured girl starting yours, or the neglected one starting her own (her choice). */
+  handleHeadStartEvent(e) {
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    const quad = this.girlUnits.find((u) => u.spec.id === e.spec).quad;
+    if (c.takenByOther(quad, 'rider')) return;
+    if (e.type === 'warmFor') return void this.warmUpFor(c, quad.unit);
+    c.requestStart(quad);
+    c.voice.say('snubGo', { urgent: true, force: true });
   }
 
   // Sitting on it while it warms ---------------------------------------------
@@ -4035,14 +4101,18 @@ export class Game {
   // Comparing notes --------------------------------------------------------
 
   /** The girls compare which quads shake them most (npc/comparingNotes.js): each line, Amy's note in her logbook, and the swap to settle it. */
-  updateComparing(dt) {
+  /** What comparing notes needs to know (npc/comparingNotes.js): the girls and their buzz, and whether anyone else is talking. */
+  comparingContext() {
     const exists = (id) => this.girlUnits.some((u) => u.spec.id === id);
-    const ctx = {
+    return {
       girls: this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.availability().free, buzz: c.content.buzz })),
       floorFree: this.talkFloor.left <= 0 && !this.banter?.busy && !this.gossip.busy && !this.menu.isOpen,
       only: exists,
     };
-    this.runComparing(this.comparing.update(dt, ctx));
+  }
+
+  updateComparing(dt) {
+    this.runComparing(this.comparing.update(dt, this.comparingContext()));
   }
 
   runComparing(steps) {
@@ -4359,64 +4429,85 @@ export class Game {
 
   // Jumpers from the barn ------------------------------------------------------
 
-  updateJumpers(dt) {
-    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+  /** What jumpers need to know (npc/jumpers.js): the weather, the girls and the rail. */
+  jumpersContext() {
     const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().free, x: c.root.position.x, z: c.root.position.z }));
-    const rail = this.world.layout.jumperRail;
-    for (const e of this.jumpers.update(dt, { weather: this.weather, girls, rail })) {
-      const c = byId[e.girl];
-      const colour = JUMPERS.find((j) => j.id === e.jumper).color;
-      const act = e.type === 'fetch'
-        ? () => {
-            this.jumpers.dressed(e.girl, e.jumper);
-            c.setJumper(colour);
-            c.voice.say('jumperOn', { urgent: true, chance: 0.9 });
-            this.jumperRail.show(this.jumpers.onRail().map((j) => j.id));
-          }
-        : () => {
-            this.jumpers.hung(e.girl);
-            c.setJumper(null);
-            c.voice.say('jumperOff', { urgent: true, chance: 0.8 });
-            this.jumperRail.show(this.jumpers.onRail().map((j) => j.id));
-          };
-      // In and out through the big doors: they're on the +x side, so go through the doorway first (and back out through it after).
-      const door = this.world.layout.jumperRail.door;
-      if (!c.sneakTo(rail.stand, act, 2.6, { via: door.in, out: door.out })) this.jumpers.cancel(e.girl);
-    }
+    return { weather: this.weather, girls, rail: this.world.layout.jumperRail };
   }
+
+  updateJumpers(dt) {
+    for (const e of this.jumpers.update(dt, this.jumpersContext())) this.handleJumperEvent(e);
+  }
+
+  /** Acts on jumpers (npc/jumpers.js): fetching one (a choice she made, or asked), hanging it back up. */
+  handleJumperEvent(e) {
+    if (!e) return;
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    const rail = this.world.layout.jumperRail;
+    const colour = JUMPERS.find((j) => j.id === e.jumper).color;
+    const act = e.type === 'fetch'
+      ? () => {
+          this.jumpers.dressed(e.girl, e.jumper);
+          c.setJumper(colour);
+          c.voice.say('jumperOn', { urgent: true, chance: 0.9 });
+          this.jumperRail.show(this.jumpers.onRail().map((j) => j.id));
+        }
+      : () => {
+          this.jumpers.hung(e.girl);
+          c.setJumper(null);
+          c.voice.say('jumperOff', { urgent: true, chance: 0.8 });
+          this.jumperRail.show(this.jumpers.onRail().map((j) => j.id));
+        };
+    // In and out through the big doors: they're on the +x side, so go through the doorway first (and back out through it after).
+    const door = rail.door;
+    if (!c.sneakTo(rail.stand, act, 2.6, { via: door.in, out: door.out })) this.jumpers.cancel(e.girl);
+  }
+
 
   // Red diesel by mistake ----------------------------------------------------
 
   /** Jess takes the diesel can to a low quad and pours it in; Amy, near enough to see, tells her off. */
-  updateDieselMistake(dt, ridden) {
-    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
-    const m = this.dieselMistake;
-    const unitOf = (spec) => this.girlUnits.find((u) => u.spec.id === spec);
+  /** What the red diesel mistake needs to know (npc/dieselMistake.js): the girls and the quads' tanks. */
+  dieselContext(ridden) {
     const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().free, x: c.root.position.x, z: c.root.position.z }));
     const quads = this.girlUnits.map((u) => {
       const q = u.quad;
       return { id: u.spec.id, x: q.position.x, z: q.position.z, speed: Math.abs(q.speed), rider: u === ridden, driver: this.quadUser(u, ridden) !== 'you' ? this.quadUser(u, ridden) : null, tipped: q.isTipped, space: q.fuel.space, level: q.fuel.level };
     });
-    for (const e of m.update(dt, { girls, quads })) {
-      const c = byId[e.girl];
-      const quad = unitOf(e.spec).quad;
-      const p = quad.localToWorld(c.nearSide(quad) * 0.85, 0, -0.95);
-      const stay = m.p.pourSeconds + 1.6;
-      const set = c.sneakTo({ x: p.x, z: p.z }, () => {
-        if (quad.rider || quad.driver || Math.abs(quad.speed) > 0.3 || quad.isTipped) return m.finished();
-        m.started();
-        this.dieselJob = { spec: e.spec, left: m.p.pourSeconds, rate: m.p.litres / m.p.pourSeconds, girl: e.girl };
-        c.voice.say('dieselPour', { urgent: true, chance: 0.9 });
-        const amy = byId.amy;
-        if (amy && amy !== c && amy.root.position.distanceTo(quad.position) < m.p.amyRange && Math.random() < m.p.amyChance) {
-          setTimeout(() => {
-            if (!this.dieselJob) return;
-            if (amy.voice.say('dieselCaught', { force: true })) setTimeout(() => c.voice.say('dieselCaughtReply', { force: true }), 3500);
-          }, 2500);
-        }
-      }, stay);
-      if (!set) m.finished();
-    }
+    return { girls, quads };
+  }
+
+  /** Acts on the red diesel mistake (npc/dieselMistake.js): Jess going to pour (a choice she made, or the debug panel's). */
+  handleDieselEvent(e) {
+    if (!e) return;
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    const m = this.dieselMistake;
+    const unitOf = (spec) => this.girlUnits.find((u) => u.spec.id === spec);
+    const c = byId[e.girl];
+    const quad = unitOf(e.spec).quad;
+    const p = quad.localToWorld(c.nearSide(quad) * 0.85, 0, -0.95);
+    const stay = m.p.pourSeconds + 1.6;
+    const set = c.sneakTo({ x: p.x, z: p.z }, () => {
+      if (quad.rider || quad.driver || Math.abs(quad.speed) > 0.3 || quad.isTipped) return m.finished();
+      m.started();
+      this.dieselJob = { spec: e.spec, left: m.p.pourSeconds, rate: m.p.litres / m.p.pourSeconds, girl: e.girl };
+      c.voice.say('dieselPour', { urgent: true, chance: 0.9 });
+      const amy = byId.amy;
+      if (amy && amy !== c && amy.root.position.distanceTo(quad.position) < m.p.amyRange && Math.random() < m.p.amyChance) {
+        setTimeout(() => {
+          if (!this.dieselJob) return;
+          if (amy.voice.say('dieselCaught', { force: true })) setTimeout(() => c.voice.say('dieselCaughtReply', { force: true }), 3500);
+        }, 2500);
+      }
+    }, stay);
+    if (!set) m.finished();
+  }
+
+  updateDieselMistake(dt, ridden) {
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    const m = this.dieselMistake;
+    const unitOf = (spec) => this.girlUnits.find((u) => u.spec.id === spec);
+    for (const e of m.update(dt, this.dieselContext(ridden))) this.handleDieselEvent(e);
     const job = this.dieselJob;
     if (job) {
       const u = unitOf(job.spec);
@@ -4443,9 +4534,8 @@ export class Game {
     }, 3000);
   }
 
-  updateNicking(dt, ridden) {
-    const np = this.nicking.p;
-    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+  /** What nicking your quad needs to know (npc/nicking.js): what you're riding, where you are, the quads and the girls. */
+  nickContext(ridden) {
     const quads = this.girlUnits.map((u) => {
       const q = u.quad;
       const claimed = this.companions.some((c) => c.quad === q && c.fsm.is('walking', 'starting'));
@@ -4459,11 +4549,19 @@ export class Game {
       chance: c.params.nickChance ?? 0,
     }));
     const you = { x: this.player.position.x, z: this.player.position.z };
-    for (const e of this.nicking.update(dt, { riding: ridden?.spec.id ?? null, you, quads, girls })) {
-      const c = byId[e.girl];
-      const quad = this.girlUnits.find((u) => u.spec.id === e.spec).quad;
-      if (!c.takenByOther(quad, 'rider') && c.canDrive(quad)) this.startNick(c, quad);
-    }
+    return { riding: ridden?.spec.id ?? null, you, quads, girls };
+  }
+
+  /** Acts on nicking your quad (npc/nicking.js): Jess taking it (her choice). */
+  handleNickEvent(e) {
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    const quad = this.girlUnits.find((u) => u.spec.id === e.spec).quad;
+    if (!c.takenByOther(quad, 'rider') && c.canDrive(quad)) this.startNick(c, quad);
+  }
+
+  updateNicking(dt, ridden) {
+    const np = this.nicking.p;
+    this.nicking.update(dt, this.nickContext(ridden));
     // While she has it: tearing it up (the mud it comes back in), burning fuel, and laughing. A job that has come to nothing
     // (you got back on, or she gave up) is dropped.
     for (const c of this.companions) {
@@ -4604,17 +4702,39 @@ export class Game {
 
   // Follow the leader --------------------------------------------------------
 
-  updateConvoy(dt, ridden) {
-    const free = (c) => c.availability().free;
-    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
-    const girls = this.companions.map((c) => ({ id: c.character.id, free: free(c) }));
-    this.updateRaceYou(dt, ridden);
+  /** What follow the leader needs to know (npc/convoy.js): who is free, which quads each could take, and whether anything else is on. */
+  convoyContext(ridden) {
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().free }));
     const options = {};
     for (const c of this.companions) {
       options[c.character.id] = this.girlUnits.filter((u) => u !== ridden && c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && !u.quad.bog.stuck).map((u) => u.spec.id);
     }
+    return { girls, options, claims: this.ownership.claims, busy: this.race.active || this.drag.active || !!this.recalling || this.fallingOut.active };
+  }
+
+  /** Acts on follow the leader (npc/convoy.js): the invite (one of them suggested it), the follower overtaking, the end. */
+  handleConvoyEvent(e) {
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
     const cv = this.convoy;
-    const later = (ms, fn) => setTimeout(fn, ms);
+    if (e.type === 'invite') {
+      byId[e.leader].voice.say('convoyInvite', { force: true });
+      setTimeout(() => byId[e.follower]?.voice.say('convoyAccept', { force: true }), 3500);
+      const quadOf = (id) => this.girlUnits.find((u) => u.spec.id === e.picks[id]).quad;
+      byId[e.leader].requestDrive(quadOf(e.leader), { convoyLead: true });
+      byId[e.follower].requestDrive(quadOf(e.follower), { follow: true, followWho: () => quadOf(e.leader) });
+    } else if (e.type === 'swap') {
+      // The follower is to overtake whoever is in front.
+      const f = byId[e.follower];
+      if (!f.drive?.startPass()) cv.passFailed();
+    } else if (e.type === 'end') {
+      for (const c of this.companions) if (c.fsm.is('driving') && c.drive && !c.drive.done) c.drive.endActivity();
+    }
+  }
+
+  updateConvoy(dt, ridden) {
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    this.updateRaceYou(dt, ridden);
+    const cv = this.convoy;
     // A girl who has stopped or finished driving ends it for both: nobody is left leading nobody.
     if (cv.active) {
       for (const id of Object.keys(cv.picks ?? {})) {
@@ -4652,21 +4772,7 @@ export class Game {
         cv.passFailed();
       }
     } else this.convoyIdle = {};
-    for (const e of cv.update(dt, { girls, options, claims: this.ownership.claims, busy: this.race.active || this.drag.active || !!this.recalling || this.fallingOut.active })) {
-      if (e.type === 'invite') {
-        byId[e.leader].voice.say('convoyInvite', { force: true });
-        later(3500, () => byId[e.follower]?.voice.say('convoyAccept', { force: true }));
-        const quadOf = (id) => this.girlUnits.find((u) => u.spec.id === e.picks[id]).quad;
-        byId[e.leader].requestDrive(quadOf(e.leader), { convoyLead: true });
-        byId[e.follower].requestDrive(quadOf(e.follower), { follow: true, followWho: () => quadOf(e.leader) });
-      } else if (e.type === 'swap') {
-        // The follower is to overtake whoever is in front.
-        const f = byId[e.follower];
-        if (!f.drive?.startPass()) cv.passFailed();
-      } else if (e.type === 'end') {
-        for (const c of this.companions) if (c.fsm.is('driving') && c.drive && !c.drive.done) c.drive.endActivity();
-      }
-    }
+    for (const e of cv.update(dt, this.convoyContext(ridden))) this.handleConvoyEvent(e);
   }
 
   // Racing ------------------------------------------------------------------
@@ -4767,17 +4873,71 @@ export class Game {
     }
   }
 
-  updateRace(dt, ridden) {
-    if (this.drag.active && !this.race.active) return; // one race at a time
-    const p = this.race.p;
-    const free = (c) => c.availability().free;
-    const girls = this.companions.map((c) => ({ id: c.character.id, free: free(c) }));
+  /** What a race needs to know (npc/race.js): who is free, which quads each could take, and you at the line. */
+  raceContext(ridden) {
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().free }));
     const options = {};
     for (const c of this.companions) {
       options[c.character.id] = this.girlUnits.filter((u) => u !== ridden && c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && !u.quad.bog.stuck).map((u) => u.spec.id);
     }
+    return { girls, options, claims: this.ownership.claims, you: this.raceYou(ridden) };
+  }
+
+  /** Acts on a race (npc/race.js): the invite (one of them suggested it, or Jess dared you), the count, the go, the finish. */
+  handleRaceEvent(e) {
+    const p = this.race.p;
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
     const later = (ms, fn) => setTimeout(fn, ms);
+    if (e.type === 'invite') {
+      byId[e.challenger].voice.say(e.youIn ? 'raceInviteYou' : 'raceInvite', { force: true });
+      later(3500, () => byId[e.other]?.voice.say(e.youIn ? 'raceJoinYou' : 'raceAccept', { force: true }));
+      if (e.youIn) this.hud.toast('Race: line up on the start line by the yard, pointing along the track', 4);
+      let side = 1;
+      for (const [id, spec] of Object.entries(e.picks)) {
+        const c = byId[id];
+        if (!c) continue; // you
+        const quad = this.girlUnits.find((u) => u.spec.id === spec).quad;
+        const confidence = c.driveConfidence ?? c.params.driveConfidence;
+        const race = {
+          route: this.raceRoute((e.youIn ? p.gridSpacing : 1.5) * side),
+          gridIndex: 1,
+          assistYaw: Math.atan2(this.world.track.sample(this.raceStart).tx, this.world.track.sample(this.raceStart).tz), // eased round on the grid (helpOnGrid), not driven round again
+          cruise: p.cruiseBase + p.cruiseConfidence * confidence + (Math.random() * 2 - 1) * p.cruiseSpread,
+          throttle: p.throttle,
+          keepDriving: Math.random() < p.keepRidingChance,
+          go: () => this.race.go(),
+          alive: () => this.race.active,
+          onGrid: () => this.race.grid(id),
+          onFinish: () => this.race.finish(id),
+          onAbort: () => this.race.abort(id),
+        };
+        side = -side;
+        c.requestDrive(quad, { race });
+      }
+    } else if (e.type === 'countdown') byId[this.race.challenger]?.voice.say('raceCount', { force: true });
+    else if (e.type === 'go') {
+      if (this.race.picks.you) this.hud.toast('Go!', 1.2);
+    } else if (e.type === 'youDropped') this.hud.toast('The girls are going without you', 2.5);
+    else if (e.type === 'finish') {
+      if (e.girl === 'you') {
+        this.achievements.note('races');
+        if (e.place === 1) this.achievements.note('raceWins');
+      }
+      if (e.girl === 'you') this.hud.toast(['', 'You won!', 'You came second', 'You came third'][e.place] ?? `You finished`, 3);
+      else if (e.place === 1) byId[e.girl].voice.say(e.youIn ? 'raceBeatYou' : 'raceWin', { force: true });
+      else later(2500, () => byId[e.girl]?.voice.say(e.ahead.includes('you') ? 'raceLoseToYou' : 'raceLose', { force: true }));
+    } else if (e.type === 'out') {
+      if (e.girl === 'you') this.hud.toast('You are out of the race', 2.5);
+      else byId[e.girl]?.voice.say('raceOut', { force: true });
+    } else if (e.type === 'result' && e.winner && e.loser) {
+      this.raceResult = { winner: e.winner, loser: e.loser };
+      this.noteFriction('race', e.loser);
+    }
+  }
+
+  updateRace(dt, ridden) {
+    if (this.drag.active && !this.race.active) return; // one race at a time
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
     // A racer who has stopped doing anything about it (told to do something else, say) is out, rather than holding it up.
     if (this.race.active && this.race.phase !== 'over') {
       for (const id of Object.keys(this.race.picks ?? {})) {
@@ -4788,53 +4948,7 @@ export class Game {
         if (this.raceIdle[id] > 4) this.race.abort(id);
       }
     } else this.raceIdle = {};
-    for (const e of this.race.update(dt, { girls, options, claims: this.ownership.claims, you: this.raceYou(ridden) })) {
-      if (e.type === 'invite') {
-        byId[e.challenger].voice.say(e.youIn ? 'raceInviteYou' : 'raceInvite', { force: true });
-        later(3500, () => byId[e.other]?.voice.say(e.youIn ? 'raceJoinYou' : 'raceAccept', { force: true }));
-        if (e.youIn) this.hud.toast('Race: line up on the start line by the yard, pointing along the track', 4);
-        let side = 1;
-        for (const [id, spec] of Object.entries(e.picks)) {
-          const c = byId[id];
-          if (!c) continue; // you
-          const quad = this.girlUnits.find((u) => u.spec.id === spec).quad;
-          const confidence = c.driveConfidence ?? c.params.driveConfidence;
-          const race = {
-            route: this.raceRoute((e.youIn ? p.gridSpacing : 1.5) * side),
-            gridIndex: 1,
-            assistYaw: Math.atan2(this.world.track.sample(this.raceStart).tx, this.world.track.sample(this.raceStart).tz), // eased round on the grid (helpOnGrid), not driven round again
-            cruise: p.cruiseBase + p.cruiseConfidence * confidence + (Math.random() * 2 - 1) * p.cruiseSpread,
-            throttle: p.throttle,
-            keepDriving: Math.random() < p.keepRidingChance,
-            go: () => this.race.go(),
-            alive: () => this.race.active,
-            onGrid: () => this.race.grid(id),
-            onFinish: () => this.race.finish(id),
-            onAbort: () => this.race.abort(id),
-          };
-          side = -side;
-          c.requestDrive(quad, { race });
-        }
-      } else if (e.type === 'countdown') byId[this.race.challenger]?.voice.say('raceCount', { force: true });
-      else if (e.type === 'go') {
-        if (this.race.picks.you) this.hud.toast('Go!', 1.2);
-      } else if (e.type === 'youDropped') this.hud.toast('The girls are going without you', 2.5);
-      else if (e.type === 'finish') {
-        if (e.girl === 'you') {
-          this.achievements.note('races');
-          if (e.place === 1) this.achievements.note('raceWins');
-        }
-        if (e.girl === 'you') this.hud.toast(['', 'You won!', 'You came second', 'You came third'][e.place] ?? `You finished`, 3);
-        else if (e.place === 1) byId[e.girl].voice.say(e.youIn ? 'raceBeatYou' : 'raceWin', { force: true });
-        else later(2500, () => byId[e.girl]?.voice.say(e.ahead.includes('you') ? 'raceLoseToYou' : 'raceLose', { force: true }));
-      } else if (e.type === 'out') {
-        if (e.girl === 'you') this.hud.toast('You are out of the race', 2.5);
-        else byId[e.girl]?.voice.say('raceOut', { force: true });
-      } else if (e.type === 'result' && e.winner && e.loser) {
-        this.raceResult = { winner: e.winner, loser: e.loser };
-        this.noteFriction('race', e.loser);
-      }
-    }
+    for (const e of this.race.update(dt, this.raceContext(ridden))) this.handleRaceEvent(e);
   }
 
   // Drag racing --------------------------------------------------------------
@@ -4887,6 +5001,41 @@ export class Game {
     } else if (!on) drag.ungrid('you');
   }
 
+  /** What the drag challenge needs to know to offer it (npc/drag.js): who is free, which quads each could take, and you. */
+  dragContext(ridden) {
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().free }));
+    const options = {};
+    for (const c of this.companions) {
+      options[c.character.id] = this.girlUnits.filter((u) => u !== ridden && c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && !u.quad.bog.stuck).map((u) => u.spec.id);
+    }
+    return { girls, options, claims: this.ownership.claims, busy: this.race.active, you: this.dragYou(ridden) };
+  }
+
+  /** Jess drives over to sit beside you and challenge you (her choice: npc/drag.js). */
+  dragApproach(e, ridden) {
+    const drag = this.drag;
+    const q = ridden?.quad;
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    if (!q || !c) return drag.cancel([], true);
+    const side = { x: -Math.cos(q.yaw), z: Math.sin(q.yaw) };
+    const beside = { x: q.position.x + side.x * 3.2, z: q.position.z + side.z * 3.2 };
+    const quad = this.girlUnits.find((u) => u.spec.id === e.pick).quad;
+    c.requestDrive(quad, {
+      race: {
+        route: [beside],
+        gridIndex: 0,
+        cruise: 9,
+        throttle: 0.7,
+        go: () => false,
+        alive: () => drag.active,
+        onGrid: () => drag.grid(e.girl),
+        onFinish: () => {},
+        onAbort: () => drag.abort(e.girl),
+        blip: () => drag.blipping(),
+      },
+    });
+  }
+
   updateDrag(dt, ridden) {
     const drag = this.drag;
     const s = this.world.layout.dragStrip;
@@ -4932,27 +5081,8 @@ export class Game {
       onAbort: () => drag.abort(id),
     });
     for (const e of drag.update(dt, { girls, options, claims: this.ownership.claims, busy: this.race.active, you: this.dragYou(ridden), along, length: s.length })) {
-      if (e.type === 'approach') {
-        // Jess drives over to sit beside you.
-        const q = ridden.quad;
-        const side = { x: -Math.cos(q.yaw), z: Math.sin(q.yaw) };
-        const beside = { x: q.position.x + side.x * 3.2, z: q.position.z + side.z * 3.2 };
-        const quad = this.girlUnits.find((u) => u.spec.id === e.pick).quad;
-        byId[e.girl].requestDrive(quad, {
-          race: {
-            route: [beside],
-            gridIndex: 0,
-            cruise: 9,
-            throttle: 0.7,
-            go: () => false,
-            alive: () => drag.active,
-            onGrid: () => drag.grid(e.girl),
-            onFinish: () => {},
-            onAbort: () => drag.abort(e.girl),
-            blip: () => drag.blipping(),
-          },
-        });
-      } else if (e.type === 'chicken') byId[e.girl]?.voice.say('dragChicken', { force: true });
+      if (e.type === 'approach') this.dragApproach(e, ridden);
+      else if (e.type === 'chicken') byId[e.girl]?.voice.say('dragChicken', { force: true });
       else if (e.type === 'invite') {
         const c = byId[e.girl];
         c.voice.say(e.blipped ? 'dragAccepted' : 'dragAsked', { force: true });
@@ -5006,18 +5136,21 @@ export class Game {
   }
 
   updatePranks(dt, ridden) {
-    for (const e of this.pranks.update(dt, this.prankContext(ridden))) {
-      const a = e.prank;
-      const girl = this.companions.find((c) => c.character.id === a.girl);
-      if (e.type === 'start') this.startPrank(a, girl);
-      else if (e.type === 'found') girl?.voice.say('prankGiggle', { force: true });
-      else if (e.type === 'restore') {
-        const thing = a.item === 'can' ? this.petrolCan : this.toolbox;
-        const home = this.itemHome[a.item];
-        if (home && !thing.held && !thing.carried) this.restoreItem(girl, thing, a.item, home);
-      }
-      if (e.type === 'resolved' || e.type === 'restore') delete this.itemHome[a.item];
+    for (const e of this.pranks.update(dt, this.prankContext(ridden))) this.handlePrankEvent(e);
+  }
+
+  /** Acts on pranks (npc/pranks.js): starting one (a choice she made), being found out, putting a hidden thing back. */
+  handlePrankEvent(e) {
+    const a = e.prank;
+    const girl = this.companions.find((c) => c.character.id === a.girl);
+    if (e.type === 'start') this.startPrank(a, girl);
+    else if (e.type === 'found') girl?.voice.say('prankGiggle', { force: true });
+    else if (e.type === 'restore') {
+      const thing = a.item === 'can' ? this.petrolCan : this.toolbox;
+      const home = this.itemHome[a.item];
+      if (home && !thing.held && !thing.carried) this.restoreItem(girl, thing, a.item, home);
     }
+    if (e.type === 'resolved' || e.type === 'restore') delete this.itemHome[a.item];
   }
 
   /** Time's up: she goes and fetches it back to where it was, or just puts it back if she's busy. */

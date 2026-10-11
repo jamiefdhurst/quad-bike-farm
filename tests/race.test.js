@@ -8,16 +8,29 @@ import { DEFAULT_COMPANION_PARAMS } from '../src/npc/companionParams.js';
 
 const free = [{ id: 'amy', free: true }, { id: 'jess', free: true }];
 const ctx = (o = {}) => ({ girls: free, options: { amy: ['red', 'blue'], jess: ['red', 'blue', 'yellow'] }, claims: { amy: 'red', jess: 'yellow' }, ...o });
-const make = (params = {}, random = () => 0) => new Race({ ...P, startAfter: 0, freeFor: 0, chance: 1, ...params }, random);
+const make = (params = {}, random = () => 0) => new Race({ ...P, startAfter: 0, freeFor: 0, ...params }, random);
+/** A step in which one of them takes the race she's offered, the dare first (as a chooser that always says yes): the events. */
+const begin = (r, c = ctx(), dt = 1) => {
+  const events = r.update(dt, c);
+  const offer = r.offers(c)[0];
+  if (offer) events.push(r.take(offer));
+  return events;
+};
 const step = (r, seconds, c = ctx(), dt = 0.5) => {
   const events = [];
   for (let t = 0; t < seconds; t += dt) events.push(...r.update(dt, c));
   return events;
 };
+/** Seconds go by with the girls taking any race offered. */
+const steps = (r, seconds, c = ctx(), dt = 0.5) => {
+  const events = [];
+  for (let t = 0; t < seconds; t += dt) events.push(...begin(r, c, dt));
+  return events;
+};
 // Gets a race going to the point where it has started.
 function started(params) {
   const r = make(params);
-  const [invite] = r.update(1, ctx());
+  const [invite] = begin(r, ctx());
   r.grid('amy');
   r.grid('jess');
   step(r, 5);
@@ -61,17 +74,23 @@ describe('the lap', () => {
 });
 
 describe('a race', () => {
+  it('never starts on its own: that is the chooser\'s, and either girl can suggest one', () => {
+    const r = make();
+    expect(r.update(1, ctx())).toEqual([]);
+    expect(r.offers(ctx()).map((o) => [o.key, o.girl])).toEqual([['race', 'amy'], ['race', 'jess']]);
+  });
+
   it('starts when both are free, after the start delay and the free time, not before', () => {
-    expect(make({ startAfter: 100 }).update(1, ctx())).toEqual([]);
-    expect(make({ freeFor: 10 }).update(1, ctx())).toEqual([]);
-    expect(make().update(1, ctx({ girls: [{ id: 'amy', free: true }, { id: 'jess', free: false }] }))).toEqual([]);
-    const [invite] = make().update(1, ctx());
+    expect(begin(make({ startAfter: 100 }), ctx())).toEqual([]);
+    expect(begin(make({ freeFor: 10 }), ctx())).toEqual([]);
+    expect(begin(make(), ctx({ girls: [{ id: 'amy', free: true }, { id: 'jess', free: false }] }))).toEqual([]);
+    const [invite] = begin(make(), ctx());
     expect(invite).toMatchObject({ type: 'invite', challenger: 'jess', other: 'amy', picks: { amy: 'red', jess: 'yellow' } });
   });
 
   it('waits for both on the grid, counts down, then they are off', () => {
     const r = make();
-    r.update(1, ctx());
+    begin(r, ctx());
     expect(r.go()).toBe(false);
     r.grid('amy');
     expect(step(r, 5)).toEqual([]); // one on the line is not enough
@@ -85,12 +104,12 @@ describe('a race', () => {
 
   it('is called off if they have not both got to the line in time, or one is out before the start', () => {
     const r = make({ gatherTimeout: 20 });
-    r.update(1, ctx());
+    begin(r, ctx());
     r.grid('amy');
     expect(step(r, 25).some((e) => e.type === 'cancel')).toBe(true);
     expect(r.active).toBe(false);
     const q = make();
-    q.update(1, ctx());
+    begin(q, ctx());
     q.abort('amy');
     expect(step(q, 1).some((e) => e.type === 'cancel')).toBe(true);
   });
@@ -131,8 +150,8 @@ describe('a race', () => {
     r.finish('amy');
     r.finish('jess');
     step(r, 2);
-    expect(step(r, P.cooldown - 20).some((e) => e.type === 'invite')).toBe(false);
-    expect(step(r, 40).some((e) => e.type === 'invite')).toBe(true);
+    expect(steps(r, P.cooldown - 20).some((e) => e.type === 'invite')).toBe(false);
+    expect(steps(r, 40).some((e) => e.type === 'invite')).toBe(true);
   });
 
   it('rivalry is the one with the lead of at least rivalLead wins', () => {
@@ -248,29 +267,29 @@ describe('racing with you', () => {
   const withYou = (o = {}) => ctx({ you: { ...here, ...o } });
 
   it('invites you when they start a race and you are on a quad near the line, and not otherwise', () => {
-    expect(make().update(1, withYou())[0].youIn).toBe(true);
-    expect(make().update(1, withYou())[0].picks.you).toBe('green');
-    expect(make().update(1, withYou({ near: false }))[0].youIn).toBe(false);
-    expect(make().update(1, withYou({ riding: null }))[0].picks.you).toBeUndefined();
+    expect(begin(make(), withYou())[0].youIn).toBe(true);
+    expect(begin(make(), withYou())[0].picks.you).toBe('green');
+    expect(begin(make(), withYou({ near: false }))[0].youIn).toBe(false);
+    expect(begin(make(), withYou({ riding: null }))[0].picks.you).toBeUndefined();
   });
 
   it('has Jess dare you once you have sat still near the line, even when they would not have asked themselves', () => {
-    const r = make({ chance: 0, dareChance: 1, dareStill: 3 });
-    expect(step(r, 2, withYou())).toEqual([]);
-    const [invite] = step(r, 3, withYou());
+    const r = make({ weight: 0, dareStill: 3 });
+    expect(steps(r, 2, withYou())).toEqual([]);
+    const [invite] = steps(r, 3, withYou());
     expect(invite).toMatchObject({ type: 'invite', challenger: 'jess', dare: true, youIn: true });
-    expect(make({ chance: 0, dareChance: 1, dareStill: 3 }).update(5, withYou({ still: false }))).toEqual([]);
+    expect(begin(make({ weight: 0, dareStill: 3 }), withYou({ still: false }), 5)).toEqual([]);
   });
 
   it('starts when you ask for one, whatever the timing', () => {
-    const r = make({ chance: 0, startAfter: 999 });
+    const r = make({ weight: 0, startAfter: 999 });
     r.forced = true;
     expect(r.update(1, withYou())[0]).toMatchObject({ type: 'invite', youIn: true });
   });
 
   it('waits for you on the grid, then counts down, then runs', () => {
     const r = make();
-    r.update(1, withYou());
+    begin(r, withYou());
     r.grid('amy');
     r.grid('jess');
     step(r, 5, withYou());
@@ -283,7 +302,7 @@ describe('racing with you', () => {
 
   it('races without you if you do not line up in time, or get off', () => {
     const r = make({ youWait: 20 });
-    r.update(1, withYou());
+    begin(r, withYou());
     r.grid('amy');
     r.grid('jess');
     const events = step(r, 25, withYou());
@@ -291,13 +310,13 @@ describe('racing with you', () => {
     expect(r.phase).toBe('race');
     expect(r.picks.you).toBeUndefined();
     const r2 = make();
-    r2.update(1, withYou());
+    begin(r2, withYou());
     expect(step(r2, 1, withYou({ riding: null })).some((e) => e.type === 'youDropped')).toBe(true);
   });
 
   it('drops you rather than calling it off if you pull away during the count-down', () => {
     const r = make();
-    r.update(1, withYou());
+    begin(r, withYou());
     r.grid('amy');
     r.grid('jess');
     r.grid('you');
@@ -311,7 +330,7 @@ describe('racing with you', () => {
 
   it('puts you in the results: you can win, and a girl is only the loser to the other girl', () => {
     const r = make();
-    r.update(1, withYou());
+    begin(r, withYou());
     r.grid('amy');
     r.grid('jess');
     r.grid('you');
@@ -330,7 +349,7 @@ describe('racing with you', () => {
 
   it('ends the race when you are out and the girls are done, and keeps the girls own rivalry separate from you', () => {
     const r = make({ rivalLead: 2 });
-    r.update(1, withYou());
+    begin(r, withYou());
     r.grid('amy');
     r.grid('jess');
     r.grid('you');
