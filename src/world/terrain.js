@@ -82,9 +82,11 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
   const roadMudTex = new THREE.DataTexture(mudData.data, mudData.nx, mudData.nz, THREE.RGBAFormat);
   roadMudTex.magFilter = roadMudTex.minFilter = THREE.LinearFilter;
   roadMudTex.needsUpdate = true;
+  const snow = { value: 0 }; // 0..1 how far the ground is under snow (the weather's cover); the World feeds it
   const frost = { value: 0 }; // 0..1 how hard the frost is (the weather's); the World feeds it
   addDetailLayer(mat, detailTex, 0.45, {
     frost,
+    snow,
     wear: { map: wearTex, origin: new THREE.Vector2(wear.minX, wear.minZ), size: new THREE.Vector2(wear.sizeX, wear.sizeZ) },
     roadMud: { map: roadMudTex, origin: new THREE.Vector2(mudData.minX, mudData.minZ), size: new THREE.Vector2(mudData.sizeX, mudData.sizeZ) },
   });
@@ -96,7 +98,7 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
 
   scene.add(createOuterRing(layout, heights, fields));
 
-  return { mesh, collider, frost, wearTexture: wearTex, roadMudTexture: roadMudTex, meshHeightAt: (x, z) => gridHeight(grid, n, step, half, x, z) };
+  return { mesh, collider, frost, snow, wearTexture: wearTex, roadMudTexture: roadMudTex, meshHeightAt: (x, z) => gridHeight(grid, n, step, half, x, z) };
 }
 
 /**
@@ -122,13 +124,14 @@ function gridHeight(grid, n, step, half, x, z) {
 }
 
 /** Multiplies a tiling greyscale texture over the diffuse colour in world space, and lays the worn ground and the road's mud over it. */
-function addDetailLayer(material, detailTex, scale, { wear, roadMud, frost }) {
+function addDetailLayer(material, detailTex, scale, { wear, roadMud, frost, snow }) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.detailMap = { value: detailTex };
     shader.uniforms.wearMap = { value: wear.map };
     shader.uniforms.wearOrigin = { value: wear.origin };
     shader.uniforms.wearSize = { value: wear.size };
     shader.uniforms.uFrost = frost;
+    shader.uniforms.uSnow = snow;
     shader.uniforms.roadMudMap = { value: roadMud.map };
     shader.uniforms.roadMudOrigin = { value: roadMud.origin };
     shader.uniforms.roadMudSize = { value: roadMud.size };
@@ -136,7 +139,7 @@ function addDetailLayer(material, detailTex, scale, { wear, roadMud, frost }) {
       .replace('#include <common>', '#include <common>\nvarying vec2 vWorldXZ;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWorldXZ = (modelMatrix * vec4(transformed, 1.0)).xz;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;\nuniform sampler2D wearMap;\nuniform vec2 wearOrigin;\nuniform vec2 wearSize;\nuniform sampler2D roadMudMap;\nuniform vec2 roadMudOrigin;\nuniform vec2 roadMudSize;\nuniform float uFrost;\nvarying vec2 vWorldXZ;')
+      .replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;\nuniform sampler2D wearMap;\nuniform vec2 wearOrigin;\nuniform vec2 wearSize;\nuniform sampler2D roadMudMap;\nuniform vec2 roadMudOrigin;\nuniform vec2 roadMudSize;\nuniform float uFrost;\nuniform float uSnow;\nvarying vec2 vWorldXZ;')
       .replace(
         '#include <map_fragment>',
         `#include <map_fragment>
@@ -165,9 +168,17 @@ function addDetailLayer(material, detailTex, scale, { wear, roadMud, frost }) {
         float patchy = 0.75 + 0.25 * (texture2D(detailMap, vWorldXZ * 0.07).r - 0.5) * 2.0;
         float frostAmt = uFrost * patchy * (1.0 - smoothstep(0.1, 0.6, thawed)) * (1.0 - wornSoft) * (1.0 - 0.45 * onRoad);
         float glitter = smoothstep(0.82, 1.0, texture2D(detailMap, vWorldXZ * 5.1).r) * frostAmt;
-        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.86, 0.91, 0.94) * mix(0.9, 1.08, grain), frostAmt * 0.72) + vec3(0.25) * glitter;`,
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.86, 0.91, 0.94) * mix(0.9, 1.08, grain), frostAmt * 0.72) + vec3(0.25) * glitter;
+        // Snow: it lies in patches at first and joins up as the cover grows. The tyres' lines and churned ground show through it
+        // (the wear map), so tracks stay, and it lies a little thinner on the road.
+        float snowPatch = texture2D(detailMap, vWorldXZ * 0.11).r * 0.6 + texture2D(detailMap, vWorldXZ * 0.9).r * 0.4;
+        float snowLay = smoothstep(0.0, 0.25, uSnow * 1.5 - (snowPatch - 0.25) * 0.9);
+        float snowAmt = snowLay * (1.0 - 0.7 * smoothstep(0.1, 0.5, thawed)) * (1.0 - 0.85 * wornSoft) * (1.0 - 0.3 * onRoad);
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.93, 0.95, 0.98) * mix(0.93, 1.04, grain), snowAmt * 0.93);
+        float snowGlint = smoothstep(0.86, 1.0, texture2D(detailMap, vWorldXZ * 6.3).r) * snowAmt;
+        diffuseColor.rgb += vec3(0.12) * snowGlint;`,
       )
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n        roughnessFactor *= 1.0 - 0.4 * wornBog;\n        roughnessFactor = mix(roughnessFactor, 0.55, frostAmt * 0.5);');
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n        roughnessFactor *= 1.0 - 0.4 * wornBog;\n        roughnessFactor = mix(roughnessFactor, 0.55, frostAmt * 0.5);\n        roughnessFactor = mix(roughnessFactor, 0.85, snowAmt * 0.6);');
   };
 }
 

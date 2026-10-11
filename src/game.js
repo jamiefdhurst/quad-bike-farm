@@ -174,6 +174,7 @@ import { Winch, WINCH_PARAM_RANGES } from './items/winch.js';
 import { Chain, CHAIN_PARAM_RANGES } from './items/chain.js';
 import { TRACTOR_GROUND_OFFSET } from './vehicle/tractorModel.js';
 import { Weather, pickWeatherKind, pickTemperature } from './world/weather.js';
+import { Snow } from './effects/snow.js';
 import { Rain } from './effects/rain.js';
 
 import { washMud } from './effects/mudBuildUp.js';
@@ -443,9 +444,10 @@ export class Game {
     this.weather = new Weather(kind, random, celsius);
     this.weather.temperature = Math.round(this.daylight.temperature(celsius) * 10) / 10;
     this.world.daylight = this.daylight;
-    for (const unit of this.units) unit.quad.seatFrost = this.weather.frost;
+    for (const unit of this.units) unit.quad.seatFrost = this.weather.seatFrost;
     this.world.setWeather(this.weather);
     this.rain = new Rain(this.scene);
+    this.snow = new Snow(this.scene);
     // Smoke hanging over the yard on a still day (world/haze.js, effects/hazeLayer.js).
     this.haze = new Haze(this.world.layout.yard);
     this.hazeLayer = new HazeLayer(this.scene, this.world.layout.yard, this.world.layout.yard.radius, createRandom(this.seed ^ 0x4a2e));
@@ -1251,7 +1253,7 @@ export class Game {
   setWeatherKind(kind) {
     if (!this.weather.setKind(kind)) return false;
     this.world.setWeather(this.weather);
-    for (const unit of this.units) unit.quad.seatFrost = this.weather.frost;
+    for (const unit of this.units) unit.quad.seatFrost = this.weather.seatFrost;
     return true;
   }
 
@@ -1260,12 +1262,23 @@ export class Game {
     this.weather.rain = this.weather.target = Math.max(0, Math.min(1, amount));
   }
 
+  /** How hard it is snowing now, 0 to 1 (it settles back to what the weather would do in time). */
+  setSnow(amount) {
+    this.weather.snow = this.weather.snowTarget = Math.max(0, Math.min(1, amount));
+  }
+
+  /** How far the ground and the seats are under snow, 0 to 1. */
+  setSnowCover(amount) {
+    this.weather.cover = Math.max(0, Math.min(1, amount));
+    for (const unit of this.units) unit.quad.seatFrost = this.weather.seatFrost;
+  }
+
   /** The day's temperature in degrees C. */
   setTemperature(celsius) {
     // It goes on following the time of day from there: the day's warmest moves so that it is this now.
     if (this.daylight) this.weather.peak = this.daylight.peakFor(celsius);
     this.weather.temperature = celsius;
-    for (const unit of this.units) unit.quad.seatFrost = this.weather.frost;
+    for (const unit of this.units) unit.quad.seatFrost = this.weather.seatFrost;
   }
 
   /** Sets the time of day (hours after midnight; past 24 is the same night going on), with the temperature and the frost following at once. */
@@ -1273,7 +1286,7 @@ export class Game {
     if (!this.daylight) return;
     this.daylight.hour = hour;
     this.weather.temperature = Math.round(this.daylight.temperature(this.weather.peak) * 10) / 10;
-    for (const unit of this.units) unit.quad.seatFrost = this.weather.frost;
+    for (const unit of this.units) unit.quad.seatFrost = this.weather.seatFrost;
   }
 
   /** On: the girls start things on their own as usual. Off: nothing new starts; they follow, ride and answer you. */
@@ -3558,7 +3571,7 @@ export class Game {
     w.sunUp = d.sun.light;
     w.dark = d.darkness; // for what the girls say about it (companionVoice.watchWeather)
     for (const unit of this.units) {
-      unit.quad.dayFrost = w.frost;
+      unit.quad.dayFrost = w.seatFrost;
       // A girl driving a cab in the dark puts its lights on.
       const q = unit.quad;
       if (q.lights && q.lights.mode === 'off' && d.darkness > 0.5 && this.companions.some((c) => c.quad === q && c.fsm.is('driving'))) q.lights.set('low');
@@ -3576,6 +3589,7 @@ export class Game {
     // The barn: no rain under its roof, the drumming of it on the tin, a dimmer light inside with the bulb on, and a room's echo.
     const indoor = world.indoor(cam.x, cam.z);
     this.rain.update(dt, this.camera, w.rain, w.wind, (x, z) => world.covered(x, z));
+    this.snow.update(dt, this.camera, w.snow, w.wind, (x, z) => world.covered(x, z));
     this.audioHub.setRain(w.rain, indoor, world.barnParams);
     this.audioHub.room ??= { inside: (x, z) => world.inBarn(x, z), params: world.barnParams, listenerIn: false };
     this.audioHub.room.listenerIn = world.inBarn(cam.x, cam.z);
@@ -3610,6 +3624,7 @@ export class Game {
     const tint = (m, hex) => m?.color.setHex(hex).multiplyScalar(light);
     for (const layer of [this.hazeLayer, this.barnFumesLayer]) for (const b of layer?.blobs ?? []) tint(b.sprite.material, 0xaeb9c8);
     tint(this.rain.lines?.material, 0xc4ccd2);
+    tint(this.snow.points?.material, 0xf2f5f8);
   }
 
   /** Carrying the can, the hose, the toolbox or the winch hook. */

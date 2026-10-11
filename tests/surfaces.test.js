@@ -48,3 +48,17 @@ describe('tyre squeal', () => {
     expect(slipAngle(-10, 10)).toBeCloseTo(Math.PI / 4);
   });
 });
+
+describe('snow underfoot', () => {
+  it('cuts grip and adds drag in proportion to the cover, on grass and on tarmac', () => {
+    const P = S;
+    const bare = surfaceFeel(P, 0, 0, 0, 0);
+    const half = surfaceFeel(P, 0, 0, 0, 0.5);
+    const full = surfaceFeel(P, 0, 0, 0, 1);
+    expect(full.grip).toBeCloseTo(P.snowGrip);
+    expect(half.grip).toBeLessThan(bare.grip);
+    expect(half.grip).toBeGreaterThan(full.grip);
+    expect(full.roll).toBeGreaterThan(bare.roll);
+    expect(surfaceFeel(P, 1, 0, 0, 1).grip).toBeLessThan(surfaceFeel(P, 1, 0, 0, 0).grip);
+  });
+});

@@ -6,14 +6,19 @@
 // ground gets wet with rain and dries slowly after, which makes the grass and
 // track slipperier and the mud worse. Pure logic.
 
+export const SNOW_AT_START = 0.45; // cover on the ground when a snowy game starts: it has been snowing a while
+export const SNOW_SETTLE_SECONDS = 150; // seconds of heavy snow (1) to cover the ground
+export const SNOW_MELT_ABOVE_C = 3; // above this the snow starts to go
+export const SNOW_MELT_SECONDS = 400; // seconds to melt from full cover at 5 degrees above that, and the rain washes it away at its own rate
+
 const lerp = (a, b, t) => a + (b - a) * t;
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
-/** How each kind looks, and its weather. `rain` and `showers` are 0..1; `wind` scales the breeze. */
+/** How each kind looks, and its weather. `rain`, `snow` (left out for none) and `showers` are 0..1; `wind` scales the breeze. */
 export const WEATHER_KINDS = {
   sunny: {
     name: 'sunny',
-    weight: 0.7,
+    weight: 0.64,
     sky: { horizonColor: '#d6e3ea', zenithColor: '#6c9ccd', cloudColor: '#f6f7f8', cloudShadowColor: '#b9c4ce', cloudCover: 0.22, fogDensity: 0.0032, sunIntensity: 2.6, hemiIntensity: 1.35, exposure: 1.05 },
     rain: 0,
     showers: 0,
@@ -56,6 +61,16 @@ export const WEATHER_KINDS = {
     wind: 1.5,
     wet: 1,
   },
+  snow: {
+    name: 'snowing',
+    weight: 0.06,
+    sky: { horizonColor: '#dde1e4', zenithColor: '#aeb6bd', cloudColor: '#e8eaeb', cloudShadowColor: '#a3aab0', cloudCover: 0.9, fogDensity: 0.013, sunIntensity: 0.7, hemiIntensity: 1.6, exposure: 0.98 },
+    rain: 0,
+    snow: 0.7, // 0..1 how hard it falls
+    showers: 0.5,
+    wind: 0.5,
+    wet: 0.3,
+  },
   fog: {
     name: 'foggy',
     weight: 0.02,
@@ -82,6 +97,7 @@ const TEMPERATURE_ODDS = {
   drizzle: { cold: 0.35, mild: 0.65 },
   rain: { cold: 0.35, mild: 0.65 },
   fog: { frosty: 0.35, cold: 0.4, mild: 0.25 },
+  snow: { frosty: 0.6, cold: 0.4 },
 };
 export const MILD_C = 12; // at and above this the cold doesn't bother an engine
 export const COLDEST_C = -5; // the coldest day there is: chill 1
@@ -143,6 +159,9 @@ export class Weather {
     this.rain = k.rain; // 0..1 falling now
     this.target = k.rain;
     this.wet = k.wet; // 0..1 how wet the ground is
+    this.snow = k.snow ?? 0; // 0..1 falling now
+    this.snowTarget = this.snow;
+    this.cover = this.snow > 0 ? SNOW_AT_START : 0; // 0..1 how far the ground is under snow: it settles while snow falls and melts slowly when it warms
     this.nextChange = this.spell();
   }
 
@@ -157,6 +176,8 @@ export class Weather {
     this.kind = kind;
     this.rain = this.target = k.rain;
     this.wet = Math.max(this.wet, k.wet);
+    this.snow = this.snowTarget = k.snow ?? 0;
+    if (this.snow > 0) this.cover = Math.max(this.cover, SNOW_AT_START);
     this.nextChange = this.spell();
     return true;
   }
@@ -168,12 +189,17 @@ export class Weather {
   /** 0..1 how warm the day is for an engine in the sun: the sunshine, taken off by rain. */
   get warmth() {
     // The temperature nudges it: a frosty day takes the edge off the sun, a warm one adds to a dull day.
-    return clamp01(clamp01(this.def.sky.sunIntensity / 2.6) * (1 - 0.8 * this.rain) * this.sunUp + (this.temperature - MILD_C) * 0.01);
+    return clamp01(clamp01(this.def.sky.sunIntensity / 2.6) * (1 - 0.8 * this.rain) * (1 - 0.5 * this.snow) * this.sunUp + (this.temperature - MILD_C) * 0.01);
   }
 
   /** 0..1 how cold it is for an engine (see chillOf). */
   get chill() {
     return chillOf(this.temperature);
+  }
+
+  /** 0..1 how white a seat should be: frosty, or snowed on (the snow only lies on a seat in the open, so a bit less than the ground). */
+  get seatFrost() {
+    return Math.max(this.frost, this.cover * 0.85);
   }
 
   /** 0..1 how frosty: nothing above freezing, white seats at a few degrees below. */
@@ -204,10 +230,16 @@ export class Weather {
       if (r < k.showers * 0.5) this.target = clamp01(Math.max(k.rain, 0.3) + this.random() * 0.6);
       else if (r < k.showers) this.target = k.rain * this.random();
       else this.target = k.rain;
+      // Snow falls in flurries: heavy for a bit, then lighter.
+      this.snowTarget = (k.snow ?? 0) * (0.3 + 0.7 * this.random());
     }
     // Rain comes on over half a minute or so and eases off a bit slower.
     const rate = this.target > this.rain ? 1 / 30 : 1 / 50;
     this.rain += Math.sign(this.target - this.rain) * Math.min(Math.abs(this.target - this.rain), rate * dt);
+    // Snow comes and goes over a minute or so, settles while it falls and melts when it is mild or rains.
+    this.snow += Math.sign(this.snowTarget - this.snow) * Math.min(Math.abs(this.snowTarget - this.snow), dt / 60);
+    const melt = Math.max(0, this.temperature - SNOW_MELT_ABOVE_C) / (5 * SNOW_MELT_SECONDS) + this.rain / 300;
+    this.cover = clamp01(this.cover + (this.snow * 0.9 / SNOW_SETTLE_SECONDS - melt) * dt);
     // The ground soaks up rain quickly and dries over ten minutes or so.
     if (this.rain > this.wet) this.wet = Math.min(1, this.wet + this.rain * dt / 40);
     else this.wet = Math.max(k.wet * 0.5, this.wet - dt / 600);

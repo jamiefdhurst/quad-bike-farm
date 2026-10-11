@@ -122,7 +122,9 @@ export function buildGameTree(g, host) {
       out.faults = group(() => faults, 'the faults');
 
       out.brakes = group(() => ({
-        wet: num(() => q().brakes.wet, (v) => (q().brakes.wet = v), 0, 1, '', '1 is soaked: they barely bite until they dry'),
+        snow: num(() => w().snow, (v) => g.setSnow(v), 0, 1, '', 'snowing now'),
+    snowCover: num(() => w().cover, (v) => g.setSnowCover(v), 0, 1, '', 'how far the ground and seats are under snow'),
+    wet: num(() => q().brakes.wet, (v) => (q().brakes.wet = v), 0, 1, '', '1 is soaked: they barely bite until they dry'),
         binding: flag(() => q().brakes.binding, (v) => q().brakes.setBinding(v)),
       }), 'the brakes');
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Weather, WEATHER_KINDS, pickWeatherKind } from '../src/world/weather.js';
+import { Weather, WEATHER_KINDS, pickWeatherKind, pickTemperature } from '../src/world/weather.js';
 
 function seeded(seed = 7) {
   return () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;

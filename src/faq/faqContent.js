@@ -357,6 +357,14 @@ export const FAQ_SECTIONS = [
           day warms up the frost thaws, and on a cold evening it comes back after dark, on the grass and on any seat nobody is sitting on.`,
       },
       {
+        q: 'Why is it snowing, and why is my quad sliding about?',
+        a: `Now and then the day is a snowy one, on a frosty or cold day. Snow settles on the ground in patches that join up the longer it falls,
+          and the seats turn white too (sit on one to clear it). Your tyres leave tracks that stay, but the quad grips less and drags more
+          on snow, so brake early and take bends gently. It melts slowly if the day turns mild, and rain washes it away. A frosty start
+          is harder in the cold, so use the choke.`,
+        tip: 'Snow means less grip: brake early, take bends gently, and use the choke on a cold start.',
+      },
+      {
         q: 'What time is it?',
         a: `Look at the clock on the barn wall, past the end of the workbench, or the clock on a dash that has one. Each game starts at its own
           time, some in the morning and some in the afternoon, and the day runs on about twelve times faster than real time, so a morning

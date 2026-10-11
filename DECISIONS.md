@@ -2877,3 +2877,15 @@ Agreed with Jamie before building: this session does the chalkboard and the muck
 - **Not checked in the running game:** only unit tests (and a load check, see the summary). Not seen: the board on the door by eye, the mound in the tub, whether 12 s of forking or 1.8 m patches feel right.
 
 - **Follow-up: the tilt (after Jamie tried it).** `T` used to tip the tub all the way, which dumped the lot in a heap. With muck in the tub `T` now tilts it to `spreadTipTo` (0.4, between the spreading threshold and the slide) and holds there (`UtvBed.cap`); `T` again lowers it and `Shift`+`T` tips it right up. Also the chalkboard hung inside the door's white battens, which stand 0.11 m proud: it now hangs 0.16 m out on a slate backing.
+
+## Snow (TODO 11)
+
+A weather kind, `snow` (weight 0.06, so about one game in sixteen; the temperature is rolled only from the frosty and cold bands, 60/40). Jamie settled the scope: the roll, falling snow, ground and seat cover, tracks that stay, grip and the cold; snowballs are left for a follow-up.
+
+- **Weather** (`weather.js`): `snow` is how hard it falls now (flurries, eased towards a target re-rolled every spell, like rain) and `cover` is how far the ground is under snow. A snowy game starts at `SNOW_AT_START` 0.45; cover grows at `snow * 0.9 / 150` a second, so about three minutes of heavy snow covers it. It melts above 3 degrees (full cover goes in about 400 s at 8 degrees) and with rain (`rain / 300` a second). Nothing melts it on a frosty day, which is the point. `seatFrost` is the larger of the frost and 0.85 of the cover; the game feeds that to the quads' seats instead of `frost`, so the existing seat frost (sat on to clear, forming again) does the seats.
+- **Ground** (`terrain.js`): one more block in the same shader as the frost, `uSnow`. Coverage is patchy at low cover and joins up as it grows. It is thinned by the wear map's blue (the tyre lines, the same as frost) and mostly removed where the ground is churned, so tracks show as the grass and mud beneath. Not done: hedges, roofs, trees, props and the outer ring stay bare, so a snowy world is a white field with a green surround. A material-wide treatment can come later.
+- **Falling snow** (`effects/snow.js`): 1800 points in a cylinder round the camera, swaying and wind-slanted, none under roofs; tinted down at night in `updateWeather`.
+- **Grip** (`surfaces.js`): `snowGrip` 0.62 and `snowRoll` 1.25 at full cover, scaled by cover, on top of tarmac and stubble (not a new surface type, since cover varies and sits on all of them). In the Tune tab's surface group.
+- **Girls:** no new lines (they would need recording). A snowy day reads as frosty or cold to them, so they warm their hands and remark on the cold as before.
+- **Debug:** console `weather.snow`, `weather.snowCover`, `weather.kind snow`; `?weather=snow`. Barometer reads 0.4 for it.
+- **Not checked in the running game:** only unit tests. Not seen: how the white ground and the flakes look, whether 0.62 grip feels right, and the shader cost.

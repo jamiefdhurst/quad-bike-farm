@@ -20,7 +20,7 @@ export function thermoAngle(celsius) {
 export const BARO_WORDS = ['Stormy', 'Rain', 'Change', 'Fair', 'Very dry'];
 
 /** How settled each weather is, 0 (stormy) to 1 (very dry): where the barometer sits for it. */
-const SETTLED = { sunny: 0.85, fair: 0.7, overcast: 0.5, drizzle: 0.35, rain: 0.22, fog: 0.55 };
+const SETTLED = { sunny: 0.85, fair: 0.7, overcast: 0.5, drizzle: 0.35, rain: 0.22, fog: 0.55, snow: 0.4 };
 
 /**
  * The barometer's reading, 0 (stormy) to 1 (very dry), for the weather: `kind` (weather.js), `rain` falling now and `target` (where

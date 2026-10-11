@@ -94,7 +94,7 @@ export class World {
 
   /** Grip and rolling drag here as factors on grass, in today's wetness (surfaces.js). */
   surfaceFeelAt(x, z) {
-    return surfaceFeel(this.surfaceParams, this.fields.tarmacAt(x, z), this.fields.stubbleAt(x, z), this.wet);
+    return surfaceFeel(this.surfaceParams, this.fields.tarmacAt(x, z), this.fields.stubbleAt(x, z), this.wet, this.weather?.cover ?? 0);
   }
 
   /** The next point on the way from `from` to `to` that doesn't go through a hedge (fields.js): `to` itself in the same field. */
@@ -191,6 +191,7 @@ export class World {
     }
     if (this.weather) {
       this.terrain.frost.value = this.weather.frost;
+      this.terrain.snow.value = this.weather.cover;
       this.weather.update(dt);
       Object.assign(this.sky.params, this.skyNow());
       // Wet ground looks darker, and a little glossier.
