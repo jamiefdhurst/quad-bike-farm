@@ -92,10 +92,10 @@ export const FAQ_SECTIONS = [
       {
         q: 'What does the farm remember from one day to the next?',
         a: `Each vehicle's hours and miles, its wear, any fault you didn't put right, what you set with the toolbox, its tyres, fuel, oil and coolant,
-          where the pods are, and how far you got with the barn find. Overnight a battery runs down a little (flat, if you left the key on) and half
+          where the pods are, and how far you got with the barn find. Overnight a battery runs down a little (flat, if you left the key on with the engine stopped) and half
           the mud dries and drops off. The bucket list keeps its ticks, the records board its bests (with "today" on any set today), and Amy's logbook
           its last forty notes, by day. The girls keep half of how much they like you and all you've taught them.`,
-        tip: 'Leave the key on overnight and the battery is flat in the morning.',
+        tip: 'Leave the key on with the engine off overnight and the battery is flat by morning.',
       },
       {
         q: 'Do the girls remember a row?',

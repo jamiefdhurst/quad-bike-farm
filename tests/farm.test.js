@@ -199,6 +199,8 @@ describe('a vehicle from one day to the next', () => {
     expect(on.keyOn).toBe(true);
     expect(overnight(on, P).engine.battery).toBe(P.flatOvernight);
     expect(on.engine.battery).toBe(0.8); // the saved copy is left alone
+    // Running is fine: only a key left on with the engine stopped flattens it.
+    expect(overnight({ ...on, running: true }, P).engine.battery).toBeCloseTo(0.8 - P.overnightDrain);
   });
 });
 

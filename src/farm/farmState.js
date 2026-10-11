@@ -28,6 +28,7 @@ export function captureVehicle(unit, extra = {}) {
     odo: q.usage.odoMiles,
     engine: Object.fromEntries(ENGINE_KEPT.filter((k) => k in e).map((k) => [k, e[k]])),
     keyOn: !!e.ignitionOn,
+    running: !!e.isRunning, // a running engine is taken as fine overnight: the key is only "left on" when the engine is not going
     filter: q.filter?.clog ?? 0,
     fuel: { litres: q.fuel.litres, tap: q.fuel.tap, ...Object.fromEntries(FUEL_KEPT.map((k) => [k, q.fuel[k] ?? 0])) },
     faults: { tyre: q.faults.tyre, ...Object.fromEntries(FAULT_FIELDS.map((k) => [k, { ...q.faults[k] }])) },
@@ -41,13 +42,14 @@ export function captureVehicle(unit, extra = {}) {
   return out;
 }
 
-/** The same vehicle the next morning: a little battery gone (all of it if the key was left on), the mud half dried off. */
+/** The same vehicle the next morning: a little battery gone (all of it if the key was left on with the engine stopped; a running one is taken as fine), the mud half dried off. */
 export function overnight(saved, P = DEFAULT_FARM_PARAMS) {
   const out = structuredClone(saved);
   if (out.engine && num(out.engine.battery)) {
-    out.engine.battery = out.keyOn ? Math.min(out.engine.battery, P.flatOvernight) : Math.max(0, out.engine.battery - P.overnightDrain);
+    out.engine.battery = out.keyOn && !out.running ? Math.min(out.engine.battery, P.flatOvernight) : Math.max(0, out.engine.battery - P.overnightDrain);
   }
   out.keyOn = false;
+  out.running = false;
   if (out.mud) {
     out.mud.body *= P.mudKept;
     out.mud.wheels *= P.mudKept;
