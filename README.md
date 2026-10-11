@@ -716,3 +716,9 @@ Numbered on from the end of the list so nothing else moves.
 220. A classic Mini: tiny, quick, front-wheel drive, a famous noise; great on the lane and hopeless in the field.
 221. A site dumper: a small front-tipping skip on a diesel dumper with a hand crank or pull start, for moving muck and gravel and tipping it; the useful part of a digger without the arm.
 222. A compact tractor with a front loader (a Kubota style): a modern little tractor with a loader bucket on two simple hydraulic arms, lifting bales and muck; a contrast with the Fergie's age.
+223. A reason to come back: the farm remembering (item 40) plus a small economy. Earn from jobs (haymaking, spraying, the show day), spend on parts, the shed (item 168) and second-hand vehicles (item 164). Big: split into items before starting.
+224. Stories across days: each girl's arc unfolding over many days (Amy learning to drive properly and passing her test in her Fiesta, Jess saving for a bike of her own, the romance as a slow thread). Needs the farm to remember. Big: split before starting.
+225. A first day that teaches: a gentle opening day for a new player (Amy shows you a cold start, Jess dares you up the hill, the jobs board explains itself), so the hidden depth is reachable. Split before starting.
+226. More people: a neighbour farmer who lends, borrows and judges your quads; visitors (the vet, the post van); Amy's dad who owns the farm and leaves you jobs. Big: split before starting.
+227. Getting it out to people: smaller downloads (item 114), a settings menu, saving, and a page to play it on the web. Split before starting.
+228. Tools for building more: a vehicle spec editor in the debug panel, to tune a new vehicle's engine and handling live and save it, so every vehicle after it is cheaper.
