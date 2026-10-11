@@ -2247,7 +2247,10 @@ export class Game {
     // T tips the tub, from the seat of whatever pulls it or standing by it.
     const near = riding || (!this.player.isRiding && this.player.position.distanceTo(t.model.position) < 3);
     if (near && input.wasPressed('KeyT') && !this.handsFull && !(ridden && !riding) && !(riding && ridden.quad.isTipped)) {
-      const note = t.toggleTip();
+      // With muck in the tub T tilts it just enough to spread and holds it there; Shift+T tips it all the way out in one heap.
+      const spread = !this.muck.empty && !(input.isDown('ShiftLeft') || input.isDown('ShiftRight'));
+      const note = t.toggleTip(spread ? this.muckParams.spreadTipTo : 1);
+      if (!note && spread && t.bed.want) this.hud.toast('Tub tilted to spread: drive on slowly. T lowers it, Shift+T tips the lot out', 3);
       if (note) this.achievements.note('tipped');
       if (note) this.hud.toast(note.replace('the bed', 'the tub'), 2);
     }

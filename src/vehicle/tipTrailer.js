@@ -173,8 +173,10 @@ export class TipTrailer {
   }
 
   /** The tip lever: a note for whoever pulled it when nothing happened. */
-  toggleTip() {
-    return this.bed.toggle(this.hitched ? this.puller.speed : 0);
+  toggleTip(cap = 1) {
+    const note = this.bed.toggle(this.hitched ? this.puller.speed : 0);
+    if (!note && this.bed.want) this.bed.cap = cap; // a part-way tilt holds there; the lever again lowers it
+    return note;
   }
 
   /** The tub is high enough that what's in it slides out. */

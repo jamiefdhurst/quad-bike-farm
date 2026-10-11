@@ -12,9 +12,10 @@ export class JobBoardView {
     this.board = board;
     const shape = barnShape(game.world.layout);
     const floorY = game.world.heightAt(shape.x, shape.z);
-    // The sliding door leaf nearer the first wall segment (barnBuild.js hangs it 0.25 m out from the wall, 0.06 thick).
+    // The sliding door leaf nearer the first wall segment (barnBuild.js hangs it 0.25 m out from the wall). Its white battens stand up to
+    // 0.11 m proud of the leaf, so the board hangs 0.16 m out on a backing slab, each layer 2 cm clear of the last.
     const door = shape.door;
-    const x = door.x + 0.25 + 0.03 + 0.012;
+    const x = door.x + 0.25 + 0.16;
     const z = door.minZ - 1.2;
     const y = floorY + 1.6;
     this.canvas = document.createElement('canvas');
@@ -27,6 +28,9 @@ export class JobBoardView {
     const face = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1), new THREE.MeshStandardMaterial({ map: this.texture, roughness: 0.9 }));
     face.rotation.y = Math.PI / 2; // the plane's front faces +x, out over the yard
     group.add(face);
+    const backing = new THREE.Mesh(new THREE.BoxGeometry(0.02, 1.08, 1.58), new THREE.MeshStandardMaterial({ color: 0x2b3330, roughness: 0.9 }));
+    backing.position.x = -0.025;
+    group.add(backing);
     const wood = new THREE.MeshStandardMaterial({ color: 0x5a3f28, roughness: 0.85 });
     for (const [w, h, dx, dy] of [[1.58, 0.04, 0, 0.52], [1.58, 0.04, 0, -0.52], [0.04, 1.08, 0.77, 0], [0.04, 1.08, -0.77, 0]]) {
       const bar = new THREE.Mesh(new THREE.BoxGeometry(0.03, h, w), wood);
@@ -36,7 +40,7 @@ export class JobBoardView {
     group.position.set(x, y, z);
     game.scene.add(group);
     this.group = group;
-    this.proxy = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.1, 1.6), new THREE.MeshBasicMaterial({ visible: false }));
+    this.proxy = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.1, 1.6), new THREE.MeshBasicMaterial({ visible: false }));
     this.proxy.position.copy(group.position);
     game.scene.add(this.proxy);
     this.buildCard();

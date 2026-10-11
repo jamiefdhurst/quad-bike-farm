@@ -74,3 +74,18 @@ describe('the UTV bed', () => {
     expect(bed.sliding).toBe(true);
   });
 });
+
+describe('a part-way lift', () => {
+  it('holds at its cap until lowered', async () => {
+    const { UtvBed } = await import('../src/vehicle/utvBed.js');
+    const bed = new UtvBed();
+    bed.toggle(0);
+    bed.cap = 0.4;
+    for (let i = 0; i < 300; i++) bed.update(0.1, { speed: 0 });
+    expect(bed.tip).toBeCloseTo(0.4, 5);
+    expect(bed.sliding).toBe(false);
+    bed.toggle(0);
+    for (let i = 0; i < 300; i++) bed.update(0.1, { speed: 0 });
+    expect(bed.tip).toBe(0);
+  });
+});

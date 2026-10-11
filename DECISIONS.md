@@ -2875,3 +2875,5 @@ Agreed with Jamie before building: this session does the chalkboard and the muck
 - **Debug.** Tune: "Muck job", "Job board". Girls tab "Both girls and the farm": what's in the tub, the board, and fill / finish / reset buttons calling the same game methods. Console: `farm.muck`, `farm.laid`, `farm.muckDone`, `farm.board`.
 - **Weight.** A full tub counts as 3 things in the tow load (`towWeight`).
 - **Not checked in the running game:** only unit tests (and a load check, see the summary). Not seen: the board on the door by eye, the mound in the tub, whether 12 s of forking or 1.8 m patches feel right.
+
+- **Follow-up: the tilt (after Jamie tried it).** `T` used to tip the tub all the way, which dumped the lot in a heap. With muck in the tub `T` now tilts it to `spreadTipTo` (0.4, between the spreading threshold and the slide) and holds there (`UtvBed.cap`); `T` again lowers it and `Shift`+`T` tips it right up. Also the chalkboard hung inside the door's white battens, which stand 0.11 m proud: it now hangs 0.16 m out on a slate backing.

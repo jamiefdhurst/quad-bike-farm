@@ -5,6 +5,7 @@
 export const DEFAULT_MUCK_PARAMS = {
   forkSeconds: 12, // holding E at the heap fills an empty tub in this long
   forkReach: 5, // metres from the heap's edge to the trailer that you can still fork it in
+  spreadTipTo: 0.4, // how far T tilts the tub when there is muck in it: past spreadTipAt, short of the slide, and it holds there
   spreadTipAt: 0.3, // how far up the tub must be before muck starts to run out of the back (it all comes out in a heap at the slide)
   spreadMinSpeed: 0.4, // m/s: slower than this it is just piling up behind you
   spreadMaxSpeed: 2.2, // m/s: faster than this the tub lowers itself, so muck stops
@@ -17,6 +18,7 @@ export const DEFAULT_MUCK_PARAMS = {
 export const MUCK_PARAM_RANGES = {
   forkSeconds: [2, 40, 0.5],
   forkReach: [1, 12, 0.5],
+  spreadTipTo: [0.1, 0.49, 0.01],
   spreadTipAt: [0.05, 0.6, 0.01],
   spreadMinSpeed: [0.05, 2, 0.05],
   spreadMaxSpeed: [0.5, 5, 0.1],

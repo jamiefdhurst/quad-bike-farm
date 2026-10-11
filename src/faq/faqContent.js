@@ -798,13 +798,13 @@ export const FAQ_SECTIONS = [
         q: 'How do I do the muck job?',
         a: `Hitch the little trailer to the tractor or a quad with a rack and park it by the muck heap in the east wheat field (within about five metres).
           Hold <kbd>E</kbd> at the trailer, empty-handed, to fork muck in: the girls will have something to say about the smell. Drive onto the stubble, stop,
-          tip the tub a little with <kbd>T</kbd> (not all the way) and drive off slowly. Muck runs out of the back in patches while you go slower than
+          press <kbd>T</kbd> (the tub tilts just enough and holds there) and drive off slowly. Muck runs out of the back in patches while you go slower than
           a brisk walk, and the job ticks off the board once there's a good strip down. A full tub is a drag on whatever pulls it.`,
       },
       {
         q: "Why won't the muck spread, or why did it all come out in a heap?",
         a: `It only spreads with the tub tipped up a little and you moving slowly (not stopped, not quicker than a brisk walk, or the tub lowers itself).
-          It only counts on the stubble fields: on the road, the grass or the yard you waste it. Tip the tub right up while stood still and the whole load slides out in one heap.`,
+          It only counts on the stubble fields: on the road, the grass or the yard you waste it. Press <kbd>Shift</kbd>+<kbd>T</kbd> to tip the tub right up and the whole load slides out in one heap wherever you are.`,
       },
       {
         q: 'Will the girls drive into a trailer?',

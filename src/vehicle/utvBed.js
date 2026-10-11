@@ -32,6 +32,7 @@ export class UtvBed {
     this.tip = 0;
     this.gate = 0;
     this.want = false; // the ram is lifting it (true) or lowering it (false)
+    this.cap = 1; // how far up this lift goes: less than 1 holds it part-way (the muck job's spreading tilt)
     this.gateHeld = false; // somebody is sat on the tailgate, so it stays down
   }
 
@@ -64,7 +65,7 @@ export class UtvBed {
     const p = this.p;
     if (this.want && Math.abs(ctx.speed) > p.autoLowerSpeed) this.want = false;
     this.gateHeld = !!ctx.gateDown;
-    if (this.want) this.tip = Math.min(1, this.tip + dt / p.riseSeconds);
+    if (this.want) this.tip = Math.max(Math.min(this.cap, this.tip + dt / p.riseSeconds), this.tip - dt / p.lowerSeconds);
     else this.tip = Math.max(0, this.tip - dt / p.lowerSeconds);
     // The tailgate: open while the bed is up and while somebody sits on it, otherwise shut again once the bed is down.
     const wantOpen = this.gateHeld || this.tip >= p.gateOpenAt;
