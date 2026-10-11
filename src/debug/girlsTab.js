@@ -111,6 +111,12 @@ export function buildGirlsTab(d) {
     g.tea.forced = true;
     g.hud.toast('A free girl will put her tea on a rack');
   });
+  button(both, 'Take me to the rock at the top of the hill', () => {
+    const v = g.flaskSpot;
+    if (!v) return;
+    if (g.riddenUnit) return g.hud.toast('Get off first');
+    g.player.moveTo({ x: v.x, y: g.world.heightAt(v.x, v.z) + 0.5, z: v.z + 2.5 });
+  });
   button(both, 'Take me to the jump', () => {
     const r = g.world.layout.jumpRamp;
     if (!r) return;

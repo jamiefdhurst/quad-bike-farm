@@ -131,6 +131,7 @@ import { DEFAULT_LINEUP_PARAMS, LINEUP_PARAM_RANGES, parkRoute } from './npc/lin
 import { WorkLight, WORK_LIGHT_PARAM_RANGES } from './npc/workLight.js';
 import { DEFAULT_HOME_PARAMS, HOME_PARAM_RANGES } from './npc/homeParking.js';
 import { Tea, TEA_PARAM_RANGES } from './npc/tea.js';
+import { Flask, FLASK_PARAM_RANGES } from './npc/flask.js';
 import { carryParams, CARRY_PARAM_RANGES, carryWeight } from './npc/carrying.js';
 import { Jumpers, JUMPER_PARAM_RANGES, JUMPERS } from './npc/jumpers.js';
 import { JumperRail } from './world/jumperRail.js';
@@ -720,6 +721,9 @@ export class Game {
     this.dieselJob = null; // her pouring: { spec, left }
     this.mugs = new Mugs(this.scene, (x, z) => this.world.heightAt(x, z), this.tea.p.stainFor);
     this.teaMugs = {}; // girl id -> the mug on a rack
+    this.flask = new Flask(undefined, createRandom(this.seed ^ 0x6f1a)); // tea from a flask on the rock at the top of the hill (npc/flask.js)
+    this.flaskSet = null; // the flask and two mugs out on the ground by the rock: a Group
+    this.setupFlask();
     this.jumpers = new Jumpers(); // jumpers from the barn rail on cold or wet days (npc/jumpers.js)
     this.jumperRail = new JumperRail(this.scene, this.world.layout, (x, z) => this.world.heightAt(x, z));
     this.convoy = new Convoy(); // follow the leader, swapping places (npc/convoy.js)
@@ -1168,6 +1172,7 @@ export class Game {
     registerTuning('Lining them up', this.lineUpParams, LINEUP_PARAM_RANGES);
     registerTuning('Home and jogging', this.homeParams, HOME_PARAM_RANGES);
     registerTuning('Tea on the rack', this.tea.p, TEA_PARAM_RANGES);
+    registerTuning('Flask at the top of the hill', this.flask.p, FLASK_PARAM_RANGES);
     registerTuning('Girls carrying things', carryParams, CARRY_PARAM_RANGES);
     registerTuning('Jumpers', this.jumpers.p, JUMPER_PARAM_RANGES);
     registerTuning('Red diesel mistake', this.dieselMistake.p, DIESEL_MISTAKE_PARAM_RANGES);
@@ -2840,6 +2845,7 @@ export class Game {
         this.handleWorkLight(this.workLight.take(o));
       }),
       ...mine(this.tea.offers(this.teaContext(ridden)), (o) => this.handleTeaEvent(this.tea.take(o))),
+      ...mine(this.flask.offers(this.flaskContext(ridden)), (o) => this.handleFlaskEvent(this.flask.take(o))),
       ...(this.hiding.active ? [] : mine(this.requests.offers(this.requestContext(ridden)), (o) => this.handleRequestEvent(this.requests.take(o)))),
       ...mine(this.jumpers.offers(this.jumpersContext()), (o) => this.handleJumperEvent(this.jumpers.take(o))),
       ...mine(this.dieselMistake.offers(this.dieselContext(ridden)), (o) => this.handleDieselEvent(this.dieselMistake.take(o))),
@@ -5088,6 +5094,131 @@ export class Game {
   }
 
 
+  // Flask at the top of the hill ------------------------------------------------
+
+  /** The rock's seat as a rest spot (a girl sits on it like a bale) and the E prompt at it; the rock itself is built with the hill's props. */
+  setupFlask() {
+    const v = this.world.layout.hill?.viewpoint;
+    this.flaskSpot = v ? { id: 'viewpoint', kind: 'rock', x: v.x, z: v.z, yaw: v.yaw, seat: v.height + 0.08 } : null;
+    if (!v) return;
+    const proxy = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.2, 1.6), new THREE.MeshBasicMaterial({ visible: false }));
+    proxy.position.set(v.x, this.world.heightAt(v.x, v.z) + 0.5, v.z);
+    proxy.rotation.y = v.yaw;
+    this.scene.add(proxy);
+    this.interaction.add({
+      target: proxy,
+      isAvailable: () => !this.handsFull && !this.player.isRiding && !this.flask.active && !!this.flaskGirl(),
+      prompt: () => `Sit down with ${this.flaskGirl().name} and have a cup of tea from the flask`,
+      interact: () => this.askForFlask(),
+    });
+  }
+
+  /** The girl you'd share the flask with: the nearest one close enough, stood about or sat on a quad you've left. */
+  flaskGirl() {
+    const v = this.flaskSpot;
+    if (!v || !this.fineForFlask()) return null;
+    const near = this.companions
+      .filter((c) => c.root.position.distanceTo(this.player.position) <= this.flask.p.askRange)
+      .filter((c) => c.availability({ asked: true }).free || (c.fsm.is('seated') && c.quad && Math.abs(c.quad.speed) < 0.5))
+      .sort((a, b) => a.root.position.distanceTo(this.player.position) - b.root.position.distanceTo(this.player.position));
+    return near[0] ?? null;
+  }
+
+  fineForFlask() {
+    return this.flask.fine({ rain: this.weather.rain, darkness: this.daylight?.darkness ?? 0 });
+  }
+
+  /** The weather as the flask module wants it. */
+  flaskWeather() {
+    const w = this.weather;
+    return { rain: w.rain, darkness: this.daylight?.darkness ?? 0, cold: w.warmth < 0.5, sunny: w.name === 'sunny' || w.name === 'sunny intervals' };
+  }
+
+  /** E at the rock: the girl beside you sits down with the flask. */
+  askForFlask(girl = this.flaskGirl()) {
+    if (!girl || this.flask.active) return false;
+    const e = this.flask.begin(girl.character.id, 'asked', { seated: girl.fsm.is('seated') });
+    if (!e) return false;
+    this.handleFlaskEvent(e);
+    return true;
+  }
+
+  /** What the flask needs to know (npc/flask.js) to suggest it: the girls' distance from the rock, and you. */
+  flaskContext(ridden) {
+    const v = this.flaskSpot;
+    if (!v) return { girls: [], youDistance: Infinity, youSlow: false, weather: this.flaskWeather() };
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().free, distance: Math.hypot(c.root.position.x - v.x, c.root.position.z - v.z) }));
+    const speed = ridden ? Math.abs(ridden.quad.speed) : 0;
+    return { girls, youDistance: Math.hypot(this.player.position.x - v.x, this.player.position.z - v.z), youSlow: speed < 2, weather: this.flaskWeather() };
+  }
+
+  updateFlask(dt) {
+    const v = this.flaskSpot;
+    const id = this.flask.girl;
+    const c = id && this.companions.find((o) => o.character.id === id);
+    const ctx = {
+      girl: c ? { free: c.availability({ asked: true, mine: 'flask' }).free, seated: c.isResting && c.restPhase === 'sat' && c.restSpot === v, x: c.root.position.x, z: c.root.position.z } : null,
+      youDistance: v ? Math.hypot(this.player.position.x - v.x, this.player.position.z - v.z) : Infinity,
+      favoured: !!id && this.favour.mood(id) === 'favoured',
+      weather: this.flaskWeather(),
+    };
+    for (const e of this.flask.update(dt, ctx)) this.handleFlaskEvent(e);
+  }
+
+  /** Acts on the flask (npc/flask.js): she gets off or goes to the rock, the tea comes out, she speaks, it ends. */
+  handleFlaskEvent(e) {
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    const v = this.flaskSpot;
+    if (!c || !v) return this.flask.cancel();
+    if (e.type === 'getOff') {
+      c.hold('flask', 'having tea at the top of the hill');
+      c.voice.say('flaskYes', { force: true });
+      c.requestStandBeside(c.quad); // then update sends her up to the rock once she's on her feet
+    } else if (e.type === 'go') {
+      c.hold('flask', 'having tea at the top of the hill');
+      if (e.how) c.voice.say(e.how === 'offer' ? 'flaskOffer' : 'flaskYes', { force: true });
+      if (!c.goRest(v, { stay: Infinity })) {
+        c.release('flask');
+        this.flask.cancel();
+      }
+    } else if (e.type === 'pour') {
+      this.putOutFlask();
+    } else if (e.type === 'say') {
+      c.voice.say(e.line, { force: true });
+    } else if (e.type === 'end') {
+      c.release('flask');
+      if (c.isResting) c.leaveRest();
+      this.clearFlask();
+      if (e.why === 'done') {
+        this.favour.add(e.girl, this.flask.p.favour + (this.favour.mood(e.girl) === 'favoured' ? this.flask.p.romanceFavour : 0));
+        this.achievements.note('flask');
+      }
+    }
+  }
+
+  /** The flask and two mugs on the ground beside the rock, in its own frame. */
+  putOutFlask() {
+    this.clearFlask();
+    const v = this.flaskSpot;
+    const group = new THREE.Group();
+    group.position.set(v.x, this.world.heightAt(v.x, v.z), v.z);
+    group.rotation.y = v.yaw;
+    const flask = this.mugs.makeFlask();
+    const mugs = [this.mugs.make(0x3a6ea5), this.mugs.make(0xb8322a)];
+    [[flask, 1.15, 0.55], [mugs[0], 0.9, 0.7], [mugs[1], 1.35, 0.75]].forEach(([o, x, z]) => {
+      group.add(o);
+      o.position.set(x, 0, z);
+    });
+    this.scene.add(group);
+    this.flaskSet = group;
+  }
+
+  clearFlask() {
+    if (!this.flaskSet) return;
+    this.scene.remove(this.flaskSet);
+    this.flaskSet = null;
+  }
+
   // Jumpers from the barn ------------------------------------------------------
 
   /** What jumpers need to know (npc/jumpers.js): the weather, the girls and the rail. */
@@ -6506,6 +6637,7 @@ export class Game {
     this.updateJumps(dt);
     if (auto) this.updateNicking(dt, ridden);
     if (auto || this.tea.forced) this.updateTea(dt, ridden);
+    if (auto || this.flask.active) this.updateFlask(dt);
     if (auto) this.updateJumpers(dt);
     if (auto || this.dieselMistake.forced) this.updateDieselMistake(dt, ridden);
     this.bell.update(dt);

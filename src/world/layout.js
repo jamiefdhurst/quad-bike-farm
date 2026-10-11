@@ -55,6 +55,9 @@ export const LAYOUT = {
     gentle: { fromX: -12, toX: 24, factor: 2.4 },
     wood: { minX: -94, maxX: -66, minZ: 150, maxZ: 201 },
     foot: 7, // metres past the stream's far edge: the bottom of the pasture, where the girls stop driving
+    // The flat rock at the top of the pasture, on the level ground by the far hedge, looking back north over the farm (npc/flask.js): a girl sits on it
+    // (yaw is the way she faces, `height` how high the top is) and the flask and mugs go on the ground beside it.
+    viewpoint: { x: -22, z: 198.5, yaw: Math.PI, height: 0.45 },
   },
   hedgeThickness: 1.8,
   hedgeHeight: 2.4,

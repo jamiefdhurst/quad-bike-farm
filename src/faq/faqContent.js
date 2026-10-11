@@ -707,7 +707,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'What do they do when I leave them alone?',
         a: `All sorts: wander off for a look round, start a quad, take one for a drive, race each other, go for a ride together, spin doughnuts, show off to you,
-          line the quads up by the barn, leave a mug of tea on a rack, sit on the bales or the paddock fence on a fine day, run for the barn or climb into a Land Rover when it rains,
+          line the quads up by the barn, leave a mug of tea on a rack, sit with you on the rock at the top of the hill with a flask, sit on the bales or the paddock fence on a fine day, run for the barn or climb into a Land Rover when it rains,
           warm their hands over a running engine, start a Land Rover and sit in it to warm up, or fetch jumpers when it's cold.`,
       },
       {
@@ -743,6 +743,18 @@ export const FAQ_SECTIONS = [
         q: 'Are there any animals?',
         a: `A flock of sheep on the hill pasture, past the stream. They graze, wander about, bunch up and call to each other now and then. Come close and they move off, further away the faster you are going, and the rest of the flock runs with them. You can't hurt them, and for now there's nothing to do with them but watch.`,
         tip: 'Ride up the hill pasture to find the sheep. They move off from a quad.',
+      },
+      {
+        q: 'How do I have tea at the top of the hill?',
+        a: `Ride up the hill pasture with a girl to the flat rock at the very top, by the far hedge. Get off, stand by the rock and press E. She gets off her quad if she is on
+          it, sits on the rock and pours two mugs from her flask. Stay close and look at the view for about forty seconds and she will say a few things about it, and about
+          the weather. A girl stood about up there when you arrive may suggest it herself. Finish the cup and she likes you a little more.`,
+        tip: 'Take a girl to the rock at the top of the hill, get off, and press E for a flask of tea.',
+      },
+      {
+        q: 'Why won’t she pour the tea, or why did she stop?',
+        a: `It is off in rain and after dark, because the view is the point. Stand within about ten metres of the rock: walk away for a few seconds and she packs up,
+          a bit put out. She also needs to be near you and not busy with something else. A cold day is better for it, and the girl who likes you more has a quieter line.`,
       },
       {
         q: 'Why do the sheep run away?',

@@ -126,6 +126,7 @@ export const ACHIEVEMENTS = [
   { id: 'tip', group: 'Jobs', name: 'Tipped out', hint: 'Tip a trailer or the UTV\'s bed', points: 1, test: (s) => s.n('tipped') >= 1 },
   { id: 'muck', group: 'Jobs', name: 'Muck spreader', hint: 'Fork muck into the little trailer and spread it on the stubble', points: 2, test: (s) => s.n('muckSpread') >= 1 },
   { id: 'job-board', group: 'Jobs', name: 'Board cleared', hint: 'Do everything on the chalkboard on the barn door', points: 2, test: (s) => s.n('boardCleared') >= 1 },
+  { id: 'flask', group: 'Jobs', name: 'Tea at the top', hint: 'Sit on the rock at the top of the hill and share a flask of tea with a girl', points: 2, test: (s) => s.n('flask') >= 1 },
   { id: 'park-brake', group: 'Jobs', name: 'Handbrake on', hint: 'Put the parking brake on', points: 1, test: (s) => s.n('parkBrake') >= 1 },
   { id: 'map', group: 'Jobs', name: 'Where am I?', hint: 'Open the farm map', points: 1, test: (s) => s.n('map') >= 1 },
   { id: 'barn-find', group: 'Jobs', name: 'Barn find', hint: 'Get the old quad under the tarp running', points: 3, needs: 'rusty', test: (s) => s.n('barnFind') >= 1 },

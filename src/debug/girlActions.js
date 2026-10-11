@@ -182,6 +182,16 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'flask',
+      label: '% goes up to the rock at the top of the hill and pours the tea (walks there from wherever she is; needs dry, light weather)',
+      run: (id) => {
+        if (!free(id)) return;
+        if (g.flask.active) return toast('Someone already has the flask out');
+        if (!g.fineForFlask()) return toast('It is too wet or too dark for the flask');
+        toast(g.askForFlask(girl(id)) ? `${nameOf(id)} is off to the rock with the flask` : `${nameOf(id)} can't just now`);
+      },
+    },
+    {
       verb: 'warm-sit',
       label: '% starts the picked vehicle and sits on it while it warms (needs it off, and a seat)',
       vehicle: true,

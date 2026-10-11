@@ -86,6 +86,7 @@ import { AMY_SULK_LINES } from './sulkLines.js';
 import { AMY_READY_LINES } from './readyLines.js';
 import { AMY_SEAT_LINES } from './seatLines.js';
 import { AMY_WARMSIT_LINES } from './warmSitLines.js';
+import { AMY_FLASK_LINES } from './flaskLines.js';
 import { AMY_DONTFIX_LINES } from './dontFixLines.js';
 import { AMY_BUZZ_LINES } from './buzzLines.js';
 import { AMY_NUMB_LINES } from './numbLines.js';
@@ -1455,6 +1456,7 @@ export const VOICE_LINES = {
   ...AMY_READY_LINES,
   ...AMY_SEAT_LINES,
   ...AMY_WARMSIT_LINES,
+  ...AMY_FLASK_LINES,
   ...AMY_DONTFIX_LINES,
   ...AMY_BUZZ_LINES,
   ...AMY_NUMB_LINES,

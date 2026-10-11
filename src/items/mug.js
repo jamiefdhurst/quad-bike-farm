@@ -25,6 +25,21 @@ function buildMug(colour) {
   return g;
 }
 
+/** A tartan-green vacuum flask with its cup on top, standing on a rock (npc/flask.js). */
+function buildFlask() {
+  const g = new THREE.Group();
+  g.name = 'flask';
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.22, 16), new THREE.MeshStandardMaterial({ color: 0x2f6b45, roughness: 0.5 }));
+  body.position.y = 0.11;
+  const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.044, 0.07, 16), new THREE.MeshStandardMaterial({ color: 0xc9ccd0, roughness: 0.3, metalness: 0.6 }));
+  cup.position.y = 0.255;
+  for (const m of [body, cup]) {
+    m.castShadow = true;
+    g.add(m);
+  }
+  return g;
+}
+
 export class Mugs {
   constructor(scene, heightAt, stainFor = 60) {
     this.scene = scene;
@@ -40,6 +55,13 @@ export class Mugs {
     const mug = buildMug(colour);
     this.scene.add(mug);
     return mug;
+  }
+
+  /** A flask in the scene, for a girl to set down. */
+  makeFlask() {
+    const flask = buildFlask();
+    this.scene.add(flask);
+    return flask;
   }
 
   /** A mug on this quad's rear rack, if it has a place for one. Returns the mug, or null. */

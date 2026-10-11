@@ -19,6 +19,7 @@ export function buildHill(c) {
   buildGorse(c);
   buildBracken(c);
   buildTussocks(c);
+  buildViewpoint(c);
 }
 
 /** The stream's water: a ribbon along its line, level across, following the channel's fall along it, a little past the side hedges. */
@@ -245,4 +246,30 @@ function buildTussocks({ scene, heights, fields, random }) {
   mesh.receiveShadow = true;
   mesh.name = 'tussocks';
   scene.add(mesh);
+}
+
+/** The flat rock at the top of the pasture (layout.hill.viewpoint) where the girls sit with the flask: a squat grey boulder with a smaller one by it. */
+function buildViewpoint({ scene, layout, heights, physics, RAPIER }) {
+  const v = layout.hill.viewpoint;
+  if (!v) return;
+  const ground = heights.heightAt(v.x, v.z);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x8a877d, roughness: 0.95, flatShading: true });
+  const group = new THREE.Group();
+  group.name = 'viewpoint';
+  group.position.set(v.x, ground, v.z);
+  group.rotation.y = v.yaw;
+  const lump = (rx, ry, rz, x, y, z, detail) => {
+    const m = new THREE.Mesh(new THREE.IcosahedronGeometry(1, detail), mat);
+    m.scale.set(rx, ry, rz);
+    m.position.set(x, y, z);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    group.add(m);
+  };
+  // The seat: a wide flat-topped lump whose top is at `height` (the scale squashes it, the lower half sunk in the grass).
+  lump(0.75, v.height, 0.5, 0, 0, 0, 1);
+  lump(0.35, 0.22, 0.3, 0.95, -0.02, 0.15, 0);
+  lump(0.28, 0.16, 0.25, -0.9, -0.02, -0.2, 0);
+  scene.add(group);
+  physics.createCollider(RAPIER.ColliderDesc.cuboid(0.7, v.height / 2, 0.45).setTranslation(v.x, ground + v.height / 2, v.z).setRotation({ x: 0, y: Math.sin(v.yaw / 2), z: 0, w: Math.cos(v.yaw / 2) }));
 }
