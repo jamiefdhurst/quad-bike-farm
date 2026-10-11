@@ -89,6 +89,7 @@ import { DEFAULT_MOVE_PARAMS, MOVE_PARAM_RANGES } from './npc/companionMoves.js'
 import { DEFAULT_IDLE_POSE_PARAMS, IDLE_POSE_PARAM_RANGES } from './npc/poseMoves.js';
 import { HayTrailer } from './vehicle/hayTrailer.js';
 import { TRAILER_PARAM_RANGES } from './vehicle/trailer.js';
+import { LOAD_PARAM_RANGES, mayLoad } from './vehicle/quadLoad.js';
 import { QuadNames, NAME_PARAM_RANGES, quadKey } from './npc/quadNames.js';
 import { Ownership, OWNERSHIP_PARAM_RANGES } from './npc/ownership.js';
 import { Hearing, EAR_PARAM_RANGES } from './npc/earing.js';
@@ -747,6 +748,7 @@ export class Game {
         unit,
         target: quad.proxy,
         prompt: () => {
+          if (quad.loadedOn) return this.loadedPrompt(quad);
           if (unit.barnFind && !unit.barnFind.tarpOff) return { text: 'The rusty quad: an old shape under a tarp   ·   take it off at the workbench' };
           if (this.tooFastToMount(quad) && this.herDriving(quad) && !quad.hasBench) return `Ask ${this.herDriving(quad).name} to stop and let you on`;
           if (this.tooFastToMount(quad)) {
@@ -799,6 +801,7 @@ export class Game {
           };
         },
         interact: () => {
+          if (quad.loadedOn) return this.strapDown(quad);
           if (unit.barnFind && !unit.barnFind.tarpOff) return;
           if (this.leads.held) return this.clampLeads(quad);
           if (this.leads.ends.includes(quad)) return this.leads.unclamp(this.camera);
@@ -1090,6 +1093,7 @@ export class Game {
     registerTuning('Time of day', this.daylight.p, DAYLIGHT_PARAM_RANGES);
     registerTuning('Vehicle lights', this.vehicleLights.p, VEHICLE_LIGHT_PARAM_RANGES);
     registerTuning('Trailer', this.trailer.p, TRAILER_PARAM_RANGES);
+    registerTuning('Loading ramps', this.trailer.lp, LOAD_PARAM_RANGES, { onChange: () => this.trailer.refreshRamps() });
     registerTuning('Quad names', this.quadNames.p, NAME_PARAM_RANGES);
     registerTuning('Whose quad', this.ownership.p, OWNERSHIP_PARAM_RANGES);
     registerTuning('Hearing a quad', this.hearing.p, EAR_PARAM_RANGES);
@@ -1369,9 +1373,20 @@ export class Game {
   }
 
   /** The hay ride: the trailer follows the tractor, and the girls climb on, bounce about, lie back, fall off and climb down (npc/hayRide.js). */
-  updateHayRide(dt, ridden) {
+  updateHayRide(dt, ridden, input) {
     const t = this.trailer;
-    t.update(dt);
+    this.updateTrailerLoad(dt, ridden, input);
+    t.update(dt, this.loadCtx);
+    this.handleLoadEvents(t.events);
+    // A quad on the back is weight for the tractor (the empty trailer takes nothing, as before).
+    const puller = this.tractorUnit?.quad;
+    if (puller && t.hitched && t.loaded) {
+      Object.assign(puller.tow, towEffect(t.loaded.params.mass ?? 290, true, this.towParams));
+      this.hayWeighs = true;
+    } else if (puller && this.hayWeighs) {
+      if (!this.tipTrailer.hitched || this.tipTrailer.puller !== puller) Object.assign(puller.tow, { driveFactor: 1, brakeFactor: 1 });
+      this.hayWeighs = false;
+    }
     const m = t.motion;
     const active = t.hitched && !!ridden && ridden === this.tractorUnit;
     const free = (c) => c.availability({ mine: 'hayFell' }).free; // a girl who fell off is still free to catch it up
@@ -1426,6 +1441,147 @@ export class Game {
     for (const l of this.hayLater) l.left -= dt;
     for (const l of this.hayLater.filter((x) => x.left <= 0)) say(l.girl, l.key);
     this.hayLater = this.hayLater.filter((x) => x.left > 0);
+  }
+
+  /** Everything about a quad on the bale trailer: T for the ramps, hold X to winch (with Shift to pay out), V to push it up, and the load's inputs. */
+  updateTrailerLoad(dt, ridden, input) {
+    const t = this.trailer;
+    this.loadCtx = { winch: 0, push: 0 };
+    const onFoot = !this.player.isRiding && !this.menu.isOpen && !this.workshop.isOpen;
+    const g = t.geometry;
+    const foot = t.model.localToWorld(new THREE.Vector3(0, 0, g.footZ));
+    const seated = !!ridden && ridden === this.tractorUnit && t.hitched && ridden.quad.speed < 0.8 && !ridden.quad.isTipped;
+    const nearRear = onFoot && this.player.position.distanceTo(foot) < 5;
+    if ((nearRear || seated) && input.wasPressed('KeyT') && !this.handsFull) {
+      const note = t.toggleRamps();
+      this.hud.toast(note ?? (t.rampWant ? 'Ramps down' : 'Ramps up'), 1.8);
+    }
+    if (this.loadForced && t.load) {
+      this.loadCtx.winch = this.loadForced === 'down' ? -1 : 1;
+      if (this.loadForced === 'up' && t.load.mode === 'aboard') this.loadForced = null;
+    } else if (!t.load) this.loadForced = null;
+    if (!onFoot) return;
+    const eligible = (unit) => this.loadBlock(unit);
+    // Pushed (V) straight onto the foot of the ramp it starts up by itself.
+    if (!t.load && t.rampsOpen) {
+      for (const unit of this.units) {
+        const q = unit.quad;
+        if (!q.pushDir || eligible(unit)) continue;
+        const line = t.lineUp(q);
+        if (line.ok && q.pushDir * line.facing > 0) {
+          t.startLoad(q, { winch: false, facing: line.facing });
+          break;
+        }
+      }
+    }
+    const looked = this.interaction.focused?.unit;
+    if (t.load) {
+      const q = t.loaded;
+      if (!t.load.held) this.loadCtx.push = q.pushDir * t.load.facing;
+    }
+    // Hold X near the foot of the ramp to winch the nearest quad on (Shift to pay out).
+    const near = this.player.position.distanceTo(foot) < 9;
+    if (near && t.rampsOpen && input.isDown('KeyX') && !this.handsFull && looked !== this.winch?.unit && looked !== this.tractorUnit) {
+      const out = input.isDown('ShiftLeft') || input.isDown('ShiftRight');
+      if (t.load && (t.load.mode !== 'aboard' || !t.load.strapped)) this.loadCtx.winch = out ? -1 : 1;
+      else if (t.load?.strapped && input.wasPressed('KeyX')) this.hud.toast('Undo the strap first (E on the quad)', 2);
+      else if (!t.load && !out) {
+        const fits = this.units
+          .filter((u) => t.inReach(u.quad))
+          .sort((a, b) => a.quad.position.distanceTo(foot) - b.quad.position.distanceTo(foot));
+        const pick = fits.find((u) => !eligible(u));
+        if (pick) {
+          t.startLoad(pick.quad, { winch: true, facing: 1 });
+          this.loadCtx.winch = 1;
+        } else if (input.wasPressed('KeyX')) {
+          this.hud.toast(fits.length ? eligible(fits[0]) : 'No quad within reach of the winch', 2.4);
+        }
+      }
+    }
+  }
+
+  /** Why this quad can't go on the trailer now, or null if it can (vehicle/quadLoad.js mayLoad). */
+  loadBlock(unit) {
+    const q = unit.quad;
+    const busy = this.companions.some((c) => c.quad === q && !c.fsm.is('idle'));
+    return mayLoad({
+      running: q.engine.isRunning,
+      occupied: !!(q.rider || q.driver || q.passenger || q.input || q.ghost || busy),
+      tipped: q.isTipped,
+      excluded: !!(unit.spec.tractor || unit.spec.utv || unit.spec.landRover || unit.barnFind),
+      hooked: !!(q.towed || this.winch?.target === q || this.chain?.target === q),
+    });
+  }
+
+  /** Debug panel and console: ramps down at once, and the trailer's winch fetches this quad up (as holding X would). Returns a note. */
+  debugLoad(unit) {
+    const t = this.trailer;
+    if (t.load) return 'The trailer already has a quad on it';
+    const why = this.loadBlock(unit);
+    if (why) return why;
+    t.rampWant = true;
+    t.ramp = 1;
+    t.refreshRamps();
+    const at = t.model.localToWorld(new THREE.Vector3(0, 0, t.geometry.footZ - 3));
+    unit.quad.placeAt(at.x, at.z, t.motion.yaw);
+    unit.quad.model.position.copy(unit.quad.currPos); // the model catches up on the next frame; the load wants it now
+    unit.quad.model.quaternion.copy(unit.quad.currQuat);
+    t.startLoad(unit.quad, { winch: true, facing: 1 });
+    this.loadForced = 'up';
+    return 'winching it on';
+  }
+
+  /** Debug panel and console: the winch pays it back down the ramp. */
+  debugUnload(unit) {
+    const t = this.trailer;
+    if (t.loaded !== unit.quad) return 'it is not on the trailer';
+    t.rampWant = true;
+    t.ramp = 1;
+    t.refreshRamps();
+    t.load.strapped = false;
+    this.loadForced = 'down';
+    return 'paying it out';
+  }
+
+  /** What happened to the load this step: a toast and now and then a word from a girl. */
+  handleLoadEvents(events = []) {
+    const t = this.trailer;
+    const say = (key) => this.loadVoice(key, t.model.position);
+    for (const e of events) {
+      if (e === 'aboard') {
+        this.hud.toast('It is on: E on the quad to strap it down', 2.4);
+        say('loadAboard');
+      } else if (e === 'released') this.hud.toast('Let go at the foot of the ramp', 1.6);
+      else if (e === 'thump') this.hud.toast('It slid into the front. Strap it down', 2);
+      else if (e === 'slid') {
+        this.hud.toast('It slid off the back', 2);
+        say('loadSlid');
+      }
+    }
+  }
+
+  loadedPrompt(quad) {
+    const l = this.trailer.load;
+    if (!l || l.mode !== 'aboard') return { text: 'On the ramps   ·   hold X to wind it up (Shift X to pay out), V to push it up' };
+    if (l.strapped) return 'Undo the strap';
+    return `Strap the ${this.units.find((u) => u.quad === quad)?.label ?? 'quad'} down`;
+  }
+
+  /** E on a quad on the trailer: the ratchet strap. */
+  strapDown(quad) {
+    const l = this.trailer.load;
+    if (!l) return;
+    const note = l.toggleStrap();
+    if (note) return this.hud.toast(note, 2);
+    this.hud.toast(l.strapped ? 'Strapped down' : 'Strap off', 1.6);
+    if (l.strapped) this.loadVoice('loadStrap', quad.position);
+  }
+
+  /** One of the girls near the trailer, picked from the seed, says a loading line. */
+  loadVoice(key, at) {
+    this.loadRandom ??= createRandom(this.seed ^ 0x10ad);
+    const near = this.companions.filter((c) => c.root.position.distanceTo(at) < 25);
+    if (near.length) near[Math.floor(this.loadRandom() * near.length)].voice.say(key, { urgent: false });
   }
 
   /** The wheel's "Tractor" slice for a girl: up on the mudguard (or down again), or a go at driving it. */
@@ -6094,7 +6250,7 @@ export class Game {
     this.updateHorns(dt, ridden);
     if (this.tractorUnit) this.updateTractorWatch(dt);
     if (this.tractorUnit) this.updateTractorRunaway(dt, ridden);
-    this.updateHayRide(dt, ridden);
+    this.updateHayRide(dt, ridden, input);
     if (this.tractorUnit) this.updateMudguard(dt, ridden);
     if (this.utvUnit) this.updateUtv(dt, ridden, input);
     for (const l of Object.values(this.landys)) if (l.unit) this.updateLandRover(dt, ridden, input, l);
@@ -6238,6 +6394,11 @@ export class Game {
       this.hud.setStatus('Toolbox\nTake it to a quad that is switched off\nG to put it down');
     } else if (this.can.held) {
       this.hud.setStatus(`Jerry can  ${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel, this.can.water)}\nG to put it down`);
+    } else if (!this.player.isRiding && this.trailer.load && this.player.position.distanceTo(this.trailer.model.position) < 7) {
+      const l = this.trailer.load;
+      this.hud.setStatus(l.mode === 'aboard' ? `Quad on the bale trailer${l.strapped ? ', strapped' : ''}\nE on it to ${l.strapped ? 'undo the strap' : 'strap it down'}${l.strapped ? '' : ', Shift X to lower it'}` : 'Quad on the ramps\nHold X to wind it up, V to push it');
+    } else if (!this.player.isRiding && this.trailer.rampWant && this.player.position.distanceTo(this.trailer.model.position) < 7) {
+      this.hud.setStatus('Ramps down\nHold X to winch a switched-off quad on, or push it up with V\nT to fold them up');
     } else if (this.tractorUnit && this.riddenUnit === this.tractorUnit && this.trailer.canHitch(this.tractorUnit.quad)) {
       this.hud.setStatus('The drawbar is at the trailer\'s ring\nJ to hitch it on');
     } else if (this.riddenUnit && this.tipTrailer.canHitch(this.riddenUnit.quad)) {

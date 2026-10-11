@@ -266,6 +266,7 @@ export class Companion {
 
   /** A quad that's one girl's alone (the kids' quad is Jess's) isn't ridden by the other. */
   mayRide(quad) {
+    if (quad.loadedOn) return false; // strapped on the trailer
     const owner = quad.unit?.spec.owner;
     return !owner || owner === this.character?.id;
   }

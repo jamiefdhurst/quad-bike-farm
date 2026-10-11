@@ -40,6 +40,14 @@ export const CONTROLS = [
     ],
   },
   {
+    title: 'Loading a quad on the bale trailer',
+    lines: [
+      `On foot by the back of the bale trailer, <kbd>T</kbd> folds the ramps down or up (or from the tractor's seat, stopped). The bales are all at the front, so there is a clear bed`,
+      `Switch a quad off, stand within reach, then hold <kbd>X</kbd> and the trailer's winch drags it to the ramp and up. Or line it up straight at the foot of the ramp and hold <kbd>V</kbd> to push it up (let go and it rolls back)`,
+      `<kbd>E</kbd> on the quad once it is aboard to strap it down or undo the strap; unstrapped it slides about when you brake or pull away hard. <kbd>Shift</kbd> + hold <kbd>X</kbd> lowers an unstrapped one back down. Not the tractor, the UTV or the Land Rovers`,
+    ],
+  },
+  {
     title: 'The little tipping trailer',
     lines: [
       `<kbd>J</kbd> on a quad with a rack (or the tractor) hooks it on when the hitch is at its ring, or takes it off when you're stopped. <kbd>E</kbd> at the tub with a jerry can or the toolbox in your hands stands it in the tub. <kbd>T</kbd> tips the tub (stopped, from the seat or beside it) and tips out whatever is in it. Jess may climb in against the rules, or ask either girl in from the wheel`,

@@ -4,11 +4,14 @@ import { createRandom } from '../core/random.js';
 import { PART_MAT, box, buildWheel, addMudguard, addRearLights, addJockeyWheel } from './trailerParts.js';
 
 // The bale trailer, procedural like the tractor: a flat bed on one axle with two wheels, a tongue to the tractor's drawbar, and
-// bales stacked on it, two high at the back (to lean on) and at the front, with a well between where legs hang down.
+// bales stacked at the front only, so there is a clear bed behind them for a quad. Two ramps fold down from under the back end.
 //
 //   trailer (origin on the ground, under the axle; +Z toward the tractor, +X left)
 //   ├── body          the bed and bales, which ride on the springs and tilt
-//   │   ├── seatLeft, seatRight   where a girl's hips go (on the top of the lower layer, at the edge of the well)
+//   │   ├── seatLeft, seatRight   where a girl's hips go (on the top of the low bales, at the edge of the clear bed, facing back)
+//   │   ├── rampLeft, rampRight   pivots at the back edge; rotation.x runs from 0 (stowed under the bed) to the open angle (poseRamps)
+//   │   ├── winch                  the drum against the bales, its cable end point is `winchEye`
+//   │   └── straps                 two ratchet straps over a loaded quad, shown while it is strapped (placed by the game)
 //   └── wheelLeft, wheelRight     spin as it rolls
 
 export const TRAILER_SPEC = {
@@ -19,7 +22,11 @@ export const TRAILER_SPEC = {
   baleHeight: 0.38,
   wheelRadius: 0.42,
   seatX: 0.5, // her hips' distance from the middle, either side
-  seatZ: -0.12,
+  seatZ: 0.72, // on the back edge of the low bales at the front
+  rampLength: 2.4,
+  rampX: 0.45, // each ramp's distance from the middle
+  rampWidth: 0.52,
+  winchZ: 0.5, // the drum, against the back of the bale stack
   ringHeight: 0.5, // the hitch ring, above the ground
 };
 
@@ -39,6 +46,17 @@ const MAT = {
   hayDark: new THREE.MeshStandardMaterial({ color: 0xb8933f, roughness: 0.95 }),
   twine: new THREE.MeshStandardMaterial({ color: 0x3b6e8f, roughness: 0.8 }),
 };
+
+/** The angle the ramps open to (radians of rotation.x): they swing down from pointing forward under the bed to pointing back and down. */
+export function rampOpenAngle(rise) {
+  const rampLen = TRAILER_SPEC.rampLength;
+  return Math.PI - Math.asin(Math.min(0.95, rise / rampLen));
+}
+
+/** Folds the ramps: t from 0 (stowed under the bed) to 1 (down on the ground). */
+export function poseRamps(body, t, openAngle) {
+  for (const n of ['rampLeft', 'rampRight']) body.getObjectByName(n).rotation.x = t * openAngle;
+}
 
 // A bale is 1 m across the trailer, 0.45 along it: two across fill the bed. They share one geometry and one set of textures (twine and all).
 let baleGeo;
@@ -82,7 +100,6 @@ export function buildTrailerModel() {
     box(0.05, 0.04, len + 0.04, PART_MAT.steel, s * S.bedHalfWidth, S.bedY + 0.17, midZ, body); // its capping
     for (const z of [S.rearZ + 0.1, midZ, S.frontZ - 0.1]) box(0.05, 0.22, 0.06, PART_MAT.steel, s * S.bedHalfWidth, S.bedY + 0.1, z, body); // stakes
   }
-  box(S.bedHalfWidth * 2, 0.12, 0.05, MAT.deck, 0, S.bedY + 0.06, S.rearZ - 0.025, body); // the back board, low, so the bales load over it
   box(S.bedHalfWidth * 2, 0.55, 0.05, MAT.deck, 0, S.bedY + 0.275, S.frontZ + 0.025, body); // headboard
   box(S.bedHalfWidth * 2 + 0.04, 0.05, 0.07, PART_MAT.steel, 0, S.bedY + 0.57, S.frontZ + 0.025, body);
   for (const s of [-0.7, 0, 0.7]) box(0.05, 0.5, 0.06, PART_MAT.steel, s, S.bedY + 0.3, S.frontZ + 0.07, body); // headboard uprights
@@ -120,19 +137,17 @@ export function buildTrailerModel() {
   body.add(chain);
   addRearLights(body, S.bedHalfWidth - 0.12, S.bedY - 0.12, S.rearZ - 0.03);
 
-  // Bales: a layer across the back four rows, a second layer on the back two, and a stack at the front.
+  // Bales: a stack two high across the front, and a single layer in front of that on its back side for the girls to sit on.
   const top = S.bedY + S.baleHeight / 2;
   let n = 0;
-  for (let row = 0; row < 4; row++) {
-    for (const x of [-0.5, 0.5]) bale(x, top, S.rearZ + 0.22 + row * 0.45, body, n++ % 3 === 0);
-  }
-  for (let row = 0; row < 2; row++) {
-    for (const x of [-0.5, 0.5]) bale(x, top + S.baleHeight, S.rearZ + 0.22 + row * 0.45, body, n++ % 3 === 1);
-  }
   for (const x of [-0.5, 0.5]) {
     bale(x, top, S.frontZ - 0.22, body, n++ % 3 === 2);
     bale(x, top + S.baleHeight, S.frontZ - 0.22, body, n++ % 3 === 0);
+    bale(x, top, S.frontZ - 0.67, body, n++ % 3 === 1);
   }
+
+  buildRamps(body);
+  buildWinch(body);
 
   // Where the girls sit: hips on the top of the lower layer at the edge of the well, facing forward.
   const seatY = S.bedY + S.baleHeight;
@@ -140,6 +155,7 @@ export function buildTrailerModel() {
     const a = new THREE.Object3D();
     a.name = name;
     a.position.set(side * S.seatX, seatY, S.seatZ);
+    a.rotation.y = Math.PI; // facing back over the clear bed, leaning on the high bales
     body.add(a);
   }
 
@@ -149,4 +165,47 @@ export function buildTrailerModel() {
     addMudguard(root, side * (S.bedHalfWidth + 0.14), S.wheelRadius, 0.26, PART_MAT.paint, S.bedHalfWidth);
   }
   return root;
+}
+
+const ALU = new THREE.MeshStandardMaterial({ color: 0x9aa0a4, roughness: 0.45, metalness: 0.7 });
+const STRAP = new THREE.MeshStandardMaterial({ color: 0xe0780f, roughness: 0.7 });
+
+// Two loading ramps hinged at the back edge, each a plank of aluminium with cleats, stowed under the bed.
+function buildRamps(body) {
+  const S = TRAILER_SPEC;
+  for (const [name, side] of [['rampLeft', 1], ['rampRight', -1]]) {
+    const pivot = new THREE.Group();
+    pivot.name = name;
+    pivot.position.set(side * S.rampX, S.bedY - 0.025, S.rearZ);
+    box(S.rampWidth, 0.04, S.rampLength, ALU, 0, -0.02, S.rampLength / 2, pivot);
+    for (const e of [-1, 1]) box(0.03, 0.07, S.rampLength, ALU, e * (S.rampWidth / 2 - 0.015), -0.005, S.rampLength / 2, pivot); // side lips
+    for (let i = 1; i < 9; i++) box(S.rampWidth - 0.06, 0.012, 0.03, PART_MAT.steel, 0, 0.004, (i * S.rampLength) / 9, pivot); // cleats
+    body.add(pivot);
+  }
+}
+
+// The winch: a drum in a frame against the back of the bales, cable out of the bottom, and the two ratchet straps for the load.
+function buildWinch(body) {
+  const S = TRAILER_SPEC;
+  box(0.36, 0.2, 0.22, PART_MAT.paint, 0, S.bedY + 0.12, S.winchZ + 0.1, body).name = 'winch';
+  const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.26, 10), PART_MAT.steel);
+  drum.rotation.z = Math.PI / 2;
+  drum.position.set(0, S.bedY + 0.12, S.winchZ - 0.02);
+  body.add(drum);
+  const eye = new THREE.Object3D();
+  eye.name = 'winchEye';
+  eye.position.set(0, S.bedY + 0.12, S.winchZ - 0.1);
+  body.add(eye);
+
+  const straps = new THREE.Group();
+  straps.name = 'straps';
+  straps.visible = false;
+  for (const i of [0, 1]) {
+    const s = new THREE.Group();
+    s.name = `strap${i}`;
+    box(1.14, 0.025, 0.05, STRAP, 0, 0.6, 0, s); // over the top
+    for (const side of [-1, 1]) box(0.025, 0.6, 0.05, STRAP, side * 0.57, 0.3, 0, s); // down each side to the deck
+    straps.add(s);
+  }
+  body.add(straps);
 }

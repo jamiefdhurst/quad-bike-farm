@@ -234,6 +234,8 @@ export class Quad {
     this.quirks = new QuirkSet(); // this game's oddities (quirks.js); the game gives it the ones it picked
     this.note = null; // something to tell whoever's at the controls, taken by the game (see takeNote)
     this.bog = new Bog(); // how far it's sunk into a bog (bog.js)
+    this.pinned = null; // { pos, quat } while it is on the bale trailer's ramps or bed: the trailer holds its body there
+    this.loadedOn = null; // the bale trailer carrying it, while it is
     this.towed = false; // on the end of the winch: brakes off
     this.engineLoad = new EngineLoad(params);
     this.cruise = new CruiseControl(params);
@@ -571,6 +573,11 @@ export class Quad {
   }
 
   fixedUpdate(dt) {
+    // On the bale trailer's ramps or bed: its body is held where the trailer puts it (vehicle/hayTrailer.js), nothing else about it runs.
+    if (this.pinned) {
+      this.physics.pin(this.pinned.pos, this.pinned.quat);
+      return;
+    }
     const p = this.params;
     const fwd = this.forwardSpeed;
     let throttleInput = 0;

@@ -14,6 +14,8 @@ export const VEHICLE_VERBS = [
   { name: 'warm', help: 'engine up to temperature' },
   { name: 'cool', help: 'engine stone cold' },
   { name: 'fill', help: 'fill the tank' },
+  { name: 'load', help: 'winch it onto the bale trailer (ramps down at once; not the tractor, UTV or Land Rovers)' },
+  { name: 'unload', help: 'pay it back down the trailer\'s ramps' },
   { name: 'fix', help: 'put right: faults, plug, filter, wear, scuffing, seizure, water (quirks stay)' },
 ];
 
@@ -135,6 +137,8 @@ export function createHost(g, { copy = () => {} } = {}) {
         case 'cool': u.engine.setTemperature(0); break;
         case 'fill': u.quad.fuel.litres = u.quad.fuel.params.tankCapacity; break;
         case 'fix': fixEverything(u); break;
+        case 'load': return `${id}: ${g.debugLoad(u)}`;
+        case 'unload': return `${id}: ${g.debugUnload(u)}`;
         default: throw new Error(`no such thing as ${verb}`);
       }
       return `${id}: ${verb}`;

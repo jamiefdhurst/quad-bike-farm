@@ -721,6 +721,28 @@ export const FAQ_SECTIONS = [
           On the tractor alone, they may climb onto the rear mudguards.`,
       },
       {
+        q: 'How do I load a quad onto the bale trailer?',
+        a: `Stand by the back of the trailer and press <kbd>T</kbd> to fold the ramps down. Switch the quad off (it can't be running, ridden or tipped over) and hold <kbd>X</kbd>
+          within reach of the ramps: the trailer's winch drags it across to the foot of the ramps and winds it up. Or line it up straight on the ramps and hold
+          <kbd>V</kbd> to push it up yourself, and it rolls back if you let go. The tractor, the UTV and the Land Rovers are too big.`,
+        tip: 'Ramps down with T, switch the quad off, hold X to winch it on.',
+      },
+      {
+        q: 'How do I strap a quad down, and get it off again?',
+        a: `Look at the quad once it's on the bed and press <kbd>E</kbd>. Press <kbd>E</kbd> again to undo it. To get it off, undo the strap, then hold <kbd>Shift</kbd> and
+          <kbd>X</kbd> and the winch lowers it down the ramps. Fold the ramps up with <kbd>T</kbd> once it's strapped and you're ready to go.`,
+      },
+      {
+        q: 'Why did the quad slide about on the trailer?',
+        a: `It wasn't strapped. An unstrapped quad slides forward when you brake hard and back when you pull away hard, and with the ramps down it can go straight
+          off the back. Strap it down with <kbd>E</kbd> before you tow it home behind the tractor.`,
+      },
+      {
+        q: "Why won't the ramps fold up, or the winch take my quad?",
+        a: `The ramps can't fold up with a quad on them or being winched to them: get it all the way up, or off. The winch only takes a quad that is switched off, with
+          nobody on it, upright and not hooked to the green's winch or the chain, within about seven metres of the foot of the ramps with the ramps down.`,
+      },
+      {
         q: 'What can the little trailer do?',
         a: `Hook it to the tractor, the Land Rover or a quad with a rack (<kbd>J</kbd>), stand a jerry can, the toolbox or the jump leads in it (<kbd>E</kbd> at the tub),
           and tip it (<kbd>T</kbd>) when stopped. Jess may climb in against the rules.`,

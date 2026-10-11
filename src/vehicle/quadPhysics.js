@@ -281,6 +281,14 @@ export class QuadPhysics {
   }
 
   /** Puts the bike back on its wheels at a spot, e.g. after a rollover. */
+  /** Holds the body at a pose, still, every step (a quad strapped on a trailer, or on its ramps). */
+  pin(pos, quat) {
+    this.body.setTranslation({ x: pos.x, y: pos.y, z: pos.z }, true);
+    this.body.setRotation({ x: quat.x, y: quat.y, z: quat.z, w: quat.w }, true);
+    this.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    this.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+  }
+
   reset(x, y, z, yaw) {
     this.body.setTranslation({ x, y, z }, true);
     this.body.setRotation(yawQuat(yaw), true);

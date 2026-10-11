@@ -62,6 +62,7 @@ import { AMY_FUMES_LINES } from './fumesLines.js';
 import { AMY_RUSTY_LINES } from './rustyLines.js';
 import { AMY_UTV_LINES } from './utvLines.js';
 import { AMY_TRAILER_LINES } from './trailerLines.js';
+import { AMY_LOAD_LINES } from './loadLines.js';
 import { AMY_RACE_LINES } from './raceLines.js';
 import { AMY_DRAG_LINES } from './dragLines.js';
 import { AMY_RECALL_LINES } from './recallLines.js';
@@ -1517,6 +1518,7 @@ export const VOICE_LINES = {
   ...AMY_UTV_LINES,
   // The little tipping trailer: riding in it against the rules (trailerLines.js).
   ...AMY_TRAILER_LINES,
+  ...AMY_LOAD_LINES,
   // Racing each other (raceLines.js).
   ...AMY_RACE_LINES,
   // Drag racing you (dragLines.js).
