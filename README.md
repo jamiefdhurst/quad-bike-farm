@@ -711,3 +711,8 @@ Numbered on from the end of the list so nothing else moves.
 215. A small old 4x4 (a Suzuki SJ or Daihatsu Fourtrak style): a rusty, light, lively petrol runabout for the lane and the village, easy to tip, reusing the Land Rovers' cab, seats, gears and 4WD lever. In the random pool and second hand.
 216. A home-made go-kart: a lawnmower engine on a welded frame, a pull start and no suspension, raced round the yard and the track on the existing race system; a shed project with Jess. In the random pool and second hand.
 217. A moped (a Honda Cub style): a semi-automatic step-through for the lane, an easy road bike Amy could take to the village. In the random pool and second hand.
+218. The girls' own cars: Amy's sensible old Ford Fiesta (a Mk1 or Mk2, the late-70s or early-80s one) and Jess's battered old hatchback with a loud exhaust, parked in the yard at the start; they arrive in them and drive home at the end of the day (with item 93). Borrow one and its owner minds; Jess drives hers too fast down the lane.
+219. A farm hack estate (a Volvo 240 style): an old rear-wheel-drive estate used across the fields, sheep feed in the back and the exhaust tied up with wire, sliding about on wet grass.
+220. A classic Mini: tiny, quick, front-wheel drive, a famous noise; great on the lane and hopeless in the field.
+221. A site dumper: a small front-tipping skip on a diesel dumper with a hand crank or pull start, for moving muck and gravel and tipping it; the useful part of a digger without the arm.
+222. A compact tractor with a front loader (a Kubota style): a modern little tractor with a loader bucket on two simple hydraulic arms, lifting bales and muck; a contrast with the Fergie's age.
