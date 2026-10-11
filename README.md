@@ -677,3 +677,13 @@ Numbered on from the end of the list so nothing else moves.
 181. Weather that builds: a forecast board in the barn and a day that changes (a fine morning clouding to rain in the afternoon), so you plan the jobs around it.
 182. Challenges on the chalkboard: get every quad started from cold in under five minutes, the tidiest line-up, a clean lap of the hill, with your best kept.
 183. A start-of-day briefing: when the game loads, Amy reads out the day (the weather, which quad is playing up, what the girls fancy doing), turning the hidden state into story.
+184. Engine swaps: a donor engine (the barn find's) goes into another quad at the bench, the engine model taking on the new one's character; a big-bore conversion as a project.
+185. Brakes that fade on the hill: holding the brake down the steep bank heats the drums until they barely bite at the bottom; a low gear's engine braking is the fix, and Amy coaches it.
+186. Chains and sprockets you can see wear: with item 41, the sprocket teeth visibly hook over the game.
+187. A river to cross: a wider, slower river past the ford with a shallow crossing marked by posts; miss the line and you drown it.
+188. Woodland trails: a marked trail through the wood (item 78) with roots, tight turns and a log to hop, for the two-wheelers.
+189. A gravel pit: an old quarry at the farm's edge with steep loose banks, a real test of a climb, and a pond at the bottom.
+190. Neighbours' kids on pushbikes now and then ride the public lane (item 47) and stop at the gate to watch; the girls show off more with someone watching.
+191. A shepherd's hut on the hill pasture with a stove: somewhere to shelter, make tea and look out over the farm, a destination for rides and the romance.
+192. A notebook of discoveries: things you've worked out (the blue floods with the choke left on, Jess pranks when neglected) written on a 'things I've learnt' page as you find them.
+193. The day's story, written: with item 93, a short account generated from what happened (who raced, who fell out, which quad broke) to read back afterwards.
