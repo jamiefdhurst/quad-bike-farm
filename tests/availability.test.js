@@ -45,3 +45,20 @@ describe('availability', () => {
     }
   });
 });
+
+describe('availability when pulled', () => {
+  const state = (name, extra = {}) => ({ state: name, jobs: {}, holds: [], held: null, ...extra });
+
+  it('lets a big ask break into walking, sitting, driving and resting, but not into getting off', () => {
+    for (const name of ['walking', 'seated', 'mounting', 'driving', 'resting']) {
+      expect(availabilityOf(state(name), { asked: true }).free).toBe(false);
+      expect(availabilityOf(state(name), { asked: true, pull: true }).free).toBe(true);
+    }
+    expect(availabilityOf(state('dismounting'), { asked: true, pull: true })).toMatchObject({ free: false, why: 'getting off' });
+    expect(availabilityOf(state('thrown'), { asked: true, pull: true }).free).toBe(false);
+  });
+
+  it('still respects what she is doing that a request does not break', () => {
+    expect(availabilityOf(state('walking', { jobs: { carrying: true } }), { asked: true, pull: true })).toMatchObject({ free: false, why: 'carrying something' });
+  });
+});

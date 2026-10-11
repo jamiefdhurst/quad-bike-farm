@@ -1132,11 +1132,11 @@ export class Companion {
    * feature asks this rather than checking her state and flags. `asked`: you're asking her (the wheel, the debug panel); `mine`: the
    * asking feature's own job (a JOBS flag or hold key), which doesn't count against her.
    */
-  availability({ asked = false, mine = null } = {}) {
+  availability({ asked = false, mine = null, pull = false } = {}) {
     const jobs = {};
     for (const [flag] of JOBS) jobs[flag] = this[flag];
     const restingSat = this.fsm.is('resting') && this.restPhase === 'sat';
-    return availabilityOf({ state: this.fsm.name, restingSat, jobs, holds: [...this.holds], held: this.worldHold?.() ?? null }, { asked, mine });
+    return availabilityOf({ state: this.fsm.name, restingSat, jobs, holds: [...this.holds], held: this.worldHold?.() ?? null }, { asked, mine, pull });
   }
 
   /**

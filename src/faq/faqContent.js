@@ -748,6 +748,13 @@ export const FAQ_SECTIONS = [
         tip: 'Press Enter at the start line by the yard to race the girls.',
       },
       {
+        q: 'Why won\'t the girls race when I ask?',
+        a: `When you press <kbd>Enter</kbd> they drop what they are doing, find a quad and set off, so it should only take a few moments. If they can't, the game
+          tells you why after about fifteen seconds: one of them is carrying something or getting off a quad, there's no quad free for her (the one you're on is
+          never offered, and the little ones belong to one girl), a race is already on, or you've rung the bell. The lap race needs both of them, and two different quads; the drag race and the hill climb
+          need only one. Ride up to the start line first: the lap race by the yard, the drag race at the gravel strip, the climb at the cones.`,
+      },
+      {
         q: 'How do I time a run up the hill?',
         a: `Go down the lane and across the ford to the hill pasture. Just past the stream there are two pairs of big orange cones: ride up to them on a quad and press
           <kbd>Enter</kbd>, then ride through them when you're ready. The clock runs from there. Go between the cones of each checkpoint in order (a cone
@@ -758,7 +765,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why did my hill climb stop counting?',
         a: `You're out if you get off or stall for ten seconds, or take more than two and a half minutes. Missing a gate (going round outside its cones, or
-          skipping one) doesn't count it, so go back through. Press <kbd>Enter</kbd> at the start cones again to try another run.`,
+          skipping one) doesn't count it, so go back through. Press <kbd>Enter</kbd> at the start cones again to try another run. Pressing it also asks one of the girls to race you up, in the dark too.`,
       },
       {
         q: 'Where are the records kept?',

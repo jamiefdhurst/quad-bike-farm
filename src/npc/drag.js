@@ -200,23 +200,19 @@ export class Drag {
 
     if (this.phase === 'idle') {
       if (ctx.busy) return events;
-      const bothFree = ctx.girls.length >= 2 && ctx.girls.every((g) => g.free);
       if (this.forced && !you.riding) this.forced = false;
-      if (!bothFree || !you.riding) return events;
-      const ids = ctx.girls.map((g) => g.id);
-      if (this.forced) {
-        // Asked from the line: Jess or Amy, whichever fancies it.
-        const first = ids.includes('jess') && this.random() < p.jessChooses ? 'jess' : ids.find((id) => id !== 'jess') ?? ids[0];
-        const order = [first, ...ids.filter((id) => id !== first)];
-        for (const girl of order) {
-          const pick = pickQuads({ [girl]: ctx.options[girl] ?? [] }, ctx.claims, this.random);
-          if (!pick) continue;
-          this.forced = false;
-          return this.invite(events, girl, pick[girl], you, { asked: true });
-        }
-        return events;
+      if (!you.riding || !this.forced) return events;
+      // Asked from the line: Jess or Amy, whichever fancies it and is free (one girl is enough for a drag run).
+      const ids = ctx.girls.filter((g) => g.free).map((g) => g.id);
+      if (!ids.length) return events;
+      const first = ids.includes('jess') && this.random() < p.jessChooses ? 'jess' : ids.find((id) => id !== 'jess') ?? ids[0];
+      const order = [first, ...ids.filter((id) => id !== first)];
+      for (const girl of order) {
+        const pick = pickQuads({ [girl]: ctx.options[girl] ?? [] }, ctx.claims, this.random);
+        if (!pick) continue;
+        this.forced = false;
+        return this.invite(events, girl, pick[girl], you, { asked: true });
       }
-      // Jess pulling up to challenge you is an offer (offers, take).
       return events;
     }
 

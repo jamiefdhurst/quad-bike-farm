@@ -117,7 +117,8 @@ import { Haze, HAZE_PARAM_RANGES } from './world/haze.js';
 import { HazeLayer } from './effects/hazeLayer.js';
 import { BarnFumes, FUMES_PARAM_RANGES } from './world/barnFumes.js';
 import { barnShape } from './world/barn.js';
-import { Race, RACE_PARAM_RANGES, planLap, YouRun, youOnGrid } from './npc/race.js';
+import { Race, RACE_PARAM_RANGES, planLap, YouRun, youOnGrid, pickQuads } from './npc/race.js';
+import { ASK_PATIENCE, ASK_KINDS, askProblems, askLine } from './npc/asking.js';
 import { Drag, DRAG_PARAM_RANGES, onDragGrid } from './npc/drag.js';
 import { buildDragStrip } from './world/dragStrip.js';
 import { HillClimb, CLIMB_PARAM_RANGES, climbGates, climbRoute } from './npc/hillClimb.js';
@@ -752,6 +753,8 @@ export class Game {
     this.convoyIdle = {};
     this.race = new Race();
     this.raceIdle = {}; // seconds each racer has been doing nothing about it
+    this.asking = null; // you asking for a race, drag run or climb, until they set off or run out of time (askGirls, npc/asking.js)
+    this.lastAsk = null; // why the last ask came to nothing, in words, for the panel
     this.raceStart = nearestTrackFraction(this.world.track, this.world.layout.yard.x, this.world.layout.yard.z);
     buildStartLine(this.scene, (x, z) => this.world.heightAt(x, z), this.world.track, this.raceStart, this.world.layout.trackHalfWidth);
     this.drag = new Drag(); // a drag race down the straight, against one girl (npc/drag.js)
@@ -5778,8 +5781,7 @@ export class Game {
     if (this.dragYou(ridden).near && (toStrip < toLap || !you.near)) return this.askForDrag(ridden);
     if (!you.near) return this.hud.toast('Ride up to the start line by the yard first', 2);
     if (this.race.active) return this.hud.toast('There is a race on already', 1.6);
-    this.race.forced = true;
-    this.hud.toast('Asking the girls for a race', 2);
+    this.askGirls('race');
   }
 
   /** Your part in a race: lined up on the grid, then your lap judged (npc/race.js). */
@@ -5835,12 +5837,101 @@ export class Game {
 
   /** What a race needs to know (npc/race.js): who is free, which quads each could take, and you at the line. */
   raceContext(ridden) {
-    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().free }));
+    const asked = this.asking?.kind === 'race';
+    return { girls: this.askedGirls(asked), options: this.askedOptions(ridden, asked), claims: this.ownership.claims, you: this.raceYou(ridden) };
+  }
+
+  // Asking the girls ------------------------------------------------------------
+
+  /** The girls as a race, drag run or climb sees them. While you are asking for it they can be taken from walking, sitting or driving too. */
+  askedGirls(asked) {
+    return this.companions.map((c) => {
+      const a = c.availability(asked ? { asked: true, pull: true } : {});
+      return { id: c.character.id, name: c.name, free: a.free, why: a.why };
+    });
+  }
+
+  /** The quads each girl could take. Asked, a girl may take the one she is already on, and the quad you are on is the only one never offered. */
+  askedOptions(ridden, asked) {
     const options = {};
     for (const c of this.companions) {
-      options[c.character.id] = this.girlUnits.filter((u) => u !== ridden && c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && !u.quad.bog.stuck).map((u) => u.spec.id);
+      options[c.character.id] = this.girlUnits
+        .filter((u) => {
+          if (u === ridden || !c.mayRide(u.quad) || c.takenByOther(u.quad) || u.quad.bog.stuck) return false;
+          if (!asked) return c.canDrive(u.quad) && !this.herOn(u.quad);
+          const on = this.herOn(u.quad);
+          return on ? on === c : c.canDrive(u.quad);
+        })
+        .map((u) => u.spec.id);
     }
-    return { girls, options, claims: this.ownership.claims, you: this.raceYou(ridden) };
+    return options;
+  }
+
+  /** Why nothing can start at all just now, for this kind of ask, or null. */
+  askBusy(kind) {
+    if (this.recalling) return 'the bell has been rung and they are coming back';
+    if (kind === 'climb' && this.hillClimb.active) return 'a girl is already out on the climb';
+    if (kind !== 'climb' && this.hillClimb.active) return 'a girl is out on the hill climb';
+    if (this.drag.active) return 'a drag race is on';
+    if (this.race.active) return 'a race is on';
+    if (kind === 'climb' && this.fallingOut.active) return 'the girls have fallen out';
+    return null;
+  }
+
+  /** What would stop an ask for this kind working now: a list of sentences, empty if nothing (npc/asking.js). The debug panel and console show it. */
+  askNow(kind, ridden = this.riddenUnit) {
+    const girls = this.askedGirls(true);
+    const options = this.askedOptions(ridden, true);
+    const distinct = kind === 'race' ? !!pickQuads(options, this.ownership.claims, () => 0) : null;
+    return askProblems(kind, { girls, options, busy: this.askBusy(kind), riding: !!this.raceYou(ridden).riding, distinct });
+  }
+
+  /**
+   * You ask the girls for a race, a drag run or the hill climb. It is a priority for them: they leave what they were doing, find a quad
+   * and set off. If they cannot in `ASK_PATIENCE` seconds the ask is called off with the reason (updateAsk), so it is never silent.
+   */
+  askGirls(kind) {
+    const busy = this.askBusy(kind);
+    if (busy) return this.hud.toast(`Not now: ${busy}`, 2.5);
+    this.asking = { kind, age: 0, tried: 0 };
+    this.lastAsk = null;
+    if (kind === 'race') this.race.forced = true;
+    else if (kind === 'drag') this.drag.forced = true;
+    else this.hillClimb.forced = true;
+    this.hud.toast(kind === 'race' ? 'Asking the girls for a race' : kind === 'drag' ? 'Asking for a drag race' : 'Asking for someone to race you up the hill', 2);
+  }
+
+  /** Each frame while an ask is open: for the climb, tries to send a girl; for all, ends it when it has started or run out of time. */
+  updateAsk(dt, ridden) {
+    const a = this.asking;
+    if (!a) return;
+    a.age += dt;
+    const module = a.kind === 'race' ? this.race : a.kind === 'drag' ? this.drag : this.hillClimb;
+    if (a.kind === 'climb' && module.forced && (a.tried -= dt) <= 0) {
+      a.tried = 0.5;
+      const offers = module.offers(this.climbContext(ridden));
+      if (offers.length) this.startHillClimb(module.take(offers[Math.floor(Math.random() * offers.length)]));
+    }
+    if (module.active) {
+      this.asking = null; // they are off
+      return;
+    }
+    if (!module.forced) return void (this.asking = null); // the module let it go (you got off, say)
+    if (a.age < ASK_PATIENCE) return;
+    module.forced = false;
+    this.asking = null;
+    const problems = this.askNow(a.kind, ridden);
+    this.lastAsk = askLine(a.kind, problems.length ? problems : ['they could not get going']);
+    this.hud.toast(this.lastAsk, 5);
+  }
+
+  /** Takes her from whatever she was doing to drive `quad` with these options (requestDrive's), stopping a drive or getting her up first. */
+  sendToDrive(c, quad, options) {
+    c.interrupt();
+    c.warmingAt = null;
+    if (c.fsm.is('resting')) return void c.leaveRest(() => c.requestDrive(quad, options));
+    if (c.fsm.is('driving') && c.quad === quad && !c.drive?.race) return void c.stopDriving('off', () => c.requestDrive(quad, options));
+    c.requestDrive(quad, options);
   }
 
   /** Acts on a race (npc/race.js): the invite (one of them suggested it, or Jess dared you), the count, the go, the finish. */
@@ -5872,7 +5963,7 @@ export class Game {
           onAbort: () => this.race.abort(id),
         };
         side = -side;
-        c.requestDrive(quad, { race });
+        this.sendToDrive(c, quad, { race });
       }
     } else if (e.type === 'countdown') byId[this.race.challenger]?.voice.say('raceCount', { force: true });
     else if (e.type === 'go') {
@@ -5904,7 +5995,7 @@ export class Game {
       for (const id of Object.keys(this.race.picks ?? {})) {
         const c = byId[id];
         if (!c) continue; // you
-        const busy = c.fsm.is('walking', 'mounting', 'driving', 'shuffling', 'dismounting') || !!c.drive?.race;
+        const busy = c.fsm.is('walking', 'mounting', 'driving', 'shuffling', 'dismounting', 'resting', 'seated', 'starting', 'cranking') || !!c.drive?.race;
         this.raceIdle[id] = busy ? 0 : (this.raceIdle[id] ?? 0) + dt;
         if (this.raceIdle[id] > 4) this.race.abort(id);
       }
@@ -5934,8 +6025,7 @@ export class Game {
   askForDrag(ridden) {
     if (this.race.active || this.drag.active) return this.hud.toast('There is a race on already', 1.6);
     if (!this.dragYou(ridden).riding) return;
-    this.drag.forced = true;
-    this.hud.toast('Asking for a drag race', 2);
+    this.askGirls('drag');
   }
 
   /** The route for a girl in the drag race: the staging point behind the line, her grid point, then down the strip and past the finish. */
@@ -5964,12 +6054,8 @@ export class Game {
 
   /** What the drag challenge needs to know to offer it (npc/drag.js): who is free, which quads each could take, and you. */
   dragContext(ridden) {
-    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().free }));
-    const options = {};
-    for (const c of this.companions) {
-      options[c.character.id] = this.girlUnits.filter((u) => u !== ridden && c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && !u.quad.bog.stuck).map((u) => u.spec.id);
-    }
-    return { girls, options, claims: this.ownership.claims, busy: this.race.active, you: this.dragYou(ridden) };
+    const asked = this.asking?.kind === 'drag';
+    return { girls: this.askedGirls(asked), options: this.askedOptions(ridden, asked), claims: this.ownership.claims, busy: this.race.active, you: this.dragYou(ridden) };
   }
 
   /** Jess drives over to sit beside you and challenge you (her choice: npc/drag.js). */
@@ -6002,15 +6088,13 @@ export class Game {
     const s = this.world.layout.dragStrip;
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
     const later = (ms, fn) => setTimeout(fn, ms);
-    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().free }));
-    const options = {};
-    for (const c of this.companions) {
-      options[c.character.id] = this.girlUnits.filter((u) => u !== ridden && c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && !u.quad.bog.stuck).map((u) => u.spec.id);
-    }
+    const asked = this.asking?.kind === 'drag';
+    const girls = this.askedGirls(asked);
+    const options = this.askedOptions(ridden, asked);
     // The girl racing you has stopped doing anything about it (told to do something else, say): she's out.
     if (drag.active && drag.phase !== 'over' && drag.girl) {
       const c = byId[drag.girl];
-      const busy = c.fsm.is('walking', 'mounting', 'driving', 'shuffling', 'dismounting') || !!c.drive?.race;
+      const busy = c.fsm.is('walking', 'mounting', 'driving', 'shuffling', 'dismounting', 'resting', 'seated', 'starting', 'cranking') || !!c.drive?.race;
       this.dragIdle = busy ? 0 : this.dragIdle + dt;
       if (this.dragIdle > 4) drag.abort(drag.girl);
     } else this.dragIdle = 0;
@@ -6051,7 +6135,7 @@ export class Game {
         const r = race(e.girl, e.lane * drag.p.laneOffset);
         const quad = this.girlUnits.find((u) => u.spec.id === e.picks[e.girl]).quad;
         if (c.fsm.is('driving') && c.drive && c.quad === quad) c.drive.reroute(r);
-        else c.requestDrive(quad, { race: r });
+        else this.sendToDrive(c, quad, { race: r });
       } else if (e.type === 'countdown') byId[drag.girl]?.voice.say('dragCount', { force: true });
       else if (e.type === 'falseStart') {
         byId[e.girl]?.voice.say('dragFalseStart', { force: true });
@@ -6112,17 +6196,20 @@ export class Game {
   /** You ask to be timed up the hill (Enter by the start cones): the clock runs when you ride through them. */
   askForClimb() {
     this.hillClimb.arm();
+    this.askGirls('climb');
     this.hud.toast('Hill climb: ride through the start cones when you are ready, then up through the gates to the top', 5);
   }
 
   /** What the hill climb needs to know to offer it to a girl (npc/hillClimb.js). */
   climbContext(ridden) {
-    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().free }));
-    const options = {};
-    for (const c of this.companions) {
-      options[c.character.id] = this.girlUnits.filter((u) => u !== ridden && c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && !u.quad.bog.stuck).map((u) => u.spec.id);
-    }
-    return { girls, options, claims: this.ownership.claims, busy: this.race.active || this.drag.active || !!this.recalling || this.fallingOut.active, dark: this.daylight.darkness > 0.6 };
+    const asked = this.asking?.kind === 'climb';
+    return {
+      girls: this.askedGirls(asked),
+      options: this.askedOptions(ridden, asked),
+      claims: this.ownership.claims,
+      busy: this.race.active || this.drag.active || !!this.recalling || this.fallingOut.active,
+      dark: !asked && this.daylight.darkness > 0.6, // asked, she'll go up in the dark (the quads have lights)
+    };
   }
 
   /** She chose to climb: she drives her quad to the cones, waits a moment, then goes (HerDrive's race mode through the gates). */
@@ -6140,7 +6227,7 @@ export class Game {
     const s = this.climbGates[0];
     const confidence = c.driveConfidence ?? c.params.driveConfidence;
     c.voice.say('climbOff', { force: true });
-    c.requestDrive(unit.quad, {
+    this.sendToDrive(c, unit.quad, {
       race: {
         route,
         gridIndex: via.length + 1,
@@ -6171,7 +6258,7 @@ export class Game {
         const mine = c.quad === quad && c.fsm.is('driving');
         at[hc.girl] = { x: quad.position.x, z: quad.position.z, riding: mine, running: quad.engine.isRunning };
         // She has stopped doing anything about it (told to do something else): out.
-        const busy = c.fsm.is('walking', 'mounting', 'driving', 'shuffling', 'dismounting') || !!c.drive?.race;
+        const busy = c.fsm.is('walking', 'mounting', 'driving', 'shuffling', 'dismounting', 'resting', 'seated', 'starting', 'cranking') || !!c.drive?.race;
         this.climbIdle = busy ? 0 : this.climbIdle + dt;
         if (this.climbIdle > 4) hc.abort(hc.girl);
       } else hc.abort(hc.girl);
@@ -6955,6 +7042,7 @@ export class Game {
     this.updateRecall(dt);
     if (!this.recalling && (auto || this.convoy.active || this.convoy.forced)) this.updateConvoy(dt, ridden);
     this.updateDashReading(dt, ridden);
+    this.updateAsk(dt, ridden);
     if (!this.recalling && (auto || this.race.active || this.race.forced)) this.updateRace(dt, ridden);
     if (!this.recalling && (auto || this.drag.active || this.drag.forced)) this.updateDrag(dt, ridden);
     this.updateClimb(dt, ridden);

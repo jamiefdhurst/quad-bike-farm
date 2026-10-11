@@ -40,17 +40,25 @@ export const JOBS = [
 ];
 
 /**
+ * The states a request can break into: she is on her way somewhere, sat on a quad or resting, or driving, and asking her for a race, a
+ * drag run or the climb takes her out of it (Companion.requestDrive stops the drive, gets her off, or has her get up first). The
+ * transient ones (changing seats, getting off) are left to finish.
+ */
+export const PULL_STATES = ['walking', 'seated', 'mounting', 'driving', 'resting'];
+
+/**
  * `s`: { state, restingSat (sat down where she rests, not on her way), jobs: { flag: value }, holds: [[key, why]] (features that have her),
  * held: why or null (something on the farm holding both girls, like a menu open) }. `asked`: you're asking her, so the farm's holds
  * and the soft jobs don't count. `mine`: the asking feature's own job (a JOBS flag or a hold key), which doesn't count against her.
  * Returns { free, why, settled, held, canRemark }: free to start something new; what has her ('free' if nothing); settled (stood
  * about or sat resting, free or not); the farm's hold, if any; canRemark (settled and not held: she can notice and remark on things).
+ * `pull`: you're asking for something big enough to take her out of PULL_STATES too (she counts as stood about for the rest of the test).
  */
-export function availabilityOf(s, { asked = false, mine = null } = {}) {
+export function availabilityOf(s, { asked = false, mine = null, pull = false } = {}) {
   const settled = s.state === 'idle' || (s.state === 'resting' && !!s.restingSat);
   const held = s.held ?? null;
   const out = (why) => ({ free: why === null, why: why ?? 'free', settled, held, canRemark: settled && !held });
-  if (s.state !== 'idle') return out(STATE_WHY[s.state] ?? s.state);
+  if (s.state !== 'idle' && !(pull && PULL_STATES.includes(s.state))) return out(STATE_WHY[s.state] ?? s.state);
   for (const [flag, why, soft] of JOBS) if (flag !== mine && s.jobs?.[flag] && !(soft && asked)) return out(why);
   const holds = (s.holds ?? []).filter(([key]) => key !== mine);
   if (holds.length) return out(holds[0][1]);

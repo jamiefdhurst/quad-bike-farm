@@ -92,16 +92,12 @@ export function buildGirlsTab(d) {
   // --- The two of them, and the farm.
   const both = d.addFolder('Girls', 'Both girls and the farm');
   button(both, 'Call the girls back to the barn (as the bell does)', () => g.recallGirls());
-  button(both, 'Start a race now', () => {
-    if (g.race.active) return g.hud.toast('A race is already on');
-    g.race.forced = true;
-    g.hud.toast('A race will start as soon as both girls are stood about (and not on a quad)');
-  });
-  button(both, 'Start a drag race now', () => {
-    if (g.race.active || g.drag.active) return g.hud.toast('A race is already on');
-    g.drag.forced = true;
-    g.hud.toast('A drag race will start as soon as both girls are stood about, with you on a quad');
-  });
+  // Asking for a race, a drag run or the climb, as Enter does: they leave what they are doing, and if they can't, it says why (npc/asking.js).
+  for (const [kind, label] of [['race', 'lap race'], ['drag', 'drag race'], ['climb', 'hill climb']]) {
+    button(both, `Ask the girls for the ${label} now`, () => g.askGirls(kind));
+    show(both, `${label}: what is in the way`, () => { const p = g.askNow(kind); return p.length ? p.join('; ') : 'nothing'; });
+  }
+  show(both, 'last ask', () => g.lastAsk ?? (g.asking ? `asking for the ${g.asking.kind}, ${Math.round(g.asking.age)} s` : 'none'));
   button(both, 'Take me to the hill climb start', () => {
     const s = g.climbGates[0];
     if (g.riddenUnit) return g.hud.toast('Get off first');

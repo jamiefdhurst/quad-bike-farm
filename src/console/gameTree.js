@@ -239,6 +239,12 @@ export function buildGameTree(g, host) {
     board: text(() => g.jobBoard.lines().map((l) => `${l.done ? '[x]' : '[ ]'} ${l.text}`).join('; ') || 'nothing on', "today's jobs on the barn door"),
     records: text(() => g.records.lines().map((l) => `${l.label}: ${l.text}`).join('; '), 'the bests on the barn board'),
     day: text(() => g.farmText(), 'the farm that remembers: which day it is and when it last saved (the save command does the rest)'),
+    ask: group(() => ({
+      race: text(() => g.askNow('race').join('; ') || 'nothing in the way', 'what would stop asking for the lap race working now'),
+      drag: text(() => g.askNow('drag').join('; ') || 'nothing in the way', 'what would stop asking for the drag race working now'),
+      climb: text(() => g.askNow('climb').join('; ') || 'nothing in the way', 'what would stop asking for the hill climb working now'),
+      last: text(() => g.lastAsk ?? 'none', 'why the last ask came to nothing'),
+    }), 'asking the girls for a race, a drag run or the climb'),
     climb: text(() => (g.hillClimb.active ? `${g.hillClimb.girl} (${g.hillClimb.phase})` : g.hillClimb.youArmed ? 'you are asked for' : 'idle'), 'the hill climb'),
   }), 'farm jobs');
   const audio = group(() => ({ sound: flag(() => !g.audioHub.params.muted, (v) => (g.audioHub.params.muted = !v), 'all game sound') }));

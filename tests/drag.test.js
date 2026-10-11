@@ -47,13 +47,16 @@ describe('asking for one at the line', () => {
     expect(amy.update(0.5, ctx())[0]).toMatchObject({ girl: 'amy', picks: { amy: 'red' } });
   });
 
-  it('waits for both girls to be free, and forgets it if you get off', () => {
+  it('is happy with one girl free, waits if neither is, and forgets it if you get off', () => {
     const d = make();
     d.forced = true;
-    expect(d.update(0.5, ctx({ girls: [{ id: 'amy', free: true }, { id: 'jess', free: false }] }))).toEqual([]);
+    expect(d.update(0.5, ctx({ girls: [{ id: 'amy', free: false }, { id: 'jess', free: false }] }))).toEqual([]);
     expect(d.forced).toBe(true);
-    expect(d.update(0.5, ctx({ you: { ...idleYou, riding: null } }))).toEqual([]);
-    expect(d.forced).toBe(false);
+    expect(d.update(0.5, ctx({ girls: [{ id: 'amy', free: true }, { id: 'jess', free: false }] }))[0]).toMatchObject({ type: 'invite', girl: 'amy' });
+    const e = make();
+    e.forced = true;
+    expect(e.update(0.5, ctx({ you: { ...idleYou, riding: null } }))).toEqual([]);
+    expect(e.forced).toBe(false);
   });
 
   it('puts her in the lane you are not nearer to', () => {
