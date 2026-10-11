@@ -93,6 +93,17 @@ export const CONTROLS = [
       `<kbd>H</kbd> help, <kbd>Tab</kbd> bucket list (<kbd>&larr;</kbd><kbd>&rarr;</kbd> turn the page), <kbd>Enter</kbd> ask for a race (on a quad, by the yard or at the drag strip), <kbd>M</kbd> farm map, <kbd>N</kbd> mute, <kbd>Esc</kbd> pause, <kbd>\`</kbd> tuning panel, <kbd>\\</kbd> console`,
     ],
   },
+  {
+    title: 'On a gamepad',
+    lines: [
+      `Press <kbd>Start</kbd> on the start card to play, and again to pause. <kbd>Select</kbd> shows this help`,
+      `On foot: left stick walks (a gentle lean is a gentle walk), right stick looks, <kbd>A</kbd> is <kbd>E</kbd>, <kbd>B</kbd> puts down what you hold, <kbd>X</kbd> is <kbd>X</kbd> (winch), <kbd>L3</kbd> jogs, <kbd>LT</kbd> pushes, <kbd>RB</kbd> sits on the back`,
+      `On a vehicle: <kbd>RT</kbd> throttle and <kbd>LT</kbd> brake (as far as you press), left stick steers, right stick looks, <kbd>L3</kbd> looks back, <kbd>B</kbd> gets off, <kbd>X</kbd> horn, <kbd>Y</kbd> parking brake, <kbd>RB</kbd> reverse`,
+      `Clutch: hold <kbd>LB</kbd> and press <kbd>D-pad up</kbd> or <kbd>down</kbd> for the next gear up or down (down from first is neutral)`,
+      `Everything else (ignition, crank, choke, fuel tap, lights, indicators, 4WD, diff lock, seat belt, the bucket list...): click <kbd>R3</kbd> for the ring, <kbd>D-pad</kbd> or the right stick to pick, <kbd>A</kbd> to do it, <kbd>B</kbd> to cancel. The crank, choke and pull-start hold themselves for a moment; any button lets go`,
+      `In the girls' wheel the sticks and <kbd>D-pad</kbd> point, <kbd>A</kbd> picks and <kbd>B</kbd> backs out. At the toolbox the <kbd>D-pad</kbd> picks and adjusts, <kbd>B</kbd> leaves; at the bench <kbd>A</kbd> is <kbd>E</kbd> and <kbd>X</kbd> <kbd>Y</kbd> <kbd>LB</kbd> <kbd>RB</kbd> pick the first four jobs`,
+    ],
+  },
 ];
 
 /** The help panel's HTML: a heading and a line per row. */

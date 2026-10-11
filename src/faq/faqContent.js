@@ -25,6 +25,32 @@ export const FAQ_SECTIONS = [
         tip: 'Press H at any time for the controls.',
       },
       {
+        q: 'Can I play with a gamepad?',
+        a: `Yes. Plug in an Xbox, PlayStation, Switch Pro or similar pad, press any button on it so the browser notices it, and the start
+          card says "Gamepad found". Press <kbd>Start</kbd> to play (and again to pause). The left stick walks and steers, the right stick
+          looks, <kbd>RT</kbd> is the throttle and <kbd>LT</kbd> the brake, and they go in as far as you press them. <kbd>A</kbd> does what
+          <kbd>E</kbd> does, <kbd>B</kbd> gets you off or puts things down. Press <kbd>H</kbd> or the pad's Select button to see them all.`,
+        tip: 'Gamepad: Start plays, sticks move and look, RT is throttle, LT brake, A interacts.',
+      },
+      {
+        q: 'How do I work the choke, the lights or the ignition on a gamepad?',
+        a: `Click the right stick in (<kbd>R3</kbd>) and a ring of the jobs the buttons have no room for comes up: ignition, crank, choke,
+          fuel tap, lights, indicators, 4WD, diff lock, seat belt, the bucket list and more. Point with the D-pad or the right stick,
+          press <kbd>A</kbd> to do it, <kbd>B</kbd> to cancel. Cranking, the choke and the pull-start hold themselves for a moment, since
+          they need holding; press any button to let go early.`,
+      },
+      {
+        q: 'How do I change gear on a gamepad?',
+        a: `On a vehicle with a clutch, hold <kbd>LB</kbd> (the clutch) and press up on the D-pad for the next gear and down for the one
+          below; down from first is neutral. <kbd>RB</kbd> is reverse, as <kbd>B</kbd> is on the keyboard.`,
+      },
+      {
+        q: 'The game does not see my gamepad. What now?',
+        a: `Browsers only show a pad to a page once a button has been pressed on it, so press one with the game open. The console
+          (<kbd>\\</kbd>) says on loading whether one was found, and says again when one is plugged in or taken out. Pads that report
+          the "standard" layout work; an odd one may need switching to its Xbox mode.`,
+      },
+      {
         q: 'Does the game pause?',
         a: `Yes. Press Esc and the mouse is let go and the card comes back: the whole farm stops where it is, sound and all, until you click
           to carry on. Nothing happens behind the start screen either, so you can open this page from it without missing anything. The tuning

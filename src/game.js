@@ -19,6 +19,8 @@ import { applyIdle, applyTopRpm, applyVariation, pickIdle } from './vehicle/quad
 import { AudioHub } from './audio/engineAudio.js';
 import { RideWind, rideBuffers } from './audio/rideAudio.js';
 import { overlayPauses } from './core/pause.js';
+import { RadialPad } from './hud/radialPad.js';
+import { PAD_RANGES } from './input/gamepad.js';
 import { DEFAULT_SOUND_PARAMS, SOUND_PARAM_RANGES } from './audio/audioParams.js';
 import { Companion } from './npc/companion.js';
 import { CompanionVoice } from './npc/companionVoice.js';
@@ -225,6 +227,7 @@ export class Game {
     this.physics.timestep = FIXED_DT;
 
     this.input = new Input(canvas);
+    this.radialPad = new RadialPad();
     this.hud = new Hud(document.getElementById('hud'));
     this.interaction = new Interaction();
     this.menu = new Wheel(document.getElementById('hud')); // the companion wheel
@@ -333,6 +336,7 @@ export class Game {
     // Tyres: pressures a bit off, mismatched brands, a worn rear (the toolbox's psi tunables are given to them once it exists, below).
     this.tyreParams = { ...DEFAULT_TYRE_PARAMS };
     registerTuning('Tyres', this.tyreParams, TYRE_PARAM_RANGES);
+    registerTuning('Gamepad', this.input.padParams, PAD_RANGES);
     const tyreRandom = createRandom(this.seed ^ 0x7e55);
     for (const unit of this.units) {
       unit.quad.tyres = new TyreSet(dealTyres(tyreRandom, 4, this.tyreParams), this.tyreParams);
@@ -1278,9 +1282,60 @@ export class Game {
     });
     this.input.on('lockchange', (locked) => {
       overlay.classList.toggle('hidden', locked);
-      if (!locked) this.closeMenu();
+      if (!locked) {
+        this.input.padPlaying = false;
+        this.closeMenu();
+      }
     });
+    // A pad is seen once a button is pressed on it; the card then says how to start.
+    const padLine = document.getElementById('overlay-pad');
+    const sayPad = (names) => {
+      if (padLine) padLine.textContent = names.length ? 'Gamepad found: press Start to play.' : '';
+    };
+    sayPad(this.input.padNames());
+    this.input.on('padchange', sayPad);
     this.renderer.setAnimationLoop(() => this.frame());
+  }
+
+  /** What the pad's buttons mean right now (input/gamepad.js): a menu, the saddle, on foot, or nothing behind the start card. */
+  padContext() {
+    if (this.isPaused()) return { mode: 'paused' };
+    const bucketOpen = this.hud.bucketOpen;
+    if (this.menu.isOpen) return { mode: 'menu', menu: 'wheel' };
+    if (this.workshop.isOpen) return { mode: 'menu', menu: 'workshop' };
+    if (this.bench.isOpen) return { mode: 'menu', menu: 'bench' };
+    if (this.notebook.isOpen) return { mode: 'menu', menu: 'notebook' };
+    if (this.player.isRiding) {
+      const q = this.riddenUnit?.quad;
+      return { mode: 'ride', seat: this.player.seat, bucketOpen, gear: q?.manual ? q.drivetrain.gear : null, gears: q?.gearbox?.gears ?? 0 };
+    }
+    return { mode: 'foot', bucketOpen };
+  }
+
+  /** Reads the pad at the top of a frame: Start plays, pauses or shuts the radial menu, and the radial menu is drawn. */
+  pollPad(dt) {
+    const s = this.input.poll(dt, this.padContext());
+    this.radialPad.update(s.radial);
+    if (s.start) {
+      if (this.isPaused()) this.startFromPad();
+      else this.pauseFromPad();
+    }
+  }
+
+  startFromPad() {
+    this.audioHub.unlock();
+    document.getElementById('overlay').classList.add('hidden');
+    this.input.padPlaying = true;
+    this.input.requestPointerLock();
+  }
+
+  pauseFromPad() {
+    this.input.padPlaying = false;
+    if (this.input.pointerLocked) this.input.exitPointerLock(); // its lockchange shows the card
+    else {
+      document.getElementById('overlay').classList.remove('hidden');
+      this.closeMenu();
+    }
   }
 
   /** The tractor walking off on its own: they remark on it, one runs after it and stops it, or it reaches the hedge (npc/tractorRunaway.js). */
@@ -6116,6 +6171,7 @@ export class Game {
     this.timer.update();
     const dt = Math.min(this.timer.getDelta(), MAX_FRAME_DT);
     const input = this.input;
+    this.pollPad(dt);
     // Paused: draw the farm as it stands behind the card and nothing else, so no time passes for anything. The very first frame runs
     // regardless, so the camera is put at your eyes and everything is placed before the start screen shows the farm behind it.
     this.setPaused(this.isPaused());

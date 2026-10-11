@@ -426,6 +426,25 @@ She talks, now and then, with captions at the bottom of the screen:
 
 Their lines are recorded offline with Chatterbox, a text-to-speech engine that copies a voice from a short reference recording and can be made more or less emotional: each kind of situation has a feel (calm, chatty, cross, excited or scared), so a fright sounds frightened. Amy's reference is the Piper "cori" voice she had before; Jess's is Kokoro's young "Lily" voice saying something excitable, recorded with the emotion turned up further than Amy's. Every line is checked with a speech recogniser and recorded again if it doesn't come out right; a few of Amy's short shouts that Chatterbox can't manage are recorded with Piper instead, and anything still wrong is left to the browser's voice. Lines play from where she is, like her sighs, hums and laughs, which are real recordings (Jess's a shade quicker and higher). After changing the lines in `src/npc/voiceLines.js` or `src/npc/jessLines.js`, re-record them with `tools/generate_companion_voice.py --character amy` (or `jess`; usage at the top of the script). Until then, a new line uses the browser's speech, but only with a voice known to be a woman's (Flo or Shelley on a Mac, Google UK English Female in Chrome, Sonia or Libby in Edge); with none of those she just shows the caption. Her figure (bust, waist, hips) can be adjusted live in the Companion folder of the tuning panel. How chatty she is, her volume, speech rate and pitch, captions and the thresholds she reacts to are in the Companion folder of the tuning panel. The lines are in `src/npc/voiceLines.js`.
 
+## Gamepad
+
+Plug in a standard-layout pad (Xbox, PlayStation, Switch Pro and most others) and press a button so the browser notices it; the start card says so, and the console says whether one was found as the game loads. `Start` plays and pauses. The keyboard works as ever alongside it.
+
+| Button | On foot | On a vehicle |
+| --- | --- | --- |
+| Left stick | Walk (a gentle lean is a gentle walk) | Steer, in proportion |
+| Right stick | Look | Look |
+| `RT` / `LT` | `LT` pushes a quad | Throttle / brake, as far as you press |
+| `A` / `B` | `E` / `G` | `B` gets off (`E`); `A` talks to her as a pillion |
+| `X` / `Y` | `X` (winch) / jump | Horn / parking brake |
+| `LB` | Clutch (`Shift`) | Clutch; with `D-pad` up and down, the gear lever |
+| `RB` | Sit on the back (`B`) | Reverse (`B`) |
+| `L3` | Jog | Look back |
+| `R3` | The ring of everything else | The ring of everything else |
+| `Select` | Help | Help |
+
+The ring holds the keys with no button left: ignition, crank, choke, fuel tap, lights, indicators, hazards, 4WD, diff lock, seat belt, right it, hitch, bucket list and sound. Point with the `D-pad` or the right stick, `A` does it, `B` cancels. Cranking, the choke and the pull-start hold themselves for a moment; any button lets go early. In the girls' wheel the sticks and `D-pad` point, `A` picks and `B` backs out. At the toolbox the `D-pad` picks and adjusts, `X` services, `Y` fits or takes off the silencer, and `B` leaves (the rest of its keys are on the keyboard). At the bench `A` is `E` and `X`, `Y`, `LB`, `RB` pick the first four jobs. The "Gamepad" group in the Tune tab has the dead zones, look speed and stick curves.
+
 ## Console
 
 Backslash (the key left of Z, or the `#` key on a UK keyboard) opens a command line along the bottom of the screen, separate from the debug panel. Backslash again shuts it (the mouse stays locked while it is open, so the game carries on and you do not need to click). Esc also shuts it, but the browser takes Esc to release the mouse, so you click the game to carry on. Tab completes whatever you are typing (commands, paths, vehicles, girls, places, values) and goes through the choices if there are several, Shift+Tab goes back, the up and down arrows bring back old lines. `help` lists every command, `help <command>` gives examples, `help topics` explains the tree.
@@ -521,7 +540,7 @@ What is still to do. Finished items are recorded in DECISIONS.md, under their ol
 5. **Done.** The ATC's tip-over: the old three-wheeler goes over if you sit still in a corner, and the rider's weight shift, automatic from the steering, keeps it up.
 6. Loading a dead quad onto the big trailer. Ramps on the back of the trailer: push it or winch it up, strap it down, tow it home behind the tractor. **Done.**
 7. The girls on the mini moto. Jess has a go, wobbles, gets braver and comes off on the grass (the two-wheeler's fall); Amy won't touch it and says so. An action button for each in the Girls tab. **Done.**
-8. Gamepad support. Analogue throttle, brake and steering, which suits the mini moto's lean and the manual quads' clutch better than keys. Keyboard stays as it is.
+8. **Done.** Gamepad support. Analogue throttle, brake and steering, which suits the mini moto's lean and the manual quads' clutch better than keys. Keyboard stays as it is.
 9. Sheep on the hill pasture. A small flock that drifts, bunches and runs from a revving quad. A gate left open lets them out into the green lane or onto the road. Gather them with the girls riding either side, and a dog that rides on the rack and does some of the work.
 10. Farm jobs with the kit we have: muck from the muck heap into the tipping trailer and spread on the stubble, a round bale taken out to the trough field, harrowing the paddock behind the tractor. A chalkboard on the barn door lists the day's jobs, and doing them ticks the bucket list.
 11. Snow, as a rare weather roll. It settles on the ground and the seats, quads leave tracks that stay, grip drops, the cold starts and the girls' hand-warming come into their own, and Jess throws snowballs.

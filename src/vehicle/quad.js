@@ -568,7 +568,10 @@ export class Quad {
 
   /** Your throttle from the keys (`target`: 1, or the automatics' gentler reverse), opened gradually while held (pedalKeys.js). */
   squeezeThrottle(target, dt) {
-    this.throttleKey = stepPedalKey(this.throttleKey, target > 0, dt, DEFAULT_THROTTLE_KEY_PARAMS);
+    // On a trigger the pedal is where your finger is, so there is no squeezing it in over a second.
+    const pedal = this.reverse ? 'KeyS' : 'KeyW';
+    if (this.input?.fromPad?.(pedal)) this.throttleKey = this.input.amount(pedal);
+    else this.throttleKey = stepPedalKey(this.throttleKey, target > 0, dt, DEFAULT_THROTTLE_KEY_PARAMS);
     return target * this.throttleKey;
   }
 
@@ -587,7 +590,7 @@ export class Quad {
     if (this.tractor && this.input) {
       // The tractor: foot throttle and brake, a hand throttle that stays put, a clutch pedal and a gear lever.
       const input = this.input;
-      steerInput = (input.isDown('KeyA') ? 1 : 0) - (input.isDown('KeyD') ? 1 : 0);
+      steerInput = input.steerAxis();
       // In reverse gear S is the throttle (backwards) and W the brake, as on every other vehicle.
       [throttleInput, brakeInput] = pedals(input.isDown('KeyW'), input.isDown('KeyS'), this.reverse);
       throttleInput = this.squeezeThrottle(throttleInput, dt);
@@ -598,7 +601,7 @@ export class Quad {
       const input = this.input;
       const w = input.isDown('KeyW');
       const s = input.isDown('KeyS');
-      steerInput = (input.isDown('KeyA') ? 1 : 0) - (input.isDown('KeyD') ? 1 : 0);
+      steerInput = input.steerAxis();
       this.starter = input.isDown('KeyR') && this.starterAllowed();
       if (this.manual) this.clutchHeld = CLUTCH_KEYS.some((k) => input.isDown(k));
       if (this.handLever) {
@@ -649,7 +652,9 @@ export class Quad {
       if (this.driver && this.manual) throttleInput = this.shift(dt, throttleInput, brakeInput, fwd);
     }
     // On the keyboard the brake squeezes in while the key is held rather than snatching full on (pedalKeys.js), as the throttle does.
-    this.brakeKey = this.input ? stepPedalKey(this.brakeKey, brakeInput > 0, dt, DEFAULT_BRAKE_KEY_PARAMS) : 0;
+    const brakePedal = this.reverse ? 'KeyW' : 'KeyS';
+    if (this.input?.fromPad?.(brakePedal)) this.brakeKey = brakeInput > 0 ? this.input.amount(brakePedal) : 0;
+    else this.brakeKey = this.input ? stepPedalKey(this.brakeKey, brakeInput > 0, dt, DEFAULT_BRAKE_KEY_PARAMS) : 0;
     if (this.input) brakeInput = this.brakeKey;
     else this.throttleKey = 0;
 

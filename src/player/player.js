@@ -127,10 +127,16 @@ export class Player {
       if (input.isDown('KeyS')) fz -= 1;
       if (input.isDown('KeyD')) fx += 1;
       if (input.isDown('KeyA')) fx -= 1;
+      // The pad's stick: up is forward, and a gentle lean is a gentle walk.
+      if (input.padMove?.mag > 0 && !fx && !fz) {
+        fx = input.padMove.x;
+        fz = -input.padMove.y;
+      }
     }
     const len = Math.hypot(fx, fz);
+    const lean = !len ? 0 : input.padMove?.mag > 0 && !input.isDown('KeyW') && !input.isDown('KeyS') && !input.isDown('KeyA') && !input.isDown('KeyD') ? Math.min(1, input.padMove.mag) : 1;
     const jogging = input.isDown('ShiftLeft') || input.isDown('ShiftRight');
-    const speed = len > 0 ? (jogging ? p.jogSpeed : p.walkSpeed) : 0;
+    const speed = len > 0 ? (jogging ? p.jogSpeed : p.walkSpeed) * lean : 0;
     if (len > 0) {
       fx /= len;
       fz /= len;

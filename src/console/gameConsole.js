@@ -4,6 +4,7 @@ import { Shell, tabStep } from './shell.js';
 import { buildCommands } from './commands.js';
 import { buildGameTree } from './gameTree.js';
 import { createHost } from './gameHost.js';
+import { padStatus } from '../input/gamepad.js';
 
 const MAX_LINES = 300;
 
@@ -24,6 +25,9 @@ export class GameConsole {
     this.draft = '';
     this.build();
     this.print('Console. help lists every command, Tab completes, backslash or Esc shuts it.', 'info');
+    // Whether a pad was seen as the game loaded (a browser only lists one once a button has been pressed on it), and when one comes or goes.
+    this.print(game.input.padStatus(), 'info');
+    game.input.on('padchange', (names) => this.print(padStatus(names), 'info'));
   }
 
   build() {
