@@ -690,6 +690,31 @@ export const FAQ_SECTIONS = [
         tip: 'Press Enter at the start line by the yard to race the girls.',
       },
       {
+        q: 'How do I time a run up the hill?',
+        a: `Go down the lane and across the ford to the hill pasture. Just past the stream there are orange cones: ride up to them on a quad and press
+          <kbd>Enter</kbd>, then ride through them when you're ready. The clock runs from there. Go through the cones of each gate in order (there are two on the
+          way up) and on through the finish cones near the top. Anywhere between the cones of a gate counts, so the line is yours: the gentler ground in the east
+          is the easy way, the steep banks in the west are quicker if you dare. Your time goes up as a toast, and the best ones go on the board in the barn.`,
+        tip: 'Press Enter by the orange cones past the stream, then ride through them to time a hill climb.',
+      },
+      {
+        q: 'Why did my hill climb stop counting?',
+        a: `You're out if you get off or stall for ten seconds, or take more than two and a half minutes. Missing a gate (going round outside its cones, or
+          skipping one) doesn't count it, so go back through. Press <kbd>Enter</kbd> at the start cones again to try another run.`,
+      },
+      {
+        q: 'Where are the records kept?',
+        a: `On the second chalkboard on the barn doors, next to the jobs board: the best lap of the track, drag run, hill climb and longest jump of this game,
+          and who set it. Press <kbd>E</kbd> at either board for a close view. You're told when you set a record, and when it's your best on the quad you're on.
+          The girls set them too. They start afresh each game.`,
+        tip: 'The records for laps, drag runs, the hill climb and the longest jump are on the chalkboard on the barn door.',
+      },
+      {
+        q: 'Do the girls climb the hill too?',
+        a: `Yes. In their free time Jess (more often) and Amy ride down to the cones past the stream, wait a moment and go up against the clock. They say
+          something at the top, or when their quad dies on a bank, and whoever's near the top times you when you finish.`,
+      },
+      {
         q: 'How do I get them back?',
         a: `Ring the bell on the post by the barn doors (<kbd>E</kbd>). They hear it anywhere on the farm, stop what they're doing and gather at the barn.`,
         tip: 'Ring the bell by the barn doors and the girls come back from anywhere on the farm.',
@@ -817,7 +842,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'What is the chalkboard on the barn door?',
         a: `Today's farm jobs. Walk up to the barn's sliding door and press <kbd>E</kbd> for a close look. Done jobs get a tick, and a bucket list
-          entry when you've cleared the lot. At the moment the only job is the muck, but the board lists up to two a day.`,
+          entry when you've cleared the lot. At the moment the only job is the muck, but the board lists up to two a day. The records are on the board beside it.`,
         tip: 'The chalkboard on the barn door lists the day\'s farm jobs.',
       },
       {

@@ -420,6 +420,20 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'climb',
+      label: '% climbs the hill against the clock',
+      run: (id) => {
+        if (!free(id)) return;
+        if (g.hillClimb.active) return toast('Somebody is already climbing');
+        const c = girl(id);
+        const quads = freeQuads(c, g.player.position, (q) => !q.bog.stuck);
+        if (!quads.length) return toast('No free quad');
+        const unit = g.girlUnits.find((u) => u.quad === quads[0]);
+        g.startClimb(g.hillClimb.take({ key: 'climb', girl: id, pick: unit.spec.id }));
+        toast(`${nameOf(id)} sets off for the cones past the stream`);
+      },
+    },
+    {
       verb: 'diesel',
       label: 'Jess pours red diesel into a quad',
       girls: ['jess'],

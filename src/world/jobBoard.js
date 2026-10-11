@@ -7,9 +7,10 @@ import { barnShape } from './barn.js';
  * and press E for a close view (the card), the same way as Amy's logbook. The prop is drawn on a canvas that's redrawn when the list changes.
  */
 export class JobBoardView {
-  constructor({ game, board }) {
+  constructor({ game, board, records }) {
     this.game = game;
     this.board = board;
+    this.records = records;
     const shape = barnShape(game.world.layout);
     const floorY = game.world.heightAt(shape.x, shape.z);
     // The sliding door leaf nearer the first wall segment (barnBuild.js hangs it 0.25 m out from the wall). Its white battens stand up to
@@ -18,14 +19,26 @@ export class JobBoardView {
     const x = door.x + 0.25 + 0.16;
     const z = door.minZ - 1.2;
     const y = floorY + 1.6;
-    this.canvas = document.createElement('canvas');
-    this.canvas.width = 512;
-    this.canvas.height = 340;
-    this.texture = new THREE.CanvasTexture(this.canvas);
-    this.texture.colorSpace = THREE.SRGBColorSpace;
+    // Two boards: today's jobs on the leaf nearer the first wall segment, and the records on the other leaf, past the doorway.
+    this.jobs = this.hangBoard(x, y, z);
+    this.recordsBoard = this.hangBoard(x, y, door.maxZ + 1.2);
+    this.canvas = this.jobs.canvas;
+    this.proxy = this.jobs.proxy;
+    this.recordsProxy = this.recordsBoard.proxy;
+    this.buildCard();
+    this.draw();
+  }
+
+  /** One board on the door: a chalk-dusted slate on a backing slab in a wood frame, drawn on a canvas, with its invisible target for E. */
+  hangBoard(x, y, z) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 340;
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
     const group = new THREE.Group();
     group.name = 'job-board';
-    const face = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1), new THREE.MeshStandardMaterial({ map: this.texture, roughness: 0.9 }));
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1), new THREE.MeshStandardMaterial({ map: texture, roughness: 0.9 }));
     face.rotation.y = Math.PI / 2; // the plane's front faces +x, out over the yard
     group.add(face);
     const backing = new THREE.Mesh(new THREE.BoxGeometry(0.02, 1.08, 1.58), new THREE.MeshStandardMaterial({ color: 0x2b3330, roughness: 0.9 }));
@@ -38,13 +51,11 @@ export class JobBoardView {
       group.add(bar);
     }
     group.position.set(x, y, z);
-    game.scene.add(group);
-    this.group = group;
-    this.proxy = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.1, 1.6), new THREE.MeshBasicMaterial({ visible: false }));
-    this.proxy.position.copy(group.position);
-    game.scene.add(this.proxy);
-    this.buildCard();
-    this.draw();
+    this.game.scene.add(group);
+    const proxy = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.1, 1.6), new THREE.MeshBasicMaterial({ visible: false }));
+    proxy.position.copy(group.position);
+    this.game.scene.add(proxy);
+    return { canvas, texture, group, proxy };
   }
 
   get isOpen() {
@@ -53,6 +64,10 @@ export class JobBoardView {
 
   prompt() {
     return "Read today's jobs";
+  }
+
+  recordsPrompt() {
+    return 'Read the records';
   }
 
   open() {
@@ -74,24 +89,47 @@ export class JobBoardView {
     if (input.wasPressed('KeyG') || input.wasPressed('KeyE') || input.wasPressed('Escape')) this.close();
   }
 
-  /** The list changed (a job done): redraw the board and the card. */
+  /** The list changed (a job done) or a record was set: redraw the boards and the card. */
   refresh() {
     this.draw();
+    this.drawRecords();
     if (this.isOpen) this.render();
   }
 
-  draw() {
-    const ctx = this.canvas.getContext('2d');
-    const { width: w, height: h } = this.canvas;
+  /** A slate wiped and dusted, with its heading and underline in chalk; returns the context and the canvas size. */
+  slate(board, heading, underline) {
+    const ctx = board.canvas.getContext('2d');
+    const { width: w, height: h } = board.canvas;
     ctx.fillStyle = '#2b3330';
     ctx.fillRect(0, 0, w, h);
     ctx.fillStyle = 'rgba(255,255,255,0.05)'; // smeared chalk dust
     for (let i = 0; i < 6; i++) ctx.fillRect(20 + i * 70, 30 + ((i * 53) % 200), 160, 26);
     ctx.fillStyle = '#ece8d8';
     ctx.font = 'bold 40px "Comic Sans MS", "Segoe Print", cursive';
-    ctx.fillText('TODAY', 28, 58);
-    ctx.fillRect(28, 68, 190, 3);
+    ctx.fillText(heading, 28, 58);
+    ctx.fillRect(28, 68, underline, 3);
     ctx.font = '28px "Comic Sans MS", "Segoe Print", cursive';
+    return { ctx, w, h };
+  }
+
+  /** The records board: each of the game's bests in chalk, with who set it. */
+  drawRecords() {
+    const { ctx, w } = this.slate(this.recordsBoard, 'RECORDS', 230);
+    this.records.lines().forEach((l, i) => {
+      const y = 120 + i * 64;
+      ctx.fillStyle = '#ece8d8';
+      ctx.font = '24px "Comic Sans MS", "Segoe Print", cursive';
+      ctx.fillText(l.label, 28, y);
+      ctx.fillStyle = l.set ? '#f3d98a' : 'rgba(236,232,216,0.45)';
+      ctx.font = '28px "Comic Sans MS", "Segoe Print", cursive';
+      ctx.fillText(l.text, 60, y + 30, w - 90);
+    });
+    this.recordsBoard.texture.needsUpdate = true;
+  }
+
+  draw() {
+    const { ctx, w } = this.slate(this.jobs, 'TODAY', 190);
+    this.drawRecords();
     const lines = this.board.lines();
     if (!lines.length) ctx.fillText('Nothing on. Put the kettle on.', 28, 130);
     lines.forEach((l, i) => {
@@ -108,7 +146,7 @@ export class JobBoardView {
         ctx.stroke();
       }
     });
-    this.texture.needsUpdate = true;
+    this.jobs.texture.needsUpdate = true;
   }
 
   wrap(ctx, text, x, y, maxWidth, lineHeight) {
@@ -129,10 +167,11 @@ export class JobBoardView {
     const el = document.createElement('div');
     el.className = 'jobboard';
     el.style.display = 'none';
-    el.innerHTML = '<div class="jb-card"><div class="jb-title">Today\'s jobs</div><div class="jb-body"></div><div class="jb-keys">E or G to step back</div></div>';
+    el.innerHTML = '<div class="jb-card"><div class="jb-title">Today\'s jobs</div><div class="jb-body"></div><div class="jb-title jb-records-title">Records</div><div class="jb-records"></div><div class="jb-keys">E or G to step back</div></div>';
     document.body.appendChild(el);
     this.el = el;
     this.bodyEl = el.querySelector('.jb-body');
+    this.recordsEl = el.querySelector('.jb-records');
   }
 
   render() {
@@ -143,6 +182,13 @@ export class JobBoardView {
       row.append(name, Object.assign(document.createElement('div'), { className: 'jb-hint', textContent: l.done ? 'Done.' : l.hint }));
       return row;
     });
+    this.recordsEl.replaceChildren(
+      ...this.records.lines().map((l) => {
+        const row = Object.assign(document.createElement('div'), { className: l.set ? 'jb-record' : 'jb-record jb-unset' });
+        row.append(Object.assign(document.createElement('span'), { textContent: l.label }), Object.assign(document.createElement('span'), { textContent: l.text }));
+        return row;
+      }),
+    );
     this.bodyEl.replaceChildren(...(rows.length ? rows : [Object.assign(document.createElement('div'), { textContent: 'Nothing on today.' })]));
   }
 }

@@ -49,3 +49,20 @@
   font-size: 12px;
   opacity: 0.6;
 }
+
+.jb-records-title {
+  margin-top: 14px;
+}
+
+.jb-record {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+  color: #f3d98a;
+}
+
+.jb-unset {
+  color: inherit;
+  opacity: 0.5;
+}

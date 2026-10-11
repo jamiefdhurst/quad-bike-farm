@@ -118,6 +118,8 @@ import { barnShape } from './world/barn.js';
 import { Race, RACE_PARAM_RANGES, planLap, YouRun, youOnGrid } from './npc/race.js';
 import { Drag, DRAG_PARAM_RANGES, onDragGrid } from './npc/drag.js';
 import { buildDragStrip } from './world/dragStrip.js';
+import { HillClimb, CLIMB_PARAM_RANGES, climbGates, climbRoute } from './npc/hillClimb.js';
+import { Records, JumpMeasure, DEFAULT_RECORD_PARAMS, RECORD_PARAM_RANGES, RECORD_KINDS, WHO_NAMES, formatValue } from './world/records.js';
 import { stripFrame, stripPoint } from './world/layout.js';
 import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
 import { Convoy, CONVOY_PARAM_RANGES } from './npc/convoy.js';
@@ -140,7 +142,7 @@ import { Mugs } from './items/mug.js';
 import { Achievements, DEFAULT_ACHIEVEMENT_PARAMS, ACHIEVEMENT_PARAM_RANGES } from './achievements/achievements.js';
 import { paginate } from './achievements/pages.js';
 import { achievementSnapshot } from './achievements/snapshot.js';
-import { buildStartLine, nearestTrackFraction } from './world/startLine.js';
+import { buildStartLine, buildClimbCones, nearestTrackFraction } from './world/startLine.js';
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
 import { StrawFall } from './effects/strawFall.js';
 import { Places, PLACE_PARAM_RANGES, isFine, nearestSpot, restStay } from './npc/places.js';
@@ -736,6 +738,15 @@ export class Game {
     this.dragIdle = 0; // seconds the girl racing you has been doing nothing about it
     this.dragBlipSaid = false;
     buildDragStrip(this.scene, (x, z) => this.world.heightAt(x, z), this.world.layout.dragStrip);
+    this.records = new Records(); // the bests of the game, on the barn's chalkboard (world/records.js)
+    this.recordParams = { ...DEFAULT_RECORD_PARAMS };
+    this.jumpMeasures = new Map(); // quad -> JumpMeasure, for whoever is on it
+    this.climbGates = climbGates(this.world.layout.hill.climb);
+    this.hillClimb = new HillClimb(this.climbGates, undefined, createRandom(this.seed ^ 0x5c1b)); // timed runs up the hill pasture (npc/hillClimb.js)
+    this.climbIdle = 0; // seconds the girl climbing has been doing nothing about it
+    buildClimbCones(this.scene, (x, z) => this.world.heightAt(x, z), this.climbGates);
+    registerTuning('Hill climb', this.hillClimb.p, CLIMB_PARAM_RANGES);
+    registerTuning('Records', this.recordParams, RECORD_PARAM_RANGES);
     this.warming = new Warming(); // hands over an idling engine on a cold day (npc/warming.js)
     this.readyWaiting = new ReadyWaiting(undefined, createRandom(this.seed ^ 0x2ead)); // sat on a running quad, revving and tooting, while you are a minute (npc/readyWaiting.js)
     this.warmSit = new WarmSit(undefined, createRandom(this.seed ^ 0x3a2f)); // sat on your quad while it warms, for the shake (npc/warmSit.js)
@@ -1062,13 +1073,19 @@ export class Game {
     this.muckView = new MuckView({ scene: this.scene, tub: this.tipTrailer.tub, heightAt: (x, z) => this.world.heightAt(x, z), random: createRandom(this.seed ^ 0x3a9c) });
     this.jobBoardParams = { ...DEFAULT_JOB_BOARD_PARAMS };
     this.jobBoard = new JobBoard({ ids: availableJobs(this.world.layout), random: createRandom(this.seed ^ 0x7ab0), params: this.jobBoardParams });
-    this.jobBoardView = new JobBoardView({ game: this, board: this.jobBoard });
+    this.jobBoardView = new JobBoardView({ game: this, board: this.jobBoard, records: this.records });
     registerTuning('Muck job', this.muckParams, MUCK_PARAM_RANGES);
     registerTuning('Job board', this.jobBoardParams, JOB_BOARD_PARAM_RANGES);
     this.interaction.add({
       target: this.jobBoardView.proxy,
       isAvailable: () => !this.handsFull && !this.player.isRiding,
       prompt: () => this.jobBoardView.prompt(),
+      interact: () => this.jobBoardView.open(),
+    });
+    this.interaction.add({
+      target: this.jobBoardView.recordsProxy,
+      isAvailable: () => !this.handsFull && !this.player.isRiding,
+      prompt: () => this.jobBoardView.recordsPrompt(),
       interact: () => this.jobBoardView.open(),
     });
 
@@ -2879,8 +2896,9 @@ export class Game {
     const compare = this.comparingContext();
     return [
       ...mine(this.convoy.offers(this.convoyContext(ridden)), (o) => this.handleConvoyEvent(this.convoy.take(o))),
-      ...(this.drag.active ? [] : mine(this.race.offers(this.raceContext(ridden)), (o) => this.handleRaceEvent(this.race.take(o)))),
-      ...(this.race.active ? [] : mine(this.drag.offers(this.dragContext(ridden)), (o) => this.dragApproach(this.drag.take(o), ridden))),
+      ...(this.drag.active || this.hillClimb.active ? [] : mine(this.race.offers(this.raceContext(ridden)), (o) => this.handleRaceEvent(this.race.take(o)))),
+      ...(this.race.active || this.hillClimb.active ? [] : mine(this.drag.offers(this.dragContext(ridden)), (o) => this.dragApproach(this.drag.take(o), ridden))),
+      ...mine(this.hillClimb.offers(this.climbContext(ridden)), (o) => this.startClimb(this.hillClimb.take(o))),
       ...mine(this.comparing.offers(compare), (o) => this.runComparing(this.comparing.take(o, compare))),
       ...mine(this.pair.offers(this.pairContext()), (o) => this.handlePairEvent(this.pair.take(o))),
     ];
@@ -4958,6 +4976,7 @@ export class Game {
   recallGirls() {
     this.race.stand();
     this.drag.stand();
+    this.hillClimb.stand();
     this.convoy.stand();
     this.recalling = { left: 120, spots: this.companions.map((c, i) => this.recallSpot(i)), said: false };
     this.hud.toast('Girls: stop what you are doing and come to the barn');
@@ -5601,6 +5620,8 @@ export class Game {
   askForRace(ridden) {
     const you = this.raceYou(ridden);
     if (!you.riding) return this.hud.toast('You need to be on a quad to ask for a race', 2);
+    const start = this.climbGates[0];
+    if (Math.hypot(ridden.quad.position.x - start.x, ridden.quad.position.z - start.z) < this.hillClimb.p.nearStart) return this.askForClimb();
     // The two start lines can be within reach of each other: whichever you are nearer to is the one you mean.
     const lapLine = this.world.track.sample(this.raceStart);
     const q = ridden.quad;
@@ -5711,6 +5732,7 @@ export class Game {
       if (this.race.picks.you) this.hud.toast('Go!', 1.2);
     } else if (e.type === 'youDropped') this.hud.toast('The girls are going without you', 2.5);
     else if (e.type === 'finish') {
+      this.noteRecord('lap', e.girl, e.time, this.race.picks?.[e.girl]);
       if (e.girl === 'you') {
         this.achievements.note('races');
         if (e.place === 1) this.achievements.note('raceWins');
@@ -5889,6 +5911,7 @@ export class Game {
         this.hud.toast('False start. Back on the line', 2.5);
       } else if (e.type === 'go') this.hud.toast('Go!', 1.2);
       else if (e.type === 'finish') {
+        this.noteRecord('drag', e.id, e.time, drag.picks?.[e.id]);
         if (e.id === 'you') {
           this.achievements.note('drags');
           if (e.place === 1) this.achievements.note('dragWins');
@@ -5900,6 +5923,145 @@ export class Game {
         if (e.id === 'you') this.hud.toast('You are out of the race', 2.5);
         else byId[e.id]?.voice.say('dragOut', { force: true });
       } else if (e.type === 'cancel') this.hud.toast('Drag race called off', 2);
+    }
+  }
+
+
+  // Records and the hill climb --------------------------------------------------
+
+  /** A result for the chalkboard. Returns { record, quadBest, previous }; you are told when you set one. */
+  noteRecord(kind, who, value, quadId) {
+    const r = this.records.submit(kind, who, value, quadId);
+    if (r.record) {
+      this.jobBoardView.refresh();
+      if (who === 'you') {
+        this.achievements.note('records');
+        this.hud.toast(`New record on the board: ${RECORD_KINDS[kind].label}, ${formatValue(kind, value)}`, 4);
+      }
+    }
+    return r;
+  }
+
+  /** Longest jump: whoever is on a quad is measured from take-off to landing, and a good one goes to the board. */
+  updateJumpRecords(dt, ridden) {
+    const units = new Set([...this.girlUnits, ridden].filter(Boolean));
+    for (const u of units) {
+      const q = u.quad;
+      const driver = this.companions.find((c) => c.quad === q && c.fsm.is('driving'));
+      const who = ridden === u ? 'you' : driver?.character.id;
+      let m = this.jumpMeasures.get(q);
+      if (!who) {
+        m?.reset();
+        continue;
+      }
+      if (!m) this.jumpMeasures.set(q, (m = new JumpMeasure(this.recordParams)));
+      const j = m.update(dt, { airborne: !!q.airborne, x: q.position.x, z: q.position.z });
+      if (!j) continue;
+      if (who === 'you') this.hud.toast(`Jump: ${j.distance.toFixed(1)} m`, 2);
+      this.noteRecord('jump', who, j.distance, u.spec.id);
+    }
+  }
+
+  /** You ask to be timed up the hill (Enter by the start cones): the clock runs when you ride through them. */
+  askForClimb() {
+    this.hillClimb.arm();
+    this.hud.toast('Hill climb: ride through the start cones when you are ready, then up through the gates to the top', 5);
+  }
+
+  /** What the hill climb needs to know to offer it to a girl (npc/hillClimb.js). */
+  climbContext(ridden) {
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().free }));
+    const options = {};
+    for (const c of this.companions) {
+      options[c.character.id] = this.girlUnits.filter((u) => u !== ridden && c.mayRide(u.quad) && c.canDrive(u.quad) && !c.takenByOther(u.quad) && !this.herOn(u.quad) && !u.quad.bog.stuck).map((u) => u.spec.id);
+    }
+    return { girls, options, claims: this.ownership.claims, busy: this.race.active || this.drag.active || !!this.recalling || this.fallingOut.active, dark: this.daylight.darkness > 0.6 };
+  }
+
+  /** She chose to climb: she drives her quad to the cones, waits a moment, then goes (HerDrive's race mode through the gates). */
+  startClimb(e) {
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    const unit = this.girlUnits.find((u) => u.spec.id === e.pick);
+    if (!c || !unit) return this.hillClimb.stand();
+    const hc = this.hillClimb;
+    // From the farm she goes down the lane and across the ford (world/fields.js gateways), then along the pasture's bottom to the cones.
+    const lane = this.world.layout.hill.lane;
+    const there = climbRoute(this.climbGates, hc.p);
+    const via = this.world.fields.route(unit.quad.position, there[0]).slice(0, -1).map((p) => ({ x: p.x, z: p.z }));
+    if (via.length) via.push({ x: lane.x, z: this.world.layout.hill.stream.z + 9 });
+    const route = [...via, ...there];
+    const s = this.climbGates[0];
+    const confidence = c.driveConfidence ?? c.params.driveConfidence;
+    c.voice.say('climbOff', { force: true });
+    c.requestDrive(unit.quad, {
+      race: {
+        route,
+        gridIndex: via.length + 1,
+        assistYaw: Math.atan2(s.tx, s.tz),
+        cruise: hc.p.cruise + 3 * confidence,
+        throttle: 1,
+        keepDriving: Math.random() < this.race.p.keepRidingChance,
+        go: () => hc.go(),
+        alive: () => hc.active,
+        onGrid: () => hc.grid(e.girl),
+        onFinish: () => {},
+        onAbort: () => hc.abort(e.girl),
+      },
+    });
+  }
+
+  updateClimb(dt, ridden) {
+    const hc = this.hillClimb;
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    const at = {};
+    const q = ridden?.quad;
+    if (q) at.you = { x: q.position.x, z: q.position.z, riding: true, running: q.engine.isRunning };
+    else if (hc.runs.you) at.you = { x: this.player.position.x, z: this.player.position.z, riding: false, running: false };
+    if (hc.active) {
+      const c = byId[hc.girl];
+      const quad = this.girlUnits.find((u) => u.spec.id === hc.pick)?.quad;
+      if (c && quad) {
+        const mine = c.quad === quad && c.fsm.is('driving');
+        at[hc.girl] = { x: quad.position.x, z: quad.position.z, riding: mine, running: quad.engine.isRunning };
+        // She has stopped doing anything about it (told to do something else): out.
+        const busy = c.fsm.is('walking', 'mounting', 'driving', 'shuffling', 'dismounting') || !!c.drive?.race;
+        this.climbIdle = busy ? 0 : this.climbIdle + dt;
+        if (this.climbIdle > 4) hc.abort(hc.girl);
+      } else hc.abort(hc.girl);
+    } else this.climbIdle = 0;
+    const girl = hc.girl;
+    const pick = hc.pick;
+    for (const e of hc.update(dt, { at })) {
+      const quadId = e.id === 'you' ? ridden?.spec.id : pick;
+      if (e.type === 'start' && e.id === 'you') this.hud.toast('Go!', 1.2);
+      else if (e.type === 'gate' && e.id === 'you') this.hud.toast(e.gatesLeft > 1 ? 'Gate' : 'Gate. The finish cones are next', 1.2);
+      else if (e.type === 'out') {
+        if (e.id === 'you') this.hud.toast('Hill climb: you are out', 2.5);
+        else byId[e.id]?.voice.say('climbOut', { force: true });
+      } else if (e.type === 'finish') this.finishClimb(e, quadId, byId, girl);
+    }
+  }
+
+  /** Someone has been through the finish cones: the time to the board, and what is said. */
+  finishClimb(e, quadId, byId, girl) {
+    const r = this.noteRecord('climb', e.id, e.time, quadId);
+    const time = formatValue('climb', e.time);
+    if (e.id !== 'you') {
+      byId[e.id]?.voice.say(r.record ? 'climbRecord' : 'climbDone', { force: true });
+      return;
+    }
+    this.achievements.note('climbs');
+    this.hud.toast(`Hill climb: ${time}${r.record ? '. A record!' : r.quadBest ? '. Your best on this quad' : ''}`, 4);
+    // Whoever is near the top has timed you.
+    const top = this.climbGates[this.climbGates.length - 1];
+    const near = this.companions
+      .filter((c) => c.availability().canRemark && Math.hypot(c.root.position.x - top.x, c.root.position.z - top.z) < 40)
+      .sort((a, b) => Math.hypot(a.root.position.x - top.x, a.root.position.z - top.z) - Math.hypot(b.root.position.x - top.x, b.root.position.z - top.z))[0];
+    const timer = near ?? null;
+    if (timer) timer.voice.say(r.record ? 'climbYouRecord' : 'climbYou', { force: true });
+    if (r.record && r.previous && r.previous.who !== 'you') {
+      const loser = byId[r.previous.who];
+      if (loser && loser !== timer) setTimeout(() => loser.voice.say('climbYouRecord', { force: true }), 2500);
     }
   }
 
@@ -6647,6 +6809,8 @@ export class Game {
     this.updateDashReading(dt, ridden);
     if (!this.recalling && (auto || this.race.active || this.race.forced)) this.updateRace(dt, ridden);
     if (!this.recalling && (auto || this.drag.active || this.drag.forced)) this.updateDrag(dt, ridden);
+    this.updateClimb(dt, ridden);
+    this.updateJumpRecords(dt, ridden);
     this.helpOnGrid(dt);
     this.updateSmokeSense(dt);
     this.updateDustClouds();

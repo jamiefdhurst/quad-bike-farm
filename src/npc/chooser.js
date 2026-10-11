@@ -49,6 +49,7 @@ export const OFFER_KINDS = {
   race: { label: 'race her friend', satisfies: { excitement: 1, company: 0.4, purpose: 0.5 }, pace: 'brisk' },
   raceDare: { label: 'dare you to a race', satisfies: { excitement: 1, company: 0.6, purpose: 0.5 }, pace: 'brisk' },
   dragDare: { label: 'challenge you to a drag race', satisfies: { excitement: 1, company: 0.6, purpose: 0.4 }, pace: 'brisk' },
+  climb: { label: 'time herself up the hill', satisfies: { excitement: 1, purpose: 0.6 }, pace: 'brisk' },
   compare: { label: 'compare notes on the shake', satisfies: { company: 0.7, purpose: 0.4 } },
   invite: { label: 'ask you round the back of the barn', satisfies: { company: 1 } },
   workLight: { label: 'bring something round to light the way for you', satisfies: { purpose: 0.9, company: 0.6 }, pace: 'brisk' },

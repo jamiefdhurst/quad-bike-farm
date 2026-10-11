@@ -102,6 +102,16 @@ export function buildGirlsTab(d) {
     g.drag.forced = true;
     g.hud.toast('A drag race will start as soon as both girls are stood about, with you on a quad');
   });
+  button(both, 'Take me to the hill climb start', () => {
+    const s = g.climbGates[0];
+    if (g.riddenUnit) return g.hud.toast('Get off first');
+    g.player.moveTo({ x: s.x - s.tx * 4, y: g.world.heightAt(s.x, s.z) + 0.5, z: s.z - s.tz * 4 });
+  });
+  button(both, 'Clear the records', () => {
+    g.records.bests = {};
+    g.records.byQuad = {};
+    g.jobBoardView.refresh();
+  });
   button(both, 'Start follow the leader now', () => {
     if (g.convoy.active) return g.hud.toast('They are already out');
     g.convoy.forced = true;
@@ -133,6 +143,8 @@ export function buildGirlsTab(d) {
   show(both, 'fallen out', () => (fo.active ? `yes, ${fo.cause.kind} (${fo.fault} at fault), ${Math.round(fo.remaining)} s left` : `no, friction ${round(fo.friction, 1)}`));
   show(both, 'comparing notes', () => (g.comparing.busy ? `${g.comparing.last?.first} and ${g.comparing.last?.second}, ${g.comparing.steps.length} steps to go` : 'no'));
   show(both, 'race', () => g.race.phase);
+  show(both, 'hill climb', () => (g.hillClimb.active ? `${g.hillClimb.girl} (${g.hillClimb.phase})` : g.hillClimb.youArmed ? 'you are asked for' : 'idle'));
+  show(both, 'records', () => g.records.lines().map((l) => `${l.label}: ${l.text}`).join('; '));
   show(both, 'follow the leader', () => (g.convoy.active ? `${g.convoy.phase}: ${g.convoy.leader} leads, ${g.convoy.swapsDone} swaps` : 'idle'));
   show(both, 'throttle grab', () => (g.throttleGrab.grab?.girl ? `${g.throttleGrab.grab.girl} (${g.throttleGrab.grab.phase})` : g.throttleGrab.forced ? `${g.throttleGrab.forced} waiting` : 'none'));
   show(both, 'jump now', () => {

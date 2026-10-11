@@ -7,7 +7,7 @@ const ORANGE = new THREE.MeshStandardMaterial({ color: 0xe8541a, roughness: 0.55
 const WHITE = new THREE.MeshStandardMaterial({ color: 0xf2f2ee, roughness: 0.5 });
 const BLACK = new THREE.MeshStandardMaterial({ color: 0x1d1d1d, roughness: 0.8 });
 
-function cone() {
+export function cone() {
   const g = new THREE.Group();
   const h = 0.5;
   const body = new THREE.Mesh(new THREE.ConeGeometry(0.15, h, 14), ORANGE);
@@ -58,6 +58,26 @@ export function buildStartLine(scene, heightAt, track, u, halfWidth) {
       group.add(c);
     }
   }
+  scene.add(group);
+  return group;
+}
+
+/** Cones either side of each gate of the hill climb (npc/hillClimb.js climbGates): two at the start and the finish, one at the ends of the gates between. */
+export function buildClimbCones(scene, heightAt, gates) {
+  const group = new THREE.Group();
+  group.name = 'climbCones';
+  gates.forEach((g, i) => {
+    const end = i === 0 || i === gates.length - 1;
+    for (const side of [-1, 1]) {
+      for (const along of end ? [-0.6, 0.6] : [0]) {
+        const x = g.x - g.tz * (g.half + 0.9) * side + g.tx * along;
+        const z = g.z + g.tx * (g.half + 0.9) * side + g.tz * along;
+        const c = cone();
+        c.position.set(x, heightAt(x, z), z);
+        group.add(c);
+      }
+    }
+  });
   scene.add(group);
   return group;
 }
