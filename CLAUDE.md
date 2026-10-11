@@ -43,7 +43,7 @@ What a girl does on her own follows from what she wants (`src/npc/needs.js`: war
 - **A new boredom choice** is an entry in `boredOdds` and an offer in `boredOffers` on the companion.
 - **How she goes about it** (`src/npc/intent.js`): give the offer kind a `pace` ('hurry', 'brisk' or 'dawdle') if it calls for one; have her say she's off to do it if it has no line yet; anything new that takes her from what she was doing for you (a new way of asking or calling her) calls `companion.interrupt()` first, as the wheel and the bell do.
 - Personality is weights and rates in `characters.js` (Jess's restlessness, Amy's cold), not rules.
-- The Girls tab's "Why" folder shows her needs (settable), what she chose and for what, and what she nearly chose: use it, and `Think now`, to see a new offer working rather than waiting for chance. Features still on their own dice are listed in DECISIONS.md ("Needs and a chooser (TODO 133, with 134): what was built"); moving one is the same steps as a new offer.
+- The Girls tab's "Why" folder shows her needs (settable), what she chose and for what, and what she nearly chose: use it, and `Think now`, to see a new offer working rather than waiting for chance. Everything a girl decides to do with her free time is an offer now; the things left on their own clocks are reactions (to your rev, to being left on a quad, to falling out) and are listed in DECISIONS.md ("Needs and a chooser (TODO 133): the rest moved"). A new reaction stays a reaction; a new choice is an offer.
 
 ### Is she free? (availability)
 
