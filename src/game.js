@@ -154,6 +154,8 @@ import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES, PREMIX_CAN_
 import { OilBottle, OIL_BOTTLE_PARAM_RANGES } from './items/oilBottle.js';
 import { ratioText } from './engine/lubrication.js';
 import { walkRound, DEFAULT_WALK_PARAMS, WALK_PARAM_RANGES } from './npc/walkRound.js';
+import { DEFAULT_MOTO_PARAMS, MOTO_PARAM_RANGES } from './npc/motoGo.js';
+import { DEFAULT_THROWN_PARAMS, THROWN_PARAM_RANGES } from './npc/companionThrown.js';
 import { FaultKnowledge, DEFAULT_WONT_PARAMS, WONT_PARAM_RANGES, WONT_LINE } from './npc/wontRide.js';
 import { Sump, DEFAULT_SUMP_PARAMS, SUMP_PARAM_RANGES, pickBurner, startLevel, readStick } from './vehicle/sump.js';
 import { fuelText } from './engine/diesel.js';
@@ -378,6 +380,10 @@ export class Game {
     registerTuning('Amy walk-round', this.walkParams, WALK_PARAM_RANGES);
     this.wontParams = { ...DEFAULT_WONT_PARAMS }; // Amy refusing a quad she knows is faulty (npc/wontRide.js)
     registerTuning('Amy won\'t ride', this.wontParams, WONT_PARAM_RANGES);
+    this.motoParams = { ...DEFAULT_MOTO_PARAMS }; // the girls on the mini moto: Amy won't, Jess has a go (npc/motoGo.js)
+    this.thrownParams = { ...DEFAULT_THROWN_PARAMS }; // and coming off it (npc/companionThrown.js)
+    registerTuning('Mini moto nerve', this.motoParams, MOTO_PARAM_RANGES);
+    registerTuning('Thrown off the moto', this.thrownParams, THROWN_PARAM_RANGES);
     const sumpRandom = createRandom(this.seed ^ 0x0115);
     const sumpUnits = this.units.filter((u) => u.quad.sump);
     const burnerId = pickBurner(sumpUnits.map((u) => u.spec.id), sumpRandom);
@@ -690,6 +696,8 @@ export class Game {
     for (const c of this.companions) {
       c.walkParams = this.walkParams;
       c.knows = new FaultKnowledge(Math.random, this.wontParams);
+      c.motoParams = this.motoParams;
+      c.thrownParams = this.thrownParams;
     }
     this.homeParams = { ...DEFAULT_HOME_PARAMS }; // bringing a quad back near the barn when done, and jogging (npc/homeParking.js)
     for (const c of this.companions) c.homeParams = this.homeParams;

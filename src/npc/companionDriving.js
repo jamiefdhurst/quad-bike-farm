@@ -12,6 +12,7 @@ import { CrankAttempt, DEFAULT_CRANK_ATTEMPT_PARAMS } from './crankAttempt.js';
 import { PushStart, DEFAULT_PUSH_PARAMS } from './pushStart.js';
 import { onTarmac } from './tarmac.js';
 import { towedBy } from '../vehicle/trailerObstacle.js';
+import { MotoNerve, refusesMoto, speedShare } from './motoGo.js';
 
 // Her driving a quad herself, as Companion states and methods: getting on the
 // front, driving (the logic is HerDrive in herDriving.js), shuffling between
@@ -129,6 +130,16 @@ export const drivingStates = {
       if (via.length) park = { ...park, route: [...via.map((p) => ({ x: p.x, z: p.z })), ...park.route] };
       const params = driveMood(this.params, this.driveMood);
       params.driveSpeedMaxBase = this.params.driveSpeedMax;
+      // The mini moto: she is nervous at first and slow, braver the longer she is on it, and in the end comes off (motoGo.js).
+      this.motoRide = !!q.unit?.spec.miniMoto && !this.refusesMoto(q);
+      if (this.motoRide) {
+        this.motoNerve ??= new MotoNerve(this.motoParams);
+        this.motoNerve.begin();
+        const share = speedShare(this.motoNerve.nerve, this.motoParams);
+        params.driveSpeedMax *= share;
+        params.driveSpeedMin = Math.min(params.driveSpeedMin, params.driveSpeedMax);
+        this.voice.say(this.motoNerve.goes === 1 ? 'motoStart' : 'motoBrave', { chance: 1 });
+      }
       // What she goes back to if she carries on driving when an activity is over (HerDrive.carryOn).
       const after = Object.fromEntries(['driveMaxThrottle', 'driveScareSpeed', 'drivePauseChance', 'driveForMin', 'driveForMax', 'driveLoopRadiusMin', 'driveLoopRadiusMax'].map((k) => [k, params[k]]));
       if (offered) {
@@ -224,10 +235,13 @@ export const drivingStates = {
         else if (e.startsWith('start:')) this.startEvents.push(e.slice(6));
         else this.driveEvents.push(e);
       }
+      if (this.motoRide && !d.done && this.stepMoto(dt)) return;
       if (d.done) this.endDrive();
     },
     exit() {
       this.sittingPose = null;
+      this.motoRide = false;
+      this.motoNerve?.end();
       if (this.quad.driver === this.drive) this.quad.setDriver(null);
     },
   },
@@ -624,9 +638,39 @@ export const drivingMethods = {
     return actions;
   },
 
+  /** The mini moto, and a girl who won't go near it (only Amy, motoGo.js). */
+  refusesMoto(q) {
+    return !!q.unit?.spec.miniMoto && refusesMoto(this.character.id, this.motoParams);
+  },
+
+  /** She says she isn't getting on it. */
+  refuseMoto() {
+    this.voice.say('motoWont', { urgent: true, chance: 1 });
+  },
+
+  /**
+   * One step of her go on the mini moto: the bars wobble while she is nervous, and when it is time she loses it on the grass and is thrown
+   * off. True if she came off (she's in the thrown state now).
+   */
+  stepMoto(dt) {
+    const q = this.quad;
+    const d = this.drive;
+    const road = this.world.layout.road;
+    const r = this.motoNerve.update(dt, { speed: Math.abs(q.speed), grass: !onTarmac(road, q.position.x, q.position.z) });
+    d.controls.steer = Math.max(-1, Math.min(1, d.controls.steer + r.wobble));
+    if (Math.abs(r.wobble) > this.motoParams.wobbleAmp * 0.2) this.voice.say('motoWobble', { chance: 0.3 });
+    if (!r.fall) return false;
+    const lean = q.physics.lean().lean;
+    q.fallOver(Math.sign(lean) || Math.sign(d.controls.steer) || 1);
+    d.stop('thrown');
+    q.setDriver(null);
+    this.fsm.transition('thrown', { side: q.bike.fallSide });
+    return true;
+  },
+
   /** A quad she could have a drive on: nobody on it, upright and parked. */
   canDrive(q) {
-    return !q.rider && !q.isTipped && !q.isGhostRiding && q.speed < 0.5 && !this.wontRide(q) && !this.avoidsFriendOn(q);
+    return !q.rider && !q.isTipped && !q.isGhostRiding && q.speed < 0.5 && !this.wontRide(q) && !this.refusesMoto(q) && !this.avoidsFriendOn(q);
   },
 
   /** The fault (a walk-round finding) she knows this quad has and won't ride it for, or null. Only Amy ever has any (wontRide.js). */

@@ -9,6 +9,8 @@ import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 import { TractorStartAttempt, DEFAULT_TRACTOR_START_PARAMS } from './tractorStart.js';
 import { drivingStates, drivingMethods } from './companionDriving.js';
 import { hayRideStates, hayRideMethods, DEFAULT_HAYSEAT_PARAMS } from './companionHayRide.js';
+import { thrownStates, DEFAULT_THROWN_PARAMS } from './companionThrown.js';
+import { DEFAULT_MOTO_PARAMS } from './motoGo.js';
 import { restingMethods, restingStates } from './companionResting.js';
 import { warmingMethods } from './companionWarming.js';
 import { keepAliveMethods } from './companionKeepAlive.js';
@@ -179,6 +181,8 @@ export class Companion {
     this.rig.posers.push((dt) => this.poseCarrying(dt));
     // Riding on the bale trailer (companionHayRide.js).
     this.hay = { ...DEFAULT_HAYSEAT_PARAMS };
+    this.thrownParams = DEFAULT_THROWN_PARAMS; // coming off the mini moto (companionThrown.js); the game swaps in its tunable copy
+    this.motoParams = DEFAULT_MOTO_PARAMS; // her nerve on the mini moto (motoGo.js)
     this.trailer = null;
     this.traSlot = null;
     this.mayJog = false; // the walking state says whether this walk is one she'd jog (homeParking.js)
@@ -238,7 +242,7 @@ export class Companion {
   /** The quad she's busy with (on her way to get on, start or drive it, or on it), if any. */
   get claimedQuad() {
     const s = this.fsm;
-    if (s.is('idle', 'boarding', 'onTrailer', 'sliding')) return null;
+    if (s.is('idle', 'boarding', 'onTrailer', 'sliding', 'thrown')) return null;
     if (s.is('walking')) return ['mount', 'start', 'drive'].includes(s.data?.goal) ? this.quad : null;
     return this.quad;
   }
@@ -332,6 +336,7 @@ export class Companion {
     const actions = [];
     if (s.is('driving')) return this.drivingActions();
     if (s.is('boarding', 'onTrailer', 'sliding')) return actions; // on the hay ride: nothing to ask of her
+    if (s.is('thrown')) return actions; // lying on the grass
     if (s.is('shuffling')) return actions;
     const drivable = (q) => this.canDrive(q) && !this.takenByOther(q, 'rider') && !(s.is('walking') && s.data?.goal === 'drive' && q === this.quad);
     const boarding = s.is('seated', 'mounting') || (s.is('walking') && s.data?.goal === 'mount');
@@ -346,6 +351,7 @@ export class Companion {
         if (q !== this.quad && rideable(q)) actions.push({ kind: 'mount', quad: q, short: 'Get on it', label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
         if (q !== this.quad && this.canRideRackOn(q)) actions.push({ kind: 'mountRack', quad: q, short: 'Sit on the front', label: `Sit on the front of the ${q.label}`, run: () => this.requestMount(q, { seat: 'rack' }) });
         if (drivable(q)) actions.push({ kind: 'drive', quad: q, short: 'Drive it', label: `Drive the ${q.label}`, run: () => this.requestDrive(q) });
+        else if (this.refusesMoto(q)) actions.push({ kind: 'drive', quad: q, short: 'Drive it', label: `Drive the ${q.label}`, run: () => this.refuseMoto() });
       }
       return actions;
     }
@@ -359,6 +365,7 @@ export class Companion {
         actions.push({ kind: 'start', quad: q, short: 'Start it', label: `Start the ${q.label}`, run: () => this.requestStart(q) });
       }
       if (drivable(q)) actions.push({ kind: 'drive', quad: q, short: 'Drive it', label: `Drive the ${q.label}`, run: () => this.requestDrive(q) });
+      else if (this.refusesMoto(q)) actions.push({ kind: 'drive', quad: q, short: 'Drive it', label: `Drive the ${q.label}`, run: () => this.refuseMoto() });
       if (rideable(q)) actions.push({ kind: 'mount', quad: q, short: 'Get on it', label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
       if (this.canRideRackOn(q)) actions.push({ kind: 'mountRack', quad: q, short: 'Sit on the front', label: `Sit on the front of the ${q.label}`, run: () => this.requestMount(q, { seat: 'rack' }) });
       if (!this.isStandingBeside(q)) actions.push({ kind: 'stand', quad: q, short: 'Stand next to it', label: `Stand next to the ${q.label}`, run: () => this.requestStandBeside(q) });
@@ -1393,6 +1400,7 @@ Companion.prototype.updateFidget = function (dt) {
 export const STATES = {
   ...drivingStates,
   ...hayRideStates,
+  ...thrownStates,
   ...restingStates,
 
   idle: {

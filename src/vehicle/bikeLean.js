@@ -93,6 +93,13 @@ export class BikeLean {
     this.out = { rollTorque: 0, steer: 0, rearGrip: 1, frontGrip: 1, leaning: false };
   }
 
+  /** Down it goes now, to this side (+1 left, -1 right): a girl having her first go has lost it. Not reported by takeFall, which is yours. */
+  forceFall(side) {
+    this.fallen = true;
+    this.fallSide = side >= 0 ? 1 : -1;
+    this.out.rollTorque = this.p.fallPush * this.fallSide;
+  }
+
   /** True once, the step after it went down. */
   takeFall() {
     const f = this.justFell;

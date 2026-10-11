@@ -227,6 +227,23 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'moto',
+      label: '% has a go on the mini moto (Jess wobbles, gets braver and comes off on the grass; Amy says she is not getting on it)',
+      run: (id) => {
+        const c = girl(id);
+        const u = g.units.find((x) => x.spec.miniMoto);
+        if (!u) return toast('There is no mini moto on the farm this game');
+        if (c.refusesMoto(u.quad)) {
+          c.refuseMoto();
+          return toast(`${c.name} won't touch the mini moto`);
+        }
+        if (!free(id)) return;
+        if (!c.mayRide(u.quad) || !c.canDrive(u.quad) || c.takenByOther(u.quad) || u.quad.rider) return toast(`${c.name} can't have a go on the mini moto right now`);
+        c.requestDrive(u.quad);
+        toast(`${c.name} is off to have a go on the mini moto`);
+      },
+    },
+    {
       verb: 'drive',
       label: '% drives the vehicle picked on the Vehicles tab',
       vehicle: true,

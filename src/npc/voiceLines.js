@@ -16,6 +16,7 @@ import { AMY_PUSH_LINES } from './pushLines.js';
 import { AMY_MIND_LINES } from './mindLines.js';
 import { AMY_KNACK_LINES } from './knackLines.js';
 import { AMY_OIL_LINES } from './oilLines.js';
+import { AMY_MOTO_LINES } from './motoLines.js';
 import { AMY_WALK_LINES } from './walkLines.js';
 import { AMY_DIESEL_LINES } from './dieselLines.js';
 import { AMY_WATER_LINES } from './waterLines.js';
@@ -1431,6 +1432,8 @@ export const VOICE_LINES = {
   ...AMY_OIL_LINES,
   // Amy's walk-round before she rides (walkLines.js).
   ...AMY_WALK_LINES,
+  // The mini moto (motoLines.js).
+  ...AMY_MOTO_LINES,
   ...AMY_DIESEL_LINES,
   ...AMY_WATER_LINES,
   // Heat (heatLines.js).

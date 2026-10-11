@@ -21,6 +21,7 @@ export const STATE_WHY = {
   boarding: 'getting on the trailer',
   onTrailer: 'riding the trailer',
   sliding: 'coming off the trailer',
+  thrown: 'thrown off the mini moto',
   resting: 'sitting down',
 };
 

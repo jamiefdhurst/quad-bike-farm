@@ -863,6 +863,13 @@ export class Quad {
     return out.steer;
   }
 
+  /** A two-wheeler goes over on its side now, whoever is on it, and the engine dies (a girl who has lost it, motoGo.js). */
+  fallOver(side) {
+    if (!this.bike || this.bike.fallen) return;
+    this.bike.forceFall(side);
+    this.engine.setIgnition(false);
+  }
+
   /** Record the chassis transform after the physics step, for interpolation. */
   recordTransform() {
     this.prevPos.copy(this.currPos);

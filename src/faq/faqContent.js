@@ -228,6 +228,12 @@ export const FAQ_SECTIONS = [
           down: <kbd>T</kbd> or <kbd>E</kbd> beside it picks it up. Under walking pace a foot is down, so it can't fall.`,
       },
       {
+        q: 'Will the girls ride the mini moto?',
+        a: `Jess will. Ask her to drive it from the wheel menu and she has a go: slow and wobbly at first, braver the longer she is on it, and
+          sooner or later she comes off on the grass and lies there laughing. The bike stays on its side until you pick it up with <kbd>T</kbd>.
+          The next go is steadier and quicker, and she comes off less. Amy won't touch it and says so.`,
+      },
+      {
         q: 'Do I have to lean on the old three-wheeler?',
         a: `No, there's no key for it. Your weight goes to the inside of a corner as you steer, a moment behind the bars. Ease into corners and it stays up.`,
       },
