@@ -2785,3 +2785,16 @@ Nothing needed settling; the numbers were chosen here.
 - The girls (`waterLines.js`, 4 situations, recorded): Amy says it is water when a quad coughs or cuts out, tells you to stop cranking and look at the bowl, and notices a full bowl on a parked quad; Jess blames the quad. Their `crankHint` gives `waterNoStart` above 0.5.
 - Debug: Running has "water reaching the carb"; Problems has "water in the fuel (fraction)" and "tap bowl full of water", both in `problemSummary`, `fuelWater` and `tapBowl` in the console tree, and cleared by "Put it right" (`FuelSystem.clearWater`). "Water in the fuel" tuning under Engines, fuel and faults.
 - Not done: the girls don't drain it themselves, and the diesels are not affected. Not checked in play: how the bowl looks, or how long the water takes to show on a real ride. Unit tests only.
+
+
+## Top-end rebuild (TODO 3)
+
+Nothing needed settling; the numbers were chosen here.
+
+- `src/engine/topEnd.js` (pure, tested in `tests/topEnd.test.js`): `canRebuildTopEnd` (a two-stroke that is seized or scuffed past `topEndScuffFrom` 0.05), `readScoring` (light, deep from `topEndDeepScuff` 0.5, or seized) and `rebuildTopEnd`. The bench job is `topEnd` in `benchJobs.js`: head nuts (hold), barrel up (hold), look at the piston (the inspect step, a toast), new piston and rings from the shelf (press), barrel down (hold), head nuts with a window. It is the tenth job, so the number keys went to `0` for it.
+- A seized engine is no longer freed at the toolbox: `F` toasts that it has to go to the bench, and the panel says so. `F` still cleans a nipped-up (scuffed, not seized) engine as before, since that is a quick clean rather than a rebuild. `EngineModel.freeSeized` is unchanged.
+- The rebuild costs less than the strip down it replaces: a seizure leaves `topEndSeizeWear` 0.15 (was 0.3) and the new piston and rings take `topEndWearRemoved` 0.2 off, so a seized engine ends up a little fresher than it was. The price is the bench time and the running in: it calls `startRunningIn`, so the existing rules apply unchanged (ten minutes under about 60% revs, or several times the wear and a scar).
+- A botched rebuild (head nuts uneven) leaves `topEndBotchedScuff` 0.3 of scuffing, under the 0.55 where it nips up, so it runs but gets there sooner than it should. All five are in "Workshop bench" tuning.
+- The shelf is only a step in the job for now; the spares shelf (TODO 34) would make the piston and rings run out.
+- Amy writes "top end rebuilt, new piston and rings" in the logbook. No new girl lines, so nothing to record; they react to the job through the bench's usual start, step and done reactions.
+- Not checked in play: how the bench list looks with ten rows, or how the piston toast reads. Unit tests only.

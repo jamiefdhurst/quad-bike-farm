@@ -65,6 +65,7 @@ const JOB_TEXT = {
   packing: 'silencer repacked',
   coolant: 'coolant topped up',
   bore: 'big-bore kit fitted',
+  topEnd: 'top end rebuilt, new piston and rings',
   sump: 'engine oil topped up',
   tarp: 'tarp off',
   fuel: 'old fuel drained',

@@ -311,10 +311,15 @@ export class Workshop {
     return unit.quad.fuel.diesel > 0.005 || unit.quad.fuel.bowlDiesel > 0.005 || unit.engine.dieselSoak > 0.005;
   }
 
-  /** Strip a nipped-up or seized engine down and free it (top the oil up first, or it goes again). */
+  /** Strip a nipped-up engine down and free it (top the oil up first, or it goes again). A seized one is a job for the bench (`topEnd`). */
   stripDown() {
     const unit = this.unit;
-    if (!unit || !unit.engine.freeSeized()) return;
+    if (!unit) return;
+    if (unit.engine.seized) {
+      this.game.hud.toast('It is seized solid: the barrel has to come off at the bench, and it wants a new piston and rings');
+      return;
+    }
+    if (!unit.engine.freeSeized()) return;
     this.render();
     for (const c of this.game.companions) c.voice.onTinker?.('service');
   }
@@ -663,6 +668,6 @@ export class Workshop {
     // Only an engine that's scuffed or seized has anything to strip.
     const strip = this.el.querySelector('.ws-strip');
     strip.style.visibility = (e.seized || e.scuff >= 0.05) ? '' : 'hidden'; // keeps its place, so the others don't move
-    if (e.seized) this.el.querySelector('.ws-cond').textContent = 'Seized solid: it needs stripping down before it will turn over.';
+    if (e.seized) this.el.querySelector('.ws-cond').textContent = 'Seized solid: it needs its top end rebuilt at the bench before it will turn over.';
   }
 }

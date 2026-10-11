@@ -474,8 +474,8 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'What can the workbench do?',
-        a: `Drive into the yellow bay in front of it, switch off, look at the bench and press <kbd>E</kbd>. <kbd>1</kbd> to <kbd>9</kbd> pick a job: a new plug,
-          clean the carb, fix a tyre, two-stroke oil, engine oil, repack a silencer, coolant, a big-bore kit, or new engine mounts. Each is a short list of steps; on a hold step keep
+        a: `Drive into the yellow bay in front of it, switch off, look at the bench and press <kbd>E</kbd>. <kbd>1</kbd> to <kbd>9</kbd> and <kbd>0</kbd> pick a job: a new plug,
+          clean the carb, fix a tyre, two-stroke oil, engine oil, repack a silencer, coolant, a big-bore kit, new engine mounts, or a top-end rebuild for a two-stroke that has seized. Each is a short list of steps; on a hold step keep
           <kbd>E</kbd> down and let go inside the green band. Too soon or too long botches it and the fault comes back a little. Amy helps; Jess heckles.`,
       },
       {
@@ -498,8 +498,10 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'My two-stroke seized. Is it ruined?',
-        a: `No. Take the toolbox to it and strip it down (<kbd>F</kbd>), which frees it but leaves it worn, then sort out whatever caused it (straight petrol,
-          too lean a jet, no oil). A rebuilt engine wants about ten minutes of gentle running before it's thrashed.`,
+        a: `No, but it's a bench job. A seized engine won't turn at all, and the toolbox can't help: park the quad in the bay, switch off and pick "Rebuild
+          the top end". Undo the head, ease the barrel off, look at the piston, fit the new piston and rings and put it back together, doing the head nuts up
+          evenly. Then sort out whatever caused it (straight petrol, too lean a jet, no oil). A rebuilt engine wants about ten minutes of gentle running before
+          it's thrashed. An engine that has only started to nip up can still be stripped down with the toolbox (<kbd>F</kbd>).`,
       },
       {
         q: 'What are the pods?',

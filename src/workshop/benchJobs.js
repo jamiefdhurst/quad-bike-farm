@@ -4,6 +4,7 @@
 // the job botched, so it works but not as well. Pure logic, no Three.js or DOM.
 
 import { canFitBore, fitBore } from '../engine/bigBore.js';
+import { canRebuildTopEnd, readScoring, rebuildTopEnd } from '../engine/topEnd.js';
 
 export const DEFAULT_BENCH_PARAMS = {
   holdScale: 1, // multiplier on how long every hold takes, so the whole bench can be quicker or slower
@@ -23,6 +24,11 @@ export const DEFAULT_BENCH_PARAMS = {
   coolantLeakLeft: 0.4, // share of its leak left after a badly tightened clip
   boreWearRemoved: 0.2, // wear a new piston and rings take away, with the big-bore kit
   boreBotchedFit: 0.55, // share of the kit's power left after a badly fitted one
+  topEndScuffFrom: 0.05, // scuffing at which a two-stroke has a top end worth pulling down
+  topEndDeepScuff: 0.5, // scuffing at which the bore looks deeply scored rather than lightly scuffed
+  topEndSeizeWear: 0.15, // wear a seizure leaves, which the new piston and rings mostly take away (the toolbox strip down left 0.3)
+  topEndWearRemoved: 0.2, // wear a new piston and rings take away
+  topEndBotchedScuff: 0.3, // scuffing left after uneven head nuts or a forced barrel: it nips up again sooner
   packingBotched: 0.3, // silencer blown-out level left after a badly packed one (too loose or stuffed too tight)
 };
 
@@ -37,6 +43,11 @@ export const BENCH_PARAM_RANGES = {
   sumpShort: [0.3, 1, 0.01],
   oilOver: [0, 0.2, 0.002],
   packingBotched: [0, 1, 0.05],
+  topEndScuffFrom: [0, 0.5, 0.01],
+  topEndDeepScuff: [0.1, 1, 0.05],
+  topEndSeizeWear: [0, 1, 0.05],
+  topEndWearRemoved: [0, 1, 0.05],
+  topEndBotchedScuff: [0, 0.54, 0.02],
   boreWearRemoved: [0, 1, 0.05],
   boreBotchedFit: [0, 1, 0.05],
   coolantShort: [0.3, 1, 0.05],
@@ -136,6 +147,17 @@ export const JOBS = {
       { id: 'tight', text: 'Do the head nuts up evenly: snug, not tight', kind: 'hold', need: 0.8, limit: 1.6 },
     ],
   },
+  topEnd: {
+    name: 'Rebuild the top end',
+    steps: [
+      { id: 'head', text: 'Undo the head nuts and lift the head off', kind: 'hold', need: 1 },
+      { id: 'barrel', text: 'Ease the barrel up off the piston', kind: 'hold', need: 0.8 },
+      { id: 'look', text: 'Look at the piston and the bore', kind: 'press', inspect: true },
+      { id: 'piston', text: 'Take the new piston and rings off the shelf and fit them', kind: 'press' },
+      { id: 'refit', text: 'Ease the barrel down over the rings', kind: 'hold', need: 1.1 },
+      { id: 'tight', text: 'Do the head nuts up evenly: snug, not tight', kind: 'hold', need: 0.8, limit: 1.6 },
+    ],
+  },
   // The barn find's own jobs (vehicle/barnFind.js): only the rusty quad has them.
   tarp: {
     name: 'Take the tarp off',
@@ -172,7 +194,7 @@ export const JOBS = {
   },
 };
 
-export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts'];
+export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd'];
 
 /** What each reading means, the way Amy would say it. Order is the order Jess can be wrong in. */
 export const PLUG_KINDS = ['healthy', 'rich', 'lean', 'oily', 'worn'];
@@ -205,6 +227,11 @@ export function guessPlug(truth, accuracy, random = Math.random) {
   if (random() < accuracy) return truth;
   const wrong = PLUG_KINDS.filter((k) => k !== truth);
   return wrong[Math.floor(random() * wrong.length)];
+}
+
+/** What the pulled-down barrel and piston look like, for the toast. */
+export function scoringLook(engine, P = DEFAULT_BENCH_PARAMS) {
+  return readScoring(engine, P).look;
 }
 
 /** What the plug looks like, for the toast: just the colour, you work out what it means. */
@@ -362,6 +389,10 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     fitBore(engine, botched ? P.boreBotchedFit : 1, P);
     return botched ? 'Kit fitted, but the head is not torqued evenly: it will not pull as it should' : 'Big-bore kit fitted: it should pull much harder, and run hotter';
   }
+  if (job.kind === 'topEnd') {
+    rebuildTopEnd(engine, botched, P);
+    return botched ? 'Back together on a new piston, but the head is uneven: it will nip up again sooner. Run it in gently' : 'New piston and rings in, and it turns freely. Run it in gently for a few minutes';
+  }
   if (job.kind === 'tarp') return 'The tarp is off, and the dust is everywhere';
   if (job.kind === 'fuel') {
     engine.fouling = botched ? P.plugLeftFouling : 0;
@@ -380,11 +411,12 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
 }
 
 /** Which jobs a quad can have done: the pre-mix oil is for the two-strokes, the sump's for the petrol four-strokes. */
-export function jobAvailable(kind, engine) {
+export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS) {
   if (kind === 'oil') return engine.params.strokes === 2;
   if (kind === 'packing') return engine.params.strokes === 2;
   if (kind === 'coolant') return !!engine.params.waterCooled;
   if (kind === 'bore') return canFitBore(engine);
+  if (kind === 'topEnd') return canRebuildTopEnd(engine, P);
   if (kind === 'tarp' || kind === 'fuel' || kind === 'brake' || kind === 'battery') return true;
   if (kind === 'sump') return engine.params.strokes !== 2 && !engine.params.runsOnDiesel;
   return true;
