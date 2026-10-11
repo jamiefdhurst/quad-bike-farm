@@ -247,6 +247,7 @@ export class DebugGui {
     }
     set(p, 'hard start (goes it took)', () => unit().quad.startTrouble, (v) => (unit().quad.startTrouble = Math.round(v)), 0, 6, 1);
     show(p, 'flat tyre (wheel)', () => unit().quad.faults.tyre);
+    tick(p, 'valves too tight (not worn wide)', () => unit().quad.faults.kept.valveTight, (v) => (unit().quad.faults.kept.valveTight = v));
     tick(p, 'chain off the sprocket', () => unit().quad.faults.chainOff, (v) => (unit().quad.faults.kept.chainOff = v));
     set(p, 'chain oil (0 bone dry)', () => round(unit().quad.faults.kept.chainLube), (v) => (unit().quad.faults.kept.chainLube = v), 0, 1);
     set(p, 'wet brakes', () => round(unit().quad.brakes.wet), (v) => (unit().quad.brakes.wet = v), 0, 1);

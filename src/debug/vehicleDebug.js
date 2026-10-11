@@ -84,6 +84,7 @@ export function problemSummary(unit) {
   const e = unit.engine;
   const bits = [];
   for (const kind of FAULT_KINDS) if (unit.quad.faults.started[kind]) bits.push(`${kind} ${unit.quad.faults.levels[kind].toFixed(2)}`);
+  if (unit.quad.faults.kept.valveTight && unit.quad.faults.started.valves) bits.push('valves too tight');
   if (unit.quad.faults.chainOff) bits.push('chain off the sprocket');
   if (unit.quad.faults.chainDryness > 0.8) bits.push('chain dry');
   if (e.seized) bits.push('seized');

@@ -30,6 +30,7 @@ export const DEFAULT_BENCH_PARAMS = {
   topEndWearRemoved: 0.2, // wear a new piston and rings take away
   topEndBotchedScuff: 0.3, // scuffing left after uneven head nuts or a forced barrel: it nips up again sooner
   chainBotched: 0.35, // slack left in a chain adjusted badly (too loose, or pulled so tight it binds and wears)
+  valvesBotchedLevel: 0.5, // how far out a valve clearance set badly is (too wide, or too tight if the screws were over-turned)
   chainOilShort: 0.5, // chain oil left after too little was put on
   packingBotched: 0.3, // silencer blown-out level left after a badly packed one (too loose or stuffed too tight)
 };
@@ -47,6 +48,7 @@ export const BENCH_PARAM_RANGES = {
   packingBotched: [0, 1, 0.05],
   chainBotched: [0, 1, 0.05],
   chainOilShort: [0, 1, 0.05],
+  valvesBotchedLevel: [0, 1, 0.05],
   topEndScuffFrom: [0, 0.5, 0.01],
   topEndDeepScuff: [0.1, 1, 0.05],
   topEndSeizeWear: [0, 1, 0.05],
@@ -163,6 +165,17 @@ export const JOBS = {
       { id: 'on', text: 'Chainguard back on', kind: 'press' },
     ],
   },
+  valves: {
+    name: 'Set the valve clearances',
+    steps: [
+      { id: 'cover', text: 'Take the rocker cover off', kind: 'press' },
+      { id: 'look', text: 'Slide the feeler gauge in under a rocker and feel how it sits', kind: 'press', inspect: true },
+      { id: 'nut', text: 'Slacken the locknuts', kind: 'hold', need: 0.8 },
+      { id: 'gap', text: 'Turn the screws until the gauge just drags: not too wide, not too tight', kind: 'hold', need: 0.8, limit: 1.6 },
+      { id: 'lock', text: 'Hold the screws and do the locknuts up: snug, not tight', kind: 'hold', need: 0.6, limit: 1.3 },
+      { id: 'on', text: 'Rocker cover back on', kind: 'press' },
+    ],
+  },
   topEnd: {
     name: 'Rebuild the top end',
     steps: [
@@ -210,7 +223,7 @@ export const JOBS = {
   },
 };
 
-export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd', 'chain'];
+export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd', 'chain', 'valves'];
 
 /** What each reading means, the way Amy would say it. Order is the order Jess can be wrong in. */
 export const PLUG_KINDS = ['healthy', 'rich', 'lean', 'oily', 'worn'];
@@ -253,6 +266,14 @@ export function chainLook(faults) {
   if (level < 0.5) return `a bit loose${dry}`;
   if (level < 0.8) return `hanging slack${dry}`;
   return `drooping nearly off the sprocket${dry}`;
+}
+
+/** What the feeler gauge says about the valve clearance, for the toast: you work out what it needs. */
+export function valvesLook(faults) {
+  if (faults.valveTight > 0.2) return 'a hard squeeze: the clearance is too tight';
+  if (faults.valveLoose < 0.2) return 'a snug sliding fit: right';
+  if (faults.valveLoose < 0.6) return 'a loose fit: a bit wide';
+  return 'rattling about: the clearance is far too wide';
 }
 
 /** What the pulled-down barrel and piston look like, for the toast. */
@@ -428,6 +449,21 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     if (adjust) return 'Chain back on, but the slack is not right and it will stretch again soon';
     return job.outcome('oil') === 'good' ? 'Chain adjusted and oiled: it runs quietly' : 'Chain adjusted, though it is a touch dry';
   }
+  if (job.kind === 'valves') {
+    // Setting the gap is the fix. Too little turn of the screws leaves it wide, too much leaves it tight; a locknut left slack lets it creep back wide.
+    const gap = job.outcome('gap');
+    faults.fix('valves');
+    if (gap === 'over') {
+      faults.leave('valves', P.valvesBotchedLevel);
+      faults.kept.valveTight = true;
+      return 'Cover back on, but the screws are turned too far: the valves are tight and it will start hard when it is hot and lack power';
+    }
+    if (gap !== 'good' || job.outcome('lock') === 'short') {
+      faults.leave('valves', P.valvesBotchedLevel);
+      return 'Cover back on, but the clearance is still a bit wide and it will keep ticking';
+    }
+    return 'Valve clearances set: the tick has gone';
+  }
   if (job.kind === 'tarp') return 'The tarp is off, and the dust is everywhere';
   if (job.kind === 'fuel') {
     engine.fouling = botched ? P.plugLeftFouling : 0;
@@ -446,13 +482,14 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
 }
 
 /** Which jobs a quad can have done: the pre-mix oil is for the two-strokes, the sump's for the petrol four-strokes, the chain's for the chain-driven. */
-export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = false) {
+export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = false, valves = engine.params.strokes !== 2) {
   if (kind === 'oil') return engine.params.strokes === 2;
   if (kind === 'packing') return engine.params.strokes === 2;
   if (kind === 'coolant') return !!engine.params.waterCooled;
   if (kind === 'bore') return canFitBore(engine);
   if (kind === 'topEnd') return canRebuildTopEnd(engine, P);
   if (kind === 'chain') return !!chain;
+  if (kind === 'valves') return !!valves; // every four-stroke has them
   if (kind === 'tarp' || kind === 'fuel' || kind === 'brake' || kind === 'battery') return true;
   if (kind === 'sump') return engine.params.strokes !== 2 && !engine.params.runsOnDiesel;
   return true;

@@ -1,5 +1,5 @@
 // Faults that develop on a quad over time, separate from wear: a slow puncture, a
-// slipping drive belt, a sticking throttle cable, a dirty carb, worn engine mounts and (on the chain-driven ones) a stretched drive chain. Each starts
+// slipping drive belt, a sticking throttle cable, a dirty carb, worn engine mounts (on the chain-driven ones) a stretched drive chain and (on the four-strokes) valve clearances gone out. Each starts
 // without warning, gets worse until it's put right at the toolbox, and has a
 // symptom you can feel or hear. Pure logic, no Three.js.
 
@@ -10,6 +10,7 @@ export const DEFAULT_FAULT_PARAMS = {
   cableEvery: 7200, // engine running (was 2700: it stuck too often)
   carbEvery: 2400, // engine running
   mountsEvery: 5400, // engine running: rubber perishing, so it comes on slower than the rest
+  valvesEvery: 4800, // engine running, on a four-stroke: the tappets wearing wide
   chainEvery: 3000, // riding, on a chain-driven quad: the chain stretching (a dry one starts sooner, see chainDryWear)
   // How long each takes to go from just started to as bad as it gets.
   punctureSeconds: 120, // the tyre going flat
@@ -17,6 +18,7 @@ export const DEFAULT_FAULT_PARAMS = {
   cableSeconds: 600, // running
   carbSeconds: 900, // running
   mountsSeconds: 1500, // running: the mounts going from sound to shot
+  valvesSeconds: 2400, // running: the clearance going from a faint tick to a loud one
   chainSeconds: 900, // of riding: the chain going from just slack to hanging off the sprocket
   chainLubeSeconds: 1500, // of riding for a freshly oiled chain to run dry
   // What they do at their worst.
@@ -27,6 +29,7 @@ export const DEFAULT_FAULT_PARAMS = {
   cableHangFrom: 0.2, // below this the cable's only a little stiff and doesn't hang
   cableHangMin: 0.4, // seconds it takes to come back as it first starts to hang, lengthening from there (faster than linear)
   cableStuckAt: 0.9, // at this level it never comes back: it holds wherever you last opened it until you switch off
+  valvesBotchedLevel: 0.5, // how far out a valve clearance set badly at the bench is, on the tight side
   chainDryWear: 2, // extra stretching, and chance of it starting, on a bone dry chain (1 + this)
   chainSlapFrom: 0.3, // slack at which it starts slapping on the chainguard over bumps
   chainSlapBump: 4, // m/s2 of jolt that makes a slack chain slap
@@ -49,6 +52,9 @@ export const FAULT_PARAM_RANGES = {
   carbEvery: [60, 20000, 60],
   mountsEvery: [60, 20000, 60],
   chainEvery: [60, 20000, 60],
+  valvesEvery: [60, 20000, 60],
+  valvesSeconds: [10, 7200, 10],
+  valvesBotchedLevel: [0, 1, 0.05],
   punctureSeconds: [10, 1200, 10],
   beltSeconds: [10, 1800, 10],
   cableSeconds: [10, 1800, 10],
@@ -78,7 +84,7 @@ export const FAULT_PARAM_RANGES = {
   fieldFixCap: [0, 1, 0.01],
 };
 
-export const FAULT_KINDS = ['puncture', 'belt', 'cable', 'carb', 'mounts', 'chain'];
+export const FAULT_KINDS = ['puncture', 'belt', 'cable', 'carb', 'mounts', 'chain', 'valves'];
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
@@ -93,14 +99,15 @@ export class Faults {
     this.tyre = -1; // which wheel has the puncture
     this.tyreWheels = [0, 1, 2, 3]; // the wheels one can land on (the mini moto's outriggers can't go flat)
     this.wheelSides = null; // per wheel { side, front } when the layout isn't a plain four-wheeler's (set by Quad)
-    this.levels = { puncture: 0, belt: 0, cable: 0, carb: 0, mounts: 0, chain: 0 }; // 0 none, rising to 1 at their worst
-    this.started = { puncture: false, belt: false, cable: false, carb: false, mounts: false, chain: false };
-    this.caps = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1 }; // a rough fix leaves it from getting any worse than this
+    this.levels = { puncture: 0, belt: 0, cable: 0, carb: 0, mounts: 0, chain: 0, valves: 0 }; // 0 none, rising to 1 at their worst
+    this.started = { puncture: false, belt: false, cable: false, carb: false, mounts: false, chain: false, valves: false };
+    this.caps = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1 }; // a rough fix leaves it from getting any worse than this
     this.heldThrottle = 0; // what a sticking cable is still holding open
-    this.prone = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1 }; // times as often it starts (see roll)
-    this.worsens = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1 }; // times as fast it gets worse
+    this.prone = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1 }; // times as often it starts (see roll)
+    this.worsens = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1 }; // times as fast it gets worse
     this.hasChain = false; // a chain-driven quad (the sport quad, the mini moto, the ATC) can have a stretched chain; the others never
-    this.kept = { chainLube: 1, chainOff: false }; // the chain's oil (1 fresh, 0 bone dry) and whether it has jumped the sprocket: kept between games
+    this.hasValves = false; // a four-stroke can have its valve clearances out; a two-stroke has no valves (set by Quad)
+    this.kept = { chainLube: 1, chainOff: false, valveTight: false }; // the chain's oil (1 fresh, 0 bone dry) and whether it has jumped the sprocket, and whether the valves were left too tight rather than worn wide: kept between games
     this.slapped = 0; // 0..1 how hard the slack chain just slapped; take it with takeSlap()
     this.slapGap = 0;
     this.jumpHeard = false; // the chain has just come off; take it with takeJump()
@@ -160,6 +167,7 @@ export class Faults {
     if (running && !this.started.cable && this.random() < chance(p.cableEvery, 'cable')) this.begin('cable');
     if (running && !this.started.carb && this.random() < chance(p.carbEvery, 'carb')) this.begin('carb');
     if (running && !this.started.mounts && this.random() < chance(p.mountsEvery, 'mounts')) this.begin('mounts');
+    if (this.hasValves && running && !this.started.valves && this.random() < chance(p.valvesEvery, 'valves')) this.begin('valves');
     const grow = (kind, on, seconds) => {
       if (this.started[kind] && on) this.levels[kind] = Math.min(this.caps[kind], this.levels[kind] + (dt * this.worsens[kind]) / seconds);
     };
@@ -168,6 +176,7 @@ export class Faults {
     grow('cable', running, p.cableSeconds);
     grow('carb', running, p.carbSeconds);
     grow('mounts', running, p.mountsSeconds);
+    grow('valves', running && !this.kept.valveTight, p.valvesSeconds); // wearing wide; a clearance set too tight stays as it is
     if (this.hasChain) this.updateChain(dt, { moving, throttle, jolt });
   }
 
@@ -272,6 +281,16 @@ export class Faults {
     return this.levels.carb;
   }
 
+  /** 0..1 how loud the tappets tick (valves worn wide), for the engine. */
+  get valveLoose() {
+    return this.started.valves && !this.kept.valveTight ? this.levels.valves : 0;
+  }
+
+  /** 0..1 how far too tight the valves are (set badly at the bench), for the engine. */
+  get valveTight() {
+    return this.started.valves && this.kept.valveTight ? this.levels.valves : 0;
+  }
+
   /** 0..1 how worn the engine mounts are (for the vibration model). */
   get mountWear() {
     return this.started.mounts ? this.levels.mounts : 0;
@@ -288,6 +307,7 @@ export class Faults {
       this.kept.chainOff = false;
       this.kept.chainLube = Math.max(this.kept.chainLube, rough ? 0.6 : 1);
     }
+    if (kind === 'valves') this.kept.valveTight = false; // a rough fix (a shim) or the bench both leave it wide, not tight
     if (rough) {
       if (this.caps[kind] < 1) return false; // already patched up as far as it'll go
       this.leave(kind, this.params.fieldFixLevel, this.params.fieldFixCap);

@@ -224,6 +224,9 @@ export const DEFAULT_ENGINE_PARAMS = {
   beltFlareRpm: 1800, // rpm a fully slipping drive belt lets the revs run on past what the load would hold, at full throttle
   dirtRoughness: 0.3, // roughness added by a fully dirty carb
   dirtPowerLoss: 0.25, // power lost to a fully dirty carb
+  valveTightPowerLoss: 0.3, // power lost to valves set fully too tight (they don't seat)
+  valveLoosePowerLoss: 0.05, // and to valves fully too loose (they open late)
+  valveTightHot: 2, // times as much extra hot-start richness tight valves add to a heat-soaked engine
   clogRich: 0.3, // mixture added by a fully clogged air filter (it chokes the air, so it runs rich: past richTolerance it smokes and fouls)
   clogPowerLoss: 0.3, // top-end power lost to a fully clogged air filter (it's the revs it can't breathe for)
 
@@ -518,6 +521,9 @@ export const ENGINE_PARAM_RANGES = {
   beltFlareRpm: [0, 4000, 50],
   dirtRoughness: [0, 1, 0.01],
   dirtPowerLoss: [0, 1, 0.01],
+  valveTightPowerLoss: [0, 1, 0.01],
+  valveLoosePowerLoss: [0, 0.5, 0.01],
+  valveTightHot: [0, 6, 0.1],
   clogRich: [0, 1, 0.01],
   clogPowerLoss: [0, 1, 0.01],
   waterCooled: [0, 1, 1],

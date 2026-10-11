@@ -67,6 +67,7 @@ const JOB_TEXT = {
   bore: 'big-bore kit fitted',
   topEnd: 'top end rebuilt, new piston and rings',
   chain: 'chain adjusted and oiled',
+  valves: 'valve clearances set',
   sump: 'engine oil topped up',
   tarp: 'tarp off',
   fuel: 'old fuel drained',

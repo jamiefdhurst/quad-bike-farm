@@ -469,7 +469,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I know something’s wrong?',
         a: `Mostly by feel and sound; nothing on screen tells you. A slow puncture pulls the bars towards the soft tyre. A slipping belt flares the revs and
-          hardly goes. A sticking throttle lingers after you let go, then sticks for good. A dirty carb hunts and runs rough. A stretched chain (the sport quad, mini moto and three-wheeler) slaps over bumps and can jump off. Worn engine mounts (on any vehicle, but you feel it most on the tractor, the UTV and the Land Rovers) shake more through the seat and clonk when you stab the throttle. The girls see what you can't:
+          hardly goes. A sticking throttle lingers after you let go, then sticks for good. A dirty carb hunts and runs rough. Valve clearances that have worn wide make a four-stroke tick from the top of the engine. A stretched chain (the sport quad, mini moto and three-wheeler) slaps over bumps and can jump off. Worn engine mounts (on any vehicle, but you feel it most on the tractor, the UTV and the Land Rovers) shake more through the seat and clonk when you stab the throttle. The girls see what you can't:
           ride off and one behind you may shout about smoke or a soft tyre. Amy's logbook on the workbench records what she has found.`,
         tip: 'Read Amy’s logbook on the workbench: it is always true, unlike what Jess tells you.',
       },
@@ -489,6 +489,15 @@ export const FAQ_SECTIONS = [
         a: `In the yard, take the toolbox to the quad and press <kbd>N</kbd>: it goes back on the sprocket and gets a squirt of oil, enough to ride home. To take the
           stretch out, use the workbench's "Adjust and oil the chain" (the minus key): slacken the axle nuts, draw the axle back to about a finger of play, oil it
           a little and do the nuts up. Look at the chain first and it will tell you how slack and how dry it is. Done carelessly some of the slack comes back.`,
+      },
+      {
+        q: 'Why is my four-stroke ticking, and what does the feeler gauge do?',
+        a: `Every four-stroke has valves whose clearance wears wide over the hours, and the engine starts to tick from the top, louder the longer it runs and
+          a touch weaker. Use the workbench's "Set the valve clearances" (the equals key): look with the feeler gauge first and it will tell you whether the
+          gap is wide, right or too tight, then slacken the locknuts, turn the screws until the gauge just drags and do the locknuts up. Turn too little and it
+          still ticks; turn too far and the valves are too tight, which makes no noise at all but means a hard start when the engine is hot and a loss of power.
+          Set it again properly to cure either. Two-strokes have no valves.`,
+        tip: 'A tick from the top of a four-stroke is the valves: set the clearances at the workbench.',
       },
       {
         q: 'It started on the leads and then died again when I stopped. Why?',
@@ -573,8 +582,8 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'What can the workbench do?',
-        a: `Drive into the yellow bay in front of it, switch off, look at the bench and press <kbd>E</kbd>. <kbd>1</kbd> to <kbd>9</kbd>, <kbd>0</kbd> and <kbd>-</kbd> pick a job: a new plug,
-          clean the carb, fix a tyre, two-stroke oil, engine oil, repack a silencer, coolant, a big-bore kit, new engine mounts, a top-end rebuild for a two-stroke that has seized, or adjusting and oiling the chain on the three chain-driven quads. Each is a short list of steps; on a hold step keep
+        a: `Drive into the yellow bay in front of it, switch off, look at the bench and press <kbd>E</kbd>. <kbd>1</kbd> to <kbd>9</kbd>, <kbd>0</kbd>, <kbd>-</kbd> and <kbd>=</kbd> pick a job: a new plug,
+          clean the carb, fix a tyre, two-stroke oil, engine oil, repack a silencer, coolant, a big-bore kit, new engine mounts, a top-end rebuild for a two-stroke that has seized, adjusting and oiling the chain on the three chain-driven quads, or setting the valve clearances on a four-stroke. Each is a short list of steps; on a hold step keep
           <kbd>E</kbd> down and let go inside the green band. Too soon or too long botches it and the fault comes back a little. Amy helps; Jess heckles.`,
       },
       {

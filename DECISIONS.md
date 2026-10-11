@@ -2973,3 +2973,10 @@ Jamie: too many vehicles started near the barn and caused traffic, and some star
 - The girls: Amy and Jess each have a `faultChain` line (a slapping chain, said when riding) and a `faultChainOff` line (said when the engine is running and it has come off), plus a `histChain` line for a chain that was already loose. Same notice rules as the other faults (`faultNoticeFrom`, twice at most).
 - Not done: a squeak for a dry chain and a visible droop on the models. The slap is the only sound.
 
+## Valve clearances (TODO 17)
+
+- A fault kind, `valves`, in `faults.js`, so it gets the save, the Problems list, "Put it right", the girls' fault lines and the history for free. Only four-strokes have it (`Faults.hasValves`, set by `Quad` from the engine's strokes; the history pool leaves it out for a two-stroke spec). It starts after about 4,800 s of the engine running and wears wider over 2,400 s.
+- Two directions, one level. Worn wide is the natural way: `valveLoose` goes to the engine, which ticks (it shares the `tick` the low sump uses, so the same `coolTick` sound, taking the louder of the two) and loses up to 5% power. Too tight (`kept.valveTight`) only comes from a bad bench job: no noise, up to 30% power lost, and a heat-soaked engine's hot-start richness multiplied by up to three, so it starts hard hot. A tight clearance does not wear any further. The tight flag is kept in the farm save with the rest of `kept`.
+- The bench job (twelfth, on the equals key) has a feeler-gauge inspect step that says wide, right or too tight. The `gap` step is a window: too little turn leaves it wide at 0.5, too much leaves it tight at 0.5, a slack locknut leaves it wide. Any proper job, or "Put it right", clears both. There is no toolbox quick fix: a valve adjustment is a bench job.
+- The girls: each has a `faultValves` line (said when the engine runs and it ticks) and a `histValves` line. Too-tight valves make no noise so nobody says anything.
+- Not done: tight valves burning out over time, and a visible or audible difference between the sump tick and the valve tick.

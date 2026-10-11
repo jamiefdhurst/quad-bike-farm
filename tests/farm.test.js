@@ -149,7 +149,7 @@ describe('a vehicle from one day to the next', () => {
     expect(b.quad.faults.has('belt')).toBe(true);
     expect(b.quad.faults.levels.belt).toBe(0.4);
     expect(b.quad.faults.levels.chain).toBe(0.7);
-    expect(b.quad.faults.kept).toEqual({ chainLube: 0.2, chainOff: true });
+    expect(b.quad.faults.kept).toEqual({ chainLube: 0.2, chainOff: true, valveTight: false });
     expect(b.quad.faults.caps.puncture).toBe(0.28);
     expect(b.quad.faults.tyre).toBe(a.quad.faults.tyre);
     expect(b.quad.faults.has('carb')).toBe(false);

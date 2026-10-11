@@ -129,6 +129,7 @@ export class Quad {
     this.faults = new Faults();
     if (engine.params.compressionIgnition) this.faults.prone.carb = 0; // a diesel has no carb to get dirty
     if (tractor) this.faults.prone.belt = 0; // and the tractor has a clutch and gearbox, not a belt
+    this.faults.hasValves = engine.params.strokes !== 2; // every four-stroke has valves to go out of adjustment; a two-stroke has none
     this.faults.hasChain = chainDrive; // only the chain-driven ones can stretch one
     this.lastUp = 0; // vertical speed last step, for the jolt a slack chain slaps on
     this.sump = hasSump(engine.params) ? new Sump() : null; // every four-stroke's engine oil; the game deals each its level (sump.js)
@@ -933,6 +934,8 @@ export class Quad {
       oilBurn: this.sump ? this.sump.burnSmoke(this.engine.throttle, Math.max(0, this.engine.rpm - this.engine.params.idleRpmWarm)) : 0,
       slip: this.faults.slip,
       dirt: this.faults.dirt,
+      valveLoose: this.faults.valveLoose,
+      valveTight: this.faults.valveTight,
       clog: this.filter.clog,
       gulp: this.waterGulp(),
       diesel: this.fuel.bowlDiesel,

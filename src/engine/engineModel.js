@@ -73,6 +73,8 @@ export class EngineModel {
     this.clickedDead = false; // the starter has clicked for this press
     this.slip = 0; // see update()
     this.dirt = 0;
+    this.valveLoose = 0; // 0..1 valve clearance too wide: a tappet tick (set from the quad's faults)
+    this.valveTight = 0; // 0..1 clearance too tight: starts hard when hot and loses power
     this.clog = 0; // 0..1 how clogged the air filter is
     this.oil = this.params.strokes === 2 ? this.params.oilGood : 0; // oil fraction of the fuel it's being fed
     this.oilRich = 0; // 0..1 how much more oil than it can burn clean
@@ -259,6 +261,8 @@ export class EngineModel {
    * @param {number}  [controls.resistLoad] 0..1 the part of driveLoad from climbing, mud or being blocked; this is what lugs a weak engine.
    * @param {number}  [controls.slip] 0..1 a slipping drive belt: the revs flare and the load doesn't hold them down.
    * @param {number}  [controls.dirt] 0..1 a dirty carb: lumpy, erratic and short of power.
+   * @param {number}  [controls.valveLoose] 0..1 valves too loose: the tappets tick.
+   * @param {number}  [controls.valveTight] 0..1 valves too tight: a hard hot start and short of power.
    * @param {number}  [controls.clog] 0..1 a clogged air filter: runs rich, smokes darker, loses top-end power.
    * @param {number}  [controls.gulp] water going in at the intake, per second (see waterGulp).
    * @param {number}  [controls.speed] ground speed in m/s: the air that cools it.
@@ -267,7 +271,7 @@ export class EngineModel {
    * @param {number}  [controls.gearRpm] a manual's revs at this road speed in this gear (speed over the gear's top speed, times full-throttle revs).
    * @param {number}  [controls.gearLock] 0..1 how far the clutch ties the engine to those revs: the throttle then only decides the torque.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, clog = 0, gulp = 0, diesel = 0, fuelWater = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12 } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, valveLoose = 0, valveTight = 0, clog = 0, gulp = 0, diesel = 0, fuelWater = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12 } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -283,6 +287,8 @@ export class EngineModel {
     this.oilBurn = clamp(oilBurn, 0, 1);
     this.slip = clamp(slip, 0, 1);
     this.dirt = clamp(dirt, 0, 1);
+    this.valveLoose = clamp(valveLoose, 0, 1);
+    this.valveTight = clamp(valveTight, 0, 1);
     this.clog = clamp(clog, 0, 1);
     this.gulp = Math.max(0, gulp);
     this.diesel = contaminant(this.params, diesel);
@@ -551,7 +557,7 @@ export class EngineModel {
         this.emit('seized');
       }
     }
-    this.tick = p.strokes === 2 ? 0 : clamp((p.sumpTickFrom - this.sump) / Math.max(0.01, p.sumpTickFrom - p.sumpTickFull), 0, 1);
+    this.tick = p.strokes === 2 ? 0 : Math.max(this.valveLoose, clamp((p.sumpTickFrom - this.sump) / Math.max(0.01, p.sumpTickFrom - p.sumpTickFull), 0, 1)); // dry of oil or wide in the valves
     if (running && this.tick > 0 && this.random() < this.tick * p.tickRate * h * (0.5 + 0.5 * rpmNorm)) this.emit('coolTick', this.random() * h);
     this.nip = nipping(this.scuff, p.nipFrom);
     this.oilRich = oilExcess(this.oil, p.strokes, p);
@@ -589,7 +595,7 @@ export class EngineModel {
     // A draining float bowl leans the mixture out, whatever the choke is doing.
     const starve = clamp((p.fuelStarveLevel - this.fuel) / p.fuelStarveLevel, 0, 1);
     // A heat-soaked carburettor boils its fuel, so a hot engine that isn't running starts rich; the throttle open clears it.
-    const hot = this.state === EngineState.RUNNING ? 0 : hotStartRich(this.soak, this.throttle, p);
+    const hot = this.state === EngineState.RUNNING ? 0 : hotStartRich(this.soak, this.throttle, p) * (1 + p.valveTightHot * this.valveTight); // tight valves swell with the heat and hold it up
     this.jetErr = p.strokes === 2 ? jetError(p.jet, this.dayTemp, p, this.bore) : 0;
     this.jetOn = p.strokes === 2 ? jetTrue(this.jetErr, p) : 0;
     this.mixture = jetMixture(this.jetErr, p) + supplied - need - p.starveLean * starve + p.mixtureTrim + p.clogRich * this.clog + hot;
@@ -635,6 +641,7 @@ export class EngineModel {
     this.power *= borePowerFactor(this.bore, this.boreFit, p);
     this.erratic = Math.max(this.erratic, this.nip * this.nip, this.dirt ** 1.5);
     this.power *= 1 - p.dirtPowerLoss * this.dirt;
+    this.power *= (1 - p.valveTightPowerLoss * this.valveTight) * (1 - p.valveLoosePowerLoss * this.valveLoose);
     // A clogged filter can't feed the revs: it's the top end that goes.
     this.power *= 1 - p.clogPowerLoss * this.clog * clamp((this.rpm - p.idleRpmWarm) / (p.maxRpm - p.idleRpmWarm), 0, 1) ** 2;
     this.power *= 1 - p.pinkPowerLoss * this.pink;

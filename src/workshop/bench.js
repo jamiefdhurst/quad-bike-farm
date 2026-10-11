@@ -1,7 +1,7 @@
 import './bench.css';
 import * as THREE from 'three';
 import { registerTuning } from '../core/tuning.js';
-import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, BenchJob, finishJob, jobAvailable, inBay, plugCondition, readPlug, scoringLook, chainLook } from './benchJobs.js';
+import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, BenchJob, finishJob, jobAvailable, inBay, plugCondition, readPlug, scoringLook, chainLook, valvesLook } from './benchJobs.js';
 
 /**
  * The barn bench: park a quad in the painted bay, switch it off and work on it here. Each job is a few
@@ -42,7 +42,7 @@ export class Bench {
   }
 
   canBegin(kind, unit) {
-    return unit.barnFind ? unit.barnFind.available(kind) : jobAvailable(kind, unit.engine, this.params, unit.quad.faults.hasChain);
+    return unit.barnFind ? unit.barnFind.available(kind) : jobAvailable(kind, unit.engine, this.params, unit.quad.faults.hasChain, unit.quad.faults.hasValves);
   }
 
   toolboxHere() {
@@ -96,6 +96,8 @@ export class Bench {
       this.game.hud.toast(`The piston is ${scoringLook(this.unit.engine, this.params)}`);
     } else if (inspected && this.job?.kind === 'chain') {
       this.game.hud.toast(`The chain is ${chainLook(this.unit.quad.faults)}`);
+    } else if (inspected && this.job?.kind === 'valves') {
+      this.game.hud.toast(`The feeler gauge goes in ${valvesLook(this.unit.quad.faults)}`);
     } else if (inspected) {
       const reading = readPlug(this.unit.engine, this.params);
       this.game.hud.toast(`The old plug is ${plugCondition(this.unit.engine, this.params)}`);
@@ -136,8 +138,8 @@ export class Bench {
     const job = this.job;
     if (!job) {
       this.kindsFor(this.unit).forEach((kind, i) => {
-        const n = (i + 1) % 10; // the tenth job is on 0, the eleventh on the minus key
-        const hit = i >= 10 ? input.wasPressed('Minus') : input.wasPressed(`Digit${n}`) || input.wasPressed(`Numpad${n}`);
+        const n = (i + 1) % 10; // the tenth job is on 0, the eleventh on the minus key, the twelfth on equals
+        const hit = i >= 10 ? input.wasPressed(i === 10 ? 'Minus' : 'Equal') : input.wasPressed(`Digit${n}`) || input.wasPressed(`Numpad${n}`);
         if (hit) this.begin(kind);
       });
       return;
@@ -198,8 +200,8 @@ export class Bench {
         const ok = this.canBegin(k, unit);
         let note = '';
         if (find) note = find.isDone(k) ? ' ✓' : k === 'battery' && find.charging ? ` (charging: ${Math.round(find.chargeProgress * 100)}%)` : ok ? '' : ' (take the tarp off first)';
-        else if (!ok) note = k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
-        return `<div class="bn-row${ok ? '' : ' off'}"><span class="key">${i >= 10 ? '-' : (i + 1) % 10}</span>${JOBS[k].name}${note}</div>`;
+        else if (!ok) note = k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'valves' ? ' (two-strokes have none)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
+        return `<div class="bn-row${ok ? '' : ' off'}"><span class="key">${i >= 10 ? (i === 10 ? '-' : '=') : (i + 1) % 10}</span>${JOBS[k].name}${note}</div>`;
       }).join('');
       this.keysEl.textContent = 'Press a number to start   ·   G step away';
       return;
