@@ -61,6 +61,7 @@ export class QuadUnit {
       scale: spec.scale,
       solo: spec.solo,
       plateNumber: spec.plateNumber,
+      chainDrive: !!spec.chainDrive,
       reverseStyle: spec.reverseStyle,
       chokeStyle: spec.chokeStyle,
       tapStyle: spec.tapStyle,

@@ -20,7 +20,7 @@ const cap = (s) => s[0].toUpperCase() + s.slice(1);
 const SOUND_CAPTIONS = { sigh: '(sighs)', hum: '(hums)', laugh: '(laughs)', yawn: '(yawns)', gasp: '(gasps)', hmm: 'Hmm?', oh: 'Oh.' };
 
 const DIAGNOSE_SITUATION = { cold: 'diagnoseCold', rich: 'diagnoseRich', fouled: 'diagnoseFouled', worn: 'diagnoseWorn', fine: 'diagnoseFine' };
-const FAULT_SITUATION = { puncture: 'faultPuncture', belt: 'faultBelt', cable: 'faultCable', carb: 'faultCarb', mounts: 'faultMounts' };
+const FAULT_SITUATION = { puncture: 'faultPuncture', belt: 'faultBelt', cable: 'faultCable', carb: 'faultCarb', mounts: 'faultMounts', chain: 'faultChain' };
 
 // Mistakes that show a skill she's short on.
 const SLIPS = { chokeOff: 'choke', stalled: 'starting', overSteer: 'cornering', revIt: 'mud' };
@@ -631,7 +631,7 @@ export class CompanionVoice {
     else if (!e.isRunning && e.events.some((x) => x.type === 'coolTick')) this.say('heatTicking', { chance: 0.08 });
   }
 
-  /** A slow puncture, slipping belt, sticking cable, dirty carb or worn engine mounts: she mentions it when it's bad enough for her to notice, and sooner on a quad she's on. */
+  /** A slow puncture, slipping belt, sticking cable, dirty carb, worn engine mounts or a slack chain: she mentions it when it's bad enough for her to notice, and sooner on a quad she's on. */
   watchFaults(unit, w, listening) {
     const f = unit.quad.faults;
     const from = this.companion.params.faultNoticeFrom;
@@ -641,11 +641,14 @@ export class CompanionVoice {
         w.faultSaid[kind] = 0;
         continue;
       }
-      // Each shows only in its own way: the tyre and belt when it's being ridden, the cable and carb when the engine's going.
-      const showing = kind === 'puncture' || kind === 'belt' ? Math.abs(unit.quad.forwardSpeed) > 2 : unit.engine.isRunning;
-      if (!listening || !showing || f.levels[kind] < from || w.faultSaid[kind] >= 2) continue;
+      // Each shows only in its own way: the tyre, belt and chain when it's being ridden, the cable and carb when the engine's going.
+      const ridden = kind === 'puncture' || kind === 'belt' || kind === 'chain';
+      const showing = ridden ? Math.abs(unit.quad.forwardSpeed) > 2 : unit.engine.isRunning;
+      // A chain that has come off shows when the engine is going and nothing drives: it is a different thing to say.
+      const off = kind === 'chain' && f.chainOff && unit.engine.isRunning;
+      if (!listening || !(showing || off) || f.levels[kind] < from || w.faultSaid[kind] >= 2) continue;
       const hers = unit.quad === this.companion.quad;
-      if (this.say(FAULT_SITUATION[kind], { urgent: hers, chance: hers ? 0.03 : 0.01 })) w.faultSaid[kind] += 1;
+      if (this.say(off ? 'faultChainOff' : FAULT_SITUATION[kind], { urgent: hers, chance: hers ? 0.03 : 0.01 })) w.faultSaid[kind] += 1;
     }
   }
 

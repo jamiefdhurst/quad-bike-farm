@@ -124,6 +124,9 @@ describe('a vehicle from one day to the next', () => {
     a.quad.fuel.water = 0.03;
     a.quad.fuel.tap = 'off';
     a.quad.faults.leave('belt', 0.4);
+    a.quad.faults.leave('chain', 0.7);
+    a.quad.faults.kept.chainLube = 0.2;
+    a.quad.faults.kept.chainOff = true;
     a.quad.faults.leave('puncture', 0.2, 0.28);
     a.quad.tyres.psi = [3, 3.5, 4, 5];
     a.quad.sump.level = 0.55;
@@ -145,6 +148,8 @@ describe('a vehicle from one day to the next', () => {
     expect(b.quad.fuel.tap).toBe('off');
     expect(b.quad.faults.has('belt')).toBe(true);
     expect(b.quad.faults.levels.belt).toBe(0.4);
+    expect(b.quad.faults.levels.chain).toBe(0.7);
+    expect(b.quad.faults.kept).toEqual({ chainLube: 0.2, chainOff: true });
     expect(b.quad.faults.caps.puncture).toBe(0.28);
     expect(b.quad.faults.tyre).toBe(a.quad.faults.tyre);
     expect(b.quad.faults.has('carb')).toBe(false);

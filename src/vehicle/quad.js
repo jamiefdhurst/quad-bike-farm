@@ -84,7 +84,7 @@ export class Quad {
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null, handLever = false, crank = null, landRover = false, utv = false, lightSwitch = false, driverStand = null, benchStand = null }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null, handLever = false, crank = null, landRover = false, utv = false, lightSwitch = false, driverStand = null, benchStand = null, chainDrive = false }) {
     this.reverseStyle = reverseStyle; // where its reverse is and what it takes (controls.js)
     this.chokeStyle = chokeStyle;
     this.tapStyle = tapStyle;
@@ -129,6 +129,8 @@ export class Quad {
     this.faults = new Faults();
     if (engine.params.compressionIgnition) this.faults.prone.carb = 0; // a diesel has no carb to get dirty
     if (tractor) this.faults.prone.belt = 0; // and the tractor has a clutch and gearbox, not a belt
+    this.faults.hasChain = chainDrive; // only the chain-driven ones can stretch one
+    this.lastUp = 0; // vertical speed last step, for the jolt a slack chain slaps on
     this.sump = hasSump(engine.params) ? new Sump() : null; // every four-stroke's engine oil; the game deals each its level (sump.js)
     this.sumpClock = 0;
     // A layout's outrigger wheels (the mini moto's) are never the flat one.
@@ -699,7 +701,10 @@ export class Quad {
     this.crank?.update(dt);
 
     // Faults that develop: a sticking cable holds the throttle open, a flat tyre pulls the bars over.
-    this.faults.update(dt, { running: this.engine.isRunning, speed: Math.abs(fwd), throttle: throttleInput });
+    const up = this.physics.body.linvel().y;
+    const jolt = dt > 0 ? Math.abs(up - this.lastUp) / dt : 0;
+    this.lastUp = up;
+    this.faults.update(dt, { running: this.engine.isRunning, speed: Math.abs(fwd), throttle: throttleInput, jolt });
     this.dust = this.world.dustParams ? dustLevel(this.world.dustParams, this.world.stubbleAt?.(this.position.x, this.position.z) ?? 0, this.world.wet ?? 0, fwd) : 0;
     this.filter.update(dt, { running: this.engine.isRunning, speed: fwd, dust: Math.max(this.dust, this.dustIn) * (this.world.dustParams?.filterBoost ?? 1), mud: Math.max(...this.physics.wheelInfo.map((w) => w.mud ?? 0)), puddle: Math.max(...this.physics.wheelInfo.map((w) => w.puddle ?? 0)) });
     // She has the sense to switch off a quad whose throttle has stuck open.

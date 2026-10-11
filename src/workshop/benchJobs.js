@@ -29,6 +29,8 @@ export const DEFAULT_BENCH_PARAMS = {
   topEndSeizeWear: 0.15, // wear a seizure leaves, which the new piston and rings mostly take away (the toolbox strip down left 0.3)
   topEndWearRemoved: 0.2, // wear a new piston and rings take away
   topEndBotchedScuff: 0.3, // scuffing left after uneven head nuts or a forced barrel: it nips up again sooner
+  chainBotched: 0.35, // slack left in a chain adjusted badly (too loose, or pulled so tight it binds and wears)
+  chainOilShort: 0.5, // chain oil left after too little was put on
   packingBotched: 0.3, // silencer blown-out level left after a badly packed one (too loose or stuffed too tight)
 };
 
@@ -43,6 +45,8 @@ export const BENCH_PARAM_RANGES = {
   sumpShort: [0.3, 1, 0.01],
   oilOver: [0, 0.2, 0.002],
   packingBotched: [0, 1, 0.05],
+  chainBotched: [0, 1, 0.05],
+  chainOilShort: [0, 1, 0.05],
   topEndScuffFrom: [0, 0.5, 0.01],
   topEndDeepScuff: [0.1, 1, 0.05],
   topEndSeizeWear: [0, 1, 0.05],
@@ -147,6 +151,18 @@ export const JOBS = {
       { id: 'tight', text: 'Do the head nuts up evenly: snug, not tight', kind: 'hold', need: 0.8, limit: 1.6 },
     ],
   },
+  chain: {
+    name: 'Adjust and oil the chain',
+    steps: [
+      { id: 'guard', text: 'Take the chainguard off', kind: 'press' },
+      { id: 'look', text: 'Pull the chain at the middle of its run and see how slack it is', kind: 'press', inspect: true },
+      { id: 'axle', text: 'Slacken the rear axle nuts', kind: 'hold', need: 0.9 },
+      { id: 'adjust', text: 'Draw the axle back to take the slack out: a finger of play, not bar tight', kind: 'hold', need: 0.7, limit: 1.5 },
+      { id: 'oil', text: 'Oil the chain as you turn the wheel: a little, not a lot', kind: 'hold', need: 0.8, limit: 1.6 },
+      { id: 'tight', text: 'Do the axle nuts up: snug, not tight', kind: 'hold', need: 0.6, limit: 1.3 },
+      { id: 'on', text: 'Chainguard back on', kind: 'press' },
+    ],
+  },
   topEnd: {
     name: 'Rebuild the top end',
     steps: [
@@ -194,7 +210,7 @@ export const JOBS = {
   },
 };
 
-export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd'];
+export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd', 'chain'];
 
 /** What each reading means, the way Amy would say it. Order is the order Jess can be wrong in. */
 export const PLUG_KINDS = ['healthy', 'rich', 'lean', 'oily', 'worn'];
@@ -227,6 +243,16 @@ export function guessPlug(truth, accuracy, random = Math.random) {
   if (random() < accuracy) return truth;
   const wrong = PLUG_KINDS.filter((k) => k !== truth);
   return wrong[Math.floor(random() * wrong.length)];
+}
+
+/** How slack the chain is, for the toast: you work out what it needs. */
+export function chainLook(faults) {
+  const level = faults.started.chain ? faults.levels.chain : 0;
+  const dry = faults.chainDryness > 0.6 ? ' and bone dry' : '';
+  if (level < 0.2) return `snug${dry}`;
+  if (level < 0.5) return `a bit loose${dry}`;
+  if (level < 0.8) return `hanging slack${dry}`;
+  return `drooping nearly off the sprocket${dry}`;
 }
 
 /** What the pulled-down barrel and piston look like, for the toast. */
@@ -393,6 +419,15 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     rebuildTopEnd(engine, botched, P);
     return botched ? 'Back together on a new piston, but the head is uneven: it will nip up again sooner. Run it in gently' : 'New piston and rings in, and it turns freely. Run it in gently for a few minutes';
   }
+  if (job.kind === 'chain') {
+    // Adjusting it is the fix; the oil and the nuts only make it last. Done badly (or the nuts left loose) some of the slack comes back.
+    const adjust = job.outcome('adjust') !== 'good' || job.outcome('tight') === 'short';
+    faults.fix('chain');
+    if (adjust) faults.leave('chain', P.chainBotched);
+    faults.kept.chainLube = job.outcome('oil') === 'good' ? 1 : P.chainOilShort;
+    if (adjust) return 'Chain back on, but the slack is not right and it will stretch again soon';
+    return job.outcome('oil') === 'good' ? 'Chain adjusted and oiled: it runs quietly' : 'Chain adjusted, though it is a touch dry';
+  }
   if (job.kind === 'tarp') return 'The tarp is off, and the dust is everywhere';
   if (job.kind === 'fuel') {
     engine.fouling = botched ? P.plugLeftFouling : 0;
@@ -410,13 +445,14 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
   return how === 'short' ? 'Oil topped up, though it looks a bit light' : how === 'over' ? 'Oil topped up, with a good glug too much' : 'Oil topped up to 50:1';
 }
 
-/** Which jobs a quad can have done: the pre-mix oil is for the two-strokes, the sump's for the petrol four-strokes. */
-export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS) {
+/** Which jobs a quad can have done: the pre-mix oil is for the two-strokes, the sump's for the petrol four-strokes, the chain's for the chain-driven. */
+export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = false) {
   if (kind === 'oil') return engine.params.strokes === 2;
   if (kind === 'packing') return engine.params.strokes === 2;
   if (kind === 'coolant') return !!engine.params.waterCooled;
   if (kind === 'bore') return canFitBore(engine);
   if (kind === 'topEnd') return canRebuildTopEnd(engine, P);
+  if (kind === 'chain') return !!chain;
   if (kind === 'tarp' || kind === 'fuel' || kind === 'brake' || kind === 'battery') return true;
   if (kind === 'sump') return engine.params.strokes !== 2 && !engine.params.runsOnDiesel;
   return true;

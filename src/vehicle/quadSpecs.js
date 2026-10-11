@@ -125,6 +125,7 @@ export const QUAD_SPECS = [
     // engine braking, and trails blue-white oil smoke. Sounds like a two-stroke
     // dirt bike. Automatic like the others.
     id: 'yellow',
+    chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
     label: 'yellow quad',
     name: 'Yellow quad',
     bodyColor: 0xe9c21b,
@@ -504,6 +505,7 @@ export const EXTRA_SPECS = [
     // sound for now. Built by miniMotoModel.js: it rides on the quad physics with two wheels and the lean model (bikeLean.js) holding it up, and
     // leaning into corners. Anyone can ride it (it's nobody's), but there's no room on the back.
     id: 'moto',
+    chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
     miniMoto: true,
     label: 'mini moto',
     name: 'Mini moto',
@@ -607,6 +609,7 @@ export const EXTRA_SPECS = [
     // pull-start only (no starter motor), a clutch (Shift) and a four-speed box, and a tall, narrow stance that tips if you throw it round
     // a corner. Worn out, hard to start and rough. Built by atcModel.js, with the yellow's sound until it gets its own. Solo.
     id: 'atc',
+    chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
     threeWheeler: true,
     label: 'old three-wheeler',
     name: 'Old three-wheeler',

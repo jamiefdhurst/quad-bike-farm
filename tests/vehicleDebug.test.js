@@ -37,6 +37,11 @@ describe('vehicle debug helpers', () => {
   it('fixes everything but leaves quirks', () => {
     const u = unitWith();
     setFault(u.quad.faults, 'cable', 0.8);
+    u.quad.faults.hasChain = true;
+    u.quad.faults.kept.chainOff = true;
+    u.quad.faults.kept.chainLube = 0;
+    expect(problemSummary(u)).toContain('chain off the sprocket');
+    expect(problemSummary(u)).toContain('chain dry');
     expect(problemSummary(u)).toContain('seized');
     expect(problemSummary(u)).toContain('brake binding');
     expect(problemSummary(u)).toContain('water in the fuel');
@@ -46,6 +51,8 @@ describe('vehicle debug helpers', () => {
     expect(u.quad.quirks.tapStiff).toBe(0);
     expect(u.quad.sump.level).toBe(1);
     expect(u.quad.fuel.water + u.quad.fuel.sediment + u.quad.fuel.bowlWater).toBe(0);
+    expect(u.quad.faults.chainOff).toBe(false);
+    expect(u.quad.faults.kept.chainLube).toBe(1);
     expect(u.quad.startTrouble).toBe(0); // a hard start is a problem the girls keep a quad alive for
   });
 

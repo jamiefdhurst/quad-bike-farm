@@ -465,6 +465,9 @@ export class RideAudio {
     }
 
     if (quad.brakes?.takeClunk()) this.events.push('knock', 0.9); // a binding brake frees
+    const slap = quad.faults.takeSlap();
+    if (slap > 0) this.events.push('knock', 0.25 + 0.4 * slap); // a slack chain slaps the chainguard
+    if (quad.faults.takeJump()) this.events.push('knock', 1); // and the chain comes off
 
     // Ground jolts that shake a riderless quad are the bumps you hear from it.
     const vib = this.unit.vibration;

@@ -120,6 +120,12 @@ export function buildGameTree(g, host) {
       const faults = {};
       for (const kind of FAULT_KINDS) faults[kind] = num(() => (q().faults.started[kind] ? q().faults.levels[kind] : 0), (v) => setFault(q().faults, kind, v), 0, 1, '', '0 clears it');
       out.faults = group(() => faults, 'the faults');
+      if (q().faults.hasChain) {
+        out.chain = group(() => ({
+          oil: num(() => q().faults.kept.chainLube, (v) => (q().faults.kept.chainLube = v), 0, 1, '', '1 fresh, 0 bone dry'),
+          off: flag(() => q().faults.chainOff, (v) => (q().faults.kept.chainOff = v)),
+        }), 'the drive chain');
+      }
 
       out.brakes = group(() => ({
         snow: num(() => w().snow, (v) => g.setSnow(v), 0, 1, '', 'snowing now'),

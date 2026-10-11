@@ -469,7 +469,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I know something’s wrong?',
         a: `Mostly by feel and sound; nothing on screen tells you. A slow puncture pulls the bars towards the soft tyre. A slipping belt flares the revs and
-          hardly goes. A sticking throttle lingers after you let go, then sticks for good. A dirty carb hunts and runs rough. Worn engine mounts (on any vehicle, but you feel it most on the tractor, the UTV and the Land Rovers) shake more through the seat and clonk when you stab the throttle. The girls see what you can't:
+          hardly goes. A sticking throttle lingers after you let go, then sticks for good. A dirty carb hunts and runs rough. A stretched chain (the sport quad, mini moto and three-wheeler) slaps over bumps and can jump off. Worn engine mounts (on any vehicle, but you feel it most on the tractor, the UTV and the Land Rovers) shake more through the seat and clonk when you stab the throttle. The girls see what you can't:
           ride off and one behind you may shout about smoke or a soft tyre. Amy's logbook on the workbench records what she has found.`,
         tip: 'Read Amy’s logbook on the workbench: it is always true, unlike what Jess tells you.',
       },
@@ -478,6 +478,17 @@ export const FAQ_SECTIONS = [
         a: `Their engines sit on rubber mounts, so the engine rocks on its own: a shudder at idle, and a lurch as it starts and stops. That is normal. If it
           has got much worse and clonks when you go on or off the throttle, the mounts have perished. A quick fix with the toolbox (<kbd>M</kbd>) tightens them;
           the workbench renews them for good.`,
+      },
+      {
+        q: 'What is that slapping from the sport quad, the mini moto or the old three-wheeler?',
+        a: `Those three are chain driven. A chain oils off as you ride and stretches until it hangs slack, and a slack one slaps the chainguard over bumps. Left
+          alone it gets worse until a handful of throttle makes it jump off the sprocket: the engine races and nothing drives the wheels.`,
+      },
+      {
+        q: 'How do I put a chain back on, and how do I stop it coming off?',
+        a: `In the yard, take the toolbox to the quad and press <kbd>N</kbd>: it goes back on the sprocket and gets a squirt of oil, enough to ride home. To take the
+          stretch out, use the workbench's "Adjust and oil the chain" (the minus key): slacken the axle nuts, draw the axle back to about a finger of play, oil it
+          a little and do the nuts up. Look at the chain first and it will tell you how slack and how dry it is. Done carelessly some of the slack comes back.`,
       },
       {
         q: 'It started on the leads and then died again when I stopped. Why?',
@@ -556,14 +567,14 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I fix things?',
         a: `Pick up the red toolbox from the workbench, take it to a switched-off quad and press <kbd>E</kbd>. <kbd>T</kbd> pumps and patches the tyres,
-          <kbd>R</kbd> swaps the belt, <kbd>L</kbd> oils the cable, <kbd>C</kbd> cleans the carb, <kbd>M</kbd> nips up the engine mounts, <kbd>I</kbd> (held) cleans the air filter, <kbd>V</kbd>
+          <kbd>R</kbd> swaps the belt, <kbd>L</kbd> oils the cable, <kbd>C</kbd> cleans the carb, <kbd>M</kbd> nips up the engine mounts, <kbd>N</kbd> puts a chain back on and oils it, <kbd>I</kbd> (held) cleans the air filter, <kbd>V</kbd>
           services it. These are quick fixes that leave a mild fault behind; for a proper job, use the workbench. Each fix does its job if there is one and
           otherwise says all is well, so it doesn't give a fault away.`,
       },
       {
         q: 'What can the workbench do?',
-        a: `Drive into the yellow bay in front of it, switch off, look at the bench and press <kbd>E</kbd>. <kbd>1</kbd> to <kbd>9</kbd> and <kbd>0</kbd> pick a job: a new plug,
-          clean the carb, fix a tyre, two-stroke oil, engine oil, repack a silencer, coolant, a big-bore kit, new engine mounts, or a top-end rebuild for a two-stroke that has seized. Each is a short list of steps; on a hold step keep
+        a: `Drive into the yellow bay in front of it, switch off, look at the bench and press <kbd>E</kbd>. <kbd>1</kbd> to <kbd>9</kbd>, <kbd>0</kbd> and <kbd>-</kbd> pick a job: a new plug,
+          clean the carb, fix a tyre, two-stroke oil, engine oil, repack a silencer, coolant, a big-bore kit, new engine mounts, a top-end rebuild for a two-stroke that has seized, or adjusting and oiling the chain on the three chain-driven quads. Each is a short list of steps; on a hold step keep
           <kbd>E</kbd> down and let go inside the green band. Too soon or too long botches it and the fault comes back a little. Amy helps; Jess heckles.`,
       },
       {

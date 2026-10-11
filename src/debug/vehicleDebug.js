@@ -54,6 +54,8 @@ export function fixEverything(unit) {
   unit.quad.quirks.tapStiff = 0;
   unit.quad.startTrouble = 0;
   unit.quad.brakes.fix();
+  unit.quad.faults.kept.chainLube = 1; // a fresh chain, as the bench leaves it
+  unit.quad.faults.kept.chainOff = false;
 }
 
 /** Straight to running and warm with the fuel on, as if started and left a while (no cranking). */
@@ -82,6 +84,8 @@ export function problemSummary(unit) {
   const e = unit.engine;
   const bits = [];
   for (const kind of FAULT_KINDS) if (unit.quad.faults.started[kind]) bits.push(`${kind} ${unit.quad.faults.levels[kind].toFixed(2)}`);
+  if (unit.quad.faults.chainOff) bits.push('chain off the sprocket');
+  if (unit.quad.faults.chainDryness > 0.8) bits.push('chain dry');
   if (e.seized) bits.push('seized');
   if (e.scuff > 0.05) bits.push(`scuffed ${e.scuff.toFixed(2)}`);
   if (e.fouling > 0.1) bits.push(`plug fouled ${e.fouling.toFixed(2)}`);
