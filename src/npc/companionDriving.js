@@ -12,6 +12,7 @@ import { CrankAttempt, DEFAULT_CRANK_ATTEMPT_PARAMS } from './crankAttempt.js';
 import { PushStart, DEFAULT_PUSH_PARAMS } from './pushStart.js';
 import { onTarmac } from './tarmac.js';
 import { towedBy } from '../vehicle/trailerObstacle.js';
+import { pickOuting } from './outings.js';
 import { MotoNerve, refusesMoto, speedShare } from './motoGo.js';
 
 // Her driving a quad herself, as Companion states and methods: getting on the
@@ -196,6 +197,9 @@ export const drivingStates = {
         jump,
         tarmac: this.tarmacParams && this.world.layout.road && !q.tractor && !q.driverStand ? { at: (x, z) => onTarmac(this.world.layout.road, x, z), p: this.tarmacParams } : null,
         showOff: showOff ? { ...showOff, you: () => this.showOffYou() } : null,
+        outing: this.outingParams && this.outingSpots && this.world.fields && !race && !park && !doughnut && !jump && !showOff && !following && !convoyLead && !q.tractor && !q.driverStand && !this.motoRide
+          ? this.outingFor(q)
+          : null,
         tires: offered,
         follow: following ? () => {
           const lead = (followWho ?? this.followTarget)?.();
@@ -715,6 +719,21 @@ export const drivingMethods = {
     const wait = !!hill && hill.pastFoot(lead.x, lead.z) && !hill.pastFoot(pos.x, pos.z);
     const to = wait ? hill.waitSpot : point;
     return { point: fields.nextWaypoint(pos, to, 3), wait, to };
+  },
+
+  /** Her drive's way of going somewhere now and then (herDriving.js `outing`): a place picked from the farm's, the gateways there and the way back. */
+  outingFor(quad) {
+    const fields = this.world.fields;
+    const clear = (a, b) => this.driveClear(a, b);
+    const origin = { x: quad.position.x, z: quad.position.z };
+    const way = (from, to) => fields.route(from, to).map((pt) => ({ x: pt.x, z: pt.z }));
+    const forced = this.outingForced; // from the debug panel: this drive goes somewhere for certain
+    this.outingForced = false;
+    return {
+      p: forced ? { ...this.outingParams, chance: 1 } : this.outingParams,
+      pick: (from) => pickOuting(from, this.outingSpots(), way, clear, this.driveRandom ?? Math.random, this.outingParams),
+      back: (from) => way(from, origin),
+    };
   },
 
   /** Whether she could drive straight from a to b: inside the farm's hedges, nothing in the way (the hedges between fields included). */

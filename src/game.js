@@ -118,6 +118,7 @@ import { HazeLayer } from './effects/hazeLayer.js';
 import { BarnFumes, FUMES_PARAM_RANGES } from './world/barnFumes.js';
 import { barnShape } from './world/barn.js';
 import { Race, RACE_PARAM_RANGES, planLap, YouRun, youOnGrid, pickQuads } from './npc/race.js';
+import { DEFAULT_OUTING_PARAMS, OUTING_PARAM_RANGES, pickOuting, outingSpots } from './npc/outings.js';
 import { ASK_PATIENCE, ASK_KINDS, askProblems, askLine } from './npc/asking.js';
 import { Drag, DRAG_PARAM_RANGES, onDragGrid } from './npc/drag.js';
 import { buildDragStrip } from './world/dragStrip.js';
@@ -721,6 +722,9 @@ export class Game {
     for (const c of this.companions) c.doughnutParams = this.doughnutWatch.p;
     this.tarmacWatch = new TarmacWatch(); // the girls ride faster on the farm road; Jess eggs you on, Amy scolds the squealing (npc/tarmac.js)
     for (const c of this.companions) c.tarmacParams = this.tarmacWatch.p;
+    this.outingParams = { ...DEFAULT_OUTING_PARAMS }; // her drives that go somewhere (npc/outings.js)
+    for (const c of this.companions) c.outingParams = this.outingParams;
+    for (const c of this.companions) c.outingSpots = () => outingSpots(this.world.layout, this.world.fields.hill?.waitSpot, stripPoint);
     this.viewForward = new THREE.Vector3(); // which way your eyes point, for the girls showing off (npc/showOff.js)
     this.showOffParams = { ...DEFAULT_SHOWOFF_PARAMS };
     for (const c of this.companions) c.showOffParams = this.showOffParams;
@@ -1207,6 +1211,7 @@ export class Game {
     registerTuning('Follow the leader', this.convoy.p, CONVOY_PARAM_RANGES);
     registerTuning('Doughnuts', this.doughnutWatch.p, DOUGHNUT_PARAM_RANGES);
     registerTuning('Tarmac', this.tarmacWatch.p, TARMAC_PARAM_RANGES);
+    registerTuning('Drives that go somewhere', this.outingParams, OUTING_PARAM_RANGES);
     registerTuning('Showing off', this.showOffParams, SHOWOFF_PARAM_RANGES);
     registerTuning('The jump', this.jumpWatch.p, JUMP_PARAM_RANGES);
     registerTuning('Nicking your quad', this.nicking.p, NICK_PARAM_RANGES);

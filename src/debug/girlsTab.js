@@ -37,6 +37,7 @@ export function buildGirlsTab(d) {
     show(f, 'with her friend', () => g.pairState(id));
     show(f, 'waiting about', () => c.waitingText());
     show(f, 'numbness', () => (c.numbPlan ? `walking it off (${c.numbPlan.phase})` : `${round(c.numbness.value)} of 1`));
+    show(f, 'drive somewhere', () => (c.drive?.trip ? `${c.drive.trip.name} (${c.drive.trip.stage === 'there' ? 'on the way' : 'on the way back'})` : 'no'));
     show(f, 'her quad', () => g.ownership.claims[id] ?? 'none');
     show(f, 'tidying', () => c.lineUpStatus);
     show(f, 'race score', () => `${g.race.tally[id]?.wins ?? 0} won, ${g.race.tally[id]?.losses ?? 0} lost`);

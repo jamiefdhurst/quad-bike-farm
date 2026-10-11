@@ -17,6 +17,7 @@ import { doughnutControl } from './doughnuts.js';
 import { JumpRun } from './jumps.js';
 import { ShowOffRun } from './showOff.js';
 import { slotHeading, slotOffsets } from './lineUp.js';
+import { pathLength } from './outings.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const TAU = Math.PI * 2;
@@ -162,6 +163,8 @@ export class HerDrive {
    *   likes, and pulls up after each; each landing is rated (a 'jumpRated' event with the result in `lastJump`).
    * @param {object} [opts.showOff]  { trick, p, you() }: instead of her loops she rides at you and does a wheelie past or a skid to a stop
    *   beside you (showOff.js), looks to see if you saw, and goes again if you didn't; `you()` is { x, z, fx, fz }, where you are and are facing.
+   * @param {object} [opts.outing]  { pick(from) => { name, path } | null, back(from) => path, p }: now and then, instead of a loop, she drives to a place on the farm
+   *   (the path through the gateways), stops a moment and drives back to where she started (outings.js).
    * @param {object} [opts.tarmac]  { at(x, z), p }: whether a point is on the farm road, and the tarmac params; she rides faster there and the 'onRoad' event fires as she joins it.
    * @param {object} [opts.park]  { route }: drive the route (in line with a slot, then the slot) slowly, and stop on the last point.
    * @param {function} [opts.follow]  () => the quad she's following (yours), or null. Following, she keeps
@@ -169,7 +172,7 @@ export class HerDrive {
    * @param {function} [opts.followWay]  (her position, the point behind the lead, the lead's position) => { point, wait, to }: the way
    *   there through the gateways, or, with `wait`, to the foot of the hill (`to`) where she pulls up rather than go on up after you.
    */
-  constructor(quad, { tractorStarting = undefined, params, probe, isClear, random = Math.random, startingParams, momentWindow = 5, skill = { starting: 0.5, choke: 0.5, cornering: 0.5, mud: 0.5 }, passenger = () => false, waitForPassenger = false, tires = false, follow = null, followWay = null, friend = () => null, after = null, race = null, doughnut = null, jump = null, park = null, showOff = null, tarmac = null }) {
+  constructor(quad, { tractorStarting = undefined, params, probe, isClear, random = Math.random, startingParams, momentWindow = 5, skill = { starting: 0.5, choke: 0.5, cornering: 0.5, mud: 0.5 }, passenger = () => false, waitForPassenger = false, tires = false, follow = null, followWay = null, friend = () => null, after = null, race = null, doughnut = null, jump = null, park = null, showOff = null, tarmac = null, outing = null }) {
     this.quad = quad;
     this.tractorStarting = tractorStarting; // how she goes about starting the tractor (tractorStart.js), when it is one
     this.p = params;
@@ -191,6 +194,8 @@ export class HerDrive {
     this.waited = 0;
     this.waitedTotal = 0;
     this.cruiseScale = 1; // you asked her to go faster or slower
+    this.outing = outing; // driving somewhere and back, now and then (outings.js)
+    this.trip = null; // the outing she is on: { name, stage: 'there' | 'back' }
     this.tarmac = tarmac; // { at(x, z) => on the road, p }: she goes faster on the tarmac (tarmac.js)
     this.roadPace = 1; // multiplier on her cruising speed from the road
     this.roadSettled = 0; // 0 off the road, 1 settled into its pace
@@ -245,6 +250,11 @@ export class HerDrive {
 
   between(a, b) {
     return a + this.random() * Math.max(0, b - a);
+  }
+
+  /** The place an outing is going to: she stops there for a moment. */
+  atPlace(wp) {
+    return this.trip?.stage === 'there' && wp === this.waypoints[this.waypoints.length - 1];
   }
 
   pickCruise() {
@@ -725,6 +735,7 @@ export class HerDrive {
     this.jump = null;
     this.showOff = null;
     this.follow = null;
+    this.trip = null;
     this.waypoints = [];
     this.index = 0;
     this.time = 0;
@@ -762,6 +773,32 @@ export class HerDrive {
     }
     const q = this.quad;
     const pos = q.position;
+    if (this.outing && !this.follow) {
+      const o = this.outing;
+      if (this.trip && !this.waypoints.length) this.trip = null; // something cleared her route on the way (backing off twice, a friend getting on): the trip is off
+      if (this.trip?.stage === 'there') {
+        // At the place: home again, by the same gateways.
+        this.trip.stage = 'back';
+        this.waypoints = o.back(pos).map((pt) => ({ x: pt.x, z: pt.z }));
+        this.index = 0;
+        if (this.waypoints.length) return true;
+      }
+      if (this.trip?.stage === 'back') this.trip = null;
+      else if (!this.trip && this.random() < o.p.chance) {
+        const trip = o.pick(pos);
+        if (trip?.path.length) {
+          this.trip = { name: trip.name, stage: 'there' };
+          this.waypoints = trip.path.map((pt) => ({ x: pt.x, z: pt.z }));
+          this.index = 0;
+          // Long enough to get there and back at her pace, and a while at the place, before she tires of it.
+          const pace = Math.max(1, this.cruise * o.p.speedScale);
+          const there = pathLength(pos, this.waypoints);
+          this.driveFor = Math.max(this.driveFor, this.time + (there * 2) / pace + o.p.stopMax + o.p.extraSeconds);
+          this.events.push('outing');
+          return true;
+        }
+      }
+    }
     // Wandered off a bit: the next loop sets off back towards where she started.
     const away = Math.hypot(pos.x - this.origin.x, pos.z - this.origin.z) > this.p.driveLoopRadiusMin;
     const yaw = away ? headingTo(pos, this.origin) : q.yaw;
@@ -882,7 +919,7 @@ export class HerDrive {
       }
       if (this.pauseHere) {
         this.events.push('pause');
-        this.setPhase('pause', this.between(p.drivePauseMin, p.drivePauseMax));
+        this.setPhase('pause', this.trip?.stage === 'there' && this.index >= this.waypoints.length ? this.between(this.outing.p.stopMin, this.outing.p.stopMax) : this.between(p.drivePauseMin, p.drivePauseMax));
         // She brakes there rather than coasting.
         this.hold(c);
         c.brake = p.driveBrakeFirm;
@@ -892,7 +929,7 @@ export class HerDrive {
     // Whether she'll stop for a moment at this one; if so she slows for it on the way.
     if (this.pauseFor !== wp) {
       this.pauseFor = wp;
-      this.pauseHere = !this.park && this.random() < p.drivePauseChance;
+      this.pauseHere = !this.park && (this.atPlace(wp) || this.random() < p.drivePauseChance);
     }
 
     // Look where she's going a few times a second, and steer round anything in the way.
@@ -965,7 +1002,7 @@ export class HerDrive {
     const stopsHere = this.race ? this.index === this.race.gridIndex : !follow && (this.index === this.waypoints.length - 1 || this.pauseHere);
     const corner = cornerSpeed(error, dist, cornerAccel);
     const crowded = Math.max(2.5, this.clearAround * 1.2);
-    const target = targetSpeed(this.cruise * this.roadPace, { error, toStop: stopsHere ? dist : Infinity, clear: this.clearAhead, corner: Math.min(corner, crowded) });
+    const target = targetSpeed(this.cruise * this.roadPace * (this.trip ? this.outing.p.speedScale : 1), { error, toStop: stopsHere ? dist : Infinity, clear: this.clearAhead, corner: Math.min(corner, crowded) });
     const short = target - speed;
     this.integral = clamp(this.integral + short * dt, -3, 8);
     const pedals = pedalsFor(speed, target, this.integral, p);

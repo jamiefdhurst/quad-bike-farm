@@ -711,6 +711,12 @@ export const FAQ_SECTIONS = [
           slow down gently.`,
       },
       {
+        q: 'Where do the girls drive when they go off on a quad?',
+        a: `Mostly somewhere. More often than not a girl driving a quad on her own picks a place on the farm, such as the drag strip, the muck heap, the
+          trough, the end of the road, the foot of the hill or a field, goes there by the gateways, stops for a moment and drives back. The rest of the time
+          she potters about in loops near where she started.`,
+      },
+      {
         q: 'How do I get a girl to drive me about?',
         a: `Ask her from the wheel ("Take me for a ride"), or just sit on the back of a parked quad (<kbd>B</kbd>) and wait: after a while a free girl
           comes over and drives you about in big loops. On the back, <kbd>E</kbd> opens a wheel to ask her to stop, slow down, speed up, let you off,

@@ -406,3 +406,81 @@ describe('backing off in a race', () => {
     expect(d.index).toBe(1);
   });
 });
+
+describe('her driving: an outing', () => {
+  const outing = (extra = {}) => ({
+    p: { chance: 1, minDistance: 35, maxDistance: 230, speedScale: 1.3, stopMin: 3, stopMax: 4, extraSeconds: 25 },
+    pick: () => ({ name: 'the muck heap', path: [{ x: 0, z: 40 }, { x: 10, z: 90 }] }),
+    back: () => [{ x: 0, z: 40 }, { x: 0, z: 0 }],
+    ...extra,
+  });
+
+  it('drives to the place, stops there for a moment and comes back', () => {
+    const quad = fakeQuad();
+    const d = new HerDrive(quad, { params: P, probe: () => Infinity, isClear: open, random: seededRandom(3), outing: outing() });
+    quad.driver = d;
+    const events = [];
+    const stages = new Set();
+    let far = 0;
+    let stoppedThere = 0;
+    for (let t = 0; t < 400 && !d.done; t += DT) {
+      events.push(...d.update(DT));
+      quad.step(DT);
+      if (d.trip) stages.add(d.trip.stage);
+      far = Math.max(far, quad.position.z);
+      if (d.trip?.stage === 'there' && quad.position.z > 85 && d.phase === 'pause') stoppedThere += DT;
+    }
+    expect(events).toContain('outing');
+    expect(far).toBeGreaterThan(80);
+    expect(stoppedThere).toBeGreaterThan(1);
+    expect([...stages]).toEqual(['there', 'back']);
+    expect(d.trip).toBeNull(); // home and onto loops
+  });
+
+  it('keeps going long enough to get there and back before she tires of it', () => {
+    const quad = fakeQuad();
+    const d = new HerDrive(quad, { params: { ...P, driveForMin: 20, driveForMax: 20 }, probe: () => Infinity, isClear: open, random: seededRandom(5), outing: outing() });
+    quad.driver = d;
+    for (let t = 0; t < 400 && d.trip?.stage !== 'back' && !d.done; t += DT) {
+      d.update(DT);
+      quad.step(DT);
+    }
+    expect(d.driveFor).toBeGreaterThan(60);
+    expect(d.done).toBe(false);
+  });
+
+  it('loops as before when there is nowhere to go or the dice say no', () => {
+    const nowhere = fakeQuad();
+    const a = new HerDrive(nowhere, { params: P, probe: () => Infinity, isClear: open, random: seededRandom(1), outing: outing({ pick: () => null }) });
+    nowhere.driver = a;
+    const dicey = fakeQuad();
+    const b = new HerDrive(dicey, { params: P, probe: () => Infinity, isClear: open, random: seededRandom(1), outing: outing({ p: { ...outing().p, chance: 0 } }) });
+    dicey.driver = b;
+    for (let t = 0; t < 60; t += DT) {
+      a.update(DT);
+      nowhere.step(DT);
+      b.update(DT);
+      dicey.step(DT);
+    }
+    expect(a.trip).toBeNull();
+    expect(b.trip).toBeNull();
+    expect(Math.hypot(nowhere.position.x, nowhere.position.z)).toBeLessThan(30);
+  });
+
+  it('abandons the trip if her route is cleared on the way', () => {
+    const quad = fakeQuad();
+    const o = outing();
+    const d = new HerDrive(quad, { params: P, probe: () => Infinity, isClear: open, random: seededRandom(3), outing: o });
+    quad.driver = d;
+    for (let t = 0; t < 30; t += DT) {
+      d.update(DT);
+      quad.step(DT);
+    }
+    expect(d.trip?.stage).toBe('there');
+    o.p.chance = 0; // and she does not fancy another
+    d.waypoints = []; // backed off twice, say
+    d.update(DT);
+    quad.step(DT);
+    expect(d.trip).toBeNull();
+  });
+});

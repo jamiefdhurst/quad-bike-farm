@@ -274,6 +274,19 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'outing',
+      label: '% drives somewhere on the farm and back (a place picked from the farm, by the gateways)',
+      run: (id) => {
+        const c = girl(id);
+        if (!free(id)) return;
+        const q = freeQuads(c, c.root.position)[0];
+        if (!q) return toast(`${c.name} has no quad she can take`);
+        c.outingForced = true; // the next drive goes somewhere for certain
+        c.requestDrive(q);
+        toast(`${c.name} is off for a drive somewhere`);
+      },
+    },
+    {
       verb: 'back-seat',
       label: '% gets in the back of the 200TDi',
       run: (id) => {
