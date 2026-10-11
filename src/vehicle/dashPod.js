@@ -6,7 +6,7 @@ import {
 } from './dashParts.js';
 import { segmentCounts } from './dash.js';
 
-// The two accessory pods (README TODO 26, docs/briefs/dashes/). Each shows everything for whichever quad it's fitted to, and there's
+// The two accessory pods (docs/briefs/dashes/). Each shows everything for whichever quad it's fitted to, and there's
 // only one of each, so the toolbox moves them between quads. buildPod(kind) returns { group, update(state) } with the same state the
 // stock dash gets; the group's origin is the bar clamp at the foot of its stem, and it faces the rider along -Z.
 

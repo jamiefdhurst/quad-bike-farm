@@ -14,7 +14,7 @@ export const DEFAULT_DAYLIGHT_PARAMS = {
   sunset: 17.25,
   sunHigh: 0.5, // radians: the sun at its highest, in the south at noon (about 29 degrees, as in October)
   nightLight: 0.14, // the sky's light at full dark, as a fraction of the day's
-  moonLight: 0.35, // a faint blue light from above at night, so the farm is still just there (stars and a moon are item 94)
+  moonLight: 0.35, // a faint blue light from above at night, so the farm is still just there (stars and a moon are README TODO item 68)
   duskGlow: 0.75, // how orange the low sun turns the sky (less on a cloudy day)
   peakHour: 14.5, // the warmest time of day
   coolHours: 9, // hours after the warmest for the night's cold to set in

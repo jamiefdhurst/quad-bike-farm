@@ -770,9 +770,8 @@ export const EXTRA_SPECS = [
   },
 ];
 
-// The tractor: always on the farm (it isn't part of the fleet, src/vehicle/fleet.js) and the girls leave it alone for now (it's TODO 8's
-// own; they come to it in 11 and 14). An old diesel in the yard: heavy, slow and strong, with a clutch and a three-speed gearbox, glow
-// plugs for a cold start, a hand throttle and a stop knob. Built as a QuadUnit like the rest, with its own body, wheels and drivetrain
+// The tractor: always on the farm (it isn't part of the fleet, src/vehicle/fleet.js). An old diesel in the yard: heavy, slow and strong,
+// with a clutch and a three-speed gearbox, glow plugs for a cold start, a hand throttle and a stop knob. Built as a QuadUnit like the rest, with its own body, wheels and drivetrain
 // (QuadUnit reads `tractor`). Runs on red diesel, so it doesn't mind it. Its sound is kyles's old tractor recordings.
 export const TRACTOR_SPEC = {
   id: 'tractor',

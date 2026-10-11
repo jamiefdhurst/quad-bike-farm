@@ -33,7 +33,7 @@ Backtick opens it. It has three tabs, each with a job; keep them that way, and k
 
 ## The girls' minds
 
-How the girls notice, react and decide is being rebuilt (TODO 130 to 137) so each part lives in one place and everything new plugs into it rather than bringing its own timers and dice. Follow every part below for anything new the girls do; `tests/girlsMinds.test.js`, `tests/reactions.test.js`, `tests/availability.test.js`, `tests/needs.test.js` and `tests/chooser.test.js` check what they can. Read DECISIONS.md's sections for TODO 130 onwards before changing any of it.
+How the girls notice, react and decide has been rebuilt so each part lives in one place and everything new plugs into it rather than bringing its own timers and dice. Follow every part below for anything new the girls do; `tests/girlsMinds.test.js`, `tests/reactions.test.js`, `tests/availability.test.js`, `tests/needs.test.js` and `tests/chooser.test.js` check what they can. Read DECISIONS.md's sections on it (from "The girls' attention" on) before changing any of it.
 
 ### What she decides to do (needs and the chooser)
 

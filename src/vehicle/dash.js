@@ -7,7 +7,7 @@ import {
 } from './dashParts.js';
 
 // The stock dashes. Each quad's own dash is close to the real machine it's modelled on, which for most means very little: the
-// instruments are on the two accessory pods (dashPod.js). Layouts and colours follow docs/briefs/dashes/ (see README TODO 26).
+// instruments are on the two accessory pods (dashPod.js). Layouts and colours follow docs/briefs/dashes/ (see DECISIONS.md, "The dashes").
 //
 //   foreman:   red. A Honda Foreman-style cover: a rectangular speedo with hour and odometer drums, N / R / OIL lamps and the key.
 //   grizzly:   blue. A Yamaha Grizzly-style pod around a grey-green LCD: fuel and temperature bars, gear letter, speed, clock and a

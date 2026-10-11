@@ -2,6 +2,8 @@
 
 A running log of choices made while building this, so later work starts from the same assumptions.
 
+TODO and item numbers in sections written before 11 October 2026 are the README list's old numbers. That day the finished items were taken out of the list and the rest renumbered from 1, so an old number here names the item it was then, not the one with that number now.
+
 ## Working agreement (2026-10-04)
 
 - Built autonomously from the original brief. All later work on this project is autonomous too.

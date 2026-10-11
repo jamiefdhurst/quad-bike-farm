@@ -3,7 +3,7 @@ import { Numbness, DEFAULT_NUMB_PARAMS } from './numbness.js';
 
 // A long sit on a shaking seat: her legs go tingly, her bum goes numb, and she gets off, walks it off, stretches and gets back on (numbness.js
 // has the build-up). As Companion methods, mixed in by companion.js. Only for a sit of her own choosing on a parked running quad's back, not
-// one she is holding for you (item 119's hold, waiting for you, warming it up) and not while you ride.
+// one she is holding for you (keeping a sick one alive's hold, waiting for you, warming it up) and not while you ride.
 
 export const numbMethods = {
   get numbParams() {
