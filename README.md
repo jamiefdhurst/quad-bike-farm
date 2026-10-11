@@ -652,3 +652,17 @@ Numbered on from the end of the list so nothing else moves.
 156. Making up. After a falling out, one makes the first move: brings the other a tea, or offers her the better quad. An offer that meets company, so the chooser decides when.
 157. Sound shapes what they notice. Heavy rain, a loud engine beside them or being inside the barn dulls what they hear (attention's ranges), so they miss things far off in a downpour.
 158. Getting attached to a quad. Whoever drives one most this game cares about it: she complains when you run it dry or thrash it, and is proud when it's washed. Extends ownership with a "care" score.
+159. A proper mechanic's day. A full service at the bench, step by step: plug gap, air filter, oil change, chain or belt check, ending with the quad noticeably smoother and Amy ticking it off in her logbook.
+160. Tyre wear that shows. Tread wears over a game, faster on tarmac and with doughnuts; bald tyres lose grip in mud and on wet grass, and the tread visibly goes. New ones fitted at the bench.
+161. A diesel that needs bleeding. Run the tractor or a Land Rover dry and it won't restart until the fuel is bled at the lift pump. Amy knows how.
+162. Towing a broken-down quad with the Land Rover on a rope, on the road and the farm track, a girl steering the dead one (item 30 is the trailer-ramp version).
+163. A quad better in some places. Each quad gets a small hidden strength (climbs the hill best, floats over mud, quickest on tarmac); the girls work it out over games and argue about it.
+164. Second-hand buying. A board in the barn lists the odd vehicle for sale from neighbours; buying one adds it to the yard. Goes with item 40.
+165. The neighbour's farm over the lane: a second yard to ride to on the road, its own vehicles, a neighbour who lends and borrows.
+166. Seasons across games: each game a day, the days moving through the year (muddy winter, dusty summer with haymaking, autumn leaves), changing the weather pool, the ground and the jobs.
+167. Haymaking. Cut the field with the tractor, turn it, bale it, stack the bales on the trailer with the girls throwing them up.
+168. A shed to build up over games: a pit for working underneath, a compressor for the tyres, a parts washer, each unlocking bench jobs.
+169. Night riding with lamps (with item 33): spotlamps fitted at the bench on the quads and the Land Rover, riding the fields by their beam, the girls jumpy at noises in the dark.
+170. A show day: now and then a day ends at a local show, your best-kept quad judged on clean, tidy and running sweet, the girls in the slow race.
+171. Photo mode: a free camera, time of day frozen, the girls posing (goes with item 51).
+172. A replay of your best jump or race from a chase camera, using item 53's record and replay.
