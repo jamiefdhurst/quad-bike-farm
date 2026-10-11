@@ -698,3 +698,11 @@ Numbered on from the end of the list so nothing else moves.
 202. Wet tarmac that shines: reflections on the road and yard after rain, drying patchily as the sun comes out.
 203. Exhaust condensation: on a cold morning a cold engine drips water from the exhaust and puffs white vapour until it's warm (with item 125).
 204. A tanker for the diesel: the red diesel bowser runs down as the tractor and Land Rovers use it, and a tanker comes up the lane to refill it; until then it's on a ration.
+205. Loads on the racks: strap the jerry can, the toolbox or a bale to a quad's racks with a ratchet strap; strapped, they ride along and the quad handles heavier; unstrapped, they slide off over bumps.
+206. Corroded battery terminals: a quad with a charged battery that only clicks until you clean the terminals with a wire brush, easily mistaken for a flat battery.
+207. A sticky starter: an old starter motor with worn brushes that won't turn until you give it a tap with a spanner; Jess learns the trick and does it with relish.
+208. Service intervals by the hours: the logbook shows when each quad is due a service from its engine hours; overdue engines wear faster, and Amy nags.
+209. Wipers and rain on the glass: rain beads and streaks on the Land Rovers' and UTV's screens, and working wipers clear it, with a switch on the dash.
+210. Steamed-up windows: on a cold, wet day the cab glass mists as people sit in it until the heater, from a warm engine, clears it (with sheltering in a cab).
+211. A road-legal Land Rover: an MOT list (lights, brakes, wipers, horn) to put right before it can go on the lane to the village (item 180). Needs the wipers (item 209) first.
+212. Tools left lying about: a spanner or the tyre gauge left in the field gets lost in the grass, or one of the girls finds it and brings it back (or hides it, if it's Jess).
