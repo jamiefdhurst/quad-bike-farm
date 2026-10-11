@@ -3382,6 +3382,7 @@ export class Game {
 
   /** Each frame: whether it's over, and which vehicle the light pool should favour. */
   updateWorkLight(dt) {
+    if (!this.companions.length) return; // a game without the girls has nobody to bring a light
     const ctx = { dark: this.daylight?.darkness ?? 0, ...this.workLightContext(this.companions[0]) };
     for (const e of this.workLight.update(dt, ctx)) this.handleWorkLight(e);
     const job = this.workLight.job;
