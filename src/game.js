@@ -28,6 +28,7 @@ import { CHARACTERS } from './npc/characters.js';
 import { DEFAULT_NOTICE_PARAMS, NOTICE_PARAM_RANGES } from './npc/attention.js';
 import { NoticeWatch } from './npc/noticeWatch.js';
 import { Pair, PAIR_PARAM_RANGES, pairFacing } from './npc/pair.js';
+import { DEFAULT_WAITING_PARAMS, WAITING_PARAM_RANGES } from './npc/waiting.js';
 import { choose, mainNeed, OFFER_KINDS } from './npc/chooser.js';
 import { girlsLeftOut } from './npc/leftOut.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
@@ -565,7 +566,8 @@ export class Game {
     // How they get on and off things, and stand about (npc/companionMoves.js, npc/poseMoves.js): one set for both.
     this.moveParams = { ...DEFAULT_MOVE_PARAMS };
     this.idlePoseParams = { ...DEFAULT_IDLE_POSE_PARAMS };
-    for (const c of this.companions) Object.assign(c, { moveParams: this.moveParams, idlePoseParams: this.idlePoseParams });
+    this.waitingParams = { ...DEFAULT_WAITING_PARAMS };
+    for (const c of this.companions) Object.assign(c, { moveParams: this.moveParams, idlePoseParams: this.idlePoseParams, waitingParams: this.waitingParams });
     // A girl on the tractor's wheel arch (npc/mudguardRide.js, vehicle/tractorMount.js); the tractor is built above.
     this.mudguard = new MudguardRide(undefined, createRandom(this.seed ^ 0x3d6a));
     this.tractorMount = this.tractorUnit ? new TractorMount(this.tractorUnit.quad, (x, z) => this.world.heightAt(x, z)) : null;
@@ -1050,6 +1052,7 @@ export class Game {
     registerTuning('Hay ride seat', this.haySeat, HAYSEAT_PARAM_RANGES);
     registerTuning('Getting on and off', this.moveParams, MOVE_PARAM_RANGES);
     registerTuning('Standing about', this.idlePoseParams, IDLE_POSE_PARAM_RANGES);
+    registerTuning('Waiting about', this.waitingParams, WAITING_PARAM_RANGES);
     registerTuning('Trailer', this.trailer.p, TRAILER_PARAM_RANGES);
     registerTuning('Quad names', this.quadNames.p, NAME_PARAM_RANGES);
     registerTuning('Whose quad', this.ownership.p, OWNERSHIP_PARAM_RANGES);
@@ -2364,6 +2367,9 @@ export class Game {
       const ctx = this.needsContext(c);
       c.needs.update(dt, ctx, c.params);
       c.wetNow = ctx.wet;
+      // What the day is doing, for the ways she waits about (npc/waiting.js): the cold, the sun, a shower coming on.
+      const w = this.weather;
+      c.waitWeather = { chill: ctx.chill, wet: ctx.wet, sun: Math.min(1, w.def.sky.sunIntensity / 2.6) * (1 - w.rain), clouding: Math.max(0, w.target - w.rain) };
       c.intent.update(dt, `${c.fsm.name}:${c.fsm.data?.goal ?? ''}`);
       const m = c.mind;
       m.since += dt;

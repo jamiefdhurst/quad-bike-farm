@@ -2,6 +2,7 @@
 // so both do exactly what the game does. Each action calls the real game methods and says what happened with a toast.
 import { pickTrick } from '../npc/showOff.js';
 import { standBy } from '../npc/pair.js';
+import { WAITING_IDLES } from '../npc/waiting.js';
 
 /**
  * @typedef {object} GirlAction
@@ -411,6 +412,17 @@ export function girlActions(g) {
       },
     },
   ];
+  // Each way of waiting that fits what's about her (npc/waiting.js), started now.
+  for (const [name, w] of Object.entries(WAITING_IDLES)) {
+    actions.push({
+      verb: `wait-${name.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)}`,
+      label: `% waits about ${w.label}${w.needs === 'wheel' ? ' (a tyre within reach)' : w.needs === 'seat' ? ' (a seat within reach)' : ''}`,
+      run: (id) => {
+        const why = girl(id).forceWaiting(name);
+        if (why) toast(`${nameOf(id)} can't: ${why}`);
+      },
+    });
+  }
   return {
     all: actions,
     /** The actions this girl can do. */

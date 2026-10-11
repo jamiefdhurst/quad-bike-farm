@@ -67,6 +67,7 @@ Decided in one place, `src/npc/attention.js` (pure, tested). Never turn her head
 - **A sub-activity inside a state** (warming her hands while idle) calls `companion.attend(point, { weight, seconds })` while it's doing it.
 - **Walking somewhere** needs nothing: from standing she looks at the target first (`lookLead`). A walk that mustn't pause puts `hurry: true` in the walking state's data.
 - **Something new that pins her where she stands** (hands on something, a pose) adds itself to `freeToTurn()`, so she doesn't turn round to look mid-way through it.
+- **A new way of waiting about that fits what's around her** goes in `WAITING_IDLES` (`src/npc/waiting.js`, with what it needs) and `STANDING_IDLES` (its pose); `pins` makes her face the thing and not turn round, `hands` keeps hands-up reactions off. Each girl's taste for it is her `waitTastes` in characters.js.
 - **Someone or something she should keep an eye on all the time** (not a one-off event) goes in `attentionWorld` in `game.watchNotices`.
 
 ### How her body reacts (reactions)

@@ -500,6 +500,13 @@ export const FAQ_SECTIONS = [
           face the middle. Walk off and they turn back to each other.`,
       },
       {
+        q: 'Why does she kick the tyres, or wipe the seat?',
+        a: `Stood about, the girls pass the time with whatever is next to them. Beside a quad, Jess gives a tyre a kick and Amy wipes the seat
+          down. On a cold day they rub their hands, in bright sun they shade their eyes, when a shower is coming on they look up at the sky,
+          and now and then they check their phones (Jess far more than Amy).`,
+        tip: 'Stood by a quad, Amy wipes its seat down and Jess kicks its tyres.',
+      },
+      {
         q: 'Why did she cover her ears, or flinch?',
         a: `They react to what happens near them. A backfire or a bang makes them flinch, a quad leaping forward right by them makes them hop
           back, and revving flat out beside them makes Amy cover her ears (Jess likes the noise). A quad going over gets a gasp, a good jump a

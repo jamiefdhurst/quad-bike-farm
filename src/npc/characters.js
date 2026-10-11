@@ -38,6 +38,7 @@ export const CHARACTERS = [
     },
     lines: VOICE_LINES,
     idles: ['folded', 'clasped', 'weight'], // her ways of standing about (STANDING_IDLES in poseMoves.js): tidy and patient
+    waitTastes: { wipeSeat: 2, kickTyre: 0.5, phone: 0.4 }, // how keen she is on each way of waiting that fits what's about (waiting.js): tidies the seat
     seatedIdles: ['folded', 'handsOnKnees', 'anklesCrossed', 'leanBack', 'elbowOut'], // and of sitting a while (SEATED_IDLES)
     voiceBank: 'companion-voice', // public/audio/<voiceBank>.json, recorded by tools/generate_companion_voice.py
     soundRate: 1, // her sighs and laughs, played at this speed (a shade higher pitched above 1)
@@ -102,6 +103,7 @@ export const CHARACTERS = [
       placedPatienceMax: 300,
     },
     idles: ['hips', 'rock', 'scuff', 'stretch', 'pocket'], // fidgety
+    waitTastes: { kickTyre: 1.6, wipeSeat: 0.3, phone: 2 }, // kicks the tyres, never off her phone
     seatedIdles: ['kneeJiggle', 'handsBehindHead', 'swingLegs', 'slouch', 'leanBack', 'elbowOut'],
     lines: linesFor(JESS_LINES),
     voiceBank: 'companion-voice-jess',

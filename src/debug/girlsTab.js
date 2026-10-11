@@ -35,6 +35,7 @@ export function buildGirlsTab(d) {
     show(f, 'looking at', () => c.attention.describe());
     show(f, 'reacting', () => c.reactingText);
     show(f, 'with her friend', () => g.pairState(id));
+    show(f, 'waiting about', () => c.waitingText());
     show(f, 'numbness', () => (c.numbPlan ? `walking it off (${c.numbPlan.phase})` : `${round(c.numbness.value)} of 1`));
     show(f, 'her quad', () => g.ownership.claims[id] ?? 'none');
     show(f, 'tidying', () => c.lineUpStatus);

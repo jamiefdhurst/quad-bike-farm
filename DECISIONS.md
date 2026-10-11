@@ -2708,3 +2708,15 @@ Built to the plan above, with these differences:
 - Debug: "goes and stands with her friend" and "her friend wanders off and she tags along" in each girl's "Make her do"; "with her friend" on the Girls tab and `girl <name> pairedWith` in the console; "The two as a pair" tuning under "Girls: moving about".
 - Checked once headless: going over ends 1.5 m apart facing each other; tagging along follows and stands together at the end. Opening the circle to you is checked by the unit tests only.
 
+## Waiting that fits where she is (TODO 139)
+
+Stood about, a girl's ways of standing were picked at random from her own list. Now what's around her adds to the list, and the poses that fit it are likelier.
+
+- The item said the poses were already there; only hand-warming was, and that is a job (hands over a running engine), not a way of standing. So six are new in `STANDING_IDLES`: kicking a tyre, wiping a seat, rubbing her hands, shading her eyes, looking up at the sky and checking her phone. Rubbing and wiping move the hands to and fro (a `move` on the idle, metres added to where each hand is held), which the bone-only `wave` couldn't.
+- `src/npc/waiting.js` (pure, tested) says which suit: a wheel within 1.2 m, a free seat within about 1 m, the day's chill where she is over 0.3, the sun over 0.65 of a sunny day's and not raining, or the rain heading up (a shower coming on: `target` over `rain` by 0.05). Each that suits is 2.5 times as likely as one of her habits; the phone, which suits anywhere, 0.6. Re-weighed once a second while she's stood about (`StandingIdles.setChoices`, now weighted).
+- Personality is each girl's `waitTastes` in characters.js: Amy wipes the seat (2) and seldom looks at her phone (0.4); Jess kicks the tyres (1.6), barely wipes a seat (0.3) and is on her phone (2).
+- Kicking a tyre and wiping a seat turn her to it (`waitTurn` in the idle state) and pin her (`freeToTurn` says no while they last), so she doesn't turn round mid-kick. Each says what she looks at with `attend`: the tyre, the seat, her phone, out ahead under her hand, up at the sky.
+- Her phone is a procedural box with a lit screen, put each frame along her right hand's fingers with the screen to her eyes, and only shown while she checks it (and not while reacting). While she has it, or a hand on a seat, `mayReact` says no to hands-up reactions. Item 52 (Amy's phone ringing) can reuse it; that's the only overlap with the later phone item.
+- Debug: a button per way in each girl's "Make her do" (a tyre or seat has to be within reach), "waiting about" on the Girls tab, `girl <name> waiting` and `girl <name> wait-kick-tyre` (and the rest) in the console, and "Waiting about" tuning under "Girls: moving about".
+- Checked in one headless run from beside her: she turns to the wheel and the kick reaches 0.44 m forward (0.29 m at first, so the swing was doubled); shading her eyes, rubbing her hands, wiping and the phone in her hand read as meant. Looking up was not looked at.
+

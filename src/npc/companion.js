@@ -18,6 +18,7 @@ import { carryParams } from './carrying.js';
 import { Contentment } from './contentment.js';
 import { SideSaddleSlip, pickSideSaddle } from './sideSaddle.js';
 import { wavingMethods } from './companionWaving.js';
+import { waitingMethods } from './companionWaiting.js';
 import { DEFAULT_DOUGHNUT_PARAMS, ringPoints } from './doughnuts.js';
 import { DEFAULT_SHOWOFF_PARAMS, pickTrick } from './showOff.js';
 import { DEFAULT_JUMP_PARAMS } from './jumps.js';
@@ -189,6 +190,8 @@ export class Companion {
     // Waving two-stroke smoke away (companionWaving.js).
     this.waving = null;
     this.rig.posers.push((dt) => this.poseWaving(dt));
+    // Her phone in her hand while she checks it, waiting about (companionWaiting.js).
+    this.rig.posers.push(() => this.posePhone());
     // A reaction (a flinch, hands over her ears, a cheer: companionReacting.js) shows over everything else, so it goes last.
     this.reaction = null; // { type, t, from, strength }
     this.reactTurn = null; // a heading to turn to while she turns away from something
@@ -1155,7 +1158,7 @@ export class Companion {
 
   /** Stood about with nothing holding her in place (her hands over an engine, a wave, a start), so she may turn to look at something. */
   freeToTurn() {
-    return this.fsm.is('idle') && !this.warmingAt && !this.waving && !this.recoil && !this.attempt;
+    return this.fsm.is('idle') && !this.warmingAt && !this.waving && !this.recoil && !this.attempt && !this.waitPinned();
   }
 
   turnToward(dt, facing) {
@@ -1198,6 +1201,7 @@ export class Companion {
     if (viewer) this.updateAttention(dt, viewer);
     this.updateFidget(dt);
     this.updateCarry(dt);
+    this.updateWaiting(dt);
     this.updatePose(dt);
     if (this.root.parent === this.scene) this.syncCollider();
 
@@ -1222,6 +1226,7 @@ Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(ke
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(numbMethods));
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(carryingMethods));
 Object.assign(Companion.prototype, wavingMethods);
+Object.assign(Companion.prototype, waitingMethods);
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(moveMethods));
 // (restingMethods has getters, so copy its descriptors rather than assigning.)
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(restingMethods));
@@ -1398,6 +1403,7 @@ export const STATES = {
       // Turning away from smoke (reactions.js); something held over her shoulder a while, she turns to face it (attention.js); either
       // way she turns back to what she was facing after.
       if (this.reactTurn !== null && !this.warmingAt && !this.attempt) this.turnToward(dt, this.reactTurn);
+      else if (this.waitTurn != null) this.turnToward(dt, this.waitTurn); // to the tyre she's kicking or the seat she's wiping
       else if (this.lookTurn !== null && this.freeToTurn()) this.turnToward(dt, this.lookTurn);
       else if (this.pairFacing != null && this.freeToTurn()) {
         // Stood with her friend: facing her, opened up to you when you come over (pair.js). She keeps facing that way after.

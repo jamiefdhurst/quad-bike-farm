@@ -361,6 +361,54 @@ export const STANDING_IDLES = {
     },
     wave: { period: 5, bones: { Spine: [0, 0.04, 0] } },
   },
+  // Ways of waiting that fit what's about her (waiting.js says when): turned to the thing by companionWaiting.js.
+  // Kicking a tyre with the toe of her welly, twice.
+  kickTyre: {
+    short: true,
+    hold: { bones: { Hips: [0, 0, -0.04], Spine: [-0.06, 0, 0], LeftUpLeg: [-0.45, 0, 0.02], LeftLeg: [0.35, 0, 0], LeftFoot: [-0.15, 0, 0] } },
+    wave: { period: 1.1, bones: { LeftUpLeg: [-0.32, 0, 0], LeftLeg: [-0.35, 0, 0] } },
+  },
+  // Wiping the seat in front of her with the flat of her hand, leant over it.
+  wipeSeat: {
+    hold: {
+      bones: { Spine: [0.3, 0, 0], Spine1: [0.12, 0, 0], LeftUpLeg: [-0.05, 0, 0], RightLeg: [0.1, 0, 0] },
+      hands: { left: { frame: 'hips', at: [0.08, -0.1, 0.46], pole: [0.6, 0.3, -0.2], fingers: [-0.3, 0, 1], palm: [0, -1, 0], w: 1 } },
+    },
+    move: { period: 0.9, hands: { left: [0.12, 0, 0.03] } },
+  },
+  // Rubbing her hands together in front of her for the cold, shoulders up.
+  rubHands: {
+    hold: {
+      bones: { Spine1: [0.08, 0, 0], Neck: [0.1, 0, 0], LeftShoulder: [0, 0, 0.08], RightShoulder: [0, 0, -0.08] },
+      hands: {
+        left: { frame: 'chest', at: [0.025, -0.1, 0.24], pole: [0.6, -0.4, 0], fingers: [0, 0.6, 0.8], palm: [-1, 0, 0], w: 1 },
+        right: { frame: 'chest', at: [-0.025, -0.1, 0.24], pole: [-0.6, -0.4, 0], fingers: [0, 0.6, 0.8], palm: [1, 0, 0], w: 1 },
+      },
+    },
+    move: { period: 0.4, hands: { left: [0, 0.035, 0.01], right: [0, -0.035, -0.01] } },
+  },
+  // A hand flat over her brow against the sun, looking out.
+  shadeEyes: {
+    hold: {
+      bones: { Spine1: [-0.04, 0, 0], Hips: [0, 0, 0.04] },
+      hands: { left: { frame: 'chest', at: [0.03, 0.34, 0.15], pole: [0.8, 0.1, 0.1], fingers: [-1, 0, 0.25], palm: [0, -1, 0], w: 1 } },
+    },
+    wave: { period: 5, bones: { Spine: [0, 0.06, 0] } },
+  },
+  // Looking up at the sky as it clouds over, leant back a touch (the head's tilt is attention's, at a point up there).
+  lookUp: {
+    short: true,
+    hold: { bones: { Spine: [-0.06, 0, 0], Spine1: [-0.05, 0, 0], Neck: [-0.15, 0, 0] } },
+  },
+  // Her phone held in her right hand in front of her, looking down at it (companionWaiting.js puts the phone there).
+  phone: {
+    fixedSide: true,
+    hold: {
+      bones: { Neck: [0.15, 0, 0], Spine1: [0.04, 0, 0] },
+      hands: { right: { frame: 'chest', at: [-0.04, -0.14, 0.3], pole: [-0.6, -0.5, -0.2], fingers: [0.1, 0.35, 1], palm: [0, 1, 0.2], w: 1 } },
+    },
+    wave: { period: 6, bones: { Spine: [0, 0.03, 0] } },
+  },
 };
 
 // Ways of sitting a while, on top of the sitting clip and the seat's pose: on a bench (the UTV, the Land Rover), or perched with
@@ -441,6 +489,13 @@ export function idlePose(name, time, side = 1, weight = 1, library = STANDING_ID
   if (!idle || weight <= 0) return EMPTY_POSE;
   let pose = addPose(EMPTY_POSE, idle.hold, weight);
   for (const w of [idle.wave ?? []].flat()) pose = addPose(pose, { bones: w.bones }, weight * Math.sin((time / w.period + (w.phase ?? 0)) * Math.PI * 2));
+  // Hands moving to and fro (wiping, rubbing): metres added to where each is held, in its own frame.
+  if (idle.move) {
+    const k = Math.sin((time / idle.move.period) * Math.PI * 2);
+    const hands = { ...pose.hands };
+    for (const [side, d] of Object.entries(idle.move.hands)) if (hands[side]) hands[side] = { ...hands[side], at: hands[side].at.map((v, i) => v + d[i] * k) };
+    pose = { bones: pose.bones, hands };
+  }
   return side < 0 && !idle.fixedSide ? mirrorPose(pose) : pose;
 }
 
@@ -478,6 +533,7 @@ export class StandingIdles {
   constructor(names, params = DEFAULT_IDLE_POSE_PARAMS, random = Math.random, library = STANDING_IDLES) {
     this.library = library;
     this.names = names.filter((n) => library[n]);
+    this.weights = null; // name -> how likely, against 1 for the others (setChoices); null and they're all as likely
     this.params = params;
     this.random = random;
     this.name = null;
@@ -510,19 +566,47 @@ export class StandingIdles {
       }
     } else if (this.names.length && (this.left -= dt) <= 0) {
       const choices = this.names.length > 1 ? this.names.filter((n) => n !== this.last) : this.names;
-      this.name = choices[Math.floor(this.random() * choices.length) % choices.length];
-      this.last = this.name;
-      this.side = this.random() < 0.5 ? -1 : 1;
-      this.time = 0;
-      this.left = this.library[this.name].short ? p.idlePoseShortHold : this.between(p.idlePoseHoldMin, p.idlePoseHoldMax);
+      this.begin(this.pick(choices));
     }
     if (this.name) this.time += dt;
     return this.name ? idlePose(this.name, this.time, this.side, smooth(this.weight), this.library) : EMPTY_POSE;
+  }
+
+  /** One of `choices` at random, by weight. */
+  pick(choices) {
+    const w = (n) => this.weights?.[n] ?? 1;
+    let r = this.random() * choices.reduce((sum, n) => sum + w(n), 0);
+    for (const n of choices) if ((r -= w(n)) < 0) return n;
+    return choices[choices.length - 1];
+  }
+
+  begin(name) {
+    const p = this.params;
+    this.name = name;
+    this.last = name;
+    this.side = this.random() < 0.5 ? -1 : 1;
+    this.time = 0;
+    this.weight = Math.min(this.weight, 0.3);
+    this.left = this.library[name].short ? p.idlePoseShortHold : this.between(p.idlePoseHoldMin, p.idlePoseHoldMax);
   }
 
   /** Changes her list (a different seat); one that no longer suits is eased out. */
   setNames(names) {
     this.names = names.filter((n) => this.library[n]);
     if (this.name && !this.names.includes(this.name)) this.left = Math.min(this.left, 0);
+  }
+
+  /** Changes her list with how likely each is ([{ name, weight }], waiting.js); one that no longer suits is eased out. */
+  setChoices(choices) {
+    this.weights = Object.fromEntries(choices.map((c) => [c.name, c.weight]));
+    this.setNames(choices.map((c) => c.name));
+  }
+
+  /** Starts one now (the debug panel), whatever was going on. */
+  force(name) {
+    if (!this.library[name]) return false;
+    if (!this.names.includes(name)) this.names = [...this.names, name];
+    this.begin(name);
+    return true;
   }
 }

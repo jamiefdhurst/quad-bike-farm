@@ -160,6 +160,7 @@ export function buildGameTree(g, host) {
       setOn: text(() => c().intent.describe((k) => OFFER_KINDS[k]?.label ?? k)),
       reacting: text(() => c().reactingText),
       pairedWith: text(() => g.pairState(id)),
+      waiting: text(() => c().waitingText()),
       ...where(id),
       favour: num(() => g.favour.scores[id], (v) => (g.favour.scores[id] = v), -30, 30, '', 'how she rates you'),
       standing: ro(() => g.favour.standing(id)),

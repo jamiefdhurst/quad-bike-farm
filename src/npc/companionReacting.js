@@ -34,7 +34,7 @@ export const reactingMethods = {
 
   /**
    * Whether she's free to do this reaction now. 'any' (a flinch) she can do anywhere; 'feet' (a step back, turning away) needs her
-   * stood or walking; 'hands' needs her hands free too: not driving, holding on behind you, carrying, warming them or starting a quad.
+   * stood or walking; 'hands' needs her hands free too: not driving, holding on behind you, carrying, warming them, starting a quad, or on her phone or a seat.
    */
   mayReact(type) {
     const needs = REACTIONS[type]?.needs;
@@ -42,7 +42,7 @@ export const reactingMethods = {
     if (needs === 'any') return true;
     const onFoot = this.root.parent === this.scene && this.fsm.is('idle', 'walking', 'pranking');
     if (needs === 'feet') return onFoot && !this.attempt;
-    if (this.carrying || this.warmingAt || this.attempt) return false;
+    if (this.carrying || this.warmingAt || this.attempt || this.waitHands?.()) return false;
     return onFoot || this.fsm.is('resting', 'onTrailer') || (this.fsm.is('seated') && this.seatKind === 'rack');
   },
 
