@@ -217,35 +217,43 @@ export const LAYOUT = {
     player: { x: -47, z: 46, yaw: -2.68 }, // facing the quad
     // Parking slots in the yard. Each start the quads are shuffled between them and
     // nudged (quadJitter metres, quadYawJitter radians), and sometimes parked the
-    // other way round (quadFlipChance).
+    // other way round (quadFlipChance). No more than `yardMax` start in the yard (hers
+    // among them) and never the tractor, UTV or a Land Rover: the rest are out on the farm.
     quadJitter: 1.4,
     quadYawJitter: 0.8,
     quadFlipChance: 0.25,
-    // Two rows about 6.7 m apart, 4.4 m between quads along each, so a girl can get a quad out without catching its neighbour (they kept
-    // getting stuck). Listed alternately, so a smaller fleet still uses both rows.
+    yardMax: 4,
+    // Spread round the yard, 8 to 12 m apart, so a girl can get one out without a jam. Each is clear of the trailers, the tank, the bowser,
+    // the barn and its doorway, the bales and the track by its jitter (spawnKeepOut, a test checks).
     quads: [
-      { x: -44.5, z: 50, yaw: Math.PI * 0.62 },
-      { x: -37.8, z: 52, yaw: Math.PI * 0.62 },
-      { x: -43.4, z: 54.4, yaw: Math.PI * 0.62 },
-      { x: -36.7, z: 56.4, yaw: Math.PI * 0.62 },
-      { x: -42.3, z: 58.8, yaw: Math.PI * 0.62 },
-      { x: -41.2, z: 63.2, yaw: Math.PI * 0.62 },
-      { x: -35.6, z: 60.8, yaw: Math.PI * 0.62 },
+      { x: -46, z: 48, yaw: Math.PI * 0.62 },
+      { x: -34, z: 52, yaw: Math.PI * 0.62 },
+      { x: -38, z: 62, yaw: Math.PI * 0.62 },
+      { x: -52, z: 42, yaw: Math.PI * 0.62 },
+      { x: -24, z: 58, yaw: Math.PI * 0.62 },
+      { x: -44, z: 56, yaw: Math.PI * 0.62 },
+      { x: -30, z: 68, yaw: Math.PI * 0.62 },
+      { x: -53, z: 72, yaw: Math.PI * 0.62 },
     ],
     // Every quad but the one she's standing by has this chance of having been left
     // somewhere else on the farm instead, at any angle, within awayJitter metres of
-    // one of these spots.
+    // one of these spots. The tractor, UTV and Land Rovers always are.
     awayChance: 0.4,
     awayJitter: 3,
     away: [
       { x: -27, z: 73, where: 'by the field gate' },
-      { x: -53, z: 30, where: 'by the paddock' },
-      { x: 18, z: 10, where: 'by the straw bales' },
+      { x: -14, z: 64, where: 'out from the yard' },
+      { x: 8, z: 70, where: 'by the south hedge' },
+      { x: 28, z: 14, where: 'by the straw bales' },
       { x: 47, z: -12, where: 'out past the far bend' },
+      { x: 70, z: 40, where: 'by the east hedge' },
       { x: -46, z: -30, where: 'by the bottom of the track' },
       { x: 4, z: -32, where: 'in the middle of the field' },
+      { x: 30, z: -70, where: 'by the north hedge' },
+      { x: -68, z: -50, where: 'in the far corner' },
+      { x: -72, z: -22, where: 'down the west hedge' },
       { x: -68, z: 8, where: 'by the west hedge' },
-      // Out in the east fields. A spot's own `jitter` (metres) is for a tight one: the Dutch barn's open bay. `tight` keeps the tractor, UTV and Land Rover out.
+    // Out in the east fields. A spot's own `jitter` (metres) is for a tight one: the Dutch barn's open bay. `tight` keeps the tractor, UTV and Land Rover out.
       { x: 181, z: -13.6, jitter: 0.8, tight: true, where: 'in the Dutch barn' },
       { x: 104, z: 2, jitter: 1, tight: true, where: 'along the road' },
       { x: 112, z: -40, where: 'out in the barley field' },

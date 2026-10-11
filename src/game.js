@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Input } from './core/input.js';
 import { createRandom, startSeed } from './core/random.js';
-import { randomiseQuadSpawns, randomJerryCanSpots } from './world/spawns.js';
+import { randomiseQuadSpawns, randomJerryCanSpots, spawnKeepOut, spawnBlocked } from './world/spawns.js';
 import { registerTuning } from './core/tuning.js';
 import { loadModels } from './world/assets.js';
 import { World } from './world/world.js';
@@ -299,9 +299,11 @@ export class Game {
     this.fleetIds = chosen.map((s) => s.id);
     const fleet = chosen.filter((s) => !isBig(s));
     const bigSpecs = chosen.filter(isBig);
+    const keepOut = spawnKeepOut(this.world.layout); // nothing starts on a trailer, the tank, the barn doorway, a bale or the track
     const { placed: spawns, home } = randomiseQuadSpawns(this.world.spawn, chosen.length, random, {
       homeCount: fleet.length,
       big: chosen.map((_, i) => i >= fleet.length),
+      blocked: (x, z) => spawnBlocked(keepOut, x, z, { track: this.world.track, trackHalfWidth: this.world.layout.trackHalfWidth }),
     });
     const bigSpawn = (spec) => spawns[fleet.length + bigSpecs.indexOf(spec)];
 

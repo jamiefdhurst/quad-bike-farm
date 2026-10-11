@@ -72,6 +72,13 @@ export const FAQ_SECTIONS = [
           quirks and history.`,
       },
       {
+        q: 'Where are all the vehicles?',
+        a: `At most four start in the yard, the quad a girl is stood by among them. The rest have been left about the farm: by the gates and
+          hedges, out in the field, by the track or out east by the Dutch barn and the field shed. The tractor, the UTV and the Land Rovers are always
+          out on the farm. Press <kbd>M</kbd> for the map, which shows every one.`,
+        tip: 'Only a few vehicles start in the yard: press M to see where the rest were left.',
+      },
+      {
         q: 'Does the game save?',
         a: `Yes, in your browser, every thirty seconds while you play and when you close or leave the tab. There's nothing to press. The start
           screen then says "Continue" with the day you're on. It's kept in this browser only: another browser, or a private window, starts a new farm.`,

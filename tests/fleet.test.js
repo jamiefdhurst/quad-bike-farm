@@ -4,8 +4,11 @@ import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC } from
 import { BODY_STYLES } from '../src/vehicle/quadModel.js';
 import { DASH_STYLES } from '../src/vehicle/dash.js';
 import { createRandom } from '../src/core/random.js';
-import { randomiseQuadSpawns } from '../src/world/spawns.js';
+import { randomiseQuadSpawns, spawnKeepOut, spawnBlocked } from '../src/world/spawns.js';
 import { LAYOUT } from '../src/world/layout.js';
+import { Track } from '../src/world/track.js';
+import { createFields } from '../src/world/fields.js';
+import { createTerrainHeight } from '../src/world/terrainHeight.js';
 
 describe('the fleet', () => {
   const big = [TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC];
@@ -135,15 +138,72 @@ describe('where the vehicles start', () => {
       expect(placed[home].where).toBe('in the yard');
       placed.forEach((a, i) =>
         placed.forEach((b, j) => {
-          if (i < j) expect(Math.hypot(a.x - b.x, a.z - b.z), `seed ${seed}: ${i} and ${j}`).toBeGreaterThanOrEqual(big[i] || big[j] ? 4.6 : 2.8);
+          if (i < j) expect(Math.hypot(a.x - b.x, a.z - b.z), `seed ${seed}: ${i} and ${j}`).toBeGreaterThanOrEqual(big[i] || big[j] ? 6 : 4.5);
         }),
       );
     }
   });
 
-  it('leaves the extras out on the farm when there are more vehicles than parking slots', () => {
+  it('puts no more than yardMax in the yard, and leaves the rest out on the farm', () => {
     const { placed } = randomiseQuadSpawns({ ...spawn, awayChance: 0 }, 12, createRandom(3));
-    expect(placed.filter((p) => p.where === 'in the yard')).toHaveLength(spawn.quads.length);
+    expect(placed.filter((p) => p.where === 'in the yard')).toHaveLength(spawn.yardMax);
+  });
+
+  it('never parks the tractor, UTV or a Land Rover in the yard', () => {
+    for (let seed = 1; seed <= 100; seed++) {
+      const big = kinds(10, [7, 8, 9]);
+      const { placed } = randomiseQuadSpawns({ ...spawn, awayChance: 0 }, 10, createRandom(seed), { homeCount: 7, big });
+      for (const i of [7, 8, 9]) expect(placed[i].where).not.toBe('in the yard');
+    }
+  });
+
+  const track = new Track(LAYOUT.trackPoints);
+  const keepOut = spawnKeepOut(LAYOUT);
+  const blocked = (x, z) => spawnBlocked(keepOut, x, z, { track, trackHalfWidth: LAYOUT.trackHalfWidth });
+
+  it('has every spot clear of the trailers, the tank, the barn, the bales, the jump, the drag strip and the track, nudged any way', () => {
+    const fields = createFields(LAYOUT);
+    const heights = createTerrainHeight(LAYOUT, track);
+    const spots = [...spawn.quads.map((q) => ({ ...q, jitter: spawn.quadJitter, where: 'yard' })), ...spawn.away.map((a) => ({ ...a, jitter: a.jitter ?? spawn.awayJitter }))];
+    for (const a of spots) {
+      const j = a.jitter;
+      for (const [dx, dz] of [[0, 0], [-j, -j], [j, -j], [-j, j], [j, j]]) {
+        const x = a.x + dx;
+        const z = a.z + dz;
+        expect(blocked(x, z), `${a.where} (${a.x}, ${a.z})`).toBe(null);
+        expect(fields.hedgeDistance(x, z), `${a.where} (${a.x}, ${a.z}) is near a hedge`).toBeGreaterThan(3.3);
+        const e = 1.5;
+        const slope = Math.hypot(heights.heightAt(x + e, z) - heights.heightAt(x - e, z), heights.heightAt(x, z + e) - heights.heightAt(x, z - e)) / (2 * e);
+        expect(slope, `${a.where} (${a.x}, ${a.z}) is steep`).toBeLessThan(0.15);
+      }
+    }
+  });
+
+  it('keeps the yard slots well apart', () => {
+    for (const a of spawn.quads) for (const b of spawn.quads) if (a !== b) expect(Math.hypot(a.x - b.x, a.z - b.z)).toBeGreaterThan(8);
+  });
+
+  it('never starts a vehicle on anything, over many deals, with the yard spread out', () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const big = kinds(12, [9, 10, 11]);
+      const { placed } = randomiseQuadSpawns(spawn, 12, createRandom(seed), { homeCount: 9, big, blocked });
+      for (const p of placed) expect(blocked(p.x, p.z), `seed ${seed}: ${p.where}`).toBe(null);
+      const yard = placed.filter((p) => p.where === 'in the yard');
+      expect(yard.length).toBeLessThanOrEqual(spawn.yardMax);
+      for (const a of yard) for (const b of yard) if (a !== b) expect(Math.hypot(a.x - b.x, a.z - b.z)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('nudges a vehicle again when the nudge lands on something, and at worst uses the middle of its spot', () => {
+    const nowhere = () => 'everything';
+    const { placed } = randomiseQuadSpawns({ ...spawn, awayChance: 0 }, 3, createRandom(5), { blocked: nowhere });
+    for (const p of placed) expect(spawn.quads.some((q) => q.x === p.x && q.z === p.z)).toBe(true);
+  });
+
+  it('keeps out of the tipping trailer, which a quad left by the paddock used to start on', () => {
+    const t = LAYOUT.tipTrailer;
+    expect(spawnBlocked(keepOut, t.x + 2, t.z)).toBe('the tipping trailer');
+    expect(spawnBlocked(keepOut, LAYOUT.trailer.x, LAYOUT.trailer.z + 3)).toBe('the bale trailer');
   });
 
   it('never leaves the tractor, UTV or Land Rover in a tight spot, but does leave them away', () => {
