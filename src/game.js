@@ -29,6 +29,9 @@ import { DEFAULT_NOTICE_PARAMS, NOTICE_PARAM_RANGES } from './npc/attention.js';
 import { NoticeWatch } from './npc/noticeWatch.js';
 import { Pair, PAIR_PARAM_RANGES, pairFacing } from './npc/pair.js';
 import { DEFAULT_WAITING_PARAMS, WAITING_PARAM_RANGES } from './npc/waiting.js';
+import { Daylight, DEFAULT_DAYLIGHT_PARAMS, DAYLIGHT_PARAM_RANGES } from './world/daylight.js';
+import { VehicleLights, VEHICLE_LIGHT_PARAM_RANGES } from './effects/vehicleLights.js';
+import { WeatherStation } from './world/weatherStation.js';
 import { choose, mainNeed, OFFER_KINDS } from './npc/chooser.js';
 import { girlsLeftOut } from './npc/leftOut.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
@@ -167,7 +170,7 @@ import { Workshop } from './workshop/workshop.js';
 import { PodRack } from './vehicle/pods.js';
 import { buildPod } from './vehicle/dashPod.js';
 import { pickWornGearbox } from './vehicle/manualDrivetrain.js';
-import { DashClock, CLOCK_START_RANGE, pickReading, pickRelatedReading, setDashClock, dashClock } from './vehicle/dashState.js';
+import { DashClock, pickReading, pickRelatedReading, setDashClock, dashClock } from './vehicle/dashState.js';
 import { Bench } from './workshop/bench.js';
 import { pickBarnFind, BarnFind, DEFAULT_BARN_FIND_PARAMS, BARN_FIND_RANGES, RUSTY_ID } from './vehicle/barnFind.js';
 import { weatherModel, buildTarp } from './vehicle/rustyLook.js';
@@ -305,7 +308,14 @@ export class Game {
     const historyRandom = createRandom(this.seed ^ 0x4157);
     const faultChance = pickFaultChance(historyRandom);
     for (const unit of this.units) this.applyHistory(unit, historyRandom, faultChance);
-    setDashClock(new DashClock(pickReading(CLOCK_START_RANGE, createRandom(this.seed ^ 0xc10c))));
+    // The time of day (world/daylight.js): its own start each game, morning or afternoon (?time=16.5 starts it then), running on into the night.
+    const forcedTime = new URLSearchParams(location.search).get('time');
+    this.daylight = new Daylight({ ...DEFAULT_DAYLIGHT_PARAMS }, { random: createRandom(this.seed ^ 0xc10c), start: forcedTime !== null && Number.isFinite(+forcedTime) ? +forcedTime : null });
+    this.vehicleLights = new VehicleLights(this.scene); // real light from the lit vehicles' lamps, a fixed pool (effects/vehicleLights.js)
+    // The dashboards' clocks read the time of day; their flashing and cycling keep to real seconds.
+    const dash = new DashClock(this.daylight.seconds());
+    dash.text = () => this.daylight.text();
+    setDashClock(dash);
     this.podRack = new PodRack(this.units.map((u) => u.id));
     this.podRack.place(createRandom(this.seed ^ 0x90d5));
     this.pods = { analogue: buildPod('analogue'), digital: buildPod('digital') };
@@ -394,8 +404,11 @@ export class Game {
     const forced = new URLSearchParams(location.search).get('weather');
     const kind = forced ?? pickWeatherKind(random);
     const forcedTemp = new URLSearchParams(location.search).get('temp'); // ?temp=-3 forces the day's temperature in degrees C
-    const celsius = forcedTemp !== null && forcedTemp !== '' && Number.isFinite(+forcedTemp) ? +forcedTemp : pickTemperature(kind, createRandom(this.seed ^ 0x7e3b));
+    // The picked temperature is the day's warmest; ?temp= sets it as it is when the game starts.
+    const celsius = forcedTemp !== null && forcedTemp !== '' && Number.isFinite(+forcedTemp) ? this.daylight.peakFor(+forcedTemp) : pickTemperature(kind, createRandom(this.seed ^ 0x7e3b));
     this.weather = new Weather(kind, random, celsius);
+    this.weather.temperature = Math.round(this.daylight.temperature(celsius) * 10) / 10;
+    this.world.daylight = this.daylight;
     for (const unit of this.units) unit.quad.seatFrost = this.weather.frost;
     this.world.setWeather(this.weather);
     this.rain = new Rain(this.scene);
@@ -406,7 +419,7 @@ export class Game {
     this.barnFumes = new BarnFumes();
     const bs = barnShape(this.world.layout);
     this.barnFumesLayer = new HazeLayer(this.scene, { x: bs.x, z: bs.z }, 2.8, createRandom(this.seed ^ 0x51c3), { size: [3.5, 3], height: [2.6, 2.2], wander: 0.8 });
-    console.info(`Weather: ${this.weather.name}, ${this.weather.temperature} °C (${this.weather.band}), chill ${this.weather.chill.toFixed(2)}, frost ${this.weather.frost.toFixed(2)} (add ?temp=<degrees> to the URL to force it)`);
+    console.info(`Time: ${this.daylight.text()}, falling ${this.daylight.drop.toFixed(1)} °C into the night. Weather: ${this.weather.name}, ${this.weather.temperature} °C (${this.weather.band}), chill ${this.weather.chill.toFixed(2)}, frost ${this.weather.frost.toFixed(2)} (add ?temp=<degrees> to the URL to force it)`);
     // She starts beside a random quad in the yard; the player starts facing it.
     this.homeUnit = this.units[home];
     this.lastUnit = this.homeUnit;
@@ -507,6 +520,9 @@ export class Game {
     // The hayloft: she climbs the ladder (the points she passes through are heights above the barn floor) and sits on a bale at its edge.
     this.loftParams = { ...DEFAULT_LOFT_PARAMS };
     this.loft = this.world.props.barn.loft;
+    // The clock and weather station on the barn wall (world/weatherStation.js).
+    const ws = this.world.layout.weatherStation;
+    this.station = new WeatherStation(this.scene, { x: ws.x, y: this.world.props.barn.floorY + ws.y, z: barnShape(this.world.layout).inner.minZ });
     const L0 = this.world.layout;
     this.loftSpot = {
       ...L0.loft.seat,
@@ -1053,6 +1069,8 @@ export class Game {
     registerTuning('Getting on and off', this.moveParams, MOVE_PARAM_RANGES);
     registerTuning('Standing about', this.idlePoseParams, IDLE_POSE_PARAM_RANGES);
     registerTuning('Waiting about', this.waitingParams, WAITING_PARAM_RANGES);
+    registerTuning('Time of day', this.daylight.p, DAYLIGHT_PARAM_RANGES);
+    registerTuning('Vehicle lights', this.vehicleLights.p, VEHICLE_LIGHT_PARAM_RANGES);
     registerTuning('Trailer', this.trailer.p, TRAILER_PARAM_RANGES);
     registerTuning('Quad names', this.quadNames.p, NAME_PARAM_RANGES);
     registerTuning('Whose quad', this.ownership.p, OWNERSHIP_PARAM_RANGES);
@@ -1184,7 +1202,17 @@ export class Game {
 
   /** The day's temperature in degrees C. */
   setTemperature(celsius) {
+    // It goes on following the time of day from there: the day's warmest moves so that it is this now.
+    if (this.daylight) this.weather.peak = this.daylight.peakFor(celsius);
     this.weather.temperature = celsius;
+    for (const unit of this.units) unit.quad.seatFrost = this.weather.frost;
+  }
+
+  /** Sets the time of day (hours after midnight; past 24 is the same night going on), with the temperature and the frost following at once. */
+  setTime(hour) {
+    if (!this.daylight) return;
+    this.daylight.hour = hour;
+    this.weather.temperature = Math.round(this.daylight.temperature(this.weather.peak) * 10) / 10;
     for (const unit of this.units) unit.quad.seatFrost = this.weather.frost;
   }
 
@@ -2369,7 +2397,7 @@ export class Game {
       c.wetNow = ctx.wet;
       // What the day is doing, for the ways she waits about (npc/waiting.js): the cold, the sun, a shower coming on.
       const w = this.weather;
-      c.waitWeather = { chill: ctx.chill, wet: ctx.wet, sun: Math.min(1, w.def.sky.sunIntensity / 2.6) * (1 - w.rain), clouding: Math.max(0, w.target - w.rain) };
+      c.waitWeather = { chill: ctx.chill, wet: ctx.wet, sun: Math.min(1, w.def.sky.sunIntensity / 2.6) * (1 - w.rain) * w.sunUp, clouding: Math.max(0, w.target - w.rain) };
       c.intent.update(dt, `${c.fsm.name}:${c.fsm.data?.goal ?? ''}`);
       const m = c.mind;
       m.since += dt;
@@ -2521,6 +2549,7 @@ export class Game {
     const inBarn = this.world.inBarn(at.x, at.z);
     const inCab = this.cabShelter.of(c.character.id)?.state === 'in';
     const covered = inBarn || inCab;
+    c.coveredNow = covered; // in the barn or a cab, for what she says about the dark (companionVoice.watchWeather)
     const w = this.weather;
     // A dull or wet day feels cold (as warming hands always had it), and a cold one colder.
     const dayChill = Math.min(1, Math.max(0, (0.6 - w.warmth) / 0.6) * 0.8 + w.chill * 0.5);
@@ -3031,6 +3060,24 @@ export class Game {
     }
   }
 
+  /**
+   * The time of day moving on (world/daylight.js): the temperature with it, so the frost on the ground and the seats forms as the night
+   * cools and thaws as the morning warms. The sky follows in world.update.
+   */
+  updateDaylight(dt) {
+    const d = this.daylight;
+    if (!d) return;
+    d.update(dt);
+    const w = this.weather;
+    w.temperature = Math.round(d.temperature(w.peak) * 10) / 10;
+    w.sunUp = d.sun.light;
+    w.dark = d.darkness; // for what the girls say about it (companionVoice.watchWeather)
+    for (const unit of this.units) unit.quad.dayFrost = w.frost;
+    this.station.update(d.hour, w.temperature, w.kind, w.rain, w.target);
+    const board = this.boardUnit ?? this.player.vehicle?.unit ?? null;
+    this.vehicleLights.update(this.units, this.camera.position, board, this.lightingUnit ?? null, d.darkness);
+  }
+
   /** Rain round you and its sound, and the wind on the exhaust smoke. */
   updateWeather(dt) {
     const w = this.weather;
@@ -3046,9 +3093,22 @@ export class Game {
     if (barn) {
       world.sky.hemi.intensity *= 1 - 0.55 * indoor;
       const gloom = Math.min(1, 1.3 - w.warmth * 0.9);
-      barn.light.intensity = BARN_BULB * indoor * gloom;
+      // After dark the bulb is left on, so the barn glows from outside too.
+      const dark = this.daylight?.darkness ?? 0;
+      barn.light.intensity = BARN_BULB * Math.max(indoor * gloom, dark > 0.5 ? 0.8 : 0);
     }
+    // Smoke, steam, dust and mud are drawn with their own fixed light, so they're dimmed with the daylight or they'd glow at night.
+    const light = this.daylight ? this.daylight.p.nightLight + (1 - this.daylight.p.nightLight) * this.daylight.sun.light : 1;
+    const dim = (m, name) => {
+      const u = m?.uniforms?.[name];
+      if (!u) return;
+      m.userData.baseLight ??= u.value.clone();
+      u.value.copy(m.userData.baseLight).multiplyScalar(light);
+    };
     for (const unit of this.units) {
+      for (const fx of [unit.smoke, unit.steam, unit.heatSteam]) dim(fx?.material, 'uLight');
+      dim(unit.dustCloud?.material, 'uColor');
+      dim(unit.mud?.spray?.material, 'uLight');
       const s = unit.smoke.params;
       s.baseWindX ??= s.windX;
       s.baseWindZ ??= s.windZ;
@@ -3057,6 +3117,9 @@ export class Game {
       // A pop's flash from the pipe shows in poor light: none on a sunny day, plenty under heavy cloud.
       unit.smoke.darkness = Math.max(0, Math.min(1, 1 - w.warmth * 1.3));
     }
+    const tint = (m, hex) => m?.color.setHex(hex).multiplyScalar(light);
+    for (const layer of [this.hazeLayer, this.barnFumesLayer]) for (const b of layer?.blobs ?? []) tint(b.sprite.material, 0xaeb9c8);
+    tint(this.rain.lines?.material, 0xc4ccd2);
   }
 
   /** Carrying the can, the hose, the toolbox or the winch hook. */
@@ -3437,6 +3500,7 @@ export class Game {
   placesContext() {
     return {
       rain: this.weather.rain,
+      dark: this.daylight?.darkness ?? 0,
       spots: this.restSpots,
       girls: this.companions.map((c) => {
         const spot = c.currentSpot();
@@ -3454,7 +3518,7 @@ export class Game {
     const c = this.companions.find((o) => o.character.id === a.girl);
     if (a.do === 'shelter') {
       const go = () => {
-        if (c.goRest(a.spot)) c.selfEvents.push('restRain');
+        if (c.goRest(a.spot)) c.selfEvents.push(a.dark ? 'goInDark' : 'restRain');
         else c.pendingSpot = null;
       };
       c.pendingSpot = a.spot; // held for her while she gets up, so her friend picks another
@@ -5968,6 +6032,7 @@ export class Game {
     this.audioHub.setPouring(pouring, dt);
     this.audioHub.update(dt, this.camera);
     this.rideWind.update(dt, board ? board.quad.speed : 0);
+    this.updateDaylight(dt);
     this.world.update(dt, board ? board.quad.position : this.player.position, this.camera);
     this.updateWeather(dt);
     this.updateAchievements(dt, ridden);

@@ -27,6 +27,7 @@ import { JESS_CONTENT_LINES } from './contentLines.js';
 import { JESS_HISTORY_LINES } from './historyLines.js';
 import { JESS_QUIRK_LINES } from './quirkLines.js';
 import { JESS_TEMPERATURE_LINES } from './temperatureLines.js';
+import { JESS_DUSK_LINES } from './duskLines.js';
 import { JESS_HANDBRAKE_LINES } from './handbrakeLines.js';
 import { JESS_FOUR_WD_LINES } from './fourWdLines.js';
 import { JESS_REVOFF_LINES } from './revOffLines.js';
@@ -434,6 +435,7 @@ export const JESS_LINES = {
   ...JESS_HISTORY_LINES,
   ...JESS_QUIRK_LINES,
   ...JESS_TEMPERATURE_LINES,
+  ...JESS_DUSK_LINES,
   ...JESS_HANDBRAKE_LINES,
   ...JESS_FOUR_WD_LINES,
   ...JESS_REVOFF_LINES,

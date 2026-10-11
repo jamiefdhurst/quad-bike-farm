@@ -135,7 +135,9 @@ function mixColor(a, b, t) {
 export class Weather {
   constructor(kind = 'overcast', random = Math.random, celsius = MILD_C) {
     this.kind = WEATHER_KINDS[kind] ? kind : 'overcast';
-    this.temperature = celsius; // degrees C; fixed for the game for now
+    this.peak = celsius; // degrees C: the day's warmest (mid-afternoon)
+    this.temperature = celsius; // degrees C now: the game moves it with the time of day (daylight.js)
+    this.sunUp = 1; // 0..1 how far the sun is up (daylight.js): no sunshine to warm anything at night
     this.random = random;
     const k = WEATHER_KINDS[this.kind];
     this.rain = k.rain; // 0..1 falling now
@@ -166,7 +168,7 @@ export class Weather {
   /** 0..1 how warm the day is for an engine in the sun: the sunshine, taken off by rain. */
   get warmth() {
     // The temperature nudges it: a frosty day takes the edge off the sun, a warm one adds to a dull day.
-    return clamp01(clamp01(this.def.sky.sunIntensity / 2.6) * (1 - 0.8 * this.rain) + (this.temperature - MILD_C) * 0.01);
+    return clamp01(clamp01(this.def.sky.sunIntensity / 2.6) * (1 - 0.8 * this.rain) * this.sunUp + (this.temperature - MILD_C) * 0.01);
   }
 
   /** 0..1 how cold it is for an engine (see chillOf). */

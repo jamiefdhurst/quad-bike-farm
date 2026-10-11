@@ -209,6 +209,7 @@ export class Quad {
     }, scale, layout);
     this.lightTime = 0;
     this.seatFrost = 0; // 0 bare to 1 white over; the game sets it on a freezing day, and sitting on it clears it (seatFrost.js)
+    this.dayFrost = null; // the day's frost now (Weather.frost, set by the game each frame): the seat's frosts or thaws towards it
     this.seatMaterial = this.model.userData.seatMaterial ?? null;
     this.seatBase = this.seatMaterial ? { color: this.seatMaterial.color.getHex(), roughness: this.seatMaterial.roughness } : null;
     this.shownFrost = 0;
@@ -997,8 +998,8 @@ export class Quad {
 
   /** Frost on the seat, cleared by whoever sits on it, shown as a tint on the seat material. */
   updateFrost(dt) {
-    if (!this.seatMaterial || (this.seatFrost <= 0 && this.shownFrost <= 0)) return;
-    this.seatFrost = frostAfter(this.seatFrost, !!(this.rider || this.driver || this.passenger), dt);
+    if (!this.seatMaterial || (this.seatFrost <= 0 && this.shownFrost <= 0 && !(this.dayFrost > 0))) return;
+    this.seatFrost = frostAfter(this.seatFrost, !!(this.rider || this.driver || this.passenger), dt, DEFAULT_FROST_PARAMS, this.dayFrost ?? null);
     if (Math.abs(this.seatFrost - this.shownFrost) < 0.01 && this.seatFrost > 0) return;
     this.shownFrost = this.seatFrost;
     this.seatMaterial.color.setHex(frostedColour(this.seatBase.color, this.seatFrost));
@@ -1086,6 +1087,10 @@ export class Quad {
     const supply = onBattery ? lampSupply(e.battery, e.rpm, e.params.idleRpmWarm, e.params.maxRpm, e.params.batteryWeakBelow) : 1;
     const level = (beams ? beams.level : look.level) * this.quirks.headlight(dt) * supply;
     setHeadlights(this.model, lit, level, beams ? beams.colour : look.colour, beams);
+    // For the real light the pool gives the lit vehicles (effects/vehicleLights.js).
+    this.headlightLevel = lit ? level : 0;
+    this.headlightColour = beams ? beams.colour : look.colour;
+    this.headlightReach = beams?.reach ?? 1;
     if (this.signals) {
       const sides = this.signals.update(dt, Math.max(-1, Math.min(1, this.steer / ((this.params.maxSteerDeg * Math.PI) / 180))), e.hasPower && e.ignitionOn);
       if (this.signals.click) this.signalClick = this.signals.click;

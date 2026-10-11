@@ -28,6 +28,7 @@ export const OFFER_KINDS = {
   warmHands: { label: 'warm her hands on an engine', satisfies: { warmth: 1 } },
   warmHandsJoin: { label: 'warm her hands with her friend', satisfies: { warmth: 1, company: 0.4 } },
   shelterBarn: { label: 'shelter in the barn doorway', satisfies: { warmth: 0.8 }, urgent: true, pace: 'hurry' },
+  goIn: { label: 'go in out of the dark', satisfies: { warmth: 0.7, rest: 0.5 }, pace: 'brisk' },
   shelterCab: { label: 'shelter in a cab', satisfies: { warmth: 0.9, rest: 0.3 }, urgent: true, pace: 'hurry' },
   warmCab: { label: "sit in a Land Rover with the heater on", satisfies: { warmth: 1, rest: 0.4 } },
   tea: { label: 'make a cup of tea', satisfies: { warmth: 0.4, rest: 0.3, purpose: 0.5 } },

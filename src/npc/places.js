@@ -2,6 +2,7 @@
 // the paddock fence rather than only wait at a quad; when the rain sets in, a
 // girl who's about can head for the barn doorway (an offer, weighed by her needs
 // in chooser.js against a cab and the rest) and stays there till it dries off.
+// After dark the doorway pulls the same way (going in), and she stays in.
 // Pure logic: the game says what the weather and the girls are doing and where
 // the spots are, and does the walking and sitting this module asks for.
 //
@@ -13,6 +14,8 @@ export const DEFAULT_PLACE_PARAMS = {
   rainAbove: 0.25, // rain above which they go looking for cover
   dryBelow: 0.08, // rain below which they come out of the barn again
   shelterWeight: 1, // how much she cares for the barn doorway out of the rain (a cab is weighed against it, chooser.js)
+  darkAbove: 0.6, // how dark (0 day, 1 night) before she wants to go in, and won't come out again
+  goInWeight: 1, // how much she cares for going in out of the dark (weighed against a cab with the heater on and the rest)
   dryDelayMin: 15, // seconds after it dries off before she comes out
   dryDelayMax: 45,
   shelterFrom: 150, // metres: how far away she'll still run to the barn from (anywhere on the farm)
@@ -26,6 +29,8 @@ export const PLACE_PARAM_RANGES = {
   rainAbove: [0.05, 1, 0.01],
   dryBelow: [0, 0.5, 0.01],
   shelterWeight: [0, 3, 0.05],
+  darkAbove: [0, 1, 0.01],
+  goInWeight: [0, 3, 0.05],
   dryDelayMin: [0, 120, 1],
   dryDelayMax: [0, 240, 1],
   shelterFrom: [10, 300, 5],
@@ -76,6 +81,7 @@ export class Places {
   /**
    * One step. `ctx`:
    *   rain: 0..1
+   *   dark: 0 (day) to 1 (night)
    *   spots: [{ id, kind, x, z, ... }]
    *   girls: [{ id, x, z, state, spot }]
    *     state: 'idle' (stood about), 'resting' (at a spot, free to be moved), 'busy' (anything else)
@@ -92,7 +98,7 @@ export class Places {
         this.dryFor[g.id] = 0;
         delete this.delay[g.id];
       } else {
-        if (!atShelter || g.state !== 'resting' || ctx.rain > p.dryBelow) {
+        if (!atShelter || g.state !== 'resting' || ctx.rain > p.dryBelow || (ctx.dark ?? 0) > p.darkAbove) {
           this.dryFor[g.id] = 0;
           continue;
         }
@@ -114,20 +120,24 @@ export class Places {
    */
   offers(ctx) {
     const p = this.p;
-    if (ctx.rain <= p.rainAbove) return [];
+    const raining = ctx.rain > p.rainAbove;
+    const dark = (ctx.dark ?? 0) > p.darkAbove;
+    if (!raining && !dark) return [];
     const taken = new Set(ctx.girls.map((g) => g.spot?.id).filter(Boolean));
     const out = [];
     for (const g of ctx.girls) {
       if (g.spot?.kind === 'shelter' || g.state === 'busy') continue;
       const spot = nearestSpot(ctx.spots, ['shelter'], g, taken, p.shelterFrom);
-      if (spot) out.push({ key: 'shelterBarn', girl: g.id, spot, weight: p.shelterWeight });
+      if (!spot) continue;
+      if (raining) out.push({ key: 'shelterBarn', girl: g.id, spot, weight: p.shelterWeight });
+      else out.push({ key: 'goIn', girl: g.id, spot, weight: p.goInWeight });
     }
     return out;
   }
 
-  /** She chose to run for it: returns the action the game carries out, { girl, do: 'shelter', spot }. */
+  /** She chose to run for it (or go in out of the dark): returns the action the game carries out, { girl, do: 'shelter', spot, dark }. */
   take(offer) {
     this.taken.add(offer.spot.id);
-    return { girl: offer.girl, do: 'shelter', spot: offer.spot };
+    return { girl: offer.girl, do: 'shelter', spot: offer.spot, dark: offer.key === 'goIn' };
   }
 }

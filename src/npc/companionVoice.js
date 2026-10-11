@@ -385,7 +385,7 @@ export class CompanionVoice {
   watchOwnMind() {
     const events = this.companion.selfEvents;
     // Switching a quad off is rare, so she always mentions it.
-    for (const e of events) this.say({ wander: 'selfWander', restGo: 'restGo', loftGo: 'loftGo', restRain: 'restRain', restLeave: 'restLeave', join: 'selfJoin', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive', sulkOff: 'sulkOff', offerRide: 'offerRide', borrow: 'borrow', doughnuts: 'selfDoughnuts', jumps: 'selfJumps', showOff: 'selfShowOff', nickGo: 'nickGo', nickBack: 'nickBack', lineUp: 'selfLineUp', lineUpCrooked: 'selfCrooked', straighten: 'lineUpStraighten', lineUpNotice: 'lineUpNotice', keyOff: 'selfKeyOff', buzz: 'selfBuzz', numbTingle: 'numbTingle', numbGo: 'numbGo', numbStretch: 'numbStretch', numbBack: 'numbBack', keepSit: 'keepSit', keepCharge: 'keepCharge', keepCharged: 'keepCharged', keepTruth: 'keepTruth', keepDied: 'keepDied', keepGiveUp: 'keepGiveUp', askOff: 'askOff', askStop: 'askStop', getOff: 'selfGetOff', getOffWaited: 'selfGetOffWaited', takeOverStop: 'takeOverStop', takeOverDrive: 'takeOverDrive', sideOn: 'sideSaddleOn', sideWobble: 'sideSaddleWobble', sideSlip: 'sideSaddleSlip' }[e], { urgent: true, chance: e === 'keyOff' || e === 'askOff' || e === 'offerRide' || e === 'sulkOff' || e === 'borrow' || e.startsWith('nick') || e.startsWith('takeOver') || e === 'sideWobble' || e === 'sideSlip' ? 1 : 0.8 });
+    for (const e of events) this.say({ wander: 'selfWander', restGo: 'restGo', loftGo: 'loftGo', restRain: 'restRain', goInDark: 'goInDark', restLeave: 'restLeave', join: 'selfJoin', mount: 'selfMount', start: 'selfStart', drive: 'selfDrive', sulkOff: 'sulkOff', offerRide: 'offerRide', borrow: 'borrow', doughnuts: 'selfDoughnuts', jumps: 'selfJumps', showOff: 'selfShowOff', nickGo: 'nickGo', nickBack: 'nickBack', lineUp: 'selfLineUp', lineUpCrooked: 'selfCrooked', straighten: 'lineUpStraighten', lineUpNotice: 'lineUpNotice', keyOff: 'selfKeyOff', buzz: 'selfBuzz', numbTingle: 'numbTingle', numbGo: 'numbGo', numbStretch: 'numbStretch', numbBack: 'numbBack', keepSit: 'keepSit', keepCharge: 'keepCharge', keepCharged: 'keepCharged', keepTruth: 'keepTruth', keepDied: 'keepDied', keepGiveUp: 'keepGiveUp', askOff: 'askOff', askStop: 'askStop', getOff: 'selfGetOff', getOffWaited: 'selfGetOffWaited', takeOverStop: 'takeOverStop', takeOverDrive: 'takeOverDrive', sideOn: 'sideSaddleOn', sideWobble: 'sideSaddleWobble', sideSlip: 'sideSaddleSlip' }[e], { urgent: true, chance: e === 'keyOff' || e === 'askOff' || e === 'offerRide' || e === 'sulkOff' || e === 'borrow' || e.startsWith('nick') || e.startsWith('takeOver') || e === 'sideWobble' || e === 'sideSlip' ? 1 : 0.8 });
     events.length = 0;
   }
 
@@ -801,6 +801,10 @@ export class CompanionVoice {
     // Out in it a while, the odd grumble.
     this.rainTime = raining ? (this.rainTime ?? 0) + dt : 0;
     if (this.rainTime > 60) this.say('stillRaining', { chance: 0.004 });
+    // The day going (world/daylight.js): a word as the light goes, and out in the dark, now and then, that she'd like to go in.
+    const dark = weather.dark ?? 0;
+    if (dark > 0.25 && dark < 0.8 && !this.duskSaid) this.duskSaid = !!this.say('gettingDark', { chance: 0.9 });
+    if (dark > 0.85 && !this.companion.coveredNow) this.say('darkGoIn', { chance: 0.003 });
   }
 
   /** Picks a line for the situation and says it; returns what was said, or null. */

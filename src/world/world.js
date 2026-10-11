@@ -15,6 +15,7 @@ import { DEFAULT_DUST_PARAMS, DUST_PARAM_RANGES } from './dust.js';
 import { surfaceFeel, DEFAULT_SURFACE_PARAMS, SURFACE_PARAM_RANGES } from './surfaces.js';
 import { DEFAULT_SQUEAL_PARAMS, SQUEAL_PARAM_RANGES } from '../vehicle/tyreSqueal.js';
 import { registerTuning } from '../core/tuning.js';
+import { skyAt } from './daylight.js';
 import * as THREE from 'three';
 
 /** The farm: terrain, track, sky and static props. */
@@ -148,9 +149,15 @@ export class World {
   /** Sets this game's weather (weather.js) and bakes the reflections for its sky. */
   setWeather(weather) {
     this.weather = weather;
-    Object.assign(this.sky.params, weather.skyParams());
+    Object.assign(this.sky.params, this.skyNow());
     this.sky.update(0, new THREE.Vector3(), { position: new THREE.Vector3() });
     this.sky.buildEnvironment();
+  }
+
+  /** The sky for the weather and, if the day is running (daylight.js), the time of day: golden at dusk, dark at night. */
+  skyNow() {
+    const base = this.weather.skyParams();
+    return this.daylight ? skyAt(base, this.daylight.sun, this.daylight.p) : base;
   }
 
   /** 0..1 how warm the day is: full sun on a sunny day, nothing much in the rain. */
@@ -184,7 +191,8 @@ export class World {
     }
     if (this.weather) {
       this.terrain.frost.value = this.weather.frost;
-      Object.assign(this.sky.params, this.weather.update(dt).skyParams());
+      this.weather.update(dt);
+      Object.assign(this.sky.params, this.skyNow());
       // Wet ground looks darker, and a little glossier.
       const m = this.terrain.mesh.material;
       m.color.setScalar(1 - 0.24 * this.weather.wet);

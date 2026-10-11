@@ -132,6 +132,8 @@ export function buildGirlsTab(d) {
   });
   show(both, 'L plates are on', () => g.lPlates.where);
   show(both, 'the day', () => `${g.weather.temperature} °C (${g.weather.band}), chill ${g.weather.chill.toFixed(2)}, frost ${g.weather.frost.toFixed(2)}`);
+  slider(both, 'time of day (hours)', () => g.daylight.hour, (v) => g.setTime(v), 0, 30, 0.05);
+  show(both, 'the clock', () => `${g.daylight.text()}, ${Math.round(g.daylight.darkness * 100)}% dark, falling ${g.daylight.drop.toFixed(1)} °C into the night`);
   for (const u of g.girlUnits) {
     const names = g.quadNames.names[u.spec.id];
     show(both, `${u.name} is`, () => `${g.ownership.ownerOf(u.spec.id) ?? 'nobody'}'s${names ? ` (${names}${g.quadNames.announced.has(u.spec.id) ? '' : ', not said yet'})` : ''}`);

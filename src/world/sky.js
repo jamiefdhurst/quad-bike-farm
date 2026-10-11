@@ -154,10 +154,22 @@ export class Sky {
     this.uniforms.cloudShadowColor.value.set(p.cloudShadowColor);
     this.scene.fog.color.set(p.horizonColor);
     this.scene.background.set(p.horizonColor);
+    // The leaves' soft cut-out edges (assets.js) let a little of what's behind the canvas through, so behind it is the sky's colour too:
+    // against the page's grey, the trees sparkled at night.
+    if (this.backdrop !== p.horizonColor && this.renderer.domElement?.style) {
+      this.backdrop = p.horizonColor;
+      this.renderer.domElement.style.background = p.horizonColor;
+    }
     this.scene.fog.density = p.fogDensity;
     this.sun.intensity = p.sunIntensity;
     this.hemi.intensity = p.hemiIntensity;
     this.renderer.toneMappingExposure = p.exposure;
+    // The time of day (daylight.js): the sun's colour and where it is, the sky's fill going blue, and the baked reflections dimming with
+    // the light so paint doesn't shine with the afternoon at night.
+    if (p.sunColor) this.sun.color.set(p.sunColor);
+    if (p.hemiColor) this.hemi.color.set(p.hemiColor);
+    if (p.sunDir) this.sunOffset.set(p.sunDir.x, p.sunDir.y, p.sunDir.z).multiplyScalar(85);
+    this.scene.environmentIntensity = 0.6 * (p.envLevel ?? 1);
 
     // Keep the shadow frustum centred on the action, snapped to texels to stop shimmering.
     const texel = 90 / this.sun.shadow.mapSize.x;

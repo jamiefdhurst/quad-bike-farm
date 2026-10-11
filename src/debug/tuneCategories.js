@@ -4,12 +4,12 @@
 
 export const TUNE_CATEGORIES = {
   'Driving and towing': [
-    '2WD and 4WD', 'Throttle key', 'Brake key', 'Handbrake', 'Headlights', 'UTV lights', 'Indicators', 'Seat belts', 'Two-wheeler lean', 'Tyres', 'Tyre squeal', 'Towing', 'Tow chain', 'Trailer', 'Tipping trailer', 'Trailer tub',
+    '2WD and 4WD', 'Throttle key', 'Brake key', 'Handbrake', 'Headlights', 'Vehicle lights', 'UTV lights', 'Indicators', 'Seat belts', 'Two-wheeler lean', 'Tyres', 'Tyre squeal', 'Towing', 'Tow chain', 'Trailer', 'Tipping trailer', 'Trailer tub',
     'UTV bed', 'UTV load', 'UTV riders', 'Land Rover riders', '200TDi riders', '200TDi back seats', 'Trailer riders', 'Tractor creep', 'Tractor runaway',
   ],
   'Engines, fuel and faults': ['Quirks', 'Engine oil', 'Dripping carb', 'Barn find', 'Red diesel mistake', 'Two-stroke smoke'],
   'Items and workshop': ['Toolbox', 'Logbook', 'Workshop bench', 'Jerry can', 'Pre-mix can', 'Diesel can', 'Oil bottle', 'Hose', 'Jump leads', 'Winch', 'Bell', 'Hayloft'],
-  'World, weather and sound': ['Surfaces', 'Dust', 'Ground wear', 'Road mud', 'Barn', 'Sky', 'Yard haze', 'Fumes in the barn', 'Map', 'Sound', 'Player'],
+  'World, weather and sound': ['Time of day', 'Surfaces', 'Dust', 'Ground wear', 'Road mud', 'Barn', 'Sky', 'Yard haze', 'Fumes in the barn', 'Map', 'Sound', 'Player'],
   'Girls: themselves': [], // each girl's own build and her riding pillion; named from the characters, see GIRL_GROUP
   'Girls: moving about': [
     'Amy walk-round', "Amy won't ride", 'Getting on and off', 'Standing about', 'Waiting about', 'What catches the eye', 'Hearing a quad', 'Warming hands', 'Shelter in a cab', 'Girls carrying things', 'Home and jogging',

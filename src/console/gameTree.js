@@ -203,6 +203,9 @@ export function buildGameTree(g, host) {
     chill: ro(() => w().chill),
     band: text(() => w().band),
     wind: ro(() => w().wind),
+    time: num(() => g.daylight.hour, (v) => g.setTime(v), 0, 30, 'h', 'time of day, hours after midnight (past 24 is the same night going on)'),
+    clock: text(() => g.daylight.text()),
+    darkness: ro(() => g.daylight.darkness),
   }), 'the day');
 
   const gAll = group(() => ({

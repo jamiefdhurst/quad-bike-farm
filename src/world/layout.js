@@ -99,6 +99,8 @@ export const LAYOUT = {
   },
   // The workbench along the north wall: where the toolbox sits (its height is `lift`).
   bench: { x: -62.3, z: 56.1, length: 3.2, depth: 0.7, height: 0.92 },
+  // The clock and weather station (world/weatherStation.js) on the north wall past the door end of the bench, at eye height above the floor.
+  weatherStation: { x: -59.85, y: 1.65 },
   // The freestanding clothes rack by the barn's south wall where the two jumpers hang (npc/jumpers.js): its bar runs along x at height `y`, `length`
   // long, so they hang edge-on to the wall. A girl stands at `stand`, at the end of the rack, to take one down or hang it up, going in and out by the doorway (`door`).
   jumperRail: { x: -61.2, z: 63.2, y: 1.7, length: 1.3, stand: { x: -60.0, z: 63.2 }, door: { in: [{ x: -56.5, z: 60 }, { x: -59.8, z: 60 }], out: { x: -56.5, z: 60 } } },
