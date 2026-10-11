@@ -294,11 +294,39 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why is everything white, and how do I get the frost off the seat?',
         a: `On a freezing morning the grass has a frost on it and so do the seats. Drive or ride across the grass and your tyres melt a dark track
-          through it, which stays melted. A seat clears when someone sits on it, in a few seconds, though it is a cold start to the day.`,
+          through it, which stays melted. A seat clears when someone sits on it, in a few seconds, though it is a cold start to the day. As the
+          day warms up the frost thaws, and on a cold evening it comes back after dark, on the grass and on any seat nobody is sitting on.`,
+      },
+      {
+        q: 'What time is it?',
+        a: `Look at the clock on the barn wall, past the end of the workbench, or the clock on a dash that has one. Each game starts at its own
+          time, some in the morning and some in the afternoon, and the day runs on about twelve times faster than real time, so a morning
+          start reaches dusk in about forty minutes and an afternoon one in ten or so. Beside the clock are a thermometer and a barometer: the
+          barometer drops before rain comes on.`,
+        tip: 'The clock on the barn wall tells you how long until dark; the barometer beside it drops before rain.',
+      },
+      {
+        q: 'Why is it getting dark?',
+        a: `The day goes on. Late in the afternoon the sun gets low in the west and the light turns golden, then it sets and the dusk fades into
+          night, and the night stays for the rest of the game. It gets colder too, so a mild afternoon can end in a frost. In the dark the
+          headlights really light the way, the barn light comes on, and the girls start saying they want to go in.`,
+      },
+      {
+        q: 'Do the headlights actually light anything?',
+        a: `Yes. A lit headlamp throws real light on the ground and on whatever's in front of it, as bright as that vehicle's lamps are: the old
+          quads' lamps run off the engine, dim and yellow at tickover and brighter with the revs, and flicker on a rough engine. The Land
+          Rovers and the UTV have a light switch. In daylight you barely see it; after dark it's the only way to see where you're going.`,
+        tip: 'After dark, rev an old quad and its headlights brighten.',
+      },
+      {
+        q: 'Why do the girls want to go in?',
+        a: `It's dark and getting cold. As the light goes they say so, and once it's dark they'd rather wait in the barn doorway or sit in a
+          Land Rover with the heater on than stand about outside. Ask them out from their wheel and they'll still come.`,
       },
       {
         q: 'Does the weather matter?',
-        a: `Yes. Rain wets the ground, and wet grass and especially wet mud are slipperier and the bogs worse. Cold days want more choke, longer to warm
+        a: `Yes. Rain wets the ground, and wet grass and especially wet mud are slipperier and the bogs worse. It's colder in the morning and after dark than
+          in the afternoon. Cold days want more choke, longer to warm
           up and drain batteries faster; a hard frost whitens the grass and the seats (your tyres melt a track through the grass, and sitting on a seat clears it). Dry stubble throws up dust that clogs air filters fast. Hot, sunny days make the
           air-cooled quads overheat if you idle them or crawl through mud.`,
       },

@@ -169,6 +169,16 @@ Pick up the red toolbox from the workbench in the barn (`E`), take it to a quad 
 
 **Faults differ per quad.** Each game every quad is dealt its own luck: for each of the five faults (puncture, belt, cable, carb, engine mounts), how often it starts and how fast it gets worse, each from 0.4 to 2.5 times the usual rate, picked at random (from the layout seed, so `?seed=` repeats it). So one quad might be belt-prone and slow to puncture, another the reverse. The tuning panel shows the quad you're looking at, under "Faults (live)", and `proneSpread` sets the range.
 
+## The day
+
+Each game starts at its own time, morning or afternoon, and the day runs on about twelve times faster than real time. The sun crosses the sky from the east through the south to the west, the light goes golden late in the afternoon, the sun sets about a quarter past five and the dusk fades into a blue night that lasts the rest of the game. A clock, a thermometer and a barometer hang on the barn wall past the end of the workbench (the barometer drops ahead of rain), and the dashes' clocks keep the same time.
+
+The temperature follows the day: coldest at dawn, warmest at half past two, then falling by four to eight degrees into the night. So a frosty morning thaws (the ground and the seats clear as it warms), and a cold evening frosts over again after dark. Cold starts, the girls' need for warmth and the rest follow the temperature as it is now, not as it was when the game began.
+
+After dark the headlights matter: a lit lamp throws real light, as bright and as yellow as that vehicle's lamps are (the old quads' brighten with the revs and flicker when the engine runs rough). There are six real lights, given to the lit vehicles that matter most: yours first, then whichever is lighting the way for you, then the nearest. The barn's bulb is left on, and the girls say it's getting dark, then that they want to go in, and head for the barn doorway or a warm cab.
+
+`?time=16.5` starts a game at half past four; the debug panel (Girls tab, "Both girls and the farm") and the console (`weather.time`) set the time of day.
+
 ## Fuel
 
 Each quad has a fuel tank and a fuel tap, and a fuel gauge on the loan quad's and the blue's LCD or on a pod. Taps start OFF. How much is in each tank varies every game (see `fuelRange` above); the blue can start below its reserve, so it'll only run on RESERVE until it's filled.
@@ -411,7 +421,7 @@ Every value is at a dotted path. Type the path alone to read it, or the path and
 
 - `vehicle.red.temperature 0.4`, `vehicle.red.faults.carb 0.3`, `vehicle.red.tyres.flPsi 2`, `vehicle.red.quirks.<kind> on`: each vehicle's running state, faults, engine health, quirks, tyres, position, and `vehicle.red.tune.*` for its own engine and controls.
 - `girl.amy.favour 10`, `girl.jess.autonomy off`, `girl.amy.skills.*`, `girl.amy.tune.*`.
-- `weather.kind rain`, `weather.rain`, `weather.wet`, `weather.temperature -4`.
+- `weather.kind rain`, `weather.rain`, `weather.wet`, `weather.temperature -4`, `weather.time 17.5` (the time of day, in hours).
 - `player.x`, `player.heading`, `player.flying`; `girls.autonomy`, `girls.speech`, `audio.sound`.
 - `tune.<group>.<key>`: every number in the Tune tab.
 
@@ -549,7 +559,7 @@ Numbered on from the end of the list so nothing else moves.
 30. Loading a dead quad onto the big trailer. Ramps on the back of the trailer: push it or winch it up, strap it down, tow it home behind the tractor. Wants item 14's trailer collision first.
 31. The girls on the mini moto. Jess has a go, wobbles, gets braver and comes off on the grass (the fall from item 7); Amy won't touch it and says so. An action button for each in the Girls tab.
 32. Gamepad support. Analogue throttle, brake and steering, which suits the mini moto's lean and the manual quads' clutch better than keys. Keyboard stays as it is.
-33. The day running on into dusk. Over a long game the light fades and goes orange, then dark: the headlights and tail lights finally matter, frost forms on the ground and the seats as it cools (helps item 18), the girls start saying they want to go in, and riding the hill in the dark is its own thing.
+33. **Done.** See DECISIONS.md, "The day running on into dusk (TODO 33)". The day running on into dusk. Over a long game the light fades and goes orange, then dark: the headlights and tail lights finally matter, frost forms on the ground and the seats as it cools (helps item 18), the girls start saying they want to go in, and riding the hill in the dark is its own thing.
 34. Sheep on the hill pasture. A small flock that drifts, bunches and runs from a revving quad. A gate left open lets them out into the green lane or onto the road. Gather them with the girls riding either side, and a dog that rides on the rack and does some of the work.
 35. Farm jobs with the kit we have: muck from the muck heap into the tipping trailer and spread on the stubble, a round bale taken out to the trough field, harrowing the paddock behind the tractor. A chalkboard on the barn door lists the day's jobs, and doing them ticks the bucket list.
 36. Snow, as a rare weather roll. It settles on the ground and the seats, quads leave tracks that stay, grip drops, the cold starts and the girls' hand-warming come into their own, and Jess throws snowballs.

@@ -17,6 +17,7 @@ First-person British farm quad-bike game: Three.js, Vite, ES modules, Rapier phy
 - New tunables go in the module's `DEFAULT_*_PARAMS` with a one-line comment, plus a `[min, max, step]` entry in its ranges, registered with `registerTuning` so they show in the debug panel (see "Debug panel" below).
 - Match the surrounding style: single quotes, about 140-column lines, comments that say why. There's no prettier or eslint config; don't run either over existing files.
 - A quad spec must name a `style` and `dashStyle` that exist (a test checks); the game won't load otherwise.
+- The day moves on (`src/world/daylight.js`): the temperature, the frost and the light change over a game, so read `weather.temperature`, `weather.frost` and `daylight.darkness` as they are now, never once at the start. An effect drawn with its own fixed light colour (a custom shader, a sprite) gets dimmed with the daylight in `updateWeather`, or it glows at night. A new light source goes through the fixed pool in `effects/vehicleLights.js` (or a light made at the start and only dimmed), never a light added mid-game, which recompiles every shader.
 
 ## Debug panel
 
