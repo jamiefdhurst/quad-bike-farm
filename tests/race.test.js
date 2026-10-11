@@ -314,6 +314,17 @@ describe('racing with you', () => {
     expect(step(r2, 1, withYou({ riding: null })).some((e) => e.type === 'youDropped')).toBe(true);
   });
 
+  it('does not drop you for waiting on the grid while the girls take their time', () => {
+    const r = make({ youWait: 20 });
+    begin(r, withYou());
+    r.grid('you');
+    expect(step(r, 60, withYou()).some((e) => e.type === 'youDropped')).toBe(false);
+    expect(r.picks.you).toBeDefined();
+    r.grid('amy');
+    r.grid('jess');
+    expect(step(r, 1, withYou()).some((e) => e.type === 'countdown')).toBe(true);
+  });
+
   it('drops you rather than calling it off if you pull away during the count-down', () => {
     const r = make();
     begin(r, withYou());

@@ -20,7 +20,7 @@ export const DEFAULT_RACE_PARAMS = {
   cruiseSpread: 1.5, // +/- random per race
   throttle: 1, // most throttle she'll use
   keepRidingChance: 0.5, // chance a girl carries on driving after the finish instead of pulling up and getting off (the drag race uses it too)
-  youWait: 30, // seconds you get to line up on the grid once asked, before they race without you
+  youWait: 30, // seconds you get to line up on the grid once asked, before they race without you (not counted once you are lined up: the girls may be slow to arrive)
   dareStill: 4, // seconds you've sat still on a quad near the line before Jess may dare you
   dareWeight: 1.5, // how keen Jess is to dare you after that, when the girls are free and it's been long enough
   nearLine: 45, // metres from the start line you count as there (to be asked, or dared)
@@ -296,7 +296,7 @@ export class Race {
 
     this.phaseClock += dt;
     // You didn't line up in time, or got off: they race without you.
-    if ((this.phase === 'gather' && this.picks.you && (this.phaseClock > p.youWait || (you.riding !== this.picks.you && !this.ready.has('you')))) || (this.phase === 'countdown' && this.picks.you && !this.ready.has('you'))) {
+    if ((this.phase === 'gather' && this.picks.you && ((this.phaseClock > p.youWait || you.riding !== this.picks.you) && !this.ready.has('you'))) || (this.phase === 'countdown' && this.picks.you && !this.ready.has('you'))) {
       this.dropYou(events);
     }
     const racers = Object.keys(this.picks);
