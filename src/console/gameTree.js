@@ -120,6 +120,11 @@ export function buildGameTree(g, host) {
       for (const kind of FAULT_KINDS) faults[kind] = num(() => (q().faults.started[kind] ? q().faults.levels[kind] : 0), (v) => setFault(q().faults, kind, v), 0, 1, '', '0 clears it');
       out.faults = group(() => faults, 'the faults');
 
+      out.brakes = group(() => ({
+        wet: num(() => q().brakes.wet, (v) => (q().brakes.wet = v), 0, 1, '', '1 is soaked: they barely bite until they dry'),
+        binding: flag(() => q().brakes.binding, (v) => q().brakes.setBinding(v)),
+      }), 'the brakes');
+
       out.engineHealth = group(() => ({
         plugFouling: num(() => e().fouling, (v) => (e().fouling = v), 0, 1),
         airFilterClog: num(() => e().clog, (v) => (e().clog = v), 0, 1),

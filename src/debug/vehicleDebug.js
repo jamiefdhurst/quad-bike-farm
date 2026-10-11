@@ -33,7 +33,7 @@ export function clearFaults(faults) {
   for (const kind of FAULT_KINDS) faults.fix(kind);
 }
 
-/** Puts a quad right: faults, plug, filter, wear, scuffing, seizure, water, diesel and the stiff tap. Quirks and the engine's age stay. */
+/** Puts a quad right: faults, plug, filter, wear, scuffing, seizure, water, diesel, wet or binding brakes and the stiff tap. Quirks and the engine's age stay. */
 export function fixEverything(unit) {
   const e = unit.engine;
   clearFaults(unit.quad.faults);
@@ -52,6 +52,7 @@ export function fixEverything(unit) {
   if (unit.quad.sump) unit.quad.sump.level = 1;
   unit.quad.quirks.tapStiff = 0;
   unit.quad.startTrouble = 0;
+  unit.quad.brakes.fix();
 }
 
 /** Straight to running and warm with the fuel on, as if started and left a while (no cranking). */
@@ -88,6 +89,8 @@ export function problemSummary(unit) {
   if (e.water > 0.05) bits.push('water in it');
   if (e.dieselSoak > 0.05) bits.push('diesel-soaked');
   if (e.battery < 0.25) bits.push('battery flat');
+  if (unit.quad.brakes.wet > 0.1) bits.push(`brakes wet ${unit.quad.brakes.wet.toFixed(2)}`);
+  if (unit.quad.brakes.binding) bits.push('brake binding');
   if (e.boiled) bits.push('boiled over');
   if (unit.quad.fuel.litres <= 0.01) bits.push('out of fuel');
   return bits.length ? bits.join(', ') : 'nothing wrong';

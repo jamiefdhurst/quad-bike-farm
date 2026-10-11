@@ -2761,3 +2761,13 @@ Settled with Jamie before building (see "The day running on into dusk (TODO 33):
 - Debug: "brings a vehicle round to light you up" in each girl's "Make her do", "lights to work by" on the Girls tab and `girls.workLight` in the console (`girl <name> light-me` starts it); "Lights to work by" tuning under the girls' things they do.
 - Checked headless (seed 3, 19:00, stood by the red): Amy fetched the UTV, started it, drove it round with its lights on, parked on the spot, walked round and got into the passenger seat, and its light fell where you stood, with no errors. Not checked: a quad being brought (the pillion), her standing by it, the unasked offer winning in play, or Land Rover parking.
 
+## Wet and binding brakes (TODO 1)
+
+Nothing needed settling; the numbers were chosen here.
+
+- `src/vehicle/brakeState.js` (pure, tested in `tests/brakeState.test.js`): `BrakeState` per quad, with `wet` (0 to 1) and `binding`. Wet rises while moving above `soakSpeed` 0.8 m/s with water deeper than `soakFrom` 0.25 under a wheel (the same `puddleAt` the air filter uses, which includes the stream and ford), at `soakRate` 0.8 a second at full depth, so the ford soaks them in about a second and a half. It falls at `dryRate` 0.03 a second driving, plus `dryBraking` 0.35 a second at full brake pressure, so dabbing dries them in a few seconds and plain driving in about half a minute. Stood still they stay wet.
+- Wet scales only the lever's brake by `1 - wetLoss (0.8) * wet`. The parking hold, the handbrake and the rolling resistance are unchanged, so a wet quad still stays put on a slope.
+- Binding is a drag, not a brake: `bindDrag` 1.1 m/s2 times mass is added to the physics `hold` (the same path as the bog's drag), because the brake path cuts the drive and a binding brake shouldn't. It frees after `bindMetres` 6 of riding (each quad's own is 0.6 to 1.5 times that, from the seed) with a knock from `rideAudio` and no drag after. Each quad starts binding with `bindChance` 0.2, from the game's seed, so `?seed=` repeats it. A binding brake does not come back in a game; the quad stood all game is the start.
+- Debug: "wet brakes" and "brake binding" in Problems, wetness in Running, `brakes` in the console tree, both in `problemSummary` and cleared by "Put it right"; "Brakes" tuning under Driving.
+- Not done: the girls don't comment on it, and the barn find's seized brake bench job is separate and unchanged. Not checked in play: how the 0.8 loss and 1.1 m/s2 drag feel, or the clunk's sound. Unit tests only.
+

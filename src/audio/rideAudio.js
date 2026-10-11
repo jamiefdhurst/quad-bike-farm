@@ -464,6 +464,8 @@ export class RideAudio {
       }
     }
 
+    if (quad.brakes?.takeClunk()) this.events.push('knock', 0.9); // a binding brake frees
+
     // Ground jolts that shake a riderless quad are the bumps you hear from it.
     const vib = this.unit.vibration;
     if (!quad.rider && vib.params.groundGain > 0 && vib.jolts) {

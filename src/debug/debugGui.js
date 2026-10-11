@@ -223,6 +223,7 @@ export class DebugGui {
     });
     show(r, 'hours', () => round(unit().quad.usage.hours));
     show(r, 'odometer / trip (mi)', () => `${unit().quad.usage.odoMiles.toFixed(2)} / ${unit().quad.tripMiles.toFixed(2)}`);
+    show(r, 'brakes wet (0 dry)', () => round(unit().quad.brakes.wet));
     tick(r, 'parking brake', () => !!unit().quad.parkBrake, (v) => (unit().quad.parkBrake = v));
     // The UTV's light switch, and the 2WD / 4WD switch where there is one.
     if (u.quad.lights) r.add({ get v() { return unit().quad.lights?.mode; }, set v(x) { unit().quad.lights?.set(x); } }, 'v', LIGHT_MODES).name('lights').listen();
@@ -243,6 +244,8 @@ export class DebugGui {
     }
     set(p, 'hard start (goes it took)', () => unit().quad.startTrouble, (v) => (unit().quad.startTrouble = Math.round(v)), 0, 6, 1);
     show(p, 'flat tyre (wheel)', () => unit().quad.faults.tyre);
+    set(p, 'wet brakes', () => round(unit().quad.brakes.wet), (v) => (unit().quad.brakes.wet = v), 0, 1);
+    tick(p, 'brake binding (rides free)', () => unit().quad.brakes.binding, (v) => unit().quad.brakes.setBinding(v));
     set(p, 'plug fouling', () => round(unit().engine.fouling), (v) => (unit().engine.fouling = v), 0, 1);
     set(p, 'air filter clogged', () => round(unit().engine.clog), (v) => (unit().engine.clog = v), 0, 1);
     set(p, 'wear (a service clears it)', () => round(unit().engine.wear), (v) => (unit().engine.wear = v), 0, e.params.wearMax ?? 1);

@@ -33,6 +33,7 @@ import { Faults } from './faults.js';
 import { toppleLoad } from './topple.js';
 import { BikeLean, DEFAULT_BIKE_PARAMS } from './bikeLean.js';
 import { holdsItself } from './handbrake.js';
+import { BrakeState } from './brakeState.js';
 import { SeatSpring, UpAccel, DEFAULT_SEAT_PARAMS } from './seatRide.js';
 import { DriveSwitch, driveEffects, DEFAULT_DRIVE_PARAMS } from './driveMode.js';
 import { reverseAllowed, chokeReach, DEFAULT_CONTROLS_PARAMS } from './controls.js';
@@ -133,6 +134,7 @@ export class Quad {
       this.faults.tyreWheels = layout.wheels.flatMap((w, i) => (w.outrigger ? [] : [i]));
       this.faults.wheelSides = layout.wheels.map((w) => ({ side: w.x >= 0 ? 1 : -1, front: !!w.front }));
     }
+    this.brakes = new BrakeState(); // wet and binding brakes (brakeState.js); the game gives it this game's tuning and deals the binding ones
     this.filter = new AirFilter(); // clogs with mud, puddles and dust; cleaned at the toolbox
     this.dust = 0; // 0..1 how much dust it is throwing up (fast over dry stubble)
     this.dustIn = 0; // 0..1 the thickest cloud of another quad's it is in (the game sets it)
@@ -747,7 +749,8 @@ export class Quad {
     this.bog.update(dt, { bog: inBog, spin: this.physics.spinSlip, speed: groundSpeed, drive: d.driveForce });
     const hold = this.bog.holdForce(p.mass);
 
-    let brake = this.brake * p.maxBrake * this.tow.brakeFactor;
+    this.brakes.update(dt, { puddle: Math.max(0, ...this.physics.wheelInfo.map((w) => w.puddle ?? 0)), speed: fwd, pressure: this.brake });
+    let brake = this.brake * p.maxBrake * this.tow.brakeFactor * this.brakes.grip; // wet brakes barely bite until they dry
     // Someone at the controls with nothing pressed and stopped: it holds itself, unless it's an automatic on a steep slope, which rolls back.
     // With nobody on it (and not carrying on by itself) it only holds if the parking brake was set, or it rolls off down a slope; the tractor
     // still holds itself. Not while it's being winched (vehicle/handbrake.js).
@@ -773,7 +776,7 @@ export class Quad {
       this.physics.frontDriven = this.driveEffects.frontDriven;
       this.physics.traction.gripScale = this.driveEffects.gripScale;
     }
-    this.physics.hold = hold + this.bog.dragForce(inBog, p.mass, groundSpeed);
+    this.physics.hold = hold + this.bog.dragForce(inBog, p.mass, groundSpeed) + this.brakes.drag * p.mass; // a binding brake drags
     let wheelSteer = this.steer + this.faults.steerPull + this.quirks.brakePull(this.brake);
     if (this.bike) wheelSteer = this.balanceBike(dt, wheelSteer);
     this.physics.applyControls({

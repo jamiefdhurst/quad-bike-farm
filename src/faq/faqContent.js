@@ -178,6 +178,17 @@ export const FAQ_SECTIONS = [
         tip: 'Tap W for a little throttle; hold it down for the lot.',
       },
       {
+        q: 'Why won\'t the brakes work after the ford?',
+        a: `Wet brakes barely bite. Drive through the ford or a deep puddle and for a few seconds the quad runs on when you brake. Keep dabbing
+          <kbd>S</kbd> as you go and they dry quickly; just driving dries them in about half a minute. Brake early after water. The parking brake still holds.`,
+        tip: 'After the ford the brakes are wet. Dab S as you ride to dry them.',
+      },
+      {
+        q: 'Why does my quad drag, then clunk?',
+        a: `Some quads have stood so long that a brake binds, as if the handbrake were half on. It drags until a few metres of riding free it with a clunk,
+          and then it is fine. It is nothing you did, and there is nothing to fix.`,
+      },
+      {
         q: 'How do I brake gently?',
         a: `Tap <kbd>S</kbd>. The brake squeezes in the longer you hold the key: the first moment is only a light brake, and it reaches full braking
           about a second later. Let go and it comes straight off. Short dabs slow you gently; hold it down to stop hard.`,

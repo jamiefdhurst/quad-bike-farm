@@ -40,6 +40,7 @@ import { Romance, Tryst, ROMANCE_PARAM_RANGES } from './npc/romance.js';
 import { pickHistory, pickFaultChance } from './vehicle/history.js';
 import { TyreSet, dealTyres, DEFAULT_TYRE_PARAMS, TYRE_PARAM_RANGES } from './vehicle/tyres.js';
 import { pushDirection, localAlong } from './vehicle/controls.js';
+import { BrakeState, DEFAULT_BRAKE_PARAMS, BRAKE_PARAM_RANGES } from './vehicle/brakeState.js';
 import { RollWatch, rollReactions, DEFAULT_HANDBRAKE_PARAMS, HANDBRAKE_PARAM_RANGES } from './vehicle/handbrake.js';
 import { DEFAULT_DRIVE_PARAMS, DRIVE_PARAM_RANGES, StuckWatch, forgotReaction } from './vehicle/driveMode.js';
 import { HEADLIGHT_PARAMS, HEADLIGHT_PARAM_RANGES } from './vehicle/headlight.js';
@@ -334,6 +335,14 @@ export class Game {
     }
     // Every quad starts parked properly, with its brake on; after that it's down to whoever gets off one (vehicle/handbrake.js).
     for (const unit of this.units) unit.quad.parkBrake = true;
+    // Wet brakes after the ford, and the odd quad that has stood so long its brake binds until a few metres free it (vehicle/brakeState.js).
+    this.brakeParams = { ...DEFAULT_BRAKE_PARAMS };
+    registerTuning('Brakes', this.brakeParams, BRAKE_PARAM_RANGES);
+    const brakeRandom = createRandom(this.seed ^ 0xb4a7);
+    for (const unit of this.units) {
+      unit.quad.brakes = new BrakeState(this.brakeParams, brakeRandom);
+      unit.quad.brakes.setBinding(brakeRandom() < this.brakeParams.bindChance);
+    }
     this.handbrakeParams = { ...DEFAULT_HANDBRAKE_PARAMS };
     this.pushing = null; // the unit you're shoving along on foot (pushOnFoot)
     registerTuning('Handbrake', this.handbrakeParams, HANDBRAKE_PARAM_RANGES);
@@ -1988,6 +1997,8 @@ export class Game {
     unit.quad.tyres = new TyreSet(dealTyres(random, 4, this.tyreParams), this.tyreParams);
     unit.quad.tyres.useLayout(unit.quad.layout.wheels);
     unit.quad.quirks = new QuirkSet(pickQuirks(featuresOf(spec, false), random, this.quirkParams), this.quirkParams);
+    unit.quad.brakes = new BrakeState(this.brakeParams, random);
+    unit.quad.brakes.setBinding(random() < this.brakeParams.bindChance);
     if (unit.quad.sump) unit.quad.sump = new Sump({ level: startLevel(false, random, this.sumpParams), burner: false, params: this.sumpParams });
     unit.quad.faults.roll(createRandom(this.seed ^ (spec.defender ? 0x1a5f : 0x1a4f)));
     unit.quad.faults.prone.belt = 0; // a clutch, not a belt

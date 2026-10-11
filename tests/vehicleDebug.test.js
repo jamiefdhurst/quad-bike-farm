@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { setQuirk, setFault, clearFaults, fixEverything, problemSummary, quirkLabel } from '../src/debug/vehicleDebug.js';
 import { QuirkSet } from '../src/vehicle/quirks.js';
+import { BrakeState } from '../src/vehicle/brakeState.js';
 import { Faults } from '../src/vehicle/faults.js';
 
 const unitWith = () => ({
   engine: { fouling: 0.5, clog: 0.6, wear: 0.4, scuff: 0.3, overheat: 0.2, seized: true, water: 0.4, dieselSoak: 0.4, silencerBlown: 0.5, boiled: true, coolant: 0.2, coolantLeak: 2, battery: 1 },
-  quad: { startTrouble: 3, faults: new Faults(), quirks: new QuirkSet(['tapStiff']), sump: { level: 0.2 }, fuel: { litres: 5 } },
+  quad: { startTrouble: 3, faults: new Faults(), quirks: new QuirkSet(['tapStiff']), sump: { level: 0.2 }, fuel: { litres: 5 }, brakes: Object.assign(new BrakeState(), { wet: 0.8, binding: true }) },
 });
 
 describe('vehicle debug helpers', () => {
@@ -36,6 +37,7 @@ describe('vehicle debug helpers', () => {
     const u = unitWith();
     setFault(u.quad.faults, 'cable', 0.8);
     expect(problemSummary(u)).toContain('seized');
+    expect(problemSummary(u)).toContain('brake binding');
     fixEverything(u);
     expect(problemSummary(u)).toBe('nothing wrong');
     expect(u.quad.quirks.kinds).toEqual(['tapStiff']);
