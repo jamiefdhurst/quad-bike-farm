@@ -687,3 +687,14 @@ Numbered on from the end of the list so nothing else moves.
 191. A shepherd's hut on the hill pasture with a stove: somewhere to shelter, make tea and look out over the farm, a destination for rides and the romance.
 192. A notebook of discoveries: things you've worked out (the blue floods with the choke left on, Jess pranks when neglected) written on a 'things I've learnt' page as you find them.
 193. The day's story, written: with item 93, a short account generated from what happened (who raced, who fell out, which quad broke) to read back afterwards.
+194. A fuel gauge you can't trust: one old quad's float sticks, so it reads half full when nearly dry; you learn to dip the tank, and Amy writes it in the logbook.
+195. Plugging a puncture in the field: a plug kit in the toolbox mends a tubeless tyre where it went soft, without the trip to the bench.
+196. A booster pack: a battery pack charged on the bench and carried to a flat quad instead of fetching a second vehicle for the leads; it can run flat itself.
+197. Heated grips: an accessory fitted at the bench for frosty days, a switch on the bars that draws on the battery at idle (with item 120's charging).
+198. Your cold hands: on a frosty ride without gloves your steering stiffens a little and the girls offer you theirs; gloves hang on the hooks with the helmets (item 71).
+199. Working wing mirrors on the Land Rovers and the UTV that show what's behind, for reversing a trailer (item 89) and seeing who's following.
+200. A rolling road day: a dyno in the shed measures each quad's power after tuning, the girls cheering the numbers and arguing about whose is strongest.
+201. Tracks through long grass: riding the hay field leaves flattened lines that slowly spring back, so you can see where everyone has been.
+202. Wet tarmac that shines: reflections on the road and yard after rain, drying patchily as the sun comes out.
+203. Exhaust condensation: on a cold morning a cold engine drips water from the exhaust and puffs white vapour until it's warm (with item 125).
+204. A tanker for the diesel: the red diesel bowser runs down as the tractor and Land Rovers use it, and a tanker comes up the lane to refill it; until then it's on a ration.
