@@ -691,9 +691,9 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I time a run up the hill?',
-        a: `Go down the lane and across the ford to the hill pasture. Just past the stream there are orange cones: ride up to them on a quad and press
-          <kbd>Enter</kbd>, then ride through them when you're ready. The clock runs from there. Go through the cones of each gate in order (there are two on the
-          way up) and on through the finish cones near the top. Anywhere between the cones of a gate counts, so the line is yours: the gentler ground in the east
+        a: `Go down the lane and across the ford to the hill pasture. Just past the stream there are two pairs of big orange cones: ride up to them on a quad and press
+          <kbd>Enter</kbd>, then ride through them when you're ready. The clock runs from there. Go between the cones of each checkpoint in order (a cone
+          either side, two on the way up) and on through the two pairs at the finish near the top. Anywhere between the cones counts, so the line is yours: the gentler ground in the east
           is the easy way, the steep banks in the west are quicker if you dare. Your time goes up as a toast, and the best ones go on the board in the barn.`,
         tip: 'Press Enter by the orange cones past the stream, then ride through them to time a hill climb.',
       },
@@ -704,10 +704,10 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where are the records kept?',
-        a: `On the second chalkboard on the barn doors, next to the jobs board: the best lap of the track, drag run, hill climb and longest jump of this game,
+        a: `On the second chalkboard inside the barn, on the back wall next to the jobs board: the best lap of the track, drag run, hill climb and longest jump of this game,
           and who set it. Press <kbd>E</kbd> at either board for a close view. You're told when you set a record, and when it's your best on the quad you're on.
           The girls set them too. They start afresh each game.`,
-        tip: 'The records for laps, drag runs, the hill climb and the longest jump are on the chalkboard on the barn door.',
+        tip: 'The records for laps, drag runs, the hill climb and the longest jump are on the chalkboard in the barn.',
       },
       {
         q: 'Do the girls climb the hill too?',
@@ -840,10 +840,10 @@ export const FAQ_SECTIONS = [
           and tip it (<kbd>T</kbd>) when stopped. Jess may climb in against the rules.`,
       },
       {
-        q: 'What is the chalkboard on the barn door?',
-        a: `Today's farm jobs. Walk up to the barn's sliding door and press <kbd>E</kbd> for a close look. Done jobs get a tick, and a bucket list
+        q: 'What are the chalkboards in the barn?',
+        a: `Today's farm jobs. Walk into the barn to the back wall and press <kbd>E</kbd> for a close look. Done jobs get a tick, and a bucket list
           entry when you've cleared the lot. At the moment the only job is the muck, but the board lists up to two a day. The records are on the board beside it.`,
-        tip: 'The chalkboard on the barn door lists the day\'s farm jobs.',
+        tip: 'The chalkboard in the barn lists the day\'s farm jobs.',
       },
       {
         q: 'How do I do the muck job?',

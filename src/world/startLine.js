@@ -62,17 +62,21 @@ export function buildStartLine(scene, heightAt, track, u, halfWidth) {
   return group;
 }
 
-/** Cones either side of each gate of the hill climb (npc/hillClimb.js climbGates): two at the start and the finish, one at the ends of the gates between. */
-export function buildClimbCones(scene, heightAt, gates) {
+/**
+ * Cones for the hill climb's gates (npc/hillClimb.js climbGates), bigger than the lap's so they read from across the pasture: one pair (a cone
+ * either side) at each gate between, and two pairs `box` m apart along the course at the start and the finish, to ride through like a gateway.
+ */
+export function buildClimbCones(scene, heightAt, gates, { scale = 1.8, box = 3 } = {}) {
   const group = new THREE.Group();
   group.name = 'climbCones';
   gates.forEach((g, i) => {
     const end = i === 0 || i === gates.length - 1;
     for (const side of [-1, 1]) {
-      for (const along of end ? [-0.6, 0.6] : [0]) {
-        const x = g.x - g.tz * (g.half + 0.9) * side + g.tx * along;
-        const z = g.z + g.tx * (g.half + 0.9) * side + g.tz * along;
+      for (const along of end ? [-box / 2, box / 2] : [0]) {
+        const x = g.x - g.tz * (g.half + 0.5) * side + g.tx * along;
+        const z = g.z + g.tx * (g.half + 0.5) * side + g.tz * along;
         const c = cone();
+        c.scale.setScalar(scale);
         c.position.set(x, heightAt(x, z), z);
         group.add(c);
       }

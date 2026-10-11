@@ -59,9 +59,9 @@ export const LAYOUT = {
     // (yaw is the way she faces, `height` how high the top is) and the flask and mugs go on the ground beside it.
     viewpoint: { x: -22, z: 198.5, yaw: Math.PI, height: 0.45 },
     // The hill climb (npc/hillClimb.js): cones mark a gate at each of `points` ([x, z]: the start just past the stream, two on the way up, the
-    // finish near the top), each `gateHalf` m either side of the point and across the way to the next. The line between them is yours; the points
+    // finish near the top), each `gateHalf` m either side of the point and across the way to the next (cones stand just outside). The line between them is yours; the points
     // run up the gentler ground in the east of the pasture, where the banks spread out, so the girls can drive it too.
-    climb: { points: [[8, 152], [16, 168], [18, 182], [6, 197]], gateHalf: 7 },
+    climb: { points: [[8, 152], [16, 168], [18, 182], [6, 197]], gateHalf: 4.5 },
   },
   hedgeThickness: 1.8,
   hedgeHeight: 2.4,

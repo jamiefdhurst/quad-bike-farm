@@ -2,8 +2,13 @@ import './jobBoard.css';
 import * as THREE from 'three';
 import { barnShape } from './barn.js';
 
+const BOARD_W = 1.5; // metres
+const BOARD_H = 1.3; // tall enough for the four records with room to spare
+const BOARD_PX_W = 512;
+const BOARD_PX_H = 444; // the same chalk-per-metre as the width
+
 /**
- * The chalkboard hung on the barn's sliding door: today's farm jobs (farmJobs.js JobBoard), ticked off in chalk as they're done. Look at it
+ * The chalkboards hung inside the barn on its back wall: today's farm jobs (farmJobs.js JobBoard), ticked off in chalk as they're done. Look at it
  * and press E for a close view (the card), the same way as Amy's logbook. The prop is drawn on a canvas that's redrawn when the list changes.
  */
 export class JobBoardView {
@@ -13,15 +18,12 @@ export class JobBoardView {
     this.records = records;
     const shape = barnShape(game.world.layout);
     const floorY = game.world.heightAt(shape.x, shape.z);
-    // The sliding door leaf nearer the first wall segment (barnBuild.js hangs it 0.25 m out from the wall). Its white battens stand up to
-    // 0.11 m proud of the leaf, so the board hangs 0.16 m out on a backing slab, each layer 2 cm clear of the last.
-    const door = shape.door;
-    const x = door.x + 0.25 + 0.16;
-    const z = door.minZ - 1.2;
-    const y = floorY + 1.6;
-    // Two boards: today's jobs on the leaf nearer the first wall segment, and the records on the other leaf, past the doorway.
-    this.jobs = this.hangBoard(x, y, z);
-    this.recordsBoard = this.hangBoard(x, y, door.maxZ + 1.2);
+    // Both boards hang inside, on the back (west) wall, side by side: the jobs to the south, the records to the north. The backing is 1 cm off
+    // the plaster, and each layer in front of it 2 cm clear of the last.
+    const x = shape.inner.minX + 0.06;
+    const y = floorY + 1.75;
+    this.jobs = this.hangBoard(x, y, shape.z - 2);
+    this.recordsBoard = this.hangBoard(x, y, shape.z + 2);
     this.canvas = this.jobs.canvas;
     this.proxy = this.jobs.proxy;
     this.recordsProxy = this.recordsBoard.proxy;
@@ -29,30 +31,30 @@ export class JobBoardView {
     this.draw();
   }
 
-  /** One board on the door: a chalk-dusted slate on a backing slab in a wood frame, drawn on a canvas, with its invisible target for E. */
+  /** One board on the wall: a chalk-dusted slate on a backing slab in a wood frame, drawn on a canvas, with its invisible target for E. */
   hangBoard(x, y, z) {
     const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 340;
+    canvas.width = BOARD_PX_W;
+    canvas.height = BOARD_PX_H;
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
     const group = new THREE.Group();
     group.name = 'job-board';
-    const face = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1), new THREE.MeshStandardMaterial({ map: texture, roughness: 0.9 }));
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(BOARD_W, BOARD_H), new THREE.MeshStandardMaterial({ map: texture, roughness: 0.9 }));
     face.rotation.y = Math.PI / 2; // the plane's front faces +x, out over the yard
     group.add(face);
-    const backing = new THREE.Mesh(new THREE.BoxGeometry(0.02, 1.08, 1.58), new THREE.MeshStandardMaterial({ color: 0x2b3330, roughness: 0.9 }));
+    const backing = new THREE.Mesh(new THREE.BoxGeometry(0.02, BOARD_H + 0.08, BOARD_W + 0.08), new THREE.MeshStandardMaterial({ color: 0x2b3330, roughness: 0.9 }));
     backing.position.x = -0.025;
     group.add(backing);
     const wood = new THREE.MeshStandardMaterial({ color: 0x5a3f28, roughness: 0.85 });
-    for (const [w, h, dx, dy] of [[1.58, 0.04, 0, 0.52], [1.58, 0.04, 0, -0.52], [0.04, 1.08, 0.77, 0], [0.04, 1.08, -0.77, 0]]) {
+    for (const [w, h, dx, dy] of [[BOARD_W + 0.08, 0.04, 0, BOARD_H / 2 + 0.02], [BOARD_W + 0.08, 0.04, 0, -BOARD_H / 2 - 0.02], [0.04, BOARD_H + 0.08, BOARD_W / 2 + 0.02, 0], [0.04, BOARD_H + 0.08, -BOARD_W / 2 - 0.02, 0]]) {
       const bar = new THREE.Mesh(new THREE.BoxGeometry(0.03, h, w), wood);
       bar.position.set(0.005, dy, dx);
       group.add(bar);
     }
     group.position.set(x, y, z);
     this.game.scene.add(group);
-    const proxy = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.1, 1.6), new THREE.MeshBasicMaterial({ visible: false }));
+    const proxy = new THREE.Mesh(new THREE.BoxGeometry(0.4, BOARD_H + 0.1, BOARD_W + 0.1), new THREE.MeshBasicMaterial({ visible: false }));
     proxy.position.copy(group.position);
     this.game.scene.add(proxy);
     return { canvas, texture, group, proxy };
