@@ -169,6 +169,8 @@ export function buildGameTree(g, host) {
       thinking: text(() => describeMind(c().mind).next),
       setOn: text(() => c().intent.describe((k) => OFFER_KINDS[k]?.label ?? k)),
       reacting: text(() => c().reactingText),
+      mud: num(() => c().mucky.mud, (v) => (c().mucky.mud = v), 0, 1, '', 'how muddy her jeans are'),
+      dust: num(() => c().mucky.dust, (v) => (c().mucky.dust = v), 0, 1, '', 'how dusty her hair and face are'),
       pairedWith: text(() => g.pairState(id)),
       waiting: text(() => c().waitingText()),
       ...where(id),

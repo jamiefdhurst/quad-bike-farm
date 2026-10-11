@@ -351,6 +351,12 @@ export const FAQ_SECTIONS = [
           clean first, then the bodywork. <kbd>G</kbd> puts the hose back. Mind where you point it.`,
       },
       {
+        q: 'Why are the girls muddy, and how do I clean them up?',
+        a: `Riding behind a muddy quad splashes their jeans, the girl on the back most of all, and dry stubble throws dust in their faces and hair.
+          Amy minds and says so; Jess thinks it is hilarious. It dries and flakes off slowly, quicker while they walk about, or you can
+          hose them (hold <kbd>E</kbd> with the hose pointed at her) and take the consequences. Going round the puddles helps.`,
+      },
+      {
         q: 'Why is everything white, and how do I get the frost off the seat?',
         a: `On a freezing morning the grass has a frost on it and so do the seats. Drive or ride across the grass and your tyres melt a dark track
           through it, which stays melted. A seat clears when someone sits on it, in a few seconds, though it is a cold start to the day. As the

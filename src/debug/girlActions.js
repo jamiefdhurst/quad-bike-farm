@@ -1,6 +1,7 @@
 // Things you can make a girl do on demand, shared by the debug panel's Girls tab (a button each) and the console (`girl amy drive red`),
 // so both do exactly what the game does. Each action calls the real game methods and says what happened with a toast.
 import { pickTrick } from '../npc/showOff.js';
+import { cleanUp } from '../npc/muddiness.js';
 import { standBy } from '../npc/pair.js';
 import { WAITING_IDLES } from '../npc/waiting.js';
 
@@ -429,6 +430,23 @@ export function girlActions(g) {
       },
     },
   ];
+  actions.push({
+    verb: 'splash',
+    label: '% gets splashed with mud and dust',
+    run: (id) => {
+      const m = girl(id).mucky;
+      m.mud = 0.8;
+      m.dust = 0.6;
+      m.wet = 1;
+      m.noticedMud = m.noticedDust = false;
+      m.sinceRemark = 1e9;
+    },
+  });
+  actions.push({
+    verb: 'clean',
+    label: '% is scrubbed clean',
+    run: (id) => cleanUp(girl(id).mucky),
+  });
   actions.push({
     verb: 'light-me',
     label: '% brings a vehicle round to light you up (after dark)',

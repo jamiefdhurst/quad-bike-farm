@@ -178,6 +178,7 @@ import { Snow } from './effects/snow.js';
 import { Rain } from './effects/rain.js';
 
 import { washMud } from './effects/mudBuildUp.js';
+import { DEFAULT_MUDDY_PARAMS, MUDDY_PARAM_RANGES, updateMuddiness, noticing, markRemarked } from './npc/muddiness.js';
 import { Workshop } from './workshop/workshop.js';
 import { PodRack } from './vehicle/pods.js';
 import { buildPod } from './vehicle/dashPod.js';
@@ -1092,6 +1093,8 @@ export class Game {
     registerTuning('Diesel can', this.dieselCan.params, JERRY_CAN_PARAM_RANGES);
     registerTuning('Oil bottle', this.oilBottle.params, OIL_BOTTLE_PARAM_RANGES);
     registerTuning('Hose', this.hose.params, HOSE_PARAM_RANGES);
+    this.muddyParams = { ...DEFAULT_MUDDY_PARAMS };
+    registerTuning('Muddy girls', this.muddyParams, MUDDY_PARAM_RANGES);
     registerTuning('Bell', this.bell.params, BELL_PARAM_RANGES);
     registerTuning('Favour', this.favour.p, FAVOUR_PARAM_RANGES);
     registerTuning('Achievements', this.achievements.p, ACHIEVEMENT_PARAM_RANGES);
@@ -3097,6 +3100,29 @@ export class Game {
     this.herAtTheFront(unit.quad)?.voice.onRequest('passengerOn');
   }
 
+  /** How muddy and dusty each girl is: what her quad throws at her, the stubble dust, drying, brushing off and the hose; and her remark when she sees it. */
+  updateMuddiness(dt) {
+    const p = this.muddyParams;
+    for (const c of this.companions) {
+      const unit = c.quad && (c.isSeated || c.fsm.is('driving')) ? this.units.find((u) => u.quad === c.quad) : null;
+      const mud = unit?.mud?.state;
+      const ride = mud
+        ? {
+            pillion: c.fsm.is('seated') && c.seatKind === 'pillion',
+            wheels: mud.wheels,
+            body: mud.body,
+            speed: unit.quad.speed,
+            puddle: Math.max(0, ...unit.quad.physics.wheelInfo.map((w) => w.puddle ?? 0)),
+            dust: Math.max(unit.quad.dust, unit.quad.dustIn),
+          }
+        : null;
+      updateMuddiness(c.mucky, dt, { ride, walking: c.fsm.is('walking'), hosed: c.hosedNow ? 1 : 0 }, p);
+      c.girlMud.update(c.mucky);
+      const kind = noticing(c.mucky, p);
+      if (kind && c.voice.onMuddy(kind)) markRemarked(c.mucky, kind, p);
+    }
+  }
+
   /** Spraying, the hose's reach, the hiss, and her reaction if you get her wet. */
   updateHose(dt) {
     const hose = this.hose;
@@ -3111,11 +3137,15 @@ export class Game {
     for (const c of this.companions) {
       if (this.washing) c.voice.onWash?.('quad');
       // Spraying her: she's in front of you and close.
+      c.hosedNow = false;
       if (hose.spraying) {
         const to = c.voice.head.clone().sub(this.camera.position);
         const dist = to.length();
         const ahead = this.camera.getWorldDirection(to.clone()).dot(to.normalize());
-        if (dist < 7 && ahead > 0.96) c.voice.onWash?.('her');
+        if (dist < 7 && ahead > 0.96) {
+          c.voice.onWash?.('her');
+          c.hosedNow = true; // it takes the mud off her (muddiness.js)
+        }
       }
     }
   }
@@ -6498,6 +6528,7 @@ export class Game {
     if (auto || this.tryst) this.updateRomance(dt);
     this.updateBanter(dt, ridden);
     this.updateMinds(dt, ridden);
+    this.updateMuddiness(dt);
     this.updatePair(dt);
     this.watchNotices(dt);
     for (const c of this.companions) {

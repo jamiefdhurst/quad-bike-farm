@@ -42,6 +42,10 @@ export function buildGirlsTab(d) {
     show(f, 'race score', () => `${g.race.tally[id]?.wins ?? 0} won, ${g.race.tally[id]?.losses ?? 0} lost`);
     show(f, 'jump score', () => { const s = g.jumpWatch.score[id]; return s ? JSON.stringify(s) : 'none yet'; });
 
+    show(f, 'mud and dust', () => `${round(c.mucky.mud)} mud (${round(c.mucky.wet)} wet), ${round(c.mucky.dust)} dust`);
+    slider(f, 'mud on her', () => c.mucky.mud, (v) => (c.mucky.mud = v), 0, 1, 0.01);
+    slider(f, 'dust on her', () => c.mucky.dust, (v) => (c.mucky.dust = v), 0, 1, 0.01);
+
     // --- Why she does what she does: what she wants (settable) and what she chose for it (npc/needs.js, npc/chooser.js).
     const why = f.addFolder('Why');
     for (const n of NEEDS) slider(why, `wants ${NEED_LABELS[n]}`, () => c.needs[n], (v) => (c.needs[n] = v), 0, 1, 0.01);
