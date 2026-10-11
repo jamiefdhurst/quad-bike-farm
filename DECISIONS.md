@@ -2691,3 +2691,7 @@ The girls' heads were on a swivel round idling quads. Revs were counted from how
 - One notice a blip, at its top (the revs stop climbing or the throttle shuts), as strong as how far up the range it got (0.5 up to 1.5), so a flat-out blip still makes Amy cover her ears and a half one only turns heads.
 - The three new numbers replace `revRate` in "What catches the eye".
 
+## The girls' buttons folded away (TODO 137)
+
+Each girl's folder on the Girls tab opened with about thirty action buttons, so with both folders open her details were off the bottom of the screen. The buttons now sit in their own "Make her do" folder below "Why", closed, and the folder opens on what she is doing and why. Actions still live with the girl they act on (the panel's rule), only folded. The two buttons inside "Why" (stop her on her way, think now) stay there, as they are for watching the chooser.
+

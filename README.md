@@ -421,7 +421,7 @@ Every value is at a dotted path. Type the path alone to read it, or the path and
 
 ## Tuning panel
 
-Press `` ` `` to open it. It releases the mouse so you can use the panel; click the game to carry on. Each quad has its own folder (Engine, Vibration, Audio, Smoke, Vehicle), alongside Sound, Player, Companion and Sky. The live engine readouts (state, rpm, mixture, roughness, fouling) and the shortcuts (warm or cool the engine, clear a flood) follow the quad you're on or looking at. There's also a shortcut to put both quads back in the yard and one to copy every value as JSON.
+Press `` ` `` to open it. It releases the mouse so you can use the panel; click the game to carry on. Each quad has its own folder (Engine, Vibration, Audio, Smoke, Vehicle), alongside Sound, Player, Companion and Sky. The live engine readouts (state, rpm, mixture, roughness, fouling) and the shortcuts (warm or cool the engine, clear a flood) follow the quad you're on or looking at. There's also a shortcut to put both quads back in the yard and one to copy every value as JSON. On the Girls tab each girl's folder shows what she is doing and why (her needs and what she chose), with the buttons that make her do things folded away in "Make her do" below it, so both girls' details fit on the screen at once.
 
 ## How it's put together
 
@@ -531,7 +531,7 @@ Numbered on from the end of the list so nothing else moves.
 134. **Done.** See DECISIONS.md, "Needs and a chooser (TODO 133)". "Why" on the Girls tab (item 83, brought forward to go with item 133). Show what she wants (her needs), what the chooser scored, what she nearly did and what she is doing it for, not only what she is doing. Without it, tuning the chooser is guesswork.
 135. **Done.** See DECISIONS.md, "Going about it (TODO 135)". Saying what she is going to do. When the chooser picks, she sometimes says so ("I'm going to warm up by the red"), always looks at it first (item 130), and walks at a pace that fits: hurrying in the rain, dawdling when bored, jogging to a race. Interrupted, she says so and picks it up again later. Builds on item 133.
 136. **Done.** See DECISIONS.md, "Revs, not idling (TODO 136)". The girls react too much to revs all the time when the quads are idling, a rev needs to be distinct from an idling quad, with or without choke, as their heads are on a swivel currently
-137. Move the buttons in the girls' debug menus below the "Why" into a separate section, so I can see both girls' details at once
+137. **Done.** See DECISIONS.md, "The girls' buttons folded away (TODO 137)". Move the buttons in the girls' debug menus below the "Why" into a separate section, so I can see both girls' details at once
 138. The two as a pair. When free they drift towards each other and stand at talking distance, facing each other; they walk somewhere together, and one follows the other's lead. When you come up they open the circle to let you in. Fallen out, they keep apart. Builds on item 133.
 139. Waiting that fits where she is. Instead of a random pose, something to do with what she is next to: she kicks a tyre of the quad she is by, wipes its seat, rubs her hands when it is cold, shades her eyes in the sun, looks up when it clouds over, checks her phone. The poses are already there; this picks between them by what is around her.
 

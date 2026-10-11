@@ -1,5 +1,6 @@
-// The debug panel's Girls tab: one folder per girl (what she is doing and what you can make her do, her favour, the romance
-// and her skills), then one for the two of them and the farm. Actions come first in each, state after.
+// The debug panel's Girls tab: one folder per girl (what she is doing, why, what you can make her do, her favour, the romance
+// and her skills), then one for the two of them and the farm. Her state comes first and her many action buttons sit in their own
+// folder below "Why", closed, so both girls' details fit on the screen at once.
 import { girlActions } from './girlActions.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
 import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
@@ -26,9 +27,7 @@ export function buildGirlsTab(d) {
     const c = girl(id);
     const f = d.addFolder('Girls', name);
 
-    // --- Things to make her do, at the top (girlActions.js, which the console uses too).
     const romance = g.romance;
-    for (const a of actions.forGirl(id)) button(f, a.label.replace('%', name), () => a.run(id, a.vehicle ? d.unit() : undefined));
 
     // --- What she is doing.
     show(f, 'doing', () => c.state + (c.quad && c.fsm.is('seated', 'mounting', 'driving', 'starting') ? ` (${c.quad.label})` : ''));
@@ -51,6 +50,11 @@ export function buildGirlsTab(d) {
     show(why, 'pace', () => `${c.paceMul.toFixed(2)} times her walk${c.pace ? ` (${c.pace})` : ''}`);
     button(why, 'Stop her on her way (as if you asked her something)', () => c.interrupt());
     button(why, 'Think now', () => (c.mind.thinkIn = 0));
+
+    // --- Things to make her do (girlActions.js, which the console uses too), folded away so her details stay in view.
+    const act = f.addFolder('Make her do');
+    for (const a of actions.forGirl(id)) button(act, a.label.replace('%', name), () => a.run(id, a.vehicle ? d.unit() : undefined));
+    act.close();
 
     // --- How she rates you, and the romance.
     const fav = f.addFolder('Favour and romance');
