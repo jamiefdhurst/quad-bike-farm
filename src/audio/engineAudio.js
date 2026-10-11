@@ -109,8 +109,11 @@ export class AudioHub {
   setPaused(on) {
     if (this.paused === on) return;
     this.paused = on;
+    if (!on) this.played = true;
     if (!this.ctx) return;
-    if (on && this.ctx.state === 'running') this.ctx.suspend();
+    // Not before the game has begun: the click that unlocks the sound leaves the card up for a frame or two while the pointer locks, and
+    // suspending then (Firefox) shuts the sound off again with no click left to switch it back on.
+    if (on && this.played && this.ctx.state === 'running') this.ctx.suspend();
     else if (!on && this.ctx.state === 'suspended') this.ctx.resume();
   }
 
