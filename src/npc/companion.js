@@ -1042,7 +1042,11 @@ export class Companion {
     const final = Math.hypot(target.x - pos.x, target.z - pos.z);
     if (final < p.arriveRadius) return true;
     // In another field, she heads for the gateways on the way (world/fields.js) rather than straight at a hedge.
-    const via = this.world.nextWaypoint?.(pos, target) ?? target;
+    let via = this.world.nextWaypoint?.(pos, target) ?? target;
+    // A building in the way (the barn, mostly): aimed at its corner, or its doorway, rather than at the wall.
+    const round = this.world.detour?.(pos, via, this.detourCorner);
+    this.detourCorner = round;
+    if (round) via = round;
     const to = this.tmpV.set(via.x - pos.x, 0, via.z - pos.z);
     const leg = to.length(); // to the gateway, or the end if there's none on the way
     const dist = final;

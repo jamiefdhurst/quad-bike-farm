@@ -4,11 +4,12 @@ import { Track } from './track.js';
 import { createTerrainHeight } from './terrainHeight.js';
 import { createTerrain } from './terrain.js';
 import { buildProps } from './props.js';
-import { DEFAULT_BARN_PARAMS, BARN_PARAM_RANGES, underRoof, insideBarn, indoorLevel } from './barn.js';
+import { DEFAULT_BARN_PARAMS, BARN_PARAM_RANGES, underRoof, insideBarn, indoorLevel, barnShape } from './barn.js';
 import { GroundWear, DEFAULT_WEAR_PARAMS, WEAR_PARAM_RANGES } from './groundWear.js';
 import { stripFrame } from './layout.js';
 import { Sky, SKY_PARAMS, SKY_RANGES } from './sky.js';
 import { createFields } from './fields.js';
+import { detourVia, DEFAULT_DETOUR_PARAMS, DETOUR_PARAM_RANGES } from '../npc/detour.js';
 import { createOutbuildings } from './outbuildings.js';
 import { RoadMud, DEFAULT_ROAD_MUD_PARAMS, ROAD_MUD_PARAM_RANGES } from './roadMud.js';
 import { DEFAULT_DUST_PARAMS, DUST_PARAM_RANGES } from './dust.js';
@@ -37,6 +38,16 @@ export class World {
 
     this.barnParams = { ...DEFAULT_BARN_PARAMS };
     registerTuning('Barn', this.barnParams, BARN_PARAM_RANGES);
+
+    // The buildings she walks round rather than into (npc/detour.js): the barn, with its doorway, and the field shed.
+    this.detourParams = { ...DEFAULT_DETOUR_PARAMS };
+    registerTuning('Walking round buildings', this.detourParams, DETOUR_PARAM_RANGES);
+    const bo = barnShape(layout);
+    const sh = layout.fieldShed;
+    this.detourBuildings = [
+      { ...bo.outer, door: { x: bo.door.x, z: bo.z, halfWidth: bo.door.maxZ - bo.z } },
+      ...(sh ? [{ minX: sh.x - sh.halfX, maxX: sh.x + sh.halfX, minZ: sh.z - sh.halfZ, maxZ: sh.z + sh.halfZ }] : []),
+    ];
 
     this.sky = new Sky(scene, renderer, { ...SKY_PARAMS });
     registerTuning('Sky', this.sky.params, SKY_RANGES);
@@ -100,6 +111,11 @@ export class World {
   /** The next point on the way from `from` to `to` that doesn't go through a hedge (fields.js): `to` itself in the same field. */
   nextWaypoint(from, to) {
     return this.fields.nextWaypoint(from, to);
+  }
+
+  /** The first point to head for from `from` to `to` so as not to walk into a building (npc/detour.js), or null if the way is clear. */
+  detour(from, to, prefer = null) {
+    return detourVia(from, to, this.detourBuildings, this.detourParams, prefer);
   }
 
   /** How deep a bog: the three on the farm, and any the wear has made. */
