@@ -147,6 +147,26 @@ describe('her driving a quad', () => {
     expect(events).toContain('setOff');
   });
 
+  it('pulls up for a friend who is getting on, and carries on once she is aboard', () => {
+    const quad = fakeQuad();
+    let friend = null;
+    const d = new HerDrive(quad, { params: P, probe: () => Infinity, isClear: open, random: seededRandom(2), friend: () => friend });
+    quad.driver = d;
+    const step = (seconds) => {
+      for (let t = 0; t < seconds; t += DT) {
+        d.update(DT);
+        quad.step(DT);
+      }
+    };
+    step(15);
+    friend = 'coming';
+    expect(() => step(1)).not.toThrow(); // it once threw: a drive's `park` route hid the pull-up method of the same name
+    expect(d.phase).toBe('parked');
+    friend = null;
+    step(1);
+    expect(d.phase).not.toBe('parked');
+  });
+
   it('stops when asked, and is done once it has stopped', () => {
     const quad = fakeQuad();
     const d = new HerDrive(quad, { params: P, probe: () => Infinity, isClear: open, random: seededRandom(2) });

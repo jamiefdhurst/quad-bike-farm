@@ -408,7 +408,7 @@ export class HerDrive {
   watchFriend() {
     const f = this.friend();
     if (f === 'coming' && this.phase === 'drive') {
-      this.park();
+      this.pullUp();
       this.parkedForFriend = true;
     } else if (f !== 'coming' && this.parkedForFriend && this.phase === 'parked') {
       this.parkedForFriend = false;
@@ -436,7 +436,7 @@ export class HerDrive {
   }
 
   /** Pull up and wait where she is, engine running, until resume(). */
-  park() {
+  pullUp() {
     if (this.done || this.phase === 'start' || this.phase === 'parked') return;
     this.setPhase('parked');
     this.events.push('parked');
@@ -801,7 +801,7 @@ export class HerDrive {
     const road = this.updateRoadPace(dt);
     if (speed > p.driveScareSpeed * road.scare) {
       this.events.push('tooFast');
-      if (this.carrying) this.park();
+      if (this.carrying) this.pullUp();
       else this.stop('scared');
       return;
     }

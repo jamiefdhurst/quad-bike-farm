@@ -3769,14 +3769,14 @@ export class Game {
     const actions = [];
     const ask = (kind, label, run) => actions.push({ kind, label, run: () => (run(), c.voice.onRequest(kind)) });
     if (stopped) ask('letMeOff', 'I\'ll get off here', () => this.getOffBack());
-    else ask('letMeOff', 'Let me off', () => ((this.passengerPlan = 'off'), drive.park()));
+    else ask('letMeOff', 'Let me off', () => ((this.passengerPlan = 'off'), drive.pullUp()));
     if (drive && !stopped) {
-      ask('stopHere', 'Stop here', () => drive.park());
+      ask('stopHere', 'Stop here', () => drive.pullUp());
       ask('slower', 'Slow down a bit', () => drive.setCruiseScale(drive.cruiseScale * 0.75));
       ask('faster', 'Go a bit faster', () => drive.setCruiseScale(drive.cruiseScale * 1.25));
     }
     if (drive && drive.phase === 'parked') ask('goAgain', 'Off we go again', () => drive.resume());
-    if (c.fsm.is('driving') && !quad0.hasBench) ask('swap', 'Let me drive', () => ((this.passengerPlan = 'swap'), drive?.park()));
+    if (c.fsm.is('driving') && !quad0.hasBench) ask('swap', 'Let me drive', () => ((this.passengerPlan = 'swap'), drive?.pullUp()));
     // Advice that fits what she's just got wrong (or is about to): only those are on the wheel.
     const coaching = drive && !stopped ? drive.coachable() : [];
     if (coaching.length) actions.push({ label: 'Coach her', children: coaching.map((key) => ({ label: COACHING[key].label, run: () => this.coachHer(c, key) })) });
