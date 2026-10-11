@@ -706,3 +706,8 @@ Numbered on from the end of the list so nothing else moves.
 210. Steamed-up windows: on a cold, wet day the cab glass mists as people sit in it until the heater, from a warm engine, clears it (with sheltering in a cab).
 211. A road-legal Land Rover: an MOT list (lights, brakes, wipers, horn) to put right before it can go on the lane to the village (item 180). Needs the wipers (item 209) first.
 212. Tools left lying about: a spanner or the tyre gauge left in the field gets lost in the grass, or one of the girls finds it and brings it back (or hides it, if it's Jess).
+213. A farm bike (an AG200-style shepherd's bike): a manual trail bike with a kickstart and a rack, the first two-wheeler a girl rides on the back of, her weight shifting the lean model (item 7's bike physics). In the random vehicle pool, and one of the things that can turn up second hand (item 164).
+214. A ride-on mower: slow and simple, a pull start and a blade you engage; mowing the yard and the paddock is a job, and Amy happily drives it when she won't touch the big vehicles. In the random pool and second hand.
+215. A small old 4x4 (a Suzuki SJ or Daihatsu Fourtrak style): a rusty, light, lively petrol runabout for the lane and the village, easy to tip, reusing the Land Rovers' cab, seats, gears and 4WD lever. In the random pool and second hand.
+216. A home-made go-kart: a lawnmower engine on a welded frame, a pull start and no suspension, raced round the yard and the track on the existing race system; a shed project with Jess. In the random pool and second hand.
+217. A moped (a Honda Cub style): a semi-automatic step-through for the lane, an easy road bike Amy could take to the village. In the random pool and second hand.
