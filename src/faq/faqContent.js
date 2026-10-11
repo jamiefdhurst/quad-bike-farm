@@ -904,6 +904,12 @@ export const FAQ_SECTIONS = [
         tip: 'The chalkboard in the barn lists the day\'s farm jobs.',
       },
       {
+        q: 'How do I tell which day I am on?',
+        a: `Look at the calendar on the barn's back wall, between the two chalkboards. Every day gone is crossed off in red and today is circled. A page
+          is thirty days, then it turns over to the next month. The start screen's "Continue" button also says which day you are about to play.`,
+        tip: 'The calendar in the barn crosses off each day and circles today.',
+      },
+      {
         q: 'How do I do the muck job?',
         a: `Hitch the little trailer to the tractor or a quad with a rack and park it by the muck heap in the east wheat field (within about five metres).
           Hold <kbd>E</kbd> at the trailer, empty-handed, to fork muck in: the girls will have something to say about the smell. Drive onto the stubble, stop,

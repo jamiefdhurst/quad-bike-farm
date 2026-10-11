@@ -2980,3 +2980,10 @@ Jamie: too many vehicles started near the barn and caused traffic, and some star
 - The bench job (twelfth, on the equals key) has a feeler-gauge inspect step that says wide, right or too tight. The `gap` step is a window: too little turn leaves it wide at 0.5, too much leaves it tight at 0.5, a slack locknut leaves it wide. Any proper job, or "Put it right", clears both. There is no toolbox quick fix: a valve adjustment is a bench job.
 - The girls: each has a `faultValves` line (said when the engine runs and it ticks) and a `histValves` line. Too-tight valves make no noise so nobody says anything.
 - Not done: tight valves burning out over time, and a visible or audible difference between the sump tick and the valve tick.
+
+## The barn calendar (2026-10-11)
+
+- Asked for so you can tell which day you are on once loaded in (the start screen says it only before). It hangs on the barn's back wall at the middle of the boards' height, halfway between the jobs and records boards (`WallCalendar` in `world/wallCalendar.js`; the boards are 2.5 m apart edge to edge and it is 0.9 m wide). Nothing to press: you read it from where you stand.
+- A page is `DAYS_PER_PAGE` 30 days, laid out seven across from a Monday, so it is the farm's own calendar rather than the real one. It starts in April and goes round twelve months, then says "year 2". Past days get a red cross, today a circle on a yellow highlight, and the rest are plain. `calendarPage(day)` is pure and tested; the canvas is drawn once at build, since the day cannot change while the game is loaded.
+- The picture is "Sheep of the month", drawn on the canvas (a woolly sheep in sunglasses and a grin), so no asset to credit.
+- Not done: nothing is written on it (birthdays, a job due), and there is no close view. Not looked at in the game, only unit tested, so the sheep's drawing and the calendar's height on the wall want a glance.
