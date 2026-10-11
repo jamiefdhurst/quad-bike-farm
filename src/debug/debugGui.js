@@ -4,7 +4,7 @@ import { FAULT_KINDS } from '../vehicle/faults.js';
 import { applicableQuirks, featuresOf } from '../vehicle/quirks.js';
 import { categoryOf, sortTuneGroups } from './tuneCategories.js';
 import { buildGirlsTab } from './girlsTab.js';
-import { setQuirk, setFault, clearFaults, fixEverything, problemSummary, quirkLabel, startWarm, switchOff } from './vehicleDebug.js';
+import { setQuirk, setFault, clearFaults, fixEverything, problemSummary, quirkLabel, startWarm, switchOff, engineReadouts } from './vehicleDebug.js';
 import { netCharge } from '../engine/charging.js';
 import { sickness, sickEvidence } from '../npc/keepAlive.js';
 import { BRANDS, WHEEL_NAMES } from '../vehicle/tyres.js';
@@ -207,7 +207,8 @@ export class DebugGui {
     show(r, 'on the bale trailer', () => (unit().quad.loadedOn ? (this.game.trailer.load.mode === 'aboard' ? (this.game.trailer.load.strapped ? 'strapped on' : 'on, loose') : 'on the ramps') : 'no'));
     if (u.quad.manual) show(r, 'turned by the wheels (bump-start)', () => round(unit().engine.rollSpeed));
     set(r, 'temperature', () => round(unit().engine.temperature), (v) => unit().engine.setTemperature(v), 0, 1);
-    show(r, 'overheating', () => round(unit().engine.heat));
+    // Heat and the rest of what the engine does that you would watch: only what this engine can do (vehicleDebug.js engineReadouts).
+    for (const m of engineReadouts(e)) show(r, m.label, () => { const v = m.get(unit().engine); return typeof v === 'number' ? round(v) : v; });
     if (e.params.waterCooled) {
       set(r, 'coolant', () => round(unit().engine.coolant), (v) => (unit().engine.coolant = v), 0, 1);
       show(r, 'radiator fan', () => (unit().engine.fan ? 'on' : 'off'));

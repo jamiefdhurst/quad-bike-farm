@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { setQuirk, setFault, clearFaults, fixEverything, problemSummary, quirkLabel } from '../src/debug/vehicleDebug.js';
+import { setQuirk, setFault, clearFaults, fixEverything, problemSummary, quirkLabel, engineReadouts } from '../src/debug/vehicleDebug.js';
 import { QuirkSet } from '../src/vehicle/quirks.js';
 import { BrakeState } from '../src/vehicle/brakeState.js';
 import { Faults } from '../src/vehicle/faults.js';
@@ -58,5 +58,32 @@ describe('vehicle debug helpers', () => {
 
   it('labels quirks readably', () => {
     expect(quirkLabel('headlightFlicker')).toBe('headlight flicker');
+  });
+});
+
+describe('engineReadouts', () => {
+  const eng = (params) => ({ params, heat: 0.4, pink: 0.3, soak: 0.6, overheat: 0, steam: 0, boiled: false, coolantPuddle: 0, glow: 0, nip: 0, tick: 0, oilBurn: 0, oilRich: 0, jetOn: 1, jetErr: 0, valveLoose: 0.2, valveTight: 0, chill: 0, sheltered: false });
+  const keys = (params) => engineReadouts(eng(params)).map((m) => m.key);
+
+  it('shows pinking and heat soak on an air-cooled petrol engine', () => {
+    expect(keys({ strokes: 4 })).toEqual(expect.arrayContaining(['overheating', 'pinking', 'heatSoak', 'valves']));
+    expect(engineReadouts(eng({ strokes: 4 })).find((m) => m.key === 'pinking').get(eng({ strokes: 4 }))).toBe(0.3);
+  });
+
+  it('leaves out what an engine cannot do', () => {
+    expect(keys({ strokes: 4, waterCooled: true })).not.toContain('pinking');
+    expect(keys({ strokes: 4, waterCooled: true })).toContain('steam');
+    expect(keys({ strokes: 4, compressionIgnition: true })).toContain('glow');
+    expect(keys({ strokes: 4 })).not.toContain('glow');
+    expect(keys({ strokes: 2 })).toEqual(expect.arrayContaining(['jetting', 'oilRich']));
+    expect(keys({ strokes: 2 })).not.toContain('valves');
+  });
+
+  it('has a unique key and a label for each', () => {
+    for (const params of [{ strokes: 2 }, { strokes: 4 }, { strokes: 4, waterCooled: true }, { strokes: 4, compressionIgnition: true, waterCooled: true }]) {
+      const list = engineReadouts(eng(params));
+      expect(new Set(list.map((m) => m.key)).size).toBe(list.length);
+      for (const m of list) expect(m.label.length).toBeGreaterThan(3);
+    }
   });
 });

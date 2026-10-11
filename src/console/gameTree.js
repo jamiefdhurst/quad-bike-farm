@@ -8,7 +8,7 @@ import { getTuningGroups } from '../core/tuning.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
 import { applicableQuirks, featuresOf } from '../vehicle/quirks.js';
 import { WHEEL_NAMES } from '../vehicle/tyres.js';
-import { setFault, setQuirk } from '../debug/vehicleDebug.js';
+import { setFault, setQuirk, engineReadouts } from '../debug/vehicleDebug.js';
 import { TAP_POSITIONS } from '../vehicle/fuelSystem.js';
 import { LIGHT_MODES } from '../vehicle/lightSwitch.js';
 import { SIGNAL_MODES } from '../vehicle/indicators.js';
@@ -92,7 +92,6 @@ export function buildGameTree(g, host) {
         load: ro(() => e().load),
         rolled: ro(() => e().rollSpeed, '', 'how fast the wheels turn it over (bump-start), 0 to 1 of a starter'),
         temperature: num(() => e().temperature, (v) => e().setTemperature(v), 0, 1, '', '0 cold, 1 warm'),
-        overheating: ro(() => e().heat),
         trailer: text(() => (q().loadedOn ? (g.trailer.load.mode === 'aboard' ? (g.trailer.load.strapped ? 'strapped on' : 'on, loose') : 'on the ramps') : 'off'), 'on the bale trailer?'),
         battery: num(() => e().battery, (v) => (e().battery = v), 0, 1),
         charging: ro(() => (e().isRunning ? netCharge(e().rpm, e().params.idleRpmWarm, e().params.maxRpm, e().lightLoad, e().params.batteryChargeRate, e().params) * 60 : 0), '/min', 'battery gained a minute at these revs and lamps'),
@@ -114,6 +113,7 @@ export function buildGameTree(g, host) {
       if (q().signals) out.indicators = choice(SIGNAL_MODES, () => q().signals.mode, (v) => q().signals.set(v), 'the indicators and hazards');
       if (q().drive) out.drive = choice(q().drive.hasLock ? DRIVE_MODES : ['2wd', '4wd'], () => q().drive.mode, (v) => (q().drive.mode = v), 'the 2WD / 4WD switch');
       if (!q().fuel.params.noTap || (q().landRover && !q().engine.params.compressionIgnition)) out.choke = num(() => q().choke, (v) => (q().choke = v), 0, 1); // the Land Rover has a choke but no tap
+      for (const m of engineReadouts(e())) out[m.key] = typeof m.get(e()) === 'number' ? ro(() => m.get(e()), '', m.label) : text(() => String(m.get(e())), m.label);
       if (e().params.waterCooled) out.coolant = num(() => e().coolant, (v) => (e().coolant = v), 0, 1);
       if (q().sump) out.oil = num(() => q().sump.level, (v) => (q().sump.level = v), 0, 1, '', 'engine oil level');
 

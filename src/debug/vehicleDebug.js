@@ -102,3 +102,38 @@ export function problemSummary(unit) {
   if (unit.quad.fuel.litres <= 0.01) bits.push('out of fuel');
   return bits.length ? bits.join(', ') : 'nothing wrong';
 }
+
+/**
+ * The engine numbers worth watching that are not set from the panel, for whichever engine this is: [{ key, label, get(engine) }], in
+ * the order the Running folder shows them. Only what the engine can do is listed (an air-cooled petrol engine pinks; a diesel has glow plugs;
+ * a two-stroke has a jet), so a quad never shows a number that is always zero. The Vehicles tab and the console both read this.
+ */
+export function engineReadouts(engine) {
+  const p = engine.params;
+  const diesel = !!p.compressionIgnition;
+  const list = [{ key: 'overheating', label: 'overheating', get: (e) => e.heat }];
+  if (!p.waterCooled && !diesel) list.push({ key: 'pinking', label: 'pinking (heat too high, loses power)', get: (e) => e.pink });
+  list.push({ key: 'heatSoak', label: 'heat soak (ticks as it cools, hot start rich)', get: (e) => e.soak });
+  list.push({ key: 'lubeHeat', label: 'extra heat from poor lubrication', get: (e) => e.overheat });
+  if (p.waterCooled) {
+    list.push({ key: 'steam', label: 'steam off the radiator', get: (e) => e.steam });
+    list.push({ key: 'boiled', label: 'boiled over since last topped up', get: (e) => (e.boiled ? 'yes' : 'no') });
+    list.push({ key: 'coolantPuddle', label: 'coolant puddle under it', get: (e) => e.coolantPuddle });
+  }
+  if (diesel) list.push({ key: 'glow', label: 'glow plugs', get: (e) => e.glow });
+  list.push({ key: 'nip', label: 'nipping up', get: (e) => e.nip });
+  list.push({ key: 'tick', label: 'tappet tick (low oil)', get: (e) => e.tick });
+  list.push({ key: 'oilBurn', label: 'burning oil', get: (e) => e.oilBurn });
+  if (p.strokes === 2) {
+    list.push({ key: 'oilRich', label: 'too much oil in the mix', get: (e) => e.oilRich });
+    list.push({ key: 'jetting', label: 'jetting spot on (1 is right)', get: (e) => e.jetOn });
+    list.push({ key: 'jetError', label: 'jet size less the right one (negative is lean)', get: (e) => e.jetErr });
+  } else {
+    list.push({ key: 'valves', label: 'valve clearance (loose / too tight)', get: (e) => `${num(e.valveLoose)} / ${num(e.valveTight)}` });
+  }
+  list.push({ key: 'chill', label: 'cold day (more choke, slower warm-up)', get: (e) => e.chill });
+  list.push({ key: 'sheltered', label: 'under the barn roof', get: (e) => (e.sheltered ? 'yes' : 'no') });
+  return list;
+}
+
+const num = (v) => Math.round((v ?? 0) * 100) / 100;
