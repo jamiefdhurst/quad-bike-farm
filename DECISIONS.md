@@ -2670,3 +2670,13 @@ The features left on their own dice at the end of stage one, sorted into two kin
 - Left as reactions, on purpose (they answer something that just happened rather than being something she decides to do with free time): answering your rev and drowning Amy out, keeping a sick one alive, Amy peeling the L plates off, Amy's day on the tractor (a story beat), falling out and sulking after it, gossip, nicknames and quad talk (remarks), waiting ready (you asked her), and the other girl climbing in beside a driver or hopping on the back as part of a ride already chosen.
 - Debug-panel forces still start each feature directly. Tests: each moved module's tests now take what it offers (as a chooser that always says yes) and check it never starts on its own; `tests/girlsMinds.test.js` checks every offer kind the code makes is in `OFFER_KINDS`.
 - Checked: tests, and headless with each module's clock moved past its start delay: Amy (favoured) was offered tea, a favour, a race, a ride together and the barn invitation as well as her boredom choices, Jess the jumps, doughnuts, a go on the tractor and the L plates, and with both free a while Amy chose a race within a second; no errors. Not checked: every one of them through to the end in play.
+
+## The two as a pair (TODO 136): the plan
+
+Written before any code; not built yet.
+
+- A pure `src/npc/pair.js` (tested): when both girls are free (`availability().free`), the one with the higher company need offers to go and stand with the other (`pairUp` in `OFFER_KINDS`: company 0.9, purpose 0.3, `pace: 'normal'`), walking to a point at talking distance (about 1.4 m) facing her friend; the other turns to face her (`attend` plus a `facing`). Not while they've fallen out (`fallingOut.active`): then a `pairApart` check keeps a free girl from choosing anything that ends within 10 m of the other.
+- Walking somewhere together: when one takes a walking offer (wander, rest, tea) and the other is free and paired (within 4 m), a `tagAlong` offer for the other follows her, 1.2 m behind and to one side, until she arrives (`followTarget` on foot; the companion already follows quads).
+- Opening the circle: you walking up within 5 m of a pair makes each turn a little (about 30 degrees) towards you, so the three of you face the middle (attention already looks; this is the body turn in idle, via `freeToTurn`).
+- Needs: being paired meets company (`together` is already true within 6 m), so the pull fades once they're together, and builds again apart.
+- Debug: "pair up now" and "follow her" buttons per girl in `girlActions.js`; "paired with" in the Girls tab and console. FAQ and README for the player; CLAUDE.md under "The girls' minds".
