@@ -231,6 +231,7 @@ export function buildGameTree(g, host) {
     muckDone: flag(() => g.muck.done, (v) => v && g.debugFinishMuck(), 'the muck job is done (ticks the board)'),
     board: text(() => g.jobBoard.lines().map((l) => `${l.done ? '[x]' : '[ ]'} ${l.text}`).join('; ') || 'nothing on', "today's jobs on the barn door"),
     records: text(() => g.records.lines().map((l) => `${l.label}: ${l.text}`).join('; '), 'the bests on the barn board'),
+    day: text(() => g.farmText(), 'the farm that remembers: which day it is and when it last saved (the save command does the rest)'),
     climb: text(() => (g.hillClimb.active ? `${g.hillClimb.girl} (${g.hillClimb.phase})` : g.hillClimb.youArmed ? 'you are asked for' : 'idle'), 'the hill climb'),
   }), 'farm jobs');
   const audio = group(() => ({ sound: flag(() => !g.audioHub.params.muted, (v) => (g.audioHub.params.muted = !v), 'all game sound') }));

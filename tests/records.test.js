@@ -18,7 +18,7 @@ describe('records', () => {
     expect(r.submit('climb', 'jess', 50, 'red').record).toBe(true);
     expect(r.submit('climb', 'amy', 55, 'blue').record).toBe(false);
     expect(r.submit('climb', 'you', 45, 'blue').record).toBe(true);
-    expect(r.best('climb')).toEqual({ who: 'you', value: 45, quad: 'blue' });
+    expect(r.best('climb')).toEqual({ who: 'you', value: 45, quad: 'blue', day: 1 });
     expect(r.submit('jump', 'you', 8, 'red').record).toBe(true);
     expect(r.submit('jump', 'amy', 6, 'red').record).toBe(false);
     expect(r.submit('jump', 'amy', 9, 'red').record).toBe(true);

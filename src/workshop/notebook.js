@@ -2,9 +2,11 @@ import './notebook.css';
 import * as THREE from 'three';
 import { registerTuning } from '../core/tuning.js';
 import { FINDING_OF_FAULT } from '../npc/wontRide.js';
-import { Logbook, DEFAULT_LOGBOOK_PARAMS, LOGBOOK_PARAM_RANGES, shortName, formatEntry, startingCandidates, startingEntries } from './logbook.js';
+import { Logbook, DEFAULT_LOGBOOK_PARAMS, LOGBOOK_PARAM_RANGES, shortName, startingCandidates, startingEntries } from './logbook.js';
 import { buildNotebookModel } from './notebookModel.js';
 import { createRandom } from '../core/random.js';
+
+const FAULT_OF_FINDING = Object.fromEntries(Object.entries(FINDING_OF_FAULT).map(([fault, finding]) => [finding, fault]));
 
 /**
  * Amy's logbook: the notebook lying on the workbench, and the page you read when you look at it and press E. What goes in it is decided
@@ -17,15 +19,26 @@ export class Notebook {
     this.book = new Logbook(this.params);
     this.told = false; // the one-off toast saying where her notes go
     registerTuning('Logbook', this.params, LOGBOOK_PARAM_RANGES);
-    // What she had already written down before the game: some of what is true of the quads at the start, from the seed.
-    const candidates = game.units.flatMap((u) => startingCandidates({ name: u.name, history: game.history.quads[u.id], quirks: u.quad.quirks.kinds }));
-    const starting = startingEntries(candidates, createRandom(game.seed ^ 0x109b), this.params);
-    this.book.seed(starting);
-    // Faults she wrote down are faults she knows about, so she won't ride those quads until they're put right (npc/wontRide.js).
+    this.book.day = game.farm?.day ?? 1;
     const amy = game.companions.find((c) => c.character.id === 'amy');
-    for (const e of starting) {
-      const unit = e.what.kind === 'fault' && game.units.find((u) => shortName(u.name) === e.quad);
-      if (unit && amy?.knows) amy.knows.learn(unit.spec.id, [FINDING_OF_FAULT[e.what.fault]]);
+    if (game.farm?.continuing) {
+      // The farm remembers: her page from earlier days, and the faults on it that are still there she still knows about.
+      this.book.restore(game.farm.save.logbook);
+      for (const e of this.book.entries) {
+        const fault = e.what?.kind === 'fault' ? e.what.fault : e.what?.kind === 'walk' ? FAULT_OF_FINDING[e.what.finding] : null;
+        const unit = fault && game.units.find((u) => shortName(u.name) === e.quad);
+        if (unit && unit.quad.faults.has(fault) && amy?.knows) amy.knows.learn(unit.spec.id, [FINDING_OF_FAULT[fault]]);
+      }
+    } else {
+      // What she had already written down before the first day: some of what is true of the quads at the start, from the seed.
+      const candidates = game.units.flatMap((u) => startingCandidates({ name: u.name, history: game.history.quads[u.id], quirks: u.quad.quirks.kinds }));
+      const starting = startingEntries(candidates, createRandom(game.seed ^ 0x109b), this.params);
+      this.book.seed(starting);
+      // Faults she wrote down are faults she knows about, so she won't ride those quads until they're put right (npc/wontRide.js).
+      for (const e of starting) {
+        const unit = e.what.kind === 'fault' && game.units.find((u) => shortName(u.name) === e.quad);
+        if (unit && amy?.knows) amy.knows.learn(unit.spec.id, [FINDING_OF_FAULT[e.what.fault]]);
+      }
     }
     const b = game.world.layout.bench;
     const top = game.world.heightAt(b.x, b.z) + b.height;
@@ -113,7 +126,7 @@ export class Notebook {
   }
 
   render() {
-    const lines = this.book.entries.map((e) => formatEntry(e));
+    const lines = this.book.lines();
     this.bodyEl.replaceChildren(...(lines.length ? lines : ['Nothing written yet.']).map((t) => Object.assign(document.createElement('div'), { textContent: t })));
     this.bodyEl.scrollTop = this.bodyEl.scrollHeight;
   }

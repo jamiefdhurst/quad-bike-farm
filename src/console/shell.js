@@ -165,6 +165,7 @@ export class Shell {
     const text = line.trim().replace(/^\//, '');
     if (!text) return [];
     if (this.history[this.history.length - 1] !== text) this.history.push(text);
+    this.line = text; // the line as typed, for a command that takes the rest of it whole (save load)
     const tokens = tokenise(text);
     if (tokens[tokens.length - 1] === '') tokens.pop();
     const out = [];

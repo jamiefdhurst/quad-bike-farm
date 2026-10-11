@@ -11,6 +11,7 @@ import { resolve, walk, show, describe, parseValue, pathCandidates } from './she
  *   girlVerbs(id): [{ verb, label, vehicle }]         girlVerb(id, verb, vehicleId): void
  *   weatherKinds(): string[]              setWeather(kind): string
  *   dump(text): void                      (copies to the clipboard)
+ *   farmText(): string   farmSave(): boolean   farmJson(): string   farmLoad(json): string   farmWipe(): void   (the farm that remembers)
  */
 
 const GROUPS = ['Looking', 'Changing', 'Moving', 'Vehicles', 'Girls', 'World', 'Console'];
@@ -388,6 +389,33 @@ export function buildCommands(host) {
         const k = host.weatherKinds().find((w) => w.toLowerCase() === kind.toLowerCase());
         if (!k) throw new Error(`no weather "${kind}". There is ${host.weatherKinds().join(', ')}`);
         return host.setWeather(k);
+      },
+    },
+    {
+      name: 'save',
+      group: 'World',
+      usage: 'save [now | show | copy | wipe | load <json>]',
+      help: 'the farm that remembers: which day and when it saved; save it now, show or copy the save, wipe it, or load one (it plays from the next reload)',
+      examples: ['save', 'save now', 'save copy', 'save load {"version":1,"day":3,...}'],
+      complete: (ctx, tokens) => (tokens.length === 0 ? ['now', 'show', 'copy', 'wipe', 'load'] : []),
+      run: ([what], shell) => {
+        if (!what) return host.farmText();
+        if (what === 'now') return host.farmSave() ? `saved: ${host.farmText()}` : `not saved: ${host.farmText()}`;
+        if (what === 'show') return host.farmJson();
+        if (what === 'copy') {
+          host.dump(host.farmJson());
+          return 'copied the save';
+        }
+        if (what === 'wipe') {
+          host.farmWipe();
+          return 'wiped: the next load deals a new farm';
+        }
+        if (what === 'load') {
+          const json = shell.line.replace(/^\S+\s+\S+\s*/, '');
+          if (!json) throw new Error('paste the save after "save load"');
+          return host.farmLoad(json);
+        }
+        throw new Error(`no "save ${what}". Try save, save now, save show, save copy, save wipe or save load <json>`);
       },
     },
     ...[

@@ -1,8 +1,9 @@
-// The start screen over the game: the logo, a tip from the FAQ that changes every few seconds, and a link to the FAQ page in a new
-// tab. Loaded on its own ahead of main.js, so it shows while the game is still loading.
+// The start screen over the game: the logo, Continue and New farm when there's a saved farm, a tip from the FAQ that changes every
+// few seconds, and a link to the FAQ page in a new tab. Loaded on its own ahead of main.js, so it shows while the game is still loading.
 
 import { logoSvg } from './logo.js';
 import { faqTips } from '../faq/faqContent.js';
+import { browserStorage, continueInfo, wipeSave } from '../farm/farmSave.js';
 
 const TIP_EVERY = 9; // seconds each tip stays up
 
@@ -24,3 +25,20 @@ setInterval(() => {
 
 // Opening the FAQ mustn't count as clicking to play.
 document.getElementById('start-faq').addEventListener('click', (e) => e.stopPropagation());
+
+// The farm that remembers (farm/farmSave.js). The game behind the card is already the saved farm's next day, so Continue just plays
+// (its click reaches the card like any other); New farm forgets the save and loads the page again, which deals a new farm.
+const storage = browserStorage();
+const saved = continueInfo({ search: location.search, storage });
+if (saved) {
+  document.getElementById('start-farm').hidden = false;
+  document.getElementById('start-continue').textContent = `Continue: day ${saved.day}`;
+  document.getElementById('start-new').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!confirm('Start a new farm? The one you have now, and everything it remembers, is gone for good.')) return;
+    wipeSave(storage);
+    location.reload();
+  });
+} else if (new URLSearchParams(location.search).has('seed')) {
+  document.getElementById('overlay-play').textContent = 'Click to play. A seeded game: the farm is not saved.';
+}

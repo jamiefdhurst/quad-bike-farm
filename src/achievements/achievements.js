@@ -345,6 +345,17 @@ export class Achievements {
     }
   }
 
+  /** The ticks as a list of ids, for the farm's save. */
+  toJSON() {
+    return [...this.unlocked.keys()];
+  }
+
+  /** Ticks off what was done on earlier days (see toJSON), quietly: no toast or chime. Ids no longer on the list are dropped. */
+  restore(ids) {
+    if (!Array.isArray(ids)) return;
+    for (const id of ids) if (this.list.some((a) => a.id === id) && !this.unlocked.has(id)) this.unlocked.set(id, -1);
+  }
+
   // Reading it back --------------------------------------------------------------------------
 
   /** The list for the screen, in order: { ...achievement, done, available }. */

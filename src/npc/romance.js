@@ -59,7 +59,7 @@ export class Romance {
     this.p = params;
     this.ids = ids;
     this.clock = 0;
-    this.girls = Object.fromEntries(ids.map((id) => [id, { visits: 0, locked: false, pending: null, nextInvite: 0 }]));
+    this.girls = Object.fromEntries(ids.map((id) => [id, { visits: 0, locked: false, betrayed: false, pending: null, nextInvite: 0 }]));
   }
 
   /** The girl you're locked in with, if any. */
@@ -171,6 +171,7 @@ export class Romance {
     g.visits = 0;
     g.pending = null;
     g.nextInvite = this.clock + this.p.betrayedCooldown;
+    g.betrayed = true; // the farm remembers it into the next morning (farm/farmState.js)
     return true;
   }
 }

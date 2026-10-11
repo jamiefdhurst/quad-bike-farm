@@ -66,14 +66,45 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Is it the same every game?',
-        a: `No. Which vehicles are on the farm (four to all thirteen), where they're parked, how much fuel each has, the weather, the day's
-          temperature, each quad's faults, quirks and history, and even the girls' moods are dealt fresh each game. Nothing carries over
-          from one game to the next.`,
+        a: `It's the same farm, a day later. Each time you load the game is the next day: the same vehicles in the condition you left them, and
+          the girls remembering some of what happened. Where everything is parked, the weather, the temperature, the time of day and the girls'
+          moods are new each day. "New farm" on the start screen deals a whole new one: which vehicles (four to all thirteen), their fuel, faults,
+          quirks and history.`,
+      },
+      {
+        q: 'Does the game save?',
+        a: `Yes, in your browser, every thirty seconds while you play and when you close or leave the tab. There's nothing to press. The start
+          screen then says "Continue" with the day you're on. It's kept in this browser only: another browser, or a private window, starts a new farm.`,
+        tip: 'The farm saves itself as you play: each time you load it is the next day.',
+      },
+      {
+        q: 'How do I start again with a new farm?',
+        a: `Press "New farm" on the start screen and say yes. The farm you had, with everything it remembers, is gone for good. Before you've played
+          at all there's no button: you're on a new farm already.`,
+      },
+      {
+        q: 'What does the farm remember from one day to the next?',
+        a: `Each vehicle's hours and miles, its wear, any fault you didn't put right, what you set with the toolbox, its tyres, fuel, oil and coolant,
+          where the pods are, and how far you got with the barn find. Overnight a battery runs down a little (flat, if you left the key on) and half
+          the mud dries and drops off. The bucket list keeps its ticks, the records board its bests (with "today" on any set today), and Amy's logbook
+          its last forty notes, by day. The girls keep half of how much they like you and all you've taught them.`,
+        tip: 'Leave the key on overnight and the battery is flat in the morning.',
+      },
+      {
+        q: 'Do the girls remember a row?',
+        a: `Yes. If they fell out and hadn't made up when you stopped, they start the next day cool with each other, and one more race or borrowed
+          quad sets it off again.`,
+      },
+      {
+        q: 'Does the romance carry on?',
+        spoiler: true,
+        a: `Once a girl is yours (the quad, after two trips round the back of the barn) she still is the next day. Trips round the back that hadn't
+          got that far start again. Throw her off a quad and she's still off you the next morning; by the day after it's forgotten.`,
       },
       {
         q: 'Can I play the same farm again?',
         a: `Yes. The browser console prints the game's seed when it loads. Add <code>?seed=</code> and that number to the address and you get
-          the same layout, weather and luck again. <code>?weather=rain</code> (or <code>sunny</code>, <code>overcast</code>, <code>drizzle</code>,
+          the same layout, weather and luck again, as a first day: a seeded game doesn't touch your saved farm and isn't saved. <code>?weather=rain</code> (or <code>sunny</code>, <code>overcast</code>, <code>drizzle</code>,
           <code>fog</code>) forces the weather, and <code>?temp=-3</code> sets the temperature in degrees.`,
         tip: 'Add ?seed= and a number to the address to play the same farm again.',
       },
@@ -704,9 +735,9 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where are the records kept?',
-        a: `On the second chalkboard inside the barn, on the back wall next to the jobs board: the best lap of the track, drag run, hill climb and longest jump of this game,
+        a: `On the second chalkboard inside the barn, on the back wall next to the jobs board: the best lap of the track, drag run, hill climb and longest jump on the farm,
           and who set it. Press <kbd>E</kbd> at either board for a close view. You're told when you set a record, and when it's your best on the quad you're on.
-          The girls set them too. They start afresh each game.`,
+          The girls set them too. They're kept from day to day, and one set today says so; only a new farm clears them.`,
         tip: 'The records for laps, drag runs, the hill climb and the longest jump are on the chalkboard in the barn.',
       },
       {
@@ -937,9 +968,9 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why does each quad behave a bit oddly?',
         spoiler: true,
-        a: `Quirks: each quad gets one to three each game. A fuel gauge that reads high or sticks, a temperature needle that never moves, a choke that creeps out with the
+        a: `Quirks: each quad has one to three. A fuel gauge that reads high or sticks, a temperature needle that never moves, a choke that creeps out with the
           shaking, a stiff fuel tap that needs working (press <kbd>F</kbd> a few times), a split seat, a horn that works when it likes, brakes that pull or squeal, or a
-          flickering headlight. Nobody fixes them. Amy's logbook may mention them.`,
+          flickering headlight. Nobody fixes them, and a quad keeps its quirks from day to day. Amy's logbook may mention them.`,
       },
       {
         q: 'Someone has been messing with my quads.',

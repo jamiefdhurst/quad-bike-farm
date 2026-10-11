@@ -1,5 +1,5 @@
 // The records on the barn's chalkboard: the best lap, drag run, hill climb and longest jump of the game, by whoever set them. Pure, tested.
-// Times are kept for every quad as well as overall, so a slow quad is not compared with the quick one. Nothing carries between games (item 15).
+// Times are kept for every quad as well as overall, so a slow quad is not compared with the quick one. They carry from day to day with the farm (farm/farmState.js); one set today is marked so.
 
 export const RECORD_KINDS = {
   lap: { label: 'Lap of the track', better: 'lower' },
@@ -33,9 +33,27 @@ export function formatValue(kind, value) {
 }
 
 export class Records {
-  constructor() {
-    this.bests = {}; // kind -> { who, value, quad }
-    this.byQuad = {}; // kind -> quad id -> { who, value }
+  constructor(day = 1) {
+    this.day = day; // the farm's day: a record carries the day it was set
+    this.bests = {}; // kind -> { who, value, quad, day }
+    this.byQuad = {}; // kind -> quad id -> { who, value, day }
+  }
+
+  /** The records as plain data, for the farm's save. */
+  toJSON() {
+    return { bests: structuredClone(this.bests), byQuad: structuredClone(this.byQuad) };
+  }
+
+  /** Puts saved records back (see toJSON), keeping only kinds and values the board knows. */
+  restore(s) {
+    const ok = (r) => r && typeof r === 'object' && r.value > 0 && typeof r.who === 'string';
+    for (const kind of Object.keys(RECORD_KINDS)) {
+      if (ok(s?.bests?.[kind])) this.bests[kind] = { ...s.bests[kind] };
+      const quads = s?.byQuad?.[kind];
+      if (quads && typeof quads === 'object') {
+        for (const [id, r] of Object.entries(quads)) if (ok(r)) (this.byQuad[kind] ??= {})[id] = { ...r };
+      }
+    }
   }
 
   beats(kind, value, old) {
@@ -50,12 +68,12 @@ export class Records {
     if (!RECORD_KINDS[kind] || !(value > 0)) return { record: false, quadBest: false, previous: null };
     const previous = this.bests[kind] ?? null;
     const record = this.beats(kind, value, previous);
-    if (record) this.bests[kind] = { who, value, quad };
+    if (record) this.bests[kind] = { who, value, quad, day: this.day };
     let quadBest = false;
     if (quad) {
       const q = (this.byQuad[kind] ??= {});
       quadBest = this.beats(kind, value, q[quad]);
-      if (quadBest) q[quad] = { who, value };
+      if (quadBest) q[quad] = { who, value, day: this.day };
     }
     return { record, quadBest, previous };
   }
@@ -68,11 +86,12 @@ export class Records {
     return this.byQuad[kind]?.[quad] ?? null;
   }
 
-  /** One line per kind for the board: { kind, label, text, set }. */
+  /** One line per kind for the board: { kind, label, text, set, today }. After the first day, a record set today says so. */
   lines() {
     return Object.entries(RECORD_KINDS).map(([kind, k]) => {
       const b = this.bests[kind];
-      return { kind, label: k.label, set: !!b, text: b ? `${formatValue(kind, b.value)}  ${WHO_NAMES[b.who] ?? b.who}` : 'not yet' };
+      const today = !!b && this.day > 1 && b.day === this.day;
+      return { kind, label: k.label, set: !!b, today, text: b ? `${formatValue(kind, b.value)}  ${WHO_NAMES[b.who] ?? b.who}${today ? '  (today)' : ''}` : 'not yet' };
     });
   }
 }

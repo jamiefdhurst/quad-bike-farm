@@ -112,6 +112,19 @@ export class Logbook {
     this.params = params;
     this.entries = [];
     this.clock = 0; // seconds into the game
+    this.day = 1; // the farm's day: each entry carries the day it was written, and earlier days' entries say which
+  }
+
+  /** The page as plain data, for the farm's save. */
+  toJSON() {
+    return this.entries.map((e) => ({ ...e, day: e.day ?? this.day }));
+  }
+
+  /** Puts earlier days' entries back on the page (see toJSON), oldest first, within the page's length. */
+  restore(entries) {
+    if (!Array.isArray(entries)) return;
+    const kept = entries.filter((e) => e && typeof e.text === 'string' && Number.isFinite(e.day)).map((e) => ({ ...e, old: true }));
+    this.entries = [...kept, ...this.entries].slice(-this.params.maxEntries);
   }
 
   update(dt) {
@@ -127,7 +140,7 @@ export class Logbook {
     if (!text) return null;
     const recent = this.entries.some((e) => !e.old && e.quad === quad && e.text === text && this.clock - e.time < this.params.repeatSeconds);
     if (recent) return null;
-    const entry = { time: this.clock, quad, text, by };
+    const entry = { time: this.clock, quad, text, by, day: this.day, what };
     this.entries.push(entry);
     while (this.entries.length > this.params.maxEntries) this.entries.shift();
     return entry;
@@ -140,7 +153,7 @@ export class Logbook {
     const old = this.entries.findIndex((e) => e.ranking);
     if (old >= 0 && this.entries[old].text === text) return null;
     if (old >= 0) this.entries.splice(old, 1);
-    const entry = { time: this.clock, quad: null, text, by: null, ranking: true };
+    const entry = { time: this.clock, quad: null, text, by: null, ranking: true, day: this.day };
     this.entries.push(entry);
     while (this.entries.length > this.params.maxEntries) this.entries.shift();
     return entry;
@@ -148,13 +161,21 @@ export class Logbook {
 
   /** Fills the page with what she wrote before the game began (`startingEntries`): all shown as "Yesterday". */
   seed(entries) {
-    for (const e of entries) this.entries.push({ time: -1, quad: e.quad, text: entryText(e.what), by: e.by ?? null, old: true });
+    for (const e of entries) this.entries.push({ time: -1, quad: e.quad, text: entryText(e.what), by: e.by ?? null, old: true, day: this.day - 1, what: e.what });
   }
 
   /** The page as lines, newest last: "0:42  Blue, belt slipping." */
   lines() {
-    return this.entries.map((e) => formatEntry(e));
+    return this.entries.map((e) => formatEntry(e, this.day));
   }
+}
+
+/** When an entry was written: m:ss today, "Yesterday", "Day 3", or "Before" for what she wrote before the farm's first day. */
+export function formatWhen(e, today = e.day ?? 1) {
+  const day = e.day ?? today;
+  if (day === today) return formatClock(e.time);
+  if (day === today - 1) return 'Yesterday';
+  return day < 1 ? 'Before' : `Day ${day}`;
 }
 
 export function formatClock(seconds) {
@@ -163,9 +184,9 @@ export function formatClock(seconds) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
-export function formatEntry(e) {
-  if (!e.quad) return `${formatClock(e.time)}  ${e.text}.`; // a note about no one quad (the buzz ranking)
-  return `${formatClock(e.time)}  ${e.quad}, ${e.text}${e.by ? ` (${e.by})` : ''}.`;
+export function formatEntry(e, today) {
+  if (!e.quad) return `${formatWhen(e, today)}  ${e.text}.`; // a note about no one quad (the buzz ranking)
+  return `${formatWhen(e, today)}  ${e.quad}, ${e.text}${e.by ? ` (${e.by})` : ''}.`;
 }
 
 /**

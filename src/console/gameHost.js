@@ -159,6 +159,12 @@ export function createHost(g, { copy = () => {} } = {}) {
     dump(text) {
       copy(text);
     },
+
+    farmText: () => g.farmText(),
+    farmSave: () => g.saveFarm(),
+    farmJson: () => JSON.stringify(g.captureFarm(), null, 2),
+    farmWipe: () => g.wipeFarm(),
+    farmLoad: (json) => g.loadFarmJson(json),
   };
   return host;
 }

@@ -15,6 +15,8 @@ import { clearOfChassis } from './vehicle/dismount.js';
 import { DEFAULT_BIKE_PARAMS, BIKE_PARAM_RANGES } from './vehicle/bikeLean.js';
 import { DEFAULT_RIDER_LEAN_PARAMS, RIDER_LEAN_RANGES } from './vehicle/riderLean.js';
 import { pickFleet } from './vehicle/fleet.js';
+import { DEFAULT_FARM_PARAMS, FARM_PARAM_RANGES, browserStorage, openFarm, writeSave, wipeSave, fleetFromSave, describeFarm, validSave } from './farm/farmSave.js';
+import { captureVehicle, restoreVehicle, overnight, savedFaults, captureGirls, restoreGirls } from './farm/farmState.js';
 import { applyIdle, applyTopRpm, applyVariation, pickIdle } from './vehicle/quadVariation.js';
 import { AudioHub } from './audio/engineAudio.js';
 import { RideWind, rideBuffers } from './audio/rideAudio.js';
@@ -279,10 +281,22 @@ export class Game {
     this.seed = startSeed();
     const random = createRandom(this.seed);
     console.info(`Layout seed ${this.seed} (add ?seed=${this.seed} to the URL to repeat it)`);
-    // Which vehicles are here this game (its own random stream, so the rest of a seed's layout doesn't depend on it).
+    // The farm that remembers (farm/farmSave.js): each load is the next day on the same farm, unless ?seed= is in the URL. What the farm
+    // is (which vehicles, their plates, quirks and luck, the girls' quads) is dealt from the farm's seed, which is the first day's; what
+    // varies each day (where things are parked, the weather) from today's. On a new farm the two are the same, so a seed deals as before.
+    this.farmParams = { ...DEFAULT_FARM_PARAMS };
+    registerTuning('Farm that remembers', this.farmParams, FARM_PARAM_RANGES);
+    this.farmStorage = browserStorage();
+    this.farm = openFarm({ search: location.search, storage: this.farmStorage });
+    this.farmSeed = this.farm.farmSeed ?? this.seed;
+    const kept = this.farm.save?.vehicles ?? {}; // vehicle id -> what it was like when the last day was saved
+    if (this.farm.continuing) console.info(`Day ${this.farm.day} on the farm (farm seed ${this.farmSeed})`);
+    // Which vehicles are here (its own random stream, so the rest of a seed's layout doesn't depend on it).
     // The tractor, UTV and Land Rover are in the same pool as the quads and are dealt a place the same way, but they aren't the girls' quads (`girlUnits`).
     const isBig = (spec) => spec.tractor || spec.utv || spec.landRover;
-    const chosen = pickFleet(QUAD_SPECS, [...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC], createRandom(this.seed ^ 0x51ee7));
+    const pool = [...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC];
+    const chosen = fleetFromSave(this.farm.save?.fleet, [...QUAD_SPECS, ...pool]) ?? pickFleet(QUAD_SPECS, pool, createRandom(this.farmSeed ^ 0x51ee7));
+    this.fleetIds = chosen.map((s) => s.id);
     const fleet = chosen.filter((s) => !isBig(s));
     const bigSpecs = chosen.filter(isBig);
     const { placed: spawns, home } = randomiseQuadSpawns(this.world.spawn, chosen.length, random, {
@@ -291,7 +305,7 @@ export class Game {
     });
     const bigSpawn = (spec) => spawns[fleet.length + bigSpecs.indexOf(spec)];
 
-    const plateRandom = createRandom(this.seed ^ 0x91a7e);
+    const plateRandom = createRandom(this.farmSeed ^ 0x91a7e);
     this.units = fleet.map(
       (spec, i) =>
         new QuadUnit({
@@ -304,17 +318,19 @@ export class Game {
           audioHub: this.audioHub,
         }),
     );
-    // Each quad idles differently every game, within its spec's idleRange (same seed, same idles).
+    // Each quad idles differently every game, within its spec's idleRange (same seed, same idles); on a farm that remembers, as it did
+    // on the first day (still drawn, so the rest of today's stream is the same).
     for (const unit of this.units) {
       const range = unit.spec.idleRange ?? [unit.engine.params.idleRpmWarm, unit.engine.params.idleRpmWarm];
-      unit.idleRpm = applyIdle(unit.engine.params, unit.quad.params, pickIdle(range, random));
+      const dealt = pickIdle(range, random);
+      unit.idleRpm = unit.dealtIdle = applyIdle(unit.engine.params, unit.quad.params, Number.isFinite(kept[unit.id]?.idle) ? kept[unit.id].idle : dealt);
     }
     // Then roughness and starting fuel, after the idles so a seed keeps its idles.
     for (const unit of this.units) {
       unit.variation = applyVariation(unit.spec, unit.engine.params, unit.quad.fuel, random);
     }
     // Each quad's top revs, on their own stream so a seed keeps everything above.
-    const topRpmRandom = createRandom(this.seed ^ 0x70b5);
+    const topRpmRandom = createRandom(this.farmSeed ^ 0x70b5);
     for (const unit of this.units) unit.topRpm = applyTopRpm(unit.spec, unit.engine.params, topRpmRandom);
     this.units.forEach((u, i) => (u.where = spawns[i].where));
     // What the hour meters and odometers show, the dash clock, and where the two accessory pods start. Each has its own seeded
@@ -328,7 +344,7 @@ export class Game {
     this.history = { quads: {}, settingsFor: (unit) => this.workshop?.settingsFor(unit) ?? unit.leftovers?.settings ?? null };
     const historyRandom = createRandom(this.seed ^ 0x4157);
     const faultChance = pickFaultChance(historyRandom);
-    for (const unit of this.units) this.applyHistory(unit, historyRandom, faultChance);
+    for (const unit of this.units) this.applyHistory(unit, historyRandom, faultChance, kept[unit.id]);
     // The time of day (world/daylight.js): its own start each game, morning or afternoon (?time=16.5 starts it then), running on into the night.
     const forcedTime = new URLSearchParams(location.search).get('time');
     this.daylight = new Daylight({ ...DEFAULT_DAYLIGHT_PARAMS }, { random: createRandom(this.seed ^ 0xc10c), start: forcedTime !== null && Number.isFinite(+forcedTime) ? +forcedTime : null });
@@ -338,7 +354,7 @@ export class Game {
     dash.text = () => this.daylight.text();
     setDashClock(dash);
     this.podRack = new PodRack(this.units.map((u) => u.id));
-    this.podRack.place(createRandom(this.seed ^ 0x90d5));
+    this.podRack.place(createRandom(this.farmSeed ^ 0x90d5));
     this.pods = { analogue: buildPod('analogue'), digital: buildPod('digital') };
     for (const unit of this.units) {
       const kind = this.podRack.podOn(unit.id);
@@ -383,7 +399,7 @@ export class Game {
     // One to three quirks each, from the parts the quad has (a gauge quirk needs a dash or pod that shows it, so this comes after the pods).
     this.quirkParams = { ...DEFAULT_QUIRK_PARAMS };
     registerTuning('Quirks', this.quirkParams, QUIRK_PARAM_RANGES);
-    const quirkRandom = createRandom(this.seed ^ 0x9a1c);
+    const quirkRandom = createRandom(this.farmSeed ^ 0x9a1c);
     for (const unit of this.units) {
       const kinds = pickQuirks(featuresOf(unit.spec, !!this.podRack.podOn(unit.id)), quirkRandom, this.quirkParams);
       unit.quad.quirks = new QuirkSet(kinds, this.quirkParams);
@@ -399,7 +415,7 @@ export class Game {
     this.thrownParams = { ...DEFAULT_THROWN_PARAMS }; // and coming off it (npc/companionThrown.js)
     registerTuning('Mini moto nerve', this.motoParams, MOTO_PARAM_RANGES);
     registerTuning('Thrown off the moto', this.thrownParams, THROWN_PARAM_RANGES);
-    const sumpRandom = createRandom(this.seed ^ 0x0115);
+    const sumpRandom = createRandom(this.farmSeed ^ 0x0115);
     const sumpUnits = this.units.filter((u) => u.quad.sump);
     const burnerId = pickBurner(sumpUnits.map((u) => u.spec.id), sumpRandom);
     for (const u of sumpUnits) u.quad.sump = new Sump({ level: startLevel(u.spec.id === burnerId, sumpRandom, this.sumpParams), burner: u.spec.id === burnerId, params: this.sumpParams });
@@ -423,12 +439,12 @@ export class Game {
     this.achievements = new Achievements({ params: { ...DEFAULT_ACHIEVEMENT_PARAMS } }); // the bucket list; its fleet is set once every vehicle is added
     if (this.rustyUnit) this.podRack.allow(this.rustyUnit.id); // placed after the pods were dealt, but you can fit one at the bench
     // A sticky float on some of the quads (vehicle/carbDrip.js): a parked one with the tap on drips petrol and floods. Own random stream.
-    this.carbDrip = new CarbDrip(this.units.filter((u) => !u.quad.fuel.params.noTap && !u.quad.engine.params.compressionIgnition).map((u) => u.id), createRandom(this.seed ^ 0x5d1f));
+    this.carbDrip = new CarbDrip(this.units.filter((u) => !u.quad.fuel.params.noTap && !u.quad.engine.params.compressionIgnition).map((u) => u.id), createRandom(this.farmSeed ^ 0x5d1f));
     registerTuning('Dripping carb', this.carbDrip.p, DRIP_PARAM_RANGES);
     this.dripPatches = new Map(); // quad id -> the dark patch on the ground where it dripped
     // The orange's coolant leaks (engine/coolant.js): how fast and how full it starts are picked from the seed, on their own stream.
     this.coolantPatches = new Map(); // quad id -> the damp patch under a leaking radiator
-    const coolantRandom = createRandom(this.seed ^ 0x2b6d);
+    const coolantRandom = createRandom(this.farmSeed ^ 0x2b6d);
     for (const u of this.units) {
       if (!u.engine.params.waterCooled) continue;
       const pick = pickLeak(coolantRandom, u.engine.params);
@@ -437,6 +453,7 @@ export class Game {
       console.info(pick.leak > 0 ? `${u.name}: leaking coolant, ${levelText(pick.level)} (${pick.level.toFixed(2)}) at ${pick.leak.toFixed(2)} times the usual rate` : `${u.name}: coolant fine this game`);
     }
     this.wearGearbox();
+    this.restoreVehicles();
     this.logStart();
     this.updateSmokeScale();
     // This game's weather, picked after everything else so a seed keeps its layout (?weather=rain forces one).
@@ -687,8 +704,8 @@ export class Game {
     this.itemHome = {}; // where a hidden item was taken from, by name
 
     // What they call the quads, whose is whose, and placing a quad by ear (npc/quadNames.js, ownership.js, earing.js).
-    this.quadNames = new QuadNames(this.girlUnits.map((u) => u.spec.id), { random: createRandom(this.seed ^ 0x6a3e) });
-    this.ownership = new Ownership(undefined, createRandom(this.seed ^ 0x0c1a));
+    this.quadNames = new QuadNames(this.girlUnits.map((u) => u.spec.id), { random: createRandom(this.farmSeed ^ 0x6a3e) });
+    this.ownership = new Ownership(undefined, createRandom(this.farmSeed ^ 0x0c1a));
     this.hearing = new Hearing();
     this.pillionCoach = new PillionCoach(); // the girl on the back coaching the girl driving (npc/pillionCoach.js)
     this.throttleGrab = new ThrottleGrab(); // a girl on the back opening it over your hand (npc/throttleGrab.js)
@@ -738,7 +755,7 @@ export class Game {
     this.dragIdle = 0; // seconds the girl racing you has been doing nothing about it
     this.dragBlipSaid = false;
     buildDragStrip(this.scene, (x, z) => this.world.heightAt(x, z), this.world.layout.dragStrip);
-    this.records = new Records(); // the bests of the game, on the barn's chalkboard (world/records.js)
+    this.records = new Records(this.farm.day); // the bests, kept from day to day, on the barn's chalkboard (world/records.js)
     this.recordParams = { ...DEFAULT_RECORD_PARAMS };
     this.jumpMeasures = new Map(); // quad -> JumpMeasure, for whoever is on it
     this.climbGates = climbGates(this.world.layout.hill.climb);
@@ -777,7 +794,7 @@ export class Game {
     }
 
     // Each quad is dealt its own luck with faults this game, from the seed (vehicle/faults.js).
-    this.girlUnits.forEach((u, i) => u.quad.faults.roll(createRandom(this.seed ^ (0xfa17 + i * 7919))));
+    this.girlUnits.forEach((u, i) => u.quad.faults.roll(createRandom(this.farmSeed ^ (0xfa17 + i * 7919))));
 
     for (const unit of this.units) {
       const quad = unit.quad;
@@ -1212,6 +1229,7 @@ export class Game {
     this.applyDebugCamera();
     if (import.meta.env.DEV) window.game = this;
     report('Settling…');
+    this.restoreDay();
     await new Promise((r) => setTimeout(r, 0));
     this.settleVehicles();
     await this.loadSounds(report);
@@ -1357,6 +1375,9 @@ export class Game {
     };
     sayPad(this.input.padNames());
     this.input.on('padchange', sayPad);
+    // The farm saves when you leave it, as well as every so often (updateFarmSave).
+    addEventListener('pagehide', () => this.saveFarm());
+    document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && this.saveFarm());
     this.renderer.setAnimationLoop(() => this.frame());
   }
 
@@ -2020,7 +2041,7 @@ export class Game {
 
   /** Builds the UTV, with its own seeded idle, roughness, fuel and hours, and adds it to `units` (not `girlUnits`). */
   addUtv(spawn) {
-    const random = createRandom(this.seed ^ 0x07c5);
+    const random = createRandom(this.farmSeed ^ 0x07c5);
     const unit = new QuadUnit({
       spec: UTV_SPEC,
       spawn,
@@ -2032,7 +2053,7 @@ export class Game {
     });
     unit.idleRpm = applyIdle(unit.engine.params, unit.quad.params, pickIdle(UTV_SPEC.idleRange, random));
     unit.variation = applyVariation(UTV_SPEC, unit.engine.params, unit.quad.fuel, random);
-    unit.topRpm = applyTopRpm(UTV_SPEC, unit.engine.params, createRandom(this.seed ^ 0x07c6));
+    unit.topRpm = applyTopRpm(UTV_SPEC, unit.engine.params, createRandom(this.farmSeed ^ 0x07c6));
     unit.quad.usage.hours = pickReading(UTV_SPEC.hoursRange, random);
     const [hoursLo, hoursHi] = UTV_SPEC.hoursRange;
     unit.quad.usage.odoMiles = pickRelatedReading(UTV_SPEC.odoRange, (unit.quad.usage.hours - hoursLo) / (hoursHi - hoursLo), random);
@@ -2370,11 +2391,11 @@ export class Game {
 
   /** Builds a Land Rover: a unit like the UTV (not one of the girls'), with a quad's wear, faults, quirks and oil. */
   addLandRover(spawn, spec) {
-    const random = createRandom(this.seed ^ (spec.defender ? 0x1a5c : 0x1a4c));
+    const random = createRandom(this.farmSeed ^ (spec.defender ? 0x1a5c : 0x1a4c));
     const unit = new QuadUnit({ spec, spawn, scene: this.scene, physics: this.physics, RAPIER: this.RAPIER, world: this.world, audioHub: this.audioHub });
     unit.idleRpm = applyIdle(unit.engine.params, unit.quad.params, pickIdle(spec.idleRange, random));
     unit.variation = applyVariation(spec, unit.engine.params, unit.quad.fuel, random);
-    unit.topRpm = applyTopRpm(spec, unit.engine.params, createRandom(this.seed ^ (spec.defender ? 0x1a5e : 0x1a4e)));
+    unit.topRpm = applyTopRpm(spec, unit.engine.params, createRandom(this.farmSeed ^ (spec.defender ? 0x1a5e : 0x1a4e)));
     unit.quad.usage.odoMiles = pickReading(spec.odoRange, random);
     unit.engine.wear = spec.wearRange[0] + (spec.wearRange[1] - spec.wearRange[0]) * random();
     unit.quad.tyres = new TyreSet(dealTyres(random, 4, this.tyreParams), this.tyreParams);
@@ -2383,7 +2404,7 @@ export class Game {
     unit.quad.brakes = new BrakeState(this.brakeParams, random);
     unit.quad.brakes.setBinding(random() < this.brakeParams.bindChance);
     if (unit.quad.sump) unit.quad.sump = new Sump({ level: startLevel(false, random, this.sumpParams), burner: false, params: this.sumpParams });
-    unit.quad.faults.roll(createRandom(this.seed ^ (spec.defender ? 0x1a5f : 0x1a4f)));
+    unit.quad.faults.roll(createRandom(this.farmSeed ^ (spec.defender ? 0x1a5f : 0x1a4f)));
     unit.quad.faults.prone.belt = 0; // a clutch, not a belt
     if (spec.engine.compressionIgnition) unit.quad.faults.prone.carb = 0; // and a diesel has no carb
     unit.quad.parkBrake = true;
@@ -2592,9 +2613,16 @@ export class Game {
   }
 
   /** Gives a quad its past: wear, any starting faults and any tinkering left in (the toolbox opens on it as it is, with stock the factory's). */
-  applyHistory(unit, random, faultChance) {
+  applyHistory(unit, random, faultChance, kept = null) {
     const [lo, hi] = unit.spec.hoursRange ?? [0, 0];
     const h = pickHistory(unit.spec, random, { faultChance, hoursT: hi > lo ? (unit.quad.usage.hours - lo) / (hi - lo) : 0.5 });
+    if (kept) {
+      // The farm remembers this one: its wear, faults and tuning are put back by restoreVehicles, and nobody else has tinkered with it.
+      // It was still drawn above so the stream stays in step; who had it out yesterday is still dealt.
+      Object.assign(h, { faults: [], tinker: null });
+      this.history.quads[unit.id] = h;
+      return;
+    }
     unit.engine.wear = h.wear;
     if (unit.engine.params.strokes === 2) unit.engine.silencerBlown = Math.min(0.6, h.wear * 0.8); // an old two-stroke's packing has started to go
     for (const f of h.faults) unit.quad.faults.leave(f.kind, f.level);
@@ -2604,6 +2632,121 @@ export class Game {
       unit.leftovers = { stock, settings };
     }
     this.history.quads[unit.id] = h;
+  }
+
+  /**
+   * The farm remembers (farm/farmState.js): each vehicle's condition from the last day, after the night, over what was dealt this
+   * morning; its tuning; the barn find's progress; and where the pods are. Nothing on a new farm or a seeded game.
+   */
+  restoreVehicles() {
+    const save = this.farm.save;
+    if (!save) return;
+    for (const unit of this.units) {
+      const s = save.vehicles?.[unit.id];
+      if (!s) continue;
+      restoreVehicle(unit, overnight(s, this.farmParams));
+      if (s.settings) {
+        const stock = captureStock(tuneTarget(unit));
+        const settings = applyTune(tuneTarget(unit), stock, clampSettings({ ...stockSettings(stock), ...s.settings }, stock));
+        unit.leftovers = { stock, settings };
+        unit.idleRpm = settings.idle;
+      }
+      if (unit.barnFind && s.barnFind) {
+        unit.barnFind.restore(s.barnFind);
+        unit.engine.startBlocked = unit.barnFind.startBlocked;
+        unit.tarp.visible = !unit.barnFind.tarpOff;
+      }
+      const h = this.history.quads[unit.id];
+      if (h) Object.assign(h, { wear: unit.engine.wear, faults: savedFaults(s) });
+    }
+    for (const [kind, at] of Object.entries(save.pods ?? {})) {
+      if (!(kind in this.podRack.at) || this.podRack.at[kind] === at) continue;
+      const from = this.units.find((u) => u.id === this.podRack.at[kind]);
+      if (from && this.podRack.takeOff(from.id)) from.quad.removePod();
+      const to = this.units.find((u) => u.id === at);
+      if (to?.quad.model.userData.podMount && this.podRack.fit(kind, to.id)) to.quad.fitPod(this.pods[kind]);
+    }
+  }
+
+  /** The rest of what the farm remembers, once everything is built: the girls, the bucket list and the records (the logbook does its own). */
+  restoreDay() {
+    const save = this.farm.save;
+    if (!save) return;
+    restoreGirls(this, save.girls, this.farmParams);
+    this.achievements.restore(save.bucket);
+    this.records.restore(save.records);
+    this.jobBoardView.refresh();
+  }
+
+  /** Everything the farm keeps, as plain data (farm/farmSave.js writes it). */
+  captureFarm() {
+    const vehicles = {};
+    for (const unit of this.units) {
+      vehicles[unit.id] = captureVehicle(unit, { settings: this.history.settingsFor(unit), barnFind: unit.barnFind?.toJSON() });
+    }
+    return {
+      day: this.farm.day,
+      farmSeed: this.farmSeed,
+      savedAt: Date.now(),
+      fleet: this.fleetIds,
+      vehicles,
+      pods: { ...this.podRack.at },
+      girls: captureGirls(this),
+      bucket: this.achievements.toJSON(),
+      records: this.records.toJSON(),
+      logbook: this.notebook.book.toJSON(),
+    };
+  }
+
+  /** The first moment of play makes this day count (and hides Continue and New farm); after that it saves every so often. */
+  updateFarmSave(dt) {
+    if (this.paused) return;
+    if (!this.farmStarted) {
+      this.farmStarted = true;
+      document.getElementById('overlay')?.classList.add('started');
+      this.saveFarm();
+    }
+    this.farmClock = (this.farmClock ?? 0) + dt;
+    if (this.farmClock < this.farmParams.saveEvery) return;
+    this.farmClock = 0;
+    this.saveFarm();
+  }
+
+  /** Saves the farm, once you've started playing and unless it's a seeded game. Returns whether it saved. */
+  saveFarm() {
+    if (this.farm.seeded || !this.farmStarted || this.farmWiped) return false;
+    const ok = writeSave(this.farmStorage, this.captureFarm());
+    if (ok) this.farmSavedAt = performance.now();
+    return ok;
+  }
+
+  /**
+   * Puts a save (as JSON, from `save copy`) in the browser for the next load, for a bug that only shows on a remembered farm. This game
+   * stops saving, so it doesn't write over it. Throws if it isn't a save.
+   */
+  loadFarmJson(json) {
+    let save;
+    try {
+      save = JSON.parse(json);
+    } catch (e) {
+      throw new Error(`that isn't JSON (${e.message})`);
+    }
+    if (!validSave(save)) throw new Error('that JSON is not a farm save (it needs version, day and farmSeed)');
+    if (!writeSave(this.farmStorage, save)) throw new Error("the browser wouldn't store it");
+    this.farmWiped = true;
+    return `stored day ${save.day}: reload the page (without ?seed=) to play day ${save.day + 1}`;
+  }
+
+  /** One line about the save, for the debug panel and the console. */
+  farmText() {
+    const savedAgo = this.farmSavedAt === undefined ? null : (performance.now() - this.farmSavedAt) / 1000;
+    return describeFarm({ day: this.farm.day, seeded: this.farm.seeded, wiped: !!this.farmWiped, started: !!this.farmStarted, savedAgo });
+  }
+
+  /** Forgets the farm: the next load deals a new one. Nothing is saved from this game after it. */
+  wipeFarm() {
+    wipeSave(this.farmStorage);
+    this.farmWiped = true;
   }
 
   /** One readable block per vehicle of everything dealt out at random at the start (debug/startReport.js). */
@@ -2645,14 +2788,14 @@ export class Game {
 
   wearGearbox() {
     const manual = this.units.filter((u) => u.quad.manual);
-    const pick = pickWornGearbox(manual.map((u) => ({ id: u.id, gears: u.quad.gearbox.gears })), createRandom(this.seed ^ 0x6ea4));
+    const pick = pickWornGearbox(manual.map((u) => ({ id: u.id, gears: u.quad.gearbox.gears })), createRandom(this.farmSeed ^ 0x6ea4));
     if (!pick) return;
     this.units.find((u) => u.id === pick.id).quad.drivetrain.wear(pick.gear, pick.wear);
   }
 
   /** Builds the tractor, with its own seeded idle, roughness, fuel and hours, and adds it to `units` (not `girlUnits`). */
   addTractor(spawn) {
-    const random = createRandom(this.seed ^ 0x7ac70);
+    const random = createRandom(this.farmSeed ^ 0x7ac70);
     const unit = new QuadUnit({
       spec: TRACTOR_SPEC,
       spawn,
@@ -2664,7 +2807,7 @@ export class Game {
     });
     unit.idleRpm = applyIdle(unit.engine.params, unit.quad.params, pickIdle(TRACTOR_SPEC.idleRange, random));
     unit.variation = applyVariation(TRACTOR_SPEC, unit.engine.params, unit.quad.fuel, random);
-    unit.topRpm = applyTopRpm(TRACTOR_SPEC, unit.engine.params, createRandom(this.seed ^ 0x70b6));
+    unit.topRpm = applyTopRpm(TRACTOR_SPEC, unit.engine.params, createRandom(this.farmSeed ^ 0x70b6));
     unit.quad.usage.hours = pickReading(TRACTOR_SPEC.hoursRange, random);
     // Its odometer isn't on the dash, but it counts from a start that goes with its hours (more hours, more miles).
     const [hoursLo, hoursHi] = TRACTOR_SPEC.hoursRange;
@@ -2677,10 +2820,10 @@ export class Game {
 
   /** The barn find, if this game has one: a brown copy of a regular quad, under a tarp, with its jobs picked from the seed. Returns its unit or null. */
   addRusty() {
-    const plan = pickBarnFind(createRandom(this.seed ^ 0xba2f), QUAD_SPECS, this.barnFindParams);
+    const plan = pickBarnFind(createRandom(this.farmSeed ^ 0xba2f), QUAD_SPECS, this.barnFindParams);
     if (!plan) return null;
     const P = this.barnFindParams;
-    const random = createRandom(this.seed ^ 0xba30);
+    const random = createRandom(this.farmSeed ^ 0xba30);
     const spec = {
       ...plan.donor,
       id: RUSTY_ID,
@@ -6638,6 +6781,7 @@ export class Game {
       input.endFrame();
       return;
     }
+    this.updateFarmSave(dt);
 
     if (input.wasPressed('KeyH')) this.hud.toggleHelp();
     if (input.wasPressed('Backquote')) this.debugGui.toggle();

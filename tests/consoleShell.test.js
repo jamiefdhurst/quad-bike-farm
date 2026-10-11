@@ -41,6 +41,15 @@ function makeWorld() {
     weatherNow: () => 'sunny',
     setWeather: (k) => `now ${k}`,
     dump: (t) => (state.dumped = t),
+    farmText: () => `day ${state.day ?? 4}`,
+    farmSave: () => true,
+    farmJson: () => '{"day":4}',
+    farmWipe: () => (state.wiped = true),
+    farmLoad: (json) => {
+      const s = JSON.parse(json);
+      state.loaded = s;
+      return `stored day ${s.day}`;
+    },
   };
   const shell = new Shell({ root: tree, commands: buildCommands(host) });
   return { shell, state, tree };
@@ -258,5 +267,21 @@ describe('tab completion', () => {
   it('offers nothing for an unknown path', () => {
     const { shell } = makeWorld();
     expect(shell.complete('get nothing.').candidates).toEqual([]);
+  });
+});
+
+describe('the farm save', () => {
+  it('says the day, saves, copies, wipes and loads a pasted save whole', () => {
+    const { shell, state } = makeWorld();
+    expect(text(shell.run('save'))).toBe('day 4');
+    expect(text(shell.run('save now'))).toMatch(/^saved/);
+    expect(text(shell.run('save copy'))).toBe('copied the save');
+    expect(state.dumped).toBe('{"day":4}');
+    shell.run('save wipe');
+    expect(state.wiped).toBe(true);
+    expect(text(shell.run('save load {"version": 1, "day": 7, "farmSeed": 3}'))).toBe('stored day 7');
+    expect(state.loaded).toEqual({ version: 1, day: 7, farmSeed: 3 });
+    expect(text(shell.run('save load'))).toMatch(/paste the save/);
+    expect(text(shell.run('save frobnicate'))).toMatch(/no "save frobnicate"/);
   });
 });

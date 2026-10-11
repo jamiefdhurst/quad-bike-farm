@@ -46,6 +46,7 @@ body {
 
 #overlay.tuning .overlay-card h1,
 #overlay.tuning .overlay-hint,
+#overlay.tuning .start-farm,
 #overlay.tuning .start-logo,
 #overlay.tuning .start-tip,
 #overlay.tuning .start-faq {
@@ -93,6 +94,47 @@ body {
 
 .start-faq:hover {
   background: #427545;
+}
+
+/* Continue and New farm, when there's a saved farm; gone once you've started playing. */
+.start-farm {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 10px 0 4px;
+}
+
+.start-farm[hidden],
+#overlay.started .start-farm {
+  display: none;
+}
+
+.start-farm button {
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.start-continue {
+  background: #c9a43b;
+  color: #1d1a10;
+}
+
+.start-continue:hover {
+  background: #d8b44c;
+}
+
+.start-new {
+  background: rgba(239, 228, 196, 0.14);
+  color: #efe4c4;
+}
+
+.start-new:hover {
+  background: rgba(239, 228, 196, 0.26);
 }
 
 .visually-hidden {

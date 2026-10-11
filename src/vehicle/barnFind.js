@@ -140,6 +140,21 @@ export class BarnFind {
     return this.jobs.filter((k) => !this.isDone(k));
   }
 
+  /** Its progress as plain data, for the farm's save. */
+  toJSON() {
+    return { tarpOff: this.tarpOff, finished: [...this.finished], charging: this.charging, charge: this.charge, started: this.started };
+  }
+
+  /** Puts saved progress back (see toJSON); jobs this plan doesn't have are ignored. */
+  restore(s) {
+    if (!s) return;
+    this.tarpOff = !!s.tarpOff;
+    this.finished = new Set((s.finished ?? []).filter((k) => this.jobs.includes(k)));
+    this.charging = !!s.charging;
+    this.charge = Math.min(this.params.chargeSeconds, Math.max(0, +s.charge || 0));
+    this.started = !!s.started;
+  }
+
   /** What stops it starting, said once the tarp is off. */
   blockedReason() {
     const first = this.remaining[0];

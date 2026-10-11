@@ -153,6 +153,12 @@ export function buildGirlsTab(d) {
     return run ? `${c.character.id}: ${run.phase}, go ${run.went + 1} of ${run.goes}` : 'nobody';
   });
   show(both, 'L plates are on', () => g.lPlates.where);
+  show(both, 'the farm that remembers', () => g.farmText());
+  button(both, 'Save the farm now', () => g.hud.toast(g.saveFarm() ? 'Farm saved' : 'Not saved (a seeded game, wiped, or not started)'));
+  button(both, 'Wipe the farm (a new one next load)', () => {
+    g.wipeFarm();
+    g.hud.toast('Farm wiped: the next load deals a new one');
+  });
   show(both, 'the day', () => `${g.weather.temperature} °C (${g.weather.band}), chill ${g.weather.chill.toFixed(2)}, frost ${g.weather.frost.toFixed(2)}`);
   slider(both, 'time of day (hours)', () => g.daylight.hour, (v) => g.setTime(v), 0, 30, 0.05);
   show(both, 'lights to work by', () => g.workLight.describe());
