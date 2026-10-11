@@ -666,3 +666,14 @@ Numbered on from the end of the list so nothing else moves.
 170. A show day: now and then a day ends at a local show, your best-kept quad judged on clean, tidy and running sweet, the girls in the slow race.
 171. Photo mode: a free camera, time of day frozen, the girls posing (goes with item 51).
 172. A replay of your best jump or race from a chase camera, using item 53's record and replay.
+173. Spraying the field. A sprayer tank on the green quad's racks with a fold-out boom, and a job spraying the paddock in straight overlapping lines; your lines are drawn on the farm map afterwards.
+174. A log splitter on the tractor's back, run off the hydraulics: feed it rounds from the wood (item 78) and stack them, the engine note changing under load.
+175. A vintage motorbike in the barn: a restoration project with a kickstart and a manual advance-retard lever, an old-bike starting ritual for the engine model.
+176. Snorkels and wading. Fit a snorkel to the Land Rover at the bench and it can take the ford deep; without one, water gets into the intake (the engine model's water ingestion).
+177. Winching between vehicles: the green's winch to a tree or another vehicle, the rope going taut, a dead quad crawling up a bank.
+178. Animals that need you: a few hens and a pig in the yard, feeding them a daily job, and a quad left running near them scattering them.
+179. A muddy lane that changes: the green lane worsens through a wet day as ruts deepen wherever anyone rides, until it's barely passable, drying back over days if the farm remembers (item 40).
+180. The village: a short road ride to a shop, a garage selling parts and fuel, and a pub car park the girls want to stop at.
+181. Weather that builds: a forecast board in the barn and a day that changes (a fine morning clouding to rain in the afternoon), so you plan the jobs around it.
+182. Challenges on the chalkboard: get every quad started from cold in under five minutes, the tidiest line-up, a clean lap of the hill, with your best kept.
+183. A start-of-day briefing: when the game loads, Amy reads out the day (the weather, which quad is playing up, what the girls fancy doing), turning the hidden state into story.
