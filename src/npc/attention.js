@@ -42,7 +42,9 @@ export const DEFAULT_NOTICE_PARAMS = {
   lurch: 1.3,
   jump: 1.2,
   bang: 1.8,
-  revRate: 2500, // rpm per second of rise that counts as a vehicle being revved: up and back down again while it stays put
+  revThrottle: 0.2, // how far the throttle has to be opened for climbing revs to count as a vehicle being revved (an idle never does)
+  revAbove: 0.2, // and how far up the rev range above its idle (0 idle, 1 flat out) the revs have to get
+  revBaseSeconds: 1.5, // seconds the idle it's measured from takes to follow the revs with the throttle shut (a choke's fast idle)
   revEvery: 1.2, // seconds between rev notices from one vehicle
   revMaxSpeed: 0.5, // m/s: moving faster than this during it, it was pulling away, not being revved
   lurchAccel: 3.5, // m/s per second of sudden speeding up, from slow, that counts as a lurch
@@ -53,7 +55,9 @@ export const DEFAULT_NOTICE_PARAMS = {
 
 export const NOTICE_PARAM_RANGES = {
   ...Object.fromEntries(Object.keys(NOTICE_KINDS).map((k) => [k, [0, 4, 0.05]])),
-  revRate: [200, 10000, 100],
+  revThrottle: [0.02, 1, 0.01],
+  revAbove: [0.02, 1, 0.01],
+  revBaseSeconds: [0.1, 10, 0.1],
   revEvery: [0.1, 5, 0.1],
   revMaxSpeed: [0, 5, 0.1],
   lurchAccel: [0.5, 15, 0.5],

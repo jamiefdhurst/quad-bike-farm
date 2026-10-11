@@ -467,6 +467,12 @@ export const FAQ_SECTIONS = [
         tip: 'Rev a quad near the girls and watch them turn to look.',
       },
       {
+        q: 'Why don\'t they look round at a quad just idling?',
+        a: `They only turn for a quad being revved: someone opening the throttle so the engine climbs well clear of its tickover. An engine
+          sat idling, even one that hunts up and down, runs rough or idles fast on the choke, is just noise in the background, and a gentle
+          whiff of throttle doesn't count either. A good blip does, and the harder it goes up the rev range the more it catches the eye.`,
+      },
+      {
         q: 'Why does she do what she does?',
         a: `Because of what she wants. Each girl gets cold on a dull or wet day, lonely with nobody about, restless for a bit of excitement,
           tired from being on the go, and bored stood about with nothing to do. Every couple of seconds while she's free she weighs up what

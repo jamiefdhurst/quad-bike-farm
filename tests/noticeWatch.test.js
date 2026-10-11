@@ -27,29 +27,66 @@ describe('NoticeWatch', () => {
     expect(w.update(dt, [quad({ horn: true, tipped: true })])).toEqual([]);
   });
 
-  it('notices a stood engine being revved, at the top of the blip, not too often', () => {
+  // A quad idling at 1200 with a 6200 top: a rev has to get up past 2200 with the throttle open.
+  const idling = (o = {}) => quad({ idleRpm: 1200, maxRpm: 6200, throttle: 0, ...o });
+  const blip = (w, rpms, o = {}) => rpms.flatMap((rpm) => kinds(w.update(dt, [idling({ rpm, throttle: 0.6, ...o })])));
+
+  it('notices a stood engine being revved, at the top of the blip, once, and not too often', () => {
     const w = new NoticeWatch(P);
-    w.update(dt, [quad()]);
-    const up = 1200 + P.revRate * dt * 2;
-    expect(w.update(dt, [quad({ rpm: up })])).toEqual([]); // still climbing
-    expect(kinds(w.update(dt, [quad({ rpm: up - 100 })]))).toEqual(['rev']); // and back down
-    w.update(dt, [quad({ rpm: up + P.revRate * dt * 2 })]);
-    expect(w.update(dt, [quad({ rpm: up })])).toEqual([]); // too soon after the last
+    w.update(dt, [idling()]);
+    expect(blip(w, [2000, 3000, 4000])).toEqual([]); // still climbing
+    expect(blip(w, [3500])).toEqual(['rev']); // and over the top
+    expect(blip(w, [3200, 3000])).toEqual([]); // the same blip
+    for (const rpm of [2500, 1800, 1300]) w.update(dt, [idling({ rpm })]);
+    expect(blip(w, [3000, 4000, 3500])).toEqual([]); // too soon after the last
+  });
+
+  it('counts a blip as stronger the further up the range it goes', () => {
+    const strength = (peak) => {
+      const w = new NoticeWatch(P);
+      w.update(dt, [idling()]);
+      for (const rpm of [peak - 400, peak]) w.update(dt, [idling({ rpm, throttle: 1 })]);
+      return w.update(dt, [idling({ rpm: peak - 800 })]).find((n) => n.kind === 'rev').strength;
+    };
+    expect(strength(5800)).toBeGreaterThan(strength(2800));
+    expect(strength(5800)).toBeLessThanOrEqual(1.5);
+  });
+
+  it('does not count an idle that hunts, a rough one or one sat high on the choke, with the throttle shut', () => {
+    const w = new NoticeWatch(P);
+    let out = [];
+    for (let t = 0; t < 10; t += dt) {
+      const choke = t > 2 ? 1300 : 0; // the choke pulled out: the idle climbs to 2500 and stays
+      const hunt = 600 * Math.sin(t * 4) + (Math.random() - 0.5) * 400;
+      out = out.concat(kinds(w.update(dt, [idling({ rpm: 1200 + choke + hunt })])));
+    }
+    expect(out).not.toContain('rev');
+  });
+
+  it('measures a rev from the choke\'s fast idle, not the warm idle', () => {
+    const w = new NoticeWatch(P);
+    for (let t = 0; t < 6; t += dt) w.update(dt, [idling({ rpm: 2600 })]);
+    expect(blip(w, [3000, 3200, 3000])).toEqual([]); // a whiff of throttle on a fast idle is not a rev
+    expect(blip(w, [3800, 4500, 4200])).toEqual(['rev']);
+  });
+
+  it('does not count a barely opened throttle', () => {
+    const w = new NoticeWatch(P);
+    w.update(dt, [idling()]);
+    expect(blip(w, [2500, 3500, 3000], { throttle: P.revThrottle / 2 })).toEqual([]);
   });
 
   it('does not count pulling away as revving', () => {
     const w = new NoticeWatch(P);
-    w.update(dt, [quad()]);
-    const up = 1200 + P.revRate * dt * 2;
-    w.update(dt, [quad({ rpm: up, speed: 0.2 })]);
-    w.update(dt, [quad({ rpm: up + 300, speed: P.revMaxSpeed + 0.5 })]);
-    expect(w.update(dt, [quad({ rpm: up, speed: P.revMaxSpeed + 1.5 })])).toEqual([]);
+    w.update(dt, [idling()]);
+    const out = blip(w, [2500, 3500], { speed: 0.2 }).concat(blip(w, [4000, 3500], { speed: P.revMaxSpeed + 0.5 }));
+    expect(out).not.toContain('rev');
   });
 
   it('does not count revs on an engine that is not running', () => {
     const w = new NoticeWatch(P);
-    w.update(dt, [quad({ running: false, rpm: 0 })]);
-    expect(w.update(dt, [quad({ running: false, rpm: 300 })])).toEqual([]);
+    w.update(dt, [idling({ running: false, rpm: 0 })]);
+    expect(blip(w, [300, 2500, 2000], { running: false })).toEqual([]);
   });
 
   it('notices a vehicle lurching forward from slow, not one already going or one gently pulling away', () => {

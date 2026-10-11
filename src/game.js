@@ -2487,7 +2487,7 @@ export class Game {
     const vehicles = this.units.map((u) => {
       const q = u.quad;
       const p = q.position;
-      return { id: u.id, x: p.x, y: p.y + 0.8, z: p.z, events: u.engine.events.map((e) => e.type), rpm: u.engine.rpm, running: u.engine.isRunning, speed: Math.abs(q.forwardSpeed), horn: !!q.hornHeld, tipped: !!q.isTipped, airborne: !!q.airborne };
+      return { id: u.id, x: p.x, y: p.y + 0.8, z: p.z, events: u.engine.events.map((e) => e.type), rpm: u.engine.rpm, running: u.engine.isRunning, throttle: u.engine.throttle, idleRpm: u.engine.params.idleRpmWarm, maxRpm: u.engine.params.maxRpm, speed: Math.abs(q.forwardSpeed), horn: !!q.hornHeld, tipped: !!q.isTipped, airborne: !!q.airborne };
     });
     for (const n of this.noticeWatch.update(dt, vehicles)) this.notice(n.kind, n, { key: n.key, strength: n.strength });
     const eye = this.camera.position;
