@@ -779,10 +779,10 @@ export class Quad {
       this.physics.traction.gripScale = this.driveEffects.gripScale;
     }
     this.physics.hold = hold + this.bog.dragForce(inBog, p.mass, groundSpeed) + this.brakes.drag * p.mass; // a binding brake drags
-    let wheelSteer = this.steer + this.faults.steerPull + this.quirks.brakePull(this.brake);
+    let wheelSteer = this.steer + this.faults.steerPull + this.tyres.steerPull + this.quirks.brakePull(this.brake);
     if (this.bike) wheelSteer = this.balanceBike(dt, wheelSteer);
     this.physics.applyControls({
-      driveForce: Math.sign(drive) * Math.max(0, Math.abs(drive) * this.faults.driveFactor * this.tow.driveFactor * (this.drive ? this.driveEffects.driveScale : 1) - hold),
+      driveForce: Math.sign(drive) * Math.max(0, Math.abs(drive) * this.faults.driveFactor * this.tyres.driveFactor * this.tow.driveFactor * (this.drive ? this.driveEffects.driveScale : 1) - hold),
       brake,
       steer: wheelSteer,
       mudAt: (x, z) => Math.max(this.world.mudAt(x, z), this.churn),

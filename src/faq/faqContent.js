@@ -484,6 +484,16 @@ export const FAQ_SECTIONS = [
           too much oil in the mix), a pale one lean.`,
       },
       {
+        q: 'How do I set one tyre\'s pressure?',
+        a: `Open the toolbox on a switched-off quad. Under the rows is the tyre pump and gauge, with a reading for each wheel. Click <kbd>−</kbd> to let a
+          little air out of that tyre or <kbd>+</kbd> to pump it up. Softer tyres grip better in mud, harder ones roll easier on the track.`,
+      },
+      {
+        q: 'Why does it pull to one side and feel draggy?',
+        a: `A tyre let down too far (under about 2 psi, shown in orange on the pump) squashes off its rim: the bars pull towards it and it drags. Pump it
+          back up. A slow puncture does much the same, and the pump's reading shows it going down.`,
+      },
+      {
         q: 'What can I tune with the toolbox?',
         a: `The idle screw, the carb mixture, the throttle stop (screw it out for more top speed), the rev limiter, the clutch springs and the tyre pressures, plus
           a jet kit on the yellow and orange. Each shows its stock value and the trade-off. Taking the silencer off (<kbd>X</kbd>) makes it louder, rawer and

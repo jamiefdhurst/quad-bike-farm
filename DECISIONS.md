@@ -2798,3 +2798,10 @@ Nothing needed settling; the numbers were chosen here.
 - The shelf is only a step in the job for now; the spares shelf (TODO 34) would make the piston and rings run out.
 - Amy writes "top end rebuilt, new piston and rings" in the logbook. No new girl lines, so nothing to record; they react to the job through the bench's usual start, step and done reactions.
 - Not checked in play: how the bench list looks with ten rows, or how the piston toast reads. Unit tests only.
+
+## Tyre pump and gauge (TODO 4)
+
+- The toolbox panel gets a pump under the rows: a gauge reading and a − / + button per real wheel (`Tyres.realWheels`, so a bike has two and the outriggers none). A click moves one tyre by `pumpStep` 0.5 psi (`TyreSet.pump`), between `ventMinPsi` 0.5 and `maxPsi` 7. It sits beside the existing Tyres row, which still levels all four to one setting, and `T` and the bench still pump to that. A punctured wheel's reading falls with its puncture, as the gauge always did.
+- Too low: below `rimPsi` 2.2 a tyre starts to roll off the rim. `rimLevel` is 0 at 2.2 and 1 at 0 psi; the bars are pulled towards it (`rimPull` 0.06 rad at worst on a front wheel, half for a rear, left and right cancelling) and the drive loses up to `rimDrag` 25% for the worst tyre. Both ride alongside the puncture's own pull and drag in `quad.js`. Dealt pressures still stop at `minPsi` 1.5, so no quad starts the game pulling from this.
+- Grip and ride from pressure were already per wheel, so nothing else changed. The pump's range tuning is under "Tyres" in the Tune tab; the Vehicles tab's pressures go down to 0.5 and show each wheel's off-the-rim level, and the console's psi values likewise.
+- Not checked in play: how the pump rows look in the panel, how the pull and drag feel. Unit tests only. No new girl lines.

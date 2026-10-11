@@ -28,7 +28,12 @@ export const DEFAULT_TYRE_PARAMS = {
   treadDryLoss: 0.15, // grip lost on grass and the track with no tread at all
   treadMudLoss: 0.4, // and in mud and puddles
   flatDrop: 0.75, // how much of a wheel's pressure a puncture at its worst takes off the gauge
-  minPsi: 1.5,
+  rimPsi: 2.2, // below this a tyre starts to squash off the rim: the bars pull towards it and it drags
+  rimPull: 0.06, // radians of pull at 0 psi on a front wheel (half for a rear)
+  rimDrag: 0.25, // share of the drive lost at 0 psi
+  pumpStep: 0.5, // psi a click on the pump adds or lets out
+  minPsi: 1.5, // the lowest a tyre is dealt
+  ventMinPsi: 0.5, // the lowest you can let one down to at the pump
   maxPsi: 7,
 };
 
@@ -47,7 +52,12 @@ export const TYRE_PARAM_RANGES = {
   treadDryLoss: [0, 1, 0.01],
   treadMudLoss: [0, 1, 0.01],
   flatDrop: [0, 1, 0.05],
+  rimPsi: [0, 4, 0.1],
+  rimPull: [0, 0.3, 0.01],
+  rimDrag: [0, 1, 0.05],
+  pumpStep: [0.1, 2, 0.1],
   minPsi: [0, 5, 0.1],
+  ventMinPsi: [0, 2, 0.1],
   maxPsi: [3, 12, 0.5],
 };
 
@@ -114,6 +124,36 @@ export class TyreSet {
   level(psi) {
     const v = clamp(psi, this.P.minPsi, this.P.maxPsi);
     this.psi = this.psi.map(() => v);
+  }
+
+  /** The real wheels as { i, name, front, side } (side 1 left, -1 right, 0 centre): what the pump lists. */
+  get realWheels() {
+    const list = this.wheels ?? WHEEL_NAMES.map((name, i) => ({ i, name, front: isFront(i) }));
+    return list.map((w) => ({ ...w, side: w.name.length > 1 ? (w.name.endsWith('L') ? 1 : -1) : 0 }));
+  }
+
+  /** Pumps one tyre up (positive) or lets air out (negative), by `psi`; returns the new pressure. */
+  pump(i, psi) {
+    this.psi[i] = round(clamp(this.psi[i] + psi, this.P.ventMinPsi, this.P.maxPsi), 0.1);
+    return this.psi[i];
+  }
+
+  /** 0..1 how far a tyre is down below the pressure where it starts to roll off the rim. */
+  rimLevel(i) {
+    return clamp((this.P.rimPsi - this.psi[i]) / Math.max(0.1, this.P.rimPsi), 0, 1);
+  }
+
+  /** Radians the bars are pulled by tyres let right down (positive is left); added to the puncture's pull. */
+  get steerPull() {
+    let pull = 0;
+    for (const w of this.realWheels) pull += w.side * (w.front ? 1 : 0.5) * this.P.rimPull * this.rimLevel(w.i);
+    return pull;
+  }
+
+  /** Multiplier on the drive force: a tyre half off its rim drags. */
+  get driveFactor() {
+    const worst = Math.max(0, ...this.realWheels.map((w) => this.rimLevel(w.i)));
+    return 1 - this.P.rimDrag * worst;
   }
 
   /** What the gauge reads on each wheel: the pressure, less what a puncture has let out (`punctureWheel` -1 for none, level 0..1). */

@@ -121,3 +121,45 @@ describe('describing them', () => {
     expect(text).toContain('tyres:    FL 3.8  FR 4.3  RL 4.0  RR 4.1 psi; front Mudclaw, tread 0.82; rear Roadrunner, tread 0.30');
   });
 });
+
+describe('the pump', () => {
+  it('pumps and bleeds one wheel by a step, within the limits', () => {
+    const t = fresh();
+    expect(t.pump(1, 0.5)).toBeCloseTo(4.5);
+    expect(t.psi).toEqual([4, 4.5, 4, 4]);
+    for (let n = 0; n < 40; n++) t.pump(2, -0.5);
+    expect(t.psi[2]).toBe(P.ventMinPsi);
+    for (let n = 0; n < 40; n++) t.pump(2, 0.5);
+    expect(t.psi[2]).toBe(P.maxPsi);
+  });
+
+  it('lists only the real wheels, with their sides', () => {
+    expect(fresh().realWheels.map((w) => [w.name, w.side])).toEqual([['FL', 1], ['FR', -1], ['RL', 1], ['RR', -1]]);
+    const bike = fresh();
+    bike.useLayout([{ front: true, x: 0 }, { front: false, x: 0 }, { front: false, x: 0.3, outrigger: true }, { front: false, x: -0.3, outrigger: true }]);
+    expect(bike.realWheels.map((w) => w.side)).toEqual([0, 0]);
+  });
+
+  it('does nothing at or above the rim pressure and pulls towards a let-down tyre', () => {
+    const t = fresh();
+    expect(t.steerPull).toBe(0);
+    expect(t.driveFactor).toBe(1);
+    t.psi[0] = 0.5; // front left
+    expect(t.steerPull).toBeGreaterThan(0);
+    expect(t.driveFactor).toBeLessThan(1);
+    t.psi[0] = P.rimPsi;
+    expect(t.steerPull).toBe(0);
+    t.psi[1] = 0.5; // front right pulls the other way, so the two cancel
+    t.psi[0] = 0.5;
+    expect(t.steerPull).toBeCloseTo(0);
+    const rear = fresh();
+    rear.psi[2] = 0.5;
+    const front = fresh();
+    front.psi[0] = 0.5;
+    expect(rear.steerPull).toBeCloseTo(front.steerPull / 2);
+  });
+
+  it('does not touch the dealt pressures', () => {
+    for (const d of many(200, (r) => dealTyres(r, T.stockPsi))) for (const v of d.psi) expect(v).toBeGreaterThanOrEqual(P.minPsi);
+  });
+});

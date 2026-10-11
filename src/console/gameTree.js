@@ -145,7 +145,7 @@ export function buildGameTree(g, host) {
 
       const tyres = {};
       WHEEL_NAMES.forEach((name, i) => {
-        tyres[`${slug(name)}Psi`] = num(() => q().tyres.psi[i], (v) => { q().tyres.psi[i] = v; q().physics.applyParams(); }, 1.5, 7, 'psi');
+        tyres[`${slug(name)}Psi`] = num(() => q().tyres.psi[i], (v) => { q().tyres.psi[i] = v; q().physics.applyParams(); }, 0.5, 7, 'psi');
       });
       out.tyres = group(() => tyres);
       return out;

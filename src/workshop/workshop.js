@@ -335,6 +335,7 @@ export class Workshop {
     const done = unit.quad.faults.fix(kind, { rough: true });
     this.game.hud.toast(done ? REPAIR_DONE[kind] : REPAIR_NOTHING[kind]);
     if (done) for (const c of this.game.companions) c.voice.onTinker?.('service');
+    this.render(); // the pump's readings changed
   }
 
   /** Whether a quick job is on the panel: a diesel has no carb, and the tractor no belt. */
@@ -349,6 +350,31 @@ export class Workshop {
     const q = this.quads.get(unit);
     unit.quad.tyres.level(q?.settings.tyres ?? this.params.stockPsi);
     unit.quad.physics.applyParams();
+  }
+
+  /** The pump: lets one tyre down or tops it up by a step, whatever the toolbox's all-four setting says. */
+  pumpWheel(i, dir) {
+    const unit = this.unit;
+    if (!unit) return;
+    const t = unit.quad.tyres;
+    t.pump(i, dir * t.P.pumpStep);
+    unit.quad.physics.applyParams();
+    this.render();
+  }
+
+  /** The pump's rows: a gauge reading per real wheel with a bleed and a pump button. */
+  renderPump(unit) {
+    const t = unit.quad.tyres;
+    const f = unit.quad.faults;
+    const reading = t.reading(f.tyre, f.started.puncture ? f.levels.puncture : 0);
+    this.pumpEl.innerHTML = `<div class="ws-pumphead">Tyre pump and gauge</div>${t.realWheels
+      .map(
+        (w) => `<div class="ws-wheel${t.rimLevel(w.i) > 0 ? ' low' : ''}"><span class="ws-wname">${w.name}</span>
+          <button type="button" data-wheel="${w.i}" data-dir="-1" aria-label="Let some out"${t.psi[w.i] <= t.P.ventMinPsi ? ' disabled' : ''}>−</button>
+          <span class="ws-wpsi">${reading[w.i].toFixed(1)} psi</span>
+          <button type="button" data-wheel="${w.i}" data-dir="1" aria-label="Pump up"${t.psi[w.i] >= t.P.maxPsi ? ' disabled' : ''}>+</button></div>`,
+      )
+      .join('')}`;
   }
 
   /** Takes the silencer off, or puts it back. */
@@ -539,6 +565,7 @@ export class Workshop {
           <div class="ws-cond"></div>
         </div>
         <div class="ws-rows"></div>
+        <div class="ws-pump"></div>
         <div class="ws-explain"></div>
         <div class="ws-foot">
           <button type="button" class="ws-btn ws-service"><span class="key">V</span>Service it</button>
@@ -568,6 +595,12 @@ export class Workshop {
     this.titleEl = el.querySelector('.ws-title');
     this.rowsEl = el.querySelector('.ws-rows');
     this.explainEl = el.querySelector('.ws-explain');
+    this.pumpEl = el.querySelector('.ws-pump');
+    // One click handler for the pump's buttons, as the wheels (and so the buttons) change with the quad.
+    this.pumpEl.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-wheel]');
+      if (b) this.pumpWheel(Number(b.dataset.wheel), Number(b.dataset.dir));
+    });
     this.rowsEl.innerHTML = ROWS.map(
       (r, i) => `
         <div class="ws-row" data-row="${i}">
@@ -616,6 +649,7 @@ export class Workshop {
     const st = stockSettings(stock, P);
     this.titleEl.textContent = `Toolbox   ·   ${unit.name}`;
     this.explainEl.textContent = ROWS[this.selected].explain;
+    this.renderPump(unit);
     ROWS.forEach((r, i) => {
       const rowEl = this.rowEls[i];
       rowEl.style.display = this.rowShown(i) ? '' : 'none';

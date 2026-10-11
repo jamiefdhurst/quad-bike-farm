@@ -193,6 +193,25 @@
   white-space: nowrap;
 }
 
+.ws-pump {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 6px 16px 0;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 12px;
+}
+
+.ws-pumphead { opacity: 0.75; }
+.ws-wheel { display: flex; align-items: center; gap: 6px; }
+.ws-wname { width: 22px; opacity: 0.75; }
+.ws-wpsi { min-width: 62px; text-align: center; font-variant-numeric: tabular-nums; }
+.ws-wheel.low .ws-wpsi { color: #ffb347; }
+.ws-wheel button { width: 24px; height: 22px; cursor: pointer; }
+
 .ws-explain {
   min-height: calc(12px * 1.45 * 4 + 16px); /* room for the longest, so nothing jumps */
   margin: 6px 16px 0;
