@@ -656,7 +656,7 @@ export const EXTRA_SPECS = [
     },
     vehicle: {
       mass: 215, // bike plus rider
-      centreOfMassY: -0.06, // a bit higher than the quads' -0.08 default, with the rider up on top: that, and one front wheel, is what tips it
+      centreOfMassY: 0, // well above the quads' -0.08, with the rider up on top: that, and one front wheel, is what tips it unless the rider leans in (riderLean.js)
       riderTopple: 0, // its tipping is tuned with the rider in the centre of mass already
       steerSpeedReduction: 0.12, // less lock at speed, or it trips itself on a single front wheel
       rollInertia: 38,

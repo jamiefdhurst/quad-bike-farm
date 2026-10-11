@@ -32,6 +32,7 @@ import { stepHand } from './handLever.js';
 import { Faults } from './faults.js';
 import { toppleLoad } from './topple.js';
 import { BikeLean, DEFAULT_BIKE_PARAMS } from './bikeLean.js';
+import { RiderLean, DEFAULT_RIDER_LEAN_PARAMS } from './riderLean.js';
 import { holdsItself } from './handbrake.js';
 import { BrakeState } from './brakeState.js';
 import { SeatSpring, UpAccel, DEFAULT_SEAT_PARAMS } from './seatRide.js';
@@ -219,6 +220,7 @@ export class Quad {
     this.shownFrost = 0;
     this.tyres = new TyreSet(); // pressures, brands and tread (tyres.js); the game deals this game's
     this.physics.tyres = this.tyres;
+    this.riderLean = this.model.userData.riderLean ? new RiderLean(DEFAULT_RIDER_LEAN_PARAMS) : null; // the three-wheeler's rider leaning in (riderLean.js)
     this.bike = this.model.userData.bike ? new BikeLean(DEFAULT_BIKE_PARAMS) : null; // a two-wheeler's balance and lean (bikeLean.js)
     this.tyres.useLayout(layout.wheels);
     this.physics.applyParams();
@@ -819,6 +821,10 @@ export class Quad {
     const load = toppleLoad(p, { front: !!(this.rider || this.driver), back: !!(this.passenger || this.backRider) });
     if (load > 0) this.physics.topple(load, dt);
     if (this.bike) this.physics.rollTorque(this.bike.out.rollTorque, dt);
+    if (this.riderLean) {
+      const bars = Math.max(-1, Math.min(1, this.steer / ((p.maxSteerDeg * Math.PI) / 180)));
+      this.physics.rollTorque(this.riderLean.update(dt, { bars, speed: this.physics.forwardSpeed, aboard: !!(this.rider || this.driver), girl: !!this.driver }), dt);
+    }
     this.physics.update(dt);
   }
 
@@ -1154,6 +1160,7 @@ export class Quad {
 
   rightItself() {
     this.bike?.recover();
+    this.riderLean?.recover();
     const p = this.currPos;
     const yaw = this.yaw;
     this.physics.reset(p.x, this.world.heightAt(p.x, p.z) - this.groundOffset * this.scale + 0.3 * this.scale, p.z, yaw);

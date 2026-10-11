@@ -13,6 +13,7 @@ import { LANDY_STAND, LANDY_REAR_STAND, LANDY_REAR_SEATS } from './vehicle/landR
 import { DEFAULT_REAR_ACCESS_PARAMS, REAR_ACCESS_PARAM_RANGES, seatTipTargets, easeSeatTips, pickRearSeat, rearDoor } from './vehicle/rearAccess.js';
 import { clearOfChassis } from './vehicle/dismount.js';
 import { DEFAULT_BIKE_PARAMS, BIKE_PARAM_RANGES } from './vehicle/bikeLean.js';
+import { DEFAULT_RIDER_LEAN_PARAMS, RIDER_LEAN_RANGES } from './vehicle/riderLean.js';
 import { pickFleet } from './vehicle/fleet.js';
 import { applyIdle, applyTopRpm, applyVariation, pickIdle } from './vehicle/quadVariation.js';
 import { AudioHub } from './audio/engineAudio.js';
@@ -360,6 +361,7 @@ export class Game {
     registerTuning('Indicators', INDICATOR_PARAMS, INDICATOR_PARAM_RANGES);
     registerTuning('Seat belts', SEAT_BELT_PARAMS, SEAT_BELT_PARAM_RANGES);
     registerTuning('Two-wheeler lean', DEFAULT_BIKE_PARAMS, BIKE_PARAM_RANGES);
+    registerTuning('Three-wheeler rider lean', DEFAULT_RIDER_LEAN_PARAMS, RIDER_LEAN_RANGES);
     // One to three quirks each, from the parts the quad has (a gauge quirk needs a dash or pod that shows it, so this comes after the pods).
     this.quirkParams = { ...DEFAULT_QUIRK_PARAMS };
     registerTuning('Quirks', this.quirkParams, QUIRK_PARAM_RANGES);

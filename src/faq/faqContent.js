@@ -228,8 +228,12 @@ export const FAQ_SECTIONS = [
           down: <kbd>T</kbd> or <kbd>E</kbd> beside it picks it up. Under walking pace a foot is down, so it can't fall.`,
       },
       {
+        q: 'Do I have to lean on the old three-wheeler?',
+        a: `No, there's no key for it. Your weight goes to the inside of a corner as you steer, a moment behind the bars. Ease into corners and it stays up.`,
+      },
+      {
         q: 'Why did the old three-wheeler fall over?',
-        a: `One front wheel and a tall seat. A hard turn at speed (over about 12 m/s with the lock on) rolls it, while 9 m/s is fine. Slow down for corners.`,
+        a: `One front wheel and a tall seat. Turning hard over about 8 m/s would roll it, but you lean into the corner by yourself as you steer, and that holds it up to about 12 m/s. Faster than that, or with the bars flung over late, it goes. Slow down for corners.`,
       },
       {
         q: 'How do I see the dash properly?',

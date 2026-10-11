@@ -78,6 +78,7 @@ export function buildAtcModel({ bodyColor = 0xb4553f, dashStyle = 'kidsKey', cho
   quad.name = 'quad';
   quad.userData.lensMaterial = lensMat;
   quad.userData.seatMaterial = seatMat;
+  quad.userData.riderLean = true; // the rider shifts their weight into corners by themselves (riderLean.js)
   const body = new THREE.Group();
   body.name = 'body';
   quad.add(body);
