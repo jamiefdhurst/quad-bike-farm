@@ -1,0 +1,55 @@
+/* The parts rack panel (sparesShelf.js): a small card low on the screen, like the bench's. */
+.spares {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 14%;
+  z-index: 25;
+  display: none;
+  pointer-events: none;
+  font-size: 14px;
+  color: #f2f2ee;
+}
+
+.spares-open .prompt {
+  display: none;
+}
+
+.sp-card {
+  width: min(420px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 12px 16px;
+  background: rgba(20, 22, 20, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+}
+
+.sp-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.sp-row {
+  padding: 3px 0;
+}
+
+.sp-row.none {
+  color: #f0b8a8;
+}
+
+.sp-row em {
+  opacity: 0.55;
+  font-style: normal;
+}
+
+.sp-keys {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.spares .key {
+  display: inline-block;
+  width: 1.4em;
+  opacity: 0.5;
+}

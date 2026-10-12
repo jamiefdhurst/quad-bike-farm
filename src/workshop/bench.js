@@ -1,7 +1,8 @@
 import './bench.css';
 import * as THREE from 'three';
+import { PARTS } from './spares.js';
 import { registerTuning } from '../core/tuning.js';
-import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, BenchJob, finishJob, jobAvailable, inBay, plugCondition, readPlug, scoringLook, chainLook, valvesLook, crashLook } from './benchJobs.js';
+import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, BenchJob, finishJob, jobAvailable, jobPart, inBay, plugCondition, readPlug, scoringLook, chainLook, valvesLook, crashLook } from './benchJobs.js';
 
 // The jobs after the tenth (which is on 0) have the keys beside it.
 const OVERFLOW_KEYS = [
@@ -48,8 +49,14 @@ export class Bench {
     return unit.barnFind ? unit.barnFind.kinds : JOB_KINDS;
   }
 
+  /** The shelf has the part the job fits (a job with no part always has it). */
+  partOk(kind) {
+    const part = jobPart(kind);
+    return !part || this.game.spares.has(part);
+  }
+
   canBegin(kind, unit) {
-    return unit.barnFind ? unit.barnFind.available(kind) : jobAvailable(kind, unit.engine, this.params, unit.quad.faults.hasChain, unit.quad.faults.hasValves);
+    return this.partOk(kind) && (unit.barnFind ? unit.barnFind.available(kind) : jobAvailable(kind, unit.engine, this.params, unit.quad.faults.hasChain, unit.quad.faults.hasValves));
   }
 
   toolboxHere() {
@@ -99,7 +106,7 @@ export class Bench {
 
   begin(kind) {
     if (!this.canBegin(kind, this.unit)) return;
-    this.job = new BenchJob(kind, this.params);
+    this.job = new BenchJob(kind, this.params, this.game.spares);
     this.render();
   }
 
@@ -120,7 +127,8 @@ export class Bench {
       this.game.notebook.note(this.unit, { kind: 'plug', reading: reading.kind }, { by: 'you' });
     }
     for (const e of events) {
-      if (e.type === 'flaw') this.say('flaw');
+      if (e.type === 'noPart') this.game.hud.toast(`No ${PARTS[e.part].one} left on the shelf: order one from the parts rack`);
+      else if (e.type === 'flaw') this.say('flaw');
       else if (e.type === 'step') this.say('step');
       else if (e.type === 'done') {
         const job = this.job;
@@ -215,7 +223,9 @@ export class Bench {
       this.bodyEl.innerHTML = this.kindsFor(unit).map((k, i) => {
         const ok = this.canBegin(k, unit);
         let note = '';
+        const lacking = !this.partOk(k);
         if (find) note = find.isDone(k) ? ' ✓' : k === 'battery' && find.charging ? ` (charging: ${Math.round(find.chargeProgress * 100)}%)` : ok ? '' : ' (take the tarp off first)';
+        else if (lacking) note = ` (no ${PARTS[jobPart(k)].one} on the shelf)`;
         else if (!ok) note = k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'valves' ? ' (two-strokes have none)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
         return `<div class="bn-row${ok ? '' : ' off'}"><span class="key">${i >= 10 ? OVERFLOW_KEYS[i - 10].label : (i + 1) % 10}</span>${JOBS[k].name}${note}</div>`;
       }).join('');

@@ -1,6 +1,7 @@
 import './workshop.css';
 import { jetError, leanStarve, jetTrue, jetText, adviceText } from '../engine/jetting.js';
 import { registerTuning } from '../core/tuning.js';
+import { FIX_PARTS, PARTS, jetShelfChange } from './spares.js';
 import {
   DEFAULT_TUNE_PARAMS,
   TUNE_PARAM_RANGES,
@@ -19,8 +20,8 @@ const REPEAT_INTERVAL = 0.09;
 const FAST_SAY_AFTER = 1.5; // seconds above the old top speed, with her on the back, before she notices
 
 const REPAIR_DONE = {
-  puncture: 'Stuck a bodge patch on the tyre and pumped it up: it will do for now',
-  belt: 'Turned the glazed belt round: it grips a bit better',
+  puncture: 'Put a spare inner tube in and pumped it up: it will do for now',
+  belt: 'Swapped in a spare belt: it grips a bit better',
   cable: 'Squirted some oil on the cable: it is freer, but not right',
   carb: 'Gave the carb a clean with what is in the toolbox: better, not perfect',
   mounts: 'Nipped up the engine mount bolts and packed a washer under the worst: it shakes less, but the rubber is still perished',
@@ -227,6 +228,13 @@ export class Workshop {
     const q = this.quads.get(this.unit);
     const next = nudge(q.settings, key, direction, q.stock, this.params);
     if (Object.keys(next).every((k) => next[k] === q.settings[k])) return false;
+    const shelf = key === 'jet' ? jetShelfChange(q.settings.jet, next.jet) : null;
+    if (shelf === 'take' && !this.game.spares.has('jet')) {
+      this.game.hud.toast('There is no spare main jet on the shelf: order one from the parts rack in the barn');
+      return false;
+    }
+    if (shelf === 'take') this.game.spares.take('jet');
+    else if (shelf === 'give') this.game.spares.give('jet');
     const raisedLimiter = key === 'limiter' && next.limiter > q.settings.limiter;
     this.apply(next);
     let kind = raisedLimiter ? 'limiter' : 'adjust';
@@ -333,8 +341,16 @@ export class Workshop {
   repair(kind) {
     const unit = this.unit;
     if (!unit || !this.repairShown(kind)) return;
+    const part = FIX_PARTS[kind];
+    const f = unit.quad.faults;
+    if (part && f.started[kind] && f.caps[kind] >= 1 && !this.game.spares.has(part)) {
+      // Something to fix and nothing on the shelf to fix it with.
+      this.game.hud.toast(`There is no spare ${PARTS[part].one} on the shelf: order one from the parts rack in the barn`);
+      return;
+    }
     if (kind === 'puncture') this.levelTyres(unit); // pumping up is pumping up, whether or not there was a puncture
     const done = unit.quad.faults.fix(kind, { rough: true });
+    if (done && part) this.game.spares.take(part);
     this.game.hud.toast(done ? REPAIR_DONE[kind] : REPAIR_NOTHING[kind]);
     if (done) for (const c of this.game.companions) c.voice.onTinker?.('service');
     this.render(); // the pump's readings changed
@@ -433,6 +449,7 @@ export class Workshop {
     const e = this.unit.engine;
     if (isStock(q.settings, q.stock, this.params) && !e.silencerOff) return;
     e.silencerOff = false;
+    if (q.settings.jet !== 0) this.game.spares.give('jet'); // the stock jet goes back in, the other comes out
     this.apply(stockSettings(q.stock, this.params));
     this.levelTyres(this.unit);
     for (const c of this.game.companions) c.voice.onTinker?.('stock');

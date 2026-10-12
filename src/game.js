@@ -222,6 +222,7 @@ import { DEFAULT_FUEL_WATER_PARAMS, FUEL_WATER_RANGES, stepCanWater } from './ve
 import { pickBarnFind, BarnFind, DEFAULT_BARN_FIND_PARAMS, BARN_FIND_RANGES, RUSTY_ID } from './vehicle/barnFind.js';
 import { weatherModel, buildTarp } from './vehicle/rustyLook.js';
 import { Notebook } from './workshop/notebook.js';
+import { SparesShelf } from './workshop/sparesShelf.js';
 import { MuckLoad, DEFAULT_MUCK_PARAMS, MUCK_PARAM_RANGES, JobBoard, DEFAULT_JOB_BOARD_PARAMS, JOB_BOARD_PARAM_RANGES, availableJobs } from './world/farmJobs.js';
 import { JobBoardView } from './world/jobBoard.js';
 import { PhotoHost } from './photos/photoHost.js';
@@ -1153,8 +1154,11 @@ export class Game {
     registerTuning('Dares', this.dares.p, DARE_PARAM_RANGES);
     this.bench = new Bench(this);
     this.notebook = new Notebook(this); // Amy's logbook, on the bench
+    this.sparesShelf = new SparesShelf(this); // the parts rack on the barn wall: plugs, tubes, belts, jets and pistons, which run out (workshop/spares.js)
+    this.spares = this.sparesShelf.spares;
     this.girlBench = new GirlBench(undefined, this.bench.params, createRandom(this.seed ^ 0x2b3c)); // a girl working on a quad at the bench (npc/girlBench.js)
     registerTuning('Girl at the bench', this.girlBench.p, GIRL_BENCH_PARAM_RANGES);
+    this.girlBench.spares = this.spares;
     this.phoneCalls = new PhoneCalls(undefined, createRandom(this.seed ^ 0x7e1f)); // a girl's phone ringing (npc/phoneCalls.js)
     registerTuning('Phone calls', this.phoneCalls.p, PHONE_PARAM_RANGES);
     // A hosepipe for washing the mud off.
@@ -1540,7 +1544,7 @@ export class Game {
     if (this.menu.isOpen) return { mode: 'menu', menu: 'wheel' };
     if (this.workshop.isOpen) return { mode: 'menu', menu: 'workshop' };
     if (this.bench.isOpen) return { mode: 'menu', menu: 'bench' };
-    if (this.notebook.isOpen || this.jobBoardView.isOpen || this.photos.view.isOpen) return { mode: 'menu', menu: 'notebook' };
+    if (this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.photos.view.isOpen) return { mode: 'menu', menu: 'notebook' };
     if (this.player.isRiding) {
       const q = this.riddenUnit?.quad;
       return { mode: 'ride', seat: this.player.seat, bucketOpen, gear: q?.manual ? q.drivetrain.gear : null, gears: q?.gearbox?.gears ?? 0 };
@@ -2942,6 +2946,8 @@ export class Game {
     this.jobBoardView.refresh();
     this.photos.wall.restore(save.photos);
     this.photos.view.refresh();
+    this.spares.restore(save.spares);
+    this.sparesShelf.showParcel();
   }
 
   /** Everything the farm keeps, as plain data (farm/farmSave.js writes it). */
@@ -2962,6 +2968,7 @@ export class Game {
       records: this.records.toJSON(),
       photos: this.photos.wall.toJSON(),
       logbook: this.notebook.book.toJSON(),
+      spares: this.spares.toJSON(),
     };
   }
 
@@ -7623,7 +7630,7 @@ export class Game {
     // 5: raise the camera (photos/photoHost.js), unless you are in a menu, up the ladder or hidden in the hay.
     if (
       input.wasPressed('Digit5') &&
-      !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.jobBoardView.isOpen || this.photos.view.isOpen) &&
+      !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.photos.view.isOpen) &&
       !(this.climb || this.tryst || this.hiding.active)
     ) {
       this.photos.press();
@@ -7658,6 +7665,9 @@ export class Game {
     } else if (this.notebook.isOpen) {
       this.interaction.clear();
       this.notebook.handleInput(input);
+    } else if (this.sparesShelf.isOpen) {
+      this.interaction.clear();
+      this.sparesShelf.handleInput(input);
     } else if (this.jobBoardView.isOpen) {
       this.interaction.clear();
       this.jobBoardView.handleInput(input);
@@ -7859,6 +7869,7 @@ export class Game {
     this.bench.update(dt);
     this.updateBarnFind(dt);
     this.notebook.update(dt);
+    this.sparesShelf.update(dt);
     this.updateLoft(dt);
     this.audioHub.setPouring(pouring, dt);
     this.audioHub.update(dt, this.camera);

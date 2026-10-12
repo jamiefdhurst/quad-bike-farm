@@ -175,6 +175,11 @@ export function buildGirlsTab(d) {
   show(both, 'electric fence', () => `${g.fence.live ? 'on' : 'off'}; last zapped: ${g.fence.lastZap ? `${g.fence.lastZap.id} (${g.fence.lastZap.kind})` : 'nobody yet'}`);
   button(both, 'Zap you on the electric fence', () => g.debugZapFence());
   show(both, 'the lane and the gates', () => `${g.trafficHost.describe()}; south gate ${g.trafficHost.gate('south').isOpen ? 'open' : 'shut'}, big gate ${g.trafficHost.gate('road').isOpen ? 'open' : 'shut'}, grid gate ${g.trafficHost.gate('grid')?.isOpen ? 'open' : 'shut'}`);
+  show(both, 'the spares shelf', () => g.sparesShelf.describe());
+  button(both, 'Fill the spares shelf', () => g.sparesShelf.debugSetAll(g.sparesShelf.params.maxOnShelf));
+  button(both, 'Empty the spares shelf', () => g.sparesShelf.debugSetAll(0));
+  button(both, 'Order a pack of each spare', () => g.sparesShelf.debugOrderAll());
+  button(both, 'Open the parcel', () => (g.spares.hasParcel ? g.sparesShelf.collect() : g.hud.toast('There is no parcel at the barn door')));
   button(both, 'Send a vehicle along the lane', () => g.trafficHost.debugPass());
   button(both, 'Send the post van', () => g.trafficHost.debugVisit('post') || g.hud.toast('A visitor is already about'));
   button(both, 'Send a neighbour', () => g.trafficHost.debugVisit('neighbour') || g.hud.toast('A visitor is already about'));

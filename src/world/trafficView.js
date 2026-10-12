@@ -155,10 +155,15 @@ export class TrafficView {
     r.mode = null;
   }
 
-  /** A parcel left at the barn door. Only the latest stays. */
-  addParcel(x, z, yaw) {
+  /** Takes the parcel at the barn door away (opened). */
+  clearParcel() {
     for (const p of this.parcels) this.scene.remove(p);
     this.parcels = [];
+  }
+
+  /** A parcel left at the barn door. Only the latest stays. */
+  addParcel(x, z, yaw) {
+    this.clearParcel();
     const g = new THREE.Group();
     const box = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.3, 0.34), BOX);
     box.position.y = 0.15;

@@ -4,6 +4,7 @@ import { netCharge } from '../engine/charging.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
 import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
 import { group, value, slug } from './shell.js';
+import { PARTS, PART_IDS } from '../workshop/spares.js';
 import { getTuningGroups } from '../core/tuning.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
 import { applicableQuirks, featuresOf } from '../vehicle/quirks.js';
@@ -278,6 +279,12 @@ export function buildGameTree(g, host) {
     last: text(() => (g.fence.lastZap ? `${g.fence.lastZap.id} (${g.fence.lastZap.kind})` : 'nobody yet'), 'who last got a jolt from it'),
     zap: flag(() => false, (v) => v && g.debugZapFence(), 'set to true: you (or the quad you are on) catch the wire now'),
   }), 'the electric fence across the hill pasture');
+  const spares = group(() => ({
+    now: text(() => g.sparesShelf.describe(), 'what is on the rack, on order and in the parcel'),
+    ...Object.fromEntries(PART_IDS.map((id) => [id, num(() => g.spares.count(id), (v) => ((g.spares.counts[id] = Math.max(0, Math.round(v))), g.sparesShelf.paintCrates()), 0, 20, '', `${PARTS[id].many} on the rack`)])),
+    orderAll: flag(() => false, (v) => v && g.sparesShelf.debugOrderAll(), 'set to true: order a pack of every part'),
+    openParcel: flag(() => false, (v) => v && g.spares.hasParcel && g.sparesShelf.collect(), 'set to true: open the parcel at the barn door'),
+  }), 'the spares shelf in the barn');
   const lane = group(() => ({
     now: text(() => g.trafficHost.describe(), 'what is on the lane and who is visiting'),
     pass: flag(() => false, (v) => v && g.trafficHost.debugPass(), 'set to true: a vehicle goes along the lane now'),
@@ -309,6 +316,7 @@ export function buildGameTree(g, host) {
     wildlife,
     fence,
     lane,
+    spares,
     photos,
     towRope,
     audio,

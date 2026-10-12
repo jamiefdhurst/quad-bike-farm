@@ -673,7 +673,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I fix things?',
         a: `Pick up the red toolbox from the workbench, take it to a switched-off quad and press <kbd>E</kbd>. <kbd>T</kbd> pumps and patches the tyres,
-          <kbd>R</kbd> swaps the belt, <kbd>L</kbd> oils the cable, <kbd>C</kbd> cleans the carb, <kbd>M</kbd> nips up the engine mounts, <kbd>N</kbd> puts a chain back on and oils it, <kbd>I</kbd> (held) cleans the air filter, <kbd>V</kbd>
+          <kbd>R</kbd> swaps the belt (using a spare from the rack), <kbd>L</kbd> oils the cable, <kbd>C</kbd> cleans the carb, <kbd>M</kbd> nips up the engine mounts, <kbd>N</kbd> puts a chain back on and oils it, <kbd>I</kbd> (held) cleans the air filter, <kbd>V</kbd>
           services it. These are quick fixes that leave a mild fault behind; for a proper job, use the workbench. Each fix does its job if there is one and
           otherwise says all is well, so it doesn't give a fault away.`,
       },
@@ -1007,6 +1007,15 @@ export const FAQ_SECTIONS = [
         q: 'Who is that on the lane, and why has someone come in at the gate?',
         a: `Beyond the big gate is a quiet public lane. A van, a Land Rover, a tractor or a UTV goes by now and then, less after dark. Now and then a visitor turns in: the post van, whose driver opens the gate, drives up to the barn and leaves a parcel by the door, or a neighbour who parks at the barn and stands about for a while. Jess waves at them, Amy less often. If you are in their way they wait, then hoot, so pull over.`,
         tip: 'The post van and neighbours come in at the big gate. Pull over for them.',
+      },
+      {
+        q: 'Why does the bench say there is no spark plug (or tube, or piston) on the shelf?',
+        a: `The parts rack on the barn's back wall, past the end of the workbench, is counted. A new plug, an inner tube, a drive belt, a main jet and a piston and rings are each used up when you fit one: a plug change or the top-end rebuild at the bench, a tube for a puncture or a belt swap with the toolbox in the yard, and a main jet when you fit a size other than the stock one (put the stock one back and the other goes back on the rack). With none left the job is greyed out and says what is missing. Look at the rack and press <kbd>E</kbd> to see what is there and order a pack with <kbd>1</kbd> to <kbd>5</kbd>.`,
+        tip: 'Spares are counted. Order more at the parts rack on the barn wall.',
+      },
+      {
+        q: 'How do I order spare parts, and when do they come?',
+        a: `Look at the parts rack in the barn (back wall, beyond the workbench), press <kbd>E</kbd> and press the number of the part to order a pack. A minute or so later the post van comes in at the big gate (if no one else is visiting, and only in daylight) and leaves a parcel by the barn door. Look at the parcel and press <kbd>E</kbd> to open it and put what is in it on the rack. An order you have not had by the end of the day is still on its way the next morning, and so is a parcel you have not opened. You can only order what the rack would have room for.`,
       },
       {
         q: 'How do I take a photo?',

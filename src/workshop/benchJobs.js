@@ -75,7 +75,7 @@ export const JOBS = {
       { id: 'lead', text: 'Pull the plug cap off', kind: 'press' },
       { id: 'out', text: 'Undo the old plug with the spanner', kind: 'hold', need: 0.9 },
       { id: 'look', text: 'Look at the old plug', kind: 'press', inspect: true },
-      { id: 'fit', text: 'Screw the new plug in by hand', kind: 'press' },
+      { id: 'fit', text: 'Screw a new plug from the shelf in by hand', kind: 'press', part: 'plug' },
       { id: 'tight', text: 'Nip it up with the spanner: snug, not tight', kind: 'hold', need: 0.6, limit: 1.3 },
     ],
   },
@@ -104,7 +104,7 @@ export const JOBS = {
     steps: [
       { id: 'jack', text: 'Jack the quad up', kind: 'press' },
       { id: 'off', text: 'Undo the nuts and take the wheel off', kind: 'hold', need: 1 },
-      { id: 'patch', text: 'Find the hole and patch the tube', kind: 'press' },
+      { id: 'patch', text: 'Find the hole and put a new inner tube in', kind: 'press', part: 'tube' },
       { id: 'on', text: 'Put the wheel back on', kind: 'press' },
       { id: 'pump', text: 'Pump it up: stop at the right pressure', kind: 'hold', need: 1.1, limit: 2.3 },
     ],
@@ -195,7 +195,7 @@ export const JOBS = {
       { id: 'head', text: 'Undo the head nuts and lift the head off', kind: 'hold', need: 1 },
       { id: 'barrel', text: 'Ease the barrel up off the piston', kind: 'hold', need: 0.8 },
       { id: 'look', text: 'Look at the piston and the bore', kind: 'press', inspect: true },
-      { id: 'piston', text: 'Take the new piston and rings off the shelf and fit them', kind: 'press' },
+      { id: 'piston', text: 'Take the new piston and rings off the shelf and fit them', kind: 'press', part: 'piston' },
       { id: 'refit', text: 'Ease the barrel down over the rings', kind: 'hold', need: 1.1 },
       { id: 'tight', text: 'Do the head nuts up evenly: snug, not tight', kind: 'hold', need: 0.8, limit: 1.6 },
     ],
@@ -322,7 +322,8 @@ export function plugCondition(engine, P = DEFAULT_BENCH_PARAMS) {
  * { type: 'step', index }, { type: 'flaw', step, how: 'short' | 'over' } and { type: 'done' }.
  */
 export class BenchJob {
-  constructor(kind, params = DEFAULT_BENCH_PARAMS) {
+  constructor(kind, params = DEFAULT_BENCH_PARAMS, spares = null) {
+    this.spares = spares; // the shelf: a step with a `part` uses one up (spares.js)
     this.kind = kind;
     this.def = JOBS[kind];
     this.params = params;
@@ -368,6 +369,8 @@ export class BenchJob {
 
   press() {
     const events = [];
+    const part = this.step?.part;
+    if (part && this.spares && !this.spares.take(part)) return [{ type: 'noPart', part }];
     if (this.step?.kind === 'press') this.advance(events);
     return events;
   }
@@ -536,6 +539,11 @@ export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = fal
   if (kind === 'tarp' || kind === 'fuel' || kind === 'brake' || kind === 'battery') return true;
   if (kind === 'sump') return engine.params.strokes !== 2 && !engine.params.runsOnDiesel;
   return true;
+}
+
+/** The part a job uses up, if it uses one (the step that has a `part`). */
+export function jobPart(kind) {
+  return JOBS[kind]?.steps.find((s) => s.part)?.part ?? null;
 }
 
 /** Is a quad's middle inside the bay painted on the floor? */

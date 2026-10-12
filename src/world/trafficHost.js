@@ -181,6 +181,7 @@ export class TrafficHost {
       this.remark(v?.kind === 'post' ? 'postVan' : 'neighbourCalls', e, 0.9);
     } else if (e.type === 'parcel') {
       this.view.addParcel(places.parcel.x, places.parcel.z, 0.4);
+      if (g.spares.deliver()) g.hud.toast('The post has left your parts at the barn door');
       this.lastEvent = 'the post left a parcel at the barn';
       this.later.push({ left: 7, run: () => this.remark('parcelLeft', e, 0.7) });
     } else if (e.type === 'chat') {

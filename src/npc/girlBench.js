@@ -95,6 +95,7 @@ export class GirlBench {
     this.cooldownUntil = 0;
     this.session = null; // { girl, how, unit, kind, job, slips (she will make a hash of it), phase: 'going' | 'working' | 'asking', t, extra, asks, askedAt, ask, missed, said }
     this.pending = null; // Jess's half-done job: { girl, unit, kind, job, since, nagged }
+    this.spares = null; // the spares shelf (workshop/spares.js), set by the game: the plug, tube or piston she fits comes off it
   }
 
   get girl() {
@@ -125,7 +126,7 @@ export class GirlBench {
   /** Starts it (her choice, or the debug panel's). Returns { type: 'go', girl, unit, kind, how }, or null if it is already on. */
   begin(girl, unit, kind, how, { slips = false } = {}) {
     if (this.session || this.pending || !JOBS[kind]) return null;
-    this.session = { girl, how, unit, kind, job: new BenchJob(kind, this.benchParams), phase: 'going', t: 0, extra: 0, slips, asks: 0, askedAt: -1, ask: null, missed: false, said: new Set() };
+    this.session = { girl, how, unit, kind, job: new BenchJob(kind, this.benchParams, this.spares), phase: 'going', t: 0, extra: 0, slips, asks: 0, askedAt: -1, ask: null, missed: false, said: new Set() };
     return { type: 'go', girl, unit, kind, how };
   }
 
@@ -261,6 +262,12 @@ export class GirlBench {
     const slip = s.slips ? false : !!step.limit && this.random() < (s.missed ? p.missedBotch : p.amyBotch);
     s.missed = false;
     const events = this.doStep(job, slip);
+    if (events.some((e) => e.type === 'noPart')) {
+      // The shelf ran out under her (you used the last one meanwhile).
+      out.push({ type: 'say', girl: s.girl, line: 'benchGirlStep' });
+      end('lost');
+      return out;
+    }
     if (events.some((e) => e.type === 'flaw')) out.push({ type: 'say', girl: s.girl, line: 'benchGirlSlip' });
     else if (!job.done && this.random() < 0.3) out.push({ type: 'say', girl: s.girl, line: 'benchGirlStep' });
     if (job.done) {
