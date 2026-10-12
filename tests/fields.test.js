@@ -17,7 +17,9 @@ describe('the farm fields', () => {
     expect(f.areaOf(road.pad.x, road.z)).toBe('end');
     expect(f.areaOf(-30, 100)).toBe('lane');
     expect(f.areaOf(0, 170)).toBe('hill');
-    expect(f.areaOf(0, 100)).toBe('out');
+    expect(f.areaOf(0, 100)).toBe('sheep');
+    expect(f.areaOf(-60, 100)).toBe('meadow');
+    expect(f.areaOf(50, 100)).toBe('out');
     expect(f.areaOf(220, 0)).toBe('out');
   });
 

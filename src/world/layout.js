@@ -54,6 +54,30 @@ export const LAYOUT = {
     ],
     gentle: { fromX: -12, toX: 24, factor: 2.4 },
     wood: { minX: -94, maxX: -66, minZ: 150, maxZ: 201 },
+    // The two fields either side of the lane, through gateways in its hedges (world/hill.js, hillProps.js): each runs from the grass field's
+    // south hedge to the pasture's north one, the lane's hedge on one side and `minX` / `maxX` (the pasture's own edge) on the other.
+    // A gateway is `gate.z` along the lane and `gate.width` across, and the lane's bank is eased down to it over `ramp` m.
+    // West, the wet meadow: a pond (an ellipse `rx` by `rz` m, `depth` m cut with `water` m standing in it), the muddy way in from the gateway to it
+    // (`track`: points, as far as the water), trees (oaks) round the pond and reeds along its edge.
+    // East, the sheep field: rolling ground (`knolls`: a hump `r` m across, `rise` m high), a drystone wall across it with a gap in it
+    // (`wall`: along z, from x `from` to `to`, `height` high, the `gap` at x `at` and `half` wide), and thorn bushes in clumps (`thorns`).
+    paddocks: {
+      ramp: 10,
+      west: {
+        minX: -96,
+        gate: { z: 104, width: 4.8 },
+        pond: { x: -66, z: 110, rx: 11, rz: 8, depth: 1.1, water: 0.6 },
+        track: [[-38, 104], [-45, 106], [-52, 106.5]],
+        trees: [[-76, 107], [-74, 116], [-62, 120], [-55, 114], [-57, 101], [-68, 100], [-77, 98]],
+      },
+      east: {
+        maxX: 34,
+        gate: { z: 112, width: 4.8 },
+        knolls: [{ x: 6, z: 103, r: 19, rise: 3 }, { x: 24, z: 123, r: 11, rise: 1.4 }],
+        wall: { z: 92, from: -25.4, to: 34, height: 1, gap: { at: -4, half: 2.6 } },
+        thorns: [[-8, 118], [-6, 120], [14, 96], [17, 94], [28, 108], [-14, 98], [30, 86]],
+      },
+    },
     foot: 7, // metres past the stream's far edge: the bottom of the pasture, where the girls stop driving
     // The flat rock at the top of the pasture, on the level ground by the far hedge, looking back north over the farm (npc/flask.js): a girl sits on it
     // (yaw is the way she faces, `height` how high the top is) and the flask and mugs go on the ground beside it.

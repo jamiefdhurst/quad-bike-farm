@@ -21,6 +21,12 @@ export function buildHill(c) {
   buildBracken(c);
   buildTussocks(c);
   buildViewpoint(c);
+  if (c.fields.hill.west) {
+    buildPond(c);
+    buildMeadowTrees(c);
+    buildWall(c);
+    buildThorns(c);
+  }
 }
 
 /** The stream's water: a ribbon along its line, level across, following the channel's fall along it, a little past the side hedges. */
@@ -208,20 +214,23 @@ function buildBracken({ scene, heights, fields, random, drawDistance }) {
   scene.add(drawDistance.add(tiledInstances(geo, material, matrices, { colors, name: 'bracken' }), 'roughDistance'));
 }
 
-/** Tussocks of long, coarse grass all over the pasture and along the lane's banks: rough grazing, never mown. */
+/** Tussocks of long, coarse grass all over the pasture, the two fields beside the lane and along the lane's banks: rough grazing, never mown. */
 function buildTussocks({ scene, heights, fields, random, drawDistance }) {
   const hill = fields.hill;
   const geo = frondGeometry(random, 9, 0.38, 0.025, 0.55);
-  const count = 16000;
+  const count = 20000;
   const matrices = [];
   const colors = [];
-  const lane = hill.laneRect;
-  const p = hill.pasture;
-  const laneArea = (lane.maxX - lane.minX) * (lane.maxZ - lane.minZ);
-  const pastureArea = (p.maxX - p.minX) * (p.maxZ - p.minZ);
+  // Where they grow and how thick (the fields beside the lane are grazed a little closer).
+  const areas = [{ r: hill.laneRect, k: 1, lane: true }, { r: hill.pasture, k: 1 }];
+  if (hill.west) areas.push({ r: hill.west, k: 0.5 }, { r: hill.east, k: 0.5 });
+  const weights = areas.map((a) => (a.r.maxX - a.r.minX) * (a.r.maxZ - a.r.minZ) * a.k);
+  const total = weights.reduce((a, b) => a + b, 0);
   for (let tries = 0; matrices.length < count && tries < count * 4; tries++) {
-    const inLane = random() < laneArea / (laneArea + pastureArea);
-    const r = inLane ? lane : p;
+    let pick = random() * total;
+    let i = 0;
+    while (i < areas.length - 1 && pick > weights[i]) pick -= weights[i++];
+    const { r, lane: inLane } = areas[i];
     const x = r.minX + random() * (r.maxX - r.minX);
     const z = r.minZ + random() * (r.maxZ - r.minZ);
     if (heights.puddleAt(x, z) > 0 || heights.mudAt(x, z) > 0.2 || hill.inWood(x, z, 2)) continue;
@@ -236,6 +245,131 @@ function buildTussocks({ scene, heights, fields, random, drawDistance }) {
   }
   const material = new THREE.MeshLambertMaterial({ vertexColors: true });
   scene.add(drawDistance.add(tiledInstances(geo, material, matrices, { colors, name: 'tussocks' }), 'roughDistance'));
+}
+
+/** The wet meadow's pond: its water a fan out to the edge of where the dished ground holds it, level, and reeds standing round the shore. */
+function buildPond({ scene, layout, heights, fields, random, drawDistance }) {
+  const hill = fields.hill;
+  const pond = hill.pond;
+  const level = heights.heightAt(pond.x, pond.z) + pond.water;
+  const pos = [pond.x, level, pond.z];
+  const index = [];
+  const edge = [];
+  const steps = 48;
+  for (let i = 0; i < steps; i++) {
+    const a = (i / steps) * Math.PI * 2;
+    // March out along this bearing to where the water runs out.
+    let r = 0;
+    while (r < 1.3 && hill.waterAt(pond.x + Math.cos(a) * r * pond.rx, pond.z + Math.sin(a) * r * pond.rz) > 0.05) r += 0.02;
+    edge.push(r);
+    pos.push(pond.x + Math.cos(a) * r * 0.97 * pond.rx, level, pond.z + Math.sin(a) * r * 0.97 * pond.rz);
+  }
+  for (let i = 0; i < steps; i++) index.push(0, 1 + ((i + 1) % steps), 1 + i);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setIndex(index);
+  geo.computeVertexNormals();
+  const mat = new THREE.MeshStandardMaterial({ color: 0x35332a, roughness: 0.12, transparent: true, opacity: 0.86, depthWrite: false });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.receiveShadow = true;
+  mesh.name = 'pond';
+  scene.add(mesh);
+
+  // Reeds: tall, stiff clumps just in and just out of the water's edge, thinner on the track's side so there is a way down to drink.
+  const reeds = frondGeometry(random, 6, 1.3, 0.035, 0.12);
+  const matrices = [];
+  const colors = [];
+  for (let tries = 0; matrices.length < 260 && tries < 4000; tries++) {
+    const i = Math.floor(random() * steps);
+    const a = (i / steps) * Math.PI * 2;
+    const r = edge[i] * (0.9 + random() * 0.45);
+    const x = pond.x + Math.cos(a) * r * pond.rx;
+    const z = pond.z + Math.sin(a) * r * pond.rz;
+    if (hill.lineDistance(layout.hill.paddocks.west.track, x, z) < 3) continue;
+    const s = 0.8 + random() * 0.6;
+    matrices.push(matrixAt(x, heights.heightAt(x, z) - 0.05, z, random() * 6.28, s, s * (0.8 + random() * 0.6), s));
+    colors.push(new THREE.Color().setHSL(0.17 + random() * 0.05, 0.3 + random() * 0.15, 0.3 + random() * 0.15));
+  }
+  const material = new THREE.MeshLambertMaterial({ vertexColors: true });
+  scene.add(drawDistance.add(tiledInstances(reeds, material, matrices, { colors, name: 'reeds' }), 'roughDistance'));
+}
+
+/** Oaks round the pond with hazel under them: the farm's models, trunks you cannot ride through. */
+function buildMeadowTrees({ scene, models, layout, heights, physics, RAPIER, random }) {
+  const west = layout.hill.paddocks.west;
+  const mats = [[], []];
+  for (const [x, z] of west.trees) {
+    const s = 1.1 + random() * 0.6;
+    mats[random() < 0.5 ? 0 : 1].push(matrixAt(x, heights.heightAt(x, z) - 0.15, z, random() * Math.PI * 2, s));
+    physics.createCollider(RAPIER.ColliderDesc.cylinder(2.5 * s, 0.32 * s).setTranslation(x, heights.heightAt(x, z) + 2.5 * s, z));
+  }
+  scene.add(instanceModel(models.treeA.scene, mats[0]));
+  scene.add(instanceModel(models.treeB.scene, mats[1]));
+  const bushSize = modelBounds(models.bush.scene).getSize(new THREE.Vector3());
+  const bushes = [];
+  for (const [tx, tz] of west.trees) {
+    if (random() < 0.4) continue;
+    const x = tx + (random() - 0.5) * 6;
+    const z = tz + (random() - 0.5) * 6;
+    bushes.push(matrixAt(x, heights.heightAt(x, z) - 0.2, z, random() * Math.PI * 2, (1.4 + random() * 1.2) / bushSize.y));
+  }
+  scene.add(instanceModel(models.bush.scene, bushes, { castShadow: false }));
+}
+
+/** The drystone wall across the sheep field (layout.hill.paddocks.east.wall): three courses of grey stones and a capping row, a gap in it, a collider along each side. */
+function buildWall({ scene, layout, heights, fixedBox, random }) {
+  const w = layout.hill.paddocks.east.wall;
+  if (!w) return;
+  const spans = [[w.from, w.gap.at - w.gap.half], [w.gap.at + w.gap.half, w.to]];
+  const stones = [];
+  for (const [a, b] of spans) {
+    for (let x = a; x < b; x += 0.45 + random() * 0.15) {
+      const ground = heights.heightAt(x, w.z);
+      for (let course = 0; course < 3; course++) {
+        const y = ground + 0.18 + course * 0.28;
+        stones.push(matrixAt(x + (random() - 0.5) * 0.1, y, w.z + (random() - 0.5) * 0.12, random() * 0.3, 0.3 + random() * 0.12, 0.15 + random() * 0.05, 0.22 + random() * 0.06));
+      }
+      // The top: flat capstones, set on edge now and then.
+      stones.push(matrixAt(x, ground + w.height - 0.02, w.z, (random() - 0.5) * 0.4, 0.34 + random() * 0.1, 0.12 + random() * 0.08, 0.26));
+    }
+    // A collider a few metres at a time, following the ground.
+    const pieces = Math.max(1, Math.ceil((b - a) / 3));
+    for (let k = 0; k < pieces; k++) {
+      const pa = a + ((b - a) * k) / pieces;
+      const pb = a + ((b - a) * (k + 1)) / pieces;
+      let top = -Infinity;
+      for (let x = pa; x <= pb + 1e-6; x += 1) top = Math.max(top, heights.heightAt(x, w.z));
+      fixedBox((pa + pb) / 2, top + w.height / 2 - 0.2, w.z, (pb - pa) / 2, w.height / 2 + 0.2, 0.25);
+    }
+  }
+  const mesh = new THREE.InstancedMesh(
+    new THREE.IcosahedronGeometry(1, 0),
+    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, flatShading: true }),
+    stones.length,
+  );
+  const col = new THREE.Color();
+  stones.forEach((m, i) => {
+    mesh.setMatrixAt(i, m);
+    col.setHSL(0.1 + random() * 0.05, 0.05 + random() * 0.08, 0.2 + random() * 0.14); // the material is lit white, so this reads as weathered grey
+    mesh.setColorAt(i, col);
+  });
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.name = 'drystone wall';
+  scene.add(mesh);
+}
+
+/** Thorn bushes in the sheep field: the farm's bush, big, with a trunk's worth of collider. */
+function buildThorns({ scene, models, layout, heights, physics, RAPIER, random }) {
+  const bushSize = modelBounds(models.bush.scene).getSize(new THREE.Vector3());
+  const mats = [];
+  for (const [x, z] of layout.hill.paddocks.east.thorns) {
+    const h = 2.4 + random() * 1.2;
+    const y = heights.heightAt(x, z);
+    mats.push(matrixAt(x, y - 0.25, z, random() * Math.PI * 2, h / bushSize.y));
+    physics.createCollider(RAPIER.ColliderDesc.cylinder(h * 0.4, h * 0.22).setTranslation(x, y + h * 0.4, z));
+  }
+  scene.add(instanceModel(models.bush.scene, mats));
 }
 
 /** The flat rock at the top of the pasture (layout.hill.viewpoint) where the girls sit with the flask: a squat grey boulder with a smaller one by it. */

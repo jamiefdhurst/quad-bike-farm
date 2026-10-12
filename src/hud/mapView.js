@@ -119,6 +119,14 @@ export class MapView {
       }
     }
 
+    // The wet meadow's pond.
+    if (f.pond) {
+      ctx.beginPath();
+      ctx.ellipse(...P(f.pond.x, f.pond.z), f.pond.rx * s, f.pond.rz * s, 0, 0, Math.PI * 2);
+      ctx.fillStyle = C.water;
+      ctx.fill();
+    }
+
     // The track: a brown loop, its bogs darker.
     const tp = f.track.points;
     ctx.lineJoin = 'round';

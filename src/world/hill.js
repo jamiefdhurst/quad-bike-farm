@@ -19,6 +19,49 @@ export function createHill(layout) {
   const top = layout.fieldHalf; // the grass field's south hedge, where the gate is
   const laneRect = { minX: lane.x - lane.hedgeOff, maxX: lane.x + lane.hedgeOff, minZ: top, maxZ: lane.toZ };
 
+  // The two fields either side of the lane, through gateways in its hedges: the wet meadow to the west, the sheep field to the east.
+  const pad = hill.paddocks ?? null;
+  const west = pad ? { minX: pad.west.minX, maxX: laneRect.minX, minZ: top, maxZ: lane.toZ } : null;
+  const east = pad ? { minX: laneRect.maxX, maxX: pad.east.maxX, minZ: top, maxZ: lane.toZ } : null;
+  // `side` is which way out of the lane the gateway faces (-1 west, 1 east); `x` is the hedge line it is in.
+  const gates = pad
+    ? [
+        { side: -1, x: laneRect.minX, z: pad.west.gate.z, half: pad.west.gate.width / 2 },
+        { side: 1, x: laneRect.maxX, z: pad.east.gate.z, half: pad.east.gate.width / 2 },
+      ]
+    : [];
+  const pond = pad?.west.pond ?? null;
+  const knolls = pad?.east.knolls ?? [];
+  /** How far (x, z) is through the pond, 0 at its middle and 1 at the edge of the ground it dishes. */
+  const pondR = (x, z) => (pond ? Math.hypot((x - pond.x) / pond.rx, (z - pond.z) / pond.rz) : Infinity);
+  /** Metres the pond is cut into the ground at (x, z). */
+  const pondCut = (x, z) => {
+    const r = pondR(x, z);
+    return r >= 1 ? 0 : pond.depth * (1 - smoothstep(0.3, 1, r));
+  };
+  /** Metres the sheep field's humps lift the ground at (x, z). */
+  const knollLift = (x, z) => {
+    let h = 0;
+    for (const k of knolls) {
+      const d = Math.hypot(x - k.x, z - k.z) / k.r;
+      if (d < 1) h += k.rise * (1 - smoothstep(0.15, 1, d));
+    }
+    return h;
+  };
+  /** Metres from (x, z) to the nearest point of a line through `pts` ([x, z] pairs). */
+  const lineDistance = (pts, x, z) => {
+    let best = Infinity;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [ax, az] = pts[i];
+      const [bx, bz] = pts[i + 1];
+      const dx = bx - ax;
+      const dz = bz - az;
+      const t = clamp(((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1), 0, 1);
+      best = Math.min(best, Math.hypot(x - (ax + dx * t), z - (az + dz * t)));
+    }
+    return best;
+  };
+
   /** The stream's middle line at x. */
   const streamZ = (x) => stream.z + stream.wander * Math.sin(x * 0.05 + 1.1);
   /** 1 at the ford (where the lane crosses), 0 along the rest of the stream. */
@@ -64,7 +107,14 @@ export function createHill(layout) {
   /** How far the lane is cut below the land at (x, z): all of it between its banks, nothing at the hedges, run out through the ford. */
   function sinkAt(x, z) {
     if (z < top || z > streamZ(x)) return 0;
-    const across = 1 - smoothstep(lane.halfWidth, lane.hedgeOff - 0.3, Math.abs(x - lane.x));
+    let across = 1 - smoothstep(lane.halfWidth, lane.hedgeOff - 0.3, Math.abs(x - lane.x));
+    // Through a gateway the bank is eased down into the field over `ramp` m, and the cut fades out along the lane a few metres either side.
+    for (const g of gates) {
+      const out = (x - lane.x) * g.side;
+      if (out <= 0) continue;
+      const along = 1 - smoothstep(g.half, g.half + 5, Math.abs(z - g.z));
+      if (along > 0) across = Math.max(across, along * (1 - smoothstep(lane.halfWidth, lane.hedgeOff + pad.ramp, out)));
+    }
     return across > 0 ? across * Math.max(0, land(x, z) - bedAt(z)) : 0;
   }
 
@@ -84,8 +134,10 @@ export function createHill(layout) {
     let h = land(x, z) + climb(x, z);
     h -= sinkAt(x, z);
     h -= channelAt(x, z);
+    h -= pondCut(x, z);
+    h += knollLift(x, z);
     // Tussocks and old anthills: rough ground, kept off the lane and out of the stream.
-    const rough = inPasture(x, z) ? smoothstep(1, 4, Math.abs(z - streamZ(x)) - halfAt(x)) : 0;
+    const rough = inPasture(x, z) || inPaddock(x, z) ? smoothstep(1, 4, Math.abs(z - streamZ(x)) - halfAt(x)) : 0;
     if (rough > 0) h += rough * 0.09 * Math.sin(x * 0.93 + z * 0.31) * Math.sin(z * 0.81 - x * 0.27);
     return h;
   }
@@ -96,20 +148,46 @@ export function createHill(layout) {
    */
   function weight(x, z) {
     if (inRect(farm, x, z)) return 0;
-    return Math.max(1 - smoothstep(0, 40, outside(pasture, x, z)), 1 - smoothstep(0, 30, outside(laneRect, x, z)));
+    let w = Math.max(1 - smoothstep(0, 40, outside(pasture, x, z)), 1 - smoothstep(0, 30, outside(laneRect, x, z)));
+    if (pad) w = Math.max(w, 1 - smoothstep(0, 40, outside(west, x, z)), 1 - smoothstep(0, 40, outside(east, x, z)));
+    return w;
   }
 
   /** 0..1 how much water stands at (x, z): the stream, its edges where the channel is cut deeper than the water stands. */
   function waterAt(x, z) {
-    if (x < pasture.minX - 2 || x > pasture.maxX + 2) return 0;
-    const cut = channelAt(x, z);
-    const water = waterDepthAt(x);
-    const dry = depthAt(x) - water; // the cut above the water's surface
-    return clamp((cut - dry) / (water * 0.5), 0, 1);
+    let w = 0;
+    if (x >= pasture.minX - 2 && x <= pasture.maxX + 2) {
+      const cut = channelAt(x, z);
+      const water = waterDepthAt(x);
+      const dry = depthAt(x) - water; // the cut above the water's surface
+      w = clamp((cut - dry) / (water * 0.5), 0, 1);
+    }
+    if (pond) {
+      const dry = pond.depth - pond.water;
+      w = Math.max(w, clamp((pondCut(x, z) - dry) / (pond.water * 0.5), 0, 1));
+    }
+    return w;
   }
 
   /** 0..1 mud on the ford's approaches: churned by every quad and tractor that's crossed it. */
   function mudAt(x, z) {
+    return Math.max(laneMud(x, z), paddockMud(x, z));
+  }
+
+  /** Mud in the two fields: the pond's shore, the track in to it, and a worn patch each side of the gateways in the lane's hedges. */
+  function paddockMud(x, z) {
+    if (!pad) return 0;
+    let m = 0;
+    if (pond) m = 0.8 * (1 - smoothstep(1, 1.3, pondR(x, z)));
+    if (pad.west.track) m = Math.max(m, 0.75 * (1 - smoothstep(0.9, 2.2, lineDistance(pad.west.track, x, z))));
+    for (const g of gates) {
+      const out = (x - lane.x) * g.side;
+      if (out > 0) m = Math.max(m, 0.6 * (1 - smoothstep(1.5, 6, Math.hypot(out - lane.hedgeOff, z - g.z))));
+    }
+    return m;
+  }
+
+  function laneMud(x, z) {
     const onLane = 1 - smoothstep(lane.halfWidth, lane.halfWidth + 3, Math.abs(x - lane.x));
     if (onLane <= 0) return 0;
     const fromWater = Math.abs(z - streamZ(x)) - halfAt(x) * 0.6;
@@ -118,6 +196,9 @@ export function createHill(layout) {
 
   const inPasture = (x, z, margin = 0) => inRect(pasture, x, z, margin);
   const inLane = (x, z, margin = 0) => inRect(laneRect, x, z, margin);
+  const inWest = (x, z, margin = 0) => !!west && inRect(west, x, z, margin);
+  const inEast = (x, z, margin = 0) => !!east && inRect(east, x, z, margin);
+  const inPaddock = (x, z, margin = 0) => inWest(x, z, margin) || inEast(x, z, margin);
   const inWood = (x, z, margin = 0) => inRect(hill.wood, x, z, margin);
 
   /** The climb's slope up the hill at (x, z), rise over run along z: the banks' steepness, without the rough. */
@@ -147,10 +228,10 @@ export function createHill(layout) {
   /** Where a girl following you pulls up to wait when you go on up the hill: just through the ford, off the lane's line. */
   const waitSpot = { x: lane.x + 3, z: farEdge(lane.x) + 2.5 };
 
-  const outsideHill = (x, z) => Math.min(outside(pasture, x, z), outside(laneRect, x, z));
+  const outsideHill = (x, z) => Math.min(outside(pasture, x, z), outside(laneRect, x, z), west ? outside(west, x, z) : Infinity, east ? outside(east, x, z) : Infinity);
   return {
-    lane, pasture, stream, laneRect, top, total, waitSpot,
+    lane, pasture, stream, laneRect, west, east, gates, pond, knolls, top, total, waitSpot,
     streamZ, halfAt, depthAt, waterDepthAt, farEdge, climb, climbSlope, sinkAt, channelAt, profile, weight,
-    waterAt, mudAt, brackenAt, gorseAt, inPasture, inLane, inWood, pastFoot, outside: outsideHill,
+    waterAt, mudAt, pondCut, knollLift, lineDistance, brackenAt, gorseAt, inPasture, inLane, inWest, inEast, inPaddock, inWood, pastFoot, outside: outsideHill,
   };
 }

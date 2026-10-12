@@ -55,6 +55,8 @@ export function mapBounds(fields, margin = MAP_MARGIN) {
   let r = { ...fields.farm };
   if (fields.areas.lane) r = union(r, fields.areas.lane);
   if (fields.areas.hill) r = union(r, fields.areas.hill);
+  if (fields.areas.meadow) r = union(r, fields.areas.meadow);
+  if (fields.areas.sheep) r = union(r, fields.areas.sheep);
   return { minX: r.minX - margin, maxX: r.maxX + margin, minZ: r.minZ - margin, maxZ: r.maxZ + margin };
 }
 
@@ -121,7 +123,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   const A = fields.areas;
   const hill = fields.hill;
   const crop = (k) => layout.stubbleFields?.[k]?.crop;
-  const fieldFill = { grass: C.grass, road: C.verge, end: C.verge, north: crop('north') === 'barley' ? C.barley : C.wheat, south: crop('south') === 'barley' ? C.barley : C.wheat, lane: C.lane, hill: C.pasture };
+  const fieldFill = { grass: C.grass, road: C.verge, end: C.verge, north: crop('north') === 'barley' ? C.barley : C.wheat, south: crop('south') === 'barley' ? C.barley : C.wheat, lane: C.lane, hill: C.pasture, meadow: C.pasture, sheep: C.pasture };
   const areas = Object.entries(A).map(([kind, rect]) => ({ kind, rect, fill: fieldFill[kind] ?? C.grass }));
 
   const hedges = [];
@@ -140,6 +142,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
     ford = { x: hill.lane.x, z: hill.streamZ(hill.lane.x), half: hill.halfAt(hill.lane.x) };
   }
 
+  const pond = hill?.pond ?? null;
   const road = layout.road ? { x1: layout.road.fromX, x2: layout.road.toX, z: layout.road.z, half: layout.road.halfWidth, pad: layout.road.pad ? { x: layout.road.pad.x, z: layout.road.z, r: layout.road.pad.radius } : null } : null;
 
   const bogs = (layout.bogs ?? []).map((b) => {
@@ -182,6 +185,8 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   field('Grass field', 0, -68);
   if (A.north) field(`${cap(crop('north') ?? 'stubble')} stubble`, (A.north.minX + A.north.maxX) / 2, A.north.minZ + 20);
   if (A.south) field(`${cap(crop('south') ?? 'stubble')} stubble`, (A.south.minX + A.south.maxX) / 2 + 10, A.south.maxZ - 14);
+  if (A.meadow) field('Wet meadow', (A.meadow.minX + A.meadow.maxX) / 2 - 10, A.meadow.minZ + 10);
+  if (A.sheep) field('Sheep field', (A.sheep.minX + A.sheep.maxX) / 2 + 6, A.sheep.minZ + 8);
   if (hill) field('Hill pasture', (hill.pasture.minX + hill.pasture.maxX) / 2 + 12, hill.pasture.maxZ - 12);
   if (b) place('Barn', b.x - 5, b.z + b.halfZ + 6); // south-west of it, clear of the quads parked in the yard (which has no name: it's crowded)
   if (paddock) place('Paddock', p.x, p.z, p.half + 4);
@@ -205,7 +210,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   const key = { minX: (A.hill?.maxX ?? fields.farm.minX) + 10, maxX: bounds.maxX - 4, minZ: fields.farm.maxZ + 8, maxZ: bounds.maxZ - 4 };
 
   return {
-    bounds, key, areas, hedges, gates, stream, ford, road, track: { points: track.points, half: layout.trackHalfWidth }, bogs, dragStrip, ramp,
+    bounds, key, areas, hedges, gates, stream, ford, pond, road, track: { points: track.points, half: layout.trackHalfWidth }, bogs, dragStrip, ramp,
     buildings, small, muckHeap, paddock, yard, wood, labels,
   };
 }

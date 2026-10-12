@@ -244,6 +244,8 @@ function paintHill(ctx, toPx, s, fields, random) {
     }
   }
 
+  if (hill.west) paintPaddocks(ctx, toPx, s, hill, random);
+
   // The stream's bed: silt along it, the ford's gravel pale and stony.
   for (let x = p.minX - 3; x < p.maxX + 3; x += 0.5) {
     const sz = hill.streamZ(x);
@@ -265,6 +267,57 @@ function paintHill(ctx, toPx, s, fields, random) {
     ctx.beginPath();
     ctx.ellipse(px, pz, (0.05 + random() * 0.1) * s, (0.04 + random() * 0.08) * s, random() * Math.PI, 0, Math.PI * 2);
     ctx.fill();
+  }
+}
+
+/**
+ * The two fields beside the lane: rough grazing like the pasture's but greener, the wet meadow's sedgy patches and the pond's silt, and the mud
+ * of the track in to the water and round the gateways (hill.mudAt).
+ */
+function paintPaddocks(ctx, toPx, s, hill, random) {
+  const cell = (x, z, w, h, color) => {
+    const [px, pz] = toPx(x, z);
+    ctx.fillStyle = color;
+    ctx.fillRect(px, pz, w * s, h * s);
+  };
+  for (const r of [hill.west, hill.east]) {
+    for (let x = r.minX; x < r.maxX; x += 1) {
+      for (let z = r.minZ; z < r.maxZ; z += 1) {
+        const v = random();
+        cell(x, z, 1, 1, `rgba(${110 + v * 30},${124 + v * 30},${56 + v * 20},0.2)`);
+        // Mud in soft daubs, so the edge of a track or a shore is not a row of squares.
+        for (let k = 0; k < 2; k++) {
+          const mx = x + random();
+          const mz = z + random();
+          const m = hill.mudAt(mx, mz);
+          if (m < 0.1) continue;
+          const [px, pz] = toPx(mx, mz);
+          ctx.fillStyle = `rgba(${62 + v * 14},${46 + v * 10},${30 + v * 8},${Math.min(0.85, m * 0.9)})`;
+          ctx.beginPath();
+          ctx.ellipse(px, pz, (0.5 + random() * 0.4) * s, (0.5 + random() * 0.4) * s, random() * Math.PI, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+    for (let i = 0; i < 3000; i++) {
+      const x = r.minX + random() * (r.maxX - r.minX);
+      const z = r.minZ + random() * (r.maxZ - r.minZ);
+      const [px, pz] = toPx(x, z);
+      ctx.fillStyle = random() < 0.5 ? 'rgba(45,62,28,0.32)' : 'rgba(165,160,95,0.28)';
+      ctx.beginPath();
+      ctx.ellipse(px, pz, (0.2 + random() * 0.3) * s, (0.15 + random() * 0.2) * s, random() * Math.PI, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  // Rushes in dark patches round the pond, the silt of its bed under the water.
+  const pond = hill.pond;
+  for (let x = pond.x - pond.rx * 1.4; x < pond.x + pond.rx * 1.4; x += 0.5) {
+    for (let z = pond.z - pond.rz * 1.4; z < pond.z + pond.rz * 1.4; z += 0.5) {
+      const r = Math.hypot((x - pond.x) / pond.rx, (z - pond.z) / pond.rz);
+      const v = random();
+      if (r < 0.75) cell(x, z, 0.5, 0.5, `rgba(${46 + v * 18},${40 + v * 14},${30 + v * 8},0.95)`);
+      else if (r < 1.3 && v < 0.5) cell(x, z, 0.5, 0.5, `rgba(${52 + v * 20},${70 + v * 20},${34},${0.5 * (1.3 - r)})`);
+    }
   }
 }
 

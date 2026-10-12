@@ -70,6 +70,8 @@ export function createFields(layout) {
   if (hill) {
     areas.lane = { ...hill.laneRect, minZ: F };
     areas.hill = { ...hill.pasture };
+    if (hill.west) areas.meadow = { ...hill.west };
+    if (hill.east) areas.sheep = { ...hill.east };
   }
   // On foot, a girl wandering about the hill pasture keeps to the bottom of it, over the stream from the lane: this rect, less the 6 m margin
   // clampToArea is given, is the strip just past the water and short of the foot, 8 m either side of the lane.
@@ -84,10 +86,10 @@ export function createFields(layout) {
     wanderAreas.hill = { minX: hill.lane.x - 14, maxX: hill.lane.x + 14, minZ: lo - 6, maxZ: Math.max(lo, hi) + 6 };
   }
 
-  /** Which field (x, z) is in: 'grass', 'road', 'end', 'north', 'south', 'lane', 'hill', or 'out' beyond the hedges. */
+  /** Which field (x, z) is in: 'grass', 'road', 'end', 'north', 'south', 'lane', 'hill', 'meadow' (west of the lane), 'sheep' (east of it), or 'out' beyond the hedges. */
   function areaOf(x, z) {
     if (inRect(grass, x, z)) return 'grass';
-    for (const k of ['road', 'end', 'north', 'south', 'lane', 'hill']) if (areas[k] && inRect(areas[k], x, z)) return k;
+    for (const k of ['road', 'end', 'north', 'south', 'lane', 'hill', 'meadow', 'sheep']) if (areas[k] && inRect(areas[k], x, z)) return k;
     return 'out';
   }
 
@@ -114,7 +116,14 @@ export function createFields(layout) {
     // The lane's tall hedges on top of its banks, from the gate to the pasture, and the pasture's own all round, open where the lane comes in.
     const { lane, pasture: p } = hill;
     const lx = [lane.x - lane.hedgeOff, lane.x + lane.hedgeOff];
-    for (const x of lx) hedges.push({ x1: x, z1: F, x2: x, z2: lane.toZ, gaps: [], height: lane.hedgeHeight });
+    // Each has a gateway into the field beside the lane, if there is one, a little wider than the gap the ground is eased down to.
+    for (const x of lx) {
+      const g = hill.gates.find((o) => o.x === x);
+      hedges.push({ x1: x, z1: F, x2: x, z2: lane.toZ, gaps: g ? [{ at: g.z, half: g.half }] : [], height: lane.hedgeHeight });
+    }
+    // The two fields' outer hedges: a short piece of the grass field's south hedge to the west of it, and a side hedge down to the pasture's.
+    if (hill.west) hedges.push({ x1: hill.west.minX, z1: F, x2: -F, z2: F, gaps: [] }, { x1: hill.west.minX, z1: F, x2: hill.west.minX, z2: lane.toZ, gaps: [] });
+    if (hill.east) hedges.push({ x1: hill.east.maxX, z1: F, x2: hill.east.maxX, z2: lane.toZ, gaps: [] });
     hedges.push(
       { x1: p.minX, z1: p.minZ, x2: p.maxX, z2: p.minZ, gaps: [{ at: lane.x, half: lane.hedgeOff }] },
       { x1: p.minX, z1: p.maxZ, x2: p.maxX, z2: p.maxZ, gaps: [] },
@@ -179,6 +188,11 @@ export function createFields(layout) {
   const link = (a, pa, b, pb) => gateways.push({ a, pa, b, pb });
   link('grass', { x: gate.x, z: F - 2.5 }, hill ? 'lane' : 'out', { x: gate.x, z: F + 2.5 });
   if (hill) link('lane', { x: hill.lane.x, z: hill.lane.toZ - 2 }, 'hill', { x: hill.lane.x, z: hill.lane.toZ + 2 });
+  if (hill) {
+    for (const g of hill.gates) {
+      link('lane', { x: g.x - g.side * 2, z: g.z }, g.side < 0 ? 'meadow' : 'sheep', { x: g.x + g.side * 2.5, z: g.z });
+    }
+  }
   if (road) {
     link('grass', { x: F - 2.5, z: road.z }, 'road', { x: F + 2.5, z: road.z });
     for (const x of road.gaps.north) link('road', { x, z: corridor.lo + 1.5 }, 'north', { x, z: corridor.lo - 2.5 });
