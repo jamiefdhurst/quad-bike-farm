@@ -130,6 +130,9 @@ export function girlActions(g) {
       ['cheer', '% cheers'],
       ['turnAway', '% turns away from smoke'],
       ['wave', '% waves at someone going by'],
+      ['pose', '% poses for the camera'],
+      ['face', '% pulls a face for the camera'],
+      ['palm', '% puts a hand up: put that away'],
     ].map(([type, label]) => ({
       verb: type.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`),
       label,

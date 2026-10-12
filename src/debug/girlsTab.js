@@ -174,6 +174,8 @@ export function buildGirlsTab(d) {
   button(both, 'Send a vehicle along the lane', () => g.trafficHost.debugPass());
   button(both, 'Send the post van', () => g.trafficHost.debugVisit('post') || g.hud.toast('A visitor is already about'));
   button(both, 'Send a neighbour', () => g.trafficHost.debugVisit('neighbour') || g.hud.toast('A visitor is already about'));
+  button(both, 'Take a photo now', () => g.photos.press() || g.hud.toast('The camera is not ready'));
+  button(both, 'Take all the photos down', () => g.photos.clear());
   button(both, 'Swing the south gate', () => g.trafficHost.toggle(g.trafficHost.gate('south')));
   button(both, 'Swing the big gate', () => g.trafficHost.toggle(g.trafficHost.gate('road')));
   button(both, 'Fill the tipping trailer with muck', () => g.debugFillMuck());

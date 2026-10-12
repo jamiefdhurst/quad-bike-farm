@@ -41,6 +41,7 @@ import { AMY_REVOFF_LINES } from './revOffLines.js';
 import { AMY_DROWNOUT_LINES } from './drownOutLines.js';
 import { AMY_HORN_LINES } from './hornLines.js';
 import { AMY_TRAFFIC_LINES } from './trafficLines.js';
+import { AMY_PHOTO_LINES } from './photoLines.js';
 import { AMY_FENCE_LINES } from './fenceLines.js';
 import { AMY_TRACTOR_LINES } from './tractorLines.js';
 import { AMY_HAYRIDE_LINES } from './hayRideLines.js';
@@ -1490,6 +1491,8 @@ export const VOICE_LINES = {
   ...AMY_HORN_LINES,
   // The lane and the visitors (trafficLines.js).
   ...AMY_TRAFFIC_LINES,
+  // The camera and the corkboard (photoLines.js).
+  ...AMY_PHOTO_LINES,
   // The electric fence on the hill (fenceLines.js).
   ...AMY_FENCE_LINES,
   // The tractor: the key that doesn't stop it, waiting for the glow plugs, and it catching (tractorLines.js).

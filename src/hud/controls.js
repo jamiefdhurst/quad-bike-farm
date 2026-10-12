@@ -7,6 +7,7 @@ export const CONTROLS = [
     lines: [
       `<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move, mouse to look, <kbd>Shift</kbd> jog`,
       `<kbd>E</kbd> interact with what you're looking at`,
+      `<kbd>5</kbd> raise the camera (on foot or on a quad): the girls in the picture pose, pull a face or tell you to put it away, and the shot is pinned on the corkboard in the barn (<kbd>E</kbd> at the board for a closer look)`,
       `At a quad: <kbd>K</kbd> <kbd>R</kbd> <kbd>Q</kbd> <kbd>Z</kbd> <kbd>F</kbd> work its engine, <kbd>Y</kbd> pull the dipstick on a four-stroke (hold it by the oil bottle to top up, or away from it to let out too much), <kbd>B</kbd> sit on the back, hold <kbd>V</kbd> to push it (the yellow, orange and kids' quads have no reverse)`,
     ],
   },

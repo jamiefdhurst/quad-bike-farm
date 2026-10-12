@@ -57,6 +57,9 @@ export const DEFAULT_COMPANION_PARAMS = {
   reactStartleChance: 0.7, // a pheasant bursting out of the hedge near her: the chance she jumps
   reactCheerChance: 0.6, // someone landing a jump she can see: the chance she cheers
   reactWaveChance: 0.4, // someone going by on the lane or coming in at the gate: the chance she waves
+  photoPose: 1, // when you raise the camera: how likely she is to pose nicely (against her face and palm weights)
+  photoFace: 0.3, // ... to pull a face
+  photoPalm: 0.2, // ... to put a hand up and tell you to put it away
   reactCheerArms: 0.7, // how she cheers: under 0.5 a clap, above it arms up (and how high)
   reactFlinch: 1, // how big her flinch is
 
@@ -343,6 +346,9 @@ export const COMPANION_PARAM_RANGES = {
   reactStartleChance: [0, 1, 0.05],
   reactCheerChance: [0, 1, 0.05],
   reactWaveChance: [0, 1, 0.05],
+  photoPose: [0, 2, 0.05],
+  photoFace: [0, 2, 0.05],
+  photoPalm: [0, 2, 0.05],
   reactCheerArms: [0, 1, 0.05],
   reactFlinch: [0, 2, 0.05],
   fidgetEveryMin: [0.5, 30, 0.5],

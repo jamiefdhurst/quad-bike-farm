@@ -276,6 +276,12 @@ export function buildGameTree(g, host) {
     southGate: flag(() => g.trafficHost.gate('south').isOpen, (v) => g.trafficHost.gate('south').set(!!v), 'the south gate onto the green lane: true is open'),
     bigGate: flag(() => g.trafficHost.gate('road').isOpen, (v) => g.trafficHost.gate('road').set(!!v), 'the big gate in the east hedge: true is open'),
   }), 'the public lane, the visitors and the two gates');
+  const photos = group(() => ({
+    now: text(() => g.photos.describe(), 'the photos pinned on the barn corkboard and the last one taken'),
+    count: ro(() => g.photos.wall.photos.length, '', 'photos pinned'),
+    take: flag(() => false, (v) => v && g.photos.press(), 'set to true: raise the camera now'),
+    clear: flag(() => false, (v) => v && g.photos.clear(), 'set to true: take every photo down'),
+  }), 'the camera and the barn corkboard');
   const audio = group(() => ({ sound: flag(() => !g.audioHub.params.muted, (v) => (g.audioHub.params.muted = !v), 'all game sound') }));
 
   return group(() => ({
@@ -288,6 +294,7 @@ export function buildGameTree(g, host) {
     wildlife,
     fence,
     lane,
+    photos,
     audio,
     tune: tuningTree(),
   }));

@@ -115,6 +115,26 @@ export const reactingMethods = {
       solveTwoBone(b.RightArm, b.RightForeArm, b.RightHand, _target, _pole, Math.min(1, k));
       return;
     }
+    if (r.type === 'pose' || r.type === 'palm') {
+      // One hand: on her right hip with her head tilted (pose), or flat up in front of her face (palm). The left hangs as it was.
+      const root = this.root;
+      root.updateMatrixWorld(true);
+      const head = root.worldToLocal(b.Head.getWorldPosition(_head));
+      const shoulder = root.worldToLocal(b.RightArm.getWorldPosition(_shoulder));
+      if (r.type === 'pose') {
+        _target.set(shoulder.x - 0.1, shoulder.y - 0.42, shoulder.z + 0.04);
+        _pole.set(shoulder.x - 0.55, shoulder.y - 0.3, shoulder.z - 0.1);
+        rig.rotateAboutRootAxis(b.Neck, AXIS_Z, 0.14 * k);
+      } else {
+        _target.set(shoulder.x + 0.2, head.y - 0.03, head.z + 0.26 + 0.03 * Math.sin(r.t * 8));
+        _pole.set(shoulder.x - 0.3, shoulder.y - 0.25, shoulder.z + 0.1);
+      }
+      root.localToWorld(_target);
+      root.localToWorld(_pole);
+      solveTwoBone(b.RightArm, b.RightForeArm, b.RightHand, _target, _pole, Math.min(1, k));
+      return;
+    }
+    if (r.type === 'face') rig.rotateAboutRootAxis(b.Neck, AXIS_Z, 0.18 * k * Math.sin(r.t * 6)); // head wobbling, hands in below
     // The rest place both hands, in her own frame: x to her left, y up, z forward. The targets are the wrists, and the fingers reach
     // on past them, so a hand meant to be at her middle is aimed short of it or the arms cross.
     const root = this.root;
@@ -129,6 +149,10 @@ export const reactingMethods = {
         // Hands up in front of her chest, palms out, as if to fend it off.
         _target.set(shoulder.x - s * 0.02, shoulder.y - 0.04, shoulder.z + 0.3);
         _pole.set(shoulder.x + s * 0.25, shoulder.y - 0.45, shoulder.z);
+      } else if (r.type === 'face') {
+        // Hands out beside her cheeks, wiggling.
+        _target.set(head.x + s * (0.2 + 0.03 * swing), head.y - 0.04 + 0.03 * swing, head.z + 0.06);
+        _pole.set(shoulder.x + s * 0.35, shoulder.y - 0.2, shoulder.z + 0.1);
       } else if (r.type === 'coverEars') {
         _target.set(head.x + s * 0.12, head.y + 0.05, head.z + 0.03);
         _pole.set(shoulder.x + s * 0.3, shoulder.y - 0.2, shoulder.z + 0.3);

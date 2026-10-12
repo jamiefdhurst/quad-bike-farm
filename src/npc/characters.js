@@ -37,6 +37,9 @@ export const CHARACTERS = [
       reactStartleChance: 0.95, // a pheasant out of the hedge makes her jump
       reactCheerChance: 0.45,
       reactWaveChance: 0.25, // a nod and a small wave, now and then
+      photoPose: 1, // poses neatly
+      photoFace: 0.12,
+      photoPalm: 0.4, // and says put that away, if she is not in the mood
       reactCheerArms: 0.2,
       needColdRise: 0.032, // feels the cold sooner (needs.js)
     },
@@ -65,6 +68,9 @@ export const CHARACTERS = [
       reactStartleChance: 0.4, // laughs at the pheasant, mostly
       reactCheerChance: 0.95,
       reactWaveChance: 0.85, // waves at anyone going by
+      photoPose: 0.6,
+      photoFace: 1, // pulls faces
+      photoPalm: 0.08,
       reactCheerArms: 1,
       reactFlinch: 0.7,
       needThrillRise: 0.003, // gets restless for a bit of excitement sooner (needs.js)

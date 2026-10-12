@@ -937,6 +937,19 @@ export const FAQ_SECTIONS = [
         tip: 'The post van and neighbours come in at the big gate. Pull over for them.',
       },
       {
+        q: 'How do I take a photo?',
+        a: `Press 5, on foot or on a quad. The camera comes up, any girl in front of you reacts, and a moment later the shutter goes. The shot is pinned on the corkboard on the barn's back wall, south of the chalkboards. It throws away a shot of nothing but sky or a blank wall, and there is a short wait between shots.`,
+        tip: 'Press 5 to take a photo. They get pinned on the corkboard in the barn.',
+      },
+      {
+        q: 'Why did she put her hand up and tell me to put the camera away?',
+        a: `Amy does that when she is feeling neglected, and now and then anyway; Jess does it rarely. Spend some time with her and she will pose instead. Jess is the one who pulls faces. The shot still counts, with a hand in it.`,
+      },
+      {
+        q: 'Where do my photos go, and how many stay?',
+        a: `On the corkboard in the barn, each at a random spot and a little crooked, with its day. Look at the board and press E for a bigger view that says when each was taken and who is in it. The last twelve stay up and the oldest comes down to make room. They are kept from one day to the next, with the rest of the farm.`,
+      },
+      {
         q: 'Why is the big gate open?',
         a: `Either you left it, or a visitor did: they shut it behind them most of the time, but about one visit in four they leave it open and Amy or Jess says so. Look at it and press E to shut it.`,
       },

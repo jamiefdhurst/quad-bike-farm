@@ -1,0 +1,72 @@
+/* The corkboard's close view (photoBoard.js): the prints laid out on a card low on the screen, like the chalkboard's. */
+.photoboard {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 8%;
+  z-index: 25;
+  display: none;
+  pointer-events: none;
+  font-size: 16px;
+}
+
+.photoboard-open .prompt {
+  display: none;
+}
+
+.pb-card {
+  width: min(720px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 14px 18px;
+  background: rgba(176, 134, 88, 0.97);
+  color: #2b2118;
+  border: 4px solid #5a3f28;
+  border-radius: 6px;
+  font-family: "Comic Sans MS", "Segoe Print", cursive;
+}
+
+.pb-title {
+  font-weight: 700;
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.pb-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-height: 46vh;
+  overflow: hidden;
+}
+
+.pb-print {
+  width: 150px;
+  padding: 5px 5px 4px;
+  background: #f6f2e8;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+  font-size: 11px;
+  text-align: center;
+}
+
+.pb-print img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1.6;
+  object-fit: cover;
+  margin-bottom: 3px;
+}
+
+.pb-keys {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+#photo-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}

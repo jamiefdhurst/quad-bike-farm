@@ -214,6 +214,7 @@ import { weatherModel, buildTarp } from './vehicle/rustyLook.js';
 import { Notebook } from './workshop/notebook.js';
 import { MuckLoad, DEFAULT_MUCK_PARAMS, MUCK_PARAM_RANGES, JobBoard, DEFAULT_JOB_BOARD_PARAMS, JOB_BOARD_PARAM_RANGES, availableJobs } from './world/farmJobs.js';
 import { JobBoardView } from './world/jobBoard.js';
+import { PhotoHost } from './photos/photoHost.js';
 import { WallCalendar } from './world/wallCalendar.js';
 import { MuckView } from './world/muckView.js';
 import { shortName } from './workshop/logbook.js';
@@ -1153,6 +1154,7 @@ export class Game {
     this.jobBoard = new JobBoard({ ids: availableJobs(this.world.layout), random: createRandom(this.seed ^ 0x7ab0), params: this.jobBoardParams });
     this.jobBoardView = new JobBoardView({ game: this, board: this.jobBoard, records: this.records });
     this.wallCalendar = new WallCalendar({ game: this, day: this.farm.day }); // between the two boards: the days crossed off
+    this.photos = new PhotoHost(this); // the camera key and the corkboard beside the chalkboards (photos/)
     this.setUpEndOfDay();
     registerTuning('Muck job', this.muckParams, MUCK_PARAM_RANGES);
     registerTuning('Job board', this.jobBoardParams, JOB_BOARD_PARAM_RANGES);
@@ -1167,6 +1169,13 @@ export class Game {
       isAvailable: () => !this.handsFull && !this.player.isRiding,
       prompt: () => this.jobBoardView.recordsPrompt(),
       interact: () => this.jobBoardView.open(),
+    });
+
+    this.interaction.add({
+      target: this.photos.view.proxy,
+      isAvailable: () => !this.handsFull && !this.player.isRiding,
+      prompt: () => this.photos.view.prompt(),
+      interact: () => this.photos.openBoard(),
     });
 
     // The hayloft: the ladder up and down, and the hay to hide in.
@@ -1454,7 +1463,7 @@ export class Game {
     if (this.menu.isOpen) return { mode: 'menu', menu: 'wheel' };
     if (this.workshop.isOpen) return { mode: 'menu', menu: 'workshop' };
     if (this.bench.isOpen) return { mode: 'menu', menu: 'bench' };
-    if (this.notebook.isOpen || this.jobBoardView.isOpen) return { mode: 'menu', menu: 'notebook' };
+    if (this.notebook.isOpen || this.jobBoardView.isOpen || this.photos.view.isOpen) return { mode: 'menu', menu: 'notebook' };
     if (this.player.isRiding) {
       const q = this.riddenUnit?.quad;
       return { mode: 'ride', seat: this.player.seat, bucketOpen, gear: q?.manual ? q.drivetrain.gear : null, gears: q?.gearbox?.gears ?? 0 };
@@ -2746,6 +2755,8 @@ export class Game {
     this.achievements.restore(save.bucket);
     this.records.restore(save.records);
     this.jobBoardView.refresh();
+    this.photos.wall.restore(save.photos);
+    this.photos.view.refresh();
   }
 
   /** Everything the farm keeps, as plain data (farm/farmSave.js writes it). */
@@ -2764,6 +2775,7 @@ export class Game {
       girls: captureGirls(this),
       bucket: this.achievements.toJSON(),
       records: this.records.toJSON(),
+      photos: this.photos.wall.toJSON(),
       logbook: this.notebook.book.toJSON(),
     };
   }
@@ -7272,6 +7284,15 @@ export class Game {
       this.hud.toast(this.audioHub.params.muted ? 'Sound off' : 'Sound on', 1.2);
     }
 
+    // 5: raise the camera (photos/photoHost.js), unless you are in a menu, up the ladder or hidden in the hay.
+    if (
+      input.wasPressed('Digit5') &&
+      !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.jobBoardView.isOpen || this.photos.view.isOpen) &&
+      !(this.climb || this.tryst || this.hiding.active)
+    ) {
+      this.photos.press();
+    }
+
     for (const unit of this.units) {
       unit.quad.setRemote(null);
       unit.quad.pushDir = 0;
@@ -7304,6 +7325,9 @@ export class Game {
     } else if (this.jobBoardView.isOpen) {
       this.interaction.clear();
       this.jobBoardView.handleInput(input);
+    } else if (this.photos.view.isOpen) {
+      this.interaction.clear();
+      this.photos.view.handleInput(input);
     } else if (this.climb || this.tryst) {
       this.interaction.clear();
       input.takeWheelSteps();
@@ -7497,8 +7521,10 @@ export class Game {
     this.updateWeather(dt);
     this.updateAchievements(dt, ridden);
     this.updateHud(dt);
+    this.photos.update(dt);
 
     this.renderer.render(this.scene, this.camera);
+    this.photos.afterRender();
     input.endFrame();
     this.firstFrameDone = true;
     this.frameStats.record(started / 1000, performance.now() - started);

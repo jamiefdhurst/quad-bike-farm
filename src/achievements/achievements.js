@@ -133,6 +133,8 @@ export const ACHIEVEMENTS = [
   { id: 'muck', group: 'Jobs', name: 'Muck spreader', hint: 'Fork muck into the little trailer and spread it on the stubble', points: 2, test: (s) => s.n('muckSpread') >= 1 },
   { id: 'job-board', group: 'Jobs', name: 'Board cleared', hint: 'Do everything on the chalkboard on the barn door', points: 2, test: (s) => s.n('boardCleared') >= 1 },
   { id: 'flask', group: 'Jobs', name: 'Tea at the top', hint: 'Sit on the rock at the top of the hill and share a flask of tea with a girl', points: 2, test: (s) => s.n('flask') >= 1 },
+  { id: 'say-cheese', group: 'Jobs', name: 'Say cheese', hint: 'Take a photo with a girl in it (press 5)', points: 1, test: (s) => s.n('photoGirl') >= 1 },
+  { id: 'gallery', group: 'Jobs', name: 'Gallery', hint: 'Have six photos pinned on the corkboard in the barn', points: 2, test: (s) => s.m('photosPinned') >= 6 },
   { id: 'park-brake', group: 'Jobs', name: 'Handbrake on', hint: 'Put the parking brake on', points: 1, test: (s) => s.n('parkBrake') >= 1 },
   { id: 'map', group: 'Jobs', name: 'Where am I?', hint: 'Open the farm map', points: 1, test: (s) => s.n('map') >= 1 },
   { id: 'barn-find', group: 'Jobs', name: 'Barn find', hint: 'Get the old quad under the tarp running', points: 3, needs: 'rusty', test: (s) => s.n('barnFind') >= 1 },

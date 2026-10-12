@@ -28,6 +28,7 @@ export const NOTICE_KINDS = {
   traffic: { seconds: 4, range: 70, heard: true }, // something going by on the lane, or a visitor coming in at the gate
   pheasant: { seconds: 2.5, range: 40, heard: true }, // one bursting out of the hedge in a clatter of wings
   zap: { seconds: 2.5, range: 50, heard: true }, // someone catching the electric fence
+  photo: { seconds: 3, range: 20, heard: false }, // you raising the camera: she looks at you
   bang: { seconds: 2.5, range: 80, heard: true }, // anything else loud and sudden (and the debug panel's test noise)
 };
 
@@ -45,6 +46,7 @@ export const DEFAULT_NOTICE_PARAMS = {
   lurch: 1.3,
   jump: 1.2,
   traffic: 0.9,
+  photo: 1.5,
   pheasant: 1.6,
   zap: 1.7,
   bang: 1.8,

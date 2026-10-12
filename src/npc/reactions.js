@@ -15,6 +15,9 @@ export const REACTIONS = {
   cheer: { seconds: 2.2, rise: 0.2, fall: 0.5, needs: 'hands' }, // arms up (or a clap, as her cheerArms says)
   turnAway: { seconds: 3, rise: 0.4, fall: 0.8, needs: 'feet' }, // turns her face away and waves it off (smoke)
   wave: { seconds: 2.6, rise: 0.3, fall: 0.5, needs: 'hands' }, // a hand up, waving at someone going by
+  pose: { seconds: 3.4, rise: 0.3, fall: 0.6, needs: 'hands' }, // a hand on her hip, head tilted, for the camera
+  face: { seconds: 3.4, rise: 0.25, fall: 0.5, needs: 'hands' }, // both hands up by her cheeks, head wobbling, pulling a face for the camera
+  palm: { seconds: 3, rise: 0.2, fall: 0.6, needs: 'hands' }, // a flat hand up in front of her face: put that away
 };
 
 /**
@@ -38,7 +41,7 @@ export const NOTICE_REACTIONS = {
 };
 
 /** Stronger things take over from weaker ones already under way. */
-const RANK = { wave: 1, cheer: 1, turnAway: 1, coverEars: 2, gasp: 2, flinch: 3, stepBack: 4 };
+const RANK = { wave: 1, pose: 1, face: 1, palm: 1, cheer: 1, turnAway: 1, coverEars: 2, gasp: 2, flinch: 3, stepBack: 4 };
 
 /**
  * The reaction a notice gets from her, or null. `ctx`: distance (metres from her), own (it's the vehicle she's on), can(type) (whether
