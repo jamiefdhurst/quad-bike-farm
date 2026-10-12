@@ -1173,7 +1173,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Is there a way to see what’s going on under the bonnet?',
         a: `The tuning panel (<kbd>&#96;</kbd>, the key above Tab) shows each vehicle's live state and faults, each girl's mood and skills, and every tunable number,
-          with buttons to set things up or put them right. It releases the mouse but the game keeps running under it; click the game to carry on.`,
+          with buttons to set things up or put them right, and a small graph of the revs, speed, wheel slip and throttle over the last ten seconds. It releases the mouse but the game keeps running under it; click the game to carry on.`,
       },
       {
         q: 'Is there a console?',

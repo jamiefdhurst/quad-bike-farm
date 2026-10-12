@@ -11,6 +11,7 @@ import { BRANDS, WHEEL_NAMES } from '../vehicle/tyres.js';
 import { LIGHT_MODES } from '../vehicle/lightSwitch.js';
 import { SIGNAL_MODES } from '../vehicle/indicators.js';
 import { DRIVE_MODES } from '../vehicle/driveMode.js';
+import { Trace, TRACE_LINES } from './trace.js';
 
 /**
  * lil-gui panel built from the tuning registry, plus live engine readouts and
@@ -179,12 +180,71 @@ export class DebugGui {
       tyres: this.addFolder('Vehicles', 'Tyres'),
       character: this.addFolder('Vehicles', 'How this one was dealt'),
     };
+    this.trace = new Trace();
+    this.buildTraceGraph(this.vehicleFolders.running);
     this.rebuildVehicle();
+  }
+
+  /** The graph of revs, speed, wheel slip and throttle over the last ten seconds, at the top of Running (a canvas, so rebuilding the rows leaves it be). */
+  buildTraceGraph(folder) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'padding:4px 6px';
+    this.traceCanvas = document.createElement('canvas');
+    this.traceCanvas.width = 320;
+    this.traceCanvas.height = 90;
+    this.traceCanvas.style.cssText = 'width:100%;height:90px;background:#111;display:block';
+    const key = document.createElement('div');
+    key.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;font-size:10px;margin-top:2px';
+    this.traceKey = TRACE_LINES.map((l) => {
+      const span = document.createElement('span');
+      span.style.color = l.colour;
+      key.appendChild(span);
+      return span;
+    });
+    wrap.append(this.traceCanvas, key);
+    folder.$children.prepend(wrap);
+  }
+
+  /** Takes this moment's sample and redraws the graph. */
+  updateTrace(dt) {
+    const u = this.unit();
+    this.trace.tick(dt, () => ({
+      rpm: u.engine.rpm,
+      speed: Math.abs(u.quad.speed),
+      slip: u.quad.physics.spinSlip,
+      throttle: u.engine.throttle,
+    }));
+    const ctx = this.traceCanvas.getContext('2d');
+    const { width: w, height: h } = this.traceCanvas;
+    ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = '#2a2a2a';
+    ctx.beginPath();
+    for (const f of [0.25, 0.5, 0.75]) {
+      ctx.moveTo(0, h * f);
+      ctx.lineTo(w, h * f);
+    }
+    ctx.stroke();
+    const lines = this.trace.lines({ rpm: u.engine.params.maxRpm });
+    lines.forEach((line, i) => {
+      ctx.strokeStyle = line.colour;
+      ctx.beginPath();
+      // Newest on the right; a trace still filling starts part way across.
+      const x0 = w - (line.values.length - 1) * (w / (this.trace.size - 1));
+      line.values.forEach((v, j) => {
+        const x = x0 + j * (w / (this.trace.size - 1));
+        if (j === 0) ctx.moveTo(x, h - 2 - v * (h - 4));
+        else ctx.lineTo(x, h - 2 - v * (h - 4));
+      });
+      ctx.stroke();
+      const now = line.values.length ? line.values[line.values.length - 1] * line.top : 0;
+      this.traceKey[i].textContent = `${line.label} ${Math.round(now * (line.key === 'rpm' ? 1 : 10)) / (line.key === 'rpm' ? 1 : 10)}`;
+    });
   }
 
   rebuildVehicle() {
     const u = this.unit();
     this.builtFor = u.id;
+    this.trace?.clear();
     for (const folder of Object.values(this.vehicleFolders)) {
       for (const c of [...folder.controllers]) c.destroy();
     }
@@ -334,6 +394,9 @@ export class DebugGui {
   watch() {
     if (!this.visible) return;
     if (!this.pickedId && this.unit().id !== this.builtFor) this.rebuildVehicle();
+    const now = performance.now();
+    if (this.tab === 'Vehicles') this.updateTrace(Math.min(0.25, (now - (this.lastWatch ?? now)) / 1000));
+    this.lastWatch = now;
     requestAnimationFrame(() => this.watch());
   }
 
@@ -342,6 +405,7 @@ export class DebugGui {
     if (this.visible) {
       this.gui.show();
       this.game.input.exitPointerLock();
+      this.lastWatch = undefined;
       this.watch();
     } else {
       this.gui.hide();

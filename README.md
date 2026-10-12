@@ -505,6 +505,8 @@ Every value is at a dotted path. Type the path alone to read it, or the path and
 
 ## Tuning panel
 
+A small graph at the top of the Vehicles tab's Running folder draws the picked vehicle's revs, speed, wheel slip and throttle over the last ten seconds (it fills while the panel is open), so you can feel-tune a quad by riding it and watching, with no long simulation runs.
+
 Press `` ` `` to open it. It releases the mouse so you can use the panel; click the game to carry on. Each quad has its own folder (Engine, Vibration, Audio, Smoke, Vehicle), alongside Sound, Player, Companion and Sky. The live engine readouts (state, rpm, mixture, roughness, fouling) and the shortcuts (warm or cool the engine, clear a flood) follow the quad you're on or looking at. There's also a shortcut to put both quads back in the yard and one to copy every value as JSON. On the Girls tab each girl's folder shows what she is doing and why (her needs and what she chose), with the buttons that make her do things folded away in "Make her do" below it, so both girls' details fit on the screen at once.
 
 ## How it's put together
@@ -598,7 +600,7 @@ What is still to do. Finished items are recorded in DECISIONS.md, under their ol
 25. **Done.** Jess's dares. She dares you to jump the ramp, take the ford flat out, touch the electric fence, ride the mini moto down the steepest bank. Taking one wins favour with her and loses a little with Amy; backing out gets teased. Each one on the bucket list.
 26. Photos. A camera key: the girls see it and pose, pull faces or tell you to put it away, depending on who and her mood. The shots are pinned on the barn wall for good (the farm remembers, item 15). **Done.**
 27. **Done.** Amy's phone. It rings now and then; she wanders off to take it and comes back with news, or in a mood that takes a while to lift. Flavour for boredom and contentment; Jess gets one too, with different calls.
-29. A live trace on the Vehicles tab. Revs, speed, wheel slip and throttle over the last ten seconds as a small graph under Running, for tuning feel without long simulation runs.
+29. **Done.** A live trace on the Vehicles tab. Revs, speed, wheel slip and throttle over the last ten seconds as a small graph under Running, for tuning feel without long simulation runs.
 30. Crash damage. Hitting a gatepost hard or landing the ramp badly can bend a track rod or a rim: the quad pulls to one side and the wheel visibly wobbles. Straighten the rod or swap the wheel at the bench. In Problems on the Vehicles tab, cleared by "Put it right".
 31. Fuel starvation on the banks. With the tank low, a quad coughs and dies nose-up on a steep bank as the fuel runs away from the tap, and picks up again when it levels out. The girls notice whose quad it was.
 32. Carb icing. On a cold, damp day (the day's temperature and the weather roll) a carburettor quad loses power at steady part throttle; a blip or a stop clears it. Amy knows what it is, Jess thinks it's broken. Not on the diesels.

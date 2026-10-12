@@ -3193,3 +3193,10 @@ Jamie's answers: none asked. The item settled the shape (rings, she wanders off,
 - The route goes through the cattle grid's gateway (two extra waypoints either way). The barn's doors face east, so the stop, the door spot and the parcel are east of the door, and the turn is to the south of the stop, 4 m from the silage stack (a test checks it) and the bell. A `Drive` now also looks along the way to its next waypoint, so a corner no longer swings it into something it had not faced; it waits for anything in its way, and after `patience` 40 s edges past it for 8 s (so a tractor left in the yard cannot hold the visit up for ever).
 - `buildLandRoverModel` takes a `reg`; the post van is `G342 TVR` and the neighbour has one of four, none the farm's two.
 - Not checked: the wall by walking into it, and a visit round a parked tractor.
+
+## A live trace on the Vehicles tab (TODO 29)
+
+- `src/debug/trace.js` (pure, tested in `tests/trace.test.js`): a `Trace` ring of 20 samples a second for 10 seconds. A long frame adds one sample, not a run of copies. `lines()` turns each series into 0 to 1 heights.
+- Four lines: revs (scaled to the engine's own top), speed, wheel slip (the driven tyres' `spinSlip`, m/s) and throttle. Speed and slip fit the window with a floor (5 m/s and 2 m/s) so a still quad draws a flat line, not noise.
+- It is a canvas added once at the top of the Running folder, so the rebuild of the rows leaves it alone. It samples from the panel's own animation-frame loop, so it only fills while the panel is open on the Vehicles tab, and it empties when the picked vehicle changes. A trace of the minutes before you opened the panel would need the game to sample all the time; not worth it for a tuning aid.
+- Not a tunable: the length and rate are constants. Not checked: how it looks in the running game (no headless check, per the testing rule); drawn by reading the code only.
