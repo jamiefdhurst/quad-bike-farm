@@ -161,6 +161,14 @@ export const FAQ_SECTIONS = [
         tip: 'Nearly empty and dying on a bank? The fuel has run away from the tap. Level out, or fill up.',
       },
       {
+        q: 'It keeps losing power at a steady throttle on a cold, damp day. Why?',
+        a: `That is carb icing: petrol evaporating in the carburettor chills it, and on a cold, damp day (rain, or wet ground, and a few degrees
+          above freezing) the moisture freezes round the throttle plate. It builds when you hold a steady part throttle and the engine
+          slowly loses its pull. Give it a good blip (open the throttle quickly) and the ice breaks off, or stop and let it idle for a bit.
+          A warm engine is slower to ice up. Amy knows what it is; Jess is sure you have broken it. The diesels have no carb to freeze.`,
+        tip: 'Losing power at a steady throttle in the cold and wet? Carb ice. Blip the throttle, or stop for a minute.',
+      },
+      {
         q: 'It won’t start. What should I check?',
         a: `In order: is the fuel tap on (<kbd>F</kbd>), is there fuel in it, is there enough choke for how cold it is (more on a frosty day,
           little or none once warm), and does the starter sound strong? A slow, groaning starter or a single click is a flat battery.

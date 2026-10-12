@@ -289,6 +289,7 @@ export class DebugGui {
     show(r, 'chain oil (1 fresh)', () => (unit().quad.faults.hasChain ? round(unit().quad.faults.kept.chainLube) : 'no chain'));
     show(r, 'brakes wet (0 dry)', () => round(unit().quad.brakes.wet));
     show(r, 'ice in the throttle cable', () => round(unit().quad.iceCable.ice));
+    if (u.quad.carbIce.enabled) show(r, 'ice in the carb', () => round(unit().quad.carbIce.ice));
     if (u.engine.params.strokes === 2) set(r, 'plug-saver in the tank (share)', () => round(unit().quad.fuel.additive), (v) => (unit().quad.fuel.additive = v), 0, 1);
     show(r, 'water reaching the carb', () => round(unit().engine.fuelWater));
     tick(r, 'parking brake', () => !!unit().quad.parkBrake, (v) => (unit().quad.parkBrake = v));
@@ -316,6 +317,7 @@ export class DebugGui {
     tick(p, 'chain off the sprocket', () => unit().quad.faults.chainOff, (v) => (unit().quad.faults.kept.chainOff = v));
     set(p, 'chain oil (0 bone dry)', () => round(unit().quad.faults.kept.chainLube), (v) => (unit().quad.faults.kept.chainLube = v), 0, 1);
     set(p, 'wet brakes', () => round(unit().quad.brakes.wet), (v) => (unit().quad.brakes.wet = v), 0, 1);
+    if (u.quad.carbIce.enabled) set(p, 'iced carb (ice)', () => round(unit().quad.carbIce.ice), (v) => (unit().quad.carbIce.ice = v), 0, 1);
     set(p, 'frozen throttle cable (ice)', () => round(unit().quad.iceCable.ice), (v) => (unit().quad.iceCable.ice = v), 0, 1);
     tick(p, 'cable freezes open (not shut)', () => unit().quad.iceCable.mode === 'open', (v) => (unit().quad.iceCable.mode = v ? 'open' : 'shut'));
     tick(p, 'brake binding (rides free)', () => unit().quad.brakes.binding, (v) => unit().quad.brakes.setBinding(v));

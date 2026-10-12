@@ -229,6 +229,7 @@ export const DEFAULT_ENGINE_PARAMS = {
   valveLoosePowerLoss: 0.05, // and to valves fully too loose (they open late)
   valveTightHot: 2, // times as much extra hot-start richness tight valves add to a heat-soaked engine
   clogRich: 0.3, // mixture added by a fully clogged air filter (it chokes the air, so it runs rich: past richTolerance it smokes and fouls)
+  carbIcePowerLoss: 0.55, // power lost to a carb iced solid (a damp, cold day at steady part throttle; a blip clears it)
   clogPowerLoss: 0.3, // top-end power lost to a fully clogged air filter (it's the revs it can't breathe for)
 
   // Heat (see heat.js). Running heat is 0..1 above a normal warm engine; soak is the heat held in the metal.
@@ -530,6 +531,7 @@ export const ENGINE_PARAM_RANGES = {
   valveLoosePowerLoss: [0, 0.5, 0.01],
   valveTightHot: [0, 6, 0.1],
   clogRich: [0, 1, 0.01],
+  carbIcePowerLoss: [0, 1, 0.01],
   clogPowerLoss: [0, 1, 0.01],
   waterCooled: [0, 1, 1],
   heatSun: [0, 2, 0.01],

@@ -3350,6 +3350,15 @@ Settled with Jamie before building (2026-10-12): all six recommendations taken.
 - **When she's held** (carrying something, the nick, the hay trailer): the wheel doesn't open, and the toast says what has her rather than "She's busy".
 - **Not checked:** in the running game; unit tests only. "I'll be a minute" from a walking or driving girl leans on `requestMount` and `requestStart`'s existing hand-offs. Not added to the debug panel or console (they are wheel requests, and the Girls tab's existing actions are the same game methods).
 
+## Carb icing (TODO 38)
+
+- **What:** `src/vehicle/carbIcing.js` (pure, tested). Ice builds in a petrol engine's carb when the throttle is steady between 12% and 75% open, the revs are above idle, and the weather suits it: `icingWeather` is worst at 2 to 8 degrees C and fades to nothing at -4 and 14, and needs damp (the greater of the rain and 0.8 of the ground's wetness, at least 0.25). About half a minute from clear to choked in the worst weather; a warm engine builds it half as fast.
+- **Clearing:** a throttle opened faster than 3.5 a second (a blip) breaks off 0.5 of the ice; closed throttle melts it at 0.06 a second, and an engine that's off at 0.03. Working the throttle at all stops it building.
+- **Effect:** the engine takes `ice` as a control and loses `carbIcePowerLoss` (0.55) of its power at full ice, and runs a little uneven. It is not saved between loads: it melts within a minute of stopping. Diesels (no carb) have it disabled; the petrol Land Rover has a carb, so it can ice.
+- **The girls:** `carbIcing` lines (`iceLines.js`): Amy names it and says to blip it, Jess thinks it's broken. Said at most twice a spell, only while the quad is moving, and again after it has cleared. The lines need recording.
+- **Panel and console:** "ice in the carb" in Running, a settable "iced carb" in Problems (cleared by Put it right), `carbIce.ice` in the console, and the "Carb icing" tuning group (Engines, fuel and faults).
+- **Not checked:** in the running game; unit tests only. Whether the temperature and damp window turns up often enough on the farm's weather is a guess.
+
 ## Fuel starvation on the banks (TODO 37)
 
 - **What:** below `starveFraction` (0.3) of the tank, the fuel slops away from the tap's pick-up when the nose is up a steep enough bank, and nothing reaches the float bowl (`FuelSystem.coversTap(climb)`, `uncovered`). The bowl is 12 ml, so a running engine stumbles and dies in a few seconds, and picks up when it levels out and the bowl refills. The slope that does it falls with the tank: `starveClimb` (sine 0.3, about 17 degrees) just under the threshold down to `starveMinClimb` (0.1, about 6 degrees) nearly dry.

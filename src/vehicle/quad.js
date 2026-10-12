@@ -23,6 +23,7 @@ import { poseUtvControls, poseUtvBelts } from './utvModel.js';
 import { EngineLoad } from './engineLoad.js';
 import { waterGulp } from '../engine/water.js';
 import { AirFilter } from './airFilter.js';
+import { CarbIcing } from './carbIcing.js';
 import { dustLevel } from '../world/dust.js';
 import { CruiseControl } from './cruise.js';
 import { Creep, mayCreep, DEFAULT_CREEP_PARAMS } from './creep.js';
@@ -146,6 +147,7 @@ export class Quad {
       this.faults.tyreWheels = layout.wheels.flatMap((w, i) => (w.outrigger ? [] : [i]));
       this.faults.wheelSides = layout.wheels.map((w) => ({ side: w.x >= 0 ? 1 : -1, front: !!w.front }));
     }
+    this.carbIce = new CarbIcing(undefined, !engine.params.compressionIgnition); // ice in the carb on a cold, damp day (carbIcing.js); a diesel has no carb
     this.iceCable = new FrozenCable(); // a throttle cable frozen on a frosty morning (frozenCable.js); the game gives it this game's tuning and deals it
     this.brakes = new BrakeState(); // wet and binding brakes (brakeState.js); the game gives it this game's tuning and deals the binding ones
     this.filter = new AirFilter(); // clogs with mud, puddles and dust; cleaned at the toolbox
@@ -931,6 +933,16 @@ export class Quad {
   /** Burns fuel for this frame and refills the float bowl from the tank. */
   updateFuel(dt) {
     const e = this.engine;
+    const w = this.world;
+    const ip = e.params;
+    this.carbIce.update(dt, {
+      running: e.isRunning,
+      throttle: this.throttle,
+      revs: Math.max(0, (e.rpm - ip.idleRpmWarm) / (ip.maxRpm - ip.idleRpmWarm)),
+      temperature: w.temperature ?? 12,
+      damp: Math.max(w.weather?.rain ?? 0, 0.8 * (w.weather?.wet ?? 0)),
+      engineTemp: e.temperature,
+    });
     this.fuel.update(dt, { rpm: e.rpm, throttle: e.throttle, choke: e.choke, running: e.isRunning, climb: this.climb });
     this.sump?.step(dt, { running: e.isRunning, work: e.lubeWork });
     this.sumpClock += dt;
@@ -974,6 +986,7 @@ export class Quad {
       valveLoose: this.faults.valveLoose,
       valveTight: this.faults.valveTight,
       clog: Math.min(1, this.filter.clog + (this.sump?.airboxChoke ?? 0)),
+      ice: this.carbIce.ice,
       gulp: this.waterGulp(),
       diesel: this.fuel.bowlDiesel,
       additive: this.fuel.additive,

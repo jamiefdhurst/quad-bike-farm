@@ -135,6 +135,9 @@ export function buildGameTree(g, host) {
     wet: num(() => q().brakes.wet, (v) => (q().brakes.wet = v), 0, 1, '', '1 is soaked: they barely bite until they dry'),
         binding: flag(() => q().brakes.binding, (v) => q().brakes.setBinding(v)),
       }), 'the brakes');
+      out.carbIce = group(() => ({
+        ice: num(() => q().carbIce.ice, (v) => (q().carbIce.ice = v), 0, 1, '', '1 is iced solid: power gone at steady part throttle until a blip or a stop clears it'),
+      }), 'the carb\'s ice');
       out.iceCable = group(() => ({
         ice: num(() => q().iceCable.ice, (v) => (q().iceCable.ice = v), 0, 1, '', '1 is frozen solid: it will not open (or, if it freezes open, shut) until it thaws'),
         open: flag(() => q().iceCable.mode === 'open', (v) => (q().iceCable.mode = v ? 'open' : 'shut')),

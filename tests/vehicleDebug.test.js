@@ -2,13 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { setQuirk, setFault, clearFaults, fixEverything, problemSummary, quirkLabel, engineReadouts } from '../src/debug/vehicleDebug.js';
 import { QuirkSet } from '../src/vehicle/quirks.js';
 import { BrakeState } from '../src/vehicle/brakeState.js';
+import { CarbIcing } from '../src/vehicle/carbIcing.js';
 import { FrozenCable } from '../src/vehicle/frozenCable.js';
 import { Faults } from '../src/vehicle/faults.js';
 import { FuelSystem, DEFAULT_FUEL_PARAMS } from '../src/vehicle/fuelSystem.js';
 
 const unitWith = () => ({
   engine: { fouling: 0.5, clog: 0.6, wear: 0.4, scuff: 0.3, overheat: 0.2, seized: true, water: 0.4, dieselSoak: 0.4, silencerBlown: 0.5, boiled: true, coolant: 0.2, coolantLeak: 2, battery: 1 },
-  quad: { startTrouble: 3, faults: new Faults(), quirks: new QuirkSet(['tapStiff']), sump: { level: 0.2 }, fuel: Object.assign(new FuelSystem({ ...DEFAULT_FUEL_PARAMS }), { water: 0.05, sediment: 0.6 }), brakes: Object.assign(new BrakeState(), { wet: 0.8, binding: true }), iceCable: Object.assign(new FrozenCable(), { ice: 0.9 }) },
+  quad: { startTrouble: 3, faults: new Faults(), quirks: new QuirkSet(['tapStiff']), sump: { level: 0.2 }, fuel: Object.assign(new FuelSystem({ ...DEFAULT_FUEL_PARAMS }), { water: 0.05, sediment: 0.6 }), brakes: Object.assign(new BrakeState(), { wet: 0.8, binding: true }), iceCable: Object.assign(new FrozenCable(), { ice: 0.9 }), carbIce: Object.assign(new CarbIcing(), { ice: 0.7 }) },
 });
 
 describe('vehicle debug helpers', () => {
@@ -46,6 +47,7 @@ describe('vehicle debug helpers', () => {
     expect(problemSummary(u)).toContain('seized');
     expect(problemSummary(u)).toContain('brake binding');
     expect(problemSummary(u)).toContain('throttle cable frozen');
+    expect(problemSummary(u)).toContain('carb iced');
     expect(problemSummary(u)).toContain('water in the fuel');
     fixEverything(u);
     expect(problemSummary(u)).toBe('nothing wrong');

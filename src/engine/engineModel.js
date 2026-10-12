@@ -76,6 +76,7 @@ export class EngineModel {
     this.valveLoose = 0; // 0..1 valve clearance too wide: a tappet tick (set from the quad's faults)
     this.valveTight = 0; // 0..1 clearance too tight: starts hard when hot and loses power
     this.clog = 0; // 0..1 how clogged the air filter is
+    this.ice = 0; // 0..1 how iced up the carb is (vehicle/carbIcing.js)
     this.oil = this.params.strokes === 2 ? this.params.oilGood : 0; // oil fraction of the fuel it's being fed
     this.oilRich = 0; // 0..1 how much more oil than it can burn clean
     this.sump = 1; // 0..1 how far up its mark the engine oil is (a four-stroke's; see vehicle/sump.js)
@@ -264,6 +265,7 @@ export class EngineModel {
    * @param {number}  [controls.dirt] 0..1 a dirty carb: lumpy, erratic and short of power.
    * @param {number}  [controls.valveLoose] 0..1 valves too loose: the tappets tick.
    * @param {number}  [controls.valveTight] 0..1 valves too tight: a hard hot start and short of power.
+   * @param {number}  [controls.ice] 0..1 ice round the carb's throttle plate: loses power and runs unevenly.
    * @param {number}  [controls.clog] 0..1 a clogged air filter: runs rich, smokes darker, loses top-end power.
    * @param {number}  [controls.gulp] water going in at the intake, per second (see waterGulp).
    * @param {number}  [controls.speed] ground speed in m/s: the air that cools it.
@@ -272,7 +274,7 @@ export class EngineModel {
    * @param {number}  [controls.gearRpm] a manual's revs at this road speed in this gear (speed over the gear's top speed, times full-throttle revs).
    * @param {number}  [controls.gearLock] 0..1 how far the clutch ties the engine to those revs: the throttle then only decides the torque.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, valveLoose = 0, valveTight = 0, clog = 0, gulp = 0, diesel = 0, fuelWater = 0, additive = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12 } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, valveLoose = 0, valveTight = 0, clog = 0, ice = 0, gulp = 0, diesel = 0, fuelWater = 0, additive = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12 } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -291,6 +293,7 @@ export class EngineModel {
     this.valveLoose = clamp(valveLoose, 0, 1);
     this.valveTight = clamp(valveTight, 0, 1);
     this.clog = clamp(clog, 0, 1);
+    this.ice = clamp(ice, 0, 1);
     this.gulp = Math.max(0, gulp);
     this.diesel = contaminant(this.params, diesel);
     this.fuelWater = clamp(fuelWater, 0, 1);
@@ -647,6 +650,8 @@ export class EngineModel {
     this.power *= (1 - p.valveTightPowerLoss * this.valveTight) * (1 - p.valveLoosePowerLoss * this.valveLoose);
     // A clogged filter can't feed the revs: it's the top end that goes.
     this.power *= 1 - p.clogPowerLoss * this.clog * clamp((this.rpm - p.idleRpmWarm) / (p.maxRpm - p.idleRpmWarm), 0, 1) ** 2;
+    this.power *= 1 - p.carbIcePowerLoss * this.ice; // ice round the throttle plate strangles it
+    this.erratic = Math.max(this.erratic, this.ice ** 2);
     this.power *= 1 - p.pinkPowerLoss * this.pink;
     this.power *= 1 - p.waterPowerLoss * this.water;
     this.power *= 1 - p.dieselPowerLoss * this.dieselSoak;

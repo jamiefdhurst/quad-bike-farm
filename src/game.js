@@ -52,6 +52,7 @@ import { pickHistory, pickFaultChance } from './vehicle/history.js';
 import { TyreSet, dealTyres, DEFAULT_TYRE_PARAMS, TYRE_PARAM_RANGES } from './vehicle/tyres.js';
 import { pushDirection, localAlong } from './vehicle/controls.js';
 import { BrakeState, DEFAULT_BRAKE_PARAMS, BRAKE_PARAM_RANGES } from './vehicle/brakeState.js';
+import { DEFAULT_CARB_ICE_PARAMS, CARB_ICE_PARAM_RANGES } from './vehicle/carbIcing.js';
 import { FrozenCable, DEFAULT_FROZEN_CABLE_PARAMS, FROZEN_CABLE_PARAM_RANGES } from './vehicle/frozenCable.js';
 import { RollWatch, rollReactions, DEFAULT_HANDBRAKE_PARAMS, HANDBRAKE_PARAM_RANGES } from './vehicle/handbrake.js';
 import { DEFAULT_DRIVE_PARAMS, DRIVE_PARAM_RANGES, StuckWatch, forgotReaction } from './vehicle/driveMode.js';
@@ -420,6 +421,7 @@ export class Game {
       unit.quad.brakes.setBinding(brakeRandom() < this.brakeParams.bindChance);
     }
     // A throttle cable frozen on a frosty morning (vehicle/frozenCable.js); dealt once the day's weather is known, just below.
+    registerTuning('Carb icing', DEFAULT_CARB_ICE_PARAMS, CARB_ICE_PARAM_RANGES); // the quads share this object (vehicle/carbIcing.js)
     this.frozenCableParams = { ...DEFAULT_FROZEN_CABLE_PARAMS };
     registerTuning('Frozen throttle cable', this.frozenCableParams, FROZEN_CABLE_PARAM_RANGES);
     this.frozenCableRandom = createRandom(this.seed ^ 0xf205);

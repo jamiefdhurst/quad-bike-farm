@@ -576,6 +576,7 @@ export class CompanionVoice {
         if (this.say('silencerBlown', { chance: 0.02 })) w.blownUntil = this.chatter.time + 300;
       }
       this.watchFaults(unit, w, near || hers);
+      this.watchCarbIce(unit, w, near || hers);
       this.watchDiagnosis(dt, unit, w);
       this.watchThrash(dt, unit, view, near || hers);
       this.watchBlame(dt, unit, w, view);
@@ -651,6 +652,18 @@ export class CompanionVoice {
       const hers = unit.quad === this.companion.quad;
       if (this.say(off ? 'faultChainOff' : FAULT_SITUATION[kind], { urgent: hers, chance: hers ? 0.03 : 0.01 })) w.faultSaid[kind] += 1;
     }
+  }
+
+  /** A carb iced up (carbIcing.js) shows as a quad losing power at a steady throttle. Amy knows it; Jess thinks it's broken. Twice a spell, then not till it has cleared. */
+  watchCarbIce(unit, w, listening) {
+    const ice = unit.quad.carbIce;
+    if (!ice.icing || ice.ice < 0.4) {
+      if (!ice.icing) w.iceSaid = 0;
+      return;
+    }
+    if (!listening || !unit.engine.isRunning || Math.abs(unit.quad.forwardSpeed) < 2 || (w.iceSaid ?? 0) >= 2) return;
+    const hers = unit.quad === this.companion.quad;
+    if (this.say('carbIcing', { urgent: hers, chance: hers ? 0.03 : 0.01 })) w.iceSaid = (w.iceSaid ?? 0) + 1;
   }
 
   /**
