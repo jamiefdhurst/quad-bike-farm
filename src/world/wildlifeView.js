@@ -75,9 +75,11 @@ function rabbitGeometry() {
     fur(0.016, 1, 1, 0.5, [-0.058, 0.275, 0.18], 0x15110e, 9, 0, 1), // eyes, dark and shiny
     fur(0.016, 1, 1, 0.5, [0.058, 0.275, 0.18], 0x15110e, 10, 0, 1),
     fur(0.05, 1, 1, 1, [0, 0.17, -0.25], 0xf1eee2, 11, 0.1, 1), // the white scut
-    stalk(0.016, 0.014, [-0.04, 0.1, 0.1], [-0.04, 0, 0.14], 0x846a4a, 12), // forelegs
-    stalk(0.016, 0.014, [0.04, 0.1, 0.1], [0.04, 0, 0.14], 0x846a4a, 13),
   ];
+  for (const x of [-0.045, 0.045]) {
+    parts.push(fur(0.035, 0.8, 1.9, 1, [x, 0.075, 0.1], 0x86694a, 17, 0.05, 1)); // a short thick foreleg under the chest
+    parts.push(fur(0.025, 0.9, 0.6, 1.8, [x, 0.012, 0.135], 0xc4b392, 18, 0.04, 1)); // the paw, pale, on the ground
+  }
   for (const x of [-0.075, 0.075]) parts.push(fur(0.04, 0.55, 0.4, 1.9, [x, 0.03, -0.1], 0x6e5638, 14, 0.04, 1)); // long hind feet
   for (const x of [-1, 1]) {
     // Ears: long, tapered, tilted back and out, with a dark tip and a pink inside.
@@ -115,10 +117,10 @@ function pheasantGeometry() {
   ];
   // A long barred tail: a flat tapering fan of three plates trailing back and down.
   for (const [x, yaw, c] of [[0, 0, 0x8a6a38], [-0.025, 0.1, 0x7a5c30], [0.025, -0.1, 0x7a5c30]]) {
-    const t = fur(0.04, 0.45, 0.12, 5.5, [0, 0, 0], c, 14, 0.1, 1, 0.22);
+    const t = fur(0.04, 0.45, 0.12, 7.5, [0, 0, 0], c, 14, 0.1, 1, 0.22);
     t.rotateX(0.12);
     t.rotateY(yaw);
-    t.translate(x, 0.27, -0.38);
+    t.translate(x, 0.27, -0.46);
     parts.push(t);
   }
   for (const x of [-0.05, 0.05]) {
@@ -128,12 +130,22 @@ function pheasantGeometry() {
   return mergeGeometries(parts);
 }
 
-/** One wing, hinged at its root on the x axis and spread out along +x (the other is mirrored). */
+/** One wing, hinged at its root on the x axis and spread out along +x: a fan of overlapping flight feathers, banded brown and buff, under a pad of coverts. */
 function wingGeometry() {
-  const g = new THREE.IcosahedronGeometry(0.12, 2);
-  g.scale(2.7, 0.12, 1.6);
-  g.translate(0.31, 0, 0);
-  return paint(lump(g.toNonIndexed(), 0.08), 0x8d5e30, 0.2, 8);
+  const parts = [];
+  const n = 9;
+  for (let i = 0; i < n; i++) {
+    const k = i / (n - 1); // 0 the leading primaries, 1 the trailing secondaries
+    const len = 0.5 - 0.14 * k + (i === 0 ? -0.04 : 0);
+    const f = fur(0.04, len / 0.04 / 2, 0.1, 1.5, [len / 2, 0, 0], i % 2 ? 0x7a4a24 : 0xa8763a, 20 + i, 0.05, 1, 0.12);
+    f.rotateY(-0.12 + k * 0.85); // fanned out, the trailing ones swept back
+    f.rotateZ(-0.05 * k); // the trailing edge droops a little
+    f.translate(0.04, -0.004 * i, 0.07 * (1 - k) - 0.03 * k);
+    parts.push(f);
+  }
+  parts.push(fur(0.09, 1.7, 0.2, 1.2, [0.17, 0.016, 0.0], 0xb88a4a, 40, 0.05, 1, 0.14)); // the coverts over the feathers' roots
+  parts.push(fur(0.05, 1.5, 0.3, 1, [0.1, 0.03, -0.01], 0x8d5e30, 41, 0.05, 1, 0.14));
+  return mergeGeometries(parts);
 }
 
 export class WildlifeView {
