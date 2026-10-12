@@ -13,6 +13,8 @@ npm run dev
 
 Open the URL Vite prints (usually http://localhost:5173). The loading screen counts the models and then the sounds (every engine recording, the ride sounds and both girls' voices), so the game never starts silent. Click to lock the mouse and you're in. Press `H` to show or hide the controls. `Esc` lets the mouse go and pauses the game, sound and all, until you click again; nothing moves behind the start screen either. The tuning panel and the console don't pause it, so you can watch it live.
 
+It draws at most 60 frames a second, at 1.5 times the screen's points on a Retina screen rather than the full 2, and the grass, stubble, tussocks and bracken stop 70 to 90 m away, where you can't make out a stalk anyway; so it runs cool on a laptop. "Graphics" in the Tune tab (or `tune.graphics` in the console) lifts the cap (0), raises the scale or the distances; the console's `perf` says the frame rate, the work a frame and what the graphics card is asked to draw.
+
 The start screen shows the game's sign, a tip that changes every few seconds, and a link to **How to play, and the FAQ** (`faq.html`), which opens in a new tab while the game waits where it is. It answers the questions a player asks (why won't it start, how do I get out of a bog, what does Amy want), with the secrets folded away behind a click, and a search box. The controls, every vehicle's engine, gearbox, tank and reverse, the girls, the whole bucket list and a "Recently changed" list (from the commit messages) are read from the game itself, so they're always current.
 
 Other scripts:
