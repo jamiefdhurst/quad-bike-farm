@@ -19,6 +19,9 @@ export const LAYOUT = {
   // gate (`gate`, `width` m across) in the farm's east hedge, closed. The cattle grid (`grid`) fills the grass field's gateway: `length` m along
   // the road, bars `pitch` m apart, `margin` m of pit beyond the tarmac each side (world/cattleGrid.js).
   road: { z: 2, fromX: 78, toX: 199.5, halfWidth: 2.3, verge: 2.8, hedgeTo: 176, pad: { x: 188, radius: 8 }, gaps: { north: [112, 152], south: [128, 166] }, gapWidth: 6, gate: { width: 7 }, grid: { length: 3.2, pitch: 0.16, margin: 0.3 } },
+  // The public lane outside the farm's east hedge, running north to south past the big gate (world/traffic.js): its middle `x`, `halfWidth`,
+  // and the `minZ` to `maxZ` that is drawn and driven on. Vehicles go by on it and visitors turn in at the gate.
+  publicLane: { x: 206.4, halfWidth: 2.3, minZ: -205, maxZ: 205 },
   // How each stubble field looks and lies (world/fields.js, groundTexture.js, props.js). `rows` is the way it was drilled (rows along x or z,
   // half a metre apart), `tramlines` the metres between the sprayer's wheel lines, `ground` the straw's colour on the ground, `stalk` the
   // stalks' tip and base colours, `stalkHeight` their cut height range and `density` how thick they stand (1 is the wheat's). The north field,

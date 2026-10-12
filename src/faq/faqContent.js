@@ -897,6 +897,20 @@ export const FAQ_SECTIONS = [
         tip: 'Pheasants lie in the hedge feet and burst out if you pass close. Amy jumps.',
       },
       {
+        q: 'How do I open and shut the gates?',
+        a: `Get off, look at the gate and press E: it swings open or shut. There are two, the field gate in the south hedge (it starts tied open) and the big gate in the east hedge at the end of the farm road (it starts shut). A shut gate is solid, and the girls won't try to go through it, so shut the south gate and they stay on the farm side. It won't shut with a quad, a girl or you within a few metres of it.`,
+        tip: 'Look at a gate on foot and press E to open or shut it.',
+      },
+      {
+        q: 'Who is that on the lane, and why has someone come in at the gate?',
+        a: `Beyond the big gate is a quiet public lane. A van, a Land Rover, a tractor or a UTV goes by now and then, less after dark. Now and then a visitor turns in: the post van, whose driver opens the gate, drives up to the barn and leaves a parcel by the door, or a neighbour who parks at the barn and stands about for a while. Jess waves at them, Amy less often. If you are in their way they wait, then hoot, so pull over.`,
+        tip: 'The post van and neighbours come in at the big gate. Pull over for them.',
+      },
+      {
+        q: 'Why is the big gate open?',
+        a: `Either you left it, or a visitor did: they shut it behind them most of the time, but about one visit in four they leave it open and Amy or Jess says so. Look at it and press E to shut it.`,
+      },
+      {
         q: 'Why do the rabbits stand still when I drive at night?',
         a: `Headlights freeze them. Put your lights on after dark and a rabbit in the beam sits up rigid with its eyes shining, until you are nearly on it, and then it bolts. Slow down and it will let you get close; swing the lights away and it goes back to what it was doing.`,
       },

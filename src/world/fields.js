@@ -95,7 +95,8 @@ export function createFields(layout) {
 
   // Hedge lines, each straight along x or z from (x1, z1) to (x2, z2), with gaps { at, half } along it. A gap with a gate in it is `gate`,
   // and `shut` if the gate is (the south gate is tied open; the big gate at the end of the road is shut). `height` is a taller hedge's own.
-  const gateGap = { at: gate.x, half: gate.width / 2 + 0.35, gate: true, shut: !gate.open };
+  const gateGap = { id: 'south', at: gate.x, half: gate.width / 2 + 0.35, gate: true, shut: !gate.open };
+  const roadGap = road?.gate ? { id: 'road', at: road.z, half: road.gate.width / 2 + 0.35, gate: true, shut: true } : null; // the game opens and shuts both (world/gates.js)
   const hedges = [
     { x1: -F, z1: -F, x2: F, z2: -F, gaps: [] },
     { x1: -F, z1: F, x2: F, z2: F, gaps: [gateGap] },
@@ -107,7 +108,7 @@ export function createFields(layout) {
     hedges.push(
       { x1: F, z1: farm.minZ, x2: farm.maxX, z2: farm.minZ, gaps: [] },
       { x1: F, z1: farm.maxZ, x2: farm.maxX, z2: farm.maxZ, gaps: [] },
-      { x1: farm.maxX, z1: farm.minZ, x2: farm.maxX, z2: farm.maxZ, gaps: road.gate ? [{ at: road.z, half: road.gate.width / 2 + 0.35, gate: true, shut: true }] : [] },
+      { x1: farm.maxX, z1: farm.minZ, x2: farm.maxX, z2: farm.maxZ, gaps: roadGap ? [roadGap] : [] },
       { x1: F, z1: corridor.lo, x2: road.hedgeTo, z2: corridor.lo, gaps: gaps(road.gaps.north) },
       { x1: F, z1: corridor.hi, x2: road.hedgeTo, z2: corridor.hi, gaps: gaps(road.gaps.south) },
     );
@@ -190,8 +191,8 @@ export function createFields(layout) {
 
   // Gateways: a point either side of each gap (2 m out), joining the two fields it's between. The open sides round the hardstanding count too.
   const gateways = [];
-  const link = (a, pa, b, pb) => gateways.push({ a, pa, b, pb });
-  link('grass', { x: gate.x, z: F - 2.5 }, hill ? 'lane' : 'out', { x: gate.x, z: F + 2.5 });
+  const link = (a, pa, b, pb, gap = null) => gateways.push({ a, pa, b, pb, gap });
+  link('grass', { x: gate.x, z: F - 2.5 }, hill ? 'lane' : 'out', { x: gate.x, z: F + 2.5 }, gateGap); // a shut gate is no way through
   if (hill) link('lane', { x: hill.lane.x, z: hill.lane.toZ - 2 }, 'hill', { x: hill.lane.x, z: hill.lane.toZ + 2 });
   if (hill) {
     for (const g of hill.gates) {
@@ -218,7 +219,7 @@ export function createFields(layout) {
     if (start === goal) return [to];
     // Nodes: 0 is `from`, 1 is `to`, then each gateway's two points.
     const nodes = [{ p: from, area: start }, { p: to, area: goal }];
-    for (const g of gateways) nodes.push({ p: g.pa, area: g.a, twin: nodes.length + 1 }, { p: g.pb, area: g.b, twin: nodes.length });
+    for (const g of gateways) if (!g.gap?.shut) nodes.push({ p: g.pa, area: g.a, twin: nodes.length + 1 }, { p: g.pb, area: g.b, twin: nodes.length });
     const dist = nodes.map(() => Infinity);
     const prev = nodes.map(() => -1);
     const done = nodes.map(() => false);
@@ -298,5 +299,6 @@ export function createFields(layout) {
     return hill ? Math.min(d, hill.outside(x, z)) : d;
   }
 
-  return { farm, hill, outside: outsideAll, grass, areas, hedges, gateways, soakAt, stubbleField, areaOf, hedgeDistance, hedgeAhead, tarmacAt, stubbleAt, route, nextWaypoint, inFarm, clampToArea, inGap };
+  const gates = { south: gateGap, road: roadGap };
+  return { farm, hill, gates, outside: outsideAll, grass, areas, hedges, gateways, soakAt, stubbleField, areaOf, hedgeDistance, hedgeAhead, tarmacAt, stubbleAt, route, nextWaypoint, inFarm, clampToArea, inGap };
 }

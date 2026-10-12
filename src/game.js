@@ -191,6 +191,7 @@ import { Weather, pickWeatherKind, pickTemperature } from './world/weather.js';
 import { Wind, Shutter, pickHeading, DEFAULT_WIND_PARAMS, WIND_PARAM_RANGES } from './world/wind.js';
 import { windUniforms, swayMetres } from './effects/windSway.js';
 import { DoorAudio } from './audio/doorAudio.js';
+import { TrafficHost } from './world/trafficHost.js';
 import { Snow } from './effects/snow.js';
 import { Rain } from './effects/rain.js';
 
@@ -1056,6 +1057,7 @@ export class Game {
 
     this.setUpFlock();
     this.setUpWildlife();
+    this.trafficHost = new TrafficHost(this); // the lane's traffic, the visitors and the two gates (world/trafficHost.js)
 
     // The bell beside the barn doors: ring it and the girls come back to the barn, wherever they are.
     this.bell = new Bell({ scene: this.scene, physics: this.physics, RAPIER: this.RAPIER, world: this.world, audioHub: this.audioHub, position: L.bell, yaw: L.bell.yaw });
@@ -7196,6 +7198,7 @@ export class Game {
     this.bell.update(dt);
     this.updateFlock(dt);
     this.updateWildlife(dt);
+    this.trafficHost.update(dt);
     this.updateRecall(dt);
     if (!this.recalling && (auto || this.convoy.active || this.convoy.forced)) this.updateConvoy(dt, ridden);
     this.updateDashReading(dt, ridden);

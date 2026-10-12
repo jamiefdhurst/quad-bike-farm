@@ -14,6 +14,7 @@ export const REACTIONS = {
   gasp: { seconds: 2.4, rise: 0.2, fall: 0.6, needs: 'hands' }, // both hands to her mouth
   cheer: { seconds: 2.2, rise: 0.2, fall: 0.5, needs: 'hands' }, // arms up (or a clap, as her cheerArms says)
   turnAway: { seconds: 3, rise: 0.4, fall: 0.8, needs: 'feet' }, // turns her face away and waves it off (smoke)
+  wave: { seconds: 2.6, rise: 0.3, fall: 0.5, needs: 'hands' }, // a hand up, waving at someone going by
 };
 
 /**
@@ -32,10 +33,11 @@ export const NOTICE_REACTIONS = {
   tipped: { reaction: 'gasp', within: 40, notOwn: true },
   pheasant: { reaction: 'flinch', within: 14, chance: 'reactStartleChance' },
   jump: { reaction: 'cheer', within: 45, chance: 'reactCheerChance', notOwn: true },
+  traffic: { reaction: 'wave', within: 45, chance: 'reactWaveChance' },
 };
 
 /** Stronger things take over from weaker ones already under way. */
-const RANK = { cheer: 1, turnAway: 1, coverEars: 2, gasp: 2, flinch: 3, stepBack: 4 };
+const RANK = { wave: 1, cheer: 1, turnAway: 1, coverEars: 2, gasp: 2, flinch: 3, stepBack: 4 };
 
 /**
  * The reaction a notice gets from her, or null. `ctx`: distance (metres from her), own (it's the vehicle she's on), can(type) (whether

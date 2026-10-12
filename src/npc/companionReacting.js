@@ -1,4 +1,4 @@
-// Her reactions with her body (reactions.js says which and when): a flinch, a step back, hands over her ears or her mouth, a cheer, and
+// Her reactions with her body (reactions.js says which and when): a flinch, a step back, hands over her ears or her mouth, a cheer, a wave at someone going by, and
 // turning away from smoke. Mixed into Companion; poseReacting runs as the last rig poser, so a reaction shows over whatever else she's
 // doing with her arms.
 import * as THREE from 'three';
@@ -99,6 +99,20 @@ export const reactingMethods = {
     }
     if (r.type === 'turnAway') {
       rig.rotateAboutRootAxis(b.Spine2, AXIS_X, -0.08 * k); // leaning back from it (the waving hand is poseWaving's)
+      return;
+    }
+    if (r.type === 'wave') {
+      // Her right hand up beside her head, swinging from side to side; the left hangs as it was.
+      const root = this.root;
+      root.updateMatrixWorld(true);
+      const head = root.worldToLocal(b.Head.getWorldPosition(_head));
+      const shoulder = root.worldToLocal(b.RightArm.getWorldPosition(_shoulder));
+      const swing = Math.sin(r.t * 9);
+      _target.set(shoulder.x - 0.2 + 0.09 * swing, head.y + 0.16, shoulder.z + 0.12);
+      _pole.set(shoulder.x - 0.45, shoulder.y - 0.15, shoulder.z - 0.05);
+      root.localToWorld(_target);
+      root.localToWorld(_pole);
+      solveTwoBone(b.RightArm, b.RightForeArm, b.RightHand, _target, _pole, Math.min(1, k));
       return;
     }
     // The rest place both hands, in her own frame: x to her left, y up, z forward. The targets are the wrists, and the fingers reach

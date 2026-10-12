@@ -25,6 +25,7 @@ export const NOTICE_KINDS = {
   tipped: { seconds: 4, range: 60, heard: true, interest: 'attentionVehicles' }, // a vehicle going over
   lurch: { seconds: 1.5, range: 15, heard: false, interest: 'attentionVehicles' }, // a vehicle leaping forward from a standstill (a clutch dropped, a kangaroo hop)
   jump: { seconds: 3, range: 50, heard: false, interest: 'attentionVehicles' }, // a vehicle landing after real air
+  traffic: { seconds: 4, range: 70, heard: true }, // something going by on the lane, or a visitor coming in at the gate
   pheasant: { seconds: 2.5, range: 40, heard: true }, // one bursting out of the hedge in a clatter of wings
   bang: { seconds: 2.5, range: 80, heard: true }, // anything else loud and sudden (and the debug panel's test noise)
 };
@@ -42,6 +43,7 @@ export const DEFAULT_NOTICE_PARAMS = {
   tipped: 1.8,
   lurch: 1.3,
   jump: 1.2,
+  traffic: 0.9,
   pheasant: 1.6,
   bang: 1.8,
   revThrottle: 0.2, // how far the throttle has to be opened for climbing revs to count as a vehicle being revved (an idle never does)

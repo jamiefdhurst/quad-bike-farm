@@ -261,6 +261,14 @@ export function buildGameTree(g, host) {
     pheasants: text(() => g.pheasants.birds.map((b) => b.mode).join(', ') || 'none', 'each pheasant: hidden, fly or gone'),
     flush: flag(() => false, (v) => v && g.debugFlushPheasant(), 'set to true: the nearest pheasant bursts out as if you had come up to it'),
   }), 'rabbits and pheasants');
+  const lane = group(() => ({
+    now: text(() => g.trafficHost.describe(), 'what is on the lane and who is visiting'),
+    pass: flag(() => false, (v) => v && g.trafficHost.debugPass(), 'set to true: a vehicle goes along the lane now'),
+    post: flag(() => false, (v) => v && g.trafficHost.debugVisit('post'), 'set to true: the post van comes in at the big gate'),
+    neighbour: flag(() => false, (v) => v && g.trafficHost.debugVisit('neighbour'), 'set to true: a neighbour calls'),
+    southGate: flag(() => g.trafficHost.gate('south').isOpen, (v) => g.trafficHost.gate('south').set(!!v), 'the south gate onto the green lane: true is open'),
+    bigGate: flag(() => g.trafficHost.gate('road').isOpen, (v) => g.trafficHost.gate('road').set(!!v), 'the big gate in the east hedge: true is open'),
+  }), 'the public lane, the visitors and the two gates');
   const audio = group(() => ({ sound: flag(() => !g.audioHub.params.muted, (v) => (g.audioHub.params.muted = !v), 'all game sound') }));
 
   return group(() => ({
@@ -271,6 +279,7 @@ export function buildGameTree(g, host) {
     weather,
     farm,
     wildlife,
+    lane,
     audio,
     tune: tuningTree(),
   }));

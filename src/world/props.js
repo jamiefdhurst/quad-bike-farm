@@ -8,6 +8,7 @@ import { buildBarnShed } from './barnBuild.js';
 import { buildJumpRamp } from './jumpRamp.js';
 import { buildHill } from './hillProps.js';
 import { buildOutbuildings } from './outbuildingProps.js';
+import { Gate, DEFAULT_GATE_PARAMS } from './gates.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -39,9 +40,10 @@ export function buildProps(ctx) {
 
   const barn = buildBarn(c);
   buildHedges(c);
-  buildGate(c);
-  buildRoadGate(c);
+  c.gateParams = { ...DEFAULT_GATE_PARAMS }; // shared by the gates, tuned in the panel
+  const gates = [buildGate(c), buildRoadGate(c)].filter(Boolean);
   buildCattleGrid(c);
+  buildPublicLane(c);
   buildPaddock(c);
   const bale = buildBales(c);
   buildOutbuildings({ ...c, bale });
@@ -53,7 +55,7 @@ export function buildProps(ctx) {
   buildBogs(c);
   if (ctx.fields.hill) buildHill(c);
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
-  return { barn, jumpRamp };
+  return { barn, jumpRamp, gates, gateParams: c.gateParams };
 }
 
 function buildBarn(c) {
@@ -135,7 +137,7 @@ function buildHedges({ scene, models, layout, heights, fields, fixedBox, random 
   scene.add(instanceModel(models.bush.scene, bushMatrices, { castShadow: false }));
 }
 
-function buildGate({ scene, layout, heights, fixedBox }) {
+function buildGate({ scene, layout, heights, fixedBox, fields, gateParams }) {
   const { gate, fieldHalf: F } = layout;
   const y = heights.heightAt(gate.x, F);
   const wood = new THREE.MeshStandardMaterial({ color: 0x8b7d66, roughness: 0.9 });
@@ -153,8 +155,8 @@ function buildGate({ scene, layout, heights, fixedBox }) {
   const leafW = w - 0.3;
   const leaf = new THREE.Group();
   leaf.position.set(-w / 2 + 0.15, 0, 0);
-  const swing = gate.open ? Math.PI / 2 + 0.08 : 0;
-  leaf.rotation.y = swing;
+  const swing = Math.PI / 2 + 0.08; // swung right open
+  leaf.rotation.y = gate.open ? swing : 0;
   const box = (bw, bh, bd, x, yy, rotZ = 0) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), wood);
     m.position.set(x, yy, 0);
@@ -168,26 +170,37 @@ function buildGate({ scene, layout, heights, fixedBox }) {
   const diag = Math.hypot(leafW - 0.2, 0.94);
   box(diag, 0.09, 0.05, leafW / 2, 0.68, Math.atan2(0.94, leafW - 0.2));
   g.add(leaf);
-  if (gate.open) {
+  const tie = new THREE.Group(); // the stake it's tied to, shown when it is swung right open
+  g.add(tie);
+  {
     // The stake it's tied to, by the closing end, and a loop of orange baler twine round the two.
     const end = new THREE.Vector3(leafW, 0, 0).applyAxisAngle(UP, swing).add(leaf.position);
     const stake = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.3, 0.1), postMat);
     stake.position.set(end.x - 0.12, 0.5, end.z);
-    g.add(stake);
+    tie.add(stake);
     const twine = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.012, 5, 10), new THREE.MeshStandardMaterial({ color: 0xe0782a, roughness: 0.8 }));
     twine.position.set(end.x - 0.06, 0.92, end.z);
     twine.rotation.x = Math.PI / 2;
-    g.add(twine);
+    tie.add(twine);
   }
   enableShadows(g);
   scene.add(g);
-  if (gate.open) {
-    // Only the leaf, standing out into the field.
-    const mid = new THREE.Vector3(leafW / 2, 0, 0).applyAxisAngle(UP, swing).add(leaf.position);
-    fixedBox(gate.x + mid.x, y + 0.7, F + mid.z, leafW / 2, 0.7, 0.08, swing);
-  } else {
-    fixedBox(gate.x, y + 0.8, F, w / 2 + 0.2, 0.9, 0.2);
-  }
+  // Shut, the whole gap is solid; swung open, only the leaf standing out into the field.
+  const mid = new THREE.Vector3(leafW / 2, 0, 0).applyAxisAngle(UP, swing).add(leaf.position);
+  return new Gate({
+    id: 'south',
+    params: gateParams,
+    x: gate.x,
+    z: F,
+    open: !!gate.open,
+    pose: (a) => {
+      leaf.rotation.y = a * swing;
+      tie.visible = a > 0.99;
+    },
+    solid: fixedBox(gate.x, y + 0.8, F, w / 2 + 0.2, 0.9, 0.2),
+    swungSolid: fixedBox(gate.x + mid.x, y + 0.7, F + mid.z, leafW / 2, 0.7, 0.08, swing),
+    gap: fields.gates.south,
+  });
 }
 
 /**
@@ -195,7 +208,7 @@ function buildGate({ scene, layout, heights, fixedBox }) {
  * timber posts, shut, meeting in the middle with a chain round them. Seven tubular rails each, closer together towards the bottom, with a
  * diagonal brace from the foot of the hinge end.
  */
-function buildRoadGate({ scene, layout, heights, fixedBox }) {
+function buildRoadGate({ scene, layout, heights, fixedBox, fields, gateParams }) {
   const road = layout.road;
   if (!road?.gate || !layout.farm) return;
   const x = layout.farm.maxX;
@@ -219,6 +232,7 @@ function buildRoadGate({ scene, layout, heights, fixedBox }) {
     return m;
   };
   const leafW = w / 2 - 0.05;
+  const leaves = [];
   const rails = [0.12, 0.26, 0.41, 0.57, 0.75, 0.95, 1.18];
   for (const side of [-1, 1]) {
     const leaf = new THREE.Group();
@@ -238,6 +252,7 @@ function buildRoadGate({ scene, layout, heights, fixedBox }) {
       leaf.add(strap);
     }
     g.add(leaf);
+    leaves.push({ leaf, side });
   }
   // The chain round the two closing stiles.
   const chain = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.012, 6, 12), new THREE.MeshStandardMaterial({ color: 0x55504a, metalness: 0.5, roughness: 0.6 }));
@@ -246,7 +261,53 @@ function buildRoadGate({ scene, layout, heights, fixedBox }) {
   g.add(chain);
   enableShadows(g);
   scene.add(g);
-  fixedBox(x, y + 0.8, road.z, 0.2, 0.9, w / 2 + 0.3);
+  return new Gate({
+    id: 'road',
+    params: gateParams,
+    x,
+    z: road.z,
+    open: false,
+    pose: (a) => {
+      for (const { leaf, side } of leaves) leaf.rotation.y = -side * a * (Math.PI / 2 - 0.05); // inwards, into the farm
+      chain.visible = a < 0.05;
+    },
+    solid: fixedBox(x, y + 0.8, road.z, 0.2, 0.9, w / 2 + 0.3),
+    gap: fields.gates.road,
+  });
+}
+
+/**
+ * The public lane (layout.publicLane) outside the farm's east hedge: a strip of tarmac laid over the ground in short sections, a worn
+ * dashed line down its middle and a grassy verge worn into each side. Nothing on it is solid: the ground under it is the terrain's.
+ */
+function buildPublicLane({ scene, layout, heights }) {
+  const lane = layout.publicLane;
+  if (!lane) return;
+  const step = 4;
+  const ribbon = (x0, half, lift, material, dashed) => {
+    const pos = [];
+    const idx = [];
+    let n = 0;
+    for (let z = lane.minZ; z < lane.maxZ; z += step) {
+      if (dashed && Math.floor((z - lane.minZ) / step) % 3 !== 0) continue;
+      const z1 = Math.min(lane.maxZ, z + step);
+      for (const [a, b] of [[x0 - half, z], [x0 + half, z], [x0 - half, z1], [x0 + half, z1]]) pos.push(a, heights.heightAt(a, b) + lift, b);
+      idx.push(n, n + 2, n + 1, n + 1, n + 2, n + 3);
+      n += 4;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setIndex(idx);
+    g.computeVertexNormals();
+    const m = new THREE.Mesh(g, material);
+    m.receiveShadow = true;
+    m.frustumCulled = false;
+    scene.add(m);
+  };
+  const poly = { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 };
+  ribbon(lane.x, lane.halfWidth + 0.9, 0.025, new THREE.MeshStandardMaterial({ color: 0x4a5236, roughness: 1, ...poly }), false); // verge
+  ribbon(lane.x, lane.halfWidth, 0.04, new THREE.MeshStandardMaterial({ color: 0x3b3c3d, roughness: 0.92, ...poly }), false);
+  ribbon(lane.x, 0.07, 0.06, new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...poly }), true);
 }
 
 /**
