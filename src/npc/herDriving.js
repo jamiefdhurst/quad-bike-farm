@@ -669,7 +669,7 @@ export class HerDrive {
         c.reverse = true;
         c.brake = q.forwardSpeed > 0.2 ? 0.8 : 0;
         c.throttle = q.forwardSpeed < 0.2 && q.forwardSpeed > -1.2 ? 0.45 : 0;
-        c.steer = this.avoidSide;
+        c.steer = this.reverseSteer;
         // Not into whatever's behind her, either.
         this.probeTimer -= dt;
         if (this.probeTimer <= 0) {
@@ -1169,7 +1169,30 @@ export class HerDrive {
     }
     if (this.backOffs >= 2 && !this.race && !this.follow) this.waypoints = [];
     this.events.push(event);
-    this.setPhase('reversing', this.between(1.5, 2.5));
+    this.reverseSteer = this.chooseReverseSteer(again);
+    // Backing off the same thing again she goes further each time, so the nose has room to come round.
+    const longer = 1 + this.p.backOffLonger * (this.backOffs - 1);
+    this.setPhase('reversing', this.between(1.5, 2.5) * longer);
+  }
+
+  /**
+   * Which way to turn the bars to back away. Reversing, the nose swings the other way to forward driving, so the bars go
+   * opposite to the side she wants the nose to end up on: whichever has more room. Backing off again from the same spot she
+   * goes the other way unless that side is clearly worse, rather than winding the same lock on into the same hedge.
+   */
+  chooseReverseSteer(again) {
+    const yaw = this.quad.yaw;
+    const reach = this.p.backOffLook;
+    let left = Math.min(this.probe(yaw + 0.9, reach), this.probe(yaw + 0.45, reach)); // yaw grows to the left
+    let right = Math.min(this.probe(yaw - 0.9, reach), this.probe(yaw - 0.45, reach));
+    const last = this.lastReverseSide ?? 0;
+    if (again && last) {
+      if (last > 0) right += reach * 0.5;
+      else left += reach * 0.5;
+    }
+    let side = left === right ? -last || this.avoidSide : left > right ? 1 : -1;
+    this.lastReverseSide = side;
+    return -side;
   }
 
   /**

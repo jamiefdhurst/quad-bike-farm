@@ -622,7 +622,7 @@ What is still to do. Finished items are recorded in DECISIONS.md, under their ol
 31. **Done.** Could we have a way to prevent plug fouling on the two-strokes? Some additive or something that lasts a while?
 32. **Done.** Add a gate to the cattle grid, so we have to open it.
 33. **Done.** Move the Corsa and the Fiesta to be parked near the dutch barn, and remove the hard standing from near the barn
-34. The girls keep getting stuck in the bottom hedge next to the end of the road, and can't reverse around. They need to go backwards in the opposite direction a lot more when they're stuck to help get themselves out.
+34. **Done.** The girls keep getting stuck in the bottom hedge next to the end of the road, and can't reverse around. They need to go backwards in the opposite direction a lot more when they're stuck to help get themselves out.
 35. Hours recorded against the cars/vehicles need to reflect in-game hours, not real hours.
 36. When the girls are in the middle of doing something, only the quads come up on their wheel, not other options.
 37. Fuel starvation on the banks. With the tank low, a quad coughs and dies nose-up on a steep bank as the fuel runs away from the tap, and picks up again when it levels out. The girls notice whose quad it was.

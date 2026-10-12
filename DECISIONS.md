@@ -3329,3 +3329,9 @@ Settled with Jamie before building (2026-10-12): all six recommendations taken.
 - The slab is gone entirely: `carStanding.js` and `carStandingBuild.js` deleted, and the levelling in `terrainHeight.js`, the tarmac test in `fields.js`, the grass exclusion in `props.js` and the spawn keep-out circle went with it. The two quad parking slots it had pushed aside are back at (-38, 62) and (-24, 58).
 - Unchanged on purpose: the girls still only take the cars down the farm road (the outings start from the pad now, so it is their natural run), and you can still take them anywhere.
 - Checked: unit tests. Not checked: the cars in the running game (that they stand square on the pad and clear of the Dutch barn's apron, and the girls driving out from there).
+
+## Backing out of the hedge (TODO 34)
+
+- Jamie: the girls keep getting stuck in the bottom hedge by the end of the road and can't reverse round. Found by reading `herDriving.js`: backing off steered with `avoidSide`, a coin flip that had nothing to do with where the hedge was, and only for 1.5 to 2.5 s, which is too short to bring the nose round. And in reverse the nose swings the opposite way to forward driving, so a lock chosen for going forward winds her further in.
+- Now `chooseReverseSteer` looks 6 m (`backOffLook`) to either side of the nose and swings it towards the side with more room (bars the other way, as reversing needs). Backing off the same thing again she tries the other lock unless that side is clearly worse, and reverses half as long again each time (`backOffLonger`), up to the existing give-up at the fifth go.
+- Tested as pure logic. Not checked in the running game: the bottom hedge itself, or how it looks.

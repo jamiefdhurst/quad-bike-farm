@@ -223,6 +223,8 @@ export const DEFAULT_COMPANION_PARAMS = {
   raceGridYaw: 0.6, // radians off the track's direction she may be pointing on the grid before she goes round again to face it
   backOffsToGiveUp: 5, // backing off the same thing this many times in a row and she gives up and gets off
   backOffRadius: 6, // metres: backing off again within this of the last time counts as the same spot
+  backOffLonger: 0.5, // each time she backs off the same thing she reverses this much longer again (0.5: half as long again)
+  backOffLook: 6, // metres: how far she looks to either side to see which way the nose should swing as she backs away
   backOffWithin: 25, // seconds: and within this long of it
   driveMaxStalls: 2, // stalls before she gives up on it
   driveBackChance: 0.4, // when she's done, the chance she moves onto the back to wait rather than getting off
@@ -541,6 +543,8 @@ export const COMPANION_PARAM_RANGES = {
   backOffsToGiveUp: [2, 12, 1],
   backOffRadius: [1, 20, 0.5],
   backOffWithin: [5, 120, 1],
+  backOffLonger: [0, 2, 0.1],
+  backOffLook: [2, 15, 0.5],
   driveMaxStalls: [0, 6, 1],
   driveBackChance: [0, 1, 0.05],
   driveKeyOffChance: [0, 1, 0.05],

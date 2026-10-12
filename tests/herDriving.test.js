@@ -301,7 +301,9 @@ describe('backing off the same thing again and again', () => {
     const d = Object.create(HerDrive.prototype);
     Object.assign(d, {
       p: { ...DEFAULT_COMPANION_PARAMS },
-      quad: { position: { x: 0, z: 0 } },
+      quad: { position: { x: 0, z: 0 }, yaw: 0 },
+      probe: () => Infinity,
+      avoidSide: 1,
       events: [],
       clock: 0,
       waypoints: [{ x: 1, z: 1 }],
@@ -363,6 +365,40 @@ describe('backing off the same thing again and again', () => {
   });
 });
 
+describe('backing off: which way to swing', () => {
+  function boxed(blockedLeft, blockedRight) {
+    const d = Object.create(HerDrive.prototype);
+    Object.assign(d, {
+      p: { ...DEFAULT_COMPANION_PARAMS },
+      quad: { position: { x: 0, z: 0 }, yaw: 0 },
+      avoidSide: 1,
+      probe: (a) => ((a > 0 && blockedLeft) || (a < 0 && blockedRight) ? 1 : Infinity),
+    });
+    return d;
+  }
+
+  it('turns the bars so the nose swings towards the side with room (reversing swings it the other way)', () => {
+    expect(boxed(true, false).chooseReverseSteer(false)).toBe(1); // hedge on the left, nose to the right: bars left
+    expect(boxed(false, true).chooseReverseSteer(false)).toBe(-1);
+  });
+
+  it('goes the other way on a second try from the same spot when neither side is clearly worse', () => {
+    const d = boxed(false, false);
+    const first = d.chooseReverseSteer(false);
+    expect(d.chooseReverseSteer(true)).toBe(-first);
+  });
+
+  it('reverses longer each time she backs off the same thing', () => {
+    const d = boxed(false, false);
+    Object.assign(d, { events: [], clock: 0, waypoints: [], race: null, follow: null, random: () => 0, between: (a, b) => a, setPhase: (ph, t) => (d.timer = t), stop() {} });
+    d.backOff('obstacle');
+    const first = d.timer;
+    d.clock += 5;
+    d.backOff('obstacle');
+    expect(d.timer).toBeCloseTo(first * 1.5);
+  });
+});
+
 describe('backing off in a race', () => {
   function reversing(race) {
     const d = Object.create(HerDrive.prototype);
@@ -388,6 +424,7 @@ describe('backing off in a race', () => {
       random: () => 0,
       probe: () => Infinity,
       avoidSide: 1,
+      reverseSteer: 1,
     });
     return d;
   }
