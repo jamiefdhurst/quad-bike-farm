@@ -222,6 +222,18 @@ export function createHill(layout) {
     return steep * smoothstep(0.42, 0.6, patch(x * 1.7, z * 1.7, 2.1));
   }
 
+  /**
+   * Whether a sheep may stand at (x, z) in the sheep field: inside it, on its big side south of the drystone wall (they would walk through the
+   * wall, which is only a collider), clear of the thorn bushes and the lane's bank, and off the ground the gateway ramp is cut into.
+   */
+  function sheepFieldOk(x, z) {
+    if (!east || !inEast(x, z, 3)) return false;
+    const w = pad.east.wall;
+    if (w && z < w.z + 2.5) return false;
+    for (const [tx, tz] of pad.east.thorns) if (Math.hypot(x - tx, z - tz) < 2) return false;
+    return x > laneRect.maxX + 5;
+  }
+
   /** Up the hill past its foot (a few metres beyond the stream), where the girls won't take a quad. */
   const pastFoot = (x, z) => inPasture(x, z) && z > farEdge(x) + hill.foot;
 
@@ -232,6 +244,6 @@ export function createHill(layout) {
   return {
     lane, pasture, stream, laneRect, west, east, gates, pond, knolls, top, total, waitSpot,
     streamZ, halfAt, depthAt, waterDepthAt, farEdge, climb, climbSlope, sinkAt, channelAt, profile, weight,
-    waterAt, mudAt, pondCut, knollLift, lineDistance, brackenAt, gorseAt, inPasture, inLane, inWest, inEast, inPaddock, inWood, pastFoot, outside: outsideHill,
+    waterAt, mudAt, sheepFieldOk, pondCut, knollLift, lineDistance, brackenAt, gorseAt, inPasture, inLane, inWest, inEast, inPaddock, inWood, pastFoot, outside: outsideHill,
   };
 }

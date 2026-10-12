@@ -7208,10 +7208,11 @@ export class Game {
     this.frameStats.record(started / 1000, performance.now() - started);
   }
 
-  /** The flock on the hill pasture (world/flock.js): grazing on the gentler ground past the stream, out of the gorse, the wood and the water. */
+  /** The flocks (world/flock.js): the hill pasture's, grazing on the gentler ground past the stream, out of the gorse, the wood and the water. */
   setUpFlock() {
     const hill = this.world.fields.hill;
     this.flock = null;
+    this.flocks = [];
     if (!hill) return;
     const allowed = (x, z) =>
       hill.inPasture(x, z, 3) && z > hill.farEdge(x) + this.world.layout.hill.foot + 2 && !hill.inWood(x, z, -2) && hill.waterAt(x, z) < 0.05 &&
@@ -7225,19 +7226,35 @@ export class Game {
     this.flock = new Flock({ allowed, random, params: this.flockParams });
     this.flock.place(spot);
     this.flockView = new FlockView(this.scene, this.flock, (x, z) => this.world.groundHeightAt(x, z));
+    this.flocks.push({ flock: this.flock, view: this.flockView });
     this.sheepAudio = new SheepAudio(this.audioHub);
+    this.setUpFieldFlock(hill, random);
+  }
+
+  /** A smaller flock in the sheep field beside the lane, south of its drystone wall (hill.sheepFieldOk). */
+  setUpFieldFlock(hill, random) {
+    const e = hill.east;
+    if (!e || !this.flockParams.fieldCount) return;
+    const wallZ = this.world.layout.hill.paddocks.east.wall?.z ?? e.minZ;
+    const spot = findFlockSpot(hill.sheepFieldOk, { minX: e.minX + 8, maxX: e.maxX - 6, minZ: wallZ + 6, maxZ: e.maxZ - 6 }, random);
+    if (!spot) return;
+    const flock = new Flock({ allowed: hill.sheepFieldOk, random, params: this.flockParams, count: this.flockParams.fieldCount });
+    flock.place(spot);
+    this.flocks.push({ flock, view: new FlockView(this.scene, flock, (x, z) => this.world.groundHeightAt(x, z)) });
   }
 
   /** Moves the flock: it keeps clear of every vehicle that comes close (faster ones from further off), the girls and you. */
   updateFlock(dt) {
-    if (!this.flock) return;
+    if (!this.flocks?.length) return;
     const threats = this.units.map((u) => ({ x: u.quad.position.x, z: u.quad.position.z, speed: u.quad.speed }));
     threats.push({ x: this.player.position.x, z: this.player.position.z, speed: 0 });
     for (const c of this.companions) threats.push({ x: c.root.position.x, z: c.root.position.z, speed: 0 });
-    for (const b of this.flock.update(dt, threats)) {
-      this.sheepAudio.bleat({ ...b, y: this.world.groundHeightAt(b.x, b.z) + 0.7 });
+    for (const { flock, view } of this.flocks) {
+      for (const b of flock.update(dt, threats)) {
+        this.sheepAudio.bleat({ ...b, y: this.world.groundHeightAt(b.x, b.z) + 0.7 });
+      }
+      view.update();
     }
-    this.flockView.update();
   }
 
   fixedUpdate(dt) {

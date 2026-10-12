@@ -3065,3 +3065,9 @@ Jamie: the game was working his M4 Max MacBook Pro hard, and more is coming. Mea
 - Jamie: more open, and (after a first try that took off the outer hedges) keep the external borders, remove the internal ones. So the two fields are hedged on their outer sides only: the grass field's south hedge continued west of its corner, the west field's west side and the east field's east side (`fields.js`). Gone: the lane's own hedges along its whole length where the fields are (the lane runs open between them, its banks and the ramp at each gateway still there), and the pasture's north hedge along the width of the two fields (one gap, corner to corner). A lane with no fields beside it would still keep its hedges.
 - The gateway ramps stay as the way up and down the lane's banks, which are still about 2 m high and steep elsewhere. Not done: easing the banks themselves down along the lane.
 - Not checked: how the lane looks open, and the colour seam where the fields' ground meets the neighbours' beyond the outer hedges.
+
+## Sheep in the sheep field (TODO 188, follow-up)
+
+- Jamie: yes to some sheep in the sheep field. A second flock (`setUpFieldFlock` in game.js; the pasture's stays as it was), `fieldCount` 5 in the "Sheep" tuning, the same behaviour and bleats. Where they may stand is `hill.sheepFieldOk`: inside the field, south of the drystone wall (they have no physics and would walk through it, so the strip behind the wall stays empty), 2 m clear of the thorns and 5 m from the lane's bank. A test runs the flock 120 s, 60 of them scattering from a quad at 8 m/s, and checks every sheep stays on allowed ground.
+- Not checked: how they look on the knolls.
+

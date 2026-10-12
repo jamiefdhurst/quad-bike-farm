@@ -852,7 +852,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Are there any animals?',
-        a: `A flock of sheep on the hill pasture, past the stream. They graze, wander about, bunch up and call to each other now and then. Come close and they move off, further away the faster you are going, and the rest of the flock runs with them. You can't hurt them, and for now there's nothing to do with them but watch.`,
+        a: `A flock of sheep on the hill pasture, past the stream, and a smaller one in the sheep field beside the lane, on the big side of its drystone wall. They graze, wander about, bunch up and call to each other now and then. Come close and they move off, further away the faster you are going, and the rest of the flock runs with them. You can't hurt them, and for now there's nothing to do with them but watch.`,
         tip: 'Ride up the hill pasture to find the sheep. They move off from a quad.',
       },
       {

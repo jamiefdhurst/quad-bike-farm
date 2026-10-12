@@ -4,6 +4,8 @@ import { createHill } from '../src/world/hill.js';
 import { createFields } from '../src/world/fields.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
+import { Flock, findFlockSpot, DEFAULT_FLOCK_PARAMS } from '../src/world/flock.js';
+import { createRandom } from '../src/core/random.js';
 
 const track = new Track(LAYOUT.trackPoints);
 const heights = createTerrainHeight(LAYOUT, track);
@@ -156,6 +158,29 @@ describe('the hill through the south gate', () => {
       expect(fields.hedgeAhead(0, 100, Math.PI / 2)).toBeCloseTo(pads.east.maxX); // east: its outer hedge
       expect(fields.hedgeAhead(-60, 100, Math.PI)).toBeCloseTo(20); // north: the grass field's south hedge
       expect(fields.hedgeAhead(-90, 100, Math.PI)).toBeCloseTo(20); // and the piece of it west of the grass field's corner
+    });
+
+    it('give the sheep the big side of the sheep field, south of the wall and clear of the thorns', () => {
+      const w = pads.east.wall;
+      expect(hill.sheepFieldOk(10, w.z + 10)).toBe(true);
+      expect(hill.sheepFieldOk(10, w.z - 5)).toBe(false); // behind the wall
+      expect(hill.sheepFieldOk(10, w.z + 1)).toBe(false); // at it
+      expect(hill.sheepFieldOk(-60, 100)).toBe(false); // the meadow
+      expect(hill.sheepFieldOk(-27, 112)).toBe(false); // the gateway and the lane's bank
+      for (const [x, z] of pads.east.thorns) expect(hill.sheepFieldOk(x, z)).toBe(false);
+      const spot = findFlockSpot(hill.sheepFieldOk, { minX: hill.east.minX + 8, maxX: hill.east.maxX - 6, minZ: w.z + 6, maxZ: hill.east.maxZ - 6 }, createRandom(3));
+      expect(spot).not.toBeNull();
+    });
+
+    it('keep their flock in the field, on its allowed side, even running from a quad', () => {
+      const w = pads.east.wall;
+      const flock = new Flock({ allowed: hill.sheepFieldOk, random: createRandom(7), params: { ...DEFAULT_FLOCK_PARAMS }, count: DEFAULT_FLOCK_PARAMS.fieldCount });
+      flock.place(findFlockSpot(hill.sheepFieldOk, { minX: hill.east.minX + 8, maxX: hill.east.maxX - 6, minZ: w.z + 6, maxZ: hill.east.maxZ - 6 }, createRandom(3)));
+      expect(flock.sheep).toHaveLength(DEFAULT_FLOCK_PARAMS.fieldCount);
+      for (let t = 0; t < 120; t += 0.1) {
+        flock.update(0.1, t < 60 ? [{ x: 6, z: 112, speed: 8 }] : []);
+        for (const sh of flock.sheep) expect(hill.sheepFieldOk(sh.x, sh.z)).toBe(true);
+      }
     });
 
     it('are on the girls\' routes from the yard, through the lane', () => {

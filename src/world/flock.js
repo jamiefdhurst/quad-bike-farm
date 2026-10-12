@@ -3,7 +3,8 @@
 // threatens them each step, and gets back the bleats to play.
 
 export const DEFAULT_FLOCK_PARAMS = {
-  count: 9, // sheep in the flock (read when the game is dealt)
+  count: 9, // sheep in the hill pasture's flock (read when the game is dealt)
+  fieldCount: 5, // sheep in the sheep field's own, smaller flock beside the lane (read when the game is dealt)
   walkSpeed: 0.8, // m/s drifting from one patch of grass to the next
   runSpeed: 4.2, // m/s moving off from something
   turnRate: 3, // rad/s a sheep can turn at
@@ -24,6 +25,7 @@ export const DEFAULT_FLOCK_PARAMS = {
 
 export const FLOCK_PARAM_RANGES = {
   count: [0, 20, 1],
+  fieldCount: [0, 12, 1],
   walkSpeed: [0.2, 2, 0.05],
   runSpeed: [1, 8, 0.1],
   turnRate: [0.5, 8, 0.1],
@@ -51,8 +53,9 @@ export class Flock {
    * `allowed(x, z)` says whether a sheep may stand there (not in the water, the wood, the gorse, up a bank too steep, or through a
    * hedge). `random` is a seeded 0..1 source, so the same game deals the same flock.
    */
-  constructor({ allowed, random = Math.random, params = { ...DEFAULT_FLOCK_PARAMS } }) {
+  constructor({ allowed, random = Math.random, params = { ...DEFAULT_FLOCK_PARAMS }, count = null }) {
     this.allowed = allowed;
+    this.count = count; // how many to place, if not `params.count` (the sheep field's flock is smaller)
     this.random = random;
     this.p = params;
     this.sheep = [];
@@ -63,7 +66,8 @@ export class Flock {
     const { random, p } = this;
     this.sheep = [];
     let tries = 0;
-    while (this.sheep.length < p.count && tries++ < p.count * 60) {
+    const want = this.count ?? p.count;
+    while (this.sheep.length < want && tries++ < want * 60) {
       const a = random() * TAU;
       const r = Math.sqrt(random()) * Math.min(p.spread, 3 + tries * 0.05);
       const x = centre.x + Math.cos(a) * r;
