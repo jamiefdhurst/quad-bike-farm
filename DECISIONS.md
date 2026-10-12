@@ -3212,3 +3212,15 @@ Jamie's answers: none asked. The item settled the shape (rings, she wanders off,
 - Panel: the two levels in Problems, which wheel, and a "Hit a post head-on" button that calls the real `crash` method. Tuning per quad under "Crash damage". Console: `faults.rod`, `faults.rim`.
 - Not done: a sound for the knock, the girls reacting at the instant of the hit, a rim leaking air, and bending anything on the tractor or Land Rover specially (they take the same rules).
 - **Not checked** in the running game: the thresholds against real gatepost hits and the ramp landing (picked sensibly, not measured), and how the toe and wobble look on the models. Unit tests only.
+
+## The green quad stalling (2026-10-12)
+
+Jamie: the green stalls a lot, cold and warm. Found with the real engine model run headlessly (no browser), not by changing the stall RPM, which was fine: a stall point of about 270 to 300 against an idle of 800 to 900.
+
+- **Warm:** an engine is erratic (stumbles, surges, now and then dies) once its build roughness plus wear passes `erraticFrom` 0.8. The green was dealt roughness 0.55 to 0.7 plus wear 0.25 to 0.55, so every green was born past the line: 16 of 40 stalled within five minutes of idling at wear 0.25 and 37 of 40 at 0.4 (red and blue, none). The old three-wheeler (0.80 to 1.35) and orange (0.79 to 1.10) were the same. Wear only goes up (0.012 a minute idling), so a green will cross the line again after enough play until it is serviced.
+- **Fix:** wear ranges lowered, roughness left alone: green 0.08 to 0.15, three-wheeler 0.12 to 0.20, orange 0.02 to 0.04. `tests/startingCondition.test.js` keeps the green's and three-wheeler's middle roughness plus worst wear under the line. The fleet test's "worn" for the three-wheeler is now "at least as worn as the yellow's low end".
+- **Cold:** the green needs 1.15 of enrichment at temperature 0 and full choke gave 1.0, so it was lean on full choke until it had warmed a little and died within seconds. `chokeEnrichment` is 1.25 for the green. It still wants choke for about three minutes and eases off as it warms (with the choke following its need it ran 400 s without a stall); take the choke off early and it dies, as intended.
+- **Not changed:** the stall RPM and the spec idle. The yellow, orange and three-wheeler also have a choke a little short of their cold need (1.0 against 1.05 to 1.1); left, as they are two-strokes with their own jet error.
+- **Orange:** its roughness alone (0.75 to 0.9) is on the line, so it is still erratic in many games. That is a roughness decision, not wear.
+- **A weak battery** (under 40%) kills any petrol engine at idle (the 10 October charging change); I could not see Jamie's save, so that is unchecked as a cause.
+- **Not checked** in the running game: the headless runs use the engine alone, with no clutch or braking load.

@@ -237,7 +237,7 @@ export const QUAD_SPECS = [
     tapStyle: 'rearLeft', // where the fuel tap sits
     hoursRange: [1800, 3500], // engine hours showing when the game starts
     odoRange: [4500, 8750], // odometer miles showing when the game starts
-    wearRange: [0.25, 0.55], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
+    wearRange: [0.08, 0.15], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
     // Slow and lumpy; a big slow heave, like a tractor.
     safeIdle: 800,
     idleRange: [800, 900],
@@ -249,6 +249,7 @@ export const QUAD_SPECS = [
     fuel: { tankCapacity: 14, reserveLitres: 2.5, burnPerRev: 0.000085 },
     engine: {
       idleRpmWarm: 1050,
+      chokeEnrichment: 1.25, // full choke must cover its cold need (1.15), or it dies on the choke before it has warmed a little
       maxRpm: 5600,
       redlineRpm: 5200,
       rpmRiseRate: 5.5,
@@ -317,7 +318,7 @@ export const QUAD_SPECS = [
     tapStyle: 'lowRight', // where the fuel tap sits
     hoursRange: [100, 400], // engine hours showing when the game starts
     odoRange: [400, 1600], // odometer miles showing when the game starts
-    wearRange: [0.04, 0.2], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
+    wearRange: [0.02, 0.04], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
     // A nervous, hunting idle; harsh and hard.
     safeIdle: 1600,
     idleRange: [2000, 2300],
@@ -621,7 +622,7 @@ export const EXTRA_SPECS = [
     tapStyle: 'left', // where the fuel tap sits
     hoursRange: [800, 2400], // engine hours showing when the game starts
     odoRange: [3000, 9000], // odometer miles showing when the game starts
-    wearRange: [0.35, 0.65], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
+    wearRange: [0.12, 0.2], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
     tinkers: false, // nobody leaves a throttle stop out on this
     solo: true, // no room for anyone on the back
     wheelShake: 0.9, // old and loose, so its wheels shake a bit more than the quads'

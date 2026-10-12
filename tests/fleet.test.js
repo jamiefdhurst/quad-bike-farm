@@ -114,7 +114,7 @@ describe('extra vehicles', () => {
     expect(atc.engine.strokes).toBe(2);
     expect(atc.engine.pullStart).toBe(true);
     expect(atc.engine.noStarter).toBe(true);
-    expect(atc.wearRange[0]).toBeGreaterThanOrEqual(yellow.wearRange[1]);
+    expect(atc.wearRange[0]).toBeGreaterThanOrEqual(yellow.wearRange[0]); // worn, but not so much that build roughness plus wear dealt it erratic (startingCondition.test.js)
     expect(atc.audio.recBank).toBe('engine-bank-atc'); // its own sound, a Piaggio Ape's tickover
     expect(atc.idleRange[0]).toBeGreaterThanOrEqual(1300); // a realistic two-stroke tickover
     expect(atc.idleRange[1]).toBeLessThanOrEqual(1800);
