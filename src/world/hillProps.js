@@ -4,6 +4,7 @@
 
 import * as THREE from 'three';
 import { instanceModel, modelBounds } from './assets.js';
+import { tiledInstances, MODEL_TILE } from './tiledInstances.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -134,11 +135,8 @@ function buildGorse({ scene, heights, fields, physics, RAPIER, random }) {
     matrices.push(matrixAt(x, y, z, random() * Math.PI * 2, s * (1 + random() * 0.5), s, s * (1 + random() * 0.5)));
     physics.createCollider(RAPIER.ColliderDesc.cylinder(0.35 * s, 0.7 * s).setTranslation(x, y + 0.35 * s, z));
   }
-  const mesh = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }), matrices.length);
-  matrices.forEach((m, i) => mesh.setMatrixAt(i, m));
-  mesh.castShadow = mesh.receiveShadow = true;
-  mesh.name = 'gorse';
-  scene.add(mesh);
+  const material = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+  scene.add(tiledInstances(geo, material, matrices, { tileSize: MODEL_TILE, castShadow: true, name: 'gorse' }));
 }
 
 /** A plant of fronds: each frond a curved, tapering strip, each face twice (once each way round) so it lights the same from both sides. */
@@ -186,46 +184,42 @@ function frondGeometry(random, fronds, length, width, droop) {
 }
 
 /** Bracken in thick patches over the rough (hill.brackenAt), knee to waist high, some turning russet. No collider: you ride through it. */
-function buildBracken({ scene, heights, fields, random }) {
+function buildBracken({ scene, heights, fields, random, drawDistance }) {
   const hill = fields.hill;
   const p = hill.pasture;
   const geo = frondGeometry(random, 4, 0.9, 0.16, 0.45);
   const count = 4500;
-  const mesh = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }), count);
-  const col = new THREE.Color();
-  let placed = 0;
-  for (let tries = 0; placed < count && tries < count * 12; tries++) {
+  const matrices = [];
+  const colors = [];
+  for (let tries = 0; matrices.length < count && tries < count * 12; tries++) {
     const x = p.minX + random() * (p.maxX - p.minX);
     const z = p.minZ + random() * (p.maxZ - p.minZ);
     if (random() > hill.brackenAt(x, z)) continue;
     const s = 0.7 + random() * 0.6;
-    mesh.setMatrixAt(placed, matrixAt(x, heights.heightAt(x, z) - 0.03, z, random() * 6.28, s, s * (0.8 + random() * 0.4), s));
+    matrices.push(matrixAt(x, heights.heightAt(x, z) - 0.03, z, random() * 6.28, s, s * (0.8 + random() * 0.4), s));
     // Most green; some turning, the way it does from late summer.
     const turning = random() < 0.25;
+    const col = new THREE.Color();
     if (turning) col.setHSL(0.07 + random() * 0.03, 0.5, 0.5);
     else col.setHSL(0.23 + random() * 0.04, 0.35 + random() * 0.15, 0.5 + random() * 0.15);
-    mesh.setColorAt(placed, col);
-    placed++;
+    colors.push(col);
   }
-  mesh.count = placed;
-  mesh.receiveShadow = true;
-  mesh.name = 'bracken';
-  scene.add(mesh);
+  const material = new THREE.MeshLambertMaterial({ vertexColors: true });
+  scene.add(drawDistance.add(tiledInstances(geo, material, matrices, { colors, name: 'bracken' }), 'roughDistance'));
 }
 
 /** Tussocks of long, coarse grass all over the pasture and along the lane's banks: rough grazing, never mown. */
-function buildTussocks({ scene, heights, fields, random }) {
+function buildTussocks({ scene, heights, fields, random, drawDistance }) {
   const hill = fields.hill;
   const geo = frondGeometry(random, 9, 0.38, 0.025, 0.55);
   const count = 16000;
-  const mesh = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }), count);
-  const col = new THREE.Color();
+  const matrices = [];
+  const colors = [];
   const lane = hill.laneRect;
   const p = hill.pasture;
   const laneArea = (lane.maxX - lane.minX) * (lane.maxZ - lane.minZ);
   const pastureArea = (p.maxX - p.minX) * (p.maxZ - p.minZ);
-  let placed = 0;
-  for (let tries = 0; placed < count && tries < count * 4; tries++) {
+  for (let tries = 0; matrices.length < count && tries < count * 4; tries++) {
     const inLane = random() < laneArea / (laneArea + pastureArea);
     const r = inLane ? lane : p;
     const x = r.minX + random() * (r.maxX - r.minX);
@@ -237,15 +231,11 @@ function buildTussocks({ scene, heights, fields, random }) {
       if (dx > 0.3 && dx < 1.3) continue;
     }
     const s = 0.7 + random() * 0.8;
-    mesh.setMatrixAt(placed, matrixAt(x, heights.heightAt(x, z) - 0.02, z, random() * 6.28, s, s * (0.7 + random() * 0.7), s));
-    col.setHSL(0.15 + random() * 0.07, 0.3 + random() * 0.2, 0.7 + random() * 0.3);
-    mesh.setColorAt(placed, col);
-    placed++;
+    matrices.push(matrixAt(x, heights.heightAt(x, z) - 0.02, z, random() * 6.28, s, s * (0.7 + random() * 0.7), s));
+    colors.push(new THREE.Color().setHSL(0.15 + random() * 0.07, 0.3 + random() * 0.2, 0.7 + random() * 0.3));
   }
-  mesh.count = placed;
-  mesh.receiveShadow = true;
-  mesh.name = 'tussocks';
-  scene.add(mesh);
+  const material = new THREE.MeshLambertMaterial({ vertexColors: true });
+  scene.add(drawDistance.add(tiledInstances(geo, material, matrices, { colors, name: 'tussocks' }), 'roughDistance'));
 }
 
 /** The flat rock at the top of the pasture (layout.hill.viewpoint) where the girls sit with the flask: a squat grey boulder with a smaller one by it. */

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { tiledInstances, MODEL_TILE } from './tiledInstances.js';
 
 // Every external model. Sources and licences are listed in ASSETS.md.
 export const MODEL_FILES = {
@@ -71,22 +72,17 @@ export function enableShadows(root, cast = true, receive = true) {
 }
 
 /**
- * Turns a static model into instanced meshes, one per sub-mesh, placed by the
- * given matrices. Far cheaper than cloning for hedges and trees.
+ * Turns a static model into instanced meshes, one per sub-mesh and tile of ground (tiledInstances.js), placed by the given matrices. Far
+ * cheaper than cloning for hedges and trees, and the tiles out of view are left out.
  */
 export function instanceModel(modelRoot, matrices, { castShadow = true, receiveShadow = true } = {}) {
   const group = new THREE.Group();
   modelRoot.updateMatrixWorld(true);
-  const tmp = new THREE.Matrix4();
   modelRoot.traverse((o) => {
     if (!o.isMesh) return;
-    const inst = new THREE.InstancedMesh(o.geometry, o.material, matrices.length);
-    matrices.forEach((m, i) => inst.setMatrixAt(i, tmp.multiplyMatrices(m, o.matrixWorld)));
-    inst.instanceMatrix.needsUpdate = true;
-    inst.castShadow = castShadow;
-    inst.receiveShadow = receiveShadow;
-    inst.computeBoundingSphere();
-    group.add(inst);
+    const placed = matrices.map((m) => new THREE.Matrix4().multiplyMatrices(m, o.matrixWorld));
+    const tiles = tiledInstances(o.geometry, o.material, placed, { tileSize: MODEL_TILE, castShadow, receiveShadow });
+    group.add(...tiles.children);
   });
   return group;
 }

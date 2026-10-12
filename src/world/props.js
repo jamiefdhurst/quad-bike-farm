@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { stripFrame } from './layout.js';
 import { enableShadows, instanceModel, modelBounds } from './assets.js';
+import { tiledInstances } from './tiledInstances.js';
 import { patchAt } from './terrain.js';
 import { buildBarnShed } from './barnBuild.js';
 import { buildJumpRamp } from './jumpRamp.js';
@@ -540,7 +541,7 @@ function buildDistantTrees({ scene, layout, heights, fields, random }) {
 }
 
 /** Instanced grass tufts across the field, kept off the track and the yard. */
-function buildGrass({ scene, layout, heights, random }) {
+function buildGrass({ scene, layout, heights, random, drawDistance }) {
   const blades = 7;
   const pos = [];
   const colors = [];
@@ -566,17 +567,13 @@ function buildGrass({ scene, layout, heights, random }) {
   for (let i = 0; i < normals.count; i++) normals.setXYZ(i, 0, 1, 0);
 
   const count = 90000;
-  const mesh = new THREE.InstancedMesh(
-    geo,
-    new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }),
-    count,
-  );
+  const material = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+  const matrices = [];
+  const tints = [];
   const F = layout.fieldHalf - 1.5;
   const { yard, dragStrip: strip } = layout;
-  const col = new THREE.Color();
-  let placed = 0;
   let tries = 0;
-  while (placed < count && tries++ < count * 3) {
+  while (matrices.length < count && tries++ < count * 3) {
     const x = (random() * 2 - 1) * F;
     const z = (random() * 2 - 1) * F;
     if (heights.mudAt(x, z) > 0.02) continue;
@@ -587,22 +584,17 @@ function buildGrass({ scene, layout, heights, random }) {
       if (f.along > -3 && f.along < strip.length + strip.runOff + 3 && Math.abs(f.across) < strip.width / 2 + 2) continue;
     }
     const s = 0.6 + random() * 0.8;
-    mesh.setMatrixAt(placed, matrixAt(x, heights.heightAt(x, z) - 0.02, z, random() * 6.28, s, s * (0.7 + random() * 0.6), s));
-    col.setHSL(0.2 + random() * 0.05, 0.3 + random() * 0.15, 0.55 + random() * 0.2);
-    mesh.setColorAt(placed, col);
-    placed++;
+    matrices.push(matrixAt(x, heights.heightAt(x, z) - 0.02, z, random() * 6.28, s, s * (0.7 + random() * 0.6), s));
+    tints.push(new THREE.Color().setHSL(0.2 + random() * 0.05, 0.3 + random() * 0.15, 0.55 + random() * 0.2));
   }
-  mesh.count = placed;
-  mesh.receiveShadow = true;
-  mesh.name = 'grass';
-  scene.add(mesh);
+  scene.add(drawDistance.add(tiledInstances(geo, material, matrices, { colors: tints, name: 'grass' }), 'coverDistance'));
 }
 
 /**
  * Cut straw stalks standing in the stubble fields, in the drill rows (half a metre apart, the way each field was drilled), off the tarmac and
  * clear of the hedges: each field's own crop (layout.stubbleFields), the barley shorter, greyer and thicker than the wheat.
  */
-function buildStubble({ scene, fields, heights, random }) {
+function buildStubble({ scene, fields, heights, random, drawDistance }) {
   const areas = ['north', 'south'].filter((k) => fields.areas[k]);
   if (!areas.length) return;
   const perArea = (r) => (r.maxX - r.minX) * (r.maxZ - r.minZ);
@@ -645,12 +637,11 @@ function buildStubble({ scene, fields, heights, random }) {
     for (let i = 0; i < normals.count; i++) normals.setXYZ(i, 0, 1, 0);
 
     const count = Math.round((total * weight[n]) / weight.reduce((a, b) => a + b, 0));
-    const mesh = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }), count);
+    const matrices = [];
+    const tints = [];
     const alongX = f.rows !== 'z';
-    const col = new THREE.Color();
-    let placed = 0;
     let tries = 0;
-    while (placed < count && tries++ < count * 3) {
+    while (matrices.length < count && tries++ < count * 3) {
       const span = alongX ? r.maxZ - r.minZ : r.maxX - r.minX;
       const row = (alongX ? r.minZ : r.minX) + 0.25 + Math.floor(random() * (span / 0.5)) * 0.5 + (random() - 0.5) * 0.06;
       const along = alongX ? r.minX + random() * (r.maxX - r.minX) : r.minZ + random() * (r.maxZ - r.minZ);
@@ -659,15 +650,11 @@ function buildStubble({ scene, fields, heights, random }) {
       if (fields.stubbleAt(x, z) < 0.99 || fields.hedgeDistance(x, z) < 1.5) continue;
       const sc = 0.8 + random() * 0.5;
       const yaw = (alongX ? 0 : Math.PI / 2) + (random() - 0.5) * 0.3;
-      mesh.setMatrixAt(placed, matrixAt(x, heights.heightAt(x, z) - 0.01, z, yaw, sc, sc * (0.7 + random() * 0.6), sc));
-      col.setHSL(0.11 + random() * 0.03, (f.crop === 'barley' ? 0.25 : 0.45) + random() * 0.15, 0.5 + random() * 0.12);
-      mesh.setColorAt(placed, col);
-      placed++;
+      matrices.push(matrixAt(x, heights.heightAt(x, z) - 0.01, z, yaw, sc, sc * (0.7 + random() * 0.6), sc));
+      tints.push(new THREE.Color().setHSL(0.11 + random() * 0.03, (f.crop === 'barley' ? 0.25 : 0.45) + random() * 0.15, 0.5 + random() * 0.12));
     }
-    mesh.count = placed;
-    mesh.receiveShadow = true;
-    mesh.name = `stubble-${areas[n]}`;
-    scene.add(mesh);
+    const material = new THREE.MeshLambertMaterial({ vertexColors: true });
+    scene.add(drawDistance.add(tiledInstances(geo, material, matrices, { colors: tints, name: `stubble-${areas[n]}` }), 'coverDistance'));
   }
 }
 

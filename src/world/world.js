@@ -3,6 +3,8 @@ import { LAYOUT } from './layout.js';
 import { Track } from './track.js';
 import { createTerrainHeight } from './terrainHeight.js';
 import { createTerrain } from './terrain.js';
+import { DrawDistance } from './tiledInstances.js';
+import { DEFAULT_GRAPHICS_PARAMS } from '../core/graphics.js';
 import { buildProps } from './props.js';
 import { DEFAULT_BARN_PARAMS, BARN_PARAM_RANGES, underRoof, insideBarn, indoorLevel, barnShape } from './barn.js';
 import { GroundWear, DEFAULT_WEAR_PARAMS, WEAR_PARAM_RANGES } from './groundWear.js';
@@ -21,8 +23,9 @@ import * as THREE from 'three';
 
 /** The farm: terrain, track, sky and static props. */
 export class World {
-  constructor({ scene, physics, RAPIER, renderer, models, layout = LAYOUT }) {
+  constructor({ scene, physics, RAPIER, renderer, models, layout = LAYOUT, graphics = { ...DEFAULT_GRAPHICS_PARAMS } }) {
     this.layout = layout;
+    this.drawDistance = new DrawDistance(graphics); // hides far tiles of grass, stubble, tussocks and bracken (tiledInstances.js)
     this.track = new Track(layout.trackPoints);
     this.heights = createTerrainHeight(layout, this.track);
     this.fields = createFields(layout);
@@ -79,7 +82,7 @@ export class World {
         })
       : null;
 
-    const ctx = { scene, physics, RAPIER, renderer, models, layout, grid: this.cattleGrid, heights: this.heights, track: this.track, wear: this.wear, fields: this.fields, roadMud: this.roadMud };
+    const ctx = { scene, physics, RAPIER, renderer, models, layout, grid: this.cattleGrid, heights: this.heights, track: this.track, wear: this.wear, fields: this.fields, roadMud: this.roadMud, drawDistance: this.drawDistance };
     this.terrain = createTerrain(ctx);
     this.props = buildProps(ctx);
   }
@@ -216,5 +219,6 @@ export class World {
       m.roughness = 0.95 - 0.25 * this.weather.wet;
     }
     this.sky.update(dt, focus, camera);
+    this.drawDistance.update(camera.position);
   }
 }
