@@ -29,46 +29,111 @@ function blob(r, sx, sy, sz, at, hex, seed, detail = 1) {
   return paint(g.toNonIndexed(), hex, 0.1, seed);
 }
 
-/** A rabbit facing +z, haunches at the back, about 0.4 m long. */
+/** Moves a geometry's vertices by a deterministic lumpy noise, for fur and feathers (as the sheep's wool is). */
+function lump(geo, amount) {
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    const k = 1 + amount * (Math.sin(x * 61 + z * 43) * Math.sin(y * 53 + x * 29) + 0.6 * Math.sin(z * 79 - y * 37));
+    pos.setXYZ(i, x * k, y * k, z * k);
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/** A lumpy blob: an icosphere stretched, moved and roughened. */
+function fur(r, sx, sy, sz, at, hex, seed, amount = 0.07, detail = 2, vary = 0.14) {
+  const g = new THREE.IcosahedronGeometry(r, detail);
+  g.scale(sx, sy, sz);
+  g.translate(at[0], at[1], at[2]);
+  return paint(lump(g.toNonIndexed(), amount), hex, vary, seed);
+}
+
+/** A tapered stalk from (x, y0, z0) to (x, y1, z1): legs, ears, toes. */
+function stalk(r0, r1, from, to, hex, seed, sides = 5) {
+  const len = Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]);
+  const g = new THREE.CylinderGeometry(r1, r0, len, sides);
+  const dir = new THREE.Vector3(to[0] - from[0], to[1] - from[1], to[2] - from[2]).normalize();
+  g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(UP, dir));
+  g.translate((from[0] + to[0]) / 2, (from[1] + to[1]) / 2, (from[2] + to[2]) / 2);
+  return paint(g.toNonIndexed(), hex, 0.06, seed);
+}
+
+/** A rabbit facing +z, haunches at the back, about 0.45 m long: brown agouti fur on the back, pale belly and cheeks, white scut. */
 function rabbitGeometry() {
   const parts = [
-    blob(0.11, 0.9, 1, 1.35, [0, 0.13, -0.02], 0x8a6d4b, 1),
-    blob(0.09, 1, 1, 1, [0, 0.14, -0.13], 0x806445, 2), // haunches
-    blob(0.075, 0.9, 0.9, 1.1, [0, 0.24, 0.13], 0x8f7452, 3), // head
-    blob(0.03, 0.5, 2.6, 0.6, [-0.035, 0.34, 0.1], 0x7a5f40, 4),
-    blob(0.03, 0.5, 2.6, 0.6, [0.035, 0.34, 0.1], 0x7a5f40, 5),
-    blob(0.04, 1, 1, 1, [0, 0.16, -0.22], 0xeeeadc, 6), // the white scut
+    fur(0.12, 0.92, 0.95, 1.4, [0, 0.14, -0.02], 0x8a6d4b, 1, 0.08), // body
+    fur(0.1, 0.8, 0.5, 1.2, [0, 0.07, 0.02], 0xd2c3a6, 2, 0.05), // pale belly
+    fur(0.1, 1.05, 1, 1.05, [-0.075, 0.15, -0.13], 0x7d6244, 3, 0.08), // haunches
+    fur(0.1, 1.05, 1, 1.05, [0.075, 0.15, -0.13], 0x7d6244, 4, 0.08),
+    fur(0.085, 0.9, 0.9, 1.1, [0, 0.25, 0.14], 0x91765a, 5, 0.05), // head
+    fur(0.04, 1, 0.8, 1, [-0.05, 0.225, 0.2], 0xcdbd9f, 6, 0.04, 1), // cheeks
+    fur(0.04, 1, 0.8, 1, [0.05, 0.225, 0.2], 0xcdbd9f, 7, 0.04, 1),
+    fur(0.022, 1.1, 0.8, 0.9, [0, 0.235, 0.255], 0xc9a08a, 8, 0, 1), // nose
+    fur(0.016, 1, 1, 0.5, [-0.058, 0.275, 0.18], 0x15110e, 9, 0, 1), // eyes, dark and shiny
+    fur(0.016, 1, 1, 0.5, [0.058, 0.275, 0.18], 0x15110e, 10, 0, 1),
+    fur(0.05, 1, 1, 1, [0, 0.17, -0.25], 0xf1eee2, 11, 0.1, 1), // the white scut
+    stalk(0.016, 0.014, [-0.04, 0.1, 0.1], [-0.04, 0, 0.14], 0x846a4a, 12), // forelegs
+    stalk(0.016, 0.014, [0.04, 0.1, 0.1], [0.04, 0, 0.14], 0x846a4a, 13),
   ];
+  for (const x of [-0.075, 0.075]) parts.push(fur(0.04, 0.55, 0.4, 1.9, [x, 0.03, -0.1], 0x6e5638, 14, 0.04, 1)); // long hind feet
+  for (const x of [-1, 1]) {
+    // Ears: long, tapered, tilted back and out, with a dark tip and a pink inside.
+    const ear = fur(0.03, 0.6, 3.2, 0.35, [0, 0, 0], 0x7a5f40, 15, 0.03, 1);
+    ear.rotateZ(x * -0.18);
+    ear.rotateX(-0.25);
+    ear.translate(x * 0.04, 0.36, 0.2);
+    parts.push(ear);
+    const tip = fur(0.022, 0.6, 1.2, 0.3, [0, 0, 0], 0x2a2018, 16, 0, 1);
+    tip.rotateZ(x * -0.2);
+    tip.rotateX(-0.3);
+    tip.translate(x * 0.05, 0.435, 0.185);
+    parts.push(tip);
+  }
   return mergeGeometries(parts);
 }
 
-/** A cock pheasant facing +z, standing: about 0.35 m tall with a long tail trailing behind. */
+/** A cock pheasant facing +z, standing: about 0.4 m tall, copper breast spotted dark, green head with a white collar and a red face, a barred tail 0.5 m long. */
 function pheasantGeometry() {
-  const tail = new THREE.ConeGeometry(0.05, 0.5, 5);
-  tail.rotateX(-Math.PI / 2 - 0.15); // pointing back, a little down
-  tail.translate(0, 0.26, -0.38);
   const parts = [
-    blob(0.13, 0.9, 1, 1.5, [0, 0.27, 0], 0x9a5a2a, 1),
-    blob(0.07, 1, 1.5, 1, [0, 0.4, 0.17], 0x1f4a3a, 2), // neck and head, glossy green
-    blob(0.035, 1, 1, 1, [0, 0.38, 0.17], 0xf0f0e8, 3), // the white ring at the neck
-    blob(0.04, 0.8, 0.8, 1.2, [0, 0.5, 0.21], 0x234f40, 4),
-    blob(0.025, 1, 0.6, 1, [0, 0.5, 0.26], 0xb3342a, 5), // the red wattle round the eye
-    paint(tail.toNonIndexed(), 0x8b6a3a, 0.14, 6),
+    fur(0.14, 0.9, 1, 1.5, [0, 0.27, 0], 0xa55a26, 1, 0.07, 2, 0.22), // body, speckled by the vertex variation
+    fur(0.1, 0.85, 0.7, 1.2, [0, 0.31, 0.1], 0xb4642c, 2, 0.06, 1, 0.18), // breast
+    fur(0.08, 0.9, 0.8, 1.2, [0, 0.22, -0.16], 0x7d4a22, 3, 0.06, 1, 0.14), // rump
+    fur(0.05, 1, 1.9, 1, [0, 0.42, 0.16], 0x1f4a3a, 4, 0.04, 1), // neck, glossy green
+    fur(0.052, 1.05, 0.5, 1.05, [0, 0.38, 0.16], 0xf0f0e8, 5, 0.03, 1), // the white collar
+    fur(0.052, 0.95, 0.95, 1.2, [0, 0.52, 0.2], 0x234f40, 6, 0.03, 1), // head
+    fur(0.03, 1.2, 0.9, 0.9, [-0.04, 0.515, 0.215], 0xc43a2e, 7, 0, 1), // the red face patch round each eye
+    fur(0.03, 1.2, 0.9, 0.9, [0.04, 0.515, 0.215], 0xc43a2e, 8, 0, 1),
+    fur(0.012, 1, 1, 0.6, [-0.05, 0.525, 0.23], 0x12100d, 9, 0, 1), // eyes
+    fur(0.012, 1, 1, 0.6, [0.05, 0.525, 0.23], 0x12100d, 10, 0, 1),
+    fur(0.014, 0.8, 0.7, 2, [0, 0.505, 0.27], 0xd8cfa0, 11, 0, 1), // beak
+    // The folded wings along the body, buff and brown, with a darker edge.
+    fur(0.09, 0.4, 0.55, 1.7, [-0.115, 0.29, -0.01], 0x8d5e30, 12, 0.06, 1, 0.2),
+    fur(0.09, 0.4, 0.55, 1.7, [0.115, 0.29, -0.01], 0x8d5e30, 13, 0.06, 1, 0.2),
   ];
+  // A long barred tail: a flat tapering fan of three plates trailing back and down.
+  for (const [x, yaw, c] of [[0, 0, 0x8a6a38], [-0.025, 0.1, 0x7a5c30], [0.025, -0.1, 0x7a5c30]]) {
+    const t = fur(0.04, 0.45, 0.12, 5.5, [0, 0, 0], c, 14, 0.1, 1, 0.22);
+    t.rotateX(0.12);
+    t.rotateY(yaw);
+    t.translate(x, 0.27, -0.38);
+    parts.push(t);
+  }
   for (const x of [-0.05, 0.05]) {
-    const leg = new THREE.CylinderGeometry(0.012, 0.012, 0.18, 4);
-    leg.translate(x, 0.09, 0.02);
-    parts.push(paint(leg.toNonIndexed(), 0x8c8570, 0.05, 7));
+    parts.push(stalk(0.014, 0.011, [x, 0.16, 0.03], [x, 0.01, 0.03], 0x8c8570, 15)); // legs
+    for (const dx of [-0.02, 0, 0.02]) parts.push(stalk(0.007, 0.005, [x, 0.012, 0.03], [x + dx, 0.004, 0.08], 0x8c8570, 16, 4)); // toes
   }
   return mergeGeometries(parts);
 }
 
 /** One wing, hinged at its root on the x axis and spread out along +x (the other is mirrored). */
 function wingGeometry() {
-  const g = new THREE.IcosahedronGeometry(0.12, 1);
-  g.scale(3, 0.18, 1.7);
-  g.translate(0.34, 0, 0);
-  return paint(g.toNonIndexed(), 0x865228, 0.14, 8);
+  const g = new THREE.IcosahedronGeometry(0.12, 2);
+  g.scale(2.7, 0.12, 1.6);
+  g.translate(0.31, 0, 0);
+  return paint(lump(g.toNonIndexed(), 0.08), 0x8d5e30, 0.2, 8);
 }
 
 export class WildlifeView {
@@ -90,7 +155,7 @@ export class WildlifeView {
     const nr = rabbits.rabbits.length;
     const np = pheasants.birds.length;
     this.rabbitMesh = make(rabbitGeometry(), nr, 'rabbits');
-    this.eyes = make(new THREE.SphereGeometry(0.014, 6, 4), nr * 2, 'rabbitEyes', true);
+    this.eyes = make(new THREE.SphereGeometry(0.02, 6, 4), nr * 2, 'rabbitEyes', true);
     this.pheasantMesh = make(pheasantGeometry(), np, 'pheasants');
     this.wings = make(wingGeometry(), np * 2, 'pheasantWings');
     this.t = { m: new THREE.Matrix4(), q: new THREE.Quaternion(), q2: new THREE.Quaternion(), p: new THREE.Vector3(), s: new THREE.Vector3(), n: new THREE.Vector3(), e: new THREE.Euler() };
@@ -138,8 +203,8 @@ export class WildlifeView {
           this.eyes.setMatrixAt(i * 2 + (side + 1) / 2, this.zero);
           continue;
         }
-        const at = new THREE.Vector3(side * 0.04, 0.25, 0.19).applyMatrix4(m);
-        this.eyes.setMatrixAt(i * 2 + (side + 1) / 2, new THREE.Matrix4().compose(at, q, s.clone().multiplyScalar(0.6 + glow * 0.8)));
+        const at = new THREE.Vector3(side * 0.05, 0.285, 0.225).applyMatrix4(m);
+        this.eyes.setMatrixAt(i * 2 + (side + 1) / 2, new THREE.Matrix4().compose(at, q, s.clone().multiplyScalar(0.5 + glow * 0.7)));
       }
     });
     this.pheasants.birds.forEach((b, i) => {
