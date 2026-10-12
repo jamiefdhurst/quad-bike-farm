@@ -142,6 +142,8 @@ import { WorkLight, WORK_LIGHT_PARAM_RANGES } from './npc/workLight.js';
 import { finishJob } from './workshop/benchJobs.js';
 import { Dares, DARE_PARAM_RANGES, DARE_KINDS, steepestBank } from './npc/dares.js';
 import { GirlBench, GIRL_BENCH_PARAM_RANGES, ASK_PROMPT, pickJob, workSpot } from './npc/girlBench.js';
+import { PhoneCalls, PHONE_PARAM_RANGES, callSpot } from './npc/phoneCalls.js';
+import { PhoneAudio } from './audio/phoneAudio.js';
 import { DEFAULT_HOME_PARAMS, HOME_PARAM_RANGES } from './npc/homeParking.js';
 import { Tea, TEA_PARAM_RANGES } from './npc/tea.js';
 import { Flask, FLASK_PARAM_RANGES } from './npc/flask.js';
@@ -1089,6 +1091,8 @@ export class Game {
     this.notebook = new Notebook(this); // Amy's logbook, on the bench
     this.girlBench = new GirlBench(undefined, this.bench.params, createRandom(this.seed ^ 0x2b3c)); // a girl working on a quad at the bench (npc/girlBench.js)
     registerTuning('Girl at the bench', this.girlBench.p, GIRL_BENCH_PARAM_RANGES);
+    this.phoneCalls = new PhoneCalls(undefined, createRandom(this.seed ^ 0x7e1f)); // a girl's phone ringing (npc/phoneCalls.js)
+    registerTuning('Phone calls', this.phoneCalls.p, PHONE_PARAM_RANGES);
     // A hosepipe for washing the mud off.
     this.hose = new Hose({ scene: this.scene, world: this.world, position: L.hose, yaw: L.hose.yaw });
     // The green quad's winch, for pulling a stuck quad out of a bog.
@@ -3136,6 +3140,7 @@ export class Game {
       }),
       ...mine(this.places.offers(this.placesContext()), (o) => this.handlePlaceAction(this.places.take(o))),
       ...mine(this.dares.offers(this.daresContext()), (o) => this.handleDare(this.dares.take(o))),
+      ...mine(this.phoneCalls.offers(this.phoneContext()), (o) => this.handlePhoneCall(this.phoneCalls.take(o))),
       ...mine(this.girlBench.offers(this.girlBenchContext()), (o) => this.handleGirlBench(this.girlBench.take(o))),
       ...mine(this.workLight.offers(this.workLightContext(c)), (o) => {
         c.voice.say('workLightOffer', { urgent: true, force: true });
@@ -3938,6 +3943,85 @@ export class Game {
     const c = this.companions.find((o) => o.character.id === pn.girl);
     this.favour.add(pn.girl, this.girlBench.p.favourFinish);
     c?.voice.say('benchFinished', { force: true });
+  }
+
+  // Phone calls -------------------------------------------------------------
+  /** What the phone module needs to offer (npc/phoneCalls.js): who is free, and how keen each is. */
+  phoneContext() {
+    return {
+      girls: this.companions.map((c) => ({
+        id: c.character.id,
+        free: c.availability().free,
+        weight: c.params.phoneWeight ?? 0,
+        moodChance: c.params.phoneMoodChance ?? 0,
+        moodSeconds: c.params.phoneMoodSeconds ?? 240,
+      })),
+    };
+  }
+
+  /** The debug panel's and the console's way of making her phone ring: says why not with a toast. */
+  startPhoneCall(id, mood = null) {
+    const c = this.companions.find((o) => o.character.id === id);
+    const a = c.availability({ asked: true });
+    if (!a.free) return this.hud.toast(`${c.name} is busy (${a.why})`);
+    if (this.phoneCalls.active) return this.hud.toast(`${this.phoneCalls.girl}'s phone is already going`);
+    c.interrupt();
+    const bad = mood ?? Math.random() < (c.params.phoneMoodChance ?? 0);
+    this.handlePhoneCall(this.phoneCalls.begin(id, 'asked', { mood: bad, moodSeconds: c.params.phoneMoodSeconds ?? 240 }));
+  }
+
+  updatePhoneCall(dt) {
+    const pc = this.phoneCalls;
+    const c = pc.girl && this.companions.find((o) => o.character.id === pc.girl);
+    const ctx = {
+      girl: c
+        ? {
+            free: c.availability({ asked: true, mine: 'phoneCall' }).free,
+            there: !!c.callSpot && c.fsm.is('idle') && Math.hypot(c.root.position.x - c.callSpot.x, c.root.position.z - c.callSpot.z) < 1.2,
+            youDistance: c.root.position.distanceTo(this.player.position),
+          }
+        : null,
+    };
+    if (c && pc.session?.phase === 'talking') {
+      // Keeps the phone at her ear for the whole call (an idle pose only holds for a while), turned away from you.
+      if (c.standingIdles?.name !== 'phoneCall') c.standingIdles?.force('phoneCall');
+      c.standingIdles.left = Math.max(c.standingIdles.left, 2);
+    }
+    for (const e of pc.update(dt, ctx)) this.handlePhoneCall(e);
+  }
+
+  /** Acts on a phone call (npc/phoneCalls.js): it rings, she goes off to answer, talks, comes back to tell you, and the mood sets in. */
+  handlePhoneCall(e) {
+    if (!e) return;
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    if (!c) return this.phoneCalls.cancel();
+    if (e.type === 'ring') {
+      this.phoneAudio.ring({ x: c.root.position.x, y: c.root.position.y + 1, z: c.root.position.z });
+      if (!c.callSpot) {
+        c.hold('phoneCall', 'on the phone');
+        c.voice.say('phoneRing', { force: true });
+        const away = this.phoneCalls.p.awayMin + (this.phoneCalls.p.awayMax - this.phoneCalls.p.awayMin) * Math.random();
+        const spot = callSpot({ x: c.root.position.x, z: c.root.position.z }, this.player.position, away, (Math.random() - 0.5) * 1.6);
+        const target = c.keepToField(new THREE.Vector3(spot.x, 0, spot.z));
+        c.callSpot = { x: target.x, z: target.z };
+        c.walkTo(target, Math.atan2(target.x - this.player.position.x, target.z - this.player.position.z));
+      }
+    } else if (e.type === 'answer') {
+      c.standingIdles?.force('phoneCall');
+    } else if (e.type === 'say') {
+      c.voice.say(e.line, { force: true });
+    } else if (e.type === 'hangUp') {
+      c.standingIdles && (c.standingIdles.left = 0);
+      c.callSpot = null;
+      c.walkToYou(this.player.position);
+    } else if (e.type === 'tell') {
+      c.voice.say(e.mood ? 'phoneMood' : 'phoneNews', { force: true });
+      if (e.mood) this.favour.sulk(e.girl, e.moodSeconds);
+    } else if (e.type === 'end') {
+      c.callSpot = null;
+      c.release('phoneCall');
+      if (c.standingIdles?.name === 'phoneCall') c.standingIdles.left = 0;
+    }
   }
 
   // Lights to work by -------------------------------------------------------
@@ -7439,6 +7523,7 @@ export class Game {
     if (auto || this.tea.forced) this.updateTea(dt, ridden);
     if (auto || this.flask.active) this.updateFlask(dt);
     if (auto || this.girlBench.active || this.girlBench.pending) this.updateGirlBench(dt);
+    if (auto || this.phoneCalls.active) this.updatePhoneCall(dt);
     this.updateDares(dt);
     if (auto) this.updateJumpers(dt);
     if (auto || this.dieselMistake.forced) this.updateDieselMistake(dt, ridden);
@@ -7631,6 +7716,7 @@ export class Game {
     registerTuning('Electric fence', this.fenceParams, FENCE_PARAM_RANGES);
     this.fence = new ElectricFence(fence, this.fenceParams);
     this.fenceAudio = new FenceAudio(this.audioHub);
+    this.phoneAudio = new PhoneAudio(this.audioHub);
     this.fenceLed = this.scene.getObjectByName('fence led') ?? null;
     this.fenceLedOn = 0;
   }

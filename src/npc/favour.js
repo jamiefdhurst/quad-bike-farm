@@ -20,6 +20,7 @@ export const DEFAULT_FAVOUR_PARAMS = {
   offerBias: 0.7, // how much her standing sways who offers you a ride (0 none, 1 a neglected girl never offers)
   refuseMax: 0.35, // the chance a fully neglected girl says no to a request, and her friend takes it on
   sulkDriveBoost: 2.5, // a fully neglected girl is this much more likely to go off on a quad on her own when bored
+  moodDrag: 0.6, // how far a bad phone call or the like pulls her standing down while it lasts (`sulk`)
   gloatChance: 0.7, // the girl who takes on a request her friend turned down gloats about it, rather than just saying okay
 };
 
@@ -38,6 +39,7 @@ export const FAVOUR_PARAM_RANGES = {
   offerBias: [0, 1, 0.05],
   refuseMax: [0, 1, 0.05],
   sulkDriveBoost: [1, 6, 0.1],
+  moodDrag: [0, 1, 0.05],
   gloatChance: [0, 1, 0.05],
 };
 
@@ -49,6 +51,7 @@ export class Favour {
     this.p = params;
     this.ids = ids;
     this.scores = Object.fromEntries(ids.map((id) => [id, 0]));
+    this.moods = {}; // girl id -> seconds left of a bad mood that has nothing to do with you (sulk)
     this.locked = {}; // girl id -> the score her favour never drops below (romance.js: she is yours for the rest of the game)
   }
 
@@ -71,8 +74,19 @@ export class Favour {
     this.scores[id] = clamp(this.scores[id] + amount, -this.p.maxScore, this.p.maxScore);
   }
 
-  /** Scores drift back towards nothing. */
+  /** She is in a mood for `seconds` (a bad phone call): she stands lower with you while it lasts, whatever the score. Never shortens one. */
+  sulk(id, seconds) {
+    if (id in this.scores) this.moods[id] = Math.max(this.moods[id] ?? 0, seconds);
+  }
+
+  /** Seconds left of her mood, 0 if she is not in one. */
+  moodLeft(id) {
+    return this.moods[id] ?? 0;
+  }
+
+  /** Scores drift back towards nothing, and moods wear off. */
   update(dt) {
+    for (const id of Object.keys(this.moods)) if ((this.moods[id] -= dt) <= 0) delete this.moods[id];
     for (const id of this.ids) {
       if (id in this.locked) {
         this.scores[id] = Math.max(this.scores[id], this.locked[id]);
@@ -90,7 +104,7 @@ export class Favour {
     const others = this.ids.filter((o) => o !== id);
     if (!others.length) return 0;
     const rest = others.reduce((sum, o) => sum + this.scores[o], 0) / others.length;
-    return clamp((this.scores[id] - rest) / this.p.scale, -1, 1);
+    return clamp((this.scores[id] - rest) / this.p.scale - (this.moods[id] > 0 ? this.p.moodDrag : 0), -1, 1);
   }
 
   /** 'favoured', 'neglected' or 'even'. */

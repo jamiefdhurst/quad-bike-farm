@@ -239,6 +239,7 @@ export function buildGameTree(g, host) {
     speech: flag(() => g.companions.every((c) => c.params.voice), (v) => g.companions.forEach((c) => (c.params.voice = v)), 'off: they say nothing out loud'),
     dares: text(() => g.dares.describe()),
     girlBench: text(() => g.girlBench.describe()),
+    phoneCall: text(() => g.phoneCalls.describe()),
     workLight: text(() => g.workLight.describe()),
   }), 'both girls');
   const farm = group(() => ({

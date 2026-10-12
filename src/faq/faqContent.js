@@ -619,6 +619,13 @@ export const FAQ_SECTIONS = [
           <kbd>E</kbd> down and let go inside the green band. Too soon or too long botches it and the fault comes back a little. Amy helps; Jess heckles.`,
       },
       {
+        q: 'Why did a girl wander off with her phone?',
+        a: `Her phone rang. Now and then, when she has nothing to do, a girl goes off out of earshot to take a call, talks for a bit, and comes back to tell you the news. Stand near her when she comes back and she says it.
+          Most calls are good news. A bad one leaves her in a mood for a few minutes (Amy longer than Jess): she is sulkier with you, more likely to say no when you ask and keener to take a quad off on her own.
+          A little time, or a ride together, brings her round. Jess's phone goes more than Amy's.`,
+        tip: 'If a girl comes back from a phone call in a mood, give her a few minutes. It wears off.',
+      },
+      {
         q: 'Why is a girl working on a quad at the bench?',
         a: `With a quad parked in the yellow bay and switched off, and the toolbox on the bench, a girl may decide to work on it herself, doing whatever it needs most (a puncture,
           a dirty carb, low oil in a two-stroke, a tired plug). Amy is the keener. She will stop and ask you for a hand: "Pass me the ten millimetre" or "Hold the torch". Go to the bench and press <kbd>E</kbd> when the prompt shows.

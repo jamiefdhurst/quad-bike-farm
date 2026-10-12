@@ -16,6 +16,7 @@ export const WAITING_IDLES = {
   shadeEyes: { needs: 'sun', label: 'shading her eyes from the sun' },
   lookUp: { needs: 'clouding', label: 'looking up at the clouds coming over' },
   phone: { needs: null, hands: true, label: 'checking her phone' },
+  phoneCall: { needs: null, forced: true, hands: true, pins: true, label: 'on a call' }, // never chosen: phoneCalls.js has her do it, and updateWaiting keeps it in her list
 };
 
 export const DEFAULT_WAITING_PARAMS = {
@@ -54,7 +55,7 @@ function suits(need, ctx, p) {
 export function waitingChoices(own, ctx, tastes = {}, p = DEFAULT_WAITING_PARAMS) {
   const out = own.map((name) => ({ name, weight: 1 }));
   for (const [name, w] of Object.entries(WAITING_IDLES)) {
-    if (!suits(w.needs, ctx, p)) continue;
+    if (w.forced || !suits(w.needs, ctx, p)) continue;
     const weight = (name === 'phone' ? p.waitPhone : p.waitThings) * (tastes[name] ?? 1);
     if (weight > 0) out.push({ name, weight });
   }

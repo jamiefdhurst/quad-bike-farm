@@ -192,6 +192,16 @@ export function girlActions(g) {
       run: (id) => g.startDare(id, kind),
     })),
     {
+      verb: 'phone-call',
+      label: "%'s phone rings: she wanders off out of earshot, takes it, and comes back with news (or sometimes in a mood that lasts a few minutes)",
+      run: (id) => g.startPhoneCall(id),
+    },
+    {
+      verb: 'phone-call-bad',
+      label: '% takes a call that goes badly and comes back in a mood (stands lower with you for a few minutes)',
+      run: (id) => g.startPhoneCall(id, true),
+    },
+    {
       verb: 'bench-work',
       label: '% works on the quad in the bay at the bench (needs one parked there, off, and the toolbox on the bench; Jess makes a hash of it and hands it to you)',
       run: (id) => g.startGirlBench(id),

@@ -93,6 +93,7 @@ import { JESS_NUMB_LINES } from './numbLines.js';
 import { JESS_RANK_LINES } from './rankLines.js';
 import { JESS_FAULT_LINES } from './faultLines.js';
 import { JESS_BENCH_LINES } from './benchLines.js';
+import { JESS_PHONE_LINES } from './phoneLines.js';
 import { JESS_DARE_LINES } from './dareLines.js';
 
 export const JESS_LINES = {
@@ -504,5 +505,6 @@ export const JESS_LINES = {
   ...JESS_TEA_LINES,
   ...JESS_JUMPER_LINES,
   ...JESS_BENCH_LINES,
+  ...JESS_PHONE_LINES,
   ...JESS_DARE_LINES,
 };

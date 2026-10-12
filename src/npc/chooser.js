@@ -54,6 +54,7 @@ export const OFFER_KINDS = {
   invite: { label: 'ask you round the back of the barn', satisfies: { company: 1 } },
   dare: { label: 'dare you to do something daft', satisfies: { excitement: 0.9, company: 0.6, purpose: 0.3 } },
   benchWork: { label: 'work on a quad at the bench', satisfies: { purpose: 0.9, company: 0.2 }, pace: 'brisk' },
+  phoneCall: { label: 'take a call on her phone', satisfies: { company: 0.6, excitement: 0.3 } },
   workLight: { label: 'bring something round to light the way for you', satisfies: { purpose: 0.9, company: 0.6 }, pace: 'brisk' },
   pairUp: { label: 'go and stand with her friend', satisfies: { company: 0.9, purpose: 0.4 } },
   tagAlong: { label: 'tag along with her friend', satisfies: { company: 0.8, purpose: 0.5 }, pace: 'brisk' },

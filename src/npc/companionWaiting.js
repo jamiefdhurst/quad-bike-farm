@@ -45,7 +45,9 @@ export const waitingMethods = {
       this.waitTargets = { wheel: nearestWithin(here, wheels, p.waitReach), seat: nearestWithin(here, seats, p.waitReach * 0.8) };
       const w = this.waitWeather ?? {};
       const ctx = { ...this.waitTargets, chill: w.chill, sun: w.sun, clouding: w.clouding, wet: w.wet };
-      idles.setChoices(waitingChoices(this.character?.idles ?? [], ctx, this.character?.waitTastes ?? {}, p));
+      const choices = waitingChoices(this.character?.idles ?? [], ctx, this.character?.waitTastes ?? {}, p);
+      if (this.callSpot) choices.push({ name: 'phoneCall', weight: 1 }); // on a call (phoneCalls.js): kept in her list so it isn't eased out
+      idles.setChoices(choices);
     }
     this.waitTurn = null;
     const name = idles.name;
@@ -101,7 +103,7 @@ export const waitingMethods = {
   /** Her phone in her right hand while she checks it, screen up to her face. Runs as a rig poser, after the hands are posed. */
   posePhone() {
     const s = this.standingIdles;
-    const show = s?.name === 'phone' && s.weight > 0.6 && this.fsm.is('idle') && !this.reaction;
+    const show = (s?.name === 'phone' || s?.name === 'phoneCall') && s.weight > 0.6 && this.fsm.is('idle') && !this.reaction;
     if (!show) {
       if (this.phone) this.phone.visible = false;
       return;

@@ -82,6 +82,9 @@ export const DEFAULT_COMPANION_PARAMS = {
   benchSlip: 0, // the chance, working at the bench on her own, that she makes a hash of it and hands it to you to finish
   dareWeight: 0, // how keen she is to dare you to something daft (dares.js)
   benchWeight: 0, // how keen she is to work on a quad at the barn bench on her own (girlBench.js)
+  phoneWeight: 0, // how keen she is to wander off and take a call when her phone goes (phoneCalls.js)
+  phoneMoodChance: 0.3, // the chance a call she takes is bad news and leaves her in a mood
+  phoneMoodSeconds: 240, // how long that mood takes to lift
   workLightWeight: 0, // how keen she is to bring a vehicle round to light what you're at in the dark without being asked (workLight.js)
   // What she wants (needs.js), each 0 met to 1 pressing, and how she chooses what to do about it (chooser.js).
   chooseWhim: 0.6, // how much the scores of what she might do are reshuffled each time she chooses (log scale)
@@ -387,6 +390,9 @@ export const COMPANION_PARAM_RANGES = {
   benchSlip: [0, 1, 0.05],
   dareWeight: [0, 3, 0.05],
   benchWeight: [0, 3, 0.05],
+  phoneWeight: [0, 3, 0.05],
+  phoneMoodChance: [0, 1, 0.05],
+  phoneMoodSeconds: [10, 900, 10],
   workLightWeight: [0, 3, 0.05],
   wanderFarChance: [0, 1, 0.05],
   boredAfterMax: [5, 900, 1],

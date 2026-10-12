@@ -130,6 +130,7 @@ export class Companion {
     this.lookPick = null; // what attention picked this frame
     this.lookPoint = null; // where her eyes are now, sweeping towards the pick
     this.lookTurn = null; // a heading to turn and face, when a look over her shoulder is held (idle uses it)
+    this.callSpot = null; // where she has gone off to take a phone call (phoneCalls.js)
     this.benchAt = null; // stood at the barn bench working on a quad (girlBench.js): she faces it and doesn't turn to look about
     this.attendHint = null; // a sub-activity's own focus: { x, y, z, weight, left } (attend())
     this.lookLeadLeft = 0; // seconds she still looks where she's going before setting off
@@ -639,6 +640,22 @@ export class Companion {
     this.fsm.transition('walking', { goal: 'stand', target: () => ({ position: point, facing }) });
   }
 
+  /** Walks back to stand `gap` metres from you, wherever you have got to by then, facing you. */
+  walkToYou(you, gap = 1.8) {
+    this.warmingAt = null;
+    this.waving = null;
+    this.fsm.transition('walking', {
+      goal: 'stand',
+      target: () => {
+        const r = this.root.position;
+        const d = Math.hypot(you.x - r.x, you.z - r.z) || 1;
+        const x = you.x - ((you.x - r.x) / d) * gap;
+        const z = you.z - ((you.z - r.z) / d) * gap;
+        return { position: new THREE.Vector3(x, this.world.heightAt(x, z), z), facing: Math.atan2(you.x - r.x, you.z - r.z) };
+      },
+    });
+  }
+
   /** Goes over to stand with her friend at talking distance, facing her (pair.js), wherever her friend has got to by then. */
   standWith(friend, p) {
     this.warmingAt = null;
@@ -716,13 +733,9 @@ export class Companion {
     return true;
   }
 
-  /** A stroll to somewhere nearby on the farm, staying inside the hedges of the field she's in. */
-  wander() {
-    const p = this.params;
+  /** `target` moved inside the hedges of the field she is in, and onto the ground. */
+  keepToField(target) {
     const here = this.root.position;
-    const angle = Math.random() * Math.PI * 2;
-    const dist = this.randomBetween(p.wanderMin, p.wanderMax) * (Math.random() < p.wanderFarChance ? 2.5 : 1);
-    const target = new THREE.Vector3(here.x + Math.sin(angle) * dist, 0, here.z + Math.cos(angle) * dist);
     const fields = this.world.fields;
     const area = fields?.areaOf(here.x, here.z);
     if (fields && area !== 'out') {
@@ -735,6 +748,16 @@ export class Companion {
       target.z = Math.max(-limit, Math.min(limit, target.z));
     }
     target.y = this.world.heightAt(target.x, target.z);
+    return target;
+  }
+
+  /** A stroll to somewhere nearby on the farm, staying inside the hedges of the field she's in. */
+  wander() {
+    const p = this.params;
+    const here = this.root.position;
+    const angle = Math.random() * Math.PI * 2;
+    const dist = this.randomBetween(p.wanderMin, p.wanderMax) * (Math.random() < p.wanderFarChance ? 2.5 : 1);
+    const target = this.keepToField(new THREE.Vector3(here.x + Math.sin(angle) * dist, 0, here.z + Math.cos(angle) * dist));
     const facing = Math.random() * Math.PI * 2;
     this.fsm.transition('walking', { goal: 'wander', target: () => ({ position: target, facing }) });
   }
@@ -1175,7 +1198,7 @@ export class Companion {
 
   /** Stood about with nothing holding her in place (her hands over an engine, a wave, a start), so she may turn to look at something. */
   freeToTurn() {
-    return this.fsm.is('idle') && !this.warmingAt && !this.waving && !this.recoil && !this.attempt && !this.benchAt && !this.waitPinned();
+    return this.fsm.is('idle') && !this.warmingAt && !this.waving && !this.recoil && !this.attempt && !this.benchAt && !this.callSpot && !this.waitPinned();
   }
 
   turnToward(dt, facing) {

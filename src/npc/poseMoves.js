@@ -409,6 +409,18 @@ export const STANDING_IDLES = {
     },
     wave: { period: 6, bones: { Spine: [0, 0.03, 0] } },
   },
+  // Her phone held to her ear, a hand on her hip, turned a little away (phoneCalls.js forces it; companionWaiting.js puts the phone there).
+  phoneCall: {
+    fixedSide: true,
+    hold: {
+      bones: { Neck: [0, -0.1, 0.12], Spine1: [0, 0.05, 0] },
+      hands: {
+        right: { frame: 'chest', at: [-0.13, 0.36, 0.1], pole: [-1, 0.3, -0.3], fingers: [0.1, 0.35, 1], palm: [1, 0.3, 0], w: 1 },
+        left: { frame: 'hips', at: [0.2, 0, 0.05], pole: [0.8, 0, -0.4], fingers: [0.2, 0.4, 0.6], palm: [-1, 0, 0], w: 1 },
+      },
+    },
+    wave: { period: 4, bones: { Spine: [0, 0.04, 0] } },
+  },
 };
 
 // Ways of sitting a while, on top of the sitting clip and the seat's pose: on a bench (the UTV, the Land Rover), or perched with
