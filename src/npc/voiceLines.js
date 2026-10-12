@@ -96,6 +96,7 @@ import { AMY_NUMB_LINES } from './numbLines.js';
 import { AMY_RANK_LINES } from './rankLines.js';
 import { AMY_FAULT_LINES } from './faultLines.js';
 import { AMY_BENCH_LINES } from './benchLines.js';
+import { AMY_DARE_LINES } from './dareLines.js';
 
 export const VOICE_LINES = {
   // Riding pillion ----------------------------------------------------------
@@ -1566,4 +1567,5 @@ export const VOICE_LINES = {
   ...AMY_JUMPER_LINES,
   // The barn bench (benchLines.js).
   ...AMY_BENCH_LINES,
+  ...AMY_DARE_LINES,
 };

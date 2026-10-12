@@ -918,6 +918,15 @@ export const FAQ_SECTIONS = [
         a: `Ride through the gap between the two stout posts, the one with the sign. It is wide enough for a quad, and it is where the hill climb goes. The tape runs from the wood in the west to the hedge in the east, so use the gap.`,
       },
       {
+        q: 'Why is Jess daring me to do things?',
+        a: `She gets restless. Now and then, with you in earshot, she dares you to jump the ramp in the field, take the ford flat out, touch the electric fence, or ride the mini moto down the steepest bank on the hill pasture. You do not have to answer: just do it, within about two minutes. Do it and she cheers, likes you a little more and Amy a little less. Leave it and she calls you a chicken, and that is all. Amy has her say either way, and checks you are all right if it goes wrong.`,
+        tip: 'Jess dares you now and then: the ramp, the ford, the fence, the mini moto on the big bank. Just do it.',
+      },
+      {
+        q: 'What counts as taking a dare?',
+        a: `The ramp: a proper jump off it, in the air for half a second or more, landing counted even if you fall off. The ford: through it at a good speed on a quad, not wading. The fence: it has to jolt you or the quad you are on. The bank: on the mini moto, down the steepest bank on the hill pasture (the big one the fence runs along), rolling and upright. The mini moto dare only comes up if the mini moto is on the farm. Each one goes on the bucket list.`,
+      },
+      {
         q: 'How do I open and shut the gates?',
         a: `Get off, look at the gate and press E: it swings open or shut. There are two, the field gate in the south hedge (it starts tied open) and the big gate in the east hedge at the end of the farm road (it starts shut). A shut gate is solid, and the girls won't try to go through it, so shut the south gate and they stay on the farm side. It won't shut with a quad, a girl or you within a few metres of it.`,
         tip: 'Look at a gate on foot and press E to open or shut it.',

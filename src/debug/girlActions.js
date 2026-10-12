@@ -182,6 +182,12 @@ export function girlActions(g) {
         toast(c.voice.onFixedFavourite() ? `${nameOf(id)} minds` : `${nameOf(id)} is too far away to say`);
       },
     },
+    ...['ramp', 'ford', 'fence', 'bank'].map((kind) => ({
+      verb: `dare-${kind}`,
+      label: `% dares you to ${{ ramp: 'jump the ramp', ford: 'take the ford flat out', fence: 'touch the electric fence', bank: 'ride the mini moto down the steepest bank' }[kind]} (you have two minutes; she cheers or calls you chicken)`,
+      girls: ['jess'],
+      run: (id) => g.startDare(id, kind),
+    })),
     {
       verb: 'bench-work',
       label: '% works on the quad in the bay at the bench (needs one parked there, off, and the toolbox on the bench; Jess makes a hash of it and hands it to you)',

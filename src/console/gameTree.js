@@ -237,6 +237,7 @@ export function buildGameTree(g, host) {
   const gAll = group(() => ({
     autonomy: flag(() => g.girlsAuto, (v) => g.setGirlsAuto(v), 'off: they start nothing on their own, but follow and answer you'),
     speech: flag(() => g.companions.every((c) => c.params.voice), (v) => g.companions.forEach((c) => (c.params.voice = v)), 'off: they say nothing out loud'),
+    dares: text(() => g.dares.describe()),
     girlBench: text(() => g.girlBench.describe()),
     workLight: text(() => g.workLight.describe()),
   }), 'both girls');

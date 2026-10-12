@@ -57,6 +57,7 @@ export const CHARACTERS = [
     params: {
       outfit: 'jessPolo',
       benchSlip: 0.85,
+      dareWeight: 1.2, // dares you to jump the ramp, take the ford flat out, touch the fence
       benchWeight: 0.7, // has a go at the bench now and then, and hands it back
       voiceHardBrakeDecel: 6.5, // takes a sharper stop before she calls it hard braking
       voiceHardBrakeShed: 3,

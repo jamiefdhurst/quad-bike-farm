@@ -140,6 +140,7 @@ import { Nicking, NICK_PARAM_RANGES } from './npc/nicking.js';
 import { DEFAULT_LINEUP_PARAMS, LINEUP_PARAM_RANGES, parkRoute } from './npc/lineUp.js';
 import { WorkLight, WORK_LIGHT_PARAM_RANGES } from './npc/workLight.js';
 import { finishJob } from './workshop/benchJobs.js';
+import { Dares, DARE_PARAM_RANGES, DARE_KINDS, steepestBank } from './npc/dares.js';
 import { GirlBench, GIRL_BENCH_PARAM_RANGES, ASK_PROMPT, pickJob, workSpot } from './npc/girlBench.js';
 import { DEFAULT_HOME_PARAMS, HOME_PARAM_RANGES } from './npc/homeParking.js';
 import { Tea, TEA_PARAM_RANGES } from './npc/tea.js';
@@ -151,7 +152,7 @@ import { DieselMistake, DIESEL_MISTAKE_PARAM_RANGES } from './npc/dieselMistake.
 import { Mugs } from './items/mug.js';
 import { Achievements, DEFAULT_ACHIEVEMENT_PARAMS, ACHIEVEMENT_PARAM_RANGES } from './achievements/achievements.js';
 import { paginate } from './achievements/pages.js';
-import { achievementSnapshot } from './achievements/snapshot.js';
+import { achievementSnapshot, placesAt } from './achievements/snapshot.js';
 import { buildStartLine, buildClimbCones, nearestTrackFraction } from './world/startLine.js';
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
 import { StrawFall } from './effects/strawFall.js';
@@ -1081,6 +1082,8 @@ export class Game {
       unit.quad.physics.tyres = unit.quad.tyres;
       unit.quad.physics.applyParams();
     }
+    this.dares = new Dares(steepestBank(this.world.layout.hill), undefined, createRandom(this.seed ^ 0x6d17)); // Jess's dares (npc/dares.js)
+    registerTuning('Dares', this.dares.p, DARE_PARAM_RANGES);
     this.bench = new Bench(this);
     this.notebook = new Notebook(this); // Amy's logbook, on the bench
     this.girlBench = new GirlBench(undefined, this.bench.params, createRandom(this.seed ^ 0x2b3c)); // a girl working on a quad at the bench (npc/girlBench.js)
@@ -3120,6 +3123,7 @@ export class Game {
         if (e) this.handleCabEvent(e);
       }),
       ...mine(this.places.offers(this.placesContext()), (o) => this.handlePlaceAction(this.places.take(o))),
+      ...mine(this.dares.offers(this.daresContext()), (o) => this.handleDare(this.dares.take(o))),
       ...mine(this.girlBench.offers(this.girlBenchContext()), (o) => this.handleGirlBench(this.girlBench.take(o))),
       ...mine(this.workLight.offers(this.workLightContext(c)), (o) => {
         c.voice.say('workLightOffer', { urgent: true, force: true });
@@ -3723,6 +3727,94 @@ export class Game {
   }
 
   /** The wheel's two extras while they're fallen out and she's told you her side: take her side, or tell her to make up. */
+  // Jess's dares -----------------------------------------------------------
+  /** The dares that could be done now on this farm: the ramp, the ford and (if there is one) the fence, and the bank if there is a mini moto. */
+  dareKinds() {
+    const L = this.world.layout;
+    const kinds = [];
+    if (L.jumpRamp) kinds.push('ramp');
+    kinds.push('ford');
+    if (this.fence?.fence) kinds.push('fence');
+    if (this.units.some((u) => u.id === 'moto')) kinds.push('bank');
+    return kinds;
+  }
+
+  daresContext() {
+    const p = this.player.position;
+    return {
+      kinds: this.dareKinds(),
+      girls: this.companions.map((c) => ({
+        id: c.character.id,
+        free: c.availability().free,
+        distance: Math.hypot(c.root.position.x - p.x, c.root.position.z - p.z),
+        weight: c.params.dareWeight ?? 0,
+      })),
+    };
+  }
+
+  /** The debug panel's and console's dare: she dares you to `kind` (any of the four if left out). */
+  startDare(id, kind) {
+    const c = this.companions.find((o) => o.character.id === id);
+    if (this.dares.active) return this.hud.toast(`${this.dares.describe()}`);
+    const kinds = this.dareKinds();
+    const k = kind ?? kinds[Math.floor(Math.random() * kinds.length)];
+    if (!kinds.includes(k)) return this.hud.toast(`There is nothing to ${DARE_KINDS[k]?.label ?? k} on this farm`);
+    const a = c.availability({ asked: true });
+    if (!a.free) return this.hud.toast(`${c.name} is busy (${a.why})`);
+    c.interrupt();
+    this.handleDare(this.dares.begin(id, k));
+  }
+
+  updateDares(dt) {
+    const d = this.dares;
+    const board = this.boardUnit;
+    const seat = this.player.seat === 'rider';
+    let you = null;
+    if (board && seat) {
+      const q = board.quad;
+      const ramp = this.world.layout.jumpRamp;
+      const lip = ramp ? { x: ramp.x + Math.sin(ramp.yaw) * ramp.length, z: ramp.z + Math.cos(ramp.yaw) * ramp.length } : null;
+      you = {
+        rider: true,
+        moto: board.id === 'moto',
+        speed: Math.abs(q.speed),
+        airborne: q.airborne,
+        tipped: q.isTipped,
+        nearRamp: lip ? Math.hypot(q.position.x - lip.x, q.position.z - lip.z) : Infinity,
+        atFord: placesAt(q.position, this.world.layout).includes('ford'),
+        x: q.position.x,
+        y: q.position.y,
+        z: q.position.z,
+      };
+    }
+    for (const e of d.update(dt, you)) this.handleDare(e);
+  }
+
+  /** Acts on a dare (npc/dares.js): Jess says it, cheers or teases; Amy says what she thinks, or is worried after a tumble. */
+  handleDare(e) {
+    if (!e) return;
+    const jess = this.companions.find((o) => o.character.id === e.girl);
+    const friend = this.companions.find((o) => o.character.id !== e.girl);
+    if (!jess) return this.dares.cancel();
+    const Kind = e.kind ? e.kind[0].toUpperCase() + e.kind.slice(1) : '';
+    const near = (c) => c && c.availability().canRemark && Math.hypot(c.root.position.x - this.player.position.x, c.root.position.z - this.player.position.z) < 40;
+    if (e.type === 'dared') {
+      jess.voice.say(`dare${Kind}`, { force: true, urgent: true });
+      this.hud.toast(`${jess.name} dares you to ${DARE_KINDS[e.kind].label}`, 4);
+    } else if (e.type === 'done') {
+      jess.voice.say('dareWon', { force: true });
+      this.favour.add(e.girl, this.dares.p.favourWin);
+      if (friend) this.favour.add(friend.character.id, this.dares.p.favourAmy);
+      this.achievements.note(`dare${Kind}`);
+      if (e.fell && near(friend)) friend.voice.say('dareFell', { force: true });
+      else if (near(friend)) friend.voice.say(`dareAmy${Kind}`, { chance: 0.9 });
+    } else if (e.type === 'chicken') {
+      jess.voice.say('dareChicken', { force: true });
+    } else if (e.type === 'fell' && near(friend)) {
+      friend.voice.say('dareFell', { force: true });
+    }
+  }
+
   // A girl at the bench -----------------------------------------------------
   /** Whether you are within `range` metres of the workbench. */
   nearBench(range) {
@@ -7323,6 +7415,7 @@ export class Game {
     if (auto || this.tea.forced) this.updateTea(dt, ridden);
     if (auto || this.flask.active) this.updateFlask(dt);
     if (auto || this.girlBench.active || this.girlBench.pending) this.updateGirlBench(dt);
+    this.updateDares(dt);
     if (auto) this.updateJumpers(dt);
     if (auto || this.dieselMistake.forced) this.updateDieselMistake(dt, ridden);
     this.bell.update(dt);
@@ -7557,6 +7650,7 @@ export class Game {
     const where = { x: e.x, y: this.world.groundHeightAt(e.x, e.z) + 0.8, z: e.z };
     this.fenceAudio.zap(where);
     this.notice('zap', where, { key: 'fence', strength: 1 });
+    if (unit ? unit === this.boardUnit : e.kind === 'foot') this.dares.zap(); // it got you: Jess's dare
     const hit = [];
     if (unit) {
       unit.vibration.zap(p.zapKick);
