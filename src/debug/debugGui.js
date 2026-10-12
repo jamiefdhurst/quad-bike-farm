@@ -208,7 +208,7 @@ export class DebugGui {
     if (u.quad.manual) show(r, 'turned by the wheels (bump-start)', () => round(unit().engine.rollSpeed));
     set(r, 'temperature', () => round(unit().engine.temperature), (v) => unit().engine.setTemperature(v), 0, 1);
     // Heat and the rest of what the engine does that you would watch: only what this engine can do (vehicleDebug.js engineReadouts).
-    for (const m of engineReadouts(e)) show(r, m.label, () => { const v = m.get(unit().engine); return typeof v === 'number' ? round(v) : v; });
+    for (const m of engineReadouts(e, { manual: !!u.quad.manual })) show(r, m.label, () => { const v = m.get(unit().engine); return typeof v === 'number' ? round(v) : v; });
     if (e.params.waterCooled) {
       set(r, 'coolant', () => round(unit().engine.coolant), (v) => (unit().engine.coolant = v), 0, 1);
       show(r, 'radiator fan', () => (unit().engine.fan ? 'on' : 'off'));
