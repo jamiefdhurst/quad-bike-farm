@@ -840,8 +840,15 @@ export const FAQ_SECTIONS = [
         q: 'What’s beyond the grass field?',
         a: `East, over the cattle grid, a tarmac farm road between two stubble fields, a Dutch barn full of round bales, an old stone field shed, a muck heap and a
           water trough. South, through the field gate, a sunk green lane down to a ford and a rough hill pasture with gorse, bracken and a small oak wood, and a
-          view over the whole farm from the top. The sheep graze there.`,
+          view over the whole farm from the top. The sheep graze there. Halfway down the lane there is a gateway on each side: west into a wet meadow with a pond,
+          east into a rolling sheep field with a drystone wall.`,
         tip: 'Ride to the top of the hill pasture for a view over the whole farm.',
+      },
+      {
+        q: 'How do I get to the pond and the sheep field?',
+        a: `Go through the south gate and down the lane. About halfway there is a gap in each hedge, with the bank eased down to it. West is a wet meadow: a muddy track
+          leads down to a pond with reeds and oaks round it, and the mud is deep enough to catch you out. East is a rolling field with two humps to climb, a drystone
+          wall across it (go through the gap, or round the end) and thorn bushes. The girls follow you into both, but do not go there on their own yet.`,
       },
       {
         q: 'Are there any animals?',
@@ -866,7 +873,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Do the girls go up the hill?',
-        a: `Not on a quad. Following you, they come down the lane and through the ford, then wait at the foot of the hill. On the back with you, they tell you when it gets steep.`,
+        a: `Not on a quad. Following you, they come down the lane (and through the gateways into the meadow and the sheep field) and through the ford, then wait at the foot of the hill. On the back with you, they tell you when it gets steep.`,
       },
       {
         q: 'What’s the bucket list?',
@@ -929,6 +936,18 @@ export const FAQ_SECTIONS = [
         a: `Look at the calendar on the barn's back wall, between the two chalkboards. Every day gone is crossed off in red and today is circled. A page
           is thirty days, then it turns over to the next month. The start screen's "Continue" button also says which day you are about to play.`,
         tip: 'The calendar in the barn crosses off each day and circles today.',
+      },
+      {
+        q: 'How do I save and carry on to the next day?',
+        a: `The farm saves as you play, so you can simply close the tab. To do it properly, wait until the evening (it lets you from 17:00, about sunset), ring the
+          bell by the barn doors to call the girls in, then walk into the barn and press <kbd>E</kbd> on the calendar on the back wall. The screen fades to black,
+          says the day is done, saves, and loads the next morning: click Continue to play it. A seeded game (<code>?seed=</code>) never carries on.`,
+        tip: 'In the evening, ring the bell, then press E on the barn calendar to call it a day.',
+      },
+      {
+        q: 'Why won\'t the calendar let me call it a day?',
+        a: `Its prompt says why. Either it is too early (from 17:00), or one or both girls are not back at the barn: ring the bell and wait for them. Your browser also has to be
+          willing to keep the farm, or there is no next day to carry on to.`,
       },
       {
         q: 'How do I do the muck job?',
