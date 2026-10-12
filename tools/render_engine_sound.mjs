@@ -123,7 +123,7 @@ for (const [step, dur, throttle = 0] of plan) {
     top = Math.max(top, engine.rpm);
     const start = (frame + 0.05 * SR) / SR; // a little latency, as in the game
     const events = engine.pulses.map((p) => ({ time: start + p.t, type: p.type, strength: p.strength, period: p.period }));
-    for (const e of engine.events ?? []) events.push({ time: start + e.t, type: e.type });
+    for (const e of engine.events ?? []) events.push({ time: start + e.t, type: e.type, strength: e.strength });
     proc.onMessage({
       params,
       state: {

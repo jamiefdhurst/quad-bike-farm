@@ -438,7 +438,7 @@ export class EngineAudio {
         events.push({ time: time + 0.1 + Math.random() * 0.06, type: 'cough', strength: 0.55 * v });
         events.push({ time: time + 0.27 + Math.random() * 0.08, type: 'cough', strength: 0.3 * v });
       }
-      events.push({ time, type: e.type });
+      events.push({ time, type: e.type, strength: e.strength }); // (a pop's and a spit-back's strength: without it their loudness was NaN)
     }
 
     this.node.port.postMessage({

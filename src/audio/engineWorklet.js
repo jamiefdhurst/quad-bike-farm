@@ -613,11 +613,11 @@ class EngineProcessor extends AudioWorkletProcessor {
       }
       case 'overrunPop':
         // Unburnt fuel going off in the pipe on a closed throttle at speed (the engine model decides when).
-        this.active.push({ kind: 'pop', age: -Math.round((0.004 + Math.random() * 0.012) * sr), amp: p.popVolume * (0.5 + ev.strength) });
+        this.active.push({ kind: 'pop', age: -Math.round((0.004 + Math.random() * 0.012) * sr), amp: p.popVolume * (0.5 + (ev.strength ?? 0.5)) });
         break;
       case 'spitBack':
         // A lean, cold engine's flame going back up the intake: a soft, wide 'whuff' from the airbox, not the pipe's sharp crack.
-        this.active.push({ kind: 'spit', age: -Math.round(0.003 * sr), amp: p.spitVolume * (0.5 + ev.strength), lp: 0 });
+        this.active.push({ kind: 'spit', age: -Math.round(0.003 * sr), amp: p.spitVolume * (0.5 + (ev.strength ?? 0.5)), lp: 0 });
         break;
       case 'misfire':
         this.addExhaust(0.12 * pressure, cycle, 0.3, p.turbulence * 2);
