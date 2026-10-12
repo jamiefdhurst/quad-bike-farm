@@ -185,6 +185,9 @@ import { Winch, WINCH_PARAM_RANGES } from './items/winch.js';
 import { Chain, CHAIN_PARAM_RANGES } from './items/chain.js';
 import { TRACTOR_GROUND_OFFSET } from './vehicle/tractorModel.js';
 import { Weather, pickWeatherKind, pickTemperature } from './world/weather.js';
+import { Wind, Shutter, pickHeading, DEFAULT_WIND_PARAMS, WIND_PARAM_RANGES } from './world/wind.js';
+import { windUniforms, swayMetres } from './effects/windSway.js';
+import { DoorAudio } from './audio/doorAudio.js';
 import { Snow } from './effects/snow.js';
 import { Rain } from './effects/rain.js';
 
@@ -483,6 +486,10 @@ export class Game {
     const celsius = forcedTemp !== null && forcedTemp !== '' && Number.isFinite(+forcedTemp) ? this.daylight.peakFor(+forcedTemp) : pickTemperature(kind, createRandom(this.seed ^ 0x7e3b));
     this.weather = new Weather(kind, random, celsius);
     this.weather.temperature = Math.round(this.daylight.temperature(celsius) * 10) / 10;
+    // The day's wind: which way it blows and its gusts (world/wind.js), dealt from the game's seed like the weather.
+    const windRandom = createRandom(this.seed ^ 0x817d);
+    this.wind = new Wind(windRandom, pickHeading(windRandom), { ...DEFAULT_WIND_PARAMS });
+    this.wind.update(0, this.weather.wind);
     this.world.daylight = this.daylight;
     for (const unit of this.units) unit.quad.seatFrost = this.weather.seatFrost;
     for (const unit of this.units) unit.quad.iceCable.deal(this.frozenCableRandom, this.weather.frost, !!this.world.covered?.(unit.quad.position.x, unit.quad.position.z));
@@ -614,6 +621,11 @@ export class Game {
     this.hiding = new Hiding(this.loftParams);
     this.strawDrop = new StrawDrop(this.loftParams);
     this.strawFall = new StrawFall(this.scene);
+    // The hay door's shutter bangs about in a gale, and loose hay blows out of the door (updateWind).
+    this.hayBlow = new StrawFall(this.scene);
+    this.shutter = new Shutter(this.wind.p);
+    this.shutterBangCool = 0;
+    this.doorAudio = new DoorAudio(this.audioHub, this.world.props.barn.hayDoor);
     this.climb = null; // Climb of you on the ladder, when you are
     this.hiddenFrom = null; // where you were stood before you ducked into the hay
     const fine = () => isFine(this.weather.name, this.weather.rain, this.places.p);
@@ -1243,6 +1255,7 @@ export class Game {
     registerTuning('Skills', this.skills.p, SKILL_PARAM_RANGES);
     registerTuning('Places', this.places.p, PLACE_PARAM_RANGES);
     registerTuning('Hayloft', this.loftParams, LOFT_PARAM_RANGES);
+    registerTuning('Wind', this.wind.p, WIND_PARAM_RANGES);
     registerTuning('Favours asked', this.requests.p, REQUEST_PARAM_RANGES);
     if (this.winch) registerTuning('Winch', this.winch.params, WINCH_PARAM_RANGES);
     if (this.chain) registerTuning('Tow chain', this.chain.params, CHAIN_PARAM_RANGES);
@@ -3864,6 +3877,43 @@ export class Game {
     this.vehicleLights.update(this.units, this.camera.position, board, this.lightingUnit ?? null, d.darkness);
   }
 
+  /**
+   * The wind (world/wind.js): ticks the day's wind and gusts, leans the hedges and trees with it, swings the hay door's shutter (a bang
+   * when it slams, which the girls hear) and now and then blows loose hay out of the loft door.
+   */
+  updateWind(dt) {
+    const wind = this.wind;
+    wind.update(dt, this.weather.wind);
+    const p = wind.p;
+    windUniforms.uWindDir.value = [Math.sin(wind.heading), Math.cos(wind.heading)];
+    windUniforms.uWindPush.value = wind.strength;
+    windUniforms.uWindTime.value += dt;
+    swayMetres.hedge.value = p.swayHedge;
+    swayMetres.tree.value = p.swayTree;
+    const barn = this.world.props?.barn;
+    if (!barn?.shutter) return;
+    const OUT = Math.PI / 2; // the hay door looks east: out of it is +x
+    const bang = this.shutter.update(dt, wind.along(OUT));
+    barn.shutter.rotation.y = -this.shutter.angle;
+    this.shutterBangCool = Math.max(0, this.shutterBangCool - dt);
+    if (bang && this.shutterBangCool <= 0) {
+      this.shutterBangCool = 3;
+      this.doorAudio.bang(bang.strength);
+      this.notice('bang', { x: barn.hayDoor.x + 0.3, y: barn.hayDoor.y + 0.7, z: barn.hayDoor.z }, { key: 'shutter', strength: 0.6 * bang.strength });
+    }
+    if (wind.hayBlows(OUT)) this.blowHay();
+    this.hayBlow.update(dt);
+  }
+
+  /** Loose hay lifted off the loft floor and out of the hay door on a strong gust, to land in the yard downwind. */
+  blowHay() {
+    const door = this.world.props.barn.hayDoor;
+    const wind = this.wind;
+    const len = Math.max(0.1, Math.hypot(wind.x, wind.z));
+    const to = { x: door.x + (wind.x / len) * 8, y: door.y, z: door.z + (wind.z / len) * 8 };
+    this.hayBlow.drop({ x: door.x + 0.2, y: door.y + 0.3, z: door.z }, to, this.world.heightAt(to.x, to.z));
+  }
+
   /** Rain round you and its sound, and the wind on the exhaust smoke. */
   updateWeather(dt) {
     const w = this.weather;
@@ -3871,8 +3921,12 @@ export class Game {
     const world = this.world;
     // The barn: no rain under its roof, the drumming of it on the tin, a dimmer light inside with the bulb on, and a room's echo.
     const indoor = world.indoor(cam.x, cam.z);
-    this.rain.update(dt, this.camera, w.rain, w.wind, (x, z) => world.covered(x, z));
-    this.snow.update(dt, this.camera, w.snow, w.wind, (x, z) => world.covered(x, z));
+    this.updateWind(dt);
+    const wind = this.wind;
+    this.rain.wind = { x: wind.x, z: wind.z };
+    this.snow.wind = { x: wind.x, z: wind.z };
+    this.rain.update(dt, this.camera, w.rain, 1, (x, z) => world.covered(x, z));
+    this.snow.update(dt, this.camera, w.snow, 1, (x, z) => world.covered(x, z));
     this.audioHub.setRain(w.rain, indoor, world.barnParams);
     this.audioHub.room ??= { inside: (x, z) => world.inBarn(x, z), params: world.barnParams, listenerIn: false };
     this.audioHub.room.listenerIn = world.inBarn(cam.x, cam.z);
@@ -3897,10 +3951,9 @@ export class Game {
       dim(unit.dustCloud?.material, 'uColor');
       dim(unit.mud?.spray?.material, 'uLight');
       const s = unit.smoke.params;
-      s.baseWindX ??= s.windX;
-      s.baseWindZ ??= s.windZ;
-      s.windX = s.baseWindX * w.wind;
-      s.windZ = s.baseWindZ * w.wind;
+      s.windX = wind.x;
+      s.windZ = wind.z;
+      if (unit.dustCloud) unit.dustCloud.wind = { x: wind.x, z: wind.z };
       // A pop's flash from the pipe shows in poor light: none on a sunny day, plenty under heavy cloud.
       unit.smoke.darkness = Math.max(0, Math.min(1, 1 - w.warmth * 1.3));
     }

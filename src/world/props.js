@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { swayMaterials } from '../effects/windSway.js';
 import { stripFrame } from './layout.js';
 import { enableShadows, instanceModel, modelBounds } from './assets.js';
 import { tiledInstances } from './tiledInstances.js';
@@ -129,6 +130,7 @@ function buildHedges({ scene, models, layout, heights, fields, fixedBox, random 
     }
   }
   // Hedges don't cast shadows: there are hundreds of instances and the shadow pass would double their cost.
+  swayMaterials(models.hedge.scene, 'hedge', layout.hedgeHeight);
   scene.add(instanceModel(models.hedge.scene, hedgeMatrices, { castShadow: false }));
   scene.add(instanceModel(models.bush.scene, bushMatrices, { castShadow: false }));
 }
@@ -498,6 +500,9 @@ function buildTrees({ scene, models, layout, heights, physics, RAPIER, random })
       RAPIER.ColliderDesc.cylinder(2.5 * s, 0.32 * s).setTranslation(x, heights.heightAt(x, z) + 2.5 * s, z),
     );
   }
+  // Trees and hedges lean and rock in the wind (effects/windSway.js; the metres are at the top in an ordinary wind, wind.js).
+  swayMaterials(models.treeA.scene, 'tree', 8);
+  swayMaterials(models.treeB.scene, 'tree', 8);
   scene.add(instanceModel(models.treeA.scene, mats[0]));
   scene.add(instanceModel(models.treeB.scene, mats[1]));
 }

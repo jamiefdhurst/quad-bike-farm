@@ -203,6 +203,20 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   for (const side of [-1, 1]) add(box(wall + 0.14, postH, 0.1 + proud, white), fx, sillTop - 0.08 + postH / 2, shape.z + side * (hd.halfWidth + 0.05 - proud / 2));
   add(box(wall + 0.14, 0.1, hd.halfWidth * 2 + 0.3, white), fx, doorTop - proud + 0.05, shape.z); // underside at doorTop - proud
   add(box(0.9, 0.12, 0.12, timber), door.x + 0.35, doorTop + 0.2, shape.z);
+  // The hay door's shutter, hooked back against the outside of the wall so you can see out. A wind out of the door lifts it off and it
+  // swings about on its hinge (`angle` radians away from the wall, world/wind.js Shutter) and bangs back. Boards with two battens.
+  const shutterW = hd.halfWidth * 2 - 0.1;
+  const shutterH = hd.top - hd.sill - 0.08;
+  const shutter = new THREE.Group();
+  shutter.position.set(door.x + 0.115, floorY + (hd.sill + hd.top) / 2, shape.z - hd.halfWidth - 0.1);
+  const boardsMat = new THREE.MeshStandardMaterial({ map: boards([1.5, 1]), roughness: 0.9, color: 0xb9b0a4 });
+  for (const [sx, sy, sz, mat, dx, dy] of [[0.035, shutterH, shutterW, boardsMat, 0, 0], [0.03, 0.1, shutterW, timber, 0.03, shutterH * 0.3], [0.03, 0.1, shutterW, timber, 0.03, -shutterH * 0.3]]) {
+    const part = box(sx, sy, sz, mat);
+    part.position.set(dx, dy, -shutterW / 2);
+    part.castShadow = true;
+    shutter.add(part);
+  }
+  group.add(shutter);
 
   // Roof: two tin slopes with an overhang, and a ridge cap.
   const overhang = 0.35;
@@ -499,5 +513,5 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   light.position.set(shape.x, bulbY - 0.15, shape.z);
   group.add(light);
 
-  return { group, light, bulb, floorY, loft: { ...lf, ladderProxy, hayProxy } };
+  return { group, light, bulb, floorY, shutter, hayDoor: { x: door.x, y: floorY + hd.sill, z: shape.z }, loft: { ...lf, ladderProxy, hayProxy } };
 }

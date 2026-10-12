@@ -45,6 +45,7 @@ export class DustCloud {
     this.heightAt = heightAt;
     this.pos = new Float32Array(MAX * 3);
     this.vel = new Float32Array(MAX * 3);
+    this.wind = { x: 0, z: 0 }; // the day's wind (world/wind.js): the cloud drifts downwind
     this.age = new Float32Array(MAX);
     this.life = new Float32Array(MAX).fill(-1); // < 0 means free
     this.size = new Float32Array(MAX);
@@ -117,6 +118,8 @@ export class DustCloud {
       this.vel[i * 3 + 1] *= 1 - Math.min(1, dt * 1.8);
       this.vel[i * 3 + 2] *= damp;
       for (let a = 0; a < 3; a++) this.pos[i * 3 + a] += this.vel[i * 3 + a] * dt;
+      this.pos[i * 3] += this.wind.x * 2.5 * k * dt;
+      this.pos[i * 3 + 2] += this.wind.z * 2.5 * k * dt;
       this.size[i] = p.puffSize * (1 + 2.2 * k);
       this.alpha[i] = p.puffAlpha * (1 - k) * Math.min(1, k * 8);
     }

@@ -417,6 +417,22 @@ export const FAQ_SECTIONS = [
           day warms up the frost thaws, and on a cold evening it comes back after dark, on the grass and on any seat nobody is sitting on.`,
       },
       {
+        q: 'Which way is the wind blowing, and what does it do?',
+        a: `Each game has its own wind, a different way every time, and gusts come and go. Watch the exhaust smoke, the dust off the stubble or the rain and
+          snow: they all lean downwind. The hedges and trees rock in it, and on a strong day with the wind blowing out through the barn's hay door (towards the east) its shutter is lifted
+          off the wall and bangs about, which makes the girls jump. Foggy days are the stillest; rainy and overcast ones are the windiest.`,
+      },
+      {
+        q: 'Why did hay blow out of the loft?',
+        a: `On a gusty day with the wind blowing out of the hay door, loose hay lifts off the loft floor and drifts into the yard. It is only for show, and it
+          doesn't happen again for a minute or two.`,
+      },
+      {
+        q: 'Why is a door banging in the barn?',
+        a: `That is the hay door's shutter, on the end of the barn. It sits hooked back against the wall, but a strong gust blowing out of the door lifts it off,
+          and it slams back. It stops when the wind drops or turns.`,
+      },
+      {
         q: 'Why is it snowing, and why is my quad sliding about?',
         a: `Now and then the day is a snowy one, on a frosty or cold day. Snow settles on the ground in patches that join up the longer it falls,
           and the seats turn white too (sit on one to clear it). Your tyres leave tracks that stay, but the quad grips less and drags more
