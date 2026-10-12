@@ -38,6 +38,10 @@ export const DEFAULT_FAULT_PARAMS = {
   chainJumpFrom: 0.8, // slack at which it can jump the sprocket under power
   chainJumpThrottle: 0.5, // throttle that loads the chain enough to jump it
   chainJumpRate: 0.25, // chance a second of it jumping at full slack with the throttle open
+  rodPull: 0.07, // radians the bars are pulled towards a bent track rod's wheel when it is as bent as it gets
+  rodToe: 0.14, // radians that front wheel toes out of line, for show
+  rimDrag: 0.05, // drive lost to a bent rim at its worst
+  rimWobble: 0.09, // radians the bent wheel wobbles from side to side, for show
   proneSpread: 2.5, // each quad is dealt, once a game, how prone it is to each fault and how fast each worsens: from 1/this to this times the rates here
   hardThrottle: 0.6, // throttle that counts as riding hard
   movingSpeed: 2, // m/s over which it counts as being ridden
@@ -71,6 +75,10 @@ export const FAULT_PARAM_RANGES = {
   chainJumpThrottle: [0.1, 1, 0.05],
   chainJumpRate: [0, 2, 0.05],
   puncturePull: [0, 0.3, 0.005],
+  rodPull: [0, 0.3, 0.005],
+  rodToe: [0, 0.4, 0.01],
+  rimDrag: [0, 0.5, 0.01],
+  rimWobble: [0, 0.3, 0.005],
   punctureDrag: [0, 0.5, 0.01],
   beltDriveLoss: [0, 1, 0.01],
   cableHang: [0, 15, 0.5],
@@ -84,7 +92,10 @@ export const FAULT_PARAM_RANGES = {
   fieldFixCap: [0, 1, 0.01],
 };
 
-export const FAULT_KINDS = ['puncture', 'belt', 'cable', 'carb', 'mounts', 'chain', 'valves'];
+export const FAULT_KINDS = ['puncture', 'belt', 'cable', 'carb', 'mounts', 'chain', 'valves', 'rod', 'rim'];
+
+/** Faults that come from a knock (crashDamage.js), not from use: they never start or worsen by themselves, and only the bench puts them right. */
+export const CRASH_KINDS = ['rod', 'rim'];
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
@@ -99,12 +110,15 @@ export class Faults {
     this.tyre = -1; // which wheel has the puncture
     this.tyreWheels = [0, 1, 2, 3]; // the wheels one can land on (the mini moto's outriggers can't go flat)
     this.wheelSides = null; // per wheel { side, front } when the layout isn't a plain four-wheeler's (set by Quad)
-    this.levels = { puncture: 0, belt: 0, cable: 0, carb: 0, mounts: 0, chain: 0, valves: 0 }; // 0 none, rising to 1 at their worst
-    this.started = { puncture: false, belt: false, cable: false, carb: false, mounts: false, chain: false, valves: false };
-    this.caps = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1 }; // a rough fix leaves it from getting any worse than this
+    this.rodWheel = -1; // which front wheel has the bent track rod
+    this.rimWheel = -1; // which wheel has the bent rim
+    this.steerWheels = [0, 1]; // the wheels a track rod can be bent on (set by Quad)
+    this.levels = { puncture: 0, belt: 0, cable: 0, carb: 0, mounts: 0, chain: 0, valves: 0, rod: 0, rim: 0 }; // 0 none, rising to 1 at their worst
+    this.started = { puncture: false, belt: false, cable: false, carb: false, mounts: false, chain: false, valves: false, rod: false, rim: false };
+    this.caps = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1, rod: 1, rim: 1 }; // a rough fix leaves it from getting any worse than this
     this.heldThrottle = 0; // what a sticking cable is still holding open
-    this.prone = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1 }; // times as often it starts (see roll)
-    this.worsens = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1 }; // times as fast it gets worse
+    this.prone = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1, rod: 1, rim: 1 }; // times as often it starts (see roll)
+    this.worsens = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1, rod: 1, rim: 1 }; // times as fast it gets worse
     this.hasChain = false; // a chain-driven quad (the sport quad, the mini moto, the ATC) can have a stretched chain; the others never
     this.hasValves = false; // a four-stroke can have its valve clearances out; a two-stroke has no valves (set by Quad)
     this.kept = { chainLube: 1, chainOff: false, valveTight: false }; // the chain's oil (1 fresh, 0 bone dry) and whether it has jumped the sprocket, and whether the valves were left too tight rather than worn wide: kept between games
@@ -144,8 +158,32 @@ export class Faults {
     this.started[kind] = true;
     this.levels[kind] = 0.15;
     if (kind === 'puncture') this.tyre = this.tyreWheels[Math.floor(this.random() * this.tyreWheels.length)];
+    this.pickWheel(kind);
     this.events.push({ type: 'start', kind });
     return true;
+  }
+
+  /** A bent rod or rim needs a wheel (the panel and a quad's history start them without a knock). */
+  pickWheel(kind) {
+    const pool = kind === 'rod' ? this.steerWheels : this.tyreWheels;
+    if (kind === 'rod' && this.rodWheel < 0) this.rodWheel = pool[Math.floor(this.random() * pool.length)] ?? 0;
+    if (kind === 'rim' && this.rimWheel < 0) this.rimWheel = pool[Math.floor(this.random() * pool.length)] ?? 0;
+  }
+
+  /**
+   * A knock bends something (a hit or a landing, see crashDamage.js). A second knock on the same part only makes it worse,
+   * and moves it to the wheel that took the worse of the two.
+   */
+  damage(kind, level, wheel) {
+    const worse = !this.started[kind] || level > this.levels[kind];
+    this.started[kind] = true;
+    this.caps[kind] = 1;
+    if (worse) {
+      this.levels[kind] = Math.min(1, level);
+      if (kind === 'rod') this.rodWheel = wheel;
+      else this.rimWheel = wheel;
+    }
+    this.events.push({ type: 'start', kind });
   }
 
   /**
@@ -266,10 +304,31 @@ export class Faults {
     return side * (front ? 1 : 0.5) * this.params.puncturePull * this.levels.puncture;
   }
 
+  /** The side a wheel is on: +1 is the rider's left, as for a flat tyre. */
+  sideOf(i) {
+    return this.wheelSides?.[i]?.side ?? tyreSide(i);
+  }
+
+  /** Radians the bars are pulled by a bent track rod (positive is left): towards the side the bent rod is on. */
+  get rodPull() {
+    if (!this.started.rod || this.rodWheel < 0) return 0;
+    return this.sideOf(this.rodWheel) * this.params.rodPull * this.levels.rod;
+  }
+
+  /** Radians that wheel is toed out of line, for show (zero for any other). */
+  wheelToe(i) {
+    return this.started.rod && i === this.rodWheel ? this.sideOf(i) * this.params.rodToe * this.levels.rod : 0;
+  }
+
+  /** Radians that wheel wobbles side to side once a turn, for show (zero for any other). */
+  wheelWobble(i) {
+    return this.started.rim && i === this.rimWheel ? this.params.rimWobble * this.levels.rim : 0;
+  }
+
   /** Multiplier on the drive force at the wheels. */
   get driveFactor() {
     if (this.kept.chainOff) return 0;
-    return (1 - this.params.punctureDrag * this.levels.puncture) * (1 - this.params.beltDriveLoss * this.levels.belt) * (1 - this.params.chainLash * this.levels.chain);
+    return (1 - this.params.punctureDrag * this.levels.puncture) * (1 - this.params.beltDriveLoss * this.levels.belt) * (1 - this.params.chainLash * this.levels.chain) * (1 - this.params.rimDrag * this.levels.rim);
   }
 
   /** 0..1 how badly the belt slips, and how dirty the carb is (for the engine). */
@@ -302,6 +361,7 @@ export class Faults {
    */
   fix(kind, { rough = false } = {}) {
     if (!this.started[kind]) return false;
+    if (rough && CRASH_KINDS.includes(kind)) return false; // bent metal can't be mended with what's in the toolbox
     if (kind === 'chain') {
       // Put back on the sprocket either way, and given a squirt of oil; only the bench takes the stretch out.
       this.kept.chainOff = false;
@@ -318,6 +378,8 @@ export class Faults {
     this.levels[kind] = 0;
     this.caps[kind] = 1;
     if (kind === 'puncture') this.tyre = -1;
+    if (kind === 'rod') this.rodWheel = -1;
+    if (kind === 'rim') this.rimWheel = -1;
     if (kind === 'cable') this.heldThrottle = 0;
     this.events.push({ type: 'fixed', kind });
     return true;
@@ -329,6 +391,7 @@ export class Faults {
     this.levels[kind] = Math.min(level, cap);
     this.caps[kind] = cap;
     if (kind === 'puncture' && this.tyre < 0) this.tyre = this.tyreWheels[Math.floor(this.random() * this.tyreWheels.length)];
+    this.pickWheel(kind);
   }
 }
 

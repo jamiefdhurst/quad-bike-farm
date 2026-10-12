@@ -309,6 +309,7 @@ export class DebugGui {
     }
     set(p, 'hard start (goes it took)', () => unit().quad.startTrouble, (v) => (unit().quad.startTrouble = Math.round(v)), 0, 6, 1);
     show(p, 'flat tyre (wheel)', () => unit().quad.faults.tyre);
+    show(p, 'bent track rod / bent rim (wheel)', () => `${unit().quad.faults.rodWheel} / ${unit().quad.faults.rimWheel}`);
     tick(p, 'valves too tight (not worn wide)', () => unit().quad.faults.kept.valveTight, (v) => (unit().quad.faults.kept.valveTight = v));
     tick(p, 'chain off the sprocket', () => unit().quad.faults.chainOff, (v) => (unit().quad.faults.kept.chainOff = v));
     set(p, 'chain oil (0 bone dry)', () => round(unit().quad.faults.kept.chainLube), (v) => (unit().quad.faults.kept.chainLube = v), 0, 1);
@@ -330,7 +331,9 @@ export class DebugGui {
     const buttons = {
       clearFaults: () => clearFaults(unit().quad.faults),
       fix: () => fixEverything(unit()),
+      crash: () => unit().quad.crashHeadOn(1),
     };
+    p.add(buttons, 'crash').name('Hit a post head-on (may bend a rod or rim)');
     p.add(buttons, 'clearFaults').name('Clear the faults');
     p.add(buttons, 'fix').name('Put everything right (not quirks)');
 

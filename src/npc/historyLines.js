@@ -1,5 +1,5 @@
 // What the girls know of how a quad came to be as it is (vehicle/history.js): who had it out yesterday (histRiderAmy,
-// histRiderJess: the girl it was), a fault it already had (histPuncture, histBelt, histCable, histCarb, histMounts, histChain, histValves) and tinkering left
+// histRiderJess: the girl it was), a fault it already had (histPuncture, histBelt, histCable, histCarb, histMounts, histChain, histValves, histRod, histRim) and tinkering left
 // in (histLimiter, histMixture). Amy says it plainly; Jess is cheerful about it. Written for the colour and each nickname
 // (see quadLines.js), and merged into the main line sets (voiceLines.js, jessLines.js).
 
@@ -17,6 +17,8 @@ const AMY_TEMPLATES = {
   histMounts: line(600, ['The engine mounts on {q} are worn. It shakes more than it should.']),
   histChain: line(600, ['The chain on {q} is loose. It was slapping yesterday.']),
   histValves: line(600, ['{q} was ticking away yesterday. I think the valves want setting.']),
+  histRod: line(600, ['Someone has bent the track rod on {q}. It pulls to one side.']),
+  histRim: line(600, ['{Q} has a bent rim. You can see the wheel wobble when it goes.']),
   histLimiter: line(600, ['Someone has wound the throttle stop right out on {q}. I did not do it.']),
   histMixture: line(600, ['Someone has been at the carb on {q}. It is running rich.']),
 };
@@ -31,6 +33,8 @@ const JESS_TEMPLATES = {
   histMounts: line(600, ['{Q} clonks when you stab the throttle. You get used to it.']),
   histChain: line(600, ['The chain on {q} rattles a bit. It adds atmosphere.']),
   histValves: line(600, ['{q} goes tick tick tick. I like it, it is like a little clock.']),
+  histRod: line(600, ['{Q} steers itself a bit. It is brilliant, you just let it.']),
+  histRim: line(600, ['{Q} has a wobbly wheel. It wibbles. I like it.']),
   histLimiter: line(600, ['Someone has wound the stop out on {q}. Good. I like them.']),
   histMixture: line(600, ['Someone has richened up {q}. It smokes more. I love it.']),
 };

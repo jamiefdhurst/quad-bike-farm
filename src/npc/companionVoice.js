@@ -20,7 +20,7 @@ const cap = (s) => s[0].toUpperCase() + s.slice(1);
 const SOUND_CAPTIONS = { sigh: '(sighs)', hum: '(hums)', laugh: '(laughs)', yawn: '(yawns)', gasp: '(gasps)', hmm: 'Hmm?', oh: 'Oh.' };
 
 const DIAGNOSE_SITUATION = { cold: 'diagnoseCold', rich: 'diagnoseRich', fouled: 'diagnoseFouled', worn: 'diagnoseWorn', fine: 'diagnoseFine' };
-const FAULT_SITUATION = { puncture: 'faultPuncture', belt: 'faultBelt', cable: 'faultCable', carb: 'faultCarb', mounts: 'faultMounts', chain: 'faultChain', valves: 'faultValves' };
+const FAULT_SITUATION = { puncture: 'faultPuncture', belt: 'faultBelt', cable: 'faultCable', carb: 'faultCarb', mounts: 'faultMounts', chain: 'faultChain', valves: 'faultValves', rod: 'faultRod', rim: 'faultRim' };
 
 // Mistakes that show a skill she's short on.
 const SLIPS = { chokeOff: 'choke', stalled: 'starting', overSteer: 'cornering', revIt: 'mud' };
@@ -642,7 +642,7 @@ export class CompanionVoice {
         continue;
       }
       // Each shows only in its own way: the tyre, belt and chain when it's being ridden, the cable and carb when the engine's going.
-      const ridden = kind === 'puncture' || kind === 'belt' || kind === 'chain';
+      const ridden = kind === 'puncture' || kind === 'belt' || kind === 'chain' || kind === 'rod' || kind === 'rim';
       const showing = ridden ? Math.abs(unit.quad.forwardSpeed) > 2 : unit.engine.isRunning;
       // A chain that has come off shows when the engine is going and nothing drives: it is a different thing to say.
       const off = kind === 'chain' && f.chainOff && unit.engine.isRunning;

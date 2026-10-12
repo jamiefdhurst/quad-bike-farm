@@ -128,6 +128,8 @@ describe('a vehicle from one day to the next', () => {
     a.quad.faults.kept.chainLube = 0.2;
     a.quad.faults.kept.chainOff = true;
     a.quad.faults.leave('puncture', 0.2, 0.28);
+    a.quad.faults.damage('rod', 0.7, 1);
+    a.quad.faults.damage('rim', 0.5, 3);
     a.quad.tyres.psi = [3, 3.5, 4, 5];
     a.quad.sump.level = 0.55;
     a.quad.filter.clog = 0.3;
@@ -152,6 +154,7 @@ describe('a vehicle from one day to the next', () => {
     expect(b.quad.faults.kept).toEqual({ chainLube: 0.2, chainOff: true, valveTight: false });
     expect(b.quad.faults.caps.puncture).toBe(0.28);
     expect(b.quad.faults.tyre).toBe(a.quad.faults.tyre);
+    expect([b.quad.faults.rodWheel, b.quad.faults.rimWheel, b.quad.faults.levels.rod, b.quad.faults.levels.rim]).toEqual([1, 3, 0.7, 0.5]);
     expect(b.quad.faults.has('carb')).toBe(false);
     expect(b.quad.tyres.psi).toEqual([3, 3.5, 4, 5]);
     expect(b.quad.sump.level).toBe(0.55);

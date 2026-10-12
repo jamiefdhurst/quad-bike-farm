@@ -105,4 +105,4 @@ export function historyTopics(knows, history, { faultsNow, settingsNow }, said) 
   return topics.filter((t) => !said.has(t));
 }
 
-export const HISTORY_FAULT_KINDS = { puncture: 'histPuncture', belt: 'histBelt', cable: 'histCable', carb: 'histCarb', mounts: 'histMounts', chain: 'histChain', valves: 'histValves' };
+export const HISTORY_FAULT_KINDS = { puncture: 'histPuncture', belt: 'histBelt', cable: 'histCable', carb: 'histCarb', mounts: 'histMounts', chain: 'histChain', valves: 'histValves', rod: 'histRod', rim: 'histRim' };

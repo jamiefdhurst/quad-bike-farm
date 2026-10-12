@@ -29,6 +29,7 @@ export const DEFAULT_BENCH_PARAMS = {
   topEndSeizeWear: 0.15, // wear a seizure leaves, which the new piston and rings mostly take away (the toolbox strip down left 0.3)
   topEndWearRemoved: 0.2, // wear a new piston and rings take away
   topEndBotchedScuff: 0.3, // scuffing left after uneven head nuts or a forced barrel: it nips up again sooner
+  crashBotched: 0.3, // a bent rod or rim not put quite true at the bench: it comes back at this level
   chainBotched: 0.35, // slack left in a chain adjusted badly (too loose, or pulled so tight it binds and wears)
   valvesBotchedLevel: 0.5, // how far out a valve clearance set badly is (too wide, or too tight if the screws were over-turned)
   chainOilShort: 0.5, // chain oil left after too little was put on
@@ -47,6 +48,7 @@ export const BENCH_PARAM_RANGES = {
   oilOver: [0, 0.2, 0.002],
   packingBotched: [0, 1, 0.05],
   chainBotched: [0, 1, 0.05],
+  crashBotched: [0, 1, 0.05],
   chainOilShort: [0, 1, 0.05],
   valvesBotchedLevel: [0, 1, 0.05],
   topEndScuffFrom: [0, 0.5, 0.01],
@@ -176,6 +178,17 @@ export const JOBS = {
       { id: 'on', text: 'Rocker cover back on', kind: 'press' },
     ],
   },
+  crash: {
+    name: 'Mend the crash damage',
+    steps: [
+      { id: 'jack', text: 'Jack the front of the quad up', kind: 'press' },
+      { id: 'look', text: 'Spin each wheel and sight along the track rods', kind: 'press', inspect: true },
+      { id: 'off', text: 'Undo the nuts and take the bent wheel and rod off', kind: 'hold', need: 1 },
+      { id: 'true', text: 'Straighten the rod in the vice, or fit a straight rim: firm, not forced', kind: 'hold', need: 1.2, limit: 2.4 },
+      { id: 'on', text: 'Bolt it all back on', kind: 'press' },
+      { id: 'tight', text: 'Do the nuts up: snug, not tight', kind: 'hold', need: 0.6, limit: 1.3 },
+    ],
+  },
   topEnd: {
     name: 'Rebuild the top end',
     steps: [
@@ -223,7 +236,7 @@ export const JOBS = {
   },
 };
 
-export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd', 'chain', 'valves'];
+export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd', 'chain', 'valves', 'crash'];
 
 /** What each reading means, the way Amy would say it. Order is the order Jess can be wrong in. */
 export const PLUG_KINDS = ['healthy', 'rich', 'lean', 'oily', 'worn'];
@@ -274,6 +287,23 @@ export function valvesLook(faults) {
   if (faults.valveLoose < 0.2) return 'a snug sliding fit: right';
   if (faults.valveLoose < 0.6) return 'a loose fit: a bit wide';
   return 'rattling about: the clearance is far too wide';
+}
+
+const WHEEL_WORDS = ['front left', 'front right', 'rear left', 'rear right'];
+
+/** Which wheel, in words (the first four are the usual layout; anything else is just a number). */
+export function wheelWords(faults, i) {
+  if (!faults.wheelSides) return WHEEL_WORDS[i] ?? `wheel ${i + 1}`;
+  const w = faults.wheelSides[i];
+  return w ? `${w.front ? 'front' : 'rear'} ${w.side > 0 ? 'left' : 'right'}` : `wheel ${i + 1}`;
+}
+
+/** What spinning the wheels and sighting along the rods shows, for the toast: you work out what it needs. */
+export function crashLook(faults) {
+  const bits = [];
+  if (faults.started.rod) bits.push(`the ${wheelWords(faults, faults.rodWheel)} track rod is bent`);
+  if (faults.started.rim) bits.push(`the ${wheelWords(faults, faults.rimWheel)} rim runs out of true`);
+  return bits.length ? bits.join(', and ') : 'everything runs true';
 }
 
 /** What the pulled-down barrel and piston look like, for the toast. */
@@ -467,6 +497,15 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
       return 'Cover back on, but the clearance is still a bit wide and it will keep ticking';
     }
     return 'Valve clearances set: the tick has gone';
+  }
+  if (job.kind === 'crash') {
+    // Truing the metal is the fix. Too little work leaves it a bit out, too much (forced) leaves it that way too; loose nuts let it creep back.
+    const bent = ['rod', 'rim'].filter((k) => faults.has(k));
+    const wrong = job.outcome('true') !== 'good' || job.outcome('tight') === 'short';
+    for (const k of bent) faults.fix(k);
+    if (wrong) for (const k of bent) faults.leave(k, P.crashBotched);
+    if (!bent.length) return 'Nothing was bent, but everything is checked and tight';
+    return wrong ? 'Back together, but it is not quite true and still pulls a little' : 'Straight again: it steers true and the wheel runs without a wobble';
   }
   if (job.kind === 'tarp') return 'The tarp is off, and the dust is everywhere';
   if (job.kind === 'fuel') {

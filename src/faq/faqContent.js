@@ -501,7 +501,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I know something’s wrong?',
         a: `Mostly by feel and sound; nothing on screen tells you. A slow puncture pulls the bars towards the soft tyre. A slipping belt flares the revs and
-          hardly goes. A sticking throttle lingers after you let go, then sticks for good. A dirty carb hunts and runs rough. Valve clearances that have worn wide make a four-stroke tick from the top of the engine. A stretched chain (the sport quad, mini moto and three-wheeler) slaps over bumps and can jump off. Worn engine mounts (on any vehicle, but you feel it most on the tractor, the UTV and the Land Rovers) shake more through the seat and clonk when you stab the throttle. The girls see what you can't:
+          hardly goes. A sticking throttle lingers after you let go, then sticks for good. A dirty carb hunts and runs rough. Valve clearances that have worn wide make a four-stroke tick from the top of the engine. A hard knock on a post or a bad landing can bend a track rod (the bars pull to one side and a front wheel points out of line) or a rim (a wheel wobbles). A stretched chain (the sport quad, mini moto and three-wheeler) slaps over bumps and can jump off. Worn engine mounts (on any vehicle, but you feel it most on the tractor, the UTV and the Land Rovers) shake more through the seat and clonk when you stab the throttle. The girls see what you can't:
           ride off and one behind you may shout about smoke or a soft tyre. Amy's logbook on the workbench records what she has found.`,
         tip: 'Read Amy’s logbook on the workbench: it is always true, unlike what Jess tells you.',
       },
@@ -521,6 +521,15 @@ export const FAQ_SECTIONS = [
         a: `In the yard, take the toolbox to the quad and press <kbd>N</kbd>: it goes back on the sprocket and gets a squirt of oil, enough to ride home. To take the
           stretch out, use the workbench's "Adjust and oil the chain" (the minus key): slacken the axle nuts, draw the axle back to about a finger of play, oil it
           a little and do the nuts up. Look at the chain first and it will tell you how slack and how dry it is. Done carelessly some of the slack comes back.`,
+      },
+      {
+        q: 'I hit a post and now it pulls to one side, or a wheel wobbles. What happened?',
+        a: `A hard hit on a gatepost or wall, or a bad landing off the ramp, can bend a track rod or a rim. A bent track rod pulls the bars towards its side and
+          you can see the front wheel pointing out of line; a bent rim makes its wheel wobble and costs you a little drive. The harder the knock, the likelier
+          and the worse. Braking hard or bumping something slowly does no harm. You can't mend either in the yard: use the workbench's "Mend the crash damage"
+          (the <kbd>[</kbd> key). Look it over first and it will tell you which wheel, then take the wheel and rod off, straighten the rod or fit a straight rim
+          (firm, not forced) and do the nuts up. Done carelessly it comes back a little bent.`,
+        tip: 'A pull after a hard knock is a bent track rod: the workbench straightens it.',
       },
       {
         q: 'Why is my four-stroke ticking, and what does the feeler gauge do?',

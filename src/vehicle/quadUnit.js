@@ -15,6 +15,7 @@ import { QuadMud, DEFAULT_MUD_PARAMS, MUD_PARAM_RANGES, MUD_STATE_RANGES } from 
 import { Quad } from './quad.js';
 import { DEFAULT_VEHICLE_PARAMS, VEHICLE_PARAM_RANGES } from './vehicleParams.js';
 import { FAULT_PARAM_RANGES } from './faults.js';
+import { CRASH_PARAM_RANGES } from './crashDamage.js';
 import { DEFAULT_FUEL_PARAMS, FUEL_PARAM_RANGES } from './fuelSystem.js';
 import { DEFAULT_CONTROLS_PARAMS, CONTROLS_PARAM_RANGES } from './controls.js';
 import { DEFAULT_GEARBOX_PARAMS, GEARBOX_PARAM_RANGES } from './manualDrivetrain.js';
@@ -155,6 +156,7 @@ export class QuadUnit {
     registerTuning(`${folder}/Mud on it`, this.mud.state, MUD_STATE_RANGES);
     registerTuning(`${folder}/Fuel`, this.quad.fuel.params, FUEL_PARAM_RANGES);
     registerTuning(`${folder}/Faults`, this.quad.faults.params, FAULT_PARAM_RANGES);
+    registerTuning(`${folder}/Crash damage`, this.quad.crashWatch.params, CRASH_PARAM_RANGES);
     if (this.quad.crank) registerTuning(`${folder}/Starting handle`, this.quad.crank.p, CRANK_PARAM_RANGES);
     if (this.quad.manual) {
       registerTuning(`${folder}/Gearbox`, this.quad.gearbox, GEARBOX_PARAM_RANGES);

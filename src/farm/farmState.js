@@ -31,7 +31,7 @@ export function captureVehicle(unit, extra = {}) {
     running: !!e.isRunning, // a running engine is taken as fine overnight: the key is only "left on" when the engine is not going
     filter: q.filter?.clog ?? 0,
     fuel: { litres: q.fuel.litres, tap: q.fuel.tap, ...Object.fromEntries(FUEL_KEPT.map((k) => [k, q.fuel[k] ?? 0])) },
-    faults: { tyre: q.faults.tyre, ...Object.fromEntries(FAULT_FIELDS.map((k) => [k, { ...q.faults[k] }])) },
+    faults: { tyre: q.faults.tyre, rodWheel: q.faults.rodWheel, rimWheel: q.faults.rimWheel, ...Object.fromEntries(FAULT_FIELDS.map((k) => [k, { ...q.faults[k] }])) },
     tyres: q.tyres ? { psi: [...q.tyres.psi], brand: { ...q.tyres.brand }, tread: { ...q.tyres.tread } } : null,
     sump: q.sump ? q.sump.level : null,
     tapStiff: q.quirks?.tapStiff ?? null,
@@ -78,6 +78,8 @@ export function restoreVehicle(unit, s) {
   if (s.faults) {
     for (const k of FAULT_FIELDS) if (s.faults[k]) copyKnown(q.faults[k], s.faults[k], Object.keys(q.faults[k]));
     if (Number.isInteger(s.faults.tyre)) q.faults.tyre = s.faults.tyre;
+    if (Number.isInteger(s.faults.rodWheel)) q.faults.rodWheel = s.faults.rodWheel; // which wheel took the knock
+    if (Number.isInteger(s.faults.rimWheel)) q.faults.rimWheel = s.faults.rimWheel;
   }
   if (s.tyres && q.tyres) {
     if (Array.isArray(s.tyres.psi) && s.tyres.psi.length === q.tyres.psi.length && s.tyres.psi.every(num)) q.tyres.psi = [...s.tyres.psi];

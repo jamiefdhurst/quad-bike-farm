@@ -30,6 +30,7 @@ import { Bog } from './bog.js';
 import { Sump, hasSump, oilPressureLamp } from './sump.js';
 import { stepHand } from './handLever.js';
 import { Faults } from './faults.js';
+import { CrashWatch, damageFor, DEFAULT_CRASH_PARAMS } from './crashDamage.js';
 import { toppleLoad } from './topple.js';
 import { BikeLean, DEFAULT_BIKE_PARAMS } from './bikeLean.js';
 import { RiderLean, DEFAULT_RIDER_LEAN_PARAMS } from './riderLean.js';
@@ -133,6 +134,9 @@ export class Quad {
     this.faults.hasValves = engine.params.strokes !== 2; // every four-stroke has valves to go out of adjustment; a two-stroke has none
     this.faults.hasChain = chainDrive; // only the chain-driven ones can stretch one
     this.lastUp = 0; // vertical speed last step, for the jolt a slack chain slaps on
+    this.crashWatch = new CrashWatch({ ...DEFAULT_CRASH_PARAMS }); // a hard hit or landing can bend a rod or a rim (crashDamage.js)
+    this.lastCrash = null; // { impact, bent: [{ kind, wheel, level }] } the last one, for the panel
+    this.faults.steerWheels = layout.wheels.flatMap((w, i) => (!w.outrigger && (w.front ?? i < 2) ? [i] : []));
     this.sump = hasSump(engine.params) ? new Sump() : null; // every four-stroke's engine oil; the game deals each its level (sump.js)
     this.sumpClock = 0;
     // A layout's outrigger wheels (the mini moto's) are never the flat one.
@@ -348,6 +352,34 @@ export class Quad {
   get isTipped() {
     const up = new THREE.Vector3(0, 1, 0).applyQuaternion(this.currQuat);
     return up.y < 0.45 || !!this.bike?.fallen; // a bike that has gone down may be lying at a lean it could otherwise ride at
+  }
+
+  /** Hard knocks while someone is at the controls: a hit on a post or a bad landing can bend a rod or a rim (crashDamage.js). */
+  checkCrash(dt) {
+    if (!this.rider && !this.driver) return this.crashWatch.reset(); // parked: stopping it by hand isn't a crash
+    const impact = this.crashWatch.update(dt, this.physics.body.linvel());
+    if (impact) this.crash(impact);
+  }
+
+  /** An impact (from crashDamage.js, `dir` being the way it was shoved in the world) bends what it bends. Returns what it bent. */
+  crash(impact) {
+    const local = new THREE.Vector3(impact.dir.x, 0, impact.dir.z).applyQuaternion(this.currQuat.clone().invert());
+    const eligible = new Set(this.faults.tyreWheels);
+    const wheels = this.wheels.flatMap((w, i) => (eligible.has(i) ? [{ x: w.x, z: w.z, front: !!(w.front ?? i < 2), index: i }] : []));
+    const bent = damageFor(impact, wheels, { x: local.x, z: local.z }, this.crashWatch.params, this.faults.random);
+    for (const b of bent) this.faults.damage(b.kind, b.level, b.wheel);
+    this.lastCrash = { impact, bent };
+    return bent;
+  }
+
+  /** For the panel: the obstacle dead ahead and the quad knocked straight back off it. */
+  crashHeadOn(strength = 1) {
+    const front = this.wheels.filter((w, i) => w.front ?? i < 2);
+    const rear = this.wheels.filter((w, i) => !(w.front ?? i < 2));
+    const mean = (ws) => ws.reduce((a, w) => a + w.z, 0) / Math.max(1, ws.length);
+    const ahead = Math.sign(mean(front) - mean(rear)) || 1; // which way along the model's length is forward
+    const dir = new THREE.Vector3(0, 0, -ahead).applyQuaternion(this.currQuat);
+    return this.crash({ type: 'hit', strength, dir: { x: dir.x, z: dir.z } });
   }
 
   setRider(rider, input) {
@@ -708,6 +740,7 @@ export class Quad {
     const jolt = dt > 0 ? Math.abs(up - this.lastUp) / dt : 0;
     this.lastUp = up;
     this.faults.update(dt, { running: this.engine.isRunning, speed: Math.abs(fwd), throttle: throttleInput, jolt });
+    this.checkCrash(dt);
     this.dust = this.world.dustParams ? dustLevel(this.world.dustParams, this.world.stubbleAt?.(this.position.x, this.position.z) ?? 0, this.world.wet ?? 0, fwd) : 0;
     this.filter.update(dt, { running: this.engine.isRunning, speed: fwd, dust: Math.max(this.dust, this.dustIn) * (this.world.dustParams?.filterBoost ?? 1), mud: Math.max(...this.physics.wheelInfo.map((w) => w.mud ?? 0)), puddle: Math.max(...this.physics.wheelInfo.map((w) => w.puddle ?? 0)) });
     // She has the sense to switch off a quad whose throttle has stuck open.
@@ -801,7 +834,7 @@ export class Quad {
       this.physics.traction.gripScale = this.driveEffects.gripScale;
     }
     this.physics.hold = hold + this.bog.dragForce(inBog, p.mass, groundSpeed) + this.brakes.drag * p.mass; // a binding brake drags
-    let wheelSteer = this.steer + this.faults.steerPull + this.tyres.steerPull + this.quirks.brakePull(this.brake);
+    let wheelSteer = this.steer + this.faults.steerPull + this.faults.rodPull + this.tyres.steerPull + this.quirks.brakePull(this.brake);
     if (this.bike) wheelSteer = this.balanceBike(dt, wheelSteer);
     this.physics.applyControls({
       driveForce: Math.sign(drive) * Math.max(0, Math.abs(drive) * this.faults.driveFactor * this.tyres.driveFactor * this.tow.driveFactor * (this.drive ? this.driveEffects.driveScale : 1) - hold),
@@ -970,7 +1003,10 @@ export class Quad {
         w.object.position.y += this.wheelShake * (b.heave - w.z * b.pitch + w.x * b.roll);
       }
       w.object.position.y += (rearZ - w.z) * lift;
-      w.object.rotation.y = st.steering;
+      // A bent rod toes that wheel out of line, and a bent rim makes its wheel wobble once a turn.
+      const wobble = this.faults.wheelWobble(i);
+      w.object.rotation.y = st.steering + this.faults.wheelToe(i) + wobble * Math.sin(st.rotation);
+      w.object.rotation.z = wobble * 0.5 * Math.cos(st.rotation);
       w.spin.rotation.x = st.rotation;
       this.wheelHeights[i] = w.object.position.y - this.groundOffset;
     }

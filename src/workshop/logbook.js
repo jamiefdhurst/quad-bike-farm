@@ -68,6 +68,7 @@ const JOB_TEXT = {
   topEnd: 'top end rebuilt, new piston and rings',
   chain: 'chain adjusted and oiled',
   valves: 'valve clearances set',
+  crash: 'crash damage put right',
   sump: 'engine oil topped up',
   tarp: 'tarp off',
   fuel: 'old fuel drained',
