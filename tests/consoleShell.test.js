@@ -45,6 +45,7 @@ function makeWorld() {
     farmSave: () => true,
     farmJson: () => '{"day":4}',
     farmWipe: () => (state.wiped = true),
+    perf: () => ({ fps: 59.8, ms: 4.234, worstMs: 9.06, calls: 812, triangles: 1234567, width: 2592, height: 1676, pixelRatio: 1.5, maxFps: 60 }),
     farmLoad: (json) => {
       const s = JSON.parse(json);
       state.loaded = s;
@@ -283,5 +284,14 @@ describe('the farm save', () => {
     expect(state.loaded).toEqual({ version: 1, day: 7, farmSeed: 3 });
     expect(text(shell.run('save load'))).toMatch(/paste the save/);
     expect(text(shell.run('save frobnicate'))).toMatch(/no "save frobnicate"/);
+  });
+});
+
+describe('perf', () => {
+  it('says the frame rate, the work a frame and what is drawn', () => {
+    const { shell } = makeWorld();
+    expect(text(shell.run('perf'))).toBe(
+      '60 fps (cap 60), 4.23 ms a frame on average, 9.1 ms at worst\n812 draw calls and 1.23M triangles a frame, shadows included\n2592 x 1676 pixels (render scale 1.5)',
+    );
   });
 });

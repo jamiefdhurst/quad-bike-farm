@@ -12,6 +12,7 @@ import { resolve, walk, show, describe, parseValue, pathCandidates } from './she
  *   weatherKinds(): string[]              setWeather(kind): string
  *   dump(text): void                      (copies to the clipboard)
  *   farmText(): string   farmSave(): boolean   farmJson(): string   farmLoad(json): string   farmWipe(): void   (the farm that remembers)
+ *   perf(): { fps, ms, worstMs, calls, triangles, width, height, pixelRatio, maxFps }   (how hard the game is working)
  */
 
 const GROUPS = ['Looking', 'Changing', 'Moving', 'Vehicles', 'Girls', 'World', 'Console'];
@@ -438,6 +439,23 @@ export function buildCommands(host) {
         return shell.write(r, state);
       },
     })),
+
+    {
+      name: 'perf',
+      group: 'World',
+      usage: 'perf',
+      help: 'how hard the game is working: frames a second, the game\'s own time on each, and what the GPU is asked to draw. tune.graphics sets the cap, the render scale and the draw distances',
+      examples: ['perf', 'tune.graphics.maxFps 0'],
+      run: () => {
+        const p = host.perf();
+        const k = (n) => (n >= 1e6 ? `${round(n / 1e6, 2)}M` : n >= 1e3 ? `${round(n / 1e3)}k` : String(Math.round(n)));
+        return [
+          `${Math.round(p.fps)} fps (cap ${p.maxFps > 0 ? p.maxFps : 'none'}), ${round(p.ms, 2)} ms a frame on average, ${round(p.worstMs, 1)} ms at worst`,
+          `${k(p.calls)} draw calls and ${k(p.triangles)} triangles a frame, shadows included`,
+          `${p.width} x ${p.height} pixels (render scale ${p.pixelRatio})`,
+        ];
+      },
+    },
 
     // Console ---------------------------------------------------------------------------------------------------------------
     {

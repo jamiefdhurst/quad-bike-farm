@@ -21,6 +21,8 @@ import { applyIdle, applyTopRpm, applyVariation, pickIdle } from './vehicle/quad
 import { AudioHub } from './audio/engineAudio.js';
 import { RideWind, rideBuffers } from './audio/rideAudio.js';
 import { overlayPauses } from './core/pause.js';
+import { DEFAULT_GRAPHICS_PARAMS, GRAPHICS_PARAM_RANGES, pixelRatioFor, nextFrameAt } from './core/graphics.js';
+import { FrameStats } from './core/frameStats.js';
 import { RadialPad } from './hud/radialPad.js';
 import { PAD_RANGES } from './input/gamepad.js';
 import { DEFAULT_SOUND_PARAMS, SOUND_PARAM_RANGES } from './audio/audioParams.js';
@@ -227,8 +229,12 @@ export class Game {
     this.RAPIER = RAPIER;
     this.canvas = canvas;
 
+    // How often and at what resolution a frame is drawn, and how far the ground cover reaches (core/graphics.js).
+    this.graphics = { ...DEFAULT_GRAPHICS_PARAMS };
+    registerTuning('Graphics', this.graphics, GRAPHICS_PARAM_RANGES, { onChange: () => this.onResize() });
+    this.frameStats = new FrameStats(); // for the console's `perf`
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(pixelRatioFor(window.devicePixelRatio, this.graphics));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -265,6 +271,7 @@ export class Game {
       RAPIER: this.RAPIER,
       renderer: this.renderer,
       models: this.models,
+      graphics: this.graphics,
     });
 
     this.player = new Player({
@@ -1296,6 +1303,7 @@ export class Game {
     this.audioHub.setPaused(on); // every frame: a click can switch the sound back on while the card is still up
     if (this.paused === on) return;
     this.paused = on;
+    this.redraw = true;
     if (typeof speechSynthesis !== 'undefined') {
       if (on) speechSynthesis.pause();
       else speechSynthesis.resume();
@@ -6873,15 +6881,25 @@ export class Game {
   // Loop -----------------------------------------------------------------
 
   frame() {
+    // Under the fps cap a screen tick that comes too soon is skipped whole: no time passes, and keys pressed wait for the next frame.
+    const started = performance.now();
+    const due = nextFrameAt(started / 1000, this.frameDueAt, this.graphics.maxFps);
+    if (due === null) return;
+    this.frameDueAt = due;
     this.timer.update();
     const dt = Math.min(this.timer.getDelta(), MAX_FRAME_DT);
     const input = this.input;
     this.pollPad(dt);
-    // Paused: draw the farm as it stands behind the card and nothing else, so no time passes for anything. The very first frame runs
+    // Paused: the farm as it stands behind the card and nothing else, so no time passes for anything. Nothing moves, so it is drawn when
+    // the pause starts or the window changes, and twice a second in case something finished loading. The very first frame runs
     // regardless, so the camera is put at your eyes and everything is placed before the start screen shows the farm behind it.
     this.setPaused(this.isPaused());
     if (this.paused && this.firstFrameDone) {
-      this.renderer.render(this.scene, this.camera);
+      if (this.redraw || started - (this.pausedDrawAt ?? 0) > 500) {
+        this.renderer.render(this.scene, this.camera);
+        this.redraw = false;
+        this.pausedDrawAt = started;
+      }
       input.endFrame();
       return;
     }
@@ -7130,6 +7148,7 @@ export class Game {
     this.renderer.render(this.scene, this.camera);
     input.endFrame();
     this.firstFrameDone = true;
+    this.frameStats.record(started / 1000, performance.now() - started);
   }
 
   /** The flock on the hill pasture (world/flock.js): grazing on the gentler ground past the stream, out of the gorse, the wood and the water. */
@@ -7272,10 +7291,13 @@ export class Game {
     return markers;
   }
 
+  /** The window changed size, or the render scale did. */
   onResize() {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
+    this.renderer.setPixelRatio(pixelRatioFor(window.devicePixelRatio, this.graphics));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.redraw = true;
     this.updateSmokeScale();
   }
 

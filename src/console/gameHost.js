@@ -165,6 +165,11 @@ export function createHost(g, { copy = () => {} } = {}) {
     farmJson: () => JSON.stringify(g.captureFarm(), null, 2),
     farmWipe: () => g.wipeFarm(),
     farmLoad: (json) => g.loadFarmJson(json),
+
+    perf() {
+      const r = g.renderer;
+      return { ...g.frameStats.summary(), ...r.info.render, width: r.domElement.width, height: r.domElement.height, pixelRatio: r.getPixelRatio(), maxFps: g.graphics.maxFps };
+    },
   };
   return host;
 }
