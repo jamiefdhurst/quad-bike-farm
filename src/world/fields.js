@@ -121,11 +121,10 @@ export function createFields(layout) {
       const g = hill.gates.find((o) => o.x === x);
       hedges.push({ x1: x, z1: F, x2: x, z2: lane.toZ, gaps: g ? [{ at: g.z, half: g.half }] : [], height: lane.hedgeHeight });
     }
-    // The two fields' outer hedges: a short piece of the grass field's south hedge to the west of it, and a side hedge down to the pasture's.
-    if (hill.west) hedges.push({ x1: hill.west.minX, z1: F, x2: -F, z2: F, gaps: [] }, { x1: hill.west.minX, z1: F, x2: hill.west.minX, z2: lane.toZ, gaps: [] });
-    if (hill.east) hedges.push({ x1: hill.east.maxX, z1: F, x2: hill.east.maxX, z2: lane.toZ, gaps: [] });
     hedges.push(
-      { x1: p.minX, z1: p.minZ, x2: p.maxX, z2: p.minZ, gaps: [{ at: lane.x, half: lane.hedgeOff }] },
+      // The two fields beside the lane are open to the pasture and to the country round them (no hedge on their south, west or east
+      // sides): the pasture's north hedge is open along its whole width.
+      { x1: p.minX, z1: p.minZ, x2: p.maxX, z2: p.minZ, gaps: [hill.west ? { at: (p.minX + p.maxX) / 2, half: (p.maxX - p.minX) / 2 + 1 } : { at: lane.x, half: lane.hedgeOff }] },
       { x1: p.minX, z1: p.maxZ, x2: p.maxX, z2: p.maxZ, gaps: [] },
       { x1: p.minX, z1: p.minZ, x2: p.minX, z2: p.maxZ, gaps: [] },
       { x1: p.maxX, z1: p.minZ, x2: p.maxX, z2: p.maxZ, gaps: [] },

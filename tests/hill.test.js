@@ -148,6 +148,15 @@ describe('the hill through the south gate', () => {
       }
     });
 
+    it('are open: no hedge on their south, west or east sides, only the lane\'s and the grass field\'s', () => {
+      const south = 0; // yaw 0 is +z
+      expect(fields.hedgeAhead(-60, 100, south)).toBeGreaterThan(LAYOUT.hill.pasture.maxZ - 100 - 1); // on to the pasture's far hedge
+      expect(fields.hedgeAhead(0, 100, south)).toBeGreaterThan(LAYOUT.hill.pasture.maxZ - 100 - 1);
+      expect(fields.hedgeAhead(-60, 100, -Math.PI / 2)).toBe(Infinity); // west, out of the meadow
+      expect(fields.hedgeAhead(0, 100, Math.PI / 2)).toBe(Infinity); // east, out of the sheep field
+      expect(fields.hedgeAhead(-60, 100, Math.PI)).toBeCloseTo(20); // north: the grass field\'s south hedge
+    });
+
     it('are on the girls\' routes from the yard, through the lane', () => {
       for (const [to, gate] of [[{ x: -70, z: 95 }, gw[0]], [{ x: 10, z: 100 }, gw[1]]]) {
         const way = fields.route({ x: 0, z: 40 }, to);

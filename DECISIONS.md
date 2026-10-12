@@ -3058,3 +3058,10 @@ Jamie: the game was working his M4 Max MacBook Pro hard, and more is coming. Mea
 - Debug: "the calendar says" and "Call it a day now" in the Girls tab, `save day` and `farm.calendar` in the console (the forced one ignores the time and the girls, not seeding).
 - Not checked: the fade and reload in a real browser, and that the card fades in after the reload.
 
+
+
+## The fields beside the lane, opened up (TODO 188, follow-up)
+
+- Jamie: remove the hedges round the two new fields to make them more open. Gone: the new west side hedge, the east side hedge, the short piece of the grass field's south hedge west of its corner, and the pasture's north hedge along the whole width of the two fields (it was their south side, and it now has one gap from corner to corner). Still there: the lane's hedges with their two gateways, and the grass field's own south hedge to the north. The fields' rectangles (`hill.west`, `hill.east`) still say where their ground, tussocks and routes are; beyond them is the neighbouring land, which is drivable but not on the girls' routes.
+- Not checked: how the seam looks where the farm's own ground meets the neighbours' beyond the old hedge line.
+\n
