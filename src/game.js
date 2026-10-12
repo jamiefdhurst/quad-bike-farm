@@ -37,6 +37,7 @@ import { CHARACTERS } from './npc/characters.js';
 import { DEFAULT_NOTICE_PARAMS, NOTICE_PARAM_RANGES } from './npc/attention.js';
 import { NoticeWatch } from './npc/noticeWatch.js';
 import { Pair, PAIR_PARAM_RANGES, pairFacing } from './npc/pair.js';
+import { generalRequests } from './npc/generalRequests.js';
 import { DEFAULT_WAITING_PARAMS, WAITING_PARAM_RANGES } from './npc/waiting.js';
 import { Daylight, DEFAULT_DAYLIGHT_PARAMS, DAYLIGHT_PARAM_RANGES } from './world/daylight.js';
 import { VehicleLights, VEHICLE_LIGHT_PARAM_RANGES } from './effects/vehicleLights.js';
@@ -2002,10 +2003,30 @@ export class Game {
     }
   }
 
+  /** You can ask her for something general now: she is in one of these states and free to be asked (soft jobs and holds give way). */
+  askable(c, states) {
+    return states.some((st) => c.fsm.is(st)) && c.availability({ asked: true, pull: true }).free;
+  }
+
+  /** The wheel's general slices, whatever she is up to (generalRequests.js): come here, stop, I'll be a minute. */
+  generalWheelOptions(c) {
+    const kinds = generalRequests({ state: c.fsm.name, avail: c.availability({ asked: true, pull: true }), youDistance: c.root.position.distanceTo(this.player.position) });
+    const ask = (kind, run) => () => {
+      c.interrupt();
+      run();
+      c.voice.onRequest(kind);
+    };
+    const options = [];
+    if (kinds.includes('come')) options.push({ label: 'Come here', run: ask('come', () => c.requestComeHere(this.player.position)) });
+    if (kinds.includes('stop')) options.push({ label: 'Stop there', run: ask('stop', () => c.requestStop()) });
+    if (kinds.includes('wait') && !this.readyWaiting.has(c.character.id)) options.push({ label: 'I\'ll be a minute', run: () => this.askToWait(c) });
+    return options;
+  }
+
   /** The wheel's "Push start" slice: you're at the controls of a manual that won't start, and she's free to push it. */
   pushStartOption(c) {
     const unit = this.riddenUnit;
-    if (!unit || !c.fsm.is('idle') || !c.canPushStart(unit.quad)) return null;
+    if (!unit || !this.askable(c, ['idle', 'walking', 'driving', 'seated', 'mounting']) || !c.canPushStart(unit.quad)) return null;
     return { label: 'Push start it', run: () => c.requestPush(unit.quad) };
   }
 
@@ -5208,7 +5229,7 @@ export class Game {
     const id = c.character.id;
     const q = this.readyQuadFor(c);
     this.closeMenu();
-    if (!q || !c.fsm.is('idle')) {
+    if (!q || !(forced ? c.fsm.is('idle') : this.askable(c, ['idle', 'walking', 'driving']))) {
       if (!forced) this.hud.toast(`${c.name} can't just now`);
       return false;
     }
@@ -7085,8 +7106,10 @@ export class Game {
       return;
     }
     const actions = c.getActions(this.girlUnits.map((u) => u.quad));
-    if (!actions.length) {
-      this.hud.toast('She\'s busy');
+    const general = this.generalWheelOptions(c);
+    if (!actions.length && !general.length) {
+      const why = c.availability({ asked: true, pull: true }).why;
+      this.hud.toast(why && why !== 'free' ? `${c.name} is ${why}` : 'She\'s busy');
       return;
     }
     // She answers when you ask her something.
@@ -7096,7 +7119,7 @@ export class Game {
     const options = actions.filter((a) => !a.quad).map((a) => ({ label: a.label, run: answer(a) }));
     const push = this.pushStartOption(c);
     if (push) options.push(push);
-    if (c.fsm.is('idle') && !this.readyWaiting.has(c.character.id)) options.push({ label: 'I\'ll be a minute', run: () => this.askToWait(c) });
+    options.push(...general);
     const tractor = this.tractorUnit && this.tractorWheelOption(c);
     if (tractor?.children.length) options.push(tractor);
     const utv = this.utvUnit && this.utvWheelOption(c);

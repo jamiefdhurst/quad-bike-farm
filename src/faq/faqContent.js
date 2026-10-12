@@ -25,6 +25,14 @@ export const FAQ_SECTIONS = [
         tip: 'Press H at any time for the controls.',
       },
       {
+        q: 'How do I call a girl over, or tell her to stop?',
+        a: `Look at her and press <kbd>E</kbd> to open her wheel. Whatever she is up to, it has "Come here" (she gets off whatever she is on and
+          walks over to you), "Stop there" (when she is on her way somewhere) and "I'll be a minute" (she gets a quad going and waits on the back
+          for you). The quads she could ride come on the wheel as well. If she is in the middle of something she will not drop, such as carrying
+          something, the game says what she is doing instead.`,
+        tip: 'Press E at a girl: "Come here" works whatever she is doing.',
+      },
+      {
         q: 'Can I play with a gamepad?',
         a: `Yes. Plug in an Xbox, PlayStation, Switch Pro or similar pad, press any button on it so the browser notices it, and the start
           card says "Gamepad found". Press <kbd>Start</kbd> to play (and again to pause). The left stick walks and steers, the right stick

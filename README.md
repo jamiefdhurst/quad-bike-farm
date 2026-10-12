@@ -624,7 +624,7 @@ What is still to do. Finished items are recorded in DECISIONS.md, under their ol
 33. **Done.** Move the Corsa and the Fiesta to be parked near the dutch barn, and remove the hard standing from near the barn
 34. **Done.** The girls keep getting stuck in the bottom hedge next to the end of the road, and can't reverse around. They need to go backwards in the opposite direction a lot more when they're stuck to help get themselves out.
 35. **Done.** Hours recorded against the cars/vehicles need to reflect in-game hours, not real hours.
-36. When the girls are in the middle of doing something, only the quads come up on their wheel, not other options.
+36. **Done.** When the girls are in the middle of doing something, only the quads come up on their wheel, not other options. Her wheel now always has "Come here", "Stop there" (when she is walking) and "I'll be a minute", whatever she is up to, unless something she will not drop has her (then the game says what).
 37. Fuel starvation on the banks. With the tank low, a quad coughs and dies nose-up on a steep bank as the fuel runs away from the tap, and picks up again when it levels out. The girls notice whose quad it was.
 38. Carb icing. On a cold, damp day (the day's temperature and the weather roll) a carburettor quad loses power at steady part throttle; a blip or a stop clears it. Amy knows what it is, Jess thinks it's broken. Not on the diesels.
 39. A quad towing a quad. A rope between them, a girl on the dead one steering and braking: she shouts if you snatch the rope, and runs into your back if she doesn't brake. Either girl can be asked; an action button for each.

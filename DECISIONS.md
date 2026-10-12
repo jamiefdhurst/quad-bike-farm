@@ -3342,3 +3342,10 @@ Settled with Jamie before building (2026-10-12): all six recommendations taken.
 - **Odometer and trip stay as they were.** They are distance, and the farm's metres are already the game's metres, so nothing scales them.
 - **Starting readings and saves are unchanged.** The ranges in the specs were already meant as hours of use, so they now sit in proportion to how much a game adds. Wear and faults are tied to the readings at the start only, not to hours added during play.
 - **Not checked:** the feel of the numbers over a long run in the browser; unit test only.
+
+## The girls' wheel when she's busy (TODO 36)
+
+- **Decided with Jamie:** a small set of general requests that always make sense, not just un-gating the old idle-only ones. Asked with `availability({ asked: true, pull: true })`, so soft jobs and the farm's holds give way and a girl who is walking, driving or sat on a vehicle can be broken into. Her lines are the existing acknowledgements (`ackStand`), so nothing new is recorded.
+- **What shows (`src/npc/generalRequests.js`, pure, tested):** "Come here" (idle, walking, driving, sat; not when she is already within 2.5 m), "Stop there" (walking only), "I'll be a minute" (idle, walking, driving). "Push start it" is open to the same states. Each calls `companion.interrupt()` first. "Come here" gets her off a vehicle first (`requestComeHere`, using the usual stop-driving and dismount hand-offs) then `walkToYou`.
+- **When she's held** (carrying something, the nick, the hay trailer): the wheel doesn't open, and the toast says what has her rather than "She's busy".
+- **Not checked:** in the running game; unit tests only. "I'll be a minute" from a walking or driving girl leans on `requestMount` and `requestStart`'s existing hand-offs. Not added to the debug panel or console (they are wheel requests, and the Girls tab's existing actions are the same game methods).

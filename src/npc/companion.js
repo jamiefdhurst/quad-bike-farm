@@ -656,6 +656,24 @@ export class Companion {
     });
   }
 
+  /** You asked her to come here: off whatever she's driving or sat on first, then over to you. */
+  requestComeHere(you) {
+    if (this.stopDriving('off', () => this.walkToYou(you))) return;
+    if (this.fsm.is('seated', 'mounting')) {
+      this.afterDismount = () => this.walkToYou(you);
+      this.fsm.transition('dismounting');
+      return;
+    }
+    this.walkToYou(you);
+  }
+
+  /** You asked her to stop where she is (she was on her way somewhere): she stands there. */
+  requestStop() {
+    this.warmingAt = null;
+    this.waving = null;
+    this.fsm.transition('idle');
+  }
+
   /** Goes over to stand with her friend at talking distance, facing her (pair.js), wherever her friend has got to by then. */
   standWith(friend, p) {
     this.warmingAt = null;
