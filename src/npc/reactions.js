@@ -30,6 +30,7 @@ export const NOTICE_REACTIONS = {
   boilOver: { reaction: 'stepBack', within: 4, notOwn: true },
   rev: { reaction: 'coverEars', within: 5, minStrength: 0.8, chance: 'reactEarsChance', notOwn: true },
   tipped: { reaction: 'gasp', within: 40, notOwn: true },
+  pheasant: { reaction: 'flinch', within: 14, chance: 'reactStartleChance' },
   jump: { reaction: 'cheer', within: 45, chance: 'reactCheerChance', notOwn: true },
 };
 

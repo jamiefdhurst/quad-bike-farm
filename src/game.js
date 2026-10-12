@@ -177,6 +177,9 @@ import { Bell } from './world/bellBuild.js';
 import { Flock, findFlockSpot, DEFAULT_FLOCK_PARAMS, FLOCK_PARAM_RANGES } from './world/flock.js';
 import { FlockView } from './world/flockView.js';
 import { SheepAudio } from './audio/sheepAudio.js';
+import { Rabbits, Pheasants, hedgeSpots, DEFAULT_WILDLIFE_PARAMS, WILDLIFE_PARAM_RANGES } from './world/wildlife.js';
+import { WildlifeView } from './world/wildlifeView.js';
+import { WildlifeAudio } from './audio/wildlifeAudio.js';
 import { BELL_PARAM_RANGES } from './world/bell.js';
 import { Toolbox } from './items/toolbox.js';
 import { JumpLeads, JUMP_LEAD_PARAM_RANGES } from './items/jumpLeads.js';
@@ -1052,6 +1055,7 @@ export class Game {
     });
 
     this.setUpFlock();
+    this.setUpWildlife();
 
     // The bell beside the barn doors: ring it and the girls come back to the barn, wherever they are.
     this.bell = new Bell({ scene: this.scene, physics: this.physics, RAPIER: this.RAPIER, world: this.world, audioHub: this.audioHub, position: L.bell, yaw: L.bell.yaw });
@@ -7191,6 +7195,7 @@ export class Game {
     if (auto || this.dieselMistake.forced) this.updateDieselMistake(dt, ridden);
     this.bell.update(dt);
     this.updateFlock(dt);
+    this.updateWildlife(dt);
     this.updateRecall(dt);
     if (!this.recalling && (auto || this.convoy.active || this.convoy.forced)) this.updateConvoy(dt, ridden);
     this.updateDashReading(dt, ridden);
@@ -7305,6 +7310,65 @@ export class Game {
     const flock = new Flock({ allowed: hill.sheepFieldOk, random, params: this.flockParams, count: this.flockParams.fieldCount });
     flock.place(spot);
     this.flocks.push({ flock, view: new FlockView(this.scene, flock, (x, z) => this.world.groundHeightAt(x, z)) });
+  }
+
+  /**
+   * Rabbits on the grass field and pheasants lying in the hedge feet (world/wildlife.js). Both go from what comes near: the rabbits
+   * bolt for the hedge and freeze in a headlight after dark, the pheasants burst out and the girls hear it (the 'pheasant' notice).
+   */
+  setUpWildlife() {
+    const f = this.world.fields;
+    const L = this.world.layout;
+    const random = createRandom(this.seed ^ 0xb1ed5);
+    this.wildlifeParams = { ...DEFAULT_WILDLIFE_PARAMS };
+    registerTuning('Wildlife', this.wildlifeParams, WILDLIFE_PARAM_RANGES);
+    const clear = (x, z) =>
+      f.tarmacAt(x, z) < 0.05 && f.hedgeDistance(x, z) > 1.2 && !this.world.outbuildings.builtAt(x, z, 2) && !this.world.inBarn(x, z, 3) &&
+      Math.hypot(x - L.yard.x, z - L.yard.z) > L.yard.radius;
+    const spots = hedgeSpots(f.hedges, f.inGap, (x, z) => ['grass', 'north', 'south'].includes(f.areaOf(x, z)) && clear(x, z));
+    const burrows = spots.filter((s) => f.areaOf(s.x, s.z) === 'grass');
+    this.rabbits = new Rabbits({ allowed: (x, z) => f.areaOf(x, z) === 'grass' && clear(x, z), burrows, random, params: this.wildlifeParams });
+    this.rabbits.place();
+    this.pheasants = new Pheasants({ spots, random, params: this.wildlifeParams });
+    this.pheasants.place();
+    this.wildlifeView = new WildlifeView(this.scene, this.rabbits, this.pheasants, (x, z) => this.world.groundHeightAt(x, z));
+    this.wildlifeAudio = new WildlifeAudio(this.audioHub);
+  }
+
+  /** What the wildlife shies from: every vehicle (with its headlights' bearing and brightness), you and the girls. */
+  wildlifeThreats() {
+    const threats = [{ x: this.player.position.x, z: this.player.position.z, speed: 0, yaw: 0, beam: 0 }];
+    for (const u of this.units) threats.push({ x: u.quad.position.x, z: u.quad.position.z, speed: u.quad.speed, yaw: u.quad.yaw, beam: u.quad.headlightLevel ?? 0 });
+    for (const c of this.companions) threats.push({ x: c.root.position.x, z: c.root.position.z, speed: 0, yaw: 0, beam: 0 });
+    return threats;
+  }
+
+  updateWildlife(dt) {
+    if (!this.rabbits) return;
+    const threats = this.wildlifeThreats();
+    const at = (e) => ({ x: e.x, y: this.world.groundHeightAt(e.x, e.z) + 0.3, z: e.z });
+    for (const e of this.rabbits.update(dt, threats, this.daylight?.darkness ?? 0)) {
+      if (e.thump) this.wildlifeAudio.thump(at(e));
+    }
+    for (const e of this.pheasants.update(dt, threats, threats[0])) {
+      this.firePheasantEvent(e);
+    }
+    this.wildlifeView.update(dt, this.daylight?.darkness ?? 0);
+  }
+
+  firePheasantEvent(e) {
+    if (e.kind === 'call') return this.wildlifeAudio.call({ x: e.x, y: this.world.groundHeightAt(e.x, e.z) + 0.5, z: e.z });
+    const where = { x: e.x, y: this.world.groundHeightAt(e.x, e.z) + 0.5, z: e.z };
+    this.wildlifeAudio.burst({ ...where, strength: e.strength });
+    this.notice('pheasant', where, { key: 'pheasant', strength: e.strength });
+  }
+
+  /** The debug panel's and console's flush: the pheasant nearest you bursts out as if you had walked up to it. */
+  debugFlushPheasant() {
+    const p = this.player.position;
+    const e = this.pheasants?.flush(p.x, p.z);
+    if (e) this.firePheasantEvent(e);
+    return !!e;
   }
 
   /** Moves the flock: it keeps clear of every vehicle that comes close (faster ones from further off), the girls and you. */

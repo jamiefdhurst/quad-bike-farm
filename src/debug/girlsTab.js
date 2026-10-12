@@ -164,6 +164,8 @@ export function buildGirlsTab(d) {
   show(both, 'the clock', () => `${g.daylight.text()}, ${Math.round(g.daylight.darkness * 100)}% dark, falling ${g.daylight.drop.toFixed(1)} °C into the night`);
   show(both, 'muck in the tub', () => `${Math.round(g.muck.load * 100)}%, ${g.muck.laid} patches laid on the stubble${g.muck.done ? ', done' : ''}`);
   show(both, 'the board', () => g.jobBoard.lines().map((l) => `${l.done ? '[x]' : '[ ]'} ${l.text}`).join('; ') || 'nothing on');
+  show(both, 'wildlife', () => `${g.rabbits.rabbits.filter((r) => r.mode !== 'down').length} rabbits about (${g.rabbits.rabbits.filter((r) => r.mode === 'caught').length} in a beam), pheasants ${g.pheasants.birds.map((b) => b.mode).join('/')}`);
+  button(both, 'Flush the nearest pheasant', () => g.debugFlushPheasant());
   button(both, 'Fill the tipping trailer with muck', () => g.debugFillMuck());
   button(both, 'Muck job done now', () => g.debugFinishMuck());
   button(both, 'Empty the tub and clear the muck from the ground', () => g.debugResetMuck());

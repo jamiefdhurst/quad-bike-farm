@@ -54,6 +54,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   lookSpeed: 3, // 1/s, how fast her head turns in and out
   // How she reacts with her body (reactions.js): the chances and the size of it.
   reactEarsChance: 0.5, // revs right beside her: the chance she covers her ears
+  reactStartleChance: 0.7, // a pheasant bursting out of the hedge near her: the chance she jumps
   reactCheerChance: 0.6, // someone landing a jump she can see: the chance she cheers
   reactCheerArms: 0.7, // how she cheers: under 0.5 a clap, above it arms up (and how high)
   reactFlinch: 1, // how big her flinch is
@@ -335,6 +336,7 @@ export const COMPANION_PARAM_RANGES = {
   lookSweep: [0.5, 20, 0.5],
   lookSpeed: [0.3, 10, 0.1],
   reactEarsChance: [0, 1, 0.05],
+  reactStartleChance: [0, 1, 0.05],
   reactCheerChance: [0, 1, 0.05],
   reactCheerArms: [0, 1, 0.05],
   reactFlinch: [0, 2, 0.05],

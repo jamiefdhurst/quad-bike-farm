@@ -255,6 +255,12 @@ export function buildGameTree(g, host) {
     }), 'asking the girls for a race, a drag run or the climb'),
     climb: text(() => (g.hillClimb.active ? `${g.hillClimb.girl} (${g.hillClimb.phase})` : g.hillClimb.youArmed ? 'you are asked for' : 'idle'), 'the hill climb'),
   }), 'farm jobs');
+  const wildlife = group(() => ({
+    rabbits: ro(() => g.rabbits.rabbits.filter((r) => r.mode !== 'down').length, '', 'rabbits above ground (the rest are in the hedge)'),
+    caught: ro(() => g.rabbits.rabbits.filter((r) => r.mode === 'caught').length, '', 'rabbits frozen in a headlight'),
+    pheasants: text(() => g.pheasants.birds.map((b) => b.mode).join(', ') || 'none', 'each pheasant: hidden, fly or gone'),
+    flush: flag(() => false, (v) => v && g.debugFlushPheasant(), 'set to true: the nearest pheasant bursts out as if you had come up to it'),
+  }), 'rabbits and pheasants');
   const audio = group(() => ({ sound: flag(() => !g.audioHub.params.muted, (v) => (g.audioHub.params.muted = !v), 'all game sound') }));
 
   return group(() => ({
@@ -264,6 +270,7 @@ export function buildGameTree(g, host) {
     player,
     weather,
     farm,
+    wildlife,
     audio,
     tune: tuningTree(),
   }));

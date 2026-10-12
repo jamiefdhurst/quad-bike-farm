@@ -33,6 +33,7 @@ export const CHARACTERS = [
       voiceHardBrakeDecel: 5.5, // notices hard braking a little sooner than Jess
       voiceHardBrakeTime: 0.3,
       reactEarsChance: 0.85, // covers her ears at revs beside her; claps a jump rather than cheering
+      reactStartleChance: 0.95, // a pheasant out of the hedge makes her jump
       reactCheerChance: 0.45,
       reactCheerArms: 0.2,
       needColdRise: 0.032, // feels the cold sooner (needs.js)
@@ -56,6 +57,7 @@ export const CHARACTERS = [
       voiceHardBrakeDecel: 6.5, // takes a sharper stop before she calls it hard braking
       voiceHardBrakeShed: 3,
       reactEarsChance: 0.15, // loves the noise; cheers a jump with both arms up; flinches less
+      reactStartleChance: 0.4, // laughs at the pheasant, mostly
       reactCheerChance: 0.95,
       reactCheerArms: 1,
       reactFlinch: 0.7,

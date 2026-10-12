@@ -876,7 +876,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Are there any animals?',
-        a: `A flock of sheep on the hill pasture, past the stream, and a smaller one in the sheep field beside the lane, on the big side of its drystone wall. They graze, wander about, bunch up and call to each other now and then. Come close and they move off, further away the faster you are going, and the rest of the flock runs with them. You can't hurt them, and for now there's nothing to do with them but watch.`,
+        a: `Rabbits and pheasants round the hedges (see “What are the rabbits and pheasants for?”), and a flock of sheep on the hill pasture, past the stream, and a smaller one in the sheep field beside the lane, on the big side of its drystone wall. They graze, wander about, bunch up and call to each other now and then. Come close and they move off, further away the faster you are going, and the rest of the flock runs with them. You can't hurt them, and for now there's nothing to do with them but watch.`,
         tip: 'Ride up the hill pasture to find the sheep. They move off from a quad.',
       },
       {
@@ -890,6 +890,15 @@ export const FAQ_SECTIONS = [
         q: 'Why won’t she pour the tea, or why did she stop?',
         a: `It is off in rain and after dark, because the view is the point. Stand within about ten metres of the rock: walk away for a few seconds and she packs up,
           a bit put out. She also needs to be near you and not busy with something else. A cold day is better for it, and the girl who likes you more has a quieter line.`,
+      },
+      {
+        q: 'What are the rabbits and pheasants for?',
+        a: `Just the farm being alive. Rabbits sit about on the grass field, a few metres out from the hedges, and bolt for the hedge when you come close; the faster you come, the earlier they go. Pheasants lie hidden at the foot of the hedges and burst out with a clatter if you ride close or walk up to one. Amy jumps almost every time; Jess usually laughs. A new pheasant turns up somewhere else after a minute or two.`,
+        tip: 'Pheasants lie in the hedge feet and burst out if you pass close. Amy jumps.',
+      },
+      {
+        q: 'Why do the rabbits stand still when I drive at night?',
+        a: `Headlights freeze them. Put your lights on after dark and a rabbit in the beam sits up rigid with its eyes shining, until you are nearly on it, and then it bolts. Slow down and it will let you get close; swing the lights away and it goes back to what it was doing.`,
       },
       {
         q: 'Why do the sheep run away?',
