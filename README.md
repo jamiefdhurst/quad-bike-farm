@@ -598,7 +598,6 @@ What is still to do. Finished items are recorded in DECISIONS.md, under their ol
 25. **Done.** Jess's dares. She dares you to jump the ramp, take the ford flat out, touch the electric fence, ride the mini moto down the steepest bank. Taking one wins favour with her and loses a little with Amy; backing out gets teased. Each one on the bucket list.
 26. Photos. A camera key: the girls see it and pose, pull faces or tell you to put it away, depending on who and her mood. The shots are pinned on the barn wall for good (the farm remembers, item 15). **Done.**
 27. **Done.** Amy's phone. It rings now and then; she wanders off to take it and comes back with news, or in a mood that takes a while to lift. Flavour for boredom and contentment; Jess gets one too, with different calls.
-28. Record and replay. Keep the seed and your inputs for the last couple of minutes, save them on a key, and play them back the same way, so a bug hit while playing can be reproduced exactly. Check first that Rapier stays deterministic within a build with the same step.
 29. A live trace on the Vehicles tab. Revs, speed, wheel slip and throttle over the last ten seconds as a small graph under Running, for tuning feel without long simulation runs.
 30. Crash damage. Hitting a gatepost hard or landing the ramp badly can bend a track rod or a rim: the quad pulls to one side and the wheel visibly wobbles. Straighten the rod or swap the wheel at the bench. In Problems on the Vehicles tab, cleared by "Put it right".
 31. Fuel starvation on the banks. With the tank low, a quad coughs and dies nose-up on a steep bank as the fuel runs away from the tap, and picks up again when it levels out. The girls notice whose quad it was.
@@ -693,7 +692,6 @@ What is still to do. Finished items are recorded in DECISIONS.md, under their ol
 120. Night riding with lamps (now that the night comes): spotlamps fitted at the bench on the quads and the Land Rover, riding the fields by their beam, the girls jumpy at noises in the dark.
 121. A show day: now and then a day ends at a local show, your best-kept quad judged on clean, tidy and running sweet, the girls in the slow race.
 122. Photo mode: a free camera, time of day frozen, the girls posing (goes with item 26).
-123. A replay of your best jump or race from a chase camera, using item 28's record and replay.
 124. Spraying the field. A sprayer tank on the green quad's racks with a fold-out boom, and a job spraying the paddock in straight overlapping lines; your lines are drawn on the farm map afterwards.
 125. A log splitter on the tractor's back, run off the hydraulics: feed it rounds from the wood (item 53) and stack them, the engine note changing under load.
 126. A vintage motorbike in the barn: a restoration project with a kickstart and a manual advance-retard lever, an old-bike starting ritual for the engine model.
