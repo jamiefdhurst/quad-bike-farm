@@ -43,7 +43,7 @@ export function buildProps(ctx) {
   const barn = buildBarn(c);
   buildHedges(c);
   c.gateParams = { ...DEFAULT_GATE_PARAMS }; // shared by the gates, tuned in the panel
-  const gates = [buildGate(c), buildRoadGate(c)].filter(Boolean);
+  const gates = [buildGate(c), buildRoadGate(c), buildGridGate(c)].filter(Boolean);
   buildCattleGrid(c);
   buildPublicLane(c);
   if (ctx.layout.carStanding) buildCarStanding(c);
@@ -211,16 +211,30 @@ function buildGate({ scene, layout, heights, fixedBox, fields, gateParams }) {
  * timber posts, shut, meeting in the middle with a chain round them. Seven tubular rails each, closer together towards the bottom, with a
  * diagonal brace from the foot of the hinge end.
  */
-function buildRoadGate({ scene, layout, heights, fixedBox, fields, gateParams }) {
+function buildRoadGate({ layout, fields, ...c }) {
   const road = layout.road;
   if (!road?.gate || !layout.farm) return;
-  const x = layout.farm.maxX;
-  const w = road.gate.width;
-  const y = heights.heightAt(x, road.z);
+  return buildSteelGate({ ...c, id: 'road', x: layout.farm.maxX, z: road.z, w: road.gate.width, swing: -1, gap: fields.gates.road });
+}
+
+/**
+ * The gate across the farm road just east of the cattle grid (layout.road.grid.gateOffset), hedge to hedge so there is no way round it:
+ * the same steel gates as the big one, swung out east to lie along the verges, shut at the start of a game.
+ */
+function buildGridGate({ layout, ...c }) {
+  const road = layout.road;
+  if (road?.grid?.gateOffset == null) return;
+  const w = 2 * (road.halfWidth + road.verge) - 0.9; // between the hedges, less their thickness and the posts
+  return buildSteelGate({ ...c, layout, id: 'grid', x: layout.fieldHalf + road.grid.gateOffset, z: road.z, w, swing: 1, gap: null });
+}
+
+/** Two steel leaves hung from timber posts across the road at (x, z), `w` m between the posts; `swing` -1 opens them west, 1 east. */
+function buildSteelGate({ scene, heights, fixedBox, gateParams, id, x, z, w, swing, gap }) {
+  const y = heights.heightAt(x, z);
   const steel = new THREE.MeshStandardMaterial({ color: 0xa8adaf, metalness: 0.6, roughness: 0.45 });
   const timber = new THREE.MeshStandardMaterial({ color: 0x5e4c38, roughness: 0.95 });
   const g = new THREE.Group();
-  g.position.set(x, y, road.z);
+  g.position.set(x, y, z);
   g.rotation.y = Math.PI / 2; // the gate's length (its local x) along the hedge
 
   for (const sx of [-1, 1]) {
@@ -265,17 +279,17 @@ function buildRoadGate({ scene, layout, heights, fixedBox, fields, gateParams })
   enableShadows(g);
   scene.add(g);
   return new Gate({
-    id: 'road',
+    id,
     params: gateParams,
     x,
-    z: road.z,
+    z,
     open: false,
     pose: (a) => {
-      for (const { leaf, side } of leaves) leaf.rotation.y = -side * a * (Math.PI / 2 - 0.05); // inwards, into the farm
+      for (const { leaf, side } of leaves) leaf.rotation.y = swing * side * a * (Math.PI / 2 - 0.05); // inwards for the big gate, out for the grid's
       chain.visible = a < 0.05;
     },
-    solid: fixedBox(x, y + 0.8, road.z, 0.2, 0.9, w / 2 + 0.3),
-    gap: fields.gates.road,
+    solid: fixedBox(x, y + 0.8, z, 0.2, 0.9, w / 2 + 0.3),
+    gap,
   });
 }
 

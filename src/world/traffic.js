@@ -159,6 +159,7 @@ export function visitPlaces(layout) {
     road,
     outside: { x: gate.x + 3.8, z: gate.z }, // where a vehicle waits outside the gate
     inside: { x: gate.x - 3.8, z: gate.z },
+    grid: road.grid?.gateOffset == null ? null : { x: layout.fieldHalf + road.grid.gateOffset, z: road.z }, // the gate just east of the cattle grid
     // The barn's big doors face east, onto the yard; the wrapped silage is stacked at its south-east corner (x -67 to -62, z 69 to 72), the bell
     // is by the north leaf. The vehicle stops east of the door, facing west, and turns round to the south, clear of both.
     stop: { x: barn.x + 14, z: barn.z + 7.5 },
@@ -174,10 +175,10 @@ export const laneX = (lane, dir) => lane.x + (dir > 0 ? 1 : -1) * lane.halfWidth
 /**
  * The steps of one visit, in order. `from` is the way it comes in (+1 heading south, -1 north), `to` the way it leaves, `leaveOpen` whether
  * the gate is left open on the way out. Steps: drive { path }, exit / enter (the driver gets out or in), walk { to }, gate { open, at }
- * (the driver walks to the gate and swings it; only if it is not already so), wait { seconds, event }.
+ * (the driver walks to the gate and swings it; only if it is not already so; `gate: 'grid'` is the one by the cattle grid), wait { seconds, event }.
  */
 export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
-  const { lane, gate, road, outside, inside, stop, door, turn } = places;
+  const { lane, gate, road, outside, inside, stop, door, turn, grid } = places;
   const steps = [];
   const sp = (p) => ({ ...p, speed: farmSpeed });
   // In along the lane, turn across it into the gateway and stop outside the gate.
@@ -194,12 +195,27 @@ export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
   steps.push({ type: 'gate', open: true, at: gateWalk(1), side: 'out' });
   // Through the gate and along the farm road on the left (heading west, that is the south side).
   const inZ = road.z + 1;
+  // The gate by the cattle grid: stop short of it, the driver opens it, and after the grid she shuts it behind her. `from` is the side she
+  // is coming from (+1 east, -1 west). The driver stands on the grid's side of the gate.
+  const gridGate = (open) => ({ type: 'gate', gate: 'grid', open, at: { x: grid.x - 1, z: grid.z + 4.4 }, side: open ? 'out' : 'in' });
+  const east = grid ? grid.x + 5 : 0;
+  const west = grid ? grid.x - 5.5 : 0;
   steps.push({
     type: 'drive',
     path: [
       sp({ x: gate.x - 2, z: gate.z, speed: 4 }),
       sp({ x: gate.x - 14, z: inZ }),
-      sp({ x: road.fromX + 6, z: inZ }),
+      ...(grid ? [sp({ x: east, z: inZ, stop: true })] : [sp({ x: road.fromX + 6, z: inZ })]),
+    ],
+  });
+  if (grid) {
+    steps.push(gridGate(true));
+    steps.push({ type: 'drive', path: [sp({ x: west, z: inZ, stop: true })] });
+    steps.push(gridGate(false));
+  }
+  steps.push({
+    type: 'drive',
+    path: [
       sp({ x: road.fromX - 6, z: inZ }), // through the cattle grid's gateway in the grass field's east hedge, not the hedge
       sp({ x: (road.fromX + stop.x) / 2 + 10, z: (inZ + stop.z) / 2 - 2 }),
       { x: stop.x + 8, z: stop.z, speed: 4 },
@@ -223,7 +239,17 @@ export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
       { x: cx, z: turn.z1, speed: 4 },
       { x: stop.x + 6, z: turn.z1 - 1, speed: 5 },
       sp({ x: (road.fromX + stop.x) / 2, z: (road.z - 1 + stop.z) / 2 }),
-      sp({ x: road.fromX - 6, z: road.z - 1 }),
+      sp({ x: grid ? west : road.fromX - 6, z: road.z - 1, stop: !!grid }),
+    ],
+  });
+  if (grid) {
+    steps.push({ ...gridGate(true), if: 'shut' });
+    steps.push({ type: 'drive', path: [sp({ x: east, z: road.z - 1, stop: true })] });
+    steps.push(gridGate(false));
+  }
+  steps.push({
+    type: 'drive',
+    path: [
       sp({ x: road.fromX + 6, z: road.z - 1 }),
       sp({ x: gate.x - 14, z: road.z - 1 }),
       { x: inside.x, z: gate.z - 0.5, speed: 4 },
@@ -356,7 +382,8 @@ export class Visit {
   /** Gets out, walks to the gate, swings it, walks back and gets in. Skipped if the gate is already as asked (an `if: 'shut'` one only when shut). */
   gateStep(dt, s, ctx, events) {
     const d = this.driver;
-    const g = ctx.gate;
+    const g = s.gate ? ctx.gates?.[s.gate] : ctx.gate;
+    if (!g) return this.next(); // a gate this stand-in world has not got
     if (!s.phase) {
       const needed = g.isOpen !== s.open && (s.if !== 'shut' || !g.isOpen);
       if (!needed) return this.next();
@@ -369,8 +396,8 @@ export class Visit {
         s.phase = 'swing';
         s.swungAt = this.t;
         if (g.set(s.open)) {
-          events.push({ type: 'gate', open: s.open });
-          if (s.open) this.openedByVisitor = true;
+          events.push({ type: 'gate', open: s.open, which: s.gate ?? 'road' });
+          if (s.open && !s.gate) this.openedByVisitor = true;
         } else s.phase = 'back'; // something in the way of shutting it: leave it
       }
     } else if (s.phase === 'swing') {
@@ -443,7 +470,7 @@ export class Traffic {
   }
 
   /**
-   * Moves everything on. ctx: darkness (0..1), blockers ([{ x, z }]: you, the quads, the girls), gate ({ isOpen, set }), swingSeconds.
+   * Moves everything on. ctx: darkness (0..1), blockers ([{ x, z }]: you, the quads, the girls), gate ({ isOpen, set }), gates ({ grid: the same, for the gate by the cattle grid }), swingSeconds.
    * Returns events: { type: 'pass', vehicle } when one goes by the gate, { type: 'gone', vehicle }, { type: 'visit', visit } as one sets
    * off, and the visit's own.
    */

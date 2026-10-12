@@ -279,6 +279,7 @@ export function buildGameTree(g, host) {
     post: flag(() => false, (v) => v && g.trafficHost.debugVisit('post'), 'set to true: the post van comes in at the big gate'),
     neighbour: flag(() => false, (v) => v && g.trafficHost.debugVisit('neighbour'), 'set to true: a neighbour calls'),
     southGate: flag(() => g.trafficHost.gate('south').isOpen, (v) => g.trafficHost.gate('south').set(!!v), 'the south gate onto the green lane: true is open'),
+    gridGate: flag(() => g.trafficHost.gate('grid').isOpen, (v) => g.trafficHost.setGridGate(!!v), 'the gate by the cattle grid: true is open'),
     bigGate: flag(() => g.trafficHost.gate('road').isOpen, (v) => g.trafficHost.gate('road').set(!!v), 'the big gate in the east hedge: true is open'),
   }), 'the public lane, the visitors and the two gates');
   const photos = group(() => ({

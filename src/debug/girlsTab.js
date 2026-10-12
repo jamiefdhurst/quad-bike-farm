@@ -174,7 +174,7 @@ export function buildGirlsTab(d) {
   button(both, 'Flush the nearest pheasant', () => g.debugFlushPheasant());
   show(both, 'electric fence', () => `${g.fence.live ? 'on' : 'off'}; last zapped: ${g.fence.lastZap ? `${g.fence.lastZap.id} (${g.fence.lastZap.kind})` : 'nobody yet'}`);
   button(both, 'Zap you on the electric fence', () => g.debugZapFence());
-  show(both, 'the lane and the gates', () => `${g.trafficHost.describe()}; south gate ${g.trafficHost.gate('south').isOpen ? 'open' : 'shut'}, big gate ${g.trafficHost.gate('road').isOpen ? 'open' : 'shut'}`);
+  show(both, 'the lane and the gates', () => `${g.trafficHost.describe()}; south gate ${g.trafficHost.gate('south').isOpen ? 'open' : 'shut'}, big gate ${g.trafficHost.gate('road').isOpen ? 'open' : 'shut'}, grid gate ${g.trafficHost.gate('grid')?.isOpen ? 'open' : 'shut'}`);
   button(both, 'Send a vehicle along the lane', () => g.trafficHost.debugPass());
   button(both, 'Send the post van', () => g.trafficHost.debugVisit('post') || g.hud.toast('A visitor is already about'));
   button(both, 'Send a neighbour', () => g.trafficHost.debugVisit('neighbour') || g.hud.toast('A visitor is already about'));
@@ -182,6 +182,7 @@ export function buildGirlsTab(d) {
   button(both, 'Take all the photos down', () => g.photos.clear());
   button(both, 'Swing the south gate', () => g.trafficHost.toggle(g.trafficHost.gate('south')));
   button(both, 'Swing the big gate', () => g.trafficHost.toggle(g.trafficHost.gate('road')));
+  button(both, 'Swing the cattle grid gate', () => g.trafficHost.toggle(g.trafficHost.gate('grid')));
   button(both, 'Fill the tipping trailer with muck', () => g.debugFillMuck());
   button(both, 'Muck job done now', () => g.debugFinishMuck());
   button(both, 'Empty the tub and clear the muck from the ground', () => g.debugResetMuck());

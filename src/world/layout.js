@@ -17,8 +17,9 @@ export const LAYOUT = {
   // `hedgeTo` is where the hedges either side of it stop, `verge` the grass between the tarmac and those hedges, `gaps` the open gateways in them
   // into the stubble fields (x of each, `gapWidth` wide), north side then south. The tarmac runs on across the hardstanding to a big double
   // gate (`gate`, `width` m across) in the farm's east hedge, closed. The cattle grid (`grid`) fills the grass field's gateway: `length` m along
-  // the road, bars `pitch` m apart, `margin` m of pit beyond the tarmac each side (world/cattleGrid.js).
-  road: { z: 2, fromX: 78, toX: 199.5, halfWidth: 2.3, verge: 2.8, hedgeTo: 176, pad: { x: 188, radius: 8 }, gaps: { north: [112, 152], south: [128, 166] }, gapWidth: 6, gate: { width: 7 }, grid: { length: 3.2, pitch: 0.16, margin: 0.3 } },
+  // the road, bars `pitch` m apart, `margin` m of pit beyond the tarmac each side (world/cattleGrid.js). A steel gate shuts the whole
+  // corridor, hedge to hedge, `gateOffset` m east of the grid's middle, so it has to be opened before you can cross.
+  road: { z: 2, fromX: 78, toX: 199.5, halfWidth: 2.3, verge: 2.8, hedgeTo: 176, pad: { x: 188, radius: 8 }, gaps: { north: [112, 152], south: [128, 166] }, gapWidth: 6, gate: { width: 7 }, grid: { length: 3.2, pitch: 0.16, margin: 0.3, gateOffset: 2.4 } },
   // The public lane outside the farm's east hedge, running north to south past the big gate (world/traffic.js): its middle `x`, `halfWidth`,
   // and the `minZ` to `maxZ` that is drawn and driven on. Vehicles go by on it and visitors turn in at the gate.
   publicLane: { x: 206.4, halfWidth: 2.3, minZ: -205, maxZ: 205 },

@@ -17,11 +17,11 @@ const fakeGate = (open = false, allow = true) => ({
   },
 });
 
-function runVisit(visit, gate, { blockers = [], limit = 1200 } = {}) {
+function runVisit(visit, gate, { blockers = [], limit = 1200, gates } = {}) {
   const events = [];
   let t = 0;
   while (!visit.done && t < limit) {
-    events.push(...visit.update(0.1, { gate, blockers, swingSeconds: 1.8 }));
+    events.push(...visit.update(0.1, { gate, gates, blockers, swingSeconds: 1.8 }));
     t += 0.1;
   }
   return { events, t };
@@ -147,6 +147,20 @@ describe('a visit', () => {
     expect(types).toContain('leftOpen');
     expect(events.filter((e) => e.type === 'gate').map((e) => e.open)).toEqual([]);
     expect(gate.isOpen).toBe(true);
+  });
+
+  it('opens the gate by the cattle grid each way and shuts it behind her', () => {
+    const grid = fakeGate(false);
+    const { events } = runVisit(make('post'), fakeGate(false), { gates: { grid } });
+    const swings = events.filter((e) => e.type === 'gate' && e.which === 'grid').map((e) => e.open);
+    expect(swings).toEqual([true, false, true, false]);
+    expect(grid.isOpen).toBe(false);
+    expect(events.some((e) => e.type === 'done')).toBe(true);
+  });
+
+  it('has the grid gate east of the grid, across the road', () => {
+    expect(places.grid.x).toBeGreaterThan(LAYOUT.fieldHalf + LAYOUT.road.grid.length / 2);
+    expect(places.grid.z).toBe(LAYOUT.road.z);
   });
 
   it('opens a gate that was shut behind it from inside', () => {

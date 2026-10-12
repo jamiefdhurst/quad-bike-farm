@@ -1,5 +1,5 @@
-// The traffic in the running game: owns the lane's simulation (traffic.js), its view and sound, the two gates' prompts (E opens or shuts
-// them), and what the girls make of it all. game.js builds it and calls update(); the debug panel and the console use the debug* methods.
+// The traffic in the running game: owns the lane's simulation (traffic.js), its view and sound, the gates' prompts (E opens or shuts
+// them; the girls open and shut the one by the cattle grid for themselves), and what the girls make of it all. game.js builds it and calls update(); the debug panel and the console use the debug* methods.
 
 import * as THREE from 'three';
 import { createRandom } from '../core/random.js';
@@ -7,6 +7,7 @@ import { registerTuning } from '../core/tuning.js';
 import { Traffic, DEFAULT_TRAFFIC_PARAMS, TRAFFIC_PARAM_RANGES, visitPlaces, LANE_KINDS, VISITOR_KINDS } from './traffic.js';
 import { TrafficView } from './trafficView.js';
 import { GATE_PARAM_RANGES } from './gates.js';
+import { GateMinder, DEFAULT_GATE_MIND_PARAMS, GATE_MIND_RANGES } from './gateMinding.js';
 import { TrafficAudio } from '../audio/trafficAudio.js';
 
 const CLOSE = 40; // m: a girl within this of something that happens may remark on it
@@ -19,6 +20,10 @@ export class TrafficHost {
     this.params = { ...DEFAULT_TRAFFIC_PARAMS };
     registerTuning('Traffic', this.params, TRAFFIC_PARAM_RANGES);
     registerTuning('Gates', world.props.gateParams, GATE_PARAM_RANGES);
+    this.mindParams = { ...DEFAULT_GATE_MIND_PARAMS };
+    registerTuning('Girls and the grid gate', this.mindParams, GATE_MIND_RANGES);
+    this.minder = new GateMinder(this.mindParams);
+    this.lastSeen = new Map(); // girl -> { x, z }: where she was last frame, for how fast she is going
     this.places = visitPlaces(world.layout);
     this.traffic = new Traffic({ places: this.places, params: this.params, random: createRandom(game.seed ^ 0x7a11c) });
     this.view = new TrafficView(game.scene, (x, z) => world.groundHeightAt(x, z), game.models.companion);
@@ -47,7 +52,7 @@ export class TrafficHost {
   addGatePrompts() {
     const g = this.g;
     for (const gate of this.gates) {
-      const wide = gate.id === 'road' ? { x: 1.4, z: 7.8 } : { x: 4.8, z: 1.4 };
+      const wide = gate.id === 'south' ? { x: 4.8, z: 1.4 } : { x: 1.4, z: gate.id === 'grid' ? 9.4 : 7.8 };
       const proxy = new THREE.Mesh(new THREE.BoxGeometry(wide.x, 2.2, wide.z), new THREE.MeshBasicMaterial({ visible: false }));
       proxy.position.set(gate.x, g.world.groundHeightAt(gate.x, gate.z) + 1.1, gate.z);
       g.scene.add(proxy);
@@ -63,6 +68,7 @@ export class TrafficHost {
   /** You (or the debug panel) swing a gate. Shutting is refused with something in the way. */
   toggle(gate, byYou = false) {
     const r = gate.set(!gate.isOpen, this.blockers());
+    if (gate.id === 'grid' && r.ok) this.minder.taken();
     if (!r.ok) {
       this.g.hud.toast('Something is in the way of the gate', 2);
       return false;
@@ -105,14 +111,46 @@ export class TrafficHost {
       blockers,
       swingSeconds: road.state.p.swingSeconds,
       gate: { get isOpen() { return road.isOpen; }, set: (open) => road.set(open, blockers).ok },
+      gates: { grid: this.gridGate() },
     };
     for (const e of this.traffic.update(dt, ctx)) this.onEvent(e);
+    this.mindGridGate(dt, blockers);
     this.view.update(dt, this.traffic, dark);
     for (let i = this.later.length - 1; i >= 0; i--) {
       this.later[i].left -= dt;
       if (this.later[i].left <= 0) this.later.splice(i, 1)[0].run();
     }
     this.sound(dt);
+  }
+
+  /** The console sets the grid gate: the girls then leave it as it is set. */
+  setGridGate(open) {
+    this.gate('grid').set(open);
+    this.minder.taken();
+  }
+
+  /** The gate by the cattle grid as a visit sees it (or undefined, on a farm without one). */
+  gridGate() {
+    const gate = this.gate('grid');
+    if (!gate) return undefined;
+    return { get isOpen() { return gate.isOpen; }, set: (open) => gate.set(open, this.blockers()).ok };
+  }
+
+  /** The girls open the grid's gate as they reach it, and shut it once they have gone through and nobody is near (world/gateMinding.js). */
+  mindGridGate(dt, blockers) {
+    const gate = this.gate('grid');
+    if (!gate) return;
+    const pos = new THREE.Vector3();
+    const girls = this.g.companions.map((c) => {
+      c.root.getWorldPosition(pos);
+      const last = this.lastSeen.get(c);
+      this.lastSeen.set(c, { x: pos.x, z: pos.z });
+      const speed = last && dt > 0 ? Math.hypot(pos.x - last.x, pos.z - last.z) / dt : 0;
+      return { x: pos.x, z: pos.z, speed, going: c.fsm.is('walking') || c.fsm.is('driving') };
+    });
+    const act = this.minder.update(dt, { x: gate.x, z: gate.z, open: gate.isOpen }, girls, blockers);
+    if (act === 'open') gate.set(true);
+    else if (act === 'shut' && gate.set(false, blockers).ok) this.minder.taken();
   }
 
   sound(dt) {

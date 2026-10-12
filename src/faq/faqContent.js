@@ -972,7 +972,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I open and shut the gates?',
-        a: `Get off, look at the gate and press E: it swings open or shut. There are two, the field gate in the south hedge (it starts tied open) and the big gate in the east hedge at the end of the farm road (it starts shut). A shut gate is solid, and the girls won't try to go through it, so shut the south gate and they stay on the farm side. It won't shut with a quad, a girl or you within a few metres of it.`,
+        a: `Get off, look at the gate and press E: it swings open or shut. There are three: the field gate in the south hedge (it starts tied open), the big gate in the east hedge at the end of the farm road (it starts shut) and the gate just past the cattle grid (it starts shut). A shut gate is solid, and the girls won't route through the south or big gate, so shut the south gate and they stay on the farm side. It won't shut with a quad, a girl or you within a few metres of it.`,
         tip: 'Look at a gate on foot and press E to open or shut it.',
       },
       {
@@ -992,6 +992,11 @@ export const FAQ_SECTIONS = [
       {
         q: 'Where do my photos go, and how many stay?',
         a: `On the corkboard in the barn, each at a random spot and a little crooked, with its day. Look at the board and press E for a bigger view that says when each was taken and who is in it. The last twelve stay up and the oldest comes down to make room. They are kept from one day to the next, with the rest of the farm.`,
+      },
+      {
+        q: 'Why can\'t I ride out over the cattle grid?',
+        a: `There is a steel gate across the farm road just past the grid, and it starts shut. Get off, look at it and press E to open it, then ride through. Shut it behind you if you like: the girls open it as they reach it and shut it again once they and you are well clear, but they leave a gate you opened for you to shut, and it won't shut with anyone within a few metres. The post van opens it and shuts it behind them each way.`,
+        tip: 'The gate past the cattle grid starts shut. Get off and press E at it.',
       },
       {
         q: 'Why is the big gate open?',
