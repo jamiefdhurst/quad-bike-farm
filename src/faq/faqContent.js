@@ -154,6 +154,13 @@ export const FAQ_SECTIONS = [
         tip: 'Cold engine? Choke right out (Q), fuel tap on (F), key (K), then crank (R) in short goes.',
       },
       {
+        q: 'It coughed and died going up a steep bank. Why?',
+        a: `With the tank nearly empty, the petrol slops to the back of it on a steep climb and runs away from the tap, so the engine starves.
+          The lower the tank, the gentler the bank that does it. It picks up again when the quad levels out (give it a moment to refill),
+          or you can put the tap on RESERVE (<kbd>F</kbd>) or fill the tank. The cars and the tractor aren't bothered.`,
+        tip: 'Nearly empty and dying on a bank? The fuel has run away from the tap. Level out, or fill up.',
+      },
+      {
         q: 'It won’t start. What should I check?',
         a: `In order: is the fuel tap on (<kbd>F</kbd>), is there fuel in it, is there enough choke for how cold it is (more on a frosty day,
           little or none once warm), and does the starter sound strong? A slow, groaning starter or a single click is a flat battery.

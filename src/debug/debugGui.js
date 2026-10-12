@@ -275,6 +275,7 @@ export class DebugGui {
     }
     set(r, 'fuel (litres)', () => round(unit().quad.fuel.litres, 1), (v) => (unit().quad.fuel.litres = v), 0, u.quad.fuel.params.tankCapacity, 0.1);
     show(r, 'fuel tap', () => unit().quad.fuel.tap);
+    if (!u.quad.fuel.params.noTap) show(r, 'fuel slopped away from the tap (steep bank, low tank)', () => (unit().quad.fuel.uncovered ? 'yes' : 'no'));
     // The Land Rover has a choke (Q and Z) but no fuel tap, so the tap's absence doesn't mean no choke.
     if (!u.quad.fuel.params.noTap || (u.quad.landRover && !u.quad.engine.params.compressionIgnition)) set(r, 'choke', () => round(unit().quad.choke), (v) => (unit().quad.choke = v), 0, 1, 0.1);
     if (u.quad.sump) set(r, 'engine oil', () => round(unit().quad.sump?.level ?? 0), (v) => unit().quad.sump && (unit().quad.sump.level = v), 0, unit().quad.sump?.params.maxLevel ?? 1); // the picked vehicle can change before the next rebuild (past 1 is overfilled)

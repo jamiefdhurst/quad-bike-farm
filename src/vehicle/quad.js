@@ -931,7 +931,7 @@ export class Quad {
   /** Burns fuel for this frame and refills the float bowl from the tank. */
   updateFuel(dt) {
     const e = this.engine;
-    this.fuel.update(dt, { rpm: e.rpm, throttle: e.throttle, choke: e.choke, running: e.isRunning });
+    this.fuel.update(dt, { rpm: e.rpm, throttle: e.throttle, choke: e.choke, running: e.isRunning, climb: this.climb });
     this.sump?.step(dt, { running: e.isRunning, work: e.lubeWork });
     this.sumpClock += dt;
   }

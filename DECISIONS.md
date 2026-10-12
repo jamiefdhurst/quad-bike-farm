@@ -3349,3 +3349,11 @@ Settled with Jamie before building (2026-10-12): all six recommendations taken.
 - **What shows (`src/npc/generalRequests.js`, pure, tested):** "Come here" (idle, walking, driving, sat; not when she is already within 2.5 m), "Stop there" (walking only), "I'll be a minute" (idle, walking, driving). "Push start it" is open to the same states. Each calls `companion.interrupt()` first. "Come here" gets her off a vehicle first (`requestComeHere`, using the usual stop-driving and dismount hand-offs) then `walkToYou`.
 - **When she's held** (carrying something, the nick, the hay trailer): the wheel doesn't open, and the toast says what has her rather than "She's busy".
 - **Not checked:** in the running game; unit tests only. "I'll be a minute" from a walking or driving girl leans on `requestMount` and `requestStart`'s existing hand-offs. Not added to the debug panel or console (they are wheel requests, and the Girls tab's existing actions are the same game methods).
+
+## Fuel starvation on the banks (TODO 37)
+
+- **What:** below `starveFraction` (0.3) of the tank, the fuel slops away from the tap's pick-up when the nose is up a steep enough bank, and nothing reaches the float bowl (`FuelSystem.coversTap(climb)`, `uncovered`). The bowl is 12 ml, so a running engine stumbles and dies in a few seconds, and picks up when it levels out and the bowl refills. The slope that does it falls with the tank: `starveClimb` (sine 0.3, about 17 degrees) just under the threshold down to `starveMinClimb` (0.1, about 6 degrees) nearly dry.
+- **Only quads with a tap:** the `noTap` vehicles (cars, tractor) have bigger tanks and are untouched. Tap OFF is already dry.
+- **The girls:** the stall goes through the existing `stalled` notice, so they react as to any stall. I added no new line saying whose quad it was.
+- **Panel and console:** "fuel slopped away from the tap" shows in Running and as `tapUncovered` in the console; the three params are in the vehicle's Fuel tuning.
+- **Not checked:** in the running game; unit tests only. Whether 17 degrees is often met on the farm's banks is a guess.

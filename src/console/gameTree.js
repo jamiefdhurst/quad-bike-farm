@@ -97,6 +97,7 @@ export function buildGameTree(g, host) {
         charging: ro(() => (e().isRunning ? netCharge(e().rpm, e().params.idleRpmWarm, e().params.maxRpm, e().lightLoad, e().params.batteryChargeRate, e().params) * 60 : 0), '/min', 'battery gained a minute at these revs and lamps'),
         fuel: num(() => q().fuel.litres, (v) => (q().fuel.litres = v), 0, q().fuel.params.tankCapacity, 'litres'),
         tap: choice(TAP_POSITIONS, () => q().fuel.tap, (v) => (q().fuel.tap = v), 'the fuel tap'),
+        tapUncovered: text(() => (q().fuel.uncovered ? 'yes' : 'no'), 'has the fuel slopped away from the tap (low tank, steep nose-up bank)?'),
         hours: num(() => q().usage.hours, (v) => (q().usage.hours = v), 0, 5000),
         odometer: num(() => q().usage.odoMiles, (v) => (q().usage.odoMiles = v), 0, 100000, 'miles'),
         trip: num(() => q().tripMiles, (v) => (q().tripMiles = v), 0, 1000, 'miles'),

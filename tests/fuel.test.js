@@ -129,3 +129,50 @@ describe('engine running out of fuel', () => {
     expect(engine.isRunning).toBe(true);
   });
 });
+
+describe('fuel running away from the tap on a bank', () => {
+  const run = { rpm: 3000, throttle: 0.5, choke: 0, running: true };
+
+  it('leaves a well-filled tank alone on a steep climb', () => {
+    const f = makeFuel({ startLitres: 8 });
+    f.bowl = 0;
+    f.update(1, { ...run, climb: 0.5 });
+    expect(f.uncovered).toBe(false);
+    expect(f.bowl).toBeGreaterThan(0);
+  });
+
+  it('stops the bowl filling on a steep bank with the tank low, and starts again on the level', () => {
+    const f = makeFuel({ startLitres: 2.5, reserveLitres: 0 });
+    f.bowl = 0;
+    f.update(1, { ...run, climb: 0.35 });
+    expect(f.uncovered).toBe(true);
+    expect(f.bowl).toBe(0);
+    f.update(1, { ...run, climb: 0 });
+    expect(f.uncovered).toBe(false);
+    expect(f.bowl).toBeGreaterThan(0);
+  });
+
+  it('uncovers on a gentler bank the less is left', () => {
+    const more = makeFuel({ startLitres: 3 });
+    const less = makeFuel({ startLitres: 0.5 });
+    expect(more.coversTap(0.2)).toBe(true);
+    expect(less.coversTap(0.2)).toBe(false);
+    expect(less.coversTap(0.05)).toBe(true); // never on nearly level ground
+  });
+
+  it('starves a running quad on the bank until it dies, and not downhill', () => {
+    const f = makeFuel({ startLitres: 2.5, reserveLitres: 0 });
+    let t = 0;
+    while (f.bowl > 0 && t < 120) { f.update(DT, { ...run, climb: -0.4 }); t += DT; }
+    expect(f.bowl).toBeGreaterThan(0);
+    t = 0;
+    while (f.bowl > 0 && t < 120) { f.update(DT, { ...run, climb: 0.4 }); t += DT; }
+    expect(f.bowl).toBe(0);
+    expect(t).toBeLessThan(10);
+  });
+
+  it('does nothing for a vehicle with no tap, or with the tap off', () => {
+    expect(makeFuel({ startLitres: 1, noTap: true }).coversTap(0.8)).toBe(true);
+    expect(makeFuel({ startLitres: 1, startTap: 'off' }).coversTap(0.8)).toBe(true);
+  });
+});

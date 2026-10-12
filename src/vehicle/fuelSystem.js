@@ -22,6 +22,9 @@ export const DEFAULT_FUEL_PARAMS = {
   burnPerRev: 0.0000722, // litres per crank revolution at full throttle (game-paced: a full tank lasts about 25 minutes flat out, cruising at about 5,700 rpm under load)
   idleBurnFraction: 0.295, // fraction of that burnt at a closed throttle (keeps idle burn, and so tap-off timing, as it was)
   chokeBurn: 0.3, // extra consumption at full choke
+  starveFraction: 0.3, // below this share of the tank the fuel runs away from the tap on a steep nose-up bank (taps only, not the cars or the tractor)
+  starveClimb: 0.3, // sine of the nose-up climb at which the tap is uncovered with the tank at that share (0.3 is about 17 degrees); less fuel, a gentler bank
+  starveMinClimb: 0.1, // and the gentlest climb that uncovers it however little is left (about 6 degrees)
 };
 
 export const FUEL_PARAM_RANGES = {
@@ -35,6 +38,9 @@ export const FUEL_PARAM_RANGES = {
   burnPerRev: [0, 0.0005, 0.000001],
   idleBurnFraction: [0, 1, 0.01],
   chokeBurn: [0, 2, 0.01],
+  starveFraction: [0, 1, 0.01],
+  starveClimb: [0.05, 0.9, 0.01],
+  starveMinClimb: [0.02, 0.5, 0.01],
 };
 
 export const TAP_POSITIONS = ['on', 'reserve', 'off'];
@@ -56,6 +62,17 @@ export class FuelSystem {
     this.waterParams = DEFAULT_FUEL_WATER_PARAMS;
     this.tap = params.startTap ?? 'on';
     this.burnRate = 0; // litres per second, last update
+    this.uncovered = false; // the fuel has slopped away from the tap on a bank, so nothing reaches the bowl
+  }
+
+  /** Whether the fuel has run away from the tap's pick-up: a low tank, the nose pointing up a steep enough bank. `climb` is the sine of the nose-up angle. */
+  coversTap(climb) {
+    const p = this.params;
+    if (p.noTap || this.tap === 'off') return true;
+    const lowAt = p.starveFraction * p.tankCapacity;
+    if (this.litres >= lowAt) return true;
+    const limit = Math.max(p.starveMinClimb, p.starveClimb * (this.litres / lowAt));
+    return climb < limit;
   }
 
   /** Fraction of the tank that's full, for the gauge. */
@@ -139,9 +156,9 @@ export class FuelSystem {
 
   /**
    * @param {number} dt
-   * @param {object} engine  { rpm, throttle, choke, running }
+   * @param {object} engine  { rpm, throttle, choke, running, climb } (climb: sine of the nose-up angle, 0 on the level)
    */
-  update(dt, { rpm, throttle, choke, running }) {
+  update(dt, { rpm, throttle, choke, running, climb = 0 }) {
     const p = this.params;
     // Burn from the bowl while the engine is running.
     const pedal = p.idleBurnFraction + (1 - p.idleBurnFraction) * throttle;
@@ -150,7 +167,8 @@ export class FuelSystem {
 
     // Top the bowl up from the tank through the tap.
     const want = p.bowlCapacity - this.bowl;
-    const flow = Math.min(want, p.bowlFillRate * dt, this.reachable);
+    this.uncovered = !this.coversTap(climb);
+    const flow = this.uncovered ? 0 : Math.min(want, p.bowlFillRate * dt, this.reachable);
     if (flow > 0) {
       this.bowlDiesel = mixOil(this.bowl, this.bowlDiesel, flow, this.diesel);
       const settled = settleWater(this.sediment, flow * this.water, this.waterParams);
