@@ -175,6 +175,8 @@ export function buildGirlsTab(d) {
   show(both, 'electric fence', () => `${g.fence.live ? 'on' : 'off'}; last zapped: ${g.fence.lastZap ? `${g.fence.lastZap.id} (${g.fence.lastZap.kind})` : 'nobody yet'}`);
   button(both, 'Zap you on the electric fence', () => g.debugZapFence());
   show(both, 'the lane and the gates', () => `${g.trafficHost.describe()}; south gate ${g.trafficHost.gate('south').isOpen ? 'open' : 'shut'}, big gate ${g.trafficHost.gate('road').isOpen ? 'open' : 'shut'}, grid gate ${g.trafficHost.gate('grid')?.isOpen ? 'open' : 'shut'}`);
+  show(both, 'the battery charger', () => g.describeCharger());
+  button(both, 'Take the charged battery off the charger', () => g.debugChargerClear());
   show(both, 'the spares shelf', () => g.sparesShelf.describe());
   button(both, 'Fill the spares shelf', () => g.sparesShelf.debugSetAll(g.sparesShelf.params.maxOnShelf));
   button(both, 'Empty the spares shelf', () => g.sparesShelf.debugSetAll(0));

@@ -175,6 +175,9 @@ import { BanterWatch } from './npc/banterWatch.js';
 const FRICTION_BANTER = ['idle', 'favoured', 'rivals', 'watching', 'sharing', 'riding', 'corrected', 'swapped', 'stuck'];
 import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES, PREMIX_CAN_COLOURS, DIESEL_CAN_COLOURS } from './items/jerryCan.js';
 import { OilBottle, OIL_BOTTLE_PARAM_RANGES } from './items/oilBottle.js';
+import { BatteryItem, hasBattery } from './items/battery.js';
+import { Charger, CHARGER_PARAM_RANGES } from './workshop/charger.js';
+import { buildChargerModel, CHARGER_SLOT } from './workshop/chargerModel.js';
 import { PlugAdditive, PLUG_ADDITIVE_PARAM_RANGES } from './items/plugAdditive.js';
 import { ratioText } from './engine/lubrication.js';
 import { walkRound, DEFAULT_WALK_PARAMS, WALK_PARAM_RANGES } from './npc/walkRound.js';
@@ -912,6 +915,7 @@ export class Game {
             const muddy = Math.round(Math.max(unit.mud.state.body, unit.mud.state.wheels) * 100);
             return { text: muddy > 0 ? `Hold E to wash the ${unit.label} (${muddy}% muddy)   ·   G put the hose back` : `The ${unit.label} is clean   ·   G put the hose back` };
           }
+          if (this.heldBattery()) return this.batteryPrompt(unit);
           if (this.toolbox.held) {
             return this.workshop.prompt(unit);
           }
@@ -972,6 +976,7 @@ export class Game {
             return;
           }
           if (this.can.held || this.hose.held) return; // E is for pouring or spraying while you're holding those
+          if (this.heldBattery()) return this.fitHeldBattery(unit);
           if (this.toolbox.held) {
             this.achievements.note('toolbox');
             return this.workshop.open(unit);
@@ -1180,6 +1185,7 @@ export class Game {
     // Jump leads, for a flat battery: a running quad charges it.
     this.leads = new JumpLeads({ scene: this.scene, world: this.world, position: L.benchLeads, yaw: L.benchLeads.yaw });
     this.leads.model.position.y += L.bench.height; // they start on the workbench
+    this.setUpBatteries();
     // The farm map on M (hud/farmMap.js, mapView.js).
     this.mapParams = { ...DEFAULT_MAP_PARAMS };
     registerTuning('Map', this.mapParams, MAP_PARAM_RANGES);
@@ -1200,7 +1206,7 @@ export class Game {
     // The workbench: jobs on a quad parked in the painted bay (workshop/bench.js).
     this.interaction.add({
       target: this.bench.proxy,
-      isAvailable: () => !this.handsFull || !!this.benchItem(),
+      isAvailable: () => !this.handsFull || !!this.benchItem() || !!this.heldBattery(), // a battery in your hands is fitted from the bench's job list
       prompt: () => (this.benchItem() ? `Put the ${this.benchItem().name} back on the bench` : this.bench.prompt()),
       interact: () => (this.benchItem() ? this.putOnBench(this.benchItem()) : (this.achievements.note('bench'), this.bench.open())),
     });
@@ -2409,12 +2415,12 @@ export class Game {
 
   /** Whichever jerry can, the toolbox, the jump leads or the oil bottle you are holding, or null. */
   heldLoad() {
-    return [this.petrolCan, this.premixCan, this.dieselCan, this.toolbox, this.leads, this.oilBottle].find((i) => i.held) ?? null;
+    return [this.petrolCan, this.premixCan, this.dieselCan, this.toolbox, this.leads, this.oilBottle, this.heldBattery()].find((i) => i?.held) ?? null;
   }
 
   /** What to call whatever heldLoad() found. */
   loadName(item) {
-    return item === this.toolbox ? 'toolbox' : item === this.leads ? 'jump leads' : item === this.oilBottle ? 'oil bottle' : 'jerry can';
+    return item === this.toolbox ? 'toolbox' : item === this.leads ? 'jump leads' : item === this.oilBottle ? 'oil bottle' : item instanceof BatteryItem ? 'battery' : 'jerry can';
   }
 
   /** The UTV's bed as somewhere to stand a can, the toolbox, the leads or the oil bottle (vehicle/cargoHold.js). They tip out with the bed. */
@@ -2947,6 +2953,7 @@ export class Game {
     this.photos.wall.restore(save.photos);
     this.photos.view.refresh();
     this.spares.restore(save.spares);
+    this.restoreBatteries(save.batteries);
     this.sparesShelf.showParcel();
   }
 
@@ -2969,6 +2976,7 @@ export class Game {
       photos: this.photos.wall.toJSON(),
       logbook: this.notebook.book.toJSON(),
       spares: this.spares.toJSON(),
+      batteries: Object.fromEntries([...this.batteries].filter(([, b]) => b.out).map(([id, b]) => [id, { where: b.where === 'charger' ? 'charger' : 'loose' }])),
     };
   }
 
@@ -4519,7 +4527,7 @@ export class Game {
   }
 
   get handsFull() {
-    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.oilBottle.held || this.winch?.state === 'carried' || this.chain?.state === 'carried' || this.towRope?.state === 'carried';
+    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.oilBottle.held || !!this.heldBattery() || this.winch?.state === 'carried' || this.chain?.state === 'carried' || this.towRope?.state === 'carried';
   }
 
   /** The debug panel's tow rope button: hook the rope from the nearest utility quad onto this vehicle, or take it off again. */
@@ -7543,6 +7551,171 @@ export class Game {
     this.oilBottle.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7), yaw);
   }
 
+  // Batteries --------------------------------------------------------------------
+
+  /** The bench charger and the batteries: every vehicle with a starter has a battery that can come out (items/battery.js). */
+  setUpBatteries() {
+    const L = this.world.layout;
+    this.batteries = new Map(); // by vehicle id, made when the battery first comes out
+    this.charger = new Charger();
+    registerTuning('Battery charger', this.charger.params, CHARGER_PARAM_RANGES);
+    const built = buildChargerModel();
+    this.chargerModel = built;
+    const top = this.world.heightAt(L.benchCharger.x, L.benchCharger.z) + L.bench.height;
+    built.group.position.set(L.benchCharger.x, top, L.benchCharger.z);
+    this.scene.add(built.group);
+    const proxy = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.3, 0.4), new THREE.MeshBasicMaterial({ visible: false }));
+    proxy.position.set(CHARGER_SLOT.x / 2, 0.12, 0.02);
+    built.group.add(proxy);
+    this.interaction.add({
+      target: proxy,
+      priority: 1, // it sits on the bench, whose box would otherwise be hit first
+      isAvailable: () => !!this.heldBattery() || (!!this.chargedBattery() && !this.handsFull),
+      prompt: () => {
+        const held = this.heldBattery();
+        if (held) return this.charger.busy ? { text: 'The charger already has a battery on   ·   G put it down' } : `Put the ${held.name} on the charger`;
+        return `Pick up the ${this.chargedBattery().name}`;
+      },
+      interact: () => {
+        const held = this.heldBattery();
+        if (held && !this.charger.busy) this.putOnCharger(held);
+        else if (!held && !this.handsFull) this.pickUpBattery(this.chargedBattery());
+      },
+    });
+  }
+
+  /** The next morning: a battery that was on the charger is on it still and has had all night; any other loose one is left on the floor by the bench. */
+  restoreBatteries(saved = {}) {
+    const L = this.world.layout;
+    let n = 0;
+    for (const unit of this.units) {
+      if (!unit.engine.batteryOut) continue;
+      const b = this.batteryOf(unit);
+      if (saved[unit.id]?.where === 'charger' && !this.charger.busy) {
+        this.putOnCharger(b);
+        unit.engine.battery = 1;
+        this.charger.full = true;
+      } else {
+        b.putDown(new THREE.Vector3(L.bench.x - 1.4 + n * 0.4, 0, L.bench.z + 0.85), 0.3 * n);
+        n++;
+      }
+    }
+  }
+
+  /** Where a unit's battery is, in words (the debug panel). */
+  batteryWhere(unit) {
+    const b = this.batteries.get(unit.id);
+    return !b?.out ? 'in the vehicle' : b.held ? 'in your hands' : b.where === 'charger' ? 'on the bench charger' : 'loose, out of the vehicle';
+  }
+
+  describeCharger() {
+    const b = this.chargedBattery();
+    return b ? `${b.name} at ${Math.round(b.engine.battery * 100)}%${this.charger.full ? ', full' : ''}` : 'empty';
+  }
+
+  debugBatteryOut(unit) {
+    if (!hasBattery(unit)) return this.hud.toast('It has no battery to take out');
+    const b = this.batteryOf(unit);
+    if (b.out) return;
+    const q = unit.quad.position;
+    b.putDown({ x: q.x + 1.6, z: q.z }, 0.4);
+  }
+
+  debugBatteryIn(unit) {
+    if (this.batteries.get(unit.id)?.out) this.batteryIn(unit);
+  }
+
+  debugChargerClear() {
+    const b = this.chargedBattery();
+    if (b) this.pickUpBattery(b);
+  }
+
+  /** The battery on the charger, or null. */
+  chargedBattery() {
+    return this.charger.busy ? this.batteries.get(this.charger.unitId) ?? null : null;
+  }
+
+  /** The battery in your hands, or null. */
+  heldBattery() {
+    for (const b of this.batteries?.values() ?? []) if (b.held) return b;
+    return null;
+  }
+
+  /** The unit's battery item, made on first use. */
+  batteryOf(unit) {
+    let b = this.batteries.get(unit.id);
+    if (!b) {
+      b = new BatteryItem({ scene: this.scene, world: this.world, unit });
+      this.batteries.set(unit.id, b);
+      this.interaction.add({
+        target: b.proxy,
+        isAvailable: () => b.out && !b.held && !this.handsFull,
+        prompt: () => `Pick up the ${b.name}`,
+        interact: () => this.pickUpBattery(b),
+      });
+    }
+    return b;
+  }
+
+  pickUpBattery(b) {
+    if (this.charger.holds(b.unitId)) {
+      this.charger.take();
+      this.chargerModel.set({});
+    }
+    b.pickUp(this.camera);
+  }
+
+  /** Lifts a unit's battery out into your hands (the bench job). */
+  batteryOut(unit) {
+    if (!hasBattery(unit)) return false;
+    this.pickUpBattery(this.batteryOf(unit));
+    return true;
+  }
+
+  /** Fits the battery you hold into its vehicle (the bench job, or E at the vehicle). */
+  batteryIn(unit) {
+    const b = this.batteries.get(unit.id);
+    if (!b?.out) return false;
+    if (this.charger.holds(unit.id)) this.charger.take();
+    b.fit();
+    return true;
+  }
+
+  batteryPrompt(unit) {
+    const b = this.heldBattery();
+    if (b.unitId !== unit.id) return { text: `That is the ${b.name}, not the ${unit.label}'s   ·   G put it down` };
+    if (unit.engine.isRunning || unit.engine.state === 'cranking') return { text: `Switch the ${unit.label} off first   ·   G put the battery down` };
+    return `Fit the battery in the ${unit.label}   ·   G put it down`;
+  }
+
+  fitHeldBattery(unit) {
+    const b = this.heldBattery();
+    if (b.unitId !== unit.id || unit.engine.isRunning || unit.engine.state === 'cranking') return;
+    this.batteryIn(unit);
+    this.hud.toast(unit.engine.battery >= 0.9 ? `The ${unit.label} battery is back in, fully charged` : `The ${unit.label} battery is back in, though it is not fully charged`);
+  }
+
+  putBatteryDown() {
+    const b = this.heldBattery();
+    const p = this.player.position;
+    const yaw = this.player.yaw;
+    b.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7), yaw);
+  }
+
+  putOnCharger(b) {
+    const g = this.chargerModel.group;
+    const at = g.localToWorld(new THREE.Vector3(CHARGER_SLOT.x, 0.006, CHARGER_SLOT.z));
+    b.setOnCharger(at, g.rotation.y);
+    this.charger.put(b.unitId, b.engine);
+  }
+
+  /** The charger working: the needle and lamps follow the battery on it. */
+  updateCharger(dt) {
+    const b = this.chargedBattery();
+    if (this.charger.update(dt, b?.engine) === 'full') this.hud.toast(`The charger light has gone green: the ${b.name} is full`);
+    this.chargerModel.set({ level: b?.engine.battery ?? 0, charging: !!b, full: this.charger.full });
+  }
+
   putToolboxDown() {
     const p = this.player.position;
     const yaw = this.player.yaw;
@@ -7732,6 +7905,7 @@ export class Game {
       else if (this.toolbox.held && input.wasPressed('KeyG')) this.putToolboxDown();
       else if (this.leads.held && input.wasPressed('KeyG')) this.putLeadsDown();
       else if (this.oilBottle.held && input.wasPressed('KeyG')) this.putOilBottleDown();
+      else if (this.heldBattery() && input.wasPressed('KeyG')) this.putBatteryDown();
     }
 
     this.accumulator += dt;
@@ -7867,6 +8041,7 @@ export class Game {
     this.updateTowRope();
     this.workshop.update(dt);
     this.bench.update(dt);
+    this.updateCharger(dt);
     this.updateBarnFind(dt);
     this.notebook.update(dt);
     this.sparesShelf.update(dt);
@@ -8120,6 +8295,8 @@ export class Game {
       this.hud.setStatus('Hose\nHold E to spray, G to put it back');
     } else if (this.leads.held) {
       this.hud.setStatus('Jump leads\nE on a quad to clamp one end, then another quad for the other\nG to put them down');
+    } else if (this.heldBattery()) {
+      this.hud.setStatus(`${this.heldBattery().name}\nE on its vehicle to fit it, at the bench charger to charge it\nG to put it down`);
     } else if (this.oilBottle.held) {
       this.hud.setStatus('Oil bottle\nY at a four-stroke to top up its oil, near it\nG to put it down');
     } else if (this.toolbox.held) {
@@ -8185,6 +8362,7 @@ export class Game {
       [this.toolbox, '#c8452c', 'Toolbox'],
       [this.leads, '#222222', 'Jump leads'],
       [this.oilBottle, '#e8e2c8', 'Oil bottle'],
+      ...[...this.batteries.values()].filter((b) => b.out).map((b) => [b, '#c2231b', b.name]),
     ];
     for (const [item, colour, label] of items) {
       at(item.model);

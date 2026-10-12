@@ -9,6 +9,7 @@ const OVERFLOW_KEYS = [
   { code: 'Minus', label: '-' },
   { code: 'Equal', label: '=' },
   { code: 'BracketLeft', label: '[' },
+  { code: 'BracketRight', label: ']' },
 ];
 
 /**
@@ -46,7 +47,7 @@ export class Bench {
 
   /** The jobs listed for a quad: the barn find's own (the tarp, then what it needs), or the usual ones. */
   kindsFor(unit) {
-    return unit.barnFind ? unit.barnFind.kinds : JOB_KINDS;
+    return unit.barnFind ? unit.barnFind.kinds : [...JOB_KINDS, unit.engine.batteryOut ? 'chargeOff' : 'chargeOn'];
   }
 
   /** The shelf has the part the job fits (a job with no part always has it). */
@@ -55,8 +56,15 @@ export class Bench {
     return !part || this.game.spares.has(part);
   }
 
+  /** A battery job needs your hands: out wants them empty, back in wants this quad's battery in them. */
+  batteryHandsOk(kind, unit) {
+    if (kind === 'chargeOn') return !this.game.handsFull;
+    if (kind === 'chargeOff') return this.game.heldBattery()?.unitId === unit.id;
+    return true;
+  }
+
   canBegin(kind, unit) {
-    return this.partOk(kind) && (unit.barnFind ? unit.barnFind.available(kind) : jobAvailable(kind, unit.engine, this.params, unit.quad.faults.hasChain, unit.quad.faults.hasValves));
+    return this.partOk(kind) && this.batteryHandsOk(kind, unit) && (unit.barnFind ? unit.barnFind.available(kind) : jobAvailable(kind, unit.engine, this.params, unit.quad.faults.hasChain, unit.quad.faults.hasValves));
   }
 
   toolboxHere() {
@@ -133,7 +141,7 @@ export class Bench {
       else if (e.type === 'done') {
         const job = this.job;
         const unit = this.unit;
-        this.game.hud.toast(finishJob(job, { engine: unit.engine, faults: unit.quad.faults, fuel: unit.quad.fuel, tyres: unit.quad.tyres, sump: unit.quad.sump }, this.params));
+        this.game.hud.toast(finishJob(job, { engine: unit.engine, faults: unit.quad.faults, fuel: unit.quad.fuel, tyres: unit.quad.tyres, sump: unit.quad.sump, batteryOut: () => this.game.batteryOut(unit), batteryIn: () => this.game.batteryIn(unit) }, this.params));
         this.say(job.kind === 'bore' ? (job.botched ? 'boreBotched' : 'boreDone') : job.botched ? 'botched' : 'done');
         if (unit.barnFind) this.foundJobDone(unit, job.kind);
         this.game.notebook.note(unit, { kind: 'job', job: job.kind, botched: job.botched }, { by: 'you' });
@@ -162,7 +170,7 @@ export class Bench {
     const job = this.job;
     if (!job) {
       this.kindsFor(this.unit).forEach((kind, i) => {
-        const n = (i + 1) % 10; // the tenth job is on 0, the eleventh on the minus key, the twelfth on equals, the thirteenth on the left bracket
+        const n = (i + 1) % 10; // the tenth job is on 0, the eleventh on the minus key, the twelfth on equals, the thirteenth on the left bracket, the fourteenth on the right
         const hit = i >= 10 ? input.wasPressed(OVERFLOW_KEYS[i - 10].code) : input.wasPressed(`Digit${n}`) || input.wasPressed(`Numpad${n}`);
         if (hit) this.begin(kind);
       });
@@ -226,7 +234,7 @@ export class Bench {
         const lacking = !this.partOk(k);
         if (find) note = find.isDone(k) ? ' ✓' : k === 'battery' && find.charging ? ` (charging: ${Math.round(find.chargeProgress * 100)}%)` : ok ? '' : ' (take the tarp off first)';
         else if (lacking) note = ` (no ${PARTS[jobPart(k)].one} on the shelf)`;
-        else if (!ok) note = k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'valves' ? ' (two-strokes have none)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
+        else if (!ok) note = k === 'chargeOn' ? (unit.engine.params.noStarter ? ' (no battery to take out)' : ' (empty your hands first)') : k === 'chargeOff' ? ' (carry its battery here first)' : k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'valves' ? ' (two-strokes have none)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
         return `<div class="bn-row${ok ? '' : ' off'}"><span class="key">${i >= 10 ? OVERFLOW_KEYS[i - 10].label : (i + 1) % 10}</span>${JOBS[k].name}${note}</div>`;
       }).join('');
       this.keysEl.textContent = 'Press a number to start   ·   G step away';

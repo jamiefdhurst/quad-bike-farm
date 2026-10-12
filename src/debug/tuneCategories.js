@@ -8,7 +8,7 @@ export const TUNE_CATEGORIES = {
     'UTV bed', 'UTV load', 'UTV riders', 'Land Rover riders', '200TDi riders', '200TDi back seats', 'Fiesta riders', 'Corsa riders', 'Trailer riders', 'Tractor creep', 'Tractor runaway',
   ],
   'Engines, fuel and faults': ['Quirks', 'Engine oil', 'Dripping carb', 'Carb icing', 'Water in the fuel', 'Barn find', 'Red diesel mistake', 'Two-stroke smoke'],
-  'Items and workshop': ['Toolbox', 'Logbook', 'Workshop bench', 'Spares shelf', 'Girl at the bench', 'Phone calls', 'Jerry can', 'Pre-mix can', 'Diesel can', 'Oil bottle', 'Plug-saver', 'Hose', 'Jump leads', 'Winch', 'Loading ramps', 'Bell', 'Hayloft', 'Muck job', 'Job board', 'Records', 'Photos'],
+  'Items and workshop': ['Toolbox', 'Logbook', 'Workshop bench', 'Battery charger', 'Spares shelf', 'Girl at the bench', 'Phone calls', 'Jerry can', 'Pre-mix can', 'Diesel can', 'Oil bottle', 'Plug-saver', 'Hose', 'Jump leads', 'Winch', 'Loading ramps', 'Bell', 'Hayloft', 'Muck job', 'Job board', 'Records', 'Photos'],
   'World, weather and sound': ['Time of day', 'Forecast', 'Wind', 'Surfaces', 'Dust', 'Ground wear', 'Road mud', 'Barn', 'Sky', 'Yard haze', 'Fumes in the barn', 'Map', 'Sound', 'Player', 'Sheep', 'Wildlife', 'Electric fence', 'Traffic', 'Gates', 'Girls and the grid gate', 'Farm that remembers', 'Graphics'],
   'Girls: themselves': [], // each girl's own build and her riding pillion; named from the characters, see GIRL_GROUP
   'Girls: moving about': [

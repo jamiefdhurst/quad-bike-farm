@@ -74,6 +74,8 @@ const JOB_TEXT = {
   fuel: 'old fuel drained',
   brake: 'seized brake freed',
   battery: 'battery on the charger',
+  chargeOn: 'battery lifted out and put on the charger',
+  chargeOff: 'battery charged and put back',
 };
 
 /** "Blue quad" is just "Blue" in a notebook; "Mini moto" stays as it is. */

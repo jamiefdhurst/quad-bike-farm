@@ -186,7 +186,7 @@ export const FAQ_SECTIONS = [
         a: `Three ways out. The yellow, orange, kids' quad, mini moto and old three-wheeler have a pull-start: with the ignition on, hold <kbd>P</kbd>
           for about half a second to a second and let go to yank (too short is weak, too long is botched). Or fetch the jump leads from the
           workbench, clamp the flat one (<kbd>E</kbd>) and then a running one (<kbd>E</kbd>), parked nose to nose since they only reach about
-          4.5 m. The Series III Land Rover has a starting handle too (the 200TDi hasn't: it wants the leads). Running an engine charges its battery again, but by the revs: about ten minutes revved, much longer at idle. A jumped petrol engine
+          4.5 m. The Series III Land Rover has a starting handle too (the 200TDi hasn't: it wants the leads). Running an engine charges its battery again, but by the revs: about ten minutes revved, much longer at idle. The leads are slow: a flat battery wants a minute or two joined to a running quad before it will turn the engine. Or lift the battery out, charge it on the workbench charger and put it back (see the battery questions below). A jumped petrol engine
           with a weak battery dies again at the first stop unless you keep the revs up. Leaving the key on with it stopped drains it flat in about eight minutes.`,
         tip: 'Leaving the key on with the engine off flattens the battery in about eight minutes.',
       },
@@ -1007,6 +1007,20 @@ export const FAQ_SECTIONS = [
         q: 'Who is that on the lane, and why has someone come in at the gate?',
         a: `Beyond the big gate is a quiet public lane. A van, a Land Rover, a tractor or a UTV goes by now and then, less after dark. Now and then a visitor turns in: the post van, whose driver opens the gate, drives up to the barn and leaves a parcel by the door, or a neighbour who parks at the barn and stands about for a while. Jess waves at them, Amy less often. If you are in their way they wait, then hoot, so pull over.`,
         tip: 'The post van and neighbours come in at the big gate. Pull over for them.',
+      },
+      {
+        q: 'How do I charge a flat battery on the bench?',
+        a: `Park the quad in the yellow bay, switch it off and open the workbench. The last job on the list is "Take the battery out": lift the seat, undo the terminals (hold <kbd>E</kbd>) and the battery is in your hands. Look at the charger on the bench (the blue box at the far west end) and press <kbd>E</kbd> to stand the battery on its mat. The needle climbs and the red lamp comes on; about five minutes from flat the green lamp lights and a message tells you. Pick it up again with <kbd>E</kbd>, carry it back, open the bench and do "Fit the battery you are carrying", or just look at the quad and press <kbd>E</kbd>. It slows down near the top, like a real trickle charger.`,
+        tip: 'A flat battery takes about five minutes on the bench charger. The needle shows how far it has got.',
+      },
+      {
+        q: 'Can I take a battery out in the yard, and carry one in the UTV?',
+        a: `Yes, for any vehicle with a starter. Take the toolbox to it, switched off, press <kbd>E</kbd> to open it and then <kbd>H</kbd>: the battery stands by your feet. Pick it up with <kbd>E</kbd> and carry it like a can: look into the UTV's bed and press <kbd>E</kbd> to stand it in with the rest of your things, take it to the barn, charge it, and bring it back. Fit it by looking at its own vehicle, switched off, and pressing <kbd>E</kbd>, or by pressing <kbd>H</kbd> in the toolbox panel when it is lying close. A battery belongs to its vehicle, so the prompt tells you if you have the wrong one.`,
+        tip: 'Toolbox, then H takes a battery out. Carry it in the UTV bed.',
+      },
+      {
+        q: 'Why is the quad completely dead with no clicking?',
+        a: `Its battery is out. With no battery there is no dash and no starter noise at all (a flat one only clicks), and the jump leads do nothing. Fit the battery, or find where it is: the Vehicles tab says, and a battery you left in the barn is on the floor by the bench the next morning. A quad with a pull-start will still fire on the cord.`,
       },
       {
         q: 'Why does the bench say there is no spark plug (or tube, or piston) on the shelf?',

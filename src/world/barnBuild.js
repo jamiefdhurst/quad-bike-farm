@@ -342,12 +342,12 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   spout.rotation.z = -0.9;
   add(spout, b.x - b.length / 2 + 0.4, benchTop + 0.18, b.z - 0.1, { cast: false });
   for (let i = 0; i < 2; i++) {
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.11, 12), glass), b.x - 0.5 + i * 0.16, benchTop + 0.055, b.z - 0.2, { cast: false });
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.047, 0.047, 0.015, 12), steel), b.x - 0.5 + i * 0.16, benchTop + 0.118, b.z - 0.2, { cast: false });
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.11, 12), glass), b.x + i * 0.16, benchTop + 0.055, b.z - 0.2, { cast: false });
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.047, 0.047, 0.015, 12), steel), b.x + i * 0.16, benchTop + 0.118, b.z - 0.2, { cast: false });
   }
   const rag = box(0.22, 0.015, 0.16, new THREE.MeshStandardMaterial({ color: 0x3a3c3e, roughness: 1 }));
   rag.rotation.y = 0.4;
-  add(rag, b.x + 0.5, benchTop + 0.008, b.z + 0.05, { cast: false });
+  add(rag, b.x + b.length / 2 - 1.1, benchTop + 0.008, b.z + 0.05, { cast: false });
   // Pegboard above it with a few tools hung up.
   add(box(b.length, 0.9, 0.03, new THREE.MeshStandardMaterial({ color: 0x9c8a66, roughness: 0.9 })), b.x, benchTop + 1.1, inner.minZ + 0.03, { cast: false });
   // A grid of holes across the pegboard, as dark dots.

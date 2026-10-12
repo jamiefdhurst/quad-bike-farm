@@ -9,13 +9,13 @@ import * as THREE from 'three';
 export const DEFAULT_JUMP_LEAD_PARAMS = {
   reach: 4.5, // metres between the two quads the leads will stretch
   handReach: 5, // metres from a clamped quad you can carry the other end before it pulls off
-  chargeRate: 0.06, // battery (0..1) gained per second by the quad being jumped from a running one
+  chargeRate: 0.012, // battery (0..1) gained per second by the quad being jumped from a running one: a flat one needs a minute or two, not a moment
 };
 
 export const JUMP_LEAD_PARAM_RANGES = {
   reach: [1, 12, 0.1],
   handReach: [1, 15, 0.1],
-  chargeRate: [0, 0.5, 0.005],
+  chargeRate: [0, 0.5, 0.001],
 };
 
 /**
@@ -24,6 +24,7 @@ export const JUMP_LEAD_PARAM_RANGES = {
  * Neither running, nothing happens. Returns the engine to charge, or null.
  */
 export function jumpTarget(a, b) {
+  if (a.batteryOut || b.batteryOut) return null; // no battery in it to charge or to give
   if (!a.isRunning && !b.isRunning) return null;
   let donor = a.isRunning ? a : b;
   if (a.isRunning && b.isRunning) donor = a.battery >= b.battery ? a : b;

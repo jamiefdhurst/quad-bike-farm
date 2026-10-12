@@ -4,7 +4,7 @@ import { LAYOUT } from '../src/world/layout.js';
 describe('the workbench', () => {
   const b = LAYOUT.bench;
   const spots = { toolbox: LAYOUT.toolbox, leads: LAYOUT.benchLeads, oil: LAYOUT.benchOil };
-  const notebook = { x: b.x + 0.9, z: b.z + 0.05 }; // where Amy's logbook lies (workshop/notebook.js)
+  const notebook = { x: b.x + b.length / 2 - 0.7, z: b.z + 0.05 }; // where Amy's logbook lies (workshop/notebook.js)
 
   it('has a place on top for the toolbox, one for the jump leads and one for the oil bottle', () => {
     for (const s of Object.values(spots)) {

@@ -227,6 +227,22 @@ export const JOBS = {
       { id: 'lever', text: 'Squeeze the lever: it moves', kind: 'press' },
     ],
   },
+  chargeOn: {
+    name: 'Take the battery out',
+    steps: [
+      { id: 'seat', text: 'Lift the seat off', kind: 'press' },
+      { id: 'leads', text: 'Undo the terminals, the black one first', kind: 'hold', need: 0.8 },
+      { id: 'lift', text: 'Lift the battery out: it is heavy', kind: 'press' },
+    ],
+  },
+  chargeOff: {
+    name: 'Fit the battery you are carrying',
+    steps: [
+      { id: 'drop', text: 'Lower the battery into its tray', kind: 'press' },
+      { id: 'leads', text: 'Do the terminals up, the red one first', kind: 'hold', need: 0.8 },
+      { id: 'seat', text: 'Seat back on', kind: 'press' },
+    ],
+  },
   battery: {
     name: 'Charge the battery',
     steps: [
@@ -236,6 +252,7 @@ export const JOBS = {
   },
 };
 
+// The last row of the list is the charger, and says either 'chargeOn' or 'chargeOff' depending on where this quad's battery is (bench.js kindsFor).
 export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd', 'chain', 'valves', 'crash'];
 
 /** What each reading means, the way Amy would say it. Order is the order Jess can be wrong in. */
@@ -521,6 +538,14 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     return botched ? 'Drained, though the tank still smells of varnish. It needs fuel' : 'Tank drained and flushed. It needs fuel now';
   }
   if (job.kind === 'brake') return botched ? 'The brake is free, but it is a bit stiff' : 'The brake is free and moves properly';
+  if (job.kind === 'chargeOn') {
+    target.batteryOut?.();
+    return 'The battery is out and in your hands. The charger is on the bench; the quad is dead until it is back';
+  }
+  if (job.kind === 'chargeOff') {
+    target.batteryIn?.();
+    return engine.battery >= 0.9 ? 'The battery is back in, fully charged' : 'The battery is back in, though it is not fully charged';
+  }
   if (job.kind === 'battery') return 'The charger is on: it will be about five minutes';
   const how = job.outcome('pour');
   fuel.oil = how === 'short' ? P.oilShort : how === 'over' ? P.oilOver : P.oilGood;
@@ -536,6 +561,8 @@ export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = fal
   if (kind === 'topEnd') return canRebuildTopEnd(engine, P);
   if (kind === 'chain') return !!chain;
   if (kind === 'valves') return !!valves; // every four-stroke has them
+  if (kind === 'chargeOn') return !engine.batteryOut && !engine.params.noStarter; // a cord-only quad has no battery to take out
+  if (kind === 'chargeOff') return !!engine.batteryOut;
   if (kind === 'tarp' || kind === 'fuel' || kind === 'brake' || kind === 'battery') return true;
   if (kind === 'sump') return engine.params.strokes !== 2 && !engine.params.runsOnDiesel;
   return true;

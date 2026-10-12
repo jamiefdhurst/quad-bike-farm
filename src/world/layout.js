@@ -136,7 +136,10 @@ export const LAYOUT = {
     strawDx: -0.4, // Jess tips her straw from this far towards the edge
   },
   // The workbench along the north wall: where the toolbox sits (its height is `lift`).
-  bench: { x: -62.3, z: 56.1, length: 3.2, depth: 0.7, height: 0.92 },
+  // (4.2 long: the east end, with the vice, is where it was; the extra metre at the west end holds the battery charger.)
+  bench: { x: -62.8, z: 56.1, length: 4.2, depth: 0.7, height: 0.92 },
+  // The trickle charger at the west end of the workbench (workshop/chargerModel.js): faces the bay, the way you stand at the bench.
+  benchCharger: { x: -64.5, z: 56.2 },
   // The clock and weather station (world/weatherStation.js) on the north wall past the door end of the bench, at eye height above the floor.
   weatherStation: { x: -59.85, y: 1.65 },
   // The freestanding clothes rack by the barn's south wall where the two jumpers hang (npc/jumpers.js): its bar runs along x at height `y`, `length`

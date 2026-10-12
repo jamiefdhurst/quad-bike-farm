@@ -2,6 +2,7 @@ import './workshop.css';
 import { jetError, leanStarve, jetTrue, jetText, adviceText } from '../engine/jetting.js';
 import { registerTuning } from '../core/tuning.js';
 import { FIX_PARTS, PARTS, jetShelfChange } from './spares.js';
+import { hasBattery } from '../items/battery.js';
 import {
   DEFAULT_TUNE_PARAMS,
   TUNE_PARAM_RANGES,
@@ -40,7 +41,7 @@ const SILENCER_ON = 'Put the silencer back on';
 const POD_JOB_SECONDS = 3; // fitting or taking off an accessory pod
 const FILTER_KEY = 'KeyI'; // hold to clean the air filter
 const POD_NAMES = { analogue: 'analogue pod', digital: 'digital pod' };
-const REPAIR_KEYS = { KeyT: 'puncture', KeyR: 'belt', KeyL: 'cable', KeyC: 'carb', KeyM: 'mounts', KeyN: 'chain' };
+const REPAIR_KEYS = { KeyT: 'puncture', KeyR: 'belt', KeyL: 'cable', KeyC: 'carb', KeyM: 'mounts', KeyN: 'chain', KeyH: 'battery' };
 
 const rpm = (n) => `${Math.round(n).toLocaleString('en-GB')} rpm`;
 const pct = (f) => `${f >= 0 ? '+' : '−'}${Math.round(Math.abs(f) * 100)}%`;
@@ -345,6 +346,7 @@ export class Workshop {
   repair(kind) {
     const unit = this.unit;
     if (!unit || !this.repairShown(kind)) return;
+    if (kind === 'battery') return this.battery(unit);
     const part = FIX_PARTS[kind];
     const f = unit.quad.faults;
     if (part && f.started[kind] && f.caps[kind] >= 1 && !this.game.spares.has(part)) {
@@ -360,8 +362,35 @@ export class Workshop {
     this.render(); // the pump's readings changed
   }
 
+  /**
+   * The battery: out, it stands on the ground at your feet (your hands have the toolbox) for you to pick up and carry; with it
+   * lying within `fitRange` of the vehicle, the same key fits it back. The bench job does the same with the spanners.
+   */
+  battery(unit) {
+    const g = this.game;
+    const e = unit.engine;
+    if (!e.batteryOut) {
+      const b = g.batteryOf(unit);
+      const p = g.player.position;
+      const yaw = g.player.yaw;
+      b.putDown({ x: p.x - Math.sin(yaw) * 0.7, z: p.z - Math.cos(yaw) * 0.7 }, yaw);
+      g.hud.toast(`The ${unit.label} battery is out and standing by your feet: it is dead until it goes back`);
+    } else {
+      const b = g.batteries.get(unit.id);
+      if (!b || b.where !== 'loose' || b.worldPosition().distanceTo(unit.quad.position) > g.charger.params.fitRange) {
+        g.hud.toast(b?.where === 'charger' ? 'Its battery is on the charger in the barn' : `Bring the ${unit.label} battery over to fit it`);
+        return;
+      }
+      g.batteryIn(unit);
+      g.hud.toast(e.battery >= 0.9 ? `The ${unit.label} battery is back in, fully charged` : `The ${unit.label} battery is back in, though it is not fully charged`);
+    }
+    for (const c of g.companions) c.voice.onTinker?.('service');
+    this.render();
+  }
+
   /** Whether a quick job is on the panel: a diesel has no carb, and the tractor no belt. */
   repairShown(kind) {
+    if (kind === 'battery') return hasBattery(this.unit);
     if (kind === 'carb') return !this.isDiesel;
     if (kind === 'chain') return !!this.unit?.quad.faults.hasChain; // only the chain-driven ones
     if (kind === 'belt') return !this.unit?.quad.tractor && !this.unit?.quad.landRover; // the Land Rover has a clutch
@@ -599,6 +628,7 @@ export class Workshop {
           <button type="button" class="ws-btn ws-fix" data-fix="cable"><span class="key">L</span>Oil the throttle cable</button>
           <button type="button" class="ws-btn ws-fix" data-fix="carb"><span class="key">C</span>Clean the carb</button>
           <button type="button" class="ws-btn ws-fix" data-fix="mounts"><span class="key">M</span>Nip up the engine mounts</button>
+          <button type="button" class="ws-btn ws-fix" data-fix="battery"><span class="key">H</span>Battery out, or back in</button>
           <button type="button" class="ws-btn ws-fix" data-fix="chain"><span class="key">N</span>Put the chain back and oil it</button>
           <button type="button" class="ws-btn ws-drain"><span class="key">P</span>Pump out the tank and carb</button>
           <button type="button" class="ws-btn ws-water"><span class="key">G</span>Drain the water at the tap</button>
@@ -613,7 +643,7 @@ export class Workshop {
           <button type="button" class="ws-btn ws-pod" data-pod="digital"><span class="key">U</span>Fit digital pod</button>
           <button type="button" class="ws-btn ws-podoff"><span class="key">O</span>Pod off</button>
         </div>
-        <div class="ws-keys">↑ ↓ choose   ·   ← → adjust (hold to keep going)   ·   V service   ·   hold I air filter   ·   X silencer   ·   F strip down   ·   P pump out the fuel   ·   Y U O pods   ·   T tyres   ·   R belt   ·   L cable   ·   C carb   ·   M mounts   ·   N chain   ·   or use the mouse</div>
+        <div class="ws-keys">↑ ↓ choose   ·   ← → adjust (hold to keep going)   ·   V service   ·   hold I air filter   ·   X silencer   ·   F strip down   ·   P pump out the fuel   ·   Y U O pods   ·   T tyres   ·   R belt   ·   L cable   ·   C carb   ·   M mounts   ·   N chain   ·   H battery   ·   or use the mouse</div>
       </div>`;
     document.body.appendChild(el);
     this.el = el;

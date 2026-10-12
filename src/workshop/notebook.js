@@ -43,7 +43,7 @@ export class Notebook {
     const b = game.world.layout.bench;
     const top = game.world.heightAt(b.x, b.z) + b.height;
     this.model = buildNotebookModel();
-    this.model.position.set(b.x + 0.9, top, b.z + 0.05);
+    this.model.position.set(b.x + b.length / 2 - 0.7, top, b.z + 0.05); // by the east end, with the vice
     this.model.rotation.y = 0.35;
     game.scene.add(this.model);
     // Something to look at: a box a little bigger than the notebook, so you don't have to aim at the cover.

@@ -68,6 +68,7 @@ export class EngineModel {
     this.fuel = 1; // float bowl level, 0..1
     this.lightLoad = 0; // 0..1 of the lamps run off the battery, set by the vehicle (charging.js)
     this.battery = 1; // charge, 0..1: drained by the ignition and the starter, charged while it runs
+    this.batteryOut = false; // lifted out and on the bench charger: no dash, no starter, and it neither drains nor charges (the cord and a magneto still work)
     this.pullLeft = 0; // seconds left of a yank on the pull-start
     this.pullStrength = 0; // how good that yank was, 0..1
     this.clickedDead = false; // the starter has clicked for this press
@@ -361,13 +362,13 @@ export class EngineModel {
     const p = this.params;
     const canTurn = this.state === EngineState.IGNITION || this.state === EngineState.STALLED;
     const canCrank = canTurn && !this.seized;
-    const motor = starter && this.battery >= p.batteryDeadBelow && !this.seized;
+    const motor = starter && !this.batteryOut && this.battery >= p.batteryDeadBelow && !this.seized;
     const pulling = this.pullLeft > 0;
     // A manual rolling with the clutch out: the wheels turn it over (bump-starting). The key has to be on; the battery doesn't matter.
     const roll = (canCrank || this.state === EngineState.CRANKING) && !this.seized && !motor && !pulling && this.ignitionOn ? rollTurn(this.gearRpm, this.gearLock, p) : 0;
     this.rollSpeed = roll;
     // A dead battery: the solenoid clicks and nothing turns.
-    if (starter && !motor && canTurn && !this.clickedDead) {
+    if (starter && !motor && !this.batteryOut && canTurn && !this.clickedDead) {
       this.clickedDead = true;
       this.emit('starterClick');
     }
@@ -399,7 +400,7 @@ export class EngineModel {
 
   /** Whether the dash has power to light. */
   get hasPower() {
-    return this.ignitionOn && this.battery > this.params.batteryDashOutBelow;
+    return this.ignitionOn && !this.batteryOut && this.battery > this.params.batteryDashOutBelow;
   }
 
   /** Strips it down and frees it (the toolbox): the scuffing is cleaned off, and a seizure leaves wear behind. */
@@ -439,6 +440,7 @@ export class EngineModel {
 
   updateBattery(h) {
     const p = this.params;
+    if (this.batteryOut) return; // it is on the charger: the bench raises its charge
     const cold = 1 + p.chillBattery * this.chill; // a cold battery gives less
     if (this.state === EngineState.RUNNING) {
       this.battery += netCharge(this.rpm, p.idleRpmWarm, p.maxRpm, this.lightLoad, p.batteryChargeRate, p) * h;

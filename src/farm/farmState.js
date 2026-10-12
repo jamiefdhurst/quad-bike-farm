@@ -8,7 +8,7 @@ import { DEFAULT_FARM_PARAMS } from './farmSave.js';
 import { TAP_POSITIONS } from '../vehicle/fuelSystem.js';
 
 // Engine values that are its condition rather than its running state (rpm, heat, choke). Restored only when the save has them.
-export const ENGINE_KEPT = ['wear', 'fouling', 'scuff', 'seized', 'silencerBlown', 'silencerOff', 'runIn', 'scar', 'coolant', 'coolantLeak', 'boiled', 'dieselSoak', 'bore', 'boreFit', 'battery'];
+export const ENGINE_KEPT = ['wear', 'fouling', 'scuff', 'seized', 'silencerBlown', 'silencerOff', 'runIn', 'scar', 'coolant', 'coolantLeak', 'boiled', 'dieselSoak', 'bore', 'boreFit', 'battery', 'batteryOut'];
 const FUEL_KEPT = ['oil', 'diesel', 'water', 'sediment', 'additive'];
 const FAULT_FIELDS = ['levels', 'started', 'caps', 'kept']; // kept: the chain's oil and whether it is off the sprocket
 
@@ -45,7 +45,8 @@ export function captureVehicle(unit, extra = {}) {
 /** The same vehicle the next morning: a little battery gone (all of it if the key was left on with the engine stopped; a running one is taken as fine), the mud half dried off. */
 export function overnight(saved, P = DEFAULT_FARM_PARAMS) {
   const out = structuredClone(saved);
-  if (out.engine && num(out.engine.battery)) {
+  // A battery lifted out of the quad keeps its charge (the game finishes a charge on the bench charger overnight, game.js restoreDay).
+  if (out.engine && num(out.engine.battery) && !out.engine.batteryOut) {
     out.engine.battery = out.keyOn && !out.running ? Math.min(out.engine.battery, P.flatOvernight) : Math.max(0, out.engine.battery - P.overnightDrain);
   }
   out.keyOn = false;

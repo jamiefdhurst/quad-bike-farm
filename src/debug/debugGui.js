@@ -281,6 +281,7 @@ export class DebugGui {
     if (!u.quad.fuel.params.noTap || (u.quad.landRover && !u.quad.engine.params.compressionIgnition)) set(r, 'choke', () => round(unit().quad.choke), (v) => (unit().quad.choke = v), 0, 1, 0.1);
     if (u.quad.sump) set(r, 'engine oil', () => round(unit().quad.sump?.level ?? 0), (v) => unit().quad.sump && (unit().quad.sump.level = v), 0, unit().quad.sump?.params.maxLevel ?? 1); // the picked vehicle can change before the next rebuild (past 1 is overfilled)
     set(r, 'battery', () => round(unit().engine.battery), (v) => (unit().engine.battery = v), 0, 1);
+    show(r, 'battery is', () => this.game.batteryWhere(unit()));
     show(r, 'charging (battery per minute)', () => {
       const en = unit().engine;
       return en.isRunning ? round(netCharge(en.rpm, en.params.idleRpmWarm, en.params.maxRpm, en.lightLoad, en.params.batteryChargeRate, en.params) * 60, 3) : 'not running';
@@ -335,11 +336,15 @@ export class DebugGui {
     show(p, 'running in / scar', () => `${round(unit().engine.runIn)} / ${round(unit().engine.scar)}`);
     const buttons = {
       clearFaults: () => clearFaults(unit().quad.faults),
-      fix: () => fixEverything(unit()),
+      batteryOut: () => this.game.debugBatteryOut(unit()),
+      batteryIn: () => this.game.debugBatteryIn(unit()),
+      fix: () => (fixEverything(unit()), this.game.debugBatteryIn(unit())),
       crash: () => unit().quad.crashHeadOn(1),
     };
     p.add(buttons, 'crash').name('Hit a post head-on (may bend a rod or rim)');
     p.add(buttons, 'clearFaults').name('Clear the faults');
+    p.add(buttons, 'batteryOut').name('Take the battery out (stands by it)');
+    p.add(buttons, 'batteryIn').name('Put the battery back in');
     p.add(buttons, 'fix').name('Put everything right (not quirks)');
 
     const qf = this.vehicleFolders.quirks;
@@ -383,7 +388,7 @@ export class DebugGui {
     row(one, 'Winch it onto the bale trailer', () => g.hud.toast(g.debugLoad(this.unit())));
     row(one, 'Pay it back off the trailer', () => g.hud.toast(g.debugUnload(this.unit())));
     row(one, 'Hook the tow rope on it / take it off', () => g.hud.toast(g.debugTowRope(this.unit())));
-    row(one, 'Put it right (faults, plug, filter, wear; not quirks)', () => fixEverything(this.unit()));
+    row(one, 'Put it right (faults, plug, filter, wear; not quirks)', () => (fixEverything(this.unit()), g.debugBatteryIn(this.unit())));
     row(one, 'Take me to it', () => {
       const q = this.unit().quad;
       if (g.riddenUnit) return g.hud.toast('Get off first');
@@ -394,7 +399,7 @@ export class DebugGui {
     row(all, 'Start them all (warm, fuel on)', () => g.units.forEach(startOne));
     row(all, 'Switch them all off (fuel off)', () => g.units.forEach(stopOne));
     row(all, 'Warm them all up', () => g.units.forEach((u) => u.engine.setTemperature(1)));
-    row(all, 'Put them all right (not quirks)', () => g.units.forEach(fixEverything));
+    row(all, 'Put them all right (not quirks)', () => g.units.forEach((u) => (fixEverything(u), g.debugBatteryIn(u))));
     row(all, 'Put them all back in the yard', () => g.units.forEach((u) => u.resetToSpawn(g.world)));
     all.close();
   }
