@@ -20,6 +20,7 @@ import {
 //   tractor:   the tractor. Three round dials in chrome bezels (water temperature, a rev counter with an hour meter and the PTO speed marked, fuel), GLOW, CHARGE and OIL lamps and the key.
 //   utv:       the UTV. A basic LCD (speed, five fuel and four water blocks, F / N / R, hours and a 4WD note) over symbols for glow, charge, oil, park
 //              (parking brake), a belted figure (flashes while someone sits unbelted), a headlamp (green, blue for main beam) and the key.
+//   fiesta:    Amy's Mk1 Fiesta: a big speedo, fuel and water dials, a row of lamps. corsa: Jess's Corsa B, with a rev counter too.
 //   series:    the Land Rover. A Series III binnacle: a big speedo to 90 mph with its odometer, a combined fuel and water gauge,
 //              IGN, OIL, CHOKE and BRAKE lamps, a 4WD and a DIFF lamp, and the key.
 //
@@ -829,8 +830,204 @@ function buildDefender() {
   };
 }
 
+// The girls' cars ------------------------------------------------------------------------
+
+const FIESTA_BROWN = new THREE.MeshStandardMaterial({ color: 0x4a3426, roughness: 0.75 }); // the Fiesta's binnacle, brown like its dash
+
+/**
+ * Amy's Mk1 Fiesta: a black binnacle with a big speedometer to 100 mph (and its odometer) in the middle, the fuel and water gauges
+ * as two small dials to its right, and the warning lamps in a row underneath: ignition, oil, the choke, the handbrake, the indicators
+ * and main beam. No rev counter (only the sporty ones had one). The key is on the steering column, drawn at the binnacle's right end.
+ */
+function buildFiesta() {
+  const group = new THREE.Group();
+  group.name = 'dash';
+  const O = { ox: 180, oy: 60 };
+  housing(group, { x: 76, y: 14, w: 208, h: 92, r: 6, ...O, material: FIESTA_BROWN });
+  const face = mmPanel({ x: 76, y: 14, w: 208, h: 92, ...O });
+  group.add(face.mesh);
+  const speedo = { cx: 150, cy: 52, r: 33 };
+  const fuel = { cx: 220, cy: 52, r: 16 };
+  const temp = { cx: 256, cy: 52, r: 16 };
+  for (const d of [speedo, fuel, temp]) chromeRing(group, { ...d, r: d.r + 1, ...O, tube: 0.0016 });
+  const gate = changeGate();
+  let shownMph = 0;
+  let shownFuel = 0;
+  let shownTemp = 0;
+  const FIG = '#eef0ea';
+  const NEEDLE = '#f2f2ee'; // white needles on black, the 70s Ford look
+  const dial = (ctx, d) => {
+    ctx.fillStyle = '#0a0a0b';
+    ctx.beginPath();
+    ctx.arc(d.cx, d.cy, d.r, 0, Math.PI * 2);
+    ctx.fill();
+  };
+  const small = (ctx, d, frac, sym, lo, hi, hotEnd) => {
+    dial(ctx, d);
+    ticks(ctx, d.cx, d.cy, d.r - 4, d.r - 1.5, 150, 30, 4, FIG, 0.7);
+    if (hotEnd) arc(ctx, d.cx, d.cy, d.r - 2, 40, 30, '#d8402e', 1.8);
+    warnSymbol(ctx, sym, d.cx, d.cy + 5, '#aaa', true, 0.45, false);
+    text(ctx, lo, d.cx - d.r * 0.6, d.cy + d.r * 0.55, 3.4, FIG, { align: 'center' });
+    text(ctx, hi, d.cx + d.r * 0.6, d.cy + d.r * 0.55, 3.4, hotEnd ? '#ff6a5a' : FIG, { align: 'center' });
+    needle(ctx, d.cx, d.cy, d.r - 3, 150 - 120 * frac, NEEDLE, 1);
+  };
+
+  function draw(ctx, s, L) {
+    ctx.fillStyle = '#3b2a1e'; // the brown panel the dials sit in
+    ctx.fillRect(76, 14, 208, 92);
+    dial(ctx, speedo);
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 5, speedo.r - 1.5, 225, -45, 20, FIG, 0.5);
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 8, speedo.r - 1.5, 225, -45, 10, FIG, 1);
+    labels(ctx, speedo.cx, speedo.cy, speedo.r - 13, 225, -45, ['0', '', '20', '', '40', '', '60', '', '80', '', '100'], FIG, 4.2);
+    text(ctx, 'MPH', speedo.cx, speedo.cy - 9, 3.4, '#bbb', { align: 'center' });
+    const odo = counterDigits(s.odoMiles, 5);
+    drum(ctx, speedo.cx - 14, speedo.cy + 12, odo.whole, odo.tenth, 6);
+    needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 225 - (270 * Math.min(100, L.mph)) / 100, NEEDLE, 1.2);
+    small(ctx, fuel, L.fuel, 'fuel', 'E', 'F', false);
+    small(ctx, temp, L.temp, 'temp', 'C', 'H', true);
+    ctx.fillStyle = '#1c140e';
+    ctx.beginPath();
+    ctx.roundRect(198, 74, 80, 26, 3);
+    ctx.fill();
+    warnSymbol(ctx, 'charge', 210, 81, LAMP.red, L.charge, 0.8);
+    warnSymbol(ctx, 'oil', 230, 81, LAMP.red, L.oil, 0.8);
+    warnSymbol(ctx, 'choke', 250, 81, LAMP.amber, L.choke, 0.8);
+    warnSymbol(ctx, 'park', 268, 81, LAMP.red, L.park, 0.8);
+    warnSymbol(ctx, 'turn', 220, 93, LAMP.green, L.turn, 0.8);
+    warnSymbol(ctx, 'beam', 252, 93, '#4aa8ff', L.main, 0.8);
+    keySwitch(ctx, 96, 86, s.keyOn);
+  }
+
+  return {
+    group,
+    mount: null,
+    update(s) {
+      shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
+      shownFuel += ((s.ignition ? s.fuelLevel : 0) - shownFuel) * 0.2;
+      shownTemp += ((s.ignition ? tempGaugeFraction(s.temperature, true, s.overheat) : 0) - shownTemp) * 0.1;
+      const running = s.rpm > 300;
+      const on = !!s.ignition;
+      const L = {
+        mph: shownMph,
+        fuel: shownFuel,
+        temp: shownTemp,
+        charge: on && !running,
+        oil: on && (!running || !!s.oilLow),
+        choke: on && (s.choke ?? 0) > 0.05,
+        park: on && !!s.parkBrake,
+        main: on && !!s.lightLamps?.main,
+        turn: on && !!(s.indicatorLamps?.left || s.indicatorLamps?.right),
+      };
+      const odo = counterDigits(s.odoMiles, 5);
+      if (gate([on, s.keyOn, L.charge, L.oil, L.choke, L.park, L.main, L.turn, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
+        face.redraw((ctx) => draw(ctx, s, L));
+      }
+    },
+  };
+}
+
+/**
+ * Jess's Corsa B: a rounded charcoal binnacle with a rev counter on the left, the speedometer to 120 mph in the middle (with the
+ * odometer), the water and fuel gauges stacked on the right, red-orange needles on black, and a strip of lamps along the bottom:
+ * charge, oil, engine management (it is injected), handbrake, belts, the indicators, side lights and main beam. The key is on the
+ * column, drawn at the binnacle's right end.
+ */
+function buildCorsa() {
+  const group = new THREE.Group();
+  group.name = 'dash';
+  const O = { ox: 180, oy: 60 };
+  housing(group, { x: 62, y: 12, w: 236, h: 96, r: 18, ...O, material: charcoal });
+  const face = mmPanel({ x: 62, y: 12, w: 236, h: 96, ...O });
+  group.add(face.mesh);
+  const tacho = { cx: 106, cy: 50, r: 28 };
+  const speedo = { cx: 178, cy: 50, r: 33 };
+  const temp = { cx: 246, cy: 36, r: 13 };
+  const fuel = { cx: 246, cy: 66, r: 13 };
+  const gate = changeGate();
+  let shownMph = 0;
+  let shownRpm = 0;
+  let shownFuel = 0;
+  let shownTemp = 0;
+  const TACHO_MAX = 7000;
+  const NEEDLE = '#ff5a1f';
+  const WHITE = '#f4f4f4';
+  const dial = (ctx, d) => {
+    ctx.fillStyle = '#0b0c0d';
+    ctx.beginPath();
+    ctx.arc(d.cx, d.cy, d.r, 0, Math.PI * 2);
+    ctx.fill();
+  };
+  const small = (ctx, d, frac, sym, hotEnd) => {
+    dial(ctx, d);
+    ticks(ctx, d.cx, d.cy, d.r - 4, d.r - 1.5, 150, 30, 4, WHITE, 0.7);
+    if (hotEnd) arc(ctx, d.cx, d.cy, d.r - 2, 40, 30, '#d8402e', 1.8);
+    warnSymbol(ctx, sym, d.cx, d.cy + 5, '#aaa', true, 0.42, false);
+    needle(ctx, d.cx, d.cy, d.r - 3, 150 - 120 * frac, NEEDLE, 1);
+  };
+
+  function draw(ctx, s, L) {
+    dial(ctx, tacho);
+    arc(ctx, tacho.cx, tacho.cy, tacho.r - 2.5, -45, 225 - (270 * L.redline) / TACHO_MAX, '#d8402e', 2.2);
+    ticks(ctx, tacho.cx, tacho.cy, tacho.r - 4.5, tacho.r - 1.5, 225, -45, 14, WHITE, 0.5);
+    ticks(ctx, tacho.cx, tacho.cy, tacho.r - 7, tacho.r - 1.5, 225, -45, 7, WHITE, 1);
+    labels(ctx, tacho.cx, tacho.cy, tacho.r - 11.5, 225, -45, ['0', '1', '2', '3', '4', '5', '6', '7'], WHITE, 3.8);
+    text(ctx, '1/min x1000', tacho.cx, tacho.cy + 11, 2.8, '#bbb', { align: 'center' });
+    needle(ctx, tacho.cx, tacho.cy, tacho.r - 2, 225 - (270 * Math.min(TACHO_MAX, L.rpm)) / TACHO_MAX, NEEDLE, 1.1);
+    dial(ctx, speedo);
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 5, speedo.r - 1.5, 225, -45, 24, WHITE, 0.5);
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 8, speedo.r - 1.5, 225, -45, 12, WHITE, 1);
+    labels(ctx, speedo.cx, speedo.cy, speedo.r - 13, 225, -45, ['0', '', '20', '', '40', '', '60', '', '80', '', '100', '', '120'], WHITE, 3.8);
+    text(ctx, 'mph', speedo.cx, speedo.cy - 9, 3.4, '#bbb', { align: 'center' });
+    const odo = counterDigits(s.odoMiles, 6);
+    drum(ctx, speedo.cx - 17, speedo.cy + 12, odo.whole, odo.tenth, 6);
+    needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 225 - (270 * Math.min(120, L.mph)) / 120, NEEDLE, 1.2);
+    small(ctx, temp, L.temp, 'temp', true);
+    small(ctx, fuel, L.fuel, 'fuel', false);
+    ctx.fillStyle = '#121213';
+    ctx.beginPath();
+    ctx.roundRect(78, 88, 196, 16, 4);
+    ctx.fill();
+    const lamps = [['charge', LAMP.red, L.charge], ['oil', LAMP.red, L.oil], ['engine', LAMP.amber, L.engine], ['park', LAMP.red, L.park], ['belt', LAMP.red, L.belt], ['turnLeft', LAMP.green, L.turnLeft], ['turnRight', LAMP.green, L.turnRight], ['lights', LAMP.green, L.lights], ['beam', '#4aa8ff', L.main]];
+    lamps.forEach(([kind, colour, lit], i) => warnSymbol(ctx, kind, 90 + i * 21.5, 96, colour, lit, 0.85));
+    keySwitch(ctx, 286, 86, s.keyOn);
+  }
+
+  return {
+    group,
+    mount: null,
+    update(s) {
+      shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
+      shownRpm += ((s.ignition ? s.rpm : 0) - shownRpm) * 0.35;
+      shownFuel += ((s.ignition ? s.fuelLevel : 0) - shownFuel) * 0.2;
+      shownTemp += ((s.ignition ? tempGaugeFraction(s.temperature, true, s.overheat) : 0) - shownTemp) * 0.1;
+      const running = s.rpm > 300;
+      const on = !!s.ignition;
+      const L = {
+        mph: shownMph,
+        rpm: shownRpm,
+        redline: s.redline ?? 6000,
+        fuel: shownFuel,
+        temp: shownTemp,
+        charge: on && !running,
+        oil: on && (!running || !!s.oilLow),
+        engine: on && !running, // the injection's lamp: on with the key, out once it runs
+        park: on && !!s.parkBrake,
+        belt: on && !!s.beltLamp,
+        lights: on && !!s.lightLamps?.lights,
+        main: on && !!s.lightLamps?.main,
+        turnLeft: on && !!s.indicatorLamps?.left,
+        turnRight: on && !!s.indicatorLamps?.right,
+      };
+      const odo = counterDigits(s.odoMiles, 6);
+      if (gate([on, s.keyOn, L.charge, L.oil, L.engine, L.park, L.belt, L.lights, L.main, L.turnLeft, L.turnRight, Math.round(shownMph * 2), Math.round(shownRpm / 40), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
+        face.redraw((ctx) => draw(ctx, s, L));
+      }
+    },
+  };
+}
+
 /** Dash styles buildDash knows: every quad spec must name one of these. */
-export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey', 'tractor', 'utv', 'series', 'defender'];
+export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey', 'tractor', 'utv', 'series', 'defender', 'fiesta', 'corsa'];
 
 /** Where each dash sits on the bars (metres, in the bars' frame) and how far it tilts back. A nacelle quad carries its own on its top. */
 export const DASH_PLACE = {
@@ -845,6 +1042,8 @@ export const DASH_PLACE = {
   utv: { pos: [0, 0, 0], tilt: 0.9 }, // so does the UTV's
   series: { pos: [0, 0, 0], tilt: 0.55 }, // and the Land Rover's
   defender: { pos: [0, 0, 0], tilt: 0.55 }, // and the 200TDi's
+  fiesta: { pos: [0, 0, 0], tilt: 0.5 }, // and the girls' cars'
+  corsa: { pos: [0, 0, 0], tilt: 0.5 },
 };
 
 const BUILDERS = {
@@ -859,6 +1058,8 @@ const BUILDERS = {
   utv: buildUtv,
   series: buildSeries,
   defender: buildDefender,
+  fiesta: buildFiesta,
+  corsa: buildCorsa,
 };
 
 export function buildDash(style = 'foreman') {

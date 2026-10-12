@@ -165,6 +165,7 @@ export function buildGirlsTab(d) {
   show(both, 'Jess\'s dare', () => g.dares.describe());
   show(both, 'a phone call', () => `${g.phoneCalls.describe()}${g.companions.map((c) => (g.favour.moodLeft(c.character.id) > 0 ? `; ${c.name} in a mood for ${Math.round(g.favour.moodLeft(c.character.id))} s` : '')).join('')}`);
   show(both, 'a girl at the bench', () => g.girlBench.describe());
+  show(both, 'their cars', () => g.describeCars());
   show(both, 'lights to work by', () => g.workLight.describe());
   show(both, 'the clock', () => `${g.daylight.text()}, ${Math.round(g.daylight.darkness * 100)}% dark, falling ${g.daylight.drop.toFixed(1)} °C into the night`);
   show(both, 'muck in the tub', () => `${Math.round(g.muck.load * 100)}%, ${g.muck.laid} patches laid on the stubble${g.muck.done ? ', done' : ''}`);

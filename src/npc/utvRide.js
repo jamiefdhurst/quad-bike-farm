@@ -81,10 +81,11 @@ export const UTV_RIDE_PARAM_RANGES = {
  * Where the girls in `ids` sit, given the seats already taken (`taken`: a Set of 'mid', 'left', 'bed' and any back seats). `random` is a
  * 0..1 source. `rear` lists a back bench's seats, nearest the door first (the 200TDi's; none in the UTV or the Series): the front fills
  * first and the back takes the rest, and now and then one would rather sit in the back anyway. Returns { seats: [{ id, seat }] in the
- * order they should climb in, squabble: { winner, loser } or null }. A girl with no seat to take isn't in the list.
+ * order they should climb in, squabble: { winner, loser } or null }. A girl with no seat to take isn't in the list. `front` is the front's seats
+ * beside the driver: the bench's middle and window, or the passenger's seat alone in the girls' cars.
  */
-export function planSeats(ids, taken, random, p = DEFAULT_UTV_RIDE_PARAMS, rear = []) {
-  const free = new Set(['mid', 'left'].filter((s) => !taken.has(s)));
+export function planSeats(ids, taken, random, p = DEFAULT_UTV_RIDE_PARAMS, rear = [], front = ['mid', 'left']) {
+  const free = new Set(front.filter((s) => !taken.has(s)));
   const backFree = rear.filter((s) => !taken.has(s));
   const bedFree = !taken.has('bed');
   const bedChance = (id) => (id === 'jess' ? p.jessBedChance : p.amyBedChance);
@@ -127,11 +128,12 @@ export function planSeats(ids, taken, random, p = DEFAULT_UTV_RIDE_PARAMS, rear 
 }
 
 export class UtvRide {
-  /** `rear`: a back bench's seats, nearest the door first, where there is one (the 200TDi). */
-  constructor(params = { ...DEFAULT_UTV_RIDE_PARAMS }, random = Math.random, { rear = [] } = {}) {
+  /** `rear`: a back bench's seats, nearest the door first, where there is one (the 200TDi, the cars). `front`: the seats beside the driver. */
+  constructor(params = { ...DEFAULT_UTV_RIDE_PARAMS }, random = Math.random, { rear = [], front = ['mid', 'left'] } = {}) {
     this.p = params;
     this.random = random;
     this.rear = rear;
+    this.front = front;
     this.rolled = false; // this stop has had its chance already
     this.queue = []; // girls on their way: { id, seat, in, squabble }
     this.girls = {}; // id -> { aboardFor, stayFor, shoutIn, leaveIn, tellIn, told }
@@ -193,7 +195,7 @@ export class UtvRide {
     if (!ctx.riding) {
       if (ctx.parked && ctx.speed < p.stopSpeed && !aboard.length && !this.queue.length) {
         const g = ctx.girls.find((x) => x.free && x.dist <= p.boardRange && this.random() < p.idleBoardRate * dt);
-        const seat = g && planSeats([g.id], this.taken(ctx), this.random, p, this.rear).seats[0];
+        const seat = g && planSeats([g.id], this.taken(ctx), this.random, p, this.rear, this.front).seats[0];
         if (seat) {
           this.ask(g.id); // she stays put until she's bored of it, even with you not in it
           events.push({ type: 'board', girl: g.id, seat: seat.seat, squabble: null });
@@ -274,7 +276,7 @@ export class UtvRide {
         ids = [jess && this.random() < p.jessChance ? 'jess' : ids.find((i) => i !== 'jess') ?? 'jess'];
       } else if (ids.includes('jess') && this.random() < 0.5) ids.reverse();
     }
-    const { seats, squabble } = planSeats(ids, this.taken(ctx), this.random, p, this.rear);
+    const { seats, squabble } = planSeats(ids, this.taken(ctx), this.random, p, this.rear, this.front);
     let delay = this.between(p.boardDelayMin, p.boardDelayMax);
     seats.forEach((s, i) => {
       if (i > 0) delay += this.between(p.followDelayMin, p.followDelayMax);

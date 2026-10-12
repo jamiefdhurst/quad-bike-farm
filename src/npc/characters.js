@@ -30,6 +30,7 @@ export const CHARACTERS = [
       phoneMoodChance: 0.35, // and it is not always good news
       phoneMoodSeconds: 360, // she stews on it
       benchWeight: 1.3, // services her own quad at the bench, and asks you for a hand
+      carGoWeight: 0.8, // takes her Fiesta down the road now and then, carefully, on her L plates
       workLightWeight: 1.2, // brings the Land Rover round to light what you're at in the dark, unasked
       sideSaddleChance: 0.4, // sits side-saddle on the back, ladylike
       blownNoticeAt: 0.25,
@@ -69,6 +70,7 @@ export const CHARACTERS = [
       phoneMoodChance: 0.2, // her mates fall out with her now and then
       phoneMoodSeconds: 150, // and she is over it quickly
       benchWeight: 0.7, // has a go at the bench now and then, and hands it back
+      carGoWeight: 1.3, // can't leave her Corsa alone: down the road and back, loud
       voiceHardBrakeDecel: 6.5, // takes a sharper stop before she calls it hard braking
       voiceHardBrakeShed: 3,
       reactEarsChance: 0.15, // loves the noise; cheers a jump with both arms up; flinches less

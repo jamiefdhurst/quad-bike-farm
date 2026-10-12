@@ -371,6 +371,26 @@ export function warnSymbol(ctx, kind, x, y, colour, lit, scale = 1, glow = true)
       ctx.fill();
       ctx.stroke();
     }
+  } else if (kind === 'engine') {
+    // The engine management lamp: an engine block in outline, the filler on top and the fan at the front.
+    ctx.moveTo(x - 5, y - 3);
+    ctx.lineTo(x + 3, y - 3);
+    ctx.lineTo(x + 5, y - 1);
+    ctx.lineTo(x + 7, y - 1);
+    ctx.lineTo(x + 7, y + 3);
+    ctx.lineTo(x + 5, y + 3);
+    ctx.lineTo(x + 3, y + 5);
+    ctx.lineTo(x - 5, y + 5);
+    ctx.closePath();
+    ctx.moveTo(x - 2, y - 3);
+    ctx.lineTo(x - 2, y - 5.5);
+    ctx.moveTo(x - 4, y - 5.5);
+    ctx.lineTo(x, y - 5.5);
+    ctx.moveTo(x - 5, y);
+    ctx.lineTo(x - 7.5, y);
+    ctx.moveTo(x - 7.5, y - 2);
+    ctx.lineTo(x - 7.5, y + 2);
+    ctx.stroke();
   } else if (kind === 'lights') {
     // A headlamp with its beams.
     ctx.arc(x - 2, y, 4.2, -Math.PI / 2, Math.PI / 2);

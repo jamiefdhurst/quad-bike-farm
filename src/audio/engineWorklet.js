@@ -398,6 +398,9 @@ class RecordedEngine {
         for (const v of this.voices) if (v.start === engaged?.start) v.release = true;
         return ev.type === 'caught';
       case 'stalled':
+        // A bank with a stall of its own (the Corsa's cold Carlton dying) plays it; the rest run down as for the key.
+        this.playOneshot(this.oneshots.stall ? 'stall' : 'shutdown', p.recShutdownVolume);
+        return true;
       case 'shutdown':
         this.playOneshot('shutdown', p.recShutdownVolume);
         return true;

@@ -591,11 +591,12 @@ export class EngineModel {
   updateMixture() {
     const p = this.params;
     const need = p.coldEnrichmentNeed * (1 + p.chillChoke * this.chill) * (1 - this.temperature);
-    const supplied = p.chokeEnrichment * (1 + p.chillChoke * p.chillChokeFlow * this.chill) * this.choke * (1 - p.throttleChokeRelief * this.throttle);
+    // Injection gives a cold engine exactly what it needs, whatever the choke (it has none).
+    const supplied = p.injected ? need : p.chokeEnrichment * (1 + p.chillChoke * p.chillChokeFlow * this.chill) * this.choke * (1 - p.throttleChokeRelief * this.throttle);
     // A draining float bowl leans the mixture out, whatever the choke is doing.
     const starve = clamp((p.fuelStarveLevel - this.fuel) / p.fuelStarveLevel, 0, 1);
     // A heat-soaked carburettor boils its fuel, so a hot engine that isn't running starts rich; the throttle open clears it.
-    const hot = this.state === EngineState.RUNNING ? 0 : hotStartRich(this.soak, this.throttle, p) * (1 + p.valveTightHot * this.valveTight); // tight valves swell with the heat and hold it up
+    const hot = this.state === EngineState.RUNNING || p.injected ? 0 : hotStartRich(this.soak, this.throttle, p) * (1 + p.valveTightHot * this.valveTight); // tight valves swell with the heat and hold it up
     this.jetErr = p.strokes === 2 ? jetError(p.jet, this.dayTemp, p, this.bore) : 0;
     this.jetOn = p.strokes === 2 ? jetTrue(this.jetErr, p) : 0;
     this.mixture = jetMixture(this.jetErr, p) + supplied - need - p.starveLean * starve + p.mixtureTrim + p.clogRich * this.clog + hot;
@@ -724,7 +725,8 @@ export class EngineModel {
 
     this.idleTarget =
       p.idleRpmWarm +
-      p.chokeIdleRpm * this.choke * lerp(p.chokeIdleColdFactor, 1, T) -
+      p.chokeIdleRpm * this.choke * lerp(p.chokeIdleColdFactor, 1, T) +
+      p.coldIdleRpm * (1 - this.temperature) -
       p.leanIdleDrop * this.lean +
       hunt +
       roughHunt +

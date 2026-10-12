@@ -16,6 +16,7 @@ export function baseHeight(x, z) {
   );
 }
 
+import { standingDistance } from './carStanding.js';
 import { floorBlend } from './barn.js';
 import { stripFrame } from './layout.js';
 import { outsideRect, createFieldShape } from './fields.js';
@@ -35,6 +36,14 @@ export function createTerrainHeight(layout, track) {
   // The drag strip is level: the average of the ground along it, blended back into the field over its shoulders.
   const strip = layout.dragStrip;
   const stripLevel = strip ? [0, 0.25, 0.5, 0.75, 1].reduce((sum, t) => sum + baseHeight(strip.x + Math.sin(strip.yaw) * strip.length * t, strip.z + Math.cos(strip.yaw) * strip.length * t), 0) / 5 : 0;
+
+  // The cars' slab is laid level at the yard's lie of the land across it (the yard is flattened round the barn, and it reaches part of it).
+  const standing = layout.carStanding;
+  const yardLie = (x, z) => {
+    const h = baseHeight(x, z);
+    return h + (yardHeight - h) * (1 - smoothstep(yard.radius * 0.6, yard.radius, Math.hypot(x - yard.x, z - yard.z)));
+  };
+  const standingLevel = standing ? [[0, 0], [-1, -1], [1, -1], [-1, 1], [1, 1]].reduce((sum, [a, b]) => sum + yardLie(standing.x + a * standing.halfX, standing.z + b * standing.halfZ), 0) / 5 : 0;
 
   function heightAt(x, z) {
     let h = baseHeight(x, z);
@@ -72,6 +81,12 @@ export function createTerrainHeight(layout, track) {
     // And under the Dutch barn and the field shed, to the lie of the land at their middles.
     const floor = outbuildings.floorAt(x, z, (fx, fz) => baseHeight(fx, fz) + fieldShape(fx, fz).lift);
     if (floor) h += (floor.level - h) * floor.k;
+
+    // Level under the cars' hard-standing, with a shoulder of a couple of metres.
+    if (standing) {
+      const k = 1 - smoothstep(0, 2, standingDistance(standing, x, z));
+      if (k > 0) h += (standingLevel - h) * k;
+    }
 
     // Level under the drag strip, with a shoulder to ease it back into the field.
     if (strip) {

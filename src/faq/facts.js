@@ -14,7 +14,7 @@ export const ALL_VEHICLE_SPECS = (() => {
   // A module's exports come in alphabetical order, so put them in the page's: the five quads, the other small ones, then the big
   // machines, oldest first.
   const lists = [SPECS.QUAD_SPECS, SPECS.EXTRA_SPECS, ...Object.values(SPECS).filter((v) => Array.isArray(v) && v !== SPECS.QUAD_SPECS && v !== SPECS.EXTRA_SPECS)];
-  const big = (s) => (s.tractor ? 0 : s.utv ? 1 : s.defender ? 3 : s.landRover ? 2 : 4);
+  const big = (s) => (s.tractor ? 0 : s.utv ? 1 : s.defender ? 3 : s.landRover ? 2 : s.car ? (s.car === 'fiesta' ? 5 : 6) : 4); // the girls' cars last, Amy's first
   const singles = Object.values(SPECS).filter((v) => !Array.isArray(v) && isSpec(v)).sort((a, b) => big(a) - big(b));
   return [...lists.flat(), ...singles].filter(isSpec);
 })();
@@ -35,7 +35,7 @@ export function vehicleFacts(spec) {
   const facts = [];
   if (engine.compressionIgnition || engine.runsOnDiesel) facts.push(['Engine', 'Diesel, on red diesel, with glow plugs']);
   else if (engine.strokes === 2) facts.push(['Engine', 'Two-stroke, on pre-mix']);
-  else facts.push(['Engine', 'Four-stroke, on petrol']);
+  else facts.push(['Engine', engine.injected ? 'Four-stroke, on petrol, fuel injected (no choke)' : 'Four-stroke, on petrol']);
 
   const manual = spec.manual || spec.tractor;
   if (manual) {
@@ -59,5 +59,6 @@ export function vehicleFacts(spec) {
   facts.push(['Tank', `${tank} litres`]);
   if (spec.driveSwitch) facts.push(['4WD', spec.diffLock ? 'Switchable (G), with a diff lock (U)' : 'Switchable (G)']);
   if (spec.solo) facts.push(['Seats', 'One']);
+  if (spec.car) facts.push(['Seats', 'Four, two in front and two in the back'], ['Drive', 'Front-wheel drive, on road tyres']);
   return facts;
 }

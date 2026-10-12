@@ -202,6 +202,17 @@ export function girlActions(g) {
       run: (id) => g.startPhoneCall(id, true),
     },
     {
+      verb: 'car-go',
+      label: '% takes her own car down the farm road and back (the Fiesta for Amy, the Corsa for Jess)',
+      run: (id) => {
+        if (!free(id)) return;
+        const kind = g.carGoContext(g.riddenUnit).girls[id]?.car;
+        if (!kind) return toast(`${nameOf(id)} has no car here`);
+        if (!g.goFree(kind)) return toast(`Someone is in or at her ${g.landys[kind].spec.name} just now`);
+        g.handleCarGoEvent({ type: 'carGo', girl: id, vehicle: kind });
+      },
+    },
+    {
       verb: 'bench-work',
       label: '% works on the quad in the bay at the bench (needs one parked there, off, and the toolbox on the bench; Jess makes a hash of it and hands it to you)',
       run: (id) => g.startGirlBench(id),

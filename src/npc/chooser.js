@@ -43,6 +43,7 @@ export const OFFER_KINDS = {
   snub: { label: 'start her own instead of yours', satisfies: { purpose: 0.6 }, pace: 'brisk' },
   nick: { label: 'nick your quad', satisfies: { excitement: 0.8, purpose: 0.5, company: 0.2 }, pace: 'hurry' },
   bigGo: { label: 'take a big one for a go', satisfies: { excitement: 0.9, purpose: 0.6 }, pace: 'brisk' },
+  carGo: { label: 'take her car down the road and back', satisfies: { excitement: 0.7, purpose: 0.6 }, pace: 'brisk' },
   lPlates: { label: "tape L plates on Amy's quad", satisfies: { purpose: 0.5, excitement: 0.3, company: 0.3 } },
   lPlatesTractor: { label: 'put the L plates on the tractor', satisfies: { purpose: 0.7 } },
   convoy: { label: 'go for a ride together', satisfies: { company: 0.8, excitement: 0.6, purpose: 0.5 }, pace: 'brisk' },

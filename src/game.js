@@ -8,8 +8,9 @@ import { World } from './world/world.js';
 import { Player, PLAYER_CAPSULE } from './player/player.js';
 import { DEFAULT_PLAYER_PARAMS, PLAYER_PARAM_RANGES } from './player/playerParams.js';
 import { QuadUnit } from './vehicle/quadUnit.js';
-import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC } from './vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC } from './vehicle/quadSpecs.js';
 import { LANDY_STAND, LANDY_REAR_STAND, LANDY_REAR_SEATS } from './vehicle/landRoverModel.js';
+import { CARS, CAR_STAND } from './vehicle/carModel.js';
 import { DEFAULT_REAR_ACCESS_PARAMS, REAR_ACCESS_PARAM_RANGES, seatTipTargets, easeSeatTips, pickRearSeat, rearDoor } from './vehicle/rearAccess.js';
 import { clearOfChassis } from './vehicle/dismount.js';
 import { DEFAULT_BIKE_PARAMS, BIKE_PARAM_RANGES } from './vehicle/bikeLean.js';
@@ -83,6 +84,7 @@ import { poseUtvBed, BED_CARGO_SPOTS, BED_CARGO_YAWS, BED_CARGO_YAW } from './ve
 import { CargoHold, CARGO_PARAM_RANGES } from './vehicle/cargoHold.js';
 import { UtvRide, UTV_RIDE_PARAM_RANGES, DEFAULT_UTV_RIDE_PARAMS } from './npc/utvRide.js';
 import { TractorGo, TRACTORGO_PARAM_RANGES } from './npc/tractorGo.js';
+import { CarGo, Borrowing, mayDriveCar, CAR_GO_PARAM_RANGES } from './npc/carGo.js';
 import { LPlates, LPLATE_PARAM_RANGES, meanSkill } from './npc/lPlates.js';
 import { LPlateSet } from './vehicle/lPlateModel.js';
 import { TractorRunaway, TRACTOR_RUNAWAY_PARAM_RANGES } from './npc/tractorRunaway.js';
@@ -240,7 +242,8 @@ const MAX_FRAME_DT = 0.1;
 const RACE_STAGE_BACK = 14; // metres behind the start line the girls stage before they come up to the grid
 
 // The vehicles the girls take for a go (and are asked to start): the tractor, the UTV and the two Land Rovers.
-const GO_KINDS = ['tractor', 'utv', 'landy', 'defender'];
+const GO_KINDS = ['tractor', 'utv', 'landy', 'defender', 'fiesta', 'corsa'];
+const CAR_KINDS = ['fiesta', 'corsa']; // the girls' own cars: each goes out only with her owner at the wheel (npc/carGo.js)
 
 export class Game {
   constructor(RAPIER, canvas) {
@@ -465,6 +468,12 @@ export class Game {
     this.landys = {};
     for (const [kind, spec] of [['landy', LAND_ROVER_SPEC], ['defender', DEFENDER_SPEC]]) {
       this.landys[kind] = { kind, spec, unit: bigSpecs.includes(spec) ? this.addLandRover(bigSpawn(spec), spec) : null, mount: null, ride: null };
+    }
+    // The girls' own cars (vehicle/carModel.js), always here, on their hard-standing by the barn: built and ridden like the Land Rovers, so
+    // they live in `landys` too (with `car` set), but each is driven only by its owner (spec.owner) and minds if you take it (npc/carGo.js).
+    for (const kind of CAR_KINDS) {
+      const spec = { fiesta: FIESTA_SPEC, corsa: CORSA_SPEC }[kind];
+      this.landys[kind] = { kind, spec, car: true, unit: this.addLandRover({ ...this.world.layout.carStanding.cars[kind] }, spec), mount: null, ride: null };
     }
     // Perhaps an old quad under a tarp at the back of the barn (vehicle/barnFind.js): a unit like the tractor, not one of the girls' quads.
     this.barnFindParams = { ...DEFAULT_BARN_FIND_PARAMS };
@@ -705,12 +714,16 @@ export class Game {
     // The Land Rovers' benches: the same riding as the UTV's, with no bed to ride in (vehicle/utvMount.js, npc/utvRide.js).
     for (const l of Object.values(this.landys)) {
       const series = l.kind === 'landy';
-      // The 200TDi has a back bench too (LANDY_REAR_SEATS): the girls take it when the front's full, or now and then by choice.
-      const rear = series ? {} : LANDY_REAR_SEATS;
-      l.ride = new UtvRide({ ...DEFAULT_UTV_RIDE_PARAMS, jessBedChance: 0, amyBedChance: 0, jessBedLoseChance: 0, amyBedLoseChance: 0 }, createRandom(this.seed ^ (series ? 0x1a4d : 0x1a5d)), { rear: Object.keys(rear) });
-      if (series) registerTuning('Land Rover riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
-      else registerTuning('200TDi riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
-      l.mount = l.unit ? new UtvMount(l.unit.quad, (x, z) => this.world.heightAt(x, z), { ...LANDY_STAND, ...LANDY_REAR_STAND }, rear) : null;
+      // The 200TDi has a back bench too (LANDY_REAR_SEATS): the girls take it when the front's full, or now and then by choice. The cars
+      // have two seats in front and two behind (CARS), reached past a tipped front seat as the 200TDi's are.
+      const rear = l.car ? CARS[l.kind].rear : series ? {} : LANDY_REAR_SEATS;
+      const seed = { landy: 0x1a4d, defender: 0x1a5d, fiesta: 0x1a6d, corsa: 0x1a7d }[l.kind];
+      l.ride = new UtvRide({ ...DEFAULT_UTV_RIDE_PARAMS, jessBedChance: 0, amyBedChance: 0, jessBedLoseChance: 0, amyBedLoseChance: 0 }, createRandom(this.seed ^ seed), { rear: Object.keys(rear), front: l.car ? ['left'] : undefined });
+      if (l.kind === 'landy') registerTuning('Land Rover riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
+      else if (l.kind === 'defender') registerTuning('200TDi riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
+      else if (l.kind === 'fiesta') registerTuning('Fiesta riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
+      else registerTuning('Corsa riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
+      l.mount = l.unit ? new UtvMount(l.unit.quad, (x, z) => this.world.heightAt(x, z), l.car ? CAR_STAND : { ...LANDY_STAND, ...LANDY_REAR_STAND }, rear) : null;
       if (l.unit) l.unit.quad.tipHold = { left: 0, driver: 0 }; // seconds a backrest stays tipped after you climb past it
     }
     this.rearAccess = { ...DEFAULT_REAR_ACCESS_PARAMS };
@@ -741,11 +754,14 @@ export class Game {
     this.noviceParams = { ...DEFAULT_NOVICE_PARAMS };
     this.utvDrive = { ...DEFAULT_UTV_GO_DRIVE }; // and the same for the UTV and the Land Rover (the same ranges)
     this.landyDrive = { ...DEFAULT_LANDY_GO_DRIVE };
+    // The girls' own cars: each takes hers down the road now and then, and minds if you take it (npc/carGo.js).
+    this.carGo = new CarGo(undefined, createRandom(this.seed ^ 0x0ca9));
+    this.borrowing = Object.fromEntries(CAR_KINDS.map((k) => [k, new Borrowing(this.carGo.p)]));
     this.crankParams = { ...DEFAULT_CRANK_ATTEMPT_PARAMS };
     this.pushParams = { ...DEFAULT_PUSH_PARAMS };
     this.keepParams = { ...DEFAULT_KEEPALIVE_PARAMS }; // keeping a sick one alive from the back (npc/keepAlive.js), shared by both girls
     this.goJoins = []; // the other girl on her way to climb in beside a driver: { left, girl, kind, driver }
-    for (const c of this.companions) Object.assign(c, { tractorGo: this.tractorDrive, utvGo: this.utvDrive, landyGo: this.landyDrive, crankParams: this.crankParams, pushParams: this.pushParams, keepParams: this.keepParams, numbShared: this.numbParams, tractorStartParams: this.tractorStartParams, noviceParams: this.noviceParams });
+    for (const c of this.companions) Object.assign(c, { tractorGo: this.tractorDrive, utvGo: this.utvDrive, landyGo: this.landyDrive, carGo: this.carGo, crankParams: this.crankParams, pushParams: this.pushParams, keepParams: this.keepParams, numbShared: this.numbParams, tractorStartParams: this.tractorStartParams, noviceParams: this.noviceParams });
     // Jess tapes L plates to Amy's quad; Amy peels them off, and once she's confident they go on the tractor (npc/lPlates.js).
     this.lPlates = new LPlates(undefined, createRandom(this.seed ^ 0x1b1a));
     this.lPlateSet = new LPlateSet();
@@ -906,6 +922,8 @@ export class Game {
                 ? [['K', 'Key'], ['R', 'Start'], ['T', 'Tip the bed'], ['Y', 'Dipstick'], ...(this.canSitOnBack(quad) ? [['B', 'Sit in the passenger seat']] : [])] // the reverse lever is on the dash: only from the seat
                 : unit.spec.landRover
                   ? [['K', 'Key'], ['R', 'Start'], ...(unit.spec.defender ? [] : [['Q Z', 'Choke'], ['[ ]', 'Hand throttle']]), ['Y', 'Dipstick'], ...(unit.spec.defender ? [] : [['P', 'Starting handle (at the front)']]), ...(this.canSitOnBack(quad) ? [['B', this.lookingAtBack(quad) ? 'Sit in the back' : 'Sit in the passenger seat']] : [])]
+                : unit.spec.car
+                  ? [['K', 'Key'], ['R', 'Start'], ...(unit.spec.engine.injected ? [] : [['Q Z', 'Choke']]), ['Y', 'Dipstick'], ...(this.canSitOnBack(quad) ? [['B', this.lookingAtBack(quad) ? 'Sit in the back' : 'Sit in the passenger seat']] : [])]
                 : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(quad.sump ? [['Y', 'Dipstick']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : []), ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
           };
         },
@@ -1243,6 +1261,7 @@ export class Game {
     registerTuning('Tractor go drive', this.tractorDrive, TRACTOR_GO_DRIVE_RANGES);
     registerTuning('UTV go drive', this.utvDrive, TRACTOR_GO_DRIVE_RANGES);
     registerTuning('Land Rover go drive', this.landyDrive, TRACTOR_GO_DRIVE_RANGES);
+    registerTuning('Their cars', this.carGo.p, CAR_GO_PARAM_RANGES);
     registerTuning('Land Rover go handle', this.crankParams, CRANK_ATTEMPT_PARAM_RANGES);
     registerTuning('Girl pushing a start', this.pushParams, PUSH_PARAM_RANGES);
     registerTuning('Keeping it alive', this.keepParams, KEEPALIVE_PARAM_RANGES);
@@ -1743,7 +1762,7 @@ export class Game {
       running: q.engine.isRunning,
       occupied: !!(q.rider || q.driver || q.passenger || q.input || q.ghost || busy),
       tipped: q.isTipped,
-      excluded: !!(unit.spec.tractor || unit.spec.utv || unit.spec.landRover || unit.barnFind),
+      excluded: !!(unit.spec.tractor || unit.spec.utv || unit.spec.landRover || unit.spec.car || unit.barnFind),
       hooked: !!(q.towed || this.winch?.target === q || this.chain?.target === q),
     });
   }
@@ -1847,10 +1866,10 @@ export class Game {
 
   /** The tractor, the UTV and the two Land Rovers as the girls' goes know them: { unit, free(), ask line, refuse line }. */
   goVehicle(kind) {
-    return { tractor: this.tractorUnit, utv: this.utvUnit, landy: this.landys.landy.unit, defender: this.landys.defender.unit }[kind] ?? null;
+    return { tractor: this.tractorUnit, utv: this.utvUnit, landy: this.landys.landy.unit, defender: this.landys.defender.unit, fiesta: this.landys.fiesta?.unit, corsa: this.landys.corsa?.unit }[kind] ?? null;
   }
 
-  /** Which of the four this unit is, or null. */
+  /** Which of them this unit is, or null. */
   goKindOf(quad) {
     return GO_KINDS.find((k) => this.goVehicle(k)?.quad === quad) ?? null;
   }
@@ -1889,8 +1908,8 @@ export class Game {
   /** You ask her for a go: Jess is thrilled, and Amy says no until her day has come. */
   askDriveVehicle(c, kind) {
     const id = c.character.id;
-    const line = { tractor: ['tractorRefuse', 'tractorGoAsk'], utv: ['utvRefuse', 'utvGoAsk'], landy: ['landyRefuse', 'landyGoAsk'], defender: ['landyRefuse', 'landyGoAsk'] }[kind];
-    if (this.tractorGo.ask(id) === 'refuse') return void c.voice.say(line[0], { force: true });
+    const line = { tractor: ['tractorRefuse', 'tractorGoAsk'], utv: ['utvRefuse', 'utvGoAsk'], landy: ['landyRefuse', 'landyGoAsk'], defender: ['landyRefuse', 'landyGoAsk'], fiesta: ['carNotMine', 'carGoOff'], corsa: ['carNotMine', 'carGoOff'] }[kind];
+    if (CAR_KINDS.includes(kind) ? !mayDriveCar(id, this.landys[kind].spec) : this.tractorGo.ask(id) === 'refuse') return void c.voice.say(line[0], { force: true });
     this.startGo(c, kind);
     c.voice.say(line[1], { force: true });
   }
@@ -1937,7 +1956,8 @@ export class Game {
   startGo(c, kind) {
     const unit = this.goVehicle(kind);
     if (!c.homeQuad && c.quad !== unit.quad) c.homeQuad = c.quad;
-    this.tractorGo.started(c.character.id);
+    if (CAR_KINDS.includes(kind)) this.carGo.started(c.character.id);
+    else this.tractorGo.started(c.character.id);
     this.tractorSeen[c.character.id] = { stalls: 0, hops: 0, crunches: 0, setOff: false, wasDriving: false, kind, joinRolled: false, joined: null };
     c.requestDrive(unit.quad);
   }
@@ -1968,12 +1988,83 @@ export class Game {
     return { label: 'Push start it', run: () => c.requestPush(unit.quad) };
   }
 
+  /** What a go in her own car needs to know (npc/carGo.js): for each girl, whether she is free and her car is. */
+  carGoContext(ridden) {
+    const girls = {};
+    for (const c of this.companions) {
+      const id = c.character.id;
+      const kind = CAR_KINDS.find((k) => this.landys[k]?.unit && this.landys[k].spec.owner === id) ?? null;
+      girls[id] = { free: c.availability().free, car: kind, carFree: !!kind && this.goFree(kind) && ridden !== this.goVehicle(kind), weight: c.params.carGoWeight ?? 0 };
+    }
+    return { girls };
+  }
+
+  /** She takes her car out (npc/carGo.js): she says so and goes, the same go as the Land Rovers', down the road and back. */
+  handleCarGoEvent(ev) {
+    const c = this.companions.find((o) => o.character.id === ev.girl);
+    if (!c) return;
+    c.voice.say('carGoOff', { force: true });
+    this.startGo(c, ev.vehicle);
+  }
+
+  /**
+   * You and the girls' cars: the go clock, and each owner minding you taking hers (npc/carGo.js Borrowing): when she sees you drive off in it,
+   * when you bring it back, and, sat in it with you, what she thinks of your driving.
+   */
+  updateCars(dt) {
+    this.carGo.update(dt);
+    for (const kind of CAR_KINDS) {
+      const l = this.landys[kind];
+      if (!l?.unit) continue;
+      const q = l.unit.quad;
+      const owner = this.companions.find((c) => c.character.id === l.spec.owner);
+      if (!owner) continue;
+      const driving = this.riddenUnit === l.unit;
+      const herIn = owner.onHayRide && owner.trailer === l.mount;
+      const sees = !herIn && owner.root.position.distanceTo(q.position) < this.carGo.p.seenRange;
+      const faults = Object.values(q.faults.levels).filter((v) => v > 0.05).length;
+      for (const e of this.borrowing[kind].update({ driving, herIn, sees, faults, bogged: q.bog.stuck })) {
+        if (e.favour) this.favour.add(owner.character.id, e.favour);
+        const key = { taken: 'carTaken', ridden: 'carRidden', back: e.damaged ? 'carBackDamaged' : 'carBack' }[e.type];
+        owner.voice.say(key, { urgent: true, force: e.type !== 'ridden' });
+      }
+      // Sat beside you in her own car: Amy can't bear it fast, Jess can't bear it slow, and neither likes it stalled.
+      if (!driving || !herIn) {
+        l.slowFor = 0;
+        continue;
+      }
+      if (q.engine.events.some((ev) => ev.type === 'stalled')) owner.voice.say('carStalled', { urgent: true });
+      const fast = owner.character.id === 'amy' ? 18 : Infinity; // m/s, about 40 mph
+      if (Math.abs(q.speed) > fast) owner.voice.say('carTooFast', { urgent: true });
+      l.slowFor = q.engine.isRunning && Math.abs(q.speed) > 1 && Math.abs(q.speed) < 7 ? (l.slowFor ?? 0) + dt : 0;
+      if (owner.character.id === 'jess' && l.slowFor > 20) {
+        owner.voice.say('carTooSlow', { urgent: true });
+        l.slowFor = 0;
+      }
+    }
+  }
+
+  /** The girls' cars in a line, for the Girls tab and the console: where each is, who has it, and when its owner next takes it out. */
+  describeCars() {
+    return CAR_KINDS.filter((k) => this.landys[k]?.unit).map((k) => {
+      const l = this.landys[k];
+      const q = l.unit.quad;
+      const owner = this.companions.find((c) => c.character.id === l.spec.owner);
+      const driver = this.riddenUnit === l.unit ? 'you' : this.companions.find((c) => c.quad === q && c.fsm.is('driving'))?.name;
+      const aboard = this.companions.filter((c) => c.onHayRide && c.trailer === l.mount).map((c) => c.name);
+      const out = this.borrowing[k].out;
+      const next = Math.max(0, (this.carGo.lastGo[l.spec.owner] ?? -Infinity) + this.carGo.p.every, this.carGo.p.firstAfter) - this.carGo.clock;
+      const parts = [driver ? `${driver} driving` : 'parked', aboard.length ? `${aboard.join(' and ')} in it` : null, out ? (out.withHer ? 'you have it, with her' : out.seen ? 'you have it, and she saw' : 'you have it, unseen') : null, next > 0 ? `${owner?.name ?? l.spec.owner} out in it in ${Math.round(next)} s` : `${owner?.name ?? l.spec.owner} may take it out`];
+      return `${l.spec.name}: ${parts.filter(Boolean).join(', ')}`;
+    }).join('; ');
+  }
+
   /** What a go on the big vehicles needs to know (npc/tractorGo.js): who is free and which of them are free to take. */
   tractorGoContext(ridden) {
     const girlsFree = {};
     for (const c of this.companions) girlsFree[c.character.id] = c.availability().free;
     const youOn = GO_KINDS.some((k) => !!ridden && ridden === this.goVehicle(k));
-    const vehicles = GO_KINDS.filter((k) => this.goFree(k) && ridden !== this.goVehicle(k));
+    const vehicles = GO_KINDS.filter((k) => !CAR_KINDS.includes(k) && this.goFree(k) && ridden !== this.goVehicle(k)); // the cars are their owners' alone (carGoContext)
     return { free: girlsFree, vehicles: youOn ? [] : vehicles };
   }
 
@@ -1995,7 +2086,7 @@ export class Game {
       const kind = seen.kind;
       const q = this.goVehicle(kind)?.quad;
       if (!q) continue;
-      const pre = { tractor: 'tractorGo', utv: 'utvGo', landy: 'landyGo', defender: 'landyGo' }[kind];
+      const pre = { tractor: 'tractorGo', utv: 'utvGo', landy: 'landyGo', defender: 'landyGo', fiesta: 'carGo', corsa: 'carGo' }[kind];
       // The starting handle, on a flat battery.
       for (const e of c.crankEvents.splice(0)) {
         if (e === 'swing') c.voice.say('landyGoSwing', { urgent: true });
@@ -2477,25 +2568,31 @@ export class Game {
     c.voice.say(inBed ? 'utvBedGo' : 'utvBoard', { force: true });
   }
 
-  /** Builds a Land Rover: a unit like the UTV (not one of the girls'), with a quad's wear, faults, quirks and oil. */
+  /**
+   * Builds a Land Rover or one of the girls' cars: a unit like the UTV (not one of the girls' quads), with a quad's wear, faults, quirks and
+   * oil. Amy's tidy Fiesta gets at most one quirk; Jess's thrashed Corsa at least two, and its throttle cable is twice as likely to stick.
+   */
   addLandRover(spawn, spec) {
-    const random = createRandom(this.farmSeed ^ (spec.defender ? 0x1a5c : 0x1a4c));
+    const seed = { landrover200: 0x1a5c, fiesta: 0x1a6c, corsa: 0x1a7c }[spec.id] ?? 0x1a4c; // each its own stream (the Series' first)
+    const random = createRandom(this.farmSeed ^ seed);
     const unit = new QuadUnit({ spec, spawn, scene: this.scene, physics: this.physics, RAPIER: this.RAPIER, world: this.world, audioHub: this.audioHub });
     unit.idleRpm = applyIdle(unit.engine.params, unit.quad.params, pickIdle(spec.idleRange, random));
     unit.variation = applyVariation(spec, unit.engine.params, unit.quad.fuel, random);
-    unit.topRpm = applyTopRpm(spec, unit.engine.params, createRandom(this.farmSeed ^ (spec.defender ? 0x1a5e : 0x1a4e)));
+    unit.topRpm = applyTopRpm(spec, unit.engine.params, createRandom(this.farmSeed ^ (seed + 2)));
     unit.quad.usage.odoMiles = pickReading(spec.odoRange, random);
     unit.engine.wear = spec.wearRange[0] + (spec.wearRange[1] - spec.wearRange[0]) * random();
     unit.quad.tyres = new TyreSet(dealTyres(random, 4, this.tyreParams), this.tyreParams);
     unit.quad.tyres.useLayout(unit.quad.layout.wheels);
-    unit.quad.quirks = new QuirkSet(pickQuirks(featuresOf(spec, false), random, this.quirkParams), this.quirkParams);
+    const quirkCount = spec.id === 'fiesta' ? { countTwo: 0, countThree: 0 } : spec.id === 'corsa' ? { countTwo: 0.7, countThree: 0.3 } : {};
+    unit.quad.quirks = new QuirkSet(pickQuirks(featuresOf(spec, false), random, { ...this.quirkParams, ...quirkCount }), this.quirkParams);
     unit.quad.brakes = new BrakeState(this.brakeParams, random);
     unit.quad.brakes.setBinding(random() < this.brakeParams.bindChance);
     unit.quad.iceCable = new FrozenCable(this.frozenCableParams, random); // stood in the barn, so never frozen
     if (unit.quad.sump) unit.quad.sump = new Sump({ level: startLevel(false, random, this.sumpParams), burner: false, params: this.sumpParams });
-    unit.quad.faults.roll(createRandom(this.farmSeed ^ (spec.defender ? 0x1a5f : 0x1a4f)));
+    unit.quad.faults.roll(createRandom(this.farmSeed ^ (seed + 3)));
     unit.quad.faults.prone.belt = 0; // a clutch, not a belt
-    if (spec.engine.compressionIgnition) unit.quad.faults.prone.carb = 0; // and a diesel has no carb
+    if (spec.engine.compressionIgnition || spec.engine.injected) unit.quad.faults.prone.carb = 0; // and a diesel or an injected car has no carb
+    if (spec.id === 'corsa') unit.quad.faults.prone.cable = 2; // Jess's: a throttle cable that sticks
     unit.quad.parkBrake = true;
     this.units = [...this.units, unit];
     unit.where = spawn.where;
@@ -2587,7 +2684,7 @@ export class Game {
     }
   }
 
-  /** The wheel's slice for a Land Rover (`l`, from `landys`) for a girl: get in (she picks her own seat on the bench), or get out again. */
+  /** The wheel's slice for a Land Rover or a car (`l`, from `landys`) for a girl: get in (she picks her own seat), or get out again; drive it if she may. */
   landyWheelOption(c, l) {
     const { mount, ride, kind } = l;
     const q = l.unit.quad;
@@ -2599,7 +2696,7 @@ export class Game {
       if (mount.freeSlot(c.root.position) || mount.freeRearSlot(c.root.position)) children.push({ label: `Get in the ${name}`, run: () => this.askIntoLandy(c, l) });
       if (mount.freeRearSlot(c.root.position)) children.push({ label: 'Get in the back', run: () => this.askIntoLandy(c, l, { back: true }) });
     }
-    if (c.fsm.is('idle') && this.goFree(kind) && c.canDrive(q)) children.push({ label: 'Drive it', run: () => this.askDriveVehicle(c, kind) });
+    if (c.fsm.is('idle') && this.goFree(kind) && c.canDrive(q) && mayDriveCar(c.character.id, l.spec)) children.push({ label: 'Drive it', run: () => this.askDriveVehicle(c, kind) });
     if (this.canAskStart(c, kind)) children.push({ label: 'Start it', run: () => c.requestStart(q) });
     return { label: name, color: l.spec.bodyColor, children };
   }
@@ -3165,6 +3262,7 @@ export class Game {
       ...mine(this.headStart.offers(this.headStartContext()), (o) => this.handleHeadStartEvent(this.headStart.take(o))),
       ...mine(this.nicking.offers(this.nickContext(ridden)), (o) => this.handleNickEvent(this.nicking.take(o))),
       ...(GO_KINDS.some((k) => this.goVehicle(k)) ? mine(this.tractorGo.offers(this.tractorGoContext(ridden)), (o) => this.handleGoEvent(this.tractorGo.take(o))) : []),
+      ...mine(this.carGo.offers(this.carGoContext(ridden)), (o) => this.handleCarGoEvent(this.carGo.take(o))),
       ...this.lPlateOffers(id),
       ...this.togetherOffers(c, ridden),
       ...(this.tryst ? [] : mine(this.romance.offers(this.romanceContext()), (o) => {
@@ -3393,9 +3491,9 @@ export class Game {
     if (!mount) return null;
     if (back) {
       const driverSide = quad.model.worldToLocal(this.player.position.clone()).x < 0 && !quad.driver && !quad.rider;
-      return pickRearSeat(mount.rearSlots.filter((s) => s.girl).map((s) => s.name), driverSide);
+      return pickRearSeat(mount.rearSlots.filter((s) => s.girl).map((s) => s.name), driverSide, mount.rearSlots.map((s) => s.name));
     }
-    return pickBenchSeat(BENCH_SEATS.filter((s) => mount.slots[s].girl));
+    return pickBenchSeat(BENCH_SEATS.filter((s) => !mount.slots[s] || mount.slots[s].girl)); // a seat a car hasn't got (the middle) counts as taken
   }
 
   /** You could get in beside the girl driving the UTV or Land Rover: she's at the wheel, the seat is free and you're not in the middle of something. */
@@ -4975,9 +5073,9 @@ export class Game {
 
   // Sheltering in a cab --------------------------------------------------
 
-  /** The UTV and the Land Rovers as somewhere to get in out of the weather: where each is, whether it is free to climb into, and how many seats. */
+  /** The UTV, the Land Rovers and the girls' cars as somewhere to get in out of the weather: where each is, whether it is free to climb into, and how many seats. */
   cabContext() {
-    return ['utv', 'landy', 'defender'].filter((k) => this.goVehicle(k)).map((kind) => {
+    return ['utv', 'landy', 'defender', ...CAR_KINDS].filter((k) => this.goVehicle(k)).map((kind) => {
       const q = this.goVehicle(kind).quad;
       const mount = this.mountOfKind(kind);
       const busy = (c) => c.quad === q && (c.fsm.is('driving', 'mounting', 'dismounting', 'shuffling', 'cranking') || (c.fsm.is('walking') && ['drive', 'crank', 'start'].includes(c.fsm.data?.goal)));
@@ -5316,7 +5414,7 @@ export class Game {
   /** Where she could sit while this vehicle warms: the back of a quad, or the passenger seat of a Land Rover or the UTV. null if there is nowhere. */
   warmSitSpot(c, unit) {
     const q = unit.quad;
-    const cab = ['utv', 'landy', 'defender'].find((k) => this.goVehicle(k) === unit);
+    const cab = ['utv', 'landy', 'defender', ...CAR_KINDS].find((k) => this.goVehicle(k) === unit);
     if (cab) {
       const slot = this.mountOfKind(cab).slots.left;
       return slot && !slot.girl && !q.rider && !q.driver && !q.passenger ? { cab } : null;
@@ -7531,6 +7629,7 @@ export class Game {
     for (const l of Object.values(this.landys)) if (l.unit) this.updateLandRover(dt, ridden, input, l);
     this.updateTipTrailer(dt, ridden, input);
     if (GO_KINDS.some((k) => this.goVehicle(k)) && auto) this.updateTractorGo(dt, ridden);
+    this.updateCars(dt); // (minding you taking her car is a reaction, so it runs with the girls on hold too)
     this.updateLPlates(dt);
     this.updatePushStart();
     this.updateQuadTalk(dt, ridden);

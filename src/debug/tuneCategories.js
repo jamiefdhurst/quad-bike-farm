@@ -5,7 +5,7 @@
 export const TUNE_CATEGORIES = {
   'Driving and towing': [
     '2WD and 4WD', 'Throttle key', 'Brake key', 'Gamepad', 'Brakes', 'Frozen throttle cable', 'Handbrake', 'Headlights', 'Vehicle lights', 'UTV lights', 'Indicators', 'Seat belts', 'Two-wheeler lean', 'Three-wheeler rider lean', 'Tyres', 'Tyre squeal', 'Towing', 'Tow chain', 'Trailer', 'Tipping trailer', 'Trailer tub',
-    'UTV bed', 'UTV load', 'UTV riders', 'Land Rover riders', '200TDi riders', '200TDi back seats', 'Trailer riders', 'Tractor creep', 'Tractor runaway',
+    'UTV bed', 'UTV load', 'UTV riders', 'Land Rover riders', '200TDi riders', '200TDi back seats', 'Fiesta riders', 'Corsa riders', 'Trailer riders', 'Tractor creep', 'Tractor runaway',
   ],
   'Engines, fuel and faults': ['Quirks', 'Engine oil', 'Dripping carb', 'Water in the fuel', 'Barn find', 'Red diesel mistake', 'Two-stroke smoke'],
   'Items and workshop': ['Toolbox', 'Logbook', 'Workshop bench', 'Girl at the bench', 'Phone calls', 'Jerry can', 'Pre-mix can', 'Diesel can', 'Oil bottle', 'Hose', 'Jump leads', 'Winch', 'Loading ramps', 'Bell', 'Hayloft', 'Muck job', 'Job board', 'Records', 'Photos'],
@@ -22,7 +22,7 @@ export const TUNE_CATEGORIES = {
   'Girls: things they do': [
     'Racing', 'Drag race', 'Drives that go somewhere', 'Hill climb', 'Follow the leader', 'Doughnuts', 'Tarmac', 'Showing off', 'The jump', 'Hay ride', 'Hay ride seat', 'Mudguard ride', 'Muddy girls',
     'Tractor remarks', 'Mini moto nerve', 'Thrown off the moto', 'Tractor go', 'Tractor go drive', 'Tractor go start', 'Tractor go novice',
-    'UTV go drive', 'Land Rover go drive', 'Land Rover go handle', 'Girl pushing a start', 'Keeping it alive', 'Lights to work by', 'Dares',
+    'UTV go drive', 'Land Rover go drive', 'Land Rover go handle', 'Their cars', 'Girl pushing a start', 'Keeping it alive', 'Lights to work by', 'Dares',
   ],
 };
 

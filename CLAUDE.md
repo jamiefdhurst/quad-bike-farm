@@ -6,7 +6,7 @@ First-person British farm quad-bike game: Three.js, Vite, ES modules, Rapier phy
 
 - Autonomous: don't ask whether to write the code, just do it. Do ask when there's a real decision the TODO item doesn't settle (look, feel, scope, which of two behaviours). Ask once, up front, as a short numbered list with a recommendation for each. Jamie answers in a matching numbered list. If nothing needs deciding, don't ask.
 - Plan briefly, then build. Keep to the item; note other ideas at the end rather than doing them.
-- Assets: CC0 or public domain only, credited in ASSETS.md. Prefer procedural.
+- Assets: CC0 or public domain only, credited in ASSETS.md. Prefer procedural. (One named exception: the girls' cars' engine banks use BBC RemArc recordings, allowed while the game is private; see the top of ASSETS.md.)
 - Prose (docs, commit messages, comments, lines the girls say): British English, no em dashes, no throat-clearing.
 - The girls refer to the player only as "you", never "he" or "she" or "they".
 

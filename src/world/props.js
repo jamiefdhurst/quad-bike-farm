@@ -6,6 +6,8 @@ import { tiledInstances } from './tiledInstances.js';
 import { patchAt } from './terrain.js';
 import { buildBarnShed } from './barnBuild.js';
 import { buildJumpRamp } from './jumpRamp.js';
+import { standingDistance } from './carStanding.js';
+import { buildCarStanding } from './carStandingBuild.js';
 import { buildHill } from './hillProps.js';
 import { buildOutbuildings } from './outbuildingProps.js';
 import { Gate, DEFAULT_GATE_PARAMS } from './gates.js';
@@ -44,6 +46,7 @@ export function buildProps(ctx) {
   const gates = [buildGate(c), buildRoadGate(c)].filter(Boolean);
   buildCattleGrid(c);
   buildPublicLane(c);
+  if (ctx.layout.carStanding) buildCarStanding(c);
   buildPaddock(c);
   const bale = buildBales(c);
   buildOutbuildings({ ...c, bale });
@@ -683,7 +686,7 @@ function buildGrass({ scene, layout, heights, random, drawDistance }) {
   const matrices = [];
   const tints = [];
   const F = layout.fieldHalf - 1.5;
-  const { yard, dragStrip: strip } = layout;
+  const { yard, dragStrip: strip, carStanding } = layout;
   let tries = 0;
   while (matrices.length < count && tries++ < count * 3) {
     const x = (random() * 2 - 1) * F;
@@ -695,6 +698,7 @@ function buildGrass({ scene, layout, heights, random, drawDistance }) {
       const f = stripFrame(strip, x, z);
       if (f.along > -3 && f.along < strip.length + strip.runOff + 3 && Math.abs(f.across) < strip.width / 2 + 2) continue;
     }
+    if (carStanding && standingDistance(carStanding, x, z) < 0.6) continue; // nor through the cars' concrete
     const s = 0.6 + random() * 0.8;
     matrices.push(matrixAt(x, heights.heightAt(x, z) - 0.02, z, random() * 6.28, s, s * (0.7 + random() * 0.6), s));
     tints.push(new THREE.Color().setHSL(0.2 + random() * 0.05, 0.3 + random() * 0.15, 0.55 + random() * 0.2));

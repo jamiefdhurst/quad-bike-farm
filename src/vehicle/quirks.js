@@ -54,7 +54,7 @@ export const QUIRK_PARAM_RANGES = {
 };
 
 /** Dash styles that show a fuel level and an engine temperature themselves (the others need a pod fitted to show them). */
-const GAUGE_DASHES = ['grizzly', 'kodiak', 'series', 'defender'];
+const GAUGE_DASHES = ['grizzly', 'kodiak', 'series', 'defender', 'fiesta', 'corsa'];
 
 /**
  * What a quad has that a quirk could act on. `hasPod`: an accessory pod is fitted at the start, which reads the quad's fuel and
@@ -65,9 +65,9 @@ export function featuresOf(spec, hasPod = false) {
   return {
     fuelGauge: gauge,
     tempGauge: gauge,
-    choke: !spec.tractor && !spec.utv && !spec.defender,
+    choke: !spec.tractor && !spec.utv && !spec.defender && !spec.engine?.injected, // (Jess's Corsa is injected: no choke)
     tap: !spec.fuel?.noTap,
-    seat: !spec.tractor && !spec.utv && !spec.landRover && spec.id !== 'kids' && spec.id !== 'moto', // the Land Rover's is a vinyl bench
+    seat: !spec.tractor && !spec.utv && !spec.landRover && !spec.car && spec.id !== 'kids' && spec.id !== 'moto', // the Land Rover's is a vinyl bench, the cars' are cloth
     horn: true,
     brakes: true,
     headlight: true,

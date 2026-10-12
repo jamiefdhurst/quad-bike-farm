@@ -39,10 +39,10 @@ export function easeSeatTips(tips, targets, dt, speed) {
  * seats with someone in them or on the way; `driverSide` is whether you're on the driver's side and can use that door (nobody at the
  * wheel). Null when the back is full.
  */
-export function pickRearSeat(taken, driverSide) {
+export function pickRearSeat(taken, driverSide, seats = ['rearLeft', 'rearMid', 'rearRight']) {
   const t = new Set(taken);
   const order = driverSide ? ['rearRight', 'rearMid', 'rearLeft'] : ['rearLeft', 'rearMid', 'rearRight'];
-  return order.find((s) => !t.has(s)) ?? null;
+  return order.find((s) => seats.includes(s) && !t.has(s)) ?? null; // (the cars have no middle seat in the back)
 }
 
 /** The door a back seat is reached by: the right one by the driver's, unless somebody's at the wheel; the others by the passenger's. */

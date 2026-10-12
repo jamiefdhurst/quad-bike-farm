@@ -1,6 +1,6 @@
 # Assets
 
-Every external asset is CC0 1.0 (public domain). Models come from Poly Pizza and live in `public/models/`; engine recordings come from Freesound and are cut into `public/audio/`.
+Every external asset is CC0 1.0 (public domain), with one named exception: the girls' cars' engine sounds are cut from BBC Sound Effects recordings under the BBC's RemArc licence (personal, educational and research use only), allowed because the game is private and personal. **If the game is ever made public or shared, `engine-bank-fiesta` and `engine-bank-corsa` must be rebuilt from CC0 recordings first.** Models come from Poly Pizza and live in `public/models/`; engine recordings come from Freesound (and those BBC ones) and are cut into `public/audio/`.
 
 ## Models
 
@@ -105,6 +105,26 @@ Quaternius: https://quaternius.com
 | Idle pulses | Cold start of old diesel car (a Ford Transit 2.5 DI) | Mullumbimby | https://freesound.org/people/Mullumbimby/sounds/622829/ | CC0 1.0 |
 | Revs | Landrover--Safari Diesel_Engin | D.jones | https://freesound.org/people/D.jones/sounds/521892/ | CC0 1.0 |
 | Starter and shutdown | Diesel engine starting revving and stopping (a Citroën Jumpy van) | chlund | https://freesound.org/people/chlund/sounds/500193/ | CC0 1.0 |
+
+`public/audio/engine-bank-fiesta.wav` and `engine-bank-fiesta.json` (Amy's Fiesta) are cut from these. The BBC recordings are **not CC0**: RemArc licence, see the top of this file.
+
+| Used for | Recording | Author | Source | Licence |
+| --- | --- | --- | --- | --- |
+| Idle pulses | 07043115: Ford Fiesta, exterior, switch on, idle, switch off (1.1 litre hatchback, 1986/7) | BBC | https://sound-effects.bbcrewind.co.uk/search?q=07043115 | RemArc (BBC) |
+| Revs up to about 2,000 rpm | 07043116: Ford Fiesta, exterior, switch on, depart | BBC | https://sound-effects.bbcrewind.co.uk/search?q=07043116 | RemArc (BBC) |
+| Shutdown | 07043117: Ford Fiesta, exterior, approach from left and stop, switch off | BBC | https://sound-effects.bbcrewind.co.uk/search?q=07043117 | RemArc (BBC) |
+| Revs above that | car_engine_mini_cooper_1976.wav | Dokuta_Gerovv | https://freesound.org/people/Dokuta_Gerovv/sounds/686742/ | CC0 1.0 |
+| Starter (and the Corsa's) | failed_car_start.wav | jerry.berumen | https://freesound.org/people/jerry.berumen/sounds/511685/ | CC0 1.0 |
+
+`public/audio/engine-bank-corsa.wav` and `engine-bank-corsa.json` (Jess's Corsa, from a Vauxhall Carlton 1.8) are cut from these, BBC and so **not CC0** (RemArc licence, see the top of this file), apart from its starter, which is the CC0 failed_car_start.wav above:
+
+| Used for | Recording | Author | Source | Licence |
+| --- | --- | --- | --- | --- |
+| Idle pulses and revs pulling away | 07043124: Vauxhall Carlton, exterior, switch on, depart (1.8 litre saloon, 1986) | BBC | https://sound-effects.bbcrewind.co.uk/search?q=07043124 | RemArc (BBC) |
+| Revs held, and the stall | 07043123: Vauxhall Carlton, exterior, switch on, rev cold engine, engine fails | BBC | https://sound-effects.bbcrewind.co.uk/search?q=07043123 | RemArc (BBC) |
+| Shutdown | 07043125: Vauxhall Carlton, exterior, approach from right and stop, switch off | BBC | https://sound-effects.bbcrewind.co.uk/search?q=07043125 | RemArc (BBC) |
+
+Kept but not used yet (in `.scratch/`, not committed): the rest of the BBC's Fiesta, Carlton and Peugeot 309 diesel series (07043112 to 07043137), for the cars arriving and leaving (TODO 183, 184) and anything else.
 
 `public/audio/ride.wav` and `ride.json` (mud squelches, splashes and landing thuds) are cut from these by `tools/slice_ride_audio.py`, using Freesound's high-quality MP3 previews. The other ride sounds (tyre rumble, grass, gravel, water churn, knocks, rattles and the rider's wind) are made in code.
 

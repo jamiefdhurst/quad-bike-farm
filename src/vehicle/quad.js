@@ -17,6 +17,7 @@ import { ManualDrivetrain, gearLabel } from './manualDrivetrain.js';
 import { AutoShifter, grindsGear } from './autoShifter.js';
 import { poseTractorControls } from './tractorModel.js';
 import { poseLandyControls, poseSeatTips, LANDY_REAR_SEATS } from './landRoverModel.js';
+import { poseCarControls, poseCarSeats } from './carModel.js';
 
 import { poseUtvControls, poseUtvBelts } from './utvModel.js';
 import { EngineLoad } from './engineLoad.js';
@@ -86,7 +87,7 @@ export class Quad {
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null, handLever = false, crank = null, landRover = false, utv = false, lightSwitch = false, driverStand = null, benchStand = null, chainDrive = false }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null, handLever = false, crank = null, landRover = false, utv = false, car = false, lightSwitch = false, driverStand = null, benchStand = null, chainDrive = false }) {
     this.reverseStyle = reverseStyle; // where its reverse is and what it takes (controls.js)
     this.chokeStyle = chokeStyle;
     this.tapStyle = tapStyle;
@@ -97,6 +98,7 @@ export class Quad {
     this.atCrank = false; // set by the game while you stand at the front, looking at it
     this.kicked = false; // the handle has just kicked back (the game reads and clears it)
     this.landRover = landRover;
+    this.car = car; // the girls' cars (carModel.js): cab vehicles like the Land Rovers, with two seats in front and two behind
     this.utv = utv;
     this.hornHeld = false; // set by the game while the horn sounds (the UTV's wheel pad sinks)
     this.lights = lightSwitch ? new LightSwitch() : null; // the UTV's and the Land Rovers' three-way light switch: off, dipped, main beam (lightSwitch.js)
@@ -403,7 +405,7 @@ export class Quad {
     this.driver = driver;
     this.ghost = null;
     if (!driver) this.churn = 0;
-    if (!driver && (this.tractor || this.landRover)) this.shifter = new AutoShifter(); // Jess's go leaves her clumsy shifter behind
+    if (!driver && (this.tractor || this.landRover || this.car)) this.shifter = new AutoShifter(); // Jess's go leaves her clumsy shifter behind
     if (!driver && this.manual && !this.input) this.parkInNeutral(); // she leaves it in neutral when she gets off
     if (!driver && !this.input) {
       this.throttle = 0;
@@ -515,7 +517,7 @@ export class Quad {
     // An automatic's reverse is a button, pressed with the brake held (the two-strokes have none).
     if (this.input && !this.manual && !this.tractor && input.wasPressed('KeyB') && this.reverseCheck(input)) this.reverse = true;
     this.handOff = 1;
-    if (!this.tractor) {
+    if (!this.tractor && !this.engine.params.injected) { // (an injected engine has no choke: Jess's Corsa)
       const reach = chokeReach(this.chokeStyle, Math.abs(this.forwardSpeed), !!this.input, this.controlsParams);
       const keys = [CHOKE_MORE_KEY, CHOKE_LESS_KEY];
       if (reach.ok) {
@@ -1186,7 +1188,12 @@ export class Quad {
       poseUtvBelts(this.model, this.belts.worn()); // the same belt names as the UTV's
       if (this.rearSeats.length) poseSeatTips(this.model, this.seatTips);
     }
-    if (!this.utv && !this.landRover && !this.tractor) {
+    if (this.car) {
+      poseCarControls(this.model, { gear: this.drivetrain.gear, gears: this.gearbox.gears, choke: this.choke, park: this.parkBrake });
+      poseUtvBelts(this.model, this.belts.worn());
+      poseCarSeats(this.model, this.seatTips);
+    }
+    if (!this.utv && !this.landRover && !this.tractor && !this.car) {
       this.displayPark += ((this.parkBrake ? 1 : 0) - this.displayPark) * Math.min(1, 14 * dt);
       poseParkBrake(this.model, this.displayPark);
     }

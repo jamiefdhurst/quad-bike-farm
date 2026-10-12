@@ -3,6 +3,7 @@
 // Through the south gate, the green lane and the hill pasture (world/hill.js) are fields too.
 // Pure: built from the layout (layout.js), used by the terrain, the props, the tyres and the girls.
 
+import { onStanding } from './carStanding.js';
 import { createHill } from './hill.js';
 import { createOutbuildings } from './outbuildings.js';
 
@@ -171,9 +172,10 @@ export function createFields(layout) {
     return best;
   }
 
-  /** 0..1 how much of (x, z) is tarmac: the road and the hardstanding at its end, with a soft edge a hand's width across. */
+  /** 0..1 how much of (x, z) is tarmac: the road and the hardstanding at its end (and the cars' concrete by the barn), with a soft edge a hand's width across. */
   function tarmacAt(x, z) {
-    if (!road) return 0;
+    const concrete = onStanding(layout.carStanding, x, z);
+    if (concrete > 0 || !road) return concrete;
     const edge = 0.15;
     const along = Math.max(road.fromX - x, 0, x - road.toX);
     const onRoad = 1 - smoothstep(road.halfWidth - edge, road.halfWidth + edge, Math.hypot(along, z - road.z));

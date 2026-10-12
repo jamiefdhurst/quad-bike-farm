@@ -12,7 +12,7 @@ import { CrankAttempt, DEFAULT_CRANK_ATTEMPT_PARAMS } from './crankAttempt.js';
 import { PushStart, DEFAULT_PUSH_PARAMS } from './pushStart.js';
 import { onTarmac } from './tarmac.js';
 import { towedBy } from '../vehicle/trailerObstacle.js';
-import { pickOuting } from './outings.js';
+import { pickOuting, roadSpots } from './outings.js';
 import { MotoNerve, refusesMoto, speedShare } from './motoGo.js';
 
 // Her driving a quad herself, as Companion states and methods: getting on the
@@ -197,9 +197,11 @@ export const drivingStates = {
         jump,
         tarmac: this.tarmacParams && this.world.layout.road && !q.tractor && !q.driverStand ? { at: (x, z) => onTarmac(this.world.layout.road, x, z), p: this.tarmacParams } : null,
         showOff: showOff ? { ...showOff, you: () => this.showOffYou() } : null,
-        outing: this.outingParams && this.outingSpots && this.world.fields && !race && !park && !doughnut && !jump && !showOff && !following && !convoyLead && !q.tractor && !q.driverStand && !this.motoRide
-          ? this.outingFor(q)
-          : null,
+        outing: q.car && this.outingParams && this.outingSpots && this.world.fields
+          ? this.outingFor(q, { road: true })
+          : this.outingParams && this.outingSpots && this.world.fields && !race && !park && !doughnut && !jump && !showOff && !following && !convoyLead && !q.tractor && !q.driverStand && !this.motoRide
+            ? this.outingFor(q)
+            : null,
         tires: offered,
         follow: following ? () => {
           const lead = (followWho ?? this.followTarget)?.();
@@ -391,6 +393,18 @@ export const drivingMethods = {
   goParams(params) {
     const jess = this.character.id === 'jess';
     const q = this.quad;
+    if (q.car) {
+      // Her own car: she drives it every day, so a driver's gear changes, and her own pace (carGo.js: Amy careful, Jess not).
+      const d = this.carGo?.driveFor(this.character.id) ?? { speedMin: 5, speedMax: 10, forMin: 70, forMax: 130, maxThrottle: 0.7 };
+      params.driveSpeedMin = d.speedMin;
+      params.driveSpeedMax = d.speedMax;
+      params.driveForMin = d.forMin;
+      params.driveForMax = d.forMax;
+      params.driveMaxThrottle = d.maxThrottle;
+      params.driveScareSpeed = 99;
+      this.quad.shifter = new AutoShifter();
+      return;
+    }
     const t = q.tractor ? this.tractorGo ?? DEFAULT_TRACTOR_GO_DRIVE : q.landRover ? this.landyGo ?? DEFAULT_LANDY_GO_DRIVE : this.utvGo ?? DEFAULT_UTV_GO_DRIVE;
     params.driveSpeedMin = jess ? t.jessSpeedMin : t.amySpeedMin;
     params.driveSpeedMax = jess ? t.jessSpeedMax : t.amySpeedMax;
@@ -722,16 +736,19 @@ export const drivingMethods = {
   },
 
   /** Her drive's way of going somewhere now and then (herDriving.js `outing`): a place picked from the farm's, the gateways there and the way back. */
-  outingFor(quad) {
+  outingFor(quad, { road = false } = {}) {
     const fields = this.world.fields;
     const clear = (a, b) => this.driveClear(a, b);
     const origin = { x: quad.position.x, z: quad.position.z };
     const way = (from, to) => fields.route(from, to).map((pt) => ({ x: pt.x, z: pt.z }));
     const forced = this.outingForced; // from the debug panel: this drive goes somewhere for certain
     this.outingForced = false;
+    // A car only ever goes out along the farm road and back (outings.js roadSpots), every time, however far the road's end is.
+    const p = road ? { ...this.outingParams, chance: 1, maxDistance: Infinity } : forced ? { ...this.outingParams, chance: 1 } : this.outingParams;
+    const spots = () => (road ? roadSpots(this.world.layout) : this.outingSpots());
     return {
-      p: forced ? { ...this.outingParams, chance: 1 } : this.outingParams,
-      pick: (from) => pickOuting(from, this.outingSpots(), way, clear, this.driveRandom ?? Math.random, this.outingParams),
+      p,
+      pick: (from) => pickOuting(from, spots(), way, clear, this.driveRandom ?? Math.random, p),
       back: (from) => way(from, origin),
     };
   },

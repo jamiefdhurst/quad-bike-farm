@@ -37,6 +37,11 @@ Usage (needs numpy, and matplotlib for --plot):
 
   afconvert ... 510231.mp3 ten.wav;  afconvert ... 450136.mp3 honda.wav
   python3 tools/slice_engine_audio.py engine-bank-green ten=ten.wav honda=honda.wav quad=quad.wav
+
+  The girls' cars, from the BBC's recordings (each unzipped WAV made mono with afconvert as above, named by its number):
+  afconvert ... 511685.mp3 st.wav   # the won't-start car, for both starters
+  python3 tools/slice_engine_audio.py engine-bank-fiesta fx=07043115.wav fd=07043116.wav fs=07043117.wav st=st.wav mini=686742.wav
+  python3 tools/slice_engine_audio.py engine-bank-corsa cd=07043124.wav cc=07043123.wav cs=07043125.wav st=st.wav
 """
 
 import argparse
@@ -387,6 +392,62 @@ BANKS = {
         'revTail': 0.9,
         'revOdd': 0.3,
     },
+    'engine-bank-fiesta': {
+        # Amy's Fiesta, from the BBC's 1986/7 Fiesta 1.1 (RemArc licence, see ASSETS.md): the same small four as a Mk1's. Its
+        # idle is the exterior idle (07043115) once it has settled, firing every 27 ms (about 1,100 rpm), cut into whole cycles
+        # (about 109 ms). Its own revs only go as far as pulling away (the depart, 07043116), so above that it revs on the CC0
+        # 1976 Mini (Dokuta_Gerovv, Freesound 686742), another small four, blipped to about 3,700 rpm and falling back. The
+        # BBC's starts all catch within half a second and their cranks are faint or fire part way, so the starter is a car that
+        # won't start (jerry.berumen, Freesound 511685, CC0): seven seconds of even cranking, a compression every 120 to 140 ms;
+        # the loop is its four steadiest (two turns at about 220 rpm), cut just ahead of a compression so it goes round on the
+        # beat. The run-down is the exterior approach and stop (07043117).
+        'segments': [
+            ('idle', 'fx', 62.0, 88.0, (0.095, 0.125)),
+            ('accel', 'fd', 2.8, 4.7, (0.03, 0.05)),
+            ('accel', 'mini', 21.2, 21.6, (0.026, 0.05)),
+            ('accel', 'mini', 23.0, 23.5, (0.022, 0.05)),
+            ('decel', 'mini', 21.5, 22.9, (0.026, 0.06)),
+            ('decel', 'mini', 23.8, 25.0, (0.026, 0.06)),
+        ],
+        'oneshots': [
+            ('starterEngage', 'st', 0.18, 0.42),
+            ('crankLoop', 'st', 2.388, 2.933, {'crankRpm': 220}),
+            ('shutdown', 'fs', 21.95, 23.6),
+        ],
+        'level': [('idle', 'idle', 'fx'), ('idle', 'accel', 'fd'), ('idle', 'accel', 'mini')],
+        'oneshotGain': {'st': 6},  # the crank about 10 dB under the idle, as a starter heard from beside the car is
+        'oneshotLevel': {'fs': (14.0, 21.0)},  # the run-down as loud against the bank's idle as against its own recording's
+        'idleCycles': True,
+        'revTail': 0.9,
+        'revOdd': 0.3,
+    },
+    'engine-bank-corsa': {
+        # Jess's Corsa, from the BBC's 1986 Vauxhall Carlton 1.8 (RemArc licence, see ASSETS.md), a deeper four than a Corsa's
+        # 1.2 that suits its big exhaust. The idle is the depart recording's (07043124) before it moves off, firing every 34 ms
+        # (875 rpm, a warm Corsa's idle), cut into whole cycles; its revs are the same car pulling away (875 to 1,770 rpm) and
+        # the cold engine revved and held at about 2,170 rpm (07043123). The starter is the same won't-start car as the Fiesta's
+        # (Freesound 511685), its second go: a little quicker, about 240 rpm (the Carlton's own crank fires part way through). The
+        # stall is the cold engine dying (07043123), the run-down the exterior approach and stop (07043125).
+        'segments': [
+            ('idle', 'cd', 2.0, 11.2, (0.12, 0.155)),
+            ('accel', 'cd', 11.0, 13.0, (0.075, 0.14)),
+            ('accel', 'cd', 13.0, 16.3, (0.065, 0.11)),
+            ('accel', 'cc', 13.5, 20.2, (0.048, 0.064)),
+            ('decel', 'cc', 20.2, 21.4, (0.05, 0.1)),
+        ],
+        'oneshots': [
+            ('starterEngage', 'st', 12.85, 13.05),
+            ('crankLoop', 'st', 14.373, 14.872, {'crankRpm': 240}),
+            ('stall', 'cc', 57.4, 58.9),
+            ('shutdown', 'cs', 15.6, 17.3),
+        ],
+        'level': [('idle', 'idle', 'cd'), ('idle', 'accel', 'cc', 'cd')],
+        'oneshotGain': {'st': 7},
+        'oneshotLevel': {'cs': (8.0, 15.0)},
+        'idleCycles': True,
+        'revTail': 0.9,
+        'revOdd': 0.3,
+    },
 }
 
 
@@ -687,6 +748,8 @@ def main():
             x[-fade:] *= np.linspace(1, 0, fade)
         oneshots[name] = {'start': append(x) / SR, 'dur': round(len(x) / SR, 5), **(extra[0] if extra else {})}
         # crankRpm on a crank loop: the cranking speed it plays at its recorded pace (the vehicle's own, on a good battery).
+        if src in config.get('oneshotGain', {}):
+            oneshots[name]['gain'] = config['oneshotGain'][src]  # a borrowed recording with no idle of its own to match against: set by ear
         lvl = config.get('oneshotLevel', {}).get(src)
         if lvl:
             # Its own engine's idle, from the same recording, set to the bank's idle level: the starter keeps its loudness against it.

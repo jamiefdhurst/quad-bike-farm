@@ -21,11 +21,12 @@ export class UtvMount {
     this.model = quad.model;
     this.stand = stand;
     this.motion = { jolt: 0, omega: 0, speed: 0 }; // `speed` is how fast the girls wait for it to be going before they climb in
-    this.slots = {
-      // Stepped into, under the roof (npc/poseMoves.js); the bed is climbed up onto.
-      left: { name: 'left', side: 1, anchor: this.model.getObjectByName('seatLeft'), girl: null, lift: CLIMB_LIFT, move: 'stepIn' },
-      mid: { name: 'mid', side: 1, anchor: this.model.getObjectByName('seatMid'), girl: null, lift: CLIMB_LIFT, move: 'stepIn' },
-    };
+    this.slots = {};
+    // Stepped into, under the roof (npc/poseMoves.js); the bed is climbed up onto. A car has no middle seat (no seatMid), only the passenger's.
+    for (const [name, part] of [['left', 'seatLeft'], ['mid', 'seatMid']]) {
+      const anchor = this.model.getObjectByName(part);
+      if (anchor) this.slots[name] = { name, side: 1, anchor, girl: null, lift: CLIMB_LIFT, move: 'stepIn' };
+    }
     // The back bench, stepped into past the tipped front seat (npc/poseMoves.js stepInBack).
     for (const [name, seat] of Object.entries(rear)) {
       const anchor = this.model.getObjectByName(`seat${name[0].toUpperCase()}${name.slice(1)}`);
@@ -75,7 +76,7 @@ export class UtvMount {
 
   /** The nearest free bench seat to `from`, or null. The bed is never picked this way: a girl has to want it. */
   freeSlot(from) {
-    const free = [this.slots.left, this.slots.mid].filter((s) => !s.girl);
+    const free = [this.slots.left, this.slots.mid].filter((s) => s && !s.girl);
     free.sort((a, b) => this.standPoint(a.side, a).position.distanceTo(from) - this.standPoint(b.side, b).position.distanceTo(from));
     return free[0] ?? null;
   }

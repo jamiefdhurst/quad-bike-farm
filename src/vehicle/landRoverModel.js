@@ -136,14 +136,14 @@ const MAT = {
   clear: new THREE.MeshStandardMaterial({ color: 0xdfe4e6, roughness: 0.2 }), // the reverse lens
 };
 
-function add(geo, mat, parent, name) {
+export function add(geo, mat, parent, name) {
   const m = new THREE.Mesh(geo, mat);
   if (name) m.name = name;
   parent.add(m);
   return m;
 }
 
-function rbox(w, h, d, r, mat, x, y, z, parent, name) {
+export function rbox(w, h, d, r, mat, x, y, z, parent, name) {
   const m = add(new RoundedBoxGeometry(w, h, d, 2, Math.min(r, w / 2, h / 2, d / 2) * 0.999), mat, parent, name);
   m.position.set(x, y, z);
   return m;
@@ -192,7 +192,7 @@ function post(a, b, t1, t2, mat, parent) {
   return m;
 }
 
-function canvasTexture(w, h, draw, { repeat = null } = {}) {
+export function canvasTexture(w, h, draw, { repeat = null } = {}) {
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
@@ -208,7 +208,7 @@ function canvasTexture(w, h, draw, { repeat = null } = {}) {
 }
 
 /** A small seeded random, so the textures come out the same every time. */
-function seeded(seed) {
+export function seeded(seed) {
   let v = seed;
   return () => ((v = (v * 16807) % 2147483647) / 2147483647);
 }
@@ -217,14 +217,14 @@ function seeded(seed) {
  * A flat label (plate, badge, rip) on a plane of w by h metres, facing +Z; the caller places and turns it. Has a map, so it isn't merged.
  * `draw(g, W, H)` draws in pixels of a canvas `px` to the metre, because browsers mangle text set at a fraction of a pixel.
  */
-function label(w, h, px, draw, parent) {
+export function label(w, h, px, draw, parent) {
   const tex = canvasTexture(Math.round(w * px), Math.round(h * px), (g, cw, ch) => draw(g, cw, ch));
   const mat = new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.5, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   return add(new THREE.PlaneGeometry(w, h), mat, parent);
 }
 
 /** Text of at most `size` pixels, shrunk until it is no wider than `maxW`, centred on (x, y). */
-function fitText(g, str, x, y, size, maxW, weight = 'bold') {
+export function fitText(g, str, x, y, size, maxW, weight = 'bold') {
   g.font = `${weight} ${size}px Helvetica, Arial, sans-serif`;
   const w = g.measureText(str).width;
   if (w > maxW) g.font = `${weight} ${size * (maxW / w)}px Helvetica, Arial, sans-serif`;
@@ -234,7 +234,7 @@ function fitText(g, str, x, y, size, maxW, weight = 'bold') {
 }
 
 /** A number plate, white at the front and yellow at the back, with the registration in black, filling most of it. */
-function plate(text, bg, parent, { x, y, z, facing }) {
+export function plate(text, bg, parent, { x, y, z, facing }) {
   const m = label(0.52, 0.13, 800, (g, W, H) => {
     g.fillStyle = bg;
     g.fillRect(0, 0, W, H);
@@ -447,11 +447,11 @@ function seatRip(parent) {
   }, parent);
 }
 
-function tube(a, b, r, mat, parent, radial = 8) {
+export function tube(a, b, r, mat, parent, radial = 8) {
   return add(rod(a, b, r, radial), mat, parent);
 }
 
-function axleCyl(r, len, mat, x, y, z, parent, segments = 20) {
+export function axleCyl(r, len, mat, x, y, z, parent, segments = 20) {
   const m = add(new THREE.CylinderGeometry(r, r, len, segments).rotateZ(Math.PI / 2), mat, parent);
   m.position.set(x, y, z);
   return m;

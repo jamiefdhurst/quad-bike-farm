@@ -887,7 +887,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why is a girl sitting in the Land Rover?',
-        a: `She's sheltering. When it rains, a girl stood about sometimes climbs into the UTV or a Land Rover (they have roofs) instead of running for the barn.
+        a: `She's sheltering. When it rains, a girl stood about sometimes climbs into the UTV, a Land Rover or one of their cars (they have roofs) instead of running for the barn.
           On a cold day she may walk over to a Land Rover, start it and sit in it for a minute or two with the engine running. When the weather turns or she has had enough
           she gets out again, and switches off an engine she started herself. If you want the vehicle, just get in: she shuffles up and comes along.`,
       },
@@ -1121,15 +1121,15 @@ export const FAQ_SECTIONS = [
           they sit down in either.`
       },
       {
-        q: 'How do I turn the lights on in the UTV or a Land Rover?',
+        q: 'How do I turn the lights on in the UTV, a Land Rover or a car?',
         a: `Sit in it with the key on and press <kbd>P</kbd>: dipped, then main beam, then off again. The UTV has one lamp on its dash that goes green for
           dipped and blue for main beam. The 200TDi has a green lamp for the lights and a blue one for the main beam. The Series III has no lights lamp, only the
-          blue main beam one. The quads' lights come on with the engine and have no switch.`,
+          blue main beam one. The girls' cars work the same way. The quads' lights come on with the engine and have no switch.`,
         tip: 'P switches the lights in the UTV and both Land Rovers: dipped, main beam, off.',
       },
       {
         q: 'How do I use the indicators and hazard lights?',
-        a: `In the UTV or either Land Rover with the key on: <kbd>,</kbd> is left, <kbd>.</kbd> is right and <kbd>=</kbd> is the hazards (both sides). There is also a stalk on the left of the steering column that drops down for left and goes up for right, and a red hazard button on the dash that flashes with the hazards. The lamps at the
+        a: `In the UTV, either Land Rover or the girls' cars with the key on: <kbd>,</kbd> is left, <kbd>.</kbd> is right and <kbd>=</kbd> is the hazards (both sides). There is also a stalk on the left of the steering column that drops down for left and goes up for right, and a red hazard button on the dash that flashes with the hazards. The lamps at the
           front and back of that side flash orange and the relay ticks. The Series III has one green "<- ->" lamp on its dash; the UTV and the 200TDi have a separate arrow for each side. Press the same key again to switch them off. A left or right
           indicator also cancels itself once you have turned the wheel that way and straightened up, like a real stalk. The hazards stay on until you press <kbd>=</kbd>.`,
         tip: "Comma and full stop are the left and right indicators in the UTV and Land Rovers, equals the hazards.",
@@ -1142,6 +1142,46 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I put the Land Rover\'s handbrake on?',
         a: `<kbd>Space</kbd>, as on any vehicle. The lever between the seats comes up and the red BRAKE lamp on the dash lights; <kbd>Space</kbd> again lets it off.`,
+      },
+    ],
+  },
+  {
+    id: 'cars',
+    title: "The girls' cars",
+    entries: [
+      {
+        q: 'Whose are the two cars in the yard?',
+        a: `The pale blue Fiesta is Amy's: an old Mk1, kept clean, with L plates on, because she is still learning. The red Corsa with the grey wing and the big exhaust is
+          Jess's. They park side by side on the concrete hard-standing on the east side of the yard, and they are always there.`,
+        tip: "The Fiesta is Amy's and the Corsa is Jess's. They park on the concrete on the east side of the yard.",
+      },
+      {
+        q: 'Can I drive their cars?',
+        a: `Yes: look at one and press <kbd>E</kbd> to get in the driver's seat. They drive like the Land Rovers: <kbd>K</kbd> for the key, hold <kbd>R</kbd> to start,
+          <kbd>Shift</kbd> for the clutch and the number keys for the gears (four in the Fiesta, five in the Corsa). The Fiesta has a choke (<kbd>Q</kbd> and <kbd>Z</kbd>) for a cold start;
+          the Corsa is fuel injected, so it has none and sorts out a cold start itself. But they are their cars: see below.`,
+      },
+      {
+        q: 'Why is Amy (or Jess) cross that I took her car?',
+        a: `If she sees you drive off in it without her, she minds, and it costs you a little with her. Bring it back with something wrong with it, or stuck in the mud, and
+          she minds more. Take her with you instead: ask her to get in first (look at her, <kbd>E</kbd>, and pick her car on the wheel), and she is happy to come, though she will tell you what she thinks of your
+          driving. Amy hates you going fast in her Fiesta; Jess hates you dawdling in her Corsa, and neither likes you stalling it.`,
+      },
+      {
+        q: 'Why does the car get stuck on the grass?',
+        a: `They are road cars: front-wheel drive, low, and on road tyres. On the yard and the farm road they are quick and easy, but on wet grass they slither, in mud they bog
+          down almost at once, and they scrape over bumps a Land Rover wouldn't notice. The tractor can pull one out.`,
+        tip: 'The girls\' cars are road cars: keep them on the yard and the farm road, especially when it is wet.',
+      },
+      {
+        q: 'Do the girls drive their cars?',
+        a: `Yes, each her own and never the other's. Now and then one takes hers out down the farm road to the end and back, and you can ask her to from the wheel ("Drive it").
+          Amy goes carefully. Jess does not. Her friend may climb in with her. They also sit in them out of the rain, like the Land Rovers.`,
+      },
+      {
+        q: 'Can I ride in their cars?',
+        a: `Yes. While one of them is driving, look at the car and press <kbd>E</kbd> to get in beside her, or look at its back half and press <kbd>B</kbd> to get in the back. There are
+          four seats, two in front and two behind, all with belts (<kbd>;</kbd>). The front seat tips forward to let people into the back, as they are both three-doors.`,
       },
     ],
   },
@@ -1275,6 +1315,14 @@ export const VEHICLE_NOTES = {
   landrover200: {
     blurb: 'An early-90s Land Rover 90 station wagon in faded pastel green, the 200TDi: a rattly 2.5 litre turbo diesel, a square back with the spare on its door and a newer dash.',
     tips: ['Wait for the GLOW lamp before cranking.', 'Every gear has synchromesh: no crunching.', 'The belt lamp flashes and it bongs until you do your belt up.', 'Listen for the turbo whistling as it pulls, and chattering when you lift off.'],
+  },
+  fiesta: {
+    blurb: "Amy's car: a late-70s Mk1 Fiesta in faded pale blue with a beige inside, a 1.1 with a choke and four gears, clean, careful and on L plates. It lives on the concrete at the east side of the yard.",
+    tips: ['A cold start wants the choke (Q).', 'Front-wheel drive on road tyres: stay on the road and the yard if it is wet.', 'Take it without Amy and she will not be pleased.'],
+  },
+  corsa: {
+    blurb: "Jess's car: a 1993 Corsa, red gone pink on the roof and bonnet, a grey primer wing, a wheel trim missing and a big exhaust. A 1.2 with fuel injection and five gears that sounds much faster than it is.",
+    tips: ['No choke: the injection sorts out a cold start itself.', 'There is rarely much petrol in it.', 'Jess minds less if you borrow it, as long as you do not dawdle.'],
   },
 };
 

@@ -242,6 +242,7 @@ export function buildGameTree(g, host) {
     dares: text(() => g.dares.describe()),
     girlBench: text(() => g.girlBench.describe()),
     phoneCall: text(() => g.phoneCalls.describe()),
+    cars: text(() => g.describeCars(), "the girls' cars: who's in them, who has them, when each girl next takes hers out"),
     workLight: text(() => g.workLight.describe()),
   }), 'both girls');
   const farm = group(() => ({

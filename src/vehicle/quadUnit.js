@@ -25,6 +25,7 @@ import { buildMiniMotoModel, MOTO_LAYOUT, MOTO_GROUND_OFFSET, MOTO_PROXY } from 
 import { buildTractorModel, TRACTOR_LAYOUT, TRACTOR_GROUND_OFFSET, TRACTOR_PROXY } from './tractorModel.js';
 import { buildUtvModel, UTV_LAYOUT, UTV_GROUND_OFFSET, UTV_PROXY, UTV_STAND } from './utvModel.js';
 import { buildLandRoverModel, LANDY_LAYOUT, LANDY_GROUND_OFFSET, LANDY_PROXY, LANDY_STAND } from './landRoverModel.js';
+import { buildCarModel, carLayout, carProxy, CAR_GROUND_OFFSET, CAR_STAND } from './carModel.js';
 import { CrankHandle, DEFAULT_CRANK_PARAMS, CRANK_PARAM_RANGES } from './crankHandle.js';
 
 import { hotSteam } from '../engine/heat.js';
@@ -119,6 +120,18 @@ export class QuadUnit {
         benchStand: LANDY_STAND.left,
         handLever: !spec.defender, // the Series' hand throttle knob on its dash
         crank: spec.defender ? null : new CrankHandle({ ...DEFAULT_CRANK_PARAMS }), // and its starting handle
+      }),
+      ...(spec.car && {
+        build: ({ dashStyle }) => buildCarModel({ kind: spec.car, bodyColor: spec.bodyColor, dashStyle }),
+        layout: carLayout(spec.car),
+        groundOffset: CAR_GROUND_OFFSET,
+        proxy: carProxy(spec.car),
+        wheelShake: spec.wheelShake,
+        steadyLights: spec.steadyLights,
+        car: true,
+        lightSwitch: true, // P cycles off, dipped and main beam from the seat (lightSwitch.js)
+        driverStand: CAR_STAND.driver,
+        benchStand: CAR_STAND.left,
       }),
     });
     this.quad.unit = this;

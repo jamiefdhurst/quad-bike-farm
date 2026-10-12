@@ -88,3 +88,16 @@ export function outingSpots(layout, hillWait, stripPoint) {
   });
   return spots;
 }
+
+/**
+ * Where a car goes out to: along the farm road only (the girls' cars are road cars, and never go into the fields). The end of the road at the
+ * hardstanding, and halfway along it.
+ */
+export function roadSpots(layout) {
+  const road = layout.road;
+  if (!road) return [];
+  const spots = [];
+  if (road.pad) spots.push({ name: 'the end of the road', x: road.pad.x - 4, z: road.z });
+  spots.push({ name: 'along the road', x: (road.fromX + road.toX) / 2, z: road.z });
+  return spots;
+}

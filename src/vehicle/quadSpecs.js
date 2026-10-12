@@ -1302,3 +1302,227 @@ export const DEFENDER_SPEC = {
   },
   smoke: { ...UTV_SPEC.smoke },
 };
+
+// The girls' own cars, always parked on the hard-standing by the barn. Built like the Land Rovers (a unit with a clutch and gears, two
+// seats in front and two in the back reached past a tipped front seat, belts) but small, light road cars: front-wheel drive, soft and
+// rolling, on road tyres that slither on wet grass and bog in mud, and low enough to ground on a bump. `owner` is whose it is: she is
+// the only girl who drives it, and minds if you take it.
+const CAR_VEHICLE = {
+  centreOfMassY: -0.12,
+  rollInertia: 170, // light and narrow: it leans over in a corner
+  pitchInertia: 520,
+  yawInertia: 560,
+  maxSuspensionTravel: 0.14,
+  suspensionStiffness: 24,
+  suspensionCompression: 2.4,
+  suspensionRelaxation: 2.2,
+  maxSuspensionForce: 60000,
+  grassFrictionSlip: 1.4, // road tyres: they slither on grass...
+  mudFrictionSlip: 0.42, // ...and barely hold in mud
+  puddleFrictionSlip: 0.3,
+  tyreGrip: 0.6,
+  mudGrip: 0.24,
+  mudLoad: 0.3, // and they bog down soon in it
+  fourWheelDrive: 1, // the front pair drives; the back wheels are left undriven by the layout (carModel.js)
+  maxReverseSpeed: 4,
+  maxSteerDeg: 34,
+  steerRate: 3, // a light rack
+  steerSpeedReduction: 0.07,
+  maxBrake: 34,
+  parkingBrake: 14,
+  parkedHoldSpeed: 0.3,
+  rollingResistance: 0.6,
+  revHoldMin: 2, // getting out never leaves it revving
+};
+const CAR_VIBRATION = {
+  mountGain: 0.45, // a small petrol four on soft mounts: a light shiver at idle, a rock as it stops
+  mountFreq: 11,
+  steadiness: 0.8,
+  firingsPerCycle: 1, // the engine fires four times a cycle (engine.cylinders): one kick each
+  smoothRpmRange: 1800,
+  pulseGain: 0.8,
+  heaveFreq: 6,
+  pitchFreq: 5.5,
+  rollFreq: 5,
+  heaveGain: 0.1,
+  pitchGain: 0.14,
+  heaveDamping: 0.4,
+  barsFreq: 16,
+  barsGain: 0.06,
+};
+const CAR_ENGINE = {
+  loadDragRpm: 1800, // a manual: lugging it in a high gear with the clutch out stalls it
+  stallRpm: 380,
+  crankRpm: 200,
+  catchRpm: 650,
+  rpmRiseRate: 6, // a small four with a light flywheel: quick to rev and quick to drop
+  rpmFallRate: 5,
+  warmUpSeconds: 360,
+  lugDepth: 0.3,
+  wearPerMinute: 0.0003,
+  cylinders: 4, // four firings a cycle: a misfire is one beat of four
+  misfireRoughness: 0.03,
+  cycleJitter: 0.04,
+  pulseStrengthJitter: 0.1,
+  roughHunt: 0.04,
+  erraticHunt: 0.03,
+  stumbleRate: 0.1,
+};
+
+// Amy's Mk1 Fiesta: a 1.1 petrol four with a carburettor and a pull-out choke, a four-speed, in faded pale blue with a beige inside, kept
+// clean and looked after. L plates on (she is learning; item 167 has her pass in it).
+export const FIESTA_SPEC = {
+  id: 'fiesta',
+  label: 'Fiesta',
+  name: 'Fiesta',
+  car: 'fiesta',
+  owner: 'amy',
+  scale: 1.15, // as the Land Rovers: true to size it looks small beside the girls
+  steadyLights: true,
+  wheelShake: 0.5,
+  bodyColor: 0x9fb8cc, // a faded pale blue
+  dashStyle: 'fiesta',
+  chokeStyle: 'knob', // under the dash
+  hoursRange: [0, 0],
+  odoRange: [38000, 76000], // a careful owner's miles
+  wearRange: [0.03, 0.08], // looked after
+  safeIdle: 750,
+  idleRange: [1010, 1090], // it ticks over briskly; its recording runs at 1,084 to 1,187, so its beats play near their own pace
+  roughnessRange: [0.03, 0.07],
+  fuelRange: [12, 30], // 34 litre tank
+  topRpmRange: [5900, 6100],
+  manual: true,
+  gearbox: {
+    gears: 4,
+    crashGears: 0, // synchromesh on all four
+    crashSpeed: 1,
+    topSpeed1: 8.5, // about 19 mph
+    topSpeed2: 15, // 34
+    topSpeed3: 24, // 54
+    topSpeed4: 37, // 83: flat out it settles just under
+    topSpeedReverse: 4,
+    torque1: 1,
+    torque2: 0.62,
+    torque3: 0.42,
+    torque4: 0.3,
+    torqueReverse: 0.95,
+    launchLoad1: 0.35, // a light flywheel: it wants a few revs to pull away
+    launchLoad2: 0.7,
+    launchLoad3: 1.05,
+    launchLoad4: 1.3,
+    lugSpeed: 0.15,
+    handStart: 0,
+  },
+  fuel: { tankCapacity: 34, reserveLitres: 4, noTap: true, startTap: 'on', burnPerRev: 0.00012, idleBurnFraction: 0.3 },
+  engine: {
+    ...CAR_ENGINE,
+    idleRpmWarm: 1050,
+    maxRpm: 6000,
+    redlineRpm: 5750,
+  },
+  vehicle: {
+    ...CAR_VEHICLE,
+    mass: 830, // with its driver
+    wheelRadius: 0.312, // 145 x 12 tyres (0.27 m) at the model's 1.15
+    suspensionRestLength: 0.184,
+    maxDriveForce: 4000,
+    maxSpeed: 38,
+    engineBrakeForce: 700,
+  },
+  vibration: { ...CAR_VIBRATION, idleRpm: 1050 },
+  audio: {
+    recBank: 'engine-bank-fiesta', // the BBC's Fiesta 1.1 idling and pulling away, a 1976 Mini revving above that, its own starter
+    recIdleSource: 'quad',
+    pulseDivide: 4, // the bank's grains are whole cycles: one plays every fourth firing, filling the cycle
+    pulseRefRpm: 1130, // its recorded idle, where the rev loudness and EQ start
+    pulseRevLo: 1600, // from here it blends into real rev firings
+    pulseRevHi: 2600,
+    pulseRevFollow: 0.08,
+    pulseRevLoudness: 0.3,
+    pulseRevGain: 1,
+    recVolume: 0.8,
+    recStarterVolume: 0.8,
+    recToneClosed: 4600,
+    pipeLength: 1.6,
+    densityRefRpm: 1600,
+  },
+  smoke: { ...LAND_ROVER_SPEC.smoke, warmDensity: 0.08, coldDensity: 0.5, throttleDensity: 0.5 },
+};
+
+// Jess's 1993 Corsa B: a 1.2 with fuel injection (no choke, no carburettor to go wrong), a five-speed, in red faded pink on the roof
+// and bonnet, a grey primer wing, and a big-bore exhaust that makes it sound far quicker than it is.
+export const CORSA_SPEC = {
+  id: 'corsa',
+  label: 'Corsa',
+  name: 'Corsa',
+  car: 'corsa',
+  owner: 'jess',
+  scale: 1.15,
+  steadyLights: true,
+  wheelShake: 0.6,
+  bodyColor: 0xb8322e, // red, gone pink where the sun gets it
+  dashStyle: 'corsa',
+  hoursRange: [0, 0],
+  odoRange: [88000, 140000],
+  wearRange: [0.08, 0.16], // thrashed
+  safeIdle: 650,
+  idleRange: [860, 900], // its recording ticks over at 854 to 909
+  roughnessRange: [0.06, 0.12],
+  fuelRange: [3, 18], // 46 litre tank, and never more than a tenner in it
+  topRpmRange: [6200, 6400],
+  manual: true,
+  gearbox: {
+    ...FIESTA_SPEC.gearbox,
+    gears: 5,
+    topSpeed1: 8, // 18 mph
+    topSpeed2: 14, // 31
+    topSpeed3: 21, // 47
+    topSpeed4: 29, // 65
+    topSpeed5: 40, // 89
+    torque1: 1,
+    torque2: 0.64,
+    torque3: 0.46,
+    torque4: 0.36,
+    torque5: 0.28,
+    launchLoad4: 1.3,
+    launchLoad5: 1.5,
+  },
+  fuel: { tankCapacity: 46, reserveLitres: 5, noTap: true, startTap: 'on', burnPerRev: 0.00012, idleBurnFraction: 0.3 },
+  engine: {
+    ...CAR_ENGINE,
+    injected: true,
+    coldIdleRpm: 450, // the injection holds a cold engine at about 1,300 and lets it down as it warms
+    idleRpmWarm: 880,
+    maxRpm: 6300,
+    redlineRpm: 6000,
+    warmUpSeconds: 300,
+  },
+  vehicle: {
+    ...CAR_VEHICLE,
+    mass: 930,
+    wheelRadius: 0.315, // 155/70 x 13 tyres (0.274 m) at the model's 1.15
+    suspensionRestLength: 0.184,
+    maxDriveForce: 4100,
+    maxSpeed: 40,
+    engineBrakeForce: 750,
+    parkingBrake: 15,
+  },
+  vibration: { ...CAR_VIBRATION, idleRpm: 880, steadiness: 0.7, pulseGain: 1 }, // the exhaust rattles against the floor
+  audio: {
+    recBank: 'engine-bank-corsa', // the BBC's Carlton 1.8 idling, pulling away and revved cold, its own starter and its cold stall
+    recIdleSource: 'quad',
+    pulseDivide: 4,
+    pulseRefRpm: 880,
+    pulseRevLo: 1100,
+    pulseRevHi: 1800,
+    pulseRevFollow: 0.08,
+    pulseRevLoudness: 0.35,
+    pulseRevGain: 1.2,
+    recVolume: 1,
+    recStarterVolume: 0.8,
+    recToneClosed: 3800,
+    pipeLength: 1.9, // the big-bore pipe: a deeper, louder note
+    densityRefRpm: 1400,
+  },
+  smoke: { ...LAND_ROVER_SPEC.smoke, warmDensity: 0.12, coldDensity: 0.6 },
+};

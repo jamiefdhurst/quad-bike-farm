@@ -71,7 +71,7 @@ export function randomiseQuadSpawns(spawn, count, random, { homeCount = count, b
 
 /**
  * Ground no vehicle may start on, as circles { x, z, r, what }: the trailers, the fuel tank and bowser, the silage stack, the barn and its
- * doorway, the paddock, the straw bales, the bell, the trees by the barn, the jump and its run-up, the drag strip and the bog in the field.
+ * doorway, the paddock, the girls' cars' hard-standing, the straw bales, the bell, the trees by the barn, the jump and its run-up, the drag strip and the bog in the field.
  * `r` is how far a vehicle's centre must keep from the middle. The track is checked separately (spawnBlocked). Pure, from the layout.
  */
 export function spawnKeepOut(layout) {
@@ -90,6 +90,7 @@ export function spawnKeepOut(layout) {
     add(L.barn.x + 1.6, L.barn.z + 10, 5, 'the silage'); // the wrapped bales stacked beside the barn (props.js)
   }
   if (L.paddock) add(L.paddock.x, L.paddock.z, L.paddock.half * Math.SQRT2 + 3, 'the paddock');
+  if (L.carStanding) add(L.carStanding.x, L.carStanding.z, Math.max(L.carStanding.halfX, L.carStanding.halfZ) + 1, "the girls' cars"); // their concrete in the yard
   for (const [x, z] of L.strawBaleSpots ?? []) add(x, z, 3.5, 'a straw bale');
   for (const [x, z] of [[-76, 72], [-84, 52]]) add(x, z, 4, 'a tree by the barn'); // the trees behind the barn (props.js)
   if (L.jumpRamp) {
