@@ -42,3 +42,13 @@ if (saved) {
 } else if (new URLSearchParams(location.search).has('seed')) {
   document.getElementById('overlay-play').textContent = 'Click to play. A seeded game: the farm is not saved.';
 }
+
+// Called it a day (game.js callItADay): the page has loaded again as the next day, so the card comes up out of the black the game left.
+try {
+  if (sessionStorage.getItem('quadBikeFarmNextDay')) {
+    sessionStorage.removeItem('quadBikeFarmNextDay');
+    document.getElementById('overlay').classList.add('daybreak');
+  }
+} catch {
+  // no fade
+}

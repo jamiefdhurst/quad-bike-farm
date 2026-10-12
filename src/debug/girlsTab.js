@@ -152,6 +152,8 @@ export function buildGirlsTab(d) {
   show(both, 'L plates are on', () => g.lPlates.where);
   show(both, 'the farm that remembers', () => g.farmText());
   button(both, 'Save the farm now', () => g.hud.toast(g.saveFarm() ? 'Farm saved' : 'Not saved (a seeded game, wiped, or not started)'));
+  show(both, 'the calendar says', () => g.endOfDayNow().text);
+  button(both, 'Call it a day now (fade, save, next day)', () => g.callItADay({ force: true }));
   button(both, 'Wipe the farm (a new one next load)', () => {
     g.wipeFarm();
     g.hud.toast('Farm wiped: the next load deals a new one');

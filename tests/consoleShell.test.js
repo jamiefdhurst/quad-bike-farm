@@ -45,6 +45,7 @@ function makeWorld() {
     farmSave: () => true,
     farmJson: () => '{"day":4}',
     farmWipe: () => (state.wiped = true),
+    farmEndDay: () => 'fading to black: day 5 loads next',
     perf: () => ({ fps: 59.8, ms: 4.234, worstMs: 9.06, calls: 812, triangles: 1234567, width: 2592, height: 1676, pixelRatio: 1.5, maxFps: 60 }),
     farmLoad: (json) => {
       const s = JSON.parse(json);
@@ -277,6 +278,7 @@ describe('the farm save', () => {
     expect(text(shell.run('save'))).toBe('day 4');
     expect(text(shell.run('save now'))).toMatch(/^saved/);
     expect(text(shell.run('save copy'))).toBe('copied the save');
+    expect(text(shell.run('save day'))).toMatch(/^fading to black/);
     expect(state.dumped).toBe('{"day":4}');
     shell.run('save wipe');
     expect(state.wiped).toBe(true);

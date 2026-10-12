@@ -15,6 +15,7 @@ import { clearOfChassis } from './vehicle/dismount.js';
 import { DEFAULT_BIKE_PARAMS, BIKE_PARAM_RANGES } from './vehicle/bikeLean.js';
 import { DEFAULT_RIDER_LEAN_PARAMS, RIDER_LEAN_RANGES } from './vehicle/riderLean.js';
 import { pickFleet } from './vehicle/fleet.js';
+import { endOfDay, DayFade } from './farm/endOfDay.js';
 import { DEFAULT_FARM_PARAMS, FARM_PARAM_RANGES, browserStorage, openFarm, writeSave, wipeSave, fleetFromSave, describeFarm, validSave } from './farm/farmSave.js';
 import { captureVehicle, restoreVehicle, overnight, savedFaults, captureGirls, restoreGirls } from './farm/farmState.js';
 import { applyIdle, applyTopRpm, applyVariation, pickIdle } from './vehicle/quadVariation.js';
@@ -1109,6 +1110,7 @@ export class Game {
     this.jobBoard = new JobBoard({ ids: availableJobs(this.world.layout), random: createRandom(this.seed ^ 0x7ab0), params: this.jobBoardParams });
     this.jobBoardView = new JobBoardView({ game: this, board: this.jobBoard, records: this.records });
     this.wallCalendar = new WallCalendar({ game: this, day: this.farm.day }); // between the two boards: the days crossed off
+    this.setUpEndOfDay();
     registerTuning('Muck job', this.muckParams, MUCK_PARAM_RANGES);
     registerTuning('Job board', this.jobBoardParams, JOB_BOARD_PARAM_RANGES);
     this.interaction.add({
@@ -2716,6 +2718,59 @@ export class Game {
       records: this.records.toJSON(),
       logbook: this.notebook.book.toJSON(),
     };
+  }
+
+  /** The wall calendar is how you call it a day (farm/endOfDay.js): E on it in the evening, with the girls in the barn, fades to black and loads the next day. */
+  setUpEndOfDay() {
+    this.dayFade = new DayFade();
+    this.dayFadeEl = document.createElement('div');
+    this.dayFadeEl.id = 'day-fade';
+    this.dayFadeEl.innerHTML = '<p></p>';
+    document.body.appendChild(this.dayFadeEl);
+    this.interaction.add({
+      target: this.wallCalendar.group,
+      isAvailable: () => !this.dayFade.active,
+      prompt: () => ({ text: this.endOfDayNow().text }),
+      interact: () => this.callItADay(),
+    });
+  }
+
+  /** Whether you could call it a day now, and what the calendar says about it. */
+  endOfDayNow() {
+    const b = this.world.layout.barn;
+    const girls = this.companions.map((c) => ({
+      name: c.character.name,
+      home: Math.hypot(c.root.position.x - b.x, c.root.position.z - b.z) < this.farmParams.endDayHomeRadius,
+    }));
+    return endOfDay(
+      { hour: this.daylight.hour, seeded: this.farm.seeded, canSave: !!this.farmStorage, girls, day: this.farm.day },
+      this.farmParams,
+    );
+  }
+
+  /** Crosses the day off: the screen fades to black (updateEndOfDay), the farm saves, and the page loads again as the next day. */
+  callItADay({ force = false } = {}) {
+    if (this.dayFade.active) return;
+    const now = this.endOfDayNow();
+    if (!now.ok && !(force && !this.farm.seeded)) return this.hud.toast(now.text);
+    this.dayFade.start();
+    this.dayFadeEl.querySelector('p').textContent = `Day ${this.farm.day} done`;
+    this.saveFarm();
+  }
+
+  updateEndOfDay(dt) {
+    if (!this.dayFade.active) return;
+    const f = this.dayFade.update(dt, this.farmParams);
+    this.dayFadeEl.style.opacity = String(f.alpha);
+    this.dayFadeEl.classList.toggle('words', f.alpha >= 1);
+    if (!f.done) return;
+    this.saveFarm();
+    try {
+      sessionStorage.setItem('quadBikeFarmNextDay', '1'); // the start screen fades in from black (startScreen.js)
+    } catch {
+      // it just comes up without the fade
+    }
+    location.reload();
   }
 
   /** The first moment of play makes this day count (and hides Continue and New farm); after that it saves every so often. */
@@ -6895,6 +6950,7 @@ export class Game {
     // regardless, so the camera is put at your eyes and everything is placed before the start screen shows the farm behind it.
     this.setPaused(this.isPaused());
     if (this.paused && this.firstFrameDone) {
+      this.updateEndOfDay(dt); // a fade to the next day carries on if the pointer lock is let go of
       if (this.redraw || started - (this.pausedDrawAt ?? 0) > 500) {
         this.renderer.render(this.scene, this.camera);
         this.redraw = false;
@@ -6904,6 +6960,7 @@ export class Game {
       return;
     }
     this.updateFarmSave(dt);
+    this.updateEndOfDay(dt);
 
     if (input.wasPressed('KeyH')) this.hud.toggleHelp();
     if (input.wasPressed('Backquote')) this.debugGui.toggle();

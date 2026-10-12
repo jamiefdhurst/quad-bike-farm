@@ -164,6 +164,10 @@ export function createHost(g, { copy = () => {} } = {}) {
     farmSave: () => g.saveFarm(),
     farmJson: () => JSON.stringify(g.captureFarm(), null, 2),
     farmWipe: () => g.wipeFarm(),
+    farmEndDay: () => {
+      g.callItADay({ force: true });
+      return g.farm.seeded ? 'a seeded game does not carry on to another day' : `fading to black: day ${g.farm.day + 1} loads next`;
+    },
     farmLoad: (json) => g.loadFarmJson(json),
 
     perf() {

@@ -11,7 +11,7 @@ import { resolve, walk, show, describe, parseValue, pathCandidates } from './she
  *   girlVerbs(id): [{ verb, label, vehicle }]         girlVerb(id, verb, vehicleId): void
  *   weatherKinds(): string[]              setWeather(kind): string
  *   dump(text): void                      (copies to the clipboard)
- *   farmText(): string   farmSave(): boolean   farmJson(): string   farmLoad(json): string   farmWipe(): void   (the farm that remembers)
+ *   farmText(): string   farmSave(): boolean   farmJson(): string   farmLoad(json): string   farmWipe(): void   farmEndDay(): string   (the farm that remembers)
  *   perf(): { fps, ms, worstMs, calls, triangles, width, height, pixelRatio, maxFps }   (how hard the game is working)
  */
 
@@ -395,10 +395,10 @@ export function buildCommands(host) {
     {
       name: 'save',
       group: 'World',
-      usage: 'save [now | show | copy | wipe | load <json>]',
-      help: 'the farm that remembers: which day and when it saved; save it now, show or copy the save, wipe it, or load one (it plays from the next reload)',
+      usage: 'save [now | show | copy | day | wipe | load <json>]',
+      help: 'the farm that remembers: which day and when it saved; save it now, show or copy the save, end the day (the fade to the next day, whatever the time), wipe it, or load one (it plays from the next reload)',
       examples: ['save', 'save now', 'save copy', 'save load {"version":1,"day":3,...}'],
-      complete: (ctx, tokens) => (tokens.length === 0 ? ['now', 'show', 'copy', 'wipe', 'load'] : []),
+      complete: (ctx, tokens) => (tokens.length === 0 ? ['now', 'show', 'copy', 'day', 'wipe', 'load'] : []),
       run: ([what], shell) => {
         if (!what) return host.farmText();
         if (what === 'now') return host.farmSave() ? `saved: ${host.farmText()}` : `not saved: ${host.farmText()}`;
@@ -407,6 +407,7 @@ export function buildCommands(host) {
           host.dump(host.farmJson());
           return 'copied the save';
         }
+        if (what === 'day') return host.farmEndDay();
         if (what === 'wipe') {
           host.farmWipe();
           return 'wiped: the next load deals a new farm';

@@ -12,6 +12,10 @@ export const DEFAULT_FARM_PARAMS = {
   favourKept: 0.5, // fraction of each girl's favour that carries to the next day
   frictionKept: 0.5, // fraction of the girls' friction that carries when they hadn't fallen out
   frictionFallenOut: 6, // their friction in the morning after a falling-out that wasn't made up (8 falls out again)
+  endDayHour: 17, // hours after midnight: from then the barn's wall calendar lets you call it a day (sunset is 17:15)
+  endDayHomeRadius: 20, // metres from the barn's middle each girl has to be within to call it a day
+  endDayFade: 2.2, // seconds the screen takes to go black when you call it a day
+  endDayHold: 1.4, // seconds it stays black, saying the day is done, before the next day loads
 };
 
 export const FARM_PARAM_RANGES = {
@@ -22,6 +26,10 @@ export const FARM_PARAM_RANGES = {
   favourKept: [0, 1, 0.05],
   frictionKept: [0, 1, 0.05],
   frictionFallenOut: [0, 10, 0.5],
+  endDayHour: [12, 23, 0.25],
+  endDayHomeRadius: [8, 60, 1],
+  endDayFade: [0.5, 6, 0.1],
+  endDayHold: [0.5, 5, 0.1],
 };
 
 /** The browser's localStorage, or null where it can't be had (a private window, blocked site data, tests). */
