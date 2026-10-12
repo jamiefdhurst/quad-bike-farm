@@ -32,6 +32,7 @@ export const NOTICE_REACTIONS = {
   rev: { reaction: 'coverEars', within: 5, minStrength: 0.8, chance: 'reactEarsChance', notOwn: true },
   tipped: { reaction: 'gasp', within: 40, notOwn: true },
   pheasant: { reaction: 'flinch', within: 14, chance: 'reactStartleChance' },
+  zap: { reaction: 'flinch', within: 25, notOwn: true },
   jump: { reaction: 'cheer', within: 45, chance: 'reactCheerChance', notOwn: true },
   traffic: { reaction: 'wave', within: 45, chance: 'reactWaveChance' },
 };

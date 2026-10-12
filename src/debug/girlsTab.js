@@ -166,6 +166,8 @@ export function buildGirlsTab(d) {
   show(both, 'the board', () => g.jobBoard.lines().map((l) => `${l.done ? '[x]' : '[ ]'} ${l.text}`).join('; ') || 'nothing on');
   show(both, 'wildlife', () => `${g.rabbits.rabbits.filter((r) => r.mode !== 'down').length} rabbits about (${g.rabbits.rabbits.filter((r) => r.mode === 'caught').length} in a beam), pheasants ${g.pheasants.birds.map((b) => b.mode).join('/')}`);
   button(both, 'Flush the nearest pheasant', () => g.debugFlushPheasant());
+  show(both, 'electric fence', () => `${g.fence.live ? 'on' : 'off'}; last zapped: ${g.fence.lastZap ? `${g.fence.lastZap.id} (${g.fence.lastZap.kind})` : 'nobody yet'}`);
+  button(both, 'Zap you on the electric fence', () => g.debugZapFence());
   show(both, 'the lane and the gates', () => `${g.trafficHost.describe()}; south gate ${g.trafficHost.gate('south').isOpen ? 'open' : 'shut'}, big gate ${g.trafficHost.gate('road').isOpen ? 'open' : 'shut'}`);
   button(both, 'Send a vehicle along the lane', () => g.trafficHost.debugPass());
   button(both, 'Send the post van', () => g.trafficHost.debugVisit('post') || g.hud.toast('A visitor is already about'));

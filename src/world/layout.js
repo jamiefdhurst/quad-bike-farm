@@ -81,6 +81,9 @@ export const LAYOUT = {
         thorns: [[-8, 118], [-6, 120], [14, 96], [17, 94], [28, 108], [-14, 98], [30, 86]],
       },
     },
+    // The electric fence across the pasture (world/electricFence.js): along x at `z` from `fromX` to `toX` (the energiser stands on the east hedge),
+    // two strands of tape, with a gap `half` m either side of `gap.at` where the climb's line goes through.
+    fence: { z: 176, fromX: -66, toX: 33.4, gap: { at: 14, half: 3.5 } },
     foot: 7, // metres past the stream's far edge: the bottom of the pasture, where the girls stop driving
     // The flat rock at the top of the pasture, on the level ground by the far hedge, looking back north over the farm (npc/flask.js): a girl sits on it
     // (yaw is the way she faces, `height` how high the top is) and the flask and mugs go on the ground beside it.

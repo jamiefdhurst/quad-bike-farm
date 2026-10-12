@@ -180,6 +180,8 @@ import { SheepAudio } from './audio/sheepAudio.js';
 import { Rabbits, Pheasants, hedgeSpots, DEFAULT_WILDLIFE_PARAMS, WILDLIFE_PARAM_RANGES } from './world/wildlife.js';
 import { WildlifeView } from './world/wildlifeView.js';
 import { WildlifeAudio } from './audio/wildlifeAudio.js';
+import { ElectricFence, createElectricFence, DEFAULT_FENCE_PARAMS, FENCE_PARAM_RANGES } from './world/electricFence.js';
+import { FenceAudio } from './audio/fenceAudio.js';
 import { BELL_PARAM_RANGES } from './world/bell.js';
 import { Toolbox } from './items/toolbox.js';
 import { JumpLeads, JUMP_LEAD_PARAM_RANGES } from './items/jumpLeads.js';
@@ -1057,6 +1059,7 @@ export class Game {
 
     this.setUpFlock();
     this.setUpWildlife();
+    this.setUpFence();
     this.trafficHost = new TrafficHost(this); // the lane's traffic, the visitors and the two gates (world/trafficHost.js)
 
     // The bell beside the barn doors: ring it and the girls come back to the barn, wherever they are.
@@ -7198,6 +7201,7 @@ export class Game {
     this.bell.update(dt);
     this.updateFlock(dt);
     this.updateWildlife(dt);
+    this.updateFence(dt);
     this.trafficHost.update(dt);
     this.updateRecall(dt);
     if (!this.recalling && (auto || this.convoy.active || this.convoy.forced)) this.updateConvoy(dt, ridden);
@@ -7372,6 +7376,89 @@ export class Game {
     const e = this.pheasants?.flush(p.x, p.z);
     if (e) this.firePheasantEvent(e);
     return !!e;
+  }
+
+  /** The electric fence across the hill pasture (world/electricFence.js): it ticks, and a quad's nose or tail or your feet on the wire get a jolt. */
+  setUpFence() {
+    const fence = createElectricFence(this.world.layout);
+    this.fenceParams = { ...DEFAULT_FENCE_PARAMS };
+    registerTuning('Electric fence', this.fenceParams, FENCE_PARAM_RANGES);
+    this.fence = new ElectricFence(fence, this.fenceParams);
+    this.fenceAudio = new FenceAudio(this.audioHub);
+    this.fenceLed = this.scene.getObjectByName('fence led') ?? null;
+    this.fenceLedOn = 0;
+  }
+
+  /** Where the energiser stands, for the tick's sound. */
+  fenceEnergiser() {
+    const f = this.fence.fence;
+    return { x: f.toX, y: this.world.groundHeightAt(f.toX, f.z) + 1.1, z: f.z };
+  }
+
+  /** Who could be touching the wire: every moving quad (its nose, middle and tail) and you on foot. */
+  fenceTouchers() {
+    const out = [];
+    for (const u of this.units) {
+      const q = u.quad;
+      if (q.speed < 0.2) continue;
+      const sx = Math.sin(q.yaw);
+      const cz = Math.cos(q.yaw);
+      const x = q.position.x;
+      const z = q.position.z;
+      out.push({ id: u.id, kind: 'vehicle', unit: u, points: [{ x: x + sx, z: z + cz }, { x, z }, { x: x - sx, z: z - cz }] });
+    }
+    if (!this.player.isRiding) out.push({ id: 'you', kind: 'foot', points: [{ x: this.player.position.x, z: this.player.position.z }] });
+    return out;
+  }
+
+  updateFence(dt) {
+    if (!this.fence?.fence) return;
+    const touchers = this.fenceTouchers();
+    for (const e of this.fence.update(dt, touchers)) {
+      if (e.type === 'tick') {
+        this.fenceAudio.tick(this.fenceEnergiser(), this.fenceParams.hearWithin);
+        this.fenceLedOn = 0.12;
+      } else this.fireFenceZap(e, touchers.find((t) => t.id === e.id)?.unit ?? null);
+    }
+    this.fenceLedOn = Math.max(0, this.fenceLedOn - dt);
+    this.fenceLed?.material.color.setHex(this.fenceLedOn > 0 ? 0xff2a1a : 0x400000);
+  }
+
+  /** Something caught the wire: the jolt, the snap, a yelp from whoever is on the quad, a word from a girl who saw, and every girl hears it. */
+  fireFenceZap(e, unit) {
+    const p = this.fenceParams;
+    const where = { x: e.x, y: this.world.groundHeightAt(e.x, e.z) + 0.8, z: e.z };
+    this.fenceAudio.zap(where);
+    this.notice('zap', where, { key: 'fence', strength: 1 });
+    const hit = [];
+    if (unit) {
+      unit.vibration.zap(p.zapKick);
+      const body = unit.quad.physics.body;
+      const v = body.linvel();
+      body.setLinvel({ x: v.x * p.zapSlow, y: v.y, z: v.z * p.zapSlow }, true);
+      if (unit.quad.rider || (this.player.isRiding && unit.quad.passenger)) this.hud.toast('Ow! That fence is live.', 2);
+      for (const c of [this.herAtTheFront(unit.quad), this.herOnBack(unit.quad)]) {
+        if (!c) continue;
+        hit.push(c);
+        c.voice.say('fenceZap', { urgent: true, chance: 1 });
+        c.react('flinch', { from: where, strength: 1.2, force: true });
+      }
+    } else if (e.kind === 'foot') this.hud.toast('Ow! That fence is live.', 2);
+    // A girl who is free and nearby (not one of those hit) says something about it.
+    const watcher = this.companions.filter((c) => !hit.includes(c) && c.availability().canRemark)
+      .sort((a, b) => Math.hypot(a.root.position.x - e.x, a.root.position.z - e.z) - Math.hypot(b.root.position.x - e.x, b.root.position.z - e.z))[0];
+    if (watcher && Math.hypot(watcher.root.position.x - e.x, watcher.root.position.z - e.z) < 40) watcher.voice.say('fenceZapSeen', { chance: 0.7 });
+  }
+
+  /** The debug panel's and console's zap: you (or the quad you are on) catch the wire where you are, whether or not you are near it. */
+  debugZapFence() {
+    if (!this.fence?.fence) return false;
+    const f = this.fence.fence;
+    const pos = this.player.position;
+    const unit = this.units.find((u) => u.quad.rider || (this.player.isRiding && u.quad.passenger)) ?? null;
+    const e = this.fence.zapNow(unit ? unit.id : 'you', unit ? 'vehicle' : 'foot', pos.x, f.z);
+    this.fireFenceZap(e, unit);
+    return true;
   }
 
   /** Moves the flock: it keeps clear of every vehicle that comes close (faster ones from further off), the girls and you. */

@@ -37,6 +37,7 @@ import { JESS_REVOFF_LINES } from './revOffLines.js';
 import { JESS_DROWNOUT_LINES } from './drownOutLines.js';
 import { JESS_HORN_LINES } from './hornLines.js';
 import { JESS_TRAFFIC_LINES } from './trafficLines.js';
+import { JESS_FENCE_LINES } from './fenceLines.js';
 import { JESS_TRACTOR_LINES } from './tractorLines.js';
 import { JESS_HAYRIDE_LINES } from './hayRideLines.js';
 import { JESS_MUDGUARD_LINES } from './mudguardLines.js';
@@ -455,6 +456,7 @@ export const JESS_LINES = {
   ...JESS_DROWNOUT_LINES,
   ...JESS_HORN_LINES,
   ...JESS_TRAFFIC_LINES,
+  ...JESS_FENCE_LINES,
   ...JESS_TRACTOR_LINES,
   ...JESS_SHOUT_LINES,
   ...JESS_HAYRIDE_LINES,

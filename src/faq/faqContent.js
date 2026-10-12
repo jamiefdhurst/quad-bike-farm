@@ -897,6 +897,15 @@ export const FAQ_SECTIONS = [
         tip: 'Pheasants lie in the hedge feet and burst out if you pass close. Amy jumps.',
       },
       {
+        q: 'What is the ticking fence on the hill, and what happens if I touch it?',
+        a: `It is an electric fence across the hill pasture, two strands of yellow tape on white stakes, with a gap in it for you to ride through (look for the pair of stout posts and the sign with the lightning bolt). The box on the hedge at the east end ticks and blinks. Touch the tape with the front or back of a quad, or walk into it, and it jolts you: the view shakes, you lose some speed, and whoever is on the quad yelps. A girl who sees it will say something about it. It only zaps once for each brush, so you won't be stuck in a loop.`,
+        tip: 'The fence across the hill pasture is live. Go through the gap by the sign, not the tape.',
+      },
+      {
+        q: 'How do I get past the electric fence?',
+        a: `Ride through the gap between the two stout posts, the one with the sign. It is wide enough for a quad, and it is where the hill climb goes. The tape runs from the wood in the west to the hedge in the east, so use the gap.`,
+      },
+      {
         q: 'How do I open and shut the gates?',
         a: `Get off, look at the gate and press E: it swings open or shut. There are two, the field gate in the south hedge (it starts tied open) and the big gate in the east hedge at the end of the farm road (it starts shut). A shut gate is solid, and the girls won't try to go through it, so shut the south gate and they stay on the farm side. It won't shut with a quad, a girl or you within a few metres of it.`,
         tip: 'Look at a gate on foot and press E to open or shut it.',

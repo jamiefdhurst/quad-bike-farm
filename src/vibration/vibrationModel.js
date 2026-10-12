@@ -237,6 +237,22 @@ export class VibrationModel {
     }
   }
 
+  /** A sudden shock through the whole machine and the rider (an electric fence's zap): one big kick of `size` pulse kicks in every direction. */
+  zap(size) {
+    const p = this.params;
+    const o = this.osc;
+    const r = this.random;
+    const sign = () => (r() < 0.5 ? -1 : 1);
+    o.heave.kick(size * p.heaveGain * 1.2);
+    o.pitch.kick(size * p.pitchGain * sign());
+    o.roll.kick(size * p.rollGain * sign());
+    o.barsX.kick(size * p.barsGain * sign());
+    o.barsRoll.kick(size * p.barsRotGain * sign());
+    o.camY.kick(size * p.cameraGain);
+    o.camPitch.kick(size * p.cameraRotGain * sign());
+    o.camRoll.kick(size * p.cameraRotGain * sign());
+  }
+
   /**
    * Uneven ground: a jolt every so many metres, harder with speed, mostly small
    * with the odd big one. They land between physics bumps, which the terrain is

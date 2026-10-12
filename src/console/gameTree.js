@@ -261,6 +261,11 @@ export function buildGameTree(g, host) {
     pheasants: text(() => g.pheasants.birds.map((b) => b.mode).join(', ') || 'none', 'each pheasant: hidden, fly or gone'),
     flush: flag(() => false, (v) => v && g.debugFlushPheasant(), 'set to true: the nearest pheasant bursts out as if you had come up to it'),
   }), 'rabbits and pheasants');
+  const fence = group(() => ({
+    on: flag(() => g.fence.live, (v) => { g.fenceParams.live = v ? 1 : 0; }, 'whether the electric fence on the hill is switched on'),
+    last: text(() => (g.fence.lastZap ? `${g.fence.lastZap.id} (${g.fence.lastZap.kind})` : 'nobody yet'), 'who last got a jolt from it'),
+    zap: flag(() => false, (v) => v && g.debugZapFence(), 'set to true: you (or the quad you are on) catch the wire now'),
+  }), 'the electric fence across the hill pasture');
   const lane = group(() => ({
     now: text(() => g.trafficHost.describe(), 'what is on the lane and who is visiting'),
     pass: flag(() => false, (v) => v && g.trafficHost.debugPass(), 'set to true: a vehicle goes along the lane now'),
@@ -279,6 +284,7 @@ export function buildGameTree(g, host) {
     weather,
     farm,
     wildlife,
+    fence,
     lane,
     audio,
     tune: tuningTree(),
