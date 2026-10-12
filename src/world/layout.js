@@ -147,19 +147,11 @@ export const LAYOUT = {
   // Where the barn find stands under its tarp (vehicle/barnFind.js), at the back of the barn: clear of the bay, the bales and the ladder.
   rusty: { x: -66.7, z: 59.9, yaw: 0.15 },
   yard: { x: -54, z: 58, radius: 20 },
-  // The girls' cars' hard-standing (world/carStanding.js): a concrete slab on the east side of the yard, the flattest clear ground near the
-  // barn (west of the barn the land falls away a metre and more), `halfX` by `halfZ` about its middle, laid level. Each car's spot on it,
-  // side by side, nosed in towards the barn. Two of the quads' parking slots moved off it (spawnKeepOut keeps them clear).
-  carStanding: {
-    x: -31,
-    z: 60,
-    halfX: 5,
-    halfZ: 4.2,
-    // 5.2 m apart, so there's room for a girl to walk between them (they were 3.4, with 1.6 m between their sides).
-    cars: {
-      fiesta: { x: -31.3, z: 62.6, yaw: -Math.PI / 2, where: 'on the hard-standing' },
-      corsa: { x: -31.3, z: 57.4, yaw: -Math.PI / 2, where: 'on the hard-standing' },
-    },
+  // Where the girls' cars park (game.js): on the tarmac pad at the end of the farm road, in front of the Dutch barn's open side, side by side
+  // and nosed in towards it. 5.2 m apart, so there's room for a girl to walk between them. The pad is flat, so nothing needs laying.
+  cars: {
+    fiesta: { x: 185.4, z: -2.4, yaw: Math.PI, where: 'by the Dutch barn' },
+    corsa: { x: 190.6, z: -2.4, yaw: Math.PI, where: 'by the Dutch barn' },
   },
   paddock: { x: -66, z: 34, half: 7 },
   gate: { x: -30, side: 'south', width: 4.2, open: true }, // swung back into the field and tied, onto the lane to the hill
@@ -274,9 +266,9 @@ export const LAYOUT = {
     quads: [
       { x: -46, z: 48, yaw: Math.PI * 0.62 },
       { x: -34, z: 52, yaw: Math.PI * 0.62 },
-      { x: -54, z: 52, yaw: Math.PI * 0.62 }, // (was at -38, 62 before the cars' hard-standing)
+      { x: -38, z: 62, yaw: Math.PI * 0.62 },
       { x: -52, z: 42, yaw: Math.PI * 0.62 },
-      { x: -24, z: 54, yaw: Math.PI * 0.62 }, // (was at -24, 58)
+      { x: -24, z: 58, yaw: Math.PI * 0.62 },
       { x: -44, z: 56, yaw: Math.PI * 0.62 },
       { x: -30, z: 68, yaw: Math.PI * 0.62 },
       { x: -53, z: 72, yaw: Math.PI * 0.62 },

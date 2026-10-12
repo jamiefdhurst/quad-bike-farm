@@ -1303,7 +1303,7 @@ export const DEFENDER_SPEC = {
   smoke: { ...UTV_SPEC.smoke },
 };
 
-// The girls' own cars, always parked on the hard-standing by the barn. Built like the Land Rovers (a unit with a clutch and gears, two
+// The girls' own cars, always parked on the pad by the Dutch barn. Built like the Land Rovers (a unit with a clutch and gears, two
 // seats in front and two in the back reached past a tipped front seat, belts) but small, light road cars: front-wheel drive, soft and
 // rolling, on road tyres that slither on wet grass and bog in mud, and low enough to ground on a bump. `owner` is whose it is: she is
 // the only girl who drives it, and minds if you take it.

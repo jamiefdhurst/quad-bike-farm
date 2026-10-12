@@ -1164,10 +1164,10 @@ export const FAQ_SECTIONS = [
     title: "The girls' cars",
     entries: [
       {
-        q: 'Whose are the two cars in the yard?',
+        q: 'Whose are the two cars?',
         a: `The pale blue Fiesta is Amy's: an old Mk1, kept clean, with L plates on, because she is still learning. The red Corsa with the grey wing and the big exhaust is
-          Jess's. They park side by side on the concrete hard-standing on the east side of the yard, and they are always there.`,
-        tip: "The Fiesta is Amy's and the Corsa is Jess's. They park on the concrete on the east side of the yard.",
+          Jess's. They park side by side on the tarmac at the end of the farm road, in front of the Dutch barn, and they are always there.`,
+        tip: "The Fiesta is Amy's and the Corsa is Jess's. They park at the end of the farm road, by the Dutch barn.",
       },
       {
         q: 'Can I drive their cars?',
@@ -1183,9 +1183,9 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why does the car get stuck on the grass?',
-        a: `They are road cars: front-wheel drive, low, and on road tyres. On the yard and the farm road they are quick and easy, but on wet grass they slither, in mud they bog
+        a: `They are road cars: front-wheel drive, low, and on road tyres. On the tarmac they are quick and easy, but on wet grass they slither, in mud they bog
           down almost at once, and they scrape over bumps a Land Rover wouldn't notice. The tractor can pull one out.`,
-        tip: 'The girls\' cars are road cars: keep them on the yard and the farm road, especially when it is wet.',
+        tip: 'The girls\' cars are road cars: keep them on the tarmac, especially when it is wet.',
       },
       {
         q: 'Do the girls drive their cars?',
@@ -1337,7 +1337,7 @@ export const VEHICLE_NOTES = {
     tips: ['Wait for the GLOW lamp before cranking.', 'Every gear has synchromesh: no crunching.', 'The belt lamp flashes and it bongs until you do your belt up.', 'Listen for the turbo whistling as it pulls, and chattering when you lift off.'],
   },
   fiesta: {
-    blurb: "Amy's car: a late-70s Mk1 Fiesta in faded pale blue with a beige inside, a 1.1 with a choke and four gears, clean, careful and on L plates. It lives on the concrete at the east side of the yard.",
+    blurb: "Amy's car: a late-70s Mk1 Fiesta in faded pale blue with a beige inside, a 1.1 with a choke and four gears, clean, careful and on L plates. It lives on the tarmac by the Dutch barn.",
     tips: ['A cold start wants the choke (Q).', 'Front-wheel drive on road tyres: stay on the road and the yard if it is wet.', 'Take it without Amy and she will not be pleased.'],
   },
   corsa: {

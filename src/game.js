@@ -470,11 +470,11 @@ export class Game {
     for (const [kind, spec] of [['landy', LAND_ROVER_SPEC], ['defender', DEFENDER_SPEC]]) {
       this.landys[kind] = { kind, spec, unit: bigSpecs.includes(spec) ? this.addLandRover(bigSpawn(spec), spec) : null, mount: null, ride: null };
     }
-    // The girls' own cars (vehicle/carModel.js), always here, on their hard-standing by the barn: built and ridden like the Land Rovers, so
+    // The girls' own cars (vehicle/carModel.js), always here, by the Dutch barn: built and ridden like the Land Rovers, so
     // they live in `landys` too (with `car` set), but each is driven only by its owner (spec.owner) and minds if you take it (npc/carGo.js).
     for (const kind of CAR_KINDS) {
       const spec = { fiesta: FIESTA_SPEC, corsa: CORSA_SPEC }[kind];
-      this.landys[kind] = { kind, spec, car: true, unit: this.addLandRover({ ...this.world.layout.carStanding.cars[kind] }, spec), mount: null, ride: null };
+      this.landys[kind] = { kind, spec, car: true, unit: this.addLandRover({ ...this.world.layout.cars[kind] }, spec), mount: null, ride: null };
     }
     // Perhaps an old quad under a tarp at the back of the barn (vehicle/barnFind.js): a unit like the tractor, not one of the girls' quads.
     this.barnFindParams = { ...DEFAULT_BARN_FIND_PARAMS };
