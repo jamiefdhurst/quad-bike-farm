@@ -49,6 +49,7 @@ import { pickHistory, pickFaultChance } from './vehicle/history.js';
 import { TyreSet, dealTyres, DEFAULT_TYRE_PARAMS, TYRE_PARAM_RANGES } from './vehicle/tyres.js';
 import { pushDirection, localAlong } from './vehicle/controls.js';
 import { BrakeState, DEFAULT_BRAKE_PARAMS, BRAKE_PARAM_RANGES } from './vehicle/brakeState.js';
+import { FrozenCable, DEFAULT_FROZEN_CABLE_PARAMS, FROZEN_CABLE_PARAM_RANGES } from './vehicle/frozenCable.js';
 import { RollWatch, rollReactions, DEFAULT_HANDBRAKE_PARAMS, HANDBRAKE_PARAM_RANGES } from './vehicle/handbrake.js';
 import { DEFAULT_DRIVE_PARAMS, DRIVE_PARAM_RANGES, StuckWatch, forgotReaction } from './vehicle/driveMode.js';
 import { HEADLIGHT_PARAMS, HEADLIGHT_PARAM_RANGES } from './vehicle/headlight.js';
@@ -396,6 +397,11 @@ export class Game {
       unit.quad.brakes = new BrakeState(this.brakeParams, brakeRandom);
       unit.quad.brakes.setBinding(brakeRandom() < this.brakeParams.bindChance);
     }
+    // A throttle cable frozen on a frosty morning (vehicle/frozenCable.js); dealt once the day's weather is known, just below.
+    this.frozenCableParams = { ...DEFAULT_FROZEN_CABLE_PARAMS };
+    registerTuning('Frozen throttle cable', this.frozenCableParams, FROZEN_CABLE_PARAM_RANGES);
+    this.frozenCableRandom = createRandom(this.seed ^ 0xf205);
+    for (const unit of this.units) unit.quad.iceCable = new FrozenCable(this.frozenCableParams, this.frozenCableRandom);
     this.handbrakeParams = { ...DEFAULT_HANDBRAKE_PARAMS };
     this.pushing = null; // the unit you're shoving along on foot (pushOnFoot)
     registerTuning('Handbrake', this.handbrakeParams, HANDBRAKE_PARAM_RANGES);
@@ -479,6 +485,7 @@ export class Game {
     this.weather.temperature = Math.round(this.daylight.temperature(celsius) * 10) / 10;
     this.world.daylight = this.daylight;
     for (const unit of this.units) unit.quad.seatFrost = this.weather.seatFrost;
+    for (const unit of this.units) unit.quad.iceCable.deal(this.frozenCableRandom, this.weather.frost, !!this.world.covered?.(unit.quad.position.x, unit.quad.position.z));
     this.world.setWeather(this.weather);
     this.rain = new Rain(this.scene);
     this.snow = new Snow(this.scene);
@@ -2425,6 +2432,7 @@ export class Game {
     unit.quad.quirks = new QuirkSet(pickQuirks(featuresOf(spec, false), random, this.quirkParams), this.quirkParams);
     unit.quad.brakes = new BrakeState(this.brakeParams, random);
     unit.quad.brakes.setBinding(random() < this.brakeParams.bindChance);
+    unit.quad.iceCable = new FrozenCable(this.frozenCableParams, random); // stood in the barn, so never frozen
     if (unit.quad.sump) unit.quad.sump = new Sump({ level: startLevel(false, random, this.sumpParams), burner: false, params: this.sumpParams });
     unit.quad.faults.roll(createRandom(this.farmSeed ^ (spec.defender ? 0x1a5f : 0x1a4f)));
     unit.quad.faults.prone.belt = 0; // a clutch, not a belt
@@ -2615,7 +2623,10 @@ export class Game {
     const raining = this.weather.rain > 0.25;
     for (const u of this.units) {
       const q = u.quad;
-      q.quirks.seatStep(dt, { raining, covered: !!this.world.covered?.(q.position.x, q.position.z) });
+      const covered = !!this.world.covered?.(q.position.x, q.position.z);
+      q.quirks.seatStep(dt, { raining, covered });
+      // The weather as it is now: the frost and the temperature move over the day.
+      q.iceCable.update(dt, { running: u.engine.isRunning, engineTemp: u.engine.temperature, covered, frost: this.weather.frost, temperature: this.weather.temperature, sun: this.weather.warmth });
     }
     if (ridden === this.lastRiddenForSeat) return;
     this.lastRiddenForSeat = ridden;

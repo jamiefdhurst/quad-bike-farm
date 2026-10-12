@@ -227,6 +227,7 @@ export class DebugGui {
     show(r, 'odometer / trip (mi)', () => `${unit().quad.usage.odoMiles.toFixed(2)} / ${unit().quad.tripMiles.toFixed(2)}`);
     show(r, 'chain oil (1 fresh)', () => (unit().quad.faults.hasChain ? round(unit().quad.faults.kept.chainLube) : 'no chain'));
     show(r, 'brakes wet (0 dry)', () => round(unit().quad.brakes.wet));
+    show(r, 'ice in the throttle cable', () => round(unit().quad.iceCable.ice));
     show(r, 'water reaching the carb', () => round(unit().engine.fuelWater));
     tick(r, 'parking brake', () => !!unit().quad.parkBrake, (v) => (unit().quad.parkBrake = v));
     // The UTV's light switch, and the 2WD / 4WD switch where there is one.
@@ -252,6 +253,8 @@ export class DebugGui {
     tick(p, 'chain off the sprocket', () => unit().quad.faults.chainOff, (v) => (unit().quad.faults.kept.chainOff = v));
     set(p, 'chain oil (0 bone dry)', () => round(unit().quad.faults.kept.chainLube), (v) => (unit().quad.faults.kept.chainLube = v), 0, 1);
     set(p, 'wet brakes', () => round(unit().quad.brakes.wet), (v) => (unit().quad.brakes.wet = v), 0, 1);
+    set(p, 'frozen throttle cable (ice)', () => round(unit().quad.iceCable.ice), (v) => (unit().quad.iceCable.ice = v), 0, 1);
+    tick(p, 'cable freezes open (not shut)', () => unit().quad.iceCable.mode === 'open', (v) => (unit().quad.iceCable.mode = v ? 'open' : 'shut'));
     tick(p, 'brake binding (rides free)', () => unit().quad.brakes.binding, (v) => unit().quad.brakes.setBinding(v));
     set(p, 'plug fouling', () => round(unit().engine.fouling), (v) => (unit().engine.fouling = v), 0, 1);
     set(p, 'air filter clogged', () => round(unit().engine.clog), (v) => (unit().engine.clog = v), 0, 1);

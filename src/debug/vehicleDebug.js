@@ -33,7 +33,7 @@ export function clearFaults(faults) {
   for (const kind of FAULT_KINDS) faults.fix(kind);
 }
 
-/** Puts a quad right: faults, plug, filter, wear, scuffing, seizure, water, water in the fuel, diesel, wet or binding brakes and the stiff tap. Quirks and the engine's age stay. */
+/** Puts a quad right: faults, plug, filter, wear, scuffing, seizure, water, water in the fuel, diesel, wet or binding brakes, a frozen throttle cable and the stiff tap. Quirks and the engine's age stay. */
 export function fixEverything(unit) {
   const e = unit.engine;
   clearFaults(unit.quad.faults);
@@ -57,6 +57,7 @@ export function fixEverything(unit) {
   unit.quad.quirks.tapStiff = 0;
   unit.quad.startTrouble = 0;
   unit.quad.brakes.fix();
+  unit.quad.iceCable.fix();
   unit.quad.faults.kept.chainLube = 1; // a fresh chain, as the bench leaves it
   unit.quad.faults.kept.chainOff = false;
 }
@@ -101,6 +102,7 @@ export function problemSummary(unit) {
   if (e.battery < 0.25) bits.push('battery flat');
   if (unit.quad.brakes.wet > 0.1) bits.push(`brakes wet ${unit.quad.brakes.wet.toFixed(2)}`);
   if (unit.quad.brakes.binding) bits.push('brake binding');
+  if (unit.quad.iceCable.frozen) bits.push(`throttle cable frozen ${unit.quad.iceCable.ice.toFixed(2)}`);
   if (e.boiled) bits.push('boiled over');
   if (unit.quad.fuel.litres <= 0.01) bits.push('out of fuel');
   return bits.length ? bits.join(', ') : 'nothing wrong';

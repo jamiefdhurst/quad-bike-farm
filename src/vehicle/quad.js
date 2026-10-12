@@ -35,6 +35,7 @@ import { BikeLean, DEFAULT_BIKE_PARAMS } from './bikeLean.js';
 import { RiderLean, DEFAULT_RIDER_LEAN_PARAMS } from './riderLean.js';
 import { holdsItself } from './handbrake.js';
 import { BrakeState } from './brakeState.js';
+import { FrozenCable } from './frozenCable.js';
 import { SeatSpring, UpAccel, DEFAULT_SEAT_PARAMS } from './seatRide.js';
 import { DriveSwitch, driveEffects, DEFAULT_DRIVE_PARAMS } from './driveMode.js';
 import { fuelWaterLevel } from './fuelWater.js';
@@ -139,6 +140,7 @@ export class Quad {
       this.faults.tyreWheels = layout.wheels.flatMap((w, i) => (w.outrigger ? [] : [i]));
       this.faults.wheelSides = layout.wheels.map((w) => ({ side: w.x >= 0 ? 1 : -1, front: !!w.front }));
     }
+    this.iceCable = new FrozenCable(); // a throttle cable frozen on a frosty morning (frozenCable.js); the game gives it this game's tuning and deals it
     this.brakes = new BrakeState(); // wet and binding brakes (brakeState.js); the game gives it this game's tuning and deals the binding ones
     this.filter = new AirFilter(); // clogs with mud, puddles and dust; cleaned at the toolbox
     this.dust = 0; // 0..1 how much dust it is throwing up (fast over dry stubble)
@@ -709,8 +711,8 @@ export class Quad {
     this.dust = this.world.dustParams ? dustLevel(this.world.dustParams, this.world.stubbleAt?.(this.position.x, this.position.z) ?? 0, this.world.wet ?? 0, fwd) : 0;
     this.filter.update(dt, { running: this.engine.isRunning, speed: fwd, dust: Math.max(this.dust, this.dustIn) * (this.world.dustParams?.filterBoost ?? 1), mud: Math.max(...this.physics.wheelInfo.map((w) => w.mud ?? 0)), puddle: Math.max(...this.physics.wheelInfo.map((w) => w.puddle ?? 0)) });
     // She has the sense to switch off a quad whose throttle has stuck open.
-    if (this.driver && this.faults.stuck && this.engine.isRunning && this.faults.heldThrottle > 0.3) this.engine.setIgnition(false);
-    this.throttle = this.faults.stickThrottle(dt, throttleInput, this.engine.isRunning);
+    if (this.driver && ((this.faults.stuck && this.faults.heldThrottle > 0.3) || (this.iceCable.mode === 'open' && this.iceCable.frozen && this.iceCable.held > 0.3)) && this.engine.isRunning) this.engine.setIgnition(false);
+    this.throttle = this.iceCable.throttle(this.faults.stickThrottle(dt, throttleInput, this.engine.isRunning), this.engine.isRunning);
     this.brake = brakeInput;
 
     if (this.ghost) {

@@ -3028,6 +3028,17 @@ Jamie: too many vehicles started near the barn and caused traffic, and some star
 - Amy drains an overfilled quad before she rides (`oilOver` line, new, needs recording) and logs it in the notebook as an oil job. The girls never pour, so only you can overfill one. Jess never checks.
 - Checked: unit tests (`tests/sump.test.js`). Not checked in the running game: how the smoke and the sluggishness feel, or the status text while pouring. Numbers are first guesses.
 
+## A frozen throttle cable (TODO 19)
+
+Nothing needed settling; the numbers were chosen here.
+
+- `src/vehicle/frozenCable.js` (pure, tested in `tests/frozenCable.test.js`): `FrozenCable` per quad, `quad.iceCable`, with `ice` (0 free to 1 solid) and a `mode`, dealt 50/50 from the seed: `shut` (won't open: the throttle is capped at `1 - openLoss * ice`, so 0.1 at full ice) or `open` (from `holdFrom` 0.3 ice a throttle you open stays where you left it; as it thaws below that it comes back). Below `freezeFrom` 0.15 it is only stiff and does nothing. It sits after the existing sticking-cable fault in `quad.js`, so the two stack; it is a condition of the weather, not a wear fault, so it is not in `Faults`.
+- Dealt once the day's weather is known (`deal`): on a frosty day (`weather.frost` above 0), a quad not under a roof starts frozen with `startChance` 0.7, ice `startIce` 0.5 to 1. From a stream of its own (`seed ^ 0xf205`). Not saved between days: it is the morning's weather, not the quad's lasting condition, and each load deals again. The barn find stands in the barn, so is never frozen.
+- Freezes again while stood out with the engine off in frost: `freezeRate` 0.0011 a second at full frost (about fifteen minutes). Thaws with the engine running (`thawEngine` 0.015, scaled 0.3 cold to 1 warm: about a minute warm, three cold), in the sun (`thawSun` 0.005 times `weather.warmth`, under a roof none) and per degree above freezing (`thawWarm` 0.002). Read from the weather every frame in `updateQuirks`, as the temperature and frost move over the day.
+- Frozen open on a quad someone is driving: she switches it off, as for the stuck cable. A frozen-shut quad she is driving just idles until it thaws; I did not add a girl line for either, so nothing to record.
+- Debug: "ice in the throttle cable" in Running; "frozen throttle cable (ice)" and "cable freezes open" in Problems (in `problemSummary`, cleared by "Put it right"); `iceCable` in the console; "Frozen throttle cable" tuning under Driving.
+- Not checked in play: how the frozen-shut idle feels, or the real times. Unit tests only.
+
 ## Drawing less (frame time) (2026-10-12)
 
 Jamie: the game was working his M4 Max MacBook Pro hard, and more is coming. Measured first, headless at 1728 by 1117 points at Retina 2x (the 16" default), with `--disable-gpu-vsync --disable-frame-rate-limit` so the frame rate shows the real cost (`.scratch/pp/perf.mjs`, `tris.mjs`, `ab2.mjs`; headless fps drifts by a fifth over a run, so each change was alternated with the baseline three times).

@@ -248,6 +248,14 @@ export const FAQ_SECTIONS = [
         tip: 'After the ford the brakes are wet. Dab S as you ride to dry them.',
       },
       {
+        q: 'Why won\'t the throttle open (or shut) on a frosty morning?',
+        a: `On a frosty morning a quad left out in the open can have a frozen throttle cable. Either it won't open past a crack, so the engine idles and
+          you can't go anywhere, or it opens and then stays open when you let go. Don't fight it. Keep the engine running and the heat will free it in a
+          minute or two (a warm engine is quicker), or wait for the sun, or the day to warm up. Quads in the barn or lean-to never freeze, and one left out
+          in a hard frost with the engine off can freeze again. If it is stuck open, switch off.`,
+        tip: 'Frosty morning and the throttle will not move? The cable is frozen. Let the engine run, or wait for the sun.',
+      },
+      {
         q: 'Why does my quad drag, then clunk?',
         a: `Some quads have stood so long that a brake binds, as if the handbrake were half on. It drags until a few metres of riding free it with a clunk,
           and then it is fine. It is nothing you did, and there is nothing to fix.`,
