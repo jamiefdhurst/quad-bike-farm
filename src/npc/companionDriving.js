@@ -13,6 +13,7 @@ import { PushStart, DEFAULT_PUSH_PARAMS } from './pushStart.js';
 import { onTarmac } from './tarmac.js';
 import { towedBy } from '../vehicle/trailerObstacle.js';
 import { pickOuting, roadSpots } from './outings.js';
+import { TowSteer, DEFAULT_TOW_STEER_PARAMS } from './towSteer.js';
 import { MotoNerve, refusesMoto, speedShare } from './motoGo.js';
 
 // Her driving a quad herself, as Companion states and methods: getting on the
@@ -129,6 +130,14 @@ export const drivingStates = {
       // From another field, by the gateways (world/fields.js): the way to the first point of her route, without it.
       const via = park && this.world.fields ? this.world.fields.route(this.quad.position, park.route[0]).slice(0, -1) : [];
       if (via.length) park = { ...park, route: [...via.map((p) => ({ x: p.x, z: p.z })), ...park.route] };
+      // Sat on a dead quad on the tow rope: no engine to start and nowhere of her own to go, just the bars and the brake (towSteer.js).
+      const tow = this.towWanted;
+      this.towWanted = null;
+      if (tow?.rope.target === q) {
+        this.drive = new TowSteer(q, tow.rope, { params: this.towSteerParams ?? { ...DEFAULT_TOW_STEER_PARAMS }, horizon: this.params.towHorizon, distractChance: this.params.towDistractChance });
+        q.setDriver(this.drive);
+        return;
+      }
       const params = driveMood(this.params, this.driveMood);
       params.driveSpeedMaxBase = this.params.driveSpeedMax;
       // The mini moto: she is nervous at first and slow, braver the longer she is on it, and in the end comes off (motoGo.js).
@@ -452,6 +461,17 @@ export const drivingMethods = {
     this.fsm.transition('walking', { goal: 'drive', target: () => this.driveMountPoint() });
   },
 
+  /** She gets on a dead quad that is on the end of the tow rope and steers and brakes it behind the towing quad (towSteer.js). */
+  requestTowSteer(quad, rope) {
+    this.requestDrive(quad);
+    this.towWanted = { rope }; // after requestDrive, which can be a drive she was already on: it is read when she sits down
+  },
+
+  /** The rope is on this quad, the quad is still, nobody is on it, and she could sit on it. */
+  canSteerTowed(quad, rope) {
+    return rope?.state === 'hooked' && rope.target === quad && !quad.passenger && quad.speed < 0.5 && this.canDrive(quad);
+  },
+
   /** The Land Rover's battery is too flat for the starter and it is not running: she will have to swing the handle. */
   needsHandle(quad) {
     const e = quad.engine;
@@ -592,9 +612,9 @@ export const drivingMethods = {
     if (nick && !(nick.phase === 'back' && d.result === 'parked')) this.nickJob = null; // anything else ends it: she's done, or you've got it back
     this.driveConfidence = afterDrive(this.driveConfidence ?? p.driveConfidence, d.result);
     let how = exit?.how;
-    if (!how) how = d.result === 'parked' || d.result === 'gaveUp' || d.result === 'noRoom' || Math.random() >= p.driveBackChance ? 'off' : 'back';
+    if (!how) how = d.towing || d.result === 'parked' || d.result === 'gaveUp' || d.result === 'noRoom' || Math.random() >= p.driveBackChance ? 'off' : 'back';
     // Done, and getting off: most of the time she drives it back near the barn first, into clear ground east of the row.
-    if (how === 'off' && !d.park && !nick && !q.tractor && !q.driverStand) {
+    if (how === 'off' && !d.park && !d.towing && !nick && !q.tractor && !q.driverStand) {
       const home = this.homeParams ?? DEFAULT_HOME_PARAMS;
       const lp = this.lineUpParams ?? DEFAULT_LINEUP_PARAMS;
       const wants = bringsItHome({ result: d.result, pos: q.position, hasPassenger: !!q.passenger, asked: !!exit }, Math.random, home, lp);

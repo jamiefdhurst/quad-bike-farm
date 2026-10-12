@@ -13,6 +13,7 @@ import { AMY_PLACE_LINES } from './placeLines.js';
 import { AMY_LOFT_LINES } from './loftLines.js';
 import { AMY_BATTERY_LINES } from './batteryLines.js';
 import { AMY_PUSH_LINES } from './pushLines.js';
+import { AMY_TOW_LINES } from './towLines.js';
 import { AMY_MIND_LINES } from './mindLines.js';
 import { AMY_KNACK_LINES } from './knackLines.js';
 import { AMY_OIL_LINES } from './oilLines.js';
@@ -1438,6 +1439,7 @@ export const VOICE_LINES = {
   // Flat batteries (batteryLines.js).
   ...AMY_BATTERY_LINES,
   ...AMY_PUSH_LINES,
+  ...AMY_TOW_LINES,
   ...AMY_MIND_LINES,
   // Each quad's knack (knackLines.js).
   ...AMY_KNACK_LINES,

@@ -93,6 +93,7 @@ export function buildGameTree(g, host) {
         rolled: ro(() => e().rollSpeed, '', 'how fast the wheels turn it over (bump-start), 0 to 1 of a starter'),
         temperature: num(() => e().temperature, (v) => e().setTemperature(v), 0, 1, '', '0 cold, 1 warm'),
         trailer: text(() => (q().loadedOn ? (g.trailer.load.mode === 'aboard' ? (g.trailer.load.strapped ? 'strapped on' : 'on, loose') : 'on the ramps') : 'off'), 'on the bale trailer?'),
+        towRope: flag(() => g.towRope.target === q(), (v) => { if (!!v !== (g.towRope.target === q())) g.hud.toast(g.debugTowRope(u())); }, 'is the tow rope hooked on it? Set true to hook it from the nearest utility quad, false to take it off'),
         battery: num(() => e().battery, (v) => (e().battery = v), 0, 1),
         charging: ro(() => (e().isRunning ? netCharge(e().rpm, e().params.idleRpmWarm, e().params.maxRpm, e().lightLoad, e().params.batteryChargeRate, e().params) * 60 : 0), '/min', 'battery gained a minute at these revs and lamps'),
         fuel: num(() => q().fuel.litres, (v) => (q().fuel.litres = v), 0, q().fuel.params.tankCapacity, 'litres'),
@@ -292,6 +293,10 @@ export function buildGameTree(g, host) {
     take: flag(() => false, (v) => v && g.photos.press(), 'set to true: raise the camera now'),
     clear: flag(() => false, (v) => v && g.photos.clear(), 'set to true: take every photo down'),
   }), 'the camera and the barn corkboard');
+  const towRope = group(() => ({
+    now: text(() => { const r = g.towRope; return r.state === 'hooked' ? `${r.puller.unit?.label} to ${r.target.unit?.label}: ${r.tight ? `tight, ${Math.round(r.force)} N` : 'slack'}, ${r.length.toFixed(1)} m long` : r.state; }, 'where the tow rope is and how tight'),
+    off: flag(() => false, (v) => v && g.towRope.stow(), 'set to true: take the rope off and put it back'),
+  }), 'the tow rope on the utility quads');
   const audio = group(() => ({ sound: flag(() => !g.audioHub.params.muted, (v) => (g.audioHub.params.muted = !v), 'all game sound') }));
 
   return group(() => ({
@@ -305,6 +310,7 @@ export function buildGameTree(g, host) {
     fence,
     lane,
     photos,
+    towRope,
     audio,
     tune: tuningTree(),
   }));

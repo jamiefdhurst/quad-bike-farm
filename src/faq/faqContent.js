@@ -1143,6 +1143,27 @@ export const FAQ_SECTIONS = [
         a: `Look at the tractor and press <kbd>X</kbd> to take the chain, <kbd>E</kbd> on a stuck quad to hook it, then back the tractor up and drive off.`,
       },
       {
+        q: 'How do I tow a dead quad with another quad?',
+        a: `Look at the red or blue quad (the green keeps its winch on <kbd>X</kbd>) and press <kbd>X</kbd> to take the tow rope off its rack. Walk the hook to the dead quad and press
+          <kbd>E</kbd> on it, then get on the towing quad and ride off gently. <kbd>E</kbd> on the dead quad unhooks it, and <kbd>X</kbd> puts the rope back. The rope stretches and goes slack, unlike the tractor's chain, and
+          the dead quad has its brakes off, so it rolls on if you stop.`,
+        tip: 'Tow rope: X at a red or blue quad, E on the dead one. Take up the slack gently.',
+      },
+      {
+        q: 'How do I get a girl to steer the quad I am towing?',
+        a: `With the rope hooked on, look at her, press <kbd>E</kbd> for her wheel and choose "Steer the towed quad". She sits on the dead quad, steers it after you and works the brake. Amy brakes early and keeps her eyes on the rope.
+          Jess brakes later and now and then looks away, so if you stop sharply she may run into your back. "Get off the towed quad" lets her down again, and she gets off by herself if you unhook the rope.`,
+      },
+      {
+        q: 'Why did she shout when I towed her?',
+        a: `You took up the slack too fast and the rope snatched. Pull away gently so it goes tight slowly. If you stop suddenly with her on the end, she may run up into your back: slow down in good time.`,
+      },
+      {
+        q: "Why won't the tow rope come off the quad, or hook on?",
+        a: `The green quad's <kbd>X</kbd> is its winch, so take the rope from the red or blue one, with your hands empty and on foot. A trailer on the same quad's hitch has to come off first. The rope only reaches a few metres from the hitch
+          and comes out of your hand if you go further or get on something.`,
+      },
+      {
         q: 'Can the girls ride in the UTV and the Land Rover?',
         a: `Yes. Stop with the engine running and they may climb in, squabbling over the middle seat. Jess may ride in the UTV's bed, which is against the rules.
           They drive both too (Amy only once she's had her day on the tractor), and you can ride beside the driver. The 200TDi has a back bench as well: ask a girl to "Get in the back", or look at its back half and press <kbd>B</kbd> to sit there yourself.`,

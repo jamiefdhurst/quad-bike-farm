@@ -361,6 +361,20 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'steer-tow',
+      label: '% sits on the quad the tow rope is hooked to and steers and brakes it (hook the rope from the Vehicles tab first)',
+      run: (id) => {
+        const c = girl(id);
+        if (!free(id)) return;
+        const rope = g.towRope;
+        const quad = rope.state === 'hooked' ? rope.target : null;
+        if (!quad) return toast('The tow rope is not hooked on anything: use "Hook the tow rope on it" on the Vehicles tab');
+        if (!c.canSteerTowed(quad, rope)) return toast(`${c.name} can't steer it right now (somebody is on it, or it is moving)`);
+        c.requestTowSteer(quad, rope);
+        toast(`${c.name} is off to steer the towed quad`);
+      },
+    },
+    {
       verb: 'ride',
       label: '% rides on the back of it',
       vehicle: true,

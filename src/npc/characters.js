@@ -37,6 +37,8 @@ export const CHARACTERS = [
       remembers4wd: 0.65,
       voiceHardBrakeDecel: 5.5, // notices hard braking a little sooner than Jess
       voiceHardBrakeTime: 0.3,
+      towHorizon: 2.6, // brakes early and keeps her eyes on the rope
+      towDistractChance: 0.004,
       reactEarsChance: 0.85, // covers her ears at revs beside her; claps a jump rather than cheering
       reactStartleChance: 0.95, // a pheasant out of the hedge makes her jump
       reactCheerChance: 0.45,
@@ -104,6 +106,8 @@ export const CHARACTERS = [
       nickChance: 1, // hops on a quad you've left running and rides off with it (nicking.js)
       boredDriveChance: 0.4,
       driveConfidence: 0.7,
+      towHorizon: 1.2, // brakes late for the quad in front, and now and then looks away
+      towDistractChance: 0.04,
       diagnoseAccuracy: 0.5, // sure of herself, wrong about half the time
       faultNoticeFrom: 0.6, // not watching the quad, only what's fun
       startPullWhenFlat: 1, // on a flat battery she'd rather yank the pull-start than give up

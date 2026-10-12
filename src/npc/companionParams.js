@@ -134,6 +134,8 @@ export const DEFAULT_COMPANION_PARAMS = {
   wanderMax: 18,
 
   // Driving a quad herself (herDriving.js)
+  towHorizon: 1.8, // seconds ahead she brakes for steering a dead quad on the tow rope: longer is earlier, safer braking
+  towDistractChance: 0.02, // chance each second she looks away from the rope for a moment, with no steering or braking
   driveConfidence: 0.5, // her usual confidence driving, 0 careful to 1 confident; a fright knocks it, a good go builds it
   driveMoodSwing: 0.35, // how much it varies from one go to the next
   driveSpeedMin: 2, // m/s she's happy at (4.5 to 8 mph) at middling confidence
@@ -453,6 +455,8 @@ export const COMPANION_PARAM_RANGES = {
   offerRideForMin: [10, 600, 5],
   offerRideForMax: [10, 900, 5],
   offerRideGiveUp: [5, 120, 1],
+  towHorizon: [0.3, 5, 0.1],
+  towDistractChance: [0, 0.3, 0.005],
   driveConfidence: [0, 1, 0.01],
   driveMoodSwing: [0, 1, 0.01],
   driveSpeedMin: [0.5, 8, 0.1],

@@ -264,6 +264,7 @@ export class DebugGui {
     show(r, 'throttle', () => round(unit().engine.throttle));
     show(r, 'load / lug', () => `${round(unit().engine.load)} / ${round(unit().engine.lug)}`);
     show(r, 'power', () => round(unit().engine.power));
+    show(r, 'on the tow rope', () => (this.game.towRope.target === unit().quad ? (this.game.towRope.tight ? `tight, ${Math.round(this.game.towRope.force)} N` : 'slack') : this.game.towRope.puller === unit().quad ? `pulling the ${this.game.towRope.target?.unit?.label ?? 'rope'}` : 'no'));
     show(r, 'on the bale trailer', () => (unit().quad.loadedOn ? (this.game.trailer.load.mode === 'aboard' ? (this.game.trailer.load.strapped ? 'strapped on' : 'on, loose') : 'on the ramps') : 'no'));
     if (u.quad.manual) show(r, 'turned by the wheels (bump-start)', () => round(unit().engine.rollSpeed));
     set(r, 'temperature', () => round(unit().engine.temperature), (v) => unit().engine.setTemperature(v), 0, 1);
@@ -381,6 +382,7 @@ export class DebugGui {
     row(one, 'Fill the tank', () => (this.unit().quad.fuel.litres = this.unit().quad.fuel.params.tankCapacity));
     row(one, 'Winch it onto the bale trailer', () => g.hud.toast(g.debugLoad(this.unit())));
     row(one, 'Pay it back off the trailer', () => g.hud.toast(g.debugUnload(this.unit())));
+    row(one, 'Hook the tow rope on it / take it off', () => g.hud.toast(g.debugTowRope(this.unit())));
     row(one, 'Put it right (faults, plug, filter, wear; not quirks)', () => fixEverything(this.unit()));
     row(one, 'Take me to it', () => {
       const q = this.unit().quad;

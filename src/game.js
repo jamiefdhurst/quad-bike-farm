@@ -199,6 +199,8 @@ import { JumpLeads, JUMP_LEAD_PARAM_RANGES } from './items/jumpLeads.js';
 import { Hose, HOSE_PARAM_RANGES } from './items/hose.js';
 import { Winch, WINCH_PARAM_RANGES } from './items/winch.js';
 import { Chain, CHAIN_PARAM_RANGES } from './items/chain.js';
+import { TowRope, TOW_ROPE_PARAM_RANGES } from './items/towRope.js';
+import { DEFAULT_TOW_STEER_PARAMS, TOW_STEER_RANGES } from './npc/towSteer.js';
 import { TRACTOR_GROUND_OFFSET } from './vehicle/tractorModel.js';
 import { Weather, pickWeatherKind, pickTemperature } from './world/weather.js';
 import { Wind, Shutter, pickHeading, DEFAULT_WIND_PARAMS, WIND_PARAM_RANGES } from './world/wind.js';
@@ -764,9 +766,10 @@ export class Game {
     this.borrowing = Object.fromEntries(CAR_KINDS.map((k) => [k, new Borrowing(this.carGo.p)]));
     this.crankParams = { ...DEFAULT_CRANK_ATTEMPT_PARAMS };
     this.pushParams = { ...DEFAULT_PUSH_PARAMS };
+    this.towSteerParams = { ...DEFAULT_TOW_STEER_PARAMS }; // a girl steering a dead quad on the tow rope (npc/towSteer.js)
     this.keepParams = { ...DEFAULT_KEEPALIVE_PARAMS }; // keeping a sick one alive from the back (npc/keepAlive.js), shared by both girls
     this.goJoins = []; // the other girl on her way to climb in beside a driver: { left, girl, kind, driver }
-    for (const c of this.companions) Object.assign(c, { tractorGo: this.tractorDrive, utvGo: this.utvDrive, landyGo: this.landyDrive, carGo: this.carGo, crankParams: this.crankParams, pushParams: this.pushParams, keepParams: this.keepParams, numbShared: this.numbParams, tractorStartParams: this.tractorStartParams, noviceParams: this.noviceParams });
+    for (const c of this.companions) Object.assign(c, { tractorGo: this.tractorDrive, utvGo: this.utvDrive, landyGo: this.landyDrive, carGo: this.carGo, crankParams: this.crankParams, pushParams: this.pushParams, towSteerParams: this.towSteerParams, keepParams: this.keepParams, numbShared: this.numbParams, tractorStartParams: this.tractorStartParams, noviceParams: this.noviceParams });
     // Jess tapes L plates to Amy's quad; Amy peels them off, and once she's confident they go on the tractor (npc/lPlates.js).
     this.lPlates = new LPlates(undefined, createRandom(this.seed ^ 0x1b1a));
     this.lPlateSet = new LPlateSet();
@@ -898,6 +901,12 @@ export class Game {
             return `Hook the tractor's chain on the ${unit.label}${quad.bog.stuck ? ' (it\'s stuck)' : ''}   ·   X put it back`;
           }
           if (chain?.state === 'hooked' && chain.target === quad) return 'Unhook the tow chain';
+          const rope = this.towRope;
+          if (rope.state === 'carried') {
+            if (quad === rope.puller) return { text: 'X put the tow rope back' };
+            return `Hook the tow rope on the ${unit.label}   ·   X put it back`;
+          }
+          if (rope.state === 'hooked' && rope.target === quad) return 'Unhook the tow rope';
           if (this.hose.held) {
             const muddy = Math.round(Math.max(unit.mud.state.body, unit.mud.state.wheels) * 100);
             return { text: muddy > 0 ? `Hold E to wash the ${unit.label} (${muddy}% muddy)   ·   G put the hose back` : `The ${unit.label} is clean   ·   G put the hose back` };
@@ -929,7 +938,7 @@ export class Game {
                   ? [['K', 'Key'], ['R', 'Start'], ...(unit.spec.defender ? [] : [['Q Z', 'Choke'], ['[ ]', 'Hand throttle']]), ['Y', 'Dipstick'], ...(unit.spec.defender ? [] : [['P', 'Starting handle (at the front)']]), ...(this.canSitOnBack(quad) ? [['B', this.lookingAtBack(quad) ? 'Sit in the back' : 'Sit in the passenger seat']] : [])]
                 : unit.spec.car
                   ? [['K', 'Key'], ['R', 'Start'], ...(unit.spec.engine.injected ? [] : [['Q Z', 'Choke']]), ['Y', 'Dipstick'], ...(this.canSitOnBack(quad) ? [['B', this.lookingAtBack(quad) ? 'Sit in the back' : 'Sit in the passenger seat']] : [])]
-                : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(quad.sump ? [['Y', 'Dipstick']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : []), ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : [])],
+                : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.engine.params.pullStart ? [['P', 'Pull-start']] : []), ['Q Z', 'Choke'], ['F', 'Fuel tap'], ...(quad.sump ? [['Y', 'Dipstick']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : []), ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : []), ...(this.towRope.state === 'stowed' && this.ropeQuadFor(unit) && !this.player.isRiding ? [['X', 'Tow rope']] : [])],
           };
         },
         interact: () => {
@@ -951,6 +960,14 @@ export class Game {
           }
           if (this.chain?.state === 'hooked' && this.chain.target === quad) {
             this.chain.unhook(this.camera);
+            return;
+          }
+          if (this.towRope.state === 'carried') {
+            if (quad !== this.towRope.puller) this.towRope.hookOn(quad);
+            return;
+          }
+          if (this.towRope.state === 'hooked' && this.towRope.target === quad) {
+            this.towRope.unhook(this.camera);
             return;
           }
           if (this.can.held || this.hose.held) return; // E is for pouring or spraying while you're holding those
@@ -1148,6 +1165,8 @@ export class Game {
     this.winchReel = false;
     // The tractor's tow chain (items/chain.js), for a quad sunk too deep for the winch or a dead one to tow home.
     this.chain = this.tractorUnit ? new Chain({ scene: this.scene, tractor: this.tractorUnit.quad, anchor: (q) => q.localToWorld(0, TRACTOR_GROUND_OFFSET + 0.52, -1.5) }) : null; // no tractor, no chain
+    // The tow rope on the red and blue quads' racks (items/towRope.js): a quad towing a quad, with a girl steering the dead one.
+    this.towRope = new TowRope({ scene: this.scene });
     this.interaction.add({
       target: this.hose.proxy,
       isAvailable: () => !this.handsFull,
@@ -1346,6 +1365,8 @@ export class Game {
     registerTuning('Favours asked', this.requests.p, REQUEST_PARAM_RANGES);
     if (this.winch) registerTuning('Winch', this.winch.params, WINCH_PARAM_RANGES);
     if (this.chain) registerTuning('Tow chain', this.chain.params, CHAIN_PARAM_RANGES);
+    registerTuning('Tow rope', this.towRope.params, TOW_ROPE_PARAM_RANGES);
+    registerTuning('Girl steering a tow', this.towSteerParams, TOW_STEER_RANGES);
     registerTuning('Player', this.player.params, PLAYER_PARAM_RANGES);
     for (const c of this.companions) {
       registerTuning(c.name, c.params, COMPANION_PARAM_RANGES, { onChange: () => c.refreshFigure() });
@@ -1634,6 +1655,7 @@ export class Game {
     const tip = this.tipTrailer;
     const mine = [hay, tip].filter(Boolean);
     if (tractor && this.chain?.state !== 'stowed') return this.hud.toast('The tow chain is on the drawbar', 2);
+    if (!tractor && this.towRope.state !== 'stowed' && this.towRope.puller === q) return this.hud.toast('The tow rope is on the hitch', 2);
     const on = mine.find((t) => t.hitched && (t === hay || t.puller === q));
     if (on) {
       if (q.speed > 0.5) return this.hud.toast('Stop before you unhitch the trailer', 2);
@@ -1787,7 +1809,7 @@ export class Game {
       occupied: !!(q.rider || q.driver || q.passenger || q.input || q.ghost || busy),
       tipped: q.isTipped,
       excluded: !!(unit.spec.tractor || unit.spec.utv || unit.spec.landRover || unit.spec.car || unit.barnFind),
-      hooked: !!(q.towed || this.winch?.target === q || this.chain?.target === q),
+      hooked: !!(q.towed || this.winch?.target === q || this.chain?.target === q || this.towRope?.target === q),
     });
   }
 
@@ -2023,6 +2045,15 @@ export class Game {
     if (kinds.includes('stop')) options.push({ label: 'Stop there', run: ask('stop', () => c.requestStop()) });
     if (kinds.includes('wait') && !this.readyWaiting.has(c.character.id)) options.push({ label: 'I\'ll be a minute', run: () => this.askToWait(c) });
     return options;
+  }
+
+  /** The wheel's "Steer the towed quad" slice: the rope is on a quad nobody is on, and she can sit on it; or, if she is, getting off it. */
+  towSteerOption(c) {
+    const rope = this.towRope;
+    if (c.fsm.is('driving') && c.drive?.towing) return { label: 'Get off the towed quad', run: () => c.stopDriving('off') };
+    const unit = rope.state === 'hooked' ? this.units.find((u) => u.quad === rope.target) : null;
+    if (!unit || !this.askable(c, ['idle', 'walking', 'seated', 'mounting']) || !c.canSteerTowed(unit.quad, rope)) return null;
+    return { label: `Steer the towed ${unit.label}`, run: () => c.requestTowSteer(unit.quad, rope) };
   }
 
   /** The wheel's "Push start" slice: you're at the controls of a manual that won't start, and she's free to push it. */
@@ -4481,7 +4512,45 @@ export class Game {
   }
 
   get handsFull() {
-    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.oilBottle.held || this.winch?.state === 'carried' || this.chain?.state === 'carried';
+    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.oilBottle.held || this.winch?.state === 'carried' || this.chain?.state === 'carried' || this.towRope?.state === 'carried';
+  }
+
+  /** The debug panel's tow rope button: hook the rope from the nearest utility quad onto this vehicle, or take it off again. */
+  debugTowRope(unit) {
+    const r = this.towRope;
+    if (r.state === 'hooked' && r.target === unit.quad) {
+      r.stow();
+      return 'Tow rope off';
+    }
+    const near = this.units
+      .filter((u) => u !== unit && this.ropeQuadFor(u))
+      .map((u) => ({ u, d: u.quad.position.distanceTo(unit.quad.position) }))
+      .sort((a, b) => a.d - b.d)[0];
+    if (!near || near.d > 8) return 'No utility quad within 8 m to tow it with';
+    r.stow();
+    r.take(this.camera, near.u.quad);
+    r.hookOn(unit.quad);
+    return `Tow rope from the ${near.u.label} to the ${unit.label}`;
+  }
+
+  /** A quad that carries the tow rope on its rack: a utility quad, not the green (its X is the winch) and not the tractor or the Land Rover. */
+  ropeQuadFor(unit) {
+    return !!unit && unit !== this.winch?.unit && !unit.spec.tractor && !unit.spec.landRover && !unit.spec.car && !unit.spec.utv && !!unit.quad.mugAnchor;
+  }
+
+  /** The tow rope: it comes out of your hand if you go further than it reaches, or when you get on something; a snatch makes her on the dead quad shout. */
+  updateTowRope() {
+    const r = this.towRope;
+    if (r.state === 'carried' && this.player.isRiding) r.stow();
+    if (r.state === 'carried' && r.distanceFrom(this.player.position) > r.params.reach) {
+      r.stow();
+      this.hud.toast('The rope won\'t reach any further: the hook pulled out of your hand');
+    }
+    r.update();
+    for (const e of r.events.splice(0)) {
+      const girl = this.companions.find((c) => c.fsm.is('driving') && c.quad === r.target && c.drive?.towing);
+      if (girl && e === 'snatch') girl.driveEvents.push('snatch');
+    }
   }
 
   /** The tow chain: it comes out of your hand if you go further than it reaches, or when you get on something. */
@@ -7121,6 +7190,8 @@ export class Game {
     const options = actions.filter((a) => !a.quad).map((a) => ({ label: a.label, run: answer(a) }));
     const push = this.pushStartOption(c);
     if (push) options.push(push);
+    const tow = this.towSteerOption(c);
+    if (tow) options.push(tow);
     options.push(...general);
     const tractor = this.tractorUnit && this.tractorWheelOption(c);
     if (tractor?.children.length) options.push(tractor);
@@ -7637,6 +7708,15 @@ export class Game {
           else c.take(this.camera);
         } else if (c.state === 'carried') c.stow();
       }
+      // The tow rope: X takes it off a red or blue quad's rack (looking at it), or puts it back.
+      if (input.wasPressed('KeyX') && !this.player.isRiding) {
+        const r = this.towRope;
+        if (r.state === 'stowed' && this.ropeQuadFor(focused?.unit) && !this.handsFull) {
+          const quad = focused.unit.quad;
+          if (this.tipTrailer.hitched && this.tipTrailer.puller === quad) this.hud.toast('Unhitch the trailer first: the rope goes on the same hitch', 2.4);
+          else r.take(this.camera, quad);
+        } else if (r.state === 'carried') r.stow();
+      }
       if (this.hose.held && input.wasPressed('KeyG')) this.hose.putBack();
       else if (this.can.held && input.wasPressed('KeyG')) this.putCanDown();
       else if (this.toolbox.held && input.wasPressed('KeyG')) this.putToolboxDown();
@@ -7774,6 +7854,7 @@ export class Game {
     this.updateHose(dt);
     this.updateWinch();
     this.updateChain();
+    this.updateTowRope();
     this.workshop.update(dt);
     this.bench.update(dt);
     this.updateBarnFind(dt);
@@ -7994,6 +8075,7 @@ export class Game {
     this.player.fixedUpdate(dt);
     this.winch?.fixedUpdate(dt, this.winchReel);
     this.chain?.fixedUpdate(dt);
+    this.towRope?.fixedUpdate(dt);
     if (this.leads.update(dt, this.camera.position) === 'pulledOff') this.hud.toast('The jump leads came off');
     for (const unit of this.units) {
       unit.quad.backRider = !!this.herOnBack(unit.quad);
@@ -8019,6 +8101,8 @@ export class Game {
     // No readout for the quad: its dash is all you get.
     if (this.chain?.state === 'carried') {
       this.hud.setStatus('Tow chain\nE on a quad to hook it on, X to put it back\nThen drive the tractor off, forwards');
+    } else if (this.towRope?.state === 'carried') {
+      this.hud.setStatus('Tow rope\nE on a dead quad to hook it on, X to put it back\nThen ride off gently: it stretches and can snatch');
     } else if (this.winch?.state === 'carried') {
       this.hud.setStatus('Winch hook\nE on a quad to hook it on, X to put it back');
     } else if (this.hose.held) {
