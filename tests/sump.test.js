@@ -75,16 +75,42 @@ describe('the sump level', () => {
     expect(t).toBeGreaterThan(300);
     expect(t).toBeLessThan(900);
   });
-  it('tops up from a bottle to the top mark and no further', () => {
+  it('tops up from a bottle, and keeps going past the top mark if you let it, to what it holds', () => {
     const s = new Sump({ level: 0.3 });
     expect(s.low).toBe(false);
     const low = new Sump({ level: 0.2 });
     expect(low.low).toBe(true);
     let took = 0;
     for (let i = 0; i < 100; i++) took += low.pour(1);
-    expect(low.level).toBe(1);
-    expect(took).toBeCloseTo(0.8, 5);
+    expect(low.level).toBe(P.maxLevel);
+    expect(took).toBeCloseTo(P.maxLevel - 0.2, 5);
     expect(low.pour(1)).toBe(0);
+  });
+  it('overfilling blows oil into the air box while it works, and the air box dries once drained to the line', () => {
+    const s = new Sump({ level: 1.3 });
+    expect(s.tooMuch).toBe(true);
+    expect(s.over).toBeGreaterThan(0.9);
+    expect(s.overSmoke()).toBeGreaterThan(0.4);
+    for (let i = 0; i < 120; i++) s.step(1, { running: true, work: 0.7 });
+    expect(s.airbox).toBeGreaterThan(0.9);
+    expect(s.airboxChoke).toBeGreaterThan(0.5);
+    expect(s.drain(100)).toBeGreaterThan(0.25); // lets out down to the line and no further
+    expect(s.level).toBe(1);
+    expect(s.tooMuch).toBe(false);
+    for (let i = 0; i < 400; i++) s.step(1, { running: true, work: 0.7 });
+    expect(s.airbox).toBe(0);
+  });
+  it('up to the top mark does no harm', () => {
+    const s = new Sump({ level: 1 });
+    for (let i = 0; i < 300; i++) s.step(1, { running: true, work: 1 });
+    expect(s.airbox).toBe(0);
+    expect(s.overSmoke()).toBe(0);
+    expect(s.drain(10)).toBe(0);
+  });
+  it('the dipstick says when it is over the mark', () => {
+    expect(readStick(1.1, 0).text).toBe('Over the top mark');
+    expect(readStick(1.4, 0).text).toMatch(/far too much/);
+    expect(readStick(1, 0).text).toBe('Up to the top mark');
   });
   it('the burner smokes on the overrun only, and the rest never do', () => {
     const b = new Sump({ level: 0.6, burner: true });
@@ -176,5 +202,23 @@ describe('a four-stroke on a low sump', () => {
     e.update(1 / 60, { oilBurn: 0.7 });
     expect(e.oilBurn).toBeCloseTo(0.7);
     expect(e.oilRich).toBe(0);
+  });
+});
+
+describe('an overfilled engine', () => {
+  it('smokes, runs rich and loses power through the soaked air box (the quad feeds the engine the extra clog)', () => {
+    const run = (clog, oilBurn) => {
+      const e = fourStroke();
+      e.setTemperature(1);
+      e.setIgnition(true);
+      for (let t = 0; t < 12 && !e.isRunning; t += 1 / 60) e.update(1 / 60, { starter: true, choke: 0.5 });
+      for (let t = 0; t < 5; t += 1 / 60) e.update(1 / 60, { throttle: 0.9, driveLoad: 0.5, clog, oilBurn, sump: 1.3 });
+      return e;
+    };
+    const clean = run(0, 0);
+    const soaked = run(0.6, 0.5);
+    expect(soaked.oilBurn).toBeGreaterThan(clean.oilBurn);
+    expect(soaked.sump).toBe(1.3);
+    expect(soaked.clog).toBeGreaterThan(clean.clog);
   });
 });

@@ -365,6 +365,14 @@ export const FAQ_SECTIONS = [
           and puffs smoke on the overrun. Run one low and the tappets tick, then it knocks, and dry it seizes.`,
         tip: 'Tappets ticking? Check the oil with Y. One four-stroke burns oil every game.',
       },
+      {
+        q: 'I put too much oil in. What happens?',
+        a: `Keep holding <kbd>Y</kbd> by the bottle past the top mark and the pour carries on, so you can overfill it. Over the mark the dipstick says so, the
+          exhaust smokes blue even on a light throttle, and the longer you work it the more oil gets blown into the air box, which leaves it sluggish and
+          rich. Park away from the bottle and hold <kbd>Y</kbd> to let the extra out at the drain plug until it is back at the line; the air box dries out
+          over a few minutes after that. A job at the bench does the same. Amy drains an overfilled one before she rides it.`,
+        tip: 'Over the top mark on the dipstick? Hold Y away from the oil bottle to drain it back.',
+      },
     ],
   },
   {

@@ -283,7 +283,7 @@ export class EngineModel {
     this.load = clamp(load, 0, 1);
     this.fuel = clamp(fuel, 0, 1);
     this.oil = Math.max(0, oil);
-    this.sump = clamp(sump, 0, 1);
+    this.sump = clamp(sump, 0, 2); // past 1 is overfilled
     this.oilBurn = clamp(oilBurn, 0, 1);
     this.slip = clamp(slip, 0, 1);
     this.dirt = clamp(dirt, 0, 1);

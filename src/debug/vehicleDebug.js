@@ -50,7 +50,10 @@ export function fixEverything(unit) {
   e.boiled = false;
   e.coolant = 1;
   e.coolantLeak = 0;
-  if (unit.quad.sump) unit.quad.sump.level = 1;
+  if (unit.quad.sump) {
+    unit.quad.sump.level = 1;
+    unit.quad.sump.airbox = 0;
+  }
   unit.quad.quirks.tapStiff = 0;
   unit.quad.startTrouble = 0;
   unit.quad.brakes.fix();
@@ -138,7 +141,7 @@ export function engineReadouts(engine, { manual = false } = {}) {
   if (diesel) list.push({ key: 'glow', label: 'glow plugs', get: (e) => e.glow });
   list.push({ key: 'nip', label: 'nipping up', get: (e) => e.nip });
   list.push({ key: 'tick', label: 'tappet tick (low oil)', get: (e) => e.tick });
-  list.push({ key: 'oilBurn', label: 'burning oil', get: (e) => e.oilBurn });
+  list.push({ key: 'oilBurn', label: 'burning oil (or too much of it)', get: (e) => e.oilBurn });
   if (p.strokes === 2) {
     list.push({ key: 'oilRich', label: 'too much oil in the mix', get: (e) => e.oilRich });
     list.push({ key: 'jetting', label: 'jetting spot on (1 is right)', get: (e) => e.jetOn });

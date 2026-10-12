@@ -429,6 +429,10 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
   }
   if (job.kind === 'sump') {
     const short = job.outcome('pour') === 'short';
+    if (target.sump && target.sump.level > 1) {
+      target.sump.level = 1;
+      return 'Drained back to the top mark';
+    }
     if (target.sump) target.sump.level = short ? Math.max(target.sump.level, P.sumpShort) : 1;
     return short ? 'Oil topped up, though it is a touch under the top mark' : 'Oil up to the top mark';
   }

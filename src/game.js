@@ -6722,7 +6722,7 @@ export class Game {
       const { text } = readStick(sump.level, Math.random() * 2 - 1, this.sumpParams);
       sump.checked = true;
       this.achievements.note('dipstick');
-      this.hud.toast(`Dipstick: ${text}${sump.low ? '. Hold Y beside the oil bottle to top it up' : ''}`, 3);
+      this.hud.toast(`Dipstick: ${text}${sump.low ? '. Hold Y beside the oil bottle to top it up' : sump.tooMuch ? '. Hold Y away from the bottle to let some out at the drain plug' : ''}`, 3);
       return;
     }
     if (!input.isDown('KeyY')) {
@@ -6734,13 +6734,17 @@ export class Game {
     const bottle = this.oilBottle.worldPosition();
     const q = unit.quad.position;
     if (Math.hypot(q.x - bottle.x, q.z - bottle.z) > this.sumpParams.bottleRange) {
-      if (this.yHeld < 0.6) this.hud.toast('The oil bottle is by the petrol tank: pick it up and bring it here', 2.5);
+      // Too much in: away from the bottle, holding the key lets it out at the drain plug, down to the line.
+      if (sump.tooMuch || sump.level > 1) {
+        sump.drain(dt);
+        this.hud.setStatus(`Letting oil out at the drain plug: ${readStick(sump.level, 0, this.sumpParams).text}`);
+      } else if (this.yHeld < 0.6) this.hud.toast('The oil bottle is by the petrol tank: pick it up and bring it here', 2.5);
       return;
     }
     if (sump.pour(dt) > 0) {
       this.achievements.note('oilPoured');
-      this.hud.setStatus(`Topping up the oil: ${readStick(sump.level, 0, this.sumpParams).text}`);
-    } else if (this.yHeld < 0.6) this.hud.toast('Up to the top mark');
+      this.hud.setStatus(`${sump.level > 1 ? 'Too much oil' : 'Topping up the oil'}: ${readStick(sump.level, 0, this.sumpParams).text}`);
+    } else if (this.yHeld < 0.6) this.hud.toast('As full as it will hold');
   }
 
   /**
@@ -6776,7 +6780,11 @@ export class Game {
       }
       const sump = c.quad.sump;
       if (!sump || Math.random() > this.sumpParams.amyChecks) continue;
-      if (sump.level < this.sumpParams.minMark + this.sumpParams.amyTopUpMargin) {
+      if (sump.tooMuch) {
+        sump.drain(1e6); // she has the drain plug out and back in without ceremony
+        c.voice.say('oilOver', { urgent: true, chance: 1 });
+        if (driven) this.notebook.note(driven, { kind: 'oil' }, { saw: true });
+      } else if (sump.level < this.sumpParams.minMark + this.sumpParams.amyTopUpMargin) {
         sump.fill();
         c.voice.say('oilTopUp', { urgent: true, chance: 1 });
         if (driven) this.notebook.note(driven, { kind: 'oil' }, { saw: true });

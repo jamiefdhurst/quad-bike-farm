@@ -1,4 +1,4 @@
-// What the girls say about oil: engineTicking (a four-stroke ticking from a low sump), oilTopUp and oilFine (Amy checking the dipstick before
+// What the girls say about oil: oilOver (Amy letting out too much), engineTicking (a four-stroke ticking from a low sump), oilTopUp and oilFine (Amy checking the dipstick before
 // she rides; Jess never does), and for two-strokes: oilStraight (you're pouring straight petrol
 // into a two-stroke), oilPremixFour (pre-mix into a four-stroke), engineHot (a two-stroke
 // running hot), engineNipping (it's tightening up), engineSeized (it's locked solid) and
@@ -15,6 +15,7 @@ export const AMY_OIL_LINES = {
   engineSeized: line(30, ["It's seized. That's what happens with no oil in it.", 'Oh no. It has locked solid. It will need stripping down.', "That's the engine gone. It wanted oil."]),
   engineTicking: line(40, ['Listen to the ticking. That is short of oil.', 'It is ticking. Has anyone checked the dipstick?', 'That tapping is the top end running dry. Pull over and check the oil.']),
   oilTopUp: line(20, ["That's low on oil. There, I've topped it up.", 'The dipstick is barely wet. I will put some in before it does any damage.', 'Hardly any oil in this one. Topped up.']),
+  oilOver: line(20, ['Too much oil in that. I have let some out.', 'The dipstick is over the top. There, drained back to the line.', 'Someone has overfilled it. It would only smoke and clog up.']),
   oilFine: line(60, ['Oil is fine.', 'Dipstick looks good.', 'Oil is up to the mark.']),
   oilSmoky: line(40, ["That's far too much oil. It is smoking like a bonfire.", 'Too much oil. The plug will be filthy.', 'Cough. That is a lot of smoke.']),
 };
