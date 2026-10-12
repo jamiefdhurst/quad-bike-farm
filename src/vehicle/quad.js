@@ -1105,7 +1105,7 @@ export class Quad {
     const e = this.engine;
     const speed = Math.abs(this.forwardSpeed);
     this.tripMiles += (speed * dt) / 1609.34;
-    advanceUsage(this.usage, { running: e.isRunning, speedMps: speed, dt });
+    advanceUsage(this.usage, { running: e.isRunning, speedMps: speed, dt, timeScale: dashClock().rate() });
     const f = this.fuel;
     const clock = dashClock();
     const state = {

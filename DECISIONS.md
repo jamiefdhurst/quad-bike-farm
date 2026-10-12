@@ -3335,3 +3335,10 @@ Settled with Jamie before building (2026-10-12): all six recommendations taken.
 - Jamie: the girls keep getting stuck in the bottom hedge by the end of the road and can't reverse round. Found by reading `herDriving.js`: backing off steered with `avoidSide`, a coin flip that had nothing to do with where the hedge was, and only for 1.5 to 2.5 s, which is too short to bring the nose round. And in reverse the nose swings the opposite way to forward driving, so a lock chosen for going forward winds her further in.
 - Now `chooseReverseSteer` looks 6 m (`backOffLook`) to either side of the nose and swings it towards the side with more room (bars the other way, as reversing needs). Backing off the same thing again she tries the other lock unless that side is clearly worse, and reverses half as long again each time (`backOffLonger`), up to the existing give-up at the fifth go.
 - Tested as pure logic. Not checked in the running game: the bottom hedge itself, or how it looks.
+
+## Hour meters in game time (TODO 35)
+
+- **Hours are game hours.** `advanceUsage` (`src/vehicle/dashState.js`) multiplies the frame's seconds by a `timeScale`, which `Quad.updateDash` takes from `dashClock().rate()`; the game sets that to the day's `clockRate` (12 game seconds a real second by default), so five real minutes of running adds one hour, the same hour the dash clock shows. It follows the Tune tab's clock rate live.
+- **Odometer and trip stay as they were.** They are distance, and the farm's metres are already the game's metres, so nothing scales them.
+- **Starting readings and saves are unchanged.** The ranges in the specs were already meant as hours of use, so they now sit in proportion to how much a game adds. Wear and faults are tied to the readings at the start only, not to hours added during play.
+- **Not checked:** the feel of the numbers over a long run in the browser; unit test only.

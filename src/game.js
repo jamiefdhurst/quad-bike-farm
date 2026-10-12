@@ -386,6 +386,7 @@ export class Game {
     // The dashboards' clocks read the time of day; their flashing and cycling keep to real seconds.
     const dash = new DashClock(this.daylight.seconds());
     dash.text = () => this.daylight.text();
+    dash.rate = () => this.daylight.p.clockRate; // the hour meters count game hours
     setDashClock(dash);
     this.podRack = new PodRack(this.units.map((u) => u.id));
     this.podRack.place(createRandom(this.farmSeed ^ 0x90d5));

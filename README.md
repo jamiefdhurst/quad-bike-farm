@@ -347,7 +347,7 @@ Each quad's own dash is close to the real machine it's modelled on, which for mo
 
 To make up for it there are **two accessory pods**, and there's only one of each: an older **analogue** pod (a cream speedo and rev counter with drum counters, small fuel and temperature dials set between them, a row of lamps along the top) and a new **digital** one (amber on black: a bar-graph rev counter, speed, fuel and temperature blocks, gear letter, clock and a line cycling odometer, trip and hours). Each shows everything for whichever quad it's fitted to, with its rev counter's red band starting at that quad's own redline. Each game they start in the toolbox or on a random quad (the console says where), and you move them with the toolbox (see above). The K key still turns the key on every quad; the dashes go dark with the ignition off or the battery flat.
 
-Every quad starts a new farm with some hours and miles on it (the Blaster and the loan quad low, the green's well into four figures), and they add up as you run and ride, from one day to the next.
+Every quad starts a new farm with some hours and miles on it (the Blaster and the loan quad low, the green's well into four figures), and they add up as you run and ride, from one day to the next. The hour meters count game hours, the same as the dash clock, so an hour of running on the meter is an hour on the clock (about five real minutes at the usual rate).
 
 The fuel tap's position isn't on any dash now: look at the tap itself.
 
@@ -623,7 +623,7 @@ What is still to do. Finished items are recorded in DECISIONS.md, under their ol
 32. **Done.** Add a gate to the cattle grid, so we have to open it.
 33. **Done.** Move the Corsa and the Fiesta to be parked near the dutch barn, and remove the hard standing from near the barn
 34. **Done.** The girls keep getting stuck in the bottom hedge next to the end of the road, and can't reverse around. They need to go backwards in the opposite direction a lot more when they're stuck to help get themselves out.
-35. Hours recorded against the cars/vehicles need to reflect in-game hours, not real hours.
+35. **Done.** Hours recorded against the cars/vehicles need to reflect in-game hours, not real hours.
 36. When the girls are in the middle of doing something, only the quads come up on their wheel, not other options.
 37. Fuel starvation on the banks. With the tank low, a quad coughs and dies nose-up on a steep bank as the fuel runs away from the tap, and picks up again when it levels out. The girls notice whose quad it was.
 38. Carb icing. On a cold, damp day (the day's temperature and the weather roll) a carburettor quad loses power at steady part throttle; a blip or a stop clears it. Amy knows what it is, Jess thinks it's broken. Not on the diesels.

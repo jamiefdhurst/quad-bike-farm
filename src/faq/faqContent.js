@@ -90,6 +90,11 @@ export const FAQ_SECTIONS = [
           at all there's no button: you're on a new farm already.`,
       },
       {
+        q: 'Why do the hours on the dash go up so fast?',
+        a: `The hour meter counts game time, the same as the clock on the dash: the day runs about twelve times faster than real life, so five minutes
+          of the engine running adds an hour. The miles are real distance and aren't sped up.`,
+      },
+      {
         q: 'What does the farm remember from one day to the next?',
         a: `Each vehicle's hours and miles, its wear, any fault you didn't put right, what you set with the toolbox, its tyres, fuel, oil and coolant,
           where the pods are, and how far you got with the barn find. Overnight a battery runs down a little (flat, if you left the key on with the engine stopped) and half

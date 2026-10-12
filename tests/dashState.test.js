@@ -2,6 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { pickRelatedReading, advanceUsage, isNeutral, lampStates, counterDigits, counterText, DashClock, cycleIndex, pickReading } from '../src/vehicle/dashState.js';
 
 describe('dash state', () => {
+  it('counts hours in game time when given a time scale', () => {
+    const u = { hours: 0, odoMiles: 0 };
+    advanceUsage(u, { running: true, speedMps: 0, dt: 300, timeScale: 12 });
+    expect(u.hours).toBeCloseTo(1, 6);
+    advanceUsage(u, { running: false, speedMps: 0, dt: 300, timeScale: 12 });
+    expect(u.hours).toBeCloseTo(1, 6);
+  });
+
   it('adds hours only while the engine runs, and miles at speed', () => {
     const u = { hours: 10, odoMiles: 100 };
     advanceUsage(u, { running: true, speedMps: 0, dt: 360 });

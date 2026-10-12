@@ -17,9 +17,10 @@ export function pickRelatedReading(range, t, random, weight = 0.7) {
   return pickReading(range, () => weight * t + (1 - weight) * random());
 }
 
-/** Running hours and odometer, advanced by one frame. Hours count only while the engine runs. */
-export function advanceUsage(usage, { running, speedMps, dt }) {
-  if (running) usage.hours += dt / 3600;
+/** Running hours and odometer, advanced by one frame. Hours count only while the engine runs, in game time (`timeScale` game seconds
+ * per real second, the day's clock rate), so an hour on the meter is an hour on the dash clock. The odometer is distance, so it isn't scaled. */
+export function advanceUsage(usage, { running, speedMps, dt, timeScale = 1 }) {
+  if (running) usage.hours += (dt * timeScale) / 3600;
   usage.odoMiles += (Math.abs(speedMps) * dt) / METRES_PER_MILE;
   return usage;
 }
@@ -62,6 +63,11 @@ export class DashClock {
     this.start = startSeconds;
     this.now = now;
     this.t0 = now();
+  }
+
+  /** Game seconds per real second. 1 until the game ties it to the day's clock rate. */
+  rate() {
+    return 1;
   }
 
   seconds() {
