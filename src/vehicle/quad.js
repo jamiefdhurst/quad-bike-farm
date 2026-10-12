@@ -976,6 +976,7 @@ export class Quad {
       clog: Math.min(1, this.filter.clog + (this.sump?.airboxChoke ?? 0)),
       gulp: this.waterGulp(),
       diesel: this.fuel.bowlDiesel,
+      additive: this.fuel.additive,
       fuelWater: fuelWaterLevel(this.fuel.bowlWater, this.fuel.waterParams),
       speed: this.forwardSpeed,
       ambient: this.world.warmth ?? 0.5,

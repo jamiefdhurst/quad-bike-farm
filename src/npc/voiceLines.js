@@ -33,6 +33,7 @@ import { AMY_CONTENT_LINES } from './contentLines.js';
 import { AMY_HISTORY_LINES } from './historyLines.js';
 import { AMY_QUIRK_LINES } from './quirkLines.js';
 import { AMY_TEMPERATURE_LINES } from './temperatureLines.js';
+import { AMY_ADDITIVE_LINES } from './additiveLines.js';
 import { AMY_DUSK_LINES } from './duskLines.js';
 import { AMY_FORECAST_LINES } from './forecastLines.js';
 import { AMY_CAR_LINES } from './carLines.js';
@@ -1482,6 +1483,7 @@ export const VOICE_LINES = {
   ...AMY_HISTORY_LINES,
   ...AMY_QUIRK_LINES,
   ...AMY_TEMPERATURE_LINES,
+  ...AMY_ADDITIVE_LINES,
   ...AMY_DUSK_LINES,
   ...AMY_FORECAST_LINES,
   ...AMY_WORK_LIGHT_LINES,

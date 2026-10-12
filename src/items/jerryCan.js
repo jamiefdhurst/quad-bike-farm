@@ -165,6 +165,7 @@ export class JerryCan {
     this.oil = params.startOil ?? 0; // oil fraction of what's in it
     this.diesel = params.startDiesel ?? 0; // diesel fraction of what's in it
     this.water = params.startWater ?? 0; // water fraction of what's in it
+    this.additive = 0; // share of what's in it that has plug-saver in it (plugAdditive.js)
     this.model = buildModel(colours?.colour, colours?.darkColour, colours?.text);
     this.model.name = name;
     this.proxy = new THREE.Mesh(
@@ -213,6 +214,7 @@ export class JerryCan {
     this.oil = mixOil(this.litres, this.oil, added, oil);
     this.diesel = mixOil(this.litres, this.diesel, added, diesel);
     this.water = mixOil(this.litres, this.water, added, 0); // a tank's fuel is clean
+    this.additive = mixOil(this.litres, this.additive, added, 0);
     this.litres += added;
     return added;
   }
@@ -223,8 +225,17 @@ export class JerryCan {
     this.oil = mixOil(this.litres, this.oil, added, 1);
     this.diesel = mixOil(this.litres, this.diesel, added, 0);
     this.water = mixOil(this.litres, this.water, added, 0);
+    this.additive = mixOil(this.litres, this.additive, added, 0);
     this.litres += added;
     return added;
+  }
+
+  /** Treats `litres` of what's in it with plug-saver (plugAdditive.js); returns the litres treated. */
+  treat(litres) {
+    if (this.litres <= 0) return 0;
+    const before = this.additive;
+    this.additive = Math.min(1, this.additive + litres / this.litres);
+    return (this.additive - before) * this.litres;
   }
 
   update(dt) {

@@ -349,6 +349,15 @@ export const FAQ_SECTIONS = [
         tip: 'The two-strokes need pre-mix. Straight petrol will seize them.',
       },
       {
+        q: 'How do I stop a two-stroke fouling its plug?',
+        a: `Treat the pre-mix with plug-saver. The green-labelled bottle stands a little way from the oil bottle by the petrol tank: carry the yellow
+          can over and hold <kbd>E</kbd> on it for a few seconds. The prompts then call the pre-mix "with plug-saver". Fill a two-stroke from that can and
+          its plug loads up far less when it idles, or when the pre-mix is a little oily. It lasts as long as the treated fuel does: top the tank up with
+          ordinary petrol and it thins out, and once that fuel is burnt it is gone, so treat the can each time you mix it. It doesn't help a flooded
+          engine or too much choke; for those, open the throttle while you crank.`,
+        tip: 'Two-stroke plug keeps fouling at idle? Treat the pre-mix with plug-saver from the bottle by the oil.',
+      },
+      {
         q: 'What about red diesel?',
         a: `The dark green bowser holds red diesel, for the tractor and the UTV, with a dark green can somewhere about the farm. Diesel in a petrol quad
           is slow poison: it runs rougher and weaker, smokes grey and stalls for good at about a fifth diesel. Petrol in a diesel does the same the other

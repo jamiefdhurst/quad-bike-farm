@@ -115,6 +115,7 @@ export class EngineModel {
     this.water = 0; // 0..1 water swallowed through the intake (see water.js); it drains, and it won't catch while wet
     this.gulp = 0; // water being taken in right now, per second
     this.diesel = 0; // diesel fraction of the fuel in the carb right now
+    this.additive = 0; // 0..1 how much of the fuel has plug-saver in it (plugAdditive.js): it cuts the oily idle fouling
     this.fuelWater = 0; // 0..1 how much water is reaching the carb in the fuel (fuelWater.js); it clears when clean fuel arrives
     this.dieselSoak = 0; // 0..1 how soaked it is with diesel (see diesel.js); only a drain at the toolbox clears it
     this.glow = 0; // 0..1 how hot the glow plugs are (a diesel; see compression.js)
@@ -271,7 +272,7 @@ export class EngineModel {
    * @param {number}  [controls.gearRpm] a manual's revs at this road speed in this gear (speed over the gear's top speed, times full-throttle revs).
    * @param {number}  [controls.gearLock] 0..1 how far the clutch ties the engine to those revs: the throttle then only decides the torque.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, valveLoose = 0, valveTight = 0, clog = 0, gulp = 0, diesel = 0, fuelWater = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12 } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, valveLoose = 0, valveTight = 0, clog = 0, gulp = 0, diesel = 0, fuelWater = 0, additive = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12 } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -293,6 +294,7 @@ export class EngineModel {
     this.gulp = Math.max(0, gulp);
     this.diesel = contaminant(this.params, diesel);
     this.fuelWater = clamp(fuelWater, 0, 1);
+    this.additive = clamp(additive, 0, 1);
     this.speed = Math.abs(speed);
     this.ambient = clamp(ambient, 0, 1);
     this.chill = clamp(chill, 0, 1);
@@ -762,12 +764,12 @@ export class EngineModel {
       this.fouling += this.rich * p.foulRate * h;
     } else if (p.idleFoulRate > 0 && this.throttle < 0.05) {
       // Oily two-stroke plugs slowly load up at idle until the throttle clears them.
-      this.fouling += p.idleFoulRate * h;
+      this.fouling += p.idleFoulRate * (1 - p.additiveFoulCut * this.additive) * h;
     } else {
       this.fouling -= p.foulClearRate * (1 + p.foulClearThrottleBoost * this.throttle) * h;
     }
 
-    this.fouling += this.oilRich * p.oilFoulRate * h;
+    this.fouling += this.oilRich * p.oilFoulRate * (1 - p.additiveFoulCut * this.additive) * h;
 
     if (this.advanceCycle(h)) {
       const t = this.cycleT;

@@ -288,6 +288,7 @@ export class DebugGui {
     show(r, 'chain oil (1 fresh)', () => (unit().quad.faults.hasChain ? round(unit().quad.faults.kept.chainLube) : 'no chain'));
     show(r, 'brakes wet (0 dry)', () => round(unit().quad.brakes.wet));
     show(r, 'ice in the throttle cable', () => round(unit().quad.iceCable.ice));
+    if (u.engine.params.strokes === 2) set(r, 'plug-saver in the tank (share)', () => round(unit().quad.fuel.additive), (v) => (unit().quad.fuel.additive = v), 0, 1);
     show(r, 'water reaching the carb', () => round(unit().engine.fuelWater));
     tick(r, 'parking brake', () => !!unit().quad.parkBrake, (v) => (unit().quad.parkBrake = v));
     // The UTV's light switch, and the 2WD / 4WD switch where there is one.

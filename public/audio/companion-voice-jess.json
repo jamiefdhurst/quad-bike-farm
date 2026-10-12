@@ -7182,1869 +7182,1879 @@
    "start": 0.1,
    "dur": 3.43
   },
-  "It is getting dark! Quick, one more go before we cannot see.": {
+  "Plug-saver? You paid for magic fuel? Bet it still fouls.": {
    "file": 65,
    "start": 3.61,
+   "dur": 4.19
+  },
+  "You are putting sauce in the petrol. Does it make it go faster?": {
+   "file": 65,
+   "start": 7.88,
+   "dur": 3.22
+  },
+  "It is getting dark! Quick, one more go before we cannot see.": {
+   "file": 65,
+   "start": 11.18,
    "dur": 3.9
   },
   "Ooh, look at the sunset.": {
    "file": 65,
-   "start": 7.59,
+   "start": 15.16,
    "dur": 1.85
   },
   "Lights on, everyone. It is getting dark.": {
    "file": 65,
-   "start": 9.52,
+   "start": 17.09,
    "dur": 2.58
   },
   "I am freezing and I cannot see. Can we go in now?": {
    "file": 65,
-   "start": 12.18,
+   "start": 19.75,
    "dur": 3.84
   },
   "It is dark. I am not scared. I just want to go in.": {
    "file": 65,
-   "start": 16.1,
+   "start": 23.67,
    "dur": 3.0
   },
   "Night riding is fun, but my fingers have gone.": {
    "file": 65,
-   "start": 19.18,
+   "start": 26.75,
    "dur": 2.69
   },
   "I am off in. Shout if you need me.": {
    "file": 65,
-   "start": 21.95,
+   "start": 29.52,
    "dur": 2.59
   },
   "Barn. Warm. Now.": {
    "file": 65,
-   "start": 24.62,
+   "start": 32.19,
    "dur": 1.98
   },
   "Amy says it rains later. Amy says lots of things.": {
    "file": 65,
-   "start": 26.68,
+   "start": 34.25,
    "dur": 2.99
   },
   "Rain later, apparently. Better make the most of it.": {
    "file": 65,
-   "start": 29.75,
+   "start": 37.32,
    "dur": 2.99
   },
   "Board says it is going to chuck it down. We will see.": {
    "file": 65,
-   "start": 32.82,
+   "start": 40.39,
    "dur": 4.0
   },
   "Board says it clears up. Finally, something good.": {
    "file": 65,
-   "start": 36.9,
+   "start": 44.47,
    "dur": 2.93
   },
   "It is going to brighten up later, Amy says. I will believe it when I see it.": {
    "file": 65,
-   "start": 39.91,
+   "start": 47.48,
    "dur": 4.35
   },
   "Oh, here come the clouds.": {
    "file": 65,
-   "start": 44.34,
+   "start": 51.91,
    "dur": 1.55
   },
   "Told you it would go grey. Well, Amy did.": {
    "file": 65,
-   "start": 45.97,
+   "start": 53.54,
    "dur": 2.96
   },
   "That sky has gone horrible.": {
    "file": 65,
-   "start": 49.01,
+   "start": 56.58,
    "dur": 2.0
   },
   "Ooh, the sun is coming out.": {
    "file": 65,
-   "start": 51.09,
+   "start": 58.66,
    "dur": 1.65
   },
   "It is clearing up. Perfect timing.": {
-   "file": 65,
-   "start": 52.82,
+   "file": 66,
+   "start": 0.1,
    "dur": 3.73
   },
   "So much for the forecast.": {
-   "file": 65,
-   "start": 56.63,
+   "file": 66,
+   "start": 3.91,
    "dur": 3.58
   },
   "Nobody said that on the board. Typical.": {
    "file": 66,
-   "start": 0.1,
+   "start": 7.57,
    "dur": 2.02
   },
   "You are going to lose a finger in the dark. I will bring the lights.": {
    "file": 66,
-   "start": 2.2,
+   "start": 9.67,
    "dur": 3.63
   },
   "Fine. But I get to choose the music.": {
    "file": 66,
-   "start": 5.91,
+   "start": 13.38,
    "dur": 2.15
   },
   "On it. Do not move.": {
    "file": 66,
-   "start": 8.14,
+   "start": 15.61,
    "dur": 2.51
   },
   "Lights, coming up.": {
    "file": 66,
-   "start": 10.73,
+   "start": 18.2,
    "dur": 1.3
   },
   "With what? There is nothing here with lights.": {
    "file": 66,
-   "start": 12.11,
+   "start": 19.58,
    "dur": 2.72
   },
   "Can I hold my phone up instead?": {
    "file": 66,
-   "start": 14.91,
+   "start": 22.38,
    "dur": 1.55
   },
   "Ta da. Light.": {
    "file": 66,
-   "start": 16.54,
+   "start": 24.01,
    "dur": 1.12
   },
   "There you go. Hurry up, it is freezing.": {
    "file": 66,
-   "start": 17.74,
+   "start": 25.21,
    "dur": 2.11
   },
   "Better? You owe me.": {
    "file": 66,
-   "start": 19.93,
+   "start": 27.4,
    "dur": 1.5
   },
   "Finally. I am going in.": {
    "file": 66,
-   "start": 21.51,
+   "start": 28.98,
    "dur": 1.92
   },
   "Right, done. Lights off.": {
    "file": 66,
-   "start": 23.51,
+   "start": 30.98,
    "dur": 1.55
   },
   "Did you even fix it?": {
    "file": 66,
-   "start": 25.14,
+   "start": 32.61,
    "dur": 1.8
   },
   "Ha! Something is rolling off! Nobody put the brake on!": {
    "file": 66,
-   "start": 27.02,
+   "start": 34.49,
    "dur": 3.81
   },
   "Look, one is escaping!": {
    "file": 66,
-   "start": 30.91,
+   "start": 38.38,
    "dur": 2.11
   },
   "That is yours rolling off! You forgot the handbrake. Typical.": {
    "file": 66,
-   "start": 33.1,
+   "start": 40.57,
    "dur": 4.03
   },
   "Ha! You left the handbrake off! Go and get it.": {
    "file": 66,
-   "start": 37.21,
+   "start": 44.68,
    "dur": 3.02
   },
   "Jess! You forgot the handbrake again! It is getting away!": {
    "file": 66,
-   "start": 40.31,
+   "start": 47.78,
    "dur": 4.12
   },
   "Jess, that is yours. You did not put the brake on.": {
    "file": 66,
-   "start": 44.51,
+   "start": 51.98,
    "dur": 3.56
   },
   "Oops. That one is mine. Worth it.": {
    "file": 66,
-   "start": 48.15,
+   "start": 55.62,
    "dur": 2.44
   },
   "Whoops. I forgot the handbrake. It is fine, it is only a bit of mud.": {
    "file": 66,
-   "start": 50.67,
+   "start": 58.14,
    "dur": 5.0
   },
   "Ah. Two-wheel drive. Yeah. That would do it.": {
-   "file": 66,
-   "start": 55.75,
+   "file": 67,
+   "start": 0.1,
    "dur": 4.25
   },
   "Whoops. Forgot the switch. Four-wheel drive, go on then.": {
    "file": 67,
-   "start": 0.1,
+   "start": 4.43,
    "dur": 2.9
   },
   "Jess! You have to put it in four-wheel drive for the mud! Honestly!": {
    "file": 67,
-   "start": 3.08,
+   "start": 7.41,
    "dur": 3.65
   },
   "Jess, it is in two-wheel drive again. That is why you are stuck.": {
    "file": 67,
-   "start": 6.81,
+   "start": 11.14,
    "dur": 4.18
   },
   "Hold on tight!": {
    "file": 67,
-   "start": 11.07,
+   "start": 15.4,
    "dur": 1.08
   },
   "Did you feel that? It rocks!": {
    "file": 67,
-   "start": 12.23,
+   "start": 16.56,
    "dur": 2.61
   },
   "Just a little blip. Hold the rails.": {
    "file": 67,
-   "start": 14.92,
+   "start": 19.25,
    "dur": 1.98
   },
   "Jess! Do not do that, it makes it jump.": {
    "file": 67,
-   "start": 16.98,
+   "start": 21.31,
    "dur": 2.4
   },
   "Jess, stop it! I nearly fell off.": {
    "file": 67,
-   "start": 19.46,
+   "start": 23.79,
    "dur": 2.44
   },
   "Is that all you have got?": {
    "file": 67,
-   "start": 21.98,
+   "start": 26.31,
    "dur": 1.29
   },
   "Ha! Listen to that.": {
    "file": 67,
-   "start": 23.35,
+   "start": 27.68,
    "dur": 1.1
   },
   "Go on, then. Beat that.": {
    "file": 67,
-   "start": 24.53,
+   "start": 28.86,
    "dur": 1.6
   },
   "Oh, you want a go? Right.": {
    "file": 67,
-   "start": 26.21,
+   "start": 30.54,
    "dur": 2.0
   },
   "Louder! Come on, louder!": {
    "file": 67,
-   "start": 28.29,
+   "start": 32.62,
    "dur": 2.05
   },
   "You will have to do better than that!": {
    "file": 67,
-   "start": 30.42,
+   "start": 34.75,
    "dur": 2.03
   },
   "Hear that? That is the sound of winning.": {
    "file": 67,
-   "start": 32.53,
+   "start": 36.86,
    "dur": 2.98
   },
   "More, more, give it more!": {
    "file": 67,
-   "start": 35.59,
+   "start": 39.92,
    "dur": 1.86
   },
   "Will you two stop it! You will break something.": {
    "file": 67,
-   "start": 37.53,
+   "start": 41.86,
    "dur": 3.08
   },
   "That is enough, both of you. My ears are ringing.": {
    "file": 67,
-   "start": 40.69,
+   "start": 45.02,
    "dur": 3.02
   },
   "Stop revving! They will hear us in the next county.": {
    "file": 67,
-   "start": 43.79,
+   "start": 48.12,
    "dur": 3.11
   },
   "Oops. Killed it.": {
    "file": 67,
-   "start": 46.98,
+   "start": 51.31,
    "dur": 1.47
   },
   "Okay, that one was too much. It has died on me.": {
    "file": 67,
-   "start": 48.53,
+   "start": 52.86,
    "dur": 3.79
   },
   "Well. I won, and it is dead.": {
    "file": 67,
-   "start": 52.4,
+   "start": 56.73,
    "dur": 2.1
   },
   "Jess! Stop revving it!": {
    "file": 67,
-   "start": 54.58,
+   "start": 58.91,
    "dur": 2.14
   },
   "Jess, I was talking! Pack it in!": {
-   "file": 67,
-   "start": 56.8,
+   "file": 68,
+   "start": 0.1,
    "dur": 2.18
   },
   "Beep beep!": {
-   "file": 67,
-   "start": 59.06,
+   "file": 68,
+   "start": 2.36,
    "dur": 0.52
   },
   "Move over, then!": {
-   "file": 67,
-   "start": 59.66,
+   "file": 68,
+   "start": 2.96,
    "dur": 0.78
   },
   "Mine is louder.": {
    "file": 68,
-   "start": 0.1,
+   "start": 3.82,
    "dur": 1.2
   },
   "Ha! You jumped a mile!": {
    "file": 68,
-   "start": 1.38,
+   "start": 5.1,
    "dur": 1.79
   },
   "Your face! Brilliant.": {
    "file": 68,
-   "start": 3.25,
+   "start": 6.97,
    "dur": 1.77
   },
   "Got you!": {
    "file": 68,
-   "start": 5.1,
+   "start": 8.82,
    "dur": 0.44
   },
   "Post! Anything for me?": {
    "file": 68,
-   "start": 5.62,
+   "start": 9.34,
    "dur": 1.45
   },
   "Ooh, the post van!": {
    "file": 68,
-   "start": 7.15,
+   "start": 10.87,
    "dur": 1.49
   },
   "Is it my parcel? It is probably not my parcel.": {
    "file": 68,
-   "start": 8.72,
+   "start": 12.44,
    "dur": 2.76
   },
   "Visitors! Hide the mess.": {
    "file": 68,
-   "start": 11.56,
+   "start": 15.28,
    "dur": 1.7
   },
   "Somebody is coming. Act normal.": {
    "file": 68,
-   "start": 13.34,
+   "start": 17.06,
    "dur": 2.34
   },
   "It is the neighbour. Say hello!": {
    "file": 68,
-   "start": 15.76,
+   "start": 19.48,
    "dur": 2.17
   },
   "Ooh, a parcel! Can I open it?": {
    "file": 68,
-   "start": 18.01,
+   "start": 21.73,
    "dur": 2.45
   },
   "A parcel by the barn. Shake it and see.": {
    "file": 68,
-   "start": 20.54,
+   "start": 24.26,
    "dur": 2.95
   },
   "They left the gate open. Not my gate.": {
    "file": 68,
-   "start": 23.57,
+   "start": 27.29,
    "dur": 3.02
   },
   "Open gate. Race you through it.": {
    "file": 68,
-   "start": 26.67,
+   "start": 30.39,
    "dur": 2.03
   },
   "Rude. They never shut it.": {
    "file": 68,
-   "start": 28.78,
+   "start": 32.5,
    "dur": 2.02
   },
   "Gate shut. Very responsible of you.": {
    "file": 68,
-   "start": 30.88,
+   "start": 34.6,
    "dur": 2.7
   },
   "Look at you, shutting the gate.": {
    "file": 68,
-   "start": 33.66,
+   "start": 37.38,
    "dur": 1.47
   },
   "Get my good side!": {
    "file": 68,
-   "start": 35.21,
+   "start": 38.93,
    "dur": 1.82
   },
   "Ooh, photo! Hang on.": {
    "file": 68,
-   "start": 37.11,
+   "start": 40.83,
    "dur": 1.73
   },
   "Take it, take it, I am gorgeous.": {
    "file": 68,
-   "start": 38.92,
+   "start": 42.64,
    "dur": 2.25
   },
   "Tongue out, ready? Go!": {
    "file": 68,
-   "start": 41.25,
+   "start": 44.97,
    "dur": 1.84
   },
   "This one is going straight on the wall.": {
    "file": 68,
-   "start": 43.17,
+   "start": 46.89,
    "dur": 1.74
   },
   "Make it a funny one!": {
    "file": 68,
-   "start": 44.99,
+   "start": 48.71,
    "dur": 1.36
   },
   "Not me! Take one of Amy.": {
    "file": 68,
-   "start": 46.43,
+   "start": 50.15,
    "dur": 2.0
   },
   "Oi, no! I look a state.": {
    "file": 68,
-   "start": 48.51,
+   "start": 52.23,
    "dur": 2.19
   },
   "Look, we are on the corkboard!": {
    "file": 68,
-   "start": 50.78,
+   "start": 54.5,
    "dur": 1.8
   },
   "That is my best photo on the wall.": {
    "file": 68,
-   "start": 52.66,
+   "start": 56.38,
    "dur": 2.28
   },
   "Ow! Ow! Ow!": {
    "file": 68,
-   "start": 55.02,
+   "start": 58.74,
    "dur": 4.47
   },
   "My teeth buzzed!": {
-   "file": 68,
-   "start": 59.57,
+   "file": 69,
+   "start": 0.1,
    "dur": 1.37
   },
   "That is not funny. Ha. It is a bit funny.": {
    "file": 69,
-   "start": 0.1,
+   "start": 1.55,
    "dur": 3.0
   },
   "It got me right in the elbow!": {
    "file": 69,
-   "start": 3.18,
+   "start": 4.63,
    "dur": 1.82
   },
   "Ha! You touched it!": {
    "file": 69,
-   "start": 5.08,
+   "start": 6.53,
    "dur": 1.38
   },
   "Did you feel that? I saw your face.": {
    "file": 69,
-   "start": 6.54,
+   "start": 7.99,
    "dur": 2.09
   },
   "You went right into it. Brilliant.": {
    "file": 69,
-   "start": 8.71,
+   "start": 10.16,
    "dur": 2.56
   },
   "Ha! You turned it off and it carried on. Brilliant.": {
    "file": 69,
-   "start": 11.35,
+   "start": 12.8,
    "dur": 2.88
   },
   "The key does nothing, you muppet. It is the knob.": {
    "file": 69,
-   "start": 14.31,
+   "start": 15.76,
    "dur": 2.89
   },
   "Look at you, telling it to stop and it will not listen.": {
    "file": 69,
-   "start": 17.28,
+   "start": 18.73,
    "dur": 3.45
   },
   "Come on, come on. It is only a tractor.": {
    "file": 69,
-   "start": 20.81,
+   "start": 22.26,
    "dur": 2.38
   },
   "How long does this take? I am getting old here.": {
    "file": 69,
-   "start": 23.27,
+   "start": 24.72,
    "dur": 2.46
   },
   "Is it ready yet? Come on.": {
    "file": 69,
-   "start": 25.81,
+   "start": 27.26,
    "dur": 1.81
   },
   "Ha! Look at the smoke! Do it again!": {
    "file": 69,
-   "start": 27.7,
+   "start": 29.15,
    "dur": 2.17
   },
   "Black clouds! Brilliant.": {
    "file": 69,
-   "start": 29.95,
+   "start": 31.4,
    "dur": 1.73
   },
   "Is it on fire? No? Shame.": {
    "file": 69,
-   "start": 31.76,
+   "start": 33.21,
    "dur": 2.57
   },
   "Hay ride! Do not drive like Amy.": {
    "file": 69,
-   "start": 34.41,
+   "start": 35.86,
    "dur": 2.64
   },
   "Faster than a walk, please.": {
    "file": 69,
-   "start": 37.13,
+   "start": 38.58,
    "dur": 1.97
   },
   "Brilliant. I am sat on the best bit.": {
    "file": 69,
-   "start": 39.18,
+   "start": 40.63,
    "dur": 2.52
   },
   "Woooah! Again, again!": {
    "file": 69,
-   "start": 41.78,
+   "start": 43.23,
    "dur": 2.8
   },
   "Aaaah! Do that bit again!": {
    "file": 69,
-   "start": 44.66,
+   "start": 46.11,
    "dur": 2.21
   },
   "My teeth! Hit another one!": {
    "file": 69,
-   "start": 46.95,
+   "start": 48.4,
    "dur": 2.04
   },
   "This is the life. Wake me up at the yard.": {
    "file": 69,
-   "start": 49.07,
+   "start": 50.52,
    "dur": 2.6
   },
   "I could sleep here. Do not stop.": {
    "file": 69,
-   "start": 51.75,
+   "start": 53.2,
    "dur": 2.49
   },
   "Nice and flat. Do not ruin it with a corner.": {
    "file": 69,
-   "start": 54.32,
+   "start": 55.77,
    "dur": 2.78
   },
   "Ow! Mud! In my mouth!": {
    "file": 69,
-   "start": 57.18,
+   "start": 58.63,
    "dur": 2.07
   },
   "I fell off! You absolute legend, you did it on purpose!": {
-   "file": 69,
-   "start": 59.33,
+   "file": 70,
+   "start": 0.1,
    "dur": 3.85
   },
   "Wait for me! I am running!": {
    "file": 70,
-   "start": 0.1,
+   "start": 4.03,
    "dur": 2.7
   },
   "Ha! She is in the mud! Brilliant!": {
    "file": 70,
-   "start": 2.88,
+   "start": 6.81,
    "dur": 2.83
   },
   "Did you see her go? Straight off!": {
    "file": 70,
-   "start": 5.79,
+   "start": 9.72,
    "dur": 1.89
   },
   "Corner too fast, I think. Lovely.": {
    "file": 70,
-   "start": 7.76,
+   "start": 11.69,
    "dur": 2.09
   },
   "Up I go! This is the best seat on the farm!": {
    "file": 70,
-   "start": 9.93,
+   "start": 13.86,
    "dur": 3.06
   },
   "Budge over, I am riding on the wheel!": {
    "file": 70,
-   "start": 13.07,
+   "start": 17.0,
    "dur": 2.63
   },
   "Look at me, I am the king of the tractor!": {
    "file": 70,
-   "start": 15.78,
+   "start": 19.71,
    "dur": 2.29
   },
   "Faster! Make it go faster!": {
    "file": 70,
-   "start": 18.15,
+   "start": 22.08,
    "dur": 1.75
   },
   "I cannot hear a word! Say it again, you!": {
    "file": 70,
-   "start": 19.98,
+   "start": 23.91,
    "dur": 3.3
   },
   "Woooo! I can see all the way to the hedge from up here!": {
    "file": 70,
-   "start": 23.36,
+   "start": 27.29,
    "dur": 3.43
   },
   "I am not going near that thing.": {
    "file": 70,
-   "start": 26.87,
+   "start": 30.8,
    "dur": 2.27
   },
   "No. It has no seatbelt and I do not trust the clutch.": {
    "file": 70,
-   "start": 29.22,
+   "start": 33.15,
    "dur": 4.03
   },
   "Absolutely not. Ask Jess, she loves it.": {
    "file": 70,
-   "start": 33.33,
+   "start": 37.26,
    "dur": 3.12
   },
   "Fine. Move over. And nobody say a word.": {
    "file": 70,
-   "start": 36.53,
+   "start": 40.46,
    "dur": 2.9
   },
   "Oh, give it here. How hard can it be?": {
    "file": 70,
-   "start": 39.51,
+   "start": 43.44,
    "dur": 2.51
   },
   "Right. I am doing this once, so watch carefully.": {
    "file": 70,
-   "start": 42.1,
+   "start": 46.03,
    "dur": 3.21
   },
   "Right, I am having the tractor.": {
    "file": 70,
-   "start": 45.39,
+   "start": 49.32,
    "dur": 1.92
   },
   "Nobody is using the tractor. Mine now.": {
    "file": 70,
-   "start": 47.39,
+   "start": 51.32,
    "dur": 2.55
   },
   "Move aside, I am driving the big one.": {
    "file": 70,
-   "start": 50.02,
+   "start": 53.95,
    "dur": 2.93
   },
   "Woah! It is bucking!": {
    "file": 70,
-   "start": 53.03,
+   "start": 56.96,
    "dur": 2.19
   },
   "It is jumping! Why is it jumping?": {
    "file": 70,
-   "start": 55.3,
+   "start": 59.23,
    "dur": 2.96
   },
   "Hold on, hold on, hold on!": {
-   "file": 70,
-   "start": 58.34,
+   "file": 71,
+   "start": 0.1,
    "dur": 1.23
   },
   "I cannot see over the bonnet!": {
-   "file": 70,
-   "start": 59.65,
+   "file": 71,
+   "start": 1.41,
    "dur": 1.79
   },
   "Where is the front? I cannot see the front!": {
    "file": 71,
-   "start": 0.1,
+   "start": 3.28,
    "dur": 2.26
   },
   "This is brilliant, and I cannot see a thing.": {
    "file": 71,
-   "start": 2.44,
+   "start": 5.62,
    "dur": 3.19
   },
   "It died. It just died on me.": {
    "file": 71,
-   "start": 5.71,
+   "start": 8.89,
    "dur": 2.56
   },
   "Why did it stop? I did not do anything!": {
    "file": 71,
-   "start": 8.35,
+   "start": 11.53,
    "dur": 2.5
   },
   "Stalled it again. It is the tractor, not me.": {
    "file": 71,
-   "start": 10.93,
+   "start": 14.11,
    "dur": 3.84
   },
   "That was the best thing ever. Again!": {
    "file": 71,
-   "start": 14.85,
+   "start": 18.03,
    "dur": 2.79
   },
   "I am a tractor driver now. Call me that.": {
    "file": 71,
-   "start": 17.72,
+   "start": 20.9,
    "dur": 2.83
   },
   "I only hit one thing. Maybe two.": {
    "file": 71,
-   "start": 20.63,
+   "start": 23.81,
    "dur": 3.27
   },
   "Show off.": {
    "file": 71,
-   "start": 23.98,
+   "start": 27.16,
    "dur": 0.69
   },
   "Beginner is luck, that is all it is.": {
    "file": 71,
-   "start": 24.75,
+   "start": 27.93,
    "dur": 2.5
   },
   "Oh, come on! She is good at it? Since when?": {
    "file": 71,
-   "start": 27.33,
+   "start": 30.51,
    "dur": 3.07
   },
   "No. It is a farm vehicle, not a toy. Ask Jess, she will love it.": {
    "file": 71,
-   "start": 30.48,
+   "start": 33.66,
    "dur": 4.35
   },
   "Absolutely not. I would have to reverse it, and I do not trust the lever.": {
    "file": 71,
-   "start": 34.91,
+   "start": 38.09,
    "dur": 4.83
   },
   "I am not driving that. It has a starting handle.": {
    "file": 71,
-   "start": 39.82,
+   "start": 43.0,
    "dur": 3.59
   },
   "No. It has no power steering and I will not be made to try.": {
    "file": 71,
-   "start": 43.49,
+   "start": 46.67,
    "dur": 4.69
   },
   "Right, I am having the UTV.": {
    "file": 71,
-   "start": 48.26,
+   "start": 51.44,
    "dur": 2.57
   },
   "Nobody is using the UTV. Mine now.": {
    "file": 71,
-   "start": 50.91,
+   "start": 54.09,
    "dur": 3.1
   },
   "Move aside, I am driving the big green one.": {
    "file": 71,
-   "start": 54.09,
+   "start": 57.27,
    "dur": 3.24
   },
   "It has a bed! I can carry things! I have nothing to carry!": {
-   "file": 71,
-   "start": 57.41,
+   "file": 72,
+   "start": 0.1,
    "dur": 3.48
   },
   "No gears, no clutch, I am a natural.": {
    "file": 72,
-   "start": 0.1,
+   "start": 3.66,
    "dur": 3.69
   },
   "Hold on, here I go.": {
    "file": 72,
-   "start": 3.87,
+   "start": 7.43,
    "dur": 1.59
   },
   "Best thing ever. Again!": {
    "file": 72,
-   "start": 5.54,
+   "start": 9.1,
    "dur": 1.73
   },
   "I am a UTV driver now. Call me that.": {
    "file": 72,
-   "start": 7.35,
+   "start": 10.91,
    "dur": 2.65
   },
   "I only clipped the one thing. Maybe two.": {
    "file": 72,
-   "start": 10.08,
+   "start": 13.64,
    "dur": 3.21
   },
   "Beginner's luck, that is all it is.": {
    "file": 72,
-   "start": 13.37,
+   "start": 16.93,
    "dur": 2.55
   },
   "Right, I am having the Land Rover.": {
    "file": 72,
-   "start": 16.0,
+   "start": 19.56,
    "dur": 2.08
   },
   "Nobody is using the Landy. Mine now.": {
    "file": 72,
-   "start": 18.16,
+   "start": 21.72,
    "dur": 3.05
   },
   "Move aside, I am driving the old one.": {
    "file": 72,
-   "start": 21.29,
+   "start": 24.85,
    "dur": 2.54
   },
   "Where is the first gear? Is that first gear?": {
    "file": 72,
-   "start": 23.91,
+   "start": 27.47,
    "dur": 2.64
   },
   "It is so slow to turn. Why is it so slow to turn?": {
    "file": 72,
-   "start": 26.63,
+   "start": 30.19,
    "dur": 3.92
   },
   "This is brilliant, and I cannot feel the steering at all.": {
    "file": 72,
-   "start": 30.63,
+   "start": 34.19,
    "dur": 3.5
   },
   "I am a Land Rover driver now. Call me that.": {
    "file": 72,
-   "start": 34.21,
+   "start": 37.77,
    "dur": 3.23
   },
   "I only ground it a bit.": {
    "file": 72,
-   "start": 37.52,
+   "start": 41.08,
    "dur": 1.61
   },
   "I know how to do the handle. Thumb round it, obviously.": {
    "file": 72,
-   "start": 39.21,
+   "start": 42.77,
    "dur": 2.98
   },
   "Easy. I swing it hard and it goes.": {
    "file": 72,
-   "start": 42.27,
+   "start": 45.83,
    "dur": 3.57
   },
   "Flat battery? Pah. Handle time.": {
    "file": 72,
-   "start": 45.92,
+   "start": 49.48,
    "dur": 2.6
   },
   "That is what thumbs round the handle get you!": {
    "file": 72,
-   "start": 48.6,
+   "start": 52.16,
    "dur": 2.21
   },
   "Jess! I told you. Alongside the fingers!": {
    "file": 72,
-   "start": 50.89,
+   "start": 54.45,
    "dur": 2.97
   },
   "Oh, your hand. Is it broken?": {
    "file": 72,
-   "start": 53.94,
+   "start": 57.5,
    "dur": 2.07
   },
   "It is dead. I did try. It is dead.": {
    "file": 72,
-   "start": 56.09,
+   "start": 59.65,
    "dur": 3.77
   },
   "Nothing. Not even a cough.": {
-   "file": 72,
-   "start": 59.94,
+   "file": 73,
+   "start": 0.1,
    "dur": 1.93
   },
   "Ow! It bit me! It actually bit me!": {
    "file": 73,
-   "start": 0.1,
+   "start": 2.11,
    "dur": 3.04
   },
   "My thumb! My thumb is broken! It is not broken. It really hurts.": {
    "file": 73,
-   "start": 3.22,
+   "start": 5.23,
    "dur": 4.78
   },
   "Right. Thumb alongside. I knew that.": {
    "file": 73,
-   "start": 8.08,
+   "start": 10.09,
    "dur": 2.79
   },
   "That was not me, that was the gearbox.": {
    "file": 73,
-   "start": 10.95,
+   "start": 12.96,
    "dur": 2.57
   },
   "It is crunching! Is it meant to crunch?": {
    "file": 73,
-   "start": 13.6,
+   "start": 15.61,
    "dur": 2.73
   },
   "Sorry, sorry, sorry. Gearbox!": {
    "file": 73,
-   "start": 16.41,
+   "start": 18.42,
    "dur": 2.21
   },
   "That noise! Clutch all the way down, Jess!": {
    "file": 73,
-   "start": 18.7,
+   "start": 20.71,
    "dur": 3.28
   },
   "Poor gearbox. It never did anything to you.": {
    "file": 73,
-   "start": 22.06,
+   "start": 24.07,
    "dur": 2.7
   },
   "It has no synchromesh. Slow down for it.": {
    "file": 73,
-   "start": 24.84,
+   "start": 26.85,
    "dur": 2.73
   },
   "I am taking the Corsa out. Listen to this.": {
    "file": 73,
-   "start": 27.65,
+   "start": 29.66,
    "dur": 2.74
   },
   "Back in a bit. Going to give the car a run.": {
    "file": 73,
-   "start": 30.47,
+   "start": 32.48,
    "dur": 2.19
   },
   "Time to wake the neighbours.": {
    "file": 73,
-   "start": 32.74,
+   "start": 34.75,
    "dur": 1.08
   },
   "Listen to that!": {
    "file": 73,
-   "start": 33.9,
+   "start": 35.91,
    "dur": 1.13
   },
   "Here we go.": {
    "file": 73,
-   "start": 35.11,
+   "start": 37.12,
    "dur": 0.68
   },
   "Hold on to your hats.": {
    "file": 73,
-   "start": 35.87,
+   "start": 37.88,
    "dur": 1.27
   },
   "Look at her, ten to two on the wheel.": {
    "file": 73,
-   "start": 37.22,
+   "start": 39.23,
    "dur": 1.93
   },
   "Amy drives like she is carrying eggs.": {
    "file": 73,
-   "start": 39.23,
+   "start": 41.24,
    "dur": 2.2
   },
   "She will be back by teatime at that speed.": {
    "file": 73,
-   "start": 41.51,
+   "start": 43.52,
    "dur": 2.41
   },
   "Best car in the world, that.": {
    "file": 73,
-   "start": 44.0,
+   "start": 46.01,
    "dur": 1.21
   },
   "Did you hear it on the straight? Did you?": {
    "file": 73,
-   "start": 45.29,
+   "start": 47.3,
    "dur": 1.89
   },
   "Back. Nobody died.": {
    "file": 73,
-   "start": 47.26,
+   "start": 49.27,
    "dur": 1.68
   },
   "Amy's car? She would never speak to me again.": {
    "file": 73,
-   "start": 49.02,
+   "start": 51.03,
    "dur": 2.21
   },
   "Not the Fiesta. I like being alive.": {
    "file": 73,
-   "start": 51.31,
+   "start": 53.32,
    "dur": 2.78
   },
   "Oi! That is my car!": {
    "file": 73,
-   "start": 54.17,
+   "start": 56.18,
    "dur": 1.89
   },
   "Where do you think you are going in my Corsa?": {
    "file": 73,
-   "start": 56.14,
+   "start": 58.15,
    "dur": 2.23
   },
   "You had better give it some, at least.": {
-   "file": 73,
-   "start": 58.45,
+   "file": 74,
+   "start": 0.1,
    "dur": 1.91
   },
   "Did you give it some? Course you did.": {
    "file": 74,
-   "start": 0.1,
+   "start": 2.09,
    "dur": 2.03
   },
   "Not bad. Still in one piece.": {
    "file": 74,
-   "start": 2.21,
+   "start": 4.2,
    "dur": 1.97
   },
   "Told you it goes.": {
    "file": 74,
-   "start": 4.26,
+   "start": 6.25,
    "dur": 1.0
   },
   "You have broken my car. You are paying.": {
    "file": 74,
-   "start": 5.34,
+   "start": 7.33,
    "dur": 3.21
   },
   "What have you done to it? It sounds worse than before, and that is saying something.": {
    "file": 74,
-   "start": 8.63,
+   "start": 10.62,
    "dur": 5.19
   },
   "Stuck. You got my car stuck.": {
    "file": 74,
-   "start": 13.9,
+   "start": 15.89,
    "dur": 1.94
   },
   "Go on then, let us see what you can do.": {
    "file": 74,
-   "start": 15.92,
+   "start": 17.91,
    "dur": 2.07
   },
   "Put your foot down, it will not break. Probably.": {
    "file": 74,
-   "start": 18.07,
+   "start": 20.06,
    "dur": 3.0
   },
   "Mind the exhaust on the bumps.": {
    "file": 74,
-   "start": 21.15,
+   "start": 23.14,
    "dur": 2.3
   },
   "You stalled it. In my car.": {
    "file": 74,
-   "start": 23.53,
+   "start": 25.52,
    "dur": 2.18
   },
   "More revs! It is not a tractor.": {
    "file": 74,
-   "start": 25.79,
+   "start": 27.78,
    "dur": 2.78
   },
   "Ha! Go on, again.": {
    "file": 74,
-   "start": 28.65,
+   "start": 30.64,
    "dur": 1.41
   },
   "Slow down! It does not like going this fast.": {
    "file": 74,
-   "start": 30.14,
+   "start": 32.13,
    "dur": 3.21
   },
   "That is far too quick. Please.": {
    "file": 74,
-   "start": 33.43,
+   "start": 35.42,
    "dur": 2.16
   },
   "It was not built for this. Neither was I.": {
    "file": 74,
-   "start": 35.67,
+   "start": 37.66,
    "dur": 2.15
   },
   "Jess. Why are there L plates on my quad?": {
    "file": 74,
-   "start": 37.9,
+   "start": 39.89,
    "dur": 2.56
   },
   "Oh, very funny. Who made these?": {
    "file": 74,
-   "start": 40.54,
+   "start": 42.53,
    "dur": 2.6
   },
   "Those are not staying on.": {
    "file": 74,
-   "start": 43.22,
+   "start": 45.21,
    "dur": 1.51
   },
   "There. Gone.": {
    "file": 74,
-   "start": 44.81,
+   "start": 46.8,
    "dur": 1.31
   },
   "I passed my test years ago, and I am not driving round with those on.": {
    "file": 74,
-   "start": 46.2,
+   "start": 48.19,
    "dur": 3.69
   },
   "In the bin with you.": {
    "file": 74,
-   "start": 49.97,
+   "start": 51.96,
    "dur": 1.05
   },
   "Right. These are going on the tractor, where they belong.": {
    "file": 74,
-   "start": 51.1,
+   "start": 53.09,
    "dur": 3.43
   },
   "I have had enough of these. Jess can wear them on the tractor.": {
    "file": 74,
-   "start": 54.61,
+   "start": 56.6,
    "dur": 3.68
   },
   "There. Now they are on something that deserves them.": {
-   "file": 74,
-   "start": 58.37,
+   "file": 75,
+   "start": 0.1,
    "dur": 2.47
   },
   "Ha, it is going on its own. Brilliant.": {
    "file": 75,
-   "start": 0.1,
+   "start": 2.65,
    "dur": 2.75
   },
   "The tractor is walking off. Go on, go on!": {
    "file": 75,
-   "start": 2.93,
+   "start": 5.48,
    "dur": 3.19
   },
   "It is escaping!": {
    "file": 75,
-   "start": 6.2,
+   "start": 8.75,
    "dur": 1.6
   },
   "It is taking the trailer on holiday!": {
    "file": 75,
-   "start": 7.88,
+   "start": 10.43,
    "dur": 1.94
   },
   "The tractor is off, and it has brought the trailer.": {
    "file": 75,
-   "start": 9.9,
+   "start": 12.45,
    "dur": 2.61
   },
   "Come back! Come back, you horrible thing!": {
    "file": 75,
-   "start": 12.59,
+   "start": 15.14,
    "dur": 2.11
   },
   "Wait! I am coming! Do not hit the hedge!": {
    "file": 75,
-   "start": 14.78,
+   "start": 17.33,
    "dur": 2.82
   },
   "I am running! I am running as fast as I can!": {
    "file": 75,
-   "start": 17.68,
+   "start": 20.23,
    "dur": 2.78
   },
   "Got it! Did you see me? I leapt on like a film.": {
    "file": 75,
-   "start": 20.54,
+   "start": 23.09,
    "dur": 2.74
   },
   "Caught it. Easy. I was not even out of breath.": {
    "file": 75,
-   "start": 23.36,
+   "start": 25.91,
    "dur": 2.9
   },
   "Stopped it! Somebody say thank you.": {
    "file": 75,
-   "start": 26.34,
+   "start": 28.89,
    "dur": 2.47
   },
   "It is in the hedge. It has driven itself into the hedge.": {
    "file": 75,
-   "start": 28.89,
+   "start": 31.44,
    "dur": 3.15
   },
   "Nobody was watching! It is in the hedge!": {
    "file": 75,
-   "start": 32.12,
+   "start": 34.67,
    "dur": 2.92
   },
   "Well, that is the hedge done.": {
    "file": 75,
-   "start": 35.12,
+   "start": 37.67,
    "dur": 1.9
   },
   "Not looking at anyone, but it was somebody's fault.": {
    "file": 75,
-   "start": 37.1,
+   "start": 39.65,
    "dur": 2.94
   },
   "Not my fault. I was miles away.": {
    "file": 75,
-   "start": 40.12,
+   "start": 42.67,
    "dur": 3.0
   },
   "Somebody should have been watching it.": {
    "file": 75,
-   "start": 43.2,
+   "start": 45.75,
    "dur": 2.12
   },
   "She cannot lose, can she? Always a reason. Always.": {
    "file": 75,
-   "start": 45.4,
+   "start": 47.95,
    "dur": 3.68
   },
   "I won fair and square and she is sulking. Not my problem.": {
    "file": 75,
-   "start": 49.16,
+   "start": 51.71,
    "dur": 4.71
   },
   "You saw it. Tell her you saw it.": {
    "file": 75,
-   "start": 53.95,
+   "start": 56.5,
    "dur": 2.5
   },
   "It is a quad, not a crown. Only I wanted a go.": {
    "file": 75,
-   "start": 56.53,
+   "start": 59.08,
    "dur": 3.38
   },
   "She is making a massive fuss over a quad. It is a quad.": {
-   "file": 75,
-   "start": 59.99,
+   "file": 76,
+   "start": 0.1,
    "dur": 4.51
   },
   "I only borrowed it. She is being dramatic.": {
    "file": 76,
-   "start": 0.1,
+   "start": 4.69,
    "dur": 3.19
   },
   "She started it. I just finished it.": {
    "file": 76,
-   "start": 3.37,
+   "start": 7.96,
    "dur": 2.12
   },
   "She gives it out and cannot take it. Typical.": {
    "file": 76,
-   "start": 5.57,
+   "start": 10.16,
    "dur": 2.33
   },
   "I was only having a laugh and she went all quiet. Who does that?": {
    "file": 76,
-   "start": 7.98,
+   "start": 12.57,
    "dur": 4.35
   },
   "Ha! See? You get it.": {
    "file": 76,
-   "start": 12.41,
+   "start": 17.0,
    "dur": 1.76
   },
   "Knew you would be on my side. Always are, really.": {
    "file": 76,
-   "start": 14.25,
+   "start": 18.84,
    "dur": 2.61
   },
   "Right. So that is settled, then. Amy can think about it.": {
    "file": 76,
-   "start": 16.94,
+   "start": 21.53,
    "dur": 3.64
   },
   "Oh, go on, then. Not yet, though.": {
    "file": 76,
-   "start": 20.66,
+   "start": 25.25,
    "dur": 2.62
   },
   "You are not going to leave this alone, are you?": {
    "file": 76,
-   "start": 23.36,
+   "start": 27.95,
    "dur": 2.17
   },
   "I will say sorry when she does. Not before.": {
    "file": 76,
-   "start": 25.61,
+   "start": 30.2,
    "dur": 2.42
   },
   "Oi. Come round the back of the barn with me. No reason. Definitely no reason.": {
    "file": 76,
-   "start": 28.11,
+   "start": 32.7,
    "dur": 5.02
   },
   "You and me, round the back of the barn. Go on. Do not make me say it twice.": {
    "file": 76,
-   "start": 33.21,
+   "start": 37.8,
    "dur": 4.13
   },
   "Come on, I want to show you something. It is behind the barn. It is me, basically.": {
    "file": 76,
-   "start": 37.42,
+   "start": 42.01,
    "dur": 4.42
   },
   "I am sitting on my quad. Come and stand by me. You know what for.": {
    "file": 76,
-   "start": 41.92,
+   "start": 46.51,
    "dur": 4.17
   },
   "Get over here. I am on the back of my favourite and you are going to stand there looking handsome.": {
    "file": 76,
-   "start": 46.17,
+   "start": 50.76,
    "dur": 5.48
   },
   "My quad, the back seat, you next to me. Do not look so surprised.": {
    "file": 76,
-   "start": 51.73,
+   "start": 56.32,
    "dur": 4.39
   },
   "Wow. Okay. Rejected. Fine.": {
-   "file": 76,
-   "start": 56.2,
+   "file": 77,
+   "start": 0.1,
    "dur": 3.13
   },
   "Your loss, honestly.": {
-   "file": 76,
-   "start": 59.41,
+   "file": 77,
+   "start": 3.31,
    "dur": 1.73
   },
   "Ha. Right. I will ask again just to annoy you.": {
    "file": 77,
-   "start": 0.1,
+   "start": 5.12,
    "dur": 3.32
   },
   "Fine, ignore me, see if I care.": {
    "file": 77,
-   "start": 3.5,
+   "start": 8.52,
    "dur": 2.34
   },
   "Seriously? Too busy for me?": {
    "file": 77,
-   "start": 5.92,
+   "start": 10.94,
    "dur": 2.25
   },
   "Too slow. Offer is off the table. For now.": {
    "file": 77,
-   "start": 8.25,
+   "start": 13.27,
    "dur": 2.95
   },
   "Do not say a word.": {
    "file": 77,
-   "start": 11.28,
+   "start": 16.3,
    "dur": 1.59
   },
   "Shut up and come here.": {
    "file": 77,
-   "start": 12.95,
+   "start": 17.97,
    "dur": 1.36
   },
   "About time, if you ask me.": {
    "file": 77,
-   "start": 14.39,
+   "start": 19.41,
    "dur": 3.14
   },
   "Right. Here. Stand right there.": {
    "file": 77,
-   "start": 17.61,
+   "start": 22.63,
    "dur": 1.89
   },
   "Look at you. Come on, then.": {
    "file": 77,
-   "start": 19.58,
+   "start": 24.6,
    "dur": 1.76
   },
   "Do not you dare take the mickey.": {
    "file": 77,
-   "start": 21.42,
+   "start": 26.44,
    "dur": 1.82
   },
   "That did not happen. It totally happened.": {
    "file": 77,
-   "start": 23.32,
+   "start": 28.34,
    "dur": 2.95
   },
   "Do not tell Amy. Tell Amy. I do not care.": {
    "file": 77,
-   "start": 26.35,
+   "start": 31.37,
    "dur": 3.45
   },
   "Right. Back to the quads. Act cool.": {
    "file": 77,
-   "start": 29.88,
+   "start": 34.9,
    "dur": 2.47
   },
   "There. Official. You are not allowed to run off with anyone else now.": {
    "file": 77,
-   "start": 32.43,
+   "start": 37.45,
    "dur": 3.7
   },
   "I am keeping you, you know. Just so it is clear.": {
    "file": 77,
-   "start": 36.21,
+   "start": 41.23,
    "dur": 3.12
   },
   "Well, that is you taken. Sorry, not sorry.": {
    "file": 77,
-   "start": 39.41,
+   "start": 44.43,
    "dur": 3.58
   },
   "Where did you two vanish to? Do not tell me. I can guess.": {
    "file": 77,
-   "start": 43.07,
+   "start": 48.09,
    "dur": 4.34
   },
   "Oh, so you do have time for Amy. Good to know.": {
    "file": 77,
-   "start": 47.49,
+   "start": 52.51,
    "dur": 3.21
   },
   "Do not mind me. I am fine. I am absolutely fine.": {
    "file": 77,
-   "start": 50.78,
+   "start": 55.8,
    "dur": 4.03
   },
   "Got my own quad. Do not need anybody. Nope.": {
    "file": 77,
-   "start": 54.89,
+   "start": 59.91,
    "dur": 2.64
   },
   "You threw me off! Me! You absolute idiot.": {
-   "file": 77,
-   "start": 57.61,
+   "file": 78,
+   "start": 0.1,
    "dur": 2.91
   },
   "I am not speaking to you. I mean it this time.": {
    "file": 78,
-   "start": 0.1,
+   "start": 3.09,
    "dur": 3.59
   },
   "Right. That is it. All of it. Gone.": {
    "file": 78,
-   "start": 3.77,
+   "start": 6.76,
    "dur": 2.73
   },
   "The red quad? That one is mine. Hands off.": {
    "file": 78,
-   "start": 6.58,
+   "start": 9.57,
    "dur": 3.11
   },
   "Just so you know, the red quad is mine.": {
    "file": 78,
-   "start": 9.77,
+   "start": 12.76,
    "dur": 2.78
   },
   "Postie? That one is mine. Hands off.": {
    "file": 78,
-   "start": 12.63,
+   "start": 15.62,
    "dur": 2.39
   },
   "Just so you know, Postie is mine.": {
    "file": 78,
-   "start": 15.1,
+   "start": 18.09,
    "dur": 2.14
   },
   "The tomato? That one is mine. Hands off.": {
    "file": 78,
-   "start": 17.32,
+   "start": 20.31,
    "dur": 3.57
   },
   "Just so you know, the tomato is mine.": {
    "file": 78,
-   "start": 20.97,
+   "start": 23.96,
    "dur": 2.43
   },
   "The blue quad? That one is mine. Hands off.": {
    "file": 78,
-   "start": 23.48,
+   "start": 26.47,
    "dur": 2.94
   },
   "Just so you know, the blue quad is mine.": {
    "file": 78,
-   "start": 26.5,
+   "start": 29.49,
    "dur": 2.93
   },
   "Smurf? That one is mine. Hands off.": {
    "file": 78,
-   "start": 29.51,
+   "start": 32.5,
    "dur": 3.0
   },
   "Just so you know, Smurf is mine.": {
    "file": 78,
-   "start": 32.59,
+   "start": 35.58,
    "dur": 3.07
   },
   "Bluebell? That one is mine. Hands off.": {
    "file": 78,
-   "start": 35.74,
+   "start": 38.73,
    "dur": 3.08
   },
   "Just so you know, Bluebell is mine.": {
    "file": 78,
-   "start": 38.9,
+   "start": 41.89,
    "dur": 2.21
   },
   "The yellow quad? That one is mine. Hands off.": {
    "file": 78,
-   "start": 41.19,
+   "start": 44.18,
    "dur": 3.68
   },
   "Just so you know, the yellow quad is mine.": {
    "file": 78,
-   "start": 44.95,
+   "start": 47.94,
    "dur": 2.84
   },
   "The wasp? That one is mine. Hands off.": {
    "file": 78,
-   "start": 47.87,
+   "start": 50.86,
    "dur": 2.62
   },
   "Just so you know, the wasp is mine.": {
    "file": 78,
-   "start": 50.57,
+   "start": 53.56,
    "dur": 3.01
   },
   "Custard? That one is mine. Hands off.": {
    "file": 78,
-   "start": 53.66,
+   "start": 56.65,
    "dur": 2.14
   },
   "Just so you know, Custard is mine.": {
    "file": 78,
-   "start": 55.88,
+   "start": 58.87,
    "dur": 2.14
   },
   "The green quad? That one is mine. Hands off.": {
-   "file": 78,
-   "start": 58.1,
+   "file": 79,
+   "start": 0.1,
    "dur": 3.21
   },
   "Just so you know, the green quad is mine.": {
    "file": 79,
-   "start": 0.1,
+   "start": 3.39,
    "dur": 2.54
   },
   "Grandad? That one is mine. Hands off.": {
    "file": 79,
-   "start": 2.72,
+   "start": 6.01,
    "dur": 2.89
   },
   "Just so you know, Grandad is mine.": {
    "file": 79,
-   "start": 5.69,
+   "start": 8.98,
    "dur": 2.77
   },
   "Kermit? That one is mine. Hands off.": {
    "file": 79,
-   "start": 8.54,
+   "start": 11.83,
    "dur": 2.37
   },
   "Just so you know, Kermit is mine.": {
    "file": 79,
-   "start": 10.99,
+   "start": 14.28,
    "dur": 2.29
   },
   "The orange quad? That one is mine. Hands off.": {
    "file": 79,
-   "start": 13.36,
+   "start": 16.65,
    "dur": 3.81
   },
   "Just so you know, the orange quad is mine.": {
    "file": 79,
-   "start": 17.25,
+   "start": 20.54,
    "dur": 2.66
   },
   "The satsuma? That one is mine. Hands off.": {
    "file": 79,
-   "start": 19.99,
+   "start": 23.28,
    "dur": 3.18
   },
   "Just so you know, the satsuma is mine.": {
    "file": 79,
-   "start": 23.25,
+   "start": 26.54,
    "dur": 2.63
   },
   "Tango? That one is mine. Hands off.": {
    "file": 79,
-   "start": 25.96,
+   "start": 29.25,
    "dur": 2.95
   },
   "Just so you know, Tango is mine.": {
    "file": 79,
-   "start": 28.99,
+   "start": 32.28,
    "dur": 1.97
   },
   "The kids' quad? That one is mine. Hands off.": {
    "file": 79,
-   "start": 31.04,
+   "start": 34.33,
    "dur": 2.79
   },
   "Just so you know, the kids' quad is mine.": {
    "file": 79,
-   "start": 33.91,
+   "start": 37.2,
    "dur": 2.99
   },
   "Tiddler? That one is mine. Hands off.": {
    "file": 79,
-   "start": 36.98,
+   "start": 40.27,
    "dur": 3.01
   },
   "Just so you know, Tiddler is mine.": {
    "file": 79,
-   "start": 40.07,
+   "start": 43.36,
    "dur": 1.98
   },
   "The pram? That one is mine. Hands off.": {
    "file": 79,
-   "start": 42.13,
+   "start": 45.42,
    "dur": 2.81
   },
   "Just so you know, the pram is mine.": {
    "file": 79,
-   "start": 45.02,
+   "start": 48.31,
    "dur": 2.26
   },
   "The loan quad? That one is mine. Hands off.": {
    "file": 79,
-   "start": 47.36,
+   "start": 50.65,
    "dur": 2.78
   },
   "Just so you know, the loan quad is mine.": {
    "file": 79,
-   "start": 50.22,
+   "start": 53.51,
    "dur": 2.36
   },
   "Lucky? That one is mine. Hands off.": {
    "file": 79,
-   "start": 52.66,
+   "start": 55.95,
    "dur": 3.08
   },
   "Just so you know, Lucky is mine.": {
    "file": 79,
-   "start": 55.82,
+   "start": 59.11,
    "dur": 2.68
   },
   "The loaner? That one is mine. Hands off.": {
-   "file": 79,
-   "start": 58.58,
+   "file": 80,
+   "start": 0.1,
    "dur": 2.76
   },
   "Just so you know, the loaner is mine.": {
    "file": 80,
-   "start": 0.1,
+   "start": 2.94,
    "dur": 2.68
   },
   "The mini moto? That one is mine. Hands off.": {
    "file": 80,
-   "start": 2.86,
+   "start": 5.7,
    "dur": 3.75
   },
   "Just so you know, the mini moto is mine.": {
    "file": 80,
-   "start": 6.69,
+   "start": 9.53,
    "dur": 2.91
   },
   "Pogo? That one is mine. Hands off.": {
    "file": 80,
-   "start": 9.68,
+   "start": 12.52,
    "dur": 2.41
   },
   "Just so you know, Pogo is mine.": {
    "file": 80,
-   "start": 12.17,
+   "start": 15.01,
    "dur": 2.21
   },
   "The bumblebee? That one is mine. Hands off.": {
    "file": 80,
-   "start": 14.46,
+   "start": 17.3,
    "dur": 3.25
   },
   "Just so you know, the bumblebee is mine.": {
    "file": 80,
-   "start": 17.79,
+   "start": 20.63,
    "dur": 2.43
   },
   "The old three-wheeler? That one is mine. Hands off.": {
    "file": 80,
-   "start": 20.3,
+   "start": 23.14,
    "dur": 3.09
   },
   "Just so you know, the old three-wheeler is mine.": {
    "file": 80,
-   "start": 23.47,
+   "start": 26.31,
    "dur": 2.8
   },
   "The tripod? That one is mine. Hands off.": {
    "file": 80,
-   "start": 26.35,
+   "start": 29.19,
    "dur": 3.38
   },
   "Just so you know, the tripod is mine.": {
    "file": 80,
-   "start": 29.81,
+   "start": 32.65,
    "dur": 2.4
   },
   "Wobbles? That one is mine. Hands off.": {
    "file": 80,
-   "start": 32.29,
+   "start": 35.13,
    "dur": 2.59
   },
   "Just so you know, Wobbles is mine.": {
    "file": 80,
-   "start": 34.96,
+   "start": 37.8,
    "dur": 2.42
   },
   "That's Amy on the red quad? Flat out? Wonders never cease.": {
    "file": 80,
-   "start": 37.46,
+   "start": 40.3,
    "dur": 4.17
   },
   "Is that Amy on the red quad? She is actually giving it some.": {
    "file": 80,
-   "start": 41.71,
+   "start": 44.55,
    "dur": 3.37
   },
   "That's Amy on Postie? Flat out? Wonders never cease.": {
    "file": 80,
-   "start": 45.16,
+   "start": 48.0,
    "dur": 4.11
   },
   "Is that Amy on Postie? She is actually giving it some.": {
    "file": 80,
-   "start": 49.35,
+   "start": 52.19,
    "dur": 3.97
   },
   "That's Amy on the tomato? Flat out? Wonders never cease.": {
    "file": 80,
-   "start": 53.4,
+   "start": 56.24,
    "dur": 4.07
   },
   "Is that Amy on the tomato? She is actually giving it some.": {
-   "file": 80,
-   "start": 57.55,
+   "file": 81,
+   "start": 0.1,
    "dur": 2.91
   },
   "That's Amy on the blue quad? Flat out? Wonders never cease.": {
    "file": 81,
-   "start": 0.1,
+   "start": 3.09,
    "dur": 4.29
   },
   "Is that Amy on the blue quad? She is actually giving it some.": {
    "file": 81,
-   "start": 4.47,
+   "start": 7.46,
    "dur": 4.07
   },
   "That's Amy on Smurf? Flat out? Wonders never cease.": {
    "file": 81,
-   "start": 8.62,
+   "start": 11.61,
    "dur": 3.66
   },
   "Is that Amy on Smurf? She is actually giving it some.": {
    "file": 81,
-   "start": 12.36,
+   "start": 15.35,
    "dur": 5.18
   },
   "That's Amy on Bluebell? Flat out? Wonders never cease.": {
    "file": 81,
-   "start": 17.62,
+   "start": 20.61,
    "dur": 4.15
   },
   "Is that Amy on Bluebell? She is actually giving it some.": {
    "file": 81,
-   "start": 21.85,
+   "start": 24.84,
    "dur": 3.06
   },
   "That's Amy on the yellow quad? Flat out? Wonders never cease.": {
    "file": 81,
-   "start": 24.99,
+   "start": 27.98,
    "dur": 4.35
   },
   "Is that Amy on the yellow quad? She is actually giving it some.": {
    "file": 81,
-   "start": 29.42,
+   "start": 32.41,
    "dur": 4.27
   },
   "That's Amy on the wasp? Flat out? Wonders never cease.": {
    "file": 81,
-   "start": 33.77,
+   "start": 36.76,
    "dur": 3.91
   },
   "Is that Amy on the wasp? She is actually giving it some.": {
    "file": 81,
-   "start": 37.76,
+   "start": 40.75,
    "dur": 3.45
   },
   "That's Amy on Custard? Flat out? Wonders never cease.": {
    "file": 81,
-   "start": 41.29,
+   "start": 44.28,
    "dur": 4.14
   },
   "Is that Amy on Custard? She is actually giving it some.": {
    "file": 81,
-   "start": 45.51,
+   "start": 48.5,
    "dur": 3.45
   },
   "That's Amy on the green quad? Flat out? Wonders never cease.": {
    "file": 81,
-   "start": 49.04,
+   "start": 52.03,
    "dur": 3.6
   },
   "Is that Amy on the green quad? She is actually giving it some.": {
    "file": 81,
-   "start": 52.72,
+   "start": 55.71,
    "dur": 3.71
   },
   "That's Amy on Grandad? Flat out? Wonders never cease.": {
    "file": 81,
-   "start": 56.51,
+   "start": 59.5,
    "dur": 4.38
   },
   "Is that Amy on Grandad? She is actually giving it some.": {

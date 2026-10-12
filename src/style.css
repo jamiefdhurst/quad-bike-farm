@@ -413,6 +413,18 @@ body {
   max-height: 100vh;
 }
 
+/* lil-gui's label is a minimum width that never wraps, so a long one pushes its value right and the columns drift row to row. Fix the
+   label's width and let it wrap, so every value, slider and button in a folder starts at the same place. */
+.lil-gui.root .lil-controller > .lil-name {
+  width: var(--name-width);
+  max-width: var(--name-width);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
 /* The farm map on M (hud/mapView.js), over the middle of the screen. */
 .farm-map {
   position: absolute;

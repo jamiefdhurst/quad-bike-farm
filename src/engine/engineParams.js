@@ -163,6 +163,7 @@ export const DEFAULT_ENGINE_PARAMS = {
   skipThrottle: 0.2, // only below this throttle
   skipRpm: 4000, // and below these revs
   idleFoulRate: 0, // plug fouling per second while idling (oily two-stroke plugs load up); throttle clears it
+  additiveFoulCut: 0.85, // share of the idle and excess-oil plug fouling that plug-saver in the fuel stops, at full strength (vehicle/plugAdditive.js)
 
   // The orange's coolant leak (see coolant.js). Levels run 1 full to 0 dry.
   coolantLeakRun: 0.00035, // level lost a second while running at a leak multiplier of 1 (about 48 minutes from full to dry)
@@ -356,6 +357,7 @@ export const ENGINE_PARAM_RANGES = {
   skipThrottle: [0, 1, 0.01],
   skipRpm: [500, 10000, 50],
   idleFoulRate: [0, 0.05, 0.0005],
+  additiveFoulCut: [0, 1, 0.01],
   maxRpm: [2000, 12000, 100],
   redlineRpm: [1800, 11000, 100],
   idleRpmWarm: [300, 2500, 10],

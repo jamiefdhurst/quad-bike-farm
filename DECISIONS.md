@@ -3300,3 +3300,16 @@ What was built:
 - **Door handles**: the side details (handles, shut lines, rubbing strips, repeaters, mirrors) sat inside the Corsa's rounder side, whose bevel puts its face further out than the Fiesta's. They're placed on each car's own outer face now, and the Corsa's handles are dark grey pulls in a recess.
 - **A boomier Corsa**: a new audio param, `pulseDrone` (dB) at `pulseDroneFreq` (Hz), a low boost on the pulse sound that is full at idle and half of it high up the revs. The Corsa has 9 dB at 75 Hz and `recVolume` 1.1: offline its idle is 3.7 dB louder, nearly all of it below 150 Hz, and full throttle half a dB. Renders at 6, 9 and 12 dB are in `.scratch/cars-sound/renders/` (`corsa-revs-drone*.wav`). A first go: more refinement later.
 
+
+## Plug-saver for the two-strokes (TODO 31)
+
+Settled with Jamie before building (2026-10-12): all six recommendations taken.
+
+- **Where it goes.** A bottle by the oil bottle treats the pre-mix can (hold `E` with the can in your hands); the treated share carries into the tank on a fill. Unlike the oil bottle it is a fixed prop, not carried: nothing needs to take it anywhere else, and carried items cost plumbing (hands, trailer, bench spots).
+- **How it lasts.** Not a timer: a `additive` share (0..1) of the fuel, mixed with `mixOil` like the oil, diesel and water fractions. It thins as untreated fuel goes in and is gone when the fuel is. `treatRate` is 2 litres a second, so a full 10 L can takes five seconds.
+- **What it does.** `additiveFoulCut` (0.85) takes that share off the idle fouling (`idleFoulRate`) and the excess-oil fouling (`oilFoulRate`) at full strength. Rich fouling from the choke or a clogged filter is untouched, so mixture mistakes still matter. Diesels have no plug and ignore it.
+- **The girls.** One remark each (`plugSaver` in `npc/additiveLines.js`), said by whoever is nearest and free to remark when a can first goes over half treated. Amy adding it to the can on her own would be a new offer and a pose; left out, noted as an idea.
+- **Kept.** `additive` is in `FUEL_KEPT`, so a tank's treated share survives a reload. The cans are not saved, as before.
+- **Panel.** Running on the Vehicles tab shows and sets it for a two-stroke, "Plug-saver" in Tune (Items and workshop) has the pour rate, and the console has `plugSaver`. It is not a fault, so "Put it right" leaves it.
+- **The Vehicles tab's columns (same session).** lil-gui gives a row's label `min-width: 45%` and `white-space: pre`, so a label longer than that pushed its value to the right and the columns drifted from row to row. The label is now a fixed width that wraps (`src/style.css`). Not checked in a browser.
+- **Not checked in a browser:** the bottle's look and place, and the column fix. Unit tests cover the mixing, the engine's fouling cut, the save and the text.

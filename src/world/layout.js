@@ -254,6 +254,7 @@ export const LAYOUT = {
   toolbox: { x: -62.9, z: 56.1, yaw: 0.1, lift: 0.92 }, // on the barn workbench
   benchOil: { x: -62.05, z: 56.1, yaw: 0.2 }, // the oil bottle's place on the workbench
   oilBottle: { x: -59.3, z: 52.9, yaw: 0.3 }, // two-stroke oil, by the petrol tank
+  plugAdditive: { x: -59.75, z: 53.2, yaw: -0.3 }, // plug-saver, a little way from the oil bottle
   benchLeads: { x: -63.55, z: 56.1, yaw: 0.4 }, // where the jump leads lie on the workbench, at the start and when you put them back (the toolbox's place is `toolbox`)
   hose: { x: -61.2, z: 49.4, yaw: 0.2 }, // hose reel at the south end of the petrol tank
 

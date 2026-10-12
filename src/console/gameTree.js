@@ -148,6 +148,7 @@ export function buildGameTree(g, host) {
         hardStart: num(() => q().startTrouble, (v) => (q().startTrouble = Math.round(v)), 0, 6, '', 'goes the last start took; 2 or more makes the girls keep it going'),
         water: num(() => e().water, (v) => (e().water = v), 0, 1),
         fuelWater: num(() => q().fuel.water, (v) => (q().fuel.water = v), 0, 0.3, '', 'fraction of the tank that is water'),
+        plugSaver: num(() => q().fuel.additive, (v) => (q().fuel.additive = v), 0, 1, '', 'share of the tank treated with plug-saver; cuts the oily idle fouling'),
         tapBowl: num(() => q().fuel.sediment, (v) => (q().fuel.sediment = v), 0, 1, '', 'how full the sediment bowl on the tap is; full, the water reaches the carb'),
         dieselSoak: num(() => e().dieselSoak, (v) => (e().dieselSoak = v), 0, 1),
         ...(e().params.strokes === 2 ? { silencerBlown: num(() => e().silencerBlown, (v) => (e().silencerBlown = v), 0, 1) } : {}),

@@ -51,6 +51,7 @@ export class FuelSystem {
     this.bowlDiesel = this.diesel; // and of what's in the float bowl, which is what the engine is fed
     this.water = params.startWater ?? 0; // water fraction of what's in the tank
     this.bowlWater = this.water; // and of what's in the float bowl, which is what the engine is fed
+    this.additive = params.startAdditive ?? 0; // share of what's in the tank that has plug-saver in it (plugAdditive.js)
     this.sediment = 0; // 0..1 how full the sediment bowl on the tap is of water
     this.waterParams = DEFAULT_FUEL_WATER_PARAMS;
     this.tap = params.startTap ?? 'on';
@@ -91,12 +92,13 @@ export class FuelSystem {
     this.bowl = this.litres > 0 ? this.params.bowlCapacity : 0;
   }
 
-  /** Pours fuel in, with `oil` as its oil fraction, `diesel` as its diesel fraction and `water` as its water fraction; returns how much actually went in. */
-  add(litres, oil = 0, diesel = 0, water = 0) {
+  /** Pours fuel in, with `oil` as its oil fraction, `diesel` as its diesel fraction `water` as its water fraction and `additive` as its treated share; returns how much actually went in. */
+  add(litres, oil = 0, diesel = 0, water = 0, additive = 0) {
     const added = clamp(litres, 0, this.space);
     this.oil = mixOil(this.litres, this.oil, added, oil);
     this.diesel = mixOil(this.litres, this.diesel, added, diesel);
     this.water = mixOil(this.litres, this.water, added, water);
+    this.additive = mixOil(this.litres, this.additive, added, additive);
     this.litres += added;
     return added;
   }
@@ -110,6 +112,7 @@ export class FuelSystem {
     this.bowlDiesel = 0;
     this.water = 0;
     this.bowlWater = 0;
+    this.additive = 0;
     this.sediment = 0;
     return lost;
   }

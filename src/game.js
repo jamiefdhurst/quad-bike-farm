@@ -173,6 +173,7 @@ import { BanterWatch } from './npc/banterWatch.js';
 const FRICTION_BANTER = ['idle', 'favoured', 'rivals', 'watching', 'sharing', 'riding', 'corrected', 'swapped', 'stuck'];
 import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES, PREMIX_CAN_COLOURS, DIESEL_CAN_COLOURS } from './items/jerryCan.js';
 import { OilBottle, OIL_BOTTLE_PARAM_RANGES } from './items/oilBottle.js';
+import { PlugAdditive, PLUG_ADDITIVE_PARAM_RANGES } from './items/plugAdditive.js';
 import { ratioText } from './engine/lubrication.js';
 import { walkRound, DEFAULT_WALK_PARAMS, WALK_PARAM_RANGES } from './npc/walkRound.js';
 import { DEFAULT_MOTO_PARAMS, MOTO_PARAM_RANGES } from './npc/motoGo.js';
@@ -904,7 +905,7 @@ export class Game {
             const pct = Math.round(quad.fuel.level * 100);
             if (quad.fuel.space < 0.01) return { text: `The ${unit.label} is full   ·   G put the can down` };
             if (this.can.litres < 0.01) return { text: 'The can is empty   ·   G put the can down' };
-            return { text: `Hold E to fill the ${unit.label} (${pct}%) with ${fuelText(this.can.oil, this.can.diesel, this.can.water)}   ·   G put the can down` };
+            return { text: `Hold E to fill the ${unit.label} (${pct}%) with ${fuelText(this.can.oil, this.can.diesel, this.can.water, this.can.additive)}   ·   G put the can down` };
           }
           if (quad.crank && quad.atCrank && !this.player.isRiding) return { text: this.crankPrompt(quad) };
           if (this.sulkerIn(quad)) return { text: `${this.sulkerIn(quad).name} is sulking in the ${unit.label}   ·   E knock on the window` };
@@ -982,7 +983,7 @@ export class Game {
           }
           if (!this.can.held || this.tooFastToMount(quad)) return false;
           const wanted = Math.min(this.can.params.pourRate * dt, quad.fuel.space);
-          const poured = quad.fuel.add(this.can.take(wanted), this.can.oil, this.can.diesel, this.can.water) > 0;
+          const poured = quad.fuel.add(this.can.take(wanted), this.can.oil, this.can.diesel, this.can.water, this.can.additive) > 0;
           if (poured) {
             this.wrongMix = this.mixWrongFor(quad, this.can);
             this.achievements.note('fuelPoured');
@@ -1044,11 +1045,12 @@ export class Game {
       name: 'dieselCan',
     });
     this.oilBottle = new OilBottle({ scene: this.scene, world: this.world, position: L.oilBottle, yaw: L.oilBottle.yaw });
+    this.plugAdditive = new PlugAdditive({ scene: this.scene, world: this.world, position: L.plugAdditive, yaw: L.plugAdditive.yaw });
     for (const can of [this.petrolCan, this.premixCan, this.dieselCan]) {
       this.interaction.add({
         target: can.proxy,
         isAvailable: () => !this.handsFull && !can.carried,
-        prompt: () => `Pick up the ${can === this.premixCan ? 'yellow' : can === this.dieselCan ? 'dark green' : 'red'} jerry can (${can.litres.toFixed(1)} L, ${fuelText(can.oil, can.diesel, can.water)})`,
+        prompt: () => `Pick up the ${can === this.premixCan ? 'yellow' : can === this.dieselCan ? 'dark green' : 'red'} jerry can (${can.litres.toFixed(1)} L, ${fuelText(can.oil, can.diesel, can.water, can.additive)})`,
         interact: () => can.pickUp(this.camera),
       });
     }
@@ -1059,7 +1061,7 @@ export class Game {
         if (!this.handsFull) return 'Pick up the oil bottle';
         if (!this.can.held) return { text: 'Engine oil: bring a jerry can to add some to the pre-mix' };
         if (this.can.space < 0.01) return { text: 'The jerry can is full' };
-        return { text: `Hold E to add oil to the can (${fuelText(this.can.oil, this.can.diesel, this.can.water)})` };
+        return { text: `Hold E to add oil to the can (${fuelText(this.can.oil, this.can.diesel, this.can.water, this.can.additive)})` };
       },
       interact: () => {
         if (!this.handsFull) this.oilBottle.pickUp(this.camera);
@@ -1067,11 +1069,28 @@ export class Game {
       hold: (dt) => this.can.held && this.can.addOil(this.oilBottle.params.pourRate * dt) > 0,
     });
     this.interaction.add({
+      target: this.plugAdditive.proxy,
+      prompt: () => {
+        if (!this.can.held) return { text: 'Plug-saver: bring the pre-mix can to treat it, so a two-stroke plug stays cleaner at idle' };
+        if (this.can.oil <= 0 || this.can.litres < 0.01) return { text: 'Plug-saver is for pre-mix: this can has no oil in it, or nothing' };
+        if (this.can.additive > 0.99) return { text: 'The pre-mix is already treated' };
+        return { text: `Hold E to treat the pre-mix with plug-saver (${Math.round(this.can.additive * 100)}% treated)` };
+      },
+      interact: () => {},
+      hold: (dt) => {
+        if (!this.can.held || this.can.oil <= 0) return false;
+        const was = this.can.additive;
+        const treated = this.can.treat(this.plugAdditive.params.treatRate * dt);
+        if (was < 0.5 && this.can.additive >= 0.5) this.saySomethingAboutAdditive();
+        return treated > 0;
+      },
+    });
+    this.interaction.add({
       target: this.fuelTank.proxy,
       prompt: () => {
         if (!this.can.held) return { text: 'Petrol tank: bring the jerry can to fill it' };
         if (this.can.space < 0.01) return { text: 'The jerry can is full' };
-        return { text: `Hold E to fill the jerry can (${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel, this.can.water)})` };
+        return { text: `Hold E to fill the jerry can (${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel, this.can.water, this.can.additive)})` };
       },
       interact: () => {},
       hold: (dt) => this.can.held && this.can.fill(this.can.params.fillRate * dt) > 0,
@@ -1081,7 +1100,7 @@ export class Game {
       prompt: () => {
         if (!this.can.held) return { text: 'Red diesel, for the tractor: bring a jerry can to fill it' };
         if (this.can.space < 0.01) return { text: 'The jerry can is full' };
-        return { text: `Hold E to fill the jerry can with red diesel (${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel, this.can.water)})` };
+        return { text: `Hold E to fill the jerry can with red diesel (${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel, this.can.water, this.can.additive)})` };
       },
       interact: () => {},
       hold: (dt) => this.can.held && this.can.fill(this.can.params.fillRate * dt, 0, 1) > 0,
@@ -1230,6 +1249,7 @@ export class Game {
     registerTuning('Pre-mix can', this.premixCan.params, JERRY_CAN_PARAM_RANGES);
     registerTuning('Diesel can', this.dieselCan.params, JERRY_CAN_PARAM_RANGES);
     registerTuning('Oil bottle', this.oilBottle.params, OIL_BOTTLE_PARAM_RANGES);
+    registerTuning('Plug-saver', this.plugAdditive.params, PLUG_ADDITIVE_PARAM_RANGES);
     registerTuning('Hose', this.hose.params, HOSE_PARAM_RANGES);
     this.muddyParams = { ...DEFAULT_MUDDY_PARAMS };
     registerTuning('Muddy girls', this.muddyParams, MUDDY_PARAM_RANGES);
@@ -3115,6 +3135,15 @@ export class Game {
     unit.quad.bodyRoot.add(unit.tarp);
     this.units = [...this.units, unit];
     return unit;
+  }
+
+  /** A girl near you who is free to remark says her line about the plug-saver you have just poured in (additiveLines.js). */
+  saySomethingAboutAdditive() {
+    const at = this.player.position;
+    this.companions
+      .filter((c) => c.availability().canRemark && c.root.position.distanceTo(at) < 12)
+      .sort((a, b) => a.root.position.distanceTo(at) - b.root.position.distanceTo(at))[0]
+      ?.voice.say('plugSaver', { force: true });
   }
 
   /** A can left out in the rain, not held and not under cover, collects water (the barn's roof and the lean-to keep it off). */
@@ -7975,7 +8004,7 @@ export class Game {
     } else if (this.toolbox.held) {
       this.hud.setStatus('Toolbox\nTake it to a quad that is switched off\nG to put it down');
     } else if (this.can.held) {
-      this.hud.setStatus(`Jerry can  ${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel, this.can.water)}\nG to put it down`);
+      this.hud.setStatus(`Jerry can  ${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel, this.can.water, this.can.additive)}\nG to put it down`);
     } else if (!this.player.isRiding && this.trailer.load && this.player.position.distanceTo(this.trailer.model.position) < 7) {
       const l = this.trailer.load;
       this.hud.setStatus(l.mode === 'aboard' ? `Quad on the bale trailer${l.strapped ? ', strapped' : ''}\nE on it to ${l.strapped ? 'undo the strap' : 'strap it down'}${l.strapped ? '' : ', Shift X to lower it'}` : 'Quad on the ramps\nHold X to wind it up, V to push it');

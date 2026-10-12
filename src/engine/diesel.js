@@ -28,8 +28,9 @@ export function dieselCatchFactor(soak, p) {
 }
 
 /** What's in a can or tank, in words: red diesel (or a share of it) when there is any, else its petrol or pre-mix ratio. */
-export function fuelText(oil, diesel, water = 0) {
+export function fuelText(oil, diesel, water = 0, additive = 0) {
   if (diesel > 0.95) return 'red diesel';
   const base = diesel > 0.02 ? `petrol with ${Math.round(diesel * 100)}% red diesel in it` : ratioText(oil);
-  return water > 0.01 ? `${base}, with ${Math.round(water * 100)}% water in it` : base;
+  const treated = additive > 0.5 && oil > 0 ? `${base}, with plug-saver` : base;
+  return water > 0.01 ? `${treated}, with ${Math.round(water * 100)}% water in it` : treated;
 }

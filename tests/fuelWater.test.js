@@ -139,3 +139,43 @@ describe('what the fuel is called', () => {
     expect(fuelText(0, 0, 0)).toBe('straight petrol');
   });
 });
+
+describe('plug-saver', () => {
+  it('is mixed by share through a can and into a tank, and thins out with untreated fuel', async () => {
+    const { JerryCan, DEFAULT_JERRY_CAN_PARAMS } = await import('../src/items/jerryCan.js');
+    const can = Object.create(JerryCan.prototype);
+    Object.assign(can, { params: { ...DEFAULT_JERRY_CAN_PARAMS, capacity: 20 }, litres: 10, oil: 0.02, diesel: 0, water: 0, additive: 0 });
+    expect(can.treat(4)).toBeCloseTo(4);
+    expect(can.additive).toBeCloseTo(0.4);
+    can.treat(100);
+    expect(can.additive).toBe(1);
+    const fuel = new FuelSystem({ ...DEFAULT_FUEL_PARAMS, startLitres: 0 });
+    fuel.add(5, 0.02, 0, 0, can.additive);
+    expect(fuel.additive).toBe(1);
+    fuel.add(5, 0.02, 0, 0, 0);
+    expect(fuel.additive).toBeCloseTo(0.5);
+    fuel.drain();
+    expect(fuel.additive).toBe(0);
+  });
+
+  it('is named on the can only once most of it is treated', () => {
+    expect(fuelText(0.02, 0, 0, 1)).toContain('plug-saver');
+    expect(fuelText(0.02, 0, 0, 0.2)).not.toContain('plug-saver');
+  });
+
+  it("cuts the engine's idle fouling by additiveFoulCut at full strength", () => {
+    // Idle at an easy mixture for a while, with the plug just clean, and see how much has loaded up.
+    const idle = (additive) => {
+      const e = new EngineModel({ strokes: 2, idleFoulRate: 0.01 }, { random: seeded(7) });
+      e.setTemperature(1);
+      e.setIgnition(true);
+      for (let t = 0; t < 12 && !e.isRunning; t += 1 / 60) e.update(1 / 60, { starter: true, choke: 0.3, additive });
+      e.fouling = 0;
+      for (let t = 0; t < 20; t += 1 / 60) e.update(1 / 60, { throttle: 0, additive, oil: 0.02 });
+      return e.fouling;
+    };
+    const plain = idle(0);
+    expect(plain).toBeGreaterThan(0.02);
+    expect(idle(1)).toBeLessThan(plain * (1 - P.additiveFoulCut) * 1.5 + 0.005);
+  });
+});
