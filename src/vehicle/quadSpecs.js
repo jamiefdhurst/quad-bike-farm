@@ -1523,10 +1523,12 @@ export const CORSA_SPEC = {
     pulseRevFollow: 0.08,
     pulseRevLoudness: 0.35,
     pulseRevGain: 1.2,
-    recVolume: 1,
+    recVolume: 1.1,
     recStarterVolume: 0.8,
     recToneClosed: 3800,
     pipeLength: 1.9, // the big-bore pipe: a deeper, louder note
+    pulseDrone: 9, // Jamie: boomier at idle, a teenager's big-bore exhaust; 6 and 12 rendered too (.scratch/cars-sound/renders)
+    pulseDroneFreq: 75,
     densityRefRpm: 1400,
   },
   smoke: { ...LAND_ROVER_SPEC.smoke, warmDensity: 0.12, coldDensity: 0.6 },

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { buildCarModel, carLayout, sideShape, poseCarControls, poseCarSeats, CARS, CAR_GROUND_OFFSET } from '../src/vehicle/carModel.js';
+import { buildCarModel, carLayout, sideShape, poseCarControls, poseCarSeats, carEyeToGlass, CARS, CAR_GROUND_OFFSET } from '../src/vehicle/carModel.js';
+import { landyEyeToGlass } from '../src/vehicle/landRoverModel.js';
 import { poseUtvBelts } from '../src/vehicle/utvModel.js';
 import { FIESTA_SPEC, CORSA_SPEC } from '../src/vehicle/quadSpecs.js';
 import { DASH_STYLES } from '../src/vehicle/dash.js';
@@ -97,3 +98,16 @@ describe('the two cars', () => {
     expect(FIESTA_SPEC.idleRange[0] / 1187).toBeGreaterThan(slowest); // the slowest idle against the fastest recorded beat
   });
 });
+
+describe('where the driver sits', () => {
+  it("puts the windscreen as far from your eye as in the Land Rovers (both at the same scale), with the mirror well ahead of you", () => {
+    const landy = landyEyeToGlass();
+    for (const kind of Object.keys(CARS)) {
+      const e = carEyeToGlass(kind);
+      expect(Math.abs(e.glass - landy), kind).toBeLessThan(0.06);
+      expect(e.mirror, kind).toBeGreaterThan(0.4); // in front of you, in view, not over your head
+      expect(e.mirrorUp, kind).toBeLessThan(0.15);
+    }
+  });
+});
+

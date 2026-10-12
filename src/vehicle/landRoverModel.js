@@ -106,6 +106,13 @@ export const TIPPING_SEATS = ['left', 'driver'];
 const REAR_DY = LANDY_REAR_SEATS.rearMid.y - LANDY_SEATS.mid.y; // the back bench against the front one
 const REAR_DZ = LANDY_REAR_SEATS.rearMid.z - LANDY_SEATS.mid.z;
 
+/** How far ahead of the driver's eye the windscreen's glass is, at eye height (the cars are held to it: tests/carModel.test.js). */
+export function landyEyeToGlass() {
+  const ey = LANDY_SEATS.driver.y + 0.69;
+  const ez = LANDY_SEATS.driver.z + 0.02;
+  return SCREEN_BASE.z - (ey - SCREEN_BASE.y) * Math.tan(SCREEN_RAKE) - ez;
+}
+
 /** The starting handle's hole in the front bumper, in the model's frame: where you stand to swing it, and the towing jaw behind. */
 export const CRANK_HOLE = { x: 0, y: 0.56, z: 1.84 };
 export const TOW_HITCH = { x: 0, y: 0.56, z: -2.02 };

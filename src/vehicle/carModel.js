@@ -33,6 +33,7 @@ const HANDBRAKE_ON = -0.5;
 // The body sits this much higher on its wheels than the arches' first cut (Jamie: it looked low, like a sports model): everything but
 // the wheels hangs from a group raised by it, so the tyres show a gap under the arches as an ordinary car's do.
 const RIDE_LIFT = 0.05;
+const EYE_UP = 0.66; // your eyes over the hips
 
 /**
  * Each car's shape. `upper` is the top of the body's side from the nose back, as (z, y) points; `sill` its bottom. The glasshouse is
@@ -49,14 +50,16 @@ export const CARS = {
     sill: 0.2,
     upper: [[1.8, 0.7], [1.66, 0.75], [0.7, 0.86], [-1.38, 0.92], [-1.52, 0.92], [-1.64, 0.84]],
     screenBase: [0.7, 0.88],
-    screenTop: [0.05, 1.36],
-    roofRear: [-0.98, 1.36],
+    screenTop: [0.22, 1.36], // raked 45 degrees: the glass about as far from your eye as the Land Rovers' (a test keeps it so)
+    roofRear: [-1.08, 1.36],
     hatchBottom: [-1.5, 0.93],
     tumble: 0.16, // how far the glasshouse leans in, metres a metre up
-    bPillar: -0.42,
-    // (Jamie: everyone sat too far forward, with the mirror over your head; the front hips are now about 0.3 m behind the screen's top.)
-    seats: { driver: { x: -0.36, y: 0.5, z: -0.27 }, left: { x: 0.36, y: 0.5, z: -0.27 } },
-    rear: { rearLeft: { x: 0.33, y: 0.52, z: -1.0, door: 'left' }, rearRight: { x: -0.33, y: 0.52, z: -1.0, door: 'driver' } },
+    bPillar: -0.58,
+    wheelOut: 0.28, // the steering wheel along its column from the dash face
+    columnY: 0.71, // and how high the column comes out of the face
+    // (Jamie: the windscreen should be as far from your eye as in the Land Rovers, and the mirror ahead of you, not over your head.)
+    seats: { driver: { x: -0.36, y: 0.5, z: -0.4 }, left: { x: 0.36, y: 0.5, z: -0.4 } },
+    rear: { rearLeft: { x: 0.33, y: 0.52, z: -1.1, door: 'left' }, rearRight: { x: -0.33, y: 0.52, z: -1.1, door: 'driver' } },
     plate: 'KPB 412V', // a V, 1979 to 1980
   },
   corsa: {
@@ -70,13 +73,15 @@ export const CARS = {
     upper: [[1.88, 0.56], [1.86, 0.65], [1.78, 0.73], [1.55, 0.8], [0.8, 0.9], [-1.36, 1.0], [-1.5, 0.99], [-1.6, 0.93], [-1.68, 0.82]],
     round: true, // the upper line is a smooth curve through its points, not straight lines: the Corsa B is all curves
     screenBase: [0.8, 0.9],
-    screenTop: [-0.1, 1.42],
-    roofRear: [-1.16, 1.4],
+    screenTop: [0.2, 1.42], // raked 49 degrees
+    roofRear: [-1.2, 1.4],
     hatchBottom: [-1.56, 0.98],
     tumble: 0.26,
-    bPillar: -0.5,
-    seats: { driver: { x: -0.37, y: 0.5, z: -0.26 }, left: { x: 0.37, y: 0.5, z: -0.26 } },
-    rear: { rearLeft: { x: 0.34, y: 0.52, z: -1.06, door: 'left' }, rearRight: { x: -0.34, y: 0.52, z: -1.06, door: 'driver' } },
+    bPillar: -0.62,
+    wheelOut: 0.32,
+    columnY: 0.575, // lower than Amy's, so the dials and their lamps show over the boss of Jess's small wheel
+    seats: { driver: { x: -0.37, y: 0.5, z: -0.34 }, left: { x: 0.37, y: 0.5, z: -0.34 } },
+    rear: { rearLeft: { x: 0.34, y: 0.52, z: -1.14, door: 'left' }, rearRight: { x: -0.34, y: 0.52, z: -1.14, door: 'driver' } },
     plate: 'L238 FKR', // an L, 1993 to 1994
   },
 };
@@ -108,12 +113,22 @@ export function carProxy(kind) {
 
 /** Where a girl stands to get in each seat: by its door, front seats a little forward of the back ones (the mount's `stand`). */
 export const CAR_STAND = {
-  left: { x: 1.25, z: 0.1 },
-  mid: { x: 1.25, z: 0.1 }, // no middle seat; kept so anything asking for one gets the passenger's door
-  driver: { x: -1.25, z: 0.1 },
-  rearLeft: { x: 1.25, z: -0.15 },
-  rearRight: { x: -1.25, z: -0.15 },
+  left: { x: 1.25, z: -0.15 },
+  mid: { x: 1.25, z: -0.15 }, // no middle seat; kept so anything asking for one gets the passenger's door
+  driver: { x: -1.25, z: -0.15 },
+  rearLeft: { x: 1.25, z: -0.4 },
+  rearRight: { x: -1.25, z: -0.4 },
 };
+
+/** How far ahead of the driver's eye the windscreen's glass is, at eye height, and the mirror: in the model's own size (a test holds the cars to the Land Rovers'). */
+export function carEyeToGlass(kind) {
+  const c = CARS[kind];
+  const ey = c.seats.driver.y + EYE_UP;
+  const ez = c.seats.driver.z + 0.02;
+  const [zs, ys] = c.screenBase;
+  const [zt, yt] = c.screenTop;
+  return { glass: zs + ((zt - zs) * (ey - ys)) / (yt - ys) - ez, mirror: zt - 0.06 - ez, mirrorUp: yt - 0.15 - ey };
+}
 
 /** The backrests that tip forward to let someone into the back. */
 export const CAR_TIPPING_SEATS = ['left', 'driver'];
@@ -130,6 +145,7 @@ const MAT = {
   belt: new THREE.MeshStandardMaterial({ color: 0x3a3d42, roughness: 0.9 }),
   red: new THREE.MeshStandardMaterial({ color: 0xb02018, roughness: 0.35 }),
   primer: new THREE.MeshStandardMaterial({ color: 0x8d9092, roughness: 0.85 }), // the Corsa's grey wing
+  handle: new THREE.MeshStandardMaterial({ color: 0x3a3b3d, roughness: 0.5 }), // the Corsa's door handles
   rust: new THREE.MeshStandardMaterial({ color: 0x4b3a2e, roughness: 0.7, metalness: 0.5 }),
 };
 
@@ -537,32 +553,42 @@ export function buildCarModel({ kind = 'fiesta', bodyColor = 0x9fb8cc, dashStyle
   // The body sides, with the wheel arches cut in them, and the shut lines of the door and the handle.
   for (const s of [-1, 1]) {
     // The Corsa's left front wing is a replacement in grey primer, never painted: a separate panel over the side's front.
-    extrudeZY(sideShape(c), 0.035, s * (W / 2 - 0.02), paint, root, c.round ? 0.02 : 0.012);
+    const bevel = c.round ? 0.02 : 0.012;
+    extrudeZY(sideShape(c), 0.035, s * (W / 2 - 0.02), paint, root, bevel);
+    const face = W / 2 - 0.0025 + bevel; // the side's outer face (its middle, half its thickness and its bevel out): details stand on it
     // The indicator repeater on the front wing.
-    rbox(0.012, 0.025, 0.06, 0.008, MAT.amber, s * (W / 2 + 0.008), upperAt(c, zs + 0.45) - 0.12, zs + 0.45, root);
+    rbox(0.012, 0.025, 0.06, 0.008, MAT.amber, s * (face + 0.004), upperAt(c, zs + 0.45) - 0.12, zs + 0.45, root);
     const doorFront = zs - 0.02;
     const doorBack = c.bPillar + 0.02;
-    for (const z of [doorFront, doorBack]) rbox(0.004, ys - c.sill - 0.08, 0.006, 0.002, MAT.black, s * (W / 2 + 0.002), (ys + c.sill) / 2 + 0.02, z, root);
-    rbox(0.01, 0.02, 0.1, 0.006, fiesta ? MAT.chrome : MAT.black, s * (W / 2 + 0.006), ys - 0.08, doorBack + 0.12, root); // the door handle
+    for (const z of [doorFront, doorBack]) rbox(0.004, ys - c.sill - 0.08, 0.006, 0.002, MAT.black, s * (face + 0.001), (ys + c.sill) / 2 + 0.02, z, root);
+    // The door handle at the back of the door: chrome on the Fiesta, a dark grey pull in a recess on the Corsa.
+    rbox(0.014, 0.026, 0.12, 0.007, fiesta ? MAT.chrome : MAT.handle, s * (face + 0.007), ys - 0.08, doorBack + 0.14, root);
+    if (!fiesta) rbox(0.004, 0.05, 0.16, 0.002, MAT.black, s * (face + 0.001), ys - 0.08, doorBack + 0.14, root); // its recess
     // A rubbing strip along the doors.
-    rbox(0.012, 0.035, zs - c.bPillar, 0.006, MAT.black, s * (W / 2 + 0.004), c.sill + 0.24, (zs + c.bPillar) / 2, root);
+    rbox(0.012, 0.035, zs - c.bPillar, 0.006, MAT.black, s * (face + 0.004), c.sill + 0.24, (zs + c.bPillar) / 2, root);
     // The door mirror on its arm, at the front of the door window.
-    rbox(0.07, 0.03, 0.05, 0.01, MAT.black, s * (W / 2 + 0.03), ys + 0.04, zs - 0.14, root);
-    rbox(0.13, 0.09, 0.05, 0.02, MAT.black, s * (W / 2 + 0.1), ys + 0.08, zs - 0.15, root);
+    rbox(0.07, 0.03, 0.05, 0.01, MAT.black, s * (face + 0.025), ys + 0.04, zs - 0.14, root);
+    rbox(0.13, 0.09, 0.05, 0.02, MAT.black, s * (face + 0.09), ys + 0.08, zs - 0.15, root);
   }
   if (!fiesta) {
+    // The primer wing: from the door's front edge to where the nose starts rounding, round the arch along the sill (it once closed
+    // across the arch and ran into the nose, which showed as a grey line on the front).
     const wing = new THREE.Shape();
     const a = archOf(c);
+    const front = c.nose - 0.26;
+    const dy = c.sill - a.y;
+    const dz = Math.sqrt(Math.max(0, a.r * a.r - dy * dy));
+    const start = Math.atan2(dy, dz);
     wing.moveTo(zs + 0.02, c.sill);
-    wing.lineTo(zF + a.r * 0.98, c.sill + 0.02);
-    wing.absarc(zF, a.y, a.r + 0.002, 0.02, Math.PI - 0.02, false);
+    wing.lineTo(zs + 0.02, upperAt(c, zs + 0.02) - 0.01);
+    for (let z = zs + 0.1; z < front; z += 0.1) wing.lineTo(z, upperAt(c, z) - 0.01);
+    wing.lineTo(front, upperAt(c, front) - 0.01);
+    wing.lineTo(front, c.sill);
+    wing.lineTo(zF + dz, c.sill);
+    wing.absarc(zF, a.y, a.r + 0.002, start, Math.PI - start, false);
     wing.lineTo(zs + 0.02, c.sill);
-    wing.lineTo(zs + 0.02, upperAt(c, zs + 0.02));
-    for (let z = zs + 0.1; z < c.nose - 0.08; z += 0.1) wing.lineTo(z, upperAt(c, z));
-    wing.lineTo(c.nose - 0.12, c.sill + 0.25);
-    wing.lineTo(c.nose - 0.12, c.sill);
-    wing.closePath();
-    extrudeZY(wing, 0.004, W / 2 + 0.017, MAT.primer, root); // over the paint on the left (+x) side
+    const bevel = 0.02;
+    extrudeZY(wing, 0.004, W / 2 - 0.0025 + bevel + 0.003, MAT.primer, root); // on the paint's outer face on the left (+x) side
   }
   // Inside the arches and under the bonnet: the inner wings and the engine, so you can't see through the wheel arches.
   for (const s of [-1, 1]) {
@@ -691,7 +717,7 @@ export function buildCarModel({ kind = 'fiesta', bodyColor = 0x9fb8cc, dashStyle
   // Inside: the floor, the bulkhead, the arch humps, the door cards, the dash, the seats.
   rbox(W - 0.1, 0.03, zs - c.tail - 0.1, 0.01, trim.floor, 0, 0.26, (zs + c.tail) / 2, root);
   rbox(W - 0.1, 0.5, 0.04, 0.01, MAT.under, 0, 0.5, zs - 0.06, root); // the bulkhead
-  rbox(0.16, 0.12, 0.9, 0.04, trim.floor, 0, 0.32, 0.05, root); // the low tunnel
+  rbox(0.16, 0.12, zs - 0.1 - (c.seats.driver.z - 0.2), 0.04, trim.floor, 0, 0.32, (zs - 0.1 + c.seats.driver.z - 0.2) / 2, root); // the low tunnel
   for (const s of [-1, 1]) {
     rbox(0.08, 0.3, 0.7, 0.03, trim.plastic, s * 0.52, 0.42, -zF, root); // the rear arch inside, beside the back seat (inboard of the tyre)
     rbox(0.03, 0.5, zs - c.bPillar - 0.1, 0.01, trim.plastic, s * (W / 2 - 0.06), 0.6, (zs + c.bPillar) / 2, root); // the door card
@@ -702,8 +728,8 @@ export function buildCarModel({ kind = 'fiesta', bodyColor = 0x9fb8cc, dashStyle
   // the top of the wheel) under its hood, the stereo in the middle of the face and the hazard switch over it (on the Corsa; the Fiesta's is
   // on top of the column, as the Series III's). Amy's is brown, as a 70s Ford's was.
   const dashTop = ys - 0.02;
-  const face = zs - 0.2; // the dash face's z
-  rbox(W - 0.12, 0.08, 0.2, 0.03, trim.dash, 0, dashTop, zs - 0.11, root);
+  const face = zs - 0.32; // the dash face's z: a deep dash, so the wheel reaches back to the driver without sticking far out of it
+  rbox(W - 0.12, 0.08, 0.32, 0.03, trim.dash, 0, dashTop, zs - 0.17, root);
   rbox(W - 0.12, 0.3, 0.04, 0.02, trim.dash, 0, dashTop - 0.17, face, root); // its face
   rbox(0.34, 0.04, 0.12, 0.02, trim.dash, c.seats.driver.x, dashTop + 0.07, face - 0.05, root); // the binnacle's hood
   rbox(0.34, 0.2, 0.04, 0.02, trim.dash, c.seats.driver.x, dashTop - 0.03, face - 0.01, root); // its back, round the dials
@@ -770,30 +796,30 @@ export function buildCarModel({ kind = 'fiesta', bodyColor = 0x9fb8cc, dashStyle
   const column = new THREE.Group();
   column.name = 'steeringColumn';
   column.userData.keep = true;
-  column.position.set(c.seats.driver.x, 0.71, face); // out of the dash face, so the wheel stands clear in front of the binnacle
+  column.position.set(c.seats.driver.x, c.columnY, face); // out of the dash face, so the wheel stands clear in front of the binnacle
   column.rotation.x = -1.12;
-  tube([0, -0.02, 0], [0, 0.18, 0], 0.03, MAT.black, column);
+  tube([0, -0.02, 0], [0, c.wheelOut - 0.02, 0], 0.03, MAT.black, column);
   rbox(0.08, 0.06, 0.1, 0.025, MAT.black, 0, 0.05, 0, column); // the shroud by the dash, with the key in its side (low, so the dials show over it)
   root.add(column);
-  addSignalStalk(column, 0.14, MAT.black, { modern: !fiesta });
+  addSignalStalk(column, c.wheelOut - 0.06, MAT.black, { modern: !fiesta });
   if (fiesta) {
     // The Fiesta's hazard switch on top of the column in front of the wheel, tipped up to face the driver, as the Series III's.
     // On a pod standing up off the top of the column just ahead of the wheel: the column points almost at your eye, so it has to stand
     // well up off it to show over the wheel's boss, and near the wheel, since "up" off this raked column also leans into the binnacle.
-    rbox(0.06, 0.05, 0.065, 0.015, MAT.black, 0, 0.15, 0.036, column);
-    const top = new THREE.Vector3(0, 0.15, 0.07).applyEuler(column.rotation).add(column.position);
+    rbox(0.06, 0.05, 0.065, 0.015, MAT.black, 0, c.wheelOut - 0.05, 0.036, column);
+    const top = new THREE.Vector3(0, c.wheelOut - 0.05, 0.07).applyEuler(column.rotation).add(column.position);
     const hazard = addHazardSwitch(root, top.x, top.y, top.z, { plate: false, w: 0.04, h: 0.03 });
     faceAlong(hazard, new THREE.Vector3(0, 0.75, -0.66), new THREE.Vector3(0, 0.66, 0.75));
   }
   const wheel = new THREE.Group();
   wheel.name = 'handlebars';
   wheel.userData.keep = true;
-  wheel.position.set(0, 0.2, 0); // close to the dash (Jamie: it stuck out too far); with the seats back, about 0.55 m ahead of her hips
+  wheel.position.set(0, c.wheelOut, 0); // its middle about 0.5 m ahead of the driver's hips, about 0.3 m out from the deep dash
   column.add(wheel);
   const rimR = fiesta ? 0.19 : 0.17; // Jess's is a small sports wheel, with a red mark at the top
   add(new THREE.TorusGeometry(rimR, fiesta ? 0.014 : 0.02, 8, 32).rotateX(Math.PI / 2), MAT.black, wheel);
   if (!fiesta) rbox(0.03, 0.044, 0.044, 0.01, MAT.red, 0, 0, rimR, wheel);
-  rbox(fiesta ? 0.11 : 0.12, 0.04, fiesta ? 0.06 : 0.12, 0.02, MAT.black, 0, 0, 0, wheel); // the boss
+  rbox(fiesta ? 0.11 : 0.09, 0.04, fiesta ? 0.06 : 0.07, 0.02, MAT.black, 0, 0, 0, wheel); // the boss
   const spokes = fiesta ? [Math.PI / 2, -Math.PI / 2] : [Math.PI / 2, -Math.PI / 2, Math.PI];
   for (const a of spokes) tube([0, 0, 0], [Math.sin(a) * rimR, 0, Math.cos(a) * rimR], 0.012, MAT.black, wheel, 5);
   for (const side of [1, -1]) {
@@ -826,13 +852,13 @@ export function buildCarModel({ kind = 'fiesta', bodyColor = 0x9fb8cc, dashStyle
   const hb = new THREE.Group();
   hb.name = 'parkBrakeLever';
   hb.userData.keep = true;
-  hb.position.set(0, 0.405, c.seats.driver.z - 0.3); // pivoting at the back on top of the tunnel, the grip forward between the seats
+  hb.position.set(0, 0.405, c.seats.driver.z - 0.1); // pivoting at the back on top of the tunnel, the grip forward between the seats
   rbox(0.035, 0.03, 0.26, 0.012, MAT.black, 0, 0, 0.13, hb);
   rbox(0.014, 0.014, 0.02, 0.004, MAT.chrome, 0, 0.005, 0.27, hb); // the release button
   hb.rotation.x = HANDBRAKE_OFF;
   root.add(hb);
   const pedal = fiesta ? MAT.black : MAT.chrome; // Jess's are drilled alloy
-  for (const [x, w] of [[-0.5, 0.06], [-0.38, 0.07], [-0.24, 0.04]]) rbox(w, 0.015, 0.1, 0.005, pedal, x, 0.36, zs - 0.12, root).rotation.x = -0.9; // clutch, brake, accelerator
+  for (const [x, w] of [[-0.5, 0.06], [-0.38, 0.07], [-0.24, 0.04]]) rbox(w, 0.015, 0.1, 0.005, pedal, x, 0.36, zs - 0.18, root).rotation.x = -0.9; // clutch, brake, accelerator
   // The Fiesta's choke: a pull knob in the dash face on the inside of the column, below the binnacle, out on its cable towards you.
   const choke = new THREE.Group();
   choke.name = 'chokeKnob';
@@ -873,7 +899,7 @@ export function buildCarModel({ kind = 'fiesta', bodyColor = 0x9fb8cc, dashStyle
 
   // The seats' anchors: hips on the cushions, and where your eyes are in each.
   const cap = (n) => n[0].toUpperCase() + n.slice(1);
-  const EYE = 0.66;
+  const EYE = EYE_UP;
   for (const [name, seat] of [['riderAnchor', c.seats.driver], ['seatLeft', c.seats.left], ...Object.entries(c.rear).map(([n, s]) => [`seat${cap(n)}`, s])]) {
     const a = new THREE.Object3D();
     a.name = name;

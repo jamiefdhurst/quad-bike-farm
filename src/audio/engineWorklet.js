@@ -904,6 +904,7 @@ class EngineProcessor extends AudioWorkletProcessor {
       this.pulseLow ??= new Biquad();
       this.pulseMid ??= new Biquad();
       this.pulseBoom ??= new Biquad();
+      this.pulseDrone ??= new Biquad();
       if ((this.blockCount & 7) === 1) {
         // The EQ makes idle firings sound like revs; real rev firings blended in already do.
         const rev = smoothstep(p.pulseRefRpm, p.pulseRefRpm + p.pulseEqRange, this.rpm) * (1 - (this.recorded?.pulseRevBlend(p, this.rpm) ?? 0));
@@ -911,6 +912,8 @@ class EngineProcessor extends AudioWorkletProcessor {
         this.pulseMid.set('peaking', p.pulseMidFreq, p.pulseMidQ, sr, p.pulseMidBoost * rev);
         // A recording made on the machine can carry its body's boom; take it out at every rpm.
         if (p.pulseBoomCut > 0) this.pulseBoom.set('peaking', p.pulseBoomFreq, 1.4, sr, -p.pulseBoomCut);
+        // A big-bore exhaust's drone: a boost low down, fullest at idle and easing to half of it as the revs rise.
+        if (p.pulseDrone > 0) this.pulseDrone.set('peaking', p.pulseDroneFreq, 1.1, sr, p.pulseDrone * (1 - 0.5 * smoothstep(p.pulseRefRpm, p.pulseRefRpm * 3, this.rpm)));
       }
     }
     for (let i = 0; i < n; i++) {
@@ -951,6 +954,7 @@ class EngineProcessor extends AudioWorkletProcessor {
         // As revs rise the firings merge: less of the deep thump, more mid-range rasp.
         x = this.pulseMid.run(this.pulseLow.run(x)) * drive;
         if (p.pulseBoomCut > 0) x = this.pulseBoom.run(x);
+        if (p.pulseDrone > 0) x = this.pulseDrone.run(x);
       }
       const s = this.tone.run(x) * (1 + p.silencerLoud * (st.loud || 0)) + dry + this.fanSample() + this.turboSample();
       out[i] = Math.tanh(s);

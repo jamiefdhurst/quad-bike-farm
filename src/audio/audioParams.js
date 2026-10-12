@@ -146,6 +146,8 @@ export const DEFAULT_AUDIO_PARAMS = {
   pulseDrive: 0.6, // extra drive into the soft clipper at full throttle
   pulseBoomCut: 0, // dB taken out of a boom in the recording itself (a body resonance), at every rpm; 0 leaves it alone
   pulseBoomFreq: 110, // Hz, the middle of that boom
+  pulseDrone: 0, // dB of low boost for a big-bore exhaust's drone (Jess's Corsa), fullest at idle and half of it high up the revs; 0 leaves it alone
+  pulseDroneFreq: 80, // Hz, the middle of that drone
   recStarterVolume: 0.9,
   recShutdownVolume: 0.9,
   // A turbocharger (engineWorklet.js turboSample): off unless turboVolume is above 0 (the 200TDi).
@@ -249,6 +251,8 @@ export const AUDIO_PARAM_RANGES = {
   pulseDrive: [0, 4, 0.01],
   pulseBoomCut: [0, 18, 0.5],
   pulseBoomFreq: [40, 400, 5],
+  pulseDrone: [0, 18, 0.5],
+  pulseDroneFreq: [30, 300, 5],
   recBank: ['engine-bank', 'engine-bank-2t', 'engine-bank-50', 'engine-bank-tractor', 'engine-bank-moto', 'engine-bank-atc', 'engine-bank-utv', 'engine-bank-green', 'engine-bank-yellow', 'engine-bank-landy', 'engine-bank-tdi', 'engine-bank-fiesta', 'engine-bank-corsa', 'engine-bank-tractor-eq'],
   recIdleSource: ['quad', 'rev', 'third'],
   recVolume: [0, 3, 0.01],
