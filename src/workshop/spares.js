@@ -26,7 +26,8 @@ export const DEFAULT_SPARES_PARAMS = {
   packJet: 2,
   packPiston: 1,
   maxOnShelf: 8, // most of one part the shelf (plus what is ordered or in a parcel) will hold
-  orderDelay: 75, // seconds from ordering to the post van setting off (it waits for a clear lane and daylight)
+  orderDelay: 270, // seconds from ordering to the post van setting off (it waits for a clear lane and daylight, then drives up: five or six minutes in all)
+  orderJitter: 30, // and it is this much early or late
 };
 
 export const SPARES_PARAM_RANGES = {
@@ -41,7 +42,8 @@ export const SPARES_PARAM_RANGES = {
   packJet: [1, 10, 1],
   packPiston: [1, 10, 1],
   maxOnShelf: [1, 20, 1],
-  orderDelay: [0, 600, 5],
+  orderDelay: [0, 900, 5],
+  orderJitter: [0, 120, 5],
 };
 
 const cap = (id) => id[0].toUpperCase() + id.slice(1);
@@ -52,8 +54,9 @@ export function partCount(id, n) {
 }
 
 export class Spares {
-  constructor(params = DEFAULT_SPARES_PARAMS) {
+  constructor(params = DEFAULT_SPARES_PARAMS, random = Math.random) {
     this.p = params;
+    this.random = random;
     this.counts = Object.fromEntries(PART_IDS.map((id) => [id, params[`start${cap(id)}`] ?? 0]));
     this.ordered = {}; // part -> how many are on order
     this.waiting = {}; // part -> how many are in the parcel at the barn door
@@ -102,7 +105,7 @@ export class Spares {
     if (!PARTS[id]) return { ok: false, why: 'nothing by that name' };
     if (this.total(id) + this.pack(id) > this.p.maxOnShelf) return { ok: false, why: `there is room for no more ${PARTS[id].many}` };
     this.ordered[id] = (this.ordered[id] ?? 0) + this.pack(id);
-    if (this.due === null) this.due = this.p.orderDelay;
+    if (this.due === null) this.due = Math.max(0, this.p.orderDelay + (this.random() * 2 - 1) * this.p.orderJitter);
     return { ok: true, why: '' };
   }
 

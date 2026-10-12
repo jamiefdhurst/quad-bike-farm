@@ -252,6 +252,10 @@ export class Workshop {
   service() {
     const unit = this.unit;
     if (!unit || this.isServiced(unit)) return;
+    if (!this.game.spares.take('plug')) {
+      this.game.hud.toast('A service wants a new spark plug and there is none on the shelf: order one from the parts rack in the barn');
+      return;
+    }
     unit.engine.wear = 0;
     unit.engine.silencerBlown = 0;
     const best = unit.spec.roughnessRange?.[0];

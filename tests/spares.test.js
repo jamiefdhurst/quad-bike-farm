@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Spares, DEFAULT_SPARES_PARAMS, SPARES_PARAM_RANGES, PART_IDS, jetShelfChange, partCount } from '../src/workshop/spares.js';
 import { BenchJob, JOBS, jobPart, DEFAULT_BENCH_PARAMS } from '../src/workshop/benchJobs.js';
 
-const shelf = (over = {}) => new Spares({ ...DEFAULT_SPARES_PARAMS, ...over });
+const shelf = (over = {}) => new Spares({ ...DEFAULT_SPARES_PARAMS, orderJitter: 0, ...over });
 
 describe('the spares shelf', () => {
   it('starts with the counts in its params', () => {
@@ -36,6 +36,15 @@ describe('the spares shelf', () => {
     expect(s.update(0.1, true)).toBe(true);
     s.sentOff();
     expect(s.update(1, true)).toBe(false);
+  });
+
+  it('the wait is five minutes or so with the default params, a little either way', () => {
+    const lo = new Spares({ ...DEFAULT_SPARES_PARAMS }, () => 0);
+    const hi = new Spares({ ...DEFAULT_SPARES_PARAMS }, () => 1);
+    lo.order('plug');
+    hi.order('plug');
+    expect(lo.due).toBe(240);
+    expect(hi.due).toBe(300);
   });
 
   it('the parcel carries the order, and opening it restocks the shelf', () => {

@@ -1010,12 +1010,12 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why does the bench say there is no spark plug (or tube, or piston) on the shelf?',
-        a: `The parts rack on the barn's back wall, past the end of the workbench, is counted. A new plug, an inner tube, a drive belt, a main jet and a piston and rings are each used up when you fit one: a plug change or the top-end rebuild at the bench, a tube for a puncture or a belt swap with the toolbox in the yard, and a main jet when you fit a size other than the stock one (put the stock one back and the other goes back on the rack). With none left the job is greyed out and says what is missing. Look at the rack and press <kbd>E</kbd> to see what is there and order a pack with <kbd>1</kbd> to <kbd>5</kbd>.`,
+        a: `The parts rack on the barn's back wall, past the end of the workbench, is counted. A new plug, an inner tube, a drive belt, a main jet and a piston and rings are each used up when you fit one: a plug change or the top-end rebuild at the bench, or a service with the toolbox (<kbd>V</kbd>) which wants a plug, a tube for a puncture or a belt swap with the toolbox in the yard, and a main jet when you fit a size other than the stock one (put the stock one back and the other goes back on the rack). With none left the job is greyed out and says what is missing. Look at the rack and press <kbd>E</kbd> to see what is there and order a pack with <kbd>1</kbd> to <kbd>5</kbd>.`,
         tip: 'Spares are counted. Order more at the parts rack on the barn wall.',
       },
       {
         q: 'How do I order spare parts, and when do they come?',
-        a: `Look at the parts rack in the barn (back wall, beyond the workbench), press <kbd>E</kbd> and press the number of the part to order a pack. A minute or so later the post van comes in at the big gate (if no one else is visiting, and only in daylight) and leaves a parcel by the barn door. Look at the parcel and press <kbd>E</kbd> to open it and put what is in it on the rack. An order you have not had by the end of the day is still on its way the next morning, and so is a parcel you have not opened. You can only order what the rack would have room for.`,
+        a: `Look at the parts rack in the barn (back wall, beyond the workbench), press <kbd>E</kbd> and press the number of the part to order a pack. About five minutes later the post van comes in at the big gate (if no one else is visiting, and only in daylight) and leaves a parcel by the barn door. Look at the parcel and press <kbd>E</kbd> to open it and put what is in it on the rack. An order you have not had by the end of the day is still on its way the next morning, and so is a parcel you have not opened. You can only order what the rack would have room for.`,
       },
       {
         q: 'How do I take a photo?',
