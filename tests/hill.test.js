@@ -138,23 +138,24 @@ describe('the hill through the south gate', () => {
     const pads = LAYOUT.hill.paddocks;
     const gw = hill.gates;
 
-    it('are reached through a gateway in each of the lane\'s hedges', () => {
+    it('are open to the lane: no hedge between them, only the banks, with a ramp at each gateway', () => {
       expect(fields.areaOf(-60, 95)).toBe('meadow');
       expect(fields.areaOf(0, 100)).toBe('sheep');
       for (const g of gw) {
-        expect(fields.hedgeAhead(lane.x, g.z, g.side * Math.PI / 2)).toBeGreaterThan(40);
-        // Beside the gap the hedge is there.
-        expect(fields.hedgeAhead(lane.x, g.z + 8, g.side * Math.PI / 2)).toBeLessThan(lane.hedgeOff + 1);
+        // From the lane straight out through where the hedge was, and on to the field's outer hedge.
+        const outer = g.side < 0 ? pads.west.minX : pads.east.maxX;
+        expect(fields.hedgeAhead(lane.x, g.z + 8, g.side * Math.PI / 2)).toBeCloseTo(Math.abs(outer - lane.x));
       }
     });
 
-    it('are open: no hedge on their south, west or east sides, only the lane\'s and the grass field\'s', () => {
+    it('are hedged on their outer sides and open to each other and to the pasture', () => {
       const south = 0; // yaw 0 is +z
       expect(fields.hedgeAhead(-60, 100, south)).toBeGreaterThan(LAYOUT.hill.pasture.maxZ - 100 - 1); // on to the pasture's far hedge
       expect(fields.hedgeAhead(0, 100, south)).toBeGreaterThan(LAYOUT.hill.pasture.maxZ - 100 - 1);
-      expect(fields.hedgeAhead(-60, 100, -Math.PI / 2)).toBe(Infinity); // west, out of the meadow
-      expect(fields.hedgeAhead(0, 100, Math.PI / 2)).toBe(Infinity); // east, out of the sheep field
-      expect(fields.hedgeAhead(-60, 100, Math.PI)).toBeCloseTo(20); // north: the grass field\'s south hedge
+      expect(fields.hedgeAhead(-60, 100, -Math.PI / 2)).toBeCloseTo(-60 - pads.west.minX); // west: its outer hedge
+      expect(fields.hedgeAhead(0, 100, Math.PI / 2)).toBeCloseTo(pads.east.maxX); // east: its outer hedge
+      expect(fields.hedgeAhead(-60, 100, Math.PI)).toBeCloseTo(20); // north: the grass field's south hedge
+      expect(fields.hedgeAhead(-90, 100, Math.PI)).toBeCloseTo(20); // and the piece of it west of the grass field's corner
     });
 
     it('are on the girls\' routes from the yard, through the lane', () => {

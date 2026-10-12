@@ -3062,6 +3062,6 @@ Jamie: the game was working his M4 Max MacBook Pro hard, and more is coming. Mea
 
 ## The fields beside the lane, opened up (TODO 188, follow-up)
 
-- Jamie: remove the hedges round the two new fields to make them more open. Gone: the new west side hedge, the east side hedge, the short piece of the grass field's south hedge west of its corner, and the pasture's north hedge along the whole width of the two fields (it was their south side, and it now has one gap from corner to corner). Still there: the lane's hedges with their two gateways, and the grass field's own south hedge to the north. The fields' rectangles (`hill.west`, `hill.east`) still say where their ground, tussocks and routes are; beyond them is the neighbouring land, which is drivable but not on the girls' routes.
-- Not checked: how the seam looks where the farm's own ground meets the neighbours' beyond the old hedge line.
-\n
+- Jamie: more open, and (after a first try that took off the outer hedges) keep the external borders, remove the internal ones. So the two fields are hedged on their outer sides only: the grass field's south hedge continued west of its corner, the west field's west side and the east field's east side (`fields.js`). Gone: the lane's own hedges along its whole length where the fields are (the lane runs open between them, its banks and the ramp at each gateway still there), and the pasture's north hedge along the width of the two fields (one gap, corner to corner). A lane with no fields beside it would still keep its hedges.
+- The gateway ramps stay as the way up and down the lane's banks, which are still about 2 m high and steep elsewhere. Not done: easing the banks themselves down along the lane.
+- Not checked: how the lane looks open, and the colour seam where the fields' ground meets the neighbours' beyond the outer hedges.

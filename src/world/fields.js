@@ -116,14 +116,20 @@ export function createFields(layout) {
     // The lane's tall hedges on top of its banks, from the gate to the pasture, and the pasture's own all round, open where the lane comes in.
     const { lane, pasture: p } = hill;
     const lx = [lane.x - lane.hedgeOff, lane.x + lane.hedgeOff];
-    // Each has a gateway into the field beside the lane, if there is one, a little wider than the gap the ground is eased down to.
-    for (const x of lx) {
-      const g = hill.gates.find((o) => o.x === x);
-      hedges.push({ x1: x, z1: F, x2: x, z2: lane.toZ, gaps: g ? [{ at: g.z, half: g.half }] : [], height: lane.hedgeHeight });
+    if (hill.west) {
+      // The lane runs between the two fields beside it with nothing in between (the banks are still there, with a ramp at each gateway);
+      // they are hedged round their outer sides: a short piece of the grass field's south hedge west of its corner, and a hedge down each side.
+      hedges.push(
+        { x1: hill.west.minX, z1: F, x2: -F, z2: F, gaps: [] },
+        { x1: hill.west.minX, z1: F, x2: hill.west.minX, z2: lane.toZ, gaps: [] },
+        { x1: hill.east.maxX, z1: F, x2: hill.east.maxX, z2: lane.toZ, gaps: [] },
+      );
+    } else {
+      for (const x of lx) hedges.push({ x1: x, z1: F, x2: x, z2: lane.toZ, gaps: [], height: lane.hedgeHeight });
     }
     hedges.push(
-      // The two fields beside the lane are open to the pasture and to the country round them (no hedge on their south, west or east
-      // sides): the pasture's north hedge is open along its whole width.
+      // The pasture's north hedge is open along its whole width where the two fields beside the lane meet it (they are hedged on their
+      // outer sides only).
       { x1: p.minX, z1: p.minZ, x2: p.maxX, z2: p.minZ, gaps: [hill.west ? { at: (p.minX + p.maxX) / 2, half: (p.maxX - p.minX) / 2 + 1 } : { at: lane.x, half: lane.hedgeOff }] },
       { x1: p.minX, z1: p.maxZ, x2: p.maxX, z2: p.maxZ, gaps: [] },
       { x1: p.minX, z1: p.minZ, x2: p.minX, z2: p.maxZ, gaps: [] },

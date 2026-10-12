@@ -840,13 +840,13 @@ export const FAQ_SECTIONS = [
         q: 'What’s beyond the grass field?',
         a: `East, over the cattle grid, a tarmac farm road between two stubble fields, a Dutch barn full of round bales, an old stone field shed, a muck heap and a
           water trough. South, through the field gate, a sunk green lane down to a ford and a rough hill pasture with gorse, bracken and a small oak wood, and a
-          view over the whole farm from the top. The sheep graze there. Halfway down the lane there is a gateway on each side: west into a wet meadow with a pond,
-          east into a rolling sheep field with a drystone wall.`,
+          view over the whole farm from the top. The sheep graze there. Beside the lane, with no hedge between, there is a wet meadow with a pond to the west and a rolling
+          sheep field with a drystone wall to the east.`,
         tip: 'Ride to the top of the hill pasture for a view over the whole farm.',
       },
       {
         q: 'How do I get to the pond and the sheep field?',
-        a: `Go through the south gate and down the lane. About halfway there is a gap in each hedge, with the bank eased down to it. West is a wet meadow: a muddy track
+        a: `Go through the south gate and down the lane. The lane has no hedge on either side, and halfway down its banks are eased into a ramp each way. West is a wet meadow: a muddy track
           leads down to a pond with reeds and oaks round it, and the mud is deep enough to catch you out. East is a rolling field with two humps to climb, a drystone
           wall across it (go through the gap, or round the end) and thorn bushes. The girls follow you into both, but do not go there on their own yet.`,
       },
