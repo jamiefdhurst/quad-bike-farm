@@ -45,17 +45,18 @@ export const CARS = {
     track: 1.33,
     width: 1.57,
     nose: 1.8,
-    tail: -1.68,
+    tail: -1.64,
     sill: 0.2,
-    upper: [[1.8, 0.7], [1.66, 0.75], [0.7, 0.86], [-1.38, 0.92], [-1.56, 0.93], [-1.68, 0.86]],
+    upper: [[1.8, 0.7], [1.66, 0.75], [0.7, 0.86], [-1.38, 0.92], [-1.52, 0.92], [-1.64, 0.84]],
     screenBase: [0.7, 0.88],
     screenTop: [0.05, 1.36],
     roofRear: [-0.98, 1.36],
-    hatchBottom: [-1.53, 0.94],
+    hatchBottom: [-1.5, 0.93],
     tumble: 0.16, // how far the glasshouse leans in, metres a metre up
     bPillar: -0.42,
-    seats: { driver: { x: -0.36, y: 0.5, z: -0.14 }, left: { x: 0.36, y: 0.5, z: -0.14 } },
-    rear: { rearLeft: { x: 0.33, y: 0.52, z: -0.92, door: 'left' }, rearRight: { x: -0.33, y: 0.52, z: -0.92, door: 'driver' } },
+    // (Jamie: everyone sat too far forward, with the mirror over your head; the front hips are now about 0.3 m behind the screen's top.)
+    seats: { driver: { x: -0.36, y: 0.5, z: -0.27 }, left: { x: 0.36, y: 0.5, z: -0.27 } },
+    rear: { rearLeft: { x: 0.33, y: 0.52, z: -1.0, door: 'left' }, rearRight: { x: -0.33, y: 0.52, z: -1.0, door: 'driver' } },
     plate: 'KPB 412V', // a V, 1979 to 1980
   },
   corsa: {
@@ -64,18 +65,18 @@ export const CARS = {
     track: 1.39,
     width: 1.61,
     nose: 1.88,
-    tail: -1.72,
+    tail: -1.68,
     sill: 0.19,
-    upper: [[1.88, 0.56], [1.86, 0.65], [1.78, 0.73], [1.55, 0.8], [0.8, 0.9], [-1.38, 1.0], [-1.55, 1.0], [-1.66, 0.94], [-1.72, 0.84]],
+    upper: [[1.88, 0.56], [1.86, 0.65], [1.78, 0.73], [1.55, 0.8], [0.8, 0.9], [-1.36, 1.0], [-1.5, 0.99], [-1.6, 0.93], [-1.68, 0.82]],
     round: true, // the upper line is a smooth curve through its points, not straight lines: the Corsa B is all curves
     screenBase: [0.8, 0.9],
     screenTop: [-0.1, 1.42],
     roofRear: [-1.16, 1.4],
-    hatchBottom: [-1.62, 1.0],
+    hatchBottom: [-1.56, 0.98],
     tumble: 0.26,
     bPillar: -0.5,
-    seats: { driver: { x: -0.37, y: 0.5, z: -0.12 }, left: { x: 0.37, y: 0.5, z: -0.12 } },
-    rear: { rearLeft: { x: 0.34, y: 0.52, z: -0.98, door: 'left' }, rearRight: { x: -0.34, y: 0.52, z: -0.98, door: 'driver' } },
+    seats: { driver: { x: -0.37, y: 0.5, z: -0.26 }, left: { x: 0.37, y: 0.5, z: -0.26 } },
+    rear: { rearLeft: { x: 0.34, y: 0.52, z: -1.06, door: 'left' }, rearRight: { x: -0.34, y: 0.52, z: -1.06, door: 'driver' } },
     plate: 'L238 FKR', // an L, 1993 to 1994
   },
 };
@@ -294,7 +295,8 @@ function glasshouse(c, paint, trim, root) {
   for (const x of [-0.42, 0.08]) tube([x, ys + 0.02, zs - 0.02], [x + 0.42, ys + 0.06, zs - 0.08], 0.006, MAT.black, root, 4);
   tube([0, yh + 0.03, zh + 0.02], [0.3, yh + 0.1, zh + 0.12], 0.006, MAT.black, root, 4);
   // A rear-view mirror at the top of the screen, in the middle.
-  rbox(0.2, 0.06, 0.02, 0.01, MAT.black, 0, yt - 0.1, zt - 0.06, root);
+  rbox(0.2, 0.06, 0.02, 0.01, MAT.black, 0, yt - 0.15, zt - 0.06, root);
+  tube([0, yt - 0.01, zt - 0.03], [0, yt - 0.12, zt - 0.06], 0.008, MAT.black, root, 5); // on its stem from the header
 }
 
 // The trim --------------------------------------------------------------------------------
@@ -332,7 +334,25 @@ function trimMaterials(kind) {
       g.fillRect(rand() * w, rand() * h, 1, 1);
     }
   }, { repeat: [4, 4] });
+  // Jess's bucket seats: black cloth with lurid zigzags of purple and green through it.
+  const loud = canvasTexture(128, 128, (g, w, h) => {
+    const rand = seeded(47);
+    g.fillStyle = '#1a1a1e';
+    g.fillRect(0, 0, w, h);
+    g.lineWidth = 5;
+    for (const [col, y0] of [['#b23cff', 24], ['#2fe08a', 64], ['#b23cff', 104]]) {
+      g.strokeStyle = col;
+      g.beginPath();
+      for (let x = 0; x <= w; x += 16) g.lineTo(x, y0 + (x / 16) % 2 * 14 - 7);
+      g.stroke();
+    }
+    for (let i = 0; i < 800; i++) {
+      g.fillStyle = rand() > 0.5 ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.25)';
+      g.fillRect(rand() * w, rand() * h, 1.5, 1.5);
+    }
+  }, { repeat: [1, 2] });
   return {
+    bucket: new THREE.MeshStandardMaterial({ map: loud, roughness: 0.95 }),
     seat: new THREE.MeshStandardMaterial({ map: cloth, roughness: 0.95 }),
     floor: new THREE.MeshStandardMaterial({ map: carpet, roughness: 1 }),
     plastic: new THREE.MeshStandardMaterial({ color: fiesta ? 0x8c7b62 : 0x3a3b3d, roughness: 0.75 }), // the dash and door cards
@@ -345,8 +365,9 @@ function trimMaterials(kind) {
  * A front seat: a cushion, and a backrest on a pivot at the back of the cushion named `seatBack_<name>` (tipped forward by
  * poseCarSeats), leaning back inside it, with a headrest on the Corsa's.
  */
-function frontSeat(name, seat, trim, headrest, root) {
-  rbox(0.46, 0.12, 0.46, 0.05, trim.seat, seat.x, seat.y - 0.07, seat.z + 0.12, root); // the cushion, the hips at its back
+function frontSeat(name, seat, trim, bucket, root) {
+  const mat = bucket ? trim.bucket : trim.seat;
+  rbox(0.46, 0.12, 0.46, 0.05, mat, seat.x, seat.y - 0.07, seat.z + 0.12, root); // the cushion, the hips at its back
   rbox(0.4, 0.2, 0.36, 0.02, MAT.under, seat.x, seat.y - 0.24, seat.z + 0.1, root); // its frame and runners
   const pivot = new THREE.Group();
   pivot.name = `seatBack_${name}`;
@@ -354,17 +375,28 @@ function frontSeat(name, seat, trim, headrest, root) {
   pivot.position.set(seat.x, seat.y - 0.04, seat.z - 0.13);
   const lean = new THREE.Group();
   lean.rotation.x = -0.22; // reclined a little
-  rbox(0.46, 0.6, 0.1, 0.05, trim.seat, 0, 0.3, -0.03, lean);
-  if (headrest) rbox(0.26, 0.15, 0.09, 0.04, trim.seat, 0, 0.72, -0.03, lean);
+  if (bucket) {
+    // Jess's: aftermarket buckets, tall with the headrest built in and a slot through it for a harness, big side bolsters on the back and
+    // the cushion, in a loud cloth.
+    rbox(0.46, 0.84, 0.1, 0.05, mat, 0, 0.42, -0.03, lean);
+    for (const sx of [-1, 1]) {
+      const wing = rbox(0.08, 0.5, 0.16, 0.04, mat, sx * 0.24, 0.32, 0.03, lean); // the bolster, standing forward
+      wing.rotation.y = sx * -0.25;
+    }
+    rbox(0.16, 0.05, 0.11, 0.02, MAT.black, 0, 0.66, -0.03, lean); // the harness slot
+  } else {
+    rbox(0.46, 0.6, 0.1, 0.05, mat, 0, 0.3, -0.03, lean);
+  }
   pivot.add(lean);
   root.add(pivot);
+  if (bucket) for (const sx of [-1, 1]) rbox(0.07, 0.1, 0.42, 0.03, mat, seat.x + sx * 0.23, seat.y - 0.02, seat.z + 0.12, root); // the cushion's bolsters
 }
 
 /**
  * One seat's belt, named `belt_<seat>` with a `stowed` and a `worn` child as poseUtvBelts expects: a diagonal and lap belt from the body
  * side (`out`, the pillar's x) to a buckle on the inner side (`inn`). Laid out round the seat's hip point.
  */
-function addBelt(root, name, seat, out, inn, post) {
+function addBelt(root, name, seat, out, inn, post, outTop) {
   const group = new THREE.Group();
   group.name = `belt_${name}`;
   group.userData.keep = true;
@@ -372,14 +404,15 @@ function addBelt(root, name, seat, out, inn, post) {
   const stowed = new THREE.Group();
   stowed.name = 'stowed';
   // `post`: the z of the door post it hangs from (the B pillar for the front seats, the C pillar's foot for the back).
-  rbox(0.012, 0.46, 0.045, 0.004, MAT.belt, out, y + 0.38, post, stowed); // hanging down the door post
+  // `outTop`: the top mounting's x, inside the glass where the post leans in towards the roof.
+  tube([outTop, y + 0.62, post], [out, y + 0.18, post], 0.012, MAT.belt, stowed, 4); // hanging down the door post
   rbox(0.02, 0.06, 0.05, 0.006, MAT.steel, out, y + 0.14, post, stowed); // the tongue, loose
-  rbox(0.03, 0.05, 0.05, 0.01, MAT.black, out, y + 0.66, post, root); // the top mounting, bolted to the post
+  rbox(0.03, 0.05, 0.05, 0.01, MAT.black, outTop, y + 0.66, post, root); // the top mounting, bolted to the post
   const worn = new THREE.Group();
   worn.name = 'worn';
   worn.visible = false;
   const at = (t, dy, dz) => [out + (inn - out) * t, y + dy, z + dz];
-  add(bentTube([[out, y + 0.64, post], at(0.18, 0.6, -0.08), at(0.36, 0.48, 0.1), at(0.62, 0.3, 0.14), at(0.88, 0.1, 0.06), [inn, 0.04 + y, -0.08 + z]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
+  add(bentTube([[outTop, y + 0.64, post], at(0.18, 0.6, -0.08), at(0.36, 0.48, 0.1), at(0.62, 0.3, 0.14), at(0.88, 0.1, 0.06), [inn, 0.04 + y, -0.08 + z]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
   add(bentTube([[out, y + 0.04, post], at(0.25, 0.1, 0.1), at(0.7, 0.1, 0.12), [inn, y + 0.04, z - 0.08]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
   group.add(stowed, worn);
   root.add(group);
@@ -601,23 +634,23 @@ export function buildCarModel({ kind = 'fiesta', bodyColor = 0x9fb8cc, dashStyle
     plate(reg ?? c.plate, '#e8c51c', root, { x: 0, y: 0.6, z: c.tail - 0.01, facing: -1 });
   } else {
     for (const s of [-1, 1]) {
-      // The Corsa's tall lamps up the corners, beside the hatch.
-      rbox(0.13, 0.32, 0.04, 0.02, MAT.black, s * 0.66, 0.82, c.tail + 0.02, root);
-      rbox(0.11, 0.13, 0.03, 0.015, tailMat, s * 0.66, 0.9, c.tail + 0.005, root);
-      rbox(0.11, 0.07, 0.03, 0.015, MAT.amber, s * 0.66, 0.79, c.tail + 0.005, root);
-      rbox(0.11, 0.07, 0.03, 0.015, s > 0 ? MAT.clear : tailMat, s * 0.66, 0.71, c.tail + 0.005, root);
+      // The Corsa's tall lamps in the tailgate's corners, all on the tailgate below the glass.
+      rbox(0.13, 0.3, 0.04, 0.02, MAT.black, s * 0.64, 0.66, c.tail + 0.015, root);
+      rbox(0.11, 0.12, 0.03, 0.015, tailMat, s * 0.64, 0.74, c.tail + 0.002, root);
+      rbox(0.11, 0.07, 0.03, 0.015, MAT.amber, s * 0.64, 0.63, c.tail + 0.002, root);
+      rbox(0.11, 0.06, 0.03, 0.015, s > 0 ? MAT.clear : tailMat, s * 0.64, 0.55, c.tail + 0.002, root);
     }
     // Jess's additions: a black boot spoiler over the hatch glass, and a bass box in the boot you can see through it.
     const spoiler = rbox(halfAt(c, c.roofRear[1]) * 2 - 0.04, 0.03, 0.2, 0.012, MAT.black, 0, c.roofRear[1] + 0.03, c.roofRear[0] - 0.08, root);
     spoiler.rotation.x = 0.18;
-    rbox(0.7, 0.32, 0.3, 0.02, new THREE.MeshStandardMaterial({ color: 0x232426, roughness: 0.9 }), 0.1, 0.62, c.tail + 0.3, root);
-    for (const [r, m, dz] of [[0.12, MAT.black, 0.149], [0.035, MAT.chrome, 0.148]]) {
+    rbox(0.7, 0.32, 0.24, 0.02, new THREE.MeshStandardMaterial({ color: 0x232426, roughness: 0.9 }), 0.1, 0.62, c.tail + 0.22, root);
+    for (const [r, m, dz] of [[0.12, MAT.black, 0.099], [0.035, MAT.chrome, 0.098]]) {
       const cone = add(new THREE.CircleGeometry(r, 18), m, root); // its speaker, facing back out of the hatch
       cone.position.set(0.1, 0.63, c.tail + dz);
       cone.rotation.y = Math.PI;
     }
     rbox(W + 0.02, 0.24, 0.14, 0.08, MAT.black, 0, 0.36, c.tail - 0.02, root); // the unpainted bumper
-    plate(reg ?? c.plate, '#e8c51c', root, { x: 0, y: 0.72, z: c.tail - 0.002, facing: -1 });
+    plate(reg ?? c.plate, '#e8c51c', root, { x: 0, y: 0.62, z: c.tail - 0.002, facing: -1 });
     // A sticker in the back window: a silhouette of a bike over a stripe, nothing anyone makes.
     const sticker = label(0.3, 0.07, 800, (g, Wd, H) => {
       g.fillStyle = '#f2f2f2';
@@ -629,6 +662,16 @@ export function buildCarModel({ kind = 'fiesta', bodyColor = 0x9fb8cc, dashStyle
     sticker.position.set(0, yh + 0.15 * Math.cos(lean) + 0.008 * Math.sin(lean), zh + 0.15 * Math.sin(lean) - 0.008 * Math.cos(lean));
     sticker.rotation.set(lean, Math.PI, 0);
   }
+
+  // The tailgate's shut lines: across the tail just over the bumper, and up each side to the glass, with its lock in the middle.
+  const gateFoot = fiesta ? 0.45 : 0.5;
+  const tailTopY = upperAt(c, c.tail);
+  rbox(W - 0.16, 0.012, 0.006, 0.003, MAT.black, 0, gateFoot, c.tail - 0.003, root);
+  for (const sx of [-1, 1]) {
+    rbox(0.012, tailTopY - gateFoot, 0.006, 0.003, MAT.black, sx * (W / 2 - 0.08), (tailTopY + gateFoot) / 2, c.tail - 0.003, root);
+    rbox(0.012, 0.006, zh - c.tail, 0.003, MAT.black, sx * (W / 2 - 0.08), upperAt(c, (zh + c.tail) / 2) + 0.003, (zh + c.tail) / 2, root);
+  }
+  rbox(0.05, 0.03, 0.012, 0.006, MAT.chrome, 0, fiesta ? 0.77 : 0.78, c.tail - 0.005, root); // the lock
 
   glasshouse(c, fiesta ? paint : faded, trim, root);
 
@@ -695,8 +738,11 @@ export function buildCarModel({ kind = 'fiesta', bodyColor = 0x9fb8cc, dashStyle
       g.fillStyle = '#f4f4f4';
       fitText(g, 'JESS', Wd / 2, H * 0.55, H * 0.7, Wd * 0.3);
     }, root);
-    strip.position.set(0, ys0 + (yt - ys0) * t - 0.01, zs0 + (zt - zs0) * t - 0.012);
-    strip.rotation.x = -Math.atan2(yt - ys0, zs0 - zt) + Math.PI / 2;
+    // Lying on the outside of the glass, read from in front, as a sun strip is.
+    const along = new THREE.Vector3(0, yt - ys0, zt - zs0).normalize();
+    const out = new THREE.Vector3(0, zs0 - zt, yt - ys0).normalize(); // square to the glass, outwards (forward and up)
+    strip.position.set(0, ys0 + (yt - ys0) * t, zs0 + (zt - zs0) * t).addScaledVector(out, 0.006);
+    faceAlong(strip, out, along);
   } else {
     // Amy's road atlas on the parcel shelf.
     rbox(0.24, 0.02, 0.3, 0.004, new THREE.MeshStandardMaterial({ color: 0x2a5aa8, roughness: 0.7 }), 0.3, upperAt(c, -1.3) + 0.02, -1.38, root);
@@ -711,12 +757,14 @@ export function buildCarModel({ kind = 'fiesta', bodyColor = 0x9fb8cc, dashStyle
   rbox(W - 0.12, 0.02, 0.36, 0.005, trim.plastic, 0, upperAt(c, rz - 0.4), rz - 0.45, root); // the parcel shelf
 
   // The belts: a diagonal and lap belt for each of the four seats.
-  const outer = W / 2 - 0.08;
-  const post = c.bPillar + 0.04; // the front belts hang from the B pillars, the back ones from the rear quarters
-  addBelt(root, 'driver', c.seats.driver, -outer, -0.12, post);
-  addBelt(root, 'left', c.seats.left, outer, 0.12, post);
-  addBelt(root, 'rearLeft', c.rear.rearLeft, outer, 0.1, c.rear.rearLeft.z - 0.24);
-  addBelt(root, 'rearRight', c.rear.rearRight, -outer, -0.1, c.rear.rearRight.z - 0.24);
+  // The front belts hang from the B pillars, the back ones from the rear quarters ahead of the hatch; the tops sit inside the glass.
+  const outer = W / 2 - 0.1;
+  const top = (seat) => halfAt(c, seat.y + 0.66) - 0.07;
+  const post = c.bPillar + 0.04;
+  addBelt(root, 'driver', c.seats.driver, -outer, -0.12, post, -top(c.seats.driver));
+  addBelt(root, 'left', c.seats.left, outer, 0.12, post, top(c.seats.left));
+  addBelt(root, 'rearLeft', c.rear.rearLeft, outer, 0.1, c.rear.rearLeft.z - 0.12, top(c.rear.rearLeft));
+  addBelt(root, 'rearRight', c.rear.rearRight, -outer, -0.1, c.rear.rearRight.z - 0.12, -top(c.rear.rearRight));
 
   // The steering wheel on its column, raked well over: two spokes on the Fiesta, three on the Corsa.
   const column = new THREE.Group();
@@ -724,25 +772,28 @@ export function buildCarModel({ kind = 'fiesta', bodyColor = 0x9fb8cc, dashStyle
   column.userData.keep = true;
   column.position.set(c.seats.driver.x, 0.71, face); // out of the dash face, so the wheel stands clear in front of the binnacle
   column.rotation.x = -1.12;
-  tube([0, -0.02, 0], [0, 0.26, 0], 0.03, MAT.black, column);
+  tube([0, -0.02, 0], [0, 0.18, 0], 0.03, MAT.black, column);
   rbox(0.08, 0.06, 0.1, 0.025, MAT.black, 0, 0.05, 0, column); // the shroud by the dash, with the key in its side (low, so the dials show over it)
   root.add(column);
-  addSignalStalk(column, 0.2, MAT.black, { modern: !fiesta });
+  addSignalStalk(column, 0.14, MAT.black, { modern: !fiesta });
   if (fiesta) {
     // The Fiesta's hazard switch on top of the column in front of the wheel, tipped up to face the driver, as the Series III's.
-    const top = new THREE.Vector3(0, 0.08, 0.035).applyEuler(column.rotation).add(column.position);
-    const hazard = addHazardSwitch(root, top.x, top.y + 0.012, top.z, { plate: false, w: 0.034, h: 0.026 });
+    // On a pod standing up off the top of the column just ahead of the wheel: the column points almost at your eye, so it has to stand
+    // well up off it to show over the wheel's boss, and near the wheel, since "up" off this raked column also leans into the binnacle.
+    rbox(0.06, 0.05, 0.065, 0.015, MAT.black, 0, 0.15, 0.036, column);
+    const top = new THREE.Vector3(0, 0.15, 0.07).applyEuler(column.rotation).add(column.position);
+    const hazard = addHazardSwitch(root, top.x, top.y, top.z, { plate: false, w: 0.04, h: 0.03 });
     faceAlong(hazard, new THREE.Vector3(0, 0.75, -0.66), new THREE.Vector3(0, 0.66, 0.75));
   }
   const wheel = new THREE.Group();
   wheel.name = 'handlebars';
   wheel.userData.keep = true;
-  wheel.position.set(0, 0.28, 0); // its middle about 0.4 m ahead of her hips and 0.33 m up
+  wheel.position.set(0, 0.2, 0); // close to the dash (Jamie: it stuck out too far); with the seats back, about 0.55 m ahead of her hips
   column.add(wheel);
   const rimR = fiesta ? 0.19 : 0.17; // Jess's is a small sports wheel, with a red mark at the top
   add(new THREE.TorusGeometry(rimR, fiesta ? 0.014 : 0.02, 8, 32).rotateX(Math.PI / 2), MAT.black, wheel);
   if (!fiesta) rbox(0.03, 0.044, 0.044, 0.01, MAT.red, 0, 0, rimR, wheel);
-  rbox(fiesta ? 0.14 : 0.12, 0.04, fiesta ? 0.08 : 0.12, 0.02, MAT.black, 0, 0, 0, wheel); // the boss
+  rbox(fiesta ? 0.11 : 0.12, 0.04, fiesta ? 0.06 : 0.12, 0.02, MAT.black, 0, 0, 0, wheel); // the boss
   const spokes = fiesta ? [Math.PI / 2, -Math.PI / 2] : [Math.PI / 2, -Math.PI / 2, Math.PI];
   for (const a of spokes) tube([0, 0, 0], [Math.sin(a) * rimR, 0, Math.cos(a) * rimR], 0.012, MAT.black, wheel, 5);
   for (const side of [1, -1]) {
@@ -848,6 +899,8 @@ export function buildCarModel({ kind = 'fiesta', bodyColor = 0x9fb8cc, dashStyle
   quad.userData.tailHaloMaterial = new THREE.SpriteMaterial({ transparent: true, opacity: 0 });
   quad.userData.tailHalos = [];
   mergeStatic(root);
+  // The inside never gets muddy (vehicle mud coat, effects/mudCoat.js): only what's outside does.
+  quad.userData.cleanMaterials = [trim.seat, trim.bucket, trim.floor, trim.plastic, trim.dash, trim.lining, MAT.belt];
   // Only the outside casts a shadow (the inside is in the body's shadow anyway): half the shadow pass's draw calls and triangles.
   const casts = new Set([paint, faded, MAT.rubber, MAT.black, MAT.primer, MAT.under, MAT.chrome]);
   quad.traverse((o) => {

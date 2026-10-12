@@ -20,7 +20,7 @@ import {
 //   tractor:   the tractor. Three round dials in chrome bezels (water temperature, a rev counter with an hour meter and the PTO speed marked, fuel), GLOW, CHARGE and OIL lamps and the key.
 //   utv:       the UTV. A basic LCD (speed, five fuel and four water blocks, F / N / R, hours and a 4WD note) over symbols for glow, charge, oil, park
 //              (parking brake), a belted figure (flashes while someone sits unbelted), a headlamp (green, blue for main beam) and the key.
-//   fiesta:    Amy's Mk1 Fiesta: a big speedo, fuel and water dials, a row of lamps. corsa: Jess's Corsa B, with a rev counter too.
+//   fiesta:    Amy's Mk1 Fiesta: a speedo and a combined fuel and water gauge the same size, the lamps between them, on brown. corsa: Jess's Corsa B, with a rev counter too.
 //   series:    the Land Rover. A Series III binnacle: a big speedo to 90 mph with its odometer, a combined fuel and water gauge,
 //              IGN, OIL, CHOKE and BRAKE lamps, a 4WD and a DIFF lamp, and the key.
 //
@@ -835,9 +835,9 @@ function buildDefender() {
 const FIESTA_BROWN = new THREE.MeshStandardMaterial({ color: 0x4a3426, roughness: 0.75 }); // the Fiesta's binnacle, brown like its dash
 
 /**
- * Amy's Mk1 Fiesta: a black binnacle with a big speedometer to 100 mph (and its odometer) in the middle, the fuel and water gauges
- * as two small dials to its right, and the warning lamps in a row underneath: ignition, oil, the choke, the handbrake, the indicators
- * and main beam. No rev counter (only the sporty ones had one). The key is on the steering column, drawn at the binnacle's right end.
+ * Amy's Mk1 Fiesta: a brown binnacle with two dials the same size, the speedometer to 100 mph (and its odometer) and a combined fuel
+ * and water gauge, and the warning lamps between them: ignition, oil, the choke, the handbrake, the indicators and main beam. No rev
+ * counter (only the sporty ones had one). The key is on the steering column, drawn at the binnacle's right end.
  */
 function buildFiesta() {
   const group = new THREE.Group();
@@ -846,56 +846,63 @@ function buildFiesta() {
   housing(group, { x: 76, y: 14, w: 208, h: 92, r: 6, ...O, material: FIESTA_BROWN });
   const face = mmPanel({ x: 76, y: 14, w: 208, h: 92, ...O });
   group.add(face.mesh);
-  const speedo = { cx: 150, cy: 52, r: 33 };
-  const fuel = { cx: 220, cy: 52, r: 16 };
-  const temp = { cx: 256, cy: 52, r: 16 };
-  for (const d of [speedo, fuel, temp]) chromeRing(group, { ...d, r: d.r + 1, ...O, tube: 0.0016 });
+  // Two dials the same size, set low in the panel: the speedometer and a combined fuel and water gauge, with the lamps in a column
+  // between them, black rims, pale green-white figures and orange needles, as a 70s Ford's were.
+  const speedo = { cx: 124, cy: 64, r: 29 };
+  const combo = { cx: 236, cy: 64, r: 29 };
   const gate = changeGate();
   let shownMph = 0;
   let shownFuel = 0;
   let shownTemp = 0;
-  const FIG = '#eef0ea';
-  const NEEDLE = '#f2f2ee'; // white needles on black, the 70s Ford look
+  const FIG = '#dfeedd';
+  const NEEDLE = '#ff8a2a';
   const dial = (ctx, d) => {
-    ctx.fillStyle = '#0a0a0b';
+    ctx.fillStyle = '#060606';
+    ctx.beginPath();
+    ctx.arc(d.cx, d.cy, d.r + 2.5, 0, Math.PI * 2); // its black rim
+    ctx.fill();
+    ctx.fillStyle = '#101211';
     ctx.beginPath();
     ctx.arc(d.cx, d.cy, d.r, 0, Math.PI * 2);
     ctx.fill();
-  };
-  const small = (ctx, d, frac, sym, lo, hi, hotEnd) => {
-    dial(ctx, d);
-    ticks(ctx, d.cx, d.cy, d.r - 4, d.r - 1.5, 150, 30, 4, FIG, 0.7);
-    if (hotEnd) arc(ctx, d.cx, d.cy, d.r - 2, 40, 30, '#d8402e', 1.8);
-    warnSymbol(ctx, sym, d.cx, d.cy + 5, '#aaa', true, 0.45, false);
-    text(ctx, lo, d.cx - d.r * 0.6, d.cy + d.r * 0.55, 3.4, FIG, { align: 'center' });
-    text(ctx, hi, d.cx + d.r * 0.6, d.cy + d.r * 0.55, 3.4, hotEnd ? '#ff6a5a' : FIG, { align: 'center' });
-    needle(ctx, d.cx, d.cy, d.r - 3, 150 - 120 * frac, NEEDLE, 1);
   };
 
   function draw(ctx, s, L) {
     ctx.fillStyle = '#3b2a1e'; // the brown panel the dials sit in
     ctx.fillRect(76, 14, 208, 92);
     dial(ctx, speedo);
-    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 5, speedo.r - 1.5, 225, -45, 20, FIG, 0.5);
-    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 8, speedo.r - 1.5, 225, -45, 10, FIG, 1);
-    labels(ctx, speedo.cx, speedo.cy, speedo.r - 13, 225, -45, ['0', '', '20', '', '40', '', '60', '', '80', '', '100'], FIG, 4.2);
-    text(ctx, 'MPH', speedo.cx, speedo.cy - 9, 3.4, '#bbb', { align: 'center' });
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 4, speedo.r - 1.5, 225, -45, 20, FIG, 0.5);
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 7, speedo.r - 1.5, 225, -45, 10, FIG, 1);
+    labels(ctx, speedo.cx, speedo.cy, speedo.r - 12, 225, -45, ['0', '', '20', '', '40', '', '60', '', '80', '', '100'], FIG, 4);
+    text(ctx, 'MPH', speedo.cx, speedo.cy - 8, 3.2, '#a9b8a7', { align: 'center' });
     const odo = counterDigits(s.odoMiles, 5);
-    drum(ctx, speedo.cx - 14, speedo.cy + 12, odo.whole, odo.tenth, 6);
-    needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 225 - (270 * Math.min(100, L.mph)) / 100, NEEDLE, 1.2);
-    small(ctx, fuel, L.fuel, 'fuel', 'E', 'F', false);
-    small(ctx, temp, L.temp, 'temp', 'C', 'H', true);
+    drum(ctx, speedo.cx - 14, speedo.cy + 11, odo.whole, odo.tenth, 6);
+    needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 225 - (270 * Math.min(100, L.mph)) / 100, NEEDLE, 1.3);
+    // The combined gauge: fuel round its top half, water temperature round its bottom.
+    dial(ctx, combo);
+    ticks(ctx, combo.cx, combo.cy, combo.r - 5, combo.r - 1.5, 150, 30, 4, FIG, 0.8);
+    ticks(ctx, combo.cx, combo.cy, combo.r - 5, combo.r - 1.5, 210, 330, 4, FIG, 0.8);
+    arc(ctx, combo.cx, combo.cy, combo.r - 2.5, 315, 330, '#d8402e', 2.2);
+    warnSymbol(ctx, 'fuel', combo.cx, combo.cy - 10, '#a9b8a7', true, 0.5, false);
+    warnSymbol(ctx, 'temp', combo.cx, combo.cy + 10, '#a9b8a7', true, 0.5, false);
+    text(ctx, 'E', combo.cx - combo.r * 0.62, combo.cy - 5, 3.6, FIG, { align: 'center' });
+    text(ctx, 'F', combo.cx + combo.r * 0.62, combo.cy - 5, 3.6, FIG, { align: 'center' });
+    text(ctx, 'C', combo.cx - combo.r * 0.62, combo.cy + 8, 3.6, FIG, { align: 'center' });
+    text(ctx, 'H', combo.cx + combo.r * 0.62, combo.cy + 8, 3.6, '#ff6a5a', { align: 'center' });
+    needle(ctx, combo.cx, combo.cy, combo.r - 4, 150 - 120 * L.fuel, NEEDLE, 1.1);
+    needle(ctx, combo.cx, combo.cy, combo.r - 4, 210 + 120 * L.temp, NEEDLE, 1.1);
+    // The lamps in two short rows high between the dials (the hazard switch on top of the column sits in front of the gap below them).
     ctx.fillStyle = '#1c140e';
     ctx.beginPath();
-    ctx.roundRect(198, 74, 80, 26, 3);
+    ctx.roundRect(157, 29, 46, 26, 3);
     ctx.fill();
-    warnSymbol(ctx, 'charge', 210, 81, LAMP.red, L.charge, 0.8);
-    warnSymbol(ctx, 'oil', 230, 81, LAMP.red, L.oil, 0.8);
-    warnSymbol(ctx, 'choke', 250, 81, LAMP.amber, L.choke, 0.8);
-    warnSymbol(ctx, 'park', 268, 81, LAMP.red, L.park, 0.8);
-    warnSymbol(ctx, 'turn', 220, 93, LAMP.green, L.turn, 0.8);
-    warnSymbol(ctx, 'beam', 252, 93, '#4aa8ff', L.main, 0.8);
-    keySwitch(ctx, 96, 86, s.keyOn);
+    warnSymbol(ctx, 'charge', 166, 36, LAMP.red, L.charge, 0.6);
+    warnSymbol(ctx, 'oil', 180, 36, LAMP.red, L.oil, 0.6);
+    warnSymbol(ctx, 'choke', 194, 36, LAMP.amber, L.choke, 0.6);
+    warnSymbol(ctx, 'park', 166, 48, LAMP.red, L.park, 0.6);
+    warnSymbol(ctx, 'turn', 180, 48, LAMP.green, L.turn, 0.6);
+    warnSymbol(ctx, 'beam', 194, 48, '#4aa8ff', L.main, 0.6);
+    keySwitch(ctx, 272, 96, s.keyOn);
   }
 
   return {

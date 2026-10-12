@@ -144,7 +144,8 @@ export class MudCoat {
     };
     const model = quad.model;
     const signals = model.userData.signalMaterials; // the indicator and reverse lenses light up, so they keep their own materials
-    const skip = new Set([model.userData.lensMaterial, model.userData.tailMaterial, ...(signals ? Object.values(signals) : []), model.getObjectByName('hazardSwitch')?.userData.mat]);
+    // A model's `cleanMaterials`: its inside (the seats, the dash, the carpet in a cab), which mud on the outside never reaches.
+    const skip = new Set([model.userData.lensMaterial, model.userData.tailMaterial, ...(signals ? Object.values(signals) : []), model.getObjectByName('hazardSwitch')?.userData.mat, ...(model.userData.cleanMaterials ?? [])]);
     const bodyCopies = new Map();
     const wheelCopies = new Map();
     const bars = model.getObjectByName('handlebars');

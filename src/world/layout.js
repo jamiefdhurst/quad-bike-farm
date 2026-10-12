@@ -153,10 +153,11 @@ export const LAYOUT = {
     x: -31,
     z: 60,
     halfX: 5,
-    halfZ: 3.4,
+    halfZ: 4.2,
+    // 5.2 m apart, so there's room for a girl to walk between them (they were 3.4, with 1.6 m between their sides).
     cars: {
-      fiesta: { x: -31.3, z: 61.7, yaw: -Math.PI / 2, where: 'on the hard-standing' },
-      corsa: { x: -31.3, z: 58.3, yaw: -Math.PI / 2, where: 'on the hard-standing' },
+      fiesta: { x: -31.3, z: 62.6, yaw: -Math.PI / 2, where: 'on the hard-standing' },
+      corsa: { x: -31.3, z: 57.4, yaw: -Math.PI / 2, where: 'on the hard-standing' },
     },
   },
   paddock: { x: -66, z: 34, half: 7 },

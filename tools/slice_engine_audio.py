@@ -416,6 +416,7 @@ BANKS = {
         ],
         'level': [('idle', 'idle', 'fx'), ('idle', 'accel', 'fd'), ('idle', 'accel', 'mini')],
         'oneshotGain': {'st': 6},  # the crank about 10 dB under the idle, as a starter heard from beside the car is
+        'periodCheck': True,  # the Mini's blips throw up half-cycles and single firings among its cycles: keep only real cycles
         'oneshotLevel': {'fs': (14.0, 21.0)},  # the run-down as loud against the bank's idle as against its own recording's
         'idleCycles': True,
         'revTail': 0.9,
@@ -443,6 +444,7 @@ BANKS = {
         ],
         'level': [('idle', 'idle', 'cd'), ('idle', 'accel', 'cc', 'cd')],
         'oneshotGain': {'st': 7},
+        'periodCheck': True,
         'oneshotLevel': {'cs': (8.0, 15.0)},
         'idleCycles': True,
         'revTail': 0.9,

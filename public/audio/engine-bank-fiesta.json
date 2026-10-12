@@ -8,7 +8,7 @@
   "fd": 2.121,
   "fs": 3.538,
   "st": 3.538,
-  "mini": 5.593
+  "mini": 3.804
  },
  "grains": [
   {
@@ -2671,7 +2671,8 @@
    "tail": 0.00254,
    "rpm": 5659.9,
    "src": "mini",
-   "rms": 0.03314
+   "rms": 0.03314,
+   "ok": false
   },
   {
    "kind": "accel",
@@ -2680,7 +2681,8 @@
    "tail": 0.00254,
    "rpm": 5623.8,
    "src": "mini",
-   "rms": 0.02945
+   "rms": 0.02945,
+   "ok": false
   },
   {
    "kind": "accel",
@@ -2699,7 +2701,8 @@
    "tail": 0.0019,
    "rpm": 7474.6,
    "src": "mini",
-   "rms": 0.03006
+   "rms": 0.03006,
+   "ok": false
   },
   {
    "kind": "accel",
@@ -2726,7 +2729,8 @@
    "tail": 0.00234,
    "rpm": 6153.5,
    "src": "mini",
-   "rms": 0.02353
+   "rms": 0.02353,
+   "ok": false
   },
   {
    "kind": "accel",
@@ -2839,7 +2843,8 @@
    "tail": 0.00218,
    "rpm": 6615.0,
    "src": "mini",
-   "rms": 0.08144
+   "rms": 0.08144,
+   "ok": false
   },
   {
    "kind": "accel",
@@ -3037,7 +3042,8 @@
    "tail": 0.00231,
    "rpm": 6218.6,
    "src": "mini",
-   "rms": 0.03432
+   "rms": 0.03432,
+   "ok": false
   },
   {
    "kind": "decel",
@@ -3276,7 +3282,8 @@
    "tail": 0.00227,
    "rpm": 6330.1,
    "src": "mini",
-   "rms": 0.02857
+   "rms": 0.02857,
+   "ok": false
   },
   {
    "kind": "decel",
@@ -3537,7 +3544,8 @@
    "tail": 0.00234,
    "rpm": 6153.5,
    "src": "mini",
-   "rms": 0.02959
+   "rms": 0.02959,
+   "ok": false
   },
   {
    "kind": "decel",
@@ -3679,7 +3687,8 @@
    "tail": 0.00252,
    "rpm": 5708.7,
    "src": "mini",
-   "rms": 0.01191
+   "rms": 0.01191,
+   "ok": false
   },
   {
    "kind": "decel",

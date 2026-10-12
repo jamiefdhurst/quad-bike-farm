@@ -53,10 +53,13 @@ export const UTV_PROXY = { w: 1.9, h: 2.1, d: 3.6 };
  * at -X); the bed's seat is the open tailgate, facing backwards with her legs hanging. `stand` is where she stands on the ground to
  * climb up: beside her seat, or behind the tailgate.
  */
+// The hips sit about 0.12 m in front of the backrest's face (-0.43), as a person's do; they were 0.23 m, which sat everyone too far
+// forward (Jamie). The worn belts' chest and lap points moved back with them (SEAT_BACK).
+const SEAT_BACK = -0.11;
 export const UTV_SEATS = {
-  driver: { x: -0.34, y: 0.76, z: -0.2 },
-  mid: { x: 0, y: 0.76, z: -0.2 },
-  left: { x: 0.34, y: 0.76, z: -0.2 },
+  driver: { x: -0.34, y: 0.76, z: -0.31 },
+  mid: { x: 0, y: 0.76, z: -0.31 },
+  left: { x: 0.34, y: 0.76, z: -0.31 },
   bed: { x: 0, y: 0.8, z: -1.95 }, // on the open tailgate, hips over its middle
 };
 export const UTV_STAND = {
@@ -378,16 +381,17 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
     worn.visible = false;
     // The sash from the shoulder anchor over the shoulder and across the chest to the buckle, and the lap strap from the outboard hip.
     const across = (t) => belt.anchor + (belt.buckle - belt.anchor) * t;
-    // (Measured on the girls sitting in the seats: their chests are at about z 0.04 and their waists at 0, so the belt lies in front of those.)
-    const at = (t, y, z) => [across(t), y, z];
-    add(bentTube([[belt.anchor, 1.32, -0.5], at(0.06, 1.3, -0.2), at(0.14, 1.2, 0.06), at(0.5, 1.02, 0.08), at(0.85, 0.88, 0.03), [belt.buckle, 0.84, -0.1], [belt.buckle, 0.82, -0.31]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
-    add(bentTube([[belt.anchor, 0.77, -0.4], at(0.06, 0.84, -0.12), at(0.45, 0.87, 0.03), [belt.buckle, 0.85, -0.05], [belt.buckle, 0.82, -0.31]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
-    rbox(0.05, 0.05, 0.03, 0.008, MAT.steel, belt.buckle, 0.81, -0.335, worn); // the tongue, pushed home in the buckle
+    // (Measured on the girls sitting in the seats: their chests were at about z 0.04 and their waists at 0, before the seats moved back by
+    // SEAT_BACK, so the belt's chest and lap points move with them.)
+    const at = (t, y, z) => [across(t), y, z + SEAT_BACK];
+    add(bentTube([[belt.anchor, 1.32, -0.5], at(0.06, 1.3, -0.15), at(0.14, 1.2, 0.06), at(0.5, 1.02, 0.08), at(0.85, 0.88, 0.03), [belt.buckle, 0.84, -0.1 + SEAT_BACK], [belt.buckle, 0.82, -0.36]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
+    add(bentTube([[belt.anchor, 0.77, -0.4], at(0.06, 0.84, -0.12), at(0.45, 0.87, 0.03), [belt.buckle, 0.85, -0.05 + SEAT_BACK], [belt.buckle, 0.82, -0.36]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
+    rbox(0.05, 0.05, 0.03, 0.008, MAT.steel, belt.buckle, 0.81, -0.37, worn); // the tongue, pushed home in the buckle
     group.add(stowed, worn);
     root.add(group);
     // The buckle: a steel stalk standing up out of the seat's crease with a red release button on top.
-    rbox(0.034, 0.075, 0.03, 0.008, MAT.steel, belt.buckle, 0.78, -0.37, root);
-    rbox(0.026, 0.02, 0.022, 0.006, MAT.buckleRed, belt.buckle, 0.828, -0.37, root);
+    rbox(0.034, 0.075, 0.03, 0.008, MAT.steel, belt.buckle, 0.78, -0.4, root);
+    rbox(0.026, 0.02, 0.022, 0.006, MAT.buckleRed, belt.buckle, 0.828, -0.4, root);
   }
 
   // The roll cage: two hoops joined by roof rails, a cab guard behind the seat, and a bar along each side. Black tube all through.

@@ -1244,6 +1244,12 @@ export const FAQ_SECTIONS = [
           with buttons to set things up or put them right, and a small graph of the revs, speed, wheel slip and throttle over the last ten seconds. It releases the mouse but the game keeps running under it; click the game to carry on.`,
       },
       {
+        q: "Can I tune the girls' cars?",
+        a: `Yes, like any vehicle. Open the tuning panel (<kbd>\`</kbd>), pick the Fiesta or the Corsa on the Vehicles tab, and every one of its own groups is there: the engine,
+          the gearbox, the springs and grip, the sound, the shake. "Their cars" in the Tune tab sets how often the girls take them out, how they drive and how much they mind
+          you borrowing them, and "Fiesta riders" and "Corsa riders" how the girls ride in them.`,
+      },
+      {
         q: 'Is there a console?',
         a: `Backslash (<kbd>\\</kbd>, the <kbd>#</kbd> key on a UK keyboard) opens a command line. <code>help</code> lists the commands. You can read and set any value
           (<code>vehicle.red.temperature 0.4</code>), move things (<code>tp red barn</code>), reset them, change the weather (<code>weather rain</code>), fly

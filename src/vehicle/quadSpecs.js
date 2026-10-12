@@ -1386,8 +1386,8 @@ export const FIESTA_SPEC = {
   hoursRange: [0, 0],
   odoRange: [38000, 76000], // a careful owner's miles
   wearRange: [0.03, 0.08], // looked after
-  safeIdle: 750,
-  idleRange: [1010, 1090], // it ticks over briskly; its recording runs at 1,084 to 1,187, so its beats play near their own pace
+  safeIdle: 650,
+  idleRange: [830, 870], // Jamie: about 850 warm (its recording idles faster, at 1,084 to 1,187: each beat is stretched to fit)
   roughnessRange: [0.03, 0.07],
   fuelRange: [12, 30], // 34 litre tank
   topRpmRange: [5900, 6100],
@@ -1416,7 +1416,7 @@ export const FIESTA_SPEC = {
   fuel: { tankCapacity: 34, reserveLitres: 4, noTap: true, startTap: 'on', burnPerRev: 0.00012, idleBurnFraction: 0.3 },
   engine: {
     ...CAR_ENGINE,
-    idleRpmWarm: 1050,
+    idleRpmWarm: 850,
     maxRpm: 6000,
     redlineRpm: 5750,
   },
@@ -1429,7 +1429,7 @@ export const FIESTA_SPEC = {
     maxSpeed: 38,
     engineBrakeForce: 700,
   },
-  vibration: { ...CAR_VIBRATION, idleRpm: 1050 },
+  vibration: { ...CAR_VIBRATION, idleRpm: 850 },
   audio: {
     recBank: 'engine-bank-fiesta', // the BBC's Fiesta 1.1 idling and pulling away, a 1976 Mini revving above that, its own starter
     recIdleSource: 'quad',
@@ -1464,10 +1464,10 @@ export const CORSA_SPEC = {
   dashStyle: 'corsa',
   hoursRange: [0, 0],
   odoRange: [88000, 140000],
-  wearRange: [0.08, 0.16], // thrashed
+  wearRange: [0.06, 0.12], // thrashed (but four cylinders hide it: much more and it hunts and shakes about)
   safeIdle: 650,
   idleRange: [860, 900], // its recording ticks over at 854 to 909
-  roughnessRange: [0.06, 0.12],
+  roughnessRange: [0.04, 0.08],
   fuelRange: [3, 18], // 46 litre tank, and never more than a tenner in it
   topRpmRange: [6200, 6400],
   manual: true,
@@ -1492,6 +1492,8 @@ export const CORSA_SPEC = {
     ...CAR_ENGINE,
     injected: true,
     coldIdleRpm: 450, // the injection holds a cold engine at about 1,300 and lets it down as it warms
+    stumbleRate: 0.05, // (half the cars' usual: its idle doesn't lurch about at random)
+    erraticHunt: 0.02,
     idleRpmWarm: 880,
     maxRpm: 6300,
     redlineRpm: 6000,
@@ -1506,8 +1508,11 @@ export const CORSA_SPEC = {
     maxSpeed: 40,
     engineBrakeForce: 750,
     parkingBrake: 15,
+    suspensionCompression: 3.2, // damped firmer than Amy's: it settles after a bump instead of bouncing on
+    suspensionRelaxation: 3,
   },
-  vibration: { ...CAR_VIBRATION, idleRpm: 880, steadiness: 0.7, pulseGain: 1 }, // the exhaust rattles against the floor
+  // A touch more shake than Amy's (the exhaust rattles against the floor), but Jamie found the first go's random bouncing too much.
+  vibration: { ...CAR_VIBRATION, idleRpm: 880, steadiness: 0.82, pulseGain: 0.75, heaveGain: 0.07, pitchGain: 0.1 },
   audio: {
     recBank: 'engine-bank-corsa', // the BBC's Carlton 1.8 idling, pulling away and revved cold, its own starter and its cold stall
     recIdleSource: 'quad',

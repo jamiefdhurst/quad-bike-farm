@@ -65,10 +65,13 @@ export const LANDY_PROXY = { w: 1.95, h: 2.1, d: 3.9 };
 
 /** Where people sit on the bench (the driver, you, at -X) and where a girl stands to climb in, by the passenger's door. */
 export const LANDY_SEATS = {
-  driver: { x: -0.42, y: 0.94, z: -0.22 },
-  mid: { x: 0, y: 0.94, z: -0.22 },
-  left: { x: 0.42, y: 0.94, z: -0.22 },
+  driver: { x: -0.42, y: 0.94, z: -0.34 },
+  mid: { x: 0, y: 0.94, z: -0.34 },
+  left: { x: 0.42, y: 0.94, z: -0.34 },
 };
+// Jamie: everyone sat too far forward. The hips were 0.24 m in front of the backrests' faces (about 0.12 is a person's), which also
+// put the wheel too close and the mirror over your head; they moved back 0.12 m, and the worn belts' chest and lap points with them.
+const SEAT_BACK = -0.12;
 export const LANDY_STAND = {
   left: { x: 1.45, z: 0 },
   mid: { x: 1.45, z: 0 }, // the middle seat is reached through the passenger's door, as in the real thing
@@ -81,9 +84,9 @@ export const LANDY_STAND = {
  * and middle seats by the passenger's door (the left seat tips), the right one by the driver's (the driver's seat tips).
  */
 export const LANDY_REAR_SEATS = {
-  rearLeft: { x: 0.38, y: 0.98, z: -1.0, door: 'left' },
-  rearMid: { x: 0, y: 0.98, z: -1.0, door: 'left' },
-  rearRight: { x: -0.38, y: 0.98, z: -1.0, door: 'driver' },
+  rearLeft: { x: 0.38, y: 0.98, z: -1.12, door: 'left' },
+  rearMid: { x: 0, y: 0.98, z: -1.12, door: 'left' },
+  rearRight: { x: -0.38, y: 0.98, z: -1.12, door: 'driver' },
 };
 /** Where a girl stands to climb into the back: at the door, a little back from where she gets into the front. */
 export const LANDY_REAR_STAND = {
@@ -297,26 +300,27 @@ function addBelt(root, seat, belt) {
     rbox(0.045, 0.5, 0.012, 0.004, MAT.belt, belt.anchor, 1.2, -0.435, stowed); // hanging down the pillar
     rbox(0.05, 0.06, 0.02, 0.006, MAT.steel, belt.anchor, 0.92, -0.435, stowed); // the tongue, loose
   } else {
-    rbox(0.04, 0.012, 0.18, 0.004, MAT.belt, belt.anchor, 0.958, -0.3, stowed); // lying on the cushion
+    rbox(0.04, 0.012, 0.18, 0.004, MAT.belt, belt.anchor, 0.958, -0.34, stowed); // lying on the cushion
   }
   const worn = new THREE.Group();
   worn.name = 'worn';
   worn.visible = false;
-  const at = (t, y, z) => [belt.anchor + (belt.buckle - belt.anchor) * t, y, z];
-  // (The sitters' hips are at y 0.94 and z -0.22: the belt lies about 0.4 above them for the chest and 0.05 for the lap.)
+  const d = SEAT_BACK; // the sitter's chest and lap, moved back with the seats; the anchors and the buckles at the crease stay
+  const at = (t, y, z) => [belt.anchor + (belt.buckle - belt.anchor) * t, y, z + d];
+  // (The sitters' hips are at y 0.94 and z -0.34: the belt lies about 0.4 above them for the chest and 0.05 for the lap.)
   if (belt.diagonal) {
-    add(bentTube([[belt.anchor, 1.46, -0.5], at(0.15, 1.45, -0.3), at(0.32, 1.36, -0.02), at(0.6, 1.2, 0.04), at(0.88, 1.02, 0), [belt.buckle, 0.98, -0.13], [belt.buckle, 0.96, -0.34]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
-    add(bentTube([[belt.anchor, 0.9, -0.45], at(0.25, 0.98, -0.1), at(0.6, 1.0, 0.0), [belt.buckle, 0.99, -0.05], [belt.buckle, 0.96, -0.34]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
+    add(bentTube([[belt.anchor, 1.46, -0.5], at(0.15, 1.45, -0.26), at(0.32, 1.36, -0.02), at(0.6, 1.2, 0.04), at(0.88, 1.02, 0), [belt.buckle, 0.98, -0.13 + d], [belt.buckle, 0.96, -0.38]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
+    add(bentTube([[belt.anchor, 0.9, -0.45], at(0.25, 0.98, -0.1), at(0.6, 1.0, 0.0), [belt.buckle, 0.99, -0.05 + d], [belt.buckle, 0.96, -0.38]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
   } else {
-    add(bentTube([[belt.anchor, 0.96, -0.34], at(0.1, 0.99, -0.05), at(0.9, 0.99, -0.05), [belt.buckle, 0.96, -0.34]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
+    add(bentTube([[belt.anchor, 0.96, -0.38], at(0.1, 0.99, -0.05), at(0.9, 0.99, -0.05), [belt.buckle, 0.96, -0.38]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
   }
-  rbox(0.05, 0.05, 0.03, 0.008, MAT.steel, belt.buckle, 0.975, -0.335, worn); // the tongue, pushed home
+  rbox(0.05, 0.05, 0.03, 0.008, MAT.steel, belt.buckle, 0.975, -0.375, worn); // the tongue, pushed home
   group.add(stowed, worn);
   root.add(group);
   // The buckle: a steel stalk up out of the seat's crease with a red release button on top (the middle seat's other end has a plain one).
-  rbox(0.034, 0.075, 0.03, 0.008, MAT.steel, belt.buckle, 0.985, -0.38, root);
-  rbox(0.026, 0.02, 0.022, 0.006, MAT.red, belt.buckle, 1.032, -0.38, root);
-  if (!belt.diagonal) rbox(0.034, 0.075, 0.03, 0.008, MAT.steel, belt.anchor, 0.985, -0.38, root);
+  rbox(0.034, 0.075, 0.03, 0.008, MAT.steel, belt.buckle, 0.985, -0.42, root);
+  rbox(0.026, 0.02, 0.022, 0.006, MAT.red, belt.buckle, 1.032, -0.42, root);
+  if (!belt.diagonal) rbox(0.034, 0.075, 0.03, 0.008, MAT.steel, belt.anchor, 0.985, -0.42, root);
 }
 
 /** The trim's textures, made when a Land Rover is built (they need a canvas). */
@@ -523,6 +527,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   const trim = trimMaterials(D);
   const frame = D ? MAT.black : MAT.galv; // the screen and window frames: galvanised on the Series, black on the 200TDi
   quad.userData.seatMaterial = trim.seat;
+  quad.userData.cleanMaterials = [trim.seat, trim.dash, trim.floor, MAT.belt]; // the cab's inside never gets muddy (effects/mudCoat.js)
   quad.userData.steerGain = 7; // a big wheel, a lot of turns lock to lock
   const body = new THREE.Group();
   body.name = 'body';
@@ -661,7 +666,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   rbox(1.56, 0.26, 0.5, 0.02, paint, 0, 0.76, -0.3, root, 'seatBox');
   rbox(D ? 0.4 : 0.36, D ? 0.26 : 0.22, 0.6, 0.04, D ? trim.dash : MAT.black, 0, D ? 0.75 : 0.73, 0.25, root); // the tunnel (the 200TDi's a moulded console)
   for (const [name, seat] of Object.entries(LANDY_SEATS)) {
-    rbox(0.42, 0.1, 0.46, 0.04, trim.seat, seat.x, 0.9, seat.z, root);
+    rbox(0.42, 0.1, 0.46, 0.04, trim.seat, seat.x, 0.9, seat.z - SEAT_BACK, root); // the cushion runs forward from the backrest
     // On the 200TDi the outer two backrests tip forward to let people into the back: each is its own part, hinged at its foot
     // (`seatBack_<seat>`, posed by poseSeatTips). The Series' and the middle one are fixed.
     const tips = D && TIPPING_SEATS.includes(name);
@@ -686,7 +691,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   if (!D) {
     // The driver's cushion is split: the foam showing, with a strip of tape over one end.
     const rip = seatRip(root);
-    rip.position.set(LANDY_SEATS.driver.x - 0.03, 0.9505 + 0.0, LANDY_SEATS.driver.z + 0.06);
+    rip.position.set(LANDY_SEATS.driver.x - 0.03, 0.9505 + 0.0, LANDY_SEATS.driver.z - SEAT_BACK + 0.06);
     rip.rotation.x = -Math.PI / 2;
     rip.rotation.z = 0.25;
   }
@@ -700,7 +705,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   column.userData.keep = true;
   column.position.set(-0.42, 0.9, 0.5);
   column.rotation.x = -1.05;
-  tube([0, 0, 0], [0, 0.5, 0], 0.024, MAT.black, column);
+  tube([0, 0, 0], [0, 0.42, 0], 0.024, MAT.black, column);
   root.add(column);
   addSignalStalk(column, 0.34, MAT.black, { modern: D });
   if (!D) {
@@ -713,7 +718,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   const wheel = new THREE.Group();
   wheel.name = 'handlebars';
   wheel.userData.keep = true;
-  wheel.position.set(0, 0.5, 0);
+  wheel.position.set(0, 0.42, 0); // (Jamie: it stuck out too far; with the seats back it's about 0.45 m ahead of the hips)
   column.add(wheel);
   if (D) {
     // The 200TDi's: a thicker, softer rim on two spokes with a padded hub.
@@ -853,7 +858,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
     rbox(1.1, 0.26, 0.44, 0.02, paint, 0, 0.75, -1.02, root); // the seat box
     rbox(1.1, 0.4, 0.03, 0.01, paint, 0, 0.82, -1.29, root); // its back, up to the load floor behind
     for (const seat of Object.values(LANDY_REAR_SEATS)) {
-      rbox(0.36, 0.1, 0.42, 0.04, trim.seat, seat.x, 0.94, seat.z, root);
+      rbox(0.36, 0.1, 0.42, 0.04, trim.seat, seat.x, 0.94, seat.z - SEAT_BACK, root);
       rbox(0.36, 0.5, 0.08, 0.04, trim.seat, seat.x, 1.24, -1.26, root).rotation.x = -0.1;
       if (seat.x !== 0) rbox(0.22, 0.11, 0.07, 0.03, trim.seat, seat.x, 1.58, -1.29, root).rotation.x = -0.1; // the outer two have headrests
     }

@@ -3,7 +3,7 @@ import { buildCarModel, carLayout, sideShape, poseCarControls, poseCarSeats, CAR
 import { poseUtvBelts } from '../src/vehicle/utvModel.js';
 import { FIESTA_SPEC, CORSA_SPEC } from '../src/vehicle/quadSpecs.js';
 import { DASH_STYLES } from '../src/vehicle/dash.js';
-import { AUDIO_PARAM_RANGES } from '../src/audio/audioParams.js';
+import { AUDIO_PARAM_RANGES, DEFAULT_AUDIO_PARAMS } from '../src/audio/audioParams.js';
 
 // A canvas that accepts every drawing call and does nothing, so the models (whose dash, trim and plates are drawn on canvases) build in node.
 function fakeCanvas() {
@@ -87,11 +87,13 @@ describe('the two cars', () => {
     expect(CORSA_SPEC.engine.injected).toBe(true);
   });
 
-  it('idle near the pace of the recordings they are cut from, so their beats play at about their own speed', () => {
-    // The Fiesta's recorded idle runs 1,084 to 1,187 rpm, the Carlton's 854 to 909.
-    for (const [spec, lo, hi] of [[FIESTA_SPEC, 1084, 1187], [CORSA_SPEC, 854, 909]]) {
-      expect(spec.idleRange[0]).toBeGreaterThan(lo * 0.9);
-      expect(spec.idleRange[1]).toBeLessThan(hi * 1.05);
-    }
+  it("idle where Jamie hears them right, with each recorded beat stretched no further than the sound will stretch it", () => {
+    // The Corsa idles at its recording's pace (854 to 909). The Fiesta's recording idles at 1,084 to 1,187, but it sounded too fast
+    // there: it idles at about 850, so each beat is stretched to fill the longer cycle, and must stay above pulseSlowest or it leaves a gap.
+    expect(CORSA_SPEC.idleRange[0]).toBeGreaterThan(854 * 0.9);
+    expect(CORSA_SPEC.idleRange[1]).toBeLessThan(909 * 1.05);
+    expect(FIESTA_SPEC.idleRange[1]).toBeLessThan(1000);
+    const slowest = FIESTA_SPEC.audio.pulseSlowest ?? DEFAULT_AUDIO_PARAMS.pulseSlowest;
+    expect(FIESTA_SPEC.idleRange[0] / 1187).toBeGreaterThan(slowest); // the slowest idle against the fastest recorded beat
   });
 });
