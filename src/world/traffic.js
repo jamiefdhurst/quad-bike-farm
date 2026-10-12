@@ -48,8 +48,8 @@ export const LANE_KINDS = {
 
 /** The two kinds of visitor: what drives, in what paint, and what they do at the barn. */
 export const VISITOR_KINDS = {
-  post: { model: 'defender', colour: 0xc8102e, does: 'parcel' },
-  neighbour: { model: 'series', colours: [0x5d6d4a, 0x8a3b2e, 0x3d5a80, 0xc9c3b0], does: 'chat' },
+  post: { model: 'defender', colour: 0xc8102e, regs: ['G342 TVR'], does: 'parcel' },
+  neighbour: { model: 'series', colours: [0x5d6d4a, 0x8a3b2e, 0x3d5a80, 0xc9c3b0], regs: ['L915 HRE', 'F604 WGT', 'M227 BDK', 'E158 NFA'], does: 'chat' }, // not the farm's own
 };
 
 const wrap = (a) => ((((a + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) - Math.PI;
@@ -67,6 +67,8 @@ export class Drive {
     Object.assign(this, { x, z, yaw, speed, cruise, radius, accel, brake });
     this.path = [];
     this.waited = 0; // s held up by something in the way
+    this.patience = 40; // s it waits for something to move before it edges past regardless
+    this.ignoring = 0;
     this.blocked = false;
   }
 
@@ -79,10 +81,10 @@ export class Drive {
   }
 
   /** Whether something in `blockers` is in the way ahead: within a car's length plus the stopping room, and not off to the side. */
-  inTheWay(blockers) {
+  inTheWay(blockers, aim = this.yaw) {
     const reach = 5 + this.speed * 1.2;
-    const fx = Math.sin(this.yaw);
-    const fz = Math.cos(this.yaw);
+    const fx = Math.sin(aim);
+    const fz = Math.cos(aim);
     for (const b of blockers) {
       const dx = b.x - this.x;
       const dz = b.z - this.z;
@@ -95,8 +97,15 @@ export class Drive {
 
   update(dt, blockers = []) {
     const wp = this.path[0];
-    this.blocked = this.inTheWay(blockers);
+    // Looks along where it is heading and along where the next waypoint lies, so a corner doesn't swing it into something it hadn't faced yet.
+    const toward = wp ? headingTo(this.x, this.z, wp.x, wp.z) : this.yaw;
+    this.blocked = this.ignoring > 0 ? false : this.inTheWay(blockers) || (Math.abs(wrap(toward - this.yaw)) > 0.2 && this.inTheWay(blockers, toward));
+    if (this.ignoring > 0) this.ignoring -= dt;
     this.waited = this.blocked && this.speed < 0.3 ? this.waited + dt : 0;
+    if (this.waited > this.patience) {
+      this.ignoring = 8; // held up too long by something that is not moving: edge past it
+      this.waited = 0;
+    }
     let want = 0;
     if (wp) {
       const dist = Math.hypot(wp.x - this.x, wp.z - this.z);
@@ -150,9 +159,12 @@ export function visitPlaces(layout) {
     road,
     outside: { x: gate.x + 3.8, z: gate.z }, // where a vehicle waits outside the gate
     inside: { x: gate.x - 3.8, z: gate.z },
-    stop: { x: barn.x + 9, z: doorZ + 5.6 }, // where the vehicle stops, facing west
-    door: { x: barn.x + 4, z: doorZ + 2.2 }, // and where the driver goes
-    turn: { z0: doorZ + 5.6, z1: doorZ + 12.6, r: 3.5 },
+    // The barn's big doors face east, onto the yard; the wrapped silage is stacked at its south-east corner (x -67 to -62, z 69 to 72), the bell
+    // is by the north leaf. The vehicle stops east of the door, facing west, and turns round to the south, clear of both.
+    stop: { x: barn.x + 14, z: barn.z + 7.5 },
+    door: { x: barn.x + barn.halfX + 1.8, z: barn.z + 2.6 }, // where the driver goes
+    parcel: { x: barn.x + barn.halfX + 1.4, z: barn.z + 4.2 },
+    turn: { z0: barn.z + 7.5, z1: barn.z + 14.5, r: 3.5, dx: 4 },
   };
 }
 
@@ -188,6 +200,7 @@ export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
       sp({ x: gate.x - 2, z: gate.z, speed: 4 }),
       sp({ x: gate.x - 14, z: inZ }),
       sp({ x: road.fromX + 6, z: inZ }),
+      sp({ x: road.fromX - 6, z: inZ }), // through the cattle grid's gateway in the grass field's east hedge, not the hedge
       sp({ x: (road.fromX + stop.x) / 2 + 10, z: (inZ + stop.z) / 2 - 2 }),
       { x: stop.x + 8, z: stop.z, speed: 4 },
       { ...stop, stop: true },
@@ -200,7 +213,7 @@ export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
   steps.push({ type: 'walk', to: [{ x: stop.x - 0.2, z: stop.z - 1.4 }] });
   steps.push({ type: 'enter' });
   // Round the loop to face east again, and back out along the road on the other side.
-  const cx = stop.x - 10;
+  const cx = stop.x - turn.dx;
   const mid = (turn.z0 + turn.z1) / 2;
   steps.push({
     type: 'drive',
@@ -210,6 +223,7 @@ export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
       { x: cx, z: turn.z1, speed: 4 },
       { x: stop.x + 6, z: turn.z1 - 1, speed: 5 },
       sp({ x: (road.fromX + stop.x) / 2, z: (road.z - 1 + stop.z) / 2 }),
+      sp({ x: road.fromX - 6, z: road.z - 1 }),
       sp({ x: road.fromX + 6, z: road.z - 1 }),
       sp({ x: gate.x - 14, z: road.z - 1 }),
       { x: inside.x, z: gate.z - 0.5, speed: 4 },
@@ -239,8 +253,9 @@ export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
  * ({ mode: 'seat' | 'foot', x, z, heading, walking }). Events come back from update(): arrived, parcel, chat, gate (opened/shut), honk, leftOpen, done.
  */
 export class Visit {
-  constructor({ kind, places, from, to, leaveOpen, params, colour }) {
+  constructor({ kind, places, from, to, leaveOpen, params, colour, reg = null }) {
     this.kind = kind;
+    this.reg = reg ?? VISITOR_KINDS[kind].regs[0];
     this.colour = colour;
     this.params = params;
     this.places = places;
@@ -422,6 +437,7 @@ export class Traffic {
       leaveOpen: leaveOpen ?? this.random() < this.p.leftOpenChance,
       params: this.p,
       colour,
+      reg: spec.regs[Math.floor(this.random() * spec.regs.length)],
     });
     return this.visit;
   }

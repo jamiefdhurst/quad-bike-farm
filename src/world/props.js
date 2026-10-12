@@ -280,23 +280,42 @@ function buildRoadGate({ scene, layout, heights, fixedBox, fields, gateParams })
  * The public lane (layout.publicLane) outside the farm's east hedge: a strip of tarmac laid over the ground in short sections, a worn
  * dashed line down its middle and a grassy verge worn into each side. Nothing on it is solid: the ground under it is the terrain's.
  */
-function buildPublicLane({ scene, layout, heights }) {
+function buildPublicLane({ scene, layout, heights, fixedBox }) {
   const lane = layout.publicLane;
   if (!lane) return;
-  const step = 4;
-  const ribbon = (x0, half, lift, material, dashed) => {
+  // An invisible wall along the lane's near edge: you can walk through the gate onto the verge, but not out into the road.
+  const wallX = lane.x - lane.halfWidth - 1.2;
+  fixedBox(wallX, 0, (lane.minZ + lane.maxZ) / 2, 0.3, 40, (lane.maxZ - lane.minZ) / 2 + 20);
+  const step = 1; // as fine as the terrain's own grid, or its bumps show through
+  const cols = 5; // and across, so the camber of the ground doesn't
+  const tarmac = new THREE.CanvasTexture(laneTexture());
+  tarmac.wrapS = tarmac.wrapT = THREE.RepeatWrapping;
+  tarmac.colorSpace = THREE.SRGBColorSpace;
+  const ribbon = (x0, half, lift, material, dashed, uvScale) => {
     const pos = [];
+    const uv = [];
     const idx = [];
     let n = 0;
     for (let z = lane.minZ; z < lane.maxZ; z += step) {
-      if (dashed && Math.floor((z - lane.minZ) / step) % 3 !== 0) continue;
+      if (dashed && Math.floor((z - lane.minZ) / 3) % 3 !== 0) continue;
       const z1 = Math.min(lane.maxZ, z + step);
-      for (const [a, b] of [[x0 - half, z], [x0 + half, z], [x0 - half, z1], [x0 + half, z1]]) pos.push(a, heights.heightAt(a, b) + lift, b);
-      idx.push(n, n + 2, n + 1, n + 1, n + 2, n + 3);
-      n += 4;
+      for (const zz of [z, z1]) {
+        for (let c = 0; c < cols; c++) {
+          const x = x0 - half + (2 * half * c) / (cols - 1);
+          pos.push(x, heights.heightAt(x, zz) + lift, zz);
+          uv.push((c / (cols - 1)) * uvScale, zz / 4);
+        }
+      }
+      for (let c = 0; c < cols - 1; c++) {
+        const a = n + c;
+        const b = n + cols + c;
+        idx.push(a, b, a + 1, a + 1, b, b + 1);
+      }
+      n += cols * 2;
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
     g.setIndex(idx);
     g.computeVertexNormals();
     const m = new THREE.Mesh(g, material);
@@ -305,9 +324,36 @@ function buildPublicLane({ scene, layout, heights }) {
     scene.add(m);
   };
   const poly = { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 };
-  ribbon(lane.x, lane.halfWidth + 0.9, 0.025, new THREE.MeshStandardMaterial({ color: 0x4a5236, roughness: 1, ...poly }), false); // verge
-  ribbon(lane.x, lane.halfWidth, 0.04, new THREE.MeshStandardMaterial({ color: 0x3b3c3d, roughness: 0.92, ...poly }), false);
-  ribbon(lane.x, 0.07, 0.06, new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...poly }), true);
+  ribbon(lane.x, lane.halfWidth, 0.07, new THREE.MeshStandardMaterial({ map: tarmac, color: 0xffffff, roughness: 0.92, ...poly }), false, 1);
+  ribbon(lane.x, 0.07, 0.09, new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...poly }), true, 1);
+}
+
+/** Worn grey tarmac: speckle, a darker band down each wheel track and a pale, crumbling edge. */
+function laneTexture() {
+  const size = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  g.fillStyle = '#434446';
+  g.fillRect(0, 0, size, size);
+  const img = g.getImageData(0, 0, size, size);
+  let seed = 99;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      seed = (seed * 16807) % 2147483647;
+      const n = (seed / 2147483647 - 0.5) * 26;
+      const u = x / size;
+      const track = Math.exp(-(((u - 0.27) / 0.09) ** 2)) + Math.exp(-(((u - 0.73) / 0.09) ** 2)); // the wheel tracks, worn darker
+      const edge = Math.max(0, 1 - Math.min(u, 1 - u) / 0.06) * 14; // the edges, paler and gritty
+      const k = n - track * 9 + edge;
+      const i = (y * size + x) * 4;
+      img.data[i] = Math.max(0, Math.min(255, img.data[i] + k));
+      img.data[i + 1] = Math.max(0, Math.min(255, img.data[i + 1] + k));
+      img.data[i + 2] = Math.max(0, Math.min(255, img.data[i + 2] + k));
+    }
+  }
+  g.putImageData(img, 0, 0);
+  return c;
 }
 
 /**

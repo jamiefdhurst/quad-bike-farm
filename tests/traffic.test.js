@@ -87,11 +87,42 @@ describe('the lane and the plan', () => {
     }
   });
 
-  it('puts the stopping spot and the loop in front of the barn, clear of its walls and the hedge', () => {
+  it('stops and turns east of the barn, clear of the silage bales and the bell, with its door on the yard side', () => {
     const b = LAYOUT.barn;
-    expect(places.stop.z).toBeGreaterThan(b.z + b.halfZ);
-    expect(places.turn.z1 + places.turn.r * 0).toBeLessThan(LAYOUT.fieldHalf - 2);
-    expect(places.door.z).toBeGreaterThan(b.z + b.halfZ);
+    expect(places.door.x).toBeGreaterThan(b.x + b.halfX);
+    expect(places.stop.x - places.turn.dx - places.turn.r).toBeGreaterThan(b.x + 2.3 + 2); // the silage stack runs to about x = barn.x + 2.3
+    expect(places.turn.z1).toBeLessThan(LAYOUT.fieldHalf - 3);
+    expect(places.parcel.x).toBeGreaterThan(b.x + b.halfX);
+  });
+
+  it('goes through the cattle grid gateway, not the hedge', () => {
+    const steps = planVisit({ places, from: 1, to: 1, does: 'parcel', leaveOpen: false, farmSpeed: 7 });
+    for (const s of steps) {
+      const path = s.path ?? [];
+      for (let i = 1; i < path.length; i++) {
+        const a = path[i - 1];
+        const b = path[i];
+        // a leg that crosses x = fieldHalf (the hedge) must cross it within the road's gateway
+        if ((a.x - LAYOUT.fieldHalf) * (b.x - LAYOUT.fieldHalf) < 0) {
+          const z = a.z + ((b.z - a.z) * (LAYOUT.fieldHalf - a.x)) / (b.x - a.x);
+          expect(Math.abs(z - LAYOUT.road.z)).toBeLessThan(LAYOUT.road.halfWidth);
+        }
+      }
+    }
+  });
+
+  it('gives the post van and the neighbour their own registrations, not the farm\'s Land Rovers\'', () => {
+    const farm = ['FRM 88L', 'H471 DKP'];
+    const t = new Traffic({ places, params: P, random: createRandom(5) });
+    const regs = new Set();
+    for (let i = 0; i < 40; i++) {
+      t.visit = null;
+      const v = t.startVisit(i % 2 ? 'post' : 'neighbour');
+      regs.add(v.reg);
+      expect(farm).not.toContain(v.reg);
+    }
+    expect(regs.has('G342 TVR')).toBe(true);
+    expect(regs.size).toBeGreaterThan(2);
   });
 });
 
@@ -139,10 +170,20 @@ describe('a visit', () => {
     const events = [];
     // Someone stood on the lane where she turns in.
     const block = [{ x: laneX(places.lane, 1), z: places.gate.z - 10 }];
-    for (let i = 0; i < 800; i++) events.push(...v.update(0.1, { gate, blockers: block, swingSeconds: 1.8 }));
+    for (let i = 0; i < 300; i++) events.push(...v.update(0.1, { gate, blockers: block, swingSeconds: 1.8 }));
     expect(events.some((e) => e.type === 'honk')).toBe(true);
     expect(v.drive.z).toBeLessThan(places.gate.z - 10);
     expect(v.done).toBe(false);
+  });
+
+  it('edges past something that never moves, after a long wait', () => {
+    const d = new Drive({ x: 0, z: 0, yaw: 0, speed: 0, cruise: 8 });
+    d.go([{ x: 0, z: 60 }]);
+    const block = [{ x: 0, z: 8 }];
+    for (let i = 0; i < 400 && d.z < 7; i++) d.update(0.1, block);
+    expect(d.z).toBeLessThan(7);
+    for (let i = 0; i < 600; i++) d.update(0.1, block);
+    expect(d.z).toBeGreaterThan(20);
   });
 
   it('keeps the driver in the seat while driving and on foot only to walk', () => {

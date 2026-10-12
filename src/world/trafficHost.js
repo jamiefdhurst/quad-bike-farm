@@ -142,7 +142,7 @@ export class TrafficHost {
       g.notice('traffic', at(e.x, e.z), { key: 'visitor', strength: 1 });
       this.remark(v?.kind === 'post' ? 'postVan' : 'neighbourCalls', e, 0.9);
     } else if (e.type === 'parcel') {
-      this.view.addParcel(places.stop.x - 6.5, places.door.z - 1.7, 0.4);
+      this.view.addParcel(places.parcel.x, places.parcel.z, 0.4);
       this.lastEvent = 'the post left a parcel at the barn';
       this.later.push({ left: 7, run: () => this.remark('parcelLeft', e, 0.7) });
     } else if (e.type === 'chat') {

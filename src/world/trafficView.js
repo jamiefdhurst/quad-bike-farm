@@ -11,8 +11,8 @@ import { CharacterRig } from '../npc/characterRig.js';
 import { applyOutfit, withShirt, withJumper, OUTFITS } from '../npc/outfit.js';
 
 const MODELS = {
-  defender: { build: (c) => buildLandRoverModel({ bodyColor: c, dashStyle: 'defender', variant: 'defender' }), layout: LANDY_LAYOUT, offset: LANDY_GROUND_OFFSET, seat: LANDY_SEATS.driver },
-  series: { build: (c) => buildLandRoverModel({ bodyColor: c, dashStyle: 'series', variant: 'series' }), layout: LANDY_LAYOUT, offset: LANDY_GROUND_OFFSET, seat: LANDY_SEATS.driver },
+  defender: { build: (c, reg) => buildLandRoverModel({ bodyColor: c, dashStyle: 'defender', variant: 'defender', reg }), layout: LANDY_LAYOUT, offset: LANDY_GROUND_OFFSET, seat: LANDY_SEATS.driver },
+  series: { build: (c, reg) => buildLandRoverModel({ bodyColor: c, dashStyle: 'series', variant: 'series', reg }), layout: LANDY_LAYOUT, offset: LANDY_GROUND_OFFSET, seat: LANDY_SEATS.driver },
   tractor: { build: (c) => buildTractorModel({ bodyColor: c, dashStyle: 'tractor' }), layout: TRACTOR_LAYOUT, offset: TRACTOR_GROUND_OFFSET, seat: { x: 0, y: 1.35, z: -0.55 } },
   utv: { build: (c) => buildUtvModel({ bodyColor: c, dashStyle: 'utv' }), layout: UTV_LAYOUT, offset: UTV_GROUND_OFFSET, seat: UTV_SEATS.driver ?? { x: -0.4, y: 0.9, z: -0.1 } },
 };
@@ -46,15 +46,15 @@ export class TrafficView {
   }
 
   /** A vehicle body for this model and paint, from the pool if there is one idle. */
-  take(model, colour, driver) {
-    const key = `${model}:${colour}`;
+  take(model, colour, driver, reg = null) {
+    const key = `${model}:${colour}:${reg ?? ''}`;
     const idle = this.pool.get(key)?.pop();
     if (idle) {
       idle.object.visible = true;
       return idle;
     }
     const spec = MODELS[model];
-    const object = spec.build(colour);
+    const object = spec.build(colour, reg);
     const wheels = spec.layout.wheels.map((w) => {
       const o = object.getObjectByName(w.name);
       o.position.set(w.x, w.radius + spec.offset + (spec.layout.spawnSag ?? 0), w.z); // the tyre on the ground, the body sunk by its springs
@@ -197,7 +197,7 @@ export class TrafficView {
     if (visit) {
       let body = this.shown.get(visit);
       if (!body) {
-        body = this.take(visit.model, visit.colour, false);
+        body = this.take(visit.model, visit.colour, false, visit.reg);
         this.shown.set(visit, body);
       }
       this.place(body, visit.drive, darkness, dt);

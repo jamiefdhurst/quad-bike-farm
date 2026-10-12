@@ -509,8 +509,9 @@ function buildWheel(w, rim) {
 
 // The Land Rover ----------------------------------------------------------------
 
-export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series', variant = 'series' } = {}) {
-  const D = variant === 'defender'; // the 200TDi: a square-back with the spare on its rear door, a newer dash and console
+export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series', variant = 'series', reg = null } = {}) {
+  const D = variant === 'defender';
+  const regText = reg ?? (D ? PLATE_200 : PLATE); // the registration, front and back (a visiting vehicle has its own) // the 200TDi: a square-back with the spare on its rear door, a newer dash and console
   const paint = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.55, side: THREE.DoubleSide });
   const lensMat = new THREE.MeshStandardMaterial({ color: 0x2c302c, roughness: 0.08, metalness: 0.2, emissive: 0x000000 });
   const tailMat = new THREE.MeshStandardMaterial({ color: 0x3c0b08, roughness: 0.25, emissive: 0x000000 });
@@ -552,7 +553,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   // The front: bumper with the starting-handle hole, the black grille panel between the wings, the flat-topped wings with the headlamps
   // in their faces, the bonnet with the spare wheel on it.
   rbox(1.62, 0.16, 0.12, 0.02, MAT.black, 0, 0.56, 1.78, root); // bumper
-  plate(D ? PLATE_200 : PLATE, '#ece9de', root, { x: 0.45, y: 0.56, z: 1.8475, facing: 1 }); // the front number plate
+  plate(regText, '#ece9de', root, { x: 0.45, y: 0.56, z: 1.8475, facing: 1 }); // the front number plate
   for (const s of [-1, 1]) rbox(0.07, 0.17, 0.14, 0.02, MAT.chassis, s * 0.83, 0.56, 1.78, root); // the bumper's ends, turned back
   if (!D) {
     add(new THREE.TorusGeometry(0.035, 0.012, 8, 16), MAT.steel, root).position.set(CRANK_HOLE.x, CRANK_HOLE.y, CRANK_HOLE.z - 0.02); // the hole's ring
@@ -841,7 +842,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
     rbox(1.6, 0.34, 0.04, 0.01, paint, 0, 0.8, -1.95, root); // the rear body panel under it
     for (const y of [1.03, 1.35]) rbox(1.5, 0.02, 0.01, 0.004, paint, 0, y, -1.975, root); // the tailgate's pressings
     rbox(0.1, 0.04, 0.02, 0.006, MAT.galv, 0, 1.07, -1.975, root); // its catch
-    plate(PLATE, '#e8c51c', root, { x: 0, y: 0.78, z: -1.9755, facing: -1 }); // the rear number plate
+    plate(regText, '#e8c51c', root, { x: 0, y: 0.78, z: -1.9755, facing: -1 }); // the rear number plate
     badge(root, { x: 0, y: 1.2, z: -1.9755, facing: -1, w: 0.2, h: 0.14, twoLines: true }); // the maker's badge on the tailgate, on two lines
   } else {
     // The 200TDi's square back: a carpeted load floor over the wheels, side bodywork with a window band and the wheel arches cut in
@@ -895,7 +896,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
     addWheelFace(spare, 1, MAT.rimGrey);
     root.add(spare);
     rbox(0.1, 0.3, 0.04, 0.01, MAT.black, 0, 1.27, -2.0, root);
-    plate(PLATE_200, '#e8c51c', root, { x: 0, y: 0.78, z: -1.9755, facing: -1 }); // the rear number plate
+    plate(regText, '#e8c51c', root, { x: 0, y: 0.78, z: -1.9755, facing: -1 }); // the rear number plate
     badge(root, { x: 0.55, y: 1.18, z: -1.9755, facing: -1, w: 0.16, h: 0.064, px: 900 }); // the maker's badge on the door
     modelBadge('200Tdi', root, { x: -0.52, y: 1.17, z: -1.9755 }); // and the model's, the other side
   }

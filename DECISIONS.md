@@ -3184,3 +3184,12 @@ Jamie's answers: none asked. The item settled the shape (rings, she wanders off,
 - Panel: "Phone calls" in the Tune tab (items and workshop); the Girls tab's shared section shows the call and anyone in a mood; the actions `phone-call` and `phone-call-bad` in each girl's "Make her do" (and `girl <name> phone-call`); the console's `phoneCall` path.
 - Left out: the ring heard as a notice for the other girl to react to, calls while she is on a quad or at the bench, and news that changes anything (a bucket-list tick, an errand).
 - Checked: unit tests only. Not checked in the running game: how the phone sits at her ear (the hand targets are guessed from the existing phone and shade-eyes poses), whether she stops where the call spot is, and how the ring sounds.
+
+## Traffic, follow-up: the lane's surface, a wall, the route and registrations (TODO 22)
+
+- Jamie: the lane had dark green patches; you could walk out into it; the post van drove through the hedge at the cattle grid and through the silage bales and the tractor at the barn; the visitors should have their own registrations.
+- The green was the ground showing through the tarmac, which was laid in 4 m sections with two columns of heights. It is now a 1 m by five-column mesh 7 cm above the ground, with a worn-tarmac texture (speckle, darker wheel tracks, pale edges); the separate verge strip is gone.
+- An invisible wall (`fixedBox`, 0.6 m thick) runs the length of the lane 1.2 m short of its tarmac: you can step through the gate onto the verge but not into the road. The visitors are not physical, so they ignore it.
+- The route goes through the cattle grid's gateway (two extra waypoints either way). The barn's doors face east, so the stop, the door spot and the parcel are east of the door, and the turn is to the south of the stop, 4 m from the silage stack (a test checks it) and the bell. A `Drive` now also looks along the way to its next waypoint, so a corner no longer swings it into something it had not faced; it waits for anything in its way, and after `patience` 40 s edges past it for 8 s (so a tractor left in the yard cannot hold the visit up for ever).
+- `buildLandRoverModel` takes a `reg`; the post van is `G342 TVR` and the neighbour has one of four, none the farm's two.
+- Not checked: the wall by walking into it, and a visit round a parked tractor.
