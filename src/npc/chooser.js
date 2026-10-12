@@ -52,6 +52,7 @@ export const OFFER_KINDS = {
   climb: { label: 'time herself up the hill', satisfies: { excitement: 1, purpose: 0.6 }, pace: 'brisk' },
   compare: { label: 'compare notes on the shake', satisfies: { company: 0.7, purpose: 0.4 } },
   invite: { label: 'ask you round the back of the barn', satisfies: { company: 1 } },
+  benchWork: { label: 'work on a quad at the bench', satisfies: { purpose: 0.9, company: 0.2 }, pace: 'brisk' },
   workLight: { label: 'bring something round to light the way for you', satisfies: { purpose: 0.9, company: 0.6 }, pace: 'brisk' },
   pairUp: { label: 'go and stand with her friend', satisfies: { company: 0.9, purpose: 0.4 } },
   tagAlong: { label: 'tag along with her friend', satisfies: { company: 0.8, purpose: 0.5 }, pace: 'brisk' },

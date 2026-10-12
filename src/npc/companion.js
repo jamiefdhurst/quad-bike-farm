@@ -130,6 +130,7 @@ export class Companion {
     this.lookPick = null; // what attention picked this frame
     this.lookPoint = null; // where her eyes are now, sweeping towards the pick
     this.lookTurn = null; // a heading to turn and face, when a look over her shoulder is held (idle uses it)
+    this.benchAt = null; // stood at the barn bench working on a quad (girlBench.js): she faces it and doesn't turn to look about
     this.attendHint = null; // a sub-activity's own focus: { x, y, z, weight, left } (attend())
     this.lookLeadLeft = 0; // seconds she still looks where she's going before setting off
     // What she wants (needs.js), started a little different for each so they don't move in step, and what she last chose and nearly
@@ -1174,7 +1175,7 @@ export class Companion {
 
   /** Stood about with nothing holding her in place (her hands over an engine, a wave, a start), so she may turn to look at something. */
   freeToTurn() {
-    return this.fsm.is('idle') && !this.warmingAt && !this.waving && !this.recoil && !this.attempt && !this.waitPinned();
+    return this.fsm.is('idle') && !this.warmingAt && !this.waving && !this.recoil && !this.attempt && !this.benchAt && !this.waitPinned();
   }
 
   turnToward(dt, facing) {

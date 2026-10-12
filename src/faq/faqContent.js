@@ -619,6 +619,18 @@ export const FAQ_SECTIONS = [
           <kbd>E</kbd> down and let go inside the green band. Too soon or too long botches it and the fault comes back a little. Amy helps; Jess heckles.`,
       },
       {
+        q: 'Why is a girl working on a quad at the bench?',
+        a: `With a quad parked in the yellow bay and switched off, and the toolbox on the bench, a girl may decide to work on it herself, doing whatever it needs most (a puncture,
+          a dirty carb, low oil in a two-stroke, a tired plug). Amy is the keener. She will stop and ask you for a hand: "Pass me the ten millimetre" or "Hold the torch". Go to the bench and press <kbd>E</kbd> when the prompt shows.
+          Be quick and she likes you for it; ignore her and she fetches it herself, which takes longer and makes her likelier to slip. Amy writes what she did in her logbook.`,
+        tip: 'Amy asks for the ten millimetre or the torch at the bench. Go to it and press E to help.',
+      },
+      {
+        q: 'Jess has left a job half done at the bench. What do I do?',
+        a: `She has a go, botches a step and asks you to finish it. Look at the bench and press <kbd>E</kbd>: the job carries on from the step she got to. Because she slipped it will come out
+          rough, but she is pleased you finished it. Leave it for about four minutes and she gives up, and the quad is left as it was. Park a different quad in the bay and nothing happens until the job is cleared.`,
+      },
+      {
         q: 'What does the old spark plug tell me?',
         a: `How it has been running. The plug job lets you look at it: a black, sooty plug means it has been running rich (too much choke, a clogged air filter,
           too much oil in the mix), a pale one lean.`,

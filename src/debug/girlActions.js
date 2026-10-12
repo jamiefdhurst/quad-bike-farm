@@ -183,6 +183,11 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'bench-work',
+      label: '% works on the quad in the bay at the bench (needs one parked there, off, and the toolbox on the bench; Jess makes a hash of it and hands it to you)',
+      run: (id) => g.startGirlBench(id),
+    },
+    {
       verb: 'flask',
       label: '% goes up to the rock at the top of the hill and pours the tea (walks there from wherever she is; needs dry, light weather)',
       run: (id) => {

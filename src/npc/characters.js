@@ -26,6 +26,7 @@ export const CHARACTERS = [
       boredShowOffChance: 0.04,
       boredBuzzChance: 0.03, // sits on a rough one now and then, and never says why
       tagWeight: 1.2, // goes along with Jess to keep an eye on her
+      benchWeight: 1.3, // services her own quad at the bench, and asks you for a hand
       workLightWeight: 1.2, // brings the Land Rover round to light what you're at in the dark, unasked
       sideSaddleChance: 0.4, // sits side-saddle on the back, ladylike
       blownNoticeAt: 0.25,
@@ -55,6 +56,8 @@ export const CHARACTERS = [
     // she likes being left on a runaway.
     params: {
       outfit: 'jessPolo',
+      benchSlip: 0.85,
+      benchWeight: 0.7, // has a go at the bench now and then, and hands it back
       voiceHardBrakeDecel: 6.5, // takes a sharper stop before she calls it hard braking
       voiceHardBrakeShed: 3,
       reactEarsChance: 0.15, // loves the noise; cheers a jump with both arms up; flinches less

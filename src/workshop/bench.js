@@ -63,12 +63,18 @@ export class Bench {
     const unit = this.unitInBay();
     if (!unit || !this.toolboxHere() || unit.engine.isRunning || unit.engine.state === 'cranking') return;
     this.unit = unit;
-    this.job = null;
+    // A girl left a job half done for you to finish: it carries on from the step she got to.
+    const left = this.game.girlBench.pendingFor(unit.id);
+    this.job = left?.job ?? null;
+    if (this.job) {
+      this.job.holding = false;
+      this.job.held = 0;
+    }
     this.render();
     this.el.style.display = 'block';
     document.body.classList.add('bench-open');
     this.game.player.moveEnabled = false;
-    this.say(unit.engine.params.boreKit && !unit.engine.bore ? 'catalogue' : 'start');
+    if (!left) this.say(unit.engine.params.boreKit && !unit.engine.bore ? 'catalogue' : 'start');
   }
 
   close() {
@@ -115,6 +121,7 @@ export class Bench {
         if (unit.barnFind) this.foundJobDone(unit, job.kind);
         this.game.notebook.note(unit, { kind: 'job', job: job.kind, botched: job.botched }, { by: 'you' });
         this.job = null;
+        this.game.girlBenchFinished(job);
       }
     }
     if (events.length) this.render();

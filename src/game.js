@@ -139,6 +139,8 @@ import { JumpWatch, JUMP_PARAM_RANGES, rampPoint } from './npc/jumps.js';
 import { Nicking, NICK_PARAM_RANGES } from './npc/nicking.js';
 import { DEFAULT_LINEUP_PARAMS, LINEUP_PARAM_RANGES, parkRoute } from './npc/lineUp.js';
 import { WorkLight, WORK_LIGHT_PARAM_RANGES } from './npc/workLight.js';
+import { finishJob } from './workshop/benchJobs.js';
+import { GirlBench, GIRL_BENCH_PARAM_RANGES, ASK_PROMPT, pickJob, workSpot } from './npc/girlBench.js';
 import { DEFAULT_HOME_PARAMS, HOME_PARAM_RANGES } from './npc/homeParking.js';
 import { Tea, TEA_PARAM_RANGES } from './npc/tea.js';
 import { Flask, FLASK_PARAM_RANGES } from './npc/flask.js';
@@ -1081,6 +1083,8 @@ export class Game {
     }
     this.bench = new Bench(this);
     this.notebook = new Notebook(this); // Amy's logbook, on the bench
+    this.girlBench = new GirlBench(undefined, this.bench.params, createRandom(this.seed ^ 0x2b3c)); // a girl working on a quad at the bench (npc/girlBench.js)
+    registerTuning('Girl at the bench', this.girlBench.p, GIRL_BENCH_PARAM_RANGES);
     // A hosepipe for washing the mud off.
     this.hose = new Hose({ scene: this.scene, world: this.world, position: L.hose, yaw: L.hose.yaw });
     // The green quad's winch, for pulling a stuck quad out of a bog.
@@ -1121,6 +1125,14 @@ export class Game {
       isAvailable: () => !this.handsFull || !!this.benchItem(),
       prompt: () => (this.benchItem() ? `Put the ${this.benchItem().name} back on the bench` : this.bench.prompt()),
       interact: () => (this.benchItem() ? this.putOnBench(this.benchItem()) : (this.achievements.note('bench'), this.bench.open())),
+    });
+    // Her asking for a hand at the bench (npc/girlBench.js): the spanner, or the torch.
+    this.interaction.add({
+      target: this.bench.proxy,
+      priority: 2,
+      isAvailable: () => !!this.girlBench.asking && this.nearBench(this.girlBench.p.helpRange),
+      prompt: () => ASK_PROMPT[this.girlBench.asking.type].replace('{name}', this.companions.find((c) => c.character.id === this.girlBench.asking.girl)?.name ?? 'her'),
+      interact: () => this.girlBench.help(),
     });
     this.interaction.add({
       target: this.notebook.proxy,
@@ -3108,6 +3120,7 @@ export class Game {
         if (e) this.handleCabEvent(e);
       }),
       ...mine(this.places.offers(this.placesContext()), (o) => this.handlePlaceAction(this.places.take(o))),
+      ...mine(this.girlBench.offers(this.girlBenchContext()), (o) => this.handleGirlBench(this.girlBench.take(o))),
       ...mine(this.workLight.offers(this.workLightContext(c)), (o) => {
         c.voice.say('workLightOffer', { urgent: true, force: true });
         this.handleWorkLight(this.workLight.take(o));
@@ -3710,6 +3723,119 @@ export class Game {
   }
 
   /** The wheel's two extras while they're fallen out and she's told you her side: take her side, or tell her to make up. */
+  // A girl at the bench -----------------------------------------------------
+  /** Whether you are within `range` metres of the workbench. */
+  nearBench(range) {
+    const b = this.world.layout.bench;
+    return Math.hypot(this.player.position.x - b.x, this.player.position.z - b.z) <= range;
+  }
+
+  /** The quad she would work on and the job it needs: { unit, kind }, or why not: { why }. Parked in the bay, switched off, toolbox on the bench. */
+  benchWorkPlan() {
+    if (this.bench.isOpen) return { why: 'the bench is in use' };
+    if (this.girlBench.pending) return { why: 'there is a job left on the bench to finish' };
+    if (!this.bench.toolboxHere()) return { why: "the toolbox isn't on the bench" };
+    const unit = this.bench.unitInBay();
+    if (!unit || unit.barnFind) return { why: 'there is no quad in the painted bay' };
+    if (unit.engine.isRunning || unit.engine.state === 'cranking' || this.herOn(unit.quad) || unit.quad.rider) return { why: 'the quad in the bay is in use' };
+    const f = unit.quad.faults;
+    const e = unit.engine;
+    const kind = pickJob(
+      { puncture: f.started.puncture, carb: f.started.carb, fouling: e.fouling, wear: e.wear, twoStroke: e.params.strokes === 2, oilLow: (unit.quad.fuel.oil ?? 1) < this.bench.params.oilGood * 0.8 },
+      (k) => this.bench.canBegin(k, unit),
+    );
+    return kind ? { unit: unit.id, kind } : { why: 'there is nothing she could do to it' };
+  }
+
+  /** What the girl-at-the-bench module needs to offer (npc/girlBench.js). */
+  girlBenchContext() {
+    const plan = this.benchWorkPlan();
+    const b = this.world.layout.bench;
+    return {
+      bay: plan.why ? null : plan,
+      girls: this.companions.map((g) => ({
+        id: g.character.id,
+        free: g.availability().free,
+        distance: Math.hypot(g.root.position.x - b.x, g.root.position.z - b.z),
+        weight: g.params.benchWeight ?? 0,
+        slip: g.params.benchSlip ?? 0,
+      })),
+    };
+  }
+
+  /** The debug panel's and the console's way of sending her to the bench: says why not with a toast. */
+  startGirlBench(id) {
+    const c = this.companions.find((o) => o.character.id === id);
+    const a = c.availability({ asked: true });
+    if (!a.free) return this.hud.toast(`${c.name} is busy (${a.why})`);
+    if (this.girlBench.active) return this.hud.toast(`${this.girlBench.girl} is at the bench already`);
+    const plan = this.benchWorkPlan();
+    if (plan.why) return this.hud.toast(`${c.name} can't: ${plan.why}`);
+    c.interrupt();
+    this.handleGirlBench(this.girlBench.begin(id, plan.unit, plan.kind, 'asked', { slips: (c.params.benchSlip ?? 0) >= 0.5 }));
+  }
+
+  updateGirlBench(dt) {
+    const gb = this.girlBench;
+    const ref = gb.session ?? gb.pending;
+    const unit = ref && this.units.find((u) => u.id === ref.unit);
+    const c = gb.girl && this.companions.find((o) => o.character.id === gb.girl);
+    const spot = workSpot(this.world.layout.bay);
+    const unitOk = !!unit && this.bench.unitInBay() === unit && !unit.engine.isRunning && unit.engine.state !== 'cranking';
+    const ctx = {
+      girl: c ? { there: c.fsm.is('idle') && Math.hypot(c.root.position.x - spot.x, c.root.position.z - spot.z) < 0.9 } : null,
+      unitOk,
+      benchOpen: this.bench.isOpen,
+    };
+    if (c && gb.session?.phase !== 'going' && unitOk) {
+      c.benchAt = spot;
+      const q = unit.quad.position;
+      c.attend({ x: q.x, y: q.y + 0.7, z: q.z }, { weight: 4 });
+    } else if (c) c.benchAt = null;
+    for (const e of gb.update(dt, ctx)) this.handleGirlBench(e);
+  }
+
+  /** Acts on the girl at the bench (npc/girlBench.js): she walks over, speaks, is helped, finishes the job on the quad, or hands it to you. */
+  handleGirlBench(e) {
+    if (!e) return;
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    if (!c) return this.girlBench.cancel();
+    const gb = this.girlBench;
+    const unit = e.unit && this.units.find((u) => u.id === e.unit);
+    if (e.type === 'go') {
+      c.hold('benchWork', 'working at the bench');
+      c.voice.say('benchGirlGo', { force: true });
+      const s = workSpot(this.world.layout.bay);
+      c.walkTo(new THREE.Vector3(s.x, this.world.heightAt(s.x, s.z), s.z), s.yaw);
+    } else if (e.type === 'say') {
+      c.voice.say(e.line, { force: true });
+    } else if (e.type === 'help') {
+      this.favour.add(e.girl, e.quick ? gb.p.favourQuick : gb.p.favourSlow);
+    } else if (e.type === 'finish' && unit) {
+      this.hud.toast(`${c.name}: ${finishJob(e.job, { engine: unit.engine, faults: unit.quad.faults, fuel: unit.quad.fuel, tyres: unit.quad.tyres, sump: unit.quad.sump }, this.bench.params)}`);
+      this.notebook.note(unit, { kind: 'job', job: e.kind, botched: e.botched }, { saw: true });
+      c.voice.say(e.botched ? 'benchGirlBotched' : 'benchGirlDone', { force: true });
+      if (!e.botched) this.favour.add(e.girl, gb.p.favourDone);
+    } else if (e.type === 'handover') {
+      c.voice.say('benchHandOver', { force: true });
+    } else if (e.type === 'gaveUp') {
+      if (e.why === 'waited') c.voice.say('benchGaveUp', { force: true });
+    } else if (e.type === 'end') {
+      c.release('benchWork');
+      c.benchAt = null;
+    }
+  }
+
+  /** You finished the job a girl left half done at the bench: she is pleased (npc/girlBench.js). */
+  girlBenchFinished(job) {
+    const pn = this.girlBench.pending;
+    if (!pn || pn.job !== job) return;
+    this.girlBench.settle();
+    const c = this.companions.find((o) => o.character.id === pn.girl);
+    this.favour.add(pn.girl, this.girlBench.p.favourFinish);
+    c?.voice.say('benchFinished', { force: true });
+  }
+
   // Lights to work by -------------------------------------------------------
 
   /**
@@ -7196,6 +7322,7 @@ export class Game {
     if (auto) this.updateNicking(dt, ridden);
     if (auto || this.tea.forced) this.updateTea(dt, ridden);
     if (auto || this.flask.active) this.updateFlask(dt);
+    if (auto || this.girlBench.active || this.girlBench.pending) this.updateGirlBench(dt);
     if (auto) this.updateJumpers(dt);
     if (auto || this.dieselMistake.forced) this.updateDieselMistake(dt, ridden);
     this.bell.update(dt);
