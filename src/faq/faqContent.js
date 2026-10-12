@@ -444,9 +444,28 @@ export const FAQ_SECTIONS = [
         q: 'What time is it?',
         a: `Look at the clock on the barn wall, past the end of the workbench, or the clock on a dash that has one. Each game starts at its own
           time, some in the morning and some in the afternoon, and the day runs on about twelve times faster than real time, so a morning
-          start reaches dusk in about forty minutes and an afternoon one in ten or so. Beside the clock are a thermometer and a barometer: the
-          barometer drops before rain comes on.`,
+          start reaches dusk in about forty minutes and an afternoon one in ten or so. Beside the clock are a thermometer and a barometer (the
+          barometer drops before rain comes on) and, hung under them, the forecast board.`,
         tip: 'The clock on the barn wall tells you how long until dark; the barometer beside it drops before rain.',
+      },
+      {
+        q: 'Does the weather change during the day?',
+        a: `Sometimes. Most days stay as they began, but about two in five turn: a fine morning clouds over to rain by the afternoon, a grey
+          one drizzles, a wet one clears, fog burns off. The sky eases across over a few minutes, the rain follows part-way through, and a wet
+          turn cools the day a little. The barometer on the barn wall falls as it turns. Snow is the exception and stays what it is.`,
+        tip: 'Some days turn: a fine morning can go to rain by the afternoon. Check the board in the barn.',
+      },
+      {
+        q: 'How do I read the forecast board?',
+        a: `It hangs in the barn under the clock, on the north wall past the end of the workbench. It has three chalk pictures, for the morning,
+          the afternoon and the evening, with the part of the day it is now boxed and the ones gone by faded. Plan the jobs round it: do the
+          muck before the rain it shows, or wait for the sun it promises. Amy reads it and tells you what it says; Jess hardly looks.`,
+        tip: 'The forecast board under the barn clock shows morning, afternoon and evening. Plan the jobs round it.',
+      },
+      {
+        q: 'Why was the forecast wrong?',
+        a: `It usually isn't, but it is only a forecast: now and then it promises a change that never comes, or misses one that does. The sky
+          and the barometer are the truth. When it turns on you, the girls say so, and Jess enjoys it.`,
       },
       {
         q: 'Why is it getting dark?',

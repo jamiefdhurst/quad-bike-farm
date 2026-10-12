@@ -39,6 +39,7 @@ export const CHARACTERS = [
       reactEarsChance: 0.85, // covers her ears at revs beside her; claps a jump rather than cheering
       reactStartleChance: 0.95, // a pheasant out of the hedge makes her jump
       reactCheerChance: 0.45,
+      forecastChat: 0.85, // reads the board in the barn and tells you what it says
       reactWaveChance: 0.25, // a nod and a small wave, now and then
       photoPose: 1, // poses neatly
       photoFace: 0.12,
@@ -73,6 +74,7 @@ export const CHARACTERS = [
       reactEarsChance: 0.15, // loves the noise; cheers a jump with both arms up; flinches less
       reactStartleChance: 0.4, // laughs at the pheasant, mostly
       reactCheerChance: 0.95,
+      forecastChat: 0.2, // hardly looks at the board
       reactWaveChance: 0.85, // waves at anyone going by
       photoPose: 0.6,
       photoFace: 1, // pulls faces

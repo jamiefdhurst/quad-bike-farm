@@ -163,6 +163,12 @@ export class Weather {
     this.snowTarget = this.snow;
     this.cover = this.snow > 0 ? SNOW_AT_START : 0; // 0..1 how far the ground is under snow: it settles while snow falls and melts slowly when it warms
     this.nextChange = this.spell();
+    this.from = null; // the kind the sky is turning from, while the weather changes over (beginShift)
+    this.mix = 1; // 0..1 how far the changeover has got
+    this.shiftSeconds = 1;
+    this.peakDelta = 0; // degrees the day's warmest is still to move over the changeover
+    this.turning = null; // the turn the day has taken ({ from, to, worse, told }), for the girls to notice
+    this.promise = null; // what the forecast board says the day holds ({ worse, to }) or null, for the girls to read
   }
 
   get def() {
@@ -179,7 +185,36 @@ export class Weather {
     this.snow = this.snowTarget = k.snow ?? 0;
     if (this.snow > 0) this.cover = Math.max(this.cover, SNOW_AT_START);
     this.nextChange = this.spell();
+    this.from = null;
+    this.mix = 1;
+    this.peakDelta = 0;
     return true;
+  }
+
+  /**
+   * The weather turns to another kind over `seconds`: the sky blends across, the rain follows part-way through and the day's warmest
+   * moves by `warmth` degrees. `turning` is left for the girls to notice.
+   */
+  beginShift(to, seconds, { warmth = 0, note = null } = {}) {
+    if (!WEATHER_KINDS[to] || to === this.kind) return false;
+    this.from = this.kind;
+    this.kind = to;
+    this.mix = 0;
+    this.shiftSeconds = Math.max(1, seconds);
+    this.peakDelta = warmth;
+    this.nextChange = this.shiftSeconds * 0.4;
+    this.turning = note;
+    return true;
+  }
+
+  /** The kind's sky, or the blend of the old and the new while the weather changes over. */
+  get baseSky() {
+    if (!this.from || this.mix >= 1) return this.def.sky;
+    const a = WEATHER_KINDS[this.from].sky;
+    const b = this.def.sky;
+    const out = {};
+    for (const key of Object.keys(b)) out[key] = typeof b[key] === 'string' ? mixColor(a[key], b[key], this.mix) : lerp(a[key], b[key], this.mix);
+    return out;
   }
 
   get name() {
@@ -189,7 +224,7 @@ export class Weather {
   /** 0..1 how warm the day is for an engine in the sun: the sunshine, taken off by rain. */
   get warmth() {
     // The temperature nudges it: a frosty day takes the edge off the sun, a warm one adds to a dull day.
-    return clamp01(clamp01(this.def.sky.sunIntensity / 2.6) * (1 - 0.8 * this.rain) * (1 - 0.5 * this.snow) * this.sunUp + (this.temperature - MILD_C) * 0.01);
+    return clamp01(clamp01(this.baseSky.sunIntensity / 2.6) * (1 - 0.8 * this.rain) * (1 - 0.5 * this.snow) * this.sunUp + (this.temperature - MILD_C) * 0.01);
   }
 
   /** 0..1 how cold it is for an engine (see chillOf). */
@@ -212,7 +247,8 @@ export class Weather {
   }
 
   get wind() {
-    return this.def.wind * (1 + this.rain * 0.4);
+    const wind = this.from && this.mix < 1 ? lerp(WEATHER_KINDS[this.from].wind, this.def.wind, this.mix) : this.def.wind;
+    return wind * (1 + this.rain * 0.4);
   }
 
   /** Seconds until the rain changes again. */
@@ -222,6 +258,12 @@ export class Weather {
 
   update(dt) {
     const k = this.def;
+    if (this.from) {
+      const before = this.mix;
+      this.mix = Math.min(1, this.mix + dt / this.shiftSeconds);
+      this.peak += this.peakDelta * (this.mix - before);
+      if (this.mix >= 1) this.from = null;
+    }
     this.nextChange -= dt;
     if (this.nextChange <= 0) {
       this.nextChange = this.spell();
@@ -248,7 +290,7 @@ export class Weather {
 
   /** The sky's params for now: the kind's look, darkened towards a rainy sky while it rains. */
   skyParams() {
-    const base = this.def.sky;
+    const base = this.baseSky;
     const t = clamp01((this.rain - this.def.rain) / Math.max(0.2, 1 - this.def.rain));
     const out = {};
     for (const [key, v] of Object.entries(base)) {

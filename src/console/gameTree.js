@@ -231,6 +231,8 @@ export function buildGameTree(g, host) {
     gust: flag(() => g.wind.gust > 0.05, (v) => v && g.wind.blowGust(), 'on: a gust now'),
     time: num(() => g.daylight.hour, (v) => g.setTime(v), 0, 30, 'h', 'time of day, hours after midnight (past 24 is the same night going on)'),
     clock: text(() => g.daylight.text()),
+    forecast: text(() => g.forecast.describe(g.daylight.hour), 'what the barn board says and what the day will do'),
+    turn: flag(() => !!g.weather.from, (v) => v && g.turnWeatherNow(), 'on: the weather turns now (to what the forecast has, else something believable)'),
     darkness: ro(() => g.daylight.darkness),
   }), 'the day');
 

@@ -814,6 +814,18 @@ export class CompanionVoice {
       const situation = { sunny: 'weatherSunny', raining: 'weatherRain', fog: 'weatherFog', grey: 'weatherGrey', frost: 'weatherFrost', cold: 'weatherCold', warm: 'weatherWarm' }[kind];
       this.say(situation, { chance: 0.75 });
     }
+    // The board in the barn (world/forecast.js): a word on what it says, a while after the weather's been mentioned.
+    if (this.weatherSaid && !this.forecastSaid && weather.promise && this.weatherTime > this.weatherAt + 20) {
+      this.forecastSaid = true;
+      this.say(weather.promise.worse ? 'forecastWorse' : 'forecastBetter', { chance: this.params.forecastChat });
+    }
+    // The weather turning: a word once the sky has started to change, and when the board never said it would.
+    const turning = weather.turning;
+    if (turning && turning !== this.turnSeen && weather.mix > 0.3) {
+      this.turnSeen = turning;
+      const said = this.say(turning.worse ? 'turningWorse' : 'turningBetter', { chance: turning.told ? 0.6 : 0.2 });
+      if (!said && !turning.told) this.say('forecastMissed', { chance: 0.5 });
+    }
     const raining = weather.rain > 0.25;
     if (raining && this.wasRaining === false) this.say('rainStarts', { urgent: true, chance: 0.9 });
     if (!raining && this.wasRaining && weather.rain < 0.1) this.say('rainStops', { chance: 0.7 });

@@ -159,6 +159,8 @@ export function buildGirlsTab(d) {
     g.hud.toast('Farm wiped: the next load deals a new one');
   });
   show(both, 'the day', () => `${g.weather.temperature} °C (${g.weather.band}), chill ${g.weather.chill.toFixed(2)}, frost ${g.weather.frost.toFixed(2)}`);
+  show(both, 'the forecast', () => g.forecast.describe(g.daylight.hour));
+  button(both, 'Turn the weather now (as the forecast says it will)', () => g.hud.toast(g.turnWeatherNow() ? `The weather is turning to ${g.weather.name}` : 'This weather has nowhere to turn'));
   slider(both, 'time of day (hours)', () => g.daylight.hour, (v) => g.setTime(v), 0, 30, 0.05);
   show(both, 'Jess\'s dare', () => g.dares.describe());
   show(both, 'a phone call', () => `${g.phoneCalls.describe()}${g.companions.map((c) => (g.favour.moodLeft(c.character.id) > 0 ? `; ${c.name} in a mood for ${Math.round(g.favour.moodLeft(c.character.id))} s` : '')).join('')}`);

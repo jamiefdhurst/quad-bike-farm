@@ -3224,3 +3224,15 @@ Jamie: the green stalls a lot, cold and warm. Found with the real engine model r
 - **Orange:** its roughness alone (0.75 to 0.9) is on the line, so it is still erratic in many games. That is a roughness decision, not wear.
 - **A weak battery** (under 40%) kills any petrol engine at idle (the 10 October charging change); I could not see Jamie's save, so that is unchecked as a cause.
 - **Not checked** in the running game: the headless runs use the engine alone, with no clutch or braking load.
+
+## A day that changes, and the forecast board (TODO 28)
+
+Jamie settled: a scheduled turn rather than random drift (so it can be forecast), only believable turns, a board that is right most of the time, the girls reacting lightly, nothing for the tarp or the washing line.
+
+- **The turn is dealt at the start** from `this.seed ^ 0x2c9d` (`src/world/forecast.js`, pure, tested): 40% of games turn, between 1 and 5 game hours after the start. The table `SHIFTS` is the believable ones only (fair weather clouds over, grey goes wet, wet clears, fog burns off); snow never turns, because its own cover and melt rules already deal with it, and nothing turns to fog or snow.
+- **Easing across, not jumping.** `Weather.beginShift` blends the sky (`baseSky`) and the wind over `shiftHours` (0.75 game hours, about 3 real minutes at the usual clock rate). The rain retargets 40% of the way through so the sky darkens before it falls, and the barometer moves with the sky, a little ahead of the rain. The day's warmest moves by the difference in `KIND_WARMTH` between the kinds (sunny +1.5, rain -1.5 degrees), spread over the blend through `peak`, which `updateDaylight` already reads each frame.
+- **The board is right 80% of the time about whether the day turns.** One roll per day: right means it shows the real turn; wrong means no turn when one comes, or a made-up turn when none does. It shows three slots, with the slot's middle hour deciding which kind it shows. It says nothing about wind or temperature. It never changes its mind during the day.
+- **Forced or hand-set weather stays put.** `?weather=` makes the forecast `frozen`, and `setWeatherKind` cancels any turn left, so the debug panel and console work as they did.
+- **The girls.** Amy reads the board early (`forecastChat` 0.85, Jess 0.2) and says whether it is turning worse or better. As the sky turns (once the blend is 30% across) either may remark, more often when the board said so; when it did not, `forecastMissed` is the fallback. These are reactions to the weather in `watchWeather`, with their own cooldowns, not offers.
+- **Not saved.** The day is dealt afresh each load like the weather it came from; the farm's save does not carry it.
+- **Not checked in a browser:** the slate's drawing (symbols, text fit) and how the sky blend looks. Unit tests cover the dealing, the board, the blend, the rain timing and the temperature move.

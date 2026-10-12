@@ -56,6 +56,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   reactEarsChance: 0.5, // revs right beside her: the chance she covers her ears
   reactStartleChance: 0.7, // a pheasant bursting out of the hedge near her: the chance she jumps
   reactCheerChance: 0.6, // someone landing a jump she can see: the chance she cheers
+  forecastChat: 0.5, // reading the forecast board: the chance she mentions what it says early in the game
   reactWaveChance: 0.4, // someone going by on the lane or coming in at the gate: the chance she waves
   photoPose: 1, // when you raise the camera: how likely she is to pose nicely (against her face and palm weights)
   photoFace: 0.3, // ... to pull a face
@@ -348,6 +349,7 @@ export const COMPANION_PARAM_RANGES = {
   reactEarsChance: [0, 1, 0.05],
   reactStartleChance: [0, 1, 0.05],
   reactCheerChance: [0, 1, 0.05],
+  forecastChat: [0, 1, 0.05],
   reactWaveChance: [0, 1, 0.05],
   photoPose: [0, 2, 0.05],
   photoFace: [0, 2, 0.05],

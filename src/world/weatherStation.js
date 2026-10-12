@@ -24,10 +24,12 @@ const SETTLED = { sunny: 0.85, fair: 0.7, overcast: 0.5, drizzle: 0.35, rain: 0.
 
 /**
  * The barometer's reading, 0 (stormy) to 1 (very dry), for the weather: `kind` (weather.js), `rain` falling now and `target` (where
- * the rain is heading). It falls ahead of rain coming on and lower still while it pours.
+ * the rain is heading), and `from` and `mix` while it turns to `kind`. It falls ahead of rain coming on and lower still while it pours.
  */
-export function baroReading(kind, rain, target) {
-  const settled = SETTLED[kind] ?? 0.5;
+export function baroReading(kind, rain, target, from = null, mix = 1) {
+  const now = SETTLED[kind] ?? 0.5;
+  // While the weather turns the glass moves across with the sky (it leads the rain, which comes part-way through).
+  const settled = from ? (SETTLED[from] ?? 0.5) + (now - (SETTLED[from] ?? 0.5)) * Math.min(1, mix * 1.5) : now;
   return Math.min(1, Math.max(0, settled - 0.35 * Math.max(0, target - rain) - 0.15 * rain));
 }
 
@@ -103,6 +105,66 @@ function drawPin(ctx) {
   ctx.fill();
 }
 
+const CHALK = '#ece8da';
+
+function cloudShape(ctx, x, y, w) {
+  ctx.beginPath();
+  ctx.arc(x - w * 0.22, y, w * 0.2, 0, Math.PI * 2);
+  ctx.arc(x + w * 0.05, y - w * 0.12, w * 0.26, 0, Math.PI * 2);
+  ctx.arc(x + w * 0.3, y, w * 0.18, 0, Math.PI * 2);
+  ctx.rect(x - w * 0.22, y, w * 0.52, w * 0.18);
+  ctx.fill();
+}
+
+/** A weather picture in chalk (forecast.js SYMBOLS) centred on (x, y), about `w` wide. */
+export function drawSymbol(ctx, symbol, x, y, w) {
+  ctx.fillStyle = ctx.strokeStyle = CHALK;
+  ctx.lineWidth = Math.max(2, w * 0.05);
+  ctx.lineCap = 'round';
+  const sun = (sx, sy, r) => {
+    ctx.beginPath();
+    ctx.arc(sx, sy, r, 0, Math.PI * 2);
+    ctx.stroke();
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(sx + Math.cos(a) * r * 1.35, sy + Math.sin(a) * r * 1.35);
+      ctx.lineTo(sx + Math.cos(a) * r * 1.75, sy + Math.sin(a) * r * 1.75);
+      ctx.stroke();
+    }
+  };
+  if (symbol === 'sun') sun(x, y, w * 0.2);
+  else if (symbol === 'sunCloud') {
+    sun(x - w * 0.14, y - w * 0.14, w * 0.14);
+    cloudShape(ctx, x + w * 0.06, y + w * 0.1, w * 0.8);
+  } else if (symbol !== 'fog') cloudShape(ctx, x, y - w * (symbol === 'cloud' ? 0 : 0.12), w * 0.8);
+  if (symbol === 'drizzle' || symbol === 'rain') {
+    const n = symbol === 'rain' ? 4 : 3;
+    for (let i = 0; i < n; i++) {
+      const dx = x - w * 0.24 + (i / (n - 1)) * w * 0.48;
+      ctx.beginPath();
+      ctx.moveTo(dx, y + w * 0.12);
+      ctx.lineTo(dx - w * 0.06, y + w * (symbol === 'rain' ? 0.34 : 0.26));
+      ctx.stroke();
+    }
+  } else if (symbol === 'snow') {
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.arc(x - w * 0.22 + i * w * 0.22, y + w * 0.26, w * 0.04, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (symbol === 'fog') {
+    for (let i = 0; i < 4; i++) {
+      ctx.beginPath();
+      ctx.moveTo(x - w * 0.34, y - w * 0.12 + i * w * 0.14);
+      ctx.lineTo(x + w * 0.34, y - w * 0.12 + i * w * 0.14);
+      ctx.stroke();
+    }
+  }
+}
+
+const SYMBOL_WORDS = { sun: 'Sunny', sunCloud: 'Sunny spells', cloud: 'Overcast', drizzle: 'Drizzle', rain: 'Rain', fog: 'Fog', snow: 'Snow' };
+
 const HOURS = ['12', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'];
 
 export class WeatherStation {
@@ -128,11 +190,54 @@ export class WeatherStation {
       this.group.add(rim);
       return { name, canvas, ctx: canvas.getContext('2d'), texture, shown: null };
     });
+    // The forecast board hung under it: a slate with the morning, the afternoon and the evening (forecast.js).
+    const slate = dialCanvas();
+    slate.width = 512;
+    slate.height = 160;
+    const slateTexture = new THREE.CanvasTexture(slate);
+    slateTexture.colorSpace = THREE.SRGBColorSpace;
+    slateTexture.anisotropy = 4;
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(0.96, 0.32, 0.02), new THREE.MeshStandardMaterial({ color: 0x6a4a2c, roughness: 0.8 }));
+    frame.position.set(0, -0.37, 0.01);
+    this.group.add(frame);
+    const slateFace = new THREE.Mesh(new THREE.PlaneGeometry(0.9, (0.9 * 160) / 512), new THREE.MeshStandardMaterial({ map: slateTexture, roughness: 0.9 }));
+    slateFace.position.set(0, -0.37, 0.0215);
+    this.group.add(slateFace);
+    this.slate = { canvas: slate, ctx: slate.getContext('2d'), texture: slateTexture, shown: null };
     scene.add(this.group);
   }
 
+  /** Redraws the forecast board (forecast.js `board`) when what it shows has changed. */
+  setForecast(slots) {
+    const key = slots.map((s) => `${s.symbol}${s.past ? 'p' : ''}${s.now ? 'n' : ''}`).join();
+    if (this.slate.shown === key) return;
+    this.slate.shown = key;
+    const { ctx, canvas } = this.slate;
+    ctx.fillStyle = '#24302a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.textAlign = 'center';
+    const w = canvas.width / slots.length;
+    slots.forEach((s, i) => {
+      const cx = w * (i + 0.5);
+      ctx.globalAlpha = s.past ? 0.35 : 1;
+      ctx.fillStyle = CHALK;
+      ctx.font = '26px "Comic Sans MS", cursive, sans-serif';
+      ctx.fillText(s.label, cx, 32);
+      drawSymbol(ctx, s.symbol, cx, 82, 90);
+      ctx.font = '22px "Comic Sans MS", cursive, sans-serif';
+      ctx.fillText(SYMBOL_WORDS[s.symbol] ?? '', cx, 148);
+      if (s.now) {
+        ctx.strokeStyle = CHALK;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(cx - w / 2 + 8, 6, w - 16, canvas.height - 12);
+      }
+      ctx.globalAlpha = 1;
+    });
+    this.slate.texture.needsUpdate = true;
+  }
+
   /** Redraws whatever has moved on: `hour` (time of day), `celsius`, and the weather (`kind`, `rain`, `target`). */
-  update(hour, celsius, kind, rain, target) {
+  update(hour, celsius, kind, rain, target, from = null, mix = 1) {
     const [clock, thermo, baro] = this.dials;
     const minute = Math.floor(hour * 60);
     if (clock.shown !== minute) {
@@ -154,7 +259,7 @@ export class WeatherStation {
       drawPin(ctx);
       thermo.texture.needsUpdate = true;
     }
-    const reading = Math.round(baroReading(kind, rain, target) * 100) / 100;
+    const reading = Math.round(baroReading(kind, rain, target, from, mix) * 100) / 100;
     if (baro.shown !== reading) {
       baro.shown = reading;
       const { ctx } = baro;

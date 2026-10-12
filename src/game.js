@@ -40,6 +40,7 @@ import { DEFAULT_WAITING_PARAMS, WAITING_PARAM_RANGES } from './npc/waiting.js';
 import { Daylight, DEFAULT_DAYLIGHT_PARAMS, DAYLIGHT_PARAM_RANGES } from './world/daylight.js';
 import { VehicleLights, VEHICLE_LIGHT_PARAM_RANGES } from './effects/vehicleLights.js';
 import { WeatherStation } from './world/weatherStation.js';
+import { Forecast, DEFAULT_FORECAST_PARAMS, FORECAST_PARAM_RANGES, KIND_WARMTH } from './world/forecast.js';
 import { choose, mainNeed, OFFER_KINDS } from './npc/chooser.js';
 import { girlsLeftOut } from './npc/leftOut.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
@@ -498,6 +499,11 @@ export class Game {
     const celsius = forcedTemp !== null && forcedTemp !== '' && Number.isFinite(+forcedTemp) ? this.daylight.peakFor(+forcedTemp) : pickTemperature(kind, createRandom(this.seed ^ 0x7e3b));
     this.weather = new Weather(kind, random, celsius);
     this.weather.temperature = Math.round(this.daylight.temperature(celsius) * 10) / 10;
+    // Whether the day turns to something else, and what the barn's forecast board says about it (world/forecast.js); a forced weather stays put.
+    this.forecastParams = { ...DEFAULT_FORECAST_PARAMS };
+    this.forecastRandom = createRandom(this.seed ^ 0x2c9d);
+    this.forecast = new Forecast(kind, this.daylight.hour, this.forecastRandom, this.forecastParams, { frozen: forced !== null });
+    this.weather.promise = this.forecast.promise();
     // The day's wind: which way it blows and its gusts (world/wind.js), dealt from the game's seed like the weather.
     const windRandom = createRandom(this.seed ^ 0x817d);
     this.wind = new Wind(windRandom, pickHeading(windRandom), { ...DEFAULT_WIND_PARAMS });
@@ -1247,6 +1253,7 @@ export class Game {
     registerTuning('Standing about', this.idlePoseParams, IDLE_POSE_PARAM_RANGES);
     registerTuning('Waiting about', this.waitingParams, WAITING_PARAM_RANGES);
     registerTuning('Time of day', this.daylight.p, DAYLIGHT_PARAM_RANGES);
+    registerTuning('Forecast', this.forecastParams, FORECAST_PARAM_RANGES);
     registerTuning('Vehicle lights', this.vehicleLights.p, VEHICLE_LIGHT_PARAM_RANGES);
     registerTuning('Trailer', this.trailer.p, TRAILER_PARAM_RANGES);
     registerTuning('Loading ramps', this.trailer.lp, LOAD_PARAM_RANGES, { onChange: () => this.trailer.refreshRamps() });
@@ -1374,6 +1381,8 @@ export class Game {
   /** Changes the weather to a kind at once, with the sky, the rain and the frost on the seats following. */
   setWeatherKind(kind) {
     if (!this.weather.setKind(kind)) return false;
+    this.forecast.cancel(); // set by hand: the day no longer turns, and the board has nothing to say
+    this.weather.promise = null;
     this.world.setWeather(this.weather);
     for (const unit of this.units) unit.quad.seatFrost = this.weather.seatFrost;
     return true;
@@ -4195,9 +4204,28 @@ export class Game {
       const q = unit.quad;
       if (q.lights && q.lights.mode === 'off' && d.darkness > 0.5 && this.companions.some((c) => c.quad === q && c.fsm.is('driving'))) q.lights.set('low');
     }
-    this.station.update(d.hour, w.temperature, w.kind, w.rain, w.target);
+    const turn = this.forecast.update(d.hour);
+    if (turn) this.turnWeather(turn);
+    this.station.update(d.hour, w.temperature, w.kind, w.rain, w.target, w.from, w.mix);
+    this.station.setForecast(this.forecast.board(d.hour));
     const board = this.boardUnit ?? this.player.vehicle?.unit ?? null;
     this.vehicleLights.update(this.units, this.camera.position, board, this.lightingUnit ?? null, d.darkness);
+  }
+
+  /** The weather turns to another kind (forecast.js): the sky eases across, the rain follows and the day's warmest moves; the girls notice. */
+  turnWeather(turn) {
+    const seconds = (this.forecastParams.shiftHours * 3600) / this.daylight.p.clockRate;
+    const warmth = ((KIND_WARMTH[turn.to] ?? 0) - (KIND_WARMTH[turn.from] ?? 0)) * this.forecastParams.tempShiftScale;
+    this.weather.beginShift(turn.to, seconds, { warmth, note: { ...turn } });
+    console.info(`The weather turns from ${turn.from} to ${turn.to} (${turn.told ? 'as the board said' : 'not on the board'}) over ${Math.round(seconds)} s`);
+  }
+
+  /** Turns the weather now, as it would at its time (the debug panel and the console). Returns false if this kind has nowhere to turn. */
+  turnWeatherNow() {
+    const turn = this.forecast.turnNow(this.weather.kind, this.daylight.hour, this.forecastRandom);
+    if (!turn) return false;
+    this.turnWeather(turn);
+    return true;
   }
 
   /**
