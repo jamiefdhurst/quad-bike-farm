@@ -1,0 +1,201 @@
+import { describe, it, expect } from 'vitest';
+import {
+  applySkin,
+  unskin,
+  blendWeights,
+  weld,
+  subdivide,
+  cut,
+  openEdges,
+  edgeLoops,
+  rayHit,
+  inTriangle,
+  smoothNormals,
+} from '../src/npc/garmentMesh.js';
+import { buildTop, topFields, POLO, JUMPER } from '../src/npc/polo.js';
+
+const IDENTITY = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0];
+// A quarter turn about y with a drop, as her bind pose is to the way she stands.
+const TURN = [0, 0, -1, 0.1, 0, 1, 0, -0.02, 1, 0, 0, 0.3];
+
+const vert = (bind, normal = [0, 0, 1], skin = IDENTITY, weights = [[0, 1]]) => ({ bind, rest: applySkin(skin, bind), normal, weights, skin });
+
+/** A flat grid in the xy plane, `n` by `n` squares of side 1/n, as a welded mesh. */
+function grid(n) {
+  const verts = [];
+  const tris = [];
+  for (let j = 0; j <= n; j++) for (let i = 0; i <= n; i++) verts.push(vert([i / n, j / n, 0], [0, 0, 1], IDENTITY, [[i % 3, 0.6], [5, 0.4]]));
+  const at = (i, j) => j * (n + 1) + i;
+  for (let j = 0; j < n; j++) {
+    for (let i = 0; i < n; i++) tris.push([at(i, j), at(i + 1, j), at(i, j + 1)], [at(i + 1, j), at(i + 1, j + 1), at(i, j + 1)]);
+  }
+  return { verts, tris };
+}
+
+describe('garment skin maps', () => {
+  it('carries a point to where she stands and back', () => {
+    const p = [0.3, 1.1, -0.2];
+    const back = unskin(TURN, applySkin(TURN, p));
+    back.forEach((c, k) => expect(c).toBeCloseTo(p[k], 9));
+  });
+
+  it('blends skin weights into at most four that sum to one', () => {
+    const w = blendWeights([[1, 0.5], [2, 0.3], [3, 0.2]], [[4, 0.6], [5, 0.25], [6, 0.15]], 0.5);
+    expect(w.length).toBe(4);
+    expect(w.reduce((s, [, x]) => s + x, 0)).toBeCloseTo(1, 9);
+    expect(w[0][0]).toBe(4);
+  });
+});
+
+describe('weld and subdivide', () => {
+  it('welds the corners a flat-shaded body keeps apart', () => {
+    // Two triangles sharing an edge, each with its own copies of the shared corners.
+    const verts = [vert([0, 0, 0]), vert([1, 0, 0]), vert([0, 1, 0]), vert([1, 0, 0], [1, 0, 0]), vert([1, 1, 0]), vert([0, 1, 0], [1, 0, 0])];
+    const m = weld(verts, [0, 1, 2, 3, 4, 5], () => true);
+    expect(m.verts.length).toBe(4);
+    const shared = m.verts.find((v) => v.bind[0] === 1 && v.bind[1] === 0);
+    expect(shared.normal[0]).toBeCloseTo(Math.SQRT1_2, 6);
+  });
+
+  it('splits each triangle in four and rounds the new points out over curved normals', () => {
+    const flat = subdivide(grid(1), 0.75);
+    expect(flat.tris.length).toBe(8);
+    for (const v of flat.verts) expect(v.bind[2]).toBeCloseTo(0, 9);
+    // Normals leaning apart, as over a shoulder: the point between bulges out towards them.
+    const a = vert([0, 0, 0], [-0.6, 0, 0.8]);
+    const b = vert([1, 0, 0], [0.6, 0, 0.8]);
+    const c = vert([0.5, 1, 0], [0, 0.6, 0.8]);
+    const round = subdivide({ verts: [a, b, c], tris: [[0, 1, 2]] }, 1);
+    const mid = round.verts.find((v) => Math.abs(v.bind[0] - 0.5) < 1e-6 && Math.abs(v.bind[1]) < 1e-6);
+    expect(mid.bind[2]).toBeGreaterThan(0.05);
+  });
+});
+
+describe('cutting along a line', () => {
+  const field = (v) => v.bind[0] + 0.35 * v.bind[1] - 0.61; // a slanted line through the grid's triangles
+
+  it('keeps only the inside, with the edge exactly on the line and no cracks', () => {
+    const m = cut(grid(5), field, 'line');
+    for (const v of m.verts.filter((_, i) => m.tris.some((t) => t.includes(i)))) expect(field(v)).toBeLessThan(1e-9);
+    const onLine = m.verts.filter((v) => v.edge === 'line');
+    expect(onLine.length).toBeGreaterThan(5);
+    for (const v of onLine) expect(field(v)).toBeCloseTo(0, 9);
+    // Open edges are the grid's own border and the cut, which together make one loop.
+    expect(edgeLoops(m).length).toBe(1);
+    for (const v of onLine) expect(v.weights.reduce((s, [, w]) => s + w, 0)).toBeCloseTo(1, 9);
+  });
+
+  it('with keep both, draws the line in and gives the far side its own copies of the points on it', () => {
+    const before = grid(5);
+    const m = cut(before, field, 'band', { keep: 'both' });
+    expect(m.tris.length).toBeGreaterThan(before.tris.length);
+    expect(m.sides.length).toBe(m.tris.length);
+    const copies = m.verts.filter((v) => v.outside);
+    expect(copies.length).toBe(m.verts.filter((v) => v.edge === 'band' && !v.outside).length);
+    m.tris.forEach((t, k) => {
+      if (m.sides[k] === 'out') for (const i of t) expect(m.verts[i].edge !== 'band' || m.verts[i].outside).toBe(true);
+    });
+    // The copies shade as one surface with the originals.
+    const normals = smoothNormals(m);
+    normals.forEach((n) => expect(n[2]).toBeCloseTo(1, 6));
+  });
+
+  it('finds where a ray meets the mesh', () => {
+    const m = grid(4);
+    const hit = rayHit(m, [0.3, 0.6, 1], [0, 0, -1]);
+    expect(hit.t).toBeCloseTo(1, 9);
+    const v = inTriangle(m, hit.tri, hit.bary);
+    expect(v.bind[0]).toBeCloseTo(0.3, 9);
+    expect(v.bind[1]).toBeCloseTo(0.6, 9);
+    expect(rayHit(m, [2, 2, 1], [0, 0, -1])).toBe(null);
+    expect(openEdges(m).length).toBe(16);
+  });
+});
+
+/**
+ * A stand-in body: an upright cylinder for her torso (bone 0, Spine2) from the hips to above her neck, and nothing else, stored
+ * turned a quarter round as her real body is (`TURN`), so a mistake between the stored and standing frames shows.
+ */
+function cylinderBody() {
+  const bones = {
+    Neck: [0, 1.2, 0],
+    Spine: [0, 0.88, 0],
+    LeftArm: [0.4, 1.17, 0],
+    LeftForeArm: [0.42, 0.97, 0],
+    LeftHand: [0.44, 0.8, 0],
+    RightArm: [-0.4, 1.17, 0],
+    RightForeArm: [-0.42, 0.97, 0],
+    RightHand: [-0.44, 0.8, 0],
+  };
+  const boneNames = ['Spine2', 'LeftArm', 'RightArm'];
+  const segs = 24;
+  const rows = [];
+  for (let y = 0.7; y <= 1.3001; y += 0.03) rows.push(y);
+  const verts = [];
+  const index = [];
+  rows.forEach((y) => {
+    for (let s = 0; s < segs; s++) {
+      const a = (s / segs) * Math.PI * 2;
+      const rest = [0.12 * Math.sin(a), y, 0.12 * Math.cos(a)];
+      const bind = unskin(TURN, rest);
+      const normal = unskin([...TURN.slice(0, 3), 0, ...TURN.slice(4, 7), 0, ...TURN.slice(8, 11), 0], [Math.sin(a), 0, Math.cos(a)]);
+      verts.push({ bind, rest, normal, weights: [[0, 1]], skin: TURN });
+    }
+  });
+  for (let r = 0; r < rows.length - 1; r++) {
+    for (let s = 0; s < segs; s++) {
+      const a = r * segs + s;
+      const b = r * segs + ((s + 1) % segs);
+      index.push(a, b, a + segs, b, b + segs, a + segs);
+    }
+  }
+  const waist = unskin(TURN, [0, bones.Spine[1] + 0.01, 0])[1];
+  return { verts, index, boneNames, bones, paint: () => 'shirt', waist };
+}
+
+describe('knitted tops', () => {
+  it('cuts the polo round the neck and at a tucked hem, measured as she stands', () => {
+    const body = cylinderBody();
+    const { shell, placket } = buildTop(body, POLO);
+    const F = topFields(body, POLO);
+    const neck = shell.verts.filter((v) => v.edge === 'neck' && !v.apart);
+    const hem = shell.verts.filter((v) => v.edge === 'hem' && !v.apart);
+    expect(neck.length).toBeGreaterThan(20);
+    expect(hem.length).toBeGreaterThan(20);
+    // On a straight cylinder the neck line is the cap above her neck bone, all the way round.
+    for (const v of neck) expect(v.rest[1]).toBeCloseTo(body.bones.Neck[1] + POLO.neckCap, 3);
+    for (const v of hem) expect(v.bind[1]).toBeCloseTo(body.waist - POLO.hemDrop, 3);
+    // Everything stands off the body, and nothing is above the neck line.
+    for (const v of shell.verts.filter((q) => !q.apart)) {
+      expect(Math.hypot(v.rest[0], v.rest[2])).toBeGreaterThan(0.12);
+      expect(F.neckField({ ...v, rest: [v.rest[0] * 0.12 / Math.hypot(v.rest[0], v.rest[2]), v.rest[1], v.rest[2] * 0.12 / Math.hypot(v.rest[0], v.rest[2])] })).toBeLessThan(1e-6);
+    }
+    expect(shell.normals.length).toBe(shell.verts.length);
+  });
+
+  it('puts the placket down the middle of her front, from the neck, with its buttons', () => {
+    const body = cylinderBody();
+    const { placket } = buildTop(body, POLO);
+    expect(placket).not.toBe(null);
+    expect(placket.top).toBeGreaterThan(body.bones.Neck[1] + POLO.neckCap - 0.01);
+    expect(placket.buttons.length).toBe(3);
+    for (const b of placket.buttons) {
+      expect(Math.abs(b.centre[0])).toBeLessThan(0.002);
+      expect(b.centre[2]).toBeGreaterThan(0.12); // on her front (+z as she stands), not her side
+      expect(b.normal[2]).toBeGreaterThan(0.9);
+    }
+    const ys = placket.verts.map((v) => v.rest[1]);
+    expect(Math.max(...ys) - Math.min(...ys)).toBeCloseTo(POLO.placketLength, 2);
+  });
+
+  it('gives the jumper no placket, ribbing at the hem and a hem over the shorts', () => {
+    const body = cylinderBody();
+    const { shell, placket, shade } = buildTop(body, JUMPER);
+    expect(placket).toBe(null);
+    const hem = shell.verts.filter((v) => v.edge === 'hem' && !v.apart);
+    for (const v of hem) expect(v.bind[1]).toBeCloseTo(body.waist - JUMPER.hemDrop, 3);
+    const ribbed = shell.verts.map((v, i) => [v, shade[i]]).filter(([v]) => !v.apart && v.bind[1] < body.waist - JUMPER.hemDrop + JUMPER.hemBand - 0.005);
+    expect(ribbed.length).toBeGreaterThan(0);
+    for (const [, k] of ribbed) expect(k).toBe(JUMPER.bandShade);
+  });
+});

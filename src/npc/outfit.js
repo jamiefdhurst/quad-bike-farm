@@ -1,9 +1,14 @@
 import * as THREE from 'three';
+import { buildTop, buttonShape, poloFields, POLO, JUMPER } from './polo.js';
+import { unskin } from './garmentMesh.js';
 
 // Outfits for the companion. The Quaternius model is textured from a tiny
 // palette (one flat colour per band), so recolouring clothes is a matter of
 // swapping palette entries. Extra garment parts (a collar, boot shafts) are
 // small meshes attached to bones so they follow the animations.
+
+// The polo as a garment over her body instead of painted on (polo.js), while it's being tried out: ?polo=shell.
+const POLO_SHELL = new URLSearchParams(globalThis.location?.search ?? '').get('polo') === 'shell';
 
 // Palette colours in the source texture.
 const PALETTE = {
@@ -468,7 +473,7 @@ function withNecklineStrip(texture) {
  * squeezed into its left half, and each shirt triangle round her neck that reaches the neckline is mapped across the strip by
  * its height above the neckline at that angle: shirt below, skin above. Once per geometry; each girl has her own.
  */
-function cutNeckline(rig, body) {
+function cutNeckline(rig, body, line = null) {
   const original = body.material.userData.baseMap ?? body.material.map;
   if (!original?.image || !rig.bones.Neck) return;
   const strip = withNecklineStrip(original);
@@ -492,6 +497,12 @@ function cutNeckline(rig, body) {
         for (let t = 0; t < index.length; t += 3) {
           const tri = [index[t], index[t + 1], index[t + 2]];
           if (!tri.every((i) => pal.is(i, PALETTE.shirt))) continue;
+          if (line) {
+            // The polo garment's own neckline (`above(i)` is vertex i's height above it, worked out where she stands).
+            const d = tri.map(line.above);
+            if (tri.some(line.near) && Math.max(...d) > -0.01) tri.forEach((i, k) => cut.push([i, d[k]]));
+            continue;
+          }
           const ps = tri.map(at);
           const r = ps.map((q) => Math.hypot(q.x - neck.x, q.z - neck.z));
           // Height above the neckline; anything further out than her neck counts as further below it, so the line stays round
@@ -700,7 +711,7 @@ export function applyOutfit(rig, outfit) {
   rig.root.updateMatrixWorld(true);
   rig.outfitParts = [];
   const body = bodyMesh(rig);
-  if (body && outfit.collar) cutNeckline(rig, body);
+  if (body && outfit.collar) cutNeckline(rig, body, POLO_SHELL ? poloNeckPaint(rig, body) : null);
   rig.model.traverse((o) => {
     if (!o.isMesh) return;
     const mat = o.material;
@@ -834,13 +845,234 @@ function addJumper(rig, color, shirtHex) {
   );
 }
 
+/**
+ * Her body as plain data for polo.js: each vertex's position as stored (`bind`, a T-pose turned a quarter round) and as she
+ * stands (`rest`), both in root space, its normal, skin weights and `skin`, the map from one to the other. Needs her in her
+ * rest pose.
+ */
+function bodyData(rig, body) {
+  rig.root.updateMatrixWorld(true);
+  body.skeleton.update();
+  const g = body.geometry;
+  const pos = g.attributes.position;
+  const nrm = g.attributes.normal;
+  const si = g.attributes.skinIndex;
+  const sw = g.attributes.skinWeight;
+  const toRoot = rig.root.matrixWorld.clone().invert().multiply(body.matrixWorld);
+  const fromRoot = toRoot.clone().invert();
+  const bm = body.skeleton.boneMatrices;
+  const v = new THREE.Vector3();
+  const sum = new THREE.Matrix4();
+  const verts = [];
+  for (let i = 0; i < pos.count; i++) {
+    const bind = v.fromBufferAttribute(pos, i).applyMatrix4(toRoot).toArray();
+    const normal = v.fromBufferAttribute(nrm, i).transformDirection(toRoot).toArray();
+    const weights = [];
+    const acc = new Array(16).fill(0);
+    for (let k = 0; k < 4; k++) {
+      const w = sw.getComponent(i, k);
+      if (!w) continue;
+      const b = si.getComponent(i, k);
+      weights.push([b, w]);
+      for (let e = 0; e < 16; e++) acc[e] += w * bm[b * 16 + e];
+    }
+    const e = sum.fromArray(acc).premultiply(body.bindMatrixInverse).multiply(body.bindMatrix).premultiply(toRoot).multiply(fromRoot).elements;
+    const skin = [e[0], e[4], e[8], e[12], e[1], e[5], e[9], e[13], e[2], e[6], e[10], e[14]];
+    const rest = rig.root.worldToLocal(body.localToWorld(body.getVertexPosition(i, v))).toArray();
+    verts.push({ bind, rest, normal, weights, skin });
+  }
+  const bones = {};
+  for (const name of Object.keys(rig.bones)) bones[name] = bonePos(rig, name).toArray();
+  const pal = paletteUv(body);
+  const bands = Object.entries(PALETTE);
+  const paint = (i) => bands.find(([, c]) => pal?.is(i, c))?.[0] ?? 'other';
+  const waist = (rig.bones.Spine ? bonePos(rig, 'Spine') : bonePos(rig, 'Hips')).y + 0.01; // as the shorts
+  return { verts, index: g.index ? [...g.index.array] : [...Array(pos.count).keys()], boneNames: body.skeleton.bones.map((b) => b.name), bones, paint, waist, fromRoot };
+}
+
+/** The body's paint under the polo garment: shirt up to a little below the garment's neckline, skin above, so none shows. */
+function poloNeckPaint(rig, body) {
+  if (!rig.bones.Neck || !rig.bones.LeftArm || !rig.bones.RightArm) return null;
+  const data = bodyData(rig, body);
+  const { neckField } = poloFields(data);
+  const neck = data.bones.Neck;
+  return {
+    above: (i) => neckField(data.verts[i]) + 0.006,
+    near: (i) => {
+      const r = data.verts[i].rest;
+      return Math.hypot(r[0] - neck[0], r[2] - neck[2]) < 0.12 && r[1] > neck[1] - 0.1;
+    },
+  };
+}
+
+/** Stitching for the placket, drawn once: tonal thread down both long edges and a box across the bottom. */
+let placketStitchMap = null;
+const STITCH_BASE = 0.8; // the texture's ground (sRGB); the material colour is divided by its linear value so the fabric matches the shirt
+function placketStitches() {
+  if (placketStitchMap) return placketStitchMap;
+  const w = 64;
+  const h = 360;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  const ground = Math.round(255 * STITCH_BASE);
+  ctx.fillStyle = `rgb(${ground},${ground},${ground})`;
+  ctx.fillRect(0, 0, w, h);
+  // A little shading towards the long edges, where it turns down.
+  for (const [x, a] of [[0, 0.22], [2, 0.12], [w - 2, 0.12], [w - 1, 0.22]]) {
+    ctx.fillStyle = `rgba(0,0,0,${a})`;
+    ctx.fillRect(x, 0, 1, h);
+  }
+  ctx.strokeStyle = 'rgb(250,250,250)';
+  ctx.lineWidth = 1.6;
+  ctx.setLineDash([4, 2.5]);
+  const edge = 7;
+  ctx.beginPath();
+  ctx.moveTo(edge, 0);
+  ctx.lineTo(edge, h - 9);
+  ctx.lineTo(w - edge, h - 9);
+  ctx.lineTo(w - edge, 0);
+  ctx.moveTo(edge, h - 16);
+  ctx.lineTo(w - edge, h - 16);
+  ctx.stroke();
+  // A shadow along the bottom where it sits on the shirt.
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.fillRect(0, h - 2, w, 2);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  placketStitchMap = tex;
+  return tex;
+}
+
+/** A skinned mesh from polo.js's arrays (bind frame, root space), bound to her skeleton like her body. */
+function skinnedFromArrays(rig, body, data, name, { positions, normals, weights, colors, uvs, index }, material) {
+  const P = [];
+  const N = [];
+  const SI = [];
+  const SW = [];
+  const v = new THREE.Vector3();
+  positions.forEach((p, i) => {
+    P.push(...v.fromArray(p).applyMatrix4(data.fromRoot).toArray());
+    N.push(...v.fromArray(normals[i]).transformDirection(data.fromRoot).toArray());
+    const w = weights[i];
+    for (let k = 0; k < 4; k++) {
+      SI.push(w[k]?.[0] ?? 0);
+      SW.push(w[k]?.[1] ?? 0);
+    }
+  });
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+  geo.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3));
+  if (colors) geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  if (uvs) geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(SI, 4));
+  geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(SW, 4));
+  geo.setIndex(index);
+  const mesh = new THREE.SkinnedMesh(geo, material);
+  mesh.name = name;
+  mesh.castShadow = true;
+  mesh.frustumCulled = false;
+  body.parent.add(mesh);
+  mesh.position.copy(body.position);
+  mesh.quaternion.copy(body.quaternion);
+  mesh.scale.copy(body.scale);
+  mesh.bind(body.skeleton, body.bindMatrix);
+  rig.outfitParts.push(mesh);
+  return mesh;
+}
+
+/**
+ * A knitted top as a garment (polo.js): her torso and arms rounded and cut along smooth lines. The polo (POLO) has a round neck
+ * at the base of hers, short sleeves and its hem tucked into her shorts, with a stitched placket and three buttons; the jumper
+ * (JUMPER) goes over it, to her wrists and over the shorts. ?polo=shell.
+ */
+function addTop(rig, name, color, spec) {
+  const body = bodyMesh(rig);
+  const needs = ['Neck', 'Spine', 'LeftArm', 'RightArm', 'LeftForeArm', 'RightForeArm', 'LeftHand', 'RightHand'];
+  if (!body || !needs.every((b) => rig.bones[b])) return;
+  const data = bodyData(rig, body);
+  const { shell, shade, placket } = buildTop(data, spec);
+  // The polo matches the shirt colour the body is painted under it; the jumper is its own colour, as before.
+  const tint = spec === POLO ? shirtColour(color) : new THREE.Color(color);
+  const shading = [];
+  for (const k of shade) shading.push(tint.r * k, tint.g * k, tint.b * k);
+  skinnedFromArrays(
+    rig,
+    body,
+    data,
+    name,
+    { positions: shell.verts.map((q) => q.bind), normals: shell.normals, weights: shell.verts.map((q) => q.weights), colors: shading, index: shell.tris.flat() },
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: spec === JUMPER ? 0.97 : 0.92, side: THREE.DoubleSide }),
+  );
+  if (!placket) return;
+
+  // The placket, stitched, and its buttons (a second mesh, the holes coloured in).
+  const index = placket.tris.flat();
+  skinnedFromArrays(
+    rig,
+    body,
+    data,
+    'poloPlacket',
+    { positions: placket.verts.map((q) => q.bind), normals: smoothArrayNormals(placket.verts.map((q) => q.bind), index), weights: placket.verts.map((q) => q.weights), uvs: placket.uv, index },
+    new THREE.MeshStandardMaterial({ color: tint.clone().multiplyScalar(1 / new THREE.Color().setRGB(STITCH_BASE, 0, 0, THREE.SRGBColorSpace).r), map: placketStitches(), roughness: 0.9, side: THREE.DoubleSide }),
+  );
+  const positions = [];
+  const weights = [];
+  const colors = [];
+  const tris = [];
+  const ivory = new THREE.Color(0xebe7dc);
+  const hole = tint.clone().multiplyScalar(0.35);
+  const add = (points, triangles, anchor, c) => {
+    const base = positions.length;
+    for (const pt of points) {
+      positions.push(unskin(anchor.skin, pt));
+      weights.push(anchor.weights);
+      colors.push(c.r, c.g, c.b);
+    }
+    for (const t of triangles) tris.push(...t.map((i) => i + base));
+  };
+  for (const b of placket.buttons) {
+    const shape = buttonShape(b.centre, b.normal, POLO.buttonRadius);
+    add(shape.points, shape.tris, b.anchor, ivory);
+    add(shape.holes, shape.holeTris, b.anchor, hole);
+  }
+  skinnedFromArrays(
+    rig,
+    body,
+    data,
+    'poloButtons',
+    { positions, normals: smoothArrayNormals(positions, tris), weights, colors, index: tris },
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.32, side: THREE.DoubleSide }),
+  );
+}
+
+/** Per-vertex normals for plain arrays (each vertex the sum of its faces). */
+function smoothArrayNormals(positions, index) {
+  const sums = positions.map(() => new THREE.Vector3());
+  const a = new THREE.Vector3();
+  const b = new THREE.Vector3();
+  const c = new THREE.Vector3();
+  for (let t = 0; t < index.length; t += 3) {
+    a.fromArray(positions[index[t]]);
+    b.fromArray(positions[index[t + 1]]);
+    c.fromArray(positions[index[t + 2]]);
+    const n = b.clone().sub(a).cross(c.clone().sub(a));
+    for (let k = 0; k < 3; k++) sums[index[t + k]].add(n);
+  }
+  return sums.map((s) => s.normalize().toArray());
+}
+
 function addGarments(rig, outfit) {
   withPosedBody(rig, () => addEachGarment(rig, outfit));
 }
 
 function addEachGarment(rig, outfit) {
-  if (outfit.collar) addPoloFront(rig, outfit.collar, shirtFrontTop(rig, outfit.collar));
-  if (outfit.jumper) addJumper(rig, outfit.jumper, outfit.colors?.shirt);
+  if (outfit.collar && POLO_SHELL) addTop(rig, 'polo', outfit.collar, POLO);
+  else if (outfit.collar) addPoloFront(rig, outfit.collar, shirtFrontTop(rig, outfit.collar));
+  if (outfit.jumper && POLO_SHELL) addTop(rig, 'jumper', outfit.jumper, JUMPER);
+  else if (outfit.jumper) addJumper(rig, outfit.jumper, outfit.colors?.shirt);
   if (outfit.shorts) addShorts(rig, outfit.shorts);
   if (outfit.wellies) addWellies(rig, outfit.wellies);
 }
