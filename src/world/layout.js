@@ -140,6 +140,10 @@ export const LAYOUT = {
   bench: { x: -62.8, z: 56.1, length: 4.2, depth: 0.7, height: 0.92 },
   // The trickle charger at the west end of the workbench (workshop/chargerModel.js): faces the bay, the way you stand at the bench.
   benchCharger: { x: -64.5, z: 56.2 },
+  // The bonfire site (world/bonfire.js): on the grass field's south side, well clear of the track, the yard's parking and the south hedge. The logs
+  // the girls sit on stand round it. `brushwood` is where the hedge cuttings lie, as [x, z, yaw], along the inside of the south hedge: carry three to the pile.
+  bonfire: { x: -6, z: 71, seatRadius: 2.4 },
+  brushwood: [[-30, 77, 0.3], [-20, 77.5, 2], [-12, 77, 1.1], [2, 77.5, 0.5], [14, 77, 2.5], [26, 77.5, 1.7]],
   // The diesel generator outside the barn's north-east corner, its panel facing the yard (items/generator.js): it powers the barn bulb and the charger.
   generator: { x: -58.3, z: 53.6, yaw: Math.PI / 2, stand: { x: -57.3, z: 52.9 } }, // `stand`: where a girl stands to pull the cord
   // The clock and weather station (world/weatherStation.js) on the north wall past the door end of the bench, at eye height above the floor.

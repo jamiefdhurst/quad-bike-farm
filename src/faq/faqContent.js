@@ -1140,7 +1140,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'What are the chalkboards in the barn?',
         a: `Today's farm jobs. Walk into the barn to the back wall and press <kbd>E</kbd> for a close look. Done jobs get a tick, and a bucket list
-          entry when you've cleared the lot. The jobs are the muck and, if the tractor is about, the silage; the board lists up to two a day. The records are on the board beside it.`,
+          entry when you've cleared the lot. The jobs are the muck and, if the tractor is about, the silage; the bonfire is not a job, but you can light one any time; the board lists up to two a day. The records are on the board beside it.`,
         tip: 'The chalkboard in the barn lists the day\'s farm jobs.',
       },
       {
@@ -1167,6 +1167,23 @@ export const FAQ_SECTIONS = [
           Hold <kbd>E</kbd> at the trailer, empty-handed, to fork muck in: the girls will have something to say about the smell. Drive onto the stubble, stop,
           press <kbd>T</kbd> (the tub tilts just enough and holds there) and drive off slowly. Muck runs out of the back in patches while you go slower than
           a brisk walk, and the job ticks off the board once there's a good strip down. A full tub is a drag on whatever pulls it.`,
+      },
+      {
+        q: 'How do I light the bonfire?',
+        a: `Bundles of hedge cuttings lie along the inside of the south hedge of the grass field. Pick one up (<kbd>E</kbd>, empty-handed), carry it to the ring of stones south of the yard
+          and press <kbd>E</kbd> to put it on the pile. Three make a pile; then <kbd>E</kbd> lights it. It takes about half a minute to get going and burns for nine minutes or so before it dies down to
+          ash. Put three more on the ash to build another. Rain stops you lighting it and puts it out, damp air makes it smoky and burn faster, and a strong wind can blow out a young fire.`,
+        tip: 'Three bundles of cuttings from the south hedge, on the ring of stones, make a bonfire.',
+      },
+      {
+        q: 'Do the girls sit by the bonfire?',
+        a: `Yes. Once it is blazing a free girl may fancy a sit on one of the logs round it, more so as it gets dark and cold, and both can sit at once. Stand by the fire and press <kbd>E</kbd> to ask
+          the nearest free girl. She warms up, says a few things (more if you are close and she is fond of you) and gets up when she has had enough or the fire goes out. It is not kept overnight.`,
+      },
+      {
+        q: "Why can't I put the brushwood on the fire, or why did it go out?",
+        a: `You can only add to a pile that is not yet three bundles high, and not to one that is lit. Once it burns down to ash it takes a new pile. Rain puts a fire out and stops you lighting one, and wind
+          blows out a young one. Riding through a lit fire does nothing worse than a warning, but it is a fire.`,
       },
       {
         q: 'How do I move the silage bales with the tractor?',

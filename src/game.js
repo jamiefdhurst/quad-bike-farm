@@ -235,6 +235,10 @@ import { JobBoardView } from './world/jobBoard.js';
 import { DEFAULT_SPIKE_PARAMS, SPIKE_PARAM_RANGES } from './items/baleSpike.js';
 import { BaleSpikeRig } from './items/baleSpikeRig.js';
 import { dutchBarnShape } from './world/outbuildings.js';
+import { Bonfire, DEFAULT_BONFIRE_PARAMS, BONFIRE_PARAM_RANGES, logSeats } from './world/bonfire.js';
+import { BonfireView } from './world/bonfireView.js';
+import { BrushwoodHeap } from './items/brushwood.js';
+import { FireSit, FIRE_SIT_PARAM_RANGES } from './npc/fireSit.js';
 import { PhotoHost } from './photos/photoHost.js';
 import { WallCalendar } from './world/wallCalendar.js';
 import { MuckView } from './world/muckView.js';
@@ -1252,6 +1256,7 @@ export class Game {
     this.baleRig.restore(this.farm.save?.bales);
     this.siloRect = dutchBarnShape(this.world.layout)?.open ?? null;
     registerTuning('Bale spike', this.spikeParams, SPIKE_PARAM_RANGES);
+    this.setUpBonfire();
     this.jobBoardParams = { ...DEFAULT_JOB_BOARD_PARAMS };
     // The silage job needs the tractor, and enough bales still out of the barn for it to be worth asking.
     const jobIds = availableJobs(this.world.layout).filter((id) => id !== 'silage' || (!!this.tractorUnit && !!this.siloRect && this.baleRig.yard.countIn(this.siloRect) < this.spikeParams.balesNeeded));
@@ -2508,6 +2513,201 @@ export class Game {
     ranked[other ? ranked.length - 1 : 0]?.voice.say(key);
   }
 
+  // The bonfire ---------------------------------------------------------------------
+
+  /** The bonfire site on the grass field, the hedge cuttings to carry to it, and the girls' sit by it (world/bonfire.js, npc/fireSit.js). */
+  setUpBonfire() {
+    const L = this.world.layout;
+    this.bonfireParams = { ...DEFAULT_BONFIRE_PARAMS };
+    this.bonfire = new Bonfire(this.bonfireParams);
+    this.fireSit = new FireSit();
+    registerTuning('Bonfire', this.bonfireParams, BONFIRE_PARAM_RANGES);
+    registerTuning('Sitting by the bonfire', this.fireSit.p, FIRE_SIT_PARAM_RANGES);
+    const site = L.bonfire;
+    const seats = logSeats(site);
+    this.bonfireView = new BonfireView({ scene: this.scene, site, seats, heightAt: (x, z) => this.world.heightAt(x, z), params: this.bonfireParams });
+    // Rest spots for the logs: stable objects, since a girl's restSpot is compared by identity.
+    this.fireSpots = seats.map((s, i) => ({ id: `fire${i}`, kind: 'log', x: s.x, z: s.z, yaw: s.yaw, seat: this.bonfireView.seatHeight + 0.04 }));
+    this.brushwood = L.brushwood.map(([x, z, yaw], i) => new BrushwoodHeap({ scene: this.scene, world: this.world, x, z, yaw, random: createRandom(this.seed ^ (0xb0f0 + i)) }));
+    for (const h of this.brushwood) {
+      this.interaction.add({
+        target: h.proxy,
+        isAvailable: () => !h.held && !h.used && !this.handsFull && !this.player.isRiding,
+        prompt: () => `Pick up the brushwood (${this.bonfire.piled} of ${this.bonfireParams.heapsNeeded} on the pile)`,
+        interact: () => {
+          h.pickUp(this.camera);
+          if (!this.fireHinted) {
+            this.fireHinted = true;
+            this.hud.toast('Carry it to the ring of stones on the south side of the field: three bundles make a fire', 4);
+          }
+        },
+      });
+    }
+    const proxy = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.4, 2.6), new THREE.MeshBasicMaterial({ visible: false }));
+    proxy.position.set(site.x, this.world.heightAt(site.x, site.z) + 0.5, site.z);
+    this.scene.add(proxy);
+    this.interaction.add({
+      target: proxy,
+      isAvailable: () => !this.player.isRiding && !!this.bonfireAction(),
+      prompt: () => this.bonfireAction().prompt,
+      interact: () => this.bonfireAction().run(),
+    });
+    this.fireClock = 0;
+    this.fireLastWarned = -Infinity;
+  }
+
+  get heldBrushwood() {
+    return this.brushwood?.find((h) => h.held) ?? null;
+  }
+
+  /** What E does at the fire right now: { prompt, run }, or null for nothing. */
+  bonfireAction() {
+    const f = this.bonfire;
+    const heap = this.heldBrushwood;
+    if (heap) {
+      if (!f.canAdd()) return null;
+      return { prompt: `Put the brushwood on the pile (${f.piled + 1} of ${this.bonfireParams.heapsNeeded})`, run: () => this.putBrushwoodOn(heap) };
+    }
+    if (this.handsFull) return null;
+    if (f.state === 'built' && f.built) {
+      if (!f.canLight(this.weather.rain)) return { prompt: { text: 'Too wet to light the fire' }, run: () => {} };
+      return { prompt: 'Light the bonfire', run: () => this.lightBonfire() };
+    }
+    const girl = this.fireGirl();
+    if (girl) return { prompt: `Sit down by the fire with ${girl.name}`, run: () => this.askForFire(girl) };
+    return null;
+  }
+
+  putBrushwoodOn(heap) {
+    if (!this.bonfire.addHeap()) return;
+    heap.burn();
+    const f = this.bonfire;
+    this.hud.toast(f.built ? 'The pile is made: E to light it' : `${f.piled} of ${this.bonfireParams.heapsNeeded} on the pile`, 2.4);
+  }
+
+  putBrushwoodDown() {
+    const h = this.heldBrushwood;
+    if (!h) return;
+    const p = this.player.position;
+    const yaw = this.player.yaw;
+    h.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.9, 0, p.z - Math.cos(yaw) * 0.9), yaw + Math.PI / 2);
+  }
+
+  lightBonfire() {
+    if (!this.bonfire.light(this.weather.rain)) return false;
+    this.achievements.note('bonfireLit');
+    this.hud.toast('The fire catches', 2.4);
+    this.saySomethingAboutFire('fireLit');
+    return true;
+  }
+
+  /** One of the girls nearest the fire says something about it (npc/fireLines.js). */
+  saySomethingAboutFire(key) {
+    const s = this.world.layout.bonfire;
+    const c = this.companions
+      .filter((g) => g.availability().canRemark && Math.hypot(g.root.position.x - s.x, g.root.position.z - s.z) < 40)
+      .sort((a, b) => Math.hypot(a.root.position.x - s.x, a.root.position.z - s.z) - Math.hypot(b.root.position.x - s.x, b.root.position.z - s.z))[0];
+    c?.voice.say(key);
+  }
+
+  /** The girl you'd sit by the fire with: the nearest free one close enough, with the fire blazing and a log free. */
+  fireGirl() {
+    if (!this.bonfire.blazing || !this.fireSit.seatsLeft(this.fireSpots.length).length) return null;
+    const near = this.companions
+      .filter((c) => !this.fireSit.sessions.has(c.character.id) && c.root.position.distanceTo(this.player.position) <= this.fireSit.p.askRange)
+      .filter((c) => c.availability({ asked: true }).free)
+      .sort((a, b) => a.root.position.distanceTo(this.player.position) - b.root.position.distanceTo(this.player.position));
+    return near[0] ?? null;
+  }
+
+  askForFire(girl = this.fireGirl()) {
+    if (!girl || !this.bonfire.blazing) return false;
+    const e = this.fireSit.begin(girl.character.id, 'asked', this.fireSit.seatsLeft(this.fireSpots.length));
+    if (!e) return false;
+    this.handleFireEvent(e);
+    return true;
+  }
+
+  /** What the fire sit needs to know to suggest it: the fire, the weather and how far each girl is from the fire. */
+  fireSitContext() {
+    const s = this.world.layout.bonfire;
+    return {
+      blazing: this.bonfire.blazing,
+      seats: this.fireSit.seatsLeft(this.fireSpots.length).length,
+      rain: this.weather.rain,
+      darkness: this.daylight?.darkness ?? 0,
+      girls: this.companions.map((c) => ({ id: c.character.id, free: c.availability().free, distance: Math.hypot(c.root.position.x - s.x, c.root.position.z - s.z) })),
+    };
+  }
+
+  /** Acts on the fire sit: she goes to her log, speaks, gets up. */
+  handleFireEvent(e) {
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    if (!c) return this.fireSit.cancel(e.girl);
+    if (e.type === 'go') {
+      c.hold('fire', 'sitting by the bonfire');
+      c.voice.say(e.how === 'offer' ? 'fireOffer' : 'fireYes', { force: true });
+      if (!c.goRest(this.fireSpots[e.seat], { stay: Infinity })) {
+        c.release('fire');
+        this.fireSit.cancel(e.girl);
+      }
+    } else if (e.type === 'say') {
+      c.voice.say(e.line, { force: true });
+    } else if (e.type === 'end') {
+      c.release('fire');
+      if (c.isResting) c.leaveRest();
+      if (e.why === 'done') {
+        const p = this.fireSit.p;
+        this.favour.add(e.girl, p.favour + (this.favour.mood(e.girl) === 'favoured' ? p.romanceFavour : 0));
+        this.achievements.note('fireSat');
+      }
+    }
+  }
+
+  /** The fire, every frame: it burns on the weather, draws itself, warns a vehicle that gets too close, and the girls sit by it. */
+  updateBonfire(dt, ridden) {
+    const f = this.bonfire;
+    const w = this.weather;
+    const s = this.world.layout.bonfire;
+    this.fireClock += dt;
+    for (const e of f.update(dt, { rain: w.rain, wind: Math.hypot(this.wind.x, this.wind.z) })) {
+      if (e.type === 'out' && Math.hypot(this.player.position.x - s.x, this.player.position.z - s.z) < 60) {
+        this.hud.toast(e.why === 'rain' ? 'The rain has put the fire out' : e.why === 'wind' ? 'The wind has blown the fire out' : 'The fire has burnt out', 3);
+      }
+    }
+    this.bonfireView.update(dt, f, { wind: this.wind, darkness: this.daylight?.darkness ?? 0 });
+    if (f.burning && ridden && Math.hypot(ridden.quad.position.x - s.x, ridden.quad.position.z - s.z) < f.p.dangerRange + 0.9) {
+      if (this.fireClock - this.fireLastWarned > 8) {
+        this.fireLastWarned = this.fireClock;
+        this.hud.toast('Mind the fire!', 1.6);
+      }
+    }
+    const spots = this.fireSpots;
+    const girls = {};
+    for (const c of this.companions) {
+      const id = c.character.id;
+      if (!this.fireSit.sessions.has(id)) continue;
+      const seat = this.fireSit.seatOf(id);
+      girls[id] = {
+        free: c.availability({ asked: true, mine: 'fire' }).free,
+        seated: c.isResting && c.restPhase === 'sat' && c.restSpot === spots[seat],
+        youNear: Math.hypot(c.root.position.x - this.player.position.x, c.root.position.z - this.player.position.z) < this.fireSit.p.youRange,
+        favoured: this.favour.mood(id) === 'favoured',
+      };
+    }
+    for (const e of this.fireSit.update(dt, { blazing: f.blazing, girls })) this.handleFireEvent(e);
+  }
+
+  debugLightFire() {
+    this.bonfire.buildAll();
+    this.bonfire.light();
+  }
+
+  debugResetFire() {
+    this.bonfire.reset();
+    for (const h of this.brushwood) h.reset();
+  }
+
   /**
    * The bale spike on the tractor (items/baleSpike.js): ] raises the arms and [ lowers them while you drive it (with the engine running);
    * a standing silage bale the point runs into is speared, and one lowered to the ground or on a stack is left when you drive on.
@@ -3461,6 +3661,7 @@ export class Game {
       }),
       ...mine(this.tea.offers(this.teaContext(ridden)), (o) => this.handleTeaEvent(this.tea.take(o))),
       ...mine(this.flask.offers(this.flaskContext(ridden)), (o) => this.handleFlaskEvent(this.flask.take(o))),
+      ...mine(this.fireSit.offers(this.fireSitContext()), (o) => this.handleFireEvent(this.fireSit.take(o, this.fireSit.seatsLeft(this.fireSpots.length)))),
       ...(this.hiding.active ? [] : mine(this.requests.offers(this.requestContext(ridden)), (o) => this.handleRequestEvent(this.requests.take(o)))),
       ...mine(this.jumpers.offers(this.jumpersContext()), (o) => this.handleJumperEvent(this.jumpers.take(o))),
       ...mine(this.dieselMistake.offers(this.dieselContext(ridden)), (o) => this.handleDieselEvent(this.dieselMistake.take(o))),
@@ -3574,7 +3775,7 @@ export class Game {
     return {
       chill: covered ? 0 : dayChill,
       wet: !covered && w.rain > 0.25,
-      warmed: !!c.warmingAt || inCab || inBarn,
+      warmed: !!c.warmingAt || inCab || inBarn || this.bonfire.warms(Math.hypot(at.x - this.world.layout.bonfire.x, at.z - this.world.layout.bonfire.z)),
       alone: near > p.needLonelyRange && !ridingWith,
       together: near < p.needCloseRange || ridingWith,
       thrill: Math.min(1, speed / 12 + (onBoard && c.quad?.airborne ? 0.5 : 0)),
@@ -4652,6 +4853,7 @@ export class Game {
       m.userData.baseLight ??= u.value.clone();
       u.value.copy(m.userData.baseLight).multiplyScalar(light);
     };
+    dim(this.bonfireView?.smoke.material, 'uLight');
     for (const unit of this.units) {
       for (const fx of [unit.smoke, unit.steam, unit.heatSteam]) dim(fx?.material, 'uLight');
       dim(unit.dustCloud?.material, 'uColor');
@@ -4685,7 +4887,7 @@ export class Game {
   }
 
   get handsFull() {
-    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.oilBottle.held || !!this.heldBattery() || this.winch?.state === 'carried' || this.chain?.state === 'carried' || this.towRope?.state === 'carried';
+    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.oilBottle.held || !!this.heldBrushwood || !!this.heldBattery() || this.winch?.state === 'carried' || this.chain?.state === 'carried' || this.towRope?.state === 'carried';
   }
 
   /** The debug panel's tow rope button: hook the rope from the nearest utility quad onto this vehicle, or take it off again. */
@@ -8178,6 +8380,7 @@ export class Game {
       else if (this.toolbox.held && input.wasPressed('KeyG')) this.putToolboxDown();
       else if (this.leads.held && input.wasPressed('KeyG')) this.putLeadsDown();
       else if (this.oilBottle.held && input.wasPressed('KeyG')) this.putOilBottleDown();
+      else if (this.heldBrushwood && input.wasPressed('KeyG')) this.putBrushwoodDown();
       else if (this.heldBattery() && input.wasPressed('KeyG')) this.putBatteryDown();
     }
 
@@ -8242,6 +8445,7 @@ export class Game {
     if (auto) this.updateNicking(dt, ridden);
     if (auto || this.tea.forced) this.updateTea(dt, ridden);
     if (auto || this.flask.active) this.updateFlask(dt);
+    this.updateBonfire(dt, ridden);
     if (auto || this.girlBench.active || this.girlBench.pending) this.updateGirlBench(dt);
     if (auto || this.phoneCalls.active) this.updatePhoneCall(dt);
     this.updateDares(dt);
@@ -8573,6 +8777,8 @@ export class Game {
       this.hud.setStatus('Jump leads\nE on a quad to clamp one end, then another quad for the other\nG to put them down');
     } else if (this.heldBattery()) {
       this.hud.setStatus(`${this.heldBattery().name}\nE on its vehicle to fit it, at the bench charger to charge it\nG to put it down`);
+    } else if (this.heldBrushwood) {
+      this.hud.setStatus(`Brushwood\nE at the ring of stones to put it on the pile (${this.bonfire.piled} of ${this.bonfireParams.heapsNeeded})\nG to put it down`);
     } else if (this.oilBottle.held) {
       this.hud.setStatus('Oil bottle\nY at a four-stroke to top up its oil, near it\nG to put it down');
     } else if (this.toolbox.held) {
@@ -8638,6 +8844,7 @@ export class Game {
       [this.toolbox, '#c8452c', 'Toolbox'],
       [this.leads, '#222222', 'Jump leads'],
       [this.oilBottle, '#e8e2c8', 'Oil bottle'],
+      ...this.brushwood.filter((h) => !h.used).map((h) => [h, '#6b4d30', 'Brushwood']),
       ...[...this.batteries.values()].filter((b) => b.out).map((b) => [b, '#c2231b', b.name]),
     ];
     for (const [item, colour, label] of items) {
@@ -8659,5 +8866,6 @@ export class Game {
 
   updateSmokeScale() {
     for (const unit of this.units ?? []) unit.setViewport(window.innerHeight * this.renderer.getPixelRatio(), this.camera.fov);
+    this.bonfireView?.setViewport(window.innerHeight * this.renderer.getPixelRatio(), this.camera.fov);
   }
 }

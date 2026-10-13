@@ -104,6 +104,7 @@ export function spawnKeepOut(layout) {
     const fz = Math.cos(d.yaw);
     for (let a = -8; a <= d.length + d.runOff; a += 6) add(d.x + fx * a, d.z + fz * a, d.width / 2 + 3, 'the drag strip');
   }
+  if (L.bonfire) add(L.bonfire.x, L.bonfire.z, 6, 'the bonfire');
   for (const b of L.bogs ?? []) if (b.x !== undefined) add(b.x, b.z, b.radius + 4, 'the bog');
   return out;
 }

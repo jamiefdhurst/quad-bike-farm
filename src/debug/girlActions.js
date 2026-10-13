@@ -228,6 +228,15 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'fire',
+      label: '% walks to a log by the bonfire and sits (needs it lit and blazing: build one with the button on the shared section)',
+      run: (id) => {
+        if (!free(id)) return;
+        if (!g.bonfire.blazing) return toast('The bonfire is not blazing yet');
+        toast(g.askForFire(girl(id)) ? `${nameOf(id)} is off to sit by the fire` : `${nameOf(id)} can't just now`);
+      },
+    },
+    {
       verb: 'warm-sit',
       label: '% starts the picked vehicle and sits on it while it warms (needs it off, and a seat)',
       vehicle: true,

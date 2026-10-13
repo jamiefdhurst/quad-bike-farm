@@ -203,6 +203,15 @@ export function buildGirlsTab(d) {
   button(both, 'Empty the tub and clear the muck from the ground', () => g.debugResetMuck());
   slider(both, 'Bale spike arms (0 down, 1 up)', () => g.baleRig.lift.lift, (v) => (g.baleRig.lift.lift = v), 0, 1, 0.01);
   show(both, 'On the spike', () => g.baleRig.held?.id ?? 'nothing');
+  show(both, 'The bonfire', () => `${g.bonfire.state}, ${g.bonfire.piled} of ${g.bonfireParams.heapsNeeded} on the pile, ${Math.round(g.bonfire.intensity * 100)}% blaze${g.bonfire.damp ? ', smoky' : ''}`);
+  button(both, 'Build and light the bonfire', () => g.debugLightFire());
+  button(both, 'Put the bonfire out', () => g.bonfire.putOut() || g.hud.toast('It is not lit'));
+  button(both, 'Clear the bonfire and put the brushwood back', () => g.debugResetFire());
+  button(both, 'Take me to the bonfire', () => {
+    const b = g.world.layout.bonfire;
+    if (g.riddenUnit) return g.hud.toast('Get off first');
+    g.player.moveTo({ x: b.x, y: g.world.heightAt(b.x, b.z) + 0.5, z: b.z + 5 });
+  });
   button(both, 'Silage job done now', () => g.debugFinishSilage());
   button(both, 'Put the silage bales back where they started', () => g.debugResetBales());
   button(both, 'Put the bale on the spike down', () => g.baleRig.putDown());

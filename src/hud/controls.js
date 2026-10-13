@@ -57,6 +57,12 @@ export const CONTROLS = [
     ],
   },
   {
+    title: 'The bonfire',
+    lines: [
+      `Bundles of hedge cuttings lie along the south hedge of the grass field: <kbd>E</kbd> picks one up, <kbd>G</kbd> puts it down. At the ring of stones south of the yard <kbd>E</kbd> puts it on the pile; three make a fire, and <kbd>E</kbd> again lights it. Rain puts it out. Beside a blazing fire <kbd>E</kbd> asks the nearest girl to sit by it`,
+    ],
+  },
+  {
     title: 'The UTV',
     lines: [
       `<kbd>K</kbd> key (wait for the GLOW lamp to go out), hold <kbd>R</kbd> to crank; the key stops it again. It is a diesel: red diesel only`,
