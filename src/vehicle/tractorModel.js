@@ -21,6 +21,8 @@ import { loftGeometry, mergeStatic, rod, springGeometry } from './quadGeometry.j
 //
 // +Z is forward and +X is the rider's left.
 
+export const SPIKE_RAIL_Z = -1.78; // the bale spike's mast, behind the lift housing
+export const SPIKE_PLATE_Z = -1.85; // and its plate on the carriage, where the spike starts (it points out of the back)
 export const TRACTOR_GROUND_OFFSET = -0.8; // chassis origin to the ground at rest, metres
 const REAR_R = 0.72; // big rear wheels
 const FRONT_R = 0.42; // small front ones
@@ -435,6 +437,16 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   tube([0, 0, 0], [0, 0.34, 0.0], 0.012, MAT.steel, lever);
   add(new THREE.SphereGeometry(0.025, 10, 8), MAT.knob, lever).position.set(0, 0.36, 0);
   root.add(lever);
+  // The spike's lift lever, on the left of the seat over its quadrant: forward is down, back is up (posed by poseBaleSpike).
+  const spikeLever = new THREE.Group();
+  spikeLever.name = 'spikeLever';
+  spikeLever.userData.keep = true;
+  spikeLever.position.set(0.2, 1.03, -0.55);
+  rbox(0.02, 0.014, 0.34, 0.005, MAT.steel, 0, 0, 0, root).position.copy(spikeLever.position); // the quadrant plate it moves over
+  for (const dz of [-0.17, 0.17]) rbox(0.03, 0.03, 0.012, 0.004, MAT.red, 0.2, 1.045, -0.55 + dz, root); // the stops at each end
+  tube([0, 0, 0], [0, 0.3, 0], 0.011, MAT.steel, spikeLever);
+  add(new THREE.SphereGeometry(0.024, 10, 8), MAT.red, spikeLever).position.set(0, 0.32, 0);
+  root.add(spikeLever);
   const clutch = new THREE.Group();
   clutch.name = 'clutchPedal';
   clutch.userData.keep = true;
@@ -452,6 +464,30 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   add(new THREE.CylinderGeometry(0.018, 0.018, 0.14, 8), MAT.steel, root).position.set(0, 0.54, -1.5);
   for (const s of [-1, 1]) tube([s * 0.22, 0.6, -0.95], [s * 0.4, 0.5, -1.45], 0.02, MAT.steel, root);
   tube([-0.4, 0.5, -1.45], [0.4, 0.5, -1.45], 0.016, MAT.steel, root);
+
+  // The bale spike (items/baleSpike.js): a mast of two rails braced back to the lift housing, and a carriage that runs up and down it with
+  // a spike pointing out of the back. The carriage is posed by poseBaleSpike; the whole group is hidden while a trailer is on the drawbar.
+  const spikeMast = new THREE.Group();
+  spikeMast.name = 'baleSpike';
+  spikeMast.userData.keep = true;
+  for (const s of [-1, 1]) {
+    tube([s * 0.3, 0.45, SPIKE_RAIL_Z], [s * 0.3, 2.2, SPIKE_RAIL_Z], 0.028, MAT.red, spikeMast);
+    tube([s * 0.3, 1.95, SPIKE_RAIL_Z], [s * 0.3, 1.1, -1.2], 0.02, MAT.steel, spikeMast);
+    tube([s * 0.3, 0.55, SPIKE_RAIL_Z], [s * 0.4, 0.5, -1.45], 0.02, MAT.steel, spikeMast);
+  }
+  rbox(0.68, 0.05, 0.05, 0.015, MAT.red, 0, 2.2, SPIKE_RAIL_Z, spikeMast);
+  const carriage = new THREE.Group();
+  carriage.name = 'spikeCarriage';
+  rbox(0.5, 0.34, 0.05, 0.02, MAT.rust, 0, 0, SPIKE_PLATE_Z, carriage);
+  for (const s of [-1, 1]) rbox(0.07, 0.5, 0.1, 0.02, MAT.red, s * 0.3, 0, SPIKE_RAIL_Z - 0.05, carriage);
+  add(new THREE.CylinderGeometry(0.014, 0.05, 1.5, 12).rotateX(-Math.PI / 2), MAT.steel, carriage).position.set(0, 0, SPIKE_PLATE_Z - 0.75);
+  add(new THREE.CylinderGeometry(0.065, 0.065, 0.08, 12).rotateX(-Math.PI / 2), MAT.castDark, carriage).position.set(0, 0, SPIKE_PLATE_Z - 0.06);
+  carriage.position.y = 1.1;
+  carriage.userData.keep = true;
+  spikeMast.add(carriage);
+  mergeStatic(carriage);
+  mergeStatic(spikeMast);
+  root.add(spikeMast);
 
   // Anchors for people and the camera. A girl can sit on top of each rear wheel arch (npc/mudguardRide.js).
   for (const [name, s] of [['mudguardLeft', 1], ['mudguardRight', -1]]) {
@@ -495,4 +531,13 @@ export function poseTractorControls(model, { gear, hand, pedal }) {
   const throttle = model.getObjectByName('handThrottle');
   throttle.rotation.x = 0.7 - 1.4 * hand;
   model.getObjectByName('clutchPedal').rotation.x = -0.45 * pedal;
+}
+
+/** Poses the bale spike's carriage at `plateY` metres up and its lever in the cab at `lift` (0 to 1), and hides the whole fitting while `shown` is false (a trailer on the drawbar). */
+export function poseBaleSpike(model, plateY, shown = true, lift = 0) {
+  const mast = model.getObjectByName('baleSpike');
+  if (!mast) return;
+  model.getObjectByName('spikeLever').rotation.x = 0.6 - 1.2 * lift;
+  mast.visible = shown;
+  model.getObjectByName('spikeCarriage').position.y = plateY;
 }

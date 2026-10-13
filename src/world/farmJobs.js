@@ -140,6 +140,12 @@ export const FARM_JOBS = {
     hint: 'Fork it into the little trailer, tip the tub a bit and drive slowly over the stubble',
     needs: 'muckHeap',
   },
+  silage: {
+    label: 'Silage to the Dutch barn',
+    chalk: 'Three silage bales into the Dutch barn',
+    hint: 'Spike them with the tractor, carry them east and leave them on the floor of the open bay',
+    needs: 'dutchBarn',
+  },
 };
 
 export const DEFAULT_JOB_BOARD_PARAMS = {

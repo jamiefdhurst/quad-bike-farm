@@ -114,3 +114,11 @@ describe('job board', () => {
     expect(b.cleared).toBe(false);
   });
 });
+
+describe('the silage job', () => {
+  it('is on offer on a farm with a Dutch barn, and not without one', async () => {
+    const { availableJobs } = await import('../src/world/farmJobs.js');
+    expect(availableJobs({ muckHeap: {}, dutchBarn: {} })).toContain('silage');
+    expect(availableJobs({ muckHeap: {} })).not.toContain('silage');
+  });
+});

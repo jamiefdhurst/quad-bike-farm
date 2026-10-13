@@ -201,6 +201,11 @@ export function buildGirlsTab(d) {
   button(both, 'Fill the tipping trailer with muck', () => g.debugFillMuck());
   button(both, 'Muck job done now', () => g.debugFinishMuck());
   button(both, 'Empty the tub and clear the muck from the ground', () => g.debugResetMuck());
+  slider(both, 'Bale spike arms (0 down, 1 up)', () => g.baleRig.lift.lift, (v) => (g.baleRig.lift.lift = v), 0, 1, 0.01);
+  show(both, 'On the spike', () => g.baleRig.held?.id ?? 'nothing');
+  button(both, 'Silage job done now', () => g.debugFinishSilage());
+  button(both, 'Put the silage bales back where they started', () => g.debugResetBales());
+  button(both, 'Put the bale on the spike down', () => g.baleRig.putDown());
   for (const u of g.girlUnits) {
     const names = g.quadNames.names[u.spec.id];
     show(both, `${u.name} is`, () => `${g.ownership.ownerOf(u.spec.id) ?? 'nobody'}'s${names ? ` (${names}${g.quadNames.announced.has(u.spec.id) ? '' : ', not said yet'})` : ''}`);

@@ -232,6 +232,9 @@ import { Notebook } from './workshop/notebook.js';
 import { SparesShelf } from './workshop/sparesShelf.js';
 import { MuckLoad, DEFAULT_MUCK_PARAMS, MUCK_PARAM_RANGES, JobBoard, DEFAULT_JOB_BOARD_PARAMS, JOB_BOARD_PARAM_RANGES, availableJobs } from './world/farmJobs.js';
 import { JobBoardView } from './world/jobBoard.js';
+import { DEFAULT_SPIKE_PARAMS, SPIKE_PARAM_RANGES } from './items/baleSpike.js';
+import { BaleSpikeRig } from './items/baleSpikeRig.js';
+import { dutchBarnShape } from './world/outbuildings.js';
 import { PhotoHost } from './photos/photoHost.js';
 import { WallCalendar } from './world/wallCalendar.js';
 import { MuckView } from './world/muckView.js';
@@ -1236,8 +1239,23 @@ export class Game {
     this.muckParams = { ...DEFAULT_MUCK_PARAMS };
     this.muck = new MuckLoad(this.muckParams);
     this.muckView = new MuckView({ scene: this.scene, tub: this.tipTrailer.tub, heightAt: (x, z) => this.world.heightAt(x, z), random: createRandom(this.seed ^ 0x3a9c) });
+    // The tractor's bale spike (items/baleSpike.js): the standing silage bales can be lifted and carried; where they were left is kept.
+    this.spikeParams = { ...DEFAULT_SPIKE_PARAMS };
+    this.baleRig = new BaleSpikeRig({
+      physics: this.physics,
+      RAPIER: this.RAPIER,
+      silage: this.world.props.silage,
+      groundAt: (x, z) => this.world.heightAt(x, z),
+      tractor: this.tractorUnit?.quad ?? null,
+      params: this.spikeParams,
+    });
+    this.baleRig.restore(this.farm.save?.bales);
+    this.siloRect = dutchBarnShape(this.world.layout)?.open ?? null;
+    registerTuning('Bale spike', this.spikeParams, SPIKE_PARAM_RANGES);
     this.jobBoardParams = { ...DEFAULT_JOB_BOARD_PARAMS };
-    this.jobBoard = new JobBoard({ ids: availableJobs(this.world.layout), random: createRandom(this.seed ^ 0x7ab0), params: this.jobBoardParams });
+    // The silage job needs the tractor, and enough bales still out of the barn for it to be worth asking.
+    const jobIds = availableJobs(this.world.layout).filter((id) => id !== 'silage' || (!!this.tractorUnit && !!this.siloRect && this.baleRig.yard.countIn(this.siloRect) < this.spikeParams.balesNeeded));
+    this.jobBoard = new JobBoard({ ids: jobIds, random: createRandom(this.seed ^ 0x7ab0), params: this.jobBoardParams });
     this.jobBoardView = new JobBoardView({ game: this, board: this.jobBoard, records: this.records });
     this.wallCalendar = new WallCalendar({ game: this, day: this.farm.day }); // between the two boards: the days crossed off
     this.photos = new PhotoHost(this); // the camera key and the corkboard beside the chalkboards (photos/)
@@ -1678,6 +1696,7 @@ export class Game {
     const tip = this.tipTrailer;
     const mine = [hay, tip].filter(Boolean);
     if (tractor && this.chain?.state !== 'stowed') return this.hud.toast('The tow chain is on the drawbar', 2);
+    if (tractor && this.baleRig.held) return this.hud.toast('Put the bale down first: it is on the spike', 2);
     if (!tractor && this.towRope.state !== 'stowed' && this.towRope.puller === q) return this.hud.toast('The tow rope is on the hitch', 2);
     const on = mine.find((t) => t.hitched && (t === hay || t.puller === q));
     if (on) {
@@ -2489,6 +2508,75 @@ export class Game {
     ranked[other ? ranked.length - 1 : 0]?.voice.say(key);
   }
 
+  /**
+   * The bale spike on the tractor (items/baleSpike.js): ] raises the arms and [ lowers them while you drive it (with the engine running);
+   * a standing silage bale the point runs into is speared, and one lowered to the ground or on a stack is left when you drive on.
+   */
+  updateBaleSpike(dt, ridden, input) {
+    const u = this.tractorUnit;
+    const driving = ridden === u && this.player.seat === 'rider' && !this.menu.isOpen;
+    const q = u.quad;
+    const trailerOn = this.trailer.hitched || (this.tipTrailer.hitched && this.tipTrailer.puller === q);
+    const rig = this.baleRig;
+    const before = rig.lift.lift;
+    const events = rig.update(dt, {
+      raise: driving && input.isDown('BracketRight'),
+      lower: driving && input.isDown('BracketLeft'),
+      powered: q.engine.isRunning,
+      shown: !trailerOn,
+    });
+    if (driving && !trailerOn && rig.lift.lift !== before && !this.spikeHinted) {
+      this.spikeHinted = true;
+      this.hud.toast('Bale spike: reverse the point into a standing silage bale, ] up and [ down', 3.5);
+    }
+    for (const e of events) {
+      if (e.type === 'speared') {
+        this.hud.toast('Bale on the spike: ] raise it to carry, lower it and drive on to leave it', 3);
+        this.saySomethingAboutBale('baleSpiked');
+      } else if (e.type === 'left') {
+        this.baleSettled();
+      }
+    }
+    const weight = rig.held ? this.spikeParams.towWeight : 0;
+    if (weight || this.spikeWeighed) Object.assign(q.tow, towEffect(towLoad(0, weight, this.towParams), true, this.towParams));
+    this.spikeWeighed = !!weight;
+  }
+
+  /** A bale has been left: if that brings the silage job's bales into the Dutch barn, tick it off. */
+  baleSettled() {
+    if (!this.siloRect || !this.jobBoard.has('silage') || this.jobBoard.finished.has('silage')) return;
+    if (this.baleRig.yard.countIn(this.siloRect) < this.spikeParams.balesNeeded) return;
+    this.finishSilage();
+  }
+
+  finishSilage() {
+    this.achievements.note('silageMoved');
+    if (this.jobBoard.complete('silage')) {
+      this.hud.toast('Silage in. Ticked off the board on the barn door', 3);
+      this.jobBoardView.refresh();
+      if (this.jobBoard.cleared) this.achievements.note('boardCleared');
+    }
+    this.saySomethingAboutBale('silageDone');
+  }
+
+  /** One of the girls near the tractor says something about the bales (npc/farmJobLines.js). */
+  saySomethingAboutBale(key) {
+    const at = this.tractorUnit.quad.model.position;
+    const c = this.companions
+      .filter((g) => g.availability().canRemark && g.root.position.distanceTo(at) < 30)
+      .sort((a, b) => a.root.position.distanceTo(at) - b.root.position.distanceTo(at))[0];
+    c?.voice.say(key);
+  }
+
+  debugFinishSilage() {
+    if (this.tractorUnit) this.finishSilage();
+  }
+
+  /** Puts every silage bale back where it started (the debug panel). */
+  debugResetBales() {
+    this.baleRig.reset();
+  }
+
   /** The muck in the tub and what it leaves: patches behind the tub on the stubble (world/farmJobs.js). */
   updateMuck(dt) {
     const t = this.tipTrailer;
@@ -2991,6 +3079,7 @@ export class Game {
       logbook: this.notebook.book.toJSON(),
       spares: this.spares.toJSON(),
       generator: this.generator.toJSON(),
+      bales: this.baleRig.yard.toJSON(),
       batteries: Object.fromEntries([...this.batteries].filter(([, b]) => b.out).map(([id, b]) => [id, { where: b.where === 'charger' ? 'charger' : 'loose' }])),
     };
   }
@@ -8131,6 +8220,7 @@ export class Game {
     if (this.utvUnit) this.updateUtv(dt, ridden, input);
     for (const l of Object.values(this.landys)) if (l.unit) this.updateLandRover(dt, ridden, input, l);
     this.updateTipTrailer(dt, ridden, input);
+    if (this.tractorUnit) this.updateBaleSpike(dt, ridden, input);
     if (GO_KINDS.some((k) => this.goVehicle(k)) && auto) this.updateTractorGo(dt, ridden);
     this.updateCars(dt); // (minding you taking her car is a reaction, so it runs with the girls on hold too)
     this.updateLPlates(dt);

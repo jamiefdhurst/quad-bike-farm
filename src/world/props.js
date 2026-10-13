@@ -47,6 +47,7 @@ export function buildProps(ctx) {
   buildPaddock(c);
   const bale = buildBales(c);
   buildOutbuildings({ ...c, bale });
+  const silage = bale.silage;
   buildTrees(c);
   buildDistantTrees(c);
   buildGrass(c);
@@ -55,7 +56,7 @@ export function buildProps(ctx) {
   buildBogs(c);
   const hillProps = ctx.fields.hill ? buildHill(c) : null;
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
-  return { barn, jumpRamp, gates, gateParams: c.gateParams, stream: hillProps?.stream ?? null };
+  return { barn, jumpRamp, silage, gates, gateParams: c.gateParams, stream: hillProps?.stream ?? null };
 }
 
 function buildBarn(c) {
@@ -568,17 +569,22 @@ function buildBales({ scene, layout, heights, track, physics, RAPIER, random }) 
     mesh.quaternion.copy(q);
     mesh.castShadow = mesh.receiveShadow = true;
     scene.add(mesh);
-    physics.createCollider(
+    const collider = physics.createCollider(
       RAPIER.ColliderDesc.cylinder(W / 2, R).setTranslation(x, y, z).setRotation(q).setFriction(0.8),
     );
+    return { mesh, collider, x, y, z, yaw };
   };
+
+  // The wrapped silage stands on its end, so the tractor's spike can lift it (items/baleSpike.js): the game moves these meshes and their colliders.
+  const silage = [];
+  const placeSilage = (x, z, opts) => silage.push({ id: `silage${silage.length}`, ...place(x, z, { wrapped: true, upright: true, ...opts }) });
 
   // Wrapped silage stacked two high beside the barn.
   const sx = layout.barn.x - 3;
   const sz = layout.barn.z + 9;
-  for (let i = 0; i < 4; i++) place(sx + i * 1.55, sz, { wrapped: true, upright: true });
-  for (let i = 0; i < 3; i++) place(sx + 0.78 + i * 1.55, sz, { wrapped: true, upright: true, stackLevel: 1 });
-  for (let i = 0; i < 3; i++) place(sx + i * 1.55 + 0.3, sz + 1.6, { wrapped: true, upright: true });
+  for (let i = 0; i < 4; i++) placeSilage(sx + i * 1.55, sz);
+  for (let i = 0; i < 3; i++) placeSilage(sx + 0.78 + i * 1.55, sz, { stackLevel: 1 });
+  for (let i = 0; i < 3; i++) placeSilage(sx + i * 1.55 + 0.3, sz + 1.6);
 
   // Straw bales in the barn, to sit on out of the rain.
   for (const [x, z, yaw] of layout.barnBaleSpots ?? []) place(x, z, { yaw });
@@ -588,7 +594,7 @@ function buildBales({ scene, layout, heights, track, physics, RAPIER, random }) 
     if (track.distanceTo(x, z, 10) < layout.trackHalfWidth + 3) continue;
     place(x, z, { yaw });
   }
-  return { geo, straw }; // for the Dutch barn's stack (outbuildingProps.js)
+  return { geo, straw, silage }; // for the Dutch barn's stack (outbuildingProps.js), and the silage the spike moves (game.js)
 }
 
 // Trees ---------------------------------------------------------------------

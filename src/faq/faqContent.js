@@ -1140,7 +1140,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'What are the chalkboards in the barn?',
         a: `Today's farm jobs. Walk into the barn to the back wall and press <kbd>E</kbd> for a close look. Done jobs get a tick, and a bucket list
-          entry when you've cleared the lot. At the moment the only job is the muck, but the board lists up to two a day. The records are on the board beside it.`,
+          entry when you've cleared the lot. The jobs are the muck and, if the tractor is about, the silage; the board lists up to two a day. The records are on the board beside it.`,
         tip: 'The chalkboard in the barn lists the day\'s farm jobs.',
       },
       {
@@ -1167,6 +1167,25 @@ export const FAQ_SECTIONS = [
           Hold <kbd>E</kbd> at the trailer, empty-handed, to fork muck in: the girls will have something to say about the smell. Drive onto the stubble, stop,
           press <kbd>T</kbd> (the tub tilts just enough and holds there) and drive off slowly. Muck runs out of the back in patches while you go slower than
           a brisk walk, and the job ticks off the board once there's a good strip down. A full tub is a drag on whatever pulls it.`,
+      },
+      {
+        q: 'How do I move the silage bales with the tractor?',
+        a: `The old tractor has a bale spike on its back (when there's no trailer on the drawbar). With the engine running, <kbd>]</kbd> raises the arms and <kbd>[</kbd> lowers
+          them; the red lever on the left of the seat shows where they are. Only the wrapped bales standing on their end beside the barn can be moved. Lower the spike to about the
+          height of a bale's middle and reverse the point into it: it goes on the spike. Raise the arms to carry it, and go gently. To leave it, lower it to the ground (or onto
+          another bale, up to two high) and drive forward. The farm remembers where you left them.`,
+        tip: 'The tractor\'s bale spike: ] and [ raise and lower it, then reverse into a standing silage bale.',
+      },
+      {
+        q: 'How do I do the silage job?',
+        a: `When it's on the chalkboard, spike three of the wrapped silage bales beside the barn one at a time and leave them on the floor of the Dutch barn's open bay, out east
+          (the bay with no bale stack in it). The job ticks off once the third is down.`,
+      },
+      {
+        q: "Why won't the spike go into the bale, or why won't it lift?",
+        a: `The point has to run into the middle of a bale that stands on its end, at about the height of its middle, so lower the arms first and line up before you reverse. A bale with another on
+          top can't be spiked: take the top one off first. The bales lying on their sides (the ones the girls sit on, and the Dutch barn's stack) are fixed. The arms only move with the engine running,
+          and the spike is folded away while a trailer is on the drawbar. You can't hitch one with a bale on the spike.`,
       },
       {
         q: "Why won't the muck spread, or why did it all come out in a heap?",
