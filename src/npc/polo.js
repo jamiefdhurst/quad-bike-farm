@@ -4,7 +4,7 @@
 //
 // A top is her torso and arms, rounded (subdivided) and cut along smooth lines: a round neck at the base of her neck, the
 // sleeves square across the arm, and a hem. The edges finish in bands a shade darker, turned in so they have some thickness.
-// The polo's sleeves are short and its hem is tucked into her shorts, with a stitched placket and three buttons down the front;
+// The polo's sleeves are short and its hem is tucked into her shorts, with a stitched placket and five buttons down the front;
 // the jumper reaches her wrists and hangs over her shorts.
 
 import {
@@ -67,13 +67,16 @@ export const POLO = {
   bandShade: 0.84, // the neck band and cuffs, ribbed, a shade darker
   insideShade: 0.55, // the turned-in edge
   lips: ['neck', 'sleeve'], // which edges are turned in
-  // The placket: a strip down the front from the neck with three buttons.
+  // The placket: a strip down the front from the neck with five buttons.
   placket: true,
-  placketLength: 0.135,
+  placketLength: 0.155,
   placketWidth: 0.024,
   placketLift: 0.0022, // how far it stands proud of the shirt
-  buttons: [0.12, 0.47, 0.82], // down the placket, as fractions of its length
+  buttons: [0.01, 0.042, 0.074, 0.106, 0.138], // how far down the placket each button is (m)
   buttonRadius: 0.0052,
+  open: 0, // how many buttons from the top are undone (Jess: 1)
+  veeWidth: 0.017, // an open neck's V: half its width at the neckline
+  veeStop: 0.009, // and where it stops, this far above the first button done up
 };
 
 // The barn jumper, a size too big: down to the wrist and over the shorts, a crew neck low enough at the front to show the
@@ -82,9 +85,9 @@ export const JUMPER = {
   ...POLO,
   ease: 0.026,
   bare: /Leg|Foot|Toe|Hand[A-Z]/, // the hand itself may carry the wrist
-  neckBack: 0.02,
-  neckSide: 0.018,
-  neckFront: -0.03,
+  neckBack: 0.018,
+  neckSide: 0.015,
+  neckFront: -0.036,
   neckRing: 0.055,
   neckBand: 0.022,
   neckEase: 0.022,
@@ -110,7 +113,7 @@ export const JUMPER = {
  * The lines a top is cut along, as fields (below 0 is inside). `body` is her body as plain data: `verts[i]` is { bind, rest,
  * normal, weights, skin } (garmentMesh.js), `index` its triangles, `boneNames` the skeleton's bone names by index, `bones`
  * rest-frame positions of the bones by name, `paint(i)` the palette band the original texture gives vertex i ('skin', 'shirt',
- * 'trousers', 'hair' ...), `waist` the bind-frame height of the top of the shorts.
+ * 'trousers', 'hair' ...), `waist` the height of the top of the shorts as she stands.
  */
 export function topFields(body, p = POLO) {
   const { bones, boneNames, waist } = body;
@@ -144,7 +147,7 @@ export function topFields(body, p = POLO) {
     };
     return { field, s, armness, limb: share(limb), at };
   };
-  const hemField = (v) => waist - p.hemDrop - v.bind[1];
+  const hemField = (v) => waist - p.hemDrop - v.rest[1];
   return { neckField, left: sleeve('Left'), right: sleeve('Right'), hemField };
 }
 
@@ -168,8 +171,14 @@ export function buildTop(body, p = POLO) {
   // Below the waistband a tucked shirt is inside the shorts, which are her flat faces pushed out: don't round it out there.
   let mesh = weld(verts, index, keepTri);
   const onArm = (v) => F.left.limb(v) + F.right.limb(v) > 0.5;
-  const flatBelow = p.tucked ? waist + 0.02 : -Infinity;
-  mesh = subdivide(mesh, (A, B) => (Math.min(A.bind[1], B.bind[1]) < flatBelow ? 0 : onArm(A) || onArm(B) ? p.armRound : p.round));
+  const flatBelow = p.tucked ? waist + 0.03 : -Infinity;
+  mesh = subdivide(mesh, (A, B) => (Math.min(A.rest[1], B.rest[1]) < flatBelow ? 0 : onArm(A) || onArm(B) ? p.armRound : p.round));
+  // An open neck: a V cut into the front of the neckline, down to just above the first button done up.
+  const vee = p.open ? openNeck(mesh, body, p, F.neckField) : null;
+  if (vee) {
+    const round = F.neckField;
+    F.neckField = (v) => Math.max(round(v), vee.field(v));
+  }
   mesh = cut(mesh, F.neckField, 'neck');
   mesh = cut(mesh, F.left.field, 'sleeve');
   mesh = cut(mesh, F.right.field, 'sleeve');
@@ -197,11 +206,11 @@ export function buildTop(body, p = POLO) {
     // The neck band hugs her neck towards its edge.
     const n = F.neckField(v);
     e += (p.neckEase - e) * smooth01((n + p.neckBand) / p.neckBand);
-    const y = v.bind[1];
+    const y = v.rest[1];
     if (p.tucked) {
       // Close to her below the waistband, blousing a little over it.
-      e += (p.tuckEase - e) * smooth01((waist + 0.005 - y) / 0.02);
-      e += p.blouse * Math.max(0, 1 - Math.abs(y - (waist + 0.025)) / 0.03) * (1 - a);
+      e += (p.tuckEase - e) * smooth01((waist + 0.025 - y) / 0.02);
+      e += p.blouse * Math.max(0, 1 - Math.abs(y - (waist + 0.04)) / 0.03) * (1 - a);
     } else if (p.hemBand) {
       // A snug ribbed hem.
       e += (p.hemEase - e) * smooth01((F.hemField(v) + p.hemBand) / p.hemBand) * (1 - a);
@@ -251,7 +260,30 @@ export function buildTop(body, p = POLO) {
   }
   const shell = { verts: allVerts, tris };
   shell.normals = smoothNormals(shell);
-  return { shell, shade, placket: p.placket ? buildPlacket({ verts: mesh.verts, tris: mesh.tris }, body, p) : null };
+  return { shell, shade, vee, placket: p.placket ? buildPlacket({ verts: mesh.verts, tris: mesh.tris }, body, p, vee) : null };
+}
+
+/**
+ * The V of an open neck, worked out on the rounded shirt before it's cut: `top`, the round neckline's height at the middle of
+ * her front; `bottom`, just above the first button done up; `halfWidth(y)`, how far either side of the middle it reaches at a
+ * height; `field`, above 0 inside the V (only on her front, so her back is never cut by it).
+ */
+function openNeck(mesh, body, p, neckField) {
+  const neck = body.bones.Neck;
+  const x0 = neck[0];
+  const near = (v) => Math.abs(v.rest[0] - x0) < 0.05 && v.rest[2] > neck[2] && v.rest[1] > neck[1] - 0.15;
+  const front = { verts: mesh.verts, tris: mesh.tris.filter((t) => t.some((i) => near(mesh.verts[i]))) };
+  let top = null;
+  for (let y = neck[1] + p.neckCap + 0.005; y > neck[1] - 0.1 && top === null; y -= 0.001) {
+    const h = rayHit(front, [x0, y, neck[2] + 0.6], [0, 0, -1]);
+    if (h && neckField(inTriangle(front, h.tri, h.bary)) <= 0) top = y;
+  }
+  if (top === null) return null;
+  const bottom = top - (p.buttons[p.open] - p.veeStop);
+  const slope = p.veeWidth / (top - bottom);
+  const halfWidth = (y) => slope * (y - bottom);
+  const field = (v) => Math.min(halfWidth(v.rest[1]) - Math.abs(v.rest[0] - x0), v.rest[2] - neck[2] - 0.03);
+  return { top, bottom, halfWidth, field };
 }
 
 /**
@@ -291,91 +323,167 @@ function hang(mesh, body, p, F) {
     if (r[2] >= want) continue;
     // Not at her sides, which are already upright.
     const sides = 1 - smooth01((Math.abs(r[0] - neck[0]) - 0.09) / 0.05);
-    const tuck = p.tucked ? smooth01((v.bind[1] - (body.waist + 0.01)) / 0.06) : 1;
+    const tuck = p.tucked ? smooth01((v.rest[1] - (body.waist + 0.01)) / 0.06) : 1;
     const dz = Math.min(p.hangMax, want - r[2]) * sides * tuck;
     if (dz > 0) v.bind = add(v.bind, unskinDir(v.skin, [0, 0, dz]));
   }
 }
 
 /**
- * The placket: a strip down the middle of her front from the neck, standing a little proud of the shirt, with its edges turned
- * down to the shirt, stitching drawn on it (`uv`: across 0 to 1, down 0 to 1) and three buttons. Laid out in the rest frame
- * on the finished shirt, then carried back to the bind frame through the skin of the shirt where each point lies.
+ * The placket: a strip down the middle of her front from the neck, standing a little proud of the shirt, its edges turned down
+ * to the shirt, stitching drawn on it (`uv`: across 0 to 1, down 0 to 1) and its buttons. With the top `p.open` buttons undone
+ * (`vee`, from buildTop) it splits above the first one done up: its two halves lie along the edges of the V, the undone buttons
+ * on her left half and their buttonholes on her right. Laid out as she stands on the finished shirt, then carried back to the
+ * stored pose through the skin of the shirt where each point lies.
  */
-function buildPlacket(mesh, body, p) {
+function buildPlacket(mesh, body, p, vee) {
   const neck = body.bones.Neck;
   const x0 = neck[0];
+  const w = p.placketWidth;
   // Only the front of her chest can be hit; the rest is skipped for speed.
-  const near = (v) => Math.abs(v.rest[0] - x0) < 0.06 && v.rest[2] > neck[2] && v.rest[1] > neck[1] - 0.25;
+  const near = (v) => Math.abs(v.rest[0] - x0) < 0.07 && v.rest[2] > neck[2] && v.rest[1] > neck[1] - 0.3;
   const front = { verts: mesh.verts, tris: mesh.tris.filter((t) => t.some((i) => near(mesh.verts[i]))) };
-  // Where the neckline is at the middle of her front: walk down until a ray from in front hits the shirt.
   const hitAt = (x, y) => {
     const h = rayHit(front, [x, y, neck[2] + 0.6], [0, 0, -1]);
     return h && inTriangle(front, h.tri, h.bary);
   };
-  let top = null;
-  for (let y = neck[1] + p.neckCap + 0.005; y > neck[1] - 0.1; y -= 0.001) {
-    if (hitAt(x0, y)) {
-      top = y - 0.002;
-      break;
-    }
-  }
-  if (top === null) return null;
-  const rows = 18;
-  const cols = [-0.5, -0.25, 0, 0.25, 0.5];
-  const grid = [];
-  for (let r = 0; r <= rows; r++) {
-    const y = top - (r / rows) * p.placketLength;
-    const row = [];
-    for (const c of cols) {
-      const v = hitAt(x0 + c * p.placketWidth, y);
+  // Where the neckline is at the middle of her front (or at the top of the V): walk down until a ray from in front hits.
+  const found = vee ? vee.top : frontTop(hitAt, x0, neck[1] + p.neckCap + 0.005, neck[1] - 0.1);
+  if (found === null) return null;
+  const top = found - 0.002;
+  const split = (y) => (vee ? Math.max(0, vee.halfWidth(y)) : 0);
+  const restNormal = (v) => norm(applySkinDir(v.skin, v.normal));
+  // A row across the strip at height y from xL to xR: the shirt under it, and how far forward the strip lies (flat across, so
+  // it bridges any dip in the shirt).
+  const rowAt = (y, xL, xR, n) => {
+    const xAt = (k) => (n === 1 ? xL : xL + ((xR - xL) * k) / (n - 1));
+    const under = [];
+    for (let k = 0; k < n; k++) {
+      const x = xAt(k);
+      // At the V's edge a ray can just miss the shirt: step out a little until it hits.
+      let v = null;
+      for (let out = 0; !v && out < 0.006; out += 0.001) v = hitAt(x + Math.sign(x - x0) * out, y);
       if (!v) return null;
-      row.push(v);
+      under.push(v);
     }
-    grid.push(row);
-  }
-  // Across the strip it lies flat, bridging any dip in the shirt: each row takes the furthest-forward of its points.
+    return { under, z: Math.max(...under.map((v) => v.rest[2])) + p.placketLift, xs: under.map((_, k) => xAt(k)) };
+  };
+
   const verts = [];
   const tris = [];
   const uv = [];
-  const restNormal = (v) => norm(applySkinDir(v.skin, v.normal));
-  const put = (v, rest, u, w) => {
-    const bind = unskin(v.skin, rest);
-    verts.push({ ...v, bind, rest, normal: v.normal });
-    uv.push(u, w);
+  const put = (v, rest, u, d) => {
+    verts.push({ ...v, bind: unskin(v.skin, rest), rest, normal: v.normal });
+    uv.push(u, d / p.placketLength);
     return verts.length - 1;
   };
-  const face = [];
-  const foot = [];
-  grid.forEach((row, r) => {
-    const z = Math.max(...row.map((v) => v.rest[2]));
-    face.push(
-      row.map((v, k) => put(v, [v.rest[0], v.rest[1], z + p.placketLift], cols[k] + 0.5, r / rows)),
-    );
-    foot.push([0, 4].map((k) => put(row[k], add(row[k].rest, scale(restNormal(row[k]), 0.0004)), cols[k] + 0.5, r / rows)));
-  });
-  for (let r = 0; r < rows; r++) {
-    for (let k = 0; k < cols.length - 1; k++) {
-      const [a, b, c, d] = [face[r][k], face[r][k + 1], face[r + 1][k], face[r + 1][k + 1]];
-      tris.push([a, c, b], [b, c, d]);
+  // One strip: rows from y0 down to y1, its edges at `edges(y)` ([xL, xR]), its u from u0 to u1; `caps` says which ends get a
+  // turned-down end ('top', 'bottom').
+  const strip = (y0, y1, edges, u0, u1, n, caps) => {
+    const count = Math.max(2, Math.ceil((y0 - y1) / 0.0075));
+    const face = [];
+    const foot = [];
+    for (let r = 0; r <= count; r++) {
+      const y = y0 - ((y0 - y1) * r) / count;
+      const [xL, xR] = edges(y);
+      const row = rowAt(y, xL, xR, n);
+      if (!row) return false;
+      const d = top - y;
+      face.push(row.under.map((v, k) => put(v, [row.xs[k], y, row.z], u0 + ((u1 - u0) * k) / (n - 1), d)));
+      foot.push([0, n - 1].map((k) => put(row.under[k], add(row.under[k].rest, scale(restNormal(row.under[k]), 0.0004)), k ? u1 : u0, d)));
     }
-    // The two long sides, down to the shirt.
-    tris.push([foot[r][0], foot[r + 1][0], face[r][0]], [face[r][0], foot[r + 1][0], face[r + 1][0]]);
-    tris.push([face[r][4], face[r + 1][4], foot[r][1]], [foot[r][1], face[r + 1][4], foot[r + 1][1]]);
-  }
-  // The bottom end.
-  const last = rows;
-  tris.push([face[last][0], foot[last][0], face[last][4]], [face[last][4], foot[last][0], foot[last][1]]);
+    for (let r = 0; r < count; r++) {
+      for (let k = 0; k < n - 1; k++) {
+        const [a, b, c, d] = [face[r][k], face[r][k + 1], face[r + 1][k], face[r + 1][k + 1]];
+        tris.push([a, c, b], [b, c, d]);
+      }
+      // The two long sides, down to the shirt.
+      tris.push([foot[r][0], foot[r + 1][0], face[r][0]], [face[r][0], foot[r + 1][0], face[r + 1][0]]);
+      tris.push([face[r][n - 1], face[r + 1][n - 1], foot[r][1]], [foot[r][1], face[r + 1][n - 1], foot[r + 1][1]]);
+    }
+    if (caps.includes('bottom')) tris.push([face[count][0], foot[count][0], face[count][n - 1]], [face[count][n - 1], foot[count][0], foot[count][1]]);
+    if (caps.includes('top')) tris.push([face[0][0], face[0][n - 1], foot[0][0]], [face[0][n - 1], foot[0][1], foot[0][0]]);
+    return true;
+  };
+  const bottom = top - p.placketLength;
+  const vBottom = vee ? vee.bottom : top;
+  const ok =
+    strip(vBottom, bottom, () => [x0 - w / 2, x0 + w / 2], 0, 1, 5, vee ? ['bottom'] : ['top', 'bottom']) &&
+    (!vee ||
+      (strip(top, vBottom, (y) => [x0 + split(y), x0 + split(y) + w / 2], 0.5, 1, 3, ['top']) &&
+        strip(top, vBottom, (y) => [x0 - split(y) - w / 2, x0 - split(y)], 0, 0.5, 3, ['top'])));
+  if (!ok) return null;
 
-  const buttons = p.buttons.map((t) => {
-    const f = t * rows;
-    const r = Math.min(rows - 1, Math.floor(f));
-    const k = f - r;
-    const centre = vec.lerp(verts[face[r][2]].rest, verts[face[r + 1][2]].rest, k);
-    const anchor = grid[r][2];
-    return { centre, normal: restNormal(anchor), anchor };
+  // The buttons, and for the undone ones the buttonhole on the other half.
+  const buttons = [];
+  const slits = [];
+  p.buttons.forEach((d, i) => {
+    const y = top - d;
+    const open = vee && y > vBottom && i < p.open;
+    // On the strip's own face (which bridges the shirt's dips), not on the shirt under it.
+    const at = (x, [xL, xR, n]) => {
+      const face = rowAt(y, xL, xR, n);
+      const under = rowAt(y, x, x, 1);
+      return face && under && { centre: [x, y, face.z], normal: restNormal(under.under[0]), anchor: under.under[0] };
+    };
+    const b = open ? at(x0 + split(y) + w / 4, [x0 + split(y), x0 + split(y) + w / 2, 3]) : at(x0, [x0 - w / 2, x0 + w / 2, 5]);
+    if (b) buttons.push(b);
+    const h = open && at(x0 - split(y) - w / 4, [x0 - split(y) - w / 2, x0 - split(y), 3]);
+    if (h) slits.push(h);
   });
-  return { verts, tris, uv, buttons, top };
+  return { verts, tris, uv, buttons, slits, top };
+}
+
+/** Walks down the middle of her front until a ray from in front hits the shirt: the top of the shirt there. */
+function frontTop(hitAt, x0, from, to) {
+  for (let y = from; y > to; y -= 0.001) if (hitAt(x0, y)) return y;
+  return null;
+}
+
+/**
+ * A buttonhole: a thin dark slit up and down the placket, standing just off it. Rest-frame points and triangles at `centre`,
+ * facing `normal`.
+ */
+export function slitShape(centre, normal, length = 0.009, width = 0.0016) {
+  const n = norm(normal);
+  const across = norm(cross([0, 1, 0], n));
+  const along = cross(n, across);
+  const c = add(centre, scale(n, 0.0003));
+  const corner = (a, b) => add(c, add(scale(across, (a * width) / 2), scale(along, (b * length) / 2)));
+  return { points: [corner(-1, -1), corner(1, -1), corner(1, 1), corner(-1, 1)], tris: [[0, 1, 2], [0, 2, 3]] };
+}
+
+/**
+ * Her skin inside the V of an open neck, as a patch of her own (flat-shaded) triangles cut to the V and lifted a hair off her,
+ * because the body's paint can't follow a V across its coarse triangles. `vee` comes from buildTop.
+ */
+export function buildInset(body, vee) {
+  const { verts, index } = body;
+  const ids = new Map();
+  const mesh = { verts: [], tris: [] };
+  for (let t = 0; t < index.length; t += 3) {
+    const tri = [index[t], index[t + 1], index[t + 2]];
+    if (!tri.some((i) => vee.field(verts[i]) > 0)) continue;
+    mesh.tris.push(
+      tri.map((i) => {
+        if (!ids.has(i)) {
+          ids.set(i, mesh.verts.length);
+          mesh.verts.push({ ...verts[i] });
+        }
+        return ids.get(i);
+      }),
+    );
+  }
+  let patch = cut(mesh, (v) => -vee.field(v), 'vee');
+  patch = cut(patch, (v) => v.rest[1] - (vee.top + 0.01), 'vee');
+  // Lifted along the average of the faces at each corner, so the faces stay joined (each along its own would open cracks at
+  // the creases, showing the shirt paint under them); still drawn flat, to match her.
+  const lift = smoothNormals(patch);
+  patch.verts.forEach((v, i) => {
+    v.bind = add(v.bind, scale(lift[i], 0.0008));
+    v.rest = applySkin(v.skin, v.bind);
+  });
+  return patch;
 }
 
 /**

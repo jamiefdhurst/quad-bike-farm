@@ -12,7 +12,8 @@ import {
   inTriangle,
   smoothNormals,
 } from '../src/npc/garmentMesh.js';
-import { buildTop, topFields, POLO, JUMPER } from '../src/npc/polo.js';
+import { buildTop, buildInset, topFields, POLO, JUMPER } from '../src/npc/polo.js';
+import { buildShorts, SHORTS } from '../src/npc/shorts.js';
 
 const IDENTITY = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0];
 // A quarter turn about y with a drop, as her bind pose is to the way she stands.
@@ -126,8 +127,12 @@ function cylinderBody() {
     RightArm: [-0.4, 1.17, 0],
     RightForeArm: [-0.42, 0.97, 0],
     RightHand: [-0.44, 0.8, 0],
+    LeftUpLeg: [0.3, 0.75, 0],
+    LeftLeg: [0.3, 0.4, 0],
+    RightUpLeg: [-0.3, 0.75, 0],
+    RightLeg: [-0.3, 0.4, 0],
   };
-  const boneNames = ['Spine2', 'LeftArm', 'RightArm'];
+  const boneNames = ['Spine2', 'LeftArm', 'RightArm', 'LeftUpLeg', 'RightUpLeg'];
   const segs = 24;
   const rows = [];
   for (let y = 0.7; y <= 1.3001; y += 0.03) rows.push(y);
@@ -149,7 +154,7 @@ function cylinderBody() {
       index.push(a, b, a + segs, b, b + segs, a + segs);
     }
   }
-  const waist = unskin(TURN, [0, bones.Spine[1] + 0.01, 0])[1];
+  const waist = bones.Spine[1] - 0.012;
   return { verts, index, boneNames, bones, paint: () => 'shirt', waist };
 }
 
@@ -164,7 +169,7 @@ describe('knitted tops', () => {
     expect(hem.length).toBeGreaterThan(20);
     // On a straight cylinder the neck line is the cap above her neck bone, all the way round.
     for (const v of neck) expect(v.rest[1]).toBeCloseTo(body.bones.Neck[1] + POLO.neckCap, 3);
-    for (const v of hem) expect(v.bind[1]).toBeCloseTo(body.waist - POLO.hemDrop, 3);
+    for (const v of hem) expect(v.rest[1]).toBeCloseTo(body.waist - POLO.hemDrop, 3);
     // Everything stands off the body, and nothing is above the neck line.
     for (const v of shell.verts.filter((q) => !q.apart)) {
       expect(Math.hypot(v.rest[0], v.rest[2])).toBeGreaterThan(0.12);
@@ -178,7 +183,8 @@ describe('knitted tops', () => {
     const { placket } = buildTop(body, POLO);
     expect(placket).not.toBe(null);
     expect(placket.top).toBeGreaterThan(body.bones.Neck[1] + POLO.neckCap - 0.01);
-    expect(placket.buttons.length).toBe(3);
+    expect(placket.buttons.length).toBe(POLO.buttons.length);
+    expect(placket.slits.length).toBe(0);
     for (const b of placket.buttons) {
       expect(Math.abs(b.centre[0])).toBeLessThan(0.002);
       expect(b.centre[2]).toBeGreaterThan(0.12); // on her front (+z as she stands), not her side
@@ -193,9 +199,47 @@ describe('knitted tops', () => {
     const { shell, placket, shade } = buildTop(body, JUMPER);
     expect(placket).toBe(null);
     const hem = shell.verts.filter((v) => v.edge === 'hem' && !v.apart);
-    for (const v of hem) expect(v.bind[1]).toBeCloseTo(body.waist - JUMPER.hemDrop, 3);
-    const ribbed = shell.verts.map((v, i) => [v, shade[i]]).filter(([v]) => !v.apart && v.bind[1] < body.waist - JUMPER.hemDrop + JUMPER.hemBand - 0.005);
+    for (const v of hem) expect(v.rest[1]).toBeCloseTo(body.waist - JUMPER.hemDrop, 3);
+    const ribbed = shell.verts.map((v, i) => [v, shade[i]]).filter(([v]) => !v.apart && v.rest[1] < body.waist - JUMPER.hemDrop + JUMPER.hemBand - 0.005);
     expect(ribbed.length).toBeGreaterThan(0);
     for (const [, k] of ribbed) expect(k).toBe(JUMPER.bandShade);
+  });
+
+  it('opens the top button into a V on her front, the placket split along it, with her skin in it', () => {
+    const body = cylinderBody();
+    const { shell, placket, vee } = buildTop(body, { ...POLO, open: 1 });
+    expect(vee).not.toBe(null);
+    expect(vee.top - vee.bottom).toBeCloseTo(POLO.buttons[1] - POLO.veeStop, 6);
+    // The neck's edge comes down the V at her front, and her back is untouched.
+    const neck = shell.verts.filter((v) => v.edge === 'neck' && !v.apart);
+    expect(Math.min(...neck.map((v) => v.rest[1]))).toBeLessThan(vee.bottom + 0.004);
+    for (const v of neck.filter((q) => q.rest[2] < 0)) expect(v.rest[1]).toBeCloseTo(body.bones.Neck[1] + POLO.neckCap, 3);
+    // The undone button is on her left half (+x as she stands), its buttonhole on her right, the rest down the middle.
+    expect(placket.buttons.length).toBe(POLO.buttons.length);
+    expect(placket.buttons[0].centre[0]).toBeGreaterThan(0.005);
+    expect(placket.slits.length).toBe(1);
+    expect(placket.slits[0].centre[0]).toBeLessThan(-0.005);
+    for (const b of placket.buttons.slice(1)) expect(Math.abs(b.centre[0])).toBeLessThan(0.002);
+    const inset = buildInset(body, vee);
+    expect(inset.tris.length).toBeGreaterThan(0);
+    const used = new Set(inset.tris.flat());
+    for (const i of used) expect(vee.field(inset.verts[i])).toBeGreaterThan(-0.002);
+  });
+});
+
+describe('shorts', () => {
+  it('cut level at the waist, with the polo tucked inside them all the way to their top', () => {
+    const body = cylinderBody();
+    const shorts = buildShorts(body);
+    const waist = shorts.shell.verts.filter((v) => v.edge === 'waist' && !v.apart);
+    expect(waist.length).toBeGreaterThan(20);
+    for (const v of waist) expect(v.rest[1]).toBeCloseTo(body.waist, 4);
+    // Below their top, every point of the polo is nearer her than every point of the shorts.
+    const radius = (v) => Math.hypot(v.rest[0], v.rest[2]);
+    const below = (verts) => verts.filter((v) => !v.apart && v.rest[1] < body.waist - 1e-4).map(radius);
+    const polo = below(buildTop(body, POLO).shell.verts);
+    expect(polo.length).toBeGreaterThan(20);
+    expect(Math.max(...polo)).toBeLessThan(Math.min(...below(shorts.shell.verts)));
+    expect(SHORTS.ease).toBeGreaterThan(POLO.tuckEase);
   });
 });

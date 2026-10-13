@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { buildTop, buttonShape, poloFields, POLO, JUMPER } from './polo.js';
+import { buildTop, buildInset, buttonShape, slitShape, poloFields, POLO, JUMPER } from './polo.js';
+import { buildShorts } from './shorts.js';
 import { unskin } from './garmentMesh.js';
 
 // Outfits for the companion. The Quaternius model is textured from a tiny
@@ -33,6 +34,7 @@ export const OUTFITS = {
   jessPolo: {
     colors: { hair: '#2a221d', shirt: '#8e2238', shoes: '#262626', trousers: 'skin' },
     collar: '#8e2238',
+    poloOpen: 1, // her top button undone (the polo garment, ?polo=shell)
     wellies: '#262626',
     shorts: '#3f4f6e',
   },
@@ -886,7 +888,8 @@ function bodyData(rig, body) {
   const pal = paletteUv(body);
   const bands = Object.entries(PALETTE);
   const paint = (i) => bands.find(([, c]) => pal?.is(i, c))?.[0] ?? 'other';
-  const waist = (rig.bones.Spine ? bonePos(rig, 'Spine') : bonePos(rig, 'Hips')).y + 0.01; // as the shorts
+  // The top of the shorts as she stands: where the old shorts' top (1 cm above her spine bone, in the stored pose) comes to.
+  const waist = (rig.bones.Spine ? bonePos(rig, 'Spine') : bonePos(rig, 'Hips')).y - 0.012;
   return { verts, index: g.index ? [...g.index.array] : [...Array(pos.count).keys()], boneNames: body.skeleton.bones.map((b) => b.name), bones, paint, waist, fromRoot };
 }
 
@@ -993,9 +996,9 @@ function addTop(rig, name, color, spec) {
   const needs = ['Neck', 'Spine', 'LeftArm', 'RightArm', 'LeftForeArm', 'RightForeArm', 'LeftHand', 'RightHand'];
   if (!body || !needs.every((b) => rig.bones[b])) return;
   const data = bodyData(rig, body);
-  const { shell, shade, placket } = buildTop(data, spec);
+  const { shell, shade, placket, vee } = buildTop(data, spec);
   // The polo matches the shirt colour the body is painted under it; the jumper is its own colour, as before.
-  const tint = spec === POLO ? shirtColour(color) : new THREE.Color(color);
+  const tint = name === 'polo' ? shirtColour(color) : new THREE.Color(color);
   const shading = [];
   for (const k of shade) shading.push(tint.r * k, tint.g * k, tint.b * k);
   skinnedFromArrays(
@@ -1006,6 +1009,19 @@ function addTop(rig, name, color, spec) {
     { positions: shell.verts.map((q) => q.bind), normals: shell.normals, weights: shell.verts.map((q) => q.weights), colors: shading, index: shell.tris.flat() },
     new THREE.MeshStandardMaterial({ vertexColors: true, roughness: spec === JUMPER ? 0.97 : 0.92, side: THREE.DoubleSide }),
   );
+  if (vee) {
+    // Her skin in the V of the open neck, her own flat faces in her skin's colour.
+    const inset = buildInset(data, vee);
+    const [r, g, b] = PALETTE.skin.map((c) => c / 255);
+    skinnedFromArrays(
+      rig,
+      body,
+      data,
+      'poloVee',
+      { positions: inset.verts.map((q) => q.bind), normals: inset.verts.map((q) => q.normal), weights: inset.verts.map((q) => q.weights), index: inset.tris.flat() },
+      new THREE.MeshStandardMaterial({ color: new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace), roughness: 0.85, flatShading: true }),
+    );
+  }
   if (!placket) return;
 
   // The placket, stitched, and its buttons (a second mesh, the holes coloured in).
@@ -1038,6 +1054,10 @@ function addTop(rig, name, color, spec) {
     add(shape.points, shape.tris, b.anchor, ivory);
     add(shape.holes, shape.holeTris, b.anchor, hole);
   }
+  for (const h of placket.slits) {
+    const shape = slitShape(h.centre, h.normal);
+    add(shape.points, shape.tris, h.anchor, hole);
+  }
   skinnedFromArrays(
     rig,
     body,
@@ -1045,6 +1065,25 @@ function addTop(rig, name, color, spec) {
     'poloButtons',
     { positions, normals: smoothArrayNormals(positions, tris), weights, colors, index: tris },
     new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.32, side: THREE.DoubleSide }),
+  );
+}
+
+/** The shorts as a garment (shorts.js), with the polo tucked into them. ?polo=shell. */
+function addBottom(rig, color) {
+  const body = bodyMesh(rig);
+  if (!body || !['Spine', 'LeftUpLeg', 'RightUpLeg', 'LeftLeg', 'RightLeg'].every((b) => rig.bones[b])) return;
+  const data = bodyData(rig, body);
+  const { shell, shade } = buildShorts(data);
+  const tint = new THREE.Color(color);
+  const colors = [];
+  for (const k of shade) colors.push(tint.r * k, tint.g * k, tint.b * k);
+  skinnedFromArrays(
+    rig,
+    body,
+    data,
+    'shorts',
+    { positions: shell.verts.map((q) => q.bind), normals: shell.normals, weights: shell.verts.map((q) => q.weights), colors, index: shell.tris.flat() },
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.88, side: THREE.DoubleSide }),
   );
 }
 
@@ -1069,11 +1108,12 @@ function addGarments(rig, outfit) {
 }
 
 function addEachGarment(rig, outfit) {
-  if (outfit.collar && POLO_SHELL) addTop(rig, 'polo', outfit.collar, POLO);
+  if (outfit.collar && POLO_SHELL) addTop(rig, 'polo', outfit.collar, { ...POLO, open: outfit.poloOpen ?? 0 });
   else if (outfit.collar) addPoloFront(rig, outfit.collar, shirtFrontTop(rig, outfit.collar));
   if (outfit.jumper && POLO_SHELL) addTop(rig, 'jumper', outfit.jumper, JUMPER);
   else if (outfit.jumper) addJumper(rig, outfit.jumper, outfit.colors?.shirt);
-  if (outfit.shorts) addShorts(rig, outfit.shorts);
+  if (outfit.shorts && POLO_SHELL) addBottom(rig, outfit.shorts);
+  else if (outfit.shorts) addShorts(rig, outfit.shorts);
   if (outfit.wellies) addWellies(rig, outfit.wellies);
 }
 
