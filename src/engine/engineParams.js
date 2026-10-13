@@ -225,6 +225,10 @@ export const DEFAULT_ENGINE_PARAMS = {
   beltFlareRpm: 1800, // rpm a fully slipping drive belt lets the revs run on past what the load would hold, at full throttle
   dirtRoughness: 0.3, // roughness added by a fully dirty carb
   dirtPowerLoss: 0.25, // power lost to a fully dirty carb
+  leakLean: 0.25, // mixture leaned by a fully split intake boot at idle (less as the throttle opens, when the vacuum is lower)
+  leakHunt: 0.22, // idle hunt of a fully split boot, as a fraction of idle rpm: a slow rise and fall, mostly at idle
+  leakHuntFrequency: 0.45, // Hz of that hunt
+  popLeak: 0.6, // overrun pop propensity added by a fully split boot (it sucks air in with the throttle shut)
   valveTightPowerLoss: 0.3, // power lost to valves set fully too tight (they don't seat)
   valveLoosePowerLoss: 0.05, // and to valves fully too loose (they open late)
   valveTightHot: 2, // times as much extra hot-start richness tight valves add to a heat-soaked engine
@@ -527,6 +531,10 @@ export const ENGINE_PARAM_RANGES = {
   beltFlareRpm: [0, 4000, 50],
   dirtRoughness: [0, 1, 0.01],
   dirtPowerLoss: [0, 1, 0.01],
+  leakLean: [0, 1, 0.01],
+  leakHunt: [0, 1, 0.01],
+  leakHuntFrequency: [0.05, 3, 0.05],
+  popLeak: [0, 3, 0.05],
   valveTightPowerLoss: [0, 1, 0.01],
   valveLoosePowerLoss: [0, 0.5, 0.01],
   valveTightHot: [0, 6, 0.1],

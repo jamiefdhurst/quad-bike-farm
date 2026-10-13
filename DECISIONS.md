@@ -3500,3 +3500,12 @@ Asked and settled: your helmet and goggles are two separate things you take from
 - Asked and settled: J does the swapping. Hitching a trailer to the tractor takes the spike off (the mast was already hidden while a trailer is on), unhitching puts it back, and the toasts say so. No separate fit and remove action.
 - Helmets: Amy's goggle elastic now has its gap at the front (it ran across her eyes); Jess's pushed-up goggles sit proud of the shell and lie along it.
 
+## An air leak at the carb boot (TODO 49)
+
+Settled without asking, as the item was clear.
+
+- A ninth use-driven fault, `leak`, in `faults.js` like the carb and mounts: starts while the engine runs (about every 6000 s of running, scaled by the quad's own proneness), from level 0.15, takes about 1200 s to open right up. Not on a diesel (`hasBoot`, set in `quad.js` from `compressionIgnition`; a diesel has no carb or throttle body). Quads can start a game with it (history), and the girls mention it (`faultLeak`, `histLeak`) like the others.
+- What it does is in `EngineModel` (control `airLeak`): leans the mixture (`leakLean`, strongest at idle where the vacuum is, less with the throttle open), a slow idle hunt (`leakHunt`, 0.45 Hz, plus a little noise, mostly gone with the throttle open) and extra overrun-pop propensity (`popLeak`, added in `popPropensity`). Leaning also costs a little power and makes the lean-driven run-on a touch likelier, as a real leak would. The noise term throws no dice while the boot is sound, so every existing seeded test and every healthy engine is unchanged.
+- Bench only (`BENCH_ONLY_KINDS`): a rough fix returns false, so no toolbox key. The new bench job "Renew the intake boot" (the fifteenth key, semicolon, as the overflow keys ran out) has an inspect step that reads `bootLook`; a clip not nipped up right leaves a faint leak at the usual botched level. No spare part is used.
+- The Problems folder and the console's faults path list it automatically, and "Put it right" clears it, because they walk `FAULT_KINDS`.
+- Tests in `tests/airLeak.test.js`. Not checked in the running game: the hunt amplitude (22% of idle at its worst) and pop rate are sensible numbers, not tuned by ear.

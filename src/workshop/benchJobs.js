@@ -178,6 +178,16 @@ export const JOBS = {
       { id: 'on', text: 'Rocker cover back on', kind: 'press' },
     ],
   },
+  boot: {
+    name: 'Renew the intake boot',
+    steps: [
+      { id: 'air', text: 'Take the airbox off to get at the rubber boot', kind: 'press' },
+      { id: 'look', text: 'Rev it a touch and spray water round the boot: see where it sucks', kind: 'press', inspect: true },
+      { id: 'clips', text: 'Slacken the boot clips and pull the old boot off', kind: 'hold', need: 0.8 },
+      { id: 'fit', text: 'Slide the new boot on and nip the clips up: snug, not tight', kind: 'hold', need: 0.7, limit: 1.5 },
+      { id: 'on', text: 'Airbox back on', kind: 'press' },
+    ],
+  },
   crash: {
     name: 'Mend the crash damage',
     steps: [
@@ -253,7 +263,7 @@ export const JOBS = {
 };
 
 // The last row of the list is the charger, and says either 'chargeOn' or 'chargeOff' depending on where this quad's battery is (bench.js kindsFor).
-export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd', 'chain', 'valves', 'crash'];
+export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd', 'chain', 'valves', 'boot', 'crash'];
 
 /** What each reading means, the way Amy would say it. Order is the order Jess can be wrong in. */
 export const PLUG_KINDS = ['healthy', 'rich', 'lean', 'oily', 'worn'];
@@ -296,6 +306,15 @@ export function chainLook(faults) {
   if (level < 0.5) return `a bit loose${dry}`;
   if (level < 0.8) return `hanging slack${dry}`;
   return `drooping nearly off the sprocket${dry}`;
+}
+
+/** What the water spray says about the intake boot, for the toast: where it gets sucked in tells you what it needs. */
+export function bootLook(faults) {
+  const l = faults.airLeak;
+  if (l < 0.1) return 'no change in the revs wherever you spray: sound';
+  if (l < 0.4) return 'a faint hiss, and the revs lift as the water is sucked in at the split: a small crack';
+  if (l < 0.75) return 'the revs jump where you spray the boot: it is split along the fold';
+  return 'sucked in with a gulp and the engine nearly stalls: the boot is split right open';
 }
 
 /** What the feeler gauge says about the valve clearance, for the toast: you work out what it needs. */
@@ -503,6 +522,13 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     if (adjust) return 'Chain back on, but the slack is not right and it will stretch again soon';
     return job.outcome('oil') === 'good' ? 'Chain adjusted and oiled: it runs quietly' : 'Chain adjusted, though it is a touch dry';
   }
+  if (job.kind === 'boot') {
+    // A new boot is the fix; clips left slack, or done up too hard on the old rubber, leave a small leak.
+    const bad = botched || job.outcome('fit') !== 'good';
+    faults.fix('leak');
+    if (bad) faults.leave('leak', P.botchedLevel);
+    return bad ? 'New boot on, but the clips are not right and there is a faint hiss left' : 'New intake boot on: the idle is steady again and the popping has stopped';
+  }
   if (job.kind === 'valves') {
     // Setting the gap is the fix. Too little turn of the screws leaves it wide, too much leaves it tight; a locknut left slack lets it creep back wide.
     const gap = job.outcome('gap');
@@ -561,6 +587,7 @@ export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = fal
   if (kind === 'topEnd') return canRebuildTopEnd(engine, P);
   if (kind === 'chain') return !!chain;
   if (kind === 'valves') return !!valves; // every four-stroke has them
+  if (kind === 'boot') return !engine.params.compressionIgnition; // a diesel has no carb or throttle body boot
   if (kind === 'chargeOn') return !engine.batteryOut && !engine.params.noStarter; // a cord-only quad has no battery to take out
   if (kind === 'chargeOff') return !!engine.batteryOut;
   if (kind === 'tarp' || kind === 'fuel' || kind === 'brake' || kind === 'battery') return true;

@@ -2,7 +2,7 @@ import './bench.css';
 import * as THREE from 'three';
 import { PARTS } from './spares.js';
 import { registerTuning } from '../core/tuning.js';
-import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, BenchJob, finishJob, jobAvailable, jobPart, inBay, plugCondition, readPlug, scoringLook, chainLook, valvesLook, crashLook } from './benchJobs.js';
+import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, BenchJob, finishJob, jobAvailable, jobPart, inBay, plugCondition, readPlug, scoringLook, chainLook, bootLook, valvesLook, crashLook } from './benchJobs.js';
 
 // The jobs after the tenth (which is on 0) have the keys beside it.
 const OVERFLOW_KEYS = [
@@ -10,6 +10,7 @@ const OVERFLOW_KEYS = [
   { code: 'Equal', label: '=' },
   { code: 'BracketLeft', label: '[' },
   { code: 'BracketRight', label: ']' },
+  { code: 'Semicolon', label: ';' },
 ];
 
 /**
@@ -126,6 +127,8 @@ export class Bench {
       this.game.hud.toast(`The chain is ${chainLook(this.unit.quad.faults)}`);
     } else if (inspected && this.job?.kind === 'crash') {
       this.game.hud.toast(`Looking it over: ${crashLook(this.unit.quad.faults)}`);
+    } else if (inspected && this.job?.kind === 'boot') {
+      this.game.hud.toast(`The spray: ${bootLook(this.unit.quad.faults)}`);
     } else if (inspected && this.job?.kind === 'valves') {
       this.game.hud.toast(`The feeler gauge goes in ${valvesLook(this.unit.quad.faults)}`);
     } else if (inspected) {
@@ -170,7 +173,7 @@ export class Bench {
     const job = this.job;
     if (!job) {
       this.kindsFor(this.unit).forEach((kind, i) => {
-        const n = (i + 1) % 10; // the tenth job is on 0, the eleventh on the minus key, the twelfth on equals, the thirteenth on the left bracket, the fourteenth on the right
+        const n = (i + 1) % 10; // the tenth job is on 0, the eleventh on the minus key, the twelfth on equals, the thirteenth on the left bracket, the fourteenth on the right, the fifteenth on the semicolon
         const hit = i >= 10 ? input.wasPressed(OVERFLOW_KEYS[i - 10].code) : input.wasPressed(`Digit${n}`) || input.wasPressed(`Numpad${n}`);
         if (hit) this.begin(kind);
       });

@@ -74,6 +74,9 @@ export class EngineModel {
     this.clickedDead = false; // the starter has clicked for this press
     this.slip = 0; // see update()
     this.dirt = 0;
+    this.airLeak = 0; // 0..1 a split or loose intake boot letting unmetered air in (set from the quad's faults)
+    this.leakPhase = 0;
+    this.leakNoise = 0;
     this.valveLoose = 0; // 0..1 valve clearance too wide: a tappet tick (set from the quad's faults)
     this.valveTight = 0; // 0..1 clearance too tight: starts hard when hot and loses power
     this.clog = 0; // 0..1 how clogged the air filter is
@@ -263,6 +266,7 @@ export class EngineModel {
    * @param {number}  [controls.driveLoad]  0..1 how hard the wheels hold the revs down (pulling away, hills, mud).
    * @param {number}  [controls.resistLoad] 0..1 the part of driveLoad from climbing, mud or being blocked; this is what lugs a weak engine.
    * @param {number}  [controls.slip] 0..1 a slipping drive belt: the revs flare and the load doesn't hold them down.
+   * @param {number}  [controls.airLeak] 0..1 a split intake boot: the idle hunts up and down, it runs lean and pops on the overrun.
    * @param {number}  [controls.dirt] 0..1 a dirty carb: lumpy, erratic and short of power.
    * @param {number}  [controls.valveLoose] 0..1 valves too loose: the tappets tick.
    * @param {number}  [controls.valveTight] 0..1 valves too tight: a hard hot start and short of power.
@@ -275,7 +279,7 @@ export class EngineModel {
    * @param {number}  [controls.gearRpm] a manual's revs at this road speed in this gear (speed over the gear's top speed, times full-throttle revs).
    * @param {number}  [controls.gearLock] 0..1 how far the clutch ties the engine to those revs: the throttle then only decides the torque.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, valveLoose = 0, valveTight = 0, clog = 0, ice = 0, gulp = 0, diesel = 0, fuelWater = 0, additive = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12 } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, airLeak = 0, valveLoose = 0, valveTight = 0, clog = 0, ice = 0, gulp = 0, diesel = 0, fuelWater = 0, additive = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12 } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -291,6 +295,7 @@ export class EngineModel {
     this.oilBurn = clamp(oilBurn, 0, 1);
     this.slip = clamp(slip, 0, 1);
     this.dirt = clamp(dirt, 0, 1);
+    this.airLeak = clamp(airLeak, 0, 1);
     this.valveLoose = clamp(valveLoose, 0, 1);
     this.valveTight = clamp(valveTight, 0, 1);
     this.clog = clamp(clog, 0, 1);
@@ -606,7 +611,7 @@ export class EngineModel {
     const hot = this.state === EngineState.RUNNING || p.injected ? 0 : hotStartRich(this.soak, this.throttle, p) * (1 + p.valveTightHot * this.valveTight); // tight valves swell with the heat and hold it up
     this.jetErr = p.strokes === 2 ? jetError(p.jet, this.dayTemp, p, this.bore) : 0;
     this.jetOn = p.strokes === 2 ? jetTrue(this.jetErr, p) : 0;
-    this.mixture = jetMixture(this.jetErr, p) + supplied - need - p.starveLean * starve + p.mixtureTrim + p.clogRich * this.clog + hot;
+    this.mixture = jetMixture(this.jetErr, p) + supplied - need - p.starveLean * starve - p.leakLean * this.airLeak * (1 - 0.7 * this.throttle) + p.mixtureTrim + p.clogRich * this.clog + hot;
     this.lean = Math.max(0, -this.mixture);
     this.rich = Math.max(0, this.mixture - p.richTolerance);
 
@@ -730,6 +735,11 @@ export class EngineModel {
     // Needing a service, the idle won't settle at all: a fast, irregular wander, and flare-ups that die away.
     this.erraticNoise += (this.random() * 2 - 1) * 14 * h - this.erraticNoise * 4 * h;
     this.surge *= Math.exp(-1.4 * h);
+    // A split intake boot: the idle rises and falls on its own as the leaked air comes and goes, and it settles once the throttle is open.
+    this.leakPhase += 2 * Math.PI * p.leakHuntFrequency * h;
+    const gust = this.airLeak > 0 ? this.random() * 2 - 1 : 0; // no dice thrown while the boot is sound
+    this.leakNoise += (gust * 2 - this.leakNoise * 1.5) * h;
+    const leakHunt = p.leakHunt * p.idleRpmWarm * this.airLeak * (0.8 * Math.sin(this.leakPhase) + this.leakNoise) * (1 - 0.85 * this.throttle);
     const erratic = (p.erraticHunt * p.idleRpmWarm * this.erratic * this.erraticNoise * 3 + this.surge) * (1 - 0.6 * this.throttle);
 
     this.idleTarget =
@@ -739,7 +749,8 @@ export class EngineModel {
       p.leanIdleDrop * this.lean +
       hunt +
       roughHunt +
-      erratic;
+      erratic +
+      leakHunt;
     this.freeTargetRpm = Math.min(p.maxRpm, this.idleTarget + this.throttle * (p.maxRpm - this.idleTarget));
     // Under load the revs sag towards idle. A weak engine sags further when it's
     // climbing or ploughing (the slipping clutch spares it when pulling away),

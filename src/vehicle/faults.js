@@ -9,6 +9,7 @@ export const DEFAULT_FAULT_PARAMS = {
   beltEvery: 1800, // riding hard, with the throttle well open
   cableEvery: 7200, // engine running (was 2700: it stuck too often)
   carbEvery: 2400, // engine running
+  leakEvery: 6000, // engine running: the intake boot perishing and splitting (diesels have no carb boot, see hasBoot)
   mountsEvery: 5400, // engine running: rubber perishing, so it comes on slower than the rest
   valvesEvery: 4800, // engine running, on a four-stroke: the tappets wearing wide
   chainEvery: 3000, // riding, on a chain-driven quad: the chain stretching (a dry one starts sooner, see chainDryWear)
@@ -17,6 +18,7 @@ export const DEFAULT_FAULT_PARAMS = {
   beltSeconds: 300, // of hard riding
   cableSeconds: 600, // running
   carbSeconds: 900, // running
+  leakSeconds: 1200, // running: the split opening up from a hiss to a gape
   mountsSeconds: 1500, // running: the mounts going from sound to shot
   valvesSeconds: 2400, // running: the clearance going from a faint tick to a loud one
   chainSeconds: 900, // of riding: the chain going from just slack to hanging off the sprocket
@@ -55,6 +57,8 @@ export const FAULT_PARAM_RANGES = {
   cableEvery: [60, 20000, 60],
   carbEvery: [60, 20000, 60],
   mountsEvery: [60, 20000, 60],
+  leakEvery: [60, 20000, 60],
+  leakSeconds: [10, 3600, 10],
   chainEvery: [60, 20000, 60],
   valvesEvery: [60, 20000, 60],
   valvesSeconds: [10, 7200, 10],
@@ -92,7 +96,10 @@ export const FAULT_PARAM_RANGES = {
   fieldFixCap: [0, 1, 0.01],
 };
 
-export const FAULT_KINDS = ['puncture', 'belt', 'cable', 'carb', 'mounts', 'chain', 'valves', 'rod', 'rim'];
+export const FAULT_KINDS = ['puncture', 'belt', 'cable', 'carb', 'mounts', 'chain', 'valves', 'rod', 'rim', 'leak'];
+
+/** Faults the toolbox can't touch: a rough fix in the yard does nothing, only the bench puts them right. */
+export const BENCH_ONLY_KINDS = ['leak'];
 
 /** Faults that come from a knock (crashDamage.js), not from use: they never start or worsen by themselves, and only the bench puts them right. */
 export const CRASH_KINDS = ['rod', 'rim'];
@@ -113,13 +120,14 @@ export class Faults {
     this.rodWheel = -1; // which front wheel has the bent track rod
     this.rimWheel = -1; // which wheel has the bent rim
     this.steerWheels = [0, 1]; // the wheels a track rod can be bent on (set by Quad)
-    this.levels = { puncture: 0, belt: 0, cable: 0, carb: 0, mounts: 0, chain: 0, valves: 0, rod: 0, rim: 0 }; // 0 none, rising to 1 at their worst
-    this.started = { puncture: false, belt: false, cable: false, carb: false, mounts: false, chain: false, valves: false, rod: false, rim: false };
-    this.caps = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1, rod: 1, rim: 1 }; // a rough fix leaves it from getting any worse than this
+    this.levels = { puncture: 0, belt: 0, cable: 0, carb: 0, mounts: 0, chain: 0, valves: 0, rod: 0, rim: 0, leak: 0 }; // 0 none, rising to 1 at their worst
+    this.started = { puncture: false, belt: false, cable: false, carb: false, mounts: false, chain: false, valves: false, rod: false, rim: false, leak: false };
+    this.caps = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1, rod: 1, rim: 1, leak: 1 }; // a rough fix leaves it from getting any worse than this
     this.heldThrottle = 0; // what a sticking cable is still holding open
-    this.prone = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1, rod: 1, rim: 1 }; // times as often it starts (see roll)
-    this.worsens = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1, rod: 1, rim: 1 }; // times as fast it gets worse
+    this.prone = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1, rod: 1, rim: 1, leak: 1 }; // times as often it starts (see roll)
+    this.worsens = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1, rod: 1, rim: 1, leak: 1 }; // times as fast it gets worse
     this.hasChain = false; // a chain-driven quad (the sport quad, the mini moto, the ATC) can have a stretched chain; the others never
+    this.hasBoot = true; // a petrol carb or throttle body has an intake boot to split; a diesel has none (set by Quad)
     this.hasValves = false; // a four-stroke can have its valve clearances out; a two-stroke has no valves (set by Quad)
     this.kept = { chainLube: 1, chainOff: false, valveTight: false }; // the chain's oil (1 fresh, 0 bone dry) and whether it has jumped the sprocket, and whether the valves were left too tight rather than worn wide: kept between games
     this.slapped = 0; // 0..1 how hard the slack chain just slapped; take it with takeSlap()
@@ -206,6 +214,7 @@ export class Faults {
     if (running && !this.started.carb && this.random() < chance(p.carbEvery, 'carb')) this.begin('carb');
     if (running && !this.started.mounts && this.random() < chance(p.mountsEvery, 'mounts')) this.begin('mounts');
     if (this.hasValves && running && !this.started.valves && this.random() < chance(p.valvesEvery, 'valves')) this.begin('valves');
+    if (this.hasBoot && running && !this.started.leak && this.random() < chance(p.leakEvery, 'leak')) this.begin('leak');
     const grow = (kind, on, seconds) => {
       if (this.started[kind] && on) this.levels[kind] = Math.min(this.caps[kind], this.levels[kind] + (dt * this.worsens[kind]) / seconds);
     };
@@ -214,6 +223,7 @@ export class Faults {
     grow('cable', running, p.cableSeconds);
     grow('carb', running, p.carbSeconds);
     grow('mounts', running, p.mountsSeconds);
+    grow('leak', running, p.leakSeconds);
     grow('valves', running && !this.kept.valveTight, p.valvesSeconds); // wearing wide; a clearance set too tight stays as it is
     if (this.hasChain) this.updateChain(dt, { moving, throttle, jolt });
   }
@@ -340,6 +350,11 @@ export class Faults {
     return this.levels.carb;
   }
 
+  /** 0..1 how badly the intake boot is split, for the engine (it leans out, hunts at idle and pops on the overrun). */
+  get airLeak() {
+    return this.levels.leak;
+  }
+
   /** 0..1 how loud the tappets tick (valves worn wide), for the engine. */
   get valveLoose() {
     return this.started.valves && !this.kept.valveTight ? this.levels.valves : 0;
@@ -361,6 +376,7 @@ export class Faults {
    */
   fix(kind, { rough = false } = {}) {
     if (!this.started[kind]) return false;
+    if (rough && BENCH_ONLY_KINDS.includes(kind)) return false; // a split boot wants a new one
     if (rough && CRASH_KINDS.includes(kind)) return false; // bent metal can't be mended with what's in the toolbox
     if (kind === 'chain') {
       // Put back on the sprocket either way, and given a squirt of oil; only the bench takes the stretch out.

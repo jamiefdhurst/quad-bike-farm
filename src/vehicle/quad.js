@@ -132,6 +132,7 @@ export class Quad {
     this.dash = this.model.userData.dash;
     this.fuel = new FuelSystem(fuelParams);
     this.faults = new Faults();
+    this.faults.hasBoot = !engine.params.compressionIgnition; // nor an intake boot to split
     if (engine.params.compressionIgnition) this.faults.prone.carb = 0; // a diesel has no carb to get dirty
     if (tractor) this.faults.prone.belt = 0; // and the tractor has a clutch and gearbox, not a belt
     this.faults.hasValves = engine.params.strokes !== 2; // every four-stroke has valves to go out of adjustment; a two-stroke has none
@@ -987,6 +988,7 @@ export class Quad {
       oilBurn: this.sump ? Math.max(this.sump.burnSmoke(this.engine.throttle, Math.max(0, this.engine.rpm - this.engine.params.idleRpmWarm)), this.engine.isRunning ? this.sump.overSmoke() : 0) : 0,
       slip: this.faults.slip,
       dirt: this.faults.dirt,
+      airLeak: this.faults.airLeak,
       valveLoose: this.faults.valveLoose,
       valveTight: this.faults.valveTight,
       clog: Math.min(1, this.filter.clog + (this.sump?.airboxChoke ?? 0)),

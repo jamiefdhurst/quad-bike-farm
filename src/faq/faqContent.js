@@ -589,7 +589,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I know something’s wrong?',
         a: `Mostly by feel and sound; nothing on screen tells you. A slow puncture pulls the bars towards the soft tyre. A slipping belt flares the revs and
-          hardly goes. A sticking throttle lingers after you let go, then sticks for good. A dirty carb hunts and runs rough. Valve clearances that have worn wide make a four-stroke tick from the top of the engine. A hard knock on a post or a bad landing can bend a track rod (the bars pull to one side and a front wheel points out of line) or a rim (a wheel wobbles). A stretched chain (the sport quad, mini moto and three-wheeler) slaps over bumps and can jump off. Worn engine mounts (on any vehicle, but you feel it most on the tractor, the UTV and the Land Rovers) shake more through the seat and clonk when you stab the throttle. The girls see what you can't:
+          hardly goes. A sticking throttle lingers after you let go, then sticks for good. A dirty carb hunts and runs rough. A split intake boot makes the idle rise and fall by itself and the exhaust pop when you lift off (not on a diesel). Valve clearances that have worn wide make a four-stroke tick from the top of the engine. A hard knock on a post or a bad landing can bend a track rod (the bars pull to one side and a front wheel points out of line) or a rim (a wheel wobbles). A stretched chain (the sport quad, mini moto and three-wheeler) slaps over bumps and can jump off. Worn engine mounts (on any vehicle, but you feel it most on the tractor, the UTV and the Land Rovers) shake more through the seat and clonk when you stab the throttle. The girls see what you can't:
           ride off and one behind you may shout about smoke or a soft tyre. Amy's logbook on the workbench records what she has found.`,
         tip: 'Read Amy’s logbook on the workbench: it is always true, unlike what Jess tells you.',
       },
@@ -710,9 +710,14 @@ export const FAQ_SECTIONS = [
           otherwise says all is well, so it doesn't give a fault away.`,
       },
       {
+        q: 'Why does the idle keep rising and falling, and why does it pop when I lift off?',
+        a: `Most likely the rubber intake boot between the carb and the engine has split and is sucking in air it shouldn't. The idle drifts up and down by itself, it runs lean, and it pops in the exhaust when you come off the throttle at speed. It settles a little once you open up. It only gets worse, and the toolbox can't mend it: renew the boot at the workbench (spray water round it with the engine revving to find the split). Diesels have no carb boot.`,
+        tip: 'An idle that rises and falls by itself and pops on the overrun is a split intake boot: renew it at the workbench.',
+      },
+      {
         q: 'What can the workbench do?',
-        a: `Drive into the yellow bay in front of it, switch off, look at the bench and press <kbd>E</kbd>. <kbd>1</kbd> to <kbd>9</kbd>, <kbd>0</kbd>, <kbd>-</kbd> and <kbd>=</kbd> pick a job: a new plug,
-          clean the carb, fix a tyre, two-stroke oil, engine oil, repack a silencer, coolant, a big-bore kit, new engine mounts, a top-end rebuild for a two-stroke that has seized, adjusting and oiling the chain on the three chain-driven quads, or setting the valve clearances on a four-stroke. Each is a short list of steps; on a hold step keep
+        a: `Drive into the yellow bay in front of it, switch off, look at the bench and press <kbd>E</kbd>. <kbd>1</kbd> to <kbd>9</kbd>, <kbd>0</kbd>, <kbd>-</kbd>, <kbd>=</kbd>, <kbd>[</kbd>, <kbd>]</kbd> and <kbd>;</kbd> pick a job: a new plug,
+          clean the carb, fix a tyre, two-stroke oil, engine oil, repack a silencer, coolant, a big-bore kit, new engine mounts, a top-end rebuild for a two-stroke that has seized, adjusting and oiling the chain on the three chain-driven quads, setting the valve clearances on a four-stroke, or renewing a split intake boot on a petrol engine. Each is a short list of steps; on a hold step keep
           <kbd>E</kbd> down and let go inside the green band. Too soon or too long botches it and the fault comes back a little. Amy helps; Jess heckles.`,
       },
       {
