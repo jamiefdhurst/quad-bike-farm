@@ -14,6 +14,7 @@ import { TAP_POSITIONS } from '../vehicle/fuelSystem.js';
 import { LIGHT_MODES } from '../vehicle/lightSwitch.js';
 import { SIGNAL_MODES } from '../vehicle/indicators.js';
 import { DRIVE_MODES } from '../vehicle/driveMode.js';
+import { lensCoverage } from '../effects/lensMud.js';
 import { WEATHER_KINDS } from '../world/weather.js';
 
 const DEG = 180 / Math.PI;
@@ -314,6 +315,13 @@ export function buildGameTree(g, host) {
     now: text(() => { const r = g.towRope; return r.state === 'hooked' ? `${r.puller.unit?.label} to ${r.target.unit?.label}: ${r.tight ? `tight, ${Math.round(r.force)} N` : 'slack'}, ${r.length.toFixed(1)} m long` : r.state; }, 'where the tow rope is and how tight'),
     off: flag(() => false, (v) => v && g.towRope.stow(), 'set to true: take the rope off and put it back'),
   }), 'the tow rope on the utility quads');
+  const lens = group(() => ({
+    covered: ro(() => lensCoverage(g.lens), '', 'how much of your view has mud or drops on it, 0 to 1'),
+    guard: num(() => g.lensParams.guard, (v) => (g.lensParams.guard = v), 0, 1, '', 'how much is kept off the lens (goggles will set it)'),
+    splat: flag(() => false, (v) => v && g.debugLens('splat'), 'set to true: three splats of mud on the lens'),
+    wipe: flag(() => false, (v) => v && g.debugLens('wipe'), 'set to true: wipe it (the first smears, the second clears)'),
+    clear: flag(() => false, (v) => v && g.debugLens('clear'), 'set to true: clean it off'),
+  }), 'the mud on your view on an open vehicle');
   const audio = group(() => ({ sound: flag(() => !g.audioHub.params.muted, (v) => (g.audioHub.params.muted = !v), 'all game sound') }));
 
   return group(() => ({
@@ -330,6 +338,7 @@ export function buildGameTree(g, host) {
     spares,
     photos,
     towRope,
+    lens,
     audio,
     tune: tuningTree(),
   }));

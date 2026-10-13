@@ -83,6 +83,7 @@ export const RADIAL_ITEMS = [
   { label: 'Seat belt', key: 'Semicolon', where: 'ride' },
   { label: 'Right it', key: 'KeyT', where: 'ride' },
   { label: 'Hitch', key: 'KeyJ' },
+  { label: 'Wipe the lens', key: 'KeyX', where: 'ride' },
   { label: 'Tip / ramps', key: 'KeyT', where: 'foot' },
   { label: 'Push', key: 'KeyV', hold: 1.5, where: 'foot' },
   { label: 'Bucket list', key: 'Tab' },

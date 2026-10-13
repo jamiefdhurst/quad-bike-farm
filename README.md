@@ -216,6 +216,8 @@ Each game starts at its own time, morning or afternoon, and the day runs on abou
 
 **Muddy girls.** The girls get dirty. Riding on a muddy quad splashes mud up their jeans and onto their faces (the girl on the back takes the most, more through puddles), and riding in the dust off the stubble puts it in their hair and faces. Amy minds and says so, Jess laughs. The mud stays on while it is wet, then dries and flakes off slowly, faster while she walks about; the hose takes it off in a couple of seconds (and she reacts as before). Her wellies and shorts stay clean. "Muddy girls" in the Tune tab sets how quickly; the Girls tab shows her mud and dust, sets them and has a Splash and a Scrub button, and the console has `girl amy mud`, `girl amy dust`.
 
+**Mud on your view.** On an open vehicle (the quads, the mini moto, the three-wheeler and the tractor) mud splatters your view as brown blobs over the screen: close behind another vehicle on the mud, through a puddle or the ford at speed, and a few drops in hard rain. Press `X` (on a pad, the ring's "Wipe the lens") to wipe: the first wipe smears it wide and thin, the second clears it, and raindrops go at once. It dries off and drops away by itself in a few minutes. The UTV, the Land Rovers and the cars have a windscreen and stay clean. Goggles (TODO 48) will keep most of it off. "Mud on the lens" in the Tune tab sets how easily it splatters and how fast it dries; the Vehicles tab shows how much is on your view and can splat or wipe it; the console's `lens` path does the same.
+
 The temperature follows the day: coldest at dawn, warmest at half past two, then falling by four to eight degrees into the night. So a frosty morning thaws (the ground and the seats clear as it warms), and a cold evening frosts over again after dark. Cold starts, the girls' need for warmth and the rest follow the temperature as it is now, not as it was when the game began.
 
 After dark the headlights matter: a lit lamp throws real light, as bright and as yellow as that vehicle's lamps are (the old quads' brighten with the revs and flicker when the engine runs rough). There are six real lights, given to the lit vehicles that matter most: yours first, then whichever is lighting the way for you, then the nearest. The barn's bulb is left on, and the girls say it's getting dark, then that they want to go in, and head for the barn doorway or a warm cab.
@@ -651,7 +653,7 @@ What is still to do. Finished items are recorded in DECISIONS.md, under their ol
 44. **Done.** A bale spike on the Fergie's lift arms. Raise and lower the linkage, spear a bale, carry it and stack it. A front loader could come later.
 45. **Done.** A bonfire at dusk. Drag the hedge cuttings into a pile, light it, and the girls sit round it with the flask (item 13); smoke on the wind (item 20), sparks and a glow on faces.
 46. **Done.** A frame-time readout. A breakdown per system (physics, girls, audio, effects, rendering) on the debug panel, before the farm grows any more.
-47. Mud on the lens. Riding through the wet track behind another quad, a puddle at speed or the ford splatters your view; a key wipes it, smearing at first. Goggles (item 46) keep most of it off.
+47. Mud on the lens. Riding through the wet track behind another quad, a puddle at speed or the ford splatters your view; a key wipes it, smearing at first. Goggles (item 46) keep most of it off. **Done.**
 48. Helmets and goggles. Hooks by the barn door. Amy always wears hers and nags you if you don't; Jess wears hers pushed back on her head. Goggles keep the mud off your view (item 45).
 49. An air leak at the carb boot. A split or loose intake boot makes the idle hunt up and down and pop on the overrun. Heard rather than shown, fixed at the bench, in Problems on the Vehicles tab.
 50. Clutch wear on the manual quads. Slipping it at the bite on the hill or creeping in low wears it; a worn clutch slips under power, the revs flare without the speed, and it smells hot. The manual quads' version of the slipping belt.
@@ -659,7 +661,7 @@ What is still to do. Finished items are recorded in DECISIONS.md, under their ol
 52. Need to fix the UTV, cars, etc. when they get crash damage too - how do we do that if they don't fit in the barn?
 53. The girls' wheels still aren't right - if they're in the middle of something, only show the "stop, come here", etc. options. If both me and Amy are in the Corsa, there's no option for Jess to drive it, but there should be (same for Amy and the Fiesta, etc.)
 54. Corsa's dash is still too low down, I can't see the warning lights because of the steering wheel
-55. Need options to start the Fiesta and Corsa, same as the others
+55. Need options for the girls to start the Fiesta and Corsa, same as the others
 56. Mist in the barley hollow and rainbows. Ground mist sits in the damp north field early in the game and burns off as it warms; a passing shower can leave a rainbow.
 57. Waterproofs and getting cold. In the rain the girls pull their hoods up or fetch coats from the barn, and their hair goes wet. A girl who gets soaked gets cold: she shivers, wants the Land Rover's heater or borrows your jumper.
 58. A barn cat. It sleeps on a warm engine or a sunny seat and has to be shooed off, and runs from a revving quad. Jess talks to it; Amy pretends not to like it.

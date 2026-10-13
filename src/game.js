@@ -219,6 +219,8 @@ import { Snow } from './effects/snow.js';
 import { Rain } from './effects/rain.js';
 
 import { washMud } from './effects/mudBuildUp.js';
+import { DEFAULT_LENS_PARAMS, LENS_PARAM_RANGES, createLens, updateLens, wipeLens, leaderAhead, isOpenVehicle, lensCoverage, addSplat } from './effects/lensMud.js';
+import { LensMudView } from './effects/lensMudView.js';
 import { DEFAULT_MUDDY_PARAMS, MUDDY_PARAM_RANGES, updateMuddiness, noticing, markRemarked } from './npc/muddiness.js';
 import { Workshop } from './workshop/workshop.js';
 import { PodRack } from './vehicle/pods.js';
@@ -1317,6 +1319,12 @@ export class Game {
     registerTuning('Hose', this.hose.params, HOSE_PARAM_RANGES);
     this.muddyParams = { ...DEFAULT_MUDDY_PARAMS };
     registerTuning('Muddy girls', this.muddyParams, MUDDY_PARAM_RANGES);
+    // What is stuck on your view riding an open vehicle (effects/lensMud.js), and the canvas that draws it.
+    this.lensParams = { ...DEFAULT_LENS_PARAMS };
+    registerTuning('Mud on the lens', this.lensParams, LENS_PARAM_RANGES);
+    this.lens = createLens();
+    this.lensRandom = createRandom(this.seed ^ 0x1e45);
+    this.lensView = new LensMudView();
     registerTuning('Bell', this.bell.params, BELL_PARAM_RANGES);
     registerTuning('Favour', this.favour.p, FAVOUR_PARAM_RANGES);
     registerTuning('Achievements', this.achievements.p, ACHIEVEMENT_PARAM_RANGES);
@@ -3947,6 +3955,44 @@ export class Game {
       const kind = noticing(c.mucky, p);
       if (kind && c.voice.onMuddy(kind)) markRemarked(c.mucky, kind, p);
     }
+  }
+
+  /** Mud and drops on your view: what a puddle, the quad ahead or hard rain throws up, drying, and X to wipe it (effects/lensMud.js). */
+  updateLens(dt, ridden) {
+    const p = this.lensParams;
+    const open = !!ridden && isOpenVehicle(ridden.spec.id);
+    let situation = null;
+    if (open) {
+      const q = ridden.quad;
+      const others = this.units
+        .filter((u) => u !== ridden && u.quad.speed > 0)
+        .map((u) => {
+          const m = u.quad.physics.wheelMud;
+          return { x: u.quad.position.x, z: u.quad.position.z, speed: u.quad.speed, mud: m.length ? m.reduce((a, b) => a + b, 0) / m.length : 0 };
+        });
+      situation = {
+        speed: q.forwardSpeed,
+        puddle: Math.max(0, ...q.physics.wheelInfo.map((w) => w.puddle ?? 0)),
+        leader: leaderAhead({ x: q.position.x, z: q.position.z, yaw: q.yaw }, others, p),
+        rain: this.weather.rain,
+        covered: this.world.covered(q.position.x, q.position.z),
+      };
+      if (!this.menu.isOpen && this.input.wasPressed('KeyX')) {
+        const had = this.lens.splats.length;
+        wipeLens(this.lens, p);
+        if (had) this.hud.toast(this.lens.splats.length ? 'Smeared it about' : 'Wiped it clear', 1.2);
+      }
+    }
+    updateLens(this.lens, dt, situation, this.lensRandom, p);
+    this.lensView.setLight(1 - (this.daylight?.darkness ?? 0)); // drawn with its own colours, so dimmed with the day like the other fixed-colour effects
+    this.lensView.update(dt, this.lens, open);
+  }
+
+  /** The debug panel and console: a splat of mud on the lens now, or a wipe. */
+  debugLens(what) {
+    if (what === 'splat') for (let i = 0; i < 3; i++) addSplat(this.lens, this.lensRandom, this.lensParams, 'mud');
+    else if (what === 'clear') this.lens.splats.length = 0;
+    else wipeLens(this.lens, this.lensParams);
   }
 
   /** Spraying, the hose's reach, the hiss, and her reaction if you get her wet. */
@@ -8486,6 +8532,7 @@ export class Game {
     fb.lap('farm features', performance.now());
     this.updateMinds(dt, ridden);
     this.updateMuddiness(dt);
+    this.updateLens(dt, ridden);
     this.updatePair(dt);
     this.watchNotices(dt);
     for (const c of this.companions) {

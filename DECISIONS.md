@@ -3464,3 +3464,14 @@ Nothing needed asking: the item said what and where.
 - Measured once headless on seed 2 (a software-ish GPU, so the drawing figure means little): vehicles 2.0 ms, farm features 0.9, girls 0.4, world and weather 0.3, the rest under 0.2. "Vehicles" is the biggest of the game's own stages, which is expected with twelve engine models running.
 - Not done: a per-feature split inside "farm features" (the console's `trace` is the place for that), and a graph over time.
 
+## Mud on the lens (TODO 47)
+
+Asked and settled: `X` wipes (a ring item on the pad); open vehicles only; the sources are the quad ahead on the mud, puddles and the ford at speed, and hard rain; a screen overlay; goggles are item 48, so this has a `guard` value they can set; no new girl lines for now.
+
+- `src/effects/lensMud.js` (pure, tested in `tests/lensMud.test.js`): a list of splats (x and y over the screen, size, thickness). `leaderAhead` finds the nearest moving, muddy vehicle within `followRange` and inside a cone ahead; `splatRates` turns that, a puddle under any wheel and the rain into splats a second, scaled by `1 - guard`; `updateLens` rolls them and dries the old ones (mud over `dryTime`, drops over `dropDryTime`); `wipeLens` makes the first wipe a wider, thinner smear (`smearGrow`, `wipeSmear`) and the second take it off (`wipeClear`).
+- Open or not is by spec id (`isOpenVehicle`): the UTV, both Land Rovers, the Fiesta and the Corsa are closed. The rain only counts when the quad is not under a roof (`world.covered`).
+- `src/effects/lensMudView.js` draws it as a 2D canvas under the HUD, about ten times a second and only while something is stuck, so a clean lens costs nothing. Its colours are dimmed with `daylight.darkness` so it does not glow at night.
+- The lens is yours, not the vehicle's: it dries while you are off, and is hidden on foot or in a cab.
+- Not saved between games. Not measured for frame time: a small canvas redrawn at 10 Hz.
+- Not done: girl lines about it, and goggles (item 48).
+

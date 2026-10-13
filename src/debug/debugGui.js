@@ -1,3 +1,4 @@
+import { lensCoverage } from '../effects/lensMud.js';
 import GUI from 'lil-gui';
 import { getTuningGroups, exportTuning } from '../core/tuning.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
@@ -291,6 +292,7 @@ export class DebugGui {
     show(r, 'hours', () => round(unit().quad.usage.hours));
     show(r, 'odometer / trip (mi)', () => `${unit().quad.usage.odoMiles.toFixed(2)} / ${unit().quad.tripMiles.toFixed(2)}`);
     show(r, 'chain oil (1 fresh)', () => (unit().quad.faults.hasChain ? round(unit().quad.faults.kept.chainLube) : 'no chain'));
+    show(r, 'mud on your view (0 clean; open vehicles only)', () => round(lensCoverage(this.game.lens)));
     show(r, 'brakes wet (0 dry)', () => round(unit().quad.brakes.wet));
     show(r, 'ice in the throttle cable', () => round(unit().quad.iceCable.ice));
     if (u.quad.carbIce.enabled) show(r, 'ice in the carb', () => round(unit().quad.carbIce.ice));
@@ -391,6 +393,8 @@ export class DebugGui {
     row(one, 'Pay it back off the trailer', () => g.hud.toast(g.debugUnload(this.unit())));
     row(one, 'Hook the tow rope on it / take it off', () => g.hud.toast(g.debugTowRope(this.unit())));
     row(one, 'Put it right (faults, plug, filter, wear; not quirks)', () => (fixEverything(this.unit()), g.debugBatteryIn(this.unit())));
+    row(one, 'Splat mud on the lens', () => g.debugLens('splat'));
+    row(one, 'Wipe the lens (once smears, twice clears)', () => g.debugLens('wipe'));
     row(one, 'Take me to it', () => {
       const q = this.unit().quad;
       if (g.riddenUnit) return g.hud.toast('Get off first');

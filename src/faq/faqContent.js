@@ -453,6 +453,14 @@ export const FAQ_SECTIONS = [
           hose them (hold <kbd>E</kbd> with the hose pointed at her) and take the consequences. Going round the puddles helps.`,
       },
       {
+        q: 'Why has mud appeared on my view, and how do I wipe it off?',
+        a: `On a quad, the mini moto, the three-wheeler or the tractor, riding close behind another vehicle on the mud, through a puddle or the ford
+          at speed, or fast in hard rain splatters your view. Press <kbd>X</kbd> to wipe: the first wipe only smears it wide and thin, the second
+          clears the smear, and raindrops go in one. Left alone it dries and drops off in a few minutes. The UTV, the Land Rovers and the cars
+          have a windscreen, so they stay clean. Hanging back, or going round the puddles, keeps it off.`,
+        tip: 'Mud on your view? Press X to wipe it. Once smears, twice clears.',
+      },
+      {
         q: 'Why is everything white, and how do I get the frost off the seat?',
         a: `On a freezing morning the grass has a frost on it and so do the seats. Drive or ride across the grass and your tyres melt a dark track
           through it, which stays melted. A seat clears when someone sits on it, in a few seconds, though it is a cold start to the day. As the

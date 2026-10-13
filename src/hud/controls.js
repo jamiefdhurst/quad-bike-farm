@@ -27,6 +27,7 @@ export const CONTROLS = [
       `Red and blue: <kbd>G</kbd> 2WD or 4WD (4WD for the mud; the rocker on the bars), blue: <kbd>U</kbd> diff lock (the UTV and Land Rover have both too)`,
       `<kbd>Space</kbd> parking brake, <kbd>T</kbd> right it if it tips, <kbd>E</kbd> get off`,
       `Hold <kbd>L</kbd> for the horn: the girls beep back`,
+      `<kbd>X</kbd> wipe mud off your view on an open vehicle (the first wipe smears it, the second clears it)`,
       `Hold <kbd>C</kbd> to look back, <kbd>V</kbd> to lean in to the dash`,
     ],
   },
