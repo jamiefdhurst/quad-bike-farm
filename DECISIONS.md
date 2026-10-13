@@ -3494,3 +3494,9 @@ Asked and settled: your helmet and goggles are two separate things you take from
 - A girl no longer rides bare-headed at the start: fetching is keener (`startAfter` 5 s, `weight` 2), and getting on an open vehicle with hers still on the hooks, within `grabRange` 25 m of them, has her take it off the hooks on her way (an instant swap; further away she rides without). Getting on now counts from the start of mounting.
 - The generator moved from the north-east corner to the barn's south wall, towards the back (x -63.5, z 66.5, panel facing south), and burns half the fuel (`burn` 0.002, `loadBurn` 0.001: about forty minutes from a full tank). It puffs thin grey smoke from its stack while it runs, thicker for the first four seconds after it catches, with the charger on and when it sputters low; it leans downwind and dims with the daylight. Checked headless: the smoke shows. Not measured for frame time (one small smoke pool).
 
+### Follow-up: the spike's fixings and the trailer (TODO 44, 48)
+
+- Model: the spike lever moved in off the cover's edge (x 0.15, it hung half off before), the carriage plate widened to meet the blocks that ride the rails (a 1.5 cm gap before), the upper braces now end inside the lift housing's side instead of 5 cm out in the air, and a foot bar joins the rails' bottoms.
+- Asked and settled: J does the swapping. Hitching a trailer to the tractor takes the spike off (the mast was already hidden while a trailer is on), unhitching puts it back, and the toasts say so. No separate fit and remove action.
+- Helmets: Amy's goggle elastic now has its gap at the front (it ran across her eyes); Jess's pushed-up goggles sit proud of the shell and lie along it.
+

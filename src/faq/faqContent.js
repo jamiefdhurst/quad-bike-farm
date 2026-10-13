@@ -1229,7 +1229,12 @@ export const FAQ_SECTIONS = [
         q: "Why won't the spike go into the bale, or why won't it lift?",
         a: `The point has to run into the middle of a bale that stands on its end, at about the height of its middle, so lower the arms first and line up before you reverse. A bale with another on
           top can't be spiked: take the top one off first. The bales lying on their sides (the ones the girls sit on, and the Dutch barn's stack) are fixed. The arms only move with the engine running,
-          and the spike is folded away while a trailer is on the drawbar. You can't hitch one with a bale on the spike.`,
+          and the spike is taken off while a trailer is on the drawbar. You can't hitch one with a bale on the spike.`,
+      },
+      {
+        q: 'How do I hitch a trailer with the bale spike on?',
+        a: `Back the hitch up to the trailer's ring and press <kbd>J</kbd> as usual: the spike comes off with it (it says so), and goes back on when you unhitch. Put any bale down first.`,
+        tip: 'Hitching a trailer takes the bale spike off, and unhitching puts it back. Press J.',
       },
       {
         q: "Why won't the muck spread, or why did it all come out in a heap?",

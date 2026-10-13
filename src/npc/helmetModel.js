@@ -75,8 +75,9 @@ export function buildGoggles(look = GOGGLE_LOOK, strapRadius = 0.12) {
   g.add(lens);
   // The elastic: a flat loop going back round the head from each end.
   const strap = new THREE.Mesh(new THREE.TorusGeometry(strapRadius, 0.009, 4, 20, Math.PI * 1.55), mat(look.strap ?? look.frame, 0.9));
-  strap.rotation.set(Math.PI / 2, 0, Math.PI * 0.725 + Math.PI);
-  strap.position.set(0, 0, -strapRadius + 0.012);
+  strap.rotation.set(Math.PI / 2, 0, Math.PI * 0.725); // the gap in the loop faces front, where the lens is
+  strap.scale.set(1, 0.82, 1); // squashed front to back, to hug a head rather than float behind it
+  strap.position.set(0, 0, -strapRadius * 0.82 + 0.012);
   g.add(strap);
   g.userData.strap = strap;
   return g;
@@ -139,8 +140,8 @@ export function buildHelmet(who, { goggles } = {}) {
     if (mode === 'down') gg.position.set(0, -0.034, DEPTH - 0.006);
     else {
       // Pushed up: the lens turned up against the front of the shell, the elastic still round it.
-      gg.position.set(0, HEIGHT * 0.42, DEPTH * 0.9);
-      gg.rotation.x = -0.6;
+      gg.position.set(0, HEIGHT * 0.42, DEPTH * 0.907 + 0.016); // just proud of the shell there, turned to lie along it
+      gg.rotation.x = -0.45;
       gg.userData.strap.visible = false; // the elastic would float off the shell: it is round the back of the helmet, out of sight
     }
     g.add(gg);

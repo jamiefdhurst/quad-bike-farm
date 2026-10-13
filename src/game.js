@@ -1743,13 +1743,13 @@ export class Game {
     if (on) {
       if (q.speed > 0.5) return this.hud.toast('Stop before you unhitch the trailer', 2);
       on.unhitch();
-      return this.hud.toast('Trailer unhitched', 1.6);
+      return this.hud.toast(tractor ? 'Trailer unhitched, bale spike fitted again' : 'Trailer unhitched', 2);
     }
     const can = mine.find((t) => t.canHitch(q));
     if (can) {
       can.hitch(q);
       this.achievements.note('hitched');
-      return this.hud.toast('Trailer hitched', 1.6);
+      return this.hud.toast(tractor ? 'Trailer hitched, bale spike taken off' : 'Trailer hitched', 2);
     }
     const near = Math.min(...mine.filter((t) => !t.hitched).map((t) => t.gap(q)));
     this.hud.toast(near < 8 ? 'Back the hitch up to the trailer\'s ring' : 'No trailer behind you', 2);

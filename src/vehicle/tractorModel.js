@@ -441,9 +441,9 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   const spikeLever = new THREE.Group();
   spikeLever.name = 'spikeLever';
   spikeLever.userData.keep = true;
-  spikeLever.position.set(0.2, 1.03, -0.55);
+  spikeLever.position.set(0.15, 1.03, -0.5); // well inside the cover's edge (it spans x +-0.22), so it stands on it
   rbox(0.02, 0.014, 0.34, 0.005, MAT.steel, 0, 0, 0, root).position.copy(spikeLever.position); // the quadrant plate it moves over
-  for (const dz of [-0.17, 0.17]) rbox(0.03, 0.03, 0.012, 0.004, MAT.red, 0.2, 1.045, -0.55 + dz, root); // the stops at each end
+  for (const dz of [-0.17, 0.17]) rbox(0.03, 0.03, 0.012, 0.004, MAT.red, 0.15, 1.045, -0.5 + dz, root); // the stops at each end
   tube([0, 0, 0], [0, 0.3, 0], 0.011, MAT.steel, spikeLever);
   add(new THREE.SphereGeometry(0.024, 10, 8), MAT.red, spikeLever).position.set(0, 0.32, 0);
   root.add(spikeLever);
@@ -472,13 +472,14 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   spikeMast.userData.keep = true;
   for (const s of [-1, 1]) {
     tube([s * 0.3, 0.45, SPIKE_RAIL_Z], [s * 0.3, 2.2, SPIKE_RAIL_Z], 0.028, MAT.red, spikeMast);
-    tube([s * 0.3, 1.95, SPIKE_RAIL_Z], [s * 0.3, 1.1, -1.2], 0.02, MAT.steel, spikeMast);
+    tube([s * 0.3, 1.95, SPIKE_RAIL_Z], [s * 0.2, 1.02, -1.2], 0.02, MAT.steel, spikeMast); // down into the side of the lift housing (x +-0.25, z -0.92 to -1.32)
     tube([s * 0.3, 0.55, SPIKE_RAIL_Z], [s * 0.4, 0.5, -1.45], 0.02, MAT.steel, spikeMast);
   }
   rbox(0.68, 0.05, 0.05, 0.015, MAT.red, 0, 2.2, SPIKE_RAIL_Z, spikeMast);
+  rbox(0.6, 0.05, 0.05, 0.015, MAT.red, 0, 0.5, SPIKE_RAIL_Z, spikeMast); // and a foot bar across the bottom, so the rails are one frame
   const carriage = new THREE.Group();
   carriage.name = 'spikeCarriage';
-  rbox(0.5, 0.34, 0.05, 0.02, MAT.rust, 0, 0, SPIKE_PLATE_Z, carriage);
+  rbox(0.64, 0.34, 0.05, 0.02, MAT.rust, 0, 0, SPIKE_PLATE_Z, carriage); // wide enough to reach the carriage blocks on the rails either side
   for (const s of [-1, 1]) rbox(0.07, 0.5, 0.1, 0.02, MAT.red, s * 0.3, 0, SPIKE_RAIL_Z - 0.05, carriage);
   add(new THREE.CylinderGeometry(0.014, 0.05, 1.5, 12).rotateX(-Math.PI / 2), MAT.steel, carriage).position.set(0, 0, SPIKE_PLATE_Z - 0.75);
   add(new THREE.CylinderGeometry(0.065, 0.065, 0.08, 12).rotateX(-Math.PI / 2), MAT.castDark, carriage).position.set(0, 0, SPIKE_PLATE_Z - 0.06);
