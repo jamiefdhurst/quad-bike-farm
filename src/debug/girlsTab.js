@@ -177,6 +177,12 @@ export function buildGirlsTab(d) {
   show(both, 'the lane and the gates', () => `${g.trafficHost.describe()}; south gate ${g.trafficHost.gate('south').isOpen ? 'open' : 'shut'}, big gate ${g.trafficHost.gate('road').isOpen ? 'open' : 'shut'}, grid gate ${g.trafficHost.gate('grid')?.isOpen ? 'open' : 'shut'}`);
   show(both, 'the battery charger', () => g.describeCharger());
   button(both, 'Take the charged battery off the charger', () => g.debugChargerClear());
+  show(both, 'the generator', () => g.describeGenerator());
+  show(both, 'starting the generator', () => g.generatorStart.describe());
+  button(both, 'Pull the generator\'s cord', () => g.debugGeneratorPull());
+  button(both, 'Switch the generator off', () => g.switchGeneratorOff());
+  button(both, 'Fill the generator\'s tank', () => g.debugGeneratorFuel(g.generator.params.tank));
+  button(both, 'Empty the generator\'s tank', () => g.debugGeneratorFuel(0));
   show(both, 'the spares shelf', () => g.sparesShelf.describe());
   button(both, 'Fill the spares shelf', () => g.sparesShelf.debugSetAll(g.sparesShelf.params.maxOnShelf));
   button(both, 'Empty the spares shelf', () => g.sparesShelf.debugSetAll(0));

@@ -279,6 +279,11 @@ export function buildGameTree(g, host) {
     last: text(() => (g.fence.lastZap ? `${g.fence.lastZap.id} (${g.fence.lastZap.kind})` : 'nobody yet'), 'who last got a jolt from it'),
     zap: flag(() => false, (v) => v && g.debugZapFence(), 'set to true: you (or the quad you are on) catch the wire now'),
   }), 'the electric fence across the hill pasture');
+  const generator = group(() => ({
+    now: text(() => g.describeGenerator(), 'whether it runs, its fuel and what it powers'),
+    fuel: num(() => g.generator.fuel, (v) => g.debugGeneratorFuel(v), 0, 20, ' L', 'diesel in the tank (setting it switches the set off)'),
+    running: flag(() => g.generator.running, (v) => (v ? g.debugGeneratorPull() : g.switchGeneratorOff()), 'set to true: pull the cord once (it may not catch); false: switch it off'),
+  }), 'the diesel generator outside the barn');
   const spares = group(() => ({
     now: text(() => g.sparesShelf.describe(), 'what is on the rack, on order and in the parcel'),
     ...Object.fromEntries(PART_IDS.map((id) => [id, num(() => g.spares.count(id), (v) => ((g.spares.counts[id] = Math.max(0, Math.round(v))), g.sparesShelf.paintCrates()), 0, 20, '', `${PARTS[id].many} on the rack`)])),
@@ -316,6 +321,7 @@ export function buildGameTree(g, host) {
     wildlife,
     fence,
     lane,
+    generator,
     spares,
     photos,
     towRope,

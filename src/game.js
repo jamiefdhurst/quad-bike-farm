@@ -144,6 +144,7 @@ import { JumpWatch, JUMP_PARAM_RANGES, rampPoint } from './npc/jumps.js';
 import { Nicking, NICK_PARAM_RANGES } from './npc/nicking.js';
 import { DEFAULT_LINEUP_PARAMS, LINEUP_PARAM_RANGES, parkRoute } from './npc/lineUp.js';
 import { WorkLight, WORK_LIGHT_PARAM_RANGES } from './npc/workLight.js';
+import { GeneratorStart, GENERATOR_START_PARAM_RANGES } from './npc/generatorStart.js';
 import { finishJob } from './workshop/benchJobs.js';
 import { Dares, DARE_PARAM_RANGES, DARE_KINDS, steepestBank } from './npc/dares.js';
 import { GirlBench, GIRL_BENCH_PARAM_RANGES, ASK_PROMPT, pickJob, workSpot } from './npc/girlBench.js';
@@ -191,6 +192,9 @@ import { Bell } from './world/bellBuild.js';
 import { Flock, findFlockSpot, DEFAULT_FLOCK_PARAMS, FLOCK_PARAM_RANGES } from './world/flock.js';
 import { FlockView } from './world/flockView.js';
 import { SheepAudio } from './audio/sheepAudio.js';
+import { GeneratorAudio } from './audio/generatorAudio.js';
+import { Generator, GENERATOR_PARAM_RANGES } from './items/generator.js';
+import { buildGeneratorModel, GENERATOR_SIZE } from './items/generatorModel.js';
 import { Rabbits, Pheasants, hedgeSpots, DEFAULT_WILDLIFE_PARAMS, WILDLIFE_PARAM_RANGES } from './world/wildlife.js';
 import { WildlifeView } from './world/wildlifeView.js';
 import { WildlifeAudio } from './audio/wildlifeAudio.js';
@@ -853,6 +857,7 @@ export class Game {
     this.numbParams = { ...DEFAULT_NUMB_PARAMS }; // legs gone tingly and a numb bum from a long sit on a shaking seat (npc/numbness.js)
     this.comparing = new ComparingNotes(undefined, createRandom(this.seed ^ 0xc0de)); // the girls ranking the quads by their buzz (npc/comparingNotes.js)
     this.pair = new Pair(); // the two as a pair: going over to each other, tagging along, letting you in (npc/pair.js)
+    this.generatorStart = new GeneratorStart(); // a girl pulling the generator's cord (npc/generatorStart.js)
     this.workLight = new WorkLight(undefined, createRandom(this.seed ^ 0x11e7)); // bringing a vehicle round to light what you're at, after dark (npc/workLight.js)
     this.dontFix = new DontFixIt(); // a girl minding when her favourite is fixed up (npc/dontFixIt.js)
     this.warmSitQuads = new Map(); // girl id -> the quad she is sitting on
@@ -1186,6 +1191,7 @@ export class Game {
     this.leads = new JumpLeads({ scene: this.scene, world: this.world, position: L.benchLeads, yaw: L.benchLeads.yaw });
     this.leads.model.position.y += L.bench.height; // they start on the workbench
     this.setUpBatteries();
+    this.setUpGenerator();
     // The farm map on M (hud/farmMap.js, mapView.js).
     this.mapParams = { ...DEFAULT_MAP_PARAMS };
     registerTuning('Map', this.mapParams, MAP_PARAM_RANGES);
@@ -1336,6 +1342,7 @@ export class Game {
     registerTuning('Comparing notes', this.comparing.p, COMPARE_PARAM_RANGES);
     registerTuning('The two as a pair', this.pair.p, PAIR_PARAM_RANGES);
     registerTuning('Lights to work by', this.workLight.p, WORK_LIGHT_PARAM_RANGES);
+    registerTuning('Starting the generator', this.generatorStart.p, GENERATOR_START_PARAM_RANGES);
     registerTuning('Numb bum', this.numbParams, NUMB_PARAM_RANGES);
     registerTuning('Minding a fix', this.dontFix.p, DONTFIX_PARAM_RANGES);
     registerTuning('Sitting while it warms', this.warmSit.p, WARMSIT_PARAM_RANGES);
@@ -2954,6 +2961,7 @@ export class Game {
     this.photos.view.refresh();
     this.spares.restore(save.spares);
     this.restoreBatteries(save.batteries);
+    this.generator.restore(save.generator);
     this.sparesShelf.showParcel();
   }
 
@@ -2976,6 +2984,7 @@ export class Game {
       photos: this.photos.wall.toJSON(),
       logbook: this.notebook.book.toJSON(),
       spares: this.spares.toJSON(),
+      generator: this.generator.toJSON(),
       batteries: Object.fromEntries([...this.batteries].filter(([, b]) => b.out).map(([id, b]) => [id, { where: b.where === 'charger' ? 'charger' : 'loose' }])),
     };
   }
@@ -3350,6 +3359,10 @@ export class Game {
       ...mine(this.workLight.offers(this.workLightContext(c)), (o) => {
         c.voice.say('workLightOffer', { urgent: true, force: true });
         this.handleWorkLight(this.workLight.take(o));
+      }),
+      ...mine(this.generatorStart.offers(this.generatorStartContext()), (o) => {
+        this.companions.find((g) => g.character.id === o.girl).voice.say('generatorGo', { urgent: true, force: true });
+        this.handleGeneratorStart(this.generatorStart.take(o));
       }),
       ...mine(this.tea.offers(this.teaContext(ridden)), (o) => this.handleTeaEvent(this.tea.take(o))),
       ...mine(this.flask.offers(this.flaskContext(ridden)), (o) => this.handleFlaskEvent(this.flask.take(o))),
@@ -4332,6 +4345,45 @@ export class Game {
     return { x: c.x, z: c.z, yaw: Math.atan2(target.x - c.x, target.z - c.z) };
   }
 
+  // Starting the generator --------------------------------------------------
+
+  /** What a girl starting the generator needs to know (npc/generatorStart.js): the set, the dark, the charger and where the girls are. */
+  generatorStartContext() {
+    const g = this.generator;
+    return {
+      set: { running: g.running, fuel: g.fuel },
+      dark: this.daylight?.darkness ?? 0,
+      charging: this.charger.busy,
+      at: this.generatorAt,
+      girls: this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.availability().free, weight: c.params.generatorWeight ?? 0 })),
+    };
+  }
+
+  /** She goes to the cord and pulls it, a few goes if it won't catch (a choice she made, or the debug panel's). */
+  handleGeneratorStart(e) {
+    if (!e) return;
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    const m = this.generatorStart;
+    const stand = this.world.layout.generator.stand;
+    const tries = m.p.tries;
+    const pullAgain = (n) => {
+      const result = this.pullGenerator(c.character.id);
+      if (result === 'caught') {
+        c.voice.say('generatorCaught', { urgent: true, force: true });
+        return m.finished();
+      }
+      if (result === 'dry' || n >= tries || this.generator.running || Math.hypot(c.root.position.x - stand.x, c.root.position.z - stand.z) > 3) return m.finished();
+      c.voice.say('generatorCough', { urgent: true, chance: 0.7 });
+      setTimeout(() => pullAgain(n + 1), m.p.tryGap * 1000);
+    };
+    const set = c.sneakTo(stand, () => {
+      if (this.generator.running) return m.finished();
+      m.started();
+      pullAgain(1);
+    }, tries * m.p.tryGap + 2);
+    if (!set) m.finished();
+  }
+
   /** Each frame: whether it's over, and which vehicle the light pool should favour. */
   updateWorkLight(dt) {
     if (!this.companions.length) return; // a game without the girls has nobody to bring a light
@@ -4484,7 +4536,13 @@ export class Game {
       const gloom = Math.min(1, 1.3 - w.warmth * 0.9);
       // After dark the bulb is left on, so the barn glows from outside too.
       const dark = this.daylight?.darkness ?? 0;
-      barn.light.intensity = BARN_BULB * Math.max(indoor * gloom, dark > 0.5 ? 0.8 : 0);
+      // The bulb and the light work off the generator (items/generator.js): with it off the barn is as dark as the day makes it.
+      const lit = this.generator.powered;
+      barn.light.intensity = lit ? BARN_BULB * Math.max(indoor * gloom, dark > 0.5 ? 0.8 : 0) : 0;
+      if (this.bulbLit !== lit) {
+        this.bulbLit = lit;
+        barn.bulb.material.color.setHex(lit ? 0xfff1c9 : 0x5d5c55);
+      }
     }
     // Smoke, steam, dust and mud are drawn with their own fixed light, so they're dimmed with the daylight or they'd glow at night.
     const light = this.daylight ? this.daylight.p.nightLight + (1 - this.daylight.p.nightLight) * this.daylight.sun.light : 1;
@@ -7573,7 +7631,7 @@ export class Game {
       isAvailable: () => !!this.heldBattery() || (!!this.chargedBattery() && !this.handsFull),
       prompt: () => {
         const held = this.heldBattery();
-        if (held) return this.charger.busy ? { text: 'The charger already has a battery on   ·   G put it down' } : `Put the ${held.name} on the charger`;
+        if (held) return this.charger.busy ? { text: 'The charger already has a battery on   ·   G put it down' } : `Put the ${held.name} on the charger${this.generator.powered ? '' : ' (it needs the generator running)'}`;
         return `Pick up the ${this.chargedBattery().name}`;
       },
       interact: () => {
@@ -7628,6 +7686,21 @@ export class Game {
   debugChargerClear() {
     const b = this.chargedBattery();
     if (b) this.pickUpBattery(b);
+  }
+
+  /** The debug panel's and the console's generator buttons call the real game methods. */
+  describeGenerator() {
+    return `${this.generator.describe()}; the barn bulb is ${this.generator.powered ? 'on' : 'off'}${this.charger.busy ? ', the charger is drawing on it' : ''}`;
+  }
+
+  debugGeneratorPull() {
+    const r = this.pullGenerator('debug');
+    this.hud.toast(r === null ? (this.generator.running ? 'It is already running' : 'A pull is in hand') : r === 'caught' ? 'The generator catches' : r === 'dry' ? 'Empty tank' : 'It coughs');
+  }
+
+  debugGeneratorFuel(litres) {
+    if (this.generator.running) this.switchGeneratorOff();
+    this.generator.fuel = Math.max(0, Math.min(this.generator.params.tank, litres));
   }
 
   /** The battery on the charger, or null. */
@@ -7712,8 +7785,108 @@ export class Game {
   /** The charger working: the needle and lamps follow the battery on it. */
   updateCharger(dt) {
     const b = this.chargedBattery();
-    if (this.charger.update(dt, b?.engine) === 'full') this.hud.toast(`The charger light has gone green: the ${b.name} is full`);
-    this.chargerModel.set({ level: b?.engine.battery ?? 0, charging: !!b, full: this.charger.full });
+    // It runs off the generator: with that off, the lamps are dark and nothing charges.
+    const live = this.generator.powered;
+    if (this.charger.update(live ? dt : 0, b?.engine) === 'full') this.hud.toast(`The charger light has gone green: the ${b.name} is full`);
+    this.chargerModel.set({ level: live ? b?.engine.battery ?? 0 : 0, charging: !!b && live, full: this.charger.full });
+  }
+
+  // The generator ----------------------------------------------------------------
+
+  /** The diesel set outside the barn door (items/generator.js): it powers the barn bulb and the bench charger, and is off every morning. */
+  setUpGenerator() {
+    const L = this.world.layout.generator;
+    this.generator = new Generator();
+    registerTuning('Generator', this.generator.params, GENERATOR_PARAM_RANGES);
+    this.generatorAudio = new GeneratorAudio(this.audioHub);
+    const built = buildGeneratorModel();
+    this.generatorModel = built;
+    const y = this.world.heightAt(L.x, L.z);
+    built.group.position.set(L.x, y, L.z);
+    built.group.rotation.y = L.yaw;
+    this.scene.add(built.group);
+    this.generatorAt = { x: L.x, y: y + 0.4, z: L.z };
+    this.generatorClock = 0;
+    const proxy = new THREE.Mesh(new THREE.BoxGeometry(GENERATOR_SIZE.x, GENERATOR_SIZE.y, GENERATOR_SIZE.z), new THREE.MeshBasicMaterial({ visible: false }));
+    proxy.position.y = GENERATOR_SIZE.y / 2;
+    built.group.add(proxy);
+    // A set that cannot be walked through.
+    const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), L.yaw);
+    this.physics.createCollider(
+      this.RAPIER.ColliderDesc.cuboid(GENERATOR_SIZE.x / 2, GENERATOR_SIZE.y / 2, GENERATOR_SIZE.z / 2).setTranslation(L.x, y + GENERATOR_SIZE.y / 2, L.z).setRotation(q),
+    );
+    this.interaction.add({
+      target: proxy,
+      isAvailable: () => !this.handsFull || !!this.can.held,
+      prompt: () => this.generatorPrompt(),
+      interact: () => {
+        if (this.can.held) return;
+        if (this.generator.running) this.switchGeneratorOff();
+        else this.pullGenerator();
+      },
+      hold: (dt) => this.pourIntoGenerator(dt),
+    });
+  }
+
+  generatorPrompt() {
+    const g = this.generator;
+    const fuel = `${g.fuel.toFixed(1)} / ${g.params.tank} L`;
+    if (this.can.held) {
+      if (g.running) return { text: `The generator is running: switch it off before you refuel it (${fuel})` };
+      if (this.can.diesel < 0.5 || this.can.litres < 0.01) return { text: `The generator takes red diesel: this can has ${this.can.litres < 0.01 ? 'nothing in it' : 'petrol in it'}` };
+      if (g.space < 0.01) return { text: `The generator's tank is full (${fuel})` };
+      return { text: `Hold E to fill the generator with diesel (${fuel})` };
+    }
+    if (g.running) return `Switch the generator off (${fuel})`;
+    return g.fuel <= 0 ? 'Pull the cord (the tank looks empty)' : `Pull the cord to start the generator (${fuel})`;
+  }
+
+  /** Holding E with a can: red diesel into the generator's tank, while it is off. */
+  pourIntoGenerator(dt) {
+    const g = this.generator;
+    if (!this.can.held || g.running || this.can.diesel < 0.5 || g.space < 0.01) return false;
+    const poured = g.add(this.can.take(Math.min(g.params.pourRate * dt, g.space)), this.can.diesel);
+    return poured > 0;
+  }
+
+  /** A pull of the cord, by you or a girl. Returns what came of it ('caught', 'coughed', 'dry' or null if one was in hand). */
+  pullGenerator(by = 'you') {
+    const g = this.generator;
+    const result = g.pull();
+    const at = this.generatorAt;
+    if (result === 'caught') {
+      this.generatorAudio.catch(at);
+      this.notice('engineStart', at, { key: 'generator', strength: 1 });
+      this.hud.toast('The generator catches');
+    } else if (result === 'coughed' || result === 'dry') {
+      this.generatorAudio.crank(at, result === 'dry');
+      if (by === 'you') this.hud.toast(result === 'dry' ? 'Nothing happens: the tank is empty' : 'It coughs and dies. Pull again');
+    }
+    return result;
+  }
+
+  switchGeneratorOff() {
+    if (!this.generator.stop()) return;
+    this.generatorAudio.stop(this.generatorAt);
+    this.hud.toast('The generator is off');
+  }
+
+  /** The set running: fuel burning (more with the charger on), its sound and shake, and the dial on its panel. */
+  updateGenerator(dt) {
+    const g = this.generator;
+    this.generatorClock += dt;
+    if (g.update(dt, this.charger.busy ? 1 : 0) === 'stalled') {
+      this.generatorAudio.stop(this.generatorAt, true);
+      this.notice('stall', this.generatorAt, { key: 'generator', strength: 1 });
+      this.hud.toast('The generator has run out of diesel');
+      const near = this.companions.filter((c) => c.availability().canRemark && c.root.position.distanceTo(this.camera.position) < 30);
+      near[0]?.voice.say('generatorOut', { chance: 0.9 });
+    }
+    if (g.running) {
+      this.generatorAudio.ensureLoop(this.generatorAt);
+      this.generatorAudio.update(this.generatorAt, this.world.indoor(this.camera.position.x, this.camera.position.z));
+    }
+    this.generatorModel.set({ level: g.level, running: g.running, pull: g.pulling > 0 ? Math.sin((1 - g.pulling / g.params.pullSeconds) * Math.PI) : 0, time: this.generatorClock });
   }
 
   putToolboxDown() {
@@ -8042,6 +8215,7 @@ export class Game {
     this.workshop.update(dt);
     this.bench.update(dt);
     this.updateCharger(dt);
+    this.updateGenerator(dt);
     this.updateBarnFind(dt);
     this.notebook.update(dt);
     this.sparesShelf.update(dt);
@@ -8050,6 +8224,7 @@ export class Game {
     this.audioHub.update(dt, this.camera);
     this.rideWind.update(dt, board ? board.quad.speed : 0);
     this.updateWorkLight(dt);
+    this.generatorStart.update(dt);
     this.updateDaylight(dt);
     this.world.update(dt, board ? board.quad.position : this.player.position, this.camera);
     this.updateWeather(dt);

@@ -508,7 +508,7 @@ export const FAQ_SECTIONS = [
         q: 'Why is it getting dark?',
         a: `The day goes on. Late in the afternoon the sun gets low in the west and the light turns golden, then it sets and the dusk fades into
           night, and the night stays for the rest of the game. It gets colder too, so a mild afternoon can end in a frost. In the dark the
-          headlights really light the way, the barn light comes on, and the girls start saying they want to go in.`,
+          headlights really light the way, the barn light comes on (if the generator is running), and the girls start saying they want to go in.`,
       },
       {
         q: 'Do the headlights actually light anything?',
@@ -1009,8 +1009,25 @@ export const FAQ_SECTIONS = [
         tip: 'The post van and neighbours come in at the big gate. Pull over for them.',
       },
       {
+        q: 'Why is the barn dark, and why has the charger gone dead?',
+        a: `The barn light and the bench charger both run off the generator outside the barn's north-east corner, and it is switched off every morning. Walk up to it and press <kbd>E</kbd> to pull the cord. It may take a few pulls. If nothing happens at all and it only wheezes, the tank is empty.`,
+        tip: 'The barn light and the charger need the generator running: pull its cord with E.',
+      },
+      {
+        q: 'How do I refuel the generator?',
+        a: `Switch it off (<kbd>E</kbd>), pick up the dark green diesel can, and hold <kbd>E</kbd> at the generator. It takes red diesel only, so the red petrol can and the yellow pre-mix can are refused, and it will not take fuel while it is running. The can fills at the diesel tank by the barn like the others. A full tank (5 litres) lasts about twenty minutes, a little less while the charger is on.`,
+      },
+      {
+        q: 'Why did the generator stop?',
+        a: `It ran out of diesel: the lights go out, the charger stops and a girl nearby will say so. Fill it from the diesel can and pull the cord again. The fuel in the tank is kept from one day to the next, but the generator itself is always off in the morning.`,
+      },
+      {
+        q: 'Will the girls start the generator for me?',
+        a: `Sometimes. If the barn is dark, or a battery is sitting on the charger, a girl who is free may go and pull the cord, Amy more often than Jess. They cannot fill it, so if there is no diesel in it they leave it.`,
+      },
+      {
         q: 'How do I charge a flat battery on the bench?',
-        a: `Park the quad in the yellow bay, switch it off and open the workbench. The last job on the list is "Take the battery out": lift the seat, undo the terminals (hold <kbd>E</kbd>) and the battery is in your hands. Look at the charger on the bench (the blue box at the far west end) and press <kbd>E</kbd> to stand the battery on its mat. The needle climbs and the red lamp comes on; about five minutes from flat the green lamp lights and a message tells you. Pick it up again with <kbd>E</kbd>, carry it back, open the bench and do "Fit the battery you are carrying", or just look at the quad and press <kbd>E</kbd>. It slows down near the top, like a real trickle charger.`,
+        a: `Park the quad in the yellow bay, switch it off and open the workbench. The last job on the list is "Take the battery out": lift the seat, undo the terminals (hold <kbd>E</kbd>) and the battery is in your hands. Look at the charger on the bench (the blue box at the far west end) and press <kbd>E</kbd> to stand the battery on its mat. The charger runs off the generator, so start that first (see the question on the generator). The needle climbs and the red lamp comes on; about five minutes from flat the green lamp lights and a message tells you. Pick it up again with <kbd>E</kbd>, carry it back, open the bench and do "Fit the battery you are carrying", or just look at the quad and press <kbd>E</kbd>. It slows down near the top, like a real trickle charger.`,
         tip: 'A flat battery takes about five minutes on the bench charger. The needle shows how far it has got.',
       },
       {

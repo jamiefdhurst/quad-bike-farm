@@ -175,6 +175,12 @@ These have no external source:
 - **Terrain, track, grass tufts, distant trees and sky**: generated in `src/world/`.
 - **Synthesised engine sound** (selectable in the tuning panel), relay clicks, fuel pump, pouring and wind: synthesised at runtime in `src/audio/`.
 
+## Generator
+
+| Used for | Recording | Author | Source | Licence |
+| --- | --- | --- | --- | --- |
+| The barn generator's start, steady run (cross-faded to loop) and stop (`public/audio/generator.wav`, cut from the 178 s recording, mono at 32 kHz) | Small Diesel Generator (a 5 kVA set, two microphones at 1.5 m and 3 m) | jameswrowles | https://freesound.org/people/jameswrowles/sounds/516759/ | CC0 1.0 |
+
 ## Sheep
 
 | Used for | Recording | Author | Source | Licence |

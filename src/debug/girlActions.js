@@ -535,6 +535,17 @@ export function girlActions(g) {
     run: (id) => cleanUp(girl(id).mucky),
   });
   actions.push({
+    verb: 'start-generator',
+    label: '% goes and starts the generator',
+    run: (id) => {
+      if (!free(id)) return;
+      if (g.generator.running) return toast('The generator is already running');
+      if (g.generator.fuel <= 0) return toast('The generator has no diesel in it: fill it first');
+      const e = g.generatorStart.force(g.generatorStartContext(), id);
+      if (e) g.handleGeneratorStart(e);
+    },
+  });
+  actions.push({
     verb: 'light-me',
     label: '% brings a vehicle round to light you up (after dark)',
     run: (id) => g.askWorkLight(girl(id)),
