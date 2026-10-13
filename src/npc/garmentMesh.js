@@ -132,12 +132,15 @@ export function subdivide(mesh, round = 0.75) {
  * Cuts the mesh along where `field(vertex)` is 0, keeping the side where it's below 0. Triangles across the line are split
  * on it, the new points shared between neighbours (so no cracks) and tagged `edge: tag`. With `keep: 'both'` nothing is
  * thrown away: the line is only drawn into the mesh, and the far side gets its own copies of the points on it, marked
- * `outside` (so a colour can change sharply there); `sides` then says which side each triangle is on ('in' or 'out').
+ * `outside` (so a colour can change sharply there); `sides` then says which side each triangle is on ('in' or 'out'). With
+ * `keep: 'split'` both sides are kept sharing the points on the line: the line is only drawn in, so a later cut whose field
+ * bends there (a V's point) can follow it exactly.
  */
 export function cut(mesh, field, tag, { keep = 'in' } = {}) {
   const verts = mesh.verts.slice();
   const f = verts.map((v) => field(v));
   const both = keep === 'both';
+  const split = keep === 'split'; // both sides kept and the points on the line shared: the line only drawn in
   const onLine = new Map();
   const copies = new Map();
   const point = (a, b) => {
@@ -162,6 +165,10 @@ export function cut(mesh, field, tag, { keep = 'in' } = {}) {
   const tris = [];
   const sides = [];
   const emit = (tri, side) => {
+    if (split) {
+      tris.push(tri);
+      return;
+    }
     if (side === 'out' && !both) return;
     tris.push(side === 'out' ? tri.map(outCopy) : tri);
     sides.push(side);

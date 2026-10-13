@@ -14,6 +14,7 @@ import {
 } from '../src/npc/garmentMesh.js';
 import { buildTop, buildInset, topFields, POLO, JUMPER } from '../src/npc/polo.js';
 import { buildShorts, SHORTS } from '../src/npc/shorts.js';
+import { buildCollar, COLLAR } from '../src/npc/collar.js';
 
 const IDENTITY = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0];
 // A quarter turn about y with a drop, as her bind pose is to the way she stands.
@@ -121,6 +122,7 @@ function cylinderBody() {
   const bones = {
     Neck: [0, 1.2, 0],
     Spine: [0, 0.88, 0],
+    Hips: [0, 0.8, 0],
     LeftArm: [0.4, 1.17, 0],
     LeftForeArm: [0.42, 0.97, 0],
     LeftHand: [0.44, 0.8, 0],
@@ -241,5 +243,43 @@ describe('shorts', () => {
     expect(polo.length).toBeGreaterThan(20);
     expect(Math.max(...polo)).toBeLessThan(Math.min(...below(shorts.shell.verts)));
     expect(SHORTS.ease).toBeGreaterThan(POLO.tuckEase);
+  });
+});
+
+describe('the collar', () => {
+  const ring = (verts, y) => verts.filter((v) => Math.abs(v.rest[1] - y) < 0.004).map((v) => Math.hypot(v.rest[0], v.rest[2]));
+
+  it('stands on the neck edge, closes at the front over the placket, and lies outside the shirt', () => {
+    const body = cylinderBody();
+    const { shell } = buildTop(body, POLO);
+    const collar = buildCollar(shell, body, { placketWidth: POLO.placketWidth, over: [shell] });
+    expect(collar).not.toBe(null);
+    expect(collar.shade.length).toBe(collar.verts.length);
+    // Its two ends meet over the middle of her front.
+    const front = collar.verts.filter((v) => v.rest[2] > 0.1 && v.rest[1] > body.bones.Neck[1] + POLO.neckCap - 0.004);
+    expect(Math.min(...front.map((v) => Math.abs(v.rest[0])))).toBeLessThan(COLLAR.closedGap + 0.003);
+    // Below the neck edge, where the fall lies on the shirt, it is outside it.
+    const neckY = body.bones.Neck[1] + POLO.neckCap;
+    for (const y of [neckY - 0.008, neckY - 0.015]) {
+      const shirt = ring(shell.verts.filter((v) => !v.apart), y);
+      const mine = ring(collar.verts, y);
+      if (shirt.length && mine.length) expect(Math.min(...mine)).toBeGreaterThan(Math.max(...shirt) - 0.001);
+    }
+    // It stands up above the neck edge.
+    expect(Math.max(...collar.verts.map((v) => v.rest[1]))).toBeGreaterThan(neckY + COLLAR.standFront);
+  });
+
+  it('on an open neck ends at the top corners of the V, so the points splay apart', () => {
+    const body = cylinderBody();
+    const { shell, vee } = buildTop(body, { ...POLO, open: 3 });
+    const collar = buildCollar(shell, body, { vee, placketWidth: POLO.placketWidth, over: [shell] });
+    const front = collar.verts.filter((v) => v.rest[2] > 0.1);
+    expect(Math.min(...front.map((v) => Math.abs(v.rest[0])))).toBeGreaterThan(vee.halfWidth(vee.top) - 0.004);
+  });
+
+  it('opens one to four buttons, each further down than the last', () => {
+    const body = cylinderBody();
+    const bottoms = [1, 2, 3, 4].map((open) => buildTop(body, { ...POLO, open }).vee.bottom);
+    for (let k = 1; k < bottoms.length; k++) expect(bottoms[k]).toBeLessThan(bottoms[k - 1]);
   });
 });

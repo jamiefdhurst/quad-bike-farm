@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { buildTop, buildInset, buttonShape, slitShape, poloFields, POLO, JUMPER } from './polo.js';
 import { buildShorts } from './shorts.js';
-import { unskin } from './garmentMesh.js';
+import { buildCollar } from './collar.js';
+import { unskin, smoothNormals } from './garmentMesh.js';
 
 // Outfits for the companion. The Quaternius model is textured from a tiny
 // palette (one flat colour per band), so recolouring clothes is a matter of
@@ -34,7 +35,7 @@ export const OUTFITS = {
   jessPolo: {
     colors: { hair: '#2a221d', shirt: '#8e2238', shoes: '#262626', trousers: 'skin' },
     collar: '#8e2238',
-    poloOpen: 1, // her top button undone (the polo garment, ?polo=shell)
+    poloOpen: 4, // her top four buttons undone (the polo garment, ?polo=shell; any of 0 to 4 is drawn)
     wellies: '#262626',
     shorts: '#3f4f6e',
   },
@@ -996,7 +997,9 @@ function addTop(rig, name, color, spec) {
   const needs = ['Neck', 'Spine', 'LeftArm', 'RightArm', 'LeftForeArm', 'RightForeArm', 'LeftHand', 'RightHand'];
   if (!body || !needs.every((b) => rig.bones[b])) return;
   const data = bodyData(rig, body);
-  const { shell, shade, placket, vee } = buildTop(data, spec);
+  const built = buildTop(data, spec);
+  const { shell, shade, placket, vee } = built;
+  const made = { data, built, spec };
   // The polo matches the shirt colour the body is painted under it; the jumper is its own colour, as before.
   const tint = name === 'polo' ? shirtColour(color) : new THREE.Color(color);
   const shading = [];
@@ -1022,7 +1025,7 @@ function addTop(rig, name, color, spec) {
       new THREE.MeshStandardMaterial({ color: new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace), roughness: 0.85, flatShading: true }),
     );
   }
-  if (!placket) return;
+  if (!placket) return made;
 
   // The placket, stitched, and its buttons (a second mesh, the holes coloured in).
   const index = placket.tris.flat();
@@ -1038,7 +1041,7 @@ function addTop(rig, name, color, spec) {
   const weights = [];
   const colors = [];
   const tris = [];
-  const ivory = new THREE.Color(0xebe7dc);
+  const face = tint.clone().multiplyScalar(spec.buttonShade); // a shade darker than the shirt, as a polo's are
   const hole = tint.clone().multiplyScalar(0.35);
   const add = (points, triangles, anchor, c) => {
     const base = positions.length;
@@ -1051,7 +1054,7 @@ function addTop(rig, name, color, spec) {
   };
   for (const b of placket.buttons) {
     const shape = buttonShape(b.centre, b.normal, POLO.buttonRadius);
-    add(shape.points, shape.tris, b.anchor, ivory);
+    add(shape.points, shape.tris, b.anchor, face);
     add(shape.holes, shape.holeTris, b.anchor, hole);
   }
   for (const h of placket.slits) {
@@ -1065,6 +1068,27 @@ function addTop(rig, name, color, spec) {
     'poloButtons',
     { positions, normals: smoothArrayNormals(positions, tris), weights, colors, index: tris },
     new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.32, side: THREE.DoubleSide }),
+  );
+  return made;
+}
+
+/** The polo's collar (collar.js), on the polo's neck edge and over the jumper if she has one on. ?polo=shell. */
+function addCollar(rig, polo, jumper, color) {
+  const body = bodyMesh(rig);
+  const { data, built, spec } = polo;
+  const over = [built.shell, ...(jumper ? [jumper.built.shell] : [])];
+  const collar = buildCollar(built.shell, data, { vee: built.vee, placketWidth: spec.placketWidth, over });
+  if (!collar) return;
+  const tint = shirtColour(color);
+  const colors = [];
+  for (const k of collar.shade) colors.push(tint.r * k, tint.g * k, tint.b * k);
+  skinnedFromArrays(
+    rig,
+    body,
+    data,
+    'poloCollar',
+    { positions: collar.verts.map((q) => q.bind), normals: smoothNormals(collar), weights: collar.verts.map((q) => q.weights), colors, index: collar.tris.flat() },
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, side: THREE.DoubleSide }),
   );
 }
 
@@ -1108,10 +1132,15 @@ function addGarments(rig, outfit) {
 }
 
 function addEachGarment(rig, outfit) {
-  if (outfit.collar && POLO_SHELL) addTop(rig, 'polo', outfit.collar, { ...POLO, open: outfit.poloOpen ?? 0 });
-  else if (outfit.collar) addPoloFront(rig, outfit.collar, shirtFrontTop(rig, outfit.collar));
-  if (outfit.jumper && POLO_SHELL) addTop(rig, 'jumper', outfit.jumper, JUMPER);
-  else if (outfit.jumper) addJumper(rig, outfit.jumper, outfit.colors?.shirt);
+  if (POLO_SHELL) {
+    // The polo, the jumper over it, then the collar on the polo's neck, lying over whichever is outermost.
+    const polo = outfit.collar ? addTop(rig, 'polo', outfit.collar, { ...POLO, open: outfit.poloOpen ?? 0 }) : null;
+    const jumper = outfit.jumper ? addTop(rig, 'jumper', outfit.jumper, JUMPER) : null;
+    if (polo) addCollar(rig, polo, jumper, outfit.collar);
+  } else {
+    if (outfit.collar) addPoloFront(rig, outfit.collar, shirtFrontTop(rig, outfit.collar));
+    if (outfit.jumper) addJumper(rig, outfit.jumper, outfit.colors?.shirt);
+  }
   if (outfit.shorts && POLO_SHELL) addBottom(rig, outfit.shorts);
   else if (outfit.shorts) addShorts(rig, outfit.shorts);
   if (outfit.wellies) addWellies(rig, outfit.wellies);

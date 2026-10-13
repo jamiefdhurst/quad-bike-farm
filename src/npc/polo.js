@@ -74,8 +74,9 @@ export const POLO = {
   placketLift: 0.0022, // how far it stands proud of the shirt
   buttons: [0.01, 0.042, 0.074, 0.106, 0.138], // how far down the placket each button is (m)
   buttonRadius: 0.0052,
+  buttonShade: 0.72, // buttons a shade darker than the shirt
   open: 0, // how many buttons from the top are undone (Jess: 1)
-  veeWidth: 0.017, // an open neck's V: half its width at the neckline
+  veeWidths: [0, 0.017, 0.022, 0.027, 0.031], // an open neck's V: half its width at the neckline, by buttons undone
   veeStop: 0.009, // and where it stops, this far above the first button done up
 };
 
@@ -178,6 +179,9 @@ export function buildTop(body, p = POLO) {
   if (vee) {
     const round = F.neckField;
     F.neckField = (v) => Math.max(round(v), vee.field(v));
+    // Split down her middle first: either side of it the V's edge is a straight line, which a cut follows exactly. Across it,
+    // where the V is narrower than the shirt's triangles, a triangle straddling the middle couldn't be cut along both sides.
+    mesh = cut(mesh, (v) => v.rest[0] - body.bones.Neck[0], 'middle', { keep: 'split' });
   }
   mesh = cut(mesh, F.neckField, 'neck');
   mesh = cut(mesh, F.left.field, 'sleeve');
@@ -254,6 +258,8 @@ export function buildTop(body, p = POLO) {
     const A = mesh.verts[a];
     const B = mesh.verts[b];
     if (!lips.has(A.edge) || !lips.has(B.edge)) continue;
+    // Not down an open neck's V: the placket's halves cover that edge, and turned in there they'd fill the opening.
+    if (vee && Math.min(A.rest[1], B.rest[1]) < vee.top - 0.004 && A.rest[2] > 0) continue;
     const [oa, ob] = [copy(outer, a, 0), copy(outer, b, 0)];
     const [ia, ib] = [copy(inner, a, ease(A) - 0.0012), copy(inner, b, ease(B) - 0.0012)];
     tris.push([ob, oa, ia], [ob, ia, ib]);
@@ -279,8 +285,8 @@ function openNeck(mesh, body, p, neckField) {
     if (h && neckField(inTriangle(front, h.tri, h.bary)) <= 0) top = y;
   }
   if (top === null) return null;
-  const bottom = top - (p.buttons[p.open] - p.veeStop);
-  const slope = p.veeWidth / (top - bottom);
+  const bottom = top - (p.buttons[Math.min(p.open, p.buttons.length - 1)] - p.veeStop);
+  const slope = p.veeWidths[Math.min(p.open, p.veeWidths.length - 1)] / (top - bottom);
   const halfWidth = (y) => slope * (y - bottom);
   const field = (v) => Math.min(halfWidth(v.rest[1]) - Math.abs(v.rest[0] - x0), v.rest[2] - neck[2] - 0.03);
   return { top, bottom, halfWidth, field };
@@ -463,7 +469,7 @@ export function buildInset(body, vee) {
   const mesh = { verts: [], tris: [] };
   for (let t = 0; t < index.length; t += 3) {
     const tri = [index[t], index[t + 1], index[t + 2]];
-    if (!tri.some((i) => vee.field(verts[i]) > 0)) continue;
+    if (!tri.some((i) => vee.field(verts[i]) > -0.03)) continue; // generous: the V's point can lie inside a triangle
     mesh.tris.push(
       tri.map((i) => {
         if (!ids.has(i)) {
@@ -474,7 +480,11 @@ export function buildInset(body, vee) {
       }),
     );
   }
-  let patch = cut(mesh, (v) => -vee.field(v), 'vee');
+  // Split flat (each triangle into four in its own plane, so it still matches her facets) and down her middle, so the cut can
+  // follow the V to its point: her chest's triangles are 5 cm across, and cut whole they stopped the patch well short of it.
+  let patch = subdivide(mesh, 0);
+  patch = cut(patch, (v) => v.rest[0] - body.bones.Neck[0], 'middle', { keep: 'split' });
+  patch = cut(patch, (v) => -vee.field(v), 'vee');
   patch = cut(patch, (v) => v.rest[1] - (vee.top + 0.01), 'vee');
   // Lifted along the average of the faces at each corner, so the faces stay joined (each along its own would open cracks at
   // the creases, showing the shirt paint under them); still drawn flat, to match her.
