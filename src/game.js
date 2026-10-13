@@ -25,6 +25,7 @@ import { RideWind, rideBuffers } from './audio/rideAudio.js';
 import { overlayPauses } from './core/pause.js';
 import { DEFAULT_GRAPHICS_PARAMS, GRAPHICS_PARAM_RANGES, pixelRatioFor, nextFrameAt } from './core/graphics.js';
 import { FrameStats } from './core/frameStats.js';
+import { FrameBreakdown } from './core/frameBreakdown.js';
 import { RadialPad } from './hud/radialPad.js';
 import { PAD_RANGES } from './input/gamepad.js';
 import { DEFAULT_SOUND_PARAMS, SOUND_PARAM_RANGES } from './audio/audioParams.js';
@@ -274,6 +275,7 @@ export class Game {
     this.graphics = { ...DEFAULT_GRAPHICS_PARAMS };
     registerTuning('Graphics', this.graphics, GRAPHICS_PARAM_RANGES, { onChange: () => this.onResize() });
     this.frameStats = new FrameStats(); // for the console's `perf`
+    this.frameBreakdown = new FrameBreakdown(); // where the time goes, for the Tune tab's "Frame time" and `perf` (core/frameBreakdown.js)
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setPixelRatio(pixelRatioFor(window.devicePixelRatio, this.graphics));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -8253,6 +8255,8 @@ export class Game {
       input.endFrame();
       return;
     }
+    const fb = this.frameBreakdown;
+    fb.begin(started);
     this.updateFarmSave(dt);
     this.updateEndOfDay(dt);
 
@@ -8384,17 +8388,20 @@ export class Game {
       else if (this.heldBattery() && input.wasPressed('KeyG')) this.putBatteryDown();
     }
 
+    fb.lap('input and prompts', performance.now());
     this.accumulator += dt;
     while (this.accumulator >= FIXED_DT) {
       this.fixedUpdate(FIXED_DT);
       this.accumulator -= FIXED_DT;
     }
     const alpha = this.accumulator / FIXED_DT;
+    fb.lap('physics', performance.now());
 
     this.updatePassenger();
     this.updateRideOffer(dt);
     for (const unit of this.units) unit.listenerOnBoard = unit === this.boardUnit;
     for (const unit of this.units) unit.update(dt, alpha);
+    fb.lap('vehicles', performance.now());
     const ridden = this.riddenUnit;
     this.talkFloor.left = Math.max(0, this.talkFloor.left - dt);
     this.updateFavour(dt, ridden);
@@ -8476,6 +8483,7 @@ export class Game {
     if (auto || this.fallingOut.active) this.updateFallingOut(dt);
     if (auto || this.tryst) this.updateRomance(dt);
     this.updateBanter(dt, ridden);
+    fb.lap('farm features', performance.now());
     this.updateMinds(dt, ridden);
     this.updateMuddiness(dt);
     this.updatePair(dt);
@@ -8506,6 +8514,7 @@ export class Game {
         wrongMix: pouring ? this.wrongMix : null,
       });
     }
+    fb.lap('girls', performance.now());
     const board = this.boardUnit;
     if (!this.debugCamera) this.player.update(dt, alpha, board ? board.vibration : null);
     this.can.pouring = pouring;
@@ -8525,20 +8534,26 @@ export class Game {
     this.notebook.update(dt);
     this.sparesShelf.update(dt);
     this.updateLoft(dt);
+    fb.lap('player and items', performance.now());
     this.audioHub.setPouring(pouring, dt);
     this.audioHub.update(dt, this.camera);
     this.rideWind.update(dt, board ? board.quad.speed : 0);
+    fb.lap('audio', performance.now());
     this.updateWorkLight(dt);
     this.generatorStart.update(dt);
     this.updateDaylight(dt);
     this.world.update(dt, board ? board.quad.position : this.player.position, this.camera);
     this.updateWeather(dt);
+    fb.lap('world, weather and effects', performance.now());
     this.updateAchievements(dt, ridden);
     this.updateHud(dt);
     this.photos.update(dt);
+    fb.lap('hud', performance.now());
 
     this.renderer.render(this.scene, this.camera);
     this.photos.afterRender();
+    fb.lap('drawing', performance.now());
+    fb.end();
     input.endFrame();
     this.firstFrameDone = true;
     this.frameStats.record(started / 1000, performance.now() - started);

@@ -4,6 +4,7 @@ import { FAULT_KINDS } from '../vehicle/faults.js';
 import { applicableQuirks, featuresOf } from '../vehicle/quirks.js';
 import { categoryOf, sortTuneGroups } from './tuneCategories.js';
 import { buildGirlsTab } from './girlsTab.js';
+import { buildFrameTime } from './frameTimeFolder.js';
 import { setQuirk, setFault, clearFaults, fixEverything, problemSummary, quirkLabel, startWarm, switchOff, engineReadouts } from './vehicleDebug.js';
 import { netCharge } from '../engine/charging.js';
 import { sickness, sickEvidence } from '../npc/keepAlive.js';
@@ -36,6 +37,7 @@ export class DebugGui {
     // Every vehicle's own registered tuning, together at the bottom of the Vehicles tab.
     this.tuningParent = this.addFolder('Vehicles', 'Tuning for each vehicle (engine, controls, sound...)');
     this.tuningParent.close();
+    buildFrameTime(this);
     this.searchFolder = this.addFolder('Tune', 'Search');
     this.searchFolder.add(this.search, 'text').name('Find a folder').onChange(() => this.applyVisibility());
     this.searchFolder

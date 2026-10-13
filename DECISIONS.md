@@ -3454,3 +3454,13 @@ Settled with Jamie before building (all the recommendations): a fixed site on th
 - Debug: Tune "Bonfire" and "Sitting by the bonfire"; the Girls tab's shared section shows the fire's state and builds and lights it, puts it out, clears it, and takes you there; each girl's "Make her do" has "fire"; the console has `farm.bonfire` and `farm.bonfireLit`.
 - Checked: unit tests, and headless: the game loads with no errors, the prompts go from "Put the brushwood on the pile (1 of 3)" to "Light the bonfire", a lit fire reaches a full blaze with the flames shown and the light on, and a girl sent to it starts a session. Not checked: how any of it looks, the smoke and sparks in the wind, a girl actually sitting on a log (the seat height 0.46 m is a guess), or the frame-time cost of the extra light and smoke.
 
+## A frame-time readout (TODO 46)
+
+Nothing needed asking: the item said what and where.
+
+- `src/core/frameBreakdown.js` (pure, tested in `tests/frameBreakdown.test.js`): `FrameBreakdown.begin(now)`, `lap(name, now)` and `end()`. A lap is the time since the one before, so `frame()` in game.js only needs a `fb.lap('stage', performance.now())` at each boundary (nine `performance.now()` calls a frame, well under 0.01 ms). Each stage's figure is smoothed (0.9 of the old kept) and its worst over the last 120 frames kept. `FRAME_STAGES` names the ten stages in order, and a test checks the game laps exactly those.
+- The stages are cut where the frame already falls: input and prompts; physics (the fixed steps); vehicles (`unit.update`); farm features (every `update*` up to `updateMinds`); girls (minds, bodies, voices); player and items; audio; world, weather and effects (daylight, `world.update`, `updateWeather`); HUD; drawing (the renderer call). A frame paused behind a card is not counted.
+- Shown as the Tune tab's first folder, "Frame time" (`src/debug/frameTimeFolder.js`), closed and read-only, and as a line in the console's `perf`. It sits on Tune because that tab is the one for the game as a whole rather than a vehicle or a girl.
+- Measured once headless on seed 2 (a software-ish GPU, so the drawing figure means little): vehicles 2.0 ms, farm features 0.9, girls 0.4, world and weather 0.3, the rest under 0.2. "Vehicles" is the biggest of the game's own stages, which is expected with twelve engine models running.
+- Not done: a per-feature split inside "farm features" (the console's `trace` is the place for that), and a graph over time.
+

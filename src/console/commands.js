@@ -454,6 +454,7 @@ export function buildCommands(host) {
           `${Math.round(p.fps)} fps (cap ${p.maxFps > 0 ? p.maxFps : 'none'}), ${round(p.ms, 2)} ms a frame on average, ${round(p.worstMs, 1)} ms at worst`,
           `${k(p.calls)} draw calls and ${k(p.triangles)} triangles a frame, shadows included`,
           `${p.width} x ${p.height} pixels (render scale ${p.pixelRatio})`,
+          ...(p.stages?.length ? [`where the time goes: ${p.stages.map((x) => `${x.name} ${round(x.ms, 2)}`).join(', ')} (ms)`] : []),
         ];
       },
     },

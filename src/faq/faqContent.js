@@ -1400,6 +1400,12 @@ export const FAQ_SECTIONS = [
           (<code>fly</code>) and switch the girls' autonomy and speech off.`,
       },
       {
+        q: 'How do I see what is slowing the game down?',
+        a: `Open the tuning panel (the backtick key), go to the Tune tab and open "Frame time" at the top: it shows frames a second, the game's own time on each frame and how much of
+          that goes on ten stages, from physics and the vehicles to the girls, the audio, the weather and effects, and finally drawing, with the biggest one named. <code>perf</code> in the
+          console says the same in a line.`,
+      },
+      {
         q: 'Why does the game stop at 60 frames a second?',
         a: `So it runs cool and quiet on a laptop. The physics works in sixtieths of a second anyway, so a faster screen only got extra in-between frames
           for twice the work. It also draws at 1.5 times the screen's points on a Retina screen rather than 2, and the grass and stubble stop about 70 m
