@@ -43,7 +43,7 @@ export class Wheel {
 
   /**
    * @param {string} title
-   * @param {{label: string, run?: () => void, children?: object[], color?: number|string, hint?: string}[]} options
+   * @param {{label: string, run?: () => void, children?: object[], color?: number|string, hint?: string, disabled?: boolean}[]} options
    */
   open(title, options) {
     this.stack = [{ title, options }];
@@ -89,7 +89,7 @@ export class Wheel {
 
   choose(i) {
     const option = this.level.options[i];
-    if (!option) return;
+    if (!option || option.disabled) return;
     if (option.children) {
       this.stack.push({ title: option.label, options: option.children, color: option.color });
       this.reset();
@@ -174,7 +174,7 @@ export class Wheel {
       const a1 = i * step + step / 2 - gap;
       const slice = document.createElementNS(SVG, 'path');
       slice.setAttribute('d', slicePath(a0, a1, INNER, OUTER));
-      slice.setAttribute('class', `wheel-slice${i === this.selected ? ' selected' : ''}`);
+      slice.setAttribute('class', `wheel-slice${i === this.selected ? ' selected' : ''}${o.disabled ? ' disabled' : ''}`);
       svg.appendChild(slice);
       if (o.color !== undefined) {
         // A band of the quad's colour round the outside of its slice.
@@ -188,7 +188,7 @@ export class Wheel {
       const y = SIZE / 2 - Math.cos(a) * LABEL_RADIUS;
       const more = o.children ? ' ›' : '';
       labels.push(
-        `<div class="wheel-label${i === this.selected ? ' selected' : ''}" style="left:${x}px;top:${y}px"><span class="key">${i + 1}</span>${o.label}${more}${o.hint ? `<small>${o.hint}</small>` : ''}</div>`,
+        `<div class="wheel-label${i === this.selected ? ' selected' : ''}${o.disabled ? ' disabled' : ''}" style="left:${x}px;top:${y}px"><span class="key">${i + 1}</span>${o.label}${more}${o.hint ? `<small>${o.hint}</small>` : ''}</div>`,
       );
     });
     const needle = document.createElementNS(SVG, 'circle');

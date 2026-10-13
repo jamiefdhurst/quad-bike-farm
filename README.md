@@ -667,7 +667,7 @@ What is still to do. Finished items are recorded in DECISIONS.md, under their ol
 50. Clutch wear on the manual quads. Slipping it at the bite on the hill or creeping in low wears it; a worn clutch slips under power, the revs flare without the speed, and it smells hot. The manual quads' version of the slipping belt. **Done.**
 51. A thunderstorm, as a rare weather roll. The sky goes dark, lightning and thunder roll in from the hills, heavy rain, and the girls run for the nearest barn. Amy won't ride in it, Jess wants to. **Done.**
 52. We need to be able to fix the UTV, cars, etc. when they get crash damage too - how do we do that if they don't fit in the barn? **Done.**
-53. The girls' wheels still aren't right - if they're in the middle of something, only show the "stop, come here", etc. options. If both me and Amy are in the Corsa, there's no option for Jess to drive it, but there should be (same for Amy and the Fiesta, etc.) - I still see options only for the quads sometimes and I don't know why.
+53. **Done.** The girls' wheels still aren't right - if they're in the middle of something, only show the "stop, come here", etc. options. If both me and Amy are in the Corsa, there's no option for Jess to drive it, but there should be (same for Amy and the Fiesta, etc.) - I still see options only for the quads sometimes and I don't know why.
 54. Corsa's dash is still too low down, I can't see the warning lights because of the steering wheel
 55. Need options for the girls to start the Fiesta and Corsa, same as the others
 56. Re-organise the girls' debug menus, place the buttons near each other, make the descriptions smaller, give them some sort of order as there are too many options now

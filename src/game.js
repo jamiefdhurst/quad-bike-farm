@@ -87,6 +87,7 @@ import { poseUtvBed, BED_CARGO_SPOTS, BED_CARGO_YAWS, BED_CARGO_YAW } from './ve
 import { CargoHold, CARGO_PARAM_RANGES } from './vehicle/cargoHold.js';
 import { UtvRide, UTV_RIDE_PARAM_RANGES, DEFAULT_UTV_RIDE_PARAMS } from './npc/utvRide.js';
 import { TractorGo, TRACTORGO_PARAM_RANGES } from './npc/tractorGo.js';
+import { vehicleOptions, wheelChildren } from './npc/vehicleWheel.js';
 import { CarGo, Borrowing, mayDriveCar, CAR_GO_PARAM_RANGES } from './npc/carGo.js';
 import { LPlates, LPLATE_PARAM_RANGES, meanSkill } from './npc/lPlates.js';
 import { LPlateSet } from './vehicle/lPlateModel.js';
@@ -3116,17 +3117,53 @@ export class Game {
   landyWheelOption(c, l) {
     const { mount, ride, kind } = l;
     const q = l.unit.quad;
-    const name = l.spec.name;
-    const children = [];
-    if (c.fsm.is('onTrailer') && c.trailer === mount) children.push({ label: `Get out of the ${name}`, run: () => (ride.dismiss(c.character.id), c.leaveTrailer()) });
-    else if (c.fsm.is('idle') && !q.rider && !q.driver && q.speed < ride.p.stopSpeed) {
-      // "Get in" takes the front if there's room and the back if not; the 200TDi's slice also lets you send her to the back.
-      if (mount.freeSlot(c.root.position) || mount.freeRearSlot(c.root.position)) children.push({ label: `Get in the ${name}`, run: () => this.askIntoLandy(c, l) });
-      if (mount.freeRearSlot(c.root.position)) children.push({ label: 'Get in the back', run: () => this.askIntoLandy(c, l, { back: true }) });
-    }
-    if (c.fsm.is('idle') && this.goFree(kind) && c.canDrive(q) && mayDriveCar(c.character.id, l.spec)) children.push({ label: 'Drive it', run: () => this.askDriveVehicle(c, kind) });
-    if (this.canAskStart(c, kind)) children.push({ label: 'Start it', run: () => c.requestStart(q) });
-    return { label: name, color: l.spec.bodyColor, children };
+    const from = c.root.position;
+    const owner = l.spec.owner ? this.companions.find((o) => o.character.id === l.spec.owner)?.name ?? l.spec.owner : '';
+    const options = vehicleOptions({
+      name: l.spec.name,
+      inside: c.fsm.is('onTrailer') && c.trailer === mount,
+      idle: c.fsm.is('idle'),
+      busy: this.busyWhy(c),
+      moving: q.speed >= ride.p.stopSpeed,
+      youDriving: !!q.rider,
+      girlDriving: !!q.driver,
+      seatFree: !!(mount.freeSlot(from) || mount.freeRearSlot(from)),
+      hasBack: !!mount.rearSlots.length,
+      backFree: !!mount.freeRearSlot(from),
+      mayDrive: mayDriveCar(c.character.id, l.spec),
+      ownerName: owner,
+      canDrive: c.canDrive(q),
+      driveFree: this.driveFree(kind),
+      running: q.engine.isRunning,
+      untouched: this.goFree(kind),
+    });
+    const children = wheelChildren(options, (key) => {
+      if (key === 'out') (ride.dismiss(c.character.id), c.leaveTrailer());
+      else if (key === 'in') this.askIntoLandy(c, l);
+      else if (key === 'back') this.askIntoLandy(c, l, { back: true });
+      else if (key === 'drive') this.askDriveVehicle(c, kind);
+      else if (key === 'start') c.requestStart(q);
+    });
+    return { label: l.spec.name, color: l.spec.bodyColor, children };
+  }
+
+  /** Why she can't be asked something just now, for a greyed wheel option. */
+  busyWhy(c) {
+    const why = c.availability({ asked: true, pull: true }).why;
+    return why && why !== 'free' ? `she's ${why}` : 'she\'s busy';
+  }
+
+  /**
+   * Nobody is at the wheel, or on their way to it, and it's stopped. Unlike goFree, someone sat in the other seats (you, or her friend on the
+   * bench) doesn't stop her taking the wheel, for the Land Rovers and the girls' cars.
+   */
+  driveFree(kind) {
+    if (!['landy', 'defender', 'fiesta', 'corsa'].includes(kind)) return this.goFree(kind);
+    const unit = this.goVehicle(kind);
+    if (!unit) return false;
+    const q = unit.quad;
+    const busy = (c) => c.quad === q && (c.fsm.is('driving', 'mounting', 'dismounting', 'shuffling', 'cranking') || (c.fsm.is('walking') && ['drive', 'crank'].includes(c.fsm.data?.goal)));
+    return !q.rider && !q.driver && !q.isTipped && q.speed < 0.5 && !this.companions.some(busy);
   }
 
   /** You asked her into a Land Rover: she goes at once and stays until you ask her out. `back`: the 200TDi's back bench. */
@@ -7842,6 +7879,12 @@ export class Game {
         hint: unit.quad === c.quad && c.isSeated ? 'she\'s on it' : null,
         children: own.map((a) => ({ label: a.short ?? a.label, run: answer(a) })),
       });
+    }
+    // The quads she can do nothing with just now stay on the wheel, greyed, so its shape doesn't change under you.
+    const shown = new Set(actions.filter((a) => a.quad).map((a) => a.quad.unit));
+    const why = c.fsm.is('idle') ? 'not just now' : this.busyWhy(c);
+    for (const unit of this.girlUnits) {
+      if (!shown.has(unit)) options.push({ label: unit.name, color: unit.spec.bodyColor, children: [{ label: 'Not just now', disabled: true, hint: why }] });
     }
     options.push(...this.workLightWheelOptions(c));
     options.push(...this.fallingOutWheelOptions(c));

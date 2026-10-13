@@ -344,6 +344,12 @@ body {
   stroke: rgba(255, 255, 255, 0.5);
 }
 
+.wheel-slice.disabled,
+.wheel-slice.disabled.selected {
+  fill: rgba(20, 22, 20, 0.5);
+  stroke: rgba(255, 255, 255, 0.05);
+}
+
 .wheel-hub {
   fill: rgba(20, 22, 20, 0.6);
 }
@@ -364,6 +370,12 @@ body {
 .wheel-label.selected {
   opacity: 1;
   font-weight: 600;
+}
+
+.wheel-label.disabled,
+.wheel-label.disabled.selected {
+  opacity: 0.4;
+  font-weight: 400;
 }
 
 .wheel-label .key {
