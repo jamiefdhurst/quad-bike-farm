@@ -3598,6 +3598,15 @@ Jamie: the orange polo was more of a red; take the flag away and make the garmen
 - The FAQ's notes on the girls say their polos are the colours of their favourite quads (they said navy and burgundy, true only before the shirts matched the quads), with a new answer on why the shirts and buttons change between farms; the README likewise.
 - Checked headless: both girls full length in their own colours (Amy green, Jess red on seed 3), both in the orange quad's orange, Jess's open neck in yellow, the game loading with no errors of its own.
 
+### Follow-up: a crease over the shoulder when driving
+
+Jamie: an artefact poking out of the rear shoulder on a quad, e.g. Jess with 2 or 3 undone. It was a crease in the polo over her left shoulder blade with her arms forward on the bars, for both girls and with any number undone; her body alone (the polo hidden) showed none. Ruled out first: a gap in the collar's neck ring (it has a 0.6 rad gap with nothing undone too), and the rounding (unrounded, a thinner crease stayed). The body's weights change abruptly there, between her back, shoulder and upper arm; with no thickness it doesn't matter, but the polo stands 5 to 7 mm off, and skinning carries that offset in quite different directions at neighbouring points once the shoulder bends, which makes a valley.
+
+- `smoothSkinning` (`garmentMesh.js`, tested): each point's bone weights, and its skin map with them (it's linear in the weights, so rest positions stay right), move halfway towards its neighbours' average, four passes (`skinSmoothing`), right after the polo is rounded, so the placket, logo and collar, built on it afterwards, take the evened-out skinning too. Points at one spot are kept together.
+- Restricting it (her back only, or not the sleeves, or not the sleeves' fronts) left the crease, the edge of the smoothed part making its own; smoothed everywhere it's gone. Counting triangles that turn over when driving: 2 before; 37 smoothed everywhere, at the front of her shoulders and the inside of her upper arms, where the arms coming forward squeeze the cloth. None of those showed in close shots of both armpits from the front, the sides and front three-quarter.
+- Checked headless: both girls driving, from behind either side and straight behind, the front and both sides; Jess with 2 and 3 undone; standing from the front, three-quarter, back and shoulder, and Jess's open neck straight on. A shadow on Amy's upper back standing is her hair's (it's there before the change too). Not checked: the jumper (not smoothed: it has no crease in the shots so far, and stands further off).
+
+
 
 
 

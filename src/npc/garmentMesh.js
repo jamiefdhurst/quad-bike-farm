@@ -287,3 +287,64 @@ export function smoothNormals(mesh, pos = (v) => v.bind) {
   }
   return mesh.verts.map((v, i) => norm(sums.get(key(v, i)) ?? v.normal));
 }
+
+/**
+ * Evens out how the mesh is skinned: each point's bone weights (and the skin map that goes with them, which is linear in them)
+ * move part way towards the average of its neighbours', `passes` times. The body's weights change abruptly in places (over her
+ * shoulder blade, between her back, shoulder and upper arm); a garment standing off the body there carries its offset in quite
+ * different directions at neighbouring points once a joint bends, and creases. Points at one spot (copies made for a colour
+ * change) are kept together. `where(v)` limits it, `amount` is how far each pass goes.
+ */
+export function smoothSkinning(mesh, passes = 3, amount = 0.5, where = () => true) {
+  const key = (v) => v.bind.map((c) => Math.round(c * 1e5)).join(',');
+  const groups = new Map();
+  mesh.verts.forEach((v, i) => {
+    const k = key(v);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(i);
+  });
+  const keys = [...groups.keys()];
+  const gid = new Map();
+  keys.forEach((k, g) => groups.get(k).forEach((i) => gid.set(i, g)));
+  const near = keys.map(() => new Set());
+  for (const tri of mesh.tris) {
+    for (const i of tri) for (const j of tri) if (gid.get(i) !== gid.get(j)) near[gid.get(i)].add(gid.get(j));
+  }
+  const first = keys.map((k) => mesh.verts[groups.get(k)[0]]);
+  let weights = first.map((v) => v.weights);
+  let skins = first.map((v) => v.skin);
+  for (let pass = 0; pass < passes; pass++) {
+    const nextW = [];
+    const nextS = [];
+    weights.forEach((w, g) => {
+      const ns = [...near[g]];
+      if (!ns.length || !where(first[g])) {
+        nextW.push(w);
+        nextS.push(skins[g]);
+        return;
+      }
+      const sum = new Map();
+      for (const [b, x] of w) sum.set(b, (sum.get(b) ?? 0) + x * (1 - amount));
+      const skin = skins[g].map((x) => x * (1 - amount));
+      for (const n of ns) {
+        for (const [b, x] of weights[n]) sum.set(b, (sum.get(b) ?? 0) + (x * amount) / ns.length);
+        skins[n].forEach((x, k) => (skin[k] += (x * amount) / ns.length));
+      }
+      const top = [...sum].filter(([, x]) => x > 0).sort((a, b) => b[1] - a[1]).slice(0, 4);
+      const total = top.reduce((t, [, x]) => t + x, 0) || 1;
+      nextW.push(top.map(([b, x]) => [b, x / total]));
+      nextS.push(skin);
+    });
+    weights = nextW;
+    skins = nextS;
+  }
+  keys.forEach((k, g) => {
+    for (const i of groups.get(k)) {
+      const v = mesh.verts[i];
+      v.weights = weights[g];
+      v.skin = skins[g];
+      v.rest = applySkin(v.skin, v.bind);
+    }
+  });
+  return mesh;
+}

@@ -9,6 +9,7 @@
 import {
   weld,
   subdivide,
+  smoothSkinning,
   cut,
   openEdges,
   smoothNormals,
@@ -32,6 +33,7 @@ export const POLO = {
   ease: 0.007, // how far the shirt stands off her body (m)
   round: 0.75, // how far the subdivided shirt rounds out between the body's corners (0 flat, 1 full)
   armRound: 0.25, // less on the arms, whose few long triangles would balloon
+  skinSmoothing: 4, // passes evening out its bone weights between neighbours, so it bends without creasing
   bare: /Leg|Foot|Toe|Hand/, // bones whose skin it never covers
   // The neck: a line round her neck where it meets her shoulders, as heights above her neck bone at the back, the sides and the
   // front (where the placket starts), for points `neckRing` out from the middle of her neck. Further out counts as lower by
@@ -188,6 +190,8 @@ export function buildTop(body, p = POLO) {
   const onArm = (v) => F.left.limb(v) + F.right.limb(v) > 0.5;
   const flatBelow = p.tucked ? waist + 0.03 : -Infinity;
   mesh = subdivide(mesh, (A, B) => (Math.min(A.rest[1], B.rest[1]) < flatBelow ? 0 : onArm(A) || onArm(B) ? p.armRound : p.round));
+  // Even out its skinning, so it doesn't crease across her shoulders when her arms reach forward (smoothSkinning).
+  if (p.skinSmoothing) smoothSkinning(mesh, p.skinSmoothing, 0.5);
   // An open neck: a V cut into the front of the neckline, down to just above the first button done up.
   const vee = p.open ? openNeck(mesh, body, p, F.neckField) : null;
   if (vee) {

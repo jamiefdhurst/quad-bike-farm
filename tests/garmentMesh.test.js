@@ -11,6 +11,7 @@ import {
   rayHit,
   inTriangle,
   smoothNormals,
+  smoothSkinning,
 } from '../src/npc/garmentMesh.js';
 import { buildTop, buildInset, topFields, dealPoloOpen, POLO, JUMPER } from '../src/npc/polo.js';
 import { CHARACTERS } from '../src/npc/characters.js';
@@ -329,6 +330,36 @@ describe('buttons undone on each farm', () => {
     // The rest are evenly spaced.
     const gaps = up.buttons.slice(1).map((b, i) => up.buttons[i].centre[1] - b.centre[1]);
     for (const g of gaps) expect(g).toBeCloseTo(gaps[0], 3);
+  });
+});
+
+describe('evening out the skinning', () => {
+  it('softens a sudden change of bone between neighbours, keeping weights whole and the skin map in step', () => {
+    // A strip whose left half follows bone 1 and right half bone 2, its skin map a different shift for each.
+    const m = grid(6);
+    const shift = (x) => [1, 0, 0, x, 0, 1, 0, 0, 0, 0, 1, 0];
+    m.verts.forEach((v) => {
+      const right = v.bind[0] > 0.5;
+      v.weights = [[right ? 2 : 1, 1]];
+      v.skin = shift(right ? 0.1 : 0);
+      v.rest = applySkin(v.skin, v.bind);
+    });
+    const jump = (mesh) => {
+      const at = (x) => mesh.verts.find((v) => Math.abs(v.bind[0] - x) < 1e-9 && Math.abs(v.bind[1] - 0.5) < 1e-9);
+      const w2 = (v) => v.weights.find(([b]) => b === 2)?.[1] ?? 0;
+      return w2(at(4 / 6)) - w2(at(3 / 6));
+    };
+    expect(jump(m)).toBeCloseTo(1, 9);
+    smoothSkinning(m, 4, 0.5);
+    expect(jump(m)).toBeLessThan(0.5);
+    for (const v of m.verts) {
+      expect(v.weights.length).toBeLessThanOrEqual(4);
+      expect(v.weights.reduce((t, [, w]) => t + w, 0)).toBeCloseTo(1, 9);
+      // The skin map is the weights' blend of the bones' maps, as skinning will make it.
+      const w2 = v.weights.find(([b]) => b === 2)?.[1] ?? 0;
+      expect(v.skin[3]).toBeCloseTo(0.1 * w2, 6);
+      v.rest.forEach((c, k) => expect(c).toBeCloseTo(applySkin(v.skin, v.bind)[k], 9));
+    }
   });
 });
 
