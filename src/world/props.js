@@ -5,6 +5,7 @@ import { enableShadows, instanceModel, modelBounds } from './assets.js';
 import { tiledInstances } from './tiledInstances.js';
 import { patchAt } from './terrain.js';
 import { buildBarnShed } from './barnBuild.js';
+import { underRoof } from './barn.js';
 import { buildJumpRamp } from './jumpRamp.js';
 import { buildHill } from './hillProps.js';
 import { buildOutbuildings } from './outbuildingProps.js';
@@ -579,9 +580,9 @@ function buildBales({ scene, layout, heights, track, physics, RAPIER, random }) 
   const silage = [];
   const placeSilage = (x, z, opts) => silage.push({ id: `silage${silage.length}`, ...place(x, z, { wrapped: true, upright: true, ...opts }) });
 
-  // Wrapped silage stacked two high beside the barn.
-  const sx = layout.barn.x - 3;
-  const sz = layout.barn.z + 9;
+  // Wrapped silage stacked two high beside the barn (layout.silage).
+  const sx = layout.silage?.x ?? layout.barn.x - 3;
+  const sz = layout.silage?.z ?? layout.barn.z + 9;
   for (let i = 0; i < 4; i++) placeSilage(sx + i * 1.55, sz);
   for (let i = 0; i < 3; i++) placeSilage(sx + 0.78 + i * 1.55, sz, { stackLevel: 1 });
   for (let i = 0; i < 3; i++) placeSilage(sx + i * 1.55 + 0.3, sz + 1.6);
@@ -710,6 +711,7 @@ function buildGrass({ scene, layout, heights, random, drawDistance }) {
     const z = (random() * 2 - 1) * F;
     if (heights.mudAt(x, z) > 0.02) continue;
     if (Math.hypot(x - yard.x, z - yard.z) < yard.radius * 0.75) continue;
+    if (underRoof(layout, x, z)) continue; // none growing up through the barn floor, in either span
     if (strip) {
       // None growing through the gravel of the drag strip.
       const f = stripFrame(strip, x, z);

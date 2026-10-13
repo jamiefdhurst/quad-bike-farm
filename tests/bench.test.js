@@ -226,3 +226,18 @@ describe('topping up the coolant', () => {
     expect(done({ flawAt: 'pour' }).coolant).toBe(P.coolantShort);
   });
 });
+
+describe('the jobs on a diesel or an injected engine', () => {
+  const diesel = { params: { strokes: 4, compressionIgnition: true, runsOnDiesel: true } };
+  const injected = { params: { strokes: 4, injected: true } };
+  const petrol = { params: { strokes: 4 } };
+  it('leaves out plugs, carb and boot for a diesel, carb and boot for an injected petrol, and nothing for a carburettor', () => {
+    for (const k of ['plug', 'carb', 'boot']) expect(jobAvailable(k, diesel)).toBe(false);
+    expect(jobAvailable('plug', injected)).toBe(true);
+    for (const k of ['carb', 'boot']) expect(jobAvailable(k, injected)).toBe(false);
+    for (const k of ['plug', 'carb', 'boot']) expect(jobAvailable(k, petrol)).toBe(true);
+  });
+  it('still offers the ones every vehicle has', () => {
+    for (const k of ['tyre', 'crash', 'brake', 'fuel', 'mounts']) expect(jobAvailable(k, diesel)).toBe(true);
+  });
+});

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { barnShape, wallBoxes } from './barn.js';
+import { barnShape, wallBoxes, dividerPosts } from './barn.js';
+import { buildJack, buildAxleStand } from '../workshop/jackModel.js';
 import { loftShape } from './loft.js';
 import { squareBaleGeometry, squareBaleMaterials, strawClumpGeometry } from './squareBale.js';
 
@@ -111,7 +112,12 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   scene.add(group);
 
   const sizeX = outer.maxX - outer.minX;
-  const sizeZ = outer.maxZ - outer.minZ;
+  const sizeZ = outer.maxZ - outer.minZ; // one span's width: the roof, gables and ties are drawn once for each span
+  const annex = shape.annex;
+  const spanZs = annex ? [shape.z, annex.z] : [shape.z]; // the middle of each span
+  const all = shape.outerAll;
+  const allZ = (all.minZ + all.maxZ) / 2;
+  const sizeAllZ = all.maxZ - all.minZ;
 
   const boards = boardTexture(random, '#7d2a22');
   const white = new THREE.MeshStandardMaterial({ color: 0xe9e6dd, roughness: 0.8 });
@@ -127,8 +133,8 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   const box = (sx, sy, sz, mat) => new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat);
 
   // Floor: a slab just proud of the flattened ground.
-  const floorMat = new THREE.MeshStandardMaterial({ map: concreteTexture(random, [4, 4]), roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -2 });
-  add(box(sizeX - 0.02, 0.03, sizeZ - 0.02, floorMat), shape.x, floorY - 0.004, shape.z, { cast: false });
+  const floorMat = new THREE.MeshStandardMaterial({ map: concreteTexture(random, [4, 4 * (sizeAllZ / sizeZ)]), roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -2 });
+  add(box(sizeX - 0.02, 0.03, sizeAllZ - 0.02, floorMat), shape.x, floorY - 0.004, allZ, { cast: false });
 
   // Walls with colliders. The east wall's two halves leave the doorway between them.
   const wallMat = (len, hgt) => {
@@ -142,11 +148,22 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   }
   // White corner posts and the door frame.
   for (const [cx, cz] of [
-    [outer.minX, outer.minZ],
-    [outer.minX, outer.maxZ],
-    [outer.maxX, outer.minZ],
-    [outer.maxX, outer.maxZ],
+    [all.minX, all.minZ],
+    [all.minX, all.maxZ],
+    [all.maxX, all.minZ],
+    [all.maxX, all.maxZ],
   ]) add(box(0.34, wallHeight + 0.05, 0.34, white), cx, floorY + wallHeight / 2, cz);
+  if (annex) {
+    // Where the two spans meet: a white post on the east and west walls, and the valley between the roofs on a beam across the barn
+    // that the posts inside carry (they have colliders), with a steel gutter along it.
+    for (const cx of [all.minX, all.maxX]) add(box(0.34, wallHeight - 0.12, 0.34, white), cx, floorY + (wallHeight - 0.12) / 2, outer.maxZ);
+    add(box(sizeX - wall * 2, 0.28, 0.2, timber), shape.x, floorY + wallHeight - 0.14, outer.maxZ);
+    add(box(sizeX + 0.8, 0.08, 0.3, steel), shape.x, floorY + wallHeight + 0.02, outer.maxZ, { cast: false });
+    for (const p of dividerPosts(layout)) {
+      add(box(0.2, wallHeight - 0.28, 0.2, timber), p.x, floorY + (wallHeight - 0.28) / 2, p.z);
+      fixedBox(p.x, floorY + wallHeight / 2, p.z, p.r, wallHeight / 2, p.r);
+    }
+  }
   // Offsets are deliberately off from the wall's own edges so no two faces share a plane.
   for (const side of [-1, 1]) {
     const z = side < 0 ? door.minZ - 0.08 : door.maxZ + 0.08;
@@ -192,6 +209,12 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
     const g = add(new THREE.Mesh(x === outer.maxX ? notchGeo : gableGeo, gableMat), x, floorY + wallHeight, shape.z);
     g.rotation.y = -Math.PI / 2;
   }
+  if (annex) {
+    for (const x of [outer.minX + wall, outer.maxX]) {
+      const g = add(new THREE.Mesh(gableGeo, gableMat), x, floorY + wallHeight, annex.z);
+      g.rotation.y = -Math.PI / 2;
+    }
+  }
   // A white frame round the hay door and a hoist beam sticking out above it. Each piece stands 0.02 m proud of the opening's edges
   // (sill top, reveals and lintel underside), or its faces share a plane with the wall's and flicker, as the barn doors' did.
   const doorTop = floorY + hd.top;
@@ -218,6 +241,16 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   }
   group.add(shutter);
 
+  // The second span's door: the same white frame and header, and plain boards over it up to the eaves.
+  if (annex) {
+    const ad = annex.door;
+    for (const side of [-1, 1]) add(box(wall + 0.2, ad.height + 0.06, 0.24, white), ad.x - wall / 2, floorY + (ad.height + 0.06) / 2, side < 0 ? ad.minZ - 0.08 : ad.maxZ + 0.08);
+    add(box(wall + 0.22, 0.3, ad.maxZ - ad.minZ + 0.56, white), ad.x - wall / 2, floorY + ad.height + 0.15, annex.z);
+    const aboveA = wallHeight - ad.height - 0.28;
+    add(box(wall, aboveA, ad.maxZ - ad.minZ, wallMat(ad.maxZ - ad.minZ, aboveA)), ad.x - wall / 2, floorY + ad.height + 0.28 + aboveA / 2, annex.z);
+    fixedBox(ad.x - wall / 2, floorY + (ad.height + wallHeight) / 2, annex.z, wall / 2, (wallHeight - ad.height) / 2, (ad.maxZ - ad.minZ) / 2);
+  }
+
   // Roof: two tin slopes with an overhang, and a ridge cap.
   const overhang = 0.35;
   const rise = ridge - wallHeight;
@@ -226,12 +259,19 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   const eaveY = wallHeight - overhang * Math.tan(slope);
   const slopeLen = Math.hypot(eaveZ, ridge - eaveY);
   const tin = new THREE.MeshStandardMaterial({ map: tinTexture(random, [(sizeX + 0.8) / 2, slopeLen / 2]), roughness: 0.55, metalness: 0.5 });
-  for (const side of [-1, 1]) {
-    const panel = box(sizeX + 0.8, 0.07, slopeLen, tin);
-    panel.rotation.x = side * slope;
-    add(panel, shape.x, floorY + (eaveY + ridge) / 2 + 0.04, shape.z + (side * eaveZ) / 2);
+  for (const [n, zc] of spanZs.entries()) {
+    for (const side of [-1, 1]) {
+      // The side facing the other span ends at the wall line, with no overhang, so the two roofs meet cleanly in a valley.
+      const valley = annex && side === (n === 0 ? 1 : -1);
+      const eZ = valley ? sizeZ / 2 : eaveZ;
+      const eY = valley ? wallHeight : eaveY;
+      const len = Math.hypot(eZ, ridge - eY);
+      const panel = box(sizeX + 0.8, 0.07, len, tin);
+      panel.rotation.x = side * Math.atan2(ridge - eY, eZ);
+      add(panel, shape.x, floorY + (eY + ridge) / 2 + 0.04, zc + (side * eZ) / 2);
+    }
+    add(box(sizeX + 0.8, 0.1, 0.35, steel), shape.x, floorY + ridge + 0.07, zc);
   }
-  add(box(sizeX + 0.8, 0.1, 0.35, steel), shape.x, floorY + ridge + 0.07, shape.z);
 
   // Timber inside: a tie beam across the barn every few metres, a collar and a ridge beam.
   for (let x = outer.minX + 1.4; x < outer.maxX - 0.8; x += 2.6) {
@@ -243,19 +283,28 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
     add(box(0.16, 0.22, sizeZ - wall * 2, timber), x, floorY + wallHeight - 0.15, shape.z);
     addRafters(x);
   }
-  function addRafters(x) {
+  // The second span has a tie beam at every position (there is no loft over it) and rafters of its own.
+  if (annex) {
+    for (let x = outer.minX + 1.4; x < outer.maxX - 0.8; x += 2.6) {
+      add(box(0.16, 0.22, sizeZ - wall * 2, timber), x, floorY + wallHeight - 0.15, annex.z);
+      addRafters(x, annex.z);
+    }
+    add(box(sizeX - wall * 2, 0.18, 0.18, timber), shape.x, floorY + ridge - 0.12, annex.z);
+  }
+  function addRafters(x, zc = shape.z) {
     for (const side of [-1, 1]) {
       const rafter = box(0.12, 0.16, Math.hypot(sizeZ / 2, rise), timber);
       rafter.rotation.x = side * slope;
-      add(rafter, x, floorY + wallHeight + rise / 2 - 0.05, shape.z + (side * sizeZ) / 4);
+      add(rafter, x, floorY + wallHeight + rise / 2 - 0.05, zc + (side * sizeZ) / 4);
     }
   }
   add(box(sizeX - wall * 2, 0.18, 0.18, timber), shape.x, floorY + ridge - 0.12, shape.z);
 
   // The big doors, slid right back on their rail along the outside of the wall.
-  const panelW = (door.maxZ - door.minZ) / 2 + 0.3;
+  for (const dr of annex ? [door, annex.door] : [door]) {
+  const panelW = (dr.maxZ - dr.minZ) / 2 + 0.3;
   for (const side of [-1, 1]) {
-    const z = side < 0 ? door.minZ - panelW / 2 + 0.1 : door.maxZ + panelW / 2 - 0.1;
+    const z = side < 0 ? dr.minZ - panelW / 2 + 0.1 : dr.maxZ + panelW / 2 - 0.1;
     const leaf = new THREE.Group();
     leaf.add(box(0.06, door.height - 0.1, panelW, new THREE.MeshStandardMaterial({ map: boards([panelW / 2.4, door.height / 2.4]), roughness: 0.85 })));
     // White battens stacked proud of the boards, each layer at least 2 cm clear of the last (the camera's near/far range
@@ -279,7 +328,8 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
     leaf.position.set(door.x + 0.25, floorY + door.height / 2 + 0.05, z);
     group.add(leaf);
   }
-  add(box(0.06, 0.1, sizeZ - 0.6, steel), door.x + 0.22, floorY + door.height + 0.12, shape.z, { cast: false });
+  }
+  add(box(0.06, 0.1, sizeAllZ - 0.6, steel), door.x + 0.22, floorY + door.height + 0.12, allZ, { cast: false });
 
   // The workbench along the north wall: a thick top, four legs and a shelf, with a vice at one end.
   const b = layout.bench;
@@ -371,6 +421,23 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   for (const [w, d, x, z] of [[bay.halfX * 2, 0.08, 0, -bay.halfZ], [bay.halfX * 2, 0.08, 0, bay.halfZ], [0.08, bay.halfZ * 2, -bay.halfX, 0], [0.08, bay.halfZ * 2, bay.halfX, 0]]) {
     add(box(w, 0.012, d, paint), bay.x + x, floorY + 0.016, bay.z + z, { cast: false });
   }
+  if (layout.bay2) {
+    // The big bay in the second span, painted the same, with a trolley jack and a pair of axle stands waiting beside it.
+    const b2 = layout.bay2;
+    for (const [w, d, x, z] of [[b2.halfX * 2, 0.08, 0, -b2.halfZ], [b2.halfX * 2, 0.08, 0, b2.halfZ], [0.08, b2.halfZ * 2, -b2.halfX, 0], [0.08, b2.halfZ * 2, b2.halfX, 0]]) {
+      add(box(w, 0.012, d, paint), b2.x + x, floorY + 0.016, b2.z + z, { cast: false });
+    }
+    const jack = buildJack();
+    jack.position.set(layout.jack.x, floorY, layout.jack.z);
+    jack.rotation.y = layout.jack.yaw;
+    group.add(jack);
+    for (const st of layout.axleStands) {
+      const stand = buildAxleStand();
+      stand.position.set(st.x, floorY, st.z);
+      stand.rotation.y = st.yaw;
+      group.add(stand);
+    }
+  }
 
   // The hayloft over the front of the barn: planks on joists from the end wall back to an open edge with a rail and a gap at the ladder,
   // and hay stacked down both sides where the roof comes too low to walk (they have colliders, so you stay in the middle).
@@ -394,9 +461,15 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
     const len = span.z1 - span.z0;
     if (len < 0.05) continue;
     const cz = (span.z0 + span.z1) / 2;
-    add(box(0.07, 0.07, len, timber), lf.edgeX + 0.04, lf.top + l.rail, cz, { cast: false });
-    add(box(0.05, 0.05, len, timber), lf.edgeX + 0.04, lf.top + l.rail * 0.5, cz, { cast: false });
-    for (const z of [span.z0 + 0.05, span.z1 - 0.05]) add(box(0.07, l.rail, 0.07, timber), lf.edgeX + 0.04, lf.top + l.rail / 2, z, { cast: false });
+    // The drawn rail stops short of the eaves, where the roof comes down below its top (it showed through the tin, now the valley can be seen from above);
+    // the collider keeps the whole span.
+    const v0 = Math.max(span.z0, shape.z - 3.7);
+    const v1 = Math.min(span.z1, shape.z + 3.7);
+    if (v1 - v0 > 0.05) {
+      add(box(0.07, 0.07, v1 - v0, timber), lf.edgeX + 0.04, lf.top + l.rail, (v0 + v1) / 2, { cast: false });
+      add(box(0.05, 0.05, v1 - v0, timber), lf.edgeX + 0.04, lf.top + l.rail * 0.5, (v0 + v1) / 2, { cast: false });
+      for (const z of [v0 + 0.05, v1 - 0.05]) add(box(0.07, l.rail, 0.07, timber), lf.edgeX + 0.04, lf.top + l.rail / 2, z, { cast: false });
+    }
     fixedBox(lf.edgeX + 0.04, lf.top + l.rail / 2, cz, 0.05, l.rail / 2, len / 2);
   }
   // The ladder: leans from the foot on the barn floor to just over the edge at the gap in the rail.
@@ -512,6 +585,17 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   const light = new THREE.PointLight(0xffe2b0, 0, 12, 1.6);
   light.position.set(shape.x, bulbY - 0.15, shape.z);
   group.add(light);
+  // And a second over the big bay in the second span, on the same switch.
+  let bulb2 = null;
+  let light2 = null;
+  if (annex) {
+    bulb2 = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 8), new THREE.MeshBasicMaterial({ color: 0xfff1c9 }));
+    add(bulb2, layout.bay2.x, bulbY, annex.z, { cast: false, receive: false });
+    add(box(0.015, 0.9, 0.015, steel), layout.bay2.x, bulbY + 0.5, annex.z, { cast: false, receive: false });
+    light2 = new THREE.PointLight(0xffe2b0, 0, 12, 1.6);
+    light2.position.set(layout.bay2.x, bulbY - 0.15, annex.z);
+    group.add(light2);
+  }
 
-  return { group, light, bulb, floorY, shutter, hayDoor: { x: door.x, y: floorY + hd.sill, z: shape.z }, loft: { ...lf, ladderProxy, hayProxy } };
+  return { group, light, bulb, light2, bulb2, floorY, shutter, hayDoor: { x: door.x, y: floorY + hd.sill, z: shape.z }, loft: { ...lf, ladderProxy, hayProxy } };
 }

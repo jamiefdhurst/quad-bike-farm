@@ -111,9 +111,15 @@ export const LAYOUT = {
 
   // The barn (world/barn.js): a hollow shed with its big doors open on the +x side, facing the yard. halfX and halfZ are the outside
   // half-sizes, wall the thickness, wallHeight the eaves and ridge the top of the roof along its length (x). The door is centred on z.
-  barn: { x: -64, z: 60, halfX: 5.2, halfZ: 4.6, wall: 0.2, wallHeight: 4.2, ridge: 6.3, door: { halfWidth: 2.3, height: 3.2 } },
-  // The bell on its post just north of the barn's north door leaf, arm out towards the yard (world/bellBuild.js): ring it to call the girls back.
-  bell: { x: -58.1, z: 65.5, yaw: 0 },
+  barn: { x: -64, z: 60, halfX: 5.2, halfZ: 4.6, wall: 0.2, wallHeight: 4.2, ridge: 6.3, door: { halfWidth: 2.3, height: 3.2 },
+    // A second span of the same size on the south side (world/barn.js), its own gable roof beside the first with a valley between and posts in
+    // place of a wall, and its own door in the +x wall, centred on its middle. It is where the tractor, the UTV, the Land Rovers and the cars are mended.
+    annex: { halfZ: 4.6, door: { halfWidth: 2.0, height: 3.2 } },
+  },
+  // The bell on its post just north of the barn's north door leaf (the first door's), arm out towards the yard (world/bellBuild.js): ring it to call the girls back.
+  bell: { x: -58.1, z: 54.1, yaw: 0 },
+  // The wrapped silage, stacked beside the barn's west wall (world/props.js): `x`, `z` are the stack's north-west corner.
+  silage: { x: -76.5, z: 62.5 },
   // Straw bales inside the barn, [x, z, yaw] (she sits facing yaw, climbing up from behind it): somewhere dry to sit out of the rain.
   barnBaleSpots: [
     [-66.4, 57.3, Math.PI / 2],
@@ -145,17 +151,22 @@ export const LAYOUT = {
   bonfire: { x: -6, z: 71, seatRadius: 2.4 },
   brushwood: [[-30, 77, 0.3], [-20, 77.5, 2], [-12, 77, 1.1], [2, 77.5, 0.5], [14, 77, 2.5], [26, 77.5, 1.7]],
   // The diesel generator along the barn's south wall, towards the back, its panel facing away from the wall (items/generator.js): it powers the barn bulb and the charger.
-  generator: { x: -63.5, z: 66.5, yaw: 0, stand: { x: -62.8, z: 67.5 } }, // `stand`: where a girl stands to pull the cord
+  generator: { x: -63.5, z: 75.7, yaw: 0, stand: { x: -62.8, z: 76.7 } }, // `stand`: where a girl stands to pull the cord
   // The clock and weather station (world/weatherStation.js) on the north wall past the door end of the bench, at eye height above the floor.
   weatherStation: { x: -59.85, y: 1.65 },
   // The freestanding clothes rack by the barn's south wall where the two jumpers hang (npc/jumpers.js): its bar runs along x at height `y`, `length`
   // long, so they hang edge-on to the wall. A girl stands at `stand`, at the end of the rack, to take one down or hang it up, going in and out by the doorway (`door`).
-  jumperRail: { x: -61.2, z: 63.2, y: 1.7, length: 1.3, stand: { x: -60.0, z: 63.2 }, door: { in: [{ x: -56.5, z: 60 }, { x: -59.8, z: 60 }], out: { x: -56.5, z: 60 } } },
+  jumperRail: { x: -61.2, z: 72.4, y: 1.7, length: 1.3, stand: { x: -60.0, z: 72.4 }, door: { in: [{ x: -56.5, z: 69.2 }, { x: -59.8, z: 69.2 }], out: { x: -56.5, z: 69.2 } } },
   // The hooks on the inside of the barn's south wall for the helmets and goggles (world/helmetHooks.js, npc/headgear.js): the board's middle is at `y`
   // above the floor and `length` long; a girl stands at `stand` in front of it to take hers down, going in and out by the doorway (`door`).
-  helmetHooks: { x: -64.5, z: 64.38, y: 1.5, length: 1.6, stand: { x: -64.5, z: 63.4 }, door: { in: [{ x: -56.5, z: 60 }, { x: -59.8, z: 60 }, { x: -62, z: 62.6 }], out: { x: -56.5, z: 60 } } },
+  helmetHooks: { x: -64.5, z: 73.58, y: 1.5, length: 1.6, stand: { x: -64.5, z: 72.6 }, door: { in: [{ x: -56.5, z: 69.2 }, { x: -59.8, z: 69.2 }, { x: -62, z: 71.8 }], out: { x: -56.5, z: 69.2 } } },
   // The bay painted on the barn floor in front of the bench: park a quad here to work on it at the bench (workshop/bench.js).
   bay: { x: -62.3, z: 58.5, halfX: 1.5, halfZ: 1.1, yaw: 0 },
+  // The big bay in the barn's second span, nose-in from its door: the tractor, UTV, Land Rovers and cars are worked on here, at the same bench
+  // (workshop/bench.js). A trolley jack and axle stands stand by it (workshop/jackModel.js), and a second bulb hangs over it.
+  bay2: { x: -65.4, z: 69.2, halfX: 3.0, halfZ: 1.9, yaw: 0 },
+  jack: { x: -63.2, z: 66.6, yaw: 0.25 },
+  axleStands: [{ x: -66.6, z: 66.7, yaw: 0.1 }, { x: -66.0, z: 66.9, yaw: -0.3 }],
   // Where the barn find stands under its tarp (vehicle/barnFind.js), at the back of the barn: clear of the bay, the bales and the ladder.
   rusty: { x: -66.7, z: 59.9, yaw: 0.15 },
   yard: { x: -54, z: 58, radius: 20 },
@@ -245,7 +256,7 @@ export const LAYOUT = {
     { x: -58.6, z: 51.6, yaw: 0.4, where: 'by the petrol tank' },
     { x: -57.6, z: 56.6, yaw: 1.2, where: 'by the barn doors' },
     { x: -58.4, z: 38.5, yaw: 2.1, where: 'by the paddock' },
-    { x: -61.5, z: 67.8, yaw: -0.6, where: 'by the silage bales' },
+    { x: -72.6, z: 66.3, yaw: -0.6, where: 'by the silage bales' },
     { x: -35.2, z: 77.4, yaw: 0.9, where: 'by the field gate' }, // clear of the gate, swung open into the field
     { x: 177.2, z: -8.6, yaw: 2.4, where: 'by the Dutch barn' }, // by its front corner stanchion, under the eaves
     { x: 92.9, z: -69.6, yaw: -0.5, where: 'by the field shed' }, // against its wall, beside the doorway
@@ -283,7 +294,6 @@ export const LAYOUT = {
       { x: -24, z: 58, yaw: Math.PI * 0.62 },
       { x: -44, z: 56, yaw: Math.PI * 0.62 },
       { x: -30, z: 68, yaw: Math.PI * 0.62 },
-      { x: -53, z: 72, yaw: Math.PI * 0.62 },
     ],
     // Every quad but the one she's standing by has this chance of having been left
     // somewhere else on the farm instead, at any angle, within awayJitter metres of

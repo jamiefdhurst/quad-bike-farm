@@ -10,6 +10,8 @@ import {
   boomFor,
   rainHeard,
   wallBoxes,
+  barnDoors,
+  dividerPosts,
   floorBlend,
   offTemperature,
 } from '../src/world/barn.js';
@@ -22,7 +24,8 @@ describe('where the barn is', () => {
   it('is inside the walls at its centre and not outside them', () => {
     expect(insideBarn(L, b.x, b.z)).toBe(true);
     expect(insideBarn(L, b.x + b.halfX + 1, b.z)).toBe(false);
-    expect(insideBarn(L, b.x, b.z + b.halfZ + 0.5)).toBe(false);
+    expect(insideBarn(L, b.x, b.z + b.halfZ + 0.5)).toBe(true); // the second span
+    expect(insideBarn(L, b.x, b.z + b.halfZ + b.annex.halfZ * 2 + 0.5)).toBe(false);
   });
   it('has a roof that overhangs the walls a little', () => {
     expect(underRoof(L, b.x + b.halfX + 0.2, b.z)).toBe(true);
@@ -116,5 +119,49 @@ describe('an engine parked in the barn', () => {
     expect(cool(1, false, 20000)).toBeLessThan(0.01);
     expect(offTemperature(0, 1, 900, true, engine)).toBe(0);
     expect(offTemperature(0.1, 1, 900, true, engine)).toBe(0.1);
+  });
+});
+
+describe('the second span', () => {
+  const s = barnShape(L);
+  it('sits beside the first, the same size, with a door of its own in the same wall', () => {
+    expect(s.annex.outer.minZ).toBeCloseTo(s.outer.maxZ);
+    expect(s.annex.outer.maxZ - s.annex.outer.minZ).toBeCloseTo(s.outer.maxZ - s.outer.minZ);
+    expect(s.annex.door.x).toBe(s.door.x);
+    expect(s.annex.door.minZ).toBeGreaterThan(s.door.maxZ + 2); // room for both doors' leaves to slide back
+    expect(s.annex.door.height).toBeGreaterThan(2.7);
+  });
+  it('has the big bay inside its walls, clear of the posts, and the small bay clear of the big one', () => {
+    const bay = L.bay2;
+    expect(bay.x - bay.halfX).toBeGreaterThan(s.inner.minX);
+    expect(bay.x + bay.halfX).toBeLessThan(s.door.x);
+    expect(bay.z - bay.halfZ).toBeGreaterThan(s.outer.maxZ + 0.3);
+    expect(bay.z + bay.halfZ).toBeLessThan(s.innerAll.maxZ);
+    expect(bay.halfX * 2).toBeGreaterThanOrEqual(5.5); // a Land Rover
+    expect(L.bay.z + L.bay.halfZ).toBeLessThan(bay.z - bay.halfZ);
+    for (const p of dividerPosts(L)) expect(Math.abs(p.z - bay.z)).toBeGreaterThan(bay.halfZ);
+  });
+  it('is walled round the outside with both doorways clear and no wall between the spans', () => {
+    const hits = (x, z) => wallBoxes(L).some((w) => Math.abs(x - w.x) < w.hx && Math.abs(z - w.z) < w.hz);
+    for (const d of barnDoors(L)) {
+      for (let z = d.minZ + 0.05; z < d.maxZ; z += 0.25) expect(hits(d.x - 0.1, z)).toBe(false);
+      expect(hits(d.x - 0.1, d.maxZ + 0.3)).toBe(true);
+    }
+    expect(hits(s.x, s.outer.maxZ)).toBe(false);
+    expect(hits(s.x, s.outerAll.maxZ - 0.1)).toBe(true);
+  });
+  it('counts as indoors, under the roof and flattened, and the posts stand between the spans', () => {
+    expect(indoorLevel(L, L.bay2.x, L.bay2.z, P)).toBe(1);
+    expect(underRoof(L, L.bay2.x, L.bay2.z)).toBe(true);
+    expect(floorBlend(L, L.bay2.x, L.bay2.z)).toBe(1);
+    expect(dividerPosts(L).length).toBeGreaterThan(1);
+  });
+  it('keeps the fittings that moved outside the walls, and the generator and silage off the building', () => {
+    expect(insideBarn(L, L.generator.x, L.generator.z, -0.5)).toBe(false);
+    expect(underRoof(L, L.generator.x, L.generator.z)).toBe(false);
+    expect(underRoof(L, L.bell.x, L.bell.z)).toBe(false);
+    expect(underRoof(L, L.silage.x + 5, L.silage.z)).toBe(false);
+    expect(insideBarn(L, L.helmetHooks.stand.x, L.helmetHooks.stand.z)).toBe(true);
+    expect(insideBarn(L, L.jumperRail.stand.x, L.jumperRail.stand.z)).toBe(true);
   });
 });

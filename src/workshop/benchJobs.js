@@ -201,7 +201,7 @@ export const JOBS = {
   crash: {
     name: 'Mend the crash damage',
     steps: [
-      { id: 'jack', text: 'Jack the front of the quad up', kind: 'press' },
+      { id: 'jack', text: 'Jack the front end up', kind: 'press' },
       { id: 'look', text: 'Spin each wheel and sight along the track rods', kind: 'press', inspect: true },
       { id: 'off', text: 'Undo the nuts and take the bent wheel and rod off', kind: 'hold', need: 1 },
       { id: 'true', text: 'Straighten the rod in the vice, or fit a straight rim: firm, not forced', kind: 'hold', need: 1.2, limit: 2.4 },
@@ -614,7 +614,9 @@ export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = fal
   if (kind === 'chain') return !!chain;
   if (kind === 'valves') return !!valves; // every four-stroke has them
   if (kind === 'clutch') return !!clutch; // only a manual quad has a clutch plate
-  if (kind === 'boot') return !engine.params.compressionIgnition; // a diesel has no carb or throttle body boot
+  if (kind === 'boot') return !engine.params.compressionIgnition && !engine.params.injected; // a diesel or an injected engine has no carb to hang a boot on
+  if (kind === 'carb') return !engine.params.compressionIgnition && !engine.params.injected; // nor a carb to strip
+  if (kind === 'plug') return !engine.params.compressionIgnition; // a diesel has glow plugs, not a plug to gap and clean
   if (kind === 'chargeOn') return !engine.batteryOut && !engine.params.noStarter; // a cord-only quad has no battery to take out
   if (kind === 'chargeOff') return !!engine.batteryOut;
   if (kind === 'tarp' || kind === 'fuel' || kind === 'brake' || kind === 'battery') return true;

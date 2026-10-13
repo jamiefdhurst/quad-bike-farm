@@ -4925,9 +4925,11 @@ export class Game {
       // The bulb and the light work off the generator (items/generator.js): with it off the barn is as dark as the day makes it.
       const lit = this.generator.powered;
       barn.light.intensity = lit ? BARN_BULB * Math.max(indoor * gloom, dark > 0.5 ? 0.8 : 0) : 0;
+      if (barn.light2) barn.light2.intensity = barn.light.intensity;
       if (this.bulbLit !== lit) {
         this.bulbLit = lit;
         barn.bulb.material.color.setHex(lit ? 0xfff1c9 : 0x5d5c55);
+        barn.bulb2?.material.color.setHex(lit ? 0xfff1c9 : 0x5d5c55);
       }
     }
     // Smoke, steam, dust and mud are drawn with their own fixed light, so they're dimmed with the daylight or they'd glow at night.

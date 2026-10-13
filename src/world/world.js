@@ -55,6 +55,7 @@ export class World {
     const sh = layout.fieldShed;
     this.detourBuildings = [
       { ...bo.outer, door: { x: bo.door.x, z: bo.z, halfWidth: bo.door.maxZ - bo.z } },
+      ...(bo.annex ? [{ ...bo.annex.outer, door: { x: bo.annex.door.x, z: bo.annex.z, halfWidth: bo.annex.door.maxZ - bo.annex.z } }] : []),
       ...(sh ? [{ minX: sh.x - sh.halfX, maxX: sh.x + sh.halfX, minZ: sh.z - sh.halfZ, maxZ: sh.z + sh.halfZ }] : []),
     ];
 

@@ -87,7 +87,12 @@ export function spawnKeepOut(layout) {
   if (L.barn) {
     add(L.barn.x, L.barn.z, Math.hypot(L.barn.halfX, L.barn.halfZ) + 3, 'the barn');
     add(L.barn.x + L.barn.halfX + 3, L.barn.z, 5, 'the barn doorway');
-    add(L.barn.x + 1.6, L.barn.z + 10, 5, 'the silage'); // the wrapped bales stacked beside the barn (props.js)
+    if (L.barn.annex) {
+      const az = L.barn.z + L.barn.halfZ + L.barn.annex.halfZ; // the second span, and its doorway
+      add(L.barn.x, az, Math.hypot(L.barn.halfX, L.barn.annex.halfZ) + 3, 'the barn extension');
+      add(L.barn.x + L.barn.halfX + 3, az, 5, 'the extension doorway');
+    }
+    if (L.silage) add(L.silage.x + 2.5, L.silage.z + 1.5, 5, 'the silage'); // the wrapped bales stacked beside the barn (props.js)
   }
   if (L.paddock) add(L.paddock.x, L.paddock.z, L.paddock.half * Math.SQRT2 + 3, 'the paddock');
   for (const [x, z] of L.strawBaleSpots ?? []) add(x, z, 3.5, 'a straw bale');

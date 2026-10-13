@@ -630,6 +630,13 @@ export const FAQ_SECTIONS = [
         tip: 'A pull after a hard knock is a bent track rod: the workbench straightens it.',
       },
       {
+        q: 'How do I mend a bent rod or rim on the tractor, the UTV, a Land Rover or a car?',
+        a: `The same way as on a quad, in the big bay in the barn's second span. Drive it in through the second door (the one nearer the generator), nose to the back
+          wall, switch it off and use the bench with the toolbox on it. The big bay is the one with the trolley jack and axle stands beside it. The quads use the small bay
+          in front of the bench. Jobs that don't apply (spark plugs on a diesel, a carb on the Corsa) are greyed out.`,
+        tip: 'The tractor, UTV, Land Rovers and cars are mended in the barn’s big bay, through the second door.',
+      },
+      {
         q: 'Why is my four-stroke ticking, and what does the feeler gauge do?',
         a: `Every four-stroke has valves whose clearance wears wide over the hours, and the engine starts to tick from the top, louder the longer it runs and
           a touch weaker. Use the workbench's "Set the valve clearances" (the equals key): look with the feeler gauge first and it will tell you whether the

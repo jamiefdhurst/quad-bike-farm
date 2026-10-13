@@ -160,8 +160,8 @@ export function visitPlaces(layout) {
     outside: { x: gate.x + 3.8, z: gate.z }, // where a vehicle waits outside the gate
     inside: { x: gate.x - 3.8, z: gate.z },
     grid: road.grid?.gateOffset == null ? null : { x: layout.fieldHalf + road.grid.gateOffset, z: road.z }, // the gate just east of the cattle grid
-    // The barn's big doors face east, onto the yard; the wrapped silage is stacked at its south-east corner (x -67 to -62, z 69 to 72), the bell
-    // is by the north leaf. The vehicle stops east of the door, facing west, and turns round to the south, clear of both.
+    // The barn's big doors face east, onto the yard; the wrapped silage is stacked beside its west wall, the bell
+    // is by the north leaf and the second span's door is at z + 9.2. The vehicle stops east of the door, facing west, and turns round to the south, clear of both.
     stop: { x: barn.x + 14, z: barn.z + 7.5 },
     door: { x: barn.x + barn.halfX + 1.8, z: barn.z + 2.6 }, // where the driver goes
     parcel: { x: barn.x + barn.halfX + 1.4, z: barn.z + 4.2 },

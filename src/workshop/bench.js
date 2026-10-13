@@ -15,7 +15,7 @@ const OVERFLOW_KEYS = [
 ];
 
 /**
- * The barn bench: park a quad in the painted bay, switch it off and work on it here. Each job is a few
+ * The barn bench: park a vehicle in a painted bay (the small one for the quads, the big one in the second span for everything else), switch it off and work on it here. Each job is a few
  * steps with E (tap or hold). Unlike the toolbox panel's quick fixes, a job done right puts the thing
  * properly right. The girls watch from wherever they are: Amy helps, Jess heckles.
  */
@@ -45,6 +45,14 @@ export class Bench {
     const parked = this.game.girlUnits.find((u) => !u.quad.driver && inBay(bay, u.quad.position.x, u.quad.position.z, this.params.bayMargin));
     const rusty = this.game.rustyUnit;
     return parked ?? (rusty && !rusty.barnFind.ready ? rusty : null);
+  }
+
+  /** What the bench works on: the quad in the small bay (or the barn find), else whatever is in the big bay in the barn's second span: any vehicle, since it is
+   *  the one bay the tractor, UTV, Land Rovers and cars fit. The girls only ever work on the small bay (unitInBay). */
+  unitAtBench() {
+    const inBig = this.game.world.layout.bay2;
+    const big = inBig && this.game.units.find((u) => !u.barnFind && !u.quad.driver && !u.quad.rider && inBay(inBig, u.quad.position.x, u.quad.position.z, this.params.bayMargin));
+    return this.unitInBay() ?? big ?? null;
   }
 
   /** The jobs listed for a quad: the barn find's own (the tarp, then what it needs), or the usual ones. */
@@ -77,14 +85,14 @@ export class Bench {
 
   prompt() {
     if (!this.toolboxHere()) return { text: "The toolbox isn't on the bench" };
-    const unit = this.unitInBay();
-    if (!unit) return { text: 'Park a quad in the painted bay and switch it off to work on it here' };
+    const unit = this.unitAtBench();
+    if (!unit) return { text: 'Park a vehicle in a painted bay and switch it off to work on it here' };
     if (unit.engine.isRunning || unit.engine.state === 'cranking') return { text: `Switch the ${unit.label} off first` };
     return `Work on the ${unit.label} at the bench`;
   }
 
   open() {
-    const unit = this.unitInBay();
+    const unit = this.unitAtBench();
     if (!unit || !this.toolboxHere() || unit.engine.isRunning || unit.engine.state === 'cranking') return;
     this.unit = unit;
     // A girl left a job half done for you to finish: it carries on from the step she got to.

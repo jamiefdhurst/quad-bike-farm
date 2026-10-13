@@ -163,7 +163,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   const shed = fieldShedShape(layout);
   const b = layout.barn;
   const buildings = [];
-  if (b) buildings.push({ name: 'barn', rect: centred(b.x, b.z, b.halfX, b.halfZ), fill: C.building });
+  if (b) buildings.push({ name: 'barn', rect: centred(b.x, b.z + (b.annex?.halfZ ?? 0), b.halfX, b.halfZ + (b.annex?.halfZ ?? 0)), fill: C.building });
   if (dutch) buildings.push({ name: 'dutchBarn', rect: dutch.roof, fill: C.building });
   if (shed) buildings.push({ name: 'fieldShed', rect: shed.outer, fill: C.building });
   const small = [];
