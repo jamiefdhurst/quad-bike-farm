@@ -267,6 +267,13 @@ describe('the collar', () => {
     }
     // It stands up above the neck edge.
     expect(Math.max(...collar.verts.map((v) => v.rest[1]))).toBeGreaterThan(neckY + COLLAR.standFront);
+    // The wings leave the placket showing: nothing below the neck edge on her front is over the placket.
+    const low = collar.verts.filter((v) => v.rest[2] > 0.1 && v.rest[1] < neckY - 0.004);
+    expect(low.length).toBeGreaterThan(0);
+    for (const v of low) expect(Math.abs(v.rest[0])).toBeGreaterThan(POLO.placketWidth / 2);
+    // And the points turn out towards her shoulders: the lowest point of each wing is further out than where it starts.
+    const lowest = low.reduce((a, b) => (b.rest[1] < a.rest[1] ? b : a));
+    expect(Math.abs(lowest.rest[0])).toBeGreaterThan(POLO.placketWidth / 2 + 0.01);
   });
 
   it('on an open neck ends at the top corners of the V, so the points splay apart', () => {
@@ -277,9 +284,17 @@ describe('the collar', () => {
     expect(Math.min(...front.map((v) => Math.abs(v.rest[0])))).toBeGreaterThan(vee.halfWidth(vee.top) - 0.004);
   });
 
-  it('opens one to four buttons, each further down than the last', () => {
+  it('opens one to five buttons, each further down than the last, all five with a placket in two halves', () => {
     const body = cylinderBody();
-    const bottoms = [1, 2, 3, 4].map((open) => buildTop(body, { ...POLO, open }).vee.bottom);
+    const bottoms = [1, 2, 3, 4, 5].map((open) => buildTop(body, { ...POLO, open }).vee.bottom);
     for (let k = 1; k < bottoms.length; k++) expect(bottoms[k]).toBeLessThan(bottoms[k - 1]);
+    const all = buildTop(body, { ...POLO, open: 5 });
+    expect(all.placket).not.toBe(null);
+    expect(all.placket.buttons.length).toBe(POLO.buttons.length);
+    expect(all.placket.slits.length).toBe(POLO.buttons.length);
+    // Her cleavage is shaded down the middle of the skin in the V, lighter away from it.
+    const inset = buildInset(body, all.vee);
+    expect(inset.shade.length).toBe(inset.verts.length);
+    expect(Math.min(...inset.shade)).toBeLessThan(1);
   });
 });

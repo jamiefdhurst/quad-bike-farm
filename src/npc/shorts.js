@@ -16,9 +16,10 @@ const smooth01 = (t) => {
 export const SHORTS = {
   ease: 0.006, // off her body at the waist (m)
   flare: 0.012, // more by the hem
-  legLength: 0.56, // the hem across the thigh, this fraction of the way from hip joint to knee
+  legLength: 0.4, // the hem across the thigh, this fraction of the way from hip joint to knee
   band: 0.03, // the waistband's depth
-  bandShade: 0.92,
+  bandEase: 0.011, // it stands proud of her (and of the shirt tucked into it), so it reads as a band
+  bandShade: 0.88,
   hemShade: 0.9, // the leg hems, a turned-up edge
   hemBand: 0.012,
   insideShade: 0.55,
@@ -73,7 +74,8 @@ export function buildShorts(body, p = SHORTS) {
   const ease = (v) => {
     const l = F.left.legness(v) > F.right.legness(v) ? F.left : F.right;
     const down = smooth01(l.s(v) / l.at) * smooth01((hipY - v.rest[1]) / 0.05 + 1);
-    return p.ease + p.flare * down;
+    const band = smooth01((F.waistField(v) + p.band + 0.004) / 0.006); // a small step out at the band's bottom edge
+    return Math.max(p.ease + p.flare * down, p.ease + (p.bandEase - p.ease) * band);
   };
   for (const v of mesh.verts) {
     v.bind = add(v.bind, scale(v.normal, ease(v)));

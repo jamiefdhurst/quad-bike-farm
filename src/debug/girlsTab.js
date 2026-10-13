@@ -47,7 +47,7 @@ export function buildGirlsTab(d) {
     show(f, 'mud and dust', () => `${round(c.mucky.mud)} mud (${round(c.mucky.wet)} wet), ${round(c.mucky.dust)} dust`);
     slider(f, 'mud on her', () => c.mucky.mud, (v) => (c.mucky.mud = v), 0, 1, 0.01);
     slider(f, 'dust on her', () => c.mucky.dust, (v) => (c.mucky.dust = v), 0, 1, 0.01);
-    slider(f, 'polo buttons undone', () => c.outfit.poloOpen ?? 0, (v) => c.setPoloOpen(v), 0, 4, 1);
+    slider(f, 'polo buttons undone', () => c.outfit.poloOpen ?? 0, (v) => c.setPoloOpen(v), 0, 5, 1);
 
     // --- Why she does what she does: what she wants (settable) and what she chose for it (npc/needs.js, npc/chooser.js).
     const why = f.addFolder('Why');

@@ -3558,6 +3558,21 @@ Jamie: open Jess's shirt more, 3 or 4 buttons, with a tiny visible cleavage, and
 - Checked headless at full size: both girls' collars close up from the front, three-quarter and back; Jess with 3 and 4 undone; both in jumpers with the collar over; Amy driving; Jess's hips from the side, back and three-quarter back before and after the seat. Not checked: the clothes in motion, Jess driving since the collar.
 - Not mine: the console shows "THREE.Object3D.add: object not an instance of THREE.Object3D" twice on loading, from `src/world/assets.js`, with or without the flag.
 
+### Follow-up: the collar sitting right, all five undone, cleavage, the shorts again, the placket's top
+
+Jamie: the collar overlapped and didn't sit right; the points only slightly rounded; done up it should leave Amy's placket showing, its wings either side of it rather than straight down; Jess up to all five undone, and her bust didn't show (draw cleavage on if need be); the jumper's neck came through the collar; the placket should start right where the polo meets her neck; the polo still looked like the shorts' colour rather than tucked in, and the shorts' legs should be higher.
+
+- **The collar** is two pieces now. The stand runs all the way round, closing across the top of the placket when done up. The wings (the fall) start 2 mm beyond the placket's edges, so the placket shows between them, and at each end turn out towards her shoulders (`pointSpread` 0.75), so each wing's front edge runs down and outward as a polo's does; the points come 2 cm further out and 3 cm further down than the back, their corners rounded only slightly (`tipRound` 0.05 rad). Open, both pieces start at the top corners of the V.
+- **Over the jumper**: the jumper's neck is a narrow ridge, and the fall, laid at six points from fold to edge, let it through between them. It's laid at eleven, each resting on the highest of what's under it there and 4 mm either side down the fall (`feel`), 3 mm off it.
+- **All five undone** (`setPoloOpen` and the panel and console go to 5): the V runs to the bottom of the placket, where the shirt is sewn shut, the placket in two halves its whole length with every button on her left half and a buttonhole on her right. The V's sides curve out the further it's undone (`veeBows`, 1 for one or two buttons down to 0.5 for all five; at the neckline 3.3 cm either side for four, 4 cm for five), so it opens round her bust.
+- **Cleavage, drawn on.** Her body is a few flat faces on her chest, so nothing in the V showed her bust. The skin in the V is shaded: a soft shadow down her middle (half as bright at the centre, gone 7 mm either side, fading in over 4 cm from 9 cm above the fullest part of her bust), and a lighter one along the V's edges where the shirt's fronts stand over her skin. Split either side of her middle so the line stays narrow. Jess has 4 undone.
+- **The placket's top**: the shirt's top at her middle is found to a tenth of a millimetre (it was walked down in millimetre steps, then started 2 mm below), and the placket starts there. A ray at that very top, or at a V's point, can just miss the shirt, so each looks up to 12 mm lower for what's under it (only for its skin; the point stays where it is). Without that the placket vanished on Jess.
+- **Tucked in, again**: just above the waist the polo stood out about as far as the shorts, so the outline ran straight on and the shorts looked like the shirt coloured blue. The waistband stands 11 mm off her now (the shorts are 6 mm), stepping out at its bottom edge too, a shade darker (88%), and the shirt above it blouses 4 mm rather than 5: it reads as a band the shirt goes into.
+- **Shorter shorts**: the hem 40% of the way from hip to knee (was 56%).
+- **Buttons** stay at 72% of the shirt's colour.
+- Checked headless at full size: Amy's collar close up from the front; Jess's with 4 and 5 undone straight on from 30 cm (`.scratch/pp/veeshot.mjs`) and from further off; both in jumpers with the collar over them; both girls' waists from the front and three-quarter back; Amy sitting on the back of a quad; Jess standing in her own red shirt. Not checked since these changes: driving, and the clothes in motion.
+
+
 
 
 ## A worn clutch on the manual quads (TODO 50)
@@ -3594,3 +3609,11 @@ Jamie: the tractor, UTV, Land Rovers and cars can be bent like the quads but don
 - **A second bulb** (`light2`, made at the start and dimmed with the first) hangs over the big bay.
 - **Not done:** the fumes haze is still drawn only over the first span (an engine run in the second counts as indoors for coughing and the echo, but its fumes show less), the girls' pathing to the second door beyond the waypoints, and a second interior detail pass (shelves, tools) in the new span.
 - **Checked** with unit tests and headless screenshots (outside, front roof from above, the valley close up, inside the big bay, the jack and stand at full size). The game logged `THREE.Object3D.add: object not an instance` twice from `instanceModel` in `assets.js` on load (an empty tile list); it comes from the hedges, bushes or trees, not this change, but I did not run it on the commit before to prove it. **Not checked:** driving the Land Rover or tractor through the new door and into the bay by hand, how it feels at night under the two bulbs, and the girls walking to the hooks and rail by the new route.
+
+## The girls' wheel always keeps its shape (TODO 53)
+
+Decided with Jamie:
+- **Greyed, not hidden.** Every quad, Land Rover and car stays on a girl's wheel; an option she can't do just now is greyed (`disabled` on a wheel option, no `run`) with the reason as its hint. When she is busy, every vehicle option says why ("she's walking"). The rule is pure and tested in `src/npc/vehicleWheel.js`.
+- **Taking the wheel with you aboard.** "Drive it" in the Land Rovers and the girls' cars needs nobody at the wheel or on their way to it (`driveFree` in game.js), not an empty vehicle: you in the passenger seat and her friend on the bench no longer stop Jess driving her Corsa. If you are driving, or a girl is, it is greyed and says so. Only her own car, as before; the other girl's shows "it's Amy's".
+- **Quads** with nothing she can do just now show a single greyed "Not just now" with her reason.
+- The tractor, UTV and tipping trailer slices are unchanged (they already show only when they have something). Not checked in the running game: only unit tests, so how a girl sits when she takes the wheel with you and her friend aboard is untested by eye.

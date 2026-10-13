@@ -35,7 +35,7 @@ export const OUTFITS = {
   jessPolo: {
     colors: { hair: '#2a221d', shirt: '#8e2238', shoes: '#262626', trousers: 'skin' },
     collar: '#8e2238',
-    poloOpen: 4, // her top four buttons undone (the polo garment, ?polo=shell; any of 0 to 4 is drawn)
+    poloOpen: 4, // her top four buttons undone (the polo garment, ?polo=shell; any of 0 to 5, all of them, is drawn)
     wellies: '#262626',
     shorts: '#3f4f6e',
   },
@@ -1014,15 +1014,18 @@ function addTop(rig, name, color, spec) {
   );
   if (vee) {
     // Her skin in the V of the open neck, her own flat faces in her skin's colour.
-    const inset = buildInset(data, vee);
+    const inset = buildInset(data, vee, spec);
     const [r, g, b] = PALETTE.skin.map((c) => c / 255);
+    const skin = new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace);
+    const shading = [];
+    for (const k of inset.shade) shading.push(skin.r * k, skin.g * k, skin.b * k);
     skinnedFromArrays(
       rig,
       body,
       data,
       'poloVee',
-      { positions: inset.verts.map((q) => q.bind), normals: inset.verts.map((q) => q.normal), weights: inset.verts.map((q) => q.weights), index: inset.tris.flat() },
-      new THREE.MeshStandardMaterial({ color: new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace), roughness: 0.85, flatShading: true }),
+      { positions: inset.verts.map((q) => q.bind), normals: inset.verts.map((q) => q.normal), weights: inset.verts.map((q) => q.weights), colors: shading, index: inset.tris.flat() },
+      new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, flatShading: true }),
     );
   }
   if (!placket) return made;

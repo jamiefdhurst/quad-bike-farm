@@ -227,9 +227,9 @@ export class Companion {
     this.outfit = reshirt(this.rig, this.outfit, color);
   }
 
-  /** How many of her polo's buttons are undone (0 to 4; the garment polo, ?polo=shell), refitting it. */
+  /** How many of her polo's buttons are undone (0 to 5, all of them; the garment polo, ?polo=shell), refitting it. */
   setPoloOpen(n) {
-    this.outfit = { ...this.outfit, poloOpen: Math.max(0, Math.min(4, Math.round(n))) };
+    this.outfit = { ...this.outfit, poloOpen: Math.max(0, Math.min(5, Math.round(n))) };
     refitOutfit(this.rig, this.outfit);
   }
 
