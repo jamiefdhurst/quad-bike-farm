@@ -957,8 +957,12 @@ export class Quad {
   /** Water going up the intake, per second: the deepest puddle under a wheel, ploughed through fast. */
   waterGulp() {
     let puddle = 0;
-    for (const w of this.physics.wheelInfo) puddle = Math.max(puddle, w.puddle);
-    return waterGulp(puddle, this.speed, this.engine.params);
+    let boost = 1;
+    for (const w of this.physics.wheelInfo) {
+      puddle = Math.max(puddle, w.puddle);
+      if (w.puddle > 0.5) boost = Math.max(boost, this.world.gulpBoostAt?.(w.point.x, w.point.z) ?? 1);
+    }
+    return waterGulp(puddle, this.speed, this.engine.params) * boost;
   }
 
   /** Engine controls for this frame. */

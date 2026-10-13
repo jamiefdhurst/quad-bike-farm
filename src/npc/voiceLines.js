@@ -21,6 +21,7 @@ import { AMY_MOTO_LINES } from './motoLines.js';
 import { AMY_WALK_LINES } from './walkLines.js';
 import { AMY_DIESEL_LINES } from './dieselLines.js';
 import { AMY_GENERATOR_LINES } from './generatorLines.js';
+import { AMY_STREAM_LINES } from './streamLines.js';
 import { AMY_WATER_LINES } from './waterLines.js';
 import { AMY_HEAT_LINES } from './heatLines.js';
 import { AMY_SILENCER_LINES } from './silencerLines.js';
@@ -1452,6 +1453,7 @@ export const VOICE_LINES = {
   ...AMY_MOTO_LINES,
   ...AMY_DIESEL_LINES,
   ...AMY_GENERATOR_LINES,
+  ...AMY_STREAM_LINES,
   ...AMY_WATER_LINES,
   // Heat (heatLines.js).
   ...AMY_HEAT_LINES,

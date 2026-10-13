@@ -1460,6 +1460,12 @@ export class Game {
   // The console's switches (src/console) ---------------------------------------------------------------
 
   /** Changes the weather to a kind at once, with the sky, the rain and the frost on the seats following. */
+  /** The debug panel's and the console's stream level: sets it at once, for the water, the hill and the engine's drowning to follow. */
+  setStreamLevel(level) {
+    this.world.streamLevel.set(level);
+    this.world.setStreamLevel();
+  }
+
   setWeatherKind(kind) {
     if (!this.weather.setKind(kind)) return false;
     this.forecast.cancel(); // set by hand: the day no longer turns, and the board has nothing to say
@@ -4517,6 +4523,11 @@ export class Game {
   /** Rain round you and its sound, and the wind on the exhaust smoke. */
   updateWeather(dt) {
     const w = this.weather;
+    if (this.world.streamEvent) {
+      // The stream came up or went back down: whoever is stood about near you says so.
+      const near = this.companions.filter((c) => c.availability().canRemark && c.root.position.distanceTo(this.camera.position) < 40);
+      near[Math.floor(Math.random() * near.length)]?.voice.say(this.world.streamEvent === 'up' ? 'streamUp' : 'streamDown', { chance: 0.85 });
+    }
     const cam = this.camera.position;
     const world = this.world;
     // The barn: no rain under its roof, the drumming of it on the tin, a dimmer light inside with the bulb on, and a room's echo.

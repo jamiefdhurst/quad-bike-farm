@@ -15,6 +15,8 @@ export function createHill(layout) {
   if (!hill) return null;
   const { lane, pasture, stream, banks } = hill;
   const ford = stream.ford;
+  /** Metres the water stands above its usual after rain (world/streamLevel.js sets it); the channel's cut and the bed don't change. */
+  let rise = 0;
   const farm = layout.farm ?? { minX: -layout.fieldHalf, maxX: layout.fieldHalf, minZ: -layout.fieldHalf, maxZ: layout.fieldHalf };
   const top = layout.fieldHalf; // the grass field's south hedge, where the gate is
   const laneRect = { minX: lane.x - lane.hedgeOff, maxX: lane.x + lane.hedgeOff, minZ: top, maxZ: lane.toZ };
@@ -69,7 +71,7 @@ export function createHill(layout) {
   const halfAt = (x) => stream.halfWidth + (ford.halfWidth - stream.halfWidth) * fordK(x);
   const depthAt = (x) => stream.depth + (ford.depth - stream.depth) * fordK(x);
   /** How deep the water stands in the channel at x: shallower over the ford, in the same proportion as the channel. */
-  const waterDepthAt = (x) => (stream.water * depthAt(x)) / stream.depth;
+  const waterDepthAt = (x) => (stream.water * depthAt(x)) / stream.depth + rise;
   /** The stream's far (south) edge at x: where the climb starts. */
   const farEdge = (x) => streamZ(x) + halfAt(x);
 
@@ -240,10 +242,14 @@ export function createHill(layout) {
   /** Where a girl following you pulls up to wait when you go on up the hill: just through the ford, off the lane's line. */
   const waitSpot = { x: lane.x + 3, z: farEdge(lane.x) + 2.5 };
 
+  const setRise = (metres) => {
+    rise = Math.max(0, metres);
+  };
   const outsideHill = (x, z) => Math.min(outside(pasture, x, z), outside(laneRect, x, z), west ? outside(west, x, z) : Infinity, east ? outside(east, x, z) : Infinity);
   return {
     lane, pasture, stream, laneRect, west, east, gates, pond, knolls, top, total, waitSpot,
     streamZ, halfAt, depthAt, waterDepthAt, farEdge, climb, climbSlope, sinkAt, channelAt, profile, weight,
+    setRise, get rise() { return rise; },
     waterAt, mudAt, sheepFieldOk, pondCut, knollLift, lineDistance, brackenAt, gorseAt, inPasture, inLane, inWest, inEast, inPaddock, inWood, pastFoot, outside: outsideHill,
   };
 }

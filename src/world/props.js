@@ -53,9 +53,9 @@ export function buildProps(ctx) {
   buildStubble(c);
   buildPuddles(c);
   buildBogs(c);
-  if (ctx.fields.hill) buildHill(c);
+  const hillProps = ctx.fields.hill ? buildHill(c) : null;
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
-  return { barn, jumpRamp, gates, gateParams: c.gateParams };
+  return { barn, jumpRamp, gates, gateParams: c.gateParams, stream: hillProps?.stream ?? null };
 }
 
 function buildBarn(c) {

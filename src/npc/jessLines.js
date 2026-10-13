@@ -17,6 +17,7 @@ import { JESS_OIL_LINES } from './oilLines.js';
 import { JESS_MOTO_LINES } from './motoLines.js';
 import { JESS_DIESEL_LINES } from './dieselLines.js';
 import { JESS_GENERATOR_LINES } from './generatorLines.js';
+import { JESS_STREAM_LINES } from './streamLines.js';
 import { JESS_WATER_LINES } from './waterLines.js';
 import { JESS_HEAT_LINES } from './heatLines.js';
 import { JESS_SILENCER_LINES } from './silencerLines.js';
@@ -433,6 +434,7 @@ export const JESS_LINES = {
   ...JESS_MOTO_LINES,
   ...JESS_DIESEL_LINES,
   ...JESS_GENERATOR_LINES,
+  ...JESS_STREAM_LINES,
   ...JESS_WATER_LINES,
   ...JESS_LPLATE_LINES,
   ...JESS_HEAT_LINES,

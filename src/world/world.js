@@ -19,6 +19,7 @@ import { surfaceFeel, DEFAULT_SURFACE_PARAMS, SURFACE_PARAM_RANGES } from './sur
 import { DEFAULT_SQUEAL_PARAMS, SQUEAL_PARAM_RANGES } from '../vehicle/tyreSqueal.js';
 import { registerTuning } from '../core/tuning.js';
 import { skyAt } from './daylight.js';
+import { StreamLevel, STREAM_PARAM_RANGES } from './streamLevel.js';
 import * as THREE from 'three';
 
 /** The farm: terrain, track, sky and static props. */
@@ -31,6 +32,11 @@ export class World {
     this.fields = createFields(layout);
     this.cattleGrid = createCattleGrid(layout); // across the road in the grass field's east gateway, or null
     this.outbuildings = createOutbuildings(layout); // the Dutch barn, the field shed, the muck heap and the trough out east
+
+    this.streamLevel = new StreamLevel(); // how high the stream stands after rain (streamLevel.js)
+    registerTuning('Stream', this.streamLevel.params, STREAM_PARAM_RANGES);
+    this.streamStarted = false;
+    this.streamEvent = null; // 'up' or 'down' on the frame the stream crossed the line, for the girls
 
     this.surfaceParams = { ...DEFAULT_SURFACE_PARAMS };
     registerTuning('Surfaces', this.surfaceParams, SURFACE_PARAM_RANGES);
@@ -199,7 +205,33 @@ export class World {
     return this.weather?.wet ?? 0;
   }
 
+  /** How much more water an engine gulps at (x, z) than usual: the stream, when it is up, is deeper and its bow wave bigger. */
+  gulpBoostAt(x, z) {
+    const hill = this.heights.hill;
+    return hill && hill.waterAt(x, z) > 0.5 && Math.abs(z - hill.streamZ(x)) <= hill.halfAt(x) + 1 ? this.streamLevel.gulp : 1;
+  }
+
+  /** The stream follows the rain: its surface lifts, browns and runs faster as the level rises. */
+  updateStream(dt) {
+    const s = this.streamLevel;
+    if (!this.streamStarted) {
+      this.streamStarted = true;
+      s.start(this.weather.wet);
+    }
+    this.streamEvent = s.update(dt, this.weather.rain);
+    this.setStreamLevel();
+  }
+
+  /** Gives the hill, and the water drawn, the stream's level as it is now. */
+  setStreamLevel() {
+    const s = this.streamLevel;
+    this.heights.hill?.setRise(s.rise);
+    this.fields.hill?.setRise(s.rise);
+    this.props.stream?.update(this.streamLastDt ?? 0, s.level, s.rise, s.flow);
+  }
+
   update(dt, focus, camera) {
+    this.streamLastDt = dt;
     this.wear.update(dt, this.wet);
     if (this.wear.packed) this.terrain.wearTexture.needsUpdate = true;
     this.wear.packed = false;
@@ -212,6 +244,7 @@ export class World {
       this.terrain.frost.value = this.weather.frost;
       this.terrain.snow.value = this.weather.cover;
       this.weather.update(dt);
+      this.updateStream(dt);
       Object.assign(this.sky.params, this.skyNow());
       // Wet ground looks darker, and a little glossier.
       const m = this.terrain.mesh.material;

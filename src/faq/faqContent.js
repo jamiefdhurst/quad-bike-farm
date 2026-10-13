@@ -317,6 +317,11 @@ export const FAQ_SECTIONS = [
         tip: 'Take the ford slowly: above about 15 mph the bow wave drowns the engine.',
       },
       {
+        q: 'Why is the ford deeper than it was?',
+        a: `The stream comes up with the rain. After a few minutes of steady rain it stands higher, runs browner and faster, and the ford is nearly twice as deep, so a quad drowns more easily in it. It drops back over ten minutes or more once the rain stops. Wait for it to go down, or cross very slowly. A girl nearby will tell you when it is up and when it has gone down.`,
+        tip: 'After rain the stream rises and the ford drowns engines more easily. Wait, or go very slowly.',
+      },
+      {
         q: 'How do I jump the ramp?',
         a: `There's a plank ramp in the grass field with a long run-up behind it and room to land ahead. Hit it straight and fast and keep the bars
           straight in the air. The bucket list counts a jump, a long one and a clean landing.`,

@@ -16,7 +16,7 @@ function matrixAt(x, y, z, yaw, sx, sy = sx, sz = sx) {
 
 /** Builds the hill's props and their colliders. `c` is the props context (props.js). */
 export function buildHill(c) {
-  buildStream(c);
+  const stream = buildStream(c);
   buildWood(c);
   buildGorse(c);
   buildBracken(c);
@@ -29,21 +29,53 @@ export function buildHill(c) {
     buildWall(c);
     buildThorns(c);
   }
+  return { stream };
 }
 
-/** The stream's water: a ribbon along its line, level across, following the channel's fall along it, a little past the side hedges. */
+/** Faint pale streaks along the stream, so the water's drift shows (the ribbon scrolls this across it). */
+function flowTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 32;
+  const g = canvas.getContext('2d');
+  g.fillStyle = '#808080';
+  g.fillRect(0, 0, 128, 32);
+  for (let i = 0; i < 26; i++) {
+    const x = (i * 53) % 128;
+    const y = (i * 29) % 32;
+    g.fillStyle = `rgba(255,255,255,${0.12 + ((i * 7) % 5) * 0.04})`;
+    g.fillRect(x, y, 14 + ((i * 11) % 22), 1.5);
+    g.fillRect(x - 128, y, 14 + ((i * 11) % 22), 1.5);
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+const STREAM_CLEAR = new THREE.Color(0x35332a);
+const STREAM_SPATE = new THREE.Color(0x5a4a34); // after rain it runs browner with the peat and mud it carries
+
+/**
+ * The stream's water: a ribbon along its line, level across, following the channel's fall along it, a little past the side hedges.
+ * Returns the view: `update(dt, level, rise, flow)` lifts the surface by `rise` metres, browns it with `level` and drifts the streaks at `flow`.
+ */
 function buildStream({ scene, heights, fields }) {
   const hill = fields.hill;
   const p = hill.pasture;
   const xs = [];
   for (let x = p.minX - 3; x <= p.maxX + 3; x += 1) xs.push(x);
   const pos = [];
+  const uv = [];
   const index = [];
+  const base = [];
   for (const x of xs) {
     const z = hill.streamZ(x);
     const y = heights.heightAt(x, z) + hill.waterDepthAt(x);
     const half = hill.halfAt(x) * 0.95;
     pos.push(x, y, z - half, x, y, z + half);
+    base.push(y);
+    uv.push(x / 6, 0, x / 6, 1);
   }
   for (let i = 0; i < xs.length - 1; i++) {
     const a = i * 2;
@@ -51,14 +83,33 @@ function buildStream({ scene, heights, fields }) {
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   geo.setIndex(index);
   geo.computeVertexNormals();
   // Peaty, clear-ish moorland water: brown-green, glossy, the bed showing through.
-  const mat = new THREE.MeshStandardMaterial({ color: 0x35332a, roughness: 0.12, transparent: true, opacity: 0.86, depthWrite: false });
+  const map = flowTexture();
+  const mat = new THREE.MeshStandardMaterial({ color: STREAM_CLEAR.clone(), map, roughness: 0.12, transparent: true, opacity: 0.86, depthWrite: false });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.receiveShadow = true;
   mesh.name = 'stream';
   scene.add(mesh);
+  let lastRise = 0;
+  return {
+    mesh,
+    update(dt, level, rise, flow) {
+      map.offset.x -= dt * 0.12 * flow;
+      mat.color.copy(STREAM_CLEAR).lerp(STREAM_SPATE, level);
+      mat.opacity = 0.86 + 0.1 * level;
+      if (Math.abs(rise - lastRise) < 0.003) return;
+      lastRise = rise;
+      const attr = geo.getAttribute('position');
+      for (let i = 0; i < base.length; i++) {
+        attr.setY(i * 2, base[i] + rise);
+        attr.setY(i * 2 + 1, base[i] + rise);
+      }
+      attr.needsUpdate = true;
+    },
+  };
 }
 
 /**

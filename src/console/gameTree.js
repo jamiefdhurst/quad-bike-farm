@@ -227,6 +227,7 @@ export function buildGameTree(g, host) {
   const weather = group(() => ({
     kind: choice(Object.keys(WEATHER_KINDS), () => w().kind, (v) => g.setWeatherKind(v)),
     rain: num(() => w().rain, (v) => g.setRain(v), 0, 1, '', 'falling now'),
+    stream: num(() => g.world.streamLevel.level, (v) => g.setStreamLevel(v), 0, 1, '', 'how high the stream stands, low to full (the ford deepens and runs faster)'),
     wet: num(() => w().wet, (v) => (w().wet = v), 0, 1, '', 'how wet the ground is'),
     temperature: num(() => w().temperature, (v) => g.setTemperature(v), -15, 35, '°C'),
     frost: ro(() => w().frost),
