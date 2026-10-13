@@ -156,7 +156,8 @@ import { DEFAULT_HOME_PARAMS, HOME_PARAM_RANGES } from './npc/homeParking.js';
 import { Tea, TEA_PARAM_RANGES } from './npc/tea.js';
 import { Flask, FLASK_PARAM_RANGES } from './npc/flask.js';
 import { carryParams, CARRY_PARAM_RANGES, carryWeight } from './npc/carrying.js';
-import { Jumpers, JUMPER_PARAM_RANGES, JUMPERS } from './npc/jumpers.js';
+import { dealPoloOpen } from './npc/polo.js';
+import { Jumpers, JUMPER_PARAM_RANGES, dealJumperColours } from './npc/jumpers.js';
 import { JumperRail } from './world/jumperRail.js';
 import { Headgear, HEADGEAR_PARAM_RANGES } from './npc/headgear.js';
 import { HelmetView } from './npc/helmetView.js';
@@ -850,8 +851,9 @@ export class Game {
     this.flask = new Flask(undefined, createRandom(this.seed ^ 0x6f1a)); // tea from a flask on the rock at the top of the hill (npc/flask.js)
     this.flaskSet = null; // the flask and two mugs out on the ground by the rock: a Group
     this.setupFlask();
-    this.jumpers = new Jumpers(); // jumpers from the barn rail on cold or wet days (npc/jumpers.js)
-    this.jumperRail = new JumperRail(this.scene, this.world.layout, (x, z) => this.world.heightAt(x, z));
+    // Jumpers from the barn rail on cold or wet days (npc/jumpers.js), in colours this farm dealt.
+    this.jumpers = new Jumpers(undefined, Math.random, dealJumperColours(createRandom(this.farmSeed ^ 0x1e57)));
+    this.jumperRail = new JumperRail(this.scene, this.world.layout, (x, z) => this.world.heightAt(x, z), this.jumpers.list);
     // Helmets and goggles from the hooks by the barn's south wall (npc/headgear.js): yours, and one on each girl's head when she wears hers.
     this.headgear = new Headgear(undefined, createRandom(this.seed ^ 0x4e1a));
     this.helmetHooks = new HelmetHooks(this.scene, this.world.layout, (x, z) => this.world.heightAt(x, z));
@@ -904,12 +906,18 @@ export class Game {
     this.ownership.assign(
       Object.fromEntries(this.companions.map((c) => [c.character.id, this.girlUnits.filter((u) => c.mayRide(u.quad) && c.voice.chatter.lines[`like${capital(u.spec.id)}`]).map((u) => u.spec.id)])),
     );
+    // How many of her polo's buttons she has undone, dealt for this farm (so it's the same every day) between her own limits.
+    const buttonsRandom = createRandom(this.farmSeed ^ 0x9b07);
+    for (const c of this.companions) {
+      c.outfit = { ...c.outfit, poloOpen: dealPoloOpen(c.character.poloOpen, buttonsRandom) }; // fitted with her shirt just below
+    }
     for (const c of this.companions) {
       const id = c.character.id;
       c.claimedSpec = this.ownership.claims[id] ?? null;
       c.voice.favourite = c.claimedSpec; // the one she likes best is the one she says is hers
       const mine = this.girlUnits.find((u) => u.spec.id === c.claimedSpec);
       if (mine) c.setShirt(mine.spec.bodyColor); // and her shirt is its colour, so you can see why
+      else if (c.outfit.poloOpen) c.setPoloOpen(c.outfit.poloOpen); // no shirt colour to set: fitted for her buttons on their own
       c.voice.names = this.quadNames;
       c.borrowPick = (specs) => this.ownership.borrowPick(id, specs);
     }
@@ -6655,7 +6663,7 @@ export class Game {
     if (!e) return;
     const c = this.companions.find((o) => o.character.id === e.girl);
     const rail = this.world.layout.jumperRail;
-    const colour = JUMPERS.find((j) => j.id === e.jumper).color;
+    const colour = this.jumpers.colourOf(e.jumper);
     const act = e.type === 'fetch'
       ? () => {
           this.jumpers.dressed(e.girl, e.jumper);

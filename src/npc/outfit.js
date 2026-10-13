@@ -35,7 +35,6 @@ export const OUTFITS = {
   jessPolo: {
     colors: { hair: '#2a221d', shirt: '#8e2238', shoes: '#262626', trousers: 'skin' },
     collar: '#8e2238',
-    poloOpen: 4, // her top four buttons undone (the polo garment, ?polo=shell; any of 0 to 5, all of them, is drawn)
     wellies: '#262626',
     shorts: '#3f4f6e',
   },
@@ -1028,6 +1027,7 @@ function addTop(rig, name, color, spec) {
       new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, flatShading: true }),
     );
   }
+  if (built.logo) addLogo(rig, body, data, built.logo, tint);
   if (!placket) return made;
 
   // The placket, stitched, and its buttons (a second mesh, the holes coloured in).
@@ -1073,6 +1073,64 @@ function addTop(rig, name, color, spec) {
     new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.32, side: THREE.DoubleSide }),
   );
   return made;
+}
+
+/**
+ * The polo's logo: a leaping hare, embroidered (drawn here: the farm's own brand, not anyone's real one), in cream thread on a
+ * dark shirt and dark thread on a light one.
+ */
+let logoMap = null;
+function hareLogo() {
+  if (logoMap) return logoMap;
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 96;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.strokeStyle = '#fff';
+  ctx.lineCap = 'round';
+  const ellipse = (x, y, rx, ry, rot = 0) => {
+    ctx.beginPath();
+    ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2);
+    ctx.fill();
+  };
+  const limb = (x0, y0, x1, y1, w) => {
+    ctx.lineWidth = w;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y1);
+    ctx.stroke();
+  };
+  ellipse(62, 52, 27, 12, -0.18); // body, stretched out mid-leap
+  ellipse(40, 56, 14, 13); // haunch
+  ellipse(26, 47, 5, 5); // tail
+  ellipse(92, 39, 11, 8, -0.3); // head
+  ellipse(97, 19, 4, 14, 0.45); // ears, laid back
+  ellipse(89, 21, 3.5, 13, 0.3);
+  limb(96, 52, 118, 64, 5); // front legs reaching
+  limb(90, 55, 112, 70, 4);
+  limb(34, 64, 8, 74, 6); // hind leg kicking off
+  ctx.globalCompositeOperation = 'destination-out';
+  ellipse(96, 37, 1.8, 1.8); // the eye, left as shirt
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  logoMap = tex;
+  return tex;
+}
+
+function addLogo(rig, body, data, logo, tint) {
+  const light = 0.2126 * tint.r + 0.7152 * tint.g + 0.0722 * tint.b > 0.18;
+  const thread = light ? tint.clone().multiplyScalar(0.3) : new THREE.Color(0xeee6cf);
+  const index = logo.tris.flat();
+  const positions = logo.verts.map((q) => q.bind);
+  skinnedFromArrays(
+    rig,
+    body,
+    data,
+    'poloLogo',
+    { positions, normals: smoothArrayNormals(positions, index), weights: logo.verts.map((q) => q.weights), uvs: logo.uv, index },
+    new THREE.MeshStandardMaterial({ color: thread, map: hareLogo(), alphaTest: 0.5, roughness: 0.75, side: THREE.DoubleSide }),
+  );
 }
 
 /** The polo's collar (collar.js), on the polo's neck edge and over the jumper if she has one on. ?polo=shell. */

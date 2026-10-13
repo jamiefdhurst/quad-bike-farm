@@ -991,6 +991,12 @@ export const FAQ_SECTIONS = [
           warm their hands over a running engine, start a Land Rover and sit in it to warm up, fetch jumpers when it's cold, or get their helmets from the hooks.`,
       },
       {
+        q: 'Why are the jumpers on the rack different colours from my last farm?',
+        a: `Each farm has its own two jumpers on the rail in the barn, in colours dealt when the farm is new: grey and beige among
+          them, or navy, bottle green, burgundy, mustard, oatmeal, charcoal, heather blue, rust or moss. They stay the same on that
+          farm from day to day. The girls put one on when they've been cold or wet for a while and hang it back up once it's warm and dry.`,
+      },
+      {
         q: 'Why is a girl sitting in the Land Rover?',
         a: `She's sheltering. When it rains, a girl stood about sometimes climbs into the UTV, a Land Rover or one of their cars (they have roofs) instead of running for the barn.
           On a cold day she may walk over to a Land Rover, start it and sit in it for a minute or two with the engine running. When the weather turns or she has had enough

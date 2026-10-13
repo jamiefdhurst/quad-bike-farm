@@ -25,11 +25,34 @@ export const JUMPER_PARAM_RANGES = {
   timeout: [10, 180, 5],
 };
 
-/** The jumpers on the rail: their ids and the (dull) colours they're knitted in. */
+/** The jumpers on the rail, by where they hang, and the colours they have unless the farm deals others (dealJumperColours). */
 export const JUMPERS = [
-  { id: 'grey', color: '#7b7d80' },
-  { id: 'beige', color: '#b7a98c' },
+  { id: 'left', color: '#7b7d80' },
+  { id: 'right', color: '#b7a98c' },
 ];
+
+/** What the farm's jumpers can be knitted in: dull, practical colours, grey and beige among them. */
+export const JUMPER_PALETTE = [
+  { name: 'grey', color: '#7b7d80' },
+  { name: 'beige', color: '#b7a98c' },
+  { name: 'navy', color: '#3d4a62' },
+  { name: 'bottle green', color: '#3f5a46' },
+  { name: 'burgundy', color: '#6c3439' },
+  { name: 'mustard', color: '#b08b42' },
+  { name: 'oatmeal', color: '#cfc4a8' },
+  { name: 'charcoal', color: '#4b4c50' },
+  { name: 'heather blue', color: '#6b7c93' },
+  { name: 'rust', color: '#8d5337' },
+  { name: 'moss', color: '#6d7442' },
+];
+
+/** The farm's jumpers' colours, a different pair for each farm (from its own stream of the farm seed, so it's the same every day). */
+export function dealJumperColours(random, count = JUMPERS.length) {
+  const left = JUMPER_PALETTE.slice();
+  const out = [];
+  for (let i = 0; i < count && left.length; i++) out.push(left.splice(Math.floor(random() * left.length), 1)[0].color);
+  return out;
+}
 
 /** Whether it's a day for a jumper: cold or wet. */
 export function isJumperWeather(weather, p) {
@@ -37,8 +60,10 @@ export function isJumperWeather(weather, p) {
 }
 
 export class Jumpers {
-  constructor(params = { ...DEFAULT_JUMPER_PARAMS }, random = Math.random) {
+  constructor(params = { ...DEFAULT_JUMPER_PARAMS }, random = Math.random, colours = null) {
     this.p = params;
+    // The jumpers on this farm's rail: the same places, in the colours it dealt.
+    this.list = JUMPERS.map((j, i) => ({ ...j, color: colours?.[i] ?? j.color }));
     this.random = random;
     this.clock = 0;
     this.worn = {}; // girl id -> jumper id she has on
@@ -53,13 +78,18 @@ export class Jumpers {
   /** Jumpers not on a girl and not about to be. */
   free() {
     const taken = new Set([...Object.values(this.worn), ...Object.values(this.pending).filter((j) => j.kind === 'fetch').map((j) => j.jumper)]);
-    return JUMPERS.filter((j) => !taken.has(j.id));
+    return this.list.filter((j) => !taken.has(j.id));
   }
 
   /** Jumpers on the rail for drawing: not worn, though one being fetched still hangs there until she lifts it. */
   onRail() {
     const worn = new Set(Object.values(this.worn));
-    return JUMPERS.filter((j) => !worn.has(j.id));
+    return this.list.filter((j) => !worn.has(j.id));
+  }
+
+  /** The colour a jumper is knitted in. */
+  colourOf(id) {
+    return this.list.find((j) => j.id === id)?.color ?? null;
   }
 
   /** The debug panel: send her for a jumper if she has none, or to hang hers up if she has. Returns which. */

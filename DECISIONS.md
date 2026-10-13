@@ -3576,6 +3576,18 @@ Jamie: the collar overlapped and didn't sit right; the points only slightly roun
 - **Buttons** stay at 72% of the shirt's colour.
 - Checked headless at full size: Amy's collar close up from the front; Jess's with 4 and 5 undone straight on from 30 cm (`.scratch/pp/veeshot.mjs`) and from further off; both in jumpers with the collar over them; both girls' waists from the front and three-quarter back; Amy sitting on the back of a quad; Jess standing in her own red shirt. Not checked since these changes: driving, and the clothes in motion.
 
+### Follow-up: buttons to the top, a logo, jumper colours and buttons dealt for each farm
+
+Jamie: the placket still didn't look joined to the top of the shirt, the top button much further up and the rest spaced to match, and right for the open plackets too; jumper colours random for each game and kept, grey and beige among more; a little logo, as a brand's; a TODO for other outfits and layers; Amy with 0 or 1 button undone and Jess 0 to 5, random for each game and kept.
+
+- **Buttons.** Done up, the top button is on the collar's stand, 8 mm above where the shirt meets her neck (buttoned right up), just off the shirt's face there; the other four are 3.65 cm apart down to where the bottom one was (`buttons`, from the shirt's top: -0.8, 2.85, 6.5, 10.15 and 13.8 cm). Undone, the top one is 6 mm below the top of its half of the placket (`topButtonOpen`), by the V's corner; the rest stay where they were. One undone opens a V 2 cm deep now (it was 3.3 cm, with the old spacing).
+- **The logo**: a leaping hare, the farm's own brand rather than anyone's real one, drawn on a canvas (body, haunch, tail, head, laid-back ears, legs reaching and kicking, the eye cut out), on a 2.5 by 1.8 cm patch on her left chest, 7 cm from her middle and 7.2 cm below the shirt's top, laid on the finished shirt by rays like the placket, 0.7 mm off it. Cream thread on a dark shirt, the shirt's colour at 30% on a light one.
+- **Jumper colours** (`dealJumperColours` in `jumpers.js`, tested): each farm deals its two jumpers different colours from `JUMPER_PALETTE` (grey, beige, navy, bottle green, burgundy, mustard, oatmeal, charcoal, heather blue, rust, moss), from its own stream of the farm seed (`farmSeed ^ 0x1e57`), so a farm has the same pair every day without anything new in the save, as its plates and quirks do. The two jumpers are named by where they hang now (`left`, `right`) rather than grey and beige; `Jumpers` holds the farm's list and `colourOf`, and the rail draws from it. This is in the game with or without the flag.
+- **Buttons undone** (`dealPoloOpen` in `polo.js`, tested): each girl's range is `poloOpen` in `characters.js` (Amy [0, 1], Jess [0, 5]), dealt from the farm seed's own stream (`farmSeed ^ 0x9b07`) into her outfit before her shirt colour is set, so it costs no extra refit and is the same every day on that farm. The debug panel and console still set it live for the day.
+- TODO 201: other outfits and layers (a plaid shirt instead of or over the polo, a double polo, a popped collar).
+- Checked headless: Amy done up, Jess with one and three undone straight on, Amy in her own dark green with the logo, the rail on two farms (seed 3 navy and grey, Amy 1 and Jess 4 undone; seed 11 bottle green and rust, Amy 1 and Jess 3). Not checked: driving, and the clothes in motion.
+
+
 
 
 

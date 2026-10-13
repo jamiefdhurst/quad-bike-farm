@@ -21,6 +21,7 @@ export const CHARACTERS = [
     id: 'amy',
     name: 'Amy',
     mapColour: '#3a5690', // her blue polo, for her dot on the farm map
+    poloOpen: [0, 1], // buttons of her polo undone, dealt for each farm between these (the garment polo, ?polo=shell)
     params: {
       outfit: 'farmPolo',
       boredShowOffChance: 0.04,
@@ -67,6 +68,7 @@ export const CHARACTERS = [
     id: 'jess',
     name: 'Jess',
     mapColour: '#8e2238', // her burgundy polo
+    poloOpen: [0, 5], // buttons of her polo undone, dealt for each farm between these: none up to all of them
     // Cheekier: braver behind the bars, chattier, bored sooner (usually after
     // about 45 s rather than 60) and more likely to do something about it, and
     // she likes being left on a runaway.

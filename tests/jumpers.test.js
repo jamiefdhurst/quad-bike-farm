@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { Jumpers, DEFAULT_JUMPER_PARAMS, isJumperWeather, JUMPERS } from '../src/npc/jumpers.js';
+import { Jumpers, DEFAULT_JUMPER_PARAMS, isJumperWeather, JUMPERS, JUMPER_PALETTE, dealJumperColours } from '../src/npc/jumpers.js';
+import { createRandom } from '../src/core/random.js';
 
 const P = { ...DEFAULT_JUMPER_PARAMS, startAfter: 0, coldFor: 5, warmFor: 10 };
 const rail = { x: 0, z: 0 };
@@ -69,18 +70,18 @@ describe('Jumpers', () => {
   it('puts it on, then hangs it up after a warm spell', () => {
     const j = new Jumpers({ ...P }, () => 0);
     run(j, 10, { weather: cold, girls: [girl('amy')], rail });
-    j.dressed('amy', 'grey');
-    expect(j.onRail().map((x) => x.id)).toEqual(['beige']);
+    j.dressed('amy', 'left');
+    expect(j.onRail().map((x) => x.id)).toEqual(['right']);
     expect(run(j, 30, { weather: cold, girls: [girl('amy')], rail })).toEqual([]);
     const events = run(j, 15, { weather: warm, girls: [girl('amy')], rail });
-    expect(events[0]).toMatchObject({ type: 'hang', girl: 'amy', jumper: 'grey' });
+    expect(events[0]).toMatchObject({ type: 'hang', girl: 'amy', jumper: 'left' });
     j.hung('amy');
     expect(j.onRail()).toHaveLength(2);
   });
 
   it('a shower resets the warm spell', () => {
     const j = new Jumpers({ ...P }, () => 0);
-    j.dressed('amy', 'grey');
+    j.dressed('amy', 'left');
     const ctx = (weather) => ({ weather, girls: [girl('amy')], rail });
     run(j, 8, ctx(warm));
     run(j, 1, ctx(cold));
@@ -119,10 +120,10 @@ describe('asked for from the debug panel', () => {
     const ctx = { weather: warm, girls: [girl('amy')], rail };
     expect(j.toggle('amy')).toBe('fetch');
     expect(j.update(1, ctx)[0]).toMatchObject({ type: 'fetch', girl: 'amy' });
-    j.dressed('amy', 'grey');
+    j.dressed('amy', 'left');
     expect(run(j, 300, ctx)).toEqual([]); // warm, but she keeps it on: it was asked for
     expect(j.toggle('amy')).toBe('hang');
-    expect(j.update(1, ctx)[0]).toMatchObject({ type: 'hang', girl: 'amy', jumper: 'grey' });
+    expect(j.update(1, ctx)[0]).toMatchObject({ type: 'hang', girl: 'amy', jumper: 'left' });
   });
 
   it('waits until she is free', () => {
@@ -132,3 +133,26 @@ describe('asked for from the debug panel', () => {
     expect(j.update(1, { weather: warm, girls: [girl('amy')], rail })).toHaveLength(1);
   });
 });
+
+describe("the farm's jumper colours", () => {
+  it('deals a different colour for each jumper from the palette, the same for the same farm', () => {
+    const palette = new Set(JUMPER_PALETTE.map((c) => c.color));
+    for (let seed = 1; seed < 40; seed++) {
+      const colours = dealJumperColours(createRandom(seed));
+      expect(colours).toHaveLength(JUMPERS.length);
+      expect(new Set(colours).size).toBe(colours.length);
+      for (const c of colours) expect(palette.has(c)).toBe(true);
+      expect(dealJumperColours(createRandom(seed))).toEqual(colours);
+    }
+    expect(JUMPER_PALETTE.map((c) => c.name)).toEqual(expect.arrayContaining(['grey', 'beige']));
+    expect(JUMPER_PALETTE.length).toBeGreaterThan(6);
+  });
+
+  it("knits the rail's jumpers in the colours dealt", () => {
+    const j = new Jumpers({ ...DEFAULT_JUMPER_PARAMS }, () => 0, ['#111111', '#222222']);
+    expect(j.colourOf('left')).toBe('#111111');
+    expect(j.colourOf('right')).toBe('#222222');
+    expect(j.onRail().map((x) => x.color)).toEqual(['#111111', '#222222']);
+  });
+});
+

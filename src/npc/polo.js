@@ -72,10 +72,16 @@ export const POLO = {
   placketLength: 0.155,
   placketWidth: 0.024,
   placketLift: 0.0022, // how far it stands proud of the shirt
-  buttons: [0.01, 0.042, 0.074, 0.106, 0.138], // how far down the placket each button is (m)
+  // How far down the placket each button is (m), from where the shirt meets her neck. The top one is above it, on the collar's
+  // stand (buttoned right up); the rest are spaced evenly down from it.
+  buttons: [-0.008, 0.0285, 0.065, 0.1015, 0.138],
+  topButtonOpen: 0.006, // undone, the top button is on its half of the placket, this far below the top
+  // A little embroidered logo on her left chest, as a brand's would be: centred this far across from her middle and down from
+  // where the shirt meets her neck, this wide and high.
+  logo: { across: 0.07, down: 0.072, width: 0.025, height: 0.018, lift: 0.0007 },
   buttonRadius: 0.0052,
   buttonShade: 0.72, // buttons a shade darker than the shirt
-  open: 0, // how many buttons from the top are undone (Jess: 1)
+  open: 0, // how many buttons from the top are undone (dealt for each farm between the girl's limits)
   veeWidths: [0, 0.017, 0.022, 0.027, 0.033, 0.04], // an open neck's V: half its width at the neckline, by buttons undone
   veeBows: [1, 1, 0.92, 0.8, 0.6, 0.5], // and how its sides curve out (below 1), opening round her bust the further it's undone
   veeStop: 0.009, // and where it stops, this far above the first button done up (all undone: the bottom of the placket)
@@ -113,6 +119,11 @@ export const JUMPER = {
   lips: ['neck', 'sleeve', 'hem'],
   placket: false,
 };
+
+/** How many of a girl's polo buttons are undone on this farm: a whole number from `lo` to `hi`, both included. */
+export function dealPoloOpen([lo, hi] = [0, 0], random = Math.random) {
+  return lo + Math.min(hi - lo, Math.floor(random() * (hi - lo + 1)));
+}
 
 /**
  * The lines a top is cut along, as fields (below 0 is inside). `body` is her body as plain data: `verts[i]` is { bind, rest,
@@ -270,7 +281,9 @@ export function buildTop(body, p = POLO) {
   }
   const shell = { verts: allVerts, tris };
   shell.normals = smoothNormals(shell);
-  return { shell, shade, vee, placket: p.placket ? buildPlacket({ verts: mesh.verts, tris: mesh.tris }, body, p, vee) : null };
+  const placket = p.placket ? buildPlacket({ verts: mesh.verts, tris: mesh.tris }, body, p, vee) : null;
+  const logo = placket && p.logo ? buildLogo({ verts: mesh.verts, tris: mesh.tris }, body, p, placket.top) : null;
+  return { shell, shade, vee, placket, logo };
 }
 
 /**
@@ -436,9 +449,17 @@ function buildPlacket(mesh, body, p, vee) {
   // The buttons, and for the undone ones the buttonhole on the other half.
   const buttons = [];
   const slits = [];
-  p.buttons.forEach((d, i) => {
+  p.buttons.forEach((d0, i) => {
+    const undone = vee && i < p.open;
+    const d = undone ? Math.max(d0, p.topButtonOpen) : d0;
     const y = top - d;
-    const open = vee && (y > vBottom || !closed) && i < p.open;
+    if (d < 0) {
+      // On the collar's stand, which stands straight up from the shirt's top edge here (collar.js): just off the shirt's face.
+      const at = rowAt(top, x0, x0, 1);
+      if (at) buttons.push({ centre: [x0, y, at.under[0].rest[2] - 0.0005], normal: norm([0, 0.15, 1]), anchor: at.under[0] });
+      return;
+    }
+    const open = undone && (y > vBottom || !closed);
     // On the strip's own face (which bridges the shirt's dips), not on the shirt under it.
     const at = (x, [xL, xR, n]) => {
       const face = rowAt(y, xL, xR, n);
@@ -451,6 +472,42 @@ function buildPlacket(mesh, body, p, vee) {
     if (h) slits.push(h);
   });
   return { verts, tris, uv, buttons, slits, top };
+}
+
+/**
+ * The logo's patch: a small grid laid on the finished shirt on her left chest (rays from in front, as she stands), lifted a hair
+ * off it and carried back to the stored pose through the shirt's skin where each point lies. `uv` maps the drawing on to it.
+ */
+function buildLogo(mesh, body, p, top) {
+  const neck = body.bones.Neck;
+  const { across, down, width, height, lift } = p.logo;
+  const cx = neck[0] + across; // her left is +x as she stands
+  const cy = top - down;
+  const near = (v) => Math.abs(v.rest[0] - cx) < 0.05 && v.rest[2] > neck[2] && Math.abs(v.rest[1] - cy) < 0.05;
+  const front = { verts: mesh.verts, tris: mesh.tris.filter((t) => t.some((i) => near(mesh.verts[i]))) };
+  const n = 5;
+  const verts = [];
+  const uv = [];
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      const x = cx - width / 2 + (width * c) / (n - 1);
+      const y = cy + height / 2 - (height * r) / (n - 1);
+      const h = rayHit(front, [x, y, neck[2] + 0.6], [0, 0, -1]);
+      if (!h) return null;
+      const v = inTriangle(front, h.tri, h.bary);
+      const rest = add(v.rest, scale(norm(applySkinDir(v.skin, v.normal)), lift));
+      verts.push({ ...v, bind: unskin(v.skin, rest), rest });
+      uv.push(c / (n - 1), 1 - r / (n - 1));
+    }
+  }
+  const tris = [];
+  for (let r = 0; r < n - 1; r++) {
+    for (let c = 0; c < n - 1; c++) {
+      const a = r * n + c;
+      tris.push([a, a + n, a + 1], [a + 1, a + n, a + n + 1]);
+    }
+  }
+  return { verts, tris, uv };
 }
 
 /**

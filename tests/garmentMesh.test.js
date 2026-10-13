@@ -12,7 +12,9 @@ import {
   inTriangle,
   smoothNormals,
 } from '../src/npc/garmentMesh.js';
-import { buildTop, buildInset, topFields, POLO, JUMPER } from '../src/npc/polo.js';
+import { buildTop, buildInset, topFields, dealPoloOpen, POLO, JUMPER } from '../src/npc/polo.js';
+import { CHARACTERS } from '../src/npc/characters.js';
+import { createRandom } from '../src/core/random.js';
 import { buildShorts, SHORTS } from '../src/npc/shorts.js';
 import { buildCollar, COLLAR } from '../src/npc/collar.js';
 
@@ -298,3 +300,35 @@ describe('the collar', () => {
     expect(Math.min(...inset.shade)).toBeLessThan(1);
   });
 });
+
+describe('buttons undone on each farm', () => {
+  it('deals Amy none or one and Jess anything from none to all five, the same for the same farm', () => {
+    const range = (id) => CHARACTERS.find((c) => c.id === id).poloOpen;
+    expect(range('amy')).toEqual([0, 1]);
+    expect(range('jess')).toEqual([0, POLO.buttons.length]);
+    const seen = { amy: new Set(), jess: new Set() };
+    for (let seed = 1; seed < 300; seed++) {
+      for (const id of ['amy', 'jess']) {
+        const n = dealPoloOpen(range(id), createRandom(seed));
+        expect(n).toBe(dealPoloOpen(range(id), createRandom(seed)));
+        seen[id].add(n);
+      }
+    }
+    expect([...seen.amy].sort()).toEqual([0, 1]);
+    expect([...seen.jess].sort()).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(dealPoloOpen([0, 5], () => 0.99999)).toBe(5);
+    expect(dealPoloOpen(undefined, () => 0.5)).toBe(0);
+  });
+
+  it('puts the top button on the collar stand when done up, and at the top of its half when undone', () => {
+    const body = cylinderBody();
+    const up = buildTop(body, POLO).placket;
+    expect(up.buttons[0].centre[1]).toBeGreaterThan(up.top);
+    const open = buildTop(body, { ...POLO, open: 2 }).placket;
+    expect(open.buttons[0].centre[1]).toBeCloseTo(open.top - POLO.topButtonOpen, 4);
+    // The rest are evenly spaced.
+    const gaps = up.buttons.slice(1).map((b, i) => up.buttons[i].centre[1] - b.centre[1]);
+    for (const g of gaps) expect(g).toBeCloseTo(gaps[0], 3);
+  });
+});
+

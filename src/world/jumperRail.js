@@ -194,9 +194,9 @@ function hangingJumper(color) {
   return g;
 }
 
-/** The rack and its jumpers. `show` lists the ids that are hanging there. */
+/** The rack and its jumpers (`jumpers`: ids and colours, the farm's from Jumpers.list). `show` lists the ids that are hanging there. */
 export class JumperRail {
-  constructor(scene, layout, heightAt) {
+  constructor(scene, layout, heightAt, jumpers = JUMPERS) {
     const r = layout.jumperRail;
     const floor = heightAt(r.x, r.z);
     this.group = new THREE.Group();
@@ -217,9 +217,9 @@ export class JumperRail {
       add(new THREE.BoxGeometry(0.05, 0.03, 0.6), side * half, 0.015, 0);
     }
     this.hung = {};
-    JUMPERS.forEach((j, i) => {
+    jumpers.forEach((j, i) => {
       const jumper = hangingJumper(j.color);
-      jumper.position.set((i - (JUMPERS.length - 1) / 2) * 0.5, r.y + 0.015, 0);
+      jumper.position.set((i - (jumpers.length - 1) / 2) * 0.5, r.y + 0.015, 0);
       this.group.add(jumper);
       this.hung[j.id] = jumper;
     });
