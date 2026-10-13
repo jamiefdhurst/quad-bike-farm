@@ -991,6 +991,13 @@ export const FAQ_SECTIONS = [
           warm their hands over a running engine, start a Land Rover and sit in it to warm up, fetch jumpers when it's cold, or get their helmets from the hooks.`,
       },
       {
+        q: 'Why are the girls wearing different coloured shirts from my last farm?',
+        a: `Each girl's polo is the colour of the quad she likes best, which is dealt with the farm, so a new farm can mean new shirts.
+          How many buttons each has undone is dealt with the farm too: Amy keeps hers done up or undoes the top one, and Jess can have
+          anything from none to all of them undone. Both stay the same on that farm from day to day.`,
+        tip: "The girls' polos match the quads they like best.",
+      },
+      {
         q: 'Why are the jumpers on the rack different colours from my last farm?',
         a: `Each farm has its own two jumpers on the rail in the barn, in colours dealt when the farm is new: grey and beige among
           them, or navy, bottle green, burgundy, mustard, oatmeal, charcoal, heather blue, rust or moss. They stay the same on that
@@ -1559,12 +1566,12 @@ export const VEHICLE_NOTES = {
 // A note for each girl, keyed by character id (characters.js).
 export const GIRL_NOTES = {
   amy: {
-    blurb: 'Blonde, navy polo. Careful, kind with an edge, and the one who knows what she’s doing with an engine.',
+    blurb: 'Blonde, in a polo the colour of her favourite quad, usually done right up. Careful, kind with an edge, and the one who knows what she’s doing with an engine.',
     traits: ['Checks the oil and walks round a quad before she rides it.', 'Won’t ride a quad she knows is faulty.', 'Hates two-stroke smoke.',
       'Keeps a true logbook of every fault on the bench.', 'Corners better than Jess.'],
   },
   jess: {
-    blurb: 'Black hair, burgundy polo. Cheeky, competitive and braver behind the bars, and gets bored sooner.',
+    blurb: 'Black hair, in a polo the colour of her favourite quad, often with a few buttons undone. Cheeky, competitive and braver behind the bars, and gets bored sooner.',
     traits: ['Takes quads off on her own, and yours if you leave it running.', 'Names the quads.', 'Loves the smoke, the noise and the mud.',
       'Better in mud than Amy, and never checks the oil.', 'Blames the quad.'],
   },

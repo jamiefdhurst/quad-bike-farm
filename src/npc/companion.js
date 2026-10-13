@@ -76,7 +76,8 @@ export class Companion {
     this.figure = this.figureAmounts();
     shapeFigure(this.rig, this.figure);
     this.outfit = OUTFITS[params.outfit] ?? OUTFITS.original;
-    applyOutfit(this.rig, this.outfit);
+    // Her clothes are fitted once the game has dealt her shirt colour and buttons (setShirt, or dress), not twice.
+    applyOutfit(this.rig, this.outfit, { garments: false });
     this.mucky = createMuddiness(); // how muddy and dusty she is (muddiness.js)
     this.girlMud = new GirlMud(this.rig); // and how that looks on her
     this.root = this.rig.root;
@@ -227,7 +228,12 @@ export class Companion {
     this.outfit = reshirt(this.rig, this.outfit, color);
   }
 
-  /** How many of her polo's buttons are undone (0 to 5, all of them; the garment polo, ?polo=shell), refitting it. */
+  /** Fits her clothes as her outfit stands (when nothing else is going to). */
+  dress() {
+    refitOutfit(this.rig, this.outfit);
+  }
+
+  /** How many of her polo's buttons are undone (0 to 5, all of them), refitting it. */
   setPoloOpen(n) {
     this.outfit = { ...this.outfit, poloOpen: Math.max(0, Math.min(5, Math.round(n))) };
     refitOutfit(this.rig, this.outfit);

@@ -1,6 +1,5 @@
-// The girls' knitted tops, the polo and the barn jumper, as garments over her body rather than colour painted on it (the spike
-// behind ?polo=shell; see DECISIONS.md, "The polo as a garment"). Pure: it takes her body as plain data (garmentMesh.js) and
-// gives back arrays.
+// The girls' knitted tops, the polo and the barn jumper, as garments over her body rather than colour painted on it (see
+// DECISIONS.md, "The polo as a garment"). Pure: it takes her body as plain data (garmentMesh.js) and gives back arrays.
 //
 // A top is her torso and arms, rounded (subdivided) and cut along smooth lines: a round neck at the base of her neck, the
 // sleeves square across the arm, and a hem. The edges finish in bands a shade darker, turned in so they have some thickness.

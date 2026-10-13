@@ -3587,6 +3587,18 @@ Jamie: the placket still didn't look joined to the top of the shirt, the top but
 - TODO 201: other outfits and layers (a plaid shirt instead of or over the polo, a double polo, a popped collar).
 - Checked headless: Amy done up, Jess with one and three undone straight on, Amy in her own dark green with the logo, the rail on two farms (seed 3 navy and grey, Amy 1 and Jess 4 undone; seed 11 bottle green and rust, Amy 1 and Jess 3). Not checked: driving, and the clothes in motion.
 
+### The garments made the default (2026-10-13)
+
+Jamie: the orange polo was more of a red; take the flag away and make the garments the default, deleting the old code.
+
+- **Colour.** The painted polo's colour was its hex's linear value written into the texture as if it were sRGB, which comes out darker and redder (that's why Amy's navy was once lightened to #3a5690). The garments carried that over to match the paint under them. They now use the colour as it is, the quad's own, so the orange quad's girl wears orange; the shirt band of the body's paint under them is written the same way (`recolourTexture`, the shirt band only: hair and shoes keep their old reading, which their colours were chosen for). The logo's thread turns dark on the lighter shirts this makes.
+- **Deleted**: the flag (`?polo=shell`), the painted polo's placket and buttons (`addPoloFront`, `chestPoint`, `shirtFrontTop`), the old jumper (`addJumper`) and shorts (`addShorts`), `skinnedGarment` (only they used it), the old neckline (`necklineAt` and its constants, and `cutNeckline`'s own line: it now always takes the polo's), `shirtVertices` and `shirtColour`. The outfits' `collar` key is now `polo`. Kept: the wellies (`fittedShell`, rays at a posed copy of the body), the palette recolour and the neckline strip under the polo. The lane's visitors use the plain original outfit, and the neighbour's jumper is the garment jumper.
+- **Fitted once.** Each girl's garments were built when she was made and again straight after, when her shirt colour and buttons are dealt. They're now only fitted then (`applyOutfit`'s `garments: false`, then `setShirt`, or `Companion.dress` for a girl with no favourite quad). Load to "Ready": 2.38 to 2.54 s (2.52 and 2.69 before, building twice), at about the 2.5 s budget.
+- **Mud.** The mud and dust drawn on a girl (`girlMud`) are on her body's material, so under her polo they don't show now, as they never did under her shorts or wellies; her face and arms still show them. Mud on the clothes themselves is left for later.
+- The FAQ's notes on the girls say their polos are the colours of their favourite quads (they said navy and burgundy, true only before the shirts matched the quads), with a new answer on why the shirts and buttons change between farms; the README likewise.
+- Checked headless: both girls full length in their own colours (Amy green, Jess red on seed 3), both in the orange quad's orange, Jess's open neck in yellow, the game loading with no errors of its own.
+
+
 
 
 

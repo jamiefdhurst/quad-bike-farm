@@ -108,7 +108,7 @@ describe('jumper lines and outfit', () => {
     const { OUTFITS, withJumper } = await import('../src/npc/outfit.js');
     const on = withJumper(OUTFITS.farmPolo, '#7b7d80');
     expect(on.jumper).toBe('#7b7d80');
-    expect(on.collar).toBe(OUTFITS.farmPolo.collar);
+    expect(on.polo).toBe(OUTFITS.farmPolo.polo);
     expect(withJumper(on, null).jumper).toBeUndefined();
     expect(OUTFITS.farmPolo.jumper).toBeUndefined();
   });

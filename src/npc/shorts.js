@@ -1,5 +1,5 @@
-// The girls' denim shorts as a garment cut over the body (the spike behind ?polo=shell, with the polo in polo.js; see
-// DECISIONS.md, "The polo as a garment"). Pure, on her body as plain data (garmentMesh.js).
+// The girls' denim shorts as a garment cut over the body, with the polo (polo.js) tucked in (see DECISIONS.md, "The polo as a
+// garment"). Pure, on her body as plain data (garmentMesh.js).
 //
 // Her hips and thighs, cut level at the waist and square across each thigh, with a waistband and turned-in edges. The polo is
 // tucked into them: at the waist both are her own faces pushed straight out along the same normals (the shorts further), so

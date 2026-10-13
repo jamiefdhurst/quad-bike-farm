@@ -3,10 +3,10 @@ import { OUTFITS, withShirt } from '../src/npc/outfit.js';
 import { QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
 
 describe('withShirt', () => {
-  it('recolours the shirt and collar together and leaves the rest alone', () => {
+  it('recolours the shirt and the polo together and leaves the rest alone', () => {
     const out = withShirt(OUTFITS.farmPolo, 0xe9c21b);
     expect(out.colors.shirt).toBe('#e9c21b');
-    expect(out.collar).toBe('#e9c21b');
+    expect(out.polo).toBe('#e9c21b');
     expect(out.colors.shoes).toBe(OUTFITS.farmPolo.colors.shoes);
     expect(out.shorts).toBe(OUTFITS.farmPolo.shorts);
   });

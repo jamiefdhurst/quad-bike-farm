@@ -917,7 +917,7 @@ export class Game {
       c.voice.favourite = c.claimedSpec; // the one she likes best is the one she says is hers
       const mine = this.girlUnits.find((u) => u.spec.id === c.claimedSpec);
       if (mine) c.setShirt(mine.spec.bodyColor); // and her shirt is its colour, so you can see why
-      else if (c.outfit.poloOpen) c.setPoloOpen(c.outfit.poloOpen); // no shirt colour to set: fitted for her buttons on their own
+      else c.dress(); // no favourite quad, so no shirt colour to wait for: her clothes are fitted as they are
       c.voice.names = this.quadNames;
       c.borrowPick = (specs) => this.ownership.borrowPick(id, specs);
     }

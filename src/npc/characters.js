@@ -21,7 +21,7 @@ export const CHARACTERS = [
     id: 'amy',
     name: 'Amy',
     mapColour: '#3a5690', // her blue polo, for her dot on the farm map
-    poloOpen: [0, 1], // buttons of her polo undone, dealt for each farm between these (the garment polo, ?polo=shell)
+    poloOpen: [0, 1], // buttons of her polo undone, dealt for each farm between these
     params: {
       outfit: 'farmPolo',
       boredShowOffChance: 0.04,
