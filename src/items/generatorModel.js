@@ -71,11 +71,12 @@ export function buildGeneratorModel() {
   for (let i = 0; i < 5; i++) part(new THREE.BoxGeometry(0.004, 0.2, 0.3), dark, 0.0 + i * 0.015, 0.32, 0.2); // slats on the cover's front edge
   part(new THREE.CylinderGeometry(0.19, 0.19, 0.4, 20), dark, -0.27, 0.36, -0.02, [0, 0, Math.PI / 2]);
   for (let i = 0; i < 3; i++) part(new THREE.CylinderGeometry(0.195, 0.195, 0.012, 20), grey, -0.4 + i * 0.12, 0.36, -0.02, [0, 0, Math.PI / 2]); // cooling rings
-  // The recoil starter housing on the end, with the handle on its cord.
-  part(new THREE.CylinderGeometry(0.11, 0.11, 0.07, 16), red, W / 2 - 0.075, 0.35, -0.02, [0, 0, Math.PI / 2]);
-  part(new THREE.CylinderGeometry(0.045, 0.045, 0.012, 12), dark, W / 2 - 0.036, 0.35, -0.02, [0, 0, Math.PI / 2]);
+  // The recoil starter housing on the end, with the handle on its cord. It stands 1.5 cm proud of the engine cover's end: flush, its back face shared a plane
+  // with the cover's and the grey and the red flickered.
+  part(new THREE.CylinderGeometry(0.11, 0.11, 0.07, 16), red, W / 2 - 0.055, 0.35, -0.02, [0, 0, Math.PI / 2]);
+  part(new THREE.CylinderGeometry(0.045, 0.045, 0.012, 12), dark, W / 2 - 0.016, 0.35, -0.02, [0, 0, Math.PI / 2]);
   const cord = new THREE.Group();
-  cord.position.set(W / 2 - 0.04, 0.32, -0.02);
+  cord.position.set(W / 2 - 0.02, 0.32, -0.02);
   g.add(cord);
   const cordLine = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.1, 6), rubber);
   cordLine.rotation.z = Math.PI / 2;

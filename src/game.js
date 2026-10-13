@@ -126,7 +126,7 @@ import { FaultShout, SHOUT_PARAM_RANGES } from './npc/shoutFault.js';
 import { Haze, HAZE_PARAM_RANGES } from './world/haze.js';
 import { HazeLayer } from './effects/hazeLayer.js';
 import { BarnFumes, FUMES_PARAM_RANGES } from './world/barnFumes.js';
-import { barnShape } from './world/barn.js';
+import { barnShape, underRoof } from './world/barn.js';
 import { Race, RACE_PARAM_RANGES, planLap, YouRun, youOnGrid, pickQuads } from './npc/race.js';
 import { DEFAULT_OUTING_PARAMS, OUTING_PARAM_RANGES, pickOuting, outingSpots } from './npc/outings.js';
 import { ASK_PATIENCE, ASK_KINDS, askProblems, askLine } from './npc/asking.js';
@@ -242,7 +242,7 @@ import { Notebook } from './workshop/notebook.js';
 import { SparesShelf } from './workshop/sparesShelf.js';
 import { MuckLoad, DEFAULT_MUCK_PARAMS, MUCK_PARAM_RANGES, JobBoard, DEFAULT_JOB_BOARD_PARAMS, JOB_BOARD_PARAM_RANGES, availableJobs } from './world/farmJobs.js';
 import { JobBoardView } from './world/jobBoard.js';
-import { DEFAULT_SPIKE_PARAMS, SPIKE_PARAM_RANGES } from './items/baleSpike.js';
+import { DEFAULT_SPIKE_PARAMS, SPIKE_PARAM_RANGES, keepOutside } from './items/baleSpike.js';
 import { BaleSpikeRig } from './items/baleSpikeRig.js';
 import { dutchBarnShape } from './world/outbuildings.js';
 import { Bonfire, DEFAULT_BONFIRE_PARAMS, BONFIRE_PARAM_RANGES, logSeats } from './world/bonfire.js';
@@ -1278,7 +1278,7 @@ export class Game {
       tractor: this.tractorUnit?.quad ?? null,
       params: this.spikeParams,
     });
-    this.baleRig.restore(this.farm.save?.bales);
+    this.baleRig.restore(keepOutside(this.farm.save?.bales, (x, z) => underRoof(this.world.layout, x, z))); // not one left where the barn now stands
     this.siloRect = dutchBarnShape(this.world.layout)?.open ?? null;
     registerTuning('Bale spike', this.spikeParams, SPIKE_PARAM_RANGES);
     this.setUpBonfire();

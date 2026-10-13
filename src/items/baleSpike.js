@@ -186,6 +186,11 @@ export class BaleYard {
   }
 }
 
+/** The saved bales that are not inside `isInside(x, z)` (a building put up where one was left): those go back to where they start. */
+export function keepOutside(saved, isInside) {
+  return Array.isArray(saved) ? saved.filter((row) => !(Array.isArray(row) && isInside(row[1], row[2]))) : saved;
+}
+
 /** Whether the silage job has run: `needed` bales standing in the target area. */
 export function silageDone(yard, rect, needed) {
   return yard.countIn(rect) >= needed;

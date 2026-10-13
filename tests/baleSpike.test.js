@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { BaleYard, SpikeLift, DEFAULT_SPIKE_PARAMS as P, SPIKE_PARAM_RANGES, BALE_SHAPE as S, silageDone } from '../src/items/baleSpike.js';
+import { BaleYard, SpikeLift, DEFAULT_SPIKE_PARAMS as P, SPIKE_PARAM_RANGES, BALE_SHAPE as S, silageDone, keepOutside } from '../src/items/baleSpike.js';
 
 const flat = () => 0;
 const mid = S.height / 2 - S.sink;
@@ -178,5 +178,14 @@ describe('what the farm keeps of the bales', () => {
     const saved = y.toJSON();
     y.restore(saved, flat);
     expect(y.get('a').held).toBe(false);
+  });
+});
+
+describe('saved bales left where a building now stands', () => {
+  it('are dropped, so they start in their usual place, and the rest are kept', () => {
+    const saved = [['silage0', -65, 70, 0, 0], ['silage1', 10, 10, 0, 0], 'junk'];
+    const kept = keepOutside(saved, (x, z) => x < -60 && z > 60);
+    expect(kept).toEqual([['silage1', 10, 10, 0, 0], 'junk']);
+    expect(keepOutside(undefined, () => true)).toBeUndefined();
   });
 });
