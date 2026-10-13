@@ -199,7 +199,8 @@ import { FlockView } from './world/flockView.js';
 import { SheepAudio } from './audio/sheepAudio.js';
 import { GeneratorAudio } from './audio/generatorAudio.js';
 import { Generator, GENERATOR_PARAM_RANGES } from './items/generator.js';
-import { buildGeneratorModel, GENERATOR_SIZE } from './items/generatorModel.js';
+import { buildGeneratorModel, GENERATOR_SIZE, GENERATOR_EXHAUST } from './items/generatorModel.js';
+import { ExhaustSmoke, DEFAULT_SMOKE_PARAMS } from './effects/exhaustSmoke.js';
 import { Rabbits, Pheasants, hedgeSpots, DEFAULT_WILDLIFE_PARAMS, WILDLIFE_PARAM_RANGES } from './world/wildlife.js';
 import { WildlifeView } from './world/wildlifeView.js';
 import { WildlifeAudio } from './audio/wildlifeAudio.js';
@@ -4931,6 +4932,7 @@ export class Game {
       u.value.copy(m.userData.baseLight).multiplyScalar(light);
     };
     dim(this.bonfireView?.smoke.material, 'uLight');
+    dim(this.generatorSmoke?.material, 'uLight');
     for (const unit of this.units) {
       for (const fx of [unit.smoke, unit.steam, unit.heatSteam]) dim(fx?.material, 'uLight');
       dim(unit.dustCloud?.material, 'uColor');
@@ -6584,7 +6586,7 @@ export class Game {
 
   /** Which open vehicle (its unit) a girl is sat on or driving, or null (npc/headgear.js is about those). */
   girlRide(c) {
-    if (!c.quad || !c.fsm.is('driving', 'seated', 'shuffling')) return null;
+    if (!c.quad || !c.fsm.is('mounting', 'driving', 'seated', 'shuffling')) return null;
     const unit = this.units.find((u) => u.quad === c.quad);
     return unit && isOpenVehicle(unit.spec.id) ? unit : null;
   }
@@ -6636,6 +6638,7 @@ export class Game {
     if (!e) return;
     const c = this.companions.find((o) => o.character.id === e.girl);
     if (e.type === 'drop') return void c.voice.say('helmetFell', { chance: 0.7 });
+    if (e.type === 'don' && e.from === 'rack') return void this.helmetHooks.show(this.headgear.onHooks());
     if (e.type !== 'fetch' && e.type !== 'hang') return;
     const hooks = this.world.layout.helmetHooks;
     const act = e.type === 'fetch'
@@ -8305,6 +8308,12 @@ export class Game {
     built.group.rotation.y = L.yaw;
     this.scene.add(built.group);
     this.generatorAt = { x: L.x, y: y + 0.4, z: L.z };
+    // A thin grey-blue puff from the stack while it runs: a few a second, thicker for the first seconds after it catches and with the charger on.
+    this.generatorSmoke = new ExhaustSmoke(this.scene, (x, z) => this.world.heightAt(x, z), { ...DEFAULT_SMOKE_PARAMS, startSize: 0.07, endSize: 1.1, lifeMin: 1.4, lifeMax: 3, buoyancy: 0.5, opacity: 1.7, tint: '#d8e0ea' });
+    built.group.updateMatrixWorld(true);
+    this.generatorSmokeTop = built.group.localToWorld(new THREE.Vector3(GENERATOR_EXHAUST.x, GENERATOR_EXHAUST.y, GENERATOR_EXHAUST.z));
+    this.generatorSmokeBudget = 0;
+    this.generatorNoVel = { x: 0, y: 0, z: 0 };
     this.generatorClock = 0;
     const proxy = new THREE.Mesh(new THREE.BoxGeometry(GENERATOR_SIZE.x, GENERATOR_SIZE.y, GENERATOR_SIZE.z), new THREE.MeshBasicMaterial({ visible: false }));
     proxy.position.y = GENERATOR_SIZE.y / 2;
@@ -8385,6 +8394,19 @@ export class Game {
       this.generatorAudio.ensureLoop(this.generatorAt);
       this.generatorAudio.update(this.generatorAt, this.world.indoor(this.camera.position.x, this.camera.position.z));
     }
+    // The smoke: puffs from the stack leaning downwind, the first few seconds after it catches the thickest.
+    const sm = this.generatorSmoke;
+    sm.params.windX = this.wind.x;
+    sm.params.windZ = this.wind.z;
+    const choke = g.running ? Math.max(0, 1 - g.ranFor / 4) : 0;
+    this.generatorSmokeBudget = Math.min(this.generatorSmokeBudget + (g.running ? 3 + 5 * choke + 3 * (this.charger.busy ? 1 : 0) : 0) * dt, 3);
+    sm.tipPos.copy(this.generatorSmokeTop);
+    sm.tipDir.set(0, 1, 0.1);
+    while (this.generatorSmokeBudget >= 1) {
+      this.generatorSmokeBudget -= 1;
+      sm.spawn(0.2 + 0.25 * choke + (g.fuel < g.params.sputterAt ? 0.2 : 0), 0.55 - 0.3 * choke, 0.7 + Math.random() * 0.5, this.generatorNoVel, 0);
+    }
+    sm.simulate(dt);
     this.generatorModel.set({ level: g.level, running: g.running, pull: g.pulling > 0 ? Math.sin((1 - g.pulling / g.params.pullSeconds) * Math.PI) : 0, time: this.generatorClock });
   }
 
@@ -9079,5 +9101,6 @@ export class Game {
   updateSmokeScale() {
     for (const unit of this.units ?? []) unit.setViewport(window.innerHeight * this.renderer.getPixelRatio(), this.camera.fov);
     this.bonfireView?.setViewport(window.innerHeight * this.renderer.getPixelRatio(), this.camera.fov);
+    this.generatorSmoke?.setViewport(window.innerHeight * this.renderer.getPixelRatio(), this.camera.fov);
   }
 }

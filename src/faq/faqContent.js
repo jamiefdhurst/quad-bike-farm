@@ -1042,12 +1042,12 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why is the barn dark, and why has the charger gone dead?',
-        a: `The barn light and the bench charger both run off the generator outside the barn's north-east corner, and it is switched off every morning. Walk up to it and press <kbd>E</kbd> to pull the cord. It may take a few pulls. If nothing happens at all and it only wheezes, the tank is empty.`,
+        a: `The barn light and the bench charger both run off the generator along the barn's south wall, round the back, and it is switched off every morning. Walk up to it and press <kbd>E</kbd> to pull the cord. It may take a few pulls. If nothing happens at all and it only wheezes, the tank is empty.`,
         tip: 'The barn light and the charger need the generator running: pull its cord with E.',
       },
       {
         q: 'How do I refuel the generator?',
-        a: `Switch it off (<kbd>E</kbd>), pick up the dark green diesel can, and hold <kbd>E</kbd> at the generator. It takes red diesel only, so the red petrol can and the yellow pre-mix can are refused, and it will not take fuel while it is running. The can fills at the diesel tank by the barn like the others. A full tank (5 litres) lasts about twenty minutes, a little less while the charger is on.`,
+        a: `Switch it off (<kbd>E</kbd>), pick up the dark green diesel can, and hold <kbd>E</kbd> at the generator. It takes red diesel only, so the red petrol can and the yellow pre-mix can are refused, and it will not take fuel while it is running. The can fills at the diesel tank by the barn like the others. A full tank (5 litres) lasts about forty minutes, a little less while the charger is on. It puffs a little grey smoke from its stack while it runs, more when it catches and when the charger is on.`,
       },
       {
         q: 'Why did the generator stop?',

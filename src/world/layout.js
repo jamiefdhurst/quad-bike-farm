@@ -144,8 +144,8 @@ export const LAYOUT = {
   // the girls sit on stand round it. `brushwood` is where the hedge cuttings lie, as [x, z, yaw], along the inside of the south hedge: carry three to the pile.
   bonfire: { x: -6, z: 71, seatRadius: 2.4 },
   brushwood: [[-30, 77, 0.3], [-20, 77.5, 2], [-12, 77, 1.1], [2, 77.5, 0.5], [14, 77, 2.5], [26, 77.5, 1.7]],
-  // The diesel generator outside the barn's north-east corner, its panel facing the yard (items/generator.js): it powers the barn bulb and the charger.
-  generator: { x: -58.3, z: 53.6, yaw: Math.PI / 2, stand: { x: -57.3, z: 52.9 } }, // `stand`: where a girl stands to pull the cord
+  // The diesel generator along the barn's south wall, towards the back, its panel facing away from the wall (items/generator.js): it powers the barn bulb and the charger.
+  generator: { x: -63.5, z: 66.5, yaw: 0, stand: { x: -62.8, z: 67.5 } }, // `stand`: where a girl stands to pull the cord
   // The clock and weather station (world/weatherStation.js) on the north wall past the door end of the bench, at eye height above the floor.
   weatherStation: { x: -59.85, y: 1.65 },
   // The freestanding clothes rack by the barn's south wall where the two jumpers hang (npc/jumpers.js): its bar runs along x at height `y`, `length`

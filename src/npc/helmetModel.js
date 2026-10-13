@@ -6,8 +6,8 @@ import * as THREE from 'three';
 
 /** What each wearer's helmet looks like: the shell, the stripe, the strap and whether the goggles sit on the eyes or on the shell. */
 export const HELMET_LOOKS = {
-  amy: { shell: '#1f3a4a', stripe: '#d9d9d2', strap: '#161616', goggles: 'down', lens: '#9fd0e8', scuff: 0.1 },
-  jess: { shell: '#e0b81c', stripe: '#8e2238', strap: '#262626', goggles: 'up', lens: '#e8b45a', scuff: 0.55 },
+  amy: { shell: '#1f3a4a', stripe: '#d9d9d2', strap: '#161616', goggles: 'down', lens: '#bfe4f4', scuff: 0.1 },
+  jess: { shell: '#e0b81c', stripe: '#8e2238', strap: '#262626', goggles: 'up', lens: '#f0c070', scuff: 0.55 },
   you: { shell: '#a8282c', stripe: '#e8e8e0', strap: '#1a1a1a', goggles: null, lens: '#9fd0e8', scuff: 0.3 },
 };
 
@@ -25,21 +25,60 @@ const mat = (hex, rough = 0.5, metal = 0, extra = {}) => {
   return mats.get(key);
 };
 
-/** The goggles: a rubber frame and a tinted lens facing +z, centred, about 0.14 m across, with an elastic round the back. */
+/** A goggle outline: a rounded rectangle with a dip for the nose, drawn into `path` (a Shape, or a Path for the hole). */
+function outline(path, w, h, r, nose) {
+  const x = w / 2;
+  const y = h / 2;
+  path.moveTo(-x + r, -y);
+  path.lineTo(-nose, -y);
+  path.quadraticCurveTo(0, -y + nose * 0.7, nose, -y);
+  path.lineTo(x - r, -y);
+  path.quadraticCurveTo(x, -y, x, -y + r);
+  path.lineTo(x, y - r);
+  path.quadraticCurveTo(x, y, x - r, y);
+  path.lineTo(-x + r, y);
+  path.quadraticCurveTo(-x, y, -x, y - r);
+  path.lineTo(-x, -y + r);
+  path.quadraticCurveTo(-x, -y, -x + r, -y);
+}
+
+/** Bends a flat plate round a face: the middle stands out, the ends curve back. */
+function wrap(geo, bend) {
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) pos.setZ(i, pos.getZ(i) - bend * pos.getX(i) * pos.getX(i));
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/**
+ * The goggles: a thin rubber rim round an open, tinted lens (you see the eyes through it), curved to wrap a face, with a dip for the nose
+ * and an elastic going back round the head from each end. Faces +z, centred, about 0.15 m across.
+ */
 export function buildGoggles(look = GOGGLE_LOOK, strapRadius = 0.12) {
   const g = new THREE.Group();
   g.name = 'goggles';
-  const frame = new THREE.Mesh(new THREE.BoxGeometry(0.135, 0.055, 0.03), mat(look.frame, 0.85));
-  frame.castShadow = true;
-  g.add(frame);
-  const lens = new THREE.Mesh(new THREE.BoxGeometry(0.115, 0.04, 0.012), mat(look.lens, 0.1, 0.1, { transparent: true, opacity: 0.55 }));
-  lens.position.z = 0.014;
+  const W = 0.15;
+  const H = 0.062;
+  const inset = 0.008;
+  const outer = new THREE.Shape();
+  outline(outer, W, H, 0.022, 0.014);
+  const hole = new THREE.Path();
+  outline(hole, W - inset * 2, H - inset * 2, 0.016, 0.012);
+  outer.holes.push(hole);
+  const depth = 0.02;
+  const rim = new THREE.Mesh(wrap(new THREE.ExtrudeGeometry(outer, { depth, bevelEnabled: false, curveSegments: 6 }).translate(0, 0, -depth / 2), 3.2), mat(look.frame, 0.85, 0, { side: THREE.DoubleSide }));
+  rim.castShadow = true;
+  g.add(rim);
+  const pane = new THREE.Shape();
+  outline(pane, W - inset * 2 + 0.002, H - inset * 2 + 0.002, 0.016, 0.012);
+  const lens = new THREE.Mesh(wrap(new THREE.ShapeGeometry(pane, 6).translate(0, 0, 0.002), 3.2), mat(look.lens, 0.05, 0.1, { transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }));
   g.add(lens);
   // The elastic: a flat loop going back round the head from each end.
-  const strap = new THREE.Mesh(new THREE.TorusGeometry(strapRadius, 0.011, 4, 20, Math.PI * 1.55), mat(look.strap ?? look.frame, 0.9));
+  const strap = new THREE.Mesh(new THREE.TorusGeometry(strapRadius, 0.009, 4, 20, Math.PI * 1.55), mat(look.strap ?? look.frame, 0.9));
   strap.rotation.set(Math.PI / 2, 0, Math.PI * 0.725 + Math.PI);
   strap.position.set(0, 0, -strapRadius + 0.012);
   g.add(strap);
+  g.userData.strap = strap;
   return g;
 }
 
@@ -75,6 +114,12 @@ export function buildHelmet(who, { goggles } = {}) {
   peak.rotation.x = 0.18;
   peak.castShadow = true;
   g.add(peak);
+  // A dark padded liner across the open underside, so nothing shows of the inside of the shell from below.
+  const liner = new THREE.Mesh(new THREE.CircleGeometry(1, 20), mat('#2b2b2b', 0.95, 0, { side: THREE.DoubleSide }));
+  liner.rotation.x = Math.PI / 2;
+  liner.position.y = 0.004;
+  liner.scale.set(RADIUS * 0.97, DEPTH * 0.97, 1);
+  g.add(liner);
   // A rolled rim round the bottom, and the chin strap hanging from each side.
   const rim = new THREE.Mesh(new THREE.TorusGeometry(1, 0.007, 5, 28), mat(look.strap, 0.9));
   rim.rotation.x = Math.PI / 2;
@@ -91,11 +136,12 @@ export function buildHelmet(who, { goggles } = {}) {
   let gg = null;
   if (mode) {
     gg = buildGoggles({ frame: '#202020', lens: look.lens, strap: look.strap }, RADIUS);
-    if (mode === 'down') gg.position.set(0, -0.035, DEPTH - 0.004);
+    if (mode === 'down') gg.position.set(0, -0.034, DEPTH - 0.006);
     else {
       // Pushed up: the lens turned up against the front of the shell, the elastic still round it.
       gg.position.set(0, HEIGHT * 0.42, DEPTH * 0.9);
       gg.rotation.x = -0.6;
+      gg.userData.strap.visible = false; // the elastic would float off the shell: it is round the back of the helmet, out of sight
     }
     g.add(gg);
   }

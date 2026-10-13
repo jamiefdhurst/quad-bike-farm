@@ -5,10 +5,11 @@
 // Pure logic: the game says where the girls and the vehicles are and does the walking, the drawing and the talking this module asks for.
 
 export const DEFAULT_HEADGEAR_PARAMS = {
-  startAfter: 25, // seconds into the game before a girl thinks of fetching her helmet
-  weight: 1, // how much she cares for fetching it once she has none (times her own helmetWeight, and weighed by chooser.js)
+  startAfter: 5, // seconds into the game before a girl thinks of fetching her helmet
+  weight: 2, // how much she cares for fetching it once she has none (times her own helmetWeight, and weighed by chooser.js)
   range: 140, // metres: how far she'll walk to the hooks for it
   timeout: 60, // seconds she has to get to the hooks before it's forgotten
+  grabRange: 25, // metres: getting on without hers, she takes it off the hooks on the way if they are this close
   pickUpRange: 30, // metres: a helmet she left lying this close is picked up as she gets on
   footMax: 90, // seconds she keeps it on, stood about on foot, before it comes off and goes on the ground
   dropSpeed: 2.5, // m/s: a helmet left on the seat falls off once the vehicle goes faster than this
@@ -24,6 +25,7 @@ export const DEFAULT_HEADGEAR_PARAMS = {
 
 export const HEADGEAR_PARAM_RANGES = {
   startAfter: [0, 600, 5],
+  grabRange: [0, 100, 1],
   weight: [0, 3, 0.05],
   range: [10, 300, 5],
   timeout: [10, 180, 5],
@@ -137,6 +139,9 @@ export class Headgear {
         const near = at && Math.hypot((at.x ?? c.x) - c.x, (at.z ?? c.z) - c.z) <= p.pickUpRange;
         if (near || (g.place === 'seat' && g.vehicle === c.vehicle)) {
           events.push({ type: 'don', girl: c.id, from: g.place });
+          this.put(c.id);
+        } else if (g.place === 'rack' && ctx.hooks && Math.hypot(ctx.hooks.x - c.x, ctx.hooks.z - c.z) <= p.grabRange) {
+          events.push({ type: 'don', girl: c.id, from: 'rack' }); // not going without: she grabs it on her way past
           this.put(c.id);
         }
       } else if (!g.riding && was && g.place === 'head') {

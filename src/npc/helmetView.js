@@ -93,8 +93,8 @@ export class HelmetView {
     if (!on) return;
     w.helmet.scale.setScalar(w.s * fit);
     const target = tipBack ? 1 : 0;
-    w.inner.rotation.x = THREE.MathUtils.lerp(w.inner.rotation.x, -0.3 * target, 0.2);
-    w.inner.position.y = lift + THREE.MathUtils.lerp(w.inner.position.y - (w.lift ?? 0), 0.025 * target, 0.2);
+    w.inner.rotation.x = THREE.MathUtils.lerp(w.inner.rotation.x, -0.18 * target, 0.2);
+    w.inner.position.y = lift + THREE.MathUtils.lerp(w.inner.position.y - (w.lift ?? 0), 0.01 * target, 0.2);
     w.lift = lift;
     w.inner.position.z = THREE.MathUtils.lerp(w.inner.position.z, -0.015 * target, 0.2);
   }

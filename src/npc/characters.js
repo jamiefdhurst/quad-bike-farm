@@ -78,8 +78,8 @@ export const CHARACTERS = [
       phoneMoodSeconds: 150, // and she is over it quickly
       benchWeight: 0.7, // has a go at the bench now and then, and hands it back
       helmetWeight: 0.5, // fetches hers when she remembers
-      helmetSize: 1.2, // over her big black hair
-      helmetRaise: 0.025,
+      helmetSize: 1.05, // over her big black hair
+      helmetRaise: 0,
       helmetLeave: 0.9, // and off it comes the moment she's off the quad
       helmetGround: 0.6, // usually chucked on the grass
       generatorWeight: 0.6, // starts the generator if she is bored of the dark, with a lot of tugging and swearing

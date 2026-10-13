@@ -20,7 +20,7 @@ describe('a girl and her helmet', () => {
   it('weighs the offer by her own keenness, and stops offering once she is on her way or has it', () => {
     const h = make();
     h.update(30, { girls: [girl()], vehicles: {}, hooks });
-    expect(h.offers({ girls: [girl({ weight: 2 })], hooks })[0].weight).toBe(2);
+    expect(h.offers({ girls: [girl({ weight: 2 })], hooks })[0].weight).toBe(DEFAULT_HEADGEAR_PARAMS.weight * 2);
     h.take({ girl: 'amy' });
     expect(h.offers({ girls: [girl()], hooks })).toEqual([]);
     h.put('amy');
@@ -82,8 +82,14 @@ describe('a girl and her helmet', () => {
     expect(far.wearing('amy')).toBe(false);
 
     const rack = make();
-    step(rack, girl());
-    expect(step(rack, girl({ riding: true, vehicle: 'red' }))).toEqual([]);
+    step(rack, girl({ x: 500 }));
+    expect(step(rack, girl({ x: 500, riding: true, vehicle: 'red' }))).toEqual([]);
+
+    // Near the hooks she takes it off them on her way rather than ride bare-headed.
+    const grab = make();
+    step(grab, girl());
+    expect(step(grab, girl({ riding: true, vehicle: 'red' }))).toEqual([{ type: 'don', girl: 'amy', from: 'rack' }]);
+    expect(grab.wearing('amy')).toBe(true);
   });
 
   it('puts on the helmet she left on the very seat she gets back on, however far the vehicle has gone', () => {

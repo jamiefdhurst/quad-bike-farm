@@ -5,8 +5,8 @@
 export const DEFAULT_GENERATOR_PARAMS = {
   tank: 5, // litres the tank holds
   startLitres: 2.5, // what is in it on a fresh farm; after that the save keeps it
-  burn: 0.004, // litres a second running with nothing on it: a full tank lasts about twenty minutes
-  loadBurn: 0.0025, // and this much more while the charger is drawing on it
+  burn: 0.002, // litres a second running with nothing on it: a full tank lasts about forty minutes
+  loadBurn: 0.001, // and this much more while the charger is drawing on it
   pourRate: 0.4, // litres a second from a jerry can
   catchChance: 0.45, // the first pull of the cord catches this often
   warmUp: 0.2, // each pull that doesn't catch makes the next one likelier by this much
