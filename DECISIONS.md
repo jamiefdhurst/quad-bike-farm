@@ -3301,9 +3301,10 @@ What was built:
 - **A boomier Corsa**: a new audio param, `pulseDrone` (dB) at `pulseDroneFreq` (Hz), a low boost on the pulse sound that is full at idle and half of it high up the revs. The Corsa has 9 dB at 75 Hz and `recVolume` 1.1: offline its idle is 3.7 dB louder, nearly all of it below 150 Hz, and full throttle half a dB. Renders at 6, 9 and 12 dB are in `.scratch/cars-sound/renders/` (`corsa-revs-drone*.wav`). A first go: more refinement later.
 
 
-## The Corsa's dash, higher (TODO 54)
+## The Corsa's dash and idle (TODO 54)
 
-- Jamie: the Corsa's dash was too low to see the warning lights over the steering wheel. Measured from the driver's eye (`carDashClearance` in `carModel.js`), the lamp strip passed only about 1.5 cm above the wheel's top rim, so the rim's thickness hid it. The Corsa's binnacle (hood, back and dial) now stands 7 cm higher (`dashLift`) and its column comes out 3.5 cm lower (`columnY` 0.54, was 0.575), which puts the strip about 10 cm clear. A test holds it above 6 cm. The Fiesta is unchanged (`dashLift` 0): its dials are seen through the hoop of its wheel, by design. Not checked by screenshot.
+- Jamie: the Corsa's warning lights were hidden behind the wheel. A first go raised the binnacle and lowered the column; Jamie then found the column far too low and asked for the Fiesta's way instead: the dials seen through the hoop of the wheel. The column is back up (`columnY` 0.71, was 0.575) and `carDashThroughWheel` in `carModel.js` measures where the sight line from the driver's eye to the binnacle crosses the wheel's plane: the lamp strip at 0.062 above the middle (the boss reaches 0.035) and the top of the dials at 0.136 (the rim's inner edge is 0.15). A test holds both cars to that, so a change to the seat, wheel or dash that hides the dials fails. Not checked by screenshot.
+- **Idle too high when warm**: the injection's fast idle (`coldIdleRpm` 450) fell away linearly with temperature, so at half way up the gauge the Corsa still idled about 225 rpm high and took the full 300 s to reach 880. It now falls with the cube of how cold it is (`engineModel.js`; only injected engines use it): about 1,110 rpm at 0.2, about 30 rpm over 880 by 0.6 and 7 by 0.75. Cold starts are as before.
 
 ## Plug-saver for the two-strokes (TODO 31)
 

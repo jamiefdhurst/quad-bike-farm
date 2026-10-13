@@ -745,7 +745,7 @@ export class EngineModel {
     this.idleTarget =
       p.idleRpmWarm +
       p.chokeIdleRpm * this.choke * lerp(p.chokeIdleColdFactor, 1, T) +
-      p.coldIdleRpm * (1 - this.temperature) -
+      p.coldIdleRpm * (1 - this.temperature) ** 3 - // injection lets the fast idle drop away early: it is near its warm idle by half way up the gauge
       p.leanIdleDrop * this.lean +
       hunt +
       roughHunt +

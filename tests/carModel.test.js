@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { buildCarModel, carLayout, sideShape, poseCarControls, poseCarSeats, carEyeToGlass, carDashClearance, CARS, CAR_GROUND_OFFSET } from '../src/vehicle/carModel.js';
+import { buildCarModel, carLayout, sideShape, poseCarControls, poseCarSeats, carEyeToGlass, carDashThroughWheel, CARS, CAR_GROUND_OFFSET } from '../src/vehicle/carModel.js';
 import { landyEyeToGlass } from '../src/vehicle/landRoverModel.js';
 import { poseUtvBelts } from '../src/vehicle/utvModel.js';
 import { FIESTA_SPEC, CORSA_SPEC } from '../src/vehicle/quadSpecs.js';
+import { EngineModel } from '../src/engine/engineModel.js';
+import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { DASH_STYLES } from '../src/vehicle/dash.js';
 import { AUDIO_PARAM_RANGES, DEFAULT_AUDIO_PARAMS } from '../src/audio/audioParams.js';
 
@@ -67,9 +69,10 @@ describe.each([['fiesta', FIESTA_SPEC], ['corsa', CORSA_SPEC]])('%s', (kind, spe
     expect(spec.vehicle.maxSpeed).toBeGreaterThanOrEqual(spec.gearbox[`topSpeed${spec.gearbox.gears}`] - 1);
   });
 
-  it('shows the Corsa\'s warning lights over the top of the wheel from the driver\'s eye', () => {
-    // The Fiesta's dials are seen through the hoop of its wheel; the Corsa's are meant to show over the rim.
-    if (kind === 'corsa') expect(carDashClearance('corsa')).toBeGreaterThan(0.06);
+  it('shows its dials and lamps through the hoop of the wheel, above the boss and inside the rim, from the driver\'s eye', () => {
+    const { low, high, boss, rimInner } = carDashThroughWheel(kind);
+    expect(low).toBeGreaterThan(boss + 0.015);
+    expect(high).toBeLessThan(rimInner - 0.005);
   });
 
   it('pulls the handbrake up and tips the front seats forward', () => {
@@ -116,3 +119,19 @@ describe('where the driver sits', () => {
   });
 });
 
+const rnd = (s) => () => ((s = (s * 16807) % 2147483647) / 2147483647);
+
+describe('the Corsa\'s injected idle', () => {
+  it('has dropped to within 40 rpm of its warm idle by 0.6 up the gauge, and is still fast when cold', () => {
+    const idleAt = (temperature) => {
+      const e = new EngineModel({ ...DEFAULT_ENGINE_PARAMS, ...CORSA_SPEC.engine, initialTemperature: temperature }, { random: rnd(3) });
+      e.setIgnition(true);
+      for (let t = 0; t < 6 && !e.isRunning; t += 1 / 60) e.update(1 / 60, { starter: true, fuel: 1 });
+      for (let t = 0; t < 3; t += 1 / 60) e.update(1 / 60, { fuel: 1 });
+      expect(e.isRunning).toBe(true);
+      return e.idleTarget;
+    };
+    expect(idleAt(0.6) - CORSA_SPEC.engine.idleRpmWarm).toBeLessThan(40);
+    expect(idleAt(0.2)).toBeGreaterThan(1050);
+  });
+});

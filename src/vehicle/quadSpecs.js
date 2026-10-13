@@ -1491,7 +1491,7 @@ export const CORSA_SPEC = {
   engine: {
     ...CAR_ENGINE,
     injected: true,
-    coldIdleRpm: 450, // the injection holds a cold engine at about 1,300 and lets it down as it warms
+    coldIdleRpm: 450, // the injection holds a cold engine at about 1,300 and lets it down quickly as it warms (cubed: Jamie: it idled high when warm)
     stumbleRate: 0.05, // (half the cars' usual: its idle doesn't lurch about at random)
     erraticHunt: 0.02,
     idleRpmWarm: 880,

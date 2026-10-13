@@ -57,7 +57,6 @@ export const CARS = {
     bPillar: -0.58,
     wheelOut: 0.28, // the steering wheel along its column from the dash face
     columnY: 0.71, // and how high the column comes out of the face
-    dashLift: 0, // the Fiesta's dials are seen through the top of its wheel, so its binnacle stays where it is
     // (Jamie: the windscreen should be as far from your eye as in the Land Rovers, and the mirror ahead of you, not over your head.)
     seats: { driver: { x: -0.36, y: 0.5, z: -0.4 }, left: { x: 0.36, y: 0.5, z: -0.4 } },
     rear: { rearLeft: { x: 0.33, y: 0.52, z: -1.1, door: 'left' }, rearRight: { x: -0.33, y: 0.52, z: -1.1, door: 'driver' } },
@@ -80,8 +79,7 @@ export const CARS = {
     tumble: 0.26,
     bPillar: -0.62,
     wheelOut: 0.32,
-    columnY: 0.54, // lower than Amy's, so the dials and their lamps show over the boss of Jess's small wheel
-    dashLift: 0.07, // the binnacle stands this much higher, so its lamp strip clears the wheel's top rim (a test measures it from your eye)
+    columnY: 0.71, // the dials and their lamps show through the top of Jess's small wheel, above its boss, as the Fiesta's do (a test measures it)
     seats: { driver: { x: -0.37, y: 0.5, z: -0.34 }, left: { x: 0.37, y: 0.5, z: -0.34 } },
     rear: { rearLeft: { x: 0.34, y: 0.52, z: -1.14, door: 'left' }, rearRight: { x: -0.34, y: 0.52, z: -1.14, door: 'driver' } },
     plate: 'L238 FKR', // an L, 1993 to 1994
@@ -133,21 +131,29 @@ export function carEyeToGlass(kind) {
 }
 
 /**
- * How far the sight line from the driver's eye to the bottom of the binnacle (its lamp strip) passes above the top of the wheel's rim,
- * at the rim's distance, in model units: negative when the rim hides the lamps. (Jamie: the Corsa's warning lights were behind the wheel.)
+ * Where the driver's sight line to the binnacle crosses the wheel's plane, as heights up the wheel from its middle (model units): `low` for
+ * the bottom of the lamp strip, `high` for the top of the dials. The dials are meant to be seen through the hoop of the wheel above its boss
+ * and below the rim (as the Fiesta's are), so `low` has to clear the boss and `high` the rim's inner edge. `boss` and `rimInner` give those.
+ * (Jamie: the Corsa's dials were behind the wheel; then its column was too low, so the dash is seen through the wheel, as the Fiesta's.)
  */
-export function carDashClearance(kind) {
+export function carDashThroughWheel(kind) {
   const c = CARS[kind];
+  const fiesta = kind === 'fiesta';
   const th = -1.12; // the column's rake, as buildCarModel sets it
   const face = c.screenBase[0] - 0.32;
-  const rimR = kind === 'fiesta' ? 0.19 : 0.17;
-  const topY = c.columnY + c.wheelOut * Math.cos(th) - rimR * Math.sin(th);
-  const topZ = face + c.wheelOut * Math.sin(th) + rimR * Math.cos(th);
-  const lampY = c.screenBase[1] - 0.02 - 0.03 - 0.05 + c.dashLift;
-  const lampZ = face - 0.04;
+  const rimR = fiesta ? 0.19 : 0.17;
+  const wy = c.columnY + c.wheelOut * Math.cos(th);
+  const wz = face + c.wheelOut * Math.sin(th);
   const ey = c.seats.driver.y + EYE_UP;
   const ez = c.seats.driver.z + 0.02;
-  return ey + ((lampY - ey) * (topZ - ez)) / (lampZ - ez) - topY;
+  const centreY = c.screenBase[1] - 0.05;
+  const at = (dy) => {
+    const dY = centreY + dy - ey;
+    const dZ = face - 0.04 - ez;
+    const t = ((wy - ey) * Math.cos(th) + (wz - ez) * Math.sin(th)) / (dY * Math.cos(th) + dZ * Math.sin(th));
+    return (ey + t * dY - wy) * -Math.sin(th) + (ez + t * dZ - wz) * Math.cos(th);
+  };
+  return { low: at(-0.05), high: at(0.06), boss: fiesta ? 0.03 : 0.035, rimInner: rimR - (fiesta ? 0.014 : 0.02) };
 }
 
 /** The backrests that tip forward to let someone into the back. */
@@ -751,10 +757,10 @@ export function buildCarModel({ kind = 'fiesta', bodyColor = 0x9fb8cc, dashStyle
   const face = zs - 0.32; // the dash face's z: a deep dash, so the wheel reaches back to the driver without sticking far out of it
   rbox(W - 0.12, 0.08, 0.32, 0.03, trim.dash, 0, dashTop, zs - 0.17, root);
   rbox(W - 0.12, 0.3, 0.04, 0.02, trim.dash, 0, dashTop - 0.17, face, root); // its face
-  rbox(0.34, 0.04, 0.12, 0.02, trim.dash, c.seats.driver.x, dashTop + 0.07 + c.dashLift, face - 0.05, root); // the binnacle's hood
-  rbox(0.34, 0.2, 0.04, 0.02, trim.dash, c.seats.driver.x, dashTop - 0.03 + c.dashLift, face - 0.01, root); // its back, round the dials
+  rbox(0.34, 0.04, 0.12, 0.02, trim.dash, c.seats.driver.x, dashTop + 0.07, face - 0.05, root); // the binnacle's hood
+  rbox(0.34, 0.2, 0.04, 0.02, trim.dash, c.seats.driver.x, dashTop - 0.03, face - 0.01, root); // its back, round the dials
   const dash = buildDash(dashStyle);
-  dash.group.position.set(c.seats.driver.x, dashTop - 0.03 + c.dashLift, face - 0.04);
+  dash.group.position.set(c.seats.driver.x, dashTop - 0.03, face - 0.04);
   dash.group.rotation.x = 0.3;
   dash.group.scale.setScalar(1.35); // the binnacle's about 0.3 m wide
   dash.group.userData.keep = true;
