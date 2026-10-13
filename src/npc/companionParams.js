@@ -83,6 +83,12 @@ export const DEFAULT_COMPANION_PARAMS = {
   benchSlip: 0, // the chance, working at the bench on her own, that she makes a hash of it and hands it to you to finish
   dareWeight: 0, // how keen she is to dare you to something daft (dares.js)
   benchWeight: 0, // how keen she is to work on a quad at the barn bench on her own (girlBench.js)
+  helmetWeight: 1, // how keen she is to fetch her helmet from the hooks (headgear.js)
+  helmetLeave: 0.6, // the chance she takes it off again on getting off a vehicle
+  helmetGround: 0.3, // and of those, that she drops it on the ground rather than leaving it on the seat
+  helmetSize: 1, // her helmet's size against the tuning's fit: her hair stands out from her head more or less
+  helmetRaise: 0, // metres her helmet sits above where it would, over her hair
+  helmetNags: 0, // 1 if she tells you off for riding without one
   carGoWeight: 0, // how keen she is to take her own car down the road and back (carGo.js)
   phoneWeight: 0, // how keen she is to wander off and take a call when her phone goes (phoneCalls.js)
   phoneMoodChance: 0.3, // the chance a call she takes is bad news and leaves her in a mood
@@ -398,6 +404,12 @@ export const COMPANION_PARAM_RANGES = {
   benchSlip: [0, 1, 0.05],
   dareWeight: [0, 3, 0.05],
   benchWeight: [0, 3, 0.05],
+  helmetWeight: [0, 3, 0.05],
+  helmetLeave: [0, 1, 0.05],
+  helmetGround: [0, 1, 0.05],
+  helmetSize: [0.7, 1.6, 0.05],
+  helmetRaise: [-0.05, 0.08, 0.005],
+  helmetNags: [0, 1, 1],
   carGoWeight: [0, 3, 0.05],
   phoneWeight: [0, 3, 0.05],
   phoneMoodChance: [0, 1, 0.05],

@@ -93,6 +93,7 @@ import { AMY_NICK_LINES } from './nickLines.js';
 import { AMY_LINEUP_LINES } from './lineUpLines.js';
 import { AMY_TEA_LINES } from './teaLines.js';
 import { AMY_JUMPER_LINES } from './jumperLines.js';
+import { AMY_HEADGEAR_LINES } from './headgearLines.js';
 import { AMY_KEEP_LINES } from './keepAliveLines.js';
 import { AMY_SULK_LINES } from './sulkLines.js';
 import { AMY_READY_LINES } from './readyLines.js';
@@ -1587,6 +1588,7 @@ export const VOICE_LINES = {
   // Tea on the rack (teaLines.js).
   ...AMY_TEA_LINES,
   ...AMY_JUMPER_LINES,
+  ...AMY_HEADGEAR_LINES,
   // The barn bench (benchLines.js).
   ...AMY_BENCH_LINES,
   // Her phone (phoneLines.js).

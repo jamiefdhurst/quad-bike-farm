@@ -188,6 +188,7 @@ export function buildGameTree(g, host) {
       thinking: text(() => describeMind(c().mind).next),
       setOn: text(() => c().intent.describe((k) => OFFER_KINDS[k]?.label ?? k)),
       reacting: text(() => c().reactingText),
+      helmet: text(() => g.headgear.describe(id), 'where her helmet is: on the hooks, on her head, on a seat or on the ground'),
       mud: num(() => c().mucky.mud, (v) => (c().mucky.mud = v), 0, 1, '', 'how muddy her jeans are'),
       dust: num(() => c().mucky.dust, (v) => (c().mucky.dust = v), 0, 1, '', 'how dusty her hair and face are'),
       pairedWith: text(() => g.pairState(id)),
@@ -315,9 +316,13 @@ export function buildGameTree(g, host) {
     now: text(() => { const r = g.towRope; return r.state === 'hooked' ? `${r.puller.unit?.label} to ${r.target.unit?.label}: ${r.tight ? `tight, ${Math.round(r.force)} N` : 'slack'}, ${r.length.toFixed(1)} m long` : r.state; }, 'where the tow rope is and how tight'),
     off: flag(() => false, (v) => v && g.towRope.stow(), 'set to true: take the rope off and put it back'),
   }), 'the tow rope on the utility quads');
+  const kit = group(() => ({
+    helmet: flag(() => g.headgear.you.helmet, (v) => v !== g.headgear.you.helmet && g.toggleYourGear('you'), 'your helmet is on'),
+    goggles: flag(() => g.headgear.you.goggles, (v) => v !== g.headgear.you.goggles && g.toggleYourGear('goggles'), 'your goggles are on (they keep most of the mud off your view)'),
+  }), 'your helmet and goggles from the hooks in the barn');
   const lens = group(() => ({
     covered: ro(() => lensCoverage(g.lens), '', 'how much of your view has mud or drops on it, 0 to 1'),
-    guard: num(() => g.lensParams.guard, (v) => (g.lensParams.guard = v), 0, 1, '', 'how much is kept off the lens (goggles will set it)'),
+    guard: num(() => g.lensParams.guard, (v) => (g.lensParams.guard = v), 0, 1, '', 'how much is kept off the lens (your goggles raise it while they are on)'),
     splat: flag(() => false, (v) => v && g.debugLens('splat'), 'set to true: three splats of mud on the lens'),
     wipe: flag(() => false, (v) => v && g.debugLens('wipe'), 'set to true: wipe it (the first smears, the second clears)'),
     clear: flag(() => false, (v) => v && g.debugLens('clear'), 'set to true: clean it off'),
@@ -339,6 +344,7 @@ export function buildGameTree(g, host) {
     photos,
     towRope,
     lens,
+    kit,
     audio,
     tune: tuningTree(),
   }));

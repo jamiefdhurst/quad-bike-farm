@@ -41,6 +41,7 @@ export function buildGirlsTab(d) {
     show(f, 'her quad', () => g.ownership.claims[id] ?? 'none');
     show(f, 'tidying', () => c.lineUpStatus);
     show(f, 'race score', () => `${g.race.tally[id]?.wins ?? 0} won, ${g.race.tally[id]?.losses ?? 0} lost`);
+    show(f, 'her helmet', () => g.headgear.describe(id));
     show(f, 'jump score', () => { const s = g.jumpWatch.score[id]; return s ? JSON.stringify(s) : 'none yet'; });
 
     show(f, 'mud and dust', () => `${round(c.mucky.mud)} mud (${round(c.mucky.wet)} wet), ${round(c.mucky.dust)} dust`);
@@ -93,6 +94,8 @@ export function buildGirlsTab(d) {
   // --- The two of them, and the farm.
   const both = d.addFolder('Girls', 'Both girls and the farm');
   button(both, 'Call the girls back to the barn (as the bell does)', () => g.recallGirls());
+  button(both, 'Put your helmet on or hang it up', () => g.toggleYourGear('you'));
+  button(both, 'Put your goggles on or hang them up', () => g.toggleYourGear('goggles'));
   // Asking for a race, a drag run or the climb, as Enter does: they leave what they are doing, and if they can't, it says why (npc/asking.js).
   for (const [kind, label] of [['race', 'lap race'], ['drag', 'drag race'], ['climb', 'hill climb']]) {
     button(both, `Ask the girls for the ${label} now`, () => g.askGirls(kind));

@@ -30,6 +30,10 @@ export const CHARACTERS = [
       phoneMoodChance: 0.35, // and it is not always good news
       phoneMoodSeconds: 360, // she stews on it
       benchWeight: 1.3, // services her own quad at the bench, and asks you for a hand
+      helmetWeight: 2.2, // always wears hers, and is first to the hooks
+      helmetLeave: 0.7, // but takes it off again when she gets off
+      helmetGround: 0.1, // and puts it neatly on the seat
+      helmetNags: 1, // and tells you off if you don't
       carGoWeight: 0.8, // takes her Fiesta down the road now and then, carefully, on her L plates
       generatorWeight: 1.1, // sees the barn dark and the charger waiting, and goes and starts the generator
       workLightWeight: 1.2, // brings the Land Rover round to light what you're at in the dark, unasked
@@ -73,6 +77,11 @@ export const CHARACTERS = [
       phoneMoodChance: 0.2, // her mates fall out with her now and then
       phoneMoodSeconds: 150, // and she is over it quickly
       benchWeight: 0.7, // has a go at the bench now and then, and hands it back
+      helmetWeight: 0.5, // fetches hers when she remembers
+      helmetSize: 1.2, // over her big black hair
+      helmetRaise: 0.025,
+      helmetLeave: 0.9, // and off it comes the moment she's off the quad
+      helmetGround: 0.6, // usually chucked on the grass
       generatorWeight: 0.6, // starts the generator if she is bored of the dark, with a lot of tugging and swearing
       carGoWeight: 1.3, // can't leave her Corsa alone: down the road and back, loud
       voiceHardBrakeDecel: 6.5, // takes a sharper stop before she calls it hard braking

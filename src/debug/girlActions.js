@@ -405,6 +405,14 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'helmet',
+      label: '% fetches her helmet or hangs it back up',
+      run: (id) => {
+        const what = g.headgear.toggle(id);
+        toast(what === 'fetch' ? `${nameOf(id)} will go and get her helmet once she is stood about` : `${nameOf(id)} will go and hang her helmet up once she is stood about`);
+      },
+    },
+    {
       verb: 'jumper',
       label: '% fetches or hangs up a jumper',
       run: (id) => {

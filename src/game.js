@@ -157,6 +157,10 @@ import { Flask, FLASK_PARAM_RANGES } from './npc/flask.js';
 import { carryParams, CARRY_PARAM_RANGES, carryWeight } from './npc/carrying.js';
 import { Jumpers, JUMPER_PARAM_RANGES, JUMPERS } from './npc/jumpers.js';
 import { JumperRail } from './world/jumperRail.js';
+import { Headgear, HEADGEAR_PARAM_RANGES } from './npc/headgear.js';
+import { HelmetView } from './npc/helmetView.js';
+import { HelmetHooks } from './world/helmetHooks.js';
+import { GogglesOverlay } from './hud/gogglesOverlay.js';
 import { DieselMistake, DIESEL_MISTAKE_PARAM_RANGES } from './npc/dieselMistake.js';
 import { Mugs } from './items/mug.js';
 import { Achievements, DEFAULT_ACHIEVEMENT_PARAMS, ACHIEVEMENT_PARAM_RANGES } from './achievements/achievements.js';
@@ -841,6 +845,17 @@ export class Game {
     this.setupFlask();
     this.jumpers = new Jumpers(); // jumpers from the barn rail on cold or wet days (npc/jumpers.js)
     this.jumperRail = new JumperRail(this.scene, this.world.layout, (x, z) => this.world.heightAt(x, z));
+    // Helmets and goggles from the hooks by the barn's south wall (npc/headgear.js): yours, and one on each girl's head when she wears hers.
+    this.headgear = new Headgear(undefined, createRandom(this.seed ^ 0x4e1a));
+    this.helmetHooks = new HelmetHooks(this.scene, this.world.layout, (x, z) => this.world.heightAt(x, z));
+    this.helmetView = new HelmetView(this.scene, (x, z) => this.world.heightAt(x, z));
+    for (const c of this.companions) {
+      this.helmetView.dress(c);
+      this.headgear.girl(c.character.id); // hers start on the hooks
+    }
+    this.helmetHooks.show(this.headgear.onHooks());
+    this.helmetSeen = {}; // girl id -> where her loose helmet was last drawn, so it is only moved when it changes
+    this.gogglesOverlay = new GogglesOverlay();
     this.convoy = new Convoy(); // follow the leader, swapping places (npc/convoy.js)
     this.convoyIdle = {};
     this.race = new Race();
@@ -1284,6 +1299,15 @@ export class Game {
       interact: () => this.jobBoardView.open(),
     });
 
+    for (const what of ['you', 'goggles']) {
+      this.interaction.add({
+        target: this.helmetHooks.proxies[what],
+        isAvailable: () => !this.handsFull && !this.player.isRiding,
+        prompt: () => this.hookPrompt(what),
+        interact: () => this.toggleYourGear(what),
+      });
+    }
+
     this.interaction.add({
       target: this.photos.view.proxy,
       isAvailable: () => !this.handsFull && !this.player.isRiding,
@@ -1405,6 +1429,7 @@ export class Game {
     registerTuning('Flask at the top of the hill', this.flask.p, FLASK_PARAM_RANGES);
     registerTuning('Girls carrying things', carryParams, CARRY_PARAM_RANGES);
     registerTuning('Jumpers', this.jumpers.p, JUMPER_PARAM_RANGES);
+    registerTuning('Helmets and goggles', this.headgear.p, HEADGEAR_PARAM_RANGES);
     registerTuning('Red diesel mistake', this.dieselMistake.p, DIESEL_MISTAKE_PARAM_RANGES);
     registerTuning('Reading the dash', this.dashReader.p, READING_PARAM_RANGES);
     registerTuning('Jump leads', this.leads.params, JUMP_LEAD_PARAM_RANGES);
@@ -3263,6 +3288,8 @@ export class Game {
     this.jobBoardView.refresh();
     this.photos.wall.restore(save.photos);
     this.photos.view.refresh();
+    this.headgear.restore(save.headgear);
+    this.helmetHooks.show(this.headgear.onHooks());
     this.spares.restore(save.spares);
     this.restoreBatteries(save.batteries);
     this.generator.restore(save.generator);
@@ -3289,6 +3316,7 @@ export class Game {
       logbook: this.notebook.book.toJSON(),
       spares: this.spares.toJSON(),
       generator: this.generator.toJSON(),
+      headgear: this.headgear.capture(),
       bales: this.baleRig.yard.toJSON(),
       batteries: Object.fromEntries([...this.batteries].filter(([, b]) => b.out).map(([id, b]) => [id, { where: b.where === 'charger' ? 'charger' : 'loose' }])),
     };
@@ -3674,6 +3702,7 @@ export class Game {
       ...mine(this.fireSit.offers(this.fireSitContext()), (o) => this.handleFireEvent(this.fireSit.take(o, this.fireSit.seatsLeft(this.fireSpots.length)))),
       ...(this.hiding.active ? [] : mine(this.requests.offers(this.requestContext(ridden)), (o) => this.handleRequestEvent(this.requests.take(o)))),
       ...mine(this.jumpers.offers(this.jumpersContext()), (o) => this.handleJumperEvent(this.jumpers.take(o))),
+      ...mine(this.headgear.offers(this.headgearContext()), (o) => this.handleHeadgearEvent(this.headgear.take(o))),
       ...mine(this.dieselMistake.offers(this.dieselContext(ridden)), (o) => this.handleDieselEvent(this.dieselMistake.take(o))),
       ...mine(this.pranks.offers(this.prankContext(ridden)), (o) => this.handlePrankEvent(this.pranks.take(o))),
       ...this.rockPrankOffers(c),
@@ -3959,7 +3988,7 @@ export class Game {
 
   /** Mud and drops on your view: what a puddle, the quad ahead or hard rain throws up, drying, and X to wipe it (effects/lensMud.js). */
   updateLens(dt, ridden) {
-    const p = this.lensParams;
+    const p = this.headgear.you.goggles ? { ...this.lensParams, guard: Math.max(this.lensParams.guard, this.headgear.guard()) } : this.lensParams; // goggles keep the mud off
     const open = !!ridden && isOpenVehicle(ridden.spec.id);
     let situation = null;
     if (open) {
@@ -6551,6 +6580,126 @@ export class Game {
   }
 
 
+  // Helmets and goggles -----------------------------------------------------
+
+  /** Which open vehicle (its unit) a girl is sat on or driving, or null (npc/headgear.js is about those). */
+  girlRide(c) {
+    if (!c.quad || !c.fsm.is('driving', 'seated', 'shuffling')) return null;
+    const unit = this.units.find((u) => u.quad === c.quad);
+    return unit && isOpenVehicle(unit.spec.id) ? unit : null;
+  }
+
+  /** What helmets need to know (npc/headgear.js): the girls, what they're on and the vehicles' speeds. */
+  headgearContext() {
+    const girls = this.companions.map((c) => {
+      const ride = this.girlRide(c);
+      const p = c.params;
+      return {
+        id: c.character.id, free: c.availability().free, riding: !!ride, vehicle: ride?.id ?? null, x: c.root.position.x, z: c.root.position.z,
+        weight: p.helmetWeight, leave: p.helmetLeave, ground: p.helmetGround,
+      };
+    });
+    const vehicles = {};
+    for (const u of this.units) vehicles[u.id] = { speed: u.quad.speed, x: u.quad.position.x, z: u.quad.position.z };
+    return { girls, vehicles, hooks: this.world.layout.helmetHooks };
+  }
+
+  updateHeadgear(dt, ridden) {
+    for (const e of this.headgear.update(dt, this.headgearContext())) this.handleHeadgearEvent(e);
+    this.syncHelmets();
+    // Amy minding your bare head, and liking it when you wear one.
+    const open = !!ridden && isOpenVehicle(ridden.spec.id);
+    const here = this.player.isRiding && ridden ? ridden.quad.position : this.player.position;
+    const e = this.headgear.watch(dt, {
+      riding: open,
+      speed: open ? ridden.quad.forwardSpeed : 0,
+      girls: this.companions.map((c) => ({
+        id: c.character.id,
+        nags: c.params.helmetNags > 0,
+        canRemark: c.availability().canRemark || !!this.girlRide(c),
+        dist: Math.hypot(c.root.position.x - here.x, c.root.position.z - here.z),
+      })),
+    });
+    if (e) {
+      const c = this.companions.find((o) => o.character.id === e.girl);
+      if (e.type === 'nag') c.voice.say('helmetNag', { urgent: true, force: true });
+      else {
+        c.voice.say('helmetPraise', { urgent: true, chance: 0.9 });
+        this.favour.add(e.girl, this.headgear.p.praiseFavour);
+      }
+    }
+    this.gogglesOverlay.update(this.headgear.you, open && !this.menu.isOpen);
+  }
+
+  /** Acts on helmets (npc/headgear.js): a girl going to the hooks to take hers down (a choice she made, or asked) or hang it back up, and a fall. */
+  handleHeadgearEvent(e) {
+    if (!e) return;
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    if (e.type === 'drop') return void c.voice.say('helmetFell', { chance: 0.7 });
+    if (e.type !== 'fetch' && e.type !== 'hang') return;
+    const hooks = this.world.layout.helmetHooks;
+    const act = e.type === 'fetch'
+      ? () => {
+          this.headgear.put(e.girl);
+          c.voice.say('helmetOn', { urgent: true, chance: 0.9 });
+          this.helmetHooks.show(this.headgear.onHooks());
+        }
+      : () => {
+          this.headgear.leave(e.girl, 'rack');
+          this.helmetHooks.show(this.headgear.onHooks());
+        };
+    if (!c.sneakTo(hooks.stand, act, 2.6, { via: hooks.door.in, out: hooks.door.out })) this.headgear.cancel(e.girl);
+  }
+
+  /** Puts each girl's helmet where headgear.js says it is: on her head, on a seat, on the ground, or not out. */
+  syncHelmets() {
+    for (const c of this.companions) {
+      const id = c.character.id;
+      const g = this.headgear.girl(id);
+      this.helmetView.setWorn(id, g.place === 'head', id === 'jess' && !g.riding, this.headgear.p.helmetFit * c.params.helmetSize, this.headgear.p.helmetLift + c.params.helmetRaise);
+      let where = null;
+      let key = '';
+      if (g.place === 'ground') {
+        where = { x: g.x, z: g.z };
+        key = `g${g.x.toFixed(1)},${g.z.toFixed(1)}`;
+      } else if (g.place === 'seat') {
+        const unit = this.units.find((u) => u.id === g.vehicle);
+        const anchor = unit?.quad.riderAnchor;
+        if (anchor) {
+          const local = unit.quad.model.worldToLocal(anchor.getWorldPosition(new THREE.Vector3()));
+          where = { parent: unit.quad.model, local: local.add(new THREE.Vector3(0, 0.06, -0.3)), yaw: 0 };
+          key = `s${g.vehicle}`;
+        } else {
+          g.place = 'ground'; // nowhere to rest it on that vehicle: it goes on the floor beside it
+          g.x = unit?.quad.position.x ?? g.x;
+          g.z = unit?.quad.position.z ?? g.z;
+        }
+      }
+      if (this.helmetSeen[id] !== key) {
+        this.helmetSeen[id] = key;
+        this.helmetView.setLoose(id, where);
+      }
+    }
+  }
+
+  hookPrompt(what) {
+    const y = this.headgear.you;
+    return what === 'you' ? (y.helmet ? 'Hang your helmet up' : 'Put your helmet on') : y.goggles ? 'Hang your goggles up' : 'Put your goggles on';
+  }
+
+  /** E at the hooks, and the debug panel and console: yours on or off. */
+  toggleYourGear(what) {
+    const on = what === 'you' ? this.headgear.toggleHelmet() : this.headgear.toggleGoggles();
+    this.helmetHooks.show(this.headgear.onHooks());
+    const name = what === 'you' ? 'helmet' : 'goggles';
+    this.hud.toast(on ? `Put your ${name} on` : `Hung your ${name} up`, 1.4);
+    if (on && what === 'goggles') {
+      const c = this.companions.find((o) => Math.hypot(o.root.position.x - this.player.position.x, o.root.position.z - this.player.position.z) < 14 && o.availability().canRemark);
+      c?.voice.say('gogglesOn', { chance: 0.7 });
+    }
+    return on;
+  }
+
   // Red diesel by mistake ----------------------------------------------------
 
   /** Jess takes the diesel can to a low quad and pours it in; Amy, near enough to see, tells her off. */
@@ -8503,6 +8652,7 @@ export class Game {
     if (auto || this.phoneCalls.active) this.updatePhoneCall(dt);
     this.updateDares(dt);
     if (auto) this.updateJumpers(dt);
+    this.updateHeadgear(dt, ridden);
     if (auto || this.dieselMistake.forced) this.updateDieselMistake(dt, ridden);
     this.bell.update(dt);
     this.updateFlock(dt);

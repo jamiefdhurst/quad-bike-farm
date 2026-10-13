@@ -151,6 +151,9 @@ export const LAYOUT = {
   // The freestanding clothes rack by the barn's south wall where the two jumpers hang (npc/jumpers.js): its bar runs along x at height `y`, `length`
   // long, so they hang edge-on to the wall. A girl stands at `stand`, at the end of the rack, to take one down or hang it up, going in and out by the doorway (`door`).
   jumperRail: { x: -61.2, z: 63.2, y: 1.7, length: 1.3, stand: { x: -60.0, z: 63.2 }, door: { in: [{ x: -56.5, z: 60 }, { x: -59.8, z: 60 }], out: { x: -56.5, z: 60 } } },
+  // The hooks on the inside of the barn's south wall for the helmets and goggles (world/helmetHooks.js, npc/headgear.js): the board's middle is at `y`
+  // above the floor and `length` long; a girl stands at `stand` in front of it to take hers down, going in and out by the doorway (`door`).
+  helmetHooks: { x: -64.5, z: 64.38, y: 1.5, length: 1.6, stand: { x: -64.5, z: 63.4 }, door: { in: [{ x: -56.5, z: 60 }, { x: -59.8, z: 60 }, { x: -62, z: 62.6 }], out: { x: -56.5, z: 60 } } },
   // The bay painted on the barn floor in front of the bench: park a quad here to work on it at the bench (workshop/bench.js).
   bay: { x: -62.3, z: 58.5, halfX: 1.5, halfZ: 1.1, yaw: 0 },
   // Where the barn find stands under its tarp (vehicle/barnFind.js), at the back of the barn: clear of the bay, the bales and the ladder.

@@ -461,6 +461,25 @@ export const FAQ_SECTIONS = [
         tip: 'Mud on your view? Press X to wipe it. Once smears, twice clears.',
       },
       {
+        q: 'Where do I get a helmet and goggles, and do I need them?',
+        a: `On the hooks on the barn's south wall, inside the door: yours (red), your goggles, and the girls' own helmets when they are not wearing them.
+          Look at a hook and press <kbd>E</kbd> to put yours on, and again to hang it back up. You do not need them, but Amy minds if you ride an open
+          vehicle without a helmet and says so, and thinks better of you when you put one on. Goggles keep most of the mud off your view, and show a
+          rubber frame round the edges. They stay on, and are remembered from one day to the next, until you hang them up.`,
+        tip: 'Helmet and goggles hang inside the barn door. Press E at the hook. Amy minds if you ride without.',
+      },
+      {
+        q: 'Why does Amy keep going on about my helmet?',
+        a: `Riding a quad, the mini moto, the three-wheeler or the tractor without a helmet, moving, with Amy close enough to see, gets you a telling-off,
+          and then not again for a couple of minutes. Fetch yours from the hooks in the barn and she will say thank you instead. Jess does not mind.`,
+      },
+      {
+        q: 'Why are the girls\' helmets lying about?',
+        a: `Each girl fetches her helmet from the hooks and wears it on an open vehicle, then mostly takes it off again as soon as she gets off: Amy
+          puts hers neatly on the seat, Jess drops hers on the grass or wears it pushed back on her head. They pick it up again when they get on, if
+          it is near. A helmet left on a seat falls off if the vehicle drives away, so if you take their quad, expect it in the grass. Amy would like it hung up.`,
+      },
+      {
         q: 'Why is everything white, and how do I get the frost off the seat?',
         a: `On a freezing morning the grass has a frost on it and so do the seats. Drive or ride across the grass and your tyres melt a dark track
           through it, which stays melted. A seat clears when someone sits on it, in a few seconds, though it is a cold start to the day. As the
@@ -933,7 +952,7 @@ export const FAQ_SECTIONS = [
         q: 'What do they do when I leave them alone?',
         a: `All sorts: wander off for a look round, start a quad, take one for a drive, race each other, go for a ride together, spin doughnuts, show off to you,
           line the quads up by the barn, leave a mug of tea on a rack, sit with you on the rock at the top of the hill with a flask, sit on the bales or the paddock fence on a fine day, run for the barn or climb into a Land Rover when it rains,
-          warm their hands over a running engine, start a Land Rover and sit in it to warm up, or fetch jumpers when it's cold.`,
+          warm their hands over a running engine, start a Land Rover and sit in it to warm up, fetch jumpers when it's cold, or get their helmets from the hooks.`,
       },
       {
         q: 'Why is a girl sitting in the Land Rover?',
@@ -954,7 +973,7 @@ export const FAQ_SECTIONS = [
     entries: [
       {
         q: 'What’s in the barn?',
-        a: `The workbench with the toolbox, the jump leads, the oil bottle and Amy's logbook; the jumper rack; straw bales; the ladder to the hayloft. A quad parked
+        a: `The workbench with the toolbox, the jump leads, the oil bottle and Amy's logbook; the jumper rack; the hooks for the helmets and goggles; straw bales; the ladder to the hayloft. A quad parked
           inside stays dry and cools more slowly, so it starts better later. Running an engine in there fills it with fumes.`,
       },
       {

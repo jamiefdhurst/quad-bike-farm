@@ -89,6 +89,7 @@ import { JESS_NICK_LINES } from './nickLines.js';
 import { JESS_LINEUP_LINES } from './lineUpLines.js';
 import { JESS_TEA_LINES } from './teaLines.js';
 import { JESS_JUMPER_LINES } from './jumperLines.js';
+import { JESS_HEADGEAR_LINES } from './headgearLines.js';
 import { JESS_KEEP_LINES } from './keepAliveLines.js';
 import { JESS_SULK_LINES } from './sulkLines.js';
 import { JESS_READY_LINES } from './readyLines.js';
@@ -520,6 +521,7 @@ export const JESS_LINES = {
   ...JESS_LINEUP_LINES,
   ...JESS_TEA_LINES,
   ...JESS_JUMPER_LINES,
+  ...JESS_HEADGEAR_LINES,
   ...JESS_BENCH_LINES,
   ...JESS_PHONE_LINES,
   ...JESS_DARE_LINES,
