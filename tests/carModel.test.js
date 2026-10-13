@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { buildCarModel, carLayout, sideShape, poseCarControls, poseCarSeats, carEyeToGlass, CARS, CAR_GROUND_OFFSET } from '../src/vehicle/carModel.js';
+import { buildCarModel, carLayout, sideShape, poseCarControls, poseCarSeats, carEyeToGlass, carDashClearance, CARS, CAR_GROUND_OFFSET } from '../src/vehicle/carModel.js';
 import { landyEyeToGlass } from '../src/vehicle/landRoverModel.js';
 import { poseUtvBelts } from '../src/vehicle/utvModel.js';
 import { FIESTA_SPEC, CORSA_SPEC } from '../src/vehicle/quadSpecs.js';
@@ -65,6 +65,11 @@ describe.each([['fiesta', FIESTA_SPEC], ['corsa', CORSA_SPEC]])('%s', (kind, spe
     expect(spec.fuel.noTap).toBe(true);
     expect(['amy', 'jess']).toContain(spec.owner);
     expect(spec.vehicle.maxSpeed).toBeGreaterThanOrEqual(spec.gearbox[`topSpeed${spec.gearbox.gears}`] - 1);
+  });
+
+  it('shows the Corsa\'s warning lights over the top of the wheel from the driver\'s eye', () => {
+    // The Fiesta's dials are seen through the hoop of its wheel; the Corsa's are meant to show over the rim.
+    if (kind === 'corsa') expect(carDashClearance('corsa')).toBeGreaterThan(0.06);
   });
 
   it('pulls the handbrake up and tips the front seats forward', () => {

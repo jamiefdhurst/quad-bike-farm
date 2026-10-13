@@ -3301,6 +3301,10 @@ What was built:
 - **A boomier Corsa**: a new audio param, `pulseDrone` (dB) at `pulseDroneFreq` (Hz), a low boost on the pulse sound that is full at idle and half of it high up the revs. The Corsa has 9 dB at 75 Hz and `recVolume` 1.1: offline its idle is 3.7 dB louder, nearly all of it below 150 Hz, and full throttle half a dB. Renders at 6, 9 and 12 dB are in `.scratch/cars-sound/renders/` (`corsa-revs-drone*.wav`). A first go: more refinement later.
 
 
+## The Corsa's dash, higher (TODO 54)
+
+- Jamie: the Corsa's dash was too low to see the warning lights over the steering wheel. Measured from the driver's eye (`carDashClearance` in `carModel.js`), the lamp strip passed only about 1.5 cm above the wheel's top rim, so the rim's thickness hid it. The Corsa's binnacle (hood, back and dial) now stands 7 cm higher (`dashLift`) and its column comes out 3.5 cm lower (`columnY` 0.54, was 0.575), which puts the strip about 10 cm clear. A test holds it above 6 cm. The Fiesta is unchanged (`dashLift` 0): its dials are seen through the hoop of its wheel, by design. Not checked by screenshot.
+
 ## Plug-saver for the two-strokes (TODO 31)
 
 Settled with Jamie before building (2026-10-12): all six recommendations taken.
