@@ -9,6 +9,8 @@ export const DEFAULT_FORECAST_PARAMS = {
   shiftLatest: 5, // and the latest it turns, hours after the start
   shiftHours: 0.75, // game hours the sky takes to change over (about four minutes at the usual clock rate)
   accuracy: 0.8, // chance the board is right about whether the weather turns
+  stormEarliest: 0.4, // a storm always passes: it turns this many hours after the start at the soonest...
+  stormLatest: 1.5, // ...and this many at the latest (an hour is about five minutes of play)
   tempShiftScale: 1, // how much the day's warmest moves with the turn (1 is the offsets in KIND_WARMTH, 0 keeps it as it was)
 };
 
@@ -18,6 +20,8 @@ export const FORECAST_PARAM_RANGES = {
   shiftLatest: [0, 12, 0.25],
   shiftHours: [0.1, 3, 0.05],
   accuracy: [0, 1, 0.05],
+  stormEarliest: [0, 6, 0.1],
+  stormLatest: [0, 8, 0.1],
   tempShiftScale: [0, 3, 0.1],
 };
 
@@ -29,16 +33,17 @@ export const SHIFTS = {
   drizzle: { fair: 1, overcast: 2, rain: 1 },
   rain: { fair: 1, overcast: 1.5, drizzle: 2 },
   fog: { sunny: 2, fair: 1.5, overcast: 1 }, // burning off
+  storm: { rain: 3, drizzle: 1.5, overcast: 1 }, // blowing over
 };
 
 /** How wet the sky is, for telling a turn for the worse from one for the better. */
-export const SKY_RANK = { sunny: 0, fair: 1, fog: 2, overcast: 2, drizzle: 3, rain: 4, snow: 4 };
+export const SKY_RANK = { sunny: 0, fair: 1, fog: 2, overcast: 2, drizzle: 3, rain: 4, snow: 4, storm: 5 };
 
 /** Degrees the day's warmest sits above or below a mild grey day for each kind: a clear day is warmer, a wet one cooler. */
-export const KIND_WARMTH = { sunny: 1.5, fair: 0.5, overcast: 0, drizzle: -1, rain: -1.5, fog: -1, snow: -1 };
+export const KIND_WARMTH = { sunny: 1.5, fair: 0.5, overcast: 0, drizzle: -1, rain: -1.5, fog: -1, snow: -1, storm: -1 };
 
 /** The picture on the board for each kind. */
-export const SYMBOLS = { sunny: 'sun', fair: 'sunCloud', overcast: 'cloud', drizzle: 'drizzle', rain: 'rain', fog: 'fog', snow: 'snow' };
+export const SYMBOLS = { sunny: 'sun', fair: 'sunCloud', overcast: 'cloud', drizzle: 'drizzle', rain: 'rain', fog: 'fog', snow: 'snow', storm: 'rain' };
 
 /** The board's three slots, in hours after midnight. */
 export const SLOTS = [
@@ -61,9 +66,11 @@ const pickWeighted = (table, random) => {
 export function dealShift(kind, startHour, random, p = DEFAULT_FORECAST_PARAMS, force = false) {
   const table = SHIFTS[kind];
   if (!table) return null;
-  if (!force && random() >= p.shiftChance) return null;
+  const storm = kind === 'storm'; // a storm is always going to blow over, and soon
+  if (!force && !storm && random() >= p.shiftChance) return null;
   const to = pickWeighted(table, random);
-  const at = startHour + p.shiftEarliest + (Math.max(p.shiftLatest, p.shiftEarliest) - p.shiftEarliest) * random();
+  const early = storm ? p.stormEarliest : p.shiftEarliest;
+  const at = startHour + early + (Math.max(storm ? p.stormLatest : p.shiftLatest, early) - early) * random();
   return { to, at: Math.round(at * 4) / 4 };
 }
 

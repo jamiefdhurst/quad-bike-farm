@@ -166,6 +166,8 @@ export function buildGirlsTab(d) {
   slider(both, 'stream level (0 low, 1 full)', () => g.world.streamLevel.level, (v) => g.setStreamLevel(v), 0, 1, 0.05);
   show(both, 'the forecast', () => g.forecast.describe(g.daylight.hour));
   button(both, 'Turn the weather now (as the forecast says it will)', () => g.hud.toast(g.turnWeatherNow() ? `The weather is turning to ${g.weather.name}` : 'This weather has nowhere to turn'));
+  button(both, 'Lightning, close', () => g.strikeNow(150));
+  button(both, 'Lightning, far off', () => g.strikeNow(2400));
   slider(both, 'time of day (hours)', () => g.daylight.hour, (v) => g.setTime(v), 0, 30, 0.05);
   show(both, 'Jess\'s dare', () => g.dares.describe());
   show(both, 'a phone call', () => `${g.phoneCalls.describe()}${g.companions.map((c) => (g.favour.moodLeft(c.character.id) > 0 ? `; ${c.name} in a mood for ${Math.round(g.favour.moodLeft(c.character.id))} s` : '')).join('')}`);

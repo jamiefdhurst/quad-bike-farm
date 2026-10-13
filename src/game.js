@@ -222,6 +222,8 @@ import { DoorAudio } from './audio/doorAudio.js';
 import { TrafficHost } from './world/trafficHost.js';
 import { Snow } from './effects/snow.js';
 import { Rain } from './effects/rain.js';
+import { Thunderstorm, DEFAULT_THUNDER_PARAMS, THUNDER_PARAM_RANGES } from './world/thunder.js';
+import { ThunderAudio } from './audio/thunderAudio.js';
 
 import { washMud } from './effects/mudBuildUp.js';
 import { DEFAULT_LENS_PARAMS, LENS_PARAM_RANGES, createLens, updateLens, wipeLens, leaderAhead, isOpenVehicle, lensCoverage, addSplat } from './effects/lensMud.js';
@@ -553,6 +555,9 @@ export class Game {
     for (const unit of this.units) unit.quad.iceCable.deal(this.frozenCableRandom, this.weather.frost, !!this.world.covered?.(unit.quad.position.x, unit.quad.position.z));
     this.world.setWeather(this.weather);
     this.rain = new Rain(this.scene);
+    this.thunderParams = { ...DEFAULT_THUNDER_PARAMS }; // lightning and thunder in a storm (world/thunder.js)
+    this.thunder = new Thunderstorm(this.thunderParams, createRandom(this.seed ^ 0x7d1f));
+    this.flashWhite = new THREE.Color(0xdfe8ff);
     this.snow = new Snow(this.scene);
     // Smoke hanging over the yard on a still day (world/haze.js, effects/hazeLayer.js).
     this.haze = new Haze(this.world.layout.yard);
@@ -1407,6 +1412,7 @@ export class Game {
     registerTuning('Ready and waiting', this.readyWaiting.p, READY_PARAM_RANGES);
     registerTuning('Sulking in the cab', this.sulking.p, SULK_PARAM_RANGES);
     registerTuning('Shelter in a cab', this.cabShelter.p, CAB_SHELTER_PARAM_RANGES);
+    registerTuning('Thunderstorm', this.thunderParams, THUNDER_PARAM_RANGES);
     registerTuning('Head start', this.headStart.p, HEADSTART_PARAM_RANGES);
     registerTuning('Talking about you', this.gossip.p, GOSSIP_PARAM_RANGES);
     registerTuning('Girls coaching each other', this.pillionCoach.p, PILLION_COACH_PARAM_RANGES);
@@ -4907,6 +4913,7 @@ export class Game {
     this.rain.update(dt, this.camera, w.rain, 1, (x, z) => world.covered(x, z));
     this.snow.update(dt, this.camera, w.snow, 1, (x, z) => world.covered(x, z));
     this.audioHub.setRain(w.rain, indoor, world.barnParams);
+    this.updateStorm(dt, indoor);
     this.audioHub.room ??= { inside: (x, z) => world.inBarn(x, z), params: world.barnParams, listenerIn: false };
     this.audioHub.room.listenerIn = world.inBarn(cam.x, cam.z);
     const barn = world.props?.barn;
@@ -4948,6 +4955,53 @@ export class Game {
     for (const layer of [this.hazeLayer, this.barnFumesLayer]) for (const b of layer?.blobs ?? []) tint(b.sprite.material, 0xaeb9c8);
     tint(this.rain.lines?.material, 0xc4ccd2);
     tint(this.snow.points?.material, 0xf2f5f8);
+  }
+
+  /**
+   * A thunderstorm (world/thunder.js): lightning lights the sky, thunder follows and the girls hear it. Amy won't ride in one (she gets off
+   * a quad stood still and says so); Jess would. Nothing is ever hit.
+   */
+  updateStorm(dt, indoor) {
+    const storm = this.weather.storm;
+    for (const e of this.thunder.update(dt, storm)) {
+      if (e.type !== 'thunder') continue;
+      const loud = Thunderstorm.loudness(e.strike.distance, this.thunderParams);
+      const cracks = Thunderstorm.cracks(e.strike.distance, this.thunderParams);
+      this.thunderAudio?.rumble(loud, cracks, indoor);
+      // It comes from the whole sky, so it is placed where you are; how near the strike was is its strength.
+      this.notice('thunder', this.camera.position, { key: 'thunder', strength: loud * 1.4 });
+      const near = this.companions.filter((c) => c.availability().canRemark);
+      near[Math.floor(Math.random() * near.length)]?.voice.say(cracks ? 'thunderClose' : 'thunderFar', { chance: cracks ? 0.8 : 0.3 });
+    }
+    const f = this.thunder.flash;
+    if (f > 0.002) {
+      // The whole sky and everything under it lit at once, less in the barn.
+      const k = f * (1 - 0.8 * indoor);
+      const sky = this.world.sky;
+      sky.hemi.intensity += 2.5 * k;
+      sky.sun.intensity += 2 * k;
+      this.renderer.toneMappingExposure *= 1 + 0.5 * k;
+      for (const c of [sky.scene.fog.color, sky.scene.background]) c.lerp(this.flashWhite, 0.5 * k);
+      for (const u of [sky.uniforms.horizonColor, sky.uniforms.zenithColor]) u.value.lerp(this.flashWhite, 0.6 * k);
+    }
+    for (const c of this.companions) {
+      c.inStorm = storm > 0.5;
+      // Amy gets off a quad she is sat on, stood still, once; she won't be on one in this.
+      if (c.inStorm && c.refusesStorm() && c.fsm.is('seated') && c.quad && c.quad.speed < 1) {
+        if (!c.stormTold) {
+          c.stormTold = true;
+          c.voice.say('stormGetOff', { urgent: true, chance: 1 });
+          c.requestStandBeside(c.quad);
+        }
+      } else if (!c.inStorm) {
+        c.stormTold = false;
+      }
+    }
+  }
+
+  /** A strike of lightning now (the debug panel and the console): `distance` metres off, or at random. */
+  strikeNow(distance) {
+    return this.thunder.strike(distance);
   }
 
   /** Carrying the can, the hose, the toolbox or the winch hook. */
@@ -8879,6 +8933,7 @@ export class Game {
     registerTuning('Electric fence', this.fenceParams, FENCE_PARAM_RANGES);
     this.fence = new ElectricFence(fence, this.fenceParams);
     this.fenceAudio = new FenceAudio(this.audioHub);
+    this.thunderAudio = new ThunderAudio(this.audioHub);
     this.phoneAudio = new PhoneAudio(this.audioHub);
     this.fenceLed = this.scene.getObjectByName('fence led') ?? null;
     this.fenceLedOn = 0;

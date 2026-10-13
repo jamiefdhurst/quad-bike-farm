@@ -125,7 +125,7 @@ export const FAQ_SECTIONS = [
         q: 'Can I play the same farm again?',
         a: `Yes. The browser console prints the game's seed when it loads. Add <code>?seed=</code> and that number to the address and you get
           the same layout, weather and luck again, as a first day: a seeded game doesn't touch your saved farm and isn't saved. <code>?weather=rain</code> (or <code>sunny</code>, <code>overcast</code>, <code>drizzle</code>,
-          <code>fog</code>) forces the weather, and <code>?temp=-3</code> sets the temperature in degrees.`,
+          <code>fog</code>, <code>snow</code>, <code>storm</code>) forces the weather, and <code>?temp=-3</code> sets the temperature in degrees.`,
         tip: 'Add ?seed= and a number to the address to play the same farm again.',
       },
       {
@@ -521,8 +521,18 @@ export const FAQ_SECTIONS = [
         q: 'Does the weather change during the day?',
         a: `Sometimes. Most days stay as they began, but about two in five turn: a fine morning clouds over to rain by the afternoon, a grey
           one drizzles, a wet one clears, fog burns off. The sky eases across over a few minutes, the rain follows part-way through, and a wet
-          turn cools the day a little. The barometer on the barn wall falls as it turns. Snow is the exception and stays what it is.`,
+          turn cools the day a little. The barometer on the barn wall falls as it turns. Snow is the exception and stays what it is. A thunderstorm always blows over, within an hour or two of the game's clock.`,
         tip: 'Some days turn: a fine morning can go to rain by the afternoon. Check the board in the barn.',
+      },
+      {
+        q: 'What happens in a thunderstorm?',
+        a: `Rarely (about one game in thirty) the day starts as a storm: the sky goes dark, the rain is heavy, the wind gets up and lightning
+          flickers across the sky with thunder after it, later the further off it was. The closer ones crack and make the girls jump. It
+          never strikes anything and it can't hurt you or a quad, and it blows over to rain after a few minutes. Amy won't get on a quad
+          or drive in it (she gets off one stood still, and says why); Jess loves it and would go out in it. The girls without
+          somewhere to be run for the barn doorway as they do in any heavy rain, or get into a cab. Wait it out in the barn, or ride
+          on with Jess if you like.`,
+        tip: 'In a thunderstorm Amy will not ride: wait in the barn for it to blow over, or take Jess out.',
       },
       {
         q: 'How do I read the forecast board?',

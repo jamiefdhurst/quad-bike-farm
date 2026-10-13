@@ -15,6 +15,7 @@ import { JESS_MIND_LINES } from './mindLines.js';
 import { JESS_KNACK_LINES } from './knackLines.js';
 import { JESS_OIL_LINES } from './oilLines.js';
 import { JESS_MOTO_LINES } from './motoLines.js';
+import { JESS_STORM_LINES } from './stormLines.js';
 import { JESS_DIESEL_LINES } from './dieselLines.js';
 import { JESS_GENERATOR_LINES } from './generatorLines.js';
 import { JESS_STREAM_LINES } from './streamLines.js';
@@ -434,6 +435,7 @@ export const JESS_LINES = {
   ...JESS_KNACK_LINES,
   ...JESS_OIL_LINES,
   ...JESS_MOTO_LINES,
+  ...JESS_STORM_LINES,
   ...JESS_DIESEL_LINES,
   ...JESS_GENERATOR_LINES,
   ...JESS_STREAM_LINES,

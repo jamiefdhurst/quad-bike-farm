@@ -71,6 +71,15 @@ export const WEATHER_KINDS = {
     wind: 0.5,
     wet: 0.3,
   },
+  storm: {
+    name: 'thundery',
+    weight: 0.03, // about one game in thirty: half as rare as snow
+    sky: { horizonColor: '#6d7479', zenithColor: '#3d444c', cloudColor: '#6f767c', cloudShadowColor: '#2f353b', cloudCover: 1, fogDensity: 0.016, sunIntensity: 0.18, hemiIntensity: 0.8, exposure: 0.95 },
+    rain: 0.95,
+    showers: 0.3,
+    wind: 1.9,
+    wet: 1,
+  },
   fog: {
     name: 'foggy',
     weight: 0.02,
@@ -98,6 +107,7 @@ const TEMPERATURE_ODDS = {
   rain: { cold: 0.35, mild: 0.65 },
   fog: { frosty: 0.35, cold: 0.4, mild: 0.25 },
   snow: { frosty: 0.6, cold: 0.4 },
+  storm: { cold: 0.25, mild: 0.55, warm: 0.2 }, // close, thundery air
 };
 export const MILD_C = 12; // at and above this the cold doesn't bother an engine
 export const COLDEST_C = -5; // the coldest day there is: chill 1
@@ -219,6 +229,12 @@ export class Weather {
 
   get name() {
     return this.def.name;
+  }
+
+  /** 0..1 how thundery it is now: 1 in a storm, easing in and out as the weather turns to it or from it. */
+  get storm() {
+    if (this.kind === 'storm') return this.from && this.mix < 1 ? this.mix : 1;
+    return this.from === 'storm' && this.mix < 1 ? 1 - this.mix : 0;
   }
 
   /** 0..1 how warm the day is for an engine in the sun: the sunshine, taken off by rain. */

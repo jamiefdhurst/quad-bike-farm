@@ -827,8 +827,8 @@ export class CompanionVoice {
       this.weatherSaid = true;
       // The temperature is worth a word when it's frosty, cold or warm (and the rain still comes first); a mild day says nothing of it.
       const temperature = { frosty: 'frost', cold: 'cold', warm: 'warm' }[weather.band];
-      const kind = weather.rain > 0.25 ? 'raining' : temperature ?? ({ sunny: 'sunny', fair: 'sunny', fog: 'fog' }[weather.kind] ?? 'grey');
-      const situation = { sunny: 'weatherSunny', raining: 'weatherRain', fog: 'weatherFog', grey: 'weatherGrey', frost: 'weatherFrost', cold: 'weatherCold', warm: 'weatherWarm' }[kind];
+      const kind = weather.storm > 0.5 ? 'storm' : weather.rain > 0.25 ? 'raining' : temperature ?? ({ sunny: 'sunny', fair: 'sunny', fog: 'fog' }[weather.kind] ?? 'grey');
+      const situation = { sunny: 'weatherSunny', raining: 'weatherRain', storm: 'weatherStorm', fog: 'weatherFog', grey: 'weatherGrey', frost: 'weatherFrost', cold: 'weatherCold', warm: 'weatherWarm' }[kind];
       this.say(situation, { chance: 0.75 });
     }
     // The board in the barn (world/forecast.js): a word on what it says, a while after the weather's been mentioned.

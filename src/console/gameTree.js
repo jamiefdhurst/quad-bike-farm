@@ -238,6 +238,8 @@ export function buildGameTree(g, host) {
     wind: ro(() => w().wind),
     windNow: ro(() => g.wind.strength),
     windHeading: num(() => Math.round(((g.wind.heading * 180) / Math.PI + 360) % 360), (v) => g.wind.setHeading((v * Math.PI) / 180), 0, 360, '°', 'the way the wind blows towards, in degrees from south (z) round towards east (x)'),
+    strike: flag(() => g.thunder.flash > 0.05, (v) => v && g.strikeNow(), 'on: a flash of lightning now, somewhere in the hills (thunder follows)'),
+    storm: ro(() => w().storm),
     gust: flag(() => g.wind.gust > 0.05, (v) => v && g.wind.blowGust(), 'on: a gust now'),
     time: num(() => g.daylight.hour, (v) => g.setTime(v), 0, 30, 'h', 'time of day, hours after midnight (past 24 is the same night going on)'),
     clock: text(() => g.daylight.text()),

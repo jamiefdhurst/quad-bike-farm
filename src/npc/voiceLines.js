@@ -18,6 +18,7 @@ import { AMY_MIND_LINES } from './mindLines.js';
 import { AMY_KNACK_LINES } from './knackLines.js';
 import { AMY_OIL_LINES } from './oilLines.js';
 import { AMY_MOTO_LINES } from './motoLines.js';
+import { AMY_STORM_LINES } from './stormLines.js';
 import { AMY_WALK_LINES } from './walkLines.js';
 import { AMY_DIESEL_LINES } from './dieselLines.js';
 import { AMY_GENERATOR_LINES } from './generatorLines.js';
@@ -1453,6 +1454,8 @@ export const VOICE_LINES = {
   ...AMY_WALK_LINES,
   // The mini moto (motoLines.js).
   ...AMY_MOTO_LINES,
+  // A thunderstorm (stormLines.js).
+  ...AMY_STORM_LINES,
   ...AMY_DIESEL_LINES,
   ...AMY_GENERATOR_LINES,
   ...AMY_STREAM_LINES,

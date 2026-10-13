@@ -302,7 +302,7 @@ export class Companion {
    * or giving you a ride), so she'll stop to let her on.
    */
   canRidePillion(quad) {
-    if (this.avoidsFriendOn(quad)) return false;
+    if (this.avoidsFriendOn(quad) || this.refusesStorm()) return false;
     if (!quad.hasPillion || quad.isTipped || quad.passenger || this.takenByOther(quad, 'pillion')) return false;
     const friend = this.friendDriving(quad);
     return !friend?.drive || (!friend.drive.follow && !friend.drive.waitForPassenger);
@@ -314,6 +314,7 @@ export class Companion {
    * asked her to, and nobody else is up there.
    */
   canRideRackOn(quad) {
+    if (this.refusesStorm()) return false;
     if (this.avoidsFriendOn(quad)) return false;
     const friend = this.friendDriving(quad);
     return canRideRack({
@@ -338,7 +339,7 @@ export class Companion {
     const here = this.root.getWorldPosition(new THREE.Vector3());
     const sorted = quads.filter((q) => !(this.takenByOther(q, 'rider') && this.takenByOther(q, 'pillion'))).sort((a, b) => a.position.distanceTo(here) - b.position.distanceTo(here));
     // Only quads with a free pillion seat can carry her (her friend may be driving it).
-    const rideable = (q) => this.canRidePillion(q);
+    const rideable = (q) => !this.refusesStorm() && this.canRidePillion(q);
     const actions = [];
     if (s.is('driving')) return this.drivingActions();
     if (s.is('boarding', 'onTrailer', 'sliding')) return actions; // on the hay ride: nothing to ask of her
@@ -357,7 +358,7 @@ export class Companion {
         if (q !== this.quad && rideable(q)) actions.push({ kind: 'mount', quad: q, short: 'Get on it', label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
         if (q !== this.quad && this.canRideRackOn(q)) actions.push({ kind: 'mountRack', quad: q, short: 'Sit on the front', label: `Sit on the front of the ${q.label}`, run: () => this.requestMount(q, { seat: 'rack' }) });
         if (drivable(q)) actions.push({ kind: 'drive', quad: q, short: 'Drive it', label: `Drive the ${q.label}`, run: () => this.requestDrive(q) });
-        else if (this.refusesMoto(q)) actions.push({ kind: 'drive', quad: q, short: 'Drive it', label: `Drive the ${q.label}`, run: () => this.refuseMoto() });
+        else if (this.refusesMoto(q) || this.refusesStorm()) actions.push({ kind: 'drive', quad: q, short: 'Drive it', label: `Drive the ${q.label}`, run: () => (this.refusesStorm() ? this.refuseStorm() : this.refuseMoto()) });
       }
       return actions;
     }
@@ -371,7 +372,7 @@ export class Companion {
         actions.push({ kind: 'start', quad: q, short: 'Start it', label: `Start the ${q.label}`, run: () => this.requestStart(q) });
       }
       if (drivable(q)) actions.push({ kind: 'drive', quad: q, short: 'Drive it', label: `Drive the ${q.label}`, run: () => this.requestDrive(q) });
-      else if (this.refusesMoto(q)) actions.push({ kind: 'drive', quad: q, short: 'Drive it', label: `Drive the ${q.label}`, run: () => this.refuseMoto() });
+      else if (this.refusesMoto(q) || this.refusesStorm()) actions.push({ kind: 'drive', quad: q, short: 'Drive it', label: `Drive the ${q.label}`, run: () => (this.refusesStorm() ? this.refuseStorm() : this.refuseMoto()) });
       if (rideable(q)) actions.push({ kind: 'mount', quad: q, short: 'Get on it', label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
       if (this.canRideRackOn(q)) actions.push({ kind: 'mountRack', quad: q, short: 'Sit on the front', label: `Sit on the front of the ${q.label}`, run: () => this.requestMount(q, { seat: 'rack' }) });
       if (!this.isStandingBeside(q)) actions.push({ kind: 'stand', quad: q, short: 'Stand next to it', label: `Stand next to the ${q.label}`, run: () => this.requestStandBeside(q) });

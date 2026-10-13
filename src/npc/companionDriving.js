@@ -681,6 +681,15 @@ export const drivingMethods = {
     return !!q.unit?.spec.miniMoto && refusesMoto(this.character.id, this.motoParams);
   },
 
+  /** A thunderstorm, and a girl who won't ride in one (only Amy): she won't get on or drive anything until it has passed. The game sets `inStorm`. */
+  refusesStorm() {
+    return !!this.inStorm && this.params.stormWont > 0;
+  },
+
+  refuseStorm() {
+    this.voice.say('stormWont', { urgent: true, chance: 1 });
+  },
+
   /** She says she isn't getting on it. */
   refuseMoto() {
     this.voice.say('motoWont', { urgent: true, chance: 1 });
@@ -708,7 +717,7 @@ export const drivingMethods = {
 
   /** A quad she could have a drive on: nobody on it, upright and parked. */
   canDrive(q) {
-    return !q.rider && !q.isTipped && !q.isGhostRiding && q.speed < 0.5 && !this.wontRide(q) && !this.refusesMoto(q) && !this.avoidsFriendOn(q);
+    return !q.rider && !q.isTipped && !q.isGhostRiding && q.speed < 0.5 && !this.wontRide(q) && !this.refusesMoto(q) && !this.refusesStorm() && !this.avoidsFriendOn(q);
   },
 
   /** The fault (a walk-round finding) she knows this quad has and won't ride it for, or null. Only Amy ever has any (wontRide.js). */
