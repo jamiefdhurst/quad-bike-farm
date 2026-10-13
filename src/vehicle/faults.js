@@ -9,6 +9,7 @@ export const DEFAULT_FAULT_PARAMS = {
   beltEvery: 1800, // riding hard, with the throttle well open
   cableEvery: 7200, // engine running (was 2700: it stuck too often)
   carbEvery: 2400, // engine running
+  clutchEvery: 400, // slipping the clutch (at the bite under load, or creeping in low): a worn plate starts after this much slipping
   leakEvery: 6000, // engine running: the intake boot perishing and splitting (diesels have no carb boot, see hasBoot)
   mountsEvery: 5400, // engine running: rubber perishing, so it comes on slower than the rest
   valvesEvery: 4800, // engine running, on a four-stroke: the tappets wearing wide
@@ -19,6 +20,7 @@ export const DEFAULT_FAULT_PARAMS = {
   cableSeconds: 600, // running
   carbSeconds: 900, // running
   leakSeconds: 1200, // running: the split opening up from a hiss to a gape
+  clutchSeconds: 500, // of slipping it: the plate wearing from a little slip to hardly gripping at all
   mountsSeconds: 1500, // running: the mounts going from sound to shot
   valvesSeconds: 2400, // running: the clearance going from a faint tick to a loud one
   chainSeconds: 900, // of riding: the chain going from just slack to hanging off the sprocket
@@ -27,6 +29,13 @@ export const DEFAULT_FAULT_PARAMS = {
   puncturePull: 0.09, // radians the bars are pulled towards the flat tyre (half for a rear one)
   punctureDrag: 0.12, // drive lost to a flat tyre's rolling resistance
   beltDriveLoss: 0.8, // drive lost to a fully slipping belt
+  clutchDriveLoss: 0.75, // drive lost to a fully worn clutch slipping under full throttle (less on less throttle)
+  clutchSlipFrom: 0.2, // how worn the clutch has to be before it slips under power at all: below it, it only wears
+  clutchBiteLo: 0.05, // the pedal's clutch bite (0..1) between these two counts as slipping it
+  clutchBiteHi: 0.85,
+  clutchCreepSpeed: 2, // m/s: at the bite and slower than this in a gear is creeping, which wears it even with no throttle
+  clutchLoadThrottle: 0.3, // throttle that counts as loading it when it is slipping
+  clutchLoadSlope: 0.05, // or a climb this steep (sine of the angle)
   cableHang: 5, // seconds the throttle takes to come back from open, just before the cable sticks for good
   cableHangFrom: 0.2, // below this the cable's only a little stiff and doesn't hang
   cableHangMin: 0.4, // seconds it takes to come back as it first starts to hang, lengthening from there (faster than linear)
@@ -58,6 +67,15 @@ export const FAULT_PARAM_RANGES = {
   carbEvery: [60, 20000, 60],
   mountsEvery: [60, 20000, 60],
   leakEvery: [60, 20000, 60],
+  clutchEvery: [30, 10000, 30],
+  clutchSeconds: [10, 3600, 10],
+  clutchDriveLoss: [0, 1, 0.01],
+  clutchSlipFrom: [0, 1, 0.05],
+  clutchBiteLo: [0, 0.5, 0.01],
+  clutchBiteHi: [0.5, 1, 0.01],
+  clutchCreepSpeed: [0.2, 6, 0.1],
+  clutchLoadThrottle: [0, 1, 0.05],
+  clutchLoadSlope: [0, 0.3, 0.01],
   leakSeconds: [10, 3600, 10],
   chainEvery: [60, 20000, 60],
   valvesEvery: [60, 20000, 60],
@@ -96,10 +114,10 @@ export const FAULT_PARAM_RANGES = {
   fieldFixCap: [0, 1, 0.01],
 };
 
-export const FAULT_KINDS = ['puncture', 'belt', 'cable', 'carb', 'mounts', 'chain', 'valves', 'rod', 'rim', 'leak'];
+export const FAULT_KINDS = ['puncture', 'belt', 'cable', 'carb', 'mounts', 'chain', 'valves', 'rod', 'rim', 'leak', 'clutch'];
 
 /** Faults the toolbox can't touch: a rough fix in the yard does nothing, only the bench puts them right. */
-export const BENCH_ONLY_KINDS = ['leak'];
+export const BENCH_ONLY_KINDS = ['leak', 'clutch'];
 
 /** Faults that come from a knock (crashDamage.js), not from use: they never start or worsen by themselves, and only the bench puts them right. */
 export const CRASH_KINDS = ['rod', 'rim'];
@@ -120,14 +138,15 @@ export class Faults {
     this.rodWheel = -1; // which front wheel has the bent track rod
     this.rimWheel = -1; // which wheel has the bent rim
     this.steerWheels = [0, 1]; // the wheels a track rod can be bent on (set by Quad)
-    this.levels = { puncture: 0, belt: 0, cable: 0, carb: 0, mounts: 0, chain: 0, valves: 0, rod: 0, rim: 0, leak: 0 }; // 0 none, rising to 1 at their worst
-    this.started = { puncture: false, belt: false, cable: false, carb: false, mounts: false, chain: false, valves: false, rod: false, rim: false, leak: false };
-    this.caps = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1, rod: 1, rim: 1, leak: 1 }; // a rough fix leaves it from getting any worse than this
+    this.levels = { puncture: 0, belt: 0, cable: 0, carb: 0, mounts: 0, chain: 0, valves: 0, rod: 0, rim: 0, leak: 0, clutch: 0 }; // 0 none, rising to 1 at their worst
+    this.started = { puncture: false, belt: false, cable: false, carb: false, mounts: false, chain: false, valves: false, rod: false, rim: false, leak: false, clutch: false };
+    this.caps = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1, rod: 1, rim: 1, leak: 1, clutch: 1 }; // a rough fix leaves it from getting any worse than this
     this.heldThrottle = 0; // what a sticking cable is still holding open
-    this.prone = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1, rod: 1, rim: 1, leak: 1 }; // times as often it starts (see roll)
-    this.worsens = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1, rod: 1, rim: 1, leak: 1 }; // times as fast it gets worse
+    this.prone = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1, rod: 1, rim: 1, leak: 1, clutch: 1 }; // times as often it starts (see roll)
+    this.worsens = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1, rod: 1, rim: 1, leak: 1, clutch: 1 }; // times as fast it gets worse
     this.hasChain = false; // a chain-driven quad (the sport quad, the mini moto, the ATC) can have a stretched chain; the others never
     this.hasBoot = true; // a petrol carb or throttle body has an intake boot to split; a diesel has none (set by Quad)
+    this.hasClutch = false; // a manual quad has a clutch plate to wear out; the automatics' belt is the belt fault (set by Quad)
     this.hasValves = false; // a four-stroke can have its valve clearances out; a two-stroke has no valves (set by Quad)
     this.kept = { chainLube: 1, chainOff: false, valveTight: false }; // the chain's oil (1 fresh, 0 bone dry) and whether it has jumped the sprocket, and whether the valves were left too tight rather than worn wide: kept between games
     this.slapped = 0; // 0..1 how hard the slack chain just slapped; take it with takeSlap()
@@ -201,8 +220,9 @@ export class Faults {
    * @param {number} s.speed     m/s over the ground
    * @param {number} s.throttle  0..1
    * @param {number} [s.jolt]    m/s2 of vertical jolt from the ground (for a slack chain slapping)
+   * @param {number} [s.clutchSlip]  0..1 how hard the clutch is being slipped just now (clutchSlipping below): that is what wears it
    */
-  update(dt, { running, speed, throttle, jolt = 0 }) {
+  update(dt, { running, speed, throttle, jolt = 0, clutchSlip = 0 }) {
     const p = this.params;
     this.events.length = 0;
     const moving = running && speed > p.movingSpeed;
@@ -215,8 +235,9 @@ export class Faults {
     if (running && !this.started.mounts && this.random() < chance(p.mountsEvery, 'mounts')) this.begin('mounts');
     if (this.hasValves && running && !this.started.valves && this.random() < chance(p.valvesEvery, 'valves')) this.begin('valves');
     if (this.hasBoot && running && !this.started.leak && this.random() < chance(p.leakEvery, 'leak')) this.begin('leak');
+    if (this.hasClutch && clutchSlip > 0 && !this.started.clutch && this.random() < chance(p.clutchEvery / clutchSlip, 'clutch')) this.begin('clutch');
     const grow = (kind, on, seconds) => {
-      if (this.started[kind] && on) this.levels[kind] = Math.min(this.caps[kind], this.levels[kind] + (dt * this.worsens[kind]) / seconds);
+      if (this.started[kind] && on) this.levels[kind] = Math.min(this.caps[kind], this.levels[kind] + (dt * this.worsens[kind] * (on === true ? 1 : on)) / seconds);
     };
     grow('puncture', true, p.punctureSeconds); // a tyre goes down parked too
     grow('belt', hard, p.beltSeconds);
@@ -224,6 +245,7 @@ export class Faults {
     grow('carb', running, p.carbSeconds);
     grow('mounts', running, p.mountsSeconds);
     grow('leak', running, p.leakSeconds);
+    grow('clutch', clutchSlip > 0 && clutchSlip, p.clutchSeconds); // only slipping it wears it further
     grow('valves', running && !this.kept.valveTight, p.valvesSeconds); // wearing wide; a clearance set too tight stays as it is
     if (this.hasChain) this.updateChain(dt, { moving, throttle, jolt });
   }
@@ -355,6 +377,11 @@ export class Faults {
     return this.levels.leak;
   }
 
+  /** 0..1 how worn the clutch plate is, for the manual drivetrain (it slips under power, more the worse it is). */
+  get clutchWear() {
+    return this.hasClutch ? this.levels.clutch : 0;
+  }
+
   /** 0..1 how loud the tappets tick (valves worn wide), for the engine. */
   get valveLoose() {
     return this.started.valves && !this.kept.valveTight ? this.levels.valves : 0;
@@ -414,4 +441,24 @@ export class Faults {
 /** How a symptom comes across to someone near it, 0..1: below `from` it's too slight to notice. */
 export function noticeable(level, from = 0.3) {
   return clamp((level - from) / (1 - from), 0, 1);
+}
+
+/**
+ * How hard a manual's clutch is being slipped just now, 0..1: in gear with the engine running and the pedal part way up (at the bite),
+ * and either loaded (throttle open or climbing) or creeping along in low gear. Fully in or fully out wears nothing. Pure.
+ * @param {{gear: number, clutch: number}} d  the manual drivetrain
+ */
+export function clutchSlipping(d, { running, throttle, slope, speed }, p = DEFAULT_FAULT_PARAMS) {
+  if (!running || d.gear === 0 || d.clutch < p.clutchBiteLo || d.clutch > p.clutchBiteHi) return 0;
+  const load = Math.max(throttle >= p.clutchLoadThrottle ? throttle : 0, slope >= p.clutchLoadSlope ? clamp(slope / (p.clutchLoadSlope * 3), 0.4, 1) : 0);
+  const creep = Math.abs(speed) < p.clutchCreepSpeed && Math.abs(d.gear) <= 2 ? 0.35 : 0;
+  // Worst in the middle of the bite, where the plates rub hardest.
+  const middle = 1 - Math.abs(d.clutch - (p.clutchBiteLo + p.clutchBiteHi) / 2) / ((p.clutchBiteHi - p.clutchBiteLo) / 2);
+  return clamp(Math.max(load, creep) * (0.4 + 0.6 * middle), 0, 1);
+}
+
+/** How far a worn clutch slips under power, 0..1: nothing until it is worn past `clutchSlipFrom`, then more with wear and with throttle. */
+export function clutchSlipUnderPower(wear, throttle, p = DEFAULT_FAULT_PARAMS) {
+  if (wear <= p.clutchSlipFrom) return 0;
+  return clamp(((wear - p.clutchSlipFrom) / (1 - p.clutchSlipFrom)) * clamp(throttle * 1.4, 0, 1), 0, 1);
 }

@@ -3509,3 +3509,24 @@ Settled without asking, as the item was clear.
 - Bench only (`BENCH_ONLY_KINDS`): a rough fix returns false, so no toolbox key. The new bench job "Renew the intake boot" (the fifteenth key, semicolon, as the overflow keys ran out) has an inspect step that reads `bootLook`; a clip not nipped up right leaves a faint leak at the usual botched level. No spare part is used.
 - The Problems folder and the console's faults path list it automatically, and "Put it right" clears it, because they walk `FAULT_KINDS`.
 - Tests in `tests/airLeak.test.js`. Not checked in the running game: the hunt amplitude (22% of idle at its worst) and pop rate are sensible numbers, not tuned by ear.
+
+## The polo as a garment (spike, behind `?polo=shell`)
+
+Jamie asked whether the polo could be built on top of her body like the jumper instead of painted on. Painted, it can only change colour where the body's triangles allow, and one triangle runs from her shoulder nearly to her jaw. A shell of her own triangles (as the jumper is) has the same limit: it either keeps that triangle (a roll neck) or drops it (a scoop on her shoulders). The way through is to cut the shell's triangles along a smooth line, adding vertices of its own, so its edges are where they should be however coarse the body is.
+
+Settled with Jamie before building:
+
+1. Behind a flag, `?polo=shell`, compared side by side with the painted polo before the painted one goes.
+2. Collarless first and get that right, then a collar. Fairly detailed: a placket at least as long as now, better buttons.
+3. The hem tucked into the shorts.
+4. Short sleeves.
+
+## A worn clutch on the manual quads (TODO 50)
+
+Settled without asking, as the item was clear.
+
+- A tenth fault, `clutch`, in `faults.js`, on the four manual quads only (`hasClutch`, set in `quad.js` from having a gearbox and not being the tractor, a Land Rover, a car or the UTV; history only deals it to the same). Unlike the others it starts and worsens from how the clutch is used, not from running time: `clutchSlipping` (pure, tested) gives 0 to 1 for the pedal at the bite (clutch 0.05 to 0.85), in gear with the engine running, and either loaded (throttle 0.3 or more, or a climb of sine 0.05 or more) or creeping below 2 m/s in first or second. It is strongest in the middle of the bite. Half-holding the pedal while rolling fast on the flat with no throttle counts for nothing.
+- Starts after about 400 s of full slipping (`clutchEvery`, scaled by the quad's own luck like the rest), then takes about 500 s more of slipping to go from 0.15 to worn out (`clutchSeconds`); it does not get worse unless slipped.
+- Effect (`clutchSlipUnderPower`): nothing until wear passes 0.2, then slip grows with wear and with throttle. In `quad.js` that slip takes up to 75% off the drive (`clutchDriveLoss`), is fed to the engine's existing `slip` control (the belt's flare, so the revs run away and the load stops holding them down) and loosens the engine's tie to the road (`gearLock` times one minus the slip). So it is the belt's symptom by another cause.
+- Bench only (`BENCH_ONLY_KINDS`): "Fit a new clutch plate", the sixteenth key (the quote), with an inspect step (`clutchLook`). Done badly it leaves a fault at the usual botched level. No spare part. The girls mention it (`faultClutch`, `histClutch`, which says it smells hot) while the quad is ridden. Tests in `tests/clutchWear.test.js`.
+- Left out: a real smell or smoke from the hot clutch (only the girls' words), the clutch plate on the tractor, Land Rovers and cars, and a clutch cooling down. Not checked in the running game: how quickly it wears in play (the numbers are first guesses) and how the flare feels.

@@ -69,6 +69,7 @@ const JOB_TEXT = {
   chain: 'chain adjusted and oiled',
   valves: 'valve clearances set',
   boot: 'intake boot renewed',
+  clutch: 'new clutch fitted',
   crash: 'crash damage put right',
   sump: 'engine oil topped up',
   tarp: 'tarp off',

@@ -188,6 +188,16 @@ export const JOBS = {
       { id: 'on', text: 'Airbox back on', kind: 'press' },
     ],
   },
+  clutch: {
+    name: 'Fit a new clutch plate',
+    steps: [
+      { id: 'drain', text: 'Drain the gearbox oil and take the side cover off', kind: 'press' },
+      { id: 'look', text: 'Pull the pressure plate off and measure the friction plates', kind: 'press', inspect: true },
+      { id: 'out', text: 'Undo the springs evenly and lift the worn plates out', kind: 'hold', need: 0.9 },
+      { id: 'fit', text: 'Soak the new plates in oil, stack them and tighten the springs evenly: firm, not tight', kind: 'hold', need: 0.8, limit: 1.6 },
+      { id: 'on', text: 'Cover back on and the gearbox oil in', kind: 'press' },
+    ],
+  },
   crash: {
     name: 'Mend the crash damage',
     steps: [
@@ -263,7 +273,7 @@ export const JOBS = {
 };
 
 // The last row of the list is the charger, and says either 'chargeOn' or 'chargeOff' depending on where this quad's battery is (bench.js kindsFor).
-export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd', 'chain', 'valves', 'boot', 'crash'];
+export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd', 'chain', 'valves', 'boot', 'clutch', 'crash'];
 
 /** What each reading means, the way Amy would say it. Order is the order Jess can be wrong in. */
 export const PLUG_KINDS = ['healthy', 'rich', 'lean', 'oily', 'worn'];
@@ -306,6 +316,15 @@ export function chainLook(faults) {
   if (level < 0.5) return `a bit loose${dry}`;
   if (level < 0.8) return `hanging slack${dry}`;
   return `drooping nearly off the sprocket${dry}`;
+}
+
+/** What the water spray says about the intake boot, for the toast: where it gets sucked in tells you what it needs. */
+export function clutchLook(faults) {
+  const l = faults.clutchWear;
+  if (l < 0.1) return 'plenty of friction material left: the clutch is sound';
+  if (l < 0.4) return 'the plates are glazed and a little thin: it has been slipped a lot';
+  if (l < 0.75) return 'burnt and thin, with a blue tinge: it is slipping under power';
+  return 'down to the rivets and badly burnt: it will hardly drive at all';
 }
 
 /** What the water spray says about the intake boot, for the toast: where it gets sucked in tells you what it needs. */
@@ -522,6 +541,13 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     if (adjust) return 'Chain back on, but the slack is not right and it will stretch again soon';
     return job.outcome('oil') === 'good' ? 'Chain adjusted and oiled: it runs quietly' : 'Chain adjusted, though it is a touch dry';
   }
+  if (job.kind === 'clutch') {
+    // New plates are the fix; springs done up unevenly or too hard leave it dragging or slipping a little.
+    const bad = botched || job.outcome('fit') !== 'good';
+    faults.fix('clutch');
+    if (bad) faults.leave('clutch', P.botchedLevel);
+    return bad ? 'New clutch plate in, but the springs are not even and it still slips a little' : 'New clutch plate in: it bites cleanly and holds under power';
+  }
   if (job.kind === 'boot') {
     // A new boot is the fix; clips left slack, or done up too hard on the old rubber, leave a small leak.
     const bad = botched || job.outcome('fit') !== 'good';
@@ -579,7 +605,7 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
 }
 
 /** Which jobs a quad can have done: the pre-mix oil is for the two-strokes, the sump's for the petrol four-strokes, the chain's for the chain-driven. */
-export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = false, valves = engine.params.strokes !== 2) {
+export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = false, valves = engine.params.strokes !== 2, clutch = false) {
   if (kind === 'oil') return engine.params.strokes === 2;
   if (kind === 'packing') return engine.params.strokes === 2;
   if (kind === 'coolant') return !!engine.params.waterCooled;
@@ -587,6 +613,7 @@ export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = fal
   if (kind === 'topEnd') return canRebuildTopEnd(engine, P);
   if (kind === 'chain') return !!chain;
   if (kind === 'valves') return !!valves; // every four-stroke has them
+  if (kind === 'clutch') return !!clutch; // only a manual quad has a clutch plate
   if (kind === 'boot') return !engine.params.compressionIgnition; // a diesel has no carb or throttle body boot
   if (kind === 'chargeOn') return !engine.batteryOut && !engine.params.noStarter; // a cord-only quad has no battery to take out
   if (kind === 'chargeOff') return !!engine.batteryOut;

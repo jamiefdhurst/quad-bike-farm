@@ -1,6 +1,6 @@
 // What the girls say about faults that develop (vehicle/faults.js): faultPuncture (it pulls to
 // one side), faultBelt (the revs flare and it doesn't go), faultCable (the throttle hangs
-// open), faultCarb (it hunts and runs rough) and faultLeak (the idle hunts and it pops on the overrun), faultMounts (it shakes through and clonks), faultChain (a slack chain slapping) and faultChainOff (it has come off the sprocket). Amy works out what it is and notices sooner;
+// open), faultCarb (it hunts and runs rough) and faultLeak (the idle hunts and it pops on the overrun), faultClutch (the revs flare and it smells hot), faultMounts (it shakes through and clonks), faultChain (a slack chain slapping) and faultChainOff (it has come off the sprocket). Amy works out what it is and notices sooner;
 // Jess notices later and blames the quad. Merged into the main line sets (voiceLines.js,
 // jessLines.js), so they're recorded with the rest.
 
@@ -17,6 +17,7 @@ export const AMY_FAULT_LINES = {
   faultRim: line(60, ['One of the wheels is wobbling. I think the rim is bent.', 'Can you feel that shimmy? The rim must have bent when you hit it.', 'That wheel is out of true. It wants changing.']),
   faultChainOff: line(60, ['The chain has come off. The engine is turning and nothing is happening.', 'That is the chain off the sprocket. We will have to put it back.', 'It has stopped driving. The chain has jumped off.']),
   faultLeak: line(60, ['The idle is going up and down by itself. I think the intake boot has split.', 'Can you hear that hiss? It is sucking air in somewhere. The carb boot is cracked.', 'It pops every time you shut the throttle. There is a leak in the intake.']),
+  faultClutch: line(60, ['The revs are flaring and it is not pulling. I think the clutch is worn.', 'Can you smell that? That is the clutch burning. It is slipping.', 'It will not hold on the hill. The clutch plate has had it.']),
   faultCarb: line(60, ['It will not idle properly. I think the carb is dirty.', 'It is hunting up and down. It needs the carb cleaning.', 'That is getting worse. Something is clogged.']),
 };
 
@@ -31,5 +32,6 @@ export const JESS_FAULT_LINES = {
   faultRim: ['The wheel is wobbling. It is doing a little dance.', 'Wibble wobble. Is that meant to happen?', "It's fine, the wheel's just a bit wavy."],
   faultChainOff: ["It's gone all noisy and nothing's happening. The chain's off, isn't it.", 'Brilliant. The chain has fallen off. Again.', 'Did the chain come off? I think the chain came off.'],
   faultLeak: ['It keeps revving itself up and down. Spooky.', 'Pop! Again! Do it again!', "It's hissing at me. I think it likes me."],
+  faultClutch: ['It smells like a burnt toastie. Brilliant.', 'The engine is shouting and nothing is happening. Typical.', 'Is the clutch meant to smell? It smells like my school bus.'],
   faultCarb: ["It's coughing. It's just warming up.", 'Ugh, it keeps hunting. Come on, you rubbish thing.', "It's sulking again."],
 };

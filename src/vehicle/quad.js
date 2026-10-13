@@ -31,7 +31,7 @@ import { stepPedalKey, DEFAULT_BRAKE_KEY_PARAMS, DEFAULT_THROTTLE_KEY_PARAMS } f
 import { Bog } from './bog.js';
 import { Sump, hasSump, oilPressureLamp } from './sump.js';
 import { stepHand } from './handLever.js';
-import { Faults } from './faults.js';
+import { Faults, clutchSlipping, clutchSlipUnderPower } from './faults.js';
 import { CrashWatch, damageFor, DEFAULT_CRASH_PARAMS } from './crashDamage.js';
 import { toppleLoad } from './topple.js';
 import { BikeLean, DEFAULT_BIKE_PARAMS } from './bikeLean.js';
@@ -136,6 +136,8 @@ export class Quad {
     if (engine.params.compressionIgnition) this.faults.prone.carb = 0; // a diesel has no carb to get dirty
     if (tractor) this.faults.prone.belt = 0; // and the tractor has a clutch and gearbox, not a belt
     this.faults.hasValves = engine.params.strokes !== 2; // every four-stroke has valves to go out of adjustment; a two-stroke has none
+    this.faults.hasClutch = !!gearbox && !tractor && !landRover && !car && !utv; // a manual quad's plate wears with slipping it; the cars' and tractor's are not modelled
+    this.clutchSlip = 0; // 0..1 how far a worn clutch is slipping under power just now (clutchSlipUnderPower)
     this.faults.hasChain = chainDrive; // only the chain-driven ones can stretch one
     this.lastUp = 0; // vertical speed last step, for the jolt a slack chain slaps on
     this.crashWatch = new CrashWatch({ ...DEFAULT_CRASH_PARAMS }); // a hard hit or landing can bend a rod or a rim (crashDamage.js)
@@ -744,7 +746,9 @@ export class Quad {
     const up = this.physics.body.linvel().y;
     const jolt = dt > 0 ? Math.abs(up - this.lastUp) / dt : 0;
     this.lastUp = up;
-    this.faults.update(dt, { running: this.engine.isRunning, speed: Math.abs(fwd), throttle: throttleInput, jolt });
+    const slipNow = this.manual && this.faults.hasClutch ? clutchSlipping(this.drivetrain, { running: this.engine.isRunning, throttle: throttleInput, slope: this.climb, speed: fwd }, this.faults.params) : 0;
+    this.faults.update(dt, { running: this.engine.isRunning, speed: Math.abs(fwd), throttle: throttleInput, jolt, clutchSlip: slipNow });
+    this.clutchSlip = this.manual && this.drivetrain.gear !== 0 ? clutchSlipUnderPower(this.faults.clutchWear, this.drivetrain.clutch > 0.5 ? this.throttle : 0, this.faults.params) : 0;
     this.checkCrash(dt);
     this.dust = this.world.dustParams ? dustLevel(this.world.dustParams, this.world.stubbleAt?.(this.position.x, this.position.z) ?? 0, this.world.wet ?? 0, fwd) : 0;
     this.filter.update(dt, { running: this.engine.isRunning, speed: fwd, dust: Math.max(this.dust, this.dustIn) * (this.world.dustParams?.filterBoost ?? 1), mud: Math.max(...this.physics.wheelInfo.map((w) => w.mud ?? 0)), puddle: Math.max(...this.physics.wheelInfo.map((w) => w.puddle ?? 0)) });
@@ -842,7 +846,7 @@ export class Quad {
     let wheelSteer = this.steer + this.faults.steerPull + this.faults.rodPull + this.tyres.steerPull + this.quirks.brakePull(this.brake);
     if (this.bike) wheelSteer = this.balanceBike(dt, wheelSteer);
     this.physics.applyControls({
-      driveForce: Math.sign(drive) * Math.max(0, Math.abs(drive) * this.faults.driveFactor * this.tyres.driveFactor * this.tow.driveFactor * (this.drive ? this.driveEffects.driveScale : 1) - hold),
+      driveForce: Math.sign(drive) * Math.max(0, Math.abs(drive) * this.faults.driveFactor * (1 - this.faults.params.clutchDriveLoss * this.clutchSlip) * this.tyres.driveFactor * this.tow.driveFactor * (this.drive ? this.driveEffects.driveScale : 1) - hold),
       brake,
       steer: wheelSteer,
       mudAt: (x, z) => Math.max(this.world.mudAt(x, z), this.churn),
@@ -974,7 +978,7 @@ export class Quad {
     const gearTop = geared ? d.topSpeed(d.gear) : 0;
     return {
       gearRpm: geared && gearTop > 0 ? (Math.abs(this.forwardSpeed) / gearTop) * this.engine.params.maxRpm : 0,
-      gearLock: geared ? d.clutch : 0,
+      gearLock: geared ? d.clutch * (1 - this.clutchSlip) : 0, // a slipping clutch lets the revs run away from the road
       starter: this.starter,
       throttle: this.throttle,
       choke: this.choke,
@@ -986,7 +990,7 @@ export class Quad {
       oil: this.fuel.oil,
       sump: this.sump?.level ?? 1,
       oilBurn: this.sump ? Math.max(this.sump.burnSmoke(this.engine.throttle, Math.max(0, this.engine.rpm - this.engine.params.idleRpmWarm)), this.engine.isRunning ? this.sump.overSmoke() : 0) : 0,
-      slip: this.faults.slip,
+      slip: Math.max(this.faults.slip, this.clutchSlip), // the belt's or the clutch's: the revs flare and the load doesn't hold them down
       dirt: this.faults.dirt,
       airLeak: this.faults.airLeak,
       valveLoose: this.faults.valveLoose,
