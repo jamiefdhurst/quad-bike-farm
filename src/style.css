@@ -54,28 +54,60 @@ body {
 #overlay.tuning .keys-panel,
 #overlay.tuning .start-links,
 #overlay.tuning .start-new-since {
-  margin: 12px 0 4px;
-  padding: 8px 14px;
+  margin: 14px 0 6px;
+  padding: 10px 16px 12px;
+  border: 1px solid rgba(239, 228, 196, 0.16);
+  border-left: 4px solid #5a9a5c;
   border-radius: 8px;
-  background: rgba(53, 95, 55, 0.35);
+  background: rgba(53, 95, 55, 0.28);
   text-align: left;
   font-size: 14px;
+  line-height: 1.35;
   color: #e6dcbc;
 }
 
 .start-new-since b {
   display: block;
-  margin-bottom: 4px;
-  color: #efe4c4;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #9fd19f;
 }
 
 .start-new-since ul {
   margin: 0;
-  padding-left: 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.start-new-since li {
+  position: relative;
+  padding: 3px 0 3px 18px;
 }
 
 .start-new-since li + li {
-  margin-top: 2px;
+  border-top: 1px solid rgba(239, 228, 196, 0.08);
+}
+
+/* A small green dot in place of the bullet. */
+.start-new-since li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0.8em;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #5a9a5c;
+}
+
+.start-new-since a {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #9fd19f;
 }
 
 .start-faq {
