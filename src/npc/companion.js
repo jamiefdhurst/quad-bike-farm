@@ -3,6 +3,7 @@ import { attachKeepingSize } from './attachKeepingSize.js';
 import { StateMachine } from './stateMachine.js';
 import { CharacterRig } from './characterRig.js';
 import { DEFAULT_COMPANION_PARAMS } from './companionParams.js';
+import { outfitsFor } from './outfits.js';
 import { applyOutfit, refitOutfit, reshirt, restyle, withJumper, withCoat, setHood, OUTFITS } from './outfit.js';
 import { shapeFigure } from './figure.js';
 import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
@@ -241,6 +242,7 @@ export class Companion {
 
   /** What she has on top today (npc/outfits.js), repainting and refitting her. */
   setStyle(style) {
+    if (style?.kind && !outfitsFor(this.character?.outfitOdds).includes(style.kind)) return; // only Jess wears the crop-top
     this.outfit = restyle(this.rig, this.outfit, style);
   }
 

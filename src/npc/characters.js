@@ -25,6 +25,8 @@ export const CHARACTERS = [
     // What she wears on top, dealt each day (npc/outfits.js): mostly her polo. She never wears a crop-top, so its share is her polo's.
     outfitOdds: { polo: 0.55, plaid: 0.3, doublePolo: 0.15, cropTop: 0 },
     poppedChance: 0.1, // now and then a popped collar
+    underOpen: [0, 1], // in two polos, buttons undone on her own under the other
+    plaidButtons: [0, 1], // a buttoned plaid: done right up, or the top one undone
     params: {
       outfit: 'farmPolo',
       boredShowOffChance: 0.04,
@@ -75,6 +77,8 @@ export const CHARACTERS = [
     // What she wears on top, dealt each day (npc/outfits.js); the crop-top only on a warm day, its share her polo's otherwise.
     outfitOdds: { polo: 0.5, plaid: 0.3, doublePolo: 0.15, cropTop: 0.05 },
     poppedChance: 0.3, // her collar popped a good third of the time
+    underOpen: [0, 4], // in two polos, buttons undone on her own under the other
+    plaidButtons: [0, 3], // a buttoned plaid: done right up, down to three undone
     // Cheekier: braver behind the bars, chattier, bored sooner (usually after
     // about 45 s rather than 60) and more likely to do something about it, and
     // she likes being left on a runaway.

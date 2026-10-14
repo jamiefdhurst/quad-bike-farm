@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { dealOutfit, describeOutfit, OVER_POLO_COLOURS, PLAID_PALETTE } from '../src/npc/outfits.js';
+import { dealOutfit, describeOutfit, outfitsFor, OVER_POLO_COLOURS, PLAID_PALETTE } from '../src/npc/outfits.js';
 import { CHARACTERS } from '../src/npc/characters.js';
 import { createRandom } from '../src/core/random.js';
 
@@ -53,5 +53,27 @@ describe('dealing the day\'s outfit', () => {
     }
     expect(describeOutfit({ kind: 'plaid', plaid: PLAID_PALETTE[0].colours, plaidOpen: true })).toBe('a red and black plaid shirt, open over her polo');
     expect(describeOutfit({ kind: 'doublePolo', over: OVER_POLO_COLOURS[1], popped: true })).toBe('two polos (black over hers), collars popped');
+  });
+});
+
+describe('buttons and who may wear what', () => {
+  it('deals the polo under a second one and a buttoned plaid their own buttons, each within her range', () => {
+    const random = createRandom(5);
+    const seen = new Set();
+    for (let i = 0; i < 300; i++) {
+      const o = dealOutfit(random, ODDS, { underOpen: [0, 4], plaidButtons: [0, 3] });
+      expect(o.underOpen).toBeGreaterThanOrEqual(0);
+      expect(o.underOpen).toBeLessThanOrEqual(4);
+      expect(o.plaidButtons).toBeLessThanOrEqual(3);
+      seen.add(o.plaidButtons);
+    }
+    expect(seen.has(0)).toBe(true); // done right up, sometimes
+  });
+
+  it('only lets a girl with a chance of it wear the crop-top', () => {
+    const amy = CHARACTERS.find((c) => c.id === 'amy');
+    const jess = CHARACTERS.find((c) => c.id === 'jess');
+    expect(outfitsFor(amy.outfitOdds)).not.toContain('cropTop');
+    expect(outfitsFor(jess.outfitOdds)).toContain('cropTop');
   });
 });

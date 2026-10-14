@@ -157,7 +157,7 @@ import { Tea, TEA_PARAM_RANGES } from './npc/tea.js';
 import { Flask, FLASK_PARAM_RANGES } from './npc/flask.js';
 import { carryParams, CARRY_PARAM_RANGES, carryWeight } from './npc/carrying.js';
 import { dealPoloOpen } from './npc/polo.js';
-import { dealOutfit, DEFAULT_OUTFIT_PARAMS, OUTFIT_PARAM_RANGES, OUTFIT_KINDS } from './npc/outfits.js';
+import { dealOutfit, outfitsFor, DEFAULT_OUTFIT_PARAMS, OUTFIT_PARAM_RANGES } from './npc/outfits.js';
 import { Jumpers, JUMPER_PARAM_RANGES, dealJumperColours } from './npc/jumpers.js';
 import { JumperRail } from './world/jumperRail.js';
 import { Coats, COAT_PARAM_RANGES, dealCoatColours } from './npc/coats.js';
@@ -919,8 +919,14 @@ export class Game {
     const warm = this.weather.peak > this.outfitParams.warmAbove;
     const forcedOutfit = new URLSearchParams(location.search).get('outfit');
     for (const c of this.companions) {
-      const style = dealOutfit(outfitRandom, c.character.outfitOdds ?? { polo: 1 }, { warm, popped: c.character.poppedChance ?? 0, p: this.outfitParams });
-      if (forcedOutfit && OUTFIT_KINDS[forcedOutfit]) style.kind = forcedOutfit; // ?outfit=plaid puts both girls in it, to look at
+      const style = dealOutfit(outfitRandom, c.character.outfitOdds ?? { polo: 1 }, {
+        warm,
+        popped: c.character.poppedChance ?? 0,
+        underOpen: c.character.underOpen,
+        plaidButtons: c.character.plaidButtons,
+        p: this.outfitParams,
+      });
+      if (outfitsFor(c.character.outfitOdds).includes(forcedOutfit)) style.kind = forcedOutfit; // ?outfit=plaid puts both girls in it, to look at
       c.outfit = { ...c.outfit, poloOpen: dealPoloOpen(c.character.poloOpen, buttonsRandom), style }; // fitted with her shirt just below
     }
     for (const c of this.companions) {

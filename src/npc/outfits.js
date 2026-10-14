@@ -36,11 +36,14 @@ export const OUTFIT_PARAM_RANGES = {
 
 /**
  * Today's outfit for a girl. `odds`: { polo, plaid, doublePolo, cropTop } (they needn't add up to 1); `warm`: whether the day is
- * warm enough for a crop-top (if not, its share goes to the polo); `popped`: her chance of a popped collar. Always draws the same
- * number of randoms, so one girl's deal doesn't move the other's. Returns { kind, plaid, plaidOpen, over, crop, popped }.
+ * warm enough for a crop-top (if not, its share goes to the polo); `popped`: her chance of a popped collar; `underOpen` and
+ * `plaidButtons`: her ranges of buttons undone on the polo under a second one and on a buttoned plaid. Always draws the same
+ * number of randoms, so one girl's deal doesn't move the other's. Returns { kind, plaid, plaidOpen, over, crop, popped,
+ * underOpen, plaidButtons }.
  */
-export function dealOutfit(random, odds, { warm = false, popped = 0, p = DEFAULT_OUTFIT_PARAMS } = {}) {
-  const r = [random(), random(), random(), random(), random(), random()];
+export function dealOutfit(random, odds, { warm = false, popped = 0, underOpen = [0, 0], plaidButtons = [0, 0], p = DEFAULT_OUTFIT_PARAMS } = {}) {
+  const r = [random(), random(), random(), random(), random(), random(), random(), random()];
+  const between = ([lo, hi], x) => lo + Math.min(hi - lo, Math.floor(x * (hi - lo + 1)));
   const share = { ...odds };
   if (!warm) {
     share.polo = (share.polo ?? 0) + (share.cropTop ?? 0);
@@ -65,12 +68,19 @@ export function dealOutfit(random, odds, { warm = false, popped = 0, p = DEFAULT
     over: pick(OVER_POLO_COLOURS, r[3]),
     crop: pick(CROP_COLOURS, r[4]),
     popped: kind !== 'cropTop' && r[5] < popped,
+    underOpen: between(underOpen, r[6]), // in two polos, the buttons undone on hers under the other (the top one has her usual)
+    plaidButtons: between(plaidButtons, r[7]), // a buttoned plaid's buttons undone: none, done right up, to a few
   };
 }
 
 /** A style with anything missing filled in, so the debug panel can switch to any kind (e.g. one dealt before a field existed). */
 export function completeStyle(style = {}) {
-  return { kind: 'polo', plaid: PLAID_PALETTE[0].colours, plaidOpen: false, over: OVER_POLO_COLOURS[0], crop: CROP_COLOURS[0], popped: false, ...style };
+  return { kind: 'polo', plaid: PLAID_PALETTE[0].colours, plaidOpen: false, over: OVER_POLO_COLOURS[0], crop: CROP_COLOURS[0], popped: false, underOpen: 0, plaidButtons: 0, ...style };
+}
+
+/** Which outfits a girl may wear: the crop-top only for one with a chance of it (Jess). */
+export function outfitsFor(odds = {}) {
+  return Object.keys(OUTFIT_KINDS).filter((k) => k !== 'cropTop' || (odds.cropTop ?? 0) > 0);
 }
 
 /** A short description for the debug panel and the console. */

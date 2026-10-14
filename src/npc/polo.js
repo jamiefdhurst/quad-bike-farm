@@ -204,7 +204,7 @@ export const PLAID = {
   placketWidth: 0.026,
   placketShade: 1,
   studs: 8,
-  buttons: [0.012],
+  buttons: [-0.008], // done right up, the top button is on the collar's stand, as the polo's
   topButtonOpen: 0.006,
   buttonRadius: 0.0055,
   buttonColour: '#e6e0d0', // pale shirt buttons
@@ -216,8 +216,6 @@ export const PLAID = {
   roughness: 0.95,
 };
 
-/** How many of a plaid shirt's buttons she has undone, from her polo's: at least the top one, at most three. */
-export const plaidOpenFor = (poloOpen = 0) => Math.min(3, Math.max(1, poloOpen));
 
 // The plaid shirt worn open over her polo: a little roomier, its fronts hanging apart all the way down so the polo shows.
 export const PLAID_OPEN = {
@@ -230,7 +228,9 @@ export const PLAID_OPEN = {
   open: 99, // every button undone
   veeWidths: [0.075],
   veeBows: [0.55],
-  veeFloor: 0.055, // the fronts this far either side of her middle all the way to the hem
+  veeNeck: 0.022, // at the collar the fronts are this far either side of her middle, so the collar sits round her neck
+  veeDrop: 0.14, // and they fall open over this far down
+  veeFloor: 0.055, // to this far either side of her middle, all the way to the hem
   veeMeasured: true, // its fronts laid along the edge as cut on the finished shirt (a wide V moves as the shirt is pushed out)
   inset: false, // what shows between the fronts is her polo
 };
@@ -244,8 +244,8 @@ export const OVER_POLO = {
   neckSide: 0.008,
   neckFront: -0.014,
   sleeveLength: 0.58,
-  sleeveEase: 0.011,
-  sleeveFlare: 0.014,
+  sleeveEase: 0.015, // roomy, so hers doesn't come through when her arms go up
+  sleeveFlare: 0.017,
   tuckEase: 0.0042,
   blouse: 0.006,
 };
@@ -498,8 +498,10 @@ function openNeck(mesh, body, p, neckField) {
   const bow = p.veeBows[Math.min(open, p.veeBows.length - 1)];
   // Below its point the field carries on falling as a straight V would, so nothing there sits on the edge of being cut.
   const closing = (y) => (y <= bottom ? (width * (y - bottom)) / (top - bottom) : width * ((y - bottom) / (top - bottom)) ** bow);
-  // An overshirt worn open: its fronts stay `veeFloor` apart all the way down to the hem rather than meeting at the bottom.
-  const halfWidth = p.veeFloor ? (y) => Math.max(p.veeFloor, closing(y)) : closing;
+  // An overshirt worn open: nearly together at the collar (`veeNeck`), falling open over `veeDrop` to `veeFloor` either side of her
+  // middle, and staying that far apart all the way down to the hem rather than meeting at the bottom.
+  const hanging = (y) => p.veeNeck + (p.veeFloor - p.veeNeck) * smooth01((top - y) / p.veeDrop);
+  const halfWidth = p.veeFloor ? (p.veeNeck != null ? hanging : (y) => Math.max(p.veeFloor, closing(y))) : closing;
   const field = (v) => Math.min(halfWidth(v.rest[1]) - Math.abs(v.rest[0] - x0), v.rest[2] - neck[2] - 0.03);
   return { top, bottom, halfWidth, field };
 }
@@ -561,7 +563,8 @@ function buildPlacket(mesh, body, p, vee) {
   // Only the front of her chest can be hit; the rest is skipped for speed.
   const reach = Math.max(0.3, p.placketLength + 0.05);
   const wide = 0.07 + (vee ? Math.max(0, vee.halfWidth(vee.top)) : 0);
-  const near = (v) => Math.abs(v.rest[0] - x0) < wide && v.rest[2] > neck[2] && v.rest[1] > neck[1] - reach;
+  // Her sides too: a wide open front's edges come round towards them at the waist.
+  const near = (v) => Math.abs(v.rest[0] - x0) < wide && v.rest[2] > neck[2] - (vee ? 0.08 : 0) && v.rest[1] > neck[1] - reach;
   const front = { verts: mesh.verts, tris: mesh.tris.filter((t) => t.some((i) => near(mesh.verts[i]))) };
   const hitAt = (x, y) => {
     // A hair off her middle: split down it, a ray exactly there can fall between the triangles either side.
@@ -586,16 +589,17 @@ function buildPlacket(mesh, body, p, vee) {
   // How far either side of the middle the V's edge is. A coat stands so far off her that pushing it out widens the V it was cut
   // with, so its edge is found on the finished coat (`veeMeasured`); the polo's barely moves and keeps the V it was cut to.
   const edgeCache = new Map();
-  const measured = (y) => {
-    const k = Math.round(y * 1e4);
+  // Each side on its own: her body isn't quite symmetrical, and a wide V shows it.
+  const measured = (y, side) => {
+    const k = `${Math.round(y * 1e4)},${side}`;
     if (!edgeCache.has(k)) {
       let d = Math.max(0, vee.halfWidth(y));
-      while (d < 0.2 && !hitAt(x0 + d, y)) d += 0.0005;
+      while (d < 0.2 && !hitAt(x0 + side * d, y)) d += 0.0005;
       edgeCache.set(k, d + 0.001);
     }
     return edgeCache.get(k);
   };
-  const split = (y) => (!vee ? 0 : p.veeMeasured && vee.halfWidth(y) > 0 ? measured(y) : Math.max(0, vee.halfWidth(y)));
+  const split = (y, side = 1) => (!vee ? 0 : p.veeMeasured && vee.halfWidth(y) > 0 ? measured(y, side) : Math.max(0, vee.halfWidth(y)));
   const restNormal = (v) => norm(applySkinDir(v.skin, v.normal));
   // A row across the strip at height y from xL to xR: the shirt under it, and how far forward the strip lies (flat across, so
   // it bridges any dip in the shirt).
@@ -661,7 +665,7 @@ function buildPlacket(mesh, body, p, vee) {
     (!closed || strip(vBottom, bottom, () => [x0 - w / 2, x0 + w / 2], 0, 1, 5, vee ? ['bottom'] : ['top', 'bottom'])) &&
     (!vee ||
       (strip(top, closed ? vBottom : bottom, (y) => [x0 + split(y), x0 + split(y) + w / 2], 0.5, 1, 3, halfCaps) &&
-        strip(top, closed ? vBottom : bottom, (y) => [x0 - split(y) - w / 2, x0 - split(y)], 0, 0.5, 3, halfCaps)));
+        strip(top, closed ? vBottom : bottom, (y) => [x0 - split(y, -1) - w / 2, x0 - split(y, -1)], 0, 0.5, 3, halfCaps)));
   if (!ok) return null;
 
   // The buttons, and for the undone ones the buttonhole on the other half.
@@ -686,7 +690,7 @@ function buildPlacket(mesh, body, p, vee) {
     };
     const b = open ? at(x0 + split(y) + w / 4, [x0 + split(y), x0 + split(y) + w / 2, 3]) : at(x0, [x0 - w / 2, x0 + w / 2, 5]);
     if (b) buttons.push(b);
-    const h = open && at(x0 - split(y) - w / 4, [x0 - split(y) - w / 2, x0 - split(y), 3]);
+    const h = open && at(x0 - split(y, -1) - w / 4, [x0 - split(y) - w / 2, x0 - split(y), 3]);
     if (h) slits.push(h);
   });
   return { verts, tris, uv, buttons, slits, top };

@@ -399,19 +399,26 @@ describe('the other tops', () => {
     expect(vee.halfWidth(hemY + 0.01)).toBeGreaterThanOrEqual(PLAID_OPEN.veeFloor);
     // Nothing of it across her middle at the front, from the neck to the hem.
     const used = [...new Set(shell.tris.flat())].map((i) => shell.verts[i]);
-    for (const v of used.filter((q) => !q.apart && q.rest[2] > 0.1)) expect(Math.abs(v.rest[0])).toBeGreaterThan(PLAID_OPEN.veeFloor - 0.01);
+    // Close at the collar, falling open below it: nothing across her middle anywhere down the front.
+    for (const v of used.filter((q) => !q.apart && q.rest[2] > 0.1)) {
+      const want = v.rest[1] < vee.top - PLAID_OPEN.veeDrop ? PLAID_OPEN.veeFloor : PLAID_OPEN.veeNeck;
+      expect(Math.abs(v.rest[0])).toBeGreaterThan(want - 0.01);
+    }
     expect(placket.slits.length).toBe(placket.buttons.length); // every button undone, a buttonhole for each
   });
 
-  it('buttons a plaid shirt to the hem with the top few undone', async () => {
-    const { PLAID, plaidOpenFor } = await import('../src/npc/polo.js');
+  it('buttons a plaid shirt to the hem, done right up or with the top few undone', async () => {
+    const { PLAID } = await import('../src/npc/polo.js');
     const body = cylinderBody();
-    const { placket, vee } = buildTop(body, { ...PLAID, open: plaidOpenFor(0) });
-    expect(plaidOpenFor(0)).toBe(1);
-    expect(plaidOpenFor(5)).toBe(3);
-    expect(vee).not.toBe(null);
-    expect(placket.buttons.length).toBe(PLAID.studs);
-    expect(Math.min(...placket.verts.map((v) => v.rest[1]))).toBeLessThan(body.waist - PLAID.hemDrop + 0.04);
+    const shut = buildTop(body, { ...PLAID, open: 0 });
+    expect(shut.vee).toBe(null);
+    expect(shut.placket.buttons.length).toBe(PLAID.studs);
+    // Done right up: the top button is on the collar's stand, above where the shirt meets her neck.
+    expect(Math.max(...shut.placket.buttons.map((b) => b.centre[1]))).toBeGreaterThan(shut.placket.top);
+    const open = buildTop(body, { ...PLAID, open: 2 });
+    expect(open.vee).not.toBe(null);
+    expect(open.placket.buttons.length).toBe(PLAID.studs);
+    expect(Math.min(...open.placket.verts.map((v) => v.rest[1]))).toBeLessThan(body.waist - PLAID.hemDrop + 0.04);
   });
 
   it('puts a second polo outside the first, with shorter sleeves and a lower neck', async () => {
@@ -446,11 +453,24 @@ describe('the crop-top', () => {
     expect(built).not.toBe(null);
     const F = cropFields(body);
     const verts = [...new Set(built.shell.tris.flat())].map((i) => built.shell.verts[i]).filter((v) => !v.apart);
-    for (const v of verts) expect(F.field(v)).toBeLessThan(0.006); // stood off her, so a few millimetres out
+    for (const v of verts.filter((q) => q.edge !== 'strap')) expect(F.field(v)).toBeLessThan(0.006); // stood off her, so a few millimetres out
     expect(Math.min(...verts.map((v) => v.rest[1]))).toBeGreaterThan(F.bust.y - CROP.under - 0.005);
-    // Strap points above the band, about strapAcross either side of her middle.
-    const above = verts.filter((v) => v.rest[1] > F.bust.y + CROP.top + 0.03);
-    expect(above.length).toBeGreaterThan(4);
-    for (const v of above) expect(Math.abs(Math.abs(v.rest[0]) - CROP.strapAcross)).toBeLessThan(CROP.strapWidth + 0.003);
+    // Two thin straps above the band, strapAcross either side of her middle, front and back, lying just off her.
+    const straps = verts.filter((v) => v.edge === 'strap');
+    expect(straps.length).toBeGreaterThan(20);
+    for (const v of straps) expect(Math.abs(Math.abs(v.rest[0]) - CROP.strapAcross)).toBeLessThan(CROP.strapWidth + 1e-6);
+    expect(Math.max(...straps.map((v) => v.rest[2]))).toBeGreaterThan(0.05);
+    expect(Math.min(...straps.map((v) => v.rest[2]))).toBeLessThan(-0.05);
+  });
+});
+
+describe('the crop-top round her back', () => {
+  it('goes all the way round, however narrow it is at the back', async () => {
+    const { buildCropTop } = await import('../src/npc/crop.js');
+    const body = cylinderBody();
+    const built = buildCropTop(body, { ...(await import('../src/npc/crop.js')).CROP, backTop: -0.03, backUnder: 0.04 });
+    const used = [...new Set(built.shell.tris.flat())].map((i) => built.shell.verts[i]).filter((v) => !v.apart && v.edge !== 'strap');
+    expect(used.some((v) => v.rest[2] < -0.11)).toBe(true);
+    expect(used.some((v) => v.rest[0] > 0.11)).toBe(true);
   });
 });
