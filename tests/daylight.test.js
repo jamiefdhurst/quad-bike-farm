@@ -57,7 +57,8 @@ describe('The day running on', () => {
     const blue = (hex) => parseInt(hex.slice(5, 7), 16);
     expect(red(dusk.horizonColor) - blue(dusk.horizonColor)).toBeGreaterThan(red(day.horizonColor) - blue(day.horizonColor));
     expect(red(night.horizonColor)).toBeLessThan(40);
-    expect(night.sunIntensity).toBeCloseTo(P.moonLight);
+    expect(night.sunIntensity).toBeGreaterThanOrEqual(P.moonLight * 0.7); // the moon's light: starlight and, with a bright moon up, more
+    expect(night.sunIntensity).toBeLessThanOrEqual(P.moonLight * (0.7 + P.moonBoost));
     expect(night.hemiIntensity).toBeCloseTo(BASE.hemiIntensity * P.nightLight);
     expect(night.sunDir.y).toBeGreaterThan(0); // the night light comes from above, not from under the ground
   });

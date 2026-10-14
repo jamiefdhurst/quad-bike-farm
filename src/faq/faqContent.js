@@ -611,8 +611,16 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why is it getting dark?',
         a: `The day goes on. Late in the afternoon the sun gets low in the west and the light turns golden, then it sets and the dusk fades into
-          night, and the night stays for the rest of the game. It gets colder too, so a mild afternoon can end in a frost. In the dark the
+          night, and the night stays for the rest of the game. Stars and the moon come out. It gets colder too, so a mild afternoon can end in a frost. In the dark the
           headlights really light the way, the barn light comes on (if the generator is running), and the girls start saying they want to go in.`,
+      },
+      {
+        q: 'Are there stars and a moon at night?',
+        a: `Yes. Once it is properly dark the stars come out, and the moon rises in the east, crosses the south and sets in the west. Each game
+          has its own phase. A full moon comes up at about sunset, is highest at midnight and lights the farm well enough to ride by without
+          headlights on a clear night; a thin crescent or a new moon gives hardly more than starlight. Cloud hides the stars and dims the moon,
+          so on an overcast night you will want your lights.`,
+        tip: 'A full moon on a clear night is bright enough to see the farm by; cloud hides it.',
       },
       {
         q: 'Do the headlights actually light anything?',

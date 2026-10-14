@@ -6,6 +6,8 @@
 // Directions: north is -z, east +x (the barn's workbench is on its north wall), so the sun rises in the east (+x), is in the south (+z)
 // at noon and sets in the west (-x).
 
+import { moonAt, starLevel, moonDisc, moonlightFactor } from './night.js';
+
 export const DEFAULT_DAYLIGHT_PARAMS = {
   clockRate: 12, // game seconds per real second: a morning start reaches dusk in about 40 minutes, an afternoon one in ten or so
   startEarliest: 8, // the earliest a game starts, hours after midnight
@@ -14,7 +16,10 @@ export const DEFAULT_DAYLIGHT_PARAMS = {
   sunset: 17.25,
   sunHigh: 0.5, // radians: the sun at its highest, in the south at noon (about 29 degrees, as in October)
   nightLight: 0.14, // the sky's light at full dark, as a fraction of the day's
-  moonLight: 0.35, // a faint blue light from above at night, so the farm is still just there (stars and a moon are README TODO item 68)
+  moonLight: 0.35, // a faint blue light from above at night, so the farm is still just there (more from a bright moon that is up: moonBoost)
+  moonPhase: 0.5, // the moon's phase: 0 new, 0.5 full (each game draws its own)
+  moonBoost: 0.9, // how much more night light a full moon high in a clear sky gives, as a fraction of moonLight
+  moonHigh: 0.75, // radians: how high the moon climbs in the south
   duskGlow: 0.75, // how orange the low sun turns the sky (less on a cloudy day)
   peakHour: 14.5, // the warmest time of day
   coolHours: 9, // hours after the warmest for the night's cold to set in
@@ -31,6 +36,9 @@ export const DAYLIGHT_PARAM_RANGES = {
   sunHigh: [0.1, 1.3, 0.01],
   nightLight: [0, 0.5, 0.01],
   moonLight: [0, 1, 0.01],
+  moonPhase: [0, 1, 0.01],
+  moonBoost: [0, 2, 0.05],
+  moonHigh: [0.2, 1.3, 0.01],
   duskGlow: [0, 1, 0.01],
   peakHour: [11, 17, 0.25],
   coolHours: [2, 16, 0.5],
@@ -67,7 +75,7 @@ export function sunAt(hour, p = DEFAULT_DAYLIGHT_PARAMS) {
   const dir = { x: -Math.sin(azimuth) * ce, y: Math.sin(elevation), z: Math.cos(azimuth) * ce };
   const light = smoothstep(-0.12, 0.12, elevation);
   const glow = smoothstep(0.3, 0.04, elevation) * smoothstep(-0.1, 0, elevation);
-  return { elevation, azimuth, dir, light, glow, night: 1 - light };
+  return { elevation, azimuth, dir, light, glow, night: 1 - light, hour };
 }
 
 const DUSK = { horizon: '#f2a066', zenith: '#5b6a98', cloud: '#e8a47e', shadow: '#6e5264', sun: '#ff9a52' };
@@ -85,6 +93,7 @@ export function skyAt(base, sun, p = DEFAULT_DAYLIGHT_PARAMS) {
   const glow = sun.glow * p.duskGlow * (1 - 0.6 * (base.cloudCover ?? 0.5));
   const n = sun.night;
   const tint = (key, dusk, night, g = 1) => mixHex(mixHex(base[key], dusk, glow * g), night, n);
+  const moon = moonAt(sun.hour ?? 0, p.moonPhase, p.moonHigh);
   const sunPower = (base.sunIntensity ?? 1.25) * sun.light * (1 - 0.3 * glow);
   return {
     ...base,
@@ -93,12 +102,17 @@ export function skyAt(base, sun, p = DEFAULT_DAYLIGHT_PARAMS) {
     cloudColor: tint('cloudColor', DUSK.cloud, NIGHT.cloud, 0.8),
     cloudShadowColor: tint('cloudShadowColor', DUSK.shadow, NIGHT.shadow, 0.6),
     // By day the sun; by night a faint blue light from above in its place.
-    sunIntensity: sunPower + p.moonLight * n,
+    sunIntensity: sunPower + p.moonLight * n * moonlightFactor(moon, base.cloudCover, p.moonBoost),
     sunColor: mixHex(mixHex(DAY_SUN, DUSK.sun, glow), NIGHT.sun, n),
     hemiIntensity: (base.hemiIntensity ?? 1.7) * (p.nightLight + (1 - p.nightLight) * sun.light),
     hemiColor: mixHex(DAY_HEMI, NIGHT_HEMI, n),
     envLevel: p.nightLight + (1 - p.nightLight) * sun.light, // how bright the baked reflections are
     exposure: (base.exposure ?? 1) * (1 + 0.1 * n),
+    // The stars and the moon the sky draws (sky.js): how many stars, the moon's direction, phase and brightness.
+    starLevel: starLevel(n, base.cloudCover, moon),
+    moonDir: moon.dir,
+    moonPhase: p.moonPhase,
+    moonLevel: moonDisc(n, moon),
     sunDir: sun.light > 0.02 ? sun.dir : { x: 0.3, y: 0.85, z: -0.4 }, // at night the light comes from high up, not from under the ground
   };
 }
@@ -140,6 +154,7 @@ export class Daylight {
     this.hour = start ?? p.startEarliest + (p.startLatest - p.startEarliest) * random();
     this.startHour = this.hour;
     this.drop = p.coolMin + (p.coolMax - p.coolMin) * random();
+    this.p.moonPhase = random(); // drawn after the rest, so a game's start and its fall are as they were
   }
 
   update(dt) {

@@ -2766,7 +2766,7 @@ Stood about, a girl's ways of standing were picked at random from her own list. 
 Asked before building, 11 October 2026:
 
 - The game starts at a different time each game, morning or afternoon, and the day runs on from there through dusk into night, which then stays. A clock and a little weather station (a thermometer and a barometer) on the barn wall show the time and how it is.
-- Night is dark enough that headlights matter, with the farm still faintly there under a blue night light. Stars and a moon stay with item 94.
+- Night is dark enough that headlights matter, with the farm still faintly there under a blue night light. Stars and a moon came later (item 82, below).
 - The vehicles throw real light, not only the faked beams.
 - The temperature falls from the afternoon into the night by a random amount (about 6 degrees), and frost forms on the ground and the seats if it gets cold enough; a morning start is colder and thaws.
 - As it gets dark the girls say they want to go in, and once it is dark the barn doorway and the cabs pull at them, through the chooser; you can still ask them out. Nothing ends the game.
@@ -2786,6 +2786,14 @@ Asked before building, 11 October 2026:
 - The girls: `gettingDark` once as the light goes, `darkGoIn` now and then once it's dark and they're out in it (not in the barn or a cab), and going in is an offer (`goIn` in places.js: warmth 0.7, rest 0.5) to the barn doorway once it's 60 per cent dark; once in, they stay in while it's dark. The cold at night raises their warmth need on its own, so the Land Rover with the heater on (`warmCab`) competes. You can still ask them out.
 - Debug: "time of day" slider and "the clock" on the Girls tab's "Both girls and the farm"; `weather.time`, `weather.clock` and `weather.darkness` in the console; "Time of day" tuning under world and "Vehicle lights" under driving.
 - Checked headless: dusk at 17:12 (golden sky), night at 19:00 (dark, Amy just visible), a running red quad's real light pool on the grass at night, the weather station, and 25 s after dark with the girls free and no errors. Not checked: how it feels to ride the hill in the dark, the frame rate with all six lights lit, the morning frost thawing in the running game, or the girls actually going in (they chose a start and a drive in the 25 s).
+
+## Stars and a moon (TODO 82)
+
+- `src/world/night.js` (pure, tested): `moonAt(hour, phase)`, `starLevel`, `moonDisc`, `moonlightFactor`. The moon keeps the sun's arc, twelve hours up, rising in the east and setting in the west, but its rise slips by 24 hours times its phase: a full moon (0.5) rises at 18:00, is highest (0.75 rad, `moonHigh`) at midnight and sets at 06:00; a new one is up with the sun and never seen. The game runs a few hours past dusk, so a full moon is the one that matters, and it is also the one that comes up as the sun goes.
+- Each game draws its own phase (`moonPhase` in "Time of day", the third draw from the daylight's random, after the start and the fall so those stay as they were). Not tied to the farm's day count: one night a game, and a phase that crept on by a twenty-ninth of a month a day would hardly be noticed. Settable in the Tune tab.
+- Drawn in the sky shader (`sky.js`): a grid of star cells over the sphere, a tenth with a star, of varying brightness and a faint twinkle, fading near the horizon; the moon as a disc seen face on, shaded by phase (the terminator from the sun's side), with a halo. It is 0.035 rad across, about eight times the real moon, because the real size is a speck at this screen size. Both are drawn before the clouds, so cloud covers them. Stars vanish under thick cloud (`starLevel`) and a bright moon washes some out.
+- The light: the night's blue light from above was a fixed 0.35 (`moonLight`); it is now 0.7 of that as a floor (starlight, sky glow) and up to 0.9 more (`moonBoost`) from a bright moon that is up, less under cloud. A full moon high in a clear sky gives 0.35 x 1.6 = 0.56. The light's direction stays high and fixed, so shadows don't swing about; only its strength follows the moon.
+- Not done: the moon in the baked reflections (the environment map is built by day), and a moon-shadow direction. Not checked running: how the sky looks, the disc's size, or the star density on screen; unit tests only.
 
 ## Lights to work by (TODO 121)
 

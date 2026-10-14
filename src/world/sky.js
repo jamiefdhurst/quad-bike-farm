@@ -39,6 +39,10 @@ const fragmentShader = /* glsl */ `
   uniform vec3 cloudShadowColor;
   uniform float cover;
   uniform float time;
+  uniform float stars;
+  uniform vec3 moonDir;
+  uniform float moonPhase;
+  uniform float moonLevel;
   varying vec3 vDir;
 
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -55,11 +59,48 @@ const fragmentShader = /* glsl */ `
     return v;
   }
 
+  // Stars: a grid of cells over the sphere, each holding at most one, of its own brightness and a slight tint, twinkling a little.
+  float starField(vec3 d) {
+    vec3 q = d * 140.0;
+    vec3 c = floor(q);
+    vec3 f = fract(q) - 0.5;
+    float r = fract(sin(dot(c, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+    if (r < 0.9) return 0.0;
+    vec3 off = (vec3(fract(r * 91.7), fract(r * 37.3), fract(r * 17.9)) - 0.5) * 0.6;
+    float dist = length(f - off);
+    float bright = (r - 0.9) * 10.0;
+    float tw = 0.8 + 0.2 * sin(time * 900.0 + r * 60.0);
+    return smoothstep(0.17, 0.0, dist) * (0.35 + 0.65 * bright * bright) * tw;
+  }
+
   void main() {
     vec3 d = normalize(vDir);
     float h = clamp(d.y, 0.0, 1.0);
     vec3 col = mix(horizonColor, zenithColor, pow(h, 0.6));
     if (d.y > 0.0) {
+      float sky = smoothstep(0.02, 0.3, d.y);
+      if (stars > 0.0) col += vec3(0.85, 0.9, 1.0) * starField(d) * stars * sky;
+      if (moonLevel > 0.0) {
+        // The moon: a disc seen face on, lit by the sun's side of it (the phase), with a halo round it.
+        float cosA = dot(d, moonDir);
+        float radius = 0.035;
+        float ang = acos(clamp(cosA, -1.0, 1.0));
+        vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), moonDir));
+        vec3 up = cross(moonDir, right);
+        vec2 local = vec2(dot(d, right), dot(d, up)) / sin(radius);
+        float rr = dot(local, local);
+        float halo = exp(-ang * ang / (radius * radius * 30.0)) * 0.22;
+        float disc = 0.0;
+        if (cosA > 0.0 && rr < 1.0) {
+          vec3 n = vec3(local, sqrt(1.0 - rr));
+          float a = 6.2831853 * moonPhase;
+          vec3 toSun = vec3(sin(a), 0.0, -cos(a));
+          float lit = smoothstep(-0.04, 0.06, dot(n, toSun));
+          float maria = 0.8 + 0.2 * noise(local * 3.0 + 7.0);
+          disc = (0.04 + 0.96 * lit) * maria * smoothstep(1.0, 0.92, sqrt(rr));
+        }
+        col += vec3(0.9, 0.93, 1.0) * (halo * (0.15 + 0.85 * moonPhase * (1.0 - moonPhase) * 4.0) + disc * 1.3) * moonLevel * sky;
+      }
       vec2 uv = d.xz / (d.y + 0.12) * 1.4 + vec2(time, time * 0.4);
       float n = fbm(uv);
       float clouds = smoothstep(1.0 - cover - 0.15, 1.0 - cover + 0.35, n);
@@ -86,6 +127,10 @@ export class Sky {
       cloudShadowColor: { value: new THREE.Color(params.cloudShadowColor) },
       cover: { value: params.cloudCover },
       time: { value: 0 },
+      stars: { value: 0 },
+      moonDir: { value: new THREE.Vector3(0, -1, 0) },
+      moonPhase: { value: 0.5 },
+      moonLevel: { value: 0 },
     };
     this.dome = new THREE.Mesh(
       new THREE.SphereGeometry(1000, 48, 24),
@@ -152,6 +197,11 @@ export class Sky {
     this.uniforms.zenithColor.value.set(p.zenithColor);
     this.uniforms.cloudColor.value.set(p.cloudColor);
     this.uniforms.cloudShadowColor.value.set(p.cloudShadowColor);
+    // The night sky (night.js, lent by daylight.js's skyAt): the stars and the moon, absent while there is no time of day.
+    this.uniforms.stars.value = p.starLevel ?? 0;
+    this.uniforms.moonLevel.value = p.moonLevel ?? 0;
+    this.uniforms.moonPhase.value = p.moonPhase ?? 0.5;
+    if (p.moonDir) this.uniforms.moonDir.value.set(p.moonDir.x, p.moonDir.y, p.moonDir.z).normalize();
     this.scene.fog.color.set(p.horizonColor);
     this.scene.background.set(p.horizonColor);
     // The leaves' soft cut-out edges (assets.js) let a little of what's behind the canvas through, so behind it is the sky's colour too:
