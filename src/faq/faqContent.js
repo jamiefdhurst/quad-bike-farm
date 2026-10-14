@@ -34,7 +34,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why is an option on the girl\'s wheel greyed out?',
-        a: `The wheel always shows every quad, Land Rover and car, so it never changes shape under you. An option she can't do just now is
+        a: `The wheel always shows every quad, Land Rover and car (the quads under "Quads", the rest under "Other vehicles"), so it never changes shape under you. An option she can't do just now is
           greyed with the reason underneath: she is busy, someone is driving it, it is running already, or it is her friend's car. Her own
           car is the one she drives. With you and her friend already sat in it, she can still take the wheel, as long as nobody is at it.`,
       },

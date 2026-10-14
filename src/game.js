@@ -259,6 +259,7 @@ import { MuckView } from './world/muckView.js';
 import { shortName } from './workshop/logbook.js';
 import { Interaction } from './interaction/interaction.js';
 import { Wheel } from './interaction/wheel.js';
+import { groupWheelOptions } from './interaction/wheelGroups.js';
 import { Hud } from './hud/hud.js';
 import { MapView } from './hud/mapView.js';
 import { farmMapFeatures, DEFAULT_MAP_PARAMS, MAP_PARAM_RANGES } from './hud/farmMap.js';
@@ -7937,20 +7938,22 @@ export class Game {
     if (tow) options.push(tow);
     options.push(...general);
     const tractor = this.tractorUnit && this.tractorWheelOption(c);
-    if (tractor?.children.length) options.push(tractor);
+    const other = 'Other vehicles'; // the top ring folds these into one slice (interaction/wheelGroups.js)
+    if (tractor?.children.length) options.push({ ...tractor, group: other });
     const utv = this.utvUnit && this.utvWheelOption(c);
-    if (utv?.children.length) options.push(utv);
+    if (utv?.children.length) options.push({ ...utv, group: other });
     for (const l of Object.values(this.landys)) {
       const landy = l.unit && this.landyWheelOption(c, l);
-      if (landy?.children.length) options.push(landy);
+      if (landy?.children.length) options.push({ ...landy, group: other });
     }
     const tipTrailer = this.tipTrailerWheelOption(c);
-    if (tipTrailer.children.length) options.push(tipTrailer);
+    if (tipTrailer.children.length) options.push({ ...tipTrailer, group: other });
     for (const unit of [...new Set(actions.filter((a) => a.quad).map((a) => a.quad.unit))]) {
       const own = actions.filter((a) => a.quad === unit.quad);
       options.push({
         label: unit.name,
         color: unit.spec.bodyColor,
+        group: 'Quads',
         hint: unit.quad === c.quad && c.isSeated ? 'she\'s on it' : null,
         children: own.map((a) => ({ label: a.short ?? a.label, run: answer(a) })),
       });
@@ -7959,12 +7962,12 @@ export class Game {
     const shown = new Set(actions.filter((a) => a.quad).map((a) => a.quad.unit));
     const why = c.fsm.is('idle') ? 'not just now' : this.busyWhy(c);
     for (const unit of this.girlUnits) {
-      if (!shown.has(unit)) options.push({ label: unit.name, color: unit.spec.bodyColor, children: [{ label: 'Not just now', disabled: true, hint: why }] });
+      if (!shown.has(unit)) options.push({ label: unit.name, color: unit.spec.bodyColor, group: 'Quads', children: [{ label: 'Not just now', disabled: true, hint: why }] });
     }
     options.push(...this.workLightWheelOptions(c));
     options.push(...this.fallingOutWheelOptions(c));
     options.push(...this.romanceWheelOptions(c));
-    this.openWheel(`Ask ${c.name} to`, options, c);
+    this.openWheel(`Ask ${c.name} to`, groupWheelOptions(options), c);
     this.player.lookEnabled = false;
     this.player.moveEnabled = false;
   }

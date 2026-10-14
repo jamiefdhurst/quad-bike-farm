@@ -3740,3 +3740,11 @@ The tab had grown two long flat lists: about twenty-five rows at the top of each
 - Each girl: four lines to glance at (doing, free, looking at, reacting), then "Why" (open), "Make her do" (closed), then closed folders "Her state" (friend, waiting, numbness, trips, her quad, scores), "Clothes and mud" (outfit, helmet, coat, buttons, mud, dust), "Favour and romance" and "Skills".
 - Both girls and the farm: closed subfolders by subject, readouts first and buttons after: The girls together, Races runs and records, The day and the weather, Workshop generator and spares, Jobs (board, muck, bales, bonfire, photos), Animals gates and the lane, The farm that remembers, and Take me to.
 - Nothing was removed or changed in behaviour; every row calls the same game method as before. A new shared control goes in the subfolder for its subject, not at the top level of "Both girls and the farm".
+
+## The girls' wheel, bigger and tidier (TODO 56)
+
+Jamie: the wheel was getting hard to read, and the top level had too many slices.
+
+- **Bigger.** The wheel is drawn at 600 px (was 440) with 18 px labels (was 14), small print at 13 px, and a text shadow so the words hold up over bright ground. It scales down to fit a short window (`Wheel.fit`, 90% of the window height with the hint under it).
+- **Fewer top-level slices.** Every quad, the tractor, UTV, Land Rovers, cars and the tipping trailer used to be a slice of their own, a dozen on a busy farm. They are now two: "Quads" and "Other vehicles", each opening a ring of its vehicles (`groupWheelOptions` in `src/interaction/wheelGroups.js`, pure, tested). A group of one stays a plain slice. The top ring keeps what you ask of her (come here, stop, I'll be a minute), the two groups, and the occasional extras (work lights, falling out, romance). Greyed quads stay in their ring, so the shape still doesn't change from one opening to the next; the cost is one extra click to reach a vehicle.
+- Not checked in the running game: how the bigger wheel looks at small window sizes.

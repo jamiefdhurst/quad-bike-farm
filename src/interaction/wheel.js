@@ -6,10 +6,11 @@
 // Same interface as a menu: open(title, options), isOpen, handleInput(), close().
 
 const SVG = 'http://www.w3.org/2000/svg';
-const SIZE = 440;
-const INNER = 66; // radius of the hole in the middle
-const OUTER = 205;
-const LABEL_RADIUS = 136;
+const SIZE = 600;
+const INNER = 84; // radius of the hole in the middle
+const OUTER = 284;
+const LABEL_RADIUS = 186;
+const FIT = 0.9; // the wheel (and the hint under it) never takes more than this much of the window's height
 const DEAD = 28; // mouse travel (px) before anything's picked
 const REACH = 110; // and the most it counts
 
@@ -52,6 +53,13 @@ export class Wheel {
     this.isOpen = true;
     this.reset();
     this.el.style.display = 'block';
+    this.fit();
+  }
+
+  /** Scales the wheel down to fit a short window; it is drawn at full size otherwise. */
+  fit() {
+    const scale = Math.min(1, (window.innerHeight * FIT) / (SIZE + 30));
+    this.el.style.setProperty('--wheel-scale', scale.toFixed(3));
   }
 
   get level() {
