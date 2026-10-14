@@ -3734,6 +3734,14 @@ Jamie: a buttoned plaid should still show the polo under it, as the open one doe
 - **The collars the other way round.** The plaid's collar is built first, with a lower stand (`SHIRT_UNDER_COLLAR`: 1.6 cm at the back, 1.2 at the front, the shirt's longer fall and points otherwise), then the polo's is laid over the polo, the plaid and the plaid's collar. The open plaid and the double polo are unchanged.
 - Checked: a unit test on the stand-in body (the plaid outside the polo with a neck no higher, the polo's collar above and outside the plaid's at the back), and headless shots of both girls front, three-quarter and behind (Amy done right up, Jess with two undone), and with a jumper on top, where the plaid's collar points show under the polo's. The plaid's collar is the same check as the shirt, so under the polo's it mostly blends in. The faint dark ring across the upper chest of a buttoned plaid was there before this change. Not checked: sitting, driving, or in the wax jacket.
 
+### Follow-up: the undone top button, and the under polo's sleeves
+
+Jamie: undone, the top button dropped too far below where it sits done up; and in two polos the under one's sleeves came through on the inside of the arm.
+
+- **The top button** (`buildPlacket` in `polo.js`): done up it is on the collar's stand, 8 mm above the shirt's top edge; undone it used to drop to `topButtonOpen`, 6 mm below, 1.4 cm lower. Now it stays at the same height on its own half's end of the stand, with its buttonhole on the other half's end; only if there's no shirt under that end does it fall back to the old place. Every top whose first button is on the stand gets it, so the open plaid's too.
+- **The sleeves** (`tuckSleeves` in `polo.js`, called by `tuckUnder` in `outfit.js` for the polo under any top: the second polo, either plaid). Skinned from the stored pose (arms out) to her arms hanging, the inside of a sleeve is squeezed, and the outer top, further out, more, so the under sleeve came through it. Each point of the under polo carried by an arm is checked along the line out from the arm's bone; if the outer top is nearer than it plus 2 mm, it's pulled back in to there, by at most 8 mm. As she stands only; other poses aren't checked.
+- Checked: unit tests (the button's height, side and buttonholes; the tuck on two tubes), and that the game loads without errors in two polos and in a plaid. Not looked at in the game.
+
 ## Two different figures, a rounder bust, and the seat of the shorts (2026-10-14)
 
 Jamie: the bust a little rounder and more shapely, wider, and growing in width and depth as it gets bigger; the girls with slightly different figures and heights; then the shorts showed a bump before going back in, and should blend into a shapely bottom.
@@ -3745,6 +3753,14 @@ Jamie: the bust a little rounder and more shapely, wider, and growing in width a
   - The shorts (`seat` in `shorts.js`) fill out over the same two cheeks below the waistband, only ever further out, evened out between neighbours. Subdividing the shorts so the seat could curve more (flat, not rounded) was tried and dropped: sitting on a quad, her polo came through at her hips, as rounding had done before.
   - From the side and three-quarter behind it's a rounded bottom now; straight from behind a faint crease is still where the plate's edge was (her body's triangles).
 - Checked headless: both girls side by side front, close and in profile; Jess's shorts from both sides, behind, three-quarter behind and low; Amy three-quarter behind; Amy sitting on a quad. Not checked: driving, the jumper or coat hem over the new seat.
+
+### Follow-up: a fuller underside, and rounder as it grows
+
+Jamie: Jess's bust dropped away too quickly underneath and still wasn't round enough as it got bigger.
+
+- **Fuller underneath** (`figure.js`): the dome is measured from a fullest line `fullBelow` 0.03 (times its size) below the apex, so the lower half is the fuller one. Below that line the push holds out longer (`domeUnder` 0.16 against `dome` 0.3) and meets her body over a shorter edge (`foldEdge` 0.3 of the way in, against 0.5), tucking in at the fold; the change is blended in over a short way below the line, so there's no step.
+- **Rounder as it grows**: below its fullest line its height now grows with its size as its width does (it grew half as fast before, so a big one was wide and shallow), and the dome's power is divided by the square root of its size, so a bigger one is rounder rather than flat-topped.
+- Checked: unit tests (fuller below the apex than the same distance above; a bigger one reaching further down in more than proportion; no jumps). Not looked at in the game.
 
 ## The Girls tab, tidied again (TODO 55)
 

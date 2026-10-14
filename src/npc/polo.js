@@ -78,7 +78,7 @@ export const POLO = {
   // How far down the placket each button is (m), from where the shirt meets her neck. The top one is above it, on the collar's
   // stand (buttoned right up); the rest are spaced evenly down from it.
   buttons: [-0.008, 0.0285, 0.065, 0.1015, 0.138],
-  topButtonOpen: 0.006, // undone, the top button is on its half of the placket, this far below the top
+  topButtonOpen: 0.006, // undone, a top button that sits on the placket (not the collar's stand) is at least this far below its top
   // A little embroidered logo on her left chest, as a brand's would be: centred this far across from her middle and down from
   // where the shirt meets her neck, this wide and high.
   logo: { across: 0.07, down: 0.072, width: 0.025, height: 0.018, lift: 0.0007 },
@@ -263,6 +263,45 @@ export const OVER_POLO = {
   tuckEase: 0.0042,
   blouse: 0.006,
 };
+
+/**
+ * Keeps a top's sleeves inside the top worn over it, as she stands. Skinned down from the stored pose (arms out) to her arms
+ * hanging, the inside of a sleeve is squeezed, and the outer top, further out, is squeezed more, so the under one's sleeve can
+ * come through it there. Each point of `inner` carried by an arm is checked along the line out from the arm's bone through it;
+ * if the outer top is nearer than it plus `gap`, it is pulled back in to there (by at most `most`). Changes `inner`'s points
+ * (bind and rest) in place and returns how many moved. `body` as for topFields.
+ */
+export function tuckSleeves(inner, outer, body, { gap = 0.002, most = 0.008 } = {}) {
+  const { bones, boneNames } = body;
+  let moved = 0;
+  for (const side of ['Left', 'Right']) {
+    const arm = new RegExp(`^${side}(Arm|ForeArm|Hand)$`);
+    const share = (v) => v.weights.reduce((s, [b, w]) => s + (arm.test(boneNames[b]) ? w : 0), 0);
+    const from = bones[`${side}Arm`];
+    const to = bones[`${side}Hand`];
+    const axis = sub(to, from);
+    const len2 = dot(axis, axis);
+    const onAxis = (p) => add(from, scale(axis, Math.max(0, Math.min(1, dot(sub(p, from), axis) / len2))));
+    // Only the outer top's faces near this arm, so each ray tries a few hundred triangles rather than all of them.
+    const near = (p) => Math.hypot(...sub(p, onAxis(p))) < 0.12;
+    const local = { verts: outer.verts, tris: outer.tris.filter((t) => t.some((i) => near(outer.verts[i].rest))) };
+    for (const v of inner.verts) {
+      if (share(v) < 0.3) continue;
+      const c = onAxis(v.rest);
+      const out = sub(v.rest, c);
+      const d = Math.hypot(...out);
+      if (d < 1e-6) continue;
+      const dir = scale(out, 1 / d);
+      const hit = rayHit(local, c, dir);
+      if (!hit || hit.t >= d + gap) continue;
+      const rest = add(c, scale(dir, Math.max(d - most, hit.t - gap)));
+      v.rest = rest;
+      v.bind = unskin(v.skin, rest);
+      moved++;
+    }
+  }
+  return moved;
+}
 
 /** How many of a girl's polo buttons are undone on this farm: a whole number from `lo` to `hi`, both included. */
 export function dealPoloOpen([lo, hi] = [0, 0], random = Math.random) {
@@ -687,14 +726,24 @@ function buildPlacket(mesh, body, p, vee) {
   const slits = [];
   p.buttons.forEach((d0, i) => {
     const undone = vee && i < p.open;
+    if (d0 < 0) {
+      // On the collar's stand, which stands straight up from the shirt's top edge here (collar.js): just off the shirt's face.
+      // Undone, it stays at the height it has done up, on its own half's end of the stand, with its buttonhole on the other
+      // (or, with no shirt under that end, down on its half of the placket as before).
+      const on = (x) => {
+        const at = rowAt(top, x, x, 1);
+        return at && { centre: [x, top - d0, at.under[0].rest[2] - 0.0005], normal: norm([0, 0.15, 1]), anchor: at.under[0] };
+      };
+      const b = undone ? on(x0 + split(top) + w / 4) : on(x0);
+      if (b || !undone) {
+        if (b) buttons.push(b);
+        const h = undone && on(x0 - split(top, -1) - w / 4);
+        if (h) slits.push(h);
+        return;
+      }
+    }
     const d = undone ? Math.max(d0, p.topButtonOpen) : d0;
     const y = top - d;
-    if (d < 0) {
-      // On the collar's stand, which stands straight up from the shirt's top edge here (collar.js): just off the shirt's face.
-      const at = rowAt(top, x0, x0, 1);
-      if (at) buttons.push({ centre: [x0, y, at.under[0].rest[2] - 0.0005], normal: norm([0, 0.15, 1]), anchor: at.under[0] });
-      return;
-    }
     const open = undone && (y > vBottom || !closed);
     // On the strip's own face (which bridges the shirt's dips), not on the shirt under it.
     const at = (x, [xL, xR, n]) => {

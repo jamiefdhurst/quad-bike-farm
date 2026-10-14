@@ -321,12 +321,14 @@ describe('buttons undone on each farm', () => {
     expect(dealPoloOpen(undefined, () => 0.5)).toBe(0);
   });
 
-  it('puts the top button on the collar stand when done up, and at the top of its half when undone', () => {
+  it('puts the top button on the collar stand, done up in the middle and undone at the same height on its half', () => {
     const body = cylinderBody();
     const up = buildTop(body, POLO).placket;
     expect(up.buttons[0].centre[1]).toBeGreaterThan(up.top);
     const open = buildTop(body, { ...POLO, open: 2 }).placket;
-    expect(open.buttons[0].centre[1]).toBeCloseTo(open.top - POLO.topButtonOpen, 4);
+    expect(open.buttons[0].centre[1]).toBeCloseTo(up.buttons[0].centre[1] - up.top + open.top, 4);
+    expect(open.buttons[0].centre[0]).toBeGreaterThan(body.bones.Neck[0]); // off the middle, on its own half
+    expect(open.slits.length).toBe(2); // a buttonhole for each undone button
     // The rest are evenly spaced.
     const gaps = up.buttons.slice(1).map((b, i) => up.buttons[i].centre[1] - b.centre[1]);
     for (const g of gaps) expect(g).toBeCloseTo(gaps[0], 3);
@@ -452,6 +454,50 @@ describe('the other tops', () => {
     const back = (c, y) => c.verts.filter((v) => v.rest[2] < -0.02 && Math.abs(v.rest[0]) < 0.03 && Math.abs(v.rest[1] - y) < 0.006).map(out);
     const y = high(shirt) - 0.004;
     expect(Math.max(...back(hers, y))).toBeGreaterThan(Math.max(...back(shirt, y)));
+  });
+
+  it('pulls the under polo sleeve back inside the one over it where it has come through', async () => {
+    const { tuckSleeves } = await import('../src/npc/polo.js');
+    // Two sleeves as tubes round her left arm's bone (straight down), on that bone and in the same pose stored and standing.
+    const ID = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0];
+    const bones = { LeftArm: [0.4, 1.2, 0], LeftHand: [0.4, 0.8, 0], RightArm: [-0.4, 1.2, 0], RightHand: [-0.4, 0.8, 0] };
+    const body = { bones, boneNames: ['Spine2', 'LeftArm'] };
+    const tube = (r) => {
+      const verts = [];
+      const tris = [];
+      const segs = 16;
+      for (let k = 0; k <= 8; k++) {
+        for (let j = 0; j < segs; j++) {
+          const a = (j / segs) * Math.PI * 2;
+          const p = [0.4 + r * Math.cos(a), 1.15 - k * 0.04, r * Math.sin(a)];
+          verts.push({ rest: p, bind: p.slice(), skin: ID, weights: [[1, 1]] });
+          if (k < 8) {
+            const i = k * segs + j;
+            const n = k * segs + ((j + 1) % segs);
+            tris.push([i, n, i + segs], [n, n + segs, i + segs]);
+          }
+        }
+      }
+      return { verts, tris };
+    };
+    const under = tube(0.03);
+    const over = tube(0.04);
+    // A few of the under sleeve's points out through the over one, as squeezing the inside of the arm does.
+    const pushed = [40, 41, 56].map((i) => under.verts[i]);
+    for (const v of pushed) {
+      const out = [v.rest[0] - 0.4, 0, v.rest[2]];
+      const k = 0.045 / Math.hypot(...out);
+      v.rest = [0.4 + out[0] * k, v.rest[1], out[2] * k];
+      v.bind = v.rest.slice();
+    }
+    expect(tuckSleeves(under, over, body)).toBe(3);
+    for (const v of pushed) {
+      const r = Math.hypot(v.rest[0] - 0.4, v.rest[2]);
+      expect(r).toBeLessThan(0.04); // back inside
+      expect(r).toBeGreaterThan(0.03); // not pulled in past where it was meant to be
+      expect(v.bind).toEqual(v.rest); // bind kept in step (this skin is the identity)
+    }
+    expect(tuckSleeves(under, over, body)).toBe(0); // nothing left to pull in
   });
 
   it('pops a collar up round her neck instead of laying it down', () => {

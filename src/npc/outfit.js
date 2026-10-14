@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildTop, buildInset, buttonShape, slitShape, poloFields, POLO, JUMPER, COAT, PLAID, PLAID_OVER, PLAID_OPEN, OVER_POLO } from './polo.js';
+import { buildTop, buildInset, buttonShape, slitShape, poloFields, tuckSleeves, POLO, JUMPER, COAT, PLAID, PLAID_OVER, PLAID_OPEN, OVER_POLO } from './polo.js';
 import { buildCropTop } from './crop.js';
 import { buildShorts, SHORTS } from './shorts.js';
 import { buildCollar, COLLAR, COAT_COLLAR, SHIRT_COLLAR, SHIRT_UNDER_COLLAR, OVER_COLLAR } from './collar.js';
@@ -676,7 +676,7 @@ function addTop(rig, name, color, spec) {
       : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: spec.roughness ?? (spec === JUMPER ? 0.97 : 0.92), side: THREE.DoubleSide });
   made.fabric = fabric;
   made.tint = tint;
-  skinnedFromArrays(
+  made.mesh = skinnedFromArrays(
     rig,
     body,
     data,
@@ -1071,6 +1071,7 @@ function addEachGarment(rig, outfit) {
   const plaidShut = kind === 'plaid' && !style.plaidOpen;
   const shut = { ...(polo ? PLAID_OVER : PLAID), open: style.plaidButtons ?? 0 };
   if (kind === 'plaid') outer = addTop(rig, 'plaid', style.plaid, style.plaidOpen ? PLAID_OPEN : shut);
+  if (polo && outer) tuckUnder(polo, outer);
   const jumper = outfit.jumper ? addTop(rig, 'jumper', outfit.jumper, JUMPER) : null;
   // A collar lies on its own top and on the jumper over everything (its neck is low enough for collars to come out over it), never
   // on a shirt worn over its top: under that it's hidden but for where it shows at the neck and down the front.
@@ -1086,6 +1087,16 @@ function addEachGarment(rig, outfit) {
   if (outfit.coat) addCoat(rig, outfit.coat);
   if (outfit.shorts) addBottom(rig, outfit.shorts, !!outfit.coat);
   if (outfit.wellies) addWellies(rig, outfit.wellies);
+}
+
+/** Her polo's sleeves pulled back inside the top over it (polo.js, tuckSleeves), and its mesh moved to match. */
+function tuckUnder(polo, outer) {
+  if (!polo.mesh || !tuckSleeves(polo.built.shell, outer.built.shell, polo.data)) return;
+  const attr = polo.mesh.geometry.attributes.position;
+  const v = new THREE.Vector3();
+  polo.built.shell.verts.forEach((q, i) => v.fromArray(q.bind).applyMatrix4(polo.data.fromRoot).toArray(attr.array, i * 3));
+  attr.needsUpdate = true;
+  polo.mesh.geometry.computeBoundingSphere();
 }
 
 /**
