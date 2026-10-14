@@ -10,11 +10,11 @@ const features = farmMapFeatures(LAYOUT, fields, track);
 const inside = (r, x, z) => x >= r.minX && x <= r.maxX && z >= r.minZ && z <= r.maxZ;
 
 describe('the farm map', () => {
-  it('covers the farm, the lane and the hill pasture, with a margin round them', () => {
+  it('covers the farm, the lane, the hill pasture and the wood, with a margin round them', () => {
     const b = mapBounds(fields, 6);
     expect(b.minX).toBe(Math.min(LAYOUT.farm.minX, LAYOUT.hill.pasture.minX) - 6);
     expect(b.maxX).toBe(LAYOUT.farm.maxX + 6);
-    expect(b.minZ).toBe(LAYOUT.farm.minZ - 6);
+    expect(b.minZ).toBe(LAYOUT.woods.minZ - 6);
     expect(b.maxZ).toBe(LAYOUT.hill.pasture.maxZ + 6);
   });
 

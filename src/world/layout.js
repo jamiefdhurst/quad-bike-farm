@@ -94,6 +94,38 @@ export const LAYOUT = {
     // run up the gentler ground in the east of the pasture, where the banks spread out, so the girls can drive it too.
     climb: { points: [[8, 152], [16, 168], [12, 182], [-2, 196]], gateHalf: 4.5 },
   },
+  // The wood through the north gate (world/woods.js): a hedged block of woodland the grass field's width, from its north hedge to `minZ`. Its
+  // east side (`maxX`) is a hedge for now, but it lines up with the barley field's north hedge, so it can grow east along the stubble fields later.
+  // The `gate` is in the grass field's north hedge, tied open like the south one. `circuit` is the Hollow Run, a narrow twisting loop
+  // (`points`, closed, `halfWidth` m either side, bed `depth` m) joined to the gate by `leadIn`. `hump` swells the ground between its rows
+  // (`r` m across, `rise` m high). `whoops` are `count` small humps `spacing` m apart from `from` m round the loop (`rise` m high, `r` m
+  // across, flat to the track's width). `bogs` and `logs` sit `at` metres round the loop; a log lies across the track from `side` (-1 or 1)
+  // with `len` m of it over the track, a chicane. `deadwood` are fallen branches off the track as [x, z, yaw, length]. The pond is the south
+  // one's again (an ellipse `rx` by `rz` m, `depth` cut with `water` standing). `trees` is the count of oaks and `bushes` the hazel and holly.
+  woods: {
+    name: 'Hollow Wood',
+    minX: -80, maxX: 80, minZ: -200, maxZ: -80,
+    gate: { x: -30, width: 4.2, open: true },
+    circuit: {
+      name: 'The Hollow Run',
+      points: [
+        [-30, -102], [0, -99], [28, -103], [54, -100], [70, -112], [66, -127], [48, -131], [26, -130], [2, -126], [-16, -131], [-24, -145],
+        [-12, -155], [8, -152], [36, -155], [60, -153], [74, -164], [66, -178], [44, -181], [18, -178], [-8, -184], [-34, -177], [-58, -183],
+        [-72, -168], [-62, -148], [-68, -128], [-56, -112], [-44, -104],
+      ],
+      halfWidth: 1.7,
+      depth: 0.1,
+    },
+    leadIn: [[-30, -80], [-30, -92], [-30, -102]],
+    hump: { x: 24, z: -142, r: 36, rise: 3 },
+    whoops: { from: 34, count: 4, spacing: 11, rise: 0.5, r: 4 },
+    bogs: [{ at: 455, radius: 3.6 }, { at: 560, radius: 3.4 }],
+    logs: [{ at: 152, side: 1, len: 2.2 }, { at: 166, side: -1, len: 2.2 }, { at: 262, side: -1, len: 2.2 }, { at: 276, side: 1, len: 2.2 }, { at: 400, side: 1, len: 2.2 }],
+    deadwood: [[-12, -118, 0.4, 4.2], [14, -166, 2.2, 3.6], [40, -142, 1.3, 5], [-46, -128, 2.8, 3.8], [52, -192, 0.1, 4.4], [-20, -192, 1.5, 3.2], [-52, -166, 0.7, 4.6]],
+    pond: { x: -42, z: -150, rx: 8.5, rz: 6, depth: 1, water: 0.55 },
+    trees: 170,
+    bushes: 110,
+  },
   hedgeThickness: 1.8,
   hedgeHeight: 2.4,
 
@@ -205,6 +237,7 @@ export const LAYOUT = {
     [-48, 20],
   ],
   trackHalfWidth: 2.3,
+  trackName: 'The Home Loop', // the dirt track in the grass field; the wood's is `woods.circuit.name`
   trackDepth: 0.14,
   // Puddles sit at these positions along the track (0..1 around the loop).
   puddles: [0.12, 0.31, 0.47, 0.66, 0.9],

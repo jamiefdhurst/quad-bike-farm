@@ -8,6 +8,7 @@ import { buildBarnShed } from './barnBuild.js';
 import { underRoof } from './barn.js';
 import { buildJumpRamp } from './jumpRamp.js';
 import { buildHill } from './hillProps.js';
+import { buildWoods } from './woodsProps.js';
 import { buildOutbuildings } from './outbuildingProps.js';
 import { Gate, DEFAULT_GATE_PARAMS } from './gates.js';
 
@@ -42,7 +43,7 @@ export function buildProps(ctx) {
   const barn = buildBarn(c);
   buildHedges(c);
   c.gateParams = { ...DEFAULT_GATE_PARAMS }; // shared by the gates, tuned in the panel
-  const gates = [buildGate(c), buildRoadGate(c), buildGridGate(c)].filter(Boolean);
+  const gates = [buildGate(c), buildNorthGate(c), buildRoadGate(c), buildGridGate(c)].filter(Boolean);
   buildCattleGrid(c);
   buildPublicLane(c);
   buildPaddock(c);
@@ -56,6 +57,7 @@ export function buildProps(ctx) {
   buildPuddles(c);
   buildBogs(c);
   const hillProps = ctx.fields.hill ? buildHill(c) : null;
+  if (ctx.fields.woods) buildWoods(c);
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
   return { barn, jumpRamp, silage, gates, gateParams: c.gateParams, stream: hillProps?.stream ?? null };
 }
@@ -139,8 +141,20 @@ function buildHedges({ scene, models, layout, heights, fields, fixedBox, random 
   scene.add(instanceModel(models.bush.scene, bushMatrices, { castShadow: false }));
 }
 
-function buildGate({ scene, layout, heights, fixedBox, fields, gateParams }) {
-  const { gate, fieldHalf: F } = layout;
+function buildGate(c) {
+  const { layout } = c;
+  return buildFiveBarGate(c, { id: 'south', gate: layout.gate, z: layout.fieldHalf, dir: 1, gap: c.fields.gates.south });
+}
+
+/** The gate in the grass field's north hedge onto the wood (layout.woods.gate): the south gate's twin, swung back into the field and tied. */
+function buildNorthGate(c) {
+  const { layout } = c;
+  if (!layout.woods) return null;
+  return buildFiveBarGate(c, { id: 'north', gate: layout.woods.gate, z: -layout.fieldHalf, dir: -1, gap: c.fields.gates.north });
+}
+
+/** A five-bar field gate at (gate.x, z) in a hedge along x. `dir` is the way it swings back into the grass field: 1 towards -z (the south hedge), -1 towards +z. */
+function buildFiveBarGate({ scene, heights, fixedBox, gateParams }, { id, gate, z: F, dir, gap }) {
   const y = heights.heightAt(gate.x, F);
   const wood = new THREE.MeshStandardMaterial({ color: 0x8b7d66, roughness: 0.9 });
   const postMat = new THREE.MeshStandardMaterial({ color: 0x6b5a45, roughness: 0.95 });
@@ -157,7 +171,7 @@ function buildGate({ scene, layout, heights, fixedBox, fields, gateParams }) {
   const leafW = w - 0.3;
   const leaf = new THREE.Group();
   leaf.position.set(-w / 2 + 0.15, 0, 0);
-  const swing = Math.PI / 2 + 0.08; // swung right open
+  const swing = dir * (Math.PI / 2 + 0.08); // swung right open
   leaf.rotation.y = gate.open ? swing : 0;
   const box = (bw, bh, bd, x, yy, rotZ = 0) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), wood);
@@ -190,7 +204,7 @@ function buildGate({ scene, layout, heights, fixedBox, fields, gateParams }) {
   // Shut, the whole gap is solid; swung open, only the leaf standing out into the field.
   const mid = new THREE.Vector3(leafW / 2, 0, 0).applyAxisAngle(UP, swing).add(leaf.position);
   return new Gate({
-    id: 'south',
+    id,
     params: gateParams,
     x: gate.x,
     z: F,
@@ -201,7 +215,7 @@ function buildGate({ scene, layout, heights, fixedBox, fields, gateParams }) {
     },
     solid: fixedBox(gate.x, y + 0.8, F, w / 2 + 0.2, 0.9, 0.2),
     swungSolid: fixedBox(gate.x + mid.x, y + 0.7, F + mid.z, leafW / 2, 0.7, 0.08, swing),
-    gap: fields.gates.south,
+    gap,
   });
 }
 
@@ -620,9 +634,11 @@ function buildTrees({ scene, models, layout, heights, physics, RAPIER, random })
   spots.push([-76, 72], [-84, 52], [-86, 20], [-90, -14]);
 
   const mats = [[], []];
+  const wood = layout.woods; // the north boundary's tree line would stand in the wood, which has trees of its own
   for (const [x, z] of spots) {
     const v = random() < 0.5 ? 0 : 1;
     const s = 1.35 + random() * 0.6;
+    if (wood && x > wood.minX - 3 && x < wood.maxX + 3 && z < wood.maxZ + 0.2 && z > wood.minZ - 3) continue;
     mats[v].push(matrixAt(x, heights.heightAt(x, z) - 0.15, z, random() * Math.PI * 2, s));
     physics.createCollider(
       RAPIER.ColliderDesc.cylinder(2.5 * s, 0.32 * s).setTranslation(x, heights.heightAt(x, z) + 2.5 * s, z),

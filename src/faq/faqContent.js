@@ -73,8 +73,8 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where is everything?',
-        a: `Press <kbd>M</kbd> for the farm map. It shows the fields, hedges and their gaps, the track and its bogs, the barns, the road and the
-          hill, with you, the girls, every vehicle, the trailers, the jerry cans, the toolbox, the jump leads and the oil bottle marked on it.
+        a: `Press <kbd>M</kbd> for the farm map. It shows the fields, hedges and their gaps, the track and its bogs, the barns, the road, the
+          hill and the wood, with you, the girls, every vehicle, the trailers, the jerry cans, the toolbox, the jump leads and the oil bottle marked on it.
           The game keeps going while it's open, so you can glance at it as you ride.`,
         tip: 'Lost? M shows the farm map, with the girls, the vehicles and the jerry cans on it.',
       },
@@ -1090,8 +1090,23 @@ export const FAQ_SECTIONS = [
         a: `East, over the cattle grid, a tarmac farm road between two stubble fields, a Dutch barn full of round bales, an old stone field shed, a muck heap and a
           water trough. South, through the field gate, a sunk green lane down to a ford and a rough hill pasture with gorse, bracken and a small oak wood, and a
           view over the whole farm from the top. The sheep graze there. Beside the lane, with no hedge between, there is a wet meadow with a pond to the west and a rolling
-          sheep field with a drystone wall to the east.`,
+          sheep field with a drystone wall to the east. North, through the gate in the grass field's north hedge, there is a wood with a narrow twisting
+          track through it, the Hollow Run.`,
         tip: 'Ride to the top of the hill pasture for a view over the whole farm.',
+      },
+      {
+        q: 'What is the Hollow Run, and how do I get to it?',
+        a: `A track through the wood north of the grass field, nothing like the Home Loop (the dirt track in the grass field). Go through the gate in the grass field's
+          north hedge (it starts tied open; look at it and press <kbd>E</kbd> to shut it or open it). A short muddy track leads in from the gate and joins the loop, which
+          is narrower, twistier and hillier than the Home Loop, about 590 m round with the trees close on both sides. Along it there are four whoops (small humps one after another on the first straight), banked bends, a
+          swell the middle rows climb over, two bogs, and logs lying across the track in pairs, a chicane to steer through. Ride it either way round. There is a pond in the
+          wood, with reeds, that works like the meadow's: don't drive into it. There is no timed race on it yet.`,
+        tip: 'The Hollow Run is the narrow, twisty wood track through the gate in the grass field\'s north hedge.',
+      },
+      {
+        q: 'Why do the girls stop at the wood\'s gate?',
+        a: `They will follow you through the gate, but not in among the trees on a quad. A girl following you waits just inside it until you come back out. They don't ride
+          the Hollow Run themselves yet.`,
       },
       {
         q: 'How do I get to the pond and the sheep field?',

@@ -9,7 +9,7 @@ import { buildElectricFence } from './electricFenceBuild.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 
-function matrixAt(x, y, z, yaw, sx, sy = sx, sz = sx) {
+export function matrixAt(x, y, z, yaw, sx, sy = sx, sz = sx) {
   const q = new THREE.Quaternion().setFromAxisAngle(UP, yaw);
   return new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), q, new THREE.Vector3(sx, sy, sz));
 }
@@ -24,7 +24,7 @@ export function buildHill(c) {
   buildViewpoint(c);
   buildElectricFence(c);
   if (c.fields.hill.west) {
-    buildPond(c);
+    buildPond(c, c.fields.hill, (x, z) => c.fields.hill.lineDistance(c.layout.hill.paddocks.west.track, x, z) < 3);
     buildMeadowTrees(c);
     buildWall(c);
     buildThorns(c);
@@ -199,7 +199,7 @@ function buildGorse({ scene, heights, fields, physics, RAPIER, random }) {
 }
 
 /** A plant of fronds: each frond a curved, tapering strip, each face twice (once each way round) so it lights the same from both sides. */
-function frondGeometry(random, fronds, length, width, droop) {
+export function frondGeometry(random, fronds, length, width, droop) {
   const pos = [];
   const colors = [];
   for (let f = 0; f < fronds; f++) {
@@ -300,9 +300,12 @@ function buildTussocks({ scene, heights, fields, random, drawDistance }) {
   scene.add(drawDistance.add(tiledInstances(geo, material, matrices, { colors, name: 'tussocks' }), 'roughDistance'));
 }
 
-/** The wet meadow's pond: its water a fan out to the edge of where the dished ground holds it, level, and reeds standing round the shore. */
-function buildPond({ scene, layout, heights, fields, random, drawDistance }) {
-  const hill = fields.hill;
+/**
+ * A pond: its water a fan out to the edge of where the dished ground holds it, level, and reeds standing round the shore. `source` is the
+ * hill or the wood (its `pond` and `waterAt`); `keepClear(x, z)` says where reeds mustn't grow (the way down to drink).
+ */
+export function buildPond({ scene, heights, random, drawDistance }, source, keepClear) {
+  const hill = source;
   const pond = hill.pond;
   const level = heights.heightAt(pond.x, pond.z) + pond.water;
   const pos = [pond.x, level, pond.z];
@@ -338,7 +341,7 @@ function buildPond({ scene, layout, heights, fields, random, drawDistance }) {
     const r = edge[i] * (0.9 + random() * 0.45);
     const x = pond.x + Math.cos(a) * r * pond.rx;
     const z = pond.z + Math.sin(a) * r * pond.rz;
-    if (hill.lineDistance(layout.hill.paddocks.west.track, x, z) < 3) continue;
+    if (keepClear(x, z)) continue;
     const s = 0.8 + random() * 0.6;
     matrices.push(matrixAt(x, heights.heightAt(x, z) - 0.05, z, random() * 6.28, s, s * (0.8 + random() * 0.6), s));
     colors.push(new THREE.Color().setHSL(0.17 + random() * 0.05, 0.3 + random() * 0.15, 0.3 + random() * 0.15));

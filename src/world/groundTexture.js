@@ -85,6 +85,7 @@ export function createGroundCanvas({ size, worldSize, track, layout, fields, pud
     paintStubble(ctx, toPx, s, fields, random);
     paintTarmac(ctx, toPx, s, layout, fields, random);
     if (fields.hill) paintHill(ctx, toPx, s, fields, random);
+    if (fields.woods) paintWoods(ctx, toPx, s, fields, random);
   }
 
   // Worn yard and gateway.
@@ -317,6 +318,102 @@ function paintPaddocks(ctx, toPx, s, hill, random) {
       const v = random();
       if (r < 0.75) cell(x, z, 0.5, 0.5, `rgba(${46 + v * 18},${40 + v * 14},${30 + v * 8},0.95)`);
       else if (r < 1.3 && v < 0.5) cell(x, z, 0.5, 0.5, `rgba(${52 + v * 20},${70 + v * 20},${34},${0.5 * (1.3 - r)})`);
+    }
+  }
+}
+
+/**
+ * The wood through the north gate (world/woods.js): a floor of leaf litter, darker and browner than the grass field, patched with moss and
+ * bare earth; the Hollow Run and its lead-in worn into a narrow dark track with two ruts and a grass strip between; the pond's silt and rushes.
+ */
+function paintWoods(ctx, toPx, s, fields, random) {
+  const woods = fields.woods;
+  const r = woods.rect;
+  const half = woods.halfWidth;
+  const cell = (x, z, w, h, color) => {
+    const [px, pz] = toPx(x, z);
+    ctx.fillStyle = color;
+    ctx.fillRect(px, pz, w * s, h * s);
+  };
+  for (let x = r.minX; x < r.maxX; x += 0.5) {
+    for (let z = r.minZ; z < r.maxZ; z += 0.5) {
+      const v = random();
+      const moss = 0.5 + 0.5 * Math.sin(x * 0.19 + z * 0.13) * Math.sin(z * 0.17 - x * 0.11);
+      if (moss > 0.62 && v < 0.6) cell(x, z, 0.5, 0.5, `rgba(${52 + v * 20},${72 + v * 22},${34 + v * 10},0.6)`);
+      else cell(x, z, 0.5, 0.5, `rgba(${72 + v * 34},${58 + v * 24},${36 + v * 14},0.6)`);
+    }
+  }
+  // Fallen leaves in drifts, and bare patches where the roots are.
+  for (let i = 0; i < 7000; i++) {
+    const [px, pz] = toPx(r.minX + random() * (r.maxX - r.minX), r.minZ + random() * (r.maxZ - r.minZ));
+    ctx.fillStyle = random() < 0.6 ? 'rgba(150,104,48,0.3)' : 'rgba(40,32,20,0.35)';
+    ctx.beginPath();
+    ctx.ellipse(px, pz, (0.2 + random() * 0.5) * s, (0.12 + random() * 0.25) * s, random() * Math.PI, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // The track: the circuit (closed) and the lead-in from the gate (open), each stroked in layers like the main track but narrower and darker.
+  const lines = [{ pts: woods.track.points, closed: true }, { pts: woods.leadIn, closed: false }];
+  const stroke = (line, offset, widthM, style, alpha, blur) => {
+    const list = line.pts;
+    const count = line.closed ? list.length : list.length - 1;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = style;
+    ctx.lineWidth = widthM * s;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    if (blur) ctx.filter = `blur(${blur}px)`;
+    ctx.beginPath();
+    for (let i = 0; i <= count; i++) {
+      const a = list[i % list.length];
+      const b = list[(i + 1) % list.length];
+      const c = list[(i - 1 + list.length) % list.length];
+      // Offset along the normal of the way on (the previous segment at the very end of an open line).
+      const from = i < count || line.closed ? a : c;
+      const to = i < count || line.closed ? b : a;
+      const tx = to[0] - from[0];
+      const tz = to[1] - from[1];
+      const tl = Math.hypot(tx, tz) || 1;
+      const [px, pz] = toPx(a[0] - (tz / tl) * offset, a[1] + (tx / tl) * offset);
+      if (i === 0) ctx.moveTo(px, pz);
+      else ctx.lineTo(px, pz);
+    }
+    ctx.stroke();
+    ctx.restore();
+  };
+  for (const line of lines) {
+    stroke(line, 0, half * 2 + 2, '#4a3d28', 0.5, 6);
+    stroke(line, 0, half * 2 + 0.4, '#3f3222', 0.92, 3);
+    stroke(line, 0, half * 2 - 0.4, '#392c1c', 1, 1);
+    stroke(line, 0, 0.5, '#4c5a2c', 0.4, 1);
+    for (const off of [-0.55, 0.55]) {
+      stroke(line, off, 0.38, '#251b10', 0.85, 1);
+      stroke(line, off, 0.12, '#1c140b', 0.7, 0);
+    }
+  }
+  // Mottling on the mud, and roots across the track here and there.
+  for (let i = 0; i < 3500; i++) {
+    const p = woods.track.sample(random());
+    const lat = (random() * 2 - 1) * half;
+    const [px, pz] = toPx(p.x - p.tz * lat, p.z + p.tx * lat);
+    const rr = (0.08 + random() * 0.3) * s;
+    ctx.fillStyle = random() < 0.55 ? 'rgba(25,18,10,0.35)' : 'rgba(110,86,56,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(px, pz, rr * (1 + random()), rr, random() * Math.PI, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // The pond: silt on the bed, rushes round it.
+  const pond = woods.pond;
+  if (pond) {
+    for (let x = pond.x - pond.rx * 1.4; x < pond.x + pond.rx * 1.4; x += 0.5) {
+      for (let z = pond.z - pond.rz * 1.4; z < pond.z + pond.rz * 1.4; z += 0.5) {
+        const rr = Math.hypot((x - pond.x) / pond.rx, (z - pond.z) / pond.rz);
+        const v = random();
+        if (rr < 0.75) cell(x, z, 0.5, 0.5, `rgba(${40 + v * 16},${36 + v * 12},${28 + v * 8},0.95)`);
+        else if (rr < 1.3 && v < 0.5) cell(x, z, 0.5, 0.5, `rgba(${50 + v * 20},${68 + v * 20},${34},${0.5 * (1.3 - rr)})`);
+      }
     }
   }
 }

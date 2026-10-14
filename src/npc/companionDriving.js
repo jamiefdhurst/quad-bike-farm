@@ -753,13 +753,17 @@ export const drivingMethods = {
 
   /**
    * Following, the way to the point behind the lead: through the gateways (world/fields.js), passing a gateway point within 3 m (she's
-   * moving), and, once the lead is up the hill past its foot (world/hill.js), only as far as the foot, where she waits.
+   * moving), and, once the lead is up the hill past its foot (world/hill.js) or in among the wood's trees (world/woods.js), only as far as the foot or the gate, where she waits.
    */
   followWay(pos, point, lead) {
     const fields = this.world.fields;
     const hill = fields.hill;
-    const wait = !!hill && hill.pastFoot(lead.x, lead.z) && !hill.pastFoot(pos.x, pos.z);
-    const to = wait ? hill.waitSpot : point;
+    const woods = fields.woods;
+    const waitHill = !!hill && hill.pastFoot(lead.x, lead.z) && !hill.pastFoot(pos.x, pos.z);
+    // The same for the wood: she waits just inside its gate rather than driving in among the trees.
+    const waitWood = !waitHill && !!woods && woods.pastGate(lead.x, lead.z) && !woods.pastGate(pos.x, pos.z);
+    const wait = waitHill || waitWood;
+    const to = waitHill ? hill.waitSpot : waitWood ? woods.waitSpot : point;
     return { point: fields.nextWaypoint(pos, to, 3), wait, to };
   },
 

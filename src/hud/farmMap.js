@@ -29,6 +29,7 @@ export const MAP_COLOURS = {
   lane: '#aac487',
   pasture: '#a9bf86',
   wood: '#7fa268',
+  woodland: '#9cb87c', // the north wood's ground, under its sprinkle of trees
   hedge: '#3f6b35',
   gate: '#7d7d7d',
   road: '#9a9893',
@@ -50,13 +51,14 @@ export const MAP_COLOURS = {
 const union = (a, b) => ({ minX: Math.min(a.minX, b.minX), maxX: Math.max(a.maxX, b.maxX), minZ: Math.min(a.minZ, b.minZ), maxZ: Math.max(a.maxZ, b.maxZ) });
 const centred = (x, z, hx, hz) => ({ minX: x - hx, maxX: x + hx, minZ: z - hz, maxZ: z + hz });
 
-/** The ground the map covers: the farm and the hill inside their hedges, and `margin` metres round them. */
+/** The ground the map covers: the farm, the hill and the wood inside their hedges, and `margin` metres round them. */
 export function mapBounds(fields, margin = MAP_MARGIN) {
   let r = { ...fields.farm };
   if (fields.areas.lane) r = union(r, fields.areas.lane);
   if (fields.areas.hill) r = union(r, fields.areas.hill);
   if (fields.areas.meadow) r = union(r, fields.areas.meadow);
   if (fields.areas.sheep) r = union(r, fields.areas.sheep);
+  if (fields.areas.woods) r = union(r, fields.areas.woods);
   return { minX: r.minX - margin, maxX: r.maxX + margin, minZ: r.minZ - margin, maxZ: r.maxZ + margin };
 }
 
@@ -123,7 +125,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   const A = fields.areas;
   const hill = fields.hill;
   const crop = (k) => layout.stubbleFields?.[k]?.crop;
-  const fieldFill = { grass: C.grass, road: C.verge, end: C.verge, north: crop('north') === 'barley' ? C.barley : C.wheat, south: crop('south') === 'barley' ? C.barley : C.wheat, lane: C.lane, hill: C.pasture, meadow: C.pasture, sheep: C.pasture };
+  const fieldFill = { grass: C.grass, road: C.verge, end: C.verge, north: crop('north') === 'barley' ? C.barley : C.wheat, south: crop('south') === 'barley' ? C.barley : C.wheat, lane: C.lane, hill: C.pasture, meadow: C.pasture, sheep: C.pasture, woods: C.woodland };
   const areas = Object.entries(A).map(([kind, rect]) => ({ kind, rect, fill: fieldFill[kind] ?? C.grass }));
 
   const hedges = [];
@@ -143,6 +145,9 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   }
 
   const pond = hill?.pond ?? null;
+  const woods = fields.woods;
+  const woodsTrack = woods ? { points: woods.track.points, leadIn: woods.leadIn, half: woods.halfWidth } : null;
+  const woodsBogs = woods ? woods.bogs.map((b) => ({ x: b.x, z: b.z, r: b.radius })) : [];
   const road = layout.road ? { x1: layout.road.fromX, x2: layout.road.toX, z: layout.road.z, half: layout.road.halfWidth, pad: layout.road.pad ? { x: layout.road.pad.x, z: layout.road.z, r: layout.road.pad.radius } : null } : null;
 
   const bogs = (layout.bogs ?? []).map((b) => {
@@ -203,14 +208,22 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
     place('Stream', hill.pasture.maxX - 16, hill.streamZ(hill.pasture.maxX - 16) - 4);
   }
   if (wood) place('Wood', (wood.minX + wood.maxX) / 2, (wood.minZ + wood.maxZ) / 2);
+  if (woods) {
+    const r = woods.rect;
+    field(woods.name, (r.minX + r.maxX) / 2 + 20, r.minZ + 10);
+    const p = woods.at(woods.track.totalLength * 0.97); // on the way back to the junction, in the open by the gate
+    place(woods.circuitName, p.x + 6, p.z - 10);
+    if (woods.pond) place('Pond', woods.pond.x, woods.pond.z, woods.pond.rz + 4);
+  }
   const tp = track.sample(0.78);
-  place('Track', tp.x + 8, tp.z);
+  place(layout.trackName ?? 'Track', tp.x + 8, tp.z);
 
   // The map's key, north arrow and scale go in the neighbours' land south of the farm and east of the hill, where there's room.
   const key = { minX: (A.hill?.maxX ?? fields.farm.minX) + 10, maxX: bounds.maxX - 4, minZ: fields.farm.maxZ + 8, maxZ: bounds.maxZ - 4 };
 
   return {
     bounds, key, areas, hedges, gates, stream, ford, pond, road, track: { points: track.points, half: layout.trackHalfWidth }, bogs, dragStrip, ramp,
+    woodsTrack, woodsBogs, woodsPond: woods?.pond ?? null, woodland: woods ? { ...woods.rect } : null,
     buildings, small, muckHeap, paddock, yard, wood, labels,
   };
 }

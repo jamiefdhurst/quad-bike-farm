@@ -92,11 +92,12 @@ export class MapView {
     ctx.fillRect(0, 0, W, W);
     rect(f.bounds, C.outside);
     for (const a of f.areas) rect(a.rect, a.fill);
-    if (f.wood) {
-      rect(f.wood, C.wood);
+    for (const wd of [f.wood, f.woodland]) {
+      if (!wd) continue;
+      if (wd === f.wood) rect(wd, C.wood);
       ctx.fillStyle = 'rgba(40, 70, 35, 0.35)';
-      for (let x = f.wood.minX + 3; x < f.wood.maxX; x += 6) {
-        for (let z = f.wood.minZ + 3 + ((x / 6) % 2) * 3; z < f.wood.maxZ; z += 6) {
+      for (let x = wd.minX + 3; x < wd.maxX; x += 6) {
+        for (let z = wd.minZ + 3 + ((x / 6) % 2) * 3; z < wd.maxZ; z += 6) {
           ctx.beginPath();
           ctx.arc(...P(x, z), Math.max(1.5, 1.8 * s), 0, Math.PI * 2);
           ctx.fill();
@@ -119,10 +120,11 @@ export class MapView {
       }
     }
 
-    // The wet meadow's pond.
-    if (f.pond) {
+    // The ponds: the wet meadow's and the wood's.
+    for (const pd of [f.pond, f.woodsPond]) {
+      if (!pd) continue;
       ctx.beginPath();
-      ctx.ellipse(...P(f.pond.x, f.pond.z), f.pond.rx * s, f.pond.rz * s, 0, 0, Math.PI * 2);
+      ctx.ellipse(...P(pd.x, pd.z), pd.rx * s, pd.rz * s, 0, 0, Math.PI * 2);
       ctx.fillStyle = C.water;
       ctx.fill();
     }
@@ -132,6 +134,13 @@ export class MapView {
     ctx.lineJoin = 'round';
     line([...tp, tp[0]], Math.max(3, f.track.half * 2 * s), C.track);
     for (const b of f.bogs) disc(b.x, b.z, b.r, C.bog);
+    // The Hollow Run through the wood, narrower: its lead-in from the gate, then the loop.
+    if (f.woodsTrack) {
+      const wt = f.woodsTrack;
+      line(wt.leadIn, Math.max(2, wt.half * 2 * s), C.track);
+      line([...wt.points, wt.points[0]], Math.max(2, wt.half * 2 * s), C.track);
+      for (const b of f.woodsBogs) disc(b.x, b.z, b.r, C.bog);
+    }
 
     // The road and the hardstanding, edged.
     if (f.road) {

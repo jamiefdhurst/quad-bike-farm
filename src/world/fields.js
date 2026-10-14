@@ -1,9 +1,10 @@
 // The shape of the farm: the grass field, the farm road east out of it and the stubble fields either side, the hedges between them with
 // their gateways, what the ground is (grass, stubble or tarmac) and a way round from one field to another through the gateways.
-// Through the south gate, the green lane and the hill pasture (world/hill.js) are fields too.
+// Through the south gate, the green lane and the hill pasture (world/hill.js) are fields too, and through the north gate, the wood (world/woods.js).
 // Pure: built from the layout (layout.js), used by the terrain, the props, the tyres and the girls.
 
 import { createHill } from './hill.js';
+import { createWoods } from './woods.js';
 import { createOutbuildings } from './outbuildings.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -55,6 +56,7 @@ export function createFields(layout) {
   const gate = layout.gate;
   const grass = { minX: -F, maxX: F, minZ: -F, maxZ: F };
   const hill = createHill(layout);
+  const woods = createWoods(layout);
   const built = createOutbuildings(layout);
 
   // The road's corridor between its hedges, and the two stubble fields either side of it.
@@ -73,6 +75,7 @@ export function createFields(layout) {
     if (hill.west) areas.meadow = { ...hill.west };
     if (hill.east) areas.sheep = { ...hill.east };
   }
+  if (woods) areas.woods = { ...woods.rect };
   // On foot, a girl wandering about the hill pasture keeps to the bottom of it, over the stream from the lane: this rect, less the 6 m margin
   // clampToArea is given, is the strip just past the water and short of the foot, 8 m either side of the lane.
   const wanderAreas = {};
@@ -86,19 +89,20 @@ export function createFields(layout) {
     wanderAreas.hill = { minX: hill.lane.x - 14, maxX: hill.lane.x + 14, minZ: lo - 6, maxZ: Math.max(lo, hi) + 6 };
   }
 
-  /** Which field (x, z) is in: 'grass', 'road', 'end', 'north', 'south', 'lane', 'hill', 'meadow' (west of the lane), 'sheep' (east of it), or 'out' beyond the hedges. */
+  /** Which field (x, z) is in: 'grass', 'road', 'end', 'north', 'south', 'lane', 'hill', 'meadow' (west of the lane), 'sheep' (east of it), 'woods' (through the north gate), or 'out' beyond the hedges. */
   function areaOf(x, z) {
     if (inRect(grass, x, z)) return 'grass';
-    for (const k of ['road', 'end', 'north', 'south', 'lane', 'hill', 'meadow', 'sheep']) if (areas[k] && inRect(areas[k], x, z)) return k;
+    for (const k of ['road', 'end', 'north', 'south', 'lane', 'hill', 'meadow', 'sheep', 'woods']) if (areas[k] && inRect(areas[k], x, z)) return k;
     return 'out';
   }
 
   // Hedge lines, each straight along x or z from (x1, z1) to (x2, z2), with gaps { at, half } along it. A gap with a gate in it is `gate`,
   // and `shut` if the gate is (the south gate is tied open; the big gate at the end of the road is shut). `height` is a taller hedge's own.
   const gateGap = { id: 'south', at: gate.x, half: gate.width / 2 + 0.35, gate: true, shut: !gate.open };
+  const northGap = woods ? { id: 'north', at: woods.gate.x, half: woods.gate.width / 2 + 0.35, gate: true, shut: !woods.gate.open } : null;
   const roadGap = road?.gate ? { id: 'road', at: road.z, half: road.gate.width / 2 + 0.35, gate: true, shut: true } : null; // the game opens and shuts both (world/gates.js)
   const hedges = [
-    { x1: -F, z1: -F, x2: F, z2: -F, gaps: [] },
+    { x1: -F, z1: -F, x2: F, z2: -F, gaps: northGap ? [northGap] : [] },
     { x1: -F, z1: F, x2: F, z2: F, gaps: [gateGap] },
     { x1: -F, z1: -F, x2: -F, z2: F, gaps: [] },
     { x1: F, z1: -F, x2: F, z2: F, gaps: road ? [{ at: road.z, half: (corridor.hi - corridor.lo) / 2 }] : [] },
@@ -111,6 +115,15 @@ export function createFields(layout) {
       { x1: farm.maxX, z1: farm.minZ, x2: farm.maxX, z2: farm.maxZ, gaps: roadGap ? [roadGap] : [] },
       { x1: F, z1: corridor.lo, x2: road.hedgeTo, z2: corridor.lo, gaps: gaps(road.gaps.north) },
       { x1: F, z1: corridor.hi, x2: road.hedgeTo, z2: corridor.hi, gaps: gaps(road.gaps.south) },
+    );
+  }
+  if (woods) {
+    // The wood's hedges on its other three sides; the fourth is the grass field's north hedge, with the gate in it.
+    const r = woods.rect;
+    hedges.push(
+      { x1: r.minX, z1: r.minZ, x2: r.maxX, z2: r.minZ, gaps: [] },
+      { x1: r.minX, z1: r.minZ, x2: r.minX, z2: r.maxZ, gaps: [] },
+      { x1: r.maxX, z1: r.minZ, x2: r.maxX, z2: r.maxZ, gaps: [] },
     );
   }
   if (hill) {
@@ -193,6 +206,7 @@ export function createFields(layout) {
   const gateways = [];
   const link = (a, pa, b, pb, gap = null) => gateways.push({ a, pa, b, pb, gap });
   link('grass', { x: gate.x, z: F - 2.5 }, hill ? 'lane' : 'out', { x: gate.x, z: F + 2.5 }, gateGap); // a shut gate is no way through
+  if (woods) link('grass', { x: woods.gate.x, z: -F + 2.5 }, 'woods', { x: woods.gate.x, z: -F - 2.5 }, northGap);
   if (hill) link('lane', { x: hill.lane.x, z: hill.lane.toZ - 2 }, 'hill', { x: hill.lane.x, z: hill.lane.toZ + 2 });
   if (hill) {
     for (const g of hill.gates) {
@@ -295,10 +309,12 @@ export function createFields(layout) {
 
   /** Metres (x, z) is outside the farm and the hill's hedges: how far into the neighbours' farmland (0 inside). */
   function outsideAll(x, z) {
-    const d = outsideRect(farm, x, z);
-    return hill ? Math.min(d, hill.outside(x, z)) : d;
+    let d = outsideRect(farm, x, z);
+    if (hill) d = Math.min(d, hill.outside(x, z));
+    if (woods) d = Math.min(d, woods.outside(x, z));
+    return d;
   }
 
-  const gates = { south: gateGap, road: roadGap };
-  return { farm, hill, gates, outside: outsideAll, grass, areas, hedges, gateways, soakAt, stubbleField, areaOf, hedgeDistance, hedgeAhead, tarmacAt, stubbleAt, route, nextWaypoint, inFarm, clampToArea, inGap };
+  const gates = { south: gateGap, north: northGap, road: roadGap };
+  return { farm, hill, woods, gates, outside: outsideAll, grass, areas, hedges, gateways, soakAt, stubbleField, areaOf, hedgeDistance, hedgeAhead, tarmacAt, stubbleAt, route, nextWaypoint, inFarm, clampToArea, inGap };
 }
