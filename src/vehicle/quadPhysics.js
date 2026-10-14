@@ -67,6 +67,7 @@ export class QuadPhysics {
       point: { x: 0, y: 0, z: 0 },
       mud: 0,
       puddle: 0,
+      ice: 0, // how much of the puddle under it is frozen, 0..1
       load: 0,
       grip: params.grassFrictionSlip,
       driven: false,
@@ -128,11 +129,12 @@ export class QuadPhysics {
    * @param {number} c.steer       Radians, positive turns left.
    * @param {(x:number, z:number) => number} [c.mudAt]     Surface lookup for per-wheel grip, 0..1.
    * @param {(x:number, z:number) => number} [c.puddleAt]  Standing water, 0..1.
+   * @param {(x:number, z:number) => number} [c.iceAt]  How much of that water is frozen over, 0..1 (world/puddleIce.js), and `iceGrip` the friction slip on it.
    * @param {(x:number, z:number) => {grip:number}} [c.feelAt]  The ground's grip as a factor on grass (tarmac, stubble: world/surfaces.js).
    * @param {(x:number, z:number) => number} [c.tarmacAt]  0..1 tarmac, kept per wheel for the tyre squeal.
    * @param {number} [c.dt]
    */
-  applyControls({ driveForce, brake, steer, mudAt, puddleAt, bogAt, feelAt, tarmacAt, wet = 0, dt = 1 / 60 }) {
+  applyControls({ driveForce, brake, steer, mudAt, puddleAt, iceAt, iceGrip = 0.14, bogAt, feelAt, tarmacAt, wet = 0, dt = 1 / 60 }) {
     const p = this.params;
     const v = this.vehicle;
     // Grip under each wheel, from where it touched down last step.
@@ -147,10 +149,13 @@ export class QuadPhysics {
       }
       w.mud = w.contact && mudAt ? mudAt(w.point.x, w.point.z) : 0;
       w.puddle = w.contact && puddleAt ? puddleAt(w.point.x, w.point.z) : 0;
+      w.ice = w.contact && iceAt ? iceAt(w.point.x, w.point.z) : 0;
+      w.puddle *= 1 - w.ice; // a quad on ice is not in the water
       w.load = w.contact ? (v.wheelSuspensionForce(i) ?? 0) : 0;
       w.tarmac = w.contact && tarmacAt ? tarmacAt(w.point.x, w.point.z) : 0;
       const firm = w.contact && feelAt ? feelAt(w.point.x, w.point.z).grip : 1;
       w.grip = surfaceGrip(p, w.mud, w.puddle, firm) * (w.contact && bogAt ? bogGrip(bogAt(w.point.x, w.point.z)) : 1);
+      if (w.ice > 0) w.grip += (iceGrip - w.grip) * w.ice; // glass
       // Wet ground is slipperier, and wet mud more so.
       w.grip *= 1 - wet * (0.15 + 0.15 * w.mud);
       // This wheel's tyre: its pressure, brand and tread (tyres.js).

@@ -54,12 +54,12 @@ export function buildProps(ctx) {
   buildDistantTrees(c);
   buildGrass(c);
   buildStubble(c);
-  buildPuddles(c);
+  const puddles = buildPuddles(c);
   buildBogs(c);
   const hillProps = ctx.fields.hill ? buildHill(c) : null;
   if (ctx.fields.woods) buildWoods(c);
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
-  return { barn, jumpRamp, silage, gates, gateParams: c.gateParams, stream: hillProps?.stream ?? null };
+  return { barn, jumpRamp, silage, puddles, gates, gateParams: c.gateParams, stream: hillProps?.stream ?? null };
 }
 
 function buildBarn(c) {
@@ -833,14 +833,10 @@ function buildBogs({ scene, heights }) {
 }
 
 function buildPuddles({ scene, layout, heights }) {
-  const mat = new THREE.MeshStandardMaterial({
-    color: 0x4a4236,
-    roughness: 0.06,
-    metalness: 0.1,
-    transparent: true,
-    opacity: 0.88,
-  });
+  const meshes = [];
   for (const p of heights.puddles) {
+    // Each has its own material: the ice on one is cracked or gone while the next is sound.
+    const mat = new THREE.MeshStandardMaterial({ color: 0x4a4236, roughness: 0.06, metalness: 0.1, transparent: true, opacity: 0.88 });
     const bottom = heights.heightAt(p.x, p.z);
     const mesh = new THREE.Mesh(new THREE.CircleGeometry(layout.puddleRadius * 0.8, 28).rotateX(-Math.PI / 2), mat);
     mesh.position.set(p.x, bottom + layout.puddleDepth * 0.6, p.z);
@@ -848,5 +844,7 @@ function buildPuddles({ scene, layout, heights }) {
     mesh.rotation.y = Math.atan2(p.tx, p.tz);
     mesh.receiveShadow = true;
     scene.add(mesh);
+    meshes.push(mesh);
   }
+  return meshes;
 }

@@ -2391,6 +2391,14 @@ On a freezing day (`Weather.frost`, see "The day's temperature") the frost is no
 - Seats: the tint is kept, with a speckled bump map (`frostTexture.js`, shared) and a faint cold glow so it reads in the shade. The tractor's seat now has its own material, so it frosts too (it was left out before). Sitting on any of them still clears it over 4 seconds.
 - Not measured: the look in the running game, and what the extra shader work costs the frame rate (a few texture reads on the terrain). The sun does not melt the frost, as the day does not advance; that waits for item 33.
 
+## Ice on the puddles (TODO 74)
+
+- `world/puddleIce.js` (pure, tested) keeps a thickness (0..1) and a damage figure per puddle. Below `freezeBelow` (0 °C) it grows towards a target of 1 at 3 °C of frost, taking `freezeSeconds` (40) from open water; above `meltAbove` (1 °C) it melts over `meltSeconds` (90), faster in rain. A game starts with the puddles as a night at that temperature would leave them (`settle`), so a frosty morning starts frozen. Under `skin` (0.15) it is a film and doesn't count as ice.
+- Grip: `coverAt` gives the share of the water that is frozen, the same shape as `puddleAt`. The wheel blends its grip towards `gripSlip` (0.14, against 0.3 to 0.42 for the puddles) by that share, and its puddle value is multiplied by one minus the cover, so a quad on ice takes no water up the intake, gets no wet brakes and throws no splash. Nothing else about the wheel changed.
+- Breaking: each wheel on ice adds damage of `load * (1 + 0.12 * speed) / (strength * thickness)` a second (`strength` 1800 N). A cracked sound at 0.4 damage, broken at 1. By the arithmetic in the test a quad crossing at walking pace cracks it and a faster one goes through; full-thickness ice survives a gentle crossing for a second or two of wheel load. A broken puddle is open for `openSeconds` (90) before it may freeze again, so you see the hole you made.
+- Looks: each puddle has its own material now (`PuddleIceView`): dark water to pale glossy ice with the thickness, and a white web of cracks (a canvas texture, made when the first one cracks) from the crack point. Sound: `crack` and `break` events come back from `Quad.takeIceHits()` into the ride sounds, using the existing crunch and splash clips pitched up, so no new recordings.
+- Not done: the girls and you on foot don't crack it or slip on it, and the girls' own driving still gives the puddles a wide berth as before. Not checked: how the ice looks or how the numbers feel in play.
+
 ## Indicators and a reverse light (TODO 21)
 
 - Keys: `,` left, `.` right, `=` hazards, on the UTV and both Land Rovers (the quads have no indicators). Pressing the key for the mode already on switches it off. They need the key on and a charged battery, like the dash.

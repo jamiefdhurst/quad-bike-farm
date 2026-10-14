@@ -20,6 +20,8 @@ import { DEFAULT_SQUEAL_PARAMS, SQUEAL_PARAM_RANGES } from '../vehicle/tyreSquea
 import { registerTuning } from '../core/tuning.js';
 import { skyAt } from './daylight.js';
 import { StreamLevel, STREAM_PARAM_RANGES } from './streamLevel.js';
+import { PuddleIce, DEFAULT_PUDDLE_ICE_PARAMS, PUDDLE_ICE_PARAM_RANGES } from './puddleIce.js';
+import { PuddleIceView } from './puddleIceView.js';
 import * as THREE from 'three';
 
 /** The farm: terrain, track, sky and static props. */
@@ -92,6 +94,13 @@ export class World {
     const ctx = { scene, physics, RAPIER, renderer, models, layout, grid: this.cattleGrid, heights: this.heights, track: this.track, wear: this.wear, fields: this.fields, roadMud: this.roadMud, drawDistance: this.drawDistance };
     this.terrain = createTerrain(ctx);
     this.props = buildProps(ctx);
+
+    // A skin of ice on the track's puddles on a frosty day (puddleIce.js): wheels crack it and break it.
+    this.puddleIceParams = { ...DEFAULT_PUDDLE_ICE_PARAMS };
+    registerTuning('Puddle ice', this.puddleIceParams, PUDDLE_ICE_PARAM_RANGES);
+    this.puddleIce = new PuddleIce(this.heights.puddles, layout.puddleRadius, this.puddleIceParams);
+    this.puddleIceView = new PuddleIceView(this.props.puddles ?? [], this.puddleIce);
+    this.puddleIceStarted = false;
   }
 
   heightAt(x, z) {
@@ -223,6 +232,16 @@ export class World {
     this.setStreamLevel();
   }
 
+  /** The puddles freeze and thaw with the day's temperature; they start as a night at that temperature would leave them. */
+  updatePuddleIce(dt) {
+    if (!this.puddleIceStarted) {
+      this.puddleIceStarted = true;
+      this.puddleIce.settle(this.weather.temperature);
+    }
+    this.puddleIce.update(dt, this.weather.temperature, this.weather.rain);
+    this.puddleIceView.sync();
+  }
+
   /** Gives the hill, and the water drawn, the stream's level as it is now. */
   setStreamLevel() {
     const s = this.streamLevel;
@@ -246,6 +265,7 @@ export class World {
       this.terrain.snow.value = this.weather.cover;
       this.weather.update(dt);
       this.updateStream(dt);
+      this.updatePuddleIce(dt);
       Object.assign(this.sky.params, this.skyNow());
       // Wet ground looks darker, and a little glossier.
       const m = this.terrain.mesh.material;

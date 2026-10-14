@@ -496,6 +496,14 @@ export const FAQ_SECTIONS = [
           it is near. A helmet left on a seat falls off if the vehicle drives away, so if you take their quad, expect it in the grass. Amy would like it hung up.`,
       },
       {
+        q: 'Why is the puddle white, and why did my quad slide across it?',
+        a: `On a freezing day the puddles on the track freeze over. Ice grips like glass, so a quad on it slides and the wheels just spin: slow down
+          before it, or go round. It won't hold for long. Each wheel that crosses it cracks it a little more, with a sharp crack and white lines, and
+          then it gives way with a splash. The puddle under is an ordinary puddle, so slow down for that too. Thin ice, a heavy quad and speed
+          break it sooner. The open water stays open for a minute or two, and when the day warms up the ice melts.`,
+        tip: 'A white puddle on a frosty day is ice: no grip at all. Slow down, or go round.',
+      },
+      {
         q: 'Why is everything white, and how do I get the frost off the seat?',
         a: `On a freezing morning the grass has a frost on it and so do the seats. Drive or ride across the grass and your tyres melt a dark track
           through it, which stays melted. A seat clears when someone sits on it, in a few seconds, though it is a cold start to the day. As the

@@ -467,6 +467,7 @@ export class RideAudio {
     if (quad.brakes?.takeClunk()) this.events.push('knock', 0.9); // a binding brake frees
     const slap = quad.faults.takeSlap();
     if (slap > 0) this.events.push('knock', 0.25 + 0.4 * slap); // a slack chain slaps the chainguard
+    for (const hit of quad.takeIceHits()) this.events.push(hit === 'break' ? 'iceBreak' : 'iceCrack', hit === 'break' ? 1 : 0.6); // puddle ice under a wheel
     if (quad.faults.takeJump()) this.events.push('knock', 1); // and the chain comes off
 
     // Ground jolts that shake a riderless quad are the bumps you hear from it.
@@ -507,6 +508,17 @@ export class RideAudio {
         if (this.surface.water > 0.3) this.playClip('splash', level * p.splashVolume * k, 0.8, 0);
         break;
       }
+      case 'iceCrack':
+        // A sharp crack: a high, hard knock and a bright crunch, no thud.
+        this.playKnock(level * p.knockVolume * 0.6 * k, 1.7 + Math.random() * 0.4, jitter);
+        this.playClip('crunch', level * p.landVolume * 0.9 * k, 1.5 + Math.random() * 0.4, jitter);
+        break;
+      case 'iceBreak':
+        // It gives way: the crack, then the shards and the water under.
+        this.playKnock(level * p.knockVolume * 0.7, 1.4 + Math.random() * 0.3, jitter);
+        this.playClip('crunch', level * p.landVolume * 1.2, 1.2 + Math.random() * 0.3, jitter);
+        this.playClip('splash', level * p.splashVolume * 0.8, 1 + Math.random() * 0.2, 0.05);
+        break;
       case 'splash': {
         // Front and back wheels hit the water a moment apart; one splash per axle.
         const now = this.hub.ctx.currentTime;

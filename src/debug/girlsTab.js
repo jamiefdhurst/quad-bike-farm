@@ -207,6 +207,9 @@ export function buildGirlsTab(d) {
   button(sky, 'Lightning, far off', () => g.strikeNow(2400));
   show(sky, 'the stream', () => `${Math.round(g.world.streamLevel.level * 100)}% up, ${(g.world.streamLevel.rise * 100).toFixed(0)} cm above usual, running ${g.world.streamLevel.flow.toFixed(1)}x`);
   slider(sky, 'stream level (0 low, 1 full)', () => g.world.streamLevel.level, (v) => g.setStreamLevel(v), 0, 1, 0.05);
+  show(sky, 'the puddles', () => g.world.puddleIce.describe());
+  slider(sky, 'ice on the puddles (0 open water)', () => g.world.puddleIce.thickness[0] ?? 0, (v) => g.world.puddleIce.setAll(v), 0, 1, 0.05);
+  button(sky, 'Break the ice on the puddles', () => g.world.puddleIce.breakAll());
 
   // The workshop and the barn's kit: the bench, charger, generator and the spares.
   const shop = sub('Workshop, generator and spares');

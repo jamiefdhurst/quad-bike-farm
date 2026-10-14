@@ -151,6 +151,7 @@ export class Quad {
       this.faults.wheelSides = layout.wheels.map((w) => ({ side: w.x >= 0 ? 1 : -1, front: !!w.front }));
     }
     this.carbIce = new CarbIcing(undefined, !engine.params.compressionIgnition); // ice in the carb on a cold, damp day (carbIcing.js); a diesel has no carb
+    this.iceHits = []; // 'crack' / 'break' from wheels on puddle ice, taken by takeIceHits()
     this.iceCable = new FrozenCable(); // a throttle cable frozen on a frosty morning (frozenCable.js); the game gives it this game's tuning and deals it
     this.brakes = new BrakeState(); // wet and binding brakes (brakeState.js); the game gives it this game's tuning and deals the binding ones
     this.filter = new AirFilter(); // clogs with mud, puddles and dust; cleaned at the toolbox
@@ -851,12 +852,22 @@ export class Quad {
       steer: wheelSteer,
       mudAt: (x, z) => Math.max(this.world.mudAt(x, z), this.churn),
       puddleAt: (x, z) => this.world.puddleAt?.(x, z) ?? 0,
+      iceAt: this.world.puddleIce ? (x, z) => this.world.puddleIce.coverAt(x, z) : undefined,
+      iceGrip: this.world.puddleIce?.params.gripSlip,
       bogAt: (x, z) => this.world.bogAt?.(x, z) ?? 0,
       feelAt: this.world.surfaceFeelAt ? (x, z) => this.world.surfaceFeelAt(x, z) : undefined,
       tarmacAt: this.world.tarmacAt ? (x, z) => this.world.tarmacAt(x, z) : undefined,
       wet,
       dt,
     });
+    // Wheels on a puddle's ice load it until it cracks and breaks (world/puddleIce.js); the ride sounds take what happened.
+    if (this.world.puddleIce) {
+      for (const w of this.physics.wheelInfo) {
+        if (w.ice <= 0.2) continue;
+        const hit = this.world.puddleIce.load(w.point.x, w.point.z, w.load, groundSpeed, dt);
+        if (hit && this.iceHits.length < 8) this.iceHits.push(hit);
+      }
+    }
     // Mud on the tyres: picked up on the track and in bogs, wiped off on grass, left on the road (world/roadMud.js).
     if (this.world.roadMud) {
       const wheels = this.physics.wheelInfo;
@@ -957,6 +968,11 @@ export class Quad {
   drainFuel() {
     this.engine.dieselSoak = 0;
     return this.fuel.drain();
+  }
+
+  /** What the wheels did to puddle ice since last asked: 'crack' and 'break', for the sound. */
+  takeIceHits() {
+    return this.iceHits.splice(0);
   }
 
   /** Water going up the intake, per second: the deepest puddle under a wheel, ploughed through fast. */
