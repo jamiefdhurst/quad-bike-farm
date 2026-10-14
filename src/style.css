@@ -53,7 +53,38 @@ body {
 #overlay.tuning .keys-open,
 #overlay.tuning .keys-panel,
 #overlay.tuning .start-links,
-#overlay.tuning .start-new-since {
+#overlay.tuning .start-faq {
+  display: none;
+}
+
+#overlay.tuning #overlay-status::after {
+  content: ' · click the game to resume';
+}
+
+.overlay-card {
+  text-align: center;
+  padding: 24px 36px 22px;
+  background: rgba(20, 22, 20, 0.78);
+  border-radius: 12px;
+  width: min(560px, calc(100vw - 32px));
+}
+
+/* The start screen: the painted sign (src/start/logo.js), a tip from the FAQ and the link to it. */
+.start-logo svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 auto 6px;
+}
+
+.start-tip {
+  min-height: 2.6em;
+  margin: 12px 0 4px !important;
+  font-size: 14px;
+  color: #e6dcbc;
+}
+
+.start-new-since {
   margin: 14px 0 6px;
   padding: 10px 16px 12px;
   border: 1px solid rgba(239, 228, 196, 0.16);
@@ -96,7 +127,7 @@ body {
   content: '';
   position: absolute;
   left: 2px;
-  top: 0.8em;
+  top: 0.63em;
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -108,37 +139,6 @@ body {
   margin-top: 8px;
   font-size: 13px;
   color: #9fd19f;
-}
-
-.start-faq {
-  display: none;
-}
-
-#overlay.tuning #overlay-status::after {
-  content: ' · click the game to resume';
-}
-
-.overlay-card {
-  text-align: center;
-  padding: 24px 36px 22px;
-  background: rgba(20, 22, 20, 0.78);
-  border-radius: 12px;
-  width: min(560px, calc(100vw - 32px));
-}
-
-/* The start screen: the painted sign (src/start/logo.js), a tip from the FAQ and the link to it. */
-.start-logo svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  margin: 0 auto 6px;
-}
-
-.start-tip {
-  min-height: 2.6em;
-  margin: 12px 0 4px !important;
-  font-size: 14px;
-  color: #e6dcbc;
 }
 
 .start-faq {
