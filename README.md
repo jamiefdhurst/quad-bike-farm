@@ -685,7 +685,7 @@ What is still to do. Finished items are recorded in DECISIONS.md, under their ol
 64. Can't pick up the jump leads off the bench **Done.**
 65. **Done.** Hours aren't recording correctly - they're recording as "decimal places" or at least showing that way on the quads/dashes (e.g. 1 hour is 0.1 hours) - this should be matched to game time
 66. Rusty quad's battery needs to work in the same way as the others **Done.**
-67. Jess's crop top is lop-sided and needs her cleavage drawn in - show a screenshot once you've done it so I can check.
+67. **Done.** Jess's crop top is lop-sided and needs her cleavage drawn in - show a screenshot once you've done it so I can check.
 68. A barn cat. It sleeps on a warm engine or a sunny seat and has to be shooed off, and runs from a revving quad. Jess talks to it; Amy pretends not to like it.
 69. North of the farm. DECISIONS.md left the tree line "for later": a wood with a rutted track through it, a pond that ices over on frosty days, and fallen branches to pick a line through.
 70. The dog, before the sheep. Split out of item 9: a collie that follows you about, rides on the rack, chases quads and the girls' boots. Worth having before there is anything to herd.

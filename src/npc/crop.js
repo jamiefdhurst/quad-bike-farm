@@ -15,20 +15,26 @@ export const CROP = {
   backUnder: 0.04, // and its bottom
   strapAcross: 0.07, // the straps this far either side of her middle, front and back, over her shoulders
   strapWidth: 0.0025, // half the width of a strap: a string
+  cleavageWidth: 0.045, // the shadow between her breasts reaches this far either side of the line between them
+  cleavageShadow: 0.6, // and darkens the band by this much at its middle
   strapLift: 0.0035, // how far it lies off her skin
 };
 
-/** The fullest part of her bust as she stands: the furthest-forward point of her chest ({ y, z }), or null. */
+/** The fullest part of her bust as she stands: the furthest-forward point of her chest ({ y, z, x, sides: { left, right } }), or null. */
 export function bustOf(body) {
   const { bones, boneNames } = body;
   const neck = bones.Neck;
   const torso = (v) => v.weights.reduce((s, [b, w]) => s + (/Spine|Hips/.test(boneNames[b]) ? w : 0), 0);
   let best = null;
+  const sides = {}; // each breast's own furthest-forward point: her mesh has them at different heights
   for (const v of body.verts) {
     const r = v.rest;
     if (torso(v) < 0.6 || r[2] <= neck[2] || r[1] > neck[1] - 0.06 || r[1] < neck[1] - 0.35 || Math.abs(r[0] - neck[0]) > 0.14) continue;
-    if (!best || r[2] > best.z) best = { y: r[1], z: r[2] };
+    if (!best || r[2] > best.z) best = { y: r[1], z: r[2], x: r[0] };
+    const k = r[0] > neck[0] ? 'left' : 'right';
+    if (!sides[k] || r[2] > sides[k].z) sides[k] = { x: r[0], y: r[1], z: r[2] };
   }
+  if (best && sides.left && sides.right) best.sides = sides;
   return best;
 }
 
@@ -44,8 +50,16 @@ export function cropFields(body, p = CROP) {
     const rad = Math.hypot(dx, dz);
     return rad > 1e-6 ? (dz / rad + 1) / 2 : 0.5; // 1 at her front, 0 at her back
   };
-  const top = (r) => bust.y + p.backTop + (p.top - p.backTop) * front(r);
-  const under = (r) => bust.y - p.backUnder - (p.under - p.backUnder) * front(r);
+  // Her breasts aren't level in the mesh (the left apex is over a centimetre higher), so the band's height follows a smooth blend
+  // of the two, fading out round to her back, or it cuts one breast's top and leaves the other's bare.
+  const tilt = (r) => {
+    const { left, right } = bust.sides ?? {};
+    if (!left || !right || left.x - right.x < 1e-3) return 0;
+    const t = Math.min(1, Math.max(0, (r[0] - right.x) / (left.x - right.x)));
+    return (right.y + (left.y - right.y) * t * t * (3 - 2 * t) - bust.y) * front(r);
+  };
+  const top = (r) => bust.y + tilt(r) + p.backTop + (p.top - p.backTop) * front(r);
+  const under = (r) => bust.y + tilt(r) - p.backUnder - (p.under - p.backUnder) * front(r);
   const band = (v) => Math.max(v.rest[1] - top(v.rest), under(v.rest) - v.rest[1]);
   return Object.assign(F, { bust, band, top, under, field: band });
 }
@@ -61,18 +75,31 @@ export function buildCropTop(body, p = CROP) {
     const base = all.length;
     for (const v of piece.verts) {
       all.push(v);
-      shade.push(k);
+      shade.push(typeof k === 'function' ? k(v) : k);
     }
     for (const t of piece.tris) tris.push(t.map((i) => i + base));
   };
   const torso = skinAround(body, F, 'any');
   middleOf(body, F, p, torso);
-  put(buildBand(body, F, p, torso));
+  put(buildBand(body, F, p, torso), (v) => cleavage(F, p, v));
   // The straps, from the band's top at her front, over each shoulder, to its top at her back.
   for (const strap of buildStraps(body, F, p, skinAround(body, F, 'all'))) put(strap);
   const shell = { verts: all, tris };
   shell.normals = smoothNormals(shell);
   return { shell, shade, bust: F.bust };
+}
+
+/**
+ * How much darker the band is at a point: a soft shadow down the groove between her breasts, so the two read as two. Gone
+ * `cleavageWidth` either side of the line between her apexes, and only across her front.
+ */
+function cleavage(F, p, v) {
+  const { left, right } = F.bust.sides ?? {};
+  if (!left || !right) return 1;
+  const dx = (v.rest[0] - (left.x + right.x) / 2) / p.cleavageWidth;
+  if (Math.abs(dx) >= 1 || v.rest[2] < F.bust.z * 0.5) return 1;
+  const k = 1 - Math.abs(dx);
+  return 1 - p.cleavageShadow * k * k * (3 - 2 * k);
 }
 
 /**
@@ -128,7 +155,7 @@ export function buildBand(body, F, p = CROP, ground = skinAround(body, F, 'any')
     for (let c = 0; c < COLS; c++) {
       const a = (c / COLS) * Math.PI * 2; // 0 at her front, round to her left
       const d = [Math.sin(a), 0, Math.cos(a)];
-      const at = [cx + d[0], 0, cz + d[2]];
+      const at = [cx + d[0] * 0.2, 0, cz + d[2] * 0.2]; // about where her skin is, so the height is read at her side's real x
       const top = F.top(at);
       const under = F.under(at);
       const y = under + ((top - under) * r) / ROWS;

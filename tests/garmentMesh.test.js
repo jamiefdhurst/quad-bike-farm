@@ -464,6 +464,25 @@ describe('the crop-top', () => {
   });
 });
 
+describe('the crop-top between her breasts', () => {
+  it('shades the band darker down the groove between them, and no more than cleavageShadow', async () => {
+    const { buildCropTop, CROP } = await import('../src/npc/crop.js');
+    const built = buildCropTop(cylinderBody());
+    expect(Math.min(...built.shade)).toBeLessThan(0.99);
+    expect(Math.min(...built.shade)).toBeGreaterThanOrEqual(1 - CROP.cleavageShadow - 1e-9);
+  });
+  it('is cut level with each breast, not with the highest one', async () => {
+    const { cropFields } = await import('../src/npc/crop.js');
+    const body = cylinderBody();
+    const F = cropFields(body);
+    const y = F.bust.y;
+    F.bust.sides = { left: { x: 0.07, y: y + 0.012, z: F.bust.z }, right: { x: -0.02, y: y - 0.003, z: F.bust.z } };
+    // Over each apex the band's top sits that breast's own height above (or below) the single bust height; round her back, nowhere.
+    expect(F.top([0.07, 0, 0.2]) - F.top([-0.02, 0, 0.2])).toBeCloseTo(0.015, 2);
+    expect(Math.abs(F.top([0.07, 0, -0.2]) - F.top([-0.02, 0, -0.2]))).toBeLessThan(0.003);
+  });
+});
+
 describe('the crop-top round her back', () => {
   it('goes all the way round, however narrow it is at the back', async () => {
     const { buildCropTop } = await import('../src/npc/crop.js');
