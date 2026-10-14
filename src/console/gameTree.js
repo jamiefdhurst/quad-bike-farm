@@ -286,8 +286,10 @@ export function buildGameTree(g, host) {
       race: text(() => g.askNow('race').join('; ') || 'nothing in the way', 'what would stop asking for the lap race working now'),
       drag: text(() => g.askNow('drag').join('; ') || 'nothing in the way', 'what would stop asking for the drag race working now'),
       climb: text(() => g.askNow('climb').join('; ') || 'nothing in the way', 'what would stop asking for the hill climb working now'),
+      cones: text(() => g.askNow('cones').join('; ') || 'nothing in the way', 'what would stop asking for the cone course working now'),
       last: text(() => g.lastAsk ?? 'none', 'why the last ask came to nothing'),
     }), 'asking the girls for a race, a drag run or the climb'),
+    cones: text(() => `${g.coneCourse.active ? `${g.coneCourse.girl} (${g.coneCourse.phase})` : g.coneCourse.youArmed ? 'you are asked for' : 'idle'}; ${g.coneField.downCount} of ${g.coneField.cones.length} cones down`, 'the cone course'),
     climb: text(() => (g.hillClimb.active ? `${g.hillClimb.girl} (${g.hillClimb.phase})` : g.hillClimb.youArmed ? 'you are asked for' : 'idle'), 'the hill climb'),
   }), 'farm jobs');
   const wildlife = group(() => ({

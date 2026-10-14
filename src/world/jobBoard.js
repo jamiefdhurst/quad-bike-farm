@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { barnShape } from './barn.js';
 
 const BOARD_W = 1.5; // metres
-const BOARD_H = 1.3; // tall enough for the four records with room to spare
+const BOARD_H = 1.3; // tall enough for the five records with room to spare
 const BOARD_PX_W = 512;
 const BOARD_PX_H = 444; // the same chalk-per-metre as the width
 
@@ -118,7 +118,7 @@ export class JobBoardView {
   drawRecords() {
     const { ctx, w } = this.slate(this.recordsBoard, 'RECORDS', 230);
     this.records.lines().forEach((l, i) => {
-      const y = 120 + i * 64;
+      const y = 120 + i * 58;
       ctx.fillStyle = '#ece8d8';
       ctx.font = '24px "Comic Sans MS", "Segoe Print", cursive';
       ctx.fillText(l.label, 28, y);

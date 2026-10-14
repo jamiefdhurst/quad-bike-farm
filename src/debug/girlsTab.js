@@ -175,6 +175,8 @@ export function buildGirlsTab(d) {
   const games = sub('Races, runs and records');
   show(games, 'race', () => g.race.phase);
   show(games, 'hill climb', () => (g.hillClimb.active ? `${g.hillClimb.girl} (${g.hillClimb.phase})` : g.hillClimb.youArmed ? 'you are asked for' : 'idle'));
+  show(games, 'cone course', () => (g.coneCourse.active ? `${g.coneCourse.girl} (${g.coneCourse.phase})` : g.coneCourse.youArmed ? 'you are asked for' : 'idle'));
+  show(games, 'cones down', () => `${g.coneField.downCount} of ${g.coneField.cones.length}`);
   show(games, 'jump now', () => {
     const c = g.companions.find((o) => o.fsm.is('driving') && o.drive?.jump);
     const run = c?.drive.jump.run;
@@ -182,10 +184,12 @@ export function buildGirlsTab(d) {
   });
   show(games, 'records', () => g.records.lines().map((l) => `${l.label}: ${l.text}`).join('; '));
   show(games, 'last ask', () => g.lastAsk ?? (g.asking ? `asking for the ${g.asking.kind}, ${Math.round(g.asking.age)} s` : 'none'));
-  for (const [kind, label] of [['race', 'lap race'], ['drag', 'drag race'], ['climb', 'hill climb']]) {
+  for (const [kind, label] of [['race', 'lap race'], ['drag', 'drag race'], ['climb', 'hill climb'], ['cones', 'cone course']]) {
     show(games, `${label}: what is in the way`, () => { const p = g.askNow(kind); return p.length ? p.join('; ') : 'nothing'; });
     button(games, `Ask the girls for the ${label} now`, () => g.askGirls(kind));
   }
+  button(games, 'Knock all the cones down', () => g.coneField.cones.forEach((c) => Object.assign(c, { down: true, dx: 0, dz: 1 })));
+  button(games, 'Stand the cones up', () => g.standCones());
   button(games, 'Clear the records', () => {
     g.records.bests = {};
     g.records.byQuad = {};
@@ -281,6 +285,10 @@ export function buildGirlsTab(d) {
   const go = sub('Take me to...');
   button(go, 'the hill climb start', () => {
     const s = g.climbGates[0];
+    goTo({ x: s.x - s.tx * 4, y: g.world.heightAt(s.x, s.z) + 0.5, z: s.z - s.tz * 4 });
+  });
+  button(go, 'the cone course start', () => {
+    const s = g.coneGates[0];
     goTo({ x: s.x - s.tx * 4, y: g.world.heightAt(s.x, s.z) + 0.5, z: s.z - s.tz * 4 });
   });
   button(go, 'the rock at the top of the hill', () => {

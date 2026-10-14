@@ -124,6 +124,8 @@ export class HillClimb {
     this.gates = gates;
     this.p = params;
     this.random = random;
+    this.Run = ClimbRun; // the kind of run it times (the cone course's adds penalties)
+    this.kind = 'climb'; // the event type `take` returns
     this.clock = 0;
     this.lastClimb = -Infinity;
     this.armed = 0; // seconds left of your ask
@@ -143,7 +145,7 @@ export class HillClimb {
   /** You ask (Enter near the start): the next time you cross the start cones the clock runs. */
   arm() {
     this.armed = this.p.armFor;
-    this.runs.you = new ClimbRun(this.gates, this.p);
+    this.runs.you = new this.Run(this.gates, this.p);
   }
 
   get youArmed() {
@@ -197,7 +199,7 @@ export class HillClimb {
     for (const g of ctx.girls) {
       if (!g.free) continue;
       const pick = pickQuads({ [g.id]: ctx.options[g.id] ?? [] }, ctx.claims, this.random);
-      if (pick) out.push({ key: 'climb', girl: g.id, pick: pick[g.id], weight: this.forced ? 100 : g.id === 'jess' ? p.weightJess : p.weightAmy });
+      if (pick) out.push({ key: this.kind, girl: g.id, pick: pick[g.id], weight: this.forced ? 100 : g.id === 'jess' ? p.weightJess : p.weightAmy });
     }
     return out;
   }
@@ -209,8 +211,8 @@ export class HillClimb {
     this.pick = o.pick;
     this.phase = 'gather';
     this.phaseClock = 0;
-    this.runs[o.girl] = new ClimbRun(this.gates, this.p);
-    return { type: 'climb', girl: o.girl, pick: o.pick };
+    this.runs[o.girl] = new this.Run(this.gates, this.p);
+    return { type: this.kind, girl: o.girl, pick: o.pick };
   }
 
   /**
@@ -227,7 +229,7 @@ export class HillClimb {
       if (!at) continue;
       if (id === 'you' && run.state === 'waiting' && !this.youArmed) continue;
       const e = run.update(dt, at, at);
-      if (e) events.push({ type: e, id, time: run.time, gatesLeft: run.gatesLeft });
+      if (e) events.push({ type: e, id, time: run.result?.() ?? run.time, gatesLeft: run.gatesLeft, cones: run.cones, misses: run.misses });
       if (e === 'finish') this.tally[id] = (this.tally[id] ?? 0) + 1;
     }
     this.phaseClock += dt;

@@ -2,14 +2,14 @@
 // they were doing (availability's `pull`), take a quad and join in. Pure and tested. If it still can't happen, `askProblems` says why,
 // in words, so the game can tell you (a toast when the ask runs out) and the debug panel and console can show it before you ask.
 
-export const ASK_KINDS = ['race', 'drag', 'climb'];
-export const ASK_LABELS = { race: 'the lap race', drag: 'the drag race', climb: 'the hill climb' };
+export const ASK_KINDS = ['race', 'drag', 'climb', 'cones'];
+export const ASK_LABELS = { race: 'the lap race', drag: 'the drag race', climb: 'the hill climb', cones: 'the cone course' };
 
 /** Seconds the girls get to find a quad and set off before the ask is called off with a reason. */
 export const ASK_PATIENCE = 15;
 
 /** How many girls an ask needs: both for the lap (they race each other and you), one for the drag run and the climb. */
-export const GIRLS_NEEDED = { race: 2, drag: 1, climb: 1 };
+export const GIRLS_NEEDED = { race: 2, drag: 1, climb: 1, cones: 1 };
 
 /**
  * What stops this ask from working now, as a list of short sentences (empty if nothing does). `ctx`:

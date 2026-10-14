@@ -978,8 +978,8 @@ export const FAQ_SECTIONS = [
         q: 'Why won\'t the girls race when I ask?',
         a: `When you press <kbd>Enter</kbd> they drop what they are doing, find a quad and set off, so it should only take a few moments. If they can't, the game
           tells you why after about fifteen seconds: one of them is carrying something or getting off a quad, there's no quad free for her (the one you're on is
-          never offered, and the little ones belong to one girl), a race is already on, or you've rung the bell. The lap race needs both of them, and two different quads; the drag race and the hill climb
-          need only one. Ride up to the start line first: the lap race by the yard, the drag race at the gravel strip, the climb at the cones.`,
+          never offered, and the little ones belong to one girl), a race is already on, or you've rung the bell. The lap race needs both of them, and two different quads; the drag race, the hill climb and the cone course
+          need only one. Ride up to the start line first: the lap race by the yard, the drag race at the gravel strip, the climb at the cones past the stream, the cone course at the cones in the field.`,
       },
       {
         q: 'How do I time a run up the hill?',
@@ -990,16 +990,33 @@ export const FAQ_SECTIONS = [
         tip: 'Press Enter by the orange cones past the stream, then ride through them to time a hill climb.',
       },
       {
+        q: 'How do I time a run round the cone course?',
+        a: `Amy's cone course is a slalom of orange cones across the grass, west of the middle of the field, inside the track. Ride up to the first pair of cones on any vehicle and
+          press <kbd>Enter</kbd>, then ride through them when you're ready. The clock runs from there. Weave through each pair of cones in order, left then right, and on through
+          the finish pair. Every cone you knock down adds two seconds and every gap you miss adds five. Your score goes up as a toast, and the best ones go on the board in the barn.`,
+        tip: 'Press Enter by the first orange cones in the field, west of the middle, then weave through them to be timed.',
+      },
+      {
+        q: 'How do I stand the cones back up?',
+        a: `Walk up to the first cones and press <kbd>E</kbd> when it says so. Amy also stands them up herself a few seconds after a run, and they are all put up again when anyone starts another.
+          A cone only goes over if something is moving when it touches it.`,
+      },
+      {
+        q: 'Do the girls run the cone course too?',
+        a: `Yes. Amy and Jess both ride to it in their free time and weave round against the clock. Amy goes slowly and carefully. Jess goes fast and now and then
+          aims for the cones on purpose, so her score has the penalties in it. Whoever is near the finish times you when you finish.`,
+      },
+      {
         q: 'Why did my hill climb stop counting?',
         a: `You're out if you get off or stall for ten seconds, or take more than two and a half minutes. Missing a gate (going round outside its cones, or
           skipping one) doesn't count it, so go back through. Press <kbd>Enter</kbd> at the start cones again to try another run. Pressing it also asks one of the girls to race you up, in the dark too.`,
       },
       {
         q: 'Where are the records kept?',
-        a: `On the second chalkboard inside the barn, on the back wall next to the jobs board: the best lap of the track, drag run, hill climb and longest jump on the farm,
+        a: `On the second chalkboard inside the barn, on the back wall next to the jobs board: the best lap of the track, drag run, hill climb, cone course and longest jump on the farm,
           and who set it. Press <kbd>E</kbd> at either board for a close view. You're told when you set a record, and when it's your best on the quad you're on.
           The girls set them too. They're kept from day to day, and one set today says so; only a new farm clears them.`,
-        tip: 'The records for laps, drag runs, the hill climb and the longest jump are on the chalkboard in the barn.',
+        tip: 'The records for laps, drag runs, the hill climb, the cones and the longest jump are on the chalkboard in the barn.',
       },
       {
         q: 'Do the girls climb the hill too?',

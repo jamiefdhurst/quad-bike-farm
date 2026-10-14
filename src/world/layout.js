@@ -221,6 +221,11 @@ export const LAYOUT = {
   // up, `width` across. The ground is levelled under it (terrainHeight.js); a test checks it is clear of the track, the bogs, the bales and the ramp.
   dragStrip: { x: -30, z: 19, yaw: Math.PI / 2 - 0.2, length: 56, runOff: 8, width: 10 },
 
+  // Amy's cone course (npc/coneCourse.js): a slalom across the grass west of the middle, ridden from x, z in the direction yaw (a quad's yaw, so
+  // towards -z). `gates` pairs of cones, `spacing` m apart from `lead` m past the start and swinging `swing` m either side of the line in turn, each
+  // gap `gateHalf` m either side of its point, then the finish `tail` m on. The ground along it and its run-up is a gentle slope (under 2 m over 40, a test checks), clear of the track, bogs, puddles and bales.
+  coneCourse: { x: -38, z: 3, yaw: Math.PI, lead: 5, gates: 6, spacing: 4, swing: 2.2, gateHalf: 2, tail: 5 },
+
   // Closed loop of control points for the dirt track (x, z).
   trackPoints: [
     [-30, 40],

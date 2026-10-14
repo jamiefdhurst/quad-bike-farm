@@ -136,6 +136,7 @@ import { ASK_PATIENCE, ASK_KINDS, askProblems, askLine } from './npc/asking.js';
 import { Drag, DRAG_PARAM_RANGES, onDragGrid } from './npc/drag.js';
 import { buildDragStrip } from './world/dragStrip.js';
 import { HillClimb, CLIMB_PARAM_RANGES, climbGates, climbRoute } from './npc/hillClimb.js';
+import { ConeCourse, ConeField, DEFAULT_CONE_PARAMS, CONE_PARAM_RANGES, coneGates, coneSpots, knockRoute } from './npc/coneCourse.js';
 import { Records, JumpMeasure, DEFAULT_RECORD_PARAMS, RECORD_PARAM_RANGES, RECORD_KINDS, WHO_NAMES, formatValue } from './world/records.js';
 import { stripFrame, stripPoint } from './world/layout.js';
 import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
@@ -172,7 +173,7 @@ import { Mugs } from './items/mug.js';
 import { Achievements, DEFAULT_ACHIEVEMENT_PARAMS, ACHIEVEMENT_PARAM_RANGES } from './achievements/achievements.js';
 import { paginate } from './achievements/pages.js';
 import { achievementSnapshot, placesAt } from './achievements/snapshot.js';
-import { buildStartLine, buildClimbCones, nearestTrackFraction } from './world/startLine.js';
+import { buildStartLine, buildClimbCones, buildConeCourse, layCone, nearestTrackFraction } from './world/startLine.js';
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
 import { StrawFall } from './effects/strawFall.js';
 import { Places, PLACE_PARAM_RANGES, isFine, nearestSpot, restStay } from './npc/places.js';
@@ -908,6 +909,17 @@ export class Game {
     this.climbIdle = 0; // seconds the girl climbing has been doing nothing about it
     buildClimbCones(this.scene, (x, z) => this.world.heightAt(x, z), this.climbGates);
     registerTuning('Hill climb', this.hillClimb.p, CLIMB_PARAM_RANGES);
+    // Amy's cone course (npc/coneCourse.js): the same kind of timed run on the grass, with cones that fall over and penalties for them.
+    this.coneGates = coneGates(this.world.layout.coneCourse);
+    this.coneCourse = new ConeCourse(this.coneGates, { ...DEFAULT_CONE_PARAMS }, createRandom(this.seed ^ 0x3c0e));
+    this.coneField = new ConeField(coneSpots(this.coneGates), this.coneCourse.p);
+    this.coneView = buildConeCourse(this.scene, (x, z) => this.world.heightAt(x, z), this.coneField.cones);
+    this.coneIdle = 0; // seconds the girl on the course has been doing nothing about it
+    this.coneKnocking = false; // the girl running it means to knock the cones (Jess, now and then)
+    this.coneProxy = new THREE.Mesh(new THREE.BoxGeometry(3, 1.4, 3), new THREE.MeshBasicMaterial({ visible: false })); // look at it and press E to stand them up
+    this.coneProxy.position.set(this.coneGates[0].x, this.world.heightAt(this.coneGates[0].x, this.coneGates[0].z) + 0.7, this.coneGates[0].z);
+    this.scene.add(this.coneProxy);
+    registerTuning('Cone course', this.coneCourse.p, CONE_PARAM_RANGES);
     registerTuning('Records', this.recordParams, RECORD_PARAM_RANGES);
     this.warming = new Warming(); // hands over an idling engine on a cold day (npc/warming.js)
     this.readyWaiting = new ReadyWaiting(undefined, createRandom(this.seed ^ 0x2ead)); // sat on a running quad, revving and tooting, while you are a minute (npc/readyWaiting.js)
@@ -1377,6 +1389,14 @@ export class Game {
       isAvailable: () => !this.handsFull && !this.player.isRiding,
       prompt: () => this.photos.view.prompt(),
       interact: () => this.photos.openBoard(),
+    });
+
+    // The cone course: stand the knocked cones up.
+    this.interaction.add({
+      target: this.coneProxy,
+      isAvailable: () => !this.handsFull && !this.player.isRiding && this.coneField.downCount > 0 && !this.coneCourse.active,
+      prompt: () => 'Stand the cones up',
+      interact: () => this.standCones(),
     });
 
     // The hayloft: the ladder up and down, and the hay to hide in.
@@ -3850,9 +3870,10 @@ export class Game {
     const compare = this.comparingContext();
     return [
       ...mine(this.convoy.offers(this.convoyContext(ridden)), (o) => this.handleConvoyEvent(this.convoy.take(o))),
-      ...(this.drag.active || this.hillClimb.active ? [] : mine(this.race.offers(this.raceContext(ridden)), (o) => this.handleRaceEvent(this.race.take(o)))),
-      ...(this.race.active || this.hillClimb.active ? [] : mine(this.drag.offers(this.dragContext(ridden)), (o) => this.dragApproach(this.drag.take(o), ridden))),
+      ...(this.drag.active || this.hillClimb.active || this.coneCourse.active ? [] : mine(this.race.offers(this.raceContext(ridden)), (o) => this.handleRaceEvent(this.race.take(o)))),
+      ...(this.race.active || this.hillClimb.active || this.coneCourse.active ? [] : mine(this.drag.offers(this.dragContext(ridden)), (o) => this.dragApproach(this.drag.take(o), ridden))),
       ...mine(this.hillClimb.offers(this.climbContext(ridden)), (o) => this.startHillClimb(this.hillClimb.take(o))),
+      ...mine(this.coneCourse.offers(this.climbContext(ridden, 'cones')), (o) => this.startConeCourse(this.coneCourse.take(o))),
       ...mine(this.comparing.offers(compare), (o) => this.runComparing(this.comparing.take(o, compare))),
       ...mine(this.pair.offers(this.pairContext()), (o) => this.handlePairEvent(this.pair.take(o))),
     ];
@@ -6470,6 +6491,7 @@ export class Game {
     this.race.stand();
     this.drag.stand();
     this.hillClimb.stand();
+    this.coneCourse.stand();
     this.convoy.stand();
     this.recalling = { left: 120, spots: this.companions.map((c, i) => this.recallSpot(i)), said: false };
     this.hud.toast('Girls: stop what you are doing and come to the barn');
@@ -7282,6 +7304,8 @@ export class Game {
     if (!you.riding) return this.hud.toast('You need to be on a quad to ask for a race', 2);
     const start = this.climbGates[0];
     if (Math.hypot(ridden.quad.position.x - start.x, ridden.quad.position.z - start.z) < this.hillClimb.p.nearStart) return this.askForClimb();
+    const coneStart = this.coneGates[0];
+    if (Math.hypot(ridden.quad.position.x - coneStart.x, ridden.quad.position.z - coneStart.z) < this.coneCourse.p.nearStart) return this.askForCones();
     // The two start lines can be within reach of each other: whichever you are nearer to is the one you mean.
     const lapLine = this.world.track.sample(this.raceStart);
     const q = ridden.quad;
@@ -7381,10 +7405,12 @@ export class Game {
   askBusy(kind) {
     if (this.recalling) return 'the bell has been rung and they are coming back';
     if (kind === 'climb' && this.hillClimb.active) return 'a girl is already out on the climb';
+    if (kind === 'cones' && this.coneCourse.active) return 'a girl is already out on the cone course';
     if (kind !== 'climb' && this.hillClimb.active) return 'a girl is out on the hill climb';
+    if (kind !== 'cones' && this.coneCourse.active) return 'a girl is out on the cone course';
     if (this.drag.active) return 'a drag race is on';
     if (this.race.active) return 'a race is on';
-    if (kind === 'climb' && this.fallingOut.active) return 'the girls have fallen out';
+    if ((kind === 'climb' || kind === 'cones') && this.fallingOut.active) return 'the girls have fallen out';
     return null;
   }
 
@@ -7407,8 +7433,9 @@ export class Game {
     this.lastAsk = null;
     if (kind === 'race') this.race.forced = true;
     else if (kind === 'drag') this.drag.forced = true;
+    else if (kind === 'cones') this.coneCourse.forced = true;
     else this.hillClimb.forced = true;
-    this.hud.toast(kind === 'race' ? 'Asking the girls for a race' : kind === 'drag' ? 'Asking for a drag race' : 'Asking for someone to race you up the hill', 2);
+    this.hud.toast(kind === 'race' ? 'Asking the girls for a race' : kind === 'drag' ? 'Asking for a drag race' : kind === 'cones' ? 'Asking for someone to run the cones against you' : 'Asking for someone to race you up the hill', 2);
   }
 
   /** Each frame while an ask is open: for the climb, tries to send a girl; for all, ends it when it has started or run out of time. */
@@ -7416,11 +7443,15 @@ export class Game {
     const a = this.asking;
     if (!a) return;
     a.age += dt;
-    const module = a.kind === 'race' ? this.race : a.kind === 'drag' ? this.drag : this.hillClimb;
-    if (a.kind === 'climb' && module.forced && (a.tried -= dt) <= 0) {
+    const module = a.kind === 'race' ? this.race : a.kind === 'drag' ? this.drag : a.kind === 'cones' ? this.coneCourse : this.hillClimb;
+    if ((a.kind === 'climb' || a.kind === 'cones') && module.forced && (a.tried -= dt) <= 0) {
       a.tried = 0.5;
-      const offers = module.offers(this.climbContext(ridden));
-      if (offers.length) this.startHillClimb(module.take(offers[Math.floor(Math.random() * offers.length)]));
+      const offers = module.offers(this.climbContext(ridden, a.kind));
+      if (offers.length) {
+        const o = module.take(offers[Math.floor(Math.random() * offers.length)]);
+        if (a.kind === 'cones') this.startConeCourse(o);
+        else this.startHillClimb(o);
+      }
     }
     if (module.active) {
       this.asking = null; // they are off
@@ -7711,13 +7742,13 @@ export class Game {
   }
 
   /** What the hill climb needs to know to offer it to a girl (npc/hillClimb.js). */
-  climbContext(ridden) {
-    const asked = this.asking?.kind === 'climb';
+  climbContext(ridden, kind = 'climb') {
+    const asked = this.asking?.kind === kind;
     return {
       girls: this.askedGirls(asked),
       options: this.askedOptions(ridden, asked),
       claims: this.ownership.claims,
-      busy: this.race.active || this.drag.active || !!this.recalling || this.fallingOut.active,
+      busy: this.race.active || this.drag.active || (kind === 'climb' ? this.coneCourse.active : this.hillClimb.active) || !!this.recalling || this.fallingOut.active,
       dark: !asked && this.daylight.darkness > 0.6, // asked, she'll go up in the dark (the quads have lights)
     };
   }
@@ -7806,6 +7837,136 @@ export class Game {
     if (r.record && r.previous && r.previous.who !== 'you') {
       const loser = byId[r.previous.who];
       if (loser && loser !== timer) setTimeout(() => loser.voice.say('climbYouRecord', { force: true }), 2500);
+    }
+  }
+
+  // Amy's cone course -----------------------------------------------------------
+
+  /** You ask to be timed round the cones (Enter by the first ones): Amy lays them out, and the clock runs when you ride through the start. */
+  askForCones() {
+    this.coneField.standUp();
+    this.coneCourse.arm();
+    this.askGirls('cones');
+    this.hud.toast('Cone course: ride through the first cones when you are ready, then weave through every gap. Each cone down costs 2 seconds', 5);
+  }
+
+  /** Stands the cones up (your E at them, or Amy tidying, or a new run starting). */
+  standCones() {
+    this.coneField.standUp();
+  }
+
+  /** She chose the cone course: she drives to the first cones, waits, then weaves through (HerDrive's race mode through the gates). */
+  startConeCourse(e) {
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    const unit = this.girlUnits.find((u) => u.spec.id === e.pick);
+    if (!c || !unit) return this.coneCourse.stand();
+    const cc = this.coneCourse;
+    this.coneField.standUp();
+    let there = climbRoute(this.coneGates, cc.p, 5);
+    this.coneKnocking = cc.knocksOnPurpose(e.girl);
+    if (this.coneKnocking) there = knockRoute(this.coneGates, there);
+    const via = this.world.fields.route(unit.quad.position, there[0]).slice(0, -1).map((p) => ({ x: p.x, z: p.z }));
+    const route = [...via, ...there];
+    const s = this.coneGates[0];
+    const confidence = c.driveConfidence ?? c.params.driveConfidence;
+    c.voice.say(this.coneKnocking ? 'coneKnock' : 'coneOff', { force: true });
+    this.sendToDrive(c, unit.quad, {
+      race: {
+        route,
+        gridIndex: via.length + 1,
+        assistYaw: Math.atan2(s.tx, s.tz),
+        cruise: (e.girl === 'jess' ? cc.p.cruiseJess : cc.p.cruiseAmy) + confidence,
+        throttle: 1,
+        keepDriving: Math.random() < this.race.p.keepRidingChance,
+        go: () => cc.go(),
+        alive: () => cc.active,
+        onGrid: () => cc.grid(e.girl),
+        onFinish: () => {},
+        onAbort: () => cc.abort(e.girl),
+      },
+    });
+  }
+
+  updateCones(dt, ridden) {
+    const cc = this.coneCourse;
+    const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
+    const at = {};
+    const q = ridden?.quad;
+    if (q) at.you = { x: q.position.x, z: q.position.z, riding: true, running: q.engine.isRunning };
+    else if (cc.runs.you) at.you = { x: this.player.position.x, z: this.player.position.z, riding: false, running: false };
+    if (cc.active) {
+      const c = byId[cc.girl];
+      const quad = this.girlUnits.find((u) => u.spec.id === cc.pick)?.quad;
+      if (c && quad) {
+        const mine = c.quad === quad && c.fsm.is('driving');
+        at[cc.girl] = { x: quad.position.x, z: quad.position.z, riding: mine, running: quad.engine.isRunning };
+        const busy = c.fsm.is('walking', 'mounting', 'driving', 'shuffling', 'dismounting', 'resting', 'seated', 'starting', 'cranking') || !!c.drive?.race;
+        this.coneIdle = busy ? 0 : this.coneIdle + dt;
+        if (this.coneIdle > 4) cc.abort(cc.girl);
+      } else cc.abort(cc.girl);
+    } else this.coneIdle = 0;
+
+    // The cones go over under whoever is moving through them.
+    const things = [];
+    const seen = new Set();
+    const add = (quad, id) => {
+      if (!quad || seen.has(quad)) return;
+      seen.add(quad);
+      things.push({ id, x: quad.position.x, z: quad.position.z, speed: Math.abs(quad.forwardSpeed) });
+    };
+    add(q, 'you');
+    for (const u of this.girlUnits) add(u.quad, this.companions.find((c) => c.quad === u.quad && c.fsm.is('driving'))?.character.id ?? null);
+    for (const c of this.companions) if (c.fsm.is('walking')) things.push({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, speed: 1.4, foot: true });
+    for (const h of this.coneField.hit(things)) {
+      if (h.id) cc.hit(h.id);
+      if (h.id === 'you' && cc.runs.you?.state === 'running') this.hud.toast('Cone down', 0.8);
+    }
+    const tidied = this.coneField.update(dt);
+    this.coneField.cones.forEach((c, i) => layCone(this.coneView.cones[i], c.fall, c.dx, c.dz));
+    if (tidied) this.sayConeTidy(byId);
+
+    const girl = cc.girl;
+    const pick = cc.pick;
+    const knocking = this.coneKnocking;
+    for (const e of cc.update(dt, { at })) {
+      const quadId = e.id === 'you' ? ridden?.spec.id : pick;
+      if (e.type === 'start' && e.id === 'you') this.hud.toast('Go!', 1.2);
+      else if (e.type === 'gate' && e.id === 'you') this.hud.toast(e.gatesLeft > 1 ? 'Gate' : 'Gate. The finish cones are next', 1);
+      else if (e.type === 'out') {
+        if (e.id === 'you') this.hud.toast('Cone course: you are out', 2.5);
+        else byId[e.id]?.voice.say('coneOut', { force: true });
+        this.coneField.tidySoon();
+      } else if (e.type === 'finish') this.finishCones(e, quadId, byId, knocking);
+    }
+  }
+
+  /** Amy stands the cones up, saying so if she is about. */
+  sayConeTidy(byId) {
+    const amy = byId.amy;
+    if (amy?.availability().canRemark) amy.voice.say('coneTidy', { force: true });
+  }
+
+  /** Someone has been through the finish cones: the score to the board, and what is said. */
+  finishCones(e, quadId, byId, knocking) {
+    const r = this.noteRecord('cones', e.id, e.time, quadId);
+    const clean = e.cones === 0 && e.misses === 0;
+    this.coneField.tidySoon();
+    if (e.id !== 'you') {
+      byId[e.id]?.voice.say(r.record ? 'coneRecord' : clean && !knocking ? 'coneClean' : 'coneDone', { force: true });
+      return;
+    }
+    this.achievements.note('coneRuns');
+    if (clean) this.achievements.note('coneClean');
+    const extra = [e.cones ? `${e.cones} cone${e.cones > 1 ? 's' : ''} down` : '', e.misses ? `${e.misses} gate${e.misses > 1 ? 's' : ''} missed` : ''].filter(Boolean).join(', ');
+    this.hud.toast(`Cone course: ${formatValue('cones', e.time)}${extra ? ` (${extra})` : ', a clean round'}${r.record ? '. A record!' : r.quadBest ? '. Your best on this vehicle' : ''}`, 5);
+    const end = this.coneGates[this.coneGates.length - 1];
+    const timer = this.companions
+      .filter((c) => c.availability().canRemark && Math.hypot(c.root.position.x - end.x, c.root.position.z - end.z) < 40)
+      .sort((a, b) => Math.hypot(a.root.position.x - end.x, a.root.position.z - end.z) - Math.hypot(b.root.position.x - end.x, b.root.position.z - end.z))[0];
+    if (timer) timer.voice.say(r.record ? 'coneYouRecord' : 'coneYou', { force: true });
+    if (r.record && r.previous && r.previous.who !== 'you') {
+      const loser = byId[r.previous.who];
+      if (loser && loser !== timer) setTimeout(() => loser.voice.say('coneYouRecord', { force: true }), 2500);
     }
   }
 
@@ -8956,6 +9117,7 @@ export class Game {
     if (!this.recalling && (auto || this.race.active || this.race.forced)) this.updateRace(dt, ridden);
     if (!this.recalling && (auto || this.drag.active || this.drag.forced)) this.updateDrag(dt, ridden);
     this.updateClimb(dt, ridden);
+    this.updateCones(dt, ridden);
     this.updateJumpRecords(dt, ridden);
     this.helpOnGrid(dt);
     this.updateSmokeSense(dt);

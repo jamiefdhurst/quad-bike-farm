@@ -17,7 +17,7 @@ describe('askProblems', () => {
   });
 
   it('needs both for the lap race, one for the others', () => {
-    expect(GIRLS_NEEDED).toEqual({ race: 2, drag: 1, climb: 1 });
+    expect(GIRLS_NEEDED).toEqual({ race: 2, drag: 1, climb: 1, cones: 1 });
     const c = ctx({ options: { amy: [], jess: ['a'] } });
     expect(askProblems('race', c)).toEqual(['Amy has no quad she can take']);
     expect(askProblems('climb', c)).toEqual([]);

@@ -76,6 +76,7 @@ import { JESS_LOAD_LINES } from './loadLines.js';
 import { JESS_RACE_LINES } from './raceLines.js';
 import { JESS_DRAG_LINES } from './dragLines.js';
 import { JESS_CLIMB_LINES } from './hillClimbLines.js';
+import { JESS_CONE_LINES } from './coneCourseLines.js';
 import { JESS_RECALL_LINES } from './recallLines.js';
 import { JESS_READING_LINES } from './readingLines.js';
 import { JESS_PASS_LINES } from './passLines.js';
@@ -512,6 +513,7 @@ export const JESS_LINES = {
   ...JESS_RACE_LINES,
   ...JESS_DRAG_LINES,
   ...JESS_CLIMB_LINES,
+  ...JESS_CONE_LINES,
   ...JESS_RECALL_LINES,
   ...JESS_READING_LINES,
   ...JESS_PASS_LINES,

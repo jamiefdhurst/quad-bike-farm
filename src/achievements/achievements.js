@@ -104,6 +104,8 @@ export const ACHIEVEMENTS = [
   { id: 'race', group: 'Company', name: 'On your marks', hint: 'Race one of the girls', points: 1, test: (s) => s.n('races') >= 1 },
   { id: 'race-win', group: 'Company', name: 'Beat her to it', hint: 'Win a race against a girl', points: 2, test: (s) => s.n('raceWins') >= 1 },
   { id: 'drag', group: 'Company', name: 'Quarter mile', hint: 'Drag race a girl on the strip', points: 1, test: (s) => s.n('drags') >= 1 },
+  { id: 'cones', group: 'Company', name: 'Slalom', hint: 'Time a run round Amy\'s cone course (Enter by its first cones, west of the middle of the field)', points: 1, test: (s) => s.n('coneRuns') >= 1 },
+  { id: 'coneClean', group: 'Company', name: 'Not a cone down', hint: 'Finish the cone course without knocking a cone over', points: 1, test: (s) => s.n('coneClean') >= 1 },
   { id: 'climb', group: 'Company', name: 'King of the hill', hint: 'Time a run up the hill pasture (Enter by the cones past the stream)', points: 1, test: (s) => s.n('climbs') >= 1 },
   { id: 'record', group: 'Company', name: 'On the board', hint: 'Set a record on the chalkboard in the barn', points: 2, test: (s) => s.n('records') >= 1 },
   { id: 'drag-win', group: 'Company', name: 'Lights to flag', hint: 'Win a drag race', points: 2, test: (s) => s.n('dragWins') >= 1 },

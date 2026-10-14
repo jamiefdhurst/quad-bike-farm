@@ -85,3 +85,33 @@ export function buildClimbCones(scene, heightAt, gates, { scale = 1.8, box = 3 }
   scene.add(group);
   return group;
 }
+
+/**
+ * The cone course's cones (npc/coneCourse.js coneSpots), one group each so a knocked one can be tipped over. Returns { group, cones }, the
+ * cones in the order of `spots`. `lay` tips cone i by `fall` (0 up, 1 flat) away along (dx, dz).
+ */
+export function buildConeCourse(scene, heightAt, spots, { scale = 1.4 } = {}) {
+  const group = new THREE.Group();
+  group.name = 'coneCourse';
+  const cones = spots.map((s) => {
+    const pivot = new THREE.Group(); // at the cone's foot, so it tips about its base
+    const c = cone();
+    c.scale.setScalar(scale);
+    pivot.add(c);
+    pivot.position.set(s.x, heightAt(s.x, s.z), s.z);
+    group.add(pivot);
+    return pivot;
+  });
+  scene.add(group);
+  return { group, cones };
+}
+
+/** Tips a cone's pivot over by `fall` (0 standing, 1 on its side) in the direction (dx, dz), settling a little off the ground. */
+export function layCone(pivot, fall, dx, dz) {
+  pivot.rotation.set(0, 0, 0);
+  if (fall <= 0) return;
+  const a = fall * (Math.PI / 2 - 0.1);
+  pivot.rotation.order = 'YXZ';
+  pivot.rotation.y = Math.atan2(dx, dz);
+  pivot.rotation.x = a; // after the yaw, local +z is the way it falls
+}
