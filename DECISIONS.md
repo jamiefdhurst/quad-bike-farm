@@ -3773,6 +3773,8 @@ Jamie's answers when asked for new ideas, so they are not offered again.
 - Not wanted: an amphibious six-wheeler (an Argocat style). It had been suggested more than once.
 - Skipped when offered: a confirm on "New farm" (it exists), tidying the TODO list's cross-references, puddles that stay and dry, a silent electric UTV, a Reliant-style three-wheeler car, a horse rider on the lane, a vet visit, a kite on windy days, a ghost run on the hill climb, an instant replay.
 - New characters are women, built on the girls' model and wearing the existing clothes.
+- The girls stay on the current base model (the Quaternius "Animated Woman") for now; there is no other base to move to, so improvements work on this one.
+- Dropped from the TODO list: a farm hack estate (a Volvo 240 style). There are cars enough (the girls' two and yours, item 335); carrying round the farm is the Land Rovers' job, so item 183 is now loading the Series III's tub and the 200TDi's back.
 
 ## Overheating for everything with a radiator (TODO 59)
 
@@ -3789,8 +3791,6 @@ Settled with Jamie up front: every gauge puts a warm engine in the middle; the b
 - **Steam position.** `radiatorAt` on each spec, where the steam leaves in the model's own space. The orange keeps its old point; the others are guesses from the models' noses.
 - **Checked:** unit tests only (`tests/overheat.test.js` and the updated gauge, heat and debug tests). **Not checked in the running game:** how the new red bands and symbols look on each dash, where the steam leaves each vehicle, how often a game deals a thermostat or leak, the real time to overheat when towing, the pour and flush feel, and the new lines by ear.
 - **Ideas left out:** a blocked radiator (mud) as a third cause, the bottle in the trailer and the UTV bed, and a thermostat stuck open that runs cold.
-- The girls stay on the current base model (the Quaternius "Animated Woman") for now; there is no other base to move to, so improvements work on this one.
-- Dropped from the TODO list: a farm hack estate (a Volvo 240 style). There are cars enough (the girls' two and yours, item 335); carrying round the farm is the Land Rovers' job, so item 183 is now loading the Series III's tub and the 200TDi's back.
 
 ## Mist in the hollow and rainbows (TODO 61)
 
