@@ -130,3 +130,14 @@ describe('what they say', () => {
     }
   });
 });
+
+describe('starting a cab from the seat', () => {
+  it('a Land Rover with a battery that will turn over is started from inside; only a flat one needs the handle outside', async () => {
+    const { needsStartingHandle } = await import('../src/npc/crankAttempt.js');
+    const lr = (battery, running = false) => ({ crank: {}, engine: { isRunning: running, battery, params: { batteryDeadBelow: 0.1 } } });
+    expect(needsStartingHandle(lr(0.8))).toBe(false);
+    expect(needsStartingHandle(lr(0.05))).toBe(true);
+    expect(needsStartingHandle(lr(0.05, true))).toBe(false);
+    expect(needsStartingHandle({ engine: { isRunning: false, battery: 0, params: {} } })).toBe(false); // no handle on it
+  });
+});

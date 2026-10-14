@@ -8,7 +8,7 @@ import { DEFAULT_HOME_PARAMS, bringsItHome, pickHomeSpot } from './homeParking.j
 import { solveTwoBone, orientHand } from './armIK.js';
 import { AutoShifter, NoviceShifter, DEFAULT_SHIFTER_PARAMS, DEFAULT_NOVICE_PARAMS } from '../vehicle/autoShifter.js';
 import { DEFAULT_TRACTOR_START_PARAMS } from './tractorStart.js';
-import { CrankAttempt, DEFAULT_CRANK_ATTEMPT_PARAMS } from './crankAttempt.js';
+import { CrankAttempt, DEFAULT_CRANK_ATTEMPT_PARAMS, needsStartingHandle } from './crankAttempt.js';
 import { PushStart, DEFAULT_PUSH_PARAMS } from './pushStart.js';
 import { onTarmac } from './tarmac.js';
 import { towedBy } from '../vehicle/trailerObstacle.js';
@@ -474,8 +474,7 @@ export const drivingMethods = {
 
   /** The Land Rover's battery is too flat for the starter and it is not running: she will have to swing the handle. */
   needsHandle(quad) {
-    const e = quad.engine;
-    return !!quad.crank && !e.isRunning && e.battery < (e.params.batteryDeadBelow ?? 0);
+    return needsStartingHandle(quad);
   },
 
   /** Where she stands to swing the starting handle: in front of the bumper, facing the hole. */

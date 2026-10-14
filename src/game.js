@@ -95,7 +95,7 @@ import { TractorRunaway, TRACTOR_RUNAWAY_PARAM_RANGES } from './npc/tractorRunaw
 import { DEFAULT_CREEP_PARAMS, CREEP_PARAM_RANGES } from './vehicle/creep.js';
 import { DEFAULT_BRAKE_KEY_PARAMS, DEFAULT_THROTTLE_KEY_PARAMS, PEDAL_KEY_PARAM_RANGES } from './vehicle/pedalKeys.js';
 import { DEFAULT_TRACTOR_GO_DRIVE, TRACTOR_GO_DRIVE_RANGES, DEFAULT_UTV_GO_DRIVE, DEFAULT_LANDY_GO_DRIVE } from './npc/companionDriving.js';
-import { DEFAULT_CRANK_ATTEMPT_PARAMS, CRANK_ATTEMPT_PARAM_RANGES } from './npc/crankAttempt.js';
+import { DEFAULT_CRANK_ATTEMPT_PARAMS, CRANK_ATTEMPT_PARAM_RANGES, needsStartingHandle } from './npc/crankAttempt.js';
 import { DEFAULT_PUSH_PARAMS, PUSH_PARAM_RANGES } from './npc/pushStart.js';
 import { DEFAULT_TRACTOR_START_PARAMS, TRACTOR_START_PARAM_RANGES } from './npc/tractorStart.js';
 import { DEFAULT_NOVICE_PARAMS, NOVICE_PARAM_RANGES } from './vehicle/autoShifter.js';
@@ -5856,8 +5856,14 @@ export class Game {
         if (!this.boardCab(c, e.cab, { passenger: e.reason === 'sulk' })) this.cabShelter.drop(e.girl, []);
       };
       if (e.reason !== 'sulk') c.voice.say(e.reason === 'cold' ? 'cabColdGo' : 'cabRainGo', { urgent: true, chance: 0.9 });
-      if (e.start) {
-        c.requestStart(unit.quad, { settleAt: e.reason === 'sulk' ? 0.3 : 0.5, then: (ran) => (ran || unit.quad.engine.isRunning ? go() : this.cabShelter.drop(e.girl, [])) });
+      const settleAt = e.reason === 'sulk' ? 0.3 : 0.5;
+      if (e.start && needsStartingHandle(unit.quad)) {
+        c.requestStart(unit.quad, { settleAt, then: (ran) => (ran || unit.quad.engine.isRunning ? go() : this.cabShelter.drop(e.girl, [])) });
+      } else if (e.start) {
+        // Climbs in first and starts it from the seat, choke and all, rather than standing out in the cold.
+        if (this.boardCab(c, e.cab, { passenger: e.reason === 'sulk' })) {
+          c.startFromSeat(unit.quad, { settleAt, then: (ran) => { if (!ran) { this.cabShelter.drop(e.girl, []); this.rideOfKind(e.cab).dismiss(e.girl); c.leaveTrailer(); } } });
+        } else this.cabShelter.drop(e.girl, []);
       } else go();
     } else if (e.type === 'in') {
       if (e.reason !== 'sulk') c.voice.say('cabIn', { chance: 0.8 });
@@ -6198,7 +6204,11 @@ export class Game {
       }
     };
     if (q.engine.isRunning) sit();
-    else c.requestStart(q, { settleAt: 0.3, then: (ran) => (ran || q.engine.isRunning ? sit() : this.warmSit.drop(id)) });
+    else if (spot.cab && !needsStartingHandle(q)) {
+      // In a cab she climbs in and starts it from the seat.
+      if (this.boardCab(c, spot.cab, { passenger: true })) c.startFromSeat(q, { settleAt: 0.3, then: (ran) => { if (!ran) { this.warmSit.drop(id); this.rideOfKind(spot.cab).dismiss(id); c.leaveTrailer(); } } });
+      else this.warmSit.drop(id);
+    } else c.requestStart(q, { settleAt: 0.3, then: (ran) => (ran || q.engine.isRunning ? sit() : this.warmSit.drop(id)) });
   }
 
   /** Each frame: a girl sat on a warming vehicle. */

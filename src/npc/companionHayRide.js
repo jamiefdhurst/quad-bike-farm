@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { attachKeepingSize } from './attachKeepingSize.js';
+import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 
 // A girl on the bale trailer (hayRide.js decides when): walking over, climbing on, sitting up on the bales and holding on, lying back,
 // and going off the side into the mud. As Companion states and methods, mixed in by companion.js.
@@ -85,6 +86,31 @@ export const hayRideMethods = {
     if (this.traSlot?.girl === this) this.traSlot.girl = null;
     this.traSlot = null;
     this.paceBoost = 1;
+  },
+
+  /**
+   * Once she is sat in the cab she starts it from the seat (key, choke, starter, minding the choke), instead of stood out in the cold.
+   * `then(ran)` is called when she is done. Dropped if she is moved off the seat first.
+   */
+  startFromSeat(quad, { settleAt = null, then = null } = {}) {
+    this.seatStart = { quad, settleAt, then, attempt: null };
+  },
+
+  /** Each frame on the seat: carries on with the start she was given, if any. */
+  runSeatStart(dt, leaving) {
+    const s = this.seatStart;
+    if (!s) return;
+    s.attempt ??= new StartingAttempt(s.quad, { params: { ...DEFAULT_STARTING_PARAMS, settleAt: s.settleAt } });
+    const a = s.attempt;
+    if (leaving || s.quad.rider || s.quad.isTipped) a.abandon();
+    for (const e of a.update(dt)) this.startEvents.push(e);
+    s.quad.helperStarter = a.starter;
+    if (!a.done) return;
+    this.seatStart = null;
+    s.quad.helperStarter = false;
+    s.quad.startTrouble = a.result === 'running' ? (a.bursts ?? 0) + (a.pulls ?? 0) : 0;
+    if (a.result === 'running' && !s.quad.rider) this.startEvents.push('warmedUp');
+    s.then?.(s.quad.engine.isRunning);
   },
 
   /** She's walking over or aboard (so the game counts her in the ride). */
@@ -187,6 +213,7 @@ export const hayRideStates = {
       const p = this.hay;
       if (data.fromWorld) return this.climbDown(data, dt); // on her way down
       this.hayFlailT = Math.max(0, (this.hayFlailT ?? 0) - dt);
+      this.runSeatStart(dt, data.leaving);
       this.root.position.copy(this.haySeatOffset());
       const want = data.lie && !data.leaving ? 1 : 0;
       data.leanK += Math.sign(want - data.leanK) * Math.min(Math.abs(want - data.leanK), p.leanSpeed * dt);
@@ -203,6 +230,8 @@ export const hayRideStates = {
       }
     },
     exit() {
+      if (this.seatStart) this.seatStart.quad.helperStarter = false;
+      this.seatStart = null;
       this.hayPivot.rotation.set(0, 0, 0);
       this.hayPivot.position.set(0, 0, 0);
       this.rig.legSpread = 0;

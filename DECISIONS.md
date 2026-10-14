@@ -3800,3 +3800,10 @@ The item settled it; I chose the details without asking.
 - Rainbow: once rain has been at 0.25 or more, then eases to 0.12 or less within 300 s while the sun is up (sunshine 0.5 or more, taking the sky's sun into account) and below 0.6 rad, the bow comes up over 15 s and fades over 150 s (starting to go after 40% of the window). `src/effects/rainbowView.js` draws it as a ribbon of seven stripes, 40 to 43.5 degrees round the point opposite the sun, 900 m off and following the camera, added to the sky, with only the part above the horizon drawn. The ribbon is rebuilt when the sun has moved by about 0.01.
 - Not done: the girls saying anything about either (a line each would need recording), the mist thickening the fog when you ride into it, mist over the stream or the meadow pond, and a double bow.
 - Checked: unit tests and a production build. Not checked in the running game: how the mist or the bow looks, or that the bow sits right against the sky.
+
+## Starting a cab from the seat (TODO 63)
+
+- A girl sent to a Land Rover that is not running (the cold-day warm-up, the rain, the warm-up sit; not a sulk's walk, which is the same path) now climbs in first and starts it from the seat. `startFromSeat` / `runSeatStart` in `companionHayRide.js` run the ordinary `StartingAttempt` (key, choke, starter, minding the choke until `settleAt`) while she is in `onTrailer`, so her lines and the choke habits are the same as outside.
+- A flat battery still sends her to the starting handle outside (`needsStartingHandle` in `crankAttempt.js`, shared with `needsHandle`), because the handle is at the front bumper. Nothing to swing from a seat.
+- If it will not start she drops the shelter and climbs back out. Moved off the seat part-way (you take the vehicle), the attempt is abandoned.
+- Not checked in the running game: the look of her reaching the choke from the passenger bench (she uses the sitting pose, hands in her lap). Unit-tested: the handle-or-seat rule.

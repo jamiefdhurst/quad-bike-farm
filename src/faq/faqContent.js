@@ -1061,7 +1061,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why is a girl sitting in the Land Rover?',
         a: `She's sheltering. When it rains, a girl stood about sometimes climbs into the UTV, a Land Rover or one of their cars (they have roofs) instead of running for the barn.
-          On a cold day she may walk over to a Land Rover, start it and sit in it for a minute or two with the engine running. When the weather turns or she has had enough
+          On a cold day she may walk over to a Land Rover, climb in, start it from her seat (choke and all, not stood out in the cold) and sit in it for a minute or two with the engine running. Only a flat battery makes her swing the starting handle outside. When the weather turns or she has had enough
           she gets out again, and switches off an engine she started herself. If you want the vehicle, just get in: she shuffles up and comes along.`,
       },
       {
