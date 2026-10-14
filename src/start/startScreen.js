@@ -4,7 +4,12 @@
 import './keyEditor.js';
 import { logoSvg } from './logo.js';
 import { faqTips } from '../faq/faqContent.js';
+import { currentBuild, newSince } from './sinceLast.js';
 import { browserStorage, continueInfo, wipeSave } from '../farm/farmSave.js';
+
+/* global __GIT_LOG_HASHES__ */
+const GIT_LOG = typeof __GIT_LOG_HASHES__ === 'string' ? __GIT_LOG_HASHES__ : '';
+const BUILD_KEY = 'quadBikeFarmLastBuild';
 
 const TIP_EVERY = 9; // seconds each tip stays up
 
@@ -53,3 +58,30 @@ try {
 } catch {
   // no fade
 }
+
+// New since last time: what changed since the build you last played. The build counts as played once you click into the game (a click on
+// the FAQ link or New farm stops before the card), so a load you only look at doesn't use it up.
+const build = currentBuild(GIT_LOG);
+let lastBuild = null;
+try {
+  lastBuild = localStorage.getItem(BUILD_KEY);
+} catch {
+  // no memory of it
+}
+const since = newSince(GIT_LOG, lastBuild);
+const sinceEl = document.getElementById('start-since');
+if (since) {
+  const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  sinceEl.innerHTML = `<b>New since last time</b><ul>${since.items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>${
+    since.more ? `<a href="faq.html#changes" target="_blank" rel="noopener">and ${since.more} more</a>` : ''}`;
+  sinceEl.hidden = false;
+  sinceEl.querySelector('a')?.addEventListener('click', (e) => e.stopPropagation());
+}
+document.getElementById('overlay').addEventListener('click', () => {
+  sinceEl.hidden = true;
+  try {
+    if (build) localStorage.setItem(BUILD_KEY, build);
+  } catch {
+    // not remembered
+  }
+});

@@ -86,6 +86,11 @@ export const FAQ_SECTIONS = [
         tip: 'Esc pauses the game. Click to carry on.',
       },
       {
+        q: 'What has changed since I last played?',
+        a: `The start screen lists what is new since the last time you clicked into the game: the six latest changes, with a link to the
+          full list under "Recently changed" on this page. It is blank the first time you play, and when nothing has changed.`,
+      },
+      {
         q: 'Where is everything?',
         a: `Press <kbd>M</kbd> for the farm map. It shows the fields, hedges and their gaps, the track and its bogs, the barns, the road, the
           hill and the wood, with you, the girls, every vehicle, the trailers, the jerry cans, the toolbox, the jump leads and the oil bottle marked on it.

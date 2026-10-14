@@ -49,10 +49,36 @@ body {
 #overlay.tuning .start-farm,
 #overlay.tuning .start-logo,
 #overlay.tuning .start-tip,
+#overlay.tuning .start-new-since,
 #overlay.tuning .keys-open,
 #overlay.tuning .keys-panel,
 #overlay.tuning .start-links,
-#overlay.tuning .start-faq {
+#overlay.tuning .start-new-since {
+  margin: 12px 0 4px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: rgba(53, 95, 55, 0.35);
+  text-align: left;
+  font-size: 14px;
+  color: #e6dcbc;
+}
+
+.start-new-since b {
+  display: block;
+  margin-bottom: 4px;
+  color: #efe4c4;
+}
+
+.start-new-since ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.start-new-since li + li {
+  margin-top: 2px;
+}
+
+.start-faq {
   display: none;
 }
 

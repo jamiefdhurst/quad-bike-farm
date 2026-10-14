@@ -14,9 +14,20 @@ function gitLog() {
   }
 }
 
+// The same history with each commit's short hash, for the start screen's "New since last time" (src/start/sinceLast.js): the build you
+// last played is remembered by its newest hash.
+function gitLogHashes() {
+  try {
+    return execSync('git log -n 300 --pretty=format:%h%x09%s', { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  } catch {
+    return '';
+  }
+}
+
 export default defineConfig({
   define: {
     __GIT_LOG__: JSON.stringify(gitLog()),
+    __GIT_LOG_HASHES__: JSON.stringify(gitLogHashes()),
   },
   build: {
     target: 'es2022',

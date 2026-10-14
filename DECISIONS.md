@@ -2233,6 +2233,13 @@ Jamie asked for a better start screen with a logo and "by Jamie Hurst", and a li
 - **Staging**: an earlier commit from another session (960b28b) swept up this work half-done, so CLAUDE.md now says to stage only your own files by name.
 - Checked: unit tests; a production build (both pages, the commit list in the FAQ bundle); headless screenshots of the start screen over the loaded game, the FAQ at desktop width in dark and light, at phone width (no sideways scroll), a search, and a link straight to a spoiler opening it below the bar. Not checked: how the sign looks on Windows without Rockwell, or on a very small window.
 
+### New since last time (TODO 85)
+
+- The build you played is remembered as the newest commit's short hash, in `localStorage` (`quadBikeFarmLastBuild`), written when you click into the game. A load you only look at, or a click on the FAQ link or New farm (which stop before the card), doesn't use it up.
+- `vite.config.js` defines `__GIT_LOG_HASHES__` (hash and subject, 300 commits) beside `__GIT_LOG__`; `src/start/sinceLast.js` (pure, tested in `tests/faq.test.js`) lists the subjects after the remembered hash and drops housekeeping with the same rule as "Recently changed" (`isHousekeeping` in `changes.js`). Six are shown, then "and N more" linking to the FAQ's list.
+- Nothing shows on a first visit (there is nothing to be new since), on the same build, or when only housekeeping commits came after. If the remembered hash has fallen off the end of the 300, everything in the log counts as new. In dev the log is read when the server starts, so new commits show after a restart.
+- Not checked in a browser.
+
 ## Sound in the loading screen, and pausing (2026-10-09)
 
 Jamie: sometimes the game started without its sound, and the game should pause while the start screen is up, including after Esc.

@@ -132,3 +132,24 @@ describe('the logo', () => {
     for (const id of ids(a)) expect(ids(b)).not.toContain(id);
   });
 });
+
+describe('new since last time', () => {
+  const log = ['d4\tLet the girls wave', 'c3\tTick off TODO 85', 'b2\tMake the sheep bolder', 'a1\tAdd a barn cat'].join('\n');
+  it('lists what came after the build you played, minus housekeeping', async () => {
+    const { newSince } = await import('../src/start/sinceLast.js');
+    expect(newSince(log, 'b2')).toEqual({ items: ['Let the girls wave'], more: 0 });
+    expect(newSince(log, 'a1').items).toEqual(['Let the girls wave', 'Make the sheep bolder']);
+  });
+  it('says nothing on a first visit, the same build or only housekeeping', async () => {
+    const { newSince } = await import('../src/start/sinceLast.js');
+    expect(newSince(log, null)).toBeNull();
+    expect(newSince(log, 'd4')).toBeNull();
+    expect(newSince('c3\tTick off TODO 85\nb2\tx', 'b2')).toBeNull();
+  });
+  it('counts the lot as new when the remembered build has gone from the log, and caps it', async () => {
+    const { newSince, currentBuild } = await import('../src/start/sinceLast.js');
+    expect(newSince(log, 'zzz', { limit: 2 })).toEqual({ items: ['Let the girls wave', 'Make the sheep bolder'], more: 1 });
+    expect(currentBuild(log)).toBe('d4');
+    expect(currentBuild('')).toBeNull();
+  });
+});
