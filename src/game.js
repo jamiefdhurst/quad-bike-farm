@@ -3856,6 +3856,7 @@ export class Game {
     }
     // Dust and rust, and the tarp over the lot.
     weatherModel(unit.quad.model);
+    unit.mud.coat.look.wear = P.bodyWear; // and the wear layer turned right up: rust in every fold, the edges rubbed bare
     unit.tarp = buildTarp();
     unit.quad.bodyRoot.add(unit.tarp);
     this.units = [...this.units, unit];
@@ -3878,7 +3879,6 @@ export class Game {
       const exposed = !can.held && !can.carried && !this.world.covered?.(at.x, at.z);
       can.water = stepCanWater(can.water, dt, { rain: this.weather.rain, exposed }, this.fuelWaterParams);
     }
-    unit.mud.coat.look.wear = P.bodyWear; // and the wear layer turned right up: rust in every fold, the edges rubbed bare
   }
 
   /** The barn find's slow jobs: the charger going, the seized brake holding it, and the first start. */
@@ -9231,6 +9231,18 @@ export class Game {
 
   // Loop -----------------------------------------------------------------
 
+  /**
+   * The vehicles' wear (vehicle/detail/wear.js) is baked a piece at a time after loading rather than during it (about 150 ms a
+   * vehicle): `budgetMs` of it a frame, more behind the start card where nothing moves. Until a vehicle is baked it shows no edges.
+   */
+  bakeWear(budgetMs) {
+    const start = performance.now();
+    for (const unit of this.units) {
+      const coat = unit.mud?.coat;
+      while (coat?.bakeStep()) if (performance.now() - start > budgetMs) return;
+    }
+  }
+
   frame() {
     // Under the fps cap a screen tick that comes too soon is skipped whole: no time passes, and keys pressed wait for the next frame.
     const started = performance.now();
@@ -9245,6 +9257,7 @@ export class Game {
     // the pause starts or the window changes, and twice a second in case something finished loading. The very first frame runs
     // regardless, so the camera is put at your eyes and everything is placed before the start screen shows the farm behind it.
     this.setPaused(this.isPaused());
+    if (this.firstFrameDone) this.bakeWear(this.paused ? 12 : 2);
     if (this.paused && this.firstFrameDone) {
       this.updateEndOfDay(dt); // a fade to the next day carries on if the pointer lock is let go of
       if (this.redraw || started - (this.pausedDrawAt ?? 0) > 500) {
@@ -9274,18 +9287,6 @@ export class Game {
       if (input.wasPressed('ArrowRight')) this.turnBucketPage(1);
       if (input.wasPressed('ArrowLeft')) this.turnBucketPage(-1);
     }
-  /**
-   * The vehicles' wear (vehicle/detail/wear.js) is baked a piece at a time after loading rather than during it (about 150 ms a
-   * vehicle): `budgetMs` of it a frame, more behind the start card where nothing moves. Until a vehicle is baked it shows no edges.
-   */
-  bakeWear(budgetMs) {
-    const start = performance.now();
-    for (const unit of this.units) {
-      const coat = unit.mud?.coat;
-      while (coat?.bakeStep()) if (performance.now() - start > budgetMs) return;
-    }
-  }
-
     if (input.wasPressed('KeyN')) {
       this.audioHub.params.muted = !this.audioHub.params.muted;
       this.hud.toast(this.audioHub.params.muted ? 'Sound off' : 'Sound on', 1.2);
@@ -9300,7 +9301,6 @@ export class Game {
       this.photos.press();
     }
 
-    if (this.firstFrameDone) this.bakeWear(this.paused ? 12 : 2);
     for (const unit of this.units) {
       unit.quad.setRemote(null);
       unit.quad.pushDir = 0;
