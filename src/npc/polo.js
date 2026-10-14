@@ -174,6 +174,82 @@ export const COAT = {
   roughness: 0.42, // waxed cotton has a dull sheen
 };
 
+// A plaid flannel shirt buttoned up in place of the polo: a proper shirt, untucked over the shorts, its long sleeves rolled to just
+// below the elbow in a thick turn-up, buttons all the way down its front to the hem with the top few undone as her polo's would be.
+// The check is drawn by the material (outfit.js), laid on her stored shape so it runs straight across her and along her arms.
+export const PLAID = {
+  ...POLO,
+  ease: 0.009,
+  neckBack: 0.018,
+  neckSide: 0.016,
+  neckFront: -0.006,
+  neckBand: 0.006,
+  neckEase: 0.006,
+  sleeveFrom: 'ForeArm',
+  sleeveLength: 0.3, // rolled to just below the elbow
+  sleeveEase: 0.012,
+  sleeveFlare: 0.016,
+  cuff: 0.055, // the rolled-up turn-up
+  cuffEase: 0.017, // thick, but inside the jumper's sleeve (2.1 cm off her) when she has one on
+  bandShade: 0.86,
+  tucked: false,
+  hemDrop: 0.07,
+  hemBand: 0,
+  hemEase: null,
+  hangSlope: 0.25,
+  hangMax: 0.04,
+  lips: ['neck', 'sleeve', 'hem'],
+  placket: true,
+  placketToHem: 0.015,
+  placketWidth: 0.026,
+  placketShade: 1,
+  studs: 8,
+  buttons: [0.012],
+  topButtonOpen: 0.006,
+  buttonRadius: 0.0055,
+  buttonColour: '#e6e0d0', // pale shirt buttons
+  veeWidths: [0, 0.02, 0.03, 0.04, 0.045, 0.05, 0.055, 0.06, 0.065],
+  veeBows: [1, 1, 0.9, 0.8, 0.7, 0.6, 0.6, 0.6, 0.6],
+  veeStop: 0.01,
+  logo: null,
+  plaid: true,
+  roughness: 0.95,
+};
+
+/** How many of a plaid shirt's buttons she has undone, from her polo's: at least the top one, at most three. */
+export const plaidOpenFor = (poloOpen = 0) => Math.min(3, Math.max(1, poloOpen));
+
+// The plaid shirt worn open over her polo: a little roomier, its fronts hanging apart all the way down so the polo shows.
+export const PLAID_OPEN = {
+  ...PLAID,
+  ease: 0.018,
+  sleeveEase: 0.015,
+  sleeveFlare: 0.016,
+  cuffEase: 0.017, // inside the jumper's sleeve (2.1 cm off her) when she has one on
+  neckEase: 0.016,
+  open: 99, // every button undone
+  veeWidths: [0.075],
+  veeBows: [0.55],
+  veeFloor: 0.055, // the fronts this far either side of her middle all the way to the hem
+  veeMeasured: true, // its fronts laid along the edge as cut on the finished shirt (a wide V moves as the shirt is pushed out)
+  inset: false, // what shows between the fronts is her polo
+};
+
+// A second polo over her own, white or black, a size bigger: its sleeves a little shorter and its neck a little lower, so her own
+// polo's sleeves, neck band and collar show under it. Tucked in over hers.
+export const OVER_POLO = {
+  ...POLO,
+  ease: 0.0135,
+  neckBack: 0.01,
+  neckSide: 0.008,
+  neckFront: -0.014,
+  sleeveLength: 0.58,
+  sleeveEase: 0.011,
+  sleeveFlare: 0.014,
+  tuckEase: 0.0042,
+  blouse: 0.006,
+};
+
 /** How many of a girl's polo buttons are undone on this farm: a whole number from `lo` to `hi`, both included. */
 export function dealPoloOpen([lo, hi] = [0, 0], random = Math.random) {
   return lo + Math.min(hi - lo, Math.floor(random() * (hi - lo + 1)));
@@ -421,7 +497,9 @@ function openNeck(mesh, body, p, neckField) {
   const width = p.veeWidths[Math.min(open, p.veeWidths.length - 1)];
   const bow = p.veeBows[Math.min(open, p.veeBows.length - 1)];
   // Below its point the field carries on falling as a straight V would, so nothing there sits on the edge of being cut.
-  const halfWidth = (y) => (y <= bottom ? (width * (y - bottom)) / (top - bottom) : width * ((y - bottom) / (top - bottom)) ** bow);
+  const closing = (y) => (y <= bottom ? (width * (y - bottom)) / (top - bottom) : width * ((y - bottom) / (top - bottom)) ** bow);
+  // An overshirt worn open: its fronts stay `veeFloor` apart all the way down to the hem rather than meeting at the bottom.
+  const halfWidth = p.veeFloor ? (y) => Math.max(p.veeFloor, closing(y)) : closing;
   const field = (v) => Math.min(halfWidth(v.rest[1]) - Math.abs(v.rest[0] - x0), v.rest[2] - neck[2] - 0.03);
   return { top, bottom, halfWidth, field };
 }
@@ -497,8 +575,9 @@ function buildPlacket(mesh, body, p, vee) {
   if (p.placketToHem != null) {
     // A coat's flap runs from here to just above its hem, its studs spread down it from the first done up (at the V's point).
     const placketLength = top - (body.waist - p.hemDrop - (p.skirt ?? 0)) - p.placketToHem;
-    const open = vee ? Math.min(p.open, p.studs - 1) : 0;
-    const first = vee ? top - vee.bottom + p.veeStop : p.buttons[0];
+    const allOpen = vee && p.open >= p.studs;
+    const open = vee && !allOpen ? Math.min(p.open, p.studs - 1) : 0;
+    const first = vee && !allOpen ? top - vee.bottom + p.veeStop : p.buttons[0];
     const below = (placketLength - 0.03 - first) / Math.max(1, p.studs - 1 - open);
     const above = open ? (first - p.buttons[0]) / open : 0;
     const buttons = Array.from({ length: p.studs }, (_, i) => (i < open ? p.buttons[0] + above * i : first + below * (i - open)));
@@ -576,7 +655,7 @@ function buildPlacket(mesh, body, p, vee) {
   const bottom = top - p.placketLength;
   const vBottom = vee ? vee.bottom : top;
   // All undone, the halves run to the bottom of the placket, each with its own end.
-  const closed = vBottom - bottom > 0.008;
+  const closed = !(vee && p.open >= p.buttons.length) && vBottom - bottom > 0.008;
   const halfCaps = closed ? ['top'] : ['top', 'bottom'];
   const ok =
     (!closed || strip(vBottom, bottom, () => [x0 - w / 2, x0 + w / 2], 0, 1, 5, vee ? ['bottom'] : ['top', 'bottom'])) &&

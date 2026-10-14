@@ -16,6 +16,7 @@ import { SIGNAL_MODES } from '../vehicle/indicators.js';
 import { DRIVE_MODES } from '../vehicle/driveMode.js';
 import { lensCoverage } from '../effects/lensMud.js';
 import { WEATHER_KINDS } from '../world/weather.js';
+import { OUTFIT_KINDS, completeStyle } from '../npc/outfits.js';
 
 const DEG = 180 / Math.PI;
 const round = (v, n = 3) => Math.round(v * 10 ** n) / 10 ** n;
@@ -190,6 +191,9 @@ export function buildGameTree(g, host) {
       reacting: text(() => c().reactingText),
       helmet: text(() => g.headgear.describe(id), 'where her helmet is: on the hooks, on her head, on a seat or on the ground'),
       coat: text(() => g.coats.describe(id), 'whether she has a wax jacket on, and her hood up or down'),
+      outfit: choice(Object.keys(OUTFIT_KINDS), () => completeStyle(c().outfit.style).kind, (v) => c().setStyle({ ...completeStyle(c().outfit.style), kind: v }), 'what she has on top today'),
+      plaidOpen: flag(() => completeStyle(c().outfit.style).plaidOpen, (v) => c().setStyle({ ...completeStyle(c().outfit.style), plaidOpen: v }), 'a plaid shirt worn open over her polo'),
+      popped: flag(() => completeStyle(c().outfit.style).popped, (v) => c().setStyle({ ...completeStyle(c().outfit.style), popped: v }), 'her collar popped'),
       mud: num(() => c().mucky.mud, (v) => (c().mucky.mud = v), 0, 1, '', 'how muddy her jeans are'),
       dust: num(() => c().mucky.dust, (v) => (c().mucky.dust = v), 0, 1, '', 'how dusty her hair and face are'),
       poloOpen: num(() => c().outfit.poloOpen ?? 0, (v) => c().setPoloOpen(v), 0, 5, '', "how many of her polo's buttons are undone (0 to 5)"),

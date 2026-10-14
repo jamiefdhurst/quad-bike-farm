@@ -157,6 +157,7 @@ import { Tea, TEA_PARAM_RANGES } from './npc/tea.js';
 import { Flask, FLASK_PARAM_RANGES } from './npc/flask.js';
 import { carryParams, CARRY_PARAM_RANGES, carryWeight } from './npc/carrying.js';
 import { dealPoloOpen } from './npc/polo.js';
+import { dealOutfit, DEFAULT_OUTFIT_PARAMS, OUTFIT_PARAM_RANGES, OUTFIT_KINDS } from './npc/outfits.js';
 import { Jumpers, JUMPER_PARAM_RANGES, dealJumperColours } from './npc/jumpers.js';
 import { JumperRail } from './world/jumperRail.js';
 import { Coats, COAT_PARAM_RANGES, dealCoatColours } from './npc/coats.js';
@@ -911,8 +912,16 @@ export class Game {
     );
     // How many of her polo's buttons she has undone, dealt for this farm (so it's the same every day) between her own limits.
     const buttonsRandom = createRandom(this.farmSeed ^ 0x9b07);
+    // What each girl has on top today (npc/outfits.js): dealt for this day of this farm, so a day replays the same; a crop-top only
+    // on a warm day.
+    this.outfitParams = { ...DEFAULT_OUTFIT_PARAMS };
+    const outfitRandom = createRandom((this.farmSeed ^ 0x0f17) + this.farm.day * 7919);
+    const warm = this.weather.peak > this.outfitParams.warmAbove;
+    const forcedOutfit = new URLSearchParams(location.search).get('outfit');
     for (const c of this.companions) {
-      c.outfit = { ...c.outfit, poloOpen: dealPoloOpen(c.character.poloOpen, buttonsRandom) }; // fitted with her shirt just below
+      const style = dealOutfit(outfitRandom, c.character.outfitOdds ?? { polo: 1 }, { warm, popped: c.character.poppedChance ?? 0, p: this.outfitParams });
+      if (forcedOutfit && OUTFIT_KINDS[forcedOutfit]) style.kind = forcedOutfit; // ?outfit=plaid puts both girls in it, to look at
+      c.outfit = { ...c.outfit, poloOpen: dealPoloOpen(c.character.poloOpen, buttonsRandom), style }; // fitted with her shirt just below
     }
     for (const c of this.companions) {
       const id = c.character.id;
@@ -1449,6 +1458,7 @@ export class Game {
     registerTuning('Girls carrying things', carryParams, CARRY_PARAM_RANGES);
     registerTuning('Jumpers', this.jumpers.p, JUMPER_PARAM_RANGES);
     registerTuning('Wax jackets', this.coats.p, COAT_PARAM_RANGES);
+    registerTuning('Outfits', this.outfitParams, OUTFIT_PARAM_RANGES);
     registerTuning('Helmets and goggles', this.headgear.p, HEADGEAR_PARAM_RANGES);
     registerTuning('Red diesel mistake', this.dieselMistake.p, DIESEL_MISTAKE_PARAM_RANGES);
     registerTuning('Reading the dash', this.dashReader.p, READING_PARAM_RANGES);

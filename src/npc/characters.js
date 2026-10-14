@@ -22,6 +22,9 @@ export const CHARACTERS = [
     name: 'Amy',
     mapColour: '#3a5690', // her blue polo, for her dot on the farm map
     poloOpen: [0, 1], // buttons of her polo undone, dealt for each farm between these
+    // What she wears on top, dealt each day (npc/outfits.js): mostly her polo. She never wears a crop-top, so its share is her polo's.
+    outfitOdds: { polo: 0.55, plaid: 0.3, doublePolo: 0.15, cropTop: 0 },
+    poppedChance: 0.1, // now and then a popped collar
     params: {
       outfit: 'farmPolo',
       boredShowOffChance: 0.04,
@@ -69,6 +72,9 @@ export const CHARACTERS = [
     name: 'Jess',
     mapColour: '#8e2238', // her burgundy polo
     poloOpen: [0, 5], // buttons of her polo undone, dealt for each farm between these: none up to all of them
+    // What she wears on top, dealt each day (npc/outfits.js); the crop-top only on a warm day, its share her polo's otherwise.
+    outfitOdds: { polo: 0.5, plaid: 0.3, doublePolo: 0.15, cropTop: 0.05 },
+    poppedChance: 0.3, // her collar popped a good third of the time
     // Cheekier: braver behind the bars, chattier, bored sooner (usually after
     // about 45 s rather than 60) and more likely to do something about it, and
     // she likes being left on a runaway.

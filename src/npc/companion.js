@@ -3,7 +3,7 @@ import { attachKeepingSize } from './attachKeepingSize.js';
 import { StateMachine } from './stateMachine.js';
 import { CharacterRig } from './characterRig.js';
 import { DEFAULT_COMPANION_PARAMS } from './companionParams.js';
-import { applyOutfit, refitOutfit, reshirt, withJumper, withCoat, setHood, OUTFITS } from './outfit.js';
+import { applyOutfit, refitOutfit, reshirt, restyle, withJumper, withCoat, setHood, OUTFITS } from './outfit.js';
 import { shapeFigure } from './figure.js';
 import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 import { TractorStartAttempt, DEFAULT_TRACTOR_START_PARAMS } from './tractorStart.js';
@@ -237,6 +237,11 @@ export class Companion {
   setPoloOpen(n) {
     this.outfit = { ...this.outfit, poloOpen: Math.max(0, Math.min(5, Math.round(n))) };
     refitOutfit(this.rig, this.outfit);
+  }
+
+  /** What she has on top today (npc/outfits.js), repainting and refitting her. */
+  setStyle(style) {
+    this.outfit = restyle(this.rig, this.outfit, style);
   }
 
   /** Puts a jumper on (a colour), or takes it off (null), refitting what's under it. */

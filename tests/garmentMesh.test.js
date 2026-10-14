@@ -388,3 +388,69 @@ describe('the wax jacket', () => {
     expect(minCoat).toBeGreaterThan(maxJumper);
   });
 });
+
+describe('the other tops', () => {
+  it('opens a plaid worn over the polo all the way down, its fronts apart to the hem', async () => {
+    const { PLAID_OPEN } = await import('../src/npc/polo.js');
+    const body = cylinderBody();
+    const { vee, placket, shell } = buildTop(body, PLAID_OPEN);
+    expect(vee).not.toBe(null);
+    const hemY = body.waist - PLAID_OPEN.hemDrop;
+    expect(vee.halfWidth(hemY + 0.01)).toBeGreaterThanOrEqual(PLAID_OPEN.veeFloor);
+    // Nothing of it across her middle at the front, from the neck to the hem.
+    const used = [...new Set(shell.tris.flat())].map((i) => shell.verts[i]);
+    for (const v of used.filter((q) => !q.apart && q.rest[2] > 0.1)) expect(Math.abs(v.rest[0])).toBeGreaterThan(PLAID_OPEN.veeFloor - 0.01);
+    expect(placket.slits.length).toBe(placket.buttons.length); // every button undone, a buttonhole for each
+  });
+
+  it('buttons a plaid shirt to the hem with the top few undone', async () => {
+    const { PLAID, plaidOpenFor } = await import('../src/npc/polo.js');
+    const body = cylinderBody();
+    const { placket, vee } = buildTop(body, { ...PLAID, open: plaidOpenFor(0) });
+    expect(plaidOpenFor(0)).toBe(1);
+    expect(plaidOpenFor(5)).toBe(3);
+    expect(vee).not.toBe(null);
+    expect(placket.buttons.length).toBe(PLAID.studs);
+    expect(Math.min(...placket.verts.map((v) => v.rest[1]))).toBeLessThan(body.waist - PLAID.hemDrop + 0.04);
+  });
+
+  it('puts a second polo outside the first, with shorter sleeves and a lower neck', async () => {
+    const { OVER_POLO } = await import('../src/npc/polo.js');
+    const body = cylinderBody();
+    const under = buildTop(body, POLO).shell.verts.filter((v) => !v.apart);
+    const over = buildTop(body, OVER_POLO).shell.verts.filter((v) => !v.apart);
+    const out = (v) => Math.hypot(v.rest[0], v.rest[2]);
+    const at = (vs) => vs.filter((v) => Math.abs(v.rest[1] - 1.05) < 0.02).map(out);
+    expect(Math.min(...at(over))).toBeGreaterThan(Math.max(...at(under)));
+    const top = (vs) => Math.max(...vs.filter((v) => v.edge === 'neck' && v.rest[2] < 0).map((v) => v.rest[1]));
+    expect(top(over)).toBeLessThanOrEqual(top(under));
+  });
+
+  it('pops a collar up round her neck instead of laying it down', () => {
+    const body = cylinderBody();
+    const { shell } = buildTop(body, POLO);
+    const flat = buildCollar(shell, body, { placketWidth: POLO.placketWidth, over: [shell] });
+    const popped = buildCollar(shell, body, { placketWidth: POLO.placketWidth, over: [shell] }, { ...COLLAR, popped: true });
+    const high = (c) => Math.max(...c.verts.map((v) => v.rest[1]));
+    const low = (c) => Math.min(...c.verts.map((v) => v.rest[1]));
+    expect(high(popped)).toBeGreaterThan(high(flat) + 0.01);
+    expect(low(popped)).toBeGreaterThan(low(flat));
+  });
+});
+
+describe('the crop-top', () => {
+  it('is a band round her bust and two straps over her shoulders, and nothing below the band', async () => {
+    const { buildCropTop, cropFields, CROP } = await import('../src/npc/crop.js');
+    const body = cylinderBody();
+    const built = buildCropTop(body);
+    expect(built).not.toBe(null);
+    const F = cropFields(body);
+    const verts = [...new Set(built.shell.tris.flat())].map((i) => built.shell.verts[i]).filter((v) => !v.apart);
+    for (const v of verts) expect(F.field(v)).toBeLessThan(0.006); // stood off her, so a few millimetres out
+    expect(Math.min(...verts.map((v) => v.rest[1]))).toBeGreaterThan(F.bust.y - CROP.under - 0.005);
+    // Strap points above the band, about strapAcross either side of her middle.
+    const above = verts.filter((v) => v.rest[1] > F.bust.y + CROP.top + 0.03);
+    expect(above.length).toBeGreaterThan(4);
+    for (const v of above) expect(Math.abs(Math.abs(v.rest[0]) - CROP.strapAcross)).toBeLessThan(CROP.strapWidth + 0.003);
+  });
+});

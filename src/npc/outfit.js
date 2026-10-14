@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import { buildTop, buildInset, buttonShape, slitShape, poloFields, POLO, JUMPER, COAT } from './polo.js';
+import { buildTop, buildInset, buttonShape, slitShape, poloFields, POLO, JUMPER, COAT, PLAID, PLAID_OPEN, OVER_POLO, plaidOpenFor } from './polo.js';
+import { buildCropTop } from './crop.js';
 import { buildShorts, SHORTS } from './shorts.js';
-import { buildCollar, COAT_COLLAR } from './collar.js';
+import { buildCollar, COLLAR, COAT_COLLAR, SHIRT_COLLAR, OVER_COLLAR } from './collar.js';
 import { buildHood, lowerHood, intoHood, chestShare, tartan } from './hood.js';
 import { COAT_COLLAR_COLOUR } from './coats.js';
 import { measureHead } from './helmetView.js';
@@ -399,7 +400,7 @@ export function applyOutfit(rig, outfit, { garments = true } = {}) {
     const mat = o.material;
     if (outfit.colors && mat.map) {
       mat.userData.baseMap ??= mat.map; // kept so the shirt can be recoloured later
-      mat.map = recolourTexture(mat.userData.baseMap, outfit.colors);
+      mat.map = recolourTexture(mat.userData.baseMap, bodyColours(outfit));
     }
     // The FBX conversion left the clothes slightly metallic; fabric isn't.
     mat.metalness = 0;
@@ -413,6 +414,35 @@ export function applyOutfit(rig, outfit, { garments = true } = {}) {
 export function withShirt(outfit, color) {
   const hex = typeof color === 'number' ? `#${color.toString(16).padStart(6, '0')}` : color;
   return { ...outfit, colors: { ...outfit.colors, shirt: hex }, ...(outfit.polo ? { polo: hex } : {}) };
+}
+
+/**
+ * The body's palette for an outfit: under a buttoned plaid its shirt band is the plaid's ground, and under a crop-top it's her
+ * skin (her top half is bare).
+ */
+export function bodyColours(outfit) {
+  const kind = outfit.style?.kind;
+  if (kind === 'cropTop') return { ...outfit.colors, shirt: 'skin' };
+  if (kind === 'plaid' && !outfit.style.plaidOpen) return { ...outfit.colors, shirt: outfit.style.plaid[0] };
+  return outfit.colors;
+}
+
+/** Puts her in the day's outfit (outfits.js: what she has on top), repainting the body under it and refitting. */
+export function restyle(rig, outfit, style) {
+  const next = { ...outfit, style };
+  repaint(rig, next);
+  refitOutfit(rig, next);
+  return next;
+}
+
+function repaint(rig, outfit) {
+  rig.model.traverse((o) => {
+    const base = o.isMesh && o.material.userData.baseMap;
+    if (!base) return;
+    o.material.map.dispose();
+    o.material.map = recolourTexture(base, bodyColours(outfit));
+    o.material.needsUpdate = true;
+  });
 }
 
 /** The outfit with a jumper over it (a colour), or with it taken off (null). */
@@ -478,13 +508,7 @@ function hairUnderHood(rig, shape) {
 /** Puts her in the same outfit with a different shirt, once the colour is known. */
 export function reshirt(rig, outfit, color) {
   const next = withShirt(outfit, color);
-  rig.model.traverse((o) => {
-    const base = o.isMesh && o.material.userData.baseMap;
-    if (!base) return;
-    o.material.map.dispose();
-    o.material.map = recolourTexture(base, next.colors);
-    o.material.needsUpdate = true;
-  });
+  repaint(rig, next);
   refitOutfit(rig, next);
   return next;
 }
@@ -641,17 +665,24 @@ function addTop(rig, name, color, spec) {
   const built = buildTop(data, spec);
   const { shell, shade, placket, vee } = built;
   const made = { data, built, spec };
-  // The polo matches the shirt colour the body is painted under it; the jumper is its own colour, as before.
-  const tint = new THREE.Color(color);
+  // The polo matches the shirt colour the body is painted under it; the jumper is its own colour, as before. A plaid's colour is
+  // its check, drawn by its material, so its shading is all the vertices carry.
+  const tint = new THREE.Color(spec.plaid ? '#ffffff' : color);
   const shading = [];
   for (const k of shade) shading.push(tint.r * k, tint.g * k, tint.b * k);
+  const fabric = () =>
+    spec.plaid
+      ? plaidMaterial(color, data, { vertexColors: true, roughness: spec.roughness, side: THREE.DoubleSide })
+      : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: spec.roughness ?? (spec === JUMPER ? 0.97 : 0.92), side: THREE.DoubleSide });
+  made.fabric = fabric;
+  made.tint = tint;
   skinnedFromArrays(
     rig,
     body,
     data,
     name,
     { positions: shell.verts.map((q) => q.bind), normals: shell.normals, weights: shell.verts.map((q) => q.weights), colors: shading, index: shell.tris.flat() },
-    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: spec.roughness ?? (spec === JUMPER ? 0.97 : 0.92), side: THREE.DoubleSide }),
+    fabric(),
   );
   if (vee && spec.inset !== false) {
     // Her skin in the V of the open neck, her own flat faces in her skin's colour.
@@ -680,7 +711,9 @@ function addTop(rig, name, color, spec) {
     data,
     `${name}Placket`,
     { positions: placket.verts.map((q) => q.bind), normals: smoothArrayNormals(placket.verts.map((q) => q.bind), index), weights: placket.verts.map((q) => q.weights), uvs: placket.uv, index },
-    new THREE.MeshStandardMaterial({ color: tint.clone().multiplyScalar((spec.placketShade ?? 1) / new THREE.Color().setRGB(STITCH_BASE, 0, 0, THREE.SRGBColorSpace).r), map: placketStitches(), roughness: spec.roughness ?? 0.9, side: THREE.DoubleSide }),
+    spec.plaid
+      ? plaidMaterial(color, data, { roughness: spec.roughness, side: THREE.DoubleSide })
+      : new THREE.MeshStandardMaterial({ color: tint.clone().multiplyScalar((spec.placketShade ?? 1) / new THREE.Color().setRGB(STITCH_BASE, 0, 0, THREE.SRGBColorSpace).r), map: placketStitches(), roughness: spec.roughness ?? 0.9, side: THREE.DoubleSide }),
   );
   const positions = [];
   const weights = [];
@@ -776,23 +809,95 @@ function addLogo(rig, body, data, logo, tint) {
   );
 }
 
-/** The polo's collar (collar.js), on the polo's neck edge and over the jumper if she has one on. */
-function addCollar(rig, polo, jumper, color) {
+/**
+ * A collar (collar.js) on a top's neck edge, lying over `over` (whatever is outside the top there, and any collar under it).
+ * Returns what it built, for a collar over it to lie on.
+ */
+function addCollar(rig, top, over, color, collarSpec = COLLAR, name = 'poloCollar') {
   const body = bodyMesh(rig);
-  const { data, built, spec } = polo;
-  const over = [built.shell, ...(jumper ? [jumper.built.shell] : [])];
-  const collar = buildCollar(built.shell, data, { vee: built.vee, placketWidth: spec.placketWidth, over });
-  if (!collar) return;
-  const tint = new THREE.Color(color);
+  const { data, built, spec } = top;
+  const collar = buildCollar(built.shell, data, { vee: built.vee, placketWidth: spec.placketWidth, over }, collarSpec);
+  if (!collar) return null;
+  const tint = spec.plaid ? new THREE.Color('#ffffff') : new THREE.Color(color);
   const colors = [];
   for (const k of collar.shade) colors.push(tint.r * k, tint.g * k, tint.b * k);
   skinnedFromArrays(
     rig,
     body,
     data,
-    'poloCollar',
+    name,
     { positions: collar.verts.map((q) => q.bind), normals: smoothNormals(collar), weights: collar.verts.map((q) => q.weights), colors, index: collar.tris.flat() },
-    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, side: THREE.DoubleSide }),
+    top.fabric ? top.fabric() : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, side: THREE.DoubleSide }),
+  );
+  return collar;
+}
+
+/**
+ * A plaid flannel's check, drawn on the cloth from the stored (bind) shape the garment is skinned from: in that pose her arms are
+ * straight out, so each of three flat projections, blended by which way the cloth faces, runs the check straight across her
+ * body and along and round her arms. `colours`: [ground, check, line]. Vertex colours (if any) shade it.
+ */
+function plaidMaterial(colours, data, options = {}) {
+  const mat = new THREE.MeshStandardMaterial(options);
+  const [ground, check, line] = colours.map((c) => new THREE.Color(c));
+  // About 9 cm a repeat, in the mesh's own units.
+  const perUnit = 11 / new THREE.Vector3().setFromMatrixScale(data.fromRoot).x;
+  mat.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, { plaidGround: { value: ground }, plaidCheck: { value: check }, plaidLine: { value: line }, plaidScale: { value: perUnit } });
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vPlaidPos;\nvarying vec3 vPlaidNormal;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvPlaidPos = position;\nvPlaidNormal = normal;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+varying vec3 vPlaidPos;
+varying vec3 vPlaidNormal;
+uniform vec3 plaidGround;
+uniform vec3 plaidCheck;
+uniform vec3 plaidLine;
+uniform float plaidScale;
+vec3 plaidAt(vec2 q) {
+  vec2 f = fract(q);
+  float bx = step(f.x, 0.42);
+  float by = step(f.y, 0.42);
+  vec3 c = mix(plaidGround, plaidCheck, 0.5 * (bx + by));
+  float l = max(step(abs(f.x - 0.71), 0.022), step(abs(f.y - 0.71), 0.022));
+  return mix(c, plaidLine, 0.8 * l);
+}`,
+      )
+      .replace(
+        '#include <color_fragment>',
+        `#include <color_fragment>
+{
+  vec3 w = pow(abs(normalize(vPlaidNormal)), vec3(4.0));
+  w /= (w.x + w.y + w.z);
+  vec3 p = vPlaidPos * plaidScale;
+  diffuseColor.rgb *= plaidAt(p.yz) * w.x + plaidAt(p.xz) * w.y + plaidAt(p.xy) * w.z;
+}`,
+      );
+  };
+  mat.customProgramCacheKey = () => 'plaid';
+  return mat;
+}
+
+/** Jess's string crop-top (crop.js), on her bare top half. */
+function addCrop(rig, color) {
+  const body = bodyMesh(rig);
+  if (!body || !rig.bones.Neck) return;
+  const data = bodyData(rig, body);
+  const built = buildCropTop(data);
+  if (!built) return;
+  const tint = new THREE.Color(color);
+  const colors = [];
+  for (const k of built.shade) colors.push(tint.r * k, tint.g * k, tint.b * k);
+  skinnedFromArrays(
+    rig,
+    body,
+    data,
+    'cropTop',
+    { positions: built.shell.verts.map((q) => q.bind), normals: built.shell.normals, weights: built.shell.verts.map((q) => q.weights), colors, index: built.shell.tris.flat() },
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6, side: THREE.DoubleSide }),
   );
 }
 
@@ -935,10 +1040,24 @@ function addGarments(rig, outfit) {
 }
 
 function addEachGarment(rig, outfit) {
-  // The polo, the jumper over it, then the collar on the polo's neck, lying over whichever is outermost.
-  const polo = outfit.polo ? addTop(rig, 'polo', outfit.polo, { ...POLO, open: outfit.poloOpen ?? 0 }) : null;
+  // The day's outfit (outfits.js): her polo; a plaid shirt buttoned instead of it or open over it; a second polo over hers; or a
+  // crop-top. Then the jumper over whatever she has on, then the collars from the inside out, each lying over everything outside
+  // its top and the collar under it.
+  const style = outfit.style ?? {};
+  const kind = style.kind ?? 'polo';
+  const open = outfit.poloOpen ?? 0;
+  const pop = (spec) => (style.popped ? { ...spec, popped: true } : spec);
+  const plaidShut = kind === 'plaid' && !style.plaidOpen;
+  let polo = null;
+  let outer = null;
+  if (kind === 'cropTop') addCrop(rig, style.crop);
+  else if (outfit.polo && !plaidShut) polo = addTop(rig, 'polo', outfit.polo, { ...POLO, open: kind === 'doublePolo' ? 0 : open });
+  if (kind === 'doublePolo') outer = addTop(rig, 'overPolo', style.over, { ...OVER_POLO, open });
+  if (kind === 'plaid') outer = addTop(rig, 'plaid', style.plaid, style.plaidOpen ? PLAID_OPEN : { ...PLAID, open: plaidOpenFor(open) });
   const jumper = outfit.jumper ? addTop(rig, 'jumper', outfit.jumper, JUMPER) : null;
-  if (polo) addCollar(rig, polo, jumper, outfit.polo);
+  const shells = [polo, outer, jumper].filter(Boolean).map((t) => t.built.shell);
+  const under = polo ? addCollar(rig, polo, shells, outfit.polo, pop(COLLAR)) : null;
+  if (outer) addCollar(rig, outer, [...shells, ...(under ? [under] : [])], style.over, pop(kind === 'plaid' ? SHIRT_COLLAR : OVER_COLLAR), `${kind}Collar`);
   if (outfit.coat) addCoat(rig, outfit.coat);
   if (outfit.shorts) addBottom(rig, outfit.shorts, !!outfit.coat);
   if (outfit.wellies) addWellies(rig, outfit.wellies);

@@ -5,6 +5,7 @@ import { girlActions } from './girlActions.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
 import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
 import { rampPoint } from '../npc/jumps.js';
+import { OUTFIT_KINDS, describeOutfit, completeStyle } from '../npc/outfits.js';
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
 const round = (v, n = 2) => Math.round(v * 10 ** n) / 10 ** n;
@@ -49,6 +50,13 @@ export function buildGirlsTab(d) {
     slider(f, 'mud on her', () => c.mucky.mud, (v) => (c.mucky.mud = v), 0, 1, 0.01);
     slider(f, 'dust on her', () => c.mucky.dust, (v) => (c.mucky.dust = v), 0, 1, 0.01);
     slider(f, 'polo buttons undone', () => c.outfit.poloOpen ?? 0, (v) => c.setPoloOpen(v), 0, 5, 1);
+    // What she has on top today (dealt each day, npc/outfits.js), and the choices within it.
+    const style = () => completeStyle(c.outfit.style);
+    const kinds = Object.fromEntries(Object.entries(OUTFIT_KINDS).map(([k, o]) => [o.label, k]));
+    f.add({ get v() { return style().kind; }, set v(x) { c.setStyle({ ...style(), kind: x }); } }, 'v', kinds).name('outfit').listen();
+    tick(f, 'plaid worn open', () => style().plaidOpen, (v) => c.setStyle({ ...style(), plaidOpen: v }));
+    tick(f, 'collar popped', () => style().popped, (v) => c.setStyle({ ...style(), popped: v }));
+    show(f, 'wearing', () => describeOutfit(style()));
 
     // --- Why she does what she does: what she wants (settable) and what she chose for it (npc/needs.js, npc/chooser.js).
     const why = f.addFolder('Why');

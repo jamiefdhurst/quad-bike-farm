@@ -59,6 +59,22 @@ export const COAT_COLLAR = {
   underShade: 0.6,
 };
 
+// A shirt's collar (the plaid): a taller stand, a longer fall and sharper points than a polo's.
+export const SHIRT_COLLAR = {
+  ...COLLAR,
+  stand: 0.026,
+  standFront: 0.02,
+  out: 0.036,
+  pointOut: 0.028,
+  pointDrop: 0.045,
+  pointSpread: 0.6,
+  tipRound: 0.02,
+  thickness: 0.0018,
+};
+
+// The over-polo's collar: a little smaller than her own polo's, so hers shows round its edge.
+export const OVER_COLLAR = { ...COLLAR, stand: 0.018, standFront: 0.014, out: 0.022, pointOut: 0.016, pointDrop: 0.025 };
+
 /**
  * Builds the collar. `shirt` is the garment polo's shell (its neck edge is the points tagged 'neck'), `vee` its open neck if
  * any, `placketWidth` how wide the placket is, `over` the meshes it may lie on (the shirt, the jumper). Done up, the stand
@@ -105,6 +121,16 @@ export function buildCollar(shirt, body, { vee = null, placketWidth, over }, p =
     ground.verts.push(...m.verts);
     for (const t of m.tris) if (t.some((i) => near(m.verts[i]))) ground.tris.push(t.map((i) => i + base));
   }
+  // Sorted by which way round her neck they lie, so a ray only tries the ones in its direction (with a collar over several layers
+  // of cloth, trying them all took most of the time it takes to dress her).
+  const BINS = 32;
+  const binOf = (r) => Math.floor((angleOf(r) / TAU) * BINS) % BINS;
+  const bins = Array.from({ length: BINS }, () => []);
+  for (const t of ground.tris) for (const b of new Set(t.map((i) => binOf(ground.verts[i].rest)))) bins[b].push(t);
+  const groundNear = (q) => {
+    const b = binOf(q);
+    return { verts: ground.verts, tris: [-1, 0, 1].flatMap((d) => bins[(b + d + BINS) % BINS]) };
+  };
 
   const U = [0, 1, 0];
   const outward = (theta) => [Math.sin(theta), 0, Math.cos(theta)];
@@ -139,7 +165,10 @@ export function buildCollar(shirt, body, { vee = null, placketWidth, over }, p =
     const T = standTop(theta, B);
     const dir = norm(add(O, [side * p.pointSpread * k, 0, 0]));
     const fold = add(add(T, scale(O, p.roll)), scale(U, 0.003));
-    const far = add(add(T, scale(dir, p.out + p.pointOut * k)), scale(U, -(h + p.drop + p.pointDrop * k)));
+    // Popped, the fall is turned up: it stands up round her neck from the fold, flaring out, higher towards the points.
+    const far = p.popped
+      ? add(add(T, scale(dir, p.out * 0.6 + p.pointOut * k * 0.7)), scale(U, p.out * 0.95 + p.pointDrop * k * 0.25))
+      : add(add(T, scale(dir, p.out + p.pointOut * k)), scale(U, -(h + p.drop + p.pointDrop * k)));
     const bez = (t) => add(add(scale(T, (1 - t) * (1 - t)), scale(fold, 2 * t * (1 - t))), scale(far, t * t));
     // Lifted on to what's under it, along a line from a point inside her chest below the neck.
     const centre = [x0, B.rest[1] - 0.06, z0];
@@ -147,6 +176,10 @@ export function buildCollar(shirt, body, { vee = null, placketWidth, over }, p =
     rowsT.forEach((t, r) => {
       let q = bez(t);
       if (r === rowsT.length - 1 && fromEnd < p.tipRound) q = lerp(q, bez(0.85), 0.25 * (1 - fromEnd / p.tipRound) ** 2);
+      if (p.popped) {
+        column.push({ ...B, rest: q }); // stood up, it lies on nothing
+        return;
+      }
       const D = norm(sub(q, centre));
       // What's under it here, and a few millimetres either side down the fall: it rests on the highest of them, so a narrow
       // ridge between two of its points (a jumper's neck) can't come through.
@@ -155,9 +188,10 @@ export function buildCollar(shirt, body, { vee = null, placketWidth, over }, p =
       let surface = -Infinity;
       for (const d of [0, -p.feel, p.feel]) {
         const from = add(q, scale(down, d));
-        const hit = rayHit(ground, add(from, scale(D, 0.12)), scale(D, -1));
+        const local = groundNear(from);
+        const hit = rayHit(local, add(from, scale(D, 0.12)), scale(D, -1));
         if (!hit) continue;
-        const v = inTriangle(ground, hit.tri, hit.bary);
+        const v = inTriangle(local, hit.tri, hit.bary);
         const level = dot(sub(v.rest, centre), D);
         if (level > surface) surface = level;
         if (!under || d === 0) under = v;
