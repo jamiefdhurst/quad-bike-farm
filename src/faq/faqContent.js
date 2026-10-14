@@ -1589,12 +1589,12 @@ export const VEHICLE_NOTES = {
 // A note for each girl, keyed by character id (characters.js).
 export const GIRL_NOTES = {
   amy: {
-    blurb: 'Blonde, in a polo the colour of her favourite quad, usually done right up. Careful, kind with an edge, and the one who knows what she’s doing with an engine.',
+    blurb: 'Blonde, the taller of the two, in a polo the colour of her favourite quad, usually done right up. Careful, kind with an edge, and the one who knows what she’s doing with an engine.',
     traits: ['Checks the oil and walks round a quad before she rides it.', 'Won’t ride a quad she knows is faulty.', 'Hates two-stroke smoke.',
       'Keeps a true logbook of every fault on the bench.', 'Corners better than Jess.'],
   },
   jess: {
-    blurb: 'Black hair, in a polo the colour of her favourite quad, often with a few buttons undone. Cheeky, competitive and braver behind the bars, and gets bored sooner.',
+    blurb: 'Black hair, shorter and curvier than Amy, in a polo the colour of her favourite quad, often with a few buttons undone. Cheeky, competitive and braver behind the bars, and gets bored sooner.',
     traits: ['Takes quads off on her own, and yours if you leave it running.', 'Names the quads.', 'Loves the smoke, the noise and the mud.',
       'Better in mud than Amy, and never checks the oil.', 'Blames the quad.'],
   },

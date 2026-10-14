@@ -485,3 +485,4 @@ describe('stretched over the hollows', () => {
     expect(hullReach(hull, 1, 0)).toBeCloseTo(1, 6);
   });
 });
+

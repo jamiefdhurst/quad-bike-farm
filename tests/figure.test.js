@@ -56,3 +56,35 @@ describe('figure', () => {
     });
   });
 });
+
+describe('a bigger bust', () => {
+  it('covers more of her, wider and deeper, as well as standing out further', () => {
+    const at = (bust, x, y, z) => figureOffset(x, y, z, APEX, { bust, waist: 0, hips: 0 });
+    // Out at her side, past where a smaller one reaches, a bigger one still moves her.
+    const side = [APEX.x + 0.2, APEX.y, 0.2];
+    expect(at(1, ...side)).toEqual([0, 0, 0]);
+    expect(Math.hypot(...at(1.5, ...side))).toBeGreaterThan(0.001);
+    // At the apex it stands out further than in proportion to the amount.
+    expect(at(1.5, APEX.x, APEX.y, APEX.z)[2]).toBeGreaterThan(1.5 * at(1, APEX.x, APEX.y, APEX.z)[2]);
+  });
+});
+
+describe('her seat', () => {
+  it('turns a flat plate with a shelf under it into round cheeks, and leaves her front alone', async () => {
+    const { roundSeat } = await import('../src/npc/figure.js');
+    // A block bottom: flat at -0.3 from y 0 down to -0.25, then straight in to -0.1 below it, at a few points across her.
+    const pts = [];
+    for (const x of [0, 0.13, 0.25]) for (let y = 0.15; y >= -0.45; y -= 0.025) pts.push({ x, y, z: y > -0.26 && y < 0.05 ? -0.3 : -0.1 });
+    pts.push({ x: 0.1, y: -0.1, z: 0.3 }); // her front
+    const out = roundSeat(pts);
+    const at = (x, y) => out[pts.findIndex((q) => q.x === x && Math.abs(q.y - y) < 1e-9)];
+    // The plate's bottom edge (the shelf) comes in, so the step under it is smaller and it curves under.
+    expect(at(0, -0.25)).toBeGreaterThan(-0.3 + 0.03);
+    // Up the plate she stays as full (never further out than she was at her fullest), and just above it she's rounded out.
+    expect(at(0.13, -0.1)).toBeLessThan(-0.29);
+    expect(at(0.13, 0.075)).toBeLessThan(-0.15);
+    // Below the shelf her thighs are left alone.
+    expect(at(0.13, -0.4)).toBe(-0.1);
+    expect(out[out.length - 1]).toBe(0.3);
+  });
+});

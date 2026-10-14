@@ -28,6 +28,11 @@ export const CHARACTERS = [
     underOpen: [0, 1], // in two polos, buttons undone on her own under the other
     plaidButtons: [0, 1], // a buttoned plaid: done right up, or the top one undone
     params: {
+      // The taller of the two, a balanced figure (figure.js amounts, 1 the usual shape).
+      height: 1.58,
+      bust: 1.0,
+      waist: 0.9,
+      hips: 0.95,
       outfit: 'farmPolo',
       boredShowOffChance: 0.04,
       boredBuzzChance: 0.03, // sits on a rough one now and then, and never says why
@@ -110,7 +115,11 @@ export const CHARACTERS = [
       reactCheerArms: 1,
       reactFlinch: 0.7,
       needThrillRise: 0.003, // gets restless for a bit of excitement sooner (needs.js)
-      height: 1.53,
+      // Shorter than Amy and curvier: a fuller bust, a narrower waist and wider hips.
+      height: 1.52,
+      bust: 1.4,
+      waist: 1.15,
+      hips: 1.2,
       walkSpeed: 1.4,
       boredAfterMin: 20,
       boredAfterMax: 70,

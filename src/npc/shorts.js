@@ -5,7 +5,7 @@
 // tucked into them: at the waist both are her own faces pushed straight out along the same normals (the shorts further), so
 // the shirt stays inside however she bends.
 
-import { weld, cut, openEdges, smoothNormals, applySkin, unskinDir, vec } from './garmentMesh.js';
+import { weld, subdivide, cut, openEdges, smoothNormals, applySkin, unskinDir, vec } from './garmentMesh.js';
 
 const { sub, add, scale, dot, norm } = vec;
 const smooth01 = (t) => {
@@ -23,11 +23,15 @@ export const SHORTS = {
   hemShade: 0.9, // the leg hems, a turned-up edge
   hemBand: 0.012,
   insideShade: 0.55,
-  // The seat: below the fullest part of her bottom the denim falls nearly straight to the hem, bridging between the two sides,
-  // instead of following her in under it.
-  seatSlope: 0.12, // metres forward per metre down from her bottom's furthest-back point
-  seatMax: 0.06,
-  seatReach: 2, // bins (2 cm) either side it looks for that point
+  // The seat: her body's bottom is one flat plate across both sides ending in a shelf above her thighs, so the denim is shaped
+  // over two round cheeks instead, filling the hollow under them down to the hem.
+  seatMax: 0.07, // never more than this further out than it was
+  cheek: [0.09, 0.16, 0.06], // each cheek's half-width, reach up from its fullest, and depth (m); down, it reaches past the hem
+  cheekApart: 0.055, // each cheek's middle this far from the seam
+  cheekDrop: 0, // their fullest this far below the bottom of her body's flat plate
+  hemCup: 0.015, // at the hem the cheeks are as they are this far up, so the hem stands round them
+  seatSmoothing: 6, // passes evening out how far each point of the seat is moved, between neighbours
+  subdivide: false, // split each of her faces in four (flat), so the seat curves rather than folding at her few corners
 };
 
 /** The lines the shorts are cut along (below 0 is inside). `body` as for polo.js's topFields. */
@@ -60,9 +64,10 @@ export function buildShorts(body, p = SHORTS) {
   const keepTri = (...tri) =>
     tri.every((i) => cloth.has(paint(i)) && !bare.test(dominant(verts[i]))) && tri.some((i) => inside(verts[i]));
 
-  // Not subdivided: at her hips, which bend right over when she sits, a point between two of her vertices with their weights
-  // blended doesn't stay between them once skinned, and sinks into her lap. Her own vertices bend exactly as she does.
+  // Subdivided flat, not rounded: rounded, at her hips, which bend right over when she sits, the new points (their skinning
+  // blended) sank into her lap. Flat they stay on her faces, and the seat has enough points to curve smoothly.
   let mesh = weld(verts, index, keepTri);
+  if (p.subdivide) mesh = subdivide(mesh, 0);
   mesh = cut(mesh, F.waistField, 'waist');
   mesh = cut(mesh, F.left.field, 'leg');
   mesh = cut(mesh, F.right.field, 'leg');
@@ -126,35 +131,66 @@ export function buildShorts(body, p = SHORTS) {
 function seat(mesh, body, p) {
   const hips = body.bones.Hips;
   if (!hips) return;
-  const step = 0.02;
-  const back = new Map(); // x bin -> the furthest-back point of her bottom in it
+  const x0 = hips[0];
+  const behind = (v) => v.rest[2] < hips[2];
+  // Where her bottom is fullest: the furthest-back point of the shorts near her middle, and its height.
+  let full = null;
+  let hemY = Infinity;
   for (const v of mesh.verts) {
-    const r = v.rest;
-    if (r[2] >= hips[2] || r[1] > hips[1] + 0.02 || r[1] < hips[1] - 0.2 || Math.abs(r[0] - hips[0]) > 0.16) continue;
-    const k = Math.round((r[0] - hips[0]) / step);
-    const f = back.get(k);
-    if (!f || r[2] < f.z) back.set(k, { z: r[2], y: r[1] });
+    if (!behind(v) || Math.abs(v.rest[0] - x0) > 0.14) continue;
+    hemY = Math.min(hemY, v.rest[1]);
+    if (v.rest[1] < hips[1] + 0.03 && (!full || v.rest[2] < full[2])) full = v.rest;
   }
-  const fullest = (x) => {
-    const k = Math.round((x - hips[0]) / step);
-    let best = null;
-    for (let d = -p.seatReach; d <= p.seatReach; d++) {
-      const f = back.get(k + d);
-      if (f && (!best || f.z < best.z)) best = f;
+  if (!full) return;
+  // Her body's plate is flat from its top down to the shelf under it: the bottom of that, where she should be fullest.
+  let low = full[1];
+  for (const v of mesh.verts) {
+    if (behind(v) && Math.abs(v.rest[0] - x0) < 0.12 && v.rest[2] < full[2] + 0.012) low = Math.min(low, v.rest[1]);
+  }
+  // Two round cheeks, either side of the seam, reaching back as far as she does at her fullest and a little lower, so the cloth
+  // fills the hollow under her bottom down to the hem and curves into it rather than ending in a ledge.
+  const [rx, ryUp, rz] = p.cheek;
+  const cy = low - p.cheekDrop;
+  const ryDown = Math.max(0.04, cy - hemY + p.hemCup * 2);
+  const zc = full[2] + rz;
+  const cheekZ = (x, y) => {
+    let best = Infinity;
+    for (const side of [-1, 1]) {
+      const ex = (x - (x0 + side * p.cheekApart)) / rx;
+      const ey = (y - cy) / (y > cy ? ryUp : ryDown);
+      const e = ex * ex + ey * ey;
+      if (e < 1) best = Math.min(best, zc - rz * Math.sqrt(1 - e));
     }
     return best;
   };
+  const move = new Map(); // vertex -> how far back it goes
   for (const v of mesh.verts) {
     const r = v.rest;
-    if (r[2] >= hips[2]) continue;
-    const f = fullest(r[0]);
-    if (!f || r[1] >= f.y) continue;
-    const want = f.z + p.seatSlope * (f.y - r[1]);
-    if (r[2] <= want) continue;
-    // Fading out towards her sides and round to her front, so the seat joins the rest smoothly.
-    const sides = 1 - smooth01((Math.abs(r[0] - hips[0]) - 0.07) / 0.07);
-    const behind = smooth01((hips[2] - r[2]) / 0.05);
-    const dz = -Math.min(p.seatMax, r[2] - want) * sides * behind;
+    if (!behind(v)) continue;
+    const want = cheekZ(r[0], Math.max(r[1], hemY + p.hemCup));
+    if (!(want < r[2])) continue;
+    // Never pulled in, only out; faded in below the waistband, and round towards her sides.
+    const round = smooth01((hips[2] - r[2]) / 0.05);
+    const band = smooth01((hips[1] + 0.06 - r[1]) / 0.06);
+    move.set(v, -Math.min(p.seatMax, r[2] - want) * round * band);
+  }
+  // Evened out between neighbours, so it blends into the rest instead of ending in a step.
+  const index = new Map(mesh.verts.map((v, i) => [v, i]));
+  const near = mesh.verts.map(() => new Set());
+  for (const t of mesh.tris) for (const a of t) for (const b of t) if (a !== b) near[a].add(b);
+  for (let pass = 0; pass < p.seatSmoothing; pass++) {
+    const next = new Map();
+    mesh.verts.forEach((v, i) => {
+      if (v.rest[2] >= hips[2]) return;
+      const ns = [...near[i]];
+      if (!ns.length) return;
+      const avg = ns.reduce((sum, j) => sum + (move.get(mesh.verts[j]) ?? 0), 0) / ns.length;
+      next.set(v, 0.5 * (move.get(v) ?? 0) + 0.5 * avg);
+    });
+    for (const [v, dz] of next) move.set(v, dz);
+  }
+  for (const [v, dz] of move) {
+    if (!dz || index.get(v) === undefined) continue;
     v.bind = add(v.bind, unskinDir(v.skin, [0, 0, dz]));
     v.rest = applySkin(v.skin, v.bind);
   }
