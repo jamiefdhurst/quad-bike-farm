@@ -698,8 +698,8 @@ What is still to do. Finished items are recorded in DECISIONS.md, under their ol
 69. **Done.** North of the farm. DECISIONS.md left the tree line "for later": a wood with a rutted track through it, a pond, and fallen branches to pick a line through. Built as the wood and the Hollow Run, a narrow twisting circuit with whoops, banked bends, a swell, bogs, log chicanes and a pond; the pond does not ice over (see item 74 for ice on the puddles).
 70. **Done.** The dog, before the sheep. Split out of item 9: a collie that follows you about, rides on the rack, chases quads and the girls' boots. Worth having before there is anything to herd.
 71. **Done.** Amy's cone course. She lays out cones that can be knocked over (unlike the race cones) and times you round them with penalties for each one down. Jess knocks them all over on purpose.
-72. A piggyback over the ford. A girl on foot won't wade the ford; she asks to be carried, or climbs onto whatever is nearest.
-73. A check for unrecorded voice lines. If there isn't one already: a script or test that lists every line with no recording in the banks, so nothing falls back to browser speech without anyone knowing.
+72. A piggyback over the ford. A girl on foot won't wade the ford; she asks to be carried, or climbs onto whatever is nearest. **Not doing:** they cross on a quad now.
+73. A check for unrecorded voice lines. If there isn't one already: a script or test that lists every line with no recording in the banks, so nothing falls back to browser speech without anyone knowing. **Done.**
 74. Ice on the puddles. On frosty mornings the puddles have a skin of ice that cracks and crunches under the wheels, and grips like glass until it breaks.
 75. Diesel waxing in a hard frost. On the coldest days the tractor, the UTV and the Land Rover struggle and die as the fuel gels. Kept in the barn they're fine; a can of additive from the shelf sorts the others.
 76. A burnt leg on the exhaust. A girl who gets off a hot quad on the exhaust side catches her calf on the pipe. Jess yelps, and does it again later; Amy always gets off the other side.

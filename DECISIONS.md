@@ -3813,6 +3813,12 @@ Jamie's answers when asked for new ideas, so they are not offered again.
 - New characters are women, built on the girls' model and wearing the existing clothes.
 - The girls stay on the current base model (the Quaternius "Animated Woman") for now; there is no other base to move to, so improvements work on this one.
 - Dropped from the TODO list: a farm hack estate (a Volvo 240 style). There are cars enough (the girls' two and yours, item 335); carrying round the farm is the Land Rovers' job, so item 183 is now loading the Series III's tub and the 200TDi's back.
+- Not doing (2026-10-14): item 72, a piggyback over the ford. The girls cross on a quad now, so carrying a girl who won't wade isn't needed. The item keeps its number, marked **Not doing.**
+
+## A check for unrecorded voice lines (TODO 73)
+
+- `node tools/unrecorded_lines.mjs [amy|jess]` lists every line a girl says that has no clip in her bank (so the browser would speak it), with the situations it is said in. It exits 1 if any are missing. The logic is `src/audio/voiceCoverage.js` (pure, `tests/voiceCoverage.test.js`), and it gathers lines the way `tools/generate_companion_voice.py` does: string lines in her situations, and her side of the banter. Lines built by a function are not in either list.
+- It is a tool and not a test on purpose: a line is allowed to be unrecorded while the recording runs, and the recorder itself gives up on a few short exclamations its transcript check never matches. Run it after a recording to see what is left. First run: 3 for Amy ("Oof!", "Oi!", "Bumpy!") and 17 for Jess, all of that kind.
 
 ## Overheating for everything with a radiator (TODO 59)
 
