@@ -3732,3 +3732,11 @@ Jamie: the bust a little rounder and more shapely, wider, and growing in width a
   - The shorts (`seat` in `shorts.js`) fill out over the same two cheeks below the waistband, only ever further out, evened out between neighbours. Subdividing the shorts so the seat could curve more (flat, not rounded) was tried and dropped: sitting on a quad, her polo came through at her hips, as rounding had done before.
   - From the side and three-quarter behind it's a rounded bottom now; straight from behind a faint crease is still where the plate's edge was (her body's triangles).
 - Checked headless: both girls side by side front, close and in profile; Jess's shorts from both sides, behind, three-quarter behind and low; Amy three-quarter behind; Amy sitting on a quad. Not checked: driving, the jumper or coat hem over the new seat.
+
+## The Girls tab, tidied again (TODO 55)
+
+The tab had grown two long flat lists: about twenty-five rows at the top of each girl's folder, and over a hundred in "Both girls and the farm". Both are now grouped.
+
+- Each girl: four lines to glance at (doing, free, looking at, reacting), then "Why" (open), "Make her do" (closed), then closed folders "Her state" (friend, waiting, numbness, trips, her quad, scores), "Clothes and mud" (outfit, helmet, coat, buttons, mud, dust), "Favour and romance" and "Skills".
+- Both girls and the farm: closed subfolders by subject, readouts first and buttons after: The girls together, Races runs and records, The day and the weather, Workshop generator and spares, Jobs (board, muck, bales, bonfire, photos), Animals gates and the lane, The farm that remembers, and Take me to.
+- Nothing was removed or changed in behaviour; every row calls the same game method as before. A new shared control goes in the subfolder for its subject, not at the top level of "Both girls and the farm".
