@@ -4012,6 +4012,10 @@ Settled with Jamie up front: item 70 only (she follows, rides the rack, chases q
 - Tunables: "Autumn" in the Tune tab (the leaves, the throw) and the leaf grip in "Surfaces". The day's roll and the conker count are fixed when the farm loads, so they are constants, not tuning.
 - Checked: unit tests, and a headless load with `?season=autumn` and `?season=summer` (no errors, 30 conker tiles against none, a forced throw going windup, release, land). Not checked: how any of it looks (the tint, the floor, the leaves), the arm's pose, the grip by feel, the sound, or frame time in the wood; loading time was not re-measured.
 
+## Shape checks for the models (TODO 86)
+
+The vehicles were already covered by item 87's tests in `tests/vehicleModels.test.js` (triangle budgets, fixed points, proportions). What was missing was the girls, so `tests/girlModels.test.js` builds each one in node (`tests/helpers/girlModels.js`: the real `companion.glb`, her figure and her outfit) and checks her mesh count exactly, her triangles within 5% and her bounding box within 3% of recorded numbers, and that she is about as tall as her params say. Amy is 7 meshes, about 2720 triangles, 1.61 m tall; Jess the same meshes, 1.55 m. The test has no texture pixels, so the polo's neckline is not cut and the triangle count runs a little above the game's; the numbers are for catching accidents, not for the budget. To change a girl on purpose, update `WAS` in the test and say why here.
+
 ## A shared detail kit for the vehicle models (TODO 87)
 
 Settled with Jamie before building:

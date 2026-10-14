@@ -4,7 +4,7 @@ import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFEN
 // Every vehicle's model built in node, the way quadUnit.js builds it, for the tests that look at the models as a whole (budgets,
 // fixed points, proportions). The dashes, plates and decals draw on canvases, so a canvas that accepts every call stands in.
 
-function fakeCanvas() {
+export function fakeCanvas() {
   const ctx = new Proxy({ canvas: null }, { get: (t, k) => (k in t ? t[k] : k === 'measureText' ? (s) => ({ width: String(s).length * 10 }) : () => ({ addColorStop() {}, width: 10 })), set: (t, k, v) => ((t[k] = v), true) });
   return { width: 0, height: 0, getContext: () => ctx, style: {} };
 }
