@@ -1,6 +1,7 @@
 // The start screen over the game: the logo, Continue and New farm when there's a saved farm, a tip from the FAQ that changes every
 // few seconds, and a link to the FAQ page in a new tab. Loaded on its own ahead of main.js, so it shows while the game is still loading.
 
+import './keyEditor.js';
 import { logoSvg } from './logo.js';
 import { faqTips } from '../faq/faqContent.js';
 import { browserStorage, continueInfo, wipeSave } from '../farm/farmSave.js';

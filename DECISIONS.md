@@ -4059,6 +4059,15 @@ Settled with Jamie before building: both trailers (the tipping one and the bale 
 - **Left out:** the girls driving with a trailer on and reversing it into a spot, a place to park to (no bay), jack-knifing when the puller is a physics-driven quad going sideways at speed, a scrape sound for the fold, and Jess's remarks on it.
 - **Checked:** unit tests (rolling the axle, straight reversal, folding on a held lock, no folding going forward, letting go, the calls and where she stands, a simulated reverse following and opposing her calls, her offers, crossness and ending). **Not checked:** how it feels to reverse in play (the 60 degrees and the rate it grows are guesses from the geometry), her walking round to the spot and standing clear of the trailer, the stop call arriving in time at a real speed, or the new lines by ear.
 
+## Remappable keys (TODO 84)
+
+- **Where.** On the start and pause card (`index.html`, `src/start/keyEditor.js`), not on the help panel the item names: the help panel shows over the game with the mouse locked, so nothing on it can be clicked. `Esc` frees the mouse, so the card is where a click can happen. The help panel shows the player's keys instead (`hud.showKeys`, `relabelKbd`).
+- **How.** The game reads keys by `KeyboardEvent.code`, and the pad feeds the same codes, so those codes are the actions. `Input.onKeyDown`/`onKeyUp` translate the physical key through a map (`src/input/keyMap.js`, pure, `tests/keyMap.test.js`) and nothing else in the game changed. The pad skips the map.
+- **No two actions on a key.** `rebind` swaps with whatever held the key; moving to a key no action uses leaves the old key dead (`translate` gives null) rather than letting one key stay on two jobs. Saved bindings are replayed through `rebind` on load, so a hand-edited or old save can't break that.
+- **What can move** (`ACTIONS`): the letter, digit, space and punctuation keys the help lists. Fixed: `Esc`, `Tab`, `Enter`, the arrows, `Shift`, `Alt`, `Ctrl`, the function keys, backtick and backslash. A key that does several things in different places (`E`, `G`) is one action, since the game has one code for it. A test checks every key the help page names is either listed or fixed, so a new key can't be forgotten.
+- **Kept** in localStorage (`quadBikeFarmKeys`), separate from the farm save, so New farm doesn't undo the player's keys. The editor tells the game with a `quadbikekeyschange` event.
+- **Not done:** the FAQ, the debug panel's hints and any spoken or toast line that names a key still use the usual keys; the pad is not remappable; Numpad digits aren't aliased to the digit gears.
+
 ## The radio (TODO 79)
 
 Settled with Jamie before building: the Series III, the 200TDi, Amy's Fiesta and Jess's Corsa each get a radio with a character of its own; one station, all procedural for now (a real recording could come later as a CC0 file); a key in the vehicle; Jess turns it up, Amy turns it off; it needs the key on. "Turn them all on and off at once" is a debug action only.

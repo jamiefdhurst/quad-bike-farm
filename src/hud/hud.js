@@ -2,9 +2,16 @@
 // controls help panel.
 
 import { spreads } from '../achievements/pages.js';
-import { controlsHtml } from './controls.js';
+import { CONTROLS, controlsHtml } from './controls.js';
+import { KEYS_EVENT, keyStorage, loadBindings, relabelKbd } from '../input/keyMap.js';
 
-const HELP_HTML = controlsHtml();
+// The pad's section names buttons, not keys, so a moved key doesn't rename them.
+const PAD_SECTION = 'On a gamepad';
+export function helpHtml(bindings = {}) {
+  const keys = CONTROLS.filter((s) => s.title !== PAD_SECTION);
+  const pad = CONTROLS.filter((s) => s.title === PAD_SECTION);
+  return relabelKbd(controlsHtml(keys), bindings) + controlsHtml(pad);
+}
 
 export class Hud {
   constructor(root) {
@@ -18,7 +25,8 @@ export class Hud {
     this.captionEl.style.opacity = 0;
     this.captionTimer = 0;
     this.help = this.el('div', 'help');
-    this.help.innerHTML = HELP_HTML;
+    this.showKeys(loadBindings(keyStorage()));
+    window.addEventListener?.(KEYS_EVENT, (e) => this.showKeys(e.detail ?? {}));
     this.help.style.display = 'none';
     this.toastTimer = 0;
     this.bucket = this.el('div', 'bucket');
@@ -87,6 +95,11 @@ export class Hud {
     this.captionEl.textContent = text;
     this.captionEl.style.opacity = 1;
     this.captionTimer = seconds;
+  }
+
+  /** The help panel with the keys the player has chosen written on it. */
+  showKeys(bindings) {
+    this.help.innerHTML = helpHtml(bindings);
   }
 
   toggleHelp(force) {

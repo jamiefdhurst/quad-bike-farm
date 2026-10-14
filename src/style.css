@@ -49,7 +49,83 @@ body {
 #overlay.tuning .start-farm,
 #overlay.tuning .start-logo,
 #overlay.tuning .start-tip,
-#overlay.tuning .start-faq {
+#overlay.tuning .keys-open,
+#overlay.tuning .keys-panel,
+#overlay.tuning .keys-open {
+  margin: 8px 0 0;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(239, 228, 196, 0.14);
+  color: #efe4c4;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.keys-open:hover {
+  background: rgba(239, 228, 196, 0.26);
+}
+
+/* The key editor: a scrolling list of what each key does, the key on the right. */
+.keys-panel {
+  margin: 10px 0 4px;
+  max-height: 46vh;
+  overflow-y: auto;
+  text-align: left;
+  font-size: 14px;
+  cursor: default;
+}
+
+.keys-panel[hidden] {
+  display: none;
+}
+
+.keys-panel h3 {
+  margin: 10px 0 4px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+}
+
+.keys-note {
+  opacity: 0.8;
+  font-size: 13px;
+}
+
+.keys-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 0;
+}
+
+.keys-row button,
+.keys-foot button {
+  min-width: 3.4em;
+  padding: 2px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.keys-row button.keys-moved {
+  border-color: #c9a43b;
+  color: #e8c85a;
+}
+
+.keys-foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.start-faq {
   display: none;
 }
 

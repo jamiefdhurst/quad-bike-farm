@@ -47,6 +47,20 @@ export const FAQ_SECTIONS = [
         tip: 'Gamepad: Start plays, sticks move and look, RT is throttle, LT brake, A interacts.',
       },
       {
+        q: 'Can I change the keys?',
+        a: `Yes. Press <kbd>Esc</kbd> to pause and click "Change keys" on the card (it is on the start screen too). Click what you want to
+          change, then press the key you'd like for it. If another job already has that key the two swap, so nothing is ever on two keys at
+          once. Changed keys show gold, and the help page (<kbd>H</kbd>) shows your keys from then on. The game remembers them in your
+          browser. "Put them all back" undoes the lot. <kbd>Esc</kbd>, <kbd>Tab</kbd>, <kbd>Enter</kbd>, the arrows, <kbd>Shift</kbd>,
+          <kbd>Alt</kbd> and the tuning and console keys stay where they are. This page, and the odd line the girls say, still name the usual keys.`,
+        tip: 'Pause with Esc and click "Change keys" to put any key where you like it.',
+      },
+      {
+        q: 'I changed a key and now something does nothing. What happened?',
+        a: `A key moved to a spare one leaves its old key doing nothing, and a key you moved onto another job's swaps with it. Open "Change
+          keys" on the pause card: the ones you have moved are gold. Click one and press the old key again, or use "Put them all back".`,
+      },
+      {
         q: 'How do I work the choke, the lights or the ignition on a gamepad?',
         a: `Click the right stick in (<kbd>R3</kbd>) and a ring of the jobs the buttons have no room for comes up: ignition, crank, choke,
           fuel tap, lights, indicators, 4WD, diff lock, seat belt, the bucket list and more. Point with the D-pad or the right stick,

@@ -2,6 +2,7 @@
 // Keys are tracked by KeyboardEvent.code so the layout doesn't matter. A gamepad (input/gamepad.js) is polled each frame and counts as
 // keys held and tapped in the same sets, plus analogue amounts for the stick and triggers, so the rest of the game reads one thing.
 
+import { KEYS_EVENT, keyStorage, loadBindings, makeKeyMap, translate } from '../input/keyMap.js';
 import { PadController, padStatus, DEFAULT_PAD_PARAMS } from '../input/gamepad.js';
 
 const NO_PAD = { start: false, select: false, radial: null };
@@ -34,6 +35,13 @@ export class Input {
     window.addEventListener?.('gamepadconnected', () => this.listeners.padchange.forEach((fn) => fn(this.padNames())));
     window.addEventListener?.('gamepaddisconnected', () => this.listeners.padchange.forEach((fn) => fn(this.padNames())));
 
+    // Remapped keys (input/keyMap.js): the player's own keys stand in for the game's codes, read from the browser's storage and
+    // changed from the key editor on the pause card, which says so with an event.
+    this.keyMap = makeKeyMap(loadBindings(keyStorage()));
+    window.addEventListener?.(KEYS_EVENT, (e) => {
+      this.keyMap = makeKeyMap(e.detail ?? {});
+      this.down.clear();
+    });
     window.addEventListener('keydown', (e) => this.onKeyDown(e));
     window.addEventListener('keyup', (e) => this.onKeyUp(e));
     window.addEventListener('blur', () => {
@@ -153,13 +161,17 @@ export class Input {
     this.noteInteraction();
     if (e.code === 'Tab' || e.code === 'Space') e.preventDefault();
     if (e.repeat) return;
-    this.down.add(e.code);
-    this.pressed.add(e.code);
+    const code = translate(this.keyMap, e.code);
+    if (!code) return;
+    this.down.add(code);
+    this.pressed.add(code);
   }
 
   onKeyUp(e) {
-    this.down.delete(e.code);
-    this.released.add(e.code);
+    const code = translate(this.keyMap, e.code);
+    if (!code) return;
+    this.down.delete(code);
+    this.released.add(code);
   }
 
   requestPointerLock() {
