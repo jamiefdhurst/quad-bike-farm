@@ -76,7 +76,7 @@ export const CONTROLS = [
     title: 'The Land Rover (the Series III)',
     lines: [
       `<kbd>K</kbd> key, hold <kbd>R</kbd> to start. Battery flat? Stand at the front: <kbd>1</kbd> thumb round the handle (it can kick back) or <kbd>2</kbd> thumb alongside your fingers, then hold <kbd>P</kbd> and let go to swing the starting handle`,
-      `Hold <kbd>Shift</kbd> for the clutch, <kbd>1</kbd>-<kbd>4</kbd> gears, <kbd>B</kbd> reverse (then <kbd>S</kbd> backs up), <kbd>0</kbd> neutral: first and second crunch on the move. <kbd>Q</kbd><kbd>Z</kbd> choke, <kbd>]</kbd><kbd>[</kbd> hand throttle out and in, <kbd>G</kbd> 4WD, <kbd>U</kbd> diff lock, <kbd>P</kbd> lights (off, dipped, main beam: a blue lamp for the main beam), <kbd>,</kbd> <kbd>.</kbd> <kbd>=</kbd> left, right and hazards, <kbd>Space</kbd> handbrake, <kbd>;</kbd> seat belt (optional: an old Land Rover has no lamp or bong)`,
+      `Hold <kbd>Shift</kbd> for the clutch, <kbd>1</kbd>-<kbd>4</kbd> gears, <kbd>B</kbd> reverse (then <kbd>S</kbd> backs up), <kbd>0</kbd> neutral: first and second crunch on the move unless you stop or double-declutch. <kbd>Q</kbd><kbd>Z</kbd> choke, <kbd>]</kbd><kbd>[</kbd> hand throttle out and in, <kbd>G</kbd> 4WD, <kbd>U</kbd> diff lock, <kbd>P</kbd> lights (off, dipped, main beam: a blue lamp for the main beam), <kbd>,</kbd> <kbd>.</kbd> <kbd>=</kbd> left, right and hazards, <kbd>Space</kbd> handbrake, <kbd>;</kbd> seat belt (optional: an old Land Rover has no lamp or bong)`,
     ],
   },
   {

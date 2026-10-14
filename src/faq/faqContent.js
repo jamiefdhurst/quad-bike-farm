@@ -232,6 +232,14 @@ export const FAQ_SECTIONS = [
           In the cold the plugs take longer to heat. The UTV's key stops it again; the tractor's doesn't, you pull its stop knob (<kbd>O</kbd>).`,
       },
       {
+        q: 'Why does the Series III crunch when I go into first or second?',
+        a: `Those two gears have no synchromesh, so the box can't match them to the road for you. Nearly stop and they go in. To change down
+          on the move, double-declutch: press the clutch (<kbd>Shift</kbd>) and go into neutral (<kbd>0</kbd>), let the clutch up, blip the throttle
+          until the revs suit the speed (higher for second at a given speed than you might think), then clutch down and pick the gear. Wrong
+          revs and it crunches and stays in neutral. Amy does it without thinking; Jess grinds it every time. Third and fourth are fine.`,
+        tip: 'To change down into first or second on the move: neutral, clutch up, blip the throttle, clutch down, gear.',
+      },
+      {
         q: 'How does the Series III’s starting handle work?',
         a: `Stand at the front bumper. <kbd>1</kbd> holds the handle with your thumb round it, the natural way, and now and then the engine
           kicks back and you spend a few seconds nursing your hand. <kbd>2</kbd> holds it with your thumb alongside your fingers, which is safe.

@@ -547,8 +547,11 @@ export class Quad {
         const ok = this.reverseCheck(input);
         if (!ok) continue;
       }
-      const r = this.drivetrain.select(gear, false, this.forwardSpeed);
-      if (r === 'crunch') this.say('Crunch! No synchromesh on first or second: nearly stop before you go into them');
+      const ip = this.engine.params;
+      const revs = THREE.MathUtils.clamp((this.engine.rpm - ip.idleRpmWarm) / (ip.maxRpm - ip.idleRpmWarm), 0, 1);
+      const r = this.drivetrain.select(gear, false, this.forwardSpeed, revs);
+      if (r === 'crunch') this.say('Crunch! No synchromesh on first or second: nearly stop, or double-declutch (neutral, clutch up, rev to match, clutch down)');
+      else if (r === 'mismatch') this.say('Crunch! The revs do not match the road speed: blip the throttle in neutral to match them');
       else if (r === 'clutch') this.say('Clutch in (hold Shift) to change gear');
       else if (r === 'missed') this.say('Missed the gear: it is in neutral. Clutch down a moment longer');
     }

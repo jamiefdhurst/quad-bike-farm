@@ -286,6 +286,28 @@ describe('gears with no synchromesh (the Land Rover)', () => {
     expect(d.select(2, true, 0.8)).toBe('ok');
   });
 
+  it('takes a crash gear on the move after a double-declutch with the revs matched', () => {
+    const d = new ManualDrivetrain(V, landy);
+    run(d, 0.5, { clutchHeld: true });
+    d.select(3, true, 4);
+    expect(d.select(0, true, 4)).toBe('ok');
+    run(d, 0.8, { clutchHeld: false, forwardSpeed: 4 }); // clutch up in neutral
+    run(d, 0.5, { clutchHeld: true, forwardSpeed: 4 });
+    expect(d.select(2, true, 4, 0.2)).toBe('mismatch'); // 4 m/s in second (top 4.8) wants about 0.83
+    expect(d.gear).toBe(0);
+    expect(d.select(2, true, 4, 0.8)).toBe('ok');
+    expect(d.gear).toBe(2);
+  });
+
+  it('still crunches when it was not through neutral with the clutch up', () => {
+    const d = new ManualDrivetrain(V, landy);
+    run(d, 0.5, { clutchHeld: true });
+    d.select(3, true, 4);
+    expect(d.select(2, true, 4, 0.83)).toBe('crunch');
+    d.select(0, true, 4);
+    expect(d.select(2, true, 4, 0.83)).toBe('crunch'); // neutral, but the clutch never let up
+  });
+
   it('leaves a box with synchromesh alone however fast it is going', () => {
     const d = new ManualDrivetrain(V, { ...G, gears: 4 });
     run(d, 0.5, { clutchHeld: true });

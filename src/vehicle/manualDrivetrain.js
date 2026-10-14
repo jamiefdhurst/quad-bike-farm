@@ -38,11 +38,15 @@ export const DEFAULT_GEARBOX_PARAMS = {
   jumpRate: 0.6, // chance a second, for a fully worn gear, of it jumping out while it is under that load
   crashGears: 0, // how many of the bottom gears have no synchromesh (the Land Rover's first and second)
   crashSpeed: 1, // m/s: going faster than this, a gear with no synchromesh crunches and won't go in
+  declutchTime: 0.2, // s in neutral with the clutch up (the first declutch) before a crash gear will take on the move
+  matchTolerance: 0.2, // how close the revs (0 idle to 1 flat out) must be to the gear's road speed to go in without a crunch
 };
 
 export const GEARBOX_PARAM_RANGES = {
   crashGears: [0, 4, 1],
   crashSpeed: [0, 5, 0.1],
+  declutchTime: [0, 1, 0.05],
+  matchTolerance: [0.02, 0.5, 0.01],
   topSpeed1: [0.5, 8, 0.1],
   topSpeed2: [1, 12, 0.1],
   topSpeed3: [2, 20, 0.1],
@@ -107,6 +111,7 @@ export class ManualDrivetrain {
     this.pedalDown = 0; // s the pedal has been down far enough to change gear
     this.worn = null; // { gear, wear }: a gear that jumps out of mesh under load on a climb
     this.event = null; // 'jumped' when a worn gear has just jumped out, taken by takeEvent
+    this.neutralFree = 0; // s spent in neutral with the clutch up since the last gear: the first half of a double-declutch
     this.gear = 0; // -1 reverse, 0 neutral, 1 to 3
     this.pedal = 0; // 0 up (clutch engaged) to 1 fully down
     this.clutch = 0; // how hard the clutch bites, 0..1
@@ -157,14 +162,20 @@ export class ManualDrivetrain {
    * Moves the lever to a gear (-1 to 3). Neutral can always be found; the others need the clutch down.
    * Rushing it (the pedal only just down) can miss the gear and leave the lever in a false neutral; `careful` is for a driver who
    * never does (the girls' shifter holds the clutch down for each change itself). `speed` (m/s) matters for a gear with no synchromesh
-   * (`crashGears`): moving faster than `crashSpeed`, it crunches and won't go in.
-   * @returns {'ok'|'clutch'|'same'|'missed'|'crunch'}
+   * (`crashGears`): moving faster than `crashSpeed`, it crunches and won't go in, unless you double-declutch: through neutral with the
+   * clutch let up for `declutchTime`, then the revs (`revs`, 0 idle to 1 flat out) brought to what the gear's road speed needs, within
+   * `matchTolerance`. Revs that are off say 'mismatch' and the gear stays out.
+   * @returns {'ok'|'clutch'|'same'|'missed'|'crunch'|'mismatch'}
    */
-  select(gear, careful = false, speed = 0) {
+  select(gear, careful = false, speed = 0, revs = undefined) {
     if (!GEARS.includes(gear) || gear > this.gearbox.gears) return 'same';
     if (gear === this.gear) return 'same';
     if (gear !== 0 && !this.canChange) return 'clutch';
-    if (gear > 0 && gear <= (this.gearbox.crashGears ?? 0) && Math.abs(speed) > (this.gearbox.crashSpeed ?? 1)) return 'crunch';
+    if (gear > 0 && gear <= (this.gearbox.crashGears ?? 0) && Math.abs(speed) > (this.gearbox.crashSpeed ?? 1)) {
+      if (revs === undefined || this.gear !== 0 || this.neutralFree < (this.gearbox.declutchTime ?? 0.2)) return 'crunch';
+      const target = clamp(Math.abs(speed) / this.topSpeed(gear), 0, 1);
+      if (Math.abs(revs - target) > (this.gearbox.matchTolerance ?? 0.2)) return 'mismatch';
+    }
     if (gear !== 0 && !careful && this.pedalDown < this.gearbox.rushTime && this.random() < this.gearbox.falseNeutralChance) {
       this.gear = 0;
       return 'missed';
@@ -208,6 +219,7 @@ export class ManualDrivetrain {
     this.pedal = clamp(this.pedal + (clutchHeld ? 1 : -1) * rate * dt, 0, 1);
     this.clutch = smoothstep(0, 1, 1 - this.pedal);
     this.pedalDown = this.pedal >= gb.changeClutch ? this.pedalDown + dt : 0;
+    this.neutralFree = this.gear !== 0 ? 0 : this.pedal < 0.3 ? this.neutralFree + dt : this.neutralFree;
 
     // A worn gear jumps out of mesh when it's pulling hard up a bank (not with the clutch down: that's just changing gear).
     if (this.worn && this.gear === this.worn.gear && running && this.clutch > 0.8 && throttle >= gb.jumpThrottle && slope >= gb.jumpSlope) {
