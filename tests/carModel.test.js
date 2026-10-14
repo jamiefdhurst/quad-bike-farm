@@ -22,6 +22,14 @@ describe.each([['fiesta', FIESTA_SPEC], ['corsa', CORSA_SPEC]])('%s', (kind, spe
     model.updateMatrixWorld(true);
   });
 
+  it('names a cabin box (for the mud coat) that has every seat in it', () => {
+    const { min, max } = model.userData.cabin;
+    for (const n of ['seatLeft', 'seatRearLeft', 'seatRearRight']) {
+      const p = model.getObjectByName(n).getWorldPosition(new (model.position.constructor)());
+      expect(p.x > min[0] && p.x < max[0] && p.y > min[1] && p.y < max[1] && p.z > min[2] && p.z < max[2], n).toBe(true);
+    }
+  });
+
   it('has the parts the rest of the game looks for, and four seats with a belt each', () => {
     for (const n of ['bodyRoot', 'riderAnchor', 'seatLeft', 'seatRearLeft', 'seatRearRight', 'cameraAnchor', 'cameraLeft', 'cameraRearLeft', 'cameraRearRight',
       'parkBrakeLever', 'chokeKnob', 'gearLever', 'handlebars', 'gripLeft', 'gripRight', 'riderHands', 'exhaustTip', 'seatBack_left', 'seatBack_driver', 'fuelTap', 'chokeLever']) {

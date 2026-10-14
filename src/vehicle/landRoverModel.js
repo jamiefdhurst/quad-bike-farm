@@ -535,6 +535,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   const frame = D ? MAT.black : MAT.galv; // the screen and window frames: galvanised on the Series, black on the 200TDi
   quad.userData.seatMaterial = trim.seat;
   quad.userData.cleanMaterials = [trim.seat, trim.dash, trim.floor, MAT.belt]; // the cab's inside never gets muddy (effects/mudCoat.js)
+  quad.userData.cabin = { min: [-0.9, 0.4, D ? -2.0 : -0.7], max: [0.9, 1.85, 0.65] }; // the paint inside it stays clean too (cabinMud.js)
   quad.userData.steerGain = 7; // a big wheel, a lot of turns lock to lock
   const body = new THREE.Group();
   body.name = 'body';

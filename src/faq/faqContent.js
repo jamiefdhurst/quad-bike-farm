@@ -453,6 +453,11 @@ export const FAQ_SECTIONS = [
           clean first, then the bodywork. <kbd>G</kbd> puts the hose back. Mind where you point it.`,
       },
       {
+        q: 'Does mud get inside the cars and Land Rovers?',
+        a: `No. Mud builds up on the outside, on the wheels, arches, sills and doors, and the inside of the cab stays clean: seats, dash, carpet, and the
+          painted door panels, pillars and roof lining too.`,
+      },
+      {
         q: 'Why are the girls muddy, and how do I clean them up?',
         a: `Riding behind a muddy quad splashes their jeans, the girl on the back most of all, and dry stubble throws dust in their faces and hair.
           Amy minds and says so; Jess thinks it is hilarious. It dries and flakes off slowly, quicker while they walk about, or you can

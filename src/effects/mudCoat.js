@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { cabinBox } from './cabinMud.js';
 
 // Mud caked on a quad. Each quad gets its own copies of its materials with a
 // shader blend on top: a procedural mud mask that starts on the tyres, the
@@ -58,6 +59,8 @@ function patchMaterial(material, uniforms, wheel) {
         uniform float uMudWheels;
         uniform float uMudWet;
         uniform float uWashed;
+        uniform vec3 uCabinMin;
+        uniform vec3 uCabinMax;
         varying vec3 vMudPos;
         varying vec3 vMudNormal;
         ${noiseGlsl}
@@ -84,7 +87,11 @@ function patchMaterial(material, uniforms, wheel) {
           arch = max(arch, 1.0 - smoothstep(0.28, 0.62, length(d)));
         }
         float under = smoothstep(0.1, -0.6, vMudNormal.y);
-        cover = uMudBody * ((0.95 * low + 0.7 * arch) * (1.0 - 0.25 * top) + 0.45 * under) + uMudBody * uMudBody * 0.3;`}
+        cover = uMudBody * ((0.95 * low + 0.7 * arch) * (1.0 - 0.25 * top) + 0.45 * under) + uMudBody * uMudBody * 0.3;
+        // The cab's inside (a surface in the cabin box facing its middle) stays clean: see cabinMud.js.
+        vec3 cabMid = (uCabinMin + uCabinMax) * 0.5;
+        vec3 inBox = step(uCabinMin, mp) * step(mp, uCabinMax);
+        cover *= 1.0 - inBox.x * inBox.y * inBox.z * step(0.0, dot(vMudNormal, cabMid - mp));`}
         float mudMask = smoothstep(blot - 0.06, blot + 0.06, cover * 1.25);
         // Flecks flung a bit higher than the main coat.
         float fleck = step(0.8 - 0.14 * cover, mudNoise(mp * 95.0)) * step(0.05, cover);
@@ -141,8 +148,13 @@ export class MudCoat {
       uMudWheels: { value: 0 },
       uMudWet: { value: 1 },
       uWashed: { value: 0 },
+      uCabinMin: { value: new THREE.Vector3() },
+      uCabinMax: { value: new THREE.Vector3() },
     };
     const model = quad.model;
+    const cabin = cabinBox(model.userData.cabin);
+    this.uniforms.uCabinMin.value.set(...cabin.min);
+    this.uniforms.uCabinMax.value.set(...cabin.max);
     const signals = model.userData.signalMaterials; // the indicator and reverse lenses light up, so they keep their own materials
     // A model's `cleanMaterials`: its inside (the seats, the dash, the carpet in a cab), which mud on the outside never reaches.
     const skip = new Set([model.userData.lensMaterial, model.userData.tailMaterial, ...(signals ? Object.values(signals) : []), model.getObjectByName('hazardSwitch')?.userData.mat, ...(model.userData.cleanMaterials ?? [])]);

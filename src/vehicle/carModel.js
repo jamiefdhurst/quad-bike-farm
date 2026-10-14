@@ -953,6 +953,8 @@ export function buildCarModel({ kind = 'fiesta', bodyColor = 0x9fb8cc, dashStyle
   mergeStatic(root);
   // The inside never gets muddy (vehicle mud coat, effects/mudCoat.js): only what's outside does.
   quad.userData.cleanMaterials = [trim.seat, trim.bucket, trim.floor, trim.plastic, trim.dash, trim.lining, MAT.belt];
+  // Painted inside surfaces too (door skins, pillars, the roof's underside): inside this box, faces toward its middle stay clean.
+  quad.userData.cabin = { min: [-c.width / 2, c.sill, c.hatchBottom[0]], max: [c.width / 2, c.screenTop[1] + 0.1, c.screenBase[0]] };
   // Only the outside casts a shadow (the inside is in the body's shadow anyway): half the shadow pass's draw calls and triangles.
   const casts = new Set([paint, faded, MAT.rubber, MAT.black, MAT.primer, MAT.under, MAT.chrome]);
   quad.traverse((o) => {
