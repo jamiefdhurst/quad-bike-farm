@@ -3812,3 +3812,8 @@ The item settled it; I chose the details without asking.
 
 - The leads lie on the workbench, whose own box was hit before the leads' small pickup box, so `E` found the bench and offered nothing. The leads' interaction now has `priority: 1`, as the toolbox and the oil bottle already had for the same reason.
 - Not unit-tested: the priority is wiring in `game.js` against ray hits. Not checked in the running game.
+
+## Odometer drums that roll
+
+- The mechanical counters (odometer, trip and hour meter drums on the pods and the older dashes) now turn instead of changing digit. `drumPositions` (`src/vehicle/dashState.js`, pure, tested) gives each drum a digit plus how far it has rolled: the tenths drum moves steadily with the distance, and each drum above it moves only while the one below goes from 9 to 0, the way a real carry does. `counterDigits` returns that as `pos`, and a `key` (positions to a sixth of a digit) for the faces' change gates, so a face redraws about once a second at speed rather than every frame. `drum` in `dashParts.js` draws the current digit sliding up out of its window with the next under it, and a little shading top and bottom. The LCD dashes (`counterText`) are unchanged.
+- Not checked in the running game: only the unit tests ran, so how it looks on each dash is unseen.

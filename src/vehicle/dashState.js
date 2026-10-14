@@ -42,14 +42,28 @@ export function lampStates(s) {
   };
 }
 
-/** A mechanical or LCD counter's digits: the whole number padded to `digits`, then tenths as a separate digit. */
+/** Where each drum of a mechanical counter sits, most significant first, as a digit plus how far it has rolled towards the next
+ * (0 up to but not including 10). The tenths drum rolls steadily with the distance; each drum above it only moves while the one below
+ * goes from 9 round to 0, as the carry does in a real odometer, so a 1 9 9 9 reading turns over one drum at a time. */
+export function drumPositions(value, digits) {
+  const t = (Math.max(0, value) * 10) % 10 ** (digits + 1);
+  const rolling = [t % 10]; // least significant first
+  for (let j = 1; j <= digits; j++) {
+    const carry = Math.min(1, Math.max(0, rolling[j - 1] - 9));
+    rolling.push((Math.floor(t / 10 ** j) % 10) + carry);
+  }
+  return rolling.reverse();
+}
+
+/** A mechanical or LCD counter's digits: the whole number padded to `digits`, then tenths as a separate digit. `pos` is where each drum
+ * sits (see `drumPositions`) and `key` changes whenever a drum has moved visibly, so a face redraws only then. */
 export function counterDigits(value, digits) {
   const tenths = Math.floor(Math.max(0, value) * 10);
   const whole = Math.floor(tenths / 10) % 10 ** digits;
-  return { whole: String(whole).padStart(digits, '0'), tenth: String(tenths % 10) };
+  const pos = drumPositions(value, digits);
+  return { whole: String(whole).padStart(digits, '0'), tenth: String(tenths % 10), pos, key: pos.map((p) => Math.round(p * 6)).join(',') };
 }
 
-/** "123.4" style text for the LCD lines. */
 export function counterText(value, digits) {
   const { whole, tenth } = counterDigits(value, digits);
   return `${whole.replace(/^0+(?=\d)/, '')}.${tenth}`;

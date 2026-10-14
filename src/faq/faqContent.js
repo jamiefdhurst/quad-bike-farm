@@ -109,6 +109,11 @@ export const FAQ_SECTIONS = [
           of the engine running adds an hour. The miles are real distance and aren't sped up.`,
       },
       {
+        q: 'Why are the numbers on the odometer half-way between two digits?',
+        a: `The drums on the older dashes turn like real ones: the last one rolls round steadily as you go, and each drum before it only moves
+          as the one beside it comes round from 9 to 0. The LCD dashes just change.`,
+      },
+      {
         q: 'What does the farm remember from one day to the next?',
         a: `Each vehicle's hours and miles, its wear, any fault you didn't put right, what you set with the toolbox, its tyres, fuel, oil and coolant,
           where the pods are, and how far you got with the barn find. Overnight a battery runs down a little (flat, if you left the key on with the engine stopped) and half

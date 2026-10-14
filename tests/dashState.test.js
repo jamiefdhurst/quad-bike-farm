@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pickRelatedReading, advanceUsage, isNeutral, lampStates, counterDigits, counterText, DashClock, cycleIndex, pickReading } from '../src/vehicle/dashState.js';
+import { pickRelatedReading, advanceUsage, isNeutral, lampStates, counterDigits, drumPositions, counterText, DashClock, cycleIndex, pickReading } from '../src/vehicle/dashState.js';
 
 describe('dash state', () => {
   it('counts hours in game time when given a time scale', () => {
@@ -37,7 +37,7 @@ describe('dash state', () => {
   });
 
   it('formats counters with tenths', () => {
-    expect(counterDigits(1024.66, 5)).toEqual({ whole: '01024', tenth: '6' });
+    expect(counterDigits(1024.66, 5)).toMatchObject({ whole: '01024', tenth: '6' });
     expect(counterText(12.44, 4)).toBe('12.4');
     expect(counterText(0, 4)).toBe('0.0');
     expect(counterDigits(123456.7, 5).whole).toBe('23456'); // rolls over like a drum
@@ -87,5 +87,30 @@ describe('the tractor spec', () => {
     expect(lo).toBeGreaterThanOrEqual(0);
     expect(hi).toBeLessThanOrEqual(1);
     expect(hi).toBeGreaterThan(lo);
+  });
+
+  it('rolls the tenths drum steadily and the others only as the carry comes round', () => {
+    const p = drumPositions(1999.45, 4);
+    expect(p).toHaveLength(5);
+    expect(p[4]).toBeCloseTo(4.5, 6); // tenths, part way between 4 and 5
+    expect(p.slice(0, 4)).toEqual([1, 9, 9, 9]); // nothing above has started to move
+    const q = drumPositions(1999.95, 4); // the tenths drum is nearly at 0 again, so each drum above is part way round
+    expect(q[4]).toBeCloseTo(9.5, 6);
+    expect(q[3]).toBeCloseTo(9.5, 6);
+    expect(q[2]).toBeCloseTo(9.5, 6);
+    expect(q[1]).toBeCloseTo(9.5, 6);
+    expect(q[0]).toBeCloseTo(1.5, 6);
+  });
+
+  it('only carries into a higher drum when every drum below is on 9', () => {
+    const p = drumPositions(1209.5, 4);
+    expect(p[2]).toBeCloseTo(0, 6); // the tens drum waits: the units drum is on 9 and hasn't started to turn
+    expect(p[3]).toBeCloseTo(9, 6);
+    expect(drumPositions(1209.95, 4)[2]).toBeCloseTo(0.5, 6); // it goes round with the units drum, 9 to 0
+  });
+
+  it('gives a key that changes when a drum visibly moves', () => {
+    expect(counterDigits(100.005, 4).key).toBe(counterDigits(100.0, 4).key);
+    expect(counterDigits(100.05, 4).key).not.toBe(counterDigits(100.0, 4).key);
   });
 });

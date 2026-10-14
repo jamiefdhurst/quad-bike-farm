@@ -170,22 +170,44 @@ export function needle(ctx, cx, cy, r, a, colour = '#e8541e', width = 1.4) {
   ctx.lineCap = 'butt';
 }
 
-/** A mechanical counter: white digits on black, the last (tenths) inverted. */
-export function drum(ctx, x, y, whole, tenth, h = 7) {
-  const digits = whole + tenth;
+/** A mechanical counter: white digits on black, the last (tenths) inverted. `counter` is `counterDigits(...)`: each drum is drawn
+ * rolled to its place, so the digits scroll up past the window as they would on the real thing, the tenths turning steadily and the
+ * others only as the carry comes round. */
+export function drum(ctx, x, y, counter, h = 7) {
+  const n = counter.pos.length;
   const w = 4.6;
   ctx.fillStyle = '#0b0b0b';
   ctx.strokeStyle = '#555';
   ctx.lineWidth = 0.4;
   ctx.beginPath();
-  ctx.roundRect(x - 1, y - 1, digits.length * w + 2, h + 2, 0.8);
+  ctx.roundRect(x - 1, y - 1, n * w + 2, h + 2, 0.8);
   ctx.fill();
   ctx.stroke();
-  [...digits].forEach((ch, i) => {
-    const last = i === digits.length - 1;
+  counter.pos.forEach((p, i) => {
+    const last = i === n - 1;
+    const d = Math.floor(p);
+    const roll = (p - d) * h;
+    const cx = x + i * w + 0.3;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(cx, y, w - 0.6, h);
+    ctx.clip();
     ctx.fillStyle = last ? '#f2f2f2' : '#151515';
-    ctx.fillRect(x + i * w + 0.3, y, w - 0.6, h);
-    text(ctx, ch, x + i * w + w / 2, y + h * 0.78, h * 0.8, last ? '#111' : '#f2f2f2', { align: 'center' });
+    ctx.fillRect(cx, y, w - 0.6, h);
+    // This digit rises out of the window and the next comes up under it.
+    [d, (d + 1) % 10].forEach((digit, k) => {
+      if (k === 1 && roll === 0) return;
+      text(ctx, String(digit), x + i * w + w / 2, y + h * 0.78 + k * h - roll, h * 0.8, last ? '#111' : '#f2f2f2', { align: 'center' });
+    });
+    // Shading top and bottom so the drum reads as curving away.
+    const g = ctx.createLinearGradient(0, y, 0, y + h);
+    g.addColorStop(0, 'rgba(0,0,0,0.5)');
+    g.addColorStop(0.3, 'rgba(0,0,0,0)');
+    g.addColorStop(0.7, 'rgba(0,0,0,0)');
+    g.addColorStop(1, 'rgba(0,0,0,0.5)');
+    ctx.fillStyle = g;
+    ctx.fillRect(cx, y, w - 0.6, h);
+    ctx.restore();
   });
 }
 

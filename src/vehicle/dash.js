@@ -86,10 +86,10 @@ function buildForeman() {
     text(ctx, 'mph', cx + 30, cy + 12, 4, '#bbb');
     text(ctx, 'HOUR METER', 128, 37, 3.6, '#ccc');
     const h = counterDigits(s.hours, 4);
-    drum(ctx, 128, 40, h.whole, h.tenth);
+    drum(ctx, 128, 40, h);
     text(ctx, 'ODOMETER', 128, 57, 3.6, '#ccc');
     const o = counterDigits(s.odoMiles, 4);
-    drum(ctx, 128, 60, o.whole, o.tenth);
+    drum(ctx, 128, 60, o);
     needle(ctx, cx, cy, r - 2, 170 - (160 * Math.min(45, L.mph)) / 45, '#e8541e');
     // Lamps and the key, on a small panel under the window.
     ctx.fillStyle = '#18191b';
@@ -111,7 +111,7 @@ function buildForeman() {
       const L = { lamps: lampStates(s), mph: shownMph };
       const o = counterDigits(s.odoMiles, 4);
       const h = counterDigits(s.hours, 4);
-      if (gate(lookKey(s, [Math.round(shownMph * 4), o.whole + o.tenth, h.whole + h.tenth]))) face.redraw((ctx) => draw(ctx, s, L));
+      if (gate(lookKey(s, [Math.round(shownMph * 4), o.key, h.key]))) face.redraw((ctx) => draw(ctx, s, L));
     },
   };
 }
@@ -484,7 +484,7 @@ function buildTractor() {
     text(ctx, 'PTO', t.cx, t.cy - 4, 3.2, '#6fd18a', { align: 'center' }); // in the clear middle, off the figures
     text(ctx, 'R.P.M. x 100', t.cx, t.cy + 10, 3.4, '#a89f84', { align: 'center' });
     const h = counterDigits(s.hours, 4);
-    drum(ctx, t.cx - 11.5, t.cy + 14, h.whole, h.tenth, 6);
+    drum(ctx, t.cx - 11.5, t.cy + 14, h, 6);
     needle(ctx, t.cx, t.cy, t.r - 2, 170 - (160 * Math.min(3000, L.rpm)) / 3000, '#d8cfae', 1.3);
     agedGlass(ctx, t);
     small(ctx, dials[0], L.temp, 'C', 'H', true);
@@ -508,7 +508,7 @@ function buildTractor() {
       const running = s.rpm > 300;
       const L = { rpm: shownRpm, fuel: shownFuel, temp: shownTemp, hot: !!s.ignition && shownTemp >= HOT_FROM, glow: !!s.ignition && !!s.glow, charge: !!s.ignition && !running, oil: !!s.ignition && !running };
       const hh = counterDigits(s.hours, 4);
-      if (gate([s.ignition, s.keyOn, L.glow, L.hot, L.charge, Math.round(shownRpm / 8), Math.round(shownFuel * 20), Math.round(shownTemp * 20), hh.whole + hh.tenth].join('|'))) face.redraw((ctx) => draw(ctx, s, L));
+      if (gate([s.ignition, s.keyOn, L.glow, L.hot, L.charge, Math.round(shownRpm / 8), Math.round(shownFuel * 20), Math.round(shownTemp * 20), hh.key].join('|'))) face.redraw((ctx) => draw(ctx, s, L));
     },
   };
 }
@@ -653,7 +653,7 @@ function buildSeries() {
     labels(ctx, speedo.cx, speedo.cy, speedo.r - 13, 220, -40, ['0', '10', '20', '30', '40', '50', '60', '70', '80', '90'], '#ece6d2', 3.8);
     text(ctx, 'MPH', speedo.cx, speedo.cy - 8, 3.4, '#ccc', { align: 'center' });
     const odo = counterDigits(s.odoMiles, 5);
-    drum(ctx, speedo.cx - 14, speedo.cy + 10, odo.whole, odo.tenth, 6);
+    drum(ctx, speedo.cx - 14, speedo.cy + 10, odo, 6);
     needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 220 - (260 * Math.min(90, L.mph)) / 90, '#f0eadc', 1.2);
     // The combination gauge: fuel along its top half, water temperature along its bottom, each with its own needle.
     ctx.fillStyle = '#0b0b0b';
@@ -695,7 +695,7 @@ function buildSeries() {
         turn: on && !!(s.indicatorLamps?.left || s.indicatorLamps?.right),
       };
       const odo = counterDigits(s.odoMiles, 5);
-      if (gate([on, s.keyOn, L.charge, L.oil, L.choke, L.park, L.main, L.turn, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
+      if (gate([on, s.keyOn, L.charge, L.oil, L.choke, L.park, L.main, L.turn, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.key].join('|'))) {
         face.redraw((ctx) => draw(ctx, s, L));
       }
     },
@@ -763,7 +763,7 @@ function buildDefender() {
     labels(ctx, speedo.cx, speedo.cy, speedo.r - 13, 220, -40, ['0', '10', '20', '30', '40', '50', '60', '70', '80', '90', '100'], WHITE, 3.3);
     text(ctx, 'MPH', speedo.cx, speedo.cy - 8, 3.4, '#ccc', { align: 'center' });
     const odo = counterDigits(s.odoMiles, 6);
-    drum(ctx, speedo.cx - 17, speedo.cy + 12, odo.whole, odo.tenth, 6);
+    drum(ctx, speedo.cx - 17, speedo.cy + 12, odo, 6);
     needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 220 - (260 * Math.min(SPEEDO_MAX, L.mph)) / SPEEDO_MAX, NEEDLE, 1.2);
     small(ctx, temp, L.temp, 'temp', 'C', 'H', true);
     small(ctx, fuel, L.fuel, 'fuel', 'E', 'F', false);
@@ -826,7 +826,7 @@ function buildDefender() {
         hazard: !!s.hazardLit,
       };
       const odo = counterDigits(s.odoMiles, 6);
-      if (gate([on, s.keyOn, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, L.turnLeft, L.turnRight, L.hazard, Math.round(shownMph * 2), Math.round(shownRpm / 40), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
+      if (gate([on, s.keyOn, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, L.turnLeft, L.turnRight, L.hazard, Math.round(shownMph * 2), Math.round(shownRpm / 40), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.key].join('|'))) {
         face.redraw((ctx) => draw(ctx, s, L));
       }
     },
@@ -879,7 +879,7 @@ function buildFiesta() {
     labels(ctx, speedo.cx, speedo.cy, speedo.r - 12, 225, -45, ['0', '', '20', '', '40', '', '60', '', '80', '', '100'], FIG, 4);
     text(ctx, 'MPH', speedo.cx, speedo.cy - 8, 3.2, '#a9b8a7', { align: 'center' });
     const odo = counterDigits(s.odoMiles, 5);
-    drum(ctx, speedo.cx - 14, speedo.cy + 11, odo.whole, odo.tenth, 6);
+    drum(ctx, speedo.cx - 14, speedo.cy + 11, odo, 6);
     needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 225 - (270 * Math.min(100, L.mph)) / 100, NEEDLE, 1.3);
     // The combined gauge: fuel round its top half, water temperature round its bottom.
     dial(ctx, combo);
@@ -929,7 +929,7 @@ function buildFiesta() {
         turn: on && !!(s.indicatorLamps?.left || s.indicatorLamps?.right),
       };
       const odo = counterDigits(s.odoMiles, 5);
-      if (gate([on, s.keyOn, L.charge, L.oil, L.choke, L.park, L.main, L.turn, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
+      if (gate([on, s.keyOn, L.charge, L.oil, L.choke, L.park, L.main, L.turn, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.key].join('|'))) {
         face.redraw((ctx) => draw(ctx, s, L));
       }
     },
@@ -990,7 +990,7 @@ function buildCorsa() {
     labels(ctx, speedo.cx, speedo.cy, speedo.r - 13, 225, -45, ['0', '', '20', '', '40', '', '60', '', '80', '', '100', '', '120'], WHITE, 3.8);
     text(ctx, 'mph', speedo.cx, speedo.cy - 9, 3.4, '#bbb', { align: 'center' });
     const odo = counterDigits(s.odoMiles, 6);
-    drum(ctx, speedo.cx - 17, speedo.cy + 12, odo.whole, odo.tenth, 6);
+    drum(ctx, speedo.cx - 17, speedo.cy + 12, odo, 6);
     needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 225 - (270 * Math.min(120, L.mph)) / 120, NEEDLE, 1.2);
     small(ctx, temp, L.temp, 'temp', true);
     small(ctx, fuel, L.fuel, 'fuel', false);
@@ -1030,7 +1030,7 @@ function buildCorsa() {
         turnRight: on && !!s.indicatorLamps?.right,
       };
       const odo = counterDigits(s.odoMiles, 6);
-      if (gate([on, s.keyOn, L.charge, L.oil, L.engine, L.park, L.belt, L.lights, L.main, L.turnLeft, L.turnRight, Math.round(shownMph * 2), Math.round(shownRpm / 40), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.whole + odo.tenth].join('|'))) {
+      if (gate([on, s.keyOn, L.charge, L.oil, L.engine, L.park, L.belt, L.lights, L.main, L.turnLeft, L.turnRight, Math.round(shownMph * 2), Math.round(shownRpm / 40), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.key].join('|'))) {
         face.redraw((ctx) => draw(ctx, s, L));
       }
     },

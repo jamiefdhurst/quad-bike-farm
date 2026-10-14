@@ -58,9 +58,9 @@ function bigDial(ctx, cx, cy, r, kind, s, on) {
     labels(ctx, cx, cy, r - 10, DIAL_START, DIAL_END, ['0', '10', '20', '30', '40', '50', '60'], INK, 4.6);
     text(ctx, 'MPH', cx, cy - 6, 3.4, INK, { align: 'center' });
     const o = counterDigits(s.odoMiles, 4);
-    drum(ctx, cx - 11.5, cy + 8, o.whole, o.tenth, 6);
+    drum(ctx, cx - 11.5, cy + 8, o, 6);
     const t = counterDigits(s.tripMiles, 3);
-    drum(ctx, cx - 9.2, cy + 17, t.whole, t.tenth, 6);
+    drum(ctx, cx - 9.2, cy + 17, t, 6);
     needle(ctx, cx, cy, r - 3, dialAngle(on ? s.speedMph / SPEED_MAX_MPH : 0), '#d2321e', 1.3);
   } else {
     // The red band starts at the fitted quad's own redline.
@@ -69,7 +69,7 @@ function bigDial(ctx, cx, cy, r, kind, s, on) {
     labels(ctx, cx, cy, r - 10, DIAL_START, DIAL_END, Array.from({ length: 13 }, (_, i) => String(i)), INK, 3.8);
     text(ctx, '×1000 r/min', cx, cy - 6, 3, INK, { align: 'center' });
     const h = counterDigits(s.hours, 4);
-    drum(ctx, cx - 11.5, cy + 12, h.whole, h.tenth, 6);
+    drum(ctx, cx - 11.5, cy + 12, h, 6);
     needle(ctx, cx, cy, r - 3, dialAngle(on ? s.rpm / REV_MAX : 0), '#d2321e', 1.3);
   }
 }
@@ -155,7 +155,7 @@ function buildAnalogue() {
       const key = [
         s.ignition, l.r, l.n, l.temp, l.fuel, l.oil, Math.round(s.speedMph * 3), Math.round(s.rpm / 40), Math.round(s.redline / 100),
         Math.round(s.fuelLevel * 60), Math.round(s.reserveLevel * 100), Math.round(tempGaugeFraction(s.temperature, s.ignition, s.overheat) * 60),
-        o.whole + o.tenth, t.whole + t.tenth, h.whole + h.tenth, s.fourWd, s.diffLock,
+        o.key, t.key, h.key, s.fourWd, s.diffLock,
       ].join('|');
       if (gate(key)) face.redraw((ctx) => draw(ctx, s));
     },
