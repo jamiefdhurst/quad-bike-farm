@@ -779,6 +779,7 @@ export const EXTRA_SPECS = [
 // (QuadUnit reads `tractor`). Runs on red diesel, so it doesn't mind it. Its sound is kyles's old tractor recordings.
 export const TRACTOR_SPEC = {
   id: 'tractor',
+  radiatorAt: { x: 0, y: 1.25, z: 1.3 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   steadyLights: true, // a battery runs its lights
   label: 'tractor',
   name: 'Tractor',
@@ -797,6 +798,9 @@ export const TRACTOR_SPEC = {
   topRpmRange: [2150, 2250], // full-throttle revs this game, about 4% either side of the engine's own
   fuel: { tankCapacity: 45, reserveLitres: 4, startDiesel: 1, noTap: true, startTap: 'on', burnPerRev: 0.0003, idleBurnFraction: 0.3, bowlCapacity: 0.05, bowlFillRate: 0.06 },
   engine: {
+    waterCooled: true, // a radiator and a fan like the orange's: it only gets hot with a fault (a stuck thermostat, a low radiator)
+    thermostatChance: 0.12, // (a fault in 1 of 8 or so, not 1 in 5)
+    coolantLeakChance: 0.25, // and a leak in 1 game in 4, not 1 in 2
     compressionIgnition: true, // glow plugs, no choke, the key doesn't stop it, a knob does (src/engine/compression.js)
     runsOnDiesel: true,
     idleRpmWarm: 450,
@@ -918,6 +922,7 @@ export const TRACTOR_SPEC = {
 // Its sound borrows the tractor's recordings, played faster.
 export const UTV_SPEC = {
   id: 'utv',
+  radiatorAt: { x: 0, y: 0.95, z: 1.15 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   label: 'UTV',
   name: 'UTV',
   utv: true,
@@ -937,6 +942,9 @@ export const UTV_SPEC = {
   topRpmRange: [3150, 3250], // full-throttle revs this game, about 2% either side of the engine's own
   fuel: { tankCapacity: 30, reserveLitres: 3, startDiesel: 1, noTap: true, startTap: 'on', burnPerRev: 0.00012, idleBurnFraction: 0.3, bowlCapacity: 0.05, bowlFillRate: 0.06 },
   engine: {
+    waterCooled: true, // a radiator and a fan like the orange's: it only gets hot with a fault (a stuck thermostat, a low radiator)
+    thermostatChance: 0.12, // (a fault in 1 of 8 or so, not 1 in 5)
+    coolantLeakChance: 0.25, // and a leak in 1 game in 4, not 1 in 2
     compressionIgnition: true, // glow plugs, no choke (src/engine/compression.js)
     runsOnDiesel: true,
     keyStops: true, // the key stops it, there is no knob
@@ -1062,6 +1070,7 @@ export const UTV_SPEC = {
 // hand throttle on the dash, a towing hitch, and a starting handle at the front for when the battery won't (vehicle/crankHandle.js).
 export const LAND_ROVER_SPEC = {
   id: 'landrover',
+  radiatorAt: { x: 0, y: 0.95, z: 1.6 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   label: 'Series III',
   name: 'Series III',
   landRover: true,
@@ -1105,6 +1114,9 @@ export const LAND_ROVER_SPEC = {
   },
   fuel: { tankCapacity: 45, reserveLitres: 5, noTap: true, startTap: 'on', burnPerRev: 0.0003, idleBurnFraction: 0.3 },
   engine: {
+    waterCooled: true, // a radiator and a fan like the orange's: it only gets hot with a fault (a stuck thermostat, a low radiator)
+    thermostatChance: 0.12, // (a fault in 1 of 8 or so, not 1 in 5)
+    coolantLeakChance: 0.25, // and a leak in 1 game in 4, not 1 in 2
     loadDragRpm: 2200, // a manual: slowing in third or fourth with the clutch out stalls it; first and second hold on (a heavy flywheel)
     pullStart: true, // the starting handle (vehicle/crankHandle.js): a swing is the engine's pull
     crankHandle: true,
@@ -1205,6 +1217,7 @@ export const LAND_ROVER_SPEC = {
 // stops it, so no choke, no hand throttle and no starting handle.
 export const DEFENDER_SPEC = {
   id: 'landrover200',
+  radiatorAt: { x: 0, y: 0.95, z: 1.6 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   label: '200TDi',
   name: '200TDi',
   landRover: true,
@@ -1351,6 +1364,9 @@ const CAR_VIBRATION = {
   barsGain: 0.06,
 };
 const CAR_ENGINE = {
+  waterCooled: true, // a radiator and a fan like the orange's: it only gets hot with a fault (a stuck thermostat, a low radiator)
+  thermostatChance: 0.12, // (a fault in 1 of 8 or so, not 1 in 5)
+  coolantLeakChance: 0.25, // and a leak in 1 game in 4, not 1 in 2
   loadDragRpm: 1800, // a manual: lugging it in a high gear with the clutch out stalls it
   stallRpm: 380,
   crankRpm: 200,
@@ -1373,6 +1389,7 @@ const CAR_ENGINE = {
 // clean and looked after. L plates on (she is learning; item 167 has her pass in it).
 export const FIESTA_SPEC = {
   id: 'fiesta',
+  radiatorAt: { x: 0, y: 0.85, z: 1.5 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   label: 'Fiesta',
   name: 'Fiesta',
   car: 'fiesta',
@@ -1453,6 +1470,7 @@ export const FIESTA_SPEC = {
 // and bonnet, a grey primer wing, and a big-bore exhaust that makes it sound far quicker than it is.
 export const CORSA_SPEC = {
   id: 'corsa',
+  radiatorAt: { x: 0, y: 0.85, z: 1.55 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   label: 'Corsa',
   name: 'Corsa',
   car: 'corsa',

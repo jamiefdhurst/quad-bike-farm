@@ -172,6 +172,16 @@ export const DEFAULT_ENGINE_PARAMS = {
   coolantLeakChance: 0.5, // the chance of the orange having a leak at all in a given game
   coolantLeakMin: 0.6, // the leak this game is this many times the rate, at least...
   coolantLeakMax: 1.4, // ...and at most
+  thermostatChance: 0.2, // the chance a water-cooled engine starts the game with its thermostat stuck shut
+  thermostatStickPerHour: 0.25, // and the chance, an hour of running, that a good one sticks
+  thermostatMin: 0.55, // how far shut it sticks: this much at least (1 is fully shut)...
+  thermostatBlock: 0.95, // share of the radiator's cooling a fully shut thermostat takes away
+  thermostatFlushSeconds: 6, // seconds of pouring coolant through a cold, stopped engine to free it
+  hotFrom: 0.5, // a water-cooled engine's heat from which it is running too hot: it loses power and runs rough
+  hotPowerLoss: 0.55, // power lost at the top of that
+  hotRoughness: 0.25, // roughness at the top of that
+  hotStallAt: 0.95, // heat at which it gives up and stalls
+  hotRestartBelow: 0.4, // heat it has to cool to before it will start again
   coolantStartMin: 0.55, // it starts the game this full, at least...
   coolantStartMax: 0.95, // ...and at most
   coolantPuddleFrom: 0.92, // level under which a damp patch grows while it leaks
@@ -427,6 +437,16 @@ export const ENGINE_PARAM_RANGES = {
   coolantLeakChance: [0, 1, 0.05],
   coolantLeakMin: [0, 3, 0.1],
   coolantLeakMax: [0, 3, 0.1],
+  thermostatChance: [0, 1, 0.05],
+  thermostatStickPerHour: [0, 2, 0.05],
+  thermostatMin: [0, 1, 0.05],
+  thermostatBlock: [0, 1, 0.05],
+  thermostatFlushSeconds: [1, 30, 1],
+  hotFrom: [0, 1, 0.05],
+  hotPowerLoss: [0, 1, 0.05],
+  hotRoughness: [0, 1, 0.05],
+  hotStallAt: [0.5, 1, 0.01],
+  hotRestartBelow: [0, 1, 0.05],
   coolantStartMin: [0, 1, 0.05],
   coolantStartMax: [0, 1, 0.05],
   coolantPuddleFrom: [0, 1, 0.01],

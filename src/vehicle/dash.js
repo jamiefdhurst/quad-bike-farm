@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { tempGaugeFraction } from './tempGauge.js';
+import { tempGaugeFraction, HOT_FROM } from './tempGauge.js';
 import { lampStates, counterDigits, counterText, cycleIndex, gearShown, forwardGearShown } from './dashState.js';
 import {
   plastic, charcoal, blackMat, agedSteel, agedBlack, gloss, chromeMat, changeGate, mmPanel, housing, chromeRing, text, ticks, labels, arc, needle, drum, lamp, glyphLetter, keySwitch,
@@ -466,7 +466,7 @@ function buildTractor() {
   function small(ctx, d, frac, lo, hi, redEnd = false) {
     agedFace(ctx, d);
     ticks(ctx, d.cx, d.cy, d.r - 5, d.r - 1.5, 150, 30, 6, '#cdbf98', 0.8);
-    if (redEnd) arc(ctx, d.cx, d.cy, d.r - 2.5, 50, 30, '#d8402e', 2.2);
+    if (redEnd) arc(ctx, d.cx, d.cy, d.r - 2.5, 150 - 120 * HOT_FROM, 30, '#d8402e', 2.2);
     text(ctx, lo, d.cx - d.r * 0.62, d.cy + d.r * 0.5, 4.4, '#cdbf98', { align: 'center' });
     text(ctx, hi, d.cx + d.r * 0.62, d.cy + d.r * 0.5, 4.4, redEnd ? '#ff6a5a' : '#cdbf98', { align: 'center' });
     needle(ctx, d.cx, d.cy, d.r - 3, 150 - 120 * frac, '#d8cfae', 1);
@@ -490,6 +490,7 @@ function buildTractor() {
     small(ctx, dials[0], L.temp, 'C', 'H', true);
     small(ctx, dials[2], L.fuel, 'E', 'F');
     // The lamps along the bottom, and the key.
+    warnSymbol(ctx, 'temp', 176, 93, LAMP.red, L.hot, 0.7);
     warnSymbol(ctx, 'glow', 196, 93, LAMP.amber, L.glow, 0.7);
     warnSymbol(ctx, 'charge', 216, 93, LAMP.red, L.charge, 0.7);
     warnSymbol(ctx, 'oil', 236, 93, LAMP.red, L.oil, 0.7);
@@ -505,9 +506,9 @@ function buildTractor() {
       shownFuel += (s.fuelLevel - shownFuel) * 0.2;
       shownTemp += (tempGaugeFraction(s.temperature, true, s.overheat) - shownTemp) * 0.1;
       const running = s.rpm > 300;
-      const L = { rpm: shownRpm, fuel: shownFuel, temp: shownTemp, glow: !!s.ignition && !!s.glow, charge: !!s.ignition && !running, oil: !!s.ignition && !running };
+      const L = { rpm: shownRpm, fuel: shownFuel, temp: shownTemp, hot: !!s.ignition && shownTemp >= HOT_FROM, glow: !!s.ignition && !!s.glow, charge: !!s.ignition && !running, oil: !!s.ignition && !running };
       const hh = counterDigits(s.hours, 4);
-      if (gate([s.ignition, s.keyOn, L.glow, L.charge, Math.round(shownRpm / 8), Math.round(shownFuel * 20), Math.round(shownTemp * 20), hh.whole + hh.tenth].join('|'))) face.redraw((ctx) => draw(ctx, s, L));
+      if (gate([s.ignition, s.keyOn, L.glow, L.hot, L.charge, Math.round(shownRpm / 8), Math.round(shownFuel * 20), Math.round(shownTemp * 20), hh.whole + hh.tenth].join('|'))) face.redraw((ctx) => draw(ctx, s, L));
     },
   };
 }
@@ -547,7 +548,8 @@ function buildUtv() {
         ctx.fillStyle = i < L.tempSegs ? on : ghost;
         ctx.fillRect(X + 67 + i * 6, Y + 4, 4.6, 5);
       }
-      text(ctx, 'H', X + 93, Y + 8, 3.6, on);
+      if (L.hot) warnSymbol(ctx, 'temp', X + 95, Y + 6, on, true, 0.45, false);
+      else text(ctx, 'H', X + 93, Y + 8, 3.6, on);
       // The gear: F, N and R down the right-hand side, the current one in a box, the others plain but readable.
       ['F', 'N', 'R'].forEach((g, i) => {
         const lit = g === L.gear;
@@ -590,6 +592,7 @@ function buildUtv() {
         speed: speedText(shownMph),
         fuelSegs: Math.ceil(shownFuel * 5 - 0.001),
         tempSegs: Math.ceil(shownTemp * 4 - 0.001),
+        hot: !!s.ignition && shownTemp >= HOT_FROM,
         gear: forwardGearShown(s),
         hours: counterText(s.hours, 4),
         glow: !!s.ignition && !!s.glow,
@@ -602,7 +605,7 @@ function buildUtv() {
         turnLeft: !!s.ignition && !!s.indicatorLamps?.left,
         turnRight: !!s.ignition && !!s.indicatorLamps?.right,
       };
-      const key = [s.ignition, s.keyOn, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, L.turnLeft, L.turnRight, !!s.fourWd, !!s.diffLock, L.gear, L.speed, L.fuelSegs, L.tempSegs, L.hours];
+      const key = [s.ignition, s.keyOn, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, L.turnLeft, L.turnRight, !!s.fourWd, !!s.diffLock, L.gear, L.speed, L.fuelSegs, L.tempSegs, L.hot, L.hours];
       if (gate(key.join('|'))) face.redraw((ctx) => draw(ctx, s, L));
     },
   };
@@ -659,9 +662,9 @@ function buildSeries() {
     ctx.fill();
     ticks(ctx, combo.cx, combo.cy, combo.r - 5, combo.r - 1.5, 150, 30, 4, '#ece6d2', 0.8);
     ticks(ctx, combo.cx, combo.cy, combo.r - 5, combo.r - 1.5, 210, 330, 4, '#ece6d2', 0.8);
-    arc(ctx, combo.cx, combo.cy, combo.r - 2.5, 315, 330, '#d8402e', 2.2);
+    arc(ctx, combo.cx, combo.cy, combo.r - 2.5, 210 + 120 * HOT_FROM, 330, '#d8402e', 2.2);
     warnSymbol(ctx, 'fuel', combo.cx, combo.cy - 9, '#bbb', true, 0.5);
-    warnSymbol(ctx, 'temp', combo.cx, combo.cy + 9, '#bbb', true, 0.5);
+    warnSymbol(ctx, 'temp', combo.cx, combo.cy + 9, L.temp >= HOT_FROM ? LAMP.red : '#bbb', true, 0.5);
     text(ctx, 'E', combo.cx - combo.r * 0.62, combo.cy - 5, 3.6, '#ece6d2', { align: 'center' });
     text(ctx, 'F', combo.cx + combo.r * 0.62, combo.cy - 5, 3.6, '#ece6d2', { align: 'center' });
     text(ctx, 'C', combo.cx - combo.r * 0.62, combo.cy + 8, 3.6, '#ece6d2', { align: 'center' });
@@ -737,8 +740,8 @@ function buildDefender() {
   const small = (ctx, d, frac, name, lo, hi, hotEnd) => {
     dial(ctx, d);
     ticks(ctx, d.cx, d.cy, d.r - 4, d.r - 1.5, 150, 30, 4, WHITE, 0.7);
-    if (hotEnd) arc(ctx, d.cx, d.cy, d.r - 2, 40, 30, '#d8402e', 1.8);
-    text(ctx, name, d.cx, d.cy + 1.5, 3, '#bbb', { align: 'center' });
+    if (hotEnd) arc(ctx, d.cx, d.cy, d.r - 2, 150 - 120 * HOT_FROM, 30, '#d8402e', 1.8);
+    text(ctx, name, d.cx, d.cy + 1.5, 3, hotEnd && frac >= HOT_FROM ? '#ff5a4a' : '#bbb', { align: 'center' });
     text(ctx, lo, d.cx - d.r * 0.62, d.cy + d.r * 0.62, 3.4, WHITE, { align: 'center' });
     text(ctx, hi, d.cx + d.r * 0.62, d.cy + d.r * 0.62, 3.4, hotEnd ? '#ff6a5a' : WHITE, { align: 'center' });
     needle(ctx, d.cx, d.cy, d.r - 3, 150 - 120 * frac, NEEDLE, 1);
@@ -882,9 +885,9 @@ function buildFiesta() {
     dial(ctx, combo);
     ticks(ctx, combo.cx, combo.cy, combo.r - 5, combo.r - 1.5, 150, 30, 4, FIG, 0.8);
     ticks(ctx, combo.cx, combo.cy, combo.r - 5, combo.r - 1.5, 210, 330, 4, FIG, 0.8);
-    arc(ctx, combo.cx, combo.cy, combo.r - 2.5, 315, 330, '#d8402e', 2.2);
+    arc(ctx, combo.cx, combo.cy, combo.r - 2.5, 210 + 120 * HOT_FROM, 330, '#d8402e', 2.2);
     warnSymbol(ctx, 'fuel', combo.cx, combo.cy - 10, '#a9b8a7', true, 0.5, false);
-    warnSymbol(ctx, 'temp', combo.cx, combo.cy + 10, '#a9b8a7', true, 0.5, false);
+    warnSymbol(ctx, 'temp', combo.cx, combo.cy + 10, L.temp >= HOT_FROM ? LAMP.red : '#a9b8a7', true, 0.5, L.temp >= HOT_FROM);
     text(ctx, 'E', combo.cx - combo.r * 0.62, combo.cy - 5, 3.6, FIG, { align: 'center' });
     text(ctx, 'F', combo.cx + combo.r * 0.62, combo.cy - 5, 3.6, FIG, { align: 'center' });
     text(ctx, 'C', combo.cx - combo.r * 0.62, combo.cy + 8, 3.6, FIG, { align: 'center' });
@@ -967,8 +970,9 @@ function buildCorsa() {
   const small = (ctx, d, frac, sym, hotEnd) => {
     dial(ctx, d);
     ticks(ctx, d.cx, d.cy, d.r - 4, d.r - 1.5, 150, 30, 4, WHITE, 0.7);
-    if (hotEnd) arc(ctx, d.cx, d.cy, d.r - 2, 40, 30, '#d8402e', 1.8);
-    warnSymbol(ctx, sym, d.cx, d.cy + 5, '#aaa', true, 0.42, false);
+    if (hotEnd) arc(ctx, d.cx, d.cy, d.r - 2, 150 - 120 * HOT_FROM, 30, '#d8402e', 1.8);
+    const hot = hotEnd && frac >= HOT_FROM; // the symbol lights as the needle goes into the red
+    warnSymbol(ctx, sym, d.cx, d.cy + 5, hot ? LAMP.red : '#aaa', true, 0.42, hot);
     needle(ctx, d.cx, d.cy, d.r - 3, 150 - 120 * frac, NEEDLE, 1);
   };
 

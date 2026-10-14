@@ -48,3 +48,29 @@ export function pickLeak(random, p) {
   if (random() >= p.coolantLeakChance) return { leak: 0, level: 1 };
   return { leak: p.coolantLeakMin + random() * (p.coolantLeakMax - p.coolantLeakMin), level: p.coolantStartMin + random() * (p.coolantStartMax - p.coolantStartMin) };
 }
+
+/** 0..1 how much of its cooling the radiator does with a thermostat stuck shut by `stuck` (0 free, 1 fully shut) on top of the coolant level. */
+export function radiatorEffect(level, stuck, p) {
+  return coolingEffect(level, p) * (1 - clamp01(stuck) * p.thermostatBlock);
+}
+
+/** The thermostat this game, from a random stream so a seed repeats it: how far shut it starts (0 for a good one). */
+export function pickThermostat(random, p) {
+  if (random() >= p.thermostatChance) return 0;
+  return p.thermostatMin + random() * (1 - p.thermostatMin);
+}
+
+/** A good thermostat sticking while it runs, `h` seconds of it: how far shut it sticks now (0 if it doesn't). */
+export function thermostatSticks(random, h, p) {
+  return random() < (p.thermostatStickPerHour * h) / 3600 ? p.thermostatMin + random() * (1 - p.thermostatMin) : 0;
+}
+
+/** 0..1 how far over the heat a water-cooled engine can take: from `hotFrom` to the top. */
+export function hotLevel(heat, p) {
+  return clamp01((heat - p.hotFrom) / Math.max(0.01, 1 - p.hotFrom));
+}
+
+/** Flushing coolant through a cold, stopped engine frees a stuck thermostat: the new stuck amount after `h` seconds of it. */
+export function flushThermostat(stuck, h, p) {
+  return Math.max(0, stuck - h / Math.max(0.1, p.thermostatFlushSeconds));
+}

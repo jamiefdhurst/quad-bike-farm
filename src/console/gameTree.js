@@ -120,6 +120,7 @@ export function buildGameTree(g, host) {
       if (!q().fuel.params.noTap || (q().landRover && !q().engine.params.compressionIgnition)) out.choke = num(() => q().choke, (v) => (q().choke = v), 0, 1); // the Land Rover has a choke but no tap
       for (const m of engineReadouts(e(), { manual: !!q().manual })) out[m.key] = typeof m.get(e()) === 'number' ? ro(() => m.get(e()), '', m.label) : text(() => String(m.get(e())), m.label);
       if (e().params.waterCooled) out.coolant = num(() => e().coolant, (v) => (e().coolant = v), 0, 1);
+      if (e().params.waterCooled) out.thermostat = num(() => e().thermostat, (v) => (e().thermostat = v), 0, 1);
       if (q().sump) out.oil = num(() => q().sump.level, (v) => (q().sump.level = v), 0, q().sump.params.maxLevel, '', 'engine oil level (over 1 is overfilled)');
 
       const faults = {};

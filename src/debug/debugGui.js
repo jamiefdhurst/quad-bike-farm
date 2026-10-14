@@ -338,6 +338,7 @@ export class DebugGui {
     set(p, 'wear (a service clears it)', () => round(unit().engine.wear), (v) => (unit().engine.wear = v), 0, e.params.wearMax ?? 1);
     set(p, 'scuffing (1 seizes it)', () => round(unit().engine.scuff), (v) => (unit().engine.scuff = v), 0, 1);
     tick(p, 'seized', () => unit().engine.seized, (v) => (unit().engine.seized = v));
+    if (e.params.waterCooled) set(p, 'thermostat stuck shut', () => round(unit().engine.thermostat), (v) => (unit().engine.thermostat = v), 0, 1);
     set(p, 'water in it', () => round(unit().engine.water), (v) => (unit().engine.water = v), 0, 1);
     set(p, 'water in the fuel (fraction)', () => round(unit().quad.fuel.water), (v) => (unit().quad.fuel.water = v), 0, 0.3);
     set(p, 'tap bowl full of water', () => round(unit().quad.fuel.sediment), (v) => (unit().quad.fuel.sediment = v), 0, 1);

@@ -137,7 +137,7 @@ export const JOBS = {
     ],
   },
   coolant: {
-    name: 'Top up the coolant and mend the leak',
+    name: 'Top up the coolant, mend the leak and change the thermostat',
     steps: [
       { id: 'cool', text: 'Let it cool, then undo the radiator cap', kind: 'press' },
       { id: 'clip', text: 'Find the weeping hose joint and nip the clip up: snug, not tight', kind: 'hold', need: 0.7, limit: 1.5 },
@@ -511,6 +511,7 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     if (clip) engine.coolantLeak *= P.coolantLeakLeft;
     else engine.coolantLeak = 0;
     engine.coolant = short ? P.coolantShort : 1;
+    engine.thermostat = 0; // the new thermostat goes in while the system is drained
     engine.coolantPuddle = Math.min(engine.coolantPuddle, 0.3);
     if (clip) return 'Topped up, though the clip is not right and it will weep a bit still';
     return short ? 'Mended, though the coolant is a touch under the line' : 'Hose joint mended and coolant up to the line';

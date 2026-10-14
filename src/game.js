@@ -68,7 +68,7 @@ import { startRunningIn } from './engine/runningIn.js';
 import { WearLedger, LEDGER_PARAM_RANGES } from './engine/wearLedger.js';
 import { LeftRunning, LEFT_PARAM_RANGES } from './npc/leftRunning.js';
 import { CarbDrip, DRIP_PARAM_RANGES } from './vehicle/carbDrip.js';
-import { pickLeak, levelText } from './engine/coolant.js';
+import { pickLeak, pickThermostat, levelText } from './engine/coolant.js';
 import { Pranks, PRANK_PARAM_RANGES } from './npc/pranks.js';
 import { RevOff, REVOFF_PARAM_RANGES } from './npc/revOff.js';
 import { DrownOut, DROWNOUT_PARAM_RANGES } from './npc/drownOut.js';
@@ -185,6 +185,7 @@ import { BanterWatch } from './npc/banterWatch.js';
 const FRICTION_BANTER = ['idle', 'favoured', 'rivals', 'watching', 'sharing', 'riding', 'corrected', 'swapped', 'stuck'];
 import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES, PREMIX_CAN_COLOURS, DIESEL_CAN_COLOURS } from './items/jerryCan.js';
 import { OilBottle, OIL_BOTTLE_PARAM_RANGES } from './items/oilBottle.js';
+import { CoolantBottle, COOLANT_BOTTLE_PARAM_RANGES, pourStep } from './items/coolantBottle.js';
 import { BatteryItem, hasBattery } from './items/battery.js';
 import { Charger, CHARGER_PARAM_RANGES } from './workshop/charger.js';
 import { buildChargerModel, CHARGER_SLOT } from './workshop/chargerModel.js';
@@ -524,7 +525,7 @@ export class Game {
     this.carbDrip = new CarbDrip(this.units.filter((u) => !u.quad.fuel.params.noTap && !u.quad.engine.params.compressionIgnition).map((u) => u.id), createRandom(this.farmSeed ^ 0x5d1f));
     registerTuning('Dripping carb', this.carbDrip.p, DRIP_PARAM_RANGES);
     this.dripPatches = new Map(); // quad id -> the dark patch on the ground where it dripped
-    // The orange's coolant leaks (engine/coolant.js): how fast and how full it starts are picked from the seed, on their own stream.
+    // The water-cooled ones' coolant leaks, and some have a thermostat stuck shut (engine/coolant.js): how fast and how full it starts are picked from the seed, on their own stream.
     this.coolantPatches = new Map(); // quad id -> the damp patch under a leaking radiator
     const coolantRandom = createRandom(this.farmSeed ^ 0x2b6d);
     for (const u of this.units) {
@@ -532,6 +533,7 @@ export class Game {
       const pick = pickLeak(coolantRandom, u.engine.params);
       u.engine.coolantLeak = pick.leak;
       u.engine.coolant = pick.level;
+      u.engine.thermostat = pickThermostat(coolantRandom, u.engine.params);
       console.info(pick.leak > 0 ? `${u.name}: leaking coolant, ${levelText(pick.level)} (${pick.level.toFixed(2)}) at ${pick.leak.toFixed(2)} times the usual rate` : `${u.name}: coolant fine this game`);
     }
     this.wearGearbox();
@@ -1137,6 +1139,7 @@ export class Game {
       name: 'dieselCan',
     });
     this.oilBottle = new OilBottle({ scene: this.scene, world: this.world, position: L.oilBottle, yaw: L.oilBottle.yaw });
+    this.coolantBottle = new CoolantBottle({ scene: this.scene, world: this.world, position: L.coolantBottle, yaw: L.coolantBottle.yaw });
     this.plugAdditive = new PlugAdditive({ scene: this.scene, world: this.world, position: L.plugAdditive, yaw: L.plugAdditive.yaw });
     for (const can of [this.petrolCan, this.premixCan, this.dieselCan]) {
       this.interaction.add({
@@ -1159,6 +1162,14 @@ export class Game {
         if (!this.handsFull) this.oilBottle.pickUp(this.camera);
       },
       hold: (dt) => this.can.held && this.can.addOil(this.oilBottle.params.pourRate * dt) > 0,
+    });
+    this.interaction.add({
+      target: this.coolantBottle.proxy,
+      isAvailable: () => !this.coolantBottle.held,
+      prompt: () => (this.handsFull ? { text: 'Coolant: put what you are holding down first' } : 'Pick up the coolant bottle'),
+      interact: () => {
+        if (!this.handsFull) this.coolantBottle.pickUp(this.camera);
+      },
     });
     this.interaction.add({
       target: this.plugAdditive.proxy,
@@ -1373,6 +1384,7 @@ export class Game {
     registerTuning('Pre-mix can', this.premixCan.params, JERRY_CAN_PARAM_RANGES);
     registerTuning('Diesel can', this.dieselCan.params, JERRY_CAN_PARAM_RANGES);
     registerTuning('Oil bottle', this.oilBottle.params, OIL_BOTTLE_PARAM_RANGES);
+    registerTuning('Coolant bottle', this.coolantBottle.params, COOLANT_BOTTLE_PARAM_RANGES);
     registerTuning('Plug-saver', this.plugAdditive.params, PLUG_ADDITIVE_PARAM_RANGES);
     registerTuning('Hose', this.hose.params, HOSE_PARAM_RANGES);
     this.muddyParams = { ...DEFAULT_MUDDY_PARAMS };
@@ -5089,7 +5101,7 @@ export class Game {
   }
 
   get handsFull() {
-    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.oilBottle.held || !!this.heldBrushwood || !!this.heldBattery() || this.winch?.state === 'carried' || this.chain?.state === 'carried' || this.towRope?.state === 'carried';
+    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.oilBottle.held || this.coolantBottle.held || !!this.heldBrushwood || !!this.heldBattery() || this.winch?.state === 'carried' || this.chain?.state === 'carried' || this.towRope?.state === 'carried';
   }
 
   /** The debug panel's tow rope button: hook the rope from the nearest utility quad onto this vehicle, or take it off again. */
@@ -8282,6 +8294,29 @@ export class Game {
     item.model.position.y += this.world.layout.bench.height;
   }
 
+  putCoolantBottleDown() {
+    const p = this.player.position;
+    const yaw = this.player.yaw;
+    this.coolantBottle.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7), yaw);
+  }
+
+  /** Stood looking at a vehicle with the coolant bottle in your hands: Y tops the radiator up, then flushes a stuck thermostat free (items/coolantBottle.js). */
+  coolantTopUp(unit, input, dt) {
+    if (!input.isDown('KeyY')) {
+      this.yHeld = 0;
+      return;
+    }
+    const e = unit.engine;
+    const how = pourStep(e, dt, this.coolantBottle.params);
+    this.yHeld = (this.yHeld ?? 0) + dt;
+    if (how === 'pouring') this.hud.setStatus(`Topping up the coolant: ${levelText(e.coolant)}`);
+    else if (how === 'flushing') this.hud.setStatus('Flushing coolant through the engine');
+    else if (how === 'freed') this.hud.toast('Flushed right through: the thermostat has freed up', 3);
+    else if (this.yHeld < 0.6) {
+      this.hud.toast(how === 'air' ? 'No radiator: that one is air-cooled' : how === 'hot' ? 'Too hot to open the cap: switch it off and let it cool' : 'The radiator is full', 2.5);
+    }
+  }
+
   putOilBottleDown() {
     const p = this.player.position;
     const yaw = this.player.yaw;
@@ -8735,7 +8770,8 @@ export class Game {
       if (focused?.unit) {
         focused.unit.quad.setRemote(input);
         focused.unit.quad.handleFrameInput(dt);
-        this.dipstick(focused.unit, input, dt);
+        if (this.coolantBottle.held) this.coolantTopUp(focused.unit, input, dt);
+        else this.dipstick(focused.unit, input, dt);
         this.lastUnit = focused.unit;
       }
       if (focused && input.wasPressed('KeyE')) focused.interact();
@@ -8778,6 +8814,7 @@ export class Game {
       else if (this.toolbox.held && input.wasPressed('KeyG')) this.putToolboxDown();
       else if (this.leads.held && input.wasPressed('KeyG')) this.putLeadsDown();
       else if (this.oilBottle.held && input.wasPressed('KeyG')) this.putOilBottleDown();
+      else if (this.coolantBottle.held && input.wasPressed('KeyG')) this.putCoolantBottleDown();
       else if (this.heldBrushwood && input.wasPressed('KeyG')) this.putBrushwoodDown();
       else if (this.heldBattery() && input.wasPressed('KeyG')) this.putBatteryDown();
     }
@@ -9192,6 +9229,8 @@ export class Game {
       this.hud.setStatus(`${this.heldBattery().name}\nE on its vehicle to fit it, at the bench charger to charge it\nG to put it down`);
     } else if (this.heldBrushwood) {
       this.hud.setStatus(`Brushwood\nE at the ring of stones to put it on the pile (${this.bonfire.piled} of ${this.bonfireParams.heapsNeeded})\nG to put it down`);
+    } else if (this.coolantBottle.held) {
+      this.hud.setStatus('Coolant bottle\nY at a water-cooled engine that is off and cool to top it up; keep holding when it is full to flush a stuck thermostat\nG to put it down');
     } else if (this.oilBottle.held) {
       this.hud.setStatus('Oil bottle\nY at a four-stroke to top up its oil, near it\nG to put it down');
     } else if (this.toolbox.held) {
@@ -9257,6 +9296,7 @@ export class Game {
       [this.toolbox, '#c8452c', 'Toolbox'],
       [this.leads, '#222222', 'Jump leads'],
       [this.oilBottle, '#e8e2c8', 'Oil bottle'],
+      [this.coolantBottle, '#1f9bd0', 'Coolant bottle'],
       ...this.brushwood.filter((h) => !h.used).map((h) => [h, '#6b4d30', 'Brushwood']),
       ...[...this.batteries.values()].filter((b) => b.out).map((b) => [b, '#c2231b', b.name]),
     ];

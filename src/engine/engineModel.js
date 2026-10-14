@@ -20,7 +20,7 @@ import { runInWearFactor, startRunningIn, stepRunningIn } from './runningIn.js';
 import { boreWearFactor, borePowerFactor } from './bigBore.js';
 import { netCharge, lowBatteryStallRate } from './charging.js';
 import { jetError, leanStarve, jetTrue, jetMixture } from './jetting.js';
-import { coolingEffect, leakRate, stepPuddle, steamLevel, boilsOver } from './coolant.js';
+import { coolingEffect, radiatorEffect, thermostatSticks, hotLevel, leakRate, stepPuddle, steamLevel, boilsOver } from './coolant.js';
 import { stepHeat, stepSoak, pinkLevel, gaugeHeat, coolTickRate, hotStartRich } from './heat.js';
 
 export const EngineState = Object.freeze({
@@ -99,6 +99,9 @@ export class EngineModel {
     this.coolant = 1; // water-cooled only: 1 full, 0 dry (see coolant.js); the game sets it and the leak
     this.coolantLeak = 0; // this game's leak, as a multiple of the usual rate; 0 for none
     this.coolantPuddle = 0; // 0..1 the damp patch under it
+    this.thermostat = 0; // water-cooled only: 0 a good thermostat, up to 1 stuck shut (the radiator does less; see coolant.js)
+    this.hot = 0; // water-cooled only: 0..1 how far over what it can take (power loss and roughness)
+    this.heatLocked = false; // it overheated and stalled: it won't catch until it has cooled
     this.boiled = false; // it has boiled over since it was last topped up
     this.boil = 0; // 0..1 steam left from a boil-over, dying away
     this.steam = 0; // 0..1 how much steam is coming off the radiator
@@ -367,7 +370,7 @@ export class EngineModel {
     const p = this.params;
     const canTurn = this.state === EngineState.IGNITION || this.state === EngineState.STALLED;
     const canCrank = canTurn && !this.seized;
-    const motor = starter && !this.batteryOut && this.battery >= p.batteryDeadBelow && !this.seized;
+    const motor = starter && !this.batteryOut && this.battery >= p.batteryDeadBelow && !this.seized; // (an overheated one still turns over, it just won't catch)
     const pulling = this.pullLeft > 0;
     // A manual rolling with the clutch out: the wheels turn it over (bump-starting). The key has to be on; the battery doesn't matter.
     const roll = (canCrank || this.state === EngineState.CRANKING) && !this.seized && !motor && !pulling && this.ignitionOn ? rollTurn(this.gearRpm, this.gearLock, p) : 0;
@@ -496,8 +499,9 @@ export class EngineModel {
     const p = this.params;
     const running = this.state === EngineState.RUNNING;
     if (p.waterCooled) this.updateCoolant(h, running);
-    stepHeat(this, h, { running, ambient: this.ambient, work: this.work, speed: this.speed, coolant: p.waterCooled ? coolingEffect(this.coolant, p) : 1, bore: this.bore }, p);
+    stepHeat(this, h, { running, ambient: this.ambient, work: this.work, speed: this.speed, coolant: p.waterCooled ? this.radiator : 1, bore: this.bore }, p);
     this.soak = stepSoak(this.soak, h, { running, work: this.work, heat: this.heat }, p);
+    if (p.waterCooled) this.updateHot(h, running);
     this.pink = running && !p.waterCooled && !p.compressionIgnition ? pinkLevel(this.heat, p) : 0;
     // Rattling under load; the audio plays what's owed (ticks a second, so they land at random times).
     if (this.pink > 0) this.pinkLeft += p.pinkRate * this.pink * (0.2 + 0.8 * this.throttle) * h;
@@ -513,6 +517,24 @@ export class EngineModel {
       this.tickLeft -= 1;
       this.emit('coolTick', this.random() * h);
     }
+  }
+
+  /** How much of its cooling the radiator does: the coolant level, less a thermostat stuck shut. */
+  get radiator() {
+    return radiatorEffect(this.coolant, this.thermostat, this.params);
+  }
+
+  /** A water-cooled engine over what it can take: it loses power, runs rough, and past `hotStallAt` stalls and won't catch until it's cooled. */
+  updateHot(h, running) {
+    const p = this.params;
+    if (running && this.thermostat === 0) this.thermostat = thermostatSticks(this.random, h, p);
+    this.hot = running ? hotLevel(this.heat, p) : 0;
+    if (running && this.heat >= p.hotStallAt) {
+      this.heatLocked = true;
+      this.rpm = 0;
+      this.stall('overheated');
+      this.emit('overheated');
+    } else if (this.heatLocked && this.heat < p.hotRestartBelow) this.heatLocked = false;
   }
 
   /** The leak, the damp patch, the steam and the boil-over (coolant.js). */
@@ -534,7 +556,7 @@ export class EngineModel {
 
   /** What the dash gauge shows above the normal band: poor lubrication, or running hot. */
   get gaugeHeat() {
-    return gaugeHeat(this.overheat, this.heat, this.params, this.params.waterCooled ? coolingEffect(this.coolant, this.params) : 1);
+    return gaugeHeat(this.overheat, this.heat, this.params, this.params.waterCooled ? this.radiator : 1);
   }
 
   /** How hard the engine works its oil, 0..1: idling is a little, flat out with the throttle open is all of it. */
@@ -633,6 +655,7 @@ export class EngineModel {
         p.oilRichRoughness * this.oilRich +
         p.dirtRoughness * this.dirt +
         p.pinkRoughness * this.pink +
+        p.hotRoughness * this.hot +
         p.waterRoughness * this.water +
         p.dieselRoughness * this.dieselSoak +
         p.fuelWaterRoughness * this.fuelWater -
@@ -660,6 +683,7 @@ export class EngineModel {
     this.power *= 1 - p.carbIcePowerLoss * this.ice; // ice round the throttle plate strangles it
     this.erratic = Math.max(this.erratic, this.ice ** 2);
     this.power *= 1 - p.pinkPowerLoss * this.pink;
+    this.power *= 1 - p.hotPowerLoss * this.hot;
     this.power *= 1 - p.waterPowerLoss * this.water;
     this.power *= 1 - p.dieselPowerLoss * this.dieselSoak;
     this.power *= 1 - p.fuelWaterPowerLoss * this.fuelWater;
@@ -703,7 +727,7 @@ export class EngineModel {
       }
 
       chance /= this.cylinders; // a chance every firing, so about the same each turn of the engine
-      if (this.startBlocked) chance = 0;
+      if (this.startBlocked || this.heatLocked) chance = 0;
       if (this.random() < chance) {
         this.state = EngineState.RUNNING;
         this.rpm = Math.max(this.rpm, p.catchRpm);

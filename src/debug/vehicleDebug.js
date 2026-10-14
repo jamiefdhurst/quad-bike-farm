@@ -50,6 +50,8 @@ export function fixEverything(unit) {
   e.boiled = false;
   e.coolant = 1;
   e.coolantLeak = 0;
+  e.thermostat = 0;
+  e.heatLocked = false;
   if (unit.quad.sump) {
     unit.quad.sump.level = 1;
     unit.quad.sump.airbox = 0;
@@ -106,6 +108,8 @@ export function problemSummary(unit) {
   if (unit.quad.carbIce.icing) bits.push(`carb iced ${unit.quad.carbIce.ice.toFixed(2)}`);
   if (unit.quad.iceCable.frozen) bits.push(`throttle cable frozen ${unit.quad.iceCable.ice.toFixed(2)}`);
   if (e.boiled) bits.push('boiled over');
+  if (e.thermostat > 0) bits.push(`thermostat stuck ${e.thermostat.toFixed(2)}`);
+  if (e.heatLocked) bits.push('overheated');
   if (unit.quad.fuel.litres <= 0.01) bits.push('out of fuel');
   return bits.length ? bits.join(', ') : 'nothing wrong';
 }
@@ -138,6 +142,8 @@ export function engineReadouts(engine, { manual = false } = {}) {
   list.push({ key: 'heatSoak', label: 'heat soak (ticks as it cools, hot start rich)', get: (e) => e.soak });
   list.push({ key: 'lubeHeat', label: 'extra heat from poor lubrication', get: (e) => e.overheat });
   if (p.waterCooled) {
+    list.push({ key: 'hotLevel', label: 'running too hot (loses power, stalls at the top)', get: (e) => e.hot });
+    list.push({ key: 'heatLocked', label: 'overheated and stalled (won\'t catch till cool)', get: (e) => (e.heatLocked ? 'yes' : 'no') });
     list.push({ key: 'steam', label: 'steam off the radiator', get: (e) => e.steam });
     list.push({ key: 'boiled', label: 'boiled over since last topped up', get: (e) => (e.boiled ? 'yes' : 'no') });
     list.push({ key: 'coolantPuddle', label: 'coolant puddle under it', get: (e) => e.coolantPuddle });

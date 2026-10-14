@@ -2,10 +2,10 @@
 //
 // The engine's temperature runs 0 (stone cold) to 1 (fully warm). On the gauge a fully warm
 // engine sits at WARM_AT, the middle of the white band, with a red zone above it that only an engine
-// running hot for want of oil reaches.
+// running hot reaches: for want of oil, in the sun, or with a radiator that is low or a thermostat stuck.
 
-export const WARM_AT = 0.7; // dial fraction (0 = C, 1 = H) for a fully warm engine
-export const HOT_FROM = 0.85; // the red zone starts here
+export const WARM_AT = 0.5; // dial fraction (0 = C, 1 = H) for a fully warm engine: the middle, on every gauge
+export const HOT_FROM = 0.75; // the red zone starts here
 
 /** Dial fraction 0..1 for an engine temperature; the needle rests at C with the ignition off. */
 export function tempGaugeFraction(temperature, ignition = true, overheat = 0) {

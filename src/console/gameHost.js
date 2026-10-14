@@ -29,6 +29,7 @@ export function createHost(g, { copy = () => {} } = {}) {
     'diesel-can': g.dieselCan,
     toolbox: g.toolbox,
     'oil-bottle': g.oilBottle,
+    'coolant-bottle': g.coolantBottle,
     leads: g.leads,
   };
   const itemNames = Object.keys(items).filter((k) => items[k]);

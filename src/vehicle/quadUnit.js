@@ -209,7 +209,8 @@ export class QuadUnit {
       if (e.type === 'spitBack' && this.quad.riderAnchor) this.smoke.spit(this.quad.riderAnchor.getWorldPosition(this.airbox), this.quad.velocity, e.strength);
     }
     if (this.steam) {
-      this.quad.model.localToWorld(this.radiator.set(RADIATOR_AT.x, RADIATOR_AT.y, RADIATOR_AT.z));
+      const at = this.spec.radiatorAt ?? RADIATOR_AT;
+      this.quad.model.localToWorld(this.radiator.set(at.x, at.y, at.z));
       this.steam.steam(dt, this.radiator, this.engine.steam, this.quad.velocity);
     }
     this.updateHotSteam(dt);

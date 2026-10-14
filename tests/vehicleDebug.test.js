@@ -49,7 +49,13 @@ describe('vehicle debug helpers', () => {
     expect(problemSummary(u)).toContain('throttle cable frozen');
     expect(problemSummary(u)).toContain('carb iced');
     expect(problemSummary(u)).toContain('water in the fuel');
+    u.engine.thermostat = 0.7;
+    u.engine.heatLocked = true;
+    expect(problemSummary(u)).toContain('thermostat stuck 0.70');
+    expect(problemSummary(u)).toContain('overheated');
     fixEverything(u);
+    expect(u.engine.thermostat).toBe(0);
+    expect(u.engine.heatLocked).toBe(false);
     expect(problemSummary(u)).toBe('nothing wrong');
     expect(u.quad.quirks.kinds).toEqual(['tapStiff']);
     expect(u.quad.quirks.tapStiff).toBe(0);

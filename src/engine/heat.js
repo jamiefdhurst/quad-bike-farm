@@ -19,7 +19,8 @@ export function heatTarget({ ambient, work, speed, fan, coolant = 1, bore = 0 },
   // Low on coolant, the radiator does less: the water-cooled engine feels more of the load and the fan carries off less.
   const scale = p.waterCooled ? 1 + (p.heatWaterScale - 1) * coolant : 1;
   const load = (p.heatSun * clamp01(ambient) + p.heatWork * clamp01(work) * (1 + (p.boreHeat ?? 0) * bore)) * scale; // a big bore makes more heat working
-  const cooling = p.heatAirCool * airflow(speed, p) + (fan ? p.fanCooling * coolant : 0);
+  // The radiator does the cooling, wind and fan alike: low on coolant or with a thermostat stuck shut, it does less of both.
+  const cooling = p.waterCooled ? coolant * (p.heatAirCool * airflow(speed, p) + (fan ? p.fanCooling : 0)) : p.heatAirCool * airflow(speed, p);
   return clamp01(load - cooling);
 }
 

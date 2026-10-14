@@ -589,12 +589,27 @@ export const FAQ_SECTIONS = [
         a: `Yes. Rain wets the ground, and wet grass and especially wet mud are slipperier and the bogs worse. It's colder in the morning and after dark than
           in the afternoon. Cold days want more choke, longer to warm
           up and drain batteries faster; a hard frost whitens the grass and the seats (your tyres melt a track through the grass, and sitting on a seat clears it). Dry stubble throws up dust that clogs air filters fast. Hot, sunny days make the
-          air-cooled quads overheat if you idle them or crawl through mud.`,
+          air-cooled quads overheat if you idle them or crawl through mud. The cars, Land Rovers, UTV and tractor have radiators and stay cool on any day, unless
+          something is wrong with their cooling.`,
       },
       {
         q: 'Why is my quad losing power and rattling on a hot day?',
         a: `It's too hot and pinking. The air-cooled quads (red, blue, yellow and green) cook if left idling for ages in the sun or crawled through the mud
           with the throttle open. Ride along at a decent speed to cool it. The orange has a radiator and a fan, and stays cooler unless it's leaking.`,
+      },
+      {
+        q: 'The temperature needle is in the red on a car or the tractor. What is wrong?',
+        tip: 'Needle in the red on a car? Switch off. It is low on coolant or has a stuck thermostat.',
+        a: `A healthy cooling system keeps the needle in the middle on every vehicle, all day, even idling in the sun. In the red means something is wrong: the coolant
+          is low (look for a damp patch on the ground under it) or the thermostat has stuck shut, which can be there from the start or come on after a long run.
+          It loses power and runs rough, steams if it gets worse, and past the top it cuts out and won't start until it has cooled for a minute or two. The red
+          lamp or red symbol on the dash lights as the needle goes in. Switch it off and let it cool. Then take the coolant bottle (it stands by the oil bottle
+          at the petrol tank), look at the vehicle with the engine off and cool, and hold <kbd>Y</kbd> to top up. With the radiator full, keep holding it and the
+          coolant flushes through, which frees a stuck thermostat. A weeping hose keeps weeping until it is mended at the workbench, which also changes the thermostat.`,
+      },
+      {
+        q: 'Why won\'t it let me pour coolant in?',
+        a: `Not while the engine is running or still hot: the cap would spit scalding water. Switch it off and wait a minute or two. An air-cooled quad has no radiator to fill.`,
       },
       {
         q: 'What does the tarmac road do?',
@@ -1478,7 +1493,8 @@ export const FAQ_SECTIONS = [
         q: 'Is there anything special about the yellow and the orange?',
         spoiler: true,
         a: `The yellow has a big-bore kit waiting at the workbench (job <kbd>8</kbd>): Jess's dream, about 18% more pull, more heat and much more wear. In about half of games
-          the orange has a weeping coolant hose: watch for a green damp patch under it, and fix it at the bench (job <kbd>7</kbd>) before it boils over.`,
+          the orange has a weeping coolant hose: watch for a green damp patch under it, and fix it at the bench (job <kbd>7</kbd>) before it boils over. Now and then any radiator
+          vehicle has one too, or a stuck thermostat; the coolant bottle at the petrol tank tops them up.`
       },
       {
         q: 'Why does Jess call the green quad Grandad?',
