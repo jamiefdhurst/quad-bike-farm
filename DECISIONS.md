@@ -2130,6 +2130,10 @@ Request: a console separate from the debug window to set and get any value, put 
 - Autonomy off sets each girl's `ownMind` off (no boredom projects) and stops the game starting new things: requests, resting spots, pranks, rev-offs, head starts, tractor go, nicking, tea, jumpers, the diesel mistake, rock prank, falling out, romance, races, drag races and follow the leader. What is already under way carries on, so switch it off while they are stood about. Races, follow the leader, tea and the diesel mistake still start from their debug buttons (`forced`). Horns, doughnut and jump reactions and banter stay on; `speech off` silences them.
 - Checked headless once: about sixty commands ran against a real game with no errors (reads, writes, tp of you, a vehicle, a girl and a can, weather, resets, girl actions, flight on and off), and Tab completed a path in the real input. Not checked: flying about by eye, or every girl action's scene.
 
+## Console choices shown as you type (TODO 60)
+
+Tab already completed everything; the gap was the hint line under the input, which only showed 2 to 40 choices, so a long folder (`tune.`) or a lone choice showed nothing. It now lists every choice for the word being typed, straight after a `.` or a space, as the part after the last dot (`get vehicle.` shows `red.  refurb.`), in a box that scrolls past 20% of the screen height. `hintChoices` in `shell.js` is pure and tested. Every command's completer was already in place, so none changed. Not checked in the browser.
+
 ## The girls drive the UTV and the Land Rover (TODO 10)
 
 Settled with Jamie before building: one go for all three vehicles (Jess picks a free one, Amy's single day unlocks all three); the Land Rover's starting handle on a flat battery, Jess kicked back, Amy never; crash gears: Jess grinds and Amy double-declutches; the other girl may join on the bench; UTV 2 to 6 m/s, Land Rover 2 to 8, 40 to 70 s a go, Jess never above second. Added mid-build: either girl, Amy included, will start any of the three when asked, even before she will drive.

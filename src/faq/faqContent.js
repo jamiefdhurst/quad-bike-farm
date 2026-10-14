@@ -1525,6 +1525,11 @@ export const FAQ_SECTIONS = [
           (<code>fly</code>) and switch the girls' autonomy and speech off.`,
       },
       {
+        q: 'How do I find the name of something in the console?',
+        a: `Type a <code>.</code> or a space and every choice for the next word is listed under the line (scroll it if it is long). <kbd>Tab</kbd> fills in what you have started,
+          and pressing it again goes through the choices. <kbd>Shift</kbd>+<kbd>Tab</kbd> goes back.`,
+      },
+      {
         q: 'How do I see what is slowing the game down?',
         a: `Open the tuning panel (the backtick key), go to the Tune tab and open "Frame time" at the top: it shows frames a second, the game's own time on each frame and how much of
           that goes on ten stages, from physics and the vehicles to the girls, the audio, the weather and effects, and finally drawing, with the biggest one named. <code>perf</code> in the

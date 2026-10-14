@@ -289,6 +289,19 @@ export function tabStep(shell, line, prev, dir = 1) {
   return { line: head + candidates[index], start, candidates, index };
 }
 
+/**
+ * The choices to show under the line while typing: all of them (no cap), as the part of each after the last dot so a long path
+ * stays readable, as soon as the word being typed is empty (just after a space or a dot) or is part-way through. A lone choice is
+ * shown too, so you can see what Tab will do.
+ * @returns {string[]}
+ */
+export function hintChoices(shell, line) {
+  const { start, candidates } = shell.complete(line);
+  const typed = line.slice(start);
+  const shortFrom = typed.lastIndexOf('.') + 1;
+  return candidates.filter((c) => c.toLowerCase() !== typed.toLowerCase()).map((c) => c.slice(shortFrom));
+}
+
 const finishing = (word) => (word.endsWith('.') ? '' : ' ');
 
 export function commonPrefix(words) {

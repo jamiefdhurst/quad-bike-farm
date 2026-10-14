@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Shell, group, value, resolve, tokenise, slug, tabStep, commonPrefix, pathCandidates, walk } from '../src/console/shell.js';
+import { Shell, group, value, resolve, tokenise, slug, tabStep, commonPrefix, pathCandidates, walk, hintChoices } from '../src/console/shell.js';
 import { buildCommands } from '../src/console/commands.js';
 
 function makeWorld() {
@@ -258,6 +258,14 @@ describe('tab completion', () => {
     const next = tabStep(shell, step.line, step);
     expect(next.line).toBe('get vehicle.red.');
     expect(tabStep(shell, next.line, next).line).toBe('get vehicle.refurb.');
+  });
+  it('the hint lists every choice straight after a dot or a space, by its last part', () => {
+    const { shell } = makeWorld();
+    expect(hintChoices(shell, 'get vehicle.')).toEqual(['red.', 'refurb.']);
+    expect(hintChoices(shell, 'get vehicle.red.')).toContain('temperature');
+    expect(hintChoices(shell, 'girl ')).toEqual(['amy', 'jess']);
+    expect(hintChoices(shell, 'tog')).toEqual(['toggle']); // a lone choice shows too
+    expect(hintChoices(shell, 'toggle')).toEqual([]); // already typed in full
   });
   it('helpers', () => {
     expect(commonPrefix(['abc', 'abd'])).toBe('ab');

@@ -1,6 +1,6 @@
 // The in-game console: a line at the bottom of the screen that opens with backslash (see shell.js for the language and commands.js for what
 // it can do). Not persisted, like the debug panel: its history lasts until the page reloads.
-import { Shell, tabStep } from './shell.js';
+import { Shell, tabStep, hintChoices } from './shell.js';
 import { buildCommands } from './commands.js';
 import { buildGameTree } from './gameTree.js';
 import { createHost } from './gameHost.js';
@@ -37,7 +37,7 @@ export class GameConsole {
     this.out = document.createElement('div');
     this.out.style.cssText = 'max-height:42vh;overflow-y:auto;padding:6px 10px;white-space:pre-wrap;word-break:break-word';
     this.hint = document.createElement('div');
-    this.hint.style.cssText = 'padding:0 10px;min-height:1.35em;color:#8aa;white-space:pre-wrap';
+    this.hint.style.cssText = 'padding:0 10px;min-height:1.35em;max-height:20vh;overflow-y:auto;color:#8aa;white-space:pre-wrap';
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;gap:6px;padding:4px 10px 8px;align-items:center';
     const prompt = document.createElement('span');
@@ -134,13 +134,12 @@ export class GameConsole {
     }
     this.tab = step;
     this.input.value = step.line;
-    this.hint.textContent = step.candidates.length > 1 ? step.candidates.join('   ') : '';
+    this.showHint();
   }
 
-  /** While typing, the choices for the word you are on. */
+  /** While typing, every choice for the word you are on, including straight after a '.' or a space. */
   showHint() {
-    const { candidates } = this.shell.complete(this.input.value);
-    this.hint.textContent = candidates.length > 1 && candidates.length <= 40 ? candidates.join('   ') : '';
+    this.hint.textContent = hintChoices(this.shell, this.input.value).join('   ');
   }
 
   walkHistory(dir) {
