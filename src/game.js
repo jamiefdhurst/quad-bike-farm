@@ -1279,6 +1279,7 @@ export class Game {
     this.farmMap = new MapView(document.getElementById('hud'), farmMapFeatures(L, this.world.fields, this.world.track), this.mapParams);
     this.interaction.add({
       target: this.leads.proxy,
+      priority: 1, // they lie on the bench, whose box would otherwise be hit first
       isAvailable: () => !this.handsFull && !this.leads.held,
       prompt: () => 'Pick up the jump leads',
       interact: () => this.leads.pickUp(this.camera),

@@ -682,7 +682,7 @@ What is still to do. Finished items are recorded in DECISIONS.md, under their ol
 61. **Done.** Mist in the barley hollow and rainbows. Ground mist sits in the damp north field early in the game and burns off as it warms; a passing shower can leave a rainbow.
 62. **Done.** Waterproofs and getting cold. In the rain the girls pull their hoods up or fetch coats from the barn, and their hair goes wet. A girl who gets soaked gets cold: she shivers, wants a car's heater or fetches a jumper. (Built: the wax jackets and their hoods. Getting soaked and cold moved to 206.)
 63. **Done.** When the girls want to warm up in a car/LR and they start it and manage the choke, they should do it from inside and not stand outside in the cold.
-64. Can't pick up the jump leads off the bench
+64. Can't pick up the jump leads off the bench **Done.**
 65. Hours aren't recording correctly - they're recording as "decimal places" or at least showing that way on the quads/dashes (e.g. 1 hour is 0.1 hours) - this should be matched to game time
 66. Rusty quad's battery needs to work in the same way as the others
 67. Jess's crop top is lop-sided and needs her cleavage drawn in

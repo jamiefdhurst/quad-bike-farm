@@ -3807,3 +3807,8 @@ The item settled it; I chose the details without asking.
 - A flat battery still sends her to the starting handle outside (`needsStartingHandle` in `crankAttempt.js`, shared with `needsHandle`), because the handle is at the front bumper. Nothing to swing from a seat.
 - If it will not start she drops the shelter and climbs back out. Moved off the seat part-way (you take the vehicle), the attempt is abandoned.
 - Not checked in the running game: the look of her reaching the choke from the passenger bench (she uses the sitting pose, hands in her lap). Unit-tested: the handle-or-seat rule.
+
+## Jump leads off the bench (TODO 64)
+
+- The leads lie on the workbench, whose own box was hit before the leads' small pickup box, so `E` found the bench and offered nothing. The leads' interaction now has `priority: 1`, as the toolbox and the oil bottle already had for the same reason.
+- Not unit-tested: the priority is wiring in `game.js` against ray hits. Not checked in the running game.
