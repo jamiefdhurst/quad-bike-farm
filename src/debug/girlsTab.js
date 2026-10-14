@@ -1,6 +1,7 @@
-// The debug panel's Girls tab: one folder per girl (what she is doing, why, what you can make her do, her favour, the romance
-// and her skills), then one for the two of them and the farm. Her state comes first and her many action buttons sit in their own
-// folder below "Why", closed, so both girls' details fit on the screen at once.
+// The debug panel's Girls tab: one folder per girl, then one for the two of them and the farm. Inside a girl's folder: what she is
+// doing now (four lines), "Why" (open), "Make her do", then closed folders for her other state, her clothes and mud, her favour and
+// romance and her skills, so both girls fit on the screen at once. The shared folder is a set of closed subfolders by subject
+// (the games, the day, the workshop, the jobs, the animals and the lane, the farm's memory, getting about), never a flat list.
 import { girlActions } from './girlActions.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
 import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
@@ -23,6 +24,7 @@ export function buildGirlsTab(d) {
   const girl = (id) => g.companions.find((c) => c.character.id === id);
   const actions = girlActions(g);
 
+
   for (const id of g.companions.map((c) => c.character.id)) {
     const name = cap(id);
     const c = girl(id);
@@ -30,35 +32,11 @@ export function buildGirlsTab(d) {
 
     const romance = g.romance;
 
-    // --- What she is doing.
+    // --- What she is doing now: only what you glance at.
     show(f, 'doing', () => c.state + (c.quad && c.fsm.is('seated', 'mounting', 'driving', 'starting') ? ` (${c.quad.label})` : ''));
     show(f, 'free', () => { const a = c.availability(); return a.free ? 'yes' : `no: ${a.why}`; });
     show(f, 'looking at', () => c.attention.describe());
     show(f, 'reacting', () => c.reactingText);
-    show(f, 'with her friend', () => g.pairState(id));
-    show(f, 'waiting about', () => c.waitingText());
-    show(f, 'numbness', () => (c.numbPlan ? `walking it off (${c.numbPlan.phase})` : `${round(c.numbness.value)} of 1`));
-    show(f, 'drive somewhere', () => (c.drive?.trip ? `${c.drive.trip.name} (${c.drive.trip.stage === 'there' ? 'on the way' : 'on the way back'})` : 'no'));
-    show(f, 'her quad', () => g.ownership.claims[id] ?? 'none');
-    show(f, 'tidying', () => c.lineUpStatus);
-    show(f, 'race score', () => `${g.race.tally[id]?.wins ?? 0} won, ${g.race.tally[id]?.losses ?? 0} lost`);
-    show(f, 'her helmet', () => g.headgear.describe(id));
-    show(f, 'her coat', () => g.coats.describe(id));
-    show(f, 'jump score', () => { const s = g.jumpWatch.score[id]; return s ? JSON.stringify(s) : 'none yet'; });
-
-    show(f, 'mud and dust', () => `${round(c.mucky.mud)} mud (${round(c.mucky.wet)} wet), ${round(c.mucky.dust)} dust`);
-    slider(f, 'mud on her', () => c.mucky.mud, (v) => (c.mucky.mud = v), 0, 1, 0.01);
-    slider(f, 'dust on her', () => c.mucky.dust, (v) => (c.mucky.dust = v), 0, 1, 0.01);
-    slider(f, 'polo buttons undone', () => c.outfit.poloOpen ?? 0, (v) => c.setPoloOpen(v), 0, 5, 1);
-    // What she has on top today (dealt each day, npc/outfits.js), and the choices within it.
-    const style = () => completeStyle(c.outfit.style);
-    const kinds = Object.fromEntries(outfitsFor(c.character.outfitOdds).map((k) => [OUTFIT_KINDS[k].label, k]));
-    f.add({ get v() { return style().kind; }, set v(x) { c.setStyle({ ...style(), kind: x }); } }, 'v', kinds).name('outfit').listen();
-    tick(f, 'plaid worn open', () => style().plaidOpen, (v) => c.setStyle({ ...style(), plaidOpen: v }));
-    tick(f, 'collar popped', () => style().popped, (v) => c.setStyle({ ...style(), popped: v }));
-    slider(f, 'plaid buttons undone', () => style().plaidButtons, (v) => c.setStyle({ ...style(), plaidButtons: Math.round(v) }), 0, 4, 1);
-    slider(f, 'under polo buttons undone', () => style().underOpen, (v) => c.setStyle({ ...style(), underOpen: Math.round(v) }), 0, 5, 1);
-    show(f, 'wearing', () => describeOutfit(style()));
 
     // --- Why she does what she does: what she wants (settable) and what she chose for it (npc/needs.js, npc/chooser.js).
     const why = f.addFolder('Why');
@@ -75,6 +53,36 @@ export function buildGirlsTab(d) {
     const act = f.addFolder('Make her do');
     for (const a of actions.forGirl(id)) button(act, a.label.replace('%', name), () => a.run(id, a.vehicle ? d.unit() : undefined));
     act.close();
+
+    // --- The rest of what she is up to, and what she keeps.
+    const st = f.addFolder('Her state');
+    show(st, 'with her friend', () => g.pairState(id));
+    show(st, 'waiting about', () => c.waitingText());
+    show(st, 'numbness', () => (c.numbPlan ? `walking it off (${c.numbPlan.phase})` : `${round(c.numbness.value)} of 1`));
+    show(st, 'drive somewhere', () => (c.drive?.trip ? `${c.drive.trip.name} (${c.drive.trip.stage === 'there' ? 'on the way' : 'on the way back'})` : 'no'));
+    show(st, 'her quad', () => g.ownership.claims[id] ?? 'none');
+    show(st, 'tidying', () => c.lineUpStatus);
+    show(st, 'race score', () => `${g.race.tally[id]?.wins ?? 0} won, ${g.race.tally[id]?.losses ?? 0} lost`);
+    show(st, 'jump score', () => { const s = g.jumpWatch.score[id]; return s ? JSON.stringify(s) : 'none yet'; });
+    st.close();
+
+    // --- What she has on (dealt each day, npc/outfits.js), and how mucky she is.
+    const wear = f.addFolder('Clothes and mud');
+    const style = () => completeStyle(c.outfit.style);
+    const kinds = Object.fromEntries(outfitsFor(c.character.outfitOdds).map((k) => [OUTFIT_KINDS[k].label, k]));
+    show(wear, 'wearing', () => describeOutfit(style()));
+    show(wear, 'her helmet', () => g.headgear.describe(id));
+    show(wear, 'her coat', () => g.coats.describe(id));
+    wear.add({ get v() { return style().kind; }, set v(x) { c.setStyle({ ...style(), kind: x }); } }, 'v', kinds).name('outfit').listen();
+    tick(wear, 'plaid worn open', () => style().plaidOpen, (v) => c.setStyle({ ...style(), plaidOpen: v }));
+    tick(wear, 'collar popped', () => style().popped, (v) => c.setStyle({ ...style(), popped: v }));
+    slider(wear, 'polo buttons undone', () => c.outfit.poloOpen ?? 0, (v) => c.setPoloOpen(v), 0, 5, 1);
+    slider(wear, 'plaid buttons undone', () => style().plaidButtons, (v) => c.setStyle({ ...style(), plaidButtons: Math.round(v) }), 0, 4, 1);
+    slider(wear, 'under polo buttons undone', () => style().underOpen, (v) => c.setStyle({ ...style(), underOpen: Math.round(v) }), 0, 5, 1);
+    show(wear, 'mud and dust', () => `${round(c.mucky.mud)} mud (${round(c.mucky.wet)} wet), ${round(c.mucky.dust)} dust`);
+    slider(wear, 'mud on her', () => c.mucky.mud, (v) => (c.mucky.mud = v), 0, 1, 0.01);
+    slider(wear, 'dust on her', () => c.mucky.dust, (v) => (c.mucky.dust = v), 0, 1, 0.01);
+    wear.close();
 
     // --- How she rates you, and the romance.
     const fav = f.addFolder('Favour and romance');
@@ -103,137 +111,162 @@ export function buildGirlsTab(d) {
     sk.close();
   }
 
-  // --- The two of them, and the farm.
+  // --- The two of them, and the farm: closed subfolders by subject, each with its readouts first and its buttons after.
   const both = d.addFolder('Girls', 'Both girls and the farm');
-  button(both, 'Call the girls back to the barn (as the bell does)', () => g.recallGirls());
-  button(both, 'Put your helmet on or hang it up', () => g.toggleYourGear('you'));
-  button(both, 'Put your goggles on or hang them up', () => g.toggleYourGear('goggles'));
-  // Asking for a race, a drag run or the climb, as Enter does: they leave what they are doing, and if they can't, it says why (npc/asking.js).
-  for (const [kind, label] of [['race', 'lap race'], ['drag', 'drag race'], ['climb', 'hill climb']]) {
-    button(both, `Ask the girls for the ${label} now`, () => g.askGirls(kind));
-    show(both, `${label}: what is in the way`, () => { const p = g.askNow(kind); return p.length ? p.join('; ') : 'nothing'; });
-  }
-  show(both, 'last ask', () => g.lastAsk ?? (g.asking ? `asking for the ${g.asking.kind}, ${Math.round(g.asking.age)} s` : 'none'));
-  button(both, 'Take me to the hill climb start', () => {
-    const s = g.climbGates[0];
-    if (g.riddenUnit) return g.hud.toast('Get off first');
-    g.player.moveTo({ x: s.x - s.tx * 4, y: g.world.heightAt(s.x, s.z) + 0.5, z: s.z - s.tz * 4 });
-  });
-  button(both, 'Clear the records', () => {
-    g.records.bests = {};
-    g.records.byQuad = {};
-    g.jobBoardView.refresh();
-  });
-  button(both, 'Start follow the leader now', () => {
-    if (g.convoy.active) return g.hud.toast('They are already out');
-    g.convoy.forced = true;
-    g.hud.toast('Follow the leader will start as soon as both girls are stood about');
-  });
-  button(both, 'A girl leaves her tea on a rack', () => {
-    g.tea.forced = true;
-    g.hud.toast('A free girl will put her tea on a rack');
-  });
-  button(both, 'Take me to the rock at the top of the hill', () => {
-    const v = g.flaskSpot;
-    if (!v) return;
-    if (g.riddenUnit) return g.hud.toast('Get off first');
-    g.player.moveTo({ x: v.x, y: g.world.heightAt(v.x, v.z) + 0.5, z: v.z + 2.5 });
-  });
-  button(both, 'Take me to the jump', () => {
-    const r = g.world.layout.jumpRamp;
-    if (!r) return;
-    if (g.riddenUnit) return g.hud.toast('Get off first');
-    const at = rampPoint(r, r.length * 0.6, 3.5);
-    g.player.moveTo({ x: at.x, y: g.world.heightAt(at.x, at.z) + 0.5, z: at.z });
-  });
-  button(both, 'They fall out now', () => !g.fallingOut.active && g.handleFallingOut(g.fallingOut.begin('digs')));
-  button(both, 'They make up now', () => g.fallingOut.active && g.handleFallingOut(g.fallingOut.end()));
-  button(both, 'Put the L plates on Amy\'s quad', () => g.lPlates.put('quad'));
-  button(both, 'Put the L plates on the tractor', () => g.lPlates.put('tractor'));
-  button(both, 'Take the L plates off', () => g.lPlates.put('none'));
+  const sub = (title) => { const s = both.addFolder(title); s.close(); return s; };
+  const toast = (m) => g.hud.toast(m);
+  const goTo = (at) => {
+    if (g.riddenUnit) return toast('Get off first');
+    g.player.moveTo(at);
+  };
+
+  // The girls as a pair, and the day's goings on between them.
+  const day = sub('The girls together');
+  button(day, 'Call the girls back to the barn (as the bell does)', () => g.recallGirls());
   const fo = g.fallingOut;
-  show(both, 'fallen out', () => (fo.active ? `yes, ${fo.cause.kind} (${fo.fault} at fault), ${Math.round(fo.remaining)} s left` : `no, friction ${round(fo.friction, 1)}`));
-  show(both, 'comparing notes', () => (g.comparing.busy ? `${g.comparing.last?.first} and ${g.comparing.last?.second}, ${g.comparing.steps.length} steps to go` : 'no'));
-  show(both, 'race', () => g.race.phase);
-  show(both, 'hill climb', () => (g.hillClimb.active ? `${g.hillClimb.girl} (${g.hillClimb.phase})` : g.hillClimb.youArmed ? 'you are asked for' : 'idle'));
-  show(both, 'records', () => g.records.lines().map((l) => `${l.label}: ${l.text}`).join('; '));
-  show(both, 'follow the leader', () => (g.convoy.active ? `${g.convoy.phase}: ${g.convoy.leader} leads, ${g.convoy.swapsDone} swaps` : 'idle'));
-  show(both, 'throttle grab', () => (g.throttleGrab.grab?.girl ? `${g.throttleGrab.grab.girl} (${g.throttleGrab.grab.phase})` : g.throttleGrab.forced ? `${g.throttleGrab.forced} waiting` : 'none'));
-  show(both, 'jump now', () => {
+  show(day, 'fallen out', () => (fo.active ? `yes, ${fo.cause.kind} (${fo.fault} at fault), ${Math.round(fo.remaining)} s left` : `no, friction ${round(fo.friction, 1)}`));
+  button(day, 'They fall out now', () => !g.fallingOut.active && g.handleFallingOut(g.fallingOut.begin('digs')));
+  button(day, 'They make up now', () => g.fallingOut.active && g.handleFallingOut(g.fallingOut.end()));
+  show(day, 'comparing notes', () => (g.comparing.busy ? `${g.comparing.last?.first} and ${g.comparing.last?.second}, ${g.comparing.steps.length} steps to go` : 'no'));
+  show(day, 'follow the leader', () => (g.convoy.active ? `${g.convoy.phase}: ${g.convoy.leader} leads, ${g.convoy.swapsDone} swaps` : 'idle'));
+  button(day, 'Start follow the leader now', () => {
+    if (g.convoy.active) return toast('They are already out');
+    g.convoy.forced = true;
+    toast('Follow the leader will start as soon as both girls are stood about');
+  });
+  show(day, 'throttle grab', () => (g.throttleGrab.grab?.girl ? `${g.throttleGrab.grab.girl} (${g.throttleGrab.grab.phase})` : g.throttleGrab.forced ? `${g.throttleGrab.forced} waiting` : 'none'));
+  show(day, 'Jess\'s dare', () => g.dares.describe());
+  show(day, 'a phone call', () => `${g.phoneCalls.describe()}${g.companions.map((c) => (g.favour.moodLeft(c.character.id) > 0 ? `; ${c.name} in a mood for ${Math.round(g.favour.moodLeft(c.character.id))} s` : '')).join('')}`);
+  show(day, 'lights to work by', () => g.workLight.describe());
+  button(day, 'A girl leaves her tea on a rack', () => {
+    g.tea.forced = true;
+    toast('A free girl will put her tea on a rack');
+  });
+  for (const u of g.girlUnits) {
+    const names = g.quadNames.names[u.spec.id];
+    show(day, `${u.name} is`, () => `${g.ownership.ownerOf(u.spec.id) ?? 'nobody'}'s${names ? ` (${names}${g.quadNames.announced.has(u.spec.id) ? '' : ', not said yet'})` : ''}`);
+  }
+  show(day, 'L plates are on', () => g.lPlates.where);
+  button(day, 'Put the L plates on Amy\'s quad', () => g.lPlates.put('quad'));
+  button(day, 'Put the L plates on the tractor', () => g.lPlates.put('tractor'));
+  button(day, 'Take the L plates off', () => g.lPlates.put('none'));
+  button(day, 'Put your helmet on or hang it up', () => g.toggleYourGear('you'));
+  button(day, 'Put your goggles on or hang them up', () => g.toggleYourGear('goggles'));
+
+  // Races and runs, and the records they keep. Asking for one is as Enter does: they leave what they are doing, and if they can't,
+  // it says why (npc/asking.js).
+  const games = sub('Races, runs and records');
+  show(games, 'race', () => g.race.phase);
+  show(games, 'hill climb', () => (g.hillClimb.active ? `${g.hillClimb.girl} (${g.hillClimb.phase})` : g.hillClimb.youArmed ? 'you are asked for' : 'idle'));
+  show(games, 'jump now', () => {
     const c = g.companions.find((o) => o.fsm.is('driving') && o.drive?.jump);
     const run = c?.drive.jump.run;
     return run ? `${c.character.id}: ${run.phase}, go ${run.went + 1} of ${run.goes}` : 'nobody';
   });
-  show(both, 'L plates are on', () => g.lPlates.where);
-  show(both, 'the farm that remembers', () => g.farmText());
-  button(both, 'Save the farm now', () => g.hud.toast(g.saveFarm() ? 'Farm saved' : 'Not saved (a seeded game, wiped, or not started)'));
-  show(both, 'the calendar says', () => g.endOfDayNow().text);
-  button(both, 'Call it a day now (fade, save, next day)', () => g.callItADay({ force: true }));
-  button(both, 'Wipe the farm (a new one next load)', () => {
-    g.wipeFarm();
-    g.hud.toast('Farm wiped: the next load deals a new one');
-  });
-  show(both, 'the day', () => `${g.weather.temperature} °C (${g.weather.band}), chill ${g.weather.chill.toFixed(2)}, frost ${g.weather.frost.toFixed(2)}`);
-  show(both, 'the stream', () => `${Math.round(g.world.streamLevel.level * 100)}% up, ${(g.world.streamLevel.rise * 100).toFixed(0)} cm above usual, running ${g.world.streamLevel.flow.toFixed(1)}x`);
-  slider(both, 'stream level (0 low, 1 full)', () => g.world.streamLevel.level, (v) => g.setStreamLevel(v), 0, 1, 0.05);
-  show(both, 'the forecast', () => g.forecast.describe(g.daylight.hour));
-  button(both, 'Turn the weather now (as the forecast says it will)', () => g.hud.toast(g.turnWeatherNow() ? `The weather is turning to ${g.weather.name}` : 'This weather has nowhere to turn'));
-  button(both, 'Lightning, close', () => g.strikeNow(150));
-  button(both, 'Lightning, far off', () => g.strikeNow(2400));
-  slider(both, 'time of day (hours)', () => g.daylight.hour, (v) => g.setTime(v), 0, 30, 0.05);
-  show(both, 'Jess\'s dare', () => g.dares.describe());
-  show(both, 'a phone call', () => `${g.phoneCalls.describe()}${g.companions.map((c) => (g.favour.moodLeft(c.character.id) > 0 ? `; ${c.name} in a mood for ${Math.round(g.favour.moodLeft(c.character.id))} s` : '')).join('')}`);
-  show(both, 'a girl at the bench', () => g.girlBench.describe());
-  show(both, 'their cars', () => g.describeCars());
-  show(both, 'lights to work by', () => g.workLight.describe());
-  show(both, 'the clock', () => `${g.daylight.text()}, ${Math.round(g.daylight.darkness * 100)}% dark, falling ${g.daylight.drop.toFixed(1)} °C into the night`);
-  show(both, 'muck in the tub', () => `${Math.round(g.muck.load * 100)}%, ${g.muck.laid} patches laid on the stubble${g.muck.done ? ', done' : ''}`);
-  show(both, 'the board', () => g.jobBoard.lines().map((l) => `${l.done ? '[x]' : '[ ]'} ${l.text}`).join('; ') || 'nothing on');
-  show(both, 'wildlife', () => `${g.rabbits.rabbits.filter((r) => r.mode !== 'down').length} rabbits about (${g.rabbits.rabbits.filter((r) => r.mode === 'caught').length} in a beam), pheasants ${g.pheasants.birds.map((b) => b.mode).join('/')}`);
-  button(both, 'Flush the nearest pheasant', () => g.debugFlushPheasant());
-  show(both, 'electric fence', () => `${g.fence.live ? 'on' : 'off'}; last zapped: ${g.fence.lastZap ? `${g.fence.lastZap.id} (${g.fence.lastZap.kind})` : 'nobody yet'}`);
-  button(both, 'Zap you on the electric fence', () => g.debugZapFence());
-  show(both, 'the lane and the gates', () => `${g.trafficHost.describe()}; south gate ${g.trafficHost.gate('south').isOpen ? 'open' : 'shut'}, big gate ${g.trafficHost.gate('road').isOpen ? 'open' : 'shut'}, grid gate ${g.trafficHost.gate('grid')?.isOpen ? 'open' : 'shut'}`);
-  show(both, 'the battery charger', () => g.describeCharger());
-  button(both, 'Take the charged battery off the charger', () => g.debugChargerClear());
-  show(both, 'the generator', () => g.describeGenerator());
-  show(both, 'starting the generator', () => g.generatorStart.describe());
-  button(both, 'Pull the generator\'s cord', () => g.debugGeneratorPull());
-  button(both, 'Switch the generator off', () => g.switchGeneratorOff());
-  button(both, 'Fill the generator\'s tank', () => g.debugGeneratorFuel(g.generator.params.tank));
-  button(both, 'Empty the generator\'s tank', () => g.debugGeneratorFuel(0));
-  show(both, 'the spares shelf', () => g.sparesShelf.describe());
-  button(both, 'Fill the spares shelf', () => g.sparesShelf.debugSetAll(g.sparesShelf.params.maxOnShelf));
-  button(both, 'Empty the spares shelf', () => g.sparesShelf.debugSetAll(0));
-  button(both, 'Order a pack of each spare', () => g.sparesShelf.debugOrderAll());
-  button(both, 'Open the parcel', () => (g.spares.hasParcel ? g.sparesShelf.collect() : g.hud.toast('There is no parcel at the barn door')));
-  button(both, 'Send a vehicle along the lane', () => g.trafficHost.debugPass());
-  button(both, 'Send the post van', () => g.trafficHost.debugVisit('post') || g.hud.toast('A visitor is already about'));
-  button(both, 'Send a neighbour', () => g.trafficHost.debugVisit('neighbour') || g.hud.toast('A visitor is already about'));
-  button(both, 'Take a photo now', () => g.photos.press() || g.hud.toast('The camera is not ready'));
-  button(both, 'Take all the photos down', () => g.photos.clear());
-  button(both, 'Swing the south gate', () => g.trafficHost.toggle(g.trafficHost.gate('south')));
-  button(both, 'Swing the big gate', () => g.trafficHost.toggle(g.trafficHost.gate('road')));
-  button(both, 'Swing the cattle grid gate', () => g.trafficHost.toggle(g.trafficHost.gate('grid')));
-  button(both, 'Fill the tipping trailer with muck', () => g.debugFillMuck());
-  button(both, 'Muck job done now', () => g.debugFinishMuck());
-  button(both, 'Empty the tub and clear the muck from the ground', () => g.debugResetMuck());
-  slider(both, 'Bale spike arms (0 down, 1 up)', () => g.baleRig.lift.lift, (v) => (g.baleRig.lift.lift = v), 0, 1, 0.01);
-  show(both, 'On the spike', () => g.baleRig.held?.id ?? 'nothing');
-  show(both, 'The bonfire', () => `${g.bonfire.state}, ${g.bonfire.piled} of ${g.bonfireParams.heapsNeeded} on the pile, ${Math.round(g.bonfire.intensity * 100)}% blaze${g.bonfire.damp ? ', smoky' : ''}`);
-  button(both, 'Build and light the bonfire', () => g.debugLightFire());
-  button(both, 'Put the bonfire out', () => g.bonfire.putOut() || g.hud.toast('It is not lit'));
-  button(both, 'Clear the bonfire and put the brushwood back', () => g.debugResetFire());
-  button(both, 'Take me to the bonfire', () => {
-    const b = g.world.layout.bonfire;
-    if (g.riddenUnit) return g.hud.toast('Get off first');
-    g.player.moveTo({ x: b.x, y: g.world.heightAt(b.x, b.z) + 0.5, z: b.z + 5 });
-  });
-  button(both, 'Silage job done now', () => g.debugFinishSilage());
-  button(both, 'Put the silage bales back where they started', () => g.debugResetBales());
-  button(both, 'Put the bale on the spike down', () => g.baleRig.putDown());
-  for (const u of g.girlUnits) {
-    const names = g.quadNames.names[u.spec.id];
-    show(both, `${u.name} is`, () => `${g.ownership.ownerOf(u.spec.id) ?? 'nobody'}'s${names ? ` (${names}${g.quadNames.announced.has(u.spec.id) ? '' : ', not said yet'})` : ''}`);
+  show(games, 'records', () => g.records.lines().map((l) => `${l.label}: ${l.text}`).join('; '));
+  show(games, 'last ask', () => g.lastAsk ?? (g.asking ? `asking for the ${g.asking.kind}, ${Math.round(g.asking.age)} s` : 'none'));
+  for (const [kind, label] of [['race', 'lap race'], ['drag', 'drag race'], ['climb', 'hill climb']]) {
+    show(games, `${label}: what is in the way`, () => { const p = g.askNow(kind); return p.length ? p.join('; ') : 'nothing'; });
+    button(games, `Ask the girls for the ${label} now`, () => g.askGirls(kind));
   }
+  button(games, 'Clear the records', () => {
+    g.records.bests = {};
+    g.records.byQuad = {};
+    g.jobBoardView.refresh();
+  });
+
+  // The weather and the light, which change over a game.
+  const sky = sub('The day and the weather');
+  show(sky, 'the clock', () => `${g.daylight.text()}, ${Math.round(g.daylight.darkness * 100)}% dark, falling ${g.daylight.drop.toFixed(1)} °C into the night`);
+  slider(sky, 'time of day (hours)', () => g.daylight.hour, (v) => g.setTime(v), 0, 30, 0.05);
+  show(sky, 'the day', () => `${g.weather.temperature} °C (${g.weather.band}), chill ${g.weather.chill.toFixed(2)}, frost ${g.weather.frost.toFixed(2)}`);
+  show(sky, 'the forecast', () => g.forecast.describe(g.daylight.hour));
+  button(sky, 'Turn the weather now (as the forecast says it will)', () => toast(g.turnWeatherNow() ? `The weather is turning to ${g.weather.name}` : 'This weather has nowhere to turn'));
+  button(sky, 'Lightning, close', () => g.strikeNow(150));
+  button(sky, 'Lightning, far off', () => g.strikeNow(2400));
+  show(sky, 'the stream', () => `${Math.round(g.world.streamLevel.level * 100)}% up, ${(g.world.streamLevel.rise * 100).toFixed(0)} cm above usual, running ${g.world.streamLevel.flow.toFixed(1)}x`);
+  slider(sky, 'stream level (0 low, 1 full)', () => g.world.streamLevel.level, (v) => g.setStreamLevel(v), 0, 1, 0.05);
+
+  // The workshop and the barn's kit: the bench, charger, generator and the spares.
+  const shop = sub('Workshop, generator and spares');
+  show(shop, 'a girl at the bench', () => g.girlBench.describe());
+  show(shop, 'their cars', () => g.describeCars());
+  show(shop, 'the battery charger', () => g.describeCharger());
+  button(shop, 'Take the charged battery off the charger', () => g.debugChargerClear());
+  show(shop, 'the generator', () => g.describeGenerator());
+  show(shop, 'starting the generator', () => g.generatorStart.describe());
+  button(shop, 'Pull the generator\'s cord', () => g.debugGeneratorPull());
+  button(shop, 'Switch the generator off', () => g.switchGeneratorOff());
+  button(shop, 'Fill the generator\'s tank', () => g.debugGeneratorFuel(g.generator.params.tank));
+  button(shop, 'Empty the generator\'s tank', () => g.debugGeneratorFuel(0));
+  show(shop, 'the spares shelf', () => g.sparesShelf.describe());
+  button(shop, 'Fill the spares shelf', () => g.sparesShelf.debugSetAll(g.sparesShelf.params.maxOnShelf));
+  button(shop, 'Empty the spares shelf', () => g.sparesShelf.debugSetAll(0));
+  button(shop, 'Order a pack of each spare', () => g.sparesShelf.debugOrderAll());
+  button(shop, 'Open the parcel', () => (g.spares.hasParcel ? g.sparesShelf.collect() : toast('There is no parcel at the barn door')));
+
+  // The farm's jobs: the board, the muck, the bales and the bonfire.
+  const jobs = sub('Jobs: the board, muck, bales and bonfire');
+  show(jobs, 'the board', () => g.jobBoard.lines().map((l) => `${l.done ? '[x]' : '[ ]'} ${l.text}`).join('; ') || 'nothing on');
+  show(jobs, 'muck in the tub', () => `${Math.round(g.muck.load * 100)}%, ${g.muck.laid} patches laid on the stubble${g.muck.done ? ', done' : ''}`);
+  button(jobs, 'Fill the tipping trailer with muck', () => g.debugFillMuck());
+  button(jobs, 'Muck job done now', () => g.debugFinishMuck());
+  button(jobs, 'Empty the tub and clear the muck from the ground', () => g.debugResetMuck());
+  slider(jobs, 'Bale spike arms (0 down, 1 up)', () => g.baleRig.lift.lift, (v) => (g.baleRig.lift.lift = v), 0, 1, 0.01);
+  show(jobs, 'On the spike', () => g.baleRig.held?.id ?? 'nothing');
+  button(jobs, 'Put the bale on the spike down', () => g.baleRig.putDown());
+  button(jobs, 'Silage job done now', () => g.debugFinishSilage());
+  button(jobs, 'Put the silage bales back where they started', () => g.debugResetBales());
+  show(jobs, 'The bonfire', () => `${g.bonfire.state}, ${g.bonfire.piled} of ${g.bonfireParams.heapsNeeded} on the pile, ${Math.round(g.bonfire.intensity * 100)}% blaze${g.bonfire.damp ? ', smoky' : ''}`);
+  button(jobs, 'Build and light the bonfire', () => g.debugLightFire());
+  button(jobs, 'Put the bonfire out', () => g.bonfire.putOut() || toast('It is not lit'));
+  button(jobs, 'Clear the bonfire and put the brushwood back', () => g.debugResetFire());
+  button(jobs, 'Take a photo now', () => g.photos.press() || toast('The camera is not ready'));
+  button(jobs, 'Take all the photos down', () => g.photos.clear());
+
+  // Animals, the fence, the gates and what comes along the lane.
+  const out = sub('Animals, gates and the lane');
+  show(out, 'wildlife', () => `${g.rabbits.rabbits.filter((r) => r.mode !== 'down').length} rabbits about (${g.rabbits.rabbits.filter((r) => r.mode === 'caught').length} in a beam), pheasants ${g.pheasants.birds.map((b) => b.mode).join('/')}`);
+  button(out, 'Flush the nearest pheasant', () => g.debugFlushPheasant());
+  show(out, 'electric fence', () => `${g.fence.live ? 'on' : 'off'}; last zapped: ${g.fence.lastZap ? `${g.fence.lastZap.id} (${g.fence.lastZap.kind})` : 'nobody yet'}`);
+  button(out, 'Zap you on the electric fence', () => g.debugZapFence());
+  show(out, 'the lane and the gates', () => `${g.trafficHost.describe()}; south gate ${g.trafficHost.gate('south').isOpen ? 'open' : 'shut'}, big gate ${g.trafficHost.gate('road').isOpen ? 'open' : 'shut'}, grid gate ${g.trafficHost.gate('grid')?.isOpen ? 'open' : 'shut'}`);
+  button(out, 'Swing the south gate', () => g.trafficHost.toggle(g.trafficHost.gate('south')));
+  button(out, 'Swing the big gate', () => g.trafficHost.toggle(g.trafficHost.gate('road')));
+  button(out, 'Swing the cattle grid gate', () => g.trafficHost.toggle(g.trafficHost.gate('grid')));
+  button(out, 'Send a vehicle along the lane', () => g.trafficHost.debugPass());
+  button(out, 'Send the post van', () => g.trafficHost.debugVisit('post') || toast('A visitor is already about'));
+  button(out, 'Send a neighbour', () => g.trafficHost.debugVisit('neighbour') || toast('A visitor is already about'));
+
+  // The farm's memory and the end of the day.
+  const mem = sub('The farm that remembers');
+  show(mem, 'the farm that remembers', () => g.farmText());
+  show(mem, 'the calendar says', () => g.endOfDayNow().text);
+  button(mem, 'Save the farm now', () => toast(g.saveFarm() ? 'Farm saved' : 'Not saved (a seeded game, wiped, or not started)'));
+  button(mem, 'Call it a day now (fade, save, next day)', () => g.callItADay({ force: true }));
+  button(mem, 'Wipe the farm (a new one next load)', () => {
+    g.wipeFarm();
+    toast('Farm wiped: the next load deals a new one');
+  });
+
+  // Moving you about the farm.
+  const go = sub('Take me to...');
+  button(go, 'the hill climb start', () => {
+    const s = g.climbGates[0];
+    goTo({ x: s.x - s.tx * 4, y: g.world.heightAt(s.x, s.z) + 0.5, z: s.z - s.tz * 4 });
+  });
+  button(go, 'the rock at the top of the hill', () => {
+    const v = g.flaskSpot;
+    if (v) goTo({ x: v.x, y: g.world.heightAt(v.x, v.z) + 0.5, z: v.z + 2.5 });
+  });
+  button(go, 'the jump', () => {
+    const r = g.world.layout.jumpRamp;
+    if (!r) return;
+    const at = rampPoint(r, r.length * 0.6, 3.5);
+    goTo({ x: at.x, y: g.world.heightAt(at.x, at.z) + 0.5, z: at.z });
+  });
+  button(go, 'the bonfire', () => {
+    const b = g.world.layout.bonfire;
+    goTo({ x: b.x, y: g.world.heightAt(b.x, b.z) + 0.5, z: b.z + 5 });
+  });
 }
