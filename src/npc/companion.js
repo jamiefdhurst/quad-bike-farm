@@ -3,7 +3,7 @@ import { attachKeepingSize } from './attachKeepingSize.js';
 import { StateMachine } from './stateMachine.js';
 import { CharacterRig } from './characterRig.js';
 import { DEFAULT_COMPANION_PARAMS } from './companionParams.js';
-import { applyOutfit, refitOutfit, reshirt, withJumper, OUTFITS } from './outfit.js';
+import { applyOutfit, refitOutfit, reshirt, withJumper, withCoat, setHood, OUTFITS } from './outfit.js';
 import { shapeFigure } from './figure.js';
 import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 import { TractorStartAttempt, DEFAULT_TRACTOR_START_PARAMS } from './tractorStart.js';
@@ -243,6 +243,19 @@ export class Companion {
   setJumper(color) {
     this.outfit = withJumper(this.outfit, color);
     refitOutfit(this.rig, this.outfit);
+  }
+
+  /** Puts a wax jacket on (a colour), or takes it off (null), over whatever else she has on. */
+  setCoat(color) {
+    this.outfit = withCoat(this.outfit, color);
+    if (!color) this.rig.hoodIsUp = false;
+    refitOutfit(this.rig, this.outfit);
+  }
+
+  /** Her coat's hood up or down (only shows with a coat on). */
+  setHood(up) {
+    this.rig.hoodIsUp = !!up;
+    setHood(this.rig, up);
   }
 
   randomBetween(a, b) {

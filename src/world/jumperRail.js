@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { JUMPERS } from '../npc/jumpers.js';
+import { COAT_COLLAR_COLOUR } from '../npc/coats.js';
 
 // The clothes rack in the barn where the jumpers hang: a freestanding rail on two legs, its bar running along the wall, with a
 // baggy jumper on a hanger for each (grey and beige) unless a girl has it on. They hang edge-on to the wall, as clothes do on a
@@ -27,6 +28,20 @@ export const HANGING_JUMPER = {
   sleeveRadius: 0.055,
   rib: 0.06, // depth of the ribbed hem and cuffs
   ribShade: 0.78, // how much darker the ribbing is
+};
+
+// A wax jacket hanging at the other end: longer and squarer than a jumper, hardly gathered at the hem and cuffs, with a
+// corduroy collar standing round the neck.
+export const HANGING_COAT = {
+  ...HANGING_JUMPER,
+  halfWidth: 0.25,
+  halfDepth: 0.055,
+  length: 0.72,
+  neckX: 0.075,
+  sleeveLength: 0.58,
+  sleeveRadius: 0.06,
+  rib: 0.02,
+  ribShade: 0.85,
 };
 
 /** A superellipse: a flattened loop with rounded ends, the shape of a garment hanging flat. */
@@ -165,11 +180,20 @@ function ringsToGeometry(parts, color) {
   return geo;
 }
 
-function hangingJumper(color) {
+function hangingJumper(color, coat = false) {
   const g = new THREE.Group();
-  const knit = new THREE.Mesh(ringsToGeometry(hangingJumperRings(), color), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, side: THREE.DoubleSide }));
+  const J = coat ? HANGING_COAT : HANGING_JUMPER;
+  const knit = new THREE.Mesh(ringsToGeometry(hangingJumperRings(J), color), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: coat ? 0.45 : 1, side: THREE.DoubleSide }));
   knit.castShadow = true;
   g.add(knit);
+  if (coat) {
+    // The corduroy collar, turned down round the neck.
+    const collar = new THREE.Mesh(new THREE.CylinderGeometry(J.neckX + 0.012, J.neckX + 0.03, 0.045, 20, 1, true), new THREE.MeshStandardMaterial({ color: COAT_COLLAR_COLOUR, roughness: 1, side: THREE.DoubleSide }));
+    collar.scale.z = (J.neckZ + 0.02) / (J.neckX + 0.02);
+    collar.position.set(0, J.shoulderY + 0.005, 0);
+    collar.castShadow = true;
+    g.add(collar);
+  }
   // The hanger: a hook over the bar and a wooden shoulder bar inside the jumper, its ends just showing at the neck.
   const hook = new THREE.Mesh(new THREE.TorusGeometry(0.022, 0.003, 6, 16, Math.PI * 1.3), metal);
   hook.position.set(0, -0.005, 0);
@@ -194,9 +218,12 @@ function hangingJumper(color) {
   return g;
 }
 
-/** The rack and its jumpers (`jumpers`: ids and colours, the farm's from Jumpers.list). `show` lists the ids that are hanging there. */
+/**
+ * The rack, its jumpers and at the stand's end its coats (`jumpers`, `coats`: ids and colours, the farm's from Jumpers.list and
+ * Coats.list). `show` lists the ids that are hanging there.
+ */
 export class JumperRail {
-  constructor(scene, layout, heightAt, jumpers = JUMPERS) {
+  constructor(scene, layout, heightAt, jumpers = JUMPERS, coats = []) {
     const r = layout.jumperRail;
     const floor = heightAt(r.x, r.z);
     this.group = new THREE.Group();
@@ -217,9 +244,11 @@ export class JumperRail {
       add(new THREE.BoxGeometry(0.05, 0.03, 0.6), side * half, 0.015, 0);
     }
     this.hung = {};
-    jumpers.forEach((j, i) => {
-      const jumper = hangingJumper(j.color);
-      jumper.position.set((i - (jumpers.length - 1) / 2) * 0.5, r.y + 0.015, 0);
+    const all = [...jumpers.map((j) => [j, false]), ...coats.map((j) => [j, true])];
+    const gap = all.length > 2 ? 0.27 : 0.5;
+    all.forEach(([j, coat], i) => {
+      const jumper = hangingJumper(j.color, coat);
+      jumper.position.set((i - (all.length - 1) / 2) * gap, r.y + 0.015, 0);
       this.group.add(jumper);
       this.hung[j.id] = jumper;
     });

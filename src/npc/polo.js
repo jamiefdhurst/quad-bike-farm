@@ -19,10 +19,11 @@ import {
   applySkinDir,
   unskin,
   unskinDir,
+  blendWeights,
   vec,
 } from './garmentMesh.js';
 
-const { sub, add, scale, dot, norm, cross } = vec;
+const { sub, add, scale, dot, norm, cross, lerp } = vec;
 const smooth01 = (t) => {
   const k = Math.max(0, Math.min(1, t));
   return k * k * (3 - 2 * k);
@@ -121,6 +122,56 @@ export const JUMPER = {
   placket: false,
 };
 
+// The wax jacket from the barn, over the polo and the jumper: roomy, to the wrist, done up two thirds of the way with studs down
+// a storm flap so the V at the top shows what she has on under it, and below her hips a skirt of its own (her body's triangles
+// there are her legs'). Its corduroy collar is collar.js on its neck edge (COAT_COLLAR); the hood is hood.js.
+export const COAT = {
+  ...JUMPER,
+  ease: 0.042,
+  round: 0.6,
+  neckBack: 0.022,
+  neckSide: 0.02,
+  neckFront: -0.01,
+  neckRing: 0.06,
+  neckCap: 0.045,
+  neckBand: 0.012,
+  neckEase: 0.034,
+  sleeveLength: 0.95,
+  sleeveEase: 0.032,
+  sleeveFlare: 0.03,
+  cuff: 0.04,
+  cuffEase: 0.016,
+  hemDrop: 0.08,
+  hemBand: 0,
+  hangSlope: 0.12,
+  hangMax: 0.06,
+  bandShade: 0.9,
+  insideShade: 0.4,
+  lips: ['neck', 'sleeve', 'hem'],
+  skirt: 0.1, // below the body's hem, straight down this far
+  skirtFlare: 0.012, // and out this much at the bottom
+  skirtLeg: 0.45, // how much of the skirt's bottom moves with her thighs, so it rides up over her lap when she sits
+  placket: true,
+  placketToHem: 0.025, // the storm flap runs down to this far above the hem, however long she is
+  placketWidth: 0.034,
+  placketLift: 0.004,
+  studs: 7, // spaced evenly from the first down to near the bottom of the flap
+  buttons: [0.02], // the first stud, from the top of the neck
+  topButtonOpen: 0.02,
+  buttonRadius: 0.0065,
+  buttonColour: '#a08858', // brass studs
+  buttonHoles: false,
+  slits: false,
+  veeMeasured: true,
+  inset: false, // what shows in the V is what she has on under it, not her skin
+  open: 2, // done up two thirds: the top two studs undone
+  veeWidths: [0, 0.035, 0.055, 0.065, 0.07, 0.075, 0.08, 0.085],
+  veeBows: [1, 1, 0.85, 0.8, 0.75, 0.7, 0.7, 0.7],
+  veeStop: 0.015,
+  logo: null,
+  roughness: 0.42, // waxed cotton has a dull sheen
+};
+
 /** How many of a girl's polo buttons are undone on this farm: a whole number from `lo` to `hi`, both included. */
 export function dealPoloOpen([lo, hi] = [0, 0], random = Math.random) {
   return lo + Math.min(hi - lo, Math.floor(random() * (hi - lo + 1)));
@@ -177,6 +228,12 @@ export const poloFields = (body) => topFields(body, POLO);
  */
 export function buildTop(body, p = POLO) {
   const { verts, index, boneNames, paint, waist } = body;
+  if (p.placketToHem != null) {
+    // A coat's flap and studs are as long as she is: from the neck to just above the hem.
+    const placketLength = body.bones.Neck[1] + p.neckFront - (waist - p.hemDrop - (p.skirt ?? 0)) - p.placketToHem;
+    const gap = (placketLength - 0.03 - p.buttons[0]) / (p.studs - 1);
+    p = { ...p, placketLength, buttons: Array.from({ length: p.studs }, (_, i) => p.buttons[0] + gap * i) };
+  }
   const F = topFields(body, p);
   const fields = [F.neckField, F.left.field, F.right.field, F.hemField];
   const inside = (v) => fields.every((f) => f(v) <= 0);
@@ -245,6 +302,7 @@ export function buildTop(body, p = POLO) {
   }
   hang(mesh, body, p, F);
   for (const v of mesh.verts) v.rest = applySkin(v.skin, v.bind);
+  if (p.skirt) addSkirt(mesh, body, p);
 
   // Shade: the bands a shade darker. A point on a band's line belongs to the side its triangle is on; colours are per vertex,
   // and the copies on the band side are marked by `cut`.
@@ -287,6 +345,57 @@ export function buildTop(body, p = POLO) {
   const placket = p.placket ? buildPlacket({ verts: mesh.verts, tris: mesh.tris }, body, p, vee) : null;
   const logo = placket && p.logo ? buildLogo({ verts: mesh.verts, tris: mesh.tris }, body, p, placket.top) : null;
   return { shell, shade, vee, placket, logo };
+}
+
+/**
+ * A coat's skirt: the cloth carried on down from the hem as she stands, flaring a little, so it reaches below her hips where her
+ * body's triangles are her legs'. Each column keeps the skinning of the hem point it hangs from, blended towards her thigh's
+ * further down (`skirtLeg`), so when she sits the front rides up over her lap rather than her thighs coming through it. The new
+ * bottom edge is the hem now.
+ */
+function addSkirt(mesh, body, p) {
+  const { boneNames, bones } = body;
+  const neck = bones.Neck;
+  const edges = openEdges(mesh).filter(([a, b]) => mesh.verts[a].edge === 'hem' && mesh.verts[b].edge === 'hem');
+  if (!edges.length) return;
+  // A point her thigh carries alone, at its top, for each side: its skin is the thigh's.
+  const thigh = {};
+  for (const side of ['Left', 'Right']) {
+    const name = `${side}UpLeg`;
+    for (const v of body.verts) {
+      const w = v.weights.reduce((s, [b, k]) => s + (boneNames[b] === name ? k : 0), 0);
+      if (w > 0.95 && (!thigh[side] || v.rest[1] > thigh[side].rest[1])) thigh[side] = v;
+    }
+  }
+  const rows = 3;
+  const columns = new Map();
+  const column = (i) => {
+    if (columns.has(i)) return columns.get(i);
+    const v = mesh.verts[i];
+    const dx = v.rest[0] - neck[0];
+    const dz = v.rest[2] - neck[2];
+    const r = Math.hypot(dx, dz) || 1;
+    const leg = thigh[dx > 0 ? 'Left' : 'Right']; // her left is +x as she stands
+    const ids = [i];
+    for (let k = 1; k <= rows; k++) {
+      const t = k / rows;
+      const flare = p.skirtFlare * t * t;
+      const rest = [v.rest[0] + (dx / r) * flare, v.rest[1] - p.skirt * t, v.rest[2] + (dz / r) * flare];
+      const share = leg ? p.skirtLeg * t : 0;
+      const skin = share ? lerp(v.skin, leg.skin, share) : v.skin;
+      const weights = share ? blendWeights(v.weights, leg.weights, share) : v.weights;
+      mesh.verts.push({ ...v, bind: unskin(skin, rest), rest, skin, weights, edge: k === rows ? 'hem' : undefined, outside: undefined });
+      ids.push(mesh.verts.length - 1);
+    }
+    columns.set(i, ids);
+    return ids;
+  };
+  for (const [a, b] of edges) {
+    const A = column(a);
+    const B = column(b);
+    for (let k = 0; k < rows; k++) mesh.tris.push([B[k], A[k], A[k + 1]], [B[k], A[k + 1], B[k + 1]]);
+  }
+  for (const i of columns.keys()) mesh.verts[i].edge = undefined;
 }
 
 /**
@@ -370,17 +479,42 @@ function buildPlacket(mesh, body, p, vee) {
   const x0 = neck[0];
   const w = p.placketWidth;
   // Only the front of her chest can be hit; the rest is skipped for speed.
-  const near = (v) => Math.abs(v.rest[0] - x0) < 0.07 && v.rest[2] > neck[2] && v.rest[1] > neck[1] - 0.3;
+  const reach = Math.max(0.3, p.placketLength + 0.05);
+  const wide = 0.07 + (vee ? Math.max(0, vee.halfWidth(vee.top)) : 0);
+  const near = (v) => Math.abs(v.rest[0] - x0) < wide && v.rest[2] > neck[2] && v.rest[1] > neck[1] - reach;
   const front = { verts: mesh.verts, tris: mesh.tris.filter((t) => t.some((i) => near(mesh.verts[i]))) };
   const hitAt = (x, y) => {
-    const h = rayHit(front, [x, y, neck[2] + 0.6], [0, 0, -1]);
+    // A hair off her middle: split down it, a ray exactly there can fall between the triangles either side.
+    const h = rayHit(front, [x + 1e-6, y, neck[2] + 0.6], [0, 0, -1]);
     return h && inTriangle(front, h.tri, h.bary);
   };
   // Where the neckline is at the middle of her front (or at the top of the V): walk down until a ray from in front hits.
   const found = vee ? vee.top : frontTop(hitAt, x0, neck[1] + p.neckCap + 0.005, neck[1] - 0.1);
   if (found === null) return null;
   const top = found - 0.0003; // right up to where the shirt meets her neck
-  const split = (y) => (vee ? Math.max(0, vee.halfWidth(y)) : 0);
+  if (p.placketToHem != null) {
+    // A coat's flap runs from here to just above its hem, its studs spread down it from the first done up (at the V's point).
+    const placketLength = top - (body.waist - p.hemDrop - (p.skirt ?? 0)) - p.placketToHem;
+    const open = vee ? Math.min(p.open, p.studs - 1) : 0;
+    const first = vee ? top - vee.bottom + p.veeStop : p.buttons[0];
+    const below = (placketLength - 0.03 - first) / Math.max(1, p.studs - 1 - open);
+    const above = open ? (first - p.buttons[0]) / open : 0;
+    const buttons = Array.from({ length: p.studs }, (_, i) => (i < open ? p.buttons[0] + above * i : first + below * (i - open)));
+    p = { ...p, placketLength, buttons };
+  }
+  // How far either side of the middle the V's edge is. A coat stands so far off her that pushing it out widens the V it was cut
+  // with, so its edge is found on the finished coat (`veeMeasured`); the polo's barely moves and keeps the V it was cut to.
+  const edgeCache = new Map();
+  const measured = (y) => {
+    const k = Math.round(y * 1e4);
+    if (!edgeCache.has(k)) {
+      let d = Math.max(0, vee.halfWidth(y));
+      while (d < 0.2 && !hitAt(x0 + d, y)) d += 0.0005;
+      edgeCache.set(k, d + 0.001);
+    }
+    return edgeCache.get(k);
+  };
+  const split = (y) => (!vee ? 0 : p.veeMeasured && vee.halfWidth(y) > 0 ? measured(y) : Math.max(0, vee.halfWidth(y)));
   const restNormal = (v) => norm(applySkinDir(v.skin, v.normal));
   // A row across the strip at height y from xL to xR: the shirt under it, and how far forward the strip lies (flat across, so
   // it bridges any dip in the shirt).

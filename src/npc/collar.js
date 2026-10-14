@@ -39,6 +39,26 @@ export const COLLAR = {
   columns: 72,
 };
 
+// The wax jacket's corduroy collar: deeper and heavier than a polo's, with blunter points.
+export const COAT_COLLAR = {
+  ...COLLAR,
+  stand: 0.034,
+  standFront: 0.026,
+  lean: 0.006,
+  roll: 0.012,
+  out: 0.045,
+  drop: 0.014,
+  pointOut: 0.026,
+  pointDrop: 0.036,
+  tipRound: 0.14,
+  clear: 0.004,
+  feel: 0.006,
+  thickness: 0.003,
+  placketClear: 0.003,
+  edgeShade: 0.85,
+  underShade: 0.6,
+};
+
 /**
  * Builds the collar. `shirt` is the garment polo's shell (its neck edge is the points tagged 'neck'), `vee` its open neck if
  * any, `placketWidth` how wide the placket is, `over` the meshes it may lie on (the shirt, the jumper). Done up, the stand

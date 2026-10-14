@@ -37,6 +37,7 @@ export const OFFER_KINDS = {
   favour: { label: 'ask you a favour', satisfies: { purpose: 0.5, company: 0.5 } },
   getOff: { label: 'get off the quad she was sat on', satisfies: { purpose: 0.8 }, fromSeat: true },
   jumper: { label: 'fetch a jumper', satisfies: { warmth: 0.9 } },
+  coat: { label: 'fetch a wax jacket out of the rain', satisfies: { warmth: 0.8 }, pace: 'hurry' },
   helmet: { label: 'fetch her helmet from the hooks', satisfies: { purpose: 0.5 } },
   refuel: { label: "top a quad up (from the wrong can)", satisfies: { purpose: 0.7 } },
   prank: { label: 'play a prank on you', satisfies: { purpose: 0.5, excitement: 0.5, company: 0.3 } },

@@ -42,6 +42,7 @@ export function buildGirlsTab(d) {
     show(f, 'tidying', () => c.lineUpStatus);
     show(f, 'race score', () => `${g.race.tally[id]?.wins ?? 0} won, ${g.race.tally[id]?.losses ?? 0} lost`);
     show(f, 'her helmet', () => g.headgear.describe(id));
+    show(f, 'her coat', () => g.coats.describe(id));
     show(f, 'jump score', () => { const s = g.jumpWatch.score[id]; return s ? JSON.stringify(s) : 'none yet'; });
 
     show(f, 'mud and dust', () => `${round(c.mucky.mud)} mud (${round(c.mucky.wet)} wet), ${round(c.mucky.dust)} dust`);

@@ -363,3 +363,28 @@ describe('evening out the skinning', () => {
   });
 });
 
+
+describe('the wax jacket', () => {
+  it('goes on down below the body with a skirt, opens in a V at the top and has studs down a storm flap', async () => {
+    const { COAT } = await import('../src/npc/polo.js');
+    const body = cylinderBody();
+    const { shell, placket, vee } = buildTop(body, COAT);
+    const hem = shell.verts.filter((v) => v.edge === 'hem' && !v.apart);
+    expect(hem.length).toBeGreaterThan(20);
+    for (const v of hem) expect(v.rest[1]).toBeCloseTo(body.waist - COAT.hemDrop - COAT.skirt, 3);
+    // Hanging straight on and flaring a little, never in at her.
+    for (const v of hem) expect(Math.hypot(v.rest[0], v.rest[2])).toBeGreaterThan(0.12 + COAT.ease);
+    expect(vee).not.toBe(null);
+    expect(vee.top - vee.bottom).toBeGreaterThan(0.12);
+    expect(placket.buttons.length).toBe(COAT.studs);
+    // The flap runs down to just above the hem.
+    const low = Math.min(...placket.verts.map((v) => v.rest[1]));
+    expect(low - (body.waist - COAT.hemDrop - COAT.skirt)).toBeLessThan(COAT.placketToHem + 0.02);
+    // Stands off whatever is under it: further out than the jumper everywhere on her body.
+    const jumper = buildTop(body, JUMPER).shell.verts.filter((v) => !v.apart);
+    const out = (v) => Math.hypot(v.rest[0], v.rest[2]);
+    const maxJumper = Math.max(...jumper.filter((v) => Math.abs(v.rest[1] - 1.0) < 0.02).map(out));
+    const minCoat = Math.min(...shell.verts.filter((v) => !v.apart && Math.abs(v.rest[1] - 1.0) < 0.02 && v.rest[2] < 0).map(out));
+    expect(minCoat).toBeGreaterThan(maxJumper);
+  });
+});

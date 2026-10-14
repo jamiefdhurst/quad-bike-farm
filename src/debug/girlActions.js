@@ -421,6 +421,22 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'coat',
+      label: '% fetches or hangs up a wax jacket',
+      run: (id) => {
+        const what = g.coats.toggle(id);
+        toast(what === 'fetch' ? `${nameOf(id)} will go and put a coat on once she is stood about` : `${nameOf(id)} will go and hang her coat up once she is stood about`);
+      },
+    },
+    {
+      verb: 'hood',
+      label: "% puts her coat's hood up or down (for a minute)",
+      run: (id) => {
+        if (!g.coats.worn[id]) return toast(`${nameOf(id)} has no coat on`);
+        toast(g.coats.toggleHood(id) ? `${nameOf(id)} puts her hood up` : `${nameOf(id)} puts her hood down`);
+      },
+    },
+    {
       verb: 'throttle',
       label: '% grabs the throttle (next ride with her on the back)',
       run: (id) => {

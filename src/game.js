@@ -159,6 +159,7 @@ import { carryParams, CARRY_PARAM_RANGES, carryWeight } from './npc/carrying.js'
 import { dealPoloOpen } from './npc/polo.js';
 import { Jumpers, JUMPER_PARAM_RANGES, dealJumperColours } from './npc/jumpers.js';
 import { JumperRail } from './world/jumperRail.js';
+import { Coats, COAT_PARAM_RANGES, dealCoatColours } from './npc/coats.js';
 import { Headgear, HEADGEAR_PARAM_RANGES } from './npc/headgear.js';
 import { HelmetView } from './npc/helmetView.js';
 import { HelmetHooks } from './world/helmetHooks.js';
@@ -853,7 +854,9 @@ export class Game {
     this.setupFlask();
     // Jumpers from the barn rail on cold or wet days (npc/jumpers.js), in colours this farm dealt.
     this.jumpers = new Jumpers(undefined, Math.random, dealJumperColours(createRandom(this.farmSeed ^ 0x1e57)));
-    this.jumperRail = new JumperRail(this.scene, this.world.layout, (x, z) => this.world.heightAt(x, z), this.jumpers.list);
+    // Wax jackets at the far end of the same rack, for the rain (npc/coats.js), in this farm's colours too.
+    this.coats = new Coats(undefined, Math.random, dealCoatColours(createRandom(this.farmSeed ^ 0xc0a7)));
+    this.jumperRail = new JumperRail(this.scene, this.world.layout, (x, z) => this.world.heightAt(x, z), this.jumpers.list, this.coats.list);
     // Helmets and goggles from the hooks by the barn's south wall (npc/headgear.js): yours, and one on each girl's head when she wears hers.
     this.headgear = new Headgear(undefined, createRandom(this.seed ^ 0x4e1a));
     this.helmetHooks = new HelmetHooks(this.scene, this.world.layout, (x, z) => this.world.heightAt(x, z));
@@ -1445,6 +1448,7 @@ export class Game {
     registerTuning('Flask at the top of the hill', this.flask.p, FLASK_PARAM_RANGES);
     registerTuning('Girls carrying things', carryParams, CARRY_PARAM_RANGES);
     registerTuning('Jumpers', this.jumpers.p, JUMPER_PARAM_RANGES);
+    registerTuning('Wax jackets', this.coats.p, COAT_PARAM_RANGES);
     registerTuning('Helmets and goggles', this.headgear.p, HEADGEAR_PARAM_RANGES);
     registerTuning('Red diesel mistake', this.dieselMistake.p, DIESEL_MISTAKE_PARAM_RANGES);
     registerTuning('Reading the dash', this.dashReader.p, READING_PARAM_RANGES);
@@ -3754,6 +3758,7 @@ export class Game {
       ...mine(this.fireSit.offers(this.fireSitContext()), (o) => this.handleFireEvent(this.fireSit.take(o, this.fireSit.seatsLeft(this.fireSpots.length)))),
       ...(this.hiding.active ? [] : mine(this.requests.offers(this.requestContext(ridden)), (o) => this.handleRequestEvent(this.requests.take(o)))),
       ...mine(this.jumpers.offers(this.jumpersContext()), (o) => this.handleJumperEvent(this.jumpers.take(o))),
+      ...mine(this.coats.offers(this.jumpersContext()), (o) => this.handleCoatEvent(this.coats.take(o))),
       ...mine(this.headgear.offers(this.headgearContext()), (o) => this.handleHeadgearEvent(this.headgear.take(o))),
       ...mine(this.dieselMistake.offers(this.dieselContext(ridden)), (o) => this.handleDieselEvent(this.dieselMistake.take(o))),
       ...mine(this.pranks.offers(this.prankContext(ridden)), (o) => this.handlePrankEvent(this.pranks.take(o))),
@@ -3865,7 +3870,7 @@ export class Game {
     const speed = onBoard && c.quad ? Math.abs(c.quad.speed) : 0;
     return {
       chill: covered ? 0 : dayChill,
-      wet: !covered && w.rain > 0.25,
+      wet: !covered && w.rain > 0.25 && !this.coats.worn[c.character.id], // a wax jacket keeps the rain off
       warmed: !!c.warmingAt || inCab || inBarn || this.bonfire.warms(Math.hypot(at.x - this.world.layout.bonfire.x, at.z - this.world.layout.bonfire.z)),
       alone: near > p.needLonelyRange && !ridingWith,
       together: near < p.needCloseRange || ridingWith,
@@ -6669,19 +6674,65 @@ export class Game {
           this.jumpers.dressed(e.girl, e.jumper);
           c.setJumper(colour);
           c.voice.say('jumperOn', { urgent: true, chance: 0.9 });
-          this.jumperRail.show(this.jumpers.onRail().map((j) => j.id));
+          this.showRack();
         }
       : () => {
           this.jumpers.hung(e.girl);
           c.setJumper(null);
           c.voice.say('jumperOff', { urgent: true, chance: 0.8 });
-          this.jumperRail.show(this.jumpers.onRail().map((j) => j.id));
+          this.showRack();
         };
     // In and out through the big doors: they're on the +x side, so go through the doorway first (and back out through it after).
     const door = rail.door;
     if (!c.sneakTo(rail.stand, act, 2.6, { via: door.in, out: door.out })) this.jumpers.cancel(e.girl);
   }
 
+
+  // Wax jackets from the barn ---------------------------------------------------
+
+  /** Fetching and hanging up a coat (only while the girls are left to themselves), and her hood up or down with the rain. */
+  updateCoats(dt, auto) {
+    const ctx = this.jumpersContext();
+    if (auto) for (const e of this.coats.update(dt, ctx)) this.handleCoatEvent(e);
+    else this.coats.clock += dt;
+    const girls = this.companions.map((c) => {
+      const id = c.character.id;
+      const inClosed = !!c.quad && c.fsm.is('mounting', 'driving', 'seated', 'shuffling') && !this.girlRide(c);
+      return { id, helmet: this.headgear.wearing(id), covered: !!c.coveredNow || inClosed };
+    });
+    for (const e of this.coats.updateHoods(this.weather.rain, girls)) {
+      const c = this.companions.find((o) => o.character.id === e.girl);
+      c.setHood(e.up);
+      if (e.up) c.voice.say('hoodUp', { chance: 0.5 });
+    }
+  }
+
+  /** Acts on coats (npc/coats.js) as on jumpers: to the rack through the big doors, then on or off. */
+  handleCoatEvent(e) {
+    if (!e) return;
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    const rail = this.world.layout.jumperRail;
+    const act = e.type === 'fetch'
+      ? () => {
+          this.coats.dressed(e.girl, e.jumper);
+          c.setCoat(this.coats.colourOf(e.jumper));
+          c.voice.say('coatOn', { urgent: true, chance: 0.9 });
+          this.showRack();
+        }
+      : () => {
+          this.coats.hung(e.girl);
+          c.setCoat(null);
+          c.voice.say('coatOff', { urgent: true, chance: 0.8 });
+          this.showRack();
+        };
+    const door = rail.door;
+    if (!c.sneakTo(rail.stand, act, 2.6, { via: door.in, out: door.out })) this.coats.cancel(e.girl);
+  }
+
+  /** What hangs on the rack: the jumpers and coats nobody has on. */
+  showRack() {
+    this.jumperRail.show([...this.jumpers.onRail(), ...this.coats.onRail()].map((j) => j.id));
+  }
 
   // Helmets and goggles -----------------------------------------------------
 
@@ -8781,6 +8832,7 @@ export class Game {
     if (auto || this.phoneCalls.active) this.updatePhoneCall(dt);
     this.updateDares(dt);
     if (auto) this.updateJumpers(dt);
+    this.updateCoats(dt, auto);
     this.updateHeadgear(dt, ridden);
     if (auto || this.dieselMistake.forced) this.updateDieselMistake(dt, ridden);
     this.bell.update(dt);

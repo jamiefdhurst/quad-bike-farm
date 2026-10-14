@@ -189,6 +189,7 @@ export function buildGameTree(g, host) {
       setOn: text(() => c().intent.describe((k) => OFFER_KINDS[k]?.label ?? k)),
       reacting: text(() => c().reactingText),
       helmet: text(() => g.headgear.describe(id), 'where her helmet is: on the hooks, on her head, on a seat or on the ground'),
+      coat: text(() => g.coats.describe(id), 'whether she has a wax jacket on, and her hood up or down'),
       mud: num(() => c().mucky.mud, (v) => (c().mucky.mud = v), 0, 1, '', 'how muddy her jeans are'),
       dust: num(() => c().mucky.dust, (v) => (c().mucky.dust = v), 0, 1, '', 'how dusty her hair and face are'),
       poloOpen: num(() => c().outfit.poloOpen ?? 0, (v) => c().setPoloOpen(v), 0, 5, '', "how many of her polo's buttons are undone (0 to 5)"),

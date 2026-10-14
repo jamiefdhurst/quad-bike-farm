@@ -60,10 +60,11 @@ export function isJumperWeather(weather, p) {
 }
 
 export class Jumpers {
-  constructor(params = { ...DEFAULT_JUMPER_PARAMS }, random = Math.random, colours = null) {
+  constructor(params = { ...DEFAULT_JUMPER_PARAMS }, random = Math.random, colours = null, list = JUMPERS) {
     this.p = params;
+    this.key = 'jumper'; // the offer's kind (chooser.js)
     // The jumpers on this farm's rail: the same places, in the colours it dealt.
-    this.list = JUMPERS.map((j, i) => ({ ...j, color: colours?.[i] ?? j.color }));
+    this.list = list.map((j, i) => ({ ...j, color: colours?.[i] ?? j.color }));
     this.random = random;
     this.clock = 0;
     this.worn = {}; // girl id -> jumper id she has on
@@ -73,6 +74,20 @@ export class Jumpers {
     this.forced = false; // fetch one at the first chance (the debug panel)
     this.asked = {}; // girl id -> 'fetch' | 'hang': the debug panel wants her to, whatever the weather
     this.manual = new Set(); // girls whose jumper was asked for, who keep it on until asked to take it off
+  }
+
+  /** Whether the weather calls for one (Coats has its own). */
+  wanted(weather) {
+    return isJumperWeather(weather, this.p);
+  }
+
+  /** Seconds of that weather before she goes for one, and of the other kind before she hangs it up (Coats has its own). */
+  get onAfter() {
+    return this.p.coldFor;
+  }
+
+  get offAfter() {
+    return this.p.warmFor;
   }
 
   /** Jumpers not on a girl and not about to be. */
@@ -129,7 +144,7 @@ export class Jumpers {
     const p = this.p;
     const events = [];
     this.clock += dt;
-    const cold = isJumperWeather(ctx.weather, p);
+    const cold = this.wanted(ctx.weather);
     for (const [girl, job] of Object.entries(this.pending)) if (this.clock > job.until) delete this.pending[girl];
     for (const g of ctx.girls) {
       const wearing = this.worn[g.id];
@@ -157,7 +172,7 @@ export class Jumpers {
       }
       if (wearing) {
         if (this.manual.has(g.id)) continue;
-        if (this.warmFor[g.id] >= p.warmFor) {
+        if (this.warmFor[g.id] >= this.offAfter) {
           this.pending[g.id] = { kind: 'hang', jumper: wearing, until: this.clock + p.timeout };
           events.push({ type: 'hang', girl: g.id, jumper: wearing });
         }
@@ -179,8 +194,8 @@ export class Jumpers {
     const p = this.p;
     if (this.clock < p.startAfter || !this.free()[0]) return [];
     return ctx.girls
-      .filter((g) => g.free && !this.pending[g.id] && !this.worn[g.id] && (this.coldFor[g.id] ?? 0) >= p.coldFor && Math.hypot(ctx.rail.x - g.x, ctx.rail.z - g.z) <= p.range)
-      .map((g) => ({ key: 'jumper', girl: g.id, jumper: this.free()[0].id, weight: p.weight }));
+      .filter((g) => g.free && !this.pending[g.id] && !this.worn[g.id] && (this.coldFor[g.id] ?? 0) >= this.onAfter && Math.hypot(ctx.rail.x - g.x, ctx.rail.z - g.z) <= p.range)
+      .map((g) => ({ key: this.key, girl: g.id, jumper: this.free()[0].id, weight: p.weight }));
   }
 
   /** She chose to fetch one: books it and returns the event the game acts on, { type: 'fetch', girl, jumper }. */
