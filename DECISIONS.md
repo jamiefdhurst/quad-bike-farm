@@ -3829,3 +3829,11 @@ The item settled it; I chose the details without asking.
 - **Lop-sided.** Her mesh's two breasts are not level: the left apex is about 1.5 cm higher than the right (measured at (0.072, 1.085) and (-0.02, 1.07) against a neck at 1.218). The band was cut from one height, the furthest-forward vertex, so it sat low on one side and left that breast's top poking out above it. `bustOf` now also returns each side's apex, and the band's top and bottom edges follow a smoothstep between the two heights across her front, fading to nothing round her back (`tilt` in `cropFields`).
 - **Cleavage.** The skin above the band is a few flat faces and can't be shaded without repainting her texture, so the groove is drawn on the band: a soft shadow down the line between her apexes, 4.5 cm either side, up to 60% darker at the middle (`cleavageWidth`, `cleavageShadow` in `CROP`). The band's vertex shades were a single number each; `put` in `buildCropTop` now takes a function.
 - Checked in headless screenshots from the front and three-quarter at full size (`.scratch/pp/cropshot.mjs`, crops kept in `.scratch/shots/crop-v4-*`). Not checked: sitting on a quad, or any other outfit. A small corner of her right breast still shows past the band's end.
+
+### Follow-up: the cleavage drawn on her skin, and the holes in the bust
+
+Jamie: she still needs a slight cleavage line drawn on, as with an open polo, and skin poked through the band in the bust.
+
+- **Cleavage.** As the polo's V does (`buildInset`), a strip of her skin's own colour is laid over her chest between her breasts and shaded (`buildGroove` in `crop.js`, mesh `cropGroove`): 2.5 cm either side of the line between her apexes, from 1 cm under the band's top to 9 cm above it, 3 mm off her, 80% darker down its middle at the band and fading out at the top. Flat-shaded like the polo's inset. The band keeps its own shadow too.
+- **Holes.** The band stood 5 mm off her, less than her faces' creases, so corners of her body came through it. It stands 1 cm off now (`ease`).
+- Checked in headless screenshots at full size (front and three-quarter). Not checked: sitting on a quad. A small notch is still visible at the band's right-hand end.

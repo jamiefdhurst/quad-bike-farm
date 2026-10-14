@@ -899,6 +899,22 @@ function addCrop(rig, color) {
     { positions: built.shell.verts.map((q) => q.bind), normals: built.shell.normals, weights: built.shell.verts.map((q) => q.weights), colors, index: built.shell.tris.flat() },
     new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6, side: THREE.DoubleSide }),
   );
+  const g = built.groove;
+  if (g) {
+    // Her cleavage, drawn on in her skin's colour as the open polo's is.
+    const [r, gr, b] = PALETTE.skin.map((c) => c / 255);
+    const skin = new THREE.Color().setRGB(r, gr, b, THREE.SRGBColorSpace);
+    const shading = [];
+    for (const k of g.shade) shading.push(skin.r * k, skin.g * k, skin.b * k);
+    skinnedFromArrays(
+      rig,
+      body,
+      data,
+      'cropGroove',
+      { positions: g.verts.map((q) => q.bind), normals: g.verts.map((q) => q.normal), weights: g.verts.map((q) => q.weights), colors: shading, index: g.tris.flat() },
+      new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, flatShading: true }),
+    );
+  }
 }
 
 /**

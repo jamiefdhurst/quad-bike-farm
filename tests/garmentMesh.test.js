@@ -471,6 +471,17 @@ describe('the crop-top between her breasts', () => {
     expect(Math.min(...built.shade)).toBeLessThan(0.99);
     expect(Math.min(...built.shade)).toBeGreaterThanOrEqual(1 - CROP.cleavageShadow - 1e-9);
   });
+  it('draws her cleavage on her skin above the band, darkest at the band and gone at the top', async () => {
+    const { buildCropTop, CROP } = await import('../src/npc/crop.js');
+    const { groove } = buildCropTop(cylinderBody());
+    expect(groove.verts.length).toBeGreaterThan(20);
+    expect(Math.min(...groove.shade)).toBeGreaterThanOrEqual(1 - CROP.grooveShadow - 1e-9);
+    expect(Math.min(...groove.shade)).toBeLessThan(0.5);
+    expect(Math.max(...groove.shade)).toBeCloseTo(1, 6);
+    const rows = groove.verts.length / 10;
+    expect(groove.shade[groove.shade.length - 1 - 5]).toBeCloseTo(1, 6); // the middle of the top row
+    expect(rows).toBe(9);
+  });
   it('is cut level with each breast, not with the highest one', async () => {
     const { cropFields } = await import('../src/npc/crop.js');
     const body = cylinderBody();

@@ -8,7 +8,7 @@ import { smoothNormals, unskin, applySkinDir, rayHit, inTriangle, vec } from './
 const { add, scale, norm } = vec;
 
 export const CROP = {
-  ease: 0.005, // how far it stands off her
+  ease: 0.01, // how far it stands off her
   top: 0.04, // at her front, its top edge this far above the fullest part of her bust
   under: 0.055, // and its bottom edge this far below it
   backTop: -0.022, // round her back, a narrow band: its top this far above her bust's height (below it)
@@ -17,6 +17,9 @@ export const CROP = {
   strapWidth: 0.0025, // half the width of a strap: a string
   cleavageWidth: 0.045, // the shadow between her breasts reaches this far either side of the line between them
   cleavageShadow: 0.6, // and darkens the band by this much at its middle
+  grooveWidth: 0.025, // the drawn cleavage reaches this far either side of the line between her apexes
+  grooveHeight: 0.09, // and this far up from the band's top
+  grooveShadow: 0.8, // darkening its middle by this much at the band, fading out at the top
   strapLift: 0.0035, // how far it lies off her skin
 };
 
@@ -86,7 +89,7 @@ export function buildCropTop(body, p = CROP) {
   for (const strap of buildStraps(body, F, p, skinAround(body, F, 'all'))) put(strap);
   const shell = { verts: all, tris };
   shell.normals = smoothNormals(shell);
-  return { shell, shade, bust: F.bust };
+  return { shell, shade, bust: F.bust, groove: buildGroove(body, F, p, torso) };
 }
 
 /**
@@ -100,6 +103,41 @@ function cleavage(F, p, v) {
   if (Math.abs(dx) >= 1 || v.rest[2] < F.bust.z * 0.5) return 1;
   const k = 1 - Math.abs(dx);
   return 1 - p.cleavageShadow * k * k * (3 - 2 * k);
+}
+
+/**
+ * Her cleavage, drawn on as the open polo's is (polo.js): her body is a few flat faces there with no dip of its own, so a strip of
+ * her skin's own colour is laid 1.5 mm over it, up from the band's top between her breasts, shaded dark down its middle and
+ * fading out towards the top. Returns { verts, tris, shade } (skin-coloured, shade multiplies it), or null with no bust to go by.
+ */
+export function buildGroove(body, F, p = CROP, ground = skinAround(body, F, 'any')) {
+  const { left, right } = F.bust.sides ?? {};
+  if (!left || !right) return null;
+  const x0 = (left.x + right.x) / 2;
+  const COLS = 9;
+  const ROWS = 8;
+  const verts = [];
+  const shade = [];
+  for (let r = 0; r <= ROWS; r++) {
+    for (let c = 0; c <= COLS; c++) {
+      const u = (c / COLS) * 2 - 1; // -1 to 1 across
+      const x = x0 + u * p.grooveWidth;
+      const y = F.top([x, 0, F.bust.z]) - 0.01 + (r / ROWS) * p.grooveHeight;
+      const hit = rayHit(ground, [x, y, F.bust.z + 0.4], [0, 0, -1]);
+      if (!hit) return null;
+      const v = inTriangle(ground, hit.tri, hit.bary);
+      const rest = add(v.rest, scale(norm(applySkinDir(v.skin, v.normal)), 0.003));
+      verts.push({ ...v, rest, bind: unskin(v.skin, rest), normal: norm(applySkinDir(v.skin, v.normal)) });
+      const k = 1 - Math.abs(u);
+      shade.push(1 - p.grooveShadow * k * k * (3 - 2 * k) * (1 - r / ROWS));
+    }
+  }
+  const tris = [];
+  const at = (r, c) => r * (COLS + 1) + c;
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) tris.push([at(r, c), at(r, c + 1), at(r + 1, c)], [at(r, c + 1), at(r + 1, c + 1), at(r + 1, c)]);
+  }
+  return { verts, tris, shade };
 }
 
 /**
