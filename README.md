@@ -842,3 +842,28 @@ What is still to do. Finished items are recorded in DECISIONS.md, under their ol
 225. Days of the week. On a remembered farm, Sunday has church bells at eleven and no post van, Amy works Monday mornings and turns up at noon, market day puts more on the lane.
 226. Split up `game.js`. It is over 9,000 lines; move the girls' minds wiring, the items, the weather and the farm jobs into host modules of their own, with a test that fails if `game.js` grows past a set size.
 227. A boot test without a browser. Run the game against a stand-in renderer and audio in Vitest, tick a few hundred frames on a few seeds, and fail on any error, so wiring mistakes in the update loop are caught without a headless run.
+228. Faces that move. The girls blink, and a few face poses (a smile, a grimace, eyes screwed shut laughing, a scowl) follow her mood and the reactions.
+229. Hair that moves. Ponytails swing with her walk and the quad's bumps, blow in the wind, and go flat in the rain (with item 206).
+230. Nettles and dock leaves. Nettles along the hedge bottoms; a girl in shorts who walks through them yelps and hunts for a dock leaf. Jess does it more than once, Amy goes round. A reaction and a waiting idle.
+231. Wasps on warm afternoons. One finds the tea or the lunch (item 216); Amy flaps at it, Jess sits dead still and tells her off for flapping. A new reaction.
+232. Hay fever. Jess sneezes in the stubble dust and the hayloft.
+233. A water fight. Jess grabs the hose while Amy is washing a quad; Amy gets her back and both end up wet (with item 206).
+234. Racing each other on foot. "Last one there's a loser" when both are walking to the quads (the pair already knows when they walk together).
+235. Sitting on things. A waiting idle sat on the drystone wall, a gate or the top of the bale stack, legs swinging; Jess climbs higher.
+236. Small affection. Arm in arm walking back to the barn, a hug when one is cold or upset, leaning on you at the bonfire. Romance beats are spoilers in the FAQ.
+237. You sitting down. At the flask and the bonfire you stand while they sit; let you sit with them, with the camera to match.
+238. Jess's younger sister. She visits on some days, the girls' model and clothes scaled down. She wants a go on the kids' quad, which at last has a rider its size; Amy teaches her and Jess eggs her on (the teaching in items 100 and 115 gets a third pupil).
+239. The shearer. A woman who sets up in the pen on a shearing day, the girls' model and clothes; you bring the flock in on the quads (item 188). A day's event like the show day.
+240. Amy's mum. She drives down at lunch with sandwiches (item 216) and asks how the quads are behaving, the girls' model and clothes; another voice judging you through Amy.
+241. A snow blade on the green quad. Fitted at the bench, it clears the yard and the farm road after snow (item 11), a chalkboard job, and the cleared ground shows.
+242. Snow chains on the Land Rovers. A fiddly fitting job in the cold; grip in deep snow, a clank on the tarmac, and wear if they're left on.
+243. A topper behind a quad. A towed mower with its own small pull-start engine for the paddock, the cut stripes showing on the grass.
+244. Plastics that crack. A hard crash cracks a mudguard; it gets cable ties at the bench rather than a proper fix, the bodge stays visible and Amy disapproves.
+245. Cattle. A bunch of curious bullocks in a field: they come over to stare, follow your quad along the fence, jostle at the trough and make Amy nervous on foot. Built like the flock.
+246. Rooks and a hare. Rooks lift off the stubble in a cloud as you pass; a hare runs ahead of the quad along a tramline.
+247. A rope swing on a tree by the pond. The girls take turns, Jess goes higher, someone falls in eventually.
+248. A scarecrow. Jess makes one in the barley hollow and dresses it in whatever is spare on the hooks; on a remembered farm it stays.
+249. A hot day. Heat haze over the tarmac, engines running hot (item 59), the girls in sun cream complaining, an ice-cream van on the lane.
+250. Let parked vehicles sleep. Every vehicle's physics body is kept awake (`setCanSleep(false)`); let one sleep when parked, switched off and untouched, waking on contact, input or a girl getting on. Measure with `perf.mjs` before and after.
+251. Compile the shaders while loading. Snow, frost, rain and the night lights may hitch the first time they show; `renderer.compileAsync` behind the loading screen, checked with `loadtime.mjs` to stay under 2.5 s.
+252. Less work far away. A girl's rig and poses updated less often beyond 60 m or off screen, and distant engines' sound likewise.

@@ -3761,3 +3761,11 @@ Jamie: the wheel was getting hard to read, and the top level had too many slices
 - The choke-creeps quirk used to shake the lever out to 0.5. On a warm engine that is a mixture of 0.5 against `richTolerance` 0.25, so the engine fouled and would not idle at all.
 - `chokeCreepMax` is now 0.2, two lever steps (Jamie's call, and nearer a real choke that works loose): the idle runs fast and lumpy (the choke's idle lift) but the mixture stays under the tolerance on an ordinary day. On the very coldest day a warm engine's choke supplies 0.2 x 1.45 = 0.29, just over it, so it can foul slowly there. The quirk is still there to find and push back in with `Z`.
 - Chosen over removing the quirk, which Amy's logbook and the keep-alive sickness check both know about. The creep rate is unchanged, so it reaches the cap as before. Not checked in the running game.
+
+## Ideas turned down (2026-10-14)
+
+Jamie's answers when asked for new ideas, so they are not offered again.
+
+- Not wanted: an amphibious six-wheeler (an Argocat style). It had been suggested more than once.
+- Skipped when offered: tidying the TODO list's cross-references, puddles that stay and dry, a silent electric UTV, a Reliant-style three-wheeler car, a horse rider on the lane, a vet visit, a kite on windy days, a ghost run on the hill climb, an instant replay.
+- New characters are women, built on the girls' model and wearing the existing clothes.
