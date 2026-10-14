@@ -3790,6 +3790,7 @@ Settled with Jamie up front: every gauge puts a warm engine in the middle; the b
 - **Checked:** unit tests only (`tests/overheat.test.js` and the updated gauge, heat and debug tests). **Not checked in the running game:** how the new red bands and symbols look on each dash, where the steam leaves each vehicle, how often a game deals a thermostat or leak, the real time to overheat when towing, the pour and flush feel, and the new lines by ear.
 - **Ideas left out:** a blocked radiator (mud) as a third cause, the bottle in the trailer and the UTV bed, and a thermostat stuck open that runs cold.
 - The girls stay on the current base model (the Quaternius "Animated Woman") for now; there is no other base to move to, so improvements work on this one.
+- Dropped from the TODO list: a farm hack estate (a Volvo 240 style). There are cars enough (the girls' two and yours, item 335); carrying round the farm is the Land Rovers' job, so item 183 is now loading the Series III's tub and the 200TDi's back.
 
 ## Mist in the hollow and rainbows (TODO 61)
 
@@ -3856,4 +3857,3 @@ Settled with Jamie up front: one cat, called "the cat"; procedural but not basic
 - **Kept between loads?** No: the cat starts in the yard each load, placed by a `farmSeed` stream. Nothing about it is a lasting condition.
 - **Checked:** unit tests; the model's poses in a standalone render and the cat asleep on a quad, sitting and running in the game (headless, at full size). Not checked: the girls' lines by ear (recorded after), the cat sheltering in the barn in the running game, how often a real game sees it asleep on something, the greeting from a girl's point of view, and the purr and mew by ear.
 - **Ideas left out:** stroking it (`E` when it is greeted), feeding it, kittens, the cat on the tractor or a car's bonnet, and it hearing the bell.
-- Dropped from the TODO list: a farm hack estate (a Volvo 240 style). There are cars enough (the girls' two and yours, item 335); carrying round the farm is the Land Rovers' job, so item 183 is now loading the Series III's tub and the 200TDi's back.
