@@ -345,7 +345,7 @@ export class DebugGui {
       fix: () => (fixEverything(unit()), this.game.debugBatteryIn(unit())),
       crash: () => unit().quad.crashHeadOn(1),
     };
-    p.add(buttons, 'crash').name('Hit a post head-on (may bend a rod or rim)');
+    p.add(buttons, 'crash').name('Hit a post head-on (bends a rod?)');
     p.add(buttons, 'clearFaults').name('Clear the faults');
     p.add(buttons, 'batteryOut').name('Take the battery out (stands by it)');
     p.add(buttons, 'batteryIn').name('Put the battery back in');

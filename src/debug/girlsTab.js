@@ -2,6 +2,7 @@
 // doing now (four lines), "Why" (open), "Make her do", then closed folders for her other state, her clothes and mud, her favour and
 // romance and her skills, so both girls fit on the screen at once. The shared folder is a set of closed subfolders by subject
 // (the games, the day, the workshop, the jobs, the animals and the lane, the farm's memory, getting about), never a flat list.
+import { buttonText } from './buttonText.js';
 import { girlActions } from './girlActions.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
 import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
@@ -16,7 +17,13 @@ const show = (f, label, get) => f.add({ get v() { return get(); } }, 'v').name(l
 /** A slider that writes back. */
 const slider = (f, label, get, put, min, max, step = 0.01) => f.add({ get v() { return get(); }, set v(x) { put(x); } }, 'v', min, max, step).name(label).listen();
 const tick = (f, label, get, put) => f.add({ get v() { return get(); }, set v(x) { put(x); } }, 'v').name(label).listen();
-const button = (f, label, fn) => f.add({ fn }, 'fn').name(label);
+/** A button; text past the first bracket or colon is its tooltip, so the label stays on one line (buttonText.js). */
+const button = (f, label, fn) => {
+  const { text, hint } = buttonText(label);
+  const c = f.add({ fn }, 'fn').name(text);
+  if (hint !== text) c.domElement.title = hint;
+  return c;
+};
 
 /** @param {import('./debugGui.js').DebugGui} d */
 export function buildGirlsTab(d) {
@@ -46,7 +53,7 @@ export function buildGirlsTab(d) {
     show(why, 'next', () => describeMind(c.mind).next);
     show(why, 'set on', () => c.intent.describe((k) => OFFER_KINDS[k]?.label ?? k));
     show(why, 'pace', () => `${c.paceMul.toFixed(2)} times her walk${c.pace ? ` (${c.pace})` : ''}`);
-    button(why, 'Stop her on her way (as if you asked her something)', () => c.interrupt());
+    button(why, 'Stop her on her way (as if asked)', () => c.interrupt());
     button(why, 'Think now', () => (c.mind.thinkIn = 0));
 
     // --- Things to make her do (girlActions.js, which the console uses too), folded away so her details stay in view.
@@ -122,7 +129,7 @@ export function buildGirlsTab(d) {
 
   // The girls as a pair, and the day's goings on between them.
   const day = sub('The girls together');
-  button(day, 'Call the girls back to the barn (as the bell does)', () => g.recallGirls());
+  button(day, 'Call the girls back (as the bell does)', () => g.recallGirls());
   const fo = g.fallingOut;
   show(day, 'fallen out', () => (fo.active ? `yes, ${fo.cause.kind} (${fo.fault} at fault), ${Math.round(fo.remaining)} s left` : `no, friction ${round(fo.friction, 1)}`));
   button(day, 'They fall out now', () => !g.fallingOut.active && g.handleFallingOut(g.fallingOut.begin('digs')));
@@ -150,8 +157,8 @@ export function buildGirlsTab(d) {
   button(day, 'Put the L plates on Amy\'s quad', () => g.lPlates.put('quad'));
   button(day, 'Put the L plates on the tractor', () => g.lPlates.put('tractor'));
   button(day, 'Take the L plates off', () => g.lPlates.put('none'));
-  button(day, 'Put your helmet on or hang it up', () => g.toggleYourGear('you'));
-  button(day, 'Put your goggles on or hang them up', () => g.toggleYourGear('goggles'));
+  button(day, 'Helmet on or hung up (you)', () => g.toggleYourGear('you'));
+  button(day, 'Goggles on or hung up (you)', () => g.toggleYourGear('goggles'));
 
   // Races and runs, and the records they keep. Asking for one is as Enter does: they leave what they are doing, and if they can't,
   // it says why (npc/asking.js).
@@ -181,7 +188,7 @@ export function buildGirlsTab(d) {
   slider(sky, 'time of day (hours)', () => g.daylight.hour, (v) => g.setTime(v), 0, 30, 0.05);
   show(sky, 'the day', () => `${g.weather.temperature} °C (${g.weather.band}), chill ${g.weather.chill.toFixed(2)}, frost ${g.weather.frost.toFixed(2)}`);
   show(sky, 'the forecast', () => g.forecast.describe(g.daylight.hour));
-  button(sky, 'Turn the weather now (as the forecast says it will)', () => toast(g.turnWeatherNow() ? `The weather is turning to ${g.weather.name}` : 'This weather has nowhere to turn'));
+  button(sky, 'Turn the weather now (as forecast)', () => toast(g.turnWeatherNow() ? `The weather is turning to ${g.weather.name}` : 'This weather has nowhere to turn'));
   button(sky, 'Lightning, close', () => g.strikeNow(150));
   button(sky, 'Lightning, far off', () => g.strikeNow(2400));
   show(sky, 'the stream', () => `${Math.round(g.world.streamLevel.level * 100)}% up, ${(g.world.streamLevel.rise * 100).toFixed(0)} cm above usual, running ${g.world.streamLevel.flow.toFixed(1)}x`);
@@ -192,7 +199,7 @@ export function buildGirlsTab(d) {
   show(shop, 'a girl at the bench', () => g.girlBench.describe());
   show(shop, 'their cars', () => g.describeCars());
   show(shop, 'the battery charger', () => g.describeCharger());
-  button(shop, 'Take the charged battery off the charger', () => g.debugChargerClear());
+  button(shop, 'Take the battery off the charger', () => g.debugChargerClear());
   show(shop, 'the generator', () => g.describeGenerator());
   show(shop, 'starting the generator', () => g.generatorStart.describe());
   button(shop, 'Pull the generator\'s cord', () => g.debugGeneratorPull());
@@ -209,18 +216,18 @@ export function buildGirlsTab(d) {
   const jobs = sub('Jobs: the board, muck, bales and bonfire');
   show(jobs, 'the board', () => g.jobBoard.lines().map((l) => `${l.done ? '[x]' : '[ ]'} ${l.text}`).join('; ') || 'nothing on');
   show(jobs, 'muck in the tub', () => `${Math.round(g.muck.load * 100)}%, ${g.muck.laid} patches laid on the stubble${g.muck.done ? ', done' : ''}`);
-  button(jobs, 'Fill the tipping trailer with muck', () => g.debugFillMuck());
+  button(jobs, 'Fill the trailer with muck', () => g.debugFillMuck());
   button(jobs, 'Muck job done now', () => g.debugFinishMuck());
-  button(jobs, 'Empty the tub and clear the muck from the ground', () => g.debugResetMuck());
+  button(jobs, 'Empty the tub and clear the ground', () => g.debugResetMuck());
   slider(jobs, 'Bale spike arms (0 down, 1 up)', () => g.baleRig.lift.lift, (v) => (g.baleRig.lift.lift = v), 0, 1, 0.01);
   show(jobs, 'On the spike', () => g.baleRig.held?.id ?? 'nothing');
   button(jobs, 'Put the bale on the spike down', () => g.baleRig.putDown());
   button(jobs, 'Silage job done now', () => g.debugFinishSilage());
-  button(jobs, 'Put the silage bales back where they started', () => g.debugResetBales());
+  button(jobs, 'Put the silage bales back', () => g.debugResetBales());
   show(jobs, 'The bonfire', () => `${g.bonfire.state}, ${g.bonfire.piled} of ${g.bonfireParams.heapsNeeded} on the pile, ${Math.round(g.bonfire.intensity * 100)}% blaze${g.bonfire.damp ? ', smoky' : ''}`);
   button(jobs, 'Build and light the bonfire', () => g.debugLightFire());
   button(jobs, 'Put the bonfire out', () => g.bonfire.putOut() || toast('It is not lit'));
-  button(jobs, 'Clear the bonfire and put the brushwood back', () => g.debugResetFire());
+  button(jobs, 'Clear the bonfire, restore brushwood', () => g.debugResetFire());
   button(jobs, 'Take a photo now', () => g.photos.press() || toast('The camera is not ready'));
   button(jobs, 'Take all the photos down', () => g.photos.clear());
 
@@ -229,7 +236,7 @@ export function buildGirlsTab(d) {
   show(out, 'wildlife', () => `${g.rabbits.rabbits.filter((r) => r.mode !== 'down').length} rabbits about (${g.rabbits.rabbits.filter((r) => r.mode === 'caught').length} in a beam), pheasants ${g.pheasants.birds.map((b) => b.mode).join('/')}`);
   button(out, 'Flush the nearest pheasant', () => g.debugFlushPheasant());
   show(out, 'electric fence', () => `${g.fence.live ? 'on' : 'off'}; last zapped: ${g.fence.lastZap ? `${g.fence.lastZap.id} (${g.fence.lastZap.kind})` : 'nobody yet'}`);
-  button(out, 'Zap you on the electric fence', () => g.debugZapFence());
+  button(out, 'Zap you on the fence', () => g.debugZapFence());
   show(out, 'the lane and the gates', () => `${g.trafficHost.describe()}; south gate ${g.trafficHost.gate('south').isOpen ? 'open' : 'shut'}, big gate ${g.trafficHost.gate('road').isOpen ? 'open' : 'shut'}, grid gate ${g.trafficHost.gate('grid')?.isOpen ? 'open' : 'shut'}`);
   button(out, 'Swing the south gate', () => g.trafficHost.toggle(g.trafficHost.gate('south')));
   button(out, 'Swing the big gate', () => g.trafficHost.toggle(g.trafficHost.gate('road')));
@@ -243,8 +250,8 @@ export function buildGirlsTab(d) {
   show(mem, 'the farm that remembers', () => g.farmText());
   show(mem, 'the calendar says', () => g.endOfDayNow().text);
   button(mem, 'Save the farm now', () => toast(g.saveFarm() ? 'Farm saved' : 'Not saved (a seeded game, wiped, or not started)'));
-  button(mem, 'Call it a day now (fade, save, next day)', () => g.callItADay({ force: true }));
-  button(mem, 'Wipe the farm (a new one next load)', () => {
+  button(mem, 'Call it a day now (fade, save)', () => g.callItADay({ force: true }));
+  button(mem, 'Wipe the farm (new one next load)', () => {
     g.wipeFarm();
     toast('Farm wiped: the next load deals a new one');
   });

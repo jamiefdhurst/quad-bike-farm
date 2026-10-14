@@ -12,9 +12,9 @@
 export const WAITING_IDLES = {
   kickTyre: { needs: 'wheel', pins: true, label: 'kicking a tyre' },
   wipeSeat: { needs: 'seat', pins: true, hands: true, label: 'wiping a seat' },
-  rubHands: { needs: 'cold', label: 'rubbing her hands for the cold' },
-  shadeEyes: { needs: 'sun', label: 'shading her eyes from the sun' },
-  lookUp: { needs: 'clouding', label: 'looking up at the clouds coming over' },
+  rubHands: { needs: 'cold', label: 'rubbing her hands' },
+  shadeEyes: { needs: 'sun', label: 'shading her eyes' },
+  lookUp: { needs: 'clouding', label: 'looking up at the clouds' },
   phone: { needs: null, hands: true, label: 'checking her phone' },
   phoneCall: { needs: null, forced: true, hands: true, pins: true, label: 'on a call' }, // never chosen: phoneCalls.js has her do it, and updateWaiting keeps it in her list
 };

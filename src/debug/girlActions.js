@@ -52,7 +52,7 @@ export function girlActions(g) {
     },
     {
       verb: 'tag-along',
-      label: 'Her friend wanders off and % tags along',
+      label: 'Her friend leaves, % tags along',
       run: (id) => {
         if (!free(id)) return;
         const c = girl(id);
@@ -83,7 +83,7 @@ export function girlActions(g) {
     },
     {
       verb: 'barn-now',
-      label: 'Go round the back of the barn with % now',
+      label: 'Go round the barn with % now',
       run: (id) => {
         if (g.tryst) return toast('Already at it');
         if (!free(id)) return;
@@ -93,7 +93,7 @@ export function girlActions(g) {
     },
     {
       verb: 'shelter',
-      label: '% gets into the nearest cab out of the rain',
+      label: '% shelters in the nearest cab',
       run: (id) => {
         if (!free(id)) return;
         toast(g.sendToCab(id, 'rain') ? `${nameOf(id)} is off to the nearest cab` : `No cab free for ${nameOf(id)}`);
@@ -101,7 +101,7 @@ export function girlActions(g) {
     },
     ...['grid', 'bumpy', 'mudguard'].map((kind) => ({
       verb: `ask-${kind}`,
-      label: { grid: '% asks you to take her over the cattle grid again', bumpy: '% asks you to go the bumpy way', mudguard: '% asks you to start the tractor so she can sit on its mudguard' }[kind],
+      label: { grid: '% asks for the cattle grid again', bumpy: '% asks for the bumpy way', mudguard: '% asks to sit on the tractor (start it)' }[kind],
       run: (id) => {
         const e = g.requests.force(id, kind);
         if (!e) return toast(`${nameOf(id)} has asked for something already`);
@@ -110,7 +110,7 @@ export function girlActions(g) {
     })),
     {
       verb: 'buzz-sit',
-      label: '% goes and sits on the roughest quad near her for the shake',
+      label: '% sits on the roughest quad',
       run: (id) => {
         if (!free(id)) return;
         const c = girl(id);
@@ -165,7 +165,7 @@ export function girlActions(g) {
     },
     {
       verb: 'compare',
-      label: 'Both girls compare which quads shake them most now (needs each to have felt some shake)',
+      label: 'Both girls compare quads now (needs each to have felt some shake)',
       run: () => {
         const exists = (id) => g.girlUnits.some((u) => u.spec.id === id);
         const plan = g.comparing.plan(g.companions.map((c) => ({ id: c.character.id, buzz: c.content.buzz })), exists, { force: false });
@@ -176,7 +176,7 @@ export function girlActions(g) {
     },
     {
       verb: 'minds-fix',
-      label: '% minds that you fixed up her favourite (says her line now)',
+      label: '% minds you fixed her favourite (says her line now)',
       run: (id) => {
         const c = girl(id);
         const fav = c.voice.favourite;
@@ -187,7 +187,7 @@ export function girlActions(g) {
     },
     ...['ramp', 'ford', 'fence', 'bank'].map((kind) => ({
       verb: `dare-${kind}`,
-      label: `% dares you to ${{ ramp: 'jump the ramp', ford: 'take the ford flat out', fence: 'touch the electric fence', bank: 'ride the mini moto down the steepest bank' }[kind]} (you have two minutes; she cheers or calls you chicken)`,
+      label: `% dares you at ${{ ramp: 'the ramp', ford: 'the ford', fence: 'the fence', bank: 'the bank' }[kind]} (you have two minutes; she cheers or calls you chicken)`,
       girls: ['jess'],
       run: (id) => g.startDare(id, kind),
     })),
@@ -198,12 +198,12 @@ export function girlActions(g) {
     },
     {
       verb: 'phone-call-bad',
-      label: '% takes a call that goes badly and comes back in a mood (stands lower with you for a few minutes)',
+      label: '% takes a call that goes badly (stands lower with you for a few minutes)',
       run: (id) => g.startPhoneCall(id, true),
     },
     {
       verb: 'car-go',
-      label: '% takes her own car down the farm road and back (the Fiesta for Amy, the Corsa for Jess)',
+      label: '% drives her own car out and back (the Fiesta for Amy, the Corsa for Jess)',
       run: (id) => {
         if (!free(id)) return;
         const kind = g.carGoContext(g.riddenUnit).girls[id]?.car;
@@ -214,12 +214,12 @@ export function girlActions(g) {
     },
     {
       verb: 'bench-work',
-      label: '% works on the quad in the bay at the bench (needs one parked there, off, and the toolbox on the bench; Jess makes a hash of it and hands it to you)',
+      label: '% works on the bench quad (needs one parked there, off, and the toolbox on the bench; Jess makes a hash of it and hands it to you)',
       run: (id) => g.startGirlBench(id),
     },
     {
       verb: 'flask',
-      label: '% goes up to the rock at the top of the hill and pours the tea (walks there from wherever she is; needs dry, light weather)',
+      label: '% pours the tea at the rock (walks there from wherever she is; needs dry, light weather)',
       run: (id) => {
         if (!free(id)) return;
         if (g.flask.active) return toast('Someone already has the flask out');
@@ -229,7 +229,7 @@ export function girlActions(g) {
     },
     {
       verb: 'fire',
-      label: '% walks to a log by the bonfire and sits (needs it lit and blazing: build one with the button on the shared section)',
+      label: '% sits on a log by the bonfire (needs it lit and blazing: build one with the button on the shared section)',
       run: (id) => {
         if (!free(id)) return;
         if (!g.bonfire.blazing) return toast('The bonfire is not blazing yet');
@@ -238,7 +238,7 @@ export function girlActions(g) {
     },
     {
       verb: 'warm-sit',
-      label: '% starts the picked vehicle and sits on it while it warms (needs it off, and a seat)',
+      label: '% warms up the picked vehicle (needs it off, and a seat)',
       vehicle: true,
       run: (id, unit) => {
         if (!free(id)) return;
@@ -250,7 +250,7 @@ export function girlActions(g) {
     },
     {
       verb: 'wait-ready',
-      label: '% gets a quad going and waits on the back for you, revving and tooting',
+      label: '% starts a quad and waits for you',
       run: (id) => {
         if (!free(id)) return;
         toast(g.askToWait(girl(id), true) ? `${nameOf(id)} is off to get a quad ready` : `${nameOf(id)} can't find a quad with a free back seat`);
@@ -267,7 +267,7 @@ export function girlActions(g) {
     },
     {
       verb: 'keep-alive',
-      label: '% sits on the back of the picked vehicle and keeps it alive (needs it running, nobody on it)',
+      label: '% keeps the picked vehicle alive (needs it running, nobody on it)',
       vehicle: true,
       run: (id, unit) => {
         if (!free(id)) return;
@@ -276,7 +276,7 @@ export function girlActions(g) {
     },
     {
       verb: 'warm-up',
-      label: '% starts a Land Rover and sits in it to get warm',
+      label: '% warms up in a Land Rover',
       run: (id) => {
         if (!free(id)) return;
         toast(g.sendToCab(id, 'cold') ? `${nameOf(id)} is off to a Land Rover` : `No Land Rover free for ${nameOf(id)}`);
@@ -301,7 +301,7 @@ export function girlActions(g) {
     },
     {
       verb: 'drive',
-      label: '% drives the vehicle picked on the Vehicles tab',
+      label: '% drives the picked vehicle',
       vehicle: true,
       run: (id, u) => {
         const c = girl(id);
@@ -320,7 +320,7 @@ export function girlActions(g) {
     },
     {
       verb: 'outing',
-      label: '% drives somewhere on the farm and back (a place picked from the farm, by the gateways)',
+      label: '% drives somewhere and back (a place picked from the farm, by the gateways)',
       run: (id) => {
         const c = girl(id);
         if (!free(id)) return;
@@ -345,7 +345,7 @@ export function girlActions(g) {
     },
     {
       verb: 'start',
-      label: '% starts the vehicle picked on the Vehicles tab (the starting handle on a flat Land Rover)',
+      label: '% starts the picked vehicle (the starting handle on a flat Land Rover)',
       vehicle: true,
       run: (id, u) => {
         const c = girl(id);
@@ -359,7 +359,7 @@ export function girlActions(g) {
     },
     {
       verb: 'push-start',
-      label: '% pushes the vehicle picked on the Vehicles tab to bump-start it (you in the seat, the clutch in)',
+      label: '% bump-starts the picked vehicle (you in the seat, the clutch in)',
       vehicle: true,
       run: (id, u) => {
         const c = girl(id);
@@ -371,7 +371,7 @@ export function girlActions(g) {
     },
     {
       verb: 'steer-tow',
-      label: '% sits on the quad the tow rope is hooked to and steers and brakes it (hook the rope from the Vehicles tab first)',
+      label: '% steers the towed quad (hook the rope from the Vehicles tab first)',
       run: (id) => {
         const c = girl(id);
         if (!free(id)) return;
@@ -406,7 +406,7 @@ export function girlActions(g) {
     },
     {
       verb: 'helmet',
-      label: '% fetches her helmet or hangs it back up',
+      label: '% fetches or hangs up her helmet',
       run: (id) => {
         const what = g.headgear.toggle(id);
         toast(what === 'fetch' ? `${nameOf(id)} will go and get her helmet once she is stood about` : `${nameOf(id)} will go and hang her helmet up once she is stood about`);
@@ -580,14 +580,14 @@ export function girlActions(g) {
   });
   actions.push({
     verb: 'light-me',
-    label: '% brings a vehicle round to light you up (after dark)',
+    label: '% lights you up with a vehicle (after dark)',
     run: (id) => g.askWorkLight(girl(id)),
   });
   // Each way of waiting that fits what's about her (npc/waiting.js), started now.
   for (const [name, w] of Object.entries(WAITING_IDLES)) {
     actions.push({
       verb: `wait-${name.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)}`,
-      label: `% waits about ${w.label}${w.needs === 'wheel' ? ' (a tyre within reach)' : w.needs === 'seat' ? ' (a seat within reach)' : ''}`,
+      label: `% waits, ${w.label}${w.needs === 'wheel' ? ' (a tyre within reach)' : w.needs === 'seat' ? ' (a seat within reach)' : ''}`,
       run: (id) => {
         const why = girl(id).forceWaiting(name);
         if (why) toast(`${nameOf(id)} can't: ${why}`);
