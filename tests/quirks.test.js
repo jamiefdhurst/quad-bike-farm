@@ -74,6 +74,7 @@ describe('the choke creeping on', () => {
     let choke = 0;
     for (let i = 0; i < 6000; i++) choke += q.chokeCreep(0.016, { running: true, shake: 1, choke });
     expect(choke).toBeCloseTo(P.chokeCreepMax, 5);
+    expect(P.chokeCreepMax).toBeLessThan(0.25); // a warm engine must still idle: under the engine's default richTolerance
     const still = set('chokeCreeps');
     let total = 0;
     for (let i = 0; i < 3000; i++) total += still.chokeCreep(0.016, { running: false, shake: 1, choke: 0 }) + still.chokeCreep(0.016, { running: true, shake: 0, choke: 0 });

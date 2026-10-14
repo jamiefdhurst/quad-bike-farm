@@ -3755,3 +3755,9 @@ Jamie: the wheel was getting hard to read, and the top level had too many slices
 - A closed-cab model now names a `cabin` box in its own frame (`userData.cabin`: the cars from their sill to just over the screen top and from the screen's foot to the hatch; the Land Rovers from the bulkhead back to the end of the roof, the Series' cab only, the 200TDi's all the way). Inside it, a surface whose normal faces the box's middle is the cab's inside and the coat leaves it clean; faces pointing away (the outside of the doors and the roof) take mud as before. Pure in `src/effects/cabinMud.js` (tested); `mudCoat.js` does the same sum in the shader, scaling `cover` to nothing, so the flecks go too.
 - Chosen over skipping the painted material because the same paint is the outside. A model without a `cabin` (the quads, the UTV, the tractor) is unchanged.
 - Not checked in the running game: the shader (it follows the tested rule) and that every painted panel's normals point outwards.
+
+## The choke creep, tamed (TODO 58)
+
+- The choke-creeps quirk used to shake the lever out to 0.5. On a warm engine that is a mixture of 0.5 against `richTolerance` 0.25, so the engine fouled and would not idle at all.
+- `chokeCreepMax` is now 0.1, one lever step: the idle runs a little fast and lumpy (the choke's idle lift) but the mixture stays under the tolerance, on the coldest day too, since a cold engine's need takes it off. The quirk is still there to find and push back in with `Z`.
+- Chosen over removing the quirk, which Amy's logbook and the keep-alive sickness check both know about. The creep rate is unchanged, so it reaches the cap as before. Not checked in the running game.

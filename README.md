@@ -672,7 +672,7 @@ What is still to do. Finished items are recorded in DECISIONS.md, under their ol
 55. **Done.** Re-organise the girls' debug menus, place the buttons near each other, make the descriptions smaller, give them some sort of order as there are too many options now
 56. **Done.** Girl's wheel size needs to be bigger, or we need to sort the text out, it's getting hard to read. So we need to categorise the top level?
 57. Still have mud getting inside the cars, especially painted parts and the roof **Done.**
-58. Can we temporarily fix the "choke creeps" problem, or make it less of an issue? It causes one thing to not be able to idle at all
+58. **Done.** Can we temporarily fix the "choke creeps" problem, or make it less of an issue? It causes one thing to not be able to idle at all
 59. The overheating/increase in temp doesn't seem to make much difference. Firstly, the cars should have their normal temp in the middle (this should be the same for all gauges) and it should creep up when it gets too hot. Being too hot should cause problems, and they should all be able to get too hot - I haven't seen a temp warning yet, idling them all for all day could cause this on some, or driving too hard for a while.
 60. Console needs to autofill things either after a '.' or after a ' ', every option
 61. Mist in the barley hollow and rainbows. Ground mist sits in the damp north field early in the game and burns off as it warms; a passing shower can leave a rainbow.

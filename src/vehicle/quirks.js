@@ -12,7 +12,7 @@ export const DEFAULT_QUIRK_PARAMS = {
   fuelStickJump: 0.01, // per second moving that a sticking fuel needle gets a knock and jumps to the real level before sticking again
   tempColdCap: 0.12, // the temperature needle never gets past this engine temperature (0 cold, 1 warm)
   chokeCreepRate: 0.25, // lever steps a second at full shake that the choke creeps back on, when running
-  chokeCreepMax: 0.5, // the most the shake will pull the choke on to
+  chokeCreepMax: 0.1, // the most the shake will pull the choke on to: one step, a faster idle but under richTolerance on a warm engine
   tapStiffPresses: 3, // presses of F to get a fully stiff tap to move (they have to come within tapStiffWindow of each other)
   tapStiffWindow: 2, // seconds
   tapStiffFreed: 0.35, // how much of its stiffness each turn takes off, so a few turns and it's free

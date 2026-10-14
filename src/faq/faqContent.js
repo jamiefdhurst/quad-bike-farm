@@ -1459,8 +1459,8 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why does each quad behave a bit oddly?',
         spoiler: true,
-        a: `Quirks: each quad has one to three. A fuel gauge that reads high or sticks, a temperature needle that never moves, a choke that creeps out with the
-          shaking, a stiff fuel tap that needs working (press <kbd>F</kbd> a few times), a split seat, a horn that works when it likes, brakes that pull or squeal, or a
+        a: `Quirks: each quad has one to three. A fuel gauge that reads high or sticks, a temperature needle that never moves, a choke that creeps out a notch with the
+          shaking (the engine idles a little faster, but still idles), a stiff fuel tap that needs working (press <kbd>F</kbd> a few times), a split seat, a horn that works when it likes, brakes that pull or squeal, or a
           flickering headlight. Nobody fixes them, and a quad keeps its quirks from day to day. Amy's logbook may mention them.`,
       },
       {
