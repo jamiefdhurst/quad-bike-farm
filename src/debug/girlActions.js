@@ -58,6 +58,13 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'dog',
+      label: 'The dog goes after %\'s boots',
+      run: (id) => {
+        if (!g.debugDog('boots', id)) toast('She has to be walking: send her somewhere first');
+      },
+    },
+    {
       verb: 'tag-along',
       label: 'Her friend leaves, % tags along',
       run: (id) => {

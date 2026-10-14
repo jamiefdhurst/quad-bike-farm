@@ -88,6 +88,7 @@ import { AMY_DOUGHNUT_LINES } from './doughnutLines.js';
 import { AMY_TARMAC_LINES } from './tarmacLines.js';
 import { AMY_DUST_LINES } from './dustLines.js';
 import { AMY_CAT_LINES } from './catLines.js';
+import { AMY_DOG_LINES } from './dogLines.js';
 import { AMY_MUDDY_LINES } from './muddyLines.js';
 import { AMY_JUMP_LINES } from './jumpLines.js';
 import { AMY_SHOWOFF_LINES } from './showOffLines.js';
@@ -1585,6 +1586,8 @@ export const VOICE_LINES = {
   ...AMY_DUST_LINES,
   // The barn cat (catLines.js).
   ...AMY_CAT_LINES,
+  // The farm dog (dogLines.js).
+  ...AMY_DOG_LINES,
   // Noticing she is muddy or dusty (muddyLines.js).
   ...AMY_MUDDY_LINES,
   // The jump (jumpLines.js).

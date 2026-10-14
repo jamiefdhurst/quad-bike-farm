@@ -1151,6 +1151,20 @@ export const FAQ_SECTIONS = [
         spoiler: true,
       },
       {
+        q: 'Where is the dog, and how do I get her on my quad?',
+        a: `Meg, the farm's border collie, follows you about: at your heels on foot, and a way behind when you ride (she runs to catch up if you leave her). She sits when you stop. To get her up, pull up on a quad with a rear rack (the utility quads and the farm ones, not the sports quads, the cars or the tractor) and stay still for a moment; she runs over and hops up on the rack. She hops down when you get off, or when a girl sits on the back. She keeps off the rack for a few seconds after she gets down.`,
+        tip: 'Stop on a utility quad and Meg hops up on the rear rack. She follows you everywhere else.',
+      },
+      {
+        q: 'Why is the dog chasing the quad, or Amy and Jess?',
+        a: `It is what collies do. Now and then she goes after a quad a girl is riding, running alongside and barking until she tires of it, and she goes after the heels of a girl who is walking. She keeps to the side of a vehicle and nothing hurts her: if you drive at her she yelps and jumps out of the way.`,
+      },
+      {
+        q: 'What do the girls think of the dog?',
+        a: `Jess loves her and says so. Amy tells her off for chasing and for getting on your rack, and then goes a bit soft about it.`,
+        spoiler: true,
+      },
+      {
         q: 'What is the ticking fence on the hill, and what happens if I touch it?',
         a: `It is an electric fence across the hill pasture, two strands of yellow tape on white stakes, with a gap in it for you to ride through (look for the pair of stout posts and the sign with the lightning bolt). The box on the hedge at the east end ticks and blinks. Touch the tape with the front or back of a quad, or walk into it, and it jolts you: the view shakes, you lose some speed, and whoever is on the quad yelps. A girl who sees it will say something about it. It only zaps once for each brush, so you won't be stuck in a loop.`,
         tip: 'The fence across the hill pasture is live. Go through the gap by the sign, not the tape.',

@@ -214,6 +214,9 @@ import { WildlifeAudio } from './audio/wildlifeAudio.js';
 import { Cat, perchWarmth, catShelter, DEFAULT_CAT_PARAMS, CAT_PARAM_RANGES } from './world/cat.js';
 import { CatView } from './world/catView.js';
 import { CatAudio } from './audio/catAudio.js';
+import { Dog, DEFAULT_DOG_PARAMS, DOG_PARAM_RANGES } from './world/dog.js';
+import { DogView } from './world/dogView.js';
+import { DogAudio } from './audio/dogAudio.js';
 import { ElectricFence, createElectricFence, DEFAULT_FENCE_PARAMS, FENCE_PARAM_RANGES } from './world/electricFence.js';
 import { FenceAudio } from './audio/fenceAudio.js';
 import { BELL_PARAM_RANGES } from './world/bell.js';
@@ -1225,6 +1228,7 @@ export class Game {
     this.setUpFlock();
     this.setUpWildlife();
     this.setUpCat();
+    this.setUpDog();
     this.setUpFence();
     this.trafficHost = new TrafficHost(this); // the lane's traffic, the visitors and the two gates (world/trafficHost.js)
 
@@ -8942,6 +8946,7 @@ export class Game {
     this.updateFlock(dt);
     this.updateWildlife(dt);
     this.updateCat(dt);
+    this.updateDog(dt, ridden);
     this.updateFence(dt);
     this.trafficHost.update(dt);
     this.updateRecall(dt);
@@ -9242,6 +9247,11 @@ export class Game {
 
   /** A girl who is free to remark (the one the cat went to, if `id`; otherwise the nearest to you) says a line about the cat. */
   catSay(key, id = null) {
+    this.animalSay(key, id);
+  }
+
+  /** The same for any of the farm's animals: `key` is the line set's key (catLines.js, dogLines.js). */
+  animalSay(key, id = null) {
     const p = this.player.position;
     const c = id
       ? this.companions.find((o) => o.character.id === id)
@@ -9281,6 +9291,133 @@ export class Game {
       cat.t = cat.p.sleepMax;
     } else if (action === 'visit') return cat.visit(arg);
     else if (action === 'shelter') this.catForceShelter = arg ?? !this.catForceShelter;
+    return true;
+  }
+
+  /**
+   * The farm dog, Meg (world/dog.js): she follows you, sits when you stop, hops up on the rear rack of the quad you pull up on, chases the
+   * girls' quads and goes after their heels, and jumps out of the way of a vehicle coming at her. Nothing about her is saved.
+   */
+  setUpDog() {
+    const L = this.world.layout;
+    const b = L.barn;
+    const world = this.world;
+    const f = world.fields;
+    this.dogParams = { ...DEFAULT_DOG_PARAMS };
+    registerTuning('Dog', this.dogParams, DOG_PARAM_RANGES);
+    const inside = (x, z, m = 0.5) => Math.abs(x - b.x) < b.halfX - m && Math.abs(z - b.z) < b.halfZ - m;
+    const inDoor = (x, z) => Math.abs(z - b.z) < b.door.halfWidth - 0.4 && x > b.x + b.halfX - 0.6 && x < b.x + b.halfX + 0.6;
+    // A hedge stops her except through a gap with its gate open.
+    const hedged = (x, z) => {
+      for (const h of f.hedges) {
+        const d = h.alongX ? Math.hypot(Math.max(h.x1 - x, 0, x - h.x2), z - h.z1) : Math.hypot(x - h.x1, Math.max(h.z1 - z, 0, z - h.z2));
+        if (d < 0.45 && !h.gaps.some((g) => !g.shut && Math.abs((h.alongX ? x : z) - g.at) < g.half)) return true;
+      }
+      return false;
+    };
+    const allowed = (x, z) => {
+      if (inside(x, z) || inDoor(x, z)) return true;
+      return !world.inBarn(x, z, 0.4) && !world.outbuildings.builtAt(x, z, 0.5) && !hedged(x, z);
+    };
+    this.dog = new Dog({ allowed, groundAt: (x, z) => world.groundHeightAt(x, z), random: createRandom(this.farmSeed ^ 0xd06), params: this.dogParams });
+    this.dogView = new DogView(this.scene, this.dog, (x, z) => world.groundHeightAt(x, z));
+    this.dogAudio = new DogAudio(this.audioHub);
+    this.dogPlaced = false;
+    this.dogGirlPrev = new Map(); // girl id -> where she was last frame, for how fast she is walking
+  }
+
+  /** What the dog needs to know about you, the quad you are on, the other vehicles and the girls on foot: see world/dog.js for the shape. */
+  dogContext(dt, ridden) {
+    const boarded = this.boardUnit;
+    const q = boarded?.quad;
+    const p = q ? q.position : this.player.position;
+    const owner = q
+      ? { x: p.x, z: p.z, speed: Math.abs(q.speed ?? 0), yaw: q.yaw, riding: true }
+      : { x: p.x, z: p.z, speed: Math.hypot(this.player.velocity.x, this.player.velocity.z), yaw: this.player.yaw, riding: false };
+    let rack = null;
+    if (ridden && q.mugAnchor) {
+      const at = q.mugAnchor.getWorldPosition(this._dogRackAt ??= new THREE.Vector3());
+      rack = { id: ridden.id, x: at.x, y: at.y, z: at.z, yaw: q.yaw, ok: !this.herOnBack(q) && !q.isTipped };
+    }
+    const vehicles = this.units
+      .filter((u) => u !== boarded)
+      .map((u) => ({ id: u.id, x: u.quad.position.x, z: u.quad.position.z, speed: Math.abs(u.quad.speed ?? 0), yaw: u.quad.yaw, driver: this.quadUser(u, ridden) }));
+    const girls = [];
+    for (const c of this.companions) {
+      const id = c.character.id;
+      const at = c.root.position;
+      const prev = this.dogGirlPrev.get(id);
+      const speed = prev && dt > 0 ? Math.hypot(at.x - prev.x, at.z - prev.z) / dt : 0;
+      this.dogGirlPrev.set(id, { x: at.x, z: at.z });
+      if (c.fsm.is('walking')) girls.push({ id, x: at.x, z: at.z, yaw: c.root.rotation.y, speed });
+    }
+    return { owner, rack, vehicles, girls };
+  }
+
+  updateDog(dt, ridden) {
+    if (!this.dog) return;
+    const on = !!this.dogParams.enabled;
+    this.dogView.root.visible = on;
+    if (!on) return;
+    const ctx = this.dogContext(dt, ridden);
+    if (!this.dogPlaced) {
+      this.dogPlaced = true;
+      if (!this.dog.catchUp(ctx.owner)) this.dog.place(ctx.owner.x + 3, ctx.owner.z + 3);
+    }
+    this.dogCtx = ctx;
+    for (const e of this.dog.update(dt, ctx)) this.fireDogEvent(e);
+    this.dogView.update(dt);
+    this.dogAudio.update(dt, this.dog.at(), this.dog.panting);
+  }
+
+  /** What the dog did, sounded and told to the girls. */
+  fireDogEvent(e) {
+    if (e.kind === 'bark') {
+      this.dogAudio.bark(e, e.excited);
+      this.dogView.bark();
+    } else if (e.kind === 'yelp') {
+      this.dogAudio.yelp(e);
+      this.animalSay('dogYelp');
+    } else if (e.kind === 'mounted') this.animalSay('dogMounted');
+    else if (e.kind === 'chase') this.animalSay('dogChasing', e.girl);
+    else if (e.kind === 'nip') this.animalSay('dogBoots', e.id);
+  }
+
+  /** The debug panel's and console's dog buttons. */
+  debugDog(action, arg) {
+    const dog = this.dog;
+    const p = this.player.position;
+    const ctx = this.dogCtx;
+    if (action === 'call') {
+      const d = this.camera.getWorldDirection(new THREE.Vector3());
+      const n = Math.hypot(d.x, d.z) || 1;
+      dog.place(p.x + (d.x / n) * 2.5, p.z + (d.z / n) * 2.5);
+    } else if (action === 'ride') {
+      if (!ctx?.rack?.ok) return false;
+      dog.mount(ctx.rack);
+    } else if (action === 'down') {
+      if (!dog.riding) return false;
+      dog.banned = 0;
+      dog.lastRack = ctx?.rack ?? dog.lastRack;
+      const events = [];
+      dog.getDown(events);
+      for (const e of events) this.fireDogEvent(e);
+    } else if (action === 'chase') {
+      const v = ctx?.vehicles.filter((q) => q.speed > 0.5).sort((a, b) => Math.hypot(a.x - dog.x, a.z - dog.z) - Math.hypot(b.x - dog.x, b.z - dog.z))[0];
+      if (!v) return false;
+      dog.chaseCool = 0;
+      const e = dog.start('chase', v.id, ctx);
+      if (e) this.fireDogEvent(e);
+      return !!e;
+    } else if (action === 'boots') {
+      const g = ctx?.girls.find((o) => o.id === arg) ?? ctx?.girls[0];
+      if (!g) return false;
+      const e = dog.start('nip', g.id, ctx);
+      if (e) this.fireDogEvent(e);
+      return !!e;
+    } else if (action === 'bark') {
+      this.fireDogEvent({ kind: 'bark', ...dog.at(), excited: true });
+    }
     return true;
   }
 

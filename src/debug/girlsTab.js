@@ -250,6 +250,12 @@ export function buildGirlsTab(d) {
   button(out, 'Put the cat asleep on the nearest vehicle', () => g.debugCat('perch') || toast('No open vehicle to put it on'));
   button(out, 'Shoo the cat', () => g.debugCat('shoo') || toast('The cat is not near enough, or is already off'));
   button(out, 'Keep the cat in the barn / let it out', () => g.debugCat('shelter'));
+  show(out, 'the dog', () => `${g.dog.mode}${g.dog.riding ? ` on ${g.dog.rackId}` : ''}${g.dog.target ? ` after ${g.dog.target}` : ''}`);
+  button(out, 'Call the dog over to you', () => g.debugDog('call'));
+  button(out, 'Put the dog on your rack', () => g.debugDog('ride') || toast('You need to be on a quad with a rear rack'));
+  button(out, 'Get the dog down off the rack', () => g.debugDog('down') || toast('She is not on a rack'));
+  button(out, 'Send the dog after the nearest moving vehicle', () => g.debugDog('chase') || toast('Nothing else is moving'));
+  button(out, 'Make the dog bark', () => g.debugDog('bark'));
   show(out, 'electric fence', () => `${g.fence.live ? 'on' : 'off'}; last zapped: ${g.fence.lastZap ? `${g.fence.lastZap.id} (${g.fence.lastZap.kind})` : 'nobody yet'}`);
   button(out, 'Zap you on the fence', () => g.debugZapFence());
   show(out, 'the lane and the gates', () => `${g.trafficHost.describe()}; south gate ${g.trafficHost.gate('south').isOpen ? 'open' : 'shut'}, big gate ${g.trafficHost.gate('road').isOpen ? 'open' : 'shut'}, grid gate ${g.trafficHost.gate('grid')?.isOpen ? 'open' : 'shut'}`);

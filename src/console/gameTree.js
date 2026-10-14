@@ -304,6 +304,13 @@ export function buildGameTree(g, host) {
     perch: flag(() => false, (v) => v && g.debugCat('perch'), 'set to true: warm the nearest open vehicle and put the cat asleep on it'),
     shelter: flag(() => g.catForceShelter, (v) => g.debugCat('shelter', v), 'keep the cat in the barn whatever the weather'),
   }), 'the barn cat');
+  const dog = group(() => ({
+    mode: text(() => `${g.dog.mode}${g.dog.riding ? ` on ${g.dog.rackId}` : ''}${g.dog.target ? ` after ${g.dog.target}` : ''}`, 'what the dog is doing (idle, wander, sniff, follow, seek, hop, ride, down, chase, nip, dodge) and what she is on or after'),
+    call: flag(() => false, (v) => v && g.debugDog('call'), 'set to true: the dog is put down a few metres in front of you'),
+    ride: flag(() => g.dog.riding, (v) => (v ? g.debugDog('ride') : g.debugDog('down')), 'true: put the dog on the rear rack of the quad you are on; false: get her down'),
+    chase: flag(() => false, (v) => v && g.debugDog('chase'), 'set to true: the dog goes after the nearest moving vehicle'),
+    bark: flag(() => false, (v) => v && g.debugDog('bark'), 'set to true: the dog barks'),
+  }), 'the farm dog');
   const fence = group(() => ({
     on: flag(() => g.fence.live, (v) => { g.fenceParams.live = v ? 1 : 0; }, 'whether the electric fence on the hill is switched on'),
     last: text(() => (g.fence.lastZap ? `${g.fence.lastZap.id} (${g.fence.lastZap.kind})` : 'nobody yet'), 'who last got a jolt from it'),
@@ -361,6 +368,7 @@ export function buildGameTree(g, host) {
     farm,
     wildlife,
     cat,
+    dog,
     fence,
     lane,
     generator,
