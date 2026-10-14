@@ -72,6 +72,10 @@ export const SHIRT_COLLAR = {
   thickness: 0.0018,
 };
 
+// A buttoned plaid's collar under the polo's: a lower stand, so the polo's collar folds out over it, and the shirt's longer fall
+// and sharper points, so its edge and points show beyond the polo's.
+export const SHIRT_UNDER_COLLAR = { ...SHIRT_COLLAR, stand: 0.016, standFront: 0.012 };
+
 // The over-polo's collar: a little smaller than her own polo's, so hers shows round its edge.
 export const OVER_COLLAR = { ...COLLAR, stand: 0.018, standFront: 0.014, out: 0.022, pointOut: 0.016, pointDrop: 0.025 };
 

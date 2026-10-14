@@ -3725,6 +3725,15 @@ Jamie: from behind the crop-top looked like nothing joined up; her left strap di
 - **The straps** keep the triangles where her side joins her arm (leaving them out let a ray through), and ignore a hit that isn't on the side of her the ray came from: on her left a low ray slipped under her bust and hit the inside of her back, and that stray point, at the start of the strap, dragged its front end 3.5 cm up when the path was evened out. Evened out, each point is kept outside her skin by a fresh ray where it now lies, and lifted 3.5 mm along the way her skin faces there. The band and the straps measure the band's height round her about the same middle, so they meet.
 - Checked headless, Jess close up from the front, front left, both sides and the back. Not checked: in motion. Two tiny specks of skin still show through the band at the front.
 
+### Follow-up: the buttoned plaid over the polo
+
+Jamie: a buttoned plaid should still show the polo under it, as the open one does. Asked how it should show, he chose the polo's collar worn out over the plaid's, with the plaid's buttons left as dealt (even done right up).
+
+- **The polo stays on under a buttoned plaid** (`addEachGarment` in `outfit.js`), and the body's shirt paint under it stays the polo's colour (`bodyColours`); only a girl with no polo at all gets the old plaid-only shirt.
+- **The plaid over it** (`PLAID_OVER` in `polo.js`): the over-polo's room (1.35 cm off her against the polo's 0.7), sleeves 1.5 cm off over the polo's, its neck 6 mm lower (`neckBack` 0.01, `neckSide` 0.008, `neckFront` -0.014) and eased out to 1.2 cm so the polo's neck band stands up out of it, and its V showing what is under it (`inset: false`).
+- **The collars the other way round.** The plaid's collar is built first, with a lower stand (`SHIRT_UNDER_COLLAR`: 1.6 cm at the back, 1.2 at the front, the shirt's longer fall and points otherwise), then the polo's is laid over the polo, the plaid and the plaid's collar. The open plaid and the double polo are unchanged.
+- Checked: a unit test on the stand-in body (the plaid outside the polo with a neck no higher, the polo's collar above and outside the plaid's at the back), and headless shots of both girls front, three-quarter and behind (Amy done right up, Jess with two undone), and with a jumper on top, where the plaid's collar points show under the polo's. The plaid's collar is the same check as the shirt, so under the polo's it mostly blends in. The faint dark ring across the upper chest of a buttoned plaid was there before this change. Not checked: sitting, driving, or in the wax jacket.
+
 ## Two different figures, a rounder bust, and the seat of the shorts (2026-10-14)
 
 Jamie: the bust a little rounder and more shapely, wider, and growing in width and depth as it gets bigger; the girls with slightly different figures and heights; then the shorts showed a bump before going back in, and should blend into a shapely bottom.

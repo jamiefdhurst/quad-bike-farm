@@ -218,6 +218,19 @@ export const PLAID = {
 };
 
 
+// The plaid shirt buttoned over her polo: roomier than the polo under it, as the over-polo is, and its neck a little lower so her
+// polo's neck band and collar stand up out of it (her collar is laid out over the plaid's, outfit.js). The polo shows in its V.
+export const PLAID_OVER = {
+  ...PLAID,
+  ease: 0.0135,
+  neckBack: 0.01,
+  neckSide: 0.008,
+  neckFront: -0.014,
+  neckEase: 0.012, // clear of the polo's neck band (0.45 cm off her, 1.1 cm deep)
+  sleeveEase: 0.015, // over the polo's sleeves
+  inset: false, // what shows in the V is her polo
+};
+
 // The plaid shirt worn open over her polo: a little roomier, its fronts hanging apart all the way down so the polo shows.
 export const PLAID_OPEN = {
   ...PLAID,

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { buildTop, buildInset, buttonShape, slitShape, poloFields, POLO, JUMPER, COAT, PLAID, PLAID_OPEN, OVER_POLO } from './polo.js';
+import { buildTop, buildInset, buttonShape, slitShape, poloFields, POLO, JUMPER, COAT, PLAID, PLAID_OVER, PLAID_OPEN, OVER_POLO } from './polo.js';
 import { buildCropTop } from './crop.js';
 import { buildShorts, SHORTS } from './shorts.js';
-import { buildCollar, COLLAR, COAT_COLLAR, SHIRT_COLLAR, OVER_COLLAR } from './collar.js';
+import { buildCollar, COLLAR, COAT_COLLAR, SHIRT_COLLAR, SHIRT_UNDER_COLLAR, OVER_COLLAR } from './collar.js';
 import { buildHood, lowerHood, intoHood, chestShare, tartan } from './hood.js';
 import { COAT_COLLAR_COLOUR } from './coats.js';
 import { measureHead } from './helmetView.js';
@@ -417,13 +417,13 @@ export function withShirt(outfit, color) {
 }
 
 /**
- * The body's palette for an outfit: under a buttoned plaid its shirt band is the plaid's ground, and under a crop-top it's her
- * skin (her top half is bare).
+ * The body's palette for an outfit: under a crop-top her shirt band is her skin (her top half is bare). Under a plaid it stays
+ * her polo's colour, as the polo is under it, buttoned or open; without a polo, a buttoned plaid's ground.
  */
 export function bodyColours(outfit) {
   const kind = outfit.style?.kind;
   if (kind === 'cropTop') return { ...outfit.colors, shirt: 'skin' };
-  if (kind === 'plaid' && !outfit.style.plaidOpen) return { ...outfit.colors, shirt: outfit.style.plaid[0] };
+  if (kind === 'plaid' && !outfit.style.plaidOpen && !outfit.polo) return { ...outfit.colors, shirt: outfit.style.plaid[0] };
   return outfit.colors;
 }
 
@@ -1056,26 +1056,33 @@ function addGarments(rig, outfit) {
 }
 
 function addEachGarment(rig, outfit) {
-  // The day's outfit (outfits.js): her polo; a plaid shirt buttoned instead of it or open over it; a second polo over hers; or a
-  // crop-top. Then the jumper over whatever she has on, then the collars from the inside out, each lying over everything outside
-  // its top and the collar under it.
+  // The day's outfit (outfits.js): her polo; a plaid shirt buttoned or open over it; a second polo over hers; or a crop-top. Then
+  // the jumper over whatever she has on, then the collars from the inside out, each lying over everything outside its top and the
+  // collar under it; under a buttoned plaid, her polo's collar is worn out over the plaid's instead.
   const style = outfit.style ?? {};
   const kind = style.kind ?? 'polo';
   const open = outfit.poloOpen ?? 0;
   const pop = (spec) => (style.popped ? { ...spec, popped: true } : spec);
-  const plaidShut = kind === 'plaid' && !style.plaidOpen;
   let polo = null;
   let outer = null;
   if (kind === 'cropTop') addCrop(rig, style.crop);
-  else if (outfit.polo && !plaidShut) polo = addTop(rig, 'polo', outfit.polo, { ...POLO, open: kind === 'doublePolo' ? style.underOpen ?? 0 : open });
+  else if (outfit.polo) polo = addTop(rig, 'polo', outfit.polo, { ...POLO, open: kind === 'doublePolo' ? style.underOpen ?? 0 : open });
   if (kind === 'doublePolo') outer = addTop(rig, 'overPolo', style.over, { ...OVER_POLO, open });
-  if (kind === 'plaid') outer = addTop(rig, 'plaid', style.plaid, style.plaidOpen ? PLAID_OPEN : { ...PLAID, open: style.plaidButtons ?? 0 });
+  const plaidShut = kind === 'plaid' && !style.plaidOpen;
+  const shut = { ...(polo ? PLAID_OVER : PLAID), open: style.plaidButtons ?? 0 };
+  if (kind === 'plaid') outer = addTop(rig, 'plaid', style.plaid, style.plaidOpen ? PLAID_OPEN : shut);
   const jumper = outfit.jumper ? addTop(rig, 'jumper', outfit.jumper, JUMPER) : null;
   // A collar lies on its own top and on the jumper over everything (its neck is low enough for collars to come out over it), never
   // on a shirt worn over its top: under that it's hidden but for where it shows at the neck and down the front.
   const knit = jumper ? [jumper.built.shell] : [];
-  const under = polo ? addCollar(rig, polo, [polo.built.shell, ...knit], outfit.polo, pop(COLLAR)) : null;
-  if (outer) addCollar(rig, outer, [outer.built.shell, ...knit, ...(under ? [under] : [])], style.over, pop(kind === 'plaid' ? SHIRT_COLLAR : OVER_COLLAR), `${kind}Collar`);
+  if (plaidShut && polo) {
+    // Buttoned over her polo: the plaid's collar first, a lower stand on its lower neck, then hers folded out over it and the shirt.
+    const shirt = addCollar(rig, outer, [outer.built.shell, ...knit], style.over, pop(SHIRT_UNDER_COLLAR), 'plaidCollar');
+    addCollar(rig, polo, [polo.built.shell, outer.built.shell, ...knit, ...(shirt ? [shirt] : [])], outfit.polo, pop(COLLAR));
+  } else {
+    const under = polo ? addCollar(rig, polo, [polo.built.shell, ...knit], outfit.polo, pop(COLLAR)) : null;
+    if (outer) addCollar(rig, outer, [outer.built.shell, ...knit, ...(under ? [under] : [])], style.over, pop(kind === 'plaid' ? SHIRT_COLLAR : OVER_COLLAR), `${kind}Collar`);
+  }
   if (outfit.coat) addCoat(rig, outfit.coat);
   if (outfit.shorts) addBottom(rig, outfit.shorts, !!outfit.coat);
   if (outfit.wellies) addWellies(rig, outfit.wellies);

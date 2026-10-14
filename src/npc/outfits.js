@@ -1,5 +1,5 @@
-// What each girl wears on top today. Most days a polo; some days a plaid flannel shirt, buttoned up in place of the polo or worn
-// open over it; some days a second polo, white or black and a size bigger, over her own; and on a very warm day Jess may wear just
+// What each girl wears on top today. Most days a polo; some days a plaid flannel shirt over it, buttoned (her polo's collar out over
+// the plaid's) or worn open; some days a second polo, white or black and a size bigger, over her own; and on a very warm day Jess may wear just
 // a string crop-top. Any collar may be popped. Dealt for each day of the farm from its own stream of the farm seed, so a day
 // replays the same, with each girl's odds in characters.js (outfitOdds, poppedChance). Pure.
 
@@ -26,7 +26,7 @@ export const CROP_COLOURS = ['#151515', '#f3f0ea', '#d4508c', '#58b5c9'];
 
 export const DEFAULT_OUTFIT_PARAMS = {
   warmAbove: 20, // degrees C: a day this warm at its warmest is a day for a crop-top
-  plaidOpenChance: 0.5, // how often a plaid shirt is worn open over the polo rather than buttoned up instead of it
+  plaidOpenChance: 0.5, // how often a plaid shirt is worn open over the polo rather than buttoned over it
 };
 
 export const OUTFIT_PARAM_RANGES = {
@@ -89,5 +89,5 @@ export function describeOutfit(o) {
   if (o.kind === 'cropTop') return 'a crop-top';
   if (o.kind === 'doublePolo') return `two polos (${o.over === OVER_POLO_COLOURS[0] ? 'white' : 'black'} over hers)${o.popped ? ', collars popped' : ''}`;
   const name = PLAID_PALETTE.find((q) => q.colours === o.plaid || q.colours[0] === o.plaid?.[0])?.name ?? 'plaid';
-  return `a ${name} plaid shirt, ${o.plaidOpen ? 'open over her polo' : 'buttoned'}${o.popped ? ', collar popped' : ''}`;
+  return `a ${name} plaid shirt, ${o.plaidOpen ? 'open over her polo' : 'buttoned over her polo'}${o.popped ? ', collar popped' : ''}`;
 }

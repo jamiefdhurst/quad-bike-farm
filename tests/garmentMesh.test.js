@@ -433,6 +433,27 @@ describe('the other tops', () => {
     expect(top(over)).toBeLessThanOrEqual(top(under));
   });
 
+  it('buttons a plaid over the polo, outside it with a lower neck, and lays the polo collar out over the plaid collar', async () => {
+    const { PLAID_OVER } = await import('../src/npc/polo.js');
+    const { SHIRT_UNDER_COLLAR } = await import('../src/npc/collar.js');
+    const body = cylinderBody();
+    const polo = buildTop(body, POLO).shell;
+    const plaid = buildTop(body, { ...PLAID_OVER, open: 0 }).shell;
+    const out = (v) => Math.hypot(v.rest[0], v.rest[2]);
+    const at = (vs, y) => vs.filter((v) => !v.apart && Math.abs(v.rest[1] - y) < 0.02).map(out);
+    expect(Math.min(...at(plaid.verts, 1.05))).toBeGreaterThan(Math.max(...at(polo.verts, 1.05)));
+    const top = (vs) => Math.max(...vs.filter((v) => v.edge === 'neck' && v.rest[2] < 0).map((v) => v.rest[1]));
+    expect(top(plaid.verts)).toBeLessThanOrEqual(top(polo.verts));
+    const shirt = buildCollar(plaid, body, { placketWidth: PLAID_OVER.placketWidth, over: [plaid] }, SHIRT_UNDER_COLLAR);
+    const hers = buildCollar(polo, body, { placketWidth: POLO.placketWidth, over: [polo, plaid, shirt] });
+    const high = (c) => Math.max(...c.verts.map((v) => v.rest[1]));
+    expect(high(hers)).toBeGreaterThan(high(shirt)); // her polo's fold above the plaid's
+    // Round the back, at the plaid collar's fold, her fall lies outside it (her stand is inside, under it).
+    const back = (c, y) => c.verts.filter((v) => v.rest[2] < -0.02 && Math.abs(v.rest[0]) < 0.03 && Math.abs(v.rest[1] - y) < 0.006).map(out);
+    const y = high(shirt) - 0.004;
+    expect(Math.max(...back(hers, y))).toBeGreaterThan(Math.max(...back(shirt, y)));
+  });
+
   it('pops a collar up round her neck instead of laying it down', () => {
     const body = cylinderBody();
     const { shell } = buildTop(body, POLO);

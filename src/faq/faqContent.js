@@ -1036,8 +1036,8 @@ export const FAQ_SECTIONS = [
       },
       {
         q: "Why are the girls wearing something different today?",
-        a: `What they have on top is dealt each day. Most days it's their polo. Some days it's a plaid flannel shirt, either buttoned up
-          instead of the polo or worn open over it; some days a second polo, white or black and a size bigger, over their own, so you
+        a: `What they have on top is dealt each day. Most days it's their polo. Some days it's a plaid flannel shirt over the polo, either
+          buttoned, with the polo's collar out over the shirt's, or worn open; some days a second polo, white or black and a size bigger, over their own, so you
           can see the one underneath at the collar and the sleeves; and now and then a collar is popped. Jess is likelier than Amy to
           pop hers. On a very warm day (over 20°C at its warmest) Jess may turn up in just a string crop-top. A day's outfit stays the
           same all day, and a jumper or a wax jacket goes on over whatever they're wearing.`,
