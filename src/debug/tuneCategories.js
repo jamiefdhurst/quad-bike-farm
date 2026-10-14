@@ -9,7 +9,7 @@ export const TUNE_CATEGORIES = {
   ],
   'Engines, fuel and faults': ['Quirks', 'Engine oil', 'Dripping carb', 'Carb icing', 'Water in the fuel', 'Barn find', 'Red diesel mistake', 'Two-stroke smoke'],
   'Items and workshop': ['Toolbox', 'Logbook', 'Workshop bench', 'Battery charger', 'Generator', 'Spares shelf', 'Girl at the bench', 'Bale spike', 'Phone calls', 'Jerry can', 'Pre-mix can', 'Diesel can', 'Oil bottle', 'Coolant bottle', 'Anti-gel bottle', 'Plug-saver', 'Hose', 'Jump leads', 'Winch', 'Loading ramps', 'Bell', 'Hayloft', 'Muck job', 'Job board', 'Records', 'Photos'],
-  'World, weather and sound': ['Time of day', 'Forecast', 'Thunderstorm', 'Wind', 'Surfaces', 'Puddle ice', 'Dust', 'Ground wear', 'Road mud', 'Barn', 'Bonfire', 'Stream', 'Sky', 'Yard haze', 'Mist', 'Rainbows', 'Fumes in the barn', 'Map', 'Sound', 'Player', 'Sheep', 'Wildlife', 'Cat', 'Dog', 'Electric fence', 'Traffic', 'Gates', 'Girls and the grid gate', 'Farm that remembers', 'Graphics'],
+  'World, weather and sound': ['Time of day', 'Forecast', 'Thunderstorm', 'Wind', 'Surfaces', 'Puddle ice', 'Dust', 'Ground wear', 'Road mud', 'Barn', 'Bonfire', 'Stream', 'Sky', 'Yard haze', 'Mist', 'Rainbows', 'Fumes in the barn', 'Map', 'Sound', 'Radio', 'Radio: sound', 'Player', 'Sheep', 'Wildlife', 'Cat', 'Dog', 'Electric fence', 'Traffic', 'Gates', 'Girls and the grid gate', 'Farm that remembers', 'Graphics'],
   'Girls: themselves': ['Outfits'], // each girl's own build and her riding pillion; named from the characters, see GIRL_GROUP
   'Girls: moving about': [
     'Amy walk-round', "Amy won't ride", 'Getting on and off', 'Standing about', 'Waiting about', 'What catches the eye', 'Hearing a quad', 'Warming hands', 'Shelter in a cab', 'Girls carrying things', 'Home and jogging', 'Walking round buildings',
@@ -22,7 +22,7 @@ export const TUNE_CATEGORIES = {
   'Girls: things they do': [
     'Racing', 'Drag race', 'Drives that go somewhere', 'Hill climb', 'Cone course', 'Follow the leader', 'Doughnuts', 'Tarmac', 'Showing off', 'The jump', 'Hay ride', 'Hay ride seat', 'Mudguard ride', 'Muddy girls',
     'Tractor remarks', 'Mini moto nerve', 'Thrown off the moto', 'Tractor go', 'Tractor go drive', 'Tractor go start', 'Tractor go novice',
-    'UTV go drive', 'Land Rover go drive', 'Land Rover go handle', 'Their cars', 'Girl pushing a start', 'Girl steering a tow', 'Keeping it alive', 'Lights to work by', 'Guiding a trailer back', 'Starting the generator', 'Dares',
+    'UTV go drive', 'Land Rover go drive', 'Land Rover go handle', 'Their cars', 'Girl pushing a start', 'Girl steering a tow', 'Keeping it alive', 'Lights to work by', 'Guiding a trailer back', 'Starting the generator', 'Dares', 'Radio: the girls',
   ],
 };
 

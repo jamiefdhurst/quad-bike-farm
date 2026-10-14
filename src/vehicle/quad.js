@@ -103,6 +103,7 @@ export class Quad {
     this.car = car; // the girls' cars (carModel.js): cab vehicles like the Land Rovers, with two seats in front and two behind
     this.utv = utv;
     this.hornHeld = false; // set by the game while the horn sounds (the UTV's wheel pad sinks)
+    this.radio = null; // the Land Rovers' and the girls' cars' radio, fitted by the unit (radio.js)
     this.lights = lightSwitch ? new LightSwitch() : null; // the UTV's and the Land Rovers' three-way light switch: off, dipped, main beam (lightSwitch.js)
     this.signals = lightSwitch ? new Indicators() : null; // and their indicators and hazards (indicators.js)
     this.signalClick = null; // the relay's tick: 'on' or 'off' on the frame the lamp changes (the game plays it and clears it)
@@ -517,6 +518,7 @@ export class Quad {
     }
     if (this.drive && this.input) this.driveKeys(input);
     if (this.lights && this.input && input.wasPressed('KeyP')) this.lights.cycle();
+    if (this.radio && this.input && input.wasPressed('KeyI')) this.radioKey(input);
     if (this.signals && this.input) {
       if (input.wasPressed('Comma')) this.signals.press('left');
       if (input.wasPressed('Period')) this.signals.press('right');
@@ -582,6 +584,16 @@ export class Quad {
     const d = this.drive;
     if (input.wasPressed('KeyG')) d.toggle();
     if (d.hasLock && input.wasPressed('KeyU')) d.toggleLock();
+  }
+
+  /** I switches the radio on and off; with Shift held it is louder, with Alt quieter. It needs the key on, and says so when it hasn't it. */
+  radioKey(input) {
+    const r = this.radio;
+    if (input.isDown('ShiftLeft') || input.isDown('ShiftRight')) r.louder();
+    else if (input.isDown('AltLeft') || input.isDown('AltRight')) r.quieter();
+    else r.toggle();
+    if (r.on && !this.engine.hasPower) this.say('The radio needs the key on');
+    else this.say(r.on ? `Radio ${Math.round(r.volume * 100)}%` : 'Radio off');
   }
 
   /** Tells whoever's at the controls something, for a moment; the game shows it (takeNote). */
@@ -1227,6 +1239,7 @@ export class Quad {
     this.headlightLevel = lit ? level : 0;
     this.headlightColour = beams ? beams.colour : look.colour;
     this.headlightReach = beams?.reach ?? 1;
+    if (this.radio) this.radio.update(dt, { power: e.hasPower, cranking: e.state === 'cranking', rev: Math.min(1, e.rpm / (e.params.maxRpm || 6000)) });
     if (this.signals) {
       const sides = this.signals.update(dt, Math.max(-1, Math.min(1, this.steer / ((this.params.maxSteerDeg * Math.PI) / 180))), e.hasPower && e.ignitionOn);
       if (this.signals.click) this.signalClick = this.signals.click;

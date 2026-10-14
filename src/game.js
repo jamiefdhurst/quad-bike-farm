@@ -88,6 +88,9 @@ import { CargoHold, CARGO_PARAM_RANGES } from './vehicle/cargoHold.js';
 import { UtvRide, UTV_RIDE_PARAM_RANGES, DEFAULT_UTV_RIDE_PARAMS } from './npc/utvRide.js';
 import { TractorGo, TRACTORGO_PARAM_RANGES } from './npc/tractorGo.js';
 import { vehicleOptions, wheelChildren } from './npc/vehicleWheel.js';
+import { RadioAudio } from './audio/radioAudio.js';
+import { RADIO_PARAMS, RADIO_PARAM_RANGES } from './vehicle/radio.js';
+import { RadioTaste, applyRadioMove, RADIO_TASTE_PARAMS, RADIO_TASTE_PARAM_RANGES } from './npc/radioTaste.js';
 import { CarGo, Borrowing, mayDriveCar, CAR_GO_PARAM_RANGES } from './npc/carGo.js';
 import { LPlates, LPLATE_PARAM_RANGES, meanSkill } from './npc/lPlates.js';
 import { LPlateSet } from './vehicle/lPlateModel.js';
@@ -1265,6 +1268,7 @@ export class Game {
     this.setUpCat();
     this.setUpDog();
     this.setUpFence();
+    this.setUpRadios();
     this.trafficHost = new TrafficHost(this); // the lane's traffic, the visitors and the two gates (world/trafficHost.js)
 
     // The bell beside the barn doors: ring it and the girls come back to the barn, wherever they are.
@@ -2351,6 +2355,52 @@ export class Game {
         l.slowFor = 0;
       }
     }
+  }
+
+  /** The radios in the Land Rovers and the girls' cars (vehicle/radio.js): their sound, and what each girl does about the one she is sat by. */
+  setUpRadios() {
+    this.radioAudio = new RadioAudio(this.audioHub);
+    this.radioTaste = {}; // per girl and vehicle, made when she first sits in one
+    registerTuning('Radio', RADIO_PARAMS, RADIO_PARAM_RANGES);
+    registerTuning('Radio: the girls', RADIO_TASTE_PARAMS, RADIO_TASTE_PARAM_RANGES);
+    registerTuning('Radio: sound', this.radioAudio.p, { volume: [0, 1.5, 0.01], crackleRate: [0, 30, 0.5] });
+  }
+
+  /** Every unit that has a radio. */
+  radioUnits() {
+    return this.units.filter((u) => u.quad.radio);
+  }
+
+  /** Switches every radio on or off together (the debug panel and the console). */
+  setAllRadios(on) {
+    for (const u of this.radioUnits()) u.quad.radio.set(on);
+  }
+
+  /** The girls who are sat in this vehicle now: driving it, or in it with you. */
+  girlsIn(unit, mount) {
+    return this.companions.filter((c) => (c.quad === unit.quad && c.fsm.is('driving')) || (mount && c.onHayRide && c.trailer === mount));
+  }
+
+  /** Each frame: the sound of every radio that is on, and a girl sat beside one reaching for it (npc/radioTaste.js). */
+  updateRadios(dt) {
+    const listener = this.camera.position;
+    const board = this.boardUnit;
+    const sets = [];
+    const mounts = new Map(Object.values(this.landys).filter((l) => l.unit).map((l) => [l.unit, l.mount]));
+    for (const unit of this.radioUnits()) {
+      const radio = unit.quad.radio;
+      const at = unit.quad.position;
+      sets.push({ key: unit.spec.id, radio, distance: Math.hypot(listener.x - at.x, listener.y - at.y, listener.z - at.z), inside: board === unit });
+      const girls = this.girlsIn(unit, mounts.get(unit));
+      for (const c of this.companions) {
+        const id = `${c.character.id}:${unit.spec.id}`;
+        const taste = (this.radioTaste[id] ??= new RadioTaste());
+        const move = taste.update(dt, girls.includes(c), c.params.radioKeen, radio, RADIO_TASTE_PARAMS);
+        const said = move ? applyRadioMove(move, radio) : null;
+        if (said) c.voice.say(said, { urgent: true });
+      }
+    }
+    this.radioAudio.update(sets, dt, RADIO_PARAMS);
   }
 
   /** The girls' cars in a line, for the Girls tab and the console: where each is, who has it, and when its owner next takes it out. */
@@ -9230,6 +9280,7 @@ export class Game {
     this.updateTipTrailer(dt, ridden, input);
     if (this.tractorUnit) this.updateBaleSpike(dt, ridden, input);
     if (GO_KINDS.some((k) => this.goVehicle(k)) && auto) this.updateTractorGo(dt, ridden);
+    this.updateRadios(dt);
     this.updateCars(dt); // (minding you taking her car is a reaction, so it runs with the girls on hold too)
     this.updateLPlates(dt);
     this.updatePushStart();

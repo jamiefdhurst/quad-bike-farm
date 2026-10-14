@@ -309,6 +309,11 @@ export class DebugGui {
     tick(r, 'parking brake', () => !!unit().quad.parkBrake, (v) => (unit().quad.parkBrake = v));
     // The UTV's light switch, and the 2WD / 4WD switch where there is one.
     if (u.quad.lights) r.add({ get v() { return unit().quad.lights?.mode; }, set v(x) { unit().quad.lights?.set(x); } }, 'v', LIGHT_MODES).name('lights').listen();
+    if (u.quad.radio) {
+      tick(r, 'radio on', () => unit().quad.radio?.on ?? false, (v) => unit().quad.radio?.set(v));
+      set(r, 'radio volume', () => round(unit().quad.radio?.volume ?? 0), (v) => unit().quad.radio?.setVolume(v), 0, 1);
+      show(r, 'radio (what you hear, signal)', () => (unit().quad.radio ? `${unit().quad.radio.describe()}, signal ${round(unit().quad.radio.signal)}, ${unit().quad.radio.profile.name}` : 'none'));
+    }
     if (u.quad.signals) r.add({ get v() { return unit().quad.signals?.mode; }, set v(x) { unit().quad.signals?.set(x); } }, 'v', SIGNAL_MODES).name('indicators').listen();
     if (u.quad.drive) r.add({ get v() { return unit().quad.drive?.mode; }, set v(x) { if (unit().quad.drive) unit().quad.drive.mode = x; } }, 'v', u.quad.drive.hasLock ? DRIVE_MODES : ['2wd', '4wd']).name('drive').listen();
     show(r, 'mixture', () => round(unit().engine.mixture));
@@ -401,6 +406,8 @@ export class DebugGui {
     row(one, 'Switch it off (fuel off)', () => stopOne(this.unit()));
     row(one, 'Warm it up', () => this.unit().engine.setTemperature(1));
     row(one, 'Cool it right down', () => this.unit().engine.setTemperature(0));
+    row(one, 'Turn every radio on', () => g.setAllRadios(true));
+    row(one, 'Turn every radio off', () => g.setAllRadios(false));
     row(one, 'Fill the tank', () => (this.unit().quad.fuel.litres = this.unit().quad.fuel.params.tankCapacity));
     row(one, 'Winch it onto the bale trailer', () => g.hud.toast(g.debugLoad(this.unit())));
     row(one, 'Pay it back off the trailer', () => g.hud.toast(g.debugUnload(this.unit())));

@@ -53,6 +53,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   lookSweep: 7, // 1/s, how fast her eyes move from one thing to the next
   lookSpeed: 3, // 1/s, how fast her head turns in and out
   // How she reacts with her body (reactions.js): the chances and the size of it.
+  radioKeen: 0.5, // how much she likes the radio on in a cab: above 0.5 she switches it on and turns it up, below she turns it down and off (radioTaste.js)
   reactEarsChance: 0.5, // revs right beside her: the chance she covers her ears
   reactStartleChance: 0.7, // a pheasant bursting out of the hedge near her: the chance she jumps
   reactCheerChance: 0.6, // someone landing a jump she can see: the chance she cheers
@@ -363,6 +364,7 @@ export const COMPANION_PARAM_RANGES = {
   lookLead: [0, 2, 0.05],
   lookSweep: [0.5, 20, 0.5],
   lookSpeed: [0.3, 10, 0.1],
+  radioKeen: [0, 1, 0.05],
   reactEarsChance: [0, 1, 0.05],
   reactStartleChance: [0, 1, 0.05],
   reactCheerChance: [0, 1, 0.05],

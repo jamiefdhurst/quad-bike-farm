@@ -80,6 +80,7 @@ export const RADIAL_ITEMS = [
   { label: '4WD', key: 'KeyG', where: 'ride' },
   { label: 'Diff lock', key: 'KeyU', where: 'ride' },
   { label: 'Neutral', key: 'Digit0', where: 'ride' },
+  { label: 'Radio', key: 'KeyI', where: 'ride', note: 'Land Rovers and cars' },
   { label: 'Seat belt', key: 'Semicolon', where: 'ride' },
   { label: 'Right it', key: 'KeyT', where: 'ride' },
   { label: 'Hitch', key: 'KeyJ' },

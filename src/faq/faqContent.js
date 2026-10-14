@@ -1579,6 +1579,25 @@ export const FAQ_SECTIONS = [
           Amy goes carefully. Jess does not. Her friend may climb in with her. They also sit in them out of the rain, like the Land Rovers.`,
       },
       {
+        q: 'How do I turn the radio on?',
+        a: `In either Land Rover or one of the girls' cars, press <kbd>I</kbd> with the key on. <kbd>Shift</kbd>+<kbd>I</kbd> turns it up and
+          <kbd>Alt</kbd>+<kbd>I</kbd> turns it down; on a gamepad it is in the ring. There is one station, mostly talk with a tune now and then,
+          and every radio on the farm plays the same thing. It goes quiet while the starter turns and when the battery is flat. Outside, you can hear
+          one that has been left on from a few metres.`,
+        tip: 'Press I in a Land Rover or a car, key on, for the radio. Shift+I louder, Alt+I quieter.',
+      },
+      {
+        q: 'Why does the radio crackle and fade?',
+        a: `Each set is different. The Series III has an old dash radio that picks up the engine, so it spits more the harder you rev, and the station
+          drifts in and out. The 200TDi's is plainer. Amy's Fiesta has a cassette radio with a little warble, and Jess's Corsa a loud one with a
+          lot of bass that holds the station well.`,
+      },
+      {
+        q: 'Why did she turn the radio on, up or off?',
+        a: `Jess switches it on and turns it up when she is sat in a vehicle with you, and Amy would rather hear the engine, so she turns it down and
+          then off. Neither touches it for a while after you have, so if you turn it back on it stays on for a bit.`,
+      },
+      {
         q: 'Can I ride in their cars?',
         a: `Yes. While one of them is driving, look at the car and press <kbd>E</kbd> to get in beside her, or look at its back half and press <kbd>B</kbd> to get in the back. There are
           four seats, two in front and two behind, all with belts (<kbd>;</kbd>). The front seat tips forward to let people into the back, as they are both three-doors.`,

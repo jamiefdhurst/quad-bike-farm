@@ -30,6 +30,7 @@ import { buildCarModel, carLayout, carProxy, CAR_GROUND_OFFSET, CAR_STAND } from
 import { CrankHandle, DEFAULT_CRANK_PARAMS, CRANK_PARAM_RANGES } from './crankHandle.js';
 
 import { hotSteam } from '../engine/heat.js';
+import { Radio, RADIO_PARAMS, hasRadio } from './radio.js';
 
 // Where steam leaves the orange's radiator, in the model's own space, and what the steam looks like: pale, quick and rising.
 const RADIATOR_AT = { x: 0, y: 0.68, z: 0.86 };
@@ -136,6 +137,7 @@ export class QuadUnit {
       }),
     });
     this.quad.unit = this;
+    this.quad.radio = hasRadio(spec) ? new Radio(spec.id, RADIO_PARAMS) : null; // the Land Rovers' and the girls' cars' (radio.js)
     this.torqueRock = new TorqueRock();
     this.vibration = new VibrationModel({ ...DEFAULT_VIBRATION_PARAMS, ...spec.vibration });
     this.airbox = new THREE.Vector3(); // scratch: where a spit back puffs from, under the seat

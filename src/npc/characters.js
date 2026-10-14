@@ -57,6 +57,7 @@ export const CHARACTERS = [
       voiceHardBrakeTime: 0.3,
       towHorizon: 2.6, // brakes early and keeps her eyes on the rope
       towDistractChance: 0.004,
+      radioKeen: 0.1, // would rather hear the engine: turns the radio down, then off
       reactEarsChance: 0.85, // covers her ears at revs beside her; claps a jump rather than cheering
       reactStartleChance: 0.95, // a pheasant out of the hedge makes her jump
       reactCheerChance: 0.45,
@@ -105,6 +106,7 @@ export const CHARACTERS = [
       carGoWeight: 1.3, // can't leave her Corsa alone: down the road and back, loud
       voiceHardBrakeDecel: 6.5, // takes a sharper stop before she calls it hard braking
       voiceHardBrakeShed: 3,
+      radioKeen: 0.9, // radio on and up, always
       reactEarsChance: 0.15, // loves the noise; cheers a jump with both arms up; flinches less
       reactStartleChance: 0.4, // laughs at the pheasant, mostly
       reactCheerChance: 0.95,

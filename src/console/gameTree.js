@@ -117,6 +117,11 @@ export function buildGameTree(g, host) {
         tune: tuningTree((n) => n.startsWith(`${u().name}/`), `${u().name}/`),
       };
       if (q().lights) out.lights = choice(LIGHT_MODES, () => q().lights.mode, (v) => q().lights.set(v), 'the UTV light switch');
+      if (q().radio) {
+        out.radio = flag(() => q().radio.on, (v) => q().radio.set(v), 'the radio is on (it also needs the key on to make a sound)');
+        out.radioVolume = num(() => q().radio.volume, (v) => q().radio.setVolume(v), 0, 1);
+        out.radioState = text(() => `${q().radio.describe()}, signal ${q().radio.signal.toFixed(2)}`, 'what the radio is doing');
+      }
       if (q().signals) out.indicators = choice(SIGNAL_MODES, () => q().signals.mode, (v) => q().signals.set(v), 'the indicators and hazards');
       if (q().drive) out.drive = choice(q().drive.hasLock ? DRIVE_MODES : ['2wd', '4wd'], () => q().drive.mode, (v) => (q().drive.mode = v), 'the 2WD / 4WD switch');
       if (!q().fuel.params.noTap || (q().landRover && !q().engine.params.compressionIgnition)) out.choke = num(() => q().choke, (v) => (q().choke = v), 0, 1); // the Land Rover has a choke but no tap
@@ -286,6 +291,7 @@ export function buildGameTree(g, host) {
     laid: ro(() => g.muck.laid, '', 'patches laid on the stubble this job'),
     muckDone: flag(() => g.muck.done, (v) => v && g.debugFinishMuck(), 'the muck job is done (ticks the board)'),
     bonfire: text(() => `${g.bonfire.state}, ${g.bonfire.piled} on the pile, ${Math.round(g.bonfire.intensity * 100)}% blaze`, 'the bonfire (world/bonfire.js)'),
+    radios: flag(() => g.radioUnits().some((u) => u.quad.radio.on), (v) => g.setAllRadios(v), 'every radio in the Land Rovers and the cars: set on or off together'),
     bonfireLit: flag(() => g.bonfire.burning, (v) => (v ? g.debugLightFire() : g.bonfire.putOut()), 'the bonfire is lit (setting it builds the pile and lights it)'),
     silageDone: flag(() => g.jobBoard.finished.has('silage'), (v) => v && g.debugFinishSilage(), 'the silage job is done (ticks the board)'),
     spikeLift: num(() => g.baleRig.lift.lift, (v) => { g.baleRig.lift.lift = Math.max(0, Math.min(1, v)); }, 0, 1, '', 'the bale spike arms, 0 down to 1 up'),

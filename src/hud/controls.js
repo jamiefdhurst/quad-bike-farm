@@ -87,6 +87,13 @@ export const CONTROLS = [
     ],
   },
   {
+    title: 'The radio (the Land Rovers and the girls\' cars)',
+    lines: [
+      `<kbd>I</kbd> radio on and off, <kbd>Shift</kbd>+<kbd>I</kbd> louder, <kbd>Alt</kbd>+<kbd>I</kbd> quieter. It needs the key on, and goes quiet while the starter turns`,
+      `Each has a set of its own: the Series' picks up the engine and drifts off the station, Amy's Fiesta has a cassette radio, Jess's Corsa a loud one with a lot of bass. Jess turns it up, Amy turns it off`,
+    ],
+  },
+  {
     title: 'Fuel and tools',
     lines: [
       `<kbd>E</kbd> pick up a jerry can, hold <kbd>E</kbd> at a quad to pour or at the tank to refill, <kbd>G</kbd> put it down`,

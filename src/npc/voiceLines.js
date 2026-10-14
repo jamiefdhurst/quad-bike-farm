@@ -43,6 +43,7 @@ import { AMY_ADDITIVE_LINES } from './additiveLines.js';
 import { AMY_DUSK_LINES } from './duskLines.js';
 import { AMY_FORECAST_LINES } from './forecastLines.js';
 import { AMY_CAR_LINES } from './carLines.js';
+import { AMY_RADIO_LINES } from './radioLines.js';
 import { AMY_WORK_LIGHT_LINES } from './workLightLines.js';
 import { AMY_HANDBRAKE_LINES } from './handbrakeLines.js';
 import { AMY_FOUR_WD_LINES } from './fourWdLines.js';
@@ -1535,6 +1536,8 @@ export const VOICE_LINES = {
   ...AMY_VEHICLEGO_LINES,
   // Her own car, and you borrowing it (carLines.js).
   ...AMY_CAR_LINES,
+  // The radio in a vehicle she is sat in (radioLines.js).
+  ...AMY_RADIO_LINES,
   // The L plates Jess tapes to her quad, and the tractor they end up on (lPlateLines.js).
   ...AMY_LPLATE_LINES,
   // The tractor creeping off by itself, and the hedge (tractorRunawayLines.js).
