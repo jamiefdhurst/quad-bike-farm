@@ -67,6 +67,15 @@ describe('a bigger bust', () => {
     // At the apex it stands out further than in proportion to the amount.
     expect(at(1.5, APEX.x, APEX.y, APEX.z)[2]).toBeGreaterThan(1.5 * at(1, APEX.x, APEX.y, APEX.z)[2]);
   });
+
+  it('is fuller underneath than above, and a bigger one reaches further down', () => {
+    const at = (bust, y) => figureOffset(APEX.x, y, APEX.z, APEX, { bust, waist: 0, hips: 0 })[2];
+    // The same distance below the apex as above, it stands out further.
+    expect(at(1, APEX.y - 0.1)).toBeGreaterThan(at(1, APEX.y + 0.1));
+    // Low down, a bigger bust still stands out more than in proportion (its height grows with it).
+    const low = APEX.y - 0.17;
+    expect(at(1.4, low)).toBeGreaterThan(1.4 * at(1, low));
+  });
 });
 
 describe('her seat', () => {

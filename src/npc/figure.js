@@ -32,6 +32,9 @@ const BUST = {
   sideSwell: 0.4, // the sideways swell, out towards her arms, stronger than the rest so she's fuller at the sides
   grow: 0.45, // a bigger bust (over 1) covers more of her as well as standing out further: its region this much wider and
   // deeper per unit over 1 (and narrower under 1), so a full one is round rather than a point on a narrow base
+  fullBelow: 0.03, // the dome's fullest line sits this far below the apex (more with size), so the lower half is the fuller one
+  domeUnder: 0.16, // below that line the push holds out longer (a lower power than `dome`) before tucking in at the fold
+  foldEdge: 0.3, // and meets the body over a shorter edge underneath than above (the smoothstep's reach in t)
 };
 // Each fades out over `reach` above and below its height `y`; the other
 // numbers are the fraction it narrows or widens by at full strength.
@@ -104,14 +107,22 @@ export function figureOffset(x, y, z, apex, { bust = 0, waist = 0, hips = 0 }) {
     const side = x < 0 ? -1 : 1;
     const across = Math.abs(x) - apex.x;
     const g = Math.max(0.5, 1 + BUST.grow * (bust - 1)); // how much bigger its region is, with the bust
-    const ry = (y > apex.y ? BUST.reachUp : BUST.reachDown) * (0.5 + 0.5 * g);
-    const e = (across / (BUST.reach * g)) ** 2 + ((y - apex.y) / ry) ** 2;
+    // Measured from its fullest line, a little below the apex. Above, its height grows half as fast as its width; below, as fast,
+    // so a bigger bust is as round underneath as across rather than wide and shallow.
+    const yc = apex.y - BUST.fullBelow * g;
+    const ry = y > yc ? BUST.reachUp * (0.5 + 0.5 * g) : BUST.reachDown * g;
+    const e = (across / (BUST.reach * g)) ** 2 + ((y - yc) / ry) ** 2;
     if (e < 1) {
       const t = 1 - e;
       const front = smoothstep(BUST.frontFrom, BUST.frontTo, z) * bust;
       const w = t * t * (3 - 2 * t) * front;
       // The forward push is domed, so the breast is round rather than conical; it still meets the body smoothly at the edge.
-      const dome = t ** BUST.dome * smoothstep(0, 0.5, t) * front;
+      // Underneath (blended in over a short way below the fullest line, so there is no step) it holds out longer and tucks in
+      // over a shorter edge; and the bigger it is the rounder the dome.
+      const under = smoothstep(0, 0.08, yc - y);
+      const power = (BUST.dome + (BUST.domeUnder - BUST.dome) * under) / Math.sqrt(g);
+      const edge = 0.5 + (BUST.foldEdge - 0.5) * under;
+      const dome = t ** power * smoothstep(0, edge, t) * front;
       // No sideways swell on the midline, so the two halves meet.
       dx += side * across * BUST.sideSwell * w * smoothstep(0, apex.x, Math.abs(x));
       dy += ((y - apex.y) * BUST.swell - BUST.drop) * w;
