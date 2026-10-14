@@ -3134,6 +3134,8 @@ Jamie: the game was working his M4 Max MacBook Pro hard, and more is coming. Mea
 - Debug: "the calendar says" and "Call it a day now" in the Girls tab, `save day` and `farm.calendar` in the console (the forced one ignores the time and the girls, not seeding).
 - Not checked: the fade and reload in a real browser, and that the card fades in after the reload.
 
+- Recap before the fade (TODO 81). Jamie: a card, not Amy reading aloud in the barn; the girls' lines generic ("Today was a good day", "More fun tomorrow") rather than about what happened. Built: E on the calendar saves and opens the card (`src/farm/dayRecap.js`, pure, tested) over a dark screen: Amy's logbook for today (not earlier days' entries, not the buzz ranking; the last `recapLogLines` 5), the bucket list items ticked today (the achievements' `unlocked` value is -1 for ticks restored from earlier days) with the running total, and distance ridden and bogs from the achievements' counters (which start each load, so they are today's). Amy says `dayDone` (`npc/dayLines.js`, six lines each, none about events) as it opens, Jess `recapJessDelay` 3 s later. E, Enter or a click dismisses it after `recapLock` 1 s (so the opening press does not), and that starts the existing fade. Tunables sit with the end-of-day ones in "Farm that remembers".
+- Not done: each girl's verdict on how the day went (mood, favour, events); photos taken are not counted because nothing counts them yet. Not checked: the card's look in a browser.
 
 
 ## The fields beside the lane, opened up (TODO 188, follow-up)

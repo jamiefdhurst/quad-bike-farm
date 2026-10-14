@@ -640,3 +640,62 @@ body {
     opacity: 1;
   }
 }
+
+/* The recap card shown when you call it a day, over a dark screen, before the fade (farm/dayRecap.js). */
+#day-recap {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.88);
+  color: #e9e4d4;
+  text-align: center;
+  cursor: pointer;
+}
+
+#day-recap.shown {
+  display: flex;
+  animation: daybreak 1s ease-out;
+}
+
+#day-recap h2 {
+  margin: 0 0 16px;
+  font-size: 32px;
+  font-weight: normal;
+}
+
+#day-recap h3 {
+  margin: 14px 0 4px;
+  font-size: 14px;
+  font-weight: normal;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+#day-recap ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+#day-recap p {
+  margin: 4px 0;
+  font-size: 18px;
+}
+
+#day-recap .none,
+#day-recap .facts {
+  opacity: 0.7;
+}
+
+#day-recap .go {
+  margin-top: 28px;
+  font-size: 14px;
+  opacity: 0.6;
+}

@@ -17,6 +17,8 @@ import { DEFAULT_BIKE_PARAMS, BIKE_PARAM_RANGES } from './vehicle/bikeLean.js';
 import { DEFAULT_RIDER_LEAN_PARAMS, RIDER_LEAN_RANGES } from './vehicle/riderLean.js';
 import { pickFleet } from './vehicle/fleet.js';
 import { endOfDay, DayFade } from './farm/endOfDay.js';
+import { dayRecap, todaysLog, DayRecap } from './farm/dayRecap.js';
+import { formatEntry } from './workshop/logbook.js';
 import { DEFAULT_FARM_PARAMS, FARM_PARAM_RANGES, browserStorage, openFarm, writeSave, wipeSave, fleetFromSave, describeFarm, validSave } from './farm/farmSave.js';
 import { captureVehicle, restoreVehicle, overnight, savedFaults, captureGirls, restoreGirls } from './farm/farmState.js';
 import { applyIdle, applyTopRpm, applyVariation, pickIdle } from './vehicle/quadVariation.js';
@@ -3575,13 +3577,18 @@ export class Game {
   /** The wall calendar is how you call it a day (farm/endOfDay.js): E on it in the evening, with the girls in the barn, fades to black and loads the next day. */
   setUpEndOfDay() {
     this.dayFade = new DayFade();
+    this.dayRecap = new DayRecap();
+    this.dayRecapEl = document.createElement('div');
+    this.dayRecapEl.id = 'day-recap';
+    this.dayRecapEl.addEventListener('click', () => this.dismissRecap());
+    document.body.appendChild(this.dayRecapEl);
     this.dayFadeEl = document.createElement('div');
     this.dayFadeEl.id = 'day-fade';
     this.dayFadeEl.innerHTML = '<p></p>';
     document.body.appendChild(this.dayFadeEl);
     this.interaction.add({
       target: this.wallCalendar.group,
-      isAvailable: () => !this.dayFade.active,
+      isAvailable: () => !this.dayFade.active && !this.dayRecap.active,
       prompt: () => ({ text: this.endOfDayNow().text }),
       interact: () => this.callItADay(),
     });
@@ -3600,17 +3607,57 @@ export class Game {
     );
   }
 
-  /** Crosses the day off: the screen fades to black (updateEndOfDay), the farm saves, and the page loads again as the next day. */
+  /** Crosses the day off: the recap card comes up over the dark while the farm saves, and a press on it starts the fade (updateEndOfDay). */
   callItADay({ force = false } = {}) {
-    if (this.dayFade.active) return;
+    if (this.dayFade.active || this.dayRecap.active) return;
     const now = this.endOfDayNow();
     if (!now.ok && !(force && !this.farm.seeded)) return this.hud.toast(now.text);
+    this.saveFarm();
+    this.showRecap();
+  }
+
+  /** The card over the dark: Amy's logbook for today, what was ticked off, and each girl's sign-off. */
+  showRecap() {
+    const a = this.achievements;
+    const ticked = a.entries().filter((e) => e.done && a.unlocked.get(e.id) >= 0).map((e) => e.name);
+    const r = dayRecap(
+      {
+        day: this.farm.day,
+        entries: todaysLog(this.notebook.book.entries, formatEntry, this.notebook.book.day),
+        ticked,
+        score: a.score(),
+        metres: a.n('metres'),
+        bogs: a.n('bogged'),
+      },
+      this.farmParams,
+    );
+    const esc = (t) => String(t).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+    const list = (items, more, none) =>
+      items.length ? `<ul>${items.map((t) => `<li>${esc(t)}</li>`).join('')}${more ? `<li>and ${more} more</li>` : ''}</ul>` : `<p class="none">${none}</p>`;
+    this.dayRecapEl.innerHTML =
+      `<h2>${esc(r.title)}</h2><h3>Amy's logbook</h3>${list(r.log, r.logMore, 'Nothing written down today.')}` +
+      `<h3>Bucket list</h3>${list(r.ticked, r.tickedMore, 'Nothing new ticked off.')}<p class="total">${esc(r.total)}</p>` +
+      `${r.facts.length ? `<p class="facts">${esc(r.facts.join(', '))}</p>` : ''}<p class="go">Press E to carry on</p>`;
+    this.dayRecapEl.classList.add('shown');
+    this.dayRecap.open();
+    this.recapJessIn = this.farmParams.recapJessDelay;
+    this.companions.find((c) => c.character.id === 'amy')?.voice.say('dayDone', { force: true });
+  }
+
+  /** E, Enter or a click on the card: the fade to black begins. */
+  dismissRecap() {
+    if (!this.dayRecap.dismiss(this.farmParams)) return;
+    this.dayRecapEl.classList.remove('shown');
     this.dayFade.start();
     this.dayFadeEl.querySelector('p').textContent = `Day ${this.farm.day} done`;
-    this.saveFarm();
   }
 
   updateEndOfDay(dt) {
+    if (this.dayRecap.active) {
+      this.dayRecap.update(dt);
+      if (this.recapJessIn > 0 && (this.recapJessIn -= dt) <= 0) this.companions.find((c) => c.character.id === 'jess')?.voice.say('dayDone', { force: true });
+      if (this.input.wasPressed('KeyE') || this.input.wasPressed('Enter')) this.dismissRecap();
+    }
     if (!this.dayFade.active) return;
     const f = this.dayFade.update(dt, this.farmParams);
     this.dayFadeEl.style.opacity = String(f.alpha);

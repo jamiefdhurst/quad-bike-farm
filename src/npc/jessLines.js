@@ -40,6 +40,7 @@ import { JESS_DUSK_LINES } from './duskLines.js';
 import { JESS_FORECAST_LINES } from './forecastLines.js';
 import { JESS_CAR_LINES } from './carLines.js';
 import { JESS_RADIO_LINES } from './radioLines.js';
+import { JESS_DAY_LINES } from './dayLines.js';
 import { JESS_WORK_LIGHT_LINES } from './workLightLines.js';
 import { JESS_HANDBRAKE_LINES } from './handbrakeLines.js';
 import { JESS_FOUR_WD_LINES } from './fourWdLines.js';
@@ -493,6 +494,7 @@ export const JESS_LINES = {
   ...JESS_VEHICLEGO_LINES,
   ...JESS_CAR_LINES,
   ...JESS_RADIO_LINES,
+  ...JESS_DAY_LINES,
   ...JESS_TRACTORRUNAWAY_LINES,
   ...JESS_FALLINGOUT_LINES,
   ...JESS_ROMANCE_LINES,
