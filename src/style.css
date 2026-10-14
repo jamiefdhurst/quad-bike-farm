@@ -53,13 +53,14 @@ body {
 #overlay.tuning .keys-panel,
 #overlay.tuning .keys-open {
   margin: 8px 0 0;
-  padding: 6px 14px;
+  padding: 8px 18px;
   border: 0;
   border-radius: 999px;
   background: rgba(239, 228, 196, 0.14);
   color: #efe4c4;
   font: inherit;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
 }
 
