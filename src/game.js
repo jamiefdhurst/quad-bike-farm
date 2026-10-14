@@ -126,6 +126,8 @@ import { SmokeSense, SMOKE_PARAM_RANGES } from './npc/smokeSense.js';
 import { FaultShout, SHOUT_PARAM_RANGES } from './npc/shoutFault.js';
 import { Haze, HAZE_PARAM_RANGES } from './world/haze.js';
 import { HazeLayer } from './effects/hazeLayer.js';
+import { Mist, Rainbow, MIST_PARAM_RANGES, RAINBOW_PARAM_RANGES } from './world/mist.js';
+import { RainbowView } from './effects/rainbowView.js';
 import { BarnFumes, FUMES_PARAM_RANGES } from './world/barnFumes.js';
 import { barnShape, underRoof } from './world/barn.js';
 import { Race, RACE_PARAM_RANGES, planLap, YouRun, youOnGrid, pickQuads } from './npc/race.js';
@@ -573,6 +575,14 @@ export class Game {
     this.barnFumes = new BarnFumes();
     const bs = barnShape(this.world.layout);
     this.barnFumesLayer = new HazeLayer(this.scene, { x: bs.x, z: bs.z }, 2.8, createRandom(this.seed ^ 0x51c3), { size: [3.5, 3], height: [2.6, 2.2], wander: 0.8 });
+    // Mist lying in the north field's hollow on a cool morning, and a rainbow after a shower with the sun out (world/mist.js).
+    const hollow = this.world.layout.stubbleFields.north.hollow;
+    this.mist = new Mist(Mist.drawDew(createRandom(this.seed ^ 0x3d1e7)));
+    this.mistLayer = new HazeLayer(this.scene, hollow, Math.min(hollow.rx, hollow.rz) * 1.1, createRandom(this.seed ^ 0x6b2c), {
+      size: [10, 9], height: [0.2, 1.3], wander: 3, count: 26, spread: [hollow.rx / (hollow.rz * 1.1), 1],
+    });
+    this.rainbow = new Rainbow();
+    this.rainbowView = new RainbowView(this.scene);
     console.info(`Time: ${this.daylight.text()}, falling ${this.daylight.drop.toFixed(1)} °C into the night. Weather: ${this.weather.name}, ${this.weather.temperature} °C (${this.weather.band}), chill ${this.weather.chill.toFixed(2)}, frost ${this.weather.frost.toFixed(2)} (add ?temp=<degrees> to the URL to force it)`);
     // She starts beside a random quad in the yard; the player starts facing it.
     this.homeUnit = this.units[home];
@@ -1460,6 +1470,8 @@ export class Game {
     registerTuning('Two-stroke smoke', this.smokeSense.p, SMOKE_PARAM_RANGES);
     registerTuning('Shouting a fault', this.faultShout.p, SHOUT_PARAM_RANGES);
     registerTuning('Yard haze', this.haze.p, HAZE_PARAM_RANGES);
+    registerTuning('Mist', this.mist.p, MIST_PARAM_RANGES);
+    registerTuning('Rainbows', this.rainbow.p, RAINBOW_PARAM_RANGES);
     registerTuning('Fumes in the barn', this.barnFumes.p, FUMES_PARAM_RANGES);
     registerTuning('Racing', this.race.p, RACE_PARAM_RANGES);
     registerTuning('Drag race', this.drag.p, DRAG_PARAM_RANGES);
@@ -1583,6 +1595,18 @@ export class Game {
   }
 
   /** How hard it is raining now, 0 to 1 (it settles back to what the weather would do in time). */
+  /** Holds the mist in the barley hollow at a level now (the console), or null to let the morning decide. */
+  setMist(level) {
+    this.mist.forced = level === null ? null : Math.max(0, Math.min(1, level));
+    if (this.mist.forced !== null) this.mist.level = this.mist.forced;
+  }
+
+  /** Holds a rainbow at a strength now (the console), or null to let the weather decide. */
+  setRainbow(strength) {
+    this.rainbow.forced = strength === null ? null : Math.max(0, Math.min(1, strength));
+    if (this.rainbow.forced !== null) this.rainbow.strength = this.rainbow.forced;
+  }
+
   setRain(amount) {
     this.weather.rain = this.weather.target = Math.max(0, Math.min(1, amount));
   }
@@ -5033,7 +5057,7 @@ export class Game {
       unit.smoke.darkness = Math.max(0, Math.min(1, 1 - w.warmth * 1.3));
     }
     const tint = (m, hex) => m?.color.setHex(hex).multiplyScalar(light);
-    for (const layer of [this.hazeLayer, this.barnFumesLayer]) for (const b of layer?.blobs ?? []) tint(b.sprite.material, 0xaeb9c8);
+    for (const layer of [this.hazeLayer, this.barnFumesLayer, this.mistLayer]) for (const b of layer?.blobs ?? []) tint(b.sprite.material, 0xaeb9c8);
     tint(this.rain.lines?.material, 0xc4ccd2);
     tint(this.snow.points?.material, 0xf2f5f8);
   }
@@ -6356,6 +6380,18 @@ export class Game {
       c.voice.say('hazeCough', { urgent: true });
     }
     this.hazeLayer.update(dt, this.haze.level, smoke.windX, smoke.windZ, (x, z) => this.world.heightAt(x, z));
+  }
+
+  /** Mist in the barley hollow on a damp cool morning, and a rainbow after a shower with the sun out (world/mist.js). */
+  updateMist(dt) {
+    const w = this.weather;
+    const sun = this.daylight.sun;
+    const smoke = this.girlUnits[0].smoke.params;
+    this.mist.update(dt, { hour: this.daylight.hour, sunrise: this.daylight.p.sunrise, temperature: w.temperature, wet: w.wet, wind: w.wind, rain: w.rain, snow: w.snow });
+    this.mistLayer.update(dt, this.mist.level, smoke.windX, smoke.windZ, (x, z) => this.world.heightAt(x, z), this.mist.p.maxOpacity);
+    const sunshine = sun.light * Math.min(1, w.baseSky.sunIntensity / 1.25);
+    this.rainbow.update(dt, { rain: w.rain, sunElevation: sun.elevation, sunshine });
+    this.rainbowView.update(this.rainbow.strength, sun.dir, this.camera, this.rainbow.p, sun.light);
   }
 
   /** An engine run in the barn fills it with fumes; free girls inside cough and walk out, and Amy switches it off from the doorway (world/barnFumes.js). */
@@ -8909,6 +8945,7 @@ export class Game {
     this.updateDustClouds();
     this.updateFaultShout(dt);
     this.updateHaze(dt);
+    this.updateMist(dt);
     this.updateBarnFumes(dt);
     this.updateThrottleGrab(dt, ridden);
     if (auto) this.updateRockPrank(dt);

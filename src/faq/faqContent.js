@@ -521,6 +521,18 @@ export const FAQ_SECTIONS = [
         tip: 'Snow means less grip: brake early, take bends gently, and use the choke on a cold start.',
       },
       {
+        q: 'What is the mist in the barley field?',
+        a: `On a cool, still morning (about six games in ten) a low mist lies in the barley field's hollow, past the east gateway, where the
+          damp collects. It is thickest just after sunrise and burns off over the next couple of hours, sooner if the day is warm. Wind
+          and rain blow it away, so if there is none to see, it was too late in the day, too breezy or too warm.`,
+      },
+      {
+        q: 'Why was there a rainbow, and why can I not find one?',
+        a: `A rainbow can follow a shower while the sun is out: look for it in the sky opposite the sun, once the rain has eased. The lower the
+          sun, the taller the bow, so you will not see one around midday. It fades after a few minutes. It needs a real shower and clear sun,
+          so it will not appear on a dull day or when it is still pouring.`,
+      },
+      {
         q: 'What time is it?',
         a: `Look at the clock on the barn wall, past the end of the workbench, or the clock on a dash that has one. Each game starts at its own
           time, some in the morning and some in the afternoon, and the day runs on about twelve times faster than real time, so a morning

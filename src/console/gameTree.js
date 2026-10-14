@@ -255,6 +255,10 @@ export function buildGameTree(g, host) {
     forecast: text(() => g.forecast.describe(g.daylight.hour), 'what the barn board says and what the day will do'),
     turn: flag(() => !!g.weather.from, (v) => v && g.turnWeatherNow(), 'on: the weather turns now (to what the forecast has, else something believable)'),
     darkness: ro(() => g.daylight.darkness),
+    mist: num(() => g.mist.level, (v) => g.setMist(v), 0, 1, '', 'mist in the barley hollow (setting it holds it there; mistAuto lets the day decide)'),
+    mistAuto: flag(() => g.mist.forced === null, (v) => v && g.setMist(null), 'on: the day decides the mist again'),
+    rainbow: num(() => g.rainbow.strength, (v) => g.setRainbow(v), 0, 1, '', 'a rainbow opposite the sun, which has to be up (setting it holds it there; rainbowAuto lets the weather decide)'),
+    rainbowAuto: flag(() => g.rainbow.forced === null, (v) => v && g.setRainbow(null), 'on: a shower with the sun out decides the rainbow again'),
   }), 'the day');
 
   const gAll = group(() => ({

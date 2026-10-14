@@ -593,6 +593,8 @@ public/audio/          the cut engine recordings
 
 To recut the recordings, see the instructions at the top of `tools/slice_engine_audio.py`.
 
+**Mist and rainbows (TODO 61).** About six games in ten have a mist morning: on a cool, still morning (the damper and colder the better) a low mist lies in the barley field's hollow, out past the east gateway. It is thickest in the first hour after sunrise and burns off over the next couple of hours, sooner on a warm day. Wind or rain clears it, and it doesn't form in snow. After a proper shower, once the rain has eased and the sun is out, a rainbow can stand in the sky opposite the sun: the lower the sun, the taller the bow, and with the sun high you won't see one. It fades some minutes later. "Mist" and "Rainbows" in the Tune tab set them; the console has `weather.mist` and `weather.rainbow` (setting one holds it, `mistAuto` and `rainbowAuto` hand it back). The girls don't remark on either yet.
+
 **Fumes in the barn** (`src/world/barnFumes.js`). Running an engine indoors fills the barn with haze (tunable under "Fumes in the barn"); it takes about a minute of idling to get thick and a few minutes to clear.
 
 **Exhaust smoke** (`src/effects/exhaustSmoke.js`). One soft puff per firing pulse, so you can see the beats at idle. White-grey vapour when cold, darker when rich or flooded, a burst when you snap the throttle open, and a light haze once warm. Tunable in the Smoke folder.
@@ -677,7 +679,7 @@ What is still to do. Finished items are recorded in DECISIONS.md, under their ol
 58. **Done.** Can we temporarily fix the "choke creeps" problem, or make it less of an issue? It causes one thing to not be able to idle at all
 59. **Done.** The overheating/increase in temp doesn't seem to make much difference. Firstly, the cars should have their normal temp in the middle (this should be the same for all gauges) and it should creep up when it gets too hot. Being too hot should cause problems, and they should all be able to get too hot - I haven't seen a temp warning yet, idling them all for all day could cause this on some, or driving too hard for a while.
 60. **Done.** Console needs to autofill things either after a '.' or after a ' ', every option
-61. Mist in the barley hollow and rainbows. Ground mist sits in the damp north field early in the game and burns off as it warms; a passing shower can leave a rainbow.
+61. **Done.** Mist in the barley hollow and rainbows. Ground mist sits in the damp north field early in the game and burns off as it warms; a passing shower can leave a rainbow.
 62. **Done.** Waterproofs and getting cold. In the rain the girls pull their hoods up or fetch coats from the barn, and their hair goes wet. A girl who gets soaked gets cold: she shivers, wants a car's heater or fetches a jumper. (Built: the wax jackets and their hoods. Getting soaked and cold moved to 206.)
 63. When the girls want to warm up in a car/LR and they start it and manage the choke, they should do it from inside and not stand outside in the cold.
 64. Can't pick up the jump leads off the bench
