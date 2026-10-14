@@ -13,7 +13,17 @@ const cap = (s) => s[0].toUpperCase() + s.slice(1);
 const round = (v, n = 2) => Math.round(v * 10 ** n) / 10 ** n;
 
 /** A read-only line over a getter. */
-const show = (f, label, get) => f.add({ get v() { return get(); } }, 'v').name(label).listen().disable();
+const show = (f, label, get) => {
+  // The value sits in a narrow input, so a long one is cut off; the whole of it is the tooltip.
+  let c;
+  const read = () => {
+    const v = get();
+    if (c) c.domElement.title = String(v);
+    return v;
+  };
+  c = f.add({ get v() { return read(); } }, 'v').name(label).listen().disable();
+  return c;
+};
 /** A slider that writes back. */
 const slider = (f, label, get, put, min, max, step = 0.01) => f.add({ get v() { return get(); }, set v(x) { put(x); } }, 'v', min, max, step).name(label).listen();
 const tick = (f, label, get, put) => f.add({ get v() { return get(); }, set v(x) { put(x); } }, 'v').name(label).listen();

@@ -24,6 +24,12 @@ export class DebugGui {
     this.game = game;
     this.gui = new GUI({ title: 'Debug  ( ` to hide )', width: 340 });
     this.gui.hide();
+    // lil-gui keeps a name on one line and lets a long one push its widget right, so the right-hand column drifts row by row.
+    // Let names wrap inside their column instead, so every widget starts at the same place.
+    const style = document.createElement('style');
+    style.textContent = `.lil-gui { --name-width: 45%; }
+.lil-gui .lil-controller > .lil-name { width: var(--name-width); max-width: var(--name-width); white-space: normal; overflow-wrap: anywhere; line-height: 1.25; padding-top: 3px; padding-bottom: 3px; box-sizing: border-box; }`;
+    document.head.appendChild(style);
     this.visible = false;
     this.pickedId = null; // the vehicle chosen on the Vehicles tab; null follows whichever you are on or looking at
     this.tabs = { Vehicles: [], Girls: [], Tune: [] };
