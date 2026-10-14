@@ -1402,6 +1402,17 @@ Not a TODO item: Jamie asked for it alongside item 15. Asked first; the answers 
 - Left out: a tumble animation (she just slides into the usual dismount), her hands taking a different hold side-saddle (the arms still reach the same targets, only the body is turned), and any effect on you riding off without her afterwards beyond the lines she already has.
 - Checked: unit tests and a production build. Not checked in the running game, so the pose is the biggest unknown: whether the turned hips sit right on every quad's seat and look sensible, whether the arms reach you from the twisted body, whether the slip thresholds are about right for real riding, and the girls' new lines.
 
+
+## A burnt leg on the exhaust (TODO 76)
+
+Nothing needed asking; I took the item as written.
+
+- Pure logic in `src/npc/exhaustBurn.js` (tests in `tests/exhaustBurn.test.js`). The quads' silencers run down the right (`exhaustSideOf`: -1, or a spec's `exhaustSide`); the tractor, UTV, Land Rovers and cars have none to catch a leg on (0). Pipe heat is the larger of the engine's `heat` and `soak`, so a quad that has just worked or sat in the sun is hot and one left an hour is not.
+- Only a `legOver` getting off counts (the rider's seat and astride on the back), not a hop off the rack or a side-saddle slide. She normally gets off on the left; `exhaustSideChance` (Jess 0.3, Amy 0) has her swing off the right when the left is free. If her friend is on the left, either girl goes right, as before, but only Jess burns: `burnChance` is 0.8 for Jess and 0 for Amy, who holds her leg clear. Under `burnFrom` 0.35 of heat nothing happens; above it the chance rises with the heat.
+- When it burns, as the leg goes over (past half way through the move) she yelps (`burntLeg`, a self event, both girls have lines though Amy's only come from the debug button) and on landing she flinches away through the ordinary reaction. No injury and no lasting effect, so nothing is kept in the save. She does it again another day because each getting off is a fresh roll; she learns nothing.
+- Debug: "Burns her leg on the exhaust" in each girl's Girls folder (and `girl <name> burn-leg`) gets her off over the exhaust side, hot or not, if she is sat on a quad. The three tunables are in her companion params.
+- Not checked: how the yelp and the flinch look in the game (the reaction is the stock flinch, not a leg-grab pose).
+
 ## A dripping carb (TODO 17)
 
 The item settled it; I chose the details without asking.

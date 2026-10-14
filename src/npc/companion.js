@@ -20,6 +20,7 @@ import { carryingMethods } from './companionCarrying.js';
 import { carryParams } from './carrying.js';
 import { Contentment } from './contentment.js';
 import { SideSaddleSlip, pickSideSaddle } from './sideSaddle.js';
+import { exhaustSideOf, pipeHeat, dismountSideFor, burns } from './exhaustBurn.js';
 import { wavingMethods } from './companionWaving.js';
 import { waitingMethods } from './companionWaiting.js';
 import { DEFAULT_DOUGHNUT_PARAMS, ringPoints } from './doughnuts.js';
@@ -171,6 +172,9 @@ export class Companion {
     this.pillion = new PillionPose(this);
     this.content = new Contentment(); // what she likes about the quads: them running, the seat shaking her (contentment.js)
     this.sideSaddle = 0; // which way her legs hang on the back this ride: 0 astride, +1 her left, -1 her right (sideSaddle.js)
+    this.forceBurn = false; // the debug panel: the next dismount is over the exhaust side and burns (exhaustBurn.js)
+    this.burnPending = false;
+    this.burntLeg = false;
     this.sideBlend = 0; // 0..1: how far she's turned round to sit that way
     this.sideSlip = new SideSaddleSlip();
     this.slipping = false; // she's coming off the back because she slid
@@ -1741,6 +1745,16 @@ export const STATES = {
       if (this.dismountingFrom === 'pillion' && this.sideSaddle) this.dismountSide = this.sideSaddle;
       if (front && this.quad.driverStand) this.dismountSide = -1; // out of the driver's door
       if (im) this.dismountSide = im.side;
+      // Over the exhaust side with a leg (exhaustBurn.js): Jess sometimes picks it, and a hot pipe catches her calf.
+      this.burnPending = false;
+      const exhaustSide = exhaustSideOf(this.quad);
+      if (!im && this.quadMoveKind(front) === 'legOver' && exhaustSide) {
+        const forced = this.forceBurn;
+        this.dismountSide = forced ? exhaustSide : dismountSideFor({ side: this.dismountSide, exhaustSide, p: this.params });
+        const heat = forced ? 1 : pipeHeat(this.quad.engine);
+        this.burnPending = burns({ side: this.dismountSide, exhaustSide, heat, p: this.params, forced });
+      }
+      this.forceBurn = false;
       // Back into the world, keeping her current world transform.
       attachKeepingSize(this.scene, this.root);
       const e = new THREE.Euler().setFromQuaternion(this.root.quaternion, 'YXZ');
@@ -1764,6 +1778,12 @@ export const STATES = {
       const f = this.moveFrame;
       const spread = (this.dismountingFrom === 'rider' && this.quad.driverStand) ? 0 : this.dismountingFrom === 'rack' || (this.dismountingFrom === 'pillion' && this.sideSaddle) ? this.seatSpread() : p.legSpread;
       this.rig.legSpread = spread * (this.moving.kind === 'legOver' ? f.spread : f.sit);
+      // Her leg goes over the pipe about half way through.
+      if (this.burnPending && this.moveK < 0.55) {
+        this.burnPending = false;
+        this.burntLeg = true;
+        this.selfEvents.push('burntLeg');
+      }
       if (done) {
         this.endMove();
         this.movingSeatPose = null;
@@ -1775,6 +1795,10 @@ export const STATES = {
           this.quad.lastLeft = { who: this.character.id, braked: this.quad.parkBrake };
         }
         this.fsm.transition('idle', { facing: this.target.facing });
+        if (this.burntLeg) {
+          this.burntLeg = false;
+          this.react('flinch', { from: this.quad.position, strength: 1 }); // snatches her leg away
+        }
         // A request that needed her off this quad first (e.g. getting on the other one).
         const next = this.afterDismount;
         this.afterDismount = null;

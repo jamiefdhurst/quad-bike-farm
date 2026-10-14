@@ -215,6 +215,9 @@ export const DEFAULT_COMPANION_PARAMS = {
   sideSaddleChance: 0.35, // each time she gets on the back, that she sits side-saddle
   sideSaddleTurn: 1.0, // radians her hips turn towards the side her legs hang
   sideSaddleTwist: 0.8, // fraction of that turn her back twists back to face forward
+  exhaustSideChance: 0, // getting off a quad, that she swings off the exhaust side when the other is free (Amy never does)
+  burnFrom: 0.35, // pipe heat (0..1) under which a leg against it doesn't hurt
+  burnChance: 0, // that her leg catches the hot pipe when she does get off that side (Amy holds her leg clear)
   slipMinSpeed: 3, // m/s under which she can't slip
   slipLateral: 5, // m/s^2 of sideways push she takes before she starts to slide, side-saddle with nothing to hold
   slipBump: 25, // m/s^2 up a bump or landing she takes the same way
@@ -545,6 +548,9 @@ export const COMPANION_PARAM_RANGES = {
   sideSaddleChance: [0, 1, 0.05],
   sideSaddleTurn: [0, 1.5, 0.05],
   sideSaddleTwist: [0, 1, 0.05],
+  exhaustSideChance: [0, 1, 0.05],
+  burnFrom: [0, 1, 0.05],
+  burnChance: [0, 1, 0.05],
   slipMinSpeed: [0, 15, 0.5],
   slipLateral: [1, 20, 0.5],
   slipBump: [5, 80, 1],

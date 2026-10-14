@@ -1064,6 +1064,10 @@ export const FAQ_SECTIONS = [
         tip: 'Leave a quad running and Jess may ride off with it. Switch it off if you want it where you left it.',
       },
       {
+        q: 'Why did Jess yelp getting off a quad?',
+        a: `A quad's silencer runs down its right side, and Jess sometimes swings off that side without looking. If the engine has been working or is still hot, her calf catches the pipe: she yelps, jumps back and says so. It doesn't hurt her for good, and she'll do it again another day. Amy always gets off the other side. Let a quad cool before you get off if you'd rather she didn't.`,
+      },
+      {
         q: 'What do they do when I leave them alone?',
         a: `All sorts: wander off for a look round, start a quad, take one for a drive, race each other, go for a ride together, spin doughnuts, show off to you,
           line the quads up by the barn, leave a mug of tea on a rack, sit with you on the rock at the top of the hill with a flask, sit on the bales or the paddock fence on a fine day, run for the barn or climb into a Land Rover when it rains,

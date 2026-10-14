@@ -131,6 +131,8 @@ export const CHARACTERS = [
       boredDoughnutChance: 0.12, // spins doughnuts in the field when she's bored
       boredJumpChance: 0.12, // rides at the ramp in the field when she's bored
       sideSaddleChance: 0.1, // it isn't her style
+      exhaustSideChance: 0.3, // swings off the pipe side without looking
+      burnChance: 0.8, // and catches her calf on it if it's hot
       boredBuzzChance: 0.14, // goes and sits on a rough one for the shake, and says so
       pairWeight: 1.3, // can't stand about on her own for long
       boredShowOffChance: 0.12, // rides at you to wheelie or skid past, and looks to see you saw

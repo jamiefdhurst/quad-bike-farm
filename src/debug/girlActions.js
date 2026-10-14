@@ -4,6 +4,7 @@ import { pickTrick } from '../npc/showOff.js';
 import { cleanUp } from '../npc/muddiness.js';
 import { standBy } from '../npc/pair.js';
 import { WAITING_IDLES } from '../npc/waiting.js';
+import { exhaustSideOf } from '../npc/exhaustBurn.js';
 
 /**
  * @typedef {object} GirlAction
@@ -610,6 +611,16 @@ export function girlActions(g) {
     verb: 'light-me',
     label: '% lights you up with a vehicle (after dark)',
     run: (id) => g.askWorkLight(girl(id)),
+  });
+  actions.push({
+    verb: 'burn-leg',
+    label: '% burns her leg on the exhaust',
+    run: (id) => {
+      const c = girl(id);
+      if (!c.fsm.is('seated') || !exhaustSideOf(c.quad)) return toast(`${c.name} has to be sat on a quad with an exhaust on one side`);
+      c.forceBurn = true;
+      c.requestStandBeside(c.quad);
+    },
   });
   // Each way of waiting that fits what's about her (npc/waiting.js), started now.
   for (const [name, w] of Object.entries(WAITING_IDLES)) {

@@ -102,7 +102,7 @@ FEEL = {
                      'tinkerLimiter', 'selfDrive', 'ackGoAgain', 'stallRelief', 'likeAllRunning'], 'excited'),
     **dict.fromkeys(['rideFast', 'hardBrake', 'ghostRiding', 'driveTooFast', 'driveOverSteer', 'driveBump',
                      'driveRollBack', 'driveObstacle', 'sprayedHer', 'leftBehind', 'fallingBehind', 'takeOverStop',
-                     'takeOverDrive', 'driveScared', 'driveNervous', 'rideRough', 'rideShaking', 'sideSaddleWobble', 'sideSaddleSlip'], 'scared'),
+                     'takeOverDrive', 'driveScared', 'driveNervous', 'rideRough', 'rideShaking', 'sideSaddleWobble', 'sideSaddleSlip', 'burntLeg'], 'scared'),
     **dict.fromkeys(['ghostStopped', 'ackKeepOn', 'driveTaken', 'ackStopDrive', 'ackBack', 'driveGaveUp',
                      'startGaveUp', 'stalledRiding', 'outOfFuel', 'selfGetOffWaited', 'askOff', 'askStop'], 'cross'),
     'banter': 'snide',  # the girls bickering (banterLines.js)

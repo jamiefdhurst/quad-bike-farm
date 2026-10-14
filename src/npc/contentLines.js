@@ -1,6 +1,6 @@
 // What the girls say about the quads they like and don't (contentment.js, sideSaddle.js): stallSad and stallRelief (a quad
 // stalling, and going again), likeAllRunning and wishAllRunning (they'd like them all going), buzzLove (the seat shaking them),
-// and sideSaddleOn, sideSaddleWobble and sideSaddleSlip (sitting side-saddle on the back, and sliding off). Amy is gentle and
+// sideSaddleOn, sideSaddleWobble and sideSaddleSlip (sitting side-saddle on the back, and sliding off), and burntLeg (a calf against a hot exhaust). Amy is gentle and
 // a little embarrassed; Jess is dramatic and not embarrassed at all. Merged into the main line sets (voiceLines.js,
 // jessLines.js), so they're recorded with the rest.
 
@@ -15,6 +15,7 @@ export const AMY_CONTENT_LINES = {
   sideSaddleOn: line(90, ['I will sit side-saddle, if that is all right. Hold on to me.', 'Sideways, like a lady. Go gently.']),
   sideSaddleWobble: line(20, ['Careful! I am slipping!', 'Slow down, I am sliding off!', 'Whoa, steady, I cannot hold on like this.']),
   sideSaddleSlip: line(30, ['Ow! I told you to go gently!', 'Oh! I have fallen off. Come back!']),
+  burntLeg: line(20, ['Ouch! That pipe is hot. I should know better.', 'Oh, my leg. I always get off the other side.']),
 };
 
 export const JESS_CONTENT_LINES = {
@@ -26,4 +27,5 @@ export const JESS_CONTENT_LINES = {
   sideSaddleOn: ['Side-saddle! Like a princess. Do not go fast.', 'Look at me, sat sideways. Very posh.'],
   sideSaddleWobble: ['Whoa! Whoa! I am going!', 'I am sliding! Slow down!', 'Aaah, I am falling off, I am falling off!'],
   sideSaddleSlip: ['Oof! I fell off! Why did you go over that?', 'Ow, my bum! Come back!'],
+  burntLeg: ['Ow ow ow! The pipe! The pipe is hot!', 'Aaah, my leg! Why is it so hot?', 'Ouch! I did it again. Nobody saw that.'],
 };
