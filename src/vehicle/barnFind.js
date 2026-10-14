@@ -15,6 +15,7 @@ export const DEFAULT_BARN_FIND_PARAMS = {
   wear: [0.55, 0.8], // engine wear it comes with: a lot of years
   hours: [1900, 2800], // hour meter
   odoMiles: [4200, 7800], // odometer
+  bodyWear: 0.95, // how worn its body looks (the wear layer, effects/wearLayer.js): rust in every fold, the edges rubbed bare
 };
 
 export const BARN_FIND_RANGES = {
@@ -26,6 +27,7 @@ export const BARN_FIND_RANGES = {
   waterChance: [0, 1, 0.05],
   tankWater: [0, 0.3, 0.005],
   smokeSeconds: [0, 12, 0.5],
+  bodyWear: [0, 1, 0.05],
 };
 
 /** The jobs it might need, in the order the bench lists them. 'tarp' always comes first and isn't one of these. */

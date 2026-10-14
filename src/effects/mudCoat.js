@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { cabinBox } from './cabinMud.js';
+import { bakeModelSteps } from '../vehicle/detail/wear.js';
+import { wearKind, wearColourGlsl, WEAR_VERTEX_DECL, WEAR_VERTEX, WEAR_FRAGMENT_DECL, WEAR_ROUGHNESS, WEAR_METALNESS } from './wearLayer.js';
 
 // Mud caked on a quad. Each quad gets its own copies of its materials with a
 // shader blend on top: a procedural mud mask that starts on the tyres, the
@@ -9,6 +11,9 @@ import { cabinBox } from './cabinMud.js';
 // The mask is worked out in the quad's own frame (y = 0 is the ground under
 // it), so it stays put on the bodywork as the quad moves, and in each wheel's
 // own frame for the wheels, so it turns with them.
+//
+// The same shader carries the vehicle's wear (wearLayer.js): scuffs, fading, rust and grime drawn under the mud, and the mud
+// gathers first in the nooks the wear bake finds.
 
 const noiseGlsl = /* glsl */ `
   float mudHash(vec3 p) {
@@ -32,7 +37,7 @@ const WHEEL_CENTRES = /* glsl */ `
   const vec3 mudWheels[4] = vec3[4](vec3(0.48, 0.3, 0.62), vec3(-0.48, 0.3, 0.62), vec3(0.48, 0.3, -0.62), vec3(-0.48, 0.3, -0.62));
 `;
 
-function patchMaterial(material, uniforms, wheel) {
+function patchMaterial(material, uniforms, wheel, kind) {
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader
@@ -41,7 +46,8 @@ function patchMaterial(material, uniforms, wheel) {
         `#include <common>
         uniform mat4 uMudFrame;
         varying vec3 vMudPos;
-        varying vec3 vMudNormal;`,
+        varying vec3 vMudNormal;
+        ${WEAR_VERTEX_DECL}`,
       )
       .replace(
         '#include <begin_vertex>',
@@ -49,7 +55,8 @@ function patchMaterial(material, uniforms, wheel) {
         ${wheel
           ? 'vMudPos = position; vMudNormal = objectNormal;'
           : `vMudPos = (uMudFrame * modelMatrix * vec4(transformed, 1.0)).xyz;
-        vMudNormal = normalize(mat3(uMudFrame) * mat3(modelMatrix) * objectNormal);`}`,
+        vMudNormal = normalize(mat3(uMudFrame) * mat3(modelMatrix) * objectNormal);`}
+        ${WEAR_VERTEX}`,
       );
     shader.fragmentShader = shader.fragmentShader
       .replace(
@@ -63,12 +70,14 @@ function patchMaterial(material, uniforms, wheel) {
         uniform vec3 uCabinMax;
         varying vec3 vMudPos;
         varying vec3 vMudNormal;
+        ${WEAR_FRAGMENT_DECL}
         ${noiseGlsl}
         ${WHEEL_CENTRES}`,
       )
       .replace(
         '#include <color_fragment>',
         `#include <color_fragment>
+        ${wearColourGlsl(kind)}
         vec3 mp = vMudPos;
         float blot = mudNoise(mp * 9.0) * 0.6 + mudNoise(mp * 23.0) * 0.28 + mudNoise(mp * 61.0) * 0.12;
         float cover;
@@ -92,6 +101,8 @@ function patchMaterial(material, uniforms, wheel) {
         vec3 cabMid = (uCabinMin + uCabinMax) * 0.5;
         vec3 inBox = step(uCabinMin, mp) * step(mp, uCabinMax);
         cover *= 1.0 - inBox.x * inBox.y * inBox.z * step(0.0, dot(vMudNormal, cabMid - mp));`}
+        // Mud stays in the nooks first, and an old vehicle has dried mud in them however clean the rest is.
+        cover += wearNook * (0.9 * ${wheel ? 'uMudWheels' : 'uMudBody'} + 0.6 * uWear);
         float mudMask = smoothstep(blot - 0.06, blot + 0.06, cover * 1.25);
         // Flecks flung a bit higher than the main coat.
         float fleck = step(0.8 - 0.14 * cover, mudNoise(mp * 95.0)) * step(0.05, cover);
@@ -108,6 +119,7 @@ function patchMaterial(material, uniforms, wheel) {
       .replace(
         '#include <roughnessmap_fragment>',
         `#include <roughnessmap_fragment>
+        ${WEAR_ROUGHNESS}
         roughnessFactor = mix(roughnessFactor, mix(0.92, 0.3, wetHere), mudMask);
         // Just hosed down: the clean paint is wet and shiny.
         roughnessFactor = mix(roughnessFactor, roughnessFactor * 0.35, uWashed * (1.0 - mudMask));`,
@@ -130,11 +142,15 @@ function patchMaterial(material, uniforms, wheel) {
       .replace(
         '#include <metalnessmap_fragment>',
         `#include <metalnessmap_fragment>
+        ${WEAR_METALNESS}
         metalnessFactor = mix(metalnessFactor, 0.0, mudMask);`,
       );
   };
-  material.customProgramCacheKey = () => (wheel ? 'mudCoatWheel' : 'mudCoatBody');
+  material.customProgramCacheKey = () => `${wheel ? 'mudCoatWheel' : 'mudCoatBody'}|${kind}`;
 }
+
+/** The Vehicles tab's "Wear" for each vehicle. */
+export const WEAR_LOOK_RANGES = { wear: [0, 1, 0.01] };
 
 export class MudCoat {
   /**
@@ -150,7 +166,9 @@ export class MudCoat {
       uWashed: { value: 0 },
       uCabinMin: { value: new THREE.Vector3() },
       uCabinMax: { value: new THREE.Vector3() },
+      uWear: { value: 0 },
     };
+    this.look = { wear: 0 }; // how worn it is, 0 new to 1 derelict (the spec's bodyWear; "Wear" on the Vehicles tab)
     const model = quad.model;
     const cabin = cabinBox(model.userData.cabin);
     this.uniforms.uCabinMin.value.set(...cabin.min);
@@ -170,7 +188,9 @@ export class MudCoat {
         const copies = wheel ? wheelCopies : bodyCopies;
         if (!copies.has(o.material)) {
           const copy = o.material.clone();
-          patchMaterial(copy, this.uniforms, wheel);
+          const kind = wearKind(o.material, { metalBody: !!model.userData.metalBody });
+          patchMaterial(copy, this.uniforms, wheel, kind);
+          copy.userData.wearKind = kind;
           copies.set(o.material, copy);
         }
         o.material = copies.get(o.material);
@@ -181,6 +201,17 @@ export class MudCoat {
     this.bodyCopies = bodyCopies; // original material -> the muddy copy the meshes really use, so others can tint it
     this.materialCount = bodyCopies.size + wheelCopies.size;
     this.frame = model.getObjectByName('bodyRoot');
+    // The meshes the wear bake (vehicle/detail/wear.js) works through, in the background: everything this coat patched.
+    const patched = new Set([...bodyCopies.values(), ...wheelCopies.values()]);
+    this.wearBake = bakeModelSteps(model, (o) => !patched.has(o.material));
+    this.wearBaked = false;
+  }
+
+  /** One piece of the wear bake; false once it's all done. */
+  bakeStep() {
+    if (this.wearBaked) return false;
+    if (this.wearBake.next().done) this.wearBaked = true;
+    return !this.wearBaked;
   }
 
   /** @param {{ body: number, wheels: number, wet: number }} state  0..1 each. */
@@ -190,6 +221,7 @@ export class MudCoat {
     u.uMudWheels.value = state.wheels;
     u.uMudWet.value = state.wet;
     u.uWashed.value = state.washed ?? 0;
+    u.uWear.value = this.look.wear;
     this.frame.updateWorldMatrix(true, false);
     u.uMudFrame.value.copy(this.frame.matrixWorld).invert();
   }

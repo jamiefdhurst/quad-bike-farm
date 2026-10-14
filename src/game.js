@@ -3703,6 +3703,7 @@ export class Game {
       const exposed = !can.held && !can.carried && !this.world.covered?.(at.x, at.z);
       can.water = stepCanWater(can.water, dt, { rain: this.weather.rain, exposed }, this.fuelWaterParams);
     }
+    unit.mud.coat.look.wear = P.bodyWear; // and the wear layer turned right up: rust in every fold, the edges rubbed bare
   }
 
   /** The barn find's slow jobs: the charger going, the seized brake holding it, and the first start. */
@@ -8915,6 +8916,18 @@ export class Game {
       if (input.wasPressed('ArrowRight')) this.turnBucketPage(1);
       if (input.wasPressed('ArrowLeft')) this.turnBucketPage(-1);
     }
+  /**
+   * The vehicles' wear (vehicle/detail/wear.js) is baked a piece at a time after loading rather than during it (about 150 ms a
+   * vehicle): `budgetMs` of it a frame, more behind the start card where nothing moves. Until a vehicle is baked it shows no edges.
+   */
+  bakeWear(budgetMs) {
+    const start = performance.now();
+    for (const unit of this.units) {
+      const coat = unit.mud?.coat;
+      while (coat?.bakeStep()) if (performance.now() - start > budgetMs) return;
+    }
+  }
+
     if (input.wasPressed('KeyN')) {
       this.audioHub.params.muted = !this.audioHub.params.muted;
       this.hud.toast(this.audioHub.params.muted ? 'Sound off' : 'Sound on', 1.2);
@@ -8929,6 +8942,7 @@ export class Game {
       this.photos.press();
     }
 
+    if (this.firstFrameDone) this.bakeWear(this.paused ? 12 : 2);
     for (const unit of this.units) {
       unit.quad.setRemote(null);
       unit.quad.pushDir = 0;

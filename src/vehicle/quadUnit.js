@@ -12,6 +12,7 @@ import { DEFAULT_AUDIO_PARAMS, AUDIO_PARAM_RANGES } from '../audio/audioParams.j
 import { ExhaustSmoke, DEFAULT_SMOKE_PARAMS, SMOKE_PARAM_RANGES } from '../effects/exhaustSmoke.js';
 import { DustCloud } from '../effects/dustCloud.js';
 import { QuadMud, DEFAULT_MUD_PARAMS, MUD_PARAM_RANGES, MUD_STATE_RANGES } from '../effects/quadMud.js';
+import { WEAR_LOOK_RANGES } from '../effects/mudCoat.js';
 import { Quad } from './quad.js';
 import { DEFAULT_VEHICLE_PARAMS, VEHICLE_PARAM_RANGES } from './vehicleParams.js';
 import { FAULT_PARAM_RANGES } from './faults.js';
@@ -154,6 +155,7 @@ export class QuadUnit {
     const seat = this.quad.model.userData.seatMaterial;
     const seatCopy = seat && this.mud.coat?.bodyCopies?.get(seat);
     if (seatCopy) this.quad.seatMaterial = seatCopy;
+    this.mud.coat.look.wear = spec.bodyWear ?? 0;
     this.audio = new EngineAudio(audioHub, { ...DEFAULT_AUDIO_PARAMS, ...spec.audio });
     this.ride = new RideAudio(audioHub, this, world);
     this.listenerOnBoard = false; // set by the game while you're riding this one
@@ -167,6 +169,7 @@ export class QuadUnit {
     registerTuning(`${folder}/Smoke`, this.smoke.params, SMOKE_PARAM_RANGES);
     registerTuning(`${folder}/Mud`, this.mud.params, MUD_PARAM_RANGES);
     registerTuning(`${folder}/Mud on it`, this.mud.state, MUD_STATE_RANGES);
+    registerTuning(`${folder}/Wear`, this.mud.coat.look, WEAR_LOOK_RANGES);
     registerTuning(`${folder}/Fuel`, this.quad.fuel.params, FUEL_PARAM_RANGES);
     registerTuning(`${folder}/Faults`, this.quad.faults.params, FAULT_PARAM_RANGES);
     registerTuning(`${folder}/Crash damage`, this.quad.crashWatch.params, CRASH_PARAM_RANGES);

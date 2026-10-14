@@ -16,6 +16,9 @@ export function weatherModel(model, { rust = 0.3, dust = 0.22 } = {}) {
     let m = copies.get(o.material);
     if (!m) {
       m = o.material.clone();
+      // A clone loses the mud coat's shader patch (and with it the wear layer): keep it.
+      m.onBeforeCompile = o.material.onBeforeCompile;
+      m.customProgramCacheKey = o.material.customProgramCacheKey;
       const metal = (m.metalness ?? 0) > 0.3 ? 1 : 0.35;
       m.color.lerp(RUST, rust * metal);
       m.color.lerp(DUST, dust);

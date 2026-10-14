@@ -12,6 +12,7 @@
 //   roughnessRange: [min, max] how lumpy it runs once warm (baseRoughness, 0 to 1).
 //     Cold, rich, lean and fouled running add to this.
 //   hoursRange, odoRange: [min, max] engine hours and odometer miles the dash shows at the start.
+//   bodyWear: how worn the body looks (0 new, 1 derelict), not the engine: scuffed edges, faded plastic, rust in the folds.
 //   wearRange: [min, max] engine wear (0 new, 1 shot) it comes with, higher the more hours it shows (history.js). tinkers: false keeps leftover
 //     tinkering off it.
 //   noHeadlight: true if the lamp is only for show and never lights (the orange).
@@ -24,6 +25,7 @@ export const QUAD_SPECS = [
   {
     // Honda-style farm quad: soft, steady, low warm idle. The original tuning.
     id: 'red',
+    bodyWear: 0.5, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     label: 'red quad',
     name: 'Red quad',
     bodyColor: 0xa8271f,
@@ -61,6 +63,7 @@ export const QUAD_SPECS = [
     // when cold and runs lumpier until it's warm, warms a little quicker, and
     // pulls slightly harder. Its idle comes from the other recorded machine.
     id: 'blue',
+    bodyWear: 0.3, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     label: 'blue quad',
     name: 'Blue quad',
     bodyColor: 0x1d4fa3,
@@ -125,6 +128,7 @@ export const QUAD_SPECS = [
     // engine braking, and trails blue-white oil smoke. Sounds like a two-stroke
     // dirt bike. Automatic like the others.
     id: 'yellow',
+    bodyWear: 0.4, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
     label: 'yellow quad',
     name: 'Yellow quad',
@@ -226,6 +230,7 @@ export const QUAD_SPECS = [
     // takes an age to warm up and wants plenty of choke. Rougher than the others,
     // and strong engine braking. It idles on a different recorded machine.
     id: 'green',
+    bodyWear: 0.6, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     label: 'green quad',
     name: 'Green quad',
     bodyColor: 0x2e6b30,
@@ -307,6 +312,7 @@ export const QUAD_SPECS = [
     // her), barely any engine braking, and smokes like a chimney. Its idle is a
     // different two-stroke from the yellow's.
     id: 'orange',
+    bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     noHeadlight: true, // no lighting set on the orange: its lamp never shines
     label: 'orange quad',
     name: 'Orange quad',
@@ -405,6 +411,7 @@ export const EXTRA_SPECS = [
     // physics together), light and slow, one seat, and it revs very high and sounds like an angry wasp. Pull-start as well as the
     // starter; it runs on the same pre-mix as the yellow.
     id: 'kids',
+    bodyWear: 0.45, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     label: "kids' quad",
     name: "Kids' quad",
     bodyColor: 0xcf6f98, // a faded pink
@@ -506,6 +513,7 @@ export const EXTRA_SPECS = [
     // sound for now. Built by miniMotoModel.js: it rides on the quad physics with two wheels and the lean model (bikeLean.js) holding it up, and
     // leaning into corners. Anyone can ride it (it's nobody's), but there's no room on the back.
     id: 'moto',
+    bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
     miniMoto: true,
     label: 'mini moto',
@@ -610,6 +618,7 @@ export const EXTRA_SPECS = [
     // pull-start only (no starter motor), a clutch (Shift) and a four-speed box, and a tall, narrow stance that tips if you throw it round
     // a corner. Worn out, hard to start and rough. Built by atcModel.js, with the yellow's sound until it gets its own. Solo.
     id: 'atc',
+    bodyWear: 0.8, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
     threeWheeler: true,
     label: 'old three-wheeler',
@@ -715,6 +724,7 @@ export const EXTRA_SPECS = [
     // A smart new quad on loan for the day: the Yamaha's body in neutral silver, fuel injected so it hardly wants any choke, starts on
     // the button, idles smooth and quiet and has almost no wear. Full tank, and a bit more power than the old farm quads.
     id: 'loan',
+    bodyWear: 0, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     steadyLights: true, // a battery runs its headlight, so it doesn't follow the revs like the old quads' (headlight.js)
     label: 'loan quad',
     name: 'Loan quad',
@@ -779,6 +789,7 @@ export const EXTRA_SPECS = [
 // (QuadUnit reads `tractor`). Runs on red diesel, so it doesn't mind it. Its sound is kyles's old tractor recordings.
 export const TRACTOR_SPEC = {
   id: 'tractor',
+  bodyWear: 0.6, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 1.25, z: 1.3 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   steadyLights: true, // a battery runs its lights
   label: 'tractor',
@@ -922,6 +933,7 @@ export const TRACTOR_SPEC = {
 // Its sound borrows the tractor's recordings, played faster.
 export const UTV_SPEC = {
   id: 'utv',
+  bodyWear: 0.3, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.95, z: 1.15 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   label: 'UTV',
   name: 'UTV',
@@ -1070,6 +1082,7 @@ export const UTV_SPEC = {
 // hand throttle on the dash, a towing hitch, and a starting handle at the front for when the battery won't (vehicle/crankHandle.js).
 export const LAND_ROVER_SPEC = {
   id: 'landrover',
+  bodyWear: 0.6, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.95, z: 1.6 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   label: 'Series III',
   name: 'Series III',
@@ -1217,6 +1230,7 @@ export const LAND_ROVER_SPEC = {
 // stops it, so no choke, no hand throttle and no starting handle.
 export const DEFENDER_SPEC = {
   id: 'landrover200',
+  bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.95, z: 1.6 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   label: '200TDi',
   name: '200TDi',
@@ -1389,6 +1403,7 @@ const CAR_ENGINE = {
 // clean and looked after. L plates on (she is learning; item 167 has her pass in it).
 export const FIESTA_SPEC = {
   id: 'fiesta',
+  bodyWear: 0.45, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.85, z: 1.5 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   label: 'Fiesta',
   name: 'Fiesta',
@@ -1470,6 +1485,7 @@ export const FIESTA_SPEC = {
 // and bonnet, a grey primer wing, and a big-bore exhaust that makes it sound far quicker than it is.
 export const CORSA_SPEC = {
   id: 'corsa',
+  bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.85, z: 1.55 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   label: 'Corsa',
   name: 'Corsa',

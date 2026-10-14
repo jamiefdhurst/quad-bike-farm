@@ -287,6 +287,15 @@ export const FAQ_SECTIONS = [
         tip: 'After the ford the brakes are wet. Dab S as you ride to dry them.',
       },
       {
+        q: 'Why is the tractor (or UTV, or Land Rover) coughing and dying on a very frosty day?',
+        a: `In a hard frost the diesel waxes: it goes thick in the filter. A diesel left out in the open, especially with the engine off, loses power, runs
+          roughly and cuts out, and when it is really waxed it won't start at all. Nothing is broken. Warm it: a running engine melts the wax, and so does a
+          milder spell or the sun. Quicker, take the diesel anti-gel from the ground by the coolant bottle (<kbd>E</kbd> to pick it up), look at the
+          vehicle and hold <kbd>Y</kbd> to treat the tank. Treated fuel won't wax and clears what has. Keep it in the barn on a hard frosty night and it is
+          fine. Petrol quads never wax.`,
+        tip: 'A diesel dying on a hard frost has waxed. Warm it up, or treat the tank with the anti-gel by the coolant.',
+      },
+      {
         q: 'Why won\'t the throttle open (or shut) on a frosty morning?',
         a: `On a frosty morning a quad left out in the open can have a frozen throttle cable. Either it won't open past a crack, so the engine idles and
           you can't go anywhere, or it opens and then stays open when you let go. Don't fight it. Keep the engine running and the heat will free it in a
@@ -456,6 +465,14 @@ export const FAQ_SECTIONS = [
         q: 'How do I wash a quad?',
         a: `Pick up the hose on its reel at the end of the petrol tank (<kbd>E</kbd>; it reaches 25 m) and hold <kbd>E</kbd> at the quad: the wheels come
           clean first, then the bodywork. <kbd>G</kbd> puts the hose back. Mind where you point it.`,
+      },
+      {
+        q: 'Why won’t the hose get the old dirt out of the corners?',
+        a: `That dirt is years old. Every vehicle shows its age: paint and plastic rubbed through on the sharp edges, colour faded by the sun, rust
+          starting in the folds of the metal and old dried mud packed into the nooks where parts meet. Washing takes off the day's mud, not the
+          years. Fresh mud gathers in those same nooks first. The newer vehicles (the loan quad above all) are clean; the three-wheeler and the barn
+          find are the worst.`,
+        tip: 'Hosing takes off today’s mud, not the years: the old dirt in the corners and the rust stay.',
       },
       {
         q: 'Does mud get inside the cars and Land Rovers?',
