@@ -3685,11 +3685,7 @@ export class Game {
     const e = unit.engine;
     unit.tarp.visible = !find.tarpOff;
     if (find.brakeSeized) unit.quad.parkBrake = true;
-    if (find.charging && !find.charged) e.battery = Math.max(e.battery, find.batteryLevel);
-    if (find.update(dt) === 'charged') {
-      this.hud.toast('The charger light has gone green: the battery is full');
-      this.notebook.note(unit, { kind: 'job', job: 'battery' }, { by: 'you' });
-    }
+    if (find.setBattery(e.battery, !e.batteryOut)) this.notebook.note(unit, { kind: 'job', job: 'battery' }, { by: 'you' });
     e.startBlocked = find.startBlocked;
     // Cranking it before it's ready: it tells you why.
     const cranking = e.state === 'cranking';

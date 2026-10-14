@@ -322,14 +322,10 @@ describe('what else the farm keeps', () => {
     const a = new BarnFind({ jobs: ['plug', 'battery'] });
     a.finish('tarp');
     a.finish('plug');
-    a.finish('battery');
-    a.update(100);
     const b = new BarnFind({ jobs: ['plug', 'battery'] });
     b.restore(JSON.parse(JSON.stringify(a.toJSON())));
     expect(b.tarpOff).toBe(true);
     expect(b.isDone('plug')).toBe(true);
-    expect(b.charging).toBe(true);
-    expect(b.charge).toBe(100);
     expect(b.startBlocked).toBe(a.startBlocked);
     const c = new BarnFind({ jobs: ['brake'] });
     c.restore({ finished: ['plug', 'brake'] });

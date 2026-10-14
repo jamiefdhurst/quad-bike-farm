@@ -1479,7 +1479,7 @@ export const FAQ_SECTIONS = [
         q: 'What’s under the tarp at the back of the barn?',
         spoiler: true,
         a: `In about one game in five, the rusty quad: an old barn find, not run for years. Take the tarp off at the workbench, then do the three or four jobs it needs
-          (from draining the varnished fuel to charging the battery, which takes about five minutes). It won't catch until every one is done. Try seeds 7, 8, 12 or 13.`,
+          (from draining the varnished fuel to charging the battery: lift it out at the bench, put it on the bench charger with the generator running, and fit it back). It won't catch until every one is done. Try seeds 7, 8, 12 or 13.`,
       },
       {
         q: 'What happens round the back of the barn?',

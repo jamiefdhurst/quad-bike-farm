@@ -263,13 +263,6 @@ export const JOBS = {
       { id: 'seat', text: 'Seat back on', kind: 'press' },
     ],
   },
-  battery: {
-    name: 'Charge the battery',
-    steps: [
-      { id: 'lift', text: 'Lift the seat and the flat battery out', kind: 'press' },
-      { id: 'clip', text: 'Clip on the charger and switch it on', kind: 'press' },
-    ],
-  },
 };
 
 // The last row of the list is the charger, and says either 'chargeOn' or 'chargeOff' depending on where this quad's battery is (bench.js kindsFor).
@@ -599,7 +592,6 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     target.batteryIn?.();
     return engine.battery >= 0.9 ? 'The battery is back in, fully charged' : 'The battery is back in, though it is not fully charged';
   }
-  if (job.kind === 'battery') return 'The charger is on: it will be about five minutes';
   const how = job.outcome('pour');
   fuel.oil = how === 'short' ? P.oilShort : how === 'over' ? P.oilOver : P.oilGood;
   return how === 'short' ? 'Oil topped up, though it looks a bit light' : how === 'over' ? 'Oil topped up, with a good glug too much' : 'Oil topped up to 50:1';
@@ -620,7 +612,7 @@ export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = fal
   if (kind === 'plug') return !engine.params.compressionIgnition; // a diesel has glow plugs, not a plug to gap and clean
   if (kind === 'chargeOn') return !engine.batteryOut && !engine.params.noStarter; // a cord-only quad has no battery to take out
   if (kind === 'chargeOff') return !!engine.batteryOut;
-  if (kind === 'tarp' || kind === 'fuel' || kind === 'brake' || kind === 'battery') return true;
+  if (kind === 'tarp' || kind === 'fuel' || kind === 'brake') return true;
   if (kind === 'sump') return engine.params.strokes !== 2 && !engine.params.runsOnDiesel;
   return true;
 }

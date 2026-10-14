@@ -18,7 +18,7 @@ export function batterySizeFor(unit) {
 
 /** Whether a vehicle has a battery to take out (a pull-start-only machine has none). */
 export function hasBattery(unit) {
-  return !unit.engine.params.noStarter && !unit.barnFind;
+  return !unit.engine.params.noStarter;
 }
 
 const MAT = {

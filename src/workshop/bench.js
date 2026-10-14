@@ -57,7 +57,8 @@ export class Bench {
 
   /** The jobs listed for a quad: the barn find's own (the tarp, then what it needs), or the usual ones. */
   kindsFor(unit) {
-    return unit.barnFind ? unit.barnFind.kinds : [...JOB_KINDS, unit.engine.batteryOut ? 'chargeOff' : 'chargeOn'];
+    const charger = unit.engine.batteryOut ? 'chargeOff' : 'chargeOn';
+    return unit.barnFind ? [...unit.barnFind.kinds, ...(unit.engine.params.noStarter ? [] : [charger])] : [...JOB_KINDS, charger];
   }
 
   /** The shelf has the part the job fits (a job with no part always has it). */
@@ -74,7 +75,7 @@ export class Bench {
   }
 
   canBegin(kind, unit) {
-    return this.partOk(kind) && this.batteryHandsOk(kind, unit) && (unit.barnFind ? unit.barnFind.available(kind) : jobAvailable(kind, unit.engine, this.params, unit.quad.faults.hasChain, unit.quad.faults.hasValves, unit.quad.faults.hasClutch));
+    return this.partOk(kind) && this.batteryHandsOk(kind, unit) && (unit.barnFind && kind !== 'chargeOn' && kind !== 'chargeOff' ? unit.barnFind.available(kind) : unit.barnFind && !unit.barnFind.tarpOff ? false : jobAvailable(kind, unit.engine, this.params, unit.quad.faults.hasChain, unit.quad.faults.hasValves, unit.quad.faults.hasClutch));
   }
 
   toolboxHere() {
@@ -246,7 +247,7 @@ export class Bench {
         const ok = this.canBegin(k, unit);
         let note = '';
         const lacking = !this.partOk(k);
-        if (find) note = find.isDone(k) ? ' ✓' : k === 'battery' && find.charging ? ` (charging: ${Math.round(find.chargeProgress * 100)}%)` : ok ? '' : ' (take the tarp off first)';
+        if (find) note = find.isDone(k) ? ' ✓' : ok ? '' : k === 'chargeOn' ? (find.tarpOff ? ' (empty your hands first)' : ' (take the tarp off first)') : k === 'chargeOff' ? ' (carry its battery here first)' : ' (take the tarp off first)';
         else if (lacking) note = ` (no ${PARTS[jobPart(k)].one} on the shelf)`;
         else if (!ok) note = k === 'chargeOn' ? (unit.engine.params.noStarter ? ' (no battery to take out)' : ' (empty your hands first)') : k === 'chargeOff' ? ' (carry its battery here first)' : k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'valves' ? ' (two-strokes have none)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
         return `<div class="bn-row${ok ? '' : ' off'}"><span class="key">${i >= 10 ? OVERFLOW_KEYS[i - 10].label : (i + 1) % 10}</span>${JOBS[k].name}${note}</div>`;

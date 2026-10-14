@@ -1,14 +1,14 @@
 // The barn find: in some games an old brown quad stands under a tarp at the back of the barn, a copy of one of the regular quads, not run for
 // years. It comes back to life at the bench: the tarp off first, then whichever of fuel, carb, plug, brake, tyres and battery this one needs
-// (picked from the seed). It won't catch until every one is done. Pure logic, no Three.js; the look is in rustyLook.js.
+// (picked from the seed). It won't catch until every one is done. The battery is the ordinary one (items/battery.js): lift it out at the bench,
+// charge it on the bench charger (which needs the generator), fit it back; the find only checks it is in and charged enough. Pure logic, no Three.js; the look is in rustyLook.js.
 
 export const DEFAULT_BARN_FIND_PARAMS = {
   chance: 0.2, // chance a game has one
   minJobs: 3, // how many of the six jobs it needs, at least...
   maxJobs: 4, // ...and at most
-  chargeSeconds: 300, // how long the battery takes on the charger once it's clipped on (you can get on with other things)
   startBattery: 0.03, // charge it comes with: flat
-  chargedTo: 0.95, // charge it has when the charger's done
+  readyAt: 0.6, // charge its fitted battery needs before it will start (a jump from a running quad gets it there too)
   waterChance: 0.5, // chance its old tank has water in it, which the sediment bowl on the tap shows and a drain there clears
   tankWater: 0.06, // water fraction of what is in it
   smokeSeconds: 4, // how long the first start smokes
@@ -21,9 +21,8 @@ export const BARN_FIND_RANGES = {
   chance: [0, 1, 0.05],
   minJobs: [1, 6, 1],
   maxJobs: [1, 6, 1],
-  chargeSeconds: [10, 900, 10],
   startBattery: [0, 0.2, 0.01],
-  chargedTo: [0.5, 1, 0.01],
+  readyAt: [0.1, 1, 0.05],
   waterChance: [0, 1, 0.05],
   tankWater: [0, 0.3, 0.005],
   smokeSeconds: [0, 12, 0.5],
@@ -58,7 +57,7 @@ const BLOCKED_BY = {
   fuel: 'It cranks, but the old varnished fuel will not burn',
   carb: 'It cranks, but the carb is gummed solid',
   plug: 'It cranks, but there is no spark from that old plug',
-  battery: 'The battery is flat: it only clicks',
+  battery: 'The battery is flat or out: it only clicks. Charge it on the bench charger',
   brake: 'It cranks, but the seized brake is dragging it down',
   tyre: 'It cranks, but it is not safe to start it on a flat tyre',
 };
@@ -70,55 +69,38 @@ export class BarnFind {
     this.jobs = plan.jobs;
     this.tarpOff = false;
     this.finished = new Set();
-    this.charging = false;
-    this.charge = 0; // seconds on the charger
+    this.batteryOk = false; // its battery is fitted and charged enough (set each frame by setBattery)
     this.started = false; // it has had its first start
   }
 
-  /** The kinds the bench lists for it: the tarp, then what it needs. */
+  /** The kinds the bench lists for it: the tarp, then what it needs. The battery has no job of its own: the bench's charger rows (lift out, fit back) do it. */
   get kinds() {
-    return ['tarp', ...this.jobs];
+    return ['tarp', ...this.jobs.filter((k) => k !== 'battery')];
   }
 
   /** Whether a job can be started now: nothing but the tarp until the tarp is off, and not what it doesn't need. */
   available(kind) {
     if (kind === 'tarp') return !this.tarpOff;
-    return this.tarpOff && this.jobs.includes(kind) && !this.isDone(kind);
+    return this.tarpOff && kind !== 'battery' && this.jobs.includes(kind) && !this.isDone(kind);
   }
 
   isDone(kind) {
     if (kind === 'tarp') return this.tarpOff;
-    if (kind === 'battery') return this.charged;
+    if (kind === 'battery') return this.batteryOk;
     return this.finished.has(kind);
   }
 
-  get charged() {
-    return this.charge >= this.params.chargeSeconds;
-  }
-
-  /** A bench job was finished. The battery's only the clip-on: it counts once the charger has had its time. */
+  /** A bench job was finished. */
   finish(kind) {
     if (kind === 'tarp') this.tarpOff = true;
-    else if (kind === 'battery') this.charging = true;
-    else if (this.jobs.includes(kind)) this.finished.add(kind);
+    else if (kind !== 'battery' && this.jobs.includes(kind)) this.finished.add(kind);
   }
 
-  /** The charger working. Returns 'charged' on the step it completes. */
-  update(dt) {
-    if (!this.charging || this.charged) return null;
-    this.charge = Math.min(this.params.chargeSeconds, this.charge + dt);
-    return this.charged ? 'charged' : null;
-  }
-
-  /** The battery's charge now: flat until the charger goes on, then rising to `chargedTo`. */
-  get batteryLevel() {
-    const P = this.params;
-    return P.startBattery + (P.chargedTo - P.startBattery) * Math.min(1, this.charge / P.chargeSeconds);
-  }
-
-  /** How far the charger is, 0 to 1. */
-  get chargeProgress() {
-    return Math.min(1, this.charge / this.params.chargeSeconds);
+  /** Whether its battery is in the vehicle and holds enough charge to turn it over. Returns true on the step it becomes so. */
+  setBattery(level, fitted) {
+    const was = this.batteryOk;
+    this.batteryOk = fitted && level >= this.params.readyAt;
+    return this.batteryOk && !was;
   }
 
   /** Every job done: it can start. */
@@ -142,7 +124,7 @@ export class BarnFind {
 
   /** Its progress as plain data, for the farm's save. */
   toJSON() {
-    return { tarpOff: this.tarpOff, finished: [...this.finished], charging: this.charging, charge: this.charge, started: this.started };
+    return { tarpOff: this.tarpOff, finished: [...this.finished], started: this.started };
   }
 
   /** Puts saved progress back (see toJSON); jobs this plan doesn't have are ignored. */
@@ -150,8 +132,6 @@ export class BarnFind {
     if (!s) return;
     this.tarpOff = !!s.tarpOff;
     this.finished = new Set((s.finished ?? []).filter((k) => this.jobs.includes(k)));
-    this.charging = !!s.charging;
-    this.charge = Math.min(this.params.chargeSeconds, Math.max(0, +s.charge || 0));
     this.started = !!s.started;
   }
 

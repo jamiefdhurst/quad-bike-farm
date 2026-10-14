@@ -109,7 +109,7 @@ describe('which vehicles have a battery to lift out', () => {
     const { hasBattery, batterySizeFor } = await import('../src/items/battery.js');
     expect(hasBattery({ engine: { params: {} } })).toBe(true);
     expect(hasBattery({ engine: { params: { noStarter: true } } })).toBe(false);
-    expect(hasBattery({ engine: { params: {} }, barnFind: {} })).toBe(false);
+    expect(hasBattery({ engine: { params: {} }, barnFind: {} })).toBe(true); // the rusty quad's comes out like the rest
     expect(batterySizeFor({ spec: {}, engine: { params: {} } })).toBe('small');
     expect(batterySizeFor({ spec: { car: true }, engine: { params: {} } })).toBe('big');
     expect(batterySizeFor({ spec: {}, quad: { tractor: true }, engine: { params: {} } })).toBe('big');

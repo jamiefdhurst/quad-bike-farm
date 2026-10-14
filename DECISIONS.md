@@ -3817,3 +3817,9 @@ The item settled it; I chose the details without asking.
 
 - The mechanical counters (odometer, trip and hour meter drums on the pods and the older dashes) now turn instead of changing digit. `drumPositions` (`src/vehicle/dashState.js`, pure, tested) gives each drum a digit plus how far it has rolled: the tenths drum moves steadily with the distance, and each drum above it moves only while the one below goes from 9 to 0, the way a real carry does. `counterDigits` returns that as `pos`, and a `key` (positions to a sixth of a digit) for the faces' change gates, so a face redraws about once a second at speed rather than every frame. `drum` in `dashParts.js` draws the current digit sliding up out of its window with the next under it, and a little shading top and bottom. The LCD dashes (`counterText`) are unchanged.
 - Not checked in the running game: only the unit tests ran, so how it looks on each dash is unseen.
+
+## The rusty quad's battery (TODO 66)
+
+- The barn find had its own "charge the battery" bench job: clip a charger on in place and wait five minutes. It now uses the same battery as every other vehicle (`items/battery.js`): `hasBattery` no longer excludes it, the bench list ends with the usual lift-out or fit-back row, and the charge is the engine's `battery` number, raised by the bench charger (which needs the generator) or by jump leads.
+- `BarnFind` no longer times a charge (`chargeSeconds`, `chargedTo`, `charge`, `update` are gone). The `battery` entry stays in a plan's jobs as a requirement: `setBattery(level, fitted)` is called each frame from `updateBarnFind`, and the job counts as done when the battery is in and at `readyAt` 0.6. Saves from before keep loading (the old `charging` and `charge` fields are ignored; the battery's own charge is the engine's).
+- Checked: unit tests only. Not tried at the bench in the running game.

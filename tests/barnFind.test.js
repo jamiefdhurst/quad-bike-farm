@@ -47,7 +47,7 @@ describe('picking a barn find', () => {
 describe('bringing it back', () => {
   it('offers only the tarp until it is off, then only what it needs', () => {
     const find = new BarnFind(plan);
-    expect(find.kinds).toEqual(['tarp', 'fuel', 'plug', 'battery']);
+    expect(find.kinds).toEqual(['tarp', 'fuel', 'plug']);
     expect(find.available('tarp')).toBe(true);
     expect(find.available('fuel')).toBe(false);
     find.finish('tarp');
@@ -56,30 +56,29 @@ describe('bringing it back', () => {
     expect(find.available('carb')).toBe(false);
   });
 
-  it('will not start until the tarp is off and every job is done, the battery once it has charged for five minutes', () => {
+  it('will not start until the tarp is off, every job is done and its battery is fitted and charged', () => {
     const find = new BarnFind(plan);
     expect(find.startBlocked).toBe(true);
     find.finish('tarp');
     find.finish('fuel');
     find.finish('plug');
     expect(find.startBlocked).toBe(true);
-    find.finish('battery'); // clipped on, not charged
+    expect(find.setBattery(P.startBattery, true)).toBe(false); // fitted but flat
     expect(find.startBlocked).toBe(true);
-    expect(find.update(299)).toBeNull();
+    expect(find.setBattery(1, false)).toBe(false); // charged but out on the bench
     expect(find.startBlocked).toBe(true);
-    expect(find.update(2)).toBe('charged');
+    expect(find.setBattery(P.readyAt, true)).toBe(true);
     expect(find.startBlocked).toBe(false);
-    expect(find.update(1)).toBeNull();
+    expect(find.setBattery(1, true)).toBe(false); // already so
   });
 
-  it('charges nothing until the charger is clipped on, then fills steadily to the charged level', () => {
+  it('has no battery job of its own: the bench charger rows do it, and the bench cannot mark it done', () => {
     const find = new BarnFind(plan);
-    find.update(100);
-    expect(find.batteryLevel).toBeCloseTo(P.startBattery);
+    find.finish('tarp');
+    expect(find.kinds).not.toContain('battery');
+    expect(find.available('battery')).toBe(false);
     find.finish('battery');
-    find.update(150);
-    expect(find.batteryLevel).toBeCloseTo((P.startBattery + P.chargedTo) / 2, 2);
-    expect(find.chargeProgress).toBeCloseTo(0.5);
+    expect(find.isDone('battery')).toBe(false);
   });
 
   it('holds the brake on until the brake job is done', () => {
@@ -100,7 +99,7 @@ describe('bringing it back', () => {
 
 describe('its jobs at the bench', () => {
   it('each barn-find job is a short run of presses and holds that can be finished', () => {
-    for (const kind of ['tarp', 'fuel', 'brake', 'battery']) {
+    for (const kind of ['tarp', 'fuel', 'brake']) {
       const job = new BenchJob(kind);
       let guard = 0;
       while (!job.done && guard++ < 30) {
