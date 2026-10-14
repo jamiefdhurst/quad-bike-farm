@@ -74,7 +74,7 @@ export class CharacterRig {
     this.lookWeight = 0;
     this.lookLimits = { yaw: 1.3, pitch: 0.5 };
     // Extra procedural offsets in radians about the character's own axes, set by behaviour code.
-    this.offsets = { headYaw: 0, spineRoll: 0, spinePitch: 0, leftArmOut: 0, rightArmOut: 0, leftElbow: 0, rightElbow: 0 };
+    this.offsets = { headDown: 0, headYaw: 0, spineRoll: 0, spinePitch: 0, leftArmOut: 0, rightArmOut: 0, leftElbow: 0, rightElbow: 0 };
     // Bone turns and hand placings (poseMoves.js) set by behaviour code each frame, applied before the offsets; `poseSeat` is the
     // seat a 'seat' frame hand is placed against.
     this.pose = EMPTY_POSE;
@@ -305,7 +305,7 @@ export class CharacterRig {
     const head = this.bones.Head;
     if (!neck || !head) return;
     let yaw = this.offsets.headYaw;
-    let pitch = 0;
+    let pitch = -(this.offsets.headDown ?? 0); // her head dropped on her chest (dozing)
     if (this.lookWeight > 0.001) {
       const from = this.root.worldToLocal(head.getWorldPosition(new THREE.Vector3()));
       const to = this.root.worldToLocal(this.lookTarget.clone()).sub(from);

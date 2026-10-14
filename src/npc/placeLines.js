@@ -12,6 +12,12 @@ export const AMY_PLACE_LINES = {
   restRain: line(60, ['Rain! Barn! Quick!', "That's got heavier. I'm off to the barn.", 'Oh no, I am not standing in that.', 'Right, shelter.']),
   restShelter: line(90, ['At least it is dry in here.', 'Listen to it on the roof.', "It'll blow over. Won't it?", 'I do like the smell of the barn in the rain.']),
   restLeave: line(30, ['Hang on, hang on.', 'Just a second. Coming down.', 'Oh. Right. Let me get up.']),
+  // Dozing in the sun (dozing.js): going off to, dropping off, waking by herself, woken by you, woken by a noise. Amy was only resting her eyes.
+  dozeGo: line(60, ["I'm quite sleepy. I'll sit in the sun for a minute.", 'I could do with a sit down. Just a short one.']),
+  dozeOff: line(60, ['Just resting my eyes.', "It's so warm. Just for a minute."]),
+  dozeWake: line(30, ['I was not asleep. I was resting my eyes.', 'Of course I was awake. I heard everything.']),
+  dozeWakeGentle: line(30, ['Oh! I was only resting my eyes.', 'Hm? Yes. I am awake. Completely awake.']),
+  dozeStartled: line(30, ['That was not funny!', 'Do you mind? I was having a lovely rest.', 'Honestly. What was that for?']),
 };
 
 export const JESS_PLACE_LINES = {
@@ -20,4 +26,9 @@ export const JESS_PLACE_LINES = {
   restRain: ["Oh, you're joking! Barn!", 'Rain! Run!', "I'm not melting for anyone. Barn."],
   restShelter: ['Dry. Smug.', 'You can stand out in it. I will watch.', 'Nice and dry in here, this.'],
   restLeave: ['Fine, fine. Give me a sec.', 'Ugh. Up I get.', 'What now? Hold on.'],
+  dozeGo: ["I'm knackered. Nap time.", 'Wake me up in a bit. Or do not.'],
+  dozeOff: ['Five minutes. Do not let me sleep.', "I'm not tired. I'm just... mm."],
+  dozeWake: ['Mm? How long was I out?', 'I was not snoring. Shut up.', 'Oh. I dropped off, did I?'],
+  dozeWakeGentle: ['Wha? Oh. It is you.', 'Mm. Five more minutes.'],
+  dozeStartled: ['Aaah! You absolute...', 'Oi! I was having a lovely dream!', 'Ha! Right. Very funny. I am up.'],
 };

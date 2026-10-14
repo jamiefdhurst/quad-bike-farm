@@ -182,6 +182,8 @@ import { buildStartLine, buildClimbCones, buildConeCourse, layCone, nearestTrack
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
 import { StrawFall } from './effects/strawFall.js';
 import { Places, PLACE_PARAM_RANGES, isFine, nearestSpot, restStay } from './npc/places.js';
+import { dozeStay } from './npc/dozing.js';
+import { SnoreAudio } from './audio/snoreAudio.js';
 import { Requests, REQUEST_PARAM_RANGES } from './npc/requests.js';
 import { Skills, SKILL_PARAM_RANGES, COACHING } from './npc/skills.js';
 import { Banter } from './npc/banter.js';
@@ -735,6 +737,14 @@ export class Game {
     const spotTaken = (spot) => this.companions.some((o) => o.currentSpot()?.id === spot.id);
     for (const c of this.companions) {
       c.restStayFor = () => restStay(this.places.p);
+      c.dozeParams = this.places.p;
+      c.dozeSunny = () => fine() && this.sunWarmth() >= this.places.p.dozeSunAbove * 0.6 && (this.daylight?.darkness ?? 0) < this.places.p.darkAbove;
+      // Woken rudely: Amy minds (a little favour and a sulk), Jess laughs it off (companion.params.dozeMinds).
+      c.onWoken = (how) => {
+        if (how !== 'startled' || !c.params.dozeMinds) return;
+        this.favour.add(c.character.id, -this.places.p.dozeStartledFavour);
+        this.favour.sulk(c.character.id, this.places.p.dozeStartledSulk);
+      };
       c.restSpotsNear = (here) => {
         if (!fine()) return [];
         const free = this.restSpots.filter((s) => s.kind !== 'shelter' && !spotTaken(s));
@@ -3876,7 +3886,7 @@ export class Game {
       const m = c.mind;
       m.since += dt;
       if ((m.thinkIn -= dt) > 0) continue;
-      m.thinkIn = c.params.thinkEvery * (0.5 + Math.random());
+      m.thinkIn = c.params.thinkEvery * (0.5 + Math.random()) * (1 + c.params.sleepySlowThink * c.needs.sleep); // sleepy, she thinks slowly
       if (!c.params.ownMind) {
         m.waiting = 'her own mind is off';
         continue;
@@ -3891,7 +3901,9 @@ export class Game {
       }
       m.waiting = null;
       // Something you stopped her doing is still on her mind, so she's keener on it for a while (npc/intent.js).
-      let offers = this.offersFor(c, ridden).map((o) => ({ ...o, weight: o.weight * c.intent.boost(o.key, c.params) }));
+      // Sleepy, she can't be bothered with anything but a doze (companionParams: sleepyLazy).
+      const lazy = 1 - c.params.sleepyLazy * c.needs.sleep;
+      let offers = this.offersFor(c, ridden).map((o) => ({ ...o, weight: o.weight * c.intent.boost(o.key, c.params) * (o.key === 'doze' || OFFER_KINDS[o.key]?.urgent ? 1 : lazy) }));
       if (sitting) offers = offers.filter((o) => OFFER_KINDS[o.key]?.fromSeat);
       else if (urgentOnly) offers = offers.filter((o) => OFFER_KINDS[o.key]?.urgent);
       const { pick, scored } = choose(c.needs, offers, c.params);
@@ -4060,6 +4072,7 @@ export class Game {
       thrill: Math.min(1, speed / 12 + (onBoard && c.quad?.airborne ? 0.5 : 0)),
       active: c.fsm.is('walking', 'driving', 'mounting', 'dismounting', 'starting', 'cranking', 'pushing', 'pranking', 'boarding', 'shuffling'),
       sitting: c.fsm.is('resting', 'seated', 'onTrailer'),
+      dozing: c.isDozing,
       idle: c.availability().free || c.sittingAbout(), // sat about on a quad she chose is as good as stood about
       purposeRate: c.purposeRate ?? 0,
     };
@@ -5721,12 +5734,20 @@ export class Game {
     return {
       rain: this.weather.rain,
       dark: this.daylight?.darkness ?? 0,
+      fine: isFine(this.weather.name, this.weather.rain, this.places.p),
+      sun: this.sunWarmth(),
       spots: this.restSpots,
       girls: this.companions.map((c) => {
         const spot = c.currentSpot();
-        return { id: c.character.id, x: c.root.position.x, z: c.root.position.z, spot, state: c.fsm.is('idle') ? 'idle' : c.isResting && c.restPhase === 'sat' ? 'resting' : 'busy' };
+        return { id: c.character.id, dozeWeight: c.params.dozeWeight, x: c.root.position.x, z: c.root.position.z, spot, state: c.fsm.is('idle') ? 'idle' : c.isResting && c.restPhase === 'sat' ? 'resting' : 'busy' };
       }),
     };
+  }
+
+  /** How bright and warm the sun is on the farm now (0..1): what makes it a day for dozing outside. */
+  sunWarmth() {
+    const w = this.weather;
+    return Math.min(1, w.def.sky.sunIntensity / 2.6) * (1 - w.rain) * w.sunUp;
   }
 
   updatePlaces(dt) {
@@ -5744,6 +5765,10 @@ export class Game {
       c.pendingSpot = a.spot; // held for her while she gets up, so her friend picks another
       if (c.isResting) c.leaveRest(go);
       else go();
+    } else if (a.do === 'doze') {
+      c.pendingSpot = a.spot;
+      if (c.goRest(a.spot, { stay: dozeStay(this.places.p), doze: true })) c.selfEvents.push('dozeGo');
+      else c.pendingSpot = null;
     } else if (a.do === 'leave') c.leaveRest();
   }
 
@@ -8286,7 +8311,9 @@ export class Game {
   openCompanionMenu(c) {
     // She's sat out or in the doorway: she gets up first (a moment, with a "hang on"), then you can talk.
     if (c.isResting) {
-      if (c.leaveRest(() => this.openCompanionMenu(c))) c.selfEvents.push('restLeave');
+      const dozing = c.isDozing; // woken gently by you talking to her: her own line, not the "hang on"
+      if (dozing) c.wakeUp('gentle');
+      if (c.leaveRest(() => this.openCompanionMenu(c)) && !dozing) c.selfEvents.push('restLeave');
       return;
     }
     if (c.isSeated && c.quad.speed > this.player.params.mountSpeed) {
@@ -9691,6 +9718,7 @@ export class Game {
     this.dog = new Dog({ allowed, groundAt: (x, z) => world.groundHeightAt(x, z), random: createRandom(this.farmSeed ^ 0xd06), params: this.dogParams });
     this.dogView = new DogView(this.scene, this.dog, (x, z) => world.groundHeightAt(x, z));
     this.dogAudio = new DogAudio(this.audioHub);
+    this.snoreAudio = new SnoreAudio(this.audioHub);
     this.dogPlaced = false;
     this.dogGirlPrev = new Map(); // girl id -> where she was last frame, for how fast she is walking
   }
@@ -9737,6 +9765,7 @@ export class Game {
     for (const e of this.dog.update(dt, ctx)) this.fireDogEvent(e);
     this.dogView.update(dt);
     this.dogAudio.update(dt, this.dog.at(), this.dog.panting);
+    for (const c of this.companions) this.snoreAudio.update(dt, c.character.id, c.root.position, c.isAsleep, this.places.p.dozeSnoreRange, c.character.id === 'jess' ? 1.15 : 1);
   }
 
   /** What the dog did, sounded and told to the girls. */

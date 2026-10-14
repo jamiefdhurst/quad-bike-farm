@@ -9,7 +9,10 @@
 // A spot is { id, kind: 'bale' | 'fence' | 'shelter', x, z, yaw, seat? }. `seat` is the
 // height she sits at (none for shelter, where she stands); `yaw` the way she faces.
 
+import { DEFAULT_DOZE_PARAMS, DOZE_PARAM_RANGES } from './dozing.js';
+
 export const DEFAULT_PLACE_PARAMS = {
+  ...DEFAULT_DOZE_PARAMS, // dozing on the bales when sleepy (dozing.js)
   fineBelow: 0.05, // rain (0..1) below which a sunny day counts as fine for sitting out
   rainAbove: 0.25, // rain above which they go looking for cover
   dryBelow: 0.08, // rain below which they come out of the barn again
@@ -25,6 +28,7 @@ export const DEFAULT_PLACE_PARAMS = {
 };
 
 export const PLACE_PARAM_RANGES = {
+  ...DOZE_PARAM_RANGES,
   fineBelow: [0, 0.5, 0.01],
   rainAbove: [0.05, 1, 0.01],
   dryBelow: [0, 0.5, 0.01],
@@ -122,9 +126,17 @@ export class Places {
     const p = this.p;
     const raining = ctx.rain > p.rainAbove;
     const dark = (ctx.dark ?? 0) > p.darkAbove;
-    if (!raining && !dark) return [];
     const taken = new Set(ctx.girls.map((g) => g.spot?.id).filter(Boolean));
     const out = [];
+    // A warm, bright, dry afternoon: a girl stood about can doze on a free bale (what she wants is the chooser's: her sleepiness).
+    if (ctx.fine && !dark && (ctx.sun ?? 0) >= p.dozeSunAbove) {
+      for (const g of ctx.girls) {
+        if (g.state !== 'idle') continue;
+        const spot = nearestSpot(ctx.spots, ['bale'], g, taken, p.restFrom);
+        if (spot) out.push({ key: 'doze', girl: g.id, spot, weight: g.dozeWeight ?? 1 });
+      }
+    }
+    if (!raining && !dark) return out;
     for (const g of ctx.girls) {
       if (g.spot?.kind === 'shelter' || g.state === 'busy') continue;
       const spot = nearestSpot(ctx.spots, ['shelter'], g, taken, p.shelterFrom);
@@ -135,9 +147,10 @@ export class Places {
     return out;
   }
 
-  /** She chose to run for it (or go in out of the dark): returns the action the game carries out, { girl, do: 'shelter', spot, dark }. */
+  /** She chose to run for it (or go in out of the dark), or to doze: returns the action the game carries out, { girl, do: 'shelter' | 'doze', spot, dark }. */
   take(offer) {
     this.taken.add(offer.spot.id);
+    if (offer.key === 'doze') return { girl: offer.girl, do: 'doze', spot: offer.spot };
     return { girl: offer.girl, do: 'shelter', spot: offer.spot, dark: offer.key === 'goIn' };
   }
 }

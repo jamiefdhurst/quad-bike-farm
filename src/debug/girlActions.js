@@ -52,6 +52,34 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'doze',
+      label: '% goes and dozes on the nearest bale',
+      run: (id) => {
+        if (!free(id)) return;
+        const c = girl(id);
+        const taken = new Set(g.companions.map((o) => o.currentSpot()?.id).filter(Boolean));
+        const spot = g.restSpots
+          .filter((s) => s.kind === 'bale' && !taken.has(s.id))
+          .sort((a, b) => Math.hypot(a.x - c.root.position.x, a.z - c.root.position.z) - Math.hypot(b.x - c.root.position.x, b.z - c.root.position.z))[0];
+        if (!spot) return toast('No free bale to sit on');
+        g.handlePlaceAction({ girl: id, do: 'doze', spot });
+      },
+    },
+    {
+      verb: 'wake',
+      label: '% is woken gently',
+      run: (id) => {
+        if (!girl(id).wakeUp('gentle')) toast(`${nameOf(id)} is not dozing`);
+      },
+    },
+    {
+      verb: 'wake-rudely',
+      label: '% is woken by a bang',
+      run: (id) => {
+        if (!girl(id).wakeUp('startled')) toast(`${nameOf(id)} is not dozing`);
+      },
+    },
+    {
       verb: 'cat',
       label: 'The cat goes over to %',
       run: (id) => {

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { pathAt } from '../world/loft.js';
+import { wakesOf, wakesHer } from './dozing.js';
 
 // Her sitting about somewhere on the farm: on the straw bales or the paddock fence
 // when it's fine, on the bales in the barn when it rains (places.js decides where and
@@ -28,7 +29,7 @@ export const restingMethods = {
   },
 
   /** Walks over to a spot and settles there. Only when she's stood about; returns whether she set off. */
-  goRest(spot, { stay = Infinity } = {}) {
+  goRest(spot, { stay = Infinity, doze = false } = {}) {
     if (!this.fsm.is('idle')) return false;
     this.restSpot = spot;
     this.pendingSpot = null;
@@ -40,7 +41,7 @@ export const restingMethods = {
       if (!through && door.distanceTo(this.root.position) < 0.9) through = true;
       return { position: through ? stand : door, facing: spot.yaw };
     };
-    this.fsm.transition('walking', { goal: 'rest', spot, stay, target });
+    this.fsm.transition('walking', { goal: 'rest', spot, stay, doze, target });
     return true;
   },
 
@@ -56,6 +57,39 @@ export const restingMethods = {
     d.leaving = true;
     d.then = then;
     return true;
+  },
+
+  /** Sat on a spot and nodding off or asleep (dozing.js): the sleep need falls, her head droops, and she can be woken. */
+  get isDozing() {
+    const d = this.fsm.data;
+    return this.fsm.is('resting') && this.restPhase === 'sat' && !!d?.doze && !d.woken;
+  },
+
+  /** Properly asleep, not just nodding. */
+  get isAsleep() {
+    return this.isDozing && this.dozeT >= this.dozeParams.dozeDropSeconds;
+  },
+
+  /**
+   * Wakes her: 'gentle' (you talked to her) or 'startled' (a noise, a rev beside her). She stays sat a few more seconds, and a startled
+   * one flinches and may take it badly (onWoken is the game's hook for the favour). Returns whether she was dozing.
+   */
+  wakeUp(how) {
+    if (!this.isDozing) return false;
+    const d = this.fsm.data;
+    d.woken = true;
+    this.restFor = Math.min(this.restFor, 12);
+    this.selfEvents.push(how === 'startled' ? 'dozeStartled' : 'dozeWakeGentle');
+    if (how === 'startled') this.react('flinch', { force: true, strength: 1.2 });
+    this.onWoken?.(how);
+    return true;
+  },
+
+  /** A notice (attention.js) near her while she dozes: a rev, a horn, a bang wakes her (dozing.js has how near). */
+  wakeToNotice(n) {
+    if (!this.isDozing) return;
+    const at = this.root.position;
+    if (wakesHer(n, Math.hypot(n.x - at.x, n.z - at.z), this.isAsleep)) this.wakeUp('startled');
   },
 
   /** The spot she's at or on her way to, if any. */
@@ -83,6 +117,8 @@ export const restingStates = {
         this.rig.play('Idle', { fade: 0.3 });
       }
       this.restFor = data.stay;
+      this.dozeT = 0;
+      if (data.doze) this.selfEvents.push('dozeOff');
     },
     update(dt, data) {
       const p = this.params;
@@ -116,6 +152,17 @@ export const restingStates = {
       if (this.restPhase === 'sat') {
         this.root.position.copy(seat);
         this.restFor -= dt;
+        if (data.doze && !data.woken) {
+          this.dozeT += dt;
+          // She wakes of her own accord once she's rested, her time is up, or the sun goes in.
+          const why = this.dozeT > this.dozeParams.dozeDropSeconds ? wakesOf({ sleep: this.needs.sleep, stayLeft: this.restFor, sunny: this.dozeSunny?.() ?? true }, this.dozeParams) : null;
+          if (why) {
+            data.woken = true;
+            this.selfEvents.push('dozeWake');
+            if (why === 'sun') this.restFor = Math.min(this.restFor, 6);
+            else this.restFor = Math.min(this.restFor, 10);
+          }
+        }
         if (data.leaving || this.restFor <= 0) {
           this.restPhase = 'down';
           this.downAt = this.fsm.time;

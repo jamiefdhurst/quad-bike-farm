@@ -1,4 +1,4 @@
-// What a girl wants: five needs, each 0 (met) to 1 (pressing), that build and get met as she goes about the farm. The chooser
+// What a girl wants: six needs, each 0 (met) to 1 (pressing), that build and get met as she goes about the farm. The chooser
 // (chooser.js) weighs what she could do against them, so what she does next follows from how she feels rather than a roll of the dice.
 // Pure: the game says each frame what she's doing and what it's like where she is.
 //
@@ -6,12 +6,13 @@
 //   company     rises with nobody near her; met by being near you or her friend
 //   excitement  creeps up all the time; met by going fast and by a good shake
 //   rest        rises while she's on the go; met by sitting down
+//   sleep       creeps up all the time (a bit faster on the go); met only by dozing; the sleepier she is, the less she does and the slower she thinks
 //   purpose     rises while she stands about with nothing to do (at the old boredom wait's pace); met by starting anything she chose
 
-export const NEEDS = ['warmth', 'company', 'excitement', 'rest', 'purpose'];
+export const NEEDS = ['warmth', 'company', 'excitement', 'rest', 'sleep', 'purpose'];
 
 /** What each need is called in the debug panel. */
-export const NEED_LABELS = { warmth: 'warmth', company: 'company', excitement: 'excitement', rest: 'rest', purpose: 'something to do' };
+export const NEED_LABELS = { warmth: 'warmth', company: 'company', excitement: 'excitement', rest: 'rest', sleep: 'sleepiness', purpose: 'something to do' };
 
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
@@ -23,7 +24,7 @@ export class Needs {
   /**
    * One step. `ctx`: chill (0..1, the day's cold where she is: 0 indoors or in a cab), wet (it's raining on her), warmed (warming up:
    * hands over an engine, a running cab, the barn), alone (nobody within her lonely range), together (someone close, or riding with
-   * her), thrill (0..1: speed and shake), active (on the go: walking, driving, getting about), sitting, idle (stood about with nothing
+   * her), thrill (0..1: speed and shake), active (on the go: walking, driving, getting about), sitting, dozing (asleep or nodding off on the bales), idle (stood about with nothing
    * to do), purposeRate (per second while idle: 1 over her current boredom wait). `p` her params (the need* keys).
    */
   update(dt, ctx, p) {
@@ -35,6 +36,8 @@ export class Needs {
     this.excitement += dt * (p.needThrillRise - (ctx.thrill ?? 0) * p.needThrillFall);
     if (ctx.active) this.rest += dt * p.needTireRise;
     if (ctx.sitting) this.rest -= dt * p.needRestFall;
+    this.sleep += dt * (p.needSleepRise * (ctx.active ? 1.5 : 1));
+    if (ctx.dozing) this.sleep -= dt * p.needSleepFall;
     if (ctx.idle) this.purpose += dt * (ctx.purposeRate ?? 0);
     else this.purpose -= dt * p.needBusyFall; // doing something, the itch to do something fades
     for (const n of NEEDS) this[n] = clamp01(this[n]);

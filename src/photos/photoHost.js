@@ -48,7 +48,7 @@ export class PhotoHost {
     const me = g.player.position;
     g.notice('photo', { x: me.x, y: me.y, z: me.z }, { key: 'camera', strength: 1 });
     for (const c of g.companions) {
-      if (!girls.includes(c.character.id)) continue;
+      if (!girls.includes(c.character.id) || c.isAsleep) continue; // asleep, she doesn't pose
       const kind = photoReaction({ pose: c.params.photoPose, face: c.params.photoFace, palm: c.params.photoPalm }, c.favourView().mood);
       if (c.react(kind, { from: me, force: true })) c.voice.say(SAY[kind], { chance: 0.7 });
     }
@@ -94,6 +94,7 @@ export class PhotoHost {
     g.hud.toast('Photo pinned on the corkboard in the barn', 2);
     g.achievements.note('photo');
     if (girls.length) g.achievements.note('photoGirl');
+    if (g.companions.some((c) => c.isAsleep && girls.includes(c.character.id))) g.achievements.note('photoAsleep');
     g.achievements.best('photosPinned', this.wall.photos.length);
     g.saveFarm?.();
   }

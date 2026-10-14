@@ -39,6 +39,7 @@ import { Attention, DEFAULT_NOTICE_PARAMS } from './attention.js';
 import { reactingMethods } from './companionReacting.js';
 import { availabilityOf, JOBS } from './availability.js';
 import { Needs } from './needs.js';
+import { DEFAULT_DOZE_PARAMS, dozePose } from './dozing.js';
 import { Intent, walkPace } from './intent.js';
 import { standBy, tagPoint } from './pair.js';
 
@@ -139,6 +140,9 @@ export class Companion {
     this.lookLeadLeft = 0; // seconds she still looks where she's going before setting off
     // What she wants (needs.js), started a little different for each so they don't move in step, and what she last chose and nearly
     // chose (chooser.js, run by the game's updateMinds; the debug panel's "why").
+    this.dozeParams = DEFAULT_DOZE_PARAMS; // the game points this at the shared tuning (Places)
+    this.dozeT = 0; // seconds into dozing
+    this.dozeK = 0; // how far gone she is (0..1), for her head
     this.needs = new Needs({ purpose: Math.random() * 0.4, excitement: Math.random() * 0.3 });
     this.mind = { thinkIn: Math.random() * 2, last: null, since: 0, scored: [], waiting: null };
     // What she's set on (intent.js): how she walks to it, and whether you've stopped her on her way.
@@ -1355,6 +1359,7 @@ Companion.prototype.updateRecoil = function (dt) {
 Companion.prototype.notice = function (n) {
   this.attention.notice(n);
   this.reactToNotice(n); // and it may make her move (reactions.js)
+  this.wakeToNotice(n); // or wake her, if she's dozing (dozing.js)
 };
 
 /**
@@ -1390,6 +1395,7 @@ Companion.prototype.updateAttention = function (dt, viewer) {
   const rig = this.rig;
   const look = this.stateLook();
   const own = look === 'own';
+  const dozy = this.dozeK > 0.2; // nodding off or asleep: her head is hers, not attention's
   const at = this.root.getWorldPosition(this.tmpV);
   const dir = this.root.getWorldDirection(_dirV);
   const self = { x: at.x, y: at.y + p.height * 0.93, z: at.z };
@@ -1409,7 +1415,7 @@ Companion.prototype.updateAttention = function (dt, viewer) {
   this.lookTurn = !own && pick ? pick.turnTo : null;
   // On the back behind you the pillion pose has her head, and turns it to whatever catches her eye.
   this.pillion.attend = own ? pick : null;
-  if (own || !pick) {
+  if (own || !pick || dozy) {
     rig.lookWeight += (0 - rig.lookWeight) * Math.min(1, p.lookSpeed * dt);
     return;
   }
@@ -1440,6 +1446,14 @@ Companion.prototype.updateFidget = function (dt) {
   const p = this.params;
   const offsets = this.rig.offsets;
   for (const key in offsets) offsets[key] = 0;
+  // Nodding off or asleep (dozing.js): her head droops and she doesn't fidget.
+  this.dozeK += ((this.isDozing ? 1 : 0) - this.dozeK) * Math.min(1, dt * (this.isDozing ? 1.5 : 4));
+  if (this.dozeK > 0.01) {
+    const d = dozePose(this.dozeT, this.dozeK, this.dozeParams.dozeDropSeconds);
+    offsets.headDown = d.headDown;
+    offsets.spinePitch = d.spinePitch;
+    return;
+  }
   if (this.recoil) Object.assign(offsets, { leftArmOut: 0.8 * this.recoil.k, rightArmOut: 0.8 * this.recoil.k, leftElbow: 0.6 * this.recoil.k, rightElbow: 0.6 * this.recoil.k, spinePitch: -0.25 * this.recoil.k });
 
   // Reaching for the key and the starter while she gets a quad going.
@@ -1571,7 +1585,7 @@ export const STATES = {
           this.fsm.transition('idle', { facing: t.facing });
           data.arrive();
         } else if (data.goal === 'prank') this.fsm.transition('pranking', { facing: t.facing, act: data.act, stay: data.stay, out: data.out });
-        else if (data.goal === 'rest') this.fsm.transition('resting', { spot: data.spot, stay: data.stay });
+        else if (data.goal === 'rest') this.fsm.transition('resting', { spot: data.spot, stay: data.stay, doze: data.doze });
         else if (data.goal === 'warm') {
           this.fsm.transition('idle', { facing: t.facing });
           this.startWarming(data.quad, data.side);

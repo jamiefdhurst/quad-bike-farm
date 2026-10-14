@@ -1079,8 +1079,25 @@ export const FAQ_SECTIONS = [
       {
         q: 'What do they do when I leave them alone?',
         a: `All sorts: wander off for a look round, start a quad, take one for a drive, race each other, go for a ride together, spin doughnuts, show off to you,
-          line the quads up by the barn, leave a mug of tea on a rack, sit with you on the rock at the top of the hill with a flask, sit on the bales or the paddock fence on a fine day, run for the barn or climb into a Land Rover when it rains,
+          line the quads up by the barn, leave a mug of tea on a rack, sit with you on the rock at the top of the hill with a flask, sit on the bales or the paddock fence on a fine day (or doze on the bales when they are sleepy), run for the barn or climb into a Land Rover when it rains,
           warm their hands over a running engine, start a Land Rover and sit in it to warm up, fetch jumpers when it's cold or wax jackets when it rains, or get their helmets from the hooks.`,
+      },
+      {
+        q: 'Why has a girl gone to sleep on the bales?',
+        a: `Each girl gets sleepier as the day goes on (Jess sooner than Amy, and quicker still when she has been on the go), and the only cure is a doze.
+          On a warm, bright, dry afternoon a sleepy girl sits on the straw bales, nods off and snores softly: you can hear it if you stand close.
+          The sleepier she gets, the less she does and the longer she takes to think of anything, so a girl who has been sitting about doing nothing may simply be worn out.
+          She wakes herself when she has rested, after a few minutes, or when the sun goes in. Amy swears she was only resting her eyes.`,
+        tip: 'A sleepy girl dozes on the bales on a sunny afternoon. She wakes by herself when she has rested.',
+      },
+      {
+        q: 'How do I wake a girl who is dozing?',
+        a: `Gently: walk up, press <kbd>E</kbd> and talk to her. She wakes, a bit embarrassed, and climbs down. Or rudely: rev a quad, sound the horn or make some other loud noise close by and she jumps awake.
+          Jess laughs it off. Amy minds, and is cross with you for a while afterwards, so wake her gently if you want her on your side.`,
+      },
+      {
+        q: 'How do I get a photo of a girl asleep?',
+        a: `Find one dozing on the bales, stand in front of her and press <kbd>5</kbd>. She sleeps on through the shutter, and the picture goes on the corkboard like any other. It also ticks "Caught napping" on the bucket list.`,
       },
       {
         q: 'Why are the girls wearing different coloured shirts from my last farm?',

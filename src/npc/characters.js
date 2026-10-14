@@ -68,6 +68,9 @@ export const CHARACTERS = [
       photoPalm: 0.4, // and says put that away, if she is not in the mood
       reactCheerArms: 0.2,
       needColdRise: 0.032, // feels the cold sooner (needs.js)
+      needSleepRise: 0.0009, // sleepy later than Jess, and says she was only resting her eyes
+      dozeWeight: 0.8,
+      dozeMinds: 1, // and takes it badly if you wake her with a rev
     },
     lines: VOICE_LINES,
     idles: ['folded', 'clasped', 'weight'], // her ways of standing about (STANDING_IDLES in poseMoves.js): tidy and patient
@@ -118,6 +121,8 @@ export const CHARACTERS = [
       reactCheerArms: 1,
       reactFlinch: 0.7,
       needThrillRise: 0.003, // gets restless for a bit of excitement sooner (needs.js)
+      needSleepRise: 0.0016, // up late, so sleepy sooner
+      dozeWeight: 1.2,
       // Shorter than Amy and curvier: a fuller bust, a narrower waist and wider hips.
       height: 1.52,
       bust: 1.4,

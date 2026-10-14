@@ -19,6 +19,7 @@ export const OFFER_KINDS = {
   start: { label: 'have a go at starting one', satisfies: { purpose: 0.6, excitement: 0.2, warmth: 0.3 } }, // an engine to warm her hands by
   drive: { label: 'take one for a drive', satisfies: { purpose: 0.6, excitement: 0.8 }, pace: 'brisk' },
   rest: { label: 'go and sit somewhere', satisfies: { purpose: 0.4, rest: 1 }, pace: 'dawdle' },
+  doze: { label: 'doze off in the sun on the bales', satisfies: { sleep: 1, rest: 0.5 }, pace: 'dawdle' },
   join: { label: "hop on the back of her friend's", satisfies: { purpose: 0.5, company: 0.8, excitement: 0.4 }, pace: 'hurry' },
   buzz: { label: 'sit on a rough one for the shake', satisfies: { purpose: 0.5, excitement: 0.7, rest: 0.3 } },
   lineUp: { label: 'tidy the quads', satisfies: { purpose: 0.9 } },
@@ -105,7 +106,7 @@ export function describeMind(mind) {
   return { chose, nearly, next };
 }
 
-const NEED_WORDS = { warmth: 'warmth', company: 'company', excitement: 'excitement', rest: 'a rest', purpose: 'something to do' };
+const NEED_WORDS = { warmth: 'warmth', company: 'company', excitement: 'excitement', rest: 'a rest', sleep: 'sleep', purpose: 'something to do' };
 
 /**
  * Her choice: { pick, scored } where scored is every offer with its score (best first, for the debug panel) and pick the one she
