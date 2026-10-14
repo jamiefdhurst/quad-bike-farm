@@ -3671,3 +3671,14 @@ Settled with Jamie before building: the coat and hood only this time, with getti
 - Lines: `coatOn`, `coatOff` and `hoodUp` for each girl (`coatLines.js`).
 - Putting a coat on refits all her clothes, about 0.9 s for both girls together in the headless check (mostly the coat's rays). It only happens when she gets to the rack, never at load.
 - Checked headless at full size: both girls in coats (Amy over a navy jumper) from the front, side, back and full length; hoods up front, side and back; the hood down on her back; Amy sat on a quad from the side and front. Not checked: a girl walking to the rack and back in real rain, the coat while driving, and the hood with a girl turning her head a long way (it's rigid on her head while the collar follows her neck).
+
+### Follow-up: slimmer, a hood that joins the coat, a front you can see
+
+Jamie: the coat made the girls look dumpy and round; the hood didn't seem to join the coat at the sides; the coat needs a zip or button line down the front.
+
+- **Slimmer.** 3.4 cm off her (was 4.2), sleeves 2.6 cm, and hip length, a Bedale rather than a Beaufort: the skirt is 5 cm with no flare (was 10 cm, flaring). Rounded as the jumper is (0.75): rounded less (0.35 was tried), its faces lay flatter between her corners than the jumper's, and sitting on a quad the jumper came through at her chest. Below the bust it falls at the jumper's slope; any steeper and the jumper would come through under it.
+- **The back hem** had a notch in the middle: like the jumper, the coat left out triangles her legs carry, and the bottom of her backside is her thighs'. It keeps the tops of her thighs now (`bare` leaves out only her lower legs, feet and hands), and the hem cuts them level.
+- **The shorts under it.** Their seat falls up to 6 cm off her bottom, which came through below the coat's back; under a coat it falls at most 1.8 cm.
+- **The hood joins the coat.** Up, it comes down over the collar on to her shoulders, just beyond the collar's fall, instead of stopping inside the collar (which from the side looked like it ended at her jaw). It's skinned now, not stuck to her head bone: her head carries it round her head and her chest carries its bottom edge (`chestShare`), so it stays joined to the coat when she turns her head. Down, it's built as if gathered inside the collar (the wide one turned over stood up behind her head) and skinned to her chest.
+- **The front.** The storm flap is 62% of the coat's colour, so its line shows, with bigger (8.5 mm) brighter brass studs.
+- Checked headless: Jess in the coat front and back; Amy with the hood up from the front, side and back; Amy sat on a quad from the front and side; the rack. Not checked: the hood with her head turned well round.

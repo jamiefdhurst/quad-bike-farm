@@ -127,29 +127,30 @@ export const JUMPER = {
 // there are her legs'). Its corduroy collar is collar.js on its neck edge (COAT_COLLAR); the hood is hood.js.
 export const COAT = {
   ...JUMPER,
-  ease: 0.042,
-  round: 0.6,
+  ease: 0.034, // just clear of the jumper (2.6 cm), so it hangs rather than balloons
+  bare: /(Left|Right)Leg$|Foot|Toe|Hand[A-Z]/, // the tops of her thighs are kept: the bottom of her backside is theirs, and left out it notched the hem
+  // Rounded as the jumper is: rounded less, its faces lie flatter between her corners than the jumper's and it comes through.
   neckBack: 0.022,
   neckSide: 0.02,
   neckFront: -0.01,
   neckRing: 0.06,
   neckCap: 0.045,
   neckBand: 0.012,
-  neckEase: 0.034,
+  neckEase: 0.03,
   sleeveLength: 0.95,
-  sleeveEase: 0.032,
-  sleeveFlare: 0.03,
+  sleeveEase: 0.026,
+  sleeveFlare: 0.025,
   cuff: 0.04,
   cuffEase: 0.016,
   hemDrop: 0.08,
   hemBand: 0,
-  hangSlope: 0.12,
-  hangMax: 0.06,
+  hangSlope: 0.18, // as the jumper's (any less and the jumper would come through under the bust)
+  hangMax: 0.05,
   bandShade: 0.9,
   insideShade: 0.4,
   lips: ['neck', 'sleeve', 'hem'],
-  skirt: 0.1, // below the body's hem, straight down this far
-  skirtFlare: 0.012, // and out this much at the bottom
+  skirt: 0.05, // below the body's hem, straight down this far: hip length, a Bedale rather than a long Beaufort
+  skirtFlare: 0, // and out this much at the bottom
   skirtLeg: 0.45, // how much of the skirt's bottom moves with her thighs, so it rides up over her lap when she sits
   placket: true,
   placketToHem: 0.025, // the storm flap runs down to this far above the hem, however long she is
@@ -158,8 +159,9 @@ export const COAT = {
   studs: 7, // spaced evenly from the first down to near the bottom of the flap
   buttons: [0.02], // the first stud, from the top of the neck
   topButtonOpen: 0.02,
-  buttonRadius: 0.0065,
-  buttonColour: '#a08858', // brass studs
+  buttonRadius: 0.0085,
+  buttonColour: '#c9a95c', // brass studs
+  placketShade: 0.62, // the storm flap a shade darker than the coat, so the line down the front shows
   buttonHoles: false,
   slits: false,
   veeMeasured: true,

@@ -12,7 +12,7 @@ export const HOOD = {
   faceHalf: 1.0, // radians either side of her front the face opening reaches at its widest
   faceTop: 0.06, // metres above her head's middle the opening closes over her forehead
   neckHalf: 0.62, // and how wide it stays below her chin, down to the collar
-  tuck: 0.012, // its bottom edge this far inside the collar's edge
+  tuck: 0, // its bottom edge this far inside the round it's given (outside the coat's collar, on her shoulders)
   lining: 0.004, // the lining this far inside the wax
   rows: 26,
   columns: 44,
@@ -65,7 +65,15 @@ export function hoodShape(head, collar, p = HOOD) {
     const k = smooth01((t - split) / (1 - split));
     return [cx + (collar.x - cx) * k, cz + (collar.z - cz) * k];
   };
-  return { cy, top: cy + ry, bottom: collar.y, profile, centreAt };
+  return { cy, top: cy + ry, bottom: collar.y, chin: profile(split).y, profile, centreAt };
+}
+
+/**
+ * How much of a point of the hood her chest carries rather than her head: none round her head, all of it at the bottom edge
+ * on her shoulders, so the bottom stays with the coat when she turns her head and the top with her head.
+ */
+export function chestShare(y, shape) {
+  return smooth01((shape.chin - y) / Math.max(0.01, shape.chin - shape.bottom));
 }
 
 /**

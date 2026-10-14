@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { buildTop, buildInset, buttonShape, slitShape, poloFields, POLO, JUMPER, COAT } from './polo.js';
-import { buildShorts } from './shorts.js';
+import { buildShorts, SHORTS } from './shorts.js';
 import { buildCollar, COAT_COLLAR } from './collar.js';
-import { buildHood, lowerHood, intoHood, tartan } from './hood.js';
+import { buildHood, lowerHood, intoHood, chestShare, tartan } from './hood.js';
 import { COAT_COLLAR_COLOUR } from './coats.js';
 import { measureHead } from './helmetView.js';
-import { unskin, smoothNormals } from './garmentMesh.js';
+import { unskin, smoothNormals, blendWeights, vec } from './garmentMesh.js';
 
 // Outfits for the companion. The Quaternius model is textured from a tiny palette (one flat colour per band), so her hair and the
 // body under her clothes are recoloured by swapping palette entries. Her clothes are garments over the body: the polo, its collar,
@@ -680,7 +680,7 @@ function addTop(rig, name, color, spec) {
     data,
     `${name}Placket`,
     { positions: placket.verts.map((q) => q.bind), normals: smoothArrayNormals(placket.verts.map((q) => q.bind), index), weights: placket.verts.map((q) => q.weights), uvs: placket.uv, index },
-    new THREE.MeshStandardMaterial({ color: tint.clone().multiplyScalar(1 / new THREE.Color().setRGB(STITCH_BASE, 0, 0, THREE.SRGBColorSpace).r), map: placketStitches(), roughness: 0.9, side: THREE.DoubleSide }),
+    new THREE.MeshStandardMaterial({ color: tint.clone().multiplyScalar((spec.placketShade ?? 1) / new THREE.Color().setRGB(STITCH_BASE, 0, 0, THREE.SRGBColorSpace).r), map: placketStitches(), roughness: spec.roughness ?? 0.9, side: THREE.DoubleSide }),
   );
   const positions = [];
   const weights = [];
@@ -825,14 +825,27 @@ function addCoat(rig, color) {
 function addHood(rig, data, shell, tint) {
   const head = measureHead(rig);
   const neck = data.bones.Neck;
-  if (!head || !rig.bones.Head || !(rig.bones.Spine2 ?? rig.bones.Spine1)) return;
+  const body = bodyMesh(rig);
+  // A point of her body her head carries (near enough) alone, and one her chest does: the hood is skinned between the two.
+  const anchor = (name) => {
+    let best = null;
+    let most = 0;
+    for (const v of data.verts) {
+      const w = v.weights.reduce((s, [b, k]) => s + (data.boneNames[b] === name ? k : 0), 0);
+      if (w > most) [best, most] = [v, w];
+    }
+    return best;
+  };
+  const headAt = anchor('Head');
+  const chestAt = anchor('Spine2') ?? anchor('Spine1');
+  if (!head || !headAt || !chestAt) return;
   // The coat's neck edge round the back and sides: how high it is and how far out from the middle of her neck.
   const edge = shell.verts.filter((v) => v.edge === 'neck' && !v.apart && v.rest[2] < neck[2] + 0.02);
   if (edge.length < 4) return;
   const y = edge.reduce((s, v) => s + v.rest[1], 0) / edge.length;
   const radius = edge.reduce((s, v) => s + Math.hypot(v.rest[0] - neck[0], v.rest[2] - neck[2]), 0) / edge.length;
-  const collar = { y: y + COAT_COLLAR.stand * 0.6, radius: radius - COAT_COLLAR.lean, x: neck[0], z: neck[2] };
-  const up = buildHood(head, collar);
+  // Up, it comes down over the collar on to her shoulders, just beyond the collar's fall, so it plainly joins the coat.
+  const up = buildHood(head, { y: y - 0.01, radius: radius + COAT_COLLAR.out + 0.008, x: neck[0], z: neck[2] });
   // The coat's back down her middle, 1 cm at a time, for the hood lying on it.
   const back = new Map();
   for (const v of shell.verts) {
@@ -845,38 +858,49 @@ function addHood(rig, data, shell, tint) {
     for (let d = 0; d < 6; d++) for (const j of [k - d, k + d]) if (back.has(j)) return back.get(j);
     return neck[2] - radius;
   };
-  const down = lowerHood(up, [neck[0], collar.y, neck[2] - radius], backAt);
+  // Pushed back, it's the hood as it would be gathered inside the collar (the wide bottom of the one up would stand up behind
+  // her head once turned over), lying on her back.
+  const collarTop = y + COAT_COLLAR.stand * 0.6;
+  const gathered = buildHood(head, { y: collarTop, radius: radius - COAT_COLLAR.lean - 0.012, x: neck[0], z: neck[2] });
+  const down = lowerHood(gathered, [neck[0], collarTop, neck[2] - radius], backAt);
   const edgeTint = tint.clone().multiplyScalar(0.7);
-  const mesh = (hood, name, bone) => {
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(hood.points.flat(), 3));
+  const mesh = (hood, name, share) => {
+    const positions = [];
+    const weights = [];
     const colors = [];
-    hood.kind.forEach((k, i) => {
-      const c = k === 'wax' ? tint : k === 'edge' ? edgeTint : null;
+    hood.points.forEach((pt, i) => {
+      const k = share(pt);
+      const skin = vec.lerp(headAt.skin, chestAt.skin, k);
+      positions.push(unskin(skin, pt));
+      weights.push(blendWeights(headAt.weights, chestAt.weights, k));
+      const c = hood.kind[i] === 'wax' ? tint : hood.kind[i] === 'edge' ? edgeTint : null;
       colors.push(...(c ? [c.r, c.g, c.b] : tartan(hood.uv[i])));
     });
-    geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    geo.setIndex(hood.tris.flat());
-    geo.computeVertexNormals();
-    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: COAT.roughness, side: THREE.DoubleSide }));
-    m.name = name;
-    m.castShadow = true;
-    rig.root.add(m); // made as she stands, in her root's frame, then carried by the bone from there
-    bone.attach(m);
-    rig.outfitParts.push(m);
-    return m;
+    const index = hood.tris.flat();
+    return skinnedFromArrays(
+      rig,
+      body,
+      data,
+      name,
+      { positions, normals: smoothArrayNormals(positions, index), weights, colors, index },
+      new THREE.MeshStandardMaterial({ vertexColors: true, roughness: COAT.roughness, side: THREE.DoubleSide }),
+    );
   };
-  rig.root.updateMatrixWorld(true);
-  rig.hood = { up: mesh(up, 'hoodUp', rig.bones.Head), down: mesh(down, 'hoodDown', rig.bones.Spine2 ?? rig.bones.Spine1), hair: hairUnderHood(rig, up.shape) };
+  rig.hood = {
+    up: mesh(up, 'hoodUp', (pt) => chestShare(pt[1], up.shape)),
+    down: mesh(down, 'hoodDown', () => 1),
+    hair: hairUnderHood(rig, up.shape),
+  };
   setHood(rig, rig.hoodIsUp);
 }
 
 /** The shorts as a garment (shorts.js), with the polo tucked into them. */
-function addBottom(rig, color) {
+function addBottom(rig, color, coat = false) {
   const body = bodyMesh(rig);
   if (!body || !['Spine', 'LeftUpLeg', 'RightUpLeg', 'LeftLeg', 'RightLeg'].every((b) => rig.bones[b])) return;
   const data = bodyData(rig, body);
-  const { shell, shade } = buildShorts(data);
+  // Under a coat the seat hangs no further off her than the coat does, or it shows through below the coat's back.
+  const { shell, shade } = buildShorts(data, coat ? { ...SHORTS, seatMax: 0.018 } : SHORTS);
   const tint = new THREE.Color(color);
   const colors = [];
   for (const k of shade) colors.push(tint.r * k, tint.g * k, tint.b * k);
@@ -916,7 +940,7 @@ function addEachGarment(rig, outfit) {
   const jumper = outfit.jumper ? addTop(rig, 'jumper', outfit.jumper, JUMPER) : null;
   if (polo) addCollar(rig, polo, jumper, outfit.polo);
   if (outfit.coat) addCoat(rig, outfit.coat);
-  if (outfit.shorts) addBottom(rig, outfit.shorts);
+  if (outfit.shorts) addBottom(rig, outfit.shorts, !!outfit.coat);
   if (outfit.wellies) addWellies(rig, outfit.wellies);
 }
 
