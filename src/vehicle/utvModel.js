@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { buildDash } from './dash.js';
 import { addHeadlightBeams, addTailLights, addSignalLamps, addSignalStalk, addHazardSwitch } from './quadModel.js';
 import { bentTube, loftGeometry, mergeStatic, rod, springGeometry } from './quadGeometry.js';
+import { treadTyre } from './detail/tread.js';
 
 // The farm UTV: a Gator-style side-by-side, procedural like the quads and the tractor. A diesel, open-sided, with a bench seat for
 // three under a roll cage and roof, a steering wheel on the right (it's British), a pedal pair on the floor, a centre console with the
@@ -221,25 +221,9 @@ const cached = (key, make) => {
   return cache.get(key);
 };
 
-/** A chunky farm tyre: a drum with two staggered rows of angled lugs. */
+/** A chunky all-terrain tyre (the kit's tread, detail/tread.js). */
 function tyre() {
-  const lug = 0.03;
-  const parts = [new THREE.CylinderGeometry(R - lug, R - lug, TYRE_W, 32).rotateZ(Math.PI / 2)];
-  const count = 22;
-  for (let row = 0; row < 2; row++) {
-    const side = row === 0 ? 1 : -1;
-    for (let i = 0; i < count; i++) {
-      const a = ((i + row * 0.5) / count) * Math.PI * 2;
-      const g = new THREE.BoxGeometry(TYRE_W * 0.52, lug * 2, 0.05);
-      const m = new THREE.Matrix4()
-        .makeRotationX(a)
-        .multiply(new THREE.Matrix4().makeTranslation(side * TYRE_W * 0.24, R - lug * 0.9, 0))
-        .multiply(new THREE.Matrix4().makeRotationY(side * 0.5));
-      g.applyMatrix4(m);
-      parts.push(g);
-    }
-  }
-  return mergeGeometries(parts);
+  return treadTyre('allTerrain', { radius: R, width: TYRE_W, rimR: RIM_R, count: 22 });
 }
 
 function buildWheel(w) {

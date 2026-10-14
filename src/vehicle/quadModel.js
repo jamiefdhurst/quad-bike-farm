@@ -15,8 +15,8 @@ import {
   shellGeometry,
   springGeometry,
   sweepGeometry,
-  tyreGeometry,
 } from './quadGeometry.js';
+import { treadTyre } from './detail/tread.js';
 
 // Farm quad built from procedural parts. One group with named parts so it can
 // be replaced by a real model later without touching the code that drives it:
@@ -165,7 +165,9 @@ function buildWheel(w, width, style, cfg) {
   spin.userData.keep = true;
   wheel.add(spin);
   const t = cfg.tyre ?? {};
-  const tyre = cached(`tyre${width}|${cfg.rimR}|${!!t.square}`, () => tyreGeometry(WHEEL_RADIUS, width, cfg.rimR, t.lugs ?? 20, t));
+  // The kit's tread (detail/tread.js): an ATV chevron, or square farm blocks on the older ones; a spec's style may name its own kind.
+  const kind = t.kind ?? (t.square ? 'farm' : 'atv');
+  const tyre = cached(`tyre${width}|${cfg.rimR}|${kind}|${t.lugs}`, () => treadTyre(kind, { radius: WHEEL_RADIUS, width, rimR: cfg.rimR, count: t.lugs }));
   add(tyre, MAT.rubber, spin);
   const rim = cached(`rim${style}|${width}|${s}`, () => rimGeometry(cfg.rimR, width, s, cfg.rimOpts));
   add(rim.rim, cfg.rim, spin);

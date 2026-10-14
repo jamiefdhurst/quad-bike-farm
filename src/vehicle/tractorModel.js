@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { buildDash } from './dash.js';
 import { addHeadlightBeams } from './quadModel.js';
 import { loftGeometry, mergeStatic, rod, springGeometry } from './quadGeometry.js';
+import { treadTyre } from './detail/tread.js';
 
 // The old farm tractor, procedural like the quads: a Fergie-sized diesel with a bonnet, a pan seat between two big rear wheels, a
 // steering wheel on a raked column, an upright exhaust with a flap on top, and a drawbar. Same named parts as a quad's model so
@@ -106,24 +106,7 @@ const cached = (key, make) => {
 
 /** A big lugged rear tyre: a drum with two staggered rows of angled lugs, like the herringbone on an old Fergie. */
 function rearTyre() {
-  const width = 0.38;
-  const lug = 0.07;
-  const parts = [];
-  const count = 22;
-  for (let row = 0; row < 2; row++) {
-    const side = row === 0 ? 1 : -1;
-    for (let i = 0; i < count; i++) {
-      const a = ((i + row * 0.5) / count) * Math.PI * 2;
-      const g = new THREE.BoxGeometry(width * 0.54, lug * 2.2, 0.06);
-      const m = new THREE.Matrix4()
-        .makeRotationX(a)
-        .multiply(new THREE.Matrix4().makeTranslation(side * width * 0.24, REAR_R - lug * 0.9, 0))
-        .multiply(new THREE.Matrix4().makeRotationY(side * 0.5));
-      g.applyMatrix4(m);
-      parts.push(g);
-    }
-  }
-  return mergeGeometries(parts);
+  return treadTyre('tractor', { radius: REAR_R, width: 0.38, rimR: 0.42, count: 22, segments: 48 });
 }
 
 /** The drum under the rear lugs: carcass with the caked mud of the field between the lugs. */
@@ -133,10 +116,7 @@ function rearDrum() {
 
 /** A narrow ribbed front tyre. */
 function frontTyre() {
-  const width = 0.15;
-  const parts = [new THREE.CylinderGeometry(FRONT_R - 0.03, FRONT_R - 0.03, width, 28).rotateZ(Math.PI / 2)];
-  for (const x of [-0.045, 0, 0.045]) parts.push(new THREE.CylinderGeometry(FRONT_R, FRONT_R, 0.036, 28).rotateZ(Math.PI / 2).translate(x, 0, 0));
-  return mergeGeometries(parts);
+  return treadTyre('rib', { radius: FRONT_R, width: 0.15, rimR: 0.24, segments: 32 });
 }
 
 function buildWheel(w, rimMat) {
@@ -387,6 +367,7 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   dash.group.userData.keep = true;
   root.add(dash.group);
   quad.userData.dash = dash;
+  quad.userData.metalBody = true; // painted steel (or aluminium) panels, not plastic: they chip and rust rather than fade (effects/wearLayer.js)
   // An accessory pod stands on a short steel post on the scuttle beside the binnacle (its right, so the dials stay clear), leaning back to you.
   const podPost = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.016, 0.06, 10), new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.6, metalness: 0.5 }));
   podPost.position.set(-0.27, 1.45, 0.3);

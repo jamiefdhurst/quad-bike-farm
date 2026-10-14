@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import { MAT, STYLE, add, rbox, buildSedimentBowl, tube, pipe, buildHandlebars, addHeadlightBeams, addTailLights } from './quadModel.js';
 import { mergeStatic, loftGeometry, shellGeometry } from './quadGeometry.js';
+import { treadTyre } from './detail/tread.js';
+
+let balloon = null;
+const balloonTyre = () => (balloon ??= treadTyre('balloon', { radius: R, width: 0.3, rimR: 0.115, count: 26 }));
 
 // The neighbour's old three-wheeler: a sun-bleached ATC with one front wheel, two fat balloon tyres at the back, a flat seat and a tall,
 // narrow stance, so it tips if you throw it round. Same named parts as a quad's model so Quad drives it unchanged (see quadModel.js).
@@ -46,14 +50,7 @@ function buildWheel(w, paint) {
   wheel.add(spin);
   const side = Math.sign(w.x) || 1;
   // A fat, soft balloon tyre (0.3 m wide) with a ring of lugs, on a small steel rim.
-  add(new THREE.TorusGeometry(R - 0.15, 0.15, 14, 32).rotateY(Math.PI / 2), MAT.rubber, spin);
-  const lugs = 26;
-  for (let i = 0; i < lugs; i++) {
-    const a = (i / lugs) * Math.PI * 2;
-    const lug = add(new THREE.BoxGeometry(0.26, 0.032, 0.034), MAT.rubber, spin);
-    lug.position.set(0, Math.sin(a) * (R - 0.004), Math.cos(a) * (R - 0.004));
-    lug.rotation.x = -a + Math.PI / 2;
-  }
+  add(balloonTyre(), MAT.rubber, spin);
   add(new THREE.CylinderGeometry(0.11, 0.11, 0.26, 16).rotateZ(Math.PI / 2), MAT.engineDark, spin);
   add(new THREE.CylinderGeometry(0.13, 0.13, 0.02, 16).rotateZ(Math.PI / 2), RUST, spin).position.x = side * 0.13;
   add(new THREE.CylinderGeometry(0.04, 0.04, 0.34, 10).rotateZ(Math.PI / 2), MAT.steel, spin);

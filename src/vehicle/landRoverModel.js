@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { buildDash } from './dash.js';
 import { addHeadlightBeams, addSignalLamps, addSignalStalk, addHazardSwitch, faceAlong } from './quadModel.js';
 import { bentTube, mergeStatic, rod } from './quadGeometry.js';
+import { treadTyre } from './detail/tread.js';
 
 // The old Land Rover: a Series III 88-inch pick-up, procedural like the UTV. Ladder chassis on leaf springs and live axles, flat-topped
 // front wings with the headlamps in them, a black grille, the spare wheel on the bonnet, a bumper with the hole for the starting
@@ -478,19 +478,7 @@ const cached = (key, make) => {
 
 /** A narrow all-terrain tyre on a drum: blocky tread in two staggered rows. */
 function tyre() {
-  const lug = 0.022;
-  const parts = [new THREE.CylinderGeometry(R - lug, R - lug, TYRE_W, 36).rotateZ(Math.PI / 2)];
-  const count = 26;
-  for (let row = 0; row < 2; row++) {
-    const side = row === 0 ? 1 : -1;
-    for (let i = 0; i < count; i++) {
-      const a = ((i + row * 0.5) / count) * Math.PI * 2;
-      const g = new THREE.BoxGeometry(TYRE_W * 0.44, lug * 2, 0.06);
-      g.applyMatrix4(new THREE.Matrix4().makeRotationX(a).multiply(new THREE.Matrix4().makeTranslation(side * TYRE_W * 0.24, R - lug * 0.9, 0)));
-      parts.push(g);
-    }
-  }
-  return mergeGeometries(parts);
+  return treadTyre('allTerrain', { radius: R, width: TYRE_W, rimR: RIM_R, count: 28, segments: 44 });
 }
 
 /** A steel wheel: the dished disc with its ring of holes suggested by bolts, in Limestone, and a hub cap. */
@@ -766,6 +754,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
   dash.group.userData.keep = true;
   root.add(dash.group);
   quad.userData.dash = dash;
+  quad.userData.metalBody = true; // painted steel (or aluminium) panels, not plastic: they chip and rust rather than fade (effects/wearLayer.js)
   quad.userData.podMount = null;
 
   if (D) {

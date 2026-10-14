@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { buildDash } from './dash.js';
 import { addHeadlightBeams, addSignalLamps, addSignalStalk, addHazardSwitch, faceAlong } from './quadModel.js';
 import { bentTube, mergeStatic } from './quadGeometry.js';
 import { add, rbox, label, plate, fitText, canvasTexture, seeded, tube, axleCyl, gearLeverPose, SEAT_TIP } from './landRoverModel.js';
 import { buildLPlate } from './lPlateModel.js';
+import { treadTyre } from './detail/tread.js';
 
 // The girls' cars, procedural like the Land Rovers: Amy's Mk1 Fiesta (1976 to 1983, boxy, a sloping hatch, square lamps, black
 // bumpers) and Jess's Corsa B (1993, rounded, oval lamps, body-coloured bumpers, a big-bore exhaust). One builder, a table each
@@ -502,11 +502,8 @@ function stereo(kind, parent, at) {
 // Wheels -------------------------------------------------------------------------------
 
 /** A road tyre: a drum with rounded shoulders and two grooves round it. */
-function tyre(R) {
-  const parts = [new THREE.CylinderGeometry(R - 0.012, R - 0.012, TYRE_W, 28).rotateZ(Math.PI / 2)];
-  for (const s of [-1, 1]) parts.push(new THREE.TorusGeometry(R - 0.03, 0.03, 5, 28).rotateY(Math.PI / 2).translate(s * (TYRE_W / 2 - 0.03), 0, 0));
-  for (const x of [-0.03, 0.03]) parts.push(new THREE.TorusGeometry(R - 0.008, 0.006, 3, 28).rotateY(Math.PI / 2).translate(x, 0, 0));
-  return mergeGeometries(parts.map((g) => g.toNonIndexed()));
+function tyre(R, rimR) {
+  return treadTyre('road', { radius: R, width: TYRE_W, rimR, segments: 36 });
 }
 
 function buildWheel(w, kind, R, missingTrim) {
@@ -516,8 +513,8 @@ function buildWheel(w, kind, R, missingTrim) {
   spin.name = 'spin';
   spin.userData.keep = true;
   wheel.add(spin);
-  add(tyre(R), MAT.rubber, spin);
   const rimR = kind === 'fiesta' ? 0.152 : 0.165;
+  add(tyre(R, rimR), MAT.rubber, spin);
   axleCyl(rimR, TYRE_W - 0.02, MAT.steel, 0, 0, 0, spin);
   if (kind === 'fiesta') {
     // Silver steel wheels with a small chrome hub cap.
@@ -766,6 +763,7 @@ export function buildCarModel({ kind = 'fiesta', bodyColor = 0x9fb8cc, dashStyle
   dash.group.userData.keep = true;
   root.add(dash.group);
   quad.userData.dash = dash;
+  quad.userData.metalBody = true; // painted steel (or aluminium) panels, not plastic: they chip and rust rather than fade (effects/wearLayer.js)
   quad.userData.podMount = null;
   rbox(0.24, 0.22, 0.24, 0.02, trim.dash, 0, 0.45, face - 0.1, root); // the console under the middle of the dash
   stereo(kind, root, { x: 0, y: dashTop - 0.17, z: face - 0.021 });

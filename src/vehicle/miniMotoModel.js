@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import { MAT, STYLE, add, rbox, tube, pipe, buildHandlebars, addHeadlightBeams, addTailLights } from './quadModel.js';
 import { mergeStatic } from './quadGeometry.js';
+import { treadTyre } from './detail/tread.js';
+
+let knobs = null;
+const knobbly = () => (knobs ??= treadTyre('knobbly', { radius: R, width: 0.09, rimR: R - 0.09, count: 24, segments: 32 }));
 
 // The mini moto: a 50cc pit bike, procedural like the quads. Same named parts as a quad's model so Quad drives it unchanged (see
 // quadModel.js). It has two wheels in a line and really leans: the
@@ -30,14 +34,7 @@ export const MOTO_PROXY = { w: 0.9, h: 1.2, d: 1.6 };
 
 function tyreAndRim(wheel, spin, mat) {
   // A knobbly tyre: a torus with a ring of blocks on it, and an alloy rim with a hub inside.
-  add(new THREE.TorusGeometry(R - 0.045, 0.045, 10, 26).rotateY(Math.PI / 2), MAT.rubber, spin);
-  const lugs = 22;
-  for (let i = 0; i < lugs; i++) {
-    const a = (i / lugs) * Math.PI * 2;
-    const lug = add(new THREE.BoxGeometry(0.075, 0.03, 0.026), MAT.rubber, spin);
-    lug.position.set(0, Math.sin(a) * (R - 0.012), Math.cos(a) * (R - 0.012));
-    lug.rotation.x = -a + Math.PI / 2;
-  }
+  add(knobbly(), MAT.rubber, spin);
   add(new THREE.CylinderGeometry(R - 0.09, R - 0.09, 0.07, 18).rotateZ(Math.PI / 2), mat, spin);
   add(new THREE.CylinderGeometry(0.035, 0.035, 0.12, 10).rotateZ(Math.PI / 2), MAT.engineDark, spin);
   mergeStatic(wheel);
