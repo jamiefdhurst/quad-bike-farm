@@ -581,6 +581,7 @@ export class CompanionVoice {
       }
       this.watchFaults(unit, w, near || hers);
       this.watchCarbIce(unit, w, near || hers);
+      this.watchDieselWax(unit, w, near || hers);
       this.watchDiagnosis(dt, unit, w);
       this.watchThrash(dt, unit, view, near || hers);
       this.watchBlame(dt, unit, w, view);
@@ -670,6 +671,18 @@ export class CompanionVoice {
     if (!listening || !unit.engine.isRunning || Math.abs(unit.quad.forwardSpeed) < 2 || (w.iceSaid ?? 0) >= 2) return;
     const hers = unit.quad === this.companion.quad;
     if (this.say('carbIcing', { urgent: hers, chance: hers ? 0.03 : 0.01 })) w.iceSaid = (w.iceSaid ?? 0) + 1;
+  }
+
+  /** A diesel waxed up in a hard frost (dieselWax.js): it is struggling or won't start. Amy knows it; Jess thinks it has given up. Twice a spell, then not till it has cleared. */
+  watchDieselWax(unit, w, listening) {
+    const wax = unit.quad.fuel.wax;
+    if (wax < 0.45) {
+      if (wax < 0.1) w.waxSaid = 0;
+      return;
+    }
+    if (!listening || (w.waxSaid ?? 0) >= 2) return;
+    const hers = unit.quad === this.companion.quad;
+    if (this.say('dieselWaxed', { urgent: hers, chance: hers ? 0.03 : 0.01 })) w.waxSaid = (w.waxSaid ?? 0) + 1;
   }
 
   /**

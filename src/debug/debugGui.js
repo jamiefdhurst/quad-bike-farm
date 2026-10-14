@@ -301,6 +301,7 @@ export class DebugGui {
     show(r, 'mud on your view (0 clean; open vehicles only)', () => round(lensCoverage(this.game.lens)));
     show(r, 'brakes wet (0 dry)', () => round(unit().quad.brakes.wet));
     show(r, 'ice in the throttle cable', () => round(unit().quad.iceCable.ice));
+    if (u.engine.params.compressionIgnition) show(r, 'diesel waxed (0 clear)', () => round(unit().quad.fuel.wax));
     if (u.quad.carbIce.enabled) show(r, 'ice in the carb', () => round(unit().quad.carbIce.ice));
     if (u.engine.params.strokes === 2) set(r, 'plug-saver in the tank (share)', () => round(unit().quad.fuel.additive), (v) => (unit().quad.fuel.additive = v), 0, 1);
     show(r, 'water reaching the carb', () => round(unit().engine.fuelWater));
@@ -330,6 +331,10 @@ export class DebugGui {
     set(p, 'chain oil (0 bone dry)', () => round(unit().quad.faults.kept.chainLube), (v) => (unit().quad.faults.kept.chainLube = v), 0, 1);
     set(p, 'wet brakes', () => round(unit().quad.brakes.wet), (v) => (unit().quad.brakes.wet = v), 0, 1);
     if (u.quad.carbIce.enabled) set(p, 'iced carb (ice)', () => round(unit().quad.carbIce.ice), (v) => (unit().quad.carbIce.ice = v), 0, 1);
+    if (u.engine.params.compressionIgnition) {
+      set(p, 'waxed diesel (wax)', () => round(unit().quad.fuel.wax), (v) => (unit().quad.fuel.wax = v), 0, 1);
+      set(p, 'anti-gel in the tank (share)', () => round(unit().quad.fuel.antiGel), (v) => (unit().quad.fuel.antiGel = v), 0, 1);
+    }
     set(p, 'frozen throttle cable (ice)', () => round(unit().quad.iceCable.ice), (v) => (unit().quad.iceCable.ice = v), 0, 1);
     tick(p, 'cable freezes open (not shut)', () => unit().quad.iceCable.mode === 'open', (v) => (unit().quad.iceCable.mode = v ? 'open' : 'shut'));
     tick(p, 'brake binding (rides free)', () => unit().quad.brakes.binding, (v) => unit().quad.brakes.setBinding(v));

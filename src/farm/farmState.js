@@ -9,7 +9,7 @@ import { TAP_POSITIONS } from '../vehicle/fuelSystem.js';
 
 // Engine values that are its condition rather than its running state (rpm, heat, choke). Restored only when the save has them.
 export const ENGINE_KEPT = ['wear', 'fouling', 'scuff', 'seized', 'silencerBlown', 'silencerOff', 'runIn', 'scar', 'coolant', 'coolantLeak', 'thermostat', 'boiled', 'dieselSoak', 'bore', 'boreFit', 'battery', 'batteryOut'];
-const FUEL_KEPT = ['oil', 'diesel', 'water', 'sediment', 'additive'];
+const FUEL_KEPT = ['oil', 'diesel', 'water', 'sediment', 'additive', 'wax', 'antiGel'];
 const FAULT_FIELDS = ['levels', 'started', 'caps', 'kept']; // kept: the chain's oil and whether it is off the sprocket
 
 const num = (v) => typeof v === 'number' && Number.isFinite(v);

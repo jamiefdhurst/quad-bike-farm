@@ -143,6 +143,12 @@ export function buildGameTree(g, host) {
       out.carbIce = group(() => ({
         ice: num(() => q().carbIce.ice, (v) => (q().carbIce.ice = v), 0, 1, '', '1 is iced solid: power gone at steady part throttle until a blip or a stop clears it'),
       }), 'the carb\'s ice');
+      if (e().params.compressionIgnition) {
+        out.dieselWax = group(() => ({
+          wax: num(() => q().fuel.wax, (v) => (q().fuel.wax = v), 0, 1, '', '1 is waxed solid: a diesel loses power, cuts out and will not catch until it warms or is treated'),
+          antiGel: num(() => q().fuel.antiGel, (v) => (q().fuel.antiGel = v), 0, 1, '', 'the share of the tank treated with anti-gel'),
+        }), 'the diesel\'s wax');
+      }
       out.iceCable = group(() => ({
         ice: num(() => q().iceCable.ice, (v) => (q().iceCable.ice = v), 0, 1, '', '1 is frozen solid: it will not open (or, if it freezes open, shut) until it thaws'),
         open: flag(() => q().iceCable.mode === 'open', (v) => (q().iceCable.mode = v ? 'open' : 'shut')),

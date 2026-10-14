@@ -189,6 +189,8 @@ const FRICTION_BANTER = ['idle', 'favoured', 'rivals', 'watching', 'sharing', 'r
 import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES, PREMIX_CAN_COLOURS, DIESEL_CAN_COLOURS } from './items/jerryCan.js';
 import { OilBottle, OIL_BOTTLE_PARAM_RANGES } from './items/oilBottle.js';
 import { CoolantBottle, COOLANT_BOTTLE_PARAM_RANGES, pourStep } from './items/coolantBottle.js';
+import { AntiGelBottle, ANTI_GEL_BOTTLE_PARAM_RANGES, doseStep } from './items/antiGelBottle.js';
+import { DEFAULT_DIESEL_WAX_PARAMS, DIESEL_WAX_PARAM_RANGES, dealWax } from './vehicle/dieselWax.js';
 import { BatteryItem, hasBattery } from './items/battery.js';
 import { Charger, CHARGER_PARAM_RANGES } from './workshop/charger.js';
 import { buildChargerModel, CHARGER_SLOT } from './workshop/chargerModel.js';
@@ -467,6 +469,11 @@ export class Game {
     registerTuning('Carb icing', DEFAULT_CARB_ICE_PARAMS, CARB_ICE_PARAM_RANGES); // the quads share this object (vehicle/carbIcing.js)
     this.frozenCableParams = { ...DEFAULT_FROZEN_CABLE_PARAMS };
     registerTuning('Frozen throttle cable', this.frozenCableParams, FROZEN_CABLE_PARAM_RANGES);
+    // Diesel waxing in a hard frost (vehicle/dieselWax.js): one set of tuning for every diesel; dealt with the weather, just below.
+    this.dieselWaxParams = { ...DEFAULT_DIESEL_WAX_PARAMS };
+    registerTuning('Diesel waxing', this.dieselWaxParams, DIESEL_WAX_PARAM_RANGES);
+    this.dieselWaxRandom = createRandom(this.seed ^ 0x3a9e);
+    for (const unit of this.units) unit.quad.waxParams = this.dieselWaxParams;
     this.frozenCableRandom = createRandom(this.seed ^ 0xf205);
     for (const unit of this.units) unit.quad.iceCable = new FrozenCable(this.frozenCableParams, this.frozenCableRandom);
     this.handbrakeParams = { ...DEFAULT_HANDBRAKE_PARAMS };
@@ -568,6 +575,10 @@ export class Game {
     this.wind.update(0, this.weather.wind);
     this.world.daylight = this.daylight;
     for (const unit of this.units) unit.quad.seatFrost = this.weather.seatFrost;
+    for (const unit of this.units) {
+      const q = unit.quad;
+      if (q.engine.params.compressionIgnition) q.fuel.wax = dealWax(this.dieselWaxRandom, this.weather.temperature, !!this.world.covered?.(q.position.x, q.position.z), this.dieselWaxParams);
+    }
     for (const unit of this.units) unit.quad.iceCable.deal(this.frozenCableRandom, this.weather.frost, !!this.world.covered?.(unit.quad.position.x, unit.quad.position.z));
     this.world.setWeather(this.weather);
     this.rain = new Rain(this.scene);
@@ -1168,6 +1179,7 @@ export class Game {
     });
     this.oilBottle = new OilBottle({ scene: this.scene, world: this.world, position: L.oilBottle, yaw: L.oilBottle.yaw });
     this.coolantBottle = new CoolantBottle({ scene: this.scene, world: this.world, position: L.coolantBottle, yaw: L.coolantBottle.yaw });
+    this.antiGelBottle = new AntiGelBottle({ scene: this.scene, world: this.world, position: L.antiGelBottle, yaw: L.antiGelBottle.yaw });
     this.plugAdditive = new PlugAdditive({ scene: this.scene, world: this.world, position: L.plugAdditive, yaw: L.plugAdditive.yaw });
     for (const can of [this.petrolCan, this.premixCan, this.dieselCan]) {
       this.interaction.add({
@@ -1197,6 +1209,14 @@ export class Game {
       prompt: () => (this.handsFull ? { text: 'Coolant: put what you are holding down first' } : 'Pick up the coolant bottle'),
       interact: () => {
         if (!this.handsFull) this.coolantBottle.pickUp(this.camera);
+      },
+    });
+    this.interaction.add({
+      target: this.antiGelBottle.proxy,
+      isAvailable: () => !this.antiGelBottle.held,
+      prompt: () => (this.handsFull ? { text: 'Diesel anti-gel: put what you are holding down first' } : 'Pick up the diesel anti-gel'),
+      interact: () => {
+        if (!this.handsFull) this.antiGelBottle.pickUp(this.camera);
       },
     });
     this.interaction.add({
@@ -1424,6 +1444,7 @@ export class Game {
     registerTuning('Diesel can', this.dieselCan.params, JERRY_CAN_PARAM_RANGES);
     registerTuning('Oil bottle', this.oilBottle.params, OIL_BOTTLE_PARAM_RANGES);
     registerTuning('Coolant bottle', this.coolantBottle.params, COOLANT_BOTTLE_PARAM_RANGES);
+    registerTuning('Anti-gel bottle', this.antiGelBottle.params, ANTI_GEL_BOTTLE_PARAM_RANGES);
     registerTuning('Plug-saver', this.plugAdditive.params, PLUG_ADDITIVE_PARAM_RANGES);
     registerTuning('Hose', this.hose.params, HOSE_PARAM_RANGES);
     this.muddyParams = { ...DEFAULT_MUDDY_PARAMS };
@@ -3111,6 +3132,7 @@ export class Game {
     unit.quad.brakes = new BrakeState(this.brakeParams, random);
     unit.quad.brakes.setBinding(random() < this.brakeParams.bindChance);
     unit.quad.iceCable = new FrozenCable(this.frozenCableParams, random); // stood in the barn, so never frozen
+    unit.quad.waxParams = this.dieselWaxParams;
     if (unit.quad.sump) unit.quad.sump = new Sump({ level: startLevel(false, random, this.sumpParams), burner: false, params: this.sumpParams });
     unit.quad.faults.roll(createRandom(this.farmSeed ^ (seed + 3)));
     unit.quad.faults.prone.belt = 0; // a clutch, not a belt
@@ -5152,7 +5174,7 @@ export class Game {
   }
 
   get handsFull() {
-    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.oilBottle.held || this.coolantBottle.held || !!this.heldBrushwood || !!this.heldBattery() || this.winch?.state === 'carried' || this.chain?.state === 'carried' || this.towRope?.state === 'carried';
+    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.oilBottle.held || this.coolantBottle.held || this.antiGelBottle.held || !!this.heldBrushwood || !!this.heldBattery() || this.winch?.state === 'carried' || this.chain?.state === 'carried' || this.towRope?.state === 'carried';
   }
 
   /** The debug panel's tow rope button: hook the rope from the nearest utility quad onto this vehicle, or take it off again. */
@@ -8530,6 +8552,27 @@ export class Game {
     }
   }
 
+  putAntiGelBottleDown() {
+    const p = this.player.position;
+    const yaw = this.player.yaw;
+    this.antiGelBottle.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7), yaw);
+  }
+
+  /** Stood looking at a vehicle with the anti-gel in your hands: Y doses a diesel's tank (items/antiGelBottle.js). */
+  antiGelDose(unit, input, dt) {
+    if (!input.isDown('KeyY')) {
+      this.yHeld = 0;
+      return;
+    }
+    const q = unit.quad;
+    const how = doseStep(q.fuel, unit.engine, dt, this.antiGelBottle.params);
+    this.yHeld = (this.yHeld ?? 0) + dt;
+    if (how === 'pouring') this.hud.setStatus(`Treating the diesel: ${Math.round(q.fuel.antiGel * 100)}% of the tank`);
+    else if (this.yHeld < 0.6) {
+      this.hud.toast(how === 'petrol' ? 'That runs on petrol: it never waxes' : how === 'empty' ? 'Nothing in the tank to treat' : 'The tank is already treated', 2.5);
+    }
+  }
+
   putOilBottleDown() {
     const p = this.player.position;
     const yaw = this.player.yaw;
@@ -8997,6 +9040,7 @@ export class Game {
         focused.unit.quad.setRemote(input);
         focused.unit.quad.handleFrameInput(dt);
         if (this.coolantBottle.held) this.coolantTopUp(focused.unit, input, dt);
+        else if (this.antiGelBottle.held) this.antiGelDose(focused.unit, input, dt);
         else this.dipstick(focused.unit, input, dt);
         this.lastUnit = focused.unit;
       }
@@ -9041,6 +9085,7 @@ export class Game {
       else if (this.leads.held && input.wasPressed('KeyG')) this.putLeadsDown();
       else if (this.oilBottle.held && input.wasPressed('KeyG')) this.putOilBottleDown();
       else if (this.coolantBottle.held && input.wasPressed('KeyG')) this.putCoolantBottleDown();
+      else if (this.antiGelBottle.held && input.wasPressed('KeyG')) this.putAntiGelBottleDown();
       else if (this.heldBrushwood && input.wasPressed('KeyG')) this.putBrushwoodDown();
       else if (this.heldBattery() && input.wasPressed('KeyG')) this.putBatteryDown();
     }
@@ -9749,6 +9794,8 @@ export class Game {
       this.hud.setStatus(`Brushwood\nE at the ring of stones to put it on the pile (${this.bonfire.piled} of ${this.bonfireParams.heapsNeeded})\nG to put it down`);
     } else if (this.coolantBottle.held) {
       this.hud.setStatus('Coolant bottle\nY at a water-cooled engine that is off and cool to top it up; keep holding when it is full to flush a stuck thermostat\nG to put it down');
+    } else if (this.antiGelBottle.held) {
+      this.hud.setStatus('Diesel anti-gel\nY at a diesel (tractor, UTV, Land Rover) to treat its tank, so it will not wax in a hard frost; it thaws what has waxed\nG to put it down');
     } else if (this.oilBottle.held) {
       this.hud.setStatus('Oil bottle\nY at a four-stroke to top up its oil, near it\nG to put it down');
     } else if (this.toolbox.held) {
@@ -9815,6 +9862,7 @@ export class Game {
       [this.leads, '#222222', 'Jump leads'],
       [this.oilBottle, '#e8e2c8', 'Oil bottle'],
       [this.coolantBottle, '#1f9bd0', 'Coolant bottle'],
+      [this.antiGelBottle, '#3a7bd5', 'Diesel anti-gel'],
       ...this.brushwood.filter((h) => !h.used).map((h) => [h, '#6b4d30', 'Brushwood']),
       ...[...this.batteries.values()].filter((b) => b.out).map((b) => [b, '#c2231b', b.name]),
     ];

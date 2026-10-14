@@ -38,6 +38,11 @@ const smoothstep = (a, b, x) => {
   return t * t * (3 - 2 * t);
 };
 
+/** How much of its usual chance of catching a waxed diesel keeps: all of it when clear, none once solid. */
+function waxCatchFactor(wax, p) {
+  return clamp(1 - (wax - p.waxStartFrom) / Math.max(0.01, 1 - p.waxStartFrom), 0, 1);
+}
+
 export class EngineModel {
   /**
    * @param {object} [params]  Overrides for DEFAULT_ENGINE_PARAMS. The object is
@@ -124,6 +129,7 @@ export class EngineModel {
     this.gulp = 0; // water being taken in right now, per second
     this.diesel = 0; // diesel fraction of the fuel in the carb right now
     this.additive = 0; // 0..1 how much of the fuel has plug-saver in it (plugAdditive.js): it cuts the oily idle fouling
+    this.wax = 0; // 0..1 how waxed up the diesel is in a hard frost (vehicle/dieselWax.js)
     this.fuelWater = 0; // 0..1 how much water is reaching the carb in the fuel (fuelWater.js); it clears when clean fuel arrives
     this.dieselSoak = 0; // 0..1 how soaked it is with diesel (see diesel.js); only a drain at the toolbox clears it
     this.glow = 0; // 0..1 how hot the glow plugs are (a diesel; see compression.js)
@@ -273,6 +279,7 @@ export class EngineModel {
    * @param {number}  [controls.dirt] 0..1 a dirty carb: lumpy, erratic and short of power.
    * @param {number}  [controls.valveLoose] 0..1 valves too loose: the tappets tick.
    * @param {number}  [controls.valveTight] 0..1 valves too tight: a hard hot start and short of power.
+   * @param {number}  [controls.wax] 0..1 diesel waxed in a hard frost (a diesel only): loses power, runs rough, may cut out and won't catch when solid.
    * @param {number}  [controls.ice] 0..1 ice round the carb's throttle plate: loses power and runs unevenly.
    * @param {number}  [controls.clog] 0..1 a clogged air filter: runs rich, smokes darker, loses top-end power.
    * @param {number}  [controls.gulp] water going in at the intake, per second (see waterGulp).
@@ -282,7 +289,7 @@ export class EngineModel {
    * @param {number}  [controls.gearRpm] a manual's revs at this road speed in this gear (speed over the gear's top speed, times full-throttle revs).
    * @param {number}  [controls.gearLock] 0..1 how far the clutch ties the engine to those revs: the throttle then only decides the torque.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, airLeak = 0, valveLoose = 0, valveTight = 0, clog = 0, ice = 0, gulp = 0, diesel = 0, fuelWater = 0, additive = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12 } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, airLeak = 0, valveLoose = 0, valveTight = 0, clog = 0, ice = 0, gulp = 0, diesel = 0, fuelWater = 0, wax = 0, additive = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12 } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -306,6 +313,7 @@ export class EngineModel {
     this.gulp = Math.max(0, gulp);
     this.diesel = contaminant(this.params, diesel);
     this.fuelWater = clamp(fuelWater, 0, 1);
+    this.wax = this.params.compressionIgnition ? clamp(wax, 0, 1) : 0;
     this.additive = clamp(additive, 0, 1);
     this.speed = Math.abs(speed);
     this.ambient = clamp(ambient, 0, 1);
@@ -658,7 +666,8 @@ export class EngineModel {
         p.hotRoughness * this.hot +
         p.waterRoughness * this.water +
         p.dieselRoughness * this.dieselSoak +
-        p.fuelWaterRoughness * this.fuelWater -
+        p.fuelWaterRoughness * this.fuelWater +
+        p.waxRoughness * this.wax -
         p.jetRoughness * this.jetOn,
       0,
       1,
@@ -687,6 +696,7 @@ export class EngineModel {
     this.power *= 1 - p.waterPowerLoss * this.water;
     this.power *= 1 - p.dieselPowerLoss * this.dieselSoak;
     this.power *= 1 - p.fuelWaterPowerLoss * this.fuelWater;
+    this.power *= 1 - p.waxPowerLoss * this.wax;
     if (this.silencerOff) this.power *= 1 + p.silencerPower;
     // Stumbling, it's got almost nothing.
     if (this.stumbleLeft > 0) this.power *= p.stumblePower;
@@ -723,7 +733,7 @@ export class EngineModel {
         (this.fuel > 0.02 ? 1 : 0);
       // A diesel doesn't care about the mixture: it wants hot plugs when it's cold, and turning over fast enough.
       if (p.compressionIgnition) {
-        chance = p.catchChance * lerp(p.catchColdFactor, 1, this.temperature) * compressionCatchFactor(this.glow, this.temperature, p) * (1 - this.fouling) * clamp(speed, 0, 1) * catchScale * (this.fuel > 0.02 ? 1 : 0);
+        chance = p.catchChance * lerp(p.catchColdFactor, 1, this.temperature) * compressionCatchFactor(this.glow, this.temperature, p) * waxCatchFactor(this.wax, p) * (1 - this.fouling) * clamp(speed, 0, 1) * catchScale * (this.fuel > 0.02 ? 1 : 0);
       }
 
       chance /= this.cylinders; // a chance every firing, so about the same each turn of the engine
@@ -826,6 +836,10 @@ export class EngineModel {
         this.stall('fuelWater');
         return;
       }
+      if (this.wax > p.waxStallAt && this.random() < p.waxStallChance * share) {
+        this.stall('wax');
+        return;
+      }
       if (this.dieselSoak > p.dieselStallAt && this.random() < p.dieselStallChance * share) {
         this.stall('diesel');
         return;
@@ -847,7 +861,7 @@ export class EngineModel {
           return;
         }
       }
-      const misfireChance = this.keyOff ? 0.45 : p.misfireBase + p.misfireRoughness * this.firingRoughness() ** 2 + p.waterMisfire * this.water + p.dieselMisfire * this.dieselSoak + p.fuelWaterMisfire * this.fuelWater;
+      const misfireChance = this.keyOff ? 0.45 : p.misfireBase + p.misfireRoughness * this.firingRoughness() ** 2 + p.waterMisfire * this.water + p.dieselMisfire * this.dieselSoak + p.fuelWaterMisfire * this.fuelWater + p.waxMisfire * this.wax;
       // Two-strokes at light load skip alternate firings: the ring-ding.
       this.cycleCount = (this.cycleCount ?? 0) + 1;
       const skip =

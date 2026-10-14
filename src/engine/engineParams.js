@@ -351,6 +351,13 @@ export const DEFAULT_ENGINE_PARAMS = {
   fuelWaterStallAt: 0.45, // above this it may cut out
   fuelWaterStallChance: 0.08, // chance of cutting out on each firing once past that
   fuelWaterStartFrom: 0.5, // from here a start gets harder
+  // Waxed diesel in a hard frost (see dieselWax.js): a diesel only; it clears as the fuel warms
+  waxRoughness: 0.5, // roughness added by wax at its worst
+  waxPowerLoss: 0.65, // power lost to it
+  waxMisfire: 0.3, // extra chance of a misfire on each firing at its worst
+  waxStallAt: 0.5, // above this it may starve and cut out
+  waxStallChance: 0.1, // chance of cutting out on each firing once past that
+  waxStartFrom: 0.35, // from here a start gets harder, and at full wax it will not catch at all
   dieselStartFrom: 0.15, // from here it starts to catch less
   dieselNoStart: 0.45, // soaked this far it won't catch at all
 
@@ -645,6 +652,12 @@ export const ENGINE_PARAM_RANGES = {
   fuelWaterStallAt: [0.1, 1, 0.01],
   fuelWaterStallChance: [0, 1, 0.01],
   fuelWaterStartFrom: [0, 1, 0.01],
+  waxRoughness: [0, 1, 0.01],
+  waxPowerLoss: [0, 1, 0.01],
+  waxMisfire: [0, 1, 0.01],
+  waxStallAt: [0.1, 1, 0.01],
+  waxStallChance: [0, 1, 0.01],
+  waxStartFrom: [0, 1, 0.01],
   dieselStartFrom: [0, 1, 0.01],
   dieselNoStart: [0.05, 1, 0.01],
   fuelStarveLevel: [0.05, 1, 0.01],

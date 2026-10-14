@@ -30,6 +30,7 @@ import { AMY_JET_LINES } from './jetLines.js';
 import { AMY_COOLANT_LINES } from './coolantLines.js';
 import { AMY_SPIT_LINES } from './spitLines.js';
 import { AMY_ICE_LINES } from './iceLines.js';
+import { AMY_WAX_LINES } from './waxLines.js';
 import { AMY_DIAGNOSIS_LINES } from './diagnosisLines.js';
 import { AMY_THRASH_LINES } from './thrashLines.js';
 import { AMY_LEFT_LINES } from './leftRunningLines.js';
@@ -1476,6 +1477,8 @@ export const VOICE_LINES = {
   ...AMY_SPIT_LINES,
   // A carb iced up on a cold, damp day (iceLines.js).
   ...AMY_ICE_LINES,
+  // A diesel waxed up in a hard frost (waxLines.js).
+  ...AMY_WAX_LINES,
   // Faults that develop (faultLines.js).
   ...AMY_FAULT_LINES,
   ...AMY_KEEP_LINES,

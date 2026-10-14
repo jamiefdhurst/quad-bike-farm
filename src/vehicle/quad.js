@@ -42,6 +42,7 @@ import { FrozenCable } from './frozenCable.js';
 import { SeatSpring, UpAccel, DEFAULT_SEAT_PARAMS } from './seatRide.js';
 import { DriveSwitch, driveEffects, DEFAULT_DRIVE_PARAMS } from './driveMode.js';
 import { fuelWaterLevel } from './fuelWater.js';
+import { DEFAULT_DIESEL_WAX_PARAMS, stepWax } from './dieselWax.js';
 import { reverseAllowed, chokeReach, DEFAULT_CONTROLS_PARAMS } from './controls.js';
 import { advanceUsage, isNeutral, dashClock, lampStates } from './dashState.js';
 
@@ -152,6 +153,7 @@ export class Quad {
     }
     this.carbIce = new CarbIcing(undefined, !engine.params.compressionIgnition); // ice in the carb on a cold, damp day (carbIcing.js); a diesel has no carb
     this.iceHits = []; // 'crack' / 'break' from wheels on puddle ice, taken by takeIceHits()
+    this.waxParams = DEFAULT_DIESEL_WAX_PARAMS; // diesel waxing in a hard frost (dieselWax.js); the game swaps in this game's tuning
     this.iceCable = new FrozenCable(); // a throttle cable frozen on a frosty morning (frozenCable.js); the game gives it this game's tuning and deals it
     this.brakes = new BrakeState(); // wet and binding brakes (brakeState.js); the game gives it this game's tuning and deals the binding ones
     this.filter = new AirFilter(); // clogs with mud, puddles and dust; cleaned at the toolbox
@@ -959,6 +961,16 @@ export class Quad {
       damp: Math.max(w.weather?.rain ?? 0, 0.8 * (w.weather?.wet ?? 0)),
       engineTemp: e.temperature,
     });
+    if (ip.compressionIgnition) {
+      this.fuel.wax = stepWax(this.fuel.wax, dt, {
+        temperature: w.temperature ?? 12,
+        running: e.isRunning,
+        engineTemp: e.temperature,
+        covered: !!w.covered?.(this.position.x, this.position.z),
+        sun: w.warmth ?? 0,
+        antiGel: this.fuel.antiGel,
+      }, this.waxParams);
+    }
     this.fuel.update(dt, { rpm: e.rpm, throttle: e.throttle, choke: e.choke, running: e.isRunning, climb: this.climb });
     this.sump?.step(dt, { running: e.isRunning, work: e.lubeWork });
     this.sumpClock += dt;
@@ -1017,6 +1029,7 @@ export class Quad {
       diesel: this.fuel.bowlDiesel,
       additive: this.fuel.additive,
       fuelWater: fuelWaterLevel(this.fuel.bowlWater, this.fuel.waterParams),
+      wax: this.fuel.wax,
       speed: this.forwardSpeed,
       ambient: this.world.warmth ?? 0.5,
       chill: this.world.chill ?? 0,

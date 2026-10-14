@@ -123,6 +123,8 @@ describe('a vehicle from one day to the next', () => {
     a.quad.fuel.setLitres(2.5);
     a.quad.fuel.water = 0.03;
     a.quad.fuel.additive = 0.7;
+    a.quad.fuel.wax = 0.6;
+    a.quad.fuel.antiGel = 0.4;
     a.quad.fuel.tap = 'off';
     a.quad.faults.leave('belt', 0.4);
     a.quad.faults.leave('chain', 0.7);
@@ -148,6 +150,8 @@ describe('a vehicle from one day to the next', () => {
     expect(b.quad.fuel.litres).toBe(2.5);
     expect(b.quad.fuel.water).toBe(0.03);
     expect(b.quad.fuel.additive).toBe(0.7);
+    expect(b.quad.fuel.wax).toBe(0.6);
+    expect(b.quad.fuel.antiGel).toBe(0.4);
     expect(b.quad.fuel.bowlWater).toBe(0.03);
     expect(b.quad.fuel.tap).toBe('off');
     expect(b.quad.faults.has('belt')).toBe(true);

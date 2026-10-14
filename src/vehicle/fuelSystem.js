@@ -57,6 +57,8 @@ export class FuelSystem {
     this.bowlDiesel = this.diesel; // and of what's in the float bowl, which is what the engine is fed
     this.water = params.startWater ?? 0; // water fraction of what's in the tank
     this.bowlWater = this.water; // and of what's in the float bowl, which is what the engine is fed
+    this.wax = 0; // 0..1 how waxed up the diesel is in a hard frost (dieselWax.js); only a diesel's moves
+    this.antiGel = 0; // share of what's in the tank that has anti-gel in it (dieselWax.js); topping up with untreated fuel thins it
     this.additive = params.startAdditive ?? 0; // share of what's in the tank that has plug-saver in it (plugAdditive.js)
     this.sediment = 0; // 0..1 how full the sediment bowl on the tap is of water
     this.waterParams = DEFAULT_FUEL_WATER_PARAMS;
@@ -116,6 +118,7 @@ export class FuelSystem {
     this.diesel = mixOil(this.litres, this.diesel, added, diesel);
     this.water = mixOil(this.litres, this.water, added, water);
     this.additive = mixOil(this.litres, this.additive, added, additive);
+    this.antiGel = mixOil(this.litres, this.antiGel, added, 0);
     this.litres += added;
     return added;
   }
@@ -130,6 +133,8 @@ export class FuelSystem {
     this.water = 0;
     this.bowlWater = 0;
     this.additive = 0;
+    this.antiGel = 0;
+    this.wax = 0;
     this.sediment = 0;
     return lost;
   }
