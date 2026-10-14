@@ -470,8 +470,9 @@ export const FAQ_SECTIONS = [
         q: 'Why won’t the hose get the old dirt out of the corners?',
         a: `That dirt is years old. Every vehicle shows its age: paint and plastic rubbed through on the sharp edges, colour faded by the sun, rust
           starting in the folds of the metal and old dried mud packed into the nooks where parts meet. Washing takes off the day's mud, not the
-          years. Fresh mud gathers in those same nooks first. The newer vehicles (the loan quad above all) are clean; the three-wheeler and the barn
-          find are the worst.`,
+          years. Fresh mud gathers in those same nooks first. Where hands and feet go is worn differently: the gear knob and the pedal rubbers
+          polished smooth, the footboards rubbed, the edge of the seat you slide onto gone shiny. The newer vehicles (the loan quad above all)
+          are clean; the three-wheeler and the barn find are the worst.`,
         tip: 'Hosing takes off today’s mud, not the years: the old dirt in the corners and the rust stay.',
       },
       {

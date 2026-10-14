@@ -1,4 +1,5 @@
 import { WEAR_DIST_RANGE } from '../vehicle/detail/wear.js';
+import { MAX_TOUCH } from '../vehicle/detail/touchWear.js';
 
 // The wear layer (TODO 87): scuffed paint and whitened plastic along a vehicle's sharp edges, sun-faded colour, rust in the folds
 // of its metal and dried mud and grime in its nooks. It reads the attributes `vehicle/detail/wear.js` bakes and the vehicle's
@@ -40,22 +41,34 @@ export const WEAR_VERTEX = /* glsl */ `
 
 export const WEAR_FRAGMENT_DECL = /* glsl */ `
   uniform float uWear;
+  uniform vec4 uTouch[${MAX_TOUCH}];
+  uniform float uTouchAmt[${MAX_TOUCH}];
+  uniform int uTouchCount;
   varying vec3 vWearCrease;
   varying vec3 vWearDist;
   varying float vWearNook;
 `;
 
 /**
- * The colour part, after the base colour is known and before the mud goes on. Leaves `wearScuff`, `wearRust` and `wearNook` (all
- * 0..1) for the roughness and metalness parts and for the mud. Needs `mudNoise` and `vMudPos` (the mud coat's).
+ * The colour part, after the base colour is known and before the mud goes on. Leaves `wearScuff`, `wearRust`, `wearNook` and
+ * `wearTouch` (all 0..1) for the roughness and metalness parts and for the mud. Needs `mudNoise` and `vMudPos` (the mud coat's).
+ * `wheel`: on a wheel, whose frame turns with it, there is no touch wear.
  */
-export function wearColourGlsl(kind) {
+export function wearColourGlsl(kind, { wheel = false } = {}) {
   const k = WEAR_KINDS.indexOf(kind);
   return /* glsl */ `
   float wearScuff = 0.0;
   float wearRust = 0.0;
   float wearNook = 0.0;
+  float wearTouch = 0.0;
   {
+    ${wheel ? '' : `// Touch wear: where hands and feet go (vehicle/detail/touchWear.js), patchy at its edges.
+    for (int i = 0; i < ${MAX_TOUCH}; i++) {
+      if (i >= uTouchCount) break;
+      float d = distance(vMudPos, uTouch[i].xyz);
+      wearTouch = max(wearTouch, uTouchAmt[i] * (1.0 - smoothstep(uTouch[i].w * 0.35, uTouch[i].w, d)));
+    }
+    wearTouch *= smoothstep(0.2, 0.7, mudNoise(vMudPos * 60.0) + wearTouch * 0.45) * min(1.0, 0.3 + uWear * 1.2);`}
     // How near this point is to a convex edge and to a concave fold, from each side of its triangle.
     float edgeBand = 0.003 + 0.012 * uWear;
     float foldBand = 0.006 + 0.02 * uWear;
@@ -77,21 +90,24 @@ export function wearColourGlsl(kind) {
       diffuseColor.rgb = mix(diffuseColor.rgb, vec3(lum) * 1.15 + 0.05, uWear * (0.25 + 0.2 * patchy));
       diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 1.6 + 0.12, wearScuff * 0.7);
       diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.13, 0.1, 0.07), wearNook * min(1.0, 0.25 + uWear) * 0.8);
+      diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 1.3 + 0.05, wearTouch * 0.5); // rubbed pale and shiny
     #elif ${k} == 1
       // Painted steel: faded, chipped to grey metal at the edges, rust starting in the folds and creeping out in patches.
       diffuseColor.rgb = mix(diffuseColor.rgb, vec3(lum) * 1.05 + 0.03, uWear * (0.15 + 0.15 * patchy));
+      wearScuff = max(wearScuff, wearTouch); // hands and boots wear the paint through to the steel
       diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.33, 0.32, 0.31), wearScuff * 0.85);
       wearRust = clamp(wearNook * (0.2 + 1.1 * uWear) + wearScuff * uWear * 0.6, 0.0, 1.0);
       wearRust *= smoothstep(0.25, 0.6, mudNoise(vMudPos * 47.0) + wearRust * 0.5);
     #elif ${k} == 2
       // Bare or plated metal: bright where rubbed, rust in the folds, a bloom of surface rust when it's really old.
-      diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 1.25 + 0.04, wearScuff * 0.5);
+      diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 1.25 + 0.04, max(wearScuff * 0.5, wearTouch * 0.6));
       wearRust = clamp(wearNook * (0.15 + 1.0 * uWear) + smoothstep(0.55, 0.95, patchy) * max(0.0, uWear - 0.5) * 1.4, 0.0, 1.0);
       wearRust *= smoothstep(0.25, 0.6, mudNoise(vMudPos * 47.0) + wearRust * 0.5);
       wearScuff = 0.0;
     #else
       // Rubber: perishes towards a dull grey-brown.
       diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.13, 0.12, 0.105), uWear * 0.45 * (0.6 + 0.4 * patchy));
+      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.2, 0.2, 0.19), wearTouch * 0.5); // a pedal rubber or a grip worn smooth and grey
       wearScuff = 0.0;
     #endif
     vec3 rust = mix(vec3(0.36, 0.17, 0.07), vec3(0.2, 0.09, 0.04), mudNoise(vMudPos * 19.0));
@@ -100,9 +116,10 @@ export function wearColourGlsl(kind) {
 `;
 }
 
-/** After `roughnessmap_fragment`: rust and scuffs are matt. */
+/** After `roughnessmap_fragment`: rust and scuffs are matt, what hands and feet rub is polished. */
 export const WEAR_ROUGHNESS = /* glsl */ `
   roughnessFactor = mix(roughnessFactor, 0.92, max(wearRust, wearScuff * 0.6));
+  roughnessFactor = mix(roughnessFactor, roughnessFactor * 0.45, wearTouch * (1.0 - wearRust));
 `;
 
 /** After `metalnessmap_fragment`: rust isn't shiny metal; a paint chip is. */

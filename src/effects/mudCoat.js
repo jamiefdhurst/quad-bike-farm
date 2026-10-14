@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { cabinBox } from './cabinMud.js';
 import { bakeModelSteps } from '../vehicle/detail/wear.js';
+import { findTouchPoints, packTouch, MAX_TOUCH } from '../vehicle/detail/touchWear.js';
 import { wearKind, wearColourGlsl, WEAR_VERTEX_DECL, WEAR_VERTEX, WEAR_FRAGMENT_DECL, WEAR_ROUGHNESS, WEAR_METALNESS } from './wearLayer.js';
 
 // Mud caked on a quad. Each quad gets its own copies of its materials with a
@@ -37,7 +38,8 @@ const WHEEL_CENTRES = /* glsl */ `
   const vec3 mudWheels[4] = vec3[4](vec3(0.48, 0.3, 0.62), vec3(-0.48, 0.3, 0.62), vec3(0.48, 0.3, -0.62), vec3(-0.48, 0.3, -0.62));
 `;
 
-function patchMaterial(material, uniforms, wheel, kind) {
+/** `clean`: a cab's inside (a model's cleanMaterials), which takes the wear but never the mud. */
+function patchMaterial(material, uniforms, wheel, kind, clean = false) {
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader
@@ -77,7 +79,7 @@ function patchMaterial(material, uniforms, wheel, kind) {
       .replace(
         '#include <color_fragment>',
         `#include <color_fragment>
-        ${wearColourGlsl(kind)}
+        ${wearColourGlsl(kind, { wheel })}
         vec3 mp = vMudPos;
         float blot = mudNoise(mp * 9.0) * 0.6 + mudNoise(mp * 23.0) * 0.28 + mudNoise(mp * 61.0) * 0.12;
         float cover;
@@ -103,6 +105,7 @@ function patchMaterial(material, uniforms, wheel, kind) {
         cover *= 1.0 - inBox.x * inBox.y * inBox.z * step(0.0, dot(vMudNormal, cabMid - mp));`}
         // Mud stays in the nooks first, and an old vehicle has dried mud in them however clean the rest is.
         cover += wearNook * (0.9 * ${wheel ? 'uMudWheels' : 'uMudBody'} + 0.6 * uWear);
+        ${clean ? 'cover = 0.0; // inside the cab: worn, never muddy' : ''}
         float mudMask = smoothstep(blot - 0.06, blot + 0.06, cover * 1.25);
         // Flecks flung a bit higher than the main coat.
         float fleck = step(0.8 - 0.14 * cover, mudNoise(mp * 95.0)) * step(0.05, cover);
@@ -146,7 +149,7 @@ function patchMaterial(material, uniforms, wheel, kind) {
         metalnessFactor = mix(metalnessFactor, 0.0, mudMask);`,
       );
   };
-  material.customProgramCacheKey = () => `${wheel ? 'mudCoatWheel' : 'mudCoatBody'}|${kind}`;
+  material.customProgramCacheKey = () => `${wheel ? 'mudCoatWheel' : 'mudCoatBody'}|${kind}|${clean ? 'clean' : 'muddy'}`;
 }
 
 /** The Vehicles tab's "Wear" for each vehicle. */
@@ -167,6 +170,9 @@ export class MudCoat {
       uCabinMin: { value: new THREE.Vector3() },
       uCabinMax: { value: new THREE.Vector3() },
       uWear: { value: 0 },
+      uTouch: { value: Array.from({ length: MAX_TOUCH }, () => new THREE.Vector4()) },
+      uTouchAmt: { value: new Array(MAX_TOUCH).fill(0) },
+      uTouchCount: { value: 0 },
     };
     this.look = { wear: 0 }; // how worn it is, 0 new to 1 derelict (the spec's bodyWear; "Wear" on the Vehicles tab)
     const model = quad.model;
@@ -174,8 +180,10 @@ export class MudCoat {
     this.uniforms.uCabinMin.value.set(...cabin.min);
     this.uniforms.uCabinMax.value.set(...cabin.max);
     const signals = model.userData.signalMaterials; // the indicator and reverse lenses light up, so they keep their own materials
-    // A model's `cleanMaterials`: its inside (the seats, the dash, the carpet in a cab), which mud on the outside never reaches.
-    const skip = new Set([model.userData.lensMaterial, model.userData.tailMaterial, ...(signals ? Object.values(signals) : []), model.getObjectByName('hazardSwitch')?.userData.mat, ...(model.userData.cleanMaterials ?? [])]);
+    const skip = new Set([model.userData.lensMaterial, model.userData.tailMaterial, ...(signals ? Object.values(signals) : []), model.getObjectByName('hazardSwitch')?.userData.mat]);
+    // A model's `cleanMaterials`: its inside (the seats, the dash, the carpet in a cab), which mud on the outside never reaches. They
+    // still wear (seats shiny at the edge, mats rubbed smooth), so they get the patch with the mud left out.
+    const clean = new Set(model.userData.cleanMaterials ?? []);
     const bodyCopies = new Map();
     const wheelCopies = new Map();
     const bars = model.getObjectByName('handlebars');
@@ -189,7 +197,7 @@ export class MudCoat {
         if (!copies.has(o.material)) {
           const copy = o.material.clone();
           const kind = wearKind(o.material, { metalBody: !!model.userData.metalBody });
-          patchMaterial(copy, this.uniforms, wheel, kind);
+          patchMaterial(copy, this.uniforms, wheel, kind, clean.has(o.material));
           copy.userData.wearKind = kind;
           copies.set(o.material, copy);
         }
@@ -201,10 +209,20 @@ export class MudCoat {
     this.bodyCopies = bodyCopies; // original material -> the muddy copy the meshes really use, so others can tint it
     this.materialCount = bodyCopies.size + wheelCopies.size;
     this.frame = model.getObjectByName('bodyRoot');
+    this.setTouch(findTouchPoints(model, this.frame));
     // The meshes the wear bake (vehicle/detail/wear.js) works through, in the background: everything this coat patched.
     const patched = new Set([...bodyCopies.values(), ...wheelCopies.values()]);
     this.wearBake = bakeModelSteps(model, (o) => !patched.has(o.material));
     this.wearBaked = false;
+  }
+
+  /** Where hands and feet wear it: [{ at: [x, y, z] in the body's frame, r, amount }] (vehicle/detail/touchWear.js). */
+  setTouch(points) {
+    const { centres, amounts, count } = packTouch(points);
+    this.touchPoints = points.slice(0, MAX_TOUCH);
+    this.uniforms.uTouch.value.forEach((v, i) => v.fromArray(centres, i * 4));
+    this.uniforms.uTouchAmt.value = Array.from(amounts);
+    this.uniforms.uTouchCount.value = count;
   }
 
   /** One piece of the wear bake; false once it's all done. */

@@ -6,6 +6,7 @@ import { budgetFor, TRIANGLE_BUDGETS } from '../src/vehicle/detail/budgets.js';
 import { REAL_SIZES, IN_PROPORTION, PROPORTION_TOLERANCE, measureModel, proportionErrors } from '../src/vehicle/detail/realSizes.js';
 import { buildTrailerModel } from '../src/vehicle/trailerModel.js';
 import { buildTipTrailerModel } from '../src/vehicle/tipTrailerModel.js';
+import { findTouchPoints, TOUCH_ROLES } from '../src/vehicle/detail/touchWear.js';
 
 // The vehicle models as a whole (TODO 87): each within its triangle budget, the points people and things hang from where they were,
 // and the vehicles a detail item has finished kept in proportion with the real ones.
@@ -70,6 +71,14 @@ describe('vehicle models', () => {
     for (const { id, model, layout } of vehicles.filter((v) => IN_PROPORTION.includes(v.id))) {
       const errors = proportionErrors(measureModel(model, layout), REAL_SIZES[id]);
       for (const [k, e] of Object.entries(errors)) expect(Math.abs(e), `${id} ${k} is ${(e * 100).toFixed(0)}% out`).toBeLessThanOrEqual(PROPORTION_TOLERANCE);
+    }
+  });
+
+  it('every vehicle wears where hands and feet go: its seat, and a cab\u2019s levers', () => {
+    for (const { id, spec, model } of vehicles) {
+      const pts = findTouchPoints(model, model.getObjectByName('bodyRoot'));
+      expect(pts.some((p) => p.r === TOUCH_ROLES.seat.r), id).toBe(true);
+      if (spec.car || spec.landRover || spec.tractor) expect(pts.some((p) => p.r === TOUCH_ROLES.knob.r), id).toBe(true);
     }
   });
 });
