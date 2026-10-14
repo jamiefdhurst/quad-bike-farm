@@ -3759,5 +3759,5 @@ Jamie: the wheel was getting hard to read, and the top level had too many slices
 ## The choke creep, tamed (TODO 58)
 
 - The choke-creeps quirk used to shake the lever out to 0.5. On a warm engine that is a mixture of 0.5 against `richTolerance` 0.25, so the engine fouled and would not idle at all.
-- `chokeCreepMax` is now 0.1, one lever step: the idle runs a little fast and lumpy (the choke's idle lift) but the mixture stays under the tolerance, on the coldest day too, since a cold engine's need takes it off. The quirk is still there to find and push back in with `Z`.
+- `chokeCreepMax` is now 0.2, two lever steps (Jamie's call, and nearer a real choke that works loose): the idle runs fast and lumpy (the choke's idle lift) but the mixture stays under the tolerance on an ordinary day. On the very coldest day a warm engine's choke supplies 0.2 x 1.45 = 0.29, just over it, so it can foul slowly there. The quirk is still there to find and push back in with `Z`.
 - Chosen over removing the quirk, which Amy's logbook and the keep-alive sickness check both know about. The creep rate is unchanged, so it reaches the cap as before. Not checked in the running game.
