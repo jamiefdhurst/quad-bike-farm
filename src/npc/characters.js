@@ -48,6 +48,7 @@ export const CHARACTERS = [
       stormWont: 1, // won't get on or drive a quad in a thunderstorm, and gets off one stood still in it
       carGoWeight: 0.8, // takes her Fiesta down the road now and then, carefully, on her L plates
       generatorWeight: 1.1, // sees the barn dark and the charger waiting, and goes and starts the generator
+      trailerGuideWeight: 1.2, // walks round behind a trailer you are reversing and calls the lock
       workLightWeight: 1.2, // brings the Land Rover round to light what you're at in the dark, unasked
       sideSaddleChance: 0.4, // sits side-saddle on the back, ladylike
       blownNoticeAt: 0.25,

@@ -95,6 +95,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   phoneMoodChance: 0.3, // the chance a call she takes is bad news and leaves her in a mood
   phoneMoodSeconds: 240, // how long that mood takes to lift
   generatorWeight: 0, // how keen she is to go and pull the generator's cord when the barn is dark or the charger is waiting on it (generatorStart.js)
+  trailerGuideWeight: 0, // how keen she is to walk round behind the trailer and guide you back when you reverse it
   workLightWeight: 0, // how keen she is to bring a vehicle round to light what you're at in the dark without being asked (workLight.js)
   // What she wants (needs.js), each 0 met to 1 pressing, and how she chooses what to do about it (chooser.js).
   chooseWhim: 0.6, // how much the scores of what she might do are reshuffled each time she chooses (log scale)
@@ -420,6 +421,7 @@ export const COMPANION_PARAM_RANGES = {
   phoneMoodChance: [0, 1, 0.05],
   phoneMoodSeconds: [10, 900, 10],
   generatorWeight: [0, 3, 0.05],
+  trailerGuideWeight: [0, 3, 0.05],
   workLightWeight: [0, 3, 0.05],
   wanderFarChance: [0, 1, 0.05],
   boredAfterMax: [5, 900, 1],

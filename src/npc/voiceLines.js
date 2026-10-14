@@ -75,6 +75,7 @@ import { AMY_FUMES_LINES } from './fumesLines.js';
 import { AMY_RUSTY_LINES } from './rustyLines.js';
 import { AMY_UTV_LINES } from './utvLines.js';
 import { AMY_TRAILER_LINES } from './trailerLines.js';
+import { AMY_TRAILER_GUIDE_LINES } from './trailerGuideLines.js';
 import { AMY_FARM_JOB_LINES } from './farmJobLines.js';
 import { AMY_FIRE_LINES } from './fireLines.js';
 import { AMY_LOAD_LINES } from './loadLines.js';
@@ -1565,6 +1566,7 @@ export const VOICE_LINES = {
   ...AMY_UTV_LINES,
   // The little tipping trailer: riding in it against the rules (trailerLines.js).
   ...AMY_TRAILER_LINES,
+  ...AMY_TRAILER_GUIDE_LINES,
   // The farm jobs on the barn door's board (farmJobLines.js).
   ...AMY_FARM_JOB_LINES,
   ...AMY_FIRE_LINES,

@@ -148,6 +148,8 @@ import { DEFAULT_SHOWOFF_PARAMS, SHOWOFF_PARAM_RANGES } from './npc/showOff.js';
 import { JumpWatch, JUMP_PARAM_RANGES, rampPoint } from './npc/jumps.js';
 import { Nicking, NICK_PARAM_RANGES } from './npc/nicking.js';
 import { DEFAULT_LINEUP_PARAMS, LINEUP_PARAM_RANGES, parkRoute } from './npc/lineUp.js';
+import { BALE_TRAILER_FOOTPRINT, TIP_TRAILER_FOOTPRINT } from './vehicle/trailerObstacle.js';
+import { TrailerGuide, TRAILER_GUIDE_PARAM_RANGES, guideSpot } from './npc/trailerGuide.js';
 import { WorkLight, WORK_LIGHT_PARAM_RANGES } from './npc/workLight.js';
 import { GeneratorStart, GENERATOR_START_PARAM_RANGES } from './npc/generatorStart.js';
 import { finishJob } from './workshop/benchJobs.js';
@@ -940,6 +942,7 @@ export class Game {
     this.pair = new Pair(); // the two as a pair: going over to each other, tagging along, letting you in (npc/pair.js)
     this.generatorStart = new GeneratorStart(); // a girl pulling the generator's cord (npc/generatorStart.js)
     this.workLight = new WorkLight(undefined, createRandom(this.seed ^ 0x11e7)); // bringing a vehicle round to light what you're at, after dark (npc/workLight.js)
+    this.trailerGuide = new TrailerGuide(); // Amy walking round behind the trailer and calling the lock when you reverse it (npc/trailerGuide.js)
     this.dontFix = new DontFixIt(); // a girl minding when her favourite is fixed up (npc/dontFixIt.js)
     this.warmSitQuads = new Map(); // girl id -> the quad she is sitting on
     this.readyQuads = new Map(); // girl id -> the quad she is getting ready or waiting on
@@ -1504,6 +1507,7 @@ export class Game {
     registerTuning('Warming hands', this.warming.p, WARMING_PARAM_RANGES);
     registerTuning('Comparing notes', this.comparing.p, COMPARE_PARAM_RANGES);
     registerTuning('The two as a pair', this.pair.p, PAIR_PARAM_RANGES);
+    registerTuning('Guiding a trailer back', this.trailerGuide.p, TRAILER_GUIDE_PARAM_RANGES);
     registerTuning('Lights to work by', this.workLight.p, WORK_LIGHT_PARAM_RANGES);
     registerTuning('Starting the generator', this.generatorStart.p, GENERATOR_START_PARAM_RANGES);
     registerTuning('Numb bum', this.numbParams, NUMB_PARAM_RANGES);
@@ -1877,12 +1881,37 @@ export class Game {
     this.hud.toast(near < 8 ? 'Back the hitch up to the trailer\'s ring' : 'No trailer behind you', 2);
   }
 
+  /** The trailer a vehicle has on its hook, if any. */
+  trailerOf(quad) {
+    return [this.trailer, this.tipTrailer].find((t) => t.hitched && (t.tractor ?? t.puller) === quad) ?? null;
+  }
+
+  /** A trailer that has just folded up against what is pulling it (reversed too far on the lock): the puller can't push any further. */
+  noteFolded(t, ridden) {
+    if (!t.motion.justJammed) return;
+    const puller = t.tractor ?? t.puller;
+    if (puller === ridden?.quad) this.hud.toast('The trailer has folded against you: pull forward to straighten it', 3);
+    this.notice('bang', t.model.position, { key: 'jackknife', strength: 0.5 });
+  }
+
+  /** The debug panel's jack-knife (fold it right over) and unjam (straighten it up). */
+  debugJackknife(unit, fold = true) {
+    const t = this.trailerOf(unit.quad);
+    if (!t) return 'Nothing hitched to it';
+    const q = unit.quad;
+    const limit = t.motion.p.jackknifeAngle;
+    t.motion.setHitchAngle(fold ? limit + 0.05 : 0, q.yaw, t.pinOf(q));
+    t.apply();
+    return fold ? 'Trailer folded against it' : 'Trailer straightened';
+  }
+
   /** The hay ride: the trailer follows the tractor, and the girls climb on, bounce about, lie back, fall off and climb down (npc/hayRide.js). */
   updateHayRide(dt, ridden, input) {
     const t = this.trailer;
     this.updateTrailerLoad(dt, ridden, input);
     t.update(dt, this.loadCtx);
     this.handleLoadEvents(t.events);
+    this.noteFolded(t, ridden);
     // A quad on the back is weight for the tractor (the empty trailer takes nothing, as before).
     const puller = this.tractorUnit?.quad;
     if (puller && t.hitched && t.loaded) {
@@ -3019,6 +3048,7 @@ export class Game {
   updateTipTrailer(dt, ridden, input) {
     const t = this.tipTrailer;
     t.update(dt);
+    this.noteFolded(t, ridden);
     this.updateMuck(dt);
     // What it takes from the quad (or tractor) in front of it.
     if (this.tipPuller && this.tipPuller !== t.puller) Object.assign(this.tipPuller.tow, { driveFactor: 1, brakeFactor: 1 });
@@ -3846,6 +3876,7 @@ export class Game {
       ...mine(this.dares.offers(this.daresContext()), (o) => this.handleDare(this.dares.take(o))),
       ...mine(this.phoneCalls.offers(this.phoneContext()), (o) => this.handlePhoneCall(this.phoneCalls.take(o))),
       ...mine(this.girlBench.offers(this.girlBenchContext()), (o) => this.handleGirlBench(this.girlBench.take(o))),
+      ...mine(this.trailerGuide.offers(this.trailerGuideContext(ridden)), (o) => this.handleTrailerGuide(this.trailerGuide.take(o))),
       ...mine(this.workLight.offers(this.workLightContext(c)), (o) => {
         c.voice.say('workLightOffer', { urgent: true, force: true });
         this.handleWorkLight(this.workLight.take(o));
@@ -4773,6 +4804,71 @@ export class Game {
       c.release('phoneCall');
       if (c.standingIdles?.name === 'phoneCall') c.standingIdles.left = 0;
     }
+  }
+
+  // Guiding a trailer back --------------------------------------------------
+
+  /** What guiding needs to know (npc/trailerGuide.js): the trailer on what you're riding and how it lies against it, and the girls. */
+  trailerGuideContext(ridden) {
+    const q = ridden?.quad;
+    const t = q ? this.trailerOf(q) : null;
+    const m = t?.motion;
+    const cam = this.camera.position;
+    return {
+      hitched: !!t,
+      speed: q ? q.forwardSpeed : 0,
+      angle: m?.hitchAngle ?? 0,
+      jammed: !!m?.jammed,
+      limit: m?.p.jackknifeAngle ?? 1,
+      steer: q ? q.steer / ((q.params.maxSteerDeg * Math.PI) / 180) : 0,
+      you: { x: cam.x, z: cam.z },
+      girls: this.companions.map((g) => ({ id: g.character.id, x: g.root.position.x, z: g.root.position.z, free: g.availability().free, weight: g.params.trailerGuideWeight ?? 0 })),
+    };
+  }
+
+  /** Where the guide stands now, behind the trailer you are reversing. */
+  trailerGuideSpot(c, t) {
+    const m = t.motion;
+    const rear = t === this.tipTrailer ? -TIP_TRAILER_FOOTPRINT.rearZ : -BALE_TRAILER_FOOTPRINT.rearZ;
+    const s = guideSpot(m, rear, { x: c.root.position.x, z: c.root.position.z }, this.trailerGuide.p);
+    return { point: new THREE.Vector3(s.x, this.world.heightAt(s.x, s.z), s.z), facing: s.facing };
+  }
+
+  /** She walks round behind the trailer and stands; she stays there, calling. */
+  handleTrailerGuide(e) {
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    if (!c) return;
+    if (e.type === 'go') {
+      c.hold('trailerGuide', 'guiding you back with the trailer');
+      c.voice.say('guideOffer', { urgent: true, force: true });
+      const t0 = this.trailerOf(this.riddenUnit?.quad);
+      if (t0) {
+        const s = this.trailerGuideSpot(c, t0);
+        c.walkTo(s.point, s.facing);
+      }
+    } else if (e.type === 'call') {
+      c.voice.say(`guide${e.call[0].toUpperCase()}${e.call.slice(1)}`, { urgent: true, force: true });
+      this.regroupGuide(c);
+    } else if (e.type === 'cross') {
+      c.voice.say(e.hard ? 'guideCrossHard' : 'guideCross', { urgent: true, force: true });
+    } else if (e.type === 'done') {
+      c.release('trailerGuide');
+      c.voice.say(e.why === 'quit' ? 'guideQuit' : e.why === 'finished' ? 'guideDone' : 'guideWalked', { chance: e.why === 'left' ? 0.4 : 1 });
+    }
+  }
+
+  /** Back behind the trailer if it has moved off from her. */
+  regroupGuide(c) {
+    const t = this.trailerOf(this.riddenUnit?.quad);
+    if (!t || !c.fsm.is('idle', 'walking')) return;
+    const s = this.trailerGuideSpot(c, t);
+    if (Math.hypot(c.root.position.x - s.point.x, c.root.position.z - s.point.z) > 3.5) c.walkTo(s.point, s.facing);
+  }
+
+  updateTrailerGuide(dt, ridden) {
+    if (!this.companions.length) return;
+    const ctx = this.trailerGuideContext(ridden);
+    for (const e of this.trailerGuide.update(dt, ctx)) this.handleTrailerGuide(e);
   }
 
   // Lights to work by -------------------------------------------------------
@@ -9249,6 +9345,7 @@ export class Game {
     this.rideWind.update(dt, board ? board.quad.speed : 0);
     fb.lap('audio', performance.now());
     this.updateWorkLight(dt);
+    this.updateTrailerGuide(dt, this.riddenUnit);
     this.generatorStart.update(dt);
     this.updateDaylight(dt);
     this.world.update(dt, board ? board.quad.position : this.player.position, this.camera);

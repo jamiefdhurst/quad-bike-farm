@@ -117,6 +117,7 @@ export class Quad {
     this.pushLeft = 0; // seconds since it was last pushed, counting down: the roll watch doesn't blame anyone for a quad being pushed
     this.noHeadlight = noHeadlight; // the lamp is only for show (the yellow and orange): it never lights
     this.steadyLights = steadyLights; // a battery runs the headlight, so it doesn't follow the engine (headlight.js)
+    this.towJam = false; // a trailer on the hook is folded against it: no more reversing into it (vehicle/trailer.js)
     this.tow = { driveFactor: 1, brakeFactor: 1 }; // what a trailer on the hook takes off its drive and brakes (vehicle/towing.js)
     this.wheelShake = wheelShake; // how much of the body's vibration the wheels share (the tractor's shake more than the quads', which share about 0.6 of it)
     this.scale = scale; // 1, or smaller for the kids' quad: the model and the physics chassis both shrink by this
@@ -852,7 +853,7 @@ export class Quad {
     let wheelSteer = this.steer + this.faults.steerPull + this.faults.rodPull + this.tyres.steerPull + this.quirks.brakePull(this.brake);
     if (this.bike) wheelSteer = this.balanceBike(dt, wheelSteer);
     this.physics.applyControls({
-      driveForce: Math.sign(drive) * Math.max(0, Math.abs(drive) * this.faults.driveFactor * (1 - this.faults.params.clutchDriveLoss * this.clutchSlip) * this.tyres.driveFactor * this.tow.driveFactor * (this.drive ? this.driveEffects.driveScale : 1) - hold),
+      driveForce: Math.sign(drive) * (this.towJam && drive < 0 ? 0 : 1) * Math.max(0, Math.abs(drive) * this.faults.driveFactor * (1 - this.faults.params.clutchDriveLoss * this.clutchSlip) * this.tyres.driveFactor * this.tow.driveFactor * (this.drive ? this.driveEffects.driveScale : 1) - hold),
       brake,
       steer: wheelSteer,
       mudAt: (x, z) => Math.max(this.world.mudAt(x, z), this.churn),

@@ -1372,6 +1372,23 @@ export const FAQ_SECTIONS = [
           and tip it (<kbd>T</kbd>) when stopped. Jess may climb in against the rules.`,
       },
       {
+        q: 'How do I reverse a trailer?',
+        a: `Steer the back of what is pulling it towards where the trailer's back end is: for the trailer's back end out to the left, turn the wheel left
+          while reversing ("left hand down"). Small movements, and straighten up before it gets away from you. If a trailer swings out of line it
+          keeps going further, which is why it is hard. Going forward always pulls it straight again.`,
+        tip: 'Reversing a trailer: steer the back of the puller towards the trailer\'s back end. Small movements.',
+      },
+      {
+        q: 'Why won\'t it reverse any more, and the trailer is folded up against me?',
+        a: `You have jack-knifed it: it folded to about sixty degrees and jammed against the tractor, quad or Land Rover. Pull forward a little and it
+          straightens out, then try again with less lock.`,
+      },
+      {
+        q: 'Why does Amy stand behind the trailer shouting at me?',
+        a: `She has seen you reversing a trailer and is guiding you back: "left hand down", "right hand down", "straight now" and "stop" before it folds.
+          Do as she says and it goes straight. Turn the other way and she tells you off, more crossly each time, until she gives up. Jess doesn't guide.`,
+      },
+      {
         q: 'What are the chalkboards in the barn?',
         a: `Today's farm jobs. Walk into the barn to the back wall and press <kbd>E</kbd> for a close look. Done jobs get a tick, and a bucket list
           entry when you've cleared the lot. The jobs are the muck and, if the tractor is about, the silage; the bonfire is not a job, but you can light one any time; the board lists up to two a day. The records are on the board beside it.`,

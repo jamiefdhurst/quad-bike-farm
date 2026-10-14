@@ -155,6 +155,7 @@ export function buildGirlsTab(d) {
   show(day, 'Jess\'s dare', () => g.dares.describe());
   show(day, 'a phone call', () => `${g.phoneCalls.describe()}${g.companions.map((c) => (g.favour.moodLeft(c.character.id) > 0 ? `; ${c.name} in a mood for ${Math.round(g.favour.moodLeft(c.character.id))} s` : '')).join('')}`);
   show(day, 'lights to work by', () => g.workLight.describe());
+  show(day, 'guiding a trailer back', () => g.trailerGuide.describe());
   button(day, 'A girl leaves her tea on a rack', () => {
     g.tea.forced = true;
     toast('A free girl will put her tea on a rack');

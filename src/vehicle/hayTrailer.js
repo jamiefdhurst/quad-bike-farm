@@ -86,6 +86,7 @@ export class HayTrailer {
   }
 
   unhitch() {
+    if (this.tractor) this.tractor.towJam = false;
     this.hitched = false;
     this.accel = 0;
     this.tractor = null;
@@ -230,7 +231,8 @@ export class HayTrailer {
       const ring = m.ring();
       pin = { x: ring.x, z: ring.z, y: this.ground(ring.x, ring.z) };
     }
-    m.update(dt, pin, this.ground);
+    m.update(dt, pin, this.ground, this.hitched ? this.tractor.yaw : undefined);
+    if (this.tractor) this.tractor.towJam = this.hitched && m.jammed; // the puller can't reverse any harder into the fold
     this.signedSpeed = dt > 0 ? ((m.x - before.x) * Math.sin(m.yaw) + (m.z - before.z) * Math.cos(m.yaw)) / dt : 0;
     for (const w of this.wheels) w.rotation.x += (this.signedSpeed * dt) / TRAILER_SPEC.wheelRadius;
     // How hard it is speeding up or braking along itself, smoothed, for a quad that isn't strapped down.

@@ -96,6 +96,8 @@ export function buildGameTree(g, host) {
         rolled: ro(() => e().rollSpeed, '', 'how fast the wheels turn it over (bump-start), 0 to 1 of a starter'),
         temperature: num(() => e().temperature, (v) => e().setTemperature(v), 0, 1, '', '0 cold, 1 warm'),
         trailer: text(() => (q().loadedOn ? (g.trailer.load.mode === 'aboard' ? (g.trailer.load.strapped ? 'strapped on' : 'on, loose') : 'on the ramps') : 'off'), 'on the bale trailer?'),
+        hitchAngle: ro(() => (g.trailerOf(q()) ? (g.trailerOf(q()).motion.hitchAngle * 180) / Math.PI : 0), 'deg', 'how far the trailer on its hook is off straight behind it, left positive'),
+        folded: flag(() => !!g.trailerOf(q())?.motion.jammed, (v) => g.debugJackknife(u(), !!v), 'is the trailer on its hook folded against it? Set true to fold it, false to straighten it'),
         towRope: flag(() => g.towRope.target === q(), (v) => { if (!!v !== (g.towRope.target === q())) g.hud.toast(g.debugTowRope(u())); }, 'is the tow rope hooked on it? Set true to hook it from the nearest utility quad, false to take it off'),
         battery: num(() => e().battery, (v) => (e().battery = v), 0, 1),
         charging: ro(() => (e().isRunning ? netCharge(e().rpm, e().params.idleRpmWarm, e().params.maxRpm, e().lightLoad, e().params.batteryChargeRate, e().params) * 60 : 0), '/min', 'battery gained a minute at these revs and lamps'),
@@ -277,6 +279,7 @@ export function buildGameTree(g, host) {
     phoneCall: text(() => g.phoneCalls.describe()),
     cars: text(() => g.describeCars(), "the girls' cars: who's in them, who has them, when each girl next takes hers out"),
     workLight: text(() => g.workLight.describe()),
+    trailerGuide: text(() => g.trailerGuide.describe()),
   }), 'both girls');
   const farm = group(() => ({
     muck: num(() => g.muck.load, (v) => g.debugSetMuck(v), 0, 1, '', 'muck in the tipping trailer'),

@@ -113,6 +113,7 @@ export class TipTrailer {
   }
 
   unhitch() {
+    if (this.puller) this.puller.towJam = false;
     this.hitched = false;
     this.puller = null;
     this.motion.speed = 0;
@@ -203,7 +204,8 @@ export class TipTrailer {
       const ring = m.ring();
       pin = { x: ring.x, z: ring.z, y: this.ground(ring.x, ring.z) };
     }
-    m.update(dt, pin, this.ground);
+    m.update(dt, pin, this.ground, this.hitched ? this.puller.yaw : undefined);
+    if (this.puller) this.puller.towJam = this.hitched && m.jammed; // the puller can't reverse any harder into the fold
     this.signedSpeed = dt > 0 ? ((m.x - before.x) * Math.sin(m.yaw) + (m.z - before.z) * Math.cos(m.yaw)) / dt : 0;
     for (const w of this.wheels) w.rotation.x += (this.signedSpeed * dt) / TIP_TRAILER_SPEC.wheelRadius;
     this.bed.update(dt, { speed: m.speed, gateDown: false });

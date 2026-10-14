@@ -608,6 +608,18 @@ export function girlActions(g) {
     },
   });
   actions.push({
+    verb: 'guide-trailer',
+    label: '% guides you back with the trailer',
+    girls: ['amy'],
+    run: (id) => {
+      const ride = g.riddenUnit;
+      if (!ride || !g.trailerOf(ride.quad)) return toast('Ride something with a trailer hitched first');
+      if (g.trailerGuide.active) return toast('She is already guiding you back');
+      if (!free(id)) return;
+      g.handleTrailerGuide(g.trailerGuide.take({ girl: id }));
+    },
+  });
+  actions.push({
     verb: 'light-me',
     label: '% lights you up with a vehicle (after dark)',
     run: (id) => g.askWorkLight(girl(id)),
