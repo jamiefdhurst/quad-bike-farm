@@ -45,6 +45,7 @@ import { JESS_WORK_LIGHT_LINES } from './workLightLines.js';
 import { JESS_HANDBRAKE_LINES } from './handbrakeLines.js';
 import { JESS_FOUR_WD_LINES } from './fourWdLines.js';
 import { JESS_REVOFF_LINES } from './revOffLines.js';
+import { JESS_CONKER_LINES } from './conkerLines.js';
 import { JESS_DROWNOUT_LINES } from './drownOutLines.js';
 import { JESS_HORN_LINES } from './hornLines.js';
 import { JESS_TRAFFIC_LINES } from './trafficLines.js';
@@ -481,6 +482,7 @@ export const JESS_LINES = {
   ...JESS_HANDBRAKE_LINES,
   ...JESS_FOUR_WD_LINES,
   ...JESS_REVOFF_LINES,
+  ...JESS_CONKER_LINES,
   ...JESS_DROWNOUT_LINES,
   ...JESS_HORN_LINES,
   ...JESS_TRAFFIC_LINES,

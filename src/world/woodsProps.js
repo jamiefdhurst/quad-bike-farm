@@ -5,6 +5,8 @@ import * as THREE from 'three';
 import { instanceModel, modelBounds } from './assets.js';
 import { matrixAt, buildPond } from './hillProps.js';
 import { woodsPlants } from './woods.js';
+import { buildConkers } from './autumnView.js';
+import { CONKERS_PER_TREE } from './autumn.js';
 
 /** Builds the wood's props and their colliders. `c` is the props context (props.js). */
 export function buildWoods(c) {
@@ -16,7 +18,8 @@ export function buildWoods(c) {
 }
 
 /** Oaks of all sizes with trunks you can't ride through, and hazel and holly between them. */
-function buildTrees({ scene, models, layout, heights, physics, RAPIER, random }, woods) {
+function buildTrees(c, woods) {
+  const { scene, models, layout, heights, physics, RAPIER, random } = c;
   const { trees, bushes } = woodsPlants(woods, layout, random);
   const mats = [[], []];
   for (const [x, z, s] of trees) {
@@ -26,6 +29,7 @@ function buildTrees({ scene, models, layout, heights, physics, RAPIER, random },
   }
   scene.add(instanceModel(models.treeA.scene, mats[0]));
   scene.add(instanceModel(models.treeB.scene, mats[1]));
+  if (c.autumn) buildConkers(c, woods, trees, CONKERS_PER_TREE, random);
   const bushSize = modelBounds(models.bush.scene).getSize(new THREE.Vector3());
   const matrices = bushes.map(([x, z]) => matrixAt(x, heights.heightAt(x, z) - 0.2, z, random() * Math.PI * 2, (1.2 + random() * 1.4) / bushSize.y));
   scene.add(instanceModel(models.bush.scene, matrices, { castShadow: false }));

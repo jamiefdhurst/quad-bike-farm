@@ -49,6 +49,7 @@ import { AMY_WORK_LIGHT_LINES } from './workLightLines.js';
 import { AMY_HANDBRAKE_LINES } from './handbrakeLines.js';
 import { AMY_FOUR_WD_LINES } from './fourWdLines.js';
 import { AMY_REVOFF_LINES } from './revOffLines.js';
+import { AMY_CONKER_LINES } from './conkerLines.js';
 import { AMY_DROWNOUT_LINES } from './drownOutLines.js';
 import { AMY_HORN_LINES } from './hornLines.js';
 import { AMY_TRAFFIC_LINES } from './trafficLines.js';
@@ -1515,6 +1516,8 @@ export const VOICE_LINES = {
   ...AMY_FOUR_WD_LINES,
   // Rev-offs (revOffLines.js).
   ...AMY_REVOFF_LINES,
+  // Conkers on an autumn day (conkerLines.js).
+  ...AMY_CONKER_LINES,
   // Jess revving over her (drownOutLines.js).
   ...AMY_DROWNOUT_LINES,
   // Horns (hornLines.js).

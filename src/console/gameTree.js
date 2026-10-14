@@ -254,6 +254,7 @@ export function buildGameTree(g, host) {
     stream: num(() => g.world.streamLevel.level, (v) => g.setStreamLevel(v), 0, 1, '', 'how high the stream stands, low to full (the ford deepens and runs faster)'),
     wet: num(() => w().wet, (v) => (w().wet = v), 0, 1, '', 'how wet the ground is'),
     temperature: num(() => w().temperature, (v) => g.setTemperature(v), -15, 35, '°C'),
+    autumn: text(() => (g.autumn ? 'an autumn day: turned leaves, conkers, a slippery wood' : 'not an autumn day (load with ?season=autumn)'), 'whether it is autumn (decided as the farm loads)'),
     frost: ro(() => w().frost),
     puddleIce: num(() => g.world.puddleIce.thickness[0] ?? 0, (v) => g.world.puddleIce.setAll(v), 0, 1, '', 'how thick the ice is on every puddle (0 open water; it then follows the temperature again)'),
     breakIce: flag(() => !g.world.puddleIce.thickness.some((_, i) => g.world.puddleIce.isIce(i)), (v) => v && g.world.puddleIce.breakAll(), 'on: every puddle\'s ice breaks now'),

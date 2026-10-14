@@ -1184,6 +1184,18 @@ export const FAQ_SECTIONS = [
         tip: 'The Hollow Run is the narrow, twisty wood track through the gate in the grass field\'s north hedge.',
       },
       {
+        q: 'Why have the leaves turned orange, and why is the wood so slippery?',
+        a: `About one game in six is an autumn day. The oaks, hazel and hedges turn orange and gold, leaves fall round you under the trees and the floor of the wood is
+          deep in them, with conkers lying round the foot of every oak. Wet leaves are slippery: on the Hollow Run and between the trees you get less grip, a little
+          when it is dry and a good deal after rain, so brake early and take the bends gently.`,
+        tip: 'On an autumn day the wood is deep in leaves: they are slippery, especially when wet, so take the Hollow Run gently.',
+      },
+      {
+        q: 'Why is Jess throwing conkers at me?',
+        a: `On an autumn day, if Jess is stood about in the wood a few metres from you, she may pick up a conker and throw it. She is not a good shot, and it never
+          hurts: a hit is a thock and a laugh, a miss a groan. Amy tells her off. Ride off or keep moving and they mostly miss.`,
+      },
+      {
         q: 'Why do the girls stop at the wood\'s gate?',
         a: `They will follow you through the gate, but not in among the trees on a quad. A girl following you waits just inside it until you come back out. They don't ride
           the Hollow Run themselves yet.`,

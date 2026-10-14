@@ -37,6 +37,7 @@ export const JOBS = [
   ['lineUpJob', 'tidying the quads', true],
   ['numbPlan', 'walking off a numb bum', true],
   ['warmingAt', 'warming her hands', true],
+  ['throwing', 'throwing a conker at you', true],
 ];
 
 /**

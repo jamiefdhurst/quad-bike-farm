@@ -22,6 +22,7 @@ import { Contentment } from './contentment.js';
 import { SideSaddleSlip, pickSideSaddle } from './sideSaddle.js';
 import { exhaustSideOf, pipeHeat, dismountSideFor, burns } from './exhaustBurn.js';
 import { wavingMethods } from './companionWaving.js';
+import { throwingMethods } from './companionThrowing.js';
 import { waitingMethods } from './companionWaiting.js';
 import { DEFAULT_DOUGHNUT_PARAMS, ringPoints } from './doughnuts.js';
 import { DEFAULT_SHOWOFF_PARAMS, pickTrick } from './showOff.js';
@@ -210,6 +211,9 @@ export class Companion {
     // Waving two-stroke smoke away (companionWaving.js).
     this.waving = null;
     this.rig.posers.push((dt) => this.poseWaving(dt));
+    // Throwing a conker at you (companionThrowing.js).
+    this.throwing = null;
+    this.rig.posers.push((dt) => this.poseThrowing(dt));
     // Her phone in her hand while she checks it, waiting about (companionWaiting.js).
     this.rig.posers.push(() => this.posePhone());
     // A reaction (a flinch, hands over her ears, a cheer: companionReacting.js) shows over everything else, so it goes last.
@@ -677,6 +681,7 @@ export class Companion {
   walkTo(point, facing) {
     this.warmingAt = null;
     this.waving = null;
+    this.throwing = null;
     this.recallTarget = point;
     this.fsm.transition('walking', { goal: 'stand', target: () => ({ position: point, facing }) });
   }
@@ -685,6 +690,7 @@ export class Companion {
   walkToYou(you, gap = 1.8) {
     this.warmingAt = null;
     this.waving = null;
+    this.throwing = null;
     this.fsm.transition('walking', {
       goal: 'stand',
       target: () => {
@@ -712,6 +718,7 @@ export class Companion {
   requestStop() {
     this.warmingAt = null;
     this.waving = null;
+    this.throwing = null;
     this.fsm.transition('idle');
   }
 
@@ -719,6 +726,7 @@ export class Companion {
   standWith(friend, p) {
     this.warmingAt = null;
     this.waving = null;
+    this.throwing = null;
     const target = () => {
       const f = friend.root.position;
       const at = standBy(this.root.position, f, p);
@@ -734,6 +742,7 @@ export class Companion {
   tagAlong(friend, side, p) {
     this.warmingAt = null;
     this.waving = null;
+    this.throwing = null;
     const going = () => friend.fsm.is('walking') && this.fsm.time < p.tagFor;
     const target = () => {
       const f = friend.root.position;
@@ -1257,7 +1266,7 @@ export class Companion {
 
   /** Stood about with nothing holding her in place (her hands over an engine, a wave, a start), so she may turn to look at something. */
   freeToTurn() {
-    return this.fsm.is('idle') && !this.warmingAt && !this.waving && !this.recoil && !this.attempt && !this.benchAt && !this.callSpot && !this.waitPinned();
+    return this.fsm.is('idle') && !this.warmingAt && !this.waving && !this.throwing && !this.recoil && !this.attempt && !this.benchAt && !this.callSpot && !this.waitPinned();
   }
 
   turnToward(dt, facing) {
@@ -1325,6 +1334,7 @@ Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(ke
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(numbMethods));
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(carryingMethods));
 Object.assign(Companion.prototype, wavingMethods);
+Object.assign(Companion.prototype, throwingMethods);
 Object.assign(Companion.prototype, waitingMethods);
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(moveMethods));
 // (restingMethods has getters, so copy its descriptors rather than assigning.)
@@ -1513,6 +1523,7 @@ export const STATES = {
       // Turning away from smoke (reactions.js); something held over her shoulder a while, she turns to face it (attention.js); either
       // way she turns back to what she was facing after.
       if (this.reactTurn !== null && !this.warmingAt && !this.attempt) this.turnToward(dt, this.reactTurn);
+      else if (this.throwing) this.turnToward(dt, this.throwing.facing); // to where she's throwing
       else if (this.waitTurn != null) this.turnToward(dt, this.waitTurn); // to the tyre she's kicking or the seat she's wiping
       else if (this.lookTurn !== null && this.freeToTurn()) this.turnToward(dt, this.lookTurn);
       else if (this.pairFacing != null && this.freeToTurn()) {

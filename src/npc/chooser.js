@@ -43,6 +43,7 @@ export const OFFER_KINDS = {
   refuel: { label: "top a quad up (from the wrong can)", satisfies: { purpose: 0.7 } },
   prank: { label: 'play a prank on you', satisfies: { purpose: 0.5, excitement: 0.5, company: 0.3 } },
   rockPrank: { label: "blip her friend's quad from beside it", satisfies: { excitement: 0.5, company: 0.4, purpose: 0.3 } },
+  conker: { label: 'throw a conker at you', satisfies: { excitement: 0.7, company: 0.5, purpose: 0.3 } },
   headStart: { label: 'start your quad for you', satisfies: { company: 1, purpose: 0.6 }, pace: 'hurry' },
   snub: { label: 'start her own instead of yours', satisfies: { purpose: 0.6 }, pace: 'brisk' },
   nick: { label: 'nick your quad', satisfies: { excitement: 0.8, purpose: 0.5, company: 0.2 }, pace: 'hurry' },

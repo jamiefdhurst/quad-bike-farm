@@ -152,7 +152,7 @@ export const moveMethods = {
    */
   updatePose(dt) {
     this.standingIdles ??= new StandingIdles(this.character?.idles ?? [], this.idlePoseParams ?? DEFAULT_IDLE_POSE_PARAMS);
-    const standing = this.fsm.is('idle') && !this.warmingAt && !this.waving && !this.recoil && !this.attempt;
+    const standing = this.fsm.is('idle') && !this.warmingAt && !this.waving && !this.throwing && !this.recoil && !this.attempt;
     let pose = this.standingIdles.update(dt, standing);
     // Sat a while somewhere nothing else is posing her: her own ways of sitting, to suit the seat.
     this.seatedIdles ??= new StandingIdles([], this.idlePoseParams ?? DEFAULT_IDLE_POSE_PARAMS, Math.random, SEATED_IDLES);

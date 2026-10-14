@@ -58,7 +58,7 @@ export function createDetailCanvas(size = 256) {
  * @param {object} opts.layout
  * @param {object[]} opts.puddles   Puddle centres from the height model.
  */
-export function createGroundCanvas({ size, worldSize, track, layout, fields, puddles, bogs = [] }) {
+export function createGroundCanvas({ size, worldSize, track, layout, fields, puddles, bogs = [], autumn = false }) {
   const random = rand(42);
   const c = document.createElement('canvas');
   c.width = c.height = size;
@@ -85,7 +85,7 @@ export function createGroundCanvas({ size, worldSize, track, layout, fields, pud
     paintStubble(ctx, toPx, s, fields, random);
     paintTarmac(ctx, toPx, s, layout, fields, random);
     if (fields.hill) paintHill(ctx, toPx, s, fields, random);
-    if (fields.woods) paintWoods(ctx, toPx, s, fields, random);
+    if (fields.woods) paintWoods(ctx, toPx, s, fields, random, autumn);
   }
 
   // Worn yard and gateway.
@@ -326,7 +326,7 @@ function paintPaddocks(ctx, toPx, s, hill, random) {
  * The wood through the north gate (world/woods.js): a floor of leaf litter, darker and browner than the grass field, patched with moss and
  * bare earth; the Hollow Run and its lead-in worn into a narrow dark track with two ruts and a grass strip between; the pond's silt and rushes.
  */
-function paintWoods(ctx, toPx, s, fields, random) {
+function paintWoods(ctx, toPx, s, fields, random, autumn = false) {
   const woods = fields.woods;
   const r = woods.rect;
   const half = woods.halfWidth;
@@ -344,9 +344,12 @@ function paintWoods(ctx, toPx, s, fields, random) {
     }
   }
   // Fallen leaves in drifts, and bare patches where the roots are.
-  for (let i = 0; i < 7000; i++) {
+  // In autumn there are three times as many, in oranges, golds and reds (autumn.js).
+  const AUTUMN_LEAVES = ['rgba(196,98,26,0.5)', 'rgba(214,140,36,0.5)', 'rgba(150,48,22,0.45)', 'rgba(200,170,60,0.45)'];
+  for (let i = 0; i < (autumn ? 21000 : 7000); i++) {
     const [px, pz] = toPx(r.minX + random() * (r.maxX - r.minX), r.minZ + random() * (r.maxZ - r.minZ));
-    ctx.fillStyle = random() < 0.6 ? 'rgba(150,104,48,0.3)' : 'rgba(40,32,20,0.35)';
+    if (autumn) ctx.fillStyle = random() < 0.85 ? AUTUMN_LEAVES[Math.floor(random() * AUTUMN_LEAVES.length)] : 'rgba(40,32,20,0.35)';
+    else ctx.fillStyle = random() < 0.6 ? 'rgba(150,104,48,0.3)' : 'rgba(40,32,20,0.35)';
     ctx.beginPath();
     ctx.ellipse(px, pz, (0.2 + random() * 0.5) * s, (0.12 + random() * 0.25) * s, random() * Math.PI, 0, Math.PI * 2);
     ctx.fill();

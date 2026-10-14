@@ -12,6 +12,9 @@ export const DEFAULT_SURFACE_PARAMS = {
   stubbleRoll: 0.75, // and on stubble: short and firm, so a quad runs on quicker than through grass
   snowGrip: 0.62, // grip on ground under full snow, as a factor on what it would be bare (tarmac too); between wet grass and mud
   snowRoll: 1.25, // and its rolling drag under full snow: tyres push it about
+  leafGrip: 0.72, // grip on the wood's floor in autumn when the leaves are soaking wet, as a factor on what it would be bare
+  leafDryShare: 0.35, // how much of that slip a dry day has: dry leaves are loose but not greasy
+  leafRoll: 1.12, // and the extra rolling drag in wet leaves, at most
 };
 
 export const SURFACE_PARAM_RANGES = {
@@ -23,22 +26,26 @@ export const SURFACE_PARAM_RANGES = {
   stubbleRoll: [0.1, 1.5, 0.01],
   snowGrip: [0.2, 1, 0.01],
   snowRoll: [0.8, 2, 0.01],
+  leafGrip: [0.3, 1, 0.01],
+  leafDryShare: [0, 1, 0.05],
+  leafRoll: [1, 1.6, 0.01],
 };
 
 /**
  * Grip and rolling drag for ground that is `tarmac` and `stubble` (0..1 each, the rest grass), `wet` 0..1 and under `snow` 0..1 of
- * cover, as factors on grass.
+ * cover, as factors on grass. `leaf` is 0..1 how deep in autumn leaves the ground is (autumn.js): they slip more the wetter they are.
  * @returns {{grip:number, roll:number}}
  */
-export function surfaceFeel(p, tarmac, stubble, wet = 0, snow = 0) {
+export function surfaceFeel(p, tarmac, stubble, wet = 0, snow = 0, leaf = 0) {
   const t = clamp(tarmac, 0, 1);
   const s = clamp(stubble, 0, 1 - t);
   const w = clamp(wet, 0, 1);
   const tarmacGrip = p.tarmacGrip + (p.tarmacWetGrip - p.tarmacGrip) * w;
   const stubbleGrip = p.stubbleGrip + (p.stubbleWetGrip - p.stubbleGrip) * w;
   const sn = clamp(snow, 0, 1);
+  const lf = clamp(leaf, 0, 1) * (p.leafDryShare + (1 - p.leafDryShare) * w);
   return {
-    grip: (1 + (tarmacGrip - 1) * t + (stubbleGrip - 1) * s) * (1 + (p.snowGrip - 1) * sn),
-    roll: (1 + (p.tarmacRoll - 1) * t + (p.stubbleRoll - 1) * s) * (1 + (p.snowRoll - 1) * sn),
+    grip: (1 + (tarmacGrip - 1) * t + (stubbleGrip - 1) * s) * (1 + (p.snowGrip - 1) * sn) * (1 + (p.leafGrip - 1) * lf),
+    roll: (1 + (p.tarmacRoll - 1) * t + (p.stubbleRoll - 1) * s) * (1 + (p.snowRoll - 1) * sn) * (1 + (p.leafRoll - 1) * lf),
   };
 }

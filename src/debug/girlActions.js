@@ -508,6 +508,17 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'conker',
+      label: 'Jess throws a conker at you',
+      girls: ['jess'],
+      run: (id) => {
+        if (!g.autumn) return toast('It is not an autumn day: load with ?season=autumn');
+        if (!free(id)) return;
+        if (g.conkers.active) return toast('She has one in the air already');
+        g.handleConkerEvent(g.conkers.force(id, g.conkerContext(null)));
+      },
+    },
+    {
       verb: 'crooked',
       label: 'Jess parks one crooked',
       girls: ['jess'],

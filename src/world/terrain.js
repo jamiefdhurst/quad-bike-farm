@@ -8,7 +8,7 @@ export { patchAt } from './patchwork.js';
  * Builds the detailed field terrain (visual mesh plus Rapier heightfield) and a
  * coarser patchwork ring of neighbouring fields out to the horizon.
  */
-export function createTerrain({ scene, physics, RAPIER, layout, heights, track, renderer, wear, fields, roadMud }) {
+export function createTerrain({ scene, physics, RAPIER, layout, heights, track, renderer, wear, fields, roadMud, autumn = false }) {
   const { terrainSize: size, terrainSegments: segs } = layout;
   const half = size / 2;
   const step = size / segs;
@@ -63,7 +63,7 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
 
   const groundTex = new THREE.CanvasTexture(
     // About 10 pixels a metre, as it was on the old 200 m square at 2048.
-    createGroundCanvas({ size: 4096, worldSize: size, track, layout, fields, puddles: heights.puddles, bogs: heights.bogs }),
+    createGroundCanvas({ size: 4096, worldSize: size, track, layout, fields, puddles: heights.puddles, bogs: heights.bogs, autumn }),
   );
   groundTex.flipY = false;
   groundTex.colorSpace = THREE.SRGBColorSpace;

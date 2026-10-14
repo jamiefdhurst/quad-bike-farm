@@ -246,6 +246,10 @@ import { windUniforms, swayMetres } from './effects/windSway.js';
 import { DoorAudio } from './audio/doorAudio.js';
 import { TrafficHost } from './world/trafficHost.js';
 import { Snow } from './effects/snow.js';
+import { autumnToday, leavesInAir, DEFAULT_AUTUMN_PARAMS, AUTUMN_PARAM_RANGES } from './world/autumn.js';
+import { LeafFall } from './world/autumnView.js';
+import { Conkers } from './npc/conkers.js';
+import { ConkerAudio } from './audio/conkerAudio.js';
 import { Rain } from './effects/rain.js';
 import { Thunderstorm, DEFAULT_THUNDER_PARAMS, THUNDER_PARAM_RANGES } from './world/thunder.js';
 import { ThunderAudio } from './audio/thunderAudio.js';
@@ -343,7 +347,12 @@ export class Game {
     this.models = await loadModels((done, total) => report(`Loading models… ${done}/${total}`));
     report('Building world…');
     await new Promise((r) => setTimeout(r, 0));
+    // Whether this is an autumn day (world/autumn.js) has to be known before the world is built: it turns the trees and the wood's floor.
+    // ?season=autumn or ?season=summer forces it; otherwise it is dealt from the farm's seed and the day, so a day on a farm is always the same.
+    const farmPeek = openFarm({ search: location.search, storage: browserStorage() });
+    this.autumn = autumnToday({ farmSeed: farmPeek.farmSeed ?? startSeed(), day: farmPeek.day, forced: new URLSearchParams(location.search).get('season'), createRandom });
     this.world = new World({
+      autumn: this.autumn,
       scene: this.scene,
       physics: this.physics,
       RAPIER: this.RAPIER,
@@ -595,6 +604,12 @@ export class Game {
     this.thunder = new Thunderstorm(this.thunderParams, createRandom(this.seed ^ 0x7d1f));
     this.flashWhite = new THREE.Color(0xdfe8ff);
     this.snow = new Snow(this.scene);
+    // Leaves coming down under the trees, and Jess's conkers (world/autumn.js, npc/conkers.js): only on an autumn day.
+    this.autumnParams = { ...DEFAULT_AUTUMN_PARAMS };
+    this.leafFall = new LeafFall(this.scene);
+    this.conkers = new Conkers(this.autumnParams, createRandom(this.farmSeed ^ 0xc0c4));
+    this.conkerAudio = new ConkerAudio(this.audioHub);
+    this.conkerMesh = null; // the conker in the air, made when the first one is thrown
     // Smoke hanging over the yard on a still day (world/haze.js, effects/hazeLayer.js).
     this.haze = new Haze(this.world.layout.yard);
     this.hazeLayer = new HazeLayer(this.scene, this.world.layout.yard, this.world.layout.yard.radius, createRandom(this.seed ^ 0x4a2e));
@@ -1486,6 +1501,7 @@ export class Game {
     this.leftRunning ??= new LeftRunning();
     registerTuning('Left running', this.leftRunning.p, LEFT_PARAM_RANGES);
     registerTuning('Pranks', this.pranks.p, PRANK_PARAM_RANGES);
+    registerTuning('Autumn', this.autumnParams, AUTUMN_PARAM_RANGES);
     registerTuning('Rev-offs', this.revOff.p, REVOFF_PARAM_RANGES);
     registerTuning('Drowning out', this.drownOut.p, DROWNOUT_PARAM_RANGES);
     registerTuning('Horns', this.horns.p, HORN_PARAM_RANGES);
@@ -4003,6 +4019,7 @@ export class Game {
       ...mine(this.headgear.offers(this.headgearContext()), (o) => this.handleHeadgearEvent(this.headgear.take(o))),
       ...mine(this.dieselMistake.offers(this.dieselContext(ridden)), (o) => this.handleDieselEvent(this.dieselMistake.take(o))),
       ...mine(this.pranks.offers(this.prankContext(ridden)), (o) => this.handlePrankEvent(this.pranks.take(o))),
+      ...this.conkerOffers(c, ridden),
       ...this.rockPrankOffers(c),
       ...mine(this.headStart.offers(this.headStartContext()), (o) => this.handleHeadStartEvent(this.headStart.take(o))),
       ...mine(this.nicking.offers(this.nickContext(ridden)), (o) => this.handleNickEvent(this.nicking.take(o))),
@@ -5270,6 +5287,7 @@ export class Game {
     this.snow.wind = { x: wind.x, z: wind.z };
     this.rain.update(dt, this.camera, w.rain, 1, (x, z) => world.covered(x, z));
     this.snow.update(dt, this.camera, w.snow, 1, (x, z) => world.covered(x, z));
+    this.updateLeafFall(dt);
     this.audioHub.setRain(w.rain, indoor, world.barnParams);
     this.updateStorm(dt, indoor);
     this.audioHub.room ??= { inside: (x, z) => world.inBarn(x, z), params: world.barnParams, listenerIn: false };
@@ -8240,6 +8258,83 @@ export class Game {
   }
 
   /** Acts on pranks (npc/pranks.js): starting one (a choice she made), being found out, putting a hidden thing back. */
+  /** Leaves drifting down round you under the trees, dimmed with the daylight (world/autumn.js). */
+  updateLeafFall(dt) {
+    const cam = this.camera.position;
+    const light = this.daylight ? this.daylight.p.nightLight + (1 - this.daylight.p.nightLight) * this.daylight.sun.light : 1;
+    const count = this.autumn ? leavesInAir(this.autumnParams, this.world.fields.woods, cam.x, cam.z) : 0;
+    this.leafFall.update(dt, this.camera, this.weather.rain > 0.5 ? count * 0.4 : count, this.wind?.strength ?? 1, light);
+  }
+
+  /** What the conkers need to know (npc/conkers.js): where you are, and where each girl is and whether she is free to throw. */
+  conkerContext(ridden) {
+    const woods = this.world.fields.woods;
+    const cam = this.camera.position;
+    const girls = this.companions.map((c) => {
+      const r = c.root.position;
+      return { id: c.character.id, free: c.availability().free, x: r.x, z: r.z, inWoods: !!woods?.inWoods(r.x, r.z), throwing: !!c.throwing };
+    });
+    const amy = this.companions.find((c) => c.character.id === 'amy');
+    const amyNear = amy && amy.root.position.distanceTo(cam) < 30;
+    return {
+      autumn: this.autumn,
+      you: { x: cam.x, y: cam.y, z: cam.z },
+      girls,
+      youInWoods: !!woods?.inWoods(cam.x, cam.z),
+      youRiding: !!ridden,
+      wet: this.weather.wet,
+      amyCanRemark: !!amyNear && amy.availability().canRemark,
+    };
+  }
+
+  /** Jess throwing a conker at you, as an offer for the chooser (npc/conkers.js). */
+  conkerOffers(c, ridden) {
+    const ctx = this.conkerContext(ridden);
+    return this.conkers.offers(ctx).filter((o) => o.girl === c.character.id).map((o) => ({ ...o, take: () => this.handleConkerEvent(this.conkers.take(o, ctx)) }));
+  }
+
+  /** The throw and what follows it: her arm goes back, the conker flies, it lands with a thock and a line (npc/conkers.js). */
+  handleConkerEvent(e) {
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    if (e.type === 'windup') {
+      if (!c?.throwConker(e.facing, e.seconds)) {
+        this.conkers.windup = null;
+        return;
+      }
+      c.attend(this.camera.position, { weight: 1, seconds: e.seconds + 1 });
+      c.voice.say('conkerGo', { force: true });
+    } else if (e.type === 'release') {
+      if (!this.conkerMesh) {
+        this.conkerMesh = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), new THREE.MeshStandardMaterial({ color: 0x4a2a12, roughness: 0.35 }));
+        this.scene.add(this.conkerMesh);
+      }
+      this.conkerMesh.position.set(e.from.x, e.from.y, e.from.z);
+      this.conkerMesh.visible = true;
+    } else if (e.type === 'land') {
+      if (this.conkerMesh) this.conkerMesh.visible = false;
+      this.conkerAudio.thock(e.at, e.hit ? 1 : 0.5);
+      c?.voice.say(e.hit ? 'conkerHit' : 'conkerMiss', { force: true });
+      const amy = this.companions.find((o) => o.character.id === 'amy');
+      if (amy && amy !== c && amy.root.position.distanceTo(this.camera.position) < 40 && amy.availability().canRemark) amy.voice.say('conkerAmy', { chance: 0.7 });
+    } else if (e.type === 'remark') {
+      this.companions.find((o) => o.character.id === 'amy')?.voice.say(e.kind === 'slippery' ? 'conkerSlippery' : 'conkerWood', { force: true });
+    }
+  }
+
+  updateConkers(dt, ridden) {
+    if (!this.autumn) return;
+    const jess = this.companions.find((o) => o.character.id === 'jess');
+    const ctx = { ...this.conkerContext(ridden), hand: null };
+    const hand = jess?.rig?.bones?.RightHand;
+    if (hand) {
+      const v = hand.getWorldPosition(new THREE.Vector3());
+      ctx.hand = { x: v.x, y: v.y, z: v.z };
+    }
+    for (const e of this.conkers.update(dt, ctx)) this.handleConkerEvent(e);
+    const at = this.conkers.position();
+    if (at && this.conkerMesh) this.conkerMesh.position.set(at.x, at.y, at.z);
+  }
+
   handlePrankEvent(e) {
     const a = e.prank;
     const girl = this.companions.find((c) => c.character.id === a.girl);
@@ -9342,6 +9437,7 @@ export class Game {
       this.updateRequests(dt, ridden);
       this.updatePlaces(dt);
       this.updatePranks(dt, ridden);
+      this.updateConkers(dt, ridden);
       this.updateRevOff(dt, ridden);
     }
     this.updateHorns(dt, ridden);
