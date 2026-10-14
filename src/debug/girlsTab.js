@@ -245,6 +245,11 @@ export function buildGirlsTab(d) {
   const out = sub('Animals, gates and the lane');
   show(out, 'wildlife', () => `${g.rabbits.rabbits.filter((r) => r.mode !== 'down').length} rabbits about (${g.rabbits.rabbits.filter((r) => r.mode === 'caught').length} in a beam), pheasants ${g.pheasants.birds.map((b) => b.mode).join('/')}`);
   button(out, 'Flush the nearest pheasant', () => g.debugFlushPheasant());
+  show(out, 'the cat', () => `${g.cat.mode}${g.cat.perchId != null ? ` on ${g.cat.perchId}` : ''}${g.cat.purring ? ', purring' : ''}`);
+  button(out, 'Call the cat over to you', () => g.debugCat('call'));
+  button(out, 'Put the cat asleep on the nearest vehicle', () => g.debugCat('perch') || toast('No open vehicle to put it on'));
+  button(out, 'Shoo the cat', () => g.debugCat('shoo') || toast('The cat is not near enough, or is already off'));
+  button(out, 'Keep the cat in the barn / let it out', () => g.debugCat('shelter'));
   show(out, 'electric fence', () => `${g.fence.live ? 'on' : 'off'}; last zapped: ${g.fence.lastZap ? `${g.fence.lastZap.id} (${g.fence.lastZap.kind})` : 'nobody yet'}`);
   button(out, 'Zap you on the fence', () => g.debugZapFence());
   show(out, 'the lane and the gates', () => `${g.trafficHost.describe()}; south gate ${g.trafficHost.gate('south').isOpen ? 'open' : 'shut'}, big gate ${g.trafficHost.gate('road').isOpen ? 'open' : 'shut'}, grid gate ${g.trafficHost.gate('grid')?.isOpen ? 'open' : 'shut'}`);

@@ -51,6 +51,13 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'cat',
+      label: 'The cat goes over to %',
+      run: (id) => {
+        if (!g.debugCat('visit', id)) toast('The cat is asleep on something: shoo it first');
+      },
+    },
+    {
       verb: 'tag-along',
       label: 'Her friend leaves, % tags along',
       run: (id) => {

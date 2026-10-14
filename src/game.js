@@ -211,6 +211,9 @@ import { ExhaustSmoke, DEFAULT_SMOKE_PARAMS } from './effects/exhaustSmoke.js';
 import { Rabbits, Pheasants, hedgeSpots, DEFAULT_WILDLIFE_PARAMS, WILDLIFE_PARAM_RANGES } from './world/wildlife.js';
 import { WildlifeView } from './world/wildlifeView.js';
 import { WildlifeAudio } from './audio/wildlifeAudio.js';
+import { Cat, perchWarmth, catShelter, DEFAULT_CAT_PARAMS, CAT_PARAM_RANGES } from './world/cat.js';
+import { CatView } from './world/catView.js';
+import { CatAudio } from './audio/catAudio.js';
 import { ElectricFence, createElectricFence, DEFAULT_FENCE_PARAMS, FENCE_PARAM_RANGES } from './world/electricFence.js';
 import { FenceAudio } from './audio/fenceAudio.js';
 import { BELL_PARAM_RANGES } from './world/bell.js';
@@ -1221,6 +1224,7 @@ export class Game {
 
     this.setUpFlock();
     this.setUpWildlife();
+    this.setUpCat();
     this.setUpFence();
     this.trafficHost = new TrafficHost(this); // the lane's traffic, the visitors and the two gates (world/trafficHost.js)
 
@@ -8937,6 +8941,7 @@ export class Game {
     this.bell.update(dt);
     this.updateFlock(dt);
     this.updateWildlife(dt);
+    this.updateCat(dt);
     this.updateFence(dt);
     this.trafficHost.update(dt);
     this.updateRecall(dt);
@@ -9121,6 +9126,162 @@ export class Game {
     const where = { x: e.x, y: this.world.groundHeightAt(e.x, e.z) + 0.5, z: e.z };
     this.wildlifeAudio.burst({ ...where, strength: e.strength });
     this.notice('pheasant', where, { key: 'pheasant', strength: e.strength });
+  }
+
+  /**
+   * The barn cat (world/cat.js): one cat that prowls the yard, sleeps on a warm engine or in the sun on a seat until you shoo it off, rubs
+   * round a girl stood about, goes into the barn when it is wet, frosty or dark, and runs from a revving or fast vehicle.
+   */
+  setUpCat() {
+    const L = this.world.layout;
+    const b = L.barn;
+    this.catParams = { ...DEFAULT_CAT_PARAMS };
+    registerTuning('Cat', this.catParams, CAT_PARAM_RANGES);
+    const world = this.world;
+    const f = world.fields;
+    const inside = (x, z, m = 0.5) => Math.abs(x - b.x) < b.halfX - m && Math.abs(z - b.z) < b.halfZ - m;
+    // The barn's wall is shut except at its door on the +x side; the cat comes and goes by the door.
+    const inDoor = (x, z) => Math.abs(z - b.z) < b.door.halfWidth - 0.4 && x > b.x + b.halfX - 0.6 && x < b.x + b.halfX + 0.6;
+    const allowed = (x, z) => {
+      if (inside(x, z) || inDoor(x, z)) return true;
+      if (world.inBarn(x, z, 0.4) || world.outbuildings.builtAt(x, z, 0.5)) return false;
+      return Math.hypot(x - L.yard.x, z - L.yard.z) < L.yard.radius + 12 && f.hedgeDistance(x, z) > 0.8;
+    };
+    const home = { x: b.x - 1.5, z: b.z + 2.2, via: { x: b.x + b.halfX + 1.2, z: b.z } };
+    const random = createRandom(this.farmSeed ^ 0xca7);
+    this.cat = new Cat({ allowed, home, inHome: (x, z) => inside(x, z, 0.1), groundAt: (x, z) => world.groundHeightAt(x, z), random, params: this.catParams });
+    // Starts somewhere in the yard, off the barn's wall, as the farm's seed has it.
+    for (let i = 0; i < 30; i++) {
+      const a = random() * Math.PI * 2;
+      const r = 3 + random() * (L.yard.radius - 3);
+      const x = L.yard.x + Math.cos(a) * r;
+      const z = L.yard.z + Math.sin(a) * r;
+      if (allowed(x, z)) {
+        this.cat.place(x, z);
+        break;
+      }
+    }
+    this.catView = new CatView(this.scene, this.cat, (x, z) => world.groundHeightAt(x, z));
+    this.catAudio = new CatAudio(this.audioHub);
+    this.catPerchTop = new WeakMap(); // unit -> how high its seat or engine is for the cat to lie on, from its model
+    this.catForceShelter = false;
+    this.interaction.add({
+      target: this.catView.proxy,
+      isAvailable: () => !!this.catParams.enabled && !this.cat.panicked && !this.riddenUnit,
+      range: () => 3,
+      prompt: () => (this.cat.perched ? 'Shoo the cat off' : 'Shoo the cat'),
+      interact: () => this.shooCat(),
+    });
+  }
+
+  /** Whose seat or engine the cat can lie on and how high: open vehicles only (a cab's roof is no place for a nap). */
+  catPerchHeight(unit) {
+    let h = this.catPerchTop.get(unit);
+    if (h === undefined) {
+      const box = new THREE.Box3().setFromObject(unit.quad.model);
+      const top = box.max.y - unit.quad.position.y;
+      h = top > 1.35 ? 0 : Math.min(1.0, Math.max(0.5, top * 0.62));
+      this.catPerchTop.set(unit, h);
+    }
+    return h;
+  }
+
+  /** What the cat might lie on now, and what it keeps clear of: see world/cat.js for the shape of it. */
+  catContext() {
+    const w = this.weather;
+    const idleOf = (u) => u.idleRpm ?? u.engine.params.idleRpmWarm ?? 1000;
+    const perches = [];
+    const threats = [{ x: this.player.position.x, z: this.player.position.z, speed: 0, loud: 0 }];
+    for (const u of this.units) {
+      const q = u.quad;
+      const running = u.engine.isRunning;
+      const idle = idleOf(u);
+      const span = Math.max(1, (u.topRpm ?? u.engine.params.maxRpm ?? idle + 4000) - idle);
+      const loud = running ? Math.min(1, Math.max(0, (u.engine.rpm - idle) / (0.5 * span))) : 0;
+      threats.push({ x: q.position.x, z: q.position.z, speed: Math.abs(q.speed ?? 0), loud });
+      const h = this.catPerchHeight(u);
+      if (!h) continue;
+      const occupied = this.boardUnit === u || this.companions.some((c) => c.quad === u.quad && !c.fsm.is('idle'));
+      const sheltered = this.world.inBarn(q.position.x, q.position.z, 0);
+      perches.push({
+        id: u.id,
+        x: q.position.x,
+        z: q.position.z,
+        y: q.position.y + h,
+        warm: perchWarmth({ soak: u.engine.soak, sun: sheltered ? 0 : w.warmth, wet: w.rain, snow: w.snow }),
+        taken: running || occupied || Math.abs(q.speed ?? 0) > 0.3,
+      });
+    }
+    const friends = this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.availability().canRemark && c.fsm.is('idle') }));
+    const shelter = this.catForceShelter || catShelter({ rain: w.rain, snow: w.snow, temperature: w.temperature, darkness: this.daylight?.darkness ?? 0 }, this.catParams);
+    return { threats, perches, friends, shelter };
+  }
+
+  updateCat(dt) {
+    if (!this.cat) return;
+    const on = !!this.catParams.enabled;
+    this.catView.root.visible = on;
+    if (!on) return;
+    for (const e of this.cat.update(dt, this.catContext())) this.fireCatEvent(e);
+    this.catView.update(dt);
+    this.catAudio.update(dt, this.cat.at(), this.cat.purring);
+  }
+
+  /** What the cat did, sounded and told to the girls. */
+  fireCatEvent(e) {
+    if (e.kind === 'mew') this.catAudio.mew(e);
+    else if (e.kind === 'fled' || (e.kind === 'woke' && e.scared)) {
+      this.catAudio.mew(e, 'cry');
+      this.catSay('catFled');
+    } else if (e.kind === 'settled') this.catSay('catPerched');
+    else if (e.kind === 'greeted') {
+      this.catAudio.mew(e);
+      this.catSay('catGreeted', e.id);
+    } else if (e.kind === 'fussed') this.catSay('catFussed', e.id);
+  }
+
+  /** A girl who is free to remark (the one the cat went to, if `id`; otherwise the nearest to you) says a line about the cat. */
+  catSay(key, id = null) {
+    const p = this.player.position;
+    const c = id
+      ? this.companions.find((o) => o.character.id === id)
+      : this.companions.filter((o) => o.availability().canRemark).sort((a, b) => a.root.position.distanceTo(p) - b.root.position.distanceTo(p))[0];
+    if (!c || !c.availability().canRemark || c.root.position.distanceTo(p) > 40) return;
+    c.voice.say(key);
+  }
+
+  /** E at the cat: off the seat or out of your way; it hisses, goes, and keeps off that perch for a while. */
+  shooCat() {
+    const p = this.player.position;
+    const how = this.cat.shoo(p.x, p.z);
+    if (!how) return false;
+    this.catAudio.hiss(this.cat.at());
+    this.catSay('catShooed');
+    return true;
+  }
+
+  /** The debug panel's and console's cat buttons. */
+  debugCat(action, arg) {
+    const cat = this.cat;
+    const p = this.player.position;
+    if (action === 'call') {
+      const d = this.camera.getWorldDirection(new THREE.Vector3());
+      const n = Math.hypot(d.x, d.z) || 1;
+      cat.place(p.x + (d.x / n) * 2.5, p.z + (d.z / n) * 2.5);
+    } else if (action === 'shoo') return !!cat.shoo(p.x, p.z);
+    else if (action === 'perch') {
+      const unit = [...this.units].filter((u) => this.catPerchHeight(u)).sort((a, b) => a.quad.position.distanceTo(p) - b.quad.position.distanceTo(p))[0];
+      if (!unit) return false;
+      unit.engine.soak = Math.max(unit.engine.soak, 0.7);
+      const q = unit.quad.position;
+      cat.place(q.x, q.z);
+      cat.perchId = unit.id;
+      cat.y = q.y + this.catPerchHeight(unit);
+      cat.mode = 'sleep';
+      cat.t = cat.p.sleepMax;
+    } else if (action === 'visit') return cat.visit(arg);
+    else if (action === 'shelter') this.catForceShelter = arg ?? !this.catForceShelter;
+    return true;
   }
 
   /** The debug panel's and console's flush: the pheasant nearest you bursts out as if you had walked up to it. */

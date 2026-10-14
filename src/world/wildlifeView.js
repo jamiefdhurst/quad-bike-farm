@@ -7,7 +7,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 
 const UP = new THREE.Vector3(0, 1, 0);
 
-function paint(geo, hex, vary = 0.1, seed = 1) {
+export function paint(geo, hex, vary = 0.1, seed = 1) {
   const base = new THREE.Color(hex);
   const pos = geo.attributes.position;
   const col = new Float32Array(pos.count * 3);
@@ -22,7 +22,7 @@ function paint(geo, hex, vary = 0.1, seed = 1) {
   return geo;
 }
 
-function blob(r, sx, sy, sz, at, hex, seed, detail = 1) {
+export function blob(r, sx, sy, sz, at, hex, seed, detail = 1) {
   const g = new THREE.IcosahedronGeometry(r, detail);
   g.scale(sx, sy, sz);
   g.translate(at[0], at[1], at[2]);
@@ -30,7 +30,7 @@ function blob(r, sx, sy, sz, at, hex, seed, detail = 1) {
 }
 
 /** Moves a geometry's vertices by a deterministic lumpy noise, for fur and feathers (as the sheep's wool is). */
-function lump(geo, amount) {
+export function lump(geo, amount) {
   const pos = geo.attributes.position;
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i);
@@ -44,7 +44,7 @@ function lump(geo, amount) {
 }
 
 /** A lumpy blob: an icosphere stretched, moved and roughened. */
-function fur(r, sx, sy, sz, at, hex, seed, amount = 0.07, detail = 2, vary = 0.14) {
+export function fur(r, sx, sy, sz, at, hex, seed, amount = 0.07, detail = 2, vary = 0.14) {
   const g = new THREE.IcosahedronGeometry(r, detail);
   g.scale(sx, sy, sz);
   g.translate(at[0], at[1], at[2]);
@@ -52,7 +52,7 @@ function fur(r, sx, sy, sz, at, hex, seed, amount = 0.07, detail = 2, vary = 0.1
 }
 
 /** A tapered stalk from (x, y0, z0) to (x, y1, z1): legs, ears, toes. */
-function stalk(r0, r1, from, to, hex, seed, sides = 5) {
+export function stalk(r0, r1, from, to, hex, seed, sides = 5) {
   const len = Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]);
   const g = new THREE.CylinderGeometry(r1, r0, len, sides);
   const dir = new THREE.Vector3(to[0] - from[0], to[1] - from[1], to[2] - from[2]).normalize();

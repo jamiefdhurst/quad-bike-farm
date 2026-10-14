@@ -1122,6 +1122,20 @@ export const FAQ_SECTIONS = [
         tip: 'Pheasants lie in the hedge feet and burst out if you pass close. Amy jumps.',
       },
       {
+        q: 'Where is the cat, and why is it on my quad?',
+        a: `The farm has a tabby cat that prowls the yard and the barn. It likes somewhere warm: it will curl up asleep on an engine that has just been run, or on a seat in the sun, on any open quad. It keeps asleep however close you walk. To get it off, look at it and press E to shoo it; it hisses, hops down and runs, and keeps off that quad for a few minutes. Starting the quad or sitting on it also sends it packing. It is out and about on mild, dry days and goes into the barn when it is raining, snowing, frosty or dark.`,
+        tip: 'The cat sleeps on warm engines and sunny seats. Look at it and press E to shoo it off.',
+      },
+      {
+        q: 'Why did the cat run off?',
+        a: `It does not like noise. A quad coming at it quickly, or an engine revved close to it, sends it running for a good fifteen metres or so, where it sits wary for a bit before it comes back. Start an engine it is lying on and it jumps off. The girls notice, and Jess tells you off.`,
+      },
+      {
+        q: 'What do the girls think of the cat?',
+        a: `Jess adores it and says so. The cat sometimes goes over to a girl who is stood about and rubs round her legs. Amy says she does not like cats, and she tells it off for rubbing on her, but give her a little while with it and she gives in. They both comment when it settles on a quad, and when you shoo it or frighten it.`,
+        spoiler: true,
+      },
+      {
         q: 'What is the ticking fence on the hill, and what happens if I touch it?',
         a: `It is an electric fence across the hill pasture, two strands of yellow tape on white stakes, with a gap in it for you to ride through (look for the pair of stout posts and the sign with the lightning bolt). The box on the hedge at the east end ticks and blinks. Touch the tape with the front or back of a quad, or walk into it, and it jolts you: the view shakes, you lose some speed, and whoever is on the quad yelps. A girl who sees it will say something about it. It only zaps once for each brush, so you won't be stuck in a loop.`,
         tip: 'The fence across the hill pasture is live. Go through the gap by the sign, not the tape.',

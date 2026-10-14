@@ -296,6 +296,14 @@ export function buildGameTree(g, host) {
     pheasants: text(() => g.pheasants.birds.map((b) => b.mode).join(', ') || 'none', 'each pheasant: hidden, fly or gone'),
     flush: flag(() => false, (v) => v && g.debugFlushPheasant(), 'set to true: the nearest pheasant bursts out as if you had come up to it'),
   }), 'rabbits and pheasants');
+  const cat = group(() => ({
+    mode: text(() => `${g.cat.mode}${g.cat.perchId != null ? ` on ${g.cat.perchId}` : ''}`, 'what the cat is doing (sit, walk, seek, sleep, flee, hide, greeted, curl...) and what it is on'),
+    purring: ro(() => (g.cat.purring ? 1 : 0), '', 'whether the cat is purring'),
+    call: flag(() => false, (v) => v && g.debugCat('call'), 'set to true: the cat is put down a few metres in front of you'),
+    shoo: flag(() => false, (v) => v && g.debugCat('shoo'), 'set to true: shoo the cat as if you had pressed E at it'),
+    perch: flag(() => false, (v) => v && g.debugCat('perch'), 'set to true: warm the nearest open vehicle and put the cat asleep on it'),
+    shelter: flag(() => g.catForceShelter, (v) => g.debugCat('shelter', v), 'keep the cat in the barn whatever the weather'),
+  }), 'the barn cat');
   const fence = group(() => ({
     on: flag(() => g.fence.live, (v) => { g.fenceParams.live = v ? 1 : 0; }, 'whether the electric fence on the hill is switched on'),
     last: text(() => (g.fence.lastZap ? `${g.fence.lastZap.id} (${g.fence.lastZap.kind})` : 'nobody yet'), 'who last got a jolt from it'),
@@ -352,6 +360,7 @@ export function buildGameTree(g, host) {
     weather,
     farm,
     wildlife,
+    cat,
     fence,
     lane,
     generator,
