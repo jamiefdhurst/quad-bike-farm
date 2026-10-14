@@ -3789,3 +3789,4 @@ Settled with Jamie up front: every gauge puts a warm engine in the middle; the b
 - **Steam position.** `radiatorAt` on each spec, where the steam leaves in the model's own space. The orange keeps its old point; the others are guesses from the models' noses.
 - **Checked:** unit tests only (`tests/overheat.test.js` and the updated gauge, heat and debug tests). **Not checked in the running game:** how the new red bands and symbols look on each dash, where the steam leaves each vehicle, how often a game deals a thermostat or leak, the real time to overheat when towing, the pour and flush feel, and the new lines by ear.
 - **Ideas left out:** a blocked radiator (mud) as a third cause, the bottle in the trailer and the UTV bed, and a thermostat stuck open that runs cold.
+- The girls stay on the current base model (the Quaternius "Animated Woman") for now; there is no other base to move to, so improvements work on this one.

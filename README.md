@@ -898,3 +898,28 @@ What is still to do. Finished items are recorded in DECISIONS.md, under their ol
 279. More than one farm. Save slots, or a farm exported and imported as a file, since browser storage is easily lost, and a second farm lets you try "New farm" without losing yours.
 280. Rubbish made every frame. Profile the per-frame allocations (new vectors and arrays in the update loops) behind garbage-collection hitches and reuse scratch objects in the worst few; check with the `perf.mjs` profile.
 281. Smaller voice banks. Opus at about 32 kbps instead of 58 kbps MP3 would roughly halve the girls' banks; check browser support (Safari) first. Beside item 97.
+276. A smoother body under everything. Subdivide her mesh once at load (about 1,900 triangles to about 7,600, skin weights carried across) before the figure and the clothes are fitted, so the shoulder-to-jaw triangle and "as round as its triangles allow" stop limiting the garments. Behind a flag first, since every garment is cut from her triangles; item 299 guards it.
+277. Hair of her own. Separate hair pieces (a ponytail, a plait, a bun, a bob) dealt each day like the outfits; Amy ties hers up for the bench, both stuff it under the helmet, a hair tie on the wrist. Item 229 is how it moves.
+278. A mouth when she talks. A small mouth piece or a texture swap opening with the loudness of the recorded line, so you can see who is talking (there are no face bones).
+279. Eyes that follow her attention. Her eyes go to what attention picked a beat before her head, and her eyebrows go up at a surprise. With the blinking in item 228.
+280. Cold cheeks and a red nose. Her skin tint follows the temperature as it is now: rosy on a frosty morning, a pink nose in the wind, colour after a hot afternoon. Freckles for Jess.
+281. Breath in the cold. A puff of breath when she talks or pants on a frosty day (the smoke effect, small).
+282. Accessories by the weather. A woolly hat and gloves on frosty days, sunglasses pushed up on her head when it's bright, a hair band on a windy one; dealt like the outfits.
+283. Bottoms for the weather. Jeans, leggings or joggers dealt by the day's temperature instead of shorts in the snow, socks showing over the wellies, and trainers on a dry day (Jess regrets them in the mud).
+284. A gilet. The farm body warmer, over a polo or the plaid: the layer between the jumper and the wax jacket.
+285. Overalls for the bench. Amy pulls a boiler suit on over everything before a messy job and takes it off after; Jess doesn't bother.
+286. Layers that come off. As the day warms she takes the jumper off and ties it round her waist, rolls her sleeves up, or slings her coat over a quad's rack; and puts them back on as it cools.
+287. Grease on her hands. After the bench or the dipstick her hands are black; she wipes them on her shorts and leaves a smear, which the hose clears (with item 205).
+288. Cloth in the wind. An open plaid or coat flaps in the wind and on the back of a quad at speed, from a couple of simple bones on the open fronts.
+289. Riding properly. Driving, she leans into the turns, stands on the footboards over rough ground and sits back going downhill; Jess stands up for fun.
+290. The ground in her walk. Arms out on rough ground, picking round puddles, hunched into a strong wind, and a slip on ice or wet grass she catches (or doesn't).
+291. Climbing gates and stiles. On foot she climbs a shut gate rather than opening it, and Jess vaults (with items 221 and 266).
+292. Talking with her hands. Gestures and pointing while she talks, at the quad she means or at you; a line can carry a gesture for the poser.
+293. Her hands and feet on the controls. You see her turn the key, push the choke, yank the cord, tap a manual's gear lever with her toe and glance at the dash.
+294. Looking over her shoulder in reverse. Her head and body turn to look behind as she backs up.
+295. Arm signals on the lane. Quads have no indicators, so she puts an arm out before turning off the lane.
+296. Putting the helmet on. Both hands lift it over her head, she does the strap up and pulls the goggles down, rather than it appearing.
+297. Crouching to look. Kneeling by a wheel, ducking to look under the engine, crouching at the sediment bowl: poses for the walk-round, the diagnosis and the bench.
+298. Hands that hold things properly. Her hands sit round what she holds rather than near it: a mug of tea in both hands to warm them or by its handle, the flask, the jerry can's handle, the oil bottle, the phone. Each item names its grip points and the hand's turn, and the IK aims the wrist so the fingers (which reach on past it) close on the thing; checked in a headless shot from in front of her.
+299. A test for clothes poking through. In Node, without WebGL, skin each outfit onto her in a set of poses (stood, astride, driving, arms up, side-saddle, in a coat) and measure how far any cloth goes inside her or the layer under it; fail over a limit.
+300. A wardrobe scene. `scene wardrobe` (item 207) lines both girls up in every outfit and pose for a quick look by eye.
