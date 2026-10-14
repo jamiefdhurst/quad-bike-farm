@@ -988,7 +988,7 @@ export const FAQ_SECTIONS = [
         q: 'What do they do when I leave them alone?',
         a: `All sorts: wander off for a look round, start a quad, take one for a drive, race each other, go for a ride together, spin doughnuts, show off to you,
           line the quads up by the barn, leave a mug of tea on a rack, sit with you on the rock at the top of the hill with a flask, sit on the bales or the paddock fence on a fine day, run for the barn or climb into a Land Rover when it rains,
-          warm their hands over a running engine, start a Land Rover and sit in it to warm up, fetch jumpers when it's cold, or get their helmets from the hooks.`,
+          warm their hands over a running engine, start a Land Rover and sit in it to warm up, fetch jumpers when it's cold or wax jackets when it rains, or get their helmets from the hooks.`,
       },
       {
         q: 'Why are the girls wearing different coloured shirts from my last farm?',
@@ -1002,6 +1002,20 @@ export const FAQ_SECTIONS = [
         a: `Each farm has its own two jumpers on the rail in the barn, in colours dealt when the farm is new: grey and beige among
           them, or navy, bottle green, burgundy, mustard, oatmeal, charcoal, heather blue, rust or moss. They stay the same on that
           farm from day to day. The girls put one on when they've been cold or wet for a while and hang it back up once it's warm and dry.`,
+      },
+      {
+        q: 'Where do the girls get their coats from?',
+        a: `Two Barbour-style wax jackets hang at the far end of the clothes rack in the barn, past the jumpers. When it has been raining
+          on a girl for a little while and she is stood about, she hurries over and puts one on, over her jumper if she has one. The front
+          is done up two thirds of the way, so you can still see her polo's collar and her jumper at the neck. Once it has been dry for a
+          couple of minutes she goes back and hangs it up. Each farm deals the coats' colours (olive, sage, navy or rustic brown) and keeps them.
+          A girl in a coat doesn't get wet, so she wants shelter less.`,
+        tip: 'When it rains for a while, the girls fetch wax jackets from the rack in the barn.',
+      },
+      {
+        q: 'When do the girls put their hoods up?',
+        a: `When it's raining properly and they have a coat on. The hood comes down again when the rain has nearly stopped, when they put a
+          helmet on, and when they're under a roof: in the barn, or in a car, a Land Rover or the UTV.`,
       },
       {
         q: 'Why is a girl sitting in the Land Rover?',
