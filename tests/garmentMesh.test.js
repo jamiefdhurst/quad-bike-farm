@@ -465,12 +465,6 @@ describe('the crop-top', () => {
 });
 
 describe('the crop-top between her breasts', () => {
-  it('shades the band darker down the groove between them, and no more than cleavageShadow', async () => {
-    const { buildCropTop, CROP } = await import('../src/npc/crop.js');
-    const built = buildCropTop(cylinderBody());
-    expect(Math.min(...built.shade)).toBeLessThan(0.99);
-    expect(Math.min(...built.shade)).toBeGreaterThanOrEqual(1 - CROP.cleavageShadow - 1e-9);
-  });
   it('draws her cleavage on her skin above the band, darkest at the band and gone at the top', async () => {
     const { buildCropTop, CROP } = await import('../src/npc/crop.js');
     const { groove } = buildCropTop(cylinderBody());

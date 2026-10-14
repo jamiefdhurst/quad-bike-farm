@@ -3,6 +3,7 @@
 // since they're far narrower than her triangles. Pure, on plain data. Everything else on
 // her top half is bare (outfit.js paints the body's shirt band her skin colour under it).
 
+import { cleavageShade } from './cleavage.js';
 import { smoothNormals, unskin, applySkinDir, rayHit, inTriangle, vec } from './garmentMesh.js';
 
 const { add, scale, norm } = vec;
@@ -15,11 +16,9 @@ export const CROP = {
   backUnder: 0.04, // and its bottom
   strapAcross: 0.07, // the straps this far either side of her middle, front and back, over her shoulders
   strapWidth: 0.0025, // half the width of a strap: a string
-  cleavageWidth: 0.045, // the shadow between her breasts reaches this far either side of the line between them
-  cleavageShadow: 0.6, // and darkens the band by this much at its middle
-  grooveWidth: 0.025, // the drawn cleavage reaches this far either side of the line between her apexes
+  grooveWidth: 0.025, // the drawn cleavage (cleavage.js) reaches this far either side of the line between her apexes
   grooveHeight: 0.09, // and this far up from the band's top
-  grooveShadow: 0.8, // darkening its middle by this much at the band, fading out at the top
+  grooveShadow: 0.8, // darkening its middle by this much, full over the lower part and fading out at the top
   strapLift: 0.0035, // how far it lies off her skin
 };
 
@@ -84,25 +83,12 @@ export function buildCropTop(body, p = CROP) {
   };
   const torso = skinAround(body, F, 'any');
   middleOf(body, F, p, torso);
-  put(buildBand(body, F, p, torso), (v) => cleavage(F, p, v));
+  put(buildBand(body, F, p, torso));
   // The straps, from the band's top at her front, over each shoulder, to its top at her back.
   for (const strap of buildStraps(body, F, p, skinAround(body, F, 'all'))) put(strap);
   const shell = { verts: all, tris };
   shell.normals = smoothNormals(shell);
   return { shell, shade, bust: F.bust, groove: buildGroove(body, F, p, torso) };
-}
-
-/**
- * How much darker the band is at a point: a soft shadow down the groove between her breasts, so the two read as two. Gone
- * `cleavageWidth` either side of the line between her apexes, and only across her front.
- */
-function cleavage(F, p, v) {
-  const { left, right } = F.bust.sides ?? {};
-  if (!left || !right) return 1;
-  const dx = (v.rest[0] - (left.x + right.x) / 2) / p.cleavageWidth;
-  if (Math.abs(dx) >= 1 || v.rest[2] < F.bust.z * 0.5) return 1;
-  const k = 1 - Math.abs(dx);
-  return 1 - p.cleavageShadow * k * k * (3 - 2 * k);
 }
 
 /**
@@ -128,8 +114,7 @@ export function buildGroove(body, F, p = CROP, ground = skinAround(body, F, 'any
       const v = inTriangle(ground, hit.tri, hit.bary);
       const rest = add(v.rest, scale(norm(applySkinDir(v.skin, v.normal)), 0.003));
       verts.push({ ...v, rest, bind: unskin(v.skin, rest), normal: norm(applySkinDir(v.skin, v.normal)) });
-      const k = 1 - Math.abs(u);
-      shade.push(1 - p.grooveShadow * k * k * (3 - 2 * k) * (1 - r / ROWS));
+      shade.push(cleavageShade(u * p.grooveWidth, F.top([x, 0, F.bust.z]) + 0.7 * p.grooveHeight - y, { strength: p.grooveShadow, width: p.grooveWidth, fade: 0.6 * p.grooveHeight }));
     }
   }
   const tris = [];

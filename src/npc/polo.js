@@ -6,6 +6,7 @@
 // The polo's sleeves are short and its hem is tucked into her shorts, with a stitched placket and five buttons down the front;
 // the jumper reaches her wrists and hangs over her shorts.
 
+import { cleavageShade } from './cleavage.js';
 import {
   weld,
   subdivide,
@@ -810,8 +811,7 @@ export function buildInset(body, vee, p = POLO) {
   }
   const from = apex ? apex[1] + 0.09 : -Infinity;
   patch.shade = patch.verts.map((v) => {
-    const across = Math.max(0, 1 - Math.abs(v.rest[0] - x0) / p.cleavageWidth);
-    const cleft = 1 - p.cleavage * across * smooth01((from - v.rest[1]) / 0.04);
+    const cleft = cleavageShade(v.rest[0] - x0, from - v.rest[1], { strength: p.cleavage, width: p.cleavageWidth, fade: 0.04 });
     return cleft * (1 - p.veeShadow * (1 - smooth01(vee.field(v) / 0.008)));
   });
   return patch;
