@@ -458,7 +458,7 @@ describe('the crop-top', () => {
     // Two thin straps above the band, strapAcross either side of her middle, front and back, lying just off her.
     const straps = verts.filter((v) => v.edge === 'strap');
     expect(straps.length).toBeGreaterThan(20);
-    for (const v of straps) expect(Math.abs(Math.abs(v.rest[0]) - CROP.strapAcross)).toBeLessThan(CROP.strapWidth + 1e-6);
+    for (const v of straps) expect(Math.abs(Math.abs(v.rest[0]) - CROP.strapAcross)).toBeLessThan(CROP.strapWidth + 0.004); // lifted off her as she faces
     expect(Math.max(...straps.map((v) => v.rest[2]))).toBeGreaterThan(0.05);
     expect(Math.min(...straps.map((v) => v.rest[2]))).toBeLessThan(-0.05);
   });
@@ -472,5 +472,16 @@ describe('the crop-top round her back', () => {
     const used = [...new Set(built.shell.tris.flat())].map((i) => built.shell.verts[i]).filter((v) => !v.apart && v.edge !== 'strap');
     expect(used.some((v) => v.rest[2] < -0.11)).toBe(true);
     expect(used.some((v) => v.rest[0] > 0.11)).toBe(true);
+  });
+});
+
+describe('stretched over the hollows', () => {
+  it("finds a ring's convex outline and how far it reaches in any direction", async () => {
+    const { convexHull, hullReach } = await import('../src/npc/crop.js');
+    // A square with a dent in one side: the hull skips the dent.
+    const hull = convexHull([[1, 1], [-1, 1], [-1, -1], [1, -1], [0, 0.5], [1, 0]]);
+    expect(hull.length).toBe(4);
+    expect(hullReach(hull, 0, 1)).toBeCloseTo(1, 6); // across the dent, out to the square's edge
+    expect(hullReach(hull, 1, 0)).toBeCloseTo(1, 6);
   });
 });
