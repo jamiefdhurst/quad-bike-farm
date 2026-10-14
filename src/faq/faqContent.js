@@ -1152,7 +1152,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where is the dog, and how do I get her on my quad?',
-        a: `Meg, the farm's border collie, follows you about: at your heels on foot, and a way behind when you ride (she runs to catch up if you leave her). She sits when you stop. To get her up, pull up on a quad with a rear rack (the utility quads and the farm ones, not the sports quads, the cars or the tractor) and stay still for a moment; she runs over and hops up on the rack. She hops down when you get off, or when a girl sits on the back. She keeps off the rack for a few seconds after she gets down.`,
+        a: `Meg, the farm's border collie, keeps you company but has her own business: she sits, sniffs and mooches about near you, and comes after you only when you have gone a dozen metres or so (she runs to catch up if you ride off). To get her up, pull up on a quad with a rear rack (the utility quads and the farm ones, not the sports quads, the cars or the tractor) and stay still for a moment; she runs over and hops up on the rack. She hops down when you get off, or when a girl sits on the back. She keeps off the rack for a few seconds after she gets down.`,
         tip: 'Stop on a utility quad and Meg hops up on the rear rack. She follows you everywhere else.',
       },
       {

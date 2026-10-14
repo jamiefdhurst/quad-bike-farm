@@ -15,6 +15,7 @@ const TONGUE = 0xd8707c;
 const LEG = 0.37; // m from the hip's pivot to the sole
 const HIP = -0.04; // the pivots' height in the body
 const STAND_Y = LEG - HIP; // the body's height standing
+const LEG_KEYS = ['fl', 'fr', 'hl', 'hr'];
 const SIT_PITCH = -1.0; // sat up, the body tilts back this much
 
 function part(parts) {
@@ -39,21 +40,19 @@ function bodyParts() {
     fur(0.1, 0.85, 1.0, 1.15, [0, -0.045, 0.19], WHITE, 4, 0.04, 2, 0.05), // the white chest
     fur(0.075, 0.9, 0.55, 1.9, [0, -0.085, 0.0], WHITE, 5, 0.04, 2, 0.05), // the pale belly
     fur(0.085, 1.0, 1.15, 1.3, [0, 0.07, 0.26], BLACK, 6, 0.04, 2, 0.08), // the neck
-    fur(0.1, 1.05, 1.0, 0.85, [0, 0.0, 0.27], WHITE, 7, 0.08, 2, 0.04), // the white ruff
+    fur(0.085, 1.05, 0.95, 0.8, [0, -0.015, 0.26], WHITE, 7, 0.08, 2, 0.04), // the white ruff
   ];
 }
 
 function headParts() {
   const parts = [
     fur(0.075, 0.95, 0.95, 1.05, [0, 0, 0.03], BLACK, 8, 0.03, 2, 0.08), // the skull
-    fur(0.04, 0.85, 0.8, 1.8, [0, -0.028, 0.125], BLACK, 9, 0.02, 1, 0.05), // the muzzle
+    fur(0.04, 0.85, 0.8, 1.8, [0, -0.028, 0.125], WHITE, 9, 0.02, 1, 0.03), // the muzzle, white like a collie's
     fur(0.016, 0.8, 1, 3.4, [0, 0.045, 0.085], WHITE, 10, 0.02, 1, 0.03), // the white blaze down the face
-    fur(0.028, 0.9, 0.7, 1.7, [0, -0.052, 0.14], WHITE, 11, 0.02, 1, 0.03), // the white chin
+    fur(0.02, 0.9, 0.6, 1.5, [0, -0.048, 0.14], WHITE, 11, 0.02, 1, 0.03), // the white chin
     fur(0.017, 1.1, 0.9, 0.9, [0, -0.015, 0.21], NOSE, 12, 0, 1, 0), // the nose
-    fur(0.014, 1, 1, 0.6, [-0.042, 0.025, 0.095], 0x7a4a1a, 13, 0, 1, 0), // amber eyes
-    fur(0.014, 1, 1, 0.6, [0.042, 0.025, 0.095], 0x7a4a1a, 14, 0, 1, 0),
-    fur(0.007, 1, 1, 0.6, [-0.043, 0.025, 0.104], 0x080808, 15, 0, 1, 0), // pupils
-    fur(0.007, 1, 1, 0.6, [0.043, 0.025, 0.104], 0x080808, 16, 0, 1, 0),
+    fur(0.013, 1, 1, 0.45, [-0.04, 0.028, 0.09], 0x3a2412, 13, 0, 1, 0), // small dark eyes, set flush in the skull
+    fur(0.013, 1, 1, 0.45, [0.04, 0.028, 0.09], 0x3a2412, 14, 0, 1, 0),
     fur(0.034, 1.0, 0.7, 0.8, [-0.062, -0.02, 0.05], BLACK, 17, 0.02, 1, 0.05), // cheeks
     fur(0.034, 1.0, 0.7, 0.8, [0.062, -0.02, 0.05], BLACK, 18, 0.02, 1, 0.05),
   ];
@@ -92,11 +91,12 @@ export class DogView {
     this.ground = ground;
     this.time = 0;
     this.barkT = 0;
+    this.gaitPhase = 0; // advances with how fast she moves, so the feet keep up with the ground
     this.root = new THREE.Group();
     this.root.name = 'dog';
     this.body = limb([0, STAND_Y, 0], bodyParts()); // the trunk, which every other part hangs off
     this.root.add(this.body);
-    this.head = limb([0, 0.1, 0.3], headParts());
+    this.head = limb([0, 0.14, 0.33], headParts());
     this.body.add(this.head);
     this.tongue = limb([0, -0.05, 0.17], tongueParts());
     this.head.add(this.tongue);
@@ -130,23 +130,26 @@ export class DogView {
     const d = this.dog;
     this.root.position.set(d.x, d.y, d.z);
     this.root.rotation.y = d.yaw;
+    const stride = { walk: 0.8, trot: 1.1, run: 1.6 }[d.pose]; // m of ground a full cycle of the legs covers
+    if (stride) this.gaitPhase += Math.min(d.speed / stride, { walk: 2, trot: 3, run: 3.6 }[d.pose]) * Math.PI * 2 * dt;
     const tgt = this.targets(d.pose, d.phase, d);
     this.pose ??= tgt; // the first frame goes straight to the pose
     const ease = 1 - Math.exp(-dt * 12);
     for (const k of Object.keys(tgt)) {
       const to = tgt[k];
-      this.pose[k] = typeof to === 'number' ? (this.pose[k] === undefined ? to : this.pose[k] + (to - this.pose[k]) * (dt === 0 ? 1 : ease)) : to;
+      const e = LEG_KEYS.includes(k) ? 1 - Math.exp(-dt * 50) : ease; // the legs swing too fast for the slower easing
+      this.pose[k] = typeof to === 'number' ? (this.pose[k] === undefined ? to : this.pose[k] + (to - this.pose[k]) * (dt === 0 ? 1 : e)) : to;
     }
     this.apply(this.pose, this.time);
   }
 
   /** The joint angles each pose wants this instant (they are eased toward in `update`). Angles in radians, heights in metres. */
   targets(pose, phase, dog) {
-    const gait = pose === 'run' ? 13 : pose === 'trot' ? 9.5 : 6;
-    const swing = pose === 'run' ? 0.95 : pose === 'trot' ? 0.6 : 0.42;
-    const s = Math.sin(phase * gait);
+    const swing = pose === 'run' ? 1.05 : pose === 'trot' ? 0.8 : 0.55;
+    const gp = this.gaitPhase;
+    const s = Math.sin(gp);
     const o = {
-      bodyY: STAND_Y, bodyPitch: 0, headPitch: 0, headYaw: 0, headY: 0.1, headZ: 0.3, headRoll: 0,
+      bodyY: STAND_Y, bodyPitch: 0, headPitch: 0, headYaw: 0, headY: 0.14, headZ: 0.33, headRoll: 0,
       fl: 0, fr: 0, hl: 0, hr: 0, frontLong: 1, hindLong: 1, tongue: 0,
       tail0: -0.3, tail1: 0.15, tail2: 0.15, tail3: 0.3, tailYaw: 0,
     };
@@ -157,25 +160,24 @@ export class DogView {
       o.hl = -s * swing;
       if (pose === 'run') {
         // A gallop's roll: front and back pairs reaching together, the spine arching.
-        const g = Math.sin(phase * gait);
+        const g = s;
         o.fl = o.fr = g * swing;
         o.hl = o.hr = -g * swing * 0.9;
-        o.bodyPitch = -0.1 * Math.cos(phase * gait);
+        o.bodyPitch = -0.1 * Math.cos(gp);
         o.bodyY = STAND_Y - 0.03 + Math.abs(g) * 0.05;
-        o.headPitch = 0.12;
+        o.headPitch = 0.02;
         o.tongue = 1;
       } else {
         o.bodyY = STAND_Y + Math.abs(s) * (pose === 'trot' ? 0.012 : 0.006);
-        o.headPitch = pose === 'trot' ? 0.05 : 0.18;
+        o.headPitch = pose === 'trot' ? -0.05 : 0;
         o.tongue = pose === 'trot' ? 0.6 : 0;
       }
-      o.headY = 0.1;
       // Tail low with a lift at the tip walking, streaming out behind her running.
       o.tail0 = pose === 'run' ? 0.05 : -0.3;
       o.tail1 = pose === 'run' ? 0 : 0.15;
       o.tail2 = pose === 'run' ? 0 : 0.15;
       o.tail3 = pose === 'run' ? 0 : 0.4;
-      o.tailYaw = Math.sin(phase * gait * 0.5) * 0.1;
+      o.tailYaw = Math.sin(gp * 0.5) * 0.1;
     } else if (pose === 'sit' || pose === 'ride') {
       // Sat up on her haunches, forelegs straight down, hind legs folded forward along the ground, head up and looking about.
       o.bodyPitch = SIT_PITCH;
@@ -200,8 +202,8 @@ export class DogView {
     } else if (pose === 'sniff') {
       o.bodyPitch = 0.12;
       o.headPitch = 1.0;
-      o.headY = 0.04;
-      o.headZ = 0.34;
+      o.headY = 0.08;
+      o.headZ = 0.37;
       o.headYaw = Math.sin(phase * 1.7) * 0.25;
       o.fl = o.fr = -0.1;
       o.tail0 = 0;
@@ -217,7 +219,7 @@ export class DogView {
     } else {
       // Stood about: head turning to look, tail swinging slowly.
       o.headYaw = Math.sin(phase * 0.6) * 0.45 * Math.max(0, Math.sin(phase * 0.23));
-      o.headPitch = 0.05;
+      o.headPitch = -0.05;
       o.tailYaw = Math.sin(phase * 2.2) * 0.3;
     }
     if (this.barkT > 0) {

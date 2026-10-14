@@ -16,10 +16,10 @@ export const DEFAULT_DOG_PARAMS = {
   trotSpeed: 3.2, // m/s following you at your heels
   runSpeed: 7.5, // m/s catching you up, chasing
   sprintSpeed: 13, // m/s when she is a long way behind a quad
-  followMin: 2.5, // m she keeps within you when you are walking
-  followMax: 8, // m from you before she comes after you
+  followMin: 4, // m from you at which she stops coming after you and goes back to her own business
+  followMax: 12, // m from you before she comes after you
   sprintFrom: 22, // m behind you at which she runs flat out
-  wanderMax: 6, // m furthest she mooches from you while you stand
+  wanderMax: 10, // m furthest she mooches from you while you are about
   sitDelay: 3, // s she stands before she sits
   sitMin: 6, // s sat or stood about, at least
   sitMax: 20, // s sat or stood about, at most
@@ -148,7 +148,7 @@ export class Dog {
   }
 
   get panting() {
-    return ['run', 'trot'].includes(this.pose) && this.speed > 2;
+    return this.pose === 'run' && this.speed > 4;
   }
 
   /** Puts her on the rack at once (the debug panel's). */
@@ -330,14 +330,13 @@ export class Dog {
     }
 
     // Following you, or mooching about while you stand.
-    const moving = o.speed > 1.2;
-    const comeAfter = d > (moving ? p.followMin * 1.6 : p.followMax);
-    if (comeAfter || (this.mode === 'follow' && d > p.followMin * (moving ? 1 : 1.5))) {
+    // Only when you have got well away from her: otherwise she has her own business (a sit, a sniff, a mooch about).
+    if (d > p.followMax || (this.mode === 'follow' && d > p.followMin)) {
       this.mode = 'follow';
       const far = d > p.sprintFrom;
       const speed = far ? p.sprintSpeed : d > p.followMax * 1.5 || o.speed > p.trotSpeed ? p.runSpeed : p.trotSpeed;
       // Heads for a point just behind you rather than the middle of you.
-      const back = Math.min(p.followMin, d);
+      const back = Math.min(p.followMin * 0.7, d);
       const gx = o.x - ((o.x - this.x) / (d || 1)) * back;
       const gz = o.z - ((o.z - this.z) / (d || 1)) * back;
       this.walkTo({ x: gx, z: gz }, speed, dt, 12);

@@ -23,6 +23,17 @@ describe('the farm dog', () => {
     expect(Math.hypot(dog.x - 0, dog.z - 60)).toBeLessThan(DEFAULT_DOG_PARAMS.followMax * 2);
   });
 
+  it('keeps to her own business while you are within reach, and only comes after you once you are well away', () => {
+    const dog = make({ chaseRate: 0, bootsRate: 0 });
+    dog.place(0, 0);
+    run(dog, 1, ctx({ owner: { x: 0, z: 9, speed: 1.5, yaw: 0, riding: false } }));
+    expect(dog.mode).not.toBe('follow');
+    run(dog, 1, ctx({ owner: { x: 0, z: 14, speed: 1.5, yaw: 0, riding: false } }));
+    expect(dog.mode).toBe('follow');
+    run(dog, 8, ctx({ owner: { x: 0, z: 14, speed: 0, yaw: 0, riding: false } }));
+    expect(dog.mode).not.toBe('follow');
+  });
+
   it('runs flat out to catch up with a quad', () => {
     const dog = make({ chaseRate: 0, bootsRate: 0 });
     dog.place(0, 0);

@@ -4,7 +4,7 @@
 
 import { WildlifeAudio } from './wildlifeAudio.js';
 
-const PANT_WITHIN = 8; // m: further off than this a pant is not worth making
+const PANT_WITHIN = 5; // m: further off than this a pant is not worth making
 const PANT_BURST = 1.2; // s per burst
 
 export class DogAudio extends WildlifeAudio {
@@ -86,7 +86,7 @@ export class DogAudio extends WildlifeAudio {
 
   /** One burst of panting: soft noise chopped at about five a second. */
   pantBurst({ x, y, z }) {
-    const o = this.out(x, y, z, 0.3);
+    const o = this.out(x, y, z, 0.1);
     if (!o) return;
     const { ctx, node } = o;
     const t = ctx.currentTime;
