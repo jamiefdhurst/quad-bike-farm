@@ -66,7 +66,7 @@
     "handlebars": [0,1,0.46],
     "gripRight": [-0.318,1.068,0.418],
     "gripLeft": [0.318,1.068,0.418],
-    "dash": [0,1.115,0.51],
+    "dash": [0,1.05,0.5],
     "riderHands": [0,1,0.46],
     "riderAnchor": [0,0.9,-0.18],
     "pillionAnchor": [0,1,-0.6],

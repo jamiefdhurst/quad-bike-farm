@@ -1499,7 +1499,9 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
       for (const s of [-1, 1]) {
         const e = style === 'grizzly' ? 0.225 : 0.2; // the Grizzly's black panels run 25 mm into the blue walls at the decks' ends, so no crack shows between them
         const top = [e, 0.17, 0.12, 0.05, -0.05, -0.12, -0.17, -e].map((z) => [z, bodyTopY(z)]);
-        const panel = add(sideSlab([...top, [-e, 0.36], [-0.16, 0.41], [-0.1, 0.46], [0, 0.5], [0.1, 0.46], [0.16, 0.41], [e, 0.36]], 0.022, 0.006), style === 'grizzly' ? MAT.plastic : paint, root, 'sidePanel');
+        // The Bayou's is a short strip under the seat, its ends down to the wing walls, so the crankcase shows below it.
+        const bottom = bayou ? [[-e, 0.36], [-0.19, 0.5], [-0.14, 0.6], [-0.08, 0.64], [0.08, 0.64], [0.14, 0.6], [0.19, 0.5], [e, 0.36]] : [[-e, 0.36], [-0.16, 0.41], [-0.1, 0.46], [0, 0.5], [0.1, 0.46], [0.16, 0.41], [e, 0.36]];
+        const panel = add(sideSlab([...top, ...bottom], 0.022, 0.006), style === 'grizzly' ? MAT.plastic : paint, root, 'sidePanel');
         panel.position.set(s * 0.255, 0, 0);
       }
       add(topCoverGeometry(bayou ? BAYOU_DECK : style === 'grizzly' ? GRIZZLY_DECK : DECK), style === 'grizzly' ? MAT.plastic : paint, root, 'bodyTop'); // closes the top of the body between the decks, over the frame and the wing walls' fillets
@@ -1605,8 +1607,8 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     addBayouRackBlocks(root, MAT);
     for (const s of [-1, 1]) {
       for (const z of [0.55, 0.78]) tube([s * 0.41, F.y, z], [s * 0.41, 0.7, z], 0.011, rackMat, root, 6);
-      tube([s * 0.41, R.y, -0.84], [s * 0.41, 0.75, -0.84], 0.011, rackMat, root, 6);
-      tube([s * 0.41, R.y, -1.0], [s * 0.41, 0.76, -0.86], 0.011, rackMat, root, 6);
+      tube([s * 0.41, R.y, -0.8], [s * 0.41, 0.75, -0.8], 0.011, rackMat, root, 6);
+      tube([s * 0.41, R.y, -1.0], [s * 0.41, 0.76, -0.82], 0.011, rackMat, root, 6);
     }
   } else if (style === 'utility2') {
     rack(root, 0.48, 0.98, 0.84, 6, 0.77, 0.06);

@@ -49,6 +49,7 @@ export function deckRows(D, spec) {
     }
     half -= D.cornerR * (1 - Math.sqrt(1 - r.g * r.g));
     r.half = half;
+    r.z += dir * (spec.lean ?? 0) * r.g; // a face that leans: out at the bottom, in at the top (`lean` metres over the whole face)
   }
   return rows;
 }

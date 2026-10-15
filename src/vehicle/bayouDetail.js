@@ -5,7 +5,7 @@ import { bentTube, rod } from './quadGeometry.js';
 import { boltsMesh } from './detail/fixings.js';
 import { cableGeometry } from './detail/cables.js';
 import { decalMesh, MAKER_FOR } from './detail/decals.js';
-import { BAYOU_DECK, BAYOU_FACE, BAYOU_CAGE, BAYOU_RACKS, cagePieces } from './bayouBody.js';
+import { BAYOU_DECK, BAYOU_FACE, BAYOU_CAGE, BAYOU_RACKS, cagePieces, rearFaceAt } from './bayouBody.js';
 
 // The green quad's finer detail (TODO 90), from the shared kit and the photos in `.scratch/quads/ridgeback-quad/`: the grey nose cage
 // round two square headlights, the slatted grille and its badge, the winch's housing and roller fairlead, the tail lamp panel, the tow
@@ -70,6 +70,12 @@ export function addBayouFront(root, MAT, lensMat, grey = cageMaterial()) {
     rbox(face.lampW, face.lampH, 0.012, 0.006, MAT.reflector, x, face.lampY, face.z + 0.03, root, undefined);
     const lens = rbox(face.lampW, face.lampH, 0.012, 0.008, lensMat, x, face.lampY, face.z + 0.036, root, s > 0 ? 'headlightLeft' : 'headlightRight');
     lens.scale.z = 0.8;
+    // Each lamp hangs from the cage by two short brackets, up to the sill under it and the top rail over it, and from the frame by a stay.
+    for (const dx of [-0.045, 0.045]) {
+      tube([x + dx, C.midY, C.zTop + 0.005], [x + dx, face.lampY - face.lampH / 2 - 0.012, face.z + 0.005], 0.007, grey, root, 6).name = 'lampBracket';
+      tube([x + dx, C.topY, C.zTop], [x + dx, face.lampY + face.lampH / 2 + 0.012, face.z + 0.005], 0.007, grey, root, 6).name = 'lampBracket';
+    }
+    tube([x, face.lampY - 0.03, face.z - 0.02], [x * 0.9, C.frameY + 0.02, C.frameZ + 0.03], 0.009, MAT.frame, root, 6).name = 'lampStay';
   }
 
   // The grille: a dark back, a black frame and tall slats, standing out of the face between the lamps.
@@ -86,6 +92,13 @@ export function addBayouFront(root, MAT, lensMat, grey = cageMaterial()) {
   const n = 13;
   for (let i = 0; i < n; i++) slats.push(box(0.0075, gh - 0.012, 0.022, -gw / 2 + 0.012 + ((gw - 0.024) * (i + 0.5)) / n, 0, 0.011));
   mesh(mergeGeometries(slats), MAT.plastic, g, 'grilleSlats');
+  // The grille is a panel on its own frame: two rods from its top corners up to the cage's top rail, two stays back to the cradle, and a
+  // black radiator shroud behind it, the only thing that stops you seeing straight through the nose.
+  for (const s of [-1, 1]) {
+    tube([s * gw / 2, face.lampY + gh / 2, face.z + 0.01], [s * gw / 2, C.topY, C.zTop], 0.007, grey, root, 6).name = 'grilleHanger';
+    tube([s * gw / 2, face.lampY - gh / 2, face.z], [s * gw / 2 * 0.8, C.frameY + 0.02, C.frameZ + 0.03], 0.008, MAT.frame, root, 6).name = 'grilleStay';
+  }
+  rbox(0.24, 0.15, 0.012, 0.004, MAT.plastic, 0, face.lampY, face.z - 0.03, root, 'radiatorShroud');
   // The maker's name across the slats, where the real one's is, on a plain black strip so it reads.
   const badge = decalMesh('badge', { maker: MAKER_FOR.green }, { width: 0.1, name: 'badge' });
   badge.position.set(0, face.lampY, face.z + 0.0285);
@@ -93,8 +106,7 @@ export function addBayouFront(root, MAT, lensMat, grey = cageMaterial()) {
 }
 
 /**
- * The winch's housing: a steel cover over the drum and its rope (the open front shows the rope on the drum), a back plate bolted to the
- * cage's lower rail, and a roller fairlead where the rope goes out. The drum, rope, motor and hook are the model's own (`winch`), at
+ * The winch's housing: a steel cover over the drum and its rope (the open front shows the rope on the drum), two mounts down to the frame, and a roller fairlead where the rope goes out. The drum, rope, motor and hook are the model's own (`winch`), at
  * the fixed points; this only closes them in.
  */
 export function addWinchHousing(root, MAT, x, y, z, fairleadZ) {
@@ -104,7 +116,7 @@ export function addWinchHousing(root, MAT, x, y, z, fairleadZ) {
     rbox(0.012, 0.11, 0.15, 0.004, MAT.frame, x - 0.17, y, z + 0.02, root, 'winchSideLeft'), // beyond the gearbox
   ];
   for (const c of cover) c.userData.keep = false;
-  rbox(0.4, 0.1, 0.012, 0.004, MAT.frame, x + 0.015, y, z - 0.065, root, 'winchBack'); // against the face
+  for (const s of [-1, 1]) tube([x + s * 0.2, y - 0.02, z + 0.02], [x + s * 0.2, 0.4, 0.8], 0.011, MAT.frame, root, 6).name = 'winchMount'; // the housing's sides stand on the frame
   // The roller fairlead: a plate with four rollers round the opening, in front of the cover.
   rbox(0.13, 0.07, 0.012, 0.004, MAT.frame, x, y - 0.01, fairleadZ + 0.012, root, 'fairleadPlate');
   const roller = (w, h, rx, ry) => {
@@ -128,12 +140,22 @@ export function addWinchHousing(root, MAT, x, y, z, fairleadZ) {
  */
 export function addBayouRear(root, MAT) {
   const z = BAYOU_DECK.rear.zf;
-  rbox(0.3, 0.1, 0.06, 0.014, MAT.plastic, 0, 0.66, z - 0.02, root, 'tailPanel');
-  rbox(0.16, 0.05, 0.016, 0.008, MAT.tail, 0, 0.665, z - 0.056, root, 'tailLamp');
   const reflector = new THREE.MeshStandardMaterial({ color: 0x8a1410, roughness: 0.15, metalness: 0.3 });
-  for (const s of [-1, 1]) rbox(0.05, 0.026, 0.01, 0.005, reflector, s * 0.105, 0.69, z - 0.05, root, 'tailReflector');
-  tube([-0.3, 0.46, z - 0.06], [0.3, 0.46, z - 0.06], 0.018, MAT.frame, root, 8).name = 'rearBeam';
-  for (const s of [-1, 1]) tube([s * 0.3, 0.46, z - 0.06], [s * 0.3, 0.62, z + 0.0], 0.014, MAT.frame, root, 6);
+  // Two tail lamps, one each side, lying on the leaning face: each a black housing with the red lens on it and a reflector under it.
+  const lampY = 0.665;
+  for (const s of [-1, 1]) {
+    const f = rearFaceAt(lampY, 0.19);
+    const g = new THREE.Group();
+    g.name = 'tailLampGroup';
+    g.position.set(s * 0.19, lampY, f.z);
+    g.rotation.set(f.tilt, Math.PI, 0); // turned back, then up to lie on the face
+    root.add(g);
+    rbox(0.115, 0.075, 0.03, 0.012, MAT.plastic, 0, 0, 0.004, g, 'tailHousing');
+    rbox(0.09, 0.05, 0.012, 0.008, MAT.tail, 0, 0, 0.022, g, 'tailLamp');
+    rbox(0.04, 0.02, 0.008, 0.004, reflector, 0, -0.058, 0.01, g, 'tailReflector');
+  }
+  tube([-0.3, 0.5, z - 0.06], [0.3, 0.5, z - 0.06], 0.018, MAT.frame, root, 8).name = 'rearBeam';
+  for (const s of [-1, 1]) tube([s * 0.3, 0.5, z - 0.06], [s * 0.3, 0.62, z + 0.0], 0.014, MAT.frame, root, 6);
   // The hitch: a plate down from the beam, braces up to the frame, a drawbar with its pin.
   rbox(0.14, 0.2, 0.016, 0.004, MAT.frame, 0, 0.38, z - 0.075, root, 'hitchPlate');
   for (const s of [-1, 1]) tube([s * 0.19, 0.62, z + 0.04], [s * 0.065, 0.46, z - 0.07], 0.011, MAT.frame, root, 6);
@@ -169,12 +191,12 @@ export function addBayouDecals(root) {
     name.position.set(s * 0.1935, 0.82, 0.3); // the tank cover's side, a millimetre proud
     name.rotation.y = s * (Math.PI / 2);
     root.add(name);
-    const nick = decalMesh('stripes', { colours: [], text: 'Farmhand', ink: '#e8efe2' }, { width: 0.34, name: 'nickDecal' });
-    nick.position.set(s * 0.2785, 0.7, 0.02);
+    const nick = decalMesh('stripes', { colours: [], text: 'Farmhand', ink: '#e8efe2' }, { width: 0.26, name: 'nickDecal' });
+    nick.position.set(s * 0.2785, 0.69, 0.06);
     nick.rotation.y = s * (Math.PI / 2);
     root.add(nick);
-    const four = decalMesh('stripes', { colours: [], text: '4x4', ink: '#b79cf0' }, { width: 0.3, name: 'fourDecal' });
-    four.position.set(s * 0.2785, 0.6, -0.04);
+    const four = decalMesh('stripes', { colours: [], text: '4x4', ink: '#b79cf0' }, { width: 0.14, name: 'fourDecal' });
+    four.position.set(s * 0.2785, 0.69, -0.15);
     four.rotation.y = s * (Math.PI / 2);
     root.add(four);
     const warn = decalMesh('warning', {}, { width: 0.08, name: 'warningDecal' });
@@ -187,8 +209,7 @@ export function addBayouDecals(root) {
 
 /**
  * Age: the front left mudguard has cracked across its flare and is held with three black cable ties (a dark crack along the flare, a tie
- * either side of it and one across), and oil weeps from the engine cases (a dark wet streak under the case's lower seam on the left,
- * two runs down from it). `at` says where the left front flare's trailing edge is.
+ * either side of it and one across), and oil weeps from the left case cover (a wet amber streak along its seam and three runs down from it).
  */
 export function addBayouWear(root, MAT) {
   const crack = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.9, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
@@ -210,11 +231,13 @@ export function addBayouWear(root, MAT) {
     rbox(0.009, 0.009, 0.014, 0.003, tieMat, x + 0.002, y, z0 + 0.034, root, 'cableTieHead');
   }
   // Oil weeping on the left case: a wet dark streak low on the crankcase, running down.
-  const oil = new THREE.MeshStandardMaterial({ color: 0x1e1308, roughness: 0.18, metalness: 0.1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
-  const streak = (y, z, h, w) => rbox(0.002, h, w, 0.0008, oil, 0.1515, y, z, root, 'oilWeep');
-  streak(0.352, 0.03, 0.045, 0.1);
-  streak(0.318, 0.065, 0.045, 0.012);
-  streak(0.322, -0.02, 0.07, 0.01);
+  const oil = new THREE.MeshStandardMaterial({ color: 0x7a5420, roughness: 0.12, metalness: 0.3, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  // The left case cover (the engine's dark loft at x 0.145 to 0.235) is what shows below the short side panel, so the weeping runs down its face.
+  const streak = (y, z, h, w) => rbox(0.002, h, w, 0.0008, oil, 0.2365, y, z, root, 'oilWeep');
+  streak(0.455, 0.0, 0.02, 0.2); // along the seam between the case halves
+  streak(0.4, 0.06, 0.09, 0.016);
+  streak(0.41, -0.04, 0.07, 0.014);
+  streak(0.42, -0.1, 0.05, 0.012);
 }
 
 /**
@@ -223,10 +246,10 @@ export function addBayouWear(root, MAT) {
  * and down to the column's shroud, never through the pod.
  */
 export function addBayouBarParts(bars, MAT) {
-  mesh(bentTube([[0, -0.03, -0.012], [0, 0.03, -0.004], [0, 0.078, 0.048], [0, 0.092, 0.07]], 0.0125, { bend: 0.03, steps: 5 }), MAT.frame, bars, 'speedoBracket');
+  mesh(bentTube([[0, -0.03, -0.012], [0, -0.005, 0.015], [0.0, 0.026, 0.056]], 0.0125, { bend: 0.03, steps: 5 }), MAT.frame, bars, 'speedoBracket');
   rbox(0.07, 0.034, 0.05, 0.01, MAT.frame, 0, -0.0345, -0.012, bars, 'barClamp');
   const cableGeo = (anchors, r) => cableGeometry(anchors, r, { sag: 0.05 });
   mesh(cableGeo([[0.262, 0.05, -0.012], [0.21, 0.045, 0.035], [0.1, 0.0, 0.06], [0.05, -0.05, 0.04], [0.04, -0.12, 0.01]], 0.0042), MAT.rubber, bars, 'brakeCable');
   mesh(cableGeo([[-0.25, 0.055, -0.04], [-0.15, 0.015, -0.04], [-0.07, -0.025, -0.025], [-0.04, -0.1, -0.01]], 0.0032), MAT.rubber, bars, 'throttleCable');
-  mesh(cableGeo([[0.012, 0.085, 0.066], [0.02, 0.03, 0.07], [0.015, -0.05, 0.045], [0.0, -0.12, 0.015]], 0.0045), MAT.rubber, bars, 'speedoCable');
+  mesh(cableGeo([[0.012, 0.035, 0.066], [0.02, -0.01, 0.07], [0.015, -0.06, 0.045], [0.0, -0.12, 0.015]], 0.0045), MAT.rubber, bars, 'speedoCable');
 }

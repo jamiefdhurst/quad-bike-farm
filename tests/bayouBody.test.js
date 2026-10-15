@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { BAYOU_DECK, BAYOU_RACKS, BAYOU_FACE, BAYOU_CAGE, cagePieces } from '../src/vehicle/bayouBody.js';
+import { BAYOU_DECK, BAYOU_RACKS, BAYOU_FACE, BAYOU_CAGE, cagePieces, rearFaceAt } from '../src/vehicle/bayouBody.js';
 import { deckRows, deckY } from '../src/vehicle/foremanDeck.js';
 import { WHEELS } from '../src/vehicle/quadPhysics.js';
 import { QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
@@ -31,7 +31,7 @@ describe('the Bayou body', () => {
     const [lo, hi] = [Math.min(BAYOU_RACKS.rear.z0, BAYOU_RACKS.rear.z1), Math.max(BAYOU_RACKS.rear.z0, BAYOU_RACKS.rear.z1)];
     expect(-0.93).toBeGreaterThan(lo);
     expect(-0.93).toBeLessThan(hi);
-    for (const [which, rack, zs] of [['front', BAYOU_RACKS.front, [0.55, 0.78]], ['rear', BAYOU_RACKS.rear, [-0.84]]]) {
+    for (const [which, rack, zs] of [['front', BAYOU_RACKS.front, [0.55, 0.78]], ['rear', BAYOU_RACKS.rear, [-0.8]]]) {
       const spec = BAYOU_DECK[which];
       const rows = deckRows(BAYOU_DECK, spec);
       for (const z of zs) {
@@ -43,12 +43,29 @@ describe('the Bayou body', () => {
     }
   });
 
+  it('has a back that leans, out at the bottom and in at the top, and tail lamps that lie on it', () => {
+    expect(BAYOU_DECK.rear.lean).toBeGreaterThan(0.04);
+    const high = rearFaceAt(0.7, 0.19);
+    const low = rearFaceAt(0.62, 0.19);
+    expect(low.z).toBeLessThan(high.z - 0.01); // further back lower down
+    expect(low.tilt).toBeGreaterThan(0.3); // a face tilted by 20 degrees or more from upright
+    expect(rearFaceAt(0.665, 0.19).tilt).toBeLessThan(1.0);
+  });
+
+  it('stops the front body high, leaving the lamps and grille to their own frame ahead of it', () => {
+    expect(BAYOU_DECK.front.zf - BAYOU_DECK.front.top).toBeDefined();
+    expect(BAYOU_DECK.front.top - BAYOU_DECK.front.faceH).toBeGreaterThan(0.62); // the face's lower lip is high
+    expect(BAYOU_FACE.z).toBeGreaterThan(BAYOU_DECK.front.zf + 0.08); // the lamps stand at least 8 cm out from the body
+    expect(BAYOU_FACE.lampY + BAYOU_FACE.lampH / 2).toBeLessThan(BAYOU_DECK.front.top - BAYOU_DECK.front.faceH + 0.0); // and sit below its lip
+  });
+
   it('is a body style the game builds, and the green names it', () => {
     expect(BODY_STYLES).toContain('bayou');
     const green = QUAD_SPECS.find((s) => s.id === 'green');
     expect(green.style).toBe('bayou');
     expect(green.dashStyle).toBe('bayou');
     expect(green.chokeStyle).toBe('slide'); // a slider on the switch pod, as on the real one and the red
+    expect(green.barLights).toBe(true); // P works its lights rocker
   });
 });
 
@@ -103,7 +120,7 @@ describe('the green quad’s model', () => {
 
   it('has a choke slider on its pod, a V of bars through the grips’ fixed points, and its parts by name', () => {
     const m = green.model;
-    for (const n of ['controlPod', 'chokeLever', 'stopRocker', 'startButton', 'thumbThrottle', 'parkBrakeLever', 'winchHook', 'winchFairlead', 'hitchPin', 'drawbarHole', 'headlightLeft', 'headlightRight', 'cageLoop', 'speedoBracket']) {
+    for (const n of ['controlPod', 'chokeLever', 'stopRocker', 'startButton', 'thumbThrottle', 'parkBrakeLever', 'winchHook', 'winchFairlead', 'hitchPin', 'drawbarHole', 'lightsRocker', 'headlightLeft', 'headlightRight', 'cageLoop', 'speedoBracket']) {
       expect(m.getObjectByName(n), n).toBeTruthy();
     }
     expect(m.getObjectByName('chokeLever').userData.baseX).toBeTypeOf('number');
@@ -116,6 +133,14 @@ describe('the green quad’s model', () => {
     const clamp = bars.getObjectByName('barClamp');
     expect(clamp.position.y).toBeLessThan(grip.position.y - 0.08); // the middle is 10 cm below the grips
     expect(bars.getObjectByName('speedoBracket')).toBeTruthy();
+  });
+
+  it('has two tail lamps, one each side', () => {
+    const lamps = [];
+    green.model.traverse((o) => o.name === 'tailLamp' && lamps.push(o));
+    expect(lamps).toHaveLength(2);
+    const xs = lamps.map((o) => green.model.worldToLocal(o.getWorldPosition(new (o.position.constructor)())).x);
+    expect(xs[0] * xs[1]).toBeLessThan(0);
   });
 
   it('puts the pin through the drawbar’s hole', () => {

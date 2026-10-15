@@ -241,6 +241,7 @@ export const QUAD_SPECS = [
     dashStyle: 'bayou',
     reverseStyle: 'knee', // where the reverse is and what it takes to use it (controls.js)
     chokeStyle: 'slide', // a slider on the left switch housing, as on the real one and the red
+    barLights: true, // a lights rocker on the housing (P cycles off, dipped, main beam; lightSwitch.js), starting dipped
     tapStyle: 'rearLeft', // where the fuel tap sits
     hoursRange: [1800, 3500], // engine hours showing when the game starts
     odoRange: [4500, 8750], // odometer miles showing when the game starts

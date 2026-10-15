@@ -430,18 +430,18 @@ function buildBayou() {
     });
     // The odometer's window, at the top, and the unit names under the needle's hub.
     drum(ctx, cx - 13.8, 28, L.odo, 7);
-    text(ctx, 'km/h', cx, 63, 3.8, '#2a8fd6', { align: 'center' });
-    text(ctx, 'mph', cx, 68.5, 5, '#f2f2ef', { align: 'center', weight: 'bold' });
-    makerBadge(ctx, 'ridgeback', cx, 79, 8, 34);
+    text(ctx, 'km/h', cx, 59.5, 3.8, '#2a8fd6', { align: 'center' });
+    text(ctx, 'mph', cx, 65, 5, '#f2f2ef', { align: 'center', weight: 'bold' });
+    makerBadge(ctx, 'ridgeback', cx, 72, 7, 26);
     // The needle, white, and a grey hub on its pivot; then the lamps and the key in the empty sector under the dial.
     needle(ctx, cx, cy, 41, bayouNeedleAngle(L.mph), '#f4f4ee', 1.5);
     ctx.fillStyle = '#4a4c4f';
     ctx.beginPath();
     ctx.arc(cx, cy, 4.2, 0, Math.PI * 2);
     ctx.fill();
-    glyphLetter(ctx, cx - 27, 83, LAMP.green, 'N', L.lamps.n, 8);
-    glyphLetter(ctx, cx + 27, 83, LAMP.amber, 'R', L.lamps.r, 8);
-    keySwitch(ctx, cx, 90, s.keyOn);
+    glyphLetter(ctx, cx - 21, 80, LAMP.green, 'N', L.lamps.n, 7); // in from the bezel, which is at 46 mm out
+    glyphLetter(ctx, cx + 21, 80, LAMP.amber, 'R', L.lamps.r, 7);
+    keySwitch(ctx, cx, 87, s.keyOn);
   }
 
   return {
@@ -1177,7 +1177,7 @@ export const DASH_PLACE = {
   foreman: { pos: [0, 0.1, 0.02], tilt: 0.75 },
   grizzly: { pos: [0, 0.1, 0.02], tilt: 0.75 },
   kodiak: { pos: [0, 0.1, 0.02], tilt: 0.75 },
-  bayou: { pos: [0, 0.115, 0.05], tilt: 0.85 },
+  bayou: { pos: [0, 0.05, 0.04], tilt: 0.85 }, // low, just over the middle of the bars
   blaster: { pos: [0, 0.08, 0.04], tilt: 0.45 }, // sat down on the bar clamp, not floating over it
   quadracer: { pos: [0.225, 0.085, -0.035], tilt: 0.9 },
   kidsKey: { pos: [0, 0.075, 0.0], tilt: 0.9 },
