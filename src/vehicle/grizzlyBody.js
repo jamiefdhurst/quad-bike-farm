@@ -29,7 +29,7 @@ export const GRIZZLY_RACKS = {
 export const GRIZZLY_BUMPER = {
   y: 0.5, // the cross bar's height
   z: 1.03, // and how far forward it stands
-  upright: 0.21, // the uprights' x, under the rack's two black mounting blocks
+  upright: 0.17, // the uprights' x, under the rack's two black mounting blocks
   endX: 0.4, // where the cross bar ends, in the black end blocks
   rackTop: 0.835, // the rack's front rail, where the uprights begin
   rackZ: 0.985,
