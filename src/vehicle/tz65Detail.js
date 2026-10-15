@@ -180,6 +180,9 @@ export function addTzBody(root, MAT, paint, seatMat) {
     if (s < 0) board.scale.x = -1;
     const Rd = TZ_RADIATOR;
     rbox(Rd.w, Rd.h, Rd.d, 0.008, MAT.plastic, s * Rd.x, Rd.y, Rd.z, root, 'radiatorCover');
+    // The core behind the cover reaches in to the barrel, and two stays hold the cover's top to the frame's spar, so it is not hanging in the air.
+    rbox(Rd.x - 0.045, Rd.h - 0.02, Rd.d - 0.02, 0.01, MAT.engineDark, s * (Rd.x + 0.045) / 2, Rd.y, Rd.z, root, 'radiatorCore');
+    for (const dz of [-0.05, 0.05]) tube([s * 0.108, Rd.y + Rd.h / 2 - 0.01, Rd.z + dz], [s * TZ_FRAME.x, 0.655 + dz * 0.3, Rd.z + dz], 0.006, MAT.steel, root, 5);
     for (let i = 0; i < 4; i++) rbox(0.008, 0.01, Rd.d - 0.04, 0.003, MAT.hole, s * (Rd.x + Rd.w / 2 + 0.002), Rd.y - 0.045 + i * 0.03, Rd.z, root);
   }
   mesh(loftGeometry(TZ_TANK.stations, { exponent: 3 }), MAT.plastic, root, 'tank');
