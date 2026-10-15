@@ -20,6 +20,9 @@ import { treadTyre } from './detail/tread.js';
 import { buildLeftPod, buildBrakeLever, buildDriveSwitch, buildThumbThrottle, poseBarPod } from './foremanControls.js';
 import { addRackDetail, addGrille, addTreadPlates, addShiftLever, addBarCables, addDrumBrake, seatTape, addDecals } from './foremanDetail.js';
 import { DECK, deckGeometry, flareGeometry, bulkheadGeometry, topCoverGeometry, bodyTopY } from './foremanDeck.js';
+import { GRIZZLY_DECK, GRIZZLY_RACKS } from './grizzlyBody.js';
+import { buildGrizzlyPod } from './grizzlyControls.js';
+import { addGrizzlyFront, addGrizzlyRear, addGrizzlyDecals, addFrontBrake, addGrizzlyRackBlocks, GRIZZLY_FACE } from './grizzlyDetail.js';
 
 // Farm quad built from procedural parts. One group with named parts so it can
 // be replaced by a real model later without touching the code that drives it:
@@ -82,6 +85,16 @@ const STYLE = {
     rimOpts: { spokes: true },
     rimR: 0.15,
     spring: new THREE.MeshStandardMaterial({ color: 0x2a2c2f, roughness: 0.4, metalness: 0.5 }),
+    bars: MAT.frame,
+    rear: 'arms',
+    fwd: true,
+  },
+  // The Grizzly's: independent at both ends, silver steel wheels with five slots, black springs, black steel bars.
+  grizzly: {
+    rim: new THREE.MeshStandardMaterial({ color: 0xbfc2c5, roughness: 0.33, metalness: 0.75, side: THREE.DoubleSide }),
+    rimOpts: { holes: 5 },
+    rimR: 0.15,
+    spring: new THREE.MeshStandardMaterial({ color: 0x1b1c1e, roughness: 0.4, metalness: 0.5 }),
     bars: MAT.frame,
     rear: 'arms',
     fwd: true,
@@ -185,6 +198,7 @@ function buildWheel(w, width, style, cfg) {
   add(rim.nuts, MAT.chrome, spin);
 
   if (style === 'utility' && !w.front) addDrumBrake(wheel, spin, s, MAT); // the Foreman's rear drum brakes, with the axle's inside showing
+  if (style === 'grizzly' && w.front) addFrontBrake(wheel, spin, s); // the Grizzly's front discs and calipers
   // Hub and brake drum, inboard, turning with the steering but not the wheel.
   const hub = add(cached('hub', () => new THREE.CylinderGeometry(0.07, 0.07, 0.07, 16).rotateZ(Math.PI / 2)), MAT.engineDark, wheel);
   hub.position.x = -s * (width / 2 - 0.05);
@@ -383,10 +397,11 @@ export function poseSuspension(quad, wheelY) {
 
 // Handlebars -----------------------------------------------------------------
 
-function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = null) {
+function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = null, podStyle = null) {
   const bars = new THREE.Group();
   bars.name = 'handlebars';
   bars.userData.keep = true;
+  const kit = chokeStyle === 'slide' || podStyle === 'grizzly'; // the red's and blue's levers, drive switch and thumb throttle (foremanControls.js)
 
   // Bar with a slight sweep back towards the rider, in a clamp on a riser.
   pipe([[0.43, 0.072, -0.07], [0.2, 0.06, -0.012], [-0.2, 0.06, -0.012], [-0.43, 0.072, -0.07]], 0.011, cfg.bars, bars, { bend: 0.07, steps: 5 });
@@ -398,7 +413,7 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
     const b = new THREE.Vector3(s * 0.433, 0.0725, -0.07);
     grip.position.copy(a);
     grip.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.sub(a).normalize());
-    if (chokeStyle === 'slide') {
+    if (kit) {
       buildBrakeLever(bars, s, MAT); // the Foreman's: a tapered lever with a ball end, and a latch on the left one for the parking brake
       continue;
     }
@@ -465,11 +480,26 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
   } else {
     bars.userData.chokeElsewhere = true; // buildQuadModel fits it under the tank and parents this empty group there
   }
+  if (podStyle === 'grizzly') {
+    // The Grizzly's pod (grizzlyControls.js): lights, engine stop and start, face to the rider; its choke stays on the tank.
+    const pod = buildGrizzlyPod(MAT);
+    pod.position.set(0.176, 0.048, -0.05);
+    pod.rotation.set(0.6, Math.PI, 0);
+    bars.add(pod);
+  }
   bars.userData.chokeGroup = choke;
 
   // The 2WD / 4WD rocker on a little housing inboard of the right grip (driveMode.js), and on the blue a red diff lock button beside it.
-  if (driveSwitch && chokeStyle === 'slide') {
+  if (driveSwitch && kit) {
     buildDriveSwitch(bars, MAT);
+    if (driveSwitch.lock) {
+      // The blue's red diff lock button, in the gap between the drive switch and the thumb throttle.
+      rbox(0.03, 0.02, 0.03, 0.006, MAT.plastic, -0.245, 0.064, -0.03, bars, 'diffLockHousing');
+      const button = add(new THREE.CylinderGeometry(0.009, 0.009, 0.012, 12), new THREE.MeshStandardMaterial({ color: 0xc8261e, roughness: 0.5 }), bars, 'diffLockButton');
+      button.position.set(-0.245, 0.078, -0.03);
+      button.userData.baseY = button.position.y;
+      button.userData.keep = true;
+    }
   } else if (driveSwitch) {
     rbox(0.04, 0.026, 0.044, 0.008, MAT.plastic, -0.19, 0.068, -0.03, bars, 'driveSwitchHousing');
     const rocker = new THREE.Group();
@@ -488,7 +518,7 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
   }
 
   // Thumb throttle and its housing on the right.
-  if (chokeStyle === 'slide') buildThumbThrottle(bars, MAT);
+  if (kit) buildThumbThrottle(bars, MAT);
   else {
     rbox(0.04, 0.036, 0.042, 0.01, MAT.plastic, -0.3, 0.066, -0.032, bars);
     const thumb = rbox(0.012, 0.032, 0.022, 0.005, MAT.plastic, -0.32, 0.06, -0.06, bars, 'thumbThrottle', 1);
@@ -590,6 +620,8 @@ const SECTION = {
   utility: [[0, 0.07], [0.02, 0.022], [0.07, 0.004], [0.3, -0.01], [0.6, -0.012], [0.82, -0.004], [0.92, 0.01], [0.97, 0.032], [1.0, 0.06], [0.985, 0.088]],
   // Flatter top with a squarer, deeper flare.
   utility2: [[0, 0.07], [0.02, 0.02], [0.06, 0.0], [0.5, -0.008], [0.86, -0.002], [0.93, 0.006], [0.965, 0.028], [0.975, 0.06], [0.962, 0.075]],
+  // The Grizzly's fenders are made with the decks (grizzlyBody.js); these are only here so it names a body style that exists.
+  grizzly: [[0, 0.07], [0.5, -0.008], [0.96, 0.03]],
   // Thin, crowned race fenders with a small lip.
   sport: [[0, 0.05], [0.03, 0.012], [0.1, 0.0], [0.45, -0.014], [0.8, -0.006], [0.93, 0.01], [0.98, 0.03], [0.97, 0.05]],
   // Flat top with a square edge and a deep upright skirt outboard, like pressed steel.
@@ -610,6 +642,7 @@ const PROFILE = {
     rear: [[0.38, 0.05], [0.37, 0.22], [0.32, 0.35], [0.18, 0.41], [-0.05, 0.42], [-0.24, 0.41], [-0.36, 0.34], [-0.41, 0.22], [-0.42, 0.1]],
     width: [0.25, 0.67],
   },
+  grizzly: { front: [[0.44, 0.1], [0.0, 0.412], [-0.38, 0.05]], rear: [[0.38, 0.05], [-0.05, 0.42], [-0.42, 0.1]], width: [0.25, 0.67] },
   sport: {
     front: [[0.42, 0.33], [0.35, 0.35], [0.2, 0.38], [0.03, 0.39], [-0.13, 0.37], [-0.25, 0.3], [-0.32, 0.18], [-0.34, 0.08]],
     rear: [[0.32, 0.16], [0.24, 0.3], [0.1, 0.375], [-0.08, 0.385], [-0.26, 0.36], [-0.4, 0.33], [-0.5, 0.34]],
@@ -635,6 +668,7 @@ export const BODY_STYLES = Object.keys(PROFILE).filter((k) => k in SECTION);
 
 function fenders(root, style, paint) {
   if (style === 'utility') return foremanFenders(root, paint);
+  if (style === 'grizzly') return foremanFenders(root, paint, GRIZZLY_DECK, paint);
   const P = PROFILE[style];
   for (const w of WHEELS) {
     const s = Math.sign(w.x);
@@ -675,20 +709,23 @@ function sideSlab(points, t, bevel = 0.004) {
   return g;
 }
 
-/** The Foreman's decks and flares (foremanDeck.js), the wheel arches' inner walls and the raised lip round each arch. */
-function foremanFenders(root, paint) {
-  const F = FOREMAN;
-  const flareMat = MAT.plastic.clone();
+/**
+ * The Foreman's decks and flares (foremanDeck.js), the wheel arches' inner walls and the raised lip round each arch. The Grizzly
+ * (grizzlyBody.js) takes the same pieces with its own deck numbers and its flares painted.
+ */
+function foremanFenders(root, paint, D = DECK, flareColour = null) {
+  const F = { archR: D.archR, front: { top: D.front.top, from: D.front.z0, to: D.front.zf }, rear: { top: D.rear.top, from: D.rear.z0, to: D.rear.zf }, outer: D.half };
+  const flareMat = flareColour ?? MAT.plastic.clone();
   flareMat.side = THREE.DoubleSide;
-  add(deckGeometry('front'), paint, root, 'frontPanel');
-  add(deckGeometry('rear'), paint, root, 'rearPanel');
+  add(deckGeometry('front', D), paint, root, 'frontPanel');
+  add(deckGeometry('rear', D), paint, root, 'rearPanel');
   for (const w of WHEELS) {
     const s = Math.sign(w.x);
     const which = w.front ? 'front' : 'rear';
     const W = F[which];
     const tag = w.name.slice(-2);
-    add(flareGeometry(which, w.z, s), flareMat, root, `flare_${tag}`);
-    add(bulkheadGeometry(which, s), paint, root, `bulkhead_${tag}`);
+    add(flareGeometry(which, w.z, s, D), flareMat, root, `flare_${tag}`);
+    add(bulkheadGeometry(which, s, D), paint, root, `bulkhead_${tag}`);
     // The wing's inner wall, red, just inboard of the tyre: the wheel arch is a closed tunnel from the deck down to the arch, so nothing
     // under the deck shows from the middle of the quad (the real one's inner wings are body-coloured).
     const d = Math.sign(W.to - W.from);
@@ -703,7 +740,7 @@ function foremanFenders(root, paint) {
       strip.push([z, y]);
       edge.push([w.z + (F.archR + 0.04) * Math.cos(a), Math.min(0.3 + (F.archR + 0.04) * Math.sin(a), W.top - 0.07)]);
     }
-    const trim = add(sideSlab([...strip, ...edge.reverse()], 0.012, 0.002), flareMat, root, `archTrim_${tag}`);
+    const trim = add(sideSlab([...strip, ...edge.reverse()], 0.012, 0.002), MAT.plastic, root, `archTrim_${tag}`);
     trim.position.set(s * (F.outer + 0.016), 0, 0); // its inner face 5 mm inside the skirt's outer one: not a hair off it, which z-fights
   }
 }
@@ -1233,7 +1270,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   root.name = 'bodyRoot';
   body.add(root);
 
-  buildFrame(root, sport, barsY(style), style === 'utility' ? -0.9 : -0.98); // the Foreman's rails end under its rear deck, not out behind the tail lamp
+  buildFrame(root, sport, barsY(style), style === 'utility' ? -0.9 : style === 'grizzly' ? -0.84 : -0.98); // the Foreman's rails end under its rear deck and the Grizzly's inside its own, not out behind the tail lamp
   const engine = buildEngine(root, sport, race);
   buildExhaust(engine, sport, race);
 
@@ -1301,6 +1338,30 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     pipe([[0.18, 0.38, 0.9], [0.26, 0.42, 1.1], [-0.26, 0.42, 1.1], [-0.18, 0.38, 0.9]], 0.016, MAT.frame, root, { bend: 0.07 });
     pipe([[0.16, 0.74, -0.92], [0.2, 0.77, -1.07], [-0.2, 0.77, -1.07], [-0.16, 0.74, -0.92]], 0.015, MAT.frame, root, { bend: 0.07 });
     rbox(0.1, 0.035, 0.015, 0.008, MAT.tail, 0, 0.78, -1.025, root, undefined, 1);
+  } else if (style === 'grizzly') {
+    // The Grizzly (a 2000s Yamaha 660): the painted decks are made with the fenders; here are the round lamps in black pods at the face's
+    // corners, the grille between them with the steel bumper below (grizzlyDetail.js), the black dome round the steering column, and the
+    // tail lamp panel on the rear deck's face.
+    for (const s of [-1, 1]) {
+      rbox(0.19, 0.12, 0.03, 0.03, MAT.plastic, s * GRIZZLY_FACE.lampX, GRIZZLY_FACE.lampY, GRIZZLY_FACE.z - 0.005, root, 'headlightPod');
+      roundLamp(root, s * GRIZZLY_FACE.lampX, GRIZZLY_FACE.lampY, GRIZZLY_FACE.z + 0.012, 0.047, lensMat, MAT.plastic, s > 0 ? 'headlightLeft' : 'headlightRight');
+    }
+    addGrizzlyFront(root, MAT, paint);
+    addGrizzlyRear(root, MAT);
+    add(
+      loftGeometry([
+        { z: 0.42, w: 0.26, y0: 0.71, y1: 0.8 },
+        { z: 0.52, w: 0.34, y0: 0.7, y1: 0.87 },
+        { z: 0.66, w: 0.32, y0: 0.7, y1: 0.86 },
+        { z: 0.78, w: 0.24, y0: 0.7, y1: 0.75 },
+      ], { exponent: 3.5 }),
+      MAT.plastic,
+      root,
+      'columnDome',
+    );
+    const shroud = add(new THREE.CylinderGeometry(0.036, 0.062, 0.2, 16, 1, true), MAT.plastic, root, 'columnShroud');
+    shroud.position.set(0, 0.55 + (barsY(style) - 0.55) * 0.72, 0.62 - 0.16 * 0.72);
+    shroud.rotation.x = -Math.atan2(0.16, barsY(style) - 0.55);
   } else if (style === 'utility2') {
     // Squarer bodywork: square lamps in the fascia, a black lower apron and a tubular brush guard.
     add(
@@ -1371,22 +1432,22 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     for (const s of [-1, 1]) rbox(0.05, 0.026, 0.01, 0.005, TAIL_REFLECTOR, s * 0.11, 0.735, -0.932, root, undefined, 1);
   }
   if (!sport) {
-    if (style === 'utility') {
+    if (style === 'utility' || style === 'grizzly') {
       // Red side panels under the seat, from the tank down the sides to the rear deck, and a ledge over the frame between them, so
       // the body is closed from the front deck to the rear one. Each panel's ends are the height of the deck beside it (so the deck runs
       // up into the panel with no step) and go down to the footboard where the wing walls meet them (they end 0.1 m short of the decks, where the walls' curved fillets take over); the engine shows under its middle.
       for (const s of [-1, 1]) {
         const top = [0.2, 0.17, 0.12, 0.05, -0.05, -0.12, -0.17, -0.2].map((z) => [z, bodyTopY(z)]);
-        const panel = add(sideSlab([...top, [-0.2, 0.36], [-0.16, 0.41], [-0.1, 0.46], [0, 0.5], [0.1, 0.46], [0.16, 0.41], [0.2, 0.36]], 0.022, 0.006), paint, root, 'sidePanel');
+        const panel = add(sideSlab([...top, [-0.2, 0.36], [-0.16, 0.41], [-0.1, 0.46], [0, 0.5], [0.1, 0.46], [0.16, 0.41], [0.2, 0.36]], 0.022, 0.006), style === 'grizzly' ? MAT.plastic : paint, root, 'sidePanel');
         panel.position.set(s * 0.255, 0, 0);
       }
-      add(topCoverGeometry(), paint, root, 'bodyTop'); // closes the top of the body between the decks, over the frame and the wing walls' fillets
+      add(topCoverGeometry(style === 'grizzly' ? GRIZZLY_DECK : DECK), style === 'grizzly' ? MAT.plastic : paint, root, 'bodyTop'); // closes the top of the body between the decks, over the frame and the wing walls' fillets
     } else {
       // Black side covers under the seat.
       for (const s of [-1, 1]) rbox(0.03, 0.14, 0.5, 0.014, MAT.plastic, s * 0.185, 0.69, -0.12, root);
     }
     // Tow hitch: a drawbar out of the frame with a ball on a plate.
-    if (style === 'utility') {
+    if (style === 'utility' || style === 'grizzly') {
       // The Foreman's: a steel plate bolted to the rear cross-tube and the cradle rails, a drawbar back from its foot, and gussets.
       rbox(0.14, 0.22, 0.016, 0.004, MAT.frame, 0, 0.5, -0.985, root); // stops below the tail lamp, so the lamp shows
       rbox(0.08, 0.02, 0.12, 0.004, MAT.frame, 0, 0.405, -1.04, root, undefined, 1);
@@ -1427,7 +1488,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
         { z: 0.46, w: 0.32, y0: 0.7, y1: 0.885 },
         { z: 0.5, w: 0.2, y0: 0.72, y1: 0.84 },
       ];
-  add(loftGeometry(tankStations, { exponent: style === 'utility2' || farm ? 5 : race ? 6 : 3.2 }), paint, root, 'tank');
+  add(loftGeometry(tankStations, { exponent: style === 'utility2' || style === 'grizzly' || farm ? 5 : race ? 6 : 3.2 }), paint, root, 'tank');
   buildFuelTap(root, tapStyle);
   const tankCap = add(lathe([[0.036, -0.012], [0.036, 0.004], [0.03, 0.012], [0.001, 0.012]], 18), MAT.chrome, root);
   tankCap.position.set(0, race ? 0.908 : 0.928, race ? 0.38 : 0.36);
@@ -1446,6 +1507,21 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
       for (const z of [0.55, 0.78]) tube([s * 0.41, 0.84, z], [s * 0.41, 0.69, z], 0.011, MAT.frame, root, 6);
       tube([s * 0.41, 0.92, -0.82], [s * 0.41, 0.73, -0.82], 0.011, MAT.frame, root, 6);
       tube([s * 0.41, 0.92, -0.97], [s * 0.41, 0.73, -0.84], 0.011, MAT.frame, root, 6);
+    }
+  } else if (style === 'grizzly') {
+    // The Grizzly's racks: flat grids with a raised lip, standing on the decks at their outer edges, the front one hung off the
+    // bumper's mounts and the rear one braced down to the deck's back edge.
+    const F = GRIZZLY_RACKS.front;
+    const R = GRIZZLY_RACKS.rear;
+    rack(root, F.z0, F.z1, F.y, F.slats, 0.73, F.raised, true);
+    rack(root, R.z0, R.z1, R.y, R.slats, 0.79, R.raised, true);
+    addRackDetail(root, { z0: F.z0, z1: F.z1, y: F.y, slats: F.slats }, MAT);
+    addRackDetail(root, { z0: R.z0, z1: R.z1, y: R.y, slats: R.slats }, MAT);
+    addGrizzlyRackBlocks(root, MAT);
+    for (const s of [-1, 1]) {
+      for (const z of [0.55, 0.78]) tube([s * 0.41, F.y, z], [s * 0.41, 0.7, z], 0.011, MAT.frame, root, 6);
+      tube([s * 0.41, R.y, -0.84], [s * 0.41, 0.75, -0.84], 0.011, MAT.frame, root, 6);
+      tube([s * 0.41, R.y, -1.0], [s * 0.41, 0.76, -0.86], 0.011, MAT.frame, root, 6);
     }
   } else if (style === 'utility2') {
     rack(root, 0.48, 0.98, 0.84, 6, 0.77, 0.06);
@@ -1544,9 +1620,13 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     );
     rbox(0.34, 0.1, 0.38, 0.03, MAT.plastic, 0, 0.82, -0.6, root, 'pillionBase');
     for (const s of [-1, 1]) {
-      pipe(mx(s, [[0.14, 0.84, -0.4], [0.25, 0.99, -0.44], [0.25, 0.99, -0.78], [0.14, 0.84, -0.82]]), 0.013, farm ? MAT.frame : MAT.chrome, root, { bend: 0.05, steps: 5 });
+      pipe(mx(s, [[0.14, 0.84, -0.4], [0.25, 0.99, -0.44], [0.25, 0.99, -0.78], [0.14, 0.84, -0.82]]), 0.013, farm || style === 'grizzly' ? MAT.frame : MAT.chrome, root, { bend: 0.05, steps: 5 });
     }
     pillionGrips(root, 0.25, 0.99, -0.55, false);
+  }
+  if (style === 'grizzly') {
+    quad.userData.touchWear = [-1, 1].map((s) => ({ at: [s * 0.3, 0.52, 0.0], r: 0.16, amount: 0.5 })); // boots rub the panels' lower edges
+    addGrizzlyDecals(root);
   }
   if (style === 'utility') {
     quad.userData.touchWear = [-1, 1].map((s) => ({ at: [s * 0.3, 0.52, 0.0], r: 0.16, amount: 0.8 })); // boots rub the panels' lower edges and the arches' tails
@@ -1567,7 +1647,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   if (style === 'utility' && !race && !sport) addTreadPlates(root, MAT);
 
   // Handlebars.
-  const bars = buildHandlebars(dashStyle, cfg, chokeStyle, driveSwitch);
+  const bars = buildHandlebars(dashStyle, cfg, chokeStyle, driveSwitch, style === 'grizzly' ? 'grizzly' : null);
   if (chokeStyle === 'plunger') buildChokePlunger(root, bars.userData.chokeGroup);
   if (sport) {
     // Motocross bars with a padded crossbar, ahead of the dash so it doesn't block the display.
@@ -1599,7 +1679,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     );
     roundLamp(bars, 0, 0.02, 0.17, 0.06, lensMat, MAT.chrome, 'headlight');
   }
-  if (style === 'utility') addBarCables(bars, MAT);
+  if (style === 'utility' || style === 'grizzly') addBarCables(bars, MAT);
   quad.userData.dash = bars.userData.dash;
   quad.userData.podMount = bars.userData.podMount;
   bars.position.set(0, barsY(style), 0.46);
@@ -1617,14 +1697,14 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   pillionAnchor.position.set(0, race ? 0.94 : sport ? 0.98 : 1.0, sport ? -0.66 : -0.6);
   if (!solo) root.add(pillionAnchor);
   // Quads with a front rack have a spot on it to sit, hips towards the back of the deck so her legs hang over the nose.
-  if (!solo && (style === 'utility' || style === 'utility2' || farm)) {
+  if (!solo && (style === 'utility' || style === 'utility2' || style === 'grizzly' || farm)) {
     const rackAnchor = new THREE.Object3D();
     rackAnchor.name = 'rackAnchor';
     rackAnchor.position.set(0, 0.84, 0.66);
     root.add(rackAnchor);
   }
   // Somewhere to leave a mug of tea: the middle of the rear rack, on the deck (items/mug.js).
-  if (!solo && (style === 'utility' || style === 'utility2' || farm)) {
+  if (!solo && (style === 'utility' || style === 'utility2' || style === 'grizzly' || farm)) {
     const mugAnchor = new THREE.Object3D();
     mugAnchor.name = 'mugAnchor';
     mugAnchor.position.set(0, style === 'utility' ? 0.925 : 0.935, style === 'utility' ? -0.93 : -0.93);

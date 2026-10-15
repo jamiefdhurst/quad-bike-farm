@@ -22,7 +22,7 @@ function rb(w, h, d, r, mat, x, y, z, parent, name, segments = 2) {
   return m;
 }
 
-function labelMaterial(w, h, px, draw) {
+export function labelMaterial(w, h, px, draw) {
   const c = document.createElement('canvas');
   c.width = Math.round(w * px);
   c.height = Math.round(h * px);
@@ -34,7 +34,7 @@ function labelMaterial(w, h, px, draw) {
 }
 
 /** Text drawn at pod-face metres (x right, y up from the face's middle) onto a canvas of `px` pixels a metre. */
-function put(g, W, H, px, text, x, y, size, { box = false, rot = 0, ink = '#e9e9e6' } = {}) {
+export function put(g, W, H, px, text, x, y, size, { box = false, rot = 0, ink = '#e9e9e6' } = {}) {
   g.save();
   g.translate(W / 2 + x * px, H / 2 - y * px);
   g.rotate(rot);

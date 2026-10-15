@@ -1776,7 +1776,7 @@ export const VEHICLE_NOTES = {
     tips: ['Starts every game in 2WD: G for 4WD.', 'Reverse wants the bars turned as you press B.', 'Has an OIL lamp on its little dash.'],
   },
   blue: {
-    blurb: 'The Yamaha-style farm quad: idles fast and keen, revs harder and higher, and has an LCD dash with fuel and temperature bars.',
+    blurb: 'The Tamura Bruin 660, a Grizzly-style farm quad: idles fast and keen, revs harder and higher, and has an LCD dash with fuel and temperature bars, a steel bumper, flat racks and a switch pod on the left bar.',
     tips: ['Floods if you leave the choke on once it’s warming, so ease it off early.', 'U is the diff lock, which pulls hardest in the mud.'],
   },
   yellow: {

@@ -68,7 +68,7 @@ export const QUAD_SPECS = [
     label: 'blue quad',
     name: 'Blue quad',
     bodyColor: 0x1d4fa3,
-    style: 'utility2',
+    style: 'grizzly',
     dashStyle: 'grizzly',
     driveSwitch: true,
     diffLock: true, // and a diff lock button
