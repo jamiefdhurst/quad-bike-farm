@@ -1601,7 +1601,7 @@ export const FAQ_SECTIONS = [
         tip: 'P switches the lights in the UTV and both Land Rovers: dipped, main beam, off.',
       },
       {
-        q: 'How do I put the red quad\'s lights on main beam, or off?',
+        q: 'How do I put the red, blue or green quad\'s lights on main beam, or off?',
         a: `Press <kbd>P</kbd> while you ride it: it starts on dipped, then main beam (a longer, whiter beam), then off, then dipped again. The yellow rocker on
           the switch pod on the left bar is the lights, with OFF at the top and ON at the bottom, and the white one under it is HI and LO. They move as you press. The
           red rocker is the engine stop, showing RUN while the key is on, the round button is the starter (it goes in while you hold <kbd>R</kbd>), and the black
