@@ -116,7 +116,8 @@ export function addShiftLever(root, MAT, at = [0.15, 0.37, 0.04]) {
 /** Two cables from the bars' levers down the column to the shroud: a thicker brake cable on the left, the throttle on the right. */
 export function addBarCables(bars, MAT) {
   for (const s of [-1, 1]) {
-    const anchors = [[s * 0.25, 0.07, -0.045], [s * 0.15, 0.045, -0.055], [s * 0.07, 0.0, -0.05], [s * 0.04, -0.07, -0.015]];
+    // Ahead of the pod (+z, away from the rider) and down past its foot, never through it: the pod's body is at x 0.15 to 0.2, z -0.07 to -0.03.
+    const anchors = s > 0 ? [[0.262, 0.078, -0.01], [0.23, 0.085, 0.03], [0.14, 0.06, 0.045], [0.07, 0.0, 0.03], [0.04, -0.07, -0.005]] : [[-0.25, 0.07, -0.045], [-0.15, 0.045, -0.055], [-0.07, 0.0, -0.05], [-0.04, -0.07, -0.015]];
     mesh(cableGeometry(anchors, s > 0 ? 0.0042 : 0.0032, { sag: 0.06 }), MAT.rubber, bars, s > 0 ? 'brakeCable' : 'throttleCable');
   }
 }

@@ -8,7 +8,7 @@ import { Drivetrain } from './drivetrain.js';
 import { QuirkSet } from './quirks.js';
 import { headlightLook, taillightLevel } from './headlight.js';
 import { LightSwitch, lightLook, lightLamps } from './lightSwitch.js';
-import { poseBarPod, POD } from './foremanControls.js';
+import { poseBarPod, poseThumbThrottle, POD } from './foremanControls.js';
 import { Indicators, INDICATOR_PARAMS } from './indicators.js';
 import { SeatBelts, BELT_SEATS, beltLampMode, beltLampLit } from './seatBelts.js';
 import { TyreSet } from './tyres.js';
@@ -1278,6 +1278,7 @@ export class Quad {
     else if (this.chokeStyle === 'plunger') this.chokeLever.position.y = this.chokeLever.userData.baseY - this.displayChoke * 0.045; // pulled down
     else if (this.chokeStyle === 'slide') this.chokeLever.position.x = this.chokeLever.userData.baseX - this.displayChoke * POD.slide; // pulled along its slot to apply
     else this.chokeLever.rotation.x = 0.5 - this.displayChoke * 1.45;
+    if (this.chokeStyle === 'slide') poseThumbThrottle(this.model, this.throttle);
     if (this.barLights) poseBarPod(this.model, { lights: this.barLights.mode, keyOn: e.ignitionOn, cranking: e.state === 'cranking' });
     if (this.drive && this.driveRocker) {
       this.driveShown += ((this.drive.frontDriven ? 1 : 0) - this.driveShown) * Math.min(1, 15 * dt);

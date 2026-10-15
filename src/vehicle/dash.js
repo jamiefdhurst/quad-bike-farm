@@ -59,12 +59,14 @@ function podMount(group, x, y, z, dashTilt) {
 // Red: Honda Foreman ------------------------------------------------------------------
 
 /** The maker's name in its badge style on a dash face, centred at (x, y): italic capitals with an outline, as on the bodywork. */
-function makerBadge(ctx, maker, x, y, size) {
+function makerBadge(ctx, maker, x, y, size, maxW = 0) {
   const m = MAKERS[maker];
   ctx.save();
   ctx.font = `italic 900 ${size}px Helvetica, Arial, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
+  const text = m.name.toUpperCase();
+  if (maxW && ctx.measureText(text).width > maxW) ctx.font = `italic 900 ${(size * maxW) / ctx.measureText(text).width}px Helvetica, Arial, sans-serif`;
   if (m.edge) {
     ctx.lineJoin = 'round';
     ctx.lineWidth = size * 0.14;
@@ -119,7 +121,7 @@ function buildForeman() {
     glyphLetter(ctx, 160, 114, LAMP.green, 'N', L.lamps.n, 9);
     warnSymbol(ctx, 'oil', 182, 114, LAMP.red, L.lamps.oil, 0.85);
     keySwitch(ctx, 222, 118, s.keyOn);
-    makerBadge(ctx, 'kestrel', 180, 141, 11);
+    makerBadge(ctx, 'kestrel', 141, 82, 8, 30); // in the window under the hour and odometer drums, where the face was empty
   }
 
   return {

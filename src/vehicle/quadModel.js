@@ -17,7 +17,7 @@ import {
   sweepGeometry,
 } from './quadGeometry.js';
 import { treadTyre } from './detail/tread.js';
-import { buildLeftPod, buildBrakeLever, buildDriveSwitch, poseBarPod } from './foremanControls.js';
+import { buildLeftPod, buildBrakeLever, buildDriveSwitch, buildThumbThrottle, poseBarPod } from './foremanControls.js';
 import { addRackDetail, addGrille, addTreadPlates, addShiftLever, addBarCables, addDrumBrake, seatTape, addDecals } from './foremanDetail.js';
 import { DECK, deckGeometry, flareGeometry, bulkheadGeometry, topCoverGeometry, bodyTopY } from './foremanDeck.js';
 
@@ -488,9 +488,12 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
   }
 
   // Thumb throttle and its housing on the right.
-  rbox(0.04, 0.036, 0.042, 0.01, MAT.plastic, -0.3, 0.066, -0.032, bars);
-  const thumb = rbox(0.012, 0.032, 0.022, 0.005, MAT.plastic, -0.32, 0.06, -0.06, bars, 'thumbThrottle', 1);
-  thumb.rotation.y = -0.3;
+  if (chokeStyle === 'slide') buildThumbThrottle(bars, MAT);
+  else {
+    rbox(0.04, 0.036, 0.042, 0.01, MAT.plastic, -0.3, 0.066, -0.032, bars);
+    const thumb = rbox(0.012, 0.032, 0.022, 0.005, MAT.plastic, -0.32, 0.06, -0.06, bars, 'thumbThrottle', 1);
+    thumb.rotation.y = -0.3;
+  }
 
   // The rider's gloves and forearms, only shown while riding.
   const hands = new THREE.Group();

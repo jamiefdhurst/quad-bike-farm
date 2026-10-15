@@ -67,3 +67,15 @@ describe('the red quad’s light switch', () => {
     expect(LIGHT_MODES.map(() => sw.cycle())).toEqual(['high', 'off', 'low']);
   });
 });
+
+describe('the red quad’s thumb throttle', () => {
+  it('has a paddle that the throttle pushes forward, and lets back at zero', async () => {
+    const { poseThumbThrottle } = await import('../src/vehicle/foremanControls.js');
+    const lever = red.model.getObjectByName('thumbThrottle');
+    expect(lever).toBeTruthy();
+    poseThumbThrottle(red.model, 0);
+    expect(lever.rotation.x).toBe(0);
+    poseThumbThrottle(red.model, 1);
+    expect(lever.rotation.x).toBeGreaterThan(0.3);
+  });
+});

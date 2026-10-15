@@ -86,7 +86,7 @@ export function buildLeftPod(MAT) {
   };
 
   // The body (square-edged enough that the lettering on its face lies flat) and the clamp it hangs from behind.
-  rb(POD.w, POD.h, POD.d, 0.0035, body, 0, POD.cy, 0, pod, 'podBody');
+  rb(POD.w, POD.h, POD.d, 0.002, body, 0, POD.cy, 0, pod, 'podBody', 1);
   rb(0.03, 0.02, 0.02, 0.004, body, 0.012, 0.012, -0.034, pod);
 
   // The lettering, on a plane lying on the body's face. `at` converts the photo's coordinates to the plane's.
@@ -101,7 +101,7 @@ export function buildLeftPod(MAT) {
     at(-0.0252, -0.0455, 'OFF', 0.0058, { rot: -Math.PI / 2 });
   });
   const plane = new THREE.Mesh(new THREE.PlaneGeometry(POD.w * 0.97, POD.h * 0.97), face);
-  plane.position.set(0, POD.cy, front + 0.0003);
+  plane.position.set(0, POD.cy, front + 0.0001);
   plane.name = 'podLabels';
   pod.add(plane);
 
@@ -232,7 +232,7 @@ export function buildBrakeLever(bars, s, MAT) {
  * rider's end in for 4WD) and the two positions printed on the housing, 4WD towards you and 2WD ahead.
  */
 export function buildDriveSwitch(bars, MAT, at = [-0.19, 0.068, -0.03]) {
-  const house = rb(0.046, 0.026, 0.066, 0.008, MAT.plastic, at[0], at[1], at[2], bars, 'driveSwitchHousing');
+  const house = rb(0.046, 0.026, 0.066, 0.003, MAT.plastic, at[0], at[1], at[2], bars, 'driveSwitchHousing', 1);
   house.userData.keep = true;
   // A raised bezel round the rocker's opening.
   const bezel = [
@@ -260,7 +260,40 @@ export function buildDriveSwitch(bars, MAT, at = [-0.19, 0.068, -0.03]) {
   const lp = new THREE.Mesh(new THREE.PlaneGeometry(0.04, 0.066), label);
   lp.rotation.x = -Math.PI / 2;
   lp.rotation.z = Math.PI; // read from the rider's side
-  lp.position.set(at[0], at[1] + 0.0134, at[2]);
+  lp.position.set(at[0], at[1] + 0.0132, at[2]);
   bars.add(lp);
   return rocker;
+}
+
+/**
+ * The thumb throttle on the right grip: a housing on the bar with a cable adjuster, and a paddle lever (`thumbThrottle`) standing
+ * out below the grip for the thumb, pivoting about X at its root and pushed forward (away from you) by `poseThumbThrottle`.
+ */
+export function buildThumbThrottle(bars, MAT) {
+  rb(0.046, 0.034, 0.046, 0.007, MAT.plastic, -0.3, 0.066, -0.03, bars, 'thumbHousing');
+  const barrel = new THREE.Mesh(strip(new THREE.CylinderGeometry(0.0055, 0.0055, 0.014, 8)).rotateZ(Math.PI / 2), MAT.alloy);
+  barrel.position.set(-0.282, 0.075, -0.004);
+  bars.add(barrel);
+  const lever = new THREE.Group();
+  lever.name = 'thumbThrottle';
+  lever.position.set(-0.322, 0.054, -0.045);
+  lever.userData.keep = true;
+  bars.add(lever);
+  // A curved paddle with a ridged pad, reaching back and down from its pivot under the grip.
+  const path = new THREE.CatmullRomCurve3([[0, 0, 0], [0, -0.008, -0.014], [0, -0.012, -0.03], [0, -0.01, -0.042]].map((p) => new THREE.Vector3(...p))).getPoints(10);
+  lever.add(new THREE.Mesh(sweepGeometry(path.map((p) => [p.x, p.y, p.z]), (t) => 0.0045 + 0.004 * t, { radial: 8 }), MAT.frame));
+  const pad = rb(0.024, 0.006, 0.026, 0.003, MAT.frame, 0, -0.011, -0.036, lever, 'thumbPad', 1);
+  pad.rotation.x = 0.35;
+  const ribs = [];
+  for (let i = 0; i < 4; i++) ribs.push(strip(new THREE.BoxGeometry(0.02, 0.0016, 0.0024)).translate(0, -0.0072, -0.026 - i * 0.0065));
+  const rr = new THREE.Mesh(mergeGeometries(ribs), MAT.rubber);
+  rr.rotation.x = 0.35;
+  lever.add(rr);
+  return lever;
+}
+
+/** Poses the thumb throttle: `amount` 0..1, the paddle pushed forward and down by the thumb. */
+export function poseThumbThrottle(model, amount) {
+  const lever = (model.userData.thumb ??= model.getObjectByName('thumbThrottle'));
+  if (lever && lever.userData.keep) lever.rotation.x = amount * 0.5;
 }
