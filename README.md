@@ -77,7 +77,7 @@ Look at her and press `E`. Pick an option with the number keys, or scroll to hig
 
 ## The quads
 
-- **Red quad**: Honda-style farm quad. Soft and steady, with a low warm idle around 1,150 rpm. Styled on a 1990s four-wheel-drive farm quad: black wing flares, twin rectangular headlights with an oil-cooler grille between them, racks with tie-down hooks, a pillion seat, a plate and tow hitch on the back.
+- **Red quad**: Honda-style farm quad. Soft and steady, with a low warm idle around 1,150 rpm. Styled on a 1990s four-wheel-drive farm quad: black wing flares, twin rectangular headlights with an oil-cooler grille between them, racks with tie-down hooks, a pillion seat, a tow hitch on the back.
 - **Blue quad**: Yamaha-style farm quad. Idles higher (about 1,450 rpm warm), revs harder and higher, needs more choke from cold and runs lumpier until it's warm, warms a bit quicker and pulls a little harder. It has a brush guard, square headlights, railed racks and a grey seat. Its idle comes from a different recorded machine, so it sounds different too.
 - **Yellow quad**: a two-stroke sport quad, Blaster-style. It fires every revolution, so it buzzes rather than thumps, and ring-dings at idle. It's weak low down, then comes on hard around 6,000 rpm and revs past 10,000. It has almost no engine braking, and it slowly loads up its plug if you leave it idling (blip the throttle to clear it). It trails blue-white oil smoke. It's lighter and quicker, with an expansion-chamber exhaust, motocross bars, nerf bars and a race number plate. She can squeeze onto a slim pad at the back. It idles on a Yamaha DT 125 trail bike and revs on a Honda CR85 motocross bike ridden flat out.
 

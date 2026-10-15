@@ -7,7 +7,7 @@ import { drumGeometry } from './detail/brakes.js';
 
 // The red quad's finer detail (TODO 88), built from the shared kit (detail/): welded racks with tie-down hooks, the oil cooler and
 // fan behind the grille, the footboards' diamond tread plates, the shift lever, cables from the bars, the rear drum brakes, a taped
-// seat, the maker's badge and the plate on the back. Each takes the quad's materials (`MAT`, as quadModel has them) and adds to the
+// seat, the maker's badge. Each takes the quad's materials (`MAT`, as quadModel has them) and adds to the
 // frame it is given. Nothing here moves a fixed point.
 
 const strip = (g) => {
@@ -144,17 +144,12 @@ export function seatTape(MAT, at = [0.07, 0.9, -0.3]) {
   return g;
 }
 
-/** The maker's badge on each side panel's outer face and the plate on the back, a millimetre off their surfaces. */
-export function addDecals(root, MAT, { plateAt = [0, 0.55, -0.993], plateText = 'K 407' } = {}) {
+/** The maker's badge on each side panel's outer face, a millimetre off the surface. */
+export function addDecals(root) {
   for (const s of [-1, 1]) {
     const badge = decalMesh('badge', { maker: MAKER_FOR.red, model: 'Farm 300' }, { width: 0.2, name: 'badge' });
     badge.position.set(s * 0.273, 0.655, 0.02); // the panel's outer face, with its bevel
     badge.rotation.y = s * (Math.PI / 2);
     root.add(badge);
   }
-  mesh(new THREE.BoxGeometry(0.19, 0.19, 0.01).translate(0, 0, -0.005), MAT.plastic, root, 'plateHolder').position.set(...plateAt);
-  const plate = decalMesh('number', { text: plateText, ground: '#f2c40f' }, { width: 0.17, name: 'rearPlate' });
-  plate.position.set(plateAt[0], plateAt[1], plateAt[2] - 0.0115);
-  plate.rotation.y = Math.PI;
-  root.add(plate);
 }

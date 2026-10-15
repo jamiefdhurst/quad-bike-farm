@@ -1763,7 +1763,7 @@ export const FAQ_SECTIONS = [
 // (engine, gearbox, tank, reverse) is generated from the spec; this is what a spec can't say.
 export const VEHICLE_NOTES = {
   red: {
-    blurb: 'The Kestrel Farm 300, a 1990s Honda-style farm quad: soft, steady and the smoothest of the lot, with a low warm idle, black wing flares, racks with tie-down hooks front and back, a pillion seat, and a plate and tow hitch on the back.',
+    blurb: 'The Kestrel Farm 300, a 1990s Honda-style farm quad: soft, steady and the smoothest of the lot, with a low warm idle, black wing flares, racks with tie-down hooks front and back, a pillion seat and a tow hitch on the back.',
     tips: ['Starts every game in 2WD: G for 4WD.', 'Reverse wants the bars turned as you press B.', 'Has an OIL lamp on its little dash.'],
   },
   blue: {

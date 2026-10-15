@@ -681,7 +681,7 @@ function foremanFenders(root, paint) {
       edge.push([w.z + (F.archR + 0.04) * Math.cos(a), Math.min(0.3 + (F.archR + 0.04) * Math.sin(a), W.top - 0.07)]);
     }
     const trim = add(sideSlab([...strip, ...edge.reverse()], 0.012, 0.002), flareMat, root, `archTrim_${tag}`);
-    trim.position.set(s * (F.outer + 0.02), 0, 0);
+    trim.position.set(s * (F.outer + 0.016), 0, 0); // its inner face 5 mm inside the skirt's outer one: not a hair off it, which z-fights
   }
 }
 
@@ -1532,7 +1532,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     const tape = seatTape(MAT);
     tape.applyMatrix4(tilt); // the same tilt as the seat it lies on
     root.add(tape);
-    addDecals(root, MAT);
+    addDecals(root);
     root.getObjectByName('pillionSeat').userData.wearNookMin = 0.45; // the rider's seat is marked where it meets the pillion's; hers is marked like it
   }
 
