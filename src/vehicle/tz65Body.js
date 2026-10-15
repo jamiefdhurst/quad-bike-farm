@@ -111,9 +111,11 @@ export const TZ_TAP = { pos: [0.075, 0.62, 0.06] };
  * silver silencer over the rear wheel. In the model's frame; the radii go with the swept path.
  */
 export const TZ_EXHAUST = {
-  path: [[-0.03, 0.5, 0.17], [-0.1, 0.42, 0.25], [-0.125, 0.31, 0.265], [-0.125, 0.23, 0.17], [-0.125, 0.21, 0.02], [-0.125, 0.29, -0.14], [-0.125, 0.44, -0.27]],
-  radii: [0.02, 0.034, 0.05, 0.05, 0.036, 0.03, 0.03],
-  can: { from: [-0.125, 0.45, -0.27], to: [-0.125, 0.62, -0.5], r: 0.04 },
+  // Out of the cylinder's front, one bend round the radiator and then a plain run back along the right (outboard of the side board) to the can.
+  path: [[-0.02, 0.5, 0.13], [-0.06, 0.455, 0.225], [-0.13, 0.375, 0.24], [-0.15, 0.36, 0.1], [-0.15, 0.4, -0.1], [-0.165, 0.45, -0.27]],
+  radii: [0.02, 0.03, 0.05, 0.05, 0.032, 0.03],
+  can: { from: [-0.165, 0.45, -0.27], to: [-0.18, 0.62, -0.5], r: 0.04 },
+  stay: [[-0.165, 0.45, -0.27], [-0.062, 0.4, -0.11]], // a tube from the pipe's end to the frame's rear leg, under the side board
 };
 
 /** The swingarm, a pair of silver boxes from the pivot to the rear axle, and the shock between the frame and the arm. */

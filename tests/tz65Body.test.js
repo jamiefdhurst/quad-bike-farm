@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as THREE from 'three';
-import { TZ_WHEELS, TZ_RAKE, forkZ, TZ_BARS_AT, TZ_FORK, TZ_FRONT_FENDER, TZ_FRAME, TZ_SIDE_BOARD, TZ_CARB, TZ_EXHAUST, TZ_SEAT, TZ_BARS } from '../src/vehicle/tz65Body.js';
+import { TZ_WHEELS, TZ_RAKE, forkZ, TZ_BARS_AT, TZ_FORK, TZ_FRONT_FENDER, TZ_FRAME, TZ_SIDE_BOARD, TZ_CARB, TZ_EXHAUST, TZ_ENGINE, TZ_SEAT, TZ_BARS } from '../src/vehicle/tz65Body.js';
 import { EXTRA_SPECS } from '../src/vehicle/quadSpecs.js';
 import { CHOKE_STYLES, TAP_STYLES } from '../src/vehicle/controls.js';
 import { DASH_STYLES } from '../src/vehicle/dash.js';
@@ -52,8 +52,27 @@ describe('the mini moto’s numbers', () => {
 
   it('leave the side boards behind the carb’s choke so the plunger shows, and the exhaust outboard of the board', () => {
     expect(TZ_CARB.plungerZ).toBeGreaterThan(Math.max(...TZ_SIDE_BOARD.outline.map(([z]) => z)));
-    expect(Math.abs(TZ_EXHAUST.can.from[0]) - TZ_EXHAUST.can.r).toBeLessThan(TZ_SIDE_BOARD.x); // the silencer sits against the board's face
+    // The silencer clears the board's outer face (with its 3 mm bevel) along its whole length, and the pipe under the board stays outboard too.
+    for (const [x, y] of [TZ_EXHAUST.can.from, TZ_EXHAUST.can.to]) {
+      expect(Math.abs(x) - TZ_EXHAUST.can.r, `silencer at y ${y}`).toBeGreaterThan(TZ_SIDE_BOARD.x + 0.003);
+    }
+    const lowestBoardY = Math.min(...TZ_SIDE_BOARD.outline.map(([, y]) => y));
+    const boardZ = TZ_SIDE_BOARD.outline.map(([z]) => z);
+    for (const [x, y, z] of TZ_EXHAUST.path) if (y > lowestBoardY - 0.05 && z > Math.min(...boardZ) && z < Math.max(...boardZ)) expect(Math.abs(x), `pipe at y ${y}`).toBeGreaterThan(TZ_SIDE_BOARD.x);
     expect(TZ_EXHAUST.can.to[2]).toBeLessThan(TZ_WHEELS.rearZ + 0.1); // reaches back over the rear wheel
+  });
+
+  it('runs the pipe from the cylinder’s front face in a few plain bends, and ends it on the can', () => {
+    expect(TZ_EXHAUST.path.length).toBeLessThanOrEqual(6);
+    const [sx, sy, sz] = TZ_EXHAUST.path[0];
+    const cy = TZ_ENGINE.cylinder; // the barrel leans forward, so its front face at the pipe's height is about here
+    const front = cy.z + (sy - cy.y) * Math.tan(cy.lean) + cy.r / Math.cos(cy.lean);
+    expect(Math.abs(sz - front), 'pipe starts at the barrel’s face').toBeLessThan(0.02);
+    expect(TZ_EXHAUST.can.from).toEqual(TZ_EXHAUST.path[TZ_EXHAUST.path.length - 1]);
+    // The long run along the right is straight: the middle points sit within 2 cm of the line between the ends of the run.
+    const [a, b] = [TZ_EXHAUST.path[3], TZ_EXHAUST.path[4]];
+    expect(Math.abs(a[0] - b[0])).toBeLessThan(0.02);
+    expect(sx).toBeLessThan(0);
   });
 });
 
@@ -116,6 +135,18 @@ describe('the mini moto’s model', () => {
     expect(wheel.getObjectByName('frontFender')).toBeTruthy();
     expect(bars.getObjectByName('numberPlate')).toBeTruthy();
     expect(bars.getObjectByName('frontFender')).toBeFalsy();
+  });
+
+  it('has risers from the top clamp up to the bars, so the bars are not floating', () => {
+    const bars = moto.model.getObjectByName('handlebars');
+    bars.updateMatrixWorld(true);
+    const bar = TZ_BARS_AT[1] + TZ_BARS.half[4][1] - 0.0108; // the bar's underside where the risers hold it
+    for (const riser of bars.children.filter((o) => o.name === 'barRiser')) {
+      const box = new THREE.Box3().setFromObject(riser);
+      expect(box.max.y).toBeGreaterThanOrEqual(bar); // up to the bar (into it)
+      expect(box.min.y).toBeLessThan(TZ_FORK.upperClamp + 0.01); // down to the clamp
+    }
+    expect(bars.children.filter((o) => o.name === 'barRiser').length).toBe(2);
   });
 
   it('keeps the bars at their fixed height and the dash on the clamp', () => {

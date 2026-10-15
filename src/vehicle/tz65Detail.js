@@ -291,6 +291,10 @@ export function addTzExhaust(root, MAT) {
     return X.radii[i] + (X.radii[i + 1] - X.radii[i]) * (k * k * (3 - 2 * k));
   };
   mesh(sweepGeometry(curve.getPoints(48), radius, { radial: 14 }), MAT.exhaust, root, 'chamber');
+  // The flange on the cylinder's front, square to the barrel (which leans 0.32 forward), and the stay from the pipe's end to the frame.
+  const [fx, fy, fz] = X.path[0];
+  mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.014, 12).rotateX(Math.PI / 2 + TZ_ENGINE.cylinder.lean).translate(fx, fy, fz + 0.006), MAT.steel, root, 'exhaustFlange');
+  tube(X.stay[0], X.stay[1], 0.007, MAT.steel, root, 6);
   // The silencer: a closed silver can, a heat shield's worth of dark band, and a dark mouth.
   const a = new THREE.Vector3(...X.can.from);
   const b = new THREE.Vector3(...X.can.to);
@@ -351,13 +355,16 @@ export function addTzBars(bars, MAT, paint) {
   const gold = GOLD();
   for (const s of [-1, 1]) {
     tube(local(s * F.x, F.upperBottom), local(s * F.x, F.upperTop), 0.0155, gold, bars, 10);
-    rbox(0.034, 0.026, 0.034, 0.01, MAT.frame, ...local(s * 0.045, 0.815), bars); // the bar riser
+    // The bar riser: a post up from the top clamp to the bar, with a cap clamp over the bar (the pad hides its top).
+    const [rx, ry, rz] = local(s * 0.058, 0.78);
+    rbox(0.034, 0.14, 0.034, 0.01, MAT.frame, rx, ry + 0.06, rz - 0.004, bars, 'barRiser');
+    rbox(0.04, 0.012, 0.03, 0.004, MAT.engineDark, rx, T.half[4][1] + 0.014, rz + 0.012, bars);
   }
   for (const y of [F.lowerClamp, F.upperClamp]) {
     const [, ly, lz] = local(0, y);
     rbox(0.18, 0.026, 0.06, 0.01, MAT.frame, 0, ly, lz, bars);
   }
-  tube(local(0, F.lowerClamp), local(0, F.upperClamp), 0.02, MAT.alloy, bars, 8);
+  tube(local(0, F.lowerClamp), local(0, F.upperClamp + 0.012), 0.02, MAT.alloy, bars, 8); // the steering stem, through the top clamp to its nut
   const [, py, pz] = local(0, TZ_PLATE.y);
   const plate = rbox(TZ_PLATE.w, TZ_PLATE.h, TZ_PLATE.d, 0.012, paint, 0, py, pz + TZ_PLATE.ahead + 0.01, bars, 'numberPlate');
   plate.rotation.x = -Math.atan(TZ_RAKE);
