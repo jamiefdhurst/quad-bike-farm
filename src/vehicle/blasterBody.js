@@ -15,17 +15,17 @@ export const TYRE_OUTER = { front: BLASTER_WHEELS.x + BLASTER_WHEELS.front / 2, 
 // the fronts are small low caps over the tyres, the rears short wings that peak behind the middle of the tyre and stop near its back.
 export const BLASTER_FENDERS = {
   front: {
-    profile: [[0.34, 0.24], [0.29, 0.3], [0.17, 0.34], [0.0, 0.35], [-0.15, 0.335], [-0.24, 0.28], [-0.29, 0.2], [-0.31, 0.1]],
+    profile: [[0.27, 0.26], [0.23, 0.34], [0.15, 0.4], [0.0, 0.43], [-0.15, 0.41], [-0.24, 0.355], [-0.27, 0.28]],
     width: [0.22, 0.585],
   },
   rear: {
-    profile: [[0.22, 0.17], [0.16, 0.26], [0.04, 0.32], [-0.1, 0.39], [-0.2, 0.425], [-0.27, 0.4], [-0.3, 0.32]],
+    profile: [[0.24, 0.3], [0.19, 0.36], [0.1, 0.42], [0.0, 0.44], [-0.12, 0.46], [-0.22, 0.47], [-0.28, 0.43], [-0.31, 0.35]],
     width: [0.19, 0.56],
   },
 };
 
-/** Across a fender [t from the inner edge to the outer, how far down towards the wheel]: a crowned top and a rolled-down outer lip. */
-export const BLASTER_SECTION = [[0, 0.06], [0.04, 0.012], [0.12, 0.0], [0.5, -0.012], [0.88, 0.0], [0.95, 0.03], [0.985, 0.09], [1.0, 0.13]];
+/** Across a fender [t from the inner edge to the outer, how far down towards the wheel]: a crowned top and a shallow rolled-down outer lip (the deep one it had dropped into the tyre). */
+export const BLASTER_SECTION = [[0, 0.05], [0.04, 0.01], [0.12, 0.0], [0.5, -0.012], [0.9, 0.0], [0.96, 0.02], [0.99, 0.04], [1.0, 0.055]];
 
 /** The nose between the front fenders and the tail between the rear ones, as `loftGeometry` stations (full width w). */
 export const BLASTER_NOSE = [

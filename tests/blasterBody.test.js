@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as THREE from 'three';
-import { BLASTER_FENDERS, BLASTER_NOSE, BLASTER_TAIL, BLASTER_FOOTREST, BLASTER_BUMPER, BLASTER_CARB, BLASTER_TAP, BLASTER_THROTTLE, BLASTER_EXHAUST, BLASTER_VBARS, BLASTER_LAMP, barAt, blasterCross, TYRE_OUTER, BLASTER_WHEELS } from '../src/vehicle/blasterBody.js';
+import { BLASTER_FENDERS, BLASTER_NOSE, BLASTER_TAIL, BLASTER_FOOTREST, BLASTER_BUMPER, BLASTER_CARB, BLASTER_TAP, BLASTER_THROTTLE, BLASTER_SECTION, BLASTER_EXHAUST, BLASTER_VBARS, BLASTER_LAMP, barAt, blasterCross, TYRE_OUTER, BLASTER_WHEELS } from '../src/vehicle/blasterBody.js';
 import { WHEELS } from '../src/vehicle/quadPhysics.js';
+import { shellGeometry } from '../src/vehicle/quadGeometry.js';
 import { QUAD_SPECS, EXTRA_SPECS } from '../src/vehicle/quadSpecs.js';
 import { BODY_STYLES } from '../src/vehicle/quadModel.js';
 import { CHOKE_STYLES, TAP_STYLES, chokeReach } from '../src/vehicle/controls.js';
@@ -22,6 +23,20 @@ describe('the Blaster body numbers', () => {
   it('keeps every panel inside the tyre beside it, so the wheels are the edge of the quad', () => {
     expect(BLASTER_FENDERS.front.width[1]).toBeLessThan(TYRE_OUTER.front);
     expect(BLASTER_FENDERS.rear.width[1]).toBeLessThan(TYRE_OUTER.rear);
+  });
+
+  it('keeps every fender surface clear of the tyre under it: no wheel pokes through a wing (4 cm to spare for the tread and a little travel)', () => {
+    for (const [which, wheelWidth] of [['front', BLASTER_WHEELS.front], ['rear', BLASTER_WHEELS.rear]]) {
+      const F = BLASTER_FENDERS[which];
+      const p = shellGeometry(F.profile, BLASTER_SECTION, F.width[0], F.width[1], { samples: 48 }).attributes.position;
+      let min = Infinity;
+      for (let i = 0; i < p.count; i++) {
+        const [x, y, z] = [p.getX(i), p.getY(i), p.getZ(i)];
+        if (y <= 0 || x < BLASTER_WHEELS.x - wheelWidth / 2 || x > BLASTER_WHEELS.x + wheelWidth / 2) continue;
+        min = Math.min(min, Math.hypot(y, z) - BLASTER_WHEELS.radius);
+      }
+      expect(min, `${which} fender clearance over its tyre`).toBeGreaterThan(0.03);
+    }
   });
 
   it('stops the fenders near the tyres’ ends, so the front of the front tyre and the back of the rear one show', () => {
