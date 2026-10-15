@@ -222,6 +222,18 @@ describe('the yellow quad’s model', () => {
     expect(new THREE.Box3().setFromObject(yellow.model.getObjectByName('lightsSwitchHousing')).intersectsBox(new THREE.Box3().setFromObject(yellow.model.getObjectByName('clampBlock')).expandByScalar(0.1))).toBe(true);
   });
 
+  it('has a thumb throttle on the right whose paddle moves with the throttle, in a housing that is the right lever’s perch', async () => {
+    const paddle = yellow.model.getObjectByName('thumbThrottle');
+    expect(paddle).toBeTruthy();
+    expect(yellow.model.getObjectByName('thumbHousing').position.x).toBeLessThan(0);
+    const { poseThumbThrottle } = await import('../src/vehicle/foremanControls.js');
+    poseThumbThrottle(yellow.model, 0);
+    const rest = paddle.rotation.x;
+    poseThumbThrottle(yellow.model, 1);
+    expect(paddle.rotation.x).toBeGreaterThan(rest + 0.3);
+    poseThumbThrottle(yellow.model, 0);
+  });
+
   it('has no number plate: the old sport nose’s round plate and its backing are gone', () => {
     yellow.model.traverse((o) => {
       if (o.isMesh && o.geometry.type === 'CircleGeometry') expect(o.geometry.parameters.radius, 'a plate-sized disc').not.toBeCloseTo(0.11, 2);

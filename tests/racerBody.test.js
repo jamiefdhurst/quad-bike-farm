@@ -31,7 +31,7 @@ describe('the Quadracer body numbers', () => {
 
   it('kicks the rear wings up towards the back, and keeps the shroud higher than the seat: a wedge in side view', () => {
     const rear = RACER_FENDERS.rear.profile;
-    expect(rear.at(-1)[1]).toBeGreaterThan(rear[0][1] + 0.3); // the wing's back end is much higher than its front
+    expect(rear.at(-1)[1]).toBeGreaterThan(rear[0][1] + 0.25); // the wing's back end is much higher than its front (toned down from +0.36)
     expect(shroudTop(0.22)).toBeGreaterThan(RACER_SEAT[2].y1 + 0.03);
     expect(shroudTop(0.9)).toBeLessThan(shroudTop(0.22) - 0.2); // and falls away to a low front
   });
@@ -140,7 +140,9 @@ describe('the orange quad’s model', () => {
     }
     expect(orange.model.userData.seatMaterial.color.getHex()).toBe(0x1f4aa0);
     let black = 0;
+    const bars = orange.model.getObjectByName('handlebars');
     orange.model.getObjectByName('bodyRoot').traverse((o) => {
+      for (let a = o.parent; a; a = a.parent) if (a === bars) return;
       if (o.isMesh && o.material?.color?.getHex?.() === 0x1f2123) black++; // the shared frame's black: it is all blue here
     });
     expect(black, 'meshes left in the shared black frame material').toBe(0);
@@ -154,6 +156,33 @@ describe('the orange quad’s model', () => {
     const rocker = orange.model.getObjectByName('lightsRocker');
     expect(Math.abs(world(rocker).x - world(lever).x)).toBeLessThan(0.1);
     expect(orange.model.getObjectByName('stopRocker')).toBeFalsy(); // so it poses as a plain switch
+  });
+
+  it('swings the choke lever through its whole travel without touching the crossbar or the pod’s own parts: it is clear of the bar', () => {
+    const bars = orange.model.getObjectByName('handlebars');
+    const lever = orange.model.getObjectByName('chokeLever');
+    const cross = new THREE.Box3().setFromObject(bars.getObjectByName('crossbar'));
+    for (const angle of [0.5, 0.0, -0.5, -0.95]) { // off (0.5) to full choke (0.5 - 1.45), as quad.js poses it
+      lever.rotation.x = angle;
+      bars.updateMatrixWorld(true);
+      for (const part of ['chokeLeverArm', 'chokeLeverKnob']) {
+        const box = new THREE.Box3().setFromObject(lever.getObjectByName(part));
+        expect(box.intersectsBox(cross), `${part} at ${angle} rad is through the crossbar`).toBe(false);
+      }
+    }
+    lever.rotation.x = 0.5;
+  });
+
+  it('has a thumb throttle whose paddle moves with the throttle', async () => {
+    const paddle = orange.model.getObjectByName('thumbThrottle');
+    expect(paddle).toBeTruthy();
+    expect(orange.model.getObjectByName('thumbHousing')).toBeTruthy();
+    const { poseThumbThrottle } = await import('../src/vehicle/foremanControls.js');
+    poseThumbThrottle(orange.model, 0);
+    const rest = paddle.rotation.x;
+    poseThumbThrottle(orange.model, 1);
+    expect(paddle.rotation.x).toBeGreaterThan(rest + 0.3);
+    poseThumbThrottle(orange.model, 0);
   });
 
   it('has the kill switch’s panel standing on the pod, and a crossbar no higher than the grips', () => {

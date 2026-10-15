@@ -18,8 +18,8 @@ export const RACER_FENDERS = {
     width: [0.2, 0.585],
   },
   rear: {
-    profile: [[0.25, 0.3], [0.19, 0.37], [0.08, 0.43], [-0.05, 0.49], [-0.2, 0.57], [-0.33, 0.64], [-0.36, 0.66]],
-    width: [0.17, 0.6],
+    profile: [[0.25, 0.3], [0.19, 0.37], [0.08, 0.43], [-0.05, 0.47], [-0.18, 0.52], [-0.27, 0.555], [-0.3, 0.565]],
+    width: [0.19, 0.55],
   },
 };
 
@@ -61,9 +61,9 @@ export const RACER_SEAT = [
 /** The tail between the rear wings: the duck-tail's middle, rising towards the back, as wide as the gap between the wings. */
 export const RACER_TAIL = [
   { z: -0.8, w: 0.3, y0: 0.74, y1: 0.86 },
-  { z: -0.88, w: 0.36, y0: 0.78, y1: 0.92 },
-  { z: -0.94, w: 0.36, y0: 0.8, y1: 0.95 },
-  { z: -0.97, w: 0.24, y0: 0.84, y1: 0.93 },
+  { z: -0.88, w: 0.36, y0: 0.78, y1: 0.9 },
+  { z: -0.94, w: 0.36, y0: 0.8, y1: 0.93 },
+  { z: -0.97, w: 0.24, y0: 0.84, y1: 0.915 },
 ];
 
 /** The flank triangles either side under the seat: [z, y] corners (the front top meets the shroud, the rear top the seat, the apex hangs low). */
@@ -73,7 +73,8 @@ export const RACER_FLANK = { x: 0.2, corners: [[0.3, 0.88], [-0.34, 0.8], [-0.05
 export const RACER_SIDE_PLATE = { x: 0.16, y: 0.6, h: 0.1, z: -0.6, len: 0.4 };
 
 /** The bars' lamp guard is the yellow's: the V, the clamp and the crossbar are shared (blasterBody.js `BLASTER_VBARS`). The pod on the level run: where each thing sits along it. */
-export const RACER_POD = { x0: 0.09, x1: 0.21, rockerX: 0.11, chokeX: 0.155, dashX: 0.195 };
+export const RACER_POD = { x0: 0.09, x1: 0.21, rockerX: 0.11, chokeX: 0.155, dashX: 0.195, z: -0.075, depth: 0.1 };
+// (everything on the pod stands on its rear half, behind the crossbar, which passes over the pod's front: a lever up there would go through it)
 
 /**
  * The exhaust, in the body's frame: the belly out to the right, then in under the flank and the wing to a short silver can inside the frame

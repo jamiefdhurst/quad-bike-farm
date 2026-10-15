@@ -1174,7 +1174,7 @@ export const DASH_PLACE = {
   kodiak: { pos: [0, 0.1, 0.02], tilt: 0.75 },
   bayou: { pos: [0, 0.05, 0.04], tilt: 0.85 }, // low, just over the middle of the bars
   blaster: { pos: [0, -0.034, -0.02], tilt: 0.5 }, // sitting on the clamp block at the bars' middle, behind the lamp (the V's middle is 7 cm below the bars' origin)
-  quadracer: { pos: [0.195, -0.022, -0.03], tilt: 0.9 }, // on the pod on the level run of the V bars (the kill switch's panel)
+  quadracer: { pos: [0.195, -0.022, -0.075], tilt: 0.9 }, // on the pod on the level run of the V bars (the kill switch's panel)
   kidsKey: { pos: [0, 0.075, 0.0], tilt: 0.9 },
   tractor: { pos: [0, 0, 0], tilt: 1.05 }, // the tractor's model places it on its scuttle itself
   utv: { pos: [0, 0, 0], tilt: 0.9 }, // so does the UTV's

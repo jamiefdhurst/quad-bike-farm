@@ -279,14 +279,15 @@ export function buildDriveSwitch(bars, MAT, at = [-0.19, 0.068, -0.03]) {
  * The thumb throttle on the right grip: a housing on the bar with a cable adjuster, and a paddle lever (`thumbThrottle`) standing
  * out below the grip for the thumb, pivoting about X at its root and pushed forward (away from you) by `poseThumbThrottle`.
  */
-export function buildThumbThrottle(bars, MAT) {
-  rb(0.046, 0.034, 0.046, 0.007, MAT.plastic, -0.3, 0.066, -0.03, bars, 'thumbHousing');
+export function buildThumbThrottle(bars, MAT, dy = 0, x = -0.3) {
+  // `dy` and `x` move it along a bar that is not the red's straight one (the sport quads' V bars: the housing sits on the rise, and is the right lever's perch too).
+  rb(0.046, 0.034, 0.046, 0.007, MAT.plastic, x, 0.066 + dy, -0.03, bars, 'thumbHousing');
   const barrel = new THREE.Mesh(strip(new THREE.CylinderGeometry(0.0055, 0.0055, 0.014, 8)).rotateZ(Math.PI / 2), MAT.alloy);
-  barrel.position.set(-0.282, 0.075, -0.004);
+  barrel.position.set(x + 0.018, 0.075 + dy, -0.004);
   bars.add(barrel);
   const lever = new THREE.Group();
   lever.name = 'thumbThrottle';
-  lever.position.set(-0.322, 0.054, -0.045);
+  lever.position.set(x - 0.022, 0.054 + dy, -0.045);
   lever.userData.keep = true;
   bars.add(lever);
   // A curved paddle with a ridged pad, reaching back and down from its pivot under the grip.

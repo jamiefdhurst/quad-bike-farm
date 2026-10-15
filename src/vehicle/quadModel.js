@@ -470,7 +470,7 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
       continue;
     }
     // Brake lever on a perch, curving out ahead of the grip.
-    rbox(0.03, 0.026, 0.03, 0.008, MAT.engineDark, s * perchX, perchY, -0.018, bars);
+    if (!(blaster && s < 0)) rbox(0.03, 0.026, 0.03, 0.008, MAT.engineDark, s * perchX, perchY, -0.018, bars); // (the V-bar quads' right perch is the thumb throttle's housing)
     const lever = [[0, 0.004, 0.006], [s * 0.028 * leverK, 0.01, 0.012], [s * 0.138 * leverK, 0.01, -0.016], [s * 0.156 * leverK, 0.006, -0.028]];
     if (s > 0) {
       // The left lever is also the parking brake: squeezed in and held by a red catch on the perch (poseParkBrake).
@@ -579,6 +579,7 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
 
   // Thumb throttle and its housing on the right.
   if (kit) buildThumbThrottle(bars, MAT);
+  else if (blaster) buildThumbThrottle(bars, MAT, perchY - 0.066, -perchX); // the yellow's and orange's move too (poseThumbThrottle), on the rise
   else {
     const ty = blaster ? barAt(0.3).y : vBars ? 0.062 - 0.004 : 0.066; // on the bar, whose height out along a V is not the straight bar's
     rbox(0.04, 0.036, 0.042, 0.01, MAT.plastic, -0.3, ty, -0.032, bars);
@@ -1428,7 +1429,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   root.name = 'bodyRoot';
   body.add(root);
 
-  buildFrame(root, sport, barsY(style), style === 'utility' ? -0.9 : style === 'grizzly' || bayou ? -0.84 : blaster ? -0.93 : -0.98); // the Foreman's rails end under its rear deck and the Grizzly's inside its own, not out behind the tail lamp
+  buildFrame(root, sport, barsY(style), style === 'utility' ? -0.9 : style === 'grizzly' || bayou ? -0.84 : blaster || racer ? -0.93 : -0.98); // the Foreman's rails end under its rear deck and the Grizzly's inside its own, not out behind the tail lamp
   const engine = buildEngine(root, sport, race, blaster);
   buildExhaust(engine, sport, race, blaster, racer);
 
@@ -1995,7 +1996,9 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     // The frame is blue tube, not the others' black: every tube the shared builders made in the black frame material (the nerf bars too, so
     // this is after them).
     root.traverse((o) => {
-      if (o.isMesh && o.material === MAT.frame) o.material = blue;
+      if (!o.isMesh || o.material !== MAT.frame) return;
+      for (let a = o.parent; a; a = a.parent) if (a === bars) return; // the bars' own black parts (the thumb paddle) stay black
+      o.material = blue;
     });
   }
   addHeadlightBeams(quad);

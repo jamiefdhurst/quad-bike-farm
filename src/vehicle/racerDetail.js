@@ -100,11 +100,11 @@ export function addRacerBars(bars, MAT, lensMat) {
   const P = RACER_POD;
   const w = P.x1 - P.x0;
   const py = V.centreY + 0.02;
-  rbox(w, 0.032, 0.05, 0.008, MAT.plastic, (P.x0 + P.x1) / 2, py, -0.025, bars, 'controlPod');
+  rbox(w, 0.032, P.depth, 0.008, MAT.plastic, (P.x0 + P.x1) / 2, py, -P.depth / 2, bars, 'controlPod'); // from the front of the pod (z 0) back to -0.09: the rocker, lever and dash on its rear half
   const rocker = new THREE.Group();
   rocker.name = 'lightsRocker';
   rocker.userData.keep = true;
-  rocker.position.set(P.rockerX, py + 0.016, -0.025);
+  rocker.position.set(P.rockerX, py + 0.016, P.z);
   bars.add(rocker);
   rbox(0.024, 0.007, 0.03, 0.003, new THREE.MeshStandardMaterial({ color: 0xe8c21b, roughness: 0.55 }), 0, 0.002, 0, rocker, 'lightsRockerCap');
   // The cables: the brake's on the left from the lever perch, the throttle's on the right from its housing, both down to the column's foot.
@@ -115,7 +115,7 @@ export function addRacerBars(bars, MAT, lensMat) {
 
 /** Where the choke lever stands on the pod (the bars' frame): the pod's top at the lever's place. */
 export function racerChokeAt() {
-  return [RACER_POD.chokeX, BLASTER_VBARS.centreY + 0.036, -0.025];
+  return [RACER_POD.chokeX, BLASTER_VBARS.centreY + 0.036, RACER_POD.z];
 }
 
 /** The maker's badge on each flank's outer face, a millimetre off the surface. */
