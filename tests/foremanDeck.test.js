@@ -59,6 +59,8 @@ describe('the Foreman’s decks', () => {
         expect(b.min.y).toBeCloseTo(DECK.lowEdge, 6); // down to the footboard, where the skirt's tail ends
         expect(b.max.y).toBeGreaterThan(spec.top - 0.1); // and up to the deck
         expect(Math.min(Math.abs(b.max.z - spec.z0), Math.abs(b.min.z - spec.z0))).toBeLessThan(1e-6); // meeting the deck's end at the skirt
+        const back = which === 'front' ? spec.z0 - b.min.z : b.max.z - spec.z0;
+        expect(back).toBeGreaterThanOrEqual(0.1 - 1e-6); // and leaving the panel the fillet's radius back from it, so the corner is round
       }
     });
   }

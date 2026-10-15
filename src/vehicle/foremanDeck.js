@@ -130,28 +130,35 @@ export function flareGeometry(which, wheelZ, side, D = DECK) {
 
 /**
  * The wall at a deck's inner end (side = +1 or -1): the back of the front wheel arch, or the front of the rear one. It hangs from the
- * deck's end edge down to the footboard, starts flush with the side panel's outer face (`xIn`) at the panel's end (which is the deck's end, or `join` back from it) and curves round in plan and in height to meet the black skirt's edge exactly at the deck's end. Without it the deck
- * ends in a free edge with a slot behind it that shows straight through the quad; the real fenders have no such edge.
+ * deck's end edge down to the footboard. It leaves the side panel's outer face (`xIn`) tangentially, `fillet` back from the deck's end,
+ * so there is no corner between them, curves round a quarter circle in plan, and runs out to meet the black skirt's edge exactly at the
+ * deck's end, with a belly in plan and in height. Without it the deck ends in a free edge with a slot behind it that shows straight
+ * through the quad; the real fenders have no such edge.
  */
-export function bulkheadGeometry(which, side, D = DECK, { xIn = 0.266, bottom = D.lowEdge, join = 0, bulge = 0.045 } = {}) {
+export function bulkheadGeometry(which, side, D = DECK, { xIn = 0.266, bottom = D.lowEdge, fillet = 0.1, bulge = 0.04 } = {}) {
   const spec = D[which];
   const dir = Math.sign(spec.zf - spec.z0);
   const row = deckRows(D, spec)[0];
   const xOut = row.half + 0.006;
+  // The path in plan, from the panel round the fillet and out to the skirt: [x, z].
+  const path = [];
+  const A = 6;
+  for (let i = 0; i <= A; i++) {
+    const phi = (i / A) * (Math.PI / 2);
+    path.push([xIn + fillet * (1 - Math.cos(phi)), spec.z0 - dir * fillet * (1 - Math.sin(phi))]);
+  }
+  const B = 5;
+  for (let i = 1; i <= B; i++) path.push([xIn + fillet + ((xOut - xIn - fillet) * i) / B, spec.z0]);
   const rows = [];
   const M = 8;
-  const N = 10;
   for (let k = 0; k <= M; k++) {
     const t = k / M;
-    const pts = [];
-    for (let i = 0; i <= N; i++) {
-      const u = i / N;
-      const x = xIn + (xOut - xIn) * u;
+    const pts = path.map(([x, z], i) => {
+      const u = i / (path.length - 1);
       const top = deckY(D, spec, row, Math.min(x, row.half));
-      // Back from the deck's end: all of `join` at the panel (once down off the deck), none at the skirt, with a belly in between.
-      const back = join * (1 - ease(u)) * ease(clamp01(t * 3)) + bulge * Math.sin(Math.PI * t * 0.9) * Math.sin(Math.PI * u);
-      pts.push([side * x, top + (bottom - top) * t, spec.z0 - dir * back]);
-    }
+      const back = bulge * Math.sin(Math.PI * t * 0.9) * Math.sin(Math.PI * u);
+      return [side * x, top + (bottom - top) * t, z - dir * back];
+    });
     rows.push(pts);
   }
   return gridGeometry(rows);
