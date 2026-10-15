@@ -49,9 +49,9 @@ export function bumperPoints(B = GRIZZLY_BUMPER) {
 
 /**
  * The headlight surround's control points on the face, as [u, v] from the lens's middle (u outwards, v up), after the real one: an
- * almond lying on its side, rounded and close round the lens at the inner end, the top arching over it and sweeping down to a long
- * point out towards the fender's corner, the bottom running back under the lens in a gentler curve. Taken round as a closed spline.
+ * almond lying on its side, rounded and close round the lens at the inner end, the bottom curving under it and the outer end sweeping
+ * up to a long point out towards the fender's top corner, the top running back over the lens in a gentler curve. Taken round as a closed spline.
  */
 export function grizzlyLampOutline() {
-  return [[-0.05, 0.0], [-0.04, 0.026], [-0.005, 0.042], [0.045, 0.038], [0.1, 0.018], [0.15, -0.015], [0.168, -0.04], [0.12, -0.05], [0.05, -0.052], [-0.015, -0.047], [-0.045, -0.026]];
+  return [[-0.05, 0.0], [-0.04, -0.026], [-0.005, -0.042], [0.045, -0.038], [0.1, -0.018], [0.15, 0.012], [0.168, 0.032], [0.12, 0.05], [0.05, 0.052], [-0.015, 0.047], [-0.045, 0.026]];
 }
