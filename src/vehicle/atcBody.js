@@ -68,12 +68,21 @@ export const ATC_REAR_BODY = [
   { z: -0.7, w: 0.88, y0: 0.6, y1: 0.74 },
   { z: -0.8, w: 0.7, y0: 0.57, y1: 0.68 },
 ];
-/** The black rubber flares outboard of each tyre's top, as loft stations (centre x, width w) to the back. */
+/**
+ * The black rubber flares over each tyre, as loft stations: a lip that runs in under the body's edge (so it is joined to it) and out over the
+ * tyre's shoulder, and an outboard skirt that hangs from the lip's outer edge down the tyre's face.
+ */
+export const ATC_FLARE_LIP = [
+  { z: -0.28, w: 0.115, x: 0.4875, y0: 0.6, y1: 0.66 },
+  { z: -0.45, w: 0.115, x: 0.4875, y0: 0.62, y1: 0.67 },
+  { z: -0.65, w: 0.115, x: 0.4875, y0: 0.62, y1: 0.66 },
+  { z: -0.8, w: 0.21, x: 0.4525, y0: 0.58, y1: 0.63 }, // the body narrows here, so the lip reaches further in
+];
 export const ATC_FLARE = [
-  { z: -0.28, w: 0.028, x: 0.525, y0: 0.52, y1: 0.64 },
-  { z: -0.45, w: 0.028, x: 0.53, y0: 0.47, y1: 0.65 },
-  { z: -0.65, w: 0.028, x: 0.53, y0: 0.45, y1: 0.63 },
-  { z: -0.82, w: 0.028, x: 0.525, y0: 0.44, y1: 0.55 },
+  { z: -0.28, w: 0.028, x: 0.53, y0: 0.52, y1: 0.65 },
+  { z: -0.45, w: 0.028, x: 0.53, y0: 0.47, y1: 0.655 },
+  { z: -0.65, w: 0.028, x: 0.53, y0: 0.45, y1: 0.65 },
+  { z: -0.82, w: 0.028, x: 0.525, y0: 0.44, y1: 0.6 },
 ];
 /** The rear rack's grab rail (a loop over the back of the body) and the bumper bar under its tail. */
 export const ATC_RACK = { x: 0.16, top: 0.85, front: -0.58, back: -0.82, base: 0.76 };
@@ -102,9 +111,12 @@ export const ATC_EXHAUST = {
 /** The frame, black tube, per side as [z, y] runs at x: the cradle round the engine, the spine under the tank and the rear legs to the axle. */
 export const ATC_FRAME = {
   x: 0.11,
-  cradle: [[0.4, 0.7], [0.26, 0.5], [0.18, 0.28], [0.02, 0.2], [-0.2, 0.24], [-0.45, 0.3], [-0.55, 0.3]],
-  spine: [[0.4, 0.76], [0.2, 0.67], [-0.1, 0.62], [-0.3, 0.6]],
+  // The front of it stops short of what the steering swings (the legs, boots, flap and fender sweep out from the axis as they turn); only
+  // the head tube, on the axis itself, reaches the steering and so never meets a turning part.
+  cradle: [[0.2, 0.58], [0.15, 0.42], [0.12, 0.28], [0.02, 0.2], [-0.2, 0.24], [-0.45, 0.3], [-0.55, 0.3]],
+  spine: [[0.2, 0.7], [0.0, 0.66], [-0.1, 0.62], [-0.3, 0.6]],
   rear: [[-0.3, 0.6], [-0.45, 0.45], [-0.55, 0.3]],
+  head: [0.6, 0.82], // the head tube from y to y on the steering axis, with a pair of tubes from it back to the spines
 };
 
 /** The chain on the left from the engine's sprocket to the rear axle's, and the foot rests (fixed to where the old model had them). */

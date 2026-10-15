@@ -5,9 +5,10 @@ import { cableGeometry } from './detail/cables.js';
 import { treadTyre } from './detail/tread.js';
 import { decalMesh, MAKER_FOR } from './detail/decals.js';
 import { chokeSymbol } from './blasterDetail.js';
+import { buildThumbThrottle } from './foremanControls.js';
 import { mesh, rbox, tube, pipe, CHOKE_KNOB, CHOKE_MARK } from './tz65Detail.js';
 import {
-  ATC_WHEELS, ATC_BARS_AT, ATC_FORK, ATC_FRONT_FENDER, ATC_FRONT_FLAP, ATC_LAMP, ATC_BARS, ATC_TANK, ATC_SEAT, ATC_REAR_BODY, ATC_FLARE, ATC_RACK,
+  ATC_WHEELS, ATC_BARS_AT, ATC_FORK, ATC_FRONT_FENDER, ATC_FRONT_FLAP, ATC_LAMP, ATC_BARS, ATC_TANK, ATC_SEAT, ATC_REAR_BODY, ATC_FLARE, ATC_FLARE_LIP, ATC_RACK,
   ATC_BUMPER, ATC_TAIL, ATC_ENGINE, ATC_CARB, ATC_TAP, ATC_EXHAUST, ATC_FRAME, ATC_CHAIN, ATC_PEGS, forkZ,
 } from './atcBody.js';
 
@@ -26,8 +27,8 @@ const tyre = (front) => (tyres[front ? 'f' : 'r'] ??= treadTyre('trike', {
   radius: R,
   width: front ? ATC_WHEELS.front : ATC_WHEELS.rear,
   rimR: front ? ATC_WHEELS.rimFront : ATC_WHEELS.rimRear,
-  count: 18,
-  segments: 32,
+  count: 16,
+  segments: 28,
 }));
 
 /** The tyre, the plain silver rim (a dished face with a few holes and a lip each side) and the hub. */
@@ -96,8 +97,9 @@ export function addAtcFrame(root, MAT) {
     run(s, F.spine, 0.017);
     run(s, F.rear, 0.016);
   }
-  // The head: where the spines and cradles come together behind the columns, and the cross-tubes.
-  rbox(0.26, 0.09, 0.07, 0.02, MAT.frame, 0, 0.74, forkZ(0.74) - 0.04, root);
+  // The head tube on the steering axis, with a V of tubes back to the spines (clear of the columns, boots and flap as they turn).
+  tube([0, F.head[0], forkZ(F.head[0])], [0, F.head[1], forkZ(F.head[1])], 0.028, MAT.frame, root, 10);
+  for (const s of [-1, 1]) tube([0, 0.72, forkZ(0.72)], [s * F.x, F.spine[0][1], F.spine[0][0]], 0.014, MAT.frame, root, 6);
   tube([-F.x, 0.62, -0.3], [F.x, 0.62, -0.3], 0.014, MAT.frame, root, 6);
   // The solid axle across the back (fixed: it measures as part of the body, not of the wheel) with the chain's sprocket on the left.
   tube([-ATC_WHEELS.halfTrack, R, ATC_WHEELS.rearZ], [ATC_WHEELS.halfTrack, R, ATC_WHEELS.rearZ], 0.022, MAT.steel, root);
@@ -122,6 +124,7 @@ export function addAtcBody(root, MAT, paint, seatMat) {
   mesh(loftGeometry(ATC_REAR_BODY, { exponent: 3.2, segments: 32 }), paint, root, 'rearBody');
   for (const s of [-1, 1]) {
     mesh(loftGeometry(ATC_FLARE.map((st) => ({ ...st, x: s * st.x })), { exponent: 3 }), MAT.rubber, root, 'flare');
+    mesh(loftGeometry(ATC_FLARE_LIP.map((st) => ({ ...st, x: s * st.x })), { exponent: 3 }), MAT.rubber, root, 'flareLip');
   }
   mesh(loftGeometry(ATC_TANK.stations, { exponent: 3 }), paint, root, 'tank');
   const cap = mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.012, 14), MAT.plastic, root, 'tankCap');
@@ -269,14 +272,14 @@ export function addAtcBars(bars, MAT, paint, lensMat) {
   const T = ATC_BARS;
   pipe([...T.half, ...T.half.slice().reverse().map(([x, y, z]) => [-x, y, z])], 0.0115, MAT.chrome, bars, { bend: 0.03, steps: 4 });
   tube([-T.crossX, T.crossY - 0.004, 0.0], [T.crossX, T.crossY - 0.004, 0.0], 0.009, MAT.chrome, bars, 6);
-  rbox(0.2, 0.04, 0.04, 0.016, MAT.plastic, 0, T.crossY + 0.01, -0.07, bars, 'barPad'); // behind the key, which is on the crossbar
+  for (const s of [-1, 1]) rbox(0.14, 0.04, 0.04, 0.016, MAT.plastic, s * 0.12, T.crossY + 0.008, -0.025, bars, s > 0 ? 'barPadLeft' : 'barPadRight'); // round the crossbar, either side of the key
   for (const s of [-1, 1]) {
     const grip = mesh(gripGeometry(T.gripLen, 0.016), MAT.rubber, bars, s > 0 ? 'gripLeft' : 'gripRight');
     const a = new THREE.Vector3(s * T.grip[0], T.grip[1], T.grip[2]);
     grip.position.copy(a);
     grip.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(s * T.gripDir[0], T.gripDir[1], T.gripDir[2]).normalize());
     // The perch and its lever, curving out ahead of the grip.
-    const px = 0.24;
+    const px = 0.2;
     const py = 0.054;
     rbox(0.03, 0.026, 0.03, 0.008, MAT.engineDark, s * px, py, -0.02, bars);
     const g = new THREE.Group();
@@ -284,12 +287,21 @@ export function addAtcBars(bars, MAT, paint, lensMat) {
     bars.add(g);
     pipe([[0, 0.004, 0.006], [s * 0.025, 0.01, 0.012], [s * 0.1, 0.01, -0.016], [s * 0.118, 0.006, -0.028]], 0.0055, MAT.alloy, g, { bend: 0.02 });
   }
-  rbox(0.04, 0.034, 0.04, 0.01, MAT.plastic, -0.255, 0.056, -0.04, bars, 'throttleHousing'); // the twist grip's housing on the right
-  rbox(0.034, 0.028, 0.036, 0.01, MAT.plastic, 0.27, 0.052, -0.044, bars, 'lampSwitch'); // the lights switch on the left
+  buildThumbThrottle(bars, MAT, 0, -0.3); // the thumb throttle on the right, against the grip's inner end (poseThumbThrottle moves it)
+  // The lights switch on the left: a small housing on the bar with a rocker on it (the quad's own pose finds it by name; P works it).
+  const sx = 0.27;
+  const sy = 0.056;
+  rbox(0.036, 0.024, 0.034, 0.007, MAT.plastic, sx, sy, -0.044, bars, 'lightsSwitchHousing');
+  const rocker = new THREE.Group();
+  rocker.name = 'lightsRocker';
+  rocker.userData.keep = true;
+  rocker.position.set(sx, sy + 0.012, -0.044);
+  bars.add(rocker);
+  rbox(0.024, 0.007, 0.026, 0.003, new THREE.MeshStandardMaterial({ color: 0x25272a, roughness: 0.6 }), 0, 0.002, 0, rocker, 'lightsRockerCap');
   // Cables from the levers and the throttle housing down to the steering.
-  mesh(cableGeometry([[0.24, 0.056, -0.02], [0.16, 0.0, 0.01], [0.08, -0.08, 0.04], [0.04, -0.14, 0.05]], 0.0035, { sag: 0.03 }), MAT.rubber, bars, 'clutchCable');
-  mesh(cableGeometry([[-0.255, 0.07, -0.04], [-0.2, 0.0, -0.01], [-0.1, -0.08, 0.03], [-0.045, -0.14, 0.05]], 0.0035, { sag: 0.03 }), MAT.rubber, bars, 'throttleCable');
-  mesh(cableGeometry([[-0.24, 0.056, -0.02], [-0.18, -0.01, 0.01], [-0.09, -0.1, 0.05], [-0.05, -0.16, 0.06]], 0.0035, { sag: 0.03 }), MAT.rubber, bars, 'brakeCable');
+  mesh(cableGeometry([[0.2, 0.056, -0.02], [0.16, 0.0, 0.01], [0.08, -0.08, 0.04], [0.04, -0.14, 0.05]], 0.0035, { sag: 0.03 }), MAT.rubber, bars, 'clutchCable');
+  mesh(cableGeometry([[-0.3, 0.07, -0.04], [-0.2, 0.0, -0.01], [-0.1, -0.08, 0.03], [-0.045, -0.14, 0.05]], 0.0035, { sag: 0.03 }), MAT.rubber, bars, 'throttleCable');
+  mesh(cableGeometry([[-0.2, 0.056, -0.02], [-0.18, -0.01, 0.01], [-0.09, -0.1, 0.05], [-0.05, -0.16, 0.06]], 0.0035, { sag: 0.03 }), MAT.rubber, bars, 'brakeCable');
   // The steering: a clamp block over the two red columns, the columns down to the crown, their crossbar and the lamp.
   const F = ATC_FORK;
   const local = (x, y) => [x, y - ATC_BARS_AT[1], forkZ(y) - ATC_BARS_AT[2]];

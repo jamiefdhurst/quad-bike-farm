@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as THREE from 'three';
 import {
-  ATC_WHEELS, ATC_BARS_AT, ATC_RAKE, forkZ, ATC_FORK, ATC_FRONT_FENDER, ATC_REAR_BODY, ATC_FLARE, ATC_SEAT, ATC_EXHAUST, ATC_ENGINE, ATC_CARB, ATC_BARS, ATC_TANK, ATC_LAMP,
+  ATC_WHEELS, ATC_BARS_AT, ATC_RAKE, forkZ, ATC_FORK, ATC_FRONT_FENDER, ATC_REAR_BODY, ATC_FLARE, ATC_FLARE_LIP, ATC_FRAME, ATC_SEAT, ATC_EXHAUST, ATC_ENGINE, ATC_CARB, ATC_BARS, ATC_TANK, ATC_LAMP,
 } from '../src/vehicle/atcBody.js';
 import { ATC_LAYOUT } from '../src/vehicle/atcModel.js';
 import { EXTRA_SPECS } from '../src/vehicle/quadSpecs.js';
@@ -47,6 +47,26 @@ describe('the old three-wheeler’s numbers', () => {
     for (const st of ATC_FLARE) expect(st.x - st.w / 2, `flare at z ${st.z}`).toBeGreaterThanOrEqual(outer - 0.01); // outside the tyre's face, not in it
   });
 
+  it('join the flares to the body: the lip runs in under its edge, the skirt hangs from the lip, and both stay off the tyre', () => {
+    const halfAt = (z) => {
+      const i = ATC_REAR_BODY.findIndex((st) => st.z <= z);
+      return ATC_REAR_BODY[Math.max(0, i)].w / 2;
+    };
+    ATC_FLARE_LIP.forEach((lip, i) => {
+      expect(lip.x - lip.w / 2, `lip inner edge at z ${lip.z}`).toBeLessThan(halfAt(lip.z));
+      expect(lip.y0, `lip over the tyre at z ${lip.z}`).toBeGreaterThan(tyreTop(lip.z - ATC_WHEELS.rearZ) + 0.01);
+      const skirt = ATC_FLARE[i];
+      expect(skirt.x - skirt.w / 2, 'skirt starts inside the lip').toBeLessThan(lip.x + lip.w / 2);
+      expect(skirt.x + skirt.w / 2, 'and the lip reaches it').toBeGreaterThan(lip.x + lip.w / 2 - 0.03);
+      expect(skirt.y1, 'skirt top is in the lip').toBeGreaterThan(lip.y0);
+    });
+  });
+
+  it('keep the frame out of what the steering swings: nothing of it ahead of z 0.25 but the head tube on the axis', () => {
+    for (const run of [ATC_FRAME.cradle, ATC_FRAME.spine]) for (const [z] of run) expect(z).toBeLessThanOrEqual(0.25);
+    expect(ATC_FRAME.head[1]).toBeGreaterThan(ATC_FRAME.head[0]);
+  });
+
   it('seat the rider at the fixed height: the seat top near the anchor (0.92), on the body’s top, the tank joined to the seat', () => {
     const top = Math.max(...ATC_SEAT.filter((s) => s.z <= -0.2 && s.z >= -0.5).map((s) => s.y1));
     expect(top).toBeGreaterThan(0.84);
@@ -85,6 +105,7 @@ describe('the old three-wheeler’s spec', () => {
     expect(atc.chokeStyle).toBe('plunger');
     expect(atc.tapStyle).toBe('carbLeft');
     expect(atc.noHeadlight).toBeFalsy();
+    expect(atc.barLights).toBe('switch');
     expect(MAKER_FOR.atc).toBe('kestrel');
     expect(atc.engine.pullStart).toBe(true);
     expect(atc.engine.noStarter).toBe(true);
@@ -105,6 +126,29 @@ describe('the old three-wheeler’s model', () => {
     for (const n of ['handlebars', 'gripLeft', 'gripRight', 'riderHands', 'dash', 'podMount', 'chokeLever', 'chokeKnob', 'fuelTap', 'fuelTapBody', 'carb', 'crankcase', 'recoilStarter', 'recoilHandle', 'header', 'silencer', 'exhaustTip', 'seat', 'rearBody', 'tank', 'flare', 'frontFender', 'frontFlap', 'headlight', 'tailLight', 'badge', 'stripe', 'pegLeft', 'pegRight', 'axleHousing', 'wheel_fl', 'wheel_rl', 'wheel_rr']) {
       expect(m.getObjectByName(n), n).toBeTruthy();
     }
+  });
+
+  it('has a lights rocker on the left bar and a thumb throttle on the right that moves with the throttle', async () => {
+    const m = atc.model;
+    const bars = m.getObjectByName('handlebars');
+    expect(bars.getObjectByName('lightsRocker').position.x).toBeGreaterThan(0.2);
+    const paddle = bars.getObjectByName('thumbThrottle');
+    expect(paddle.position.x).toBeLessThan(-0.25);
+    const { poseThumbThrottle } = await import('../src/vehicle/foremanControls.js');
+    poseThumbThrottle(m, 0);
+    const rest = paddle.rotation.x;
+    poseThumbThrottle(m, 1);
+    expect(paddle.rotation.x).toBeGreaterThan(rest + 0.3);
+    poseThumbThrottle(m, 0);
+  });
+
+  it('has the pads against the crossbar, not hanging off it', () => {
+    const bars = atc.model.getObjectByName('handlebars');
+    bars.updateMatrixWorld(true);
+    const cross = new THREE.Box3().setFromObject(bars.getObjectByName('barPadLeft')).expandByScalar(0.004);
+    // The crossbar (z 0, radius 9 mm): a point on its back surface must be inside the pad's box.
+    const p = new THREE.Vector3(ATC_BARS.crossX * 0.6, ATC_BARS.crossY - 0.004, -0.007).applyMatrix4(bars.matrixWorld);
+    expect(cross.containsPoint(p)).toBe(true);
   });
 
   it('has a headlight whose lens takes the lamp material (so the beam finds it), and a tail light', () => {

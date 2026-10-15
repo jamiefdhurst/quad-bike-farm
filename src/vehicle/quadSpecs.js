@@ -625,6 +625,7 @@ export const EXTRA_SPECS = [
     bodyWear: 0.8, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
     threeWheeler: true,
+    barLights: 'switch', // a plain on / off rocker on the left bar (P: off, dipped; lightSwitch.js), starting on
     label: 'old three-wheeler',
     name: 'Old three-wheeler',
     bodyColor: 0xb4553f, // a chalky, sun-bleached Honda red
