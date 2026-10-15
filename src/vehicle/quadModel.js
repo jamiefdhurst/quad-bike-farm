@@ -25,8 +25,8 @@ import { buildGrizzlyPod } from './grizzlyControls.js';
 import { BAYOU_DECK, BAYOU_RACKS, BAYOU_FACE } from './bayouBody.js';
 import { buildBayouPod } from './bayouControls.js';
 import { addBayouFront, addBayouRear, addBayouDecals, addBayouWear, addBayouRackBlocks, addBayouBarParts, addWinchHousing, cageMaterial } from './bayouDetail.js';
-import { BLASTER_FENDERS, BLASTER_SECTION, BLASTER_CARB, BLASTER_TAP } from './blasterBody.js';
-import { addBlasterNose, addBlasterTail, addBlasterFootrests, addBlasterBumper, addBlasterEngine, addBlasterBarCable, addBlasterDecals, chokeSymbol, silverMaterial } from './blasterDetail.js';
+import { BLASTER_FENDERS, BLASTER_SECTION, BLASTER_CARB, BLASTER_TAP, BLASTER_VBARS, BLASTER_EXHAUST } from './blasterBody.js';
+import { addBlasterNose, addBlasterTail, addBlasterFootrests, addBlasterBumper, addBlasterEngine, addBlasterBars, addBlasterDecals, chokeSymbol, silverMaterial } from './blasterDetail.js';
 import { addGrizzlyFront, addGrizzlyRear, addGrizzlyDecals, addFrontBrake, addGrizzlyRackBlocks, GRIZZLY_FACE } from './grizzlyDetail.js';
 
 // Farm quad built from procedural parts. One group with named parts so it can
@@ -429,11 +429,14 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
   bars.userData.keep = true;
   const kit = chokeStyle === 'slide' || podStyle === 'grizzly'; // the red's and blue's levers, drive switch and thumb throttle (foremanControls.js)
   const bayou = podStyle === 'bayou'; // the green's bars rise from a low middle in a V, and its speedo stands on a bracket over the clamp
+  const blaster = podStyle === 'blaster'; // the yellow's rise in a V too, with a hoop and crossbar over them (addBlasterBars)
+  const vBars = bayou || blaster;
+  const perchY = vBars ? 0.046 : 0.066; // the lever perches sit on the bar, which is lower out along a V
 
   // Bar with a slight sweep back towards the rider, in a clamp on a riser. The Bayou's rise straight from a low middle at about 20 degrees,
   // through the lever perch and the grip's fixed point (so the grips stay where they were), as the real one's do.
-  if (bayou) {
-    const half = [[0.433, 0.1084, -0.055], [0.318, 0.0655, -0.042], [0.262, 0.0446, -0.03], [0.05, -0.0345, -0.012]];
+  if (vBars) {
+    const half = bayou ? [[0.433, 0.1084, -0.055], [0.318, 0.0655, -0.042], [0.262, 0.0446, -0.03], [0.05, -0.0345, -0.012]] : BLASTER_VBARS.half;
     pipe([...half, ...half.slice().reverse().map(([x, y, z]) => [-x, y, z])], 0.011, cfg.bars, bars, { bend: 0.02, steps: 4 });
     tube([0, -0.1, 0.0], [0, -0.0345, -0.01], 0.02, MAT.steel, bars);
   } else {
@@ -444,7 +447,7 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
   for (const s of [-1, 1]) {
     const grip = add(gripGeometry(0.115, 0.016), MAT.rubber, bars, s > 0 ? 'gripLeft' : 'gripRight');
     const a = new THREE.Vector3(s * 0.318, 0.0675, -0.042);
-    const b = bayou ? new THREE.Vector3(s * 0.433, 0.1075, -0.055) : new THREE.Vector3(s * 0.433, 0.0725, -0.07);
+    const b = vBars ? new THREE.Vector3(s * 0.433, 0.1075, -0.055) : new THREE.Vector3(s * 0.433, 0.0725, -0.07);
     grip.position.copy(a);
     grip.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.sub(a).normalize());
     if (kit) {
@@ -452,21 +455,21 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
       continue;
     }
     // Brake lever on a perch, curving out ahead of the grip.
-    rbox(0.03, 0.026, 0.03, 0.008, MAT.engineDark, s * 0.262, 0.066, -0.018, bars);
+    rbox(0.03, 0.026, 0.03, 0.008, MAT.engineDark, s * 0.262, perchY, -0.018, bars);
     const lever = [[0, 0.004, 0.006], [s * 0.028, 0.01, 0.012], [s * 0.138, 0.01, -0.016], [s * 0.156, 0.006, -0.028]];
     if (s > 0) {
       // The left lever is also the parking brake: squeezed in and held by a red catch on the perch (poseParkBrake).
       const pivot = new THREE.Group();
       pivot.name = 'parkBrakeLever';
-      pivot.position.set(0.262, 0.066, -0.018);
+      pivot.position.set(0.262, perchY, -0.018);
       bars.add(pivot);
       pipe(lever, 0.0055, MAT.alloy, pivot, { bend: 0.02 });
       const catchBar = rbox(0.012, 0.008, 0.026, 0.003, new THREE.MeshStandardMaterial({ color: 0xc01818, roughness: 0.5 }), 0.03, 0.02, 0.0, bars, 'parkBrakeCatch');
-      catchBar.position.set(0.292, 0.088, -0.012);
+      catchBar.position.set(0.292, perchY + 0.022, -0.012);
       catchBar.visible = false;
     } else {
       const g = new THREE.Group();
-      g.position.set(s * 0.262, 0.066, -0.018);
+      g.position.set(s * 0.262, perchY, -0.018);
       bars.add(g);
       pipe(lever, 0.0055, MAT.alloy, g, { bend: 0.02 });
     }
@@ -558,8 +561,8 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
   // Thumb throttle and its housing on the right.
   if (kit) buildThumbThrottle(bars, MAT);
   else {
-    rbox(0.04, 0.036, 0.042, 0.01, MAT.plastic, -0.3, 0.066, -0.032, bars);
-    const thumb = rbox(0.012, 0.032, 0.022, 0.005, MAT.plastic, -0.32, 0.06, -0.06, bars, 'thumbThrottle', 1);
+    rbox(0.04, 0.036, 0.042, 0.01, MAT.plastic, -0.3, vBars ? 0.062 : 0.066, -0.032, bars);
+    const thumb = rbox(0.012, 0.032, 0.022, 0.005, MAT.plastic, -0.32, vBars ? 0.056 : 0.06, -0.06, bars, 'thumbThrottle', 1);
     thumb.rotation.y = -0.3;
   }
 
@@ -1128,7 +1131,7 @@ function swept(points, radii, mat, parent, samples = 40) {
   return add(sweepGeometry(curve.getPoints(samples), r, { radial: 14 }), mat, parent);
 }
 
-function buildExhaust(engine, sport, race = false) {
+function buildExhaust(engine, sport, race = false, blaster = false) {
   const exhaustTip = new THREE.Object3D();
   exhaustTip.name = 'exhaustTip';
   engine.add(exhaustTip);
@@ -1157,6 +1160,25 @@ function buildExhaust(engine, sport, race = false) {
     const tip = latheZ([[0.022, -0.02], [0.022, 0.03], [0.016, 0.03]], MAT.alloy, -0.24, 0.85, -0.9, engine, 12);
     tip.rotation.x = 0.28;
     exhaustTip.position.set(-0.24, 0.86, -0.93);
+  } else if (blaster) {
+    // The Blaster's: the belly out to the right, then in under the wing to a can inside the frame, kept low so nothing of it is in the
+    // wing or the tail. Both sides of every surface are drawn, with a dark baffle in the can's end, so looking into it is not seeing through.
+    const E = BLASTER_EXHAUST;
+    const blued = new THREE.MeshStandardMaterial({ color: 0x9aa0ab, roughness: 0.28, metalness: 0.9, side: THREE.DoubleSide });
+    swept(E.path, [0.024, 0.03, 0.05, 0.068, 0.05, 0.026, 0.024], blued, engine, 56);
+    const canMat = MAT.alloy.clone();
+    canMat.side = THREE.DoubleSide;
+    const h = E.can.length / 2;
+    const can = latheZ([[0.03, -h], [0.046, -h + 0.02], [0.05, -h + 0.07], [0.046, h - 0.02], [0.038, h], [0.02, h + 0.005]], canMat, E.can.x, E.can.y, E.can.z, engine, 16);
+    can.rotation.x = E.can.tilt;
+    const baffle = add(new THREE.CircleGeometry(0.03, 14), MAT.hole, engine);
+    baffle.position.set(E.can.x, E.can.y + Math.sin(E.can.tilt) * h * 0.7, E.can.z - h * 0.7);
+    baffle.rotation.set(E.can.tilt, Math.PI, 0); // faces the way the can opens
+    const tipMat = MAT.chrome.clone();
+    tipMat.side = THREE.DoubleSide;
+    const tip = latheZ([[0.022, -0.015], [0.022, 0.015], [0.016, 0.015]], tipMat, E.tip[0], E.tip[1], E.tip[2], engine, 12);
+    tip.rotation.x = E.can.tilt;
+    exhaustTip.position.set(E.tip[0], E.tip[1] + 0.005, E.tip[2] - 0.015);
   } else if (sport) {
     // Two-stroke expansion chamber: swelling belly down the right, tapering up to a high silencer.
     const blued = new THREE.MeshStandardMaterial({ color: 0x9aa0ab, roughness: 0.28, metalness: 0.9 });
@@ -1361,7 +1383,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
 
   buildFrame(root, sport, barsY(style), style === 'utility' ? -0.9 : style === 'grizzly' || bayou ? -0.84 : blaster ? -0.93 : -0.98); // the Foreman's rails end under its rear deck and the Grizzly's inside its own, not out behind the tail lamp
   const engine = buildEngine(root, sport, race, blaster);
-  buildExhaust(engine, sport, race);
+  buildExhaust(engine, sport, race, blaster);
 
   // Suspension: wishbones at the front, a swingarm or more wishbones at the back.
   for (let i = 0; i < WHEELS.length; i++) {
@@ -1383,7 +1405,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   } else if (blaster) {
     // Small plastics inside the tyres' edges (blasterBody.js): the nose with its lamp and vent, the tail, the side plates; the bumper is
     // tubular and the engine bay is open (addBlasterEngine). No number plate.
-    addBlasterNose(root, MAT, paint, lensMat);
+    addBlasterNose(root, MAT, paint);
     addBlasterTail(root, MAT, paint);
     addBlasterBumper(root, MAT, silver);
     addBlasterEngine(root, MAT);
@@ -1602,6 +1624,15 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
         { z: 0.53, w: 0.24, y0: 0.72, y1: 0.86 },
         { z: 0.57, w: 0.1, y0: 0.74, y1: 0.82 },
       ]
+    : blaster
+    ? [
+        // Sloping down to the front, the Blaster's wedge.
+        { z: 0.12, w: 0.2, y0: 0.74, y1: 0.85 },
+        { z: 0.2, w: 0.31, y0: 0.72, y1: 0.905 },
+        { z: 0.38, w: 0.32, y0: 0.7, y1: 0.915 },
+        { z: 0.5, w: 0.24, y0: 0.68, y1: 0.85 },
+        { z: 0.54, w: 0.12, y0: 0.68, y1: 0.79 },
+      ]
     : sport
     ? [
         { z: 0.12, w: 0.2, y0: 0.74, y1: 0.85 },
@@ -1813,18 +1844,20 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   if (style === 'utility' && !race && !sport) addTreadPlates(root, MAT);
 
   // Handlebars.
-  const bars = buildHandlebars(dashStyle, cfg, chokeStyle, driveSwitch, style === 'grizzly' ? 'grizzly' : bayou ? 'bayou' : null);
+  const bars = buildHandlebars(dashStyle, cfg, chokeStyle, driveSwitch, style === 'grizzly' ? 'grizzly' : bayou ? 'bayou' : blaster ? 'blaster' : null);
   if (chokeStyle === 'plunger') (blaster ? buildCarbPlunger : buildChokePlunger)(root, bars.userData.chokeGroup);
   if (sport) {
-    // Motocross bars with a padded crossbar, ahead of the dash so it doesn't block the display.
-    for (const s of [-1, 1]) tube([s * 0.2, 0.065, -0.01], [s * 0.17, 0.18, 0.08], 0.01, MAT.alloy, bars);
-    tube([-0.17, 0.18, 0.08], [0.17, 0.18, 0.08], 0.011, MAT.alloy, bars);
-    const pad = add(new THREE.CapsuleGeometry(0.02, 0.13, 4, 10).rotateZ(Math.PI / 2), MAT.plastic, bars, 'barPad');
-    pad.position.set(0, 0.18, 0.08);
+    // Motocross bars with a padded crossbar, ahead of the dash so it doesn't block the display. (The Blaster's hoop is made with its V: addBlasterBars.)
+    if (!blaster) {
+      for (const s of [-1, 1]) tube([s * 0.2, 0.065, -0.01], [s * 0.17, 0.18, 0.08], 0.01, MAT.alloy, bars);
+      tube([-0.17, 0.18, 0.08], [0.17, 0.18, 0.08], 0.011, MAT.alloy, bars);
+      const pad = add(new THREE.CapsuleGeometry(0.02, 0.13, 4, 10).rotateZ(Math.PI / 2), MAT.plastic, bars, 'barPad');
+      pad.position.set(0, 0.18, 0.08);
+    }
     // A pod stands on the crossbar pad, leaning back towards the rider.
     const mount = new THREE.Object3D();
     mount.name = 'podMount';
-    mount.position.set(0, 0.2, 0.08);
+    mount.position.set(0, blaster ? BLASTER_VBARS.crossY + 0.02 : 0.2, blaster ? -0.0255 : 0.08);
     mount.rotation.x = 0.35;
     bars.add(mount);
     bars.userData.podMount = mount;
@@ -1847,7 +1880,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   }
   if (style === 'utility' || style === 'grizzly') addBarCables(bars, MAT);
   if (bayou) addBayouBarParts(bars, MAT);
-  if (blaster) addBlasterBarCable(bars, MAT);
+  if (blaster) addBlasterBars(bars, MAT, lensMat);
   quad.userData.dash = bars.userData.dash;
   quad.userData.podMount = bars.userData.podMount;
   bars.position.set(0, barsY(style), 0.46);

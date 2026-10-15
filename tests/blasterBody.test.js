@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as THREE from 'three';
-import { BLASTER_FENDERS, BLASTER_NOSE, BLASTER_TAIL, BLASTER_FOOTREST, BLASTER_BUMPER, BLASTER_CARB, BLASTER_TAP, BLASTER_THROTTLE, TYRE_OUTER, BLASTER_WHEELS } from '../src/vehicle/blasterBody.js';
+import { BLASTER_FENDERS, BLASTER_NOSE, BLASTER_TAIL, BLASTER_FOOTREST, BLASTER_BUMPER, BLASTER_CARB, BLASTER_TAP, BLASTER_THROTTLE, BLASTER_EXHAUST, BLASTER_VBARS, BLASTER_LAMP, TYRE_OUTER, BLASTER_WHEELS } from '../src/vehicle/blasterBody.js';
 import { WHEELS } from '../src/vehicle/quadPhysics.js';
 import { QUAD_SPECS, EXTRA_SPECS } from '../src/vehicle/quadSpecs.js';
 import { BODY_STYLES } from '../src/vehicle/quadModel.js';
@@ -77,6 +77,47 @@ describe('the Blaster body numbers', () => {
   });
 });
 
+describe('the Blaster exhaust', () => {
+  const E = BLASTER_EXHAUST;
+  const rear = BLASTER_FENDERS.rear;
+  // The wing's top at a z, from its profile (z is relative to the wheel): the pipe has to pass under it, not through it.
+  const wingTop = (z) => {
+    const p = rear.profile;
+    const rz = z - BLASTER_WHEELS.zRear;
+    for (let i = 0; i < p.length - 1; i++) if (rz <= p[i][0] && rz >= p[i + 1][0]) return BLASTER_WHEELS.y + p[i][1] + ((p[i + 1][1] - p[i][1]) * (p[i][0] - rz)) / (p[i][0] - p[i + 1][0]);
+    return null;
+  };
+
+  it('passes under the wing wherever it is beneath it, and the can is inboard of the wing’s inner edge', () => {
+    for (const [x, y, z] of E.path) {
+      const top = wingTop(z);
+      if (top !== null && Math.abs(x) > rear.width[0]) expect(y + 0.07, `pipe at z ${z} is under the wing`).toBeLessThan(top - 0.12);
+    }
+    expect(Math.abs(E.can.x) + 0.05).toBeLessThan(rear.width[0]);
+  });
+
+  it('keeps the can under the tail and clear of the tail’s cross-tube at z -0.93, and passes below the side plate', () => {
+    expect(E.can.y + 0.05 + Math.sin(E.can.tilt) * E.can.length / 2).toBeLessThan(BLASTER_TAIL[0].y0);
+    expect(E.tip[2] - 0.03).toBeGreaterThan(-0.93);
+    for (const [x, y, z] of E.path) if (Math.abs(x) > 0.15 && Math.abs(x) < 0.24 && z < -0.24 && z > -0.6) expect(y + 0.03, `pipe at z ${z} under the plate`).toBeLessThan(0.54);
+  });
+});
+
+describe('the Blaster bars', () => {
+  it('rise in a V from the clamp, to the grips’ fixed point, and the crossbar is level across the top', () => {
+    const [, grip, perch, centre] = BLASTER_VBARS.half;
+    expect(centre[1]).toBeLessThan(perch[1]);
+    expect(perch[1]).toBeLessThan(grip[1]);
+    expect(perch[0]).toBeCloseTo(0.262, 3);
+    expect(grip[0]).toBeCloseTo(0.318, 3); // the grips' fixed point
+    expect(BLASTER_VBARS.crossY).toBeGreaterThan(grip[1]);
+  });
+
+  it('hangs the lamp on the bars, ahead of the clamp and clear of the key’s housing', () => {
+    expect(BLASTER_LAMP.z - BLASTER_LAMP.d / 2).toBeGreaterThan(0.08);
+  });
+});
+
 describe('the yellow quad’s spec', () => {
   const yellow = QUAD_SPECS.find((s) => s.id === 'yellow');
 
@@ -111,6 +152,26 @@ describe('the yellow quad’s model', () => {
     for (const n of ['chokeLever', 'chokeKnob', 'fuelTap', 'fuelTapBody', 'carb', 'intakeBoot', 'airbox', 'fuelHose', 'throttleCable', 'throttleCableLower', 'headlight', 'nose', 'tail', 'footPlate', 'pegLeft', 'pegRight', 'seat', 'pillionSeat', 'badge']) {
       expect(yellow.model.getObjectByName(n), n).toBeTruthy();
     }
+  });
+
+  it('has the lamp on the handlebars, the key on a stalk that reaches its housing, the hoop level and a cable on each side', () => {
+    const bars = yellow.model.getObjectByName('handlebars');
+    const lens = bars.getObjectByName('headlight');
+    expect(lens, 'the headlight steers with the bars').toBeTruthy();
+    expect(yellow.model.getObjectByName('nose').getObjectByName('headlight')).toBeFalsy();
+    for (const n of ['headlightHousing', 'brakeCable', 'throttleCable', 'barPad']) expect(bars.getObjectByName(n), n).toBeTruthy();
+    expect(yellow.model.getObjectByName('brakeCableLower')).toBeTruthy();
+    // the pad (the crossbar's middle) is at the level the hoop's crossbar is
+    expect(bars.getObjectByName('barPad').position.y).toBeCloseTo(BLASTER_VBARS.crossY, 3);
+    // the key's housing is touched by something under it: the stalk reaches its box
+    bars.updateMatrixWorld(true);
+    const dash = new THREE.Box3().setFromObject(bars.getObjectByName('dash')).expandByScalar(0.004);
+    let touches = false;
+    bars.traverse((o) => {
+      if (o.isMesh && !dash.isEmpty() && o.parent === bars && !o.name && o.geometry.boundingBox === null) o.geometry.computeBoundingBox();
+      if (o.isMesh && o.parent === bars && o.geometry.boundingBox && o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld).intersectsBox(dash) && o.material.metalness > 0.3 && o.material.color.r < 0.4) touches = true;
+    });
+    expect(touches, 'a steel part meets the key housing').toBe(true);
   });
 
   it('has no number plate: the old sport nose’s round plate and its backing are gone', () => {

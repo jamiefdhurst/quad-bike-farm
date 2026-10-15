@@ -11,16 +11,16 @@ export const BLASTER_WHEELS = { x: 0.48, zFront: 0.62, zRear: -0.62, front: 0.22
 export const TYRE_OUTER = { front: BLASTER_WHEELS.x + BLASTER_WHEELS.front / 2, rear: BLASTER_WHEELS.x + BLASTER_WHEELS.rear / 2 };
 
 // The fenders are shells swept round each wheel (quadGeometry.js `shellGeometry`): a side profile [z, y] from the wheel centre, front to
-// back, and where across they run from and to. The fronts are small caps over the tyres; the rears are broad wings that rise to the
-// seat's sides and stop just past the tyre.
+// back, and where across they run from and to. The whole body is a wedge, low at the front and rising to the back as the real one does:
+// the fronts are small low caps over the tyres, the rears short wings that peak behind the middle of the tyre and stop near its back.
 export const BLASTER_FENDERS = {
   front: {
-    profile: [[0.34, 0.27], [0.29, 0.335], [0.17, 0.375], [0.0, 0.385], [-0.15, 0.37], [-0.26, 0.31], [-0.31, 0.22], [-0.33, 0.1]],
-    width: [0.25, 0.585],
+    profile: [[0.34, 0.24], [0.29, 0.3], [0.17, 0.34], [0.0, 0.35], [-0.15, 0.335], [-0.24, 0.28], [-0.29, 0.2], [-0.31, 0.1]],
+    width: [0.22, 0.585],
   },
   rear: {
-    profile: [[0.34, 0.2], [0.28, 0.35], [0.15, 0.44], [-0.05, 0.465], [-0.24, 0.45], [-0.33, 0.4], [-0.36, 0.33]],
-    width: [0.17, 0.6],
+    profile: [[0.22, 0.17], [0.16, 0.26], [0.04, 0.32], [-0.1, 0.39], [-0.2, 0.425], [-0.27, 0.4], [-0.3, 0.32]],
+    width: [0.19, 0.56],
   },
 };
 
@@ -29,21 +29,38 @@ export const BLASTER_SECTION = [[0, 0.06], [0.04, 0.012], [0.12, 0.0], [0.5, -0.
 
 /** The nose between the front fenders and the tail between the rear ones, as `loftGeometry` stations (full width w). */
 export const BLASTER_NOSE = [
-  { z: 0.34, w: 0.3, y0: 0.62, y1: 0.74 },
-  { z: 0.55, w: 0.44, y0: 0.52, y1: 0.735 },
-  { z: 0.8, w: 0.5, y0: 0.5, y1: 0.7 },
-  { z: 0.93, w: 0.46, y0: 0.5, y1: 0.69 },
-  { z: 0.975, w: 0.34, y0: 0.53, y1: 0.66 },
+  { z: 0.34, w: 0.3, y0: 0.6, y1: 0.73 },
+  { z: 0.55, w: 0.4, y0: 0.5, y1: 0.69 },
+  { z: 0.8, w: 0.46, y0: 0.46, y1: 0.62 },
+  { z: 0.93, w: 0.42, y0: 0.46, y1: 0.58 },
+  { z: 0.975, w: 0.32, y0: 0.48, y1: 0.55 },
 ];
 export const BLASTER_TAIL = [
   { z: -0.76, w: 0.3, y0: 0.7, y1: 0.8 },
-  { z: -0.87, w: 0.34, y0: 0.7, y1: 0.81 },
-  { z: -0.94, w: 0.32, y0: 0.7, y1: 0.79 },
-  { z: -0.97, w: 0.22, y0: 0.72, y1: 0.77 },
+  { z: -0.87, w: 0.38, y0: 0.71, y1: 0.83 },
+  { z: -0.94, w: 0.36, y0: 0.72, y1: 0.84 },
+  { z: -0.97, w: 0.22, y0: 0.74, y1: 0.82 },
 ];
 
 /** The headlamp and the mesh vent on the nose's face (z is the face's plane at the lamp's height). */
-export const BLASTER_FACE = { z: 0.962, lampY: 0.625, lampW: 0.14, lampH: 0.08, ventY: 0.55, ventW: 0.17, ventH: 0.07 };
+export const BLASTER_FACE = { z: 0.962, ventY: 0.515, ventW: 0.15, ventH: 0.05 };
+
+/** The headlamp fitting on the handlebars (the bars' frame): a black housing ahead of the clamp on two brackets, steering with the bars. */
+export const BLASTER_LAMP = { y: 0.115, z: 0.15, w: 0.15, h: 0.1, d: 0.07 };
+
+/** The bars rise in a V from the clamp at the middle (the bars' frame, one side, from the grip outwards) and the hoop's crossbar joins the V's arms across the top. */
+export const BLASTER_VBARS = {
+  half: [[0.433, 0.1084, -0.055], [0.318, 0.0655, -0.042], [0.262, 0.0446, -0.03], [0.05, -0.0345, -0.012]],
+  armX: 0.2, // where the hoop's uprights leave the arms
+  crossY: 0.2, // the crossbar's height, level across
+};
+
+/** The exhaust, in the body's frame: the belly out to the right, then in under the wing and the side plate (below it) to a can inside the frame, ending before the tail's cross-tube. */
+export const BLASTER_EXHAUST = {
+  path: [[-0.03, 0.66, 0.2], [-0.12, 0.55, 0.4], [-0.27, 0.46, 0.32], [-0.34, 0.47, 0.04], [-0.3, 0.48, -0.22], [-0.17, 0.47, -0.34], [-0.12, 0.5, -0.48], [-0.1, 0.575, -0.58]],
+  can: { x: -0.1, y: 0.6, z: -0.73, length: 0.3, tilt: 0.1 },
+  tip: [-0.1, 0.616, -0.885],
+};
 
 /** The footrests: a plate on a tubular frame out of the lower rail (x 0.2), either side, round each peg (a fixed point at x 0.29). */
 export const BLASTER_FOOTREST = { x0: 0.2, x1: 0.5, y: 0.318, z0: -0.27, z1: 0.19, rail: { x: 0.2, y: 0.3 } };
