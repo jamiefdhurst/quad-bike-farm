@@ -28,7 +28,7 @@ const rbox = (w, h, d, r, mat, x, y, z, parent, name) => {
 const tube = (a, b, r, mat, parent, radial = 8) => mesh(rod(a, b, r, radial), mat, parent);
 
 /** The face of the front deck: where the grille and lamps go. z is the face, y the middle of its height at the middle of the quad. */
-export const GRIZZLY_FACE = { z: GRIZZLY_DECK.front.zf, grilleY: 0.545, lampX: 0.33, lampY: 0.58 };
+export const GRIZZLY_FACE = { z: GRIZZLY_DECK.front.zf, grilleY: 0.545, lampX: 0.26, lampY: 0.58 };
 
 /**
  * The front: a steel bumper (a cross bar, two uprights from the rack's front rail, wings back to the fender faces) in black plastic
