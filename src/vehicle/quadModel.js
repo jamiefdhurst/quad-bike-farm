@@ -17,6 +17,7 @@ import {
   sweepGeometry,
 } from './quadGeometry.js';
 import { treadTyre } from './detail/tread.js';
+import { DECK, deckGeometry, flareGeometry } from './foremanDeck.js';
 
 // Farm quad built from procedural parts. One group with named parts so it can
 // be replaced by a real model later without touching the code that drives it:
@@ -620,14 +621,14 @@ function fenders(root, style, paint) {
 }
 
 
-// The Foreman's fenders (TODO 88): the 1990s Honda TRX300FW's are boxy, flat on top with straight sides, and stop short of the tyres
-// at the ends: the front wing's face is above the front of the front tyre and the rear wing's above the back of the rear one, so the
-// tyre shows ahead of and behind them. A black plastic trim runs round each arch.
+// The Foreman's fenders (TODO 88), sculpted after photos of a 1990s Honda TRX300FW (foremanDeck.js): crowned decks with rolled
+// edges and rounded corners, black flares following the outer edge, and the wing ends stopping short of the tyres, so the front of the
+// front tyre and the back of the rear one show.
 export const FOREMAN = {
-  archR: 0.345, // the arch cut in each wing, a little over the tyre's 0.3
-  front: { top: 0.72, from: 0.3, to: 0.84 }, // the front wing's flat top, and where its rear edge and its face are (z from the axle)
-  rear: { top: 0.76, from: -0.3, to: -0.84 },
-  outer: 0.58, // the wing's outer face, in line with the tyres' outsides
+  archR: DECK.archR,
+  front: { top: DECK.front.top, from: DECK.front.z0, to: DECK.front.zf },
+  rear: { top: DECK.rear.top, from: DECK.rear.z0, to: DECK.rear.zf },
+  outer: DECK.half,
 };
 
 /** Points up an arch of radius r about (cz, cy), z from za to zb, as [z, y]. */
@@ -649,117 +650,35 @@ function sideSlab(points, t, bevel = 0.004) {
   return g;
 }
 
-/**
- * One wing's side: the plate with its arch cut out, as [z, y] points. Its inboard end (towards the middle of the quad) is a curve,
- * rounded off at the top and sweeping down in a tail to the footboard, not a straight edge.
- */
-function wingSide(W, cz) {
-  const d = Math.sign(W.to - W.from);
-  const z0 = W.from + d * 0.03; // where the arch starts, just outboard of the tail
-  const arch = archPoints(cz, 0.3, FOREMAN.archR, z0, W.to, 16);
-  const end = [];
-  const P = [[W.from + d * 0.1, W.top], [W.from - d * 0.04, 0.54], [z0, 0.36]]; // a quadratic Bezier: top, bulge, foot of the tail
-  for (let i = 0; i <= 8; i++) {
-    const t = i / 8;
-    end.push([(1 - t) * (1 - t) * P[0][0] + 2 * (1 - t) * t * P[1][0] + t * t * P[2][0], (1 - t) * (1 - t) * P[0][1] + 2 * (1 - t) * t * P[1][1] + t * t * P[2][1]]);
-  }
-  return [...arch, [W.to, W.top], ...end];
-}
-
-/** A flat shape in plan, [x, z] points, extruded `t` down from y = 0. */
-function planSlab(points, t, bevel = 0.003) {
-  const shape = new THREE.Shape(points.map(([x, z]) => new THREE.Vector2(x, z)));
-  const g = new THREE.ExtrudeGeometry(shape, { depth: t, bevelEnabled: bevel > 0, bevelSize: bevel, bevelThickness: bevel, bevelSegments: 1, curveSegments: 1 });
-  g.rotateX(Math.PI / 2);
-  return g;
-}
-
-/** A rectangle in plan, x0..x1 by z0..z1, with its z0 corners rounded to radius r. */
-function flarePlan(x0, x1, z0, z1, r) {
-  const d = Math.sign(z1 - z0);
-  const out = [[x0, z1], [x1, z1]];
-  for (let i = 0; i <= 6; i++) {
-    const a = (i / 6) * (Math.PI / 2);
-    out.push([x1 - r + r * Math.cos(a), z0 + d * r - d * r * Math.sin(a)]);
-  }
-  for (let i = 0; i <= 6; i++) {
-    const a = Math.PI / 2 + (i / 6) * (Math.PI / 2);
-    out.push([x0 + r + r * Math.cos(a), z0 + d * r - d * r * Math.sin(a)]);
-  }
-  return out;
-}
-
-/**
- * One red deck across the whole width, flat over the wheels and rolling gently down towards the middle so it joins the bodywork,
- * its edge rounded over at the end and a face dropping from it. `ends` is [[z, drop], ...] from the body end to the face, `roll`
- * how far the middle sits below the wings.
- */
-function deckGeometry(ends, topY, half, roll, { cut = 0.12, chamfer = 0.09 } = {}) {
-  const xs = [];
-  const N = 40;
-  for (let i = 0; i <= N; i++) xs.push(-half + (2 * half * i) / N);
-  const ease = (k) => k * k * (3 - 2 * k);
-  const pos = [];
-  const idx = [];
-  const dir = Math.sign(ends[ends.length - 1][0] - ends[0][0]);
-  ends.forEach(([z, d], row) => {
-    for (const x of xs) {
-      const k = Math.min(1, Math.max(0, (Math.abs(x) - 0.22) / 0.18));
-      let zz = z;
-      let y = topY + d - roll * (1 - ease(k));
-      // The back edge's outer corners are rounded off in plan, and the face's bottom corners are angled up (not square).
-      if (row === 0) zz += dir * (cut - Math.sqrt(Math.max(0, cut * cut - Math.max(0, Math.abs(x) - (half - cut)) ** 2)));
-      if (row === ends.length - 1) y += chamfer * ease(Math.min(1, Math.max(0, (Math.abs(x) - 0.36) / 0.2)));
-      pos.push(x, y, zz);
-    }
-  });
-  const m = xs.length;
-  for (let i = 0; i < ends.length - 1; i++) {
-    for (let j = 0; j < m - 1; j++) {
-      const a = i * m + j;
-      const b = (i + 1) * m + j;
-      idx.push(a, b, a + 1, b, b + 1, a + 1);
-    }
-  }
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  g.setIndex(idx);
-  g.computeVertexNormals();
-  return g;
-}
-
+/** The Foreman's decks and flares (foremanDeck.js), the wheel arches' inner walls and the raised lip round each arch. */
 function foremanFenders(root, paint) {
   const F = FOREMAN;
-  // The red decks: the front one carries the headlights in its face, the rear one the tail lamp's bracket.
-  const half = F.outer - 0.008;
-  const front = F.front;
-  const rear = F.rear;
-  add(deckGeometry([[front.from, 0], [front.to - 0.05, 0], [front.to - 0.016, -0.005], [front.to, -0.022], [front.to, -(front.top - 0.58)]], front.top, half, 0.03), paint, root, 'frontPanel');
-  add(deckGeometry([[rear.from, 0], [rear.to + 0.05, 0], [rear.to + 0.016, -0.005], [rear.to, -0.022], [rear.to, -(rear.top - 0.62)]], rear.top, half, 0.006), paint, root, 'rearPanel'); // flat: the frame's rails run just under it
+  const flareMat = MAT.plastic.clone();
+  flareMat.side = THREE.DoubleSide;
+  add(deckGeometry('front'), paint, root, 'frontPanel');
+  add(deckGeometry('rear'), paint, root, 'rearPanel');
   for (const w of WHEELS) {
     const s = Math.sign(w.x);
-    const W = w.front ? F.front : F.rear;
+    const which = w.front ? 'front' : 'rear';
+    const W = F[which];
     const tag = w.name.slice(-2);
-    // The black flare: a plate for the outside with the arch cut out and a flare down towards the footboard behind the wheel, and a
-    // strip along the top edge. All of the wing's outside is black plastic; the red is only the top.
-    const side = add(sideSlab(wingSide(W, w.z), 0.016), MAT.plastic, root, `fender_${tag}`);
-    side.position.set(s * (F.outer - 0.008), 0, 0);
+    add(flareGeometry(which, w.z, s), flareMat, root, `flare_${tag}`);
+    // The wing's inner wall, red, just inboard of the tyre: the wheel arch is a closed tunnel from the deck down to the arch, so nothing
+    // under the deck shows from the middle of the quad (the real one's inner wings are body-coloured).
     const d = Math.sign(W.to - W.from);
-    const flare = add(planSlab(flarePlan(-0.0475, 0.0475, W.from + d * 0.06, W.to + d * 0.01, 0.045), 0.014), MAT.plastic, root, `flare_${tag}`);
-    flare.position.set(s * (F.outer - 0.0395), W.top + 0.009, 0);
-    // A raised lip round the arch, 12 mm proud of the plate, clipped to it.
-    const inner = archPoints(w.z, 0.3, F.archR, W.from + d * 0.03, W.to, 16);
+    const wall = add(sideSlab([...archPoints(w.z, 0.3, F.archR + 0.01, W.from + d * 0.05, W.to - d * 0.1, 16), [W.to - d * 0.1, W.top - 0.06], [W.from + d * 0.05, W.top - 0.06]], 0.014, 0.003), paint, root, `innerWing_${tag}`);
+    wall.position.set(s * 0.335, 0, 0);
+    // A raised lip round the arch, 12 mm proud of the skirt, clipped to it.
+    const inner = archPoints(w.z, 0.3, F.archR, W.from + d * 0.12, W.to - d * 0.02, 14);
     const strip = [];
     const edge = [];
     for (const [z, y] of inner) {
       const a = Math.atan2(y - 0.3, z - w.z);
-      const oz = Math.min(Math.max(w.z + (F.archR + 0.04) * Math.cos(a), Math.min(W.from, W.to)), Math.max(W.from, W.to));
-      const oy = Math.min(0.3 + (F.archR + 0.04) * Math.sin(a), W.top - 0.004);
       strip.push([z, y]);
-      edge.push([oz, oy]);
+      edge.push([w.z + (F.archR + 0.04) * Math.cos(a), Math.min(0.3 + (F.archR + 0.04) * Math.sin(a), W.top - 0.07)]);
     }
-    const trim = add(sideSlab([...strip, ...edge.reverse()], 0.012, 0.002), MAT.plastic, root, `archTrim_${tag}`);
-    trim.position.set(s * (F.outer + 0.004), 0, 0);
+    const trim = add(sideSlab([...strip, ...edge.reverse()], 0.012, 0.002), flareMat, root, `archTrim_${tag}`);
+    trim.position.set(s * (F.outer + 0.02), 0, 0);
   }
 }
 
@@ -1398,12 +1317,12 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     // The Foreman (the 1990s Honda TRX300FW): the red decks are made with the fenders (foremanFenders); here are the twin rectangular
     // headlights in the front face, close in towards the middle, a black apron with grille slots below them, a tube bumper, the
     // dome round the steering column and one tail lamp on a bracket hanging off the back of the rear deck.
-    for (const s of [-1, 1]) squareLamp(root, s * 0.25, 0.635, 0.838, 0.13, 0.065, lensMat, s > 0 ? 'headlightLeft' : 'headlightRight');
+    for (const s of [-1, 1]) squareLamp(root, s * 0.25, 0.628, 0.852, 0.12, 0.06, lensMat, s > 0 ? 'headlightLeft' : 'headlightRight');
     pipe([[0.2, 0.4, 0.82], [0.25, 0.44, 0.95], [-0.25, 0.44, 0.95], [-0.2, 0.4, 0.82]], 0.017, MAT.frame, root, { bend: 0.07 });
-    rbox(0.5, 0.085, 0.05, 0.015, MAT.plastic, 0, 0.535, 0.845, root);
+    rbox(0.5, 0.085, 0.05, 0.015, MAT.plastic, 0, 0.54, 0.855, root);
     // Between the lamps, a body-coloured grille of two horizontal slats over the dark of the cooler, to let the air in.
-    rbox(0.27, 0.07, 0.012, 0.004, MAT.hole, 0, 0.635, 0.84, root, undefined, 1);
-    for (const y of [0.615, 0.655]) rbox(0.29, 0.02, 0.024, 0.008, paint, 0, y, 0.85, root, 'grilleSlat');
+    rbox(0.27, 0.07, 0.012, 0.004, MAT.hole, 0, 0.625, 0.853, root, undefined, 1);
+    for (const y of [0.607, 0.645]) rbox(0.29, 0.02, 0.024, 0.008, paint, 0, y, 0.864, root, 'grilleSlat');
     // Red dome blending the front deck up into the tank cover round the column, and a red shroud on the column itself.
     add(
       loftGeometry([
@@ -1494,9 +1413,9 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     // The Foreman's racks stand on the decks at their outer edges, where the flat top is, and nowhere else: legs straight down at
     // the front rack's two ends, and at the rear one a leg and a slanting brace to the deck's back edge, clear of the tail lamp.
     for (const s of [-1, 1]) {
-      for (const z of [0.55, 0.85]) tube([s * 0.41, 0.84, z], [s * 0.41, 0.72, z], 0.011, MAT.frame, root, 6);
-      tube([s * 0.41, 0.92, -0.82], [s * 0.41, 0.755, -0.82], 0.011, MAT.frame, root, 6);
-      tube([s * 0.41, 0.92, -0.97], [s * 0.41, 0.755, -0.84], 0.011, MAT.frame, root, 6);
+      for (const z of [0.55, 0.78]) tube([s * 0.41, 0.84, z], [s * 0.41, 0.69, z], 0.011, MAT.frame, root, 6);
+      tube([s * 0.41, 0.92, -0.82], [s * 0.41, 0.73, -0.82], 0.011, MAT.frame, root, 6);
+      tube([s * 0.41, 0.92, -0.97], [s * 0.41, 0.73, -0.84], 0.011, MAT.frame, root, 6);
     }
   } else if (style === 'utility2') {
     rack(root, 0.48, 0.98, 0.84, 6, 0.77, 0.06);
