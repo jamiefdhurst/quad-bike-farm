@@ -36,6 +36,7 @@ import { treadTyre } from './detail/tread.js';
 
 const WHEEL_RADIUS = 0.3;
 const REST_WHEEL_Y = 0.3;
+const barsY = (style) => (style === 'utility' ? 0.96 : 1.0); // the handlebars' height: the Foreman's sit lower (photos of the real one)
 
 // Shared materials. Paint, lenses, rims and springs are made per quad in buildQuadModel.
 const MAT = {
@@ -531,7 +532,7 @@ function squareLamp(parent, x, y, z, w, h, lensMat, name) {
  * Tubular rack: a rounded hoop with cross slats, on legs down to the body.
  * `raised` adds a second hoop above, joined by uprights.
  */
-function rack(root, z0, z1, y, slats, legY, raised = 0) {
+function rack(root, z0, z1, y, slats, legY, raised = 0, noLegs = false) {
   const W = 0.41;
   const dir = Math.sign(z1 - z0);
   const hoop = [[W, y, z0], [W, y, z1], [-W, y, z1], [-W, y, z0]];
@@ -550,7 +551,7 @@ function rack(root, z0, z1, y, slats, legY, raised = 0) {
     }
   }
   // Legs from the side rails down into the plastics.
-  for (const s of [-1, 1]) {
+  for (const s of noLegs ? [] : [-1, 1]) {
     for (const z of ends) tube([s * W, y, z], [s * 0.26, legY, z], 0.011, MAT.frame, root, 6);
   }
 }
@@ -734,7 +735,7 @@ function foremanFenders(root, paint) {
   const front = F.front;
   const rear = F.rear;
   add(deckGeometry([[front.from, 0], [front.to - 0.05, 0], [front.to - 0.016, -0.005], [front.to, -0.022], [front.to, -(front.top - 0.58)]], front.top, half, 0.03), paint, root, 'frontPanel');
-  add(deckGeometry([[rear.from, 0], [rear.to + 0.05, 0], [rear.to + 0.016, -0.005], [rear.to, -0.022], [rear.to, -(rear.top - 0.62)]], rear.top, half, 0.03), paint, root, 'rearPanel');
+  add(deckGeometry([[rear.from, 0], [rear.to + 0.05, 0], [rear.to + 0.016, -0.005], [rear.to, -0.022], [rear.to, -(rear.top - 0.62)]], rear.top, half, 0.006), paint, root, 'rearPanel'); // flat: the frame's rails run just under it
   for (const w of WHEELS) {
     const s = Math.sign(w.x);
     const W = w.front ? F.front : F.rear;
@@ -744,7 +745,7 @@ function foremanFenders(root, paint) {
     const side = add(sideSlab(wingSide(W, w.z), 0.016), MAT.plastic, root, `fender_${tag}`);
     side.position.set(s * (F.outer - 0.008), 0, 0);
     const d = Math.sign(W.to - W.from);
-    const flare = add(planSlab(flarePlan(-0.0475, 0.0475, W.from - d * 0.02, W.to + d * 0.01, 0.045), 0.014), MAT.plastic, root, `flare_${tag}`);
+    const flare = add(planSlab(flarePlan(-0.0475, 0.0475, W.from + d * 0.06, W.to + d * 0.01, 0.045), 0.014), MAT.plastic, root, `flare_${tag}`);
     flare.position.set(s * (F.outer - 0.0395), W.top + 0.009, 0);
     // A raised lip round the arch, 12 mm proud of the plate, clipped to it.
     const inner = archPoints(w.z, 0.3, F.archR, W.from + d * 0.03, W.to, 16);
@@ -1137,31 +1138,42 @@ function buildExhaust(engine, sport, race = false) {
   } else {
     pipe([[-0.03, 0.67, 0.25], [-0.1, 0.6, 0.42], [-0.24, 0.48, 0.36], [-0.27, 0.46, 0.0], [-0.27, 0.5, -0.5]], 0.025, MAT.exhaust, engine, { bend: 0.1, steps: 6 });
     // Silencer with a heat shield and a chrome tip.
-    latheZ([[0.035, -0.22], [0.058, -0.2], [0.064, -0.16], [0.064, 0.16], [0.058, 0.2], [0.035, 0.22], [0.02, 0.22]], MAT.exhaust, -0.27, 0.53, -0.74, engine, 18);
-    const shield = add(new THREE.CylinderGeometry(0.07, 0.07, 0.26, 16, 1, true, -0.4, 2.2), MAT.engineDark, engine);
+    // Both sides of every surface drawn, so looking into the can or under the shield shows the inside, and a dark baffle in the can.
+    const canMat = MAT.exhaust.clone();
+    canMat.side = THREE.DoubleSide;
+    const shieldMat = MAT.engineDark.clone();
+    shieldMat.side = THREE.DoubleSide;
+    latheZ([[0.035, -0.22], [0.058, -0.2], [0.064, -0.16], [0.064, 0.16], [0.058, 0.2], [0.035, 0.22], [0.02, 0.22]], canMat, -0.27, 0.53, -0.74, engine, 18);
+    const baffle = add(new THREE.CircleGeometry(0.03, 14), MAT.hole, engine);
+    baffle.position.set(-0.27, 0.53, -0.8);
+    baffle.rotation.y = Math.PI; // faces the way the can opens
+    const shield = add(new THREE.CylinderGeometry(0.07, 0.07, 0.26, 16, 1, true, -0.4, 2.2), shieldMat, engine);
     shield.rotation.x = Math.PI / 2;
     shield.position.set(-0.27, 0.53, -0.72);
-    latheZ([[0.02, -0.03], [0.02, 0.03], [0.014, 0.03]], MAT.chrome, -0.27, 0.53, -0.98, engine, 12);
+    const tipMat = MAT.chrome.clone();
+    tipMat.side = THREE.DoubleSide;
+    latheZ([[0.02, -0.03], [0.02, 0.03], [0.014, 0.03]], tipMat, -0.27, 0.53, -0.98, engine, 12);
     exhaustTip.position.set(-0.27, 0.53, -1.01);
   }
 }
 
 // Frame ----------------------------------------------------------------------
 
-function buildFrame(root, sport) {
+function buildFrame(root, sport, barsY = 1.0, tail = -0.98) {
   for (const s of [-1, 1]) {
     // Lower cradle rail, up to the steering head at the front and the rear sub-frame at the back.
-    pipe(mx(s, [[0.14, 0.62, 0.7], [0.19, 0.36, 0.92], [0.2, 0.3, 0.6], [0.2, 0.3, -0.72], [0.19, 0.66, -0.98]]), 0.02, MAT.frame, root, { bend: 0.12, steps: 6 });
+    pipe(mx(s, [[0.14, 0.62, 0.7], [0.19, 0.36, 0.92], [0.2, 0.3, 0.6], [0.2, 0.3, -0.72], [0.19, 0.66, tail]]), 0.02, MAT.frame, root, { bend: 0.12, steps: 6 });
     // Upper rail under the tank and seat.
-    pipe(mx(s, [[0.05, 0.78, 0.52], [0.15, 0.74, 0.22], [0.17, 0.74, -0.98]]), 0.017, MAT.frame, root, { bend: 0.1 });
+    pipe(mx(s, [[0.05, 0.78, 0.52], [0.15, 0.74, 0.22], [0.17, 0.74, tail]]), 0.017, MAT.frame, root, { bend: 0.1 });
     tube([s * 0.17, 0.74, -0.25], [s * 0.2, 0.3, -0.2], 0.016, MAT.frame, root);
   }
   for (const z of [0.9, 0.58, -0.7]) tube([-0.2, 0.31, z], [0.2, 0.31, z], 0.016, MAT.frame, root);
   tube([-0.17, 0.74, -0.9], [0.17, 0.74, -0.9], 0.016, MAT.frame, root);
+  if (tail > -0.95) tube([-0.19, 0.66, tail], [0.19, 0.66, tail], 0.016, MAT.frame, root); // the lower rails end on a cross-tube too, not in the air
   // Skid plate under the engine.
   rbox(0.4, 0.012, 0.86, 0.006, sport ? MAT.alloy : MAT.engineDark, 0, 0.285, 0.12, root, undefined, 1);
   // Steering column.
-  tube([0, 0.55, 0.62], [0, 1.0, 0.46], 0.022, MAT.steel, root, 10);
+  tube([0, 0.55, 0.62], [0, barsY, 0.46], 0.022, MAT.steel, root, 10);
 }
 
 // Model ----------------------------------------------------------------------
@@ -1275,7 +1287,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   root.name = 'bodyRoot';
   body.add(root);
 
-  buildFrame(root, sport);
+  buildFrame(root, sport, barsY(style), style === 'utility' ? -0.9 : -0.98); // the Foreman's rails end under its rear deck, not out behind the tail lamp
   const engine = buildEngine(root, sport, race);
   buildExhaust(engine, sport, race);
 
@@ -1405,8 +1417,8 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
       'columnDome',
     );
     const shroud = add(new THREE.CylinderGeometry(0.034, 0.062, 0.2, 16, 1, true), paint, root, 'columnShroud');
-    shroud.position.set(0, 0.55 + 0.45 * 0.72, 0.62 - 0.16 * 0.72);
-    shroud.rotation.x = Math.atan2(0.16, 0.45) * -1;
+    shroud.position.set(0, 0.55 + (barsY(style) - 0.55) * 0.72, 0.62 - 0.16 * 0.72);
+    shroud.rotation.x = -Math.atan2(0.16, barsY(style) - 0.55);
     // The tail lamp on its bracket under the rack, in a black bezel with a reflector either side.
     rbox(0.3, 0.12, 0.09, 0.02, paint, 0, 0.7, -0.885, root, 'tailBracket');
     rbox(0.16, 0.075, 0.03, 0.012, MAT.plastic, 0, 0.7, -0.935, root);
@@ -1414,14 +1426,24 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     for (const s of [-1, 1]) rbox(0.05, 0.026, 0.01, 0.005, TAIL_REFLECTOR, s * 0.11, 0.735, -0.932, root, undefined, 1);
   }
   if (!sport) {
-    // Black side covers under the seat.
-    for (const s of [-1, 1]) rbox(0.03, 0.14, 0.5, 0.014, MAT.plastic, s * 0.185, 0.69, -0.12, root);
+    if (style === 'utility') {
+      // Red side panels under the seat, from the tank down the sides to the rear deck, and a ledge over the frame between them, so
+      // the body is closed from the front deck to the rear one. The engine shows under them.
+      for (const s of [-1, 1]) {
+        const panel = add(sideSlab([[0.3, 0.77], [0.31, 0.62], [0.24, 0.54], [0.0, 0.5], [-0.26, 0.52], [-0.35, 0.6], [-0.36, 0.77]], 0.022, 0.006), paint, root, 'sidePanel');
+        panel.position.set(s * 0.255, 0, 0);
+      }
+      rbox(0.52, 0.03, 0.66, 0.012, paint, 0, 0.745, 0, root, 'bodyLedge');
+    } else {
+      // Black side covers under the seat.
+      for (const s of [-1, 1]) rbox(0.03, 0.14, 0.5, 0.014, MAT.plastic, s * 0.185, 0.69, -0.12, root);
+    }
     // Tow hitch: a drawbar out of the frame with a ball on a plate.
     if (style === 'utility') {
       // The Foreman's: a steel plate bolted to the rear cross-tube and the cradle rails, a drawbar back from its foot, and gussets.
       rbox(0.14, 0.22, 0.016, 0.004, MAT.frame, 0, 0.5, -0.985, root); // stops below the tail lamp, so the lamp shows
       rbox(0.08, 0.02, 0.12, 0.004, MAT.frame, 0, 0.405, -1.04, root, undefined, 1);
-      for (const s of [-1, 1]) tube([s * 0.19, 0.66, -0.98], [s * 0.065, 0.52, -0.985], 0.011, MAT.frame, root, 6); // braces from the rail ends to the plate
+      for (const s of [-1, 1]) tube([s * 0.19, 0.66, -0.9], [s * 0.065, 0.52, -0.985], 0.011, MAT.frame, root, 6); // braces from the rail ends to the plate
       for (const s of [-1, 1]) tube([s * 0.045, 0.4, -0.99], [s * 0.045, 0.4, -1.04], 0.008, MAT.frame, root, 6);
       tube([0, 0.4, -1.075], [0, 0.435, -1.075], 0.012, MAT.chrome, root);
       add(new THREE.SphereGeometry(0.024, 14, 10), MAT.chrome, root).position.set(0, 0.46, -1.075);
@@ -1467,8 +1489,15 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   if (solo) {
     // nothing to carry
   } else if (style === 'utility') {
-    rack(root, 0.48, 0.92, 0.84, 5, 0.73);
-    rack(root, -0.8, -1.0, 0.92, 3, 0.775);
+    rack(root, 0.48, 0.92, 0.84, 5, 0.73, 0, true);
+    rack(root, -0.8, -1.0, 0.92, 3, 0.775, 0, true);
+    // The Foreman's racks stand on the decks at their outer edges, where the flat top is, and nowhere else: legs straight down at
+    // the front rack's two ends, and at the rear one a leg and a slanting brace to the deck's back edge, clear of the tail lamp.
+    for (const s of [-1, 1]) {
+      for (const z of [0.55, 0.85]) tube([s * 0.41, 0.84, z], [s * 0.41, 0.72, z], 0.011, MAT.frame, root, 6);
+      tube([s * 0.41, 0.92, -0.82], [s * 0.41, 0.755, -0.82], 0.011, MAT.frame, root, 6);
+      tube([s * 0.41, 0.92, -0.97], [s * 0.41, 0.755, -0.84], 0.011, MAT.frame, root, 6);
+    }
   } else if (style === 'utility2') {
     rack(root, 0.48, 0.98, 0.84, 6, 0.77, 0.06);
     rack(root, -0.8, -1.06, 0.93, 4, 0.79, 0.07);
@@ -1572,10 +1601,11 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   }
   if (style === 'utility') {
     // The pillion's seat wears where she slides on, as the rider's does (riderAnchor gives that one).
-    quad.userData.touchWear = [-1, 1].map((s) => ({ at: [s * 0.17, 0.9, -0.5], r: 0.13, amount: 0.7 }));
+    quad.userData.touchWear = [-1, 1].map((s) => ({ at: [s * 0.13, 0.96, -0.55], r: 0.17, amount: 0.9 }));
     // The Foreman's seat falls away towards the back: the front is up and the rear down, about the rider's hips.
     const tilt = new THREE.Matrix4().makeTranslation(0, 0.9, -0.18).multiply(new THREE.Matrix4().makeRotationX(-0.07)).multiply(new THREE.Matrix4().makeTranslation(0, -0.9, 0.18));
     for (const n of ['seat', 'pillionSeat', 'pillionBase']) root.getObjectByName(n)?.geometry.applyMatrix4(tilt);
+    root.getObjectByName('pillionSeat').userData.wearNookMin = 0.45; // the rider's seat is marked where it meets the pillion's; hers is marked like it
   }
 
   // Where the rider's feet go: footwells on the utilities, nerf bars and pegs on the sport quad.
@@ -1618,7 +1648,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   }
   quad.userData.dash = bars.userData.dash;
   quad.userData.podMount = bars.userData.podMount;
-  bars.position.set(0, 1.0, 0.46);
+  bars.position.set(0, barsY(style), 0.46);
   root.add(bars);
 
   // Anchors for people and the camera.

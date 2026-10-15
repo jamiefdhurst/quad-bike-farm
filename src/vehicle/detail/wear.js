@@ -159,11 +159,18 @@ export function bakeWear(geometry, params = DEFAULT_WEAR_BAKE) {
 
 /**
  * Nooks between parts: for each vertex of each mesh, how many points of other parts lie within `nookReach` in front of it, as
- * 0..1 in its `wearNook`. `meshes` are { geometry, matrix } with the matrix into one shared frame (the vehicle's), and every
+ * 0..1 in its `wearNook`. `meshes` are { geometry, matrix, nookMin? } (`nookMin`: a floor of patchy grime for a part marked up without a neighbour) with the matrix into one shared frame (the vehicle's), and every
  * geometry already through `bakeWear`. Two meshes are different parts; so are two pieces of one merged mesh that share no vertex.
  */
 export function bakeNooks(meshes, params = DEFAULT_WEAR_BAKE) {
   for (const _ of bakeNooksSteps(meshes, params));
+}
+
+/** A steady 0..1 from a point's place (to a centimetre), the same every time. */
+export function hash01(x, y, z) {
+  let h = (Math.round(x * 100) * 73856093) ^ (Math.round(y * 100) * 19349663) ^ (Math.round(z * 100) * 83492791);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
 }
 
 /** `bakeNooks` a mesh at a time: yields after each, so it can be spread over frames. */
@@ -221,7 +228,10 @@ export function* bakeNooksSteps(meshes, params = DEFAULT_WEAR_BAKE) {
           if (d2 < r * r && ox * nrm.x + oy * nrm.y + oz * nrm.z > -0.002) hits++;
         }
       }
-      nook[i] = Math.round(Math.min(1, hits / params.nookCount) * 255);
+      let n = Math.min(1, hits / params.nookCount);
+      // A part that is marked up without anything crowding it (a seat that is sat on, not squeezed): patchy grime from a hash of the vertex.
+      if (meshes[m].nookMin) n = Math.max(n, meshes[m].nookMin * hash01(x, y, z));
+      nook[i] = Math.round(n * 255);
     }
     geometry.attributes.wearNook.needsUpdate = true;
     yield;
@@ -256,7 +266,7 @@ export function* bakeModelSteps(frame, skip = () => false, params = DEFAULT_WEAR
       g = own;
     }
     mesh.geometry = g;
-    list.push({ geometry: g, matrix: new THREE.Matrix4().multiplyMatrices(inv, mesh.matrixWorld) });
+    list.push({ geometry: g, matrix: new THREE.Matrix4().multiplyMatrices(inv, mesh.matrixWorld), nookMin: mesh.userData.wearNookMin ?? 0 });
     yield;
   }
   yield* bakeNooksSteps(list, params);

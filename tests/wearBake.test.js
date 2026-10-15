@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
-import { findCreases, bakeWear, bakeNooks, pieces } from '../src/vehicle/detail/wear.js';
+import { findCreases, bakeWear, bakeNooks, pieces, hash01 } from '../src/vehicle/detail/wear.js';
 
 const L = new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(0.2, 0), new THREE.Vector2(0.2, 0.05), new THREE.Vector2(0.05, 0.05), new THREE.Vector2(0.05, 0.2), new THREE.Vector2(0, 0.2)]);
 
@@ -74,6 +74,22 @@ describe('wear: nooks', () => {
       if (near) expect(nook[i], `vertex ${i}`).toBeGreaterThan(0);
       else expect(nook[i], `vertex ${i}`).toBe(0);
     }
+  });
+});
+
+describe('wear: marks on a part with no neighbours', () => {
+  it('a part with a nookMin gets patchy grime, a steady amount each time, and one without gets none', () => {
+    const g = () => bakeWear(new THREE.BoxGeometry(1, 0.1, 1, 4, 1, 4));
+    const marked = g();
+    const plain = g();
+    bakeNooks([{ geometry: marked, matrix: new THREE.Matrix4(), nookMin: 0.6 }]);
+    bakeNooks([{ geometry: plain, matrix: new THREE.Matrix4() }]);
+    const n = [...marked.attributes.wearNook.array];
+    expect(Math.max(...n)).toBeGreaterThan(0);
+    expect(Math.max(...n)).toBeLessThanOrEqual(Math.round(0.6 * 255));
+    expect(new Set(n).size).toBeGreaterThan(3); // patchy, not one flat amount
+    expect(Math.max(...plain.attributes.wearNook.array)).toBe(0);
+    expect(hash01(0.1, 0.2, 0.3)).toBe(hash01(0.1, 0.2, 0.3));
   });
 });
 
