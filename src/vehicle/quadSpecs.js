@@ -235,12 +235,12 @@ export const QUAD_SPECS = [
     bodyWear: 0.6, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     label: 'green quad',
     name: 'Green quad',
-    bodyColor: 0x2e6b30,
-    style: 'utility3',
+    bodyColor: 0x33692c, // a deep green, a shade towards olive
+    style: 'bayou',
     winch: true, // its front winch works (src/items/winch.js)
     dashStyle: 'bayou',
     reverseStyle: 'knee', // where the reverse is and what it takes to use it (controls.js)
-    chokeStyle: 'knob', // where the choke is and what it takes to reach it
+    chokeStyle: 'slide', // a slider on the left switch housing, as on the real one and the red
     tapStyle: 'rearLeft', // where the fuel tap sits
     hoursRange: [1800, 3500], // engine hours showing when the game starts
     odoRange: [4500, 8750], // odometer miles showing when the game starts

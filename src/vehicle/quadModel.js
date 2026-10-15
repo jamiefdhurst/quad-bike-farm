@@ -22,6 +22,9 @@ import { addRackDetail, addGrille, addTreadPlates, addShiftLever, addBarCables, 
 import { DECK, deckGeometry, flareGeometry, bulkheadGeometry, topCoverGeometry, bodyTopY } from './foremanDeck.js';
 import { GRIZZLY_DECK, GRIZZLY_RACKS, grizzlyLampOutline } from './grizzlyBody.js';
 import { buildGrizzlyPod } from './grizzlyControls.js';
+import { BAYOU_DECK, BAYOU_RACKS, BAYOU_FACE } from './bayouBody.js';
+import { buildBayouPod } from './bayouControls.js';
+import { addBayouFront, addBayouRear, addBayouDecals, addBayouWear, addBayouRackBlocks, addBayouBarParts, addWinchHousing, cageMaterial } from './bayouDetail.js';
 import { addGrizzlyFront, addGrizzlyRear, addGrizzlyDecals, addFrontBrake, addGrizzlyRackBlocks, GRIZZLY_FACE } from './grizzlyDetail.js';
 
 // Farm quad built from procedural parts. One group with named parts so it can
@@ -97,6 +100,17 @@ const STYLE = {
     spring: new THREE.MeshStandardMaterial({ color: 0x1b1c1e, roughness: 0.4, metalness: 0.5 }),
     bars: MAT.frame,
     rear: 'arms',
+    fwd: true,
+  },
+  // The Bayou's: a swingarm and a single shock at the back, grey steel wheels with a hub cap, ATV tyres on tall sidewalls, black bars.
+  bayou: {
+    rim: new THREE.MeshStandardMaterial({ color: 0xaeb2b4, roughness: 0.5, metalness: 0.55, side: THREE.DoubleSide }),
+    rimOpts: { holes: 4 },
+    rimR: 0.14,
+    tyre: { kind: 'atv' },
+    spring: new THREE.MeshStandardMaterial({ color: 0x2a2c2f, roughness: 0.45, metalness: 0.5 }),
+    bars: MAT.frame,
+    rear: 'swingarm',
     fwd: true,
   },
   sport: {
@@ -402,15 +416,23 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
   bars.name = 'handlebars';
   bars.userData.keep = true;
   const kit = chokeStyle === 'slide' || podStyle === 'grizzly'; // the red's and blue's levers, drive switch and thumb throttle (foremanControls.js)
+  const bayou = podStyle === 'bayou'; // the green's bars rise from a low middle in a V, and its speedo stands on a bracket over the clamp
 
-  // Bar with a slight sweep back towards the rider, in a clamp on a riser.
-  pipe([[0.43, 0.072, -0.07], [0.2, 0.06, -0.012], [-0.2, 0.06, -0.012], [-0.43, 0.072, -0.07]], 0.011, cfg.bars, bars, { bend: 0.07, steps: 5 });
-  tube([0, 0, 0], [0, 0.05, -0.01], 0.02, MAT.steel, bars);
-  rbox(0.09, 0.03, 0.045, 0.01, MAT.engineDark, 0, 0.06, -0.012, bars);
+  // Bar with a slight sweep back towards the rider, in a clamp on a riser. The Bayou's rise straight from a low middle at about 20 degrees,
+  // through the lever perch and the grip's fixed point (so the grips stay where they were), as the real one's do.
+  if (bayou) {
+    const half = [[0.433, 0.1084, -0.055], [0.318, 0.0655, -0.042], [0.262, 0.0446, -0.03], [0.05, -0.0345, -0.012]];
+    pipe([...half, ...half.slice().reverse().map(([x, y, z]) => [-x, y, z])], 0.011, cfg.bars, bars, { bend: 0.02, steps: 4 });
+    tube([0, -0.1, 0.0], [0, -0.0345, -0.01], 0.02, MAT.steel, bars);
+  } else {
+    pipe([[0.43, 0.072, -0.07], [0.2, 0.06, -0.012], [-0.2, 0.06, -0.012], [-0.43, 0.072, -0.07]], 0.011, cfg.bars, bars, { bend: 0.07, steps: 5 });
+    tube([0, 0, 0], [0, 0.05, -0.01], 0.02, MAT.steel, bars);
+    rbox(0.09, 0.03, 0.045, 0.01, MAT.engineDark, 0, 0.06, -0.012, bars);
+  }
   for (const s of [-1, 1]) {
     const grip = add(gripGeometry(0.115, 0.016), MAT.rubber, bars, s > 0 ? 'gripLeft' : 'gripRight');
     const a = new THREE.Vector3(s * 0.318, 0.0675, -0.042);
-    const b = new THREE.Vector3(s * 0.433, 0.0725, -0.07);
+    const b = bayou ? new THREE.Vector3(s * 0.433, 0.1075, -0.055) : new THREE.Vector3(s * 0.433, 0.0725, -0.07);
     grip.position.copy(a);
     grip.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.sub(a).normalize());
     if (kit) {
@@ -456,8 +478,9 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
   choke.userData.keep = true;
   if (chokeStyle === 'slide') {
     // The Foreman's switch pod (foremanControls.js): lights, HI / LO, engine stop, start and the choke slider, on the left, face to the rider.
-    const pod = buildLeftPod(MAT);
-    pod.position.set(0.176, 0.048, -0.05);
+    // The Bayou's (bayouControls.js) is the same slider on its own pod, sitting lower where the bar does at that distance out.
+    const pod = bayou ? buildBayouPod(MAT) : buildLeftPod(MAT);
+    pod.position.set(0.176, bayou ? 0.0005 : 0.048, -0.05);
     pod.rotation.set(0.6, Math.PI, 0);
     bars.add(pod);
     choke = pod.getObjectByName('chokeLever');
@@ -494,7 +517,7 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
 
   // The 2WD / 4WD rocker on a little housing inboard of the right grip (driveMode.js), and on the blue a red diff lock button beside it.
   if (driveSwitch && kit) {
-    buildDriveSwitch(bars, MAT);
+    buildDriveSwitch(bars, MAT, bayou ? [-0.19, 0.03, -0.03] : undefined);
     if (driveSwitch.lock) {
       // The blue's red diff lock button, in the gap between the drive switch and the thumb throttle.
       rbox(0.03, 0.02, 0.03, 0.006, MAT.plastic, -0.245, 0.064, -0.03, bars, 'diffLockHousing');
@@ -625,6 +648,8 @@ const SECTION = {
   utility2: [[0, 0.07], [0.02, 0.02], [0.06, 0.0], [0.5, -0.008], [0.86, -0.002], [0.93, 0.006], [0.965, 0.028], [0.975, 0.06], [0.962, 0.075]],
   // The Grizzly's fenders are made with the decks (grizzlyBody.js); these are only here so it names a body style that exists.
   grizzly: [[0, 0.07], [0.5, -0.008], [0.96, 0.03]],
+  // The Bayou's fenders are made with the decks too (bayouBody.js).
+  bayou: [[0, 0.07], [0.5, -0.008], [0.96, 0.03]],
   // Thin, crowned race fenders with a small lip.
   sport: [[0, 0.05], [0.03, 0.012], [0.1, 0.0], [0.45, -0.014], [0.8, -0.006], [0.93, 0.01], [0.98, 0.03], [0.97, 0.05]],
   // Flat top with a square edge and a deep upright skirt outboard, like pressed steel.
@@ -646,6 +671,7 @@ const PROFILE = {
     width: [0.25, 0.67],
   },
   grizzly: { front: [[0.44, 0.1], [0.0, 0.412], [-0.38, 0.05]], rear: [[0.38, 0.05], [-0.05, 0.42], [-0.42, 0.1]], width: [0.25, 0.67] },
+  bayou: { front: [[0.44, 0.1], [0.0, 0.412], [-0.38, 0.05]], rear: [[0.38, 0.05], [-0.05, 0.42], [-0.42, 0.1]], width: [0.25, 0.67] },
   sport: {
     front: [[0.42, 0.33], [0.35, 0.35], [0.2, 0.38], [0.03, 0.39], [-0.13, 0.37], [-0.25, 0.3], [-0.32, 0.18], [-0.34, 0.08]],
     rear: [[0.32, 0.16], [0.24, 0.3], [0.1, 0.375], [-0.08, 0.385], [-0.26, 0.36], [-0.4, 0.33], [-0.5, 0.34]],
@@ -672,6 +698,7 @@ export const BODY_STYLES = Object.keys(PROFILE).filter((k) => k in SECTION);
 function fenders(root, style, paint) {
   if (style === 'utility') return foremanFenders(root, paint);
   if (style === 'grizzly') return foremanFenders(root, paint, GRIZZLY_DECK, paint);
+  if (style === 'bayou') return foremanFenders(root, paint, BAYOU_DECK); // black rubber flares over painted decks
   const P = PROFILE[style];
   for (const w of WHEELS) {
     const s = Math.sign(w.x);
@@ -1249,12 +1276,14 @@ function buildChokePlunger(root, choke) {
 export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', style = 'utility', solo = false, plateNumber = '7', chokeStyle = 'thumb', tapStyle = 'left', driveSwitch = null } = {}) {
   const race = style === 'sport2';
   const farm = style === 'utility3';
+  const bayou = style === 'bayou'; // the green (TODO 90): a Kawasaki KLF300 Bayou's decks, grey nose cage, round speedo and V bars
   const sport = style === 'sport' || race; // two-stroke chassis
   const cfg = STYLE[style] ?? STYLE.utility;
   const quad = new THREE.Group();
   quad.name = 'quad';
   const paint = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.3, metalness: 0.0, side: THREE.DoubleSide });
-  const lensMat = new THREE.MeshStandardMaterial({ color: style === 'grizzly' ? 0x93a6b0 : 0x2c302c, roughness: 0.08, metalness: 0.2, emissive: 0x000000 }); // the Grizzly's is a clear lens you can see into
+  const bayouGrey = bayou ? cageMaterial() : null;
+  const lensMat = new THREE.MeshStandardMaterial({ color: style === 'grizzly' ? 0x93a6b0 : bayou ? 0xb4b08c : 0x2c302c, roughness: 0.08, metalness: 0.2, emissive: 0x000000 }); // the Grizzly's is a clear lens you can see into
   const seatMat =
     style === 'utility2'
       ? new THREE.MeshStandardMaterial({ color: 0x3b3e42, roughness: 0.55 })
@@ -1273,7 +1302,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   root.name = 'bodyRoot';
   body.add(root);
 
-  buildFrame(root, sport, barsY(style), style === 'utility' ? -0.9 : style === 'grizzly' ? -0.84 : -0.98); // the Foreman's rails end under its rear deck and the Grizzly's inside its own, not out behind the tail lamp
+  buildFrame(root, sport, barsY(style), style === 'utility' ? -0.9 : style === 'grizzly' || bayou ? -0.84 : -0.98); // the Foreman's rails end under its rear deck and the Grizzly's inside its own, not out behind the tail lamp
   const engine = buildEngine(root, sport, race);
   buildExhaust(engine, sport, race);
 
@@ -1371,6 +1400,28 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     const shroud = add(new THREE.CylinderGeometry(0.036, 0.062, 0.2, 16, 1, true), MAT.plastic, root, 'columnShroud');
     shroud.position.set(0, 0.55 + (barsY(style) - 0.55) * 0.72, 0.62 - 0.16 * 0.72);
     shroud.rotation.x = -Math.atan2(0.16, barsY(style) - 0.55);
+  } else if (bayou) {
+    // The Bayou (a 1990s Kawasaki KLF300): the painted decks and black flares are made with the fenders; here are the grey cage round two
+    // square lamps and the slatted grille on the front face, the winch behind it with its housing, the tail lamp panel and the hitch with
+    // its pin on the back (bayouDetail.js), and the black dome and shroud round the steering column.
+    addBayouFront(root, MAT, lensMat, bayouGrey);
+    winch(root, 0, 0.47, 1.07, 1.16);
+    addWinchHousing(root, MAT, 0, 0.47, 1.07, 1.16);
+    addBayouRear(root, MAT);
+    add(
+      loftGeometry([
+        { z: 0.42, w: 0.26, y0: 0.71, y1: 0.8 },
+        { z: 0.52, w: 0.34, y0: 0.7, y1: 0.87 },
+        { z: 0.66, w: 0.32, y0: 0.7, y1: 0.86 },
+        { z: 0.78, w: 0.24, y0: 0.7, y1: 0.75 },
+      ], { exponent: 3.5 }),
+      MAT.plastic,
+      root,
+      'columnDome',
+    );
+    const shroud = add(new THREE.CylinderGeometry(0.036, 0.062, 0.2, 16, 1, true), MAT.plastic, root, 'columnShroud');
+    shroud.position.set(0, 0.55 + (barsY(style) - 0.55) * 0.72, 0.62 - 0.16 * 0.72);
+    shroud.rotation.x = -Math.atan2(0.16, barsY(style) - 0.55);
   } else if (style === 'utility2') {
     // Squarer bodywork: square lamps in the fascia, a black lower apron and a tubular brush guard.
     add(
@@ -1441,7 +1492,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     for (const s of [-1, 1]) rbox(0.05, 0.026, 0.01, 0.005, TAIL_REFLECTOR, s * 0.11, 0.735, -0.932, root, undefined, 1);
   }
   if (!sport) {
-    if (style === 'utility' || style === 'grizzly') {
+    if (style === 'utility' || style === 'grizzly' || bayou) {
       // Red side panels under the seat, from the tank down the sides to the rear deck, and a ledge over the frame between them, so
       // the body is closed from the front deck to the rear one. Each panel's ends are the height of the deck beside it (so the deck runs
       // up into the panel with no step) and go down to the footboard where the wing walls meet them (they end 0.1 m short of the decks, where the walls' curved fillets take over); the engine shows under its middle.
@@ -1451,13 +1502,15 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
         const panel = add(sideSlab([...top, [-e, 0.36], [-0.16, 0.41], [-0.1, 0.46], [0, 0.5], [0.1, 0.46], [0.16, 0.41], [e, 0.36]], 0.022, 0.006), style === 'grizzly' ? MAT.plastic : paint, root, 'sidePanel');
         panel.position.set(s * 0.255, 0, 0);
       }
-      add(topCoverGeometry(style === 'grizzly' ? GRIZZLY_DECK : DECK), style === 'grizzly' ? MAT.plastic : paint, root, 'bodyTop'); // closes the top of the body between the decks, over the frame and the wing walls' fillets
+      add(topCoverGeometry(bayou ? BAYOU_DECK : style === 'grizzly' ? GRIZZLY_DECK : DECK), style === 'grizzly' ? MAT.plastic : paint, root, 'bodyTop'); // closes the top of the body between the decks, over the frame and the wing walls' fillets
     } else {
       // Black side covers under the seat.
       for (const s of [-1, 1]) rbox(0.03, 0.14, 0.5, 0.014, MAT.plastic, s * 0.185, 0.69, -0.12, root);
     }
-    // Tow hitch: a drawbar out of the frame with a ball on a plate.
-    if (style === 'utility' || style === 'grizzly') {
+    // Tow hitch: a drawbar out of the frame with a ball on a plate (the Bayou's, with a pin, is made with its rear: bayouDetail.js).
+    if (bayou) {
+      // see addBayouRear
+    } else if (style === 'utility' || style === 'grizzly') {
       // The Foreman's: a steel plate bolted to the rear cross-tube and the cradle rails, a drawbar back from its foot, and gussets.
       rbox(0.14, 0.22, 0.016, 0.004, MAT.frame, 0, 0.5, -0.985, root); // stops below the tail lamp, so the lamp shows
       rbox(0.08, 0.02, 0.12, 0.004, MAT.frame, 0, 0.405, -1.04, root, undefined, 1);
@@ -1498,7 +1551,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
         { z: 0.46, w: 0.32, y0: 0.7, y1: 0.885 },
         { z: 0.5, w: 0.2, y0: 0.72, y1: 0.84 },
       ];
-  add(loftGeometry(tankStations, { exponent: style === 'utility2' || style === 'grizzly' || farm ? 5 : race ? 6 : 3.2 }), paint, root, 'tank');
+  add(loftGeometry(tankStations, { exponent: style === 'utility2' || style === 'grizzly' || bayou || farm ? 5 : race ? 6 : 3.2 }), bayou ? MAT.plastic : paint, root, 'tank'); // the Bayou's cover is black
   buildFuelTap(root, tapStyle);
   const tankCap = add(lathe([[0.036, -0.012], [0.036, 0.004], [0.03, 0.012], [0.001, 0.012]], 18), MAT.chrome, root);
   tankCap.position.set(0, race ? 0.908 : 0.928, race ? 0.38 : 0.36);
@@ -1532,6 +1585,24 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     addRackDetail(root, { z0: F.z0, z1: F.z1, y: F.y, slats: F.slats }, { ...MAT, frame: rackMat });
     addRackDetail(root, { z0: R.z0, z1: R.z1, y: R.y, slats: R.slats }, { ...MAT, frame: rackMat });
     addGrizzlyRackBlocks(root, MAT);
+    for (const s of [-1, 1]) {
+      for (const z of [0.55, 0.78]) tube([s * 0.41, F.y, z], [s * 0.41, 0.7, z], 0.011, rackMat, root, 6);
+      tube([s * 0.41, R.y, -0.84], [s * 0.41, 0.75, -0.84], 0.011, rackMat, root, 6);
+      tube([s * 0.41, R.y, -1.0], [s * 0.41, 0.76, -0.86], 0.011, rackMat, root, 6);
+    }
+  } else if (bayou) {
+    // The Bayou's racks: full-width tube grids with a raised lip, standing on the decks at their outer edges, the front one with the cage's
+    // braces hung off its rail and the rear one braced down to the deck's back edge.
+    const F = BAYOU_RACKS.front;
+    const R = BAYOU_RACKS.rear;
+    const rackMat = MAT.frame.clone();
+    rackMat.metalness = 0.2;
+    rackMat.roughness = 0.55;
+    rack(root, F.z0, F.z1, F.y, F.slats, 0.73, F.raised, true, rackMat);
+    rack(root, R.z0, R.z1, R.y, R.slats, 0.79, R.raised, true, rackMat);
+    addRackDetail(root, { z0: F.z0, z1: F.z1, y: F.y, slats: F.slats }, { ...MAT, frame: rackMat });
+    addRackDetail(root, { z0: R.z0, z1: R.z1, y: R.y, slats: R.slats }, { ...MAT, frame: rackMat });
+    addBayouRackBlocks(root, MAT);
     for (const s of [-1, 1]) {
       for (const z of [0.55, 0.78]) tube([s * 0.41, F.y, z], [s * 0.41, 0.7, z], 0.011, rackMat, root, 6);
       tube([s * 0.41, R.y, -0.84], [s * 0.41, 0.75, -0.84], 0.011, rackMat, root, 6);
@@ -1634,9 +1705,14 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     );
     rbox(0.34, 0.1, 0.38, 0.03, MAT.plastic, 0, 0.82, -0.6, root, 'pillionBase');
     for (const s of [-1, 1]) {
-      pipe(mx(s, [[0.14, 0.84, -0.4], [0.25, 0.99, -0.44], [0.25, 0.99, -0.78], [0.14, 0.84, -0.82]]), 0.013, farm || style === 'grizzly' ? MAT.frame : MAT.chrome, root, { bend: 0.05, steps: 5 });
+      pipe(mx(s, [[0.14, 0.84, -0.4], [0.25, 0.99, -0.44], [0.25, 0.99, -0.78], [0.14, 0.84, -0.82]]), 0.013, farm || bayou || style === 'grizzly' ? MAT.frame : MAT.chrome, root, { bend: 0.05, steps: 5 });
     }
     pillionGrips(root, 0.25, 0.99, -0.55, false);
+  }
+  if (bayou) {
+    quad.userData.touchWear = [-1, 1].map((s) => ({ at: [s * 0.3, 0.52, 0.0], r: 0.16, amount: 0.7 })); // boots rub the panels' lower edges
+    addBayouDecals(root);
+    addBayouWear(root, MAT);
   }
   if (style === 'grizzly') {
     quad.userData.touchWear = [-1, 1].map((s) => ({ at: [s * 0.3, 0.52, 0.0], r: 0.16, amount: 0.5 })); // boots rub the panels' lower edges
@@ -1661,7 +1737,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   if (style === 'utility' && !race && !sport) addTreadPlates(root, MAT);
 
   // Handlebars.
-  const bars = buildHandlebars(dashStyle, cfg, chokeStyle, driveSwitch, style === 'grizzly' ? 'grizzly' : null);
+  const bars = buildHandlebars(dashStyle, cfg, chokeStyle, driveSwitch, style === 'grizzly' ? 'grizzly' : bayou ? 'bayou' : null);
   if (chokeStyle === 'plunger') buildChokePlunger(root, bars.userData.chokeGroup);
   if (sport) {
     // Motocross bars with a padded crossbar, ahead of the dash so it doesn't block the display.
@@ -1694,6 +1770,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     roundLamp(bars, 0, 0.02, 0.17, 0.06, lensMat, MAT.chrome, 'headlight');
   }
   if (style === 'utility' || style === 'grizzly') addBarCables(bars, MAT);
+  if (bayou) addBayouBarParts(bars, MAT);
   quad.userData.dash = bars.userData.dash;
   quad.userData.podMount = bars.userData.podMount;
   bars.position.set(0, barsY(style), 0.46);
@@ -1711,14 +1788,14 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   pillionAnchor.position.set(0, race ? 0.94 : sport ? 0.98 : 1.0, sport ? -0.66 : -0.6);
   if (!solo) root.add(pillionAnchor);
   // Quads with a front rack have a spot on it to sit, hips towards the back of the deck so her legs hang over the nose.
-  if (!solo && (style === 'utility' || style === 'utility2' || style === 'grizzly' || farm)) {
+  if (!solo && (style === 'utility' || style === 'utility2' || style === 'grizzly' || bayou || farm)) {
     const rackAnchor = new THREE.Object3D();
     rackAnchor.name = 'rackAnchor';
     rackAnchor.position.set(0, 0.84, 0.66);
     root.add(rackAnchor);
   }
   // Somewhere to leave a mug of tea: the middle of the rear rack, on the deck (items/mug.js).
-  if (!solo && (style === 'utility' || style === 'utility2' || style === 'grizzly' || farm)) {
+  if (!solo && (style === 'utility' || style === 'utility2' || style === 'grizzly' || bayou || farm)) {
     const mugAnchor = new THREE.Object3D();
     mugAnchor.name = 'mugAnchor';
     mugAnchor.position.set(0, style === 'utility' ? 0.925 : 0.935, style === 'utility' ? -0.93 : -0.93);

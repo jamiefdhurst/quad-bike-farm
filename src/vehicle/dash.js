@@ -4,7 +4,7 @@ import { MAKERS } from './detail/decals.js';
 import { lampStates, counterDigits, counterText, cycleIndex, gearShown, forwardGearShown } from './dashState.js';
 import {
   plastic, charcoal, blackMat, agedSteel, agedBlack, gloss, chromeMat, changeGate, mmPanel, housing, chromeRing, text, ticks, labels, arc, needle, drum, lamp, glyphLetter, keySwitch,
-  segText, speedText, warnSymbol, LAMP,
+  segText, speedText, warnSymbol, LAMP, pol,
 } from './dashParts.js';
 
 // The stock dashes. Each quad's own dash is close to the real machine it's modelled on, which for most means very little: the
@@ -14,7 +14,8 @@ import {
 //   grizzly:   blue. A Grizzly-style pod around a cyan-backlit LCD: a big speed, the odometer (or the trip) and the hours, a thermometer
 //              and a fuel pump symbol, a column of L, H, R and P lamps, a DIFF.LOCK lamp and two round buttons.
 //   kodiak:    loan quad. The same idea, newer: a wider, glossier pod with a cooler LCD and a gear column.
-//   bayou:     green. Only a little cover on the headlight nacelle with N and R lamps and the key.
+//   bayou:     green. A round black speedo on a stalk over the bars: white mph to 40 with a blue km/h scale inside, an odometer window,
+//              N and R lamps and the key under the needle's hub.
 //   blaster:   yellow. The back of a headlamp shell on the bars with a red power lamp and the key.
 //   quadracer: orange. A RUN / OFF kill switch on the left bar and its lanyard.
 //   kidsKey:   kids' quad. A key switch under the bar clamp.
@@ -375,25 +376,83 @@ function buildKodiak() {
 
 // Green: Kawasaki Bayou ---------------------------------------------------------------
 
+/** The Bayou's speedo: mph 0 to 40 sweeping 220 degrees from the lower left to the lower right, 20 at the top. */
+export const BAYOU_DIAL = { from: 200, to: -20, maxMph: 40 };
+
+/** The needle's angle in degrees for a speed, held to the dial's end. */
+export function bayouNeedleAngle(mph) {
+  const { from, to, maxMph } = BAYOU_DIAL;
+  return from + ((to - from) * Math.min(maxMph, Math.max(0, mph))) / maxMph;
+}
+
 function buildBayou() {
   const group = new THREE.Group();
   group.name = 'dash';
-  const O = { ox: 150, oy: 28 };
-  housing(group, { x: 102, y: 10, w: 96, h: 36, r: 6, ...O, material: plastic });
-  const face = mmPanel({ x: 102, y: 10, w: 96, h: 36, ...O });
+  const [cx, cy] = [150, 50];
+  // A round black cup with a bezel lip, open towards the rider (-Z), the dial recessed in it.
+  const cup = new THREE.LatheGeometry(
+    [[0, -0.032], [0.05, -0.032], [0.0545, -0.026], [0.0545, 0.026], [0.0515, 0.034], [0.0465, 0.034], [0.0465, 0.026], [0.0455, 0.0]].map(([r, y]) => new THREE.Vector2(r, y)),
+    40,
+  ).rotateX(-Math.PI / 2);
+  const cupMesh = new THREE.Mesh(cup, plastic);
+  cupMesh.name = 'dashHousing';
+  group.add(cupMesh);
+  const face = mmPanel({ x: cx - 50, y: cy - 50, w: 100, h: 100, ox: cx, oy: cy, z: -0.0185 });
   group.add(face.mesh);
   const gate = changeGate();
+  let shownMph = 0;
+  const KMH = [10, 20, 30, 40, 50, 60];
+
+  function draw(ctx, s, L) {
+    const { from, to } = BAYOU_DIAL;
+    ctx.fillStyle = '#0a0a0b';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 45, 0, Math.PI * 2);
+    ctx.fill();
+    // The mph scale: a tick every 2, long ones with figures every 10, white on black.
+    ticks(ctx, cx, cy, 39, 44, from, to, 20, '#e9e9e6', 0.7);
+    ticks(ctx, cx, cy, 35, 44, from, to, 4, '#ffffff', 1.5);
+    labels(ctx, cx, cy, 29, from, to, ['0', '10', '20', '30', '40'], '#f2f2ef', 7.5);
+    // The km/h scale inside it, in blue: an arc and small figures.
+    arc(ctx, cx, cy, 23, from, to, '#2a8fd6', 0.8);
+    KMH.forEach((k) => {
+      const a = bayouNeedleAngle(k / 1.609344);
+      const [x0, y0] = pol(cx, cy, 23, a);
+      const [x1, y1] = pol(cx, cy, 20.5, a);
+      ctx.strokeStyle = '#2a8fd6';
+      ctx.lineWidth = 0.7;
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y1);
+      ctx.stroke();
+      const [tx, ty] = pol(cx, cy, 17, a);
+      text(ctx, String(k), tx, ty + 1.2, 3.4, '#2a8fd6', { align: 'center' });
+    });
+    // The odometer's window, at the top, and the unit names under the needle's hub.
+    drum(ctx, cx - 13.8, 28, L.odo, 7);
+    text(ctx, 'km/h', cx, 63, 3.8, '#2a8fd6', { align: 'center' });
+    text(ctx, 'mph', cx, 68.5, 5, '#f2f2ef', { align: 'center', weight: 'bold' });
+    makerBadge(ctx, 'ridgeback', cx, 79, 8, 34);
+    // The needle, white, and a grey hub on its pivot; then the lamps and the key in the empty sector under the dial.
+    needle(ctx, cx, cy, 41, bayouNeedleAngle(L.mph), '#f4f4ee', 1.5);
+    ctx.fillStyle = '#4a4c4f';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 4.2, 0, Math.PI * 2);
+    ctx.fill();
+    glyphLetter(ctx, cx - 27, 83, LAMP.green, 'N', L.lamps.n, 8);
+    glyphLetter(ctx, cx + 27, 83, LAMP.amber, 'R', L.lamps.r, 8);
+    keySwitch(ctx, cx, 90, s.keyOn);
+  }
+
   return {
     group,
-    mount: podMount(group, 0, 0.026, 0.03, 0.85),
+    mount: podMount(group, 0, 0.062, 0, 0.85),
     update(s) {
-      const l = lampStates(s);
-      if (gate(lookKey(s)))
-        face.redraw((ctx) => {
-          glyphLetter(ctx, 132, 26, LAMP.green, 'N', l.n, 10);
-          glyphLetter(ctx, 156, 26, LAMP.amber, 'R', l.r, 10);
-          keySwitch(ctx, 182, 28, s.keyOn);
-        });
+      // The needle follows the road speed with a little lag, like a cable.
+      shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
+      const o = counterDigits(s.odoMiles, 6);
+      const L = { lamps: lampStates(s), mph: shownMph, odo: o };
+      if (gate(lookKey(s, [Math.round(shownMph * 4), o.key]))) face.redraw((ctx) => draw(ctx, s, L));
     },
   };
 }
