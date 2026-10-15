@@ -188,7 +188,7 @@ export const FAQ_SECTIONS = [
         a: `Look at the left bar. On the red and the green it is a ridged black slider in a slot on the switch housing, under the CHOKE label: <kbd>Q</kbd>
           slides it towards the label and <kbd>Z</kbd> eases it back. The blue's is a lever hanging under its switch housing. The yellow's is not on the
           bars at all: it is a black knob with the choke symbol on the left of the carb, down in the open engine bay, so you have to be all but stopped to
-          reach it, and it takes a hand off the bars. The fuel tap is beside it, on the tank's lower edge. The others have a knob or a lever of their own,
+          reach it, and it takes a hand off the bars. The fuel tap is beside it, on the tank's lower edge. The orange's is a lever on the pod on the left bar, beside the lights rocker, always in reach. The others have a knob or a lever of their own,
           so stand at the quad and watch what moves when you hold <kbd>Q</kbd>.`,
       },
       {
@@ -1612,11 +1612,11 @@ export const FAQ_SECTIONS = [
         tip: 'P on the red quad: dipped, main beam, off. Its pod\'s yellow and white rockers show which.',
       },
       {
-        q: 'How do I switch the yellow quad\'s lights on and off?',
-        a: `Press <kbd>P</kbd> while you ride it. It has a plain switch, not the others' three-way one: on (dipped) or off, and
-          it starts on. The little rocker on the left bar, just in from the brake lever, is the switch, and it rocks as you press. With the lights off the tail
+        q: 'How do I switch the yellow or orange quad\'s lights on and off?',
+        a: `Press <kbd>P</kbd> while you ride it. They have a plain switch, not the others' three-way one: on (dipped) or off, and
+          they start on. The little rocker on the left bar (the yellow's just in from the brake lever, the orange's the yellow one on its pod) is the switch, and it rocks as you press. With the lights off the tail
           lamp is off too. The pull-start is on <kbd>O</kbd>, not <kbd>P</kbd>, so the two don't clash.`,
-        tip: 'P switches the yellow quad\'s lights on and off. Its pull-start is on O.',
+        tip: 'P switches the yellow and orange quads\' lights on and off. Their pull-start is on O.',
       },
       {
         q: 'How do I put the blue quad\'s lights on main beam, or off, and where is its choke?',
@@ -1818,8 +1818,8 @@ export const VEHICLE_NOTES = {
     tips: ['Has the winch: X to take the hook.', 'Takes an age to warm up and wants plenty of choke.', 'The choke slides on the switch housing on the left bar.', 'Always four-wheel drive.'],
   },
   orange: {
-    blurb: 'An LT250R-style two-stroke race quad: lighter and lower than the yellow, revs to 11,500 and smokes like a chimney.',
-    tips: ['Single race seat: nobody on the back.', 'Water-cooled, so it stays cooler, unless the hose is weeping.', 'Kill switch on the left bar.'],
+    blurb: 'The Viper Adder 250, an LT250R-style two-stroke race quad: a triangle of a quad on a blue frame with big flat side panels and a wide duck-tail, lighter and lower than the yellow. It revs to 11,500 and smokes like a chimney.',
+    tips: ['Single race seat: nobody on the back.', 'Water-cooled, so it stays cooler, unless the hose is weeping.', 'The pod on the left bar has the lights rocker (P), the choke lever and the kill switch.', 'The pull-start is on O.'],
   },
   kids: {
     blurb: 'A 50cc kids’ quad, two thirds the size of the others, that Jess insists on riding anyway.',

@@ -317,14 +317,14 @@ export const QUAD_SPECS = [
     // different two-stroke from the yellow's.
     id: 'orange',
     bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
-    noHeadlight: true, // no lighting set on the orange: its lamp never shines
     label: 'orange quad',
     name: 'Orange quad',
     bodyColor: 0xe86a12,
-    style: 'sport2', // a single race seat: no room for her on the back
+    style: 'racer', // a single race seat: no room for her on the back
     dashStyle: 'quadracer',
     reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
-    chokeStyle: 'knob', // where the choke is and what it takes to reach it
+    barLights: 'switch', // a plain on / off rocker on the left pod (P: off, dipped; lightSwitch.js), starting on
+    chokeStyle: 'thumb', // a lever on the left pod, in reach on the move
     tapStyle: 'lowRight', // where the fuel tap sits
     hoursRange: [100, 400], // engine hours showing when the game starts
     odoRange: [400, 1600], // odometer miles showing when the game starts

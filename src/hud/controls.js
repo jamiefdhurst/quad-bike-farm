@@ -20,7 +20,7 @@ export const CONTROLS = [
   {
     title: 'On the quad',
     lines: [
-      `<kbd>K</kbd> ignition, hold <kbd>R</kbd> to crank, <kbd>O</kbd> pull-start (the two-strokes: hold, then let go), <kbd>P</kbd> lights on the red, blue and green: off, dipped, main beam (the switch pod on the left bar), and on the yellow: on or off (a rocker on the left bar)`,
+      `<kbd>K</kbd> ignition, hold <kbd>R</kbd> to crank, <kbd>O</kbd> pull-start (the two-strokes: hold, then let go), <kbd>P</kbd> lights on the red, blue and green: off, dipped, main beam (the switch pod on the left bar), and on the yellow and orange: on or off (a rocker on the left bar)`,
       `<kbd>Q</kbd> more choke, <kbd>Z</kbd> less, <kbd>F</kbd> fuel tap. Each quad's choke, tap and reverse are in a different place: look down for them, and some need you stopped or a hand off the bars`,
       `Red, green and yellow have a clutch: hold <kbd>Shift</kbd> to change gear with <kbd>1</kbd> to <kbd>4</kbd>, <kbd>B</kbd> reverse (red: turn the bars as you press it; green: stopped), <kbd>0</kbd> neutral`,
       `<kbd>W</kbd> throttle and <kbd>S</kbd> brake (tap for a little, hold for the lot), and backwards once reverse is on (blue and loan: hold it and press <kbd>B</kbd>; red, green: <kbd>B</kbd> with the clutch in), <kbd>A</kbd><kbd>D</kbd> steer`,
