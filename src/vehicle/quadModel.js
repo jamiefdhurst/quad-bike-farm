@@ -17,6 +17,7 @@ import {
   sweepGeometry,
 } from './quadGeometry.js';
 import { treadTyre } from './detail/tread.js';
+import { buildLeftPod, buildBrakeLever, buildDriveSwitch, poseBarPod } from './foremanControls.js';
 import { addRackDetail, addGrille, addTreadPlates, addShiftLever, addBarCables, addDrumBrake, seatTape, addDecals } from './foremanDetail.js';
 import { DECK, deckGeometry, flareGeometry, bulkheadGeometry, topCoverGeometry, bodyTopY } from './foremanDeck.js';
 
@@ -39,6 +40,10 @@ import { DECK, deckGeometry, flareGeometry, bulkheadGeometry, topCoverGeometry, 
 const WHEEL_RADIUS = 0.3;
 const REST_WHEEL_Y = 0.3;
 const barsY = (style) => (style === 'utility' ? 0.96 : 1.0); // the handlebars' height: the Foreman's sit lower (photos of the real one)
+
+// Choke knobs are black rubber with a small white mark, as on the real machines (they were yellow, which only the lights rocker is).
+const CHOKE_KNOB = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.7 });
+const CHOKE_MARK = new THREE.MeshStandardMaterial({ color: 0xe9e9e4, roughness: 0.6 });
 
 // Shared materials. Paint, lenses, rims and springs are made per quad in buildQuadModel.
 const MAT = {
@@ -393,6 +398,10 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
     const b = new THREE.Vector3(s * 0.433, 0.0725, -0.07);
     grip.position.copy(a);
     grip.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.sub(a).normalize());
+    if (chokeStyle === 'slide') {
+      buildBrakeLever(bars, s, MAT); // the Foreman's: a tapered lever with a ball end, and a latch on the left one for the parking brake
+      continue;
+    }
     // Brake lever on a perch, curving out ahead of the grip.
     rbox(0.03, 0.026, 0.03, 0.008, MAT.engineDark, s * 0.262, 0.066, -0.018, bars);
     const lever = [[0, 0.004, 0.006], [s * 0.028, 0.01, 0.012], [s * 0.138, 0.01, -0.016], [s * 0.156, 0.006, -0.028]];
@@ -427,30 +436,41 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
 
   // The choke, by style (controls.js): a thumb lever on the left bar that rotates about X, or a pull knob under the dash that slides
   // towards the rider. The plunger style lives on the carb under the tank (buildChokePlunger), not here.
-  const choke = new THREE.Group();
+  let choke = new THREE.Group();
   choke.name = 'chokeLever';
   choke.userData.keep = true;
-  if (chokeStyle === 'knob') {
+  if (chokeStyle === 'slide') {
+    // The Foreman's switch pod (foremanControls.js): lights, HI / LO, engine stop, start and the choke slider, on the left, face to the rider.
+    const pod = buildLeftPod(MAT);
+    pod.position.set(0.176, 0.052, -0.05);
+    pod.rotation.set(0.6, Math.PI, 0);
+    bars.add(pod);
+    choke = pod.getObjectByName('chokeLever');
+  } else if (chokeStyle === 'knob') {
     rbox(0.034, 0.03, 0.04, 0.008, MAT.plastic, 0.13, 0.036, 0.045, bars, 'chokeHousing');
     choke.position.set(0.13, 0.036, -0.02);
     choke.userData.baseZ = choke.position.z;
     bars.add(choke);
     tube([0, 0, 0], [0, 0, 0.1], 0.005, MAT.chrome, choke);
-    add(new THREE.SphereGeometry(0.019, 12, 8), new THREE.MeshStandardMaterial({ color: 0xd8c020, roughness: 0.5 }), choke, 'chokeKnob').position.set(0, 0, -0.012);
+    add(new THREE.SphereGeometry(0.019, 12, 8), CHOKE_KNOB, choke, 'chokeKnob').position.set(0, 0, -0.012);
+    add(new THREE.CircleGeometry(0.0065, 10).rotateY(Math.PI), CHOKE_MARK, choke).position.set(0, 0, -0.0312); // the mark, on the end facing you
   } else if (chokeStyle === 'thumb') {
     const chokeHousing = rbox(0.03, 0.026, 0.032, 0.008, MAT.plastic, 0.29, 0.07, -0.03, bars, 'chokeHousing');
     chokeHousing.rotation.y = 0.2;
     choke.position.set(0.29, 0.085, -0.03);
     bars.add(choke);
     rbox(0.01, 0.055, 0.012, 0.004, MAT.chrome, 0, 0.026, 0, choke, 'chokeLeverArm', 1);
-    rbox(0.018, 0.012, 0.016, 0.005, new THREE.MeshStandardMaterial({ color: 0xd8c020, roughness: 0.5 }), 0, 0.055, 0, choke, 'chokeLeverKnob', 1);
+    rbox(0.018, 0.012, 0.016, 0.005, CHOKE_KNOB, 0, 0.055, 0, choke, 'chokeLeverKnob', 1);
+    rbox(0.012, 0.0015, 0.0035, 0.0005, CHOKE_MARK, 0, 0.0612, 0, choke, undefined, 1);
   } else {
     bars.userData.chokeElsewhere = true; // buildQuadModel fits it under the tank and parents this empty group there
   }
   bars.userData.chokeGroup = choke;
 
   // The 2WD / 4WD rocker on a little housing inboard of the right grip (driveMode.js), and on the blue a red diff lock button beside it.
-  if (driveSwitch) {
+  if (driveSwitch && chokeStyle === 'slide') {
+    buildDriveSwitch(bars, MAT);
+  } else if (driveSwitch) {
     rbox(0.04, 0.026, 0.044, 0.008, MAT.plastic, -0.19, 0.068, -0.03, bars, 'driveSwitchHousing');
     const rocker = new THREE.Group();
     rocker.name = 'driveSwitchRocker';
@@ -1179,7 +1199,8 @@ function buildChokePlunger(root, choke) {
   choke.userData.baseY = choke.position.y;
   root.add(choke);
   tube([0, 0, 0], [0, 0.04, 0], 0.006, MAT.chrome, choke);
-  add(new THREE.CylinderGeometry(0.02, 0.02, 0.016, 14), new THREE.MeshStandardMaterial({ color: 0xf0d020, roughness: 0.5 }), choke, 'chokeKnob').position.set(0, -0.008, 0);
+  add(new THREE.CylinderGeometry(0.02, 0.02, 0.016, 14), CHOKE_KNOB, choke, 'chokeKnob').position.set(0, -0.008, 0);
+  add(new THREE.CircleGeometry(0.008, 10).rotateX(Math.PI / 2), CHOKE_MARK, choke).position.set(0, -0.0162, 0); // the mark, on the face you pull by
 }
 
 export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', style = 'utility', solo = false, plateNumber = '7', chokeStyle = 'thumb', tapStyle = 'left', driveSwitch = null } = {}) {

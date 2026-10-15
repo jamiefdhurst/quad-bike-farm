@@ -68,6 +68,7 @@ export class QuadUnit {
       chainDrive: !!spec.chainDrive,
       reverseStyle: spec.reverseStyle,
       chokeStyle: spec.chokeStyle,
+      barLights: !!spec.barLights,
       tapStyle: spec.tapStyle,
       drive: spec.driveSwitch ? { lock: !!spec.diffLock } : null,
       controlsParams: { ...DEFAULT_CONTROLS_PARAMS },

@@ -73,7 +73,7 @@ export const RADIAL_ITEMS = [
   { label: 'Less choke', key: 'KeyZ', hold: 0.5 },
   { label: 'Fuel tap', key: 'KeyF' },
   { label: 'Dipstick', key: 'KeyY', hold: 1.2, where: 'foot' },
-  { label: 'Lights', key: 'KeyP', where: 'ride', note: 'UTV and Land Rovers' },
+  { label: 'Lights', key: 'KeyP', where: 'ride', note: 'UTV, Land Rovers and the red' },
   { label: 'Left indicator', key: 'Comma', where: 'ride' },
   { label: 'Right indicator', key: 'Period', where: 'ride' },
   { label: 'Hazards', key: 'Equal', where: 'ride' },

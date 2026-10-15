@@ -309,6 +309,8 @@ export class DebugGui {
     tick(r, 'parking brake', () => !!unit().quad.parkBrake, (v) => (unit().quad.parkBrake = v));
     // The UTV's light switch, and the 2WD / 4WD switch where there is one.
     if (u.quad.lights) r.add({ get v() { return unit().quad.lights?.mode; }, set v(x) { unit().quad.lights?.set(x); } }, 'v', LIGHT_MODES).name('lights').listen();
+    // The red's lights and HI / LO rockers on its switch pod (off, dipped, main beam): the same three positions, P in the game.
+    if (u.quad.barLights) r.add({ get v() { return unit().quad.barLights?.mode; }, set v(x) { unit().quad.barLights?.set(x); } }, 'v', LIGHT_MODES).name('lights (the bars\' pod)').listen();
     if (u.quad.radio) {
       tick(r, 'radio on', () => unit().quad.radio?.on ?? false, (v) => unit().quad.radio?.set(v));
       set(r, 'radio volume', () => round(unit().quad.radio?.volume ?? 0), (v) => unit().quad.radio?.setVolume(v), 0, 1);

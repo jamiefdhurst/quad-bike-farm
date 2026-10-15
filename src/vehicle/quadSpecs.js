@@ -33,7 +33,8 @@ export const QUAD_SPECS = [
     dashStyle: 'foreman',
     driveSwitch: true, // a 2WD / 4WD switch on the bars (driveMode.js)
     reverseStyle: 'bars', // where the reverse is and what it takes to use it (controls.js)
-    chokeStyle: 'thumb', // where the choke is and what it takes to reach it
+    chokeStyle: 'slide', // where the choke is and what it takes to reach it: a slider in the left switch pod (foremanControls.js)
+    barLights: true, // a lights switch and HI / LO on the bars' pod (P cycles off, dipped, main beam; lightSwitch.js), starting dipped
     tapStyle: 'left', // where the fuel tap sits
     hoursRange: [600, 1500], // engine hours showing when the game starts
     odoRange: [1500, 3750], // odometer miles showing when the game starts

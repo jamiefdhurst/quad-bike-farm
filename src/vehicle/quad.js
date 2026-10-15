@@ -8,6 +8,7 @@ import { Drivetrain } from './drivetrain.js';
 import { QuirkSet } from './quirks.js';
 import { headlightLook, taillightLevel } from './headlight.js';
 import { LightSwitch, lightLook, lightLamps } from './lightSwitch.js';
+import { poseBarPod, POD } from './foremanControls.js';
 import { Indicators, INDICATOR_PARAMS } from './indicators.js';
 import { SeatBelts, BELT_SEATS, beltLampMode, beltLampLit } from './seatBelts.js';
 import { TyreSet } from './tyres.js';
@@ -89,7 +90,7 @@ export class Quad {
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null, handLever = false, crank = null, landRover = false, utv = false, car = false, lightSwitch = false, driverStand = null, benchStand = null, chainDrive = false }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null, handLever = false, crank = null, landRover = false, utv = false, car = false, lightSwitch = false, barLights = false, driverStand = null, benchStand = null, chainDrive = false }) {
     this.reverseStyle = reverseStyle; // where its reverse is and what it takes (controls.js)
     this.chokeStyle = chokeStyle;
     this.tapStyle = tapStyle;
@@ -104,6 +105,7 @@ export class Quad {
     this.utv = utv;
     this.hornHeld = false; // set by the game while the horn sounds (the UTV's wheel pad sinks)
     this.radio = null; // the Land Rovers' and the girls' cars' radio, fitted by the unit (radio.js)
+    this.barLights = barLights ? new LightSwitch('low') : null; // the red's lights and HI / LO rockers on the bars: P cycles them, starting dipped (headlights follow the engine as they always did; the switch only turns them off or to main beam)
     this.lights = lightSwitch ? new LightSwitch() : null; // the UTV's and the Land Rovers' three-way light switch: off, dipped, main beam (lightSwitch.js)
     this.signals = lightSwitch ? new Indicators() : null; // and their indicators and hazards (indicators.js)
     this.signalClick = null; // the relay's tick: 'on' or 'off' on the frame the lamp changes (the game plays it and clears it)
@@ -518,6 +520,7 @@ export class Quad {
     }
     if (this.drive && this.input) this.driveKeys(input);
     if (this.lights && this.input && input.wasPressed('KeyP')) this.lights.cycle();
+    if (this.barLights && this.input && input.wasPressed('KeyP')) this.barLights.cycle();
     if (this.radio && this.input && input.wasPressed('KeyI')) this.radioKey(input);
     if (this.signals && this.input) {
       if (input.wasPressed('Comma')) this.signals.press('left');
@@ -1226,14 +1229,16 @@ export class Quad {
       steady: this.steadyLights,
       time: this.lightTime,
     });
-    const lit = e.ignitionOn && !this.noHeadlight;
-    // A UTV's lights are the switch's (the key must be on as well), not the engine's.
-    const beams = this.lights ? lightLook(this.lights.mode, e.hasPower) : null;
+    const barMode = this.barLights?.mode;
+    const lit = e.ignitionOn && !this.noHeadlight && barMode !== 'off';
+    // A UTV's lights are the switch's (the key must be on as well), not the engine's. The red's switch only turns the engine's light off or
+    // to main beam: a longer, whiter, brighter reach, at the brightness the engine gives it.
+    const beams = this.lights ? lightLook(this.lights.mode, e.hasPower) : barMode === 'high' ? lightLook('high', true) : null;
     // Lamps on the battery's supply load it, and dim when it is weak and the revs are low (engine/charging.js); the old quads' run off the magneto.
-    const onBattery = lit && (beams ? beams.level > 0 : this.steadyLights);
+    const onBattery = lit && (this.lights ? beams.level > 0 : this.steadyLights);
     e.lightLoad = onBattery ? 1 : 0;
     const supply = onBattery ? lampSupply(e.battery, e.rpm, e.params.idleRpmWarm, e.params.maxRpm, e.params.batteryWeakBelow) : 1;
-    const level = (beams ? beams.level : look.level) * this.quirks.headlight(dt) * supply;
+    const level = (this.lights ? beams.level : look.level) * this.quirks.headlight(dt) * supply;
     setHeadlights(this.model, lit, level, beams ? beams.colour : look.colour, beams);
     // For the real light the pool gives the lit vehicles (effects/vehicleLights.js).
     this.headlightLevel = lit ? level : 0;
@@ -1271,7 +1276,9 @@ export class Quad {
     // Off: lever forward. Full: pulled back towards the rider.
     if (this.chokeStyle === 'knob') this.chokeLever.position.z = this.chokeLever.userData.baseZ - this.displayChoke * 0.05; // pulled out towards you
     else if (this.chokeStyle === 'plunger') this.chokeLever.position.y = this.chokeLever.userData.baseY - this.displayChoke * 0.045; // pulled down
+    else if (this.chokeStyle === 'slide') this.chokeLever.position.x = this.chokeLever.userData.baseX - this.displayChoke * POD.slide; // pulled along its slot to apply
     else this.chokeLever.rotation.x = 0.5 - this.displayChoke * 1.45;
+    if (this.barLights) poseBarPod(this.model, { lights: this.barLights.mode, keyOn: e.ignitionOn, cranking: e.state === 'cranking' });
     if (this.drive && this.driveRocker) {
       this.driveShown += ((this.drive.frontDriven ? 1 : 0) - this.driveShown) * Math.min(1, 15 * dt);
       this.driveRocker.rotation.x = 0.35 - this.driveShown * 0.7; // top pressed in for 4WD

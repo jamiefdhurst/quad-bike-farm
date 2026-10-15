@@ -4,12 +4,12 @@
 //   reverse: 'bars' a lever on the left bar you push down while turning the bars; 'button' a button you press while holding the brake
 //     (automatics); 'knee' a lever by your left knee, which wants the quad stopped; 'none' no reverse at all, so you get off and push.
 //   (also 'dashLever', the UTV's forward and reverse lever on the dash, which wants it stopped)
-//   choke: 'thumb' a lever by the left grip, always in reach; 'knob' a pull knob on the dash, a hand off the bars; 'plunger' a plunger on
+//   choke: 'thumb' a lever by the left grip, always in reach; 'slide' the same reach, a slider in the left switch pod (the red); 'knob' a pull knob on the dash, a hand off the bars; 'plunger' a plunger on
 //     the carb under the tank, which you can only reach with the quad all but stopped, and with a hand off the bars even then.
 //   tap: where the fuel tap sits (the model places it, quadModel.js) and what its handle looks like.
 
 export const REVERSE_STYLES = ['bars', 'button', 'knee', 'dashLever', 'none'];
-export const CHOKE_STYLES = ['thumb', 'knob', 'plunger'];
+export const CHOKE_STYLES = ['thumb', 'knob', 'plunger', 'slide'];
 export const TAP_STYLES = ['left', 'right', 'rearLeft', 'lowLeft', 'lowRight'];
 
 export const DEFAULT_CONTROLS_PARAMS = {
@@ -71,7 +71,7 @@ export function reverseAllowed(style, ctx, p = DEFAULT_CONTROLS_PARAMS) {
  * a hand is off the bars (1 for the thumb lever). Standing beside the quad (no `riding`) every choke is in reach.
  */
 export function chokeReach(style, speed, riding = true, p = DEFAULT_CONTROLS_PARAMS) {
-  if (!riding || style === 'thumb') return { ok: true, steer: 1 };
+  if (!riding || style === 'thumb' || style === 'slide') return { ok: true, steer: 1 };
   if (style === 'knob') {
     return speed > p.knobMaxSpeed ? { ok: false, steer: 1, why: 'Too fast to take a hand off the bars for the choke knob' } : { ok: true, steer: p.knobSteer };
   }

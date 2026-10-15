@@ -117,6 +117,7 @@ export function buildGameTree(g, host) {
         tune: tuningTree((n) => n.startsWith(`${u().name}/`), `${u().name}/`),
       };
       if (q().lights) out.lights = choice(LIGHT_MODES, () => q().lights.mode, (v) => q().lights.set(v), 'the UTV light switch');
+      if (q().barLights) out.lights = choice(LIGHT_MODES, () => q().barLights.mode, (v) => q().barLights.set(v), 'the lights switch on the bars\' pod (off, low is dipped, high is main beam)');
       if (q().radio) {
         out.radio = flag(() => q().radio.on, (v) => q().radio.set(v), 'the radio is on (it also needs the key on to make a sound)');
         out.radioVolume = num(() => q().radio.volume, (v) => q().radio.setVolume(v), 0, 1);
