@@ -71,14 +71,29 @@ export const JUNIOR_TAIL = [
 
 /** The plates under each rear fender between the engine and the tail (tucked in under the wing), and the black flaps behind the rear tyres. */
 export const JUNIOR_SIDE_PLATE = { x: 0.165, y: 0.6, h: 0.12, z: -0.62, len: 0.44 };
-export const JUNIOR_FLAP = { x: 0.48, y: 0.55, w: 0.26, h: 0.17, z: -0.975 }; // its top (0.635) is up in the fender's back end (0.62), so it hangs from it
+export const JUNIOR_FLAP = { x: 0.48, w: 0.24, bottom: 0.5, z: -0.945, d: 0.014 }; // hangs just behind the tyre; its top edge follows the fender's underside
+
+const lerpAt = (pts, k) => {
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [a, b] = [pts[i], pts[i + 1]];
+    if ((k - a[0]) * (k - b[0]) <= 0) return a[1] + ((b[1] - a[1]) * (k - a[0])) / (b[0] - a[0] || 1);
+  }
+  return pts.at(-1)[1];
+};
+
+/** The rear fender's surface height at world `x` (outboard positive) and `z`: the profile's height over the wheel, less the section's drop across it. */
+export function juniorRearFenderY(x, z, F = JUNIOR_FENDERS.rear, S = JUNIOR_SECTION) {
+  const prof = [...F.profile].sort((a, b) => a[0] - b[0]);
+  const t = (Math.abs(x) - F.width[0]) / (F.width[1] - F.width[0]);
+  return JUNIOR_WHEELS.y + lerpAt(prof, z - -0.62) - lerpAt(S, t);
+}
 
 /**
- * The small exhaust, in the body's frame: a short pipe round the right of the engine to a small can outboard of the side plate and under the
- * rear fender, its tip a little way behind the engine.
+ * The small exhaust, in the body's frame: a short pipe round the right of the engine to a small can outboard of the side plate, in the open gap between the
+ * wings so it shows from the side, its tip ending under the rear wing's front.
  */
 export const JUNIOR_EXHAUST = {
-  path: [[-0.03, 0.64, 0.2], [-0.12, 0.56, 0.32], [-0.25, 0.5, 0.12], [-0.28, 0.5, -0.15], [-0.27, 0.54, -0.4]],
-  can: { x: -0.27, y: 0.56, z: -0.54, length: 0.22, tilt: 0.08 },
-  tip: [-0.27, 0.57, -0.655],
+  path: [[-0.03, 0.64, 0.2], [-0.12, 0.56, 0.32], [-0.25, 0.5, 0.14], [-0.28, 0.5, 0.0], [-0.28, 0.5, -0.07]],
+  can: { x: -0.28, y: 0.5, z: -0.2, length: 0.26, tilt: 0.04 },
+  tip: [-0.28, 0.51, -0.335],
 };

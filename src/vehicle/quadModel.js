@@ -1404,7 +1404,9 @@ function buildCarbPlunger(root, choke) {
   choke.position.set(0, 0, 0);
   choke.userData.baseY = 0;
   mount.add(choke);
-  tube([0, 0, 0], [0, 0.03, 0], 0.005, MAT.chrome, choke);
+  // It pulls out well clear of its barrel so you can see it is on: a long bright shaft that stays inside the housing when pushed in.
+  choke.userData.travel = 0.09;
+  tube([0, 0, 0], [0, 0.09, 0], 0.005, MAT.chrome, choke);
   add(new THREE.CylinderGeometry(0.02, 0.02, 0.018, 14), CHOKE_KNOB, choke, 'chokeKnob').position.set(0, -0.008, 0);
   const symbol = chokeSymbol(CHOKE_MARK);
   symbol.rotation.x = Math.PI / 2; // the ring faces out of the knob's end (-y)

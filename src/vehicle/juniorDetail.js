@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { loftGeometry } from './quadGeometry.js';
 import { decalMesh, MAKER_FOR } from './detail/decals.js';
-import { JUNIOR_FRONT, JUNIOR_TAIL, JUNIOR_SIDE_PLATE, JUNIOR_FLAP, JUNIOR_SEAT, juniorHalf } from './juniorBody.js';
+import { JUNIOR_FRONT, JUNIOR_TAIL, JUNIOR_SIDE_PLATE, JUNIOR_FLAP, JUNIOR_SEAT, juniorHalf, juniorRearFenderY } from './juniorBody.js';
 
 // The kids' quad's finer parts (TODO 93): the bulky front body, the tail, the plates under the fenders, the mud flaps and the stickers. The
 // bars, the footrests and the engine bay are the yellow's (blasterDetail.js); the fenders are made by blasterFenders with juniorBody.js's
@@ -32,11 +32,17 @@ export function addJuniorBody(root, MAT, paint) {
   mesh(loftGeometry(JUNIOR_TAIL, { exponent: 4 }), paint, root, 'tail');
   const P = JUNIOR_SIDE_PLATE;
   for (const s of [-1, 1]) rbox(0.025, P.h, P.len, 0.008, paint, s * P.x, P.y, P.z, root, 'sidePlate');
-  // The flaps: black rubber hanging behind each rear tyre from the fender's back end.
+  // The flaps: black rubber hanging just behind each rear tyre, the top edge cut to follow the fender's underside there (it slopes across).
   const F = JUNIOR_FLAP;
   for (const s of [-1, 1]) {
-    const flap = rbox(F.w, F.h, 0.014, 0.005, MAT.rubber, s * F.x, F.y, F.z, root, 'mudFlap');
-    flap.rotation.x = -0.08;
+    const inner = juniorRearFenderY(F.x - F.w / 2, F.z) - 0.003;
+    const outer = juniorRearFenderY(F.x + F.w / 2, F.z) - 0.003;
+    const shape = new THREE.Shape([new THREE.Vector2(-F.w / 2, F.bottom), new THREE.Vector2(F.w / 2, F.bottom), new THREE.Vector2(F.w / 2, outer), new THREE.Vector2(-F.w / 2, inner)]);
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: F.d, bevelEnabled: false });
+    geo.translate(0, 0, -F.d / 2);
+    const flap = mesh(geo, MAT.rubber, root, 'mudFlap');
+    flap.position.set(s * F.x, 0, F.z);
+    if (s < 0) flap.scale.x = -1; // so the higher side is inboard on both
   }
 }
 

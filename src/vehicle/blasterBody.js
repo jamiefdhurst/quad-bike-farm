@@ -107,7 +107,7 @@ export const BLASTER_CARB = {
   len: 0.11,
   bowlY: 0.622,
   capY: 0.708,
-  plunger: { x: 0.05, y: 0.665, z: -0.02 }, // where its housing meets the carb's left side; the knob pulls out along +x
+  plunger: { x: 0.05, y: 0.665, z: -0.055 }, // where its housing meets the carb's left side; the knob pulls out along +x
   airboxZ: -0.36,
 };
 

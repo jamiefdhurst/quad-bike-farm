@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as THREE from 'three';
-import { JUNIOR_FENDERS, JUNIOR_SECTION, JUNIOR_FRONT, JUNIOR_SEAT, JUNIOR_TAIL, JUNIOR_FLAP, JUNIOR_SIDE_PLATE, JUNIOR_EXHAUST, JUNIOR_TYRES, JUNIOR_TYRE_OUTER, JUNIOR_WHEELS, juniorTop, juniorHalf } from '../src/vehicle/juniorBody.js';
+import { juniorRearFenderY, JUNIOR_FENDERS, JUNIOR_SECTION, JUNIOR_FRONT, JUNIOR_SEAT, JUNIOR_TAIL, JUNIOR_FLAP, JUNIOR_SIDE_PLATE, JUNIOR_EXHAUST, JUNIOR_TYRES, JUNIOR_TYRE_OUTER, JUNIOR_WHEELS, juniorTop, juniorHalf } from '../src/vehicle/juniorBody.js';
 import { BLASTER_VBARS } from '../src/vehicle/blasterBody.js';
 import { shellGeometry } from '../src/vehicle/quadGeometry.js';
 import { EXTRA_SPECS } from '../src/vehicle/quadSpecs.js';
@@ -46,8 +46,14 @@ describe('the kids’ quad body numbers', () => {
 
   it('ends the tail between the rear fenders, the flaps up in the fenders’ back ends, and the can small and clear of the plate', () => {
     expect(Math.max(...JUNIOR_TAIL.map((t) => t.w)) / 2).toBeGreaterThanOrEqual(JUNIOR_FENDERS.rear.width[0] - 0.01);
-    const fenderEnd = JUNIOR_WHEELS.y + JUNIOR_FENDERS.rear.profile.at(-1)[1];
-    expect(JUNIOR_FLAP.y + JUNIOR_FLAP.h / 2).toBeGreaterThanOrEqual(fenderEnd);
+    // The flap hangs just behind the tyre, under the fender's end, with its top edge meeting the fender's underside across its width.
+    for (const x of [JUNIOR_FLAP.x - JUNIOR_FLAP.w / 2, JUNIOR_FLAP.x + JUNIOR_FLAP.w / 2]) {
+      const top = juniorRearFenderY(x, JUNIOR_FLAP.z);
+      expect(top - JUNIOR_FLAP.bottom).toBeGreaterThan(0.12); // a flap, not a sliver
+      expect(top).toBeLessThan(JUNIOR_WHEELS.y + 0.45); // and no higher than the wing's own height there
+    }
+    expect(JUNIOR_FLAP.z + JUNIOR_FLAP.d / 2).toBeLessThan(JUNIOR_WHEELS.zRear - 0.27); // clear of the tyre's back
+    expect(Math.abs(JUNIOR_FLAP.x - JUNIOR_WHEELS.x)).toBeLessThan(0.01); // centred on the tyre
     const E = JUNIOR_EXHAUST;
     expect(E.can.length).toBeLessThan(0.3); // a small can
     expect(Math.abs(E.can.x) - 0.04).toBeGreaterThan(JUNIOR_SIDE_PLATE.x + 0.0125); // outboard of the plate
@@ -117,9 +123,10 @@ describe('the kids’ quad’s model', () => {
     const carb = world(kids.model.getObjectByName('carb'));
     expect(world(lever).x).toBeGreaterThan(carb.x + 0.03);
     const before = world(lever).x;
-    lever.position.y = -0.045;
+    lever.position.y = -lever.userData.travel;
+    expect(lever.userData.travel).toBeGreaterThanOrEqual(0.08);
     lever.parent.updateMatrixWorld(true);
-    expect(world(lever).x).toBeGreaterThan(before + 0.04);
+    expect(world(lever).x).toBeGreaterThan(before + 0.08);
     lever.position.y = 0;
     const bars = kids.model.getObjectByName('handlebars');
     bars.updateMatrixWorld(true);
