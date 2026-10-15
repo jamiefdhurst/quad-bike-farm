@@ -25,7 +25,7 @@ import { buildGrizzlyPod } from './grizzlyControls.js';
 import { BAYOU_DECK, BAYOU_RACKS, BAYOU_FACE } from './bayouBody.js';
 import { buildBayouPod } from './bayouControls.js';
 import { addBayouFront, addBayouRear, addBayouDecals, addBayouWear, addBayouRackBlocks, addBayouBarParts, addWinchHousing, cageMaterial } from './bayouDetail.js';
-import { BLASTER_FENDERS, BLASTER_SECTION, BLASTER_CARB, BLASTER_TAP, BLASTER_VBARS, BLASTER_EXHAUST } from './blasterBody.js';
+import { BLASTER_FENDERS, BLASTER_SECTION, BLASTER_CARB, BLASTER_TAP, BLASTER_VBARS, BLASTER_EXHAUST, barAt, blasterBarHalf, blasterCross } from './blasterBody.js';
 import { addBlasterNose, addBlasterTail, addBlasterFootrests, addBlasterBumper, addBlasterEngine, addBlasterBars, addBlasterDecals, chokeSymbol, silverMaterial } from './blasterDetail.js';
 import { addGrizzlyFront, addGrizzlyRear, addGrizzlyDecals, addFrontBrake, addGrizzlyRackBlocks, GRIZZLY_FACE } from './grizzlyDetail.js';
 
@@ -431,14 +431,16 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
   const bayou = podStyle === 'bayou'; // the green's bars rise from a low middle in a V, and its speedo stands on a bracket over the clamp
   const blaster = podStyle === 'blaster'; // the yellow's rise in a V too, with a hoop and crossbar over them (addBlasterBars)
   const vBars = bayou || blaster;
-  const perchY = vBars ? 0.046 : 0.066; // the lever perches sit on the bar, which is lower out along a V
+  const perchX = blaster ? BLASTER_VBARS.perchX : 0.262; // the lever perch's and throttle housing's place along the bar
+  const perchY = blaster ? barAt(perchX).y + 0.002 : bayou ? 0.046 : 0.066; // they sit on the bar, which is lower out along a V
+  const leverK = blaster ? BLASTER_VBARS.leverScale : 1;
 
   // Bar with a slight sweep back towards the rider, in a clamp on a riser. The Bayou's rise straight from a low middle at about 20 degrees,
   // through the lever perch and the grip's fixed point (so the grips stay where they were), as the real one's do.
   if (vBars) {
-    const half = bayou ? [[0.433, 0.1084, -0.055], [0.318, 0.0655, -0.042], [0.262, 0.0446, -0.03], [0.05, -0.0345, -0.012]] : BLASTER_VBARS.half;
+    const half = bayou ? [[0.433, 0.1084, -0.055], [0.318, 0.0655, -0.042], [0.262, 0.0446, -0.03], [0.05, -0.0345, -0.012]] : blasterBarHalf();
     pipe([...half, ...half.slice().reverse().map(([x, y, z]) => [-x, y, z])], 0.011, cfg.bars, bars, { bend: 0.02, steps: 4 });
-    tube([0, -0.1, 0.0], [0, -0.0345, -0.01], 0.02, MAT.steel, bars);
+    tube([0, -0.12, 0.0], [0, bayou ? -0.0345 : BLASTER_VBARS.centreY, -0.01], 0.02, MAT.steel, bars);
   } else {
     pipe([[0.43, 0.072, -0.07], [0.2, 0.06, -0.012], [-0.2, 0.06, -0.012], [-0.43, 0.072, -0.07]], 0.011, cfg.bars, bars, { bend: 0.07, steps: 5 });
     tube([0, 0, 0], [0, 0.05, -0.01], 0.02, MAT.steel, bars);
@@ -455,21 +457,21 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
       continue;
     }
     // Brake lever on a perch, curving out ahead of the grip.
-    rbox(0.03, 0.026, 0.03, 0.008, MAT.engineDark, s * 0.262, perchY, -0.018, bars);
-    const lever = [[0, 0.004, 0.006], [s * 0.028, 0.01, 0.012], [s * 0.138, 0.01, -0.016], [s * 0.156, 0.006, -0.028]];
+    rbox(0.03, 0.026, 0.03, 0.008, MAT.engineDark, s * perchX, perchY, -0.018, bars);
+    const lever = [[0, 0.004, 0.006], [s * 0.028 * leverK, 0.01, 0.012], [s * 0.138 * leverK, 0.01, -0.016], [s * 0.156 * leverK, 0.006, -0.028]];
     if (s > 0) {
       // The left lever is also the parking brake: squeezed in and held by a red catch on the perch (poseParkBrake).
       const pivot = new THREE.Group();
       pivot.name = 'parkBrakeLever';
-      pivot.position.set(0.262, perchY, -0.018);
+      pivot.position.set(perchX, perchY, -0.018);
       bars.add(pivot);
       pipe(lever, 0.0055, MAT.alloy, pivot, { bend: 0.02 });
       const catchBar = rbox(0.012, 0.008, 0.026, 0.003, new THREE.MeshStandardMaterial({ color: 0xc01818, roughness: 0.5 }), 0.03, 0.02, 0.0, bars, 'parkBrakeCatch');
-      catchBar.position.set(0.292, perchY + 0.022, -0.012);
+      catchBar.position.set(perchX + 0.03, perchY + 0.022, -0.012);
       catchBar.visible = false;
     } else {
       const g = new THREE.Group();
-      g.position.set(s * 0.262, perchY, -0.018);
+      g.position.set(s * perchX, perchY, -0.018);
       bars.add(g);
       pipe(lever, 0.0055, MAT.alloy, g, { bend: 0.02 });
     }
@@ -561,8 +563,9 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
   // Thumb throttle and its housing on the right.
   if (kit) buildThumbThrottle(bars, MAT);
   else {
-    rbox(0.04, 0.036, 0.042, 0.01, MAT.plastic, -0.3, vBars ? 0.062 : 0.066, -0.032, bars);
-    const thumb = rbox(0.012, 0.032, 0.022, 0.005, MAT.plastic, -0.32, vBars ? 0.056 : 0.06, -0.06, bars, 'thumbThrottle', 1);
+    const ty = blaster ? barAt(0.3).y : vBars ? 0.062 - 0.004 : 0.066; // on the bar, whose height out along a V is not the straight bar's
+    rbox(0.04, 0.036, 0.042, 0.01, MAT.plastic, -0.3, ty, -0.032, bars);
+    const thumb = rbox(0.012, 0.032, 0.022, 0.005, MAT.plastic, -0.32, ty - 0.006, -0.06, bars, 'thumbThrottle', 1);
     thumb.rotation.y = -0.3;
   }
 
@@ -1857,7 +1860,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     // A pod stands on the crossbar pad, leaning back towards the rider.
     const mount = new THREE.Object3D();
     mount.name = 'podMount';
-    mount.position.set(0, blaster ? BLASTER_VBARS.crossY + 0.02 : 0.2, blaster ? -0.0255 : 0.08);
+    mount.position.set(0, blaster ? blasterCross().y + 0.02 : 0.2, blaster ? blasterCross().z : 0.08);
     mount.rotation.x = 0.35;
     bars.add(mount);
     bars.userData.podMount = mount;

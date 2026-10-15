@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as THREE from 'three';
-import { BLASTER_FENDERS, BLASTER_NOSE, BLASTER_TAIL, BLASTER_FOOTREST, BLASTER_BUMPER, BLASTER_CARB, BLASTER_TAP, BLASTER_THROTTLE, BLASTER_EXHAUST, BLASTER_VBARS, BLASTER_LAMP, TYRE_OUTER, BLASTER_WHEELS } from '../src/vehicle/blasterBody.js';
+import { BLASTER_FENDERS, BLASTER_NOSE, BLASTER_TAIL, BLASTER_FOOTREST, BLASTER_BUMPER, BLASTER_CARB, BLASTER_TAP, BLASTER_THROTTLE, BLASTER_EXHAUST, BLASTER_VBARS, BLASTER_LAMP, barAt, blasterCross, TYRE_OUTER, BLASTER_WHEELS } from '../src/vehicle/blasterBody.js';
 import { WHEELS } from '../src/vehicle/quadPhysics.js';
 import { QUAD_SPECS, EXTRA_SPECS } from '../src/vehicle/quadSpecs.js';
 import { BODY_STYLES } from '../src/vehicle/quadModel.js';
@@ -104,17 +104,29 @@ describe('the Blaster exhaust', () => {
 });
 
 describe('the Blaster bars', () => {
-  it('rise in a V from the clamp, to the grips’ fixed point, and the crossbar is level across the top', () => {
-    const [, grip, perch, centre] = BLASTER_VBARS.half;
-    expect(centre[1]).toBeLessThan(perch[1]);
-    expect(perch[1]).toBeLessThan(grip[1]);
-    expect(perch[0]).toBeCloseTo(0.262, 3);
-    expect(grip[0]).toBeCloseTo(0.318, 3); // the grips' fixed point
-    expect(BLASTER_VBARS.crossY).toBeGreaterThan(grip[1]);
+  const V = BLASTER_VBARS;
+
+  it('run level across the middle then rise steeply (over 40 degrees) to the grips’ fixed point, which does not move', () => {
+    expect(V.grip).toEqual([0.318, 0.0675, -0.042]);
+    expect(barAt(0).y).toBe(V.centreY);
+    expect(barAt(V.run).y).toBe(V.centreY);
+    expect(barAt(V.grip[0]).y).toBeCloseTo(V.grip[1], 6);
+    const rise = Math.atan2(V.grip[1] - V.centreY, V.grip[0] - V.run);
+    expect(rise).toBeGreaterThan((40 * Math.PI) / 180);
   });
 
-  it('hangs the lamp on the bars, ahead of the clamp and clear of the key’s housing', () => {
-    expect(BLASTER_LAMP.z - BLASTER_LAMP.d / 2).toBeGreaterThan(0.08);
+  it('join the arms with a level crossbar that is no higher than the arms’ own rise, and put the perch outboard of it', () => {
+    const c = blasterCross();
+    expect(c.y).toBeLessThan(V.grip[1]); // no hoop over the V
+    expect(c.y).toBeGreaterThan(V.centreY);
+    expect(V.perchX).toBeGreaterThan(V.crossX + 0.02);
+    expect(V.perchX).toBeLessThan(V.grip[0]);
+  });
+
+  it('keep the lamp straight on the bars’ middle, in front of the clamp, low and close', () => {
+    expect(BLASTER_LAMP.z - BLASTER_LAMP.d / 2).toBeLessThan(0.02);
+    expect(BLASTER_LAMP.z - BLASTER_LAMP.d / 2).toBeGreaterThan(-0.02);
+    expect(BLASTER_LAMP.y + BLASTER_LAMP.h / 2).toBeLessThan(0.05); // no higher than the arms at the grips, so it never stands up out of the bars
   });
 });
 
@@ -154,24 +166,25 @@ describe('the yellow quad’s model', () => {
     }
   });
 
-  it('has the lamp on the handlebars, the key on a stalk that reaches its housing, the hoop level and a cable on each side', () => {
+  it('has the lamp straight on the handlebars, the key in a small pod on the clamp block (no stalk), a level crossbar and a cable each side', () => {
     const bars = yellow.model.getObjectByName('handlebars');
-    const lens = bars.getObjectByName('headlight');
-    expect(lens, 'the headlight steers with the bars').toBeTruthy();
+    expect(bars.getObjectByName('headlight'), 'the headlight steers with the bars').toBeTruthy();
     expect(yellow.model.getObjectByName('nose').getObjectByName('headlight')).toBeFalsy();
-    for (const n of ['headlightHousing', 'brakeCable', 'throttleCable', 'barPad']) expect(bars.getObjectByName(n), n).toBeTruthy();
+    for (const n of ['headlightHousing', 'lampMount', 'clampBlock', 'crossbar', 'brakeCable', 'throttleCable']) expect(bars.getObjectByName(n), n).toBeTruthy();
+    expect(bars.getObjectByName('barPad'), 'no pad on the crossbar').toBeFalsy();
     expect(yellow.model.getObjectByName('brakeCableLower')).toBeTruthy();
-    // the pad (the crossbar's middle) is at the level the hoop's crossbar is
-    expect(bars.getObjectByName('barPad').position.y).toBeCloseTo(BLASTER_VBARS.crossY, 3);
-    // the key's housing is touched by something under it: the stalk reaches its box
     bars.updateMatrixWorld(true);
-    const dash = new THREE.Box3().setFromObject(bars.getObjectByName('dash')).expandByScalar(0.004);
-    let touches = false;
-    bars.traverse((o) => {
-      if (o.isMesh && !dash.isEmpty() && o.parent === bars && !o.name && o.geometry.boundingBox === null) o.geometry.computeBoundingBox();
-      if (o.isMesh && o.parent === bars && o.geometry.boundingBox && o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld).intersectsBox(dash) && o.material.metalness > 0.3 && o.material.color.r < 0.4) touches = true;
-    });
-    expect(touches, 'a steel part meets the key housing').toBe(true);
+    const box = (n) => new THREE.Box3().setFromObject(bars.getObjectByName(n));
+    // the key's housing sits on the clamp block: they overlap or touch, and the housing is nowhere near 10 cm above it
+    const dash = new THREE.Box3().setFromObject(bars.getObjectByName('dash'));
+    expect(box('clampBlock').expandByScalar(0.004).intersectsBox(dash), 'the key pod meets the clamp block').toBe(true);
+    expect(dash.max.y - box('clampBlock').max.y).toBeLessThan(0.045);
+    // the crossbar is level, no higher than the grips, and the lamp is on the clamp's mount
+    const cross = box('crossbar');
+    expect(cross.max.y - cross.min.y).toBeLessThan(0.03);
+    expect(cross.max.y - bars.position.y, 'the crossbar is no higher than the grips').toBeLessThan(BLASTER_VBARS.grip[1]);
+    expect(box('lampMount').expandByScalar(0.004).intersectsBox(box('headlightHousing'))).toBe(true);
+    expect(box('lampMount').expandByScalar(0.004).intersectsBox(box('clampBlock'))).toBe(true);
   });
 
   it('has no number plate: the old sport nose’s round plate and its backing are gone', () => {

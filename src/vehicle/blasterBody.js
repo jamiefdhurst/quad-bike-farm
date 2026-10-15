@@ -45,15 +45,40 @@ export const BLASTER_TAIL = [
 /** The headlamp and the mesh vent on the nose's face (z is the face's plane at the lamp's height). */
 export const BLASTER_FACE = { z: 0.962, ventY: 0.515, ventW: 0.15, ventH: 0.05 };
 
-/** The headlamp fitting on the handlebars (the bars' frame): a black housing ahead of the clamp on two brackets, steering with the bars. */
-export const BLASTER_LAMP = { y: 0.115, z: 0.15, w: 0.15, h: 0.1, d: 0.07 };
+/**
+ * The headlamp fitting, in the bars' frame: a black housing sitting straight on the clamp at the bars' middle (a small mounting block between
+ * them), in front of the key's pod, and steering with the bars.
+ */
+export const BLASTER_LAMP = { y: -0.015, z: 0.045, w: 0.15, h: 0.1, d: 0.07 };
 
-/** The bars rise in a V from the clamp at the middle (the bars' frame, one side, from the grip outwards) and the hoop's crossbar joins the V's arms across the top. */
+/**
+ * The bars (the bars' frame, one side, +x to the rider's left), after the bar in `.scratch/quads/tamura-blaster/handlebars.jpg`: a level
+ * run across the middle, then a steep rise (about 50 degrees) up to the grips' fixed point, the grips splaying on a little. A straight
+ * crossbar joins the two arms across the lower part of the rise, level, and goes no higher than the arms do; there is no hoop over them.
+ */
 export const BLASTER_VBARS = {
-  half: [[0.433, 0.1084, -0.055], [0.318, 0.0655, -0.042], [0.262, 0.0446, -0.03], [0.05, -0.0345, -0.012]],
-  armX: 0.2, // where the hoop's uprights leave the arms
-  crossY: 0.2, // the crossbar's height, level across
+  centreY: -0.07, // the level run's height (the clamp's top is just under it)
+  run: 0.2, // the level run goes out to here, then the rise begins
+  grip: [0.318, 0.0675, -0.042], // the grip's fixed point, where the rise ends
+  end: [0.433, 0.1075, -0.055], // the grip's far end
+  crossX: 0.25, // where the crossbar meets each arm
+  perchX: 0.29, // the lever perch and the throttle housing: outboard of the crossbar, on the rise
+  leverScale: 0.85, // the brake lever is a little shorter than the other quads', so its tip stays inside the grip's end
 };
+
+/** The arm's height and depth at `x` (0 to the grip) along the level run and the rise. */
+export function barAt(x, V = BLASTER_VBARS) {
+  const ax = Math.abs(x);
+  if (ax <= V.run) return { y: V.centreY, z: -0.012 - (0.008 * ax) / V.run };
+  const t = Math.min(1, (ax - V.run) / (V.grip[0] - V.run));
+  return { y: V.centreY + (V.grip[1] - V.centreY) * t, z: -0.02 + (V.grip[2] + 0.02) * t };
+}
+
+/** The bar's path from the grip's far end in to the middle (one side), for the bent tube. */
+export const blasterBarHalf = (V = BLASTER_VBARS) => [V.end, V.grip, [V.run, V.centreY, barAt(V.run).z], [0.1, V.centreY, barAt(0.1).z]];
+
+/** The crossbar's height and depth, level across between the arms. */
+export const blasterCross = (V = BLASTER_VBARS) => barAt(V.crossX, V);
 
 /** The exhaust, in the body's frame: the belly out to the right, then in under the wing and the side plate (below it) to a can inside the frame, ending before the tail's cross-tube. */
 export const BLASTER_EXHAUST = {

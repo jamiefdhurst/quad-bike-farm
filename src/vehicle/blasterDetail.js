@@ -3,7 +3,7 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import { bentTube, loftGeometry, rod } from './quadGeometry.js';
 import { cableGeometry, hoseGeometry } from './detail/cables.js';
 import { decalMesh, MAKER_FOR } from './detail/decals.js';
-import { BLASTER_NOSE, BLASTER_TAIL, BLASTER_FACE, BLASTER_LAMP, BLASTER_VBARS, BLASTER_FOOTREST, BLASTER_BUMPER, BLASTER_CARB, BLASTER_TAP, BLASTER_THROTTLE } from './blasterBody.js';
+import { BLASTER_NOSE, BLASTER_TAIL, BLASTER_FACE, BLASTER_LAMP, BLASTER_VBARS, barAt, blasterCross, BLASTER_FOOTREST, BLASTER_BUMPER, BLASTER_CARB, BLASTER_TAP, BLASTER_THROTTLE } from './blasterBody.js';
 
 // The yellow quad's finer parts (TODO 91): the small nose with its lamp and mesh vent, the tail, the footrests, the bumper, and the
 // engine bay that shows (carb, intake, airbox, the choke plunger's housing, the fuel hose, the throttle cable). Each takes the quad's
@@ -107,37 +107,27 @@ export function addBlasterEngine(root, MAT) {
 }
 
 /**
- * What the Blaster's handlebars carry besides the V itself (buildHandlebars draws that): the clamp block the arms meet in, the hoop
- * (uprights on the arms and a level crossbar joining them across the top) with its pad, the headlamp on two brackets ahead of the clamp,
- * the stalk the key's housing stands on, and both cables' upper parts (brake on the left, throttle on the right) down to where the column
- * meets the body. Everything is in the bars' frame; the lamp lens is named `headlight` so the beams find it, and steers with the bars.
+ * What the Blaster's handlebars carry besides the V itself (buildHandlebars draws that): the clamp block the bar sits in, a straight level
+ * crossbar between the arms (no hoop over them), the headlamp standing straight on the clamp at the middle, and both cables' upper parts
+ * (brake on the left, throttle on the right) down to where the column meets the body. The key's small housing is the dash, on the clamp
+ * block too (`DASH_PLACE.blaster`). All in the bars' frame; the lamp lens is named `headlight` so the beams find it, and steers with the bars.
  */
 export function addBlasterBars(bars, MAT, lensMat) {
   const V = BLASTER_VBARS;
-  const arm = (s, x) => {
-    // The arm's height and depth at x, along the V's straight run from the clamp to the lever perch.
-    const [x0, y0, z0] = V.half[3];
-    const [x1, y1, z1] = V.half[2];
-    const t = (x - x0) / (x1 - x0);
-    return [s * x, y0 + (y1 - y0) * t, z0 + (z1 - z0) * t];
-  };
-  const a = arm(1, V.armX);
-  const zc = a[2];
-  pipe([[V.armX, a[1], zc], [V.armX, V.crossY, zc], [-V.armX, V.crossY, zc], [-V.armX, a[1], zc]], 0.0105, MAT.alloy, bars, { bend: 0.03, steps: 4 });
-  mesh(new THREE.CapsuleGeometry(0.02, 0.13, 4, 10).rotateZ(Math.PI / 2), MAT.plastic, bars, 'barPad').position.set(0, V.crossY, zc);
-  rbox(0.1, 0.03, 0.045, 0.01, MAT.engineDark, 0, -0.03, -0.012, bars); // the clamp block the arms meet in
-  // The key's stalk: from the clamp up to the underside of its small housing (the dash's fixed point is the housing).
-  tube([0, -0.03, -0.012], [0, 0.07, 0.038], 0.008, MAT.steel, bars, 6);
-  // The headlamp fitting: a black housing on two brackets from the clamp, a reflector and a lens on its face.
+  const c = blasterCross();
+  tube([-V.crossX, c.y, c.z], [V.crossX, c.y, c.z], 0.0105, MAT.alloy, bars).name = 'crossbar';
+  rbox(0.1, 0.03, 0.045, 0.01, MAT.engineDark, 0, V.centreY + 0.012, -0.012, bars, 'clampBlock');
+  // The lamp: a black housing on a small block off the clamp, a reflector and a lens on its face.
   const L = BLASTER_LAMP;
-  for (const s of [-1, 1]) tube([s * 0.04, -0.02, 0.0], [s * 0.05, L.y - L.h / 2 + 0.012, L.z - 0.01], 0.008, MAT.alloy, bars, 6);
+  rbox(0.05, 0.03, 0.03, 0.008, MAT.engineDark, 0, V.centreY + 0.015, 0.0, bars, 'lampMount');
   rbox(L.w, L.h, L.d, 0.025, MAT.plastic, 0, L.y, L.z, bars, 'headlightHousing');
   rbox(L.w - 0.025, L.h - 0.025, 0.012, 0.01, MAT.reflector, 0, L.y, L.z + L.d / 2 - 0.004, bars);
   const lens = rbox(L.w - 0.025, L.h - 0.025, 0.012, 0.012, lensMat, 0, L.y, L.z + L.d / 2 + 0.003, bars, 'headlight');
   lens.scale.z = 0.8;
   // The cables: the brake's on the left from the lever perch, the throttle's on the right from its housing, both down to the column's foot.
-  mesh(cableGeometry([[0.262, 0.052, -0.012], [0.22, 0.03, 0.03], [0.12, -0.005, 0.045], [0.06, -0.06, 0.03], [0.04, -0.12, 0.01]], 0.0042, { sag: 0.04 }), MAT.rubber, bars, 'brakeCable');
-  mesh(cableGeometry([[-0.3, 0.085, -0.035], [-0.2, 0.02, -0.05], [-0.1, -0.02, -0.03], [-0.05, -0.12, 0.0]], 0.0035, { sag: 0.04 }), MAT.rubber, bars, 'throttleCable');
+  const py = barAt(V.perchX).y;
+  mesh(cableGeometry([[V.perchX, py + 0.012, -0.02], [0.22, -0.03, 0.02], [0.12, -0.07, 0.04], [0.06, -0.1, 0.03], [0.04, -0.14, 0.01]], 0.0042, { sag: 0.03 }), MAT.rubber, bars, 'brakeCable');
+  mesh(cableGeometry([[-V.perchX - 0.01, py + 0.02, -0.035], [-0.2, -0.04, -0.04], [-0.1, -0.08, -0.03], [-0.05, -0.14, 0.0]], 0.0035, { sag: 0.03 }), MAT.rubber, bars, 'throttleCable');
 }
 
 /** The choke's symbol on its knob's face: a ring with a bar across it (the usual choke picture, as geometry so it takes no texture). */
