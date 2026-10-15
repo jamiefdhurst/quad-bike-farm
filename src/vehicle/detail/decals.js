@@ -19,9 +19,9 @@ export const MAKERS = {
   ashby: { name: 'Ashby', badge: 'block', ink: '#f4f4f4', edge: null, box: '#3a3a3a' }, // the Corsa (Vauxhall's)
 };
 
-/** Which maker each vehicle's badge names, by spec id. The moto and the three-wheeler have none yet (their items say). */
+/** Which maker each vehicle's badge names, by spec id. The three-wheeler has none yet (its item says). */
 export const MAKER_FOR = {
-  red: 'kestrel', blue: 'tamura', loan: 'tamura', green: 'ridgeback', yellow: 'tamura', orange: 'viper', kids: 'viper',
+  red: 'kestrel', blue: 'tamura', loan: 'tamura', green: 'ridgeback', yellow: 'tamura', orange: 'viper', kids: 'viper', moto: 'tamura',
   tractor: 'hartley', utv: 'ridgeback', landrover: 'moorland', landrover200: 'moorland', fiesta: 'thorne', corsa: 'ashby',
 };
 

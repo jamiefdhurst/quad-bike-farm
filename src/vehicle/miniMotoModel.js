@@ -1,23 +1,24 @@
 import * as THREE from 'three';
-import { MAT, STYLE, add, rbox, tube, pipe, buildHandlebars, addHeadlightBeams, addTailLights } from './quadModel.js';
+import { MAT, add, addHeadlightBeams, addTailLights } from './quadModel.js';
 import { mergeStatic } from './quadGeometry.js';
-import { treadTyre } from './detail/tread.js';
+import { buildDash } from './dash.js';
+import { DASH_PLACE } from './dash.js';
+import { TZ_WHEELS, TZ_BARS_AT } from './tz65Body.js';
+import { buildTzSpin, buildTzFork, buildTzRearBrake, addTzFrame, addTzBody, addTzPegs, addTzEngine, addTzExhaust, addTzBars, addTzDecals, silverMaterial } from './tz65Detail.js';
 
-let knobs = null;
-const knobbly = () => (knobs ??= treadTyre('knobbly', { radius: R, width: 0.09, rimR: R - 0.09, count: 24, segments: 32 }));
-
-// The mini moto: a 50cc pit bike, procedural like the quads. Same named parts as a quad's model so Quad drives it unchanged (see
-// quadModel.js). It has two wheels in a line and really leans: the
-// chassis rolls under the balance in bikeLean.js (`userData.bike` tells Quad to run it).
+// The mini moto (TODO 94): the Tamura TZ 65, a small motocross bike after a Yamaha YZ65 (tz65Body.js has the numbers, tz65Detail.js the
+// parts). Same named parts as a quad's model so Quad drives it unchanged (see quadModel.js). It has two wheels in a line and really leans:
+// the chassis rolls under the balance in bikeLean.js (`userData.bike` tells Quad to run it). The whole front end turns about the bars'
+// vertical axis (`userData.steerPivotZ`, which quad.js reads), the fork's gold tubes with the bars and its blue legs with the wheel.
 //
 // +Z is forward and +X is the rider's left.
 
 export const MOTO_GROUND_OFFSET = -0.35; // chassis origin to the ground at rest, metres
-const R = 0.22; // wheel radius
+const R = TZ_WHEELS.radius; // wheel radius
 const REST = 0.12; // suspension rest length: matches the spec's suspensionRestLength
 const wheelY = R + REST + MOTO_GROUND_OFFSET; // where each suspension mount sits in the chassis frame
-const FRONT_Z = 0.5;
-const REAR_Z = -0.45;
+const FRONT_Z = TZ_WHEELS.frontZ;
+const REAR_Z = TZ_WHEELS.rearZ;
 
 /** Where the wheels, their mounts and the bodywork box are, for QuadPhysics. Two wheels in a line; bikeLean.js holds it up. */
 export const MOTO_LAYOUT = {
@@ -32,42 +33,31 @@ export const MOTO_LAYOUT = {
 /** The invisible box you look at to get on. */
 export const MOTO_PROXY = { w: 0.9, h: 1.2, d: 1.6 };
 
-function tyreAndRim(wheel, spin, mat) {
-  // A knobbly tyre: a torus with a ring of blocks on it, and an alloy rim with a hub inside.
-  add(knobbly(), MAT.rubber, spin);
-  add(new THREE.CylinderGeometry(R - 0.09, R - 0.09, 0.07, 18).rotateZ(Math.PI / 2), mat, spin);
-  add(new THREE.CylinderGeometry(0.035, 0.035, 0.12, 10).rotateZ(Math.PI / 2), MAT.engineDark, spin);
-  mergeStatic(wheel);
-}
-
-function buildWheel(w, paint) {
+function buildWheel(w, MAT_, paint) {
   const wheel = new THREE.Group();
   const spin = new THREE.Group();
   spin.name = 'spin';
   spin.userData.keep = true;
   wheel.add(spin);
-  tyreAndRim(wheel, spin, MAT.alloy);
-  if (w.front) {
-    // The fork legs and a mudguard turn with the wheel; the legs reach up to the bars.
-    for (const s of [-1, 1]) {
-      tube([s * 0.06, 0, 0], [s * 0.06, 0.6, -0.14], 0.02, MAT.chrome, wheel);
-      tube([s * 0.06, 0.28, -0.035], [s * 0.06, 0.42, -0.07], 0.027, MAT.engineDark, wheel);
-    }
-    rbox(0.13, 0.02, 0.38, 0.008, paint, 0, 0.27, 0.02, wheel).rotation.x = -0.05;
-    mergeStatic(wheel);
-  }
+  buildTzSpin(spin, MAT_, w.front);
+  if (w.front) buildTzFork(wheel, MAT_, paint);
+  else buildTzRearBrake(wheel, MAT_);
+  mergeStatic(wheel);
   return wheel;
 }
 
-export function buildMiniMotoModel({ bodyColor = 0xd0d4d8, dashStyle = 'kidsKey' } = {}) {
+export function buildMiniMotoModel({ bodyColor = 0x3f6fa8, dashStyle = 'kidsKey' } = {}) {
   const paint = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.35, side: THREE.DoubleSide });
   const lensMat = new THREE.MeshStandardMaterial({ color: 0x2c302c, roughness: 0.08, metalness: 0.2, emissive: 0x000000 });
-  const seatMat = MAT.seat.clone(); // its own, so frost on one seat is not on them all
+  const seatMat = new THREE.MeshStandardMaterial({ color: 0x2b3d63, roughness: 0.7 }); // a dark faded blue foam, its own so frost on one seat is not on them all
+  const silver = silverMaterial();
   const quad = new THREE.Group();
   quad.name = 'quad';
   quad.userData.lensMaterial = lensMat;
   quad.userData.seatMaterial = seatMat;
   quad.userData.bike = true;
+  quad.userData.steerGain = 1; // the bars and the front wheel turn together, about the same axis
+  quad.userData.steerPivotZ = TZ_BARS_AT[2];
   const body = new THREE.Group();
   body.name = 'body';
   quad.add(body);
@@ -75,77 +65,39 @@ export function buildMiniMotoModel({ bodyColor = 0xd0d4d8, dashStyle = 'kidsKey'
   root.name = 'bodyRoot';
   body.add(root);
 
-  // Frame: the steering head, a spine over the engine to the seat rails, a down tube and cradle.
-  tube([0, 0.72, 0.36], [0, 0.66, -0.1], 0.02, MAT.frame, root);
-  tube([0, 0.72, 0.36], [0, 0.3, 0.14], 0.02, MAT.frame, root);
-  tube([0, 0.3, 0.14], [0, 0.3, -0.18], 0.02, MAT.frame, root);
-  tube([0, 0.66, -0.1], [0, 0.34, -0.2], 0.02, MAT.frame, root);
-  tube([0, 0.62, -0.12], [0, 0.6, -0.5], 0.018, MAT.frame, root);
-  // Swingarm and the rear shock.
-  for (const s of [-1, 1]) tube([s * 0.07, 0.32, -0.2], [s * 0.07, 0.22, REAR_Z], 0.017, MAT.frame, root);
-  tube([0, 0.6, -0.16], [0, 0.32, -0.3], 0.018, MAT.chrome, root);
-  tube([0, 0.5, -0.19], [0, 0.4, -0.23], 0.028, STYLE.sport.spring, root);
+  addTzFrame(root, MAT, silver);
+  addTzBody(root, MAT, paint, seatMat);
+  addTzEngine(root, MAT, paint);
+  addTzExhaust(root, MAT);
+  addTzPegs(root, MAT);
+  addTzDecals(root);
 
-  // The engine: crankcase, barrel and head, with a pull-start housing on the left.
-  rbox(0.15, 0.2, 0.25, 0.03, MAT.engine, 0, 0.3, -0.02, root);
-  rbox(0.11, 0.17, 0.12, 0.02, MAT.engineDark, 0, 0.45, 0.04, root);
-  rbox(0.13, 0.04, 0.13, 0.01, MAT.alloy, 0, 0.55, 0.04, root);
-  add(new THREE.CylinderGeometry(0.06, 0.06, 0.05, 14).rotateZ(Math.PI / 2), MAT.engineDark, root).position.set(0.1, 0.3, -0.05);
-  rbox(0.05, 0.1, 0.12, 0.012, MAT.plastic, -0.1, 0.4, 0.04, root); // the carb, with the air filter behind
-  rbox(0.07, 0.09, 0.1, 0.02, MAT.plastic, -0.1, 0.4, -0.08, root);
-
-  // The tank over the spine, the seat behind it and a short tail with the plate.
-  rbox(0.2, 0.14, 0.32, 0.05, paint, 0, 0.72, 0.18, root);
-  rbox(0.19, 0.075, 0.5, 0.03, seatMat, 0, 0.7, -0.2, root);
-  rbox(0.14, 0.02, 0.2, 0.01, paint, 0, 0.66, -0.55, root).rotation.x = 0.25;
-  rbox(0.07, 0.03, 0.01, 0.004, MAT.tail, 0, 0.67, -0.65, root);
-  // The airbox cover under the seat, joining the seat to the frame and the tank to the tail.
-  rbox(0.17, 0.12, 0.34, 0.03, paint, 0, 0.6, -0.22, root);
-  rbox(0.15, 0.1, 0.1, 0.03, paint, 0, 0.62, -0.02, root);
-
-  // Foot pegs and the brake pedal.
-  for (const s of [-1, 1]) {
-    tube([s * 0.07, 0.26, -0.05], [s * 0.16, 0.26, -0.05], 0.01, MAT.steel, root);
-    rbox(0.07, 0.015, 0.025, 0.005, MAT.steel, s * 0.19, 0.26, -0.05, root);
-  }
-
-  // The exhaust: out of the front of the barrel, round the right and back to a small silencer.
-  pipe([[-0.0, 0.5, 0.1], [-0.08, 0.38, 0.12], [-0.13, 0.36, -0.1], [-0.14, 0.4, -0.35]], 0.018, MAT.exhaust, root, { bend: 0.06 });
-  add(new THREE.CylinderGeometry(0.035, 0.035, 0.26, 12).rotateX(Math.PI / 2), MAT.exhaust, root).position.set(-0.14, 0.4, -0.43);
-  const tip = new THREE.Object3D();
-  tip.name = 'exhaustTip';
-  tip.position.set(-0.14, 0.4, -0.57);
-  root.add(tip);
-
-  // Fuel tap on the left of the tank, turning about X like the quads' (the handle points forward for ON).
-  const tap = new THREE.Group();
-  tap.name = 'fuelTap';
-  tap.userData.keep = true;
-  tap.position.set(0.115, 0.67, 0.16);
-  rbox(0.04, 0.03, 0.035, 0.008, MAT.plastic, 0.11, 0.67, 0.16, root);
-  rbox(0.008, 0.012, 0.045, 0.003, MAT.chrome, 0, 0, 0.02, tap, undefined, 1);
-  root.add(tap);
-
-  // The bars, the same as the quads' with the key switch dash, a bit narrower; a round headlight on them turns with the steering.
-  const bars = buildHandlebars(dashStyle, STYLE.sport, 'thumb');
-  bars.scale.setScalar(0.85);
-  bars.position.set(0, 0.84, 0.34);
-  // A lamp shell on two brackets from the fork tops, a chrome rim and the lens in front.
-  add(new THREE.CylinderGeometry(0.055, 0.055, 0.1, 18).rotateX(Math.PI / 2), MAT.plastic, bars).position.set(0, -0.02, 0.12);
-  add(new THREE.CylinderGeometry(0.06, 0.06, 0.02, 18).rotateX(Math.PI / 2), MAT.chrome, bars).position.set(0, -0.02, 0.17);
-  add(new THREE.CylinderGeometry(0.05, 0.05, 0.02, 18).rotateX(Math.PI / 2), lensMat, bars).position.set(0, -0.02, 0.18);
-  for (const x of [-0.06, 0.06]) tube([x, -0.04, -0.02], [x * 0.8, -0.02, 0.1], 0.012, MAT.steel, bars);
-  // A pod stands on the bar clamp, where the key switch is, leaning back towards the rider.
+  // The bars and the upper fork, turning with the steering; the key switch on the clamp and the pod's mount are on them.
+  const bars = new THREE.Group();
+  bars.name = 'handlebars';
+  bars.userData.keep = true;
+  bars.position.set(...TZ_BARS_AT);
+  addTzBars(bars, MAT, paint);
+  const dash = buildDash(dashStyle);
+  const place = DASH_PLACE[dashStyle] ?? DASH_PLACE.kidsKey;
+  dash.group.position.set(0, 0.064, 0);
+  dash.group.rotation.x = place.tilt;
+  dash.group.scale.setScalar(0.85);
+  dash.group.userData.keep = true;
+  bars.add(dash.group);
+  bars.userData.dash = dash;
+  const hands = new THREE.Object3D();
+  hands.name = 'riderHands';
+  bars.add(hands);
   const mount = new THREE.Object3D();
   mount.name = 'podMount';
-  mount.position.set(0, 0.095, 0.0);
+  mount.position.set(0, 0.15, 0.012);
   mount.rotation.x = 0.35;
   bars.add(mount);
   bars.userData.podMount = mount;
   root.add(bars);
   quad.userData.dash = bars.userData.dash;
   quad.userData.podMount = bars.userData.podMount;
-  // The choke is on the bars' thumb lever; the quads' other chokeLever is the same named part, so Quad finds it there.
 
   // Anchors for people and the camera. One seat: nobody rides on the back.
   const riderAnchor = new THREE.Object3D();
@@ -163,12 +115,12 @@ export function buildMiniMotoModel({ bodyColor = 0xd0d4d8, dashStyle = 'kidsKey'
 
   // Wheels sit outside the body so they don't rock with it.
   for (const w of MOTO_LAYOUT.wheels) {
-    const wheel = buildWheel(w, paint);
+    const wheel = buildWheel(w, MAT, paint);
     wheel.name = w.name;
     quad.add(wheel);
   }
 
-  addHeadlightBeams(quad);
+  addHeadlightBeams(quad); // (no lamps: nothing is found to give a beam)
   addTailLights(quad);
   mergeStatic(root);
   mergeStatic(bars);

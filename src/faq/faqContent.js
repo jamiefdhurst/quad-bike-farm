@@ -188,7 +188,7 @@ export const FAQ_SECTIONS = [
         a: `Look at the left bar. On the red and the green it is a ridged black slider in a slot on the switch housing, under the CHOKE label: <kbd>Q</kbd>
           slides it towards the label and <kbd>Z</kbd> eases it back. The blue's is a lever hanging under its switch housing. The yellow's is not on the
           bars at all: it is a black knob with the choke symbol on the left of the carb, down in the open engine bay, so you have to be all but stopped to
-          reach it, and it takes a hand off the bars. The fuel tap is beside it, on the tank's lower edge. The orange's is a lever on the pod on the left bar, beside the lights rocker, always in reach. The kids' quad's is a knob on the left of the carb like the yellow's, with the fuel tap beside it. The others have a knob or a lever of their own,
+          reach it, and it takes a hand off the bars. The fuel tap is beside it, on the tank's lower edge. The orange's is a lever on the pod on the left bar, beside the lights rocker, always in reach. The kids' quad's and the mini moto's are a knob on the left of the carb like the yellow's, with the fuel tap beside it, and the mini moto's knob comes well out of its barrel when it is on. The others have a knob or a lever of their own,
           so stand at the quad and watch what moves when you hold <kbd>Q</kbd>.`,
       },
       {
@@ -1826,8 +1826,8 @@ export const VEHICLE_NOTES = {
     tips: ['One seat, no reverse.', 'Pull-start (O) as well as the key.', 'No lights at all: the key, the choke knob on the carb and the fuel tap are all it has.'],
   },
   moto: {
-    blurb: 'A sun-faded 50cc pit bike. Two wheels, one seat, and it leans into corners like a proper bike.',
-    tips: ['Lean it to turn it.', 'Grab the brake mid-corner and the front tucks.', 'T picks it up when it goes down.'],
+    blurb: 'The Tamura TZ 65, a sun-faded blue small motocross bike with gold forks, a high front fender and a silver silencer. Two wheels, one seat, and it leans into corners like a proper bike.',
+    tips: ['Lean it to turn it.', 'Grab the brake mid-corner and the front tucks.', 'T picks it up when it goes down.', 'Cord only: the choke knob and the fuel tap are by the carb.'],
   },
   atc: {
     blurb: 'The neighbour’s worn-out old three-wheeler: one front wheel, two fat tyres, a taped seat and a rusty silencer.',

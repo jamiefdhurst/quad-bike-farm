@@ -1082,6 +1082,13 @@ export class Quad {
       const wobble = this.faults.wheelWobble(i);
       w.object.rotation.y = st.steering + this.faults.wheelToe(i) + wobble * Math.sin(st.rotation);
       w.object.rotation.z = wobble * 0.5 * Math.cos(st.rotation);
+      // A raked front end (the mini moto's) turns about the bars' vertical axis, which is behind the axle: swing the wheel round it.
+      const pivotZ = this.model.userData.steerPivotZ;
+      if (pivotZ !== undefined && w.front) {
+        const turn = w.object.rotation.y;
+        w.object.position.x += (w.z - pivotZ) * Math.sin(turn);
+        w.object.position.z += (w.z - pivotZ) * (Math.cos(turn) - 1);
+      }
       w.spin.rotation.x = st.rotation;
       this.wheelHeights[i] = w.object.position.y - this.groundOffset;
     }

@@ -513,7 +513,7 @@ export const EXTRA_SPECS = [
     },
   },
   {
-    // A 50cc two-stroke pit bike (the "mini moto"): two wheels, one seat, a pull-start as well as the starter, and the kids' quad's
+    // A 50cc two-stroke pit bike (the "mini moto", the Tamura TZ 65 after a Yamaha YZ65): two wheels, one seat, a pull-start as well as the starter, and the kids' quad's
     // sound for now. Built by miniMotoModel.js: it rides on the quad physics with two wheels and the lean model (bikeLean.js) holding it up, and
     // leaning into corners. Anyone can ride it (it's nobody's), but there's no room on the back.
     id: 'moto',
@@ -522,12 +522,12 @@ export const EXTRA_SPECS = [
     miniMoto: true,
     label: 'mini moto',
     name: 'Mini moto',
-    bodyColor: 0x3f6fa8, // a sun-faded blue
+    bodyColor: 0x3f6fa8, // a sun-faded blue (the YZ65's own is brighter; this is as it was)
     style: 'sport', // the quad body styles are unused (the model is its own), but the spec must name one that exists
     dashStyle: 'kidsKey',
     reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
-    chokeStyle: 'thumb', // where the choke is and what it takes to reach it
-    tapStyle: 'left', // where the fuel tap sits
+    chokeStyle: 'plunger', // on the carb, as the yellow's and the kids' (it has no thumb lever any more)
+    tapStyle: 'carbLeft', // by the carb (the model places it itself)
     hoursRange: [20, 150], // engine hours showing when the game starts
     odoRange: [60, 500], // odometer miles showing when the game starts
     wearRange: [0.05, 0.2], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
