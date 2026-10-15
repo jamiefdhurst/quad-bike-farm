@@ -129,24 +129,28 @@ export function flareGeometry(which, wheelZ, side, D = DECK) {
 }
 
 /**
- * The wall at a deck's inner end (side = +1 or -1): the back of the front wheel arch, or the front of the rear one, hanging from the
- * deck's end edge down to the footboard and from the side panel out to where the black skirt's tail takes over. Without it the
- * deck ends in a free edge with a slot behind it that shows straight through the quad; the real fenders have no such edge.
+ * The wall at a deck's inner end (side = +1 or -1): the back of the front wheel arch, or the front of the rear one. It hangs from the
+ * deck's end edge down to the footboard, starts flush with the side panel's outer face (`xIn`) at the panel's end (which is the deck's end, or `join` back from it) and curves round in plan and in height to meet the black skirt's edge exactly at the deck's end. Without it the deck
+ * ends in a free edge with a slot behind it that shows straight through the quad; the real fenders have no such edge.
  */
-export function bulkheadGeometry(which, side, D = DECK, { xIn = 0.255, bottom = 0.35 } = {}) {
+export function bulkheadGeometry(which, side, D = DECK, { xIn = 0.266, bottom = D.lowEdge, join = 0, bulge = 0.045 } = {}) {
   const spec = D[which];
   const dir = Math.sign(spec.zf - spec.z0);
   const row = deckRows(D, spec)[0];
+  const xOut = row.half + 0.006;
   const rows = [];
-  const M = 6;
+  const M = 8;
+  const N = 10;
   for (let k = 0; k <= M; k++) {
     const t = k / M;
-    const xOut = row.half - 0.08 * t ** 1.6; // the outer edge sweeps in as it goes down, like the skirt's tail
     const pts = [];
-    for (let i = 0; i <= 8; i++) {
-      const x = xIn + ((xOut - xIn) * i) / 8;
-      const top = deckY(D, spec, row, x);
-      pts.push([side * x, top + (bottom - top) * t, spec.z0 - dir * 0.035 * Math.sin(Math.PI * t * 0.9)]);
+    for (let i = 0; i <= N; i++) {
+      const u = i / N;
+      const x = xIn + (xOut - xIn) * u;
+      const top = deckY(D, spec, row, Math.min(x, row.half));
+      // Back from the deck's end: all of `join` at the panel (once down off the deck), none at the skirt, with a belly in between.
+      const back = join * (1 - ease(u)) * ease(clamp01(t * 3)) + bulge * Math.sin(Math.PI * t * 0.9) * Math.sin(Math.PI * u);
+      pts.push([side * x, top + (bottom - top) * t, spec.z0 - dir * back]);
     }
     rows.push(pts);
   }
