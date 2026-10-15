@@ -631,8 +631,8 @@ export const EXTRA_SPECS = [
     style: 'sport', // the quad body styles are unused (the model is its own), but the spec must name one that exists
     dashStyle: 'kidsKey',
     reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
-    chokeStyle: 'knob', // where the choke is and what it takes to reach it
-    tapStyle: 'left', // where the fuel tap sits
+    chokeStyle: 'plunger', // on the carb, pulled out sideways (the model places it itself)
+    tapStyle: 'carbLeft', // by the carb (the model places it itself)
     hoursRange: [800, 2400], // engine hours showing when the game starts
     odoRange: [3000, 9000], // odometer miles showing when the game starts
     wearRange: [0.12, 0.2], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
@@ -673,10 +673,10 @@ export const EXTRA_SPECS = [
     },
     vehicle: {
       mass: 215, // bike plus rider
-      centreOfMassY: 0, // well above the quads' -0.08, with the rider up on top: that, and one front wheel, is what tips it unless the rider leans in (riderLean.js)
+      centreOfMassY: -0.06, // well above the quads' -0.08, with the rider up on top: that, and one front wheel, is what tips it unless the rider leans in (riderLean.js)
       riderTopple: 0, // its tipping is tuned with the rider in the centre of mass already
       steerSpeedReduction: 0.12, // less lock at speed, or it trips itself on a single front wheel
-      rollInertia: 38,
+      rollInertia: 60, // up from 38 when the track narrowed to the real 0.78 m (the same tipping thresholds, tests/riderLeanSim.test.js)
       pitchInertia: 70,
       yawInertia: 80,
       wheelRadius: 0.3,

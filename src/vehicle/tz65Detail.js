@@ -17,23 +17,23 @@ import {
 // swingarm and monoshock, spoked wheels with discs. The numbers are tz65Body.js's; each builder takes the quad's materials (`MAT`) and
 // adds to the group it is given.
 
-const mesh = (geo, mat, parent, name) => {
+export const mesh = (geo, mat, parent, name) => {
   const m = new THREE.Mesh(geo, mat);
   if (name) m.name = name;
   parent.add(m);
   return m;
 };
-const rbox = (w, h, d, r, mat, x, y, z, parent, name) => {
+export const rbox = (w, h, d, r, mat, x, y, z, parent, name) => {
   const m = mesh(new RoundedBoxGeometry(w, h, d, 2, Math.min(r, w / 2, h / 2, d / 2) * 0.999), mat, parent, name);
   m.position.set(x, y, z);
   return m;
 };
-const tube = (a, b, r, mat, parent, radial = 8) => mesh(rod(a, b, r, radial), mat, parent);
-const pipe = (corners, r, mat, parent, opts) => mesh(bentTube(corners, r, opts), mat, parent);
+export const tube = (a, b, r, mat, parent, radial = 8) => mesh(rod(a, b, r, radial), mat, parent);
+export const pipe = (corners, r, mat, parent, opts) => mesh(bentTube(corners, r, opts), mat, parent);
 const mx = (s, pts) => pts.map(([x, y, z]) => [s * x, y, z]);
 
-const CHOKE_KNOB = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.7 });
-const CHOKE_MARK = new THREE.MeshStandardMaterial({ color: 0xe9e9e4, roughness: 0.6 });
+export const CHOKE_KNOB = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.7 });
+export const CHOKE_MARK = new THREE.MeshStandardMaterial({ color: 0xe9e9e4, roughness: 0.6 });
 const GOLD = () => new THREE.MeshStandardMaterial({ color: 0xb38a38, roughness: 0.3, metalness: 0.85 });
 const RIM_BLUE = () => new THREE.MeshStandardMaterial({ color: 0x2b55a8, roughness: 0.3, metalness: 0.8 });
 

@@ -188,7 +188,7 @@ export const FAQ_SECTIONS = [
         a: `Look at the left bar. On the red and the green it is a ridged black slider in a slot on the switch housing, under the CHOKE label: <kbd>Q</kbd>
           slides it towards the label and <kbd>Z</kbd> eases it back. The blue's is a lever hanging under its switch housing. The yellow's is not on the
           bars at all: it is a black knob with the choke symbol on the left of the carb, down in the open engine bay, so you have to be all but stopped to
-          reach it, and it takes a hand off the bars. The fuel tap is beside it, on the tank's lower edge. The orange's is a lever on the pod on the left bar, beside the lights rocker, always in reach. The kids' quad's and the mini moto's are a knob on the left of the carb like the yellow's, with the fuel tap beside it, and the mini moto's knob comes well out of its barrel when it is on. The others have a knob or a lever of their own,
+          reach it, and it takes a hand off the bars. The fuel tap is beside it, on the tank's lower edge. The orange's is a lever on the pod on the left bar, beside the lights rocker, always in reach. The kids' quad's, the mini moto's and the old three-wheeler's are a knob on the left of the carb like the yellow's, with the fuel tap beside it, and their knobs come well out of the barrel when they are on. The others have a knob or a lever of their own,
           so stand at the quad and watch what moves when you hold <kbd>Q</kbd>.`,
       },
       {
@@ -1830,8 +1830,8 @@ export const VEHICLE_NOTES = {
     tips: ['Lean it to turn it.', 'Grab the brake mid-corner and the front tucks.', 'T picks it up when it goes down.', 'Cord only: the choke knob and the fuel tap are by the carb.'],
   },
   atc: {
-    blurb: 'The neighbour’s worn-out old three-wheeler: one front wheel, two fat tyres, a taped seat and a rusty silencer.',
-    tips: ['Pull-start only.', 'Tips over in a fast tight turn.', 'Lumpy and smoky at idle, and hard to start.'],
+    blurb: 'The neighbour’s worn-out old Kestrel T185 three-wheeler: one front wheel on chrome forks, two fat tyres, a wide red rear body, a long flat seat and a rectangular headlamp.',
+    tips: ['Pull-start only.', 'Tips over in a fast tight turn.', 'Lumpy and smoky at idle, and hard to start.', 'The choke knob and the fuel tap are by the carb.'],
   },
   loan: {
     blurb: 'A smart new quad on loan for the day: fuel injected, starts on the button, idles smooth and quiet, and has almost no wear.',

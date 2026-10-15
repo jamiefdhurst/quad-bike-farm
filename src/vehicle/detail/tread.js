@@ -16,6 +16,7 @@ export const TREAD_KINDS = {
   farm: { section: 5, depth: 0.2, count: 16 }, // an old farm ATV tyre: square blocks in three rows and big shoulder blocks
   knobbly: { section: 2.2, depth: 0.28, count: 24 }, // a dirt bike's: separate square knobs, centre then pairs, and shoulder knobs
   balloon: { section: 2.2, depth: 0.08, count: 22 }, // a three-wheeler's fat soft tyre: low short bars in a shallow chevron
+  trike: { section: 2.4, depth: 0.2, count: 20 }, // an old three-wheeler's: fat and round, chunky square blocks in staggered rows with big shoulder blocks
   tractor: { section: 5, depth: 0.32, count: 22 }, // a tractor rear: tall bar lugs from each shoulder, angled, open in the middle
   rib: { section: 3, depth: 0, count: 0, crown: [{ x: -0.42, w: 0.16, d: 0.12 }, { x: 0, w: 0.16, d: 0.12 }, { x: 0.42, w: 0.16, d: 0.12 }] }, // a tractor front: three ribs
   allTerrain: { section: 4, depth: 0.14, count: 26 }, // a Land Rover's or a UTV's: two staggered rows of blocks with a zigzag between, and shoulders
@@ -91,6 +92,12 @@ export function treadBlocks(kind, { radius, width, rimR, count }) {
           break;
         case 'balloon':
           block(i, s > 0 ? 0 : 0.5, { x: s * W * 0.18, w: W * 0.4, l: depth * 2.2, yaw: s * 0.35, taper: 0.9 });
+          break;
+        case 'trike':
+          // A centre row and two inner rows half a pitch apart, and a bigger block on each shoulder.
+          if (s < 0) block(i, 0, { x: 0, w: W * 0.19, l: depth * 2.6 });
+          block(i, 0.5, { x: s * W * 0.22, w: W * 0.19, l: depth * 2.6 });
+          block(i, 0, { x: s * W * 0.4, w: W * 0.2, l: depth * 3, lean: s * 0.6, out: depth * 0.3 });
           break;
         case 'tractor':
           // An R1 bar lug: from the shoulder, angled forwards, just past the middle; the two sides half a pitch apart.
