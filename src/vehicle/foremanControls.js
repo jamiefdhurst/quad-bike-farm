@@ -52,74 +52,110 @@ function put(g, W, H, px, text, x, y, size, { box = false, rot = 0, ink = '#e9e9
   g.restore();
 }
 
-export const POD = { w: 0.064, h: 0.09, d: 0.05, rock: 0.18, slide: 0.026 };
+export const POD = { w: 0.064, h: 0.11, d: 0.05, cy: -0.0089, rock: 0.18, slide: 0.03 };
 
 /**
  * The left switch pod, built with its face towards +Z, +X to the picture's right, then turned to face the rider (the caller places
- * it). Returns the group; its parts are found by name.
+ * it). Positions are in metres from the middle of the lights rocker's row, as measured off a photo of the real pod (x right, y up).
+ * Returns the group; its parts are found by name.
  */
 export function buildLeftPod(MAT) {
   const pod = new THREE.Group();
   pod.name = 'controlPod';
   pod.userData.keep = true;
+  pod.scale.setScalar(0.85); // the real pod is about 11 cm tall with its foot; the game's bars are a little small for that
   const body = MAT.plastic;
   const yellow = new THREE.MeshStandardMaterial({ color: 0xe0bd1c, roughness: 0.5 });
   const white = new THREE.MeshStandardMaterial({ color: 0xd8d8d2, roughness: 0.5 });
   const red = new THREE.MeshStandardMaterial({ color: 0xbd1d14, roughness: 0.5 });
-  const dot = (parent, mat, w, h, cols, rows) => {
-    const dots = [];
-    for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) dots.push(strip(new THREE.CylinderGeometry(0.0021, 0.0021, 0.0016, 6)).rotateX(Math.PI / 2).translate(((i + 0.5) / cols - 0.5) * w * 0.7, ((j + 0.5) / rows - 0.5) * h * 0.55, 0.006));
-    const m = new THREE.Mesh(mergeGeometries(dots), mat);
-    parent.add(m);
+  const front = POD.d / 2;
+  const dots = (parent, w, h, cols, rows) => {
+    const list = [];
+    for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) list.push(strip(new THREE.CylinderGeometry(0.0021, 0.0021, 0.0016, 6)).rotateX(Math.PI / 2).translate(((i + 0.5) / cols - 0.5) * w * 0.7, ((j + 0.5) / rows - 0.5) * h * 0.6, 0.0095));
+    parent.add(new THREE.Mesh(mergeGeometries(list), parent.userData.mat));
+  };
+  const rocker = (name, x, y, w, h, mat) => {
+    const g = new THREE.Group();
+    g.name = name;
+    g.position.set(x, y, front);
+    g.userData.mat = mat;
+    pod.add(g);
+    rb(w, h, 0.011, 0.003, mat, 0, 0, 0.0035, g, `${name}Cap`);
+    dots(g, w, h, 3, 3);
+    return g;
   };
 
-  rb(POD.w, POD.h, POD.d, 0.009, body, 0, 0, 0, pod, 'podBody');
-  // The clamp it hangs from, behind the face.
-  rb(0.03, 0.02, 0.02, 0.005, body, 0.012, 0.012, -0.034, pod);
+  // The body (square-edged enough that the lettering on its face lies flat) and the clamp it hangs from behind.
+  rb(POD.w, POD.h, POD.d, 0.0035, body, 0, POD.cy, 0, pod, 'podBody');
+  rb(0.03, 0.02, 0.02, 0.004, body, 0.012, 0.012, -0.034, pod);
 
-  // The face's lettering, on a thin plane just proud of the body.
+  // The lettering, on a plane lying on the body's face. `at` converts the photo's coordinates to the plane's.
   const face = labelMaterial(POD.w, POD.h, 4200, (g, W, H, px) => {
-    put(g, W, H, px, 'LIGHTS', -0.0165, 0.0335, 0.0075, { box: true });
-    put(g, W, H, px, 'OFF', 0.013, 0.0425, 0.0062);
-    put(g, W, H, px, 'ON', 0.013, 0.0035, 0.0062);
-    put(g, W, H, px, 'HI', -0.0155, 0.0205, 0.0072);
-    put(g, W, H, px, 'LO', -0.0155, -0.0195, 0.0072);
-    put(g, W, H, px, 'RUN', 0.019, -0.0125, 0.0066, { box: true });
-    put(g, W, H, px, 'OFF', -0.0275, -0.032, 0.0058, { rot: -Math.PI / 2 });
-    put(g, W, H, px, 'OFF', 0.0275, -0.032, 0.0058, { rot: -Math.PI / 2 });
+    const at = (x, y, text, size, o) => put(g, W, H, px, text, x, y - POD.cy, size, o);
+    at(-0.0163, 0.032, 'LIGHTS', 0.0075, { box: true });
+    at(0.0168, 0.0402, 'OFF', 0.0062);
+    at(0.0168, -0.0035, 'ON', 0.0062);
+    at(-0.0172, 0.0105, 'HI', 0.0072);
+    at(-0.0172, -0.0315, 'LO', 0.0072);
+    at(0.0053, -0.0245, 'RUN', 0.0066, { box: true });
+    at(-0.0252, -0.0455, 'OFF', 0.0058, { rot: -Math.PI / 2 });
   });
-  const plane = new THREE.Mesh(new THREE.PlaneGeometry(POD.w * 0.98, POD.h * 0.98), face);
-  plane.position.z = POD.d / 2 + 0.0004;
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(POD.w * 0.97, POD.h * 0.97), face);
+  plane.position.set(0, POD.cy, front + 0.0003);
   plane.name = 'podLabels';
   pod.add(plane);
 
-  // The yellow lights rocker (OFF at the top, ON at the bottom): pivots about X, the bottom end in for ON.
-  const lights = new THREE.Group();
-  lights.name = 'lightsRocker';
-  lights.position.set(0.013, 0.022, POD.d / 2 + 0.002);
-  pod.add(lights);
-  rb(0.021, 0.034, 0.012, 0.004, yellow, 0, 0, 0.004, lights, 'lightsRockerCap');
-  dot(lights, yellow, 0.021, 0.034, 3, 3);
-  // The white HI / LO rocker.
-  const beam = new THREE.Group();
-  beam.name = 'beamRocker';
-  beam.position.set(-0.0145, -0.0005, POD.d / 2 + 0.002);
-  pod.add(beam);
-  rb(0.02, 0.03, 0.012, 0.004, white, 0, 0, 0.004, beam, 'beamRockerCap');
-  dot(beam, white, 0.02, 0.03, 3, 3);
-  // The red engine stop, a pair of wedges with a split between, RUN on the right.
+  // The yellow lights rocker (OFF at the top, ON at the bottom): the bottom end in for ON. The white HI / LO rocker below it on the left.
+  rocker('lightsRocker', 0.0168, 0.0209, 0.0213, 0.032, yellow);
+  rocker('beamRocker', -0.0172, -0.0088, 0.0205, 0.029, white);
+  // The red engine stop, a pair of wedges with a split between, the OFF on its left.
   const stop = new THREE.Group();
   stop.name = 'stopRocker';
-  stop.position.set(0, -0.0325, POD.d / 2 + 0.002);
+  stop.position.set(0.0015, -0.0455, front + 0.002);
   pod.add(stop);
-  for (const s of [-1, 1]) rb(0.02, 0.022, 0.011, 0.004, red, s * 0.0105, 0, 0.0035, stop, undefined, 1);
-  // The start button, black with a symbol, low on the left.
+  for (const s of [-1, 1]) rb(0.0205, 0.021, 0.011, 0.003, red, s * 0.0108, 0, 0.0035, stop, undefined, 1);
+
+  // The foot under the body, standing out towards the rider: the choke's slot and slider on its top, the start button on its front.
+  const footY = -0.0707;
+  rb(0.082, 0.014, 0.062, 0.003, body, 0.0125, footY, 0.034, pod, 'chokePlate', 1);
+  rb(0.05, 0.0015, 0.009, 0.0008, MAT.hole, 0.0275, footY + 0.0073, 0.05, pod, 'chokeSlot', 1);
+  const footTop = footY + 0.007;
+  const plateLabel = labelMaterial(0.05, 0.012, 5200, (g, W, H, px) => {
+    put(g, W, H, px, 'CHOKE', 0.006, 0, 0.0085);
+    g.strokeStyle = '#e9e9e6';
+    g.lineWidth = H * 0.1;
+    g.beginPath();
+    g.moveTo(W * 0.04, H * 0.5);
+    g.lineTo(W * 0.2, H * 0.5);
+    g.moveTo(W * 0.04, H * 0.5);
+    g.lineTo(W * 0.1, H * 0.3);
+    g.moveTo(W * 0.04, H * 0.5);
+    g.lineTo(W * 0.1, H * 0.7);
+    g.stroke();
+  });
+  const pl = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.012), plateLabel);
+  pl.rotation.x = -Math.PI / 2;
+  pl.position.set(0.0275, footTop + 0.0004, 0.032);
+  pod.add(pl);
+  const choke = new THREE.Group();
+  choke.name = 'chokeLever';
+  choke.userData.keep = true;
+  choke.position.set(0.0405, footTop + 0.001, 0.05);
+  choke.userData.baseX = choke.position.x;
+  pod.add(choke);
+  const grey = new THREE.MeshStandardMaterial({ color: 0x5a5d61, roughness: 0.6 });
+  rb(0.022, 0.013, 0.016, 0.003, grey, 0, 0.0065, 0, choke, 'chokeLeverKnob', 1);
+  const ribs = [];
+  for (let i = 0; i < 4; i++) ribs.push(strip(new THREE.BoxGeometry(0.0024, 0.0024, 0.014)).translate(-0.0075 + i * 0.005, 0.0138, 0));
+  choke.add(new THREE.Mesh(mergeGeometries(ribs), MAT.frame));
+  choke.add(new THREE.Mesh(strip(new THREE.BoxGeometry(0.0035, 0.0016, 0.013)).translate(0.0125, 0.0138, 0), new THREE.MeshStandardMaterial({ color: 0xe9e9e4, roughness: 0.6 }))); // a white index mark on its edge
+  // The start button on the foot's front face, low on the left, with its symbol.
   const start = new THREE.Group();
   start.name = 'startButton';
-  start.position.set(-0.021, -0.054, POD.d / 2 - 0.016);
+  start.position.set(-0.0165, footY, 0.0655);
   pod.add(start);
-  rb(0.017, 0.011, 0.018, 0.003, body, 0, 0, 0, start, undefined, 1);
-  const sym = labelMaterial(0.012, 0.007, 7000, (g, W, H) => {
+  rb(0.016, 0.011, 0.007, 0.003, body, 0, 0, 0, start, undefined, 1);
+  const sym = labelMaterial(0.011, 0.008, 7000, (g, W, H) => {
     g.strokeStyle = '#e9e9e6';
     g.lineWidth = H * 0.1;
     g.beginPath();
@@ -132,41 +168,9 @@ export function buildLeftPod(MAT) {
     g.lineTo(W * 0.44, H * 0.88);
     g.stroke();
   });
-  const symPlane = new THREE.Mesh(new THREE.PlaneGeometry(0.012, 0.007), sym);
-  symPlane.rotation.x = -Math.PI / 2;
-  symPlane.position.set(0, 0.0058, 0.002);
+  const symPlane = new THREE.Mesh(new THREE.PlaneGeometry(0.011, 0.008), sym);
+  symPlane.position.set(0, 0, 0.0036);
   start.add(symPlane);
-
-  // The choke: a plate under the pod with a slot, and the ridged black slider in it, pulled to the left to apply.
-  rb(0.082, 0.011, 0.034, 0.003, body, 0.0095, -0.0465, 0.014, pod, 'chokePlate', 1);
-  rb(0.04, 0.003, 0.009, 0.001, MAT.hole, 0.026, -0.0407, 0.02, pod, undefined, 1);
-  const plateLabel = labelMaterial(0.04, 0.012, 5200, (g, W, H, px) => {
-    put(g, W, H, px, 'CHOKE', 0.002, 0, 0.0085);
-    g.strokeStyle = '#e9e9e6';
-    g.lineWidth = H * 0.1;
-    g.beginPath();
-    g.moveTo(W * 0.04, H * 0.5);
-    g.lineTo(W * 0.17, H * 0.5);
-    g.moveTo(W * 0.04, H * 0.5);
-    g.lineTo(W * 0.1, H * 0.3);
-    g.moveTo(W * 0.04, H * 0.5);
-    g.lineTo(W * 0.1, H * 0.7);
-    g.stroke();
-  });
-  const pl = new THREE.Mesh(new THREE.PlaneGeometry(0.04, 0.012), plateLabel);
-  pl.rotation.x = -Math.PI / 2;
-  pl.position.set(0.0, -0.0405, 0.0055);
-  pod.add(pl);
-  const choke = new THREE.Group();
-  choke.name = 'chokeLever';
-  choke.userData.keep = true;
-  choke.position.set(0.036, -0.0405, 0.02);
-  choke.userData.baseX = choke.position.x;
-  pod.add(choke);
-  rb(0.02, 0.009, 0.016, 0.003, MAT.rubber, 0, 0.0045, 0, choke, 'chokeLeverKnob', 1);
-  const ribs = [];
-  for (let i = 0; i < 4; i++) ribs.push(strip(new THREE.BoxGeometry(0.0022, 0.0022, 0.014)).translate(-0.0075 + i * 0.005, 0.0099, 0));
-  choke.add(new THREE.Mesh(mergeGeometries(ribs), MAT.rubber));
   return pod;
 }
 
@@ -182,7 +186,7 @@ export function poseBarPod(model, { lights = 'low', keyOn = false, cranking = fa
   parts.lights.rotation.x = lights === 'off' ? -POD.rock : POD.rock;
   parts.beam.rotation.x = lights === 'high' ? -POD.rock : POD.rock;
   parts.stop.rotation.y = keyOn ? 0.14 : -0.14;
-  parts.start.position.z = parts.start.userData.z0 ?? (parts.start.userData.z0 = parts.start.position.z);
+  parts.start.userData.z0 ??= parts.start.position.z;
   parts.start.position.z = parts.start.userData.z0 - (cranking ? 0.004 : 0);
 }
 

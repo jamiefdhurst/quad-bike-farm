@@ -442,7 +442,7 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
   if (chokeStyle === 'slide') {
     // The Foreman's switch pod (foremanControls.js): lights, HI / LO, engine stop, start and the choke slider, on the left, face to the rider.
     const pod = buildLeftPod(MAT);
-    pod.position.set(0.176, 0.052, -0.05);
+    pod.position.set(0.176, 0.048, -0.05);
     pod.rotation.set(0.6, Math.PI, 0);
     bars.add(pod);
     choke = pod.getObjectByName('chokeLever');
