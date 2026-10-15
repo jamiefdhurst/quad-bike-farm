@@ -186,8 +186,10 @@ export const FAQ_SECTIONS = [
       {
         q: 'Where is the choke on each quad?',
         a: `Look at the left bar. On the red and the green it is a ridged black slider in a slot on the switch housing, under the CHOKE label: <kbd>Q</kbd>
-          slides it towards the label and <kbd>Z</kbd> eases it back. The blue's is a lever hanging under its switch housing, and the others have a
-          knob or a lever of their own, so stand at the quad and watch what moves when you hold <kbd>Q</kbd>.`,
+          slides it towards the label and <kbd>Z</kbd> eases it back. The blue's is a lever hanging under its switch housing. The yellow's is not on the
+          bars at all: it is a black knob with the choke symbol on the left of the carb, down in the open engine bay, so you have to be all but stopped to
+          reach it, and it takes a hand off the bars. The fuel tap is beside it, on the tank's lower edge. The others have a knob or a lever of their own,
+          so stand at the quad and watch what moves when you hold <kbd>Q</kbd>.`,
       },
       {
         q: 'How do I read the green quad’s speedo?',
@@ -1801,8 +1803,8 @@ export const VEHICLE_NOTES = {
     tips: ['Floods if you leave the choke on once it’s warming, so ease it off early.', 'U is the diff lock, which pulls hardest in the mud.'],
   },
   yellow: {
-    blurb: 'A Blaster-style two-stroke sport quad. Weak low down, then comes on hard around 6,000 rpm and revs past 10,000, trailing blue smoke.',
-    tips: ['Loads up its plug if left idling: blip the throttle.', 'Pre-mix only.', 'Room for one on a slim pad at the back.'],
+    blurb: 'The Tamura Hornet 200, a Blaster-style two-stroke sport quad: the wheels are the edge of it, the plastics are small and the engine is out in the open. Weak low down, then comes on hard around 6,000 rpm and revs past 10,000, trailing blue smoke.',
+    tips: ['Loads up its plug if left idling: blip the throttle.', 'Pre-mix only.', 'Room for one on a slim pad at the back.', 'The choke knob and the fuel tap are on the left of the carb: stop to reach the choke.', 'Only a key on the bars: no lamps, no gauges.'],
   },
   green: {
     blurb: 'The Kawasaki-style workhorse: older, heavier and slower, with a big lazy four-stroke that idles low and lumpy and pulls hard low down.',

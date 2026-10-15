@@ -10,9 +10,9 @@ import * as THREE from 'three';
  */
 export const MAKERS = {
   kestrel: { name: 'Kestrel', badge: 'italic', ink: '#ffffff', edge: '#7a0f0b', box: null }, // the red quad (a Honda's place)
-  tamura: { name: 'Tamura', badge: 'block', ink: '#ffffff', edge: null, box: '#1d3f8f' }, // the blue and the loan (Yamaha's)
+  tamura: { name: 'Tamura', badge: 'block', ink: '#ffffff', edge: null, box: '#1d3f8f' }, // the blue, the loan and the yellow (Yamaha's)
   ridgeback: { name: 'Ridgeback', badge: 'italic', ink: '#d9f2d0', edge: '#1f3a17', box: null }, // the green (Kawasaki's)
-  viper: { name: 'Viper', badge: 'italic', ink: '#111111', edge: '#f5d000', box: null }, // the yellow and the orange (Yamaha's sport, Suzuki's)
+  viper: { name: 'Viper', badge: 'italic', ink: '#111111', edge: '#f5d000', box: null }, // the orange (Suzuki's)
   hartley: { name: 'Hartley', badge: 'oval', ink: '#f0e6c8', edge: null, box: '#7d1712' }, // the tractor (Ferguson's)
   moorland: { name: 'Moorland', badge: 'oval', ink: '#f2f2ea', edge: null, box: '#244a2c' }, // the Land Rovers
   thorne: { name: 'Thorne', badge: 'oval', ink: '#ffffff', edge: null, box: '#1b3d7a' }, // the Fiesta (Ford's)
@@ -21,7 +21,7 @@ export const MAKERS = {
 
 /** Which maker each vehicle's badge names, by spec id. The kids' quad, the moto and the three-wheeler have none yet (their items say). */
 export const MAKER_FOR = {
-  red: 'kestrel', blue: 'tamura', loan: 'tamura', green: 'ridgeback', yellow: 'viper', orange: 'viper',
+  red: 'kestrel', blue: 'tamura', loan: 'tamura', green: 'ridgeback', yellow: 'tamura', orange: 'viper',
   tractor: 'hartley', utv: 'ridgeback', landrover: 'moorland', landrover200: 'moorland', fiesta: 'thorne', corsa: 'ashby',
 };
 

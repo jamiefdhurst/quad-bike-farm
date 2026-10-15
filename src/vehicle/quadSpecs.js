@@ -135,11 +135,11 @@ export const QUAD_SPECS = [
     label: 'yellow quad',
     name: 'Yellow quad',
     bodyColor: 0xe9c21b,
-    style: 'sport',
+    style: 'blaster',
     dashStyle: 'blaster',
     reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
-    chokeStyle: 'thumb', // where the choke is and what it takes to reach it
-    tapStyle: 'lowLeft', // where the fuel tap sits
+    chokeStyle: 'plunger', // a knob on the side of the carb, which wants it all but stopped to reach
+    tapStyle: 'carbLeft', // where the fuel tap sits: the tank's lower edge, beside the carb
     hoursRange: [150, 600], // engine hours showing when the game starts
     odoRange: [600, 2400], // odometer miles showing when the game starts
     wearRange: [0.1, 0.35], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js

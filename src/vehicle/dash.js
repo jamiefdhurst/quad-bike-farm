@@ -16,7 +16,7 @@ import {
 //   kodiak:    loan quad. The same idea, newer: a wider, glossier pod with a cooler LCD and a gear column.
 //   bayou:     green. A round black speedo on a stalk over the bars: white mph to 40 with a blue km/h scale inside, an odometer window,
 //              N and R lamps and the key under the needle's hub.
-//   blaster:   yellow. The back of a headlamp shell on the bars with a red power lamp and the key.
+//   blaster:   yellow. Only the key, in a small housing on the bar clamp.
 //   quadracer: orange. A RUN / OFF kill switch on the left bar and its lanyard.
 //   kidsKey:   kids' quad. A key switch under the bar clamp.
 //   tractor:   the tractor. Three round dials in chrome bezels (water temperature, a rev counter with an hour meter and the PTO speed marked, fuel), GLOW, CHARGE and OIL lamps and the key.
@@ -459,25 +459,20 @@ function buildBayou() {
 
 // Yellow: Yamaha Blaster ----------------------------------------------------------------
 
+// Just the key, in a small black housing on the bar clamp: no lamp, no gauge (the Blaster's headlamp is in its nose, not here).
 function buildBlaster() {
   const group = new THREE.Group();
   group.name = 'dash';
-  const O = { ox: 150, oy: 80 };
-  housing(group, { x: 96, y: 52, w: 108, h: 56, r: 10, ...O, material: blackMat });
-  const rim = housing(group, { x: 104, y: 44, w: 92, h: 7, r: 3.5, ...O, material: chromeMat, depth: 0.04 });
-  rim.name = 'dashRim';
-  const face = mmPanel({ x: 96, y: 52, w: 108, h: 56, ...O });
+  const O = { ox: 110, oy: 55 };
+  housing(group, { x: 96, y: 44, w: 28, h: 22, r: 4, ...O, material: blackMat, depth: 0.03 });
+  const face = mmPanel({ x: 96, y: 44, w: 28, h: 22, ...O });
   group.add(face.mesh);
   const gate = changeGate();
   return {
     group,
     mount: null,
     update(s) {
-      if (gate(lookKey(s)))
-        face.redraw((ctx) => {
-          lamp(ctx, 150, 60, LAMP.red, 'power', s.ignition, { r: 3.6, labelBelow: false });
-          keySwitch(ctx, 150, 86, s.keyOn);
-        });
+      if (gate(lookKey(s))) face.redraw((ctx) => keySwitch(ctx, 110, 55, s.keyOn));
     },
   };
 }

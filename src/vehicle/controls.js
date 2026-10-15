@@ -6,11 +6,12 @@
 //   (also 'dashLever', the UTV's forward and reverse lever on the dash, which wants it stopped)
 //   choke: 'thumb' a lever by the left grip, always in reach; 'slide' the same reach, a slider in the left switch pod (the red); 'knob' a pull knob on the dash, a hand off the bars; 'plunger' a plunger on
 //     the carb under the tank, which you can only reach with the quad all but stopped, and with a hand off the bars even then.
-//   tap: where the fuel tap sits (the model places it, quadModel.js) and what its handle looks like.
+//   tap: where the fuel tap sits (the model places it, quadModel.js) and what its handle looks like ('carbLeft', the yellow's, is on the tank's lower
+//     edge beside the carb, with a hose to it).
 
 export const REVERSE_STYLES = ['bars', 'button', 'knee', 'dashLever', 'none'];
 export const CHOKE_STYLES = ['thumb', 'knob', 'plunger', 'slide'];
-export const TAP_STYLES = ['left', 'right', 'rearLeft', 'lowLeft', 'lowRight'];
+export const TAP_STYLES = ['left', 'right', 'rearLeft', 'lowLeft', 'lowRight', 'carbLeft'];
 
 export const DEFAULT_CONTROLS_PARAMS = {
   barsMaxSpeed: 1.5, // m/s: the bar lever can be pushed down while it's creeping, not at a run
