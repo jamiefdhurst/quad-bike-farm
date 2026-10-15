@@ -627,7 +627,6 @@ export const FOREMAN = {
   front: { top: 0.72, from: 0.3, to: 0.84 }, // the front wing's flat top, and where its rear edge and its face are (z from the axle)
   rear: { top: 0.76, from: -0.3, to: -0.84 },
   outer: 0.58, // the wing's outer face, in line with the tyres' outsides
-  inner: 0.3, // where the wing's top meets the centre deck
 };
 
 /** Points up an arch of radius r about (cz, cy), z from za to zb, as [z, y]. */
@@ -655,21 +654,58 @@ function wingSide(W, cz, lowEdge) {
   return [[W.from, lowEdge], ...arch, [W.to, W.top], [W.from, W.top]];
 }
 
+/**
+ * One red deck across the whole width, flat over the wheels and rolling gently down towards the middle so it joins the bodywork,
+ * its edge rounded over at the end and a face dropping from it. `ends` is [[z, drop], ...] from the body end to the face, `roll`
+ * how far the middle sits below the wings.
+ */
+function deckGeometry(ends, topY, half, roll) {
+  const xs = [];
+  const N = 40;
+  for (let i = 0; i <= N; i++) xs.push(-half + (2 * half * i) / N);
+  const ease = (k) => k * k * (3 - 2 * k);
+  const pos = [];
+  const idx = [];
+  for (const [z, d] of ends) {
+    for (const x of xs) {
+      const k = Math.min(1, Math.max(0, (Math.abs(x) - 0.22) / 0.18));
+      pos.push(x, topY + d - roll * (1 - ease(k)), z);
+    }
+  }
+  const m = xs.length;
+  for (let i = 0; i < ends.length - 1; i++) {
+    for (let j = 0; j < m - 1; j++) {
+      const a = i * m + j;
+      const b = (i + 1) * m + j;
+      idx.push(a, b, a + 1, b, b + 1, a + 1);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
 function foremanFenders(root, paint) {
   const F = FOREMAN;
+  // The red decks: the front one carries the headlights in its face, the rear one the tail lamp's bracket.
+  const half = F.outer - 0.008;
+  const front = F.front;
+  const rear = F.rear;
+  add(deckGeometry([[front.from, 0], [front.to - 0.05, 0], [front.to - 0.016, -0.005], [front.to, -0.022], [front.to, -(front.top - 0.58)]], front.top, half, 0.03), paint, root, 'frontPanel');
+  add(deckGeometry([[rear.from, 0], [rear.to + 0.05, 0], [rear.to + 0.016, -0.005], [rear.to, -0.022], [rear.to, -(rear.top - 0.62)]], rear.top, half, 0.03), paint, root, 'rearPanel');
   for (const w of WHEELS) {
     const s = Math.sign(w.x);
     const W = w.front ? F.front : F.rear;
-    const outer = F.outer;
-    const dir = w.front ? 1 : -1;
     const tag = w.name.slice(-2);
-    // Side plate with the arch cut out, ending in a flare down towards the footboard.
-    const side = add(sideSlab(wingSide(W, w.z, 0.36), 0.016), paint, root, `fender_${tag}`);
-    side.position.set(s * (outer - 0.008), 0, 0);
-    // Flat top, wing-wide, with rounded edges.
-    const len = Math.abs(W.to - W.from);
-    rbox(outer - F.inner, 0.024, len, 0.01, paint, s * ((outer + F.inner) / 2), W.top - 0.012, (W.to + W.from) / 2, root, `fenderTop_${tag}`);
-    // The black trim round the arch: an arc strip standing 12 mm proud of the plate, clipped to the plate.
+    // The black flare: a plate for the outside with the arch cut out and a flare down towards the footboard behind the wheel, and a
+    // strip along the top edge. All of the wing's outside is black plastic; the red is only the top.
+    const side = add(sideSlab(wingSide(W, w.z, 0.36), 0.016), MAT.plastic, root, `fender_${tag}`);
+    side.position.set(s * (F.outer - 0.008), 0, 0);
+    const len = Math.abs(W.to - W.from) + 0.02;
+    rbox(0.095, 0.014, len, 0.006, MAT.plastic, s * (F.outer - 0.0475 + 0.008), W.top + 0.002, (W.to + W.from) / 2 + Math.sign(W.to) * 0.01, root, `flare_${tag}`);
+    // A raised lip round the arch, 12 mm proud of the plate, clipped to it.
     const inner = archPoints(w.z, 0.3, F.archR, W.from, W.to, 16);
     const strip = [];
     const edge = [];
@@ -681,7 +717,7 @@ function foremanFenders(root, paint) {
       edge.push([oz, oy]);
     }
     const trim = add(sideSlab([...strip, ...edge.reverse()], 0.012, 0.002), MAT.plastic, root, `archTrim_${tag}`);
-    trim.position.set(s * (outer + 0.004), 0, 0);
+    trim.position.set(s * (F.outer + 0.004), 0, 0);
   }
 }
 
@@ -1306,28 +1342,54 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     // Rear bumper under the tail lights.
     pipe([[0.2, 0.5, -0.96], [0.25, 0.5, -1.11], [-0.25, 0.5, -1.11], [-0.2, 0.5, -0.96]], 0.017, MAT.frame, root, { bend: 0.07 });
   } else {
-    // The Foreman (the 1990s Honda TRX300FW): flat decks between the wings, twin rectangular headlights in the front wings' faces,
-    // a black apron and slotted grille below them, a tubular bumper, and one tail lamp in the middle of the back of the rear deck.
-    rbox(0.62, 0.05, 0.56, 0.016, paint, 0, 0.695, 0.58, root, 'frontPanel');
-    rbox(0.62, 0.05, 0.62, 0.016, paint, 0, 0.735, -0.61, root, 'rearPanel');
-    for (const s of [-1, 1]) squareLamp(root, s * 0.44, 0.645, 0.838, 0.15, 0.075, lensMat, s > 0 ? 'headlightLeft' : 'headlightRight');
+    // The Foreman (the 1990s Honda TRX300FW): the red decks are made with the fenders (foremanFenders); here are the twin rectangular
+    // headlights in the front face, close in towards the middle, a black apron with grille slots below them, a tube bumper, the
+    // dome round the steering column and one tail lamp on a bracket hanging off the back of the rear deck.
+    for (const s of [-1, 1]) squareLamp(root, s * 0.25, 0.635, 0.838, 0.13, 0.065, lensMat, s > 0 ? 'headlightLeft' : 'headlightRight');
     pipe([[0.2, 0.4, 0.82], [0.25, 0.44, 0.95], [-0.25, 0.44, 0.95], [-0.2, 0.4, 0.82]], 0.017, MAT.frame, root, { bend: 0.07 });
-    rbox(0.5, 0.1, 0.04, 0.015, MAT.plastic, 0, 0.6, 0.85, root);
-    for (let k = 0; k < 4; k++) rbox(0.4, 0.007, 0.006, 0.002, MAT.hole, 0, 0.57 + k * 0.02, 0.873, root, undefined, 1);
-    rbox(0.16, 0.075, 0.03, 0.012, MAT.plastic, 0, 0.725, -0.925, root);
-    rbox(0.125, 0.05, 0.014, 0.008, MAT.tail, 0, 0.725, -0.94, root, undefined, 1);
-    for (const s of [-1, 1]) rbox(0.05, 0.026, 0.01, 0.005, TAIL_REFLECTOR, s * 0.26, 0.735, -0.926, root, undefined, 1);
+    rbox(0.5, 0.085, 0.05, 0.015, MAT.plastic, 0, 0.535, 0.845, root);
+    for (let k = 0; k < 3; k++) rbox(0.4, 0.007, 0.006, 0.002, MAT.hole, 0, 0.515 + k * 0.02, 0.873, root, undefined, 1);
+    // Red dome blending the front deck up into the tank cover round the column, and a black rubber shroud on the column itself.
+    add(
+      loftGeometry([
+        { z: 0.42, w: 0.26, y0: 0.71, y1: 0.8 },
+        { z: 0.52, w: 0.34, y0: 0.7, y1: 0.87 },
+        { z: 0.66, w: 0.32, y0: 0.7, y1: 0.86 },
+        { z: 0.78, w: 0.24, y0: 0.7, y1: 0.75 },
+      ], { exponent: 3.5 }),
+      paint,
+      root,
+      'columnDome',
+    );
+    const shroud = add(new THREE.CylinderGeometry(0.034, 0.062, 0.2, 16, 1, true), MAT.plastic, root, 'columnShroud');
+    shroud.position.set(0, 0.55 + 0.45 * 0.72, 0.62 - 0.16 * 0.72);
+    shroud.rotation.x = Math.atan2(0.16, 0.45) * -1;
+    // The tail lamp on its bracket under the rack, in a black bezel with a reflector either side.
+    rbox(0.3, 0.12, 0.09, 0.02, paint, 0, 0.7, -0.885, root, 'tailBracket');
+    rbox(0.16, 0.075, 0.03, 0.012, MAT.plastic, 0, 0.7, -0.935, root);
+    rbox(0.125, 0.05, 0.014, 0.008, MAT.tail, 0, 0.7, -0.95, root, undefined, 1);
+    for (const s of [-1, 1]) rbox(0.05, 0.026, 0.01, 0.005, TAIL_REFLECTOR, s * 0.11, 0.735, -0.932, root, undefined, 1);
   }
   if (!sport) {
     // Black side covers under the seat.
     for (const s of [-1, 1]) rbox(0.03, 0.14, 0.5, 0.014, MAT.plastic, s * 0.185, 0.69, -0.12, root);
     // Tow hitch: a drawbar out of the frame with a ball on a plate.
-    const hz = style === 'utility' ? 0.1 : 0; // the Foreman's is shorter, to keep the quad near its real length
-    rbox(0.05, 0.05, 0.3 - hz, 0.01, MAT.frame, 0, 0.37, -1.0 + hz / 2, root);
-    rbox(0.1, 0.012, 0.09, 0.004, MAT.frame, 0, 0.4, -1.12 + hz, root, undefined, 1);
-    tube([0, 0.4, -1.13 + hz], [0, 0.43, -1.13 + hz], 0.012, MAT.chrome, root);
-    const ball = add(new THREE.SphereGeometry(0.024, 14, 10), MAT.chrome, root);
-    ball.position.set(0, 0.445, -1.13 + hz);
+    if (style === 'utility') {
+      // The Foreman's: a steel plate bolted to the rear cross-tube and the cradle rails, a drawbar back from its foot, and gussets.
+      rbox(0.14, 0.34, 0.016, 0.004, MAT.frame, 0, 0.57, -0.985, root);
+      tube([-0.19, 0.66, -0.985], [0.19, 0.66, -0.985], 0.014, MAT.frame, root, 6);
+      rbox(0.08, 0.02, 0.12, 0.004, MAT.frame, 0, 0.405, -1.04, root, undefined, 1);
+      for (const s of [-1, 1]) tube([s * 0.19, 0.5, -0.9], [s * 0.05, 0.41, -0.99], 0.011, MAT.frame, root, 6);
+      for (const s of [-1, 1]) tube([s * 0.045, 0.4, -0.99], [s * 0.045, 0.4, -1.04], 0.008, MAT.frame, root, 6);
+      tube([0, 0.4, -1.075], [0, 0.435, -1.075], 0.012, MAT.chrome, root);
+      add(new THREE.SphereGeometry(0.024, 14, 10), MAT.chrome, root).position.set(0, 0.46, -1.075);
+    } else {
+      rbox(0.05, 0.05, 0.3, 0.01, MAT.frame, 0, 0.37, -1.0, root);
+      rbox(0.1, 0.012, 0.09, 0.004, MAT.frame, 0, 0.4, -1.12, root, undefined, 1);
+      tube([0, 0.4, -1.13], [0, 0.43, -1.13], 0.012, MAT.chrome, root);
+      const ball = add(new THREE.SphereGeometry(0.024, 14, 10), MAT.chrome, root);
+      ball.position.set(0, 0.445, -1.13);
+    }
   }
 
   // Tank cover, with the fuel tap on its left: lever forward for ON, down for RES, back for OFF.
@@ -1462,9 +1524,14 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     );
     rbox(0.34, 0.1, 0.38, 0.03, MAT.plastic, 0, 0.82, -0.6, root, 'pillionBase');
     for (const s of [-1, 1]) {
-      pipe(mx(s, [[0.2, 0.84, -0.4], [0.25, 0.99, -0.44], [0.25, 0.99, -0.78], [0.2, 0.84, -0.82]]), 0.013, farm ? MAT.frame : MAT.chrome, root, { bend: 0.05, steps: 5 });
+      pipe(mx(s, [[0.14, 0.84, -0.4], [0.25, 0.99, -0.44], [0.25, 0.99, -0.78], [0.14, 0.84, -0.82]]), 0.013, farm ? MAT.frame : MAT.chrome, root, { bend: 0.05, steps: 5 });
     }
     pillionGrips(root, 0.25, 0.99, -0.55, false);
+  }
+  if (style === 'utility') {
+    // The Foreman's seat falls away towards the back: the front is up and the rear down, about the rider's hips.
+    const tilt = new THREE.Matrix4().makeTranslation(0, 0.9, -0.18).multiply(new THREE.Matrix4().makeRotationX(-0.07)).multiply(new THREE.Matrix4().makeTranslation(0, -0.9, 0.18));
+    for (const n of ['seat', 'pillionSeat', 'pillionBase']) root.getObjectByName(n)?.geometry.applyMatrix4(tilt);
   }
 
   // Where the rider's feet go: footwells on the utilities, nerf bars and pegs on the sport quad.
