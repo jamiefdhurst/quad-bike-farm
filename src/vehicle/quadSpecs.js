@@ -415,16 +415,16 @@ export const EXTRA_SPECS = [
     // physics together), light and slow, one seat, and it revs very high and sounds like an angry wasp. Pull-start as well as the
     // starter; it runs on the same pre-mix as the yellow.
     id: 'kids',
-    bodyWear: 0.45, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
+    bodyWear: 0.65, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     label: "kids' quad",
     name: "Kids' quad",
-    bodyColor: 0xcf6f98, // a faded pink
-    style: 'sport',
-    plateNumbers: '123456890', // front plate digits it might wear, one picked each game (never the yellow's 7)
-    dashStyle: 'kidsKey',
+    bodyColor: 0xd596ad, // a faded pink, paler than it was
+    style: 'junior', // a Suzuki LT50's bulky plastics (juniorBody.js): the Viper Asp 50
+    noHeadlight: true, // no lamps at all
+    dashStyle: 'asp', // the key, on the clamp block
     reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
-    chokeStyle: 'thumb', // where the choke is and what it takes to reach it
-    tapStyle: 'left', // where the fuel tap sits
+    chokeStyle: 'plunger', // a knob on the side of the carb (the yellow's), which wants it all but stopped to reach
+    tapStyle: 'carbLeft', // where the fuel tap sits: the front body's lower edge, beside the carb
     hoursRange: [30, 200], // engine hours showing when the game starts
     odoRange: [100, 800], // odometer miles showing when the game starts
     wearRange: [0.02, 0.12], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js

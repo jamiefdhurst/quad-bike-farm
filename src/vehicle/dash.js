@@ -18,7 +18,7 @@ import {
 //              N and R lamps and the key under the needle's hub.
 //   blaster:   yellow. Only the key, in a small housing on the bar clamp.
 //   quadracer: orange. A RUN / OFF kill switch on the left bar and its lanyard.
-//   kidsKey:   kids' quad. A key switch under the bar clamp.
+//   kidsKey:   mini moto, old three-wheeler. A key switch under the bar clamp. asp: the kids' quad's, the same key on the V bars' clamp block.
 //   tractor:   the tractor. Three round dials in chrome bezels (water temperature, a rev counter with an hour meter and the PTO speed marked, fuel), GLOW, CHARGE and OIL lamps and the key.
 //   utv:       the UTV. A basic LCD (speed, five fuel and four water blocks, F / N / R, hours and a 4WD note) over symbols for glow, charge, oil, park
 //              (parking brake), a belted figure (flashes while someone sits unbelted), a headlamp (green, blue for main beam) and the key.
@@ -1165,7 +1165,7 @@ function buildCorsa() {
 }
 
 /** Dash styles buildDash knows: every quad spec must name one of these. */
-export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey', 'tractor', 'utv', 'series', 'defender', 'fiesta', 'corsa'];
+export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey', 'asp', 'tractor', 'utv', 'series', 'defender', 'fiesta', 'corsa'];
 
 /** Where each dash sits on the bars (metres, in the bars' frame) and how far it tilts back. A nacelle quad carries its own on its top. */
 export const DASH_PLACE = {
@@ -1176,6 +1176,7 @@ export const DASH_PLACE = {
   blaster: { pos: [0, -0.034, -0.02], tilt: 0.5 }, // sitting on the clamp block at the bars' middle, behind the lamp (the V's middle is 7 cm below the bars' origin)
   quadracer: { pos: [0.195, -0.022, -0.075], tilt: 0.9 }, // on the pod on the level run of the V bars (the kill switch's panel)
   kidsKey: { pos: [0, 0.075, 0.0], tilt: 0.9 },
+  asp: { pos: [0, -0.034, -0.02], tilt: 0.5 }, // the kids' quad's key, on the clamp block at the V bars' middle as the yellow's
   tractor: { pos: [0, 0, 0], tilt: 1.05 }, // the tractor's model places it on its scuttle itself
   utv: { pos: [0, 0, 0], tilt: 0.9 }, // so does the UTV's
   series: { pos: [0, 0, 0], tilt: 0.55 }, // and the Land Rover's
@@ -1192,6 +1193,7 @@ const BUILDERS = {
   blaster: buildBlaster,
   quadracer: buildQuadracer,
   kidsKey: buildKidsKey,
+  asp: buildKidsKey,
   tractor: buildTractor,
   utv: buildUtv,
   series: buildSeries,

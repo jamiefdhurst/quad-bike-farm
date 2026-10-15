@@ -188,7 +188,7 @@ export const FAQ_SECTIONS = [
         a: `Look at the left bar. On the red and the green it is a ridged black slider in a slot on the switch housing, under the CHOKE label: <kbd>Q</kbd>
           slides it towards the label and <kbd>Z</kbd> eases it back. The blue's is a lever hanging under its switch housing. The yellow's is not on the
           bars at all: it is a black knob with the choke symbol on the left of the carb, down in the open engine bay, so you have to be all but stopped to
-          reach it, and it takes a hand off the bars. The fuel tap is beside it, on the tank's lower edge. The orange's is a lever on the pod on the left bar, beside the lights rocker, always in reach. The others have a knob or a lever of their own,
+          reach it, and it takes a hand off the bars. The fuel tap is beside it, on the tank's lower edge. The orange's is a lever on the pod on the left bar, beside the lights rocker, always in reach. The kids' quad's is a knob on the left of the carb like the yellow's, with the fuel tap beside it. The others have a knob or a lever of their own,
           so stand at the quad and watch what moves when you hold <kbd>Q</kbd>.`,
       },
       {
@@ -1822,8 +1822,8 @@ export const VEHICLE_NOTES = {
     tips: ['Single race seat: nobody on the back.', 'Water-cooled, so it stays cooler, unless the hose is weeping.', 'The pod on the left bar has the lights rocker (P), the choke lever and the kill switch.', 'The pull-start is on O.'],
   },
   kids: {
-    blurb: 'A 50cc kids’ quad, two thirds the size of the others, that Jess insists on riding anyway.',
-    tips: ['One seat, no reverse.', 'Pull-start as well as the key.'],
+    blurb: 'The Viper Asp 50, an LT50-style 50cc kids’ quad, two thirds the size of the others and bulky for it, in faded pink with a blue seat. Jess insists on riding it anyway.',
+    tips: ['One seat, no reverse.', 'Pull-start (O) as well as the key.', 'No lights at all: the key, the choke knob on the carb and the fuel tap are all it has.'],
   },
   moto: {
     blurb: 'A sun-faded 50cc pit bike. Two wheels, one seat, and it leans into corners like a proper bike.',

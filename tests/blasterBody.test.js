@@ -170,9 +170,6 @@ describe('the yellow quad’s spec', () => {
     expect(RADIAL_ITEMS.find((i) => i.label === 'Lights').key).toBe('KeyP');
   });
 
-  it('leaves the kids’ quad on the old sport body', () => {
-    expect([...QUAD_SPECS, ...EXTRA_SPECS].find((s) => s.id === 'kids').style).toBe('sport');
-  });
 });
 
 describe('the yellow quad’s model', () => {

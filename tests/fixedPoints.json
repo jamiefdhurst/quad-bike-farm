@@ -99,7 +99,7 @@
     "handlebars": [0,1,0.46],
     "gripRight": [-0.318,1.068,0.418],
     "gripLeft": [0.318,1.068,0.418],
-    "dash": [0,1.075,0.46],
+    "dash": [0,0.966,0.44],
     "riderHands": [0,1,0.46],
     "riderAnchor": [0,0.9,-0.18],
     "pillionCameraAnchor": [0,1.77,-0.68],

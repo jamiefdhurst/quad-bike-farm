@@ -29,6 +29,8 @@ import { BLASTER_FENDERS, BLASTER_SECTION, BLASTER_CARB, BLASTER_TAP, BLASTER_VB
 import { addBlasterNose, addBlasterTail, addBlasterFootrests, addBlasterBumper, addBlasterEngine, addBlasterBars, addBlasterDecals, chokeSymbol, silverMaterial } from './blasterDetail.js';
 import { RACER_FENDERS, RACER_SECTION, RACER_SEAT, RACER_EXHAUST, shroudTop } from './racerBody.js';
 import { addRacerBody, addRacerBars, addRacerDecals, racerChokeAt, racerBlue, racerSeatBlue } from './racerDetail.js';
+import { JUNIOR_FENDERS, JUNIOR_SECTION, JUNIOR_SEAT, JUNIOR_EXHAUST, JUNIOR_TYRES, juniorTop } from './juniorBody.js';
+import { addJuniorBody, addJuniorDecals, juniorSeatMaterial } from './juniorDetail.js';
 import { addGrizzlyFront, addGrizzlyRear, addGrizzlyDecals, addFrontBrake, addGrizzlyRackBlocks, GRIZZLY_FACE } from './grizzlyDetail.js';
 
 // Farm quad built from procedural parts. One group with named parts so it can
@@ -145,6 +147,17 @@ const STYLE = {
     bars: MAT.frame,
     rear: 'swingarm',
     fwd: true,
+  },
+  // The kids' quad's (an LT50's): small silver steel wheels with four slots, fat balloon tyres with square blocks, alloy bars, a swingarm and chain.
+  junior: {
+    rim: new THREE.MeshStandardMaterial({ color: 0xc6c9cd, roughness: 0.45, metalness: 0.6, side: THREE.DoubleSide }),
+    rimOpts: { holes: 4, holeR: 0.024 },
+    rimR: 0.14,
+    tyre: { kind: 'farm' },
+    spring: new THREE.MeshStandardMaterial({ color: 0x9aa0a8, roughness: 0.4, metalness: 0.5 }),
+    bars: MAT.alloy,
+    rear: 'swingarm',
+    fwd: false,
   },
   // The Quadracer's: silver wheels, yellow springs, alloy bars, a swingarm and chain at the back.
   racer: {
@@ -442,7 +455,8 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
   const kit = chokeStyle === 'slide' || podStyle === 'grizzly'; // the red's and blue's levers, drive switch and thumb throttle (foremanControls.js)
   const bayou = podStyle === 'bayou'; // the green's bars rise from a low middle in a V, and its speedo stands on a bracket over the clamp
   const racer = podStyle === 'racer'; // the orange's: the yellow's V bars, with a pad on the crossbar, a lamp in a guard and a pod on the left
-  const blaster = podStyle === 'blaster' || racer; // the sport quads' bars rise in a V with a level crossbar (blasterBody.js `BLASTER_VBARS`)
+  const junior = podStyle === 'junior'; // the kids' quad's: the yellow's V bars, without a lamp or a lights switch
+  const blaster = podStyle === 'blaster' || racer || junior; // the sport quads' bars rise in a V with a level crossbar (blasterBody.js `BLASTER_VBARS`)
   const vBars = bayou || blaster;
   const perchX = blaster ? BLASTER_VBARS.perchX : 0.262; // the lever perch's and throttle housing's place along the bar
   const perchY = blaster ? barAt(perchX).y + 0.002 : bayou ? 0.046 : 0.066; // they sit on the bar, which is lower out along a V
@@ -690,6 +704,8 @@ const SECTION = {
   blaster: [[0, 0.05], [0.5, -0.012], [1, 0.1]],
   // The Quadracer's fenders are made by blasterFenders with racerBody.js's numbers; this names a body style that exists.
   racer: [[0, 0.04], [0.5, 0], [1, 0.045]],
+  // The kids' quad's fenders are made by blasterFenders with juniorBody.js's numbers; this names a body style that exists.
+  junior: [[0, 0.07], [0.5, -0.015], [1, 0.075]],
   // Thin, crowned race fenders with a small lip.
   sport: [[0, 0.05], [0.03, 0.012], [0.1, 0.0], [0.45, -0.014], [0.8, -0.006], [0.93, 0.01], [0.98, 0.03], [0.97, 0.05]],
   // Flat top with a square edge and a deep upright skirt outboard, like pressed steel.
@@ -713,6 +729,7 @@ const PROFILE = {
   grizzly: { front: [[0.44, 0.1], [0.0, 0.412], [-0.38, 0.05]], rear: [[0.38, 0.05], [-0.05, 0.42], [-0.42, 0.1]], width: [0.25, 0.67] },
   bayou: { front: [[0.44, 0.1], [0.0, 0.412], [-0.38, 0.05]], rear: [[0.38, 0.05], [-0.05, 0.42], [-0.42, 0.1]], width: [0.25, 0.67] },
   blaster: { front: BLASTER_FENDERS.front.profile, rear: BLASTER_FENDERS.rear.profile, width: BLASTER_FENDERS.front.width },
+  junior: { front: JUNIOR_FENDERS.front.profile, rear: JUNIOR_FENDERS.rear.profile, width: JUNIOR_FENDERS.front.width },
   racer: { front: RACER_FENDERS.front.profile, rear: RACER_FENDERS.rear.profile, width: RACER_FENDERS.front.width },
   sport: {
     front: [[0.42, 0.33], [0.35, 0.35], [0.2, 0.38], [0.03, 0.39], [-0.13, 0.37], [-0.25, 0.3], [-0.32, 0.18], [-0.34, 0.08]],
@@ -743,6 +760,7 @@ function fenders(root, style, paint) {
   if (style === 'bayou') return foremanFenders(root, paint, BAYOU_DECK); // black rubber flares over painted decks
   if (style === 'blaster') return blasterFenders(root, paint);
   if (style === 'racer') return blasterFenders(root, paint, RACER_FENDERS, RACER_SECTION);
+  if (style === 'junior') return blasterFenders(root, paint, JUNIOR_FENDERS, JUNIOR_SECTION);
   const P = PROFILE[style];
   for (const w of WHEELS) {
     const s = Math.sign(w.x);
@@ -1156,11 +1174,25 @@ function swept(points, radii, mat, parent, samples = 40) {
   return add(sweepGeometry(curve.getPoints(samples), r, { radial: 14 }), mat, parent);
 }
 
-function buildExhaust(engine, sport, race = false, blaster = false, racer = false) {
+function buildExhaust(engine, sport, race = false, blaster = false, racer = false, junior = false) {
   const exhaustTip = new THREE.Object3D();
   exhaustTip.name = 'exhaustTip';
   engine.add(exhaustTip);
-  if (racer) {
+  if (junior) {
+    // The kids' quad's: a small pipe round the right of the engine to a small can under the rear fender, two-sided with a dark baffle.
+    const E = JUNIOR_EXHAUST;
+    const pipeMat = new THREE.MeshStandardMaterial({ color: 0x8e939b, roughness: 0.35, metalness: 0.85, side: THREE.DoubleSide });
+    swept(E.path, [0.016, 0.022, 0.03, 0.03, 0.022], pipeMat, engine, 40);
+    const canMat = MAT.alloy.clone();
+    canMat.side = THREE.DoubleSide;
+    const h = E.can.length / 2;
+    const can = latheZ([[0.02, -h], [0.036, -h + 0.015], [0.04, -h + 0.04], [0.036, h - 0.012], [0.03, h], [0.016, h + 0.004]], canMat, E.can.x, E.can.y, E.can.z, engine, 14);
+    can.rotation.x = E.can.tilt;
+    const baffle = add(new THREE.CircleGeometry(0.022, 12), MAT.hole, engine);
+    baffle.position.set(E.can.x, E.can.y + Math.sin(E.can.tilt) * h * 0.7, E.can.z - h * 0.7);
+    baffle.rotation.set(E.can.tilt, Math.PI, 0);
+    exhaustTip.position.set(E.tip[0], E.tip[1] + 0.003, E.tip[2] - 0.005);
+  } else if (racer) {
     // The Quadracer's: the belly out to the right as the others', then in under the flank and the wing to a short silver silencer inside the
     // frame under the tail. Two-sided metal and a dark baffle, as the Blaster's, so the can is not see-through.
     const E = RACER_EXHAUST;
@@ -1396,11 +1428,12 @@ function buildChokePlunger(root, choke) {
 
 export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', style = 'utility', solo = false, plateNumber = '7', chokeStyle = 'thumb', tapStyle = 'left', driveSwitch = null } = {}) {
   const racer = style === 'racer'; // the orange (TODO 92): a Suzuki LT250R Quadracer's triangle wedge, flat wings, shroud and flanks
+  const junior = style === 'junior'; // the kids' quad (TODO 93): a Suzuki LT50's bulky plastics, thick seat and open engine, built full size and scaled
   const race = style === 'sport2' || racer;
   const farm = style === 'utility3';
   const bayou = style === 'bayou'; // the green (TODO 90): a Kawasaki KLF300 Bayou's decks, grey nose cage, round speedo and V bars
   const blaster = style === 'blaster'; // the yellow (TODO 91): a Yamaha YFS200 Blaster's small plastics, open engine bay and wheels at the edges
-  const sport = style === 'sport' || style === 'blaster' || race; // two-stroke chassis
+  const sport = style === 'sport' || style === 'blaster' || junior || race; // two-stroke chassis
   const cfg = STYLE[style] ?? STYLE.utility;
   const quad = new THREE.Group();
   quad.name = 'quad';
@@ -1416,7 +1449,9 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
         ? new THREE.MeshStandardMaterial({ color: 0x8a6a45, roughness: 0.62 })
         : racer
           ? racerSeatBlue()
-          : MAT.seat.clone(); // its own, so frost on one quad's seat is not on them all
+          : junior
+            ? juniorSeatMaterial()
+            : MAT.seat.clone(); // its own, so frost on one quad's seat is not on them all
   quad.userData.lensMaterial = lensMat;
   quad.userData.seatMaterial = seatMat;
   const rig = { links: [], shocks: [] };
@@ -1429,9 +1464,9 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   root.name = 'bodyRoot';
   body.add(root);
 
-  buildFrame(root, sport, barsY(style), style === 'utility' ? -0.9 : style === 'grizzly' || bayou ? -0.84 : blaster || racer ? -0.93 : -0.98); // the Foreman's rails end under its rear deck and the Grizzly's inside its own, not out behind the tail lamp
-  const engine = buildEngine(root, sport, race, blaster);
-  buildExhaust(engine, sport, race, blaster, racer);
+  buildFrame(root, sport, barsY(style), style === 'utility' ? -0.9 : style === 'grizzly' || bayou ? -0.84 : blaster || racer || junior ? -0.93 : -0.98); // the Foreman's rails end under its rear deck and the Grizzly's inside its own, not out behind the tail lamp
+  const engine = buildEngine(root, sport, race, blaster || junior);
+  buildExhaust(engine, sport, race, blaster, racer, junior);
 
   // Suspension: wishbones at the front, a swingarm or more wishbones at the back.
   for (let i = 0; i < WHEELS.length; i++) {
@@ -1446,7 +1481,11 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   fenders(root, style, paint);
 
   // Body panels, nose and lights.
-  if (racer) {
+  if (junior) {
+    // The bulky front body, the tail, the plates under the fenders and the mud flaps (juniorBody.js); the bars and the engine bay are the yellow's.
+    addJuniorBody(root, MAT, paint);
+    addBlasterEngine(root, MAT);
+  } else if (racer) {
     // The wedge (racerBody.js): the shroud with its louvres and grille, the flank triangles, the tail; the bumper is blue tube.
     addRacerBody(root, MAT, paint);
     addBlasterBumper(root, MAT, blue);
@@ -1700,10 +1739,10 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
         { z: 0.46, w: 0.32, y0: 0.7, y1: 0.885 },
         { z: 0.5, w: 0.2, y0: 0.72, y1: 0.84 },
       ];
-  if (!racer) add(loftGeometry(tankStations, { exponent: style === 'utility2' || style === 'grizzly' || bayou || farm ? 5 : race ? 6 : 3.2 }), bayou ? MAT.plastic : paint, root, 'tank'); // the Bayou's cover is black
+  if (!racer && !junior) add(loftGeometry(tankStations, { exponent: style === 'utility2' || style === 'grizzly' || bayou || farm ? 5 : race ? 6 : 3.2 }), bayou ? MAT.plastic : paint, root, 'tank'); // the Bayou's cover is black
   buildFuelTap(root, tapStyle);
   const tankCap = add(lathe([[0.036, -0.012], [0.036, 0.004], [0.03, 0.012], [0.001, 0.012]], 18), MAT.chrome, root);
-  tankCap.position.set(0, racer ? shroudTop(0.2) + 0.001 : race ? 0.908 : 0.928, racer ? 0.2 : race ? 0.38 : 0.36); // on the Quadracer's shroud, which is its tank cover
+  tankCap.position.set(0, racer ? shroudTop(0.2) + 0.001 : junior ? juniorTop(0.2) + 0.001 : race ? 0.908 : 0.928, racer || junior ? 0.2 : race ? 0.38 : 0.36); // on the Quadracer's shroud, which is its tank cover
 
   // Racks (utility quads only, and not the one-seat kids' quad).
   if (solo) {
@@ -1797,6 +1836,9 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     );
     rbox(0.29, 0.012, 0.03, 0.005, MAT.plastic, 0, 0.87, -0.47, root, 'grabStrap', 1);
     pillionGrips(root, 0.08, 0.87, -0.47, true);
+  } else if (junior) {
+    // A thick, flat, wide seat on its own (a solo quad: no pad, strap or grips for a passenger).
+    add(loftGeometry(JUNIOR_SEAT, { exponent: 3, segments: 28 }), seatMat, root, 'seat');
   } else if (sport) {
     add(
       loftGeometry([
@@ -1868,6 +1910,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   if (racer) {
     addRacerDecals(root);
   }
+  if (junior) addJuniorDecals(root);
   if (bayou) {
     quad.userData.touchWear = [-1, 1].map((s) => ({ at: [s * 0.3, 0.52, 0.0], r: 0.16, amount: 0.7 })); // boots rub the panels' lower edges
     addBayouDecals(root);
@@ -1891,7 +1934,10 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
 
   // Where the rider's feet go: footwells on the utilities, nerf bars and pegs on the sport quad.
   if (race) raceNerfBars(root);
-  else if (blaster) {
+  else if (junior) {
+    nerfBars(root, false); // the pegs, on plates on the frame as the yellow's
+    addBlasterFootrests(root, MAT, MAT.frame);
+  } else if (blaster) {
     nerfBars(root, false); // just the pegs: the footrests are plates on the frame
     addBlasterFootrests(root, MAT, silver);
   } else if (sport) nerfBars(root);
@@ -1899,11 +1945,11 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   if (style === 'utility' && !race && !sport) addTreadPlates(root, MAT);
 
   // Handlebars.
-  const bars = buildHandlebars(dashStyle, cfg, chokeStyle, driveSwitch, style === 'grizzly' ? 'grizzly' : bayou ? 'bayou' : blaster ? 'blaster' : racer ? 'racer' : null);
-  if (chokeStyle === 'plunger') (blaster ? buildCarbPlunger : buildChokePlunger)(root, bars.userData.chokeGroup);
+  const bars = buildHandlebars(dashStyle, cfg, chokeStyle, driveSwitch, style === 'grizzly' ? 'grizzly' : bayou ? 'bayou' : blaster ? 'blaster' : racer ? 'racer' : junior ? 'junior' : null);
+  if (chokeStyle === 'plunger') (blaster || junior ? buildCarbPlunger : buildChokePlunger)(root, bars.userData.chokeGroup);
   if (sport) {
     // Motocross bars with a padded crossbar, ahead of the dash so it doesn't block the display. (The Blaster's hoop is made with its V: addBlasterBars.)
-    if (!blaster && !racer) {
+    if (!blaster && !racer && !junior) {
       for (const s of [-1, 1]) tube([s * 0.2, 0.065, -0.01], [s * 0.17, 0.18, 0.08], 0.01, MAT.alloy, bars);
       tube([-0.17, 0.18, 0.08], [0.17, 0.18, 0.08], 0.011, MAT.alloy, bars);
       const pad = add(new THREE.CapsuleGeometry(0.02, 0.13, 4, 10).rotateZ(Math.PI / 2), MAT.plastic, bars, 'barPad');
@@ -1912,7 +1958,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     // A pod stands on the crossbar pad, leaning back towards the rider.
     const mount = new THREE.Object3D();
     mount.name = 'podMount';
-    mount.position.set(0, blaster || racer ? blasterCross().y + 0.02 : 0.2, blaster || racer ? blasterCross().z : 0.08);
+    mount.position.set(0, blaster || racer || junior ? blasterCross().y + 0.02 : 0.2, blaster || racer || junior ? blasterCross().z : 0.08);
     mount.rotation.x = 0.35;
     bars.add(mount);
     bars.userData.podMount = mount;
@@ -1937,6 +1983,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   if (bayou) addBayouBarParts(bars, MAT);
   if (blaster) addBlasterBars(bars, MAT, lensMat);
   if (racer) addRacerBars(bars, MAT, lensMat);
+  if (junior) addBlasterBars(bars, MAT, lensMat, { lamp: false, lights: false });
   quad.userData.dash = bars.userData.dash;
   quad.userData.podMount = bars.userData.podMount;
   bars.position.set(0, barsY(style), 0.46);
@@ -1981,7 +2028,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
 
   // Wheels sit outside the body so they don't rock with it.
   for (const w of WHEELS) {
-    const width = w.front ? 0.22 : sport ? 0.29 : style === 'utility' ? 0.23 : 0.25; // the Foreman's rears are not much wider than its fronts
+    const width = junior ? (w.front ? JUNIOR_TYRES.front : JUNIOR_TYRES.rear) : w.front ? 0.22 : sport ? 0.29 : style === 'utility' ? 0.23 : 0.25; // the Foreman's rears are not much wider than its fronts
     const wheel = buildWheel(w, width, style, cfg);
     wheel.name = w.name;
     quad.add(wheel);
