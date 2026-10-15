@@ -92,6 +92,23 @@ describe('the Blaster body numbers', () => {
   });
 });
 
+describe('the Blaster nose against the wings and the springs', () => {
+  it('stands over the front shocks’ tops and reaches the wings’ inner edges, so neither is left standing off it', () => {
+    const SHOCK_TOP = 0.68; // addShock's top mount in quadModel.js, at x 0.15 either side
+    const at = (z) => {
+      const i = BLASTER_NOSE.findIndex((st) => st.z >= z);
+      const [a, b] = [BLASTER_NOSE[i - 1], BLASTER_NOSE[i]];
+      const k = (z - a.z) / (b.z - a.z);
+      return { y1: a.y1 + (b.y1 - a.y1) * k, w: a.w + (b.w - a.w) * k };
+    };
+    const shockZ = BLASTER_WHEELS.zFront - 0.04;
+    expect(at(shockZ).y1).toBeGreaterThan(SHOCK_TOP + 0.02);
+    for (const z of [BLASTER_WHEELS.zFront - 0.05, BLASTER_WHEELS.zFront, BLASTER_WHEELS.zFront + 0.15]) {
+      expect(at(z).w / 2, `nose half width at z ${z}`).toBeGreaterThan(BLASTER_FENDERS.front.width[0] + 0.01);
+    }
+  });
+});
+
 describe('the Blaster exhaust', () => {
   const E = BLASTER_EXHAUST;
   const rear = BLASTER_FENDERS.rear;
