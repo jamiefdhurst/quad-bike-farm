@@ -6,7 +6,7 @@ import * as THREE from 'three';
 // at 1.15, so they don't look small beside the girls), so what is compared is shape, not size: every measure over the wheelbase.
 
 export const REAL_SIZES = {
-  red: { like: 'Honda TRX300FW Fourtrax 4x4', length: 1895, width: 1105, height: 1095, wheelbase: 1210, track: 830, tyre: 610 },
+  red: { like: 'Honda TRX300FW Fourtrax 4x4', length: 1895, width: 1105, height: 1095, wheelbase: 1210, track: 880, tyre: 610 },
   blue: { like: 'Yamaha YFM400 Kodiak', length: 1985, width: 1140, height: 1155, wheelbase: 1230, track: 860, tyre: 635 },
   loan: { like: 'Yamaha YFM400 Kodiak, newer', length: 1985, width: 1140, height: 1155, wheelbase: 1230, track: 860, tyre: 635 },
   green: { like: 'Kawasaki KLF300 Bayou 4x4', length: 1930, width: 1100, height: 1120, wheelbase: 1175, track: 840, tyre: 610 },
@@ -92,6 +92,6 @@ export function proportionErrors(measured, real) {
 }
 
 /** The vehicles a detail item has brought into proportion; tests/proportions.test.js holds each within `PROPORTION_TOLERANCE`. */
-export const IN_PROPORTION = [];
+export const IN_PROPORTION = ['red'];
 
 export const PROPORTION_TOLERANCE = 0.08;

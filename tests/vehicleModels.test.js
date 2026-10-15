@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import fs from 'node:fs';
 import * as THREE from 'three';
 import { buildAllModels, triangles } from './helpers/vehicleModels.js';
@@ -80,5 +80,17 @@ describe('vehicle models', () => {
       expect(pts.some((p) => p.r === TOUCH_ROLES.seat.r), id).toBe(true);
       if (spec.car || spec.landRover || spec.tractor) expect(pts.some((p) => p.r === TOUCH_ROLES.knob.r), id).toBe(true);
     }
+  });
+});
+
+describe('the red quad’s Foreman fenders', () => {
+  it('stop short of the tyres at the ends, so the front of the front tyre and the back of the rear one show', async () => {
+    const { FOREMAN } = await import('../src/vehicle/quadModel.js');
+    const { WHEELS } = await import('../src/vehicle/quadPhysics.js');
+    const front = WHEELS.find((w) => w.front);
+    const rear = WHEELS.find((w) => !w.front);
+    expect(FOREMAN.front.to).toBeLessThan(front.z + 0.3);
+    expect(FOREMAN.rear.to).toBeGreaterThan(rear.z - 0.3);
+    expect(FOREMAN.archR).toBeGreaterThan(0.3); // the arch clears the 0.3 m tyre all round
   });
 });
