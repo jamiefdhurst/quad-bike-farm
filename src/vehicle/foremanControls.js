@@ -254,13 +254,13 @@ export function buildDriveSwitch(bars, MAT, at = [-0.19, 0.068, -0.03]) {
   for (let i = 0; i < 5; i++) ribs.push(strip(new THREE.BoxGeometry(0.026, 0.0016, 0.0022)).translate(0, 0.0072, -0.014 + i * 0.007));
   rocker.add(new THREE.Mesh(mergeGeometries(ribs), MAT.rubber));
   const label = labelMaterial(0.04, 0.066, 4200, (g, W, H, px) => {
-    put(g, W, H, px, '2WD', 0, 0.0285, 0.0075, { rot: 0 });
-    put(g, W, H, px, '4WD', 0, -0.0285, 0.0075, { rot: 0 });
+    put(g, W, H, px, '2WD', 0, 0.0285, 0.0055, { rot: 0 }); // small, and in from the housing's rounded ends, up against the rocker
+    put(g, W, H, px, '4WD', 0, -0.0285, 0.0055, { rot: 0 });
   });
   const lp = new THREE.Mesh(new THREE.PlaneGeometry(0.04, 0.066), label);
   lp.rotation.x = -Math.PI / 2;
   lp.rotation.z = Math.PI; // read from the rider's side
-  lp.position.set(at[0], at[1] + 0.0132, at[2]);
+  lp.position.set(at[0], at[1] + 0.0131, at[2]);
   bars.add(lp);
   return rocker;
 }
