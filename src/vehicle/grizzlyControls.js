@@ -64,16 +64,16 @@ export function buildGrizzlyPod(MAT) {
   const dots = [];
   for (let i = 0; i < 3; i++) for (let j = 0; j < 5; j++) dots.push(strip(new THREE.CylinderGeometry(0.0013, 0.0013, 0.0014, 6)).rotateX(Math.PI / 2).translate((i - 1) * 0.0065, (j - 2) * 0.0085, 0.0105));
   lights.add(new THREE.Mesh(mergeGeometries(dots), new THREE.MeshStandardMaterial({ color: 0xc9cac6, roughness: 0.5 })));
-  // The choke lever, hanging from the pod's underside a little left of the middle: a tapered black stalk with a ridged paddle at its tip.
+  // The choke lever, hanging from the pod's underside at its right, clear of the buttons: a tapered black stalk with a ridged paddle at its tip.
   // It pivots at the top and the quad swings it about X (pulled towards the rider, +Z here, to apply the choke).
   const choke = new THREE.Group();
   choke.name = 'chokeLever';
   choke.userData.keep = true;
-  choke.position.set(-0.008, -P.h / 2 - 0.016, 0.012);
+  choke.position.set(0.0215, -P.h / 2 - 0.016, 0.012); // to the right of the stop and start buttons, so it never swings across them
   pod.add(choke);
   const path = [[0, 0, 0], [0, -0.016, 0.002], [0, -0.03, 0.006], [0, -0.042, 0.012]];
   choke.add(new THREE.Mesh(sweepGeometry(path, (t) => 0.0042 - 0.0008 * t, { radial: 8 }), MAT.frame));
-  rb(0.015, 0.012, 0.008, 0.003, MAT.frame, 0, -0.047, 0.014, choke, 'chokeLeverKnob', 1).rotation.x = -0.4;
+  rb(0.013, 0.012, 0.008, 0.003, MAT.frame, 0, -0.047, 0.014, choke, 'chokeLeverKnob', 1).rotation.x = -0.4;
   const ribs = [];
   for (let i = 0; i < 4; i++) ribs.push(strip(new THREE.BoxGeometry(0.013, 0.0016, 0.0016)).translate(0, -0.044 - i * 0.0025, 0.0187));
   choke.add(new THREE.Mesh(mergeGeometries(ribs), MAT.rubber));

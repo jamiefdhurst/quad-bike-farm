@@ -28,7 +28,7 @@ const rbox = (w, h, d, r, mat, x, y, z, parent, name) => {
 const tube = (a, b, r, mat, parent, radial = 8) => mesh(rod(a, b, r, radial), mat, parent);
 
 /** The face of the front deck: where the grille and lamps go. z is the face, y the middle of its height at the middle of the quad. */
-export const GRIZZLY_FACE = { z: GRIZZLY_DECK.front.zf, grilleY: 0.545, lampX: 0.37, lampY: 0.585 };
+export const GRIZZLY_FACE = { z: GRIZZLY_DECK.front.zf, grilleY: 0.545, lampX: 0.355, lampY: 0.585 };
 
 /**
  * The front: a steel bumper (a cross bar, two uprights from the rack's front rail, wings back to the fender faces) in black plastic
@@ -46,8 +46,8 @@ export function addGrizzlyFront(root, MAT, paint) {
   tube([P.right.lower[0], B.y, B.z - 0.04], [P.left.lower[0], B.y, B.z - 0.04], 0.012, MAT.alloy, root); // a second bar low behind the first, the way the real one braces
   // The end blocks, reaching back into the fender faces (the face is at GRIZZLY_FACE.z), and the bolts through them.
   for (const s of [-1, 1]) {
-    rbox(0.075, 0.12, 0.15, 0.016, MAT.plastic, s * (B.endX + 0.03), B.y + 0.005, GRIZZLY_FACE.z + 0.055, root, 'bumperBlock');
-    const bolts = boltsMesh([[s * (B.endX + 0.03), B.y + 0.03, 0], [s * (B.endX + 0.03), B.y - 0.03, 0]], [0, 0, 1], MAT.chrome, { size: 0.011, kind: 'hex', name: 'bumperBolts' });
+    rbox(0.075, 0.07, 0.15, 0.014, MAT.plastic, s * (B.endX + 0.03), B.y, GRIZZLY_FACE.z + 0.055, root, 'bumperBlock'); // its top is below the lamps' surrounds
+    const bolts = boltsMesh([[s * (B.endX + 0.03), B.y + 0.02, 0], [s * (B.endX + 0.03), B.y - 0.02, 0]], [0, 0, 1], MAT.chrome, { size: 0.011, kind: 'hex', name: 'bumperBolts' });
     bolts.position.z = GRIZZLY_FACE.z + 0.13;
     root.add(bolts);
   }

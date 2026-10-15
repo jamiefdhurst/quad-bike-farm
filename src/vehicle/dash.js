@@ -148,9 +148,9 @@ export function grizzlyGear(s) {
 function buildGrizzly() {
   const group = new THREE.Group();
   group.name = 'dash';
-  const O = { ox: 165, oy: 62 };
-  housing(group, { x: 64, y: 10, w: 202, h: 104, r: 14, ...O, material: charcoal });
-  const face = mmPanel({ x: 64, y: 10, w: 202, h: 104, ...O });
+  const O = { ox: 180, oy: 62 };
+  housing(group, { x: 64, y: 10, w: 232, h: 104, r: 14, ...O, material: charcoal });
+  const face = mmPanel({ x: 64, y: 10, w: 232, h: 104, ...O });
   group.add(face.mesh);
   const gate = changeGate();
   const LCD_BACKLIT = { bg: '#5fcfcb', on: '#154850', ghost: '#55bfbb' }; // after a photo of the real one: a cyan backlight, dark teal digits
@@ -159,14 +159,14 @@ function buildGrizzly() {
     // The brow, and the black window round the whole instrument.
     ctx.fillStyle = '#202124';
     ctx.beginPath();
-    ctx.moveTo(96, 16);
-    ctx.lineTo(234, 16);
-    ctx.lineTo(228, 22);
-    ctx.lineTo(102, 22);
+    ctx.moveTo(100, 16);
+    ctx.lineTo(260, 16);
+    ctx.lineTo(254, 22);
+    ctx.lineTo(106, 22);
     ctx.fill();
     ctx.fillStyle = '#121314';
     ctx.beginPath();
-    ctx.roundRect(70, 24, 190, 84, 8);
+    ctx.roundRect(70, 24, 220, 84, 8);
     ctx.fill();
     // The two round buttons on the left (SELECT and RESET).
     ctx.fillStyle = '#1c1d1f';
@@ -178,36 +178,60 @@ function buildGrizzly() {
       ctx.fill();
       ctx.stroke();
     }
-    // The gear column: L, H, R and P in a pill, the current one a green lamp, and the diff lock lamp above it.
+    // The diff lock lamp in a chamfered window above the gear column, with its name beside it; the lamp glows amber when the lock is on.
+    ctx.strokeStyle = '#4a4d50';
+    ctx.lineWidth = 1;
+    ctx.fillStyle = '#17181a';
+    ctx.beginPath();
+    ctx.moveTo(103, 27);
+    ctx.lineTo(122, 27);
+    ctx.lineTo(126, 31);
+    ctx.lineTo(126, 40);
+    ctx.lineTo(122, 44);
+    ctx.lineTo(103, 44);
+    ctx.lineTo(99, 40);
+    ctx.lineTo(99, 31);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    if (L.diffLock) {
+      ctx.fillStyle = LAMP.amber;
+      ctx.globalAlpha = 0.3;
+      ctx.beginPath();
+      ctx.arc(112.5, 35.5, 8.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    ctx.fillStyle = L.diffLock ? LAMP.amber : '#3a3b3c';
+    ctx.beginPath();
+    ctx.arc(112.5, 35.5, 5, 0, Math.PI * 2);
+    ctx.fill();
+    text(ctx, 'DIFF.LOCK', 131, 31.5, 6.4, '#e2e2de', { weight: 'bold' });
+    // The gear column: L, H, R and P in a pill, the current one a green lamp.
     ctx.strokeStyle = '#3a3d40';
     ctx.lineWidth = 0.9;
     ctx.beginPath();
-    ctx.roundRect(103, 40, 18, 64, 6);
+    ctx.roundRect(103, 49, 19, 56, 6);
     ctx.stroke();
     [...'LHRP'].forEach((g, i) => {
       const lit = L.on && g === L.gear;
-      const gy = 52 + i * 15;
+      const gy = 59 + i * 13;
       if (lit) {
         ctx.fillStyle = LAMP.green;
         ctx.globalAlpha = 0.3;
         ctx.beginPath();
-        ctx.roundRect(100, gy - 9, 24, 18, 5);
+        ctx.roundRect(100.5, gy - 8, 24, 16, 5);
         ctx.fill();
         ctx.globalAlpha = 1;
         ctx.fillStyle = '#d6ffe0';
         ctx.beginPath();
-        ctx.roundRect(105, gy - 6, 14, 12, 3);
+        ctx.roundRect(105.5, gy - 5.5, 14, 11, 3);
         ctx.fill();
       }
-      text(ctx, g, 112, gy + 3.2, 9, lit ? '#0d3a1c' : '#8e9296', { align: 'center', weight: 'bold' });
+      text(ctx, g, 112.5, gy + 3.2, 9, lit ? '#0d3a1c' : '#8e9296', { align: 'center', weight: 'bold' });
     });
-    ctx.fillStyle = L.diffLock ? LAMP.amber : '#2a2b2c';
-    ctx.beginPath();
-    ctx.arc(108, 31, 4.5, 0, Math.PI * 2);
-    ctx.fill();
-    text(ctx, 'DIFF.LOCK', 115, 33, 5, '#e2e2de', { weight: 'bold' });
     // The LCD.
-    const [x, y, w, h] = [132, 36, 122, 66];
+    const [x, y, w, h] = [132, 38, 122, 64];
     const { on, ghost } = LCD_BACKLIT;
     ctx.fillStyle = '#2a2c2e';
     ctx.beginPath();
@@ -218,30 +242,30 @@ function buildGrizzly() {
     ctx.roundRect(x, y, w, h, 4);
     ctx.fill();
     if (s.ignition) {
-      segText(ctx, L.speed, x + w - 28, y + 5, 36, on, ghost);
-      text(ctx, 'mph', x + w - 5, y + 32, 6, on, { align: 'right', weight: 'bold' });
+      segText(ctx, L.speed, x + w - 28, y + 5, 34, on, ghost);
+      text(ctx, 'mph', x + w - 5, y + 31, 6, on, { align: 'right', weight: 'bold' });
       warnSymbol(ctx, 'temp', x + w - 12, y + 9, on, L.lamps.temp, 0.8, false);
       warnSymbol(ctx, 'fuel', x + 10, y + 9, on, L.lamps.fuel, 0.8, false);
       ctx.strokeStyle = ghost;
       ctx.lineWidth = 0.5;
       ctx.beginPath();
       ctx.moveTo(x + w - 20, y + 3);
-      ctx.lineTo(x + w - 20, y + 40);
+      ctx.lineTo(x + w - 20, y + 38);
       ctx.stroke();
-      segText(ctx, L.line[1], x + 54, y + 45, 10.5, on, ghost);
+      segText(ctx, L.line[1], x + 54, y + 43, 10.5, on, ghost);
       text(ctx, L.line[0], x + 6, y + h - 3, 5.6, on, { weight: 'bold' });
-      segText(ctx, L.hours, x + w - 5, y + 45, 10.5, on, ghost);
+      segText(ctx, L.hours, x + w - 5, y + 43, 10.5, on, ghost);
       text(ctx, 'HOUR', x + w - 5, y + h - 3, 5.6, on, { align: 'right', weight: 'bold' });
     } else {
-      segText(ctx, '88', x + w - 28, y + 5, 36, ghost);
+      segText(ctx, '88', x + w - 28, y + 5, 34, ghost);
     }
-    // The maker's round badge, bottom right, outside the LCD.
+    // The maker's round badge, on the right of the window beside the LCD.
     ctx.strokeStyle = '#9a9ea2';
     ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.arc(243, 94, 9, 0, Math.PI * 2);
+    ctx.arc(274, 70, 9, 0, Math.PI * 2);
     ctx.stroke();
-    text(ctx, 'T', 243, 98.4, 11, '#9a9ea2', { align: 'center', weight: 'bold' });
+    text(ctx, 'T', 274, 74.4, 11, '#9a9ea2', { align: 'center', weight: 'bold' });
   }
 
   return {

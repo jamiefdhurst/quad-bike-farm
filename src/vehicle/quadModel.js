@@ -20,7 +20,7 @@ import { treadTyre } from './detail/tread.js';
 import { buildLeftPod, buildBrakeLever, buildDriveSwitch, buildThumbThrottle, poseBarPod } from './foremanControls.js';
 import { addRackDetail, addGrille, addTreadPlates, addShiftLever, addBarCables, addDrumBrake, seatTape, addDecals } from './foremanDetail.js';
 import { DECK, deckGeometry, flareGeometry, bulkheadGeometry, topCoverGeometry, bodyTopY } from './foremanDeck.js';
-import { GRIZZLY_DECK, GRIZZLY_RACKS } from './grizzlyBody.js';
+import { GRIZZLY_DECK, GRIZZLY_RACKS, grizzlyLampOutline } from './grizzlyBody.js';
 import { buildGrizzlyPod } from './grizzlyControls.js';
 import { addGrizzlyFront, addGrizzlyRear, addGrizzlyDecals, addFrontBrake, addGrizzlyRackBlocks, GRIZZLY_FACE } from './grizzlyDetail.js';
 
@@ -564,8 +564,8 @@ function numberPlateTexture(text, { width = 128, height = 128, font = 'bold 96px
 // Lights ---------------------------------------------------------------------
 
 /** Round headlamp facing +Z: bezel cup, reflector and a domed lens. */
-function roundLamp(parent, x, y, z, r, lensMat, bezelMat, name) {
-  latheZ([[r * 0.7, -0.05], [r * 1.05, -0.035], [r * 1.2, -0.005], [r * 1.24, 0.004], [r * 1.12, 0.01], [r * 1.0, 0.006]], bezelMat, x, y, z, parent, 20);
+function roundLamp(parent, x, y, z, r, lensMat, bezelMat, name, bare = false) {
+  if (!bare) latheZ([[r * 0.7, -0.05], [r * 1.05, -0.035], [r * 1.2, -0.005], [r * 1.24, 0.004], [r * 1.12, 0.01], [r * 1.0, 0.006]], bezelMat, x, y, z, parent, 20);
   latheZ([[r * 0.95, 0.0], [r * 0.5, -0.022], [0.01, -0.03]], MAT.reflector, x, y, z, parent, 16);
   const R = r / Math.sin(0.55);
   const lens = new THREE.SphereGeometry(R, 20, 4, 0, Math.PI * 2, 0, 0.55);
@@ -1254,7 +1254,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   const quad = new THREE.Group();
   quad.name = 'quad';
   const paint = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.3, metalness: 0.0, side: THREE.DoubleSide });
-  const lensMat = new THREE.MeshStandardMaterial({ color: 0x2c302c, roughness: 0.08, metalness: 0.2, emissive: 0x000000 });
+  const lensMat = new THREE.MeshStandardMaterial({ color: style === 'grizzly' ? 0x93a6b0 : 0x2c302c, roughness: 0.08, metalness: 0.2, emissive: 0x000000 }); // the Grizzly's is a clear lens you can see into
   const seatMat =
     style === 'utility2'
       ? new THREE.MeshStandardMaterial({ color: 0x3b3e42, roughness: 0.55 })
@@ -1346,10 +1346,13 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     // corners, the grille between them with the steel bumper below (grizzlyDetail.js), the black dome round the steering column, and the
     // tail lamp panel on the rear deck's face.
     for (const s of [-1, 1]) {
-      // A round black surround, a few millimetres proud of the face, and the lamp in it.
-      const ring = add(new THREE.CylinderGeometry(0.066, 0.068, 0.014, 24).rotateX(Math.PI / 2), MAT.plastic, root, 'headlightSurround');
-      ring.position.set(s * GRIZZLY_FACE.lampX, GRIZZLY_FACE.lampY, GRIZZLY_FACE.z);
-      roundLamp(root, s * GRIZZLY_FACE.lampX, GRIZZLY_FACE.lampY, GRIZZLY_FACE.z + 0.006, 0.05, lensMat, MAT.plastic, s > 0 ? 'headlightLeft' : 'headlightRight');
+      // An angled black surround on the face (a wedge, taller on the outside), and a bare round lens
+      // in it with no bezel of its own.
+      const outline = grizzlyLampOutline().map(([u, v]) => new THREE.Vector2(s * (GRIZZLY_FACE.lampX + u), GRIZZLY_FACE.lampY + v));
+      if (s < 0) outline.reverse();
+      const surround = add(new THREE.ExtrudeGeometry(new THREE.Shape(outline), { depth: 0.014, bevelEnabled: false }).translate(0, 0, GRIZZLY_FACE.z - 0.006), MAT.plastic, root, 'headlightSurround');
+      surround.geometry.computeVertexNormals();
+      roundLamp(root, s * GRIZZLY_FACE.lampX, GRIZZLY_FACE.lampY, GRIZZLY_FACE.z + 0.014, 0.036, lensMat, MAT.plastic, s > 0 ? 'headlightLeft' : 'headlightRight', true);
     }
     addGrizzlyFront(root, MAT, paint);
     addGrizzlyRear(root, MAT);

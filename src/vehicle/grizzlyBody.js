@@ -46,3 +46,8 @@ export function bumperPoints(B = GRIZZLY_BUMPER) {
   });
   return { left: side(1), right: side(-1) };
 }
+
+/** The headlight surround's outline on the face, as [u, v] from the lamp's middle (u outwards, v up): a wedge that is taller on the outside, its bottom edge sloping down and its top up as they go out. */
+export function grizzlyLampOutline() {
+  return [[-0.075, -0.036], [0.08, -0.045], [0.08, 0.045], [-0.075, 0.03]];
+}
