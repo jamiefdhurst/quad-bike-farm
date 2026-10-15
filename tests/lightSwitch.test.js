@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { LightSwitch, LIGHT_MODES, lightLook, lightLamps, DEFAULT_LIGHT_SWITCH_PARAMS as P } from '../src/vehicle/lightSwitch.js';
+import { LightSwitch, LIGHT_MODES, SIMPLE_LIGHT_MODES, lightLook, lightLamps, DEFAULT_LIGHT_SWITCH_PARAMS as P } from '../src/vehicle/lightSwitch.js';
 import { UTV_SPEC } from '../src/vehicle/quadSpecs.js';
 import { forwardGearShown } from '../src/vehicle/dashState.js';
 
@@ -59,5 +59,22 @@ describe('the UTV', () => {
     expect(forwardGearShown({ reverse: true, neutral: false })).toBe('R');
     expect(forwardGearShown({ reverse: false, neutral: true })).toBe('N');
     expect(forwardGearShown({ reverse: false, neutral: false })).toBe('F');
+  });
+});
+
+describe('a plain on / off switch (the yellow quad’s)', () => {
+  it('goes off, on (dipped), off, and never to main beam', () => {
+    const sw = new LightSwitch('low', SIMPLE_LIGHT_MODES);
+    expect(sw.cycle()).toBe('off');
+    expect(sw.cycle()).toBe('low');
+    expect(sw.cycle()).toBe('off');
+    expect(sw.set('high')).toBe('off'); // not a position it has
+    expect(sw.set('low')).toBe('low');
+  });
+
+  it('leaves the three-way switch as it was', () => {
+    const sw = new LightSwitch('low');
+    expect(sw.modes).toEqual(LIGHT_MODES);
+    expect(sw.cycle()).toBe('high');
   });
 });

@@ -27,19 +27,24 @@ export const LIGHT_SWITCH_PARAM_RANGES = {
 
 export const LIGHT_SWITCH_PARAMS = { ...DEFAULT_LIGHT_SWITCH_PARAMS }; // shared by the UTV (and anything else that gets the switch), registered once
 
+/** The positions of a plain on / off switch (the yellow quad's): lights off, or on at the dipped beam. */
+export const SIMPLE_LIGHT_MODES = ['off', 'low'];
+
 export class LightSwitch {
-  constructor(mode = 'off') {
-    this.mode = LIGHT_MODES.includes(mode) ? mode : 'off';
+  /** `modes` is the positions the switch has, in the order the key goes through them (a plain switch has only off and dipped). */
+  constructor(mode = 'off', modes = LIGHT_MODES) {
+    this.modes = modes;
+    this.mode = modes.includes(mode) ? mode : 'off';
   }
 
-  /** The key: off, then dipped, then main beam, then off again. Returns the new mode. */
+  /** The key: off, then dipped, then main beam, then off again (a plain switch: off, on, off). Returns the new mode. */
   cycle() {
-    this.mode = LIGHT_MODES[(LIGHT_MODES.indexOf(this.mode) + 1) % LIGHT_MODES.length];
+    this.mode = this.modes[(this.modes.indexOf(this.mode) + 1) % this.modes.length];
     return this.mode;
   }
 
   set(mode) {
-    if (LIGHT_MODES.includes(mode)) this.mode = mode;
+    if (this.modes.includes(mode)) this.mode = mode;
     return this.mode;
   }
 }

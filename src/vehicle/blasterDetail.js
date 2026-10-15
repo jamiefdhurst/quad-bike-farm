@@ -124,6 +124,17 @@ export function addBlasterBars(bars, MAT, lensMat) {
   rbox(L.w - 0.025, L.h - 0.025, 0.012, 0.01, MAT.reflector, 0, L.y, L.z + L.d / 2 - 0.004, bars);
   const lens = rbox(L.w - 0.025, L.h - 0.025, 0.012, 0.012, lensMat, 0, L.y, L.z + L.d / 2 + 0.003, bars, 'headlight');
   lens.scale.z = 0.8;
+  // The lights switch: a small housing clamped on the left of the level run, with a rocker on it (the quad's own pose finds it by name): top
+  // pressed in for off, the bottom for on.
+  const sx = 0.13;
+  const sy = V.centreY + 0.018;
+  rbox(0.036, 0.024, 0.034, 0.007, MAT.plastic, sx, sy, barAt(sx).z - 0.003, bars, 'lightsSwitchHousing');
+  const rocker = new THREE.Group();
+  rocker.name = 'lightsRocker';
+  rocker.userData.keep = true;
+  rocker.position.set(sx, sy + 0.012, barAt(sx).z - 0.003);
+  bars.add(rocker);
+  rbox(0.024, 0.007, 0.026, 0.003, new THREE.MeshStandardMaterial({ color: 0x25272a, roughness: 0.6 }), 0, 0.002, 0, rocker, 'lightsRockerCap');
   // The cables: the brake's on the left from the lever perch, the throttle's on the right from its housing, both down to the column's foot.
   const py = barAt(V.perchX).y;
   mesh(cableGeometry([[V.perchX, py + 0.012, -0.02], [0.22, -0.03, 0.02], [0.12, -0.07, 0.04], [0.06, -0.1, 0.03], [0.04, -0.14, 0.01]], 0.0042, { sag: 0.03 }), MAT.rubber, bars, 'brakeCable');

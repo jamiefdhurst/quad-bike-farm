@@ -68,7 +68,7 @@ export class QuadUnit {
       chainDrive: !!spec.chainDrive,
       reverseStyle: spec.reverseStyle,
       chokeStyle: spec.chokeStyle,
-      barLights: !!spec.barLights,
+      barLights: spec.barLights || false, // true: the pod's off / dipped / main beam; 'switch': a plain on / off switch
       tapStyle: spec.tapStyle,
       drive: spec.driveSwitch ? { lock: !!spec.diffLock } : null,
       controlsParams: { ...DEFAULT_CONTROLS_PARAMS },

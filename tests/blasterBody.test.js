@@ -148,6 +148,13 @@ describe('the yellow quad’s spec', () => {
     expect(chokeReach('plunger', 5).ok).toBe(false);
   });
 
+  it('has a plain on / off lights switch on P, and its pull-start is on O now (P is the lights on every other vehicle)', async () => {
+    expect(yellow.barLights).toBe('switch');
+    const { RADIAL_ITEMS } = await import('../src/input/gamepad.js');
+    expect(RADIAL_ITEMS.find((i) => i.label === 'Pull-start').key).toBe('KeyO');
+    expect(RADIAL_ITEMS.find((i) => i.label === 'Lights').key).toBe('KeyP');
+  });
+
   it('leaves the kids’ quad on the old sport body', () => {
     expect([...QUAD_SPECS, ...EXTRA_SPECS].find((s) => s.id === 'kids').style).toBe('sport');
   });
@@ -185,6 +192,19 @@ describe('the yellow quad’s model', () => {
     expect(cross.max.y - bars.position.y, 'the crossbar is no higher than the grips').toBeLessThan(BLASTER_VBARS.grip[1]);
     expect(box('lampMount').expandByScalar(0.004).intersectsBox(box('headlightHousing'))).toBe(true);
     expect(box('lampMount').expandByScalar(0.004).intersectsBox(box('clampBlock'))).toBe(true);
+  });
+
+  it('has a lights rocker on the left bar that a plain switch can pose, with no stop rocker or start button', async () => {
+    const rocker = yellow.model.getObjectByName('lightsRocker');
+    expect(rocker).toBeTruthy();
+    expect(yellow.model.getObjectByName('stopRocker')).toBeFalsy();
+    const { poseBarPod, POD } = await import('../src/vehicle/foremanControls.js');
+    poseBarPod(yellow.model, { lights: 'off' });
+    expect(rocker.rotation.x).toBeCloseTo(-POD.rock, 6);
+    poseBarPod(yellow.model, { lights: 'low' });
+    expect(rocker.rotation.x).toBeCloseTo(POD.rock, 6);
+    expect(rocker.position.x).toBeGreaterThan(0); // on the left
+    expect(new THREE.Box3().setFromObject(yellow.model.getObjectByName('lightsSwitchHousing')).intersectsBox(new THREE.Box3().setFromObject(yellow.model.getObjectByName('clampBlock')).expandByScalar(0.1))).toBe(true);
   });
 
   it('has no number plate: the old sport nose’s round plate and its backing are gone', () => {

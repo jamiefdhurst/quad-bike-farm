@@ -138,6 +138,7 @@ export const QUAD_SPECS = [
     style: 'blaster',
     dashStyle: 'blaster',
     reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
+    barLights: 'switch', // a plain on / off rocker on the left bar (P: off, dipped; lightSwitch.js), starting on
     chokeStyle: 'plunger', // a knob on the side of the carb, which wants it all but stopped to reach
     tapStyle: 'carbLeft', // where the fuel tap sits: the tank's lower edge, beside the carb
     hoursRange: [150, 600], // engine hours showing when the game starts

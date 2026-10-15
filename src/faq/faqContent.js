@@ -227,7 +227,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'The battery is flat. Now what?',
-        a: `Three ways out. The yellow, orange, kids' quad, mini moto and old three-wheeler have a pull-start: with the ignition on, hold <kbd>P</kbd>
+        a: `Three ways out. The yellow, orange, kids' quad, mini moto and old three-wheeler have a pull-start: with the ignition on, hold <kbd>O</kbd>
           for about half a second to a second and let go to yank (too short is weak, too long is botched). Or fetch the jump leads from the
           workbench, clamp the flat one (<kbd>E</kbd>) and then a running one (<kbd>E</kbd>), parked nose to nose since they only reach about
           4.5 m. The Series III Land Rover has a starting handle too (the 200TDi hasn't: it wants the leads). Running an engine charges its battery again, but by the revs: about ten minutes revved, much longer at idle. The leads are slow: a flat battery wants a minute or two joined to a running quad before it will turn the engine. Or lift the battery out, charge it on the workbench charger and put it back (see the battery questions below). A jumped petrol engine
@@ -1612,6 +1612,13 @@ export const FAQ_SECTIONS = [
         tip: 'P on the red quad: dipped, main beam, off. Its pod\'s yellow and white rockers show which.',
       },
       {
+        q: 'How do I switch the yellow quad\'s lights on and off?',
+        a: `Press <kbd>P</kbd> while you ride it. It has a plain switch, not the others' three-way one: on (dipped) or off, and
+          it starts on. The little rocker on the left bar, just in from the brake lever, is the switch, and it rocks as you press. With the lights off the tail
+          lamp is off too. The pull-start is on <kbd>O</kbd>, not <kbd>P</kbd>, so the two don't clash.`,
+        tip: 'P switches the yellow quad\'s lights on and off. Its pull-start is on O.',
+      },
+      {
         q: 'How do I put the blue quad\'s lights on main beam, or off, and where is its choke?',
         a: `Press <kbd>P</kbd> while you ride it: dipped, main beam, off, dipped again, as on the red. The grey rocker on the switch pod on the left bar is the lights,
           with HI at the top, LO in the middle and OFF at the bottom, and it moves as you press. The red switch under it is the engine stop and the grey button is
@@ -1804,7 +1811,7 @@ export const VEHICLE_NOTES = {
   },
   yellow: {
     blurb: 'The Tamura Hornet 200, a Blaster-style two-stroke sport quad: the wheels are the edge of it, the plastics are small and the engine is out in the open. Weak low down, then comes on hard around 6,000 rpm and revs past 10,000, trailing blue smoke.',
-    tips: ['Loads up its plug if left idling: blip the throttle.', 'Pre-mix only.', 'Room for one on a slim pad at the back.', 'The choke knob and the fuel tap are on the left of the carb: stop to reach the choke.', 'Only a key on the bars: no lamps, no gauges.'],
+    tips: ['Loads up its plug if left idling: blip the throttle.', 'Pre-mix only.', 'Room for one on a slim pad at the back.', 'The choke knob and the fuel tap are on the left of the carb: stop to reach the choke.', 'Only a key on the bars: no lamps, no gauges.', 'P is a plain lights switch (the left bar); the pull-start is O.'],
   },
   green: {
     blurb: 'The Kawasaki-style workhorse: older, heavier and slower, with a big lazy four-stroke that idles low and lumpy and pulls hard low down.',

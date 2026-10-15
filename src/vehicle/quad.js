@@ -7,7 +7,7 @@ import { unscaleAnchors } from './unscaleAnchors.js';
 import { Drivetrain } from './drivetrain.js';
 import { QuirkSet } from './quirks.js';
 import { headlightLook, taillightLevel } from './headlight.js';
-import { LightSwitch, lightLook, lightLamps } from './lightSwitch.js';
+import { LightSwitch, LIGHT_MODES, SIMPLE_LIGHT_MODES, lightLook, lightLamps } from './lightSwitch.js';
 import { poseBarPod, poseThumbThrottle, POD } from './foremanControls.js';
 import { Indicators, INDICATOR_PARAMS } from './indicators.js';
 import { SeatBelts, BELT_SEATS, beltLampMode, beltLampLit } from './seatBelts.js';
@@ -64,6 +64,7 @@ const GEAR_KEYS = { Digit1: 1, Digit2: 2, Digit3: 3, Digit4: 4, Digit5: 5, Digit
 const HAND_THROTTLE_UP_KEY = 'KeyQ';
 const HAND_THROTTLE_DOWN_KEY = 'KeyZ';
 const STOP_KNOB_KEY = 'KeyO'; // not X (the tow chain and winch) or C (look back)
+const PULL_KEY = 'KeyO'; // the recoil pull-start's: P is the lights (the tractor, which has the stop knob on O, has no pull-start)
 // The Land Rover's hand throttle, a knob on the dash: Q and Z are its choke, so the brackets open and close it.
 const HAND_KNOB_OUT_KEY = 'BracketRight';
 const HAND_KNOB_IN_KEY = 'BracketLeft';
@@ -105,7 +106,7 @@ export class Quad {
     this.utv = utv;
     this.hornHeld = false; // set by the game while the horn sounds (the UTV's wheel pad sinks)
     this.radio = null; // the Land Rovers' and the girls' cars' radio, fitted by the unit (radio.js)
-    this.barLights = barLights ? new LightSwitch('low') : null; // the red's lights and HI / LO rockers on the bars: P cycles them, starting dipped (headlights follow the engine as they always did; the switch only turns them off or to main beam)
+    this.barLights = barLights ? new LightSwitch('low', barLights === 'switch' ? SIMPLE_LIGHT_MODES : LIGHT_MODES) : null; // the red's lights and HI / LO rockers on the bars: P cycles them, starting dipped (headlights follow the engine as they always did; the switch only turns them off or to main beam)
     this.lights = lightSwitch ? new LightSwitch() : null; // the UTV's and the Land Rovers' three-way light switch: off, dipped, main beam (lightSwitch.js)
     this.signals = lightSwitch ? new Indicators() : null; // and their indicators and hazards (indicators.js)
     this.signalClick = null; // the relay's tick: 'on' or 'off' on the frame the lamp changes (the game plays it and clears it)
@@ -739,7 +740,7 @@ export class Quad {
       if (c.stall && this.engine.stopKnob()) this.creepStalled = true;
     }
 
-    // The recoil pull-start (the two-strokes): hold P to draw the cord, let go to yank. The Land Rover's starting handle works the same
+    // The recoil pull-start (the two-strokes): hold O to draw the cord, let go to yank. The Land Rover's starting handle works the same
     // way, but only from the front of it, and not while you're nursing your hand.
     // A girl swinging it (helperPull) holds it her own way (helperGrip): Jess wraps her thumb round it, Amy never does.
     const byYou = !!this.remoteInput && this.atCrank && this.crank?.ready && this.remoteInput.isDown('KeyP');
@@ -748,7 +749,7 @@ export class Quad {
       ? byYou || byHer // the Series' starting handle, from the front on foot (its lights are on P too, but only from the seat)
       : this.lights
       ? false // P is the UTV's and the 200TDi's light switch
-      : this.input ? this.input.isDown('KeyP') : (!!this.remoteInput && this.remoteInput.isDown('KeyP')) || this.helperPull;
+      : this.input ? this.input.isDown(PULL_KEY) : (!!this.remoteInput && this.remoteInput.isDown(PULL_KEY)) || this.helperPull;
     if (pullDown) {
       this.pullHeld += dt;
       this.pullByHer = !!this.crank && !byYou;

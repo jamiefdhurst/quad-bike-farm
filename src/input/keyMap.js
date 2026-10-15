@@ -31,11 +31,11 @@ export const ACTIONS = [
   { group: 'Engine and gearbox', keys: [
     ['KeyK', 'Ignition, key'],
     ['KeyR', 'Crank (hold)'],
-    ['KeyP', 'Pull-start, lights'],
+    ['KeyP', 'Lights, starting handle'],
     ['KeyQ', 'More choke, hand throttle'],
     ['KeyZ', 'Less choke'],
     ['KeyF', 'Fuel tap'],
-    ['KeyO', 'Stop knob (tractor)'],
+    ['KeyO', 'Pull-start, stop knob (tractor)'],
     ['KeyU', 'Diff lock'],
     ['Digit0', 'Neutral'],
     ['Digit1', 'Gear 1'],
