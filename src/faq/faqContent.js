@@ -184,6 +184,18 @@ export const FAQ_SECTIONS = [
         tip: 'Cold engine? Choke right out (Q), fuel tap on (F), key (K), then crank (R) in short goes.',
       },
       {
+        q: 'Where is the choke on each quad?',
+        a: `Look at the left bar. On the red and the green it is a ridged black slider in a slot on the switch housing, under the CHOKE label: <kbd>Q</kbd>
+          slides it towards the label and <kbd>Z</kbd> eases it back. The blue's is a lever hanging under its switch housing, and the others have a
+          knob or a lever of their own, so stand at the quad and watch what moves when you hold <kbd>Q</kbd>.`,
+      },
+      {
+        q: 'How do I read the green quad’s speedo?',
+        a: `It is a round dial on a bracket over the bars. The white figures round the edge are miles an hour, up to 40; the blue ring inside is
+          kilometres an hour. The window at the top is the odometer, and the little lamps under the needle's hub are N for neutral and R for
+          reverse, with the key beside them. It has no rev counter, fuel gauge or temperature gauge.`,
+      },
+      {
         q: 'It coughed and died going up a steep bank. Why?',
         a: `With the tank nearly empty, the petrol slops to the back of it on a steep climb and runs away from the tap, so the engine starves.
           The lower the tank, the gentler the bank that does it. It picks up again when the quad levels out (give it a moment to refill),
@@ -1794,7 +1806,7 @@ export const VEHICLE_NOTES = {
   },
   green: {
     blurb: 'The Kawasaki-style workhorse: older, heavier and slower, with a big lazy four-stroke that idles low and lumpy and pulls hard low down.',
-    tips: ['Has the winch: X to take the hook.', 'Takes an age to warm up and wants plenty of choke.', 'Always four-wheel drive.'],
+    tips: ['Has the winch: X to take the hook.', 'Takes an age to warm up and wants plenty of choke.', 'The choke slides on the switch housing on the left bar.', 'Always four-wheel drive.'],
   },
   orange: {
     blurb: 'An LT250R-style two-stroke race quad: lighter and lower than the yellow, revs to 11,500 and smokes like a chimney.',
