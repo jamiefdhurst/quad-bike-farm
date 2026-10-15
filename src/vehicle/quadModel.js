@@ -648,10 +648,44 @@ function sideSlab(points, t, bevel = 0.004) {
   return g;
 }
 
-/** One wing's side: the plate with its arch cut out, as [z, y] points, running down to `lowEdge` at its inboard-most end. */
-function wingSide(W, cz, lowEdge) {
-  const arch = archPoints(cz, 0.3, FOREMAN.archR, W.from, W.to, 16);
-  return [[W.from, lowEdge], ...arch, [W.to, W.top], [W.from, W.top]];
+/**
+ * One wing's side: the plate with its arch cut out, as [z, y] points. Its inboard end (towards the middle of the quad) is a curve,
+ * rounded off at the top and sweeping down in a tail to the footboard, not a straight edge.
+ */
+function wingSide(W, cz) {
+  const d = Math.sign(W.to - W.from);
+  const z0 = W.from + d * 0.03; // where the arch starts, just outboard of the tail
+  const arch = archPoints(cz, 0.3, FOREMAN.archR, z0, W.to, 16);
+  const end = [];
+  const P = [[W.from + d * 0.1, W.top], [W.from - d * 0.04, 0.54], [z0, 0.36]]; // a quadratic Bezier: top, bulge, foot of the tail
+  for (let i = 0; i <= 8; i++) {
+    const t = i / 8;
+    end.push([(1 - t) * (1 - t) * P[0][0] + 2 * (1 - t) * t * P[1][0] + t * t * P[2][0], (1 - t) * (1 - t) * P[0][1] + 2 * (1 - t) * t * P[1][1] + t * t * P[2][1]]);
+  }
+  return [...arch, [W.to, W.top], ...end];
+}
+
+/** A flat shape in plan, [x, z] points, extruded `t` down from y = 0. */
+function planSlab(points, t, bevel = 0.003) {
+  const shape = new THREE.Shape(points.map(([x, z]) => new THREE.Vector2(x, z)));
+  const g = new THREE.ExtrudeGeometry(shape, { depth: t, bevelEnabled: bevel > 0, bevelSize: bevel, bevelThickness: bevel, bevelSegments: 1, curveSegments: 1 });
+  g.rotateX(Math.PI / 2);
+  return g;
+}
+
+/** A rectangle in plan, x0..x1 by z0..z1, with its z0 corners rounded to radius r. */
+function flarePlan(x0, x1, z0, z1, r) {
+  const d = Math.sign(z1 - z0);
+  const out = [[x0, z1], [x1, z1]];
+  for (let i = 0; i <= 6; i++) {
+    const a = (i / 6) * (Math.PI / 2);
+    out.push([x1 - r + r * Math.cos(a), z0 + d * r - d * r * Math.sin(a)]);
+  }
+  for (let i = 0; i <= 6; i++) {
+    const a = Math.PI / 2 + (i / 6) * (Math.PI / 2);
+    out.push([x0 + r + r * Math.cos(a), z0 + d * r - d * r * Math.sin(a)]);
+  }
+  return out;
 }
 
 /**
@@ -659,19 +693,25 @@ function wingSide(W, cz, lowEdge) {
  * its edge rounded over at the end and a face dropping from it. `ends` is [[z, drop], ...] from the body end to the face, `roll`
  * how far the middle sits below the wings.
  */
-function deckGeometry(ends, topY, half, roll) {
+function deckGeometry(ends, topY, half, roll, { cut = 0.12, chamfer = 0.09 } = {}) {
   const xs = [];
   const N = 40;
   for (let i = 0; i <= N; i++) xs.push(-half + (2 * half * i) / N);
   const ease = (k) => k * k * (3 - 2 * k);
   const pos = [];
   const idx = [];
-  for (const [z, d] of ends) {
+  const dir = Math.sign(ends[ends.length - 1][0] - ends[0][0]);
+  ends.forEach(([z, d], row) => {
     for (const x of xs) {
       const k = Math.min(1, Math.max(0, (Math.abs(x) - 0.22) / 0.18));
-      pos.push(x, topY + d - roll * (1 - ease(k)), z);
+      let zz = z;
+      let y = topY + d - roll * (1 - ease(k));
+      // The back edge's outer corners are rounded off in plan, and the face's bottom corners are angled up (not square).
+      if (row === 0) zz += dir * (cut - Math.sqrt(Math.max(0, cut * cut - Math.max(0, Math.abs(x) - (half - cut)) ** 2)));
+      if (row === ends.length - 1) y += chamfer * ease(Math.min(1, Math.max(0, (Math.abs(x) - 0.36) / 0.2)));
+      pos.push(x, y, zz);
     }
-  }
+  });
   const m = xs.length;
   for (let i = 0; i < ends.length - 1; i++) {
     for (let j = 0; j < m - 1; j++) {
@@ -701,12 +741,13 @@ function foremanFenders(root, paint) {
     const tag = w.name.slice(-2);
     // The black flare: a plate for the outside with the arch cut out and a flare down towards the footboard behind the wheel, and a
     // strip along the top edge. All of the wing's outside is black plastic; the red is only the top.
-    const side = add(sideSlab(wingSide(W, w.z, 0.36), 0.016), MAT.plastic, root, `fender_${tag}`);
+    const side = add(sideSlab(wingSide(W, w.z), 0.016), MAT.plastic, root, `fender_${tag}`);
     side.position.set(s * (F.outer - 0.008), 0, 0);
-    const len = Math.abs(W.to - W.from) + 0.02;
-    rbox(0.095, 0.014, len, 0.006, MAT.plastic, s * (F.outer - 0.0475 + 0.008), W.top + 0.002, (W.to + W.from) / 2 + Math.sign(W.to) * 0.01, root, `flare_${tag}`);
+    const d = Math.sign(W.to - W.from);
+    const flare = add(planSlab(flarePlan(-0.0475, 0.0475, W.from - d * 0.02, W.to + d * 0.01, 0.045), 0.014), MAT.plastic, root, `flare_${tag}`);
+    flare.position.set(s * (F.outer - 0.0395), W.top + 0.009, 0);
     // A raised lip round the arch, 12 mm proud of the plate, clipped to it.
-    const inner = archPoints(w.z, 0.3, F.archR, W.from, W.to, 16);
+    const inner = archPoints(w.z, 0.3, F.archR, W.from + d * 0.03, W.to, 16);
     const strip = [];
     const edge = [];
     for (const [z, y] of inner) {
@@ -1348,8 +1389,10 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     for (const s of [-1, 1]) squareLamp(root, s * 0.25, 0.635, 0.838, 0.13, 0.065, lensMat, s > 0 ? 'headlightLeft' : 'headlightRight');
     pipe([[0.2, 0.4, 0.82], [0.25, 0.44, 0.95], [-0.25, 0.44, 0.95], [-0.2, 0.4, 0.82]], 0.017, MAT.frame, root, { bend: 0.07 });
     rbox(0.5, 0.085, 0.05, 0.015, MAT.plastic, 0, 0.535, 0.845, root);
-    for (let k = 0; k < 3; k++) rbox(0.4, 0.007, 0.006, 0.002, MAT.hole, 0, 0.515 + k * 0.02, 0.873, root, undefined, 1);
-    // Red dome blending the front deck up into the tank cover round the column, and a black rubber shroud on the column itself.
+    // Between the lamps, a body-coloured grille of two horizontal slats over the dark of the cooler, to let the air in.
+    rbox(0.27, 0.07, 0.012, 0.004, MAT.hole, 0, 0.635, 0.84, root, undefined, 1);
+    for (const y of [0.615, 0.655]) rbox(0.29, 0.02, 0.024, 0.008, paint, 0, y, 0.85, root, 'grilleSlat');
+    // Red dome blending the front deck up into the tank cover round the column, and a red shroud on the column itself.
     add(
       loftGeometry([
         { z: 0.42, w: 0.26, y0: 0.71, y1: 0.8 },
@@ -1361,7 +1404,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
       root,
       'columnDome',
     );
-    const shroud = add(new THREE.CylinderGeometry(0.034, 0.062, 0.2, 16, 1, true), MAT.plastic, root, 'columnShroud');
+    const shroud = add(new THREE.CylinderGeometry(0.034, 0.062, 0.2, 16, 1, true), paint, root, 'columnShroud');
     shroud.position.set(0, 0.55 + 0.45 * 0.72, 0.62 - 0.16 * 0.72);
     shroud.rotation.x = Math.atan2(0.16, 0.45) * -1;
     // The tail lamp on its bracket under the rack, in a black bezel with a reflector either side.
@@ -1376,10 +1419,9 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     // Tow hitch: a drawbar out of the frame with a ball on a plate.
     if (style === 'utility') {
       // The Foreman's: a steel plate bolted to the rear cross-tube and the cradle rails, a drawbar back from its foot, and gussets.
-      rbox(0.14, 0.34, 0.016, 0.004, MAT.frame, 0, 0.57, -0.985, root);
-      tube([-0.19, 0.66, -0.985], [0.19, 0.66, -0.985], 0.014, MAT.frame, root, 6);
+      rbox(0.14, 0.22, 0.016, 0.004, MAT.frame, 0, 0.5, -0.985, root); // stops below the tail lamp, so the lamp shows
       rbox(0.08, 0.02, 0.12, 0.004, MAT.frame, 0, 0.405, -1.04, root, undefined, 1);
-      for (const s of [-1, 1]) tube([s * 0.19, 0.5, -0.9], [s * 0.05, 0.41, -0.99], 0.011, MAT.frame, root, 6);
+      for (const s of [-1, 1]) tube([s * 0.19, 0.66, -0.98], [s * 0.065, 0.52, -0.985], 0.011, MAT.frame, root, 6); // braces from the rail ends to the plate
       for (const s of [-1, 1]) tube([s * 0.045, 0.4, -0.99], [s * 0.045, 0.4, -1.04], 0.008, MAT.frame, root, 6);
       tube([0, 0.4, -1.075], [0, 0.435, -1.075], 0.012, MAT.chrome, root);
       add(new THREE.SphereGeometry(0.024, 14, 10), MAT.chrome, root).position.set(0, 0.46, -1.075);
@@ -1529,6 +1571,8 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     pillionGrips(root, 0.25, 0.99, -0.55, false);
   }
   if (style === 'utility') {
+    // The pillion's seat wears where she slides on, as the rider's does (riderAnchor gives that one).
+    quad.userData.touchWear = [-1, 1].map((s) => ({ at: [s * 0.17, 0.9, -0.5], r: 0.13, amount: 0.7 }));
     // The Foreman's seat falls away towards the back: the front is up and the rear down, about the rider's hips.
     const tilt = new THREE.Matrix4().makeTranslation(0, 0.9, -0.18).multiply(new THREE.Matrix4().makeRotationX(-0.07)).multiply(new THREE.Matrix4().makeTranslation(0, -0.9, 0.18));
     for (const n of ['seat', 'pillionSeat', 'pillionBase']) root.getObjectByName(n)?.geometry.applyMatrix4(tilt);
