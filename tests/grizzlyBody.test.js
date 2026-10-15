@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { GRIZZLY_DECK, GRIZZLY_RACKS, GRIZZLY_BUMPER, bumperPoints } from '../src/vehicle/grizzlyBody.js';
+import { GRIZZLY_DECK, GRIZZLY_RACKS, GRIZZLY_BUMPER, bumperPoints, grizzlyLampOutline } from '../src/vehicle/grizzlyBody.js';
 import { deckRows, deckY } from '../src/vehicle/foremanDeck.js';
 import { WHEELS } from '../src/vehicle/quadPhysics.js';
 
@@ -57,5 +57,21 @@ describe('the Grizzly pod’s lights rocker', () => {
     expect(rocker.rotation.x).toBe(0);
     poseBarPod(model, { lights: 'off' });
     expect(rocker.rotation.x).toBeCloseTo(POD.rock, 6);
+  });
+});
+
+describe('the Grizzly headlight surround', () => {
+  it('is an almond: close round the lens at the inner end, pointing out and down, and clear of the bumper’s end blocks and the face’s roll', () => {
+    const pts = grizzlyLampOutline();
+    const us = pts.map((p) => p[0]);
+    const vs = pts.map((p) => p[1]);
+    expect(Math.min(...us)).toBeLessThan(-0.036); // it holds the 36 mm lens
+    expect(Math.min(...us)).toBeGreaterThan(-0.06); // but only just, at the inner end
+    expect(Math.max(...us)).toBeGreaterThan(0.12); // and reaches well out the other way
+    const tip = pts.reduce((a, p) => (p[0] > a[0] ? p : a));
+    expect(tip[1]).toBeLessThan(-0.02); // to a point below the lens's middle
+    expect(Math.max(...vs)).toBeLessThanOrEqual(0.045); // its top stays on the face's flat
+    const B = GRIZZLY_BUMPER;
+    expect(0.59 + Math.min(...vs)).toBeGreaterThan(B.y + 0.03 + 0.005); // above the end blocks' tops (60 mm tall about the bar)
   });
 });

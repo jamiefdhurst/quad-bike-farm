@@ -1346,10 +1346,11 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     // corners, the grille between them with the steel bumper below (grizzlyDetail.js), the black dome round the steering column, and the
     // tail lamp panel on the rear deck's face.
     for (const s of [-1, 1]) {
-      // An angled black surround on the face (a wedge, taller on the outside), and a bare round lens
-      // in it with no bezel of its own.
-      const outline = grizzlyLampOutline().map(([u, v]) => new THREE.Vector2(s * (GRIZZLY_FACE.lampX + u), GRIZZLY_FACE.lampY + v));
-      if (s < 0) outline.reverse();
+      // A black almond-shaped surround on the face, pointing out and down towards the fender's corner, and a bare round lens in it with
+      // no bezel of its own.
+      const ctrl = grizzlyLampOutline().map(([u, v]) => new THREE.Vector3(s * (GRIZZLY_FACE.lampX + u), GRIZZLY_FACE.lampY + v, 0));
+      if (s < 0) ctrl.reverse();
+      const outline = new THREE.CatmullRomCurve3(ctrl, true, 'centripetal').getPoints(48).slice(0, -1).map((p) => new THREE.Vector2(p.x, p.y));
       const surround = add(new THREE.ExtrudeGeometry(new THREE.Shape(outline), { depth: 0.014, bevelEnabled: false }).translate(0, 0, GRIZZLY_FACE.z - 0.006), MAT.plastic, root, 'headlightSurround');
       surround.geometry.computeVertexNormals();
       roundLamp(root, s * GRIZZLY_FACE.lampX, GRIZZLY_FACE.lampY, GRIZZLY_FACE.z + 0.014, 0.036, lensMat, MAT.plastic, s > 0 ? 'headlightLeft' : 'headlightRight', true);
