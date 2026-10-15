@@ -29,11 +29,11 @@ export const BLASTER_SECTION = [[0, 0.05], [0.04, 0.01], [0.12, 0.0], [0.5, -0.0
 
 /** The nose between the front fenders and the tail between the rear ones, as `loftGeometry` stations (full width w). */
 export const BLASTER_NOSE = [
-  { z: 0.34, w: 0.3, y0: 0.6, y1: 0.73 },
-  { z: 0.55, w: 0.4, y0: 0.5, y1: 0.69 },
-  { z: 0.8, w: 0.46, y0: 0.46, y1: 0.62 },
-  { z: 0.93, w: 0.42, y0: 0.46, y1: 0.58 },
-  { z: 0.975, w: 0.32, y0: 0.48, y1: 0.55 },
+  { z: 0.34, w: 0.3, y0: 0.58, y1: 0.7 },
+  { z: 0.55, w: 0.4, y0: 0.47, y1: 0.63 },
+  { z: 0.8, w: 0.46, y0: 0.43, y1: 0.55 },
+  { z: 0.93, w: 0.42, y0: 0.43, y1: 0.51 },
+  { z: 0.975, w: 0.32, y0: 0.44, y1: 0.49 },
 ];
 export const BLASTER_TAIL = [
   { z: -0.76, w: 0.3, y0: 0.7, y1: 0.8 },
@@ -43,7 +43,7 @@ export const BLASTER_TAIL = [
 ];
 
 /** The headlamp and the mesh vent on the nose's face (z is the face's plane at the lamp's height). */
-export const BLASTER_FACE = { z: 0.962, ventY: 0.515, ventW: 0.15, ventH: 0.05 };
+export const BLASTER_FACE = { z: 0.962, ventY: 0.47, ventW: 0.15, ventH: 0.04 };
 
 /**
  * The headlamp fitting, in the bars' frame: a black housing sitting straight on the clamp at the bars' middle (a small mounting block between
