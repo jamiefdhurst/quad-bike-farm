@@ -73,7 +73,8 @@ export const QUAD_SPECS = [
     driveSwitch: true,
     diffLock: true, // and a diff lock button
     reverseStyle: 'button', // where the reverse is and what it takes to use it (controls.js)
-    chokeStyle: 'plunger', // where the choke is and what it takes to reach it
+    chokeStyle: 'thumb', // where the choke is and what it takes to reach it: the lever hanging from the left switch pod (grizzlyControls.js)
+    barLights: true, // a lights rocker on the bars' pod (P cycles off, dipped, main beam; lightSwitch.js), starting dipped
     tapStyle: 'right', // where the fuel tap sits
     hoursRange: [400, 1100], // engine hours showing when the game starts
     odoRange: [1000, 2750], // odometer miles showing when the game starts

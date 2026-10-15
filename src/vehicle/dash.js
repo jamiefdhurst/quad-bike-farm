@@ -11,8 +11,8 @@ import {
 // instruments are on the two accessory pods (dashPod.js). Layouts and colours follow docs/briefs/dashes/ (see DECISIONS.md, "The dashes").
 //
 //   foreman:   red. A Honda Foreman-style cover: a rectangular speedo with hour and odometer drums, N / R / OIL lamps and the key.
-//   grizzly:   blue. A Yamaha Grizzly-style pod around a grey-green LCD: fuel and temperature bars, gear letter, speed, clock and a
-//              line that cycles trip, odometer and hours.
+//   grizzly:   blue. A Grizzly-style pod around a cyan-backlit LCD: a big speed, the odometer (or the trip) and the hours, a thermometer
+//              and a fuel pump symbol, a column of L, H, R and P lamps, a DIFF.LOCK lamp and two round buttons.
 //   kodiak:    loan quad. The same idea, newer: a wider, glossier pod with a cooler LCD and a gear column.
 //   bayou:     green. Only a little cover on the headlight nacelle with N and R lamps and the key.
 //   blaster:   yellow. The back of a headlamp shell on the bars with a red power lamp and the key.
@@ -140,6 +140,11 @@ function buildForeman() {
 
 // The two LCDs --------------------------------------------------------------------------
 
+/** The Grizzly's gear column letter that is lit: its selector has L, H, R and P, so forward is H, reverse is R and stopped in neutral is P. */
+export function grizzlyGear(s) {
+  return s.reverse ? 'R' : s.neutral ? 'P' : 'H';
+}
+
 function buildGrizzly() {
   const group = new THREE.Group();
   group.name = 'dash';
@@ -148,83 +153,105 @@ function buildGrizzly() {
   const face = mmPanel({ x: 64, y: 10, w: 202, h: 104, ...O });
   group.add(face.mesh);
   const gate = changeGate();
+  const LCD_BACKLIT = { bg: '#5fcfcb', on: '#154850', ghost: '#55bfbb' }; // after a photo of the real one: a cyan backlight, dark teal digits
 
   function draw(ctx, s, L) {
-    // The brow, and the black window around the LCD.
+    // The brow, and the black window round the whole instrument.
     ctx.fillStyle = '#202124';
     ctx.beginPath();
     ctx.moveTo(96, 16);
     ctx.lineTo(234, 16);
-    ctx.lineTo(228, 24);
-    ctx.lineTo(102, 24);
+    ctx.lineTo(228, 22);
+    ctx.lineTo(102, 22);
     ctx.fill();
-    ctx.fillStyle = '#151617';
+    ctx.fillStyle = '#121314';
     ctx.beginPath();
-    ctx.roundRect(103, 26, 124, 72, 6);
+    ctx.roundRect(70, 24, 190, 84, 8);
     ctx.fill();
-    const [x, y, w, h] = [109, 31, 112, 62];
-    const { on, ghost } = LCD;
-    ctx.fillStyle = LCD.bg;
+    // The two round buttons on the left (SELECT and RESET).
+    ctx.fillStyle = '#1c1d1f';
+    ctx.strokeStyle = '#2c2e30';
+    ctx.lineWidth = 1;
+    for (const by of [44, 82]) {
+      ctx.beginPath();
+      ctx.arc(84, by, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+    // The gear column: L, H, R and P in a pill, the current one a green lamp, and the diff lock lamp above it.
+    ctx.strokeStyle = '#3a3d40';
+    ctx.lineWidth = 0.9;
     ctx.beginPath();
-    ctx.roundRect(x, y, w, h, 3);
+    ctx.roundRect(103, 40, 18, 64, 6);
+    ctx.stroke();
+    [...'LHRP'].forEach((g, i) => {
+      const lit = L.on && g === L.gear;
+      const gy = 52 + i * 15;
+      if (lit) {
+        ctx.fillStyle = LAMP.green;
+        ctx.globalAlpha = 0.3;
+        ctx.beginPath();
+        ctx.roundRect(100, gy - 9, 24, 18, 5);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#d6ffe0';
+        ctx.beginPath();
+        ctx.roundRect(105, gy - 6, 14, 12, 3);
+        ctx.fill();
+      }
+      text(ctx, g, 112, gy + 3.2, 9, lit ? '#0d3a1c' : '#8e9296', { align: 'center', weight: 'bold' });
+    });
+    ctx.fillStyle = L.diffLock ? LAMP.amber : '#2a2b2c';
+    ctx.beginPath();
+    ctx.arc(108, 31, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    text(ctx, 'DIFF.LOCK', 115, 33, 5, '#e2e2de', { weight: 'bold' });
+    // The LCD.
+    const [x, y, w, h] = [132, 36, 122, 66];
+    const { on, ghost } = LCD_BACKLIT;
+    ctx.fillStyle = '#2a2c2e';
+    ctx.beginPath();
+    ctx.roundRect(x - 3, y - 3, w + 6, h + 6, 6);
+    ctx.fill();
+    ctx.fillStyle = LCD_BACKLIT.bg;
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, 4);
     ctx.fill();
     if (s.ignition) {
-      const c = segmentCounts(s, 6, 5);
-      text(ctx, 'E', x + 4, y + 8, 3.6, on);
-      for (let i = 0; i < 6; i++) {
-        ctx.fillStyle = i < c.fuel ? on : ghost;
-        ctx.fillRect(x + 9 + i * 6, y + 4, 4.6, 5);
-      }
-      text(ctx, 'F', x + 46, y + 8, 3.6, on);
-      const tx = x + w - 44;
-      text(ctx, 'C', tx, y + 8, 3.6, on);
-      for (let i = 0; i < 5; i++) {
-        ctx.fillStyle = i < c.temp ? on : ghost;
-        ctx.fillRect(tx + 5 + i * 6, y + 4, 4.6, 5);
-      }
-      text(ctx, 'H', tx + 36, y + 8, 3.6, on);
-      // Gear letter in a box.
-      ctx.strokeStyle = on;
-      ctx.lineWidth = 0.6;
-      ctx.strokeRect(x + 4, y + 14, 11, 14);
-      text(ctx, gearShown(s), x + 9.5, y + 25, 10, on, { align: 'center', weight: 'bold' });
-      text(ctx, 'MPH', x + w / 2 + 17, y + 35, 4.4, on);
-      segText(ctx, L.speed, x + w / 2 + 14, y + 18, 18, on, ghost);
-      segText(ctx, s.clock, x + w - 5, y + 16, 5.2, on);
-      // Trip, odometer and hours in turn.
+      segText(ctx, L.speed, x + w - 28, y + 5, 36, on, ghost);
+      text(ctx, 'mph', x + w - 5, y + 32, 6, on, { align: 'right', weight: 'bold' });
+      warnSymbol(ctx, 'temp', x + w - 12, y + 9, on, L.lamps.temp, 0.8, false);
+      warnSymbol(ctx, 'fuel', x + 10, y + 9, on, L.lamps.fuel, 0.8, false);
       ctx.strokeStyle = ghost;
       ctx.lineWidth = 0.5;
       ctx.beginPath();
-      ctx.moveTo(x + 3, y + h - 13);
-      ctx.lineTo(x + w - 3, y + h - 13);
+      ctx.moveTo(x + w - 20, y + 3);
+      ctx.lineTo(x + w - 20, y + 40);
       ctx.stroke();
-      text(ctx, L.line[0], x + 5, y + h - 4, 4.2, on, { weight: 'bold' });
-      segText(ctx, L.line[1], x + w - 5, y + h - 9.1, 5.6, on);
+      segText(ctx, L.line[1], x + 54, y + 45, 10.5, on, ghost);
+      text(ctx, L.line[0], x + 6, y + h - 3, 5.6, on, { weight: 'bold' });
+      segText(ctx, L.hours, x + w - 5, y + 45, 10.5, on, ghost);
+      text(ctx, 'HOUR', x + w - 5, y + h - 3, 5.6, on, { align: 'right', weight: 'bold' });
     } else {
-      segText(ctx, '88', x + w / 2 + 14, y + 18, 18, ghost);
+      segText(ctx, '88', x + w - 28, y + 5, 36, ghost);
     }
-    // Lamps either side, and the two buttons under the LCD.
-    glyphLetter(ctx, 86, 44, LAMP.green, 'N', L.lamps.n, 9);
-    glyphLetter(ctx, 86, 72, LAMP.amber, 'R', L.lamps.r, 9);
-    warnSymbol(ctx, 'temp', 244, 44, LAMP.red, L.lamps.temp);
-    warnSymbol(ctx, 'fuel', 244, 72, LAMP.amber, L.lamps.fuel);
-    ctx.fillStyle = '#444';
+    // The maker's round badge, bottom right, outside the LCD.
+    ctx.strokeStyle = '#9a9ea2';
+    ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.roundRect(146, 100, 14, 6, 2);
-    ctx.roundRect(170, 100, 14, 6, 2);
-    ctx.fill();
-    text(ctx, 'SELECT', 153, 111, 3.2, '#aaa', { align: 'center' });
-    text(ctx, 'RESET', 177, 111, 3.2, '#aaa', { align: 'center' });
+    ctx.arc(243, 94, 9, 0, Math.PI * 2);
+    ctx.stroke();
+    text(ctx, 'T', 243, 98.4, 11, '#9a9ea2', { align: 'center', weight: 'bold' });
   }
 
   return {
     group,
     mount: podMount(group, 0, 0.06, 0, 0.75),
     update(s) {
-      const c = segmentCounts(s, 6, 5);
-      const line = bottomLine(s, 4, 5);
-      const L = { lamps: lampStates(s), speed: speedText(s.speedMph), line };
-      const key = lookKey(s, [L.speed, c.fuel, c.temp, s.reverse, s.neutral, s.clock, line.join(' ')]);
+      const odoTrip = cycleIndex(s.seconds ?? 0, 2); // the left reading alternates between the odometer and the trip
+      const line = odoTrip ? ['TRIP', counterText(s.tripMiles, 4)] : ['ODO', counterText(s.odoMiles, 5)];
+      const L = { on: !!s.ignition, lamps: lampStates(s), speed: speedText(s.speedMph), line, hours: counterText(s.hours, 4), gear: grizzlyGear(s), diffLock: s.diffLock === true };
+      const key = lookKey(s, [L.speed, L.gear, L.diffLock, line.join(' '), L.hours]);
       if (gate(key)) face.redraw((ctx) => draw(ctx, s, L));
     },
   };

@@ -469,6 +469,8 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
     tube([0, 0, 0], [0, 0, 0.1], 0.005, MAT.chrome, choke);
     add(new THREE.SphereGeometry(0.019, 12, 8), CHOKE_KNOB, choke, 'chokeKnob').position.set(0, 0, -0.012);
     add(new THREE.CircleGeometry(0.0065, 10).rotateY(Math.PI), CHOKE_MARK, choke).position.set(0, 0, -0.0312); // the mark, on the end facing you
+  } else if (podStyle === 'grizzly' && chokeStyle === 'thumb') {
+    // the Grizzly's choke is the lever hanging from its pod, found below
   } else if (chokeStyle === 'thumb') {
     const chokeHousing = rbox(0.03, 0.026, 0.032, 0.008, MAT.plastic, 0.29, 0.07, -0.03, bars, 'chokeHousing');
     chokeHousing.rotation.y = 0.2;
@@ -486,6 +488,7 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
     pod.position.set(0.176, 0.048, -0.05);
     pod.rotation.set(0.6, Math.PI, 0);
     bars.add(pod);
+    if (chokeStyle === 'thumb') choke = pod.getObjectByName('chokeLever');
   }
   bars.userData.chokeGroup = choke;
 
@@ -588,27 +591,27 @@ function squareLamp(parent, x, y, z, w, h, lensMat, name) {
  * Tubular rack: a rounded hoop with cross slats, on legs down to the body.
  * `raised` adds a second hoop above, joined by uprights.
  */
-function rack(root, z0, z1, y, slats, legY, raised = 0, noLegs = false) {
+function rack(root, z0, z1, y, slats, legY, raised = 0, noLegs = false, mat = MAT.frame) {
   const W = 0.41;
   const dir = Math.sign(z1 - z0);
   const hoop = [[W, y, z0], [W, y, z1], [-W, y, z1], [-W, y, z0]];
-  pipe(hoop, 0.013, MAT.frame, root, { bend: 0.06, closed: true, steps: 5 });
+  pipe(hoop, 0.013, mat, root, { bend: 0.06, closed: true, steps: 5 });
   for (let i = 1; i < slats; i++) {
     const z = z0 + ((z1 - z0) * i) / slats;
-    tube([-W, y, z], [W, y, z], 0.0095, MAT.frame, root, 6);
+    tube([-W, y, z], [W, y, z], 0.0095, mat, root, 6);
   }
-  for (const x of [-0.16, 0.16]) tube([x, y - 0.004, z0], [x, y - 0.004, z1], 0.009, MAT.frame, root, 6);
+  for (const x of [-0.16, 0.16]) tube([x, y - 0.004, z0], [x, y - 0.004, z1], 0.009, mat, root, 6);
   // Points on the side rails just clear of the corner bends.
   const ends = [z0 + dir * 0.07, z1 - dir * 0.07];
   if (raised) {
-    pipe(hoop.map(([x, , z]) => [x, y + raised, z]), 0.011, MAT.frame, root, { bend: 0.06, closed: true, steps: 5 });
+    pipe(hoop.map(([x, , z]) => [x, y + raised, z]), 0.011, mat, root, { bend: 0.06, closed: true, steps: 5 });
     for (const s of [-1, 1]) {
-      for (const z of [...ends, (z0 + z1) / 2]) tube([s * W, y, z], [s * W, y + raised, z], 0.009, MAT.frame, root, 6);
+      for (const z of [...ends, (z0 + z1) / 2]) tube([s * W, y, z], [s * W, y + raised, z], 0.009, mat, root, 6);
     }
   }
   // Legs from the side rails down into the plastics.
   for (const s of noLegs ? [] : [-1, 1]) {
-    for (const z of ends) tube([s * W, y, z], [s * 0.26, legY, z], 0.011, MAT.frame, root, 6);
+    for (const z of ends) tube([s * W, y, z], [s * 0.26, legY, z], 0.011, mat, root, 6);
   }
 }
 
@@ -1343,8 +1346,10 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     // corners, the grille between them with the steel bumper below (grizzlyDetail.js), the black dome round the steering column, and the
     // tail lamp panel on the rear deck's face.
     for (const s of [-1, 1]) {
-      rbox(0.19, 0.12, 0.03, 0.03, MAT.plastic, s * GRIZZLY_FACE.lampX, GRIZZLY_FACE.lampY, GRIZZLY_FACE.z - 0.005, root, 'headlightPod');
-      roundLamp(root, s * GRIZZLY_FACE.lampX, GRIZZLY_FACE.lampY, GRIZZLY_FACE.z + 0.012, 0.047, lensMat, MAT.plastic, s > 0 ? 'headlightLeft' : 'headlightRight');
+      // A round black surround, a few millimetres proud of the face, and the lamp in it.
+      const ring = add(new THREE.CylinderGeometry(0.066, 0.068, 0.014, 24).rotateX(Math.PI / 2), MAT.plastic, root, 'headlightSurround');
+      ring.position.set(s * GRIZZLY_FACE.lampX, GRIZZLY_FACE.lampY, GRIZZLY_FACE.z);
+      roundLamp(root, s * GRIZZLY_FACE.lampX, GRIZZLY_FACE.lampY, GRIZZLY_FACE.z + 0.006, 0.05, lensMat, MAT.plastic, s > 0 ? 'headlightLeft' : 'headlightRight');
     }
     addGrizzlyFront(root, MAT, paint);
     addGrizzlyRear(root, MAT);
@@ -1437,8 +1442,9 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
       // the body is closed from the front deck to the rear one. Each panel's ends are the height of the deck beside it (so the deck runs
       // up into the panel with no step) and go down to the footboard where the wing walls meet them (they end 0.1 m short of the decks, where the walls' curved fillets take over); the engine shows under its middle.
       for (const s of [-1, 1]) {
-        const top = [0.2, 0.17, 0.12, 0.05, -0.05, -0.12, -0.17, -0.2].map((z) => [z, bodyTopY(z)]);
-        const panel = add(sideSlab([...top, [-0.2, 0.36], [-0.16, 0.41], [-0.1, 0.46], [0, 0.5], [0.1, 0.46], [0.16, 0.41], [0.2, 0.36]], 0.022, 0.006), style === 'grizzly' ? MAT.plastic : paint, root, 'sidePanel');
+        const e = style === 'grizzly' ? 0.225 : 0.2; // the Grizzly's black panels run 25 mm into the blue walls at the decks' ends, so no crack shows between them
+        const top = [e, 0.17, 0.12, 0.05, -0.05, -0.12, -0.17, -e].map((z) => [z, bodyTopY(z)]);
+        const panel = add(sideSlab([...top, [-e, 0.36], [-0.16, 0.41], [-0.1, 0.46], [0, 0.5], [0.1, 0.46], [0.16, 0.41], [e, 0.36]], 0.022, 0.006), style === 'grizzly' ? MAT.plastic : paint, root, 'sidePanel');
         panel.position.set(s * 0.255, 0, 0);
       }
       add(topCoverGeometry(style === 'grizzly' ? GRIZZLY_DECK : DECK), style === 'grizzly' ? MAT.plastic : paint, root, 'bodyTop'); // closes the top of the body between the decks, over the frame and the wing walls' fillets
@@ -1513,15 +1519,19 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     // bumper's mounts and the rear one braced down to the deck's back edge.
     const F = GRIZZLY_RACKS.front;
     const R = GRIZZLY_RACKS.rear;
-    rack(root, F.z0, F.z1, F.y, F.slats, 0.73, F.raised, true);
-    rack(root, R.z0, R.z1, R.y, R.slats, 0.79, R.raised, true);
-    addRackDetail(root, { z0: F.z0, z1: F.z1, y: F.y, slats: F.slats }, MAT);
-    addRackDetail(root, { z0: R.z0, z1: R.z1, y: R.y, slats: R.slats }, MAT);
+    // Powder-coated black, not bare steel: the wear layer fades it and grimes it, where bare steel would rust in every weld.
+    const rackMat = MAT.frame.clone();
+    rackMat.metalness = 0.2;
+    rackMat.roughness = 0.55;
+    rack(root, F.z0, F.z1, F.y, F.slats, 0.73, F.raised, true, rackMat);
+    rack(root, R.z0, R.z1, R.y, R.slats, 0.79, R.raised, true, rackMat);
+    addRackDetail(root, { z0: F.z0, z1: F.z1, y: F.y, slats: F.slats }, { ...MAT, frame: rackMat });
+    addRackDetail(root, { z0: R.z0, z1: R.z1, y: R.y, slats: R.slats }, { ...MAT, frame: rackMat });
     addGrizzlyRackBlocks(root, MAT);
     for (const s of [-1, 1]) {
-      for (const z of [0.55, 0.78]) tube([s * 0.41, F.y, z], [s * 0.41, 0.7, z], 0.011, MAT.frame, root, 6);
-      tube([s * 0.41, R.y, -0.84], [s * 0.41, 0.75, -0.84], 0.011, MAT.frame, root, 6);
-      tube([s * 0.41, R.y, -1.0], [s * 0.41, 0.76, -0.86], 0.011, MAT.frame, root, 6);
+      for (const z of [0.55, 0.78]) tube([s * 0.41, F.y, z], [s * 0.41, 0.7, z], 0.011, rackMat, root, 6);
+      tube([s * 0.41, R.y, -0.84], [s * 0.41, 0.75, -0.84], 0.011, rackMat, root, 6);
+      tube([s * 0.41, R.y, -1.0], [s * 0.41, 0.76, -0.86], 0.011, rackMat, root, 6);
     }
   } else if (style === 'utility2') {
     rack(root, 0.48, 0.98, 0.84, 6, 0.77, 0.06);

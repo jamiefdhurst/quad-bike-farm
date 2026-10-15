@@ -39,3 +39,23 @@ describe('the Grizzly body', () => {
     }
   });
 });
+
+describe('the Grizzly pod’s lights rocker', () => {
+  it('goes top in for HI, level for LO and bottom in for OFF when there is no separate HI / LO rocker', async () => {
+    const THREE = await import('three');
+    const { poseBarPod, POD } = await import('../src/vehicle/foremanControls.js');
+    const model = new THREE.Group();
+    for (const name of ['lightsRocker', 'stopRocker', 'startButton']) {
+      const o = new THREE.Object3D();
+      o.name = name;
+      model.add(o);
+    }
+    const rocker = model.getObjectByName('lightsRocker');
+    poseBarPod(model, { lights: 'high' });
+    expect(rocker.rotation.x).toBeCloseTo(-POD.rock, 6);
+    poseBarPod(model, { lights: 'low' });
+    expect(rocker.rotation.x).toBe(0);
+    poseBarPod(model, { lights: 'off' });
+    expect(rocker.rotation.x).toBeCloseTo(POD.rock, 6);
+  });
+});

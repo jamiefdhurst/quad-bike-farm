@@ -1598,6 +1598,15 @@ export const FAQ_SECTIONS = [
         tip: 'P on the red quad: dipped, main beam, off. Its pod\'s yellow and white rockers show which.',
       },
       {
+        q: 'How do I put the blue quad\'s lights on main beam, or off, and where is its choke?',
+        a: `Press <kbd>P</kbd> while you ride it: dipped, main beam, off, dipped again, as on the red. The grey rocker on the switch pod on the left bar is the lights,
+          with HI at the top, LO in the middle and OFF at the bottom, and it moves as you press. The red switch under it is the engine stop and the grey button is
+          the starter. The black lever hanging under the pod is the choke (<kbd>Q</kbd> and <kbd>Z</kbd>): it swings towards you as you apply it, and it is always in
+          reach on the move. The lamp column to the left of the display shows H for going, R in reverse and P stopped in neutral, and DIFF.LOCK lights when the lock
+          is on (<kbd>U</kbd>). With the lights off the tail lamp is off too.`,
+        tip: 'P on the blue quad: dipped, main beam, off. The choke is the lever under the left pod.',
+      },
+      {
         q: 'How do I use the indicators and hazard lights?',
         a: `In the UTV, either Land Rover or the girls' cars with the key on: <kbd>,</kbd> is left, <kbd>.</kbd> is right and <kbd>=</kbd> is the hazards (both sides). There is also a stalk on the left of the steering column that drops down for left and goes up for right, and a red hazard button on the dash that flashes with the hazards. The lamps at the
           front and back of that side flash orange and the relay ticks. The Series III has one green "<- ->" lamp on its dash; the UTV and the 200TDi have a separate arrow for each side. Press the same key again to switch them off. A left or right

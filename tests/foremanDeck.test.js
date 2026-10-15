@@ -55,7 +55,7 @@ describe('the Foreman’s decks', () => {
         const b = g.boundingBox;
         const xs = side > 0 ? [b.min.x, b.max.x] : [-b.max.x, -b.min.x];
         expect(xs[0]).toBeCloseTo(0.266, 6); // it starts at the side panel's outer face, so there is no slot between the panel and the wing
-        expect(xs[1]).toBeCloseTo(deckRows(DECK, spec)[0].half + 0.006, 6); // and ends on the black skirt's edge
+        expect(xs[1]).toBeCloseTo(deckRows(DECK, spec)[0].half + 0.012, 6); // and ends on the skirt's outer face, at its own x
         expect(b.min.y).toBeCloseTo(DECK.lowEdge, 6); // down to the footboard, where the skirt's tail ends
         expect(b.max.y).toBeGreaterThan(spec.top - 0.1); // and up to the deck
         expect(Math.min(Math.abs(b.max.z - spec.z0), Math.abs(b.min.z - spec.z0))).toBeLessThan(1e-6); // meeting the deck's end at the skirt

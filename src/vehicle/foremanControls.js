@@ -183,8 +183,12 @@ export function poseBarPod(model, { lights = 'low', keyOn = false, cranking = fa
     start: model.getObjectByName('startButton'),
   });
   if (!parts.lights) return;
-  parts.lights.rotation.x = lights === 'off' ? -POD.rock : POD.rock;
-  parts.beam.rotation.x = lights === 'high' ? -POD.rock : POD.rock;
+  if (parts.beam) {
+    parts.lights.rotation.x = lights === 'off' ? -POD.rock : POD.rock;
+    parts.beam.rotation.x = lights === 'high' ? -POD.rock : POD.rock;
+  } else {
+    parts.lights.rotation.x = lights === 'high' ? -POD.rock : lights === 'off' ? POD.rock : 0; // the blue's one rocker: HI at the top (top in), LO in the middle, OFF at the bottom
+  }
   parts.stop.rotation.y = keyOn ? 0.14 : -0.14;
   parts.start.userData.z0 ??= parts.start.position.z;
   parts.start.position.z = parts.start.userData.z0 - (cranking ? 0.004 : 0);

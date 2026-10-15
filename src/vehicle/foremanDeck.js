@@ -195,7 +195,7 @@ export function bulkheadGeometry(which, side, D = DECK, { xIn = 0.266, bottom = 
   const spec = D[which];
   const dir = Math.sign(spec.zf - spec.z0);
   const row = deckRows(D, spec)[0];
-  const xOut = row.half + 0.006;
+  const xOut = row.half + 0.012; // the skirt's own x there, so no slit shows between them
   // The path in plan, from the panel round the fillet and out to the skirt: [x, z].
   const path = [];
   const A = 6;
