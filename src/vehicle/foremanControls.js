@@ -183,7 +183,9 @@ export function poseBarPod(model, { lights = 'low', keyOn = false, cranking = fa
     start: model.getObjectByName('startButton'),
   });
   if (!parts.lights) return;
-  if (parts.beam) {
+  if (parts.lights.userData.sideways) {
+    parts.lights.rotation.y = lights === 'high' ? POD.rock : lights === 'off' ? -POD.rock : 0; // the Bayou's: OFF left, dipped in the middle, main beam right
+  } else if (parts.beam) {
     parts.lights.rotation.x = lights === 'off' ? -POD.rock : POD.rock;
     parts.beam.rotation.x = lights === 'high' ? -POD.rock : POD.rock;
   } else {

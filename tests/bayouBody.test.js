@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { BAYOU_DECK, BAYOU_RACKS, BAYOU_FACE, BAYOU_CAGE, cagePieces, rearFaceAt } from '../src/vehicle/bayouBody.js';
+import { BAYOU_DECK, BAYOU_RACKS, BAYOU_FACE, BAYOU_CAGE, cagePieces, rearFaceAt, BAYOU_TAIL_X } from '../src/vehicle/bayouBody.js';
 import { deckRows, deckY } from '../src/vehicle/foremanDeck.js';
 import { WHEELS } from '../src/vehicle/quadPhysics.js';
 import { QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
@@ -141,6 +141,18 @@ describe('the green quad’s model', () => {
     expect(lamps).toHaveLength(2);
     const xs = lamps.map((o) => green.model.worldToLocal(o.getWorldPosition(new (o.position.constructor)())).x);
     expect(xs[0] * xs[1]).toBeLessThan(0);
+    for (const x of xs) expect(Math.abs(x)).toBeGreaterThan(0.4); // out at the back's edges
+    expect(BAYOU_TAIL_X).toBeLessThan(BAYOU_DECK.half - 0.1);
+  });
+
+  it('rocks the lights switch left to right', async () => {
+    const { poseBarPod } = await import('../src/vehicle/foremanControls.js');
+    const r = green.model.getObjectByName('lightsRocker');
+    poseBarPod(green.model, { lights: 'off' });
+    const off = r.rotation.y;
+    poseBarPod(green.model, { lights: 'high' });
+    expect(r.rotation.y).toBeGreaterThan(off);
+    expect(r.rotation.x).toBe(0);
   });
 
   it('puts the pin through the drawbar’s hole', () => {

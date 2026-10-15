@@ -5,7 +5,7 @@ import { bentTube, rod } from './quadGeometry.js';
 import { boltsMesh } from './detail/fixings.js';
 import { cableGeometry } from './detail/cables.js';
 import { decalMesh, MAKER_FOR } from './detail/decals.js';
-import { BAYOU_DECK, BAYOU_FACE, BAYOU_CAGE, BAYOU_RACKS, cagePieces, rearFaceAt } from './bayouBody.js';
+import { BAYOU_DECK, BAYOU_FACE, BAYOU_CAGE, BAYOU_RACKS, BAYOU_TAIL_X, cagePieces, rearFaceAt } from './bayouBody.js';
 
 // The green quad's finer detail (TODO 90), from the shared kit and the photos in `.scratch/quads/ridgeback-quad/`: the grey nose cage
 // round two square headlights, the slatted grille and its badge, the winch's housing and roller fairlead, the tail lamp panel, the tow
@@ -144,10 +144,10 @@ export function addBayouRear(root, MAT) {
   // Two tail lamps, one each side, lying on the leaning face: each a black housing with the red lens on it and a reflector under it.
   const lampY = 0.665;
   for (const s of [-1, 1]) {
-    const f = rearFaceAt(lampY, 0.19);
+    const f = rearFaceAt(lampY, BAYOU_TAIL_X);
     const g = new THREE.Group();
     g.name = 'tailLampGroup';
-    g.position.set(s * 0.19, lampY, f.z);
+    g.position.set(s * BAYOU_TAIL_X, lampY, f.z);
     g.rotation.set(f.tilt, Math.PI, 0); // turned back, then up to lie on the face
     root.add(g);
     rbox(0.115, 0.075, 0.03, 0.012, MAT.plastic, 0, 0, 0.004, g, 'tailHousing');

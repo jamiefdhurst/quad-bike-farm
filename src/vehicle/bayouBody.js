@@ -18,6 +18,9 @@ export const BAYOU_DECK = {
   flareW: 0.1, // the black rubber strip along the top of each edge
 };
 
+/** How far out from the middle each tail lamp sits: at the back's outer edges. */
+export const BAYOU_TAIL_X = 0.43;
+
 /** The racks as the model has them: { z0, z1, y, slats, raised } (the front one's y and the rear one's are the fixed rackAnchor and mug heights). */
 export const BAYOU_RACKS = {
   front: { z0: 0.46, z1: 0.96, y: 0.84, slats: 6, raised: 0.045 },

@@ -52,6 +52,7 @@ export function buildBayouPod(MAT) {
   const lights = new THREE.Group();
   lights.name = 'lightsRocker';
   lights.position.set(0, 0.0305, front);
+  lights.userData.sideways = true; // this one rocks left to right (about the vertical), not up and down
   pod.add(lights);
   rb(0.052, 0.027, 0.011, 0.004, black, 0, 0, 0.0035, lights, 'lightsRockerCap');
   const dots = [];
