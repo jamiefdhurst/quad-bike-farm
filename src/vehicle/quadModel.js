@@ -17,6 +17,7 @@ import {
   sweepGeometry,
 } from './quadGeometry.js';
 import { treadTyre } from './detail/tread.js';
+import { addRackDetail, addGrille, addTreadPlates, addShiftLever, addBarCables, addDrumBrake, seatTape, addDecals } from './foremanDetail.js';
 import { DECK, deckGeometry, flareGeometry, bulkheadGeometry, topCoverGeometry, bodyTopY } from './foremanDeck.js';
 
 // Farm quad built from procedural parts. One group with named parts so it can
@@ -178,6 +179,7 @@ function buildWheel(w, width, style, cfg) {
   add(rim.dark, MAT.hole, spin);
   add(rim.nuts, MAT.chrome, spin);
 
+  if (style === 'utility' && !w.front) addDrumBrake(wheel, spin, s, MAT); // the Foreman's rear drum brakes, with the axle's inside showing
   // Hub and brake drum, inboard, turning with the steering but not the wheel.
   const hub = add(cached('hub', () => new THREE.CylinderGeometry(0.07, 0.07, 0.07, 16).rotateZ(Math.PI / 2)), MAT.engineDark, wheel);
   hub.position.x = -s * (width / 2 - 0.05);
@@ -698,11 +700,11 @@ function pillionGrips(root, x, y, z, strap) {
 }
 
 /** Footboards with a raised outer lip, grip ribs and a heel guard. */
-function footwells(root) {
+function footwells(root, treadPlates = false) {
   for (const s of [-1, 1]) {
     rbox(0.27, 0.024, 0.6, 0.008, MAT.plastic, s * 0.445, 0.325, -0.01, root, s > 0 ? 'footwellLeft' : 'footwellRight');
     rbox(0.024, 0.085, 0.6, 0.01, MAT.plastic, s * 0.574, 0.36, -0.01, root);
-    for (let i = 0; i < 7; i++) rbox(0.2, 0.01, 0.016, 0.004, MAT.plastic, s * 0.44, 0.34, -0.25 + i * 0.075, root, undefined, 1);
+    if (!treadPlates) for (let i = 0; i < 7; i++) rbox(0.2, 0.01, 0.016, 0.004, MAT.plastic, s * 0.44, 0.34, -0.25 + i * 0.075, root, undefined, 1);
     rbox(0.24, 0.1, 0.024, 0.01, MAT.plastic, s * 0.45, 0.38, -0.3, root);
   }
 }
@@ -1316,14 +1318,13 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     pipe([[0.2, 0.5, -0.96], [0.25, 0.5, -1.11], [-0.25, 0.5, -1.11], [-0.2, 0.5, -0.96]], 0.017, MAT.frame, root, { bend: 0.07 });
   } else {
     // The Foreman (the 1990s Honda TRX300FW): the red decks are made with the fenders (foremanFenders); here are the twin rectangular
-    // headlights in the front face, close in towards the middle, a black apron with grille slots below them, a tube bumper, the
+    // headlights in the front face, close in towards the middle, the grille between them, a low valance and a tube bumper below, the
     // dome round the steering column and one tail lamp on a bracket hanging off the back of the rear deck.
     for (const s of [-1, 1]) squareLamp(root, s * 0.25, 0.628, 0.852, 0.12, 0.06, lensMat, s > 0 ? 'headlightLeft' : 'headlightRight');
     pipe([[0.2, 0.4, 0.82], [0.25, 0.44, 0.95], [-0.25, 0.44, 0.95], [-0.2, 0.4, 0.82]], 0.017, MAT.frame, root, { bend: 0.07 });
-    rbox(0.5, 0.085, 0.05, 0.015, MAT.plastic, 0, 0.54, 0.855, root);
-    // Between the lamps, a body-coloured grille of two horizontal slats over the dark of the cooler, to let the air in.
-    rbox(0.27, 0.07, 0.012, 0.004, MAT.hole, 0, 0.625, 0.853, root, undefined, 1);
-    for (const y of [0.607, 0.645]) rbox(0.29, 0.02, 0.024, 0.008, paint, 0, y, 0.864, root, 'grilleSlat');
+    rbox(0.46, 0.035, 0.05, 0.012, MAT.plastic, 0, 0.455, 0.85, root); // a low valance: the front shocks and arms show above it
+    addGrille(root, MAT, paint); // between the lamps: the oil cooler and fan behind two body-coloured slats, to let the air in
+    addShiftLever(root, MAT);
     // Red dome blending the front deck up into the tank cover round the column, and a red shroud on the column itself.
     add(
       loftGeometry([
@@ -1413,6 +1414,8 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   } else if (style === 'utility') {
     rack(root, 0.48, 0.92, 0.84, 5, 0.73, 0, true);
     rack(root, -0.8, -1.0, 0.92, 3, 0.775, 0, true);
+    addRackDetail(root, { z0: 0.48, z1: 0.92, y: 0.84, slats: 5 }, MAT);
+    addRackDetail(root, { z0: -0.8, z1: -1.0, y: 0.92, slats: 3 }, MAT);
     // The Foreman's racks stand on the decks at their outer edges, where the flat top is, and nowhere else: legs straight down at
     // the front rack's two ends, and at the rear one a leg and a slanting brace to the deck's back edge, clear of the tail lamp.
     for (const s of [-1, 1]) {
@@ -1522,18 +1525,22 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     pillionGrips(root, 0.25, 0.99, -0.55, false);
   }
   if (style === 'utility') {
-    // The pillion's seat wears where she slides on, as the rider's does (riderAnchor gives that one).
-    quad.userData.touchWear = [-1, 1].map((s) => ({ at: [s * 0.13, 0.96, -0.55], r: 0.17, amount: 0.9 }));
+    quad.userData.touchWear = [-1, 1].map((s) => ({ at: [s * 0.3, 0.52, 0.0], r: 0.16, amount: 0.8 })); // boots rub the panels' lower edges and the arches' tails
     // The Foreman's seat falls away towards the back: the front is up and the rear down, about the rider's hips.
     const tilt = new THREE.Matrix4().makeTranslation(0, 0.9, -0.18).multiply(new THREE.Matrix4().makeRotationX(-0.07)).multiply(new THREE.Matrix4().makeTranslation(0, -0.9, 0.18));
     for (const n of ['seat', 'pillionSeat', 'pillionBase']) root.getObjectByName(n)?.geometry.applyMatrix4(tilt);
+    const tape = seatTape(MAT);
+    tape.applyMatrix4(tilt); // the same tilt as the seat it lies on
+    root.add(tape);
+    addDecals(root, MAT);
     root.getObjectByName('pillionSeat').userData.wearNookMin = 0.45; // the rider's seat is marked where it meets the pillion's; hers is marked like it
   }
 
   // Where the rider's feet go: footwells on the utilities, nerf bars and pegs on the sport quad.
   if (race) raceNerfBars(root);
   else if (sport) nerfBars(root);
-  else footwells(root);
+  else footwells(root, style === 'utility');
+  if (style === 'utility' && !race && !sport) addTreadPlates(root, MAT);
 
   // Handlebars.
   const bars = buildHandlebars(dashStyle, cfg, chokeStyle, driveSwitch);
@@ -1568,6 +1575,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     );
     roundLamp(bars, 0, 0.02, 0.17, 0.06, lensMat, MAT.chrome, 'headlight');
   }
+  if (style === 'utility') addBarCables(bars, MAT);
   quad.userData.dash = bars.userData.dash;
   quad.userData.podMount = bars.userData.podMount;
   bars.position.set(0, barsY(style), 0.46);
