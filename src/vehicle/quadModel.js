@@ -1348,12 +1348,14 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   if (!sport) {
     if (style === 'utility') {
       // Red side panels under the seat, from the tank down the sides to the rear deck, and a ledge over the frame between them, so
-      // the body is closed from the front deck to the rear one. The engine shows under them.
+      // the body is closed from the front deck to the rear one. Each panel's ends are the height of the deck beside it (so the deck runs
+      // up into the panel with no step) and go down to the footboard where the wing walls meet them; the engine shows under its middle.
       for (const s of [-1, 1]) {
-        const panel = add(sideSlab([[0.3, 0.77], [0.3, 0.62], [0.22, 0.54], [0.0, 0.5], [-0.22, 0.54], [-0.3, 0.62], [-0.3, 0.77]], 0.022, 0.006), paint, root, 'sidePanel');
+        const panel = add(sideSlab([[0.3, 0.698], [0.27, 0.735], [0.2, 0.765], [0.1, 0.77], [-0.1, 0.77], [-0.2, 0.768], [-0.27, 0.76], [-0.3, 0.756],
+          [-0.3, 0.36], [-0.25, 0.41], [-0.16, 0.47], [0, 0.5], [0.16, 0.47], [0.25, 0.41], [0.3, 0.36]], 0.022, 0.006), paint, root, 'sidePanel');
         panel.position.set(s * 0.255, 0, 0);
       }
-      rbox(0.52, 0.03, 0.66, 0.012, paint, 0, 0.745, 0, root, 'bodyLedge');
+      rbox(0.52, 0.03, 0.52, 0.012, paint, 0, 0.745, 0, root, 'bodyLedge');
     } else {
       // Black side covers under the seat.
       for (const s of [-1, 1]) rbox(0.03, 0.14, 0.5, 0.014, MAT.plastic, s * 0.185, 0.69, -0.12, root);
