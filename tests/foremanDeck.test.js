@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DECK, deckRows, deckY, deckGeometry, flareGeometry, skirtBottom, bulkheadGeometry } from '../src/vehicle/foremanDeck.js';
+import { DECK, deckRows, deckY, deckGeometry, flareGeometry, skirtBottom, bulkheadGeometry, topCoverGeometry, bodyTopY, coverY } from '../src/vehicle/foremanDeck.js';
 
 // The red quad's decks and flares (TODO 88): sculpted, so no straight edges, and kept inside the width and short of the tyres.
 describe('the Foreman’s decks', () => {
@@ -62,6 +62,35 @@ describe('the Foreman’s decks', () => {
         const back = which === 'front' ? spec.z0 - b.min.z : b.max.z - spec.z0;
         expect(back).toBeGreaterThanOrEqual(0.1 - 1e-6); // and leaving the panel the fillet's radius back from it, so the corner is round
       }
+    });
+  }
+});
+
+describe('the body between the decks', () => {
+  it('has a top cover from one deck\'s end to the other\'s, as wide as the side panels and wider over the fillets', () => {
+    const g = topCoverGeometry();
+    g.computeBoundingBox();
+    const b = g.boundingBox;
+    expect(b.min.z).toBeCloseTo(DECK.rear.z0, 6);
+    expect(b.max.z).toBeCloseTo(DECK.front.z0, 6);
+    expect(b.max.x).toBeGreaterThan(0.266 + 0.09); // out over the fillets at the ends, so there is no hole above them
+    const pos = g.attributes.position;
+    for (let i = 0; i < pos.count; i++) if (Math.abs(pos.getZ(i)) < 0.15) expect(Math.abs(pos.getX(i))).toBeLessThanOrEqual(0.27 + 1e-6);
+  });
+
+  it('follows one top line, which meets the decks\' ends without a step and is highest in the middle', () => {
+    expect(bodyTopY(0.3)).toBeCloseTo(0.703, 3);
+    expect(bodyTopY(-0.3)).toBeCloseTo(0.754, 3);
+    expect(bodyTopY(0)).toBeGreaterThan(bodyTopY(0.3));
+    expect(bodyTopY(0)).toBeGreaterThan(bodyTopY(-0.3));
+    expect(bodyTopY(5)).toBe(bodyTopY(0.3)); // clamped beyond the ends
+  });
+
+  for (const which of ['front', 'rear']) {
+    it(`${which}: the cover meets the deck's end edge at exactly the deck's height, all across`, () => {
+      const spec = DECK[which];
+      const row = deckRows(DECK, spec)[0];
+      for (const x of [0, 0.1, 0.2, 0.266, 0.35, 0.45]) expect(coverY(DECK, x, spec.z0)).toBeCloseTo(deckY(DECK, spec, row, x), 9);
     });
   }
 });

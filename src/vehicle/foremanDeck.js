@@ -129,6 +129,62 @@ export function flareGeometry(which, wheelZ, side, D = DECK) {
 }
 
 /**
+ * The height of the body's top between the two decks, front to back (z, y): the side panels' tops, the cover between them and the
+ * walls' fillets all follow it, so the deck runs up into the body and down again with no step.
+ */
+export const BODY_TOP = [[-0.3, 0.754], [-0.2, 0.762], [-0.12, 0.768], [-0.05, 0.77], [0.05, 0.77], [0.1, 0.766], [0.17, 0.75], [0.24, 0.725], [0.3, 0.703]];
+
+export function bodyTopY(z) {
+  const T = BODY_TOP;
+  if (z <= T[0][0]) return T[0][1];
+  for (let i = 1; i < T.length; i++) {
+    if (z <= T[i][0]) {
+      const k = (z - T[i - 1][0]) / (T[i][0] - T[i - 1][0]);
+      return T[i - 1][1] + (T[i][1] - T[i - 1][1]) * ease(k);
+    }
+  }
+  return T[T.length - 1][1];
+}
+
+/**
+ * The height of the cover over the body at (x, z): the body's top line, easing within 6 cm of a deck's end to that deck's own edge
+ * height there, so the cover and the deck meet in a seam with no step or crack, whatever the deck's crown does at that x.
+ */
+export function coverY(D, x, z) {
+  const end = Math.abs(D.front.z0);
+  const spec = z > 0 ? D.front : D.rear;
+  const base = bodyTopY(z) - 0.004;
+  const row = deckRows(D, spec)[0];
+  const edge = deckY(D, spec, row, Math.min(Math.abs(x), row.half));
+  const w = ease(clamp01(1 - (end - Math.abs(z)) / 0.06));
+  return base + (edge - base) * w;
+}
+
+/**
+ * The cover over the middle of the body, from one deck's end to the other's, as wide as the side panels and filling the wedge over
+ * each wall's fillet (the fillet starts `fillet` back from the deck's end and curves out), so you cannot look down into the body from
+ * above anywhere between the decks.
+ */
+export function topCoverGeometry(D = DECK, { xIn = 0.266, fillet = 0.1 } = {}) {
+  const end = Math.abs(D.front.z0);
+  const zs = [];
+  for (let z = -end; z <= end + 1e-9; z += 0.025) zs.push(z);
+  for (const z of [end - 0.01, end - 0.005, -end + 0.005, -end + 0.01]) zs.push(z);
+  zs.sort((a, b) => a - b);
+  const rows = zs.map((z) => {
+    const d = end - Math.abs(z); // back from the deck's end
+    const xmax = d >= fillet ? xIn + 0.004 : xIn + 0.004 + fillet * (1 - Math.sqrt(Math.max(0, 1 - (1 - d / fillet) ** 2)));
+    const pts = [];
+    for (let i = 0; i <= 12; i++) {
+      const x = -xmax + (2 * xmax * i) / 12;
+      pts.push([x, coverY(D, x, z), z]);
+    }
+    return pts;
+  });
+  return gridGeometry(rows);
+}
+
+/**
  * The wall at a deck's inner end (side = +1 or -1): the back of the front wheel arch, or the front of the rear one. It hangs from the
  * deck's end edge down to the footboard. It leaves the side panel's outer face (`xIn`) tangentially, `fillet` back from the deck's end,
  * so there is no corner between them, curves round a quarter circle in plan, and runs out to meet the black skirt's edge exactly at the
@@ -155,7 +211,7 @@ export function bulkheadGeometry(which, side, D = DECK, { xIn = 0.266, bottom = 
     const t = k / M;
     const pts = path.map(([x, z], i) => {
       const u = i / (path.length - 1);
-      const top = deckY(D, spec, row, Math.min(x, row.half));
+      const top = i <= A ? coverY(D, x, z) : deckY(D, spec, row, Math.min(x, row.half)); // on the fillet it follows the cover, so they meet
       const back = bulge * Math.sin(Math.PI * t * 0.9) * Math.sin(Math.PI * u);
       return [side * x, top + (bottom - top) * t, z - dir * back];
     });

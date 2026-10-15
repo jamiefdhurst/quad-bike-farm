@@ -17,7 +17,7 @@ import {
   sweepGeometry,
 } from './quadGeometry.js';
 import { treadTyre } from './detail/tread.js';
-import { DECK, deckGeometry, flareGeometry, bulkheadGeometry } from './foremanDeck.js';
+import { DECK, deckGeometry, flareGeometry, bulkheadGeometry, topCoverGeometry, bodyTopY } from './foremanDeck.js';
 
 // Farm quad built from procedural parts. One group with named parts so it can
 // be replaced by a real model later without touching the code that drives it:
@@ -1351,11 +1351,11 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
       // the body is closed from the front deck to the rear one. Each panel's ends are the height of the deck beside it (so the deck runs
       // up into the panel with no step) and go down to the footboard where the wing walls meet them (they end 0.1 m short of the decks, where the walls' curved fillets take over); the engine shows under its middle.
       for (const s of [-1, 1]) {
-        const panel = add(sideSlab([[0.2, 0.698], [0.17, 0.735], [0.12, 0.762], [0.05, 0.77], [-0.05, 0.77], [-0.12, 0.768], [-0.17, 0.763], [-0.2, 0.756],
-          [-0.2, 0.36], [-0.16, 0.41], [-0.1, 0.46], [0, 0.5], [0.1, 0.46], [0.16, 0.41], [0.2, 0.36]], 0.022, 0.006), paint, root, 'sidePanel');
+        const top = [0.2, 0.17, 0.12, 0.05, -0.05, -0.12, -0.17, -0.2].map((z) => [z, bodyTopY(z)]);
+        const panel = add(sideSlab([...top, [-0.2, 0.36], [-0.16, 0.41], [-0.1, 0.46], [0, 0.5], [0.1, 0.46], [0.16, 0.41], [0.2, 0.36]], 0.022, 0.006), paint, root, 'sidePanel');
         panel.position.set(s * 0.255, 0, 0);
       }
-      rbox(0.52, 0.03, 0.4, 0.012, paint, 0, 0.745, 0, root, 'bodyLedge');
+      add(topCoverGeometry(), paint, root, 'bodyTop'); // closes the top of the body between the decks, over the frame and the wing walls' fillets
     } else {
       // Black side covers under the seat.
       for (const s of [-1, 1]) rbox(0.03, 0.14, 0.5, 0.014, MAT.plastic, s * 0.185, 0.69, -0.12, root);
