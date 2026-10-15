@@ -17,7 +17,7 @@ import {
   sweepGeometry,
 } from './quadGeometry.js';
 import { treadTyre } from './detail/tread.js';
-import { DECK, deckGeometry, flareGeometry } from './foremanDeck.js';
+import { DECK, deckGeometry, flareGeometry, bulkheadGeometry } from './foremanDeck.js';
 
 // Farm quad built from procedural parts. One group with named parts so it can
 // be replaced by a real model later without touching the code that drives it:
@@ -663,6 +663,7 @@ function foremanFenders(root, paint) {
     const W = F[which];
     const tag = w.name.slice(-2);
     add(flareGeometry(which, w.z, s), flareMat, root, `flare_${tag}`);
+    add(bulkheadGeometry(which, s), paint, root, `bulkhead_${tag}`);
     // The wing's inner wall, red, just inboard of the tyre: the wheel arch is a closed tunnel from the deck down to the arch, so nothing
     // under the deck shows from the middle of the quad (the real one's inner wings are body-coloured).
     const d = Math.sign(W.to - W.from);

@@ -127,3 +127,28 @@ export function flareGeometry(which, wheelZ, side, D = DECK) {
   });
   return gridGeometry(grid);
 }
+
+/**
+ * The wall at a deck's inner end (side = +1 or -1): the back of the front wheel arch, or the front of the rear one, hanging from the
+ * deck's end edge down to the footboard and from the side panel out to where the black skirt's tail takes over. Without it the
+ * deck ends in a free edge with a slot behind it that shows straight through the quad; the real fenders have no such edge.
+ */
+export function bulkheadGeometry(which, side, D = DECK, { xIn = 0.255, bottom = 0.35 } = {}) {
+  const spec = D[which];
+  const dir = Math.sign(spec.zf - spec.z0);
+  const row = deckRows(D, spec)[0];
+  const rows = [];
+  const M = 6;
+  for (let k = 0; k <= M; k++) {
+    const t = k / M;
+    const xOut = row.half - 0.08 * t ** 1.6; // the outer edge sweeps in as it goes down, like the skirt's tail
+    const pts = [];
+    for (let i = 0; i <= 8; i++) {
+      const x = xIn + ((xOut - xIn) * i) / 8;
+      const top = deckY(D, spec, row, x);
+      pts.push([side * x, top + (bottom - top) * t, spec.z0 - dir * 0.035 * Math.sin(Math.PI * t * 0.9)]);
+    }
+    rows.push(pts);
+  }
+  return gridGeometry(rows);
+}
