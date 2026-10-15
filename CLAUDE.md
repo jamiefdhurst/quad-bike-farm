@@ -33,7 +33,23 @@ Each vehicle's "in full detail" item uses the shared kit in `src/vehicle/detail/
 - **Touch wear** comes from the named levers, pedals, footrests and seat points; add a vehicle's own (a door sill, a grab handle) as `userData.touchWear` in the body's frame.
 - **Wear** is not modelled by hand. The wear layer finds the edges and nooks of whatever geometry there is, so give parts real edges (a box-like panel, not a smooth blob) where paint should rub through. Set how worn the vehicle is with `bodyWear` on its spec. Don't paint rust or mud into a material's colour.
 - Matching the real thing means its look, not its name or badge: the makers are made up (Kestrel, Tamura, Ridgeback, Viper, Hartley, Moorland, Thorne, Ashby).
-- Check with tests. Jamie looks at the result and gives feedback; no screenshot rounds.
+- Check with tests, and for a vehicle model also by eye (see "Lessons from the red quad" below): the tests can't see a gap or a floating label.
+
+### Lessons from the red quad (item 88)
+
+The red took many rounds because these were missed. Do them first on every vehicle item.
+
+- **Ask for reference photos before building.** Photos of the real machine: the body from the sides, front and rear, and its controls. Memory and web searches gave boxy fenders, round headlights and a floating hitch; with photos it took one round. If there are none, ask; don't build from memory.
+- **Look at renders of model work.** Unit tests can't see a gap, a floating label or a part ending in the air, so this is the exception to "no screenshot rounds". Use `.scratch/pp/redshot.mjs` as the pattern: it hides the HUD, fixes the camera, and works with the overlay clicked through. Shoot front-side, rear-side, above, and from the seat for controls, and crop in close (a narrow fov) for lettering. Say what you did and didn't see.
+- **No see-through gaps.** Every edge should join something: a deck's end, a rack leg, a frame rail, a brace. Make parts meet exactly (shared heights and edges, a wall at a deck's end, a cover between decks) and test that they do. A bar must end on a surface, never in the air.
+- **No straight edges where the real thing is moulded.** Crown, roll and round the plastics (`foremanDeck.js`); sweep the ends in plan and in height.
+- **Lettering and labels.** Put them on flat, square-edged faces, not rounded corners, and 1 mm off the surface. Put each at its measured place from the photo, once.
+- **Z-fighting.** Two surfaces 1 mm apart fight at distance. Embed an attached part a few millimetres into its parent.
+- **Fixed points may move on purpose.** The red's handlebars went 40 mm lower: regenerate `tests/fixedPoints.json` for that vehicle only, check nothing else changed, and say why in DECISIONS.
+- **Touch wear.** `touchWear` points are capped at eight in all, and a boot patch shows nothing on black vinyl. A part marked up with no neighbour uses `wearNookMin` on its mesh.
+- **Controls.** Model them from the real machine's (the pod, levers, switches, thumb throttle) in a module like `foremanControls.js`. Parts the game poses keep their names; a new style (such as the choke's `slide`) needs `CHOKE_STYLES`, the quad's pose, a test, the debug panel and the console. Choke knobs are black, not yellow.
+- **Reuse.** The red's pod, levers, 2WD/4WD rocker and thumb throttle are for the other quads' items to adapt, not rebuild. Check the gaps and the lettering in each from the seat.
+- **Cluster badges.** A vehicle's cluster takes its maker's name (`makerBadge` in `dash.js`) in empty space on its face, and a number plate only if the vehicle would leave the farm.
 
 ## Debug panel
 
@@ -111,7 +127,7 @@ The start screen (`index.html`, `src/start/startScreen.js`, the logo in `src/sta
 ## Testing (keep it cheap)
 
 - `npm test` (Vitest) must pass before every commit. Add or update unit tests for any logic you change.
-- Don't do headless browser checks. They are slow and costly, and screenshots keep coming out showing the "Click to play" overlay instead of the game. The only exception is a check where you have worked out how to get past the overlay (click it, every time the page loads) and can confirm that in the screenshot. Otherwise rely on unit tests, and say in your summary what you didn't verify. No long simulation runs, no repeated tuning loops: pick sensible values.
+- Apart from model checks (see "Lessons from the red quad"), don't do headless browser checks. They are slow and costly, and screenshots keep coming out showing the "Click to play" overlay instead of the game. The only exception is a check where you have worked out how to get past the overlay (click it, every time the page loads) and can confirm that in the screenshot. Otherwise rely on unit tests, and say in your summary what you didn't verify. No long simulation runs, no repeated tuning loops: pick sensible values.
 - If you do use the exception above, the headless setup (see the "headless-browser-checks" memory): puppeteer-core in `.scratch/pp` (untracked) with system Chrome; existing scripts there to copy from (`errs.mjs` checks the game loads without errors). Run your own dev server with `npx vite --port 5180` in the background; Jamie's is on 5173. Editing source while a headless check runs reloads the page under it.
 - Engine sound: `node tools/render_engine_sound.mjs <vehicle id> out.wav` renders it offline through the real engine model and worklet (idle, full throttle, idle, half, full) in seconds, no browser. Use it to compare banks or settings (`--bank`, `--set`), `--start` to hear the start (key, starter, catching) instead, and `--start --no-catch` for four seconds of cranking on an empty tank; leave the WAVs in `.scratch/` for Jamie to listen to.
 - Frame time: `node .scratch/pp/perf.mjs` (with your dev server on 5180) checks the spawn view's draw calls, triangles and the game's own ms a frame against a budget and profiles a few seconds by function; run it after anything that adds to the world or to every frame's work, and the console's `perf` in the game.
