@@ -7,7 +7,7 @@ import { buildMirror } from './detail/mirrors.js';
 import { merge } from './detail/parts.js';
 import { mesh, rbox, tube } from './tz65Detail.js';
 import {
-  MULE_WHEELS, MULE_BONNET, MULE_BODY, MULE_HOOD_E, MULE_FLARES, MULE_NOSE, MULE_CAB, MULE_ROOF, MULE_DOOR, MULE_BED, MULE_TAIL, MULE_HITCH, loftTop,
+  MULE_WHEELS, MULE_BONNET, MULE_BODY, MULE_HOOD_E, MULE_FLARES, MULE_NOSE, MULE_CAB, MULE_ROOF, MULE_DOOR, MULE_BED, MULE_TAIL, MULE_HITCH, loftTop, MULE_DASH,
 } from './muleBody.js';
 
 // The UTV's parts (TODO 99), after a Mule 4010: a ribbed green hood over a mesh grille, black flares round the wheels, rectangular lamps in
@@ -79,11 +79,11 @@ export function addMuleFront(root, MAT, paint, lensMat) {
   // The grille: a diamond mesh in a black frame on the hood's face under a green lip, with the maker's badge in the middle of its top bar.
   const N = MULE_NOSE;
   const grille = buildGrille({ w: N.grille.w, h: N.grille.h, kind: 'mesh', mats: { frame: MAT.grille, bars: MAT.steel } });
-  grille.position.set(0, N.grille.y, N.z - 0.012);
+  grille.position.set(0, N.grille.y, N.z); // on the nose block's face
   root.add(grille);
-  rbox(N.grille.w + 0.08, 0.026, 0.05, 0.012, paint, 0, N.grille.y + N.grille.h / 2 + 0.032, N.z - 0.03, root, 'grilleLip');
+  rbox(N.grille.w + 0.08, 0.03, 0.05, 0.012, paint, 0, N.grille.y + N.grille.h / 2 + 0.03, N.z - 0.01, root, 'grilleLip');
   const badge = decalMesh('badge', { maker: MAKER_FOR.utv }, { width: 0.13, name: 'badge' });
-  badge.position.set(0, N.grille.y + N.grille.h / 2 + 0.032, N.z - 0.0045);
+  badge.position.set(0, N.grille.y + N.grille.h / 2 + 0.03, N.z + 0.0155); // on the lip's face
   root.add(badge);
   // The lamps: a rectangular housing at each corner of the nose in black plastic, a clear lens and reflector in it, an amber indicator on its
   // outer end, all sitting on the green body's front corner.
@@ -154,11 +154,14 @@ export function addMuleCab(root, MAT, paint) {
   glass.position.set(0, mid[0], mid[1]);
   glass.rotation.x = lean;
   const onGlass = (t, x) => [x, G.base[0] + dy * t, G.base[1] + dz * t];
-  for (const s of [-1, 1]) tube(onGlass(0, s * G.half), onGlass(1, s * G.half), 0.012, MAT.frame, root, 6);
-  tube(onGlass(0, -G.half), onGlass(0, G.half), 0.014, MAT.frame, root, 6);
-  tube(onGlass(1, -G.half), onGlass(1, G.half), 0.014, MAT.frame, root, 6);
-  tube(onGlass(0.08, 0.18), onGlass(0.5, -0.4), 0.0045, MAT.frame, root, 5).name = 'wiperArm';
-  tube(onGlass(0.5, -0.4), onGlass(0.52, -0.62), 0.007, MAT.frame, root, 5).name = 'wiperBlade';
+  for (const s of [-1, 1]) tube(onGlass(0, s * G.half), onGlass(1, s * G.half), 0.016, MAT.frame, root, 6);
+  tube(onGlass(0, -G.half), onGlass(0, G.half), 0.02, MAT.frame, root, 6);
+  tube(onGlass(1, -G.half), onGlass(1, G.half), 0.018, MAT.frame, root, 6);
+  // The wiper: a pivot on the dash's top at the glass's foot (the spindle through the cowl), a short arm up the glass and a blade lying on it.
+  const piv = onGlass(0.0, 0.2);
+  mesh(new THREE.CylinderGeometry(0.014, 0.016, 0.03, 10), MAT.plastic, root, 'wiperPivot').position.set(piv[0], piv[1] - 0.005, piv[2] + 0.0);
+  tube([piv[0], piv[1] + 0.004, piv[2] - 0.004], onGlass(0.1, 0.12), 0.0045, MAT.frame, root, 5).name = 'wiperArm';
+  tube(onGlass(0.1, 0.12), onGlass(0.26, -0.18), 0.0065, MAT.frame, root, 5).name = 'wiperBlade';
   // The rear hoop's net behind the seat: a mesh in a frame of three bars, from the seat back's height to the roof.
   const N = C.net;
   const nz = C.rear.z - 0.004;
@@ -170,14 +173,16 @@ export function addMuleCab(root, MAT, paint) {
   // The mirrors on the front posts, round and black on short arms.
   for (const s of [-1, 1]) {
     const m = buildMirror('arm', { side: s, w: 0.1, h: 0.075 });
-    m.scale.setScalar(0.5); // a small round-ish mirror on a short arm, inside the cab's width
-    m.position.set(s * (P.x - 0.02), 1.42, 0.3);
+    m.scale.setScalar(0.5); // a small mirror on a short arm, its foot on the front post
+    const k = (1.42 - P.foot[0]) / (P.head[0] - P.foot[0]);
+    m.position.set(s * (P.x - 0.04 * k), 1.42, P.foot[1] + (P.head[1] - P.foot[1]) * k);
     root.add(m);
   }
   // The lamps on their plate across the back of the roof: red above amber above clear reverse at each end, on a black plate (rusty once the
   // wear layer has been at it) bolted to the rear hoop.
   const T = MULE_TAIL;
-  rbox(1.0, 0.26, 0.012, 0.004, MAT.frame, 0, T.y, T.z + 0.012, root, 'tailPlate');
+  rbox(1.12, 0.26, 0.012, 0.004, MAT.frame, 0, T.y, T.z + 0.012, root, 'tailPlate');
+  for (const s of [-1, 1]) for (const dy of [-0.09, 0.09]) tube([s * 0.56, T.y + dy, C.rear.z], [s * 0.56, T.y + dy, T.z + 0.012], 0.01, MAT.steel, root, 6); // bolted back to the rear hoop's post at each corner
   for (const s of [-1, 1]) {
     rbox(0.1, 0.19, 0.05, 0.015, MAT.plastic, s * T.x, T.y, T.z, root, 'tailHousing');
     rbox(0.07, 0.05, 0.014, 0.008, MAT.tail, s * T.x, T.y + 0.065, T.z - 0.026, root, 'tailLens');
@@ -254,7 +259,7 @@ export function addMuleGate(gate, MAT, paint) {
     tube([s * (w / 2 - 0.01), 0.26, 0.0], [s * (w / 2 + 0.005), 0.02, 0.15], 0.005, MAT.steel, gate, 4); // the check chain
   }
   const name = decalMesh('badge', { maker: MAKER_FOR.utv }, { width: 0.3, name: 'gateBadge' });
-  name.position.set(-0.1, 0.18, -0.0215);
+  name.position.set(0, 0.17, -0.0215); // in the middle of the gate
   name.rotation.y = Math.PI;
   gate.add(name);
 }

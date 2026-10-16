@@ -1274,7 +1274,14 @@ export class Quad {
     if (this.utv) {
       poseUtvControls(this.model, { reverse: this.reverse, neutral: state.neutral, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, lights: this.lights.mode, horn: this.hornHeld, park: this.parkBrake });
       poseUtvBelts(this.model, this.belts.worn());
-      this.doorsOpen = (this.doorsOpen ?? 1) + ((Math.abs(this.speed) < 0.5 ? 1 : 0) - (this.doorsOpen ?? 1)) * Math.min(1, 5 * dt); // the door nets swing out when it is stopped, shut when it moves
+      // The door nets swing out for a few seconds when you get on or off, and while a girl steps in or climbs down; shut the rest of the time.
+      const aboard = !!(this.rider || this.driver || this.passenger);
+      this.wasAboard ??= aboard;
+      if (aboard !== this.wasAboard) this.doorTimer = 2.4;
+      this.wasAboard = aboard;
+      this.doorTimer = Math.max(0, (this.doorTimer ?? 0) - dt);
+      const wantOpen = Math.abs(this.speed) < 0.5 && (this.doorTimer > 0 || this.doorWant) ? 1 : 0;
+      this.doorsOpen = (this.doorsOpen ?? 0) + (wantOpen - (this.doorsOpen ?? 0)) * Math.min(1, 4 * dt);
       poseUtvDoors(this.model, this.doorsOpen);
     }
     if (this.landRover) {

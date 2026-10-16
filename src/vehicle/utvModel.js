@@ -7,7 +7,8 @@ import { treadTyre } from './detail/tread.js';
 import { buildBuckledBelt, webbingMaterial } from './detail/belts.js';
 import { decalMesh, MAKER_FOR } from './detail/decals.js';
 import { buildMuleSpin, addMuleFront, addMuleCab, addMuleDoors, addMuleBed, addMuleGate, addMuleHitch } from './muleDetail.js';
-import { MULE_WHEELS, MULE_BED, MULE_DOOR, MULE_HITCH } from './muleBody.js';
+import { MULE_WHEELS, MULE_BED, MULE_DOOR, MULE_HITCH, MULE_DASH, loftTop } from './muleBody.js';
+import { buildHandbrake } from './detail/cabControls.js';
 
 // The farm UTV (TODO 99): the Ridgeback Yak 4010, a Mule-4010-style side-by-side (muleBody.js has the numbers, muleDetail.js the parts),
 // procedural like the quads and the tractor. A diesel, with a bench seat for
@@ -109,10 +110,11 @@ const MAT = {
   reverse: new THREE.MeshStandardMaterial({ color: 0xdfe4e6, roughness: 0.2 }), // the reverse lens on each tail lamp: clear
   buckleRed: new THREE.MeshStandardMaterial({ color: 0xc8261e, roughness: 0.45 }), // the red release button on a seat belt buckle
   grille: new THREE.MeshStandardMaterial({ color: 0x141516, roughness: 0.6 }),
+  glovebox: new THREE.MeshStandardMaterial({ color: 0x2a2b2d, roughness: 0.6 }),
   rim: new THREE.MeshStandardMaterial({ color: 0x2a2e2d, roughness: 0.55, metalness: 0.45 }), // the wheels: black steel
   flare: new THREE.MeshStandardMaterial({ color: 0x1a1b1c, roughness: 0.8, side: THREE.DoubleSide }), // the moulded black fender flares
   roof: new THREE.MeshStandardMaterial({ color: 0xb4b6b0, roughness: 0.55 }), // the flat grey roof panel
-  glass: new THREE.MeshStandardMaterial({ color: 0xaec4cc, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.14, depthWrite: false, side: THREE.DoubleSide }), // the windscreen
+  glass: new THREE.MeshStandardMaterial({ color: 0xaec4cc, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide }), // the windscreen
   net: new THREE.MeshStandardMaterial({ color: 0x151617, roughness: 0.6, metalness: 0.4 }), // the mesh behind the seat and in the door nets
   reflector: new THREE.MeshStandardMaterial({ color: 0xe6e6e6, roughness: 0.1, metalness: 1 }),
 };
@@ -264,7 +266,7 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
 
   // Chassis: two main rails, cross members and a skid plate; the engine and gearbox under the seat, the axles and arms.
   for (const s of [-1, 1]) tube([s * 0.42, 0.36, -1.6], [s * 0.42, 0.36, 1.3], 0.035, MAT.frame, root);
-  for (const z of [1.18, 0.55, -0.3, -0.62, -1.45]) tube([-0.42, 0.36, z], [0.42, 0.36, z], 0.03, MAT.frame, root);
+  for (const z of [1.18, 0.55, -0.3, -0.62, -1.5]) tube([-0.42, 0.36, z], [0.42, 0.36, z], 0.03, MAT.frame, root);
   rbox(0.84, 0.025, 1.5, 0.01, MAT.steel, 0, 0.29, 0.4, root);
   rbox(0.56, 0.28, 0.62, 0.04, MAT.cast, 0, 0.5, -0.25, root); // engine
   rbox(0.4, 0.22, 0.4, 0.04, MAT.steel, 0, 0.48, -0.78, root); // transaxle
@@ -292,17 +294,22 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
     rbox(0.1, 0.2, 1.15, 0.03, paint, s * 0.64, 0.42, 0.0, root);
     rbox(0.12, 0.03, 1.0, 0.01, MAT.steel, s * 0.72, 0.34, 0.0, root); // the step along the sill
   }
-  add(loftGeometry([
-    { z: 0.34, w: 1.3, y0: 0.62, y1: 1.02 },
-    { z: 0.5, w: 1.26, y0: 0.6, y1: 1.06 },
-    { z: 0.6, w: 1.2, y0: 0.6, y1: 1.0 },
-  ], { exponent: 3 }), MAT.plastic, root);
-  rbox(0.42, 0.2, 0.05, 0.02, MAT.floor, 0.3, 0.9, 0.33, root); // glovebox door
-  rbox(0.1, 0.02, 0.02, 0.008, MAT.steel, 0.3, 0.98, 0.31, root);
-  add(bentTube([[0.14, 1.0, 0.37], [0.14, 1.2, 0.34], [0.52, 1.2, 0.34], [0.52, 1.0, 0.37]], 0.014, { bend: 0.03, radial: 6 }), MAT.steel, root); // the passenger's grab handle, its feet down into the dash
-  for (const x of [0.14, 0.52]) rbox(0.05, 0.016, 0.05, 0.006, MAT.steel, x, 1.04, 0.37, root); // with a plate bolted over each
-  for (const x of [0.22, 0.33]) add(new THREE.CylinderGeometry(0.03, 0.026, 0.02, 14), MAT.floor, root).position.set(x, 1.065, 0.46); // cup holders
-  for (const x of [0.22, 0.33]) add(new THREE.CylinderGeometry(0.026, 0.026, 0.002, 14), MAT.plastic, root).position.set(x, 1.075, 0.46);
+  add(loftGeometry(MULE_DASH, { exponent: 3 }), MAT.plastic, root, 'dashPanel');
+  // The glovebox: a big moulded lid on the passenger side, flush with the dash's face, with a recessed handle bar and the warning sticker.
+  rbox(0.5, 0.27, 0.014, 0.02, MAT.glovebox, 0.3, 0.84, 0.337, root, 'gloveboxLid');
+  rbox(0.13, 0.026, 0.02, 0.008, MAT.floor, 0.3, 0.935, 0.326, root); // the recess its handle sits in
+  rbox(0.11, 0.014, 0.022, 0.006, MAT.plastic, 0.3, 0.935, 0.322, root, 'gloveboxHandle');
+  const warn = decalMesh('warning', {}, { width: 0.2, name: 'gloveboxWarning' });
+  warn.position.set(0.3, 0.82, 0.3293);
+  warn.rotation.y = Math.PI;
+  root.add(warn);
+  // The passenger's grab handle: a bent bar standing on two plates bolted to the dash's top, at its true height there.
+  const gx = [0.14, 0.52];
+  const gy = gx.map((x) => loftTop(MULE_DASH, x, 0.4, 3));
+  add(bentTube([[gx[0], gy[0] - 0.02, 0.4], [gx[0], gy[0] + 0.18, 0.4], [gx[1], gy[1] + 0.18, 0.4], [gx[1], gy[1] - 0.02, 0.4]], 0.014, { bend: 0.03, radial: 6 }), MAT.steel, root, 'grabHandle');
+  gx.forEach((x, i) => rbox(0.06, 0.014, 0.06, 0.006, MAT.steel, x, gy[i] + 0.002, 0.4, root));
+  for (const x of [0.22, 0.33]) add(new THREE.CylinderGeometry(0.03, 0.026, 0.02, 14), MAT.floor, root).position.set(x, loftTop(MULE_DASH, x, 0.52, 3) - 0.004, 0.52); // cup holders
+  for (const x of [0.22, 0.33]) add(new THREE.CylinderGeometry(0.026, 0.026, 0.002, 14), MAT.plastic, root).position.set(x, loftTop(MULE_DASH, x, 0.52, 3) + 0.006, 0.52);
 
   // The bench: a base, a cushion and a split backrest, in grey cloth, with the three seat belts stowed down the back.
   rbox(1.12, 0.3, 0.46, 0.04, MAT.plastic, 0, 0.55, -0.2, root); // the base it sits on, with the engine under it
@@ -318,11 +325,11 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   // and the buckle on its strap in the crease on the other side of the seat. Stowed they hang down the backrest, worn they run across whoever
   // sits there to the tongue clicked into the buckle (poseUtvBelts).
   for (const [seat, belt] of Object.entries(BELTS)) {
-    const hip = [UTV_SEATS[seat].x, UTV_SEATS[seat].y, UTV_SEATS[seat].z + SEAT_BACK];
-    const top = [belt.anchor, 1.36, -0.52];
+    const hip = [UTV_SEATS[seat].x, UTV_SEATS[seat].y - 0.05, UTV_SEATS[seat].z + SEAT_BACK]; // the sitter's hips sink into the cushion: the belt lies lower
+    const top = [belt.anchor, 1.3, -0.52];
     const low = [belt.anchor, 0.8, -0.44];
     const buckle = [belt.buckle, 0.8, -0.38];
-    tube([belt.anchor, 1.45, -0.58], [belt.anchor, 1.38, -0.52], 0.008, MAT.steel, root, 6); // the strap bracket down from the bar to the loop
+    tube([belt.anchor, 1.45, -0.58], [belt.anchor, 1.32, -0.52], 0.008, MAT.steel, root, 6); // the strap bracket down from the bar to the loop
     root.add(buildBuckledBelt(seat, { top, low, buckle, hip, faceZ: -0.42, mats: { webbing: beltWebbing } }));
   }
 
@@ -381,14 +388,15 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   // Controls: the brake and accelerator on the floor, the parking brake handle by the door.
   rbox(0.1, 0.016, 0.08, 0.005, MAT.plastic, -0.42, 0.37, 0.3, root).rotation.x = -0.5; // the brake, wide
   rbox(0.05, 0.016, 0.12, 0.005, MAT.plastic, -0.27, 0.37, 0.3, root).rotation.x = -0.5; // the accelerator, narrow
-  rbox(0.07, 0.05, 0.12, 0.012, MAT.steel, -0.64, 0.545, 0.1, root); // the parking brake's bracket, bolted to the sill's top
-  const park = new THREE.Group(); // its handle, pivoting at the bracket: up and back when it is on, tipped forward when it is off (poseUtvControls)
+  // The parking brake, a car's: a lever with a grip and a release button at its end on a bracket on the sill's top beside the driver's seat, under
+  // a rubber boot; pulled up for on (poseUtvControls).
+  rbox(0.07, 0.03, 0.2, 0.01, MAT.steel, -0.62, 0.535, -0.12, root, 'handbrakeBracket');
+  const park = buildHandbrake('centre');
   park.name = 'parkBrakeLever';
   park.userData.keep = true;
-  park.position.set(-0.64, 0.55, 0.1);
-  tube([0, 0, 0], [0.04, 0.31, -0.1], 0.01, MAT.steel, park);
-  add(new THREE.SphereGeometry(0.02, 8, 6), MAT.knob, park).position.set(0.04, 0.32, -0.1);
+  park.position.set(-0.62, 0.575, -0.2);
   root.add(park);
+  add(new THREE.CylinderGeometry(0.03, 0.04, 0.03, 12), MAT.rubber, root, 'handbrakeBoot').position.set(-0.62, 0.56, -0.2);
   // Quad still poses these two; neither belongs on a diesel with no tap and no choke.
   const tap = new THREE.Group();
   tap.name = 'fuelTap';
@@ -401,14 +409,15 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   choke.visible = false;
   root.add(choke);
 
-  // The exhaust: a silencer under the bed on the right with a short tailpipe, and a heat shield.
-  const exX = -0.4;
-  add(new THREE.CylinderGeometry(0.075, 0.075, 0.55, 14).rotateX(Math.PI / 2), MAT.rust, root).position.set(exX, 0.4, -1.1);
-  tube([exX, 0.4, -1.4], [exX, 0.36, -1.58], 0.025, MAT.steel, root);
-  tube([exX, 0.42, -0.9], [exX, 0.4, -0.98], 0.025, MAT.steel, root);
+  // The exhaust: a silencer under the bed between the right rail and the transaxle, clear of the frame, and a tailpipe running over the rear
+  // cross member to the back.
+  const exX = -0.27;
+  add(new THREE.CylinderGeometry(0.07, 0.07, 0.5, 14).rotateX(Math.PI / 2), MAT.rust, root, 'silencer').position.set(exX, 0.45, -1.0);
+  tube([exX, 0.45, -1.25], [exX, 0.47, -1.58], 0.024, MAT.steel, root);
+  tube([-0.12, 0.45, -0.8], [exX, 0.45, -0.78], 0.024, MAT.steel, root); // the pipe in from the transaxle
   const tip = new THREE.Object3D();
   tip.name = 'exhaustTip';
-  tip.position.set(exX, 0.36, -1.58); // smoke leaves along its -Z, which is straight back
+  tip.position.set(exX, 0.47, -1.6); // smoke leaves along its -Z, which is straight back
   root.add(tip);
   // Mudflaps behind the rear wheels.
   for (const s of [-1, 1]) rbox(0.3, 0.26, 0.012, 0.004, MAT.rubber, s * 0.66, 0.4, -1.34, root);
@@ -738,7 +747,7 @@ export function poseUtvControls(model, { reverse, neutral, lights, horn, fourWd,
   parts.icons.lock.set(!!locked);
   parts.icons.lights.set(lights ?? 'off');
   parts.horn.position.y = horn ? -0.008 : 0;
-  parts.park.rotation.x += ((park ? 0 : 0.7) - parts.park.rotation.x) * 0.3; // pulled up and back when on, let down forward when off, eased
+  parts.park.rotation.x += ((park ? -0.45 : 0.08) - parts.park.rotation.x) * 0.3; // pulled up when on, let down when off, eased
 }
 
 /** Swings the door nets: `open` 0 (shut) to 1 (swung out on the rear hoop). */

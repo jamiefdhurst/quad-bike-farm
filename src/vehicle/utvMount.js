@@ -37,6 +37,18 @@ export class UtvMount {
     this.lastYaw = quad.yaw;
   }
 
+  /** Whether a girl is stepping in or climbing down just now (or walking up to climb in), so the door nets are swung out for her. */
+  get boardingNow() {
+    for (const slot of Object.values(this.slots)) {
+      const c = slot.girl;
+      if (!c?.fsm) continue;
+      const d = c.fsm.data;
+      if (c.fsm.is('boarding') || (c.fsm.is('onTrailer') && (d?.leaving || d?.fromWorld))) return true;
+      if (c.fsm.is('walking') && d?.goal === 'board' && c.root.position.distanceTo(this.quad.position) < 3.5) return true;
+    }
+    return false;
+  }
+
   /** Turn rate, left positive, and how bumpy it is, as the sway in the girl's seat wants them. */
   update(dt) {
     const yaw = this.quad.yaw;
@@ -47,6 +59,7 @@ export class UtvMount {
     this.motion.speed = speed;
     // The body's own springs already move the seats; this is the extra the bed gets over the rough, which grows with speed.
     this.motion.jolt = Math.min(1, speed / 11);
+    this.quad.doorWant = this.boardingNow; // the door nets swing out for a girl getting in or out (quad.js poses them)
   }
 
   /** The back bench's seats, if it has one. */

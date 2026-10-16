@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import * as THREE from 'three';
-import { MULE_BONNET, MULE_BED, MULE_DOOR, MULE_ROOF, loftTop } from '../src/vehicle/muleBody.js';
+import { MULE_BONNET, MULE_DASH, MULE_BED, MULE_DOOR, MULE_ROOF, loftTop } from '../src/vehicle/muleBody.js';
 import { buildBuckledBelt, tongueGeometry } from '../src/vehicle/detail/belts.js';
 import { poseUtvDoors, poseUtvBelts, BELTS, UTV_SEATS } from '../src/vehicle/utvModel.js';
 import { UTV_SPEC } from '../src/vehicle/quadSpecs.js';
@@ -98,5 +98,26 @@ describe('the UTV’s model', () => {
     expect(utv.model.userData.tailMaterial).toBeTruthy();
     expect(utv.model.getObjectByName('headlamp')).toBeTruthy();
     expect(utv.model.getObjectByName('bed').getObjectByName('tailgate')).toBeTruthy();
+  });
+
+  it('shows a windscreen and attaches its mirrors, wiper, lamp plate, grab handle and handbrake to something', () => {
+    const m = utv.model;
+    m.updateMatrixWorld(true);
+    expect(m.getObjectByName('windscreen').material.opacity).toBeGreaterThan(0.2); // clear but there to see
+    const box = (n) => new THREE.Box3().setFromObject(m.getObjectByName(n));
+    const pivot = box('wiperPivot');
+    expect(pivot.intersectsBox(box('dashPanel').expandByScalar(0.02))).toBe(true); // the wiper stands on the dash
+    expect(box('wiperArm').intersectsBox(pivot.clone().expandByScalar(0.01))).toBe(true);
+    expect(box('mirrorArm').min.x).toBeLessThan(0.7);
+    expect(box('grabHandle').min.y).toBeLessThan(loftTop(MULE_DASH, 0.14, 0.4, 3) + 0.01); // its feet are in the dash's top
+    expect(box('tailPlate').min.z).toBeGreaterThan(-0.7); // right behind the rear hoop, bolted to it
+    expect(m.getObjectByName('gateBadge').position.x).toBe(0);
+    expect(m.getObjectByName('parkBrakeLever').getObjectByName('handbrakeButton')).toBeTruthy(); // a car's lever with its release button
+  });
+
+  it('keeps the exhaust clear of the frame: its silencer is inboard of the right rail and the tailpipe over the cross member', () => {
+    const sil = new THREE.Box3().setFromObject(utv.model.getObjectByName('silencer'));
+    expect(sil.min.x).toBeGreaterThan(-0.42 + 0.04); // inside the rail at x -0.42 (radius 0.035)
+    expect(sil.max.x).toBeLessThan(-0.1);
   });
 });
