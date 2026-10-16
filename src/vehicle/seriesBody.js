@@ -53,5 +53,8 @@ export const SERIES_TUB_PROXY = { w: 1.4, h: 0.5, d: 1.0, y: SERIES_TUB.floor + 
 /** The tow jaw under the tail, a fixed point: a little behind the tub's end. */
 export const SERIES_HITCH = { x: 0, y: 0.56, z: SERIES_END - 0.06 };
 
-/** The dash: its pad's z (centre) and depth, against the bulkhead, and the face the choke and hand throttle come out of. */
-export const SERIES_DASH = { z: 0.33, depth: 0.2, knobZ: 0.23 };
+/**
+ * The dash: one metal fascia the width of the cab, centred at (y, z), raked back by `tilt`, `w` wide and `h` tall along its slope; the pod
+ * is set into it in front of the driver. The choke and hand throttle come out of its face at `knobX`, at its centre's height.
+ */
+export const SERIES_DASH = { y: 1.0, z: 0.285, tilt: 0.45, w: 1.56, h: 0.46, knobX: [0.2, 0.29] };

@@ -32,15 +32,17 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
   const trim = trimMaterials(false);
   const frame = MAT.galv; // the screen's and the windows' frames and the cappings are galvanised
   const webbing = webbingMaterial();
+  const dashMetal = new THREE.MeshStandardMaterial({ color: 0x2a2c2f, roughness: 0.55, metalness: 0.25 }); // the dash: painted metal, dark grey
+  const dashMetal2 = new THREE.MeshStandardMaterial({ color: 0x232528, roughness: 0.6, metalness: 0.2 });
 
   const quad = new THREE.Group();
   quad.name = 'quad';
   quad.userData.lensMaterial = lensMat;
   quad.userData.seatMaterial = trim.seat;
-  quad.userData.cleanMaterials = [trim.seat, trim.dash, trim.floor, MAT.belt]; // the cab's inside never gets muddy (effects/mudCoat.js)
+  quad.userData.cleanMaterials = [trim.seat, trim.dash, trim.floor, MAT.belt, dashMetal, dashMetal2]; // the cab's inside never gets muddy (effects/mudCoat.js)
   quad.userData.cabin = { min: [-0.9, 0.4, SERIES_CAB.rear - 0.04], max: [0.9, SERIES_CAB.top + 0.05, SERIES_SCREEN.baseZ + 0.02] }; // the paint inside it stays clean too (cabinMud.js)
   quad.userData.steerGain = 7; // a big wheel, a lot of turns lock to lock
-  quad.userData.knobZ = SERIES_DASH.knobZ; // where poseLandyControls pulls the choke and the hand throttle from
+  quad.userData.knobZ = SERIES_DASH.z; // where poseLandyControls pulls the choke and the hand throttle from
   const body = new THREE.Group();
   body.name = 'body';
   quad.add(body);
@@ -108,7 +110,7 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       const wz = (SERIES_FRONT.wingFace + wing.scuttle) / 2; // the flat top runs from the scuttle to the front edge
       const wl = SERIES_FRONT.wingFace + 0.02 - wing.scuttle;
       rbox(wing.outer - wing.inner + 0.01, 0.03, wl, 0.012, paint, s * (wing.outer + wing.inner) / 2, wing.top - 0.015, wz + 0.01, root, 'wingTop'); // the flat top, which you can stand a mug on
-      archPanel(s * wing.outer, 0.03, wing.bottom, wing.top, wing.rear, SERIES_FRONT.wingFace + 0.02, zF, paint, root); // the outer side, with the wheel arch cut in it
+      archPanel(s * wing.outer, 0.03, wing.bottom, wing.top, wing.scuttle, SERIES_FRONT.wingFace + 0.02, zF, paint, root); // the outer side, with the wheel arch cut in it
       archFlare(s * (wing.outer + 0.015), zF, paint, root);
       rbox(0.03, wing.top - wing.bottom - 0.02, SERIES_FRONT.wingFace - wing.rear, 0.01, paint, s * wing.inner, (wing.top + wing.bottom) / 2 - 0.01, (SERIES_FRONT.wingFace + wing.rear) / 2, root); // the inner wall, against the engine bay
       rbox(wing.outer - wing.inner, wing.top - wing.bottom, 0.03, 0.01, paint, s * (wing.outer + wing.inner) / 2, (wing.top + wing.bottom) / 2, SERIES_FRONT.wingFace, root); // the front face
@@ -145,7 +147,8 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       rbox(0.42, 0.025, 0.17, 0.01, paint, s * 0.3, sc.top + 0.01, 0.56, root); // the vent flaps: raised panels, one each side
       rbox(0.05, 0.02, 0.025, 0.006, MAT.galv, s * 0.3, sc.top + 0.03, 0.62, root); // with a catch
       rbox(0.06, 0.03, 0.04, 0.008, MAT.galv, s * 0.24, sc.top + 0.005, 0.69, root); // and the bonnet's hinges, at its back edge
-      rbox(0.03, wing.top - wing.bottom + 0.1, sc.to - sc.from, 0.01, paint, s * wing.outer, (wing.top + 0.08 + wing.bottom) / 2, (sc.from + sc.to) / 2, root); // the scuttle's side, up to its deck
+      const pz = door.hinge + 0.11; // the hinge pillar ends here; the body's side runs on from it to the wing, one panel the whole way (no two panels share a face)
+      rbox(0.03, sc.top - wing.bottom, sc.to - pz, 0.01, paint, s * wing.outer, (sc.top + wing.bottom) / 2, (pz + sc.to) / 2, root); // the scuttle's side, up to its deck
     }
     const screen = new THREE.Group();
     screen.position.set(0, SERIES_SCREEN.baseY, SERIES_SCREEN.baseZ);
@@ -211,25 +214,30 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       // The body at each side: the hinge pillar the door's front edge meets, the B pillar behind it, the quarter below the quarter window, the
       // sill closing the gap to the chassis, the rear upright and the rails above and below the quarter glass.
       rbox(0.04, door.y1 - door.y0, 0.1, 0.01, paint, s * door.x, (door.y0 + door.y1) / 2, door.hinge + 0.06, root); // the hinge pillar between the door and the wing
-      rbox(0.04, SERIES_CAB.top - door.y0 - 0.02, 0.05, 0.01, paint, s * door.x, (SERIES_CAB.top + door.y0) / 2 - 0.01, door.rear - 0.025, root); // the B pillar
-      rbox(0.04, door.y1 - door.y0, door.rear - SERIES_CAB.quarterRear + 0.04, 0.01, paint, s * door.x, (door.y0 + door.y1) / 2, (door.rear + SERIES_CAB.quarterRear) / 2, root); // the quarter
-      rbox(0.04, SERIES_CAB.top - door.y1, 0.04, 0.01, paint, s * door.x, (SERIES_CAB.top + door.y1) / 2, SERIES_CAB.quarterRear, root); // the rear post
-      rbox(0.04, 0.04, door.rear - SERIES_CAB.quarterRear + 0.04, 0.008, paint, s * door.x, SERIES_CAB.top - 0.02, (door.rear + SERIES_CAB.quarterRear) / 2, root); // the top rail
-      rbox(0.03, 0.03, door.rear - SERIES_CAB.quarterRear + 0.04, 0.008, frame, s * door.x, door.y1 + 0.005, (door.rear + SERIES_CAB.quarterRear) / 2, root); // the capping carried on
-      const quarter = add(new THREE.PlaneGeometry(SERIES_CAB.quarterRear * -1 + door.rear - 0.06, SERIES_CAB.top - door.y1 - 0.06), MAT.glass, root); // the quarter glass
+      const top = SERIES_CAB.top;
+      const qz = SERIES_CAB.quarterRear;
+      rbox(0.04, top - 0.04 - door.y0, 0.05, 0.01, paint, s * door.x, (top - 0.04 + door.y0) / 2, door.rear - 0.025, root); // the B pillar, up to the rail
+      rbox(0.04, door.y1 - door.y0, door.rear - 0.05 - qz, 0.01, paint, s * door.x, (door.y0 + door.y1) / 2, (door.rear - 0.05 + qz) / 2, root); // the quarter, from the B pillar to the rear post
+      rbox(0.04, top - 0.04 - door.y1, 0.04, 0.01, paint, s * door.x, (top - 0.04 + door.y1) / 2, qz + 0.02, root); // the rear post, above it
+      rbox(0.04, 0.04, door.rear - 0.05 - qz + 0.04, 0.008, paint, s * door.x, top - 0.02, (door.rear - 0.05 + qz) / 2 + 0.0, root); // the top rail
+      rbox(0.03, 0.03, door.rear - 0.05 - qz, 0.008, frame, s * (door.x + 0.002), door.y1 + 0.02, (door.rear - 0.05 + qz) / 2, root); // the capping carried on
+      const quarter = add(new THREE.PlaneGeometry(door.rear - 0.05 - qz - 0.02, top - 0.04 - door.y1), MAT.glass, root); // the quarter glass
       quarter.rotation.y = Math.PI / 2;
-      quarter.position.set(s * door.x, (SERIES_CAB.top + door.y1) / 2, (door.rear + SERIES_CAB.quarterRear) / 2);
+      quarter.position.set(s * door.x, (top - 0.04 + door.y1) / 2, (door.rear - 0.05 + qz) / 2);
       rbox(0.05, 0.09, 1.2, 0.01, MAT.chassis, s * door.x, 0.58, 0.0, root); // the sill under the door, closing the gap to the chassis
     }
     // The cab's rear panel in pieces round a real opening with the glass set in the middle of it: glass laid on a whole panel's face fights
     // it for the same depth and flickers.
     const rz = SERIES_CAB.rear;
-    const rh = SERIES_CAB.top - 0.04 - tub.floor;
+    const lowTop = tub.floor + 0.46; // the lower panel's top edge
+    const upBottom = SERIES_CAB.top - 0.08; // the bar over the window's bottom edge
+    const wh = upBottom - lowTop; // the window's height: the glass fills the opening from the lower panel to the bar over it
+    const wy = (lowTop + upBottom) / 2;
     rbox(1.66, 0.46, 0.04, 0.01, paint, 0, tub.floor + 0.23, rz, root, 'cabBack'); // below the window, down into the tub
     rbox(1.66, 0.08, 0.04, 0.01, paint, 0, SERIES_CAB.top - 0.04, rz, root); // above it
-    for (const s of [-1, 1]) rbox(0.36, rh - 0.46 - 0.08, 0.04, 0.01, paint, s * 0.65, tub.floor + 0.46 + (rh - 0.46 - 0.08) / 2 + 0.01, rz, root); // either side
-    const rear = add(new THREE.PlaneGeometry(0.94, rh - 0.46 - 0.08), MAT.glass, root);
-    rear.position.set(0, tub.floor + 0.46 + (rh - 0.46 - 0.08) / 2 + 0.01, rz);
+    for (const s of [-1, 1]) rbox(0.36, wh, 0.04, 0.01, paint, s * 0.65, wy, rz, root); // either side
+    const rear = add(new THREE.PlaneGeometry(0.94, wh), MAT.glass, root);
+    rear.position.set(0, wy, rz);
     // The roof: Limestone, a gentle rise to its middle and a lip all round, with the rain gutters along its edges.
     const rl = SERIES_ROOF.z0 - SERIES_ROOF.z1;
     const rm = (SERIES_ROOF.z0 + SERIES_ROOF.z1) / 2;
@@ -343,10 +351,7 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
     add(new THREE.TorusGeometry(0.21, 0.012, 8, 36).rotateX(Math.PI / 2), MAT.black, wheel);
     add(new THREE.CylinderGeometry(0.045, 0.045, 0.035, 14), MAT.black, wheel); // the boss
     badge(wheel, { x: 0, y: 0.0185, z: 0, facing: 1, w: 0.07, h: 0.035, px: 1200 }).rotation.set(-Math.PI / 2, 0, Math.PI); // the badge in its centre, facing the driver
-    for (let i = 0; i < 4; i++) {
-      const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
-      tube([0, 0, 0], [Math.sin(a) * 0.21, 0, Math.cos(a) * 0.21], 0.007, MAT.galv, wheel, 5);
-    }
+    for (const a of [Math.PI / 2 + 0.2, -Math.PI / 2 - 0.2, Math.PI]) tube([0, 0, 0], [Math.sin(a) * 0.21, 0, Math.cos(a) * 0.21], 0.007, MAT.galv, wheel, 5); // three spokes (left, right and down), the top open so you see the dials
     for (const side of [1, -1]) {
       const grip = new THREE.Object3D();
       grip.name = side > 0 ? 'gripLeft' : 'gripRight';
@@ -360,26 +365,36 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
     hands.visible = false;
     wheel.add(hands);
 
-    // The dash: a padded pad across the cab against the bulkhead, with the binnacle in front of the driver.
-    const dz = SERIES_DASH.z;
-    rbox(1.56, 0.12, SERIES_DASH.depth, 0.02, trim.dash, 0, 1.08, dz, root);
-    badge(root, { x: 0.3, y: 1.085, z: dz - SERIES_DASH.depth / 2 - 0.004, facing: -1, w: 0.14, h: 0.056 }); // the maker's badge on the glovebox side of the dash
+    // The dash: one metal fascia the whole width of the cab, raked back, with the instrument pod set into its face in front of the driver (the
+    // pod is part of it, not a box on top), a padded roll along its top against the bulkhead, the glovebox lid and the maker's badge on the
+    // passenger's half and a few switches by the pod. The face is high enough that the dials show through the gap between the wheel's top
+    // spokes. The choke and the hand throttle come out of its face to the right of the tunnel's levers, clear of the wheel's rim.
+    const D = SERIES_DASH;
+    const fascia = new THREE.Group();
+    fascia.position.set(0, D.y, D.z);
+    fascia.rotation.x = D.tilt;
+    root.add(fascia);
+    rbox(D.w, D.h, 0.03, 0.008, dashMetal, 0, 0, 0.015, fascia);
+    add(new THREE.CylinderGeometry(0.024, 0.024, D.w, 14).rotateZ(Math.PI / 2), trim.dash, fascia).position.set(0, D.h / 2, -0.004); // the padded roll along the top
+    rbox(0.42, 0.17, 0.012, 0.01, dashMetal2, 0.42, -0.05, -0.006, fascia); // the glovebox lid
+    rbox(0.05, 0.016, 0.014, 0.005, MAT.galv, 0.42, -0.02, -0.014, fascia); // and its catch
+    badge(fascia, { x: 0.42, y: 0.1, z: -0.0125, facing: -1, w: 0.14, h: 0.056 }); // the maker's badge above it
+    for (const x of [-0.19, -0.14, -0.09]) add(new THREE.CylinderGeometry(0.012, 0.012, 0.02, 10).rotateX(Math.PI / 2), MAT.galv, fascia).position.set(x, 0.13, -0.01); // the pull and push switches by the pod
     const dash = buildDash(dashStyle);
-    dash.group.position.set(-0.42, 1.21, dz - 0.02);
-    dash.group.rotation.x = 0.55;
+    dash.group.position.set(-0.42, 0.12, -0.02);
     dash.group.scale.setScalar(1.5); // the binnacle's about 0.3 m wide, as on a Series III
     dash.group.userData.keep = true;
-    root.add(dash.group);
+    fascia.add(dash.group);
     quad.userData.dash = dash;
     quad.userData.metalBody = true; // painted steel (or aluminium) panels, not plastic: they chip and rust rather than fade (effects/wearLayer.js)
     quad.userData.podMount = null;
-    // Knobs on the dash under the binnacle: the choke and the hand throttle, each pulled out towards the driver on a long shaft that runs back
-    // into the dash, so it stays joined to it however far it is out (the pose moves the group by up to KNOB_TRAVEL).
-    for (const [name, x, mat] of [['chokeKnob', -0.26, MAT.red], ['handThrottleKnob', -0.16, MAT.galv]]) {
+    // Knobs on the dash's face: the choke and the hand throttle, each pulled out towards the driver on a long shaft that runs back into the
+    // dash, so it stays joined to it however far it is out (the pose moves the group by up to KNOB_TRAVEL).
+    for (const [name, x, mat] of [['chokeKnob', D.knobX[0], MAT.red], ['handThrottleKnob', D.knobX[1], MAT.galv]]) {
       const knob = new THREE.Group();
       knob.name = name;
       knob.userData.keep = true;
-      knob.position.set(x, 1.095, SERIES_DASH.knobZ);
+      knob.position.set(x, D.y, D.z);
       tube([0, 0, 0.16], [0, 0, -0.05], 0.005, MAT.galv, knob, 6);
       add(new THREE.CylinderGeometry(0.02, 0.02, 0.028, 12).rotateX(Math.PI / 2), mat, knob).position.set(0, 0, -0.059);
       root.add(knob);
@@ -389,26 +404,26 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       const g = new THREE.Group();
       g.name = name;
       g.userData.keep = true;
-      g.position.set(x, 0.84, 0.32);
+      g.position.set(x, 0.84, 0.12);
       tube([0, 0, 0], [0, len, 0], 0.008, MAT.galv, g, 5);
       add(new THREE.SphereGeometry(r, 12, 10), mat, g).position.set(0, len, 0);
       root.add(g);
     };
-    lever('gearLever', -0.1, MAT.knob, 0.38, 0.026);
-    lever('transferKnob', 0.04, MAT.yellow, 0.22, 0.018);
-    lever('diffLockKnob', 0.12, MAT.red, 0.16, 0.016);
+    lever('gearLever', -0.1, MAT.knob, 0.3, 0.026);
+    lever('transferKnob', 0.04, MAT.yellow, 0.2, 0.018);
+    lever('diffLockKnob', 0.12, MAT.red, 0.14, 0.016);
     for (const [x, w] of [[-0.55, 0.07], [-0.4, 0.07], [-0.25, 0.04]]) rbox(w, 0.02, w === 0.04 ? 0.14 : 0.16, 0.005, MAT.black, x, 0.66, 0.32, root).rotation.x = -0.6; // the pedals: clutch, brake, accelerator
     // The handbrake: a ratchet lever on the right of the tunnel, by the driver's left knee. Down and forward when off; pulled up and back when on.
     const hb = new THREE.Group();
     hb.name = 'parkBrakeLever';
     hb.userData.keep = true;
-    hb.position.set(-0.2, 0.8, 0.12);
-    tube([0, 0, 0], [0, 0.3, 0], 0.01, MAT.galv, hb, 6);
-    add(new THREE.CylinderGeometry(0.019, 0.022, 0.12, 10), MAT.knob, hb).position.set(0, 0.34, 0);
-    rbox(0.014, 0.014, 0.02, 0.004, MAT.red, 0, 0.405, 0, hb); // the release button
+    hb.position.set(-0.2, 0.8, -0.05);
+    tube([0, 0, 0], [0, 0.2, 0], 0.01, MAT.galv, hb, 6);
+    add(new THREE.CylinderGeometry(0.019, 0.022, 0.1, 10), MAT.knob, hb).position.set(0, 0.24, 0);
+    rbox(0.014, 0.014, 0.02, 0.004, MAT.red, 0, 0.295, 0, hb); // the release button
     hb.rotation.x = HANDBRAKE_OFF;
     root.add(hb);
-    rbox(0.012, 0.1, 0.1, 0.004, MAT.steel, -0.2, 0.84, 0.1, root); // the ratchet quadrant it moves against
+    rbox(0.012, 0.1, 0.1, 0.004, MAT.steel, -0.2, 0.84, -0.07, root); // the ratchet quadrant it moves against
     // Quad poses these two on a quad; the Land Rover's choke is the dash knob and it has no fuel tap.
     for (const name of ['fuelTap', 'chokeLever']) {
       const g = new THREE.Group();
