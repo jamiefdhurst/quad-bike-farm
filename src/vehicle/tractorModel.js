@@ -134,26 +134,34 @@ function buildWheel(w, rimMat) {
   const rear = !w.front;
   add(cached(rear ? 'rearTyre' : 'frontTyre', rear ? rearTyre : frontTyre), MAT.rubber, spin);
   if (rear) add(cached('rearDrum', rearDrum), MAT.mud, spin);
-  // Pressed steel, painted grey, as in the photos, and all of it inboard of the tyre's outer face: the rim between the beads, a dished disc
-  // set in from the face with its middle further in, a cast hub on a ring of studs and nuts, nothing standing out past the rubber.
+  // Pressed steel, painted grey, as in the photos, all of it inboard of the tyre's outer face: the rim between the beads, a dished disc (a
+  // funnel, open to the outside, wide at the rim and narrowing inwards to the hub) and a cast hub standing up out of its middle with a
+  // flange carrying a ring of studs and nuts, and a cap, none of it past the rubber.
   const rimR = rear ? MF_WHEELS.rearRim : MF_WHEELS.frontRim;
   const tyreW = rear ? MF_WHEELS.rearW : MF_WHEELS.frontW;
   const face = tyreW / 2; // the tyre's outer face
-  axleCyl(rimR, tyreW - 0.03, rimMat, 0, 0, 0, spin);
-  for (const f of [-1, 1]) axleCyl(rimR * 1.05, 0.016, rimMat, f * (face - 0.03), 0, 0, spin);
-  axleCyl(rimR * 1.055, 0.018, MAT.rustPatch, side * (face - 0.03), 0, 0, spin); // bare, rusty outer flange
-  // The disc: a shallow cone, wide at the rim, its small end (the hub's) further in.
-  const dish = add(new THREE.CylinderGeometry(rimR * 0.3, rimR * 0.97, 0.05, 32).rotateZ(side * Math.PI / 2), rimMat, spin);
-  dish.position.set(side * (face - 0.05), 0, 0);
-  axleCyl(rear ? 0.12 : 0.07, 0.05, MAT.castDark, side * (face - 0.055), 0, 0, spin); // the hub casting
-  axleCyl(rear ? 0.045 : 0.028, 0.02, MAT.cast, side * (face - 0.03), 0, 0, spin); // and its cap, still inside the tyre's face
+  const x = (d) => side * (face - d); // d metres in from the face
+  const funnel = rimMat.clone();
+  funnel.side = THREE.DoubleSide;
+  add(new THREE.CylinderGeometry(rimR, rimR, tyreW - 0.03, 36, 1, true).rotateZ(Math.PI / 2), funnel, spin, 'wheelRim'); // the rim's barrel, open ended: a closed one would cap the dish over with a flat disc
+  for (const f of [-1, 1]) add(new THREE.TorusGeometry(rimR * 1.02, 0.014, 6, 36).rotateY(Math.PI / 2), rimMat, spin).position.x = f * (face - 0.03); // the rim's flanges, rings round it (a solid disc here would cover the dish)
+  add(new THREE.TorusGeometry(rimR * 1.025, 0.016, 6, 36).rotateY(Math.PI / 2), MAT.rustPatch, spin).position.x = x(0.03); // bare, rusty outer flange
+  const depth = rear ? 0.075 : 0.05; // how far the disc dishes in
+  const dish = add(new THREE.CylinderGeometry(rimR * 0.3, rimR * 0.97, depth, 36, 1, true).rotateZ(side * Math.PI / 2), funnel, spin, 'wheelDisc');
+  dish.position.set(x(0.03 + depth / 2), 0, 0);
+  const hubR = rear ? 0.1 : 0.06;
+  axleCyl(hubR, depth + 0.012, MAT.castDark, x(0.03 + depth / 2 - 0.006), 0, 0, spin).name = 'wheelHub'; // the hub casting, from the dish's floor out to the face
+  const flangeR = rear ? 0.175 : 0.1;
+  axleCyl(flangeR, 0.016, MAT.cast, x(0.052), 0, 0, spin).name = 'wheelFlange'; // the flange the studs are in, standing out of the disc
   const nuts = rear ? 8 : 6;
-  const nutR = rear ? 0.19 : 0.1;
+  const nutR = flangeR - (rear ? 0.032 : 0.02);
   for (let i = 0; i < nuts; i++) {
     const a = ((i + 0.5) / nuts) * Math.PI * 2;
-    const n = add(new THREE.CylinderGeometry(0.015, 0.015, 0.02, 6).rotateZ(Math.PI / 2), MAT.steel, spin);
-    n.position.set(side * (face - 0.045), Math.sin(a) * nutR, Math.cos(a) * nutR);
+    const nr = rear ? 0.021 : 0.014;
+    const n = add(new THREE.CylinderGeometry(nr, nr, 0.026, 6).rotateZ(Math.PI / 2), MAT.chrome, spin, 'wheelNut');
+    n.position.set(x(0.052 - 0.018), Math.sin(a) * nutR, Math.cos(a) * nutR); // each nut proud of the flange, a bright hex
   }
+  axleCyl(rear ? 0.055 : 0.032, 0.02, MAT.chrome, x(0.03), 0, 0, spin).name = 'wheelCap'; // the cap on the axle's end, in the hub's middle
   if (!rear) {
     // The yoke and steering arm of the stub axle, inside the wheel and turning with it (the wheel group is what steers).
     rbox(0.05, 0.3, 0.09, 0.02, MAT.castDark, -side * 0.09, 0.02, 0, wheel);
@@ -216,9 +224,12 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
     name.rotation.y = s * (Math.PI / 2);
     root.add(name);
   }
-  // The air cleaner: a red stack with a round cap standing out of the bonnet on its right, and its pipe down into the engine.
-  tube([MF_AIR.x, MF_AIR.base - 0.06, MF_AIR.z], [MF_AIR.x, MF_AIR.top, MF_AIR.z], 0.022, paint, root, 10);
-  add(new THREE.SphereGeometry(0.036, 14, 10), paint, root).position.set(MF_AIR.x, MF_AIR.top + 0.01, MF_AIR.z);
+  // The air cleaner: a short, fat red stack on a collar on the bonnet's right, with a flat-topped round cap and a rolled lip, as in the photos.
+  const AIRH = MF_AIR.top - MF_AIR.base;
+  add(new THREE.CylinderGeometry(0.036, 0.04, 0.03, 16), MAT.castDark, root).position.set(MF_AIR.x, MF_AIR.base - 0.01, MF_AIR.z); // the collar it stands in, on the bonnet
+  add(new THREE.CylinderGeometry(0.028, 0.03, AIRH, 16), paint, root, 'airCleaner').position.set(MF_AIR.x, MF_AIR.base + AIRH / 2 - 0.02, MF_AIR.z);
+  add(new THREE.CylinderGeometry(0.046, 0.04, 0.03, 18), paint, root, 'airCleanerCap').position.set(MF_AIR.x, MF_AIR.top - 0.008, MF_AIR.z);
+  add(new THREE.TorusGeometry(0.045, 0.006, 6, 18).rotateX(Math.PI / 2), paint, root).position.set(MF_AIR.x, MF_AIR.top - 0.015, MF_AIR.z);
   // The radiator cap on top of the nose, and the grille: a grey frame with two banks of slats either side of a plain middle strip.
   add(new THREE.CylinderGeometry(0.04, 0.05, 0.04, 14), MAT.castDark, root).position.set(0, 1.155, 1.25);
   add(new THREE.CylinderGeometry(0.026, 0.026, 0.05, 12), MAT.brass, root).position.set(0, 1.19, 1.25);
@@ -342,11 +353,10 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   for (const s of [-1, 1]) {
     const g = new THREE.CylinderGeometry(GR, GR, MF_GUARD.w, 28, 1, true, MF_GUARD.from, MF_GUARD.to - MF_GUARD.from).rotateZ(Math.PI / 2);
     add(g, paint, root, 'mudguard').position.set(s * MF_WHEELS.rearX, REAR_R, MF_WHEELS.rearZ);
-    const onShell = (theta) => [s * (MF_WHEELS.rearX - 0.2), REAR_R + GR * Math.sin(theta), MF_WHEELS.rearZ + GR * Math.cos(theta)];
+    const onShell = (theta) => [s * (MF_WHEELS.rearX - MF_GUARD.w / 2 + 0.02), REAR_R + GR * Math.sin(theta), MF_WHEELS.rearZ + GR * Math.cos(theta)];
     rbox(0.14, 0.05, 0.26, 0.015, MAT.castDark, s * 0.5, 0.88, MF_WHEELS.rearZ, root); // the bracket, on top of the final drive housing
     tube([s * 0.5, 0.9, MF_WHEELS.rearZ], onShell(Math.PI / 2), 0.02, MAT.steel, root);
-    for (const t of [Math.PI / 2 - 0.75, Math.PI / 2 + 0.75]) tube([s * 0.5, 0.9, MF_WHEELS.rearZ + Math.sign(Math.cos(t)) * 0.1], onShell(t), 0.014, MAT.steel, root);
-    rbox(0.06, 0.02, 0.1, 0.006, MAT.steel, s * (MF_WHEELS.rearX - 0.2), REAR_R + GR - 0.01, MF_WHEELS.rearZ, root); // the plate it bolts to under the shell
+    rbox(0.06, 0.02, 0.1, 0.006, MAT.steel, s * (MF_WHEELS.rearX - MF_GUARD.w / 2 + 0.02), REAR_R + GR - 0.012, MF_WHEELS.rearZ, root); // the plate it bolts to under the shell
     // A torus is in XY about Z; turned about Y it lies in YZ, and phi = pi - theta matches the shell's angle theta.
     const lip = (from, to, mat, r, edge) => {
       const arc = new THREE.TorusGeometry(GR, r, 6, 24, to - from).rotateZ(Math.PI - to).rotateY(Math.PI / 2);
@@ -585,7 +595,7 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   spikeMast.userData.keep = true;
   for (const s of [-1, 1]) {
     tube([s * 0.3, 0.45, SPIKE_RAIL_Z], [s * 0.3, 2.2, SPIKE_RAIL_Z], 0.028, MAT.red, spikeMast);
-    tube([s * 0.3, 1.95, SPIKE_RAIL_Z], [s * 0.2, 1.02, -1.2], 0.02, MAT.steel, spikeMast); // down into the side of the lift housing (x +-0.25, z -0.92 to -1.32)
+    tube([s * 0.3, 1.5, SPIKE_RAIL_Z], [s * 0.2, 1.06, -1.31], 0.02, MAT.steel, spikeMast); // down into the lift housing's back face (x +-0.25, z -0.92 to -1.32), so it clears the guards' silhouette
     tube([s * 0.3, 0.55, SPIKE_RAIL_Z], [s * 0.4, 0.5, -1.45], 0.02, MAT.steel, spikeMast);
   }
   rbox(0.68, 0.05, 0.05, 0.015, MAT.red, 0, 2.2, SPIKE_RAIL_Z, spikeMast);

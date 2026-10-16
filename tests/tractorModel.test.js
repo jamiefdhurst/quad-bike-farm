@@ -147,4 +147,36 @@ describe('tractor model', () => {
       expect(rimFace, w.name).toBeLessThanOrEqual(tyreFace + 0.001);
     }
   });
+
+  it('shows each wheel’s dish, hub, flange, nuts and cap: nothing solid across the dish, the nuts proud of the flange and all inboard of the tyre’s face', () => {
+    for (const w of TRACTOR_LAYOUT.wheels) {
+      const spin = model.getObjectByName(w.name).getObjectByName('spin');
+      spin.updateMatrixWorld(true);
+      const side = Math.sign(w.x);
+      const find = (n) => { const out = []; spin.traverse((o) => { if (o.name === n) out.push(o); }); return out; };
+      const face = (w.front ? 0.14 : 0.3) / 2;
+      const outX = (o) => { const b = new THREE.Box3().setFromObject(o); return side > 0 ? b.max.x : -b.min.x; };
+      const flange = find('wheelFlange')[0];
+      expect(find('wheelDisc').length).toBe(1);
+      expect(find('wheelNut').length).toBeGreaterThanOrEqual(6);
+      for (const n of find('wheelNut')) {
+        expect(outX(n), 'a nut stands proud of the flange').toBeGreaterThan(outX(flange) + 0.004);
+        expect(outX(n), 'and inside the tyre face').toBeLessThanOrEqual(face + 0.001);
+      }
+      expect(outX(find('wheelCap')[0])).toBeLessThanOrEqual(face + 0.001);
+      // No closed cylinder wider than the hub's flange lies across the dish outboard of it: the rim's barrel is open, its flanges are rings.
+      spin.traverse((o) => {
+        if (o.isMesh && o.geometry.type === 'CylinderGeometry' && !['wheelFlange', 'wheelHub', 'wheelCap', 'wheelNut'].includes(o.name)) {
+          expect(o.geometry.parameters.openEnded || o.geometry.parameters.radiusTop > 0.3 || o.geometry.parameters.height > 0.1, `${o.name || 'cylinder'} r ${o.geometry.parameters.radiusTop}`).toBe(true);
+        }
+      });
+    }
+  });
+
+  it('has a short fat red air cleaner standing in a collar on the bonnet, not a stick with a ball', () => {
+    const ac = model.getObjectByName('airCleaner');
+    expect(ac.geometry.parameters.radiusTop).toBeGreaterThan(0.025);
+    expect(ac.geometry.parameters.height).toBeLessThan(0.2);
+    expect(model.getObjectByName('airCleanerCap').geometry.parameters.radiusTop).toBeGreaterThan(ac.geometry.parameters.radiusTop);
+  });
 });
