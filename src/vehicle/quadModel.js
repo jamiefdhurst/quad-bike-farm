@@ -2308,7 +2308,7 @@ function signalSymbol(pair) {
  * material, with the indicator symbol on its end where the driver sees it. `modern` is a chunkier moulded stalk with a wide end; without it
  * a thin round old one with a button on the end. It swings in `poseSignalControls`: down towards the floor for left, up towards the roof for right.
  */
-export function addSignalStalk(column, y, mat, { modern = false } = {}) {
+export function addSignalStalk(column, y, mat, { modern = false, symbol = true } = {}) {
   const stalk = new THREE.Group();
   stalk.name = 'signalStalk';
   stalk.userData.keep = true;
@@ -2326,7 +2326,7 @@ export function addSignalStalk(column, y, mat, { modern = false } = {}) {
     add(new THREE.CylinderGeometry(0.016, 0.016, 0.014, 14), mat, stalk).position.set(0.145, 0, 0); // a round button on the end
     face.position.set(0.145, 0.0075, 0);
   }
-  stalk.add(face);
+  if (symbol) stalk.add(face); // (a clean end, no printed symbol, where the texture reads oddly as the stalk swings)
   column.add(stalk);
 }
 

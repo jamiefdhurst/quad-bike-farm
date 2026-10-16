@@ -95,16 +95,16 @@ export function addMuleFront(root, MAT, paint, lensMat) {
     rbox(0.036, L.h - 0.02, 0.07, 0.012, MAT.indicator, s * (L.x + L.w / 2 - 0.014), L.y, L.z + 0.005, root, 'indicator');
   }
   // The bumper: a wide black moulding with a step along its top, a lower skid and the tow loops, tied back to the chassis.
-  rbox(1.5, 0.15, 0.15, 0.05, MAT.bumper, 0, 0.47, 1.45, root, 'bumper');
-  rbox(1.2, 0.035, 0.12, 0.02, MAT.bumper, 0, 0.555, 1.42, root);
+  rbox(1.38, 0.15, 0.15, 0.05, MAT.bumper, 0, 0.47, 1.45, root, 'bumper');
+  rbox(1.12, 0.035, 0.12, 0.02, MAT.bumper, 0, 0.555, 1.42, root);
   rbox(0.9, 0.03, 0.2, 0.012, MAT.bumper, 0, 0.37, 1.36, root, 'skidPlate');
   // Its moulding: two ribs along the face, a recess each end for the lamp it would carry, bolts through its top lip and the number plate's flat.
-  for (const y of [0.44, 0.5]) rbox(1.36, 0.014, 0.012, 0.005, MAT.plastic, 0, y, 1.5305, root, 'bumperRib');
+  for (const y of [0.44, 0.5]) rbox(1.26, 0.014, 0.012, 0.005, MAT.plastic, 0, y, 1.5305, root, 'bumperRib');
   rbox(0.34, 0.1, 0.012, 0.01, MAT.floor, 0, 0.47, 1.5265, root, 'bumperPlateFlat');
   for (const s of [-1, 1]) {
-    rbox(0.16, 0.07, 0.012, 0.01, MAT.floor, s * 0.55, 0.47, 1.5265, root, 'bumperPocket');
+    rbox(0.16, 0.07, 0.012, 0.01, MAT.floor, s * 0.5, 0.47, 1.5265, root, 'bumperPocket');
   }
-  for (const x of [-0.5, -0.3, 0.3, 0.5]) mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.008, 6), MAT.chrome, root).position.set(x, 0.575, 1.42); // the bolts through the top lip
+  for (const x of [-0.46, -0.3, 0.3, 0.46]) mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.008, 6), MAT.chrome, root).position.set(x, 0.575, 1.42); // the bolts through the top lip
   for (const s of [-1, 1]) {
     rbox(0.08, 0.1, 0.5, 0.02, MAT.frame, s * 0.38, 0.43, 1.2, root); // the arm back to the rail
     const loop = mesh(new THREE.TorusGeometry(0.035, 0.008, 6, 12), MAT.steel, root, 'towLoop');

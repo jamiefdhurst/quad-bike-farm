@@ -669,7 +669,7 @@ function buildUtv() {
   // brake on the right), a thin strip of the rest of the tell-tales under it (water, belt, headlamp, indicators, 4WD) and, set into the
   // moulding's left end, a separate small round unit with the fuel gauge (a bar, E to F with quarters marked) over the hours' LCD. The key
   // switch stands out of the right-hand end (`ignitionKey`, turned by the update).
-  const BODY = { x: 36, y: 12, w: 268, h: 104 };
+  const BODY = { x: 36, y: 12, w: 292, h: 104 };
   housing(group, { ...BODY, r: 16, ...O, material: charcoal });
   const speedo = { cx: 196, cy: 58, r: 35 };
   const unit = { cx: 78, cy: 62, r: 29 }; // the fuel and hours unit
@@ -681,10 +681,12 @@ function buildUtv() {
   chromeRing(group, { ...speedo, r: speedo.r + 1.5, ...O, tube: 0.0034 });
   chromeRing(group, { ...unit, r: unit.r + 1.5, ...O, tube: 0.0034 });
   for (const p of [...pockets, ...strip]) chromeRing(group, { ...p, r: p.r ?? 8.5, ...O, material: agedSteel, tube: 0.0022 }); // every lamp in a round bezel
+  const KEY = { x: 302, y: 61 }; // the ignition's centre (mm), at the right-hand end
   const gate = changeGate();
   let shownMph = 0;
   let shownFuel = 0;
   let shownTemp = 0;
+  let keyAngle = 0;
   const BLUE = '#4aa8ff';
 
   function draw(ctx, s, L) {
@@ -741,29 +743,31 @@ function buildUtv() {
       warnSymbol(ctx, p.kind, p.cx, p.cy, colours[p.kind][0], colours[p.kind][1], 0.5, false);
     }
     // The key's legend at the right-hand end.
-    text(ctx, 'OFF', 288, 34, 3.2, '#ece6d2', { align: 'center' });
-    text(ctx, 'ON', 288, 88, 3.2, '#ece6d2', { align: 'center' });
+    text(ctx, 'OFF', KEY.x, KEY.y - 17, 3.2, '#ece6d2', { align: 'center' });
+    text(ctx, 'ON', KEY.x + 15, KEY.y - 9, 3.2, '#ece6d2');
+    text(ctx, 'START', KEY.x + 17, KEY.y + 3, 3.2, '#ece6d2');
   }
 
-  // The ignition: a round black bezel with a barrel, and a real key in it: a steel shank standing out towards the driver and a black rubber head,
-  // flat and rounded, with a ring hole, turned a quarter when the key is on (the legend OFF and ON is printed round it).
-  const bezel = new THREE.Mesh(new THREE.CylinderGeometry(0.0135, 0.0145, 0.008, 20).rotateX(Math.PI / 2), blackMat);
-  bezel.position.set(-(288 - O.ox) * 0.001, -(61 - O.oy) * 0.001, -0.039);
+  // The ignition: a round black bezel with a chrome barrel, and a real key in it: a flat steel blade with teeth standing out towards the driver and a
+  // black rubber bow (a rounded flat with a ring hole). It turns from OFF at the top to ON a quarter-way and on to START, where it springs back
+  // to ON when let go (the legend is printed round it); the dash update eases it to whichever the engine is doing.
+  const bezel = new THREE.Mesh(new THREE.CylinderGeometry(0.0125, 0.0135, 0.008, 22).rotateX(Math.PI / 2), blackMat);
+  bezel.position.set(-(KEY.x - O.ox) * 0.001, -(KEY.y - O.oy) * 0.001, -0.039);
   group.add(bezel);
   const ignitionKey = new THREE.Group();
   ignitionKey.name = 'ignitionKey';
-  ignitionKey.position.set(bezel.position.x, bezel.position.y, -0.043);
-  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.0095, 0.0095, 0.006, 16).rotateX(Math.PI / 2), chromeMat);
+  ignitionKey.position.set(bezel.position.x, bezel.position.y, -0.0435);
+  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.0088, 0.0088, 0.006, 18).rotateX(Math.PI / 2), chromeMat);
   ignitionKey.add(barrel);
-  const shank = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.005, 0.016), chromeMat);
-  shank.position.z = -0.011; // the blade, standing out of the barrel
-  const teeth = new THREE.Mesh(new THREE.BoxGeometry(0.0062, 0.002, 0.009), blackMat);
-  teeth.position.set(0, 0.0032, -0.0125);
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.034, 0.005), blackMat);
-  head.position.set(0, 0.012, -0.022); // the rubber head, flat, with the key's long axis up
-  const hole = new THREE.Mesh(new THREE.CylinderGeometry(0.0034, 0.0034, 0.0056, 10).rotateX(Math.PI / 2), chromeMat);
-  hole.position.set(0, 0.025, -0.022);
-  ignitionKey.add(shank, teeth, head, hole);
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.0065, 0.0024, 0.02), chromeMat);
+  blade.position.set(0, 0, -0.012); // lying along the barrel's axis, standing out of it
+  const cuts = new THREE.Mesh(new THREE.BoxGeometry(0.0068, 0.0012, 0.012), blackMat);
+  cuts.position.set(0, 0.0014, -0.0145);
+  const bow = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.011, 0.0055), blackMat); // the head's flat, wide across, so it reads as a car key's
+  bow.position.set(0, 0, -0.0245);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.0042, 0.0013, 6, 14), chromeMat);
+  ring.position.set(0.0072, 0, -0.0275);
+  ignitionKey.add(blade, cuts, bow, ring);
   group.add(ignitionKey);
 
   return {
@@ -773,7 +777,9 @@ function buildUtv() {
       shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
       shownFuel += ((s.ignition ? s.fuelLevel : 0) - shownFuel) * 0.2;
       shownTemp += ((s.ignition ? tempGaugeFraction(s.temperature, true, s.overheat) : 0) - shownTemp) * 0.1;
-      ignitionKey.rotation.z = s.keyOn ? -Math.PI / 2 : 0; // off at the top, on a quarter turn round
+      const keyTo = s.cranking ? -1.45 : s.keyOn ? -0.72 : 0; // OFF at the top, ON half-way round, START at the end
+      keyAngle += (keyTo - keyAngle) * 0.5;
+      ignitionKey.rotation.z = keyAngle;
       const running = s.rpm > 300;
       const lamps = lampStates(s);
       const L = {
@@ -791,7 +797,7 @@ function buildUtv() {
         turnLeft: !!s.ignition && !!s.indicatorLamps?.left,
         turnRight: !!s.ignition && !!s.indicatorLamps?.right,
       };
-      const key = [s.ignition, s.keyOn, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, L.turnLeft, L.turnRight, !!s.fourWd, !!s.diffLock, Math.round(L.mph * 2), L.fuelSegs, L.hot, L.hours, counterText(s.odoMiles, 6)];
+      const key = [s.ignition, s.keyOn, !!s.cranking, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, L.turnLeft, L.turnRight, !!s.fourWd, !!s.diffLock, Math.round(L.mph * 2), L.fuelSegs, L.hot, L.hours, counterText(s.odoMiles, 6)];
       if (gate(key.join('|'))) face.redraw((ctx) => draw(ctx, s, L));
     },
   };

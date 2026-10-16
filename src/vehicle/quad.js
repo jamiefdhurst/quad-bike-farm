@@ -1205,6 +1205,7 @@ export class Quad {
       coldBelow: e.params.warmLightThreshold,
       ignition: e.hasPower, // the dash goes dark on a flat battery
       keyOn: e.ignitionOn,
+      cranking: e.state === 'cranking', // the UTV's key turns on to START while it is cranking
       tripMiles: this.tripMiles,
       odoMiles: this.usage.odoMiles,
       hours: this.usage.hours,

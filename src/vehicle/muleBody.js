@@ -18,8 +18,8 @@ export const MULE_BODY = [
   { z: 0.58, w: 1.04, y0: 0.5, y1: 0.8 },
   { z: 1.0, w: 1.02, y0: 0.5, y1: 0.77 },
   { z: 1.27, w: 1.02, y0: 0.5, y1: 0.75 }, // up to the tyres' front, inside their inner face (0.535)
-  { z: 1.3, w: 1.46, y0: 0.5, y1: 0.74 }, // then the nose widens out over them, to the lamps' outer ends
-  { z: 1.4, w: 1.46, y0: 0.5, y1: 0.74 },
+  { z: 1.3, w: 1.3, y0: 0.5, y1: 0.74 }, // then the nose widens a little (the wheel arches stand out beyond it), to the lamps' outer ends
+  { z: 1.4, w: 1.3, y0: 0.5, y1: 0.74 },
 ];
 /** The dash's stations (the cab's front panel, behind the hood): z, width, bottom, top. */
 export const MULE_DASH = [
@@ -57,7 +57,7 @@ export const MULE_FLARES = {
 };
 
 /** The nose: the grille on the hood's face, the lamps in black housings at its corners with an amber indicator on the outer end. */
-export const MULE_NOSE = { z: 1.4, grille: { w: 0.5, h: 0.17, y: 0.67 }, lamp: { x: 0.6, y: 0.64, z: 1.37, w: 0.2, h: 0.12, d: 0.08 } }; // on the nose block's corner: its face at 1.41, 1 cm proud of the block's (1.4), the housing's top under the block's own top there
+export const MULE_NOSE = { z: 1.4, grille: { w: 0.5, h: 0.17, y: 0.67 }, lamp: { x: 0.52, y: 0.64, z: 1.37, w: 0.2, h: 0.12, d: 0.08 } }; // on the nose block's corner: its face at 1.41, 1 cm proud of the block's (1.4), the housing's top under the block's own top there
 
 /** The cab: the windscreen's base and top (y, z), the cage's heights and the roof. */
 export const MULE_CAB = {

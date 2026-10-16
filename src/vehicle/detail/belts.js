@@ -161,7 +161,7 @@ export function tongueGeometry({ w = 0.038, h = 0.082, t = 0.004 } = {}) {
  * The group is `belt_<name>` with `stowed` and `worn` children (poseUtvBelts); the fixed parts (loop, reel, buckle, its strap) are on it.
  *   top: the D-loop; low: the reel; buckle: the buckle housing's top centre; hip: the seat point.
  */
-export function buildBuckledBelt(name, { top, low, buckle, hip, faceZ = null, mats = {} }) {
+export function buildBuckledBelt(name, { top, low, buckle, hip, faceZ = null, stowedRun = null, mats = {} }) {
   const m = { ...cabMats(), ...mats };
   const web = mats.webbing ?? webbingMaterial();
   const group = new THREE.Group();
@@ -178,10 +178,14 @@ export function buildBuckledBelt(name, { top, low, buckle, hip, faceZ = null, ma
   const fz = faceZ ?? low[2] + 0.025; // the seat back's face, where it hangs when the loop is behind the seat
   const park = [low[0], low[1] - 0.02, fz]; // the tongue parked low, so the webbing hangs the whole way down the seat back
   const over = faceZ === null ? [(top[0] + park[0]) / 2, (top[1] + park[1]) / 2, (top[2] + park[2]) / 2 + 0.012] : [top[0], top[1] - 0.03, (top[2] + fz) / 2 + 0.03]; // over the top of the seat back
-  mesh(ribbonGeometry([top, over, [park[0], Math.min(top[1] - 0.07, park[1] + 0.5), fz - 0.002], park], 0.046, 0.0032, [0, 0, 1], { uv: true }), web, stowed, 'beltWebbing');
+  // `stowedRun`, when the caller gives it, is the webbing's whole path from the D-loop down the seat back to the reel (the top anchor to the
+  // bottom one), lying flat on the face; the tongue then hangs on the webbing just above the reel.
+  const run0 = stowedRun ?? [top, over, [park[0], Math.min(top[1] - 0.07, park[1] + 0.5), fz - 0.002], park];
+  mesh(ribbonGeometry(run0, 0.046, 0.0032, [0, 0, 1], { uv: true }), web, stowed, 'beltWebbing');
+  const end = run0[run0.length - 1];
   const parked = mesh(tongueGeometry(), m.steel, stowed, 'beltTongue');
-  parked.position.set(park[0], park[1] - 0.012, park[2] + 0.003);
-  mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.01, 12).rotateX(Math.PI / 2), m.plastic, stowed, 'beltStop').position.set(park[0], park[1] - 0.095, park[2] + 0.004); // the button the tongue parks on
+  parked.position.set(end[0], end[1] + (stowedRun ? 0.09 : -0.012), end[2] + 0.003);
+  if (!stowedRun) mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.01, 12).rotateX(Math.PI / 2), m.plastic, stowed, 'beltStop').position.set(park[0], park[1] - 0.095, park[2] + 0.004); // the button the tongue parks on
   // Worn: the run from the loop to the tongue and from the reel to it, ending in the tongue's slot.
   const run = beltRun({ top, low, buckle: tongueAt, hip });
   mesh(ribbonGeometry(run.lap, 0.046, 0.0032, [0, 1, 0.4], { uv: true }), web, worn, 'beltLap');

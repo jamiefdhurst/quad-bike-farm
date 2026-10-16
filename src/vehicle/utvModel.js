@@ -349,11 +349,13 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   // sits there to the tongue clicked into the buckle (poseUtvBelts).
   for (const [seat, belt] of Object.entries(BELTS)) {
     const hip = [UTV_SEATS[seat].x, UTV_SEATS[seat].y - 0.05, UTV_SEATS[seat].z + SEAT_BACK]; // the sitter's hips sink into the cushion: the belt lies lower
-    const top = [belt.anchor, 1.3, -0.52];
-    const low = [belt.anchor, 0.8, -0.44];
+    const top = [belt.anchor, 1.42, -0.54]; // the D-loop on the rear hoop's bar, above the seat back's top
+    const low = [belt.anchor, 0.8, -0.385]; // the reel stands out of the seat back's face, low in the crease: the bottom anchor
     const buckle = [belt.buckle, 0.8, -0.38];
-    tube([belt.anchor, 1.45, -0.58], [belt.anchor, 1.32, -0.52], 0.008, MAT.steel, root, 6); // the strap bracket down from the bar to the loop
-    root.add(buildBuckledBelt(seat, { top, low, buckle, hip, faceZ: -0.42, mats: { webbing: beltWebbing } }));
+    const face = (y) => -0.43 - (y - 1.06) * 0.12 + 0.01; // the backrest's face at height y (it leans back 0.12), a centimetre proud of the cloth
+    const stowedRun = [top, [belt.anchor, 1.375, -0.485], [belt.anchor, 1.3, face(1.3)], [belt.anchor, 1.05, face(1.05)], [belt.anchor, 0.9, face(0.9)], [belt.anchor, 0.84, -0.37]];
+    tube([belt.anchor, 1.45, -0.58], [belt.anchor, 1.43, -0.54], 0.008, MAT.steel, root, 6); // the strap bracket down from the bar to the loop
+    root.add(buildBuckledBelt(seat, { top, low, buckle, hip, stowedRun, mats: { webbing: beltWebbing } }));
   }
 
   // The cage, roof, windscreen, rear net, mirrors and the lamps' plate (muleDetail.js), and the door nets that swing out.
@@ -369,7 +371,7 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   column.rotation.x = -0.95;
   tube([0, 0, 0], [0, 0.46, 0], 0.025, MAT.steel, column);
   root.add(column);
-  addSignalStalk(column, 0.28, MAT.steel, { modern: true });
+  addSignalStalk(column, 0.28, MAT.steel, { modern: true, symbol: false });
   const wheel = new THREE.Group();
   wheel.name = 'handlebars';
   wheel.userData.keep = true;
@@ -398,7 +400,7 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   hands.visible = false;
   wheel.add(hands);
   // The column shroud and the key slot's bezel on the dash.
-  rbox(0.31, 0.2, 0.2, 0.04, MAT.plastic, -0.34, 0.9, 0.52, root); // the column shroud, wide enough to carry the whole cluster (the speedo's moulding and the fuel unit)
+  rbox(0.34, 0.2, 0.2, 0.04, MAT.plastic, -0.34, 0.9, 0.52, root); // the column shroud, wide enough to carry the whole cluster (the speedo's moulding and the fuel unit)
 
   // The dash, on top of the shroud and tilted up to the driver.
   const dash = buildDash(dashStyle);
