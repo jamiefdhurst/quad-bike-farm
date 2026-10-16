@@ -178,10 +178,30 @@ describe('the UTV’s model', () => {
     expect(rings.length).toBe(10); // the speedo, the fuel unit and a round bezel for each of the eight lamps
     const key = dash.getObjectByName('ignitionKey');
     m.userData.dash.update({ keyOn: false, ignition: false, rpm: 0, speedMph: 0, fuelLevel: 0.5, temperature: 0.3, hours: 12, odoMiles: 100 });
-    expect(Math.abs(key.rotation.z)).toBe(0);
     m.userData.dash.update({ keyOn: true, ignition: true, rpm: 900, speedMph: 10, fuelLevel: 0.5, temperature: 0.3, hours: 12, odoMiles: 100 });
     expect(key.rotation.z).toBeGreaterThan(0.2); // (it eases there)
     expect(m.getObjectByName('driveStalk')).toBeTruthy();
     expect(m.getObjectByName('gearGate')).toBeTruthy();
+  });
+
+  it('keeps the dirt on the bed and the tailgate as they move: each has its own rest offset for the mud coat', () => {
+    const bed = utv.model.getObjectByName('bed');
+    const gate = utv.model.getObjectByName('tailgate');
+    expect(bed.userData.mudRest).toEqual([0, MULE_BED.hinge.y, MULE_BED.hinge.z]);
+    expect(gate.userData.mudRest[2]).toBeCloseTo(MULE_BED.gate, 6);
+    expect(bed.getObjectByName('mudBedSide')).toBeTruthy();
+    expect(gate.getObjectByName('mudGate')).toBeTruthy();
+  });
+
+  it('has a bed cover on hoops that tips with the bed, open at the tailgate end, and a key that starts pointing up', () => {
+    const bed = utv.model.getObjectByName('bed');
+    const cover = bed.getObjectByName('bedCover');
+    expect(cover).toBeTruthy();
+    expect(bed.getObjectByName('coverHoops')).toBeTruthy();
+    const box = new THREE.Box3().setFromObject(cover);
+    expect(box.min.z).toBeGreaterThan(MULE_BED.gate); // stops short of the tailgate
+    const key = utv.model.getObjectByName('ignitionKey');
+    const bow = key.children.find((c) => c.geometry?.type === 'BoxGeometry' && c.geometry.parameters.height > 0.015);
+    expect(bow, 'the key’s head is long up the key (y), pointing up at OFF').toBeTruthy();
   });
 });

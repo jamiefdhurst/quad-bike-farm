@@ -6,7 +6,7 @@ import { bentTube, loftGeometry, mergeStatic, rod, springGeometry } from './quad
 import { treadTyre } from './detail/tread.js';
 import { buildBuckledBelt, webbingMaterial } from './detail/belts.js';
 import { decalMesh, MAKER_FOR } from './detail/decals.js';
-import { buildMuleSpin, addMuleFront, addMuleCab, addMuleDoors, addMuleBed, addMuleGate, addMuleHitch } from './muleDetail.js';
+import { buildMuleSpin, addMuleFront, addMuleCab, addMuleDoors, addMuleBed, addMuleGate, addMuleHitch, addMuleCover, addMuleSplashes } from './muleDetail.js';
 import { MULE_WHEELS, MULE_BED, MULE_DOOR, MULE_HITCH, MULE_DASH, loftTop } from './muleBody.js';
 import { buildHandbrake } from './detail/cabControls.js';
 
@@ -110,6 +110,8 @@ const MAT = {
   reverse: new THREE.MeshStandardMaterial({ color: 0x4d5254, roughness: 0.2 }), // the reverse lens on each tail lamp: smoked until it lights
   buckleRed: new THREE.MeshStandardMaterial({ color: 0xc8261e, roughness: 0.45 }), // the red release button on a seat belt buckle
   grille: new THREE.MeshStandardMaterial({ color: 0x141516, roughness: 0.6 }),
+  canvas: new THREE.MeshStandardMaterial({ color: 0x8e918b, roughness: 0.95, side: THREE.DoubleSide }), // the bed cover's grey canvas
+  strap: new THREE.MeshStandardMaterial({ color: 0x1b1c1d, roughness: 0.85 }),
   bumper: new THREE.MeshStandardMaterial({ color: 0x252628, roughness: 0.9, bumpScale: 0.6 }), // moulded black plastic with a grain (its map is made when the first model is built)
   glovebox: new THREE.MeshStandardMaterial({ color: 0x2a2b2d, roughness: 0.6 }),
   rim: new THREE.MeshStandardMaterial({ color: 0x2a2e2d, roughness: 0.55, metalness: 0.45 }), // the wheels: black steel
@@ -485,6 +487,10 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   gate.position.set(0, yc(MULE_BED.floorY + 0.03), zc(MULE_BED.gate));
   addMuleGate(gate, MAT, paint);
   bed.add(gate);
+  addMuleCover(bed, MAT, yc, zc);
+  addMuleSplashes(root, bed, gate, yc, zc);
+  bed.userData.mudRest = [0, HINGE.y, HINGE.z]; // the dirt on the bed and the tailgate stays on them as they tip and swing (effects/mudCoat.js)
+  gate.userData.mudRest = [0, MULE_BED.floorY + 0.03, MULE_BED.gate];
   addMuleHitch(root, MAT);
   addSignalLamps(quad, MAT.indicator, MAT.reverse);
   addTailLights(quad, MAT.tail); // before the bed is merged: the cab's lamps become the quad's own tail material, lit by the headlight supply

@@ -39,7 +39,7 @@ const WHEEL_CENTRES = /* glsl */ `
 `;
 
 /** `clean`: a cab's inside (a model's cleanMaterials), which takes the wear but never the mud. */
-function patchMaterial(material, uniforms, wheel, kind, clean = false) {
+function patchMaterial(material, uniforms, wheel, kind, clean = false, rest = null) {
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader
@@ -54,7 +54,12 @@ function patchMaterial(material, uniforms, wheel, kind, clean = false) {
       .replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
-        ${wheel
+        ${rest
+          ? `// A part that swings (the UTV's tipping bed and its tailgate): its own coordinates plus where it stands at rest, so the dirt is stuck
+        // to it and goes where it goes, not a pattern fixed in the vehicle's space that it moves through.
+        vMudPos = position + vec3(${rest.map((v) => v.toFixed(5)).join(', ')});
+        vMudNormal = objectNormal;`
+          : wheel
           ? 'vMudPos = position; vMudNormal = objectNormal;'
           : `vMudPos = (uMudFrame * modelMatrix * vec4(transformed, 1.0)).xyz;
         vMudNormal = normalize(mat3(uMudFrame) * mat3(modelMatrix) * objectNormal);`}
@@ -186,27 +191,35 @@ export class MudCoat {
     const clean = new Set(model.userData.cleanMaterials ?? []);
     const bodyCopies = new Map();
     const wheelCopies = new Map();
+    const restCopies = new Map(); // by the rest offset: the swinging parts' own copies
     const bars = model.getObjectByName('handlebars');
     const wheelGroups = new Set(quad.wheels.map((w) => w.object));
-    const visit = (o, wheel) => {
+    const visit = (o, wheel, rest = null) => {
+      if (o.userData.mudRest) rest = o.userData.mudRest; // this part and what hangs on it work in their own coordinates
       // The bars, dash and rider's hands stay clean: well above the mud, and the dash changes its own materials.
       if (o === bars || o.name === 'signalStalk') return; // (the indicator stalk swings: a wear pattern that stayed put on it would look wrong, so it stays clean)
       if (wheelGroups.has(o)) wheel = true;
       if (o.isMesh && o.material?.isMeshStandardMaterial && !skip.has(o.material) && !o.material.emissive?.getHex()) {
-        const copies = wheel ? wheelCopies : bodyCopies;
+        let copies = wheel ? wheelCopies : bodyCopies;
+        if (rest) {
+          const key = rest.map((v) => v.toFixed(4)).join(',');
+          if (!restCopies.has(key)) restCopies.set(key, new Map());
+          copies = restCopies.get(key);
+        }
         if (!copies.has(o.material)) {
           const copy = o.material.clone();
           const kind = wearKind(o.material, { metalBody: !!model.userData.metalBody });
-          patchMaterial(copy, this.uniforms, wheel, kind, clean.has(o.material));
+          patchMaterial(copy, this.uniforms, wheel, kind, clean.has(o.material), rest);
           copy.userData.wearKind = kind;
           copies.set(o.material, copy);
         }
         o.material = copies.get(o.material);
       }
-      for (const c of o.children) visit(c, wheel);
+      for (const c of o.children) visit(c, wheel, rest);
     };
     visit(model, false);
     this.bodyCopies = bodyCopies; // original material -> the muddy copy the meshes really use, so others can tint it
+    for (const m of restCopies.values()) for (const c of m.values()) wheelCopies.set(c, c); // (counted and baked with the rest)
     this.materialCount = bodyCopies.size + wheelCopies.size;
     this.frame = model.getObjectByName('bodyRoot');
     this.setTouch(findTouchPoints(model, this.frame));

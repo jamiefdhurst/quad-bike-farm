@@ -678,8 +678,8 @@ function buildUtv() {
   const strip = [{ cx: 128, cy: 105, r: 6.4, kind: 'turnLeft' }, { cx: 176, cy: 105, r: 6.4, kind: 'temp' }, { cx: 216, cy: 105, r: 6.4, kind: 'belt' }, { cx: 264, cy: 105, r: 6.4, kind: 'turnRight' }];
   const face = mmPanel({ ...BODY, ...O });
   group.add(face.mesh);
-  chromeRing(group, { ...speedo, r: speedo.r + 1.5, ...O, tube: 0.0034 });
-  chromeRing(group, { ...unit, r: unit.r + 1.5, ...O, tube: 0.0034 });
+  chromeRing(group, { ...speedo, r: speedo.r + 1.5, ...O, tube: 0.0034, material: agedSteel });
+  chromeRing(group, { ...unit, r: unit.r + 1.5, ...O, tube: 0.0034, material: agedSteel });
   for (const p of [...pockets, ...strip]) chromeRing(group, { ...p, r: p.r ?? 8.5, ...O, material: agedSteel, tube: 0.0022 }); // every lamp in a round bezel
   const KEY = { x: 291, y: 61 }; // the ignition's centre (mm), at the right-hand end
   const gate = changeGate();
@@ -705,6 +705,7 @@ function buildUtv() {
     const odo = counterDigits(s.odoMiles, 6);
     drum(ctx, speedo.cx - 15, speedo.cy + 13, odo, 5);
     needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 225 - (270 * Math.min(40, L.mph)) / 40, '#f0742a', 1.3); // an orange needle
+    agedGlass(ctx, speedo); // the years: a yellowed haze, scratches and dust over the glass
     // The fuel gauge and the hours: a red-lit window with five bars (lit up to the level) with E 1/4 1/2 3/4 F under it, and an LCD of hours.
     ctx.fillStyle = '#0b0b0b';
     ctx.beginPath();
@@ -724,6 +725,12 @@ function buildUtv() {
     ctx.fillRect(unit.cx - 17, unit.cy + 2, 34, 14);
     segText(ctx, L.hours, unit.cx + 14.5, unit.cy + 5, 8, LCD.on, LCD.ghost); // right-aligned inside the window
     text(ctx, 'HOURS', unit.cx, unit.cy + 22, 3.2, '#ece6d2', { align: 'center' });
+    agedGlass(ctx, unit);
+    // Dust and wear on the moulding: a few light scuffs on its top edge and a grimy bottom edge.
+    ctx.fillStyle = 'rgba(160,150,130,0.13)';
+    ctx.fillRect(BODY.x, BODY.y + BODY.h - 8, BODY.w, 8);
+    ctx.fillStyle = 'rgba(200,196,186,0.2)';
+    for (const [x, y, w] of [[60, 16, 14], [130, 14, 9], [226, 15, 17], [296, 18, 7]]) ctx.fillRect(x, y, w, 0.9);
     // The four lamps in their pockets (each lit in its colour, or dull), and the strip of the rest under the speedo.
     const lamps = [['glow', LAMP.amber, L.glow], ['charge', LAMP.red, L.charge], ['oil', LAMP.red, L.oil], ['park', LAMP.red, L.park]];
     pockets.forEach((p, i) => {
@@ -763,10 +770,10 @@ function buildUtv() {
   blade.position.set(0, 0, -0.012); // lying along the barrel's axis, standing out of it
   const cuts = new THREE.Mesh(new THREE.BoxGeometry(0.0068, 0.0012, 0.012), blackMat);
   cuts.position.set(0, 0.0014, -0.0145);
-  const bow = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.011, 0.0055), blackMat); // the head's flat, wide across, so it reads as a car key's
-  bow.position.set(0, 0, -0.0245);
+  const bow = new THREE.Mesh(new THREE.BoxGeometry(0.011, 0.02, 0.0055), blackMat); // the head's flat, long up the key (pointing up at OFF), so it reads as a car key's
+  bow.position.set(0, 0.0045, -0.0245);
   const ring = new THREE.Mesh(new THREE.TorusGeometry(0.0042, 0.0013, 6, 14), chromeMat);
-  ring.position.set(0.0072, 0, -0.0275);
+  ring.position.set(0, 0.0165, -0.0275);
   ignitionKey.add(blade, cuts, bow, ring);
   group.add(ignitionKey);
 

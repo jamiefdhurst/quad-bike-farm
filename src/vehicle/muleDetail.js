@@ -238,7 +238,7 @@ export function addMuleBed(bed, MAT, paint, yc, zc) {
   const mid = (B.front + B.gate) / 2;
   const depth = B.front - B.gate;
   rbox(B.half * 2 - 0.04, 0.05, depth, 0.012, MAT.floor, 0, yc(B.floorY), zc(mid), bed, 'bedFloor');
-  for (let i = -4; i <= 4; i++) rbox(0.03, 0.012, depth - 0.06, 0.004, MAT.bed, i * 0.15, yc(B.floorY + 0.028), zc(mid), bed); // the chequer plate's ribs
+  for (let i = -2; i <= 2; i++) rbox(0.04, 0.012, depth - 0.06, 0.004, MAT.bed, i * 0.3, yc(B.floorY + 0.028), zc(mid), bed); // the chequer plate's ribs
   rbox(B.half * 2, 0.36, 0.05, 0.02, paint, 0, yc(B.floorY + 0.2), zc(B.front), bed, 'bedFront'); // the front wall, a little higher than the sides
   rbox(B.half * 2 + 0.02, 0.05, 0.07, 0.02, paint, 0, yc(B.floorY + 0.4), zc(B.front), bed);
   for (const s of [-1, 1]) {
@@ -281,4 +281,83 @@ export function addMuleHitch(root, MAT) {
   tube([0, H.y - 0.01, H.z - 0.04], [0, H.y + 0.04, H.z - 0.04], 0.012, MAT.steel, root, 8);
   mesh(new THREE.SphereGeometry(0.026, 12, 10), MAT.chrome, root, 'hitchBall').position.set(0, H.y + 0.065, H.z - 0.04);
   mesh(new THREE.TorusGeometry(0.02, 0.005, 6, 12), MAT.steel, root).position.set(0.07, H.y, H.z + 0.12);
+}
+
+// Bed cover and splashes ------------------------------------------------------------
+
+/**
+ * The bed's canvas cover, as in the photo of the Mule with its hood on: three steel hoops stood on the bed's sides carrying a taut grey canvas
+ * sheet that falls over the sides to the rim, open at the back (the tailgate end) so the tailgate still opens and a girl can sit on it. In the
+ * bed's own frame (it tips with the bed).
+ */
+export function addMuleCover(bed, MAT, yc, zc) {
+  const B = MULE_BED;
+  const rim = B.floorY + 0.33;
+  const top = rim + 0.5;
+  const front = B.front + 0.02;
+  const back = B.gate + 0.12;
+  const hoopAt = (z) => [[-B.half + 0.02, yc(rim), zc(z)], [-B.half + 0.06, yc(rim + 0.32), zc(z)], [-0.3, yc(top - 0.04), zc(z)], [0.3, yc(top - 0.04), zc(z)], [B.half - 0.06, yc(rim + 0.32), zc(z)], [B.half - 0.02, yc(rim), zc(z)]];
+  const hoops = [front, (front + back) / 2, back].map((z) => sweepGeometry(new THREE.CatmullRomCurve3(hoopAt(z).map((p) => new THREE.Vector3(...p))).getPoints(8).map((p) => [p.x, p.y, p.z]), 0.012, { radial: 5 }));
+  mesh(merge(hoops), MAT.steel, bed, 'coverHoops');
+  // The sheet: a lofted arch over the hoops, a little proud of them, drooping at its back edge.
+  const sheet = loftGeometry([
+    { z: zc(front), w: B.half * 2 + 0.04, y0: yc(rim - 0.02), y1: yc(top), e: 2.6 },
+    { z: zc((front + back) / 2), w: B.half * 2 + 0.05, y0: yc(rim - 0.02), y1: yc(top + 0.015), e: 2.6 },
+    { z: zc(back), w: B.half * 2 + 0.04, y0: yc(rim - 0.02), y1: yc(top - 0.01), e: 2.6 },
+  ].sort((a, b) => a.z - b.z), { exponent: 2.6, bottom: 8 });
+  mesh(sheet, MAT.canvas, bed, 'bedCover');
+  // The straps over it, two across and their buckles, and the tie ropes down each side.
+  for (const z of [front * 0.72 + back * 0.28, front * 0.28 + back * 0.72]) rbox(B.half * 2 + 0.06, 0.012, 0.05, 0.004, MAT.strap, 0, yc(top + 0.014), zc(z), bed, 'coverStrap');
+}
+
+let splash = null;
+/** A dried mud splash texture: a band of brown splats thickest at its foot and thinning up, on a clear ground. */
+function splashMaterial() {
+  if (!splash) {
+    const c = document.createElement('canvas');
+    c.width = 256;
+    c.height = 128;
+    const g = c.getContext('2d');
+    let seed = 5;
+    const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < 420; i++) {
+      const y = 128 * Math.pow(rand(), 0.55); // more towards the foot (the bottom of the picture)
+      const r = 1.2 + rand() * (4 - y / 40);
+      g.fillStyle = `rgba(${70 + rand() * 30},${50 + rand() * 20},${30 + rand() * 12},${0.35 + rand() * 0.5})`;
+      g.beginPath();
+      g.ellipse(rand() * 256, 128 - y, r * (0.7 + rand()), r * (0.8 + rand() * 1.2), rand() * 3, 0, Math.PI * 2);
+      g.fill();
+    }
+    for (let i = 0; i < 18; i++) { // drips run up from the splats
+      const x = rand() * 256;
+      g.fillStyle = 'rgba(78,56,34,0.5)';
+      g.fillRect(x, 128 - 30 - rand() * 40, 1.4, 20 + rand() * 30);
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    splash = new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 1, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  }
+  return splash;
+}
+
+/**
+ * Mud flung up the sides: splash bands standing on the flat flanks, a millimetre off them: the bed's two sides and its tailgate (in their own
+ * frames, so they tip and swing with them), and the rocker panels and the body's flanks (in the body's).
+ */
+export function addMuleSplashes(root, bed, gate, yc, zc) {
+  const B = MULE_BED;
+  const band = (w, h, parent, x, y, z, ry, name) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), splashMaterial());
+    m.name = name;
+    m.position.set(x, y, z);
+    m.rotation.y = ry;
+    parent.add(m);
+    return m;
+  };
+  const mid = (B.front + B.gate) / 2;
+  for (const s of [-1, 1]) {
+    band(Math.abs(B.front - B.gate) - 0.2, 0.28, bed, s * (B.half + 0.0265), yc(B.floorY + 0.13), zc(mid), s * Math.PI / 2, 'mudBedSide');
+    band(0.9, 0.3, root, s * 0.5325, 0.5, 0.18, s * Math.PI / 2, 'mudBody');
+  }
+  band(B.half * 2 - 0.1, 0.2, gate, 0, 0.1, 0.0215, 0, 'mudGate'); // on the tailgate's outer face (its foot)
 }

@@ -57,7 +57,7 @@ export const MULE_FLARES = {
 };
 
 /** The nose: the grille on the hood's face, the lamps in black housings at its corners with an amber indicator on the outer end. */
-export const MULE_NOSE = { z: 1.4, grille: { w: 0.5, h: 0.17, y: 0.67 }, lamp: { x: 0.41, y: 0.64, z: 1.37, w: 0.2, h: 0.12, d: 0.08 } }; // on the nose block's corner: its face at 1.41, 1 cm proud of the block's (1.4), the housing's top under the block's own top there
+export const MULE_NOSE = { z: 1.4, grille: { w: 0.5, h: 0.17, y: 0.67 }, lamp: { x: 0.385, y: 0.64, z: 1.37, w: 0.18, h: 0.12, d: 0.08 } }; // on the nose block's corner: its face at 1.41, 1 cm proud of the block's (1.4), the housing's top under the block's own top there
 
 /** The cab: the windscreen's base and top (y, z), the cage's heights and the roof. */
 export const MULE_CAB = {
