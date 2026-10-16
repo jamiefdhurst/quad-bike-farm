@@ -4,7 +4,7 @@ import { buildDash } from './dash.js';
 import { loftGeometry, mergeStatic, rod, springGeometry, sweepGeometry } from './quadGeometry.js';
 import { treadTyre } from './detail/tread.js';
 import { decalMesh, MAKER_FOR } from './detail/decals.js';
-import { MF_WHEELS, MF_BONNET, MF_NOSE, MF_GRILLE, MF_NOSE_FACE, MF_LAMP, MF_PANEL, MF_COWL, MF_STEERING, MF_SEAT, MF_GUARD, MF_FOOT, MF_PEDALS, MF_LEVERS, MF_EXHAUST, MF_AIR, MF_ACCEL, MF_HANDBRAKE } from './mf35Body.js';
+import { MF_WHEELS, MF_BONNET, MF_NOSE, MF_GRILLE, MF_NOSE_FACE, MF_LAMP, MF_PANEL, MF_COWL, MF_STEERING, MF_SEAT, MF_GUARD, MF_FOOT, MF_PEDALS, MF_LEVERS, MF_EXHAUST, MF_AIR, MF_ACCEL, MF_HANDBRAKE, cowlTop } from './mf35Body.js';
 import { addHeadlightBeams, addTailLights } from './quadModel.js';
 
 // The old farm tractor (TODO 98): a Massey-Ferguson-35-style three-cylinder diesel in red and grey (the Hartley 35; mf35Body.js has the
@@ -266,7 +266,7 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   const L = MF_LAMP;
   for (const s of [-1, 1]) {
     add(new THREE.CylinderGeometry(L.cup, L.cup * 0.9, L.depth, 24).rotateX(Math.PI / 2), paint, root, 'lampCup').position.set(s * L.x, L.y, L.z);
-    rbox(0.07, 0.05, 0.05, 0.012, paint, s * (L.x - L.cup + 0.03), L.y, L.z - 0.01, root, 'lampBracket'); // the cup stands off the nose's side on this
+    rbox(L.x - 0.15, 0.05, 0.05, 0.012, paint, s * (0.15 + (L.x - 0.15) / 2), L.y, L.z - 0.015, root, 'lampBracket'); // an arm from inside the nose's side out to the cup's back, so the cup is carried by the body
   }
   for (const s of [-1, 1]) {
     add(new THREE.TorusGeometry(L.r, 0.007, 8, 28), MAT.chrome, root).position.set(s * L.x, L.y, L.z + L.depth / 2 + 0.002);
@@ -516,15 +516,12 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   hand.userData.keep = true;
   const hx = -0.2;
   const hz = 0.09;
-  hand.position.set(hx, panelY0(hz) + 0.026, hz);
-  const slope = Math.atan(Math.tan(Math.PI / 2 - MF_PANEL.tilt));
-  const quadrant = rbox(0.05, 0.008, 0.2, 0.004, MAT.steel, hx, panelY0(hz) + 0.002, hz, root, 'throttleQuadrant'); // the toothed quadrant plate, set into the cowl
+  const top = cowlTop(hx, hz); // the cowl's true surface here (it is not the dash's plane this far out and back), so the plate lies on it
+  const slope = Math.atan(top.slope);
+  hand.position.set(hx, top.y + 0.026, hz);
+  const quadrant = rbox(0.014, 0.004, 0.2, 0.002, MAT.black, hx, top.y - 0.0005, hz, root, 'throttleQuadrant'); // the slot the lever works in, cut flush into the cowl (a thin dark line, no slab)
   quadrant.rotation.x = slope;
-  for (let i = 0; i < 9; i++) {
-    const z = hz - 0.08 + i * 0.02;
-    rbox(0.034, 0.004, 0.003, 0.0012, MAT.black, hx, panelY0(z) + 0.007, z, root).rotation.x = slope; // its tick marks
-  }
-  const bracket = rbox(0.06, 0.05, 0.05, 0.01, MAT.castDark, hx, panelY0(hz) + 0.008, hz, root, 'throttleBracket'); // the pivot bracket, bolted down through it
+  const bracket = rbox(0.06, 0.05, 0.05, 0.01, MAT.castDark, hx, top.y + 0.006, hz, root, 'throttleBracket'); // the pivot bracket, bolted down through it
   bracket.rotation.x = slope;
   add(new THREE.CylinderGeometry(0.016, 0.016, 0.06, 14).rotateZ(Math.PI / 2), MAT.chrome, hand); // the pivot and its friction nut, on the lever's foot
   tube([0, 0, 0], [0, 0.25, 0], 0.0075, MAT.steel, hand);

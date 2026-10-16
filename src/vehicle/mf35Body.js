@@ -27,7 +27,7 @@ export const MF_NOSE = [
 export const MF_GRILLE = { z: 1.4, slats: 10, inset: 0.84 };
 export const MF_NOSE_FACE = { z: 1.4, cx: 0, cy: 0.85, hw: 0.18, hh: 0.23, e: 3.4 };
 /** A round headlamp in a red cup on each side of the nose. */
-export const MF_LAMP = { x: 0.3, y: 0.93, z: 1.37, r: 0.065, cup: 0.078, depth: 0.08 };
+export const MF_LAMP = { x: 0.27, y: 0.93, z: 1.33, r: 0.065, cup: 0.078, depth: 0.08 };
 
 /** The cowl behind the bonnet, which is the fuel tank and the instrument panel: stations (z, width, bottom, top). The top slopes to the driver. */
 export const MF_PANEL = { tilt: 1.2, at: [0, 1.13, 0.2], span: 0.34 }; // the panel's plane, as the dash group's tilt, a point on it and its length along z
@@ -39,6 +39,27 @@ export const MF_COWL = [
   { z: -0.06, w: 0.5, y0: 0.9, y1: 1.07 },
   { z: -0.14, w: 0.44, y0: 0.92, y1: 1.02 },
 ];
+
+/** Where the cowl's top is at (x, z): the loft's own section (a superellipse of exponent `e`) between its stations, so things standing on it sit on it. Returns { y, slope } (slope is dy/dz along the top at that x). */
+export function cowlTop(x, z, e = 6) {
+  const at = (zz) => {
+    for (let i = 0; i < MF_COWL.length - 1; i++) {
+      const a = MF_COWL[i];
+      const b = MF_COWL[i + 1];
+      if (zz <= a.z && zz >= b.z) {
+        const k = (zz - b.z) / (a.z - b.z);
+        const w = b.w + (a.w - b.w) * k;
+        const y0 = b.y0 + (a.y0 - b.y0) * k;
+        const y1 = b.y1 + (a.y1 - b.y1) * k;
+        const u = Math.min(1, Math.abs(x) / (w / 2)) ** e;
+        return (y0 + y1) / 2 + ((y1 - y0) / 2) * (1 - u) ** (1 / e);
+      }
+    }
+    return 0;
+  };
+  const d = 0.005;
+  return { y: at(z), slope: (at(z + d) - at(z - d)) / (2 * d) };
+}
 
 /** The steering wheel's centre (a fixed point), the column's rake and the wheel's radius. The column's foot is on the cowl behind the panel. */
 export const MF_STEERING = { column: [0, 1.08, -0.02], rake: 0.75, length: 0.164, r: 0.22 };

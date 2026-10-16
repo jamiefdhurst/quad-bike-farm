@@ -1269,7 +1269,7 @@ export class Quad {
     if (this.tractor) {
       this.stopPull = Math.max(0, (this.stopPull ?? 0) - dt * 1.6);
       this.displayPark += ((this.parkBrake ? 1 : 0) - this.displayPark) * Math.min(1, 10 * dt);
-      poseTractorControls(this.model, { gear: this.drivetrain.gear, hand: this.handSetting, pedal: this.drivetrain.pedal, brake: this.brake, throttle: this.throttle, park: this.displayPark, stop: this.stopPull });
+      poseTractorControls(this.model, { gear: this.drivetrain.gear, hand: this.handSetting, pedal: this.drivetrain.pedal, brake: this.brake, throttle: this.throttleKey ?? 0, park: this.displayPark, stop: this.stopPull });
     }
     if (this.utv) {
       poseUtvControls(this.model, { reverse: this.reverse, neutral: state.neutral, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, lights: this.lights.mode, horn: this.hornHeld, park: this.parkBrake });
