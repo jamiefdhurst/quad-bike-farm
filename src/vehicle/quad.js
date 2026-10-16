@@ -19,6 +19,7 @@ import { AutoShifter, grindsGear } from './autoShifter.js';
 import { poseTractorControls } from './tractorModel.js';
 import { poseLandyControls, poseSeatTips, LANDY_REAR_SEATS } from './landRoverModel.js';
 import { poseSeriesDoors, poseSeriesTailgate } from './seriesModel.js';
+import { poseDefenderBackDoor } from './defenderModel.js';
 import { Tailgate } from './tailgate.js';
 import { poseCarControls, poseCarSeats } from './carModel.js';
 
@@ -1286,12 +1287,14 @@ export class Quad {
       poseLandyControls(this.model, { gear: this.drivetrain.gear, gears: this.gearbox.gears, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, choke: this.choke, hand: this.handSetting, park: this.parkBrake });
       poseUtvBelts(this.model, this.belts.worn()); // the same belt names as the UTV's
       if (this.rearSeats.length) poseSeatTips(this.model, this.seatTips);
-      // The Series' doors swing out at the side used, as the UTV's nets do, and its tailgate drops on T (the 200TDi's have neither yet).
+      // The doors swing out at the side used, as the UTV's nets do (the Series' and the 200TDi's), and T drops the Series' tailgate or swings the
+      // 200TDi's back door out on its hinge.
       this.doorSwing ??= new DoorSwing();
       poseSeriesDoors(this.model, this.doorSwing.update(dt, { speed: this.speed, aboard: { right: !!(this.driver || this.rider), left: !!this.passenger && !(this.driver || this.rider) }, boarding: this.doorBoarding ?? {} }));
       this.tailgate ??= new Tailgate();
       this.tailgate.update(dt, { speed: this.speed });
       poseSeriesTailgate(this.model, this.tailgate.open);
+      poseDefenderBackDoor(this.model, this.tailgate.open);
     }
     if (this.car) {
       poseCarControls(this.model, { gear: this.drivetrain.gear, gears: this.gearbox.gears, choke: this.choke, park: this.parkBrake });

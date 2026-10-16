@@ -1558,6 +1558,12 @@ export const FAQ_SECTIONS = [
         tip: 'T drops the Series III’s tailgate; E with something in your hands stands it in the tub.',
       },
       {
+        q: 'How do I open the 200TDi’s back door?',
+        a: `Press <kbd>T</kbd>, stopped, from the seat or standing beside it, and the back door swings out on its hinge on the driver's side, spare wheel and all, onto the
+          load space behind the back bench. Press it again to shut it. It swings shut by itself if you drive off with it open, and it won't open while the 200TDi is moving.`,
+        tip: 'T swings the 200TDi’s back door out and shuts it again.',
+      },
+      {
         q: 'Why do the Series III’s doors open?',
         a: `They are hinged at the front and swing out, on the side you are using, for a couple of seconds when you get in or out and while a girl climbs in or down. They only
           open while it is nearly stopped and shut again as soon as it moves.`,
@@ -1594,10 +1600,10 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'What is the other Land Rover, the 200TDi?',
-        a: `A faded pastel green early-90s 90 station wagon with a rattly turbo diesel, a square back and the spare wheel on its rear door. Either Land Rover,
+        a: `A blue early-90s Defender 90 station wagon with a white roof and a rattly turbo diesel, a square back and the spare wheel on its rear door. Either Land Rover,
           both or neither may be on the farm. Start it like the UTV: <kbd>K</kbd>, wait for the GLOW lamp to go out, then hold <kbd>R</kbd>. It has a clutch
           and a five-speed gearbox (<kbd>1</kbd> to <kbd>5</kbd>) with synchromesh, so it never crunches, and it has no choke, hand throttle or starting handle. Its dash
-          has a rev counter and a flashing BELT lamp. It uses red diesel only.`,
+          has three small gauges and a big speedometer, a radio in the middle and a flashing BELT lamp. Press <kbd>T</kbd> and its back door swings out on its hinge. It uses red diesel only.`,
         tip: 'The 200TDi is a diesel: wait for the GLOW lamp to go out, then hold R. Red diesel only.',
       },
       {
@@ -1851,7 +1857,7 @@ export const VEHICLE_NOTES = {
   },
   tractor: {
     blurb: 'An old red-and-grey Hartley 35 (a Massey-Ferguson-35-style tractor) on red diesel: heavy, slow and strong, with three gears, a hand throttle and a lot of hours.',
-    tips: ['Wait for the GLOW lamp before cranking.', 'The stop knob (O) stops it, not the key.', 'P switches its lights; the tail lamps follow and brighten on the brake.', 'Pulls the bale trailer and the tow chain.'],
+    tips: ['Wait for the GLOW lamp before cranking.', 'T swings the back door out.', 'The stop knob (O) stops it, not the key.', 'P switches its lights; the tail lamps follow and brighten on the brake.', 'Pulls the bale trailer and the tow chain.'],
   },
   utv: {
     blurb: 'A dark green Ridgeback Yak 4010, a Mule-style side-by-side on red diesel: a bench seat with proper buckled belts, a roll cage with door nets and a tipping bed.',
@@ -1862,7 +1868,7 @@ export const VEHICLE_NOTES = {
     tips: ['First and second crunch on the move: nearly stop first.', 'A starting handle for a flat battery.', 'T drops the tailgate.', '] and [ work the hand throttle.'],
   },
   landrover200: {
-    blurb: 'An early-90s Land Rover 90 station wagon in faded pastel green, the 200TDi: a rattly 2.5 litre turbo diesel, a square back with the spare on its door and a newer dash.',
+    blurb: 'An early-90s Defender 90 station wagon in Atlantic Blue with a white roof, the 200TDi: a rattly 2.5 litre turbo diesel, a back door that swings out on T with the spare on it, and a moulded dash with a radio.',
     tips: ['Wait for the GLOW lamp before cranking.', 'Every gear has synchromesh: no crunching.', 'The belt lamp flashes and it bongs until you do your belt up.', 'Listen for the turbo whistling as it pulls, and chattering when you lift off.'],
   },
   fiesta: {

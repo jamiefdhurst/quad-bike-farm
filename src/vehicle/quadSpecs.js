@@ -1242,10 +1242,9 @@ export const DEFENDER_SPEC = {
   name: '200TDi',
   landRover: true,
   defender: true,
-  scale: 1.15,
   steadyLights: true,
   wheelShake: 0.55,
-  bodyColor: 0x8aa38a, // a faded pastel green
+  bodyColor: 0x3f5f7a, // Atlantic Blue, as the photos' (not the faded pastel green it had)
   dashStyle: 'defender',
   driveSwitch: true,
   diffLock: true,

@@ -812,6 +812,36 @@ function buildUtv() {
 
 // The Land Rover ----------------------------------------------------------------------------
 
+/**
+ * A real ignition on a pod face: a small black bezel with a chrome barrel and a key in it (a steel blade with teeth standing out towards the
+ * driver, a black bow with a ring hole), as the UTV's, at `key` (mm, in the pod's canvas) and `scale` times the UTV's size. Returns the key's
+ * group (named 'ignitionKey'): turn it about z, clockwise as the driver sees it, 0 at OFF (pointing up) to 0.72 ON and 1.45 START.
+ */
+function addIgnitionKey(group, O, key, scale = 1) {
+  const lock = new THREE.Group();
+  lock.scale.setScalar(scale);
+  lock.position.set(-(key.x - O.ox) * 0.001, -(key.y - O.oy) * 0.001, 0);
+  group.add(lock);
+  const bezel = new THREE.Mesh(new THREE.CylinderGeometry(0.0125, 0.0135, 0.008, 22).rotateX(Math.PI / 2), blackMat);
+  bezel.position.z = -0.039 / scale; // its face is a hair proud of the pod's (z -0.0356), whatever the scale
+  lock.add(bezel);
+  const ignitionKey = new THREE.Group();
+  ignitionKey.name = 'ignitionKey';
+  ignitionKey.position.z = -0.0435 / scale;
+  ignitionKey.add(new THREE.Mesh(new THREE.CylinderGeometry(0.0088, 0.0088, 0.006, 18).rotateX(Math.PI / 2), chromeMat));
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.0065, 0.0024, 0.02), chromeMat);
+  blade.position.set(0, 0, -0.012);
+  const cuts = new THREE.Mesh(new THREE.BoxGeometry(0.0068, 0.0012, 0.012), blackMat);
+  cuts.position.set(0, 0.0014, -0.0145);
+  const bow = new THREE.Mesh(new THREE.BoxGeometry(0.011, 0.02, 0.0055), blackMat);
+  bow.position.set(0, 0.0045, -0.0245);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.0042, 0.0013, 6, 14), chromeMat);
+  ring.position.set(0, 0.0165, -0.0275);
+  ignitionKey.add(blade, cuts, bow, ring);
+  lock.add(ignitionKey);
+  return ignitionKey;
+}
+
 function buildSeries() {
   const group = new THREE.Group();
   group.name = 'dash';
@@ -886,27 +916,7 @@ function buildSeries() {
   // The ignition: a small black bezel with a chrome barrel and a real key in it, as the UTV's (a steel blade standing out towards the driver, a black
   // bow with a ring hole), at the dash's right-hand end. It turns clockwise from OFF at the top to ON and on to START, and the dash eases it to
   // whichever the engine is doing.
-  const lock = new THREE.Group();
-  lock.scale.setScalar(0.6); // the Series' switch is smaller than the UTV's
-  lock.position.set(-(KEY.x - O.ox) * 0.001, -(KEY.y - O.oy) * 0.001, 0);
-  group.add(lock);
-  const bezel = new THREE.Mesh(new THREE.CylinderGeometry(0.0125, 0.0135, 0.008, 22).rotateX(Math.PI / 2), blackMat);
-  bezel.position.z = -0.065; // (in the lock's own scale: its face is a hair proud of the pod's)
-  lock.add(bezel);
-  const ignitionKey = new THREE.Group();
-  ignitionKey.name = 'ignitionKey';
-  ignitionKey.position.z = -0.0725;
-  ignitionKey.add(new THREE.Mesh(new THREE.CylinderGeometry(0.0088, 0.0088, 0.006, 18).rotateX(Math.PI / 2), chromeMat));
-  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.0065, 0.0024, 0.02), chromeMat);
-  blade.position.set(0, 0, -0.012);
-  const cuts = new THREE.Mesh(new THREE.BoxGeometry(0.0068, 0.0012, 0.012), blackMat);
-  cuts.position.set(0, 0.0014, -0.0145);
-  const bow = new THREE.Mesh(new THREE.BoxGeometry(0.011, 0.02, 0.0055), blackMat);
-  bow.position.set(0, 0.0045, -0.0245);
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.0042, 0.0013, 6, 14), chromeMat);
-  ring.position.set(0, 0.0165, -0.0275);
-  ignitionKey.add(blade, cuts, bow, ring);
-  lock.add(ignitionKey);
+  const ignitionKey = addIgnitionKey(group, O, KEY, 0.6); // the Series' switch is smaller than the UTV's
 
   return {
     group,
@@ -942,9 +952,10 @@ function buildSeries() {
 // The 200TDi ---------------------------------------------------------------------------------
 
 /**
- * An early-90s Land Rover 90's dash, in a different style from the Series': a flat grey moulding with white-on-black dials and orange
- * needles, a rev counter, the speedometer, and fuel and water gauges stacked on the right, with a row of warning lamps along the bottom
- * (glow plugs, charge, oil, handbrake, seat belts, side lights and main beam) and the key at the far end.
+ * An early-90s Land Rover 90's dash, after the photo of the real cluster and in a different style from the Series': a flat black moulding with
+ * white-on-black dials and orange needles. Three small gauges in a row at the left (the battery's volts, the water temperature, the fuel), the
+ * big speedometer at the right with its odometer, a panel of warning symbols in two rows under the small gauges (glow plugs, charge, oil, the
+ * handbrake, seat belts, the hazards; side lights, main beam and the indicators), and the ignition's key (a real one) at the far end.
  */
 function buildDefender() {
   const group = new THREE.Group();
@@ -953,18 +964,18 @@ function buildDefender() {
   housing(group, { x: 60, y: 14, w: 240, h: 92, r: 3, ...O, material: charcoal });
   const face = mmPanel({ x: 60, y: 14, w: 240, h: 92, ...O });
   group.add(face.mesh);
-  const tacho = { cx: 98, cy: 50, r: 27 };
-  const speedo = { cx: 170, cy: 50, r: 30 };
-  const temp = { cx: 236, cy: 36, r: 14 };
-  const fuel = { cx: 236, cy: 66, r: 14 };
-  for (const d of [tacho, speedo, temp, fuel]) chromeRing(group, { ...d, r: d.r + 1, ...O, tube: 0.0018 });
+  const volts = { cx: 90, cy: 38, r: 15 };
+  const temp = { cx: 124, cy: 38, r: 15 };
+  const fuel = { cx: 158, cy: 38, r: 15 };
+  const speedo = { cx: 226, cy: 56, r: 36 };
+  const KEY = { x: 286, y: 92 };
+  for (const d of [volts, temp, fuel, speedo]) chromeRing(group, { ...d, r: d.r + 1, ...O, tube: 0.0018 });
   const gate = changeGate();
   let shownMph = 0;
-  let shownRpm = 0;
   let shownFuel = 0;
   let shownTemp = 0;
-  const SPEEDO_MAX = 100;
-  const TACHO_MAX = 5000;
+  let keyAngle = 0;
+  const SPEEDO_MAX = 110;
   const NEEDLE = '#ff8a1f'; // orange needles, white figures: the look of the newer instruments
   const WHITE = '#ffffff';
   const dial = (ctx, d) => {
@@ -973,82 +984,73 @@ function buildDefender() {
     ctx.arc(d.cx, d.cy, d.r, 0, Math.PI * 2);
     ctx.fill();
   };
-  /** A small gauge: an arc scale from 150 to 30 degrees, labelled at its ends. */
-  const small = (ctx, d, frac, name, lo, hi, hotEnd) => {
+  /** A small gauge: a short arc scale across its top (150 to 30 degrees) with its symbol under the pivot and a red end for the hot ones. */
+  const small = (ctx, d, frac, symbol, colour, lo, hi, redEnd, redStart) => {
     dial(ctx, d);
     ticks(ctx, d.cx, d.cy, d.r - 4, d.r - 1.5, 150, 30, 4, WHITE, 0.7);
-    if (hotEnd) arc(ctx, d.cx, d.cy, d.r - 2, 150 - 120 * HOT_FROM, 30, '#d8402e', 1.8);
-    text(ctx, name, d.cx, d.cy + 1.5, 3, hotEnd && frac >= HOT_FROM ? '#ff5a4a' : '#bbb', { align: 'center' });
-    text(ctx, lo, d.cx - d.r * 0.62, d.cy + d.r * 0.62, 3.4, WHITE, { align: 'center' });
-    text(ctx, hi, d.cx + d.r * 0.62, d.cy + d.r * 0.62, 3.4, hotEnd ? '#ff6a5a' : WHITE, { align: 'center' });
-    needle(ctx, d.cx, d.cy, d.r - 3, 150 - 120 * frac, NEEDLE, 1);
+    if (redEnd) arc(ctx, d.cx, d.cy, d.r - 2, 150 - 120 * redStart, 30, '#d8402e', 1.8);
+    warnSymbol(ctx, symbol, d.cx, d.cy + 6.5, colour, true, 0.42);
+    text(ctx, lo, d.cx - d.r * 0.62, d.cy - 1, 3.2, WHITE, { align: 'center' });
+    text(ctx, hi, d.cx + d.r * 0.62, d.cy - 1, 3.2, redEnd ? '#ff6a5a' : WHITE, { align: 'center' });
+    needle(ctx, d.cx, d.cy, d.r - 3, 150 - 120 * frac, NEEDLE, 0.9);
   };
 
   function draw(ctx, s, L) {
-    // The rev counter: 0 to 5,000 round 260 degrees, with the red zone from the redline.
-    dial(ctx, tacho);
-    arc(ctx, tacho.cx, tacho.cy, tacho.r - 2.5, -40, 220 - (260 * L.redline) / TACHO_MAX, '#d8402e', 2.2);
-    ticks(ctx, tacho.cx, tacho.cy, tacho.r - 4.5, tacho.r - 1.5, 220, -40, 10, WHITE, 0.5);
-    ticks(ctx, tacho.cx, tacho.cy, tacho.r - 7, tacho.r - 1.5, 220, -40, 5, WHITE, 1);
-    labels(ctx, tacho.cx, tacho.cy, tacho.r - 11.5, 220, -40, ['0', '1', '2', '3', '4', '5'], WHITE, 3.8);
-    text(ctx, 'RPM x1000', tacho.cx, tacho.cy + 10, 3, '#ccc', { align: 'center' });
-    needle(ctx, tacho.cx, tacho.cy, tacho.r - 2, 220 - (260 * Math.min(TACHO_MAX, L.rpm)) / TACHO_MAX, NEEDLE, 1.1);
-    // The speedometer: 0 to 100 mph with its odometer.
+    // The three small gauges: volts (a steady 13 or so when running, a little under when not), water temperature and fuel.
+    small(ctx, volts, L.volts, 'charge', '#bbb', '8', '16', false, 0);
+    small(ctx, temp, L.temp, 'temp', L.temp >= HOT_FROM ? LAMP.red : '#bbb', 'C', 'H', true, HOT_FROM);
+    small(ctx, fuel, L.fuel, 'fuel', '#bbb', 'E', 'F', false, 0);
+    // The speedometer: 0 to 110 mph with its odometer.
     dial(ctx, speedo);
-    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 5, speedo.r - 1.5, 220, -40, 20, WHITE, 0.5);
-    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 8, speedo.r - 1.5, 220, -40, 10, WHITE, 1);
-    labels(ctx, speedo.cx, speedo.cy, speedo.r - 13, 220, -40, ['0', '10', '20', '30', '40', '50', '60', '70', '80', '90', '100'], WHITE, 3.3);
-    text(ctx, 'MPH', speedo.cx, speedo.cy - 8, 3.4, '#ccc', { align: 'center' });
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 5, speedo.r - 1.5, 220, -40, 22, WHITE, 0.5);
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 8, speedo.r - 1.5, 220, -40, 11, WHITE, 1);
+    labels(ctx, speedo.cx, speedo.cy, speedo.r - 14, 220, 220 - (260 * 100) / SPEEDO_MAX, ['0', '20', '40', '60', '80', '100'], WHITE, 3.6); // every 20 mph, evenly round to 100
+    text(ctx, 'MPH', speedo.cx, speedo.cy + 6, 3.6, '#ccc', { align: 'center' });
     const odo = counterDigits(s.odoMiles, 6);
-    drum(ctx, speedo.cx - 17, speedo.cy + 12, odo, 6);
-    needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 220 - (260 * Math.min(SPEEDO_MAX, L.mph)) / SPEEDO_MAX, NEEDLE, 1.2);
-    small(ctx, temp, L.temp, 'temp', 'C', 'H', true);
-    small(ctx, fuel, L.fuel, 'fuel', 'E', 'F', false);
-    // The lamps along the bottom: glow plugs, charge, oil, handbrake, seat belts, side lights and main beam. The key at the end.
+    drum(ctx, speedo.cx - 17, speedo.cy + 14, odo, 6);
+    needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 220 - (260 * Math.min(SPEEDO_MAX, L.mph)) / SPEEDO_MAX, NEEDLE, 1.3);
+    // The panel of warning symbols under the small gauges: two rows of six, each in a black pocket on a dark strip.
     ctx.fillStyle = '#121213';
     ctx.beginPath();
-    ctx.roundRect(66, 86, 208, 17, 2);
+    ctx.roundRect(70, 62, 106, 38, 2);
     ctx.fill();
-    warnSymbol(ctx, 'glow', 82, 94.5, LAMP.amber, L.glow);
-    warnSymbol(ctx, 'charge', 103.5, 94.5, LAMP.red, L.charge);
-    warnSymbol(ctx, 'oil', 125, 94.5, LAMP.red, L.oil);
-    warnSymbol(ctx, 'park', 146.5, 94.5, LAMP.red, L.park);
-    warnSymbol(ctx, 'belt', 168, 94.5, LAMP.red, L.belt);
-    warnSymbol(ctx, 'lights', 189.5, 94.5, LAMP.green, L.lights);
-    warnSymbol(ctx, 'beam', 211, 94.5, '#4aa8ff', L.main);
-    warnSymbol(ctx, 'turnLeft', 232.5, 94.5, LAMP.green, L.turnLeft);
-    warnSymbol(ctx, 'turnRight', 254, 94.5, LAMP.green, L.turnRight);
-    keySwitch(ctx, 284, 50, s.keyOn);
-    // The hazard button above the key: a black surround round a red square with a white triangle, point up, flashing red with the hazards.
+    const row1 = [['glow', LAMP.amber, L.glow], ['charge', LAMP.red, L.charge], ['oil', LAMP.red, L.oil], ['park', LAMP.red, L.park], ['belt', LAMP.red, L.belt]];
+    const row2 = [['lights', LAMP.green, L.lights], ['beam', '#4aa8ff', L.main], ['turnLeft', LAMP.green, L.turnLeft], ['turnRight', LAMP.green, L.turnRight]];
+    row1.forEach(([kind, colour, lit], i) => warnSymbol(ctx, kind, 80 + i * 18, 72, colour, lit));
+    row2.forEach(([kind, colour, lit], i) => warnSymbol(ctx, kind, 80 + i * 18, 90, colour, lit));
+    // The hazard button at the panel's end: a black surround round a red square with a white triangle, point up, flashing red with the hazards.
     ctx.fillStyle = '#050505';
-    ctx.fillRect(275, 19, 18, 16);
+    ctx.fillRect(147, 82, 18, 16);
     ctx.fillStyle = L.hazard ? '#ff3a22' : '#8c1812';
-    ctx.fillRect(277, 21, 14, 12);
+    ctx.fillRect(149, 84, 14, 12);
     ctx.strokeStyle = '#f2f2f2';
     ctx.lineWidth = 1;
     ctx.lineJoin = 'round';
     ctx.beginPath();
-    ctx.moveTo(284, 22.8);
-    ctx.lineTo(288.4, 30.6);
-    ctx.lineTo(279.6, 30.6);
+    ctx.moveTo(156, 85.8);
+    ctx.lineTo(160.4, 93.6);
+    ctx.lineTo(151.6, 93.6);
     ctx.closePath();
     ctx.stroke();
   }
+
+  const ignitionKey = addIgnitionKey(group, O, KEY, 0.7); // the real key, at the far end
 
   return {
     group,
     mount: null,
     update(s) {
       shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
-      shownRpm += ((s.ignition ? s.rpm : 0) - shownRpm) * 0.35;
       shownFuel += ((s.ignition ? s.fuelLevel : 0) - shownFuel) * 0.2;
       shownTemp += ((s.ignition ? tempGaugeFraction(s.temperature, true, s.overheat) : 0) - shownTemp) * 0.1;
+      const keyTo = s.cranking ? 1.45 : s.keyOn ? 0.72 : 0;
+      keyAngle += (keyTo - keyAngle) * 0.5;
+      ignitionKey.rotation.z = keyAngle;
       const running = s.rpm > 300;
       const on = !!s.ignition;
       const L = {
         mph: shownMph,
-        rpm: shownRpm,
-        redline: s.redline ?? 4300,
+        volts: on ? (running ? 0.62 : 0.5) : 0,
         fuel: shownFuel,
         temp: shownTemp,
         glow: on && !!s.glow,
@@ -1063,7 +1065,7 @@ function buildDefender() {
         hazard: !!s.hazardLit,
       };
       const odo = counterDigits(s.odoMiles, 6);
-      if (gate([on, s.keyOn, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, L.turnLeft, L.turnRight, L.hazard, Math.round(shownMph * 2), Math.round(shownRpm / 40), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.key].join('|'))) {
+      if (gate([on, running, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, L.turnLeft, L.turnRight, L.hazard, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.key].join('|'))) {
         face.redraw((ctx) => draw(ctx, s, L));
       }
     },

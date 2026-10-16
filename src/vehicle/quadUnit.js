@@ -25,7 +25,7 @@ import { buildAtcModel, ATC_LAYOUT, ATC_GROUND_OFFSET, ATC_PROXY } from './atcMo
 import { buildMiniMotoModel, MOTO_LAYOUT, MOTO_GROUND_OFFSET, MOTO_PROXY } from './miniMotoModel.js';
 import { buildTractorModel, TRACTOR_LAYOUT, TRACTOR_GROUND_OFFSET, TRACTOR_PROXY } from './tractorModel.js';
 import { buildUtvModel, UTV_LAYOUT, UTV_GROUND_OFFSET, UTV_PROXY, UTV_STAND } from './utvModel.js';
-import { buildLandRoverModel, LANDY_LAYOUT, LANDY_GROUND_OFFSET, LANDY_PROXY, LANDY_STAND } from './landRoverModel.js';
+import { buildLandRoverModel, LANDY_LAYOUT, DEFENDER_LAYOUT, LANDY_GROUND_OFFSET, LANDY_PROXY, LANDY_STAND } from './landRoverModel.js';
 import { buildCarModel, carLayout, carProxy, CAR_GROUND_OFFSET, CAR_STAND } from './carModel.js';
 import { CrankHandle, DEFAULT_CRANK_PARAMS, CRANK_PARAM_RANGES } from './crankHandle.js';
 
@@ -113,7 +113,7 @@ export class QuadUnit {
       }),
       ...(spec.landRover && {
         build: ({ dashStyle }) => buildLandRoverModel({ bodyColor: spec.bodyColor, dashStyle, variant: spec.defender ? 'defender' : 'series' }),
-        layout: LANDY_LAYOUT,
+        layout: spec.defender ? DEFENDER_LAYOUT : LANDY_LAYOUT,
         groundOffset: LANDY_GROUND_OFFSET,
         proxy: LANDY_PROXY,
         wheelShake: spec.wheelShake,

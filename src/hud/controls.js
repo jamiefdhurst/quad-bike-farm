@@ -84,6 +84,7 @@ export const CONTROLS = [
     title: 'The 200TDi',
     lines: [
       `<kbd>K</kbd> key (wait for the GLOW lamp to go out), hold <kbd>R</kbd> to crank; the key stops it. A diesel: red diesel only. No choke, hand throttle or starting handle`,
+      `<kbd>T</kbd> swings the back door out on its hinge or shuts it (stopped, from the seat or beside it). The front doors swing out when you get in or out`,
       `Hold <kbd>Shift</kbd> for the clutch, <kbd>1</kbd>-<kbd>5</kbd> gears (all synchromesh), <kbd>B</kbd> reverse, <kbd>0</kbd> neutral, <kbd>G</kbd> 4WD, <kbd>U</kbd> diff lock, <kbd>P</kbd> lights (off, dipped, main beam: a green and a blue lamp), <kbd>,</kbd> <kbd>.</kbd> <kbd>=</kbd> left, right and hazards, <kbd>Space</kbd> handbrake, <kbd>;</kbd> seat belt (leave it off, or the driver's seat empty, with the key on and the BELT lamp flashes and it bongs)`,
     ],
   },

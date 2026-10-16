@@ -126,7 +126,7 @@ describe('the 200TDi', () => {
   });
 
   it('is a square back with a rear door, and keeps the Series\' tailgate and starting handle hole to the Series', () => {
-    expect(defender.getObjectByName('rearDoor')).toBeTruthy();
+    expect(defender.getObjectByName('backDoor')).toBeTruthy();
     expect(defender.getObjectByName('tailgate')).toBeFalsy();
     expect(series.getObjectByName('tailgate')).toBeTruthy();
     expect(series.getObjectByName('crankHole')).toBeTruthy();
@@ -144,7 +144,7 @@ describe('the 200TDi', () => {
 
   it('carries the spare on the back door, behind the body, and not on the bonnet', () => {
     const box = new THREE.Box3().setFromObject(defender);
-    expect(box.min.z).toBeLessThan(-2.1); // the spare sticks out past the rear panel (at -1.97)
+    expect(box.min.z).toBeLessThan(-1.98); // the spare's cover sticks out past the rear panel (at -1.82)
     const sBox = new THREE.Box3().setFromObject(series);
     expect(sBox.min.z).toBeGreaterThan(-2.1);
   });

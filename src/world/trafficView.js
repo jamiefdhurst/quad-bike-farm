@@ -4,14 +4,14 @@
 // Nothing here is solid: the vehicles are scenery that brake for you.
 
 import * as THREE from 'three';
-import { buildLandRoverModel, LANDY_LAYOUT, LANDY_GROUND_OFFSET, LANDY_SEATS } from '../vehicle/landRoverModel.js';
+import { buildLandRoverModel, LANDY_LAYOUT, DEFENDER_LAYOUT, LANDY_GROUND_OFFSET, LANDY_SEATS } from '../vehicle/landRoverModel.js';
 import { buildTractorModel, TRACTOR_LAYOUT, TRACTOR_GROUND_OFFSET } from '../vehicle/tractorModel.js';
 import { buildUtvModel, UTV_LAYOUT, UTV_GROUND_OFFSET, UTV_SEATS } from '../vehicle/utvModel.js';
 import { CharacterRig } from '../npc/characterRig.js';
 import { applyOutfit, withShirt, withJumper, OUTFITS } from '../npc/outfit.js';
 
 const MODELS = {
-  defender: { build: (c, reg) => buildLandRoverModel({ bodyColor: c, dashStyle: 'defender', variant: 'defender', reg }), layout: LANDY_LAYOUT, offset: LANDY_GROUND_OFFSET, seat: LANDY_SEATS.driver },
+  defender: { build: (c, reg) => buildLandRoverModel({ bodyColor: c, dashStyle: 'defender', variant: 'defender', reg }), layout: DEFENDER_LAYOUT, offset: LANDY_GROUND_OFFSET, seat: LANDY_SEATS.driver },
   series: { build: (c, reg) => buildLandRoverModel({ bodyColor: c, dashStyle: 'series', variant: 'series', reg }), layout: LANDY_LAYOUT, offset: LANDY_GROUND_OFFSET, seat: LANDY_SEATS.driver },
   tractor: { build: (c) => buildTractorModel({ bodyColor: c, dashStyle: 'tractor' }), layout: TRACTOR_LAYOUT, offset: TRACTOR_GROUND_OFFSET, seat: { x: 0, y: 1.35, z: -0.55 } },
   utv: { build: (c) => buildUtvModel({ bodyColor: c, dashStyle: 'utv' }), layout: UTV_LAYOUT, offset: UTV_GROUND_OFFSET, seat: UTV_SEATS.driver ?? { x: -0.4, y: 0.9, z: -0.1 } },

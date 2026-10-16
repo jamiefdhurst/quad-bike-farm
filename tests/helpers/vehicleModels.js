@@ -26,7 +26,7 @@ export async function buildAllModels() {
   const { ATC_LAYOUT } = await import('../../src/vehicle/atcModel.js');
   const { TRACTOR_LAYOUT } = await import('../../src/vehicle/tractorModel.js');
   const { UTV_LAYOUT } = await import('../../src/vehicle/utvModel.js');
-  const { LANDY_LAYOUT } = await import('../../src/vehicle/landRoverModel.js');
+  const { LANDY_LAYOUT, DEFENDER_LAYOUT } = await import('../../src/vehicle/landRoverModel.js');
   return ALL_SPECS.map((spec) => {
     const o = { bodyColor: spec.bodyColor, dashStyle: spec.dashStyle };
     let model;
@@ -35,7 +35,7 @@ export async function buildAllModels() {
     else if (spec.threeWheeler) [model, layout] = [buildAtcModel({ ...o, chokeStyle: spec.chokeStyle }), ATC_LAYOUT];
     else if (spec.tractor) [model, layout] = [buildTractorModel(o), TRACTOR_LAYOUT];
     else if (spec.utv) [model, layout] = [buildUtvModel(o), UTV_LAYOUT];
-    else if (spec.landRover) [model, layout] = [buildLandRoverModel({ ...o, variant: spec.defender ? 'defender' : 'series' }), LANDY_LAYOUT];
+    else if (spec.landRover) [model, layout] = [buildLandRoverModel({ ...o, variant: spec.defender ? 'defender' : 'series' }), spec.defender ? DEFENDER_LAYOUT : LANDY_LAYOUT];
     else if (spec.car) [model, layout] = [buildCarModel({ ...o, kind: spec.car }), carLayout(spec.car)];
     else model = buildQuadModel({ ...o, style: spec.style, solo: spec.solo, plateNumber: spec.plateNumber, chokeStyle: spec.chokeStyle, tapStyle: spec.tapStyle, driveSwitch: spec.driveSwitch ? { lock: !!spec.diffLock } : null });
     model.updateMatrixWorld(true);

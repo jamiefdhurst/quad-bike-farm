@@ -5,6 +5,8 @@ import { addHeadlightBeams, addSignalLamps, addSignalStalk, addHazardSwitch, fac
 import { bentTube, mergeStatic, rod } from './quadGeometry.js';
 import { treadTyre } from './detail/tread.js';
 import { buildSeriesModel } from './seriesModel.js';
+import { buildDefenderModel } from './defenderModel.js';
+import { DEF_WHEELBASE, DEF_TRACK } from './defenderBody.js';
 
 // The old Land Rover: a Series III 88-inch pick-up, procedural like the UTV. Ladder chassis on leaf springs and live axles, flat-topped
 // front wings with the headlamps in them, a black grille, the spare wheel on the bonnet, a bumper with the hole for the starting
@@ -46,7 +48,6 @@ export const TUB_FLOOR = 1.02; // the tub's floor, clear of the wheel tops (0.96
 const KNOB_Z = 0.4; // the dash face the choke and hand throttle knobs come out of
 const KNOB_TRAVEL = 0.1; // how far a knob pulls out
 export const PLATE = 'FRM 88L'; // the Series' registration, front and back (an L, 1972)
-const PLATE_200 = 'H471 DKP'; // and the 200TDi's (an H, 1990)
 
 /** Where the wheels, their mounts and the bodywork box are, for QuadPhysics. */
 export const LANDY_LAYOUT = {
@@ -59,6 +60,19 @@ export const LANDY_LAYOUT = {
   ],
   topY: wheelY,
   chassis: { hx: 0.8, hy: 0.36, hz: 1.8, y: 0.85 + LANDY_GROUND_OFFSET },
+};
+
+/** The 200TDi's wheels and bodywork box: the Defender 90's longer wheelbase (2.36 m) and wider track (1.486 m). */
+export const DEFENDER_LAYOUT = {
+  spawnSag: 0.128, // as the Series'
+  wheels: [
+    { name: 'wheel_fl', x: DEF_TRACK / 2, z: DEF_WHEELBASE / 2, front: true, radius: R, y: wheelY },
+    { name: 'wheel_fr', x: -DEF_TRACK / 2, z: DEF_WHEELBASE / 2, front: true, radius: R, y: wheelY },
+    { name: 'wheel_rl', x: DEF_TRACK / 2, z: -DEF_WHEELBASE / 2, front: false, radius: R, y: wheelY },
+    { name: 'wheel_rr', x: -DEF_TRACK / 2, z: -DEF_WHEELBASE / 2, front: false, radius: R, y: wheelY },
+  ],
+  topY: wheelY,
+  chassis: { hx: 0.82, hy: 0.36, hz: 1.9, y: 0.85 + LANDY_GROUND_OFFSET },
 };
 
 /** The invisible box you look at to get in: ground to roof, a little wider than the body. */
@@ -104,8 +118,6 @@ export const LANDY_REAR_BELTS = {
 /** How far a front seat's backrest tips forward (radians) to let someone into the back, and the seats that do. */
 export const SEAT_TIP = 0.95;
 export const TIPPING_SEATS = ['left', 'driver'];
-const REAR_DY = LANDY_REAR_SEATS.rearMid.y - LANDY_SEATS.mid.y; // the back bench against the front one
-const REAR_DZ = LANDY_REAR_SEATS.rearMid.z - LANDY_SEATS.mid.z;
 
 /** How far ahead of the driver's eye the windscreen's glass is, at eye height (the cars are held to it: tests/carModel.test.js). */
 export function landyEyeToGlass() {
@@ -282,53 +294,6 @@ export function badge(parent, { x, y, z, facing, w = 0.2, h = w * 0.4, twoLines 
   m.position.set(x, y, z);
   if (facing < 0) m.rotation.y = Math.PI;
   return m;
-}
-
-/** The model's name in small silver letters on a black plate, facing the back. */
-function modelBadge(text, parent, { x, y, z }) {
-  const m = label(0.14, 0.04, 1000, (g, W, H) => {
-    g.fillStyle = '#17181a';
-    g.fillRect(0, 0, W, H);
-    g.fillStyle = '#d4d7da';
-    fitText(g, text, W / 2, H / 2 + H * 0.04, H * 0.72, W * 0.88);
-  }, parent);
-  m.position.set(x, y, z);
-  m.rotation.y = Math.PI;
-  return m;
-}
-
-/** One seat's belt, named `belt_<seat>` with a `stowed` and a `worn` child, as poseUtvBelts expects, and its buckle stalk. */
-function addBelt(root, seat, belt) {
-  const group = new THREE.Group();
-  group.name = `belt_${seat}`;
-  group.userData.keep = true;
-  const stowed = new THREE.Group();
-  stowed.name = 'stowed';
-  if (belt.diagonal) {
-    rbox(0.045, 0.5, 0.012, 0.004, MAT.belt, belt.anchor, 1.2, -0.435, stowed); // hanging down the pillar
-    rbox(0.05, 0.06, 0.02, 0.006, MAT.steel, belt.anchor, 0.92, -0.435, stowed); // the tongue, loose
-  } else {
-    rbox(0.04, 0.012, 0.18, 0.004, MAT.belt, belt.anchor, 0.958, -0.34, stowed); // lying on the cushion
-  }
-  const worn = new THREE.Group();
-  worn.name = 'worn';
-  worn.visible = false;
-  const d = SEAT_BACK; // the sitter's chest and lap, moved back with the seats; the anchors and the buckles at the crease stay
-  const at = (t, y, z) => [belt.anchor + (belt.buckle - belt.anchor) * t, y, z + d];
-  // (The sitters' hips are at y 0.94 and z -0.34: the belt lies about 0.4 above them for the chest and 0.05 for the lap.)
-  if (belt.diagonal) {
-    add(bentTube([[belt.anchor, 1.46, -0.5], at(0.15, 1.45, -0.26), at(0.32, 1.36, -0.02), at(0.6, 1.2, 0.04), at(0.88, 1.02, 0), [belt.buckle, 0.98, -0.13 + d], [belt.buckle, 0.96, -0.38]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
-    add(bentTube([[belt.anchor, 0.9, -0.45], at(0.25, 0.98, -0.1), at(0.6, 1.0, 0.0), [belt.buckle, 0.99, -0.05 + d], [belt.buckle, 0.96, -0.38]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
-  } else {
-    add(bentTube([[belt.anchor, 0.96, -0.38], at(0.1, 0.99, -0.05), at(0.9, 0.99, -0.05), [belt.buckle, 0.96, -0.38]], 0.016, { bend: 0.05, radial: 6 }), MAT.belt, worn);
-  }
-  rbox(0.05, 0.05, 0.03, 0.008, MAT.steel, belt.buckle, 0.975, -0.375, worn); // the tongue, pushed home
-  group.add(stowed, worn);
-  root.add(group);
-  // The buckle: a steel stalk up out of the seat's crease with a red release button on top (the middle seat's other end has a plain one).
-  rbox(0.034, 0.075, 0.03, 0.008, MAT.steel, belt.buckle, 0.985, -0.42, root);
-  rbox(0.026, 0.02, 0.022, 0.006, MAT.red, belt.buckle, 1.032, -0.42, root);
-  if (!belt.diagonal) rbox(0.034, 0.075, 0.03, 0.008, MAT.steel, belt.anchor, 0.985, -0.42, root);
 }
 
 /** The trim's textures, made when a Land Rover is built (they need a canvas). */
@@ -510,473 +475,8 @@ export function buildWheel(w, rim) {
 // The Land Rover ----------------------------------------------------------------
 
 export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series', variant = 'series', reg = null } = {}) {
-  if (variant === 'series') return buildSeriesModel({ bodyColor, dashStyle, reg }); // the Series has its own model now (seriesModel.js)
-  const D = variant === 'defender';
-  const regText = reg ?? (D ? PLATE_200 : PLATE); // the registration, front and back (a visiting vehicle has its own) // the 200TDi: a square-back with the spare on its rear door, a newer dash and console
-  const paint = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.55, side: THREE.DoubleSide });
-  const lensMat = new THREE.MeshStandardMaterial({ color: 0x2c302c, roughness: 0.08, metalness: 0.2, emissive: 0x000000 });
-  const tailMat = new THREE.MeshStandardMaterial({ color: 0x3c0b08, roughness: 0.25, emissive: 0x000000 });
-  const rim = D ? MAT.rimGrey : MAT.rim;
-
-  const quad = new THREE.Group();
-  quad.name = 'quad';
-  quad.userData.lensMaterial = lensMat;
-  const trim = trimMaterials(D);
-  const frame = D ? MAT.black : MAT.galv; // the screen and window frames: galvanised on the Series, black on the 200TDi
-  quad.userData.seatMaterial = trim.seat;
-  quad.userData.cleanMaterials = [trim.seat, trim.dash, trim.floor, MAT.belt]; // the cab's inside never gets muddy (effects/mudCoat.js)
-  quad.userData.cabin = { min: [-0.9, 0.4, D ? -2.0 : -0.7], max: [0.9, 1.85, 0.65] }; // the paint inside it stays clean too (cabinMud.js)
-  quad.userData.steerGain = 7; // a big wheel, a lot of turns lock to lock
-  const body = new THREE.Group();
-  body.name = 'body';
-  quad.add(body);
-  const root = new THREE.Group();
-  root.name = 'bodyRoot';
-  body.add(root);
-  const zF = WHEELBASE / 2;
-  const zR = -WHEELBASE / 2;
-
-  // Chassis: two box-section rails and cross members, the engine and gearbox, live axles with their diffs, and the leaf springs.
-  for (const s of [-1, 1]) rbox(0.08, 0.15, 3.55, 0.01, MAT.chassis, s * 0.43, 0.5, -0.1, root);
-  for (const z of [1.62, 0.6, -0.5, -1.55, -1.92]) rbox(0.86, 0.1, 0.08, 0.01, MAT.chassis, 0, 0.5, z, root);
-  rbox(0.5, 0.42, 0.75, 0.05, MAT.steel, 0, 0.75, 1.05, root); // the engine under the bonnet
-  rbox(0.3, 0.3, 0.6, 0.04, MAT.steel, 0, 0.6, 0.3, root); // gearbox and transfer box under the seat
-  tube([0, 0.48, 0.05], [0, 0.4, zR + 0.25], 0.03, MAT.steel, root); // the propshafts
-  tube([0, 0.48, 0.55], [0, 0.4, zF - 0.25], 0.03, MAT.steel, root);
-  for (const [z, off] of [[zF, 0.18], [zR, -0.12]]) {
-    axleCyl(0.05, TRACK, MAT.chassis, 0, R, z, root);
-    add(new THREE.SphereGeometry(0.15, 16, 12), MAT.chassis, root).position.set(off, R, z); // the diff casing, offset as on a Series
-    for (const s of [-1, 1]) {
-      // A leaf spring along the rail, with its shackle, and a damper.
-      add(bentTube([[s * 0.43, 0.56, z + 0.48], [s * 0.43, 0.46, z], [s * 0.43, 0.56, z - 0.48]], 0.028, { bend: 0.2, radial: 6 }), MAT.chassis, root);
-      tube([s * 0.5, 0.42, z + 0.08], [s * 0.5, 0.7, z + 0.2], 0.022, MAT.steel, root);
-    }
-  }
-
-  // The front: bumper with the starting-handle hole, the black grille panel between the wings, the flat-topped wings with the headlamps
-  // in their faces, the bonnet with the spare wheel on it.
-  rbox(1.62, 0.16, 0.12, 0.02, MAT.black, 0, 0.56, 1.78, root); // bumper
-  plate(regText, '#ece9de', root, { x: 0.45, y: 0.56, z: 1.8475, facing: 1 }); // the front number plate
-  for (const s of [-1, 1]) rbox(0.07, 0.17, 0.14, 0.02, MAT.chassis, s * 0.83, 0.56, 1.78, root); // the bumper's ends, turned back
-  if (!D) {
-    add(new THREE.TorusGeometry(0.035, 0.012, 8, 16), MAT.steel, root).position.set(CRANK_HOLE.x, CRANK_HOLE.y, CRANK_HOLE.z - 0.02); // the hole's ring
-    add(new THREE.CircleGeometry(0.03, 14), MAT.knob, root).position.set(CRANK_HOLE.x, CRANK_HOLE.y, CRANK_HOLE.z - 0.025);
-  }
-  for (const s of [-1, 1]) rbox(0.06, 0.12, 0.2, 0.01, MAT.chassis, s * 0.43, 0.56, 1.68, root); // its mounts to the rails
-  rbox(0.68, 0.5, 0.06, 0.02, MAT.black, 0, 0.83, 1.6, root); // the grille panel
-  for (let i = 0; i < 9; i++) rbox(0.6, 0.012, 0.02, 0.004, MAT.chassis, 0, 0.64 + i * 0.048, 1.635, root); // its slats
-  badge(root, { x: 0, y: 0.89, z: 1.648, facing: 1, w: 0.2 }); // the maker's badge on the grille
-  for (const s of [-1, 1]) {
-    const x = s * 0.6;
-    rbox(0.48, 0.03, 1.0, 0.01, paint, x, 1.06, 1.1, root, 'wingTop'); // the flat top, which you can stand a mug on
-    archPanel(s * 0.84, 0.03, 0.75, 1.075, 0.6, 1.6, 1.115, paint, root); // the outer side, with the wheel arch cut in it
-    archFlare(s * 0.86, 1.115, D ? MAT.black : paint, root);
-    rbox(0.48, 0.36, 0.03, 0.01, paint, x, 0.88, 1.6, root); // the front face, with the lamp
-    rbox(0.03, 0.34, 1.0, 0.01, paint, s * 0.36, 0.9, 1.1, root); // the inner side, against the engine bay
-    const bezel = add(new THREE.CylinderGeometry(0.1, 0.1, 0.04, 22).rotateX(Math.PI / 2), D ? MAT.black : MAT.galv, root);
-    bezel.position.set(x, 0.9, 1.62);
-    const lamp = add(new THREE.CylinderGeometry(0.085, 0.085, 0.02, 22).rotateX(Math.PI / 2), lensMat, root);
-    lamp.position.set(x, 0.9, 1.64);
-    rbox(0.07, 0.05, 0.03, 0.01, MAT.amber, s * 0.75, 0.73, 1.625, root); // the sidelamp and indicator below
-    // A wing mirror on a stalk from the wing top.
-    tube([s * 0.8, 1.07, 0.92], [s * 0.92, 1.3, 0.92], 0.008, MAT.galv, root, 6);
-    rbox(0.13, 0.09, 0.02, 0.01, MAT.black, s * 0.94, 1.33, 0.92, root);
-  }
-  rbox(0.7, 0.04, 0.95, 0.02, paint, 0, 1.06, 1.12, root, 'bonnet');
-  rbox(0.66, 0.02, 0.9, 0.01, paint, 0, 1.085, 1.12, root); // its pressed panel
-  if (D) {
-    rbox(0.3, 0.05, 0.62, 0.02, paint, 0, 1.105, 1.08, root); // the 200TDi's raised ridge down the middle of the bonnet
-  } else {
-    // The spare wheel on the bonnet, lying flat and strapped down.
-    const spare = new THREE.Group();
-    spare.position.set(0, 1.21, 1.1);
-    spare.rotation.z = Math.PI / 2;
-    add(cached('tyre', tyre), MAT.rubber, spare);
-    addWheelFace(spare, 1);
-    root.add(spare);
-    rbox(0.05, 0.02, 0.8, 0.005, MAT.chassis, 0, 1.33, 1.1, root); // the strap
-  }
-
-  // The bulkhead with its vent flaps, the dash rail, and the windscreen: a galvanised frame raked back about 11 degrees, with two panes and
-  // a centre post. Its uprights at the sides are the doors' front pillars, and its top rail runs up into the roof's underside.
-  rbox(1.62, 0.55, 0.05, 0.02, paint, 0, 0.88, 0.6, root);
-  for (const s of [-1, 1]) rbox(0.5, 0.06, 0.03, 0.01, paint, s * 0.4, 1.12, 0.63, root); // the vent flaps under the screen
-  const screen = new THREE.Group();
-  screen.position.set(0, SCREEN_BASE.y, SCREEN_BASE.z);
-  screen.rotation.x = -SCREEN_RAKE;
-  root.add(screen);
-  rbox(1.64, 0.06, 0.06, 0.01, frame, 0, 0.03, 0, screen); // the bottom rail, on the bulkhead
-  rbox(1.64, 0.06, 0.06, 0.01, frame, 0, SCREEN_H - 0.03, 0, screen); // the top rail, into the roof
-  for (const x of [-0.8, 0, 0.8]) rbox(0.05, SCREEN_H, 0.05, 0.01, frame, x, SCREEN_H / 2, 0, screen);
-  for (const s of [-1, 1]) {
-    const pane = add(new THREE.PlaneGeometry(0.72, SCREEN_H - 0.1), MAT.glass, screen);
-    pane.position.set(s * 0.4, SCREEN_H / 2, 0);
-  }
-  rbox(0.2, 0.07, 0.03, 0.01, MAT.black, 0, 1.55, 0.43, root); // the rear-view mirror
-  tube([0, 1.585, 0.43], [0, 1.72, 0.47], 0.006, MAT.galv, root, 4); // on its stalk from the screen header
-  tube([-0.62, 1.2, 0.605], [-0.12, 1.56, 0.52], 0.006, MAT.chassis, root, 4); // a wiper, lying on the glass
-  tube([0.1, 1.2, 0.605], [0.58, 1.56, 0.52], 0.006, MAT.chassis, root, 4);
-
-  // The cab: doors with the window frames, the sides back to the cab's rear panel, its rear window, and the white roof.
-  for (const s of [-1, 1]) {
-    // Each door runs from the bulkhead to the B pillar with no gap. Its window frame's front upright is the screen's raked side post, and
-    // the glass is cut to fit between that and the rear post.
-    rbox(0.04, 0.6, 1.035, 0.01, paint, s * 0.82, 0.86, 0.0575, root, s > 0 ? 'doorLeft' : 'doorRight'); // the door's lower half
-    rbox(0.03, 0.04, 1.035, 0.008, frame, s * 0.82, 1.17, 0.0575, root); // the top of the lower half
-    post([s * 0.82, SCREEN_BASE.y, SCREEN_BASE.z], [s * 0.82, SCREEN_TOP_Y, SCREEN_TOP_Z], 0.04, 0.05, frame, root); // the front upright, raked with the screen
-    rbox(0.03, 0.56, 0.04, 0.008, paint, s * 0.82, 1.45, -0.44, root); // the rear upright
-    rbox(0.03, 0.05, SCREEN_TOP_Z + 0.46, 0.008, paint, s * 0.82, 1.705, (SCREEN_TOP_Z - 0.46) / 2, root); // the top rail, up against the roof
-    const glass = add(new THREE.ShapeGeometry(new THREE.Shape([
-      new THREE.Vector2(-0.42, 1.2), new THREE.Vector2(0.56, 1.2), new THREE.Vector2(SCREEN_TOP_Z + 0.03, 1.68), new THREE.Vector2(-0.42, 1.68),
-    ])).rotateY(-Math.PI / 2), MAT.glass, root);
-    glass.position.x = s * 0.82;
-    rbox(0.03, 0.03, 0.1, 0.008, MAT.galv, s * 0.845, 1.07, -0.3, root); // the handle
-    for (const z of [0.42, 0.18]) rbox(0.02, 0.06, 0.06, 0.005, MAT.galv, s * 0.84, 1.0, z, root); // the hinges, on the outside
-    rbox(0.04, 1.2, D ? 0.12 : 0.22, 0.01, paint, s * 0.82, 1.22, D ? -0.5 : -0.56, root); // the B pillar (the Series' goes out to the cab's rear panel)
-    if (!D) rbox(0.04, 0.42, 0.2, 0.01, paint, s * 0.82, 0.75, -0.62, root); // the cab side behind the door
-    rbox(0.05, 0.09, 1.2, 0.01, MAT.chassis, s * 0.82, 0.55, 0.0, root); // the sill under the door, closing the gap to the chassis
-    rbox(0.04, 0.64, 0.14, 0.01, paint, s * 0.82, 0.87, 0.65, root); // the hinge pillar between the door and the wing
-  }
-  if (!D) {
-    // The cab's rear panel in four pieces round a real opening, with the glass set in the middle of it: glass laid on a whole
-    // panel's face fights it for the same depth and flickers.
-    rbox(1.62, 0.73, 0.04, 0.01, paint, 0, 0.985, -0.62, root, 'cabBack'); // below the window
-    rbox(1.62, 0.07, 0.04, 0.01, paint, 0, 1.685, -0.62, root); // above it
-    for (const s of [-1, 1]) rbox(0.36, 0.3, 0.04, 0.01, paint, s * 0.63, 1.5, -0.62, root); // either side
-    const rear = add(new THREE.PlaneGeometry(0.9, 0.3), MAT.glass, root);
-    rear.position.set(0, 1.5, -0.62);
-    // The roof: Limestone, with a gentle rise to its middle and a lip all round.
-    rbox(1.7, 0.06, 1.3, 0.03, MAT.roof, 0, 1.75, -0.02, root, 'roof');
-    rbox(1.6, 0.03, 1.2, 0.015, MAT.roof, 0, 1.79, -0.02, root);
-    for (const s of [-1, 1]) rbox(0.03, 0.03, 1.3, 0.008, MAT.galv, s * 0.86, 1.72, -0.02, root); // the rain gutters along the roof edges
-    for (const s of [-1, 1]) rbox(0.1, 0.03, 0.04, 0.008, MAT.galv, s * 0.25, 1.09, 0.64, root); // the bonnet's hinges at the screen end
-    for (let i = -3; i <= 3; i++) rbox(1.62, 0.012, 0.02, 0.004, MAT.roof, 0, 1.805, -0.02 + i * 0.16, root); // its ribs
-  } else {
-    // The 200TDi's roof runs the whole length of the square back, in the body colour, with black gutters.
-    rbox(1.7, 0.06, 2.64, 0.03, paint, 0, 1.75, -0.69, root, 'roof');
-    rbox(1.6, 0.03, 2.5, 0.015, paint, 0, 1.79, -0.69, root);
-    for (const s of [-1, 1]) rbox(0.03, 0.03, 2.64, 0.008, MAT.black, s * 0.86, 1.72, -0.69, root); // the rain gutters along the roof edges
-    for (const s of [-1, 1]) rbox(0.1, 0.03, 0.04, 0.008, MAT.black, s * 0.25, 1.09, 0.64, root); // the bonnet's hinges at the screen end
-  }
-
-  // Inside: the floor, the seat box with the bench on it (three in a row, black vinyl), the gearbox tunnel.
-  rbox(1.56, 0.03, 1.1, 0.01, trim.floor, 0, 0.62, 0.05, root);
-  rbox(1.56, 0.26, 0.5, 0.02, paint, 0, 0.76, -0.3, root, 'seatBox');
-  rbox(D ? 0.4 : 0.36, D ? 0.26 : 0.22, 0.6, 0.04, D ? trim.dash : MAT.black, 0, D ? 0.75 : 0.73, 0.25, root); // the tunnel (the 200TDi's a moulded console)
-  for (const [name, seat] of Object.entries(LANDY_SEATS)) {
-    rbox(0.42, 0.1, 0.46, 0.04, trim.seat, seat.x, 0.9, seat.z - SEAT_BACK, root); // the cushion runs forward from the backrest
-    // On the 200TDi the outer two backrests tip forward to let people into the back: each is its own part, hinged at its foot
-    // (`seatBack_<seat>`, posed by poseSeatTips). The Series' and the middle one are fixed.
-    const tips = D && TIPPING_SEATS.includes(name);
-    let holder = root;
-    let at = (x, y, z) => [x, y, z];
-    if (tips) {
-      holder = new THREE.Group();
-      holder.name = `seatBack_${name}`;
-      holder.userData.keep = true;
-      holder.position.set(seat.x, 0.94, -0.5);
-      root.add(holder);
-      at = (x, y, z) => [x - seat.x, y - 0.94, z + 0.5];
-    }
-    const back = rbox(0.42, 0.48, 0.08, 0.04, trim.seat, ...at(seat.x, 1.18, -0.5), holder); // clear of the cab's rear panel, even leant back
-    back.rotation.x = -0.08;
-    if (D && name !== 'mid') {
-      // A headrest on two steel posts sunk into the top of the backrest (the middle seat has none).
-      rbox(0.24, 0.12, 0.07, 0.03, trim.seat, ...at(seat.x, 1.53, -0.52), holder).rotation.x = -0.08;
-      for (const dx of [-0.06, 0.06]) rbox(0.016, 0.16, 0.016, 0.004, MAT.steel, ...at(seat.x + dx, 1.47, -0.515), holder).rotation.x = -0.08;
-    }
-  }
-  if (!D) {
-    // The driver's cushion is split: the foam showing, with a strip of tape over one end.
-    const rip = seatRip(root);
-    rip.position.set(LANDY_SEATS.driver.x - 0.03, 0.9505 + 0.0, LANDY_SEATS.driver.z - SEAT_BACK + 0.06);
-    rip.rotation.x = -Math.PI / 2;
-    rip.rotation.z = 0.25;
-  }
-  // The seat belts: a diagonal and lap belt for the driver and the left seat from the B pillars, a lap belt for the middle. Each is
-  // stowed (hanging on its pillar with the tongue loose) or worn across whoever sits there (`poseUtvBelts` poses the same names).
-  for (const [seat, belt] of Object.entries(LANDY_BELTS)) addBelt(root, seat, belt);
-
-  // The steering wheel: big and thin-rimmed, four spokes, on a long raked column. `handlebars` is the wheel itself.
-  const column = new THREE.Group();
-  column.name = 'steeringColumn';
-  column.userData.keep = true;
-  column.position.set(-0.42, 0.9, 0.5);
-  column.rotation.x = -1.05;
-  tube([0, 0, 0], [0, 0.42, 0], 0.024, MAT.black, column);
-  root.add(column);
-  addSignalStalk(column, 0.34, MAT.black, { modern: D });
-  if (!D) {
-    // The Series' hazard button: just the red switch, on top of the column in front of the wheel, tipped up to face the driver.
-    const top = new THREE.Vector3(0, 0.27, 0.03).applyEuler(column.rotation).add(column.position);
-    top.y += 0.02;
-    const hazard = addHazardSwitch(root, top.x, top.y, top.z, { plate: false });
-    faceAlong(hazard, new THREE.Vector3(0, 0.75, -0.66), new THREE.Vector3(0, 0.66, 0.75));
-  }
-  const wheel = new THREE.Group();
-  wheel.name = 'handlebars';
-  wheel.userData.keep = true;
-  wheel.position.set(0, 0.42, 0); // (Jamie: it stuck out too far; with the seats back it's about 0.45 m ahead of the hips)
-  column.add(wheel);
-  if (D) {
-    // The 200TDi's: a thicker, softer rim on two spokes with a padded hub.
-    add(new THREE.TorusGeometry(0.2, 0.02, 10, 40).rotateX(Math.PI / 2), MAT.black, wheel);
-    rbox(0.13, 0.05, 0.1, 0.03, MAT.black, 0, 0, 0, wheel); // the hub
-    for (const sx of [-1, 1]) rbox(0.13, 0.02, 0.05, 0.01, MAT.black, sx * 0.11, 0, 0, wheel); // the two spokes, left and right
-    badge(wheel, { x: 0, y: 0.0265, z: 0, facing: 1, w: 0.07, h: 0.035, px: 1200 }).rotation.set(-Math.PI / 2, 0, Math.PI);
-  } else {
-    add(new THREE.TorusGeometry(0.21, 0.012, 8, 36).rotateX(Math.PI / 2), MAT.black, wheel);
-    add(new THREE.CylinderGeometry(D ? 0.06 : 0.045, D ? 0.06 : 0.045, 0.035, 14), MAT.black, wheel); // the boss
-    badge(wheel, { x: 0, y: 0.0185, z: 0, facing: 1, w: 0.07, h: 0.035, px: 1200 }).rotation.set(-Math.PI / 2, 0, Math.PI); // the badge in its centre, facing the driver
-    for (let i = 0; i < 4; i++) {
-      const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
-      tube([0, 0, 0], [Math.sin(a) * 0.21, 0, Math.cos(a) * 0.21], D ? 0.01 : 0.007, D ? MAT.black : MAT.galv, wheel, 5);
-    }
-  }
-  for (const side of [1, -1]) {
-    const grip = new THREE.Object3D();
-    grip.name = side > 0 ? 'gripLeft' : 'gripRight';
-    grip.userData.keep = true;
-    grip.position.set(side * 0.21, 0, 0);
-    wheel.add(grip);
-  }
-  const hands = new THREE.Group(); // your own arms aren't drawn: Quad just expects the group
-  hands.name = 'riderHands';
-  hands.userData.keep = true;
-  hands.visible = false;
-  wheel.add(hands);
-
-  // The dash: a flat painted panel across the cab under the screen, with the binnacle in front of the driver.
-  rbox(1.56, 0.12, 0.2, 0.02, trim.dash, 0, 1.08, 0.5, root); // the padded dash top
-  badge(root, { x: 0.3, y: 1.085, z: 0.396, facing: -1, w: 0.14, h: 0.056 }); // the maker's badge on the glovebox side of the dash
-  const dash = buildDash(dashStyle);
-  dash.group.position.set(-0.42, 1.21, 0.48);
-  dash.group.rotation.x = 0.55;
-  dash.group.scale.setScalar(1.5); // the binnacle's about 0.3 m wide, as on a Series III
-  dash.group.userData.keep = true;
-  root.add(dash.group);
-  quad.userData.dash = dash;
-  quad.userData.metalBody = true; // painted steel (or aluminium) panels, not plastic: they chip and rust rather than fade (effects/wearLayer.js)
-  quad.userData.podMount = null;
-
-  if (D) {
-    // A diesel with glow plugs has no choke and no hand throttle; the pose code still looks the knobs up by name.
-    for (const name of ['chokeKnob', 'handThrottleKnob']) {
-      const g = new THREE.Group();
-      g.name = name;
-      g.userData.keep = true;
-      g.visible = false;
-      root.add(g);
-    }
-  } else {
-    // Knobs on the dash under the binnacle, over the edge of the gearbox tunnel where you see them past the wheel (the hand throttle on the
-    // left of the choke): the choke and the hand throttle, each pulled out towards the driver on a long shaft that
-    // runs back into the dash, so it stays joined to it however far it is out (the pose moves the group by up to KNOB_TRAVEL).
-    for (const [name, x, mat] of [['chokeKnob', -0.26, MAT.red], ['handThrottleKnob', -0.16, MAT.galv]]) {
-      const knob = new THREE.Group();
-      knob.name = name;
-      knob.userData.keep = true;
-      knob.position.set(x, 1.095, KNOB_Z);
-      tube([0, 0, 0.16], [0, 0, -0.05], 0.005, MAT.galv, knob, 6);
-      add(new THREE.CylinderGeometry(0.02, 0.02, 0.028, 12).rotateX(Math.PI / 2), mat, knob).position.set(0, 0, -0.059); // light heads, to show on the black dash
-      root.add(knob);
-    }
-  }
-  // The levers on the tunnel: the gear lever, the transfer lever with its yellow knob (4WD, pushed down) and a red knob for the diff lock.
-  const lever = (name, x, mat, len, r) => {
-    const g = new THREE.Group();
-    g.name = name;
-    g.userData.keep = true;
-    g.position.set(x, 0.84, 0.32);
-    tube([0, 0, 0], [0, len, 0], 0.008, MAT.galv, g, 5);
-    add(new THREE.SphereGeometry(r, 12, 10), mat, g).position.set(0, len, 0);
-    root.add(g);
-  };
-  lever('gearLever', -0.1, MAT.knob, D ? 0.34 : 0.38, D ? 0.03 : 0.026);
-  lever('transferKnob', D ? 0.05 : 0.04, D ? MAT.knob : MAT.yellow, 0.22, 0.018);
-  lever('diffLockKnob', D ? 0.13 : 0.12, D ? MAT.yellow : MAT.red, 0.16, 0.016);
-  if (D) {
-    // The 200TDi's levers come up through rubber gaiters in the console.
-    for (const x of [-0.1, 0.05, 0.13]) add(new THREE.CylinderGeometry(x === -0.1 ? 0.035 : 0.025, x === -0.1 ? 0.07 : 0.05, 0.07, 12), MAT.rubber, root).position.set(x, 0.89, 0.32);
-    rbox(0.24, 0.015, 0.2, 0.005, MAT.steel, 0.09, 0.885, 0.32, root); // the plate round the transfer and diff lock levers
-  }
-  rbox(0.07, 0.02, 0.16, 0.005, MAT.black, -0.55, 0.66, 0.32, root).rotation.x = -0.6; // the pedals: clutch, brake, accelerator
-  rbox(0.07, 0.02, 0.16, 0.005, MAT.black, -0.4, 0.66, 0.32, root).rotation.x = -0.6;
-  rbox(0.04, 0.02, 0.14, 0.005, MAT.black, -0.25, 0.66, 0.32, root).rotation.x = -0.6;
-  // The handbrake: a ratchet lever on the right of the tunnel, by the driver's left knee. Down and forward when off; pulled up and back
-  // when on (poseLandyControls). It has a black grip with a push button on the end, and the ratchet quadrant it clicks along.
-  const hb = new THREE.Group();
-  hb.name = 'parkBrakeLever';
-  hb.userData.keep = true;
-  hb.position.set(-0.2, 0.8, 0.12);
-  tube([0, 0, 0], [0, 0.3, 0], 0.01, MAT.galv, hb, 6);
-  add(new THREE.CylinderGeometry(0.019, 0.022, 0.12, 10), MAT.knob, hb).position.set(0, 0.34, 0);
-  rbox(0.014, 0.014, 0.02, 0.004, MAT.red, 0, 0.405, 0, hb); // the release button
-  hb.rotation.x = HANDBRAKE_OFF;
-  root.add(hb);
-  rbox(0.012, 0.1, 0.1, 0.004, MAT.steel, -0.2, 0.84, 0.1, root); // the ratchet quadrant it moves against
-  if (D) add(new THREE.CylinderGeometry(0.03, 0.045, 0.05, 10), MAT.rubber, root).position.set(-0.2, 0.84, 0.12); // the 200TDi's has a gaiter at its foot
-  // Quad poses these two on a quad; the Land Rover's choke is the dash knob and it has no fuel tap.
-  for (const name of ['fuelTap', 'chokeLever']) {
-    const g = new THREE.Group();
-    g.name = name;
-    g.userData.keep = true;
-    g.visible = false;
-    root.add(g);
-  }
-
-  if (!D) {
-    // The tub: the floor is above the wheels' tops (with a hump over each arch, not a box the tyre pokes into), sides with the wheel
-    // arches cut in them, the drop tailgate with its chains, and the rear body panel below it with the lamps, the plate and the badge.
-    rbox(1.6, 0.04, 1.3, 0.01, paint, 0, TUB_FLOOR, -1.3, root);
-    for (const s of [-1, 1]) {
-      archPanel(s * 0.82, 0.04, 0.78, 1.38, -1.95, -0.65, zR, paint, root); // side, with the wheel arch cut in it
-      archFlare(s * 0.845, zR, paint, root);
-      rbox(0.2, 0.26, 0.02, 0.005, MAT.black, s * 0.7, 0.5, zR - 0.52, root); // the mudflap behind the wheel
-      rbox(0.08, 0.03, 1.3, 0.01, MAT.galv, s * 0.82, 1.39, -1.3, root); // its capping
-      rbox(0.34, 0.1, 0.84, 0.04, paint, s * 0.62, TUB_FLOOR + 0.06, zR, root); // the hump over the arch, clear of the tyre
-      for (const z of [-0.8, -1.8]) add(new THREE.TorusGeometry(0.02, 0.005, 6, 10), MAT.galv, root).position.set(s * 0.8, 1.32, z); // rope hooks
-      rbox(0.08, 0.1, 0.03, 0.01, tailMat, s * 0.74, 0.86, -1.97, root); // the tail lamp
-      rbox(0.08, 0.05, 0.03, 0.01, MAT.amber, s * 0.74, 0.77, -1.97, root); // and the indicator under it
-      if (s > 0) add(new THREE.CylinderGeometry(0.04, 0.04, 0.03, 16).rotateX(Math.PI / 2), MAT.clear, root).position.set(s * 0.74, 0.69, -1.975); // a single round reverse lamp, on the nearside (the driver sits on the right)
-      tube([s * 0.78, 1.34, -1.94], [s * 0.8, 1.14, -1.95], 0.004, MAT.galv, root, 4); // the tailgate's chains
-      rbox(0.05, 0.06, 0.05, 0.008, MAT.galv, s * 0.7, 0.99, -1.96, root); // the tailgate's hinges
-    }
-    rbox(1.6, 0.4, 0.04, 0.01, paint, 0, 1.18, -1.95, root, 'tailgate');
-    rbox(1.6, 0.34, 0.04, 0.01, paint, 0, 0.8, -1.95, root); // the rear body panel under it
-    for (const y of [1.03, 1.35]) rbox(1.5, 0.02, 0.01, 0.004, paint, 0, y, -1.975, root); // the tailgate's pressings
-    rbox(0.1, 0.04, 0.02, 0.006, MAT.galv, 0, 1.07, -1.975, root); // its catch
-    plate(regText, '#e8c51c', root, { x: 0, y: 0.78, z: -1.9755, facing: -1 }); // the rear number plate
-    badge(root, { x: 0, y: 1.2, z: -1.9755, facing: -1, w: 0.2, h: 0.14, twoLines: true }); // the maker's badge on the tailgate, on two lines
-  } else {
-    // The 200TDi's square back: a carpeted load floor over the wheels, side bodywork with a window band and the wheel arches cut in
-    // it, the rear door with its window and the spare wheel on it, and the same body panel below with the lamps and the plate.
-    // The back bench (LANDY_REAR_SEATS): a footwell at the front floor's height behind the front seats, a seat box with three seats
-    // facing forward on it, the wheel boxes beside the outer two, and the raised load floor only behind it.
-    rbox(1.56, 0.03, 0.32, 0.01, trim.floor, 0, 0.62, -0.66, root); // the footwell's floor
-    rbox(1.1, 0.26, 0.44, 0.02, paint, 0, 0.75, -1.02, root); // the seat box
-    rbox(1.1, 0.4, 0.03, 0.01, paint, 0, 0.82, -1.29, root); // its back, up to the load floor behind
-    for (const seat of Object.values(LANDY_REAR_SEATS)) {
-      rbox(0.36, 0.1, 0.42, 0.04, trim.seat, seat.x, 0.94, seat.z - SEAT_BACK, root);
-      rbox(0.36, 0.5, 0.08, 0.04, trim.seat, seat.x, 1.24, -1.26, root).rotation.x = -0.1;
-      if (seat.x !== 0) rbox(0.22, 0.11, 0.07, 0.03, trim.seat, seat.x, 1.58, -1.29, root).rotation.x = -0.1; // the outer two have headrests
-    }
-    rbox(1.6, 0.04, 0.66, 0.01, trim.floor, 0, TUB_FLOOR, -1.62, root); // the load floor behind the bench
-    // Their belts, as the front ones, moved back to the bench: they pose by name (`belt_rearLeft` and so on).
-    const rearBelts = new THREE.Group();
-    rearBelts.position.set(0, REAR_DY, REAR_DZ);
-    root.add(rearBelts);
-    for (const [seat, belt] of Object.entries(LANDY_REAR_BELTS)) addBelt(rearBelts, seat, belt);
-    for (const s of [-1, 1]) {
-      archPanel(s * 0.82, 0.04, 0.78, 1.17, -1.95, -0.55, zR, paint, root); // the side below the windows, with the arch cut in it
-      archFlare(s * 0.845, zR, MAT.black, root);
-      rbox(0.2, 0.26, 0.02, 0.005, MAT.black, s * 0.7, 0.5, zR - 0.52, root); // the mudflap behind the wheel
-      rbox(0.24, 0.48, 0.86, 0.04, paint, s * 0.68, 0.86, zR, root); // the wheel box beside the bench, over the tyre
-      rbox(0.04, 0.2, 0.32, 0.01, paint, s * 0.8, 0.7, -0.66, root); // the side of the footwell, under the body side
-      const glass = add(new THREE.PlaneGeometry(1.3, 0.46), MAT.glass, root);
-      glass.rotation.y = Math.PI / 2;
-      glass.position.set(s * 0.82, 1.4, -1.22);
-      for (const z of [-0.58, -1.38, -1.9]) rbox(0.04, 0.58, 0.07, 0.008, paint, s * 0.82, 1.4, z, root); // the window posts
-      rbox(0.04, 0.1, 1.4, 0.008, paint, s * 0.82, 1.675, -1.24, root); // above the glass, up to the roof
-      // The 200TDi's newer rear lamp: a tall black housing on the corner with the red stop and tail lamp over the amber indicator over a
-      // clear reverse lens, instead of the Series' two small lamps.
-      rbox(0.1, 0.36, 0.035, 0.012, MAT.black, s * 0.74, 0.86, -1.968, root);
-      rbox(0.075, 0.13, 0.03, 0.008, tailMat, s * 0.74, 0.96, -1.975, root);
-      rbox(0.075, 0.09, 0.03, 0.008, MAT.amber, s * 0.74, 0.86, -1.975, root);
-      rbox(0.075, 0.09, 0.03, 0.008, MAT.clear, s * 0.74, 0.77, -1.975, root);
-    }
-    rbox(1.6, 0.34, 0.04, 0.01, paint, 0, 0.8, -1.95, root); // the rear body panel
-    rbox(1.6, 0.3, 0.04, 0.01, paint, 0, 1.1, -1.95, root, 'rearDoor'); // the rear door, below its window
-    for (const s of [-1, 1]) rbox(0.2, 0.46, 0.04, 0.01, paint, s * 0.7, 1.48, -1.95, root); // either side of the window
-    rbox(1.6, 0.1, 0.04, 0.01, paint, 0, 1.675, -1.95, root); // and over it
-    add(new THREE.PlaneGeometry(1.2, 0.4), MAT.glass, root).position.set(0, 1.45, -1.95);
-    rbox(0.1, 0.04, 0.03, 0.006, MAT.black, 0.52, 1.0, -1.975, root); // the handle
-    for (const s of [-1, 1]) rbox(0.05, 0.08, 0.06, 0.008, MAT.black, s * 0.79, 1.4, -1.96, root); // the door's hinges
-    // The spare wheel on the door, face out, on a stub carrier.
-    const spare = new THREE.Group();
-    spare.position.set(0, 1.27, -2.075);
-    spare.rotation.y = Math.PI / 2;
-    add(cached('tyre', tyre), MAT.rubber, spare);
-    addWheelFace(spare, 1, MAT.rimGrey);
-    root.add(spare);
-    rbox(0.1, 0.3, 0.04, 0.01, MAT.black, 0, 1.27, -2.0, root);
-    plate(regText, '#e8c51c', root, { x: 0, y: 0.78, z: -1.9755, facing: -1 }); // the rear number plate
-    badge(root, { x: 0.55, y: 1.18, z: -1.9755, facing: -1, w: 0.16, h: 0.064, px: 900 }); // the maker's badge on the door
-    modelBadge('200Tdi', root, { x: -0.52, y: 1.17, z: -1.9755 }); // and the model's, the other side
-  }
-
-  // The rear crossmember with the towing jaw: a pin through a jaw, where the trailer's ring goes.
-  rbox(1.0, 0.12, 0.1, 0.01, MAT.chassis, 0, 0.56, -1.95, root);
-  rbox(0.08, 0.08, 0.1, 0.01, MAT.steel, TOW_HITCH.x, TOW_HITCH.y, TOW_HITCH.z + 0.02, root);
-  tube([TOW_HITCH.x, TOW_HITCH.y + 0.06, TOW_HITCH.z - 0.01], [TOW_HITCH.x, TOW_HITCH.y - 0.06, TOW_HITCH.z - 0.01], 0.01, MAT.galv, root, 6);
-  for (const [name, at] of D ? [['towHitch', TOW_HITCH]] : [['towHitch', TOW_HITCH], ['crankHole', CRANK_HOLE]]) {
-    const o = new THREE.Object3D();
-    o.name = name;
-    o.position.set(at.x, at.y, at.z);
-    root.add(o);
-  }
-
-  // The exhaust: a silencer under the right side, inboard of the rail, and a tailpipe running well inside the rear wheel to come out under
-  // the back, clear of it so you can see it.
-  add(new THREE.CylinderGeometry(0.07, 0.07, 0.6, 14).rotateX(Math.PI / 2), MAT.rust, root).position.set(-0.34, 0.38, -0.6);
-  tube([-0.34, 0.38, -0.9], [-0.36, 0.34, -2.04], 0.022, MAT.rust, root, 6);
-  const tip = new THREE.Object3D();
-  tip.name = 'exhaustTip';
-  tip.position.set(-0.36, 0.34, -2.04);
-  root.add(tip);
-
-  // The seats' anchors: hips on the cushions. The driver's is yours; the other two are where the girls sit.
-  for (const [name, seat] of [['riderAnchor', LANDY_SEATS.driver], ['seatMid', LANDY_SEATS.mid], ['seatLeft', LANDY_SEATS.left]]) {
-    const a = new THREE.Object3D();
-    a.name = name;
-    a.position.set(seat.x, seat.y, seat.z);
-    root.add(a);
-  }
-  if (D) {
-    // The back bench's anchors (hips on the cushions) and where your eyes are in each of its seats.
-    const cap = (n) => n[0].toUpperCase() + n.slice(1);
-    for (const [name, seat] of Object.entries(LANDY_REAR_SEATS)) {
-      const a = new THREE.Object3D();
-      a.name = `seat${cap(name)}`;
-      a.position.set(seat.x, seat.y, seat.z);
-      const eyes = new THREE.Object3D();
-      eyes.name = `camera${cap(name)}`;
-      eyes.position.set(seat.x, seat.y + 0.69, seat.z + 0.02);
-      root.add(a, eyes);
-    }
-  }
-  const cameraAnchor = new THREE.Object3D();
-  cameraAnchor.name = 'cameraAnchor';
-  cameraAnchor.position.set(LANDY_SEATS.driver.x, LANDY_SEATS.driver.y + 0.69, LANDY_SEATS.driver.z + 0.02);
-  root.add(cameraAnchor);
-  // Where your eyes are riding in the middle or the left of the bench.
-  for (const [name, seat] of [['cameraMid', LANDY_SEATS.mid], ['cameraLeft', LANDY_SEATS.left]]) {
-    const a = new THREE.Object3D();
-    a.name = name;
-    a.position.set(seat.x, seat.y + 0.69, seat.z + 0.02);
-    root.add(a);
-  }
-
-  for (const w of LANDY_LAYOUT.wheels) {
-    const wheelModel = buildWheel(w, rim);
-    wheelModel.name = w.name;
-    quad.add(wheelModel);
-  }
-
-  addHeadlightBeams(quad);
-  addSignalLamps(quad, MAT.amber, MAT.clear);
-  // Its own tail lamp material, which setTaillights lights (no halos).
-  quad.userData.tailMaterial = tailMat;
-  quad.userData.tailHaloMaterial = new THREE.SpriteMaterial({ transparent: true, opacity: 0 });
-  quad.userData.tailHalos = [];
-  mergeStatic(root);
-  quad.traverse((o) => {
-    if (o.isMesh) {
-      o.castShadow = true;
-      o.receiveShadow = true;
-    }
-  });
-  return quad;
+  if (variant === 'defender') return buildDefenderModel({ bodyColor, dashStyle, reg }); // each has its own model: defenderModel.js, seriesModel.js
+  return buildSeriesModel({ bodyColor, dashStyle, reg });
 }
 
 /** Tips the 200TDi's outer front backrests forward, 0 (upright) to 1 (right forward), by seat name ({ left, driver }). */

@@ -92,6 +92,6 @@ export function proportionErrors(measured, real) {
 }
 
 /** The vehicles a detail item has brought into proportion; tests/proportions.test.js holds each within `PROPORTION_TOLERANCE`. */
-export const IN_PROPORTION = ['red', 'blue', 'green', 'kids', 'moto', 'atc', 'loan', 'tractor', 'utv', 'landrover'];
+export const IN_PROPORTION = ['red', 'blue', 'green', 'kids', 'moto', 'atc', 'loan', 'tractor', 'utv', 'landrover', 'landrover200'];
 
 export const PROPORTION_TOLERANCE = 0.08;

@@ -831,6 +831,7 @@ export class Game {
       l.mount = l.unit ? new UtvMount(l.unit.quad, (x, z) => this.world.heightAt(x, z), l.car ? CAR_STAND : { ...LANDY_STAND, ...LANDY_REAR_STAND }, rear) : null;
       if (l.unit) l.unit.quad.tipHold = { left: 0, driver: 0 }; // seconds a backrest stays tipped after you climb past it
       if (l.unit && series) this.addLandyCargo(l);
+      else if (l.unit && l.kind === 'defender') registerTuning('200TDi back door', (l.unit.quad.tailgate ??= new Tailgate()).p, TAILGATE_PARAM_RANGES); // T swings its back door out
     }
     this.rearAccess = { ...DEFAULT_REAR_ACCESS_PARAMS };
     registerTuning('200TDi back seats', this.rearAccess, REAR_ACCESS_PARAM_RANGES);
@@ -3303,14 +3304,14 @@ export class Game {
     const mount = l.mount;
     mount.update(dt);
     const riding = ridden === unit;
-    if (l.cargo) {
-      // T drops or raises the Series' tailgate, from the seat or standing by the tub; what stands in the tub goes with it.
+    if (l.cargo || unit.spec.defender) {
+      // T drops or raises the Series' tailgate (or swings the 200TDi's back door), from the seat or standing by it; what stands in the tub goes with it.
       const near = riding || (!this.player.isRiding && this.player.position.distanceTo(q.position) < 3.2);
       if (near && input.wasPressed('KeyT') && !q.isTipped && !this.handsFull) {
         const note = q.tailgate.toggle(q.speed);
         if (note) this.hud.toast(note, 2);
       }
-      l.cargo.update(dt);
+      l.cargo?.update(dt);
     }
     const girlOf = (id) => this.companions.find((c) => c.character.id === id);
     const say = (c, key) => c?.voice.say(key, { urgent: true });
