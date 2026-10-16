@@ -8,6 +8,7 @@ import { setHeadlights } from '../src/vehicle/quadModel.js';
 import { DEF_END, DEF_DOOR, DEF_BACK_DOOR, DEF_SCREEN, DEF_ROOF, DEF_DASH, DEF_HITCH, defScreenZ, DEF_SCREEN_TOP_Z, DEF_SIDE_WINDOW, DEF_PLATE, DEF_ARCH } from '../src/vehicle/defenderBody.js';
 import { LANDY_SEATS, LANDY_REAR_SEATS, DEFENDER_LAYOUT, poseLandyControls } from '../src/vehicle/landRoverModel.js';
 import { buildAllModels } from './helpers/vehicleModels.js';
+import { coplanarOverlaps } from './helpers/coplanar.js';
 
 let model;
 beforeAll(async () => {
@@ -211,5 +212,73 @@ describe('the 200TDi at its real size', () => {
     expect(h.point.y).toBeGreaterThan(DEF_ARCH.y + DEF_ARCH.r); // the top of the block, over the hole
     const under = firstHit([0.68, 0.7, -1.18], [0, 1, 0]); // from inside the hole upwards: the block's roof, at the top of the hole
     expect(under.point.y).toBeCloseTo(DEF_ARCH.y + DEF_ARCH.r, 1);
+  });
+
+  it('has no hole along the top edge of its sides (a slot over the B pillar, between the rails, under the roof)', () => {
+    const holes = [];
+    for (const s of [1, -1]) {
+      for (let z = -1.7983; z <= 0.2; z += 0.0111) {
+        for (const y of [1.685, 1.695, 1.705, 1.715, 1.725, 1.735]) {
+          const h = firstHit([s * 3, y, z], [-s, 0, 0]);
+          if (!h || Math.abs(h.point.x) < 0.7) holes.push(`z ${z.toFixed(2)} y ${y}`);
+        }
+      }
+    }
+    expect(holes.slice(0, 12)).toEqual([]);
+  }, 30000);
+
+  it('has no two faces fighting for the same plane where you can see them (the rails and pillars, the door\'s pieces, the roof\'s edge, the back)', () => {
+    const fights = coplanarOverlaps(model, { gap: 0.002, minArea: 2e-5 }).filter((f) => f.area > 8e-4); // 8 cm2 or more
+    expect(fights.slice(0, 8).map((f) => `${f.a}|${f.b} ${(f.area * 1e4).toFixed(0)} cm2 at ${f.at.map((v) => v.toFixed(2)).join(',')}`)).toEqual([]);
+  });
+
+  it('puts the pedals the right way round for a right-hand-drive car: the clutch furthest left of the driver (the most +x), the accelerator furthest right', () => {
+    const x = (n) => model.getObjectByName(n).position.x;
+    expect(x('pedalClutch')).toBeGreaterThan(x('pedalBrake'));
+    expect(x('pedalBrake')).toBeGreaterThan(x('pedalAccel'));
+    expect(x('pedalAccel')).toBeLessThan(LANDY_SEATS.driver.x + 0.2); // by the door side of the wheel's column
+  });
+
+  it('puts the wipers\' spindles below the glass, in the screen\'s bottom rail', () => {
+    for (const w of model.getObjectByName('bodyRoot').children) if (w.name === 'wiper') expect(w.position.y).toBeLessThan(0.06);
+    const wipers = [];
+    model.traverse((o) => { if (o.name === 'wiper') wipers.push(o); });
+    expect(wipers.length).toBe(2);
+    for (const w of wipers) expect(w.position.y).toBeLessThan(0.06);
+  });
+
+  it('has nothing of its body inside the rear tyres, at rest or at full bump (the tyre is 0.38 m radius, 0.21 wide, at x 0.743)', () => {
+    const a = new THREE.Vector3();
+    const b = new THREE.Vector3();
+    const c = new THREE.Vector3();
+    const p = new THREE.Vector3();
+    const inside = [];
+    model.updateMatrixWorld(true);
+    model.traverse((o) => {
+      if (!o.isMesh) return;
+      for (let q = o; q; q = q.parent) if (/^wheel_|^mirror|^seatBack|^belt/.test(q.name)) return;
+      if (['151617', '3a3c3e', '8e9396'].includes(o.material.color.getHexString())) return; // the chassis, springs and the like are meant to be down there
+      const pos = o.geometry.attributes.position;
+      const idx = o.geometry.index;
+      const n = idx ? idx.count / 3 : pos.count / 3;
+      for (let t = 0; t < n; t++) {
+        const g = (k) => (idx ? idx.getX(t * 3 + k) : t * 3 + k);
+        a.fromBufferAttribute(pos, g(0)).applyMatrix4(o.matrixWorld);
+        b.fromBufferAttribute(pos, g(1)).applyMatrix4(o.matrixWorld);
+        c.fromBufferAttribute(pos, g(2)).applyMatrix4(o.matrixWorld);
+        for (let i = 0; i <= 6; i++) {
+          for (let j = 0; j <= 6 - i; j++) {
+            const u = i / 6;
+            const w = j / 6;
+            p.set(a.x * (1 - u - w) + b.x * u + c.x * w, a.y * (1 - u - w) + b.y * u + c.y * w, a.z * (1 - u - w) + b.z * u + c.z * w);
+            for (const side of [1, -1]) {
+              if (Math.abs(p.x - side * 0.743) > 0.105) continue;
+              for (const cy of [0.45, 0.58]) if (Math.hypot(p.y - cy, p.z - DEFENDER_LAYOUT.wheels[2].z) < 0.37) inside.push(`${o.name || o.parent?.name} at ${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)}`);
+            }
+          }
+        }
+      }
+    });
+    expect(inside.slice(0, 6)).toEqual([]);
   });
 });

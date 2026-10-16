@@ -43,7 +43,7 @@ export const DEF_DOOR = { hinge: 0.52, rear: -0.4, y0: 0.6, y1: 1.27, glassTop: 
 
 /** The cab: the body side's top (under the roof), and the roof cap's sill and top. */
 export const DEF_CAB = { top: 1.74, rear: DEF_END + 0.04 };
-export const DEF_ROOF = { z0: DEF_SCREEN_TOP_Z + 0.02, z1: DEF_END - 0.04, y0: DEF_CAB.top - 0.03, y1: 1.95, w: 1.68 }; // its bottom edge 3 cm into the body's top rail, so no gap shows
+export const DEF_ROOF = { z0: DEF_SCREEN_TOP_Z + 0.02, z1: DEF_END - 0.04, y0: DEF_CAB.top - 0.03, y1: 1.95, w: 1.72 }; // its bottom edge 3 cm into the body's top rail, so no gap shows
 
 /** The side windows behind the door: the long window over the rear bench, its frame and the posts (z, from the B pillar back). */
 export const DEF_SIDE_WINDOW = { z0: DEF_DOOR.rear - 0.05, z1: -1.66, y0: 1.27, y1: 1.7 }; // from the B pillar's back face to the C pillar's front: no gap between them

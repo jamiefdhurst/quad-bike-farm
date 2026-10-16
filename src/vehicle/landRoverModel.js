@@ -465,9 +465,10 @@ const PEDAL_TRAVEL = 0.28;
 /**
  * The three pedals (clutch, brake, accelerator), each a group pivoting at the top of its arm (`pivot`: y, z, on the bulkhead's lining under the dash)
  * with the arm and a ribbed pad hanging from it to `foot` (y, z); `poseLandyControls` swings them with what your feet are doing. Named
- * `pedalClutch`, `pedalBrake` and `pedalAccel`, and kept apart from the merge.
+ * `pedalClutch`, `pedalBrake` and `pedalAccel`, and kept apart from the merge. The driver sits on the right (x -0.42), so the clutch is furthest left
+ * of him (the largest x, nearest the console) and the accelerator furthest right (the smallest, by the door), as on any right-hand-drive car.
  */
-export function addPedals(root, { pivot, foot, xs = [-0.55, -0.4, -0.25], widths = [0.075, 0.075, 0.045] }) {
+export function addPedals(root, { pivot, foot, xs = [-0.25, -0.4, -0.55], widths = [0.075, 0.075, 0.045] }) {
   ['pedalClutch', 'pedalBrake', 'pedalAccel'].forEach((name, i) => {
     const g = new THREE.Group();
     g.name = name;

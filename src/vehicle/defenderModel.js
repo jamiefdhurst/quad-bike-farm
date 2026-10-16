@@ -3,7 +3,7 @@ import { buildDash } from './dash.js';
 import { addHeadlightBeams, addSignalLamps, addSignalStalk } from './quadModel.js';
 import { loftGeometry, mergeStatic } from './quadGeometry.js';
 import { buildSeatBelt, webbingMaterial } from './detail/belts.js';
-import { buildWiper, buildGrabHandle } from './detail/fittings.js';
+import { buildWiper } from './detail/fittings.js';
 import { buildGlovebox } from './detail/switchgear.js';
 import { buildRadio } from './detail/radios.js';
 import {
@@ -56,7 +56,7 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
   const plastic2 = new THREE.MeshStandardMaterial({ color: 0x2d3033, roughness: 0.75 }); // its darker parts
   const console_ = new THREE.MeshStandardMaterial({ color: 0x474b4f, roughness: 0.7 }); // the centre stack's panel
   const lining = new THREE.MeshStandardMaterial({ color: 0x6d6c66, roughness: 0.95 }); // the headlining
-  const alpine = new THREE.MeshStandardMaterial({ color: 0x1b2326, roughness: 0.1, metalness: 0.2 }); // the roof's side windows
+  const alpine = new THREE.MeshStandardMaterial({ color: 0x1b2326, roughness: 0.1, metalness: 0.2, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }); // the roof's side windows, laid on the cap's side
   const cover = new THREE.MeshStandardMaterial({ color: 0x1b1c1e, roughness: 0.85 }); // the spare wheel's cover
 
   const quad = new THREE.Group();
@@ -134,7 +134,7 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
     plate(regText, '#ece9de', root, { x: 0, y: 0.6, z: DEF_FRONT.bumper + 0.0005, facing: 1 }); // the front number plate, on the bumper's face
     // The grille: a black panel with horizontal slats, the badge at its right-hand end, the maker's name on a strip above.
     const pz = DEF_FRONT.panel;
-    rbox(0.78, 0.36, 0.04, 0.012, MAT.black, 0, 0.86, pz, root); // (between the wings' inner walls, not through them)
+    rbox(0.76, 0.36, 0.04, 0.012, MAT.black, 0, 0.86, pz, root); // (between the wings' inner walls, with a centimetre to spare)
     for (let i = 0; i < 8; i++) rbox(0.72, 0.014, 0.018, 0.004, MAT.chassis, 0, 0.72 + i * 0.04, pz + 0.025, root);
     badge(root, { x: 0.3, y: 0.8, z: pz + 0.0215, facing: 1, w: 0.08 });
     const name = label(0.2, 0.034, 1000, (g, W, H) => {
@@ -178,7 +178,7 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
     for (const s of [-1, 1]) {
       rbox(0.4, 0.02, 0.07, 0.01, MAT.black, s * 0.32, sc.top + 0.01, 0.62, root); // the vent flaps' grilles, one each side of the wipers, outside the glass
       const pz = door.hinge + 0.1; // the body's side runs on from the hinge pillar to the wing, one panel the whole way
-      rbox(0.03, sc.top - wing.bottom, sc.to - pz, 0.01, paint, s * wing.outer, (sc.top + wing.bottom) / 2, (pz + sc.to) / 2, root);
+      rbox(0.03, sc.top - 0.04 - wing.bottom, sc.to - 0.006 - pz, 0.01, paint, s * (wing.outer - 0.004), (sc.top - 0.04 + wing.bottom) / 2, (pz + sc.to - 0.006) / 2, root); // (4 mm inboard of the wing's side, which it meets, and stopping under the deck's end and short of its front: they shared faces)
     }
     const screen = new THREE.Group();
     screen.position.set(0, DEF_SCREEN.baseY, DEF_SCREEN.baseZ);
@@ -193,8 +193,8 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
       pane.position.set(s * 0.4, H / 2, 0);
       rbox(0.05, H, 0.05, 0.01, frame, s * 0.8, H / 2, 0, screen); // the sides: the doors' front uprights
       const wiper = buildWiper({ len: 0.5, mats: { arm: MAT.black } }); // a wiper from the kit, parked along the foot of the glass
-      wiper.position.set(s * 0.1, 0.1, 0);
-      wiper.rotation.z = s > 0 ? 0.05 : Math.PI - 0.05;
+      wiper.position.set(s * 0.1, 0.03, 0); // its spindle in the bottom rail, below the glass (which starts at 0.06), the arm rising out of it onto the glass
+      wiper.rotation.z = s > 0 ? 0.12 : Math.PI - 0.12;
       screen.add(wiper);
     }
     rbox(0.2, 0.07, 0.03, 0.01, MAT.black, 0, DEF_SCREEN.topY - 0.1, DEF_SCREEN_TOP_Z - 0.04, root); // the rear-view mirror
@@ -216,11 +216,11 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
       const len = door.hinge - door.rear;
       const lowH = door.y1 - door.y0;
       rbox(0.05, lowH, len, 0.012, paint, 0, (door.y0 + door.y1) / 2, -len / 2, d); // the lower panel
-      rbox(0.03, 0.03, len, 0.008, frame, 0.01 * s, door.y1 + 0.005, -len / 2, d); // the black capping
+      rbox(0.03, 0.03, len, 0.008, frame, 0.015 * s, door.y1 + 0.005, -len / 2, d); // the black capping, its outer face 5 mm proud of the panel's (they shared one)
       rbox(0.014, lowH - 0.08, len - 0.08, 0.004, trim.dash, -s * 0.03, (door.y0 + door.y1) / 2, -len / 2, d); // the trim card on its inside
       rbox(0.02, 0.1, 0.36, 0.01, plastic2, -s * 0.043, door.y0 + 0.2, dz(-0.1), d); // its map pocket
       tube([-s * 0.045, door.y1 - 0.12, dz(-0.28)], [-s * 0.045, door.y1 - 0.12, dz(0.1)], 0.012, plastic2, d, 6); // the pull, along the top of the card
-      rbox(0.04, door.glassTop - door.y1 + 0.04, 0.045, 0.008, frame, 0, (door.y1 + door.glassTop) / 2 + 0.01, dz(door.rear) + 0.0225, d); // the rear upright
+      rbox(0.032, door.glassTop - door.y1 + 0.04, 0.045, 0.008, frame, 0, (door.y1 + door.glassTop) / 2 + 0.01, dz(door.rear) + 0.0225, d); // the rear upright (4 mm thinner each side than the top rail, whose face it would share)
       const railFront = defScreenZ(door.glassTop + 0.045);
       rbox(0.04, 0.045, railFront - (door.rear - 0.025), 0.008, frame, 0, door.glassTop + 0.0225, dz((railFront + door.rear - 0.025) / 2), d); // the top rail
       post([0, door.y1, dz(defScreenZ(door.y1)) - 0.03], [0, door.glassTop + 0.045, dz(defScreenZ(door.glassTop + 0.045)) - 0.03], 0.03, 0.035, frame, d); // the front upright, on the screen post's line, holding the glass
@@ -247,22 +247,23 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
       // The body at each side: the hinge pillar, the B pillar, the rear side with its arch, the long window, the rail over it.
       rbox(0.04, door.y1 - door.y0, 0.1, 0.01, paint, s * door.x, (door.y0 + door.y1) / 2, door.hinge + 0.06, root); // the hinge pillar
       const w = DEF_SIDE_WINDOW;
-      rbox(0.04, top - 0.04 - door.y0, 0.05, 0.01, paint, s * door.x, (top - 0.04 + door.y0) / 2, door.rear - 0.025, root); // the B pillar
+      rbox(0.05, top - door.y0, 0.05, 0.01, paint, s * door.x, (top + door.y0) / 2, door.rear - 0.025, root); // the B pillar, 5 mm thicker than the rails each side (0.795 to 0.845, where they are 0.80 to 0.84), right up into the roof (it stopped 4 cm short, with a slot beside it)
       archPanel(s * door.x, 0.04, door.y0, door.y1, DEF_END + 0.02, door.rear - 0.05, zR, paint, root); // the rear side below the window, with the arch cut in it
       flare(s, s * door.x, zR);
       rbox(0.03, 0.03, door.rear - 0.05 - (DEF_END + 0.02), 0.008, frame, s * (door.x + 0.002), door.y1 + 0.02, (door.rear - 0.05 + DEF_END + 0.02) / 2, root); // the capping carried on
-      rbox(0.04, 0.05, door.rear - 0.05 - (DEF_END + 0.02), 0.008, frame, s * door.x, top - 0.025, (door.rear - 0.05 + DEF_END + 0.02) / 2, root); // the rail over the window
+      rbox(0.04, 0.05, door.rear - (DEF_END + 0.02), 0.008, frame, s * (door.x + 0.008), top - 0.025, (door.rear + DEF_END + 0.02) / 2, root); // the rail over the window, on to the door's rail (no slot over the B pillar), 8 mm proud of the pillars and posts so they do not share a face
       const wl = w.z0 - w.z1;
       const wz = (w.z0 + w.z1) / 2;
-      rbox(0.04, w.y1 - w.y0, w.z1 - (DEF_END + 0.02), 0.01, paint, s * door.x, (w.y0 + w.y1) / 2, (w.z1 + DEF_END + 0.02) / 2, root); // the rear post, from the window's back edge to the rear face (no hole between)
-      rbox(0.06, w.y1 - w.y0, 0.16, 0.012, paint, s * door.x, (w.y0 + w.y1) / 2, -1.43, root); // the C pillar, a solid panel across the window behind the back seats: the belts hang on it
+      const postH = w.y1 - 0.01 - w.y0; // the posts stop just under the rail's bottom (1.69), not into it: they would share its outer face
+      rbox(0.04, postH, w.z1 - (DEF_END + 0.02), 0.01, paint, s * door.x, w.y0 + postH / 2, (w.z1 + DEF_END + 0.02) / 2, root); // the rear post, from the window's back edge to the rear face (no hole between)
+      rbox(0.06, postH, 0.16, 0.012, paint, s * door.x, w.y0 + postH / 2, -1.43, root); // the C pillar, a solid panel across the window behind the back seats: the belts hang on it
       const side = add(new THREE.PlaneGeometry(wl, w.y1 - w.y0), MAT.glass, root); // the long window
       side.rotation.y = Math.PI / 2;
       side.position.set(s * door.x, (w.y0 + w.y1) / 2, wz);
       rbox(0.025, w.y1 - w.y0, 0.02, 0.006, frame, s * door.x, (w.y0 + w.y1) / 2, wz + 0.1, root); // the divider where the sliding half runs
       rbox(0.05, 0.12, 0.45, 0.01, MAT.black, s * (door.x + 0.03), 0.56, -0.06, root); // the black step under the door
       for (const z of [-0.2, 0.25]) rbox(0.05, 0.05, 0.03, 0.008, MAT.black, s * (door.x + 0.03), 0.6, z, root); // its brackets
-      rbox(0.05, 0.09, 1.2, 0.01, MAT.chassis, s * door.x, 0.55, 0.0, root); // the sill under the door, closing the gap to the chassis
+      rbox(0.05, 0.09, 1.2, 0.01, MAT.chassis, s * (door.x - 0.012), 0.55, 0.0, root); // the sill under the door, closing the gap to the chassis (its outer face inside the door's, not on it)
     }
     // The roof: the white cap, a loft with sloping sides and a rounded top, ends and all, from the screen's header to just past the back, with
     // a dark alpine light along each side of it and a gutter under its edge.
@@ -277,7 +278,6 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
       const light = add(new THREE.PlaneGeometry(0.9, 0.09), alpine, root);
       light.rotation.y = s * Math.PI / 2;
       light.position.set(s * (rf.w / 2 + 0.004), (rf.y0 + rf.y1) / 2 + 0.01, -1.05);
-      rbox(0.01, 0.1, 0.96, 0.004, MAT.black, s * (rf.w / 2 - 0.004), (rf.y0 + rf.y1) / 2 + 0.01, -1.05, root); // its frame, behind
     }
     // The headlining: a grey lining under the roof, so you see it from inside through the windows.
     rbox(1.62, 0.012, rf.z0 - rf.z1 - 0.1, 0.004, lining, 0, DEF_CAB.top - 0.012, (rf.z0 + rf.z1) / 2, root);
@@ -300,8 +300,8 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
       const win = add(new THREE.PlaneGeometry(0.12, 0.5), MAT.glass, root);
       win.position.set(cx, 1.45, rz);
       win.rotation.y = Math.PI;
-      for (const x of [-0.07, 0.07]) rbox(0.015, 0.54, 0.012, 0.004, MAT.black, cx + x, 1.45, rz - 0.015, root); // its frame
-      for (const y of [1.18, 1.72]) rbox(0.16, 0.015, 0.012, 0.004, MAT.black, cx, y, rz - 0.015, root);
+      for (const x of [-0.07, 0.07]) rbox(0.015, 0.54, 0.012, 0.004, MAT.black, cx + x, 1.45, rz - 0.02, root); // its frame, standing 6 mm proud of the post's face
+      for (const y of [1.18, 1.72]) rbox(0.16, 0.015, 0.012, 0.004, MAT.black, cx, y, rz - 0.02, root);
       // The lamps: a black block on the post under its window, in line with it (the same x), with a gap under the window's frame: the round stop
       // and tail lamp over the round indicator over the nearside's reverse lamp or the offside's fog lamp, evenly spaced down it.
       rbox(0.12, 0.4, 0.03, 0.01, MAT.black, cx, 0.93, rz - 0.035, root);
@@ -329,9 +329,9 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
     const rear = add(new THREE.PlaneGeometry(B.window.w, winH), MAT.glass, door2);
     rear.position.set(cx, wy, 0);
     rear.rotation.y = Math.PI;
-    rbox(B.window.w + 0.03, 0.02, 0.058, 0.006, MAT.black, cx, B.window.y0 - 0.005, -0.002, door2); // its black rubber, round the glass
-    rbox(B.window.w + 0.03, 0.02, 0.058, 0.006, MAT.black, cx, B.window.y1 + 0.005, -0.002, door2);
-    for (const x of [cx - B.window.w / 2 - 0.005, cx + B.window.w / 2 + 0.005]) rbox(0.02, winH + 0.03, 0.058, 0.006, MAT.black, x, wy, -0.002, door2);
+    rbox(B.window.w + 0.03, 0.02, 0.066, 0.006, MAT.black, cx, B.window.y0 - 0.005, -0.002, door2); // its black rubber, round the glass (thicker than the panel, so no face is on the panel's)
+    rbox(B.window.w + 0.03, 0.02, 0.066, 0.006, MAT.black, cx, B.window.y1 + 0.005, -0.002, door2);
+    for (const x of [cx - B.window.w / 2 - 0.005, cx + B.window.w / 2 + 0.005]) rbox(0.02, winH + 0.03, 0.066, 0.006, MAT.black, x, wy, -0.002, door2);
     rbox(0.1, 0.04, 0.03, 0.006, MAT.black, doorW - 0.06, B.y0 + 0.5, -0.04, door2); // the handle
     rbox(0.06, 0.06, 0.04, 0.008, MAT.black, doorW - 0.01, B.y1 - 0.12, 0.02, door2); // the latch, on the free edge
     rbox(0.016, 0.28, 0.02, 0.004, MAT.chassis, 0.01, wy, 0.02, door2); // a strip on the hinge edge
@@ -377,7 +377,7 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
     const fz = DEF_SCUTTLE.from + 0.02;
     rbox(1.56, 0.03, fz - -0.55, 0.01, trim.floor, 0, 0.62, (fz - 0.55) / 2, root); // the floor, from the bulkhead back to the seat box
     rbox(1.56, 0.26, 0.5, 0.02, paint, 0, 0.76, -0.3, root, 'seatBox');
-    rbox(1.56, 0.03, 0.32, 0.01, trim.floor, 0, 0.62, -0.66, root); // the footwell behind the front seats
+    rbox(1.56, 0.03, 0.28, 0.01, trim.floor, 0, 0.62, -0.64, root); // the footwell behind the front seats (it stops at z -0.78, short of the rear tyres' front edge)
     rbox(0.4, 0.26, 0.9, 0.04, console_, 0, 0.75, 0.1, root); // the tunnel, a moulded console between the seats
     for (const [name, seat] of Object.entries(LANDY_SEATS)) {
       rbox(0.44, 0.1, 0.46, 0.04, trim.seat, seat.x, 0.9, seat.z - SEAT_BACK, root); // the cushion runs forward from the backrest
@@ -419,7 +419,6 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
     rbox(1.12, 0.012, loadL - 0.02, 0.004, trim.floor, 0, 0.906, loadZ, root); // the carpet on top
     for (const s of [-1, 1]) {
       archBlock(s, zR); // the wheel box beside the bench, over the tyre, in the trim's plastic, with a round hole for it
-      rbox(0.014, 0.5, 1.3, 0.004, trim.dash, s * 0.78, 1.0, -1.2, root); // the plastic trim on the rear side under the window
     }
     // The seat belts (detail/belts.js buildSeatBelt): a diagonal and lap belt for the outer seats, hanging on the body at the B pillar or the
     // rear quarter from the loop at the top to the reel at the bottom, and a lap belt for each middle seat. Stowed they hang there; worn they run
@@ -571,14 +570,9 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
     strips.rotation.y = Math.PI;
     for (const x of [-0.7, -0.74]) rbox(0.016, 0.03, 0.018, 0.004, MAT.black, x, 0.99, D.z1 - 0.011, root); // the sliders
     for (const [i, on] of [[0, false], [1, false], [2, true]]) rocker(-0.28 + i * 0.05, 1.0, on, D.z1);
-    // The passenger's glovebox: a box down from the shelf on that side with a lid in its face, and a grab handle on the face above.
-    const gx = (D.glove.x0 + D.glove.x1) / 2;
-    rbox(D.glove.x1 - D.glove.x0, D.face - D.foot, D.z0 - D.z1, 0.012, plastic2, gx, (D.face + D.foot) / 2, (D.z0 + D.z1) / 2, root);
-    fit(buildGlovebox({ w: 0.4, h: 0.17 }), gx, D.foot + 0.025, D.z1 - 0.003);
-    const grab = buildGrabHandle({ len: 0.22, stand: 0.035, r: 0.01 });
-    grab.position.set(0.52, 1.0, D.z1 - 0.003);
-    grab.rotation.set(0, Math.PI, 0);
-    root.add(grab);
+    // The passenger's glovebox: a lid in the dash face on that side, as on the real one, and nothing under it: the dash stops at the face, so there is
+    // room for a passenger's knees (it was a box hanging under the face, a black panel in the way).
+    fit(buildGlovebox({ w: 0.4, h: 0.12 }), (D.glove.x0 + D.glove.x1) / 2, D.face + 0.02, D.z1 - 0.003);
     // A diesel with glow plugs has no choke and no hand throttle; the pose code still looks the knobs up by name.
     for (const name of ['chokeKnob', 'handThrottleKnob']) {
       const g = new THREE.Group();

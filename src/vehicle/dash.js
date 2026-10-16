@@ -964,10 +964,12 @@ function buildDefender() {
   housing(group, { x: 60, y: 14, w: 240, h: 92, r: 3, ...O, material: charcoal });
   const face = mmPanel({ x: 60, y: 14, w: 240, h: 92, ...O });
   group.add(face.mesh);
-  const volts = { cx: 82, cy: 40, r: 14 }; // the three small gauges in a row with a gap between them, their centres in line
-  const temp = { cx: 125, cy: 40, r: 14 };
-  const fuel = { cx: 168, cy: 40, r: 14 };
-  const speedo = { cx: 232, cy: 60, r: 30 }; // the speedometer centred on the pod (its middle is y 60), clear of the top and the bottom
+  // One row of four dials on one centre line (y 52), the three small ones 43 mm apart with a gap between, the speedometer clear of the pod's top (10 mm);
+  // the warning symbols in two rows under the small ones, in columns under their centres.
+  const volts = { cx: 82, cy: 52, r: 14 };
+  const temp = { cx: 125, cy: 52, r: 14 };
+  const fuel = { cx: 168, cy: 52, r: 14 };
+  const speedo = { cx: 232, cy: 52, r: 28 };
   const KEY = { x: 286, y: 92 };
   for (const d of [volts, temp, fuel, speedo]) chromeRing(group, { ...d, r: d.r + 1, ...O, tube: 0.0018 });
   const gate = changeGate();
@@ -1014,26 +1016,26 @@ function buildDefender() {
     // on a dark strip.
     ctx.fillStyle = '#121213';
     ctx.beginPath();
-    ctx.roundRect(66, 62, 118, 42, 2);
+    ctx.roundRect(66, 71, 118, 33, 2);
     ctx.fill();
     const cols = [82, 103.5, 125, 146.5, 168];
     const row1 = [['glow', LAMP.amber, L.glow], ['charge', LAMP.red, L.charge], ['oil', LAMP.red, L.oil], ['park', LAMP.red, L.park], ['belt', LAMP.red, L.belt]];
     const row2 = [['lights', LAMP.green, L.lights], ['beam', '#4aa8ff', L.main], ['turnLeft', LAMP.green, L.turnLeft], ['turnRight', LAMP.green, L.turnRight]];
-    row1.forEach(([kind, colour, lit], i) => warnSymbol(ctx, kind, cols[i], 74, colour, lit));
-    row2.forEach(([kind, colour, lit], i) => warnSymbol(ctx, kind, cols[i], 93, colour, lit));
+    row1.forEach(([kind, colour, lit], i) => warnSymbol(ctx, kind, cols[i], 80, colour, lit));
+    row2.forEach(([kind, colour, lit], i) => warnSymbol(ctx, kind, cols[i], 96, colour, lit));
     // The hazard button in the last place of the second row: a black surround round a red square with a white triangle, point up, flashing red
     // with the hazards.
     ctx.fillStyle = '#050505';
-    ctx.fillRect(cols[4] - 8, 85, 16, 16);
+    ctx.fillRect(cols[4] - 7, 89, 14, 14);
     ctx.fillStyle = L.hazard ? '#ff3a22' : '#8c1812';
-    ctx.fillRect(cols[4] - 6.5, 86.5, 13, 13);
+    ctx.fillRect(cols[4] - 5.5, 90.5, 11, 11);
     ctx.strokeStyle = '#f2f2f2';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 0.9;
     ctx.lineJoin = 'round';
     ctx.beginPath();
-    ctx.moveTo(cols[4], 88);
-    ctx.lineTo(cols[4] + 4.2, 96);
-    ctx.lineTo(cols[4] - 4.2, 96);
+    ctx.moveTo(cols[4], 92.5);
+    ctx.lineTo(cols[4] + 3.6, 99);
+    ctx.lineTo(cols[4] - 3.6, 99);
     ctx.closePath();
     ctx.stroke();
   }

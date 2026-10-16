@@ -172,8 +172,8 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       rbox(0.05, H, 0.05, 0.01, frame, s * 0.8, H / 2, 0, screen); // the sides: the doors' front uprights
       // A wiper from the kit, parked along the foot of the glass on the outside: its spindle by the centre post, the arm out to the pillar.
       const wiper = buildWiper({ len: 0.55, mats: { arm: MAT.black } });
-      wiper.position.set(s * 0.1, 0.1, 0);
-      wiper.rotation.z = s > 0 ? 0.04 : Math.PI - 0.04;
+      wiper.position.set(s * 0.1, 0.03, 0); // its spindle in the bottom rail, below the glass, the arm rising out of it onto the glass
+      wiper.rotation.z = s > 0 ? 0.12 : Math.PI - 0.12;
       screen.add(wiper);
     }
     rbox(0.2, 0.07, 0.03, 0.01, MAT.black, 0, SERIES_SCREEN.topY - 0.1, SERIES_SCREEN_TOP_Z - 0.04, root); // the rear-view mirror
