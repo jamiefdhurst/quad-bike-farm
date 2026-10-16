@@ -301,7 +301,7 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
       win.position.set(cx, 1.45, rz);
       win.rotation.y = Math.PI;
       for (const x of [-0.07, 0.07]) rbox(0.015, 0.54, 0.012, 0.004, MAT.black, cx + x, 1.45, rz - 0.02, root); // its frame, standing 6 mm proud of the post's face
-      for (const y of [1.18, 1.72]) rbox(0.16, 0.015, 0.012, 0.004, MAT.black, cx, y, rz - 0.02, root);
+      for (const y of [1.18, 1.72]) rbox(0.16, 0.015, 0.016, 0.004, MAT.black, cx, y, rz - 0.022, root); // (the bars across are 4 mm deeper than the ones up the sides, so their corners share no face)
       // The lamps: a black block on the post under its window, in line with it (the same x), with a gap under the window's frame: the round stop
       // and tail lamp over the round indicator over the nearside's reverse lamp or the offside's fog lamp, evenly spaced down it.
       rbox(0.12, 0.4, 0.03, 0.01, MAT.black, cx, 0.93, rz - 0.035, root);
@@ -358,17 +358,26 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
     const half = Math.sqrt(r * r - dy * dy);
     const a = Math.asin(dy / r);
     const shape = new THREE.Shape();
-    shape.moveTo(zc - 0.66, yb); // (4 cm further back than the load floor's end, into the corner post, so no slot shows behind it)
+    shape.moveTo(zc - 0.65, yb); // (3 cm further back than the load floor's end, into the corner post but not out through its back face (-1.84), which it would share)
     shape.lineTo(zc - half, yb);
     shape.absarc(zc, DEF_ARCH.y, r, Math.PI + a, -a, true);
     shape.lineTo(zc + 0.62, yb);
     shape.lineTo(zc + 0.62, yt);
-    shape.lineTo(zc - 0.66, yt);
+    shape.lineTo(zc - 0.65, yt);
     shape.closePath();
     const g = new THREE.ExtrudeGeometry(shape, { depth: 0.24, bevelEnabled: false });
     g.rotateY(-Math.PI / 2); // runs along -x from 0 to -0.24
     g.translate(s > 0 ? 0.8 : -0.56, 0, 0);
     add(g, trim.dash, root);
+    // A thin metal liner over the tyre: a half pipe at radius 0.44 (clear of the tyre's 0.38 at full bump, inside the hole's 0.47) from the block's
+    // inner face to the body side, closing the hole so you cannot see through the arch to the sky beside the seats.
+    const liner = new THREE.Shape();
+    liner.absarc(zc, DEF_ARCH.y, 0.45, 0.05, Math.PI - 0.05, false);
+    liner.absarc(zc, DEF_ARCH.y, 0.44, Math.PI - 0.05, 0.05, true);
+    const lg = new THREE.ExtrudeGeometry(liner, { depth: 0.24, bevelEnabled: false });
+    lg.rotateY(-Math.PI / 2);
+    lg.translate(s > 0 ? 0.8 : -0.56, 0, 0);
+    add(lg, paint, root);
   }
 
   // Inside: the floor and seat box, the front seats (the outer two tip forward), the console between them, the back bench with the load space
