@@ -546,7 +546,10 @@ export class Quad {
 
   /** The gear lever, and the tractor's stop knob. */
   manualKeys(input) {
-    if (this.tractor && input.wasPressed(STOP_KNOB_KEY)) this.engine.stopKnob();
+    if (this.tractor && input.wasPressed(STOP_KNOB_KEY)) {
+      this.engine.stopKnob();
+      this.stopPull = 1; // the knob comes out for a moment (poseTractorControls)
+    }
     if (!this.input) return; // standing beside it you can reach the knob but not the lever
     for (const [code, gear] of Object.entries(GEAR_KEYS)) {
       if (!input.wasPressed(code)) continue;
@@ -1261,7 +1264,11 @@ export class Quad {
     }
     setTaillights(this.model, lit ? taillightLevel(level, this.brake > 0.1) : 0); // the same supply, so a brake light needs it too
 
-    if (this.tractor) poseTractorControls(this.model, { gear: this.drivetrain.gear, hand: this.handSetting, pedal: this.drivetrain.pedal });
+    if (this.tractor) {
+      this.stopPull = Math.max(0, (this.stopPull ?? 0) - dt * 1.6);
+      this.displayPark += ((this.parkBrake ? 1 : 0) - this.displayPark) * Math.min(1, 10 * dt);
+      poseTractorControls(this.model, { gear: this.drivetrain.gear, hand: this.handSetting, pedal: this.drivetrain.pedal, brake: this.brake, throttle: this.throttle, park: this.displayPark, stop: this.stopPull });
+    }
     if (this.utv) {
       poseUtvControls(this.model, { reverse: this.reverse, neutral: state.neutral, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, lights: this.lights.mode, horn: this.hornHeld, park: this.parkBrake });
       poseUtvBelts(this.model, this.belts.worn());

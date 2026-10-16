@@ -23,9 +23,11 @@ export const MF_NOSE = [
   { z: 1.28, w: 0.44, y0: 0.56, y1: 1.15 },
   { z: 1.4, w: 0.36, y0: 0.62, y1: 1.08 },
 ];
-export const MF_GRILLE = { z: 1.402, y: 0.83, w: 0.3, h: 0.4, slats: 11 };
+/** The grille follows the nose's own face (a superellipse of exponent `e`): it is the face's outline pulled in by `inset`, so it is the same shape. */
+export const MF_GRILLE = { z: 1.4, slats: 10, inset: 0.84 };
+export const MF_NOSE_FACE = { z: 1.4, cx: 0, cy: 0.85, hw: 0.18, hh: 0.23, e: 3.4 };
 /** A round headlamp in a red cup on each side of the nose. */
-export const MF_LAMP = { x: 0.262, y: 0.93, z: 1.3, r: 0.07, cup: 0.085 };
+export const MF_LAMP = { x: 0.3, y: 0.93, z: 1.37, r: 0.065, cup: 0.078, depth: 0.08 };
 
 /** The cowl behind the bonnet, which is the fuel tank and the instrument panel: stations (z, width, bottom, top). The top slopes to the driver. */
 export const MF_PANEL = { tilt: 1.2, at: [0, 1.13, 0.2], span: 0.34 }; // the panel's plane, as the dash group's tilt, a point on it and its length along z
@@ -50,7 +52,10 @@ export const MF_GUARD = { r: 0.585 + 0.1, w: 0.37, from: -0.1, to: Math.PI + 0.2
 /** The footplates either side of the transmission, the pedals and the gear levers. */
 export const MF_FOOT = { y: 0.66, x0: 0.2, x1: 0.52, z0: -0.7, z1: -0.1 };
 export const MF_PEDALS = { clutch: [0.3, 0.64, -0.36], brakes: [[-0.27, 0.64, -0.36], [-0.38, 0.64, -0.36]] };
-export const MF_LEVERS = { gear: [-0.09, 0.93, -0.44], range: [0.09, 0.93, -0.42], length: 0.27 };
+export const MF_LEVERS = { gear: [-0.09, 0.93, -0.44], length: 0.27 };
+/** The foot accelerator and the hand brake lever beside the seat, both fixed to the footplate or the casting. */
+export const MF_ACCEL = [-0.2, 0.64, -0.3];
+export const MF_HANDBRAKE = [-0.2, 0.93, -0.62];
 
 /** The upright exhaust, outside the bonnet on the left, and the air cleaner's red stack on the right. */
 export const MF_EXHAUST = { x: 0.262, z: 0.62, manifold: [0.2, 0.9, 0.72], top: 1.92 };

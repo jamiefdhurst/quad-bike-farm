@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import * as THREE from 'three';
-import { buildTractorModel, TRACTOR_LAYOUT, poseBaleSpike } from '../src/vehicle/tractorModel.js';
+import { buildTractorModel, TRACTOR_LAYOUT, poseBaleSpike, poseTractorControls } from '../src/vehicle/tractorModel.js';
+import { TRACTOR_SPEC } from '../src/vehicle/quadSpecs.js';
 import { MF_PANEL, MF_COWL, MF_BONNET, panelY } from '../src/vehicle/mf35Body.js';
 
 // The dash paints its dials on canvases; nothing here looks at them, so any 2D context that swallows every call will do.
@@ -82,5 +83,68 @@ describe('tractor model', () => {
     expect(rl.radius * 2).toBeCloseTo(1.17, 2);
     expect(fl.radius * 2).toBeCloseTo(0.71, 2);
     expect(fl.z - rl.z).toBeCloseTo(1.83, 2);
+  });
+
+  it('has a control for everything: gears, hand throttle, clutch, brakes, accelerator, hand brake, stop knob and the lights switch, all posed', () => {
+    for (const n of ['gearLever', 'handThrottle', 'clutchPedal', 'brakePedals', 'accelPedal', 'parkBrakeLever', 'stopKnob', 'lightsRocker']) expect(model.getObjectByName(n), n).toBeTruthy();
+    const m = buildTractorModel();
+    const at = (n) => m.getObjectByName(n);
+    poseTractorControls(m, { gear: 0, hand: 0, pedal: 0 });
+    const rest = { brakes: at('brakePedals').rotation.x, accel: at('accelPedal').rotation.x, park: at('parkBrakeLever').rotation.x, stop: at('stopKnob').position.z };
+    poseTractorControls(m, { gear: 1, hand: 1, pedal: 1, brake: 1, throttle: 1, park: 1, stop: 1 });
+    expect(at('brakePedals').rotation.x).toBeLessThan(rest.brakes - 0.2);
+    expect(at('accelPedal').rotation.x).toBeLessThan(rest.accel - 0.1);
+    expect(at('parkBrakeLever').rotation.x).toBeLessThan(rest.park - 0.3);
+    expect(at('stopKnob').position.z).toBeLessThan(rest.stop - 0.04);
+    expect(at('clutchPedal').rotation.x).toBeLessThan(0);
+  });
+
+  it('has a lights switch and tail lamps that the lights code finds: P is wired in the spec and the guards’ lamps share the tail material', () => {
+    expect(TRACTOR_SPEC.barLights).toBe('switch');
+    expect(model.userData.tailMaterial).toBeTruthy();
+    expect(model.userData.tailHalos.length).toBe(2);
+    expect(model.getObjectByName('headlight')).toBeTruthy();
+    expect(model.getObjectByName('lightsRocker').parent.name).toBe('dash'); // on the panel
+  });
+
+  it('has only the three gauges the game can drive (rev counter, water temperature, fuel), all inside the plate', async () => {
+    const { buildDash } = await import('../src/vehicle/dash.js');
+    const rings = buildDash('tractor').group.children.filter((o) => o.geometry?.type === 'TorusGeometry');
+    expect(rings.length).toBe(6); // a bezel and its lip for each of three dials
+    const plate = model.getObjectByName('dashPlate').geometry;
+    plate.computeBoundingBox();
+    for (const r of rings) {
+      expect(Math.abs(r.position.x) + r.geometry.parameters.radius, 'inside the plate').toBeLessThan(0.115); // (the plate's half width, in the dash group's own frame)
+    }
+  });
+
+  it('carries the seat on a bracket bolted to the gearbox cover, its arm and spring under the pan', () => {
+    for (const n of ['seatBracket', 'seatArm', 'seatSpring', 'seatPan', 'seatCushion']) expect(model.getObjectByName(n), n).toBeTruthy();
+    const top = (n) => new THREE.Box3().setFromObject(model.getObjectByName(n));
+    const cover = top('tunnelCover');
+    expect(top('seatBracket').intersectsBox(cover.clone().expandByScalar(0.01))).toBe(true); // on the cover
+    expect(top('seatArm').intersectsBox(top('seatBracket'))).toBe(true);
+    expect(top('seatSpring').intersectsBox(top('seatPan').clone().expandByScalar(0.012))).toBe(true);
+  });
+
+  it('keeps every wheel part inboard of the tyre’s outer face', () => {
+    for (const w of TRACTOR_LAYOUT.wheels) {
+      const wheel = model.getObjectByName(w.name);
+      wheel.updateMatrixWorld(true);
+      const side = Math.sign(w.x);
+      const spin = wheel.getObjectByName('spin');
+      let tyreFace = 0;
+      let rimFace = 0;
+      spin.traverse((o) => {
+        if (!o.isMesh) return;
+        o.geometry.computeBoundingBox();
+        const b = o.geometry.boundingBox;
+        const size = b.getSize(new THREE.Vector3());
+        const face = side > 0 ? b.max.x : -b.min.x;
+        if (size.y > (w.front ? 0.6 : 1.0)) tyreFace = Math.max(tyreFace, face);
+        else rimFace = Math.max(rimFace, face);
+      });
+      expect(rimFace, w.name).toBeLessThanOrEqual(tyreFace + 0.001);
+    }
   });
 });

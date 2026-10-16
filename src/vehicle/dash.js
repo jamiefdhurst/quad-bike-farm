@@ -19,7 +19,7 @@ import {
 //   blaster:   yellow. Only the key, in a small housing on the bar clamp.
 //   quadracer: orange. A RUN / OFF kill switch on the left bar and its lanyard.
 //   kidsKey:   mini moto, old three-wheeler. A key switch under the bar clamp. asp: the kids' quad's, the same key on the V bars' clamp block.
-//   tractor:   the tractor (a Massey-Ferguson-35-style cluster, TODO 98). Four round dials in chrome bezels set straight into the red metal of the cowl, no housing (a big rev counter with an hour meter and the PTO speed marked, oil pressure, water temperature, fuel), a brass ignition switch, and four warning lamps (temperature, GLOW, CHARGE, OIL).
+//   tractor:   the tractor (a Massey-Ferguson-35-style cluster, TODO 98). Three round dials in chrome bezels set straight into the red metal of the cowl, no housing (a big rev counter with an hour meter and the PTO speed marked, water temperature, fuel), a brass ignition switch, and four warning lamps (temperature, GLOW, CHARGE, OIL).
 //   utv:       the UTV. A basic LCD (speed, five fuel and four water blocks, F / N / R, hours and a 4WD note) over symbols for glow, charge, oil, park
 //              (parking brake), a belted figure (flashes while someone sits unbelted), a headlamp (green, blue for main beam) and the key.
 //   fiesta:    Amy's Mk1 Fiesta: a speedo and a combined fuel and water gauge the same size, the lamps between them, on brown. corsa: Jess's Corsa B, with a rev counter too.
@@ -575,15 +575,14 @@ function buildTractor() {
   const O = { ox: 180, oy: 70 };
   // The Massey-Ferguson-35-style cluster (TODO 98), set straight into the red metal of the cowl, no housing and no plastic: the model puts
   // a pressed steel panel behind this face, and the dials, the key's brass plate and the lamps are drawn on it. A big rev counter in the
-  // middle with its hours drum and the PTO speed marked, oil pressure on its left over the ignition switch, water temperature on its
-  // right and a small fuel gauge beyond, each in a chrome bezel; the three warning lamps in a row under the rev counter.
+  // middle with its hours drum and the PTO speed marked, fuel on its left over the ignition switch and water temperature on its right,
+  // each in a chrome bezel; the four warning lamps in a row centred under the rev counter. All of it inside the plate's edges.
   const face = mmPanel({ x: 60, y: 20, w: 260, h: 100, ...O });
   group.add(face.mesh);
   const dials = [
     { cx: 250, cy: 56, r: 19 }, // water temperature
     { cx: 180, cy: 62, r: 34 }, // the rev counter
-    { cx: 292, cy: 88, r: 15 }, // fuel
-    { cx: 110, cy: 56, r: 19 }, // oil pressure
+    { cx: 110, cy: 56, r: 19 }, // fuel
   ];
   for (const d of dials) {
     chromeRing(group, { ...d, r: d.r + 1.2, ...O, material: chromeMat, tube: 0.0034 });
@@ -653,18 +652,17 @@ function buildTractor() {
     agedGlass(ctx, t);
     small(ctx, dials[0], L.temp, 'C', 'H', true);
     small(ctx, dials[2], L.fuel, 'E', 'F');
-    small(ctx, dials[3], L.oilP, 'L', 'H');
     ignition(ctx, 110, 92, s.keyOn);
     // The warning lamps in a row under the rev counter, each in a chrome bezel's ring.
-    for (const [kind, x, colour, lit] of [['temp', 160, LAMP.red, L.hot], ['glow', 180, LAMP.amber, L.glow], ['charge', 200, LAMP.red, L.charge], ['oil', 220, LAMP.red, L.oil]]) {
+    for (const [kind, x, colour, lit] of [['temp', 150, LAMP.red, L.hot], ['glow', 170, LAMP.amber, L.glow], ['charge', 190, LAMP.red, L.charge], ['oil', 210, LAMP.red, L.oil]]) {
       ctx.fillStyle = kind === 'glow' ? '#3a2410' : '#2e100d'; // the lens, dark until it lights
       ctx.beginPath();
-      ctx.arc(x, 104, 4.4, 0, Math.PI * 2);
+      ctx.arc(x, 112, 4.4, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = '#c9c9c4';
       ctx.lineWidth = 0.9;
       ctx.stroke();
-      warnSymbol(ctx, kind, x, 104, colour, lit, 0.6);
+      warnSymbol(ctx, kind, x, 112, colour, lit, 0.6);
     }
   }
 
@@ -677,10 +675,9 @@ function buildTractor() {
       shownFuel += (s.fuelLevel - shownFuel) * 0.2;
       shownTemp += (tempGaugeFraction(s.temperature, true, s.overheat) - shownTemp) * 0.1;
       const running = s.rpm > 300;
-      const oilP = running ? Math.min(0.75, 0.45 + (s.rpm / 2200) * 0.3) : 0.04;
-      const L = { rpm: shownRpm, fuel: shownFuel, temp: shownTemp, oilP, hot: !!s.ignition && shownTemp >= HOT_FROM, glow: !!s.ignition && !!s.glow, charge: !!s.ignition && !running, oil: !!s.ignition && !running };
+      const L = { rpm: shownRpm, fuel: shownFuel, temp: shownTemp, hot: !!s.ignition && shownTemp >= HOT_FROM, glow: !!s.ignition && !!s.glow, charge: !!s.ignition && !running, oil: !!s.ignition && !running };
       const hh = counterDigits(s.hours, 4);
-      if (gate([s.ignition, s.keyOn, L.glow, L.hot, L.charge, Math.round(shownRpm / 8), Math.round(shownFuel * 20), Math.round(shownTemp * 20), Math.round(oilP * 20), hh.key].join('|'))) face.redraw((ctx) => draw(ctx, s, L));
+      if (gate([s.ignition, s.keyOn, L.glow, L.hot, L.charge, Math.round(shownRpm / 8), Math.round(shownFuel * 20), Math.round(shownTemp * 20), hh.key].join('|'))) face.redraw((ctx) => draw(ctx, s, L));
     },
   };
 }

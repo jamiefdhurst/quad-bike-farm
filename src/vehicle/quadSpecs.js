@@ -798,6 +798,7 @@ export const TRACTOR_SPEC = {
   bodyWear: 0.6, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 1.25, z: 1.3 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   steadyLights: true, // a battery runs its lights
+  barLights: 'switch', // a plain on / off switch low on the panel's right (P: off, on; lightSwitch.js), starting on
   label: 'tractor',
   name: 'Tractor',
   tractor: true,

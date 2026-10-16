@@ -1612,9 +1612,9 @@ export const FAQ_SECTIONS = [
         tip: 'P on the red quad: dipped, main beam, off. Its pod\'s yellow and white rockers show which.',
       },
       {
-        q: 'How do I switch the yellow quad\'s, orange quad\'s or old three-wheeler\'s lights on and off?',
+        q: 'How do I switch the yellow quad\'s, orange quad\'s, old three-wheeler\'s or the tractor\'s lights on and off?',
         a: `Press <kbd>P</kbd> while you ride it. They have a plain switch, not the others' three-way one: on (dipped) or off, and
-          they start on. The little rocker on the left bar (the yellow's just in from the brake lever, the three-wheeler's by the left grip, the orange's the yellow one on its pod) is the switch, and it rocks as you press. With the lights off the tail
+          they start on. The little rocker on the left bar (the yellow's just in from the brake lever, the three-wheeler's by the left grip, the tractor's a chrome bat low on its instrument panel, the orange's the yellow one on its pod) is the switch, and it rocks as you press. With the lights off the tail
           lamp is off too. The pull-start is on <kbd>O</kbd>, not <kbd>P</kbd>, so the two don't clash.`,
         tip: 'P switches the yellow and orange quads\' lights on and off. Their pull-start is on O.',
       },
@@ -1839,7 +1839,7 @@ export const VEHICLE_NOTES = {
   },
   tractor: {
     blurb: 'An old red-and-grey Hartley 35 (a Massey-Ferguson-35-style tractor) on red diesel: heavy, slow and strong, with three gears, a hand throttle and a lot of hours.',
-    tips: ['Wait for the GLOW lamp before cranking.', 'The stop knob (O) stops it, not the key.', 'Pulls the bale trailer and the tow chain.'],
+    tips: ['Wait for the GLOW lamp before cranking.', 'The stop knob (O) stops it, not the key.', 'P switches its lights; the tail lamps follow and brighten on the brake.', 'Pulls the bale trailer and the tow chain.'],
   },
   utv: {
     blurb: 'A green Gator-style side-by-side on red diesel, with a bench seat, a roll cage and a tipping bed.',

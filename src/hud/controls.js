@@ -36,7 +36,7 @@ export const CONTROLS = [
     lines: [
       `<kbd>K</kbd> key (heats the glow plugs: wait for the GLOW lamp to go out), hold <kbd>R</kbd> to crank`,
       `Hold <kbd>Shift</kbd> for the clutch: <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> gears, <kbd>B</kbd> reverse, <kbd>0</kbd> neutral`,
-      `<kbd>Q</kbd> <kbd>Z</kbd> hand throttle (it has no fuel tap; they work from the ground beside it too), <kbd>W</kbd> foot throttle, <kbd>S</kbd> brake (<kbd>S</kbd> goes backwards, <kbd>W</kbd> brakes, in reverse gear), <kbd>O</kbd> stop knob (the key won't stop it)`,
+      `<kbd>Q</kbd> <kbd>Z</kbd> hand throttle (it has no fuel tap; they work from the ground beside it too), <kbd>W</kbd> foot throttle, <kbd>S</kbd> brake (<kbd>S</kbd> goes backwards, <kbd>W</kbd> brakes, in reverse gear), <kbd>O</kbd> stop knob (the key won't stop it), <kbd>P</kbd> lights on and off (and the tail lamps with them, brighter on the brake), <kbd>Space</kbd> the hand brake lever`,
       `Leave it running in first gear with the hand throttle open and get off, and it creeps off on its own: the more throttle, the faster (a trickle to a brisk walk)`,
       `Bale spike on the back (no trailer on the drawbar): <kbd>]</kbd> raises the arms and <kbd>[</kbd> lowers them (engine running); the red lever on the left of the seat shows where they are. Reverse the point into a standing silage bale at its middle to spear it, lift to carry, lower it to the ground or onto another and drive on to leave it`,
       `<kbd>J</kbd> hook the bale trailer on when the drawbar is at its ring, or take it off when you're stopped. The girls climb on once you're stopped`,
