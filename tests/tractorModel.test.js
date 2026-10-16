@@ -179,4 +179,15 @@ describe('tractor model', () => {
     expect(ac.geometry.parameters.height).toBeLessThan(0.2);
     expect(model.getObjectByName('airCleanerCap').geometry.parameters.radiusTop).toBeGreaterThan(ac.geometry.parameters.radiusTop);
   });
+
+  it('keeps every loose part on the cowl and bonnet: nothing stands outside their width (the pod post is hidden until a pod is fitted; the air cleaner is embedded in the bonnet)', () => {
+    const post = model.userData.podPost;
+    expect(post.visible).toBe(false);
+    const half = (z) => { const st = MF_COWL; for (let i = 0; i < st.length - 1; i++) if (z <= st[i].z && z >= st[i + 1].z) return (st[i + 1].w + (st[i].w - st[i + 1].w) * ((z - st[i + 1].z) / (st[i].z - st[i + 1].z))) / 2; return 0; };
+    expect(Math.abs(post.position.x)).toBeLessThan(half(post.position.z) - 0.03);
+    const ac = model.getObjectByName('airCleaner');
+    const bonnetHalf = MF_BONNET[1].w / 2;
+    expect(Math.abs(ac.position.x) + ac.geometry.parameters.radiusBottom).toBeLessThan(bonnetHalf - 0.03);
+    expect(ac.position.y - ac.geometry.parameters.height / 2).toBeLessThan(MF_BONNET[1].y1 - 0.03); // its foot is below the bonnet's top, so it comes out of it
+  });
 });

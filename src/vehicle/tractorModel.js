@@ -309,12 +309,14 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   dash.group.add(lightsRocker);
   // An accessory pod stands on a short steel post on the cowl beside the panel (its right, so the dials stay clear), leaning back to you.
   const podPost = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.016, 0.06, 10), new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.6, metalness: 0.5 }));
-  podPost.position.set(-0.3, panelY0(0.2) + 0.03, 0.2);
+  podPost.position.set(-0.16, panelY0(0.3) + 0.03, 0.3); // on the cowl's top: well inside its edge (it is 0.44 wide there)
   podPost.userData.keep = true;
+  podPost.visible = false; // only there while a pod stands on it (Quad.fitPod): a bare stub looked like something floating
+  quad.userData.podPost = podPost;
   root.add(podPost);
   const podMount = new THREE.Object3D();
   podMount.name = 'podMount';
-  podMount.position.set(-0.3, panelY0(0.2) + 0.065, 0.2);
+  podMount.position.set(-0.16, panelY0(0.3) + 0.065, 0.3);
   podMount.rotation.x = 0.35;
   podMount.userData.keep = true;
   root.add(podMount);

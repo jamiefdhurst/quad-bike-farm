@@ -1147,6 +1147,7 @@ export class Quad {
     mount.add(pod.group);
     mount.scale.setScalar(1 / this.scale);
     this.pod = pod;
+    if (this.model.userData.podPost) this.model.userData.podPost.visible = true;
     return true;
   }
 
@@ -1155,6 +1156,7 @@ export class Quad {
     const pod = this.pod;
     if (pod) pod.group.parent?.remove(pod.group);
     this.pod = null;
+    if (this.model.userData.podPost) this.model.userData.podPost.visible = false;
     return pod;
   }
 

@@ -59,4 +59,4 @@ export const MF_HANDBRAKE = [-0.2, 0.93, -0.62];
 
 /** The upright exhaust, outside the bonnet on the left, and the air cleaner's red stack on the right. */
 export const MF_EXHAUST = { x: 0.262, z: 0.62, manifold: [0.2, 0.9, 0.72], top: 1.92 };
-export const MF_AIR = { x: -0.17, z: 0.5, base: 1.2, top: 1.33 };
+export const MF_AIR = { x: -0.15, z: 0.5, base: 1.15, top: 1.33 };
