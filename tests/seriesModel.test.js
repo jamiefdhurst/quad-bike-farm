@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import * as THREE from 'three';
 import { buildSeriesModel, poseSeriesDoors, poseSeriesTailgate } from '../src/vehicle/seriesModel.js';
-import { SERIES_END, SERIES_TUB, SERIES_TUB_SPOTS, SERIES_DOOR, SERIES_HITCH, SERIES_GATE, SERIES_SCREEN, SERIES_ROOF, screenZ, SERIES_SCREEN_TOP_Z } from '../src/vehicle/seriesBody.js';
+import { SERIES_DASH, SERIES_END, SERIES_TUB, SERIES_TUB_SPOTS, SERIES_DOOR, SERIES_HITCH, SERIES_GATE, SERIES_SCREEN, SERIES_ROOF, screenZ, SERIES_SCREEN_TOP_Z } from '../src/vehicle/seriesBody.js';
 import { LANDY_LAYOUT, LANDY_SEATS } from '../src/vehicle/landRoverModel.js';
 import { buildAllModels } from './helpers/vehicleModels.js';
 
@@ -106,5 +106,26 @@ describe('the tub', () => {
     }
     expect(model.getObjectByName(`bedCargo${SERIES_TUB_SPOTS.length}`)).toBeFalsy();
     expect(model.getObjectByName('bedProxy')).toBeTruthy();
+  });
+
+  it('puts the choke at the driver\'s end of the dash and the hand throttle at the tray\'s, both under the shelf and clear of the wheel', () => {
+    const choke = at('chokeKnob');
+    const hand = at('handThrottleKnob');
+    expect(choke.x).toBeLessThan(-0.5); // by the driver
+    expect(hand.x).toBeGreaterThan(SERIES_DASH.tray.x0); // over the tray, by the glovebox's place
+    for (const k of [choke, hand]) {
+      expect(k.y).toBeLessThan(SERIES_DASH.deck.y - SERIES_DASH.deck.t); // under the shelf
+      expect(k.y).toBeGreaterThan(SERIES_DASH.tray.y + 0.06); // above the tray's lip
+    }
+    expect(Math.abs(choke.x + 0.42)).toBeGreaterThan(0.21); // outside the wheel's rim, which is 0.21 m out from its column
+  });
+
+  it('has a radio standing proud of the shelf\'s lip, a gap under it, and the kit\'s wipers on the glass', () => {
+    expect(SERIES_DASH.radio.z0).toBeLessThan(SERIES_DASH.deck.z0); // its face is in front of the lip
+    expect(SERIES_DASH.radio.y + SERIES_DASH.radio.h / 2).toBeLessThan(SERIES_DASH.deck.y); // under the shelf
+    expect(SERIES_DASH.radio.y - SERIES_DASH.radio.h / 2).toBeGreaterThan(SERIES_DASH.tray.y + 0.1); // with the tray's gap below
+    const wipers = [];
+    model.traverse((o) => { if (o.name === 'wiper') wipers.push(o); });
+    expect(wipers).toHaveLength(2);
   });
 });

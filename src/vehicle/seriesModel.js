@@ -3,6 +3,7 @@ import { buildDash } from './dash.js';
 import { addHeadlightBeams, addSignalLamps, addSignalStalk, addHazardSwitch, faceAlong } from './quadModel.js';
 import { bentTube, loftGeometry, mergeStatic } from './quadGeometry.js';
 import { buildSeatBelt, webbingMaterial } from './detail/belts.js';
+import { buildWiper } from './detail/fittings.js';
 import {
   MAT, add, rbox, archPanel, archFlare, post, tube, axleCyl, plate, label, fitText, badge, trimMaterials, seatRip, buildWheel, addWheelFace, tyre, cached,
   LANDY_SEATS, LANDY_LAYOUT, SEAT_BACK, HANDBRAKE_OFF, CRANK_HOLE, R, WHEELBASE, PLATE,
@@ -32,17 +33,18 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
   const trim = trimMaterials(false);
   const frame = MAT.galv; // the screen's and the windows' frames and the cappings are galvanised
   const webbing = webbingMaterial();
-  const dashMetal = new THREE.MeshStandardMaterial({ color: 0x2a2c2f, roughness: 0.55, metalness: 0.25 }); // the dash: painted metal, dark grey
-  const dashMetal2 = new THREE.MeshStandardMaterial({ color: 0x232528, roughness: 0.6, metalness: 0.2 });
+  const dashMetal = new THREE.MeshStandardMaterial({ color: 0x6b7152, roughness: 0.6, metalness: 0.15 }); // the dash: painted metal, olive
+  const dashMetal2 = new THREE.MeshStandardMaterial({ color: 0x5b6145, roughness: 0.65, metalness: 0.15 }); // its lip and the radio's housing, a shade darker
+  const felt = new THREE.MeshStandardMaterial({ color: 0x1b1b19, roughness: 0.95 }); // the tray's felt
 
   const quad = new THREE.Group();
   quad.name = 'quad';
   quad.userData.lensMaterial = lensMat;
   quad.userData.seatMaterial = trim.seat;
-  quad.userData.cleanMaterials = [trim.seat, trim.dash, trim.floor, MAT.belt, dashMetal, dashMetal2]; // the cab's inside never gets muddy (effects/mudCoat.js)
+  quad.userData.cleanMaterials = [trim.seat, trim.dash, trim.floor, MAT.belt, dashMetal, dashMetal2, felt]; // the cab's inside never gets muddy (effects/mudCoat.js)
   quad.userData.cabin = { min: [-0.9, 0.4, SERIES_CAB.rear - 0.04], max: [0.9, SERIES_CAB.top + 0.05, SERIES_SCREEN.baseZ + 0.02] }; // the paint inside it stays clean too (cabinMud.js)
   quad.userData.steerGain = 7; // a big wheel, a lot of turns lock to lock
-  quad.userData.knobZ = SERIES_DASH.z; // where poseLandyControls pulls the choke and the hand throttle from
+  quad.userData.knobZ = SERIES_DASH.knobZ; // where poseLandyControls pulls the choke and the hand throttle from
   const body = new THREE.Group();
   body.name = 'body';
   quad.add(body);
@@ -101,7 +103,7 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       g.fillStyle = '#16171a';
       g.fillRect(0, 0, W, H);
       g.fillStyle = '#d4d7da';
-      fitText(g, 'LAND-ROVER', W / 2, H / 2 + H * 0.04, H * 0.7, W * 0.9);
+      fitText(g, 'MOORLAND', W / 2, H / 2 + H * 0.04, H * 0.7, W * 0.9);
     }, root);
     name.position.set(0, 1.12, pz + 0.0215);
     rbox(0.74, 0.08, 0.05, 0.015, paint, 0, 0.675, pz + 0.01, root); // the valance under it, over the bumper
@@ -162,10 +164,11 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       const pane = add(new THREE.PlaneGeometry(0.76, H - 0.1), MAT.glass, screen);
       pane.position.set(s * 0.4, H / 2, 0);
       rbox(0.05, H, 0.05, 0.01, frame, s * 0.8, H / 2, 0, screen); // the sides: the doors' front uprights
-      // A wiper lying on the glass: an arm from a spindle on the rail and a blade along it.
-      const wx = s * 0.4;
-      tube([wx - 0.3 * s, 0.07, 0.02], [wx + 0.24 * s, 0.4, 0.02], 0.005, MAT.chassis, screen, 4);
-      tube([wx - 0.05 * s, 0.07, 0.022], [wx + 0.3 * s, 0.07 + 0.01, 0.022], 0.007, MAT.chassis, screen, 4);
+      // A wiper from the kit, parked along the foot of the glass on the outside: its spindle by the centre post, the arm out to the pillar.
+      const wiper = buildWiper({ len: 0.55, mats: { arm: MAT.black } });
+      wiper.position.set(s * 0.1, 0.1, 0);
+      wiper.rotation.z = s > 0 ? 0.04 : Math.PI - 0.04;
+      screen.add(wiper);
     }
     rbox(0.2, 0.07, 0.03, 0.01, MAT.black, 0, SERIES_SCREEN.topY - 0.1, SERIES_SCREEN_TOP_Z - 0.04, root); // the rear-view mirror
     tube([0, SERIES_SCREEN.topY - 0.05, SERIES_SCREEN_TOP_Z - 0.01], [0, SERIES_SCREEN.topY - 0.09, SERIES_SCREEN_TOP_Z - 0.04], 0.006, MAT.galv, root, 4);
@@ -191,6 +194,9 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       const railFront = screenZ(door.glassTop + 0.045); // the glass's top edge follows the raked post, so the rail starts where it does
       rbox(0.04, 0.045, railFront - (door.rear - 0.025), 0.008, paint, 0, door.glassTop + 0.0225, dz((railFront + door.rear - 0.025) / 2), d); // the top rail, up against the roof
       rbox(0.025, door.glassTop - door.y1, 0.02, 0.006, frame, 0, (door.y1 + door.glassTop) / 2, dz(-0.1), d); // the sliding window's divider
+      // The metal upright down the front of the window, raked like the screen's post: it holds the glass's front edge and goes with the door when
+      // it opens. It lies just behind the screen's own post (its front half is inside it), so the two never share a face.
+      post([0, door.y1, -0.03], [0, door.glassTop + 0.045, dz(screenZ(door.glassTop + 0.045)) - 0.03], 0.03, 0.035, paint, d);
       const glass = add(new THREE.ShapeGeometry(new THREE.Shape([
         new THREE.Vector2(dz(door.hinge + 0.02), door.y1 + 0.02), new THREE.Vector2(dz(door.rear + 0.02), door.y1 + 0.02),
         new THREE.Vector2(dz(door.rear + 0.02), door.glassTop), new THREE.Vector2(dz(screenZ(door.glassTop)), door.glassTop),
@@ -365,21 +371,21 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
     hands.visible = false;
     wheel.add(hands);
 
-    // The dash: one metal fascia the whole width of the cab, raked back, with the instrument pod set into its face in front of the driver (the
-    // pod is part of it, not a box on top), a padded roll along its top against the bulkhead, the glovebox lid and the maker's badge on the
-    // passenger's half and a few switches by the pod. The face is high enough that the dials show through the gap between the wheel's top
-    // spokes. The choke and the hand throttle come out of its face to the right of the tunnel's levers, clear of the wheel's rim.
+    // The dash, after the photos: a straight olive shelf the width of the cab with a lip under its front edge, the instrument panel (the pod
+    // set into it) under the shelf in front of you, and a big open gap under the rest, down to the bulkhead. The radio's housing hangs under the
+    // shelf with a felt tray below it. The choke comes out of the bulkhead at your end and the hand throttle at the tray's.
     const D = SERIES_DASH;
+    const dk = D.deck;
+    const dl = dk.z1 - dk.z0;
+    rbox(dk.half * 2, dk.t, dl, 0.008, dashMetal, 0, dk.y, (dk.z0 + dk.z1) / 2, root); // the shelf
+    rbox(dk.half * 2 - D.lip.x0 - dk.half, D.lip.h, 0.02, 0.006, dashMetal2, (dk.half + D.lip.x0) / 2, dk.y - dk.t / 2 - D.lip.h / 2 + 0.005, dk.z0 + 0.01, root); // the lip under its edge, from the panel to the passenger's end
     const fascia = new THREE.Group();
     fascia.position.set(0, D.y, D.z);
     fascia.rotation.x = D.tilt;
     root.add(fascia);
-    rbox(D.w, D.h, 0.03, 0.008, dashMetal, 0, 0, 0.015, fascia);
-    add(new THREE.CylinderGeometry(0.024, 0.024, D.w, 14).rotateZ(Math.PI / 2), trim.dash, fascia).position.set(0, D.h / 2, -0.004); // the padded roll along the top
-    rbox(0.42, 0.17, 0.012, 0.01, dashMetal2, 0.42, -0.05, -0.006, fascia); // the glovebox lid
-    rbox(0.05, 0.016, 0.014, 0.005, MAT.galv, 0.42, -0.02, -0.014, fascia); // and its catch
-    badge(fascia, { x: 0.42, y: 0.1, z: -0.0125, facing: -1, w: 0.14, h: 0.056 }); // the maker's badge above it
-    for (const x of [-0.19, -0.14, -0.09]) add(new THREE.CylinderGeometry(0.012, 0.012, 0.02, 10).rotateX(Math.PI / 2), MAT.galv, fascia).position.set(x, 0.13, -0.01); // the pull and push switches by the pod
+    const P = D.panel;
+    rbox(P.x1 - P.x0, P.y1 - P.y0, 0.03, 0.008, dashMetal, (P.x0 + P.x1) / 2, (P.y0 + P.y1) / 2, 0.015, fascia); // the instrument panel
+    for (const x of [-0.69, -0.62, -0.55]) add(new THREE.CylinderGeometry(0.012, 0.012, 0.02, 10).rotateX(Math.PI / 2), MAT.galv, fascia).position.set(x, 0.1, -0.01); // the pull and push switches, outboard of the dials
     const dash = buildDash(dashStyle);
     dash.group.position.set(-0.42, 0.12, -0.02);
     dash.group.scale.setScalar(1.5); // the binnacle's about 0.3 m wide, as on a Series III
@@ -388,14 +394,50 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
     quad.userData.dash = dash;
     quad.userData.metalBody = true; // painted steel (or aluminium) panels, not plastic: they chip and rust rather than fade (effects/wearLayer.js)
     quad.userData.podMount = null;
-    // Knobs on the dash's face: the choke and the hand throttle, each pulled out towards the driver on a long shaft that runs back into the
-    // dash, so it stays joined to it however far it is out (the pose moves the group by up to KNOB_TRAVEL).
+    // The radio: a housing the same olive hung under the shelf's lip and standing proud of it, with a head unit set in its face (display, buttons, a big knob).
+    const R_ = D.radio;
+    const radio = new THREE.Group();
+    radio.position.set(R_.x, R_.y, R_.z0);
+    root.add(radio);
+    rbox(R_.w + 0.04, R_.h + 0.03, R_.z1 - R_.z0, 0.01, dashMetal2, 0, 0, (R_.z1 - R_.z0) / 2, radio);
+    const face = label(R_.w, R_.h * 0.7, 1400, (g, W, H) => {
+      g.fillStyle = '#101214';
+      g.fillRect(0, 0, W, H);
+      g.fillStyle = '#e4e6e8'; // the chrome trim
+      g.fillRect(0, 0, W, H * 0.05);
+      g.fillRect(0, H * 0.95, W, H * 0.05);
+      g.fillStyle = '#12202a'; // the display, with its orange digits
+      g.fillRect(W * 0.3, H * 0.2, W * 0.46, H * 0.4);
+      g.fillStyle = '#f09a28';
+      fitText(g, '97.4 FM', W * 0.53, H * 0.4, H * 0.28, W * 0.4);
+      g.fillStyle = '#2d86d6'; // the blue preset buttons along the bottom
+      for (let i = 0; i < 6; i++) g.fillRect(W * (0.3 + i * 0.078), H * 0.68, W * 0.06, H * 0.14);
+      g.fillStyle = '#9a9ea3'; // the big volume knob
+      g.beginPath();
+      g.arc(W * 0.16, H * 0.5, H * 0.3, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = '#41454a';
+      g.beginPath();
+      g.arc(W * 0.16, H * 0.5, H * 0.17, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = '#2a2d30';
+      for (const y of [0.25, 0.6]) g.fillRect(W * 0.82, H * y, W * 0.14, H * 0.14);
+    }, radio);
+    quad.userData.cleanMaterials.push(face.material); // its face stays clean like the dials
+    face.position.set(0, 0, -0.0005);
+    face.rotation.y = Math.PI; // facing you
+    const T = D.tray; // the felt-lined tray under the radio, open to the front, with a lip
+    rbox(T.x1 - T.x0, 0.012, T.z1 - T.z0, 0.004, felt, (T.x0 + T.x1) / 2, T.y, (T.z0 + T.z1) / 2, root);
+    rbox(T.x1 - T.x0, 0.06, 0.012, 0.004, felt, (T.x0 + T.x1) / 2, T.y + 0.03, T.z0 + 0.006, root);
+    rbox(0.012, 0.06, T.z1 - T.z0, 0.004, felt, T.x1 - 0.006, T.y + 0.03, (T.z0 + T.z1) / 2, root);
+    // Knobs, each pulled out towards you on a shaft that runs back into the bulkhead, so it stays joined to it however far it is out (the pose
+    // moves the group by up to KNOB_TRAVEL).
     for (const [name, x, mat] of [['chokeKnob', D.knobX[0], MAT.red], ['handThrottleKnob', D.knobX[1], MAT.galv]]) {
       const knob = new THREE.Group();
       knob.name = name;
       knob.userData.keep = true;
-      knob.position.set(x, D.y, D.z);
-      tube([0, 0, 0.16], [0, 0, -0.05], 0.005, MAT.galv, knob, 6);
+      knob.position.set(x, D.knobY, D.knobZ);
+      tube([0, 0, 0.25], [0, 0, -0.05], 0.005, MAT.galv, knob, 6);
       add(new THREE.CylinderGeometry(0.02, 0.02, 0.028, 12).rotateX(Math.PI / 2), mat, knob).position.set(0, 0, -0.059);
       root.add(knob);
     }

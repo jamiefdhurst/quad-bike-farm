@@ -54,7 +54,14 @@ export const SERIES_TUB_PROXY = { w: 1.4, h: 0.5, d: 1.0, y: SERIES_TUB.floor + 
 export const SERIES_HITCH = { x: 0, y: 0.56, z: SERIES_END - 0.06 };
 
 /**
- * The dash: one metal fascia the width of the cab, centred at (y, z), raked back by `tilt`, `w` wide and `h` tall along its slope; the pod
- * is set into it in front of the driver. The choke and hand throttle come out of its face at `knobX`, at its centre's height.
+ * The dash, after the photos: a straight olive shelf the width of the cab (`deck`, from the bulkhead to its front edge, with a lip under
+ * the edge), the instrument panel under it in front of the driver (angled by `tilt` about its centre (y, z), `w` wide), and a big open gap
+ * under the rest down to the bulkhead, with the radio's housing hung under the shelf and a felt tray below it. The choke comes out of the
+ * bulkhead at the driver's end and the hand throttle at the tray's, each at `knobY`, their faces at `knobZ`.
  */
-export const SERIES_DASH = { y: 1.0, z: 0.285, tilt: 0.45, w: 1.56, h: 0.46, knobX: [0.2, 0.29] };
+export const SERIES_DASH = {
+  y: 1.0, z: 0.285, tilt: 0.45, panel: { x0: -0.76, x1: -0.08, y0: 0.0, y1: 0.25 },
+  deck: { y: 1.195, t: 0.03, z0: 0.31, z1: 0.46, half: 0.78 }, lip: { x0: -0.08, h: 0.07 },
+  radio: { x: 0.28, w: 0.3, h: 0.1, y: 1.03, z0: 0.27, z1: 0.46 }, tray: { x0: 0.12, x1: 0.78, y: 0.84, z0: 0.3, z1: 0.45 },
+  knobX: [-0.66, 0.6], knobY: 0.97, knobZ: 0.3,
+};

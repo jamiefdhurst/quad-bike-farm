@@ -273,10 +273,10 @@ export function badge(parent, { x, y, z, facing, w = 0.2, h = w * 0.4, twoLines 
     oval(H * 0.1, '#1f4a2c');
     g.fillStyle = '#f2efe2';
     if (twoLines) {
-      fitText(g, 'LAND', W / 2, H * 0.36, H * 0.3, W * 0.5);
-      fitText(g, 'ROVER', W / 2, H * 0.66, H * 0.3, W * 0.62);
+      fitText(g, 'MOOR', W / 2, H * 0.36, H * 0.3, W * 0.5);
+      fitText(g, 'LAND', W / 2, H * 0.66, H * 0.3, W * 0.62);
     } else {
-      fitText(g, 'LAND ROVER', W / 2, H / 2 + H * 0.02, H * 0.34, W * 0.78);
+      fitText(g, 'MOORLAND', W / 2, H / 2 + H * 0.02, H * 0.34, W * 0.78);
     }
   }, parent);
   m.position.set(x, y, z);
