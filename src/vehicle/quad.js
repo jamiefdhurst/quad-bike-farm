@@ -20,7 +20,7 @@ import { poseTractorControls } from './tractorModel.js';
 import { poseLandyControls, poseSeatTips, LANDY_REAR_SEATS } from './landRoverModel.js';
 import { poseCarControls, poseCarSeats } from './carModel.js';
 
-import { poseUtvControls, poseUtvBelts } from './utvModel.js';
+import { poseUtvControls, poseUtvBelts, poseUtvDoors } from './utvModel.js';
 import { EngineLoad } from './engineLoad.js';
 import { waterGulp } from '../engine/water.js';
 import { AirFilter } from './airFilter.js';
@@ -1274,6 +1274,8 @@ export class Quad {
     if (this.utv) {
       poseUtvControls(this.model, { reverse: this.reverse, neutral: state.neutral, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, lights: this.lights.mode, horn: this.hornHeld, park: this.parkBrake });
       poseUtvBelts(this.model, this.belts.worn());
+      this.doorsOpen = (this.doorsOpen ?? 1) + ((Math.abs(this.speed) < 0.5 ? 1 : 0) - (this.doorsOpen ?? 1)) * Math.min(1, 5 * dt); // the door nets swing out when it is stopped, shut when it moves
+      poseUtvDoors(this.model, this.doorsOpen);
     }
     if (this.landRover) {
       poseLandyControls(this.model, { gear: this.drivetrain.gear, gears: this.gearbox.gears, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, choke: this.choke, hand: this.handSetting, park: this.parkBrake });

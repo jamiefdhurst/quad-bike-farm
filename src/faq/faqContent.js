@@ -1842,8 +1842,8 @@ export const VEHICLE_NOTES = {
     tips: ['Wait for the GLOW lamp before cranking.', 'The stop knob (O) stops it, not the key.', 'P switches its lights; the tail lamps follow and brighten on the brake.', 'Pulls the bale trailer and the tow chain.'],
   },
   utv: {
-    blurb: 'A green Gator-style side-by-side on red diesel, with a bench seat, a roll cage and a tipping bed.',
-    tips: ['Reverse is the dash lever: B when stopped.', 'T tips the bed.', 'The key stops it, unlike the tractor.'],
+    blurb: 'A dark green Ridgeback Yak 4010, a Mule-style side-by-side on red diesel: a bench seat with proper buckled belts, a roll cage with door nets and a tipping bed.',
+    tips: ['Reverse is the dash lever: B when stopped.', 'T tips the bed.', 'Belts: ; clicks the buckle. The door nets swing out when it is stopped.', 'The key stops it, unlike the tractor.'],
   },
   landrover: {
     blurb: 'An old Series III 88-inch pick-up in Bronze Green with a white roof: a 2.25 litre petrol four with a lot of miles on it.',

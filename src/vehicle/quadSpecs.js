@@ -947,7 +947,7 @@ export const UTV_SPEC = {
   utv: true,
   steadyLights: true, // a battery runs its lamps
   wheelShake: 0.9,
-  bodyColor: 0x367c2b, // a deep farm green
+  bodyColor: 0x3b5b3a, // a dark olive farm green, as in the photos
   dashStyle: 'utv',
   reverseStyle: 'dashLever', // the forward and reverse lever on the dash wants it stopped (controls.js)
   driveSwitch: true, // the console's 2WD / 4WD switch (driveMode.js), as on the Land Rover

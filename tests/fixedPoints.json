@@ -171,7 +171,7 @@
     "cameraAnchor": [-0.34,1.46,-0.35],
     "cameraMid": [0,1.46,-0.35],
     "cameraLeft": [0.34,1.46,-0.35],
-    "bedSeat": [0,0.8,-1.95]
+    "bedSeat": [0,0.8,-1.81]
   },
   "landrover": {
     "handlebars": [-0.42,1.109,0.136],
