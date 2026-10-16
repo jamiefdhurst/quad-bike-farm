@@ -823,8 +823,8 @@ function buildSeries() {
   // After the photo of a real Series III cab: a column of warning lamps down the left edge (main beam, charge, oil, handbrake), the speedometer
   // with the indicators' green lamp and the choke's amber one in the bottom of its dial, a big round combined fuel and water gauge to its right,
   // and the ignition key (a real one, as the UTV's) at the right-hand end.
-  const speedo = { cx: 142, cy: 58, r: 29 };
-  const combo = { cx: 222, cy: 58, r: 33 };
+  const speedo = { cx: 142, cy: 60, r: 31 }; // both dials the same size, and centred on the pod (its middle is y 60)
+  const combo = { cx: 222, cy: 60, r: 31 };
   const KEY = { x: 268, y: 92 };
   for (const d of [speedo, combo]) chromeRing(group, { ...d, r: d.r + 1, ...O });
   const gate = changeGate();
@@ -837,7 +837,7 @@ function buildSeries() {
     // The lamp column: each in its own black pocket.
     const column = [['beam', '#4aa8ff', L.main], ['charge', LAMP.red, L.charge], ['oil', LAMP.red, L.oil], ['park', LAMP.red, L.park]];
     column.forEach(([kind, colour, lit], i) => {
-      const cy = 26 + i * 18;
+      const cy = 33 + i * 18; // four lamps, 18 apart, centred on the pod's middle (y 60)
       ctx.fillStyle = '#080808';
       ctx.beginPath();
       ctx.arc(95, cy, 7, 0, Math.PI * 2);
