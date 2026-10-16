@@ -358,12 +358,12 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
     const half = Math.sqrt(r * r - dy * dy);
     const a = Math.asin(dy / r);
     const shape = new THREE.Shape();
-    shape.moveTo(zc - 0.62, yb);
+    shape.moveTo(zc - 0.66, yb); // (4 cm further back than the load floor's end, into the corner post, so no slot shows behind it)
     shape.lineTo(zc - half, yb);
     shape.absarc(zc, DEF_ARCH.y, r, Math.PI + a, -a, true);
     shape.lineTo(zc + 0.62, yb);
     shape.lineTo(zc + 0.62, yt);
-    shape.lineTo(zc - 0.62, yt);
+    shape.lineTo(zc - 0.66, yt);
     shape.closePath();
     const g = new THREE.ExtrudeGeometry(shape, { depth: 0.24, bevelEnabled: false });
     g.rotateY(-Math.PI / 2); // runs along -x from 0 to -0.24
@@ -405,7 +405,7 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
     }
     // The back bench (LANDY_REAR_SEATS): a seat box with three seats facing forward on it, the wheel boxes beside the outer two, and the load
     // floor behind. Its belts are posed by name.
-    rbox(1.1, 0.26, 0.44, 0.02, paint, 0, 0.75, -1.02, root); // the seat box
+    rbox(1.1, 0.26, 0.5, 0.02, paint, 0, 0.75, -1.04, root); // the seat box (to the back panel at -1.29, with no slot between)
     rbox(1.1, 0.4, 0.03, 0.01, paint, 0, 0.82, -1.29, root); // its back, up to the load floor behind
     for (const seat of Object.values(LANDY_REAR_SEATS)) {
       rbox(0.36, 0.1, 0.42, 0.04, trim.seat, seat.x, 0.94, seat.z - SEAT_BACK, root);

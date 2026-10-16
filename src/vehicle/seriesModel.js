@@ -7,7 +7,7 @@ import { buildWiper } from './detail/fittings.js';
 import { buildToggle, buildPullKnob, buildLampLens } from './detail/switchgear.js';
 import { buildRadio } from './detail/radios.js';
 import {
-  MAT, add, rbox, archPanel, archFlare, post, tube, axleCyl, plate, label, fitText, badge, trimMaterials, seatRip, buildWheel, addWheelFace, tyre, cached, addPedals,
+  MAT, add, rbox as roundedBox, archPanel, archFlare, post, tube, axleCyl, plate, label, fitText, badge, trimMaterials, seatRip, buildWheel, addWheelFace, tyre, cached, addPedals,
   LANDY_SEATS, LANDY_LAYOUT, SEAT_BACK, HANDBRAKE_OFF, CRANK_HOLE, R, WHEELBASE, PLATE,
 } from './landRoverModel.js';
 import {
@@ -24,6 +24,14 @@ import {
 //   bedCargo0..5, bedProxy  where things stand in the tub and a box to look at to put something in (game.js addLandyCargo)
 
 const PLATE_BG = '#e8c51c';
+
+/** A box with its edges rounded, or a plain one for a radius up to 12 mm (watertight where boxes butt, see defenderModel.js: rounded boxes leave pinholes at the corners). */
+function rbox(w, h, d, r, mat, x, y, z, parent, name) {
+  if (r > 0.012) return roundedBox(w, h, d, r, mat, x, y, z, parent, name);
+  const m = add(new THREE.BoxGeometry(w, h, d), mat, parent, name);
+  m.position.set(x, y, z);
+  return m;
+}
 
 /** The Series III hard-top pick-up. `reg` is the number plate (a visiting one has its own). */
 export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', reg = null } = {}) {
@@ -112,7 +120,7 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       fitText(g, 'MOORLAND', W / 2, H / 2 + H * 0.04, H * 0.7, W * 0.9);
     }, root);
     name.position.set(0, 1.12, pz + 0.0215);
-    rbox(0.74, 0.06, 0.04, 0.012, paint, 0, 0.655, pz + 0.005, root); // the valance under it, over the bumper: its face (pz + 0.025) is not the grille frame's (pz + 0.035)
+    rbox(0.72, 0.06, 0.04, 0.012, paint, 0, 0.655, pz + 0.005, root); // the valance under it, over the bumper: its face (pz + 0.025) is not the grille frame's (pz + 0.035)
 
     for (const s of [-1, 1]) {
       const wz = (SERIES_FRONT.wingFace + wing.scuttle) / 2; // the flat top runs from the scuttle to the front edge
@@ -156,7 +164,7 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       rbox(0.05, 0.02, 0.025, 0.006, MAT.galv, s * 0.3, sc.top + 0.03, 0.62, root); // with a catch
       rbox(0.06, 0.03, 0.04, 0.008, MAT.galv, s * 0.24, sc.top + 0.005, 0.69, root); // and the bonnet's hinges, at its back edge
       const pz = door.hinge + 0.11; // the hinge pillar ends here; the body's side runs on from it to the wing, one panel the whole way (no two panels share a face)
-      rbox(0.03, sc.top - wing.bottom, sc.to - pz, 0.01, paint, s * wing.outer, (sc.top + wing.bottom) / 2, (pz + sc.to) / 2, root); // the scuttle's side, up to its deck
+      rbox(0.03, sc.top - 0.04 - wing.bottom, sc.to - 0.006 - pz, 0.01, paint, s * (wing.outer - 0.004), (sc.top - 0.04 + wing.bottom) / 2, (pz + sc.to - 0.006) / 2, root); // the scuttle's side, up under its deck, 4 mm inboard of the wing's side and short of its front so they share no face
     }
     const screen = new THREE.Group();
     screen.position.set(0, SERIES_SCREEN.baseY, SERIES_SCREEN.baseZ);
@@ -194,9 +202,9 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       const len = door.hinge - door.rear;
       const lowH = door.y1 - door.y0;
       rbox(0.05, lowH, len, 0.012, paint, 0, (door.y0 + door.y1) / 2, -len / 2, d); // the lower panel
-      rbox(0.03, 0.03, len, 0.008, frame, 0.01 * s, door.y1 + 0.005, -len / 2, d); // the capping
+      rbox(0.03, 0.03, len, 0.008, frame, 0.015 * s, door.y1 + 0.005, -len / 2, d); // the capping, its outer face 5 mm proud of the panel's
       rbox(0.014, lowH - 0.1, len - 0.1, 0.004, trim.dash, -s * 0.03, (door.y0 + door.y1) / 2, -len / 2, d); // the trim card on its inside
-      rbox(0.04, door.glassTop - door.y1 + 0.04, 0.045, 0.008, paint, 0, (door.y1 + door.glassTop) / 2 + 0.01, dz(door.rear) + 0.0225, d); // the rear upright
+      rbox(0.032, door.glassTop - door.y1 + 0.04, 0.045, 0.008, paint, 0, (door.y1 + door.glassTop) / 2 + 0.01, dz(door.rear) + 0.0225, d); // the rear upright, thinner than the rail so they share no face
       const railFront = screenZ(door.glassTop + 0.045); // the glass's top edge follows the raked post, so the rail starts where it does
       rbox(0.04, 0.045, railFront - (door.rear - 0.025), 0.008, paint, 0, door.glassTop + 0.0225, dz((railFront + door.rear - 0.025) / 2), d); // the top rail, up against the roof
       rbox(0.025, door.glassTop - door.y1, 0.02, 0.006, frame, 0, (door.y1 + door.glassTop) / 2, dz(-0.1), d); // the sliding window's divider
@@ -211,7 +219,7 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       rbox(0.03, 0.045, 0.085, 0.01, MAT.black, s * 0.035, 1.08, dz(-0.3), d); // the push button handle
       rbox(0.02, 0.03, 0.05, 0.006, MAT.galv, s * 0.032, 1.16, dz(-0.31), d); // its lock
       root.add(d);
-      post([s * door.x, SERIES_SCREEN.baseY, SERIES_SCREEN.baseZ], [s * door.x, SERIES_SCREEN.topY, SERIES_SCREEN_TOP_Z], 0.04, 0.05, frame, root); // the screen's raked side post, which the door's glass shuts against
+      post([s * door.x, SERIES_SCREEN.baseY, SERIES_SCREEN.baseZ], [s * door.x, SERIES_SCREEN.topY, SERIES_SCREEN_TOP_Z], 0.036, 0.05, frame, root); // the screen's raked side post, which the door's glass shuts against (thinner than the hinge pillar, so they share no face)
       for (const y of [0.76, 1.1]) rbox(0.03, 0.09, 0.05, 0.008, MAT.galv, s * (door.x + 0.03), y, door.hinge + 0.01, root); // the hinge plates, on the pillar
       // A mirror on an arm from the screen's side post, at the height of the door's top: a black head on a short stalk. A named group, so the
       // proportion check leaves it out (the makers' widths do) and it stays apart from the merge.
@@ -233,10 +241,10 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       rbox(0.04, top - 0.04 - door.y1, 0.04, 0.01, paint, s * door.x, (top - 0.04 + door.y1) / 2, qz + 0.02, root); // the rear post, above it
       rbox(0.04, 0.04, door.rear - 0.05 - qz + 0.04, 0.008, paint, s * door.x, top - 0.02, (door.rear - 0.05 + qz) / 2 + 0.0, root); // the top rail
       rbox(0.03, 0.03, door.rear - 0.05 - qz, 0.008, frame, s * (door.x + 0.002), door.y1 + 0.02, (door.rear - 0.05 + qz) / 2, root); // the capping carried on
-      const quarter = add(new THREE.PlaneGeometry(door.rear - 0.05 - qz - 0.02, top - 0.04 - door.y1), MAT.glass, root); // the quarter glass
+      const quarter = add(new THREE.PlaneGeometry(door.rear - 0.05 - qz + 0.04, top - 0.04 - door.y1), MAT.glass, root); // the quarter glass
       quarter.rotation.y = Math.PI / 2;
-      quarter.position.set(s * door.x, (top - 0.04 + door.y1) / 2, (door.rear - 0.05 + qz) / 2);
-      rbox(0.05, 0.09, 1.2, 0.01, MAT.chassis, s * door.x, 0.58, 0.0, root); // the sill under the door, closing the gap to the chassis
+      quarter.position.set(s * door.x, (top - 0.04 + door.y1) / 2, (door.rear - 0.05 + qz) / 2 + 0.01); // (it runs 2 cm into the pillar each end, so no slot shows)
+      rbox(0.05, 0.09, 1.2, 0.01, MAT.chassis, s * (door.x - 0.012), 0.58, 0.0, root); // the sill (its outer face inside the door's, not on it) under the door, closing the gap to the chassis
     }
     // The cab's rear panel in pieces round a real opening with the glass set in the middle of it: glass laid on a whole panel's face fights
     // it for the same depth and flickers.
@@ -393,7 +401,7 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
     const dk = D.deck;
     const dl = dk.z1 - dk.z0;
     rbox(dk.half * 2, dk.t, dl, 0.008, dashMetal, 0, dk.y, (dk.z0 + dk.z1) / 2, root); // the shelf
-    rbox(dk.half * 2 - D.lip.x0 - dk.half, D.lip.h, 0.02, 0.006, dashMetal2, (dk.half + D.lip.x0) / 2, dk.y - dk.t / 2 - D.lip.h / 2 + 0.005, dk.z0 + 0.01, root); // the lip under its edge, from the panel to the passenger's end
+    rbox(dk.half * 2 - D.lip.x0 - dk.half, D.lip.h, 0.02, 0.006, dashMetal2, (dk.half + D.lip.x0) / 2, dk.y - dk.t / 2 - D.lip.h / 2 + 0.005, dk.z0, root); // the lip under its edge, standing 1 cm proud of the shelf's front so they share no face, from the panel to the passenger's end
     const fascia = new THREE.Group();
     fascia.position.set(0, D.y, D.z);
     fascia.rotation.x = D.tilt;

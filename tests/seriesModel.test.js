@@ -5,6 +5,7 @@ import { SERIES_DASH, SERIES_END, SERIES_TUB, SERIES_TUB_SPOTS, SERIES_DOOR, SER
 import { setHeadlights } from '../src/vehicle/quadModel.js';
 import { LANDY_LAYOUT, LANDY_SEATS } from '../src/vehicle/landRoverModel.js';
 import { buildAllModels } from './helpers/vehicleModels.js';
+import { coplanarOverlaps } from './helpers/coplanar.js';
 
 let model;
 beforeAll(async () => {
@@ -151,5 +152,38 @@ describe('the tub', () => {
     expect(dipped).toBeGreaterThan(0.005);
     expect(knob.position.z).toBeGreaterThan(dipped + 0.005);
     expect(key.rotation.z).toBeGreaterThan(0.5); // turned to ON
+  });
+
+  // The same checks as the 200TDi's (tests/defenderModel.test.js): rays at the sides and back from outside find no hole, and no visible faces fight.
+  const firstHit = (origin, dir) => {
+    model.updateMatrixWorld(true);
+    const meshes = [];
+    model.traverse((o) => { if (o.isMesh && o.visible && !o.isSprite && !/^headlight/.test(o.name)) meshes.push(o); });
+    return new THREE.Raycaster(new THREE.Vector3(...origin), new THREE.Vector3(...dir).normalize(), 0, 20).intersectObjects(meshes, false)[0] ?? null;
+  };
+
+  it('has no holes in its cab\'s sides or back (between the pillars and the quarter glass, round the rear window)', () => {
+    const holes = [];
+    for (const s of [1, -1]) {
+      for (let z = -0.7; z <= 0.4; z += 0.0497) {
+        for (let y = 0.7; y <= 1.84; y += 0.0497) {
+          if (y > 1.3 && z > screenZ(y) - 0.03) continue; // in front of the screen's raked side post: open air
+          const h = firstHit([s * 3, y, z], [-s, 0, 0]);
+          if (!h || Math.abs(h.point.x) < 0.7) holes.push(`z ${z.toFixed(2)} y ${y.toFixed(2)}`);
+        }
+      }
+    }
+    for (let x = -0.8; x <= 0.8; x += 0.0497) {
+      for (let y = 1.0; y <= 1.84; y += 0.0497) {
+        const h = firstHit([x, y, -4], [0, 0, 1]);
+        if (!h || h.point.z > -0.6) holes.push(`back x ${x.toFixed(2)} y ${y.toFixed(2)}`);
+      }
+    }
+    expect(holes.slice(0, 12)).toEqual([]);
+  }, 30000);
+
+  it('has no two faces fighting for one plane where you can see them (the doors\' pieces, the sills, the scuttle)', () => {
+    const fights = coplanarOverlaps(model, { gap: 0.002, minArea: 2e-5 }).filter((f) => f.area > 8e-4);
+    expect(fights.slice(0, 8).map((f) => `${f.a}|${f.b} ${(f.area * 1e4).toFixed(0)} cm2 at ${f.at.map((v) => v.toFixed(2)).join(',')}`)).toEqual([]);
   });
 });

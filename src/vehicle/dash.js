@@ -966,10 +966,10 @@ function buildDefender() {
   group.add(face.mesh);
   // One row of four dials on one centre line (y 52), the three small ones 43 mm apart with a gap between, the speedometer clear of the pod's top (10 mm);
   // the warning symbols in two rows under the small ones, in columns under their centres.
-  const volts = { cx: 82, cy: 52, r: 14 };
-  const temp = { cx: 125, cy: 52, r: 14 };
-  const fuel = { cx: 168, cy: 52, r: 14 };
-  const speedo = { cx: 232, cy: 52, r: 28 };
+  const volts = { cx: 87, cy: 49, r: 14 };
+  const temp = { cx: 130, cy: 49, r: 14 };
+  const fuel = { cx: 173, cy: 49, r: 14 };
+  const speedo = { cx: 243, cy: 49, r: 28 };
   const KEY = { x: 286, y: 92 };
   for (const d of [volts, temp, fuel, speedo]) chromeRing(group, { ...d, r: d.r + 1, ...O, tube: 0.0018 });
   const gate = changeGate();
@@ -1016,26 +1016,29 @@ function buildDefender() {
     // on a dark strip.
     ctx.fillStyle = '#121213';
     ctx.beginPath();
-    ctx.roundRect(66, 71, 118, 33, 2);
+    ctx.roundRect(71, 68, 118, 33, 2);
     ctx.fill();
-    const cols = [82, 103.5, 125, 146.5, 168];
+    const cols = [87, 108.5, 130, 151.5, 173];
+    // Each symbol is drawn about its own middle, but they are not the same width or placed the same about their (x, y), so each is nudged to put its
+    // drawn middle on the column's: [dx, dy] by kind (found by working out each one's extent in dashParts.js warnSymbol).
+    const nudge = { glow: [0, 0], charge: [0, 0.4], oil: [0.6, -0.4], park: [0, 0], belt: [0.8, 0], lights: [-3, 0], beam: [-2.6, 0], turnLeft: [0, 0], turnRight: [0, 0] };
     const row1 = [['glow', LAMP.amber, L.glow], ['charge', LAMP.red, L.charge], ['oil', LAMP.red, L.oil], ['park', LAMP.red, L.park], ['belt', LAMP.red, L.belt]];
     const row2 = [['lights', LAMP.green, L.lights], ['beam', '#4aa8ff', L.main], ['turnLeft', LAMP.green, L.turnLeft], ['turnRight', LAMP.green, L.turnRight]];
-    row1.forEach(([kind, colour, lit], i) => warnSymbol(ctx, kind, cols[i], 80, colour, lit));
-    row2.forEach(([kind, colour, lit], i) => warnSymbol(ctx, kind, cols[i], 96, colour, lit));
+    row1.forEach(([kind, colour, lit], i) => warnSymbol(ctx, kind, cols[i] + nudge[kind][0], 77 + nudge[kind][1], colour, lit));
+    row2.forEach(([kind, colour, lit], i) => warnSymbol(ctx, kind, cols[i] + nudge[kind][0], 93 + nudge[kind][1], colour, lit));
     // The hazard button in the last place of the second row: a black surround round a red square with a white triangle, point up, flashing red
     // with the hazards.
     ctx.fillStyle = '#050505';
-    ctx.fillRect(cols[4] - 7, 89, 14, 14);
+    ctx.fillRect(cols[4] - 7, 86, 14, 14);
     ctx.fillStyle = L.hazard ? '#ff3a22' : '#8c1812';
-    ctx.fillRect(cols[4] - 5.5, 90.5, 11, 11);
+    ctx.fillRect(cols[4] - 5.5, 87.5, 11, 11);
     ctx.strokeStyle = '#f2f2f2';
     ctx.lineWidth = 0.9;
     ctx.lineJoin = 'round';
     ctx.beginPath();
-    ctx.moveTo(cols[4], 92.5);
-    ctx.lineTo(cols[4] + 3.6, 99);
-    ctx.lineTo(cols[4] - 3.6, 99);
+    ctx.moveTo(cols[4], 89.5);
+    ctx.lineTo(cols[4] + 3.6, 96);
+    ctx.lineTo(cols[4] - 3.6, 96);
     ctx.closePath();
     ctx.stroke();
   }
