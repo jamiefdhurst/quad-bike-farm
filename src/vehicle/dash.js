@@ -820,28 +820,30 @@ function buildSeries() {
   housing(group, { x: 80, y: 14, w: 200, h: 92, r: 4, ...O, material: plastic });
   const face = mmPanel({ x: 80, y: 14, w: 200, h: 92, ...O });
   group.add(face.mesh);
-  // A Series III binnacle: a flat black moulding with a strip of warning lamps along its top, the big speedometer at the left, the
-  // combined fuel and water gauge at the right, and the ignition switch at the far end.
-  const speedo = { cx: 138, cy: 66, r: 30 };
-  const combo = { cx: 222, cy: 68, r: 23 };
+  // After the photo of a real Series III cab: a column of warning lamps down the left edge (main beam, charge, oil, handbrake), the speedometer
+  // with the indicators' green lamp and the choke's amber one in the bottom of its dial, a big round combined fuel and water gauge to its right,
+  // and the ignition key (a real one, as the UTV's) at the right-hand end.
+  const speedo = { cx: 142, cy: 58, r: 29 };
+  const combo = { cx: 222, cy: 58, r: 33 };
+  const KEY = { x: 268, y: 92 };
   for (const d of [speedo, combo]) chromeRing(group, { ...d, r: d.r + 1, ...O });
   const gate = changeGate();
   let shownMph = 0;
   let shownFuel = 0;
   let shownTemp = 0;
+  let keyAngle = 0;
 
   function draw(ctx, s, L) {
-    // The lamp strip: ignition and oil in red, the handbrake red, the choke amber and the blue main beam. A Series III has nothing else (no belt lamp, no 4WD lamp, no side lights one).
-    ctx.fillStyle = '#121213';
-    ctx.beginPath();
-    ctx.roundRect(88, 18, 184, 17, 3);
-    ctx.fill();
-    warnSymbol(ctx, 'charge', 108, 26.5, LAMP.red, L.charge);
-    warnSymbol(ctx, 'oil', 140, 26.5, LAMP.red, L.oil);
-    warnSymbol(ctx, 'park', 172, 26.5, LAMP.red, L.park);
-    warnSymbol(ctx, 'choke', 204, 26.5, LAMP.amber, L.choke);
-    warnSymbol(ctx, 'beam', 232, 26.5, '#4aa8ff', L.main); // the main beam tell-tale: all a Series has for its lights
-    warnSymbol(ctx, 'turn', 258, 26.5, LAMP.green, L.turn); // and the indicators' arrows, one lamp for both sides
+    // The lamp column: each in its own black pocket.
+    const column = [['beam', '#4aa8ff', L.main], ['charge', LAMP.red, L.charge], ['oil', LAMP.red, L.oil], ['park', LAMP.red, L.park]];
+    column.forEach(([kind, colour, lit], i) => {
+      const cy = 26 + i * 18;
+      ctx.fillStyle = '#080808';
+      ctx.beginPath();
+      ctx.arc(95, cy, 7, 0, Math.PI * 2);
+      ctx.fill();
+      warnSymbol(ctx, kind, 95, cy, colour, lit, 0.6);
+    });
     // The speedo: 0 to 90 mph round 260 degrees, white on black, with the odometer's drums under the boss.
     ctx.fillStyle = '#0b0b0b';
     ctx.beginPath();
@@ -852,26 +854,59 @@ function buildSeries() {
     labels(ctx, speedo.cx, speedo.cy, speedo.r - 13, 220, -40, ['0', '10', '20', '30', '40', '50', '60', '70', '80', '90'], '#ece6d2', 3.8);
     text(ctx, 'MPH', speedo.cx, speedo.cy - 8, 3.4, '#ccc', { align: 'center' });
     const odo = counterDigits(s.odoMiles, 5);
-    drum(ctx, speedo.cx - 14, speedo.cy + 10, odo, 6);
+    drum(ctx, speedo.cx - 14, speedo.cy + 8, odo, 6);
+    for (const [kind, x, colour, lit] of [['turn', speedo.cx - 11, LAMP.green, L.turn], ['choke', speedo.cx + 11, LAMP.amber, L.choke]]) { // the two small lamps in the dial's foot
+      ctx.fillStyle = '#080808';
+      ctx.beginPath();
+      ctx.arc(x, speedo.cy + 21, 4.4, 0, Math.PI * 2);
+      ctx.fill();
+      warnSymbol(ctx, kind, x, speedo.cy + 21, colour, lit, 0.4);
+    }
     needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 220 - (260 * Math.min(90, L.mph)) / 90, '#f0eadc', 1.2);
-    // The combination gauge: fuel along its top half, water temperature along its bottom, each with its own needle.
+    // The combination gauge: big and round, fuel along its top half, water temperature along its bottom, each with its own needle.
     ctx.fillStyle = '#0b0b0b';
     ctx.beginPath();
     ctx.arc(combo.cx, combo.cy, combo.r, 0, Math.PI * 2);
     ctx.fill();
-    ticks(ctx, combo.cx, combo.cy, combo.r - 5, combo.r - 1.5, 150, 30, 4, '#ece6d2', 0.8);
-    ticks(ctx, combo.cx, combo.cy, combo.r - 5, combo.r - 1.5, 210, 330, 4, '#ece6d2', 0.8);
-    arc(ctx, combo.cx, combo.cy, combo.r - 2.5, 210 + 120 * HOT_FROM, 330, '#d8402e', 2.2);
-    warnSymbol(ctx, 'fuel', combo.cx, combo.cy - 9, '#bbb', true, 0.5);
-    warnSymbol(ctx, 'temp', combo.cx, combo.cy + 9, L.temp >= HOT_FROM ? LAMP.red : '#bbb', true, 0.5);
-    text(ctx, 'E', combo.cx - combo.r * 0.62, combo.cy - 5, 3.6, '#ece6d2', { align: 'center' });
-    text(ctx, 'F', combo.cx + combo.r * 0.62, combo.cy - 5, 3.6, '#ece6d2', { align: 'center' });
-    text(ctx, 'C', combo.cx - combo.r * 0.62, combo.cy + 8, 3.6, '#ece6d2', { align: 'center' });
-    text(ctx, 'H', combo.cx + combo.r * 0.62, combo.cy + 8, 3.6, '#ff6a5a', { align: 'center' });
-    needle(ctx, combo.cx, combo.cy, combo.r - 4, 150 - 120 * L.fuel, '#f0eadc', 1);
-    needle(ctx, combo.cx, combo.cy, combo.r - 4, 210 + 120 * L.temp, '#f0eadc', 1);
-    keySwitch(ctx, 262, 80, s.keyOn);
+    ticks(ctx, combo.cx, combo.cy, combo.r - 6, combo.r - 2, 150, 30, 4, '#ece6d2', 0.8);
+    ticks(ctx, combo.cx, combo.cy, combo.r - 6, combo.r - 2, 210, 330, 4, '#ece6d2', 0.8);
+    arc(ctx, combo.cx, combo.cy, combo.r - 3, 210 + 120 * HOT_FROM, 330, '#d8402e', 2.4);
+    text(ctx, 'FUEL', combo.cx, combo.cy - 15, 3.4, '#ccc', { align: 'center' });
+    text(ctx, 'WATER', combo.cx, combo.cy + 19, 3.4, L.temp >= HOT_FROM ? LAMP.red : '#ccc', { align: 'center' });
+    warnSymbol(ctx, 'fuel', combo.cx, combo.cy - 8, '#bbb', true, 0.5);
+    warnSymbol(ctx, 'temp', combo.cx, combo.cy + 10, L.temp >= HOT_FROM ? LAMP.red : '#bbb', true, 0.5);
+    text(ctx, 'E', combo.cx - combo.r * 0.68, combo.cy - 5, 3.8, '#ece6d2', { align: 'center' });
+    text(ctx, 'F', combo.cx + combo.r * 0.68, combo.cy - 5, 3.8, '#ece6d2', { align: 'center' });
+    text(ctx, 'C', combo.cx - combo.r * 0.68, combo.cy + 8, 3.8, '#ece6d2', { align: 'center' });
+    text(ctx, 'H', combo.cx + combo.r * 0.68, combo.cy + 8, 3.8, '#ff6a5a', { align: 'center' });
+    needle(ctx, combo.cx, combo.cy, combo.r - 5, 150 - 120 * L.fuel, '#f0eadc', 1);
+    needle(ctx, combo.cx, combo.cy, combo.r - 5, 210 + 120 * L.temp, '#f0eadc', 1);
   }
+
+  // The ignition: a small black bezel with a chrome barrel and a real key in it, as the UTV's (a steel blade standing out towards the driver, a black
+  // bow with a ring hole), at the dash's right-hand end. It turns clockwise from OFF at the top to ON and on to START, and the dash eases it to
+  // whichever the engine is doing.
+  const lock = new THREE.Group();
+  lock.scale.setScalar(0.6); // the Series' switch is smaller than the UTV's
+  lock.position.set(-(KEY.x - O.ox) * 0.001, -(KEY.y - O.oy) * 0.001, 0);
+  group.add(lock);
+  const bezel = new THREE.Mesh(new THREE.CylinderGeometry(0.0125, 0.0135, 0.008, 22).rotateX(Math.PI / 2), blackMat);
+  bezel.position.z = -0.065; // (in the lock's own scale: its face is a hair proud of the pod's)
+  lock.add(bezel);
+  const ignitionKey = new THREE.Group();
+  ignitionKey.name = 'ignitionKey';
+  ignitionKey.position.z = -0.0725;
+  ignitionKey.add(new THREE.Mesh(new THREE.CylinderGeometry(0.0088, 0.0088, 0.006, 18).rotateX(Math.PI / 2), chromeMat));
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.0065, 0.0024, 0.02), chromeMat);
+  blade.position.set(0, 0, -0.012);
+  const cuts = new THREE.Mesh(new THREE.BoxGeometry(0.0068, 0.0012, 0.012), blackMat);
+  cuts.position.set(0, 0.0014, -0.0145);
+  const bow = new THREE.Mesh(new THREE.BoxGeometry(0.011, 0.02, 0.0055), blackMat);
+  bow.position.set(0, 0.0045, -0.0245);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.0042, 0.0013, 6, 14), chromeMat);
+  ring.position.set(0, 0.0165, -0.0275);
+  ignitionKey.add(blade, cuts, bow, ring);
+  lock.add(ignitionKey);
 
   return {
     group,
@@ -880,6 +915,9 @@ function buildSeries() {
       shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
       shownFuel += ((s.ignition ? s.fuelLevel : 0) - shownFuel) * 0.2;
       shownTemp += ((s.ignition ? tempGaugeFraction(s.temperature, true, s.overheat) : 0) - shownTemp) * 0.1;
+      const keyTo = s.cranking ? 1.45 : s.keyOn ? 0.72 : 0; // OFF at the top, ON half-way round, START at the end, clockwise as the driver sees it
+      keyAngle += (keyTo - keyAngle) * 0.5;
+      ignitionKey.rotation.z = keyAngle;
       const running = s.rpm > 300;
       const on = !!s.ignition;
       const L = {
@@ -894,7 +932,7 @@ function buildSeries() {
         turn: on && !!(s.indicatorLamps?.left || s.indicatorLamps?.right),
       };
       const odo = counterDigits(s.odoMiles, 5);
-      if (gate([on, s.keyOn, L.charge, L.oil, L.choke, L.park, L.main, L.turn, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.key].join('|'))) {
+      if (gate([on, L.charge, L.oil, L.choke, L.park, L.main, L.turn, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.key].join('|'))) {
         face.redraw((ctx) => draw(ctx, s, L));
       }
     },

@@ -137,4 +137,19 @@ describe('the tub', () => {
     setHeadlights(model, false, 0);
     expect(model.userData.sideMaterial.emissive.getHex()).toBe(0);
   });
+
+  it('moves the lights\' pull knob with the light switch and turns its key with the ignition', () => {
+    const knob = model.getObjectByName('pullKnob');
+    const key = model.getObjectByName('ignitionKey');
+    const state = (over) => ({ ignition: true, keyOn: true, speedMph: 0, fuelLevel: 0.5, temperature: 80, rpm: 800, odoMiles: 100, indicatorLamps: {}, ...over });
+    for (let i = 0; i < 30; i++) model.userData.dash.update(state({ lightLamps: { lights: false, main: false }, keyOn: false }));
+    expect(knob.position.z).toBeCloseTo(0, 3);
+    expect(key.rotation.z).toBeCloseTo(0, 2); // OFF, pointing up
+    for (let i = 0; i < 30; i++) model.userData.dash.update(state({ lightLamps: { lights: true, main: false } }));
+    const dipped = knob.position.z;
+    for (let i = 0; i < 30; i++) model.userData.dash.update(state({ lightLamps: { lights: true, main: true } }));
+    expect(dipped).toBeGreaterThan(0.005);
+    expect(knob.position.z).toBeGreaterThan(dipped + 0.005);
+    expect(key.rotation.z).toBeGreaterThan(0.5); // turned to ON
+  });
 });

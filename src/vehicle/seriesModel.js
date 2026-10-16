@@ -110,7 +110,7 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       fitText(g, 'MOORLAND', W / 2, H / 2 + H * 0.04, H * 0.7, W * 0.9);
     }, root);
     name.position.set(0, 1.12, pz + 0.0215);
-    rbox(0.74, 0.08, 0.05, 0.015, paint, 0, 0.675, pz + 0.01, root); // the valance under it, over the bumper
+    rbox(0.74, 0.06, 0.04, 0.012, paint, 0, 0.655, pz + 0.005, root); // the valance under it, over the bumper: its face (pz + 0.025) is not the grille frame's (pz + 0.035)
 
     for (const s of [-1, 1]) {
       const wz = (SERIES_FRONT.wingFace + wing.scuttle) / 2; // the flat top runs from the scuttle to the front edge
@@ -412,12 +412,20 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
     fit(buildLampLens({ r: 0.006, colour: 'Amber' }), -0.665, 0.15);
     fit(buildLampLens({ r: 0.011, colour: 'Clear' }), -0.63, 0.11); // the push button
     fit(buildToggle({ on: false }), -0.7, 0.07);
-    fit(buildPullKnob({ out: 0.01 }), -0.63, 0.04);
+    const lightsKnob = buildPullKnob({ out: 0 }); // the lights' pull knob: out one notch for the lights, two for main beam (the dash's update moves it)
+    fit(lightsKnob, -0.63, 0.04);
     const dash = buildDash(dashStyle);
     dash.group.position.set(-0.42, 0.12, -0.02);
     dash.group.scale.setScalar(1.5); // the binnacle's about 0.3 m wide, as on a Series III
     dash.group.userData.keep = true;
     fascia.add(dash.group);
+    const pull = lightsKnob.getObjectByName('pullKnob');
+    const podUpdate = dash.update;
+    dash.update = (st) => {
+      podUpdate(st);
+      const want = st.lightLamps?.main ? 0.024 : st.lightLamps?.lights ? 0.012 : 0;
+      pull.position.z += (want - pull.position.z) * 0.4;
+    };
     quad.userData.dash = dash;
     quad.userData.metalBody = true; // painted steel (or aluminium) panels, not plastic: they chip and rust rather than fade (effects/wearLayer.js)
     quad.userData.podMount = null;
