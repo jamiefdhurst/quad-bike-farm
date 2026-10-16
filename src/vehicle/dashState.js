@@ -117,3 +117,13 @@ export function gearShown(s) {
 export function forwardGearShown(s) {
   return s.reverse ? 'R' : s.neutral ? 'N' : 'F';
 }
+
+/**
+ * Where a volts gauge's needle stands (0..1 on a scale of 8 to 16 volts) for the battery's charge (0 flat to 1 full) and whether the engine is
+ * running: about 11 V standing on a flat battery to 12.8 full, and 13.6 to 14.2 with the alternator charging it.
+ */
+export function voltsFraction(battery, running) {
+  const b = Math.min(1, Math.max(0, battery ?? 0.8));
+  const volts = running ? 13.6 + 0.6 * b : 11 + 1.8 * b;
+  return (volts - 8) / 8;
+}

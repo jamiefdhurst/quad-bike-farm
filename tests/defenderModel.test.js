@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import * as THREE from 'three';
 import { buildDefenderModel, poseDefenderBackDoor } from '../src/vehicle/defenderModel.js';
+import { buildSeriesModel } from '../src/vehicle/seriesModel.js';
+import { voltsFraction } from '../src/vehicle/dashState.js';
 import { poseSeriesDoors } from '../src/vehicle/seriesModel.js';
 import { setHeadlights } from '../src/vehicle/quadModel.js';
-import { DEF_END, DEF_DOOR, DEF_BACK_DOOR, DEF_SCREEN, DEF_ROOF, DEF_DASH, DEF_HITCH, defScreenZ, DEF_SCREEN_TOP_Z, DEF_SIDE_WINDOW } from '../src/vehicle/defenderBody.js';
-import { LANDY_SEATS, LANDY_REAR_SEATS, DEFENDER_LAYOUT } from '../src/vehicle/landRoverModel.js';
+import { DEF_END, DEF_DOOR, DEF_BACK_DOOR, DEF_SCREEN, DEF_ROOF, DEF_DASH, DEF_HITCH, defScreenZ, DEF_SCREEN_TOP_Z, DEF_SIDE_WINDOW, DEF_PLATE, DEF_ARCH } from '../src/vehicle/defenderBody.js';
+import { LANDY_SEATS, LANDY_REAR_SEATS, DEFENDER_LAYOUT, poseLandyControls } from '../src/vehicle/landRoverModel.js';
 import { buildAllModels } from './helpers/vehicleModels.js';
 
 let model;
@@ -110,5 +112,104 @@ describe('the 200TDi at its real size', () => {
       const box = new THREE.Box3().setFromObject(belt);
       expect(box.max.z, name).toBeGreaterThan(seat.z); // reaches forward of the seat's hips
     }
+  });
+
+  // Holes: a ray fired at the body from outside, level and square to a side or the back, must hit the skin (a panel, a window, a post, a door), not
+  // go through a gap and hit the inside. The first hit being well inboard of the skin means the ray found a hole.
+  const firstHit = (origin, dir) => {
+    model.updateMatrixWorld(true); // (the doors may have been swung and put back by an earlier test)
+    const meshes = [];
+    model.traverse((o) => { if (o.isMesh && o.visible && !o.isSprite && !/^headlight/.test(o.name)) meshes.push(o); });
+    const rc = new THREE.Raycaster(new THREE.Vector3(...origin), new THREE.Vector3(...dir).normalize(), 0, 20);
+    return rc.intersectObjects(meshes, false)[0] ?? null;
+  };
+
+  it('has no holes in its sides (between a door and the pillar behind it, at the back of the side window, under the roof)', () => {
+    const holes = [];
+    for (const s of [1, -1]) {
+      for (let z = -1.7983; z <= 0.4; z += 0.0497) { // (a grid that does not line up with the seams between panels: a ray exactly on a seam can slip through it)
+        for (let y = 0.7213; y <= 1.74; y += 0.0497) {
+          if (Math.abs(z + 1.18) < 0.5 && y < 1.0) continue; // the rear wheel arch: the tyre is fitted by the Quad, not in this model
+          if (y > 1.3 && z > defScreenZ(y) - 0.03) continue; // in front of the screen's raked side post
+          const h = firstHit([s * 3, y, z], [-s, 0, 0]);
+          if (!h || Math.abs(h.point.x) < 0.7) holes.push(`z ${z.toFixed(2)} y ${y.toFixed(2)}`);
+        }
+      }
+    }
+    expect(holes.slice(0, 12)).toEqual([]);
+  }, 30000);
+
+  it('has no holes in its back (round the back door, its window, the corner posts and the roof)', () => {
+    const holes = [];
+    for (let x = -0.8517; x <= 0.85; x += 0.0497) {
+      for (let y = 0.7513; y <= 1.74; y += 0.0497) {
+        const h = firstHit([x, y, -4], [0, 0, 1]);
+        if (!h || h.point.z > -1.7) holes.push(`x ${x.toFixed(2)} y ${y.toFixed(2)}`);
+      }
+    }
+    expect(holes.slice(0, 12)).toEqual([]);
+  }, 30000);
+
+  it('has no hole under the back door from above: the load floor is solid down to the chassis, and the rear plate is clear of the crossmember and the jaw', () => {
+    for (let x = -0.5; x <= 0.5; x += 0.05) {
+      const h = firstHit([x, 3, -1.5], [0, -1, 0]);
+      expect(h, `x ${x}`).toBeTruthy();
+      expect(h.point.y).toBeGreaterThan(0.85); // the load floor's carpet (0.91) or the seat behind it, not the ground
+    }
+    const plate = model.getObjectByName('bodyRoot').children.find((c) => c.isMesh && c.material.map && Math.abs(c.position.x - DEF_PLATE.x) < 0.01 && Math.abs(c.position.y - DEF_PLATE.y) < 0.01);
+    expect(plate, 'the plate').toBeTruthy();
+    const front = firstHit([DEF_PLATE.x, DEF_PLATE.y, -4], [0, 0, 1]); // seen from behind, the first thing at the plate's place is the plate itself
+    expect(front.point.z).toBeGreaterThan(-1.95); // nothing sticks out behind it (the tow plate and jaw are at the middle)
+  });
+
+  it('moves its pedals with your feet', () => {
+    const rest = ['pedalClutch', 'pedalBrake', 'pedalAccel'].map((n) => model.getObjectByName(n).rotation.x);
+    for (let i = 0; i < 20; i++) poseLandyControls(model, { clutch: 1, brake: 0.5, throttle: 0 });
+    expect(model.getObjectByName('pedalClutch').rotation.x).toBeLessThan(rest[0] - 0.2); // right down
+    expect(model.getObjectByName('pedalBrake').rotation.x).toBeLessThan(rest[1] - 0.1); // half way
+    expect(model.getObjectByName('pedalBrake').rotation.x).toBeGreaterThan(model.getObjectByName('pedalClutch').rotation.x);
+    expect(model.getObjectByName('pedalAccel').rotation.x).toBeCloseTo(rest[2], 3); // untouched
+    for (let i = 0; i < 20; i++) poseLandyControls(model, {});
+    expect(model.getObjectByName('pedalClutch').rotation.x).toBeCloseTo(0, 2); // let go
+  });
+
+  it('wires the centre stack\'s hazard, lights and radio rockers, and lights the radio\'s display with the radio', () => {
+    const state = (over) => ({ ignition: true, keyOn: true, speedMph: 0, fuelLevel: 0.5, temperature: 80, rpm: 800, odoMiles: 100, indicatorLamps: {}, lightLamps: { lights: false, main: false }, ...over });
+    const rocker = (n) => model.getObjectByName(n).rotation.x;
+    for (let i = 0; i < 30; i++) model.userData.dash.update(state({}));
+    const off = ['rockerHazard', 'rockerLights', 'rockerRadio'].map(rocker);
+    for (let i = 0; i < 30; i++) model.userData.dash.update(state({ hazardOn: true, lightLamps: { lights: true, main: false }, radioOn: true }));
+    ['rockerHazard', 'rockerLights', 'rockerRadio'].forEach((n, i) => expect(rocker(n), n).toBeGreaterThan(off[i] + 0.2));
+    const unit = model.getObjectByName('radio_dab');
+    expect(unit.userData.powered).toBe(true);
+    for (let i = 0; i < 30; i++) model.userData.dash.update(state({ radioOn: true, ignition: false })); // a flat battery: dark
+    expect(unit.userData.powered).toBe(false);
+  });
+
+  it('uses the same radio as the Series, and keeps its face out of the mud coat\'s copies', () => {
+    const series = buildSeriesModel({});
+    expect(series.getObjectByName('radio_dab')).toBeTruthy();
+    expect(model.getObjectByName('radio_dab')).toBeTruthy();
+    for (const m of [series, model]) expect(m.userData.liveMaterials).toContain(m.getObjectByName('radio_dab').userData.faceMaterial);
+    expect(series.userData.liveMaterials).toContain(series.userData.sideMaterial); // the sidelamps light directly, so they are live too
+    expect(model.userData.liveMaterials).toContain(model.userData.sideMaterial);
+  });
+
+  it('reads the battery on its volts gauge', () => {
+    expect(voltsFraction(1, false)).toBeGreaterThan(voltsFraction(0.2, false)); // a flat battery reads lower
+    expect(voltsFraction(0.5, true)).toBeGreaterThan(voltsFraction(0.5, false)); // charging reads higher than standing
+    expect(voltsFraction(0.5, true)).toBeLessThan(1);
+    expect(voltsFraction(0, false)).toBeGreaterThan(0.3); // never off the bottom of the scale
+  });
+
+  it('leaves the tyres room in the rear arches, and has an arch block that does not cut them', () => {
+    expect(DEF_ARCH.r).toBeGreaterThanOrEqual(0.38 + 0.08); // the tyre's radius and 8 cm
+    expect(DEF_ARCH.y).toBeCloseTo(0.58, 5); // centred where the wheel is at full bump
+    // From above, through the arch block's hole, a ray finds the tyre's place (nothing there but air in this model, which has no wheels fitted)
+    // and the block's solid over it, 7 cm of plastic.
+    const h = firstHit([0.68, 3, -1.18], [0, -1, 0]);
+    expect(h.point.y).toBeGreaterThan(DEF_ARCH.y + DEF_ARCH.r); // the top of the block, over the hole
+    const under = firstHit([0.68, 0.7, -1.18], [0, 1, 0]); // from inside the hole upwards: the block's roof, at the top of the hole
+    expect(under.point.y).toBeCloseTo(DEF_ARCH.y + DEF_ARCH.r, 1);
   });
 });

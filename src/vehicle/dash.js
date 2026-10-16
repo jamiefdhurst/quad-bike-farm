@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { tempGaugeFraction, HOT_FROM } from './tempGauge.js';
 import { MAKERS } from './detail/decals.js';
-import { lampStates, counterDigits, counterText, cycleIndex, gearShown, forwardGearShown } from './dashState.js';
+import { lampStates, counterDigits, counterText, cycleIndex, gearShown, forwardGearShown, voltsFraction } from './dashState.js';
 import {
   plastic, charcoal, blackMat, agedSteel, agedBlack, gloss, chromeMat, changeGate, mmPanel, housing, chromeRing, text, ticks, labels, arc, needle, drum, lamp, glyphLetter, keySwitch,
   segText, speedText, warnSymbol, LAMP, pol,
@@ -974,6 +974,7 @@ function buildDefender() {
   let shownMph = 0;
   let shownFuel = 0;
   let shownTemp = 0;
+  let shownVolts = 0;
   let keyAngle = 0;
   const SPEEDO_MAX = 110;
   const NEEDLE = '#ff8a1f'; // orange needles, white figures: the look of the newer instruments
@@ -1046,6 +1047,7 @@ function buildDefender() {
       shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
       shownFuel += ((s.ignition ? s.fuelLevel : 0) - shownFuel) * 0.2;
       shownTemp += ((s.ignition ? tempGaugeFraction(s.temperature, true, s.overheat) : 0) - shownTemp) * 0.1;
+      shownVolts += ((s.ignition ? voltsFraction(s.battery, s.rpm > 300) : 0) - shownVolts) * 0.1; // the volts gauge reads the battery
       const keyTo = s.cranking ? 1.45 : s.keyOn ? 0.72 : 0;
       keyAngle += (keyTo - keyAngle) * 0.5;
       ignitionKey.rotation.z = keyAngle;
@@ -1053,7 +1055,7 @@ function buildDefender() {
       const on = !!s.ignition;
       const L = {
         mph: shownMph,
-        volts: on ? (running ? 0.62 : 0.5) : 0,
+        volts: shownVolts,
         fuel: shownFuel,
         temp: shownTemp,
         glow: on && !!s.glow,
@@ -1068,7 +1070,7 @@ function buildDefender() {
         hazard: !!s.hazardLit,
       };
       const odo = counterDigits(s.odoMiles, 6);
-      if (gate([on, running, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, L.turnLeft, L.turnRight, L.hazard, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.key].join('|'))) {
+      if (gate([on, running, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, L.turnLeft, L.turnRight, L.hazard, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), Math.round(shownVolts * 20), odo.key].join('|'))) {
         face.redraw((ctx) => draw(ctx, s, L));
       }
     },

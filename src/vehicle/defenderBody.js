@@ -46,10 +46,16 @@ export const DEF_CAB = { top: 1.74, rear: DEF_END + 0.04 };
 export const DEF_ROOF = { z0: DEF_SCREEN_TOP_Z + 0.02, z1: DEF_END - 0.04, y0: DEF_CAB.top - 0.03, y1: 1.95, w: 1.68 }; // its bottom edge 3 cm into the body's top rail, so no gap shows
 
 /** The side windows behind the door: the long window over the rear bench, its frame and the posts (z, from the B pillar back). */
-export const DEF_SIDE_WINDOW = { z0: -0.55, z1: -1.66, y0: 1.27, y1: 1.7 };
+export const DEF_SIDE_WINDOW = { z0: DEF_DOOR.rear - 0.05, z1: -1.66, y0: 1.27, y1: 1.7 }; // from the B pillar's back face to the C pillar's front: no gap between them
+
+/** The wheel arches: the radius of the round hole in the rear wheel boxes inside (the body side's own is 0.42, the tyre's 0.38 and it rises 0.18 at full bump to 0.58 high) and its centre's height. */
+export const DEF_ARCH = { r: 0.47, y: 0.58 };
 
 /** The rear door: hinged on the offside edge (x -0.5), swinging out behind; y bottom and top, the window in it and the body panels either side. */
 export const DEF_BACK_DOOR = { hingeX: -0.5, width: 1.0, y0: 0.7, y1: 1.76, window: { y0: 1.24, y1: 1.72, w: 0.8 }, open: 1.75 };
+
+/** The rear number plate: on the crossmember's back face, off the middle so the tow jaw does not hide it. */
+export const DEF_PLATE = { x: 0.4, y: 0.6 };
 
 /** The tow jaw under the rear crossmember, a fixed point. */
 export const DEF_HITCH = { x: 0, y: 0.56, z: -2.02 };

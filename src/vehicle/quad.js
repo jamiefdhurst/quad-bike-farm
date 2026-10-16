@@ -1224,6 +1224,9 @@ export class Quad {
       hand: this.handSetting,
       choke: this.choke, // the Land Rover's dash has a lamp for it
       hazardLit: !!this.signals && this.signals.mode === 'hazard' && this.signals.lit, // the 200TDi's hazard button on its cluster flashes
+      hazardOn: !!this.signals && this.signals.mode === 'hazard', // and its hazard rocker on the centre stack is down while they are on
+      radioOn: !!this.radio?.on, // the radios' rockers and displays
+      battery: this.engine.battery, // the 200TDi's volts gauge
       indicatorLamps: this.signals ? this.signals.sides : null, // the green arrows, { left, right } (null: no indicators)
       lightLamps: this.lights ? lightLamps(this.lights.mode, e.hasPower) : null, // the UTV's lights and main beam lamps (null: no switch)
       beltLamp: this.belts ? beltLampLit(beltLampMode(e.ignitionOn, this.belts.anyUnbelted), clock.seconds()) : null, // and its seat belt lamp, flashing while someone sits unbelted
@@ -1284,7 +1287,7 @@ export class Quad {
       poseUtvDoors(this.model, this.doorSwing.update(dt, { speed: this.speed, aboard: { right: !!(this.driver || this.rider), left: !!this.passenger && !(this.driver || this.rider) }, boarding: this.doorBoarding ?? {} }));
     }
     if (this.landRover) {
-      poseLandyControls(this.model, { gear: this.drivetrain.gear, gears: this.gearbox.gears, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, choke: this.choke, hand: this.handSetting, park: this.parkBrake });
+      poseLandyControls(this.model, { gear: this.drivetrain.gear, gears: this.gearbox.gears, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, choke: this.choke, hand: this.handSetting, park: this.parkBrake, clutch: this.clutchHeld ? 1 : 0, brake: this.brake, throttle: this.throttleKey });
       poseUtvBelts(this.model, this.belts.worn()); // the same belt names as the UTV's
       if (this.rearSeats.length) poseSeatTips(this.model, this.seatTips);
       // The doors swing out at the side used, as the UTV's nets do (the Series' and the 200TDi's), and T drops the Series' tailgate or swings the

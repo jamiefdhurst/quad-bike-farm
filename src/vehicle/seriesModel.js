@@ -5,8 +5,9 @@ import { bentTube, loftGeometry, mergeStatic } from './quadGeometry.js';
 import { buildSeatBelt, webbingMaterial } from './detail/belts.js';
 import { buildWiper } from './detail/fittings.js';
 import { buildToggle, buildPullKnob, buildLampLens } from './detail/switchgear.js';
+import { buildRadio } from './detail/radios.js';
 import {
-  MAT, add, rbox, archPanel, archFlare, post, tube, axleCyl, plate, label, fitText, badge, trimMaterials, seatRip, buildWheel, addWheelFace, tyre, cached,
+  MAT, add, rbox, archPanel, archFlare, post, tube, axleCyl, plate, label, fitText, badge, trimMaterials, seatRip, buildWheel, addWheelFace, tyre, cached, addPedals,
   LANDY_SEATS, LANDY_LAYOUT, SEAT_BACK, HANDBRAKE_OFF, CRANK_HOLE, R, WHEELBASE, PLATE,
 } from './landRoverModel.js';
 import {
@@ -48,6 +49,7 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
   quad.userData.cleanMaterials = [trim.seat, trim.dash, trim.floor, MAT.belt, dashMetal, dashMetal2, felt]; // the cab's inside never gets muddy (effects/mudCoat.js)
   quad.userData.cabin = { min: [-0.9, 0.4, SERIES_CAB.rear - 0.04], max: [0.9, SERIES_CAB.top + 0.05, SERIES_SCREEN.baseZ + 0.02] }; // the paint inside it stays clean too (cabinMud.js)
   quad.userData.steerGain = 7; // a big wheel, a lot of turns lock to lock
+  quad.userData.liveMaterials = [sideMat]; // what the game lights directly (the sidelamps, a radio's display): the mud coat leaves them be
   quad.userData.knobZ = SERIES_DASH.knobZ; // where poseLandyControls pulls the choke and the hand throttle from
   const body = new THREE.Group();
   body.name = 'body';
@@ -116,10 +118,10 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       const wz = (SERIES_FRONT.wingFace + wing.scuttle) / 2; // the flat top runs from the scuttle to the front edge
       const wl = SERIES_FRONT.wingFace + 0.02 - wing.scuttle;
       rbox(wing.outer - wing.inner + 0.01, 0.03, wl, 0.012, paint, s * (wing.outer + wing.inner) / 2, wing.top - 0.015, wz + 0.01, root, 'wingTop'); // the flat top, which you can stand a mug on
-      archPanel(s * wing.outer, 0.03, wing.bottom, wing.top, wing.scuttle, SERIES_FRONT.wingFace + 0.02, zF, paint, root); // the outer side, with the wheel arch cut in it
+      archPanel(s * wing.outer, 0.03, wing.bottom, wing.top - 0.004, wing.scuttle, SERIES_FRONT.wingFace + 0.02, zF, paint, root); // the outer side (its top edge 4 mm under the flat top's face, not on it), with the wheel arch cut in it
       archFlare(s * (wing.outer + 0.015), zF, paint, root);
       rbox(0.03, wing.top - wing.bottom - 0.02, SERIES_FRONT.wingFace - wing.rear, 0.01, paint, s * wing.inner, (wing.top + wing.bottom) / 2 - 0.01, (SERIES_FRONT.wingFace + wing.rear) / 2, root); // the inner wall, against the engine bay
-      rbox(wing.outer - wing.inner, wing.top - wing.bottom, 0.03, 0.01, paint, s * (wing.outer + wing.inner) / 2, (wing.top + wing.bottom) / 2, SERIES_FRONT.wingFace, root); // the front face
+      rbox(wing.outer - wing.inner, wing.top - wing.bottom - 0.004, 0.03, 0.01, paint, s * (wing.outer + wing.inner) / 2, (wing.top + wing.bottom) / 2 - 0.002, SERIES_FRONT.wingFace, root); // the front face (4 mm under the top too)
       const lx = s * 0.55;
       const bezel = add(new THREE.CylinderGeometry(0.1, 0.1, 0.04, 22).rotateX(Math.PI / 2), MAT.galv, root); // the headlamp's rim
       bezel.position.set(lx, 0.91, SERIES_FRONT.wingFace + 0.012);
@@ -420,9 +422,11 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
     dash.group.userData.keep = true;
     fascia.add(dash.group);
     const pull = lightsKnob.getObjectByName('pullKnob');
+    let radioUnit = null; // (made below)
     const podUpdate = dash.update;
     dash.update = (st) => {
       podUpdate(st);
+      radioUnit?.userData.setPower(!!st.radioOn && !!st.ignition); // its display is lit while the radio is on, with the key
       const want = st.lightLamps?.main ? 0.024 : st.lightLamps?.lights ? 0.012 : 0;
       pull.position.z += (want - pull.position.z) * 0.4;
     };
@@ -435,32 +439,11 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
     radio.position.set(R_.x, R_.y, R_.z0);
     root.add(radio);
     rbox(R_.w + 0.04, R_.h + 0.03, R_.z1 - R_.z0, 0.01, dashMetal2, 0, 0, (R_.z1 - R_.z0) / 2, radio);
-    const face = label(R_.w, R_.h * 0.7, 1400, (g, W, H) => {
-      g.fillStyle = '#101214';
-      g.fillRect(0, 0, W, H);
-      g.fillStyle = '#e4e6e8'; // the chrome trim
-      g.fillRect(0, 0, W, H * 0.05);
-      g.fillRect(0, H * 0.95, W, H * 0.05);
-      g.fillStyle = '#12202a'; // the display, with its orange digits
-      g.fillRect(W * 0.3, H * 0.2, W * 0.46, H * 0.4);
-      g.fillStyle = '#f09a28';
-      fitText(g, '97.4 FM', W * 0.53, H * 0.4, H * 0.28, W * 0.4);
-      g.fillStyle = '#2d86d6'; // the blue preset buttons along the bottom
-      for (let i = 0; i < 6; i++) g.fillRect(W * (0.3 + i * 0.078), H * 0.68, W * 0.06, H * 0.14);
-      g.fillStyle = '#9a9ea3'; // the big volume knob
-      g.beginPath();
-      g.arc(W * 0.16, H * 0.5, H * 0.3, 0, Math.PI * 2);
-      g.fill();
-      g.fillStyle = '#41454a';
-      g.beginPath();
-      g.arc(W * 0.16, H * 0.5, H * 0.17, 0, Math.PI * 2);
-      g.fill();
-      g.fillStyle = '#2a2d30';
-      for (const y of [0.25, 0.6]) g.fillRect(W * 0.82, H * y, W * 0.14, H * 0.14);
-    }, radio);
-    quad.userData.cleanMaterials.push(face.material); // its face stays clean like the dials
-    face.position.set(0, 0, -0.0005);
-    face.rotation.y = Math.PI; // facing you
+    radioUnit = buildRadio('dab', { w: R_.w, h: R_.h * 0.7 }); // the shared head unit (detail/radios.js), the same as the 200TDi's
+    radioUnit.position.set(0, 0, -0.0005);
+    radioUnit.rotation.y = Math.PI; // facing you
+    radio.add(radioUnit);
+    quad.userData.liveMaterials.push(radioUnit.userData.faceMaterial); // the display lights with the radio, so the mud coat leaves its material alone
     const T = D.tray; // the felt-lined tray under the radio, open to the front, with a lip
     rbox(T.x1 - T.x0, 0.012, T.z1 - T.z0, 0.004, felt, (T.x0 + T.x1) / 2, T.y, (T.z0 + T.z1) / 2, root);
     rbox(T.x1 - T.x0, 0.06, 0.012, 0.004, felt, (T.x0 + T.x1) / 2, T.y + 0.03, T.z0 + 0.006, root);
@@ -492,16 +475,7 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
     lever('gearLever', -0.1, MAT.knob, 0.3, 0.026);
     lever('transferKnob', 0.04, MAT.yellow, 0.2, 0.018);
     lever('diffLockKnob', 0.12, MAT.red, 0.14, 0.016);
-    // The pedals: a ribbed rubber pad (clutch, brake, accelerator) hanging from an arm that pivots under the dash.
-    for (const [x, w] of [[-0.55, 0.075], [-0.4, 0.075], [-0.25, 0.045]]) {
-      const pad = new THREE.Group();
-      pad.position.set(x, 0.66, 0.32);
-      pad.rotation.x = -0.6;
-      rbox(w, 0.016, 0.1, 0.005, MAT.black, 0, 0, 0, pad);
-      for (const dz of [-0.03, 0, 0.03]) rbox(w - 0.01, 0.006, 0.008, 0.002, MAT.knob, 0, 0.01, dz, pad); // the ribs
-      root.add(pad);
-      tube([x, 0.68, 0.34], [x, 0.98, 0.43], 0.008, MAT.galv, root, 5); // the arm, up to its pivot under the dash
-    }
+    addPedals(root, { pivot: [0.98, 0.43], foot: [0.66, 0.32] }); // the pedals (clutch, brake, accelerator), on arms from under the dash; your feet work them (poseLandyControls)
     // The handbrake: a ratchet lever on the right of the tunnel, by the driver's left knee. Down and forward when off; pulled up and back when on.
     const hb = new THREE.Group();
     hb.name = 'parkBrakeLever';

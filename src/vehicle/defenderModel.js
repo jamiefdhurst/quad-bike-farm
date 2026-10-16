@@ -5,13 +5,14 @@ import { loftGeometry, mergeStatic } from './quadGeometry.js';
 import { buildSeatBelt, webbingMaterial } from './detail/belts.js';
 import { buildWiper, buildGrabHandle } from './detail/fittings.js';
 import { buildGlovebox } from './detail/switchgear.js';
+import { buildRadio } from './detail/radios.js';
 import {
-  MAT, add, rbox as roundedBox, archPanel, archFlare, post, tube, axleCyl, plate, label, fitText, badge, trimMaterials, buildWheel,
+  MAT, add, rbox as roundedBox, archPanel, archFlare, post, tube, axleCyl, plate, label, fitText, badge, trimMaterials, buildWheel, addPedals,
   LANDY_SEATS, LANDY_REAR_SEATS, SEAT_BACK, HANDBRAKE_OFF, TIPPING_SEATS, DEFENDER_LAYOUT, R,
 } from './landRoverModel.js';
 import {
   DEF_WHEELBASE, DEF_TRACK, DEF_END, DEF_SPARE, DEF_FRONT, DEF_WING, DEF_BONNET, DEF_BONNET_E, DEF_SCUTTLE, DEF_SCREEN, DEF_SCREEN_H,
-  DEF_SCREEN_TOP_Z, defScreenZ, DEF_DOOR, DEF_CAB, DEF_ROOF, DEF_SIDE_WINDOW, DEF_BACK_DOOR, DEF_HITCH, DEF_DASH,
+  DEF_SCREEN_TOP_Z, defScreenZ, DEF_DOOR, DEF_CAB, DEF_ROOF, DEF_SIDE_WINDOW, DEF_BACK_DOOR, DEF_HITCH, DEF_DASH, DEF_ARCH, DEF_PLATE,
 } from './defenderBody.js';
 
 // The 200TDi: a Defender 90 station wagon at its real size (TODO 100), built from defenderBody.js's numbers after the photos. Driven by Quad
@@ -22,9 +23,13 @@ import {
 //   doorLeft, doorRight     groups hinged on their front edges: poseSeriesDoors swings them (the dirt on them goes with them: `mudRest`)
 //   backDoor                a group hinged on the offside edge of the back, carrying the spare: poseDefenderBackDoor swings it out on T
 
-/** A box with its edges rounded, or, for the small ones whose rounding you could not see, a plain one (a third of the triangles each). */
+/**
+ * A box with its edges rounded, or, for the panels and small parts whose rounding (a centimetre or so) you could not see, a plain one: a third of
+ * the triangles each, and, more to the point, watertight. Panels of rounded boxes butted edge to edge leave a notch where two rounded corners meet,
+ * and where three do it goes right through: pinholes at the corners of every door, post and panel. Plain boxes butted together leave none.
+ */
 function rbox(w, h, d, r, mat, x, y, z, parent, name) {
-  if (r >= 0.0075) return roundedBox(w, h, d, r, mat, x, y, z, parent, name);
+  if (r > 0.012) return roundedBox(w, h, d, r, mat, x, y, z, parent, name);
   const m = add(new THREE.BoxGeometry(w, h, d), mat, parent, name);
   m.position.set(x, y, z);
   return m;
@@ -61,6 +66,7 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
   quad.userData.cleanMaterials = [trim.seat, trim.dash, trim.floor, MAT.belt, plastic, plastic2, console_, lining]; // the cab's inside never gets muddy (effects/mudCoat.js)
   quad.userData.cabin = { min: [-0.9, 0.4, DEF_CAB.rear - 0.04], max: [0.9, DEF_CAB.top + 0.05, DEF_SCREEN.baseZ + 0.02] }; // the paint inside it stays clean too (cabinMud.js)
   quad.userData.steerGain = 7; // a big wheel, a lot of turns lock to lock
+  quad.userData.liveMaterials = [sideMat]; // what the game lights directly (the sidelamps, a radio's display): the mud coat leaves them be
   const body = new THREE.Group();
   body.name = 'body';
   quad.add(body);
@@ -143,10 +149,10 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
       const wz = (DEF_FRONT.wingFace + wing.scuttle) / 2;
       const wl = DEF_FRONT.wingFace + 0.02 - wing.scuttle;
       rbox(wing.outer - wing.inner + 0.01, 0.03, wl, 0.012, paint, s * (wing.outer + wing.inner) / 2, wing.top - 0.015, wz + 0.01, root, 'wingTop'); // the flat top, which you can stand a mug on
-      archPanel(s * wing.outer, 0.03, wing.bottom, wing.top, wing.scuttle, DEF_FRONT.wingFace + 0.02, zF, paint, root); // the outer side, with the wheel arch cut in it
+      archPanel(s * wing.outer, 0.03, wing.bottom, wing.top - 0.004, wing.scuttle, DEF_FRONT.wingFace + 0.02, zF, paint, root); // the outer side, with the wheel arch cut in it (its top edge 4 mm under the flat top's face, not on it: they fought, and the mud showed it)
       flare(s, s * wing.outer, zF); // the black flare over the wheel, standing well out
       rbox(0.03, wing.top - wing.bottom - 0.02, DEF_FRONT.wingFace - wing.scuttle, 0.01, paint, s * wing.inner, (wing.top + wing.bottom) / 2 - 0.01, (DEF_FRONT.wingFace + wing.scuttle) / 2, root); // the inner wall
-      rbox(wing.outer - wing.inner, wing.top - wing.bottom, 0.03, 0.01, paint, s * (wing.outer + wing.inner) / 2, (wing.top + wing.bottom) / 2, DEF_FRONT.wingFace, root); // the front face
+      rbox(wing.outer - wing.inner, wing.top - wing.bottom - 0.004, 0.03, 0.01, paint, s * (wing.outer + wing.inner) / 2, (wing.top + wing.bottom) / 2 - 0.002, DEF_FRONT.wingFace, root); // the front face (4 mm under the top too)
       // The lamp panel: a black plastic surround on the wing's face with the round headlamp, the sidelamp above and the indicator below.
       const lx = s * 0.58;
       rbox(0.32, 0.3, 0.02, 0.012, MAT.black, lx, 0.87, DEF_FRONT.wingFace + 0.02, root);
@@ -248,8 +254,7 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
       rbox(0.04, 0.05, door.rear - 0.05 - (DEF_END + 0.02), 0.008, frame, s * door.x, top - 0.025, (door.rear - 0.05 + DEF_END + 0.02) / 2, root); // the rail over the window
       const wl = w.z0 - w.z1;
       const wz = (w.z0 + w.z1) / 2;
-      rbox(0.04, w.y1 - w.y0, 0.05, 0.01, frame, s * door.x, (w.y0 + w.y1) / 2, w.z0 + 0.025, root); // the post at the window's front
-      rbox(0.04, w.y1 - w.y0, 0.05, 0.01, frame, s * door.x, (w.y0 + w.y1) / 2, w.z1 - 0.025, root); // and its back
+      rbox(0.04, w.y1 - w.y0, w.z1 - (DEF_END + 0.02), 0.01, paint, s * door.x, (w.y0 + w.y1) / 2, (w.z1 + DEF_END + 0.02) / 2, root); // the rear post, from the window's back edge to the rear face (no hole between)
       rbox(0.06, w.y1 - w.y0, 0.16, 0.012, paint, s * door.x, (w.y0 + w.y1) / 2, -1.43, root); // the C pillar, a solid panel across the window behind the back seats: the belts hang on it
       const side = add(new THREE.PlaneGeometry(wl, w.y1 - w.y0), MAT.glass, root); // the long window
       side.rotation.y = Math.PI / 2;
@@ -338,9 +343,32 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
     door2.add(coverBody);
     rbox(0.12, 0.3, 0.05, 0.01, MAT.black, cx, DEF_SPARE.y, -0.035, door2); // the carrier's stub, from the door into the cover
     badge(door2, { x: cx, y: DEF_SPARE.y, z: -0.04 - DEF_SPARE.depth - 0.0015, facing: -1, w: 0.2, h: 0.08, px: 900 }); // the maker's oval on the cover
-    plate(regText, PLATE_BG, root, { x: 0, y: 0.66, z: rz - 0.0205, facing: -1 }); // the rear number plate, under the door
+    plate(regText, PLATE_BG, root, { x: DEF_PLATE.x, y: DEF_PLATE.y, z: rz - 0.02 - 0.06 - 0.0005, facing: -1 }); // the rear number plate, on the crossmember's back face (its face is 6 cm out from the body's), off the middle so the tow jaw does not hide it
     root.add(door2);
     for (const y of [B.y0 + 0.1, B.y1 - 0.1]) rbox(0.06, 0.1, 0.06, 0.01, MAT.black, B.hingeX - 0.02, y, rz + 0.0, root); // the hinges, on the body
+  }
+
+  // The trim over a rear wheel inside: a block from the floor up to y 1.12 with a round hole for the tyre in it (a plain box would cut the tyre's
+  // top half, which stands in it), 7 cm of plastic over the hole. It spans x 0.56 to 0.80 on the side `s`.
+  function archBlock(s, zc) {
+    const yb = 0.62;
+    const yt = 1.12;
+    const r = DEF_ARCH.r;
+    const dy = DEF_ARCH.y - yb;
+    const half = Math.sqrt(r * r - dy * dy);
+    const a = Math.asin(dy / r);
+    const shape = new THREE.Shape();
+    shape.moveTo(zc - 0.62, yb);
+    shape.lineTo(zc - half, yb);
+    shape.absarc(zc, DEF_ARCH.y, r, Math.PI + a, -a, true);
+    shape.lineTo(zc + 0.62, yb);
+    shape.lineTo(zc + 0.62, yt);
+    shape.lineTo(zc - 0.62, yt);
+    shape.closePath();
+    const g = new THREE.ExtrudeGeometry(shape, { depth: 0.24, bevelEnabled: false });
+    g.rotateY(-Math.PI / 2); // runs along -x from 0 to -0.24
+    g.translate(s > 0 ? 0.8 : -0.56, 0, 0);
+    add(g, trim.dash, root);
   }
 
   // Inside: the floor and seat box, the front seats (the outer two tip forward), the console between them, the back bench with the load space
@@ -390,7 +418,7 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
     rbox(1.12, 0.32, loadL, 0.01, plastic2, 0, 0.74, loadZ, root); // the block under it
     rbox(1.12, 0.012, loadL - 0.02, 0.004, trim.floor, 0, 0.906, loadZ, root); // the carpet on top
     for (const s of [-1, 1]) {
-      rbox(0.24, 0.5, 0.86, 0.04, trim.dash, s * 0.68, 0.86, zR, root); // the wheel box beside the bench, over the tyre, in the trim's plastic
+      archBlock(s, zR); // the wheel box beside the bench, over the tyre, in the trim's plastic, with a round hole for it
       rbox(0.014, 0.5, 1.3, 0.004, trim.dash, s * 0.78, 1.0, -1.2, root); // the plastic trim on the rear side under the window
     }
     // The seat belts (detail/belts.js buildSeatBelt): a diagonal and lap belt for the outer seats, hanging on the body at the B pillar or the
@@ -457,7 +485,7 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
     rbox(D.half * 2, 0.07, D.z0 - D.z1, 0.012, plastic, 0, D.top - 0.035, (D.z0 + D.z1) / 2, root, 'dashTop');
     rbox(D.half * 2, D.top - 0.07 - D.face, 0.05, 0.012, plastic, 0, (D.top - 0.07 + D.face) / 2, D.z1 + 0.025, root, 'dashFace'); // the face, straight down from the shelf's edge
     rbox(D.half * 2 - 0.04, D.top - D.face - 0.04, D.z0 - D.z1 - 0.06, 0.012, plastic2, 0, (D.top + D.face) / 2 - 0.02, (D.z0 + D.z1) / 2 + 0.03, root); // the body of it, solid behind the face
-    rbox(1.54, 0.3, 0.03, 0.01, plastic2, 0, 0.77, D.z0 - 0.035, root); // the plastic lining on the bulkhead under the shelf, down to the floor
+    rbox(0.9, 0.3, 0.03, 0.01, plastic2, -0.32, 0.77, D.z0 - 0.035, root); // the plastic lining on the bulkhead under the driver's end of the shelf, behind the pedals: none on the passenger's side, where it is open for legs
     for (const s of [-1, 1]) {
       rbox(0.2, 0.004, 0.05, 0.002, MAT.black, s * 0.32, D.top + 0.002, 0.4, root); // a demister grille: a black plate with slots across it
       for (let i = 0; i < 5; i++) rbox(0.19, 0.003, 0.004, 0.001, plastic, s * 0.32, D.top + 0.004, 0.378 + i * 0.011, root);
@@ -473,8 +501,22 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
     quad.userData.dash = dash;
     quad.userData.metalBody = true;
     quad.userData.podMount = null;
+    let radioUnit = null; // (made below with the stack)
+    const rockers = {}; // (the wired rockers, made below)
+    const podUpdate = dash.update;
+    dash.update = (st) => { // the pod's own update, then the centre stack's switches follow the vehicle: down while the hazards, the lights or the radio are on
+      podUpdate(st);
+      const tip = (name, on) => {
+        const g = rockers[name];
+        if (g) g.rotation.x += ((on ? 0.15 : -0.15) - g.rotation.x) * 0.5;
+      };
+      tip('rockerHazard', st.hazardOn);
+      tip('rockerLights', !!st.lightLamps?.lights || !!st.lightLamps?.main);
+      tip('rockerRadio', st.radioOn);
+      radioUnit?.userData.setPower(!!st.radioOn && !!st.ignition);
+    };
     rbox(0.44, 0.02, 0.1, 0.01, plastic, D.pod.x, D.pod.y + 0.095, D.pod.z + 0.06, root); // the eyebrow over the pod
-    rbox(1.56, 0.1, 0.03, 0.01, plastic, 0, 1.19, D.z0 - 0.015, root); // the padded roll along the back of the shelf, up to the screen's bottom rail, so no gap shows
+    rbox(1.56, 0.14, 0.03, 0.01, plastic, 0, 1.21, D.z0 - 0.015, root); // the padded roll along the back of the shelf, up into the screen's bottom rail (it starts at 1.27), so no gap shows
     // The centre stack: a deep box from the shelf down to the console, its face a little proud of the shelf's, with a row of rockers over the radio
     // (a head unit with a display and a row of preset buttons) and the heater's two knobs under it. The `radio` is the game's one.
     const st = D.stack;
@@ -485,34 +527,32 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
       g.rotation.y = rot;
       root.add(g);
     };
-    const rocker = (x, y, on, z = front) => { // a rocker: a bezel with a cap tipped one way or the other, on a face at z
+    const rocker = (x, y, on, z = front, name = null) => { // a rocker: a bezel with a cap tipped one way or the other, on a face at z
       rbox(0.03, 0.04, 0.006, 0.002, MAT.black, x, y, z - 0.003, root);
-      const cap = rbox(0.022, 0.032, 0.01, 0.002, console_, x, y, z - 0.009, root);
-      cap.rotation.x = on ? 0.15 : -0.15;
-      rbox(0.012, 0.004, 0.004, 0.001, on ? MAT.amber : MAT.chassis, x, y + 0.008, z - 0.015, root);
-    };
-    for (const [i, on] of [[-2, true], [-1, false], [0, false], [1, true], [2, false]]) rocker(st.x + i * 0.05, 1.085, on);
-    const head = label(st.w - 0.03, 0.09, 1400, (g, W, H) => {
-      g.fillStyle = '#0e1012';
-      g.fillRect(0, 0, W, H);
-      g.fillStyle = '#9a9ea3';
-      g.fillRect(0, 0, W, H * 0.05);
-      g.fillStyle = '#10222c'; // the display
-      g.fillRect(W * 0.2, H * 0.14, W * 0.6, H * 0.45);
-      g.fillStyle = '#f09a28';
-      fitText(g, '97.4 FM', W * 0.5, H * 0.38, H * 0.3, W * 0.5);
-      g.fillStyle = '#2d86d6';
-      for (let i = 0; i < 6; i++) g.fillRect(W * (0.2 + i * 0.1), H * 0.7, W * 0.075, H * 0.14);
-      g.fillStyle = '#9a9ea3'; // a knob each end
-      for (const x of [0.09, 0.91]) {
-        g.beginPath();
-        g.arc(W * x, H * 0.45, H * 0.26, 0, Math.PI * 2);
-        g.fill();
+      const rest = on ? 0.15 : -0.15;
+      if (!name) {
+        const cap = rbox(0.022, 0.032, 0.01, 0.002, console_, x, y, z - 0.009, root);
+        cap.rotation.x = rest;
+        rbox(0.012, 0.004, 0.004, 0.001, on ? MAT.amber : MAT.chassis, x, y + 0.008, z - 0.015, root);
+        return;
       }
-    }, root);
-    head.position.set(st.x, 0.995, front - 0.0015);
-    head.rotation.y = Math.PI;
-    quad.userData.cleanMaterials.push(head.material);
+      const g = new THREE.Group(); // a wired one is its own group, pivoting at its middle, so it can be tipped
+      g.name = name;
+      g.userData.keep = true;
+      g.position.set(x, y, z - 0.009);
+      g.rotation.x = rest;
+      add(new THREE.BoxGeometry(0.022, 0.032, 0.01), console_, g);
+      add(new THREE.BoxGeometry(0.012, 0.004, 0.004), MAT.amber, g).position.set(0, 0.008, -0.006);
+      root.add(g);
+      rockers[name] = g;
+    };
+    // The top row, left to right: hazards, lights, radio (wired), and two that do nothing yet (the fog lamps).
+    [[-2, 'rockerHazard'], [-1, 'rockerLights'], [0, 'rockerRadio'], [1, null], [2, null]].forEach(([i, name]) => rocker(st.x + i * 0.05, 1.085, false, front, name));
+    radioUnit = buildRadio('dab', { w: 0.3, h: 0.07 }); // the shared head unit (detail/radios.js), the same as the Series'
+    radioUnit.position.set(st.x, 0.995, front - 0.0015);
+    radioUnit.rotation.y = Math.PI;
+    root.add(radioUnit);
+    quad.userData.liveMaterials.push(radioUnit.userData.faceMaterial); // its display lights with the radio, so the mud coat leaves its material alone
     for (const x of [-0.1, 0.1]) add(new THREE.CylinderGeometry(0.018, 0.02, 0.014, 12).rotateX(Math.PI / 2), MAT.knob, root).position.set(st.x + x, 0.915, front - 0.007); // the heater's rotary knobs
     // The heater's two sliders at the driver's end of the face (red-to-blue strips), and a row of three rockers on the face between the column and
     // the stack.
@@ -564,16 +604,7 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
     add(new THREE.CylinderGeometry(0.04, 0.075, 0.08, 14), MAT.rubber, root).position.set(-0.08, 0.88, 0.04); // the gear lever's big gaiter
     for (const x of [0.06, 0.14]) add(new THREE.CylinderGeometry(0.024, 0.04, 0.05, 12), MAT.rubber, root).position.set(x, 0.865, 0.04);
     rbox(0.24, 0.012, 0.18, 0.005, MAT.steel, 0.1, 0.88, 0.04, root); // the plate round the transfer and diff lock levers
-    // The pedals: clutch, brake and accelerator, black pads hanging on arms from under the dash.
-    for (const [x, w] of [[-0.55, 0.075], [-0.4, 0.075], [-0.25, 0.045]]) {
-      const pad = new THREE.Group();
-      pad.position.set(x, 0.66, 0.32);
-      pad.rotation.x = -0.6;
-      rbox(w, 0.016, 0.1, 0.005, MAT.black, 0, 0, 0, pad);
-      for (const dz of [-0.03, 0, 0.03]) rbox(w - 0.01, 0.006, 0.008, 0.002, MAT.knob, 0, 0.01, dz, pad);
-      root.add(pad);
-      tube([x, 0.68, 0.34], [x, 0.93, 0.53], 0.008, MAT.galv, root, 5); // the arm, up to its pivot on the bulkhead's lining
-    }
+    addPedals(root, { pivot: [0.93, 0.53], foot: [0.66, 0.32] }); // the pedals: clutch, brake and accelerator, black pads on arms from the bulkhead's lining; your feet work them (poseLandyControls)
     // The handbrake: a ratchet lever on the right of the console, by the driver's left knee. Down and forward when off; pulled up and back when on.
     const hb = new THREE.Group();
     hb.name = 'parkBrakeLever';
@@ -597,7 +628,7 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
 
   // The tow jaw (a pin through a jaw, where the trailer's ring goes) behind the crossmember, the exhaust, and the anchors people hang from.
   function addTail() {
-    rbox(1.0, 0.12, 0.1, 0.01, MAT.chassis, 0, 0.56, DEF_END - 0.12, root);
+    rbox(0.24, 0.12, 0.1, 0.01, MAT.chassis, 0, 0.56, DEF_END - 0.12, root); // the tow mount behind the crossmember, narrow so the plate beside it is not hidden
     rbox(0.08, 0.08, 0.1, 0.01, MAT.steel, DEF_HITCH.x, DEF_HITCH.y, DEF_HITCH.z + 0.02, root);
     tube([DEF_HITCH.x, DEF_HITCH.y + 0.06, DEF_HITCH.z - 0.01], [DEF_HITCH.x, DEF_HITCH.y - 0.06, DEF_HITCH.z - 0.01], 0.01, MAT.galv, root, 6);
     rbox(0.1, 0.05, 0.4, 0.01, MAT.steel, 0, 0.56, DEF_HITCH.z + 0.2 - 0.0, root); // the tow plate, out from the crossmember to the jaw
@@ -654,6 +685,10 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
   quad.userData.tailHaloMaterial = new THREE.SpriteMaterial({ transparent: true, opacity: 0 });
   quad.userData.tailHalos = [];
   mergeStatic(root);
+  // Flat panels have no creases and few corners, so the wear layer finds nothing to grime them with: a floor of patchy grime on the big merged
+  // paint and the named body panels, so the quarters and the wings are not clean next to the doors (effects/wearLayer.js, detail/wear.js).
+  for (const c of root.children) if (c.isMesh && !c.name && (c.material === paint || c.material === MAT.black)) c.userData.wearNookMin = c.material === paint ? 0.5 : 0.3;
+  for (const name of ['bonnet', 'roof', 'wingTop']) root.getObjectByName(name)?.traverse?.((o) => { if (o.isMesh) o.userData.wearNookMin = 0.4; });
   quad.traverse((o) => {
     if (o.isMesh) {
       o.castShadow = true;
