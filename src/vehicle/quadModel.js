@@ -678,13 +678,20 @@ function squareLamp(parent, x, y, z, w, h, lensMat, name) {
  * Tubular rack: a rounded hoop with cross slats, on legs down to the body.
  * `raised` adds a second hoop above, joined by uprights.
  */
-function rack(root, z0, z1, y, slats, legY, raised = 0, noLegs = false, mat = MAT.frame) {
+function rack(root, z0, z1, y, slats, legY, raised = 0, noLegs = false, mat = MAT.frame, decay = null) {
   const W = 0.41;
   const dir = Math.sign(z1 - z0);
   const hoop = [[W, y, z0], [W, y, z1], [-W, y, z1], [-W, y, z0]];
   pipe(hoop, 0.013, mat, root, { bend: 0.06, closed: true, steps: 5 });
   for (let i = 1; i < slats; i++) {
     const z = z0 + ((z1 - z0) * i) / slats;
+    if (decay?.skip?.includes(i)) continue; // rusted through and gone (the barn find's)
+    if (decay?.hang === i) {
+      // Rusted off at the middle: the left half still on its rail, the broken end hanging down.
+      tube([-W, y, z], [-0.02, y, z], 0.0095, mat, root, 6);
+      tube([-0.02, y, z], [0.07, y - 0.1, z + dir * 0.012], 0.0095, mat, root, 6);
+      continue;
+    }
     tube([-W, y, z], [W, y, z], 0.0095, mat, root, 6);
   }
   for (const x of [-0.16, 0.16]) tube([x, y - 0.004, z0], [x, y - 0.004, z1], 0.009, mat, root, 6);
@@ -1468,7 +1475,7 @@ function buildChokePlunger(root, choke) {
   add(new THREE.CircleGeometry(0.008, 10).rotateX(Math.PI / 2), CHOKE_MARK, choke).position.set(0, -0.0162, 0); // the mark, on the face you pull by
 }
 
-export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', style = 'utility', solo = false, plateNumber = '7', chokeStyle = 'thumb', tapStyle = 'left', driveSwitch = null } = {}) {
+export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', style = 'utility', solo = false, plateNumber = '7', chokeStyle = 'thumb', tapStyle = 'left', driveSwitch = null, decay = null } = {}) {
   const racer = style === 'racer'; // the orange (TODO 92): a Suzuki LT250R Quadracer's triangle wedge, flat wings, shroud and flanks
   const junior = style === 'junior'; // the kids' quad (TODO 93): a Suzuki LT50's bulky plastics, thick seat and open engine, built full size and scaled
   const race = style === 'sport2' || racer;
@@ -1806,8 +1813,8 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   if (solo) {
     // nothing to carry
   } else if (style === 'utility') {
-    rack(root, 0.48, 0.92, 0.84, 5, 0.73, 0, true);
-    rack(root, -0.8, -1.0, 0.92, 3, 0.775, 0, true);
+    rack(root, 0.48, 0.92, 0.84, 5, 0.73, 0, true, MAT.frame, decay?.rack?.front);
+    rack(root, -0.8, -1.0, 0.92, 3, 0.775, 0, true, MAT.frame, decay?.rack?.rear);
     addRackDetail(root, { z0: 0.48, z1: 0.92, y: 0.84, slats: 5 }, MAT);
     addRackDetail(root, { z0: -0.8, z1: -1.0, y: 0.92, slats: 3 }, MAT);
     // The Foreman's racks stand on the decks at their outer edges, where the flat top is, and nowhere else: legs straight down at
@@ -1826,8 +1833,8 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     const rackMat = MAT.frame.clone();
     rackMat.metalness = 0.2;
     rackMat.roughness = 0.55;
-    rack(root, F.z0, F.z1, F.y, F.slats, 0.73, F.raised, true, rackMat);
-    rack(root, R.z0, R.z1, R.y, R.slats, 0.79, R.raised, true, rackMat);
+    rack(root, F.z0, F.z1, F.y, F.slats, 0.73, F.raised, true, rackMat, decay?.rack?.front);
+    rack(root, R.z0, R.z1, R.y, R.slats, 0.79, R.raised, true, rackMat, decay?.rack?.rear);
     addRackDetail(root, { z0: F.z0, z1: F.z1, y: F.y, slats: F.slats }, { ...MAT, frame: rackMat });
     addRackDetail(root, { z0: R.z0, z1: R.z1, y: R.y, slats: R.slats }, { ...MAT, frame: rackMat });
     addGrizzlyRackBlocks(root, MAT);
@@ -1844,8 +1851,8 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     const rackMat = MAT.frame.clone();
     rackMat.metalness = 0.2;
     rackMat.roughness = 0.55;
-    rack(root, F.z0, F.z1, F.y, F.slats, 0.73, F.raised, true, rackMat);
-    rack(root, R.z0, R.z1, R.y, R.slats, 0.79, R.raised, true, rackMat);
+    rack(root, F.z0, F.z1, F.y, F.slats, 0.73, F.raised, true, rackMat, decay?.rack?.front);
+    rack(root, R.z0, R.z1, R.y, R.slats, 0.79, R.raised, true, rackMat, decay?.rack?.rear);
     addRackDetail(root, { z0: F.z0, z1: F.z1, y: F.y, slats: F.slats }, { ...MAT, frame: rackMat });
     addRackDetail(root, { z0: R.z0, z1: R.z1, y: R.y, slats: R.slats }, { ...MAT, frame: rackMat });
     addBayouRackBlocks(root, MAT);

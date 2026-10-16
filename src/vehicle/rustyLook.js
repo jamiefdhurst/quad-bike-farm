@@ -32,14 +32,14 @@ export function weatherModel(model, { rust = 0.3, dust = 0.22 } = {}) {
 
 /** A faded blue tarp, thrown over it and tied down: a lumpy box that comes down to the floor all round. Sits in bodyRoot space. */
 export function buildTarp() {
-  const g = new THREE.BoxGeometry(1.5, 1.0, 2.2, 12, 5, 16);
+  const g = new THREE.BoxGeometry(1.5, 1.25, 2.3, 12, 6, 16);
   const pos = g.attributes.position;
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i);
     let y = pos.getY(i);
     const z = pos.getZ(i);
     // Round the top over, then crumple it.
-    const edge = Math.max(Math.abs(x) / 0.75, Math.abs(z) / 1.1);
+    const edge = Math.max(Math.abs(x) / 0.75, Math.abs(z) / 1.15);
     if (y > 0) y -= 0.12 * edge * edge;
     const fold = 0.035 * Math.sin(x * 9 + z * 3) + 0.03 * Math.sin(z * 7 - x * 2) + 0.02 * Math.sin((x + z) * 15);
     const out = y > -0.3 ? fold : 0;
@@ -47,7 +47,7 @@ export function buildTarp() {
   }
   g.computeVertexNormals();
   const tarp = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0x4a6470, roughness: 0.95, flatShading: true }));
-  tarp.position.set(0, 0.5, 0);
+  tarp.position.set(0, 0.625, 0);
   tarp.name = 'tarp';
   return tarp;
 }

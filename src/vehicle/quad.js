@@ -91,7 +91,7 @@ export class Quad {
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null, handLever = false, crank = null, landRover = false, utv = false, car = false, lightSwitch = false, barLights = false, driverStand = null, benchStand = null, chainDrive = false }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, decay = null, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null, handLever = false, crank = null, landRover = false, utv = false, car = false, lightSwitch = false, barLights = false, driverStand = null, benchStand = null, chainDrive = false }) {
     this.reverseStyle = reverseStyle; // where its reverse is and what it takes (controls.js)
     this.chokeStyle = chokeStyle;
     this.tapStyle = tapStyle;
@@ -133,7 +133,7 @@ export class Quad {
 
     this.layout = layout;
     this.groundOffset = groundOffset; // chassis origin to ground, at rest
-    this.model = build ? build({ dashStyle }) : buildQuadModel({ bodyColor, dashStyle, style, solo, plateNumber, chokeStyle, tapStyle, driveSwitch: drive });
+    this.model = build ? build({ dashStyle }) : buildQuadModel({ bodyColor, dashStyle, style, solo, plateNumber, chokeStyle, tapStyle, driveSwitch: drive, decay });
     this.model.scale.setScalar(scale);
     this.dash = this.model.userData.dash;
     this.fuel = new FuelSystem(fuelParams);

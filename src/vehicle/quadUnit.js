@@ -66,6 +66,7 @@ export class QuadUnit {
       solo: spec.solo,
       plateNumber: spec.plateNumber,
       chainDrive: !!spec.chainDrive,
+      decay: spec.decay ?? null, // the barn find's damage (rustyDamage.js): rack bars gone or hanging
       reverseStyle: spec.reverseStyle,
       chokeStyle: spec.chokeStyle,
       barLights: spec.barLights || false, // true: the pod's off / dipped / main beam; 'switch': a plain on / off switch

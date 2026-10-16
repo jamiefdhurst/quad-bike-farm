@@ -267,6 +267,7 @@ import { Bench } from './workshop/bench.js';
 import { DEFAULT_FUEL_WATER_PARAMS, FUEL_WATER_RANGES, stepCanWater } from './vehicle/fuelWater.js';
 import { pickBarnFind, BarnFind, DEFAULT_BARN_FIND_PARAMS, BARN_FIND_RANGES, RUSTY_ID } from './vehicle/barnFind.js';
 import { weatherModel, buildTarp } from './vehicle/rustyLook.js';
+import { planDamage, applyDamage } from './vehicle/rustyDamage.js';
 import { Notebook } from './workshop/notebook.js';
 import { SparesShelf } from './workshop/sparesShelf.js';
 import { MuckLoad, DEFAULT_MUCK_PARAMS, MUCK_PARAM_RANGES, JobBoard, DEFAULT_JOB_BOARD_PARAMS, JOB_BOARD_PARAM_RANGES, availableJobs } from './world/farmJobs.js';
@@ -3532,7 +3533,7 @@ export class Game {
       if (unit.barnFind && s.barnFind) {
         unit.barnFind.restore(s.barnFind);
         unit.engine.startBlocked = unit.barnFind.startBlocked;
-        unit.tarp.visible = !unit.barnFind.tarpOff;
+        unit.rustyLook.sync(unit.barnFind, { instant: true });
       }
       const h = this.history.quads[unit.id];
       if (h) Object.assign(h, { wear: unit.engine.wear, faults: savedFaults(s) });
@@ -3814,8 +3815,10 @@ export class Game {
     if (!plan) return null;
     const P = this.barnFindParams;
     const random = createRandom(this.farmSeed ^ 0xba30);
+    const damage = planDamage(createRandom(this.farmSeed ^ 0xba31), plan.donor.id); // which rack bars are gone, how many patches, cracks and webs (vehicle/rustyDamage.js)
     const spec = {
       ...plan.donor,
+      decay: damage,
       id: RUSTY_ID,
       label: 'rusty quad',
       name: 'Rusty quad',
@@ -3855,10 +3858,11 @@ export class Game {
       unit.quad.faults.levels.carb = 0.9;
     }
     // Dust and rust, and the tarp over the lot.
-    weatherModel(unit.quad.model);
+    weatherModel(unit.quad.model, { rust: 0.5, dust: 0.25 }); // the metal well on its way to rust
     unit.mud.coat.look.wear = P.bodyWear; // and the wear layer turned right up: rust in every fold, the edges rubbed bare
     unit.tarp = buildTarp();
     unit.quad.bodyRoot.add(unit.tarp);
+    unit.rustyLook = applyDamage(unit.quad.model, damage, unit.tarp); // rust patches, cracks, webs, cracked tyres and (on the yellow) a mouse nest; the jobs and the tarp change them
     this.units = [...this.units, unit];
     return unit;
   }
@@ -3887,7 +3891,8 @@ export class Game {
     const find = unit?.barnFind;
     if (!find) return;
     const e = unit.engine;
-    unit.tarp.visible = !find.tarpOff;
+    unit.rustyLook.sync(find); // the tarp slides off when it is taken off, the tyres and the nest follow their jobs
+    unit.rustyLook.step(dt);
     if (find.brakeSeized) unit.quad.parkBrake = true;
     if (find.setBattery(e.battery, !e.batteryOut)) this.notebook.note(unit, { kind: 'job', job: 'battery' }, { by: 'you' });
     e.startBlocked = find.startBlocked;

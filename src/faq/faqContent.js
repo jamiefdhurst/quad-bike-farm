@@ -1713,7 +1713,7 @@ export const FAQ_SECTIONS = [
         q: 'What’s under the tarp at the back of the barn?',
         spoiler: true,
         a: `In about one game in five, the rusty quad: an old barn find, not run for years. Take the tarp off at the workbench, then do the three or four jobs it needs
-          (from draining the varnished fuel to charging the battery: lift it out at the bench, put it on the bench charger with the generator running, and fit it back). It won't catch until every one is done. Try seeds 7, 8, 12 or 13.`,
+          (from draining the varnished fuel to charging the battery: lift it out at the bench, put it on the bench charger with the generator running, and fit it back). It won't catch until every one is done. The tarp is dragged off to the side, and the jobs show on the quad: a new tyre is fresh black rubber with none of the old cracks, and on the yellow the mouse nest in its intake goes with the carb clean. Under it the quad is rusting through: bars gone from its racks, rust patches with holes eaten through, cracked plastic, cobwebs in the corners and grey, cracked tyres. Try seeds 7, 8, 12 or 13.`,
       },
       {
         q: 'What happens round the back of the barn?',
