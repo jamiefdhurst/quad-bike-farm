@@ -190,7 +190,7 @@ export class MudCoat {
     const wheelGroups = new Set(quad.wheels.map((w) => w.object));
     const visit = (o, wheel) => {
       // The bars, dash and rider's hands stay clean: well above the mud, and the dash changes its own materials.
-      if (o === bars) return;
+      if (o === bars || o.name === 'signalStalk') return; // (the indicator stalk swings: a wear pattern that stayed put on it would look wrong, so it stays clean)
       if (wheelGroups.has(o)) wheel = true;
       if (o.isMesh && o.material?.isMeshStandardMaterial && !skip.has(o.material) && !o.material.emissive?.getHex()) {
         const copies = wheel ? wheelCopies : bodyCopies;

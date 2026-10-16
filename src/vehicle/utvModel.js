@@ -371,7 +371,7 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   column.rotation.x = -0.95;
   tube([0, 0, 0], [0, 0.46, 0], 0.025, MAT.steel, column);
   root.add(column);
-  addSignalStalk(column, 0.28, MAT.steel, { modern: true, symbol: false });
+  addSignalStalk(column, 0.28, MAT.steel, { modern: true });
   const wheel = new THREE.Group();
   wheel.name = 'handlebars';
   wheel.userData.keep = true;

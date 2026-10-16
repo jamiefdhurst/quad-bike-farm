@@ -180,7 +180,7 @@ describe('the UTV’s model', () => {
     m.userData.dash.update({ keyOn: false, ignition: false, rpm: 0, speedMph: 0, fuelLevel: 0.5, temperature: 0.3, hours: 12, odoMiles: 100 });
     expect(Math.abs(key.rotation.z)).toBe(0);
     m.userData.dash.update({ keyOn: true, ignition: true, rpm: 900, speedMph: 10, fuelLevel: 0.5, temperature: 0.3, hours: 12, odoMiles: 100 });
-    expect(Math.abs(key.rotation.z)).toBeGreaterThan(0.2); // (it eases there)
+    expect(key.rotation.z).toBeGreaterThan(0.2); // (it eases there)
     expect(m.getObjectByName('driveStalk')).toBeTruthy();
     expect(m.getObjectByName('gearGate')).toBeTruthy();
   });

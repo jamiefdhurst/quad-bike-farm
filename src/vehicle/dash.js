@@ -681,7 +681,7 @@ function buildUtv() {
   chromeRing(group, { ...speedo, r: speedo.r + 1.5, ...O, tube: 0.0034 });
   chromeRing(group, { ...unit, r: unit.r + 1.5, ...O, tube: 0.0034 });
   for (const p of [...pockets, ...strip]) chromeRing(group, { ...p, r: p.r ?? 8.5, ...O, material: agedSteel, tube: 0.0022 }); // every lamp in a round bezel
-  const KEY = { x: 302, y: 61 }; // the ignition's centre (mm), at the right-hand end
+  const KEY = { x: 291, y: 61 }; // the ignition's centre (mm), at the right-hand end
   const gate = changeGate();
   let shownMph = 0;
   let shownFuel = 0;
@@ -744,8 +744,8 @@ function buildUtv() {
     }
     // The key's legend at the right-hand end.
     text(ctx, 'OFF', KEY.x, KEY.y - 17, 3.2, '#ece6d2', { align: 'center' });
-    text(ctx, 'ON', KEY.x + 15, KEY.y - 9, 3.2, '#ece6d2');
-    text(ctx, 'START', KEY.x + 17, KEY.y + 3, 3.2, '#ece6d2');
+    text(ctx, 'ON', KEY.x + 13, KEY.y - 10, 3, '#ece6d2');
+    text(ctx, 'START', KEY.x + 15, KEY.y + 2, 3, '#ece6d2');
   }
 
   // The ignition: a round black bezel with a chrome barrel, and a real key in it: a flat steel blade with teeth standing out towards the driver and a
@@ -777,7 +777,7 @@ function buildUtv() {
       shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
       shownFuel += ((s.ignition ? s.fuelLevel : 0) - shownFuel) * 0.2;
       shownTemp += ((s.ignition ? tempGaugeFraction(s.temperature, true, s.overheat) : 0) - shownTemp) * 0.1;
-      const keyTo = s.cranking ? -1.45 : s.keyOn ? -0.72 : 0; // OFF at the top, ON half-way round, START at the end
+      const keyTo = s.cranking ? 1.45 : s.keyOn ? 0.72 : 0; // OFF at the top, ON half-way round, START at the end, clockwise as the driver sees it
       keyAngle += (keyTo - keyAngle) * 0.5;
       ignitionKey.rotation.z = keyAngle;
       const running = s.rpm > 300;
