@@ -856,7 +856,7 @@ export const TRACTOR_SPEC = {
     rollInertia: 650,
     pitchInertia: 1800,
     yawInertia: 1900,
-    wheelRadius: 0.72, // the big rear wheels; the front ones' own radius is in TRACTOR_LAYOUT
+    wheelRadius: 0.585, // the big rear wheels; the front ones' own radius is in TRACTOR_LAYOUT
     suspensionRestLength: 0.12,
     maxSuspensionTravel: 0.14,
     suspensionStiffness: 24,

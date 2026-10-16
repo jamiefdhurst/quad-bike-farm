@@ -1838,7 +1838,7 @@ export const VEHICLE_NOTES = {
     tips: ['Fuel injected: no choke and no fuel tap, even on a frosty morning.', 'Full tank and a bit more power than the old farm quads.', 'The dealer’s sticker is on the left rear fender.'],
   },
   tractor: {
-    blurb: 'An old grey-and-red Fergie on red diesel: heavy, slow and strong, with three gears, a hand throttle and a lot of hours.',
+    blurb: 'An old red-and-grey Hartley 35 (a Massey-Ferguson-35-style tractor) on red diesel: heavy, slow and strong, with three gears, a hand throttle and a lot of hours.',
     tips: ['Wait for the GLOW lamp before cranking.', 'The stop knob (O) stops it, not the key.', 'Pulls the bale trailer and the tow chain.'],
   },
   utv: {

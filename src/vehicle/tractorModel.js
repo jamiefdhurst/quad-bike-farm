@@ -2,18 +2,21 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { buildDash } from './dash.js';
 import { addHeadlightBeams } from './quadModel.js';
-import { loftGeometry, mergeStatic, rod, springGeometry } from './quadGeometry.js';
+import { loftGeometry, mergeStatic, rod, springGeometry, sweepGeometry } from './quadGeometry.js';
 import { treadTyre } from './detail/tread.js';
+import { decalMesh, MAKER_FOR } from './detail/decals.js';
+import { MF_WHEELS, MF_BONNET, MF_NOSE, MF_GRILLE, MF_LAMP, MF_PANEL, MF_COWL, MF_STEERING, MF_SEAT, MF_GUARD, MF_FOOT, MF_PEDALS, MF_LEVERS, MF_EXHAUST, MF_AIR } from './mf35Body.js';
 
-// The old farm tractor, procedural like the quads: a Fergie-sized diesel with a bonnet, a pan seat between two big rear wheels, a
-// steering wheel on a raked column, an upright exhaust with a flap on top, and a drawbar. Same named parts as a quad's model so
-// Quad drives it unchanged (see quadModel.js), plus the controls only it has:
+// The old farm tractor (TODO 98): a Massey-Ferguson-35-style three-cylinder diesel in red and grey (the Hartley 35; mf35Body.js has the
+// numbers), procedural like the quads: a red bonnet over a grey engine, a red cowl behind it with the instruments set straight into its
+// metal, a pan seat between two big rear wheels, a steering wheel on a raked column, an upright exhaust with a flap on top, and a drawbar.
+// No cab. Same named parts as a quad's model so Quad drives it unchanged (see quadModel.js), plus the controls only it has:
 //
 //   quad
 //   ├── body                       rocked by vibration
 //   │   └── bodyRoot               ground-referenced: y = 0 is the ground at rest, so it sits at TRACTOR_GROUND_OFFSET in the chassis
-//   │       ├── bonnet, engine, scuttle, gearbox, fenders, seat, exhaust (exhaustFlap, exhaustTip), lamps, drawbar
-//   │       ├── dash                       on the scuttle, not turning with the wheel
+//   │       ├── bonnet, engine, cowl, gearbox, fenders, seat, exhaust (exhaustFlap, exhaustTip), lamps, drawbar
+//   │       ├── dash                       on the cowl's sloping top, not turning with the wheel
 //   │       ├── steeringColumn > handlebars    the wheel; turns about the column's axis (and holds riderHands)
 //   │       ├── gearLever, handThrottle, clutchPedal, stopKnob   posed from the controls (quad.js poseControls)
 //   │       └── riderAnchor, cameraAnchor
@@ -24,27 +27,27 @@ import { treadTyre } from './detail/tread.js';
 export const SPIKE_RAIL_Z = -1.78; // the bale spike's mast, behind the lift housing
 export const SPIKE_PLATE_Z = -1.85; // and its plate on the carriage, where the spike starts (it points out of the back)
 export const TRACTOR_GROUND_OFFSET = -0.8; // chassis origin to the ground at rest, metres
-const REAR_R = 0.72; // big rear wheels
-const FRONT_R = 0.42; // small front ones
+const REAR_R = MF_WHEELS.rearR; // big rear wheels
+const FRONT_R = MF_WHEELS.frontR; // small front ones
 const REST = 0.12; // suspension rest length: matches the spec's suspensionRestLength
 
-const wheelY = (r) => r + REST + TRACTOR_GROUND_OFFSET; // where each wheel's suspension mount sits in the chassis frame
+const wheelY = (r) => r + REST + TRACTOR_GROUND_OFFSET; // where each suspension mount sits in the chassis frame
 
 /** Where the wheels, their mounts and the bodywork box are, for QuadPhysics. */
 export const TRACTOR_LAYOUT = {
   spawnSag: 0.155, // how far the springs sink under its weight when it first lands, measured: it starts already sunk
   wheels: [
-    { name: 'wheel_fl', x: 0.66, z: 0.95, front: true, radius: FRONT_R, y: wheelY(FRONT_R) },
-    { name: 'wheel_fr', x: -0.66, z: 0.95, front: true, radius: FRONT_R, y: wheelY(FRONT_R) },
-    { name: 'wheel_rl', x: 0.88, z: -0.95, front: false, radius: REAR_R, y: wheelY(REAR_R) },
-    { name: 'wheel_rr', x: -0.88, z: -0.95, front: false, radius: REAR_R, y: wheelY(REAR_R) },
+    { name: 'wheel_fl', x: MF_WHEELS.frontX, z: MF_WHEELS.frontZ, front: true, radius: FRONT_R, y: wheelY(FRONT_R) },
+    { name: 'wheel_fr', x: -MF_WHEELS.frontX, z: MF_WHEELS.frontZ, front: true, radius: FRONT_R, y: wheelY(FRONT_R) },
+    { name: 'wheel_rl', x: MF_WHEELS.rearX, z: MF_WHEELS.rearZ, front: false, radius: REAR_R, y: wheelY(REAR_R) },
+    { name: 'wheel_rr', x: -MF_WHEELS.rearX, z: MF_WHEELS.rearZ, front: false, radius: REAR_R, y: wheelY(REAR_R) },
   ],
   topY: wheelY(REAR_R),
   chassis: { hx: 0.55, hy: 0.5, hz: 1.5, y: 0.95 + TRACTOR_GROUND_OFFSET },
 };
 
 /** The tops of the rear wheel arches, where a girl sits (chassis frame, metres), and where she stands on the ground to climb up. */
-export const MUDGUARD = { x: 0.88, top: REAR_R + REAR_R + 0.17, z: -0.95, standX: 1.5, standZ: -0.35 };
+export const MUDGUARD = { x: MF_WHEELS.rearX, top: REAR_R + MF_GUARD.r, z: MF_WHEELS.rearZ, standX: 1.5, standZ: -0.35 };
 
 /** The invisible box you look at to get on: ground to roof, wider than the body so it's easy to target. */
 export const TRACTOR_PROXY = { w: 2.0, h: 2.0, d: 3.2 };
@@ -56,11 +59,11 @@ const MAT = {
   rubber: new THREE.MeshStandardMaterial({ color: 0x1a1917, roughness: 0.95 }),
   steel: new THREE.MeshStandardMaterial({ color: 0x3a3c3e, roughness: 0.5, metalness: 0.6 }),
   rust: new THREE.MeshStandardMaterial({ color: 0x4b3a2e, roughness: 0.7, metalness: 0.5 }),
-  cast: new THREE.MeshStandardMaterial({ color: 0x55585b, roughness: 0.6, metalness: 0.4 }),
-  castDark: new THREE.MeshStandardMaterial({ color: 0x2f3133, roughness: 0.65, metalness: 0.4 }),
+  cast: new THREE.MeshStandardMaterial({ color: 0x858886, roughness: 0.62, metalness: 0.3 }), // the engine and gearbox, painted grey
+  castDark: new THREE.MeshStandardMaterial({ color: 0x5b5e5f, roughness: 0.65, metalness: 0.35 }),
   chrome: new THREE.MeshStandardMaterial({ color: 0xd8dadc, roughness: 0.14, metalness: 1.0 }),
   black: new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.7 }),
-  seat: new THREE.MeshStandardMaterial({ color: 0x1b1b1a, roughness: 0.6 }),
+  seat: new THREE.MeshStandardMaterial({ color: 0x9a9b94, roughness: 0.6 }), // the grey vinyl cushion
   glove: new THREE.MeshStandardMaterial({ color: 0x2d3a26, roughness: 0.8 }),
   sleeve: new THREE.MeshStandardMaterial({ color: 0x3f4d34, roughness: 0.9 }),
   knob: new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.4 }),
@@ -70,6 +73,8 @@ const MAT = {
   oil: new THREE.MeshStandardMaterial({ color: 0x14100b, roughness: 0.3, metalness: 0.1 }), // oil weeping from the joints and the sump
   mud: new THREE.MeshStandardMaterial({ color: 0x4a3b29, roughness: 1 }),
   brass: new THREE.MeshStandardMaterial({ color: 0xb08d3c, roughness: 0.35, metalness: 0.8 }),
+  manifold: new THREE.MeshStandardMaterial({ color: 0x6b4a34, roughness: 0.75, metalness: 0.5 }), // the cast exhaust manifold, rusty brown
+  label: new THREE.MeshStandardMaterial({ color: 0x3f7fb4, roughness: 0.6 }), // the filters' blue bands
 };
 
 function add(geo, mat, parent, name) {
@@ -106,17 +111,17 @@ const cached = (key, make) => {
 
 /** A big lugged rear tyre: a drum with two staggered rows of angled lugs, like the herringbone on an old Fergie. */
 function rearTyre() {
-  return treadTyre('tractor', { radius: REAR_R, width: 0.38, rimR: 0.42, count: 22, segments: 48 });
+  return treadTyre('tractor', { radius: REAR_R, width: MF_WHEELS.rearW, rimR: MF_WHEELS.rearRim, count: 22, segments: 48 });
 }
 
 /** The drum under the rear lugs: carcass with the caked mud of the field between the lugs. */
 function rearDrum() {
-  return new THREE.CylinderGeometry(REAR_R - 0.065, REAR_R - 0.065, 0.38, 36).rotateZ(Math.PI / 2);
+  return new THREE.CylinderGeometry(REAR_R - 0.055, REAR_R - 0.055, MF_WHEELS.rearW, 36).rotateZ(Math.PI / 2);
 }
 
 /** A narrow ribbed front tyre. */
 function frontTyre() {
-  return treadTyre('rib', { radius: FRONT_R, width: 0.15, rimR: 0.24, segments: 32 });
+  return treadTyre('rib', { radius: FRONT_R, width: MF_WHEELS.frontW, rimR: MF_WHEELS.frontRim, segments: 32 });
 }
 
 function buildWheel(w, rimMat) {
@@ -129,41 +134,39 @@ function buildWheel(w, rimMat) {
   const rear = !w.front;
   add(cached(rear ? 'rearTyre' : 'frontTyre', rear ? rearTyre : frontTyre), MAT.rubber, spin);
   if (rear) add(cached('rearDrum', rearDrum), MAT.mud, spin);
-  // Plain pressed steel, as on an old Fergie: the rim with a flange each side, a dished disc closing the outside with a ring of
-  // punched holes (the dark of the tyre's inside shows through), a cast hub and plain bolts. Painted, with the paint rubbed off the rim.
-  const rimR = rear ? 0.42 : 0.24;
-  const tyreW = rear ? 0.38 : 0.15;
-  axleCyl(rimR, tyreW + 0.06, rimMat, 0, 0, 0, spin);
-  for (const f of [-1, 1]) axleCyl(rimR * 1.07, 0.02, rimMat, f * (tyreW / 2 + 0.03), 0, 0, spin);
-  axleCyl(rimR * 1.075, 0.022, MAT.rustPatch, side * (tyreW / 2 + 0.03), 0, 0, spin); // bare, rusty outer flange
-  const out = side * (tyreW / 2 + 0.035);
-  const dish = add(new THREE.CylinderGeometry(rimR * 0.5, rimR * 0.97, 0.05, 28).rotateZ(Math.PI / 2), rimMat, spin); // the dished centre
-  dish.position.set(out - side * 0.012, 0, 0);
-  dish.scale.x = side; // the dish bulges outwards
-  const holes = rear ? 6 : 5;
-  for (let i = 0; i < holes; i++) {
-    const a = (i / holes) * Math.PI * 2;
-    const r = rimR * 0.68;
-    const h = add(new THREE.CylinderGeometry(rimR * 0.13, rimR * 0.13, 0.012, 14).rotateZ(Math.PI / 2), MAT.black, spin);
-    h.position.set(out + side * 0.016, Math.sin(a) * r, Math.cos(a) * r);
-  }
-  axleCyl(rear ? 0.11 : 0.07, 0.1, MAT.cast, side * (tyreW / 2 + 0.07), 0, 0, spin);
-  axleCyl(rear ? 0.07 : 0.045, 0.03, MAT.castDark, side * (tyreW / 2 + 0.13), 0, 0, spin);
-  const nuts = rear ? 6 : 5;
-  const nutR = rear ? 0.17 : 0.1;
+  // Pressed steel, painted grey, as in the photos: the rim with a flange each side and a dished disc closing the outside, with a cast hub
+  // standing out of the middle on a ring of studs and nuts. No punched holes.
+  const rimR = rear ? MF_WHEELS.rearRim : MF_WHEELS.frontRim;
+  const tyreW = rear ? MF_WHEELS.rearW : MF_WHEELS.frontW;
+  axleCyl(rimR, tyreW + 0.05, rimMat, 0, 0, 0, spin);
+  for (const f of [-1, 1]) axleCyl(rimR * 1.06, 0.018, rimMat, f * (tyreW / 2 + 0.025), 0, 0, spin);
+  axleCyl(rimR * 1.065, 0.02, MAT.rustPatch, side * (tyreW / 2 + 0.025), 0, 0, spin); // bare, rusty outer flange
+  const out = side * (tyreW / 2 + 0.03);
+  // The disc bulges outwards towards its hub: a shallow cone from the rim in to a raised centre.
+  const dish = add(new THREE.CylinderGeometry(rimR * 0.34, rimR * 0.97, 0.07, 32).rotateZ(Math.PI / 2), rimMat, spin);
+  dish.position.set(out + side * 0.012, 0, 0);
+  dish.scale.x = side;
+  axleCyl(rear ? 0.13 : 0.075, 0.07, MAT.castDark, out + side * 0.065, 0, 0, spin); // the hub casting
+  axleCyl(rear ? 0.05 : 0.03, 0.03, MAT.cast, out + side * 0.115, 0, 0, spin); // and its cap
+  const nuts = rear ? 8 : 6;
+  const nutR = rear ? 0.2 : 0.11;
   for (let i = 0; i < nuts; i++) {
     const a = ((i + 0.5) / nuts) * Math.PI * 2;
-    const n = add(new THREE.CylinderGeometry(0.018, 0.018, 0.03, 6).rotateZ(Math.PI / 2), MAT.steel, spin);
-    n.position.set(side * (tyreW / 2 + 0.065), Math.sin(a) * nutR, Math.cos(a) * nutR);
+    const n = add(new THREE.CylinderGeometry(0.016, 0.016, 0.03, 6).rotateZ(Math.PI / 2), MAT.steel, spin);
+    n.position.set(out + side * 0.052, Math.sin(a) * nutR, Math.cos(a) * nutR);
   }
   if (!rear) {
     // The yoke and steering arm of the stub axle, inside the wheel and turning with it (the wheel group is what steers).
-    rbox(0.05, 0.42, 0.09, 0.02, MAT.castDark, -side * 0.1, 0.02, 0, wheel);
-    tube([-side * 0.1, 0.1, 0], [-side * 0.1, 0.1, -0.2], 0.014, MAT.steel, wheel);
+    rbox(0.05, 0.3, 0.09, 0.02, MAT.castDark, -side * 0.09, 0.02, 0, wheel);
+    tube([-side * 0.09, 0.08, 0], [-side * 0.09, 0.08, -0.2], 0.014, MAT.steel, wheel);
   }
   mergeStatic(wheel);
   return wheel;
 }
+
+
+/** The height of the panel's plane at z (see mf35Body.js), for sitting things on the cowl's top. */
+const panelY0 = (z) => MF_PANEL.at[1] + Math.tan(Math.PI / 2 - MF_PANEL.tilt) * (z - MF_PANEL.at[2]);
 
 // The tractor ------------------------------------------------------------------
 
@@ -182,61 +185,108 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   root.name = 'bodyRoot';
   body.add(root);
 
-  // Engine and bonnet. The block shows under the bonnet's edge, as on the real thing, with the manifolds on its left and the sump below.
-  rbox(0.5, 0.5, 1.1, 0.04, MAT.cast, 0, 0.69, 0.7, root);
-  rbox(0.42, 0.14, 0.9, 0.03, MAT.castDark, 0, 0.46, 0.75, root); // sump
-  rbox(0.3, 0.34, 0.5, 0.04, MAT.castDark, 0, 0.62, 1.12, root); // the front pedestal the axle pivots on
-  axleCyl(0.1, 0.06, MAT.castDark, 0, 0.78, 1.3, root); // fan belt pulley
-  tube([0.27, 0.9, 0.35], [0.27, 0.9, 0.95], 0.03, MAT.rust, root); // the manifolds, along the left
-  tube([0.27, 0.8, 0.35], [0.27, 0.8, 0.95], 0.026, MAT.cast, root);
-  for (const z of [0.45, 0.65, 0.85]) rbox(0.05, 0.16, 0.05, 0.01, MAT.cast, 0.26, 0.85, z, root);
-  add(loftGeometry([
-    { z: 0.34, w: 0.5, y0: 0.93, y1: 1.3 },
-    { z: 0.7, w: 0.5, y0: 0.93, y1: 1.35 },
-    { z: 1.05, w: 0.47, y0: 0.93, y1: 1.34 },
-    { z: 1.36, w: 0.4, y0: 0.93, y1: 1.26 },
-  ], { exponent: 3 }), paint, root, 'bonnet');
-  // The radiator cap and the oil bath air cleaner with its pipe, side louvres, and the seam down the middle.
-  add(new THREE.CylinderGeometry(0.045, 0.055, 0.04, 14), MAT.castDark, root).position.set(0, 1.28, 1.28);
-  add(new THREE.CylinderGeometry(0.03, 0.03, 0.05, 12), MAT.brass, root).position.set(0, 1.32, 1.28);
-  add(new THREE.CylinderGeometry(0.085, 0.07, 0.3, 16), MAT.castDark, root).position.set(-0.33, 1.1, 0.62);
-  add(new THREE.CylinderGeometry(0.09, 0.09, 0.05, 16), MAT.cast, root).position.set(-0.33, 1.27, 0.62);
-  tube([-0.33, 1.05, 0.62], [-0.24, 0.95, 0.5], 0.03, MAT.black, root);
-  for (const s of [-1, 1]) for (let i = 0; i < 5; i++) rbox(0.012, 0.1, 0.03, 0.004, MAT.black, s * 0.256, 1.12, 0.52 + i * 0.07, root);
-  rbox(0.012, 0.014, 1.0, 0.004, MAT.castDark, 0, 1.352, 0.8, root);
-  // The front bolster and the grille: a dark casting with a chrome frame and slats, and a badge.
-  rbox(0.46, 0.62, 0.1, 0.03, MAT.castDark, 0, 0.98, 1.4, root);
-  rbox(0.4, 0.5, 0.03, 0.01, MAT.chrome, 0, 1.0, 1.44, root);
-  for (let i = 0; i < 6; i++) rbox(0.37, 0.022, 0.02, 0.006, MAT.black, 0, 0.8 + i * 0.08, 1.46, root);
-  rbox(0.014, 0.5, 0.025, 0.004, MAT.chrome, 0, 1.0, 1.465, root);
-  rbox(0.14, 0.06, 0.02, 0.01, MAT.brass, 0, 1.3, 1.4, root);
-  // Headlamps on stalks off the bolster's corners.
+  // The engine, grey and in the open under the bonnet's lower edge: the block, the sump and the pedestal the front axle pivots on, with
+  // the cast manifold, the injection pump and the two filters on its left.
+  rbox(0.36, 0.44, 0.9, 0.04, MAT.cast, 0, 0.68, 0.78, root, 'engine');
+  rbox(0.34, 0.14, 0.62, 0.03, MAT.castDark, 0, 0.42, 0.74, root); // sump
+  rbox(0.3, 0.3, 0.42, 0.04, MAT.castDark, 0, 0.5, 1.02, root); // the front pedestal the axle pivots on
+  axleCyl(0.09, 0.06, MAT.castDark, 0, 0.78, 1.17, root); // fan belt pulley
+  tube([0.19, 0.9, 0.5], [0.19, 0.9, 0.95], 0.035, MAT.manifold, root); // the manifold, along the left
+  tube([0.19, 0.84, 0.5], [0.19, 0.84, 0.95], 0.028, MAT.cast, root);
+  for (const z of [0.55, 0.72, 0.9]) rbox(0.05, 0.14, 0.05, 0.01, MAT.manifold, 0.19, 0.86, z, root);
+  rbox(0.06, 0.12, 0.2, 0.015, MAT.castDark, 0.2, 0.67, 0.98, root); // the injection pump
+  for (const z of [0.5, 0.64]) {
+    add(new THREE.CylinderGeometry(0.034, 0.034, 0.15, 14), MAT.cast, root).position.set(0.215, 0.72, z); // the filters
+    add(new THREE.CylinderGeometry(0.0345, 0.0345, 0.04, 14), MAT.label, root).position.set(0.215, 0.72, z);
+  }
+  rbox(0.05, 0.08, 0.1, 0.012, MAT.castDark, -0.2, 0.64, 0.9, root); // the dynamo on the right
+  for (const s of [-1, 1]) tube([s * 0.17, 0.5, 0.35], [s * 0.17, 0.5, 1.12], 0.02, MAT.castDark, root); // the engine's mounting rails
+
+  // The bonnet: a rounded red hood with a raised lid down its middle, over the engine's top half, and the nose shell round the radiator.
+  add(loftGeometry(MF_BONNET, { exponent: 3 }), paint, root, 'bonnet');
+  rbox(0.2, 0.014, 0.74, 0.006, paint, 0, 1.208, 0.76, root, 'bonnetLid'); // the hinged lid down its crown
+  add(loftGeometry(MF_NOSE, { exponent: 3.4 }), paint, root, 'nose');
+  // The side panel's lower edge: a darker crease line and the maker's name along it.
   for (const s of [-1, 1]) {
-    tube([s * 0.22, 1.05, 1.38], [s * 0.26, 1.14, 1.42], 0.012, MAT.steel, root);
-    add(new THREE.CylinderGeometry(0.075, 0.075, 0.05, 20).rotateX(Math.PI / 2), MAT.chrome, root).position.set(s * 0.26, 1.14, 1.43);
-    const lens = add(new THREE.CylinderGeometry(0.06, 0.06, 0.03, 20).rotateX(Math.PI / 2), lensMat, root);
-    lens.position.set(s * 0.26, 1.14, 1.465);
+    const name = decalMesh('badge', { maker: MAKER_FOR.tractor, model: '35' }, { width: 0.2, name: 'bonnetName' });
+    name.position.set(s * 0.2305, 1.04, 0.74);
+    name.rotation.y = s * (Math.PI / 2);
+    root.add(name);
+  }
+  // The air cleaner: a red stack with a round cap standing out of the bonnet on its right, and its pipe down into the engine.
+  tube([MF_AIR.x, MF_AIR.base - 0.06, MF_AIR.z], [MF_AIR.x, MF_AIR.top, MF_AIR.z], 0.022, paint, root, 10);
+  add(new THREE.SphereGeometry(0.036, 14, 10), paint, root).position.set(MF_AIR.x, MF_AIR.top + 0.01, MF_AIR.z);
+  // The radiator cap on top of the nose, and the grille: a grey frame with two banks of slats either side of a plain middle strip.
+  add(new THREE.CylinderGeometry(0.04, 0.05, 0.04, 14), MAT.castDark, root).position.set(0, 1.155, 1.25);
+  add(new THREE.CylinderGeometry(0.026, 0.026, 0.05, 12), MAT.brass, root).position.set(0, 1.19, 1.25);
+  const G = MF_GRILLE;
+  rbox(G.w, G.h, 0.03, 0.012, MAT.black, 0, G.y, G.z - 0.012, root, 'grilleDark');
+  for (const s of [-1, 1]) {
+    for (let i = 0; i < G.slats; i++) rbox(G.w / 2 - 0.03, 0.022, 0.026, 0.008, grey, s * (G.w / 4 + 0.008), G.y - G.h / 2 + 0.03 + (i * (G.h - 0.06)) / (G.slats - 1), G.z, root, 'grilleSlat');
+  }
+  rbox(0.032, G.h, 0.03, 0.01, grey, 0, G.y, G.z, root, 'grilleStrip');
+  rbox(G.w + 0.02, 0.016, 0.03, 0.006, grey, 0, G.y + G.h / 2 + 0.004, G.z - 0.004, root);
+  rbox(G.w + 0.02, 0.016, 0.03, 0.006, grey, 0, G.y - G.h / 2 - 0.004, G.z - 0.004, root);
+  rbox(0.07, 0.07, 0.014, 0.006, MAT.black, 0, 1.1, 1.385, root, 'badgeMount'); // the badge, on the nose above the grille
+  // The headlamps: round, in a red cup on each side of the nose, with a chrome rim and a clear lens.
+  const L = MF_LAMP;
+  for (const s of [-1, 1]) add(new THREE.CylinderGeometry(L.cup, L.cup * 0.9, 0.09, 24).rotateX(Math.PI / 2), paint, root, 'lampCup').position.set(s * L.x, L.y, L.z);
+  for (const s of [-1, 1]) {
+    add(new THREE.TorusGeometry(L.r, 0.007, 8, 28), MAT.chrome, root).position.set(s * L.x, L.y, L.z + 0.047);
+    const lens = add(new THREE.SphereGeometry(L.r * 1.9, 24, 6, 0, Math.PI * 2, 0, 0.55).rotateX(Math.PI / 2), lensMat, root, 'headlight');
+    lens.position.set(s * L.x, L.y, L.z + 0.047 - L.r * 1.9 * Math.cos(0.55) + 0.012);
   }
 
-  // The fuel tank behind the bonnet, domed, with the dash on top and the filler cap beside it.
-  add(loftGeometry([
-    { z: 0.04, w: 0.5, y0: 0.96, y1: 1.4 },
-    { z: 0.22, w: 0.54, y0: 0.94, y1: 1.43 },
-    { z: 0.4, w: 0.5, y0: 0.96, y1: 1.4 },
-  ], { exponent: 3 }), paint, root);
-  rbox(0.5, 0.04, 0.34, 0.015, grey, 0, 1.4, 0.22, root);
-  add(new THREE.CylinderGeometry(0.04, 0.045, 0.03, 12), MAT.castDark, root).position.set(0.19, 1.43, 0.08);
+  // The cowl behind the bonnet: the fuel tank and the instrument panel in one, its top sloping to the driver. The panel is a pressed steel
+  // plate, the same red, with the dash's dials, key and lamps set straight into it (no housing, no plastic).
+  add(loftGeometry(MF_COWL, { exponent: 3 }), paint, root, 'cowl');
+  add(new THREE.CylinderGeometry(0.036, 0.04, 0.025, 14), MAT.castDark, root).position.set(0.17, panelY0(-0.02) + 0.004, -0.02); // the filler cap, behind the panel
+  // The dash group on the cowl's slope, scaled up to the real size of the instruments (the mockup is in millimetres at half scale).
+  const DASH_SCALE = 1.5;
+  const nrm = new THREE.Vector3(0, Math.sin(MF_PANEL.tilt), -Math.cos(MF_PANEL.tilt));
+  const dashAt = new THREE.Vector3(...MF_PANEL.at).addScaledVector(nrm, 0.002 - 0.0356 * DASH_SCALE);
+  const dash = buildDash(dashStyle);
+  dash.group.position.copy(dashAt);
+  dash.group.rotation.x = MF_PANEL.tilt;
+  dash.group.scale.setScalar(DASH_SCALE);
+  dash.group.userData.keep = true;
+  root.add(dash.group);
+  quad.userData.dash = dash;
+  quad.userData.metalBody = true; // painted steel (or aluminium) panels, not plastic: they chip and rust rather than fade (effects/wearLayer.js)
+  // The pressed steel panel behind the dials: a V-nosed plate in the dash's own frame, its face 1 mm behind the dials' and its edge rolled.
+  const plateShape = new THREE.Shape([[-0.115, -0.1], [0.115, -0.1], [0.115, 0.03], [0, 0.1], [-0.115, 0.03]].map(([x, y]) => new THREE.Vector2(x, y)));
+  const plateGeo = new THREE.ExtrudeGeometry(plateShape, { depth: 0.004, bevelEnabled: true, bevelSize: 0.004, bevelThickness: 0.003, bevelSegments: 2, curveSegments: 4 });
+  const plate = add(plateGeo.translate(0, 0, -0.0316), paint, dash.group, 'dashPlate');
+  plate.geometry.computeVertexNormals();
+  // The data plate low on its left, the lights switch low on its right (a chrome bat on a bush), and the starter button beside the key.
+  const dataPlate = rbox(0.04, 0.022, 0.002, 0.002, MAT.castDark, 0.065, -0.075, -0.0338, dash.group, 'dataPlate');
+  dataPlate.rotation.z = 0;
+  tube([-0.07, -0.075, -0.034], [-0.07, -0.075, -0.046], 0.0065, MAT.chrome, dash.group); // the lights switch's bush
+  tube([-0.07, -0.075, -0.046], [-0.072, -0.063, -0.05], 0.0028, MAT.chrome, dash.group); // and its bat
+  // An accessory pod stands on a short steel post on the cowl beside the panel (its right, so the dials stay clear), leaning back to you.
+  const podPost = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.016, 0.06, 10), new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.6, metalness: 0.5 }));
+  podPost.position.set(-0.3, panelY0(0.2) + 0.03, 0.2);
+  podPost.userData.keep = true;
+  root.add(podPost);
+  const podMount = new THREE.Object3D();
+  podMount.name = 'podMount';
+  podMount.position.set(-0.3, panelY0(0.2) + 0.065, 0.2);
+  podMount.rotation.x = 0.35;
+  podMount.userData.keep = true;
+  root.add(podMount);
+  quad.userData.podMount = podMount;
 
-  // Gearbox and clutch housing, rear axle and final drives. The housing is cast in steps, with a bell at the engine end.
-  add(new THREE.CylinderGeometry(0.26, 0.26, 0.2, 20).rotateX(Math.PI / 2), MAT.cast, root).position.set(0, 0.7, 0.18);
-  rbox(0.58, 0.5, 0.82, 0.05, MAT.cast, 0, 0.7, -0.32, root);
-  rbox(0.44, 0.1, 0.5, 0.03, grey, 0, 0.98, -0.4, root); // the cover the seat bracket and lever stand on
+  // Gearbox and clutch housing, rear axle and final drives, all grey. The clutch bell at the engine end, the gearbox in steps behind it, the
+  // lift cover on the back with its flat top the lift arms ride on, and the final drives on the axle tubes.
+  add(new THREE.CylinderGeometry(0.22, 0.22, 0.26, 20).rotateX(Math.PI / 2), MAT.cast, root).position.set(0, 0.68, 0.2);
+  rbox(0.5, 0.46, 0.72, 0.05, MAT.cast, 0, 0.7, -0.3, root, 'gearbox');
+  rbox(0.4, 0.12, 0.5, 0.03, MAT.castDark, 0, 0.945, -0.4, root, 'tunnelCover'); // the cover the seat bracket and levers stand on
   rbox(0.5, 0.26, 0.4, 0.05, MAT.cast, 0, 0.98, -1.12, root); // the hydraulic lift housing behind the seat
-  axleCyl(0.09, 1.5, MAT.castDark, 0, 0.72, -0.95, root);
-  for (const s of [-1, 1]) axleCyl(0.17, 0.3, MAT.cast, s * 0.46, 0.72, -0.95, root);
+  axleCyl(0.08, 1.3, MAT.castDark, 0, MF_WHEELS.rearR, MF_WHEELS.rearZ, root);
+  for (const s of [-1, 1]) axleCyl(0.15, 0.3, MAT.cast, s * 0.38, MF_WHEELS.rearR, MF_WHEELS.rearZ, root);
   // The power take off stub and its guard, the lift arms with their rods down to the lower links, and the top link.
-  tube([0, 0.7, -1.2], [0, 0.7, -1.5], 0.032, MAT.steel, root, 10);
-  add(new THREE.CylinderGeometry(0.075, 0.075, 0.05, 12).rotateX(Math.PI / 2), MAT.castDark, root).position.set(0, 0.7, -1.2);
+  tube([0, 0.72, -1.2], [0, 0.72, -1.5], 0.032, MAT.steel, root, 10);
+  add(new THREE.CylinderGeometry(0.075, 0.075, 0.05, 12).rotateX(Math.PI / 2), MAT.castDark, root).position.set(0, 0.72, -1.2);
   for (const s of [-1, 1]) {
     tube([s * 0.28, 1.03, -1.16], [s * 0.54, 0.96, -1.5], 0.025, MAT.castDark, root);
     tube([s * 0.52, 0.97, -1.46], [s * 0.4, 0.55, -1.42], 0.012, MAT.steel, root);
@@ -244,113 +294,132 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   tube([0, 1.12, -1.2], [0, 0.88, -1.62], 0.016, MAT.steel, root);
   rbox(0.06, 0.12, 0.06, 0.01, MAT.castDark, 0, 1.14, -1.2, root);
   // Front axle beam and the kingpin housings, with the track rod behind them and the drag link from the steering box.
-  rbox(1.0, 0.1, 0.12, 0.03, MAT.castDark, 0, 0.5, 0.95, root);
+  const fy = FRONT_R + 0.03;
+  rbox(0.95, 0.09, 0.12, 0.03, MAT.castDark, 0, fy, MF_WHEELS.frontZ, root, 'frontAxle');
+  for (let i = -3; i <= 3; i++) add(new THREE.CylinderGeometry(0.012, 0.012, 0.125, 8).rotateX(Math.PI / 2), MAT.steel, root).position.set(i * 0.12, fy, MF_WHEELS.frontZ); // the beam's bolts
   for (const s of [-1, 1]) {
-    rbox(0.09, 0.2, 0.09, 0.03, MAT.cast, s * 0.58, 0.46, 0.95, root);
-    tube([s * 0.5, 0.4, 0.8], [s * 0.1, 0.55, 0.45], 0.014, MAT.steel, root); // radius rods back to the engine
+    rbox(0.09, 0.2, 0.09, 0.03, MAT.cast, s * 0.5, fy, MF_WHEELS.frontZ, root);
+    tube([s * 0.46, fy - 0.02, MF_WHEELS.frontZ - 0.1], [s * 0.1, 0.5, 0.45], 0.014, MAT.steel, root); // radius rods back to the engine
   }
-  tube([-0.62, 0.42, 0.75], [0.62, 0.42, 0.75], 0.016, MAT.steel, root);
+  tube([-0.54, fy - 0.03, MF_WHEELS.frontZ - 0.15], [0.54, fy - 0.03, MF_WHEELS.frontZ - 0.15], 0.016, MAT.steel, root);
 
-  // Rear mudguards, wide curved shells over the big wheels with a rolled lip each edge, a stay each, and the paint worn off the lip.
+  // Rear mudguards: wide curved red shells over the big wheels with a rolled lip each edge, an arm down to the axle housing, a red lamp on
+  // the back edge and the paint worn off the lip.
+  const GR = MF_GUARD.r;
   for (const s of [-1, 1]) {
-    const g = new THREE.CylinderGeometry(REAR_R + 0.17, REAR_R + 0.17, 0.58, 28, 1, true, -0.12, Math.PI + 0.24).rotateZ(Math.PI / 2);
-    add(g, paint, root).position.set(s * 0.88, REAR_R, -0.95);
-    // Bolted to a bracket on the final drive housing, with a stay up to the shell's inner edge and a brace each way from it.
-    const onShell = (theta) => [s * 0.6, REAR_R + (REAR_R + 0.17) * Math.sin(theta), -0.95 + (REAR_R + 0.17) * Math.cos(theta)];
-    rbox(0.14, 0.05, 0.26, 0.015, MAT.castDark, s * 0.56, 0.91, -0.95, root); // the bracket, on top of the housing
-    tube([s * 0.56, 0.92, -0.95], onShell(Math.PI / 2), 0.02, MAT.steel, root);
-    for (const t of [Math.PI / 2 - 0.75, Math.PI / 2 + 0.75]) tube([s * 0.55, 0.92, -0.95 + Math.sign(Math.cos(t)) * 0.1], onShell(t), 0.014, MAT.steel, root);
-    rbox(0.06, 0.02, 0.1, 0.006, MAT.steel, s * 0.6, REAR_R + REAR_R + 0.17 - 0.01, -0.95, root); // the plate it bolts to under the shell
+    const g = new THREE.CylinderGeometry(GR, GR, MF_GUARD.w, 28, 1, true, MF_GUARD.from, MF_GUARD.to - MF_GUARD.from).rotateZ(Math.PI / 2);
+    add(g, paint, root, 'mudguard').position.set(s * MF_WHEELS.rearX, REAR_R, MF_WHEELS.rearZ);
+    const onShell = (theta) => [s * (MF_WHEELS.rearX - 0.2), REAR_R + GR * Math.sin(theta), MF_WHEELS.rearZ + GR * Math.cos(theta)];
+    rbox(0.14, 0.05, 0.26, 0.015, MAT.castDark, s * 0.5, 0.88, MF_WHEELS.rearZ, root); // the bracket, on top of the final drive housing
+    tube([s * 0.5, 0.9, MF_WHEELS.rearZ], onShell(Math.PI / 2), 0.02, MAT.steel, root);
+    for (const t of [Math.PI / 2 - 0.75, Math.PI / 2 + 0.75]) tube([s * 0.5, 0.9, MF_WHEELS.rearZ + Math.sign(Math.cos(t)) * 0.1], onShell(t), 0.014, MAT.steel, root);
+    rbox(0.06, 0.02, 0.1, 0.006, MAT.steel, s * (MF_WHEELS.rearX - 0.2), REAR_R + GR - 0.01, MF_WHEELS.rearZ, root); // the plate it bolts to under the shell
     // A torus is in XY about Z; turned about Y it lies in YZ, and phi = pi - theta matches the shell's angle theta.
     const lip = (from, to, mat, r, edge) => {
-      const arc = new THREE.TorusGeometry(REAR_R + 0.17, r, 6, 24, to - from).rotateZ(Math.PI - to).rotateY(Math.PI / 2);
-      add(arc, mat, root).position.set(s * 0.88 + edge * 0.29, REAR_R, -0.95);
+      const arc = new THREE.TorusGeometry(GR, r, 6, 24, to - from).rotateZ(Math.PI - to).rotateY(Math.PI / 2);
+      add(arc, mat, root).position.set(s * MF_WHEELS.rearX + edge * (MF_GUARD.w / 2 - 0.005), REAR_R, MF_WHEELS.rearZ);
     };
-    for (const e of [-1, 1]) lip(-0.12, Math.PI + 0.12, paint, 0.014, e);
+    for (const e of [-1, 1]) lip(MF_GUARD.from, MF_GUARD.to, paint, 0.014, e);
     // Rust through at the front of the outside lip, and at the back where it's been backed into things.
     lip(0.1, 0.55, MAT.primer, 0.017, s);
     lip(0.25, 0.4, MAT.rustPatch, 0.018, s);
-    lip(2.5, 3.0, MAT.rustPatch, 0.017, s);
+    lip(2.7, 3.2, MAT.rustPatch, 0.017, s);
+    // The red lamp at the guard's back edge, on a little bracket.
+    const bx = s * (MF_WHEELS.rearX + 0.1);
+    const bz = MF_WHEELS.rearZ + GR * Math.cos(MF_GUARD.to) - 0.01;
+    const by = REAR_R + GR * Math.sin(MF_GUARD.to) + 0.02;
+    add(new THREE.CylinderGeometry(0.025, 0.028, 0.04, 12).rotateX(Math.PI / 2), MAT.red, root, 'guardLamp').position.set(bx, by, bz - 0.01);
   }
-  // Steps and the footplate.
-  for (const s of [-1, 1]) rbox(0.22, 0.03, 0.55, 0.01, MAT.steel, s * 0.46, 0.7, -0.35, root);
+  // The footplates either side of the transmission: a flat plate with a raised grid of ribs, and a step down to the ground at its edge.
+  const F = MF_FOOT;
+  for (const s of [-1, 1]) {
+    const cx = s * (F.x0 + F.x1) / 2;
+    const cz = (F.z0 + F.z1) / 2;
+    rbox(F.x1 - F.x0, 0.025, F.z1 - F.z0, 0.008, MAT.castDark, cx, F.y, cz, root, 'footplate');
+    for (let i = 0; i < 9; i++) rbox(F.x1 - F.x0 - 0.04, 0.008, 0.014, 0.003, MAT.cast, cx, F.y + 0.016, F.z0 + 0.04 + (i * (F.z1 - F.z0 - 0.08)) / 8, root);
+    tube([s * F.x0, F.y - 0.01, F.z0 + 0.05], [s * 0.3, 0.9, F.z0 + 0.05], 0.014, MAT.steel, root); // its hanger up to the housing
+  }
 
-  // The pan seat on its spring bracket, between the mudguards: a pressed steel pan with a turned lip and drain holes, a thin
-  // cushion on it, a coil under it, and the back pad.
-  tube([0, 1.0, -0.55], [0, 1.08, -0.78], 0.02, MAT.steel, root);
-  add(springGeometry(0.1, 0.035, 0.007, 5), MAT.steel, root).position.set(0, 1.12, -0.8);
-  add(new THREE.CylinderGeometry(0.19, 0.17, 0.03, 20), MAT.steel, root).position.set(0, 1.12, -0.8);
-  add(new THREE.TorusGeometry(0.19, 0.012, 6, 20).rotateX(Math.PI / 2), MAT.steel, root).position.set(0, 1.135, -0.8);
+  // The pan seat on its spring bracket, between the mudguards: a red pressed steel pan with a turned lip and drain holes, a thin grey vinyl
+  // cushion on it, a coil under it, and a low back pad.
+  const Z = MF_SEAT;
+  tube([0, 1.0, -0.55], [0, Z.y - 0.04, Z.z + 0.2], 0.02, MAT.steel, root);
+  add(springGeometry(0.08, 0.035, 0.007, 5), MAT.steel, root).position.set(0, Z.y - 0.07, Z.z);
+  add(new THREE.CylinderGeometry(Z.r, Z.r * 0.9, 0.03, 24), paint, root, 'seatPan').position.set(0, Z.y - 0.02, Z.z);
+  add(new THREE.TorusGeometry(Z.r, 0.012, 6, 24).rotateX(Math.PI / 2), paint, root).position.set(0, Z.y - 0.005, Z.z);
   for (let i = 0; i < 5; i++) {
     const a = (i / 5) * Math.PI * 2;
-    add(new THREE.CylinderGeometry(0.014, 0.014, 0.034, 8), MAT.black, root).position.set(Math.sin(a) * 0.09, 1.12, -0.8 + Math.cos(a) * 0.09);
+    add(new THREE.CylinderGeometry(0.013, 0.013, 0.034, 8), MAT.black, root).position.set(Math.sin(a) * 0.1, Z.y - 0.02, Z.z + Math.cos(a) * 0.1);
   }
   const seatMat = MAT.seat.clone(); // its own, so the frost on this seat is not on anything else's
   quad.userData.seatMaterial = seatMat;
-  const pad = add(new THREE.SphereGeometry(0.17, 16, 8), seatMat, root);
-  pad.scale.set(1, 0.3, 1.05);
-  pad.position.set(0, 1.15, -0.8);
-  rbox(0.3, 0.2, 0.05, 0.02, seatMat, 0, 1.3, -0.97, root);
-  tube([0, 1.1, -0.95], [0, 1.22, -0.97], 0.015, MAT.steel, root);
+  const pad = add(new THREE.SphereGeometry(Z.r - 0.02, 20, 8), seatMat, root, 'seatCushion');
+  pad.scale.set(1, 0.24, 1.05);
+  pad.position.set(0, Z.y + 0.022, Z.z);
+  add(loftGeometry([{ z: Z.z - 0.2, w: 0.34, y0: Z.y + 0.04, y1: Z.y + 0.2 }, { z: Z.z - 0.24, w: 0.3, y0: Z.y + 0.06, y1: Z.y + 0.22 }], { exponent: 3 }), seatMat, root, 'seatBack');
+  tube([0, Z.y, Z.z - 0.17], [0, Z.y + 0.1, Z.z - 0.22], 0.015, paint, root);
 
   // Years of use: oil weeping from the joints and the sump, and mud flung up under the body.
   for (const s of [-1, 1]) {
-    rbox(0.012, 0.22, 0.32, 0.004, MAT.oil, s * 0.293, 0.62, -0.28, root);
-    rbox(0.012, 0.12, 0.08, 0.004, MAT.oil, s * 0.293, 0.76, -0.08, root);
-    rbox(0.012, 0.1, 0.5, 0.004, MAT.oil, s * 0.213, 0.46, 0.75, root);
-    rbox(0.012, 0.16, 0.34, 0.004, MAT.mud, s * 0.254, 0.5, 0.4, root);
+    rbox(0.012, 0.22, 0.32, 0.004, MAT.oil, s * 0.253, 0.62, -0.28, root);
+    rbox(0.012, 0.12, 0.08, 0.004, MAT.oil, s * 0.253, 0.76, -0.08, root);
+    rbox(0.012, 0.1, 0.5, 0.004, MAT.oil, s * 0.173, 0.46, 0.75, root);
+    rbox(0.012, 0.16, 0.34, 0.004, MAT.mud, s * 0.184, 0.5, 0.4, root);
     rbox(0.07, 0.04, 0.3, 0.02, MAT.mud, s * 0.4, 0.52, -0.5, root);
-    // The paint worn through along the bonnet's side and over the grille surround.
-    rbox(0.02, 0.07, 0.3, 0.01, MAT.primer, s * 0.247, 1.02, 0.6, root);
-    rbox(0.021, 0.025, 0.14, 0.01, MAT.rustPatch, s * 0.247, 1.0, 0.55, root);
-    rbox(0.025, 0.07, 0.07, 0.01, MAT.primer, s * 0.2, 0.7, 1.4, root);
+    // The paint worn through along the bonnet's side and over the nose.
+    rbox(0.02, 0.07, 0.3, 0.01, MAT.primer, s * 0.222, 1.0, 0.6, root);
+    rbox(0.021, 0.025, 0.14, 0.01, MAT.rustPatch, s * 0.222, 0.98, 0.55, root);
+    rbox(0.025, 0.07, 0.07, 0.01, MAT.primer, s * 0.2, 0.7, 1.3, root);
   }
-  rbox(0.02, 0.4, 0.04, 0.008, MAT.oil, 0.06, 0.86, 1.455, root); // a drip down the grille from the radiator cap
-  rbox(0.1, 0.01, 0.1, 0.004, MAT.primer, 0.1, 1.348, 1.0, root); // a rubbed patch on the bonnet's crown
-  rbox(0.07, 0.05, 0.4, 0.01, MAT.mud, 0, 0.62, 1.4, root); // the front pedestal caked with it
+  rbox(0.016, 0.16, 0.03, 0.006, MAT.oil, 0.06, 0.72, 1.405, root); // a drip down the nose from the radiator cap
+  rbox(0.1, 0.01, 0.1, 0.004, MAT.primer, 0.1, 1.204, 1.0, root); // a rubbed patch on the bonnet's crown
+  rbox(0.07, 0.05, 0.4, 0.01, MAT.mud, 0, 0.52, 1.1, root); // the front pedestal caked with it
 
-  // The upright exhaust on the left of the bonnet, a silencer box part-way up and a hinged flap on top.
-  const exX = 0.17;
-  const exZ = 1.02;
-  tube([exX, 1.3, exZ], [exX, 2.0, exZ], 0.035, MAT.rust, root, 10);
-  add(new THREE.CylinderGeometry(0.06, 0.06, 0.32, 14), MAT.rust, root).position.set(exX, 1.58, exZ);
+  // The upright exhaust on the left, outside the bonnet: out of the manifold's rear end, up past the bonnet's side, a silencer drum part-way
+  // up and a hinged flap on top.
+  const E = MF_EXHAUST;
+  tube([E.manifold[0], E.manifold[1], E.manifold[2]], [E.x, 1.0, E.z], 0.032, MAT.manifold, root, 10);
+  tube([E.x, 1.0, E.z], [E.x, E.top, E.z], 0.03, MAT.black, root, 10);
+  add(new THREE.CylinderGeometry(0.052, 0.052, 0.3, 14), MAT.black, root).position.set(E.x, 1.3, E.z);
   const flap = new THREE.Group();
   flap.name = 'exhaustFlap';
   flap.userData.keep = true;
-  flap.position.set(exX, 2.01, exZ - 0.04); // hinged at the back
-  add(new THREE.CylinderGeometry(0.052, 0.052, 0.012, 14), MAT.steel, flap).position.set(0, 0, 0.04);
+  flap.position.set(E.x, E.top + 0.005, E.z - 0.04); // hinged at the back
+  add(new THREE.CylinderGeometry(0.046, 0.046, 0.012, 14), MAT.steel, flap).position.set(0, 0, 0.04);
   root.add(flap);
   const tip = new THREE.Object3D();
   tip.name = 'exhaustTip';
-  tip.position.set(exX, 2.06, exZ);
+  tip.position.set(E.x, E.top + 0.05, E.z);
   tip.rotation.x = Math.PI / 2; // smoke leaves along its -Z, which now points up
   root.add(tip);
 
   // The steering wheel on its column, raked back towards the rider. `handlebars` is the wheel itself, so it turns about the column.
+  const S = MF_STEERING;
   const column = new THREE.Group();
   column.name = 'steeringColumn';
   column.userData.keep = true;
-  column.position.set(0, 1.24, 0.12);
-  column.rotation.x = -0.7;
-  tube([0, 0, 0], [0, 0.42, 0], 0.025, MAT.steel, column);
+  column.position.set(...S.column);
+  column.rotation.x = -S.rake;
+  tube([0, -0.1, 0], [0, S.length, 0], 0.024, MAT.black, column);
+  add(new THREE.CylinderGeometry(0.045, 0.06, 0.04, 16), MAT.black, column).position.set(0, 0.0, 0); // the rubber boot where it comes out of the cowl
   root.add(column);
   const wheel = new THREE.Group();
   wheel.name = 'handlebars';
   wheel.userData.keep = true;
-  wheel.position.set(0, 0.42, 0);
+  wheel.position.set(0, S.length, 0);
   column.add(wheel);
-  add(new THREE.TorusGeometry(0.2, 0.017, 8, 28).rotateX(Math.PI / 2), MAT.black, wheel);
-  add(new THREE.CylinderGeometry(0.04, 0.04, 0.05, 12), MAT.steel, wheel);
+  add(new THREE.TorusGeometry(S.r, 0.014, 8, 36).rotateX(Math.PI / 2), MAT.black, wheel, 'wheelRim');
+  add(new THREE.SphereGeometry(0.045, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), MAT.black, wheel, 'wheelHub').position.y = 0;
   for (let i = 0; i < 3; i++) {
-    const a = (i / 3) * Math.PI * 2 + 0.3;
-    tube([0, 0, 0], [Math.sin(a) * 0.2, 0, Math.cos(a) * 0.2], 0.012, MAT.steel, wheel);
+    const a = (i / 3) * Math.PI * 2 + Math.PI / 2;
+    add(sweepGeometry([[0, -0.012, 0], [Math.sin(a) * S.r * 0.55, -0.02, Math.cos(a) * S.r * 0.55], [Math.sin(a) * S.r, 0, Math.cos(a) * S.r]], 0.011, { radial: 8 }), MAT.black, wheel, 'wheelSpoke');
   }
   // Where a girl's hands go: the rim at nine and three o'clock, turning with the wheel (npc/companionDriving.js reads these by name).
   for (const side of [1, -1]) {
     const grip = new THREE.Object3D();
     grip.name = side > 0 ? 'gripLeft' : 'gripRight';
     grip.userData.keep = true;
-    grip.position.set(side * 0.2, 0, 0);
+    grip.position.set(side * S.r, 0, 0);
     wheel.add(grip);
   }
   // Your own arms aren't drawn: the group is only here because Quad expects one.
@@ -360,42 +429,22 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   hands.visible = false;
   wheel.add(hands);
 
-  // The dash, on the scuttle's top, tilted up to the driver.
-  const dash = buildDash(dashStyle);
-  dash.group.position.set(0, 1.43, 0.3);
-  dash.group.rotation.x = 1.05;
-  dash.group.userData.keep = true;
-  root.add(dash.group);
-  quad.userData.dash = dash;
-  quad.userData.metalBody = true; // painted steel (or aluminium) panels, not plastic: they chip and rust rather than fade (effects/wearLayer.js)
-  // An accessory pod stands on a short steel post on the scuttle beside the binnacle (its right, so the dials stay clear), leaning back to you.
-  const podPost = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.016, 0.06, 10), new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.6, metalness: 0.5 }));
-  podPost.position.set(-0.27, 1.45, 0.3);
-  podPost.userData.keep = true;
-  root.add(podPost);
-  const podMount = new THREE.Object3D();
-  podMount.name = 'podMount';
-  podMount.position.set(-0.27, 1.48, 0.3);
-  podMount.rotation.x = 0.35;
-  podMount.userData.keep = true;
-  root.add(podMount);
-  quad.userData.podMount = podMount;
-
-  // The stop knob, pulled out to stop it; the hand throttle on the right of the column; (there's no fuel tap).
+  // The stop knob, a black pull knob on a chrome shank low on the panel's right, pulled out to stop it (the diesel's key does not); the hand
+  // throttle, a thin lever with a plain tip from the panel's right edge over a quadrant; (there's no fuel tap).
   const stopKnob = new THREE.Group();
   stopKnob.name = 'stopKnob';
   stopKnob.userData.keep = true;
-  stopKnob.position.set(-0.17, 1.4, 0.38);
-  tube([0, 0, 0], [0, 0.03, 0.05], 0.008, MAT.steel, stopKnob);
-  add(new THREE.SphereGeometry(0.02, 10, 8), MAT.chrome, stopKnob).position.set(0, 0.04, 0.07);
+  stopKnob.position.set(-0.17, panelY0(0.07) - 0.01, 0.07);
+  tube([0, 0, 0], [0, 0.012, -0.05], 0.006, MAT.chrome, stopKnob);
+  add(new THREE.SphereGeometry(0.02, 10, 8), MAT.knob, stopKnob).position.set(0, 0.014, -0.065);
   root.add(stopKnob);
   const hand = new THREE.Group();
   hand.name = 'handThrottle';
   hand.userData.keep = true;
-  hand.position.set(-0.27, 1.36, 0.1);
-  rbox(0.02, 0.012, 0.16, 0.004, MAT.steel, 0, 0, 0, root).position.copy(hand.position); // the quadrant plate it moves over
-  tube([0, 0, 0], [0, 0.09, 0], 0.007, MAT.steel, hand);
-  add(new THREE.SphereGeometry(0.016, 8, 6), MAT.knob, hand).position.set(0, 0.1, 0);
+  hand.position.set(-0.235, panelY0(0.17) + 0.012, 0.17);
+  rbox(0.024, 0.01, 0.16, 0.004, MAT.steel, 0, 0, 0, root).position.copy(hand.position); // the quadrant plate it moves over, set into the cowl
+  tube([0, 0, 0], [0, 0.26, 0], 0.0055, MAT.steel, hand);
+  add(new THREE.SphereGeometry(0.011, 8, 6), MAT.steel, hand).position.set(0, 0.26, 0);
   root.add(hand);
   const tap = new THREE.Group();
   tap.name = 'fuelTap';
@@ -410,39 +459,50 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   choke.visible = false;
   root.add(choke);
 
-  // The gear lever, tall by the seat on the right, and the clutch and brake pedals on the footplate.
+  // The gear levers, ball-topped and standing straight out of the grey casting just ahead of the seat: the main lever (the one the game
+  // poses through its gate) and the high / low range lever beside it, which stays put; each through a small cover plate.
   const lever = new THREE.Group();
   lever.name = 'gearLever';
   lever.userData.keep = true;
-  lever.position.set(-0.17, 1.03, -0.42);
-  tube([0, 0, 0], [0, 0.34, 0.0], 0.012, MAT.steel, lever);
-  add(new THREE.SphereGeometry(0.025, 10, 8), MAT.knob, lever).position.set(0, 0.36, 0);
+  lever.position.set(...MF_LEVERS.gear);
+  tube([0, 0, 0], [0, MF_LEVERS.length, 0], 0.011, MAT.steel, lever);
+  add(new THREE.SphereGeometry(0.026, 12, 8), MAT.knob, lever).position.set(0, MF_LEVERS.length + 0.014, 0);
   root.add(lever);
+  const [rx, ry, rz] = MF_LEVERS.range;
+  tube([rx, ry, rz], [rx + 0.015, ry + 0.22, rz + 0.02], 0.011, MAT.steel, root);
+  add(new THREE.SphereGeometry(0.026, 12, 8), MAT.knob, root).position.set(rx + 0.015, ry + 0.234, rz + 0.02);
+  for (const [x, z, w] of [[MF_LEVERS.gear[0], MF_LEVERS.gear[2], 0.1], [rx, rz, 0.08]]) {
+    rbox(w, 0.012, w, 0.006, MAT.castDark, x, ry - 0.004, z, root); // the cover plate, bolted to the casting
+    add(new THREE.CylinderGeometry(0.022, 0.03, 0.03, 12), MAT.rubber, root).position.set(x, ry + 0.012, z); // and the gaiter round the lever's foot
+  }
   // The spike's lift lever, on the left of the seat over its quadrant: forward is down, back is up (posed by poseBaleSpike).
   const spikeLever = new THREE.Group();
   spikeLever.name = 'spikeLever';
   spikeLever.userData.keep = true;
-  spikeLever.position.set(0.15, 1.03, -0.5); // well inside the cover's edge (it spans x +-0.22), so it stands on it
+  spikeLever.position.set(0.15, 0.995, -0.5); // well inside the cover's edge (it spans x +-0.2), so it stands on it
   rbox(0.02, 0.014, 0.34, 0.005, MAT.steel, 0, 0, 0, root).position.copy(spikeLever.position); // the quadrant plate it moves over
-  for (const dz of [-0.17, 0.17]) rbox(0.03, 0.03, 0.012, 0.004, MAT.red, 0.15, 1.045, -0.5 + dz, root); // the stops at each end
+  for (const dz of [-0.17, 0.17]) rbox(0.03, 0.03, 0.012, 0.004, MAT.red, 0.15, 1.01, -0.5 + dz, root); // the stops at each end
   tube([0, 0, 0], [0, 0.3, 0], 0.011, MAT.steel, spikeLever);
   add(new THREE.SphereGeometry(0.024, 10, 8), MAT.red, spikeLever).position.set(0, 0.32, 0);
   root.add(spikeLever);
+  // The pedals: the clutch under the left foot and the two brakes under the right, each a flat steel arm out of a slot in the footplate
+  // with a plain pad on a stalk, the brakes latched together by a bar between them.
   const clutch = new THREE.Group();
   clutch.name = 'clutchPedal';
   clutch.userData.keep = true;
-  clutch.position.set(0.17, 0.78, -0.2);
-  tube([0, 0, 0], [0, 0.18, 0.1], 0.012, MAT.steel, clutch);
-  rbox(0.1, 0.02, 0.07, 0.006, MAT.black, 0, 0.19, 0.11, clutch);
+  clutch.position.set(...MF_PEDALS.clutch);
+  tube([0, 0, 0], [0, 0.15, 0.08], 0.011, MAT.steel, clutch);
+  rbox(0.09, 0.02, 0.1, 0.006, MAT.castDark, 0, 0.16, 0.09, clutch);
   root.add(clutch);
-  for (const s of [-1, 1]) {
-    tube([s * 0.17, 0.78, -0.2], [s * 0.17, 0.94, -0.08], 0.011, MAT.steel, root);
-    rbox(0.1, 0.02, 0.07, 0.006, MAT.black, s * 0.17, 0.95, -0.07, root);
+  for (const [x, y, z] of MF_PEDALS.brakes) {
+    tube([x, y, z], [x, y + 0.15, z + 0.08], 0.011, MAT.steel, root);
+    rbox(0.09, 0.02, 0.1, 0.006, MAT.castDark, x, y + 0.16, z + 0.09, root);
   }
+  tube([MF_PEDALS.brakes[0][0], MF_PEDALS.brakes[0][1] + 0.1, MF_PEDALS.brakes[0][2] + 0.05], [MF_PEDALS.brakes[1][0], MF_PEDALS.brakes[1][1] + 0.1, MF_PEDALS.brakes[1][2] + 0.05], 0.008, MAT.steel, root); // the latch bar
 
   // The drawbar and lower links at the back, with the hitch pin through the drawbar's end.
-  rbox(0.1, 0.07, 0.7, 0.02, MAT.steel, 0, 0.52, -1.3, root);
-  add(new THREE.CylinderGeometry(0.018, 0.018, 0.14, 8), MAT.steel, root).position.set(0, 0.54, -1.5);
+  rbox(0.1, 0.07, 0.7, 0.02, MAT.steel, 0, 0.5, -1.3, root);
+  add(new THREE.CylinderGeometry(0.018, 0.018, 0.14, 8), MAT.steel, root).position.set(0, 0.52, -1.5);
   for (const s of [-1, 1]) tube([s * 0.22, 0.6, -0.95], [s * 0.4, 0.5, -1.45], 0.02, MAT.steel, root);
   tube([-0.4, 0.5, -1.45], [0.4, 0.5, -1.45], 0.016, MAT.steel, root);
 

@@ -15,7 +15,7 @@ export const REAL_SIZES = {
   kids: { like: 'Suzuki LT50 (the Viper Asp 50)', length: 1250, width: 800, height: 800, wheelbase: 830, track: 600, tyre: 406 },
   moto: { like: 'Yamaha YZ65 (the Tamura TZ 65)', length: 1625, width: 750, height: 990, wheelbase: 1145, track: 0, tyre: 460 }, // read from the side photo: tyre to tyre it is 1.42 wheelbases, the bars top out at 0.86
   atc: { like: 'Honda ATC185S (the Kestrel T185)', length: 1780, width: 1040, height: 1050, wheelbase: 1145, track: 780, tyre: 600 },
-  tractor: { like: 'Ferguson TE20', length: 2920, width: 1625, height: 1320, wheelbase: 1780, track: 1320, tyre: 1170 },
+  tractor: { like: 'Massey Ferguson 35 (the Hartley 35)', length: 2970, width: 1650, height: 1920, wheelbase: 1830, track: 1270, tyre: 1170 }, // height is to the top of the exhaust
   utv: { like: 'Kawasaki Mule 4010', length: 3015, width: 1580, height: 1925, wheelbase: 1910, track: 1230, tyre: 650 },
   landrover: { like: 'Land Rover Series IIA 88', length: 3620, width: 1680, height: 1970, wheelbase: 2235, track: 1310, tyre: 757 },
   landrover200: { like: 'Land Rover Defender 90 200Tdi', length: 3883, width: 1790, height: 1963, wheelbase: 2360, track: 1486, tyre: 757 },
@@ -92,6 +92,6 @@ export function proportionErrors(measured, real) {
 }
 
 /** The vehicles a detail item has brought into proportion; tests/proportions.test.js holds each within `PROPORTION_TOLERANCE`. */
-export const IN_PROPORTION = ['red', 'blue', 'green', 'kids', 'moto', 'atc', 'loan'];
+export const IN_PROPORTION = ['red', 'blue', 'green', 'kids', 'moto', 'atc', 'loan', 'tractor'];
 
 export const PROPORTION_TOLERANCE = 0.08;

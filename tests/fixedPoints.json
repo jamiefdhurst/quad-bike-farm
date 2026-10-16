@@ -151,11 +151,11 @@
     "cameraAnchor": [0,1.69,-0.22]
   },
   "tractor": {
-    "handlebars": [0,1.561,-0.151],
-    "gripLeft": [0.2,1.561,-0.151],
-    "gripRight": [-0.2,1.561,-0.151],
-    "riderHands": [0,1.561,-0.151],
-    "dash": [0,1.43,0.3],
+    "dash": [0,1.082,0.219],
+    "handlebars": [0,1.2,-0.132],
+    "gripLeft": [0.22,1.2,-0.132],
+    "gripRight": [-0.22,1.2,-0.132],
+    "riderHands": [0,1.2,-0.132],
     "riderAnchor": [0,1.15,-0.8],
     "cameraAnchor": [0,1.86,-0.84]
   },

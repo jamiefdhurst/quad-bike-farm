@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import * as THREE from 'three';
 import { buildTractorModel, TRACTOR_LAYOUT, poseBaleSpike } from '../src/vehicle/tractorModel.js';
+import { MF_PANEL, MF_COWL, MF_BONNET, panelY } from '../src/vehicle/mf35Body.js';
 
 // The dash paints its dials on canvases; nothing here looks at them, so any 2D context that swallows every call will do.
 const ctx = new Proxy(() => ctx, { get: (t, k) => (k === 'measureText' ? () => ({ width: 10 }) : ctx), set: () => true });
@@ -39,16 +40,47 @@ describe('tractor model', () => {
     expect(model.getObjectByName('cameraAnchor').position.toArray()).toEqual([0, 1.86, -0.84]);
   });
 
-  it('keeps the width and height of the old model (wheel to exhaust tip), which the parking spaces were sized for', () => {
+  it('is the real size of a Massey Ferguson 35: about 1.7 m across and 1.9 m to the exhaust tip (the parking spaces were sized for something bigger)', () => {
     const plain = model.clone(); // without the bale spike's mast, which stands taller than the exhaust
     plain.getObjectByName('baleSpike').removeFromParent();
     plain.updateMatrixWorld(true);
     const box = new THREE.Box3();
-    for (const name of ['bodyRoot', 'wheel_fl', 'wheel_rr']) box.expandByObject(plain.getObjectByName(name));
+    box.expandByObject(plain.getObjectByName('bodyRoot'));
     const size = box.getSize(new THREE.Vector3());
-    expect(size.x).toBeGreaterThan(2.2);
-    expect(size.x).toBeLessThan(2.45);
-    expect(size.y).toBeGreaterThan(2.6);
-    expect(size.y).toBeLessThan(2.9);
+    expect(size.x).toBeGreaterThan(1.5);
+    expect(size.x).toBeLessThan(1.8);
+    expect(size.y).toBeGreaterThan(1.8);
+    expect(size.y).toBeLessThan(2.05);
+  });
+
+  it('sets the instruments straight into the red metal: no housing round the dials, a steel plate in the body paint behind them', () => {
+    const dash = model.getObjectByName('dash');
+    expect(dash.getObjectByName('dashHousing')).toBeFalsy();
+    const plate = dash.getObjectByName('dashPlate');
+    expect(plate).toBeTruthy();
+    expect(plate.material).toBe(model.getObjectByName('bonnet').material); // the same paint, not a plastic moulding
+  });
+
+  it('puts the dash on the cowl’s slope, the wheel above the panel’s rear and the levers and knobs on the metal', () => {
+    const panel = new THREE.Vector3(...MF_PANEL.at);
+    expect(Math.abs(panelY(panel.z) - panel.y)).toBeLessThan(1e-9);
+    expect(panelY(0.4)).toBeGreaterThan(panelY(0.1)); // sloping up to the front, towards the driver's eye
+    const bars = model.getObjectByName('handlebars').getWorldPosition(new THREE.Vector3());
+    expect(bars.y).toBeGreaterThan(1.1);
+    expect(bars.y).toBeLessThan(1.35); // about the bonnet's height, not 40 cm above it
+    const cowlTop = Math.max(...MF_COWL.map((st) => st.y1));
+    expect(cowlTop).toBeLessThan(MF_BONNET[1].y1 + 0.01); // the cowl never stands above the bonnet's ridge
+    for (const name of ['gearLever', 'handThrottle', 'stopKnob']) {
+      const o = model.getObjectByName(name);
+      expect(o.position.y, name).toBeGreaterThan(0.85);
+      expect(o.position.y, name).toBeLessThan(1.25);
+    }
+  });
+
+  it('has real-sized wheels: 1.17 m rears, 0.71 m fronts, at the MF35’s wheelbase', () => {
+    const [fl, , rl] = TRACTOR_LAYOUT.wheels;
+    expect(rl.radius * 2).toBeCloseTo(1.17, 2);
+    expect(fl.radius * 2).toBeCloseTo(0.71, 2);
+    expect(fl.z - rl.z).toBeCloseTo(1.83, 2);
   });
 });
