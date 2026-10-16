@@ -3860,7 +3860,7 @@ export class Game {
     // Dust and rust, and the tarp over the lot.
     weatherModel(unit.quad.model, { rust: 0.5, dust: 0.25 }); // the metal well on its way to rust
     unit.mud.coat.look.wear = P.bodyWear; // and the wear layer turned right up: rust in every fold, the edges rubbed bare
-    unit.tarp = buildTarp();
+    unit.tarp = buildTarp(unit.quad.model); // draped over this donor's own shape
     unit.quad.bodyRoot.add(unit.tarp);
     unit.rustyLook = applyDamage(unit.quad.model, damage, unit.tarp); // rust patches, cracks, webs, cracked tyres and (on the yellow) a mouse nest; the jobs and the tarp change them
     this.units = [...this.units, unit];

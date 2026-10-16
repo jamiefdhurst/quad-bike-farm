@@ -135,21 +135,23 @@ function crackTexture(seed) {
   });
 }
 
-/** A cobweb in a corner: spokes from one point, sagging rings, a few torn threads, grey-white and mostly see-through. */
+/** A cobweb hanging from one point: spokes fanning down from the top middle, sagging rings between them, grey-white and mostly see-through. */
 function webTexture(seed) {
   const r = rng(seed);
   return canvasTexture(256, (g, S) => {
     g.clearRect(0, 0, S, S);
     g.strokeStyle = 'rgba(238,238,228,0.95)';
     g.lineWidth = 2.2;
-    const spokes = 7 + Math.floor(r() * 3);
-    const arc = Math.PI / 2;
-    const tip = (a, len) => [Math.cos(a) * len, Math.sin(a) * len];
+    const spokes = 6 + Math.floor(r() * 3);
+    const spread = 1.1; // radians either side of straight down
+    const tip = (i, len) => {
+      const a = Math.PI / 2 + (i / (spokes - 1) - 0.5) * 2 * spread;
+      return [S / 2 + Math.cos(a) * len, Math.sin(a) * len];
+    };
     for (let i = 0; i < spokes; i++) {
-      const a = (i / (spokes - 1)) * arc;
-      const [x, y] = tip(a, S * (0.9 + r() * 0.08));
+      const [x, y] = tip(i, S * (0.9 + r() * 0.08));
       g.beginPath();
-      g.moveTo(0, 0);
+      g.moveTo(S / 2, 0);
       g.lineTo(x, y);
       g.stroke();
     }
@@ -157,10 +159,9 @@ function webTexture(seed) {
       const len = S * 0.15 * ring * (0.9 + r() * 0.2);
       g.beginPath();
       for (let i = 0; i < spokes; i++) {
-        const a = (i / (spokes - 1)) * arc;
-        const [x, y] = tip(a, len);
+        const [x, y] = tip(i, len);
         if (i) {
-          const [px, py] = tip(((i - 0.5) / (spokes - 1)) * arc, len * 0.9); // the thread sags towards the corner between spokes
+          const [px, py] = tip(i - 0.5, len * 0.88); // the thread sags towards the top between spokes
           g.quadraticCurveTo(px, py, x, y);
         } else g.moveTo(x, y);
       }
@@ -169,30 +170,92 @@ function webTexture(seed) {
   });
 }
 
-/** Cracks across a tyre's sidewall, a ring of them: short, dark, mostly radial, with a pale dried edge. */
+/** A split in the seat's cover: a jagged dark slit with the pale foam showing in it and a frayed edge. */
+function ripTexture(seed) {
+  const r = rng(seed);
+  return canvasTexture(256, (g, S) => {
+    g.clearRect(0, 0, S, S);
+    const n = 14;
+    const top = [];
+    const bottom = [];
+    for (let i = 0; i <= n; i++) {
+      const x = S * (0.06 + (0.88 * i) / n);
+      const open = Math.sin((i / n) * Math.PI) * S * (0.1 + r() * 0.05); // wide in the middle, closing at the ends
+      const wob = (r() - 0.5) * S * 0.05;
+      top.push([x, S / 2 - open + wob]);
+      bottom.push([x + (r() - 0.5) * 8, S / 2 + open * (0.7 + r() * 0.5) + wob]);
+    }
+    const trace = () => {
+      g.beginPath();
+      top.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+      bottom.slice().reverse().forEach(([x, y]) => g.lineTo(x, y));
+      g.closePath();
+    };
+    trace();
+    g.strokeStyle = 'rgba(20,14,10,0.95)';
+    g.lineWidth = 9; // the torn cover's edge
+    g.stroke();
+    trace();
+    g.fillStyle = 'rgba(28,20,12,0.97)';
+    g.fill();
+    for (let i = 0; i < 90; i++) { // the foam in it, crumbling and yellow-brown
+      g.fillStyle = `rgba(${150 + r() * 70},${120 + r() * 50},${48 + r() * 30},${0.55 + r() * 0.4})`;
+      const x = S * (0.16 + r() * 0.68);
+      const y = S / 2 + (r() - 0.5) * S * 0.16 * Math.sin(((x / S - 0.06) / 0.88) * Math.PI);
+      g.fillRect(x, y, 3 + r() * 9, 3 + r() * 6);
+    }
+    g.strokeStyle = 'rgba(190,184,170,0.7)'; // threads and frayed ends
+    g.lineWidth = 1.5;
+    for (let i = 0; i < 18; i++) {
+      const p0 = top[1 + Math.floor(r() * (n - 1))];
+      g.beginPath();
+      g.moveTo(p0[0], p0[1]);
+      g.lineTo(p0[0] + (r() - 0.5) * 24, p0[1] - 6 - r() * 16);
+      g.stroke();
+    }
+  });
+}
+
+/**
+ * Cracks across a tyre's sidewall, for a polar map (the middle of the picture is the axle, its edge the tread's shoulder): a dense ring of
+ * dark, thick cracks, some running out from the rim, some round the wall, forked, each with a pale dried edge, so they read from a few metres.
+ */
 function sidewallTexture(seed) {
   const r = rng(seed);
-  return canvasTexture(512, (g, S) => {
+  return canvasTexture(1024, (g, S) => {
     g.clearRect(0, 0, S, S);
     const c = S / 2;
-    for (let i = 0; i < 160; i++) {
+    const crack = (x, y, ang, len, width, depth) => {
+      const pts = [[x, y]];
+      for (let i = 0; i < 9; i++) {
+        ang += (r() - 0.5) * 0.7;
+        x += Math.cos(ang) * (len / 9);
+        y += Math.sin(ang) * (len / 9);
+        pts.push([x, y]);
+      }
+      const draw = (style, w) => {
+        g.beginPath();
+        pts.forEach(([px, py], i) => (i ? g.lineTo(px, py) : g.moveTo(px, py)));
+        g.strokeStyle = style;
+        g.lineWidth = w;
+        g.stroke();
+      };
+      draw('rgba(188,182,166,0.6)', width + 4);
+      draw('rgba(10,9,8,0.97)', width);
+      if (depth > 0) for (let k = 0; k < 2; k++) {
+        const p = pts[2 + Math.floor(r() * 6)];
+        crack(p[0], p[1], ang + (r() < 0.5 ? -1 : 1) * (0.7 + r() * 0.6), len * 0.45, width * 0.7, depth - 1);
+      }
+    };
+    for (let i = 0; i < 95; i++) { // out from the rim, across the wall
       const a = r() * Math.PI * 2;
-      const r0 = S * (0.3 + r() * 0.17);
-      const len = S * (0.015 + r() * 0.045);
-      const wob = (r() - 0.5) * 0.25;
-      const x0 = c + Math.cos(a) * r0;
-      const y0 = c + Math.sin(a) * r0;
-      const x1 = c + Math.cos(a + wob * 0.2) * (r0 + len);
-      const y1 = c + Math.sin(a + wob * 0.2) * (r0 + len);
-      g.strokeStyle = 'rgba(176,170,156,0.5)';
-      g.lineWidth = 3.4;
-      g.beginPath();
-      g.moveTo(x0, y0);
-      g.lineTo(x1, y1);
-      g.stroke();
-      g.strokeStyle = 'rgba(14,12,10,0.9)';
-      g.lineWidth = 1.6;
-      g.stroke();
+      const r0 = S * (0.27 + r() * 0.12);
+      crack(c + Math.cos(a) * r0, c + Math.sin(a) * r0, a + (r() - 0.5) * 0.5, S * (0.07 + r() * 0.12), 3.5 + r() * 2.5, 1);
+    }
+    for (let i = 0; i < 34; i++) { // round the wall
+      const a = r() * Math.PI * 2;
+      const r0 = S * (0.3 + r() * 0.16);
+      crack(c + Math.cos(a) * r0, c + Math.sin(a) * r0, a + Math.PI / 2, S * (0.06 + r() * 0.1), 3.5 + r() * 2.5, 0);
     }
   });
 }
@@ -200,57 +263,108 @@ function sidewallTexture(seed) {
 // Placing --------------------------------------------------------------------
 
 const _ray = new THREE.Raycaster();
-const _v = new THREE.Vector3();
-const _n = new THREE.Vector3();
-const _q = new THREE.Quaternion();
 
 function isScenery(o) {
   for (let p = o; p; p = p.parent) {
-    if (p.userData?.rustyDamage || p.name === 'tarp' || /^wheel_/.test(p.name) || p.name === 'seat' || p.name === 'pillionSeat') return true;
+    if (p.userData?.rustyDamage || p.name === 'tarp' || /^wheel_/.test(p.name)) return true;
   }
   return false;
 }
 
-/** The first body surface a ray from `from` (in `root`'s frame) along `dir` hits: { point, normal } in root's frame, or null. */
-function hitSurface(root, from, dir, maxDist = 2) {
-  root.updateMatrixWorld(true);
-  const origin = root.localToWorld(from.clone());
-  const toWorld = new THREE.Matrix3().getNormalMatrix(root.matrixWorld);
-  const d = dir.clone().applyMatrix3(toWorld).normalize();
-  _ray.set(origin, d);
-  _ray.far = maxDist;
+/** The body's own meshes a patch may sit on (the seat is only for its rips): everything visible but the wheels, the tarp and the damage. */
+function bodyMeshes(root, { seat = false } = {}) {
   const meshes = [];
   root.traverse((o) => {
-    if (o.isMesh && o.visible && !isScenery(o)) meshes.push(o); // (meshes only: the lamps' halo sprites want a camera to be hit)
+    if (!o.isMesh || !o.visible || isScenery(o)) return;
+    const isSeat = o.name === 'seat' || o.name === 'pillionSeat';
+    if (seat ? isSeat : !isSeat) meshes.push(o);
   });
+  return meshes;
+}
+
+/** The first of `meshes` a ray hits, in world space: { point, normal, distance } (the normal turned to face the ray) or null. */
+function rayHit(meshes, origin, dir, far) {
+  _ray.set(origin, dir);
+  _ray.far = far;
   const hit = _ray.intersectObjects(meshes, false).find((h) => h.face);
   if (!hit) return null;
-  const inv = new THREE.Matrix3().getNormalMatrix(root.matrixWorld).invert();
-  const normal = hit.face.normal.clone().applyMatrix3(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld)).normalize().applyMatrix3(inv).normalize();
-  if (normal.dot(dir) > 0) normal.negate(); // facing the ray
-  return { point: root.worldToLocal(hit.point.clone()), normal };
+  const normal = hit.face.normal.clone().applyMatrix3(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld)).normalize();
+  if (normal.dot(dir) > 0) normal.negate();
+  return { point: hit.point, normal, distance: hit.distance };
 }
 
-/** Lays a plane flat on a surface a millimetre or two off it, turned `spin` radians about the normal. */
-function lay(root, mesh, point, normal, spin, lift = 0.0015) {
-  mesh.position.copy(point).addScaledVector(normal, lift);
-  _q.setFromUnitVectors(_v.set(0, 0, 1), _n.copy(normal));
-  mesh.quaternion.copy(_q);
-  mesh.rotateZ(spin);
+/**
+ * A decal that follows the surface instead of lying flat on it: a grid of points over the patch, each dropped onto the body along
+ * `-normal` and kept only if it lands close and facing the same way; a triangle is kept only if all three corners landed. So a patch that
+ * reaches the edge of a fender stops at it, and one over a crease bends with it, and nothing hangs in the air over a tyre. Returns the mesh
+ * (in `parent`'s frame) or null if too little of it found a surface.
+ */
+function projectedPatch(parent, meshes, origin, normal, { size, aspect = 1, spin = 0, material, name, lift = 0.0015, n = 7, reach = 0.09 }) {
+  const up = Math.abs(normal.y) > 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+  const t = new THREE.Vector3().crossVectors(up, normal).normalize();
+  t.applyAxisAngle(normal, spin);
+  const b = new THREE.Vector3().crossVectors(normal, t);
+  const dir = normal.clone().negate();
+  const grid = [];
+  let found = 0;
+  for (let j = 0; j <= n; j++) {
+    for (let i = 0; i <= n; i++) {
+      const u = (i / n - 0.5) * size;
+      const v = (j / n - 0.5) * size * aspect;
+      const from = origin.clone().addScaledVector(t, u).addScaledVector(b, v).addScaledVector(normal, 0.05);
+      const hit = rayHit(meshes, from, dir, 0.05 + reach);
+      const ok = hit && hit.normal.dot(normal) > 0.5;
+      if (ok) found++;
+      grid.push(ok ? hit.point.addScaledVector(hit.normal, lift) : null);
+    }
+  }
+  if (found < (n + 1) * (n + 1) * 0.55) return null;
+  const pos = [];
+  const uv = [];
+  const index = [];
+  const slot = new Map();
+  const vert = (k) => {
+    if (!slot.has(k)) {
+      const p = parent.worldToLocal(grid[k].clone());
+      slot.set(k, pos.length / 3);
+      pos.push(p.x, p.y, p.z);
+      uv.push((k % (n + 1)) / n, Math.floor(k / (n + 1)) / n);
+    }
+    return slot.get(k);
+  };
+  for (let j = 0; j < n; j++) {
+    for (let i = 0; i < n; i++) {
+      const k = j * (n + 1) + i;
+      const q = [k, k + 1, k + n + 1, k + n + 2];
+      if (q.some((x) => !grid[x])) continue;
+      index.push(vert(q[0]), vert(q[1]), vert(q[2]), vert(q[1]), vert(q[3]), vert(q[2]));
+    }
+  }
+  if (!index.length) return null;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(index);
+  g.computeVertexNormals();
+  const mesh = new THREE.Mesh(g, material);
+  mesh.name = name;
   mesh.userData.rustyDamage = true;
-  root.add(mesh);
+  parent.add(mesh);
+  return mesh;
 }
 
-const decalMat = (map, extra = {}) => new THREE.MeshStandardMaterial({ map, transparent: true, roughness: 0.85, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, ...extra });
+const decalMat = (map, extra = {}) => new THREE.MeshStandardMaterial({ map, transparent: true, roughness: 0.85, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, ...extra });
 
-/** Sample points to find surfaces at: down onto the tops and sideways onto the flanks, over the body's usual extent. */
-function sampleSites(random, count) {
+/** Sample sites to find surfaces at, as world rays: down onto the tops and sideways onto the flanks, over the body's usual extent. */
+function sampleSites(root, random, count, { flanks = 0.45 } = {}) {
   const sites = [];
   for (let i = 0; i < count; i++) {
     const side = random() < 0.5 ? -1 : 1;
     const z = -0.95 + random() * 1.85;
-    if (random() < 0.55) sites.push({ from: new THREE.Vector3(side * (0.15 + random() * 0.4), 1.4, z), dir: new THREE.Vector3(0, -1, 0) });
-    else sites.push({ from: new THREE.Vector3(side * 0.9, 0.38 + random() * 0.42, z), dir: new THREE.Vector3(-side, 0, 0) });
+    const down = random() >= flanks;
+    const from = down ? new THREE.Vector3(side * (0.15 + random() * 0.45), 1.4, z) : new THREE.Vector3(side * 0.9, 0.38 + random() * 0.42, z);
+    const dir = down ? new THREE.Vector3(0, -1, 0) : new THREE.Vector3(-side, 0, 0);
+    sites.push({ from: root.localToWorld(from), dir: dir.transformDirection(root.matrixWorld) });
   }
   return sites;
 }
@@ -316,70 +430,98 @@ export class RustyLook {
 }
 
 /**
- * Puts the damage on a donor's model (its `bodyRoot`), after `weatherModel` has tinted the materials: patches, cracks, webs, the nest, the
- * tyres' cracks and their two materials, and the tarp. Returns the RustyLook that keeps them in step with the jobs.
+ * Puts the damage on a donor's model (its `bodyRoot`), after `weatherModel` has tinted the materials: patches, cracks, webs, rips in the
+ * seat, rust on the wheels' centres, the nest, the tyres' cracks and their two materials, and the tarp. Returns the RustyLook that keeps
+ * them in step with the jobs.
  */
 export function applyDamage(model, plan, tarp = null) {
   const look = new RustyLook();
   const root = model.getObjectByName('bodyRoot');
   if (!root) return look;
+  model.updateMatrixWorld(true);
   const random = rng(plan.seed);
   const patchMaps = [rustTexture(plan.seed + 1), rustTexture(plan.seed + 2), rustTexture(plan.seed + 3)];
   const crackMaps = [crackTexture(plan.seed + 4), crackTexture(plan.seed + 5)];
   const webMaps = [webTexture(plan.seed + 6), webTexture(plan.seed + 7)];
+  const meshes = bodyMeshes(root);
 
-  // Rust patches, and cracks over the fenders and panels.
-  let placed = 0;
-  for (const site of sampleSites(random, plan.patches * 3)) {
-    if (placed >= plan.patches) break;
-    const hit = hitSurface(root, site.from, site.dir);
-    if (!hit || hit.point.y < 0.3 || hit.point.y > 1.0) continue;
-    const size = 0.1 + random() * 0.18;
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(size, size * (0.7 + random() * 0.6)), decalMat(patchMaps[placed % patchMaps.length]));
-    m.name = 'rustPatch';
-    lay(root, m, hit.point, hit.normal, random() * Math.PI * 2);
-    placed++;
-  }
-  placed = 0;
-  for (const site of sampleSites(random, plan.cracks * 3)) {
-    if (placed >= plan.cracks) break;
-    const hit = hitSurface(root, site.from, site.dir);
-    if (!hit || hit.point.y < 0.4 || hit.point.y > 0.95) continue;
-    const size = 0.12 + random() * 0.14;
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(size, size), decalMat(crackMaps[placed % crackMaps.length]));
-    m.name = 'crack';
-    lay(root, m, hit.point, hit.normal, random() * Math.PI * 2, 0.002);
-    placed++;
-  }
+  // Rust patches and cracks, following the surface they land on.
+  const lay = (count, kind, maps, tries, lo, hi, sizeOf) => {
+    let placed = 0;
+    for (const site of sampleSites(root, random, count * tries, { flanks: kind === 'rustPatch' ? 0.45 : 0.35 })) {
+      if (placed >= count) break;
+      const hit = rayHit(meshes, site.from, site.dir, 3);
+      const y = hit ? root.worldToLocal(hit.point.clone()).y : 0;
+      if (!hit || y < lo || y > hi) continue;
+      const size = sizeOf();
+      const aspect = 0.7 + random() * 0.6;
+      const m = projectedPatch(root, meshes, hit.point, hit.normal, { size, aspect, spin: random() * Math.PI * 2, material: decalMat(maps[placed % maps.length]), name: kind, lift: kind === 'crack' ? 0.002 : 0.0015 });
+      if (m) placed++;
+    }
+  };
+  lay(plan.patches, 'rustPatch', patchMaps, 4, 0.3, 1.0, () => 0.1 + random() * 0.17);
+  lay(plan.cracks, 'crack', crackMaps, 4, 0.4, 0.95, () => 0.12 + random() * 0.14);
 
-  // Cobwebs: the bars' grips, the racks' corners, the arches and the seat's back, on the donors that have them.
+  // Rips in the seats' covers, with the foam showing.
+  const seatMeshes = bodyMeshes(root, { seat: true });
+  const ripMaps = [ripTexture(plan.seed + 9), ripTexture(plan.seed + 10)];
+  let rips = 0;
+  for (const seat of seatMeshes) {
+    const box = new THREE.Box3().setFromObject(seat);
+    const want = seat.name === 'seat' ? 3 : 2;
+    let placed = 0;
+    for (let tries = 0; tries < want * 6 && placed < want; tries++) {
+      const x = box.min.x + (0.2 + random() * 0.6) * (box.max.x - box.min.x);
+      const z = box.min.z + (0.12 + random() * 0.76) * (box.max.z - box.min.z);
+      const hit = rayHit([seat], new THREE.Vector3(x, box.max.y + 0.3, z), new THREE.Vector3(0, -1, 0), 1);
+      if (!hit || hit.normal.y < 0.5) continue;
+      const m = projectedPatch(root, [seat], hit.point, hit.normal, { size: 0.2 + random() * 0.09, aspect: 0.55, spin: random() * 1.2 - 0.6, material: decalMat(ripMaps[placed % 2]), name: 'seatRip', lift: 0.0025, n: 8 });
+      if (m) {
+        placed++;
+        rips++;
+      }
+    }
+  }
+  look.rips = rips;
+
+  // Cobwebs, hanging from something: the grips' ends, the racks' front and back rails, the underside of the seat's edge. Each is a plane
+  // standing upright with its top corner on the thing it hangs from, so it falls straight down.
   const spots = [];
   const bars = model.getObjectByName('handlebars');
   if (bars) {
-    bars.updateMatrixWorld(true);
     const at = root.worldToLocal(bars.getWorldPosition(new THREE.Vector3()));
-    for (const s of [-1, 1]) spots.push({ p: new THREE.Vector3(at.x + s * 0.3, at.y + 0.02, at.z - 0.04), n: new THREE.Vector3(0, 0, 1), s });
+    for (const s of [-1, 1]) spots.push({ p: new THREE.Vector3(at.x + s * 0.27, at.y + 0.03, at.z - 0.04), n: new THREE.Vector3(0, 0, 1) });
   }
-  if (model.getObjectByName('rackAnchor')) for (const s of [-1, 1]) spots.push({ p: new THREE.Vector3(s * 0.4, 0.86, 0.88), n: new THREE.Vector3(0, 1, 0), s }, { p: new THREE.Vector3(s * 0.4, 0.95, -0.98), n: new THREE.Vector3(0, 1, 0), s });
-  for (const s of [-1, 1]) spots.push({ p: new THREE.Vector3(s * 0.34, 0.55, 0.62), n: new THREE.Vector3(s, 0, 0), s }, { p: new THREE.Vector3(s * 0.34, 0.5, -0.62), n: new THREE.Vector3(s, 0, 0), s });
-  spots.push({ p: new THREE.Vector3(0.3, 0.8, -0.5), n: new THREE.Vector3(0, 1, 0), s: 1 });
+  if (model.getObjectByName('rackAnchor')) {
+    const front = model.getObjectByName('rackAnchor').position;
+    for (const s of [-1, 1]) spots.push({ p: new THREE.Vector3(s * 0.4, front.y + 0.02, front.z + 0.32), n: new THREE.Vector3(0, 0, 1) }, { p: new THREE.Vector3(s * 0.4, 0.93, -1.0), n: new THREE.Vector3(0, 0, -1) });
+  }
+  for (const seat of seatMeshes.slice(0, 1)) {
+    const box = new THREE.Box3().setFromObject(seat);
+    for (const s of [-1, 1]) spots.push({ p: root.worldToLocal(new THREE.Vector3(s > 0 ? box.max.x : box.min.x, box.min.y + 0.01, (box.min.z + box.max.z) / 2)), n: new THREE.Vector3(s, 0, 0) });
+  }
   for (let i = 0; i < Math.min(plan.webs, spots.length); i++) {
     const sp = spots[i];
-    const size = 0.24 + random() * 0.2;
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(size, size), decalMat(webMaps[i % webMaps.length], { side: THREE.DoubleSide, roughness: 1 }));
+    const size = 0.2 + random() * 0.16;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(size, size), decalMat(webMaps[i % webMaps.length], { roughness: 1 }));
+    m.geometry.translate(0, -size / 2, 0); // the top middle is the point it hangs from
     m.name = 'cobweb';
-    m.geometry.translate(size / 2, size / 2, 0); // so the web's corner is the point, the way a corner web hangs
-    lay(root, m, sp.p, sp.n, random() * Math.PI * 2, 0);
+    m.userData.rustyDamage = true;
+    m.position.copy(sp.p);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), sp.n); // a horizontal normal only turns it about the vertical, so the web hangs down
+    m.rotateZ((random() - 0.5) * 0.5);
+    root.add(m);
   }
 
-  // The tyres: pale and cracked, and the fresh black rubber a new tyre gets.
+  // The wheels: pale rubber with cracks that follow the sidewall, rusty rims, and the fresh black rubber a new tyre gets.
   const sidewall = sidewallTexture(plan.seed + 8);
   const fresh = new THREE.MeshStandardMaterial({ color: 0x171717, roughness: 0.93 });
-  const spare = [];
+  const wheels = [];
   model.traverse((o) => {
-    if (/^wheel_/.test(o.name)) spare.push(o);
+    if (/^wheel_/.test(o.name)) wheels.push(o);
   });
-  for (const wheel of spare) {
+  const rust = new THREE.Color(0x6a3a1c);
+  for (const wheel of wheels) {
     const spin = wheel.getObjectByName('spin');
     if (!spin) continue;
     let tyre = null;
@@ -394,23 +536,85 @@ export function applyDamage(model, plan, tarp = null) {
       }
     });
     if (!tyre) continue;
-    const box = tyre.geometry.boundingBox;
-    const half = Math.max(Math.abs(box.min.x), Math.abs(box.max.x));
+    // The sidewall's profile from the tyre's own vertices: how far out it stands at each radius, so the crack ring lies on it.
+    const posAttr = tyre.geometry.attributes.position;
+    const rimR = (() => {
+      let m = Infinity;
+      for (let i = 0; i < posAttr.count; i++) m = Math.min(m, Math.hypot(posAttr.getY(i), posAttr.getZ(i)));
+      return m;
+    })();
+    const outerR = 0.29;
+    const bins = 10;
+    const half = new Float32Array(bins + 1);
+    for (let i = 0; i < posAttr.count; i++) {
+      const r = Math.hypot(posAttr.getY(i), posAttr.getZ(i));
+      if (r < rimR || r > outerR) continue;
+      const k = Math.round(((r - rimR) / (outerR - rimR)) * bins);
+      half[k] = Math.max(half[k], Math.abs(posAttr.getX(i)));
+    }
+    for (let k = 0; k <= bins; k++) if (!half[k]) half[k] = half[k - 1] ?? half[k + 1] ?? 0.1;
     const perished = tyre.material.clone();
-    perished.color.lerp(new THREE.Color(0x77705f), 0.55); // sun-bleached, dry and grey
+    perished.color.lerp(new THREE.Color(0x8d8774), 0.7); // sun-bleached, dry and grey
     perished.roughness = 1;
     tyre.material = perished;
     const rings = [];
+    const SEG = 56;
     for (const s of [-1, 1]) {
-      const ring = new THREE.Mesh(new THREE.RingGeometry(0.12, 0.28, 48), decalMat(sidewall, { side: THREE.FrontSide }));
-      ring.geometry.rotateY(s * Math.PI / 2);
-      ring.position.x = s * (half + 0.0015);
+      const p = [];
+      const uv = [];
+      const index = [];
+      for (let k = 0; k <= bins; k++) {
+        const r = rimR + ((outerR - rimR) * k) / bins;
+        for (let i = 0; i <= SEG; i++) {
+          const a = (i / SEG) * Math.PI * 2;
+          p.push(s * (half[k] + 0.002), Math.sin(a) * r, Math.cos(a) * r);
+          const f = r / outerR;
+          uv.push(0.5 + 0.5 * f * Math.cos(a), 0.5 + 0.5 * f * Math.sin(a));
+        }
+      }
+      for (let k = 0; k < bins; k++) for (let i = 0; i < SEG; i++) {
+        const q = k * (SEG + 1) + i;
+        index.push(q, q + 1, q + SEG + 1, q + 1, q + SEG + 2, q + SEG + 1);
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+      g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+      g.setIndex(index);
+      g.computeVertexNormals();
+      const ring = new THREE.Mesh(g, decalMat(sidewall));
       ring.userData.rustyDamage = true;
       ring.name = 'tyreCracks';
       spin.add(ring);
       rings.push(ring);
     }
     look.tyres.push({ mesh: tyre, perished, fresh, rings });
+    // The rim and hub rusted through their paint (the centres), with a few patches eaten into the face.
+    const rimMeshes = [];
+    const done = new Set();
+    spin.traverse((o) => {
+      if (!o.isMesh || o === tyre || o.userData.rustyDamage || !o.material || (o.material.metalness ?? 0) < 0.15 || done.has(o.material)) return;
+      done.add(o.material);
+      const m = o.material.clone();
+      m.color.lerp(rust, 0.82);
+      m.roughness = 0.92;
+      m.metalness = 0.12;
+      o.material = m;
+    });
+    spin.traverse((o) => {
+      if (o.isMesh && o !== tyre && !o.userData.rustyDamage) rimMeshes.push(o);
+    });
+    spin.updateMatrixWorld(true);
+    for (const s of [-1, 1]) {
+      for (let k = 0; k < 3; k++) {
+        const a = random() * Math.PI * 2;
+        const rad = 0.03 + random() * 0.09;
+        const from = spin.localToWorld(new THREE.Vector3(s * 0.6, Math.sin(a) * rad, Math.cos(a) * rad));
+        const dir = new THREE.Vector3(-s, 0, 0).transformDirection(spin.matrixWorld);
+        const hit = rayHit(rimMeshes, from, dir, 1.2);
+        if (!hit || hit.normal.dot(new THREE.Vector3(s, 0, 0).transformDirection(spin.matrixWorld)) < 0.5) continue;
+        projectedPatch(spin, rimMeshes, hit.point, hit.normal, { size: 0.08 + random() * 0.05, spin: random() * 6, material: decalMat(patchMaps[k % 3]), name: 'rimRust', lift: 0.002, n: 5 });
+      }
+    }
   }
 
   // The mouse nest in the open intake: shredded stuff and droppings, piled on the boot between the carb and the airbox.

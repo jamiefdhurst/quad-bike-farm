@@ -63,6 +63,8 @@ describe('the look on each donor', () => {
       expect(count('cobweb')).toBeGreaterThanOrEqual(3);
       expect(look.tyres.length).toBe(4);
       expect(count('tyreCracks')).toBe(8);
+      expect(count('seatRip')).toBeGreaterThanOrEqual(2);
+      expect(count('rimRust')).toBeGreaterThanOrEqual(1);
       expect(count('mouseNest')).toBe(plan.nest ? 1 : 0);
     });
   }
@@ -103,6 +105,71 @@ describe('the look on each donor', () => {
     expect(look.tyres[0].mesh.material.color.r).toBeLessThan(0.1);
     expect(look.tyres[0].rings.every((r) => !r.visible)).toBe(true);
     expect(look.nest.visible).toBe(false);
+  });
+
+  it('hangs each web from a point on something, with its top edge level and the plane upright (so it falls straight down)', () => {
+    const plan = planDamage(createRandom(5), 'red');
+    const model = build('red', plan);
+    applyDamage(model, plan, null);
+    model.traverse((o) => {
+      if (o.name !== 'cobweb') return;
+      const up = new THREE.Vector3(0, 1, 0).applyQuaternion(o.quaternion); // the plane's own up
+      expect(Math.abs(up.y), 'upright').toBeGreaterThan(0.85);
+    });
+  });
+
+  it('keeps every patch and crack on the body: no vertex of one hangs further than a few centimetres from the surface it follows', () => {
+    const plan = planDamage(createRandom(9), 'red');
+    const model = build('red', plan);
+    applyDamage(model, plan, null);
+    model.updateMatrixWorld(true);
+    const root = model.getObjectByName('bodyRoot');
+    const body = [];
+    root.traverse((o) => { if (o.isMesh && !o.userData.rustyDamage && !/^wheel_/.test(o.name)) body.push(o); });
+    const rc = new THREE.Raycaster();
+    let checked = 0;
+    let missed = 0;
+    root.traverse((o) => {
+      if (!(o.name === 'rustPatch' || o.name === 'crack')) return;
+      const p = o.geometry.attributes.position;
+      for (let i = 0; i < p.count; i += 5) {
+        const v = new THREE.Vector3().fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld);
+        const n = new THREE.Vector3().fromBufferAttribute(o.geometry.attributes.normal, i).transformDirection(o.matrixWorld);
+        let hits = 0;
+        for (const sign of [1, -1]) { // (the plane's normal may point either way: look both ways)
+          rc.set(v.clone().addScaledVector(n, 0.03 * sign), n.clone().multiplyScalar(-sign));
+          rc.far = 0.06;
+          hits += rc.intersectObjects(body, false).length;
+        }
+        if (!hits) missed++;
+        checked++;
+      }
+    });
+    expect(checked).toBeGreaterThan(50);
+    expect(missed / checked, 'a few corners of a patch over a thin tube may not be seen from the normal').toBeLessThan(0.1);
+  });
+
+  it('drapes the tarp over the quad’s own shape, down to the ground all round, with nothing of the quad through it', () => {
+    const plan = planDamage(createRandom(5), 'red');
+    const model = build('red', plan);
+    const tarp = buildTarp(model);
+    const root = model.getObjectByName('bodyRoot');
+    root.add(tarp);
+    model.updateMatrixWorld(true);
+    const rc = new THREE.Raycaster();
+    const top = (x, z) => { rc.set(new THREE.Vector3(x, 3, z), new THREE.Vector3(0, -1, 0)); return rc.intersectObject(tarp)[0]?.point.y ?? 0; };
+    expect(top(0.93, 0)).toBeLessThan(0.1); // down to the ground at the sides
+    expect(top(0, -1.4)).toBeLessThan(0.1);
+    expect(top(0, 0.46)).toBeGreaterThan(0.95); // up over the bars
+    const lumpy = [0, 0.3, -0.3, 0.6].map((x) => top(x, 0.2));
+    expect(Math.max(...lumpy) - Math.min(...lumpy)).toBeGreaterThan(0.02); // not a flat-topped box
+    for (const [x, z] of [[0.41, 0.9], [-0.41, 0.9], [0.41, -0.95], [0, 0.46]]) { // the racks' rails and the bars stand under it
+      rc.set(new THREE.Vector3(x, 3, z), new THREE.Vector3(0, -1, 0));
+      const body = [];
+      model.traverse((o) => { if (o.isMesh && o !== tarp && o.name !== 'proxy' && o.visible && !/beam|halo/i.test(o.name)) body.push(o); });
+      const high = rc.intersectObjects(body, false)[0]?.point.y ?? 0;
+      expect(top(x, z), `over ${x},${z}`).toBeGreaterThan(high - 0.015); // (a thin rail may show a centimetre between the grid's points)
+    }
   });
 
   it('puts a loaded farm straight to where it was, with no tarp to drag', () => {
