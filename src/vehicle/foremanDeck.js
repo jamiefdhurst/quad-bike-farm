@@ -113,7 +113,7 @@ export function skirtBottom(D, spec, wheelZ, z) {
 export function flareGeometry(which, wheelZ, side, D = DECK, part = 'all') {
   const spec = D[which];
   const grid = deckRows(D, spec).map((r) => {
-    const w = D.flareW * (1 - (D.flareTaper ?? 0.8) * r.g);
+    const w = D.flareW * Math.max(0, 1 - (D.flareTaper ?? 0.8) * r.g);
     const out = [];
     for (let i = 0; i <= 3; i++) {
       const x = r.half - w + (w * i) / 3;

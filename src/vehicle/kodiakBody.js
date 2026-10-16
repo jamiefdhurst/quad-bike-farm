@@ -14,7 +14,7 @@ export const KODIAK_DECK = {
   half: 0.57,
   cornerR: 0.15,
   flareW: 0.045, // the black strip along the top of each fender's edge
-  flareTaper: 1, // the strip dies away to nothing down the face's corner, so it never sinks into the rolled edge there
+  flareTaper: 1.7, // the strip dies away to nothing a third of the way down the face's corner, before the rolled edge steepens and it sinks into it
   blackWalls: true, // the inner wings and the decks' end walls are black plastic
   paintedSkirt: true, // and the wall below it is painted: only the strip and the arch's trim are black
 };

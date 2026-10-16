@@ -1349,7 +1349,9 @@ function buildFrame(root, sport, barsY = 1.0, tail = -0.98) {
     tube([s * 0.17, 0.74, -0.25], [s * 0.2, 0.3, -0.2], 0.016, MAT.frame, root);
   }
   for (const z of [0.9, 0.58, -0.7]) tube([-0.2, 0.31, z], [0.2, 0.31, z], 0.016, MAT.frame, root);
-  tube([-0.17, 0.74, -0.9], [0.17, 0.74, -0.9], 0.016, MAT.frame, root);
+  // The upper rails' cross-tube at their ends: under the rear deck, not out at -0.9 where the Grizzly's and Bayou's rolled decks (tail -0.84) leave it poking through their faces.
+  const crossZ = Math.max(-0.9, tail);
+  tube([-0.17, 0.74, crossZ], [0.17, 0.74, crossZ], 0.016, MAT.frame, root);
   if (tail > -0.95) tube([-0.19, 0.66, tail], [0.19, 0.66, tail], 0.016, MAT.frame, root); // the lower rails end on a cross-tube too, not in the air
   // Skid plate under the engine.
   rbox(0.4, 0.012, 0.86, 0.006, sport ? MAT.alloy : MAT.engineDark, 0, 0.285, 0.12, root, undefined, 1);
