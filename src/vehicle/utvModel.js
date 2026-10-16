@@ -487,7 +487,6 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   gate.position.set(0, yc(MULE_BED.floorY + 0.03), zc(MULE_BED.gate));
   addMuleGate(gate, MAT, paint);
   bed.add(gate);
-  addMuleCover(bed, MAT, yc, zc);
   addMuleSplashes(root, bed, gate, yc, zc);
   bed.userData.mudRest = [0, HINGE.y, HINGE.z]; // the dirt on the bed and the tailgate stays on them as they tip and swing (effects/mudCoat.js)
   gate.userData.mudRest = [0, MULE_BED.floorY + 0.03, MULE_BED.gate];

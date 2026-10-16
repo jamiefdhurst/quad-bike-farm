@@ -193,15 +193,9 @@ describe('the UTV’s model', () => {
     expect(gate.getObjectByName('mudGate')).toBeTruthy();
   });
 
-  it('has a bed cover on hoops that tips with the bed, open at the tailgate end, and a key that starts pointing up', () => {
-    const bed = utv.model.getObjectByName('bed');
-    const cover = bed.getObjectByName('bedCover');
-    expect(cover).toBeTruthy();
-    expect(bed.getObjectByName('coverHoops')).toBeTruthy();
-    const box = new THREE.Box3().setFromObject(cover);
-    expect(box.min.z).toBeGreaterThan(MULE_BED.gate); // stops short of the tailgate
+  it('has no bed cover, and a key whose head is long up the key (pointing up at OFF)', () => {
+    expect(utv.model.getObjectByName('bedCover')).toBeFalsy();
     const key = utv.model.getObjectByName('ignitionKey');
-    const bow = key.children.find((c) => c.geometry?.type === 'BoxGeometry' && c.geometry.parameters.height > 0.015);
-    expect(bow, 'the key’s head is long up the key (y), pointing up at OFF').toBeTruthy();
+    expect(key.children.find((c) => c.geometry?.type === 'BoxGeometry' && c.geometry.parameters.height > 0.015)).toBeTruthy();
   });
 });

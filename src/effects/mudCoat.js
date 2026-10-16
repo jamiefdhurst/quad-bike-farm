@@ -154,7 +154,7 @@ function patchMaterial(material, uniforms, wheel, kind, clean = false, rest = nu
         metalnessFactor = mix(metalnessFactor, 0.0, mudMask);`,
       );
   };
-  material.customProgramCacheKey = () => `${wheel ? 'mudCoatWheel' : 'mudCoatBody'}|${kind}|${clean ? 'clean' : 'muddy'}`;
+  material.customProgramCacheKey = () => `${wheel ? 'mudCoatWheel' : 'mudCoatBody'}|${kind}|${clean ? 'clean' : 'muddy'}|${rest ? rest.map((v) => v.toFixed(4)).join(',') : 'fixed'}`; // (the rest offset is in the shader's text, so it has to be in the key, or a swinging part is given the fixed pattern's program)
 }
 
 /** The Vehicles tab's "Wear" for each vehicle. */
