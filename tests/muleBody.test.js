@@ -111,6 +111,10 @@ describe('the UTV’s model', () => {
     const lamp = new THREE.Box3().setFromObject(m.getObjectByName('lampHousing'));
     const bumper = new THREE.Box3().setFromObject(m.getObjectByName('bumper'));
     expect(lamp.min.y).toBeGreaterThan(bumper.max.y + 0.02);
+    const nose = new THREE.Box3().setFromObject(m.getObjectByName('frontBody'));
+    expect(lamp.max.y).toBeLessThan(nose.max.y); // the housing sits in the body, not above it
+    expect(lamp.max.z).toBeGreaterThan(1.38); // and its face stands just proud of the nose's
+    expect(lamp.min.z).toBeLessThan(1.37); // with its back inside it
     expect(m.getObjectByName('bumper').material.bumpMap).toBeTruthy();
     expect(m.getObjectByName('bumperRib')).toBeTruthy();
   });
