@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import * as THREE from 'three';
-import { MULE_BONNET, MULE_DASH, MULE_BED, MULE_DOOR, MULE_ROOF, loftTop } from '../src/vehicle/muleBody.js';
+import { MULE_BONNET, MULE_DASH, MULE_DOOR, MULE_BED, MULE_DOOR, MULE_ROOF, loftTop } from '../src/vehicle/muleBody.js';
 import { buildBuckledBelt, tongueGeometry } from '../src/vehicle/detail/belts.js';
 import { poseUtvDoors, poseUtvBelts, BELTS, UTV_SEATS } from '../src/vehicle/utvModel.js';
 import { UTV_SPEC } from '../src/vehicle/quadSpecs.js';
@@ -74,15 +74,56 @@ describe('the UTV’s model', () => {
     poseUtvBelts(utv.model, { driver: false, mid: false, left: false });
   });
 
-  it('has door nets that swing out on the rear hoop and shut again', () => {
+  it('has door nets hinged at the front that swing out at one side only, the free end going outwards', () => {
     const left = utv.model.getObjectByName('doorNetLeft');
     const right = utv.model.getObjectByName('doorNetRight');
-    poseUtvDoors(utv.model, 0);
-    expect(left.rotation.y).toBe(0);
-    poseUtvDoors(utv.model, 1);
-    expect(left.rotation.y).toBeGreaterThan(1);
-    expect(right.rotation.y).toBeLessThan(-1);
-    poseUtvDoors(utv.model, 0);
+    expect(left.position.z).toBeCloseTo(MULE_DOOR.front, 6); // the hinge is on the front post
+    poseUtvDoors(utv.model, { left: 0, right: 0 });
+    expect(Math.abs(left.rotation.y)).toBe(0);
+    poseUtvDoors(utv.model, { left: 1, right: 0 });
+    utv.model.updateMatrixWorld(true);
+    const latch = (net) => net.getObjectByName('doorLatch').getWorldPosition(new THREE.Vector3());
+    expect(latch(left).x).toBeGreaterThan(MULE_DOOR.x + 0.5); // the free end swung out to the left
+    expect(Math.abs(right.rotation.y)).toBe(0); // the other side stays shut
+    expect(Math.abs(latch(right).x)).toBeLessThan(MULE_DOOR.x + 0.05);
+    poseUtvDoors(utv.model, { left: 0, right: 1 });
+    utv.model.updateMatrixWorld(true);
+    expect(latch(right).x).toBeLessThan(-MULE_DOOR.x - 0.5);
+    poseUtvDoors(utv.model, { left: 0, right: 0 });
+  });
+
+  it('lights its tail lamps in a row, outer to inner the indicator, the brake and the reverse, on a narrow plate, all dark until lit', () => {
+    const m = utv.model;
+    m.updateMatrixWorld(true);
+    const x = (n) => { const o = []; m.traverse((c) => { if (c.name === n) o.push(c); }); return o.map((c) => Math.abs(c.position.x)).sort()[0]; };
+    expect(x('tailIndicator')).toBeGreaterThan(x('tailLens'));
+    expect(x('tailLens')).toBeGreaterThan(x('tailReverse'));
+    const plate = new THREE.Box3().setFromObject(m.getObjectByName('tailPlate'));
+    expect(plate.max.x - plate.min.x).toBeLessThan(1.0);
+    const dark = (mat) => Math.max(mat.color.r, mat.color.g, mat.color.b);
+    expect(dark(m.userData.signalMaterials.left)).toBeLessThan(0.4);
+    expect(dark(m.userData.signalMaterials.reverse)).toBeLessThan(0.4);
+    expect(m.userData.signalMaterials.left.emissive.getHex()).toBe(0);
+  });
+
+  it('keeps the headlamps clear of the bumper and gives the bumper some moulding', () => {
+    const m = utv.model;
+    const lamp = new THREE.Box3().setFromObject(m.getObjectByName('lampHousing'));
+    const bumper = new THREE.Box3().setFromObject(m.getObjectByName('bumper'));
+    expect(lamp.min.y).toBeGreaterThan(bumper.max.y + 0.02);
+    expect(m.getObjectByName('bumper').material.bumpMap).toBeTruthy();
+    expect(m.getObjectByName('bumperRib')).toBeTruthy();
+  });
+
+  it('keeps the stowed belts no higher than their loops', () => {
+    for (const seat of Object.keys(BELTS)) {
+      const belt = utv.model.getObjectByName(`belt_${seat}`);
+      const loop = new THREE.Box3().setFromObject(belt.getObjectByName('beltLoop'));
+      for (const part of ['beltWebbing']) {
+        const web = new THREE.Box3().setFromObject(belt.getObjectByName('stowed').getObjectByName(part));
+        expect(web.max.y, `${seat} ${part}`).toBeLessThanOrEqual(loop.max.y + 0.001);
+      }
+    }
   });
 
   it('keeps the wheels’ parts inboard of the tyre’s face and has its nuts', () => {

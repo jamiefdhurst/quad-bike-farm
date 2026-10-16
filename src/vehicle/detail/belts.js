@@ -178,7 +178,7 @@ export function buildBuckledBelt(name, { top, low, buckle, hip, faceZ = null, ma
   const fz = faceZ ?? low[2] + 0.025; // the seat back's face, where it hangs when the loop is behind the seat
   const park = [low[0], low[1] + 0.14, fz];
   const over = faceZ === null ? [(top[0] + park[0]) / 2, (top[1] + park[1]) / 2, (top[2] + park[2]) / 2 + 0.012] : [top[0], top[1] - 0.03, (top[2] + fz) / 2 + 0.03]; // over the top of the seat back
-  mesh(ribbonGeometry([top, over, [park[0], park[1] + 0.5, fz - 0.002], park], 0.046, 0.0032, [0, 0, 1], { uv: true }), web, stowed, 'beltWebbing');
+  mesh(ribbonGeometry([top, over, [park[0], Math.min(top[1] - 0.07, park[1] + 0.5), fz - 0.002], park], 0.046, 0.0032, [0, 0, 1], { uv: true }), web, stowed, 'beltWebbing');
   const parked = mesh(tongueGeometry(), m.steel, stowed, 'beltTongue');
   parked.position.set(park[0], park[1] - 0.012, park[2] + 0.003);
   mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.01, 12).rotateX(Math.PI / 2), m.plastic, stowed, 'beltStop').position.set(park[0], park[1] - 0.095, park[2] + 0.004); // the button the tongue parks on

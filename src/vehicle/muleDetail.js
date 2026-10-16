@@ -95,9 +95,16 @@ export function addMuleFront(root, MAT, paint, lensMat) {
     rbox(0.036, L.h - 0.02, 0.07, 0.012, MAT.indicator, s * (L.x + L.w / 2 - 0.014), L.y, L.z + 0.005, root, 'indicator');
   }
   // The bumper: a wide black moulding with a step along its top, a lower skid and the tow loops, tied back to the chassis.
-  rbox(1.5, 0.15, 0.15, 0.05, MAT.plastic, 0, 0.47, 1.45, root, 'bumper');
-  rbox(1.2, 0.04, 0.12, 0.02, MAT.plastic, 0, 0.57, 1.42, root);
-  rbox(0.9, 0.03, 0.2, 0.012, MAT.plastic, 0, 0.37, 1.36, root, 'skidPlate');
+  rbox(1.5, 0.15, 0.15, 0.05, MAT.bumper, 0, 0.47, 1.45, root, 'bumper');
+  rbox(1.2, 0.035, 0.12, 0.02, MAT.bumper, 0, 0.555, 1.42, root);
+  rbox(0.9, 0.03, 0.2, 0.012, MAT.bumper, 0, 0.37, 1.36, root, 'skidPlate');
+  // Its moulding: two ribs along the face, a recess each end for the lamp it would carry, bolts through its top lip and the number plate's flat.
+  for (const y of [0.44, 0.5]) rbox(1.36, 0.014, 0.012, 0.005, MAT.plastic, 0, y, 1.5305, root, 'bumperRib');
+  rbox(0.34, 0.1, 0.012, 0.01, MAT.floor, 0, 0.47, 1.5265, root, 'bumperPlateFlat');
+  for (const s of [-1, 1]) {
+    rbox(0.16, 0.07, 0.012, 0.01, MAT.floor, s * 0.55, 0.47, 1.5265, root, 'bumperPocket');
+  }
+  for (const x of [-0.5, -0.3, 0.3, 0.5]) mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.008, 6), MAT.chrome, root).position.set(x, 0.575, 1.42); // the bolts through the top lip
   for (const s of [-1, 1]) {
     rbox(0.08, 0.1, 0.5, 0.02, MAT.frame, s * 0.38, 0.43, 1.2, root); // the arm back to the rail
     const loop = mesh(new THREE.TorusGeometry(0.035, 0.008, 6, 12), MAT.steel, root, 'towLoop');
@@ -178,22 +185,23 @@ export function addMuleCab(root, MAT, paint) {
     m.position.set(s * (P.x - 0.04 * k), 1.42, P.foot[1] + (P.head[1] - P.foot[1]) * k);
     root.add(m);
   }
-  // The lamps on their plate across the back of the roof: red above amber above clear reverse at each end, on a black plate (rusty once the
-  // wear layer has been at it) bolted to the rear hoop.
+  // The lamps on their plate across the back of the roof: at each end a row of three, outer to inner the indicator, the brake and tail lamp
+  // and the reverse lamp, in a black housing on a narrow black plate (rusty once the wear layer has been at it) bolted to the rear hoop.
   const T = MULE_TAIL;
-  rbox(1.12, 0.26, 0.012, 0.004, MAT.frame, 0, T.y, T.z + 0.012, root, 'tailPlate');
-  for (const s of [-1, 1]) for (const dy of [-0.09, 0.09]) tube([s * 0.56, T.y + dy, C.rear.z], [s * 0.56, T.y + dy, T.z + 0.012], 0.01, MAT.steel, root, 6); // bolted back to the rear hoop's post at each corner
+  rbox(T.plateW, 0.15, 0.012, 0.004, MAT.frame, 0, T.y, T.z + 0.012, root, 'tailPlate');
   for (const s of [-1, 1]) {
-    rbox(0.1, 0.19, 0.05, 0.015, MAT.plastic, s * T.x, T.y, T.z, root, 'tailHousing');
-    rbox(0.07, 0.05, 0.014, 0.008, MAT.tail, s * T.x, T.y + 0.065, T.z - 0.026, root, 'tailLens');
-    rbox(0.07, 0.05, 0.014, 0.008, MAT.indicator, s * T.x, T.y + 0.005, T.z - 0.026, root, 'tailIndicator');
-    rbox(0.07, 0.05, 0.014, 0.008, MAT.reverse, s * T.x, T.y - 0.055, T.z - 0.026, root, 'tailReverse');
+    for (const dy of [-0.045, 0.045]) tube([s * 0.56, T.y + dy, C.rear.z], [s * (T.plateW / 2 - 0.01), T.y + dy, T.z + 0.012], 0.01, MAT.steel, root, 6); // bolted back to the rear hoop's post
+    rbox(T.housing, 0.1, 0.05, 0.015, MAT.plastic, s * T.x, T.y, T.z, root, 'tailHousing');
+    const lens = (name, mat, off) => rbox(0.068, 0.07, 0.014, 0.008, mat, s * (T.x + off), T.y, T.z - 0.026, root, name);
+    lens('tailIndicator', MAT.indicator, 0.085); // outer
+    lens('tailLens', MAT.tail, 0); // brake and tail, in the middle
+    lens('tailReverse', MAT.reverse, -0.085); // inner
   }
 }
 
 /**
- * The door nets: at each side a frame with a mesh in it, hinged on the rear hoop's post and swinging out to the side (`doorNetLeft`,
- * `doorNetRight`, posed by `poseUtvDoors`), with a latch at the front edge. Returns the two groups.
+ * The door nets: at each side a frame with a mesh in it, hinged on the front post and swinging out to the side with its free, latched end
+ * at the back (`doorNetLeft`, `doorNetRight`, posed by `poseUtvDoors`). Returns the two groups.
  */
 export function addMuleDoors(root, MAT) {
   const D = MULE_DOOR;
@@ -204,14 +212,15 @@ export function addMuleDoors(root, MAT) {
     const g = new THREE.Group();
     g.name = s > 0 ? 'doorNetLeft' : 'doorNetRight';
     g.userData.keep = true;
-    g.position.set(s * D.x, D.y0, D.rear);
-    // Built in the door's own frame: +z along the door from its hinge, +y up, flat in x = 0.
+    g.position.set(s * D.x, D.y0, D.front);
+    // Built in the door's own frame: -z along the door from its hinge at the front, +y up, flat in x = 0.
     const net = mesh(netGeometry(length - 0.04, h - 0.04).rotateY(Math.PI / 2), MAT.net, g, 'doorNetMesh');
-    net.position.set(0, h / 2, length / 2);
+    net.position.set(0, h / 2, -length / 2);
     const frame = [];
-    for (const [a, b] of [[[0, 0, 0], [0, 0, length]], [[0, h, 0], [0, h, length]], [[0, 0, 0], [0, h, 0]], [[0, 0, length], [0, h, length]]]) frame.push(sweepGeometry([a, b], 0.013, { radial: 6 }));
+    for (const [a, b] of [[[0, 0, 0], [0, 0, -length]], [[0, h, 0], [0, h, -length]], [[0, 0, 0], [0, h, 0]], [[0, 0, -length], [0, h, -length]]]) frame.push(sweepGeometry([a, b], 0.013, { radial: 6 }));
     mesh(merge(frame), MAT.frame, g, 'doorNetFrame');
-    rbox(0.03, 0.05, 0.04, 0.01, MAT.steel, 0, h * 0.55, length - 0.01, g, 'doorLatch');
+    rbox(0.03, 0.05, 0.04, 0.01, MAT.steel, 0, h * 0.55, -length + 0.01, g, 'doorLatch');
+    for (const y of [0.1, h - 0.1]) rbox(0.034, 0.04, 0.04, 0.01, MAT.steel, 0, y, 0.0, g, 'doorHinge'); // the two hinges on the front post
     root.add(g);
     out[s > 0 ? 'left' : 'right'] = g;
   }

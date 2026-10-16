@@ -57,7 +57,7 @@ export const MULE_FLARES = {
 };
 
 /** The nose: the grille on the hood's face, the lamps in black housings at its corners with an amber indicator on the outer end. */
-export const MULE_NOSE = { z: 1.4, grille: { w: 0.5, h: 0.17, y: 0.6 }, lamp: { x: 0.64, y: 0.62, z: 1.37, w: 0.2, h: 0.13, d: 0.08 } };
+export const MULE_NOSE = { z: 1.4, grille: { w: 0.5, h: 0.17, y: 0.67 }, lamp: { x: 0.6, y: 0.69, z: 1.37, w: 0.2, h: 0.13, d: 0.08 } };
 
 /** The cab: the windscreen's base and top (y, z), the cage's heights and the roof. */
 export const MULE_CAB = {
@@ -79,7 +79,7 @@ export const MULE_DOOR = { x: 0.64, y0: 0.84, y1: 1.3, front: 0.46, rear: -0.52,
 export const MULE_BED = { half: 0.73, front: -0.64, gate: -1.64, floorY: 0.72, hinge: { y: 0.66, z: -1.64 } };
 
 /** The lamps on the plate at the cab's back (red, amber over reverse) and where the plate sits. */
-export const MULE_TAIL = { y: 1.6, z: -0.655, x: 0.46 };
+export const MULE_TAIL = { y: 1.62, z: -0.655, x: 0.34, plateW: 0.98, housing: 0.28 };
 
 /** The tow hitch under the tailgate: a receiver plate and a ball. */
 export const MULE_HITCH = { y: 0.42, z: -1.6 };

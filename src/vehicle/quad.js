@@ -21,6 +21,7 @@ import { poseLandyControls, poseSeatTips, LANDY_REAR_SEATS } from './landRoverMo
 import { poseCarControls, poseCarSeats } from './carModel.js';
 
 import { poseUtvControls, poseUtvBelts, poseUtvDoors } from './utvModel.js';
+import { DoorSwing } from './doorSwing.js';
 import { EngineLoad } from './engineLoad.js';
 import { waterGulp } from '../engine/water.js';
 import { AirFilter } from './airFilter.js';
@@ -1274,15 +1275,9 @@ export class Quad {
     if (this.utv) {
       poseUtvControls(this.model, { reverse: this.reverse, neutral: state.neutral, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, lights: this.lights.mode, horn: this.hornHeld, park: this.parkBrake });
       poseUtvBelts(this.model, this.belts.worn());
-      // The door nets swing out for a few seconds when you get on or off, and while a girl steps in or climbs down; shut the rest of the time.
-      const aboard = !!(this.rider || this.driver || this.passenger);
-      this.wasAboard ??= aboard;
-      if (aboard !== this.wasAboard) this.doorTimer = 2.4;
-      this.wasAboard = aboard;
-      this.doorTimer = Math.max(0, (this.doorTimer ?? 0) - dt);
-      const wantOpen = Math.abs(this.speed) < 0.5 && (this.doorTimer > 0 || this.doorWant) ? 1 : 0;
-      this.doorsOpen = (this.doorsOpen ?? 0) + (wantOpen - (this.doorsOpen ?? 0)) * Math.min(1, 4 * dt);
-      poseUtvDoors(this.model, this.doorsOpen);
+      // The door nets swing out, at the side used, for a few seconds when you get on or off and while a girl steps in or climbs down; shut the rest of the time.
+      this.doorSwing ??= new DoorSwing();
+      poseUtvDoors(this.model, this.doorSwing.update(dt, { speed: this.speed, aboard: { right: !!(this.driver || this.rider), left: !!this.passenger && !(this.driver || this.rider) }, boarding: this.doorBoarding ?? {} }));
     }
     if (this.landRover) {
       poseLandyControls(this.model, { gear: this.drivetrain.gear, gears: this.gearbox.gears, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, choke: this.choke, hand: this.handSetting, park: this.parkBrake });

@@ -106,10 +106,11 @@ const MAT = {
   glove: new THREE.MeshStandardMaterial({ color: 0x2d3a26, roughness: 0.8 }),
   rust: new THREE.MeshStandardMaterial({ color: 0x4b3a2e, roughness: 0.7, metalness: 0.5 }),
   orange: new THREE.MeshStandardMaterial({ color: 0xd9531e, roughness: 0.5 }), // the diff lock button
-  indicator: new THREE.MeshStandardMaterial({ color: 0xee6a0c, roughness: 0.3 }), // the indicator lenses, front and back: orange (addSignalLamps gives each side its own)
-  reverse: new THREE.MeshStandardMaterial({ color: 0xdfe4e6, roughness: 0.2 }), // the reverse lens on each tail lamp: clear
+  indicator: new THREE.MeshStandardMaterial({ color: 0x5c2c08, roughness: 0.25 }), // the indicator lenses, front and back: dark amber until they flash (addSignalLamps gives each side its own and lights it)
+  reverse: new THREE.MeshStandardMaterial({ color: 0x4d5254, roughness: 0.2 }), // the reverse lens on each tail lamp: smoked until it lights
   buckleRed: new THREE.MeshStandardMaterial({ color: 0xc8261e, roughness: 0.45 }), // the red release button on a seat belt buckle
   grille: new THREE.MeshStandardMaterial({ color: 0x141516, roughness: 0.6 }),
+  bumper: new THREE.MeshStandardMaterial({ color: 0x252628, roughness: 0.9, bumpScale: 0.6 }), // moulded black plastic with a grain (its map is made when the first model is built)
   glovebox: new THREE.MeshStandardMaterial({ color: 0x2a2b2d, roughness: 0.6 }),
   rim: new THREE.MeshStandardMaterial({ color: 0x2a2e2d, roughness: 0.55, metalness: 0.45 }), // the wheels: black steel
   flare: new THREE.MeshStandardMaterial({ color: 0x1a1b1c, roughness: 0.8, side: THREE.DoubleSide }), // the moulded black fender flares
@@ -125,6 +126,27 @@ export const BELTS = {
   mid: { anchor: 0.17, buckle: -0.12 },
   left: { anchor: 0.5, buckle: 0.2 },
 };
+
+/** A fine moulded grain for the bumper's black plastic: random light and dark flecks, tiled. */
+function grainTexture() {
+  const size = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  g.fillStyle = '#808080';
+  g.fillRect(0, 0, size, size);
+  let seed = 11;
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < 2600; i++) {
+    const v = Math.floor(60 + rand() * 140);
+    g.fillStyle = `rgb(${v},${v},${v})`;
+    g.fillRect(Math.floor(rand() * size), Math.floor(rand() * size), 1 + (rand() > 0.7 ? 1 : 0), 1);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(5, 2);
+  return tex;
+}
 
 /** A grey cloth weave with dark flecks, drawn once and tiled over the seat. */
 let cloth = null;
@@ -251,6 +273,7 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   const seatMat = new THREE.MeshStandardMaterial({ color: 0x191a1b, roughness: 0.55 }); // black vinyl, as in the photos
   const lensMat = new THREE.MeshStandardMaterial({ color: 0x2c302c, roughness: 0.08, metalness: 0.2, emissive: 0x000000 });
 
+  MAT.bumper.bumpMap ??= grainTexture();
   const beltWebbing = webbingMaterial();
   const quad = new THREE.Group();
   quad.name = 'quad';
@@ -750,12 +773,12 @@ export function poseUtvControls(model, { reverse, neutral, lights, horn, fourWd,
   parts.park.rotation.x += ((park ? -0.45 : 0.08) - parts.park.rotation.x) * 0.3; // pulled up when on, let down when off, eased
 }
 
-/** Swings the door nets: `open` 0 (shut) to 1 (swung out on the rear hoop). */
+/** Swings the door nets, each side on its own: `open` is { left, right }, each 0 (shut) to 1 (swung out on the front post). */
 export function poseUtvDoors(model, open) {
   const nets = model.userData.doorNets;
   if (!nets) return;
-  nets.left.rotation.y = MULE_DOOR.open * open;
-  nets.right.rotation.y = -MULE_DOOR.open * open;
+  nets.left.rotation.y = -MULE_DOOR.open * open.left; // hinged at the front, the free end at the back swings out to the side
+  nets.right.rotation.y = MULE_DOOR.open * open.right;
 }
 
 /** Shows each seat's belt worn (across whoever is in it) or stowed down the backrest. `belted` is { driver, mid, left } of booleans. */
