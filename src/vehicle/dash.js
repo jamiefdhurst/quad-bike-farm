@@ -674,11 +674,13 @@ function buildUtv() {
   const speedo = { cx: 196, cy: 58, r: 35 };
   const unit = { cx: 78, cy: 62, r: 29 }; // the fuel and hours unit
   const pockets = [{ cx: 140, cy: 46 }, { cx: 140, cy: 74 }, { cx: 252, cy: 46 }, { cx: 252, cy: 74 }];
+  // The rest of the tell-tales, in the same round bezels in a row along the bottom: the left indicator at the left edge, the right at the right.
+  const strip = [{ cx: 128, cy: 105, r: 6.4, kind: 'turnLeft' }, { cx: 176, cy: 105, r: 6.4, kind: 'temp' }, { cx: 216, cy: 105, r: 6.4, kind: 'belt' }, { cx: 264, cy: 105, r: 6.4, kind: 'turnRight' }];
   const face = mmPanel({ ...BODY, ...O });
   group.add(face.mesh);
   chromeRing(group, { ...speedo, r: speedo.r + 1.5, ...O, tube: 0.0034 });
   chromeRing(group, { ...unit, r: unit.r + 1.5, ...O, tube: 0.0034 });
-  for (const p of pockets) chromeRing(group, { ...p, r: 8.5, ...O, material: agedSteel, tube: 0.0022 }); // the lamps' bezels
+  for (const p of [...pockets, ...strip]) chromeRing(group, { ...p, r: p.r ?? 8.5, ...O, material: agedSteel, tube: 0.0022 }); // every lamp in a round bezel
   const gate = changeGate();
   let shownMph = 0;
   let shownFuel = 0;
@@ -718,7 +720,7 @@ function buildUtv() {
     warnSymbol(ctx, 'fuel', unit.cx + 20, unit.cy - 11, '#e8e2cc', true, 0.3, false);
     ctx.fillStyle = LCD.bg;
     ctx.fillRect(unit.cx - 17, unit.cy + 2, 34, 14);
-    segText(ctx, L.hours, unit.cx + 12, unit.cy + 9, 9, LCD.on, LCD.ghost);
+    segText(ctx, L.hours, unit.cx + 14.5, unit.cy + 5, 8, LCD.on, LCD.ghost); // right-aligned inside the window
     text(ctx, 'HOURS', unit.cx, unit.cy + 22, 3.2, '#ece6d2', { align: 'center' });
     // The four lamps in their pockets (each lit in its colour, or dull), and the strip of the rest under the speedo.
     const lamps = [['glow', LAMP.amber, L.glow], ['charge', LAMP.red, L.charge], ['oil', LAMP.red, L.oil], ['park', LAMP.red, L.park]];
@@ -730,28 +732,38 @@ function buildUtv() {
       const [kind, colour, lit] = ['glow', 'oil', 'charge', 'park'].map((k) => lamps.find((l) => l[0] === k))[i];
       warnSymbol(ctx, kind, p.cx, p.cy, colour, lit, 0.6);
     });
-    const strip = [['temp', LAMP.red, L.hot], ['belt', LAMP.red, L.belt], ['lights', L.main ? BLUE : LAMP.green, L.lights], ['turnLeft', LAMP.green, L.turnLeft], ['turnRight', LAMP.green, L.turnRight], [s.diffLock ? 'lock' : '4wd', LAMP.amber, !!s.fourWd]];
-    strip.forEach(([kind, colour, lit], i) => warnSymbol(ctx, kind, 150 + i * 19, 105, colour, lit, 0.5, false));
+    const colours = { turnLeft: [LAMP.green, L.turnLeft], temp: [LAMP.red, L.hot], belt: [LAMP.red, L.belt], turnRight: [LAMP.green, L.turnRight] };
+    for (const p of strip) {
+      ctx.fillStyle = '#080808';
+      ctx.beginPath();
+      ctx.arc(p.cx, p.cy, 5.6, 0, Math.PI * 2);
+      ctx.fill();
+      warnSymbol(ctx, p.kind, p.cx, p.cy, colours[p.kind][0], colours[p.kind][1], 0.5, false);
+    }
     // The key's legend at the right-hand end.
     text(ctx, 'OFF', 288, 34, 3.2, '#ece6d2', { align: 'center' });
     text(ctx, 'ON', 288, 88, 3.2, '#ece6d2', { align: 'center' });
   }
 
-  // The key switch: a round black bezel with the barrel and a key in it, standing out of the moulding's right-hand end, turned a quarter when on.
-  const bezel = new THREE.Mesh(new THREE.CylinderGeometry(0.0125, 0.0135, 0.008, 18).rotateX(Math.PI / 2), blackMat);
+  // The ignition: a round black bezel with a barrel, and a real key in it: a steel shank standing out towards the driver and a black rubber head,
+  // flat and rounded, with a ring hole, turned a quarter when the key is on (the legend OFF and ON is printed round it).
+  const bezel = new THREE.Mesh(new THREE.CylinderGeometry(0.0135, 0.0145, 0.008, 20).rotateX(Math.PI / 2), blackMat);
   bezel.position.set(-(288 - O.ox) * 0.001, -(61 - O.oy) * 0.001, -0.039);
   group.add(bezel);
   const ignitionKey = new THREE.Group();
   ignitionKey.name = 'ignitionKey';
-  ignitionKey.position.copy(bezel.position);
-  ignitionKey.position.z = -0.044;
-  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.0085, 0.0085, 0.006, 14).rotateX(Math.PI / 2), chromeMat);
+  ignitionKey.position.set(bezel.position.x, bezel.position.y, -0.043);
+  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.0095, 0.0095, 0.006, 16).rotateX(Math.PI / 2), chromeMat);
   ignitionKey.add(barrel);
-  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.026, 0.002), chromeMat);
-  blade.position.set(0, 0.011, -0.004);
-  const bow = new THREE.Mesh(new THREE.CylinderGeometry(0.0085, 0.0085, 0.003, 14).rotateX(Math.PI / 2), blackMat);
-  bow.position.set(0, 0.026, -0.004);
-  ignitionKey.add(blade, bow);
+  const shank = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.005, 0.016), chromeMat);
+  shank.position.z = -0.011; // the blade, standing out of the barrel
+  const teeth = new THREE.Mesh(new THREE.BoxGeometry(0.0062, 0.002, 0.009), blackMat);
+  teeth.position.set(0, 0.0032, -0.0125);
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.034, 0.005), blackMat);
+  head.position.set(0, 0.012, -0.022); // the rubber head, flat, with the key's long axis up
+  const hole = new THREE.Mesh(new THREE.CylinderGeometry(0.0034, 0.0034, 0.0056, 10).rotateX(Math.PI / 2), chromeMat);
+  hole.position.set(0, 0.025, -0.022);
+  ignitionKey.add(shank, teeth, head, hole);
   group.add(ignitionKey);
 
   return {

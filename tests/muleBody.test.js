@@ -111,6 +111,7 @@ describe('the UTV’s model', () => {
     const lamp = new THREE.Box3().setFromObject(m.getObjectByName('lampHousing'));
     const bumper = new THREE.Box3().setFromObject(m.getObjectByName('bumper'));
     expect(lamp.min.y).toBeGreaterThan(bumper.max.y + 0.02);
+    expect(new THREE.Box3().setFromObject(m.getObjectByName('headlamp')).max.z, 'the lens shows, outside the nose block').toBeGreaterThan(1.4);
     const nose = new THREE.Box3().setFromObject(m.getObjectByName('frontBody'));
     expect(lamp.max.y).toBeLessThan(nose.max.y); // the housing sits in the body, not above it
     expect(lamp.max.z).toBeGreaterThan(1.38); // and its face stands just proud of the nose's
@@ -126,6 +127,8 @@ describe('the UTV’s model', () => {
       for (const part of ['beltWebbing']) {
         const web = new THREE.Box3().setFromObject(belt.getObjectByName('stowed').getObjectByName(part));
         expect(web.max.y, `${seat} ${part}`).toBeLessThanOrEqual(loop.max.y + 0.001);
+        const reel = new THREE.Box3().setFromObject(belt.getObjectByName('beltReel'));
+        expect(web.min.y, `${seat} hangs the whole way down to the reel`).toBeLessThanOrEqual(reel.max.y);
       }
     }
   });
@@ -157,6 +160,7 @@ describe('the UTV’s model', () => {
     expect(box('grabHandle').min.y).toBeLessThan(loftTop(MULE_DASH, 0.14, 0.4, 3) + 0.01); // its feet are in the dash's top
     expect(box('tailPlate').min.z).toBeGreaterThan(-0.7); // right behind the rear hoop, bolted to it
     expect(m.getObjectByName('gateBadge').position.x).toBe(0);
+    expect(m.getObjectByName('hornPad').getObjectByName('wheelBadge')).toBeTruthy(); // the maker's name on the wheel
     expect(m.getObjectByName('parkBrakeLever').getObjectByName('handbrakeButton')).toBeTruthy(); // a car's lever with its release button
   });
 
@@ -171,7 +175,7 @@ describe('the UTV’s model', () => {
     const dash = m.getObjectByName('dash');
     expect(dash.getObjectByName('ignitionKey')).toBeTruthy();
     const rings = dash.children.filter((o) => o.geometry?.type === 'TorusGeometry');
-    expect(rings.length).toBe(6); // the speedo, the fuel unit and the four lamps' bezels
+    expect(rings.length).toBe(10); // the speedo, the fuel unit and a round bezel for each of the eight lamps
     const key = dash.getObjectByName('ignitionKey');
     m.userData.dash.update({ keyOn: false, ignition: false, rpm: 0, speedMph: 0, fuelLevel: 0.5, temperature: 0.3, hours: 12, odoMiles: 100 });
     expect(Math.abs(key.rotation.z)).toBe(0);

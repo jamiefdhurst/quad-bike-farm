@@ -176,7 +176,7 @@ export function buildBuckledBelt(name, { top, low, buckle, hip, faceZ = null, ma
   const tongueAt = [buckle[0], buckle[1] + 0.075, buckle[2]]; // where the tongue's slot is when it is clicked in: just above the housing
   // Stowed: down from the loop over the seat back's face to the parked tongue, which hangs on the webbing's end just above the reel.
   const fz = faceZ ?? low[2] + 0.025; // the seat back's face, where it hangs when the loop is behind the seat
-  const park = [low[0], low[1] + 0.14, fz];
+  const park = [low[0], low[1] - 0.02, fz]; // the tongue parked low, so the webbing hangs the whole way down the seat back
   const over = faceZ === null ? [(top[0] + park[0]) / 2, (top[1] + park[1]) / 2, (top[2] + park[2]) / 2 + 0.012] : [top[0], top[1] - 0.03, (top[2] + fz) / 2 + 0.03]; // over the top of the seat back
   mesh(ribbonGeometry([top, over, [park[0], Math.min(top[1] - 0.07, park[1] + 0.5), fz - 0.002], park], 0.046, 0.0032, [0, 0, 1], { uv: true }), web, stowed, 'beltWebbing');
   const parked = mesh(tongueGeometry(), m.steel, stowed, 'beltTongue');

@@ -20,7 +20,7 @@ const R = MULE_WHEELS.radius;
 // Wheels ---------------------------------------------------------------------
 
 const tyres = {};
-const tyre = (front) => (tyres[front ? 'f' : 'r'] ??= treadTyre('atv', { radius: R, width: front ? MULE_WHEELS.front : MULE_WHEELS.rear, rimR: MULE_WHEELS.rim, count: 14, segments: 26 }));
+const tyre = (front) => (tyres[front ? 'f' : 'r'] ??= treadTyre('atv', { radius: R, width: front ? MULE_WHEELS.front : MULE_WHEELS.rear, rimR: MULE_WHEELS.rim, count: 12, segments: 22 }));
 
 const axle = (r, len, mat, x, parent, name) => {
   const m = mesh(new THREE.CylinderGeometry(r, r, len, 22).rotateZ(Math.PI / 2), mat, parent, name);
@@ -40,13 +40,13 @@ export function buildMuleSpin(spin, MAT, front, side) {
   mesh(tyre(front), MAT.rubber, spin);
   const dark = MAT.rim.clone();
   dark.side = THREE.DoubleSide;
-  mesh(new THREE.CylinderGeometry(rimR, rimR, W - 0.03, 28, 1, true).rotateZ(Math.PI / 2), dark, spin, 'wheelRim');
+  mesh(new THREE.CylinderGeometry(rimR, rimR, W - 0.03, 20, 1, true).rotateZ(Math.PI / 2), dark, spin, 'wheelRim');
   for (const f of [-1, 1]) {
-    const ring = mesh(new THREE.TorusGeometry(rimR * 1.03, 0.011, 6, 28).rotateY(Math.PI / 2), MAT.rim, spin);
+    const ring = mesh(new THREE.TorusGeometry(rimR * 1.03, 0.011, 5, 20).rotateY(Math.PI / 2), MAT.rim, spin);
     ring.position.x = f * (face - 0.03);
   }
   const depth = 0.055;
-  const dish = mesh(new THREE.CylinderGeometry(rimR * 0.34, rimR * 0.97, depth, 28, 1, true).rotateZ(side * Math.PI / 2), dark, spin, 'wheelDisc');
+  const dish = mesh(new THREE.CylinderGeometry(rimR * 0.34, rimR * 0.97, depth, 20, 1, true).rotateZ(side * Math.PI / 2), dark, spin, 'wheelDisc');
   dish.position.x = x(0.03 + depth / 2);
   axle(0.052, depth + 0.012, MAT.cast, x(0.03 + depth / 2 - 0.006), spin, 'wheelHub');
   axle(0.075, 0.014, MAT.rim, x(0.05), spin, 'wheelFlange');
