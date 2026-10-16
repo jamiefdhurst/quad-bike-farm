@@ -52,7 +52,7 @@ function sampleHeights(model, nx, nz) {
       const x = -0.95 + (1.9 * i) / nx;
       const z = -1.45 + (2.85 * j) / nz;
       let top = 0;
-      for (const [dx, dz] of [[0, 0], [0.04, 0], [-0.04, 0], [0, 0.04], [0, -0.04]]) { // five rays, so a thin rack bar between two is not missed
+      for (const [dx, dz] of [[0, 0], [0.04, 0], [-0.04, 0], [0, 0.04], [0, -0.04], [0.04, 0.04], [-0.04, 0.04], [0.04, -0.04], [-0.04, -0.04], [0.02, 0], [-0.02, 0], [0, 0.02], [0, -0.02]]) { // thirteen rays, so a thin bar or grip between two points is not missed
         ray.set(root.localToWorld(new THREE.Vector3(x + dx, 2.2, z + dz)), down);
         const hit = ray.intersectObjects(meshes, false)[0];
         if (hit) top = Math.max(top, root.worldToLocal(hit.point.clone()).y);
@@ -103,7 +103,7 @@ export function buildTarp(model = null) {
     }
     h = next;
   }
-  for (let k = 0; k < h.length; k++) h[k] = Math.max(h[k], raw[k] + 0.08); // never under what it covers
+  for (let k = 0; k < h.length; k++) h[k] = Math.max(h[k], raw[k] + 0.11); // never under what it covers
   // The mesh: a finer grid over the same area, heights interpolated, folds added, the border brought down to the ground.
   const MX = 44;
   const MZ = 64;
