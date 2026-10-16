@@ -24,7 +24,8 @@ function rb(w, h, d, r, mat, x, y, z, parent, name, segments = 2) {
 
 export const GRIZZLY_POD = { w: 0.058, h: 0.07, d: 0.046 };
 
-export function buildGrizzlyPod(MAT) {
+/** `choke` false leaves the lever off, for an injected engine (the Kodiak's). */
+export function buildGrizzlyPod(MAT, { choke: withChoke = true } = {}) {
   const pod = new THREE.Group();
   pod.name = 'controlPod';
   pod.userData.keep = true;
@@ -66,17 +67,19 @@ export function buildGrizzlyPod(MAT) {
   lights.add(new THREE.Mesh(mergeGeometries(dots), new THREE.MeshStandardMaterial({ color: 0xc9cac6, roughness: 0.5 })));
   // The choke lever, hanging from the pod's underside at its right, clear of the buttons: a tapered black stalk with a ridged paddle at its tip.
   // It pivots at the top and the quad swings it about X (pulled towards the rider, +Z here, to apply the choke).
-  const choke = new THREE.Group();
-  choke.name = 'chokeLever';
-  choke.userData.keep = true;
-  choke.position.set(0.0215, -P.h / 2 - 0.016, 0.012); // to the right of the stop and start buttons, so it never swings across them
-  pod.add(choke);
-  const path = [[0, 0, 0], [0, -0.016, 0.002], [0, -0.03, 0.006], [0, -0.042, 0.012]];
-  choke.add(new THREE.Mesh(sweepGeometry(path, (t) => 0.0042 - 0.0008 * t, { radial: 8 }), MAT.frame));
-  rb(0.013, 0.012, 0.008, 0.003, MAT.frame, 0, -0.047, 0.014, choke, 'chokeLeverKnob', 1).rotation.x = -0.4;
-  const ribs = [];
-  for (let i = 0; i < 4; i++) ribs.push(strip(new THREE.BoxGeometry(0.013, 0.0016, 0.0016)).translate(0, -0.044 - i * 0.0025, 0.0187));
-  choke.add(new THREE.Mesh(mergeGeometries(ribs), MAT.rubber));
+  if (withChoke) {
+    const choke = new THREE.Group();
+    choke.name = 'chokeLever';
+    choke.userData.keep = true;
+    choke.position.set(0.0215, -P.h / 2 - 0.016, 0.012); // to the right of the stop and start buttons, so it never swings across them
+    pod.add(choke);
+    const path = [[0, 0, 0], [0, -0.016, 0.002], [0, -0.03, 0.006], [0, -0.042, 0.012]];
+    choke.add(new THREE.Mesh(sweepGeometry(path, (t) => 0.0042 - 0.0008 * t, { radial: 8 }), MAT.frame));
+    rb(0.013, 0.012, 0.008, 0.003, MAT.frame, 0, -0.047, 0.014, choke, 'chokeLeverKnob', 1).rotation.x = -0.4;
+    const ribs = [];
+    for (let i = 0; i < 4; i++) ribs.push(strip(new THREE.BoxGeometry(0.013, 0.0016, 0.0016)).translate(0, -0.044 - i * 0.0025, 0.0187));
+    choke.add(new THREE.Mesh(mergeGeometries(ribs), MAT.rubber));
+  }
   // The red engine stop on the step, a wedge, and the grey start button below it.
   const stop = new THREE.Group();
   stop.name = 'stopRocker';

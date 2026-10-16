@@ -21,6 +21,8 @@ import { buildLeftPod, buildBrakeLever, buildDriveSwitch, buildThumbThrottle, po
 import { addRackDetail, addGrille, addTreadPlates, addShiftLever, addBarCables, addDrumBrake, seatTape, addDecals } from './foremanDetail.js';
 import { DECK, deckGeometry, flareGeometry, bulkheadGeometry, topCoverGeometry, bodyTopY } from './foremanDeck.js';
 import { GRIZZLY_DECK, GRIZZLY_RACKS, grizzlyLampOutline } from './grizzlyBody.js';
+import { KODIAK_DECK, KODIAK_LAMP } from './kodiakBody.js';
+import { addKodiakDecals } from './kodiakDetail.js';
 import { buildGrizzlyPod } from './grizzlyControls.js';
 import { BAYOU_DECK, BAYOU_RACKS, BAYOU_FACE } from './bayouBody.js';
 import { buildBayouPod } from './bayouControls.js';
@@ -101,6 +103,16 @@ const STYLE = {
   // The Grizzly's: independent at both ends, silver steel wheels with five slots, black springs, black steel bars.
   grizzly: {
     rim: new THREE.MeshStandardMaterial({ color: 0xbfc2c5, roughness: 0.33, metalness: 0.75, side: THREE.DoubleSide }),
+    rimOpts: { holes: 5 },
+    rimR: 0.15,
+    spring: new THREE.MeshStandardMaterial({ color: 0x1b1c1e, roughness: 0.4, metalness: 0.5 }),
+    bars: MAT.frame,
+    rear: 'arms',
+    fwd: true,
+  },
+  // The Kodiak's (the loan quad, TODO 96): the Grizzly's independent suspension, five-spoke black alloy wheels, black bars and springs.
+  kodiak: {
+    rim: new THREE.MeshStandardMaterial({ color: 0x2a2c30, roughness: 0.45, metalness: 0.35, side: THREE.DoubleSide }),
     rimOpts: { holes: 5 },
     rimR: 0.15,
     spring: new THREE.MeshStandardMaterial({ color: 0x1b1c1e, roughness: 0.4, metalness: 0.5 }),
@@ -249,7 +261,7 @@ function buildWheel(w, width, style, cfg) {
   add(rim.nuts, MAT.chrome, spin);
 
   if (style === 'utility' && !w.front) addDrumBrake(wheel, spin, s, MAT); // the Foreman's rear drum brakes, with the axle's inside showing
-  if (style === 'grizzly' && w.front) addFrontBrake(wheel, spin, s); // the Grizzly's front discs and calipers
+  if ((style === 'grizzly' || style === 'kodiak') && w.front) addFrontBrake(wheel, spin, s); // the Grizzly's and Kodiak's front discs and calipers
   // Hub and brake drum, inboard, turning with the steering but not the wheel.
   const hub = add(cached('hub', () => new THREE.CylinderGeometry(0.07, 0.07, 0.07, 16).rotateZ(Math.PI / 2)), MAT.engineDark, wheel);
   hub.position.x = -s * (width / 2 - 0.05);
@@ -452,7 +464,7 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
   const bars = new THREE.Group();
   bars.name = 'handlebars';
   bars.userData.keep = true;
-  const kit = chokeStyle === 'slide' || podStyle === 'grizzly'; // the red's and blue's levers, drive switch and thumb throttle (foremanControls.js)
+  const kit = chokeStyle === 'slide' || podStyle === 'grizzly'; // (the Kodiak takes the Grizzly's pod, without its choke lever) // the red's and blue's levers, drive switch and thumb throttle (foremanControls.js)
   const bayou = podStyle === 'bayou'; // the green's bars rise from a low middle in a V, and its speedo stands on a bracket over the clamp
   const racer = podStyle === 'racer'; // the orange's: the yellow's V bars, with a pad on the crossbar, a lamp in a guard and a pod on the left
   const junior = podStyle === 'junior'; // the kids' quad's: the yellow's V bars, without a lamp or a lights switch
@@ -520,7 +532,9 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
   let choke = new THREE.Group();
   choke.name = 'chokeLever';
   choke.userData.keep = true;
-  if (chokeStyle === 'slide') {
+  if (chokeStyle === 'none') {
+    choke = null; // fuel injected: there is no choke to fit
+  } else if (chokeStyle === 'slide') {
     // The Foreman's switch pod (foremanControls.js): lights, HI / LO, engine stop, start and the choke slider, on the left, face to the rider.
     // The Bayou's (bayouControls.js) is the same slider on its own pod, sitting lower where the bar does at that distance out.
     const pod = bayou ? buildBayouPod(MAT) : buildLeftPod(MAT);
@@ -555,7 +569,7 @@ function buildHandlebars(dashStyle, cfg, chokeStyle = 'thumb', driveSwitch = nul
   }
   if (podStyle === 'grizzly') {
     // The Grizzly's pod (grizzlyControls.js): lights, engine stop and start, face to the rider; its choke stays on the tank.
-    const pod = buildGrizzlyPod(MAT);
+    const pod = buildGrizzlyPod(MAT, { choke: chokeStyle !== 'none' });
     pod.position.set(0.176, 0.048, -0.05);
     pod.rotation.set(0.6, Math.PI, 0);
     bars.add(pod);
@@ -698,6 +712,7 @@ const SECTION = {
   utility2: [[0, 0.07], [0.02, 0.02], [0.06, 0.0], [0.5, -0.008], [0.86, -0.002], [0.93, 0.006], [0.965, 0.028], [0.975, 0.06], [0.962, 0.075]],
   // The Grizzly's fenders are made with the decks (grizzlyBody.js); these are only here so it names a body style that exists.
   grizzly: [[0, 0.07], [0.5, -0.008], [0.96, 0.03]],
+  kodiak: [[0, 0.07], [0.5, -0.008], [0.96, 0.03]], // (the same: made with the decks)
   // The Bayou's fenders are made with the decks too (bayouBody.js).
   bayou: [[0, 0.07], [0.5, -0.008], [0.96, 0.03]],
   // The Blaster's fenders are made by blasterFenders (blasterBody.js has their numbers); this names a body style that exists.
@@ -727,6 +742,7 @@ const PROFILE = {
     width: [0.25, 0.67],
   },
   grizzly: { front: [[0.44, 0.1], [0.0, 0.412], [-0.38, 0.05]], rear: [[0.38, 0.05], [-0.05, 0.42], [-0.42, 0.1]], width: [0.25, 0.67] },
+  kodiak: { front: [[0.44, 0.1], [0.0, 0.412], [-0.38, 0.05]], rear: [[0.38, 0.05], [-0.05, 0.42], [-0.42, 0.1]], width: [0.25, 0.67] },
   bayou: { front: [[0.44, 0.1], [0.0, 0.412], [-0.38, 0.05]], rear: [[0.38, 0.05], [-0.05, 0.42], [-0.42, 0.1]], width: [0.25, 0.67] },
   blaster: { front: BLASTER_FENDERS.front.profile, rear: BLASTER_FENDERS.rear.profile, width: BLASTER_FENDERS.front.width },
   junior: { front: JUNIOR_FENDERS.front.profile, rear: JUNIOR_FENDERS.rear.profile, width: JUNIOR_FENDERS.front.width },
@@ -757,6 +773,7 @@ export const BODY_STYLES = Object.keys(PROFILE).filter((k) => k in SECTION);
 function fenders(root, style, paint) {
   if (style === 'utility') return foremanFenders(root, paint);
   if (style === 'grizzly') return foremanFenders(root, paint, GRIZZLY_DECK, paint);
+  if (style === 'kodiak') return foremanFenders(root, paint, KODIAK_DECK); // black flares along painted decks
   if (style === 'bayou') return foremanFenders(root, paint, BAYOU_DECK); // black rubber flares over painted decks
   if (style === 'blaster') return blasterFenders(root, paint);
   if (style === 'racer') return blasterFenders(root, paint, RACER_FENDERS, RACER_SECTION);
@@ -827,7 +844,13 @@ function foremanFenders(root, paint, D = DECK, flareColour = null) {
     const which = w.front ? 'front' : 'rear';
     const W = F[which];
     const tag = w.name.slice(-2);
-    add(flareGeometry(which, w.z, s, D), flareMat, root, `flare_${tag}`);
+    if (D.paintedSkirt) {
+      // The Kodiak's: a black strip along the top of the edge, the wall below it painted (the black is the arch's trim, below).
+      add(flareGeometry(which, w.z, s, D, 'strip'), flareMat, root, `flare_${tag}`);
+      add(flareGeometry(which, w.z, s, D, 'skirt'), paint, root, `skirt_${tag}`);
+    } else {
+      add(flareGeometry(which, w.z, s, D), flareMat, root, `flare_${tag}`);
+    }
     add(bulkheadGeometry(which, s, D), paint, root, `bulkhead_${tag}`);
     // The wing's inner wall, red, just inboard of the tyre: the wheel arch is a closed tunnel from the deck down to the arch, so nothing
     // under the deck shows from the middle of the quad (the real one's inner wings are body-coloured).
@@ -1174,7 +1197,7 @@ function swept(points, radii, mat, parent, samples = 40) {
   return add(sweepGeometry(curve.getPoints(samples), r, { radial: 14 }), mat, parent);
 }
 
-function buildExhaust(engine, sport, race = false, blaster = false, racer = false, junior = false) {
+function buildExhaust(engine, sport, race = false, blaster = false, racer = false, junior = false, bright = false) {
   const exhaustTip = new THREE.Object3D();
   exhaustTip.name = 'exhaustTip';
   engine.add(exhaustTip);
@@ -1283,7 +1306,7 @@ function buildExhaust(engine, sport, race = false, blaster = false, racer = fals
     pipe([[-0.03, 0.67, 0.25], [-0.1, 0.6, 0.42], [-0.24, 0.48, 0.36], [-0.27, 0.46, 0.0], [-0.27, 0.5, -0.5]], 0.025, MAT.exhaust, engine, { bend: 0.1, steps: 6 });
     // Silencer with a heat shield and a chrome tip.
     // Both sides of every surface drawn, so looking into the can or under the shield shows the inside, and a dark baffle in the can.
-    const canMat = MAT.exhaust.clone();
+    const canMat = (bright ? MAT.alloy : MAT.exhaust).clone(); // the Kodiak's is bright silver
     canMat.side = THREE.DoubleSide;
     const shieldMat = MAT.engineDark.clone();
     shieldMat.side = THREE.DoubleSide;
@@ -1434,6 +1457,8 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   const race = style === 'sport2' || racer;
   const farm = style === 'utility3';
   const bayou = style === 'bayou'; // the green (TODO 90): a Kawasaki KLF300 Bayou's decks, grey nose cage, round speedo and V bars
+  const kodiak = style === 'kodiak'; // the loan quad (TODO 96): a Yamaha Kodiak 450's, the Grizzly's machinery with its own deck numbers, black flares, wheels and bumper
+  const gz = style === 'grizzly' || kodiak; // the two Yamaha utility bodies, built with the same decks, panels, racks and pod
   const blaster = style === 'blaster'; // the yellow (TODO 91): a Yamaha YFS200 Blaster's small plastics, open engine bay and wheels at the edges
   const sport = style === 'sport' || style === 'blaster' || junior || race; // two-stroke chassis
   const cfg = STYLE[style] ?? STYLE.utility;
@@ -1443,9 +1468,9 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   const bayouGrey = bayou ? cageMaterial() : null;
   const silver = blaster ? silverMaterial() : null;
   const blue = racer ? racerBlue() : null;
-  const lensMat = new THREE.MeshStandardMaterial({ color: style === 'grizzly' ? 0x93a6b0 : bayou ? 0xb4b08c : 0x2c302c, roughness: 0.08, metalness: 0.2, emissive: 0x000000 }); // the Grizzly's is a clear lens you can see into
+  const lensMat = new THREE.MeshStandardMaterial({ color: gz ? 0x93a6b0 : bayou ? 0xb4b08c : 0x2c302c, roughness: 0.08, metalness: 0.2, emissive: 0x000000 }); // the Grizzly's is a clear lens you can see into
   const seatMat =
-    style === 'utility2'
+    style === 'utility2' || kodiak
       ? new THREE.MeshStandardMaterial({ color: 0x3b3e42, roughness: 0.55 })
       : farm
         ? new THREE.MeshStandardMaterial({ color: 0x8a6a45, roughness: 0.62 })
@@ -1466,9 +1491,9 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   root.name = 'bodyRoot';
   body.add(root);
 
-  buildFrame(root, sport, barsY(style), style === 'utility' ? -0.9 : style === 'grizzly' || bayou ? -0.84 : blaster || racer || junior ? -0.93 : -0.98); // the Foreman's rails end under its rear deck and the Grizzly's inside its own, not out behind the tail lamp
+  buildFrame(root, sport, barsY(style), style === 'utility' ? -0.9 : gz || bayou ? -0.84 : blaster || racer || junior ? -0.93 : -0.98); // the Foreman's rails end under its rear deck and the Grizzly's inside its own, not out behind the tail lamp
   const engine = buildEngine(root, sport, race, blaster || junior);
-  buildExhaust(engine, sport, race, blaster, racer, junior);
+  buildExhaust(engine, sport, race, blaster, racer, junior, kodiak);
 
   // Suspension: wishbones at the front, a swingarm or more wishbones at the back.
   for (let i = 0; i < WHEELS.length; i++) {
@@ -1549,11 +1574,11 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     pipe([[0.18, 0.38, 0.9], [0.26, 0.42, 1.1], [-0.26, 0.42, 1.1], [-0.18, 0.38, 0.9]], 0.016, MAT.frame, root, { bend: 0.07 });
     pipe([[0.16, 0.74, -0.92], [0.2, 0.77, -1.07], [-0.2, 0.77, -1.07], [-0.16, 0.74, -0.92]], 0.015, MAT.frame, root, { bend: 0.07 });
     rbox(0.1, 0.035, 0.015, 0.008, MAT.tail, 0, 0.78, -1.025, root, undefined, 1);
-  } else if (style === 'grizzly') {
-    // The Grizzly (a 2000s Yamaha 660): the painted decks are made with the fenders; here are the round lamps in black pods at the face's
+  } else if (gz) {
+    // The Grizzly (a 2000s Yamaha 660; the Kodiak shares all but its lamps, bumper and tail): the painted decks are made with the fenders; here are the round lamps in black pods at the face's
     // corners, the grille between them with the steel bumper below (grizzlyDetail.js), the black dome round the steering column, and the
     // tail lamp panel on the rear deck's face.
-    for (const s of [-1, 1]) {
+    for (const s of kodiak ? [] : [-1, 1]) {
       // A black almond-shaped surround on the face, pointing out and down towards the fender's corner, and a bare round lens in it with
       // no bezel of its own.
       const ctrl = grizzlyLampOutline().map(([u, v]) => new THREE.Vector3(s * (GRIZZLY_FACE.lampX + u), GRIZZLY_FACE.lampY + v, 0));
@@ -1563,8 +1588,15 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
       surround.geometry.computeVertexNormals();
       roundLamp(root, s * GRIZZLY_FACE.lampX, GRIZZLY_FACE.lampY, GRIZZLY_FACE.z + 0.014, 0.036, lensMat, MAT.plastic, s > 0 ? 'headlightLeft' : 'headlightRight', true);
     }
-    addGrizzlyFront(root, MAT, paint);
-    addGrizzlyRear(root, MAT);
+    if (kodiak) {
+      // The Kodiak's lamps: round, in a black bezel, low in the face's corners; a black steel bumper.
+      for (const s of [-1, 1]) roundLamp(root, s * KODIAK_LAMP.x, KODIAK_LAMP.y, GRIZZLY_FACE.z + 0.012, KODIAK_LAMP.r, lensMat, MAT.plastic, s > 0 ? 'headlightLeft' : 'headlightRight');
+      addGrizzlyFront(root, MAT, paint, { steel: MAT.frame });
+      addGrizzlyRear(root, MAT);
+    } else {
+      addGrizzlyFront(root, MAT, paint);
+      addGrizzlyRear(root, MAT);
+    }
     add(
       loftGeometry([
         { z: 0.42, w: 0.26, y0: 0.71, y1: 0.8 },
@@ -1671,19 +1703,19 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     for (const s of [-1, 1]) rbox(0.05, 0.026, 0.01, 0.005, TAIL_REFLECTOR, s * 0.11, 0.735, -0.932, root, undefined, 1);
   }
   if (!sport) {
-    if (style === 'utility' || style === 'grizzly' || bayou) {
+    if (style === 'utility' || gz || bayou) {
       // Red side panels under the seat, from the tank down the sides to the rear deck, and a ledge over the frame between them, so
       // the body is closed from the front deck to the rear one. Each panel's ends are the height of the deck beside it (so the deck runs
       // up into the panel with no step) and go down to the footboard where the wing walls meet them (they end 0.1 m short of the decks, where the walls' curved fillets take over); the engine shows under its middle.
       for (const s of [-1, 1]) {
-        const e = style === 'grizzly' ? 0.225 : 0.2; // the Grizzly's black panels run 25 mm into the blue walls at the decks' ends, so no crack shows between them
+        const e = gz ? 0.225 : 0.2; // the Grizzly's black panels run 25 mm into the blue walls at the decks' ends, so no crack shows between them
         const top = [e, 0.17, 0.12, 0.05, -0.05, -0.12, -0.17, -e].map((z) => [z, bodyTopY(z)]);
         // The Bayou's is a short strip under the seat, its ends down to the wing walls, so the crankcase shows below it.
         const bottom = bayou ? [[-e, 0.36], [-0.19, 0.5], [-0.14, 0.6], [-0.08, 0.64], [0.08, 0.64], [0.14, 0.6], [0.19, 0.5], [e, 0.36]] : [[-e, 0.36], [-0.16, 0.41], [-0.1, 0.46], [0, 0.5], [0.1, 0.46], [0.16, 0.41], [e, 0.36]];
-        const panel = add(sideSlab([...top, ...bottom], 0.022, 0.006), style === 'grizzly' ? MAT.plastic : paint, root, 'sidePanel');
+        const panel = add(sideSlab([...top, ...bottom], 0.022, 0.006), gz ? MAT.plastic : paint, root, 'sidePanel');
         panel.position.set(s * 0.255, 0, 0);
       }
-      add(topCoverGeometry(bayou ? BAYOU_DECK : style === 'grizzly' ? GRIZZLY_DECK : DECK), style === 'grizzly' ? MAT.plastic : paint, root, 'bodyTop'); // closes the top of the body between the decks, over the frame and the wing walls' fillets
+      add(topCoverGeometry(bayou ? BAYOU_DECK : kodiak ? KODIAK_DECK : style === 'grizzly' ? GRIZZLY_DECK : DECK), gz ? MAT.plastic : paint, root, 'bodyTop'); // closes the top of the body between the decks, over the frame and the wing walls' fillets
     } else {
       // Black side covers under the seat.
       for (const s of [-1, 1]) rbox(0.03, 0.14, 0.5, 0.014, MAT.plastic, s * 0.185, 0.69, -0.12, root);
@@ -1691,7 +1723,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     // Tow hitch: a drawbar out of the frame with a ball on a plate (the Bayou's, with a pin, is made with its rear: bayouDetail.js).
     if (bayou) {
       // see addBayouRear
-    } else if (style === 'utility' || style === 'grizzly') {
+    } else if (style === 'utility' || gz) {
       // The Foreman's: a steel plate bolted to the rear cross-tube and the cradle rails, a drawbar back from its foot, and gussets.
       rbox(0.14, 0.22, 0.016, 0.004, MAT.frame, 0, 0.5, -0.985, root); // stops below the tail lamp, so the lamp shows
       rbox(0.08, 0.02, 0.12, 0.004, MAT.frame, 0, 0.405, -1.04, root, undefined, 1);
@@ -1741,7 +1773,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
         { z: 0.46, w: 0.32, y0: 0.7, y1: 0.885 },
         { z: 0.5, w: 0.2, y0: 0.72, y1: 0.84 },
       ];
-  if (!racer && !junior) add(loftGeometry(tankStations, { exponent: style === 'utility2' || style === 'grizzly' || bayou || farm ? 5 : race ? 6 : 3.2 }), bayou ? MAT.plastic : paint, root, 'tank'); // the Bayou's cover is black
+  if (!racer && !junior) add(loftGeometry(tankStations, { exponent: style === 'utility2' || gz || bayou || farm ? 5 : race ? 6 : 3.2 }), bayou ? MAT.plastic : paint, root, 'tank'); // the Bayou's cover is black
   buildFuelTap(root, tapStyle);
   const tankCap = add(lathe([[0.036, -0.012], [0.036, 0.004], [0.03, 0.012], [0.001, 0.012]], 18), MAT.chrome, root);
   tankCap.position.set(0, racer ? shroudTop(0.2) + 0.001 : junior ? juniorTop(0.2) + 0.001 : race ? 0.908 : 0.928, racer || junior ? 0.2 : race ? 0.38 : 0.36); // on the Quadracer's shroud, which is its tank cover
@@ -1761,7 +1793,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
       tube([s * 0.41, 0.92, -0.82], [s * 0.41, 0.73, -0.82], 0.011, MAT.frame, root, 6);
       tube([s * 0.41, 0.92, -0.97], [s * 0.41, 0.73, -0.84], 0.011, MAT.frame, root, 6);
     }
-  } else if (style === 'grizzly') {
+  } else if (gz) {
     // The Grizzly's racks: flat grids with a raised lip, standing on the decks at their outer edges, the front one hung off the
     // bumper's mounts and the rear one braced down to the deck's back edge.
     const F = GRIZZLY_RACKS.front;
@@ -1898,7 +1930,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     );
     rbox(0.34, 0.1, 0.38, 0.03, MAT.plastic, 0, 0.82, -0.6, root, 'pillionBase');
     for (const s of [-1, 1]) {
-      pipe(mx(s, [[0.14, 0.84, -0.4], [0.25, 0.99, -0.44], [0.25, 0.99, -0.78], [0.14, 0.84, -0.82]]), 0.013, farm || bayou || style === 'grizzly' ? MAT.frame : MAT.chrome, root, { bend: 0.05, steps: 5 });
+      pipe(mx(s, [[0.14, 0.84, -0.4], [0.25, 0.99, -0.44], [0.25, 0.99, -0.78], [0.14, 0.84, -0.82]]), 0.013, farm || bayou || gz ? MAT.frame : MAT.chrome, root, { bend: 0.05, steps: 5 });
     }
     pillionGrips(root, 0.25, 0.99, -0.55, false);
   }
@@ -1918,9 +1950,10 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     addBayouDecals(root);
     addBayouWear(root, MAT);
   }
-  if (style === 'grizzly') {
-    quad.userData.touchWear = [-1, 1].map((s) => ({ at: [s * 0.3, 0.52, 0.0], r: 0.16, amount: 0.5 })); // boots rub the panels' lower edges
-    addGrizzlyDecals(root);
+  if (gz) {
+    quad.userData.touchWear = [-1, 1].map((s) => ({ at: [s * 0.3, 0.52, 0.0], r: 0.16, amount: kodiak ? 0.1 : 0.5 })); // boots rub the panels' lower edges (hardly, on the loan quad)
+    if (kodiak) addKodiakDecals(root);
+    else addGrizzlyDecals(root);
   }
   if (style === 'utility') {
     quad.userData.touchWear = [-1, 1].map((s) => ({ at: [s * 0.3, 0.52, 0.0], r: 0.16, amount: 0.8 })); // boots rub the panels' lower edges and the arches' tails
@@ -1947,7 +1980,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   if (style === 'utility' && !race && !sport) addTreadPlates(root, MAT);
 
   // Handlebars.
-  const bars = buildHandlebars(dashStyle, cfg, chokeStyle, driveSwitch, style === 'grizzly' ? 'grizzly' : bayou ? 'bayou' : blaster ? 'blaster' : racer ? 'racer' : junior ? 'junior' : null);
+  const bars = buildHandlebars(dashStyle, cfg, chokeStyle, driveSwitch, gz ? 'grizzly' : bayou ? 'bayou' : blaster ? 'blaster' : racer ? 'racer' : junior ? 'junior' : null);
   if (chokeStyle === 'plunger') (blaster || junior ? buildCarbPlunger : buildChokePlunger)(root, bars.userData.chokeGroup);
   if (sport) {
     // Motocross bars with a padded crossbar, ahead of the dash so it doesn't block the display. (The Blaster's hoop is made with its V: addBlasterBars.)
@@ -1981,7 +2014,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     );
     roundLamp(bars, 0, 0.02, 0.17, 0.06, lensMat, MAT.chrome, 'headlight');
   }
-  if (style === 'utility' || style === 'grizzly') addBarCables(bars, MAT);
+  if (style === 'utility' || gz) addBarCables(bars, MAT);
   if (bayou) addBayouBarParts(bars, MAT);
   if (blaster) addBlasterBars(bars, MAT, lensMat);
   if (racer) addRacerBars(bars, MAT, lensMat);
@@ -2003,14 +2036,14 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
   pillionAnchor.position.set(0, race ? 0.94 : sport ? 0.98 : 1.0, sport ? -0.66 : -0.6);
   if (!solo) root.add(pillionAnchor);
   // Quads with a front rack have a spot on it to sit, hips towards the back of the deck so her legs hang over the nose.
-  if (!solo && (style === 'utility' || style === 'utility2' || style === 'grizzly' || bayou || farm)) {
+  if (!solo && (style === 'utility' || style === 'utility2' || gz || bayou || farm)) {
     const rackAnchor = new THREE.Object3D();
     rackAnchor.name = 'rackAnchor';
     rackAnchor.position.set(0, 0.84, 0.66);
     root.add(rackAnchor);
   }
   // Somewhere to leave a mug of tea: the middle of the rear rack, on the deck (items/mug.js).
-  if (!solo && (style === 'utility' || style === 'utility2' || style === 'grizzly' || bayou || farm)) {
+  if (!solo && (style === 'utility' || style === 'utility2' || gz || bayou || farm)) {
     const mugAnchor = new THREE.Object3D();
     mugAnchor.name = 'mugAnchor';
     mugAnchor.position.set(0, style === 'utility' ? 0.925 : 0.935, style === 'utility' ? -0.93 : -0.93);

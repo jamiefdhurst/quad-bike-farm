@@ -125,7 +125,7 @@ export function buildGameTree(g, host) {
       }
       if (q().signals) out.indicators = choice(SIGNAL_MODES, () => q().signals.mode, (v) => q().signals.set(v), 'the indicators and hazards');
       if (q().drive) out.drive = choice(q().drive.hasLock ? DRIVE_MODES : ['2wd', '4wd'], () => q().drive.mode, (v) => (q().drive.mode = v), 'the 2WD / 4WD switch');
-      if (!q().fuel.params.noTap || (q().landRover && !q().engine.params.compressionIgnition)) out.choke = num(() => q().choke, (v) => (q().choke = v), 0, 1); // the Land Rover has a choke but no tap
+      if (!q().engine.params.injected && (!q().fuel.params.noTap || (q().landRover && !q().engine.params.compressionIgnition))) out.choke = num(() => q().choke, (v) => (q().choke = v), 0, 1); // the Land Rover has a choke but no tap
       for (const m of engineReadouts(e(), { manual: !!q().manual })) out[m.key] = typeof m.get(e()) === 'number' ? ro(() => m.get(e()), '', m.label) : text(() => String(m.get(e())), m.label);
       if (e().params.waterCooled) out.coolant = num(() => e().coolant, (v) => (e().coolant = v), 0, 1);
       if (e().params.waterCooled) out.thermostat = num(() => e().thermostat, (v) => (e().thermostat = v), 0, 1);

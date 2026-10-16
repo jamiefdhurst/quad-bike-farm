@@ -109,8 +109,8 @@ export function skirtBottom(D, spec, wheelZ, z) {
   return arch + (D.lowEdge - arch) * k * k;
 }
 
-/** The black flare for one side (side = +1 or -1), on the deck of `which` over the wheel at wheelZ. */
-export function flareGeometry(which, wheelZ, side, D = DECK) {
+/** The black flare for one side (side = +1 or -1), on the deck of `which` over the wheel at wheelZ. `part` 'strip' or 'skirt' makes only that half (the Kodiak paints the skirt). */
+export function flareGeometry(which, wheelZ, side, D = DECK, part = 'all') {
   const spec = D[which];
   const grid = deckRows(D, spec).map((r) => {
     const w = D.flareW * (1 - 0.8 * r.g);
@@ -124,7 +124,8 @@ export function flareGeometry(which, wheelZ, side, D = DECK) {
     const lipY = yEdge - 0.022;
     out.push([side * (r.half + 0.013), lipY, r.z]);
     out.push([side * (r.half + 0.012), Math.min(skirtBottom(D, spec, wheelZ, r.z), lipY - 0.002), r.z]);
-    return out;
+    // `strip` is the black top (the first four columns and the edge), `skirt` the lip and the wall down to the arch (from the edge on).
+    return part === 'strip' ? out.slice(0, 5) : part === 'skirt' ? out.slice(4) : out;
   });
   return gridGeometry(grid);
 }

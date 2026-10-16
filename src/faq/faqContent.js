@@ -189,7 +189,7 @@ export const FAQ_SECTIONS = [
           slides it towards the label and <kbd>Z</kbd> eases it back. The blue's is a lever hanging under its switch housing. The yellow's is not on the
           bars at all: it is a black knob with the choke symbol on the left of the carb, down in the open engine bay, so you have to be all but stopped to
           reach it, and it takes a hand off the bars. The fuel tap is beside it, on the tank's lower edge. The orange's is a lever on the pod on the left bar, beside the lights rocker, always in reach. The kids' quad's, the mini moto's and the old three-wheeler's are a knob on the left of the carb like the yellow's, with the fuel tap beside it, and their knobs come well out of the barrel when they are on. The others have a knob or a lever of their own,
-          so stand at the quad and watch what moves when you hold <kbd>Q</kbd>.`,
+          so stand at the quad and watch what moves when you hold <kbd>Q</kbd>. The loan quad and Jess's Corsa have none: they are fuel injected and sort out a cold start themselves.`,
       },
       {
         q: 'How do I read the green quad’s speedo?',
@@ -1603,12 +1603,12 @@ export const FAQ_SECTIONS = [
         tip: 'P switches the lights in the UTV and both Land Rovers: dipped, main beam, off.',
       },
       {
-        q: 'How do I put the red, blue or green quad\'s lights on main beam, or off?',
+        q: 'How do I put the red, blue, green or loan quad\'s lights on main beam, or off?',
         a: `Press <kbd>P</kbd> while you ride it: it starts on dipped, then main beam (a longer, whiter beam), then off, then dipped again. The yellow rocker on
           the switch pod on the left bar is the lights, with OFF at the top and ON at the bottom, and the white one under it is HI and LO. They move as you press. The
           red rocker is the engine stop, showing RUN while the key is on, the round button is the starter (it goes in while you hold <kbd>R</kbd>), and the black
           slider under the pod is the choke (<kbd>Q</kbd> and <kbd>Z</kbd>): it slides along its slot. The 2WD and 4WD labels are by the rocker on the right bar
-          (<kbd>G</kbd>). With the lights off the tail lamp is off too.`,
+          (<kbd>G</kbd>). The loan quad's pod is the blue's without the choke lever, since it is fuel injected. With the lights off the tail lamp is off too.`,
         tip: 'P on the red quad: dipped, main beam, off. Its pod\'s yellow and white rockers show which.',
       },
       {
@@ -1834,8 +1834,8 @@ export const VEHICLE_NOTES = {
     tips: ['Pull-start only.', 'Tips over in a fast tight turn.', 'Lumpy and smoky at idle, and hard to start.', 'The choke knob and the fuel tap are by the carb.'],
   },
   loan: {
-    blurb: 'A smart new quad on loan for the day: fuel injected, starts on the button, idles smooth and quiet, and has almost no wear.',
-    tips: ['Hardly needs any choke.', 'Full tank and a bit more power than the old farm quads.'],
+    blurb: 'The dealer’s loan quad, a silver Tamura Ursa 450: fuel injected, starts on the button, idles smooth and quiet, and has almost no wear.',
+    tips: ['Fuel injected: no choke to work, even on a frosty morning.', 'Full tank and a bit more power than the old farm quads.', 'The dealer’s sticker is on the left rear fender.'],
   },
   tractor: {
     blurb: 'An old grey-and-red Fergie on red diesel: heavy, slow and strong, with three gears, a hand throttle and a lot of hours.',

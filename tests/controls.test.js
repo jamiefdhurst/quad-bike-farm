@@ -97,7 +97,8 @@ describe('the specs', () => {
     for (const chokeStyle of CHOKE_STYLES) {
       for (const tapStyle of TAP_STYLES) {
         const m = buildQuadModel({ chokeStyle, tapStyle });
-        expect(m.getObjectByName('chokeLever'), `${chokeStyle}`).toBeTruthy();
+        if (chokeStyle === 'none') expect(m.getObjectByName('chokeLever'), 'no choke on an injected quad').toBeFalsy();
+        else expect(m.getObjectByName('chokeLever'), `${chokeStyle}`).toBeTruthy();
         expect(m.getObjectByName('fuelTap'), `${tapStyle}`).toBeTruthy();
       }
     }

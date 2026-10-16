@@ -1282,7 +1282,8 @@ export class Quad {
     }
     this.displayChoke += (this.choke - this.displayChoke) * Math.min(1, 12 * dt);
     // Off: lever forward. Full: pulled back towards the rider.
-    if (this.chokeStyle === 'knob') this.chokeLever.position.z = this.chokeLever.userData.baseZ - this.displayChoke * 0.05; // pulled out towards you
+    if (!this.chokeLever) { /* an injected engine has no choke to pose */ }
+    else if (this.chokeStyle === 'knob') this.chokeLever.position.z = this.chokeLever.userData.baseZ - this.displayChoke * 0.05; // pulled out towards you
     else if (this.chokeStyle === 'plunger') this.chokeLever.position.y = this.chokeLever.userData.baseY - this.displayChoke * (this.chokeLever.userData.travel ?? 0.045); // pulled down
     else if (this.chokeStyle === 'slide') this.chokeLever.position.x = this.chokeLever.userData.baseX - this.displayChoke * POD.slide; // pulled along its slot to apply
     else this.chokeLever.rotation.x = 0.5 - this.displayChoke * 1.45;

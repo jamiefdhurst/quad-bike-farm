@@ -734,10 +734,11 @@ export const EXTRA_SPECS = [
     label: 'loan quad',
     name: 'Loan quad',
     bodyColor: 0xaeb4ba, // a neutral silver
-    style: 'utility2',
+    style: 'kodiak', // a Kodiak 450's body (kodiakBody.js): the blue's machinery with its own flares, lamps, bumper, wheels and muffler
     dashStyle: 'kodiak',
     reverseStyle: 'button', // where the reverse is and what it takes to use it (controls.js)
-    chokeStyle: 'thumb', // where the choke is and what it takes to reach it
+    barLights: true, // a lights rocker on the bars' pod (P cycles off, dipped, main beam; lightSwitch.js), starting dipped
+    chokeStyle: 'none', // fuel injected: no choke at all (controls.js)
     tapStyle: 'right', // where the fuel tap sits
     hoursRange: [2, 25], // engine hours showing when the game starts
     odoRange: [5, 60], // odometer miles showing when the game starts
@@ -756,8 +757,8 @@ export const EXTRA_SPECS = [
       rpmRiseRate: 9,
       rpmFallRate: 7.5,
       warmUpSeconds: 70,
-      coldEnrichmentNeed: 0.45,
-      chokeIdleRpm: 1200,
+      injected: true, // fuel injection meters a cold start itself: no choke, no carb to flood or boil (engineParams.js)
+      coldIdleRpm: 350, // and holds a cold engine's idle up, letting it down as it warms
       catchChance: 0.9,
       coldRoughness: 0.2,
       coldPowerLoss: 0.95,

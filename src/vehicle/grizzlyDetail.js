@@ -35,15 +35,15 @@ export const GRIZZLY_FACE = { z: GRIZZLY_DECK.front.zf, grilleY: 0.545, lampX: 0
  * end blocks bolted to the faces, a skid plate under the nose, the grille between the lamps and the maker's badge on it. The lamps
  * themselves are the model's (they share its lens material).
  */
-export function addGrizzlyFront(root, MAT, paint) {
+export function addGrizzlyFront(root, MAT, paint, { steel = MAT.alloy } = {}) {
   const B = GRIZZLY_BUMPER;
   const P = bumperPoints(B);
   for (const side of [P.left, P.right]) {
-    mesh(bentTube([side.upper, side.knee, side.lower], 0.016, { bend: 0.05, steps: 5 }), MAT.alloy, root, 'bumperUpright');
-    mesh(bentTube([side.wing, side.end], 0.016, { bend: 0.03 }), MAT.alloy, root, 'bumperWing');
+    mesh(bentTube([side.upper, side.knee, side.lower], 0.016, { bend: 0.05, steps: 5 }), steel, root, 'bumperUpright');
+    mesh(bentTube([side.wing, side.end], 0.016, { bend: 0.03 }), steel, root, 'bumperWing');
   }
-  tube([P.right.end[0], B.y, B.z - 0.04], [P.left.end[0], B.y, B.z - 0.04], 0.017, MAT.alloy, root).name = 'bumperBar';
-  tube([P.right.lower[0], B.y, B.z - 0.04], [P.left.lower[0], B.y, B.z - 0.04], 0.012, MAT.alloy, root); // a second bar low behind the first, the way the real one braces
+  tube([P.right.end[0], B.y, B.z - 0.04], [P.left.end[0], B.y, B.z - 0.04], 0.017, steel, root).name = 'bumperBar';
+  tube([P.right.lower[0], B.y, B.z - 0.04], [P.left.lower[0], B.y, B.z - 0.04], 0.012, steel, root); // a second bar low behind the first, the way the real one braces
   // The end blocks, reaching back into the fender faces (the face is at GRIZZLY_FACE.z), and the bolts through them.
   for (const s of [-1, 1]) {
     rbox(0.075, 0.06, 0.15, 0.014, MAT.plastic, s * (B.endX + 0.03), B.y, GRIZZLY_FACE.z + 0.055, root, 'bumperBlock'); // its top is below the lamps' surrounds
@@ -128,3 +128,4 @@ export function addFrontBrake(wheel, spin, s) {
   if (dark) mesh(dark.translate(-s * 0.065, 0, 0), new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.9 }), spin);
   mesh(caliperGeometry({ r: 0.1, angle: 0.6, side: s }).translate(-s * 0.065, 0, 0), mat(0x2a2c2f), wheel, 'brakeCaliper');
 }
+

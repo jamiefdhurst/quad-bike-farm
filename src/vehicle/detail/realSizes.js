@@ -8,7 +8,7 @@ import * as THREE from 'three';
 export const REAL_SIZES = {
   red: { like: 'Honda TRX300FW Fourtrax 4x4', length: 1895, width: 1105, height: 1095, wheelbase: 1210, track: 880, tyre: 610 },
   blue: { like: 'Yamaha YFM660F Grizzly', length: 2080, width: 1180, height: 1115, wheelbase: 1250, track: 926, tyre: 635 },
-  loan: { like: 'Yamaha YFM400 Kodiak, newer', length: 1985, width: 1140, height: 1155, wheelbase: 1230, track: 860, tyre: 635 },
+  loan: { like: 'Yamaha YFM450 Kodiak (the Tamura Ursa 450)', length: 2050, width: 1170, height: 1190, wheelbase: 1250, track: 930, tyre: 635 },
   green: { like: 'Kawasaki KLF300 Bayou 4x4, winch fitted', length: 2060, width: 1100, height: 1120, wheelbase: 1175, track: 870, tyre: 610 }, // length is the book 1,930 plus the winch's fairlead and hook and a tow drawbar, which the farm's one wears
   yellow: { like: 'Yamaha YFS200 Blaster (the Tamura Hornet 200)', length: 1710, width: 1035, height: 1045, wheelbase: 1115, track: 790, tyre: 520 },
   orange: { like: 'Suzuki LT250R Quadracer (the Viper Adder 250)', length: 1830, width: 1175, height: 1105, wheelbase: 1240, track: 925, tyre: 520 },
@@ -92,6 +92,6 @@ export function proportionErrors(measured, real) {
 }
 
 /** The vehicles a detail item has brought into proportion; tests/proportions.test.js holds each within `PROPORTION_TOLERANCE`. */
-export const IN_PROPORTION = ['red', 'blue', 'green', 'kids', 'moto', 'atc'];
+export const IN_PROPORTION = ['red', 'blue', 'green', 'kids', 'moto', 'atc', 'loan'];
 
 export const PROPORTION_TOLERANCE = 0.08;
