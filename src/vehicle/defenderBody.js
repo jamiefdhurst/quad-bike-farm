@@ -23,7 +23,7 @@ export const DEF_WING = { top: 1.06, outer: 0.82, inner: 0.4, scuttle: 0.62, bot
 export const DEF_BONNET = [
   { z: 0.62, w: 0.84, y0: 0.98, y1: 1.19 },
   { z: 1.1, w: 0.84, y0: 0.98, y1: 1.2 },
-  { z: 1.72, w: 0.82, y0: 0.98, y1: 1.15 },
+  { z: 1.69, w: 0.82, y0: 0.98, y1: 1.15 }, // (its front is 3 cm behind the grille's face, so the two never share a plane)
 ];
 export const DEF_BONNET_E = 3;
 
@@ -43,7 +43,7 @@ export const DEF_DOOR = { hinge: 0.52, rear: -0.4, y0: 0.6, y1: 1.27, glassTop: 
 
 /** The cab: the body side's top (under the roof), and the roof cap's sill and top. */
 export const DEF_CAB = { top: 1.74, rear: DEF_END + 0.04 };
-export const DEF_ROOF = { z0: DEF_SCREEN_TOP_Z + 0.02, z1: DEF_END - 0.04, y0: DEF_CAB.top, y1: 1.95, w: 1.68 };
+export const DEF_ROOF = { z0: DEF_SCREEN_TOP_Z + 0.02, z1: DEF_END - 0.04, y0: DEF_CAB.top - 0.03, y1: 1.95, w: 1.68 }; // its bottom edge 3 cm into the body's top rail, so no gap shows
 
 /** The side windows behind the door: the long window over the rear bench, its frame and the posts (z, from the B pillar back). */
 export const DEF_SIDE_WINDOW = { z0: -0.55, z1: -1.66, y0: 1.27, y1: 1.7 };
@@ -60,9 +60,9 @@ export const DEF_HITCH = { x: 0, y: 0.56, z: -2.02 };
  * the radio and the heater controls, and the passenger's glovebox. A moulded fascia runs down from the shelf to the closeout panel at `foot`.
  */
 export const DEF_DASH = {
-  top: 1.15, z0: 0.56, z1: 0.18, half: 0.78,
+  top: 1.15, z0: 0.58, z1: 0.3, half: 0.78, face: 0.92, // the shelf from the screen's foot to its front edge (a shallow one, 0.28 m), its face down to `face`: the feet and knees are under it
   pod: { x: -0.42, y: 1.21, z: 0.48, tilt: 0.55 },
   stack: { x: 0.12, w: 0.34 },
   glove: { x0: 0.3, x1: 0.76 },
-  foot: 0.76,
+  foot: 0.7, // the glovebox's bottom, on the passenger's side only
 };

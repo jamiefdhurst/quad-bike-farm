@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { buildDefenderModel, poseDefenderBackDoor } from '../src/vehicle/defenderModel.js';
 import { poseSeriesDoors } from '../src/vehicle/seriesModel.js';
 import { setHeadlights } from '../src/vehicle/quadModel.js';
-import { DEF_END, DEF_DOOR, DEF_BACK_DOOR, DEF_SCREEN, DEF_ROOF, DEF_DASH, DEF_HITCH, defScreenZ, DEF_SCREEN_TOP_Z } from '../src/vehicle/defenderBody.js';
+import { DEF_END, DEF_DOOR, DEF_BACK_DOOR, DEF_SCREEN, DEF_ROOF, DEF_DASH, DEF_HITCH, defScreenZ, DEF_SCREEN_TOP_Z, DEF_SIDE_WINDOW } from '../src/vehicle/defenderBody.js';
 import { LANDY_SEATS, LANDY_REAR_SEATS, DEFENDER_LAYOUT } from '../src/vehicle/landRoverModel.js';
 import { buildAllModels } from './helpers/vehicleModels.js';
 
@@ -91,5 +91,24 @@ describe('the 200TDi at its real size', () => {
     expect(key.rotation.z).toBeCloseTo(0, 2);
     for (let i = 0; i < 30; i++) model.userData.dash.update(state({}));
     expect(key.rotation.z).toBeGreaterThan(0.5);
+  });
+
+  it('leaves room for the driver\'s feet and knees under a shallow dash, and keeps the rear belts off the windows', () => {
+    expect(DEF_DASH.z0 - DEF_DASH.z1).toBeLessThan(0.3); // a shelf under 0.3 m deep
+    expect(DEF_DASH.face).toBeGreaterThanOrEqual(0.9); // its face stops a hand's breadth above the pedals' arms, nothing solid under it at the driver's end
+    // The belts' upper anchors hang on the C pillar (a body panel across the window), not on the glass.
+    for (const name of ['rearLeft', 'rearRight']) {
+      const belt = model.getObjectByName(`belt_${name}`);
+      expect(belt).toBeTruthy();
+      const box = new THREE.Box3().setFromObject(belt.getObjectByName('stowed'));
+      const pillar = DEF_SIDE_WINDOW.z1 + 0.5 * (DEF_SIDE_WINDOW.z0 - DEF_SIDE_WINDOW.z1); // the middle of the window: the pillar stands behind it
+      expect(box.max.z).toBeLessThan(pillar - 0.2);
+    }
+    // And each rear seat has a buckle in front of its backrest's face.
+    for (const [name, seat] of Object.entries(LANDY_REAR_SEATS)) {
+      const belt = model.getObjectByName(`belt_${name}`);
+      const box = new THREE.Box3().setFromObject(belt);
+      expect(box.max.z, name).toBeGreaterThan(seat.z); // reaches forward of the seat's hips
+    }
   });
 });
