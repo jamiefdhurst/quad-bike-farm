@@ -2403,6 +2403,11 @@ export function setHeadlights(quad, on, level = 1, colour = 0xfff2cc, look = nul
   const lit = on && level > 0;
   lens.emissive.setHex(lit ? colour : 0x000000);
   lens.emissiveIntensity = on ? LENS_GLOW * level : 0;
+  const side = quad.userData.sideMaterial; // the Series' sidelamps come on with the headlamps
+  if (side) {
+    side.emissive.setHex(lit ? 0xfff0d8 : 0x000000);
+    side.emissiveIntensity = on ? LENS_GLOW * level : 0;
+  }
   const beam = quad.userData.beamMaterial;
   if (!beam) return;
   const { reach = 1, spread = 1, glare = 1, halo = 1 } = look ?? {};

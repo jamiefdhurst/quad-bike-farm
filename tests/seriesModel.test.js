@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import * as THREE from 'three';
 import { buildSeriesModel, poseSeriesDoors, poseSeriesTailgate } from '../src/vehicle/seriesModel.js';
 import { SERIES_DASH, SERIES_END, SERIES_TUB, SERIES_TUB_SPOTS, SERIES_DOOR, SERIES_HITCH, SERIES_GATE, SERIES_SCREEN, SERIES_ROOF, screenZ, SERIES_SCREEN_TOP_Z } from '../src/vehicle/seriesBody.js';
+import { setHeadlights } from '../src/vehicle/quadModel.js';
 import { LANDY_LAYOUT, LANDY_SEATS } from '../src/vehicle/landRoverModel.js';
 import { buildAllModels } from './helpers/vehicleModels.js';
 
@@ -108,14 +109,15 @@ describe('the tub', () => {
     expect(model.getObjectByName('bedProxy')).toBeTruthy();
   });
 
-  it('puts the choke at the driver\'s end of the dash and the hand throttle at the tray\'s, both under the shelf and clear of the wheel', () => {
+  it('puts the choke at the driver\'s end of the dash and the hand throttle beside the radio, both under the shelf and clear of the wheel', () => {
     const choke = at('chokeKnob');
     const hand = at('handThrottleKnob');
     expect(choke.x).toBeLessThan(-0.5); // by the driver
-    expect(hand.x).toBeGreaterThan(SERIES_DASH.tray.x0); // over the tray, by the glovebox's place
+    expect(hand.x).toBeLessThan(SERIES_DASH.radio.x - SERIES_DASH.radio.w / 2); // to the driver's side of the radio
+    expect(hand.x).toBeGreaterThan(-0.2);
     for (const k of [choke, hand]) {
       expect(k.y).toBeLessThan(SERIES_DASH.deck.y - SERIES_DASH.deck.t); // under the shelf
-      expect(k.y).toBeGreaterThan(SERIES_DASH.tray.y + 0.06); // above the tray's lip
+      expect(k.y).toBeGreaterThan(SERIES_DASH.tray.y + 0.06); // above the tray's height
     }
     expect(Math.abs(choke.x + 0.42)).toBeGreaterThan(0.21); // outside the wheel's rim, which is 0.21 m out from its column
   });
@@ -127,5 +129,12 @@ describe('the tub', () => {
     const wipers = [];
     model.traverse((o) => { if (o.name === 'wiper') wipers.push(o); });
     expect(wipers).toHaveLength(2);
+  });
+
+  it('lights its sidelamps with the headlights, and has round rear lamps', () => {
+    setHeadlights(model, true, 1);
+    expect(model.userData.sideMaterial.emissive.getHex()).not.toBe(0);
+    setHeadlights(model, false, 0);
+    expect(model.userData.sideMaterial.emissive.getHex()).toBe(0);
   });
 });

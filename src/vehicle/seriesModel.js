@@ -28,8 +28,11 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
   const regText = reg ?? PLATE;
   const paint = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.55, side: THREE.DoubleSide });
   const lensMat = new THREE.MeshStandardMaterial({ color: 0x2c302c, roughness: 0.08, metalness: 0.2, emissive: 0x000000 });
-  const tailMat = new THREE.MeshStandardMaterial({ color: 0x3c0b08, roughness: 0.25, emissive: 0x000000 });
-  const sideMat = new THREE.MeshStandardMaterial({ color: 0xdfe4e6, roughness: 0.2 }); // the sidelamps: not the reverse lens's material, so they stay unlit
+  const tailMat = new THREE.MeshStandardMaterial({ color: 0x3a0a07, roughness: 0.25, emissive: 0x000000 }); // dark red until lit
+  const amber = new THREE.MeshStandardMaterial({ color: 0x5c2c08, roughness: 0.25 }); // the indicators: dark amber until they flash (addSignalLamps lights each side)
+  const smoke = new THREE.MeshStandardMaterial({ color: 0x4d5254, roughness: 0.2 }); // the reverse lens: smoked until it lights
+  const reflector = new THREE.MeshStandardMaterial({ color: 0x6e1712, roughness: 0.2 }); // the red reflectors under the tail lamps
+  const sideMat = new THREE.MeshStandardMaterial({ color: 0x555a5c, roughness: 0.2, emissive: 0x000000 }); // the sidelamps: smoked until the headlights come on (setHeadlights lights them)
   const trim = trimMaterials(false);
   const frame = MAT.galv; // the screen's and the windows' frames and the cappings are galvanised
   const webbing = webbingMaterial();
@@ -122,7 +125,7 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       const lamp = add(new THREE.CylinderGeometry(0.087, 0.087, 0.02, 22).rotateX(Math.PI / 2), lensMat, root);
       lamp.position.set(lx, 0.91, SERIES_FRONT.wingFace + 0.032);
       add(new THREE.CylinderGeometry(0.03, 0.03, 0.02, 14).rotateX(Math.PI / 2), sideMat, root).position.set(s * 0.74, 1.02, SERIES_FRONT.wingFace + 0.02); // the sidelamp, above and outboard
-      add(new THREE.CylinderGeometry(0.03, 0.03, 0.02, 14).rotateX(Math.PI / 2), MAT.amber, root).position.set(s * 0.74, 0.8, SERIES_FRONT.wingFace + 0.02); // the indicator below it
+      add(new THREE.CylinderGeometry(0.03, 0.03, 0.02, 14).rotateX(Math.PI / 2), amber, root).position.set(s * 0.74, 0.8, SERIES_FRONT.wingFace + 0.02); // the indicator below it
     }
 
     // The bonnet: a crowned loft, narrower than the gap between the wings, hinged at the scuttle and held down at the front by two catches.
@@ -135,8 +138,8 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
     add(cached('tyre', tyre), MAT.rubber, spare);
     addWheelFace(spare, 1);
     root.add(spare);
-    for (const dz of [-0.2, 0.2]) rbox(0.05, 0.02, 0.05, 0.005, MAT.chassis, 0, SERIES_SPARE.y + 0.12, SERIES_SPARE.z + dz, root); // the straps' buckles
-    rbox(0.05, 0.02, 0.8, 0.005, MAT.chassis, 0, SERIES_SPARE.y + 0.115, SERIES_SPARE.z, root); // the strap
+    for (const dz of [-0.2, 0.2]) rbox(0.05, 0.02, 0.05, 0.005, MAT.chassis, 0, SERIES_SPARE.y + 0.118, SERIES_SPARE.z + dz, root); // the straps' buckles
+    rbox(0.05, 0.02, 0.8, 0.005, MAT.chassis, 0, SERIES_SPARE.y + 0.112, SERIES_SPARE.z, root); // the strap, its underside 3 mm into the tread so it never shares a face with it
   }
 
   // The scuttle (the deck behind the bonnet with the two vent flaps on it), the bulkhead under it, and the windscreen: a galvanised frame
@@ -266,9 +269,12 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       rbox(0.08, 0.03, tl, 0.01, MAT.galv, s * tub.side, tub.top + 0.01, tm, root); // its capping
       rbox(0.34, 0.1, 0.84, 0.04, paint, s * 0.62, tub.floor + 0.06, zR, root); // the hump over the arch, clear of the tyre
       for (const z of [-0.95, -1.6]) add(new THREE.TorusGeometry(0.02, 0.005, 6, 10), MAT.galv, root).position.set(s * (tub.side - 0.025), tub.top - 0.06, z); // rope hooks
-      rbox(0.08, 0.1, 0.03, 0.01, tailMat, s * 0.74, 0.84, SERIES_END - 0.02, root); // the tail lamp
-      rbox(0.08, 0.05, 0.03, 0.01, MAT.amber, s * 0.74, 0.75, SERIES_END - 0.02, root); // and the indicator under it
-      if (s > 0) add(new THREE.CylinderGeometry(0.04, 0.04, 0.03, 16).rotateX(Math.PI / 2), MAT.clear, root).position.set(s * 0.74, 0.67, SERIES_END - 0.025); // a single round reverse lamp, on the nearside
+      // The rear lamps, round as on a Series III: an indicator over a tail lamp, a red reflector under them, and the nearside's reverse lamp.
+      const round = (r, mat, y, depth = 0.03) => add(new THREE.CylinderGeometry(r, r, depth, 16).rotateX(Math.PI / 2), mat, root).position.set(s * 0.74, y, SERIES_END - 0.02);
+      round(0.04, amber, 0.86);
+      round(0.04, tailMat, 0.77);
+      rbox(0.07, 0.04, 0.02, 0.006, reflector, s * 0.74, 0.69, SERIES_END - 0.015, root);
+      if (s > 0) round(0.04, smoke, 0.61, 0.03); // a single round reverse lamp, on the nearside
       // The tailgate's chain: from a pin on the tub's side to the gate's corner, aimed and stretched by poseSeriesTailgate as the gate swings.
       const chain = new THREE.Group();
       chain.name = s > 0 ? 'gateChainLeft' : 'gateChainRight';
@@ -521,7 +527,8 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
     quad.add(wheelModel);
   }
   addHeadlightBeams(quad);
-  addSignalLamps(quad, MAT.amber, MAT.clear);
+  addSignalLamps(quad, amber, smoke);
+  quad.userData.sideMaterial = sideMat; // lit with the headlights
   // Its own tail lamp material, which setTaillights lights (no halos).
   quad.userData.tailMaterial = tailMat;
   quad.userData.tailHaloMaterial = new THREE.SpriteMaterial({ transparent: true, opacity: 0 });

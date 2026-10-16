@@ -25,7 +25,7 @@ export const SERIES_BONNET_E = 6;
 
 /** The scuttle's top (behind the bonnet, in front of the screen) and the spare wheel lying on the bonnet. */
 export const SERIES_SCUTTLE = { top: 1.2, from: 0.43, to: 0.68 };
-export const SERIES_SPARE = { z: 1.03, y: 1.33 };
+export const SERIES_SPARE = { z: 1.03, y: 1.325 }; // its rim's underside (1.21) is sunk into the bonnet's top (about 1.215) so nothing is coplanar with it
 
 /** The windscreen's frame stands on the scuttle and rakes back; its top is where the roof's front edge meets it. */
 export const SERIES_SCREEN = { baseY: 1.22, baseZ: 0.45, rake: 0.27, topY: 1.9, half: 0.82 };
@@ -57,11 +57,11 @@ export const SERIES_HITCH = { x: 0, y: 0.56, z: SERIES_END - 0.06 };
  * The dash, after the photos: a straight olive shelf the width of the cab (`deck`, from the bulkhead to its front edge, with a lip under
  * the edge), the instrument panel under it in front of the driver (angled by `tilt` about its centre (y, z), `w` wide), and a big open gap
  * under the rest down to the bulkhead, with the radio's housing hung under the shelf and a felt tray below it. The choke comes out of the
- * bulkhead at the driver's end and the hand throttle at the tray's, each at `knobY`, their faces at `knobZ`.
+ * bulkhead at the driver's end and the hand throttle just to the driver's side of the radio, each at `knobY`, their faces at `knobZ`.
  */
 export const SERIES_DASH = {
   y: 1.0, z: 0.285, tilt: 0.45, panel: { x0: -0.76, x1: -0.08, y0: 0.0, y1: 0.25 },
   deck: { y: 1.195, t: 0.03, z0: 0.31, z1: 0.46, half: 0.78 }, lip: { x0: -0.08, h: 0.07 },
   radio: { x: 0.28, w: 0.3, h: 0.1, y: 1.03, z0: 0.27, z1: 0.46 }, tray: { x0: 0.12, x1: 0.78, y: 0.84, z0: 0.3, z1: 0.45 },
-  knobX: [-0.66, 0.6], knobY: 0.97, knobZ: 0.3,
+  knobX: [-0.66, 0.05], knobY: 0.97, knobZ: 0.3,
 };
