@@ -250,7 +250,7 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
       rbox(0.05, top - door.y0, 0.05, 0.01, paint, s * door.x, (top + door.y0) / 2, door.rear - 0.025, root); // the B pillar, 5 mm thicker than the rails each side (0.795 to 0.845, where they are 0.80 to 0.84), right up into the roof (it stopped 4 cm short, with a slot beside it)
       archPanel(s * door.x, 0.04, door.y0, door.y1, DEF_END + 0.02, door.rear - 0.05, zR, paint, root); // the rear side below the window, with the arch cut in it
       flare(s, s * door.x, zR);
-      rbox(0.03, 0.03, door.rear - 0.05 - (DEF_END + 0.02), 0.008, frame, s * (door.x + 0.002), door.y1 + 0.02, (door.rear - 0.05 + DEF_END + 0.02) / 2, root); // the capping carried on
+      rbox(0.03, 0.03, door.rear - 0.05 - (DEF_END + 0.02), 0.008, frame, s * (door.x + 0.01), door.y1 + 0.02, (door.rear - 0.05 + DEF_END + 0.02) / 2, root); // the capping carried on (its faces 5 mm clear of the posts and panel)
       rbox(0.04, 0.05, door.rear - (DEF_END + 0.02), 0.008, frame, s * (door.x + 0.008), top - 0.025, (door.rear + DEF_END + 0.02) / 2, root); // the rail over the window, on to the door's rail (no slot over the B pillar), 8 mm proud of the pillars and posts so they do not share a face
       const wl = w.z0 - w.z1;
       const wz = (w.z0 + w.z1) / 2;
@@ -301,7 +301,7 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
       win.position.set(cx, 1.45, rz);
       win.rotation.y = Math.PI;
       for (const x of [-0.07, 0.07]) rbox(0.015, 0.54, 0.012, 0.004, MAT.black, cx + x, 1.45, rz - 0.02, root); // its frame, standing 6 mm proud of the post's face
-      for (const y of [1.18, 1.72]) rbox(0.16, 0.015, 0.016, 0.004, MAT.black, cx, y, rz - 0.022, root); // (the bars across are 4 mm deeper than the ones up the sides, so their corners share no face)
+      for (const y of [1.18, 1.72]) rbox(0.17, 0.015, 0.016, 0.004, MAT.black, cx, y, rz - 0.022, root); // (the bars across are 4 mm deeper than the ones up the sides, so their corners share no face)
       // The lamps: a black block on the post under its window, in line with it (the same x), with a gap under the window's frame: the round stop
       // and tail lamp over the round indicator over the nearside's reverse lamp or the offside's fog lamp, evenly spaced down it.
       rbox(0.12, 0.4, 0.03, 0.01, MAT.black, cx, 0.93, rz - 0.035, root);
@@ -369,15 +369,12 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
     g.rotateY(-Math.PI / 2); // runs along -x from 0 to -0.24
     g.translate(s > 0 ? 0.8 : -0.56, 0, 0);
     add(g, trim.dash, root);
-    // A thin metal liner over the tyre: a half pipe at radius 0.44 (clear of the tyre's 0.38 at full bump, inside the hole's 0.47) from the block's
-    // inner face to the body side, closing the hole so you cannot see through the arch to the sky beside the seats.
-    const liner = new THREE.Shape();
-    liner.absarc(zc, DEF_ARCH.y, 0.45, 0.05, Math.PI - 0.05, false);
-    liner.absarc(zc, DEF_ARCH.y, 0.44, Math.PI - 0.05, 0.05, true);
-    const lg = new THREE.ExtrudeGeometry(liner, { depth: 0.24, bevelEnabled: false });
-    lg.rotateY(-Math.PI / 2);
-    lg.translate(s > 0 ? 0.8 : -0.56, 0, 0);
-    add(lg, paint, root);
+    // The inner wall: the hole is a cavity round the tyre, and without a wall on its inner face you looked into it sideways from the boot and from the
+    // seats, down behind them to the ground and across to the sky above the tyre. A thin plate across the whole inner face, floor to top, 1.3 m
+    // long, closes it, as the box over a real wheel is closed.
+    // (Its faces are all clear of the block's and the load floor's: 4 mm under the block's top and 3 mm short of the post's rear face, 2 mm inside the
+    // block's inner face, so it shares no plane with them.)
+    rbox(0.01, yt - yb - 0.008, 1.2, 0.004, trim.dash, s * 0.553, (yb + yt) / 2, zc + 0.045, root);
   }
 
   // Inside: the floor and seat box, the front seats (the outer two tip forward), the console between them, the back bench with the load space

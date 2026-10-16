@@ -281,4 +281,43 @@ describe('the 200TDi at its real size', () => {
     });
     expect(inside.slice(0, 6)).toEqual([]);
   });
+
+  it('shows no sky through the body below the window sills from any seat, with the rear tyres in their arches (a stand-in tyre at rest height)', () => {
+    const meshes = [];
+    model.updateMatrixWorld(true);
+    model.traverse((o) => {
+      if (!o.isMesh || !o.visible || o.isSprite || /^headlight/.test(o.name)) return;
+      for (let q = o; q; q = q.parent) if (/^wheel_|^belt|^seatBack/.test(q.name)) return;
+      meshes.push(o);
+    });
+    for (const x of [0.743, -0.743]) { // the rear tyres, where the game puts them at rest (centre height 0.45)
+      const tyre = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.21, 24).rotateZ(Math.PI / 2), new THREE.MeshBasicMaterial());
+      tyre.position.set(x, 0.45, DEFENDER_LAYOUT.wheels[2].z);
+      tyre.updateMatrixWorld(true);
+      meshes.push(tyre);
+    }
+    const rc = new THREE.Raycaster();
+    const holes = [];
+    for (const eye of [[0.38, 1.67, -1.1], [-0.38, 1.67, -1.1], [-0.42, 1.63, -0.32], [0.42, 1.63, -0.32]]) {
+      for (let tz = -1.82; tz <= -0.5; tz += 0.0211) {
+        for (let ty = 0.62; ty <= 1.26; ty += 0.0211) {
+          for (const side of [1, -1]) {
+            const o = new THREE.Vector3(...eye);
+            const target = new THREE.Vector3(side * 0.84, ty, tz);
+            const d = target.clone().sub(o);
+            const dist = d.length();
+            rc.set(o, d.normalize());
+            const h = rc.intersectObjects(meshes, false)[0];
+            if (!h || Math.abs(h.point.x) > 0.9 || h.distance > dist + 0.12) holes.push(`eye ${eye} to z ${tz.toFixed(2)} y ${ty.toFixed(2)} side ${side}`);
+          }
+        }
+      }
+    }
+    expect(holes.slice(0, 8)).toEqual([]);
+  }, 60000);
+
+  it('has no strip of fighting faces in the boot or the rear arches (the wheel boxes, the load floor and the seat boxes, down to a square centimetre)', () => {
+    const fights = coplanarOverlaps(model, { gap: 0.003, minArea: 1e-5 }).filter((f) => f.at[2] < -0.5 && f.at[2] > -1.85 && Math.abs(f.at[0]) < 0.9 && f.at[1] > 0.55 && f.at[1] < 1.3);
+    expect(fights.slice(0, 8).map((f) => `${f.a}|${f.b} ${(f.area * 1e4).toFixed(1)} cm2 at ${f.at.map((v) => v.toFixed(2)).join(',')}`)).toEqual([]);
+  });
 });
