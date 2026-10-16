@@ -7,7 +7,7 @@ import { LAND_ROVER_SPEC } from '../src/vehicle/quadSpecs.js';
 describe('stepping off', () => {
   it('moves the side, front and back spots clear of the Land Rover at its size', () => {
     const c = LANDY_LAYOUT.chassis;
-    const k = LAND_ROVER_SPEC.scale;
+    const k = LAND_ROVER_SPEC.scale ?? 1;
     const [x, z] = clearOfChassis([1.0, -0.15], c, k, 0.3);
     expect(x - 0.3).toBeGreaterThan(c.hx * k);
     expect(z).toBe(-0.15);

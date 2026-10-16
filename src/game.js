@@ -87,6 +87,7 @@ import { DEFAULT_TOW_PARAMS, TOW_PARAM_RANGES, towLoad, towEffect } from './vehi
 import { TrailerRide, TRAILER_RIDE_PARAM_RANGES } from './npc/trailerRide.js';
 import { poseUtvBed, BED_CARGO_SPOTS, BED_CARGO_YAWS, BED_CARGO_YAW } from './vehicle/utvModel.js';
 import { CargoHold, CARGO_PARAM_RANGES } from './vehicle/cargoHold.js';
+import { Tailgate, TAILGATE_PARAM_RANGES } from './vehicle/tailgate.js';
 import { UtvRide, UTV_RIDE_PARAM_RANGES, DEFAULT_UTV_RIDE_PARAMS } from './npc/utvRide.js';
 import { TractorGo, TRACTORGO_PARAM_RANGES } from './npc/tractorGo.js';
 import { vehicleOptions, wheelChildren } from './npc/vehicleWheel.js';
@@ -829,6 +830,7 @@ export class Game {
       else registerTuning('Corsa riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
       l.mount = l.unit ? new UtvMount(l.unit.quad, (x, z) => this.world.heightAt(x, z), l.car ? CAR_STAND : { ...LANDY_STAND, ...LANDY_REAR_STAND }, rear) : null;
       if (l.unit) l.unit.quad.tipHold = { left: 0, driver: 0 }; // seconds a backrest stays tipped after you climb past it
+      if (l.unit && series) this.addLandyCargo(l);
     }
     this.rearAccess = { ...DEFAULT_REAR_ACCESS_PARAMS };
     registerTuning('200TDi back seats', this.rearAccess, REAR_ACCESS_PARAM_RANGES);
@@ -2728,29 +2730,40 @@ export class Game {
 
   /** The UTV's bed as somewhere to stand a can, the toolbox, the leads or the oil bottle (vehicle/cargoHold.js). They tip out with the bed. */
   addUtvCargo(quad) {
-    const bed = quad.model.getObjectByName('bed');
-    this.utvCargo = new CargoHold({
-      scene: this.scene,
-      ground: (x, z) => this.world.heightAt(x, z),
-      anchors: BED_CARGO_SPOTS.map((_, i) => bed.getObjectByName(`bedCargo${i}`)),
-      yawFor: (item) => BED_CARGO_YAWS[item.model.name] ?? BED_CARGO_YAW,
-    });
+    this.utvCargo = this.addBedCargo(quad, { name: "UTV's bed", blocked: () => this.utvBed.tip > 0.02 ? 'The bed is up' : null, yawFor: (item) => BED_CARGO_YAWS[item.model.name] ?? BED_CARGO_YAW });
     registerTuning('UTV load', this.utvCargo.p, CARGO_PARAM_RANGES);
+  }
+
+  /** The Series' tub: the same standing and loading as the UTV's bed, a tailgate dropped or not (vehicle/tailgate.js). */
+  addLandyCargo(l) {
+    l.cargo = this.addBedCargo(l.unit.quad, { name: "Land Rover's tub", blocked: () => null, yawFor: () => BED_CARGO_YAW, host: l.unit.quad.model });
+    registerTuning('Land Rover load', l.cargo.p, CARGO_PARAM_RANGES);
+    registerTuning('Land Rover tailgate', (l.unit.quad.tailgate ??= new Tailgate()).p, TAILGATE_PARAM_RANGES);
+  }
+
+  /** A row of cargo spots (`bedCargo0`...) and a `bedProxy` box on a model to look at: what you hold goes in, unless `blocked` says why not. */
+  addBedCargo(quad, { name, blocked, yawFor, host = null }) {
+    const bed = host ?? quad.model.getObjectByName('bed');
+    const anchors = [];
+    for (let i = 0; bed.getObjectByName(`bedCargo${i}`); i++) anchors.push(bed.getObjectByName(`bedCargo${i}`));
+    const hold = new CargoHold({ scene: this.scene, ground: (x, z) => this.world.heightAt(x, z), anchors, yawFor });
     this.interaction.add({
       target: bed.getObjectByName('bedProxy'),
-      priority: 1, // looking into the bed with something in your hands wins over the UTV as a whole (and its tank)
+      priority: 1, // looking into the bed with something in your hands wins over the vehicle as a whole (and its tank)
       isAvailable: () => !!this.heldLoad() && !this.player.isRiding,
       prompt: () => {
         const what = this.loadName(this.heldLoad());
-        if (this.utvBed.tip > 0.02) return { text: `The bed is up   ·   G put the ${what} down` };
-        if (this.utvCargo.freeSpot() === null) return { text: `The bed is full   ·   G put the ${what} down` };
-        return `Put the ${what} in the UTV's bed`;
+        const why = blocked();
+        if (why) return { text: `${why}   ·   G put the ${what} down` };
+        if (hold.freeSpot() === null) return { text: `It is full   ·   G put the ${what} down` };
+        return `Put the ${what} in the ${name}`;
       },
       interact: () => {
         const item = this.heldLoad();
-        if (item && this.utvBed.tip <= 0.02) this.utvCargo.load(item);
+        if (item && !blocked()) hold.load(item);
       },
     });
+    return hold;
   }
 
   /** Whether the trailer is by the muck heap with its tub down and room in it, and your hands are empty. */
@@ -3290,6 +3303,15 @@ export class Game {
     const mount = l.mount;
     mount.update(dt);
     const riding = ridden === unit;
+    if (l.cargo) {
+      // T drops or raises the Series' tailgate, from the seat or standing by the tub; what stands in the tub goes with it.
+      const near = riding || (!this.player.isRiding && this.player.position.distanceTo(q.position) < 3.2);
+      if (near && input.wasPressed('KeyT') && !q.isTipped && !this.handsFull) {
+        const note = q.tailgate.toggle(q.speed);
+        if (note) this.hud.toast(note, 2);
+      }
+      l.cargo.update(dt);
+    }
     const girlOf = (id) => this.companions.find((c) => c.character.id === id);
     const say = (c, key) => c?.voice.say(key, { urgent: true });
     // At the front, on foot, with the starting handle's hole in reach (ground distance: you stand, it's down at the bumper).

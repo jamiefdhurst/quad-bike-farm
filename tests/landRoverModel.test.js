@@ -77,10 +77,11 @@ describe('Land Rover model', () => {
     for (let i = 0; i < 40; i++) poseLandyControls(model, { choke: 1, hand: 1, park: true });
     expect(lever.rotation.x).toBeLessThan(off - 1);
     const knob = model.getObjectByName('chokeKnob');
-    expect(knob.position.z).toBeCloseTo(0.4 - 0.1, 5);
-    // Fully out, the shaft's back end is still well inside the dash (the shelf's face is at z 0.4), so it never floats free.
+    const face = model.userData.knobZ; // the dash's face the knobs come out of
+    expect(knob.position.z).toBeCloseTo(face - 0.1, 5);
+    // Fully out, the shaft's back end is still well inside the dash, so it never floats free.
     knob.updateMatrixWorld(true);
-    expect(new THREE.Box3().setFromObject(knob).max.z).toBeGreaterThan(0.4 + 0.05);
+    expect(new THREE.Box3().setFromObject(knob).max.z).toBeGreaterThan(face + 0.05);
   });
 });
 

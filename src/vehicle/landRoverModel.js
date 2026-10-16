@@ -4,6 +4,7 @@ import { buildDash } from './dash.js';
 import { addHeadlightBeams, addSignalLamps, addSignalStalk, addHazardSwitch, faceAlong } from './quadModel.js';
 import { bentTube, mergeStatic, rod } from './quadGeometry.js';
 import { treadTyre } from './detail/tread.js';
+import { buildSeriesModel } from './seriesModel.js';
 
 // The old Land Rover: a Series III 88-inch pick-up, procedural like the UTV. Ladder chassis on leaf springs and live axles, flat-topped
 // front wings with the headlamps in them, a black grille, the spare wheel on the bonnet, a bumper with the hole for the starting
@@ -23,11 +24,11 @@ import { treadTyre } from './detail/tread.js';
 // +Z is forward and +X is the driver's left (the driver sits on the right, at -X).
 
 export const LANDY_GROUND_OFFSET = -0.62; // chassis origin to the ground at rest, metres
-const R = 0.38; // 7.50 x 16 tyres
-const REST = 0.2; // suspension rest length: matches the spec's suspensionRestLength
+export const R = 0.38; // 7.50 x 16 tyres
+export const REST = 0.2; // suspension rest length: matches the spec's suspensionRestLength
 const TYRE_W = 0.21;
 const RIM_R = 0.21; // a 16 inch rim
-const WHEELBASE = 2.23; // 88 inches
+export const WHEELBASE = 2.23; // 88 inches
 const TRACK = 1.31;
 
 const wheelY = R + REST + LANDY_GROUND_OFFSET;
@@ -39,12 +40,12 @@ const SCREEN_RAKE = 0.2;
 const SCREEN_TOP_Y = 1.73; // a hair into the roof, which is 1.72 underneath
 const SCREEN_H = (SCREEN_TOP_Y - SCREEN_BASE.y) / Math.cos(SCREEN_RAKE);
 const SCREEN_TOP_Z = SCREEN_BASE.z - SCREEN_H * Math.sin(SCREEN_RAKE);
-const HANDBRAKE_OFF = 1.1; // the lever's lean when off (forward and low), and when on
-const HANDBRAKE_ON = -0.1;
+export const HANDBRAKE_OFF = 1.1; // the lever's lean when off (forward and low), and when on
+export const HANDBRAKE_ON = -0.1;
 export const TUB_FLOOR = 1.02; // the tub's floor, clear of the wheel tops (0.96) when they ride up
 const KNOB_Z = 0.4; // the dash face the choke and hand throttle knobs come out of
 const KNOB_TRAVEL = 0.1; // how far a knob pulls out
-const PLATE = 'FRM 88L'; // the Series' registration, front and back (an L, 1972)
+export const PLATE = 'FRM 88L'; // the Series' registration, front and back (an L, 1972)
 const PLATE_200 = 'H471 DKP'; // and the 200TDi's (an H, 1990)
 
 /** Where the wheels, their mounts and the bodywork box are, for QuadPhysics. */
@@ -71,7 +72,7 @@ export const LANDY_SEATS = {
 };
 // Jamie: everyone sat too far forward. The hips were 0.24 m in front of the backrests' faces (about 0.12 is a person's), which also
 // put the wheel too close and the mirror over your head; they moved back 0.12 m, and the worn belts' chest and lap points with them.
-const SEAT_BACK = -0.12;
+export const SEAT_BACK = -0.12;
 export const LANDY_STAND = {
   left: { x: 1.45, z: 0 },
   mid: { x: 1.45, z: 0 }, // the middle seat is reached through the passenger's door, as in the real thing
@@ -127,7 +128,7 @@ export const LANDY_BELTS = {
   left: { anchor: 0.78, buckle: 0.23, diagonal: true },
 };
 
-const MAT = {
+export const MAT = {
   rubber: new THREE.MeshStandardMaterial({ color: 0x1b1a18, roughness: 0.95 }),
   chassis: new THREE.MeshStandardMaterial({ color: 0x151617, roughness: 0.6, metalness: 0.3 }),
   steel: new THREE.MeshStandardMaterial({ color: 0x3a3c3e, roughness: 0.5, metalness: 0.6 }),
@@ -186,14 +187,14 @@ export function archPanel(x, thick, yBottom, yTop, z0, z1, zc, mat, parent) {
 }
 
 /** The rolled lip round an arch, standing proud of the panel. */
-function archFlare(x, zc, mat, parent) {
+export function archFlare(x, zc, mat, parent) {
   const m = add(new THREE.TorusGeometry(ARCH_R + 0.012, 0.016, 6, 24, Math.PI).rotateY(Math.PI / 2), mat, parent);
   m.position.set(x, ARCH_Y, zc);
   return m;
 }
 
 /** A square-section post from a to b (a window pillar or screen upright). */
-function post(a, b, t1, t2, mat, parent) {
+export function post(a, b, t1, t2, mat, parent) {
   const va = new THREE.Vector3(...a);
   const vb = new THREE.Vector3(...b);
   const m = add(new THREE.BoxGeometry(t1, va.distanceTo(vb), t2), mat, parent);
@@ -260,7 +261,7 @@ export function plate(text, bg, parent, { x, y, z, facing }) {
 }
 
 /** A green oval badge with the name in white, on one line or two ("LAND" over "ROVER", for the tailgate). */
-function badge(parent, { x, y, z, facing, w = 0.2, h = w * 0.4, twoLines = false, px = 700 }) {
+export function badge(parent, { x, y, z, facing, w = 0.2, h = w * 0.4, twoLines = false, px = 700 }) {
   const m = label(w, h, px, (g, W, H) => {
     const oval = (inset, colour) => {
       g.fillStyle = colour;
@@ -331,7 +332,7 @@ function addBelt(root, seat, belt) {
 }
 
 /** The trim's textures, made when a Land Rover is built (they need a canvas). */
-function trimMaterials(defender = false) {
+export function trimMaterials(defender = false) {
   // Black vinyl, pebbled, with a stitched inset on each face.
   const vinyl = canvasTexture(128, 128, (g, w, h) => {
     const rand = seeded(11);
@@ -427,7 +428,7 @@ function trimMaterials(defender = false) {
 }
 
 /** A tear in the driver's seat: the vinyl split open, the yellow foam showing, a strip of silver tape across one end. */
-function seatRip(parent) {
+export function seatRip(parent) {
   return label(0.2, 0.14, 700, (g, W, H) => {
     const w = 0.2;
     const h = 0.14;
@@ -471,18 +472,18 @@ export function axleCyl(r, len, mat, x, y, z, parent, segments = 20) {
 // Wheels ---------------------------------------------------------------------
 
 const cache = new Map();
-const cached = (key, make) => {
+export const cached = (key, make) => {
   if (!cache.has(key)) cache.set(key, make());
   return cache.get(key);
 };
 
 /** A narrow all-terrain tyre on a drum: blocky tread in two staggered rows. */
-function tyre() {
+export function tyre() {
   return treadTyre('allTerrain', { radius: R, width: TYRE_W, rimR: RIM_R, count: 28, segments: 44 });
 }
 
 /** A steel wheel: the dished disc with its ring of holes suggested by bolts, in Limestone, and a hub cap. */
-function addWheelFace(spin, side, rim = MAT.rim) {
+export function addWheelFace(spin, side, rim = MAT.rim) {
   axleCyl(RIM_R, TYRE_W + 0.02, rim, 0, 0, 0, spin);
   axleCyl(RIM_R * 0.8, 0.03, rim, side * (TYRE_W / 2 + 0.005), 0, 0, spin);
   axleCyl(0.06, 0.05, MAT.galv, side * (TYRE_W / 2 + 0.03), 0, 0, spin);
@@ -493,7 +494,7 @@ function addWheelFace(spin, side, rim = MAT.rim) {
   }
 }
 
-function buildWheel(w, rim) {
+export function buildWheel(w, rim) {
   const side = Math.sign(w.x);
   const wheel = new THREE.Group();
   const spin = new THREE.Group();
@@ -509,6 +510,7 @@ function buildWheel(w, rim) {
 // The Land Rover ----------------------------------------------------------------
 
 export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series', variant = 'series', reg = null } = {}) {
+  if (variant === 'series') return buildSeriesModel({ bodyColor, dashStyle, reg }); // the Series has its own model now (seriesModel.js)
   const D = variant === 'defender';
   const regText = reg ?? (D ? PLATE_200 : PLATE); // the registration, front and back (a visiting vehicle has its own) // the 200TDi: a square-back with the spare on its rear door, a newer dash and console
   const paint = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.55, side: THREE.DoubleSide });
@@ -1023,8 +1025,9 @@ export function poseLandyControls(model, { gear = 0, gears = 4, fourWd = false, 
   g.rotation.set(pose.along, 0, pose.across);
   model.getObjectByName('transferKnob').position.y = 0.84 - (fourWd ? 0.05 : 0);
   model.getObjectByName('diffLockKnob').position.y = 0.84 - (locked ? 0.05 : 0);
-  model.getObjectByName('chokeKnob').position.z = KNOB_Z - KNOB_TRAVEL * choke;
-  model.getObjectByName('handThrottleKnob').position.z = KNOB_Z - KNOB_TRAVEL * hand;
+  const knobZ = model.userData.knobZ ?? KNOB_Z; // the Series' dash face is further back than the 200TDi's has
+  model.getObjectByName('chokeKnob').position.z = knobZ - KNOB_TRAVEL * choke;
+  model.getObjectByName('handThrottleKnob').position.z = knobZ - KNOB_TRAVEL * hand;
   // The handbrake lever swings up and back when it goes on, eased so it doesn't snap.
   const hb = model.getObjectByName('parkBrakeLever');
   hb.rotation.x += ((park ? HANDBRAKE_ON : HANDBRAKE_OFF) - hb.rotation.x) * 0.3;

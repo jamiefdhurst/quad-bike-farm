@@ -12,7 +12,7 @@ import { LANDY_LAYOUT, LANDY_GROUND_OFFSET } from '../src/vehicle/landRoverModel
 
 describe('the Land Rover', () => {
   it('stands on its tyres at its size: the physics puts the ground where the model draws it, not inside the wheels', () => {
-    const k = L.scale;
+    const k = L.scale ?? 1;
     for (const w of LANDY_LAYOUT.wheels) {
       // Mount, down the suspension at rest, down the (scaled) wheel: the ground, in chassis space.
       const ground = w.y * k - L.vehicle.suspensionRestLength - w.radius * k;

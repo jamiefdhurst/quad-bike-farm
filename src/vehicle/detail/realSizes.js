@@ -17,7 +17,7 @@ export const REAL_SIZES = {
   atc: { like: 'Honda ATC185S (the Kestrel T185)', length: 1780, width: 1040, height: 1050, wheelbase: 1145, track: 780, tyre: 600 },
   tractor: { like: 'Massey Ferguson 35 (the Hartley 35)', length: 2970, width: 1650, height: 1920, wheelbase: 1830, track: 1270, tyre: 1170 }, // height is to the top of the exhaust
   utv: { like: 'Kawasaki Mule 4010', length: 3015, width: 1580, height: 1925, wheelbase: 1910, track: 1230, tyre: 650 },
-  landrover: { like: 'Land Rover Series IIA 88', length: 3620, width: 1680, height: 1970, wheelbase: 2235, track: 1310, tyre: 757 },
+  landrover: { like: 'Land Rover Series III 88 hard-top pick-up', length: 3640, width: 1680, height: 1970, wheelbase: 2235, track: 1310, tyre: 757 },
   landrover200: { like: 'Land Rover Defender 90 200Tdi', length: 3883, width: 1790, height: 1963, wheelbase: 2360, track: 1486, tyre: 757 },
   fiesta: { like: 'Ford Fiesta Mk1', length: 3565, width: 1567, height: 1360, wheelbase: 2286, track: 1340, tyre: 537 },
   corsa: { like: 'Vauxhall Corsa B', length: 3729, width: 1608, height: 1420, wheelbase: 2443, track: 1400, tyre: 547 },
@@ -34,7 +34,7 @@ const isPart = (o) => o.isMesh && o.material?.isMeshStandardMaterial;
  * headlight beams, not a bale spike. The wheels stand where the `layout` puts them (the game places them, not the model), each as
  * big as what turns in it (its `spin` group), and the length and width take them in. A three-wheeler's track is its rear pair's.
  */
-export function measureModel(model, layout, { skip = /proxy|tarp|baleSpike/i } = {}) {
+export function measureModel(model, layout, { skip = /proxy|tarp|baleSpike|mirror/i } = {}) {
   model.updateMatrixWorld(true);
   const inv = new THREE.Matrix4().copy(model.matrixWorld).invert();
   const local = (o) => new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld);
@@ -92,6 +92,6 @@ export function proportionErrors(measured, real) {
 }
 
 /** The vehicles a detail item has brought into proportion; tests/proportions.test.js holds each within `PROPORTION_TOLERANCE`. */
-export const IN_PROPORTION = ['red', 'blue', 'green', 'kids', 'moto', 'atc', 'loan', 'tractor', 'utv'];
+export const IN_PROPORTION = ['red', 'blue', 'green', 'kids', 'moto', 'atc', 'loan', 'tractor', 'utv', 'landrover'];
 
 export const PROPORTION_TOLERANCE = 0.08;

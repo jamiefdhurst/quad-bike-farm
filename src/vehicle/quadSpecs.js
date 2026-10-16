@@ -1094,7 +1094,6 @@ export const LAND_ROVER_SPEC = {
   label: 'Series III',
   name: 'Series III',
   landRover: true,
-  scale: 1.15, // the model and its physics, a size up: built to a real Series's measurements it looked small beside the girls
   steadyLights: true, // a battery runs its lamps
   wheelShake: 0.8,
   bodyColor: 0x3b4a36, // Bronze Green
@@ -1171,8 +1170,8 @@ export const LAND_ROVER_SPEC = {
     rollInertia: 320,
     pitchInertia: 760,
     yawInertia: 820,
-    wheelRadius: 0.437, // 0.38 m tyres at the model's 1.15 scale
-    suspensionRestLength: 0.23, // the model's 0.2 m at its 1.15 scale, so the tyres stand on the ground rather than in it
+    wheelRadius: 0.38, // 7.50 x 16 tyres, at the model's own size
+    suspensionRestLength: 0.2, // so the tyres stand on the ground rather than in it
     maxSuspensionTravel: 0.16, // leaf springs: not much travel
     suspensionStiffness: 32,
     suspensionCompression: 3,

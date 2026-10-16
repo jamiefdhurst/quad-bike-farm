@@ -1551,6 +1551,18 @@ export const FAQ_SECTIONS = [
           They ride along, and you pick one up again the same way as from the floor. Tip the bed (<kbd>T</kbd>, stopped) and everything slides out of the back.`,
       },
       {
+        q: 'Can I carry things in the Series III, and how do I drop the tailgate?',
+        a: `Yes. Hold a jerry can, the toolbox, the jump leads or the oil bottle, look into the tub and press <kbd>E</kbd>: it holds six, between the wheel arches. <kbd>T</kbd>
+          drops the tailgate (stopped, from the seat or standing beside the tub) and again to raise it. It lies flat behind the tub on its two chains, and swings shut by itself
+          if you drive off with it down. It doesn't tip like the UTV's bed, so what is in the tub stays there.`,
+        tip: 'T drops the Series III’s tailgate; E with something in your hands stands it in the tub.',
+      },
+      {
+        q: 'Why do the Series III’s doors open?',
+        a: `They are hinged at the front and swing out, on the side you are using, for a couple of seconds when you get in or out and while a girl climbs in or down. They only
+          open while it is nearly stopped and shut again as soon as it moves.`,
+      },
+      {
         q: 'How do I use the tow chain?',
         a: `Look at the tractor and press <kbd>X</kbd> to take the chain, <kbd>E</kbd> on a stuck quad to hook it, then back the tractor up and drive off.`,
       },
@@ -1846,8 +1858,8 @@ export const VEHICLE_NOTES = {
     tips: ['Reverse is the dash lever: B when stopped.', 'T tips the bed.', 'Belts: ; clicks the buckle. The door nets swing out when it is stopped.', 'The key stops it, unlike the tractor.'],
   },
   landrover: {
-    blurb: 'An old Series III 88-inch pick-up in Bronze Green with a white roof: a 2.25 litre petrol four with a lot of miles on it.',
-    tips: ['First and second crunch on the move: nearly stop first.', 'A starting handle for a flat battery.', '] and [ work the hand throttle.'],
+    blurb: 'An old Series III 88-inch pick-up in Bronze Green with a white roof: a 2.25 litre petrol four with a lot of miles on it, doors that swing open and a drop tailgate.',
+    tips: ['First and second crunch on the move: nearly stop first.', 'A starting handle for a flat battery.', 'T drops the tailgate.', '] and [ work the hand throttle.'],
   },
   landrover200: {
     blurb: 'An early-90s Land Rover 90 station wagon in faded pastel green, the 200TDi: a rattly 2.5 litre turbo diesel, a square back with the spare on its door and a newer dash.',
