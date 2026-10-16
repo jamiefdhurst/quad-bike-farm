@@ -608,29 +608,6 @@ function buildTractor() {
     agedGlass(ctx, d);
   }
 
-  /** The ignition switch: a brass plate with a chrome lever, turned a quarter when the key is on. */
-  function ignition(ctx, x, y, on) {
-    ctx.fillStyle = '#a98a45';
-    ctx.beginPath();
-    ctx.arc(x, y, 9, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#6e5a2a';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
-    ctx.fillStyle = '#8a6f34';
-    ctx.beginPath();
-    ctx.arc(x, y, 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(on ? -0.3 : -Math.PI / 2);
-    ctx.fillStyle = '#d6d6d2';
-    ctx.beginPath();
-    ctx.roundRect(-1.6, -9, 3.2, 12, 1.2);
-    ctx.fill();
-    ctx.restore();
-  }
-
   function draw(ctx, s, L) {
     // The rev counter, 0 to 3,000 rpm in hundreds, with the PTO speed marked in green and the hours drum under the needle's hub.
     const t = dials[1];
@@ -652,17 +629,16 @@ function buildTractor() {
     agedGlass(ctx, t);
     small(ctx, dials[0], L.temp, 'C', 'H', true);
     small(ctx, dials[2], L.fuel, 'E', 'F');
-    ignition(ctx, 110, 92, s.keyOn);
     // The warning lamps in a row under the rev counter, each in a chrome bezel's ring.
-    for (const [kind, x, colour, lit] of [['temp', 150, LAMP.red, L.hot], ['glow', 170, LAMP.amber, L.glow], ['charge', 190, LAMP.red, L.charge], ['oil', 210, LAMP.red, L.oil]]) {
+    for (const [kind, x, colour, lit] of [['temp', 141, LAMP.red, L.hot], ['glow', 167, LAMP.red, L.glow], ['charge', 193, LAMP.red, L.charge], ['oil', 219, LAMP.red, L.oil]].map(([k, x, c, l]) => [k, x, k === 'glow' ? LAMP.amber : c, l])) {
       ctx.fillStyle = kind === 'glow' ? '#3a2410' : '#2e100d'; // the lens, dark until it lights
       ctx.beginPath();
-      ctx.arc(x, 112, 4.4, 0, Math.PI * 2);
+      ctx.arc(x, 112, 8, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = '#c9c9c4';
       ctx.lineWidth = 0.9;
       ctx.stroke();
-      warnSymbol(ctx, kind, x, 112, colour, lit, 0.6);
+      warnSymbol(ctx, kind, x, 112, colour, lit, 0.62);
     }
   }
 

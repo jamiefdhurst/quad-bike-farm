@@ -276,7 +276,7 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
 
   // The cowl behind the bonnet: the fuel tank and the instrument panel in one, its top sloping to the driver. The panel is a pressed steel
   // plate, the same red, with the dash's dials, key and lamps set straight into it (no housing, no plastic).
-  add(loftGeometry(MF_COWL, { exponent: 3 }), paint, root, 'cowl');
+  add(loftGeometry(MF_COWL, { exponent: 6 }), paint, root, 'cowl'); // a squarer section than the bonnet's, so its top is flat out to its edges and the controls on it stand on it
   add(new THREE.CylinderGeometry(0.036, 0.04, 0.025, 14), MAT.castDark, root).position.set(0.17, panelY0(-0.02) + 0.004, -0.02); // the filler cap, behind the panel
   // The dash group on the cowl's slope, scaled up to the real size of the instruments (the mockup is in millimetres at half scale).
   const DASH_SCALE = 1.5;
@@ -295,6 +295,26 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   const plateGeo = new THREE.ExtrudeGeometry(plateShape, { depth: 0.004, bevelEnabled: true, bevelSize: 0.004, bevelThickness: 0.003, bevelSegments: 2, curveSegments: 4 });
   const plate = add(plateGeo.translate(0, 0, -0.0316), paint, dash.group, 'dashPlate');
   plate.geometry.computeVertexNormals();
+  // The ignition switch, in 3D now (it was a flat yellow disc drawn on the dial face): a brass bezel ring standing proud of the plate round a
+  // dark key barrel, with a chrome lever that turns a quarter when the key does (the dash's update is wrapped to turn it).
+  const ign = new THREE.Group();
+  ign.name = 'ignitionSwitch';
+  ign.position.set(0.07, -0.022, -0.0345);
+  add(new THREE.CylinderGeometry(0.0115, 0.0125, 0.008, 20).rotateX(Math.PI / 2), MAT.brass, ign).position.z = -0.004; // the brass base plate
+  add(new THREE.TorusGeometry(0.0105, 0.0028, 8, 20), MAT.brass, ign).position.z = -0.009; // its rolled bezel
+  add(new THREE.CylinderGeometry(0.0072, 0.0072, 0.01, 16).rotateX(Math.PI / 2), MAT.castDark, ign).position.z = -0.011; // the key barrel
+  const ignLever = new THREE.Group();
+  ignLever.position.z = -0.0165;
+  tube([0, 0, 0], [0, 0.0145, -0.003], 0.0023, MAT.chrome, ignLever, 6); // the lever
+  add(new THREE.SphereGeometry(0.0035, 8, 6), MAT.chrome, ignLever).position.set(0, 0.0155, -0.0035);
+  add(new THREE.CylinderGeometry(0.0034, 0.0034, 0.004, 10).rotateX(Math.PI / 2), MAT.chrome, ignLever); // and its hub
+  ign.add(ignLever);
+  dash.group.add(ign);
+  const dashUpdate = dash.update;
+  dash.update = (s) => {
+    dashUpdate(s);
+    ignLever.rotation.z = s.keyOn ? -0.3 : Math.PI / 2; // up and a little left with the key on, across to the left off
+  };
   // The data plate low on its left, and the lights switch low on its right: a chrome bat on a brass bush set in the panel, named `lightsRocker`
   // so the quad's lights switch tips it (P: up for off, down for on; poseBarPod).
   const dataPlate = rbox(0.04, 0.022, 0.002, 0.002, MAT.castDark, 0.065, -0.075, -0.0338, dash.group, 'dataPlate');
@@ -308,15 +328,15 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   add(new THREE.SphereGeometry(0.0055, 8, 6), MAT.chrome, lightsRocker).position.set(0, 0.018, -0.004);
   dash.group.add(lightsRocker);
   // An accessory pod stands on a short steel post on the cowl beside the panel (its right, so the dials stay clear), leaning back to you.
-  const podPost = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.016, 0.06, 10), new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.6, metalness: 0.5 }));
-  podPost.position.set(-0.16, panelY0(0.3) + 0.03, 0.3); // on the cowl's top: well inside its edge (it is 0.44 wide there)
+  const podPost = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.02, 0.15, 10), new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.6, metalness: 0.5 }));
+  podPost.position.set(-0.16, panelY0(0.3) + 0.045, 0.3); // on the cowl's top: well inside its edge (it is 0.44 wide there)
   podPost.userData.keep = true;
   podPost.visible = false; // only there while a pod stands on it (Quad.fitPod): a bare stub looked like something floating
   quad.userData.podPost = podPost;
   root.add(podPost);
   const podMount = new THREE.Object3D();
   podMount.name = 'podMount';
-  podMount.position.set(-0.16, panelY0(0.3) + 0.065, 0.3);
+  podMount.position.set(-0.16, panelY0(0.3) + 0.115, 0.3); // the post's top
   podMount.rotation.x = 0.35;
   podMount.userData.keep = true;
   root.add(podMount);
@@ -597,7 +617,7 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   spikeMast.userData.keep = true;
   for (const s of [-1, 1]) {
     tube([s * 0.3, 0.45, SPIKE_RAIL_Z], [s * 0.3, 2.2, SPIKE_RAIL_Z], 0.028, MAT.red, spikeMast);
-    tube([s * 0.3, 1.5, SPIKE_RAIL_Z], [s * 0.2, 1.06, -1.31], 0.02, MAT.steel, spikeMast); // down into the lift housing's back face (x +-0.25, z -0.92 to -1.32), so it clears the guards' silhouette
+    tube([s * 0.3, 1.45, SPIKE_RAIL_Z], [s * 0.4, 0.58, -1.45], 0.02, MAT.steel, spikeMast); // a stay down the back of the rail to the lower link's end: it stays behind the guards (they end at z -1.6 and the stay is at x 0.3 to 0.4, inside their 0.43), so nothing crosses them from any side
     tube([s * 0.3, 0.55, SPIKE_RAIL_Z], [s * 0.4, 0.5, -1.45], 0.02, MAT.steel, spikeMast);
   }
   rbox(0.68, 0.05, 0.05, 0.015, MAT.red, 0, 2.2, SPIKE_RAIL_Z, spikeMast);

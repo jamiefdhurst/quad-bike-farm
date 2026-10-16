@@ -47,7 +47,8 @@ export const MF_STEERING = { column: [0, 1.08, -0.02], rake: 0.75, length: 0.164
 export const MF_SEAT = { x: 0, y: 1.12, z: -0.8, r: 0.22 };
 
 /** The mudguards: radius over the tyre, width, how far round they go. */
-export const MF_GUARD = { r: 0.585 + 0.1, w: 0.37, from: -0.1, to: Math.PI + 0.2 };
+export const MF_GUARD = { r: 0.585 + 0.18, // (the body rides on springs and the wheel settles 9 cm up into it, then bounces: 18 cm clear of the tread, more than the old guards' 17)
+  w: 0.37, from: -0.1, to: Math.PI + 0.2 };
 
 /** The footplates either side of the transmission, the pedals and the gear levers. */
 export const MF_FOOT = { y: 0.66, x0: 0.2, x1: 0.52, z0: -0.7, z1: -0.1 };
