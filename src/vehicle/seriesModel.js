@@ -4,6 +4,7 @@ import { addHeadlightBeams, addSignalLamps, addSignalStalk, addHazardSwitch, fac
 import { bentTube, loftGeometry, mergeStatic } from './quadGeometry.js';
 import { buildSeatBelt, webbingMaterial } from './detail/belts.js';
 import { buildWiper } from './detail/fittings.js';
+import { buildToggle, buildPullKnob, buildLampLens } from './detail/switchgear.js';
 import {
   MAT, add, rbox, archPanel, archFlare, post, tube, axleCyl, plate, label, fitText, badge, trimMaterials, seatRip, buildWheel, addWheelFace, tyre, cached,
   LANDY_SEATS, LANDY_LAYOUT, SEAT_BACK, HANDBRAKE_OFF, CRANK_HOLE, R, WHEELBASE, PLATE,
@@ -361,9 +362,15 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
     wheel.position.set(0, 0.42, 0);
     column.add(wheel);
     add(new THREE.TorusGeometry(0.21, 0.012, 8, 36).rotateX(Math.PI / 2), MAT.black, wheel);
-    add(new THREE.CylinderGeometry(0.045, 0.045, 0.035, 14), MAT.black, wheel); // the boss
-    badge(wheel, { x: 0, y: 0.0185, z: 0, facing: 1, w: 0.07, h: 0.035, px: 1200 }).rotation.set(-Math.PI / 2, 0, Math.PI); // the badge in its centre, facing the driver
-    for (const a of [Math.PI / 2 + 0.2, -Math.PI / 2 - 0.2, Math.PI]) tube([0, 0, 0], [Math.sin(a) * 0.21, 0, Math.cos(a) * 0.21], 0.007, MAT.galv, wheel, 5); // three spokes (left, right and down), the top open so you see the dials
+    // The hub is a deep round cup, as on the real wheel (dished towards you, a dark recess with the badge in it) on three flat metal spokes.
+    const hubMat = new THREE.MeshStandardMaterial({ color: 0x7d8083, roughness: 0.45, metalness: 0.5, side: THREE.DoubleSide });
+    add(new THREE.LatheGeometry([[0.0, -0.022], [0.06, -0.022], [0.058, 0.022], [0.05, 0.022], [0.048, 0.006], [0.0, 0.006]].map(([r, y]) => new THREE.Vector2(r, y)), 22), hubMat, wheel); // the cup, open towards you
+    badge(wheel, { x: 0, y: 0.0075, z: 0, facing: 1, w: 0.07, h: 0.035, px: 1200 }).rotation.set(-Math.PI / 2, 0, Math.PI); // the badge in its floor
+    for (const a of [Math.PI / 2 + 0.2, -Math.PI / 2 - 0.2, Math.PI]) {
+      const spoke = add(new THREE.BoxGeometry(0.15, 0.007, 0.024), hubMat, wheel); // left, right and down, the top open so you see the dials
+      spoke.position.set(Math.sin(a) * 0.13, -0.004, Math.cos(a) * 0.13);
+      spoke.rotation.y = a - Math.PI / 2;
+    }
     for (const side of [1, -1]) {
       const grip = new THREE.Object3D();
       grip.name = side > 0 ? 'gripLeft' : 'gripRight';
@@ -391,7 +398,21 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
     root.add(fascia);
     const P = D.panel;
     rbox(P.x1 - P.x0, P.y1 - P.y0, 0.03, 0.008, dashMetal, (P.x0 + P.x1) / 2, (P.y0 + P.y1) / 2, 0.015, fascia); // the instrument panel
-    for (const x of [-0.69, -0.62, -0.55]) add(new THREE.CylinderGeometry(0.012, 0.012, 0.02, 10).rotateX(Math.PI / 2), MAT.galv, fascia).position.set(x, 0.1, -0.01); // the pull and push switches, outboard of the dials
+    // The switch panel at the door end, as in the photo: a black plate with two chrome toggles over two small lamps and a push button, a toggle
+    // and the lights' pull knob under them. They face you (the fascia's face is its +z side, so each is turned half round).
+    rbox(0.15, 0.22, 0.004, 0.002, MAT.black, -0.665, 0.125, -0.002, fascia);
+    const fit = (g, x, y) => {
+      g.position.set(x, y, -0.004);
+      g.rotation.y = Math.PI;
+      fascia.add(g);
+    };
+    fit(buildToggle({ on: true }), -0.7, 0.2);
+    fit(buildToggle({ on: false }), -0.63, 0.2);
+    fit(buildLampLens({ r: 0.006, colour: 'Red' }), -0.7, 0.15);
+    fit(buildLampLens({ r: 0.006, colour: 'Amber' }), -0.665, 0.15);
+    fit(buildLampLens({ r: 0.011, colour: 'Clear' }), -0.63, 0.11); // the push button
+    fit(buildToggle({ on: false }), -0.7, 0.07);
+    fit(buildPullKnob({ out: 0.01 }), -0.63, 0.04);
     const dash = buildDash(dashStyle);
     dash.group.position.set(-0.42, 0.12, -0.02);
     dash.group.scale.setScalar(1.5); // the binnacle's about 0.3 m wide, as on a Series III
@@ -457,10 +478,22 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       add(new THREE.SphereGeometry(r, 12, 10), mat, g).position.set(0, len, 0);
       root.add(g);
     };
+    add(new THREE.CylinderGeometry(0.045, 0.06, 0.03, 16), MAT.black, root).position.set(-0.1, 0.835, 0.12); // the gear lever's rubber gaiter
+    add(new THREE.TorusGeometry(0.06, 0.006, 6, 18).rotateX(Math.PI / 2), MAT.galv, root).position.set(-0.1, 0.825, 0.12); // and its ring
+    rbox(0.16, 0.006, 0.07, 0.002, MAT.black, 0.08, 0.842, 0.12, root); // the plate the transfer and diff levers come through
     lever('gearLever', -0.1, MAT.knob, 0.3, 0.026);
     lever('transferKnob', 0.04, MAT.yellow, 0.2, 0.018);
     lever('diffLockKnob', 0.12, MAT.red, 0.14, 0.016);
-    for (const [x, w] of [[-0.55, 0.07], [-0.4, 0.07], [-0.25, 0.04]]) rbox(w, 0.02, w === 0.04 ? 0.14 : 0.16, 0.005, MAT.black, x, 0.66, 0.32, root).rotation.x = -0.6; // the pedals: clutch, brake, accelerator
+    // The pedals: a ribbed rubber pad (clutch, brake, accelerator) hanging from an arm that pivots under the dash.
+    for (const [x, w] of [[-0.55, 0.075], [-0.4, 0.075], [-0.25, 0.045]]) {
+      const pad = new THREE.Group();
+      pad.position.set(x, 0.66, 0.32);
+      pad.rotation.x = -0.6;
+      rbox(w, 0.016, 0.1, 0.005, MAT.black, 0, 0, 0, pad);
+      for (const dz of [-0.03, 0, 0.03]) rbox(w - 0.01, 0.006, 0.008, 0.002, MAT.knob, 0, 0.01, dz, pad); // the ribs
+      root.add(pad);
+      tube([x, 0.68, 0.34], [x, 0.98, 0.43], 0.008, MAT.galv, root, 5); // the arm, up to its pivot under the dash
+    }
     // The handbrake: a ratchet lever on the right of the tunnel, by the driver's left knee. Down and forward when off; pulled up and back when on.
     const hb = new THREE.Group();
     hb.name = 'parkBrakeLever';
