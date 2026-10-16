@@ -21,7 +21,7 @@ import { buildLeftPod, buildBrakeLever, buildDriveSwitch, buildThumbThrottle, po
 import { addRackDetail, addGrille, addTreadPlates, addShiftLever, addBarCables, addDrumBrake, seatTape, addDecals } from './foremanDetail.js';
 import { DECK, deckGeometry, flareGeometry, bulkheadGeometry, topCoverGeometry, bodyTopY } from './foremanDeck.js';
 import { GRIZZLY_DECK, GRIZZLY_RACKS, grizzlyLampOutline } from './grizzlyBody.js';
-import { KODIAK_DECK, KODIAK_LAMP } from './kodiakBody.js';
+import { KODIAK_DECK, KODIAK_LAMP, KODIAK_FACE, kodiakLampOutline } from './kodiakBody.js';
 import { addKodiakDecals } from './kodiakDetail.js';
 import { buildGrizzlyPod } from './grizzlyControls.js';
 import { BAYOU_DECK, BAYOU_RACKS, BAYOU_FACE } from './bayouBody.js';
@@ -53,7 +53,7 @@ import { addGrizzlyFront, addGrizzlyRear, addGrizzlyDecals, addFrontBrake, addGr
 
 const WHEEL_RADIUS = 0.3;
 const REST_WHEEL_Y = 0.3;
-const barsY = (style) => (style === 'utility' ? 0.96 : 1.0); // the handlebars' height: the Foreman's sit lower (photos of the real one)
+const barsY = (style) => (style === 'utility' || style === 'kodiak' ? 0.96 : 1.0); // the handlebars' height: the Foreman's sit lower (photos of the real one), and so do the loan quad's (Jamie: too high against the others)
 
 // Choke knobs are black rubber with a small white mark, as on the real machines (they were yellow, which only the lights rocker is).
 const CHOKE_KNOB = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.7 });
@@ -851,11 +851,11 @@ function foremanFenders(root, paint, D = DECK, flareColour = null) {
     } else {
       add(flareGeometry(which, w.z, s, D), flareMat, root, `flare_${tag}`);
     }
-    add(bulkheadGeometry(which, s, D), paint, root, `bulkhead_${tag}`);
+    add(bulkheadGeometry(which, s, D), D.blackWalls ? flareMat : paint, root, `bulkhead_${tag}`);
     // The wing's inner wall, red, just inboard of the tyre: the wheel arch is a closed tunnel from the deck down to the arch, so nothing
     // under the deck shows from the middle of the quad (the real one's inner wings are body-coloured).
     const d = Math.sign(W.to - W.from);
-    const wall = add(sideSlab([...archPoints(w.z, 0.3, F.archR + 0.01, W.from + d * 0.05, W.to - d * 0.1, 16), [W.to - d * 0.1, W.top - 0.06], [W.from + d * 0.05, W.top - 0.06]], 0.014, 0.003), paint, root, `innerWing_${tag}`);
+    const wall = add(sideSlab([...archPoints(w.z, 0.3, F.archR + 0.01, W.from + d * 0.05, W.to - d * 0.1, 16), [W.to - d * 0.1, W.top - 0.06], [W.from + d * 0.05, W.top - 0.06]], 0.014, 0.003), D.blackWalls ? flareMat : paint, root, `innerWing_${tag}`); // (the Kodiak's inner wings are black plastic, as the real one's)
     wall.position.set(s * 0.335, 0, 0);
     // A raised lip round the arch, 12 mm proud of the skirt, clipped to it.
     const inner = archPoints(w.z, 0.3, F.archR, W.from + d * 0.12, W.to - d * 0.02, 14);
@@ -1302,11 +1302,25 @@ function buildExhaust(engine, sport, race = false, blaster = false, racer = fals
     const tip = latheZ([[0.022, -0.02], [0.022, 0.02], [0.016, 0.02]], MAT.chrome, -0.26, 0.795, -0.89, engine, 12);
     tip.rotation.x = 0.33;
     exhaustTip.position.set(-0.26, 0.81, -0.9);
+  } else if (bright) {
+    // The Kodiak's: the header and pipe run hidden inside the black covers (a long pipe at the panels' x went through them and the frame), so
+    // all that shows is a short pipe out of the frame behind the rear arch and a bright silver can, clear of the rails and the cross beam.
+    pipe([[-0.27, 0.52, -0.42], [-0.27, 0.52, -0.66]], 0.024, MAT.exhaust, engine, { bend: 0.05, steps: 3 });
+    const canMat = MAT.alloy.clone();
+    canMat.side = THREE.DoubleSide;
+    latheZ([[0.03, -0.14], [0.05, -0.12], [0.056, -0.09], [0.056, 0.1], [0.05, 0.13], [0.03, 0.15], [0.018, 0.15]], canMat, -0.27, 0.52, -0.8, engine, 18);
+    const baffle = add(new THREE.CircleGeometry(0.03, 14), MAT.hole, engine);
+    baffle.position.set(-0.27, 0.52, -0.9505);
+    baffle.rotation.y = Math.PI;
+    const tipMat = MAT.chrome.clone();
+    tipMat.side = THREE.DoubleSide;
+    latheZ([[0.02, -0.02], [0.02, 0.02], [0.014, 0.02]], tipMat, -0.27, 0.52, -0.96, engine, 12);
+    exhaustTip.position.set(-0.27, 0.52, -0.99);
   } else {
     pipe([[-0.03, 0.67, 0.25], [-0.1, 0.6, 0.42], [-0.24, 0.48, 0.36], [-0.27, 0.46, 0.0], [-0.27, 0.5, -0.5]], 0.025, MAT.exhaust, engine, { bend: 0.1, steps: 6 });
     // Silencer with a heat shield and a chrome tip.
     // Both sides of every surface drawn, so looking into the can or under the shield shows the inside, and a dark baffle in the can.
-    const canMat = (bright ? MAT.alloy : MAT.exhaust).clone(); // the Kodiak's is bright silver
+    const canMat = MAT.exhaust.clone();
     canMat.side = THREE.DoubleSide;
     const shieldMat = MAT.engineDark.clone();
     shieldMat.side = THREE.DoubleSide;
@@ -1392,6 +1406,7 @@ export function buildSedimentBowl(root, x, y, z) {
 }
 
 function buildFuelTap(root, tapStyle) {
+  if (tapStyle === 'none') return; // fuel injected: no tap to fit
   const place = TAP_PLACE[tapStyle] ?? TAP_PLACE.left;
   const [x, y, z] = place.pos;
   const side = Math.sign(x);
@@ -1578,20 +1593,27 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
     // The Grizzly (a 2000s Yamaha 660; the Kodiak shares all but its lamps, bumper and tail): the painted decks are made with the fenders; here are the round lamps in black pods at the face's
     // corners, the grille between them with the steel bumper below (grizzlyDetail.js), the black dome round the steering column, and the
     // tail lamp panel on the rear deck's face.
-    for (const s of kodiak ? [] : [-1, 1]) {
+    const FACE = kodiak ? KODIAK_FACE : GRIZZLY_FACE; // (the Kodiak's face leans, so its lamps and grille stand further forward)
+    for (const s of [-1, 1]) {
       // A black almond-shaped surround on the face, pointing out and down towards the fender's corner, and a bare round lens in it with
-      // no bezel of its own.
-      const ctrl = grizzlyLampOutline().map(([u, v]) => new THREE.Vector3(s * (GRIZZLY_FACE.lampX + u), GRIZZLY_FACE.lampY + v, 0));
+      // no bezel of its own. The Kodiak's is slimmer and sharper, with a pale daytime strip along the top of it.
+      const ctrl = (kodiak ? kodiakLampOutline() : grizzlyLampOutline()).map(([u, v]) => new THREE.Vector3(s * (FACE.lampX + u), FACE.lampY + v, 0));
       if (s < 0) ctrl.reverse();
+      const lampZ = kodiak ? FACE.lampZ : FACE.z;
       const outline = new THREE.CatmullRomCurve3(ctrl, true, 'centripetal').getPoints(48).slice(0, -1).map((p) => new THREE.Vector2(p.x, p.y));
-      const surround = add(new THREE.ExtrudeGeometry(new THREE.Shape(outline), { depth: 0.014, bevelEnabled: false }).translate(0, 0, GRIZZLY_FACE.z - 0.006), MAT.plastic, root, 'headlightSurround');
+      const surround = add(new THREE.ExtrudeGeometry(new THREE.Shape(outline), { depth: 0.014, bevelEnabled: false }).translate(0, 0, lampZ - 0.006), MAT.plastic, root, 'headlightSurround');
       surround.geometry.computeVertexNormals();
-      roundLamp(root, s * GRIZZLY_FACE.lampX, GRIZZLY_FACE.lampY, GRIZZLY_FACE.z + 0.014, 0.036, lensMat, MAT.plastic, s > 0 ? 'headlightLeft' : 'headlightRight', true);
+      roundLamp(root, s * FACE.lampX, FACE.lampY, lampZ + 0.014, kodiak ? KODIAK_LAMP.r : 0.036, lensMat, MAT.plastic, s > 0 ? 'headlightLeft' : 'headlightRight', true);
+      if (kodiak) {
+        const strip = rbox(0.1, 0.009, 0.006, 0.003, new THREE.MeshStandardMaterial({ color: 0xe9ecef, roughness: 0.3 }), s * (FACE.lampX + 0.115), FACE.lampY + 0.04, lampZ + 0.0125, root, 'daytimeStrip', 1);
+        strip.rotation.z = s * 0.1;
+      }
     }
     if (kodiak) {
-      // The Kodiak's lamps: round, in a black bezel, low in the face's corners; a black steel bumper.
-      for (const s of [-1, 1]) roundLamp(root, s * KODIAK_LAMP.x, KODIAK_LAMP.y, GRIZZLY_FACE.z + 0.012, KODIAK_LAMP.r, lensMat, MAT.plastic, s > 0 ? 'headlightLeft' : 'headlightRight');
-      addGrizzlyFront(root, MAT, paint, { steel: MAT.frame });
+      // A black sill along each side from the front arch's trim to the rear one's, under the black side panel, so the black is all one piece.
+      for (const s of [-1, 1]) rbox(0.05, 0.07, 0.66, 0.014, MAT.plastic, s * 0.285, 0.39, 0, root, 'sill');
+      // A black steel bumper under the leaning face; the grille's plane is the face's at its height.
+      addGrizzlyFront(root, MAT, paint, { steel: MAT.frame, face: KODIAK_FACE });
       addGrizzlyRear(root, MAT);
     } else {
       addGrizzlyFront(root, MAT, paint);
@@ -1711,7 +1733,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
         const e = gz ? 0.225 : 0.2; // the Grizzly's black panels run 25 mm into the blue walls at the decks' ends, so no crack shows between them
         const top = [e, 0.17, 0.12, 0.05, -0.05, -0.12, -0.17, -e].map((z) => [z, bodyTopY(z)]);
         // The Bayou's is a short strip under the seat, its ends down to the wing walls, so the crankcase shows below it.
-        const bottom = bayou ? [[-e, 0.36], [-0.19, 0.5], [-0.14, 0.6], [-0.08, 0.64], [0.08, 0.64], [0.14, 0.6], [0.19, 0.5], [e, 0.36]] : [[-e, 0.36], [-0.16, 0.41], [-0.1, 0.46], [0, 0.5], [0.1, 0.46], [0.16, 0.41], [e, 0.36]];
+        const bottom = kodiak ? [[-e, 0.41], [e, 0.41]] : bayou ? [[-e, 0.36], [-0.19, 0.5], [-0.14, 0.6], [-0.08, 0.64], [0.08, 0.64], [0.14, 0.6], [0.19, 0.5], [e, 0.36]] : [[-e, 0.36], [-0.16, 0.41], [-0.1, 0.46], [0, 0.5], [0.1, 0.46], [0.16, 0.41], [e, 0.36]];
         const panel = add(sideSlab([...top, ...bottom], 0.022, 0.006), gz ? MAT.plastic : paint, root, 'sidePanel');
         panel.position.set(s * 0.255, 0, 0);
       }

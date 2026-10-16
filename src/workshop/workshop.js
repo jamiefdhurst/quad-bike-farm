@@ -63,6 +63,7 @@ const ROWS = [
   {
     key: 'mixture',
     petrolOnly: true,
+    carbOnly: true,
     name: 'Carb mixture',
     explain:
       'Leaner gives a touch more go and uses less petrol, but it runs hotter, wants more choke from cold and can stumble and miss. Richer is happier from cold, but smokier and thirstier, and right at the end it slowly fouls its plug.',
@@ -391,7 +392,7 @@ export class Workshop {
   /** Whether a quick job is on the panel: a diesel has no carb, and the tractor no belt. */
   repairShown(kind) {
     if (kind === 'battery') return hasBattery(this.unit);
-    if (kind === 'carb') return !this.isDiesel;
+    if (kind === 'carb') return !this.isDiesel && !this.unit?.engine.params.injected; // (an injected engine has no carb to clean)
     if (kind === 'chain') return !!this.unit?.quad.faults.hasChain; // only the chain-driven ones
     if (kind === 'belt') return !this.unit?.quad.tractor && !this.unit?.quad.landRover; // the Land Rover has a clutch
     return true;
@@ -553,6 +554,7 @@ export class Workshop {
   /** Whether a row is on the panel for this quad: the jet only shows on a two-stroke, and the diesels leave out the petrol carb's settings. */
   rowShown(i) {
     if (ROWS[i].petrolOnly && this.isDiesel) return false;
+    if (ROWS[i].carbOnly && this.unit?.engine.params.injected) return false; // an injected engine has no needle or jet to set
     return !ROWS[i].twoStrokeOnly || this.unit?.engine.params.strokes === 2;
   }
 

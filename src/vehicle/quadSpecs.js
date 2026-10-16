@@ -739,7 +739,7 @@ export const EXTRA_SPECS = [
     reverseStyle: 'button', // where the reverse is and what it takes to use it (controls.js)
     barLights: true, // a lights rocker on the bars' pod (P cycles off, dipped, main beam; lightSwitch.js), starting dipped
     chokeStyle: 'none', // fuel injected: no choke at all (controls.js)
-    tapStyle: 'right', // where the fuel tap sits
+    tapStyle: 'none', // fuel injected: no fuel tap, the fuel always flows
     hoursRange: [2, 25], // engine hours showing when the game starts
     odoRange: [5, 60], // odometer miles showing when the game starts
     wearRange: [0, 0.04], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
@@ -749,7 +749,7 @@ export const EXTRA_SPECS = [
     roughnessRange: [0, 0.015],
     fuelRange: [9, 11], // 12 litre tank, brought full
     topRpmRange: [6900, 7100], // full-throttle revs this game, about 4% either side of the engine's own
-    fuel: { tankCapacity: 12, reserveLitres: 1.8, burnPerRev: 0.000075 },
+    fuel: { tankCapacity: 12, reserveLitres: 1.8, noTap: true, startTap: 'on', burnPerRev: 0.000075 },
     engine: {
       idleRpmWarm: 1150,
       maxRpm: 7000,

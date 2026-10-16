@@ -175,7 +175,7 @@ export const FAQ_SECTIONS = [
         a: `<ol>
           <li>Get on with <kbd>E</kbd> (or work it from beside it: the same keys work stood at a quad).</li>
           <li>Hold <kbd>Q</kbd> to pull the choke right out. Watch the lever move: each quad's is in a different place.</li>
-          <li>Turn the fuel tap on with <kbd>F</kbd>. They're left OFF; forget, and it starts, runs a few seconds on what's in the carb and dies.</li>
+          <li>Turn the fuel tap on with <kbd>F</kbd> (the loan quad has no tap: its fuel always flows). They're left OFF; forget, and it starts, runs a few seconds on what's in the carb and dies.</li>
           <li><kbd>K</kbd> for the ignition.</li>
           <li>Hold <kbd>R</kbd> to crank in short goes. It should catch in a couple of seconds into a high, lumpy idle.</li>
           <li>As it warms, ease the choke off with <kbd>Z</kbd> a notch or two at a time. Too early and it stumbles and dies; too late and it
@@ -189,7 +189,7 @@ export const FAQ_SECTIONS = [
           slides it towards the label and <kbd>Z</kbd> eases it back. The blue's is a lever hanging under its switch housing. The yellow's is not on the
           bars at all: it is a black knob with the choke symbol on the left of the carb, down in the open engine bay, so you have to be all but stopped to
           reach it, and it takes a hand off the bars. The fuel tap is beside it, on the tank's lower edge. The orange's is a lever on the pod on the left bar, beside the lights rocker, always in reach. The kids' quad's, the mini moto's and the old three-wheeler's are a knob on the left of the carb like the yellow's, with the fuel tap beside it, and their knobs come well out of the barrel when they are on. The others have a knob or a lever of their own,
-          so stand at the quad and watch what moves when you hold <kbd>Q</kbd>. The loan quad and Jess's Corsa have none: they are fuel injected and sort out a cold start themselves.`,
+          so stand at the quad and watch what moves when you hold <kbd>Q</kbd>. The loan quad and Jess's Corsa have none: they are fuel injected and sort out a cold start themselves, and the loan quad has no fuel tap either.`,
       },
       {
         q: 'How do I read the green quad’s speedo?',
@@ -1835,7 +1835,7 @@ export const VEHICLE_NOTES = {
   },
   loan: {
     blurb: 'The dealer’s loan quad, a silver Tamura Ursa 450: fuel injected, starts on the button, idles smooth and quiet, and has almost no wear.',
-    tips: ['Fuel injected: no choke to work, even on a frosty morning.', 'Full tank and a bit more power than the old farm quads.', 'The dealer’s sticker is on the left rear fender.'],
+    tips: ['Fuel injected: no choke and no fuel tap, even on a frosty morning.', 'Full tank and a bit more power than the old farm quads.', 'The dealer’s sticker is on the left rear fender.'],
   },
   tractor: {
     blurb: 'An old grey-and-red Fergie on red diesel: heavy, slow and strong, with three gears, a hand throttle and a lot of hours.',

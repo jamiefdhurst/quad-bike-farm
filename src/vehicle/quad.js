@@ -139,7 +139,7 @@ export class Quad {
     this.fuel = new FuelSystem(fuelParams);
     this.faults = new Faults();
     this.faults.hasBoot = !engine.params.compressionIgnition; // nor an intake boot to split
-    if (engine.params.compressionIgnition) this.faults.prone.carb = 0; // a diesel has no carb to get dirty
+    if (engine.params.compressionIgnition || engine.params.injected) this.faults.prone.carb = 0; // a diesel or an injected engine has no carb to get dirty
     if (tractor) this.faults.prone.belt = 0; // and the tractor has a clutch and gearbox, not a belt
     this.faults.hasValves = engine.params.strokes !== 2; // every four-stroke has valves to go out of adjustment; a two-stroke has none
     this.faults.hasClutch = !!gearbox && !tractor && !landRover && !car && !utv; // a manual quad's plate wears with slipping it; the cars' and tractor's are not modelled
@@ -156,7 +156,7 @@ export class Quad {
       this.faults.tyreWheels = layout.wheels.flatMap((w, i) => (w.outrigger ? [] : [i]));
       this.faults.wheelSides = layout.wheels.map((w) => ({ side: w.x >= 0 ? 1 : -1, front: !!w.front }));
     }
-    this.carbIce = new CarbIcing(undefined, !engine.params.compressionIgnition); // ice in the carb on a cold, damp day (carbIcing.js); a diesel has no carb
+    this.carbIce = new CarbIcing(undefined, !engine.params.compressionIgnition && !engine.params.injected); // ice in the carb on a cold, damp day (carbIcing.js); a diesel or an injected engine has no carb
     this.iceHits = []; // 'crack' / 'break' from wheels on puddle ice, taken by takeIceHits()
     this.waxParams = DEFAULT_DIESEL_WAX_PARAMS; // diesel waxing in a hard frost (dieselWax.js); the game swaps in this game's tuning
     this.iceCable = new FrozenCable(); // a throttle cable frozen on a frosty morning (frozenCable.js); the game gives it this game's tuning and deals it
@@ -1303,7 +1303,7 @@ export class Quad {
       bowl.scale.y = Math.max(0.001, fill);
       bowl.position.y = bowl.userData.bottom + fill * bowl.userData.full * 0.5; // settles at the bottom
     }
-    this.fuelTap.rotation.x += (tapAngle - this.fuelTap.rotation.x) * Math.min(1, 15 * dt);
+    if (this.fuelTap) this.fuelTap.rotation.x += (tapAngle - this.fuelTap.rotation.x) * Math.min(1, 15 * dt);
   }
 
   /** Moves the parked quad to a spot and heading (a girl nudging it straight by hand). */

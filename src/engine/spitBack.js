@@ -8,7 +8,7 @@ const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
 /** How readily it spits back, 0..1: needs both a lean mixture and a cold engine, so a warm one or a rich (choked) one never does. */
 export function spitPropensity(e, p) {
-  if (p.compressionIgnition || p.spitBase <= 0) return 0;
+  if (p.compressionIgnition || p.injected || p.spitBase <= 0) return 0; // (no carb to spit back through)
   const lean = clamp01((e.lean - p.spitLeanFrom) / Math.max(0.01, p.spitLeanFull - p.spitLeanFrom));
   const cold = clamp01((p.spitColdBelow - e.temperature) / Math.max(0.01, p.spitColdBelow));
   return lean * cold;

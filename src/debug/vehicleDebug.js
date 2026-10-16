@@ -132,8 +132,8 @@ export function engineReadouts(engine, { manual = false } = {}) {
   ];
   if (manual) list.push({ key: 'gearRevs', label: 'revs the road speed turns it at / clutch lock', get: (e) => `${Math.round(e.gearRpm)} / ${num(e.gearLock)}` });
   list.push({ key: 'surge', label: 'surge at idle (rpm)', get: (e) => Math.round(e.surge) });
-  list.push({ key: 'floatBowl', label: 'fuel in the float bowl', get: (e) => e.fuel });
-  if (!diesel) list.push({ key: 'dieselInCarb', label: 'diesel in the carb', get: (e) => e.diesel });
+  if (!p.injected) list.push({ key: 'floatBowl', label: 'fuel in the float bowl', get: (e) => e.fuel });
+  if (!diesel && !p.injected) list.push({ key: 'dieselInCarb', label: 'diesel in the carb', get: (e) => e.diesel });
   list.push({ key: 'waterGulp', label: 'water being swallowed (per second)', get: (e) => e.gulp });
   list.push({ key: 'starter', label: 'starter motor / last caught by', get: (e) => `${e.motorOn ? 'turning' : 'off'} / ${e.caughtBy ?? 'not yet'}` });
   list.push({ key: 'runOn', label: 'running on after switching off (firings left)', get: (e) => (e.keyOff || e.keyPulled ? e.runOnLeft : 0) });

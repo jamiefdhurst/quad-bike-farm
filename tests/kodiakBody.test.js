@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as THREE from 'three';
-import { KODIAK_DECK, KODIAK_LAMP } from '../src/vehicle/kodiakBody.js';
+import { KODIAK_DECK, KODIAK_LAMP, KODIAK_FACE, kodiakLampOutline } from '../src/vehicle/kodiakBody.js';
 import { GRIZZLY_DECK } from '../src/vehicle/grizzlyBody.js';
 import { flareGeometry } from '../src/vehicle/foremanDeck.js';
 import { QUAD_SPECS, EXTRA_SPECS } from '../src/vehicle/quadSpecs.js';
@@ -9,6 +9,8 @@ import { CHOKE_STYLES, TAP_STYLES } from '../src/vehicle/controls.js';
 import { DASH_STYLES } from '../src/vehicle/dash.js';
 import { MAKER_FOR } from '../src/vehicle/detail/decals.js';
 import { measureModel, proportionErrors, REAL_SIZES, IN_PROPORTION } from '../src/vehicle/detail/realSizes.js';
+import { spitPropensity } from '../src/engine/spitBack.js';
+import { CarbIcing } from '../src/vehicle/carbIcing.js';
 import { buildAllModels } from './helpers/vehicleModels.js';
 
 // The loan quad as a Yamaha Kodiak 450, the Tamura Ursa 450 (TODO 96): the blue's body machinery with its own flares, lamps, bumper, wheels and
@@ -31,7 +33,12 @@ describe('the loan quad’s numbers', () => {
   });
 
   it('put the lamps inside the fenders’ edges', () => {
-    expect(KODIAK_LAMP.x + KODIAK_LAMP.r).toBeLessThan(KODIAK_DECK.half);
+    const reach = Math.max(...kodiakLampOutline().map(([u]) => u));
+    expect(KODIAK_FACE.lampX + reach, 'the surround ends inside the fender').toBeLessThan(KODIAK_DECK.half - 0.08);
+    expect(KODIAK_LAMP.r).toBeGreaterThan(0.03);
+    // The leaning face puts the grille and lamps forward of the face's top edge, by no more than the lean.
+    expect(KODIAK_FACE.z - KODIAK_DECK.front.zf).toBeLessThanOrEqual(KODIAK_DECK.front.lean);
+    expect(KODIAK_FACE.lampZ).toBeGreaterThan(KODIAK_DECK.front.zf);
   });
 });
 
@@ -53,6 +60,25 @@ describe('the loan quad’s spec', () => {
   });
 });
 
+describe('the loan quad has no carb for the carb’s troubles', () => {
+  const loan = EXTRA_SPECS.find((s) => s.id === 'loan');
+
+  it('has no fuel tap, so the dripping float and the sediment bowl cannot happen either', () => {
+    expect(loan.fuel.noTap).toBe(true);
+    expect(loan.fuel.startTap).toBe('on');
+    expect(loan.tapStyle).toBe('none');
+  });
+
+  it('never spits back through a carb, however lean and cold, and a carb ice that is switched off never builds', () => {
+    const p = { injected: true, spitBase: 0.8, spitLeanFrom: 0.1, spitLeanFull: 0.5, spitColdBelow: 0.5 };
+    expect(spitPropensity({ lean: 1, temperature: 0 }, p)).toBe(0);
+    expect(spitPropensity({ lean: 1, temperature: 0 }, { ...p, injected: false })).toBeGreaterThan(0.5);
+    const ice = new CarbIcing(undefined, false);
+    for (let i = 0; i < 600; i++) ice.update(0.1, { throttle: 0.4, temperature: 4, damp: 1, running: true, warm: 0 });
+    expect(ice.ice).toBe(0);
+  });
+});
+
 describe('the loan quad’s model', () => {
   let loan;
   beforeAll(async () => {
@@ -62,6 +88,8 @@ describe('the loan quad’s model', () => {
   it('has no choke lever anywhere, and keeps the lights rocker, the thumb throttle and the pod', () => {
     const m = loan.model;
     expect(m.getObjectByName('chokeLever')).toBeFalsy();
+    expect(m.getObjectByName('fuelTap')).toBeFalsy();
+    expect(m.getObjectByName('fuelTapBody')).toBeFalsy();
     for (const n of ['lightsRocker', 'thumbThrottle', 'controlPod', 'stopRocker', 'startButton', 'handlebars', 'dash', 'frontPanel', 'rearPanel', 'headlightLeft', 'headlightRight', 'exhaustTip', 'tankDecal', 'dealerDecal', 'tailLamp']) {
       expect(m.getObjectByName(n), n).toBeTruthy();
     }

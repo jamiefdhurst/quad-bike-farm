@@ -12,7 +12,7 @@
 
 export const REVERSE_STYLES = ['bars', 'button', 'knee', 'dashLever', 'none'];
 export const CHOKE_STYLES = ['thumb', 'knob', 'plunger', 'slide', 'none'];
-export const TAP_STYLES = ['left', 'right', 'rearLeft', 'lowLeft', 'lowRight', 'carbLeft'];
+export const TAP_STYLES = ['left', 'right', 'rearLeft', 'lowLeft', 'lowRight', 'carbLeft', 'none']; // ('none': no tap at all, the fuel always flows: an injected quad's)
 
 export const DEFAULT_CONTROLS_PARAMS = {
   barsMaxSpeed: 1.5, // m/s: the bar lever can be pushed down while it's creeping, not at a run

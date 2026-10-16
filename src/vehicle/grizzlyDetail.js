@@ -35,7 +35,7 @@ export const GRIZZLY_FACE = { z: GRIZZLY_DECK.front.zf, grilleY: 0.545, lampX: 0
  * end blocks bolted to the faces, a skid plate under the nose, the grille between the lamps and the maker's badge on it. The lamps
  * themselves are the model's (they share its lens material).
  */
-export function addGrizzlyFront(root, MAT, paint, { steel = MAT.alloy } = {}) {
+export function addGrizzlyFront(root, MAT, paint, { steel = MAT.alloy, face = GRIZZLY_FACE } = {}) {
   const B = GRIZZLY_BUMPER;
   const P = bumperPoints(B);
   for (const side of [P.left, P.right]) {
@@ -46,9 +46,9 @@ export function addGrizzlyFront(root, MAT, paint, { steel = MAT.alloy } = {}) {
   tube([P.right.lower[0], B.y, B.z - 0.04], [P.left.lower[0], B.y, B.z - 0.04], 0.012, steel, root); // a second bar low behind the first, the way the real one braces
   // The end blocks, reaching back into the fender faces (the face is at GRIZZLY_FACE.z), and the bolts through them.
   for (const s of [-1, 1]) {
-    rbox(0.075, 0.06, 0.15, 0.014, MAT.plastic, s * (B.endX + 0.03), B.y, GRIZZLY_FACE.z + 0.055, root, 'bumperBlock'); // its top is below the lamps' surrounds
+    rbox(0.075, 0.06, 0.15, 0.014, MAT.plastic, s * (B.endX + 0.03), B.y, face.z + 0.055, root, 'bumperBlock'); // its top is below the lamps' surrounds
     const bolts = boltsMesh([[s * (B.endX + 0.03), B.y + 0.02, 0], [s * (B.endX + 0.03), B.y - 0.02, 0]], [0, 0, 1], MAT.chrome, { size: 0.011, kind: 'hex', name: 'bumperBolts' });
-    bolts.position.z = GRIZZLY_FACE.z + 0.13;
+    bolts.position.z = face.z + 0.13;
     root.add(bolts);
   }
   rbox(0.54, 0.018, 0.3, 0.006, MAT.plastic, 0, 0.445, 0.76, root, 'skidPlate'); // under the nose, from the face back under the radiator
@@ -62,7 +62,7 @@ export function addGrizzlyFront(root, MAT, paint, { steel = MAT.alloy } = {}) {
   };
   const g = new THREE.Group();
   g.name = 'grille';
-  g.position.set(0, GRIZZLY_FACE.grilleY, GRIZZLY_FACE.z - 0.004);
+  g.position.set(0, face.grilleY, face.z - 0.004);
   root.add(g);
   const frame = [box(0.3, 0.012, 0.03, 0, 0.0725, 0.01), box(0.3, 0.012, 0.03, 0, -0.0725, 0.01), box(0.012, 0.145, 0.03, 0.144, 0, 0.01), box(0.012, 0.145, 0.03, -0.144, 0, 0.01)];
   for (const x of [-0.07, 0.07]) frame.push(box(0.01, 0.133, 0.024, x, 0, 0.007));
@@ -72,7 +72,7 @@ export function addGrizzlyFront(root, MAT, paint, { steel = MAT.alloy } = {}) {
   for (const s of [-1, 1]) for (let i = 0; i < 6; i++) bars.push(box(0.065, 0.004, 0.012, s * 0.108, -0.055 + i * 0.022, 0.004));
   mesh(mergeGeometries(bars), MAT.engineDark, g, 'grilleBars');
   const badge = decalMesh('badge', { maker: MAKER_FOR.blue }, { width: 0.05, name: 'badge' });
-  badge.position.set(0, GRIZZLY_FACE.grilleY, GRIZZLY_FACE.z + 0.0155); // on the middle bar's front face, a millimetre off it
+  badge.position.set(0, face.grilleY, face.z + 0.0155); // on the middle bar's front face, a millimetre off it
   root.add(badge);
 }
 
