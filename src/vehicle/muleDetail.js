@@ -20,7 +20,7 @@ const R = MULE_WHEELS.radius;
 // Wheels ---------------------------------------------------------------------
 
 const tyres = {};
-const tyre = (front) => (tyres[front ? 'f' : 'r'] ??= treadTyre('atv', { radius: R, width: front ? MULE_WHEELS.front : MULE_WHEELS.rear, rimR: MULE_WHEELS.rim, count: 20, segments: 36 }));
+const tyre = (front) => (tyres[front ? 'f' : 'r'] ??= treadTyre('atv', { radius: R, width: front ? MULE_WHEELS.front : MULE_WHEELS.rear, rimR: MULE_WHEELS.rim, count: 14, segments: 26 }));
 
 const axle = (r, len, mat, x, parent, name) => {
   const m = mesh(new THREE.CylinderGeometry(r, r, len, 22).rotateZ(Math.PI / 2), mat, parent, name);
@@ -125,7 +125,7 @@ export function addMuleFront(root, MAT, paint, lensMat) {
 // The cab ---------------------------------------------------------------------
 
 /** A square mesh of thin wires `w` by `h` in a frame, in the XY plane facing +Z, its middle at the origin. */
-export function netGeometry(w, h, pitch = 0.045, r = 0.0032) {
+export function netGeometry(w, h, pitch = 0.06, r = 0.0036) {
   const bars = [];
   for (let x = -w / 2 + pitch / 2; x < w / 2; x += pitch) bars.push(new THREE.BoxGeometry(r * 2, h, r * 2).translate(x, 0, 0));
   for (let y = -h / 2 + pitch / 2; y < h / 2; y += pitch) bars.push(new THREE.BoxGeometry(w, r * 2, r * 2).translate(0, y, 0));

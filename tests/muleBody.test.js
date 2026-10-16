@@ -165,4 +165,19 @@ describe('the UTV’s model', () => {
     expect(sil.min.x).toBeGreaterThan(-0.42 + 0.04); // inside the rail at x -0.42 (radius 0.035)
     expect(sil.max.x).toBeLessThan(-0.1);
   });
+
+  it('has a Mule-style cluster: a speedo, a separate fuel and hours unit, four lamp pockets, a key switch that turns, and a bent gear stalk in a gate', () => {
+    const m = utv.model;
+    const dash = m.getObjectByName('dash');
+    expect(dash.getObjectByName('ignitionKey')).toBeTruthy();
+    const rings = dash.children.filter((o) => o.geometry?.type === 'TorusGeometry');
+    expect(rings.length).toBe(6); // the speedo, the fuel unit and the four lamps' bezels
+    const key = dash.getObjectByName('ignitionKey');
+    m.userData.dash.update({ keyOn: false, ignition: false, rpm: 0, speedMph: 0, fuelLevel: 0.5, temperature: 0.3, hours: 12, odoMiles: 100 });
+    expect(Math.abs(key.rotation.z)).toBe(0);
+    m.userData.dash.update({ keyOn: true, ignition: true, rpm: 900, speedMph: 10, fuelLevel: 0.5, temperature: 0.3, hours: 12, odoMiles: 100 });
+    expect(Math.abs(key.rotation.z)).toBeGreaterThan(1);
+    expect(m.getObjectByName('driveStalk')).toBeTruthy();
+    expect(m.getObjectByName('gearGate')).toBeTruthy();
+  });
 });

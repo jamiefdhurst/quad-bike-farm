@@ -301,10 +301,10 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
     tube([s * 0.4, 0.4, 0.8], [s * 0.6, 0.36, 0.98], 0.016, MAT.steel, root);
     tube([s * 0.4, 0.4, 1.16], [s * 0.6, 0.36, 0.98], 0.016, MAT.steel, root);
     tube([s * 0.56, 0.7, 0.98], [s * 0.6, 0.4, 0.98], 0.02, MAT.steel, root);
-    add(springGeometry(0.22, 0.04, 0.007, 6), MAT.yellow, root).position.set(s * 0.57, 0.64, 0.98);
+    add(springGeometry(0.22, 0.04, 0.007, 3), MAT.yellow, root).position.set(s * 0.57, 0.64, 0.98);
     tube([s * 0.42, 0.4, -0.5], [s * 0.6, 0.36, -0.98], 0.018, MAT.steel, root);
     tube([s * 0.55, 0.7, -0.98], [s * 0.6, 0.4, -0.98], 0.02, MAT.steel, root);
-    add(springGeometry(0.22, 0.04, 0.007, 6), MAT.yellow, root).position.set(s * 0.57, 0.64, -0.98);
+    add(springGeometry(0.22, 0.04, 0.007, 3), MAT.yellow, root).position.set(s * 0.57, 0.64, -0.98);
   }
 
   // The front (muleDetail.js): the ribbed green hood over the mesh grille, the lamps at the nose's corners, the bumper and the black flares.
@@ -394,13 +394,13 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   hands.visible = false;
   wheel.add(hands);
   // The column shroud and the key slot's bezel on the dash.
-  rbox(0.16, 0.2, 0.2, 0.04, MAT.plastic, -0.34, 0.9, 0.52, root);
+  rbox(0.31, 0.2, 0.2, 0.04, MAT.plastic, -0.34, 0.9, 0.52, root); // the column shroud, wide enough to carry the whole cluster (the speedo's moulding and the fuel unit)
 
   // The dash, on top of the shroud and tilted up to the driver.
   const dash = buildDash(dashStyle);
   dash.group.position.set(-0.34, 1.06, 0.44);
   dash.group.rotation.x = 0.95;
-  dash.group.scale.setScalar(0.95); // a small old-fashioned cluster, in proportion to the console's switches
+  dash.group.scale.setScalar(0.95);
   dash.group.userData.keep = true;
   root.add(dash.group);
   quad.userData.dash = dash;
@@ -697,14 +697,21 @@ function buildConsole(root) {
   rbox(POD.w + 0.02, POD.h + 0.02, POD.d, 0.02, MAT.plastic, 0, POD.h / 2, 0, pod);
   stick(decal(POD.w, POD.h, podLegend, { px: 2200, transparent: false }), pod, [0, POD.h / 2, FACE], '-z');
 
-  // The F / N / R lever: a stalk out of the face in its slot, swung up for forward and down for reverse.
+  // The F / N / R lever, after the photos: a stalk out of the face in its slot that bends up and away to a fat black knob, swung up for forward
+  // and down for reverse; the slot has a gate plate round it with its three notches.
   const lever = new THREE.Group();
   lever.name = 'driveLever';
   lever.userData.keep = true;
   lever.position.set(CTRL.gear.x, CTRL.gear.y, FACE);
-  tube([0, 0, 0], [0, 0, -0.04], 0.005, MAT.steel, lever);
-  add(new THREE.SphereGeometry(0.012, 10, 8), MAT.knob, lever).position.z = -0.045;
+  add(bentTube([[0, 0, 0], [0, 0, -0.03], [0.012, 0.012, -0.05], [0.03, 0.028, -0.055]], 0.0045, { bend: 0.015, radial: 6 }), MAT.steel, lever, 'driveStalk');
+  const knob = add(new THREE.SphereGeometry(0.016, 12, 10), MAT.knob, lever, 'driveKnob');
+  knob.scale.set(1.15, 1.2, 0.9);
+  knob.position.set(0.034, 0.03, -0.056);
+  add(new THREE.CylinderGeometry(0.009, 0.011, 0.01, 10).rotateX(Math.PI / 2), MAT.rubber, lever).position.z = -0.005; // the gaiter where it comes out
   pod.add(lever);
+  const gatePlate = rbox(0.046, 0.088, 0.004, 0.006, MAT.steel, CTRL.gear.x, CTRL.gear.y, FACE + 0.0006, pod, 'gearGate');
+  gatePlate.material = MAT.floor;
+  for (const dy of [-0.028, 0, 0.028]) rbox(0.026, 0.006, 0.004, 0.002, MAT.grille, CTRL.gear.x, CTRL.gear.y + dy, FACE - 0.0016, pod); // the notches the lever sits in
 
   // The bank of rockers: 4WD, diff lock, lights and the bed. All alike, each with its symbol on the cap and the selected half pushed in.
   const icons = {};

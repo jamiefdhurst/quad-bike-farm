@@ -20,7 +20,7 @@ import {
 //   quadracer: orange. A RUN / OFF kill switch on the left bar and its lanyard.
 //   kidsKey:   mini moto, old three-wheeler. A key switch under the bar clamp. asp: the kids' quad's, the same key on the V bars' clamp block.
 //   tractor:   the tractor (a Massey-Ferguson-35-style cluster, TODO 98). Three round dials in chrome bezels set straight into the red metal of the cowl, no housing (a big rev counter with an hour meter and the PTO speed marked, water temperature, fuel), a brass ignition switch, and four warning lamps (temperature, GLOW, CHARGE, OIL).
-//   utv:       the UTV. A basic LCD (speed, five fuel and four water blocks, F / N / R, hours and a 4WD note) over symbols for glow, charge, oil, park
+//   utv:       the UTV (a Mule-style cluster, TODO 99): a round speedo to 40 mph with its odometer between four lamp pockets (glow, charge, oil, parking brake), a strip of the rest of the tell-tales, a separate fuel and hours unit and a key switch in 3D. It was a basic LCD over symbols for glow, charge, oil, park
 //              (parking brake), a belted figure (flashes while someone sits unbelted), a headlamp (green, blue for main beam) and the key.
 //   fiesta:    Amy's Mk1 Fiesta: a speedo and a combined fuel and water gauge the same size, the lamps between them, on brown. corsa: Jess's Corsa B, with a rev counter too.
 //   series:    the Land Rover. A Series III binnacle: a big speedo to 90 mph with its odometer, a combined fuel and water gauge,
@@ -664,65 +664,95 @@ function buildUtv() {
   const group = new THREE.Group();
   group.name = 'dash';
   const O = { ox: 180, oy: 60 };
-  // A plain black binnacle for an older machine: a small grey-green LCD with the speed, fuel and water bars, the F / N / R gear and the
-  // hours, over a row of warning symbols (glow plug, battery, oil can, parking brake, seat belt and headlamp) with the key beside it.
-  housing(group, { x: 70, y: 14, w: 220, h: 92, r: 14, ...O, material: plastic });
-  const face = mmPanel({ x: 70, y: 14, w: 220, h: 92, ...O });
+  // A Mule-style cluster (TODO 99), after the photos: one grey moulded binnacle holding a round chrome-bezelled speedo (0 to 40 mph, the
+  // odometer's drums under its hub) with a pocket either side of it for two lamps each (glow plug and charge on the left, oil and parking
+  // brake on the right), a thin strip of the rest of the tell-tales under it (water, belt, headlamp, indicators, 4WD) and, set into the
+  // moulding's left end, a separate small round unit with the fuel gauge (a bar, E to F with quarters marked) over the hours' LCD. The key
+  // switch stands out of the right-hand end (`ignitionKey`, turned by the update).
+  const BODY = { x: 36, y: 12, w: 268, h: 104 };
+  housing(group, { ...BODY, r: 16, ...O, material: charcoal });
+  const speedo = { cx: 196, cy: 58, r: 35 };
+  const unit = { cx: 78, cy: 62, r: 29 }; // the fuel and hours unit
+  const pockets = [{ cx: 140, cy: 46 }, { cx: 140, cy: 74 }, { cx: 252, cy: 46 }, { cx: 252, cy: 74 }];
+  const face = mmPanel({ ...BODY, ...O });
   group.add(face.mesh);
+  chromeRing(group, { ...speedo, r: speedo.r + 1.5, ...O, tube: 0.0034 });
+  chromeRing(group, { ...unit, r: unit.r + 1.5, ...O, tube: 0.0034 });
+  for (const p of pockets) chromeRing(group, { ...p, r: 8.5, ...O, material: agedSteel, tube: 0.0022 }); // the lamps' bezels
   const gate = changeGate();
   let shownMph = 0;
   let shownFuel = 0;
   let shownTemp = 0;
   const BLUE = '#4aa8ff';
-  const [X, Y, W, H] = [88, 22, 136, 46]; // the LCD
 
   function draw(ctx, s, L) {
-    const { on, ghost } = LCD;
-    ctx.fillStyle = LCD.bg;
-    ctx.fillRect(X, Y, W, H);
-    if (s.ignition) {
-      // Fuel and water, five and four blocks.
-      text(ctx, 'E', X + 4, Y + 8, 3.6, on);
-      for (let i = 0; i < 5; i++) {
-        ctx.fillStyle = i < L.fuelSegs ? on : ghost;
-        ctx.fillRect(X + 9 + i * 6, Y + 4, 4.6, 5);
-      }
-      text(ctx, 'F', X + 40, Y + 8, 3.6, on);
-      text(ctx, 'C', X + 62, Y + 8, 3.6, on);
-      for (let i = 0; i < 4; i++) {
-        ctx.fillStyle = i < L.tempSegs ? on : ghost;
-        ctx.fillRect(X + 67 + i * 6, Y + 4, 4.6, 5);
-      }
-      if (L.hot) warnSymbol(ctx, 'temp', X + 95, Y + 6, on, true, 0.45, false);
-      else text(ctx, 'H', X + 93, Y + 8, 3.6, on);
-      // The gear: F, N and R down the right-hand side, the current one in a box, the others plain but readable.
-      ['F', 'N', 'R'].forEach((g, i) => {
-        const lit = g === L.gear;
-        if (lit) {
-          ctx.fillStyle = on;
-          ctx.fillRect(X + W - 18, Y + 12 + i * 10, 11, 9.5);
-        }
-        text(ctx, g, X + W - 12.5, Y + 19.8 + i * 10, 6.6, lit ? LCD.bg : on, { align: 'center', weight: 'bold' });
-      });
-      segText(ctx, L.speed, X + 82, Y + 15, 18, on, ghost);
-      text(ctx, 'MPH', X + 86, Y + 32, 4, on);
-      text(ctx, 'HRS', X + 5, Y + 42, 3.6, on);
-      segText(ctx, L.hours, X + 52, Y + 36, 6.5, on);
-      if (s.fourWd) warnSymbol(ctx, s.diffLock ? 'lock' : '4wd', X + 70, Y + 40.5, on, true, 0.5, false);
-    } else {
-      segText(ctx, '88', X + 82, Y + 15, 18, ghost);
+    // The binnacle's own face: a slightly lighter panel round the dials so the speedo and the unit stand out of it.
+    ctx.fillStyle = '#2b2d30';
+    ctx.fillRect(BODY.x, BODY.y, BODY.w, BODY.h);
+    // The speedo: white on black, 0 to 40 mph round 270 degrees, the odometer's drums under the hub.
+    ctx.fillStyle = '#0b0b0b';
+    ctx.beginPath();
+    ctx.arc(speedo.cx, speedo.cy, speedo.r, 0, Math.PI * 2);
+    ctx.fill();
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 5, speedo.r - 1.5, 225, -45, 40, '#ece6d2', 0.4);
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 8, speedo.r - 1.5, 225, -45, 8, '#ece6d2', 1);
+    labels(ctx, speedo.cx, speedo.cy, speedo.r - 14, 225, -45, ['0', '5', '10', '15', '20', '25', '30', '35', '40'], '#ece6d2', 4);
+    text(ctx, 'MPH', speedo.cx, speedo.cy - 9, 3.6, '#ccc', { align: 'center' });
+    const odo = counterDigits(s.odoMiles, 6);
+    drum(ctx, speedo.cx - 15, speedo.cy + 13, odo, 5);
+    needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 225 - (270 * Math.min(40, L.mph)) / 40, '#f0742a', 1.3); // an orange needle
+    // The fuel gauge and the hours: a red-lit window with five bars (lit up to the level) with E 1/4 1/2 3/4 F under it, and an LCD of hours.
+    ctx.fillStyle = '#0b0b0b';
+    ctx.beginPath();
+    ctx.arc(unit.cx, unit.cy, unit.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#2a0b0b';
+    ctx.fillRect(unit.cx - 17, unit.cy - 17, 34, 10);
+    for (let i = 0; i < 5; i++) {
+      ctx.fillStyle = i < L.fuelSegs ? '#ff4a3a' : '#4a1816';
+      ctx.fillRect(unit.cx - 16 + i * 6.6, unit.cy - 16, 5.6, 8);
     }
-    // The warning symbols under the LCD (each lit in its colour, or dull), and the key.
-    warnSymbol(ctx, 'glow', 94, 84, LAMP.amber, L.glow);
-    warnSymbol(ctx, 'charge', 118, 84, LAMP.red, L.charge);
-    warnSymbol(ctx, 'oil', 142, 84, LAMP.red, L.oil);
-    warnSymbol(ctx, 'park', 166, 84, LAMP.red, L.park);
-    warnSymbol(ctx, 'belt', 190, 84, LAMP.red, L.belt);
-    warnSymbol(ctx, 'lights', 214, 84, L.main ? BLUE : LAMP.green, L.lights); // the headlights: green for dipped, blue for main beam
-    warnSymbol(ctx, 'turnLeft', 234, 84, LAMP.green, L.turnLeft);
-    warnSymbol(ctx, 'turnRight', 254, 84, LAMP.green, L.turnRight);
-    keySwitch(ctx, 274, 46, s.keyOn);
+    text(ctx, 'E', unit.cx - 17, unit.cy - 3, 3.4, '#ece6d2');
+    text(ctx, '1/2', unit.cx, unit.cy - 3, 3.2, '#ece6d2', { align: 'center' });
+    text(ctx, 'F', unit.cx + 14, unit.cy - 3, 3.4, '#ece6d2');
+    warnSymbol(ctx, 'fuel', unit.cx + 20, unit.cy - 11, '#e8e2cc', true, 0.3, false);
+    ctx.fillStyle = LCD.bg;
+    ctx.fillRect(unit.cx - 17, unit.cy + 2, 34, 14);
+    segText(ctx, L.hours, unit.cx + 12, unit.cy + 9, 9, LCD.on, LCD.ghost);
+    text(ctx, 'HOURS', unit.cx, unit.cy + 22, 3.2, '#ece6d2', { align: 'center' });
+    // The four lamps in their pockets (each lit in its colour, or dull), and the strip of the rest under the speedo.
+    const lamps = [['glow', LAMP.amber, L.glow], ['charge', LAMP.red, L.charge], ['oil', LAMP.red, L.oil], ['park', LAMP.red, L.park]];
+    pockets.forEach((p, i) => {
+      ctx.fillStyle = '#080808';
+      ctx.beginPath();
+      ctx.arc(p.cx, p.cy, 7.4, 0, Math.PI * 2);
+      ctx.fill();
+      const [kind, colour, lit] = ['glow', 'oil', 'charge', 'park'].map((k) => lamps.find((l) => l[0] === k))[i];
+      warnSymbol(ctx, kind, p.cx, p.cy, colour, lit, 0.6);
+    });
+    const strip = [['temp', LAMP.red, L.hot], ['belt', LAMP.red, L.belt], ['lights', L.main ? BLUE : LAMP.green, L.lights], ['turnLeft', LAMP.green, L.turnLeft], ['turnRight', LAMP.green, L.turnRight], [s.diffLock ? 'lock' : '4wd', LAMP.amber, !!s.fourWd]];
+    strip.forEach(([kind, colour, lit], i) => warnSymbol(ctx, kind, 150 + i * 19, 105, colour, lit, 0.5, false));
+    // The key's legend at the right-hand end.
+    text(ctx, 'OFF', 288, 34, 3.2, '#ece6d2', { align: 'center' });
+    text(ctx, 'ON', 288, 88, 3.2, '#ece6d2', { align: 'center' });
   }
+
+  // The key switch: a round black bezel with the barrel and a key in it, standing out of the moulding's right-hand end, turned a quarter when on.
+  const bezel = new THREE.Mesh(new THREE.CylinderGeometry(0.0125, 0.0135, 0.008, 18).rotateX(Math.PI / 2), blackMat);
+  bezel.position.set(-(288 - O.ox) * 0.001, -(61 - O.oy) * 0.001, -0.039);
+  group.add(bezel);
+  const ignitionKey = new THREE.Group();
+  ignitionKey.name = 'ignitionKey';
+  ignitionKey.position.copy(bezel.position);
+  ignitionKey.position.z = -0.044;
+  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.0085, 0.0085, 0.006, 14).rotateX(Math.PI / 2), chromeMat);
+  ignitionKey.add(barrel);
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.026, 0.002), chromeMat);
+  blade.position.set(0, 0.011, -0.004);
+  const bow = new THREE.Mesh(new THREE.CylinderGeometry(0.0085, 0.0085, 0.003, 14).rotateX(Math.PI / 2), blackMat);
+  bow.position.set(0, 0.026, -0.004);
+  ignitionKey.add(blade, bow);
+  group.add(ignitionKey);
 
   return {
     group,
@@ -731,14 +761,13 @@ function buildUtv() {
       shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
       shownFuel += ((s.ignition ? s.fuelLevel : 0) - shownFuel) * 0.2;
       shownTemp += ((s.ignition ? tempGaugeFraction(s.temperature, true, s.overheat) : 0) - shownTemp) * 0.1;
+      ignitionKey.rotation.z = s.keyOn ? -Math.PI / 2 : 0; // off at the top, on a quarter turn round
       const running = s.rpm > 300;
       const lamps = lampStates(s);
       const L = {
-        speed: speedText(shownMph),
+        mph: shownMph,
         fuelSegs: Math.ceil(shownFuel * 5 - 0.001),
-        tempSegs: Math.ceil(shownTemp * 4 - 0.001),
         hot: !!s.ignition && shownTemp >= HOT_FROM,
-        gear: forwardGearShown(s),
         hours: counterText(s.hours, 4),
         glow: !!s.ignition && !!s.glow,
         charge: !!s.ignition && !running,
@@ -750,7 +779,7 @@ function buildUtv() {
         turnLeft: !!s.ignition && !!s.indicatorLamps?.left,
         turnRight: !!s.ignition && !!s.indicatorLamps?.right,
       };
-      const key = [s.ignition, s.keyOn, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, L.turnLeft, L.turnRight, !!s.fourWd, !!s.diffLock, L.gear, L.speed, L.fuelSegs, L.tempSegs, L.hot, L.hours];
+      const key = [s.ignition, s.keyOn, L.glow, L.charge, L.oil, L.park, L.belt, L.lights, L.main, L.turnLeft, L.turnRight, !!s.fourWd, !!s.diffLock, Math.round(L.mph * 2), L.fuelSegs, L.hot, L.hours, counterText(s.odoMiles, 6)];
       if (gate(key.join('|'))) face.redraw((ctx) => draw(ctx, s, L));
     },
   };
