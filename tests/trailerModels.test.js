@@ -137,3 +137,15 @@ describe('the chevron tyres', () => {
   });
 });
 
+
+describe('the shared winch', () => {
+  it('is on the bale trailer with its eye where the game draws the rope from, and on the green quad with its hook and fairlead where they were', async () => {
+    expect(bale.getObjectByName('winch').getObjectByName('winchRope')).toBeTruthy();
+    expect(bale.getObjectByName('winchEye')).toBeTruthy();
+    const green = (await buildAllModels()).find((v) => v.id === 'green').model;
+    expect(green.getObjectByName('winchUnit').getObjectByName('winchRope')).toBeTruthy();
+    const at = (n) => green.getObjectByName(n).getWorldPosition(new THREE.Vector3());
+    expect(at('winchHook').z).toBeCloseTo(1.19, 2); // (tests/fixedPoints.json checks the rest to 2 mm)
+    expect(at('winchFairlead').z).toBeCloseTo(1.19, 2);
+  });
+});

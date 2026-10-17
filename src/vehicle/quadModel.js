@@ -17,6 +17,7 @@ import {
   sweepGeometry,
 } from './quadGeometry.js';
 import { treadTyre } from './detail/tread.js';
+import { buildWinchUnit, addWinchHook } from './detail/winches.js';
 import { buildLeftPod, buildBrakeLever, buildDriveSwitch, buildThumbThrottle, poseBarPod } from './foremanControls.js';
 import { addRackDetail, addGrille, addTreadPlates, addShiftLever, addBarCables, addDrumBrake, seatTape, addDecals } from './foremanDetail.js';
 import { DECK, deckGeometry, flareGeometry, bulkheadGeometry, topCoverGeometry, bodyTopY } from './foremanDeck.js';
@@ -954,30 +955,22 @@ function flatRack(root, z0, z1, y, legY) {
   }
 }
 
-/** Front winch: drum wound with cable between end plates, motor on one end, a roller fairlead and hook. */
+/**
+ * Front winch (the shared piece in detail/winches.js): the drum wound with rope between flanges, the gearbox and its lever, the motor with its terminals,
+ * the solenoid, the rope out through the fairlead to a hook stop and a hook. The hook and the fairlead keep their fixed points.
+ */
 function winch(root, x, y, z, fairleadZ) {
-  const drum = add(new THREE.CylinderGeometry(0.03, 0.03, 0.17, 14).rotateZ(Math.PI / 2), MAT.steel, root);
-  drum.position.set(x, y, z);
-  const cable = add(springGeometry(0.15, 0.036, 0.0055, 12).rotateZ(Math.PI / 2), MAT.engineDark, root);
-  cable.position.set(x - 0.075, y, z);
-  for (const s of [-1, 1]) {
-    const plate = add(new THREE.CylinderGeometry(0.052, 0.052, 0.01, 16).rotateZ(Math.PI / 2), MAT.frame, root);
-    plate.position.set(x + s * 0.09, y, z);
-  }
-  const motor = add(new THREE.CylinderGeometry(0.042, 0.042, 0.1, 16).rotateZ(Math.PI / 2), MAT.plastic, root);
-  motor.position.set(x + 0.15, y, z);
-  rbox(0.07, 0.09, 0.09, 0.015, MAT.frame, x - 0.13, y, z, root);
-  rbox(0.32, 0.016, 0.1, 0.004, MAT.frame, x, y - 0.06, z, root, undefined, 1);
-  rbox(0.12, 0.05, 0.03, 0.01, MAT.frame, x, y - 0.01, fairleadZ, root);
-  tube([x, y + 0.036, z], [x, y - 0.005, fairleadZ], 0.004, MAT.engineDark, root, 4);
-  const hook = add(new THREE.TorusGeometry(0.018, 0.005, 6, 12, Math.PI * 1.5), MAT.steel, root, 'winchHook');
-  hook.rotation.y = Math.PI / 2;
+  const unit = buildWinchUnit({ mats: { steel: MAT.steel, dark: MAT.frame, plate: MAT.frame, rubber: MAT.plastic, brass: MAT.chrome } });
+  unit.position.set(x, y, z);
+  root.add(unit);
+  const lead = [x, y - 0.01, fairleadZ + 0.03]; // where the rope comes out, for the working winch (src/items/winch.js)
+  addWinchHook(root, [x, y - 0.02 + 0.0, z + 0.04], [x, y - 0.01, fairleadZ + 0.03], { steel: MAT.steel }, 'winchHook'); // the rope from the drum's front, down and out to the hook
+  const hook = root.getObjectByName('winchHook');
   hook.position.set(x, y - 0.035, fairleadZ + 0.03);
-  // Where the cable comes out, for the working winch (src/items/winch.js).
-  const lead = new THREE.Object3D();
-  lead.name = 'winchFairlead';
-  lead.position.set(x, y - 0.01, fairleadZ + 0.03);
-  root.add(lead);
+  const o = new THREE.Object3D();
+  o.name = 'winchFairlead';
+  o.position.set(...lead);
+  root.add(o);
 }
 
 /**

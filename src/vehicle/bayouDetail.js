@@ -111,7 +111,6 @@ export function addBayouFront(root, MAT, lensMat, grey = cageMaterial()) {
  */
 export function addWinchHousing(root, MAT, x, y, z, fairleadZ) {
   const cover = [
-    rbox(0.24, 0.012, 0.13, 0.004, MAT.frame, x, y + 0.06, z + 0.02, root, 'winchCover'), // over the drum
     rbox(0.012, 0.11, 0.15, 0.004, MAT.frame, x + 0.2, y, z + 0.02, root, 'winchSideRight'), // beyond the motor
     rbox(0.012, 0.11, 0.15, 0.004, MAT.frame, x - 0.17, y, z + 0.02, root, 'winchSideLeft'), // beyond the gearbox
   ];

@@ -5,6 +5,7 @@ import { PART_MAT, box, buildWheel, addMudguard, addRearLights, addJockeyWheel, 
 import { boltsMesh, boltRow } from './detail/fixings.js';
 import { decalMesh } from './detail/decals.js';
 import { mergeStatic, rod } from './quadGeometry.js';
+import { buildWinchUnit, addWinchHook } from './detail/winches.js';
 
 // The bale trailer, procedural like the tractor: a flat bed on one axle with two wheels, a tongue to the tractor's drawbar, and
 // bales stacked at the front only, so there is a clear bed behind them for a quad. Two ramps fold down from under the back end.
@@ -267,18 +268,26 @@ function buildRamps(body) {
   }
 }
 
-// The winch: a drum in a frame against the back of the bales, cable out of the bottom, and the two ratchet straps for the load.
+// The winch: the shared piece (detail/winches.js) bolted to a base plate on the deck against the back of the bales, drum across the trailer, its rope
+// leaving the front of the drum under a hawse plate to a hook stop and hook hung from the headboard side, cable end point `winchEye` where the game draws
+// the rope from. Then the two ratchet straps for the load.
 function buildWinch(body) {
   const S = TRAILER_SPEC;
-  box(0.36, 0.2, 0.22, PART_MAT.paint, 0, S.bedY + 0.12, S.winchZ + 0.1, body).name = 'winch';
-  const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.26, 10), PART_MAT.steel);
-  drum.rotation.z = Math.PI / 2;
-  drum.position.set(0, S.bedY + 0.12, S.winchZ - 0.02);
-  body.add(drum);
+  const y = S.bedY + 0.13; // the shared winch is a quad's size: one and a half times that on the trailer, so its base plate rests on the deck's plate
+  const unit = buildWinchUnit({ mats: { steel: PART_MAT.steel, dark: PART_MAT.paint, plate: PART_MAT.paint, rubber: PART_MAT.rubber, brass: PART_MAT.nut }, drumW: 0.18, layers: 2 });
+  unit.name = 'winch';
+  unit.position.set(0, y, S.winchZ + 0.1);
+  unit.scale.setScalar(1.5);
+  unit.userData.keep = true;
+  body.add(unit);
+  box(0.6, 0.012, 0.24, PART_MAT.steel, 0, S.bedY + 0.006, S.winchZ + 0.1, body); // the plate it is bolted down to the deck on
+  body.add(boltsMesh([[-0.26, S.bedY + 0.012, S.winchZ + 0.2], [0.26, S.bedY + 0.012, S.winchZ + 0.2], [-0.26, S.bedY + 0.012, S.winchZ + 0.0], [0.26, S.bedY + 0.012, S.winchZ + 0.0]], [0, 1, 0], PART_MAT.nut, { size: 0.012, kind: 'hex', name: 'winchBolts' }));
   const eye = new THREE.Object3D();
   eye.name = 'winchEye';
-  eye.position.set(0, S.bedY + 0.12, S.winchZ - 0.1);
+  eye.position.set(0, y, S.winchZ - 0.12);
   body.add(eye);
+  box(0.2, 0.1, 0.012, PART_MAT.steel, 0, y, S.winchZ - 0.08, body); // the hawse plate the rope runs out through
+  addWinchHook(body, [0, y, S.winchZ + 0.05], [0, y - 0.01, S.winchZ - 0.12], { steel: PART_MAT.steel }, 'winchHookModel');
 
   const straps = new THREE.Group();
   straps.name = 'straps';

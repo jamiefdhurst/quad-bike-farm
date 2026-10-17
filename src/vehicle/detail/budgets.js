@@ -8,7 +8,7 @@ export const TRIANGLE_BUDGETS = {
   tractor: 70000,
   utv: 80000,
   big: 100000, // the Land Rovers and the cars
-  trailer: 18000, // each trailer (the bale trailer 17k and the tipping trailer 13k, after item 101: kit tyres, bolts, lamps, springs and cables)
+  trailer: 22000, // each trailer (the bale trailer 21k with its winch, the tipping trailer 13k, after item 101: kit tyres, bolts, lamps, springs, cables)
 };
 
 /** Which budget a vehicle spec comes under. */
