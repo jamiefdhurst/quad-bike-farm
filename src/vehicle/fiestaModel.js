@@ -475,10 +475,10 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
       const strut = new THREE.Group();
       strut.name = s > 0 ? 'hatchStrutLeft' : 'hatchStrutRight';
       strut.userData.keep = true;
-      strut.position.set(s * (halfAt(1.0) - 0.04), 1.05, -1.36);
-      strut.userData.hatchEnd = [s * (halfAt(yr) - 0.04), 0, -0.06]; // in the hatch's own frame
+      strut.position.set(s * (halfAt(1.0) - 0.04), 1.0, -1.38); // on the C pillar panel's inside, low
+      strut.userData.hatchEnd = [s * (halfAt(1.12) - 0.045), 1.12 - yr, -0.23]; // on the hatch's glass frame a third of the way down it (the hatch's own frame), so the strut stretches as the hatch lifts
       add(new THREE.CylinderGeometry(0.009, 0.009, 1, 6).rotateX(Math.PI / 2).translate(0, 0, 0.5), PAL.chrome, strut);
-      add(new THREE.CylinderGeometry(0.014, 0.014, 0.4, 6).rotateX(Math.PI / 2).translate(0, 0, 0.2), PAL.steel, strut); // the cylinder end, a fixed length
+      add(new THREE.CylinderGeometry(0.014, 0.014, 0.12, 6).rotateX(Math.PI / 2).translate(0, 0, 0.06), PAL.steel, strut); // the cylinder end, a fixed length
       root.add(strut);
     }
     poseFiestaHatch(quad, 0);
@@ -672,8 +672,8 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
     for (const x of [-0.27, 0.27]) rbox(0.34, 0.28, 0.08, 0.01, trim.cloth, x, 0.0, 0.012, back);
     root.add(back);
     // (no parcel shelf: it sat above the seat backs; the boot is open to the cabin under the glass)
-    rbox(1.1, 0.03, -1.4 - (c.tail + 0.015), 0.01, trim.floor, 0, FIESTA_BOOT.floor, (c.tail + 0.015 - 1.4) / 2, root); // the boot floor, carpet, between the tyres (1.1 wide, inboard of their inner faces: it was the width of the car and ran through them)
-    rbox(1.06, FIESTA_BOOT.floor - 0.3, -1.4 - (c.tail + 0.015), 0.01, PAL.under, 0, (FIESTA_BOOT.floor + 0.3) / 2 - 0.0, (c.tail + 0.015 - 1.4) / 2, root); // the solid block under it, so nothing underneath shows
+    rbox(1.46, 0.03, -1.42 - (c.tail + 0.015), 0.01, trim.floor, 0, FIESTA_BOOT.floor, (c.tail + 0.015 - 1.42) / 2, root); // the boot floor, carpet, the width of the boot behind the tyres (their rear edge is at z -1.415): there was a gap either side of it
+    rbox(1.42, FIESTA_BOOT.floor - 0.3, -1.42 - (c.tail + 0.015), 0.01, PAL.under, 0, (FIESTA_BOOT.floor + 0.3) / 2 - 0.0, (c.tail + 0.015 - 1.42) / 2, root); // the solid block under it, so nothing underneath shows
     for (const s of [-1, 1]) {
       rbox(0.12, 0.2, 0.6, 0.03, trim.trim, s * 0.49, FIESTA_BOOT.floor + 0.1, -1.18, root); // the arch hump in the boot, inboard of the tyre
       rbox(0.03, 0.5, c.tail * -1 - 1.4 - 0.2, 0.01, trim.trim, s * (W / 2 - 0.07), FIESTA_BOOT.floor + 0.27, (-1.4 + c.tail + 0.06) / 2 + 0.0, root); // the boot's side trim
@@ -693,8 +693,10 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
     const reelX = 0.715;
     belt('driver', c.seats.driver, -outer, -0.12, c.bPillar + 0.005, -frontTop(c.seats.driver), c.seats.driver.y + 0.72, -reelX, 0.62);
     belt('left', c.seats.left, outer, 0.12, c.bPillar + 0.005, frontTop(c.seats.left), c.seats.left.y + 0.72, reelX, 0.62);
-    belt('rearLeft', c.rear.rearLeft, outer, 0.1, c.rear.rearLeft.z - 0.12, top(c.rear.rearLeft));
-    belt('rearRight', c.rear.rearRight, -outer, -0.1, c.rear.rearRight.z - 0.12, -top(c.rear.rearRight));
+    // The back belts: the loop on the C pillar's inner face (the panel is about z -1.25 at that height), the reel on the quarter's inner face above the arch.
+    const rearTop = (seat) => halfAt(seat.y + 0.6) - 0.03;
+    belt('rearLeft', c.rear.rearLeft, outer, 0.1, -1.25, rearTop(c.rear.rearLeft), c.rear.rearLeft.y + 0.6, reelX, 0.74);
+    belt('rearRight', c.rear.rearRight, -outer, -0.1, -1.25, -rearTop(c.rear.rearRight), c.rear.rearRight.y + 0.6, -reelX, 0.74);
   }
 
   // The steering wheel and its column, the gear lever, the handbrake, the pedals and the choke.
@@ -778,10 +780,11 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
     const choke = new THREE.Group();
     choke.name = 'chokeKnob';
     choke.userData.keep = true;
-    choke.position.set(c.seats.driver.x - 0.27, ys - 0.02 - 0.2, face - 0.02); // on the driver's right of the column, clear of the radio (it was inboard, over it)
+    choke.position.set(c.seats.driver.x - 0.32, ys - 0.02 - 0.15, face - 0.02); // just outboard of the wheel's rim as seen from the seat // on the driver's right of the column, clear of the radio (it was inboard, over it)
     choke.userData.baseZ = choke.position.z;
     tube([0, 0, 0.1], [0, 0, -0.03], 0.004, PAL.steel, choke, 6);
-    add(new THREE.CylinderGeometry(0.018, 0.018, 0.022, 14).rotateX(Math.PI / 2), PAL.black, choke).position.set(0, 0, -0.04);
+    add(new THREE.CylinderGeometry(0.024, 0.024, 0.026, 14).rotateX(Math.PI / 2), PAL.black, choke).position.set(0, 0, -0.04);
+    add(new THREE.CylinderGeometry(0.017, 0.017, 0.004, 14).rotateX(Math.PI / 2), PAL.chrome, choke).position.set(0, 0, -0.0545); // its pale face, so it shows on the black dash
     root.add(choke);
     for (const name of ['fuelTap', 'chokeLever']) { // Quad poses these on a quad; a car has neither
       const g = new THREE.Group();
