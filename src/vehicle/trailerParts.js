@@ -1,4 +1,9 @@
 import * as THREE from 'three';
+import { treadTyre } from './detail/tread.js';
+import { boltsMesh, boltCircle } from './detail/fixings.js';
+import { cableGeometry } from './detail/cables.js';
+import { buildLamp } from './detail/lamps.js';
+import { bentTube, rod } from './quadGeometry.js';
 
 // Bits both trailers share, so the big and the small one are dressed alike: a wheel with a treaded tyre and nuts, a curved mudguard
 // with a flap, a coupling for the drawbar, a jockey wheel, and lamps. Everything is procedural and built from the trailer's own
@@ -11,6 +16,11 @@ export const PART_MAT = {
   rubber: new THREE.MeshStandardMaterial({ color: 0x1a1917, roughness: 0.95 }),
   tread: new THREE.MeshStandardMaterial({ color: 0x141312, roughness: 1 }),
   rim: new THREE.MeshStandardMaterial({ color: 0x8a2f24, roughness: 0.6 }),
+  rimInside: new THREE.MeshStandardMaterial({ color: 0x3a1a15, roughness: 0.8, side: THREE.DoubleSide }),
+  timber: new THREE.MeshStandardMaterial({ color: 0x6b5a45, roughness: 0.85 }),
+  chain: new THREE.MeshStandardMaterial({ color: 0x5a5d60, roughness: 0.4, metalness: 0.8 }),
+  cable: new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.7 }),
+  cableSpiral: new THREE.MeshStandardMaterial({ color: 0x1b1b1b, roughness: 0.6 }),
   nut: new THREE.MeshStandardMaterial({ color: 0x777b7d, roughness: 0.4, metalness: 0.7 }),
   rust: new THREE.MeshStandardMaterial({ color: 0x6e4a33, roughness: 0.9, metalness: 0.2 }),
   flap: new THREE.MeshStandardMaterial({ color: 0x232221, roughness: 0.95 }),
@@ -29,62 +39,56 @@ export function box(w, h, d, mat, x, y, z, parent) {
 }
 
 /**
- * A wheel group named `name` at (x, radius, 0) with a child group `spin` that the game turns. The tyre has rounded shoulders and a ring
- * of tread blocks, the rim a dish, a hub cap and five nuts, and one block is bigger so the turn shows. `width` is the tyre's.
+ * A wheel group named `name` at (x, radius, 0) with a child group `spin` that the game turns. The tyre is the kit's (detail/tread.js: `kind`,
+ * 'farm' for the bale trailer's implement tyre, 'atv' for the little one's), the rim a pressed steel dish with its lip, a hub with its grease cap
+ * and a ring of wheel nuts (detail/fixings.js), and a valve. `width` is the tyre's.
  */
-export function buildWheel(name, x, radius, width) {
+export function buildWheel(name, x, radius, width, kind = 'farm') {
   const w = new THREE.Group();
   w.name = name;
+  w.userData.keep = true;
   w.position.set(x, radius, 0);
   const spin = new THREE.Group();
   spin.name = 'spin';
+  spin.userData.keep = true;
   w.add(spin);
-
-  const tyre = new THREE.Mesh(new THREE.CylinderGeometry(radius - 0.02, radius - 0.02, width, 20), PART_MAT.rubber);
-  tyre.rotation.z = Math.PI / 2;
-  spin.add(tyre);
-  for (const s of [-1, 1]) {
-    const shoulder = new THREE.Mesh(new THREE.TorusGeometry(radius - 0.04, width * 0.14, 6, 20), PART_MAT.rubber);
-    shoulder.rotation.y = Math.PI / 2;
-    shoulder.position.x = (s * (width - width * 0.28)) / 2;
-    spin.add(shoulder);
-  }
-  const blocks = 14;
-  for (let i = 0; i < blocks; i++) {
-    const a = (i / blocks) * Math.PI * 2;
-    const b = box(width * 0.9, 0.03, radius * 0.16, PART_MAT.tread, 0, Math.cos(a) * (radius - 0.025), Math.sin(a) * (radius - 0.025), spin);
-    b.rotation.x = a; // local y along the radius
-    b.castShadow = false;
-    b.receiveShadow = false;
-  }
-
-  const rimR = radius * 0.62;
-  const dish = new THREE.Mesh(new THREE.CylinderGeometry(rimR, rimR, width * 1.02, 14), PART_MAT.rim);
-  dish.rotation.z = Math.PI / 2;
-  spin.add(dish);
   const side = Math.sign(x) || 1;
+  const rimR = radius * 0.6;
+
+  const tyre = new THREE.Mesh(treadTyre(kind, { radius, width, rimR, count: radius > 0.35 ? 12 : 12, segments: radius > 0.35 ? 28 : 22 }), PART_MAT.rubber);
+  tyre.castShadow = true;
+  tyre.receiveShadow = true;
+  spin.add(tyre);
+  // The rim: a drum a little narrower than the tyre, a dished face on the outside, the rolled lips, and the hub.
+  const drum = new THREE.Mesh(new THREE.CylinderGeometry(rimR, rimR, width * 0.9, 20, 1, true), PART_MAT.rim);
+  drum.rotation.z = Math.PI / 2;
+  drum.material = PART_MAT.rimInside;
+  spin.add(drum);
+  const face = new THREE.Mesh(new THREE.CylinderGeometry(rimR * 0.97, rimR * 0.78, 0.04, 20), PART_MAT.rim); // the dish: wider at the lip, narrowing to the hub
+  face.rotation.z = Math.PI / 2;
+  face.position.x = side * (width * 0.5 - 0.035);
+  spin.add(face);
   for (const e of [-1, 1]) {
     const lip = new THREE.Mesh(new THREE.TorusGeometry(rimR, 0.012, 6, 20), PART_MAT.nut); // the rim's rolled edge
     lip.rotation.y = Math.PI / 2;
-    lip.position.x = (e * width) / 2;
+    lip.position.x = (e * width * 0.9) / 2;
     spin.add(lip);
   }
-  const cap = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.3, radius * 0.34, 0.05, 12), PART_MAT.nut);
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.2, radius * 0.24, 0.07, 14), PART_MAT.nut);
+  hub.rotation.z = Math.PI / 2;
+  hub.position.x = side * (width * 0.5 - 0.005);
+  spin.add(hub);
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.11, radius * 0.13, 0.03, 12), PART_MAT.galv); // the grease cap
   cap.rotation.z = Math.PI / 2;
-  cap.position.x = side * (width / 2 + 0.01);
+  cap.position.x = side * (width * 0.5 + 0.03);
   spin.add(cap);
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2;
-    const nut = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.03, 6), PART_MAT.nut);
-    nut.rotation.z = Math.PI / 2;
-    nut.position.set(side * (width / 2 + 0.03), Math.cos(a) * radius * 0.45, Math.sin(a) * radius * 0.45);
-    spin.add(nut);
-  }
-  const lug = box(width * 0.95, 0.05, radius * 0.3, PART_MAT.steel, 0, radius - 0.01, 0, spin); // so the spin shows
-  lug.castShadow = false;
-  spin.traverse((m) => {
-    if (m.isMesh) m.castShadow = true;
-  });
+  const nuts = boltsMesh(boltCircle(4, radius * 0.3), [0, 0, 1], PART_MAT.nut, { size: 0.016, kind: 'nut', name: 'wheelNuts' });
+  nuts.rotation.y = side * Math.PI / 2; // the kit's circle is in XY facing +Z: turn it to face outwards along the axle
+  nuts.position.x = side * (width * 0.5 - 0.01);
+  spin.add(nuts);
+  const valve = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.05, 6), PART_MAT.rubber);
+  valve.position.set(side * (width * 0.5 - 0.06), rimR * 0.92, 0);
+  spin.add(valve);
   return w;
 }
 
@@ -111,29 +115,117 @@ export function addMudguard(parent, x, radius, width, mat, stayFrom) {
   flap.rotation.x = 0.08;
 }
 
-/** A pair of rear lamps (red), amber reflectors and a plate-shaped board, on a group at the back. `halfWidth` is where the lamps sit. */
+/**
+ * The lights board across the back: a plate on two brackets carrying a lamp cluster at each end (the kit's tail lamp: red stop and tail, amber
+ * indicator, clear reverse, facing back), a red triangle reflector under each, and the number plate between them with its lamp. `halfWidth` is where
+ * the clusters sit. Returns the group (at the back, facing -Z).
+ */
 export function addRearLights(parent, halfWidth, y, z, withPlate = true) {
-  box(halfWidth * 2 + 0.1, 0.06, 0.05, PART_MAT.paint, 0, y - 0.01, z + 0.015, parent); // the bar they and the plate are mounted on
+  const g = new THREE.Group();
+  g.position.set(0, y, z);
+  parent.add(g);
+  box(halfWidth * 2 + 0.2, 0.09, 0.03, PART_MAT.paint, 0, 0.0, 0.035, g); // the board (its back face clear of the frame behind it)
   for (const s of [-1, 1]) {
-    box(0.1, 0.06, 0.04, PART_MAT.red, s * halfWidth, y, z, parent);
-    box(0.05, 0.04, 0.03, PART_MAT.amber, s * halfWidth, y + 0.07, z, parent);
+    const lamp = buildLamp('tail', { w: 0.16, h: 0.075 });
+    lamp.rotation.y = Math.PI; // facing back
+    lamp.position.set(s * halfWidth, 0.015, -0.005);
+    g.add(lamp);
+    const tri = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.012, 3), PART_MAT.red); // a triangle reflector
+    tri.rotation.x = Math.PI / 2;
+    tri.position.set(s * (halfWidth - 0.18), 0.01, -0.012);
+    g.add(tri);
+    box(0.06, 0.1, 0.06, PART_MAT.steel, s * (halfWidth + 0.05), -0.07, 0.035, g); // its bracket down to the frame
   }
-  if (withPlate) box(0.3, 0.1, 0.015, PART_MAT.plate, 0, y - 0.02, z - 0.01, parent);
+  if (withPlate) {
+    box(0.32, 0.1, 0.012, PART_MAT.plate, 0, -0.12, -0.004, g);
+    box(0.34, 0.012, 0.03, PART_MAT.steel, 0, -0.065, -0.01, g); // and the plate lamp's hood over it
+  }
+  return g;
 }
 
-/** A jockey wheel on a post under the drawbar at `z`, wound up clear of the ground, with its crank handle. `y` is where the post meets the drawbar. */
+/**
+ * A jockey wheel on a post under the drawbar at `z`, wound up clear of the ground: a clamp round the drawbar, a telescoping post with its
+ * collar, the fork and the little treaded wheel between its plates, and the wind-up handle with its grip. `y` is where the post meets the drawbar.
+ */
 export function addJockeyWheel(parent, x, y, z) {
-  // Wound up off the ground while it is hitched: the wheel hangs 0.18 m clear.
-  const lift = 0.25;
-  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, y - lift, 8), PART_MAT.steel);
-  post.position.set(x, lift + (y - lift) / 2, z);
-  post.castShadow = true;
-  parent.add(post);
-  const crank = box(0.14, 0.02, 0.02, PART_MAT.steel, x + 0.06, y * 0.85, z, parent);
-  crank.castShadow = false;
-  const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.05, 12), PART_MAT.rubber);
+  const lift = 0.25; // wound up off the ground while it is hitched
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  parent.add(g);
+  box(0.1, 0.07, 0.1, PART_MAT.steel, 0, y - 0.02, 0, g); // the clamp round the drawbar
+  const outer = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, (y - lift) * 0.5, 10), PART_MAT.galv);
+  outer.position.y = y - 0.05 - (y - lift) * 0.25 + 0.05;
+  g.add(outer);
+  const inner = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, (y - lift) * 0.6, 10), PART_MAT.steel);
+  inner.position.y = lift + (y - lift) * 0.3 + 0.02;
+  g.add(inner);
+  const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.036, 0.03, 10), PART_MAT.steel);
+  collar.position.y = lift + (y - lift) * 0.6 + 0.02;
+  g.add(collar);
+  for (const s of [-1, 1]) box(0.012, 0.13, 0.12, PART_MAT.steel, s * 0.035, lift + 0.01, 0, g); // the fork's two plates
+  const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.045, 14), PART_MAT.rubber);
   wheel.rotation.z = Math.PI / 2;
-  wheel.position.set(x, lift - 0.04, z);
-  wheel.castShadow = true;
-  parent.add(wheel);
+  wheel.position.set(0, lift - 0.03, 0);
+  g.add(wheel);
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.07, 8), PART_MAT.nut);
+  hub.rotation.z = Math.PI / 2;
+  hub.position.set(0, lift - 0.03, 0);
+  g.add(hub);
+  // The handle: a crank arm from the top of the post, with a grip, set off to one side.
+  box(0.2, 0.018, 0.018, PART_MAT.steel, 0.1, y * 0.88, 0, g);
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.1, 8), PART_MAT.rubber);
+  grip.position.set(0.2, y * 0.88 + 0.045, 0);
+  g.add(grip);
+  g.traverse((m) => {
+    if (m.isMesh) m.castShadow = true;
+  });
+  return g;
+}
+
+/** A chain hanging in a loop between two points, as separate links (alternate ones turned a quarter), for a safety chain or a breakaway chain. */
+export function addChain(parent, a, b, links = 9, sag = 0.07, mat = PART_MAT.chain) {
+  const pts = [];
+  for (let i = 0; i < links; i++) {
+    const t = (i + 0.5) / links;
+    pts.push(new THREE.Vector3(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t - 4 * t * (1 - t) * sag, a[2] + (b[2] - a[2]) * t));
+  }
+  const link = new THREE.TorusGeometry(0.014, 0.0035, 4, 8);
+  pts.forEach((p, i) => {
+    const m = new THREE.Mesh(link, mat);
+    m.position.copy(p);
+    const next = pts[Math.min(pts.length - 1, i + 1)];
+    const prev = pts[Math.max(0, i - 1)];
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), next.clone().sub(prev).normalize()); // the link's ring faces along the chain...
+    m.rotateZ(i % 2 ? Math.PI / 2 : 0); // ...turned a quarter each time
+    parent.add(m);
+  });
+}
+
+/** A cable (a breakaway cable, the lights' lead) clipped through `anchors` (the parent's frame), with a sag, as one tube. */
+export function addCable(parent, anchors, r = 0.006, sag = 0.1, mat = PART_MAT.cable) {
+  const m = new THREE.Mesh(cableGeometry(anchors, r, { sag, steps: 8, radial: 5 }), mat);
+  parent.add(m);
+  return m;
+}
+
+/** A leaf spring: the main leaf (an arc from eye to eye), `leaves` shorter ones under it, the eyes at each end, and a centre bolt, along Z at `x`, centred on z 0. */
+export function addLeafSpring(parent, x, y, len, leaves = 3, mat = PART_MAT.steel) {
+  const arc = bentTube([[x, y - 0.025, len / 2], [x, y + 0.02, len / 4], [x, y + 0.035, 0], [x, y + 0.02, -len / 4], [x, y - 0.025, -len / 2]], 0.014, { bend: 0.25, radial: 6 });
+  parent.add(new THREE.Mesh(arc, mat));
+  for (let i = 1; i <= leaves; i++) box(0.07, 0.014, len * (1 - i * 0.2), mat, x, y + 0.035 - i * 0.017, 0, parent); // the shorter leaves under it
+  for (const e of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.TorusGeometry(0.022, 0.012, 6, 10), mat); // the rolled eye
+    eye.rotation.y = Math.PI / 2;
+    eye.position.set(x, y - 0.03, (e * len) / 2);
+    parent.add(eye);
+  }
+  box(0.025, 0.1, 0.025, PART_MAT.nut, x, y - 0.0, 0, parent); // the centre bolt
+}
+
+/** A pair of U-bolts holding an axle to its spring at (x, y, z0 and z1): two legs and a bridge across under the axle. */
+export function addUBolts(parent, x, y, z, spacing = 0.12, r = 0.016) {
+  for (const dz of [-spacing / 2, spacing / 2]) {
+    for (const dx of [-0.032, 0.032]) parent.add(Object.assign(new THREE.Mesh(rod([x + dx, y + 0.07, z + dz], [x + dx, y - r - 0.04, z + dz], 0.005, 5), PART_MAT.nut)));
+    box(0.08, 0.012, 0.016, PART_MAT.nut, x, y - r - 0.04, z + dz, parent);
+  }
 }

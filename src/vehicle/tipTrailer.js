@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { TrailerMotion } from './trailer.js';
+import { TrailerCoat } from '../effects/trailerCoat.js';
 import { UtvBed, DEFAULT_UTV_BED_PARAMS } from './utvBed.js';
 import { TRACTOR_GROUND_OFFSET } from './tractorModel.js';
 import { GROUND_OFFSET } from './quad.js';
@@ -64,6 +65,8 @@ export class TipTrailer {
     this.slots = { tub: { name: 'tub', side: 1, anchor: this.tub.getObjectByName('seat'), girl: null, lift: 0.7 } };
     this.anchors = CARGO_SPOTS.map((_, i) => this.tub.getObjectByName(`cargo${i}`));
     this.wheels = ['wheelLeft', 'wheelRight'].map((n) => this.model.getObjectByName(n).getObjectByName('spin'));
+    this.coat = new TrailerCoat(this.model, ['wheelLeft', 'wheelRight'].map((n) => this.model.getObjectByName(n)), 0.35); // mud and wear
+    this.coatAt = new THREE.Vector3();
     this.proxy = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.6, 1.8), new THREE.MeshBasicMaterial({ visible: false })); // to look at the tub
     this.proxy.position.set(0, TIP_TRAILER_SPEC.floorY + 0.25, -0.15);
     this.model.add(this.proxy);
@@ -208,6 +211,7 @@ export class TipTrailer {
     if (this.puller) this.puller.towJam = this.hitched && m.jammed; // the puller can't reverse any harder into the fold
     this.signedSpeed = dt > 0 ? ((m.x - before.x) * Math.sin(m.yaw) + (m.z - before.z) * Math.cos(m.yaw)) / dt : 0;
     for (const w of this.wheels) w.rotation.x += (this.signedSpeed * dt) / TIP_TRAILER_SPEC.wheelRadius;
+    this.coat.update(dt, this.signedSpeed, this.world, this.coatAt);
     this.bed.update(dt, { speed: m.speed, gateDown: false });
     poseTipTrailer(this.model, this.bed);
     if (this.bed.sliding && this.cargo.length) this.tipOut();

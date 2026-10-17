@@ -1,5 +1,8 @@
 import * as THREE from 'three';
-import { PART_MAT, box, buildWheel, addMudguard, addJockeyWheel } from './trailerParts.js';
+import { PART_MAT, box, buildWheel, addMudguard, addJockeyWheel, addRearLights, addChain, addCable, addLeafSpring, addUBolts } from './trailerParts.js';
+import { boltsMesh } from './detail/fixings.js';
+import { decalMesh } from './detail/decals.js';
+import { mergeStatic, rod } from './quadGeometry.js';
 
 // The small tipping trailer, procedural like the others: a galvanised steel tub on one axle with two wheels, a tongue to a quad's hitch,
 // and a tailgate that drops. The tub tips up on a pivot at the back.
@@ -66,11 +69,13 @@ export function buildTipTrailerModel() {
   body.name = 'body';
   root.add(body);
 
-  // Chassis: two rails under the tub, a cross member and the A-frame tongue up to the ring.
+  // Chassis: two rails under the tub with a cross member at each end, and the A-frame tongue up to a ball coupling (a cast head with its cup, the
+  // locking handle, a safety chain and the lights' lead), a chassis plate and a jockey wheel wound up.
   const len = S.frontZ - S.rearZ;
   const midZ = (S.frontZ + S.rearZ) / 2;
   for (const s of [-0.38, 0.38]) box(0.06, 0.08, len, MAT.steel, s, S.floorY - 0.1, midZ, body);
   box(S.halfWidth * 2, 0.06, 0.08, MAT.steel, 0, S.floorY - 0.1, S.frontZ - 0.1, body);
+  box(S.halfWidth * 2, 0.06, 0.08, MAT.steel, 0, S.floorY - 0.1, S.rearZ + 0.12, body);
   for (const s of [-1, 1]) {
     const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.95), MAT.steel);
     leg.position.set(s * 0.2, S.ringHeight + 0.02, S.frontZ + 0.425); // ends on the coupling body
@@ -78,36 +83,54 @@ export function buildTipTrailerModel() {
     leg.castShadow = true;
     body.add(leg);
   }
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.014, 6, 12), MAT.steel);
-  ring.position.set(0, S.ringHeight, S.drawLength);
-  ring.rotation.y = Math.PI / 2;
-  body.add(ring);
-  box(0.08, 0.1, 0.16, MAT.steel, 0, S.ringHeight, S.drawLength - 0.1, body);
   box(0.12, 0.08, 0.3, MAT.steel, 0, S.ringHeight + 0.02, S.drawLength - 0.3, body); // the coupling body
+  // The ball coupling at the pin: a cast head with a round cup on its underside, and the handle that locks it, rising and folding back.
+  box(0.1, 0.09, 0.16, MAT.steel, 0, S.ringHeight + 0.02, S.drawLength - 0.1, body);
+  const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.06, 12), MAT.steel);
+  cup.position.set(0, S.ringHeight - 0.03, S.drawLength);
+  body.add(cup);
+  const latch = new THREE.Group();
+  latch.position.set(0, S.ringHeight + 0.06, S.drawLength - 0.04);
+  latch.rotation.x = -0.5;
+  latch.add(new THREE.Mesh(rod([0, 0, 0], [0, 0.11, 0], 0.01, 6), PART_MAT.galv));
+  const handleGrip = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.06, 8), PART_MAT.rubber);
+  handleGrip.rotation.z = Math.PI / 2;
+  handleGrip.position.y = 0.12;
+  latch.add(handleGrip);
+  body.add(latch);
+  addChain(body, [-0.06, S.ringHeight - 0.02, S.drawLength - 0.3], [0.05, S.ringHeight - 0.03, S.drawLength + 0.02], 6, 0.08); // the safety chain
+  addCable(body, [[-0.3, S.floorY - 0.05, S.rearZ + 0.1], [-0.3, S.floorY - 0.1, 0.2], [-0.12, S.ringHeight + 0.04, S.frontZ + 0.5], [-0.07, S.ringHeight - 0.06, S.drawLength - 0.4]], 0.007, 0.05); // the lights' lead
+  const plate = decalMesh('chassis', { maker: 'fenwick', seed: 11 }, { width: 0.1, name: 'chassisPlate' });
+  plate.position.set(-0.061, S.ringHeight + 0.03, S.drawLength - 0.3);
+  plate.rotation.y = -Math.PI / 2;
+  body.add(plate);
   addJockeyWheel(body, 0, S.ringHeight + 0.05, S.frontZ + 0.75);
-  // Axle and a leaf spring each side.
+  // Axle on a leaf spring each side, with U-bolts, and the spring's seat on the rail.
   const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, (S.halfWidth + 0.11) * 2, 8), MAT.steel);
   axle.rotation.z = Math.PI / 2;
   axle.position.set(0, S.wheelRadius, 0);
   axle.castShadow = true;
   body.add(axle);
   for (const s of [-0.38, 0.38]) {
-    box(0.06, 0.02, 0.7, MAT.steel, s, S.wheelRadius + 0.05, 0, body);
-    box(0.07, 0.12, 0.1, MAT.steel, s, S.wheelRadius + 0.1, 0, body);
+    addLeafSpring(body, s, S.wheelRadius + 0.07, 0.7, 2, MAT.steel);
+    addUBolts(body, s, S.wheelRadius + 0.035, 0, 0.1, 0.012);
+    box(0.07, 0.12, 0.1, MAT.steel, s, S.wheelRadius + 0.12, 0, body);
   }
+  addRearLights(body, S.halfWidth - 0.12, S.floorY - 0.15, S.rearZ - 0.08, true); // the lights board, on the chassis behind the tub (it does not tip)
 
   // The tub: floor, two sides, a front wall and the tailgate. Pivots about the back bottom edge.
   const tub = new THREE.Group();
   tub.name = 'tub';
+  tub.userData.keep = true;
   tub.position.set(0, S.floorY, S.rearZ);
   body.add(tub);
   const hz = (z) => z - S.rearZ; // tub-local z from trailer-local z
   box(S.halfWidth * 2, 0.04, len, MAT.tubInner, 0, -0.02, hz(midZ), tub);
   for (const s of [-1, 1]) {
     box(0.04, S.sideHeight, len, MAT.tub, s * (S.halfWidth - 0.02), S.sideHeight / 2, hz(midZ), tub);
-    box(0.06, 0.04, len + 0.02, MAT.steel, s * (S.halfWidth - 0.02), S.sideHeight, hz(midZ), tub); // rolled top edge
+    box(0.07, 0.04, len + 0.0, MAT.steel, s * (S.halfWidth - 0.02), S.sideHeight, hz(midZ) + 0.02, tub); // rolled top edge (wider than the posts under it, so no face is shared)
   }
-  box(S.halfWidth * 2, S.sideHeight + 0.1, 0.04, MAT.tub, 0, (S.sideHeight + 0.1) / 2, hz(S.frontZ) - 0.02, tub);
+  box(S.halfWidth * 2 - 0.02, S.sideHeight + 0.1, 0.04, MAT.tub, 0, (S.sideHeight + 0.1) / 2, hz(S.frontZ) - 0.02, tub); // (a centimetre inside the sides' outer faces, so they share none)
   // Pressed ribs along the sides and across the front, corner posts, and the tipping pivot's hinge lugs at the back.
   for (const s of [-1, 1]) {
     for (const y of [0.12, 0.26]) box(0.012, 0.03, len - 0.1, MAT.tubInner, s * (S.halfWidth + 0.002), y, hz(midZ), tub);
@@ -116,12 +139,22 @@ export function buildTipTrailerModel() {
     box(0.07, 0.07, 0.1, MAT.steel, s * 0.3, -0.02, -0.04, tub);
   }
   for (const y of [0.12, 0.26]) box(S.halfWidth * 2 - 0.1, 0.03, 0.008, MAT.tubInner, 0, y, hz(S.frontZ) + 0.003, tub);
+  // The tipping pivot: a pin through the two hinge lugs at the back (a rod through them, a washer and split pin each end), and the catch at the front: a
+  // spring latch on the chassis's cross member that hooks a bar under the tub's front edge, with its release lever.
+  tub.add(new THREE.Mesh(rod([-0.36, -0.02, -0.04], [0.36, -0.02, -0.04], 0.013, 8), MAT.steel));
+  for (const s of [-1, 1]) box(0.03, 0.03, 0.03, MAT.steel, s * 0.38, -0.02, -0.04, tub);
+  tub.add(new THREE.Mesh(rod([-0.2, -0.045, hz(S.frontZ) - 0.1], [0.2, -0.045, hz(S.frontZ) - 0.1], 0.012, 6), MAT.steel)); // the bar the catch hooks over
+  box(0.06, 0.1, 0.05, MAT.steel, 0, -0.1, hz(S.frontZ) - 0.1, tub); // the catch's body, on the tub's underside
+  const lever = new THREE.Mesh(rod([0, -0.12, hz(S.frontZ) - 0.1], [0.16, -0.13, hz(S.frontZ) - 0.02], 0.008, 6), PART_MAT.galv); // the release lever, out to the side
+  tub.add(lever);
+  for (const sd of [-1, 1]) tub.add(boltsMesh([0.08, 0.2, 0.32].map((y) => [sd * (S.halfWidth - 0.02 + 0.031), y, hz(S.frontZ) - 0.025]), [sd, 0, 0], MAT.steel, { size: 0.01, kind: 'hex', name: 'postBolts' })); // bolts through the front posts
   const gate = new THREE.Group();
   gate.name = 'tailgate';
+  gate.userData.keep = true;
   gate.position.set(0, 0, 0.0);
   box(S.halfWidth * 2 - 0.08, S.sideHeight, 0.03, MAT.tub, 0, S.sideHeight / 2, -0.015, gate);
   box(S.halfWidth * 2 - 0.04, 0.04, 0.05, MAT.steel, 0, S.sideHeight, -0.02, gate);
-  for (const s of [-1, 1]) box(0.08, 0.05, 0.03, MAT.lamp, s * (S.halfWidth - 0.1), 0.12, -0.04, gate);
+  tub.add(new THREE.Mesh(rod([-0.4, 0.0, -0.01], [0.4, 0.0, -0.01], 0.012, 6), MAT.steel)); // the gate's hinge pin along its bottom edge, through the tub's rear
   for (const s of [-1, 1]) {
     box(0.03, 0.06, 0.03, MAT.steel, s * (S.halfWidth - 0.05), S.sideHeight - 0.08, -0.03, gate); // the latch
     const chain = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.006, 4, 8), MAT.steel);
@@ -145,9 +178,17 @@ export function buildTipTrailerModel() {
 
   // Wheels, with a curved mudguard over each.
   for (const [name, side] of [['wheelLeft', 1], ['wheelRight', -1]]) {
-    root.add(buildWheel(name, side * (S.halfWidth + 0.11), S.wheelRadius, 0.16));
+    root.add(buildWheel(name, side * (S.halfWidth + 0.11), S.wheelRadius, 0.16, 'atv'));
     addMudguard(root, side * (S.halfWidth + 0.11), S.wheelRadius, 0.22, MAT.tub, S.halfWidth);
   }
+  for (const o of tub.children) if (o.name === 'seat' || /^cargo/.test(o.name)) o.userData.keep = true;
+  mergeStatic(root);
+  root.traverse((o) => {
+    if (o.isMesh) {
+      o.castShadow = true;
+      o.receiveShadow = true;
+    }
+  });
   return root;
 }
 

@@ -44,6 +44,8 @@ import { generalRequests } from './npc/generalRequests.js';
 import { DEFAULT_WAITING_PARAMS, WAITING_PARAM_RANGES } from './npc/waiting.js';
 import { Daylight, DEFAULT_DAYLIGHT_PARAMS, DAYLIGHT_PARAM_RANGES } from './world/daylight.js';
 import { VehicleLights, VEHICLE_LIGHT_PARAM_RANGES } from './effects/vehicleLights.js';
+import { MUD_STATE_RANGES } from './effects/quadMud.js';
+import { WEAR_LOOK_RANGES } from './effects/mudCoat.js';
 import { WeatherStation } from './world/weatherStation.js';
 import { Forecast, DEFAULT_FORECAST_PARAMS, FORECAST_PARAM_RANGES, KIND_WARMTH } from './world/forecast.js';
 import { choose, mainNeed, OFFER_KINDS } from './npc/chooser.js';
@@ -837,6 +839,11 @@ export class Game {
     registerTuning('200TDi back seats', this.rearAccess, REAR_ACCESS_PARAM_RANGES);
     // The little tipping trailer behind any quad with a rack (or the tractor), and the girl who rides in it (vehicle/tipTrailer.js, npc/trailerRide.js).
     this.tipTrailer = new TipTrailer({ scene: this.scene, world: this.world });
+    // The trailers' wear and the mud on them, settable like a vehicle's.
+    registerTuning('Bale trailer wear', this.trailer.coat.coat.look, WEAR_LOOK_RANGES);
+    registerTuning('Bale trailer mud', this.trailer.coat.state, MUD_STATE_RANGES);
+    registerTuning('Tipping trailer wear', this.tipTrailer.coat.coat.look, WEAR_LOOK_RANGES);
+    registerTuning('Tipping trailer mud', this.tipTrailer.coat.state, MUD_STATE_RANGES);
     const tt = this.world.layout.tipTrailer;
     this.tipTrailer.addObstacle(this.physics, this.RAPIER);
     this.tipTrailer.place(tt.x, tt.z, tt.yaw);
@@ -9269,6 +9276,7 @@ export class Game {
       const coat = unit.mud?.coat;
       while (coat?.bakeStep()) if (performance.now() - start > budgetMs) return;
     }
+    for (const t of [this.trailer, this.tipTrailer]) while (t?.coat?.bakeStep()) if (performance.now() - start > budgetMs) return; // and the trailers'
   }
 
   frame() {

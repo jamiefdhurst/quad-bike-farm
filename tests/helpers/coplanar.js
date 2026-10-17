@@ -53,7 +53,8 @@ export function coplanarOverlaps(model, { gap = 0.002, minArea = 2e-5, skip = (o
   const vc = new THREE.Vector3();
   const n = new THREE.Vector3();
   model.traverse((o) => {
-    if (!o.isMesh || !o.visible || o.isSprite) return;
+    if (!o.isMesh || o.isSprite) return;
+    for (let q = o; q; q = q.parent) if (!q.visible) return; // hidden, or inside a hidden group (the trailer's straps until it is strapped)
     const m = o.material;
     if (m.transparent || m.map || /^headlight/.test(o.name) || skip(o)) return;
     let p = o;

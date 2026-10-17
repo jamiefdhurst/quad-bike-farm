@@ -23,6 +23,15 @@ export const REAL_SIZES = {
   corsa: { like: 'Vauxhall Corsa B', length: 3729, width: 1608, height: 1420, wheelbase: 2443, track: 1400, tyre: 547 },
 };
 
+/**
+ * The trailers' (TODO 101), compared on their own sizes rather than over a wheelbase (a trailer has none): typical published figures for the
+ * kinds they stand for, overall from the back of the lights to the lunette or the coupling, over the tyres, to the top of the headboard or the tub.
+ */
+export const TRAILER_SIZES = {
+  bale: { like: 'a 10 ft by 6 ft 6 in single-axle farm flatbed with a headboard (the Fenwick F10)', length: 4470, width: 2560, height: 1550, tyre: 840 },
+  tip: { like: 'a 5 ft by 3 ft 8 in tipping quad trailer with a ball coupling (the Fenwick Q5)', length: 2790, width: 1580, height: 1080, tyre: 600 },
+};
+
 /** The measures compared, each over the wheelbase. */
 export const PROPORTIONS = ['length', 'width', 'height', 'track', 'tyre'];
 

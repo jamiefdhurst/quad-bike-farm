@@ -1437,6 +1437,11 @@ export const FAQ_SECTIONS = [
           nobody on it, upright and not hooked to the green's winch or the chain, within about seven metres of the foot of the ramps with the ramps down.`,
       },
       {
+        q: 'Do the trailers get muddy?',
+        a: `Yes, as the quads do. Tow one through mud and its tyres cake first, then slowly the bodywork; on grass the tyres shed it again. They are worn too (rust in the folds, paint
+          rubbed off the edges), the bale trailer more than the little one. They don't get hosed down yet.`,
+      },
+      {
         q: 'What can the little trailer do?',
         a: `Hook it to the tractor, the Land Rover or a quad with a rack (<kbd>J</kbd>), stand a jerry can, the toolbox or the jump leads in it (<kbd>E</kbd> at the tub),
           and tip it (<kbd>T</kbd>) when stopped. Jess may climb in against the rules.`,

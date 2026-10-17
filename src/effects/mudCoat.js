@@ -222,7 +222,7 @@ export class MudCoat {
     this.bodyCopies = bodyCopies; // original material -> the muddy copy the meshes really use, so others can tint it
     for (const m of restCopies.values()) for (const c of m.values()) wheelCopies.set(c, c); // (counted and baked with the rest)
     this.materialCount = bodyCopies.size + wheelCopies.size;
-    this.frame = model.getObjectByName('bodyRoot');
+    this.frame = model.getObjectByName('bodyRoot') ?? model; // (a trailer has no bodyRoot: its own origin on the ground is the frame)
     this.setTouch(findTouchPoints(model, this.frame));
     // The meshes the wear bake (vehicle/detail/wear.js) works through, in the background: everything this coat patched.
     const patched = new Set([...bodyCopies.values(), ...wheelCopies.values()]);

@@ -5,7 +5,7 @@
 export const TUNE_CATEGORIES = {
   'Driving and towing': [
     '2WD and 4WD', 'Throttle key', 'Brake key', 'Gamepad', 'Brakes', 'Frozen throttle cable', 'Diesel waxing', 'Handbrake', 'Headlights', 'Vehicle lights', 'UTV lights', 'Indicators', 'Seat belts', 'Mud on the lens', 'Two-wheeler lean', 'Three-wheeler rider lean', 'Tyres', 'Tyre squeal', 'Towing', 'Tow chain', 'Tow rope', 'Trailer', 'Tipping trailer', 'Trailer tub',
-    'UTV bed', 'UTV load', 'Land Rover load', 'Land Rover tailgate', '200TDi back door', 'UTV riders', 'Land Rover riders', '200TDi riders', '200TDi back seats', 'Fiesta riders', 'Corsa riders', 'Trailer riders', 'Tractor creep', 'Tractor runaway',
+    'UTV bed', 'UTV load', 'Land Rover load', 'Land Rover tailgate', '200TDi back door', 'Bale trailer wear', 'Bale trailer mud', 'Tipping trailer wear', 'Tipping trailer mud', 'UTV riders', 'Land Rover riders', '200TDi riders', '200TDi back seats', 'Fiesta riders', 'Corsa riders', 'Trailer riders', 'Tractor creep', 'Tractor runaway',
   ],
   'Engines, fuel and faults': ['Quirks', 'Engine oil', 'Dripping carb', 'Carb icing', 'Water in the fuel', 'Barn find', 'Red diesel mistake', 'Two-stroke smoke'],
   'Items and workshop': ['Toolbox', 'Logbook', 'Workshop bench', 'Battery charger', 'Generator', 'Spares shelf', 'Girl at the bench', 'Bale spike', 'Phone calls', 'Jerry can', 'Pre-mix can', 'Diesel can', 'Oil bottle', 'Coolant bottle', 'Anti-gel bottle', 'Plug-saver', 'Hose', 'Jump leads', 'Winch', 'Loading ramps', 'Bell', 'Hayloft', 'Muck job', 'Job board', 'Records', 'Photos'],

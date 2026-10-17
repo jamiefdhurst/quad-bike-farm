@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { TrailerMotion, DEFAULT_TRAILER_PARAMS } from './trailer.js';
 import { TRACTOR_GROUND_OFFSET } from './tractorModel.js';
 import { TrailerObstacle, BALE_TRAILER_FOOTPRINT } from './trailerObstacle.js';
+import { TrailerCoat } from '../effects/trailerCoat.js';
 import { buildTrailerModel, TRAILER_SPEC, trailerStandLocal, poseRamps, rampOpenAngle } from './trailerModel.js';
 import { DEFAULT_LOAD_PARAMS, QuadLoad, rampGeometry, loadPose, canCapture, inWinchReach } from './quadLoad.js';
 
@@ -47,6 +48,8 @@ export class HayTrailer {
     scene.add(this.cable);
     this.refreshRamps();
     this.wheels = ['wheelLeft', 'wheelRight'].map((n) => this.model.getObjectByName(n).getObjectByName('spin'));
+    this.coat = new TrailerCoat(this.model, ['wheelLeft', 'wheelRight'].map((n) => this.model.getObjectByName(n)), 0.5); // mud and wear, as the quads wear them: an old working trailer
+    this.coatAt = new THREE.Vector3();
   }
 
   ground = (x, z) => this.world.heightAt(x, z);
@@ -238,6 +241,7 @@ export class HayTrailer {
     // How hard it is speeding up or braking along itself, smoothed, for a quad that isn't strapped down.
     if (dt > 0) this.accel += (((this.signedSpeed - this.prevSigned) / dt) - this.accel) * Math.min(1, 8 * dt);
     this.prevSigned = this.signedSpeed;
+    this.coat.update(dt, this.signedSpeed, this.world, this.coatAt);
     this.stepRamps(dt);
     this.apply();
     this.events = this.stepLoad(dt, loadCtx);

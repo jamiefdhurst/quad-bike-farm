@@ -1,7 +1,10 @@
 import * as THREE from 'three';
 import { squareBaleGeometry, squareBaleMaterials } from '../world/squareBale.js';
 import { createRandom } from '../core/random.js';
-import { PART_MAT, box, buildWheel, addMudguard, addRearLights, addJockeyWheel } from './trailerParts.js';
+import { PART_MAT, box, buildWheel, addMudguard, addRearLights, addJockeyWheel, addChain, addCable, addLeafSpring, addUBolts } from './trailerParts.js';
+import { boltsMesh, boltRow } from './detail/fixings.js';
+import { decalMesh } from './detail/decals.js';
+import { mergeStatic, rod } from './quadGeometry.js';
 
 // The bale trailer, procedural like the tractor: a flat bed on one axle with two wheels, a tongue to the tractor's drawbar, and
 // bales stacked at the front only, so there is a clear bed behind them for a quad. Two ramps fold down from under the back end.
@@ -84,39 +87,68 @@ export function buildTrailerModel() {
   body.name = 'body';
   root.add(body);
 
-  // Bed: planks with dark gaps between them, a pair of main rails and cross members under it, a low board along each side, and a headboard.
+  // Bed: planks with dark gaps between them on a ladder of steel: two main rails (box section) with a ring of angle round the edge, cross members
+  // under the planks, a low board along each side in its stake pockets, and a tube-frame headboard.
   const len = S.frontZ - S.rearZ;
   const midZ = (S.frontZ + S.rearZ) / 2;
-  box(S.bedHalfWidth * 2, 0.05, len, MAT.deckDark, 0, S.bedY - 0.06, midZ, body); // the dark under the gaps
+  box(S.bedHalfWidth * 2 - 0.02, 0.05, len - 0.04, MAT.deckDark, 0, S.bedY - 0.06, midZ, body); // the dark under the gaps (inside the planks' ends and sides, sharing no face)
   const planks = 8;
   const plankW = (S.bedHalfWidth * 2) / planks;
   for (let i = 0; i < planks; i++) {
     box(plankW - 0.012, 0.04, len, i % 3 === 1 ? MAT.deckWorn : MAT.deck, -S.bedHalfWidth + plankW * (i + 0.5), S.bedY - 0.02, midZ, body);
   }
-  for (const s of [-0.6, 0.6]) box(0.09, 0.14, len, PART_MAT.paint, s, S.bedY - 0.16, midZ, body); // main rails
-  for (let i = 0; i < 5; i++) box(S.bedHalfWidth * 2, 0.06, 0.07, PART_MAT.paint, 0, S.bedY - 0.1, S.rearZ + 0.2 + (i * (len - 0.4)) / 4, body);
-  for (const s of [-1, 1]) {
-    box(0.04, 0.16, len, MAT.deck, s * S.bedHalfWidth, S.bedY + 0.08, midZ, body); // side board
-    box(0.05, 0.04, len + 0.04, PART_MAT.steel, s * S.bedHalfWidth, S.bedY + 0.17, midZ, body); // its capping
-    for (const z of [S.rearZ + 0.1, midZ, S.frontZ - 0.1]) box(0.05, 0.22, 0.06, PART_MAT.steel, s * S.bedHalfWidth, S.bedY + 0.1, z, body); // stakes
+  for (const s of [-0.6, 0.6]) {
+    box(0.09, 0.14, len, PART_MAT.paint, s, S.bedY - 0.16, midZ, body); // main rails
+    box(0.05, 0.1, len - 0.1, PART_MAT.steel, s, S.bedY - 0.16, midZ, body); // the box section's flange showing under them, proud of the sides
   }
-  box(S.bedHalfWidth * 2, 0.55, 0.05, MAT.deck, 0, S.bedY + 0.275, S.frontZ + 0.025, body); // headboard
-  box(S.bedHalfWidth * 2 + 0.04, 0.05, 0.07, PART_MAT.steel, 0, S.bedY + 0.57, S.frontZ + 0.025, body);
-  for (const s of [-0.7, 0, 0.7]) box(0.05, 0.5, 0.06, PART_MAT.steel, s, S.bedY + 0.3, S.frontZ + 0.07, body); // headboard uprights
+  const crossZ = Array.from({ length: 5 }, (_, i) => S.rearZ + 0.2 + (i * (len - 0.4)) / 4);
+  for (const z of crossZ) box(S.bedHalfWidth * 2, 0.06, 0.07, PART_MAT.paint, 0, S.bedY - 0.1, z, body);
+  // The angle round the bed's edge: a steel angle along each side and across the back, its upstanding leg holding the planks in.
+  for (const s of [-1, 1]) {
+    box(0.05, 0.06, len + 0.06, PART_MAT.steel, s * (S.bedHalfWidth + 0.02), S.bedY - 0.045, midZ, body);
+    box(0.02, 0.07, len + 0.06, PART_MAT.steel, s * (S.bedHalfWidth + 0.04), S.bedY - 0.035, midZ, body);
+  }
+  box(S.bedHalfWidth * 2 + 0.12, 0.066, 0.05, PART_MAT.steel, 0, S.bedY - 0.045, S.rearZ - 0.02, body);
+  // Coach bolts through the planks into the cross members: a row at each, a head on each plank.
+  const boltPts = [];
+  crossZ.forEach((z, k) => { if (k % 2 === 0) for (let i = k % 4 === 0 ? 0 : 1; i < planks; i += 2) boltPts.push([-S.bedHalfWidth + plankW * (i + 0.5), S.bedY, z]); }); // at three of the cross members, every other plank
+  body.add(boltsMesh(boltPts, [0, 1, 0], PART_MAT.nut, { size: 0.012, kind: 'dome', name: 'plankBolts' }));
+  for (const s of [-1, 1]) {
+    box(0.036, 0.16, len, MAT.deck, s * S.bedHalfWidth, S.bedY + 0.08, midZ, body); // side board
+    box(0.05, 0.04, len + 0.04, PART_MAT.steel, s * S.bedHalfWidth, S.bedY + 0.17, midZ, body); // its capping
+    const stakes = [S.rearZ + 0.1, midZ, S.frontZ - 0.1];
+    for (const z of stakes) {
+      box(0.056, 0.22, 0.06, PART_MAT.steel, s * S.bedHalfWidth, S.bedY + 0.1, z, body); // stakes (a little wider than the capping over them, so no face is shared)
+      box(0.07, 0.05, 0.1, PART_MAT.steel, s * S.bedHalfWidth, S.bedY - 0.02, z, body); // and their pockets on the bed's edge
+    }
+    body.add(boltsMesh(stakes.map((z) => [s * (S.bedHalfWidth + 0.027), S.bedY + 0.1, z]), [s, 0, 0], PART_MAT.nut, { size: 0.012, kind: 'hex', name: 'stakeBolts' }));
+  }
+  // The headboard: a tube frame (two corner posts, a centre post, four rails and a diagonal brace), welded, with a flat top plate; it stops the bales.
+  const hz = S.frontZ + 0.04;
+  const tubeAt = (a, b, r = 0.022) => body.add(new THREE.Mesh(rod(a, b, r, 6), PART_MAT.paint));
+  for (const x of [-S.bedHalfWidth + 0.02, 0, S.bedHalfWidth - 0.02]) tubeAt([x, S.bedY, hz], [x, S.bedY + 0.58, hz]);
+  for (const y of [0.1, 0.25, 0.4, 0.56]) tubeAt([-S.bedHalfWidth + 0.02, S.bedY + y, hz], [S.bedHalfWidth - 0.02, S.bedY + y, hz]);
+  tubeAt([-S.bedHalfWidth + 0.02, S.bedY + 0.1, hz + 0.001], [0, S.bedY + 0.56, hz + 0.001], 0.015);
+  tubeAt([S.bedHalfWidth - 0.02, S.bedY + 0.1, hz + 0.001], [0, S.bedY + 0.56, hz + 0.001], 0.015);
+  box(S.bedHalfWidth * 2 + 0.04, 0.03, 0.08, PART_MAT.steel, 0, S.bedY + 0.59, hz, body); // top plate
+  for (const s of [-1, 1]) box(0.08, 0.1, 0.1, PART_MAT.steel, s * (S.bedHalfWidth - 0.02), S.bedY + 0.02, hz, body); // each post's foot on the bed's angle
+  box(S.bedHalfWidth * 2 - 0.1, 0.5, 0.012, MAT.deckDark, 0, S.bedY + 0.3, hz - 0.03, body); // a dark board behind the rails, so you do not see through to the bales
 
-  // The axle with a leaf spring each side, and a pair of axle stands.
+  // The axle on two leaf springs, held by U-bolts, with a shackle at each end of each spring on a hanger bracket from the rail, and a grease nipple.
   const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, (S.bedHalfWidth + 0.14) * 2, 8), PART_MAT.steel);
   axle.rotation.z = Math.PI / 2;
   axle.position.set(0, S.wheelRadius, 0);
   axle.castShadow = true;
   body.add(axle);
   for (const s of [-0.6, 0.6]) {
-    box(0.07, 0.025, 0.9, PART_MAT.steel, s, S.wheelRadius + 0.07, 0, body);
-    box(0.07, 0.02, 0.7, PART_MAT.steel, s, S.wheelRadius + 0.095, 0, body);
-    box(0.08, 0.2, 0.12, PART_MAT.steel, s, S.wheelRadius + 0.15, 0, body);
+    addLeafSpring(body, s, S.wheelRadius + 0.09, 1.0, 3, PART_MAT.steel);
+    addUBolts(body, s, S.wheelRadius + 0.045, 0, 0.14);
+    box(0.08, 0.2, 0.12, PART_MAT.steel, s, S.wheelRadius + 0.2, 0, body); // the spring's seat on the rail
+    for (const e of [-1, 1]) box(0.1, 0.14, 0.04, PART_MAT.paint, s, S.wheelRadius + 0.22, e * 0.53, body); // the hanger and the shackle's bracket
   }
 
-  // The drawbar: an A-frame of two flat bars meeting at a coupling, a jockey wheel wound up, a chain and a ring.
+  // The drawbar: an A-frame of two flat bars meeting at an over-run coupling (a damper tube along the drawbar, the lunette ring at the end), a handbrake
+  // lever, a breakaway cable and a chain, the lights' lead with its socket, a chassis plate, and a jockey wheel wound up.
   for (const s of [-1, 1]) {
     const bar = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.08, 1.35), PART_MAT.paint);
     bar.position.set(s * 0.22, S.ringHeight + 0.1, 1.95);
@@ -125,17 +157,35 @@ export function buildTrailerModel() {
     body.add(bar);
   }
   box(0.14, 0.1, 0.5, PART_MAT.paint, 0, S.ringHeight + 0.1, 2.45, body);
+  box(0.16, 0.12, 0.3, PART_MAT.steel, 0, S.ringHeight + 0.1, 2.2, body); // the over-run housing, where the two bars meet
+  body.add(new THREE.Mesh(rod([0, S.ringHeight + 0.1, 2.2], [0, S.ringHeight + 0.1, 2.5], 0.035, 10), PART_MAT.galv)); // the damper's tube
   box(0.1, 0.1, 0.1, PART_MAT.steel, 0, S.ringHeight, 2.52, body);
   const ring = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.016, 6, 12), PART_MAT.steel);
   ring.position.set(0, S.ringHeight, 2.6);
   ring.rotation.y = Math.PI / 2;
   body.add(ring);
   addJockeyWheel(body, 0.1, S.ringHeight + 0.05, 2.25);
-  const chain = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.008, 4, 10), PART_MAT.steel);
-  chain.position.set(-0.18, S.ringHeight - 0.05, 2.25);
-  chain.rotation.x = Math.PI / 2;
-  body.add(chain);
-  addRearLights(body, S.bedHalfWidth - 0.12, S.bedY - 0.12, S.rearZ - 0.03);
+  // The handbrake: a lever off the left of the housing, up and back, with a grip and a ratchet, and the cable down the bar to the axle's brakes.
+  const hb = new THREE.Group();
+  hb.position.set(-0.12, S.ringHeight + 0.17, 2.12);
+  hb.rotation.x = -0.9;
+  hb.add(new THREE.Mesh(rod([0, 0, 0], [0, 0.32, 0], 0.01, 6), PART_MAT.steel));
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.1, 8), PART_MAT.rubber);
+  grip.position.y = 0.34;
+  hb.add(grip);
+  body.add(hb);
+  box(0.02, 0.1, 0.1, PART_MAT.steel, -0.12, S.ringHeight + 0.2, 2.1, body); // the ratchet quadrant
+  addCable(body, [[-0.12, S.ringHeight + 0.19, 2.1], [-0.13, S.ringHeight + 0.1, 1.7], [-0.2, S.ringHeight + 0.1, 0.8], [-0.4, S.wheelRadius + 0.1, 0.12]], 0.007, 0.03); // the brake cable
+  addCable(body, [[0.08, S.ringHeight + 0.12, 2.3], [0.2, S.ringHeight + 0.0, 2.0], [0.2, S.ringHeight + 0.1, 1.6]], 0.005, 0.2); // the breakaway cable, looped
+  addChain(body, [-0.1, S.ringHeight - 0.02, 2.4], [-0.02, S.ringHeight - 0.02, 2.58], 7, 0.1); // the safety chain, round to the ring
+  // The lights' lead: from the board at the back along the left rail and the drawbar to a socket on a little bracket at the front, which hangs.
+  addCable(body, [[-S.bedHalfWidth + 0.2, S.bedY - 0.12, S.rearZ], [-0.62, S.bedY - 0.28, -0.5], [-0.62, S.bedY - 0.28, S.frontZ - 0.1], [-0.3, S.ringHeight + 0.2, 1.9], [-0.26, S.ringHeight + 0.06, 2.25]], 0.009, 0.05);
+  box(0.05, 0.06, 0.04, PART_MAT.cableSpiral, -0.26, S.ringHeight + 0.02, 2.27, body); // the socket
+  const plate = decalMesh('chassis', { maker: 'fenwick', seed: 7 }, { width: 0.12, name: 'chassisPlate' });
+  plate.position.set(-0.081, S.ringHeight + 0.1, 2.2); // on the over-run housing's left face (its face is at x -0.08)
+  plate.rotation.y = -Math.PI / 2;
+  body.add(plate);
+  addRearLights(body, S.bedHalfWidth - 0.15, S.bedY - 0.14, S.rearZ - 0.05);
 
   // Bales: a stack two high across the front, and a single layer in front of that on its back side for the girls to sit on.
   const top = S.bedY + S.baleHeight / 2;
@@ -148,6 +198,7 @@ export function buildTrailerModel() {
 
   buildRamps(body);
   buildWinch(body);
+  for (const o of body.children) if (/^(ramp|seat)/.test(o.name) || o.name === 'straps' || o.name === 'winchEye') o.userData.keep = true; // the posed and the placed parts are left out of the merge
 
   // Where the girls sit: hips on the top of the lower layer at the edge of the well, facing forward.
   const seatY = S.bedY + S.baleHeight;
@@ -161,9 +212,16 @@ export function buildTrailerModel() {
 
   // Wheels, with a curved mudguard over each.
   for (const [name, side] of [['wheelLeft', 1], ['wheelRight', -1]]) {
-    root.add(buildWheel(name, side * (S.bedHalfWidth + 0.14), S.wheelRadius, 0.2));
+    root.add(buildWheel(name, side * (S.bedHalfWidth + 0.14), S.wheelRadius, 0.2, 'farm'));
     addMudguard(root, side * (S.bedHalfWidth + 0.14), S.wheelRadius, 0.26, PART_MAT.paint, S.bedHalfWidth);
   }
+  mergeStatic(root);
+  root.traverse((o) => {
+    if (o.isMesh) {
+      o.castShadow = true;
+      o.receiveShadow = true;
+    }
+  });
   return root;
 }
 
@@ -178,8 +236,8 @@ function buildRamps(body) {
     pivot.name = name;
     pivot.position.set(side * S.rampX, S.bedY - 0.025, S.rearZ);
     box(S.rampWidth, 0.04, S.rampLength, ALU, 0, -0.02, S.rampLength / 2, pivot);
-    for (const e of [-1, 1]) box(0.03, 0.07, S.rampLength, ALU, e * (S.rampWidth / 2 - 0.015), -0.005, S.rampLength / 2, pivot); // side lips
-    for (let i = 1; i < 9; i++) box(S.rampWidth - 0.06, 0.012, 0.03, PART_MAT.steel, 0, 0.004, (i * S.rampLength) / 9, pivot); // cleats
+    for (const e of [-1, 1]) box(0.04, 0.08, S.rampLength - 0.04, ALU, e * (S.rampWidth / 2 - 0.015), -0.005, S.rampLength / 2, pivot); // side lips (a hair wider than the plank's edge)
+    for (let i = 1; i < 9; i++) box(S.rampWidth - 0.09, 0.012, 0.03, PART_MAT.steel, 0, 0.004, (i * S.rampLength) / 9, pivot); // cleats
     body.add(pivot);
   }
 }

@@ -16,6 +16,7 @@ export const MAKERS = {
   hartley: { name: 'Hartley', badge: 'oval', ink: '#f0e6c8', edge: null, box: '#7d1712' }, // the tractor (Ferguson's)
   moorland: { name: 'Moorland', badge: 'oval', ink: '#f2f2ea', edge: null, box: '#244a2c' }, // the Land Rovers
   thorne: { name: 'Thorne', badge: 'oval', ink: '#ffffff', edge: null, box: '#1b3d7a' }, // the Fiesta (Ford's)
+  fenwick: { name: 'Fenwick', badge: 'block', ink: '#f4f1e6', edge: null, box: '#3c5a2e' }, // the trailers (an Ifor Williams's place)
   ashby: { name: 'Ashby', badge: 'block', ink: '#f4f4f4', edge: null, box: '#3a3a3a' }, // the Corsa (Vauxhall's)
 };
 
