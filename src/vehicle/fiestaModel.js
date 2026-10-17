@@ -211,7 +211,11 @@ function buildWheel(w, rimMat) {
   const rimR = 0.152;
   spin.add(new THREE.Mesh(treadTyre('road', { radius: c.R, width: FIESTA_TYRE_W, rimR, segments: 36 }), PAL.rubber));
   // The Mk1's pressed steel wheel: silver, with its slots round the face and a small cap in the middle (detail/roadWheels.js).
-  spin.add(buildRoadWheel('slots', { rimR: rimR - 0.004, width: FIESTA_TYRE_W - 0.02, side, nuts: 4, mats: { rim: rimMat, steel: PAL.chrome } }));
+  // The kit's wheel is built for the +x side (its lathed face faces the wrong way mirrored: the driver's wheels showed their dished faces black), so the
+  // driver's side is the same wheel turned half a turn about the vertical.
+  const face = buildRoadWheel('slots', { rimR: rimR - 0.004, width: FIESTA_TYRE_W - 0.02, side: 1, nuts: 4, mats: { rim: rimMat, steel: PAL.chrome } });
+  if (side < 0) face.rotation.y = Math.PI;
+  spin.add(face);
   // The hub: a raised boss in the middle of the face (a ring of darker steel) with a small domed chrome cap on it, inside the ring of nuts, as the Mk1's.
   axleCyl(0.056, 0.022, PAL.steel, side * (FIESTA_TYRE_W / 2 + 0.003), 0, 0, spin);
   const dome = new THREE.Mesh(new THREE.SphereGeometry(0.036, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.7, 1), PAL.chrome);
