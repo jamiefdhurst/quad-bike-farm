@@ -1673,8 +1673,14 @@ export const FAQ_SECTIONS = [
     title: "The girls' cars",
     entries: [
       {
+        q: 'How do I open the Fiesta\'s hatch?',
+        a: `Press <kbd>T</kbd>, stopped, from the driver's seat or standing beside the car, and the hatch lifts up and back on its gas struts onto the boot, with the parcel shelf and the carpet. Press it again to shut it.
+          It won't open while the Fiesta is moving, and swings shut by itself if you drive off with it up. Its doors swing out at the side you get in at.`,
+        tip: 'T lifts and shuts the Fiesta\'s hatch.',
+      },
+      {
         q: 'Whose are the two cars?',
-        a: `The pale blue Fiesta is Amy's: an old Mk1, kept clean, with L plates on, because she is still learning. The red Corsa with the grey wing and the big exhaust is
+        a: `The brown Fiesta is Amy's: an old Mk1, kept clean, with L plates on, because she is still learning. The red Corsa with the grey wing and the big exhaust is
           Jess's. They park side by side on the tarmac at the end of the farm road, in front of the Dutch barn, and they are always there.`,
         tip: "The Fiesta is Amy's and the Corsa is Jess's. They park at the end of the farm road, by the Dutch barn.",
       },
@@ -1877,8 +1883,8 @@ export const VEHICLE_NOTES = {
     tips: ['Wait for the GLOW lamp before cranking.', 'Every gear has synchromesh: no crunching.', 'The belt lamp flashes and it bongs until you do your belt up.', 'Listen for the turbo whistling as it pulls, and chattering when you lift off.'],
   },
   fiesta: {
-    blurb: "Amy's car: a late-70s Mk1 Fiesta in faded pale blue with a beige inside, a 1.1 with a choke and four gears, clean, careful and on L plates. It lives on the tarmac by the Dutch barn.",
-    tips: ['A cold start wants the choke (Q).', 'Front-wheel drive on road tyres: stay on the road and the yard if it is wet.', 'Take it without Amy and she will not be pleased.'],
+    blurb: "Amy's car: a late-70s Mk1 Fiesta in 70s brown with a brown vinyl and check cloth inside, a 1.1 with a choke and four gears, clean, careful and on L plates. Its doors swing open and its hatch lifts on T. It lives on the tarmac by the Dutch barn.",
+    tips: ['A cold start wants the choke (Q).', 'T lifts the hatch.', 'Front-wheel drive on road tyres: stay on the road and the yard if it is wet.', 'Take it without Amy and she will not be pleased.'],
   },
   corsa: {
     blurb: "Jess's car: a 1993 Corsa, red gone pink on the roof and bonnet, a grey primer wing, a wheel trim missing and a big exhaust. A 1.2 with fuel injection and five gears that sounds much faster than it is.",

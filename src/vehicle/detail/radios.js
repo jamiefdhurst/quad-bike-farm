@@ -46,6 +46,39 @@ export const RADIO_STYLES = {
   },
 };
 
+RADIO_STYLES.cassette = {
+  // A period car cassette player, as Amy's Fiesta has: a silver-grey faceplate, a cassette door in the middle with its slot, a tuning scale above a row of pale
+  // push buttons, a knob at each end. The scale lights amber when it is on.
+  draw(g, W, H, on) {
+    g.fillStyle = '#8f9294';
+    g.fillRect(0, 0, W, H);
+    g.fillStyle = 'rgba(255,255,255,0.18)'; // a brushed highlight along the top
+    g.fillRect(0, 0, W, H * 0.08);
+    g.fillStyle = on ? '#e8b64a' : '#d8d2bc'; // the tuning scale's window, lit when the radio is on
+    g.fillRect(W * 0.26, H * 0.12, W * 0.48, H * 0.26);
+    g.fillStyle = '#4a4034';
+    for (let i = 0; i < 20; i++) g.fillRect(W * (0.28 + i * 0.0225), H * 0.2, W * 0.003, H * (i % 5 === 0 ? 0.14 : 0.08)); // its figures
+    g.fillStyle = '#b32a1c';
+    g.fillRect(W * (on ? 0.5 : 0.44), H * 0.1, W * 0.007, H * 0.3); // its needle
+    g.fillStyle = '#0b0b0b'; // the cassette door
+    g.fillRect(W * 0.26, H * 0.46, W * 0.48, H * 0.34);
+    g.fillStyle = '#2a2a2a';
+    g.fillRect(W * 0.3, H * 0.58, W * 0.4, H * 0.06); // its slot
+    for (let i = 0; i < 4; i++) {
+      g.fillStyle = '#d6d6d4'; // the push buttons
+      g.fillRect(W * (0.77 + i * 0.05), H * 0.3, W * 0.04, H * 0.4);
+    }
+    for (const x of [0.11, 0.89]) {
+      g.fillStyle = '#26282a'; // the volume and tuning knobs
+      g.beginPath();
+      g.arc(W * x, H * 0.5, H * 0.3, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = '#8a8d90';
+      g.fillRect(W * x - W * 0.004, H * 0.22, W * 0.008, H * 0.2);
+    }
+  },
+};
+
 /** A canvas texture of a style's face, lit or not. Needs a canvas (a browser, or a test's stub). */
 function faceTexture(style, w, h, on) {
   const px = 1400;

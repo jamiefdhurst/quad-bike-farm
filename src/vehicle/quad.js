@@ -20,6 +20,7 @@ import { poseTractorControls } from './tractorModel.js';
 import { poseLandyControls, poseSeatTips, LANDY_REAR_SEATS } from './landRoverModel.js';
 import { poseSeriesDoors, poseSeriesTailgate } from './seriesModel.js';
 import { poseDefenderBackDoor } from './defenderModel.js';
+import { poseFiestaHatch } from './fiestaModel.js';
 import { Tailgate } from './tailgate.js';
 import { poseCarControls, poseCarSeats } from './carModel.js';
 
@@ -1300,9 +1301,15 @@ export class Quad {
       poseDefenderBackDoor(this.model, this.tailgate.open);
     }
     if (this.car) {
-      poseCarControls(this.model, { gear: this.drivetrain.gear, gears: this.gearbox.gears, choke: this.choke, park: this.parkBrake });
+      poseCarControls(this.model, { gear: this.drivetrain.gear, gears: this.gearbox.gears, choke: this.choke, park: this.parkBrake, clutch: this.clutchHeld ? 1 : 0, brake: this.brake, throttle: this.throttleKey });
       poseUtvBelts(this.model, this.belts.worn());
       poseCarSeats(this.model, this.seatTips);
+      // The Fiesta's doors swing out at the side used (as the Land Rovers'), and T lifts its hatch (a model without them poses nothing).
+      this.doorSwing ??= new DoorSwing();
+      poseSeriesDoors(this.model, this.doorSwing.update(dt, { speed: this.speed, aboard: { right: !!(this.driver || this.rider), left: !!this.passenger && !(this.driver || this.rider) }, boarding: this.doorBoarding ?? {} }));
+      this.tailgate ??= new Tailgate();
+      this.tailgate.update(dt, { speed: this.speed });
+      poseFiestaHatch(this.model, this.tailgate.open);
     }
     if (!this.utv && !this.landRover && !this.tractor && !this.car) {
       this.displayPark += ((this.parkBrake ? 1 : 0) - this.displayPark) * Math.min(1, 14 * dt);

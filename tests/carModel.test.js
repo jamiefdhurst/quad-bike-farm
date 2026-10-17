@@ -42,7 +42,7 @@ describe.each([['fiesta', FIESTA_SPEC], ['corsa', CORSA_SPEC]])('%s', (kind, spe
   });
 
   it('stands on its tyres at its size: the physics puts the ground where the model draws it', () => {
-    const k = spec.scale;
+    const k = spec.scale ?? 1;
     for (const w of carLayout(kind).wheels) {
       const ground = w.y * k - spec.vehicle.suspensionRestLength - w.radius * k;
       expect(ground).toBeCloseTo(CAR_GROUND_OFFSET * k, 2);

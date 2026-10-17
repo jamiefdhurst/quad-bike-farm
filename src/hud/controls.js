@@ -89,6 +89,12 @@ export const CONTROLS = [
     ],
   },
   {
+    title: 'Amy\'s Fiesta',
+    lines: [
+      `<kbd>K</kbd> key, hold <kbd>R</kbd> to start, <kbd>Q</kbd> <kbd>Z</kbd> choke, hold <kbd>Shift</kbd> for the clutch, <kbd>1</kbd>-<kbd>4</kbd> gears, <kbd>B</kbd> reverse, <kbd>Space</kbd> handbrake. <kbd>T</kbd> lifts the hatch or shuts it (stopped, from the seat or beside it). The doors swing out when you get in or out`,
+    ],
+  },
+  {
     title: 'The radio (the Land Rovers and the girls\' cars)',
     lines: [
       `<kbd>I</kbd> radio on and off, <kbd>Shift</kbd>+<kbd>I</kbd> louder, <kbd>Alt</kbd>+<kbd>I</kbd> quieter. It needs the key on, and goes quiet while the starter turns`,

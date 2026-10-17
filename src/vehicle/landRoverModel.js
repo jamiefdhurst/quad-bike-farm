@@ -462,6 +462,14 @@ export function addWheelFace(spin, side, rim = MAT.rim) {
 /** How far (radians) a pedal swings from the top of its arm when it is pressed right down. */
 const PEDAL_TRAVEL = 0.28;
 
+/** Swings the pedals with what your feet are doing, eased so they don't snap (`pedalClutch`, `pedalBrake`, `pedalAccel`, from addPedals). */
+export function posePedals(model, { clutch = 0, brake = 0, throttle = 0 }) {
+  for (const [name, press] of [['pedalClutch', clutch], ['pedalBrake', brake], ['pedalAccel', throttle]]) {
+    const pedal = model.getObjectByName(name);
+    if (pedal) pedal.rotation.x += (-PEDAL_TRAVEL * Math.min(1, Math.max(0, press)) - pedal.rotation.x) * 0.5;
+  }
+}
+
 /**
  * The three pedals (clutch, brake, accelerator), each a group pivoting at the top of its arm (`pivot`: y, z, on the bulkhead's lining under the dash)
  * with the arm and a ribbed pad hanging from it to `foot` (y, z); `poseLandyControls` swings them with what your feet are doing. Named
@@ -549,10 +557,7 @@ export function gearLeverPose(gear, gears = 4) {
 export function poseLandyControls(model, { gear = 0, gears = 4, fourWd = false, locked = false, choke = 0, hand = 0, park = false, clutch = 0, brake = 0, throttle = 0 }) {
   const g = model.getObjectByName('gearLever');
   if (!g) return;
-  for (const [name, press] of [['pedalClutch', clutch], ['pedalBrake', brake], ['pedalAccel', throttle]]) { // your feet on the pedals, eased so they don't snap
-    const pedal = model.getObjectByName(name);
-    if (pedal) pedal.rotation.x += (-PEDAL_TRAVEL * Math.min(1, Math.max(0, press)) - pedal.rotation.x) * 0.5;
-  }
+  posePedals(model, { clutch, brake, throttle });
   const pose = gearLeverPose(gear, gears);
   g.rotation.set(pose.along, 0, pose.across);
   model.getObjectByName('transferKnob').position.y = 0.84 - (fourWd ? 0.05 : 0);

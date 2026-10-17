@@ -2,9 +2,11 @@ import * as THREE from 'three';
 import { buildDash } from './dash.js';
 import { addHeadlightBeams, addSignalLamps, addSignalStalk, addHazardSwitch, faceAlong } from './quadModel.js';
 import { bentTube, mergeStatic } from './quadGeometry.js';
-import { add, rbox, label, plate, fitText, canvasTexture, seeded, tube, axleCyl, gearLeverPose, SEAT_TIP } from './landRoverModel.js';
+import { add, rbox, label, plate, fitText, canvasTexture, seeded, tube, axleCyl, gearLeverPose, SEAT_TIP, posePedals } from './landRoverModel.js';
 import { buildLPlate } from './lPlateModel.js';
 import { treadTyre } from './detail/tread.js';
+import { buildFiestaModel } from './fiestaModel.js';
+import { FIESTA_BODY } from './fiestaBody.js';
 
 // The girls' cars, procedural like the Land Rovers: Amy's Mk1 Fiesta (1976 to 1983, boxy, a sloping hatch, square lamps, black
 // bumpers) and Jess's Corsa B (1993, rounded, oval lamps, body-coloured bumpers, a big-bore exhaust). One builder, a table each
@@ -40,28 +42,7 @@ const EYE_UP = 0.66; // your eyes over the hips
  * `screenBase`, `screenTop`, `roofRear` and `hatchBottom` (z, y), with the B pillar at `bPillar`. Seats are hips on the cushions.
  */
 export const CARS = {
-  fiesta: {
-    R: 0.27, // 145 x 12
-    wheelbase: 2.29,
-    track: 1.33,
-    width: 1.57,
-    nose: 1.8,
-    tail: -1.64,
-    sill: 0.2,
-    upper: [[1.8, 0.7], [1.66, 0.75], [0.7, 0.86], [-1.38, 0.92], [-1.52, 0.92], [-1.64, 0.84]],
-    screenBase: [0.7, 0.88],
-    screenTop: [0.22, 1.36], // raked 45 degrees: the glass about as far from your eye as the Land Rovers' (a test keeps it so)
-    roofRear: [-1.08, 1.36],
-    hatchBottom: [-1.5, 0.93],
-    tumble: 0.16, // how far the glasshouse leans in, metres a metre up
-    bPillar: -0.58,
-    wheelOut: 0.28, // the steering wheel along its column from the dash face
-    columnY: 0.71, // and how high the column comes out of the face
-    // (Jamie: the windscreen should be as far from your eye as in the Land Rovers, and the mirror ahead of you, not over your head.)
-    seats: { driver: { x: -0.36, y: 0.5, z: -0.4 }, left: { x: 0.36, y: 0.5, z: -0.4 } },
-    rear: { rearLeft: { x: 0.33, y: 0.52, z: -1.1, door: 'left' }, rearRight: { x: -0.33, y: 0.52, z: -1.1, door: 'driver' } },
-    plate: 'KPB 412V', // a V, 1979 to 1980
-  },
+  fiesta: FIESTA_BODY, // its numbers are in fiestaBody.js, with its own model (fiestaModel.js)
   corsa: {
     R: 0.274, // 155/70 x 13
     wheelbase: 2.44,
@@ -545,6 +526,7 @@ function buildWheel(w, kind, R, missingTrim) {
 // The car ------------------------------------------------------------------------------
 
 export function buildCarModel({ kind = 'fiesta', bodyColor = 0x9fb8cc, dashStyle = kind, reg = null } = {}) {
+  if (kind === 'fiesta') return buildFiestaModel({ bodyColor, reg }); // the Fiesta has its own model now (fiestaModel.js)
   const c = CARS[kind];
   const fiesta = kind === 'fiesta';
   const paint = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: fiesta ? 0.45 : 0.6, side: THREE.DoubleSide });
@@ -972,9 +954,10 @@ export function poseCarSeats(model, tips) {
 }
 
 /** The gear lever in its H (four gears or five, as the Land Rovers'), the choke knob pulled out, the handbrake up or down. */
-export function poseCarControls(model, { gear = 0, gears = 4, choke = 0, park = false }) {
+export function poseCarControls(model, { gear = 0, gears = 4, choke = 0, park = false, clutch = 0, brake = 0, throttle = 0 }) {
   const g = model.getObjectByName('gearLever');
   if (!g) return;
+  posePedals(model, { clutch, brake, throttle });
   const pose = gearLeverPose(gear, gears);
   g.rotation.set(pose.along, 0, pose.across);
   const knob = model.getObjectByName('chokeKnob');

@@ -1408,16 +1408,15 @@ const CAR_ENGINE = {
 // clean and looked after. L plates on (she is learning; item 167 has her pass in it).
 export const FIESTA_SPEC = {
   id: 'fiesta',
-  bodyWear: 0.45, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
+  bodyWear: 0.2, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js): a careful owner's car
   radiatorAt: { x: 0, y: 0.85, z: 1.5 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   label: 'Fiesta',
   name: 'Fiesta',
   car: 'fiesta',
   owner: 'amy',
-  scale: 1.15, // as the Land Rovers: true to size it looks small beside the girls
   steadyLights: true,
   wheelShake: 0.5,
-  bodyColor: 0x9fb8cc, // a faded pale blue
+  bodyColor: 0x7a4f30, // a 70s brown, a little faded (it was pale blue)
   dashStyle: 'fiesta',
   chokeStyle: 'knob', // under the dash
   hoursRange: [0, 0],
@@ -1460,8 +1459,8 @@ export const FIESTA_SPEC = {
   vehicle: {
     ...CAR_VEHICLE,
     mass: 830, // with its driver
-    wheelRadius: 0.312, // 145 x 12 tyres (0.27 m) at the model's 1.15
-    suspensionRestLength: 0.184,
+    wheelRadius: 0.27, // 145 x 12 tyres, at the model's own size
+    suspensionRestLength: 0.16,
     maxDriveForce: 4000,
     maxSpeed: 38,
     engineBrakeForce: 700,
