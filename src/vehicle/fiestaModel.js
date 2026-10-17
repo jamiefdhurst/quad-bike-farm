@@ -271,14 +271,14 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
       for (const zc of [zF, -zF]) {
         const liner = add(new THREE.CylinderGeometry(ARCH.r - 0.008, ARCH.r - 0.008, 0.24, 16, 1, true, 0, Math.PI).rotateZ(Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.95, side: THREE.DoubleSide }), root);
         liner.position.set(s * (W / 2 - 0.15), ARCH.y, zc);
-        rbox(0.26, 0.04, 0.75, 0.01, PAL.under, s * (W / 2 - 0.15), ARCH.y + ARCH.r + 0.01, zc, root); // the arch's roof
+        rbox(0.26, 0.04, 0.7, 0.01, PAL.under, s * (W / 2 - 0.15), ARCH.y + ARCH.r + 0.01, zc, root); // the arch's roof
         rbox(0.2, 0.26, 0.018, 0.005, PAL.rubber, s * c.track / 2, 0.17, zc - 0.36, root); // a mudflap behind each wheel
       }
       rbox(0.03, 0.5, 1.0, 0.01, PAL.under, s * (c.track / 2 - FIESTA_TYRE_W / 2 - 0.05), 0.48, (zs + c.nose) / 2 - 0.05, root); // the inner wing
       rbox(0.03, 0.4, 0.75, 0.01, PAL.under, s * (c.track / 2 - FIESTA_TYRE_W / 2 - 0.05), 0.5, -zF, root);
     }
     rbox(0.55, 0.4, 0.5, 0.05, PAL.steel, 0, 0.5, zF - 0.05, root); // the engine, across the car
-    rbox(0.004, 0.13, 0.15, 0.004, PAL.black, -(OUT + 0.002), 0.58, -1.18, root); // the fuel flap's outline on the right (-x) rear quarter
+    rbox(0.004, 0.11, 0.15, 0.004, PAL.black, -(OUT + 0.005), 0.5, -1.32, root); // the fuel flap's outline on the right (-x) rear quarter
   }
 
   // Each door: a group on its front hinge, the lower panel with its handle, the window and its frame, the mirror, the card inside. Local z runs
@@ -673,10 +673,10 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
     root.add(back);
     // (no parcel shelf: it sat above the seat backs; the boot is open to the cabin under the glass)
     rbox(1.46, 0.03, -1.42 - (c.tail + 0.015), 0.01, trim.floor, 0, FIESTA_BOOT.floor, (c.tail + 0.015 - 1.42) / 2, root); // the boot floor, carpet, the width of the boot behind the tyres (their rear edge is at z -1.415): there was a gap either side of it
-    rbox(1.42, FIESTA_BOOT.floor - 0.3, -1.42 - (c.tail + 0.015), 0.01, PAL.under, 0, (FIESTA_BOOT.floor + 0.3) / 2 - 0.0, (c.tail + 0.015 - 1.42) / 2, root); // the solid block under it, so nothing underneath shows
+    rbox(1.42, FIESTA_BOOT.floor - 0.29, -1.42 - (c.tail + 0.015), 0.01, PAL.under, 0, (FIESTA_BOOT.floor + 0.29) / 2, (c.tail + 0.015 - 1.42) / 2, root); // the solid block under it, so nothing underneath shows
     for (const s of [-1, 1]) {
       rbox(0.12, 0.2, 0.6, 0.03, trim.trim, s * 0.49, FIESTA_BOOT.floor + 0.1, -1.18, root); // the arch hump in the boot, inboard of the tyre
-      rbox(0.03, 0.5, c.tail * -1 - 1.4 - 0.2, 0.01, trim.trim, s * (W / 2 - 0.07), FIESTA_BOOT.floor + 0.27, (-1.4 + c.tail + 0.06) / 2 + 0.0, root); // the boot's side trim
+      rbox(0.03, 0.4, -1.3 - (c.tail + 0.04), 0.01, trim.trim, s * (W / 2 - 0.07), FIESTA_BOOT.floor + 0.22, (-1.3 + c.tail + 0.04) / 2, root); // the boot's side trim, a panel from the seat back to the tail (the length was a slip that made it a 4 cm post)
     }
     // The belts: the kit's, hanging from the B pillar (front) and the quarter (back) and tucked to a buckle by each seat.
     const outer = W / 2 - 0.1;
@@ -780,7 +780,7 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
     const choke = new THREE.Group();
     choke.name = 'chokeKnob';
     choke.userData.keep = true;
-    choke.position.set(c.seats.driver.x - 0.32, ys - 0.02 - 0.15, face - 0.02); // just outboard of the wheel's rim as seen from the seat // on the driver's right of the column, clear of the radio (it was inboard, over it)
+    choke.position.set(c.seats.driver.x - 0.3, ys - 0.02 - 0.1, face - 0.02); // just outboard of the wheel's rim as seen from the seat // on the driver's right of the column, clear of the radio (it was inboard, over it)
     choke.userData.baseZ = choke.position.z;
     tube([0, 0, 0.1], [0, 0, -0.03], 0.004, PAL.steel, choke, 6);
     add(new THREE.CylinderGeometry(0.024, 0.024, 0.026, 14).rotateX(Math.PI / 2), PAL.black, choke).position.set(0, 0, -0.04);
