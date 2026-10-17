@@ -553,9 +553,9 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
     pivot.position.set(seat.x, seat.y - 0.04, seat.z - 0.13);
     const lean = new THREE.Group();
     lean.rotation.x = -0.22; // reclined a little
-    rbox(0.46, 0.68, 0.1, 0.04, trim.vinyl, 0, 0.34, -0.03, lean); // the shell
-    rbox(0.3, 0.5, 0.08, 0.01, trim.cloth, 0, 0.32, -0.01, lean); // the check inset, on the front
-    for (const sx of [-1, 1]) rbox(0.07, 0.5, 0.13, 0.03, trim.vinyl, sx * 0.2, 0.3, 0.0, lean); // the side bolsters
+    rbox(0.46, 0.5, 0.1, 0.04, trim.vinyl, 0, 0.25, -0.03, lean); // the shell: 0.5 tall (it was 0.68, too high against the roof)
+    rbox(0.3, 0.36, 0.08, 0.01, trim.cloth, 0, 0.24, -0.01, lean); // the check inset, on the front
+    for (const sx of [-1, 1]) rbox(0.07, 0.36, 0.13, 0.03, trim.vinyl, sx * 0.2, 0.22, 0.0, lean); // the side bolsters
     pivot.add(lean);
     root.add(pivot);
   }
@@ -629,7 +629,7 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
       const g = rockers.rockerRadio;
       if (g) g.rotation.x += ((state.radioOn ? 0.15 : -0.15) - g.rotation.x) * 0.5;
     };
-    // Amy's road atlas on the parcel shelf.
+    // Amy's road atlas, on the rear seat.
     // The atlas: a thin book lying on the shelf with a cover (blue, with its title and a map's lines), its back edge short of the glass.
     const atlas = label(0.22, 0.28, 700, (g, Wd, H) => {
       g.fillStyle = '#1f4f98';
@@ -650,10 +650,12 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
       g.lineTo(Wd * 0.55, H * 0.6);
       g.stroke();
     }, root);
+    atlas.material.transparent = false; // opaque, and 4 mm above its book's top, so it never fights it or drops out
     atlas.rotation.x = -Math.PI / 2;
     atlas.rotation.z = 0.2;
-    atlas.position.set(0.3, FIESTA_BOOT.shelf + 0.0125, -1.32);
-    rbox(0.22, 0.015, 0.28, 0.003, PAL.black, 0.3, FIESTA_BOOT.shelf + 0.0075 + 0.0, -1.32, root).rotation.y = 0.2; // its pages
+    const seatTop = c.rear.rearLeft.y - 0.08 + 0.05 + 0.0; // the rear cushion's top (its check cover stands 1 cm on it)
+    atlas.position.set(0.3, seatTop + 0.01 + 0.015 + 0.004, -0.98);
+    rbox(0.22, 0.015, 0.28, 0.003, PAL.black, 0.3, seatTop + 0.01 + 0.0075, -0.98, root).rotation.y = -0.2; // its pages, lying on the rear seat
     quad.userData.liveMaterials.push(atlas.material); // (the cover is left to the mud coat alone: it stays as drawn)
 
     for (const [name, seat] of Object.entries(c.seats)) frontSeat(name, seat);
@@ -669,9 +671,9 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
     rbox(1.1, 0.4, 0.1, 0.04, trim.vinyl, 0, 0, 0, back);
     for (const x of [-0.27, 0.27]) rbox(0.34, 0.28, 0.08, 0.01, trim.cloth, x, 0.0, 0.012, back);
     root.add(back);
-    rbox(W - 0.12, 0.02, 0.3, 0.005, trim.shelf, 0, FIESTA_BOOT.shelf, -1.32, root, 'parcelShelf'); // the parcel shelf
-    rbox(1.1, 0.03, -1.4 - (c.tail + 0.06), 0.01, trim.floor, 0, FIESTA_BOOT.floor, (c.tail + 0.06 - 1.4) / 2, root); // the boot floor, carpet, between the tyres (1.1 wide, inboard of their inner faces: it was the width of the car and ran through them)
-    rbox(1.06, FIESTA_BOOT.floor - 0.3, -1.4 - (c.tail + 0.06), 0.01, PAL.under, 0, (FIESTA_BOOT.floor + 0.3) / 2 - 0.0, (c.tail + 0.06 - 1.4) / 2, root); // the solid block under it, so nothing underneath shows
+    // (no parcel shelf: it sat above the seat backs; the boot is open to the cabin under the glass)
+    rbox(1.1, 0.03, -1.4 - (c.tail + 0.015), 0.01, trim.floor, 0, FIESTA_BOOT.floor, (c.tail + 0.015 - 1.4) / 2, root); // the boot floor, carpet, between the tyres (1.1 wide, inboard of their inner faces: it was the width of the car and ran through them)
+    rbox(1.06, FIESTA_BOOT.floor - 0.3, -1.4 - (c.tail + 0.015), 0.01, PAL.under, 0, (FIESTA_BOOT.floor + 0.3) / 2 - 0.0, (c.tail + 0.015 - 1.4) / 2, root); // the solid block under it, so nothing underneath shows
     for (const s of [-1, 1]) {
       rbox(0.12, 0.2, 0.6, 0.03, trim.trim, s * 0.49, FIESTA_BOOT.floor + 0.1, -1.18, root); // the arch hump in the boot, inboard of the tyre
       rbox(0.03, 0.5, c.tail * -1 - 1.4 - 0.2, 0.01, trim.trim, s * (W / 2 - 0.07), FIESTA_BOOT.floor + 0.27, (-1.4 + c.tail + 0.06) / 2 + 0.0, root); // the boot's side trim
@@ -680,13 +682,17 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
     const outer = W / 2 - 0.1;
     const top = (seat) => halfAt(seat.y + 0.66) - 0.07;
     const post = c.bPillar + 0.04;
-    const belt = (name, seat, out, inn, postZ, outTop) => {
+    const belt = (name, seat, out, inn, postZ, outTop, topY = seat.y + 0.68, lowOut = out, lowY = seat.y + 0.12) => {
       const lapOnly = false;
       const hip = [seat.x, seat.y - 0.05, seat.z - 0.12];
-      root.add(buildSeatBelt(name, { top: [outTop, seat.y + 0.68, postZ], low: [out, seat.y + 0.12, postZ], buckle: [inn, seat.y + 0.03, seat.z - 0.08], hip, lapOnly, mats: { webbing } }));
+      root.add(buildSeatBelt(name, { top: [outTop, topY, postZ], low: [lowOut, lowY, postZ], buckle: [inn, seat.y + 0.03, seat.z - 0.08], hip, lapOnly, mats: { webbing } }));
     };
-    belt('driver', c.seats.driver, -outer, -0.12, post, -top(c.seats.driver));
-    belt('left', c.seats.left, outer, 0.12, post, top(c.seats.left));
+    // The front belts: the loop on the inside of the B pillar (the pillar leans in as it goes up, so x is the glasshouse's half width at the loop's height less
+    // the pillar's radius), the reel low on the quarter panel's inner face just behind the door.
+    const frontTop = (seat) => halfAt(seat.y + 0.72) - 0.045;
+    const reelX = 0.715;
+    belt('driver', c.seats.driver, -outer, -0.12, c.bPillar + 0.005, -frontTop(c.seats.driver), c.seats.driver.y + 0.72, -reelX, 0.62);
+    belt('left', c.seats.left, outer, 0.12, c.bPillar + 0.005, frontTop(c.seats.left), c.seats.left.y + 0.72, reelX, 0.62);
     belt('rearLeft', c.rear.rearLeft, outer, 0.1, c.rear.rearLeft.z - 0.12, top(c.rear.rearLeft));
     belt('rearRight', c.rear.rearRight, -outer, -0.1, c.rear.rearRight.z - 0.12, -top(c.rear.rearRight));
   }
