@@ -156,7 +156,7 @@ describe('the Fiesta at its real size', () => {
     model.traverse((o) => {
       if (!o.isMesh) return;
       for (let q = o; q; q = q.parent) if (/^wheel_|^mirror|^seatBack|^belt|^hatch/.test(q.name)) return;
-      if (['3a3c3e', '1a1a19', '141414', '18191a'].includes(o.material.color.getHexString())) return; // the engine, the flaps, the liners and the under-body: meant to be down there
+      if (['3a3c3e'].includes(o.material.color.getHexString())) return; // the engine (under the bonnet, far from the rear wheels)
       const pos = o.geometry.attributes.position;
       const idx = o.geometry.index;
       const n = idx ? idx.count / 3 : pos.count / 3;
@@ -165,14 +165,14 @@ describe('the Fiesta at its real size', () => {
         a.fromBufferAttribute(pos, g(0)).applyMatrix4(o.matrixWorld);
         b.fromBufferAttribute(pos, g(1)).applyMatrix4(o.matrixWorld);
         c.fromBufferAttribute(pos, g(2)).applyMatrix4(o.matrixWorld);
-        for (let i = 0; i <= 5; i++) {
-          for (let j = 0; j <= 5 - i; j++) {
-            const u = i / 5;
-            const w = j / 5;
+        for (let i = 0; i <= 8; i++) {
+          for (let j = 0; j <= 8 - i; j++) {
+            const u = i / 8;
+            const w = j / 8;
             p.set(a.x * (1 - u - w) + b.x * u + c.x * w, a.y * (1 - u - w) + b.y * u + c.y * w, a.z * (1 - u - w) + b.z * u + c.z * w);
             for (const wh of layout.wheels) {
               if (Math.abs(p.x - wh.x) > 0.07) continue;
-              for (const cy of [FIESTA_BODY.R + 0.05, FIESTA_BODY.R + 0.18]) if (Math.hypot(p.y - cy, p.z - wh.z) < FIESTA_BODY.R - 0.01) inside.push(`${o.name || o.parent?.name} at ${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)}`);
+              for (const cy of [FIESTA_BODY.R + 0.05, FIESTA_BODY.R + 0.0]) if (Math.hypot(p.y - cy, p.z - wh.z) < FIESTA_BODY.R - 0.01) inside.push(`${o.name || o.parent?.name} #${o.material.color.getHexString()} at ${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)}`);
             }
           }
         }

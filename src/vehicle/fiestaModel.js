@@ -549,7 +549,9 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
 
   // The floor, the bulkhead, the arch humps, the door cards' place, the dash with its cluster, the console with its radio, the seats and the boot.
   function addInterior() {
-    rbox(W - 0.1, 0.03, zs - c.tail - 0.1, 0.01, trim.floor, 0, 0.26, (zs + c.tail) / 2, root);
+    // The floor: the full width under the seats and the pedals (to z -0.75, in front of the rear wheels), then only 1.1 m between the rear tyres.
+    rbox(W - 0.1, 0.03, zs - 0.1 + 0.75, 0.01, trim.floor, 0, 0.26, (zs - 0.1 - 0.75) / 2, root);
+    rbox(1.1, 0.03, -0.75 - c.tail - 0.1, 0.01, trim.floor, 0, 0.26, (-0.75 + c.tail + 0.1) / 2, root);
     rbox(W - 0.1, 0.5, 0.04, 0.01, PAL.under, 0, 0.5, zs - 0.06, root); // the bulkhead
     rbox(0.16, 0.12, zs - 0.1 - (c.seats.driver.z - 0.2), 0.04, trim.floor, 0, 0.32, (zs - 0.1 + c.seats.driver.z - 0.2) / 2, root); // the low tunnel
     for (const s of [-1, 1]) {
@@ -631,8 +633,8 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
     for (const x of [-0.27, 0.27]) rbox(0.34, 0.4, 0.08, 0.01, trim.cloth, x, 0.0, 0.012, back);
     root.add(back);
     rbox(W - 0.12, 0.02, 0.36, 0.005, trim.shelf, 0, FIESTA_BOOT.shelf, -1.28, root, 'parcelShelf'); // the parcel shelf
-    rbox(W - 0.14, 0.03, -1.4 - (c.tail + 0.06), 0.01, trim.floor, 0, FIESTA_BOOT.floor, (c.tail + 0.06 - 1.4) / 2, root); // the boot floor, carpet
-    rbox(W - 0.14, FIESTA_BOOT.floor - 0.3, -1.4 - (c.tail + 0.06), 0.01, PAL.under, 0, (FIESTA_BOOT.floor + 0.3) / 2 - 0.0, (c.tail + 0.06 - 1.4) / 2, root); // the solid block under it, so nothing underneath shows
+    rbox(1.1, 0.03, -1.4 - (c.tail + 0.06), 0.01, trim.floor, 0, FIESTA_BOOT.floor, (c.tail + 0.06 - 1.4) / 2, root); // the boot floor, carpet, between the tyres (1.1 wide, inboard of their inner faces: it was the width of the car and ran through them)
+    rbox(1.1, FIESTA_BOOT.floor - 0.3, -1.4 - (c.tail + 0.06), 0.01, PAL.under, 0, (FIESTA_BOOT.floor + 0.3) / 2 - 0.0, (c.tail + 0.06 - 1.4) / 2, root); // the solid block under it, so nothing underneath shows
     for (const s of [-1, 1]) {
       rbox(0.14, 0.2, 0.6, 0.03, trim.trim, s * 0.5, FIESTA_BOOT.floor + 0.1, -1.18, root); // the arch hump in the boot, inboard of the tyre
       rbox(0.03, 0.5, c.tail * -1 - 1.4 - 0.2, 0.01, trim.trim, s * (W / 2 - 0.07), FIESTA_BOOT.floor + 0.27, (-1.4 + c.tail + 0.06) / 2 + 0.0, root); // the boot's side trim
