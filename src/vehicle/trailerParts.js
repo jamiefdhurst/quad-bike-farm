@@ -135,6 +135,7 @@ export function addRearLights(parent, halfWidth, y, z, withPlate = true) {
   for (const s of [-1, 1]) {
     const lamp = buildLamp('tail', { w: 0.16, h: 0.075 });
     lamp.rotation.y = Math.PI; // facing back
+    if (s > 0) lamp.scale.x = -1; // the left cluster is the right one's mirror image (red on the inside of each, amber and clear on the outside), not a copy of it
     lamp.position.set(s * halfWidth, 0.015, -0.005);
     g.add(lamp);
     const tri = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.012, 3), PART_MAT.red); // a triangle reflector
@@ -326,4 +327,76 @@ export function addEye(parent, x, y, z, dir = 1) {
   ring.rotation.y = Math.PI / 2;
   ring.position.set(x + dir * 0.02, y - 0.012, z);
   parent.add(ring);
+}
+
+let chequerMat = null;
+
+/**
+ * Aluminium chequer plate for the ramps' walking face: lozenge-shaped raised bars in rows turned a quarter turn from each other, bright on their tops and
+ * shaded at their lower edges, on a brushed grey with scuffs worn through the pattern, tiling every 12 cm. Falls back to plain aluminium without a canvas.
+ */
+export function chequerPlate() {
+  if (chequerMat) return chequerMat;
+  if (typeof document === 'undefined') return (chequerMat = new THREE.MeshStandardMaterial({ color: 0x9aa0a4, roughness: 0.45, metalness: 0.7 }));
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  g.fillStyle = '#8d9498';
+  g.fillRect(0, 0, 128, 128);
+  for (let y = 0; y < 128; y += 2) { // brushing
+    g.fillStyle = y % 4 ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+    g.fillRect(0, y, 128, 1);
+  }
+  const bar = (cx, cy, angle) => {
+    g.save();
+    g.translate(cx, cy);
+    g.rotate(angle);
+    g.fillStyle = 'rgba(30,34,38,0.55)'; // the shaded lower edge
+    g.beginPath();
+    g.ellipse(1.5, 2, 15, 4.2, 0, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = '#c4cacd'; // the bar's top
+    g.beginPath();
+    g.ellipse(0, 0, 15, 4, 0, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.35)';
+    g.beginPath();
+    g.ellipse(-1, -1, 10, 1.4, 0, 0, Math.PI * 2);
+    g.fill();
+    g.restore();
+  };
+  for (let row = 0; row < 2; row++) for (let col = 0; col < 2; col++) {
+    bar(16 + col * 64 + (row ? 32 : 0), 16 + row * 64, ((row + col) % 2 ? 1 : -1) * Math.PI / 4);
+    bar(48 + col * 64 + (row ? 32 : 0), 48 + row * 64 - (row ? 0 : 0), ((row + col) % 2 ? -1 : 1) * Math.PI / 4);
+  }
+  let seed = 17;
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  g.strokeStyle = 'rgba(40,44,48,0.3)'; // scuffs worn across the pattern
+  g.lineWidth = 0.8;
+  for (let i = 0; i < 16; i++) {
+    const x = rand() * 128;
+    const y = rand() * 128;
+    g.beginPath();
+    g.moveTo(x, y);
+    g.lineTo(x + (rand() - 0.5) * 50, y + (rand() - 0.5) * 14);
+    g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = 4;
+  chequerMat = new THREE.MeshStandardMaterial({ map: tex, color: 0xffffff, roughness: 0.42, metalness: 0.65 });
+  return chequerMat;
+}
+
+/** A flat face `w` by `len` facing the -Y side of its group (the ramp's walking face), with a texture repeating every `tile` metres, its length along +Z. */
+export function walkingFace(parent, w, len, y, z, mat, tile = 0.12) {
+  const geo = new THREE.PlaneGeometry(w, len).rotateX(Math.PI / 2);
+  const uv = geo.attributes.uv;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * (w / tile), uv.getY(i) * (len / tile));
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(0, y, z);
+  m.receiveShadow = true;
+  parent.add(m);
+  return m;
 }

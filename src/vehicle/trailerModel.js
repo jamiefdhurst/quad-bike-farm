@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { squareBaleGeometry, squareBaleMaterials } from '../world/squareBale.js';
 import { createRandom } from '../core/random.js';
-import { PART_MAT, box, buildWheel, addMudguard, addRearLights, addJockeyWheel, addChain, addCable, addLeafSpring, addUBolts, beam, galvanised, addGusset, addEye } from './trailerParts.js';
+import { PART_MAT, box, buildWheel, addMudguard, addRearLights, addJockeyWheel, addChain, addCable, addLeafSpring, addUBolts, beam, galvanised, addGusset, addEye, chequerPlate, walkingFace } from './trailerParts.js';
 import { boltsMesh, boltRow } from './detail/fixings.js';
 import { decalMesh } from './detail/decals.js';
 import { mergeStatic, rod } from './quadGeometry.js';
@@ -259,6 +259,7 @@ function buildRamps(body) {
     pivot.position.set(side * S.rampX, S.bedY + 0.03, S.rearZ + S.rampLength - 0.1);
     pivot.rotation.x = Math.PI;
     box(S.rampWidth, 0.03, S.rampLength, ALU, 0, 0.015, S.rampLength / 2, pivot);
+    walkingFace(pivot, S.rampWidth - 0.1, S.rampLength - 0.02, -0.0006, S.rampLength / 2, chequerPlate()); // the walking face: chequer plate, between the lips
     for (const e of [-1, 1]) box(0.04, 0.045, S.rampLength - 0.04, ALU, e * (S.rampWidth / 2 - 0.015), -0.0075, S.rampLength / 2, pivot); // side lips on the walking face
     for (let i = 1; i < 9; i++) box(S.rampWidth - 0.09, 0.012, 0.03, PART_MAT.steel, 0, -0.006, (i * S.rampLength) / 9, pivot); // cleats across it
     box(S.rampWidth - 0.1, 0.03, 0.06, PART_MAT.steel, 0, 0.0, 0.03, pivot); // the hook plate at the upper end, that sits over the bed's edge
