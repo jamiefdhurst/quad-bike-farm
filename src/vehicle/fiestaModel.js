@@ -212,6 +212,12 @@ function buildWheel(w, rimMat) {
   spin.add(new THREE.Mesh(treadTyre('road', { radius: c.R, width: FIESTA_TYRE_W, rimR, segments: 36 }), PAL.rubber));
   // The Mk1's pressed steel wheel: silver, with its slots round the face and a small cap in the middle (detail/roadWheels.js).
   spin.add(buildRoadWheel('slots', { rimR: rimR - 0.004, width: FIESTA_TYRE_W - 0.02, side, nuts: 4, mats: { rim: rimMat, steel: PAL.chrome } }));
+  // The hub: a raised boss in the middle of the face (a ring of darker steel) with a small domed chrome cap on it, inside the ring of nuts, as the Mk1's.
+  axleCyl(0.056, 0.022, PAL.steel, side * (FIESTA_TYRE_W / 2 + 0.003), 0, 0, spin);
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(0.036, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.7, 1), PAL.chrome);
+  dome.rotation.z = -side * Math.PI / 2;
+  dome.position.x = side * (FIESTA_TYRE_W / 2 + 0.014);
+  spin.add(dome);
   // The inside of the wheel: a pressed steel disc across the barrel on the inner side with the hub standing out of it, so it is not hollow from behind.
   axleCyl(rimR - 0.006, 0.012, PAL.steel, -side * (FIESTA_TYRE_W / 2 - 0.045), 0, 0, spin);
   axleCyl(0.05, 0.05, PAL.steel, -side * (FIESTA_TYRE_W / 2 - 0.06), 0, 0, spin);
@@ -436,7 +442,7 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
     edge([-halfAt(yr) + 0.02, 0, 0], [-half, hy(yh), hz(zh)]);
     edge([halfAt(yr) - 0.02, 0, 0], [half, hy(yh), hz(zh)]);
     // The deck below the glass and the tail panel down to the sill.
-    const deckW = W - 2 * FIESTA_HATCH.inset - 0.02;
+    const deckW = W - 2 * FIESTA_HATCH.inset - 0.02 + 0.04; // spans to the quarters' inner faces (0.7475 each side), with no slot where the boot trim showed
     const deck = new THREE.Shape();
     deck.moveTo(hz(zh), hy(yh));
     deck.lineTo(hz(c.tail + 0.02), hy(upperAt(c.tail + 0.02)));
@@ -676,7 +682,7 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
     rbox(1.42, FIESTA_BOOT.floor - 0.29, -1.42 - (c.tail + 0.015), 0.01, PAL.under, 0, (FIESTA_BOOT.floor + 0.29) / 2, (c.tail + 0.015 - 1.42) / 2, root); // the solid block under it, so nothing underneath shows
     for (const s of [-1, 1]) {
       rbox(0.12, 0.2, 0.6, 0.03, trim.trim, s * 0.49, FIESTA_BOOT.floor + 0.1, -1.18, root); // the arch hump in the boot, inboard of the tyre
-      rbox(0.03, 0.4, -1.3 - (c.tail + 0.04), 0.01, trim.trim, s * (W / 2 - 0.07), FIESTA_BOOT.floor + 0.22, (-1.3 + c.tail + 0.04) / 2, root); // the boot's side trim, a panel from the seat back to the tail (the length was a slip that made it a 4 cm post)
+      rbox(0.03, 0.3, -1.3 - (c.tail + 0.12), 0.01, trim.trim, s * (W / 2 - 0.1), FIESTA_BOOT.floor + 0.17, (-1.3 + c.tail + 0.12) / 2, root); // the boot's side trim, a panel from the seat back to the tail (the length was a slip that made it a 4 cm post)
     }
     // The belts: the kit's, hanging from the B pillar (front) and the quarter (back) and tucked to a buckle by each seat.
     const outer = W / 2 - 0.1;
