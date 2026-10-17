@@ -6,6 +6,11 @@ import { lathe, taperedBox } from '../quadGeometry.js';
 // bike's knobs and a Fergie's bar lugs are each drawn the way the real ones are. The layout is pure numbers (tested); `treadTyre`
 // turns it into geometry with the axle along X and the tops of the tread exactly on `radius`, so it still matches the physics wheel.
 
+// Which way the chevrons point (Jamie, on the trailers): the V's apex leads in the direction the tyre turns, so seen from the front of the tyre it points UP
+// (and at the top of the tyre it points backwards, at the ground forwards, as a tractor's drive tyre is fitted). They pointed down: the arms' yaw
+// ran the other way round. Chevron kinds (atv, balloon, tractor, allTerrain) all use the one sign.
+const CHEVRON = 0.5;
+
 /**
  * What each kind looks like. `section` is how square the carcass is (2 round, 6 square), `depth` the tread depth as a share of the
  * section height, `count` blocks (or pairs) round the tyre. `crown` adds ribs (d > 0) or grooves (d < 0) to the carcass across its
@@ -77,7 +82,7 @@ export function treadBlocks(kind, { radius, width, rimR, count }) {
     for (const s of [-1, 1]) {
       switch (kind) {
         case 'atv':
-          block(i, 0, { x: s * W * 0.19, w: W * 0.42, l: depth * 1.5, yaw: s * 0.5 });
+          block(i, 0, { x: s * W * 0.19, w: W * 0.42, l: depth * 1.5, yaw: -s * CHEVRON });
           block(i, 0.5, { x: s * W * 0.43, w: W * 0.16, l: depth * 1.9, lean: s * 0.7, out: depth * 0.4, taper: 0.8 });
           break;
         case 'farm':
@@ -91,7 +96,7 @@ export function treadBlocks(kind, { radius, width, rimR, count }) {
           if (i % 2 === 0) block(i, 0.5, { x: s * W * 0.35, w: W * 0.18, l: W * 0.24, lean: s * 0.8, out: depth * 0.6 });
           break;
         case 'balloon':
-          block(i, s > 0 ? 0 : 0.5, { x: s * W * 0.18, w: W * 0.4, l: depth * 2.2, yaw: s * 0.35, taper: 0.9 });
+          block(i, s > 0 ? 0 : 0.5, { x: s * W * 0.18, w: W * 0.4, l: depth * 2.2, yaw: -s * 0.35 * CHEVRON * 2, taper: 0.9 });
           break;
         case 'trike':
           // A centre row and two inner rows half a pitch apart, and a bigger block on each shoulder.
@@ -101,10 +106,10 @@ export function treadBlocks(kind, { radius, width, rimR, count }) {
           break;
         case 'tractor':
           // An R1 bar lug: from the shoulder, angled forwards, just past the middle; the two sides half a pitch apart.
-          block(i, s > 0 ? 0 : 0.5, { x: s * W * 0.2, w: W * 0.6, l: depth * 0.75, yaw: s * 0.6, taper: 0.8 });
+          block(i, s > 0 ? 0 : 0.5, { x: s * W * 0.2, w: W * 0.6, l: depth * 0.75, yaw: -s * 0.6, taper: 0.8 });
           break;
         case 'allTerrain':
-          block(i, s > 0 ? 0 : 0.5, { x: s * W * 0.15, w: W * 0.26, l: depth * 3.2, yaw: s * 0.18 });
+          block(i, s > 0 ? 0 : 0.5, { x: s * W * 0.15, w: W * 0.26, l: depth * 3.2, yaw: -s * 0.18 });
           block(i, s > 0 ? 0.5 : 0, { x: s * W * 0.38, w: W * 0.2, l: depth * 3.4, lean: s * 0.45, out: depth * 0.25 });
           break;
         case 'road':

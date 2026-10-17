@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { squareBaleGeometry, squareBaleMaterials } from '../world/squareBale.js';
 import { createRandom } from '../core/random.js';
-import { PART_MAT, box, buildWheel, addMudguard, addRearLights, addJockeyWheel, addChain, addCable, addLeafSpring, addUBolts } from './trailerParts.js';
+import { PART_MAT, box, buildWheel, addMudguard, addRearLights, addJockeyWheel, addChain, addCable, addLeafSpring, addUBolts, beam, galvanised, addGusset, addEye } from './trailerParts.js';
 import { boltsMesh, boltRow } from './detail/fixings.js';
 import { decalMesh } from './detail/decals.js';
 import { mergeStatic, rod } from './quadGeometry.js';
@@ -50,15 +50,30 @@ const MAT = {
   twine: new THREE.MeshStandardMaterial({ color: 0x3b6e8f, roughness: 0.8 }),
 };
 
-/** The angle the ramps open to (radians of rotation.x): they swing down from pointing forward under the bed to pointing back and down. */
+/** The angle the ramps open to (radians of rotation.x): they end pointing back and down from the bed's rear edge, the walking face up. */
 export function rampOpenAngle(rise) {
   const rampLen = TRAILER_SPEC.rampLength;
   return Math.PI - Math.asin(Math.min(0.95, rise / rampLen));
 }
 
-/** Folds the ramps: t from 0 (stowed under the bed) to 1 (down on the ground). */
+/**
+ * Works the ramps: t from 0 (stowed) to 1 (down on the ground). They lie on the bed behind the bales, walking face up, their lower ends hanging a
+ * hand over the back; opening, they slide back along the bed until the upper end reaches the back edge (t up to 0.6), then drop at the free end to
+ * the ground, turning about that edge (0.6 to 1). Never through the floor, and closing is the same in reverse.
+ */
 export function poseRamps(body, t, openAngle) {
-  for (const n of ['rampLeft', 'rampRight']) body.getObjectByName(n).rotation.x = t * openAngle;
+  const S = TRAILER_SPEC;
+  const slide = Math.min(1, t / 0.6);
+  const k = Math.max(0, (t - 0.6) / 0.4);
+  const tilt = k * k * (3 - 2 * k);
+  for (const n of ['rampLeft', 'rampRight']) {
+    const ramp = body.getObjectByName(n);
+    const len = S.rampLength * ramp.scale.z;
+    const stowedZ = S.rearZ - 0.1 + len; // its upper end, with the lower end 10 cm past the back edge
+    ramp.position.z = stowedZ + (S.rearZ - stowedZ) * slide;
+    ramp.position.y = S.bedY + 0.03 * (1 - tilt); // lying on the deck, then its surface at the deck's height as it hinges
+    ramp.rotation.x = Math.PI + (openAngle - Math.PI) * tilt;
+  }
 }
 
 // A bale is 1 m across the trailer, 0.45 along it: two across fill the bed. They share one geometry and one set of textures (twine and all).
@@ -149,13 +164,17 @@ export function buildTrailerModel() {
 
   // The drawbar: an A-frame of two flat bars meeting at an over-run coupling (a damper tube along the drawbar, the lunette ring at the end), a handbrake
   // lever, a breakaway cable and a chain, the lights' lead with its socket, a chassis plate, and a jockey wheel wound up.
+  // The A-frame: a bar from the front of each main rail running in to the coupling (so it narrows towards the front: the bars lead from the rails
+  // at x +-0.6 to the coupling at x +-0.07), joined to the rails by a plate each, braced across by a bar and a gusset at the coupling. Galvanised.
+  const gal = galvanised();
+  const railY = S.bedY - 0.16;
   for (const s of [-1, 1]) {
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.08, 1.35), PART_MAT.paint);
-    bar.position.set(s * 0.22, S.ringHeight + 0.1, 1.95);
-    bar.rotation.y = s * 0.17;
-    bar.castShadow = true;
-    body.add(bar);
+    beam(body, [s * 0.6, railY, S.frontZ - 0.25], [s * 0.07, S.ringHeight + 0.1, 2.25], 0.07, 0.08, gal);
+    box(0.12, 0.1, 0.16, gal, s * 0.6, railY, S.frontZ - 0.12, body); // the plate joining it to the rail's end
   }
+  beam(body, [-0.42, railY - 0.005, 1.78], [0.42, railY - 0.005, 1.78], 0.05, 0.06, gal); // the cross brace
+  addGusset(body, -0.07, S.ringHeight + 0.145, 2.18, 0.22, -1, 1, gal);
+  addGusset(body, 0.07, S.ringHeight + 0.145, 2.18, 0.22, 1, 1, gal);
   box(0.14, 0.1, 0.5, PART_MAT.paint, 0, S.ringHeight + 0.1, 2.45, body);
   box(0.16, 0.12, 0.3, PART_MAT.steel, 0, S.ringHeight + 0.1, 2.2, body); // the over-run housing, where the two bars meet
   body.add(new THREE.Mesh(rod([0, S.ringHeight + 0.1, 2.2], [0, S.ringHeight + 0.1, 2.5], 0.035, 10), PART_MAT.galv)); // the damper's tube
@@ -177,7 +196,9 @@ export function buildTrailerModel() {
   box(0.02, 0.1, 0.1, PART_MAT.steel, -0.12, S.ringHeight + 0.2, 2.1, body); // the ratchet quadrant
   addCable(body, [[-0.12, S.ringHeight + 0.19, 2.1], [-0.13, S.ringHeight + 0.1, 1.7], [-0.2, S.ringHeight + 0.1, 0.8], [-0.4, S.wheelRadius + 0.1, 0.12]], 0.007, 0.03); // the brake cable
   addCable(body, [[0.08, S.ringHeight + 0.12, 2.3], [0.2, S.ringHeight + 0.0, 2.0], [0.2, S.ringHeight + 0.1, 1.6]], 0.005, 0.2); // the breakaway cable, looped
-  addChain(body, [-0.1, S.ringHeight - 0.02, 2.4], [-0.02, S.ringHeight - 0.02, 2.58], 7, 0.1); // the safety chain, round to the ring
+  addEye(body, -0.07, S.ringHeight + 0.1, 2.4, -1); // the chain's two eyes, welded one on each side of the coupling plate...
+  addEye(body, 0.07, S.ringHeight + 0.1, 2.4, 1);
+  addChain(body, [-0.09, S.ringHeight + 0.088, 2.4], [0.09, S.ringHeight + 0.088, 2.4], 8, 0.05); // ...and the safety chain between them (a loop, to hook on the towing vehicle)
   // The lights' lead: from the board at the back along the left rail and the drawbar to a socket on a little bracket at the front, which hangs.
   addCable(body, [[-S.bedHalfWidth + 0.2, S.bedY - 0.12, S.rearZ], [-0.62, S.bedY - 0.28, -0.5], [-0.62, S.bedY - 0.28, S.frontZ - 0.1], [-0.3, S.ringHeight + 0.2, 1.9], [-0.26, S.ringHeight + 0.06, 2.25]], 0.009, 0.05);
   box(0.05, 0.06, 0.04, PART_MAT.cableSpiral, -0.26, S.ringHeight + 0.02, 2.27, body); // the socket
@@ -228,16 +249,19 @@ export function buildTrailerModel() {
 const ALU = new THREE.MeshStandardMaterial({ color: 0x9aa0a4, roughness: 0.45, metalness: 0.7 });
 const STRAP = new THREE.MeshStandardMaterial({ color: 0xe0780f, roughness: 0.7 });
 
-// Two loading ramps hinged at the back edge, each a plank of aluminium with cleats, stowed under the bed.
+// Two loading ramps, each a plank of aluminium with cleats and side lips on its walking face. Built about their upper end (the pivot) running along +Z with
+// the walking face on the -Y side, so that turned upside down (poseRamps: rotation.x from pi) the face is up and the lips and cleats stand proud of it.
 function buildRamps(body) {
   const S = TRAILER_SPEC;
   for (const [name, side] of [['rampLeft', 1], ['rampRight', -1]]) {
     const pivot = new THREE.Group();
     pivot.name = name;
-    pivot.position.set(side * S.rampX, S.bedY - 0.025, S.rearZ);
-    box(S.rampWidth, 0.04, S.rampLength, ALU, 0, -0.02, S.rampLength / 2, pivot);
-    for (const e of [-1, 1]) box(0.04, 0.08, S.rampLength - 0.04, ALU, e * (S.rampWidth / 2 - 0.015), -0.005, S.rampLength / 2, pivot); // side lips (a hair wider than the plank's edge)
-    for (let i = 1; i < 9; i++) box(S.rampWidth - 0.09, 0.012, 0.03, PART_MAT.steel, 0, 0.004, (i * S.rampLength) / 9, pivot); // cleats
+    pivot.position.set(side * S.rampX, S.bedY + 0.03, S.rearZ + S.rampLength - 0.1);
+    pivot.rotation.x = Math.PI;
+    box(S.rampWidth, 0.03, S.rampLength, ALU, 0, 0.015, S.rampLength / 2, pivot);
+    for (const e of [-1, 1]) box(0.04, 0.045, S.rampLength - 0.04, ALU, e * (S.rampWidth / 2 - 0.015), -0.0075, S.rampLength / 2, pivot); // side lips on the walking face
+    for (let i = 1; i < 9; i++) box(S.rampWidth - 0.09, 0.012, 0.03, PART_MAT.steel, 0, -0.006, (i * S.rampLength) / 9, pivot); // cleats across it
+    box(S.rampWidth - 0.1, 0.03, 0.06, PART_MAT.steel, 0, 0.0, 0.03, pivot); // the hook plate at the upper end, that sits over the bed's edge
     body.add(pivot);
   }
 }

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PART_MAT, box, buildWheel, addMudguard, addJockeyWheel, addRearLights, addChain, addCable, addLeafSpring, addUBolts } from './trailerParts.js';
+import { PART_MAT, box, buildWheel, addMudguard, addJockeyWheel, addRearLights, addChain, addCable, addLeafSpring, addUBolts, beam, galvanised, addGusset, addEye } from './trailerParts.js';
 import { boltsMesh } from './detail/fixings.js';
 import { decalMesh } from './detail/decals.js';
 import { mergeStatic, rod } from './quadGeometry.js';
@@ -76,16 +76,20 @@ export function buildTipTrailerModel() {
   for (const s of [-0.38, 0.38]) box(0.06, 0.08, len, MAT.steel, s, S.floorY - 0.1, midZ, body);
   box(S.halfWidth * 2, 0.06, 0.08, MAT.steel, 0, S.floorY - 0.1, S.frontZ - 0.1, body);
   box(S.halfWidth * 2, 0.06, 0.08, MAT.steel, 0, S.floorY - 0.1, S.rearZ + 0.12, body);
+  // The A-frame in galvanised steel (the zinc's spangle, so it is not a flat dark grey): a bar from the front of each rail in to the coupling body, a plate
+  // at each rail's end where they are bolted, a cross brace, and gusset plates at the coupling, all bolted.
+  const gal = galvanised();
   for (const s of [-1, 1]) {
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.95), MAT.steel);
-    leg.position.set(s * 0.2, S.ringHeight + 0.02, S.frontZ + 0.425); // ends on the coupling body
-    leg.rotation.y = -s * 0.32;
-    leg.castShadow = true;
-    body.add(leg);
+    beam(body, [s * 0.38, S.floorY - 0.1, S.frontZ - 0.05], [s * 0.05, S.ringHeight + 0.02, S.drawLength - 0.4], 0.055, 0.055, gal);
+    box(0.1, 0.1, 0.16, gal, s * 0.38, S.floorY - 0.1, S.frontZ - 0.02, body); // the plate bolting it to the rail
+    body.add(boltsMesh([[s * 0.38, S.floorY - 0.045, S.frontZ - 0.06], [s * 0.38, S.floorY - 0.045, S.frontZ + 0.02]], [0, 1, 0], MAT.steel, { size: 0.01, kind: 'hex', name: 'railBolts' }));
   }
-  box(0.12, 0.08, 0.3, MAT.steel, 0, S.ringHeight + 0.02, S.drawLength - 0.3, body); // the coupling body
+  beam(body, [-0.27, S.floorY - 0.08, S.frontZ + 0.3], [0.27, S.floorY - 0.08, S.frontZ + 0.3], 0.04, 0.05, gal);
+  addGusset(body, -0.05, S.ringHeight + 0.06, S.drawLength - 0.48, 0.16, -1, 1, gal);
+  addGusset(body, 0.05, S.ringHeight + 0.06, S.drawLength - 0.48, 0.16, 1, 1, gal);
+  box(0.12, 0.08, 0.3, gal, 0, S.ringHeight + 0.02, S.drawLength - 0.3, body); // the coupling body
   // The ball coupling at the pin: a cast head with a round cup on its underside, and the handle that locks it, rising and folding back.
-  box(0.1, 0.09, 0.16, MAT.steel, 0, S.ringHeight + 0.02, S.drawLength - 0.1, body);
+  box(0.1, 0.09, 0.16, gal, 0, S.ringHeight + 0.02, S.drawLength - 0.1, body);
   const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.06, 12), MAT.steel);
   cup.position.set(0, S.ringHeight - 0.03, S.drawLength);
   body.add(cup);
@@ -98,7 +102,9 @@ export function buildTipTrailerModel() {
   handleGrip.position.y = 0.12;
   latch.add(handleGrip);
   body.add(latch);
-  addChain(body, [-0.06, S.ringHeight - 0.02, S.drawLength - 0.3], [0.05, S.ringHeight - 0.03, S.drawLength + 0.02], 6, 0.08); // the safety chain
+  addEye(body, -0.06, S.ringHeight + 0.02, S.drawLength - 0.3, -1); // a chain eye welded on each side of the coupling body...
+  addEye(body, 0.06, S.ringHeight + 0.02, S.drawLength - 0.3, 1);
+  addChain(body, [-0.08, S.ringHeight + 0.008, S.drawLength - 0.3], [0.08, S.ringHeight + 0.008, S.drawLength - 0.3], 7, 0.04); // ...with the safety chain between them
   addCable(body, [[-0.3, S.floorY - 0.05, S.rearZ + 0.1], [-0.3, S.floorY - 0.1, 0.2], [-0.12, S.ringHeight + 0.04, S.frontZ + 0.5], [-0.07, S.ringHeight - 0.06, S.drawLength - 0.4]], 0.007, 0.05); // the lights' lead
   const plate = decalMesh('chassis', { maker: 'fenwick', seed: 11 }, { width: 0.1, name: 'chassisPlate' });
   plate.position.set(-0.061, S.ringHeight + 0.03, S.drawLength - 0.3);

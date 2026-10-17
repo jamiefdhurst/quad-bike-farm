@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import * as THREE from 'three';
-import { buildTrailerModel, TRAILER_SPEC } from '../src/vehicle/trailerModel.js';
+import { buildTrailerModel, TRAILER_SPEC, poseRamps, rampOpenAngle } from '../src/vehicle/trailerModel.js';
 import { buildTipTrailerModel, TIP_TRAILER_SPEC, CARGO_SPOTS, SEAT_AT } from '../src/vehicle/tipTrailerModel.js';
 import { TRAILER_SIZES } from '../src/vehicle/detail/realSizes.js';
+import { treadBlocks } from '../src/vehicle/detail/tread.js';
 import { TrailerCoat } from '../src/effects/trailerCoat.js';
 import { MAKERS } from '../src/vehicle/detail/decals.js';
 import { buildAllModels } from './helpers/vehicleModels.js';
@@ -94,3 +95,45 @@ describe('mud on a trailer', () => {
     expect(coat.state.body).toBeCloseTo(standing, 3);
   });
 });
+
+describe('the bale trailer\'s ramps', () => {
+  const open = rampOpenAngle(TRAILER_SPEC.bedY);
+  const box = (t) => {
+    poseRamps(bale, t, open);
+    bale.updateMatrixWorld(true);
+    return new THREE.Box3().setFromObject(bale.getObjectByName('rampLeft'));
+  };
+
+  it('lie on the bed when stowed, in sight, behind the bales, and never below the deck at any point of opening', () => {
+    const stowed = box(0);
+    expect(stowed.min.y).toBeGreaterThanOrEqual(TRAILER_SPEC.bedY - 0.002); // on the deck, not in it
+    expect(stowed.max.z).toBeLessThanOrEqual(0.62); // clear of the bales' front stack (0.61)
+    expect(stowed.min.z).toBeGreaterThan(TRAILER_SPEC.rearZ - 0.15);
+    for (let t = 0; t <= 0.6; t += 0.05) expect(box(t).min.y, `t ${t.toFixed(2)}`).toBeGreaterThanOrEqual(TRAILER_SPEC.bedY - 0.002);
+  });
+
+  it('slide back along the bed first, then drop to the ground, walking face up', () => {
+    const z = (t) => (box(t), bale.getObjectByName('rampLeft').position.z);
+    expect(z(0.3)).toBeLessThan(z(0)); // sliding back
+    expect(z(0.6)).toBeCloseTo(TRAILER_SPEC.rearZ, 2); // its upper end at the back edge
+    expect(box(1).min.y).toBeLessThan(0.1); // its lower end on the ground
+    expect(box(1).min.z).toBeLessThan(TRAILER_SPEC.rearZ - 2); // out behind
+    // Face up: the cleats' tops are above the plank's.
+    const ramp = bale.getObjectByName('rampLeft');
+    const up = new THREE.Vector3(0, -1, 0).applyQuaternion(ramp.getWorldQuaternion(new THREE.Quaternion())); // the walking face is on local -y
+    expect(up.y).toBeGreaterThan(0.9);
+    poseRamps(bale, 0, open);
+  });
+});
+
+describe('the chevron tyres', () => {
+  it('have their V\'s apex leading the way the tyre turns: the arms\' ends trail it at the top of the tyre', () => {
+    // At the top of the tyre (th 0) the arms of the V on the right (x > 0) run out and forward (+z) from the centre line, so the apex points back, which
+    // seen from the front of the tyre is up (the direction its tread is moving there).
+    const arms = treadBlocks('atv', { radius: 0.3, width: 0.16, rimR: 0.18, count: 14 }).filter((b) => b.lean === 0 && b.th === 0);
+    const right = arms.find((b) => b.x > 0);
+    // a block's long axis is its x; yawed by `yaw` about y it points along (cos yaw, 0, -sin yaw): going outward (+x) the z change is -sin(yaw)
+    expect(-Math.sin(right.yaw)).toBeGreaterThan(0); // outward means forward along z at the top
+  });
+});
+

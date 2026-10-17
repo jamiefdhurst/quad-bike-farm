@@ -111,8 +111,15 @@ export function addMudguard(parent, x, radius, width, mat, stayFrom) {
   // A stay from the guard's top in to the trailer, so it isn't floating.
   const stay = box(Math.abs(x) - stayFrom, 0.03, 0.12, mat, Math.sign(x) * (stayFrom + (Math.abs(x) - stayFrom) / 2), radius + r - 0.01, 0, parent);
   stay.castShadow = false;
-  const flap = box(width * 0.9, radius * 0.7, 0.02, PART_MAT.flap, x, radius * 0.75, -Math.cos(Math.PI / 2 - 1.15) * r - 0.04, parent);
-  flap.rotation.x = 0.08;
+  // The flap: hangs from the guard's rear lip. The guard ends at angle pi/2 + 1.15, 0.41 r above the axle and 0.91 r behind it: the flap's top edge is clamped
+  // behind that lip by a bracket plate and two bolts, and hangs down to 12 cm off the ground.
+  const lipY = radius + r * Math.sin(Math.PI / 2 - 1.15);
+  const lipZ = -r * Math.cos(Math.PI / 2 - 1.15);
+  const flapH = lipY - 0.12;
+  box(width * 0.9, 0.06, 0.08, PART_MAT.steel, x, lipY - 0.01, lipZ - 0.03, parent); // the bracket plate that carries it, bridging the guard's lip
+  const flap = box(width * 0.9, flapH, 0.02, PART_MAT.flap, x, lipY - flapH / 2, lipZ - 0.045, parent);
+  flap.rotation.x = 0.04;
+  parent.add(boltsMesh([-0.3, 0.3].map((k) => [x + k * width * 0.9, lipY - 0.02, lipZ - 0.056]), [0, 0, -1], PART_MAT.nut, { size: 0.01, kind: 'hex', name: 'flapBolts' }));
 }
 
 /**
@@ -137,8 +144,13 @@ export function addRearLights(parent, halfWidth, y, z, withPlate = true) {
     box(0.06, 0.1, 0.06, PART_MAT.steel, s * (halfWidth + 0.05), -0.07, 0.035, g); // its bracket down to the frame
   }
   if (withPlate) {
-    box(0.32, 0.1, 0.012, PART_MAT.plate, 0, -0.12, -0.004, g);
-    box(0.34, 0.012, 0.03, PART_MAT.steel, 0, -0.065, -0.01, g); // and the plate lamp's hood over it
+    // The plate sits in a steel holder (a backing plate a little bigger than it, with a lip along the bottom to rest it on), and the holder hangs from the board
+    // on two stays, so it is held by something.
+    box(0.36, 0.13, 0.012, PART_MAT.steel, 0, -0.125, 0.012, g); // the holder's backing plate
+    box(0.36, 0.015, 0.04, PART_MAT.steel, 0, -0.185, -0.005, g); // its lip along the bottom
+    box(0.32, 0.1, 0.01, PART_MAT.plate, 0, -0.125, 0.0035, g); // the plate, on the backing's face
+    for (const s of [-1, 1]) box(0.03, 0.09, 0.02, PART_MAT.steel, s * 0.16, -0.075, 0.025, g); // the two stays from the board down to the holder
+    box(0.34, 0.012, 0.03, PART_MAT.steel, 0, -0.063, -0.01, g); // and the plate lamp's hood over it
   }
   return g;
 }
@@ -228,4 +240,90 @@ export function addUBolts(parent, x, y, z, spacing = 0.12, r = 0.016) {
     for (const dx of [-0.032, 0.032]) parent.add(Object.assign(new THREE.Mesh(rod([x + dx, y + 0.07, z + dz], [x + dx, y - r - 0.04, z + dz], 0.005, 5), PART_MAT.nut)));
     box(0.08, 0.012, 0.016, PART_MAT.nut, x, y - r - 0.04, z + dz, parent);
   }
+}
+
+let galvTex = null;
+
+/**
+ * Hot-dip galvanised steel for a trailer's front metalwork: a pale zinc grey with the crystal "spangle" of the coating (lighter and darker flakes
+ * in patches), a few scratches and the odd dull patch, on a canvas. Falls back to the plain steel where there is no canvas (a test without one).
+ */
+export function galvanised() {
+  if (galvTex) return galvTex;
+  if (typeof document === 'undefined') return (galvTex = PART_MAT.galv);
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  let seed = 41;
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  g.fillStyle = '#8f979a';
+  g.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 260; i++) { // the spangle: little angular flakes of slightly different brightness
+    const x = rand() * 128;
+    const y = rand() * 128;
+    const r = 3 + rand() * 9;
+    g.fillStyle = rand() > 0.5 ? `rgba(255,255,255,${0.05 + rand() * 0.13})` : `rgba(40,48,52,${0.06 + rand() * 0.14})`;
+    g.beginPath();
+    for (let k = 0; k < 6; k++) {
+      const a = (k / 6) * Math.PI * 2 + rand() * 0.5;
+      g.lineTo(x + Math.cos(a) * r * (0.6 + rand() * 0.6), y + Math.sin(a) * r * (0.6 + rand() * 0.6));
+    }
+    g.fill();
+  }
+  g.strokeStyle = 'rgba(30,34,36,0.25)'; // scratches
+  g.lineWidth = 0.7;
+  for (let i = 0; i < 14; i++) {
+    g.beginPath();
+    const x = rand() * 128;
+    const y = rand() * 128;
+    g.moveTo(x, y);
+    g.lineTo(x + (rand() - 0.5) * 40, y + (rand() - 0.5) * 12);
+    g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  galvTex = new THREE.MeshStandardMaterial({ map: tex, color: 0xffffff, roughness: 0.5, metalness: 0.55 });
+  return galvTex;
+}
+
+const _up = new THREE.Vector3(0, 1, 0);
+
+/** A box beam of section `w` by `h` from point `a` to point `b` (the parent's frame), its long side along the line and its `h` kept upright. */
+export function beam(parent, a, b, w, h, mat) {
+  const A = new THREE.Vector3(...a);
+  const B = new THREE.Vector3(...b);
+  const len = A.distanceTo(B);
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, len), mat);
+  m.position.copy(A).add(B).multiplyScalar(0.5);
+  m.quaternion.setFromRotationMatrix(new THREE.Matrix4().lookAt(B, A, _up)); // z along the beam
+  m.castShadow = true;
+  m.receiveShadow = true;
+  parent.add(m);
+  return m;
+}
+
+/** A gusset plate: a flat triangle of steel `size` along each leg lying in the XZ plane at (x, y, z) (thickness `t`), the right angle at the corner, bolted at its two ends. */
+export function addGusset(parent, x, y, z, size, mx, mz, mat, t = 0.008) {
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0);
+  shape.lineTo(size * mx, 0);
+  shape.lineTo(0, size * mz);
+  shape.closePath();
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: t, bevelEnabled: false }).rotateX(Math.PI / 2); // lying flat, the shape's y along z
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x, y + t, z);
+  m.castShadow = true;
+  parent.add(m);
+  parent.add(boltsMesh([[x + size * mx * 0.7, y + t, z + size * mz * 0.12], [x + size * mx * 0.12, y + t, z + size * mz * 0.7]], [0, 1, 0], PART_MAT.nut, { size: 0.01, kind: 'hex', name: 'gussetBolts' }));
+  return m;
+}
+
+/** A chain eye: a small plate welded to the metal at (x, y, z) standing out along `dir` (+1 or -1 in x), with a ring through it for a chain's end. */
+export function addEye(parent, x, y, z, dir = 1) {
+  box(0.012, 0.045, 0.045, PART_MAT.steel, x + dir * 0.006, y, z, parent);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.014, 0.004, 5, 10), PART_MAT.chain);
+  ring.rotation.y = Math.PI / 2;
+  ring.position.set(x + dir * 0.02, y - 0.012, z);
+  parent.add(ring);
 }
