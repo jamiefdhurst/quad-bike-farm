@@ -37,10 +37,10 @@ export const FIESTA_BODY = {
 export const FIESTA_DOOR = { hinge: 0.7, rear: -0.55, bottom: 0.3, open: 1.1 };
 
 /** The hatch: hinged along the roof's rear edge, `foot` the height of its lower edge on the tail, `open` how far it swings (radians, up and back). */
-export const FIESTA_HATCH = { foot: 0.5, open: 1.3, inset: 0.2 }; // `inset`: how far in from each side it stops, for the lamps in the corners
+export const FIESTA_HATCH = { foot: 0.5, open: 1.3, inset: 0.05 }; // `inset`: how far in from each side it stops (the quarters' inner faces are at 0.7475)
 
 /** The tail lamps in the body's corners either side of the hatch (centre x, bottom y, top y, width). */
-export const FIESTA_TAIL_LAMP = { x: 0.64, y0: 0.55, y1: 0.87, w: 0.26 };
+export const FIESTA_TAIL_LAMP = { x: 0.6, y0: 0.57, y1: 0.77, w: 0.22 }; // small, in the hatch's lower corners, all inside its width (0.49 to 0.71)
 
 /** The cargo floor behind the rear seat, and the parcel shelf over it. */
 export const FIESTA_BOOT = { floor: 0.5, shelf: 0.93, front: -1.4 };

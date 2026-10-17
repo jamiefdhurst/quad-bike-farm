@@ -1145,8 +1145,8 @@ function buildFiesta() {
     ticks(ctx, combo.cx, combo.cy, combo.r - 5, combo.r - 1.5, 150, 30, 4, FIG, 0.8);
     ticks(ctx, combo.cx, combo.cy, combo.r - 5, combo.r - 1.5, 210, 330, 4, FIG, 0.8);
     arc(ctx, combo.cx, combo.cy, combo.r - 2.5, 210 + 120 * HOT_FROM, 330, '#f2c614', 2.4);
-    warnSymbol(ctx, 'fuel', combo.cx + 15, combo.cy - 17, '#d8d8d0', true, 0.45, false);
-    warnSymbol(ctx, 'temp', combo.cx + 15, combo.cy + 17, L.temp >= HOT_FROM ? LAMP.red : '#d8d8d0', true, 0.45, L.temp >= HOT_FROM);
+    warnSymbol(ctx, 'fuel', combo.cx, combo.cy - 21, '#d8d8d0', true, 0.45, false);
+    warnSymbol(ctx, 'temp', combo.cx, combo.cy + 21, L.temp >= HOT_FROM ? LAMP.red : '#d8d8d0', true, 0.45, L.temp >= HOT_FROM);
     ctx.strokeStyle = 'rgba(255,255,255,0.35)'; // the two white arcs the halves are drawn in, as in the photo
     ctx.lineWidth = 0.8;
     for (const [a0, a1] of [[200, 340], [20, 160]]) {
@@ -1178,7 +1178,7 @@ function buildFiesta() {
     text(ctx, '4', 198, 53, 3.4, FIG, { align: 'center' });
     ctx.fillStyle = '#4a4b48'; // the slots
     for (let r = 0; r < 2; r++) for (let i = 0; i < 5; i++) ctx.fillRect(139 + i * 17.5, 62 + r * 10, 12, 1.6);
-    const lamps = [['oil', LAMP.red, L.oil], ['charge', LAMP.red, L.charge], ['turn', LAMP.green, L.turn], ['beam', '#4aa8ff', L.main], ['choke', LAMP.amber, L.choke]];
+    const lamps = [['oil', LAMP.red, L.oil], ['charge', LAMP.red, L.charge], ['turn', LAMP.green, L.turn], ['beam', '#4aa8ff', L.main], ['park', LAMP.red, L.park]];
     lamps.forEach(([kind, colour, lit], i) => {
       ctx.fillStyle = '#0c0c0b';
       ctx.fillRect(135 + i * 18, 70, 15, 13);
@@ -1201,12 +1201,12 @@ function buildFiesta() {
         temp: shownTemp,
         charge: on && !running,
         oil: on && (!running || !!s.oilLow),
-        choke: on && (s.choke ?? 0) > 0.05,
+        park: on && !!s.parkBrake,
         main: on && !!s.lightLamps?.main,
         turn: on && !!(s.indicatorLamps?.left || s.indicatorLamps?.right),
       };
       const odo = counterDigits(s.odoMiles, 5);
-      if (gate([on, L.charge, L.oil, L.choke, L.main, L.turn, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.key].join('|'))) {
+      if (gate([on, L.charge, L.oil, L.park, L.main, L.turn, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.key].join('|'))) {
         face.redraw((ctx) => draw(ctx, s, L));
       }
     },

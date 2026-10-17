@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { buildDash } from './dash.js';
 import { addHeadlightBeams, addSignalLamps, addSignalStalk, addHazardSwitch, faceAlong } from './quadModel.js';
 import { mergeStatic } from './quadGeometry.js';
-import { add, rbox as roundedBox, label, plate, fitText, canvasTexture, seeded, tube, axleCyl, addPedals } from './landRoverModel.js';
+import { add, post, rbox as roundedBox, label, plate, fitText, canvasTexture, seeded, tube, axleCyl, addPedals } from './landRoverModel.js';
 import { buildLPlate } from './lPlateModel.js';
 import { treadTyre } from './detail/tread.js';
 import { buildRoadWheel } from './detail/roadWheels.js';
@@ -31,6 +31,7 @@ const [zh, yh] = c.hatchBottom;
 const FACE = W / 2 - 0.02; // the body side's middle: panels are 3.5 cm thick across it
 const OUT = FACE + 0.0175; // the side's outer face
 const ARCH = { y: c.R + 0.03, r: c.R + 0.07 };
+const NOSE_LOW = 0.31; // the body's lower edge at the nose and the tail, level with the bumper's top
 
 /** A box with its edges rounded, or, up to a 12 mm radius, a plain one: watertight where boxes butt (rounded ones leave pinholes at the corners, see defenderModel.js). */
 function rbox(w, h, d, r, mat, x, y, z, parent, name) {
@@ -64,7 +65,7 @@ export function sidePiece(part) {
   const start = Math.atan2(c.sill - ARCH.y, dz);
   const s = new THREE.Shape();
   if (part === 'front') {
-    s.moveTo(c.nose, c.sill);
+    s.moveTo(c.nose, NOSE_LOW); // the valance's lower edge is higher than the sill and slopes down to it along the wing, as in the photos
     s.lineTo(zF + dz, c.sill);
     s.absarc(zF, ARCH.y, ARCH.r, start, Math.PI - start, false);
     s.lineTo(zF - dz, c.sill);
@@ -76,7 +77,7 @@ export function sidePiece(part) {
     s.lineTo(-zF + dz, c.sill);
     s.absarc(-zF, ARCH.y, ARCH.r, start, Math.PI - start, false);
     s.lineTo(-zF - dz, c.sill);
-    s.lineTo(c.tail, c.sill);
+    s.lineTo(c.tail, NOSE_LOW); // and rises again to the tail
     for (let i = c.upper.length - 1; i >= 0; i--) if (c.upper[i][0] < FIESTA_DOOR.rear) s.lineTo(c.upper[i][0], c.upper[i][1]);
     s.lineTo(FIESTA_DOOR.rear, upperAt(FIESTA_DOOR.rear));
   }
@@ -211,6 +212,9 @@ function buildWheel(w, rimMat) {
   spin.add(new THREE.Mesh(treadTyre('road', { radius: c.R, width: FIESTA_TYRE_W, rimR, segments: 36 }), PAL.rubber));
   // The Mk1's pressed steel wheel: silver, with its slots round the face and a small cap in the middle (detail/roadWheels.js).
   spin.add(buildRoadWheel('slots', { rimR: rimR - 0.004, width: FIESTA_TYRE_W - 0.02, side, nuts: 4, mats: { rim: rimMat, steel: PAL.chrome } }));
+  // The inside of the wheel: a pressed steel disc across the barrel on the inner side with the hub standing out of it, so it is not hollow from behind.
+  axleCyl(rimR - 0.006, 0.012, PAL.steel, -side * (FIESTA_TYRE_W / 2 - 0.045), 0, 0, spin);
+  axleCyl(0.05, 0.05, PAL.steel, -side * (FIESTA_TYRE_W / 2 - 0.06), 0, 0, spin);
   wheel.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   mergeStatic(wheel);
   return wheel;
@@ -260,7 +264,9 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
       extrudeZY(sidePiece('front'), 0.035, s * FACE, paint, root, 'wing');
       extrudeZY(sidePiece('rear'), 0.035, s * FACE, paint, root, 'quarter');
       rbox(0.05, 0.108, FIESTA_DOOR.hinge - FIESTA_DOOR.rear + 0.2, 0.01, PAL.black, s * (FACE + 0.003), c.sill + 0.049, (FIESTA_DOOR.hinge + FIESTA_DOOR.rear) / 2, root, 'sill'); // the sill moulding under the door
-      rbox(0.01, 0.022, 2.7, 0.006, PAL.black, s * (OUT + 0.004), 0.62, -0.05, root); // the thin black body-side moulding along the car at the door handle's height
+      const mz0 = FIESTA_DOOR.hinge + 0.02; // the thin black body-side moulding at the door handle's height: on the wing, and on the quarter; the door's own is on the door
+      rbox(0.01, 0.022, c.nose - 0.12 - mz0, 0.006, PAL.black, s * (OUT + 0.004), 0.62, (c.nose - 0.12 + mz0) / 2, root);
+      rbox(0.01, 0.022, FIESTA_DOOR.rear - 0.02 - (c.tail + 0.1), 0.006, PAL.black, s * (OUT + 0.004), 0.62, (FIESTA_DOOR.rear - 0.02 + c.tail + 0.1) / 2, root);
       rbox(0.012, 0.025, 0.06, 0.008, PAL.amber, s * (OUT + 0.004), upperAt(zs + 0.45) - 0.12, zs + 0.45, root); // the indicator repeater on the wing
       for (const zc of [zF, -zF]) {
         const liner = add(new THREE.CylinderGeometry(ARCH.r - 0.008, ARCH.r - 0.008, 0.24, 16, 1, true, 0, Math.PI).rotateZ(Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.95, side: THREE.DoubleSide }), root);
@@ -298,6 +304,7 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
       rbox(0.012, 0.02, len - 0.04, 0.006, PAL.chrome, 0.0235 * s, ys - 0.02, -len / 2, d); // the chrome strip along the window's sill (beltline)
       rbox(0.014, 0.03, 0.12, 0.007, PAL.chrome, s * 0.0245, ys - 0.1, lz(D.rear) + 0.14, d, 'doorHandle'); // the pull handle at the back
       rbox(0.014, 0.02, 0.05, 0.006, PAL.chrome, s * 0.0245, ys - 0.15, lz(D.rear) + 0.03, d); // the lock
+      rbox(0.01, 0.022, len - 0.06, 0.006, PAL.black, s * 0.0225, 0.62, -len / 2, d); // the thin black moulding along the door, on the door so it swings with it
       for (const z of [-0.003, -len + 0.003]) rbox(0.006, upperAt(D.rear) - D.bottom - 0.01, 0.005, 0.002, PAL.black, s * 0.0205, (D.bottom + upperAt(D.rear)) / 2, z, d); // the shut lines at the door's two edges
       // The window: a glass in a rubber surround, leaning in as the glasshouse does, between the A pillar's line and the door's rear edge.
       const win = new THREE.Group();
@@ -313,7 +320,11 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
       add(new THREE.ShapeGeometry(glass).rotateY(-Math.PI / 2), PAL.glass, win);
       d.add(win);
       // The door's own frame in black rubber round the glass's rear and bottom (the A pillar and the roof rail are the body's).
-      tube([x0, ys, lz(D.rear) + 0.012], [x0 + s * (yt - ys) * c.tumble, yt - 0.01, lz(D.rear) + 0.012], 0.014, PAL.black, d, 6);
+      // The frame, in the window's own (leaning) frame: a steel upright up the raked front edge, the top rail and the rear upright, round the whole glass.
+      const fr = (a, b) => post([0, ...a], [0, ...b], 0.032, 0.03, paint, win);
+      fr([0, 0], [yt - ys, zt - D.hinge]); // the front upright (where the tube was: it goes up the A pillar's line)
+      fr([yt - ys + 0.005, zt - D.hinge], [yt - ys + 0.005, -len]); // the top rail
+      fr([0, -len + 0.015], [yt - ys, -len + 0.015]); // the rear upright
       rbox(0.026, 0.026, len - 0.02, 0.01, PAL.black, x0 + s * 0.003, ys + 0.008, -len / 2, d); // the seal along the glass's foot
       // The mirror: a square chrome housing on a short arm at the front top corner of the door, on the door (so it swings with it).
       const mirror = new THREE.Group();
@@ -436,6 +447,16 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
     const tailTop = upperAt(c.tail);
     rbox(deckW, tailTop - H.foot, 0.04, 0.02, paint, 0, hy((tailTop + H.foot) / 2), hz(c.tail + 0.02), hatch);
     rbox(deckW - 0.1, 0.04, 0.012, 0.006, PAL.black, 0, hy(H.foot + 0.03), hz(c.tail) - 0.0, hatch); // a panel line over the sill
+    // The tail lamps, small and in the hatch's lower corners so they lift with it: a black housing, the stop and tail lens over the indicator and the
+    // reverse (or fog) lens, all inside the hatch's width.
+    const L = FIESTA_TAIL_LAMP;
+    for (const sd of [-1, 1]) {
+      const ly = hy((L.y0 + L.y1) / 2);
+      rbox(L.w, L.y1 - L.y0, 0.02, 0.008, PAL.black, sd * L.x, ly, hz(c.tail) - 0.01, hatch, 'tailLampBody');
+      rbox(L.w - 0.02, (L.y1 - L.y0) * 0.5, 0.012, 0.006, tailMat, sd * L.x, ly + (L.y1 - L.y0) * 0.2, hz(c.tail) - 0.026, hatch);
+      rbox((L.w - 0.02) * 0.5, (L.y1 - L.y0) * 0.36, 0.012, 0.006, PAL.amber, sd * (L.x + (L.w - 0.02) * 0.25), ly - (L.y1 - L.y0) * 0.25, hz(c.tail) - 0.026, hatch);
+      rbox((L.w - 0.02) * 0.5, (L.y1 - L.y0) * 0.36, 0.012, 0.006, sd > 0 ? PAL.smoke : PAL.fog, sd * (L.x - (L.w - 0.02) * 0.25), ly - (L.y1 - L.y0) * 0.25, hz(c.tail) - 0.026, hatch);
+    }
     rbox(0.18, 0.03, 0.025, 0.008, PAL.chrome, 0, hy(0.74), hz(c.tail) - 0.012, hatch, 'hatchHandle'); // the pull
     // The lining inside it: a brown board with a handle strap.
     rbox(deckW - 0.1, tailTop - H.foot - 0.06, 0.012, 0.005, trim.trim, 0, hy((tailTop + H.foot) / 2), hz(c.tail + 0.045), hatch);
@@ -471,7 +492,7 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
     for (const x of [-0.45, 0.45]) for (let i = 0; i < 4; i++) rbox(0.2, 0.004, 0.008, 0.002, PAL.grille, x, upperAt(zs + 0.12) + 0.0045, zs + 0.085 + i * 0.025, root);
     rbox(W - 0.06, 0.03, 0.03, 0.01, PAL.under, 0, ys - 0.04, zs + 0.02, root); // the scuttle panel at the foot of the screen
     const noseTop = upperAt(c.nose);
-    rbox(W - 0.04, noseTop - c.sill, 0.04, 0.02, paint, 0, (noseTop + c.sill) / 2, c.nose - 0.025, root); // the front panel (its face 5 mm behind the bonnet's end, so they share none)
+    rbox(W - 0.04, noseTop - NOSE_LOW, 0.04, 0.02, paint, 0, (noseTop + NOSE_LOW) / 2, c.nose - 0.025, root); // the front panel (its face 5 mm behind the bonnet's end, so they share none)
     // The grille: a wide black panel with horizontal slats and the maker's oval on it (Thorne, not a real maker's), between the lamps.
     rbox(0.74, 0.19, 0.03, 0.01, PAL.grille, 0, 0.58, c.nose + 0.006, root);
     for (let i = 0; i < 6; i++) rbox(0.7, 0.012, 0.02, 0.004, PAL.black, 0, 0.51 + i * 0.031, c.nose + 0.024, root);
@@ -506,14 +527,6 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
   // The tail: the tail lamps in the body's corners either side of the hatch, the black bumper with its chrome ends, the cargo sill with its seal,
   // the L plate, the exhaust.
   function addRear() {
-    const L = FIESTA_TAIL_LAMP;
-    for (const s of [-1, 1]) {
-      // A tall housing in the corner: the stop and tail lamp over the indicator and the reverse (or fog) lamp, as in the photos.
-      rbox(L.w + 0.02, L.y1 - L.y0 + 0.02, 0.04, 0.01, PAL.black, s * L.x, (L.y0 + L.y1) / 2, c.tail + 0.0, root, 'tailLampBody');
-      rbox(L.w, 0.16, 0.03, 0.01, tailMat, s * L.x, L.y1 - 0.1, c.tail - 0.012, root);
-      rbox(L.w * 0.5, 0.12, 0.03, 0.01, PAL.amber, s * (L.x + L.w * 0.25), L.y0 + 0.08, c.tail - 0.012, root);
-      rbox(L.w * 0.5, 0.12, 0.03, 0.01, s > 0 ? PAL.smoke : PAL.fog, s * (L.x - L.w * 0.25), L.y0 + 0.08, c.tail - 0.012, root);
-    }
     rbox(W + 0.04, 0.11, 0.1, 0.03, PAL.black, 0, 0.36, c.tail - 0.04, root); // the bumper
     for (const s of [-1, 1]) rbox(0.18, 0.1, 0.014, 0.005, PAL.chrome, s * (W / 2 - 0.1), 0.36, c.tail - 0.092, root); // its chrome ends
     rbox(W - 0.5, 0.5 - 0.38, 0.04, 0.02, paint, 0, 0.44, c.tail + 0.02, root); // the rear valance between the bumper and the hatch's foot, over the bumper
@@ -551,12 +564,12 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
   function addInterior() {
     // The floor: the full width under the seats and the pedals (to z -0.75, in front of the rear wheels), then only 1.1 m between the rear tyres.
     rbox(W - 0.1, 0.03, zs - 0.1 + 0.75, 0.01, trim.floor, 0, 0.26, (zs - 0.1 - 0.75) / 2, root);
-    rbox(1.1, 0.03, -0.75 - c.tail - 0.1, 0.01, trim.floor, 0, 0.26, (-0.75 + c.tail + 0.1) / 2, root);
+    rbox(1.12, 0.03, -0.75 - c.tail - 0.1, 0.01, trim.floor, 0, 0.26, (-0.75 + c.tail + 0.1) / 2, root);
     rbox(W - 0.1, 0.5, 0.04, 0.01, PAL.under, 0, 0.5, zs - 0.06, root); // the bulkhead
     rbox(0.16, 0.12, zs - 0.1 - (c.seats.driver.z - 0.2), 0.04, trim.floor, 0, 0.32, (zs - 0.1 + c.seats.driver.z - 0.2) / 2, root); // the low tunnel
     for (const s of [-1, 1]) {
-      rbox(0.08, 0.3, 0.7, 0.03, trim.trim, s * 0.52, 0.42, -zF, root); // the rear arch inside, beside the back seat
-      rbox(0.03, 0.2, c.bPillar - zh - 0.2, 0.01, trim.card, s * (W / 2 - 0.06), 0.8, (c.bPillar + zh) / 2 - 0.05, root); // the rear quarter trim, above the arch (it was a tall panel the tyre passed through)
+      rbox(0.08, 0.3, 0.7, 0.03, trim.trim, s * 0.5, 0.42, -zF, root); // the rear arch inside, beside the back seat
+      rbox(0.03, 0.17, c.bPillar - zh - 0.2, 0.01, trim.card, s * (W / 2 - 0.06), 0.785, (c.bPillar + zh) / 2 - 0.05, root); // the rear quarter trim, above the arch (it was a tall panel the tyre passed through)
     }
     // The dash: the black moulding across under the screen with its long shallow tray on the passenger's half, the binnacle's hood in front of
     // the driver, the face down to the console, vents at its ends.
@@ -579,7 +592,7 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
     quad.userData.podMount = null;
     // The centre stack: the console (a black moulding from the dash face down to the tunnel), the cassette radio (the shared piece, in a new style)
     // with the bank of rocker switches under it, two heater sliders under those.
-    rbox(0.32, 0.4, 0.26, 0.02, trim.dash, 0, 0.5, face - 0.12, root);
+    rbox(0.24, 0.26, 0.1, 0.02, trim.dash, 0, 0.43, face - 0.04, root); // the centre stack under the face, a slim panel running down to the tunnel (it was a big block 26 cm deep behind the gear lever)
     const radio = buildRadio('cassette', { w: 0.18, h: 0.05 });
     radio.position.set(0, dashTop - 0.12, face - 0.0225);
     radio.rotation.y = Math.PI;
@@ -617,7 +630,31 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
       if (g) g.rotation.x += ((state.radioOn ? 0.15 : -0.15) - g.rotation.x) * 0.5;
     };
     // Amy's road atlas on the parcel shelf.
-    rbox(0.24, 0.02, 0.3, 0.004, new THREE.MeshStandardMaterial({ color: 0x2a5aa8, roughness: 0.7 }), 0.3, FIESTA_BOOT.shelf + 0.02, -1.35, root);
+    // The atlas: a thin book lying on the shelf with a cover (blue, with its title and a map's lines), its back edge short of the glass.
+    const atlas = label(0.22, 0.28, 700, (g, Wd, H) => {
+      g.fillStyle = '#1f4f98';
+      g.fillRect(0, 0, Wd, H);
+      g.fillStyle = '#f2e9b8';
+      g.fillRect(Wd * 0.08, H * 0.1, Wd * 0.84, H * 0.3);
+      g.fillStyle = '#17306a';
+      fitText(g, 'ROAD ATLAS', Wd / 2, H * 0.2, H * 0.1, Wd * 0.74);
+      fitText(g, 'OF BRITAIN', Wd / 2, H * 0.31, H * 0.09, Wd * 0.66);
+      g.strokeStyle = '#e8d16a';
+      g.lineWidth = Math.max(1, Wd * 0.012);
+      g.beginPath();
+      g.moveTo(Wd * 0.08, H * 0.9);
+      g.lineTo(Wd * 0.4, H * 0.62);
+      g.lineTo(Wd * 0.62, H * 0.74);
+      g.lineTo(Wd * 0.92, H * 0.5);
+      g.moveTo(Wd * 0.3, H * 0.95);
+      g.lineTo(Wd * 0.55, H * 0.6);
+      g.stroke();
+    }, root);
+    atlas.rotation.x = -Math.PI / 2;
+    atlas.rotation.z = 0.2;
+    atlas.position.set(0.3, FIESTA_BOOT.shelf + 0.0125, -1.32);
+    rbox(0.22, 0.015, 0.28, 0.003, PAL.black, 0.3, FIESTA_BOOT.shelf + 0.0075 + 0.0, -1.32, root).rotation.y = 0.2; // its pages
+    quad.userData.liveMaterials.push(atlas.material); // (the cover is left to the mud coat alone: it stays as drawn)
 
     for (const [name, seat] of Object.entries(c.seats)) frontSeat(name, seat);
     // The back seat: one bench with a vinyl shell and two check panels in it, and the boot behind it: the carpeted floor, the side trim round the
@@ -627,16 +664,16 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
     for (const x of [-0.27, 0.27]) rbox(0.34, 0.02, 0.4, 0.008, trim.cloth, x, c.rear.rearLeft.y - 0.025, rz + 0.12, root);
     rbox(1.1, 0.26, 0.4, 0.02, PAL.under, 0, 0.37, rz + 0.1, root);
     const back = new THREE.Group();
-    back.position.set(0, c.rear.rearLeft.y + 0.24, rz - 0.2);
+    back.position.set(0, c.rear.rearLeft.y + 0.18, rz - 0.2); // a low back, its top just under the parcel shelf (it was 0.55 tall and went up through it)
     back.rotation.x = -0.18;
-    rbox(1.1, 0.55, 0.1, 0.04, trim.vinyl, 0, 0, 0, back);
-    for (const x of [-0.27, 0.27]) rbox(0.34, 0.4, 0.08, 0.01, trim.cloth, x, 0.0, 0.012, back);
+    rbox(1.1, 0.4, 0.1, 0.04, trim.vinyl, 0, 0, 0, back);
+    for (const x of [-0.27, 0.27]) rbox(0.34, 0.28, 0.08, 0.01, trim.cloth, x, 0.0, 0.012, back);
     root.add(back);
-    rbox(W - 0.12, 0.02, 0.36, 0.005, trim.shelf, 0, FIESTA_BOOT.shelf, -1.28, root, 'parcelShelf'); // the parcel shelf
+    rbox(W - 0.12, 0.02, 0.3, 0.005, trim.shelf, 0, FIESTA_BOOT.shelf, -1.32, root, 'parcelShelf'); // the parcel shelf
     rbox(1.1, 0.03, -1.4 - (c.tail + 0.06), 0.01, trim.floor, 0, FIESTA_BOOT.floor, (c.tail + 0.06 - 1.4) / 2, root); // the boot floor, carpet, between the tyres (1.1 wide, inboard of their inner faces: it was the width of the car and ran through them)
-    rbox(1.1, FIESTA_BOOT.floor - 0.3, -1.4 - (c.tail + 0.06), 0.01, PAL.under, 0, (FIESTA_BOOT.floor + 0.3) / 2 - 0.0, (c.tail + 0.06 - 1.4) / 2, root); // the solid block under it, so nothing underneath shows
+    rbox(1.06, FIESTA_BOOT.floor - 0.3, -1.4 - (c.tail + 0.06), 0.01, PAL.under, 0, (FIESTA_BOOT.floor + 0.3) / 2 - 0.0, (c.tail + 0.06 - 1.4) / 2, root); // the solid block under it, so nothing underneath shows
     for (const s of [-1, 1]) {
-      rbox(0.14, 0.2, 0.6, 0.03, trim.trim, s * 0.5, FIESTA_BOOT.floor + 0.1, -1.18, root); // the arch hump in the boot, inboard of the tyre
+      rbox(0.12, 0.2, 0.6, 0.03, trim.trim, s * 0.49, FIESTA_BOOT.floor + 0.1, -1.18, root); // the arch hump in the boot, inboard of the tyre
       rbox(0.03, 0.5, c.tail * -1 - 1.4 - 0.2, 0.01, trim.trim, s * (W / 2 - 0.07), FIESTA_BOOT.floor + 0.27, (-1.4 + c.tail + 0.06) / 2 + 0.0, root); // the boot's side trim
     }
     // The belts: the kit's, hanging from the B pillar (front) and the quarter (back) and tucked to a buckle by each seat.
@@ -735,7 +772,7 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
     const choke = new THREE.Group();
     choke.name = 'chokeKnob';
     choke.userData.keep = true;
-    choke.position.set(c.seats.driver.x + 0.27, ys - 0.02 - 0.12, face - 0.02);
+    choke.position.set(c.seats.driver.x - 0.27, ys - 0.02 - 0.2, face - 0.02); // on the driver's right of the column, clear of the radio (it was inboard, over it)
     choke.userData.baseZ = choke.position.z;
     tube([0, 0, 0.1], [0, 0, -0.03], 0.004, PAL.steel, choke, 6);
     add(new THREE.CylinderGeometry(0.018, 0.018, 0.022, 14).rotateX(Math.PI / 2), PAL.black, choke).position.set(0, 0, -0.04);

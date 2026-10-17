@@ -127,7 +127,7 @@ describe('the Fiesta at its real size', () => {
   it('has no holes in its back or its front (round the hatch, the lamps, the bumper, the grille)', () => {
     const holes = [];
     for (let x = -0.7517; x <= 0.75; x += 0.0497) {
-      for (let y = 0.3513; y <= 1.2; y += 0.0497) {
+      for (let y = 0.4113; y <= 1.2; y += 0.0497) { // (from the bumper's top: below it is the open under-body, as on the car)
         const lowOrNarrow = y < 0.9 || Math.abs(x) < 0.55;
         if (!lowOrNarrow) continue; // above the bonnet and the deck, outside the glass: open air
         const h = firstHit([x, y, -4], [0, 0, 1]);
@@ -141,7 +141,7 @@ describe('the Fiesta at its real size', () => {
   }, 40000);
 
   it('has no two faces fighting for one plane where you can see them', () => {
-    const fights = coplanarOverlaps(model, { gap: 0.002, minArea: 2e-5 }).filter((f) => f.area > 8e-4);
+    const fights = coplanarOverlaps(model, { gap: 0.003, minArea: 2e-5 }).filter((f) => f.area > 3e-4); // 3 cm2 or more, to 3 mm: the boot's carpet and trim fought at the edge
     expect(fights.slice(0, 8).map((f) => `${f.a}|${f.b} ${(f.area * 1e4).toFixed(0)} cm2 at ${f.at.map((v) => v.toFixed(2)).join(',')}`)).toEqual([]);
   });
 
