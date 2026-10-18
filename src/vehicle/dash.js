@@ -1230,8 +1230,8 @@ function buildCorsa() {
   // fuel gauge at the lower left and a small temperature gauge at the lower right, the indicators' tell-tales at the two ends and the other lamps between.
   const tacho = { cx: 140, cy: 48, r: 31 };
   const speedo = { cx: 214, cy: 48, r: 35 };
-  const fuel = { cx: 86, cy: 86, r: 14 };
-  const temp = { cx: 274, cy: 86, r: 14 };
+  const fuel = { cx: 92, cy: 82, r: 13 };
+  const temp = { cx: 268, cy: 82, r: 13 };
   const gate = changeGate();
   let shownMph = 0;
   let shownRpm = 0;
@@ -1274,12 +1274,12 @@ function buildCorsa() {
     small(ctx, fuel, L.fuel, 'fuel', false);
     small(ctx, temp, L.temp, 'temp', true);
     // The tell-tales: the indicators' arrows at the two ends (each flashes with its own side), the rest in a strip along the bottom between the small gauges.
-    for (const [kind, x, lit] of [['turnLeft', 80, L.turnLeft], ['turnRight', 280, L.turnRight]]) {
+    for (const [kind, x, lit] of [['turnLeft', 86, L.turnLeft], ['turnRight', 274, L.turnRight]]) {
       ctx.fillStyle = '#121213';
       ctx.beginPath();
-      ctx.roundRect(x - 11, 22, 22, 16, 4);
+      ctx.roundRect(x - 11, 21, 22, 16, 4);
       ctx.fill();
-      warnSymbol(ctx, kind, x, 30, LAMP.green, lit, 0.85);
+      warnSymbol(ctx, kind, x, 29, LAMP.green, lit, 0.85);
     }
     // The other lamps in their own small pods, as in the photo: charge and oil to the left, main beam and side lights to the right, the rest in a strip under the dials.
     const pod = (x, y, w, list) => {
@@ -1289,8 +1289,8 @@ function buildCorsa() {
       ctx.fill();
       list.forEach(([kind, colour, lit], i) => warnSymbol(ctx, kind, x + (w / list.length) * (i + 0.5), y + 7.5, colour, lit, 0.8));
     };
-    pod(62, 41, 40, [['charge', LAMP.red, L.charge], ['oil', LAMP.red, L.oil]]);
-    pod(258, 41, 40, [['beam', '#4aa8ff', L.main], ['lights', LAMP.green, L.lights]]);
+    pod(72, 42, 32, [['charge', LAMP.red, L.charge], ['oil', LAMP.red, L.oil]]);
+    pod(256, 42, 32, [['beam', '#4aa8ff', L.main], ['lights', LAMP.green, L.lights]]);
     pod(139, 92, 82, [['engine', LAMP.amber, L.engine], ['park', LAMP.red, L.park], ['belt', LAMP.red, L.belt]]);
   }
 

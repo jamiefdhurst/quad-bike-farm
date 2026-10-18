@@ -307,7 +307,7 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
   const paint = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.6, side: THREE.DoubleSide });
   // The roof, the bonnet and the nose have faded in the sun: a paler, chalkier red.
   const faded = new THREE.MeshStandardMaterial({ color: new THREE.Color(bodyColor).lerp(new THREE.Color(0xe8b0a8), 0.35), roughness: 0.8, side: THREE.DoubleSide });
-  const lensMat = new THREE.MeshStandardMaterial({ color: 0xc4cccf, roughness: 0.1, metalness: 0.2, emissive: 0x000000 }); // clear glass over the reflector: pale, with the black housing round it
+  const lensMat = new THREE.MeshStandardMaterial({ color: 0x1b1f20, roughness: 0.1, metalness: 0.2, emissive: 0x000000 }); // black glass when off, as every other vehicle's lamps
   const tailMat = new THREE.MeshStandardMaterial({ color: 0x9a1812, roughness: 0.25, emissive: 0x000000 });
   const trim = trimMaterials();
   const webbing = webbingMaterial();
@@ -356,11 +356,12 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
       for (const zc of [zF, -zF]) {
         const liner = add(new THREE.CylinderGeometry(ARCH.r - 0.008, ARCH.r - 0.008, 0.24, 16, 1, true, 0, Math.PI).rotateZ(Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.95, side: THREE.DoubleSide }), root);
         liner.position.set(s * (W / 2 - 0.15), ARCH.y, zc);
-        rbox(0.26, 0.04, 0.7, 0.01, PAL.under, s * (W / 2 - 0.15), ARCH.y + ARCH.r + 0.01, zc, root); // the arch's roof
+        rbox(0.2, 0.04, 0.7, 0.01, PAL.under, s * (W / 2 - 0.19), ARCH.y + ARCH.r + 0.01, zc, root); // the arch's roof: well inside the wing (it showed through as a black bar)
         // The black plastic arch trim: a half ring standing 5 cm out of the paint round the arch's edge, a wide chunky lip as in the photos.
         const ring = new THREE.Shape();
-        ring.absarc(zc, ARCH.y, ARCH.r + 0.05, 0.12, Math.PI - 0.12, false);
-        ring.absarc(zc, ARCH.y, ARCH.r - 0.004, Math.PI - 0.12, 0.12, true);
+        const a0 = Math.atan2(c.sill - ARCH.y, archDz()) + 0.02; // down to where the arch meets the sill line, so no sliver of paint shows below the trim's ends
+        ring.absarc(zc, ARCH.y, ARCH.r + 0.05, a0, Math.PI - a0, false);
+        ring.absarc(zc, ARCH.y, ARCH.r - 0.004, Math.PI - a0, a0, true);
         const g = new THREE.ExtrudeGeometry(ring, { depth: 0.025, bevelEnabled: false, curveSegments: 20 });
         g.rotateY(-Math.PI / 2); // runs along -x from 0 to -0.025
         g.translate(s > 0 ? OUT + 0.016 : -OUT + 0.009, 0, 0); // standing 1.6 cm out of the paint, clear of the body-side moulding (1 cm)
@@ -513,6 +514,20 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     const lining = add(new THREE.ExtrudeGeometry(ln, { depth: roofLen - 0.06, bevelEnabled: false, curveSegments: 10 }).translate(0, 0, -(roofLen - 0.06) / 2), trim.lining, root, 'lining');
     lining.position.copy(roof.position);
     lining.rotation.copy(roof.rotation);
+    // The header: closes the gap between the screen's top rail and the roof's front edge (you could see in over the screen). Its top follows the roof's
+    // underside, 1.2 cm up inside the roof, so nothing stands proud.
+    const y0 = roof.position.y + (zt - roof.position.z) * ((yt - yr) / (zt - zr));
+    const hw = halfAt(yt) - 0.02;
+    const hs = new THREE.Shape();
+    hs.moveTo(-hw, yt - 0.035);
+    hs.lineTo(hw, yt - 0.035);
+    for (let i = 10; i >= 0; i--) {
+      const x = -hw + (2 * hw * i) / 10;
+      const t = (x + roofW / 2) / roofW;
+      hs.lineTo(x, y0 - 0.03 + 2 * t * (1 - t) * 0.11 + 0.012);
+    }
+    hs.closePath();
+    add(new THREE.ExtrudeGeometry(hs, { depth: 0.05, bevelEnabled: false }).translate(0, 0, zt - 0.025), faded, root, 'header');
     // The sun visors: flat boards folded up against the lining (their height under the lining's curve at their x), in its slope.
     for (const x of [-0.42, 0.42]) {
       const t = 0.5 + x / (roofW - 0.06); // where along the lining's curve
@@ -642,29 +657,13 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     const noseBadge = makerBadge(0.05, root);
     noseBadge.position.set(0, 0.62, c.nose + 0.0215);
     for (const s of [-1, 1]) {
-      // The lamp: a big clear lens that bulges out of the nose and wraps the corner, a silver reflector bowl with its bulb drawn on the lens's face (no black box behind it).
+      // The lamp: a big lens that bulges out of the nose and wraps the corner, black when off like every other lamp in the game.
       const lamp = add(new THREE.SphereGeometry(0.5, 24, 14).scale(0.46, 0.19, 0.1), lensMat, root);
       lamp.position.set(s * 0.47, 0.63, c.nose - 0.03);
       lamp.rotation.y = s * 0.35;
-      const bowl = label(0.2, 0.12, 900, (g, Wd, H) => {
-        const grad = g.createRadialGradient(Wd * 0.45, H * 0.5, 2, Wd / 2, H / 2, Wd * 0.5);
-        grad.addColorStop(0, '#f4f4f0');
-        grad.addColorStop(0.5, '#a9acad');
-        grad.addColorStop(1, '#5a5d5f');
-        g.fillStyle = grad;
-        g.beginPath();
-        g.ellipse(Wd / 2, H / 2, Wd * 0.48, H * 0.46, 0, 0, Math.PI * 2);
-        g.fill();
-        g.fillStyle = '#e8d890';
-        g.beginPath();
-        g.arc(Wd * 0.45, H * 0.5, H * 0.14, 0, Math.PI * 2);
-        g.fill();
-      }, root);
-      bowl.position.set(s * 0.47 + Math.sin(s * 0.35) * 0.053, 0.63, c.nose - 0.03 + Math.cos(s * 0.35) * 0.053);
-      bowl.rotation.y = s * 0.35;
-      const ind = add(new THREE.SphereGeometry(0.5, 14, 10).scale(0.1, 0.06, 0.07), PAL.amber, root); // the indicator: a small amber lens low on the corner, in the apron's skin
-      ind.position.set(s * 0.735, 0.55, c.nose - 0.15);
-      ind.rotation.y = s * 0.9;
+      const ind = add(new THREE.SphereGeometry(0.5, 14, 10).scale(0.14, 0.075, 0.06), PAL.amber, root); // the indicator: an amber lens low on the corner under the lamp, bulging out of the apron's skin
+      ind.position.set(s * 0.64, 0.53, c.nose - 0.045);
+      ind.rotation.y = s * 0.6;
     }
     // The bumper: deep black plastic from the nose's lower edge to under the lamps, wrapping round both corners, with a lower intake slot and the plate.
     const B = CORSA_BUMPER;
@@ -684,8 +683,8 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     const bh = B.high - B.low;
     const bm = (B.low + B.high) / 2;
     const left = W / 2 - 0.005; // the bumper's outer edges
-    rbox(left - (NX + NW / 2), bh, 0.2, 0.012, PAL.plastic, (left + NX + NW / 2) / 2, bm, bz, root); // from the notch to the left corner
-    rbox(NX - NW / 2 + left, bh, 0.2, 0.012, PAL.plastic, (NX - NW / 2 - left) / 2, bm, bz, root); // and to the right corner
+    rbox(left - (NX + NW / 2), bh, 0.2, 0.06, PAL.plastic, (left + NX + NW / 2) / 2, bm, bz, root); // from the notch to the left corner
+    rbox(NX - NW / 2 + left, bh, 0.2, 0.06, PAL.plastic, (NX - NW / 2 - left) / 2, bm, bz, root); // and to the right corner
     rbox(NW + 0.08, 0.2, 0.19, 0.012, PAL.plastic, NX, B.high - 0.1 - 0.005, bz, root); // over the notch: the bumper's upper part, which carries on across
     rbox(W - 0.5, 0.03, 0.05, 0.01, PAL.black, 0, CORSA_HATCH.foot - 0.02, c.tail + 0.01, root); // the cargo sill's rubber seal
     // Jess's exhaust: a pipe under the car to a big chrome can sticking out under the right of the bumper.
