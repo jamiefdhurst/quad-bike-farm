@@ -18,11 +18,15 @@ jobs:
         with:
           # The build puts the last 300 commit subjects into the FAQ's "Recently changed"; the full history is gigabytes of audio.
           fetch-depth: 300
+      # The Node version in mise.toml, the same one used locally.
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: jdx/mise-action@v5
+      - name: Cache npm
+        uses: actions/cache@v6
         with:
-          node-version: '22'
-          cache: 'npm'
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json', 'mise.toml') }}
+          restore-keys: npm-${{ runner.os }}-
       - name: Install dependencies
         run: npm ci
       # A runner is two or three times slower than a laptop, so the heavy model tests need longer than the 5 s default.

@@ -16,7 +16,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          sparse-checkout: tools
+          sparse-checkout: |
+            tools
+            mise.toml
+      - name: Setup Node
+        uses: jdx/mise-action@v5
       - name: Check the labels
         # Explicitly bash, which runs with pipefail, so the check's exit code survives the tee.
         shell: bash

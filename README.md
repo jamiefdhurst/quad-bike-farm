@@ -7,6 +7,7 @@ Three.js, Rapier physics, Web Audio. Desktop, keyboard and mouse or a gamepad.
 ## Running it
 
 ```sh
+mise install    # Node 26, from mise.toml; CI uses the same file
 npm install
 npm run dev
 ```
