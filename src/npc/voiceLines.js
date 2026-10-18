@@ -204,7 +204,7 @@ export const VOICE_LINES = {
       'My teeth are rattling.',
       'Mind the holes!',
       'Bumpy bumpy bumpy.',
-      'Oof!',
+      'Ow, that hurt!',
       'That one went right up my spine.',
       'Did you aim for that?',
       'Ow, ow, ow.',
@@ -274,7 +274,7 @@ export const VOICE_LINES = {
       'Where are you going?!',
       'Come back!',
       "Who's driving this?!",
-      'Oi!',
+      'Hey!',
       'What are you doing?!',
       'How do I stop it?!',
       'This is not funny!',
@@ -954,7 +954,7 @@ export const VOICE_LINES = {
     shout: true,
     cooldown: 6,
     lines: [
-      'Oi!',
+      'Hey!',
       'Argh! Stop it!',
       "That's freezing!",
       "You're dead. You are so dead.",
@@ -1195,7 +1195,7 @@ export const VOICE_LINES = {
   },
   driveBump: {
     cooldown: 8,
-    lines: [{ sound: 'gasp' }, 'Ooh!', 'Eek!', 'Oof.', 'Bumpy!', 'Ow, my bum.', 'Whoops.', 'Hup!'],
+    lines: [{ sound: 'gasp' }, 'Ooh!', 'Eek!', 'Oof.', 'It is bumpy!', 'Ow, my bum.', 'Whoops.', 'Hup!'],
   },
   driveObstacle: {
     shout: true,

@@ -9,6 +9,6 @@ export const AMY_THROTTLE_LINES = {
 };
 
 export const JESS_THROTTLE_LINES = {
-  grabGo: ['Faster!', 'Give it some!', 'Hold on, I have got the throttle!', 'Too slow. I will do it.'],
+  grabGo: ['Go faster!', 'Give it some!', 'Hold on, I have got the throttle!', 'Too slow. I will do it.'],
   grabSorry: ['You loved it.', 'Do not look at me like that. It was fun.', 'Ha! Did you feel that?', 'Oops. My hand slipped. Twice.'],
 };
