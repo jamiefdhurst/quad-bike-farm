@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { FAQ_SECTIONS, VEHICLE_NOTES, GIRL_NOTES, faqTips } from '../src/faq/faqContent.js';
 import { ALL_VEHICLE_SPECS, vehicleFacts } from '../src/faq/facts.js';
-import { parseGitLog, longDate } from '../src/faq/changes.js';
+import { parseGitLog, longDate, isHousekeeping } from '../src/faq/changes.js';
 import { CHARACTERS } from '../src/npc/characters.js';
 import { CONTROLS, controlsHtml } from '../src/hud/controls.js';
 import { logoSvg } from '../src/start/logo.js';
@@ -102,6 +102,15 @@ describe('recently changed', () => {
       { date: '2026-10-08', items: ['Let the girls share a quad'] },
       { date: '2026-10-07', items: ['Put a bell on a post by the barn doors'] },
     ]);
+  });
+
+  it('leaves out pull request merges and dependency updates', () => {
+    for (const s of ['Merge pull request #12 from jamiefdhurst/issue-107-talk', 'chore(deps): bump vite from 8.3.2 to 8.4.0',
+      'chore(deps-dev): bump the dev-dependencies group with 2 updates', 'Bump three from 0.186.1 to 0.187.0']) {
+      expect(isHousekeeping(s)).toBe(true);
+    }
+    expect(isHousekeeping('Let the girls share a quad')).toBe(false);
+    expect(isHousekeeping('Bump-start a quad down the hill')).toBe(false);
   });
 
   it('stops at the limit, and copes with no log', () => {

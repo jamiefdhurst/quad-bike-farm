@@ -1,9 +1,10 @@
 // "Recently changed" on the FAQ page, from the commit messages (vite.config.js puts `git log` into the build). The commits are written
 // for a player ("Let the girls share a quad"), so most read as a changelog as they are; housekeeping ones are left out. Pure.
 
-// Commits about the docs, the TODO list, the debug tools or recording, which say nothing to a player.
+// Commits about the docs, the TODO list, the debug tools, recording or the dependencies (dependabot's "chore(deps): ..."),
+// and the merge commits pull requests leave, which say nothing to a player.
 const HOUSEKEEPING = [
-  /\bTODO\b/, /\bDECISIONS(\.md)?\b/, /\bREADME\b/, /\bCLAUDE\.md\b/, /\bFAQ\b/, /^Merge\b/, /^Revert\b/,
+  /\bTODO\b/, /\bDECISIONS(\.md)?\b/, /\bREADME\b/, /\bCLAUDE\.md\b/, /\bFAQ\b/, /^Merge\b/, /^Revert\b/, /^(chore|build|ci)(\(|:)/i, /^Bump \S+ from \S+ to /,
   /^(Describe|Note|Mark|Trim|Correct|Reword|Write down|Record the girls)\b/, /\bdebug panel\b/i, /\btuning panel\b/i, /\bheadless\b/i,
 ];
 

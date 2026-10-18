@@ -1,0 +1,36 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 3
+    labels:
+      - "⬆️ dependencies"
+    assignees:
+      - "jamiefdhurst"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    groups:
+      # Vite, Vitest and the wasm plugin: build and test tools, one PR a cycle.
+      dev-dependencies:
+        dependency-type: "development"
+        update-types: ["minor", "patch"]
+      # Rapier ships two builds that must stay on the same version.
+      rapier:
+        patterns: ["@dimforge/*"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 2
+    labels:
+      - "⬆️ dependencies"
+    assignees:
+      - "jamiefdhurst"
+    commit-message:
+      prefix: "chore"
+      include: "scope"

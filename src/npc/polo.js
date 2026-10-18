@@ -293,7 +293,8 @@ export function tuckSleeves(inner, outer, body, { gap = 0.002, most = 0.008 } = 
       if (d < 1e-6) continue;
       const dir = scale(out, 1 / d);
       const hit = rayHit(local, c, dir);
-      if (!hit || hit.t >= d + gap) continue;
+      // A point already tucked sits at exactly hit.t - gap, so allow for rounding or it is moved again on another machine.
+      if (!hit || hit.t >= d + gap - 1e-9) continue;
       const rest = add(c, scale(dir, Math.max(d - most, hit.t - gap)));
       v.rest = rest;
       v.bind = unskin(v.skin, rest);
