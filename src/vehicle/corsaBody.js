@@ -21,8 +21,8 @@ export const CORSA_BODY = {
   upper: [[1.88, 0.56], [1.86, 0.65], [1.78, 0.73], [1.55, 0.8], [0.8, 0.9], [-1.36, 1.0], [-1.5, 0.99], [-1.6, 0.93], [-1.68, 0.82]],
   round: true, // the upper line is a smooth curve through its points, not straight lines: the Corsa B is all curves
   screenBase: [0.8, 0.9],
-  screenTop: [0.2, 1.37], // raked about 46 degrees; the roof stands 5 cm higher again on the ride lift (1.42 m tall as the real car)
-  roofRear: [-1.2, 1.35],
+  screenTop: [0.25, 1.33], // raked about 46 degrees; the roof stands 5 cm higher again on the ride lift (1.42 m tall as the real car)
+  roofRear: [-1.2, 1.31],
   hatchBottom: [-1.56, 0.98],
   tumble: 0.26,
   bPillar: -0.62,
@@ -37,10 +37,10 @@ export const CORSA_BODY = {
 export const CORSA_DOOR = { hinge: 0.78, rear: -0.59, bottom: 0.3, open: 1.1 };
 
 /** The hatch: hinged along the roof's rear edge, `foot` the height of its lower edge (above the bumper), `open` how far it swings (radians, up and back). */
-export const CORSA_HATCH = { foot: 0.56, open: 1.3 };
+export const CORSA_HATCH = { foot: 0.5, open: 1.3 };
 
 /** The tail lamps, tall ovals in the hatch's lower corners (centre x, bottom y, top y, width): they lift with it. */
-export const CORSA_TAIL_LAMP = { x: 0.62, y0: 0.68, y1: 0.93, w: 0.15 };
+export const CORSA_TAIL_LAMP = { x: 0.62, y0: 0.56, y1: 0.84, w: 0.15 };
 
 /** The cargo floor behind the rear seat. */
 export const CORSA_BOOT = { floor: 0.52, front: -1.42 };

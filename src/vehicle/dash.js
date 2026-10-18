@@ -1226,10 +1226,10 @@ function buildCorsa() {
   housing(group, { x: 62, y: 12, w: 236, h: 96, r: 18, ...O, material: charcoal });
   const face = mmPanel({ x: 62, y: 12, w: 236, h: 96, ...O });
   group.add(face.mesh);
-  const tacho = { cx: 108, cy: 48, r: 30 };
-  const speedo = { cx: 222, cy: 48, r: 34 };
-  const temp = { cx: 165, cy: 36, r: 12 };
-  const fuel = { cx: 165, cy: 66, r: 12 };
+  const tacho = { cx: 121, cy: 48, r: 30 };
+  const speedo = { cx: 235, cy: 48, r: 34 };
+  const temp = { cx: 178, cy: 36, r: 12 };
+  const fuel = { cx: 178, cy: 66, r: 12 };
   const gate = changeGate();
   let shownMph = 0;
   let shownRpm = 0;

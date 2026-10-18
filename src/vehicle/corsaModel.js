@@ -119,6 +119,63 @@ function quadMesh(a, b, c2, d, mat, parent) {
 }
 
 
+/** The body sides lean in towards the roof (the Corsa B is barrel-shaped, not slab-sided): panels hang in a group turned about the sill's line. */
+const TILT = 0.05;
+function tiltGroup(s, parent) {
+  const g = new THREE.Group();
+  g.position.set(s * FACE, c.sill, 0);
+  g.rotation.z = s * TILT;
+  parent.add(g);
+  return g;
+}
+
+/**
+ * A crowned, closed sheet of metal from z0 to z1 (the bonnet): its top follows `topAt(z)` at the edges and rises `crown` in the middle, `halfAt(z)`
+ * wide (it narrows to round the nose in plan), `t` thick. Smooth normals, so it reads as curved.
+ */
+function loft(z0, z1, topAt, halfW, crown, t, mat, parent) {
+  const n = 18;
+  const m = 10;
+  const pos = [];
+  const at = (i, j, bottom) => {
+    const z = z0 + ((z1 - z0) * i) / n;
+    const u = -1 + (2 * j) / m;
+    const y = topAt(z) + (bottom ? -t : crown * (1 - u * u));
+    return [u * halfW(z), y, z];
+  };
+  const idx = (i, j, b) => (b * (n + 1) + i) * (m + 1) + j;
+  for (const b of [0, 1]) for (let i = 0; i <= n; i++) for (let j = 0; j <= m; j++) pos.push(...at(i, j, b));
+  const tri = [];
+  const quad = (a, b2, c2, d) => tri.push(a, b2, c2, a, c2, d);
+  for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) {
+    quad(idx(i, j, 0), idx(i + 1, j, 0), idx(i + 1, j + 1, 0), idx(i, j + 1, 0)); // top
+    quad(idx(i, j, 1), idx(i, j + 1, 1), idx(i + 1, j + 1, 1), idx(i + 1, j, 1)); // underside
+  }
+  for (let i = 0; i < n; i++) for (const j of [0, m]) quad(idx(i, j, 0), idx(i + 1, j, 0), idx(i + 1, j, 1), idx(i, j, 1)); // the two edges
+  for (const i of [0, n]) for (let j = 0; j < m; j++) quad(idx(i, j, 0), idx(i, j + 1, 0), idx(i, j + 1, 1), idx(i, j, 1)); // the two ends
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(tri);
+  g.computeVertexNormals();
+  return add(g, mat, parent, 'bonnet');
+}
+
+/** The maker's round badge (Ashby: the makers are made up), `size` across, a label facing +z to put on the nose and, turned half a turn, the tail. */
+function makerBadge(size, parent) {
+  return label(size, size, 800, (g, Wd, H) => {
+    g.fillStyle = '#d8dadc';
+    g.beginPath();
+    g.arc(Wd / 2, H / 2, Wd / 2, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = '#2a2b2d';
+    g.beginPath();
+    g.arc(Wd / 2, H / 2, Wd * 0.4, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = '#d8dadc';
+    fitText(g, 'A', Wd / 2, H / 2 + H * 0.03, H * 0.5, Wd * 0.5);
+  }, parent);
+}
+
 // Materials, made once --------------------------------------------------------------------
 
 const PAL = {
@@ -174,25 +231,32 @@ function trimMaterials() {
       g.fillRect(rand() * w, rand() * h, 1, 1);
     }
   }, { repeat: [4, 4] });
-  // Jess's bucket seats: black cloth with lurid zigzags of purple and green through it.
+  // Jess's sports seats, after a mid-2000s Recaro: a dark charcoal cloth with a fine weave and a few red threads in it between black bolsters.
   const loud = canvasTexture(128, 128, (g, w, h) => {
     const rand = seeded(47);
-    g.fillStyle = '#1a1a1e';
+    g.fillStyle = '#24252a';
     g.fillRect(0, 0, w, h);
-    g.lineWidth = 5;
-    for (const [col, y0] of [['#b23cff', 24], ['#2fe08a', 64], ['#b23cff', 104]]) {
-      g.strokeStyle = col;
+    g.lineWidth = 1;
+    for (let i = -h; i < w; i += 6) { // the weave: crossed fine diagonals
+      g.strokeStyle = 'rgba(120,124,134,0.22)';
       g.beginPath();
-      for (let x = 0; x <= w; x += 16) g.lineTo(x, y0 + (x / 16) % 2 * 14 - 7);
+      g.moveTo(i, 0);
+      g.lineTo(i + h, h);
+      g.stroke();
+      g.strokeStyle = 'rgba(0,0,0,0.3)';
+      g.beginPath();
+      g.moveTo(i + h, 0);
+      g.lineTo(i, h);
       g.stroke();
     }
-    for (let i = 0; i < 800; i++) {
-      g.fillStyle = rand() > 0.5 ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.25)';
-      g.fillRect(rand() * w, rand() * h, 1.5, 1.5);
+    for (let i = 0; i < 40; i++) {
+      g.fillStyle = 'rgba(168,40,34,0.7)';
+      g.fillRect(rand() * w, rand() * h, 3, 1);
     }
-  }, { repeat: [1, 2] });
+  }, { repeat: [2, 2] });
   return {
     bucket: new THREE.MeshStandardMaterial({ map: loud, roughness: 0.95 }),
+    bolster: new THREE.MeshStandardMaterial({ color: 0x17181a, roughness: 0.7 }), // the seats' black bolsters, in vinyl
     seat: new THREE.MeshStandardMaterial({ map: fleck, roughness: 0.95 }),
     band: new THREE.MeshStandardMaterial({ map: plainTex, roughness: 0.95 }), // the plain centre band of the rear bench
     floor: new THREE.MeshStandardMaterial({ map: carpetTex, roughness: 1 }),
@@ -275,13 +339,15 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
   // them, the engine.
   function addBody() {
     for (const s of [-1, 1]) {
-      extrudeZY(sidePiece('front'), 0.035, s * FACE, s > 0 ? PAL.primer : paint, root, 'wing');
-      extrudeZY(sidePiece('rear'), 0.035, s * FACE, paint, root, 'quarter');
+      const tg = tiltGroup(s, root); // the wing, the quarter and what is fixed to them lean in together
+      const lean = (m) => { m.position.x -= s * FACE; m.position.y -= c.sill; return m; };
+      lean(extrudeZY(sidePiece('front'), 0.035, s * FACE, s > 0 ? PAL.primer : paint, tg, 'wing'));
+      lean(extrudeZY(sidePiece('rear'), 0.035, s * FACE, paint, tg, 'quarter'));
       rbox(0.05, 0.108, CORSA_DOOR.hinge - CORSA_DOOR.rear + 0.2, 0.01, PAL.plastic, s * (FACE + 0.003), c.sill + 0.049, (CORSA_DOOR.hinge + CORSA_DOOR.rear) / 2, root, 'sill'); // the black plastic sill under the door
       const mz0 = CORSA_DOOR.hinge + 0.02; // the thin black body-side moulding at the door handle's height: on the wing, and on the quarter; the door's own is on the door
-      rbox(0.01, 0.022, c.nose - 0.3 - mz0, 0.006, PAL.black, s * (OUT + 0.004), 0.62, (c.nose - 0.3 + mz0) / 2, root);
-      rbox(0.01, 0.022, CORSA_DOOR.rear - 0.02 - (c.tail + 0.3), 0.006, PAL.black, s * (OUT + 0.004), 0.62, (CORSA_DOOR.rear - 0.02 + c.tail + 0.3) / 2, root);
-      rbox(0.012, 0.025, 0.06, 0.008, PAL.amber, s * (OUT + 0.004), upperAt(zs + 0.65) - 0.1, zs + 0.65, root); // the indicator repeater on the wing
+      lean(rbox(0.01, 0.022, c.nose - 0.3 - mz0, 0.006, PAL.black, s * (OUT + 0.004), 0.62, (c.nose - 0.3 + mz0) / 2, tg));
+      lean(rbox(0.01, 0.022, CORSA_DOOR.rear - 0.02 - (c.tail + 0.3), 0.006, PAL.black, s * (OUT + 0.004), 0.62, (CORSA_DOOR.rear - 0.02 + c.tail + 0.3) / 2, tg));
+      lean(rbox(0.012, 0.025, 0.06, 0.008, PAL.amber, s * (OUT + 0.004), upperAt(zs + 0.65) - 0.1, zs + 0.65, tg)); // the indicator repeater on the wing
       for (const zc of [zF, -zF]) {
         const liner = add(new THREE.CylinderGeometry(ARCH.r - 0.008, ARCH.r - 0.008, 0.24, 16, 1, true, 0, Math.PI).rotateZ(Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.95, side: THREE.DoubleSide }), root);
         liner.position.set(s * (W / 2 - 0.15), ARCH.y, zc);
@@ -324,12 +390,17 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
       }
       panel.lineTo(0, upperAt(D.hinge));
       panel.closePath();
-      extrudeZY(panel, 0.035, 0, paint, d, 'doorPanel');
+      const dt = new THREE.Group(); // the door's skin leans in with the body's sides (TILT) about the sill's line
+      dt.position.y = c.sill;
+      dt.rotation.z = s * TILT;
+      d.add(dt);
+      const dl = (m) => { m.position.y -= c.sill; return m; };
+      dl(extrudeZY(panel, 0.035, 0, paint, dt, 'doorPanel'));
       // The handle: a small black pull at the back of the door in a dark recess, and the lock above it.
-      rbox(0.004, 0.05, 0.16, 0.002, PAL.black, s * 0.0195, ys - 0.1, lz(D.rear) + 0.14, d); // its recess
-      rbox(0.014, 0.026, 0.12, 0.007, PAL.plastic, s * 0.0245, ys - 0.1, lz(D.rear) + 0.14, d, 'doorHandle');
-      rbox(0.01, 0.022, len - 0.06, 0.006, PAL.black, s * 0.0225, 0.62, -len / 2, d); // the thin black moulding along the door, on the door so it swings with it
-      for (const z of [-0.003, -len + 0.003]) rbox(0.006, upperAt(D.rear) - D.bottom - 0.01, 0.005, 0.002, PAL.black, s * 0.0205, (D.bottom + upperAt(D.rear)) / 2, z, d); // the shut lines at the door's two edges
+      dl(rbox(0.004, 0.05, 0.16, 0.002, PAL.black, s * 0.0195, ys - 0.1, lz(D.rear) + 0.14, dt)); // its recess
+      dl(rbox(0.014, 0.026, 0.12, 0.007, PAL.plastic, s * 0.0245, ys - 0.1, lz(D.rear) + 0.14, dt, 'doorHandle'));
+      dl(rbox(0.01, 0.022, len - 0.06, 0.006, PAL.black, s * 0.0225, 0.62, -len / 2, dt)); // the thin black moulding along the door, on the door so it swings with it
+      for (const z of [-0.003, -len + 0.003]) dl(rbox(0.006, upperAt(D.rear) - D.bottom - 0.01, 0.005, 0.002, PAL.black, s * 0.0205, (D.bottom + upperAt(D.rear)) / 2, z, dt)); // the shut lines at the door's two edges
       // The window: a glass leaning in as the glasshouse does, between the A pillar's line and the door's rear edge.
       const win = new THREE.Group();
       const x0 = s * (halfAt(ys) - 0.01) - s * FACE; // the glass's foot, relative to the door's middle
@@ -353,7 +424,7 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
       const mirror = new THREE.Group();
       mirror.name = 'mirror';
       mirror.userData.keep = true;
-      mirror.position.set(s * 0.045, ys + 0.06, -0.06);
+      mirror.position.set(s * 0.015, ys + 0.06, -0.06);
       rbox(0.07, 0.04, 0.06, 0.012, PAL.black, 0, 0, 0, mirror); // its foot on the door
       rbox(0.16, 0.1, 0.07, 0.035, PAL.black, s * 0.1, 0.04, -0.02, mirror); // the housing, rounded
       rbox(0.13, 0.075, 0.004, 0.003, PAL.glass, s * 0.1, 0.04, -0.0575, mirror); // and its glass, facing back
@@ -373,7 +444,7 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
 
   // The pillars, the rails, the windscreen, the roof and the rear quarter windows. The side glass in front of the B pillar is the doors'.
   function addGlasshouse() {
-    const pr = 0.04;
+    const pr = 0.032;
     const cz0 = c.bPillar - (c.bPillar - zr) * 0.62; // the quarter window's back edge, at the roof
     for (const s of [-1, 1]) {
       tube([s * halfAt(ys), ys, zs], [s * halfAt(yt), yt, zt], pr, faded, root, 8); // the A pillar
@@ -414,13 +485,13 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     const roofLen = Math.hypot(zt - zr, yt - yr);
     const arc = new THREE.Shape();
     arc.moveTo(-roofW / 2, 0);
-    arc.quadraticCurveTo(0, 0.07, roofW / 2, 0);
+    arc.quadraticCurveTo(0, 0.11, roofW / 2, 0);
     arc.lineTo(roofW / 2, -0.03);
-    arc.quadraticCurveTo(0, 0.04, -roofW / 2, -0.03);
+    arc.quadraticCurveTo(0, 0.08, -roofW / 2, -0.03);
     arc.closePath();
-    const roofGeo = new THREE.ExtrudeGeometry(arc, { depth: roofLen + 0.14, bevelEnabled: false, curveSegments: 10 }).translate(0, 0, -(roofLen + 0.14) / 2);
+    const roofGeo = new THREE.ExtrudeGeometry(arc, { depth: roofLen + 0.14, bevelEnabled: false, curveSegments: 10 }).translate(0, 0, -(roofLen + 0.14) / 2 + 0.035);
     const roof = add(roofGeo, faded, root, 'roof');
-    roof.position.set(0, (yt + yr) / 2 - 0.03, (zt + zr) / 2);
+    roof.position.set(0, (yt + yr) / 2 + 0.035, (zt + zr) / 2);
     roof.rotation.x = Math.atan2(yt - yr, zt - zr) * -1;
     const lining = rbox(roofW - 0.12, 0.012, roofLen - 0.1, 0.005, trim.lining, 0, (yt + yr) / 2 - 0.09, (zt + zr) / 2, root); // the headlining, well under the crown's edges
     lining.rotation.x = roof.rotation.x;
@@ -464,20 +535,34 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     deck.lineTo(hz(c.tail + 0.02), hy(upperAt(c.tail + 0.02)) - 0.03);
     deck.lineTo(hz(zh), hy(yh) - 0.03);
     deck.closePath();
-    extrudeZY(deck, deckW, 0, faded, hatch);
+    extrudeZY(deck, 2 * (INNER - 0.04), 0, faded, hatch); // the deck leans in with the quarters (TILT), so it is narrower than the panel under it
     const tailTop = upperAt(c.tail);
-    rbox(deckW, tailTop - H.foot, 0.04, 0.02, paint, 0, hy((tailTop + H.foot) / 2), hz(c.tail + 0.02), hatch);
+    // The tail panel: a trapezoid, as wide as the quarters' inner faces at its foot and drawn in with them (they lean in) towards its top.
+    const innerAt = (y) => INNER - TILT * (y - c.sill) - 0.0025;
+    const tp = new THREE.Shape();
+    tp.moveTo(-innerAt(H.foot), hy(H.foot));
+    tp.lineTo(innerAt(H.foot), hy(H.foot));
+    tp.lineTo(innerAt(tailTop), hy(tailTop));
+    tp.lineTo(-innerAt(tailTop), hy(tailTop));
+    tp.closePath();
+    add(new THREE.ExtrudeGeometry(tp, { depth: 0.04, bevelEnabled: false }).translate(0, 0, hz(c.tail)), paint, hatch);
     // The tail lamps: tall ovals in the corners (the photos): a black housing, the red stop and tail lens above the amber indicator, inside the hatch's width.
     const L = CORSA_TAIL_LAMP;
     for (const sd of [-1, 1]) {
       const ly = hy((L.y0 + L.y1) / 2);
-      rbox(L.w + 0.02, L.y1 - L.y0 + 0.02, 0.02, 0.008, PAL.black, sd * L.x, ly, hz(c.tail) - 0.01, hatch, 'tailLampBody');
-      const red = add(new THREE.SphereGeometry(0.5, 16, 10).scale(L.w, (L.y1 - L.y0) * 0.62, 0.05), tailMat, hatch);
-      red.position.set(sd * L.x, ly + (L.y1 - L.y0) * 0.18, hz(c.tail) - 0.02);
-      const amb = add(new THREE.SphereGeometry(0.5, 14, 8).scale(L.w * 0.9, (L.y1 - L.y0) * 0.3, 0.04), PAL.amber, hatch);
-      amb.position.set(sd * L.x, ly - (L.y1 - L.y0) * 0.33, hz(c.tail) - 0.018);
+      rbox(L.w + 0.005, L.y1 - L.y0 + 0.005, 0.02, 0.008, PAL.black, sd * L.x, ly, hz(c.tail) - 0.01, hatch, 'tailLampBody');
+      const H3 = L.y1 - L.y0;
+      const red = add(new THREE.SphereGeometry(0.5, 16, 10).scale(L.w * 1.15, H3 * 0.5, 0.05), tailMat, hatch); // the stop and tail lens, on top
+      red.position.set(sd * L.x, ly + H3 * 0.22, hz(c.tail) - 0.02);
+      const amb = add(new THREE.SphereGeometry(0.5, 14, 8).scale(L.w * 1.08, H3 * 0.25, 0.04), PAL.amber, hatch); // the indicator under it
+      amb.position.set(sd * L.x, ly - H3 * 0.08, hz(c.tail) - 0.018);
+      const low = add(new THREE.SphereGeometry(0.5, 14, 8).scale(L.w * 1.02, H3 * 0.22, 0.04), sd > 0 ? PAL.smoke : PAL.fog, hatch); // and in the same unit the reverse lamp (left) or the fog lamp (right)
+      low.position.set(sd * L.x, ly - H3 * 0.33, hz(c.tail) - 0.018);
     }
-    rbox(0.07, 0.04, 0.03, 0.01, PAL.plastic, 0, hy(0.74), hz(c.tail) - 0.0125, hatch, 'hatchHandle'); // the black pull above the plate
+    rbox(0.07, 0.04, 0.03, 0.01, PAL.plastic, 0, hy(0.715), hz(c.tail) - 0.0125, hatch, 'hatchHandle'); // the black pull above the plate
+    const tailBadge = makerBadge(0.05, hatch); // the maker's badge on the tail, above the pull
+    tailBadge.position.set(0, hy(0.785), hz(c.tail) - 0.0225);
+    tailBadge.rotation.y = Math.PI;
     rbox(deckW - 0.1, tailTop - H.foot - 0.06, 0.012, 0.005, trim.trim, 0, hy((tailTop + H.foot) / 2), hz(c.tail + 0.045), hatch); // the lining inside it
     // The rear wiper on the glass, spindle at its foot in the middle.
     const rw = buildWiper({ len: 0.34, mats: { arm: PAL.black } });
@@ -499,7 +584,7 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     sticker.position.set(0, hy(yh) + 0.15 * Math.cos(hl) + 0.008 * Math.sin(hl), hz(zh) + 0.15 * Math.sin(hl) - 0.008 * Math.cos(hl));
     sticker.rotation.set(hl, Math.PI, 0);
     // The plate on the tail panel above the bumper (yellow at the back).
-    plate(reg_, '#e8c51c', hatch, { x: 0, y: hy(0.66), z: hz(c.tail) - 0.0125, facing: -1 });
+    plate(reg_, '#e8c51c', hatch, { x: 0, y: hy(0.62), z: hz(c.tail) - 0.0125, facing: -1 });
     root.add(hatch);
     for (const s of [-1, 1]) { // the struts: a body end low on each C pillar's inside, aimed at a hatch end on its frame (stretched and turned by poseCorsaHatch)
       const strut = new THREE.Group();
@@ -517,30 +602,36 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
   // The nose: the faded bonnet, the front panel, the swept oval headlamps either side of the slim grille with its round badge, the deep black plastic
   // bumper with its lower intake, the plate in front of it.
   function addFrontEnd() {
-    skin(c.nose, zs, 0.035, W - 0.06, faded, root);
+    // The bonnet: crowned across, narrowing round the nose in plan (a loft, with smooth normals), not a flat slab.
+    loft(c.nose - 0.02, zs, upperAt, (z) => (W / 2 - 0.05) * Math.sqrt(Math.max(0.2, 1 - Math.max(0, (z - (c.nose - 0.4)) / 0.42) ** 2)), 0.045, 0.04, faded, root);
     rbox(W - 0.06, 0.03, 0.03, 0.01, PAL.under, 0, ys - 0.04, zs + 0.02, root); // the scuttle panel at the foot of the screen
     const noseTop = upperAt(c.nose);
-    rbox(W - 0.02, noseTop - NOSE_LOW + 0.02, 0.24, 0.1, faded, 0, (noseTop + NOSE_LOW) / 2 + 0.01, c.nose - 0.12, root); // the rounded nose
+    rbox(W - 0.02, noseTop + 0.08 - NOSE_LOW, 0.24, 0.09, faded, 0, (noseTop + 0.08 + NOSE_LOW) / 2, c.nose - 0.12, root); // the rounded nose, up under the bonnet's front edge
     // The grille: a slim black slot between the lamps with the maker's round badge on it (Ashby: the makers are made up).
-    rbox(0.5, 0.05, 0.03, 0.02, PAL.black, 0, 0.62, c.nose + 0.005, root);
-    const badge = label(0.06, 0.06, 800, (g, Wd, H) => {
-      g.fillStyle = '#d8dadc';
-      g.beginPath();
-      g.arc(Wd / 2, H / 2, Wd / 2, 0, Math.PI * 2);
-      g.fill();
-      g.fillStyle = '#2a2b2d';
-      g.beginPath();
-      g.arc(Wd / 2, H / 2, Wd * 0.4, 0, Math.PI * 2);
-      g.fill();
-      g.fillStyle = '#d8dadc';
-      fitText(g, 'A', Wd / 2, H / 2 + H * 0.03, H * 0.5, Wd * 0.5);
-    }, root);
-    badge.position.set(0, 0.62, c.nose + 0.0215);
+    rbox(0.46, 0.09, 0.03, 0.02, PAL.black, 0, 0.62, c.nose + 0.005, root);
+    const noseBadge = makerBadge(0.05, root);
+    noseBadge.position.set(0, 0.62, c.nose + 0.0215);
     for (const s of [-1, 1]) {
-      rbox(0.46, 0.19, 0.12, 0.04, PAL.black, s * 0.5, 0.62, c.nose - 0.08, root); // the lamp's housing, sunk in the nose
-      const lamp = add(new THREE.SphereGeometry(0.5, 20, 12).scale(0.44, 0.17, 0.1), lensMat, root);
-      lamp.position.set(s * 0.5, 0.62, c.nose - 0.05);
+      // The lamp: a big clear lens that bulges out of the nose and wraps the corner, a silver reflector bowl with its bulb drawn on the lens's face (no black box behind it).
+      const lamp = add(new THREE.SphereGeometry(0.5, 24, 14).scale(0.46, 0.19, 0.1), lensMat, root);
+      lamp.position.set(s * 0.5, 0.63, c.nose - 0.03);
       lamp.rotation.y = s * 0.35;
+      const bowl = label(0.2, 0.12, 900, (g, Wd, H) => {
+        const grad = g.createRadialGradient(Wd * 0.45, H * 0.5, 2, Wd / 2, H / 2, Wd * 0.5);
+        grad.addColorStop(0, '#f4f4f0');
+        grad.addColorStop(0.5, '#a9acad');
+        grad.addColorStop(1, '#5a5d5f');
+        g.fillStyle = grad;
+        g.beginPath();
+        g.ellipse(Wd / 2, H / 2, Wd * 0.48, H * 0.46, 0, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = '#e8d890';
+        g.beginPath();
+        g.arc(Wd * 0.45, H * 0.5, H * 0.14, 0, Math.PI * 2);
+        g.fill();
+      }, root);
+      bowl.position.set(s * 0.5 + Math.sin(s * 0.35) * 0.053, 0.63, c.nose - 0.03 + Math.cos(s * 0.35) * 0.053);
+      bowl.rotation.y = s * 0.35;
       const ind = add(new THREE.SphereGeometry(0.5, 14, 10).scale(0.1, 0.1, 0.1), PAL.amber, root); // the indicator: at the outer end of the lamp unit, wrapping the corner
       ind.position.set(s * 0.66, 0.6, c.nose - 0.075);
       ind.rotation.y = s * 0.7;
@@ -557,24 +648,43 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
   // The tail: the deep black plastic bumper with its reverse and fog lamps, the exhaust (Jess's: a big chrome can).
   function addRear() {
     const B = CORSA_BUMPER;
-    rbox(W - 0.01, B.high - B.low, 0.2, 0.07, PAL.plastic, 0, (B.low + B.high) / 2, c.tail + 0.07, root);
-    for (const s of [-1, 1]) rbox(0.18, B.high - B.low - 0.02, 0.15, 0.06, PAL.plastic, s * (W / 2 - 0.08), (B.low + B.high) / 2, c.tail + 0.085, root); // its corners wrapping forward along the quarter
-    rbox(0.1, 0.05, 0.02, 0.01, PAL.smoke, 0.46, B.high - 0.06, c.tail - 0.04, root); // the reverse lamp, in the bumper, on the left
-    rbox(0.1, 0.05, 0.02, 0.01, PAL.fog, -0.46, B.high - 0.06, c.tail - 0.04, root); // and the fog lamp on the right
-    rbox(W - 0.5, B.high - 0.45, 0.04, 0.02, paint, 0, (B.high + 0.45) / 2 + 0.04, c.tail + 0.02, root); // the rear valance between the bumper and the hatch's foot
+    // The bumper has a notch in it for the exhaust (Jess's can comes out through it): two long pieces either side, and a short piece over the gap.
+    const NX = -0.5; // the notch's middle, on the driver's side
+    const NW = 0.16;
+    const bz = c.tail + 0.07;
+    const bh = B.high - B.low;
+    const bm = (B.low + B.high) / 2;
+    const left = W / 2 - 0.005; // the bumper's outer edges
+    rbox(left - (NX + NW / 2), bh, 0.2, 0.012, PAL.plastic, (left + NX + NW / 2) / 2, bm, bz, root); // from the notch to the left corner
+    rbox(NX - NW / 2 + left, bh, 0.2, 0.012, PAL.plastic, (NX - NW / 2 - left) / 2, bm, bz, root); // and to the right corner
+    rbox(NW + 0.08, 0.2, 0.19, 0.012, PAL.plastic, NX, B.high - 0.1 - 0.005, bz, root); // over the notch: the bumper's upper part, which carries on across
+    for (const s of [-1, 1]) rbox(0.18, bh - 0.02, 0.15, 0.06, PAL.plastic, s * (W / 2 - 0.08), bm, c.tail + 0.085, root); // its corners wrapping forward along the quarter
     rbox(W - 0.5, 0.03, 0.05, 0.01, PAL.black, 0, CORSA_HATCH.foot - 0.02, c.tail + 0.01, root); // the cargo sill's rubber seal
     // Jess's exhaust: a pipe under the car to a big chrome can sticking out under the right of the bumper.
-    tube([-0.4, 0.22, -0.6], [-0.5, 0.22, c.tail - 0.14 + 0.2], 0.03, PAL.rust, root, 6);
-    add(new THREE.CylinderGeometry(0.055, 0.055, 0.22, 18, 1, true).rotateX(Math.PI / 2), PAL.chrome, root).position.set(-0.5, 0.22, c.tail - 0.14 + 0.08);
-    add(new THREE.CircleGeometry(0.05, 18), PAL.black, root).position.set(-0.5, 0.22, c.tail - 0.14 - 0.02);
+    // The can is a double-skinned chrome tube you can look into: the outer wall (chrome, seen from both sides), a dark inner liner, a rolled lip and a dark baffle deep inside.
+    const ez = c.tail - 0.14; // the tip, at the mouth
+    tube([-0.4, 0.22, -0.6], [NX, 0.22, ez + 0.2], 0.03, PAL.rust, root, 6);
+    const chromeIn = PAL.chrome.clone();
+    chromeIn.side = THREE.DoubleSide;
+    add(new THREE.CylinderGeometry(0.055, 0.055, 0.22, 20, 1, true).rotateX(Math.PI / 2), chromeIn, root).position.set(NX, 0.22, ez + 0.1);
+    const liner = PAL.black.clone();
+    liner.side = THREE.DoubleSide;
+    add(new THREE.CylinderGeometry(0.047, 0.047, 0.2, 20, 1, true).rotateX(Math.PI / 2), liner, root).position.set(NX, 0.22, ez + 0.1 + 0.005);
+    add(new THREE.TorusGeometry(0.0525, 0.007, 6, 20), PAL.chrome, root).position.set(NX, 0.22, ez - 0.0); // the rolled lip
+    const baffle = add(new THREE.CircleGeometry(0.048, 20), liner, root); // the dark disc inside, facing out of the mouth
+    baffle.position.set(NX, 0.22, ez + 0.14);
+    baffle.rotation.y = Math.PI;
+    add(new THREE.CylinderGeometry(0.02, 0.02, 0.04, 10, 1, true).rotateX(Math.PI / 2), liner, root).position.set(NX, 0.22, ez + 0.12); // the pipe's mouth inside it
   }
 
   // The front seats: Jess's aftermarket buckets, tall with the headrest built in and a slot through it for a harness, big bolsters on the back and the
   // cushion, in a loud zigzag cloth.
   function frontSeat(name, seat) {
     const mat = trim.bucket;
-    rbox(0.46, 0.1, 0.46, 0.04, mat, seat.x, seat.y - 0.08, seat.z + 0.12, root); // the cushion
-    for (const sx of [-1, 1]) rbox(0.07, 0.1, 0.42, 0.03, mat, seat.x + sx * 0.23, seat.y - 0.05, seat.z + 0.12, root); // its bolsters
+    const bol = trim.bolster;
+    rbox(0.46, 0.1, 0.46, 0.04, bol, seat.x, seat.y - 0.08, seat.z + 0.12, root); // the cushion, black
+    rbox(0.26, 0.012, 0.36, 0.005, mat, seat.x, seat.y - 0.0245, seat.z + 0.12, root); // with a cloth inset
+    for (const sx of [-1, 1]) rbox(0.08, 0.12, 0.42, 0.03, bol, seat.x + sx * 0.23, seat.y - 0.04, seat.z + 0.12, root); // and tall bolsters either side
     rbox(0.4, 0.2, 0.36, 0.02, PAL.under, seat.x, seat.y - 0.24, seat.z + 0.1, root); // its frame and runners
     const pivot = new THREE.Group();
     pivot.name = `seatBack_${name}`;
@@ -582,12 +692,13 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     pivot.position.set(seat.x, seat.y - 0.04, seat.z - 0.13);
     const lean = new THREE.Group();
     lean.rotation.x = -0.22; // reclined a little
-    rbox(0.46, 0.7, 0.1, 0.05, mat, 0, 0.35, -0.03, lean); // the shell, the headrest built in at the top
+    rbox(0.46, 0.7, 0.1, 0.05, bol, 0, 0.35, -0.03, lean); // the shell, black, the headrest built in at the top
+    rbox(0.26, 0.4, 0.012, 0.005, mat, 0, 0.3, 0.026, lean); // the cloth inset down the middle
     for (const sx of [-1, 1]) {
-      const wing = rbox(0.08, 0.42, 0.16, 0.04, mat, sx * 0.24, 0.26, 0.03, lean); // the bolster, standing forward
+      const wing = rbox(0.08, 0.42, 0.16, 0.04, bol, sx * 0.24, 0.26, 0.03, lean); // the big side bolster, standing forward
       wing.rotation.y = sx * -0.25;
     }
-    rbox(0.16, 0.05, 0.11, 0.02, PAL.black, 0, 0.58, -0.03, lean); // the harness slot
+    rbox(0.2, 0.12, 0.012, 0.005, mat, 0, 0.6, 0.026, lean); // a cloth panel on the headrest
     pivot.add(lean);
     root.add(pivot);
   }
@@ -608,10 +719,11 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     const face = zs - 0.32;
     rbox(W - 0.12, 0.08, 0.32, 0.03, trim.dash, 0, dashTop, zs - 0.17, root);
     rbox(W - 0.12, 0.3, 0.04, 0.02, trim.dash, 0, dashTop - 0.17, face, root); // its face
-    rbox(0.5, 0.05, 0.14, 0.025, trim.dash, c.seats.driver.x, dashTop + 0.07, face - 0.06, root); // the binnacle's hood
+    rbox(0.5, 0.05, 0.14, 0.025, trim.dash, c.seats.driver.x, dashTop + 0.075, face - 0.06, root); // the binnacle's hood
+    for (const sx of [-1, 1]) rbox(0.03, 0.17, 0.1, 0.01, trim.dash, c.seats.driver.x + sx * 0.235, dashTop + 0.0, face - 0.05, root); // its cheeks, so the dials sit in a pocket under it
     rbox(0.5, 0.2, 0.04, 0.02, trim.dash, c.seats.driver.x, dashTop - 0.03, face - 0.01, root); // its back, round the dials
     const dash = buildDash('corsa');
-    dash.group.position.set(c.seats.driver.x, dashTop - 0.03, face - 0.04);
+    dash.group.position.set(c.seats.driver.x, dashTop - 0.03, face - 0.04); // a fixed point
     dash.group.rotation.x = 0.3;
     dash.group.scale.setScalar(1.35); // the cluster's about 0.32 m wide
     dash.group.userData.keep = true;
@@ -620,8 +732,8 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     quad.userData.metalBody = true;
     quad.userData.podMount = null;
     for (const s of [-1, 1]) { // the vents at the ends: a big louvred rectangle each, the photos'
-      rbox(0.15, 0.07, 0.02, 0.01, PAL.black, s * 0.6, dashTop - 0.05, face - 0.025, root);
-      for (let i = 0; i < 5; i++) rbox(0.13, 0.004, 0.006, 0.002, PAL.under, s * 0.6, dashTop - 0.077 + i * 0.013, face - 0.036, root);
+      rbox(0.15, 0.07, 0.02, 0.01, PAL.black, s * 0.65, dashTop - 0.05, face - 0.025, root);
+      for (let i = 0; i < 5; i++) rbox(0.13, 0.004, 0.006, 0.002, PAL.under, s * 0.65, dashTop - 0.077 + i * 0.013, face - 0.036, root);
     }
     // The centre stack: a panel from the dash face down to the tunnel with the clock's display on top, the hazard button between two vents, the three heater
     // knobs, and Jess's head unit (the shared radio piece, in its loud style) in the slot under them.
@@ -653,8 +765,9 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     quad.userData.liveMaterials.push(radio.userData.faceMaterial);
     // The lights' knob and two rockers at the driver's right under the binnacle, the photos': the knob turns with the light switch.
     const lights = new THREE.Group();
-    lights.position.set(c.seats.driver.x - 0.3, dashTop - 0.12, face - 0.025);
+    lights.position.set(c.seats.driver.x - 0.3, dashTop - 0.165, face - 0.025);
     root.add(lights);
+    rbox(0.21, 0.085, 0.01, 0.004, PAL.under, 0.035, 0, 0.002, lights); // the little pod's black plate, under the end vent: all the lights' controls are here, as the photo's
     const knob = new THREE.Group();
     knob.name = 'lightsKnob';
     knob.userData.keep = true;
@@ -662,7 +775,7 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     add(new THREE.CylinderGeometry(0.026, 0.028, 0.02, 16).rotateX(Math.PI / 2), PAL.black, knob);
     rbox(0.005, 0.034, 0.008, 0.002, PAL.chrome, 0, 0.0, -0.014, knob);
     lights.add(knob);
-    for (const x of [0.07, 0.11]) rbox(0.026, 0.032, 0.014, 0.004, PAL.under, x, 0.0, -0.003, lights);
+    for (const x of [0.06, 0.105]) rbox(0.03, 0.036, 0.014, 0.004, PAL.plastic, x, 0.0, -0.006, lights); // the two fog lamp rockers
     const podUpdate = dash.update;
     dash.update = (state) => { // the pod's own update, then the radio's display and the lights' knob follow the radio and the switch
       podUpdate(state);
@@ -700,12 +813,12 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
       root.add(buildSeatBelt(name, { top: [outTop, topY, postZ], low: [lowOut, lowY, postZ], buckle: [inn, seat.y + 0.03, seat.z - 0.08], hip, lapOnly: false, mats: { webbing } }));
     };
     const frontTop = (seat) => halfAt(seat.y + 0.72) - 0.045;
-    const reelX = INNER - 0.032;
-    belt('driver', c.seats.driver, -outer, -0.12, post_, -frontTop(c.seats.driver), c.seats.driver.y + 0.72, -reelX, 0.62);
-    belt('left', c.seats.left, outer, 0.12, post_, frontTop(c.seats.left), c.seats.left.y + 0.72, reelX, 0.62);
+    const innerAt = (y) => INNER - TILT * (y - c.sill) - 0.032; // the quarters' inner faces lean in with the sides
+    belt('driver', c.seats.driver, -outer, -0.12, post_, -frontTop(c.seats.driver), c.seats.driver.y + 0.72, -innerAt(0.62), 0.62);
+    belt('left', c.seats.left, outer, 0.12, post_, frontTop(c.seats.left), c.seats.left.y + 0.72, innerAt(0.62), 0.62);
     const rearTop = (seat) => halfAt(seat.y + 0.6) - 0.03;
-    belt('rearLeft', c.rear.rearLeft, outer, 0.1, -1.25, rearTop(c.rear.rearLeft), c.rear.rearLeft.y + 0.6, reelX, 0.74);
-    belt('rearRight', c.rear.rearRight, -outer, -0.1, -1.25, -rearTop(c.rear.rearRight), c.rear.rearRight.y + 0.6, -reelX, 0.74);
+    belt('rearLeft', c.rear.rearLeft, outer, 0.1, -1.25, rearTop(c.rear.rearLeft), c.rear.rearLeft.y + 0.6, innerAt(0.74), 0.74);
+    belt('rearRight', c.rear.rearRight, -outer, -0.1, -1.25, -rearTop(c.rear.rearRight), c.rear.rearRight.y + 0.6, -innerAt(0.74), 0.74);
   }
 
   // The steering wheel and its column, the gear lever, the handbrake, the pedals (the choke is only a hidden stand-in: it is injected).
@@ -856,7 +969,7 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
   quad.userData.tailHaloMaterial = new THREE.SpriteMaterial({ transparent: true, opacity: 0 });
   quad.userData.tailHalos = [];
   mergeStatic(root);
-  quad.userData.cleanMaterials = [trim.bucket, trim.seat, trim.band, trim.floor, trim.dash, trim.card, trim.lining, trim.trim];
+  quad.userData.cleanMaterials = [trim.bucket, trim.bolster, trim.seat, trim.band, trim.floor, trim.dash, trim.card, trim.lining, trim.trim];
   quad.userData.cabin = { min: [-c.width / 2, c.sill, c.hatchBottom[0]], max: [c.width / 2, c.screenTop[1] + 0.1, c.screenBase[0]] };
   const casts = new Set([paint, faded, PAL.rubber, PAL.black, PAL.plastic, PAL.primer, PAL.under, PAL.chrome]);
   quad.traverse((o) => {

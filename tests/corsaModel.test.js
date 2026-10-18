@@ -107,7 +107,7 @@ describe('the Corsa at its real size', () => {
     const holes = [];
     for (const s of [1, -1]) {
       for (let z = -1.6783; z <= 1.85; z += 0.0497) {
-        for (let y = 0.4913; y <= 1.35; y += 0.0497) {
+        for (let y = 0.4913; y <= 1.3; y += 0.0497) {
           const front = 0.8 - (y - 0.95); // the A pillar's line (world y: the body stands 5 cm on its wheels)
           const cabin = z < front - 0.08 && z > -1.3;
           if (y > upperLine(z) + 0.05 - 0.03 && !cabin) continue; // over the bonnet and the tail: open air above the line
@@ -123,7 +123,7 @@ describe('the Corsa at its real size', () => {
 
   it('has no holes in its back or its front (round the hatch, the lamps, the bumper, the grille)', () => {
     const holes = [];
-    for (let x = -0.7817; x <= 0.78; x += 0.0497) {
+    for (let x = -0.7517; x <= 0.75; x += 0.0497) {
       for (let y = 0.5813; y <= 1.2; y += 0.0497) { // (from the bumper's top: below it is the open under-body, as on the car)
         const lowOrNarrow = y < 0.95 || Math.abs(x) < 0.55;
         if (!lowOrNarrow) continue; // above the bonnet and the deck, outside the glass: open air
