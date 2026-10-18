@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { choose, scoreOffer, mainNeed, describeMind, OFFER_KINDS } from '../src/npc/chooser.js';
+import { choose, nextThink, firstThink, scoreOffer, mainNeed, describeMind, OFFER_KINDS } from '../src/npc/chooser.js';
 import { NEEDS } from '../src/npc/needs.js';
 import { DEFAULT_COMPANION_PARAMS as P } from '../src/npc/companionParams.js';
 
@@ -62,5 +62,22 @@ describe('the chooser', () => {
     expect(d.nearly).toBe('wander off for a look round 0.31');
     expect(d.next).toBe('thinks again in 1.2 s');
     expect(describeMind({ last: null, since: 0, scored: [], waiting: 'driving', thinkIn: 0 })).toEqual({ chose: 'nothing yet', nearly: 'nothing on offer', next: 'not now: driving' });
+  });
+});
+
+describe('when she thinks', () => {
+  const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; };
+  it('varies the gap between thoughts widely but never under a fifth of it', () => {
+    const gaps = Array.from({ length: 200 }, (_, i) => nextThink(2, 0, seq(((i * 37) % 100) / 100 + 0.005, ((i * 53) % 100) / 100)));
+    expect(Math.min(...gaps)).toBeGreaterThanOrEqual(0.4);
+    expect(Math.max(...gaps) / Math.min(...gaps)).toBeGreaterThan(4);
+  });
+  it('is slower when sleepy', () => {
+    expect(nextThink(2, 1, () => 0.5)).toBeCloseTo(nextThink(2, 0, () => 0.5) * 2);
+  });
+  it('lets her stand a while after the game starts, differently for each girl', () => {
+    expect(firstThink(2, () => 0)).toBe(3);
+    expect(firstThink(2, () => 0.999)).toBeGreaterThan(14);
+    expect(firstThink(2, () => 0.2)).not.toBe(firstThink(2, () => 0.8));
   });
 });

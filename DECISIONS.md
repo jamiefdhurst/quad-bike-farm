@@ -4325,3 +4325,9 @@ Settled with Jamie before building:
 - **`/idea`** checks the issues and "Ideas turned down" for repeats, drafts one issue or a handful in the TODO list's style with labels, asks Jamie yes or no on each, files the yeses and writes the noes into "Ideas turned down".
 - **Left for later:** deploying the release somewhere (the zip is what a deploy takes), and showing the version in the game.
 
+
+## The girls talk over each other and start in step (issue #2, was TODO 107)
+
+- **Starting in step.** Both girls started with small needs, a first think within 2 s and the same think gap, so they chose at nearly the same moment and the first pick was nearly always a quad. Now each starts with random purpose, excitement, company and rest, and stands for `firstThink` (1.5 to 7.5 times `thinkEvery`, 3 to 15 s) before her first think.
+- **Thinking.** The gap between thoughts is `nextThink` (chooser.js): log-normal around `thinkEvery`, never under a fifth of it, so some thoughts come quick and some are mulled over. Sleepiness still slows it.
+- **Talking over.** The lines she says as she sets off (`watchOwnMind`) were `urgent`, which skips the shared floor, so both girls could announce a plan at once. They now pass `waitTurn`: no quiet gap, but if the other girl is still talking the line is dropped and she just goes. Reactions to events stay urgent.

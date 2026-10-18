@@ -69,6 +69,19 @@ export const OFFER_KINDS = {
   tagAlong: { label: 'tag along with her friend', satisfies: { company: 0.8, purpose: 0.5 }, pace: 'brisk' },
 };
 
+/**
+ * Seconds until she weighs things up again: her usual gap, but log-normal so some thoughts come quickly and some she mulls for a
+ * good while (never under a fifth of it), and slower the sleepier she is.
+ */
+export function nextThink(every, sleepy = 0, random = Math.random) {
+  return Math.max(0.2 * every, every * Math.exp(gaussian(random) * 0.6 - 0.18)) * (1 + sleepy);
+}
+
+/** How long she stands settling in after the game starts: a few seconds to a quarter of a minute, different for each girl. */
+export function firstThink(every, random = Math.random) {
+  return every * (1.5 + random() * 6);
+}
+
 /** How much this offer would do for her now: the needs it meets, weighted by how much she cares for it. */
 export function scoreOffer(offer, needs) {
   const kind = OFFER_KINDS[offer.key];
