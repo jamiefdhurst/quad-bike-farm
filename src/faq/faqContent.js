@@ -1614,7 +1614,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Do I have to wear a seat belt in the UTV or a Land Rover?',
         a: `Not to drive. The UTV and the 200TDi nag: with the key on and your belt off (or nobody in the driver's seat at all) the BELT lamp flashes and it bongs every
-          couple of seconds (quieter the further you are) until you press <kbd>;</kbd> to do it up. The Series III is old enough to have no lamp and no bong, but it has belts if you want
+          couple of seconds (quieter the further you are) until you press <kbd>;</kbd> to do it up. A girl near the 200TDi will mention the bong if it is yours that is off (Amy asks, Jess teases). The Series III is old enough to have no lamp and no bong, but it has belts if you want
           one (<kbd>;</kbd> too): a diagonal and lap belt in the driver's and the left-hand seat, a lap belt in the middle. The girls buckle up a moment after
           they sit down in either.`
       },

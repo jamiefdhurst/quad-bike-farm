@@ -2236,7 +2236,7 @@ export class Game {
   /** You ask her for a go: Jess is thrilled, and Amy says no until her day has come. */
   askDriveVehicle(c, kind) {
     const id = c.character.id;
-    const line = { tractor: ['tractorRefuse', 'tractorGoAsk'], utv: ['utvRefuse', 'utvGoAsk'], landy: ['landyRefuse', 'landyGoAsk'], defender: ['landyRefuse', 'landyGoAsk'], fiesta: ['carNotMine', 'carGoOff'], corsa: ['carNotMine', 'carGoOff'] }[kind];
+    const line = { tractor: ['tractorRefuse', 'tractorGoAsk'], utv: ['utvRefuse', 'utvGoAsk'], landy: ['landyRefuse', 'landyGoAsk'], defender: ['defenderRefuse', 'defenderGoAsk'], fiesta: ['carNotMine', 'carGoOff'], corsa: ['carNotMine', 'carGoOff'] }[kind];
     if (CAR_KINDS.includes(kind) ? !mayDriveCar(id, this.landys[kind].spec) : this.tractorGo.ask(id) === 'refuse') return void c.voice.say(line[0], { force: true });
     this.startGo(c, kind);
     c.voice.say(line[1], { force: true });
@@ -2474,7 +2474,7 @@ export class Game {
   /** Acts on a go on the big vehicles (npc/tractorGo.js): Jess's go (her choice) or Amy's day. */
   handleGoEvent(ev) {
     const c = this.companions.find((o) => o.character.id === ev.girl);
-    const ask = { tractor: 'tractorGoAsk', utv: 'utvGoAsk', landy: 'landyGoAsk', defender: 'landyGoAsk' }[ev.vehicle];
+    const ask = { tractor: 'tractorGoAsk', utv: 'utvGoAsk', landy: 'landyGoAsk', defender: 'defenderGoAsk' }[ev.vehicle];
     if (ev.type === 'amyDay') c.voice.say('tractorDay', { force: true });
     else c.voice.say(ask, { force: true });
     this.startGo(c, ev.vehicle);
@@ -2489,7 +2489,7 @@ export class Game {
       const kind = seen.kind;
       const q = this.goVehicle(kind)?.quad;
       if (!q) continue;
-      const pre = { tractor: 'tractorGo', utv: 'utvGo', landy: 'landyGo', defender: 'landyGo', fiesta: 'carGo', corsa: 'carGo' }[kind];
+      const pre = { tractor: 'tractorGo', utv: 'utvGo', landy: 'landyGo', defender: 'defenderGo', fiesta: 'carGo', corsa: 'carGo' }[kind];
       // The starting handle, on a flat battery.
       for (const e of c.crankEvents.splice(0)) {
         if (e === 'swing') c.voice.say('landyGoSwing', { urgent: true });
@@ -3346,7 +3346,14 @@ export class Game {
       if (seat && seat in sitting) sitting[seat] = 'girl';
     }
     if (youSeat && input.wasPressed('Semicolon')) q.belts.toggle(youSeat);
-    if (q.belts.update(dt, sitting, q.engine.ignitionOn, dashClock().seconds()) && unit.spec.defender) this.audioHub.beltBing(q.position);
+    if (q.belts.update(dt, sitting, q.engine.ignitionOn, dashClock().seconds()) && unit.spec.defender) {
+      this.audioHub.beltBing(q.position);
+      // The bong is for whoever has no belt on: if that is you, the nearest girl remarks on it.
+      if (youSeat) {
+        const near = this.companions.filter((c) => c.root.position.distanceTo(q.position) < 15).sort((x, y) => x.root.position.distanceTo(q.position) - y.root.position.distanceTo(q.position))[0];
+        say(near, 'defenderBong');
+      }
+    }
     if (mount.rearSlots.length) this.updateSeatTips(dt, q, mount, sitting);
 
     const girls = this.companions.map((c) => ({

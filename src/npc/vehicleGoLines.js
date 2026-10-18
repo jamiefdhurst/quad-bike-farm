@@ -2,7 +2,9 @@
 // (utvGoAsk, landyGoAsk), setting off (utvGoSetOff, landyGoSetOff), finishing (utvGoDone, landyGoDone) and the other one's view of it
 // (utvGoWatch, landyGoWatch); Amy refusing (utvRefuse, landyRefuse) before her day. The Land Rover's own: the starting handle on a flat
 // battery (landyGoSwing as she goes to it, landyGoKick when Jess's thumb gets caught and landyGoKickWatch from the other one,
-// landyGoNoLuck if it will not go), and Jess grinding first or second (landyGoCrunch, landyGoCrunchWatch). Merged into the main line
+// landyGoNoLuck if it will not go), and Jess grinding first or second (landyGoCrunch, landyGoCrunchWatch). The 200TDi has its own
+// (defenderRefuse, defenderGoAsk, defenderGoSetOff, defenderGoDone, defenderGoWatch, defenderBong): a diesel with a synchro five-speed and a
+// belt bong, so none of the Series' starting handle or crunching. Merged into the main line
 // sets (voiceLines.js, jessLines.js), so they're recorded with the rest. Nobody calls you anything but "you".
 
 const line = (cooldown, lines) => ({ cooldown, lines });
@@ -24,6 +26,12 @@ export const AMY_VEHICLEGO_LINES = {
   landyGoKick: line(20, ['Ow! That is exactly why the thumb goes alongside.', 'Ouch. I did say. Mostly to myself.']),
   landyGoCrunch: line(20, ['Sorry, sorry. Poor old gearbox.', 'That was the gearbox, not me.']),
   landyGoCrunchWatch: line(20, ['That noise! Clutch all the way down, Jess!', 'Poor gearbox. It never did anything to you.', 'It has no synchromesh. Slow down for it.']),
+  defenderRefuse: line(30, ['No. It is a big diesel and it bongs at me. I am not having that.', 'I am not driving that. It is too tall and I cannot see the corners.']),
+  defenderGoAsk: line(60, ['Fine. Keys. Belt on first, or it will bong at me all the way.', 'All right. It is a diesel, so I shall let it settle before I pull away.', 'If I must. Five gears, and I will use every one of them.']),
+  defenderGoSetOff: line(40, ['There. Synchromesh. No double declutching, thank goodness.', 'It rattles, but it pulls like anything.', 'Belt on, bong off. Lovely.']),
+  defenderGoDone: line(60, ['That was rather nice. It is very tall, though.', 'Parked, and no bong. Do not say a word.', 'It pulls well for something that rattles that much.']),
+  defenderGoWatch: line(60, ['Jess, belt! It will bong at you!', 'Mind the height, Jess. It is a lot wider than it feels.', 'Fifth gear is for the road, Jess, not the field.']),
+  defenderBong: line(45, ['That is the belt bong. Belt on, please.', 'You are not wearing your belt. It is bonging at you.', 'Belt. The bong will not stop until you do it.']),
 };
 
 export const JESS_VEHICLEGO_LINES = {
@@ -39,4 +47,9 @@ export const JESS_VEHICLEGO_LINES = {
   landyGoKick: ['Ow! It bit me! It actually bit me!', 'My thumb! My thumb is broken! It is not broken. It really hurts.', 'Right. Thumb alongside. I knew that.'],
   landyGoNoLuck: ['It is dead. I did try. It is dead.', 'Nothing. Not even a cough.'],
   landyGoCrunch: ['That was not me, that was the gearbox.', 'It is crunching! Is it meant to crunch?', 'Sorry, sorry, sorry. Gearbox!'],
+  defenderGoAsk: ['Right, I am having the 200TDi.', 'Nobody is using the big blue one. Mine now.', 'Move aside, I am driving the diesel.'],
+  defenderGoSetOff: ['It sounds like a tractor and I love it.', 'Five gears! I am going to use all of them.', 'No crunching! I have no excuse this time.'],
+  defenderGoDone: ['That was brilliant. It never even crunched.', 'I am a 200TDi driver now. Call me that.', 'I put the belt on, so the bong left me alone. Mostly.'],
+  defenderGoWatch: ['Show off.', 'Oh, come on! She is good at it? Since when?', 'It is a lorry. You are driving a lorry.'],
+  defenderBong: ['Bong, bong, bong. I get it, I get it.', 'It is only a noise. Ignore the noise.', 'Ha, it is nagging you. Belt up.'],
 };

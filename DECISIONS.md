@@ -2401,6 +2401,16 @@ Jamie asked to start optimising. Measured first (`.scratch/pp/loadtime.mjs` time
 
 - **Switch bank and the bong (UTV):** the 4WD, diff lock, lights and bed controls are now four matching rockers in a row (the diff lock was a round orange button and the bed a lever), each with a symbol on its cap drawn on a small canvas and redrawn only when its state changes: a four-wheel-drive layout (front axle and shaft light up for 4WD), a differential with lock bars (amber when locked), a headlamp with beams (slanting for dipped, level for main beam; green, then blue) and a tipping bed (amber when raised). The selected half goes in: the lower half for on; the lights' top for off, middle for dipped, lower for main beam. The dash has one LIGHTS lamp, green for dipped and blue for main beam, instead of LIGHTS and MAIN. The seat belt reminder is a "bong" now (523 Hz with an octave over it, ringing 0.7 s, `beltBingVolume` 0.16, from 0.05), sounding every two seconds on the edge of the lamp lighting, so it is in time with the flash (`SeatBelts.update` takes the dash clock). Checked in screenshots of the bank with the lights off, dipped and on main beam; the bong by ear not at all.
 
+## The 200TDi's own lines (TODO 105)
+
+Nothing needed settling; the wording was chosen here.
+
+- The 200TDi used the Series' `landy*` lines, so Amy said "it is a Series" in a car with synchromesh. It now has `defenderRefuse`, `defenderGoAsk`, `defenderGoSetOff`, `defenderGoDone`, `defenderGoWatch` and `defenderBong` for both girls (`vehicleGoLines.js`), picked in `game.js` where the Series' keys were (`askDriveVehicle`, `handleGoEvent`, and the `pre` prefix in `updateTractorGo`). They talk about the diesel, the five-speed that does not crunch, the height, and the belt bong.
+- The Series' `landyGoCrunch*`, `landyGoSwing`, `landyGoKick*` and `landyGoNoLuck` stay on the Series only: the 200TDi has no crash gears (`crashGears: 0`) and no starting handle, so those events never fire for it.
+- The bong: when it sounds and the belt that is off is yours (you are in a seat), the nearest girl within 15 m says `defenderBong` (45 s cooldown, so it does not repeat with every bong). A girl's own belt is done by her, so she never nags about hers.
+- Not done: nothing tells them apart by wear or by the day; and the shared `tractorGoLurch` still covers a bad clutch. Unit tests and the voice coverage test only; not heard in play.
+
+
 ## Smaller downloads (TODO 104, 2026-10-18)
 
 Measured first in a production build (`.scratch/pp/payload.mjs`: loads the game and sums every response): a cold load fetched **160.5 MB**, of which 125.6 MB was the girls' voice MP3s, 61 MB of WAV recordings, a 6.8 MB script and 6.7 MB of models. Now **34.9 MB**: 23 MB FLAC, 3.6 MB script, 3.1 MB wasm, 2.7 MB models, 2.3 MB json.
