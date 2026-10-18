@@ -1,4 +1,23 @@
-node_modules/
+node_modules
 dist/
 .DS_Store
 *.log
+
+# Scratch work, recordings caches, venvs and headless-check scripts: local to each machine, never committed.
+.scratch
+
+# Editor settings are each person's own.
+.vscode/
+
+# Claude Code's local state. The commands and skills in .claude/ are committed; these are not.
+.claude/scheduled_tasks.lock
+.claude/scheduled_tasks.json
+.claude/routines/.state/
+.claude/worktrees/
+.claude/checkpoints/
+.claude/mailbox/
+.claude/agent-registry.json
+.claude/agent-memory-local
+.claude/first-run
+.claude/assistant-daemon-state.json
+.claude/settings.local.json
