@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { bumpFor, nextVersion, latestTag, parseVersion, BUMP_LABELS, FIRST_VERSION } from '../tools/nextVersion.mjs';
+import { bumpFor, nextVersion, latestTag, parseVersion, checkLabels, BUMP_LABELS, TYPE_LABELS, FIRST_VERSION } from '../tools/nextVersion.mjs';
 
 describe('next release version', () => {
   it('bumps by the merged PR\'s labels, the biggest winning', () => {
@@ -28,8 +28,20 @@ describe('next release version', () => {
     expect(parseVersion('v2.0.0-rc1')).toBeNull();
   });
 
+  it('passes a PR with exactly one type label, and says what it will release as', () => {
+    expect(checkLabels('v1.0.0', ['✨ feature', '👭 girls'])).toEqual({ ok: true, message: expect.stringContaining('minor, 1.0.0 to 1.1.0') });
+    expect(checkLabels('v1.0.0', ['🐛 bug', '💥 breaking']).message).toContain('major, 1.0.0 to 2.0.0');
+    expect(checkLabels('v1.0.0', ['⬆️ dependencies']).ok).toBe(true);
+  });
+
+  it('fails a PR with no type label or two', () => {
+    expect(checkLabels('v1.0.0', ['👭 girls'])).toEqual({ ok: false, message: expect.stringContaining('it has none') });
+    expect(checkLabels('v1.0.0', ['💥 breaking']).ok).toBe(false);
+    expect(checkLabels('v1.0.0', ['✨ feature', '🐛 bug']).message).toContain('it has ✨ feature, 🐛 bug');
+  });
+
   it('uses labels that settings.yml defines', () => {
     const settings = readFileSync('.github/settings.yml', 'utf8');
-    for (const label of [...BUMP_LABELS.major, ...BUMP_LABELS.minor]) expect(settings).toContain(`name: "${label}"`);
+    for (const label of [...BUMP_LABELS.major, ...BUMP_LABELS.minor, ...TYPE_LABELS]) expect(settings).toContain(`name: "${label}"`);
   });
 });

@@ -1,0 +1,28 @@
+name: Version label
+
+# Every PR needs exactly one type label: it decides the release's version bump (tools/nextVersion.mjs), and without this
+# a PR left unlabelled would quietly release as a patch. Runs again when labels change, without re-running the tests.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  version-label:
+    name: Version label
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: tools
+      - name: Check the labels
+        # Explicitly bash, which runs with pipefail, so the check's exit code survives the tee.
+        shell: bash
+        env:
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          tags=$(git ls-remote --tags --refs origin 'v*' | sed 's|.*refs/tags/||')
+          latest=$(node tools/nextVersion.mjs --latest $tags)
+          node tools/nextVersion.mjs --check "$latest" "$LABELS" | tee -a "$GITHUB_STEP_SUMMARY"

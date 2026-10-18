@@ -3,11 +3,15 @@
 //
 //   node tools/nextVersion.mjs <latest tag or ''> '<labels as a JSON array>'   prints "1.4.0 minor"
 //   node tools/nextVersion.mjs --latest <tag> <tag> ...                        prints the highest version tag
+//   node tools/nextVersion.mjs --check <latest tag> '<labels as a JSON array>'  the PR check: fails without one type label
 
 import { pathToFileURL } from 'node:url';
 
 // The labels (from .github/settings.yml) that bump more than the patch number. Anything else, or no PR at all, is a patch.
 export const BUMP_LABELS = { major: ['💥 breaking'], minor: ['✨ feature'] };
+
+// Every PR carries exactly one of these, so its release bump is chosen rather than left to fall back to a patch.
+export const TYPE_LABELS = ['✨ feature', '⚡ enhancement', '🐛 bug', '🔨 task', '📚 documentation', '🚨 tests', '⬆️ dependencies'];
 
 // The first release, matching package.json, when there is no tag yet.
 export const FIRST_VERSION = '1.0.0';
@@ -41,6 +45,18 @@ function compareVersions(a, b) {
   return a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
 }
 
+/** The PR check: { ok, message }. Exactly one type label; `💥 breaking` may go on top of any of them. */
+export function checkLabels(tag, labels) {
+  const types = (labels ?? []).filter((l) => TYPE_LABELS.includes(l));
+  if (types.length !== 1) {
+    const found = types.length ? `it has ${types.join(', ')}` : 'it has none';
+    return { ok: false, message: `A pull request needs exactly one type label (${TYPE_LABELS.join(', ')}); ${found}.` };
+  }
+  const { version, bump } = nextVersion(tag, labels);
+  const from = parseVersion(tag) ? tag.replace(/^v/, '') : 'nothing yet';
+  return { ok: true, message: `${types[0]}: if it changes what ships, merging releases a ${bump}, ${from} to ${version}.` };
+}
+
 /** The highest plain version among tag names (from `git ls-remote --tags`), or '' if none. */
 export function latestTag(tags) {
   let best = null;
@@ -55,6 +71,10 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const args = process.argv.slice(2);
   if (args[0] === '--latest') {
     console.log(latestTag(args.slice(1)));
+  } else if (args[0] === '--check') {
+    const { ok, message } = checkLabels(args[1] ?? '', JSON.parse(args[2] || '[]'));
+    console.log(message);
+    process.exitCode = ok ? 0 : 1;
   } else {
     const [tag = '', labelsJson = '[]'] = args;
     const { version, bump } = nextVersion(tag, JSON.parse(labelsJson || '[]'));
