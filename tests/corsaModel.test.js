@@ -135,6 +135,28 @@ describe('the Corsa at its real size', () => {
     expect(holes.slice(0, 12)).toEqual([]);
   }, 40000);
 
+  it('has no gap round the glass of the rear side windows or the door windows: a ray from outside stops at the glass or its frame on the near side', () => {
+    const gaps = [];
+    for (const s of [1, -1]) {
+      for (let z = -1.52; z <= 0.7; z += 0.0311) {
+        for (let y = 0.98; y <= 1.3; y += 0.0213) {
+          const [zs, ys] = CORSA_BODY.screenBase;
+          const [zt, yt] = CORSA_BODY.screenTop;
+          if (z > zs + ((zt - zs) * (y - 0.05 - ys)) / (yt - ys) + 0.05) continue; // in front of the A pillar's line (and its radius): over the bonnet
+          if (z < -1.5 || (z < -1.2 && y > 1.28)) continue; // behind the hatch's edge, and the roof's rear corner
+          const [zr, yr] = CORSA_BODY.roofRear;
+          const [zh, yh] = CORSA_BODY.hatchBottom;
+          if (z < zr && y > 0.05 + yr + (yh - yr) * ((z - zr) / (zh - zr)) + 0.01) continue; // behind the hatch's edge line: open air
+          for (const [dy, dz] of [[0, 0], [-0.9, 0], [0.5, 0], [0, 0.9], [0, -0.9], [-0.6, 0.6]]) { // square on, from above, from below, from the back and from the front: a gap shows from some angle
+            const h = firstHit([s * 3, y - dy * 2.3, z - dz * 2.3], [-s * 2.3, dy * 2.3, dz * 2.3]);
+            if (!h || h.point.x * s < 0.55) gaps.push(`side ${s} z ${z.toFixed(2)} y ${y.toFixed(2)} from ${dy},${dz}: ${h ? h.point.x.toFixed(2) : 'none'}`);
+          }
+        }
+      }
+    }
+    expect(gaps.filter((g, i) => i % 1 === 0).slice(0, 30)).toEqual([]);
+  }, 60000);
+
   it('has no holes in its back or its front (round the hatch, the lamps, the bumper, the grille)', () => {
     const holes = [];
     for (let x = -0.7517; x <= 0.75; x += 0.0497) {

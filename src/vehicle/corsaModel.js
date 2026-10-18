@@ -352,7 +352,6 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
       lean(extrudeZY(sidePiece('front'), 0.035, s * FACE, s > 0 ? PAL.primer : paint, tg, 'wing'));
       lean(extrudeZY(sidePiece('rear'), 0.035, s * FACE, paint, tg, 'quarter'));
       rbox(0.05, 0.108, CORSA_DOOR.hinge - CORSA_DOOR.rear + 0.2, 0.01, PAL.plastic, s * (FACE + 0.003), c.sill + 0.049, (CORSA_DOOR.hinge + CORSA_DOOR.rear) / 2, root, 'sill'); // the black plastic sill under the door
-      lean(rbox(0.01, 0.022, CORSA_DOOR.rear - 0.02 - (-0.84), 0.006, PAL.black, s * (OUT + 0.004), 0.62, (CORSA_DOOR.rear - 0.02 - 0.84) / 2, tg)); // on the quarter it stops short of the arch's trim, not through it
       for (const zc of [zF, -zF]) {
         const liner = add(new THREE.CylinderGeometry(ARCH.r - 0.008, ARCH.r - 0.008, 0.24, 16, 1, true, 0, Math.PI).rotateZ(Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.95, side: THREE.DoubleSide }), root);
         liner.position.set(s * (W / 2 - 0.15), ARCH.y, zc);
@@ -473,15 +472,15 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
       glass.closePath();
       lean(glass, 0.01, PAL.glass, 'quarterGlass');
       const cp = new THREE.Shape();
-      cp.moveTo(gz, yr - 0.03);
+      cp.moveTo(gz + 0.03, yr - 0.03); // its front edge laps 3 cm over the glass's back edge: the panel stands 1.6 cm proud of the glass, so a flush edge left a slit you could see through at an angle
       cp.lineTo(zr + 0.02, yr);
       cp.lineTo(zr - 0.04, yr);
       cp.lineTo(zh, yh);
       cp.lineTo(zh, upperAt(zh) - 0.01); // down to the body's curved top edge, not below it, so no point of panel hangs out over the tail's curve
-      cp.lineTo(gz - 0.12, ys);
+      cp.lineTo(gz - 0.12 + 0.03, ys);
       cp.closePath();
       lean(cp, -0.006, faded, 'cPillar');
-      rbox(0.03, 0.025, c.bPillar - zh, 0.01, PAL.black, s * (halfAt(ys) + 0.005), ys + 0.01, (c.bPillar + zh) / 2, root); // the quarter's seal along its foot
+      rbox(0.02, 0.02, c.bPillar - (zh + 0.12), 0.006, PAL.black, s * (halfAt(ys) - 0.004), ys + 0.012, (c.bPillar + zh + 0.12) / 2, root); // the quarter's seal along its foot, in the glass's plane and short of the curved corner
     }
     // The roof's frame closes at the back across the top of the hatch, and the rails' ends are capped with a ball at each corner, so no tube ends in the air.
     tube([-halfAt(yr), yr, zr], [halfAt(yr), yr, zr], pr + 0.005, faded, root, 8);
