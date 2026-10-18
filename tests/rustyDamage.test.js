@@ -170,7 +170,7 @@ describe('the look on each donor', () => {
       const high = rc.intersectObjects(body, false)[0]?.point.y ?? 0;
       expect(top(x, z), `over ${x},${z}`).toBeGreaterThan(high - 0.015); // (a thin rail may show a centimetre between the grid's points)
     }
-  }, 30000);
+  });
 
   it('puts a loaded farm straight to where it was, with no tarp to drag', () => {
     const plan = planDamage(createRandom(5), 'red');

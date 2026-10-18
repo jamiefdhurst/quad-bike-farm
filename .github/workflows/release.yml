@@ -38,8 +38,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
       # Again on main: PRs merge without being brought up to date, and a quick fix may have been pushed straight here.
+      # A runner is two or three times slower than a laptop, so the heavy model tests need longer than the 5 s default.
       - name: Test
-        run: npm test
+        run: npm test -- --testTimeout=30000
       - name: Work out the version
         id: version
         env:
