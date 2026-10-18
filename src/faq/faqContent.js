@@ -494,8 +494,18 @@ export const FAQ_SECTIONS = [
         q: 'I’m stuck in a bog.',
         a: `Go into a bog slowly, or stop in one, and it drags you down. Not too deep: rock it, forwards, backwards, forwards, and each change of direction
           works it looser. Too deep: use the green quad's winch (look at the green, <kbd>X</kbd> to take the hook, walk it over, <kbd>E</kbd> on the stuck
-          quad, then hold <kbd>X</kbd> by the green to wind in), or the tractor's tow chain. Next time, charge it with a run-up.`,
+          quad, then hold <kbd>X</kbd> by the green to wind in), or the tractor's tow chain. Next time, charge it with a run-up. A girl who has bogged her
+          own quad calls for you instead (see the next question).`,
         tip: 'Stuck? Rock it: forwards, backwards, forwards. Each change of direction works it looser.',
+      },
+      {
+        q: 'Amy or Jess is up on her quad waving and shouting. What do I do?',
+        a: `She has bogged it (or tipped it over) and can't get out. Bogged, she stands up on the footboards and waves; tipped, she climbs off and waves
+          beside it. She shouts where she is ("I am stuck by the ford!"), and the farm map rings her in red while she waits. Go to her. For a bog, hold
+          <kbd>V</kbd> by the quad to shove while she works the throttle (that is enough unless she is in deep), or hook the green's winch or the tractor's
+          chain on it as usual. For a tipped quad, look at it and press <kbd>E</kbd> to right it. She remembers it: coming quickly earns you more of her
+          good opinion, and leaving her sitting there for three minutes costs you some. If nobody comes in about four minutes she gives up and gets down.`,
+        tip: 'A girl waving and shouting is stuck. Shove her bogged quad with V, winch it, or right a tipped one with E.',
       },
       {
         q: 'Where are the bogs?',
