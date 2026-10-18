@@ -455,7 +455,6 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
       tube([s * halfAt(ys), ys, zs], [s * halfAt(yt), yt, zt], pr, faded, root, 8); // the A pillar
       tube([s * halfAt(ys), ys, c.bPillar], [s * halfAt(yt), yt - 0.01, c.bPillar], 0.04, faded, root, 6); // the B pillar
       tube([s * halfAt(yt), yt, zt], [s * halfAt(yr), yr, zr], pr, faded, root, 8); // the rail over the windows
-      tube([s * halfAt(yr), yr, zr], [s * halfAt(yr + (yh - yr) * 0.88), yr + (yh - yr) * 0.88, zr + (zh - zr) * 0.88], 0.014, faded, root, 8); // the hatch's edge: a thin trim in the C pillar panel's face, stopping short of the quarter's curved top edge so its end does not hang out over it
       const lean = (shape, inset, mat, name) => {
         const g = new THREE.Group();
         g.position.set(s * (halfAt(ys) - inset), ys, 0);
@@ -465,18 +464,19 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
       };
       // The rear quarter: the fixed glass between the B pillar and the slanted C pillar, and the C pillar's painted panel behind it.
       const glass = new THREE.Shape();
+      const railY = (z) => yr + ((yt - yr) * (z - zr)) / (zt - zr); // the roof rail's height at z: the glass's top edge runs up into the rail (it was 3 cm under it: a slit)
       glass.moveTo(c.bPillar - 0.03, ys);
-      glass.lineTo(c.bPillar - 0.03, yr - 0.03);
-      glass.lineTo(gz, yr - 0.03);
+      glass.lineTo(c.bPillar - 0.03, railY(c.bPillar - 0.03) - 0.005);
+      glass.lineTo(gz, railY(gz) - 0.005);
       glass.lineTo(gz - 0.12, ys);
       glass.closePath();
       lean(glass, 0.01, PAL.glass, 'quarterGlass');
       const cp = new THREE.Shape();
-      cp.moveTo(gz + 0.03, yr - 0.03); // its front edge laps 3 cm over the glass's back edge: the panel stands 1.6 cm proud of the glass, so a flush edge left a slit you could see through at an angle
+      cp.moveTo(gz + 0.03, railY(gz + 0.03) - 0.005); // its front edge laps 3 cm over the glass's back edge: the panel stands 1.6 cm proud of the glass, so a flush edge left a slit you could see through at an angle
       cp.lineTo(zr + 0.02, yr);
-      cp.lineTo(zr - 0.04, yr);
-      cp.lineTo(zh, yh);
-      cp.lineTo(zh, upperAt(zh) - 0.01); // down to the body's curved top edge, not below it, so no point of panel hangs out over the tail's curve
+      cp.lineTo(zr - 0.04 - 0.03, yr); // its back edge laps 3 cm over the hatch glass's rubber, as its front edge laps the quarter glass
+      cp.lineTo(zh - 0.03, yh);
+      cp.lineTo(zh - 0.03, upperAt(zh - 0.03) - 0.01); // down to the body's curved top edge, not below it, so no point of panel hangs out over the tail's curve
       cp.lineTo(gz - 0.12 + 0.03, ys);
       cp.closePath();
       lean(cp, -0.006, faded, 'cPillar');

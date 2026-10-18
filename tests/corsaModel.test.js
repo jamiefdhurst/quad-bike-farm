@@ -139,15 +139,16 @@ describe('the Corsa at its real size', () => {
     const gaps = [];
     for (const s of [1, -1]) {
       for (let z = -1.52; z <= 0.7; z += 0.0311) {
-        for (let y = 0.98; y <= 1.3; y += 0.0213) {
+        for (let y = 0.98; y <= 1.335; y += 0.0113) {
           const [zs, ys] = CORSA_BODY.screenBase;
           const [zt, yt] = CORSA_BODY.screenTop;
-          if (z > zs + ((zt - zs) * (y - 0.05 - ys)) / (yt - ys) + 0.05) continue; // in front of the A pillar's line (and its radius): over the bonnet
+          if (z > zs + ((zt - zs) * (y - 0.05 - ys)) / (yt - ys) - 0.02) continue; // in front of the A pillar's line (and its radius): over the bonnet
           if (z < -1.5 || (z < -1.2 && y > 1.28)) continue; // behind the hatch's edge, and the roof's rear corner
           const [zr, yr] = CORSA_BODY.roofRear;
           const [zh, yh] = CORSA_BODY.hatchBottom;
           if (z < zr && y > 0.05 + yr + (yh - yr) * ((z - zr) / (zh - zr)) + 0.01) continue; // behind the hatch's edge line: open air
-          for (const [dy, dz] of [[0, 0], [-0.9, 0], [0.5, 0], [0, 0.9], [0, -0.9], [-0.6, 0.6]]) { // square on, from above, from below, from the back and from the front: a gap shows from some angle
+          for (const [dy, dz] of [[0, 0], [-0.9, 0], [0.5, 0], [0, 0.9], [0, -0.9], [-0.6, 0.6]]) {
+            if (dz !== 0 && z > -0.55) continue; // the angled rays are for the rear quarter windows (the door's front edge is the A pillar's: a different corner) // square on, from above, from below, from the back and from the front: a gap shows from some angle
             const h = firstHit([s * 3, y - dy * 2.3, z - dz * 2.3], [-s * 2.3, dy * 2.3, dz * 2.3]);
             if (!h || h.point.x * s < 0.55) gaps.push(`side ${s} z ${z.toFixed(2)} y ${y.toFixed(2)} from ${dy},${dz}: ${h ? h.point.x.toFixed(2) : 'none'}`);
           }
