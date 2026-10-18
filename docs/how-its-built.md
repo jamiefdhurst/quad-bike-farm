@@ -1,0 +1,59 @@
+# How it is put together
+
+A tour of the code. Why things are the way they are is in [DECISIONS.md](../DECISIONS.md); CLAUDE.md has the rules for working on it.
+
+```
+src/
+  main.js, game.js     bootstrap and the main loop
+  core/                input, tuning registry
+  engine/              engine model (pure logic, no Three.js) and its parameters
+  vibration/           pulse-driven vibration model (pure logic) and parameters
+  effects/             exhaust smoke
+  audio/               procedural Web Audio engine sound
+  vehicle/             quad model, Rapier vehicle, drivetrain, dash styles, fuel; quadSpecs.js defines the quads
+  items/               jerry cans, oil bottle and petrol tank
+  player/              walking and seated first-person player
+  npc/                 state machine, character rig, companion behaviour, her voice lines
+  interaction/         look-at interaction and the context menu
+  hud/                 crosshair, prompts, notes for carried items, help (controls.js is the controls list)
+  start/               the start screen and the logo
+  faq/                 the FAQ page: hand-written answers (faqContent.js) and the parts generated from the game
+  world/               terrain, track, sky, props, layout
+  debug/               lil-gui tuning panel
+tests/                 engine state machine and fuel tests
+tools/                 slice_engine_audio.py, cuts recordings into engine pulses (Python, numpy)
+public/audio/          the cut engine recordings
+```
+
+**Engine model** (`src/engine/engineModel.js`). A state machine (off, ignition, cranking, running, stalled) driven by one idea: mixture. Mixture is the enrichment the choke supplies minus the enrichment a cold engine needs. It decides whether the engine catches, where it idles, how rough it runs and how much power it makes. Running rich fouls the plug, and a fully fouled plug stalls it. Temperature rises while running and falls slowly when off. Each power stroke is emitted as a firing pulse with its own timing and strength jitter, and both the vibration and the audio play those same pulses. That's why a rough engine sounds and feels lumpy together.
+
+**Drivetrain** (`src/vehicle/drivetrain.js`). An automatic: centrifugal clutch into a CVT. It turns engine rpm and power into drive force, and puts braking load back on the engine while the clutch is locked to a moving bike.
+
+**Ride sounds and Doppler** (`src/audio/rideAudio.js`, `rideEvents.js`, `propagation.js`). Riding sounds like the ground: grass swish, grit on the track, squelch and splash at the puddles, suspension knocks and landing thuds, and wind for the rider that rises with speed. Each quad's sound reaches you through a delay line set to its distance over the speed of sound, so a quad driving past rises and falls in pitch (about 3% each way at 10 m/s) and sounds duller further away. Levels are in the Sound folder of the tuning panel.
+
+**Engine sound** (`src/audio/engineWorklet.js`). Three engines, chosen in the tuning panel (Audio, `engineSound`):
+
+- *pulse* (default): revs built from the idle recording. Every firing pulse from the engine model plays one real recorded idle firing at close to its own speed, cut off with a short crossfade when the next firing starts. As revs rise the firings simply come closer together, so the exhaust's character stays the same machine as idle, the way a real engine's does. On top, each firing gets louder with revs, and an EQ that follows the revs takes out some of the deep thump and lifts the mid-range rasp, as measured from real engines going from idle to high revs. Each quad revs on its own idle: the red on the main quad recording, the blue on the ATV recording, the orange on the Honda CRM250. The green and the yellow blend into real rev recordings as they rev (`pulseRevLo` to `pulseRevHi`): the green from a Ténéré 250 into a Honda ATV, the yellow from a DT 125 into a Honda CR85, each firing still at its own speed.
+
+- *recorded*: every firing pulse from the engine model plays one real recorded pulse, cut from CC0 recordings and resampled to last exactly one engine cycle. The four-strokes idle on quad recordings and rev on two recordings of ATVs being ridden (one driving away, one riding round a quarry), blended across 1,500 to 2,100 rpm. Both ATVs move about in front of the microphone, so the slicer takes the distance out of their loudness and levels it to rise with rpm instead. At higher revs each grain spans several real recorded firings, so there are fewer joins. The two-stroke uses its own bank, with idle from a two-stroke motocross bike and revs from a Honda CRM250 and a second two-stroke dirt bike. While the revs are steady, playback reads straight on through the recording rather than jumping between unrelated pulses. Because pulses still come from the engine model, a cold idle is still lumpy, misfires are still missing beats, and it stays in sync with the vibration and smoke. Cranking is a looped starter recording.
+- *synth*: a pulse-driven exhaust synth with a simulated pipe and silencer.
+
+To recut the recordings, see the instructions at the top of `tools/slice_engine_audio.py`.
+
+**Mist and rainbows (TODO 61).** About six games in ten have a mist morning: on a cool, still morning (the damper and colder the better) a low mist lies in the barley field's hollow, out past the east gateway. It is thickest in the first hour after sunrise and burns off over the next couple of hours, sooner on a warm day. Wind or rain clears it, and it doesn't form in snow. After a proper shower, once the rain has eased and the sun is out, a rainbow can stand in the sky opposite the sun: the lower the sun, the taller the bow, and with the sun high you won't see one. It fades some minutes later. "Mist" and "Rainbows" in the Tune tab set them; the console has `weather.mist` and `weather.rainbow` (setting one holds it, `mistAuto` and `rainbowAuto` hand it back). The girls don't remark on either yet.
+
+**Fumes in the barn** (`src/world/barnFumes.js`). Running an engine indoors fills the barn with haze (tunable under "Fumes in the barn"); it takes about a minute of idling to get thick and a few minutes to clear.
+
+**Exhaust smoke** (`src/effects/exhaustSmoke.js`). One soft puff per firing pulse, so you can see the beats at idle. White-grey vapour when cold, darker when rich or flooded, a burst when you snap the throttle open, and a light haze once warm. Tunable in the Smoke folder.
+
+**Vibration** (`src/vibration/vibrationModel.js`). Each firing pulse kicks a set of damped oscillators (body heave, pitch and roll, handlebars, rider's head) in a slightly random direction. Kicks are strongest at idle and with a rough engine, and fade as rpm rises. The bike body, handlebars, seated camera and anything sitting on the bike all move with it.
+
+**Companion** (`src/npc/companion.js`). A small state machine (idle, walking, mounting, seated, dismounting). Requests are methods, and `getActions()` decides which ones the menu shows. To add a new request, add a method and an entry in `getActions()`, plus a state if it needs one.
+
+**Quad models** (`src/vehicle/quadModel.js`, `src/vehicle/quadGeometry.js`). Procedural: fender shells swept round each wheel, lofted seats, tanks and hoods, bent-tube racks and frames, lathed tyres with lugs, and suspension arms and shocks posed from the physics wheel heights every frame. Static parts are merged per material.
+
+**Quads** (`src/vehicle/quadSpecs.js`, `src/vehicle/quadUnit.js`). Each quad is a spec (name, colour and overrides for engine, vehicle, vibration, audio and smoke parameters) built into a `QuadUnit` that owns its engine model, physics, vibration, smoke and sound. To add a third, add a spec and a spawn point in the layout.
+
+**Layout** (`src/world/layout.js`). Positions for the field, barn, gate, track control points and spawn points all live here.
+
+**Parameters**. Every tunable number lives in a `*Params.js` file next to the code that uses it, with a range for the tuning panel.
