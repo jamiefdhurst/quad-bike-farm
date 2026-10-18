@@ -659,7 +659,7 @@ What is still to do. Finished items are recorded in DECISIONS.md, under their ol
 ### Next
 
 1. Wet and binding brakes. After the ford the brakes barely bite for a few seconds until they dry. A quad that has stood all game has a brake that binds and frees with a clunk after a few metres. Both show in Running or Problems on the Vehicles tab. **Done.**
-2. Water in the fuel. A jerry can left out in the rain, or the barn find's old tank, gets water in it: the engine misfires and cuts out, and a sediment bowl on the fuel tap fills up where you can see it. Drain it at the tap; Amy knows to, Jess blames the quad. **Done.**
+2. Water in the fuel. A jerry can left out in the rain, or the barn find's old tank, gets water in it: the engine misfires and cuts out, and a sediment bowl on the fuel tap fills up where you can see it. Drain it at the tap; Amy knows to, Jess blames the quad. **Done.** **Done.**
 3. A top-end rebuild. A seized two-stroke is out for the day now. Make it a bench job instead: barrel off, look at the scoring, new piston and rings from the shelf, barrel back on, then a running-in that matters (the existing running-in rules). **Done.**
 4. **Done.** A tyre pump and gauge in the workshop. Read and set each tyre's pressure; softer grips and floats on stubble and mud, harder runs quicker on the tarmac, and too low pulls and rolls off the rim. Joins up with the existing slow punctures and soft tyres.
 5. **Done.** The ATC's tip-over: the old three-wheeler goes over if you sit still in a corner, and the rider's weight shift, automatic from the steering, keeps it up.
