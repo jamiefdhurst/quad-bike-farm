@@ -74,6 +74,7 @@ GAP = 0.08  # seconds of silence between lines in the bank
 CHUNK_SECONDS = 60  # each bank file holds about this much; the game decodes a file only when a line in it is needed
 LEAD = 0.1  # seconds of silence at the start of each file, so the MP3 encoder's start-up never touches a line
 TRIES = 4  # recordings of a line before settling for the best
+SHORT_TRIES = 12  # for a line of one or two words, which Whisper often mishears or babbles on: more goes before giving up
 S3_TOKEN_RATE = 25  # Chatterbox's speech tokens a second
 MATCH = 0.8  # how closely Whisper's transcript has to match the text (0..1)
 FALLBACK_BELOW = 0.6  # with --fallback, a Chatterbox take this far off is tried again with Piper
@@ -154,7 +155,10 @@ def words(text):
 
 
 def similarity(a, b):
-    return difflib.SequenceMatcher(None, ' '.join(words(a)), ' '.join(words(b))).ratio()
+    wa, wb = words(a), words(b)
+    spaced = difflib.SequenceMatcher(None, ' '.join(wa), ' '.join(wb)).ratio()
+    # "Spoilsport." heard as "spoil sport": the same sounds, so compare with the spaces out too.
+    return max(spaced, difflib.SequenceMatcher(None, ''.join(wa), ''.join(wb)).ratio())
 
 
 class Chatterbox:
@@ -327,6 +331,13 @@ def main():
         key = hashlib.sha1(f'{voice_id}|{exag}|{cfg}|{spoken}'.encode()).hexdigest()[:16]
         path = os.path.join(cache, f'{key}.wav')
         meta_path = os.path.join(cache, f'{key}.json')
+        tries = SHORT_TRIES if len(words(text)) <= 2 else TRIES
+        if os.path.exists(path) and not args.bank_only and os.path.exists(meta_path):
+            old = json.load(open(meta_path))
+            if old.get('score', 1) < 0.3 and old.get('tries', 0) < tries and not old.get('fallback'):
+                # A short shout that was left out last time: more goes, now there are more allowed.
+                os.remove(path)
+                os.remove(meta_path)
         if os.path.exists(path):
             x, sr = sf.read(path, dtype='float32')
             meta = json.load(open(meta_path)) if os.path.exists(meta_path) else {}
@@ -339,7 +350,7 @@ def main():
             if ear is None and not args.no_check:
                 ear = Ear()
             best = None
-            for attempt in range(TRIES):
+            for attempt in range(tries):
                 x = engine.say(spoken, exag, cfg, seed=attempt)
                 # Now and then Chatterbox runs away and babbles on; far too long for the line is a failed take.
                 if len(x) / engine.sr > max_seconds(spoken):
@@ -385,7 +396,7 @@ def main():
         if ear is not None or meta.get('heard') is not None:
             heard = meta.get('heard', '')
             babble = len(words(heard)) > 2 * len(words(text)) + 1
-            if meta.get('score', 1) < 0.3 or babble:
+            if meta.get('score', 1) < 0.3 or (babble and meta.get('score', 1) < 0.5):
                 # Clearly not the line (often a short shout turned into babble): better unrecorded.
                 unclear.append(f'{meta.get("score", 0):.2f}  "{text}"  heard "{heard}"; left out')
                 continue
