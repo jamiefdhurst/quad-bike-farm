@@ -364,6 +364,17 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'lesson',
+      label: '% starts a driving lesson (on the back of the manual you are driving)',
+      run: (id) => {
+        const c = girl(id);
+        if (!g.lessonGirls(g.riddenUnit).includes(id)) return toast(`${c.name} has to be on the back of a manual quad you are driving`);
+        if (g.lessons.active) return toast(`${girl(g.lessons.teaching).name} is already teaching you`);
+        if (!g.lessons.remaining(id).length) return toast(`${c.name} has nothing left to teach you (forget her lessons in the Girls tab)`);
+        g.handleLessonEvent(g.lessons.start(id));
+      },
+    },
+    {
       verb: 'drive',
       label: '% drives the picked vehicle',
       vehicle: true,

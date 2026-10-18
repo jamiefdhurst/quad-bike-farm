@@ -6,6 +6,7 @@ import { buttonText } from './buttonText.js';
 import { girlActions } from './girlActions.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
 import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
+import { DRILLS } from '../npc/lessons.js';
 import { rampPoint } from '../npc/jumps.js';
 import { OUTFIT_KINDS, describeOutfit, completeStyle, outfitsFor } from '../npc/outfits.js';
 
@@ -126,6 +127,17 @@ export function buildGirlsTab(d) {
     const sk = f.addFolder('Skills');
     for (const skill of Object.keys(g.skills.levels[id])) slider(sk, skill, () => round(g.skills.level(id, skill)), (v) => g.skills.set(id, skill, v), 0, 1);
     sk.close();
+
+    // --- What she has taught you to drive (npc/lessons.js).
+    const ls = f.addFolder('Lessons');
+    show(ls, 'passed', () => [...g.lessons.passed[id]].map((k) => DRILLS[k].label).join(', ') || 'nothing yet');
+    show(ls, 'left to teach', () => g.lessons.remaining(id).map((k) => DRILLS[k].label).join(', ') || 'nothing');
+    show(ls, 'now', () => (g.lessons.teaching === id ? `${DRILLS[g.lessons.active.drill].label} (${g.lessons.active.streak} clean in a row)` : 'not teaching'));
+    button(ls, 'Forget what she has taught you', () => {
+      g.lessons.passed[id].clear();
+      g.lessons.graduated[id] = false;
+    });
+    ls.close();
   }
 
   // --- The two of them, and the farm: closed subfolders by subject, each with its readouts first and its buttons after.
