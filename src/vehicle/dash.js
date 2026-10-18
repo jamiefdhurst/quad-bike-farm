@@ -1214,10 +1214,10 @@ function buildFiesta() {
 }
 
 /**
- * Jess's Corsa B: a rounded charcoal binnacle with a rev counter on the left, the speedometer to 120 mph in the middle (with the
- * odometer), the water and fuel gauges stacked on the right, red-orange needles on black, and a strip of lamps along the bottom:
- * charge, oil, engine management (it is injected), handbrake, belts, the indicators, side lights and main beam. The key is on the
- * column, drawn at the binnacle's right end.
+ * Jess's Corsa B, after the photo of the real cluster: a rounded charcoal binnacle with the rev counter and the speedometer (to 130 mph, with the
+ * odometer) side by side in the middle, a small fuel gauge at the lower left and a small water gauge at the lower right, the indicators' tell-tales at
+ * the two ends and a strip of lamps along the bottom: charge, oil, engine management (it is injected), handbrake, belts, side lights and main beam.
+ * The key is a real one on the column (corsaModel.js).
  */
 function buildCorsa() {
   const group = new THREE.Group();
@@ -1226,17 +1226,19 @@ function buildCorsa() {
   housing(group, { x: 62, y: 12, w: 236, h: 96, r: 18, ...O, material: charcoal });
   const face = mmPanel({ x: 62, y: 12, w: 236, h: 96, ...O });
   group.add(face.mesh);
-  const tacho = { cx: 121, cy: 48, r: 30 };
-  const speedo = { cx: 235, cy: 48, r: 34 };
-  const temp = { cx: 178, cy: 36, r: 12 };
-  const fuel = { cx: 178, cy: 66, r: 12 };
+  // After the photo of the real one: two big dials side by side in the middle (the rev counter on the left, the speedometer to 130 on the right), a small
+  // fuel gauge at the lower left and a small temperature gauge at the lower right, the indicators' tell-tales at the two ends and the other lamps between.
+  const tacho = { cx: 140, cy: 48, r: 31 };
+  const speedo = { cx: 214, cy: 48, r: 35 };
+  const fuel = { cx: 86, cy: 86, r: 14 };
+  const temp = { cx: 274, cy: 86, r: 14 };
   const gate = changeGate();
   let shownMph = 0;
   let shownRpm = 0;
   let shownFuel = 0;
   let shownTemp = 0;
   const TACHO_MAX = 7000;
-  const NEEDLE = '#ff5a1f';
+  const NEEDLE = '#f4f0e8';
   const WHITE = '#f4f4f4';
   const dial = (ctx, d) => {
     ctx.fillStyle = '#0b0c0d';
@@ -1249,7 +1251,7 @@ function buildCorsa() {
     ticks(ctx, d.cx, d.cy, d.r - 4, d.r - 1.5, 150, 30, 4, WHITE, 0.7);
     if (hotEnd) arc(ctx, d.cx, d.cy, d.r - 2, 150 - 120 * HOT_FROM, 30, '#d8402e', 1.8);
     const hot = hotEnd && frac >= HOT_FROM; // the symbol lights as the needle goes into the red
-    warnSymbol(ctx, sym, d.cx, d.cy + 5, hot ? LAMP.red : '#aaa', true, 0.42, hot);
+    warnSymbol(ctx, sym, d.cx, d.cy + 6, hot ? LAMP.red : '#aaa', true, 0.42, hot);
     needle(ctx, d.cx, d.cy, d.r - 3, 150 - 120 * frac, NEEDLE, 1);
   };
 
@@ -1258,25 +1260,38 @@ function buildCorsa() {
     arc(ctx, tacho.cx, tacho.cy, tacho.r - 2.5, -45, 225 - (270 * L.redline) / TACHO_MAX, '#d8402e', 2.2);
     ticks(ctx, tacho.cx, tacho.cy, tacho.r - 4.5, tacho.r - 1.5, 225, -45, 14, WHITE, 0.5);
     ticks(ctx, tacho.cx, tacho.cy, tacho.r - 7, tacho.r - 1.5, 225, -45, 7, WHITE, 1);
-    labels(ctx, tacho.cx, tacho.cy, tacho.r - 11.5, 225, -45, ['0', '1', '2', '3', '4', '5', '6', '7'], WHITE, 3.8);
-    text(ctx, '1/min x1000', tacho.cx, tacho.cy + 11, 2.8, '#bbb', { align: 'center' });
+    labels(ctx, tacho.cx, tacho.cy, tacho.r - 11.5, 225, -45, ['0', '1', '2', '3', '4', '5', '6', '7'], '#f2a516', 3.8);
+    text(ctx, '1/min x1000', tacho.cx, tacho.cy + 14, 2.6, '#bbb', { align: 'center' });
     needle(ctx, tacho.cx, tacho.cy, tacho.r - 2, 225 - (270 * Math.min(TACHO_MAX, L.rpm)) / TACHO_MAX, NEEDLE, 1.1);
     dial(ctx, speedo);
     ticks(ctx, speedo.cx, speedo.cy, speedo.r - 5, speedo.r - 1.5, 225, -45, 26, WHITE, 0.5);
     ticks(ctx, speedo.cx, speedo.cy, speedo.r - 8, speedo.r - 1.5, 225, -45, 13, WHITE, 1);
-    labels(ctx, speedo.cx, speedo.cy, speedo.r - 13, 225, -45, ['0', '', '20', '', '40', '', '60', '', '80', '', '100', '', '120', ''], WHITE, 3.8);
-    text(ctx, 'mph', speedo.cx, speedo.cy - 9, 3.4, '#bbb', { align: 'center' });
+    labels(ctx, speedo.cx, speedo.cy, speedo.r - 13, 225, -45, ['0', '', '20', '', '40', '', '60', '', '80', '', '100', '', '120', ''], '#f2a516', 3.8);
+    text(ctx, 'mph', speedo.cx, speedo.cy - 9, 3.2, '#bbb', { align: 'center' });
     const odo = counterDigits(s.odoMiles, 6);
-    drum(ctx, speedo.cx - 17, speedo.cy + 14, odo, 6);
+    drum(ctx, speedo.cx - 17, speedo.cy + 12, odo, 6);
     needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 225 - (270 * Math.min(130, L.mph)) / 130, NEEDLE, 1.2);
-    small(ctx, temp, L.temp, 'temp', true);
     small(ctx, fuel, L.fuel, 'fuel', false);
-    ctx.fillStyle = '#121213';
-    ctx.beginPath();
-    ctx.roundRect(78, 88, 196, 16, 4);
-    ctx.fill();
-    const lamps = [['charge', LAMP.red, L.charge], ['oil', LAMP.red, L.oil], ['engine', LAMP.amber, L.engine], ['park', LAMP.red, L.park], ['belt', LAMP.red, L.belt], ['turnLeft', LAMP.green, L.turnLeft], ['turnRight', LAMP.green, L.turnRight], ['lights', LAMP.green, L.lights], ['beam', '#4aa8ff', L.main]];
-    lamps.forEach(([kind, colour, lit], i) => warnSymbol(ctx, kind, 90 + i * 21.5, 96, colour, lit, 0.85));
+    small(ctx, temp, L.temp, 'temp', true);
+    // The tell-tales: the indicators' arrows at the two ends (each flashes with its own side), the rest in a strip along the bottom between the small gauges.
+    for (const [kind, x, lit] of [['turnLeft', 80, L.turnLeft], ['turnRight', 280, L.turnRight]]) {
+      ctx.fillStyle = '#121213';
+      ctx.beginPath();
+      ctx.roundRect(x - 11, 22, 22, 16, 4);
+      ctx.fill();
+      warnSymbol(ctx, kind, x, 30, LAMP.green, lit, 0.85);
+    }
+    // The other lamps in their own small pods, as in the photo: charge and oil to the left, main beam and side lights to the right, the rest in a strip under the dials.
+    const pod = (x, y, w, list) => {
+      ctx.fillStyle = '#121213';
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, 15, 4);
+      ctx.fill();
+      list.forEach(([kind, colour, lit], i) => warnSymbol(ctx, kind, x + (w / list.length) * (i + 0.5), y + 7.5, colour, lit, 0.8));
+    };
+    pod(62, 41, 40, [['charge', LAMP.red, L.charge], ['oil', LAMP.red, L.oil]]);
+    pod(258, 41, 40, [['beam', '#4aa8ff', L.main], ['lights', LAMP.green, L.lights]]);
+    pod(139, 92, 82, [['engine', LAMP.amber, L.engine], ['park', LAMP.red, L.park], ['belt', LAMP.red, L.belt]]);
   }
 
   return {

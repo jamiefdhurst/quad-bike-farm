@@ -31,6 +31,7 @@ const OUT = FACE + 0.0175; // the side's outer face
 const INNER = FACE - 0.0175; // and its inner face
 const ARCH = { y: c.R + 0.03, r: c.R + 0.07 };
 const NOSE_LOW = 0.45; // the body's lower edge at the nose and the tail, inside the bumpers' plastic
+const WING_END = c.nose - 0.28; // where the front wing stops, behind the front corner (the apron wraps it)
 
 /** A box with its edges rounded, or, up to a 12 mm radius, a plain one: watertight where boxes butt (rounded ones leave pinholes at the corners, see defenderModel.js). */
 function rbox(w, h, d, r, mat, x, y, z, parent, name) {
@@ -65,13 +66,14 @@ export function sidePiece(part) {
   const start = Math.atan2(c.sill - ARCH.y, dz);
   const s = new THREE.Shape();
   if (part === 'front') {
-    s.moveTo(c.nose, NOSE_LOW);
+    s.moveTo(WING_END, NOSE_LOW);
     s.lineTo(zF + dz + 0.0, c.sill);
     s.absarc(zF, ARCH.y, ARCH.r, start, Math.PI - start, false);
     s.lineTo(zF - dz, c.sill);
     s.lineTo(CORSA_DOOR.hinge, c.sill);
     s.lineTo(CORSA_DOOR.hinge, upperAt(CORSA_DOOR.hinge));
-    for (const [z, y] of LINE.filter(([z]) => z > CORSA_DOOR.hinge).reverse()) s.lineTo(z, y);
+    for (const [z, y] of LINE.filter(([z]) => z > CORSA_DOOR.hinge && z < WING_END).reverse()) s.lineTo(z, y);
+    s.lineTo(WING_END, upperAt(WING_END)); // the wing stops at the corner; the front apron carries on round it
   } else {
     s.moveTo(CORSA_DOOR.rear, c.sill);
     s.lineTo(-zF + dz, c.sill);
@@ -129,18 +131,24 @@ function tiltGroup(s, parent) {
   return g;
 }
 
+/** The half width of the nose in plan at z: full `hw0` back of the corner, drawn in round a corner of radius `R` at the front. */
+function planHalf(z, hw0, R) {
+  const z0 = c.nose - R;
+  return z <= z0 ? hw0 : hw0 - (R - Math.sqrt(Math.max(0, R * R - (z - z0) ** 2)));
+}
+
 /**
  * A crowned, closed sheet of metal from z0 to z1 (the bonnet): its top follows `topAt(z)` at the edges and rises `crown` in the middle, `halfAt(z)`
  * wide (it narrows to round the nose in plan), `t` thick. Smooth normals, so it reads as curved.
  */
-function loft(z0, z1, topAt, halfW, crown, t, mat, parent) {
+function loft(z0, z1, topAt, halfW, crown, t, mat, parent, bottom) {
   const n = 18;
   const m = 10;
   const pos = [];
-  const at = (i, j, bottom) => {
+  const at = (i, j, isBottom) => {
     const z = z0 + ((z1 - z0) * i) / n;
     const u = -1 + (2 * j) / m;
-    const y = topAt(z) + (bottom ? -t : crown * (1 - u * u));
+    const y = isBottom ? (bottom ?? topAt(z) - t) : topAt(z) + crown * (1 - u * u);
     return [u * halfW(z), y, z];
   };
   const idx = (i, j, b) => (b * (n + 1) + i) * (m + 1) + j;
@@ -186,7 +194,7 @@ const PAL = {
   steel: new THREE.MeshStandardMaterial({ color: 0x3a3c3e, roughness: 0.5, metalness: 0.6 }),
   under: new THREE.MeshStandardMaterial({ color: 0x18191a, roughness: 0.9 }),
   glass: new THREE.MeshStandardMaterial({ color: 0x9fb3b8, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false }),
-  amber: new THREE.MeshStandardMaterial({ color: 0x5c2c08, roughness: 0.25 }), // dark until it flashes (addSignalLamps)
+  amber: new THREE.MeshStandardMaterial({ color: 0xb8700f, roughness: 0.25 }), // an amber lens, brighter when it flashes (addSignalLamps)
   smoke: new THREE.MeshStandardMaterial({ color: 0x4d5254, roughness: 0.2 }), // the reverse lens, smoked until it lights
   fog: new THREE.MeshStandardMaterial({ color: 0x5a110d, roughness: 0.2 }),
   rust: new THREE.MeshStandardMaterial({ color: 0x4b3a2e, roughness: 0.7, metalness: 0.5 }),
@@ -300,7 +308,7 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
   // The roof, the bonnet and the nose have faded in the sun: a paler, chalkier red.
   const faded = new THREE.MeshStandardMaterial({ color: new THREE.Color(bodyColor).lerp(new THREE.Color(0xe8b0a8), 0.35), roughness: 0.8, side: THREE.DoubleSide });
   const lensMat = new THREE.MeshStandardMaterial({ color: 0xc4cccf, roughness: 0.1, metalness: 0.2, emissive: 0x000000 }); // clear glass over the reflector: pale, with the black housing round it
-  const tailMat = new THREE.MeshStandardMaterial({ color: 0x3a0a07, roughness: 0.25, emissive: 0x000000 });
+  const tailMat = new THREE.MeshStandardMaterial({ color: 0x9a1812, roughness: 0.25, emissive: 0x000000 });
   const trim = trimMaterials();
   const webbing = webbingMaterial();
   const layoutWheels = corsaWheels();
@@ -344,10 +352,7 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
       lean(extrudeZY(sidePiece('front'), 0.035, s * FACE, s > 0 ? PAL.primer : paint, tg, 'wing'));
       lean(extrudeZY(sidePiece('rear'), 0.035, s * FACE, paint, tg, 'quarter'));
       rbox(0.05, 0.108, CORSA_DOOR.hinge - CORSA_DOOR.rear + 0.2, 0.01, PAL.plastic, s * (FACE + 0.003), c.sill + 0.049, (CORSA_DOOR.hinge + CORSA_DOOR.rear) / 2, root, 'sill'); // the black plastic sill under the door
-      const mz0 = CORSA_DOOR.hinge + 0.02; // the thin black body-side moulding at the door handle's height: on the wing, and on the quarter; the door's own is on the door
-      lean(rbox(0.01, 0.022, c.nose - 0.3 - mz0, 0.006, PAL.black, s * (OUT + 0.004), 0.62, (c.nose - 0.3 + mz0) / 2, tg));
-      lean(rbox(0.01, 0.022, CORSA_DOOR.rear - 0.02 - (c.tail + 0.3), 0.006, PAL.black, s * (OUT + 0.004), 0.62, (CORSA_DOOR.rear - 0.02 + c.tail + 0.3) / 2, tg));
-      lean(rbox(0.012, 0.025, 0.06, 0.008, PAL.amber, s * (OUT + 0.004), upperAt(zs + 0.65) - 0.1, zs + 0.65, tg)); // the indicator repeater on the wing
+      lean(rbox(0.01, 0.022, CORSA_DOOR.rear - 0.02 - (-0.84), 0.006, PAL.black, s * (OUT + 0.004), 0.62, (CORSA_DOOR.rear - 0.02 - 0.84) / 2, tg)); // on the quarter it stops short of the arch's trim, not through it
       for (const zc of [zF, -zF]) {
         const liner = add(new THREE.CylinderGeometry(ARCH.r - 0.008, ARCH.r - 0.008, 0.24, 16, 1, true, 0, Math.PI).rotateZ(Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.95, side: THREE.DoubleSide }), root);
         liner.position.set(s * (W / 2 - 0.15), ARCH.y, zc);
@@ -477,6 +482,11 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
       lean(cp, -0.006, faded, 'cPillar');
       rbox(0.03, 0.025, c.bPillar - zh, 0.01, PAL.black, s * (halfAt(ys) + 0.005), ys + 0.01, (c.bPillar + zh) / 2, root); // the quarter's seal along its foot
     }
+    // The roof's frame closes at the back across the top of the hatch, and the rails' ends are capped with a ball at each corner, so no tube ends in the air.
+    tube([-halfAt(yr), yr, zr], [halfAt(yr), yr, zr], pr + 0.005, faded, root, 8);
+    for (const s of [-1, 1]) {
+      for (const [z, y] of [[zr, yr], [zt, yt], [zh, yh]]) add(new THREE.SphereGeometry(pr + 0.003, 10, 8), faded, root).position.set(s * halfAt(y), y, z);
+    }
     // The windscreen in its black rubber, the roof, the headlining and the sun visors.
     quadMesh([-halfAt(ys), ys, zs], [halfAt(ys), ys, zs], [halfAt(yt), yt, zt], [-halfAt(yt), yt, zt], PAL.glass, root);
     tube([-halfAt(ys), ys, zs], [halfAt(ys), ys, zs], 0.03, PAL.black, root, 6); // the screen's bottom seal
@@ -489,13 +499,27 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     arc.lineTo(roofW / 2, -0.03);
     arc.quadraticCurveTo(0, 0.08, -roofW / 2, -0.03);
     arc.closePath();
-    const roofGeo = new THREE.ExtrudeGeometry(arc, { depth: roofLen + 0.14, bevelEnabled: false, curveSegments: 10 }).translate(0, 0, -(roofLen + 0.14) / 2 + 0.035);
+    const roofGeo = new THREE.ExtrudeGeometry(arc, { depth: roofLen + 0.06, bevelEnabled: false, curveSegments: 10 }).translate(0, 0, -(roofLen + 0.06) / 2); // ends 3 cm past the header and the hatch's rail, not over them
     const roof = add(roofGeo, faded, root, 'roof');
     roof.position.set(0, (yt + yr) / 2 + 0.035, (zt + zr) / 2);
     roof.rotation.x = Math.atan2(yt - yr, zt - zr) * -1;
-    const lining = rbox(roofW - 0.12, 0.012, roofLen - 0.1, 0.005, trim.lining, 0, (yt + yr) / 2 - 0.09, (zt + zr) / 2, root); // the headlining, well under the crown's edges
-    lining.rotation.x = roof.rotation.x;
-    for (const x of [-0.42, 0.42]) rbox(0.36, 0.015, 0.2, 0.006, trim.lining, x, yt - 0.125, zt - 0.14, root); // the sun visors, pale boards against the headlining
+    // The headlining: a crowned sheet hard against the roof's underside (the same curve, 3 mm under it), so it is joined to the roof from outside too.
+    const ln = new THREE.Shape();
+    ln.moveTo(-roofW / 2 + 0.03, -0.033);
+    ln.quadraticCurveTo(0, 0.08 - 0.006, roofW / 2 - 0.03, -0.033);
+    ln.lineTo(roofW / 2 - 0.03, -0.045);
+    ln.quadraticCurveTo(0, 0.08 - 0.018, -roofW / 2 + 0.03, -0.045);
+    ln.closePath();
+    const lining = add(new THREE.ExtrudeGeometry(ln, { depth: roofLen - 0.06, bevelEnabled: false, curveSegments: 10 }).translate(0, 0, -(roofLen - 0.06) / 2), trim.lining, root, 'lining');
+    lining.position.copy(roof.position);
+    lining.rotation.copy(roof.rotation);
+    // The sun visors: flat boards folded up against the lining (their height under the lining's curve at their x), in its slope.
+    for (const x of [-0.42, 0.42]) {
+      const t = 0.5 + x / (roofW - 0.06); // where along the lining's curve
+      const visor = rbox(0.36, 0.012, 0.2, 0.004, trim.lining, x, roof.position.y - 0.045 + 2 * t * (1 - t) * 0.107 - 0.012, roof.position.z + 0.5 * roofLen * 0.82 - 0.0, root);
+      visor.rotation.copy(roof.rotation);
+      visor.position.y += (visor.position.z - roof.position.z) * Math.tan(roof.rotation.x) * -1;
+    }
     // The wipers: the kit's, parked along the foot of the screen, their spindles in the scuttle below the glass.
     for (const [x, ang] of [[-0.5, 0.06], [0.08, 0.06]]) {
       const wiper = buildWiper({ len: 0.5, mats: { arm: PAL.black } });
@@ -546,18 +570,23 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     tp.lineTo(-innerAt(tailTop), hy(tailTop));
     tp.closePath();
     add(new THREE.ExtrudeGeometry(tp, { depth: 0.04, bevelEnabled: false }).translate(0, 0, hz(c.tail)), paint, hatch);
-    // The tail lamps: tall ovals in the corners (the photos): a black housing, the red stop and tail lens above the amber indicator, inside the hatch's width.
+    // The tail lamps (after the photo): a tall rounded teardrop of red lens at each corner, wider at the bottom, that bulges out of the tail and wraps the corner, with a
+    // dark outline, a horizontal break across it and a rounded amber lens at the foot, the reverse (left) or fog (right) lamp as a small round lens in that.
     const L = CORSA_TAIL_LAMP;
     for (const sd of [-1, 1]) {
-      const ly = hy((L.y0 + L.y1) / 2);
-      rbox(L.w + 0.005, L.y1 - L.y0 + 0.005, 0.02, 0.008, PAL.black, sd * L.x, ly, hz(c.tail) - 0.01, hatch, 'tailLampBody');
       const H3 = L.y1 - L.y0;
-      const red = add(new THREE.SphereGeometry(0.5, 16, 10).scale(L.w * 1.15, H3 * 0.5, 0.05), tailMat, hatch); // the stop and tail lens, on top
-      red.position.set(sd * L.x, ly + H3 * 0.22, hz(c.tail) - 0.02);
-      const amb = add(new THREE.SphereGeometry(0.5, 14, 8).scale(L.w * 1.08, H3 * 0.25, 0.04), PAL.amber, hatch); // the indicator under it
-      amb.position.set(sd * L.x, ly - H3 * 0.08, hz(c.tail) - 0.018);
-      const low = add(new THREE.SphereGeometry(0.5, 14, 8).scale(L.w * 1.02, H3 * 0.22, 0.04), sd > 0 ? PAL.smoke : PAL.fog, hatch); // and in the same unit the reverse lamp (left) or the fog lamp (right)
-      low.position.set(sd * L.x, ly - H3 * 0.33, hz(c.tail) - 0.018);
+      const ly = hy((L.y0 + L.y1) / 2);
+      const lx = sd * (L.x + 0.01);
+      const at = (mesh, dy, dz, w = 1) => { // places a lens at `dy` up the lamp, turned out round the corner
+        mesh.position.set(lx + sd * (1 - w) * 0.0, ly + dy, hz(c.tail) - dz);
+        mesh.rotation.y = sd * 0.3;
+        return mesh;
+      };
+      at(add(new THREE.SphereGeometry(0.5, 20, 14).scale(L.w + 0.014, H3 + 0.012, 0.06), PAL.black, hatch), 0, 0.0125); // the dark outline
+      at(add(new THREE.SphereGeometry(0.5, 22, 14).scale(L.w, H3 * 0.97, 0.085), tailMat, hatch), 0.01 * H3, 0.02); // the red lens: the whole height, bulging
+      at(add(new THREE.SphereGeometry(0.5, 16, 10).scale(L.w * 0.96, H3 * 0.012, 0.09), PAL.black, hatch), -H3 * 0.12, 0.022); // the break across it
+      at(add(new THREE.SphereGeometry(0.5, 18, 10).scale(L.w * 0.9, H3 * 0.26, 0.07), PAL.amber, hatch), -H3 * 0.285, 0.028); // the amber lens below it
+      at(add(new THREE.SphereGeometry(0.5, 14, 10).scale(L.w * 0.4, H3 * 0.14, 0.05), sd > 0 ? PAL.smoke : PAL.fog, hatch), -H3 * 0.285, 0.05); // and the reverse or fog lamp in that
     }
     rbox(0.07, 0.04, 0.03, 0.01, PAL.plastic, 0, hy(0.715), hz(c.tail) - 0.0125, hatch, 'hatchHandle'); // the black pull above the plate
     const tailBadge = makerBadge(0.05, hatch); // the maker's badge on the tail, above the pull
@@ -572,7 +601,7 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     rw.rotation.order = 'YXZ';
     hatch.add(rw);
     // Jess's black spoiler over the glass, on the hatch's top edge (so it lifts with it), and her sticker in the glass.
-    const spoiler = rbox(halfAt(yr) * 2 - 0.04, 0.03, 0.2, 0.012, PAL.black, 0, 0.035, -0.07, hatch);
+    const spoiler = rbox(halfAt(yr) * 2 - 0.1, 0.03, 0.2, 0.012, PAL.black, 0, 0.035, -0.07, hatch);
     spoiler.rotation.x = 0.18;
     const sticker = label(0.3, 0.07, 800, (g, Wd, Ht) => {
       g.fillStyle = '#f2f2f2';
@@ -603,10 +632,11 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
   // bumper with its lower intake, the plate in front of it.
   function addFrontEnd() {
     // The bonnet: crowned across, narrowing round the nose in plan (a loft, with smooth normals), not a flat slab.
-    loft(c.nose - 0.02, zs, upperAt, (z) => (W / 2 - 0.05) * Math.sqrt(Math.max(0.2, 1 - Math.max(0, (z - (c.nose - 0.4)) / 0.42) ** 2)), 0.045, 0.04, faded, root);
+    loft(c.nose - 0.02, zs, upperAt, (z) => planHalf(z, W / 2 - 0.05, 0.22), 0.045, 0.04, faded, root);
     rbox(W - 0.06, 0.03, 0.03, 0.01, PAL.under, 0, ys - 0.04, zs + 0.02, root); // the scuttle panel at the foot of the screen
-    const noseTop = upperAt(c.nose);
-    rbox(W - 0.02, noseTop + 0.08 - NOSE_LOW, 0.24, 0.09, faded, 0, (noseTop + 0.08 + NOSE_LOW) / 2, c.nose - 0.12, root); // the rounded nose, up under the bonnet's front edge
+    // The front apron: the body's nose, rounded in plan at the corners and running up under the bonnet's edge (and back under the wings' ends), so the front is
+    // one closed shape from the bumper to the bonnet: nothing sticks out, nothing is left open behind the lamps.
+    loft(c.nose, c.nose - 0.38, (z) => upperAt(z) - 0.045, (z) => planHalf(z, W / 2 - 0.03, 0.22), 0, 0, faded, root, NOSE_LOW);
     // The grille: a slim black slot between the lamps with the maker's round badge on it (Ashby: the makers are made up).
     rbox(0.46, 0.09, 0.03, 0.02, PAL.black, 0, 0.62, c.nose + 0.005, root);
     const noseBadge = makerBadge(0.05, root);
@@ -614,7 +644,7 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     for (const s of [-1, 1]) {
       // The lamp: a big clear lens that bulges out of the nose and wraps the corner, a silver reflector bowl with its bulb drawn on the lens's face (no black box behind it).
       const lamp = add(new THREE.SphereGeometry(0.5, 24, 14).scale(0.46, 0.19, 0.1), lensMat, root);
-      lamp.position.set(s * 0.5, 0.63, c.nose - 0.03);
+      lamp.position.set(s * 0.47, 0.63, c.nose - 0.03);
       lamp.rotation.y = s * 0.35;
       const bowl = label(0.2, 0.12, 900, (g, Wd, H) => {
         const grad = g.createRadialGradient(Wd * 0.45, H * 0.5, 2, Wd / 2, H / 2, Wd * 0.5);
@@ -630,17 +660,16 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
         g.arc(Wd * 0.45, H * 0.5, H * 0.14, 0, Math.PI * 2);
         g.fill();
       }, root);
-      bowl.position.set(s * 0.5 + Math.sin(s * 0.35) * 0.053, 0.63, c.nose - 0.03 + Math.cos(s * 0.35) * 0.053);
+      bowl.position.set(s * 0.47 + Math.sin(s * 0.35) * 0.053, 0.63, c.nose - 0.03 + Math.cos(s * 0.35) * 0.053);
       bowl.rotation.y = s * 0.35;
-      const ind = add(new THREE.SphereGeometry(0.5, 14, 10).scale(0.1, 0.1, 0.1), PAL.amber, root); // the indicator: at the outer end of the lamp unit, wrapping the corner
-      ind.position.set(s * 0.66, 0.6, c.nose - 0.075);
-      ind.rotation.y = s * 0.7;
-      ind.scale.setScalar(1.3);
+      const ind = add(new THREE.SphereGeometry(0.5, 14, 10).scale(0.1, 0.06, 0.07), PAL.amber, root); // the indicator: a small amber lens low on the corner, in the apron's skin
+      ind.position.set(s * 0.735, 0.55, c.nose - 0.15);
+      ind.rotation.y = s * 0.9;
     }
     // The bumper: deep black plastic from the nose's lower edge to under the lamps, wrapping round both corners, with a lower intake slot and the plate.
     const B = CORSA_BUMPER;
     rbox(W - 0.01, B.high - B.low, 0.2, 0.07, PAL.plastic, 0, (B.low + B.high) / 2, c.nose - 0.07, root);
-    for (const s of [-1, 1]) rbox(0.18, B.high - B.low - 0.02, 0.38, 0.06, PAL.plastic, s * (W / 2 - 0.08), (B.low + B.high) / 2, c.nose - 0.19, root); // its corners wrapping back along the wing (a hair smaller, so no face matches the main piece's)
+    for (const s of [-1, 1]) rbox(0.18, B.high - B.low - 0.02, 0.23, 0.06, PAL.plastic, s * (W / 2 - 0.08), (B.low + B.high) / 2, c.nose - 0.115, root); // its corners wrapping back along the wing (a hair smaller, so no face matches the main piece's)
     rbox(0.7, 0.05, 0.02, 0.02, PAL.black, 0, B.low + 0.07, c.nose + 0.035, root); // the intake
     plate(reg_, '#ece9de', root, { x: 0, y: 0.4, z: c.nose + 0.032, facing: 1 });
   }
@@ -658,7 +687,6 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     rbox(left - (NX + NW / 2), bh, 0.2, 0.012, PAL.plastic, (left + NX + NW / 2) / 2, bm, bz, root); // from the notch to the left corner
     rbox(NX - NW / 2 + left, bh, 0.2, 0.012, PAL.plastic, (NX - NW / 2 - left) / 2, bm, bz, root); // and to the right corner
     rbox(NW + 0.08, 0.2, 0.19, 0.012, PAL.plastic, NX, B.high - 0.1 - 0.005, bz, root); // over the notch: the bumper's upper part, which carries on across
-    for (const s of [-1, 1]) rbox(0.18, bh - 0.02, 0.15, 0.06, PAL.plastic, s * (W / 2 - 0.08), bm, c.tail + 0.085, root); // its corners wrapping forward along the quarter
     rbox(W - 0.5, 0.03, 0.05, 0.01, PAL.black, 0, CORSA_HATCH.foot - 0.02, c.tail + 0.01, root); // the cargo sill's rubber seal
     // Jess's exhaust: a pipe under the car to a big chrome can sticking out under the right of the bumper.
     // The can is a double-skinned chrome tube you can look into: the outer wall (chrome, seen from both sides), a dark inner liner, a rolled lip and a dark baffle deep inside.
@@ -725,6 +753,7 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     const dash = buildDash('corsa');
     dash.group.position.set(c.seats.driver.x, dashTop - 0.03, face - 0.04); // a fixed point
     dash.group.rotation.x = 0.3;
+    for (const ch of dash.group.children) ch.position.y -= 0.018; // the cluster's drawn lower inside its group (the group's own place is the fixed point), down in the pocket under the hood
     dash.group.scale.setScalar(1.35); // the cluster's about 0.32 m wide
     dash.group.userData.keep = true;
     root.add(dash.group);
@@ -810,12 +839,12 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     const post_ = c.bPillar + 0.005;
     const belt = (name, seat, out, inn, postZ, outTop, topY, lowOut, lowY) => {
       const hip = [seat.x, seat.y - 0.05, seat.z - 0.12];
-      root.add(buildSeatBelt(name, { top: [outTop, topY, postZ], low: [lowOut, lowY, postZ], buckle: [inn, seat.y + 0.03, seat.z - 0.08], hip, lapOnly: false, mats: { webbing } }));
+      root.add(buildSeatBelt(name, { top: [outTop, topY, postZ], low: [lowOut, lowY, postZ], buckle: [inn, seat.y + 0.07, seat.z - 0.02], hip, lapOnly: false, mats: { webbing } }));
     };
     const frontTop = (seat) => halfAt(seat.y + 0.72) - 0.045;
     const innerAt = (y) => INNER - TILT * (y - c.sill) - 0.032; // the quarters' inner faces lean in with the sides
-    belt('driver', c.seats.driver, -outer, -0.12, post_, -frontTop(c.seats.driver), c.seats.driver.y + 0.72, -innerAt(0.62), 0.62);
-    belt('left', c.seats.left, outer, 0.12, post_, frontTop(c.seats.left), c.seats.left.y + 0.72, innerAt(0.62), 0.62);
+    belt('driver', c.seats.driver, -outer, -0.08, post_, -frontTop(c.seats.driver), c.seats.driver.y + 0.72, -innerAt(0.62), 0.62);
+    belt('left', c.seats.left, outer, 0.08, post_, frontTop(c.seats.left), c.seats.left.y + 0.72, innerAt(0.62), 0.62);
     const rearTop = (seat) => halfAt(seat.y + 0.6) - 0.03;
     belt('rearLeft', c.rear.rearLeft, outer, 0.1, -1.25, rearTop(c.rear.rearLeft), c.rear.rearLeft.y + 0.6, innerAt(0.74), 0.74);
     belt('rearRight', c.rear.rearRight, -outer, -0.1, -1.25, -rearTop(c.rear.rearRight), c.rear.rearRight.y + 0.6, -innerAt(0.74), 0.74);
@@ -835,8 +864,8 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     addSignalStalk(column, c.wheelOut - 0.06, PAL.black, { modern: true });
     // The key in the column's right side, a real one (as the UTV's): on the shroud, facing the driver, turned by the dash's update.
     const keyHolder = new THREE.Group();
-    keyHolder.position.set(-0.05, 0.045, 0.03); // on the driver's right, the door's side
-    keyHolder.rotation.y = Math.PI / 2;
+    keyHolder.position.set(0.05, 0.045, 0.03); // on the column's centre side, as the photo of the real one's dash shows its barrel
+    keyHolder.rotation.y = -Math.PI / 2;
     column.add(keyHolder);
     const ignitionKey = addIgnitionKey(keyHolder, { ox: 0, oy: 0 }, { x: 0, y: 0 }, 0.6);
     const podUpdate2 = quad.userData.dash.update;
