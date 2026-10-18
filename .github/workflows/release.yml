@@ -1,0 +1,66 @@
+name: Release
+
+# Every push to main that changes what ships becomes a tagged GitHub release with the built game zipped up. The version
+# bump comes from the merged PR's labels (tools/nextVersion.mjs; DECISIONS.md, "Issues, pull requests and releases").
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'faq.html'
+      - 'vite.config.js'
+      - 'package.json'
+      - 'package-lock.json'
+
+permissions:
+  contents: write
+  pull-requests: read
+
+# One at a time, so two quick merges can't both take the same version.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  Release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 300
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      # Again on main: PRs merge without being brought up to date, and a quick fix may have been pushed straight here.
+      - name: Test
+        run: npm test
+      - name: Work out the version
+        id: version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tags=$(git ls-remote --tags --refs origin 'v*' | sed 's|.*refs/tags/||')
+          latest=$(node tools/nextVersion.mjs --latest $tags)
+          labels=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" --jq '[.[0].labels[]?.name]' 2>/dev/null || echo '[]')
+          read -r version bump <<< "$(node tools/nextVersion.mjs "$latest" "$labels")"
+          echo "Latest $latest, labels $labels: $bump to $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "bump=$bump" >> "$GITHUB_OUTPUT"
+      - name: Build
+        run: npm run build
+      - name: Package
+        run: |
+          echo "${{ steps.version.outputs.version }}" > dist/VERSION
+          (cd dist && zip -qr "../quad-bike-farm-v${{ steps.version.outputs.version }}.zip" .)
+      - name: Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ steps.version.outputs.version }}" "quad-bike-farm-v${{ steps.version.outputs.version }}.zip" \
+            --target "${{ github.sha }}" --title "v${{ steps.version.outputs.version }}" --generate-notes

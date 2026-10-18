@@ -1,0 +1,94 @@
+repository:
+  name: quad-bike-farm
+  description: First-person British farm quad-bike game, with two companions who ride, drive, bicker and talk. Three.js, Rapier, Vite.
+  topics: threejs, game, rapier, vite, webaudio
+  private: true
+  has_issues: true
+  has_projects: false
+  has_wiki: false
+  has_downloads: true
+  default_branch: main
+  # Merge commits, not squash: each commit subject is written for a player and becomes the FAQ's "Recently changed".
+  allow_squash_merge: false
+  allow_merge_commit: true
+  allow_rebase_merge: false
+  delete_branch_on_merge: true
+  allow_auto_merge: true
+  enable_automated_security_fixes: true
+  enable_vulnerability_alerts: true
+labels:
+  # What kind of change. The release takes its version bump from these (tools/nextVersion.mjs).
+  - name: "✨ feature"
+    color: 22dd53
+    description: Something new the player can do or see (minor release)
+  - name: "⚡ enhancement"
+    color: a2eeef
+    description: Makes an existing feature better (patch release)
+  - name: "🐛 bug"
+    color: d73a4a
+    description: Something isn't working (patch release)
+  - name: "💥 breaking"
+    color: b60205
+    description: An old farm save won't load or loses something (major release)
+  - name: "🔨 task"
+    color: 4346cc
+    description: Code, tooling or process work the player doesn't see
+  - name: "📚 documentation"
+    color: 0075ca
+    description: Improvements or additions to documentation
+  - name: "🚨 tests"
+    color: fcb1a8
+    description: Updates or adds tests
+  - name: "⬆️ dependencies"
+    color: 0366d6
+    description: Pull requests that update a dependency file
+  # Which part of the game.
+  - name: "👭 girls"
+    color: f9a8d4
+    description: Amy and Jess - what they do, say, wear and notice
+  - name: "🏍️ vehicles"
+    color: fbca04
+    description: The quads, cars, Land Rovers, tractor and trailers - models, handling, faults
+  - name: "⚙️ engine"
+    color: 8a5a00
+    description: The engine model - starting, running, wear and faults
+  - name: "🌾 world"
+    color: 7cb342
+    description: The farm, the weather, the day, animals and visitors
+  - name: "🔊 sound"
+    color: 5319e7
+    description: Engine banks, voices, effects and ambience
+  - name: "🧰 items"
+    color: c5def5
+    description: Things you carry and use - the toolbox, bench, jerry can, hose, winch
+  - name: "🖥️ interface"
+    color: bfdadc
+    description: The HUD, menus, FAQ, debug panel, console and controls
+  # Workflow.
+  - name: "🔜 next"
+    color: 0e8a16
+    description: /todo takes this before the lowest-numbered open issue
+  - name: "🧑‍🤝‍🧑 duplicate"
+    color: cfd3d7
+    description: This issue or pull request already exists
+  - name: "❓ question"
+    color: d876e3
+    description: More information is needed
+  - name: "⛔️ invalid"
+    color: e4e669
+    description: This doesn't seem right
+  - name: "🤦‍♂️ wontfix"
+    color: ffffff
+    description: This won't be worked on
+branches:
+  - name: main
+    protection:
+      required_pull_request_reviews: null
+      # Not strict: with several sessions merging, strict would leave auto-merges waiting on a branch update nobody makes.
+      # The release workflow runs the tests again on main before it releases anything.
+      required_status_checks:
+        strict: false
+        contexts: ['Test']
+      # Off so Jamie can still push a quick fix straight to main.
+      enforce_admins: false
+      restrictions: null
