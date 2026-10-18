@@ -1282,15 +1282,16 @@ function buildCorsa() {
       warnSymbol(ctx, kind, x, 29, LAMP.green, lit, 0.85);
     }
     // The other lamps in their own small pods, as in the photo: charge and oil to the left, main beam and side lights to the right, the rest in a strip under the dials.
+    const SHIFT = { beam: -1.5, lights: -1.5, oil: 1.5 }; // the glyphs' own weight to one side (the beam's rays, the oil can's drip), so each looks centred in its slot
     const pod = (x, y, w, list) => {
       ctx.fillStyle = '#121213';
       ctx.beginPath();
       ctx.roundRect(x, y, w, 15, 4);
       ctx.fill();
-      list.forEach(([kind, colour, lit], i) => warnSymbol(ctx, kind, x + (w / list.length) * (i + 0.5), y + 7.5, colour, lit, 0.8));
+      list.forEach(([kind, colour, lit], i) => warnSymbol(ctx, kind, x + (w / list.length) * (i + 0.5) + (SHIFT[kind] ?? 0), y + 7.5, colour, lit, 0.68));
     };
-    pod(72, 42, 32, [['charge', LAMP.red, L.charge], ['oil', LAMP.red, L.oil]]);
-    pod(256, 42, 32, [['beam', '#4aa8ff', L.main], ['lights', LAMP.green, L.lights]]);
+    pod(70, 42, 36, [['charge', LAMP.red, L.charge], ['oil', LAMP.red, L.oil]]);
+    pod(254, 42, 36, [['beam', '#4aa8ff', L.main], ['lights', LAMP.green, L.lights]]);
     pod(139, 86, 82, [['engine', LAMP.amber, L.engine], ['park', LAMP.red, L.park], ['belt', LAMP.red, L.belt]]);
   }
 

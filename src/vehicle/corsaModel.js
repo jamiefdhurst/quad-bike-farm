@@ -456,7 +456,7 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
       tube([s * halfAt(ys), ys, zs], [s * halfAt(yt), yt, zt], pr, faded, root, 8); // the A pillar
       tube([s * halfAt(ys), ys, c.bPillar], [s * halfAt(yt), yt - 0.01, c.bPillar], 0.04, faded, root, 6); // the B pillar
       tube([s * halfAt(yt), yt, zt], [s * halfAt(yr), yr, zr], pr, faded, root, 8); // the rail over the windows
-      tube([s * halfAt(yr), yr, zr], [s * halfAt(yh), yh, zh], 0.014, faded, root, 8); // the hatch's edge: a thin trim in the C pillar panel's face, not a pipe standing out of it
+      tube([s * halfAt(yr), yr, zr], [s * halfAt(yr + (yh - yr) * 0.88), yr + (yh - yr) * 0.88, zr + (zh - zr) * 0.88], 0.014, faded, root, 8); // the hatch's edge: a thin trim in the C pillar panel's face, stopping short of the quarter's curved top edge so its end does not hang out over it
       const lean = (shape, inset, mat, name) => {
         const g = new THREE.Group();
         g.position.set(s * (halfAt(ys) - inset), ys, 0);
@@ -477,7 +477,7 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
       cp.lineTo(zr + 0.02, yr);
       cp.lineTo(zr - 0.04, yr);
       cp.lineTo(zh, yh);
-      cp.lineTo(zh, ys);
+      cp.lineTo(zh, upperAt(zh) - 0.01); // down to the body's curved top edge, not below it, so no point of panel hangs out over the tail's curve
       cp.lineTo(gz - 0.12, ys);
       cp.closePath();
       lean(cp, -0.006, faded, 'cPillar');
@@ -698,7 +698,7 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     const left = W / 2 - 0.005; // the bumper's outer edges
     rbox(left - (NX + NW / 2), bh, 0.2, 0.06, PAL.plastic, (left + NX + NW / 2) / 2, bm, bz, root); // from the notch to the left corner
     rbox(NX - NW / 2 + left, bh, 0.2, 0.06, PAL.plastic, (NX - NW / 2 - left) / 2, bm, bz, root); // and to the right corner
-    rbox(NW + 0.08, 0.2, 0.19, 0.012, PAL.plastic, NX, B.high - 0.1 - 0.005, bz, root); // over the notch: the bumper's upper part, which carries on across
+    rbox(NW + 0.08, 0.2, 0.19, 0.05, PAL.plastic, NX, B.high - 0.1 - 0.005, bz, root); // over the notch: the bumper's upper part, which carries on across
     rbox(W - 0.5, 0.03, 0.05, 0.01, PAL.black, 0, CORSA_HATCH.foot - 0.02, c.tail + 0.01, root); // the cargo sill's rubber seal
     // Jess's exhaust: a pipe under the car to a big chrome can sticking out under the right of the bumper.
     // The can is a double-skinned chrome tube you can look into: the outer wall (chrome, seen from both sides), a dark inner liner, a rolled lip and a dark baffle deep inside.
