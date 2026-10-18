@@ -40,7 +40,7 @@ jobs:
           key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json', 'mise.toml') }}
           restore-keys: npm-${{ runner.os }}-
       - name: Install dependencies
-        run: npm ci
+        run: node --version && npm ci
       # Again on main: PRs merge without being brought up to date, and a quick fix may have been pushed straight here.
       # A runner is two or three times slower than a laptop, so the heavy model tests need longer than the 5 s default.
       - name: Test

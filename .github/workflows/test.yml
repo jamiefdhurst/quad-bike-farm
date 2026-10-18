@@ -28,7 +28,7 @@ jobs:
           key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json', 'mise.toml') }}
           restore-keys: npm-${{ runner.os }}-
       - name: Install dependencies
-        run: npm ci
+        run: node --version && npm ci
       # A runner is two or three times slower than a laptop, so the heavy model tests need longer than the 5 s default.
       - name: Test
         run: npm test -- --testTimeout=30000
