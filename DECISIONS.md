@@ -4362,3 +4362,11 @@ Settled with Jamie: the girls offer on their own through the chooser; one drill 
 - **Lines:** `lessonLines.js` (offer, setting each drill, a reminder, a clean go, each way it goes wrong, a pass, done, giving up, goodbye). Amy has a few for Jess's drill because every situation exists for both. Needs recording.
 - **Only on quads, for now:** the pillion seat is what lets a girl teach, so the tractor and Land Rovers are not covered; the bank and hill drills wait until you find one.
 - **Not checked in the running game:** how the drills feel (the thresholds are first guesses), whether the offer comes at a good moment, and the lines by ear.
+
+## Her voice shakes with the seat (issue #5, was TODO 110)
+
+- **What:** while a girl is sat on a running vehicle her recorded voice is detuned and its volume moved by the seat's own heave (`unit.vibration.body.heave`, the signal that already shakes her model), so it follows the real shake: a slow thump on a cold single, a fast flutter on a two-stroke. Nothing new to record.
+- **Logic:** `src/npc/voiceWobble.js` (pure, `tests/voiceWobble.test.js`) turns heave into `{ cents, gain }`. `CompanionVoice.watchSeat` feeds it each frame and `CompanionSounds.setWobble` applies it to the playing clip (`detune`, `setTargetAtTime` 8 ms, so a fine buzz is not smoothed away and nothing clicks) and to the next one. It resets to still when she is off or the engine is stopped.
+- **Numbers (guesses, not judged by ear):** `voiceWobbleRef` 0.006 m of heave is a hard shake; `voiceWobbleCents` 45 of pitch swing and `voiceWobbleLevel` 0.22 of loudness at that, capped at twice the cents and 0.3 to 1.7 of the volume. A warm idle is 2 to 4 mm of heave, so it shows at about half strength; the green's 12 mm heave is clamped.
+- **Jess does it on purpose:** her `voiceWobbleDepth` is 2.4 (Amy 1). They are companion params, so each girl's are in the debug panel with the rest of hers.
+- **Not covered:** lines not yet recorded fall back to the browser's speech, which cannot be shaken. Not checked by ear.

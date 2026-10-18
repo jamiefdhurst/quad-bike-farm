@@ -319,6 +319,10 @@ export const DEFAULT_COMPANION_PARAMS = {
   takeOverDriveChance: 0.45, // and then the chance she drives it about herself rather than stopping it and getting off
   ghostFunChance: 0.4, // when you leave her on a quad driving itself: the chance she enjoys it rather than panics
   voiceShakeLevel: 0.95, // how hard the seat has to shake (about 0.6 at a warm idle, 1 to 2 cold) before she mentions it
+  voiceWobbleRef: 0.006, // metres of seat heave that make a hard shake for her voice (a warm idle is about 0.002 to 0.004)
+  voiceWobbleCents: 45, // pitch swing of her voice at that shake, in cents (100 is a semitone)
+  voiceWobbleLevel: 0.22, // and the swing in its loudness, as a share of the volume
+  voiceWobbleDepth: 1, // how much she lets it through: 1 is just the seat, Jess plays it up on purpose, 0 is off
 };
 
 export const COMPANION_PARAM_RANGES = {
@@ -623,4 +627,8 @@ export const COMPANION_PARAM_RANGES = {
   takeOverDriveChance: [0, 1, 0.05],
   ghostFunChance: [0, 1, 0.05],
   voiceShakeLevel: [0.1, 5, 0.05],
+  voiceWobbleRef: [0.001, 0.02, 0.001],
+  voiceWobbleCents: [0, 200, 1],
+  voiceWobbleLevel: [0, 0.8, 0.01],
+  voiceWobbleDepth: [0, 4, 0.05],
 };
