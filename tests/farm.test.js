@@ -13,6 +13,7 @@ import { Favour } from '../src/npc/favour.js';
 import { FallingOut } from '../src/npc/fallingOut.js';
 import { Skills } from '../src/npc/skills.js';
 import { Romance } from '../src/npc/romance.js';
+import { Lessons } from '../src/npc/lessons.js';
 import { Records } from '../src/world/records.js';
 import { Logbook, formatWhen } from '../src/workshop/logbook.js';
 import { Achievements, ACHIEVEMENTS } from '../src/achievements/achievements.js';
@@ -45,7 +46,7 @@ function unit() {
 
 function girls() {
   const ids = ['amy', 'jess'];
-  return { favour: new Favour(ids), fallingOut: new FallingOut(ids), skills: new Skills(ids), romance: new Romance(ids) };
+  return { favour: new Favour(ids), fallingOut: new FallingOut(ids), skills: new Skills(ids), romance: new Romance(ids), lessons: new Lessons() };
 }
 
 const save = (over = {}) => ({ version: SAVE_VERSION, day: 3, farmSeed: 1234, ...over });
@@ -224,6 +225,21 @@ describe('the girls from one day to the next', () => {
     expect(b.favour.scores.amy).toBe(10 * P.favourKept);
     expect(b.favour.scores.jess).toBe(-4 * P.favourKept);
     expect(b.skills.levels.jess.choke).toBe(0.9);
+  });
+
+  it('the drills each girl has passed you on carry, and an old save without them loads', () => {
+    const a = girls();
+    a.lessons.passed.amy.add('pullAway');
+    a.lessons.passed.jess.add('faster');
+    const b = girls();
+    restoreGirls(b, JSON.parse(JSON.stringify(captureGirls(a))), P);
+    expect([...b.lessons.passed.amy]).toEqual(['pullAway']);
+    expect(b.lessons.graduated.jess).toBe(true);
+    const old = captureGirls(a);
+    delete old.lessons;
+    const c = girls();
+    restoreGirls(c, old, P);
+    expect(c.lessons.passed.amy.size).toBe(0);
   });
 
   it('a falling-out not made up leaves them cool in the morning; ordinary friction carries at half', () => {

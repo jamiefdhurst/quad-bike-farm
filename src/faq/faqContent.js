@@ -1036,6 +1036,20 @@ export const FAQ_SECTIONS = [
           coach each other when they share a quad.`,
       },
       {
+        q: 'Can the girls teach me to drive a manual?',
+        a: `Yes. Drive a manual quad (the red, green or yellow) with a girl on the back and after a little while she may offer you a lesson. Amy sets one
+          thing at a time: pulling away without revving it, clutch control on a hill, changing down before a bank, smooth gear changes, and stopping
+          without stalling. She watches what the quad actually does, tells you how it went, and moves on once you have done it cleanly twice in a row.
+          Jess has one lesson, "faster", and no patience. What you have passed is kept from one day to the next.`,
+        tip: 'Drive a manual quad with Amy on the back and she may offer you a lesson.',
+      },
+      {
+        q: 'How do I pass a driving lesson?',
+        a: `Do what she asks, as cleanly as you can. Two good goes in a row passes a drill; a bad one starts the count again, and after four bad goes in a
+          row she calls it a day and offers again later. For the hill and the bank you need to find one: she will remind you now and then. Get off or
+          stop driving and the lesson is over for now. Pass all of Amy's drills for her approval and a bucket-list tick.`,
+      },
+      {
         q: 'Do they like me?',
         a: `They each keep a score of how you treat them, though you never see it: rides, talking to her, riding her favourite quad, washing it, favours done,
           and how much you leave her out while her friend gets your time. The one who likes you more is kinder and keener; the neglected one sulks, may

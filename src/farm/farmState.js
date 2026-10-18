@@ -107,22 +107,24 @@ export function savedFaults(s) {
  * The girls as plain data: { favour: { id: score }, friction, fallenOut, skills: { id: { skill: level } }, romance: { id: { locked, betrayed } } }.
  * Pranks, grudges and moods belong to the day and aren't kept.
  */
-export function captureGirls({ favour, fallingOut, skills, romance }) {
+export function captureGirls({ favour, fallingOut, skills, romance, lessons }) {
   return {
     favour: { ...favour.scores },
     friction: fallingOut.friction,
     fallenOut: !!fallingOut.active,
     skills: structuredClone(skills.levels),
+    lessons: lessons?.capture(),
     romance: Object.fromEntries(Object.entries(romance.girls).map(([id, g]) => [id, { locked: !!g.locked, betrayed: !!g.betrayed }])),
   };
 }
 
 /** Puts the girls' saved state back the next morning (see captureGirls). */
-export function restoreGirls({ favour, fallingOut, skills, romance }, s, P = DEFAULT_FARM_PARAMS) {
+export function restoreGirls({ favour, fallingOut, skills, romance, lessons }, s, P = DEFAULT_FARM_PARAMS) {
   if (!s) return;
   for (const id of favour.ids) if (num(s.favour?.[id])) favour.scores[id] = s.favour[id] * P.favourKept;
   if (s.fallenOut) fallingOut.friction = P.frictionFallenOut;
   else if (num(s.friction)) fallingOut.friction = s.friction * P.frictionKept;
+  lessons?.restore(s.lessons);
   for (const id of skills.ids) if (s.skills?.[id]) copyKnown(skills.levels[id], s.skills[id], Object.keys(skills.levels[id]));
   for (const id of romance.ids) {
     const r = s.romance?.[id];

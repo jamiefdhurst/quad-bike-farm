@@ -130,6 +130,7 @@ import { HeadStart, HEADSTART_PARAM_RANGES } from './npc/headStart.js';
 import { Gossip, GOSSIP_PARAM_RANGES } from './npc/gossip.js';
 import { ThrottleGrab, GRAB_PARAM_RANGES } from './npc/throttleGrab.js';
 import { PillionCoach, PILLION_COACH_PARAM_RANGES } from './npc/pillionCoach.js';
+import { Lessons, LESSON_PARAM_RANGES, DRILLS } from './npc/lessons.js';
 import { dustExposure } from './world/dust.js';
 import { SmokeSense, SMOKE_PARAM_RANGES } from './npc/smokeSense.js';
 import { FaultShout, SHOUT_PARAM_RANGES } from './npc/shoutFault.js';
@@ -894,6 +895,7 @@ export class Game {
     this.quadNames = new QuadNames(this.girlUnits.map((u) => u.spec.id), { random: createRandom(this.farmSeed ^ 0x6a3e) });
     this.ownership = new Ownership(undefined, createRandom(this.farmSeed ^ 0x0c1a));
     this.hearing = new Hearing();
+    this.lessons = new Lessons(); // a girl on the back teaching you to drive a manual (npc/lessons.js)
     this.pillionCoach = new PillionCoach(); // the girl on the back coaching the girl driving (npc/pillionCoach.js)
     this.throttleGrab = new ThrottleGrab(); // a girl on the back opening it over your hand (npc/throttleGrab.js)
     this.smokeSense = new SmokeSense(); // Amy coughs at two-stroke smoke, Jess loves it (npc/smokeSense.js)
@@ -1569,6 +1571,7 @@ export class Game {
     registerTuning('Head start', this.headStart.p, HEADSTART_PARAM_RANGES);
     registerTuning('Talking about you', this.gossip.p, GOSSIP_PARAM_RANGES);
     registerTuning('Girls coaching each other', this.pillionCoach.p, PILLION_COACH_PARAM_RANGES);
+    registerTuning('Driving lessons', this.lessons.p, LESSON_PARAM_RANGES);
     registerTuning('Hand on the throttle', this.throttleGrab.p, GRAB_PARAM_RANGES);
     registerTuning('Two-stroke smoke', this.smokeSense.p, SMOKE_PARAM_RANGES);
     registerTuning('Shouting a fault', this.faultShout.p, SHOUT_PARAM_RANGES);
@@ -4030,7 +4033,7 @@ export class Game {
       }
       const a = c.availability();
       // Sat about on a quad of her own choosing she can choose to get off; doing something idle, only something urgent takes her.
-      const sitting = !a.free && c.sittingAbout();
+      const sitting = !a.free && (c.sittingAbout() || this.lessonGirls(ridden).includes(c.character.id));
       const urgentOnly = !a.free && !sitting && c.interruptible();
       if (!a.free && !urgentOnly && !sitting) {
         m.waiting = a.why;
@@ -4105,6 +4108,7 @@ export class Game {
         const e = this.romance.take(o);
         if (e) this.handleRomanceEvent(e);
       })),
+      ...this.lessonOffers(id, ridden),
       ...c.seatOffers(),
     ];
   }
@@ -5639,6 +5643,67 @@ export class Game {
     for (const e of this.pillionCoach.update(dt, share)) {
       share.from.voice.say(`coachGive_${e.key}`, { force: true });
       this.applyCoaching(share.to, e.key, false);
+    }
+  }
+
+  // Driving lessons ---------------------------------------------------------
+
+  /** The girls sat on the back of the manual quad you are driving (the only ones who can teach you). */
+  lessonGirls(ridden) {
+    const q = ridden?.quad;
+    if (!q?.manual) return [];
+    return this.companions.filter((c) => c.quad === q && c.fsm.is('seated') && c.seatKind === 'pillion').map((c) => c.character.id);
+  }
+
+  /** What the drivetrain is doing now, for a lesson to judge (npc/lessons.js). */
+  lessonSample(ridden) {
+    const q = ridden?.quad;
+    if (!q?.manual) return null;
+    const d = q.drivetrain;
+    const ip = q.engine.params;
+    return {
+      running: q.engine.isRunning,
+      gear: d.gear,
+      pedal: d.pedal,
+      clutch: d.clutch,
+      throttle: q.throttle,
+      speed: q.forwardSpeed,
+      climb: q.climb,
+      revs: Math.max(0, (q.engine.rpm - ip.idleRpmWarm) / (ip.maxRpm - ip.idleRpmWarm)),
+    };
+  }
+
+  updateLessons(dt, ridden) {
+    for (const e of this.lessons.update(dt, { girls: this.lessonGirls(ridden), sample: this.lessonSample(ridden) })) this.handleLessonEvent(e);
+  }
+
+  /** The lessons she could offer now, as offers for this girl (npc/lessons.js). */
+  lessonOffers(id, ridden) {
+    return this.lessons.offers({ girls: this.lessonGirls(ridden) }).filter((o) => o.girl === id).map((o) => ({ ...o, take: () => this.handleLessonEvent(this.lessons.take(o)) }));
+  }
+
+  /** Says what a lesson event means (the words are the girl's; passing a drill is worth her favour, finishing them all more). */
+  handleLessonEvent(e) {
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    if (!c) return;
+    const say = (situation) => c.voice.say(situation, { force: true });
+    const p = this.lessons.p;
+    if (e.type === 'begin') say('lessonBegin');
+    else if (e.type === 'set') say(`lessonSet_${e.drill}`);
+    else if (e.type === 'nudge') say('lessonNudge');
+    else if (e.type === 'good') say(`lessonGood_${e.drill}`);
+    else if (e.type === 'bad') say(`lessonBad_${e.why}`);
+    else if (e.type === 'passed') {
+      this.favour.add(e.girl, p.passFavour);
+      this.hud.toast(`${c.name}: ${DRILLS[e.drill].label}, passed`);
+      if (!this.lessons.graduated[e.girl]) say(`lessonPassed_${e.drill}`);
+    } else if (e.type === 'graduated') {
+      this.favour.add(e.girl, p.graduateFavour);
+      if (e.girl === 'amy') this.achievements.note('amysTest');
+      say('lessonDone');
+    } else if (e.type === 'end') {
+      if (e.why === 'gaveUp') say('lessonGiveUp');
+      else if (e.why === 'long') say('lessonBye');
     }
   }
 
@@ -9506,6 +9571,7 @@ export class Game {
     this.updateFourWd(dt);
     this.skills.update(dt);
     this.updatePillionCoach(dt);
+    this.updateLessons(dt, ridden);
     // With the girls' autonomy off (console: girls.autonomy) nothing new starts on their own; what is under way carries on.
     const auto = this.girlsAuto;
     if (auto) {

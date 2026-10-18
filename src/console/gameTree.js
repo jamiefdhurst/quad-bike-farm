@@ -229,6 +229,7 @@ export function buildGameTree(g, host) {
         else g.favour.unlock(id);
       }),
       skills: group(() => Object.fromEntries(Object.keys(g.skills.levels[id]).map((s) => [s, num(() => g.skills.level(id, s), (v) => g.skills.set(id, s, v), 0, 1)]))),
+      lessonsPassed: text(() => [...g.lessons.passed[id]].join(', ') || 'none', 'the driving lessons she has passed you on'),
       tune: girlTune(c().name),
     }), id);
   };
