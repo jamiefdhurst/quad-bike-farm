@@ -1214,6 +1214,7 @@ export class HerDrive {
     // Sunk in a bog: a couple of goes at it, then she's had it and shouts for help.
     if (q.bog?.sink > 0.3 && this.bogs > 1 + patient) {
       this.events.push('stuckInBog');
+      this.strandedInBog = true; // the driving state keeps her up on the quad calling for help (strandedWait.js) rather than getting her off
       this.stop('gaveUp');
       return;
     }

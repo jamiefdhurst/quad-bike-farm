@@ -107,7 +107,11 @@ FEEL = {
     **dict.fromkeys(['ghostStopped', 'ackKeepOn', 'driveTaken', 'ackStopDrive', 'ackBack', 'driveGaveUp',
                      'startGaveUp', 'stalledRiding', 'outOfFuel', 'selfGetOffWaited', 'askOff', 'askStop'], 'cross'),
     'banter': 'snide',  # the girls bickering (banterLines.js)
+    **dict.fromkeys(['calloutAgain', 'calloutLeft', 'calloutGiveUp'], 'cross'),
+    **dict.fromkeys(['calloutThanksQuick', 'calloutThanksSlow'], 'excited'),
 }
+# Situations that come in a family (callout_bog_ford, callout_tip_ford...), by what comes before the first underscore.
+FEEL_PREFIX = {'callout': 'scared'}
 # How much more (or less) emotional each character is than the feel says, and
 # for some, a cfg weight that replaces the feel's (lower runs freer). Jess's were
 # picked by ear from a sweep: a lift of 0.6 with cfg 0.25 is lively without babbling.
@@ -144,7 +148,7 @@ def character_lines(character):
 
 def feel_for(situations, character):
     """The strongest feel of the situations a line is said in, lifted for the character."""
-    exag, cfg = max((FEELS[FEEL.get(s, 'chat')] for s in situations), key=lambda f: f[0])
+    exag, cfg = max((FEELS[FEEL.get(s) or FEEL_PREFIX.get(s.split('_')[0], 'chat')] for s in situations), key=lambda f: f[0])
     return round(min(2.0, exag + CHARACTER_LIFT.get(character, 0)), 2), CHARACTER_CFG.get(character, cfg)
 
 

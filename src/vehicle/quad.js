@@ -920,6 +920,11 @@ export class Quad {
       this.pushLeft = 1;
       this.physics.setParked(false);
       this.physics.pushAlong(this.pushDir * this.controlsParams.pushSpeed, dt);
+    } else if (this.pushDir && this.driver?.stranded && !this.parkBrake && !this.isTipped && !this.towed) {
+      // A girl stuck in a bog, working the throttle while you shove (npc/stranded.js): it loosens in the mud, and moves off once it is free.
+      this.pushLeft = 1;
+      this.bog.shove(dt);
+      if (!this.bog.stuck) this.physics.pushAlong(this.pushDir * this.controlsParams.pushSpeed, dt);
     }
     // Whoever's aboard, sat up on it, leans it further over on a slope (vehicle/topple.js).
     const load = toppleLoad(p, { front: !!(this.rider || this.driver), back: !!(this.passenger || this.backRider) });
@@ -1351,6 +1356,16 @@ export class Quad {
     this.recordTransform();
     this.prevPos.copy(this.currPos);
     this.prevQuat.copy(this.currQuat);
+  }
+
+  /** Lays it on its side where it stands (the debug panel's way of tipping it). */
+  tipOver() {
+    const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), 1.75));
+    const t = this.physics.body.translation();
+    this.physics.body.setTranslation({ x: t.x, y: t.y + 0.25, z: t.z }, true);
+    this.physics.body.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }, true);
+    this.physics.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    this.physics.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
   }
 
   rightItself() {

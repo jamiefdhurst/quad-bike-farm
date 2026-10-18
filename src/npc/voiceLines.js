@@ -13,6 +13,7 @@ import { AMY_PLACE_LINES } from './placeLines.js';
 import { AMY_LOFT_LINES } from './loftLines.js';
 import { AMY_BATTERY_LINES } from './batteryLines.js';
 import { AMY_PUSH_LINES } from './pushLines.js';
+import { AMY_STRANDED_LINES } from './strandedLines.js';
 import { AMY_TOW_LINES } from './towLines.js';
 import { AMY_MIND_LINES } from './mindLines.js';
 import { AMY_KNACK_LINES } from './knackLines.js';
@@ -1620,4 +1621,6 @@ export const VOICE_LINES = {
   // Her phone (phoneLines.js).
   ...AMY_PHONE_LINES,
   ...AMY_DARE_LINES,
+  // Stuck out in the field, calling you (strandedLines.js).
+  ...AMY_STRANDED_LINES,
 };

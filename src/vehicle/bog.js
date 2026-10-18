@@ -22,6 +22,8 @@ export const DEFAULT_BOG_PARAMS = {
   drag: 1.0, // mud dragging at the tyres: newtons per kg per m/s in the middle of a bog
   deepAt: 0.8, // sunk this far the mud's grip climbs past what the green's winch can pull (the tractor's chain can)
   deepSuction: 2.8, // extra holding force at full sink, as a fraction of the quad's weight
+  pushRelief: 0.12, // sunk less than `pushLimit`, someone shoving while she works the throttle loosens it this much a second
+  pushLimit: 0.6, // sunk further than this a shove does nothing: it wants the winch or the chain
 };
 
 export const BOG_PARAM_RANGES = {
@@ -38,6 +40,8 @@ export const BOG_PARAM_RANGES = {
   drag: [0, 3, 0.05],
   deepAt: [0.5, 1, 0.01],
   deepSuction: [0, 6, 0.1],
+  pushRelief: [0, 0.5, 0.01],
+  pushLimit: [0.3, 1, 0.01],
 };
 
 /** Grip multiplier for a wheel in a bog this deep (0 none, 1 the middle). */
@@ -51,6 +55,7 @@ export class Bog {
     this.sink = 0; // 0 free .. 1 sunk to the axles
     this.lastDrive = 0; // direction of the last real push, for rocking
     this.rocks = 0; // times it's been rocked this time in
+    this.fake = false; // the debug panel's "bog her where she is": treats the ground as a bog until it is out of it
   }
 
   /** Sunk too far to drive out by itself. */
@@ -68,6 +73,7 @@ export class Bog {
    */
   update(dt, { bog = 0, spin = 0, speed = 0, drive = 0 }) {
     const p = this.p;
+    if (this.fake) bog = 1;
     if (bog <= 0.02) {
       this.sink = Math.max(0, this.sink - p.outRate * dt);
       this.rocks = 0;
@@ -84,7 +90,13 @@ export class Bog {
       this.rocks++;
     }
     if (dir) this.lastDrive = dir;
+    if (this.fake && this.sink < 0.15) this.fake = false;
     return this.sink;
+  }
+
+  /** Someone on foot shoving a quad whose driver is working the throttle: it loosens a little each second, but only while it isn't in too deep. */
+  shove(dt) {
+    if (this.sink < this.p.pushLimit) this.sink = Math.max(0, this.sink - this.p.pushRelief * dt);
   }
 
   /** Newtons of mud dragging at it going through a bog this deep at `speed` m/s. */

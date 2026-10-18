@@ -52,6 +52,27 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'bog',
+      label: '% bogs her quad (she calls for help)',
+      run: (id) => {
+        const c = girl(id);
+        if (!c.fsm.is('driving') || c.stranded || !c.drive || c.drive.stranded) return toast(`${c.name} has to be driving a quad (and not already stuck)`);
+        c.quad.bog.sink = 0.75;
+        c.quad.bog.fake = true; // the ground counts as a bog under it until it is out of it
+        c.drive.strandedInBog = true;
+        c.drive.stop('gaveUp');
+      },
+    },
+    {
+      verb: 'tip',
+      label: '% tips her quad (she calls for help)',
+      run: (id) => {
+        const c = girl(id);
+        if (!c.fsm.is('driving') || c.stranded || !c.drive || c.drive.stranded) return toast(`${c.name} has to be driving a quad (and not already stuck)`);
+        c.quad.tipOver();
+      },
+    },
+    {
       verb: 'doze',
       label: '% goes and dozes on the nearest bale',
       run: (id) => {
