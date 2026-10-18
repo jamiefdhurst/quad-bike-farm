@@ -49,7 +49,7 @@ import { MUD_STATE_RANGES } from './effects/quadMud.js';
 import { WEAR_LOOK_RANGES } from './effects/mudCoat.js';
 import { WeatherStation } from './world/weatherStation.js';
 import { Forecast, DEFAULT_FORECAST_PARAMS, FORECAST_PARAM_RANGES, KIND_WARMTH } from './world/forecast.js';
-import { choose, mainNeed, OFFER_KINDS } from './npc/chooser.js';
+import { choose, mainNeed, nextThink, OFFER_KINDS } from './npc/chooser.js';
 import { girlsLeftOut } from './npc/leftOut.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { FallingOut, FALLING_OUT_PARAM_RANGES } from './npc/fallingOut.js';
@@ -3996,7 +3996,7 @@ export class Game {
       const m = c.mind;
       m.since += dt;
       if ((m.thinkIn -= dt) > 0) continue;
-      m.thinkIn = c.params.thinkEvery * (0.5 + Math.random()) * (1 + c.params.sleepySlowThink * c.needs.sleep); // sleepy, she thinks slowly
+      m.thinkIn = nextThink(c.params.thinkEvery, c.params.sleepySlowThink * c.needs.sleep); // sleepy, she thinks slowly
       if (!c.params.ownMind) {
         m.waiting = 'her own mind is off';
         continue;

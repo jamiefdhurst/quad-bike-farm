@@ -40,6 +40,7 @@ import { Attention, DEFAULT_NOTICE_PARAMS } from './attention.js';
 import { reactingMethods } from './companionReacting.js';
 import { availabilityOf, JOBS } from './availability.js';
 import { Needs } from './needs.js';
+import { firstThink } from './chooser.js';
 import { DEFAULT_DOZE_PARAMS, dozePose } from './dozing.js';
 import { Intent, walkPace } from './intent.js';
 import { standBy, tagPoint } from './pair.js';
@@ -144,8 +145,8 @@ export class Companion {
     this.dozeParams = DEFAULT_DOZE_PARAMS; // the game points this at the shared tuning (Places)
     this.dozeT = 0; // seconds into dozing
     this.dozeK = 0; // how far gone she is (0..1), for her head
-    this.needs = new Needs({ purpose: Math.random() * 0.4, excitement: Math.random() * 0.3 });
-    this.mind = { thinkIn: Math.random() * 2, last: null, since: 0, scored: [], waiting: null };
+    this.needs = new Needs({ purpose: Math.random() * 0.5, excitement: Math.random() * 0.4, company: Math.random() * 0.3, rest: Math.random() * 0.3 });
+    this.mind = { thinkIn: firstThink(this.params.thinkEvery), last: null, since: 0, scored: [], waiting: null };
     // What she's set on (intent.js): how she walks to it, and whether you've stopped her on her way.
     this.intent = new Intent();
     this.pace = null; // the chosen thing's pace for the walk to it ('hurry', 'brisk', 'dawdle'), cleared when the walk ends
