@@ -151,6 +151,7 @@ Every merge to `main` that changes what ships (`src`, `public`, the pages, `vite
 
 - Every PR has **exactly one type label**; the required "Version label" check fails until it does, and its summary says what the merge will release as. Use the issue's type label unless the work turned out to be something else.
 - `✨ feature` (minor): something new the player can do or see. `⚡ enhancement` or `🐛 bug` (patch): an existing thing made better or fixed. `🔨 task`, `📚 documentation`, `🚨 tests` (patch, and usually no release at all, since they don't change what ships): work the player doesn't see. `⬆️ dependencies` is dependabot's.
+- **Create the PR with its labels in place**: pass every `--label` to `gh pr create` itself, never add them afterwards with `gh pr edit`. The "Version label" check starts when the PR opens and can read an empty list (it did on #242, even with `--label` given); rerunning it reuses that stale event, so if it fails with "it has none" while the PR shows its labels, remove one label and add it back to fire a fresh one.
 - Add **`💥 breaking`** (major) on top only when an old farm save stops loading or loses something it kept: raising the oldest version `validSave` accepts, or dropping or renaming something `captureVehicle`, `captureGirls` or the farm save keep without carrying the old value across. Raising `SAVE_VERSION` with the old saves still loading is not breaking. Controls, balance and looks changing are not breaking.
 - A push straight to `main` (Jamie's quick fixes) has no PR, so it releases as a patch.
 
