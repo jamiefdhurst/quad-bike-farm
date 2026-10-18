@@ -96,6 +96,7 @@ export const ACHIEVEMENTS = [
   { id: 'driven-amy', group: 'Company', name: 'Amy\'s chauffeur service', hint: 'Be driven about by Amy', points: 1, test: (s) => s.n('drivenBy:amy') >= s.p.chauffeurSeconds },
   { id: 'driven-jess', group: 'Company', name: 'Jess at the wheel', hint: 'Be driven about by Jess', points: 1, test: (s) => s.n('drivenBy:jess') >= s.p.chauffeurSeconds },
   { id: 'company', group: 'Company', name: 'Passenger of your own', hint: 'Drive with a girl on the back', points: 1, test: (s) => s.n('companySeconds') >= s.p.companySeconds },
+  { id: 'amys-test', group: 'Company', name: 'Passed Amy\'s test', hint: 'Let Amy teach you everything she knows about driving a manual', points: 2, test: (s) => s.n('amysTest') >= 1 },
   { id: 'full-load', group: 'Company', name: 'Full load', hint: 'Carry both girls on one quad', points: 2, test: (s) => s.n('fullLoadSeconds') >= s.p.fullLoadSeconds },
   { id: 'amy-likes', group: 'Company', name: 'Amy\'s favourite', hint: 'Get Amy to like you best', points: 2, test: (s) => s.has('favoured', 'amy') },
   { id: 'jess-likes', group: 'Company', name: 'Jess\'s favourite', hint: 'Get Jess to like you best', points: 2, test: (s) => s.has('favoured', 'jess') },
