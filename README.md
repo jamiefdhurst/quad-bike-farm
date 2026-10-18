@@ -786,11 +786,11 @@ What is still to do. Finished items are recorded in DECISIONS.md, under their ol
 126. Making up. After a falling out, one makes the first move: brings the other a tea, or offers her the better quad. An offer that meets company, so the chooser decides when.
 127. Sound shapes what they notice. Heavy rain, a loud engine beside them or being inside the barn dulls what they hear (attention's ranges), so they miss things far off in a downpour.
 128. Getting attached to a quad. Whoever drives one most this game cares about it: she complains when you run it dry or thrash it, and is proud when it's washed. Extends ownership with a "care" score.
-129. A proper mechanic's day. A full service at the bench, step by step: plug gap, air filter, oil change, chain or belt check, ending with the quad noticeably smoother and Amy ticking it off in her logbook.
+129. A proper mechanic's day. A full service at the bench, step by step: plug gap, air filter, oil change, chain or belt check, ending with the quad noticeably smoother and Amy ticking it off in her logbook. This could be added as a job, depending on ehe quad that needs the work.
 130. Tyre wear that shows. Tread wears over a game, faster on tarmac and with doughnuts; bald tyres lose grip in mud and on wet grass, and the tread visibly goes. New ones fitted at the bench.
 131. A diesel that needs bleeding. Run the tractor or a Land Rover dry and it won't restart until the fuel is bled at the lift pump. Amy knows how.
 132. A quad better in some places. Each quad gets a small hidden strength (climbs the hill best, floats over mud, quickest on tarmac); the girls work it out over games and argue about it.
-133. Second-hand buying. A board in the barn lists the odd vehicle for sale from neighbours; buying one adds it to the yard. Goes with item 15.
+133. Second-hand buying. A board in the barn lists the odd vehicle for sale from neighbours; buying one adds it to the yard.
 134. The neighbour's farm over the lane: a second yard to ride to on the road, its own vehicles, a neighbour who lends and borrows.
 135. Seasons across games: each game a day, the days moving through the year (muddy winter, dusty summer with haymaking, autumn leaves), changing the weather pool, the ground and the jobs.
 136. Haymaking. Cut the field with the tractor, turn it, bale it, stack the bales on the trailer with the girls throwing them up.
