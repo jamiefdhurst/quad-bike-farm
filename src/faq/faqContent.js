@@ -787,6 +787,12 @@ export const FAQ_SECTIONS = [
           bench, as "Buzz ranking".`,
       },
       {
+        q: 'Why does her voice wobble when she talks on the back of a quad?',
+        a: `Her voice shakes with the seat. Her pitch and her loudness follow the shake of the quad under her, so a cold engine's slow thump makes a slow wobble and a
+          fine buzz makes a flutter, like talking on a washing machine. A smooth warm engine hardly shows. Jess plays it up on purpose; Amy just puts up with it.`,
+        tip: 'Hear her voice shake with the seat: let a rough, cold engine idle with her on the back.',
+      },
+      {
         q: 'Why has she got off the quad to walk about, saying her bum has gone numb?',
         a: `She has been sitting on the back of a running quad that shakes for a long time. The harder it shakes, the sooner her legs go tingly and her bum goes numb.
           She gets off, walks it off, stretches, and gets back on. A smooth warm engine takes a long time to do it; a cold or rough one is much quicker.`,

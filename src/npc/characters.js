@@ -94,6 +94,7 @@ export const CHARACTERS = [
     // she likes being left on a runaway.
     params: {
       outfit: 'jessPolo',
+      voiceWobbleDepth: 2.4, // talks on a buzzing seat on purpose, wobbling her voice more than the seat does
       benchSlip: 0.85,
       dareWeight: 1.2, // dares you to jump the ramp, take the ford flat out, touch the fence
       phoneWeight: 1.3, // always on it

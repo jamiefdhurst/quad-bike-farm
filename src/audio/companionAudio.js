@@ -90,7 +90,19 @@ export class CompanionSounds {
     this.rate = rate;
     this.banks = {}; // 'sounds' (sighs, hums...) and 'voice' (spoken lines by text): { buffer, clips }
     this.loading = null;
-    this.active = null; // { source, panner }
+    this.active = null; // { source, gain, volume, panner }
+    this.wobble = { cents: 0, gain: 1 }; // her seat's shake on her voice (npc/voiceWobble.js), applied to whatever is playing
+  }
+
+  /** Her voice shaken by the seat: detune and a volume multiplier for the line playing now and the next. */
+  setWobble(cents, gain) {
+    this.wobble.cents = cents;
+    this.wobble.gain = gain;
+    const a = this.active;
+    if (!a) return;
+    const t = this.hub.ctx.currentTime;
+    a.source.detune.setTargetAtTime(cents, t, 0.008); // quick enough for a fine buzz, smooth enough not to click
+    a.gain.gain.setTargetAtTime(a.volume * gain, t, 0.008);
   }
 
   /**
@@ -158,14 +170,15 @@ export class CompanionSounds {
     source.buffer = buffer;
     source.playbackRate.value = rate;
     const gain = ctx.createGain();
-    gain.gain.value = volume;
+    gain.gain.value = volume * this.wobble.gain;
+    source.detune.value = this.wobble.cents;
     const panner = ctx.createPanner();
     panner.panningModel = 'HRTF';
     panner.distanceModel = 'inverse';
     panner.refDistance = 1.5;
     panner.rolloffFactor = rolloff;
     source.connect(gain).connect(panner).connect(hub.master);
-    this.active = { source, panner };
+    this.active = { source, gain, volume, panner };
     this.setPosition(position);
     source.start(0, clip.start, clip.dur); // in seconds of the recording, whatever the rate
     source.onended = () => {

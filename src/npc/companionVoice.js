@@ -13,6 +13,7 @@ import { isThrashed } from '../engine/wearLedger.js';
 import { isThrashedRunningIn } from '../engine/runningIn.js';
 import { leftRunningSituation } from './leftRunning.js';
 import { quadKey } from './quadNames.js';
+import { voiceWobble } from './voiceWobble.js';
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
 
@@ -306,6 +307,7 @@ export class CompanionVoice {
     }
     const unit = c.quad.unit;
     if (!c.isSeated || !unit?.engine.isRunning) {
+      this.sounds.setWobble?.(0, 1);
       this.level = 0;
       this.shake = 0;
       this.shakeTime = 0;
@@ -318,6 +320,8 @@ export class CompanionVoice {
       return;
     }
     const b = unit.vibration.body;
+    const wobble = voiceWobble(b.heave, p);
+    this.sounds.setWobble?.(wobble.cents, wobble.gain);
     const now = Math.hypot(b.heave * 100, b.pitch * 57.3, b.roll * 57.3);
     this.shake += (now * now - this.shake) * Math.min(1, dt / 1.5);
     const level = Math.sqrt(this.shake);
