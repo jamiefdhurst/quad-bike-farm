@@ -88,7 +88,7 @@ branches:
       # The release workflow runs the tests again on main before it releases anything.
       required_status_checks:
         strict: false
-        contexts: ['Test']
+        contexts: ['Test', 'Version label']
       # Off so Jamie can still push a quick fix straight to main.
       enforce_admins: false
       restrictions: null

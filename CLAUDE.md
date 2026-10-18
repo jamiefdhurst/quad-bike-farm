@@ -145,6 +145,15 @@ The start screen (`index.html`, `src/start/startScreen.js`, the logo in `src/sta
 - `--bank-only` rebuilds a bank from the cache without recording anything (about 12 s a girl), for when only the bank's format or packing changes.
 - Unrecorded lines fall back to browser speech, so the game works before recording finishes; commit the banks when it's done.
 
+## Versions and releases
+
+Every merge to `main` that changes what ships (`src`, `public`, the pages, `vite.config.js`, the package files) is released by CI as `vX.Y.Z` with the built game zipped (`.github/workflows/release.yml`). The version bump comes only from the merged PR's labels (`tools/nextVersion.mjs`), so labelling the PR is how you choose it. Never tag, make a release or change `package.json`'s version by hand.
+
+- Every PR has **exactly one type label**; the required "Version label" check fails until it does, and its summary says what the merge will release as. Use the issue's type label unless the work turned out to be something else.
+- `✨ feature` (minor): something new the player can do or see. `⚡ enhancement` or `🐛 bug` (patch): an existing thing made better or fixed. `🔨 task`, `📚 documentation`, `🚨 tests` (patch, and usually no release at all, since they don't change what ships): work the player doesn't see. `⬆️ dependencies` is dependabot's.
+- Add **`💥 breaking`** (major) on top only when an old farm save stops loading or loses something it kept: raising the oldest version `validSave` accepts, or dropping or renaming something `captureVehicle`, `captureGirls` or the farm save keep without carrying the old value across. Raising `SAVE_VERSION` with the old saves still loading is not breaking. Controls, balance and looks changing are not breaking.
+- A push straight to `main` (Jamie's quick fixes) has no PR, so it releases as a patch.
+
 ## Finishing an item
 
 1. `npm test` passes.

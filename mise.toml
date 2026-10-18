@@ -1,0 +1,3 @@
+# The Node version for working on this and for CI (the workflows install it from this file with jdx/mise-action).
+[tools]
+node = "26"
