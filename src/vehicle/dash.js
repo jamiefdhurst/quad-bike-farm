@@ -1226,10 +1226,10 @@ function buildCorsa() {
   housing(group, { x: 62, y: 12, w: 236, h: 96, r: 18, ...O, material: charcoal });
   const face = mmPanel({ x: 62, y: 12, w: 236, h: 96, ...O });
   group.add(face.mesh);
-  const tacho = { cx: 106, cy: 50, r: 28 };
-  const speedo = { cx: 178, cy: 50, r: 33 };
-  const temp = { cx: 246, cy: 36, r: 13 };
-  const fuel = { cx: 246, cy: 66, r: 13 };
+  const tacho = { cx: 108, cy: 48, r: 30 };
+  const speedo = { cx: 222, cy: 48, r: 34 };
+  const temp = { cx: 165, cy: 36, r: 12 };
+  const fuel = { cx: 165, cy: 66, r: 12 };
   const gate = changeGate();
   let shownMph = 0;
   let shownRpm = 0;
@@ -1262,13 +1262,13 @@ function buildCorsa() {
     text(ctx, '1/min x1000', tacho.cx, tacho.cy + 11, 2.8, '#bbb', { align: 'center' });
     needle(ctx, tacho.cx, tacho.cy, tacho.r - 2, 225 - (270 * Math.min(TACHO_MAX, L.rpm)) / TACHO_MAX, NEEDLE, 1.1);
     dial(ctx, speedo);
-    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 5, speedo.r - 1.5, 225, -45, 24, WHITE, 0.5);
-    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 8, speedo.r - 1.5, 225, -45, 12, WHITE, 1);
-    labels(ctx, speedo.cx, speedo.cy, speedo.r - 13, 225, -45, ['0', '', '20', '', '40', '', '60', '', '80', '', '100', '', '120'], WHITE, 3.8);
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 5, speedo.r - 1.5, 225, -45, 26, WHITE, 0.5);
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 8, speedo.r - 1.5, 225, -45, 13, WHITE, 1);
+    labels(ctx, speedo.cx, speedo.cy, speedo.r - 13, 225, -45, ['0', '', '20', '', '40', '', '60', '', '80', '', '100', '', '120', ''], WHITE, 3.8);
     text(ctx, 'mph', speedo.cx, speedo.cy - 9, 3.4, '#bbb', { align: 'center' });
     const odo = counterDigits(s.odoMiles, 6);
-    drum(ctx, speedo.cx - 17, speedo.cy + 12, odo, 6);
-    needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 225 - (270 * Math.min(120, L.mph)) / 120, NEEDLE, 1.2);
+    drum(ctx, speedo.cx - 17, speedo.cy + 14, odo, 6);
+    needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 225 - (270 * Math.min(130, L.mph)) / 130, NEEDLE, 1.2);
     small(ctx, temp, L.temp, 'temp', true);
     small(ctx, fuel, L.fuel, 'fuel', false);
     ctx.fillStyle = '#121213';
@@ -1277,7 +1277,6 @@ function buildCorsa() {
     ctx.fill();
     const lamps = [['charge', LAMP.red, L.charge], ['oil', LAMP.red, L.oil], ['engine', LAMP.amber, L.engine], ['park', LAMP.red, L.park], ['belt', LAMP.red, L.belt], ['turnLeft', LAMP.green, L.turnLeft], ['turnRight', LAMP.green, L.turnRight], ['lights', LAMP.green, L.lights], ['beam', '#4aa8ff', L.main]];
     lamps.forEach(([kind, colour, lit], i) => warnSymbol(ctx, kind, 90 + i * 21.5, 96, colour, lit, 0.85));
-    keySwitch(ctx, 286, 86, s.keyOn);
   }
 
   return {

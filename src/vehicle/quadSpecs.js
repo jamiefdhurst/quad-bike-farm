@@ -1495,7 +1495,6 @@ export const CORSA_SPEC = {
   name: 'Corsa',
   car: 'corsa',
   owner: 'jess',
-  scale: 1.15,
   steadyLights: true,
   wheelShake: 0.6,
   bodyColor: 0xb8322e, // red, gone pink where the sun gets it
@@ -1540,8 +1539,8 @@ export const CORSA_SPEC = {
   vehicle: {
     ...CAR_VEHICLE,
     mass: 930,
-    wheelRadius: 0.315, // 155/70 x 13 tyres (0.274 m) at the model's 1.15
-    suspensionRestLength: 0.184,
+    wheelRadius: 0.274, // 155/70 x 13 tyres, at the model's real size
+    suspensionRestLength: 0.16,
     maxDriveForce: 4100,
     maxSpeed: 40,
     engineBrakeForce: 750,

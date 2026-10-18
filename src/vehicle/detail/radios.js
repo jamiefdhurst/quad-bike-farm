@@ -79,6 +79,36 @@ RADIO_STYLES.cassette = {
   },
 };
 
+RADIO_STYLES.headunit = {
+  // An aftermarket head unit, as Jess fitted: a black faceplate with a big orange display along the top, a row of small grey buttons under it and a
+  // volume knob each end, with a slot for a detachable panel. The display shows a station when it is on.
+  draw(g, W, H, on) {
+    g.fillStyle = '#141516';
+    g.fillRect(0, 0, W, H);
+    g.fillStyle = on ? '#2a1204' : '#0a0a0a'; // the display, dark until the radio is on
+    g.fillRect(W * 0.2, H * 0.14, W * 0.6, H * 0.36);
+    if (on) {
+      g.fillStyle = '#ff8a2a';
+      g.font = `bold ${H * 0.3}px Helvetica, Arial, sans-serif`;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText('98.4', W * 0.5, H * 0.33, W * 0.5);
+    }
+    for (let i = 0; i < 6; i++) {
+      g.fillStyle = '#3a3b3d'; // the small preset buttons
+      g.fillRect(W * (0.22 + i * 0.1), H * 0.62, W * 0.07, H * 0.24);
+    }
+    for (const x of [0.09, 0.91]) {
+      g.fillStyle = '#4a4c4f'; // a knob each end
+      g.beginPath();
+      g.arc(W * x, H * 0.5, H * 0.3, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = '#9a9ea3';
+      g.fillRect(W * x - W * 0.004, H * 0.24, W * 0.008, H * 0.2);
+    }
+  },
+};
+
 /** A canvas texture of a style's face, lit or not. Needs a canvas (a browser, or a test's stub). */
 function faceTexture(style, w, h, on) {
   const px = 1400;

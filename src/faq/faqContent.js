@@ -1679,6 +1679,12 @@ export const FAQ_SECTIONS = [
         tip: 'T lifts and shuts the Fiesta\'s hatch.',
       },
       {
+        q: 'How do I open the Corsa\'s hatch?',
+        a: `The same way: press <kbd>T</kbd>, stopped, from the driver's seat or standing beside the car, and the hatch lifts up and back with its spoiler on gas struts, over Jess's bass box.
+          Press it again to shut it. It won't open while the Corsa is moving. Its doors swing out at the side you get in at.`,
+        tip: 'T lifts and shuts the Corsa\'s hatch too.',
+      },
+      {
         q: 'Whose are the two cars?',
         a: `The brown Fiesta is Amy's: an old Mk1, kept clean, with L plates on, because she is still learning. The red Corsa with the grey wing and the big exhaust is
           Jess's. They park side by side on the tarmac at the end of the farm road, in front of the Dutch barn, and they are always there.`,
@@ -1887,8 +1893,8 @@ export const VEHICLE_NOTES = {
     tips: ['A cold start wants the choke (Q).', 'T lifts the hatch.', 'Front-wheel drive on road tyres: stay on the road and the yard if it is wet.', 'Take it without Amy and she will not be pleased.'],
   },
   corsa: {
-    blurb: "Jess's car: a 1993 Corsa, red gone pink on the roof and bonnet, a grey primer wing, a wheel trim missing and a big exhaust. A 1.2 with fuel injection and five gears that sounds much faster than it is.",
-    tips: ['No choke: the injection sorts out a cold start itself.', 'There is rarely much petrol in it.', 'Jess minds less if you borrow it, as long as you do not dawdle.'],
+    blurb: "Jess's car: a 1993 Corsa, red gone pink on the roof and bonnet, a grey primer wing, a wheel trim missing and a big exhaust. A 1.2 with fuel injection and five gears that sounds much faster than it is. Its doors swing open and its hatch lifts on T.",
+    tips: ['T lifts the hatch.', 'No choke: the injection sorts out a cold start itself.', 'There is rarely much petrol in it.', 'Jess minds less if you borrow it, as long as you do not dawdle.'],
   },
 };
 
