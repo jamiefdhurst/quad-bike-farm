@@ -11,6 +11,11 @@ const _pole = new THREE.Vector3();
 const _shoulder = new THREE.Vector3();
 
 export const wavingMethods = {
+  /** Waves an arm over her head until it is stopped: she is stuck and wants you to see her (stranded.js). Stood about, or up on her quad. */
+  startCalling() {
+    this.waving = { left: Infinity, total: Infinity, t: 0, call: true };
+  },
+
   /** Starts waving a hand in front of her face for `seconds`. */
   waveOff(seconds) {
     if (this.fsm.is('idle')) this.waving = { left: seconds, total: seconds, t: 0 };
@@ -19,7 +24,7 @@ export const wavingMethods = {
   /** Right hand swinging to and fro in front of her face. Runs as a rig poser. */
   poseWaving(dt) {
     const w = this.waving;
-    if (w && (!this.fsm.is('idle') || (w.left -= dt) <= 0)) this.waving = null;
+    if (w && (!(this.fsm.is('idle') || (w.call && this.fsm.is('driving'))) || (w.left -= dt) <= 0)) this.waving = null;
     const want = this.waving ? 1 : 0;
     this.waveReach = (this.waveReach ?? 0) + (want - (this.waveReach ?? 0)) * Math.min(1, dt * 6);
     if (this.waveReach < 0.01) return;
@@ -30,8 +35,9 @@ export const wavingMethods = {
     root.updateMatrixWorld(true);
     // In her own frame: x to her left, y up, z forward.
     const head = root.worldToLocal(b.Head.getWorldPosition(_head));
-    const swing = Math.sin((this.waving?.t ?? 0) * 13);
-    _target.set(head.x - 0.12 + 0.14 * swing, head.y - 0.08, head.z + 0.36);
+    const swing = Math.sin((this.waving?.t ?? 0) * (this.waving?.call ? 6 : 13));
+    if (this.waving?.call) _target.set(head.x - 0.2 + 0.18 * swing, head.y + 0.42, head.z + 0.05); // up and over her head, to be seen
+    else _target.set(head.x - 0.12 + 0.14 * swing, head.y - 0.08, head.z + 0.36);
     root.localToWorld(_target);
     root.worldToLocal(b.RightArm.getWorldPosition(_shoulder));
     _pole.set(_shoulder.x - 0.25, _shoulder.y - 0.1, _shoulder.z - 0.05);

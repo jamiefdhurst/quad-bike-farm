@@ -23,7 +23,7 @@ export class MapView {
     this.canvas.style.display = this.isOpen ? 'block' : 'none';
   }
 
-  /** Redraw with `markers`: { kind: 'you'|'girl'|'vehicle'|'trailer'|'item', x, z, yaw?, colour, label, short? }. */
+  /** Redraw with `markers`: { kind: 'you'|'girl'|'vehicle'|'trailer'|'item', x, z, yaw?, colour, label, short?, help? (a girl stuck and calling) }. */
   draw(markers) {
     if (!this.isOpen) return;
     const p = this.params;
@@ -259,6 +259,14 @@ export class MapView {
       ctx.fill();
       ctx.stroke();
     } else if (m.kind === 'girl') {
+      if (m.help) {
+        // Stuck and calling for you: a red ring round her.
+        ctx.beginPath();
+        ctx.arc(0, 0, 11 * k, 0, Math.PI * 2);
+        ctx.strokeStyle = '#e03a2e';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
       ctx.beginPath();
       ctx.arc(0, 0, 6 * k, 0, Math.PI * 2);
       ctx.fillStyle = m.colour;

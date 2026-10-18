@@ -22,6 +22,7 @@ import { Contentment } from './contentment.js';
 import { SideSaddleSlip, pickSideSaddle } from './sideSaddle.js';
 import { exhaustSideOf, pipeHeat, dismountSideFor, burns } from './exhaustBurn.js';
 import { wavingMethods } from './companionWaving.js';
+import { strandedMethods } from './companionStranded.js';
 import { throwingMethods } from './companionThrowing.js';
 import { waitingMethods } from './companionWaiting.js';
 import { DEFAULT_DOUGHNUT_PARAMS, ringPoints } from './doughnuts.js';
@@ -212,6 +213,10 @@ export class Companion {
     // Waving two-stroke smoke away (companionWaving.js).
     this.waving = null;
     this.rig.posers.push((dt) => this.poseWaving(dt));
+    // Stuck out in the field, waving for you (companionStranded.js).
+    this.stranded = null;
+    this.strandedParams = null; // the game swaps in its tunable copy
+    this.strandedHost = null; // game.js: (girl, event) => the shout, the thanks, the favour
     // Throwing a conker at you (companionThrowing.js).
     this.throwing = null;
     this.rig.posers.push((dt) => this.poseThrowing(dt));
@@ -1304,6 +1309,7 @@ export class Companion {
     this.fsm.update(dt);
     this.updateNumbPlan(dt);
     this.updateRecoil(dt);
+    this.updateTipCall(dt);
     this.updateReaction(dt);
     this.updateBoredom(dt);
     this.updateLineUp(dt);
@@ -1335,6 +1341,7 @@ Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(ke
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(numbMethods));
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(carryingMethods));
 Object.assign(Companion.prototype, wavingMethods);
+Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(strandedMethods));
 Object.assign(Companion.prototype, throwingMethods);
 Object.assign(Companion.prototype, waitingMethods);
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(moveMethods));

@@ -10,6 +10,7 @@ import { JESS_PLACE_LINES } from './placeLines.js';
 import { JESS_LOFT_LINES } from './loftLines.js';
 import { JESS_BATTERY_LINES } from './batteryLines.js';
 import { JESS_PUSH_LINES } from './pushLines.js';
+import { JESS_STRANDED_LINES } from './strandedLines.js';
 import { JESS_TOW_LINES } from './towLines.js';
 import { JESS_MIND_LINES } from './mindLines.js';
 import { JESS_KNACK_LINES } from './knackLines.js';
@@ -543,4 +544,5 @@ export const JESS_LINES = {
   ...JESS_BENCH_LINES,
   ...JESS_PHONE_LINES,
   ...JESS_DARE_LINES,
+  ...JESS_STRANDED_LINES,
 };

@@ -225,8 +225,8 @@ export const drivingStates = {
     update(dt) {
       const q = this.quad;
       const d = this.drive;
-      this.root.position.copy(this.seatOffset(true));
-      this.rig.legSpread = q.driverStand ? 0 : this.params.legSpread;
+      this.root.position.copy(this.stranded ? this.standOffset() : this.seatOffset(true));
+      this.rig.legSpread = q.driverStand || this.stranded ? 0 : this.params.legSpread;
 
       // You've got on: she moves onto the back (or off, if there's no back).
       if (q.rider) {
@@ -238,8 +238,10 @@ export const drivingStates = {
         return;
       }
       if (q.isTipped) {
+        this.endCall();
         q.setDriver(null);
         this.driveEvents.push('done:scared');
+        this.afterDismount = () => this.beginTipCall(); // out and stood beside it, waving for you (companionStranded.js)
         this.fsm.transition('dismounting');
         return;
       }
@@ -251,9 +253,11 @@ export const drivingStates = {
         else this.driveEvents.push(e);
       }
       if (this.motoRide && !d.done && this.stepMoto(dt)) return;
+      if (d.done && d.strandedInBog && !this.stranded) return this.beginBogCall(); // given up on the mud: stays up on it, waving, rather than getting off
       if (d.done) this.endDrive();
     },
     exit() {
+      this.endCall();
       this.sittingPose = null;
       this.motoRide = false;
       this.motoNerve?.end();
@@ -597,6 +601,7 @@ export const drivingMethods = {
     const p = this.params;
     const exit = this.driveExit;
     this.driveExit = null;
+    this.endCall();
     this.driveEvents.push(`done:${d.result}`);
     if (d.park && !d.park.nick && !d.park.home && d.result !== 'parked') this.endLineUp(`the drive ended: ${d.result}`);
     const nick = this.nickJob;
@@ -611,7 +616,7 @@ export const drivingMethods = {
     if (nick && !(nick.phase === 'back' && d.result === 'parked')) this.nickJob = null; // anything else ends it: she's done, or you've got it back
     this.driveConfidence = afterDrive(this.driveConfidence ?? p.driveConfidence, d.result);
     let how = exit?.how;
-    if (!how) how = d.towing || d.result === 'parked' || d.result === 'gaveUp' || d.result === 'noRoom' || Math.random() >= p.driveBackChance ? 'off' : 'back';
+    if (!how) how = d.towing || d.result === 'parked' || d.result === 'gaveUp' || d.result === 'rescued' || d.result === 'noRoom' || Math.random() >= p.driveBackChance ? 'off' : 'back';
     // Done, and getting off: most of the time she drives it back near the barn first, into clear ground east of the row.
     if (how === 'off' && !d.park && !d.towing && !nick && !q.tractor && !q.driverStand) {
       const home = this.homeParams ?? DEFAULT_HOME_PARAMS;

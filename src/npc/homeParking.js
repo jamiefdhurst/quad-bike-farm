@@ -33,7 +33,7 @@ export const HOME_PARAM_RANGES = {
 };
 
 /** Drives that end with her wanting to get off any way, which are the ones that bring it home. A parked or failed one doesn't. */
-export const HOME_RESULTS_SKIPPED = ['parked', 'gaveUp', 'noRoom'];
+export const HOME_RESULTS_SKIPPED = ['parked', 'gaveUp', 'noRoom', 'rescued']; // rescued: she leaves it where you pulled it out, not straight back into the mud
 
 /** Whether this quad is already close to the barn. */
 export function nearBarn(pos, home = DEFAULT_HOME_PARAMS, lineUp = DEFAULT_LINEUP_PARAMS) {

@@ -243,6 +243,8 @@ import { Winch, WINCH_PARAM_RANGES } from './items/winch.js';
 import { Chain, CHAIN_PARAM_RANGES } from './items/chain.js';
 import { TowRope, TOW_ROPE_PARAM_RANGES } from './items/towRope.js';
 import { DEFAULT_TOW_STEER_PARAMS, TOW_STEER_RANGES } from './npc/towSteer.js';
+import { DEFAULT_STRANDED_PARAMS, STRANDED_RANGES } from './npc/stranded.js';
+import { nearestNamedSpot } from './npc/spotNames.js';
 import { TRACTOR_GROUND_OFFSET } from './vehicle/tractorModel.js';
 import { Weather, pickWeatherKind, pickTemperature } from './world/weather.js';
 import { Wind, Shutter, pickHeading, DEFAULT_WIND_PARAMS, WIND_PARAM_RANGES } from './world/wind.js';
@@ -877,9 +879,10 @@ export class Game {
     this.crankParams = { ...DEFAULT_CRANK_ATTEMPT_PARAMS };
     this.pushParams = { ...DEFAULT_PUSH_PARAMS };
     this.towSteerParams = { ...DEFAULT_TOW_STEER_PARAMS }; // a girl steering a dead quad on the tow rope (npc/towSteer.js)
+    this.strandedParams = { ...DEFAULT_STRANDED_PARAMS }; // a girl stuck out in the field, calling you (npc/stranded.js)
     this.keepParams = { ...DEFAULT_KEEPALIVE_PARAMS }; // keeping a sick one alive from the back (npc/keepAlive.js), shared by both girls
     this.goJoins = []; // the other girl on her way to climb in beside a driver: { left, girl, kind, driver }
-    for (const c of this.companions) Object.assign(c, { tractorGo: this.tractorDrive, utvGo: this.utvDrive, landyGo: this.landyDrive, carGo: this.carGo, crankParams: this.crankParams, pushParams: this.pushParams, towSteerParams: this.towSteerParams, keepParams: this.keepParams, numbShared: this.numbParams, tractorStartParams: this.tractorStartParams, noviceParams: this.noviceParams });
+    for (const c of this.companions) Object.assign(c, { tractorGo: this.tractorDrive, utvGo: this.utvDrive, landyGo: this.landyDrive, carGo: this.carGo, crankParams: this.crankParams, pushParams: this.pushParams, towSteerParams: this.towSteerParams, strandedParams: this.strandedParams, strandedHost: (c, e) => this.onStranded(c, e), keepParams: this.keepParams, numbShared: this.numbParams, tractorStartParams: this.tractorStartParams, noviceParams: this.noviceParams });
     // Jess tapes L plates to Amy's quad; Amy peels them off, and once she's confident they go on the tractor (npc/lPlates.js).
     this.lPlates = new LPlates(undefined, createRandom(this.seed ^ 0x1b1a));
     this.lPlateSet = new LPlateSet();
@@ -1603,6 +1606,7 @@ export class Game {
     if (this.chain) registerTuning('Tow chain', this.chain.params, CHAIN_PARAM_RANGES);
     registerTuning('Tow rope', this.towRope.params, TOW_ROPE_PARAM_RANGES);
     registerTuning('Girl steering a tow', this.towSteerParams, TOW_STEER_RANGES);
+    registerTuning('Girl calling for help', this.strandedParams, STRANDED_RANGES);
     registerTuning('Player', this.player.params, PLAYER_PARAM_RANGES);
     for (const c of this.companions) {
       registerTuning(c.name, c.params, COMPANION_PARAM_RANGES, { onChange: () => c.refreshFigure() });
@@ -3465,6 +3469,29 @@ export class Game {
     }
     this.pushing = unit;
     q.pushDir = pushDirection(localAlong(d.x, d.z, q.yaw), p);
+  }
+
+  /** A girl stuck out in the field (npc/stranded.js): she shouts where she is, and what comes of you coming, or not, is her favour of you. */
+  onStranded(c, e) {
+    const id = c.character.id;
+    const kind = c.stranded?.kind === 'tipped' ? 'tip' : 'bog';
+    if (e.type === 'shout') {
+      const spot = nearestNamedSpot(c.quad.position.x, c.quad.position.z);
+      // The first, and every third after, say where she is; the rest are just a shout.
+      const where = e.n % 3 === 0;
+      c.voice.say(where ? `callout_${kind}_${spot.id}` : 'calloutAgain', { force: true });
+    } else if (e.type === 'left') {
+      this.favour.add(id, e.favour);
+      c.voice.say('calloutLeft', { force: true });
+    } else if (e.type === 'rescued') {
+      if (e.came) {
+        this.favour.add(id, e.favour);
+        c.voice.say(e.quick ? 'calloutThanksQuick' : 'calloutThanksSlow', { urgent: true });
+      }
+    } else if (e.type === 'gaveUp') {
+      if (e.favour) this.favour.add(id, e.favour);
+      c.voice.say('calloutGiveUp', { urgent: true });
+    }
   }
 
   /** An empty quad that's rolling off with its brake off: the girls near it say whose fault it was (a real tally, vehicle/handbrake.js). */
@@ -10207,7 +10234,7 @@ export class Game {
     this.companions.forEach((c, i) => {
       const ch = CHARACTERS[i];
       at(c.root);
-      markers.push({ kind: 'girl', x: v.x, z: v.z, colour: ch.mapColour, label: ch.name, short: ch.name[0] });
+      markers.push({ kind: 'girl', x: v.x, z: v.z, colour: ch.mapColour, label: c.stranded ? `${ch.name} (needs help)` : ch.name, short: ch.name[0], help: !!c.stranded });
     });
     const big = new Set(['tractor', 'utv', 'landrover', 'landrover200']);
     for (const u of this.units) {
