@@ -1291,7 +1291,7 @@ function buildCorsa() {
     };
     pod(72, 42, 32, [['charge', LAMP.red, L.charge], ['oil', LAMP.red, L.oil]]);
     pod(256, 42, 32, [['beam', '#4aa8ff', L.main], ['lights', LAMP.green, L.lights]]);
-    pod(139, 92, 82, [['engine', LAMP.amber, L.engine], ['park', LAMP.red, L.park], ['belt', LAMP.red, L.belt]]);
+    pod(139, 86, 82, [['engine', LAMP.amber, L.engine], ['park', LAMP.red, L.park], ['belt', LAMP.red, L.belt]]);
   }
 
   return {

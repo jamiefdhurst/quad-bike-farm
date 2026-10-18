@@ -84,6 +84,20 @@ describe('the Corsa at its real size', () => {
     expect(model.userData.liveMaterials).toContain(radio.userData.faceMaterial); // the mud coat leaves its display alone
   });
 
+  it('has a clock on the dash that follows the game\'s time of day and goes dark with no power', () => {
+    const state = (over) => ({ ignition: true, keyOn: true, speedMph: 0, fuelLevel: 0.5, temperature: 80, rpm: 800, odoMiles: 100, indicatorLamps: {}, lightLamps: { lights: false, main: false }, clock: '09:30', ...over });
+    const clockMat = model.userData.liveMaterials[0].map; // the first live material is the clock's display
+    model.userData.dash.update(state({}));
+    const v = clockMat.version;
+    model.userData.dash.update(state({})); // the same minute: nothing to redraw
+    expect(clockMat.version).toBe(v);
+    model.userData.dash.update(state({ clock: '09:31' }));
+    expect(clockMat.version).toBeGreaterThan(v);
+    const v2 = clockMat.version;
+    model.userData.dash.update(state({ clock: '09:31', ignition: false }));
+    expect(clockMat.version).toBeGreaterThan(v2);
+  });
+
   it('is the size of the car it stands for (within 8%: tests/vehicleModels.test.js) and wears a made-up maker\'s name', () => {
     expect(MAKERS.ashby.name).toBe('Ashby');
     expect(carLayout('corsa').wheels).toHaveLength(4);

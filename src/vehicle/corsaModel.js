@@ -451,12 +451,12 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
   // The pillars, the rails, the windscreen, the roof and the rear quarter windows. The side glass in front of the B pillar is the doors'.
   function addGlasshouse() {
     const pr = 0.032;
-    const cz0 = c.bPillar - (c.bPillar - zr) * 0.62; // the quarter window's back edge, at the roof
+    const gz = zr + 0.1; // the quarter window's back edge at the roof: the window runs nearly to the hatch (the photo's), the C pillar behind it is slim and swept
     for (const s of [-1, 1]) {
       tube([s * halfAt(ys), ys, zs], [s * halfAt(yt), yt, zt], pr, faded, root, 8); // the A pillar
       tube([s * halfAt(ys), ys, c.bPillar], [s * halfAt(yt), yt - 0.01, c.bPillar], 0.04, faded, root, 6); // the B pillar
       tube([s * halfAt(yt), yt, zt], [s * halfAt(yr), yr, zr], pr, faded, root, 8); // the rail over the windows
-      tube([s * halfAt(yr), yr, zr], [s * halfAt(yh), yh, zh], pr + 0.005, faded, root, 8); // the hatch's edge
+      tube([s * halfAt(yr), yr, zr], [s * halfAt(yh), yh, zh], 0.014, faded, root, 8); // the hatch's edge: a thin trim in the C pillar panel's face, not a pipe standing out of it
       const lean = (shape, inset, mat, name) => {
         const g = new THREE.Group();
         g.position.set(s * (halfAt(ys) - inset), ys, 0);
@@ -468,17 +468,17 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
       const glass = new THREE.Shape();
       glass.moveTo(c.bPillar - 0.03, ys);
       glass.lineTo(c.bPillar - 0.03, yr - 0.03);
-      glass.lineTo(cz0, yr - 0.03);
-      glass.lineTo(cz0 - 0.12, ys);
+      glass.lineTo(gz, yr - 0.03);
+      glass.lineTo(gz - 0.12, ys);
       glass.closePath();
       lean(glass, 0.01, PAL.glass, 'quarterGlass');
       const cp = new THREE.Shape();
-      cp.moveTo(cz0, yr - 0.03);
+      cp.moveTo(gz, yr - 0.03);
       cp.lineTo(zr + 0.02, yr);
       cp.lineTo(zr - 0.04, yr);
       cp.lineTo(zh, yh);
       cp.lineTo(zh, ys);
-      cp.lineTo(cz0 - 0.12, ys);
+      cp.lineTo(gz - 0.12, ys);
       cp.closePath();
       lean(cp, -0.006, faded, 'cPillar');
       rbox(0.03, 0.025, c.bPillar - zh, 0.01, PAL.black, s * (halfAt(ys) + 0.005), ys + 0.01, (c.bPillar + zh) / 2, root); // the quarter's seal along its foot
@@ -486,7 +486,7 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     // The roof's frame closes at the back across the top of the hatch, and the rails' ends are capped with a ball at each corner, so no tube ends in the air.
     tube([-halfAt(yr), yr, zr], [halfAt(yr), yr, zr], pr + 0.005, faded, root, 8);
     for (const s of [-1, 1]) {
-      for (const [z, y] of [[zr, yr], [zt, yt], [zh, yh]]) add(new THREE.SphereGeometry(pr + 0.003, 10, 8), faded, root).position.set(s * halfAt(y), y, z);
+      for (const [z, y] of [[zr, yr], [zt, yt]]) add(new THREE.SphereGeometry(pr + 0.003, 10, 8), faded, root).position.set(s * halfAt(y), y, z);
     }
     // The windscreen in its black rubber, the roof, the headlining and the sun visors.
     quadMesh([-halfAt(ys), ys, zs], [halfAt(ys), ys, zs], [halfAt(yt), yt, zt], [-halfAt(yt), yt, zt], PAL.glass, root);
@@ -528,6 +528,19 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     }
     hs.closePath();
     add(new THREE.ExtrudeGeometry(hs, { depth: 0.05, bevelEnabled: false }).translate(0, 0, zt - 0.025), faded, root, 'header');
+    // And the same at the back, over the hatch's top rail, where the roof's rear edge also stood clear of the rail.
+    const y1 = roof.position.y + (zr - roof.position.z) * ((yt - yr) / (zt - zr));
+    const hwr = halfAt(yr) - 0.02;
+    const hr = new THREE.Shape();
+    hr.moveTo(-hwr, yr - 0.035);
+    hr.lineTo(hwr, yr - 0.035);
+    for (let i = 10; i >= 0; i--) {
+      const x = -hwr + (2 * hwr * i) / 10;
+      const t = (x + roofW / 2) / roofW;
+      hr.lineTo(x, y1 - 0.03 + 2 * t * (1 - t) * 0.11 + 0.012);
+    }
+    hr.closePath();
+    add(new THREE.ExtrudeGeometry(hr, { depth: 0.05, bevelEnabled: false }).translate(0, 0, zr - 0.025), faded, root, 'headerRear');
     // The sun visors: flat boards folded up against the lining (their height under the lining's curve at their x), in its slope.
     for (const x of [-0.42, 0.42]) {
       const t = 0.5 + x / (roofW - 0.06); // where along the lining's curve
@@ -658,8 +671,8 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     noseBadge.position.set(0, 0.62, c.nose + 0.0215);
     for (const s of [-1, 1]) {
       // The lamp: a big lens that bulges out of the nose and wraps the corner, black when off like every other lamp in the game.
-      const lamp = add(new THREE.SphereGeometry(0.5, 24, 14).scale(0.46, 0.19, 0.1), lensMat, root);
-      lamp.position.set(s * 0.47, 0.63, c.nose - 0.03);
+      const lamp = add(new THREE.SphereGeometry(0.5, 24, 14).scale(0.46, 0.19, 0.07), lensMat, root);
+      lamp.position.set(s * 0.47, 0.63, c.nose - 0.04);
       lamp.rotation.y = s * 0.35;
       const ind = add(new THREE.SphereGeometry(0.5, 14, 10).scale(0.14, 0.075, 0.06), PAL.amber, root); // the indicator: an amber lens low on the corner under the lamp, bulging out of the apron's skin
       ind.position.set(s * 0.64, 0.53, c.nose - 0.045);
@@ -767,12 +780,14 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     // knobs, and Jess's head unit (the shared radio piece, in its loud style) in the slot under them.
     rbox(0.3, 0.5, 0.1, 0.02, trim.dash, 0, 0.6, face - 0.04, root);
     const zf = face - 0.095; // the stack's face
-    const clock = label(0.12, 0.03, 900, (g, Wd, Ht) => {
+    const drawClock = (g, Wd, Ht, text, lit) => { // the clock in the display above the vents: orange digits, dark with no power
       g.fillStyle = '#0a0a0a';
       g.fillRect(0, 0, Wd, Ht);
+      if (!lit) return;
       g.fillStyle = '#ff8a2a';
-      fitText(g, '12:45', Wd / 2, Ht / 2 + Ht * 0.04, Ht * 0.7, Wd * 0.6);
-    }, root);
+      fitText(g, text, Wd / 2, Ht / 2 + Ht * 0.04, Ht * 0.7, Wd * 0.6);
+    };
+    const clock = label(0.12, 0.03, 900, (g, Wd, Ht) => drawClock(g, Wd, Ht, '12:45', true), root);
     clock.position.set(0, 0.83, zf - 0.001);
     clock.rotation.y = Math.PI;
     quad.userData.liveMaterials.push(clock.material);
@@ -807,6 +822,13 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
     const podUpdate = dash.update;
     dash.update = (state) => { // the pod's own update, then the radio's display and the lights' knob follow the radio and the switch
       podUpdate(state);
+      const clockKey = `${state.ignition ? state.clock : ''}`; // the clock follows the game's time of day, and is dark with a flat battery
+      if (clockKey !== clock.userData.shown) {
+        clock.userData.shown = clockKey;
+        const tex = clock.material.map;
+        drawClock(tex.image.getContext('2d'), tex.image.width, tex.image.height, state.clock ?? '', !!state.ignition);
+        tex.needsUpdate = true;
+      }
       radio.userData.setPower(!!state.radioOn && !!state.ignition);
       const to = state.lightLamps?.main ? -1.1 : state.lightLamps?.lights ? -0.55 : 0;
       knob.rotation.z += (to - knob.rotation.z) * 0.4;
