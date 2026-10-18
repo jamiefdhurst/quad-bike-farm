@@ -11,9 +11,10 @@ import workletUrl from './engineWorklet.js?url';
 import { DEFAULT_AUDIO_PARAMS, DEFAULT_SOUND_PARAMS } from './audioParams.js';
 import { SoundPath, distanceLevel, airCutoff } from './propagation.js';
 import { rainHeard } from '../world/barn.js';
+import { wantsBank } from './bankWant.js';
 
-// Recorded pulse banks in public/audio/, made by tools/slice_engine_audio.py, loaded as the sound starts. Any other bank in
-// the tuning panel's list (engine-bank-tractor-eq) loads the first time a voice asks for it.
+// Recorded pulse banks in public/audio/, made by tools/slice_engine_audio.py and tools/wav_to_flac.py. Only the ones a vehicle near
+// the start uses load behind the loading screen; any other loads the first time a voice asks for it (`requestBank`).
 const BANK_NAMES = ['engine-bank', 'engine-bank-2t', 'engine-bank-50', 'engine-bank-tractor', 'engine-bank-moto', 'engine-bank-atc', 'engine-bank-utv', 'engine-bank-green', 'engine-bank-yellow', 'engine-bank-landy', 'engine-bank-tdi', 'engine-bank-fiesta', 'engine-bank-corsa'];
 
 /** The echo of the barn: a couple of seconds of noise that dies away fast, duller as it goes (tin and brick, not a cathedral). */
@@ -75,8 +76,9 @@ export class AudioHub {
    * made before any click starts suspended but decodes all the same, so the game never starts silent: the click only switches it on
    * (`unlock`). `onBank(done, total)` is told as each bank arrives.
    */
-  prepare(onBank = () => {}) {
+  prepare(onBank = () => {}, names = BANK_NAMES) {
     if (this.ctx) return this.loading;
+    this.startNames = names;
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) return null;
     this.ctx = new Ctx();
@@ -86,14 +88,14 @@ export class AudioHub {
     this.loading = this.ctx.audioWorklet
       .addModule(workletUrl)
       .then(() => this.build())
-      .then(() => Promise.all(BANK_NAMES.map((name) => this.requestBank(name).then(() => onBank(++done, BANK_NAMES.length)))))
+      .then(() => Promise.all(names.map((name) => this.requestBank(name).then(() => onBank(++done, names.length)))))
       .catch((err) => console.error('Engine audio failed to load', err));
     return this.loading;
   }
 
   /** How many banks `prepare` loads, for the loading screen's count. */
   get bankCount() {
-    return BANK_NAMES.length;
+    return (this.startNames ?? BANK_NAMES).length;
   }
 
   /** Must be called from a user gesture: switches the sound on (making and loading it first if `prepare` hasn't). Safe to call repeatedly. */
@@ -412,6 +414,10 @@ export class EngineAudio {
    * @param {object} source  World position of the engine { x, y, z }.
    */
   update(dt, engine, source) {
+    const l = this.hub.listenerPosition;
+    const distance = l && source ? Math.hypot(source.x - l.x, source.z - l.z) : undefined;
+    // A stopped vehicle far from you has no use for its bank yet (and so no voice), which keeps its download off the load.
+    if (!this.node && !wantsBank(engine.state, distance)) return;
     if (!this.attach()) return;
     const ctx = this.hub.ctx;
     const p = this.params;

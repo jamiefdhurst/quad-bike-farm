@@ -4,6 +4,7 @@ Reads mono 16-bit WAVs of the source recordings (see ASSETS.md for where they
 come from), finds each firing pulse, and writes:
 
   public/audio/<bank>.wav   the segments that are used, back to back
+                            (then run tools/wav_to_flac.py <bank>: it moves this to source/audio and ships a FLAC)
   public/audio/<bank>.json  where every pulse ("grain") starts and ends, its
                             pulse rate, and what kind it is
 

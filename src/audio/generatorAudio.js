@@ -1,4 +1,4 @@
-// The generator's sound: one recording (public/audio/generator.wav, CC0, a small diesel set), cut into the motor starting, a steady run
+// The generator's sound: one recording (public/audio/generator.flac, CC0, a small diesel set), cut into the motor starting, a steady run
 // to loop (cross-faded at its seam) and the stop. Loaded the first time you are near enough to hear it. It sits in the world at the
 // generator through a panner, and goes duller and quieter with distance and when you are indoors with the barn wall between you.
 
@@ -25,7 +25,7 @@ export class GeneratorAudio {
   async load() {
     const base = import.meta.env?.BASE_URL ?? '/';
     try {
-      this.buffer = await this.hub.ctx.decodeAudioData(await (await fetch(`${base}audio/generator.wav`)).arrayBuffer());
+      this.buffer = await this.hub.ctx.decodeAudioData(await (await fetch(`${base}audio/generator.flac`)).arrayBuffer());
     } catch (err) {
       console.warn('Generator sound unavailable', err);
       this.buffer = false;

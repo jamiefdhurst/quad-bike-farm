@@ -23,6 +23,7 @@ import { DEFAULT_FARM_PARAMS, FARM_PARAM_RANGES, browserStorage, openFarm, write
 import { captureVehicle, restoreVehicle, overnight, savedFaults, captureGirls, restoreGirls } from './farm/farmState.js';
 import { applyIdle, applyTopRpm, applyVariation, pickIdle } from './vehicle/quadVariation.js';
 import { AudioHub } from './audio/engineAudio.js';
+import { startBanks } from './audio/bankWant.js';
 import { RideWind, rideBuffers } from './audio/rideAudio.js';
 import { overlayPauses } from './core/pause.js';
 import { DEFAULT_GRAPHICS_PARAMS, GRAPHICS_PARAM_RANGES, pixelRatioFor, nextFrameAt } from './core/graphics.js';
@@ -1637,12 +1638,14 @@ export class Game {
     const hub = this.audioHub;
     const jobs = [];
     let done = 0;
-    const total = hub.bankCount + this.companions.length + 1; // the engine banks, each girl's voice, the ride sounds
+    // Only the banks of the vehicles near where you start load now; the rest load when their engines are used or you come near (bankWant.js).
+    const names = startBanks(this.units.map((u) => ({ audioBank: u.spec.audio?.recBank ?? 'engine-bank', at: u.quad.position })), this.player.position);
+    const total = names.length + this.companions.length + 1; // the engine banks, each girl's voice, the ride sounds
     const tick = () => report(`Loading sounds… ${done}/${total}`);
     const engine = hub.prepare(() => {
       done++;
       tick();
-    });
+    }, names);
     if (!engine) return; // no Web Audio in this browser
     await engine;
     for (const c of this.companions) {

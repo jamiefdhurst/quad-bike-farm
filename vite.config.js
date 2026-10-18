@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import wasm from 'vite-plugin-wasm';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 
@@ -25,13 +26,14 @@ function gitLogHashes() {
 }
 
 export default defineConfig({
+  plugins: [wasm()],
   define: {
     __GIT_LOG__: JSON.stringify(gitLog()),
     __GIT_LOG_HASHES__: JSON.stringify(gitLogHashes()),
   },
   build: {
     target: 'es2022',
-    chunkSizeWarningLimit: 6000,
+    chunkSizeWarningLimit: 3500,
     rollupOptions: {
       // Two pages: the game and the FAQ.
       input: { main: `${root}index.html`, faq: `${root}faq.html` },

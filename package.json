@@ -12,12 +12,14 @@
   "license": "UNLICENSED",
   "type": "module",
   "dependencies": {
+    "@dimforge/rapier3d": "^0.21.0",
     "@dimforge/rapier3d-compat": "^0.21.0",
     "lil-gui": "^0.21.0",
     "three": "^0.186.1"
   },
   "devDependencies": {
     "vite": "^8.3.2",
+    "vite-plugin-wasm": "^3.6.0",
     "vitest": "^5.0.3"
   },
   "private": true

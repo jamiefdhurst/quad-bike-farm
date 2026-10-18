@@ -108,7 +108,7 @@ def main():
         w.setframerate(SR)
         w.writeframes((np.clip(audio, -1, 1) * 32767).astype(np.int16).tobytes())
     with open(path + '.json', 'w') as f:
-        json.dump({'file': 'audio/companion.wav', 'clips': clips}, f, indent=1)
+        json.dump({'file': 'audio/companion.flac', 'clips': clips}, f, indent=1)
     print(', '.join(f'{k} {len(v)}' for k, v in clips.items()), f'{len(audio) / SR:.1f} s, peak {np.abs(audio).max():.2f}')
 
 

@@ -1,5 +1,5 @@
-// Her recorded lines come in files of about a minute each (tools/generate_companion_voice.py). Every file is downloaded while the game
-// loads, but decoded only when a line in it is first wanted, and only the few used most recently are kept decoded: the whole bank
+// Her recorded lines come in files of about a minute each (tools/generate_companion_voice.py). A file is downloaded and decoded only when a line in
+// it is first wanted, and only the few used most recently are kept decoded: the whole bank
 // decoded at once was about a gigabyte of memory per girl. Pure: decoding is passed in, so this is tested without Web Audio.
 
 export const VOICE_CHUNKS_KEPT = 6; // decoded files kept per girl (about 11 MB each at 48 kHz)

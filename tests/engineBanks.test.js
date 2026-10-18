@@ -58,7 +58,8 @@ describe('engine banks', () => {
   it("cuts the tractor's idle into whole, matching cycles to be played in order, so its tickover stays even", () => {
     // engine-bank-tractor has 637891's 4.4 s of steady running; engine-bank-tractor-eq 637890's 15 s, EQ'd.
     for (const [name, least] of [['engine-bank-tractor', 30], ['engine-bank-tractor-eq', 100]]) {
-      const bank = JSON.parse(readFileSync(`public/audio/${name}.json`, 'utf8'));
+      const dir = name.endsWith('-eq') ? 'source/audio' : 'public/audio'; // the EQ'd one is kept out of the download
+      const bank = JSON.parse(readFileSync(`${dir}/${name}.json`, 'utf8'));
       expect(bank.readThrough).toBe(true);
       const idle = bank.grains.filter((g) => g.kind === 'idle' && g.ok !== false);
       expect(idle.length, name).toBeGreaterThan(least);
@@ -124,7 +125,8 @@ describe('engine banks', () => {
   // The moto's Derbi bangs every other turn at idle (two slices a lump), the ATC's Ape about every third (three).
   for (const [name, n, idleRange] of [['engine-bank-moto', 2, [1800, 2200]], ['engine-bank-atc', 3, [1300, 1800]]]) {
     it(`cuts ${name}'s lumpy two-stroke idle into ${n} slices a lump, in order, with the bang in the first`, () => {
-      const bank = JSON.parse(readFileSync(`public/audio/${name}.json`, 'utf8'));
+      const dir = name.endsWith('-eq') ? 'source/audio' : 'public/audio'; // the EQ'd one is kept out of the download
+      const bank = JSON.parse(readFileSync(`${dir}/${name}.json`, 'utf8'));
       expect(bank.readThrough).toBe(true);
       const idle = bank.grains.filter((g) => g.kind === 'idle');
       idle.forEach((g, i) => expect(g.slice).toBe(i % n));

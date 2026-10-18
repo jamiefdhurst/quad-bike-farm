@@ -253,7 +253,7 @@ export const AUDIO_PARAM_RANGES = {
   pulseBoomFreq: [40, 400, 5],
   pulseDrone: [0, 18, 0.5],
   pulseDroneFreq: [30, 300, 5],
-  recBank: ['engine-bank', 'engine-bank-2t', 'engine-bank-50', 'engine-bank-tractor', 'engine-bank-moto', 'engine-bank-atc', 'engine-bank-utv', 'engine-bank-green', 'engine-bank-yellow', 'engine-bank-landy', 'engine-bank-tdi', 'engine-bank-fiesta', 'engine-bank-corsa', 'engine-bank-tractor-eq'],
+  recBank: ['engine-bank', 'engine-bank-2t', 'engine-bank-50', 'engine-bank-tractor', 'engine-bank-moto', 'engine-bank-atc', 'engine-bank-utv', 'engine-bank-green', 'engine-bank-yellow', 'engine-bank-landy', 'engine-bank-tdi', 'engine-bank-fiesta', 'engine-bank-corsa'],
   recIdleSource: ['quad', 'rev', 'third'],
   recVolume: [0, 3, 0.01],
   recThrottleLoudness: [0, 3, 0.01],

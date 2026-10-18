@@ -94,8 +94,8 @@ export class CompanionSounds {
   }
 
   /**
-   * Loads both banks once the audio context exists: her sighs and laughs decoded whole (one small file), and every file of her
-   * recorded lines downloaded but each decoded only when a line in it is first said (voiceChunks.js).
+   * Loads both banks once the audio context exists: her sighs and laughs decoded whole (one small file), and her recorded lines
+   * fetched and decoded a file at a time, only when a line in it is first said (voiceChunks.js).
    */
   ensure() {
     const ctx = this.hub.ctx;
@@ -107,9 +107,12 @@ export class CompanionSounds {
       this.banks.sounds = { buffer: await ctx.decodeAudioData(data), clips: bank.clips };
     });
     const voice = fetchBank(this.voiceBank).then(async (bank) => {
-      const bytes = await Promise.all(bankFiles(bank).map(async (file) => (await fetch(base + file)).arrayBuffer()));
+      // A file is fetched the first time a line in it is wanted (about half a megabyte), then kept; a long game hears only some of them.
+      const files = bankFiles(bank);
+      const bytes = new Map();
+      const fetched = (i) => bytes.get(i) ?? bytes.set(i, fetch(base + files[i]).then((r) => r.arrayBuffer()).catch((e) => (bytes.delete(i), Promise.reject(e)))).get(i);
       // decodeAudioData takes the bytes it's given, so each decode gets a copy and the download is kept for next time.
-      const chunks = new VoiceChunks(bytes.length, (i) => ctx.decodeAudioData(bytes[i].slice(0)));
+      const chunks = new VoiceChunks(files.length, async (i) => ctx.decodeAudioData((await fetched(i)).slice(0)));
       this.banks.voice = { clips: bank.clips, chunks };
     });
     const report = (name) => (err) => console.error(`Companion ${name} failed to load`, err);

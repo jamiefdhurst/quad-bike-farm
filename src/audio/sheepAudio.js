@@ -1,4 +1,4 @@
-// The flock's bleats: one recording (public/audio/sheep-baa.wav, CC0), loaded the first time a sheep is near enough to be heard, and
+// The flock's bleats: one recording (public/audio/sheep-baa.flac, CC0), loaded the first time a sheep is near enough to be heard, and
 // played from the sheep through a panner, each at her own pitch, a little duller the further off she is.
 
 const HEARD_WITHIN = 130; // m beyond which a bleat isn't worth starting
@@ -14,7 +14,7 @@ export class SheepAudio {
   async load() {
     const base = import.meta.env?.BASE_URL ?? '/';
     try {
-      this.buffer = await this.hub.ctx.decodeAudioData(await (await fetch(`${base}audio/sheep-baa.wav`)).arrayBuffer());
+      this.buffer = await this.hub.ctx.decodeAudioData(await (await fetch(`${base}audio/sheep-baa.flac`)).arrayBuffer());
     } catch (err) {
       console.warn('Sheep sound unavailable', err);
       this.buffer = false;

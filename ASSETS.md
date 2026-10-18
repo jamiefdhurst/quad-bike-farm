@@ -17,6 +17,8 @@ Quaternius: https://quaternius.com
 
 ## Audio
 
+Note: every `.wav` named below is now a lossless FLAC in `public/audio/` with the same name (the WAV is kept in `source/audio/`; `tools/wav_to_flac.py`).
+
 `public/audio/engine-bank.wav` and `engine-bank.json` are cut from these recordings by `tools/slice_engine_audio.py`, using Freesound's high-quality MP3 previews:
 
 | Used for | Recording | Author | Source | Licence |

@@ -10,7 +10,8 @@
 // first instead of skipping it: key on (glow plugs a few seconds), the starter until it catches, then a few seconds of tickover;
 // with --no-catch as well, the tank is empty, so it cranks for four seconds without catching. Rendered at 48 kHz, written at half scale so the soft clipper's top isn't clipped again.
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { basename } from 'node:path';
 import vm from 'node:vm';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
@@ -43,6 +44,13 @@ for (let i = 2; i < args.length; i++) {
     const [k, v] = args[++i].split('=');
     params[k] = Number.isNaN(Number(v)) ? v : Number(v);
   }
+}
+
+// The banks ship as FLAC; the lossless WAV they were made from is kept in source/audio (tools/wav_to_flac.py), or beside a --bank json.
+function wavFor(jsonPath) {
+  const beside = jsonPath.replace(/\.json$/, '.wav');
+  const kept = `source/audio/${basename(beside)}`;
+  return existsSync(beside) ? beside : kept;
 }
 
 /** A 16-bit mono WAV, resampled to the render rate as decodeAudioData would. */
@@ -86,7 +94,7 @@ vm.createContext(sandbox);
 vm.runInContext(`${readFileSync('src/audio/engineWorklet.js', 'utf8')}\n;this.EngineProcessor = EngineProcessor;`, sandbox);
 const proc = new sandbox.EngineProcessor();
 const bank = JSON.parse(readFileSync(bankPath, 'utf8'));
-proc.onMessage({ bank: { ...bank, data: readWav(bankPath.replace(/\.json$/, '.wav')) } });
+proc.onMessage({ bank: { ...bank, data: readWav(wavFor(bankPath)) } });
 
 let seed = 7;
 const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
