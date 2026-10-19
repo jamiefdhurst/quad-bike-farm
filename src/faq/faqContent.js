@@ -953,6 +953,12 @@ export const FAQ_SECTIONS = [
           back up. A slow puncture does much the same, and the pump's reading shows it going down.`,
       },
       {
+        q: 'Why does it knock when it is cold and then go quiet?',
+        a: `That is piston slap. On an old, worn engine the piston is loose in its bore and clacks against the wall at idle and when you pull away. It goes
+          as the engine warms and the piston swells to fit. It does no harm; it is just the engine's age. A service doesn't cure it, because the wear is in the
+          piston, but a new piston and rings do: on the two-strokes that is the top-end rebuild at the bench, and on the yellow the big-bore kit.`,
+      },
+      {
         q: 'What can I tune with the toolbox?',
         a: `The idle screw, the carb mixture, the throttle stop (screw it out for more top speed), the rev limiter, the clutch springs and the tyre pressures, plus
           a jet kit on the yellow and orange. Each shows its stock value and the trade-off. Taking the silencer off (<kbd>X</kbd>) makes it louder, rawer and

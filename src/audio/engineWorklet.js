@@ -645,6 +645,10 @@ class EngineProcessor extends AudioWorkletProcessor {
           this.active.push({ kind: 'ping', age: -Math.round((k * 0.011 + Math.random() * 0.006) * sr), amp: p.pingVolume * (0.5 + Math.random() * 0.5), freq: 2600 + Math.random() * 1400 });
         }
         break;
+      case 'slap':
+        // Piston slap: a hollow clack as the piston rocks across the bore, low and dull beside a tappet's tick.
+        this.active.push({ kind: 'slap', age: 0, amp: p.slapVolume * (0.4 + 0.6 * (ev.strength ?? 0.5)) * (0.7 + Math.random() * 0.6), freq: 340 + Math.random() * 120 });
+        break;
       case 'coolTick':
         // The metal contracting as it cools: one small, higher, ringing tick.
         this.active.push({ kind: 'ping', age: 0, amp: p.pingVolume * (0.35 + Math.random() * 0.4), freq: 3600 + Math.random() * 1800, ring: 2.2 });
@@ -799,6 +803,12 @@ class EngineProcessor extends AudioWorkletProcessor {
             const env = Math.exp(-a / (0.00025 * sr));
             this.tickIn = (this.tickIn || 0) + (Math.random() * 2 - 1) * e.amp * env;
             done = a > 0.004 * sr;
+            break;
+          }
+          case 'slap': {
+            const env = Math.exp(-a / (0.009 * sr));
+            dry += e.amp * env * (Math.sin((TWO_PI * e.freq * a) / sr) + (a < 0.0012 * sr ? (Math.random() * 2 - 1) * 0.7 : 0));
+            done = a > 0.06 * sr;
             break;
           }
           case 'clunk': {

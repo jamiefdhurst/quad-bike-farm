@@ -22,6 +22,7 @@ import { netCharge, lowBatteryStallRate } from './charging.js';
 import { jetError, leanStarve, jetTrue, jetMixture } from './jetting.js';
 import { airCharge, airPowerFactor, airMixture } from './airDensity.js';
 import { coolingEffect, radiatorEffect, thermostatSticks, hotLevel, leakRate, stepPuddle, steamLevel, boilsOver } from './coolant.js';
+import { slapLevel, slapCarry, loosen } from './pistonSlap.js';
 import { stepHeat, stepSoak, pinkLevel, gaugeHeat, coolTickRate, hotStartRich } from './heat.js';
 
 export const EngineState = Object.freeze({
@@ -160,6 +161,9 @@ export class EngineModel {
     this.roughPhase = 0;
     this.roughNoise = 0;
     this.wear = 0; // roughness built up from running; a service (the toolbox) clears it
+    this.pistonWear = null; // 0..1 how loose the piston is in the bore (null until first run: it starts at the wear it was dealt); only a new piston clears it
+    this.slap = 0; // 0..1 how loudly a worn piston knocks while cold
+    this.slapLeft = 0; // clacks owed to the audio
     this.erratic = 0; // 0..1 how erratic it's running for want of a service (see erraticFrom)
     this.stumbleLeft = 0; // cycles left of a run of misfires
     this.surge = 0; // rpm of a flare-up at idle, dying away
@@ -488,10 +492,13 @@ export class EngineModel {
       // Revved past the top it was built for (the toolbox's rev limiter, or the throttle stop out) it wears much faster.
       const overRev = p.designRpm > 0 ? Math.max(0, this.rpm / p.designRpm - 1) : 0;
       if (p.strokes === 2) this.silencerBlown = Math.min(1, this.silencerBlown + (h / 60) * p.silencerBlowPerMinute * (0.33 + 0.67 * rpmNorm));
+      if (this.pistonWear === null) this.pistonWear = this.wear;
+      const wasWear = this.wear;
       this.wear = Math.min(
         p.wearMax,
         this.wear + (h / 60) * p.wearPerMinute * (1 + p.wearWorkBoost * rpmNorm + p.wearColdBoost * coldThrash + p.wearOverRevBoost * overRev) * boreWearFactor(this.bore, p) * runInWearFactor(this.runIn, rpmNorm, p),
       );
+      this.pistonWear = loosen(this.pistonWear, this.wear - wasWear, p.wearMax);
       stepRunningIn(this, h, rpmNorm, p);
     } else {
       this.temperature = offTemperature(this.temperature, h, p.coolDownSeconds, this.sheltered, { warmFloor: p.barnWarmFloor, coolFactor: p.barnCoolFactor });
@@ -605,6 +612,14 @@ export class EngineModel {
     }
     this.tick = p.strokes === 2 ? 0 : Math.max(this.valveLoose, clamp((p.sumpTickFrom - this.sump) / Math.max(0.01, p.sumpTickFrom - p.sumpTickFull), 0, 1)); // dry of oil or wide in the valves
     if (running && this.tick > 0 && this.random() < this.tick * p.tickRate * h * (0.5 + 0.5 * rpmNorm)) this.emit('coolTick', this.random() * h);
+    // A worn piston knocks in the bore while the metal is cold, at idle and pulling away; it's gone once it's warm.
+    this.slap = running && this.pistonWear !== null ? slapLevel(this.pistonWear, this.temperature, p) * slapCarry(rpmNorm, this.driveLoad * this.throttle, p) : 0;
+    if (this.slap > 0) this.slapLeft += p.slapRate * this.slap * (0.5 + 0.5 * this.random()) * h;
+    else this.slapLeft = 0;
+    while (this.slapLeft >= 1) {
+      this.slapLeft -= 1;
+      this.emit('slap', this.random() * h);
+    }
     this.nip = nipping(this.scuff, p.nipFrom);
     this.oilRich = oilExcess(this.oil, p.strokes, p);
   }
@@ -665,6 +680,7 @@ export class EngineModel {
         p.foulRoughness * this.fouling +
         p.nipRoughness * this.nip +
         p.tickRoughness * this.tick +
+        p.slapRoughness * this.slap +
         p.oilRichRoughness * this.oilRich +
         p.dirtRoughness * this.dirt +
         p.pinkRoughness * this.pink +
