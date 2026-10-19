@@ -75,7 +75,7 @@ describe('each quad has its own character', () => {
         }
       }
     }
-  }, 30000); // a sweep of every quad, idle, wear and seed: slow by design
+  }, 90000); // a sweep of every quad, idle, wear and seed: slow by design (about 10 s here, over 30 s on a CI runner)
 
   it('runs very erratically fully worn: stumbling, surging, and now and then dying, so it wants a service', () => {
     for (const spec of QUAD_SPECS) {
