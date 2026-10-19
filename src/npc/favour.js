@@ -4,6 +4,9 @@
 // numbers; they show in how she is. The score fades back towards nothing, and
 // what matters is how she stands against her friend, from -1 (neglected) to 1
 // (favoured). Pure logic; the game feeds it events and reads it back.
+//
+// Favoured comes from the scores. Neglected does not: it is her need for your attention (needs.js, jealousy), which the game hands in
+// each frame with `setWant`, so it builds while you're with her friend and fades when you come over.
 
 export const DEFAULT_FAVOUR_PARAMS = {
   ridePerSecond: 0.05, // score for each second she's driving you about
@@ -14,8 +17,8 @@ export const DEFAULT_FAVOUR_PARAMS = {
   ignoredPerSecond: 0.02, // she's on foot while her friend drives you about
   decayPerSecond: 0.01, // scores drift back towards nothing (a score of 10 loses about 6 a minute)
   maxScore: 20, // neither goes beyond this either way
-  scale: 6, // the gap between the two scores that counts as fully favoured or neglected
-  moodAt: 0.35, // standing beyond this either way makes her favoured or neglected
+  scale: 6, // the gap between the two scores that counts as fully favoured
+  moodAt: 0.35, // standing beyond this either way makes her favoured, or neglected (her want of your attention above this)
   warmthBoost: 2, // a favoured girl's kind words come this much more often; a neglected one's fade to nothing
   offerBias: 0.7, // how much her standing sways who offers you a ride (0 none, 1 a neglected girl never offers)
   refuseMax: 0.35, // the chance a fully neglected girl says no to a request, and her friend takes it on
@@ -51,6 +54,7 @@ export class Favour {
     this.p = params;
     this.ids = ids;
     this.scores = Object.fromEntries(ids.map((id) => [id, 0]));
+    this.wants = {}; // girl id -> her need for your attention, 0..1 (needs.js); what 'neglected' is made of
     this.moods = {}; // girl id -> seconds left of a bad mood that has nothing to do with you (sulk)
     this.locked = {}; // girl id -> the score her favour never drops below (romance.js: she is yours for the rest of the game)
   }
@@ -72,6 +76,11 @@ export class Favour {
     if (!(id in this.scores)) return;
     if (id in this.locked && amount < 0) return;
     this.scores[id] = clamp(this.scores[id] + amount, -this.p.maxScore, this.p.maxScore);
+  }
+
+  /** How much she wants your attention just now, 0 (none) to 1 (pressing). */
+  setWant(id, level) {
+    if (id in this.scores) this.wants[id] = clamp(level, 0, 1);
   }
 
   /** She is in a mood for `seconds` (a bad phone call): she stands lower with you while it lasts, whatever the score. Never shortens one. */
@@ -104,7 +113,12 @@ export class Favour {
     const others = this.ids.filter((o) => o !== id);
     if (!others.length) return 0;
     const rest = others.reduce((sum, o) => sum + this.scores[o], 0) / others.length;
-    return clamp((this.scores[id] - rest) / this.p.scale - (this.moods[id] > 0 ? this.p.moodDrag : 0), -1, 1);
+    const drag = this.moods[id] > 0 ? this.p.moodDrag : 0;
+    const up = (this.scores[id] - rest) / this.p.scale - drag;
+    if (up > 0) return Math.min(1, up);
+    const shut = others.some((o) => o in this.locked); // her friend is yours for good (romance.js): she is always on the outside
+    return 0 - Math.max(this.wants[id] ?? 0, drag, shut ? 1 : 0); // a bad mood still pulls her down, as before
+
   }
 
   /** 'favoured', 'neglected' or 'even'. */

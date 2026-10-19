@@ -1140,8 +1140,14 @@ export const FAQ_SECTIONS = [
       {
         q: 'Do they like me?',
         a: `They each keep a score of how you treat them, though you never see it: rides, talking to her, riding her favourite quad, washing it, favours done,
-          and how much you leave her out while her friend gets your time. The one who likes you more is kinder and keener; the neglected one sulks, may
-          refuse a request and takes quads off alone. Treat them evenly and they stay even.`,
+          and how much you leave her out while her friend gets your time. The one who likes you more is kinder and keener. Treat them evenly and they stay even.`,
+      },
+      {
+        q: 'Why is she jealous?',
+        a: `Spend your time with her friend while she stands there and she wants your attention more and more, over a few minutes. Come over, ride with her or
+          talk to her and it eases. Jealous, she shows off, plays pranks, asks you for things and starts daft dares more, and when it gets bad she sulks, may refuse
+          a request and takes quads off alone. It fades by itself when she has no one to be jealous of.`,
+        tip: 'A girl left out while you chat to her friend gets jealous: go and talk to her.',
       },
       {
         q: 'She asked me to do something. What was it?',

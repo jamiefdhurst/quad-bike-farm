@@ -25,9 +25,24 @@ describe('who you favour', () => {
   it('favours the one you spend time with and neglects the other', () => {
     const f = make();
     f.add('amy', 8);
+    f.setWant('jess', 0.8);
     expect(f.mood('amy')).toBe('favoured');
     expect(f.mood('jess')).toBe('neglected');
     expect(f.rivalry()).toEqual({ favoured: 'amy', other: 'jess' });
+  });
+
+  it('is not neglected by scores alone: only wanting your attention does that, and it passes', () => {
+    const f = make();
+    f.add('amy', 20);
+    f.add('jess', -20);
+    expect(f.mood('jess')).toBe('even');
+    f.setWant('jess', 0.6);
+    expect(f.mood('jess')).toBe('neglected');
+    f.setWant('jess', 0.1);
+    expect(f.mood('jess')).toBe('even');
+    f.setWant('jess', 0.9);
+    f.lock('jess', 15);
+    expect(f.mood('jess')).toBe('favoured'); // romance still wins
   });
 
   it('keeps it even when you treat them the same', () => {
@@ -41,6 +56,7 @@ describe('who you favour', () => {
     const f = make();
     f.add('amy', 1000);
     f.add('jess', -1000);
+    f.setWant('jess', 5);
     expect(f.scores.amy).toBe(P.maxScore);
     expect(f.scores.jess).toBe(-P.maxScore);
     expect(f.standing('amy')).toBe(1);
@@ -65,6 +81,7 @@ describe('who you favour', () => {
   it('makes the favoured girl warmer and the neglected one quiet', () => {
     const f = make();
     f.add('amy', 20);
+    f.setWant('jess', 1);
     expect(f.warmth('amy')).toBeCloseTo(P.warmthBoost, 5);
     expect(f.warmth('jess')).toBe(0);
     expect(make().warmth('amy')).toBe(1);
@@ -73,6 +90,7 @@ describe('who you favour', () => {
   it('only turns a girl down when she is neglected, and never always', () => {
     const f = make();
     f.add('amy', 20);
+    f.setWant('jess', 1);
     expect(f.refuseChance('amy')).toBe(0);
     expect(f.refuseChance('jess')).toBeGreaterThan(0);
     expect(f.refuseChance('jess')).toBeLessThanOrEqual(P.refuseMax);
@@ -82,6 +100,7 @@ describe('who you favour', () => {
   it('lets a favoured girl offer rides more often than a neglected one', () => {
     const f = make();
     f.add('amy', 20);
+    f.setWant('jess', 1);
     const random = seeded(3);
     const wins = { amy: 0, jess: 0 };
     for (let i = 0; i < 2000; i++) {
@@ -98,6 +117,7 @@ describe('who you favour', () => {
   it('sends a neglected girl off on a quad by herself more often', () => {
     const f = make();
     f.add('amy', 20);
+    f.setWant('jess', 1);
     const count = (sulk) => {
       const random = seeded(11);
       let drives = 0;
