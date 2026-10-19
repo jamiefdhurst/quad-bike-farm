@@ -2,11 +2,13 @@
 // comments. Ranges are [min, max, step] for the debug panel.
 
 import { DEFAULT_KNACK_PARAMS, KNACK_RANGES } from './knack.js';
+import { DEFAULT_SLAP_PARAMS, SLAP_RANGES } from './pistonSlap.js';
 import { DEFAULT_CHARGING_PARAMS, CHARGING_PARAM_RANGES } from './charging.js';
 
 export const DEFAULT_ENGINE_PARAMS = {
   // A quad's knack for starting (knack.js)
   ...DEFAULT_KNACK_PARAMS,
+  ...DEFAULT_SLAP_PARAMS,
 
   // What running does to the battery (charging.js)
   ...DEFAULT_CHARGING_PARAMS,
@@ -380,6 +382,7 @@ export const DEFAULT_ENGINE_PARAMS = {
 export const ENGINE_PARAM_RANGES = {
   ...CHARGING_PARAM_RANGES,
   ...KNACK_RANGES,
+  ...SLAP_RANGES,
   strokes: [2, 4, 2],
   cylinders: [1, 8, 1],
   skipChance: [0, 1, 0.01],

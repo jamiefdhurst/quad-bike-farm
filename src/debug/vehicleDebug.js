@@ -40,6 +40,7 @@ export function fixEverything(unit) {
   e.fouling = 0;
   e.clog = 0;
   e.wear = 0;
+  e.pistonWear = 0;
   e.scuff = 0;
   e.overheat = 0;
   e.seized = false;
@@ -152,6 +153,7 @@ export function engineReadouts(engine, { manual = false } = {}) {
   }
   if (diesel) list.push({ key: 'glow', label: 'glow plugs', get: (e) => e.glow });
   list.push({ key: 'nip', label: 'nipping up', get: (e) => e.nip });
+  list.push({ key: 'slap', label: 'piston slap (worn bore, cold)', get: (e) => e.slap });
   list.push({ key: 'tick', label: 'tappet tick (low oil)', get: (e) => e.tick });
   list.push({ key: 'oilBurn', label: 'burning oil (or too much of it)', get: (e) => e.oilBurn });
   if (p.strokes === 2) {

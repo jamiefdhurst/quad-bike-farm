@@ -117,6 +117,7 @@ describe('a vehicle from one day to the next', () => {
     const a = unit();
     a.engine.params.baseRoughness = 0.07;
     a.engine.wear = 0.4;
+    a.engine.pistonWear = 0.55;
     a.engine.scuff = 0.2;
     a.engine.battery = 0.6;
     a.engine.coolantLeak = 1.5;
@@ -144,6 +145,7 @@ describe('a vehicle from one day to the next', () => {
     restoreVehicle(b, data);
     expect(b.engine.params.baseRoughness).toBe(0.07);
     expect(b.engine.wear).toBe(0.4);
+    expect(b.engine.pistonWear).toBe(0.55);
     expect(b.engine.scuff).toBe(0.2);
     expect(b.engine.battery).toBe(0.6);
     expect(b.engine.coolantLeak).toBe(1.5);

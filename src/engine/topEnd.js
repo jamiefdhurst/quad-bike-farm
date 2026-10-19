@@ -2,6 +2,7 @@
 // barrel comes off at the bench (the `topEnd` job in workshop/benchJobs.js), you look at the scoring, fit a new piston and rings and
 // put it back together, and then it wants running in. Pure logic, no Three.js.
 
+import { fitNewPiston } from './pistonSlap.js';
 import { startRunningIn } from './runningIn.js';
 
 /** Is there anything to rebuild: a two-stroke that is seized or has scuffed. */
@@ -26,6 +27,7 @@ export function rebuildTopEnd(engine, botched, P) {
   if (seized) engine.wear = Math.min(engine.params.wearMax, engine.wear + P.topEndSeizeWear);
   engine.wear = Math.max(0, engine.wear - P.topEndWearRemoved);
   engine.seized = false;
+  fitNewPiston(engine);
   engine.scuff = botched ? P.topEndBotchedScuff : 0;
   engine.overheat = 0;
   startRunningIn(engine);

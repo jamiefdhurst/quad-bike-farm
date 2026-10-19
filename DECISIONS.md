@@ -4433,3 +4433,14 @@ The item settled the behaviour; I chose the numbers and where it lives. Two-stro
 - Effects: power times `1 + airPower` 0.6 times the charge (about +6% on a frosty dry day, -5% on a muggy one), for every engine. On a carburettor with a fixed jet (a four-stroke that is not injected or a diesel) the charge also takes `airLean` 0.4 times itself off the mixture, so dense air runs lean and thin air rich; the existing lean and rich running does the rest. Injection and diesels keep their mixture. A two-stroke's mixture comes from its jet error, which now includes the damp (`jetPerDamp` 0.5 sizes smaller per whole unit of damp), so the toolbox's advice and the "spot on" bonus follow the day's air, not the temperature alone.
 - Panel and console: "the day's air" in Running, `weather.damp` in the console. The toolbox's jet row explains it.
 - Not checked: how it feels. Unit tests only; the numbers are first guesses.
+
+## Piston slap (#11, was TODO 116)
+
+A worn engine knocks when cold: a hollow clack at idle and pulling away that goes as it warms. Heard only, no new visuals.
+
+- Pure logic in `src/engine/pistonSlap.js` (tests in `tests/pistonSlap.test.js`; its tunables and ranges merge into the engine params, so they show in the engine's Tune group). `slapLevel` is the piston's looseness (`slapFrom` 0.3 to `slapFull` 0.8) times how cold it is (gone by `slapWarmBelow` 0.7 of warm). `slapCarry` keeps it full at idle or pulling and `slapRevsQuiet` 0.6 quieter at revs with the throttle off.
+- **Its own number, `pistonWear`, not `wear`.** A service clears `wear` but cannot fix a loose bore, and the issue wants a top-end rebuild to be the cure. `pistonWear` starts null, takes the wear the engine was dealt the first time it runs (so every place that deals wear, and old saves, work without change), then rises by whatever `wear` rises by. `rebuildTopEnd` and the big-bore `fitBore` set it back to `slapNewPistonWear` (0). It is in `ENGINE_KEPT`, so the farm remembers it.
+- Applies to every engine, but only the two-strokes have a rebuild, so a worn four-stroke or diesel knocks cold for good. I left that: the rebuild is item 3 and there is no four-stroke equivalent yet.
+- Sound: the engine emits `slap` at `slapRate` 7 a second at full slap with a little scatter (not one per firing, so it costs nothing at high revs); `engineAudio` carries the engine's `slap` as the strength and the worklet plays a dull 340 to 460 Hz clack (`slapVolume` 0.1 in the audio tuning), lower and rounder than the tappet and cooling ticks. It adds `slapRoughness` 0.04 at most.
+- Panel and console: "slap" in Running, "piston looseness" settable in Problems (`engineHealth.pistonLooseness`), and "Put it right" clears it.
+- Not checked: how it sounds. The numbers are first guesses; no recording or listening round.

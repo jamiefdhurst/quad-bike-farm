@@ -214,6 +214,7 @@ export const DEFAULT_AUDIO_PARAMS = {
   starterMesh: 0.25,
   starterDip: 0.45, // extra audible slowdown on each compression stroke
   solenoidVolume: 0.5,
+  slapVolume: 0.1, // a worn piston's hollow clack while the engine is cold
   pingVolume: 0.12, // pinking and the metal ticking as it cools
   silencerLoud: 2.5, // how much louder the exhaust is with the silencer off (the output's tanh squashes the top, so it needs plenty)
   silencerBright: 0.8, // and how much more open its tone is
@@ -319,6 +320,7 @@ export const AUDIO_PARAM_RANGES = {
   starterMesh: [0, 2, 0.01],
   starterDip: [0, 1, 0.01],
   solenoidVolume: [0, 2, 0.01],
+  slapVolume: [0, 1, 0.01],
   pingVolume: [0, 1, 0.01],
   silencerLoud: [0, 6, 0.05],
   silencerBright: [0, 3, 0.05],

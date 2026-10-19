@@ -4,6 +4,7 @@
 // makes more heat doing it, wears the engine faster, and wants a richer jet than the weather alone does
 // (jetting.js). A kit nipped up badly gives less of the power but all of the wear: `fit` is how well it went.
 
+import { fitNewPiston } from './pistonSlap.js';
 import { startRunningIn } from './runningIn.js';
 
 /** Whether this engine has a kit made for it, and none fitted yet. */
@@ -16,6 +17,7 @@ export function fitBore(engine, fit, P) {
   engine.bore = 1;
   engine.boreFit = fit;
   engine.wear = Math.max(0, engine.wear - P.boreWearRemoved); // a new piston and rings: the old wear goes with them
+  fitNewPiston(engine);
   startRunningIn(engine); // and a new piston wants running in
 }
 
