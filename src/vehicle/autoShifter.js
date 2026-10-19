@@ -2,6 +2,8 @@
 // and says when the clutch is down. She is a good enough driver that she never stalls it or crunches a gear; the point is that the
 // quad is in the right gear, and in neutral when she is parked. Pure logic, no Rapier or Three.
 
+import { mistake } from '../npc/skills.js';
+
 export const DEFAULT_SHIFTER_PARAMS = {
   shiftSeconds: 0.4, // the clutch is down this long for each change
   upFraction: 0.85, // changes up once it is this fraction of the gear's top speed
@@ -22,8 +24,11 @@ export const SHIFTER_PARAM_RANGES = {
  * Whether this change of gear is ground: the shifter forces it (Jess) into a crash gear (no synchromesh, `crashGears` of them) while
  * the vehicle is moving faster than `crashSpeed`. Amy double-declutches, so hers never is.
  */
-export function grindsGear(shifter, gearbox, gear, speed) {
-  return !!shifter.grinds && gear > 0 && gear <= (gearbox.crashGears ?? 0) && Math.abs(speed) > (gearbox.crashSpeed ?? 1);
+export function grindsGear(shifter, gearbox, gear, speed, random = Math.random) {
+  // With a double-declutch skill to go by she grinds that often (never at 1, always at 0); without, Jess always does and Amy never.
+  const level = shifter.declutchLevel?.();
+  const grinds = level === undefined ? !!shifter.grinds : random() < mistake(level) / 2;
+  return grinds && gear > 0 && gear <= (gearbox.crashGears ?? 0) && Math.abs(speed) > (gearbox.crashSpeed ?? 1);
 }
 
 export class AutoShifter {

@@ -259,6 +259,7 @@ export class Quad {
     this.tractor = tractor; // the tractor's own controls and body on top of that
     this.gearbox = gearbox;
     this.shifter = new AutoShifter(); // what the girls do with the clutch and lever when one of them drives
+    this.declutched = false; // set when you double-declutch into a gear with no synchromesh; npc/watching.js reads and clears it
     this.drivetrain = this.manual ? new ManualDrivetrain(params, gearbox) : new Drivetrain(params);
     this.handSetting = gearbox?.handStart ?? 0; // the tractor's hand throttle, 0..1: it stays where it was put, even with nobody on it
     this.quirks = new QuirkSet(); // this game's oddities (quirks.js); the game gives it the ones it picked
@@ -566,6 +567,7 @@ export class Quad {
       const ip = this.engine.params;
       const revs = THREE.MathUtils.clamp((this.engine.rpm - ip.idleRpmWarm) / (ip.maxRpm - ip.idleRpmWarm), 0, 1);
       const r = this.drivetrain.select(gear, false, this.forwardSpeed, revs);
+      if (r === 'ok' && gear > 0 && gear <= (this.gearbox.crashGears ?? 0) && Math.abs(this.forwardSpeed) > (this.gearbox.crashSpeed ?? 1)) this.declutched = true; // a girl watching sees it
       if (r === 'crunch') this.say('Crunch! No synchromesh on first or second: nearly stop, or double-declutch (neutral, clutch up, rev to match, clutch down)');
       else if (r === 'mismatch') this.say('Crunch! The revs do not match the road speed: blip the throttle in neutral to match them');
       else if (r === 'clutch') this.say('Clutch in (hold Shift) to change gear');

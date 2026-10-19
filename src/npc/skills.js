@@ -1,14 +1,21 @@
-// What each girl is good at. Four things she can get better at, each 0 (hopeless)
-// to 1 (has it down): starting, choke, cornering, mud. A level of 0.5 behaves as
+// What each girl is good at. Six things she can get better at, each 0 (hopeless)
+// to 1 (has it down): starting, choke, cornering, mud, and bumpStart and doubleDeclutch, which you teach by showing her. A level of 0.5 behaves as
 // she always did; below it she makes more mistakes, above it fewer. You teach her
 // from the back while she drives, by coaching at the right moment; she also picks
 // it up, slowly, from doing it right. Pure logic; HerDrive reads the levels and
 // the game feeds in coaching and practice. Nothing persists between games.
 
-export const SKILLS = ['starting', 'choke', 'cornering', 'mud'];
+export const SKILLS = ['starting', 'choke', 'cornering', 'mud', 'bumpStart', 'doubleDeclutch'];
+
+/** The four she learns while driving (coaching, practice); how good a driver she is overall is the mean of these. */
+export const DRIVING_SKILLS = ['starting', 'choke', 'cornering', 'mud'];
+
+/** The two you teach by doing them while she watches (npc/watching.js). */
+export const SHOWN_SKILLS = ['bumpStart', 'doubleDeclutch'];
 
 export const DEFAULT_SKILL_PARAMS = {
   coachGain: 0.12, // skill she gains from advice at the right moment
+  watchGain: 0.25, // skill she gains from watching you do it, if she was looking
   practiceGain: 0.01, // skill she gains from getting it right by herself
   practiceGap: 30, // seconds before getting the same thing right counts as practice again
   nagGap: 25, // seconds before advice on the same thing counts again; sooner is nagging
@@ -21,6 +28,7 @@ export const DEFAULT_SKILL_PARAMS = {
 
 export const SKILL_PARAM_RANGES = {
   coachGain: [0, 0.5, 0.01],
+  watchGain: [0, 0.6, 0.01],
   practiceGain: [0, 0.1, 0.005],
   practiceGap: [0, 120, 1],
   nagGap: [0, 120, 1],
@@ -33,8 +41,9 @@ export const SKILL_PARAM_RANGES = {
 
 /** Where each girl starts, by character id (anyone else starts at 0.5 across the board). */
 export const STARTING_SKILLS = {
-  amy: { starting: 0.5, choke: 0.3, cornering: 0.6, mud: 0.35 },
-  jess: { starting: 0.45, choke: 0.3, cornering: 0.4, mud: 0.65 },
+  // The last two start where she is now: Amy already double-declutches (so hers is nearly learnt), nobody can push-start well.
+  amy: { starting: 0.5, choke: 0.3, cornering: 0.6, mud: 0.35, bumpStart: 0, doubleDeclutch: 0.95 },
+  jess: { starting: 0.45, choke: 0.3, cornering: 0.4, mud: 0.65, bumpStart: 0, doubleDeclutch: 0 },
 };
 
 /** What you can tell her, and which skill it teaches. */
@@ -108,6 +117,16 @@ export class Skills {
     if (!fitting) return 'wrongTime';
     this.set(id, skill, this.level(id, skill) + this.p.coachGain);
     return 'taught';
+  }
+
+  /**
+   * She watched you do it (`saw`: she was looking, see watching.js). Returns 'learnt' (she gains) or 'missed' (nothing: she was
+   * looking elsewhere). Watching isn't nagging, so there's no gap between times.
+   */
+  watch(id, skill, saw) {
+    if (!saw) return 'missed';
+    this.set(id, skill, this.level(id, skill) + this.p.watchGain);
+    return 'learnt';
   }
 
   band(id, skill) {

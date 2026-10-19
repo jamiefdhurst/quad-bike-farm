@@ -311,7 +311,7 @@ export const drivingStates = {
       this.pushReach = 0;
       this.setColliderEnabled(false);
       const mass = this.quad.physics.body.mass();
-      this.pushAttempt = new PushStart(this.quad, this.character.id, mass, { params: this.pushParams ?? DEFAULT_PUSH_PARAMS });
+      this.pushAttempt = new PushStart(this.quad, this.character.id, mass, { params: this.pushParams ?? DEFAULT_PUSH_PARAMS, skill: this.skillLevels?.bumpStart ?? 0.5 });
     },
     update(dt) {
       const a = this.pushAttempt;
@@ -428,7 +428,10 @@ export const drivingMethods = {
     params.driveMaxThrottle = t.maxThrottle;
     params.driveScareSpeed = 99;
     params.driveMaxStalls = jess ? t.jessMaxStalls : params.driveMaxStalls;
-    if (q.manual) this.quad.shifter = jess ? new NoviceShifter(DEFAULT_SHIFTER_PARAMS, this.noviceParams ?? DEFAULT_NOVICE_PARAMS) : new AutoShifter();
+    if (q.manual) {
+      this.quad.shifter = jess ? new NoviceShifter(DEFAULT_SHIFTER_PARAMS, this.noviceParams ?? DEFAULT_NOVICE_PARAMS) : new AutoShifter();
+      this.quad.shifter.declutchLevel = () => this.skillLevels?.doubleDeclutch; // how often she grinds a gear with no synchromesh
+    }
   },
 
   /** Walks to the front of a quad, gets on and has a little drive; with `giveRide`, waits for you on the back. */
