@@ -861,6 +861,13 @@ export const FAQ_SECTIONS = [
           when you arrive. Say "No, I'll take it" if you would rather she didn't.`,
       },
       {
+        q: 'Why is Jess sat on a parked quad, stalling it over and over?',
+        a: `She is practising. A girl who is unsure of the clutch sometimes goes off on her own, sits on the back of a parked manual quad with it running and works
+          at it: blipping the throttle, finding the bite point (and stalling it there), restarting it and trying the choke. Jess does it most; Amy rarely needs to.
+          Every clean bite, restart and choke taken off in time counts, so her stalls get rarer as the game goes on. She stops after a minute or two, or as soon as
+          you come over, and usually leaves the engine running for you.`,
+      },
+      {
         q: 'Why does the back seat of the Land Rover bounce so much?',
         a: `Each seat rides on its own spring, and the 200TDi's back bench is over the leaf springs: soft, bouncy and slow to settle, so it comes down hard on a
           big bump. The UTV's bed has no cushion at all, so a big bump (the cattle grid, say) can throw whoever is in it off the floor. The pillion pad and the
