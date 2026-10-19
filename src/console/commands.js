@@ -12,6 +12,7 @@ import { resolve, walk, show, describe, parseValue, pathCandidates } from './she
  *   weatherKinds(): string[]              setWeather(kind): string
  *   dump(text): void                      (copies to the clipboard)
  *   farmText(): string   farmSave(): boolean   farmJson(): string   farmLoad(json): string   farmWipe(): void   farmEndDay(): string   (the farm that remembers)
+ *   errors(): [{ name, count, message }]   clearErrors(): void   (features whose update threw, caught by core/featureGuard.js)
  *   perf(): { fps, ms, worstMs, calls, triangles, width, height, pixelRatio, maxFps }   (how hard the game is working)
  */
 
@@ -456,6 +457,23 @@ export function buildCommands(host) {
           `${p.width} x ${p.height} pixels (render scale ${p.pixelRatio})`,
           ...(p.stages?.length ? [`where the time goes: ${p.stages.map((x) => `${x.name} ${round(x.ms, 2)}`).join(', ')} (ms)`] : []),
         ];
+      },
+    },
+
+    {
+      name: 'errors',
+      group: 'World',
+      usage: 'errors [clear]',
+      help: 'features whose update threw and was caught, so the rest of the frame ran: each with how many times and the last message. "errors clear" forgets them',
+      examples: ['errors', 'errors clear'],
+      run: (args) => {
+        if (args[0] === 'clear') {
+          host.clearErrors();
+          return 'forgotten';
+        }
+        const list = host.errors();
+        if (!list.length) return 'no feature has thrown';
+        return list.map((e) => `${e.count}x ${e.name}: ${e.message}`);
       },
     },
 

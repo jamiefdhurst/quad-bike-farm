@@ -46,6 +46,8 @@ function makeWorld() {
     farmJson: () => '{"day":4}',
     farmWipe: () => (state.wiped = true),
     farmEndDay: () => 'fading to black: day 5 loads next',
+    errors: () => (state.errors ?? []),
+    clearErrors: () => (state.errors = []),
     perf: () => ({ fps: 59.8, ms: 4.234, worstMs: 9.06, calls: 812, triangles: 1234567, width: 2592, height: 1676, pixelRatio: 1.5, maxFps: 60 }),
     farmLoad: (json) => {
       const s = JSON.parse(json);
@@ -294,6 +296,17 @@ describe('the farm save', () => {
     expect(state.loaded).toEqual({ version: 1, day: 7, farmSeed: 3 });
     expect(text(shell.run('save load'))).toMatch(/paste the save/);
     expect(text(shell.run('save frobnicate'))).toMatch(/no "save frobnicate"/);
+  });
+});
+
+describe('errors', () => {
+  it('says none have thrown, lists the ones that have, and clears them', () => {
+    const { shell, state } = makeWorld();
+    expect(text(shell.run('errors'))).toBe('no feature has thrown');
+    state.errors = [{ name: 'updateBackNaps', count: 12, message: 'x is not defined' }];
+    expect(text(shell.run('errors'))).toBe('12x updateBackNaps: x is not defined');
+    shell.run('errors clear');
+    expect(text(shell.run('errors'))).toBe('no feature has thrown');
   });
 });
 
