@@ -73,6 +73,13 @@ export const FAQ_SECTIONS = [
           below; down from first is neutral. <kbd>RB</kbd> is reverse, as <kbd>B</kbd> is on the keyboard.`,
       },
       {
+        q: 'Does the gamepad rumble?',
+        a: `Yes, on a pad the browser lets rumble (Chrome and Edge do, Firefox and Safari mostly do not). Sat on a vehicle, the big motor
+          follows the engine's beat and the bumps in the ground, and the small one buzzes with the handlebars when your hands are on them.
+          On the back you feel less of the engine and none of the bars. It is quiet on foot. If you would rather it did not, the Tune tab's
+          "Gamepad rumble" group has an on/off and a strength.`,
+      },
+      {
         q: 'The game does not see my gamepad. What now?',
         a: `Browsers only show a pad to a page once a button has been pressed on it, so press one with the game open. The console
           (<kbd>\\</kbd>) says on loading whether one was found, and says again when one is plugged in or taken out. Pads that report

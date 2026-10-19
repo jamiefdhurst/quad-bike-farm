@@ -4444,3 +4444,11 @@ A worn engine knocks when cold: a hollow clack at idle and pulling away that goe
 - Sound: the engine emits `slap` at `slapRate` 7 a second at full slap with a little scatter (not one per firing, so it costs nothing at high revs); `engineAudio` carries the engine's `slap` as the strength and the worklet plays a dull 340 to 460 Hz clack (`slapVolume` 0.1 in the audio tuning), lower and rounder than the tappet and cooling ticks. It adds `slapRoughness` 0.04 at most.
 - Panel and console: "slap" in Running, "piston looseness" settable in Problems (`engineHealth.pistonLooseness`), and "Put it right" clears it.
 - Not checked: how it sounds. The numbers are first guesses; no recording or listening round.
+
+## Rumble on a gamepad (#12, was TODO 117)
+
+- **Straight from the seat's vibration.** `input/rumble.js` (pure, tests in `tests/rumble.test.js`) reads the ridden vehicle's `VibrationModel` each frame, so the pad feels what the camera and bars show: the strong (low) motor is the smoothed engine shake (`intensity`, about 0.5 at idle) plus a kick for each ground jolt that dies away in 0.18 s; the weak (high) motor is the bars' speed, smoothed (measured at 0.13 m/s mean and 0.5 m/s peak at a steady 1800 rpm, hence `barsGain` 1.5).
+- **Seats.** The rider gets both. Any other seat gets 0.6 of the low motor and nothing on the high one, since there are no bars in your hands. Nothing on foot, and the motors are told to stop once on getting off.
+- **Sending.** `playEffect('dual-rumble')` every 0.06 s with a 90 ms duration, so each update overlaps the next and a pad that drops out stops itself. The first connected pad with a `vibrationActuator` is used; browsers without one (Firefox, Safari) just do nothing.
+- **Tune.** "Gamepad rumble": on/off, strength, the two gains, jolt length, bars smoothing, the pillion's share, the update interval.
+- **Not checked:** how it feels on a real pad. The gains are from measured vibration, not from a controller in hand.
