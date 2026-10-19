@@ -2857,6 +2857,15 @@ Jamie's answers: all three effects (pace, keenness, lines); the lines as a remar
 - Debug: "Why" has a settable `mood` slider and `feeling`; the console has `girl.<name>.mood`. The `mood*` params are in each girl's Tune group.
 - Not checked: how the low and high spells feel over a long game, or by eye.
 
+## Plans, not just picks (#16, was TODO 121)
+
+- Now and then, as the chooser hands her one thing, she strings a second on after it and says so ("Tea first, and then I am taking a quad out"; Jess: "Tea, then I am taking a quad out. Probably."). `src/npc/plans.js` (pure, `tests/plans.test.js`): `pickThen` rolls `planChance` (Amy 0.2, Jess 0.1), then lets the chooser score the other plannable offers against the needs as they stand once the first is met, with a floor of `planMin` 0.2 instead of `chooseMin`. Not a new dice-and-timer start: the second is still an offer, weighed by the same needs.
+- Plannable: tea, a drive, a sit down, a wander, tidying the quads, warming her hands (`PLAN_KINDS`): each ends with her free again and starts from standing. The big set pieces (races, dares, pranks) stay single picks. A plan is never a plan of a plan.
+- Carrying it out: the pending plan lives on her `Intent` (`plan`: first, then, until). Once she is free again, `updateMinds` takes the second part without weighing it if it is still on offer (cooldowns, weather and room may have taken it away); otherwise the plan waits for `planFor` 150 s and goes. Anything that interrupts her (the wheel, the bell) drops it: the first thing she was stopped from is still picked up by the existing resume boost.
+- Lines: one per ordered pair of kinds (30 each), built from the phrases in `PLAN_PHRASES` and merged in `mindLines.js`; forced so they replace the first thing's own set-off line when both would speak.
+- Panel and console: "set on" in Why says "plans to ... after"; `planChance`, `planMin` and `planFor` are in each girl's group.
+- Not checked: how it reads in play, and how often she plans; the chances are first guesses.
+
 ## Going about it (TODO 135)
 
 What a girl does once the chooser has picked, in `src/npc/intent.js` (pure, tested).

@@ -147,6 +147,7 @@ export const CHARACTERS = [
       burnChance: 0.8, // and catches her calf on it if it's hot
       boredBuzzChance: 0.14, // goes and sits on a rough one for the shake, and says so
       pairWeight: 1.3, // can't stand about on her own for long
+      planChance: 0.1, // seldom thinks past the next thing
       boredShowOffChance: 0.12, // rides at you to wheelie or skid past, and looks to see you saw
       boredLineUpChance: 0.06, // now and then parks one quad crooked on purpose, to wind Amy up
       lineUpCrookedChance: 1,

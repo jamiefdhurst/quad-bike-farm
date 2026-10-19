@@ -2,8 +2,10 @@
 // something she'd chosen), resumed (getting back to it later), teaGo (off to put the kettle on), pairGo (going over to stand with her
 // friend), tagGo (tagging along after her, pair.js), moodLow and moodHigh (she has tipped into a low or a high spell, mood.js) and
 // moodCurt (short with you when you ask her something in a low one), and memoryWary and memoryKeen (she's about to do something that went
-// badly, or well, the last time: memory.js). Merged into the main line sets
+// badly, or well, the last time: memory.js), and plan_<a>_<b> (two things strung into a plan, plans.js). Merged into the main line sets
 // (voiceLines.js, jessLines.js), so they're recorded with the rest.
+
+import { planLineSet } from './plans.js';
 
 const line = (cooldown, lines) => ({ cooldown, lines });
 
@@ -18,6 +20,7 @@ export const AMY_MIND_LINES = {
   moodCurt: line(20, ['Fine.', 'If I must.', 'Yes, all right.', 'Go on, then.']),
   memoryWary: line(120, ['I am going to be careful this time, after last time.', 'I would rather not repeat what happened before.', 'Steady, this time. I have not forgotten.', 'It went badly last time, so I shall take it gently.']),
   memoryKeen: line(120, ['That went rather well last time, so I will have another go.', 'I rather fancy doing that again.', 'I was quite good at that, you know.', 'Let me have another go. I think I have got it.']),
+  ...planLineSet((first, then) => `${first}, and then ${then}.`, (lines) => line(120, lines)),
 };
 
 export const JESS_MIND_LINES = {
@@ -31,4 +34,5 @@ export const JESS_MIND_LINES = {
   moodCurt: ['What.', 'Yeah, yeah.', 'Do I have to?', 'Ugh. Fine.'],
   memoryWary: ['Not doing that again. Well. Carefully.', 'Last time was a disaster, so I am taking it easy.', 'I remember how that went. Slowly, then.', 'Nope. Not after last time. Well, a bit.'],
   memoryKeen: ['I smashed that last time. Watch this.', 'Again! I was brilliant at that.', 'Right, I am doing that again.', 'Oh, I am so good at this one.'],
+  ...planLineSet((first, then) => `${first}, then ${then}. Probably.`),
 };

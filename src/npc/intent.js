@@ -24,11 +24,13 @@ export class Intent {
     this.clock = 0;
     this.current = null; // what she chose and is on her way to: { key, sig } (sig: her state and its goal just after she set off)
     this.resume = null; // what she was stopped from doing and is still keen on: { key, until }
+    this.plan = null; // what she means to do after what she's on with (plans.js): { first, then, until }
   }
 
   /** She chose `key`; `sig` is her state just after (walking:start and so on). Returns true if it's the thing she was stopped from. */
   chose(key, sig) {
     this.current = { key, sig };
+    if (this.plan?.then === key) this.plan = null; // she's on to the second part
     const resumed = this.resume?.key === key;
     if (resumed) this.resume = null;
     return resumed;
@@ -39,6 +41,17 @@ export class Intent {
     this.clock += dt;
     if (this.current && sig !== this.current.sig) this.current = null;
     if (this.resume && this.clock > this.resume.until) this.resume = null;
+    if (this.plan && this.clock > this.plan.until) this.plan = null;
+  }
+
+  /** She means to do `then` once she's done `first`, for `p.planFor` s. */
+  makePlan(first, then, p) {
+    this.plan = { first, then, until: this.clock + p.planFor };
+  }
+
+  /** Free again: the offer that carries on her plan, if it's still on offer, else null (the plan waits for it until it runs out). */
+  nextStep(offers) {
+    return (this.plan && offers.find((o) => o.key === this.plan.then)) || null;
   }
 
   /** Something else has her (you asked, the bell): returns what she was on her way to, now on her mind for `p.resumeFor` s, or null. */
@@ -46,6 +59,7 @@ export class Intent {
     const key = this.current?.key ?? null;
     if (key) this.resume = { key, until: this.clock + p.resumeFor };
     this.current = null;
+    this.plan = null; // asked for something else, the plan is off
     return key;
   }
 
@@ -53,7 +67,8 @@ export class Intent {
   describe(labelOf = (k) => k) {
     const on = this.current ? `on her way to ${labelOf(this.current.key)}` : 'nothing she can be stopped from';
     const mind = this.resume ? `; still keen to ${labelOf(this.resume.key)} (${Math.max(0, Math.round(this.resume.until - this.clock))} s)` : '';
-    return on + mind;
+    const plan = this.plan ? `; plans to ${labelOf(this.plan.then)} after` : '';
+    return on + mind + plan;
   }
 
   /** How much keener she is on `key` now (`p.resumeBoost` while it's the thing she was stopped from, else 1). */
