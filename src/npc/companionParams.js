@@ -127,6 +127,12 @@ export const DEFAULT_COMPANION_PARAMS = {
   paceExcited: 1.1, // and when she's as keyed up as she gets
   resumeFor: 120, // seconds she stays keen on something you stopped her on her way to
   resumeBoost: 1.8, // and how much keener
+  memoryStrength: 1, // how hard what happened bears on her feeling for it (memory.js: bogged, tipped, won, lost)
+  memoryMin: 0.5, // the warest she gets of something (times its weight)
+  memoryMax: 1.6, // and the keenest
+  memoryFade: 0.0005, // how fast a feeling eases back to nothing, a second (about 15 minutes for a bad bog)
+  memoryLineAt: 0.2, // how far from 1 before she says so when she picks it
+  memoryLineChance: 0.3, // and how often she does
   moodSeconds: 180, // how slowly her mood follows how her needs have been (mood.js): about this many seconds to settle
   moodBase: 0.2, // where it settles with nothing wanted
   moodUnease: 1.6, // how far pressing needs pull it down (cold and bored most)
@@ -415,6 +421,12 @@ export const COMPANION_PARAM_RANGES = {
   needWarmFall: [0, 0.5, 0.005],
   needLonelyRise: [0, 0.05, 0.0005],
   needLonelyRange: [3, 60, 1],
+  memoryStrength: [0, 3, 0.05],
+  memoryMin: [0.1, 1, 0.05],
+  memoryMax: [1, 3, 0.05],
+  memoryFade: [0, 0.01, 0.0001],
+  memoryLineAt: [0.05, 0.6, 0.05],
+  memoryLineChance: [0, 1, 0.05],
   needCompanyFall: [0, 0.3, 0.005],
   needCloseRange: [1, 20, 0.5],
   needThrillRise: [0, 0.05, 0.0005],

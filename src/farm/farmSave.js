@@ -10,6 +10,7 @@ export const DEFAULT_FARM_PARAMS = {
   flatOvernight: 0.02, // what's left of a battery when the key was left on overnight
   mudKept: 0.5, // fraction of a quad's mud still on it in the morning (the rest dries and drops off)
   favourKept: 0.5, // fraction of each girl's favour that carries to the next day
+  memoryKept: 0.5, // and of how far each feeling for what went well or badly sits from none (npc/memory.js)
   frictionKept: 0.5, // fraction of the girls' friction that carries when they hadn't fallen out
   frictionFallenOut: 6, // their friction in the morning after a falling-out that wasn't made up (8 falls out again)
   endDayHour: 17, // hours after midnight: from then the barn's wall calendar lets you call it a day (sunset is 17:15)
@@ -28,6 +29,7 @@ export const FARM_PARAM_RANGES = {
   flatOvernight: [0, 0.3, 0.01],
   mudKept: [0, 1, 0.05],
   favourKept: [0, 1, 0.05],
+  memoryKept: [0, 1, 0.05],
   frictionKept: [0, 1, 0.05],
   frictionFallenOut: [0, 10, 0.5],
   endDayHour: [12, 23, 0.25],

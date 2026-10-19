@@ -515,6 +515,14 @@ export const FAQ_SECTIONS = [
         tip: 'A girl waving and shouting is stuck. Shove her bogged quad with V, winch it, or right a tipped one with E.',
       },
       {
+        q: 'Why is Amy suddenly wary of driving, or Jess so keen to race?',
+        a: `The girls remember how things went. A girl who has bogged or tipped a quad is warier of driving, the big vehicles and the hill for a while, and a girl who has
+          won a race, a drag, a clean cone round or a record climb is keener to do it again. It only nudges what she picks for herself; she still does what you ask. Now and
+          then she says so as she sets off ("Not after last time"). The feeling fades over about a quarter of an hour (Jess forgets sooner than Amy), and half of it is
+          still there next time you load the farm.`,
+        tip: 'A girl who bogged her quad is warier of driving for a while; one who won a race is keener to race.',
+      },
+      {
         q: 'Where are the bogs?',
         a: `Two on the track and one in the low ground of the field, dark churned patches with a wet shine, all on the map. New ones form wherever quads
           keep driving over wet grass, and rain swells them, so late in a long game the field isn't the one you started with.`,

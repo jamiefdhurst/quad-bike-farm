@@ -122,6 +122,7 @@ export const CHARACTERS = [
       photoPalm: 0.08,
       reactCheerArms: 1,
       reactFlinch: 0.7,
+      memoryFade: 0.0008, // forgets a bad bog sooner, and a win (memory.js)
       needThrillRise: 0.003, // gets restless for a bit of excitement sooner (needs.js)
       needSleepRise: 0.0016, // up late, so sleepy sooner
       dozeWeight: 1.2,

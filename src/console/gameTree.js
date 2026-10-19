@@ -3,6 +3,7 @@
 import { netCharge } from '../engine/charging.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
 import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
+import { REMEMBERED_KINDS } from '../npc/memory.js';
 import { group, value, slug } from './shell.js';
 import { PARTS, PART_IDS } from '../workshop/spares.js';
 import { getTuningGroups } from '../core/tuning.js';
@@ -204,6 +205,8 @@ export function buildGameTree(g, host) {
       chose: text(() => describeMind(c().mind).chose),
       nearlyChose: text(() => describeMind(c().mind).nearly),
       thinking: text(() => describeMind(c().mind).next),
+      remembers: text(() => c().memory.describe(), 'what has gone well or badly for her lately, and so what she is keener or warier of'),
+      memory: group(() => Object.fromEntries(REMEMBERED_KINDS.map((k) => [k, num(() => c().memory.weight(k), (v) => (c().memory.feel[k] = v), 0.1, 3, '', `how keen (over 1) or wary (under 1) she is of: ${OFFER_KINDS[k]?.label ?? k}`)]))),
       setOn: text(() => c().intent.describe((k) => OFFER_KINDS[k]?.label ?? k)),
       reacting: text(() => c().reactingText),
       helmet: text(() => g.headgear.describe(id), 'where her helmet is: on the hooks, on her head, on a seat or on the ground'),

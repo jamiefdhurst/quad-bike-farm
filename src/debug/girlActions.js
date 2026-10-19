@@ -87,6 +87,14 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'forget',
+      label: '% forgets how everything has gone',
+      run: (id) => {
+        girl(id).memory.forget();
+        toast(`${nameOf(id)} has forgotten what went well or badly`);
+      },
+    },
+    {
       verb: 'wake',
       label: '% is woken gently',
       run: (id) => {
