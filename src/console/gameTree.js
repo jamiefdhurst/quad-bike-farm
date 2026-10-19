@@ -261,6 +261,7 @@ export function buildGameTree(g, host) {
     puddleIce: num(() => g.world.puddleIce.thickness[0] ?? 0, (v) => g.world.puddleIce.setAll(v), 0, 1, '', 'how thick the ice is on every puddle (0 open water; it then follows the temperature again)'),
     breakIce: flag(() => !g.world.puddleIce.thickness.some((_, i) => g.world.puddleIce.isIce(i)), (v) => v && g.world.puddleIce.breakAll(), 'on: every puddle\'s ice breaks now'),
     chill: ro(() => w().chill),
+    damp: ro(() => w().damp),
     band: text(() => w().band),
     wind: ro(() => w().wind),
     windNow: ro(() => g.wind.strength),

@@ -161,6 +161,7 @@ export function engineReadouts(engine, { manual = false } = {}) {
   } else {
     list.push({ key: 'valves', label: 'valve clearance (loose / too tight)', get: (e) => `${num(e.valveLoose)} / ${num(e.valveTight)}` });
   }
+  list.push({ key: 'air', label: "the day's air (dense is positive: pulls harder, runs leaner)", get: (e) => e.air });
   list.push({ key: 'warmDay', label: 'how warm a day (0 to 1)', get: (e) => e.ambient });
   list.push({ key: 'chill', label: 'cold day (more choke, slower warm-up)', get: (e) => e.chill });
   list.push({ key: 'sheltered', label: 'under the barn roof', get: (e) => (e.sheltered ? 'yes' : 'no') });

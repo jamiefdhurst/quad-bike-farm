@@ -243,6 +243,11 @@ export class Weather {
     return clamp01(clamp01(this.baseSky.sunIntensity / 2.6) * (1 - 0.8 * this.rain) * (1 - 0.5 * this.snow) * this.sunUp + (this.temperature - MILD_C) * 0.01);
   }
 
+  /** 0..1 how damp the air is: a little always, more with rain and wet ground (an engine's air thins with it). */
+  get damp() {
+    return clamp01(0.2 + 0.5 * this.rain + 0.3 * this.wet);
+  }
+
   /** 0..1 how cold it is for an engine (see chillOf). */
   get chill() {
     return chillOf(this.temperature);

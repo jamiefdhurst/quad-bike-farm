@@ -214,6 +214,11 @@ export class World {
     return this.weather?.chill ?? 0;
   }
 
+  /** 0..1 how damp the air is: the rain and the wet ground (weather.js). */
+  get damp() {
+    return this.weather?.damp ?? 0.4;
+  }
+
   /** 0..1 how wet the ground is. */
   get wet() {
     return this.weather?.wet ?? 0;
