@@ -206,6 +206,13 @@ export const DEFAULT_ENGINE_PARAMS = {
   jetTrueFade: 1, // sizes out at which the spot-on bonus has gone
   jetPower: 0.06, // power gained when spot on, on top of everything else
   jetRoughness: 0.05, // roughness taken off when spot on
+  // The day's air (see airDensity.js): cold dry air is dense, warm muggy air thin.
+  airRefDamp: 0.4, // how damp the air is (0..1) on the day the stock tune is right for
+  airPerDegree: 0.006, // density gained per degree colder than jetRefCelsius
+  airPerDamp: 0.15, // density lost per whole unit of damp above airRefDamp, at the reference temperature (warmer air holds more of it)
+  airPower: 0.6, // power gained per unit of density (dense air burns more fuel a stroke)
+  airLean: 0.4, // mixture lost per unit of density on a carburettor with a fixed jet (an injected engine and a diesel keep theirs)
+  jetPerDamp: 0.5, // sizes smaller a two-stroke wants per whole unit of damp above airRefDamp
   // The big-bore kit (see bigBore.js), fitted at the bench. Only the yellow has one to fit.
   boreKit: 0, // 1 if a big-bore kit is made for this engine
   borePower: 0.18, // power gained with the kit fitted well
@@ -477,6 +484,12 @@ export const ENGINE_PARAM_RANGES = {
   jetTrueFade: [0.1, 3, 0.05],
   jetPower: [0, 0.2, 0.005],
   jetRoughness: [0, 0.3, 0.005],
+  airRefDamp: [0, 1, 0.05],
+  airPerDegree: [0, 0.02, 0.0005],
+  airPerDamp: [0, 0.3, 0.005],
+  airPower: [0, 2, 0.05],
+  airLean: [0, 1.5, 0.05],
+  jetPerDamp: [0, 2, 0.05],
   chokeIdleRpm: [0, 3000, 10],
   chokeIdleColdFactor: [0, 1, 0.01],
   leanIdleDrop: [0, 3000, 10],

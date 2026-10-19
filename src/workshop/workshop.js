@@ -86,16 +86,16 @@ const ROWS = [
     name: 'Main jet (jet kit)',
     twoStrokeOnly: true,
     explain:
-      "A two-stroke breathes thick cold air and thin hot air, so it wants a bigger jet on a cold day and a smaller one on a hot day. Jetted right for the day it is the cleanest power it makes. Too small on a cold day and it runs hot, scuffs and seizes, the way straight petrol does. Too big and it is sluggish, smoky and fouls its plug. The jet that came with it is right at 12 °C.",
+      "A two-stroke breathes thick cold air and thin hot, muggy air, so it wants a bigger jet on a cold day and a smaller one on a hot or damp day. Jetted right for the day it is the cleanest power it makes. Too small on a cold day and it runs hot, scuffs and seizes, the way straight petrol does. Too big and it is sluggish, smoky and fouls its plug. The jet that came with it is right at 12 °C.",
     value: (s) => jetText(s.jet),
     stock: () => 'stock jet',
     effect: (s, P, unit) => {
       const e = unit.engine;
       const p = e.params;
       const day = e.dayTemp;
-      const err = jetError(s.jet, day, p, e.bore);
+      const err = jetError(s.jet, day, p, e.bore, e.dayDamp);
       const word = leanStarve(err, p) > 0 ? 'too lean, it will run hot and scuff' : jetTrue(err, p) > 0.85 ? 'spot on for the day' : err < 0 ? 'a bit lean' : 'a bit rich';
-      return `${adviceText(day, p, e.bore)}: ${word}`;
+      return `${adviceText(day, p, e.bore, e.dayDamp)}: ${word}`;
     },
   },
   {
@@ -242,7 +242,7 @@ export class Workshop {
     let kind = raisedLimiter ? 'limiter' : 'adjust';
     if (key === 'jet') {
       const p = this.unit.engine.params;
-      const err = jetError(p.jet, this.unit.engine.dayTemp, p, this.unit.engine.bore);
+      const err = jetError(p.jet, this.unit.engine.dayTemp, p, this.unit.engine.bore, this.unit.engine.dayDamp);
       if (leanStarve(err, p) > 0) kind = 'jetLean';
       else if (jetTrue(err, p) > 0.85) kind = 'jetRight';
     }

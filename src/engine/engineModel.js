@@ -20,6 +20,7 @@ import { runInWearFactor, startRunningIn, stepRunningIn } from './runningIn.js';
 import { boreWearFactor, borePowerFactor } from './bigBore.js';
 import { netCharge, lowBatteryStallRate } from './charging.js';
 import { jetError, leanStarve, jetTrue, jetMixture } from './jetting.js';
+import { airCharge, airPowerFactor, airMixture } from './airDensity.js';
 import { coolingEffect, radiatorEffect, thermostatSticks, hotLevel, leakRate, stepPuddle, steamLevel, boilsOver } from './coolant.js';
 import { stepHeat, stepSoak, pinkLevel, gaugeHeat, coolTickRate, hotStartRich } from './heat.js';
 
@@ -114,6 +115,8 @@ export class EngineModel {
     this.speed = 0; // ground speed in m/s, for the airflow
     this.ambient = 0.5; // 0..1 how warm a day it is
     this.dayTemp = 12; // the day's temperature in degrees C: what a two-stroke's jet is matched against
+    this.dayDamp = this.params.airRefDamp; // 0..1 how damp the day's air is (thins it)
+    this.air = 0; // how much denser than the reference day the air is (airDensity.js)
     this.jetErr = 0; // two-strokes: fitted jet size less the right one for the day, negative lean (see jetting.js)
     this.jetOn = 0; // 0..1 how spot on the jetting is
     this.bore = 0; // 1 once a big-bore kit is fitted at the bench (bigBore.js), else 0
@@ -289,7 +292,7 @@ export class EngineModel {
    * @param {number}  [controls.gearRpm] a manual's revs at this road speed in this gear (speed over the gear's top speed, times full-throttle revs).
    * @param {number}  [controls.gearLock] 0..1 how far the clutch ties the engine to those revs: the throttle then only decides the torque.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, airLeak = 0, valveLoose = 0, valveTight = 0, clog = 0, ice = 0, gulp = 0, diesel = 0, fuelWater = 0, wax = 0, additive = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12 } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, airLeak = 0, valveLoose = 0, valveTight = 0, clog = 0, ice = 0, gulp = 0, diesel = 0, fuelWater = 0, wax = 0, additive = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12, dayDamp = this.params.airRefDamp } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -319,6 +322,7 @@ export class EngineModel {
     this.ambient = clamp(ambient, 0, 1);
     this.chill = clamp(chill, 0, 1);
     this.dayTemp = dayTemp;
+    this.dayDamp = dayDamp;
     this.sheltered = sheltered;
     this.knack.update(dt, this.throttle, this.state === EngineState.RUNNING);
     this.driveLoad = clamp(driveLoad, 0, 1);
@@ -639,9 +643,10 @@ export class EngineModel {
     const starve = clamp((p.fuelStarveLevel - this.fuel) / p.fuelStarveLevel, 0, 1);
     // A heat-soaked carburettor boils its fuel, so a hot engine that isn't running starts rich; the throttle open clears it.
     const hot = this.state === EngineState.RUNNING || p.injected ? 0 : hotStartRich(this.soak, this.throttle, p) * (1 + p.valveTightHot * this.valveTight); // tight valves swell with the heat and hold it up
-    this.jetErr = p.strokes === 2 ? jetError(p.jet, this.dayTemp, p, this.bore) : 0;
+    this.jetErr = p.strokes === 2 ? jetError(p.jet, this.dayTemp, p, this.bore, this.dayDamp) : 0;
+    this.air = airCharge(this.dayTemp, this.dayDamp, p);
     this.jetOn = p.strokes === 2 ? jetTrue(this.jetErr, p) : 0;
-    this.mixture = jetMixture(this.jetErr, p) + supplied - need - p.starveLean * starve - p.leakLean * this.airLeak * (1 - 0.7 * this.throttle) + p.mixtureTrim + p.clogRich * this.clog + hot;
+    this.mixture = jetMixture(this.jetErr, p) + supplied - need - p.starveLean * starve - p.leakLean * this.airLeak * (1 - 0.7 * this.throttle) + p.mixtureTrim + p.clogRich * this.clog + hot + airMixture(this.air, p);
     this.lean = Math.max(0, -this.mixture);
     this.rich = Math.max(0, this.mixture - p.richTolerance);
 
@@ -683,6 +688,7 @@ export class EngineModel {
     );
     this.power *= 1 - p.nipPowerLoss * this.nip;
     this.power *= 1 + p.jetPower * this.jetOn;
+    this.power *= airPowerFactor(this.air, p);
     this.power *= borePowerFactor(this.bore, this.boreFit, p);
     this.erratic = Math.max(this.erratic, this.nip * this.nip, this.dirt ** 1.5);
     this.power *= 1 - p.dirtPowerLoss * this.dirt;

@@ -936,6 +936,13 @@ export const FAQ_SECTIONS = [
           too much oil in the mix), a pale one lean.`,
       },
       {
+        q: 'Does the weather change how an engine runs?',
+        a: `A little. Cold, dry air is dense, so an engine pulls harder, but past a carburettor's fixed jet it also runs a touch leaner. Warm, muggy air
+          (and rain, and wet ground) is thin: it is flatter and a little richer. Injected engines and diesels adjust for it, so they only feel the change in pull. On the
+          yellow and orange the toolbox's jet kit tells you what the day wants, and a damp day wants a smaller jet than a dry one at the same temperature.`,
+        tip: 'Cold dry air makes an engine pull harder; warm muggy air makes it flatter. The jet kit tells you what the day wants.',
+      },
+      {
         q: 'How do I set one tyre\'s pressure?',
         a: `Open the toolbox on a switched-off quad. Under the rows is the tyre pump and gauge, with a reading for each wheel. Click <kbd>−</kbd> to let a
           little air out of that tyre or <kbd>+</kbd> to pump it up. Softer tyres grip better in mud, harder ones roll easier on the track.`,
