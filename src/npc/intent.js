@@ -8,7 +8,7 @@ export const PACES = ['hurry', 'brisk', 'normal', 'dawdle'];
 
 /**
  * Her walking this step: { mul (times her walking speed), jog ('yes': she may jog; 'no': she won't; 'auto': as the walk usually would) }.
- * `pace` is her chosen thing's (or null); `ctx`: wet (it's raining on her), tired (her rest need, 0..1), excited (her excitement need).
+ * `pace` is her chosen thing's (or null); `ctx`: wet (it's raining on her), tired (her rest need, 0..1), excited (her excitement need), mood (times her speed from how she's been feeling: mood.js).
  * Rain makes any walk but a dawdle a hurry. `p` her params (pace*).
  */
 export function walkPace(pace, ctx, p) {
@@ -16,7 +16,7 @@ export function walkPace(pace, ctx, p) {
   const hurried = pace === 'hurry' || (ctx.wet && pace !== 'dawdle');
   if (hurried) base = Math.max(base, p.paceHurry);
   const mood = (1 - (ctx.tired ?? 0) * (1 - p.paceTired)) * (1 + (ctx.excited ?? 0) * (p.paceExcited - 1));
-  return { mul: base * mood, jog: pace === 'dawdle' ? 'no' : hurried ? 'yes' : 'auto' };
+  return { mul: base * mood * (ctx.mood ?? 1), jog: pace === 'dawdle' ? 'no' : hurried ? 'yes' : 'auto' };
 }
 
 export class Intent {
