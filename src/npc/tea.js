@@ -56,6 +56,15 @@ export class Tea {
     this.cooldownUntil[girl] = this.clock + this.p.cooldown;
   }
 
+  /** The shake walked it off the edge of the rack (vehicle/looseThings.js): the same as it falling, but nobody drove off with it. */
+  shaken(girl) {
+    const m = this.mugOf(girl);
+    if (!m) return null;
+    this.mugs = this.mugs.filter((x) => x !== m);
+    this.cooldownUntil[girl] = this.clock + this.p.cooldown;
+    return { type: 'fall', girl, spec: m.spec, by: null, shaken: true };
+  }
+
   /** She couldn't (the quad was taken, say): forget it. */
   cancel(girl) {
     delete this.pending[girl];

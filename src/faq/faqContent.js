@@ -793,6 +793,14 @@ export const FAQ_SECTIONS = [
         tip: 'Hear her voice shake with the seat: let a rough, cold engine idle with her on the back.',
       },
       {
+        q: 'Why did the mug (or the can) move by itself?',
+        a: `A shaking engine walks loose things about, even standing still. A mug of tea left on a rack creeps towards the edge and, if the engine stays rough
+          for long enough, shakes off, and its owner is not pleased. Things in the bed of the UTV or a Land Rover shuffle about their spot, and a jerry can goes
+          over if the shake is hard for a while. A smooth warm engine does none of it; a cold, worn or rough one does it soonest. Switch it off, or put the can
+          back on its feet by picking it up and standing it in the bed again.`,
+        tip: 'Leave a mug on a rack beside a rough, cold engine idling and watch it walk.',
+      },
+      {
         q: 'Why has she stopped and pointed at something while driving me?',
         a: `She has brought you to see it. With you on the back, a drive sometimes has somewhere to go: a gate that is usually shut and has been left open, the view up the
           hill, or a quad someone left running. She drives there by the gateways, pulls up short, looks, points and says why, then drives you back to where you got on.
