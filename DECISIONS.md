@@ -4508,3 +4508,7 @@ Agreed with Jamie: four asks, answered from her wheel, and a no that depends on 
 - Reasons for the shape: the lines she picks, the walking, the race set-up and all their guards stay in the modules that own them. The asked-for thing does not wait on you getting to it; the yes is the company, since the player has no way to sit on the bales or stand at the fire.
 - Debug: "asking you along" under Her state, "asks you along (bales)" under Make her do (`girl <name> ask-along`), `girl.<name>.askingAlong` in the console, the "Asking you along" Tune group and `askChance`, `askGoesAnyway` in each girl's own group. Lines in `askAlongLines.js`, recorded with the rest.
 - Not checked: the whole thing in the running game, how often she asks in a long game, and the race ask end to end. The numbers are first guesses.
+
+## The Version label check reads labels live (#266)
+
+`gh pr create --label` opens the PR and then adds the labels, so the `opened` event's payload had none and the check failed; a rerun reused that payload, and the passing `labeled` run didn't replace the failed one. The check now asks `gh pr view --json labels` for the current labels, so any run or rerun sees the truth, and a per-PR `concurrency` group with `cancel-in-progress` stops a late stale run overwriting a newer one. The remove-and-re-add workaround is gone from CLAUDE.md.
