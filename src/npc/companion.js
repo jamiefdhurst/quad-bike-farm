@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { attachKeepingSize } from './attachKeepingSize.js';
+import { recallPlan, strandedOnVehicle } from './recallPlan.js';
 import { StateMachine } from './stateMachine.js';
 import { CharacterRig } from './characterRig.js';
 import { DEFAULT_COMPANION_PARAMS } from './companionParams.js';
@@ -711,13 +712,7 @@ export class Companion {
 
   /** You asked her to come here: off whatever she's driving or sat on first, then over to you. */
   requestComeHere(you) {
-    if (this.stopDriving('off', () => this.walkToYou(you))) return;
-    if (this.fsm.is('seated', 'mounting')) {
-      this.afterDismount = () => this.walkToYou(you);
-      this.fsm.transition('dismounting');
-      return;
-    }
-    this.walkToYou(you);
+    this.getDownThen(() => this.walkToYou(you));
   }
 
   /** You asked her to stop where she is (she was on her way somewhere): she stands there. */
@@ -768,15 +763,63 @@ export class Companion {
     const s = this.fsm;
     const go = () => this.walkTo(point, facing);
     if (s.is('walking') && s.data?.goal === 'stand' && this.recallTarget === point) return;
-    if (this.stopDriving('off', go)) return;
-    if (s.is('seated', 'mounting')) {
-      this.afterDismount = go;
-      s.transition('dismounting');
-    } else if (s.is('shuffling', 'dismounting')) {
-      this.afterDismount = go;
-    } else if (s.is('resting')) {
-      this.leaveRest(go);
-    } else go();
+    this.getDownThen(go);
+  }
+
+  /** A last guard (recallPlan.js): stood or walking about but still parented to a vehicle's seat, she'd float for the rest of the game, so put her on the ground where she is. */
+  dropIfStranded() {
+    if (!strandedOnVehicle(this.fsm.name, this.root.parent === this.scene)) return;
+    console.warn(`${this.character.id} was left on a vehicle's seat while ${this.fsm.name}: dropped to the ground`);
+    attachKeepingSize(this.scene, this.root);
+    const e = new THREE.Euler().setFromQuaternion(this.root.quaternion, 'YXZ');
+    this.heading = e.y;
+    this.root.rotation.set(0, e.y, 0);
+    this.root.position.y = this.world.heightAt(this.root.position.x, this.root.position.z);
+    this.rig.legSpread = 0;
+    this.sittingPose = null;
+    this.movingSeatPose = null;
+    this.freeTrailerSlot();
+    this.setColliderEnabled(true);
+  }
+
+  /**
+   * Whatever she's on or doing, gets her to her feet on the ground and then does `go` (recallPlan.js): off the quad or the cab seat or the
+   * trailer first, never walking from a seat, which would leave her floating over the ground still parented to the vehicle. Safe to call again
+   * every so often: where she is mid-change it takes effect when that's done.
+   */
+  getDownThen(go) {
+    const s = this.fsm;
+    switch (recallPlan(s.name, s.data?.goal)) {
+      case 'stopDriving':
+        if (!this.stopDriving('off', go)) go();
+        break;
+      case 'dismount':
+        this.afterDismount = go;
+        s.transition('dismounting');
+        break;
+      case 'afterDismount':
+        this.afterDismount = go;
+        break;
+      case 'leaveRest':
+        this.leaveRest(go);
+        break;
+      case 'climbDown':
+        this.afterClimb = go;
+        this.leaveTrailer();
+        break;
+      case 'afterBoarding':
+        this.afterClimb = go;
+        this.leaveWhenUp = true;
+        break;
+      case 'abortBoarding':
+        this.abortBoarding();
+        go();
+        break;
+      case 'wait':
+        break;
+      default:
+        go();
+    }
   }
 
   /**
@@ -1307,6 +1350,7 @@ export class Companion {
   update(dt, vibration, viewer) {
     this.viewer = viewer; // who's watching, for showing off to (showOffYou)
     this.fsm.update(dt);
+    this.dropIfStranded();
     this.updateNumbPlan(dt);
     this.updateRecoil(dt);
     this.updateTipCall(dt);
