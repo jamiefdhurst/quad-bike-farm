@@ -91,6 +91,7 @@ import { DEFAULT_TOW_PARAMS, TOW_PARAM_RANGES, towLoad, towEffect } from './vehi
 import { TrailerRide, TRAILER_RIDE_PARAM_RANGES } from './npc/trailerRide.js';
 import { poseUtvBed, BED_CARGO_SPOTS, BED_CARGO_YAWS, BED_CARGO_YAW } from './vehicle/utvModel.js';
 import { CargoHold, CARGO_PARAM_RANGES } from './vehicle/cargoHold.js';
+import { DEFAULT_LOOSE_PARAMS, LOOSE_PARAM_RANGES, newLoose, creepStep, offRack, shuffleStep, tipStep } from './vehicle/looseThings.js';
 import { Tailgate, TAILGATE_PARAM_RANGES } from './vehicle/tailgate.js';
 import { UtvRide, UTV_RIDE_PARAM_RANGES, DEFAULT_UTV_RIDE_PARAMS } from './npc/utvRide.js';
 import { TractorGo, TRACTORGO_PARAM_RANGES } from './npc/tractorGo.js';
@@ -944,6 +945,7 @@ export class Game {
     this.dieselJob = null; // her pouring: { spec, left }
     this.mugs = new Mugs(this.scene, (x, z) => this.world.heightAt(x, z), this.tea.p.stainFor);
     this.teaMugs = {}; // girl id -> the mug on a rack
+    this.loose = { p: { ...DEFAULT_LOOSE_PARAMS } }; // how a shaking vehicle walks its loose things about (vehicle/looseThings.js)
     this.flask = new Flask(undefined, createRandom(this.seed ^ 0x6f1a)); // tea from a flask on the rock at the top of the hill (npc/flask.js)
     this.flaskSet = null; // the flask and two mugs out on the ground by the rock: a Group
     this.setupFlask();
@@ -1608,6 +1610,7 @@ export class Game {
     registerTuning('Lining them up', this.lineUpParams, LINEUP_PARAM_RANGES);
     registerTuning('Home and jogging', this.homeParams, HOME_PARAM_RANGES);
     registerTuning('Tea on the rack', this.tea.p, TEA_PARAM_RANGES);
+    registerTuning('Things walk off', this.loose.p, LOOSE_PARAM_RANGES);
     registerTuning('Flask at the top of the hill', this.flask.p, FLASK_PARAM_RANGES);
     registerTuning('Girls carrying things', carryParams, CARRY_PARAM_RANGES);
     registerTuning('Jumpers', this.jumpers.p, JUMPER_PARAM_RANGES);
@@ -2740,6 +2743,7 @@ export class Game {
     q.model.updateMatrixWorld(true);
     if (bed.sliding && this.utvCargo.items.length) this.utvCargo.tipOut(new THREE.Vector3(0, 0, -1).transformDirection(q.model.matrixWorld).setY(0).normalize());
     this.utvCargo.update(dt);
+    this.updateLooseBed(this.utvCargo, q, dt);
 
     // The seat belts: who is in which seat, `;` for yours, and the girls do their own (vehicle/seatBelts.js).
     const youSeat = riding ? 'driver' : this.player.isRiding && q.passenger ? this.player.benchSeat : null;
@@ -3388,6 +3392,7 @@ export class Game {
         if (note) this.hud.toast(note, 2);
       }
       l.cargo?.update(dt);
+      if (l.cargo) this.updateLooseBed(l.cargo, l.unit.quad, dt);
     }
     const girlOf = (id) => this.companions.find((c) => c.character.id === id);
     const say = (c, key) => c?.voice.say(key, { urgent: true });
@@ -7074,6 +7079,42 @@ export class Game {
     this.mugs.update(dt);
   }
 
+  /** The loose state of this model on its vehicle (vehicle/looseThings.js), made when first asked for; loading a bed clears it (CargoHold.load). */
+  looseOf(model) {
+    return (model.userData.loose ??= newLoose());
+  }
+
+  /** A mug on a rack creeps with the shake of the quad under it, and goes over the edge in the end. */
+  updateLooseMugs(dt) {
+    for (const [girl, mug] of Object.entries(this.teaMugs)) {
+      const spec = this.tea.mugOf(girl)?.spec;
+      const unit = this.units.find((u) => u.spec.id === spec);
+      if (!unit || mug.parent !== unit.quad.mugAnchor) continue;
+      const s = creepStep(this.looseOf(mug), dt, unit.vibration.intensity, this.loose.p);
+      mug.position.set(s.x, 0, s.z);
+      if (offRack(s, this.loose.p)) {
+        const e = this.tea.shaken(girl);
+        if (e) this.handleTeaEvent(e);
+      }
+    }
+  }
+
+  /** What stands in a bed shuffles about its spot with the shake of the vehicle, and a can shaken hard for long enough goes over. */
+  updateLooseBed(hold, quad, dt) {
+    const shake = quad.unit?.vibration?.intensity ?? 0;
+    for (const item of hold.items) {
+      if (!hold.holds(item)) continue;
+      const m = item.model;
+      const s = this.looseOf(m);
+      shuffleStep(s, dt, shake, this.loose.p);
+      if (m.name === 'jerryCan') tipStep(s, dt, shake, this.loose.p);
+      const yaw = hold.yawFor(item) + s.twist;
+      m.position.set(s.x, s.tipped ? 0.18 : 0, s.z); // on its side it sits half its width up
+      m.rotation.order = 'YXZ';
+      m.rotation.set(0, yaw, s.tipped ? Math.PI / 2 : 0);
+    }
+  }
+
   /** Acts on tea on the rack (npc/tea.js): putting a mug down (a choice she made, or the debug panel's), collecting it, losing it. */
   handleTeaEvent(e) {
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
@@ -7142,7 +7183,7 @@ export class Game {
       const q = unitOf(e.spec).quad;
       this.mugs.drop(this.teaMugs[e.girl], q.velocity);
       delete this.teaMugs[e.girl];
-      c.voice.say('teaFell', { force: true });
+      c.voice.say(e.shaken ? 'teaShaken' : 'teaFell', { force: true });
     }
   }
 
@@ -9743,6 +9784,7 @@ export class Game {
     this.guard.run('updateJumps', () => this.updateJumps(dt));
     if (auto) this.guard.run('updateNicking', () => this.updateNicking(dt, ridden));
     if (auto || this.tea.forced) this.guard.run('updateTea', () => this.updateTea(dt, ridden));
+    this.guard.run('updateLooseMugs', () => this.updateLooseMugs(dt));
     if (auto || this.flask.active) this.guard.run('updateFlask', () => this.updateFlask(dt));
     this.guard.run('updateBonfire', () => this.updateBonfire(dt, ridden));
     if (auto || this.girlBench.active || this.girlBench.pending) this.guard.run('updateGirlBench', () => this.updateGirlBench(dt));

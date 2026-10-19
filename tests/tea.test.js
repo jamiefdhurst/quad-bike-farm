@@ -83,8 +83,18 @@ describe('tea on the rack', () => {
     expect(u.pending.amy).toBeUndefined();
   });
 
+  it('a mug the shake walks off is lost like one driven off with, but nobody gets the blame', () => {
+    const t = make();
+    put(t);
+    t.placed('amy', 'red');
+    expect(t.shaken('amy')).toEqual({ type: 'fall', girl: 'amy', spec: 'red', by: null, shaken: true });
+    expect(t.mugOf('amy')).toBeNull();
+    expect(t.shaken('amy')).toBeNull();
+    expect(t.offers(ctx())).toEqual([]); // her cooldown
+  });
+
   it('has lines for putting one down, collecting it and losing it', () => {
-    for (const k of ['teaPlace', 'teaCollect', 'teaFell']) {
+    for (const k of ['teaPlace', 'teaCollect', 'teaFell', 'teaShaken']) {
       expect(AMY_TEA_LINES[k].lines.length).toBeGreaterThan(0);
       expect(JESS_TEA_LINES[k].length).toBeGreaterThan(0);
     }

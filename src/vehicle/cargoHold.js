@@ -49,6 +49,7 @@ export class CargoHold {
     item.model.position.set(0, 0, 0);
     item.model.rotation.set(0, this.yawFor(item), 0);
     item.model.userData.spot = spot;
+    delete item.model.userData.loose; // stood up again where it was put, not where the shake left it
     item.model.userData.cargo = item;
     item.model.userData.cargoHold = this;
     return true;
