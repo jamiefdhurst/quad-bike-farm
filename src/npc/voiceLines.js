@@ -66,6 +66,7 @@ import { AMY_LPLATE_LINES } from './lPlateLines.js';
 import { AMY_TRACTORRUNAWAY_LINES } from './tractorRunawayLines.js';
 import { AMY_FALLINGOUT_LINES } from './fallingOutLines.js';
 import { AMY_ROMANCE_LINES } from './romanceLines.js';
+import { AMY_ASK_LINES } from './askAlongLines.js';
 import { AMY_QUAD_LINES } from './quadLines.js';
 import { AMY_WARMING_LINES } from './warmingLines.js';
 import { AMY_CAB_LINES } from './cabShelterLines.js';
@@ -1559,6 +1560,7 @@ export const VOICE_LINES = {
   ...AMY_FALLINGOUT_LINES,
   // Asking you round the back of the barn, and onto her quad (romanceLines.js).
   ...AMY_ROMANCE_LINES,
+  ...AMY_ASK_LINES,
   // Quad nicknames, whose is whose, and placing a quad by ear (quadLines.js).
   ...AMY_QUAD_LINES,
   // Warming their hands over an idling engine (warmingLines.js).

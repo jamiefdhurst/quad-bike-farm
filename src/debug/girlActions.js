@@ -52,6 +52,19 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'ask-along',
+      label: '% asks you along (bales)',
+      run: (id) => {
+        if (!free(id)) return;
+        const c = girl(id);
+        const offer = c.boredOffers(c.viewer).find((o) => o.key === 'rest');
+        if (!offer) return toast(`${c.name} has nowhere to sit just now`);
+        g.askAlong.cancel(id);
+        g.askGo[id] = { key: 'rest', together: offer.take, alone: offer.take, satisfies: { rest: 1 }, pace: 'dawdle' };
+        g.handleAskEvent(g.askAlong.ask(id, 'rest'));
+      },
+    },
+    {
       verb: 'bog',
       label: '% bogs her quad (she calls for help)',
       run: (id) => {

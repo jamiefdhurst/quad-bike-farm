@@ -62,6 +62,7 @@ import { JESS_LPLATE_LINES } from './lPlateLines.js';
 import { JESS_TRACTORRUNAWAY_LINES } from './tractorRunawayLines.js';
 import { JESS_FALLINGOUT_LINES } from './fallingOutLines.js';
 import { JESS_ROMANCE_LINES } from './romanceLines.js';
+import { JESS_ASK_LINES } from './askAlongLines.js';
 import { JESS_QUAD_LINES } from './quadLines.js';
 import { JESS_WARMING_LINES } from './warmingLines.js';
 import { JESS_CAB_LINES } from './cabShelterLines.js';
@@ -507,6 +508,7 @@ export const JESS_LINES = {
   ...JESS_TRACTORRUNAWAY_LINES,
   ...JESS_FALLINGOUT_LINES,
   ...JESS_ROMANCE_LINES,
+  ...JESS_ASK_LINES,
   ...JESS_QUAD_LINES,
   ...JESS_WARMING_LINES,
   ...JESS_CAB_LINES,

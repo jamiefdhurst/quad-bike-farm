@@ -81,6 +81,8 @@ export const DEFAULT_COMPANION_PARAMS = {
   boredJoinChance: 0.5, // her friend's about to set off on a quad: how much she fancies hopping on the back (weighed against the others)
   pairWeight: 1, // how keen she is to go and stand with her friend when she wants company (pair.js; weighed against the others)
   tagWeight: 1, // how keen she is to tag along when her friend sets off on foot for a look round, a sit or a cup of tea
+  askChance: 1, // how readily she asks you along when what she's chosen would meet her want of company (askAlong.js)
+  askGoesAnyway: 0.5, // and when you say not now, the chance she shrugs and goes alone at once rather than sulking and going later
   benchSlip: 0, // the chance, working at the bench on her own, that she makes a hash of it and hands it to you to finish
   dareWeight: 0, // how keen she is to dare you to something daft (dares.js)
   benchWeight: 0, // how keen she is to work on a quad at the barn bench on her own (girlBench.js)
@@ -468,6 +470,8 @@ export const COMPANION_PARAM_RANGES = {
   moodCurtChance: [0, 1, 0.05],
   needBusyFall: [0, 0.5, 0.005],
   boredJoinChance: [0, 2, 0.05],
+  askChance: [0, 3, 0.05],
+  askGoesAnyway: [0, 1, 0.05],
   pairWeight: [0, 3, 0.05],
   tagWeight: [0, 3, 0.05],
   benchSlip: [0, 1, 0.05],

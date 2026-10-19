@@ -220,6 +220,7 @@ export function buildGameTree(g, host) {
       dust: num(() => c().mucky.dust, (v) => (c().mucky.dust = v), 0, 1, '', 'how dusty her hair and face are'),
       poloOpen: num(() => c().outfit.poloOpen ?? 0, (v) => c().setPoloOpen(v), 0, 5, '', "how many of her polo's buttons are undone (0 to 5)"),
       pairedWith: text(() => g.pairState(id)),
+      askingAlong: text(() => g.askAlongState(id)),
       practising: text(() => g.practising.describe(id)),
       waiting: text(() => c().waitingText()),
       ...where(id),
