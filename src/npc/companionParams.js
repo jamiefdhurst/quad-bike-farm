@@ -117,6 +117,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   needSleepFall: 0.012, // per second dozing on the bales
   dozeWeight: 1, // how keen she is to doze on the bales when she's sleepy (dozing.js; weighed by the chooser like any offer)
   dozeMinds: 0, // 1 if being woken rudely costs you her favour and gets a sulk (Amy), 0 if she laughs it off (Jess)
+  napProne: 1, // how readily she drops off on the back of a smooth ride (backNap.js): 1 is average, 0 never
   sleepySlowThink: 2, // when she's as sleepy as she gets she thinks this much more slowly (1 + this times her sleepiness)
   sleepyLazy: 0.6, // and anything but a doze is this much less attractive to her (1 - this times her sleepiness)
   paceHurry: 1.25, // times her walking speed hurrying (out of the rain, after her friend; intent.js), and she may jog
@@ -411,6 +412,7 @@ export const COMPANION_PARAM_RANGES = {
   needSleepFall: [0, 0.1, 0.001],
   dozeWeight: [0, 3, 0.05],
   dozeMinds: [0, 1, 1],
+  napProne: [0, 3, 0.05],
   sleepySlowThink: [0, 6, 0.1],
   sleepyLazy: [0, 1, 0.05],
   paceHurry: [1, 2, 0.05],

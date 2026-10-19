@@ -163,6 +163,7 @@ export function buildGirlsTab(d) {
     g.convoy.forced = true;
     toast('Follow the leader will start as soon as both girls are stood about');
   });
+  show(day, 'asleep on the back', () => g.companions.map((c) => `${c.character.id} ${c.nap.asleep ? 'asleep' : c.nap.drowse > 0.01 ? `drowsy ${c.nap.drowse.toFixed(2)}` : 'awake'}`).join(', '));
   show(day, 'throttle grab', () => (g.throttleGrab.grab?.girl ? `${g.throttleGrab.grab.girl} (${g.throttleGrab.grab.phase})` : g.throttleGrab.forced ? `${g.throttleGrab.forced} waiting` : 'none'));
   show(day, 'Jess\'s dare', () => g.dares.describe());
   show(day, 'a phone call', () => `${g.phoneCalls.describe()}${g.companions.map((c) => (g.favour.moodLeft(c.character.id) > 0 ? `; ${c.name} in a mood for ${Math.round(g.favour.moodLeft(c.character.id))} s` : '')).join('')}`);

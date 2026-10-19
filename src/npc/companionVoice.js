@@ -895,6 +895,8 @@ export class CompanionVoice {
     // `waitTurn` is urgent (no quiet gap) but still lets the other girl finish: her own plans, said as she sets off.
     if (this.floor.left > 0 && !opts?.force && (!opts?.urgent || opts?.waitTurn)) return null;
     if (this.floor.banter && !opts?.force) return null;
+    // Asleep on the back she says nothing, whatever else is going on (the wake-up lines are forced).
+    if (this.companion.nap?.asleep && !opts?.force) return null;
     const line = this.chatter.pick(situation, opts);
     if (!line) return null;
     return this.speak(line, { shout: !!this.chatter.lines[situation]?.shout }) === null ? null : line;

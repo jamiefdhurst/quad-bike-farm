@@ -528,6 +528,17 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'nap',
+      label: '% drops off on the back (or wakes, if she is asleep)',
+      run: (id) => {
+        const c = g.companions.find((o) => o.character.id === id);
+        if (c.nap.asleep) return g.napWoke(c, 'gentle'), c.nap.wake('gentle');
+        if (!(c.isSeated && c.seatKind === 'pillion')) return toast(`${nameOf(id)} is not on the back of a quad`);
+        c.nap.force();
+        toast(`${nameOf(id)} nods off (a bump or a hard brake wakes her)`);
+      },
+    },
+    {
       verb: 'fallout',
       label: 'Fall out with % at fault',
       run: (id) => {

@@ -130,6 +130,7 @@ import { DEFAULT_KEEPALIVE_PARAMS, KEEPALIVE_PARAM_RANGES } from './npc/keepAliv
 import { HeadStart, HEADSTART_PARAM_RANGES } from './npc/headStart.js';
 import { Gossip, GOSSIP_PARAM_RANGES } from './npc/gossip.js';
 import { ThrottleGrab, GRAB_PARAM_RANGES } from './npc/throttleGrab.js';
+import { DEFAULT_NAP_PARAMS, NAP_PARAM_RANGES } from './npc/backNap.js';
 import { PillionCoach, PILLION_COACH_PARAM_RANGES } from './npc/pillionCoach.js';
 import { Lessons, LESSON_PARAM_RANGES, DRILLS } from './npc/lessons.js';
 import { dustExposure } from './world/dust.js';
@@ -764,6 +765,7 @@ export class Game {
     for (const c of this.companions) {
       c.restStayFor = () => restStay(this.places.p);
       c.dozeParams = this.places.p;
+      c.nap.p = this.napParams;
       c.dozeSunny = () => fine() && this.sunWarmth() >= this.places.p.dozeSunAbove * 0.6 && (this.daylight?.darkness ?? 0) < this.places.p.darkAbove;
       // Woken rudely: Amy minds (a little favour and a sulk), Jess laughs it off (companion.params.dozeMinds).
       c.onWoken = (how) => {
@@ -898,6 +900,7 @@ export class Game {
     this.hearing = new Hearing();
     this.lessons = new Lessons(); // a girl on the back teaching you to drive a manual (npc/lessons.js)
     this.pillionCoach = new PillionCoach(); // the girl on the back coaching the girl driving (npc/pillionCoach.js)
+    this.napParams = { ...DEFAULT_NAP_PARAMS }; // asleep on the back of a smooth ride (npc/backNap.js)
     this.throttleGrab = new ThrottleGrab(); // a girl on the back opening it over your hand (npc/throttleGrab.js)
     this.smokeSense = new SmokeSense(); // Amy coughs at two-stroke smoke, Jess loves it (npc/smokeSense.js)
     // Racing: the girls race a lap of the track from a start line by the yard (npc/race.js).
@@ -1577,6 +1580,7 @@ export class Game {
     registerTuning('Girls coaching each other', this.pillionCoach.p, PILLION_COACH_PARAM_RANGES);
     registerTuning('Driving lessons', this.lessons.p, LESSON_PARAM_RANGES);
     registerTuning('Hand on the throttle', this.throttleGrab.p, GRAB_PARAM_RANGES);
+    registerTuning('Asleep on the back', this.napParams, NAP_PARAM_RANGES);
     registerTuning('Two-stroke smoke', this.smokeSense.p, SMOKE_PARAM_RANGES);
     registerTuning('Shouting a fault', this.faultShout.p, SHOUT_PARAM_RANGES);
     registerTuning('Yard haze', this.haze.p, HAZE_PARAM_RANGES);
@@ -6768,7 +6772,7 @@ export class Game {
 
   updateThrottleGrab(dt, ridden) {
     const q = ridden?.quad;
-    const girls = this.companions.map((c) => ({ id: c.character.id, onBack: !!q && c.quad === q && c.fsm.is('seated') && c.seatKind === 'pillion' }));
+    const girls = this.companions.map((c) => ({ id: c.character.id, onBack: !!q && c.quad === q && c.fsm.is('seated') && c.seatKind === 'pillion' && !c.nap.asleep }));
     const riding = !!q && q.engine.isRunning && !this.menu.isOpen;
     const grab = this.throttleGrab;
     for (const e of grab.update(dt, { riding, speed: Math.abs(q?.forwardSpeed ?? 0), girls })) {
@@ -6785,6 +6789,40 @@ export class Game {
     }
     if (q) q.handThrottle = grab.throttle;
     for (const u of this.girlUnits) if (u.quad !== q && u.quad.handThrottle) u.quad.handThrottle = 0;
+  }
+
+  // Asleep on the back -----------------------------------------------------
+
+  /** A girl on the pillion seat of the quad you ride drifts off on a smooth ride and wakes with a start on a rough one (npc/backNap.js). */
+  updateBackNaps(dt, ridden) {
+    const q = ridden?.quad;
+    const riding = !!q && q.engine.isRunning && !this.menu.isOpen;
+    for (const c of this.companions) {
+      const onBack = !!q && c.quad === q && c.fsm.is('seated') && c.seatKind === 'pillion';
+      const a = c.pillion.dynamics.accel;
+      const events = c.nap.update(dt, {
+        onBack,
+        riding,
+        speed: Math.abs(q?.forwardSpeed ?? 0),
+        accel: a.forward,
+        jolt: Math.abs(a.up),
+        shake: c.voice.level,
+        sleepy: c.needs.sleep,
+        prone: c.params.napProne,
+      });
+      for (const e of events) {
+        if (e.type === 'asleep') c.nap.side = Math.random() < 0.5 ? -1 : 1;
+        else if (e.type === 'wake') this.napWoke(c, e.how);
+      }
+      c.pillion.nap = c.nap.depth;
+      c.pillion.napSide = c.nap.side;
+    }
+  }
+
+  /** She wakes: with a start for a bump, a brake or a rough engine, gently if the ride stopped or you spoke to her. */
+  napWoke(c, how) {
+    const start = how === 'jolt' || how === 'brake' || how === 'rough';
+    c.voice.say(start ? 'napStart' : 'napGentle', { force: true });
   }
 
   // Two-stroke smoke ---------------------------------------------------------
@@ -8647,6 +8685,8 @@ export class Game {
   // Companion menu ---------------------------------------------------------
 
   openCompanionMenu(c) {
+    // Asleep on the back: you talk to her and she wakes, gently.
+    if (c.nap.asleep) this.napWoke(c, 'gentle'), c.nap.wake('gentle');
     // She's sat out or in the doorway: she gets up first (a moment, with a "hang on"), then you can talk.
     if (c.isResting) {
       const dozing = c.isDozing; // woken gently by you talking to her: her own line, not the "hang on"
@@ -9710,6 +9750,7 @@ export class Game {
     this.updateMist(dt);
     this.updateBarnFumes(dt);
     this.updateThrottleGrab(dt, ridden);
+    this.updateBackNaps(dt, ridden);
     if (auto) this.updateRockPrank(dt);
     this.updateDrownOut(dt);
     if (auto || this.fallingOut.active) this.updateFallingOut(dt);
@@ -10115,7 +10156,7 @@ export class Game {
     for (const e of this.dog.update(dt, ctx)) this.fireDogEvent(e);
     this.dogView.update(dt);
     this.dogAudio.update(dt, this.dog.at(), this.dog.panting);
-    for (const c of this.companions) this.snoreAudio.update(dt, c.character.id, c.root.position, c.isAsleep, this.places.p.dozeSnoreRange, c.character.id === 'jess' ? 1.15 : 1);
+    for (const c of this.companions) this.snoreAudio.update(dt, c.character.id, c.root.position, c.isAsleep || c.nap.asleep, this.places.p.dozeSnoreRange, c.character.id === 'jess' ? 1.15 : 1);
   }
 
   /** What the dog did, sounded and told to the girls. */

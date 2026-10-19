@@ -793,6 +793,18 @@ export const FAQ_SECTIONS = [
         tip: 'Hear her voice shake with the seat: let a rough, cold engine idle with her on the back.',
       },
       {
+        q: 'Why has the girl on the back gone quiet with her head on my shoulder?',
+        a: `She has dropped off. On a long smooth ride (a steady speed, no hard braking, an engine with a low even beat) the girl on the back grows drowsy, her head drops
+          onto your shoulder (look back to see it), her grip goes slack and she stops talking. Amy nods off more easily than Jess, and a sleepy girl sooner than a rested one.
+          Ride well rather than fast to keep her there.`,
+      },
+      {
+        q: 'How do I wake the girl asleep on the back?',
+        a: `A pothole, a hard brake or a rough engine wakes her with a start and she tells you about it. Stopping the quad wakes her gently, and so does talking to her. After that she
+          will not drop off again for a couple of minutes.`,
+        tip: 'A girl asleep on the back wakes at a pothole, a hard brake or a rough engine, or if you stop and talk to her.',
+      },
+      {
         q: 'Why has she got off the quad to walk about, saying her bum has gone numb?',
         a: `She has been sitting on the back of a running quad that shakes for a long time. The harder it shakes, the sooner her legs go tingly and her bum goes numb.
           She gets off, walks it off, stretches, and gets back on. A smooth warm engine takes a long time to do it; a cold or rough one is much quicker.`,
