@@ -522,6 +522,48 @@ describe('her driving: an outing', () => {
   });
 });
 
+describe('her driving: taking you to see something', () => {
+  const sight = { kind: 'gate', name: 'the open gate', x: 0, z: 60, look: { x: 0, z: 67 }, line: 'sightGate' };
+  const outing = (sights) => ({
+    p: { chance: 0, minDistance: 35, maxDistance: 230, speedScale: 1.3, stopMin: 3, stopMax: 4, extraSeconds: 25 },
+    pick: () => null,
+    back: () => [{ x: 0, z: 30 }, { x: 0, z: 0 }],
+    sights: { p: { chance: 1, stopMin: 3, stopMax: 4 }, pick: () => ({ name: sight.name, spot: sight, path: [{ x: 0, z: 30 }, { x: 0, z: 60 }] }), ...sights },
+  });
+  const drive = (o, passenger) => {
+    const quad = fakeQuad();
+    const d = new HerDrive(quad, { params: P, probe: () => Infinity, isClear: open, random: seededRandom(3), outing: o, passenger: () => passenger });
+    quad.driver = d;
+    const events = [];
+    for (let t = 0; t < 300 && !d.done && d.trip?.stage !== 'back'; t += DT) {
+      events.push(...d.update(DT));
+      quad.step(DT);
+    }
+    return { d, events, quad };
+  };
+
+  it('with you on the back, drives to it, stops there saying what it is, and heads back', () => {
+    const { d, events, quad } = drive(outing(), true);
+    expect(events).toContain('sightGo');
+    expect(events).toContain('sight:gate');
+    expect(events).not.toContain('pause');
+    expect(quad.position.z).toBeGreaterThan(50);
+    expect(d.trip.sight).toBe(sight);
+  });
+
+  it('without you on the back, loops as before', () => {
+    const { d, events } = drive(outing(), false);
+    expect(events).not.toContain('sightGo');
+    expect(d.trip).toBeNull();
+  });
+
+  it('a forced one goes with nobody on, and no sight means the usual outing or loop', () => {
+    expect(drive(outing({ forced: true }), false).events).toContain('sightGo');
+    const none = drive(outing({ pick: () => null }), true);
+    expect(none.events).not.toContain('sightGo');
+  });
+});
+
 describe('her driving: a wave from you', () => {
   function drivingFor(seed, secondsFirst) {
     const quad = fakeQuad();

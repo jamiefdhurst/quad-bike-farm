@@ -164,7 +164,8 @@ export class HerDrive {
    * @param {object} [opts.showOff]  { trick, p, you() }: instead of her loops she rides at you and does a wheelie past or a skid to a stop
    *   beside you (showOff.js), looks to see if you saw, and goes again if you didn't; `you()` is { x, z, fx, fz }, where you are and are facing.
    * @param {object} [opts.outing]  { pick(from) => { name, path } | null, back(from) => path, p }: now and then, instead of a loop, she drives to a place on the farm
-   *   (the path through the gateways), stops a moment and drives back to where she started (outings.js).
+   *   (the path through the gateways), stops a moment and drives back to where she started (outings.js). `outing.sights` ({ p, pick(from), forced }):
+   *   with you on the back, somewhere to show you instead (sights.js); the trip's `sight` is what she stops to point at.
    * @param {object} [opts.tarmac]  { at(x, z), p }: whether a point is on the farm road, and the tarmac params; she rides faster there and the 'onRoad' event fires as she joins it.
    * @param {object} [opts.park]  { route }: drive the route (in line with a slot, then the slot) slowly, and stop on the last point.
    * @param {function} [opts.follow]  () => the quad she's following (yours), or null. Following, she keeps
@@ -801,17 +802,20 @@ export class HerDrive {
         if (this.waypoints.length) return true;
       }
       if (this.trip?.stage === 'back') this.trip = null;
-      else if (!this.trip && this.random() < o.p.chance) {
-        const trip = o.pick(pos);
+      else if (!this.trip) {
+        // With you on the back, now and then somewhere to show you (sights.js); otherwise the usual outing, or loops.
+        const s = o.sights;
+        const sight = s && (this.passenger() || s.forced) && this.random() < s.p.chance ? s.pick(pos) : null;
+        const trip = sight ?? (this.random() < o.p.chance ? o.pick(pos) : null);
         if (trip?.path.length) {
-          this.trip = { name: trip.name, stage: 'there' };
+          this.trip = { name: trip.name, stage: 'there', sight: sight ? trip.spot : null };
           this.waypoints = trip.path.map((pt) => ({ x: pt.x, z: pt.z }));
           this.index = 0;
           // Long enough to get there and back at her pace, and a while at the place, before she tires of it.
           const pace = Math.max(1, this.cruise * o.p.speedScale);
           const there = pathLength(pos, this.waypoints);
-          this.driveFor = Math.max(this.driveFor, this.time + (there * 2) / pace + o.p.stopMax + o.p.extraSeconds);
-          this.events.push('outing');
+          this.driveFor = Math.max(this.driveFor, this.time + (there * 2) / pace + (sight ? s.p.stopMax : o.p.stopMax) + o.p.extraSeconds);
+          this.events.push(sight ? 'sightGo' : 'outing');
           return true;
         }
       }
@@ -935,8 +939,11 @@ export class HerDrive {
         return;
       }
       if (this.pauseHere) {
-        this.events.push('pause');
-        this.setPhase('pause', this.trip?.stage === 'there' && this.index >= this.waypoints.length ? this.between(this.outing.p.stopMin, this.outing.p.stopMax) : this.between(p.drivePauseMin, p.drivePauseMax));
+        const atPlace = this.trip?.stage === 'there' && this.index >= this.waypoints.length;
+        const sight = atPlace ? this.trip.sight : null;
+        this.events.push(sight ? `sight:${sight.kind}` : 'pause');
+        const stop = sight ? this.outing.sights.p : this.outing?.p;
+        this.setPhase('pause', atPlace ? this.between(stop.stopMin, stop.stopMax) : this.between(p.drivePauseMin, p.drivePauseMax));
         // She brakes there rather than coasting.
         this.hold(c);
         c.brake = p.driveBrakeFirm;

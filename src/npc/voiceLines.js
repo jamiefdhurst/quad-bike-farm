@@ -35,6 +35,7 @@ import { AMY_WAX_LINES } from './waxLines.js';
 import { AMY_DIAGNOSIS_LINES } from './diagnosisLines.js';
 import { AMY_THRASH_LINES } from './thrashLines.js';
 import { AMY_LEFT_LINES } from './leftRunningLines.js';
+import { AMY_SIGHT_LINES } from './sightLines.js';
 import { AMY_DRIP_LINES } from './dripLines.js';
 import { AMY_CONTENT_LINES } from './contentLines.js';
 import { AMY_HISTORY_LINES } from './historyLines.js';
@@ -1504,6 +1505,8 @@ export const VOICE_LINES = {
   ...AMY_THRASH_LINES,
   // Finding a quad left running (leftRunningLines.js).
   ...AMY_LEFT_LINES,
+  // Taking you to see something (sightLines.js).
+  ...AMY_SIGHT_LINES,
   // Smelling petrol by a quad with a dripping carb (dripLines.js).
   ...AMY_DRIP_LINES,
   // Stalls, liking them all running, the seat's buzz and sitting side-saddle (contentLines.js).

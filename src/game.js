@@ -71,7 +71,7 @@ import { QuirkSet, DEFAULT_QUIRK_PARAMS, QUIRK_PARAM_RANGES, featuresOf, pickQui
 import { captureStock, tuneTarget, stockSettings, clampSettings, applyTune } from './vehicle/tuneUp.js';
 import { startRunningIn } from './engine/runningIn.js';
 import { WearLedger, LEDGER_PARAM_RANGES } from './engine/wearLedger.js';
-import { LeftRunning, LEFT_PARAM_RANGES } from './npc/leftRunning.js';
+import { LeftRunning, LEFT_PARAM_RANGES, leftRunningSituation } from './npc/leftRunning.js';
 import { CarbDrip, DRIP_PARAM_RANGES } from './vehicle/carbDrip.js';
 import { pickLeak, pickThermostat, levelText } from './engine/coolant.js';
 import { Pranks, PRANK_PARAM_RANGES } from './npc/pranks.js';
@@ -143,6 +143,7 @@ import { RainbowView } from './effects/rainbowView.js';
 import { BarnFumes, FUMES_PARAM_RANGES } from './world/barnFumes.js';
 import { barnShape, underRoof } from './world/barn.js';
 import { Race, RACE_PARAM_RANGES, planLap, YouRun, youOnGrid, pickQuads } from './npc/race.js';
+import { DEFAULT_SIGHT_PARAMS, SIGHT_PARAM_RANGES, gatesFoundOpen } from './npc/sights.js';
 import { DEFAULT_OUTING_PARAMS, OUTING_PARAM_RANGES, pickOuting, outingSpots } from './npc/outings.js';
 import { ASK_PATIENCE, ASK_KINDS, askProblems, askLine } from './npc/asking.js';
 import { Drag, DRAG_PARAM_RANGES, onDragGrid } from './npc/drag.js';
@@ -913,6 +914,11 @@ export class Game {
     this.outingParams = { ...DEFAULT_OUTING_PARAMS }; // her drives that go somewhere (npc/outings.js)
     for (const c of this.companions) c.outingParams = this.outingParams;
     for (const c of this.companions) c.outingSpots = () => outingSpots(this.world.layout, this.world.fields.hill?.waitSpot, stripPoint);
+    this.sightParams = { ...DEFAULT_SIGHT_PARAMS }; // what she takes you to see when you're on the back (npc/sights.js)
+    for (const c of this.companions) {
+      c.sightParams = this.sightParams;
+      c.sightsNow = () => this.sightsFor(c);
+    }
     this.viewForward = new THREE.Vector3(); // which way your eyes point, for the girls showing off (npc/showOff.js)
     this.showOffParams = { ...DEFAULT_SHOWOFF_PARAMS };
     for (const c of this.companions) c.showOffParams = this.showOffParams;
@@ -1593,6 +1599,7 @@ export class Game {
     registerTuning('Doughnuts', this.doughnutWatch.p, DOUGHNUT_PARAM_RANGES);
     registerTuning('Tarmac', this.tarmacWatch.p, TARMAC_PARAM_RANGES);
     registerTuning('Drives that go somewhere', this.outingParams, OUTING_PARAM_RANGES);
+    registerTuning('Taking you to see something', this.sightParams, SIGHT_PARAM_RANGES);
     registerTuning('Showing off', this.showOffParams, SHOWOFF_PARAM_RANGES);
     registerTuning('The jump', this.jumpWatch.p, JUMP_PARAM_RANGES);
     registerTuning('Nicking your quad', this.nicking.p, NICK_PARAM_RANGES);
@@ -5793,6 +5800,23 @@ export class Game {
   /** Whichever girl likes this quad best is pleased you're on it, or washing it. */
   favourQuad(unit, amount) {
     for (const c of this.companions) if (c.voice.favourite === unit.spec.id) this.favour.add(c.character.id, amount);
+  }
+
+  /** What there is to take you to see now (npc/sights.js): a gate left open, the view up the hill, a quad left running that isn't hers. */
+  sightsFor(girl) {
+    const hill = this.world.fields?.hill;
+    const running = [];
+    for (const unit of this.girlUnits) {
+      const q = unit.quad;
+      const who = this.leftRunning?.culprit(unit.id);
+      if (!who || q === girl.quad || q.rider || q.driver || q.passenger || !unit.engine.isRunning) continue;
+      running.push({ x: q.position.x, z: q.position.z, line: leftRunningSituation(who, this.leftRunning.times(who), this.leftRunning.p) });
+    }
+    return {
+      gates: gatesFoundOpen(this.world.props?.gates ?? []),
+      view: hill?.waitSpot ? { x: hill.waitSpot.x, z: hill.waitSpot.z, look: { x: hill.waitSpot.x, z: hill.waitSpot.z + 50 } } : null,
+      running,
+    };
   }
 
   /** Each frame: who's at the controls of each quad (you, or a girl's id), and the wear that lands on them. */

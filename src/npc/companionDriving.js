@@ -13,6 +13,7 @@ import { PushStart, DEFAULT_PUSH_PARAMS } from './pushStart.js';
 import { onTarmac } from './tarmac.js';
 import { towedBy } from '../vehicle/trailerObstacle.js';
 import { pickOuting, roadSpots } from './outings.js';
+import { DEFAULT_SIGHT_PARAMS, pickSight, sightsFrom } from './sights.js';
 import { TowSteer, DEFAULT_TOW_STEER_PARAMS } from './towSteer.js';
 import { MotoNerve, refusesMoto, speedShare } from './motoGo.js';
 
@@ -250,6 +251,7 @@ export const drivingStates = {
       for (const e of d.update(dt)) {
         if (e.startsWith('practice:')) this.onPractice?.(e.slice(9));
         else if (e.startsWith('start:')) this.startEvents.push(e.slice(6));
+        else if (e.startsWith('sight:')) this.showSight(d.trip?.sight);
         else this.driveEvents.push(e);
       }
       if (this.motoRide && !d.done && this.stepMoto(dt)) return;
@@ -783,11 +785,30 @@ export const drivingMethods = {
     // A car only ever goes out along the farm road and back (outings.js roadSpots), every time, however far the road's end is.
     const p = road ? { ...this.outingParams, chance: 1, maxDistance: Infinity } : forced ? { ...this.outingParams, chance: 1 } : this.outingParams;
     const spots = () => (road ? roadSpots(this.world.layout) : this.outingSpots());
+    // With you on the back, somewhere to show you (sights.js). Forced (the debug panel): even with nobody on, and certain.
+    const sp = this.sightParams ?? DEFAULT_SIGHT_PARAMS;
+    const sightForced = this.sightForced;
+    this.sightForced = false;
+    const sights = road || !this.sightsNow ? null : {
+      p: sightForced ? { ...sp, chance: 1 } : sp,
+      forced: sightForced,
+      pick: (from) => pickSight(from, sightsFrom(from, this.sightsNow(), sp), way, clear, this.driveRandom ?? Math.random, sp),
+    };
     return {
       p,
+      sights,
       pick: (from) => pickOuting(from, spots(), way, clear, this.driveRandom ?? Math.random, p),
       back: (from) => way(from, origin),
     };
+  },
+
+  /** She has pulled up at what she brought you to see: looks at it, points, and says why. */
+  showSight(sight) {
+    if (!sight) return;
+    const sp = this.sightParams ?? DEFAULT_SIGHT_PARAMS;
+    const y = this.world.heightAt(sight.look.x, sight.look.z) + 1.2;
+    this.startPointing({ x: sight.look.x, y, z: sight.look.z }, sp.pointSeconds);
+    this.voice.say(sight.line, { urgent: true, chance: 1 });
   },
 
   /** Whether she could drive straight from a to b: inside the farm's hedges, nothing in the way (the hedges between fields included). */

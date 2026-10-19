@@ -415,6 +415,20 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'sight',
+      label: '% takes you to see something (the view, an open gate, a quad left running), pointing at it',
+      run: (id) => {
+        const c = girl(id);
+        if (!free(id)) return;
+        const q = freeQuads(c, c.root.position)[0];
+        if (!q) return toast(`${c.name} has no quad she can take`);
+        c.outingForced = true;
+        c.sightForced = true; // the next drive goes to see something for certain, with or without you on the back
+        c.requestDrive(q);
+        toast(`${c.name} is off to show you something`);
+      },
+    },
+    {
       verb: 'back-seat',
       label: '% gets in the back of the 200TDi',
       run: (id) => {

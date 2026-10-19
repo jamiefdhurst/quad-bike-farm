@@ -451,6 +451,7 @@ export class CompanionVoice {
       toBack: ['driveToBack', 0.8],
       getOff: ['driveGetOff', 0.5],
       taken: ['driveTaken', 1],
+      sightGo: ['sightGo', 1],
     };
     const mood = c.driveMood ?? 0.5;
     for (const e of events) {
