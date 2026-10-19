@@ -1033,6 +1033,14 @@ export const FAQ_SECTIONS = [
         tip: 'On a cold day, leave a quad idling near the girls and they come to warm their hands.',
       },
       {
+        q: 'Why is one of the girls short with me today?',
+        a: `Each girl has a mood that follows how her last few minutes have gone. Stood about cold and bored (Amy feels the cold sooner, Jess
+          gets bored sooner) and it sinks: she walks a little slower, is less keen on everything and answers you shortly when you ask her
+          something. A good ride, company and a warm-up lift it again, and a girl in a high mood walks briskly and says so. It comes and goes
+          over a few minutes, and she never refuses you because of it. Give her something to do, or take her for a ride.`,
+        tip: 'A girl in a low mood is cold and bored. Take her for a ride, or get her warm and she comes round.',
+      },
+      {
         q: 'Why did she say she was busy when I called her over?',
         a: `She was on her way to something she'd decided to do: a sit down, a cup of tea, a drive. Whatever you ask her takes her from it, and
           she says so. It stays on her mind for a couple of minutes, she's keener on it than before, and when she gets back to it she says so.`,
