@@ -4105,6 +4105,7 @@ export class Game {
     for (const c of this.companions) {
       const ctx = this.needsContext(c);
       c.needs.update(dt, ctx, c.params);
+      this.favour.setWant(c.character.id, c.needs.attention); // her jealousy is what 'neglected' is made of (favour.js)
       const swing = c.mood.update(dt, c.needs, ctx, c.params);
       if (swing && c.availability().canRemark) c.voice.say(swing === 'low' ? 'moodLow' : 'moodHigh', { chance: 1 });
       c.wetNow = ctx.wet;
@@ -4415,8 +4416,18 @@ export class Game {
     const dayChill = Math.min(1, Math.max(0, (0.6 - w.warmth) / 0.6) * 0.8 + w.chill * 0.5);
     const onBoard = c.root.parent !== this.scene;
     const ridingWith = onBoard && (this.riddenUnit?.quad === c.quad || c.others().some((o) => o.quad === c.quad && o.root.parent !== this.scene));
-    let near = Math.hypot(this.camera.position.x - at.x, this.camera.position.z - at.z);
-    for (const o of c.others()) near = Math.min(near, o.root.getWorldPosition(this.needsOther ??= new THREE.Vector3()).distanceTo(at));
+    const youAway = Math.hypot(this.camera.position.x - at.x, this.camera.position.z - at.z);
+    let near = youAway;
+    let friendAway = Infinity;
+    let friendFromYou = Infinity;
+    for (const o of c.others()) {
+      const op = o.root.getWorldPosition(this.needsOther ??= new THREE.Vector3());
+      friendAway = Math.min(friendAway, op.distanceTo(at));
+      friendFromYou = Math.min(friendFromYou, Math.hypot(this.camera.position.x - op.x, this.camera.position.z - op.z));
+    }
+    near = Math.min(near, friendAway);
+    // Jealousy (the attention need): you're with her if you're close or she's on your quad; she's with her friend if one is close.
+    const youNear = youAway < p.needAttentionRange || (onBoard && this.riddenUnit?.quad === c.quad);
     const speed = onBoard && c.quad ? Math.abs(c.quad.speed) : 0;
     return {
       chill: covered ? 0 : dayChill,
@@ -4430,6 +4441,9 @@ export class Game {
       dozing: c.isDozing,
       idle: c.availability().free || c.sittingAbout(), // sat about on a quad she chose is as good as stood about
       purposeRate: c.purposeRate ?? 0,
+      youNear,
+      withFriend: friendAway < p.needCloseRange,
+      youWithFriend: friendFromYou < p.needAttentionRange,
     };
   }
 
@@ -9112,9 +9126,13 @@ export class Game {
         her.voice.say('prankConfess', { force: true });
       } else this.remindOfFavour(her);
       this.favour.add(her.character.id, this.favour.p.talk);
+      her.needs.noticed(her.params.needTalkEase);
       // Her friend stood there watching you talk to the other one.
       const jealous = this.banterWatch?.talked?.jealous;
-      if (jealous) this.favour.add(jealous.character.id, -this.favour.p.ignored);
+      if (jealous) {
+        this.favour.add(jealous.character.id, -this.favour.p.ignored);
+        jealous.needs.slighted(jealous.params.needSlightBump);
+      }
     }
     this.menu.open(title, options);
   }

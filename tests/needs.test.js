@@ -3,7 +3,7 @@ import { Needs, NEEDS } from '../src/npc/needs.js';
 import { DEFAULT_COMPANION_PARAMS as P } from '../src/npc/companionParams.js';
 import { CHARACTERS } from '../src/npc/characters.js';
 
-const still = { chill: 0, wet: false, warmed: false, alone: false, together: false, thrill: 0, active: false, sitting: false, idle: false, purposeRate: 0 };
+const still = { chill: 0, wet: false, warmed: false, alone: false, together: false, thrill: 0, active: false, sitting: false, idle: false, purposeRate: 0, withFriend: false, youNear: false, youWithFriend: false };
 const run = (n, seconds, ctx, p = P) => {
   for (let t = 0; t < seconds; t += 0.5) n.update(0.5, { ...still, ...ctx }, p);
   return n;
@@ -29,6 +29,24 @@ describe('needs', () => {
   it('she gets lonely on her own and not with someone close', () => {
     expect(run(new Needs(), 100, { alone: true }).company).toBeGreaterThan(0.3);
     expect(run(new Needs({ company: 0.6 }), 10, { together: true }).company).toBeLessThan(0.6);
+  });
+
+  it('jealousy builds with her friend and you away, faster when you are with the friend, and goes when you come over', () => {
+    const away = run(new Needs(), 60, { withFriend: true }).attention;
+    const friend = run(new Needs(), 60, { withFriend: true, youWithFriend: true }).attention;
+    expect(away).toBeGreaterThan(0.2);
+    expect(friend).toBeGreaterThan(away * 2);
+    expect(run(new Needs({ attention: 0.8 }), 10, { withFriend: true, youNear: true }).attention).toBeLessThan(0.4);
+    expect(run(new Needs(), 300, { withFriend: false }).attention).toBe(0); // alone, nothing to be jealous of
+    expect(run(new Needs({ attention: 0.6 }), 30, {}).attention).toBeGreaterThan(0.4); // fades slowly
+  });
+
+  it('being slighted bumps it and being talked to eases it', () => {
+    const n = new Needs();
+    n.slighted(0.3);
+    expect(n.attention).toBeCloseTo(0.3);
+    n.noticed(0.5);
+    expect(n.attention).toBe(0);
   });
 
   it('excitement creeps up and going fast or a good shake meets it', () => {

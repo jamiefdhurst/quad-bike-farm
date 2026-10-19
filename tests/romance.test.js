@@ -162,6 +162,7 @@ describe('locking favour in', () => {
     expect(f.scores.amy).toBe(18);
     f.unlock('amy', -8);
     expect(f.scores.amy).toBe(-8);
+    f.setWant('amy', 0.8); // neglect is her want of your attention now, not the score
     expect(f.mood('amy')).toBe('neglected');
   });
 });

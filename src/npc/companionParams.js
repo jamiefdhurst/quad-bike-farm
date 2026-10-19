@@ -151,6 +151,13 @@ export const DEFAULT_COMPANION_PARAMS = {
   moodKeenHigh: 1.15, // and in the highest
   moodRemarkGap: 240, // seconds between her remarking on a change in mood
   moodCurtChance: 0.6, // chance she answers you shortly when you ask her something in a low mood
+  needJealousRise: 0.006, // your attention: per second she's with her friend and you're not near her (about 3 minutes to full)
+  needJealousFriend: 2.5, // and this many times faster while you're stood with her friend and not with her
+  needAttentionFall: 0.05, // per second you're near her
+  needAttentionFade: 0.004, // per second it fades with nobody about to be jealous of (slow, so a sulk outlasts the moment)
+  needAttentionRange: 8, // metres: how near you have to be to her friend, to count as with her (and to her, for it to ease)
+  needSlightBump: 0.2, // you talk to her friend with her stood there
+  needTalkEase: 0.3, // you talk to her
   needBusyFall: 0.05, // something to do: per second it fades while she's busy (it builds at her boredom wait's pace while she stands about)
   wanderFarChance: 0.25, // a longer stroll, two and a half times as far
   boredRestChance: 0.35, // on a fine day, goes and sits on the bales or the fence (weighed against the others; only when there's a spot)
@@ -468,6 +475,13 @@ export const COMPANION_PARAM_RANGES = {
   moodKeenHigh: [1, 2, 0.05],
   moodRemarkGap: [0, 900, 10],
   moodCurtChance: [0, 1, 0.05],
+  needJealousRise: [0, 0.05, 0.0005],
+  needJealousFriend: [1, 6, 0.1],
+  needAttentionFall: [0, 0.3, 0.005],
+  needAttentionFade: [0, 0.05, 0.0005],
+  needAttentionRange: [2, 30, 0.5],
+  needSlightBump: [0, 1, 0.01],
+  needTalkEase: [0, 1, 0.01],
   needBusyFall: [0, 0.5, 0.005],
   boredJoinChance: [0, 2, 0.05],
   askChance: [0, 3, 0.05],

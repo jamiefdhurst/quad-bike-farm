@@ -8,11 +8,13 @@
 //   rest        rises while she's on the go; met by sitting down
 //   sleep       creeps up all the time (a bit faster on the go); met only by dozing; the sleepier she is, the less she does and the slower she thinks
 //   purpose     rises while she stands about with nothing to do (at the old boredom wait's pace); met by starting anything she chose
+//   attention   rises while she's with her friend and you're not near her (faster the closer you are to the friend); met by you coming over
+//               or talking to her. Jealousy: it is what 'neglected' now means (favour.js), and makes showing off and pranks likelier
 
-export const NEEDS = ['warmth', 'company', 'excitement', 'rest', 'sleep', 'purpose'];
+export const NEEDS = ['warmth', 'company', 'excitement', 'rest', 'sleep', 'purpose', 'attention'];
 
 /** What each need is called in the debug panel. */
-export const NEED_LABELS = { warmth: 'warmth', company: 'company', excitement: 'excitement', rest: 'rest', sleep: 'sleepiness', purpose: 'something to do' };
+export const NEED_LABELS = { warmth: 'warmth', company: 'company', excitement: 'excitement', rest: 'rest', sleep: 'sleepiness', purpose: 'something to do', attention: 'your attention' };
 
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
@@ -25,7 +27,8 @@ export class Needs {
    * One step. `ctx`: chill (0..1, the day's cold where she is: 0 indoors or in a cab), wet (it's raining on her), warmed (warming up:
    * hands over an engine, a running cab, the barn), alone (nobody within her lonely range), together (someone close, or riding with
    * her), thrill (0..1: speed and shake), active (on the go: walking, driving, getting about), sitting, dozing (asleep or nodding off on the bales), idle (stood about with nothing
-   * to do), purposeRate (per second while idle: 1 over her current boredom wait). `p` her params (the need* keys).
+   * to do), purposeRate (per second while idle: 1 over her current boredom wait), withFriend (her friend is close), youNear (you are close to her),
+   * youWithFriend (you are close to her friend and not to her). `p` her params (the need* keys).
    */
   update(dt, ctx, p) {
     this.warmth += dt * (ctx.chill * p.needColdRise + (ctx.wet ? p.needWetRise : 0));
@@ -40,7 +43,20 @@ export class Needs {
     if (ctx.dozing) this.sleep -= dt * p.needSleepFall;
     if (ctx.idle) this.purpose += dt * (ctx.purposeRate ?? 0);
     else this.purpose -= dt * p.needBusyFall; // doing something, the itch to do something fades
+    if (ctx.youNear) this.attention -= dt * p.needAttentionFall;
+    else if (ctx.withFriend) this.attention += dt * p.needJealousRise * (ctx.youWithFriend ? p.needJealousFriend : 1);
+    else this.attention -= dt * p.needAttentionFade; // on her own, it fades slowly: there's nobody to be jealous of
     for (const n of NEEDS) this[n] = clamp01(this[n]);
+  }
+
+  /** You paid her friend attention with her stood there (or ignored her): a bump, whatever else is going on. */
+  slighted(amount) {
+    this.attention = clamp01(this.attention + amount);
+  }
+
+  /** You talked to her: it eases at once. */
+  noticed(amount) {
+    this.attention = clamp01(this.attention - amount);
   }
 
   /** The most pressing need and how pressing: { need, level }. */
