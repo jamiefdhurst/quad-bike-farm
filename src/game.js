@@ -3549,10 +3549,17 @@ export class Game {
     q.pushDir = pushDirection(localAlong(d.x, d.z, q.yaw), p);
   }
 
+  /** Something has gone well or badly for a girl (npc/memory.js): she feels differently about that kind of thing for a while. `id` may be 'you'. */
+  noteOutcome(id, outcome) {
+    const c = this.companions.find((o) => o.character.id === id);
+    c?.memory.note(outcome, c.params);
+  }
+
   /** A girl stuck out in the field (npc/stranded.js): she shouts where she is, and what comes of you coming, or not, is her favour of you. */
   onStranded(c, e) {
     const id = c.character.id;
     const kind = c.stranded?.kind === 'tipped' ? 'tip' : 'bog';
+    if (e.type === 'shout' && e.n === 0) c.memory.note(kind === 'tip' ? 'tipped' : 'bogged', c.params); // her first call: it has just happened
     if (e.type === 'shout') {
       const spot = nearestNamedSpot(c.quad.position.x, c.quad.position.z);
       // The first, and every third after, say where she is; the rest are just a shout.
@@ -4100,6 +4107,7 @@ export class Game {
       const w = this.weather;
       c.waitWeather = { chill: ctx.chill, wet: ctx.wet, sun: Math.min(1, w.def.sky.sunIntensity / 2.6) * (1 - w.rain) * w.sunUp, clouding: Math.max(0, w.target - w.rain) };
       c.intent.update(dt, `${c.fsm.name}:${c.fsm.data?.goal ?? ''}`);
+      c.memory.update(dt, c.params);
       const m = c.mind;
       m.since += dt;
       if ((m.thinkIn -= dt) > 0) continue;
@@ -4120,7 +4128,7 @@ export class Game {
       // Something you stopped her doing is still on her mind, so she's keener on it for a while (npc/intent.js).
       // Sleepy, she can't be bothered with anything but a doze (companionParams: sleepyLazy).
       const lazy = 1 - c.params.sleepyLazy * c.needs.sleep;
-      let offers = this.offersFor(c, ridden).map((o) => ({ ...o, weight: o.weight * c.intent.boost(o.key, c.params) * (o.key === 'doze' || OFFER_KINDS[o.key]?.urgent ? 1 : lazy * c.mood.keen(c.params)) }));
+      let offers = this.offersFor(c, ridden).map((o) => ({ ...o, weight: o.weight * c.intent.boost(o.key, c.params) * c.memory.weight(o.key) * (o.key === 'doze' || OFFER_KINDS[o.key]?.urgent ? 1 : lazy * c.mood.keen(c.params)) }));
       if (sitting) offers = offers.filter((o) => OFFER_KINDS[o.key]?.fromSeat);
       else if (urgentOnly) offers = offers.filter((o) => OFFER_KINDS[o.key]?.urgent);
       const { pick, scored } = choose(c.needs, offers, c.params);
@@ -4134,6 +4142,11 @@ export class Game {
       // She walks to it at its pace, and on her way she can be stopped (npc/intent.js).
       c.pace = OFFER_KINDS[pick.key].pace ?? null;
       if (c.intent.chose(pick.key, `${c.fsm.name}:${c.fsm.data?.goal ?? ''}`)) c.voice.say('resumed', { urgent: true, chance: 0.8 });
+      else {
+        // Something that went badly or well before: she says so now and then (npc/memory.js).
+        const feeling = c.memory.attitude(pick.key, c.params);
+        if (feeling) c.voice.say(feeling < 0 ? 'memoryWary' : 'memoryKeen', { urgent: true, chance: c.params.memoryLineChance });
+      }
       m.last = { key: pick.key, need, score: scored[0].score };
       m.since = 0;
     }
@@ -8197,6 +8210,8 @@ export class Game {
       else byId[e.girl]?.voice.say('raceOut', { force: true });
     } else if (e.type === 'result' && e.winner && e.loser) {
       this.raceResult = { winner: e.winner, loser: e.loser };
+      this.noteOutcome(e.winner, 'raceWon');
+      this.noteOutcome(e.loser, 'raceLost');
       this.noteFriction('race', e.loser);
     }
   }
@@ -8364,6 +8379,7 @@ export class Game {
         if (e.id === 'you') this.hud.toast(e.place === 1 ? 'You won!' : 'She won', 3);
         else if (e.place === 1) byId[e.id]?.voice.say('dragWin', { force: true });
         else later(2000, () => byId[e.id]?.voice.say('dragLose', { force: true }));
+        this.noteOutcome(e.id, e.place === 1 ? 'dragWon' : 'dragLost');
       } else if (e.type === 'out') {
         if (e.id === 'you') this.hud.toast('You are out of the race', 2.5);
         else byId[e.id]?.voice.say('dragOut', { force: true });
@@ -8495,6 +8511,7 @@ export class Game {
     const r = this.noteRecord('climb', e.id, e.time, quadId);
     const time = formatValue('climb', e.time);
     if (e.id !== 'you') {
+      this.noteOutcome(e.id, r.record ? 'climbRecord' : 'climbDone');
       byId[e.id]?.voice.say(r.record ? 'climbRecord' : 'climbDone', { force: true });
       return;
     }
@@ -8625,6 +8642,7 @@ export class Game {
     const clean = e.cones === 0 && e.misses === 0;
     this.coneField.tidySoon();
     if (e.id !== 'you') {
+      this.noteOutcome(e.id, clean && !knocking ? 'conesClean' : 'conesMessy');
       byId[e.id]?.voice.say(r.record ? 'coneRecord' : clean && !knocking ? 'coneClean' : 'coneDone', { force: true });
       return;
     }
@@ -8753,7 +8771,10 @@ export class Game {
     const a = e.prank;
     const girl = this.companions.find((c) => c.character.id === a.girl);
     if (e.type === 'start') this.startPrank(a, girl);
-    else if (e.type === 'found') girl?.voice.say('prankGiggle', { force: true });
+    else if (e.type === 'found') {
+      girl?.voice.say('prankGiggle', { force: true });
+      this.noteOutcome(a.girl, 'prankLanded');
+    }
     else if (e.type === 'restore') {
       const thing = a.item === 'can' ? this.petrolCan : this.toolbox;
       const home = this.itemHome[a.item];

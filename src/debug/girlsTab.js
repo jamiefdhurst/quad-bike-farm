@@ -6,6 +6,7 @@ import { buttonText } from './buttonText.js';
 import { girlActions } from './girlActions.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
 import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
+import { REMEMBERED_KINDS } from '../npc/memory.js';
 import { DRILLS } from '../npc/lessons.js';
 import { rampPoint } from '../npc/jumps.js';
 import { OUTFIT_KINDS, describeOutfit, completeStyle, outfitsFor } from '../npc/outfits.js';
@@ -66,6 +67,10 @@ export function buildGirlsTab(d) {
     show(why, 'next', () => describeMind(c.mind).next);
     show(why, 'set on', () => c.intent.describe((k) => OFFER_KINDS[k]?.label ?? k));
     show(why, 'pace', () => `${c.paceMul.toFixed(2)} times her walk${c.pace ? ` (${c.pace})` : ''}`);
+    show(why, 'remembers', () => c.memory.describe());
+    const mem = why.addFolder('Feelings from what went well or badly');
+    for (const k of REMEMBERED_KINDS) slider(mem, OFFER_KINDS[k]?.label ?? k, () => c.memory.weight(k), (v) => (c.memory.feel[k] = v), 0.1, 3, 0.05);
+    mem.close();
     button(why, 'Stop her on her way (as if asked)', () => c.interrupt());
     button(why, 'Think now', () => (c.mind.thinkIn = 0));
 

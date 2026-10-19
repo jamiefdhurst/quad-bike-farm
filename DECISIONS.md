@@ -4475,3 +4475,16 @@ A girl who is unsure of the clutch goes and works at it on a parked manual, with
 - **Ends** when the time is up (usually left running, 20% key off), when you come within 3 m (she is slow to get off), when you get on it, when she is asked off, or when it will not restart. The seated girl is held like the warm-up and ready-and-waiting ones (`readyHolding`), so nothing else revs it or switches it off.
 - **Panel and console.** Tune group "Practising the clutch", "practising the clutch" under Her state, `practise` under Make her do (the picked vehicle if it has a clutch, else the nearest), `practising` in the console. Lines are in `practisingLines.js` and need recording.
 - **Not checked:** how it looks and sounds in the running game. The numbers are first guesses.
+
+## Memories that change choices (#15, was TODO 120)
+
+Agreed with Jamie: she remembers outcomes, a multiplier per kind of offer nudges the chooser, it carries at half strength, she says so now and then, and the Why folder shows and sets it.
+
+- `src/npc/memory.js` (pure, tested): per girl, a multiplier on an offer kind's weight, 1 meaning no feeling. `OUTCOMES` says what each event does to which kinds (bogged: drive -0.25, big go -0.2; tipped: drive and big go -0.3, climb -0.2; won a race or drag +0.25, lost -0.15; a record climb +0.3, a climb +0.1; a clean cone round +0.25, a messy one -0.1; a prank that lands +0.2). It is applied in `updateMinds` beside the resume boost and the mood's keenness, so urgent things (shelter) are nudged too but nothing is ever forced: with its limits at 0.5 and 1.6 a feeling can't make her refuse or insist on anything.
+- Bound to the kind of thing, not the place. "Bogged on the hill" is a general wariness of driving; per-place memory is a bigger item and was left.
+- Fades at `memoryFade` a second towards 1: Amy 0.0005 (a bad bog is gone in about 15 minutes), Jess 0.0008. The brief said about a game-day, but a day here is a single sitting, so it is minutes. Strength, limits, fade, the line threshold and its chance are `memory*` params in each girl's group, with ranges.
+- Saved with the girls (`captureGirls`/`restoreGirls`, `memories` by girl) at `memoryKept` 0.5 of the way from 1 (a farm param), so an overnight bog is half as wary and a save from before this build loads with none. Not a `💥 breaking` change.
+- Lines: `memoryWary` and `memoryKeen` for each girl (four each, `mindLines.js`), said when she picks something she feels at least 0.2 either side of 1 about, at `memoryLineChance` 0.3 (Amy with a 120 s cooldown). They are generic across kinds, not one per kind.
+- Panel and console: Why shows "remembers" and a closed folder of a slider per kind; the "forgets how everything has gone" action is in Make her do and the console's `girl <name> forget`; `girl.<name>.memory.<kind>` is settable.
+- Hooks: her first call for help after a bog or tip (`onStranded`), a race's result, a drag's finish, a hill climb's and cone course's finish, and her prank being found. Not covered: crashes that don't end in a tip, being caught out by something you did, and the jump score.
+- Not checked: how it reads in play over a long game; the numbers are first guesses.
