@@ -32,6 +32,7 @@ import { FrameBreakdown } from './core/frameBreakdown.js';
 import { FeatureGuard } from './core/featureGuard.js';
 import { RadialPad } from './hud/radialPad.js';
 import { PAD_RANGES } from './input/gamepad.js';
+import { Rumble, DEFAULT_RUMBLE_PARAMS, RUMBLE_RANGES, playRumble } from './input/rumble.js';
 import { DEFAULT_SOUND_PARAMS, SOUND_PARAM_RANGES } from './audio/audioParams.js';
 import { Companion } from './npc/companion.js';
 import { CompanionVoice } from './npc/companionVoice.js';
@@ -478,6 +479,8 @@ export class Game {
     this.tyreParams = { ...DEFAULT_TYRE_PARAMS };
     registerTuning('Tyres', this.tyreParams, TYRE_PARAM_RANGES);
     registerTuning('Gamepad', this.input.padParams, PAD_RANGES);
+    this.rumble = new Rumble({ ...DEFAULT_RUMBLE_PARAMS });
+    registerTuning('Gamepad rumble', this.rumble.params, RUMBLE_RANGES);
     const tyreRandom = createRandom(this.seed ^ 0x7e55);
     for (const unit of this.units) {
       unit.quad.tyres = new TyreSet(dealTyres(tyreRandom, 4, this.tyreParams), this.tyreParams);
@@ -1839,6 +1842,12 @@ export class Game {
       if (this.isPaused()) this.startFromPad();
       else this.pauseFromPad();
     }
+  }
+
+  /** Drives the pad's motors from the seat's vibration: the low one from the engine and the ground, the high one from the bars. */
+  updateRumble(dt, board) {
+    const effect = this.rumble.update(dt, board ? board.vibration : null, { rider: this.player.seat === 'rider' });
+    if (effect) playRumble(effect, navigator.getGamepads?.());
   }
 
   startFromPad() {
@@ -9859,6 +9868,7 @@ export class Game {
     fb.lap('girls', performance.now());
     const board = this.boardUnit;
     if (!this.debugCamera) this.player.update(dt, alpha, board ? board.vibration : null);
+    this.guard.run('updateRumble', () => this.updateRumble(dt, board));
     this.can.pouring = pouring;
     this.petrolCan.update(dt);
     this.premixCan.update(dt);
