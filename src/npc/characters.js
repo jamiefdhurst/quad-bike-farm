@@ -36,6 +36,8 @@ export const CHARACTERS = [
       outfit: 'farmPolo',
       boredShowOffChance: 0.04,
       boredBuzzChance: 0.03, // sits on a rough one now and then, and never says why
+      askChance: 1.3, // polite: asks rather than assumes
+      askGoesAnyway: 0.2, // goes quiet and puts out a lip rather than shrugging it off
       tagWeight: 1.2, // goes along with Jess to keep an eye on her
       phoneWeight: 0.9, // her mum, the vet, the college
       phoneMoodChance: 0.35, // and it is not always good news
@@ -146,6 +148,8 @@ export const CHARACTERS = [
       exhaustSideChance: 0.3, // swings off the pipe side without looking
       burnChance: 0.8, // and catches her calf on it if it's hot
       boredBuzzChance: 0.14, // goes and sits on a rough one for the shake, and says so
+      askChance: 0.8, // more likely to just go
+      askGoesAnyway: 0.9, // 'suit yourself'
       pairWeight: 1.3, // can't stand about on her own for long
       planChance: 0.1, // seldom thinks past the next thing
       boredShowOffChance: 0.12, // rides at you to wheelie or skid past, and looks to see you saw

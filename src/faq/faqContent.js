@@ -1364,6 +1364,14 @@ export const FAQ_SECTIONS = [
         tip: 'Take a girl to the rock at the top of the hill, get off, and press E for a flask of tea.',
       },
       {
+        q: 'Why is a girl waiting and looking at me?',
+        a: `She is asking you along. When she fancies company and is about to sit on the bales, go up the hill for a cup of tea, sit by the fire or race you, she may stop and ask you
+          first if you are within earshot (a toast says who). Press <kbd>E</kbd> on her and choose the yes (“Sit on the bales with her”, “Race her”) or “Not now”. If you say nothing she
+          takes it as a not now after about forty seconds. A yes sets her off and she likes you a little more. A no depends on her: Jess shrugs and goes on her own, Amy goes quiet and
+          likes you a little less for a while, then goes by herself later. A girl you have been neglecting sulks for longer and is less likely to go on her own.`,
+        tip: 'A girl stood looking at you may be asking you along. Press E on her to say yes or not now.',
+      },
+      {
         q: 'Why won’t she pour the tea, or why did she stop?',
         a: `It is off in rain and after dark, because the view is the point. Stand within about ten metres of the rock: walk away for a few seconds and she packs up,
           a bit put out. She also needs to be near you and not busy with something else. A cold day is better for it, and the girl who likes you more has a quieter line.`,

@@ -13,7 +13,7 @@ export const TUNE_CATEGORIES = {
   'Girls: themselves': ['Outfits'], // each girl's own build and her riding pillion; named from the characters, see GIRL_GROUP
   'Girls: moving about': [
     'Amy walk-round', "Amy won't ride", 'Getting on and off', 'Standing about', 'Waiting about', 'What catches the eye', 'Hearing a quad', 'Warming hands', 'Shelter in a cab', 'Girls carrying things', 'Home and jogging', 'Walking round buildings',
-    'Lining them up', 'Places', 'Tea on the rack', 'Flask at the top of the hill', 'Sitting by the bonfire', 'Jumpers', 'Wax jackets', 'Helmets and goggles', 'L plates', 'Quad names', 'Whose quad', 'The two as a pair',
+    'Lining them up', 'Places', 'Tea on the rack', 'Flask at the top of the hill', 'Sitting by the bonfire', 'Jumpers', 'Wax jackets', 'Helmets and goggles', 'L plates', 'Quad names', 'Whose quad', 'The two as a pair', 'Asking you along',
   ],
   'Girls: how they feel about you': [
     'Favour', 'Favours asked', 'Falling out', 'Romance', 'Talking about you', 'Pranks', 'Achievements', 'Who wore it out', 'Skills', 'Nicking your quad', 'Sulking in the cab',

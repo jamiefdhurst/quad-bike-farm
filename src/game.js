@@ -43,6 +43,7 @@ import { CHARACTERS } from './npc/characters.js';
 import { DEFAULT_NOTICE_PARAMS, NOTICE_PARAM_RANGES } from './npc/attention.js';
 import { NoticeWatch } from './npc/noticeWatch.js';
 import { Pair, PAIR_PARAM_RANGES, pairFacing } from './npc/pair.js';
+import { AskAlong, ALONG_KINDS, ASK_ALONG_PARAM_RANGES } from './npc/askAlong.js';
 import { generalRequests } from './npc/generalRequests.js';
 import { DEFAULT_WAITING_PARAMS, WAITING_PARAM_RANGES } from './npc/waiting.js';
 import { Daylight, DEFAULT_DAYLIGHT_PARAMS, DAYLIGHT_PARAM_RANGES } from './world/daylight.js';
@@ -1011,6 +1012,8 @@ export class Game {
     this.practiseQuads = new Map(); // girl id -> the quad she is practising on
     this.numbParams = { ...DEFAULT_NUMB_PARAMS }; // legs gone tingly and a numb bum from a long sit on a shaking seat (npc/numbness.js)
     this.comparing = new ComparingNotes(undefined, createRandom(this.seed ^ 0xc0de)); // the girls ranking the quads by their buzz (npc/comparingNotes.js)
+    this.askAlong = new AskAlong(); // asking you along to what she's chosen, and what a no does (npc/askAlong.js)
+    this.askGo = {}; // girl id -> { together, alone }: how to carry out what she asked about
     this.pair = new Pair(); // the two as a pair: going over to each other, tagging along, letting you in (npc/pair.js)
     this.generatorStart = new GeneratorStart(); // a girl pulling the generator's cord (npc/generatorStart.js)
     this.workLight = new WorkLight(undefined, createRandom(this.seed ^ 0x11e7)); // bringing a vehicle round to light what you're at, after dark (npc/workLight.js)
@@ -1582,6 +1585,7 @@ export class Game {
     registerTuning('Practising the clutch', this.practising.p, PRACTISING_PARAM_RANGES);
     registerTuning('Comparing notes', this.comparing.p, COMPARE_PARAM_RANGES);
     registerTuning('The two as a pair', this.pair.p, PAIR_PARAM_RANGES);
+    registerTuning('Asking you along', this.askAlong.p, ASK_ALONG_PARAM_RANGES);
     registerTuning('Guiding a trailer back', this.trailerGuide.p, TRAILER_GUIDE_PARAM_RANGES);
     registerTuning('Lights to work by', this.workLight.p, WORK_LIGHT_PARAM_RANGES);
     registerTuning('Starting the generator', this.generatorStart.p, GENERATOR_START_PARAM_RANGES);
@@ -4140,6 +4144,12 @@ export class Game {
       m.scored = scored.filter((s) => s.offer !== pick).slice(0, 4).map((s) => ({ key: s.offer.key, score: s.score }));
       if (!pick) continue;
       const need = mainNeed(pick, c.needs);
+      // Wanting company, she may ask you along first and wait for your answer (npc/askAlong.js).
+      if (this.askBeforeGoing(c, pick, planned)) {
+        m.last = { key: pick.key, need, score: scored[0].score, asking: true };
+        m.since = 0;
+        continue;
+      }
       pick.take();
       c.needs.met(OFFER_KINDS[pick.key].satisfies);
       c.chose();
@@ -4154,6 +4164,109 @@ export class Game {
       m.last = { key: pick.key, need, score: scored[0].score };
       m.since = 0;
     }
+  }
+
+  /** She's chosen `pick`; if it's something to ask you along to, she asks and waits instead (returns true). */
+  askBeforeGoing(c, pick, planned) {
+    const id = c.character.id;
+    if (planned || !ALONG_KINDS[pick.key] || (pick.key === 'race' && !pick.youRiding)) return false;
+    const ask = this.askAlong;
+    const ctx = {
+      distance: c.root.position.distanceTo(this.player.position),
+      youFree: !this.menu.isOpen && !this.hiding.active && !this.climb && !this.tryst && !this.recalling,
+      company: c.needs.company,
+      askChance: c.params.askChance,
+      fallenOut: this.fallingOut.active,
+    };
+    if (!ask.shouldAsk(id, pick.key, ctx)) return false;
+    this.askGo[id] = { key: pick.key, together: pick.take, alone: pick.takeAlone ?? pick.take, satisfies: OFFER_KINDS[pick.key].satisfies, pace: OFFER_KINDS[pick.key].pace ?? null };
+    this.handleAskEvent(ask.ask(id, pick.key));
+    return true;
+  }
+
+  /** She asks: she says so, stands waiting for you, and her wheel offers the answer. */
+  handleAskEvent(e) {
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    c.voice.say(ALONG_KINDS[e.key].line, { force: true });
+    c.hold('askAlong', 'asking you along');
+    const p = this.player.position;
+    c.attend({ x: p.x, y: p.y, z: p.z }, { weight: 3, seconds: this.askAlong.p.lapseAfter });
+    this.hud.toast(`${c.name} is asking you along: talk to her`, 3);
+  }
+
+  /** You said yes or not now (or it lapsed): she goes with you, shrugs and goes alone, or sulks and goes later (askAlong.js). */
+  answerAsk(c, yes) {
+    const id = c.character.id;
+    const r = this.askAlong.answer(id, yes, { goesAnyway: c.params.askGoesAnyway, standing: this.favour.standing(id) });
+    c.release('askAlong');
+    if (!r) return;
+    const go = this.askGo[id];
+    if (r.favour) this.favour.add(id, r.favour);
+    if (r.type === 'yes') {
+      c.voice.say('askYes', { force: true });
+      this.startAsked(c, go, go.together);
+    } else if (r.type === 'anyway') {
+      c.voice.say('askAnyway', { force: true });
+      this.startAsked(c, go, go.alone);
+    } else {
+      c.voice.say('askSulk', { force: true });
+      this.favour.sulk(id, r.mood);
+      if (c.fsm.is('seated', 'mounting')) c.requestStandBeside();
+    }
+    if (r.type !== 'sulk') delete this.askGo[id];
+  }
+
+  /** Carries out what she asked about, as the chooser would have, if she's still free to. */
+  startAsked(c, go, run) {
+    if (!go || !c.availability().free) return;
+    run();
+    c.needs.met(go.satisfies);
+    c.chose();
+    c.pace = go.pace;
+  }
+
+  /** The asks running out, and a girl who sulked going alone after all. */
+  updateAskAlong(dt) {
+    for (const e of this.askAlong.update(dt)) {
+      const c = this.companions.find((o) => o.character.id === e.girl);
+      if (e.type === 'lapsed') this.answerAsk(c, false);
+      else if (e.type === 'later') {
+        const go = this.askGo[e.girl];
+        delete this.askGo[e.girl];
+        if (go && c.availability().free) {
+          c.voice.say('askLater', { force: true });
+          this.startAsked(c, go, go.alone);
+        }
+      }
+    }
+    // Someone gave her something else to do while she was waiting for your answer.
+    for (const c of this.companions) {
+      const id = c.character.id;
+      if (this.askAlong.pendingFor(id) && !c.fsm.is('idle')) {
+        this.askAlong.cancel(id);
+        c.release('askAlong');
+        delete this.askGo[id];
+      }
+    }
+  }
+
+  /** For the debug panel and console: whether she has asked you along, and to what. */
+  askAlongState(id) {
+    const ask = this.askAlong.pendingFor(id);
+    if (ask) return `asking you: ${ALONG_KINDS[ask.key].yes.toLowerCase()} (${Math.max(0, Math.round(ask.until - this.askAlong.clock))} s left)`;
+    const later = this.askAlong.later.find((l) => l.girl === id);
+    if (later) return `sulking, goes alone in ${Math.max(0, Math.round(later.at - this.askAlong.clock))} s`;
+    return 'no';
+  }
+
+  /** Her wheel options while she's asked you along: yes, or not now. */
+  askAlongWheelOptions(c) {
+    const ask = this.askAlong.pendingFor(c.character.id);
+    if (!ask) return [];
+    return [
+      { label: ALONG_KINDS[ask.key].yes, run: () => this.answerAsk(c, true) },
+      { label: 'Not now', run: () => this.answerAsk(c, false) },
+    ];
   }
 
   /** Everything this girl could choose to do now (npc/chooser.js): her boredom choices and what the moved features offer her. */
@@ -4223,7 +4336,12 @@ export class Game {
     const compare = this.comparingContext();
     return [
       ...mine(this.convoy.offers(this.convoyContext(ridden)), (o) => this.handleConvoyEvent(this.convoy.take(o))),
-      ...(this.drag.active || this.hillClimb.active || this.coneCourse.active ? [] : mine(this.race.offers(this.raceContext(ridden)), (o) => this.handleRaceEvent(this.race.take(o)))),
+      ...(this.drag.active || this.hillClimb.active || this.coneCourse.active
+        ? []
+        : mine(this.race.offers(this.raceContext(ridden)), (o) => this.handleRaceEvent(this.race.take(o))).map((o) => ({
+            ...o,
+            takeAlone: () => this.handleRaceEvent(this.race.take({ ...o, youRiding: null })), // she goes without you after a not now
+          }))),
       ...(this.race.active || this.hillClimb.active || this.coneCourse.active ? [] : mine(this.drag.offers(this.dragContext(ridden)), (o) => this.dragApproach(this.drag.take(o), ridden))),
       ...mine(this.hillClimb.offers(this.climbContext(ridden)), (o) => this.startHillClimb(this.hillClimb.take(o))),
       ...mine(this.coneCourse.offers(this.climbContext(ridden, 'cones')), (o) => this.startConeCourse(this.coneCourse.take(o))),
@@ -8970,6 +9088,7 @@ export class Game {
     options.push(...this.workLightWheelOptions(c));
     options.push(...this.fallingOutWheelOptions(c));
     options.push(...this.romanceWheelOptions(c));
+    options.unshift(...this.askAlongWheelOptions(c));
     this.openWheel(`Ask ${c.name} to`, groupWheelOptions(options), c);
     this.player.lookEnabled = false;
     this.player.moveEnabled = false;
@@ -9867,6 +9986,7 @@ export class Game {
 
     this.guard.run('updatePassenger', () => this.updatePassenger());
     this.guard.run('updateRideOffer', () => this.updateRideOffer(dt));
+    this.guard.run('updateAskAlong', () => this.updateAskAlong(dt));
     for (const unit of this.units) unit.listenerOnBoard = unit === this.boardUnit;
     for (const unit of this.units) unit.update(dt, alpha);
     fb.lap('vehicles', performance.now());
