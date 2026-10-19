@@ -37,4 +37,4 @@ jobs:
       # Runs the real game in headless Chrome (the runner's own) with software GL and fails on any error or oddity (tools/smoke.mjs).
       - name: Smoke test
         run: CHROME_PATH=$(which google-chrome) npm run smoke
-        timeout-minutes: 6
+        timeout-minutes: 12

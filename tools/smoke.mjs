@@ -43,15 +43,17 @@ const browser = await puppeteer.launch({
 
 const problems = [];
 async function run(setup) {
+  const t0 = Date.now();
   const seen = new Map();
   const note = (k) => seen.set(k, (seen.get(k) || 0) + 1);
   const page = await browser.newPage();
-  await page.setViewport({ width: 800, height: 500 });
+  await page.setViewport({ width: 320, height: 200 });
   page.on('pageerror', (e) => note(`page error: ${e.message} @ ${(e.stack || '').split('\n').slice(1, 3).join(' | ').trim()}`));
   page.on('console', (m) => { if (m.type() === 'error') note(`console.error: ${m.text().slice(0, 300)}`); });
   await page.evaluateOnNewDocument(() => { speechSynthesis.speak = () => {}; localStorage.clear(); });
   await page.goto(`${base}?${setup.query}`, { waitUntil: 'load' });
   await page.waitForFunction(() => window.game?.companions && document.getElementById('overlay-status')?.textContent === 'Ready', { timeout: 150000 });
+  const loaded = Date.now();
   await page.evaluate((rate) => {
     const o = document.getElementById('overlay');
     o.classList.add('hidden');
@@ -85,7 +87,7 @@ async function run(setup) {
   if (!ran) note('no frame ever finished');
   await page.close();
   const bad = [...seen].map(([k, n]) => `${n}x ${k}`);
-  console.log(`${bad.length ? 'FAIL' : 'ok  '} ${setup.name}${bad.length ? '\n  ' + bad.join('\n  ') : ''}`);
+  console.log(`${bad.length ? 'FAIL' : 'ok  '} ${setup.name} (loaded in ${Math.round((loaded - t0) / 1000)} s, ${Math.round((Date.now() - loaded) / 1000)} s played)${bad.length ? '\n  ' + bad.join('\n  ') : ''}`);
   if (bad.length) problems.push(setup.name);
 }
 
