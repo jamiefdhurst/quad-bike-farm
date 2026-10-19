@@ -52,6 +52,7 @@ import { WEAR_LOOK_RANGES } from './effects/mudCoat.js';
 import { WeatherStation } from './world/weatherStation.js';
 import { Forecast, DEFAULT_FORECAST_PARAMS, FORECAST_PARAM_RANGES, KIND_WARMTH } from './world/forecast.js';
 import { choose, mainNeed, nextThink, OFFER_KINDS } from './npc/chooser.js';
+import { pickThen, planKey } from './npc/plans.js';
 import { girlsLeftOut } from './npc/leftOut.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { FallingOut, FALLING_OUT_PARAM_RANGES } from './npc/fallingOut.js';
@@ -4131,7 +4132,10 @@ export class Game {
       let offers = this.offersFor(c, ridden).map((o) => ({ ...o, weight: o.weight * c.intent.boost(o.key, c.params) * c.memory.weight(o.key) * (o.key === 'doze' || OFFER_KINDS[o.key]?.urgent ? 1 : lazy * c.mood.keen(c.params)) }));
       if (sitting) offers = offers.filter((o) => OFFER_KINDS[o.key]?.fromSeat);
       else if (urgentOnly) offers = offers.filter((o) => OFFER_KINDS[o.key]?.urgent);
-      const { pick, scored } = choose(c.needs, offers, c.params);
+      // Free again with a plan to carry on (npc/plans.js): the second part, if it's still on offer, is taken without weighing.
+      const planned = a.free ? c.intent.nextStep(offers) : null;
+      const { pick: chosen, scored } = choose(c.needs, offers, c.params);
+      const pick = planned ?? chosen;
       // What she weighed and didn't take, for the debug panel's "nearly chose".
       m.scored = scored.filter((s) => s.offer !== pick).slice(0, 4).map((s) => ({ key: s.offer.key, score: s.score }));
       if (!pick) continue;

@@ -1054,6 +1054,13 @@ export const FAQ_SECTIONS = [
           she says so. It stays on her mind for a couple of minutes, she's keener on it than before, and when she gets back to it she says so.`,
       },
       {
+        q: 'Why did she say "tea, then" and name two things?',
+        a: `Now and then, as she sets off to do one thing, she has a second in mind and says so: "Tea first, then I am taking a quad out." She does the
+          second when she is next free, unless something gets in the way. Ask her for something else, or leave it too long, and the plan is off.
+          Amy plans ahead more often than Jess.`,
+        tip: 'Sometimes a girl names two things she means to do, one after the other. Ask her for something and the plan is dropped.',
+      },
+      {
         q: 'Why do the girls go and stand together?',
         a: `They're friends. A girl who wants company and sees her friend stood about a little way off goes over to her (and often says so),
           and the two stand and talk, facing each other. When one sets off for a look round, a sit down or a cup of tea, the other may tag

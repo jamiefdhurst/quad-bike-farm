@@ -127,6 +127,9 @@ export const DEFAULT_COMPANION_PARAMS = {
   paceExcited: 1.1, // and when she's as keyed up as she gets
   resumeFor: 120, // seconds she stays keen on something you stopped her on her way to
   resumeBoost: 1.8, // and how much keener
+  planChance: 0.2, // the chance that taking up one thing she strings a second on after it and says so (plans.js)
+  planMin: 0.2, // and the second must score at least this against what she still wants
+  planFor: 150, // seconds she keeps a plan before dropping it
   memoryStrength: 1, // how hard what happened bears on her feeling for it (memory.js: bogged, tipped, won, lost)
   memoryMin: 0.5, // the warest she gets of something (times its weight)
   memoryMax: 1.6, // and the keenest
@@ -447,6 +450,9 @@ export const COMPANION_PARAM_RANGES = {
   paceExcited: [1, 2, 0.05],
   resumeFor: [0, 600, 10],
   resumeBoost: [1, 5, 0.1],
+  planChance: [0, 1, 0.05],
+  planMin: [0, 1, 0.05],
+  planFor: [10, 600, 10],
   moodSeconds: [10, 900, 10],
   moodBase: [-0.5, 1, 0.05],
   moodUnease: [0, 3, 0.05],
