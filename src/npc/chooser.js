@@ -26,6 +26,7 @@ export const OFFER_KINDS = {
   showOff: { label: 'show off to you', satisfies: { purpose: 0.5, excitement: 0.7, company: 0.5 }, pace: 'brisk' },
   jumps: { label: 'jump the ramp', satisfies: { purpose: 0.5, excitement: 1 }, pace: 'brisk' },
   doughnuts: { label: 'spin doughnuts', satisfies: { purpose: 0.5, excitement: 0.9 }, pace: 'brisk' },
+  practise: { label: 'practise the clutch on a parked manual', satisfies: { purpose: 0.7, excitement: 0.2 }, pace: 'brisk' },
   warmHands: { label: 'warm her hands on an engine', satisfies: { warmth: 1 } },
   warmHandsJoin: { label: 'warm her hands with her friend', satisfies: { warmth: 1, company: 0.4 } },
   shelterBarn: { label: 'shelter in the barn doorway', satisfies: { warmth: 0.8 }, urgent: true, pace: 'hurry' },

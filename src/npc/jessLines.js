@@ -108,6 +108,7 @@ import { JESS_SULK_LINES } from './sulkLines.js';
 import { JESS_READY_LINES } from './readyLines.js';
 import { JESS_SEAT_LINES } from './seatLines.js';
 import { JESS_WARMSIT_LINES } from './warmSitLines.js';
+import { JESS_PRACTISING_LINES } from './practisingLines.js';
 import { JESS_FLASK_LINES } from './flaskLines.js';
 import { JESS_DONTFIX_LINES } from './dontFixLines.js';
 import { JESS_BUZZ_LINES } from './buzzLines.js';
@@ -466,6 +467,7 @@ export const JESS_LINES = {
   ...JESS_READY_LINES,
   ...JESS_SEAT_LINES,
   ...JESS_WARMSIT_LINES,
+  ...JESS_PRACTISING_LINES,
   ...JESS_FLASK_LINES,
   ...JESS_DONTFIX_LINES,
   ...JESS_BUZZ_LINES,

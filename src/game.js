@@ -126,6 +126,7 @@ import { Sulking, SULK_PARAM_RANGES } from './npc/sulking.js';
 import { ReadyWaiting, READY_PARAM_RANGES } from './npc/readyWaiting.js';
 import { answerWave, DEFAULT_WAVE_PARAMS, WAVE_RANGES } from './npc/playerWave.js';
 import { WarmSit, WARMSIT_PARAM_RANGES } from './npc/warmSit.js';
+import { Practising, PRACTISING_PARAM_RANGES } from './npc/practising.js';
 import { DontFixIt, DONTFIX_PARAM_RANGES } from './npc/dontFixIt.js';
 import { ComparingNotes, COMPARE_PARAM_RANGES } from './npc/comparingNotes.js';
 import { DEFAULT_NUMB_PARAMS, NUMB_PARAM_RANGES } from './npc/numbness.js';
@@ -1005,6 +1006,8 @@ export class Game {
     this.lastWaveAnswer = new Map(); // girl id -> game clock seconds she last answered a wave (wall clock)
     this.readyWaiting = new ReadyWaiting(undefined, createRandom(this.seed ^ 0x2ead)); // sat on a running quad, revving and tooting, while you are a minute (npc/readyWaiting.js)
     this.warmSit = new WarmSit(undefined, createRandom(this.seed ^ 0x3a2f)); // sat on your quad while it warms, for the shake (npc/warmSit.js)
+    this.practising = new Practising(undefined, createRandom(this.seed ^ 0x9a17)); // Jess on a parked manual, finding the bite point on her own (npc/practising.js)
+    this.practiseQuads = new Map(); // girl id -> the quad she is practising on
     this.numbParams = { ...DEFAULT_NUMB_PARAMS }; // legs gone tingly and a numb bum from a long sit on a shaking seat (npc/numbness.js)
     this.comparing = new ComparingNotes(undefined, createRandom(this.seed ^ 0xc0de)); // the girls ranking the quads by their buzz (npc/comparingNotes.js)
     this.pair = new Pair(); // the two as a pair: going over to each other, tagging along, letting you in (npc/pair.js)
@@ -1575,6 +1578,7 @@ export class Game {
     registerTuning('Whose quad', this.ownership.p, OWNERSHIP_PARAM_RANGES);
     registerTuning('Hearing a quad', this.hearing.p, EAR_PARAM_RANGES);
     registerTuning('Warming hands', this.warming.p, WARMING_PARAM_RANGES);
+    registerTuning('Practising the clutch', this.practising.p, PRACTISING_PARAM_RANGES);
     registerTuning('Comparing notes', this.comparing.p, COMPARE_PARAM_RANGES);
     registerTuning('The two as a pair', this.pair.p, PAIR_PARAM_RANGES);
     registerTuning('Guiding a trailer back', this.trailerGuide.p, TRAILER_GUIDE_PARAM_RANGES);
@@ -4170,6 +4174,7 @@ export class Game {
       ...this.conkerOffers(c, ridden),
       ...this.rockPrankOffers(c),
       ...mine(this.headStart.offers(this.headStartContext()), (o) => this.handleHeadStartEvent(this.headStart.take(o))),
+      ...mine(this.practising.offers(this.practiseContext()), (o) => this.handlePractiseGo(this.practising.take(o))),
       ...mine(this.nicking.offers(this.nickContext(ridden)), (o) => this.handleNickEvent(this.nicking.take(o))),
       ...(GO_KINDS.some((k) => this.goVehicle(k)) ? mine(this.tractorGo.offers(this.tractorGoContext(ridden)), (o) => this.handleGoEvent(this.tractorGo.take(o))) : []),
       ...mine(this.carGo.offers(this.carGoContext(ridden)), (o) => this.handleCarGoEvent(this.carGo.take(o))),
@@ -6448,7 +6453,7 @@ export class Game {
   updateReady(dt) {
     const w = this.readyWaiting;
     const ridden = this.riddenUnit;
-    for (const c of this.companions) c.readyHolding = w.waiting(c.character.id) || this.warmSit.sitting(c.character.id); // so nothing else revs her quad or she switches it off
+    for (const c of this.companions) c.readyHolding = w.waiting(c.character.id) || this.warmSit.sitting(c.character.id) || this.practising.sitting(c.character.id); // so nothing else revs her quad or she switches it off
     const girls = this.companions.filter((c) => w.has(c.character.id)).map((c) => {
       const q = this.readyQuads.get(c.character.id);
       return {
@@ -6759,6 +6764,103 @@ export class Game {
         } else c.fsm.transition('dismounting');
       }
       if (e.type === 'off' || e.type === 'giveUp' || e.type === 'lost') this.warmSitQuads.delete(e.girl);
+    }
+  }
+
+  // Practising on her own ---------------------------------------------------
+
+  /** The parked manual (a clutch of its own, nobody on it) she would go and practise on: the nearest she can sit on the back of, or null. */
+  practiseUnitFor(c) {
+    const taken = new Set(this.practiseQuads.values());
+    const fit = (u) => {
+      const q = u.quad;
+      return q.faults.hasClutch && !taken.has(q) && !q.rider && !q.driver && !q.passenger && !q.isTipped && !q.isGhostRiding && q.speed < 0.5 && !this.herOn(q)
+        && c.mayRide(q) && !c.takenByOther(q) && c.canRidePillion(q) && q.position.distanceTo(c.root.position) <= this.practising.p.goRange;
+    };
+    return this.girlUnits.filter(fit).sort((a, b) => a.quad.position.distanceTo(c.root.position) - b.quad.position.distanceTo(c.root.position))[0] ?? null;
+  }
+
+  practiseContext() {
+    return {
+      girls: this.companions.map((c) => {
+        const id = c.character.id;
+        const free = c.availability().free && !this.menu.isOpen && !this.recalling;
+        return { id, free, unit: free ? this.practiseUnitFor(c)?.id ?? null : null, level: this.skills.level(id, 'starting') };
+      }),
+    };
+  }
+
+  /** She chose to practise (or the debug panel sent her): off to the quad, started first if it is off, then sat on the back of it. */
+  handlePractiseGo(e) {
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    const unit = this.girlUnits.find((u) => u.id === e.unit);
+    if (!c || !unit) return void this.practising.drop(e.girl);
+    const q = unit.quad;
+    const id = c.character.id;
+    this.practiseQuads.set(id, q);
+    c.voice.say('practiseGo', { urgent: true, force: true });
+    const sit = () => (c.requestMount(q), c.seatedByChoice = false); // she stays there until she has done, or you come
+    if (q.engine.isRunning) sit();
+    else c.requestStart(q, { settleAt: 0.3, then: (ran) => (ran || q.engine.isRunning ? sit() : (this.practising.drop(id), this.practiseQuads.delete(id))) });
+  }
+
+  /** For the debug panel and the console: she goes now (the picked vehicle if it fits, else the nearest). Returns whether she set off. */
+  practiseNow(c, unit = null) {
+    const u = unit && unit.quad.faults.hasClutch && c.canRidePillion(unit.quad) && !unit.quad.rider && !unit.quad.driver ? unit : this.practiseUnitFor(c);
+    if (!u || !c.fsm.is('idle') || this.practising.has(c.character.id)) return false;
+    this.handlePractiseGo(this.practising.take({ girl: c.character.id, unit: u.id }));
+    return true;
+  }
+
+  /** Each frame: a girl sat on a parked manual working at the clutch, and what her hands do to it. */
+  updatePractising(dt, ridden) {
+    const w = this.practising;
+    const girls = this.companions.filter((c) => w.has(c.character.id)).map((c) => {
+      const id = c.character.id;
+      const q = this.practiseQuads.get(id);
+      return {
+        id,
+        sat: !!q && c.fsm.is('seated') && c.quad === q && c.seatKind === 'pillion',
+        running: !!q && q.engine.isRunning,
+        cold: !!q && q.engine.temperature < q.engine.params.warmLightThreshold,
+        level: { starting: this.skills.level(id, 'starting'), choke: this.skills.level(id, 'choke') },
+        youDistance: c.root.position.distanceTo(this.player.position),
+        youOn: !!ridden && ridden.quad === q,
+      };
+    });
+    const events = w.update(dt, { girls });
+    for (const e of events) {
+      const c = this.companions.find((o) => o.character.id === e.girl);
+      const q = this.practiseQuads.get(e.girl);
+      const say = (key, chance = 1) => c.voice.say(key, { force: chance >= 1, urgent: true, chance });
+      if (e.type === 'stall') q.engine.stall('practice');
+      else if (e.type === 'bite' || e.type === 'caught') this.skills.practice(e.girl, 'starting', w.p.gainScale);
+      else if (e.type === 'chokeOff') this.skills.practice(e.girl, 'choke', w.p.gainScale);
+      const line = { stall: 'practiseStall', bite: 'practiseBite', chokeOff: 'practiseChoke', chokeLate: 'practiseChokeLate', gaveUp: 'practiseGiveUp', slow: 'practiseSlow' }[e.type];
+      if (line) say(line, e.type === 'bite' || e.type === 'chokeOff' ? 0.5 : 1);
+      if (e.type === 'off') {
+        if (e.keyOff) q.engine.setIgnition(false);
+        c.fsm.transition('dismounting');
+      }
+      if (e.type === 'off' || e.type === 'lost') {
+        if (q) {
+          q.helperThrottle = 0;
+          q.choke = 0;
+          q.helperStarter = false;
+          q.practising = false;
+        }
+        this.practiseQuads.delete(e.girl);
+      }
+    }
+    // Her hands on it while she is at it.
+    for (const [id, q] of this.practiseQuads) {
+      const sitting = w.sitting(id);
+      q.practising = sitting; // (the girls don't mind a stall they caused: companionVoice.watchEngines)
+      if (!sitting) continue;
+      const h = w.controls(id);
+      q.helperThrottle = h.throttle;
+      q.helperStarter = h.starter;
+      q.choke = h.choke;
     }
   }
 
@@ -9783,6 +9885,7 @@ export class Game {
     if (auto || this.sulking.who) this.guard.run('updateSulking', () => this.updateSulking(dt));
     this.guard.run('updateReady', () => this.updateReady(dt));
     this.guard.run('updateWarmSit', () => this.updateWarmSit(dt, ridden));
+    this.guard.run('updatePractising', () => this.updatePractising(dt, ridden));
     this.guard.run('updateDontFix', () => this.updateDontFix(dt));
     if (auto) this.guard.run('updateComparing', () => this.updateComparing(dt));
     this.guard.run('updateSeatSlams', () => this.updateSeatSlams());

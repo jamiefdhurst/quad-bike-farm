@@ -556,11 +556,12 @@ export class CompanionVoice {
       const hers = together && view.ridden === unit;
 
       if (e.state === 'cranking') w.cranking += dt;
-      if (w.state === 'running' && e.state === 'stalled' && (hers || (near && c.quad === unit.quad))) {
+      const practising = unit.quad.practising; // a stall she is making on purpose (practising.js) is nothing to be sad about
+      if (w.state === 'running' && e.state === 'stalled' && !practising && (hers || (near && c.quad === unit.quad))) {
         this.say(e.lastStallReason === 'noFuel' ? 'outOfFuel' : e.lastStallReason === 'diesel' ? 'dieselDied' : e.lastStallReason === 'fuelWater' ? 'waterDied' : 'stalledRiding', { urgent: true, chance: 0.8 });
       }
       // A quad stalling where she can see it gets her down, more so if it was under her; the one she was driving knocks her nerve.
-      if (w.state === 'running' && e.state === 'stalled' && unit.quad.position.distanceTo(this.head) < c.params.voiceRange) {
+      if (w.state === 'running' && e.state === 'stalled' && !practising && unit.quad.position.distanceTo(this.head) < c.params.voiceRange) {
         const onIt = c.quad === unit.quad && !c.fsm.is('idle', 'walking');
         content.stalled(onIt, c.params);
         if (onIt && c.fsm.is('driving')) c.driveConfidence = Math.max(0, (c.driveConfidence ?? c.params.driveConfidence) - c.params.stallConfidenceKnock);

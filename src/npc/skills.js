@@ -87,12 +87,12 @@ export class Skills {
     if (this.levels[id]) this.levels[id][skill] = clamp(level, 0, 1);
   }
 
-  /** She did it right by herself. */
-  practice(id, skill) {
+  /** She did it right by herself (`scale`: how much it counts for, 1 for an ordinary bit of practice). */
+  practice(id, skill, scale = 1) {
     const key = `${id}:${skill}:practice`;
     if (this.now - (this.lastCoached[key] ?? -Infinity) < this.p.practiceGap) return;
     this.lastCoached[key] = this.now;
-    this.set(id, skill, this.level(id, skill) + this.p.practiceGain);
+    this.set(id, skill, this.level(id, skill) + this.p.practiceGain * scale);
   }
 
   /**
