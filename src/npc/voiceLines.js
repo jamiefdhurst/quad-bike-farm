@@ -71,6 +71,7 @@ import { AMY_CAB_LINES } from './cabShelterLines.js';
 import { AMY_HEADSTART_LINES } from './headStartLines.js';
 import { AMY_GOSSIP_LINES } from './gossipLines.js';
 import { AMY_THROTTLE_LINES } from './throttleLines.js';
+import { AMY_NAP_LINES } from './napLines.js';
 import { AMY_PILLION_COACH_LINES } from './pillionCoachLines.js';
 import { AMY_LESSON_LINES } from './lessonLines.js';
 import { AMY_SMOKE_LINES } from './smokeLines.js';
@@ -1564,6 +1565,8 @@ export const VOICE_LINES = {
   ...AMY_GOSSIP_LINES,
   // A hand on your throttle from the back (throttleLines.js).
   ...AMY_THROTTLE_LINES,
+  // Waking up asleep on the back (napLines.js).
+  ...AMY_NAP_LINES,
   ...AMY_PILLION_COACH_LINES,
   ...AMY_LESSON_LINES,
   // Two-stroke smoke (smokeLines.js).

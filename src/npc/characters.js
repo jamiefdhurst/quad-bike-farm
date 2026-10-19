@@ -70,6 +70,7 @@ export const CHARACTERS = [
       needColdRise: 0.032, // feels the cold sooner (needs.js)
       needSleepRise: 0.0009, // sleepy later than Jess, and says she was only resting her eyes
       dozeWeight: 0.8,
+      napProne: 1.3, // drops off on a smooth ride, and says she only closed her eyes
       dozeMinds: 1, // and takes it badly if you wake her with a rev
     },
     lines: VOICE_LINES,
@@ -124,6 +125,7 @@ export const CHARACTERS = [
       needThrillRise: 0.003, // gets restless for a bit of excitement sooner (needs.js)
       needSleepRise: 0.0016, // up late, so sleepy sooner
       dozeWeight: 1.2,
+      napProne: 0.7, // too fidgety to sleep on a quad, mostly
       // Shorter than Amy and curvier: a fuller bust, a narrower waist and wider hips.
       height: 1.52,
       bust: 1.4,

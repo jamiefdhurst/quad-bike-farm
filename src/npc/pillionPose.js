@@ -63,6 +63,8 @@ export class PillionPose {
     this.glance = { kind: 'ahead', side: 1, left: 0, timer: 2 };
     this.lookBack = 0; // how much she's looking at you looking back at her
     this.grips = new WeakMap();
+    this.nap = 0; // 0..1: her head down on your shoulder and her grip going slack (backNap.js)
+    this.napSide = 1; // which shoulder it's on: 1 her left, -1 her right
     this.throttleReach = 0; // 0..1: her right hand going round you to your throttle grip (throttleGrab.js)
   }
 
@@ -174,6 +176,9 @@ export class PillionPose {
         }
       }
       if (free && (freeSide === 0 || freeSide === a.side)) want *= 1 - free;
+      // Asleep her grip goes slack: the hold eases off and the hands sag.
+      want *= 1 - 0.5 * this.nap;
+      _target.y -= 0.05 * this.nap;
       a.pos.lerp(_target, follow);
       a.weight += (want - a.weight) * follow;
     }
@@ -191,7 +196,7 @@ export class PillionPose {
     const looking = rider?.lookBack ?? 0;
     this.lookBack += ((looking > 0.6 ? 1 : 0) - this.lookBack) * Math.min(1, dt * p.headSpeed);
     let want = GLANCES.ahead;
-    if (rider) {
+    if (rider && this.nap < 0.2) {
       if (g.left > 0) {
         g.left -= dt;
         want = GLANCES[g.kind];
@@ -205,7 +210,7 @@ export class PillionPose {
     // Something has caught her eye (attention.js, set by the companion each frame): she turns to it instead, as far as sitting
     // behind you lets her. You she sees by looking back (above); gazing about is these glances already.
     const seen = this.attend;
-    if (seen && !['you', 'talking', 'about', 'focus', 'intent'].includes(seen.kind)) {
+    if (seen && this.nap < 0.2 && !['you', 'talking', 'about', 'focus', 'intent'].includes(seen.kind)) {
       const root = this.rig.root;
       const to = root.worldToLocal(_v.set(seen.x, seen.y, seen.z)).sub(root.worldToLocal(this.rig.bones.Head.getWorldPosition(_w)));
       const yaw = clamp(Math.atan2(to.x, to.z), -1.1, 1.1);
@@ -231,13 +236,14 @@ export class PillionPose {
     const seat = quad.pillionAnchor;
     const d = this.dynamics;
     const hold = smooth(this.together);
-    const lb = smooth(this.lookBack);
+    const lb = smooth(this.lookBack) * (1 - this.nap); // asleep she doesn't look at you
+    const nap = smooth(this.nap);
 
     // Upper body: lean into the corner, over to glance past you, forward into you
     // and with the braking, slumping as the bumps squash her.
     const roll = (d.roll.x + this.head.lean * (1 - lb)) * W;
     // She sits up off your back to look at you when you turn round.
-    const pitch = (d.pitch.x + hold * p.hugLean * (1 - 0.6 * lb) - d.heave.x * p.bounceSlump) * W;
+    const pitch = (d.pitch.x + hold * p.hugLean * (1 - 0.6 * lb) - d.heave.x * p.bounceSlump + nap * 0.2) * W;
     // Side-saddle her hips are turned to one side (companion.sideAngle); the back twists round to face forward again.
     const twist = -this.companion.sideAngle * this.companion.params.sideSaddleTwist * W;
     for (const [name, share] of SPINE) {
@@ -249,7 +255,8 @@ export class PillionPose {
 
     // Head: keep her eyes up rather than following the lean, then turn to look.
     let yaw = this.head.yaw * (1 - lb);
-    let lookPitch = this.head.pitch * (1 - lb) - pitch * 0.7;
+    // Her head drops forward onto your shoulder, tilted over to one side, instead of staying level.
+    let lookPitch = this.head.pitch * (1 - lb) - pitch * 0.7 - nap * 0.75;
     if (lb > 0.001) {
       const cam = this.lookAtAngles(quad.rider);
       if (cam) {
@@ -263,7 +270,7 @@ export class PillionPose {
     rig.rotateAboutRootAxis(b.Neck, AXIS_X, -lookPitch * 0.4 * W);
     rig.rotateAboutRootAxis(b.Head, AXIS_X, -lookPitch * 0.6 * W);
     // A little tilt into the corner, against the lean, keeps her eyes level.
-    rig.rotateAboutRootAxis(b.Head, AXIS_Z, roll * 0.5);
+    rig.rotateAboutRootAxis(b.Head, AXIS_Z, roll * 0.5 - this.napSide * nap * 0.3 * W);
 
     // Arms.
     const seatQ = seat.getWorldQuaternion(_q);

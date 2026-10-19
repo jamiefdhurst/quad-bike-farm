@@ -67,6 +67,7 @@ import { JESS_CAB_LINES } from './cabShelterLines.js';
 import { JESS_HEADSTART_LINES } from './headStartLines.js';
 import { JESS_GOSSIP_LINES } from './gossipLines.js';
 import { JESS_THROTTLE_LINES } from './throttleLines.js';
+import { JESS_NAP_LINES } from './napLines.js';
 import { JESS_PILLION_COACH_LINES } from './pillionCoachLines.js';
 import { JESS_LESSON_LINES } from './lessonLines.js';
 import { JESS_SMOKE_LINES } from './smokeLines.js';
@@ -510,6 +511,7 @@ export const JESS_LINES = {
   // Caught talking about you (gossipLines.js).
   ...JESS_GOSSIP_LINES,
   ...JESS_THROTTLE_LINES,
+  ...JESS_NAP_LINES,
   ...JESS_PILLION_COACH_LINES,
   ...JESS_LESSON_LINES,
   ...JESS_SMOKE_LINES,

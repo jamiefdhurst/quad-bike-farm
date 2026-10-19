@@ -42,6 +42,7 @@ import { Attention, DEFAULT_NOTICE_PARAMS } from './attention.js';
 import { reactingMethods } from './companionReacting.js';
 import { availabilityOf, JOBS } from './availability.js';
 import { Needs } from './needs.js';
+import { BackNap } from './backNap.js';
 import { firstThink } from './chooser.js';
 import { DEFAULT_DOZE_PARAMS, dozePose } from './dozing.js';
 import { Intent, walkPace } from './intent.js';
@@ -178,6 +179,7 @@ export class Companion {
     this.gripReach = 0; // how far her hands are on the grips, 0..1
     // Holding on, leaning and looking about while she rides pillion.
     this.pillion = new PillionPose(this);
+    this.nap = new BackNap(); // asleep on the back of a smooth ride (backNap.js); the game points it at the shared tuning
     this.content = new Contentment(); // what she likes about the quads: them running, the seat shaking her (contentment.js)
     this.sideSaddle = 0; // which way her legs hang on the back this ride: 0 astride, +1 her left, -1 her right (sideSaddle.js)
     this.forceBurn = false; // the debug panel: the next dismount is over the exhaust side and burns (exhaustBurn.js)
