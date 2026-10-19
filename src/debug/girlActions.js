@@ -210,6 +210,14 @@ export function girlActions(g) {
       },
     })),
     {
+      verb: 'answer-wave',
+      label: '% answers your wave (back, over or pulls up)',
+      run: (id) => {
+        const done = g.waveAtGirls({ force: true, only: id });
+        toast(done.length ? `${nameOf(id)}: ${done[0].kind}` : `${nameOf(id)} can't answer a wave now (too far off, or busy)`);
+      },
+    },
+    {
       verb: 'bang',
       label: 'Make a bang behind % (she should turn and look)',
       run: (id) => {

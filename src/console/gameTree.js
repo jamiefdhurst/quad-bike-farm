@@ -364,6 +364,9 @@ export function buildGameTree(g, host) {
     take: flag(() => false, (v) => v && g.photos.press(), 'set to true: raise the camera now'),
     clear: flag(() => false, (v) => v && g.photos.clear(), 'set to true: take every photo down'),
   }), 'the camera and the barn corkboard');
+  const waving = group(() => ({
+    wave: flag(() => false, (v) => v && g.waveAtGirls(), 'set to true: wave as if you had pressed 6'),
+  }), 'waving at the girls (key 6)');
   const towRope = group(() => ({
     now: text(() => { const r = g.towRope; return r.state === 'hooked' ? `${r.puller.unit?.label} to ${r.target.unit?.label}: ${r.tight ? `tight, ${Math.round(r.force)} N` : 'slack'}, ${r.length.toFixed(1)} m long` : r.state; }, 'where the tow rope is and how tight'),
     off: flag(() => false, (v) => v && g.towRope.stow(), 'set to true: take the rope off and put it back'),
@@ -396,6 +399,7 @@ export function buildGameTree(g, host) {
     generator,
     spares,
     photos,
+    waving,
     towRope,
     lens,
     kit,

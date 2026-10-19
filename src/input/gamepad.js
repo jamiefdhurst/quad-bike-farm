@@ -87,6 +87,7 @@ export const RADIAL_ITEMS = [
   { label: 'Wipe the lens', key: 'KeyX', where: 'ride' },
   { label: 'Tip / ramps', key: 'KeyT', where: 'foot' },
   { label: 'Push', key: 'KeyV', hold: 1.5, where: 'foot' },
+  { label: 'Wave', key: 'Digit6' },
   { label: 'Bucket list', key: 'Tab' },
   { label: 'Sound on/off', key: 'KeyN' },
 ];

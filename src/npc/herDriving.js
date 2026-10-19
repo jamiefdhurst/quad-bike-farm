@@ -529,6 +529,18 @@ export class HerDrive {
     this.satFor = this.between(0.8, 1.6);
   }
 
+  /** In a plain drive (not a race, a trick, a tidy-up or a ride for you): whether a wave from you can make her pull up for a bit. */
+  canWaveStop() {
+    return this.phase === 'drive' && !this.race && !this.doughnut && !this.jump && !this.showOff && !this.park && !this.follow && !this.waitForPassenger;
+  }
+
+  /** You waved: she brakes to a stop and waits `seconds`, then carries on with the drive (the wait doesn't count against its length). */
+  waveStop(seconds) {
+    if (!this.canWaveStop()) return false;
+    this.waveHold = seconds;
+    return true;
+  }
+
   finish(result) {
     if (this.doughnut) this.quad.churn = 0;
     this.quad.wheelie = 0;
@@ -696,6 +708,11 @@ export class HerDrive {
         break;
 
       case 'drive':
+        if (this.waveHold > 0) {
+          this.waveHold -= dt;
+          this.hold(c);
+          break;
+        }
         this.time += dt;
         this.tendChoke();
         this.drive(dt, speed);

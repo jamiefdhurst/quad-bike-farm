@@ -4370,3 +4370,12 @@ Settled with Jamie: the girls offer on their own through the chooser; one drill 
 - **Numbers (guesses, not judged by ear):** `voiceWobbleRef` 0.006 m of heave is a hard shake; `voiceWobbleCents` 45 of pitch swing and `voiceWobbleLevel` 0.22 of loudness at that, capped at twice the cents and 0.3 to 1.7 of the volume. A warm idle is 2 to 4 mm of heave, so it shows at about half strength; the green's 12 mm heave is clamped.
 - **Jess does it on purpose:** her `voiceWobbleDepth` is 2.4 (Amy 1). They are companion params, so each girl's are in the debug panel with the rest of hers.
 - **Not covered:** lines not yet recorded fall back to the browser's speech, which cannot be shaken. Not checked by ear.
+
+## Waving (issue #6, was TODO 111)
+
+- **What:** key `6` (`Digit6`, remappable, on the pad's radial menu) waves, on foot or from any seat. Each girl answers by how far off she is and what she is doing (`src/npc/playerWave.js`, pure, `tests/playerWave.test.js`): within `backRange` 30 m and stood about or walking she waves back (the existing `wave` reaction; Jess pulls a `face` instead half the time, which you will not see from where you stand); out to `callRange` 90 m a girl who is free to be asked (`generalRequests`, so soft jobs give way, the same test as the wheel's Come here) walks over; a girl in a plain drive pulls up for `driverWaits` 12 s and then carries on. Each girl answers once per `gap` 3 s.
+- **Why 6:** every letter key is taken, and 5 is already the camera.
+- **A driving girl waits, not stops:** `HerDrive.waveStop` holds her on the brakes in the `drive` phase and the wait does not count against the length of the drive, so she carries on afterwards. It does nothing in a race, doughnuts, a jump, showing off, tidying a quad, following or waiting for a passenger (`canWaveStop`). Asking her to stop from the wheel still ends the drive.
+- **No new lines:** coming over and pulling up reuse the wheel's "come" and "stop" lines (`voice.onRequest`), so nothing needed recording.
+- **Debug and console:** "Waving" tuning, "answers your wave" in each girl's "Make her do" (`girl amy answer-wave`), `waving.wave` in the console.
+- **Not done:** you have no waving arm (first person; nothing is drawn). The girls being rarely free (the issue noted it) limits how often a wave brings one over; that is a separate problem. Not checked in the running game: how it feels, or the wave from a moving quad.
