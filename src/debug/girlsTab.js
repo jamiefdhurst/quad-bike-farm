@@ -75,6 +75,7 @@ export function buildGirlsTab(d) {
     // --- The rest of what she is up to, and what she keeps.
     const st = f.addFolder('Her state');
     show(st, 'with her friend', () => g.pairState(id));
+    show(st, 'practising the clutch', () => g.practising.describe(id));
     show(st, 'waiting about', () => c.waitingText());
     show(st, 'numbness', () => (c.numbPlan ? `walking it off (${c.numbPlan.phase})` : `${round(c.numbness.value)} of 1`));
     show(st, 'drive somewhere', () => (c.drive?.trip ? `${c.drive.trip.name} (${c.drive.trip.stage === 'there' ? 'on the way' : 'on the way back'})` : 'no'));

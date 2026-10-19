@@ -321,6 +321,15 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'practise',
+      label: '% practises the clutch (on a parked manual: the picked vehicle if it has a clutch, else the nearest)',
+      vehicle: true,
+      run: (id, unit) => {
+        if (!free(id)) return;
+        toast(g.practiseNow(girl(id), unit) ? `${nameOf(id)} is off to practise` : `${nameOf(id)} can't find a parked manual with a free back seat`);
+      },
+    },
+    {
       verb: 'wait-ready',
       label: '% starts a quad and waits for you',
       run: (id) => {
