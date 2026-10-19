@@ -2369,6 +2369,7 @@ export class Game {
     const kinds = generalRequests({ state: c.fsm.name, avail: c.availability({ asked: true, pull: true }), youDistance: c.root.position.distanceTo(this.player.position) });
     const ask = (kind, run) => () => {
       c.interrupt();
+      this.leaveRides(c);
       run();
       c.voice.onRequest(kind);
     };
@@ -6957,6 +6958,16 @@ export class Game {
     return c.fsm.is('idle') && c.root.position.distanceTo(spot.point) < 2.5;
   }
 
+  /** Tells whichever ride she is in (a cab, the tractor's arch, the tipping trailer) that she is leaving, so it doesn't send her back. */
+  leaveRides(c) {
+    const t = c.trailer;
+    if (!t || !c.onHayRide) return;
+    const id = c.character.id;
+    for (const kind of ['utv', 'landy', 'defender', 'fiesta', 'corsa']) if (this.goVehicle(kind) && this.mountOfKind(kind) === t) this.rideOfKind(kind).dismiss(id);
+    if (t === this.tractorMount) this.mudguard.dismiss(id);
+    if (t === this.tipTrailer) this.tipRide.dismiss(id);
+  }
+
   /** Keeps at it until each is there (a girl mid-change gets another nudge), or two minutes have gone. */
   updateRecall(dt) {
     const r = this.recalling;
@@ -6967,7 +6978,10 @@ export class Game {
     this.companions.forEach((c, i) => {
       if (this.recallArrived(c, r.spots[i])) return;
       waiting = true;
-      if (r.nudge <= 0) c.recall(r.spots[i].point, r.spots[i].facing);
+      if (r.nudge <= 0) {
+        this.leaveRides(c);
+        c.recall(r.spots[i].point, r.spots[i].facing);
+      }
     });
     if (r.nudge <= 0) {
       r.nudge = 0.7;

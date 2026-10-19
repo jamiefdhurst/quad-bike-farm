@@ -207,6 +207,10 @@ export const hayRideStates = {
       data.leanK = 0;
       data.lie = false;
       data.phase = 'up';
+      if (this.leaveWhenUp) { // called away while she was climbing on: straight back down
+        this.leaveWhenUp = false;
+        data.leaving = true;
+      }
       this.hayFlailT = 0;
     },
     update(dt, data) {
@@ -262,6 +266,7 @@ export const hayRideStates = {
       this.rig.play('Idle', { fade: 0.15 });
       this.rig.legSpread = 0;
       this.freeTrailerSlot();
+      this.afterClimb = null; // the next nudge finds her on her feet
       this.hayFell = true;
     },
     update(dt, data) {
@@ -329,6 +334,9 @@ export function finishClimbDown(c, data, dt) {
   const facing = c.trailer.standPoint(c.traSlot.side, c.traSlot).facing;
   c.freeTrailerSlot();
   c.fsm.transition('idle', { facing });
+  const next = c.afterClimb; // called away from the seat (recallPlan.js): on her way now she's on the ground
+  c.afterClimb = null;
+  next?.();
 }
 
 hayRideMethods.climbDown = function (data, dt) {
