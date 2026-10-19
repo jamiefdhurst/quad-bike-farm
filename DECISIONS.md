@@ -4404,3 +4404,8 @@ Settled with Jamie: the girls offer on their own through the chooser; one drill 
 - At the place `showSight` (companionDriving.js) has her point (`startPointing`/`posePointing` in companionWaving.js: right arm out along the line to it, `pointSeconds` 3.5, with `attend` turning her head) and say the line. Gate and view lines are new (`sightLines.js`: `sightGo` setting off, `sightGate`, `sightView`); a quad left running reuses the `leftRunning*` lines, so she names whose it was.
 - Debug: "Taking you to see something" in the Tune tab (Girls: things they do); a `sight` action in each girl's "Make her do" (and `girl <name> sight`), which forces the next drive to a sight with or without you on the back.
 - Not checked in the running game: how the pointing arm looks from the seat behind her, or whether the view's stopping point (the ford) is a good place to look up from. Lines still to be recorded fall back to browser speech until the banks are rebuilt.
+
+## Every frame threw after asleep on the back (#260)
+
+- `c.nap.p = this.napParams` ran in the companion loop before `this.napParams` was made, so every nap had no params and `updateBackNaps` threw each frame, taking the rest of the farm's update (the chooser among it) with it. `napParams` is now made just before that loop.
+- `tests/backNap.test.js` checks a default `BackNap` updates, and that game.js makes the params before handing them out (game.js can't be built without a browser). A guard so one feature's error can't stop the rest of the frame is a separate discussion.

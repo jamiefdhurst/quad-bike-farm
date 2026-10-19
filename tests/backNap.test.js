@@ -95,3 +95,20 @@ describe('asleep on the back', () => {
     }
   });
 });
+
+describe('how the game wires the nap', () => {
+  it('a fresh nap updates without throwing, on and off the back', () => {
+    const n = new BackNap();
+    expect(() => run(n, smooth(), 5)).not.toThrow();
+    expect(() => run(n, { onBack: false }, 5)).not.toThrow();
+  });
+
+  it('game.js makes napParams before it hands them to the companions', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../src/game.js', import.meta.url), 'utf8');
+    const made = src.indexOf('this.napParams = ');
+    const used = src.indexOf('c.nap.p = this.napParams');
+    expect(made).toBeGreaterThan(-1);
+    expect(used).toBeGreaterThan(made);
+  });
+});

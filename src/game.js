@@ -763,6 +763,7 @@ export class Game {
     this.hiddenFrom = null; // where you were stood before you ducked into the hay
     const fine = () => isFine(this.weather.name, this.weather.rain, this.places.p);
     const spotTaken = (spot) => this.companions.some((o) => o.currentSpot()?.id === spot.id);
+    this.napParams = { ...DEFAULT_NAP_PARAMS }; // asleep on the back of a smooth ride (npc/backNap.js); made before the companions are wired to it
     for (const c of this.companions) {
       c.restStayFor = () => restStay(this.places.p);
       c.dozeParams = this.places.p;
@@ -901,7 +902,6 @@ export class Game {
     this.hearing = new Hearing();
     this.lessons = new Lessons(); // a girl on the back teaching you to drive a manual (npc/lessons.js)
     this.pillionCoach = new PillionCoach(); // the girl on the back coaching the girl driving (npc/pillionCoach.js)
-    this.napParams = { ...DEFAULT_NAP_PARAMS }; // asleep on the back of a smooth ride (npc/backNap.js)
     this.throttleGrab = new ThrottleGrab(); // a girl on the back opening it over your hand (npc/throttleGrab.js)
     this.smokeSense = new SmokeSense(); // Amy coughs at two-stroke smoke, Jess loves it (npc/smokeSense.js)
     // Racing: the girls race a lap of the track from a start line by the yard (npc/race.js).
