@@ -1651,7 +1651,7 @@ export class Game {
     this.console = new GameConsole(this);
 
     this.applyDebugCamera();
-    if (import.meta.env.DEV) window.game = this;
+    if (import.meta.env.DEV || location.search.includes('smoke')) window.game = this; // ?smoke lets tools/smoke.mjs drive the built game
     report('Settling…');
     this.restoreDay();
     await new Promise((r) => setTimeout(r, 0));
