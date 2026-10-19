@@ -4512,3 +4512,13 @@ Agreed with Jamie: four asks, answered from her wheel, and a no that depends on 
 ## The Version label check reads labels live (#266)
 
 `gh pr create --label` opens the PR and then adds the labels, so the `opened` event's payload had none and the check failed; a rerun reused that payload, and the passing `labeled` run didn't replace the failed one. The check now asks `gh pr view --json labels` for the current labels, so any run or rerun sees the truth, and a per-PR `concurrency` group with `cancel-in-progress` stops a late stale run overwriting a newer one. The remove-and-re-add workaround is gone from CLAUDE.md.
+
+## Jealousy as a need (#18, was TODO 123)
+
+Decided without asking, as the issue settles the shape: a new need, and neglect made out of it.
+
+- `attention` is a seventh need (`needs.js`, "your attention"). It rises `needJealousRise` 0.006 a second while her friend is within `needCloseRange` 6 m and you are not within `needAttentionRange` 8 m (about three minutes to full), 2.5 times faster (`needJealousFriend`) while you are within 8 m of her friend. It falls `needAttentionFall` 0.05 a second with you near her or her on your quad, fades `needAttentionFade` 0.004 a second with no friend near, and has two jumps: `needSlightBump` +0.2 when you talk to her friend with her stood there (beside the old favour loss), `needTalkEase` -0.3 when you talk to her.
+- The neglected switch is replaced. `Favour.standing` takes its negative side from `setWant` (her attention need, set each frame in `updateMinds`), so everything that read neglected (refusing, sulking, the snub, pranks, photos, voice lines, sulkDrive) now builds and fades with it. Favoured still comes from the scores. A bad phone call's mood (`moodDrag`) still pulls her down, and a girl whose friend is locked in by romance stays fully neglected, as before. Scores can still go negative (they still feed her friend's standing), but a low score alone no longer makes her neglected.
+- Showing off and pranks likelier: nine offer kinds meet `attention` in `OFFER_KINDS` (showOff 1, prank 0.8, favour 0.8, conker, dare, raceDare, dragDare 0.6, nick and snub 0.5), so a jealous girl scores them higher; the pranks module's `neglectedBoost` stays on top.
+- Shown in Why as a slider and in the console as `girl.<name>.needs.attention`; the `needJealous*`, `needAttention*`, `needSlightBump` and `needTalkEase` params are in each girl's Tune group. Not saved, like the other needs.
+- Not checked: how long a jealous spell lasts in a real game, or by eye. The numbers are first guesses; the girls' own rates (Jess vs Amy) are the same for now.
