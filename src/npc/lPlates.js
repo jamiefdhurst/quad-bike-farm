@@ -7,6 +7,8 @@
 //   amyPeel    Amy takes them off, and they're gone for a while
 //   amyStick   Amy, confident now, tapes them to the tractor: they stay there
 
+import { DRIVING_SKILLS } from './skills.js';
+
 export const DEFAULT_LPLATE_PARAMS = {
   firstAfter: 120, // seconds into the game before Jess first makes them
   tapeWeight: 1, // how keen Jess is to tape them on, once she can (chooser.js weighs it)
@@ -31,7 +33,7 @@ export const LPLATE_PARAM_RANGES = {
 
 /** How good a driver she is overall: the mean of her skill levels ({ starting, choke, cornering, mud }). */
 export function meanSkill(levels) {
-  const v = Object.values(levels ?? {});
+  const v = DRIVING_SKILLS.filter((k) => k in (levels ?? {})).map((k) => levels[k]);
   return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0.5;
 }
 

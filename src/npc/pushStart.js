@@ -40,12 +40,14 @@ export function pushAccel(force, mass, p = DEFAULT_PUSH_PARAMS) {
 
 export class PushStart {
   /** @param {object} quad  engine, forwardSpeed, rider. @param {string} who 'amy' or 'jess'. @param {number} mass kg */
-  constructor(quad, who, mass, { random = Math.random, params = DEFAULT_PUSH_PARAMS } = {}) {
+  constructor(quad, who, mass, { random = Math.random, params = DEFAULT_PUSH_PARAMS, skill = 0.5 } = {}) {
     this.quad = quad;
     this.p = params;
     this.random = random;
     this.jess = who === 'jess';
-    const force = params.force * (this.jess ? 1 : params.amyShare);
+    // How well she knows it (her bumpStart skill): 0.5 is as she always pushed, a novice shoves at half strength and tires in half the time.
+    this.effort = Math.min(1.5, Math.max(0.5, 0.5 + skill));
+    const force = params.force * (this.jess ? 1 : params.amyShare) * this.effort;
     this.thrust = pushAccel(force, mass, params);
     this.time = 0;
     this.travelled = 0;
@@ -92,7 +94,7 @@ export class PushStart {
       if (this.keptRunning >= p.settle) this.finish('running');
       return this.events;
     }
-    if (this.time > (this.jess ? p.jessTime : p.amyTime) || this.travelled > p.maxDistance) {
+    if (this.time > (this.jess ? p.jessTime : p.amyTime) * this.effort || this.travelled > p.maxDistance) {
       this.events.push('tired');
       this.finish('tired');
       return this.events;

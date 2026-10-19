@@ -342,6 +342,22 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'watch-bump-start',
+      label: '% watches you bump-start (do it within the time: she has to be looking)',
+      run: (id) => {
+        if (!free(id)) return;
+        toast(g.startWatching(girl(id), 'bumpStart') ? `${nameOf(id)} is watching for a bump-start` : 'Nothing to watch');
+      },
+    },
+    {
+      verb: 'watch-double-declutch',
+      label: '% watches you double-declutch (a gear with no synchromesh, on the move)',
+      run: (id) => {
+        if (!free(id)) return;
+        toast(g.startWatching(girl(id), 'doubleDeclutch') ? `${nameOf(id)} is watching for a double-declutch` : 'Nothing to watch');
+      },
+    },
+    {
       verb: 'practise',
       label: '% practises the clutch (on a parked manual: the picked vehicle if it has a clutch, else the nearest)',
       vehicle: true,

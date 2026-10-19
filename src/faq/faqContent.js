@@ -1119,9 +1119,17 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Can I teach them to ride better?',
-        a: `Yes. Each is better or worse at starting, the choke, cornering and mud. Riding on the back while she drives, the wheel has "Coach her" when there's
+        a: `Yes. Each is better or worse at starting, the choke, cornering and mud (and at bump-starting and double-declutching, which you teach by showing her). Riding on the back while she drives, the wheel has "Coach her" when there's
           something to coach. Advice at the right moment teaches her a good step; the same advice again straight away is nagging and annoys her. They also
           coach each other when they share a quad.`,
+      },
+      {
+        q: 'How do I show her how to bump-start or double-declutch?',
+        a: `Stand or ride near her while she is stood about, and open her wheel (<kbd>E</kbd> on her). "Watch me bump-start it" shows when you are on a manual with a
+          dead engine, and "Watch me double-declutch" when you are on a Land Rover or other box with no synchromesh in first and second. She turns to look; then do it
+          (the bump-start FAQ above, or neutral, clutch up, rev to match, clutch down). If she was looking while you did it she picks it up in one go, and
+          she says so. If something else caught her eye she says she missed it, and you can ask again. She gives up after about 45 seconds if you do nothing.
+          What she knows shows: a girl who has learnt to bump-start pushes harder and for longer, and one who has learnt to double-declutch stops grinding the gears.`,
       },
       {
         q: 'Can the girls teach me to drive a manual?',

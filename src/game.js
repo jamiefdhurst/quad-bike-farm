@@ -202,6 +202,7 @@ import { dozeStay } from './npc/dozing.js';
 import { SnoreAudio } from './audio/snoreAudio.js';
 import { Requests, REQUEST_PARAM_RANGES } from './npc/requests.js';
 import { Skills, SKILL_PARAM_RANGES, COACHING } from './npc/skills.js';
+import { Watching, WATCH_PARAM_RANGES, WATCH_THINGS } from './npc/watching.js';
 import { Banter } from './npc/banter.js';
 import { RideOffer, pickOfferer } from './npc/rideOffer.js';
 import { BANTER } from './npc/banterLines.js';
@@ -732,6 +733,9 @@ export class Game {
         c.voice.onPractice(skill);
       };
     }
+
+    // Showing her how (npc/watching.js): she's asked to watch, and learns it if she was looking when you did it.
+    this.watching = new Watching();
 
     // Places to be: sitting on the bales or fence on a fine day, in the barn doorway when it rains (npc/places.js).
     this.places = new Places();
@@ -1633,6 +1637,7 @@ export class Game {
     registerTuning('Reading the dash', this.dashReader.p, READING_PARAM_RANGES);
     registerTuning('Jump leads', this.leads.params, JUMP_LEAD_PARAM_RANGES);
     registerTuning('Skills', this.skills.p, SKILL_PARAM_RANGES);
+    registerTuning('Watching you', this.watching.p, WATCH_PARAM_RANGES);
     registerTuning('Places', this.places.p, PLACE_PARAM_RANGES);
     registerTuning('Hayloft', this.loftParams, LOFT_PARAM_RANGES);
     registerTuning('Wind', this.wind.p, WIND_PARAM_RANGES);
@@ -2340,6 +2345,75 @@ export class Game {
    * vehicleGoLines.js). On the UTV and the Land Rover the other girl may climb in beside her; on the Land Rover with a flat battery she
    * swings the starting handle first (npc/crankAttempt.js).
    */
+  /** What you can show her from where you are: bump-starting a dead manual, double-declutching on a box with no synchromesh. */
+  watchableNow() {
+    const q = this.riddenUnit?.quad;
+    if (!q || !this.player.isRiding) return [];
+    const out = [];
+    if (q.manual && !q.engine.isRunning) out.push('bumpStart');
+    if (q.manual && (q.gearbox?.crashGears ?? 0) > 0 && q.engine.isRunning) out.push('doubleDeclutch');
+    return out;
+  }
+
+  /** The wheel's "Watch me" slices: she's stood about near you and there's something to show. */
+  watchWheelOptions(c) {
+    if (!this.askable(c, ['idle']) || c.root.position.distanceTo(this.player.position) > this.watching.p.watchRange) return [];
+    return this.watchableNow().map((thing) => ({ label: WATCH_THINGS[thing].label, run: () => this.startWatching(c, thing) }));
+  }
+
+  /** She's asked to watch for `thing` (no check that you can do it: the debug panel starts it from anywhere). She holds still and looks. */
+  startWatching(c, thing) {
+    if (!this.watching.begin(c.character.id, thing)) return false;
+    c.hold('watching', 'watching you');
+    c.voice.say('watchOk', { force: true });
+    return true;
+  }
+
+  /** Where she should be looking while she watches: your quad if you're on one, else you. */
+  watchPoint() {
+    const q = this.player.isRiding ? this.riddenUnit?.quad : null;
+    return q ? { x: q.position.x, y: q.position.y + 0.8, z: q.position.z } : { x: this.player.position.x, y: this.player.position.y + 1.2, z: this.player.position.z };
+  }
+
+  /** Each frame while a girl watches: she turns to look, and when you do the thing she learns it, if she was looking. */
+  updateWatching(dt) {
+    if (!this.watching.sessions.size) return;
+    const girl = (id) => this.companions.find((c) => c.character.id === id);
+    const at = this.watchPoint();
+    const ridden = this.riddenUnit?.quad;
+    const looking = (id) => {
+      const c = girl(id);
+      const k = c?.lookPick;
+      if (!k) return false;
+      return k.key === 'focus' || k.key === 'you' || (ridden && k.key === `vehicle:${this.riddenUnit.id}`);
+    };
+    for (const id of this.watching.sessions.keys()) {
+      const c = girl(id);
+      if (!c || !c.fsm.is('idle')) {
+        this.watching.cancel(id);
+        c?.release('watching');
+      } else c.attend(at, { weight: this.watching.p.watchWeight, seconds: 0.3 });
+    }
+    const done = [];
+    for (const e of this.watching.update(dt, looking)) done.push(e);
+    const eng = ridden?.engine;
+    if (eng?.caughtBy === 'roll' && eng.events.some((ev) => ev.type === 'caught')) done.push(...this.watching.shown('bumpStart').map((r) => ({ ...r, type: 'shown' })));
+    if (ridden?.declutched) {
+      ridden.declutched = false;
+      done.push(...this.watching.shown('doubleDeclutch').map((r) => ({ ...r, type: 'shown' })));
+    }
+    for (const e of done) {
+      const c = girl(e.id);
+      if (!c) continue;
+      c.release('watching');
+      if (e.type === 'gaveUp') c.voice.say('watchGaveUp', { force: true });
+      else if (this.skills.watch(e.id, e.skill, e.saw) === 'learnt') {
+        this.favour.add(e.id, this.skills.p.taughtFavour);
+        c.voice.say('watchLearnt', { force: true });
+      } else c.voice.say('watchMissed', { force: true });
+    }
+  }
+
   /** What a girl says as she pushes your vehicle for a bump-start (npc/pushStart.js, pushLines.js). */
   updatePushStart() {
     const mine = this.riddenUnit?.quad.engine;
@@ -9069,6 +9143,7 @@ export class Game {
     const options = actions.filter((a) => !a.quad).map((a) => ({ label: a.label, run: answer(a) }));
     const push = this.pushStartOption(c);
     if (push) options.push(push);
+    options.push(...this.watchWheelOptions(c));
     const tow = this.towSteerOption(c);
     if (tow) options.push(tow);
     options.push(...general);
@@ -10044,6 +10119,7 @@ export class Game {
     this.guard.run('updateCars', () => this.updateCars(dt)); // (minding you taking her car is a reaction, so it runs with the girls on hold too)
     this.guard.run('updateLPlates', () => this.updateLPlates(dt));
     this.guard.run('updatePushStart', () => this.updatePushStart());
+    this.guard.run('updateWatching', () => this.updateWatching(dt));
     this.guard.run('updateQuadTalk', () => this.updateQuadTalk(dt, ridden));
     this.guard.run('updateWarming', () => this.updateWarming(dt));
     if (auto || this.sulking.who) this.guard.run('updateCabShelter', () => this.updateCabShelter(dt, !auto));

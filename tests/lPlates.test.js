@@ -71,7 +71,7 @@ describe('Amy and the plates', () => {
 
 describe('meanSkill', () => {
   it('averages her levels', () => {
-    expect(meanSkill({ a: 0.2, b: 0.6 })).toBeCloseTo(0.4);
+    expect(meanSkill({ starting: 0.2, mud: 0.6 })).toBeCloseTo(0.4);
     expect(meanSkill(undefined)).toBe(0.5);
   });
 });

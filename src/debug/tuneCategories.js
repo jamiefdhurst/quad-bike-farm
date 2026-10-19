@@ -16,7 +16,7 @@ export const TUNE_CATEGORIES = {
     'Lining them up', 'Places', 'Tea on the rack', 'Flask at the top of the hill', 'Sitting by the bonfire', 'Jumpers', 'Wax jackets', 'Helmets and goggles', 'L plates', 'Quad names', 'Whose quad', 'The two as a pair', 'Asking you along',
   ],
   'Girls: how they feel about you': [
-    'Favour', 'Favours asked', 'Falling out', 'Romance', 'Talking about you', 'Pranks', 'Achievements', 'Who wore it out', 'Skills', 'Nicking your quad', 'Sulking in the cab',
+    'Favour', 'Favours asked', 'Falling out', 'Romance', 'Talking about you', 'Pranks', 'Achievements', 'Who wore it out', 'Skills', 'Watching you', 'Nicking your quad', 'Sulking in the cab',
     'Left running', 'Ready and waiting', 'Waving', 'Shouting a fault', 'Reading the dash', 'Rev-offs', 'Drowning out', 'Horns', 'Head start', 'Sitting while it warms', 'Minding a fix', 'Numb bum', 'Comparing notes', 'Hand on the throttle', 'Asleep on the back', 'Girls coaching each other', 'Driving lessons',
   ],
   'Girls: things they do': [
