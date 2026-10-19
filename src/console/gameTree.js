@@ -200,6 +200,7 @@ export function buildGameTree(g, host) {
       free: text(() => { const a = c().availability(); return a.free ? 'yes' : `no: ${a.why}`; }),
       lookingAt: text(() => c().attention.describe()),
       needs: group(() => Object.fromEntries(NEEDS.map((n) => [n, num(() => c().needs[n], (v) => (c().needs[n] = v), 0, 1, '', `how much she wants ${NEED_LABELS[n]} (0 met, 1 pressing)`)]))),
+      mood: num(() => c().mood.value, (v) => (c().mood.value = v), -1, 1, '', 'how she has been feeling lately (-1 low, 1 high); it eases towards how her needs have been'),
       chose: text(() => describeMind(c().mind).chose),
       nearlyChose: text(() => describeMind(c().mind).nearly),
       thinking: text(() => describeMind(c().mind).next),

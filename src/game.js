@@ -4093,6 +4093,8 @@ export class Game {
     for (const c of this.companions) {
       const ctx = this.needsContext(c);
       c.needs.update(dt, ctx, c.params);
+      const swing = c.mood.update(dt, c.needs, ctx, c.params);
+      if (swing && c.availability().canRemark) c.voice.say(swing === 'low' ? 'moodLow' : 'moodHigh', { chance: 1 });
       c.wetNow = ctx.wet;
       // What the day is doing, for the ways she waits about (npc/waiting.js): the cold, the sun, a shower coming on.
       const w = this.weather;
@@ -4118,7 +4120,7 @@ export class Game {
       // Something you stopped her doing is still on her mind, so she's keener on it for a while (npc/intent.js).
       // Sleepy, she can't be bothered with anything but a doze (companionParams: sleepyLazy).
       const lazy = 1 - c.params.sleepyLazy * c.needs.sleep;
-      let offers = this.offersFor(c, ridden).map((o) => ({ ...o, weight: o.weight * c.intent.boost(o.key, c.params) * (o.key === 'doze' || OFFER_KINDS[o.key]?.urgent ? 1 : lazy) }));
+      let offers = this.offersFor(c, ridden).map((o) => ({ ...o, weight: o.weight * c.intent.boost(o.key, c.params) * (o.key === 'doze' || OFFER_KINDS[o.key]?.urgent ? 1 : lazy * c.mood.keen(c.params)) }));
       if (sitting) offers = offers.filter((o) => OFFER_KINDS[o.key]?.fromSeat);
       else if (urgentOnly) offers = offers.filter((o) => OFFER_KINDS[o.key]?.urgent);
       const { pick, scored } = choose(c.needs, offers, c.params);
@@ -8953,7 +8955,7 @@ export class Game {
     this.hud.toggleHelp(false);
     // Whatever you ask her takes her from what she was on her way to, and she says so (npc/intent.js).
     if (her) {
-      const interrupting = (list) => list.map((o) => ({ ...o, ...(o.run ? { run: (...a) => (her.interrupt(), o.run(...a)) } : {}), ...(o.children ? { children: interrupting(o.children) } : {}) }));
+      const interrupting = (list) => list.map((o) => ({ ...o, ...(o.run ? { run: (...a) => (her.interrupt(), her.answerAsked(), o.run(...a)) } : {}), ...(o.children ? { children: interrupting(o.children) } : {}) }));
       options = interrupting(options);
     }
     this.talkingTo = her; // only she answers, and only she stops what she was about to do

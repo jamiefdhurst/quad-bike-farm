@@ -46,6 +46,7 @@ import { BackNap } from './backNap.js';
 import { firstThink } from './chooser.js';
 import { DEFAULT_DOZE_PARAMS, dozePose } from './dozing.js';
 import { Intent, walkPace } from './intent.js';
+import { Mood } from './mood.js';
 import { standBy, tagPoint } from './pair.js';
 
 const AXIS_Y = new THREE.Vector3(0, 1, 0);
@@ -152,6 +153,7 @@ export class Companion {
     this.mind = { thinkIn: firstThink(this.params.thinkEvery), last: null, since: 0, scored: [], waiting: null };
     // What she's set on (intent.js): how she walks to it, and whether you've stopped her on her way.
     this.intent = new Intent();
+    this.mood = new Mood(); // how she's been feeling over the last few minutes (mood.js)
     this.pace = null; // the chosen thing's pace for the walk to it ('hurry', 'brisk', 'dawdle'), cleared when the walk ends
     this.paceMul = 1;
     this.wetNow = false; // it's raining on her (the game sets it with her needs)
@@ -1309,6 +1311,11 @@ export class Companion {
     return key;
   }
 
+  /** You've asked her something: in a low mood she's short about it (mood.js). */
+  answerAsked() {
+    if (this.mood.state === 'low') this.voice?.say('moodCurt', { urgent: true, chance: this.params.moodCurtChance });
+  }
+
   /** A feature has her for a while (`why` says what for, for the debug panel): she isn't free until it lets her go. */
   hold(key, why) {
     this.holds.set(key, why);
@@ -1616,7 +1623,7 @@ export const STATES = {
     },
     update(dt, data) {
       // How she walks: the pace of what she chose, the rain, how tired or keyed up she is (intent.js).
-      const pace = walkPace(this.pace, { wet: this.wetNow, tired: this.needs.rest, excited: this.needs.excitement }, this.params);
+      const pace = walkPace(this.pace, { wet: this.wetNow, tired: this.needs.rest, excited: this.needs.excitement, mood: this.mood.pace(this.params) }, this.params);
       this.paceMul = pace.mul;
       this.mayJog = pace.jog === 'auto' ? data.goal !== 'prank' && data.goal !== 'wander' : pace.jog === 'yes';
       if (this.lookLeadLeft > 0) {

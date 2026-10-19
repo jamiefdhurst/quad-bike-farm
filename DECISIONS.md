@@ -2846,6 +2846,17 @@ Built as planned above, with these changes and numbers.
 - Checked: tests (the moved features' tests now check their offers and that they never start on their own; needs and the chooser have their own; the old boredom picker's tests in five files now go through the odds and the chooser). Headless against a worktree of the code before, same seeds: on a fine day the girls take something up about four times in two minutes between them, against two or three before (livelier, and within the spread from run to run); in the rain Amy left a quad for the barn doorway and Jess got into a cab within a minute, where before both were still starting quads; on a cold day with a quad left idling near them Jess went and warmed her hands on it, as before; no errors. The Why folder and console values checked headless. Not checked: a long game end to end, and how the sliders feel in play.
 - Still on their own dice (later stages, as the plan lists): the rides together, pranks, rev-offs, vehicles taken for a go, the head start, nicking your quad, the jumpers, the red diesel mistake, the rock prank, falling out, the romance, the L plates, nicknames and quad talk, comparing notes, sulking, waiting ready, keeping a sick one alive, and getting bored on the back of a quad.
 
+## Moods that last (#14, was TODO 119)
+
+Jamie's answers: all three effects (pace, keenness, lines); the lines as a remark on tipping into a spell plus a curt wheel answer; a modest effect, never a refusal.
+
+- `src/npc/mood.js` (pure, tested in `tests/mood.test.js`): one value per girl from -1 to 1. It eases (180 s time constant, `moodSeconds`) towards `moodBase` 0.2 minus `moodUnease` 1.6 times her unease, the weighted mean of her warmth (1), something-to-do (1), excitement (0.8), company (0.8) and rest (0.5) needs; being with someone adds 0.15 and warming up on a cold day 0.15. A fast ride also lifts it straight away (`moodThrillLift` 0.012 a second at full thrill, so a minute flat out is about +0.7). Nothing new for Amy and Jess to differ: Amy's cold need rises faster and Jess's excitement, so their moods fall in those weathers.
+- Named `mood`, but it is neither the favour mood (`favour.js`, how she rates you) nor the driving mood (`driveMood.js`). Not saved: DECISIONS ("A farm that remembers") says moods don't carry, and this one is minutes long.
+- Effects: walking speed times 1 plus or minus `moodPace` 0.15 (`walkPace`'s `mood`); the weight of every offer that is not urgent times 0.7 at the bottom (`moodKeenLow`) and 1.15 at the top (`moodKeenHigh`), next to the sleepy `lazy` factor in `updateMinds`, so shelter from the rain is untouched; lines.
+- Lines (`mindLines.js`, four each per girl, recorded): `moodLow` and `moodHigh` when she tips into a spell (below -0.35 or above 0.45, with 0.2 of give on the way out, at most once in `moodRemarkGap` 240 s, only if she can remark), and `moodCurt` ("Fine.", "What.") on opening the wheel for her in a low spell (`moodCurtChance` 0.6, through `companion.answerAsked()`). It never refuses a request.
+- Debug: "Why" has a settable `mood` slider and `feeling`; the console has `girl.<name>.mood`. The `mood*` params are in each girl's Tune group.
+- Not checked: how the low and high spells feel over a long game, or by eye.
+
 ## Going about it (TODO 135)
 
 What a girl does once the chooser has picked, in `src/npc/intent.js` (pure, tested).

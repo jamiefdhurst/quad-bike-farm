@@ -127,6 +127,19 @@ export const DEFAULT_COMPANION_PARAMS = {
   paceExcited: 1.1, // and when she's as keyed up as she gets
   resumeFor: 120, // seconds she stays keen on something you stopped her on her way to
   resumeBoost: 1.8, // and how much keener
+  moodSeconds: 180, // how slowly her mood follows how her needs have been (mood.js): about this many seconds to settle
+  moodBase: 0.2, // where it settles with nothing wanted
+  moodUnease: 1.6, // how far pressing needs pull it down (cold and bored most)
+  moodCompany: 0.15, // and being with someone lifts the level it settles at
+  moodWarm: 0.15, // and so does warming up on a cold day
+  moodThrillLift: 0.012, // per second at full thrill, a good ride lifts it straight away
+  moodLowAt: -0.35, // below this she's in a low spell (short with you, slower, less keen)
+  moodHighAt: 0.45, // above this a high one
+  moodPace: 0.15, // times her walking speed at the extremes (1 plus or minus this)
+  moodKeenLow: 0.7, // times how keen she is on anything not urgent, in the lowest mood
+  moodKeenHigh: 1.15, // and in the highest
+  moodRemarkGap: 240, // seconds between her remarking on a change in mood
+  moodCurtChance: 0.6, // chance she answers you shortly when you ask her something in a low mood
   needBusyFall: 0.05, // something to do: per second it fades while she's busy (it builds at her boredom wait's pace while she stands about)
   wanderFarChance: 0.25, // a longer stroll, two and a half times as far
   boredRestChance: 0.35, // on a fine day, goes and sits on the bales or the fence (weighed against the others; only when there's a spot)
@@ -422,6 +435,19 @@ export const COMPANION_PARAM_RANGES = {
   paceExcited: [1, 2, 0.05],
   resumeFor: [0, 600, 10],
   resumeBoost: [1, 5, 0.1],
+  moodSeconds: [10, 900, 10],
+  moodBase: [-0.5, 1, 0.05],
+  moodUnease: [0, 3, 0.05],
+  moodCompany: [0, 0.5, 0.01],
+  moodWarm: [0, 0.5, 0.01],
+  moodThrillLift: [0, 0.1, 0.001],
+  moodLowAt: [-1, 0, 0.05],
+  moodHighAt: [0, 1, 0.05],
+  moodPace: [0, 0.4, 0.01],
+  moodKeenLow: [0.2, 1, 0.05],
+  moodKeenHigh: [1, 2, 0.05],
+  moodRemarkGap: [0, 900, 10],
+  moodCurtChance: [0, 1, 0.05],
   needBusyFall: [0, 0.5, 0.005],
   boredJoinChance: [0, 2, 0.05],
   pairWeight: [0, 3, 0.05],

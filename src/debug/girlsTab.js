@@ -59,6 +59,8 @@ export function buildGirlsTab(d) {
     // --- Why she does what she does: what she wants (settable) and what she chose for it (npc/needs.js, npc/chooser.js).
     const why = f.addFolder('Why');
     for (const n of NEEDS) slider(why, `wants ${NEED_LABELS[n]}`, () => c.needs[n], (v) => (c.needs[n] = v), 0, 1, 0.01);
+    slider(why, 'mood', () => c.mood.value, (v) => (c.mood.value = v), -1, 1, 0.01);
+    show(why, 'feeling', () => c.mood.describe());
     show(why, 'chose', () => describeMind(c.mind).chose);
     show(why, 'nearly chose', () => describeMind(c.mind).nearly);
     show(why, 'next', () => describeMind(c.mind).next);
