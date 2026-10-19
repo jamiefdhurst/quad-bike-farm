@@ -31,6 +31,7 @@ import { JESS_WAX_LINES } from './waxLines.js';
 import { JESS_DIAGNOSIS_LINES } from './diagnosisLines.js';
 import { JESS_THRASH_LINES } from './thrashLines.js';
 import { JESS_LEFT_LINES } from './leftRunningLines.js';
+import { JESS_SIGHT_LINES } from './sightLines.js';
 import { JESS_DRIP_LINES } from './dripLines.js';
 import { JESS_CONTENT_LINES } from './contentLines.js';
 import { JESS_HISTORY_LINES } from './historyLines.js';
@@ -473,6 +474,7 @@ export const JESS_LINES = {
   ...JESS_DIAGNOSIS_LINES,
   ...JESS_THRASH_LINES,
   ...JESS_LEFT_LINES,
+  ...JESS_SIGHT_LINES,
   ...JESS_DRIP_LINES,
   ...JESS_CONTENT_LINES,
   ...JESS_HISTORY_LINES,

@@ -216,6 +216,9 @@ export class Companion {
     // Waving two-stroke smoke away (companionWaving.js).
     this.waving = null;
     this.rig.posers.push((dt) => this.poseWaving(dt));
+    // Pointing at what she's brought you to see (companionWaving.js).
+    this.pointing = null;
+    this.rig.posers.push((dt) => this.posePointing(dt));
     // Stuck out in the field, waving for you (companionStranded.js).
     this.stranded = null;
     this.strandedParams = null; // the game swaps in its tunable copy

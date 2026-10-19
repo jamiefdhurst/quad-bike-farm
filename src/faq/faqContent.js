@@ -793,6 +793,18 @@ export const FAQ_SECTIONS = [
         tip: 'Hear her voice shake with the seat: let a rough, cold engine idle with her on the back.',
       },
       {
+        q: 'Why has she stopped and pointed at something while driving me?',
+        a: `She has brought you to see it. With you on the back, a drive sometimes has somewhere to go: a gate that is usually shut and has been left open, the view up the
+          hill, or a quad someone left running. She drives there by the gateways, pulls up short, looks, points and says why, then drives you back to where you got on.
+          It needs something to show, so a farm with every gate shut and no quad left idling means the view, or just her usual loops.`,
+        tip: 'Sit on the back of a quad and wait for a ride: she may take you to see something and point it out.',
+      },
+      {
+        q: 'How do I get a girl to show me something?',
+        a: `Sit on the back of a parked quad (<kbd>B</kbd> on it) and let one of them come and drive you. Most of her drives with you aboard go to see something when there
+          is something to see. Leave the big gate open, or a quad running with nobody on it for a minute or two, and that is what she is likelier to take you to.`,
+      },
+      {
         q: 'Why has the girl on the back gone quiet with her head on my shoulder?',
         a: `She has dropped off. On a long smooth ride (a steady speed, no hard braking, an engine with a low even beat) the girl on the back grows drowsy, her head drops
           onto your shoulder (look back to see it), her grip goes slack and she stops talking. Amy nods off more easily than Jess, and a sleepy girl sooner than a rested one.

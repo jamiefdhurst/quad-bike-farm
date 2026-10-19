@@ -21,6 +21,32 @@ export const wavingMethods = {
     if (this.fsm.is('idle')) this.waving = { left: seconds, total: seconds, t: 0 };
   },
 
+  /** Holds her right arm out at `at` ({ x, y, z }) for `seconds`, and looks at it: showing you something (sights.js). Driving or stood about. */
+  startPointing(at, seconds) {
+    this.pointing = { at, left: seconds, t: 0 };
+    this.attend(at, { weight: 4, seconds });
+  },
+
+  /** Right arm out at what she's showing you, hand and arm following the line from her shoulder. Runs as a rig poser. */
+  posePointing(dt) {
+    const w = this.pointing;
+    if (w && (!(this.fsm.is('idle') || this.fsm.is('driving')) || (w.left -= dt) <= 0)) this.pointing = null;
+    const want = this.pointing ? 1 : 0;
+    this.pointReach = (this.pointReach ?? 0) + (want - (this.pointReach ?? 0)) * Math.min(1, dt * 5);
+    if (this.pointReach < 0.01) return;
+    if (this.pointing) this.pointAt = this.pointing.at;
+    const b = this.rig.bones;
+    const root = this.root;
+    root.updateMatrixWorld(true);
+    b.RightArm.getWorldPosition(_shoulder);
+    _target.set(this.pointAt.x, this.pointAt.y, this.pointAt.z).sub(_shoulder).setY(0).normalize().multiplyScalar(0.62).add(_shoulder);
+    _target.y += 0.12; // a little above the shoulder, like a point
+    // Elbow out and down, away from her body.
+    _pole.copy(_shoulder);
+    _pole.y -= 0.3;
+    solveTwoBone(b.RightArm, b.RightForeArm, b.RightHand, _target, _pole, smooth(Math.min(1, this.pointReach)));
+  },
+
   /** Right hand swinging to and fro in front of her face. Runs as a rig poser. */
   poseWaving(dt) {
     const w = this.waving;
