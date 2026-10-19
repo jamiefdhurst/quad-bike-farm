@@ -27,6 +27,7 @@ export const ACTIONS = [
     ['KeyJ', 'Hook a trailer on or off'],
     ['KeyL', 'Horn (hold)'],
     ['Digit5', 'Raise the camera'],
+    ['Digit6', 'Wave'],
   ] },
   { group: 'Engine and gearbox', keys: [
     ['KeyK', 'Ignition, key'],

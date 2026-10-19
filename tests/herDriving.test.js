@@ -521,3 +521,43 @@ describe('her driving: an outing', () => {
     expect(d.trip).toBeNull();
   });
 });
+
+describe('her driving: a wave from you', () => {
+  function drivingFor(seed, secondsFirst) {
+    const quad = fakeQuad();
+    const d = new HerDrive(quad, { params: P, probe: () => Infinity, isClear: open, random: seededRandom(seed) });
+    quad.driver = d;
+    for (let t = 0; t < secondsFirst && d.phase !== 'drive'; t += DT) {
+      d.update(DT);
+      quad.step(DT);
+    }
+    return { quad, d };
+  }
+  const tick = (quad, d, seconds) => {
+    for (let t = 0; t < seconds; t += DT) {
+      d.update(DT);
+      quad.step(DT);
+    }
+  };
+
+  it('pulls up, waits, then carries on with the drive', () => {
+    const { quad, d } = drivingFor(4, 60);
+    expect(d.phase).toBe('drive');
+    tick(quad, d, 10); // up to speed
+    expect(Math.abs(quad.forwardSpeed)).toBeGreaterThan(0.5);
+    expect(d.waveStop(8)).toBe(true);
+    tick(quad, d, 6);
+    expect(Math.abs(quad.forwardSpeed)).toBeLessThan(0.2);
+    expect(d.done).toBe(false);
+    tick(quad, d, 6); // the wait is over
+    tick(quad, d, 8);
+    expect(Math.abs(quad.forwardSpeed)).toBeGreaterThan(0.5);
+    expect(d.done).toBe(false);
+  });
+
+  it("doesn't stop a race or a drive that is for something", () => {
+    const { d } = drivingFor(4, 60);
+    d.race = {};
+    expect(d.waveStop(8)).toBe(false);
+  });
+});

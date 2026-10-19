@@ -1388,6 +1388,19 @@ export const FAQ_SECTIONS = [
         a: `Look at the parts rack in the barn (back wall, beyond the workbench), press <kbd>E</kbd> and press the number of the part to order a pack. About five minutes later the post van comes in at the big gate (if no one else is visiting, and only in daylight) and leaves a parcel by the barn door. Look at the parcel and press <kbd>E</kbd> to open it and put what is in it on the rack. An order you have not had by the end of the day is still on its way the next morning, and so is a parcel you have not opened. You can only order what the rack would have room for.`,
       },
       {
+        q: 'How do I wave at the girls?',
+        a: `Press 6, on foot or on a quad. A girl within about 30 metres who is stood about or walking waves back (Jess sometimes pulls a face instead). Further off, a girl who is free to be asked walks over to you. A girl who is driving pulls up and waits a few seconds, then carries on with her drive.`,
+        tip: 'Press 6 to wave. A free girl comes over, a driving one pulls up.',
+      },
+      {
+        q: 'How do I call a girl over when my engine is too loud to shout?',
+        a: `Wave with 6. She has to be free to be asked and within about 90 metres. If she is busy with something that matters (a race, a lesson, the camera, a job of her own), she carries on and does not come.`,
+      },
+      {
+        q: 'Why did she stop when I waved?',
+        a: `She was driving, and a wave from you makes her pull up and wait about twelve seconds before she carries on. A girl in a race, showing off, tidying a quad into the row or giving you a ride does not stop.`,
+      },
+      {
         q: 'How do I take a photo?',
         a: `Press 5, on foot or on a quad. The camera comes up, any girl in front of you reacts, and a moment later the shutter goes. The shot is pinned on the corkboard on the barn's back wall, south of the chalkboards. It throws away a shot of nothing but sky or a blank wall, and there is a short wait between shots.`,
         tip: 'Press 5 to take a photo. They get pinned on the corkboard in the barn.',

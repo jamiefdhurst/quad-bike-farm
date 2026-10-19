@@ -121,6 +121,7 @@ import { Warming, WARMING_PARAM_RANGES, isChilly } from './npc/warming.js';
 import { CabShelter, CAB_SHELTER_PARAM_RANGES } from './npc/cabShelter.js';
 import { Sulking, SULK_PARAM_RANGES } from './npc/sulking.js';
 import { ReadyWaiting, READY_PARAM_RANGES } from './npc/readyWaiting.js';
+import { answerWave, DEFAULT_WAVE_PARAMS, WAVE_RANGES } from './npc/playerWave.js';
 import { WarmSit, WARMSIT_PARAM_RANGES } from './npc/warmSit.js';
 import { DontFixIt, DONTFIX_PARAM_RANGES } from './npc/dontFixIt.js';
 import { ComparingNotes, COMPARE_PARAM_RANGES } from './npc/comparingNotes.js';
@@ -984,6 +985,8 @@ export class Game {
     registerTuning('Cone course', this.coneCourse.p, CONE_PARAM_RANGES);
     registerTuning('Records', this.recordParams, RECORD_PARAM_RANGES);
     this.warming = new Warming(); // hands over an idling engine on a cold day (npc/warming.js)
+    this.waveParams = { ...DEFAULT_WAVE_PARAMS }; // you wave at the girls (npc/playerWave.js)
+    this.lastWaveAnswer = new Map(); // girl id -> game clock seconds she last answered a wave (wall clock)
     this.readyWaiting = new ReadyWaiting(undefined, createRandom(this.seed ^ 0x2ead)); // sat on a running quad, revving and tooting, while you are a minute (npc/readyWaiting.js)
     this.warmSit = new WarmSit(undefined, createRandom(this.seed ^ 0x3a2f)); // sat on your quad while it warms, for the shake (npc/warmSit.js)
     this.numbParams = { ...DEFAULT_NUMB_PARAMS }; // legs gone tingly and a numb bum from a long sit on a shaking seat (npc/numbness.js)
@@ -1565,6 +1568,7 @@ export class Game {
     registerTuning('Minding a fix', this.dontFix.p, DONTFIX_PARAM_RANGES);
     registerTuning('Sitting while it warms', this.warmSit.p, WARMSIT_PARAM_RANGES);
     registerTuning('Ready and waiting', this.readyWaiting.p, READY_PARAM_RANGES);
+    registerTuning('Waving', this.waveParams, WAVE_RANGES);
     registerTuning('Sulking in the cab', this.sulking.p, SULK_PARAM_RANGES);
     registerTuning('Shelter in a cab', this.cabShelter.p, CAB_SHELTER_PARAM_RANGES);
     registerTuning('Thunderstorm', this.thunderParams, THUNDER_PARAM_RANGES);
@@ -2314,6 +2318,45 @@ export class Game {
         else if (e === 'tired') c.voice.say('pushTired', { urgent: true });
       }
     }
+  }
+
+  /** You wave (key 6). Each girl answers by where she is and what she is doing (npc/playerWave.js). Returns what each did, for the tests and the console. */
+  waveAtGirls({ force = false, only = null } = {}) {
+    const now = performance.now() / 1000;
+    const you = this.player.position;
+    const done = [];
+    for (const c of this.companions) {
+      const id = c.character.id;
+      if (only && id !== only) continue;
+      if (this.player.isRiding && this.riddenUnit?.quad === c.quad) continue; // she's on your quad: nothing to wave at
+      const at = c.root.parent === this.scene ? c.root.position : c.quad?.position ?? c.root.position;
+      const asked = c.availability({ asked: true, pull: true });
+      const kinds = generalRequests({ state: c.fsm.name, avail: asked, youDistance: Math.hypot(at.x - you.x, at.z - you.z) });
+      const s = {
+        distance: Math.hypot(at.x - you.x, at.z - you.z),
+        state: c.fsm.is('driving') ? 'driving' : c.fsm.name,
+        askable: kinds.includes('come') || (c.fsm.is('driving') && asked.free),
+        canPullUp: !!c.drive?.canWaveStop?.(),
+        canRemark: c.availability().canRemark,
+        since: force ? Infinity : now - (this.lastWaveAnswer.get(id) ?? -Infinity),
+      };
+      const answer = answerWave(s, this.waveParams, id);
+      if (!answer) continue;
+      this.lastWaveAnswer.set(id, now);
+      if (answer.kind === 'waveBack') {
+        const from = { x: you.x, y: you.y + 1.5, z: you.z };
+        // Her hand goes up, or Jess pulls a face instead (the camera's face reaction); if she can't, a wave.
+        if (!c.react(answer.face ? 'face' : 'wave', { from, force: true })) c.react('wave', { from, force: true });
+      } else if (answer.kind === 'comeOver') {
+        c.interrupt();
+        c.requestComeHere(you);
+        c.voice.onRequest('come');
+      } else if (c.drive.waveStop(this.waveParams.driverWaits)) {
+        c.voice.onRequest('stop');
+      }
+      done.push({ id, kind: answer.kind });
+    }
+    return done;
   }
 
   /** You can ask her for something general now: she is in one of these states and free to be asked (soft jobs and holds give way). */
@@ -9439,6 +9482,15 @@ export class Game {
       !(this.climb || this.tryst || this.hiding.active)
     ) {
       this.photos.press();
+    }
+
+    // 6: wave. Close girls wave back, a free girl further off comes over, a driving one pulls up (npc/playerWave.js).
+    if (
+      input.wasPressed('Digit6') &&
+      !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.photos.view.isOpen) &&
+      !(this.climb || this.tryst || this.hiding.active)
+    ) {
+      this.waveAtGirls();
     }
 
     for (const unit of this.units) {
