@@ -4522,3 +4522,9 @@ Decided without asking, as the issue settles the shape: a new need, and neglect 
 - Showing off and pranks likelier: nine offer kinds meet `attention` in `OFFER_KINDS` (showOff 1, prank 0.8, favour 0.8, conker, dare, raceDare, dragDare 0.6, nick and snub 0.5), so a jealous girl scores them higher; the pranks module's `neglectedBoost` stays on top.
 - Shown in Why as a slider and in the console as `girl.<name>.needs.attention`; the `needJealous*`, `needAttention*`, `needSlightBump` and `needTalkEase` params are in each girl's Tune group. Not saved, like the other needs.
 - Not checked: how long a jealous spell lasts in a real game, or by eye. The numbers are first guesses; the girls' own rates (Jess vs Amy) are the same for now.
+
+## A faster smoke test (#265)
+
+- Measured on a laptop: a set-up took about 19 s to load and then 49 s to play 20 s. The play time was drawing: the first real frame alone took 26 s on software GL, and later frames were slow too. With the GL draw calls stubbed to nothing, frames cost about 4 ms, so the game's own update is what the test now exercises. What it gives up is a draw that fails or looks wrong; shaders are still built, and the model checks and a look by eye cover the rest.
+- The load (about 18 s) is the same from the dev server and from the built game, so it is world generation, not module loading. It can't be cut, so the test loads once and changes weather and time in the page: sunny at the real clock, then snow with the clock at 600 times, starting at 15:30 so dusk arrives. The cost is the old second and third seeds; one seed (3) is checked.
+- It serves the built `dist` when there is one (CI builds first; `SMOKE_DEV=1` forces the dev server). A build has no `window.game`, so `?smoke` in the address exposes it. About 43 s in all on a laptop, down from about 3.5 minutes. CI's step timeout is 8 minutes.
