@@ -1692,7 +1692,7 @@ export const FAQ_SECTIONS = [
         q: 'What are the vehicles called?',
         a: `Every vehicle has a maker and a model, as on its badge: the Kestrel Farm 300, the Tamura Bruin 660, the Tamura Hornet 200, the Ridgeback RB300, the Viper Adder 250,
           the Viper Asp 50 (the kids' quad), the Tamura TZ 65 (the mini moto), the Kestrel T185 (the old three-wheeler), the Tamura Ursa 450 (the loan quad), the Hartley 35 (the tractor),
-          the Ridgeback Yak 4010, the Moorland Tor and the Moorland Crag (the two Land Rover-style trucks), and the girls' cars, the Thorne Finch (Amy's) and the Ashby Griffin (Jess's).
+          the Ridgeback Yak 4010, the Moorland Tor and the Moorland Crag (the two trucks), and the girls' cars, the Thorne Finch (Amy's) and the Ashby Griffin (Jess's).
           The girls say the short name: "the Farm 300", "the Hornet", "the Tor". The panels and the wheel show the maker too. A colour is only paint: a vehicle you buy second-hand
           can be a different colour from the one you know, and it is still the same model.`,
         tip: 'The girls call a quad by its model, not its colour: the Farm 300, the Bruin, the Hornet, the RB300, the Adder.',
