@@ -159,7 +159,8 @@
   "audio/companion-voice-156.mp3",
   "audio/companion-voice-157.mp3",
   "audio/companion-voice-158.mp3",
-  "audio/companion-voice-159.mp3"
+  "audio/companion-voice-159.mp3",
+  "audio/companion-voice-160.mp3"
  ],
  "voice": "chatterbox|7fda5df3df9d",
  "clips": {
@@ -19103,179 +19104,269 @@
    "start": 45.39,
    "dur": 1.39
   },
-  "I am not slow. And I am not talking to you.": {
+  "I do. We do not agree on which, though.": {
    "file": 158,
    "start": 46.86,
+   "dur": 2.11
+  },
+  "It is steady. Steady gets there.": {
+   "file": 158,
+   "start": 49.05,
+   "dur": 1.88
+  },
+  "I have noticed that one quad does the hill better than the others. Not the one you think.": {
+   "file": 158,
+   "start": 51.01,
+   "dur": 4.45
+  },
+  "It is not.": {
+   "file": 158,
+   "start": 55.54,
+   "dur": 1.88
+  },
+  "You take the flashy one up the hill, and then you wonder why it slows down.": {
+   "file": 158,
+   "start": 57.5,
+   "dur": 3.33
+  },
+  "Yours spins its wheels and throws it about.": {
+   "file": 159,
+   "start": 0.1,
+   "dur": 2.37
+  },
+  "I pick the one that does not get stuck. You were not looking.": {
+   "file": 159,
+   "start": 2.55,
+   "dur": 3.07
+  },
+  "In the wet, there is a quad that grips and a quad that does not. I have been keeping track.": {
+   "file": 159,
+   "start": 5.7,
+   "dur": 4.88
+  },
+  "And it is not the one you keep taking.": {
+   "file": 159,
+   "start": 10.66,
+   "dur": 1.84
+  },
+  "Mud is where you find out which one is any good.": {
+   "file": 159,
+   "start": 12.58,
+   "dur": 2.65
+  },
+  "And you are wrong again.": {
+   "file": 159,
+   "start": 15.31,
+   "dur": 2.11
+  },
+  "It is not the one you are on.": {
+   "file": 159,
+   "start": 17.5,
+   "dur": 1.69
+  },
+  "I know which is quickest. It is not yours.": {
+   "file": 159,
+   "start": 19.27,
+   "dur": 3.04
+  },
+  "Some of these are much nicer on the tarmac. It is quite obvious.": {
+   "file": 159,
+   "start": 22.39,
+   "dur": 3.38
+  },
+  "You do not get the tarmac at all, do you? The grip is the whole thing.": {
+   "file": 159,
+   "start": 25.85,
+   "dur": 3.63
+  },
+  "We do agree about one thing. That quad is the best up the hill.": {
+   "file": 159,
+   "start": 29.56,
+   "dur": 3.23
+  },
+  "We do. It is the one that does not bog.": {
+   "file": 159,
+   "start": 32.87,
+   "dur": 2.1
+  },
+  "For the road, there is only one choice, really.": {
+   "file": 159,
+   "start": 35.05,
+   "dur": 2.14
+  },
+  "I am not slow. And I am not talking to you.": {
+   "file": 159,
+   "start": 37.27,
    "dur": 2.56
   },
   "You forced me off the line. I saw you.": {
-   "file": 158,
-   "start": 49.5,
+   "file": 159,
+   "start": 39.91,
    "dur": 2.25
   },
   "That is it. I am not racing you again.": {
-   "file": 158,
-   "start": 51.83,
+   "file": 159,
+   "start": 42.24,
    "dur": 2.39
   },
   "Get off my quad, Jess. Now.": {
-   "file": 158,
-   "start": 54.3,
+   "file": 159,
+   "start": 44.71,
    "dur": 1.81
   },
   "That one is. And I am done with you today.": {
-   "file": 158,
-   "start": 56.19,
+   "file": 159,
+   "start": 46.6,
    "dur": 2.45
   },
   "Nobody said it was.": {
-   "file": 158,
-   "start": 58.72,
+   "file": 159,
+   "start": 49.13,
    "dur": 1.79
   },
   "Do not tell me to shut up.": {
    "file": 159,
-   "start": 0.1,
+   "start": 51.0,
    "dur": 1.42
   },
   "Do you know what? That was unkind.": {
    "file": 159,
-   "start": 1.6,
+   "start": 52.5,
    "dur": 2.2
   },
   "It was not funny. I am going over here.": {
    "file": 159,
-   "start": 3.88,
+   "start": 54.78,
    "dur": 2.15
   },
   "Not to you.": {
    "file": 159,
-   "start": 6.11,
+   "start": 57.01,
    "dur": 0.87
   },
   "Some people should apologise.": {
    "file": 159,
-   "start": 7.06,
+   "start": 57.96,
    "dur": 2.02
   },
   "Only everyone who asked.": {
-   "file": 159,
-   "start": 9.16,
+   "file": 160,
+   "start": 0.1,
    "dur": 1.76
   },
   "Do not stand near me.": {
-   "file": 159,
-   "start": 11.0,
+   "file": 160,
+   "start": 1.94,
    "dur": 1.8
   },
   "Then we will be waiting a long time.": {
-   "file": 159,
-   "start": 12.88,
+   "file": 160,
+   "start": 3.82,
    "dur": 2.08
   },
   "I am being perfectly civil.": {
-   "file": 159,
-   "start": 15.04,
+   "file": 160,
+   "start": 5.98,
    "dur": 1.41
   },
   "Same thing.": {
-   "file": 159,
-   "start": 16.53,
+   "file": 160,
+   "start": 7.47,
    "dur": 1.46
   },
   "Look. I was snippy. I am sorry.": {
-   "file": 159,
-   "start": 18.07,
+   "file": 160,
+   "start": 9.01,
    "dur": 3.29
   },
   "Jess.": {
-   "file": 159,
-   "start": 21.44,
+   "file": 160,
+   "start": 12.38,
    "dur": 0.69
   },
   "This is silly. I am not cross any more.": {
-   "file": 159,
-   "start": 22.21,
+   "file": 160,
+   "start": 13.15,
    "dur": 2.46
   },
   "Might have?": {
-   "file": 159,
-   "start": 24.75,
+   "file": 160,
+   "start": 15.69,
    "dur": 0.66
   },
   "Thrilled.": {
-   "file": 159,
-   "start": 25.49,
+   "file": 160,
+   "start": 16.43,
    "dur": 0.73
   },
   "Yes. Please. I missed you slightly.": {
-   "file": 159,
-   "start": 26.3,
+   "file": 160,
+   "start": 17.24,
    "dur": 2.1
   },
   "Some of us obey the speed limit.": {
-   "file": 159,
-   "start": 28.48,
+   "file": 160,
+   "start": 19.42,
    "dur": 1.51
   },
   "You are going far too fast!": {
-   "file": 159,
-   "start": 30.07,
+   "file": 160,
+   "start": 21.01,
    "dur": 1.37
   },
   "Is this a good speed for you, Jess?": {
-   "file": 159,
-   "start": 31.52,
+   "file": 160,
+   "start": 22.46,
    "dur": 1.49
   },
   "Maybe because you have not been.": {
-   "file": 159,
-   "start": 33.09,
+   "file": 160,
+   "start": 24.03,
    "dur": 1.57
   },
   "Did you see the way our friend took that corner earlier?": {
-   "file": 159,
-   "start": 34.74,
+   "file": 160,
+   "start": 25.68,
    "dur": 2.33
   },
   "Near the hedge. Be kind.": {
-   "file": 159,
-   "start": 37.15,
+   "file": 160,
+   "start": 28.09,
    "dur": 1.38
   },
   "Do not be silly.": {
-   "file": 159,
-   "start": 38.61,
+   "file": 160,
+   "start": 29.55,
    "dur": 1.1
   },
   "Someone has been riding the blue one like it owes money.": {
-   "file": 159,
-   "start": 39.79,
+   "file": 160,
+   "start": 30.73,
    "dur": 2.57
   },
   "I am not asking.": {
-   "file": 159,
-   "start": 42.44,
+   "file": 160,
+   "start": 33.38,
    "dur": 1.06
   },
   "Do not say anything, but the choke is getting better.": {
-   "file": 159,
-   "start": 43.58,
+   "file": 160,
+   "start": 34.52,
    "dur": 2.74
   },
   "Keep your voice down.": {
-   "file": 159,
-   "start": 46.4,
+   "file": 160,
+   "start": 37.34,
    "dur": 1.03
   },
   "It is nice having someone to ride with, though.": {
-   "file": 159,
-   "start": 47.51,
+   "file": 160,
+   "start": 38.45,
    "dur": 1.94
   },
   "I am only saying.": {
-   "file": 159,
-   "start": 49.53,
+   "file": 160,
+   "start": 40.47,
    "dur": 1.48
   }
  }

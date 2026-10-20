@@ -834,6 +834,15 @@ export const FAQ_SECTIONS = [
           bench, as "Buzz ranking".`,
       },
       {
+        q: 'Why do the girls argue about which quad is best on a hill, in mud or on tarmac?',
+        spoiler: true,
+        a: `Each quad is a little better at one thing than the rest: climbing, mud or tarmac. It is only a few per cent, so you will not feel it in one ride, and the
+          game never says which. The girls work it out by riding. The longer a girl spends on a quad going up a slope, through mud or along the road, the surer she is of
+          what it is good at. Until then she goes on a hunch, so the two of them disagree and say so when they are stood about together. Over a few games they settle on the
+          same answers, and for once they agree. A girl who thinks well of a quad is a little keener to take it for a drive. What they have learnt carries over to the
+          next day at half strength.`,
+      },
+      {
         q: 'Why does her voice wobble when she talks on the back of a quad?',
         a: `Her voice shakes with the seat. Her pitch and her loudness follow the shake of the quad under her, so a cold engine's slow thump makes a slow wobble and a
           fine buzz makes a flutter, like talking on a washing machine. A smooth warm engine hardly shows. Jess plays it up on purpose; Amy just puts up with it.`,

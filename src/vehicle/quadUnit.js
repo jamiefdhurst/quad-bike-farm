@@ -66,6 +66,7 @@ export class QuadUnit {
       solo: spec.solo,
       plateNumber: spec.plateNumber,
       chainDrive: !!spec.chainDrive,
+      strengthSpec: spec, // names its hidden strength, if any (strength.js)
       decay: spec.decay ?? null, // the barn find's damage (rustyDamage.js): rack bars gone or hanging
       reverseStyle: spec.reverseStyle,
       chokeStyle: spec.chokeStyle,

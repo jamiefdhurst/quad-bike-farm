@@ -46,6 +46,8 @@ import { BackNap } from './backNap.js';
 import { firstThink } from './chooser.js';
 import { DEFAULT_DOZE_PARAMS, dozePose } from './dozing.js';
 import { Memory } from './memory.js';
+import { QuadOpinion, OPINION_PARAMS } from './quadOpinion.js';
+import { bonusFor, STRENGTH_PARAMS } from '../vehicle/strength.js';
 import { Agenda } from './agenda.js';
 import { Intent, walkPace } from './intent.js';
 import { Mood } from './mood.js';
@@ -155,6 +157,7 @@ export class Companion {
     this.mind = { thinkIn: firstThink(this.params.thinkEvery), last: null, since: 0, scored: [], waiting: null };
     // What she's set on (intent.js): how she walks to it, and whether you've stopped her on her way.
     this.intent = new Intent();
+    this.opinion = new QuadOpinion(''); // which quads she thinks are best on a hill, in mud, on tarmac (quadOpinion.js)
     this.memory = new Memory(); // how each kind of thing has gone for her (memory.js), nudging what she chooses
     this.agenda = new Agenda(null, this.params); // what she has in mind for today (agenda.js), boosting those offers; the game deals hers once it knows who she is
     this.mood = new Mood(); // how she's been feeling over the last few minutes (mood.js)
@@ -545,11 +548,23 @@ export class Companion {
       const say = borrowed ? 'borrow' : favour.mood === 'neglected' ? 'sulkOff' : 'drive';
       out.push(offer('drive', () => {
         if (borrowed) this.requestDrive(borrowed);
-        else this.requestDrive(pick(options.drive.some((q) => this.ownsQuad(q)) ? options.drive.filter((q) => this.ownsQuad(q)) : options.drive));
+        else this.requestDrive(this.pickByOpinion(options.drive.some((q) => this.ownsQuad(q)) ? options.drive.filter((q) => this.ownsQuad(q)) : options.drive));
       }, say));
     }
     if (options.rest.length) out.push(offer('rest', () => this.goRest(pick(options.rest), { stay: this.restStayFor?.() }), options.rest[0]?.kind === 'loft' ? 'loftGo' : 'restGo'));
     return out.filter((o) => o.weight > 0);
+  }
+
+  /** One of these quads, at random but leaning to the ones she thinks are good at something (quadOpinion.js): 1 plus `pull` times her keenness. */
+  pickByOpinion(quads) {
+    const truthOf = (id, kind) => bonusFor(this.quads.find((q) => q.unit?.spec.id === id)?.unit.spec, kind);
+    const weights = quads.map((q) => 1 + OPINION_PARAMS.pull * this.opinion.keenness(q.unit?.spec.id, truthOf, STRENGTH_PARAMS.amount));
+    let r = Math.random() * weights.reduce((a, b) => a + b, 0);
+    for (let i = 0; i < quads.length; i++) {
+      r -= weights[i];
+      if (r <= 0) return quads[i];
+    }
+    return quads[quads.length - 1];
   }
 
   /**

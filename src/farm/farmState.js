@@ -116,6 +116,7 @@ export function captureGirls({ favour, fallingOut, skills, romance, lessons, qua
     skills: structuredClone(skills.levels),
     lessons: lessons?.capture(),
     memories: Object.fromEntries(companions.map((c) => [c.character.id, c.memory.capture()])),
+    opinions: Object.fromEntries(companions.map((c) => [c.character.id, c.opinion?.capture()])), // what she has worked out about the quads (quadOpinion.js)
     romance: Object.fromEntries(Object.entries(romance.girls).map(([id, g]) => [id, { locked: !!g.locked, betrayed: !!g.betrayed }])),
   };
 }
@@ -129,6 +130,7 @@ export function restoreGirls({ favour, fallingOut, skills, romance, lessons, qua
   lessons?.restore(s.lessons);
   quadCare?.restore(s.care);
   for (const c of companions) c.memory.restore(s.memories?.[c.character.id], P.memoryKept, c.params);
+  for (const c of companions) c.opinion?.restore(s.opinions?.[c.character.id]);
   for (const id of skills.ids) if (s.skills?.[id]) copyKnown(skills.levels[id], s.skills[id], Object.keys(skills.levels[id]));
   for (const id of romance.ids) {
     const r = s.romance?.[id];

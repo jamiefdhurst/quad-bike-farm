@@ -4,6 +4,7 @@ import { netCharge } from '../engine/charging.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
 import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
 import { REMEMBERED_KINDS } from '../npc/memory.js';
+import { strengthOf } from '../vehicle/strength.js';
 import { AGENDA_IDS } from '../npc/agenda.js';
 import { group, value, slug } from './shell.js';
 import { PARTS, ALL_PART_IDS } from '../workshop/spares.js';
@@ -194,6 +195,7 @@ export function buildGameTree(g, host) {
       tyres.frontTread = num(() => q().tyres.tread.front, (v) => (q().tyres.tread.front = v), 0, 1, '', '0 bald, 1 new');
       tyres.rearTread = num(() => q().tyres.tread.rear, (v) => (q().tyres.tread.rear = v), 0, 1, '', '0 bald, 1 new');
       out.tyres = group(() => tyres);
+      out.strength = text(() => strengthOf(u().spec) ?? 'none', 'its hidden strength (hill, mud or tarmac): what the girls work out by riding');
       return out;
     }, `${u().name}`);
   };
@@ -214,6 +216,7 @@ export function buildGameTree(g, host) {
       thinking: text(() => describeMind(c().mind).next),
       agenda: choice(['none', ...AGENDA_IDS], () => c().agenda.id ?? 'none', (v) => c().agenda.set(v, c().params), 'what she has in mind for the day, which she is keener on all game and says early on'),
       remembers: text(() => c().memory.describe(), 'what has gone well or badly for her lately, and so what she is keener or warier of'),
+      quadViews: text(() => c().opinion.describe(g.strengthIds(), g.strengthTruth), 'which quad she thinks best on a hill, in mud and on tarmac, from riding them'),
       memory: group(() => Object.fromEntries(REMEMBERED_KINDS.map((k) => [k, num(() => c().memory.weight(k), (v) => (c().memory.feel[k] = v), 0.1, 3, '', `how keen (over 1) or wary (under 1) she is of: ${OFFER_KINDS[k]?.label ?? k}`)]))),
       setOn: text(() => c().intent.describe((k) => OFFER_KINDS[k]?.label ?? k)),
       reacting: text(() => c().reactingText),

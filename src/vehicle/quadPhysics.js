@@ -160,6 +160,7 @@ export class QuadPhysics {
       w.grip *= 1 - wet * (0.15 + 0.15 * w.mud);
       // This wheel's tyre: its pressure, brand and tread (tyres.js).
       if (this.tyres) w.grip *= this.tyres.grip(i, w.mud, w.puddle);
+      if (this.strengthGrip) w.grip *= 1 + this.strengthGrip.mud * w.mud + this.strengthGrip.tarmac * w.tarmac; // its hidden strength (strength.js)
       // Puddles are mud too, as far as the engine's concerned.
       this.wheelMud[i] = Math.max(w.mud, w.puddle);
       w.driven = this.wheels[i].driven !== false && (!this.wheels[i].front || (this.frontDriven ?? isDriven(p, true)));
