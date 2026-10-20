@@ -310,6 +310,7 @@ export function buildGameTree(g, host) {
     bonfireLit: flag(() => g.bonfire.burning, (v) => (v ? g.debugLightFire() : g.bonfire.putOut()), 'the bonfire is lit (setting it builds the pile and lights it)'),
     silageDone: flag(() => g.jobBoard.finished.has('silage'), (v) => v && g.debugFinishSilage(), 'the silage job is done (ticks the board)'),
     spikeLift: num(() => g.baleRig.lift.lift, (v) => { g.baleRig.lift.lift = Math.max(0, Math.min(1, v)); }, 0, 1, '', 'the bale spike arms, 0 down to 1 up'),
+    service: text(() => (g.serviceJob ? `${g.serviceJob.name}: ${g.serviceJob.kinds.join(', ')} (${g.serviceJob.left.size} left)` : 'no service job on the board'), 'the service job on the barn board'),
     board: text(() => g.jobBoard.lines().map((l) => `${l.done ? '[x]' : '[ ]'} ${l.text}`).join('; ') || 'nothing on', "today's jobs on the barn door"),
     records: text(() => g.records.lines().map((l) => `${l.label}: ${l.text}`).join('; '), 'the bests on the barn board'),
     day: text(() => g.farmText(), 'the farm that remembers: which day it is and when it last saved (the save command does the rest)'),

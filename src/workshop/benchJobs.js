@@ -34,6 +34,7 @@ export const DEFAULT_BENCH_PARAMS = {
   valvesBotchedLevel: 0.5, // how far out a valve clearance set badly is (too wide, or too tight if the screws were over-turned)
   chainOilShort: 0.5, // chain oil left after too little was put on
   packingBotched: 0.3, // silencer blown-out level left after a badly packed one (too loose or stuffed too tight)
+  filterLeft: 0.3, // air filter clog left after one that was blown through badly
 };
 
 export const BENCH_PARAM_RANGES = {
@@ -47,6 +48,7 @@ export const BENCH_PARAM_RANGES = {
   sumpShort: [0.3, 1, 0.01],
   oilOver: [0, 0.2, 0.002],
   packingBotched: [0, 1, 0.05],
+  filterLeft: [0, 1, 0.05],
   chainBotched: [0, 1, 0.05],
   crashBotched: [0, 1, 0.05],
   chainOilShort: [0, 1, 0.05],
@@ -165,6 +167,27 @@ export const JOBS = {
       { id: 'oil', text: 'Oil the chain as you turn the wheel: a little, not a lot', kind: 'hold', need: 0.8, limit: 1.6 },
       { id: 'tight', text: 'Do the axle nuts up: snug, not tight', kind: 'hold', need: 0.6, limit: 1.3 },
       { id: 'on', text: 'Chainguard back on', kind: 'press' },
+    ],
+  },
+  // The next two are only done as part of a service (workshop/service.js), so they are not in JOB_KINDS, whose keys are all taken.
+  filter: {
+    name: 'Clean the air filter',
+    steps: [
+      { id: 'lid', text: 'Take the airbox lid off', kind: 'press' },
+      { id: 'out', text: 'Lift the filter out and knock the muck from it', kind: 'hold', need: 0.9 },
+      { id: 'blow', text: 'Blow it through from the clean side: until the light shows through', kind: 'hold', need: 1, limit: 2 },
+      { id: 'in', text: 'Seat it back in the box', kind: 'press' },
+      { id: 'close', text: 'Lid on', kind: 'press' },
+    ],
+  },
+  belt: {
+    name: 'Check the drive belt',
+    steps: [
+      { id: 'cover', text: 'Take the belt cover off', kind: 'press' },
+      { id: 'look', text: 'Look along the belt for cracks and glazing', kind: 'press' },
+      { id: 'dust', text: 'Brush the dust out of the pulleys', kind: 'hold', need: 0.9 },
+      { id: 'tension', text: 'Set the tension: a thumb of give, not tight', kind: 'hold', need: 0.7, limit: 1.5 },
+      { id: 'on', text: 'Cover back on', kind: 'press' },
     ],
   },
   valves: {
@@ -573,6 +596,19 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     if (!bent.length) return 'Nothing was bent, but everything is checked and tight';
     return wrong ? 'Back together, but it is not quite true and still pulls a little' : 'Straight again: it steers true and the wheel runs without a wobble';
   }
+  if (job.kind === 'filter') {
+    // Knocking the muck out is the fix; blowing it too little leaves some in, too hard thins the paper.
+    const blow = job.outcome('blow');
+    if (target.filter) target.filter.clog = blow === 'good' ? 0 : Math.min(target.filter.clog, P.filterLeft);
+    return blow === 'good' ? 'Air filter clean: you can see the light through it' : blow === 'short' ? 'Air filter cleaned, though it still has some muck in it' : 'Air filter cleaned, though you have thinned the paper blowing it so hard';
+  }
+  if (job.kind === 'belt') {
+    // Setting the tension is the fix; wrong either way leaves a little slip.
+    const bad = job.outcome('tension') !== 'good';
+    faults.fix('belt');
+    if (bad) faults.leave('belt', P.botchedLevel);
+    return bad ? 'Belt back on, but the tension is not right and it will slip a little' : 'Belt checked, dusted and set: it grips properly';
+  }
   if (job.kind === 'tarp') return 'The tarp is off, and the dust is everywhere';
   if (job.kind === 'fuel') {
     engine.fouling = botched ? P.plugLeftFouling : 0;
@@ -612,7 +648,7 @@ export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = fal
   if (kind === 'plug') return !engine.params.compressionIgnition; // a diesel has glow plugs, not a plug to gap and clean
   if (kind === 'chargeOn') return !engine.batteryOut && !engine.params.noStarter; // a cord-only quad has no battery to take out
   if (kind === 'chargeOff') return !!engine.batteryOut;
-  if (kind === 'tarp' || kind === 'fuel' || kind === 'brake') return true;
+  if (kind === 'tarp' || kind === 'fuel' || kind === 'brake' || kind === 'filter' || kind === 'belt') return true; // the bench checks a filter or belt is fitted (service plans)
   if (kind === 'sump') return engine.params.strokes !== 2 && !engine.params.runsOnDiesel;
   return true;
 }
