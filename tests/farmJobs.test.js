@@ -99,6 +99,16 @@ describe('job board', () => {
     expect(pickJobs(['a'], 2, Math.random)).toEqual(['a']);
   });
 
+  it('tells the game once when a job is ticked off, so it can pay', () => {
+    const b = new JobBoard({ ids: ['muck'], random: () => 0 });
+    const paid = [];
+    b.onComplete = (id) => paid.push(id);
+    b.complete('muck');
+    b.complete('muck');
+    b.complete('silage'); // not on the board
+    expect(paid).toEqual(['muck']);
+  });
+
   it('ticks jobs off once and clears when all are done', () => {
     const b = new JobBoard({ ids: ['muck'], random: () => 0 });
     expect(b.cleared).toBe(false);
