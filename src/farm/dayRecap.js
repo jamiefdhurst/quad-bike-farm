@@ -5,7 +5,7 @@
  * What the card says. `entries` are the logbook's lines for today, `ticked` the names of the bucket list items done today, `score` the
  * list's { count, totalCount }, `metres` how far you rode, `bogs` how many times a quad stuck.
  */
-export function dayRecap({ day, entries = [], ticked = [], score = { count: 0, totalCount: 0 }, metres = 0, bogs = 0 }, p) {
+export function dayRecap({ day, entries = [], ticked = [], score = { count: 0, totalCount: 0 }, metres = 0, bogs = 0, money = '' }, p) {
   const log = entries.slice(-p.recapLogLines);
   const facts = [];
   if (metres >= 50) facts.push(metres >= 1000 ? `${(metres / 1000).toFixed(1)} km ridden` : `${Math.round(metres / 10) * 10} m ridden`);
@@ -18,6 +18,7 @@ export function dayRecap({ day, entries = [], ticked = [], score = { count: 0, t
     tickedMore: Math.max(0, ticked.length - p.recapTickLines),
     total: score.totalCount ? `${score.count} of ${score.totalCount} on the bucket list` : '',
     facts,
+    money, // the tin: what it holds and what moved today (farm/classifieds.js moneyFacts)
   };
 }
 

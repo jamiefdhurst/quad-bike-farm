@@ -45,6 +45,12 @@ describe('Logbook', () => {
     expect(b.write({ quad: 'Blue', what: belt })).not.toBeNull();
   });
 
+  it('writes down what a vehicle was bought or sold for', () => {
+    const b = new Logbook();
+    expect(b.write({ quad: 'Red', what: { kind: 'deal', deal: 'sold', price: 420 }, by: 'you' }).text).toBe('sold for £420');
+    expect(b.write({ quad: 'Tractor', what: { kind: 'deal', deal: 'bought', price: 1900 } }).text).toBe('bought for £1900');
+  });
+
   it('drops the oldest entry when the page is full', () => {
     const b = new Logbook({ ...P, maxEntries: 2, repeatSeconds: 0 });
     b.write({ quad: 'A', what: { kind: 'oil' } });

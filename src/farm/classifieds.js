@@ -6,23 +6,31 @@
 // is in neither), so a vehicle added later joins the market or says why it stays out.
 
 export const DEFAULT_MARKET_PARAMS = {
-  startPurse: 250, // pounds a new farm starts with
+  startPurseMin: 200, // a new farm starts with a purse dealt from the farm seed, between these (pounds)...
+  startPurseMax: 600, // ...and this, in tens
   jobPay: 60, // pounds paid for each farm job ticked off the chalkboard
   adDayChance: 0.3, // chance a day has any ad on the board at all (most days there are none)
   secondAdChance: 0.3, // chance a day with an ad has a second
   thirdAdChance: 0.1, // and, given two, a third
-  maxBought: 2, // vehicles you can have bought and not yet sold
+  maxBought: 4, // vehicles you can have bought and not yet sold
+  sellCeil: 0.7, // a vehicle in perfect order sells for this fraction of the going rate (below what the cheapest ad costs, so buying to sell never pays)...
+  sellFloor: 0.4, // ...and a wrecked one for this
+  keepRegulars: 2, // you cannot sell the regular quads below this many, so each girl has one to ride
   priceSpread: 0.12, // an ad's price is the going rate within this fraction either way
   wearDiscount: 0.35, // the fraction of the price a fully worn vehicle loses
 };
 
 export const MARKET_PARAM_RANGES = {
-  startPurse: [0, 2000, 10],
+  startPurseMin: [0, 1000, 10],
+  startPurseMax: [0, 2000, 10],
   jobPay: [0, 500, 5],
   adDayChance: [0, 1, 0.05],
   secondAdChance: [0, 1, 0.05],
   thirdAdChance: [0, 1, 0.05],
-  maxBought: [0, 6, 1],
+  maxBought: [0, 8, 1],
+  sellCeil: [0.3, 1, 0.01],
+  sellFloor: [0.1, 1, 0.01],
+  keepRegulars: [0, 5, 1],
   priceSpread: [0, 0.5, 0.01],
   wearDiscount: [0, 0.8, 0.05],
 };
@@ -58,6 +66,46 @@ const COLOUR_NAMES = new Map([
   [0x6b7a3a, 'olive green'], [0x2c4f8a, 'blue'], [0x3a6a3a, 'green'], [0xc8a02c, 'mustard'], [0x3b5b3a, 'green'], [0x8a6a3a, 'brown'],
   [0x3b4a36, 'bronze green'], [0xa8a090, 'sand'], [0x3f5f7a, 'blue'], [0x6b2a22, 'maroon'], [0xb8b4a8, 'silver'], [0xa82a20, 'red'],
 ]);
+
+/** What a new farm starts with: a round number of pounds between the two limits, from the farm's seed. */
+export function dealPurse(random, P = DEFAULT_MARKET_PARAMS) {
+  const steps = Math.floor((P.startPurseMax - P.startPurseMin) / 10);
+  return P.startPurseMin + Math.floor(random() * (steps + 1)) * 10;
+}
+
+/**
+ * What a buyer offers for a vehicle on the farm, from the going rate and how it is: `cond` is { wear: engine wear 0..1, bodyWear: 0..1,
+ * faults: how many it has } . Returns { price, notes } where notes say what pulled it down, for the card.
+ */
+export function sellOffer(specId, cond, P = DEFAULT_MARKET_PARAMS) {
+  const sale = FOR_SALE[specId];
+  if (!sale) return null;
+  const clamp = (v) => Math.max(0, Math.min(1, v));
+  const wear = clamp(cond.wear ?? 0);
+  const body = clamp(cond.bodyWear ?? 0);
+  const faults = Math.max(0, cond.faults ?? 0);
+  const badness = clamp(0.5 * wear + 0.2 * body + 0.3 * Math.min(1, faults / 3));
+  const fraction = P.sellCeil - (P.sellCeil - P.sellFloor) * badness;
+  const notes = [];
+  if (wear >= 0.5) notes.push('engine tired');
+  if (body >= 0.6) notes.push('rough body');
+  if (faults > 0) notes.push(faults === 1 ? 'a fault' : `${faults} faults`);
+  return { price: Math.max(10, Math.round((sale.price * fraction) / 10) * 10), notes };
+}
+
+/** The fleet without the models you sold (they went in the morning). */
+export function withoutSold(chosen, sold) {
+  return chosen.filter((s) => !sold.includes(s.id));
+}
+
+/** The day's money in a line for the end-of-day card, or null on a day nothing happened. */
+export function moneyFacts(today, purse) {
+  const parts = [];
+  if (today.earned) parts.push(`earned £${today.earned}`);
+  if (today.spent) parts.push(`spent £${today.spent}`);
+  if (today.sold) parts.push(`sold for £${today.sold}`);
+  return `£${purse.toLocaleString('en-GB')} in the tin${parts.length ? ` (${parts.join(', ')})` : ''}`;
+}
 
 export function colourName(colour) {
   return COLOUR_NAMES.get(colour) ?? 'painted';
@@ -121,15 +169,40 @@ export function usedSpec(spec, record) {
 
 /** The money, and the vehicles bought but not yet sold. Saved with the farm. */
 export class Market {
-  constructor(P = DEFAULT_MARKET_PARAMS) {
+  constructor(P = DEFAULT_MARKET_PARAMS, random = null) {
     this.p = P;
-    this.purse = P.startPurse;
+    this.purse = random ? dealPurse(random, P) : P.startPurseMin;
     this.bought = []; // { specId, colour, hours, miles, wear, bodyWear, price }
+    this.sold = []; // models sold that were dealt with the farm: they leave the fleet in the morning
     this.ads = [];
+    this.today = { earned: 0, spent: 0, sold: 0 }; // this day's money, for the end-of-day card (not kept)
   }
 
   earn(amount) {
     this.purse += amount;
+    this.today.earned += amount;
+  }
+
+  /** Why this model can't be sold now, or null if it can. `onFarm` is the models here, `regulars` the regular quads' ids. */
+  sellWhyNot(specId, { onFarm, regulars }, P = this.p) {
+    if (!(specId in FOR_SALE)) return NOT_FOR_SALE[specId] ? 'Not ours to sell' : 'Nobody wants that';
+    if (this.sold.includes(specId)) return 'Already sold: it goes in the morning';
+    if (regulars.includes(specId)) {
+      const left = regulars.filter((id) => id !== specId && onFarm.includes(id) && !this.sold.includes(id)).length;
+      if (left < P.keepRegulars) return `Keep ${P.keepRegulars} of the regular quads for the girls`;
+    }
+    return null;
+  }
+
+  /** Takes the offer: the money now, and the vehicle gone in the morning. Returns { price } or null if it can't be sold. */
+  sell(specId, offer, ctx) {
+    if (this.sellWhyNot(specId, ctx)) return null;
+    const at = this.bought.findIndex((b) => b.specId === specId);
+    if (at >= 0) this.bought.splice(at, 1);
+    else this.sold.push(specId);
+    this.purse += offer.price;
+    this.today.sold += offer.price;
+    return { price: offer.price };
   }
 
   /** Why the ad can't be bought right now, or null if it can. */
@@ -144,6 +217,7 @@ export class Market {
   buy(ad) {
     if (this.whyNot(ad)) return null;
     this.purse -= ad.price;
+    this.today.spent += ad.price;
     this.ads = this.ads.filter((a) => a !== ad);
     const { specId, colour, hours, miles, wear, bodyWear, price } = ad;
     const record = { specId, colour, hours, miles, wear, bodyWear, price };
@@ -152,12 +226,13 @@ export class Market {
   }
 
   toJSON() {
-    return { purse: this.purse, bought: this.bought.map((b) => ({ ...b })) };
+    return { purse: this.purse, bought: this.bought.map((b) => ({ ...b })), sold: [...this.sold] };
   }
 
   restore(s) {
     if (!s) return;
     if (Number.isFinite(s.purse)) this.purse = s.purse;
+    if (Array.isArray(s.sold)) this.sold = s.sold.filter((id) => id in FOR_SALE);
     if (Array.isArray(s.bought)) this.bought = s.bought.filter((b) => b && b.specId in FOR_SALE && Number.isFinite(b.colour)).map((b) => ({ ...b }));
   }
 }
