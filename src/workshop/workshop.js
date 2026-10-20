@@ -3,6 +3,7 @@ import { jetError, leanStarve, jetTrue, jetText, adviceText } from '../engine/je
 import { registerTuning } from '../core/tuning.js';
 import { FIX_PARTS, PARTS, jetShelfChange } from './spares.js';
 import { hasBattery } from '../items/battery.js';
+import { airText } from '../vehicle/bleeding.js';
 import {
   DEFAULT_TUNE_PARAMS,
   TUNE_PARAM_RANGES,
@@ -40,6 +41,7 @@ const SILENCER_OFF = 'Took the silencer off: it will be a lot louder, and a bit 
 const SILENCER_ON = 'Put the silencer back on';
 const POD_JOB_SECONDS = 3; // fitting or taking off an accessory pod
 const FILTER_KEY = 'KeyI'; // hold to clean the air filter
+const BLEED_KEY = 'KeyQ'; // hold to work a diesel's lift pump priming lever
 const POD_NAMES = { analogue: 'analogue pod', digital: 'digital pod' };
 const REPAIR_KEYS = { KeyT: 'puncture', KeyR: 'belt', KeyL: 'cable', KeyC: 'carb', KeyM: 'mounts', KeyN: 'chain', KeyH: 'battery' };
 
@@ -208,6 +210,9 @@ export class Workshop {
     this.podJob = null;
     this.filterHeld = 0;
     this.filterKey = false;
+    this.bleedKey = false;
+    this.bleedButton = false;
+    this.bleedHeld = false;
     this.el.style.display = 'none';
     document.getElementById('overlay')?.classList.remove('workshop');
     document.body.classList.remove('workshop-open');
@@ -266,6 +271,29 @@ export class Workshop {
     if (unit.engine.params.runsOnDiesel) unit.quad.sump?.fill();
     this.render();
     for (const c of this.game.companions) c.voice.onTinker?.('service');
+  }
+
+  /**
+   * Holding the key (or button) works the lift pump's priming lever on a diesel with air in its line (bleeding.js): a few seconds' hold,
+   * and what's done stays done if you let go. It needs fuel in the tank to push, and says so if there is none.
+   */
+  bleedLever(dt) {
+    const unit = this.unit;
+    const q = unit?.quad;
+    if (!q) return;
+    const pumping = !!(q?.canAirLock && q.fuel.airLock > 0 && this.bleedKey && !this.podJob);
+    if (pumping && !q.bleed(dt)) {
+      if (!this.bleedWarned) this.game.hud.toast('Nothing in the tank to push through: put some red diesel in first');
+      this.bleedWarned = true;
+    } else if (!pumping) this.bleedWarned = false;
+    if (pumping !== this.bleedHeld) {
+      this.bleedHeld = pumping;
+      if (!pumping && q.fuel.airLock <= 0) {
+        this.game.hud.toast('Bled: fuel right through to the injectors');
+        for (const c of this.game.companions) c.voice.onTinker?.('service');
+      }
+    }
+    if (pumping) this.render();
   }
 
   /**
@@ -517,6 +545,7 @@ export class Workshop {
     if (pressed('ArrowDown', 'KeyS')) this.select(this.nextRow(1));
     if (pressed('KeyB', 'Backspace')) this.backToStock();
     this.filterKey = input.isDown(FILTER_KEY) || this.filterButton;
+    this.bleedKey = input.isDown(BLEED_KEY) || this.bleedButton;
     if (pressed('KeyV')) this.service();
     if (pressed('KeyX')) this.toggleSilencer();
     if (pressed('KeyF')) this.stripDown();
@@ -591,6 +620,7 @@ export class Workshop {
     const unit = this.unit;
     if (this.podJob && (this.podJob.t += dt) >= POD_JOB_SECONDS) this.finishPod();
     this.cleanFilter(dt);
+    this.bleedLever(dt);
     if (unit && (unit.engine.isRunning || unit.quad.speed > 1 || this.game.player.isRiding)) {
       this.close();
       this.game.hud.toast(unit.engine.isRunning ? "It's running: toolbox away" : 'Toolbox away');
@@ -624,6 +654,7 @@ export class Workshop {
         <div class="ws-explain"></div>
         <div class="ws-foot">
           <button type="button" class="ws-btn ws-service"><span class="key">V</span>Service it</button>
+          <button type="button" class="ws-btn ws-bleed"><span class="key">Q</span>Hold to bleed the fuel at the lift pump</button>
           <button type="button" class="ws-btn ws-filter"><span class="key">I</span>Hold to clean the air filter</button>
           <button type="button" class="ws-btn ws-fix" data-fix="puncture"><span class="key">T</span>Pump and patch tyres</button>
           <button type="button" class="ws-btn ws-fix" data-fix="belt"><span class="key">R</span>Check the belt</button>
@@ -687,6 +718,9 @@ export class Workshop {
     el.querySelector('.ws-drain').addEventListener('click', () => this.drainFuel());
     el.querySelector('.ws-water').addEventListener('click', () => this.drainWater());
     // The air filter takes a hold, with the key or the mouse button.
+    const bleedBtn = el.querySelector('.ws-bleed');
+    bleedBtn.addEventListener('mousedown', () => (this.bleedButton = true));
+    for (const ev of ['mouseup', 'mouseleave']) bleedBtn.addEventListener(ev, () => (this.bleedButton = false));
     const filterBtn = el.querySelector('.ws-filter');
     filterBtn.addEventListener('mousedown', () => (this.filterButton = true));
     for (const ev of ['mouseup', 'mouseleave']) filterBtn.addEventListener(ev, () => (this.filterButton = false));
@@ -741,6 +775,11 @@ export class Workshop {
     for (const b of this.el.querySelectorAll('.ws-fix')) b.style.visibility = this.repairShown(b.dataset.fix) ? '' : 'hidden';
     this.el.querySelector('.ws-service').lastChild.textContent = this.isDiesel ? 'Service it (oil, wear)' : 'Service it';
     const filter = unit.quad.filter;
+    const bleedBtn = this.el.querySelector('.ws-bleed');
+    const air = unit.quad.fuel.airLock;
+    bleedBtn.style.visibility = unit.quad.canAirLock ? '' : 'hidden';
+    bleedBtn.disabled = air <= 0;
+    bleedBtn.lastChild.textContent = this.bleedHeld ? `Bleeding... ${Math.round((1 - air) * 100)}%` : `Hold: bleed the fuel at the lift pump (${airText(air)})`;
     const filterBtn = this.el.querySelector('.ws-filter');
     filterBtn.disabled = filter.isClean;
     filterBtn.lastChild.textContent = this.filterHeld > 0 ? `Cleaning... ${Math.round((this.filterHeld / filter.p.cleanSeconds) * 100)}%` : `Hold: clean air filter (${filter.state})`;

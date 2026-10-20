@@ -63,6 +63,7 @@ export function fixEverything(unit) {
   unit.quad.iceCable.fix();
   unit.quad.carbIce.fix();
   unit.quad.fuel.wax = 0;
+  unit.quad.fuel.airLock = 0;
   unit.quad.faults.kept.chainLube = 1; // a fresh chain, as the bench leaves it
   unit.quad.faults.kept.chainOff = false;
   if (unit.quad.tyres) unit.quad.tyres.tread = { front: 1, rear: 1 }; // new rubber (without taking anything off the rack)
@@ -110,6 +111,7 @@ export function problemSummary(unit) {
   if (unit.quad.brakes.wet > 0.1) bits.push(`brakes wet ${unit.quad.brakes.wet.toFixed(2)}`);
   if (unit.quad.brakes.binding) bits.push('brake binding');
   if (unit.quad.carbIce.icing) bits.push(`carb iced ${unit.quad.carbIce.ice.toFixed(2)}`);
+  if (unit.quad.fuel.airLock >= 0.02) bits.push(`air in the fuel line ${unit.quad.fuel.airLock.toFixed(2)}`);
   if (unit.quad.fuel.wax >= 0.1) bits.push(`diesel waxed ${unit.quad.fuel.wax.toFixed(2)}`);
   if (unit.quad.iceCable.frozen) bits.push(`throttle cable frozen ${unit.quad.iceCable.ice.toFixed(2)}`);
   if (e.boiled) bits.push('boiled over');

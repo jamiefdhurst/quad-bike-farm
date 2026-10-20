@@ -217,6 +217,7 @@ import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES, PREMIX_CAN_
 import { OilBottle, OIL_BOTTLE_PARAM_RANGES } from './items/oilBottle.js';
 import { CoolantBottle, COOLANT_BOTTLE_PARAM_RANGES, pourStep } from './items/coolantBottle.js';
 import { AntiGelBottle, ANTI_GEL_BOTTLE_PARAM_RANGES, doseStep } from './items/antiGelBottle.js';
+import { DEFAULT_BLEED_PARAMS, BLEED_PARAM_RANGES } from './vehicle/bleeding.js';
 import { DEFAULT_DIESEL_WAX_PARAMS, DIESEL_WAX_PARAM_RANGES, dealWax } from './vehicle/dieselWax.js';
 import { BatteryItem, hasBattery } from './items/battery.js';
 import { Charger, CHARGER_PARAM_RANGES } from './workshop/charger.js';
@@ -517,6 +518,9 @@ export class Game {
     registerTuning('Diesel waxing', this.dieselWaxParams, DIESEL_WAX_PARAM_RANGES);
     this.dieselWaxRandom = createRandom(this.seed ^ 0x3a9e);
     for (const unit of this.units) unit.quad.waxParams = this.dieselWaxParams;
+    this.bleedParams = { ...DEFAULT_BLEED_PARAMS };
+    registerTuning('Bleeding a diesel', this.bleedParams, BLEED_PARAM_RANGES);
+    for (const unit of this.units) unit.quad.bleedParams = this.bleedParams;
     this.frozenCableRandom = createRandom(this.seed ^ 0xf205);
     for (const unit of this.units) unit.quad.iceCable = new FrozenCable(this.frozenCableParams, this.frozenCableRandom);
     this.handbrakeParams = { ...DEFAULT_HANDBRAKE_PARAMS };
@@ -3438,6 +3442,7 @@ export class Game {
     unit.quad.brakes.setBinding(random() < this.brakeParams.bindChance);
     unit.quad.iceCable = new FrozenCable(this.frozenCableParams, random); // stood in the barn, so never frozen
     unit.quad.waxParams = this.dieselWaxParams;
+    unit.quad.bleedParams = this.bleedParams;
     if (unit.quad.sump) unit.quad.sump = new Sump({ level: startLevel(false, random, this.sumpParams), burner: false, params: this.sumpParams });
     unit.quad.faults.roll(createRandom(this.farmSeed ^ (seed + 3)));
     unit.quad.faults.prone.belt = 0; // a clutch, not a belt

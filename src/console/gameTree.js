@@ -158,6 +158,9 @@ export function buildGameTree(g, host) {
           wax: num(() => q().fuel.wax, (v) => (q().fuel.wax = v), 0, 1, '', '1 is waxed solid: a diesel loses power, cuts out and will not catch until it warms or is treated'),
           antiGel: num(() => q().fuel.antiGel, (v) => (q().fuel.antiGel = v), 0, 1, '', 'the share of the tank treated with anti-gel'),
         }), 'the diesel\'s wax');
+        out.dieselAir = group(() => ({
+          airLock: num(() => q().fuel.airLock, (v) => (q().fuel.airLock = v), 0, 1, '', '1 is air in the line after running dry: the engine will not catch until it is bled at the lift pump'),
+        }), 'air in the diesel\'s fuel line');
       }
       out.iceCable = group(() => ({
         ice: num(() => q().iceCable.ice, (v) => (q().iceCable.ice = v), 0, 1, '', '1 is frozen solid: it will not open (or, if it freezes open, shut) until it thaws'),
