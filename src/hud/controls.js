@@ -55,7 +55,7 @@ export const CONTROLS = [
     title: 'The little tipping trailer',
     lines: [
       `<kbd>J</kbd> on a quad with a rack (or the tractor) hooks it on when the hitch is at its ring, or takes it off when you're stopped. <kbd>E</kbd> at the tub with a jerry can or the toolbox in your hands stands it in the tub. <kbd>T</kbd> tips the tub (stopped, from the seat or beside it) and tips out whatever is in it. Jess may climb in against the rules, or ask either girl in from the wheel`,
-      `Small ads: <kbd>E</kbd> at the cork board on the barn's back wall to read what is for sale (most days nothing is), then <kbd>1</kbd> to <kbd>3</kbd> to buy that ad with the money the farm jobs earn. It turns up in the yard the next morning`,
+      `Small ads: <kbd>E</kbd> at the cork board on the barn's back wall to read what is for sale (most days nothing is), then <kbd>1</kbd> to <kbd>3</kbd> to buy that ad with the money the farm jobs earn (it turns up in the yard the next morning), or <kbd>S</kbd> for what a buyer would take for yours: its number, then the same number again to sell (it is collected the next morning). <kbd>B</kbd> goes back to the ads`,
       `Farm jobs: <kbd>E</kbd> at the chalkboard on the barn door to read today's list. For the muck job, park the trailer by the muck heap in the east wheat field, hold <kbd>E</kbd> at the trailer to fork muck in, then press <kbd>T</kbd> (stopped) and the tub tilts just enough and holds, then drive slowly (under 2 m/s) across the stubble: it spreads out of the back. <kbd>T</kbd> again lowers it; <kbd>Shift</kbd>+<kbd>T</kbd> tips it all the way out in one heap`,
     ],
   },

@@ -8,11 +8,13 @@ const PX_W = 480;
 const PX_H = 440; // the same scrap-per-metre as the width
 const SLIP_H = 118; // a pinned slip, in pixels
 const SLIPS = 3;
+const SELL_ROWS = 9; // the number keys
 
 /**
  * The cork board of classified ads at the back of the barn (farm/classifieds.js Market): a card for sale from the neighbours, pinned up on the
- * odd day. Most days it is bare. Look at it and press E for a close view, where 1 to 3 buy the ad (it turns up tomorrow). Drawn on a canvas, redrawn
- * when an ad goes or the purse changes.
+ * odd day. Most days it is bare. Look at it and press E for a close view, where 1 to 3 buy the ad (it turns up tomorrow); S turns to the page for
+ * selling what is on the farm (a number, then the same number again, and a buyer collects it in the morning), B back to the ads. Drawn on a canvas,
+ * redrawn when an ad goes or the purse changes.
  */
 export class ClassifiedsView {
   constructor({ game, market }) {
@@ -44,6 +46,8 @@ export class ClassifiedsView {
     this.proxy = new THREE.Mesh(new THREE.BoxGeometry(0.4, BOARD_H + 0.1, BOARD_W + 0.1), new THREE.MeshBasicMaterial({ visible: false }));
     this.proxy.position.copy(group.position);
     game.scene.add(this.proxy);
+    this.page = 'buy';
+    this.armed = null; // the sell page's row waiting for a second press
     this.buildCard();
     this.draw();
   }
@@ -57,6 +61,8 @@ export class ClassifiedsView {
   }
 
   open() {
+    this.page = 'buy';
+    this.armed = null;
     this.render();
     this.el.style.display = 'block';
     document.body.classList.add('classifieds-open');
@@ -73,7 +79,33 @@ export class ClassifiedsView {
     this.game.player.moveEnabled = false;
     input.takeWheelSteps();
     if (input.wasPressed('KeyG') || input.wasPressed('KeyE') || input.wasPressed('Escape')) return this.close();
-    for (let i = 0; i < SLIPS; i++) if (input.wasPressed(`Digit${i + 1}`) && this.market.ads[i]) this.game.buyAd(this.market.ads[i]);
+    if (input.wasPressed('KeyS') && this.page !== 'sell') return this.turnTo('sell');
+    if (input.wasPressed('KeyB') && this.page !== 'buy') return this.turnTo('buy');
+    if (this.page === 'buy') {
+      for (let i = 0; i < SLIPS; i++) if (input.wasPressed(`Digit${i + 1}`) && this.market.ads[i]) this.game.buyAd(this.market.ads[i]);
+      return;
+    }
+    const items = this.game.sellable();
+    for (let i = 0; i < SELL_ROWS; i++) {
+      if (!input.wasPressed(`Digit${i + 1}`)) continue;
+      const item = items[i];
+      if (!item) break;
+      if (this.armed === i && !item.why) {
+        this.armed = null;
+        this.game.sellUnit(item);
+      } else {
+        this.armed = item.why ? null : i; // a first press only asks; the same number again sells
+        if (item.why) this.game.hud.toast(item.why, 2.5);
+        this.render();
+      }
+      break;
+    }
+  }
+
+  turnTo(page) {
+    this.page = page;
+    this.armed = null;
+    this.render();
   }
 
   /** The board changed (an ad bought, a new day dealt, the purse moved): redraw it and the card. */
@@ -145,6 +177,7 @@ export class ClassifiedsView {
     el.innerHTML = '<div class="cl-card"><div class="cl-title">For sale</div><div class="cl-purse"></div><div class="cl-body"></div><div class="cl-keys"></div></div>';
     document.body.appendChild(el);
     this.el = el;
+    this.titleEl = el.querySelector('.cl-title');
     this.purseEl = el.querySelector('.cl-purse');
     this.bodyEl = el.querySelector('.cl-body');
     this.keysEl = el.querySelector('.cl-keys');
@@ -153,6 +186,8 @@ export class ClassifiedsView {
   render() {
     const m = this.market;
     this.purseEl.textContent = `In the tin: £${m.purse.toLocaleString('en-GB')}`;
+    this.titleEl.textContent = this.page === 'sell' ? 'We buy' : 'For sale';
+    if (this.page === 'sell') return this.renderSell();
     const rows = m.ads.slice(0, SLIPS).map((ad, i) => {
       const why = m.whyNot(ad);
       const row = Object.assign(document.createElement('div'), { className: why ? 'cl-ad cl-no' : 'cl-ad' });
@@ -164,6 +199,27 @@ export class ClassifiedsView {
     });
     const bought = m.bought.length ? `On the way or bought: ${m.bought.length}` : '';
     this.bodyEl.replaceChildren(...(rows.length ? rows : [Object.assign(document.createElement('div'), { textContent: 'Nothing for sale today.' })]));
-    this.keysEl.textContent = `${bought}${bought ? '   ·   ' : ''}E or G to step back`;
+    this.keysEl.textContent = `${bought}${bought ? '   ·   ' : ''}S to sell one of yours   ·   E or G to step back`;
+  }
+
+  /** The page for selling: each vehicle on the farm that a buyer would take, with the offer and what pulled it down. */
+  renderSell() {
+    const items = this.game.sellable().slice(0, SELL_ROWS);
+    const rows = items.map((item, i) => {
+      const armed = this.armed === i;
+      const row = Object.assign(document.createElement('div'), { className: item.why ? 'cl-ad cl-no' : 'cl-ad' });
+      const name = item.unit.name;
+      const notes = item.offer.notes.length ? ` (${item.offer.notes.join(', ')})` : '';
+      row.append(
+        Object.assign(document.createElement('div'), { textContent: `${i + 1}. ${name}: £${item.offer.price.toLocaleString('en-GB')}${notes}` }),
+        Object.assign(document.createElement('div'), {
+          className: 'cl-hint',
+          textContent: item.why ?? (armed ? `Press ${i + 1} again to sell it. A buyer collects it in the morning.` : 'Press the number to sell it.'),
+        }),
+      );
+      return row;
+    });
+    this.bodyEl.replaceChildren(...(rows.length ? rows : [Object.assign(document.createElement('div'), { textContent: 'Nothing here a buyer would take.' })]));
+    this.keysEl.textContent = 'B for the ads for sale   ·   E or G to step back';
   }
 }

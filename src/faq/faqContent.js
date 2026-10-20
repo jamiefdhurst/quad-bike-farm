@@ -1693,13 +1693,26 @@ export const FAQ_SECTIONS = [
         a: `Check the cork board of small ads on the barn's back wall, south of the calendar and the records, and press <kbd>E</kbd> for a close look. Most days it is bare, but
           now and then a neighbour has something for sale: a quad, the tractor, the buggy or a Land Rover, in a colour that may not be the one you know, worn to some degree.
           Press <kbd>1</kbd>, <kbd>2</kbd> or <kbd>3</kbd> to buy that ad. The money comes out of the tin straight away and the vehicle is in the yard when you load the next
-          day. Only a model that isn't on your farm is advertised, and you can have two bought vehicles at a time.`,
+          day. Only a model that isn't on your farm is advertised, and you can have four bought vehicles at a time.`,
         tip: 'The cork board in the barn has the odd vehicle for sale. Press E, then 1 to 3 to buy.',
       },
       {
+        q: 'How do I sell a vehicle?',
+        a: `At the cork board in the barn, press <kbd>E</kbd> and then <kbd>S</kbd> for the page of what a buyer would take. Each vehicle on the farm is listed with an offer,
+          and a note on what pulled it down (a tired engine, a rough body, faults). Press its number, then the same number again to sell it. You get the money at once and a buyer
+          collects the vehicle in the morning, so you can use it until you call it a day. <kbd>B</kbd> goes back to the ads. A buyer never pays as much as the board charges for the same
+          one, so buying to sell on loses money.`,
+        tip: 'At the cork board in the barn press S to sell a vehicle: its number, then again to confirm.',
+      },
+      {
+        q: 'Why won\'t it let me sell one?',
+        a: `The cork board keeps two of the regular quads back so each girl has one to ride, and the girls' own cars and the loan quad are never for sale. A vehicle already sold
+          goes in the morning and can't be sold twice. A seeded game (<code>?seed=</code>) isn't kept, so nobody would collect it.`,
+      },
+      {
         q: 'How do I earn money?',
-        a: `Every job you tick off the chalkboard in the barn pays into the tin, the same for a muck, a silage or a service job. The cork board's close view says how much is in it.
-          A new farm starts with a little. You can't sell vehicles yet.`,
+        a: `Every job you tick off the chalkboard in the barn pays into the tin, the same for a muck, a silage or a service job, and a toast says how much is in it. Selling a vehicle pays
+          too. Each day's end-of-day card says what the tin holds and what came in and went out. A new farm starts with somewhere between £200 and £600.`,
         tip: 'Each farm job on the chalkboard pays into the tin, which buys vehicles from the small ads.',
       },
       {

@@ -296,7 +296,7 @@ import { SparesShelf } from './workshop/sparesShelf.js';
 import { MuckLoad, DEFAULT_MUCK_PARAMS, MUCK_PARAM_RANGES, JobBoard, DEFAULT_JOB_BOARD_PARAMS, JOB_BOARD_PARAM_RANGES, availableJobs } from './world/farmJobs.js';
 import { JobBoardView } from './world/jobBoard.js';
 import { ClassifiedsView } from './world/classifiedsView.js';
-import { Market, DEFAULT_MARKET_PARAMS, MARKET_PARAM_RANGES, FOR_SALE, dealAds, withBought, colourName } from './farm/classifieds.js';
+import { Market, DEFAULT_MARKET_PARAMS, MARKET_PARAM_RANGES, FOR_SALE, dealAds, withBought, withoutSold, sellOffer, moneyFacts, colourName } from './farm/classifieds.js';
 import { ServiceJob, pickServiceJob, serviceChalk, servicePlan, factsOf, stateOf } from './workshop/service.js';
 import { DEFAULT_SPIKE_PARAMS, SPIKE_PARAM_RANGES, keepOutside } from './items/baleSpike.js';
 import { BaleSpikeRig } from './items/baleSpikeRig.js';
@@ -420,13 +420,17 @@ export class Game {
     // The tractor, UTV and Land Rover are in the same pool as the quads and are dealt a place the same way, but they aren't the girls' quads (`girlUnits`).
     const isBig = (spec) => spec.tractor || spec.utv || spec.landRover;
     const pool = [...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC];
-    const chosen = fleetFromSave(this.farm.save?.fleet, [...QUAD_SPECS, ...pool]) ?? pickFleet(QUAD_SPECS, pool, createRandom(this.farmSeed ^ 0x51ee7));
-    this.fleetIds = chosen.map((s) => s.id); // as dealt: what you bought is added to it each morning (farm/classifieds.js)
-    // What you bought turns up this morning, in the colour and condition it was sold in, in place of the dealt one of the model.
+    // The purse and what you bought and sold (farm/classifieds.js). A new farm's purse is dealt from the farm seed; a saved one is put back over it.
     this.marketParams = { ...DEFAULT_MARKET_PARAMS };
     registerTuning('Second-hand market', this.marketParams, MARKET_PARAM_RANGES);
-    this.market = new Market(this.marketParams);
+    this.market = new Market(this.marketParams, createRandom(this.farmSeed ^ 0x7ea5));
     this.market.restore(this.farm.save?.market);
+    // What you sold yesterday has gone this morning (its saved condition goes with it: it isn't in the next save).
+    const dealt = fleetFromSave(this.farm.save?.fleet, [...QUAD_SPECS, ...pool]) ?? pickFleet(QUAD_SPECS, pool, createRandom(this.farmSeed ^ 0x51ee7));
+    const chosen = withoutSold(dealt, this.market.sold);
+    this.market.sold = [];
+    this.fleetIds = chosen.map((s) => s.id); // as dealt: what you bought is added to it each morning
+    // What you bought turns up this morning, in the colour and condition it was sold in, in place of the dealt one of the model.
     const bySpecId = Object.fromEntries([...QUAD_SPECS, ...pool].map((s) => [s.id, s]));
     const stocked = withBought(chosen, this.market.bought, bySpecId);
     this.stockedIds = stocked.map((s) => s.id);
@@ -1488,7 +1492,10 @@ export class Game {
     this.setUpServiceJob();
     this.jobBoardView = new JobBoardView({ game: this, board: this.jobBoard, records: this.records });
     // Each farm job ticked off pays (farm/classifieds.js); the neighbours' ads for vehicles are pinned up on the odd day, on the board beside the chalkboards.
-    this.jobBoard.onComplete = () => this.market.earn(this.marketParams.jobPay);
+    this.jobBoard.onComplete = (id) => {
+      this.market.earn(this.marketParams.jobPay);
+      this.hud.toast(`+£${this.marketParams.jobPay} for the job: ${(this.jobBoard.jobs[id]?.chalk ?? 'done').replace(/\.$/, '')}. £${this.market.purse.toLocaleString('en-GB')} in the tin`, 4);
+    };
     this.market.ads = dealAds(createRandom((this.farmSeed ^ Math.imul(this.farm.day, 0x9e3779b1)) >>> 0), { specs: this.specsById, onFarm: this.stockedIds, owned: this.market.bought, P: this.marketParams });
     this.classifiedsView = new ClassifiedsView({ game: this, market: this.market });
     this.wallCalendar = new WallCalendar({ game: this, day: this.farm.day }); // between the two boards: the days crossed off
@@ -3849,9 +3856,34 @@ export class Game {
     if (why) return this.hud.toast(why, 2.5);
     const spec = this.specsById[ad.specId];
     this.market.buy(ad);
+    this.notebook.note({ name: spec.name }, { kind: 'deal', deal: 'bought', price: ad.price }, { by: 'you', saw: true });
     this.saveFarm?.();
     this.classifiedsView.refresh();
     this.hud.toast(`Bought: the ${colourName(ad.colour)} ${spec.label}. It will be here in the morning`, 3.5);
+  }
+
+  /** The vehicles on the farm a buyer would take, each with its offer and why not if it can't go: [{ unit, specId, offer, why }]. */
+  sellable() {
+    const regulars = QUAD_SPECS.map((s) => s.id);
+    const ctx = { onFarm: this.stockedIds, regulars };
+    return this.units
+      .filter((u) => u.spec.id in FOR_SALE && !u.barnFind)
+      .map((unit) => {
+        const faults = Object.values(unit.quad.faults?.started ?? {}).filter(Boolean).length;
+        const offer = sellOffer(unit.spec.id, { wear: unit.engine.wear ?? 0, bodyWear: unit.spec.bodyWear ?? 0, faults }, this.marketParams);
+        return { unit, specId: unit.spec.id, offer, why: this.market.sellWhyNot(unit.spec.id, ctx) };
+      });
+  }
+
+  /** Sells a vehicle from the board (classifiedsView.js): the money now, the vehicle collected in the morning. Saved at once. */
+  sellUnit(item) {
+    if (this.farm.seeded) return this.hud.toast('A seeded game is not kept, so nobody would collect it', 3);
+    const done = this.market.sell(item.specId, item.offer, { onFarm: this.stockedIds, regulars: QUAD_SPECS.map((s) => s.id) });
+    if (!done) return this.hud.toast(item.why ?? 'Nobody wants that', 2.5);
+    this.notebook.note(item.unit, { kind: 'deal', deal: 'sold', price: done.price }, { by: 'you', saw: true });
+    this.saveFarm?.();
+    this.classifiedsView.refresh();
+    this.hud.toast(`Sold: the ${item.unit.label} for £${done.price}. It is collected in the morning`, 3.5);
   }
 
   /** Debug: puts up ads now, whatever the day's dice said (up to three, from the models not on the farm), and redraws the board. */
@@ -3876,7 +3908,7 @@ export class Game {
   describeMarket() {
     const m = this.market;
     const bought = m.bought.map((b) => `${colourName(b.colour)} ${this.specsById[b.specId]?.label ?? b.specId}`).join(', ');
-    return `£${m.purse} in the tin, ${m.ads.length ? m.ads.map((a) => a.text).join(' | ') : 'no ads today'}${bought ? `; bought: ${bought}` : ''}`;
+    return `£${m.purse} in the tin${m.sold.length ? `, going in the morning: ${m.sold.join(', ')}` : ''}, ${m.ads.length ? m.ads.map((a) => a.text).join(' | ') : 'no ads today'}${bought ? `; bought: ${bought}` : ''}`;
   }
 
   captureFarm() {
@@ -3959,6 +3991,7 @@ export class Game {
         score: a.score(),
         metres: a.n('metres'),
         bogs: a.n('bogged'),
+        money: moneyFacts(this.market.today, this.market.purse),
       },
       this.farmParams,
     );
@@ -3968,7 +4001,7 @@ export class Game {
     this.dayRecapEl.innerHTML =
       `<h2>${esc(r.title)}</h2><h3>Amy's logbook</h3>${list(r.log, r.logMore, 'Nothing written down today.')}` +
       `<h3>Bucket list</h3>${list(r.ticked, r.tickedMore, 'Nothing new ticked off.')}<p class="total">${esc(r.total)}</p>` +
-      `${r.facts.length ? `<p class="facts">${esc(r.facts.join(', '))}</p>` : ''}<p class="go">Press E to carry on</p>`;
+      `${r.facts.length ? `<p class="facts">${esc(r.facts.join(', '))}</p>` : ''}${r.money ? `<p class="facts">${esc(r.money)}</p>` : ''}<p class="go">Press E to carry on</p>`;
     this.dayRecapEl.classList.add('shown');
     this.dayRecap.open();
     this.recapJessIn = this.farmParams.recapJessDelay;
