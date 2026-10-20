@@ -2,6 +2,7 @@
 // be tested. North is -z and east is +x, so the map puts x across and z down the page, north up. hud/mapView.js draws it.
 
 import { dutchBarnShape, fieldShedShape } from '../world/outbuildings.js';
+import { neighbourFarmShape } from '../world/neighbourFarm.js';
 
 export const DEFAULT_MAP_PARAMS = {
   size: 0.88, // the map's side as a share of the shorter side of the screen
@@ -171,6 +172,8 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   if (b) buildings.push({ name: 'barn', rect: centred(b.x, b.z + (b.annex?.halfZ ?? 0), b.halfX, b.halfZ + (b.annex?.halfZ ?? 0)), fill: C.building });
   if (dutch) buildings.push({ name: 'dutchBarn', rect: dutch.roof, fill: C.building });
   if (shed) buildings.push({ name: 'fieldShed', rect: shed.outer, fill: C.building });
+  const nf = neighbourFarmShape(layout);
+  if (nf) buildings.push({ name: 'neighbourHouse', rect: nf.house.outer, fill: C.building }, { name: 'neighbourBarn', rect: nf.barn.outer, fill: C.building });
   const small = [];
   if (layout.fuelTank) small.push({ name: 'fuelTank', rect: centred(layout.fuelTank.x, layout.fuelTank.z, 0.8, 1.4), fill: C.shed });
   if (layout.dieselBowser) small.push({ name: 'dieselBowser', rect: centred(layout.dieselBowser.x, layout.dieselBowser.z, 0.7, 1.2), fill: C.shed });
@@ -200,6 +203,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   if (road) place('Farm road', (road.x1 + layout.road.hedgeTo) / 2 - 20, road.z - 9);
   if (dutch) place('Dutch barn', layout.dutchBarn.x - 4, layout.dutchBarn.z - layout.dutchBarn.halfZ - 4);
   if (shed) place('Field shed', layout.fieldShed.x + 21, layout.fieldShed.z + 1);
+  if (nf) place('Neighbour', nf.yard.minX + 14, nf.yard.minZ + 7);
   if (m) place('Muck heap', m.x, m.z, m.halfZ + 4);
   if (t) place('Trough', t.x, t.z - 5);
   if (hill) {
@@ -219,12 +223,13 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   place(layout.trackName ?? 'Track', tp.x + 8, tp.z);
 
   // The map's key, north arrow and scale go in the neighbours' land south of the farm and east of the hill, where there's room.
-  const key = { minX: (A.hill?.maxX ?? fields.farm.minX) + 10, maxX: bounds.maxX - 4, minZ: fields.farm.maxZ + 8, maxZ: bounds.maxZ - 4 };
+  const key = { minX: (A.hill?.maxX ?? fields.farm.minX) + (nf ? 4 : 10), maxX: Math.min(bounds.maxX - 4, nf ? nf.yard.minX - 6 : Infinity), minZ: fields.farm.maxZ + 8, maxZ: bounds.maxZ - 4 };
 
   return {
     bounds, key, areas, hedges, gates, stream, ford, pond, road, track: { points: track.points, half: layout.trackHalfWidth }, bogs, dragStrip, ramp,
     woodsTrack, woodsBogs, woodsPond: woods?.pond ?? null, woodland: woods ? { ...woods.rect } : null,
     buildings, small, muckHeap, paddock, yard, wood, labels,
+    neighbourYard: nf ? { ...nf.outline } : null,
   };
 }
 

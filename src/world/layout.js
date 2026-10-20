@@ -22,7 +22,25 @@ export const LAYOUT = {
   road: { z: 2, fromX: 78, toX: 199.5, halfWidth: 2.3, verge: 2.8, hedgeTo: 176, pad: { x: 188, radius: 8 }, gaps: { north: [112, 152], south: [128, 166] }, gapWidth: 6, gate: { width: 7 }, grid: { length: 3.2, pitch: 0.16, margin: 0.3, gateOffset: 2.4 } },
   // The public lane outside the farm's east hedge, running north to south past the big gate (world/traffic.js): its middle `x`, `halfWidth`,
   // and the `minZ` to `maxZ` that is drawn and driven on. Vehicles go by on it and visitors turn in at the gate.
-  publicLane: { x: 206.4, halfWidth: 2.3, minZ: -205, maxZ: 205 },
+  // `open` is the stretch you can ride or walk along (z from `minZ` to `maxZ`, between the farm's hedge and an invisible wall just east of
+  // the tarmac); the rest is as it was, shut off by the wall along its near edge.
+  publicLane: { x: 206.4, halfWidth: 2.3, minZ: -205, maxZ: 205, open: { minZ: -60, maxZ: 160 } },
+  // The neighbour's farm (world/neighbourFarm.js, neighbourFarmProps.js): a walled yard on the lane's west side south of the farm, its gateway
+  // in the east wall onto the lane. `yard` is the wall's outline (`wall` thick, `wallHeight` high); the farmhouse stands at the south with its
+  // door in the north wall, the barn at the west with its big door in the east wall, and three vehicles are parked about. The neighbour herself
+  // stands by `stand` (facing `yaw`, 0 being +z) until dark.
+  neighbourFarm: {
+    yard: { minX: 146, maxX: 203, minZ: 92, maxZ: 148, wall: 0.5, wallHeight: 1.3 },
+    gateway: { z: 104, width: 8 },
+    house: { x: 178, z: 138, halfX: 7, halfZ: 4.2, wallHeight: 5.2, ridge: 7.6, door: { x: 178, halfWidth: 0.55, height: 2.05 } },
+    barn: { x: 158, z: 108, halfX: 8, halfZ: 6, wallHeight: 4.6, ridge: 6.6, door: { z: 108, halfWidth: 2.6, height: 3.6 } },
+    parked: [
+      { kind: 'series', x: 192, z: 122, yaw: 1.2, colour: 0x5d6d4a, reg: 'K412 PBW' },
+      { kind: 'utv', x: 183, z: 125.5, yaw: 0.35, colour: 0x7a2a22 },
+      { kind: 'tractor', x: 159, z: 126, yaw: 3.0, colour: 0xb02a20 },
+    ],
+    stand: { x: 175.8, z: 130.6, yaw: Math.PI },
+  },
   // How each stubble field looks and lies (world/fields.js, groundTexture.js, props.js). `rows` is the way it was drilled (rows along x or z,
   // half a metre apart), `tramlines` the metres between the sprayer's wheel lines, `ground` the straw's colour on the ground, `stalk` the
   // stalks' tip and base colours, `stalkHeight` their cut height range and `density` how thick they stand (1 is the wheat's). The north field,

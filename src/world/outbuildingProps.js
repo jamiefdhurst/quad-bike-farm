@@ -9,7 +9,7 @@ import { enableShadows } from './assets.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 
-function canvasTexture(w, h, draw) {
+export function canvasTexture(w, h, draw) {
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
@@ -25,7 +25,7 @@ function canvasTexture(w, h, draw) {
  * Corrugated sheet, one tile 1.2 m across (u) and 3 m down (v): sixteen corrugations shaded light to dark across each, the base colour
  * blotched, and rust running down from the laps and fixings, `rust` 0..1 how much.
  */
-function corrugatedTexture(random, base, rust) {
+export function corrugatedTexture(random, base, rust) {
   return canvasTexture(256, 512, (ctx, w, h) => {
     ctx.fillStyle = base;
     ctx.fillRect(0, 0, w, h);
@@ -72,7 +72,7 @@ function corrugatedTexture(random, base, rust) {
 }
 
 /** Rough stone walling, one tile 2 m square: courses of irregular grey-buff stones in pale lime mortar, darker and greener low down. */
-function stoneTexture(random) {
+export function stoneTexture(random) {
   return canvasTexture(512, 512, (ctx, w, h) => {
     ctx.fillStyle = '#9a9384';
     ctx.fillRect(0, 0, w, h);
@@ -116,7 +116,7 @@ function stoneTexture(random) {
 }
 
 /** Concrete blocks, one tile 1.8 m across and 1.2 m up: 440 by 215 mm blocks, stretcher bond, weathered. */
-function blockTexture(random) {
+export function blockTexture(random) {
   return canvasTexture(512, 256, (ctx, w, h) => {
     ctx.fillStyle = '#8d8b85';
     ctx.fillRect(0, 0, w, h);
@@ -166,7 +166,7 @@ function muckTexture(random) {
 }
 
 /** A box `w` by `h` by `d` whose texture coordinates are in metres over `tile` (so a tile `tile` m across repeats evenly on every face). */
-function worldBox(w, h, d, tileU = 1, tileV = tileU) {
+export function worldBox(w, h, d, tileU = 1, tileV = tileU) {
   const geo = new THREE.BoxGeometry(w, h, d);
   const uv = geo.getAttribute('uv');
   // Faces in order +x, -x, +y, -y, +z, -z, four vertices each: what u and v run along on each.

@@ -1,6 +1,9 @@
 // The buildings and odds and ends out in the east fields: the Dutch barn at the far end of the road with its stack of round bales, the old
 // stone field shed, the muck heap and the water trough. Pure: their shapes from the layout (layout.js), for the props (outbuildingProps.js),
 // the terrain (levelled under the two buildings), the stubble (none grows under them) and the rain (none falls under their roofs).
+// The neighbour's yard (neighbourFarm.js) is folded in, so everything that asks "is something built here?" counts it too.
+
+import { createNeighbourFarm } from './neighbourFarm.js';
 
 // A round bale: the same as the farm's others (props.js buildBales).
 export const BALE = { radius: 0.75, length: 1.2 };
@@ -80,23 +83,24 @@ export function createOutbuildings(layout) {
   const t = layout.trough;
   const heap = m ? rect(m.x, m.z, m.halfX, m.halfZ) : null;
   const trough = t ? rect(t.x, t.z, t.length / 2, t.width / 2) : null;
+  const neighbour = createNeighbourFarm(layout);
   const footprints = [barn?.outer, shed?.outer, heap, trough].filter(Boolean);
   // The trodden ground in front of the Dutch barn's open side, out to the hardstanding: no stubble there either.
   const apron = barn ? { minX: barn.outer.minX - 1, maxX: barn.outer.maxX + 1, minZ: barn.outer.maxZ, maxZ: barn.outer.maxZ + 4 } : null;
 
   /** Under the Dutch barn's or the field shed's roof: out of the rain. */
   function covered(x, z) {
-    return (!!barn && inRect(barn.roof, x, z)) || (!!shed && inRect(shed.roof, x, z));
+    return (!!barn && inRect(barn.roof, x, z)) || (!!shed && inRect(shed.roof, x, z)) || !!neighbour?.covered(x, z);
   }
 
   /** Whether (x, z) is on a building, the heap or the trough (or the Dutch barn's apron), or within `margin` metres of one: no stubble grows there. */
   function builtAt(x, z, margin = 0) {
-    return footprints.some((r) => inRect(r, x, z, margin)) || (!!apron && inRect(apron, x, z, margin));
+    return footprints.some((r) => inRect(r, x, z, margin)) || (!!apron && inRect(apron, x, z, margin)) || !!neighbour?.builtAt(x, z, margin);
   }
 
   /** Metres from (x, z) to the nearest building, heap or trough (0 on one). */
   function clearance(x, z) {
-    return Math.min(Infinity, ...footprints.map((r) => outside(r, x, z)));
+    return Math.min(Infinity, ...footprints.map((r) => outside(r, x, z)), ...(neighbour?.footprints ?? []).map((r) => outside(r, x, z)));
   }
 
   /**
@@ -109,8 +113,8 @@ export function createOutbuildings(layout) {
       const d = outside(s.outer, x, z);
       if (d < reach) return { k: 1 - smooth(clamp01(d / reach)), level: ground(o.x, o.z) };
     }
-    return null;
+    return neighbour?.floorAt(x, z, ground) ?? null;
   }
 
-  return { barn, shed, heap, trough, apron, footprints, covered, builtAt, clearance, floorAt };
+  return { neighbour, barn, shed, heap, trough, apron, footprints, covered, builtAt, clearance, floorAt };
 }
