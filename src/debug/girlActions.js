@@ -118,6 +118,23 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'learn-quads',
+      label: '% has ridden every quad',
+      run: (id) => {
+        const c = girl(id);
+        for (const spec of g.strengthIds()) for (const kind of ['hill', 'mud', 'tarmac']) c.opinion.ride(1000, spec, kind);
+        toast(`${nameOf(id)}: ${c.opinion.describe(g.strengthIds(), g.strengthTruth)}`);
+      },
+    },
+    {
+      verb: 'forget-quads',
+      label: '% forgets which quad is best',
+      run: (id) => {
+        girl(id).opinion.forget();
+        toast(`${nameOf(id)} has forgotten which quad is best at what`);
+      },
+    },
+    {
       verb: 'wake',
       label: '% is woken gently',
       run: (id) => {

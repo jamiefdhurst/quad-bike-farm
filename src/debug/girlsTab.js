@@ -73,6 +73,7 @@ export function buildGirlsTab(d) {
     const mem = why.addFolder('Feelings from what went well or badly');
     for (const k of REMEMBERED_KINDS) slider(mem, OFFER_KINDS[k]?.label ?? k, () => c.memory.weight(k), (v) => (c.memory.feel[k] = v), 0.1, 3, 0.05);
     mem.close();
+    show(why, 'thinks of the quads', () => c.opinion.describe(g.strengthIds(), g.strengthTruth));
     button(why, 'Stop her on her way (as if asked)', () => c.interrupt());
     button(why, 'Think now', () => (c.mind.thinkIn = 0));
 

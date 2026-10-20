@@ -4,7 +4,7 @@
 
 export const TUNE_CATEGORIES = {
   'Driving and towing': [
-    '2WD and 4WD', 'Throttle key', 'Brake key', 'Gamepad', 'Gamepad rumble', 'Brakes', 'Frozen throttle cable', 'Diesel waxing', 'Bleeding a diesel', 'Handbrake', 'Headlights', 'Vehicle lights', 'UTV lights', 'Indicators', 'Seat belts', 'Mud on the lens', 'Two-wheeler lean', 'Three-wheeler rider lean', 'Tyres', 'Tyre squeal', 'Towing', 'Tow chain', 'Tow rope', 'Trailer', 'Tipping trailer', 'Trailer tub',
+    '2WD and 4WD', 'Throttle key', 'Brake key', 'Gamepad', 'Gamepad rumble', 'Brakes', 'Frozen throttle cable', 'Diesel waxing', 'Bleeding a diesel', 'Handbrake', 'Headlights', 'Vehicle lights', 'UTV lights', 'Indicators', 'Seat belts', 'Mud on the lens', 'Two-wheeler lean', 'Three-wheeler rider lean', 'Tyres', 'Quad strengths', 'Tyre squeal', 'Towing', 'Tow chain', 'Tow rope', 'Trailer', 'Tipping trailer', 'Trailer tub',
     'UTV bed', 'UTV load', 'Land Rover load', 'Land Rover tailgate', '200TDi back door', 'Fiesta hatch', 'Corsa hatch', 'Bale trailer wear', 'Bale trailer mud', 'Tipping trailer wear', 'Tipping trailer mud', 'UTV riders', 'Land Rover riders', '200TDi riders', '200TDi back seats', 'Fiesta riders', 'Corsa riders', 'Trailer riders', 'Tractor creep', 'Tractor runaway',
   ],
   'Engines, fuel and faults': ['Quirks', 'Engine oil', 'Dripping carb', 'Carb icing', 'Water in the fuel', 'Barn find', 'Red diesel mistake', 'Two-stroke smoke'],
@@ -13,7 +13,7 @@ export const TUNE_CATEGORIES = {
   'Girls: themselves': ['Outfits'], // each girl's own build and her riding pillion; named from the characters, see GIRL_GROUP
   'Girls: moving about': [
     'Amy walk-round', "Amy won't ride", 'Getting on and off', 'Standing about', 'Waiting about', 'What catches the eye', 'Hearing a quad', 'Warming hands', 'Shelter in a cab', 'Girls carrying things', 'Home and jogging', 'Walking round buildings',
-    'Lining them up', 'Places', 'Tea on the rack', 'Flask at the top of the hill', 'Sitting by the bonfire', 'Jumpers', 'Wax jackets', 'Helmets and goggles', 'L plates', 'Quad names', 'Whose quad', 'Caring for her quad', 'The two as a pair', 'Asking you along',
+    'Lining them up', 'Places', 'Tea on the rack', 'Flask at the top of the hill', 'Sitting by the bonfire', 'Jumpers', 'Wax jackets', 'Helmets and goggles', 'L plates', 'Quad names', 'Whose quad', 'Caring for her quad', 'The two as a pair', 'Asking you along', 'Learning the quads',
   ],
   'Girls: how they feel about you': [
     'Favour', 'Favours asked', 'Falling out', 'Making up', 'Romance', 'Talking about you', 'Pranks', 'Achievements', 'Who wore it out', 'Skills', 'Watching you', 'Nicking your quad', 'Sulking in the cab',

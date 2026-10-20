@@ -297,6 +297,7 @@ export class DebugGui {
       return en.isRunning ? round(netCharge(en.rpm, en.params.idleRpmWarm, en.params.maxRpm, en.lightLoad, en.params.batteryChargeRate, en.params) * 60, 3) : 'not running';
     });
     show(r, 'hours', () => round(unit().quad.usage.hours));
+    if (u.spec.strength) show(r, 'hidden strength', () => unit().spec.strength);
     show(r, 'odometer / trip (mi)', () => `${unit().quad.usage.odoMiles.toFixed(2)} / ${unit().quad.tripMiles.toFixed(2)}`);
     show(r, 'chain oil (1 fresh)', () => (unit().quad.faults.hasChain ? round(unit().quad.faults.kept.chainLube) : 'no chain'));
     show(r, 'mud on your view (0 clean; open vehicles only)', () => round(lensCoverage(this.game.lens)));

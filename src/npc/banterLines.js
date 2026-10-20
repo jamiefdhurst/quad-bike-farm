@@ -11,6 +11,7 @@
 
 import { DIAGNOSIS_BANTER } from './diagnosisLines.js';
 import { RACE_BANTER } from './raceLines.js';
+import { STRENGTH_BANTER } from './strengthLines.js';
 import { CONVOY_BANTER } from './convoyLines.js';
 import { GOSSIP_BANTER } from './gossipLines.js';
 import { FALLING_OUT_BANTER } from './fallingOutLines.js';
@@ -88,6 +89,7 @@ export const BANTER = [
   { when: 'sharing', roles: { driver: 'amy', passenger: 'jess' }, lines: [['amy', "Stop wriggling, you'll have us over."], ['jess', "I'm bored. Faster!"]] },
   ...DIAGNOSIS_BANTER,
   ...RACE_BANTER,
+  ...STRENGTH_BANTER,
   ...FALLING_OUT_BANTER,
   ...CONVOY_BANTER,
   ...GOSSIP_BANTER,

@@ -134,6 +134,8 @@ import { WarmSit, WARMSIT_PARAM_RANGES } from './npc/warmSit.js';
 import { Practising, PRACTISING_PARAM_RANGES } from './npc/practising.js';
 import { DontFixIt, DONTFIX_PARAM_RANGES } from './npc/dontFixIt.js';
 import { ComparingNotes, COMPARE_PARAM_RANGES } from './npc/comparingNotes.js';
+import { OPINION_PARAMS, OPINION_PARAM_RANGES, disagreements, agreements } from './npc/quadOpinion.js';
+import { STRENGTH_PARAMS, STRENGTH_PARAM_RANGES, strengthOf, bonusFor, groundKind } from './vehicle/strength.js';
 import { DEFAULT_NUMB_PARAMS, NUMB_PARAM_RANGES } from './npc/numbness.js';
 import { DEFAULT_KEEPALIVE_PARAMS, KEEPALIVE_PARAM_RANGES } from './npc/keepAlive.js';
 import { HeadStart, HEADSTART_PARAM_RANGES } from './npc/headStart.js';
@@ -212,7 +214,7 @@ import { BANTER } from './npc/banterLines.js';
 import { BanterWatch } from './npc/banterWatch.js';
 
 // Bickers where they trade digs: each adds a little friction towards falling out (fallingOut.js).
-const FRICTION_BANTER = ['idle', 'favoured', 'rivals', 'watching', 'sharing', 'riding', 'corrected', 'swapped', 'stuck'];
+const FRICTION_BANTER = ['idle', 'favoured', 'rivals', 'strengths', 'watching', 'sharing', 'riding', 'corrected', 'swapped', 'stuck'];
 import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES, PREMIX_CAN_COLOURS, DIESEL_CAN_COLOURS } from './items/jerryCan.js';
 import { OilBottle, OIL_BOTTLE_PARAM_RANGES } from './items/oilBottle.js';
 import { CoolantBottle, COOLANT_BOTTLE_PARAM_RANGES, pourStep } from './items/coolantBottle.js';
@@ -679,6 +681,7 @@ export class Game {
         name: character.name,
       });
       c.character = character;
+      c.opinion.girl = character.id; // her hunches are her own (npc/quadOpinion.js)
       c.agenda = new Agenda(character.agendaOdds, c.params);
       c.quads = this.girlUnits.map((u) => u.quad);
       c.others = () => this.companions.filter((o) => o !== c);
@@ -1602,6 +1605,8 @@ export class Game {
     registerTuning('Warming hands', this.warming.p, WARMING_PARAM_RANGES);
     registerTuning('Practising the clutch', this.practising.p, PRACTISING_PARAM_RANGES);
     registerTuning('Comparing notes', this.comparing.p, COMPARE_PARAM_RANGES);
+    registerTuning('Quad strengths', STRENGTH_PARAMS, STRENGTH_PARAM_RANGES);
+    registerTuning('Learning the quads', OPINION_PARAMS, OPINION_PARAM_RANGES);
     registerTuning('The two as a pair', this.pair.p, PAIR_PARAM_RANGES);
     registerTuning('Asking you along', this.askAlong.p, ASK_ALONG_PARAM_RANGES);
     registerTuning('Guiding a trailer back', this.trailerGuide.p, TRAILER_GUIDE_PARAM_RANGES);
@@ -4798,6 +4803,17 @@ export class Game {
     const rivals = this.race.rivalry();
     const [first, second] = this.companions;
     if (rivals && first.fsm.is('idle') && second.fsm.is('idle') && first.root.position.distanceTo(second.root.position) < 12) triggers.push({ when: 'rivals', roles: rivals });
+    // They have each worked out which quad is best at what, and differ (or for once agree): npc/quadOpinion.js.
+    if (first.fsm.is('idle') && second.fsm.is('idle') && first.root.position.distanceTo(second.root.position) < 12) {
+      const ids = this.strengthIds();
+      const hers = [first.opinion, second.opinion];
+      const clash = disagreements(...hers, ids, this.strengthTruth);
+      if (clash.length) {
+        const turn = this.strengthTurn ? 'amy' : 'jess';
+        for (const d of clash) triggers.push({ when: 'strengths', roles: { kind: d.kind, starter: turn } });
+      }
+      for (const a of agreements(...hers, ids, this.strengthTruth)) triggers.push({ when: 'strengthsAgree', roles: { kind: a.kind } });
+    }
     // Fallen out: the friendly digs stop and the bickering turns sharp.
     for (const t of this.fallingOutEvents.splice(0)) triggers.push(t);
     if (this.fallingOut.active) {
@@ -4807,6 +4823,7 @@ export class Game {
     }
     const speak = (speaker, text, opts) => (byId[speaker]?.params.voice ? byId[speaker].voice.speak(text, opts) : 0);
     const started = this.banter.update(dt, triggers, speak, this.talkFloor.left <= 0 && !this.menu.isOpen && !this.gossip.busy && !this.comparing.busy);
+    if (started?.when === 'strengths') this.strengthTurn = !this.strengthTurn; // the other one raises it next time
     if (started && FRICTION_BANTER.includes(started.when)) this.noteFriction('digs');
     this.talkFloor.banter = this.banter.busy || this.gossip.busy || this.comparing.busy;
     this.updateGossip(dt, byId, speak);
@@ -7239,6 +7256,27 @@ export class Game {
     const units = this.girlUnits.map((u) => ({ id: u.spec.id, wear: u.engine.wear }));
     const girls = this.companions.map((c) => ({ id: c.character.id, favourite: c.voice.favourite, distance: c.root.position.distanceTo(this.player.position) }));
     for (const e of this.dontFix.update(dt, { units, girls })) this.companions.find((c) => c.character.id === e.girl)?.voice.onFixedFavourite();
+  }
+
+  // What the girls make of the quads ------------------------------------------
+
+  /** The spec ids of the quads that have a hidden strength (vehicle/strength.js): the only ones the girls have views about. */
+  strengthIds() {
+    return this.girlUnits.filter((u) => strengthOf(u.spec)).map((u) => u.spec.id);
+  }
+
+  /** The truth for a quad and a kind of ground (a share like the strength), which the girls only work out by riding. */
+  strengthTruth = (id, kind) => bonusFor(this.girlUnits.find((u) => u.spec.id === id)?.spec, kind);
+
+  /** A girl riding a quad (driving it, or sat behind) up a hill, through mud or along tarmac learns a little of what it is good at. */
+  updateStrengthOpinions(dt) {
+    for (const c of this.companions) {
+      const q = c.quad;
+      const spec = q?.unit?.spec;
+      if (!spec || !strengthOf(spec) || !(c.fsm.is('driving') || c.fsm.is('seated'))) continue;
+      const kind = groundKind(q.groundUnder());
+      if (kind) c.opinion.ride(dt, spec.id, kind);
+    }
   }
 
   // Comparing notes --------------------------------------------------------
@@ -10272,6 +10310,7 @@ export class Game {
     this.guard.run('updatePractising', () => this.updatePractising(dt, ridden));
     this.guard.run('updateDontFix', () => this.updateDontFix(dt));
     if (auto) this.guard.run('updateComparing', () => this.updateComparing(dt));
+    this.guard.run('updateStrengthOpinions', () => this.updateStrengthOpinions(dt));
     this.guard.run('updateSeatSlams', () => this.updateSeatSlams());
     if (auto) this.guard.run('updateKeepAlive', () => this.updateKeepAlive(dt));
     if (auto) this.guard.run('updateHeadStart', () => this.updateHeadStart(dt, ridden));
