@@ -384,6 +384,11 @@ export function buildGameTree(g, host) {
     gridGate: flag(() => g.trafficHost.gate('grid').isOpen, (v) => g.trafficHost.setGridGate(!!v), 'the gate by the cattle grid: true is open'),
     bigGate: flag(() => g.trafficHost.gate('road').isOpen, (v) => g.trafficHost.gate('road').set(!!v), 'the big gate in the east hedge: true is open'),
   }), 'the public lane, the visitors and the two gates');
+  const neighbour = group(() => ({
+    now: text(() => g.neighbourHost.describe(), 'where the neighbour is and what she did last'),
+    hello: flag(() => false, (v) => v && g.neighbourHost.debugGreet(), 'set to true: she says hello now'),
+    go: flag(() => false, (v) => v && g.neighbourHost.debugGoTo(), 'set to true: put you on foot at her gate'),
+  }), 'the neighbour over the lane');
   const photos = group(() => ({
     now: text(() => g.photos.describe(), 'the photos pinned on the barn corkboard and the last one taken'),
     count: ro(() => g.photos.wall.photos.length, '', 'photos pinned'),
@@ -422,6 +427,7 @@ export function buildGameTree(g, host) {
     dog,
     fence,
     lane,
+    neighbour,
     generator,
     spares,
     photos,

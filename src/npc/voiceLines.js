@@ -56,6 +56,7 @@ import { AMY_CONKER_LINES } from './conkerLines.js';
 import { AMY_DROWNOUT_LINES } from './drownOutLines.js';
 import { AMY_HORN_LINES } from './hornLines.js';
 import { AMY_TRAFFIC_LINES } from './trafficLines.js';
+import { AMY_NEIGHBOUR_LINES } from './neighbourLines.js';
 import { AMY_PHOTO_LINES } from './photoLines.js';
 import { AMY_FENCE_LINES } from './fenceLines.js';
 import { AMY_TRACTOR_LINES } from './tractorLines.js';
@@ -1539,6 +1540,7 @@ export const VOICE_LINES = {
   ...AMY_HORN_LINES,
   // The lane and the visitors (trafficLines.js).
   ...AMY_TRAFFIC_LINES,
+  ...AMY_NEIGHBOUR_LINES,
   // The camera and the corkboard (photoLines.js).
   ...AMY_PHOTO_LINES,
   // The electric fence on the hill (fenceLines.js).

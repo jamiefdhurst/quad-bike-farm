@@ -11,6 +11,8 @@ Two engines:
               Reference voices, in tools/voices/:
                 amy-ref.wav   Piper's "cori" voice (trained on public-domain
                               LibriVox recordings), so Amy sounds as she did
+                neighbour-ref.wav  Kokoro's "bf_emma" voice (Apache 2.0), calm and
+                              unhurried, for the neighbour over the lane
                 jess-ref.wav  Kokoro's "bf_lily" voice (Apache 2.0) saying
                               something excited and cheeky, so Jess comes out
                               young and lively: "Oh my god, did you see that?
@@ -115,7 +117,7 @@ FEEL_PREFIX = {'callout': 'scared'}
 # How much more (or less) emotional each character is than the feel says, and
 # for some, a cfg weight that replaces the feel's (lower runs freer). Jess's were
 # picked by ear from a sweep: a lift of 0.6 with cfg 0.25 is lively without babbling.
-CHARACTER_LIFT = {'amy': 0.0, 'jess': 0.6}
+CHARACTER_LIFT = {'amy': 0.0, 'jess': 0.6, 'neighbour': -0.1}
 CHARACTER_CFG = {'jess': 0.25}
 
 # What to actually say where the written line doesn't come out right.
@@ -134,7 +136,8 @@ def character_lines(character):
     """The character's spoken lines, each with the situations it's said in, and her voice bank name."""
     script = (
         f"const m = await import({json.dumps('file://' + os.path.join(ROOT, 'src/npc/characters.js'))});"
-        f"const c = m.CHARACTERS.find((c) => c.id === {json.dumps(character)});"
+        f"const n = await import({json.dumps('file://' + os.path.join(ROOT, 'src/npc/neighbourLines.js'))});"  # the neighbour over the lane is not a companion
+        f"const c = {json.dumps(character)} === n.NEIGHBOUR_VOICE.id ? n.NEIGHBOUR_VOICE : m.CHARACTERS.find((c) => c.id === {json.dumps(character)});"
         "if (!c) { console.error('no such character'); process.exit(1); }"
         f"const b = await import({json.dumps('file://' + os.path.join(ROOT, 'src/npc/banterLines.js'))});"
         "const out = {};"

@@ -268,6 +268,7 @@ import { Wind, Shutter, pickHeading, DEFAULT_WIND_PARAMS, WIND_PARAM_RANGES } fr
 import { windUniforms, swayMetres } from './effects/windSway.js';
 import { DoorAudio } from './audio/doorAudio.js';
 import { TrafficHost } from './world/trafficHost.js';
+import { NeighbourHost } from './world/neighbourHost.js';
 import { Snow } from './effects/snow.js';
 import { autumnToday, leavesInAir, DEFAULT_AUTUMN_PARAMS, AUTUMN_PARAM_RANGES } from './world/autumn.js';
 import { LeafFall } from './world/autumnView.js';
@@ -1379,6 +1380,7 @@ export class Game {
     this.setUpFence();
     this.setUpRadios();
     this.trafficHost = new TrafficHost(this); // the lane's traffic, the visitors and the two gates (world/trafficHost.js)
+    this.neighbourHost = new NeighbourHost(this); // the neighbour in her yard over the lane (world/neighbourHost.js)
 
     // The bell beside the barn doors: ring it and the girls come back to the barn, wherever they are.
     this.bell = new Bell({ scene: this.scene, physics: this.physics, RAPIER: this.RAPIER, world: this.world, audioHub: this.audioHub, position: L.bell, yaw: L.bell.yaw });
@@ -10502,6 +10504,7 @@ export class Game {
     this.guard.run('updateDog', () => this.updateDog(dt, ridden));
     this.guard.run('updateFence', () => this.updateFence(dt));
     this.trafficHost.update(dt);
+    this.guard.run('updateNeighbour', () => this.neighbourHost.update(dt));
     this.guard.run('updateRecall', () => this.updateRecall(dt));
     if (!this.recalling && (auto || this.convoy.active || this.convoy.forced)) this.guard.run('updateConvoy', () => this.updateConvoy(dt, ridden));
     this.guard.run('updateDashReading', () => this.updateDashReading(dt, ridden));
