@@ -54,6 +54,7 @@ import { WeatherStation } from './world/weatherStation.js';
 import { Forecast, DEFAULT_FORECAST_PARAMS, FORECAST_PARAM_RANGES, KIND_WARMTH } from './world/forecast.js';
 import { choose, mainNeed, nextThink, OFFER_KINDS } from './npc/chooser.js';
 import { pickThen, planKey } from './npc/plans.js';
+import { Agenda, agendaKey } from './npc/agenda.js';
 import { girlsLeftOut } from './npc/leftOut.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { FallingOut, FALLING_OUT_PARAM_RANGES } from './npc/fallingOut.js';
@@ -671,6 +672,7 @@ export class Game {
         name: character.name,
       });
       c.character = character;
+      c.agenda = new Agenda(character.agendaOdds, c.params);
       c.quads = this.girlUnits.map((u) => u.quad);
       c.others = () => this.companions.filter((o) => o !== c);
       c.trailers = () => [this.trailer, this.tipTrailer]; // obstacles on foot and on wheels (vehicle/trailerObstacle.js)
@@ -4188,6 +4190,11 @@ export class Game {
       c.waitWeather = { chill: ctx.chill, wet: ctx.wet, sun: Math.min(1, w.def.sky.sunIntensity / 2.6) * (1 - w.rain) * w.sunUp, clouding: Math.max(0, w.target - w.rain) };
       c.intent.update(dt, `${c.fsm.name}:${c.fsm.data?.goal ?? ''}`);
       c.memory.update(dt, c.params);
+      // What she has in mind for the day, said early on once she's stood about with nothing holding her (npc/agenda.js).
+      if (c.agenda.due(dt) && c.availability().canRemark) {
+        c.agenda.mention();
+        c.voice.say(agendaKey(c.agenda.id), { chance: 1 });
+      }
       const m = c.mind;
       m.since += dt;
       if ((m.thinkIn -= dt) > 0) continue;
@@ -4208,7 +4215,7 @@ export class Game {
       // Something you stopped her doing is still on her mind, so she's keener on it for a while (npc/intent.js).
       // Sleepy, she can't be bothered with anything but a doze (companionParams: sleepyLazy).
       const lazy = 1 - c.params.sleepyLazy * c.needs.sleep;
-      let offers = this.offersFor(c, ridden).map((o) => ({ ...o, weight: o.weight * c.intent.boost(o.key, c.params) * c.memory.weight(o.key) * (o.key === 'doze' || OFFER_KINDS[o.key]?.urgent ? 1 : lazy * c.mood.keen(c.params)) }));
+      let offers = this.offersFor(c, ridden).map((o) => ({ ...o, weight: o.weight * c.intent.boost(o.key, c.params) * c.memory.weight(o.key) * c.agenda.boost(o.key, c.params) * (o.key === 'doze' || OFFER_KINDS[o.key]?.urgent ? 1 : lazy * c.mood.keen(c.params)) }));
       if (sitting) offers = offers.filter((o) => OFFER_KINDS[o.key]?.fromSeat);
       else if (urgentOnly) offers = offers.filter((o) => OFFER_KINDS[o.key]?.urgent);
       // Free again with a plan to carry on (npc/plans.js): the second part, if it's still on offer, is taken without weighing.

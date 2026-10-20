@@ -67,6 +67,7 @@ export function buildGirlsTab(d) {
     show(why, 'next', () => describeMind(c.mind).next);
     show(why, 'set on', () => c.intent.describe((k) => OFFER_KINDS[k]?.label ?? k));
     show(why, 'pace', () => `${c.paceMul.toFixed(2)} times her walk${c.pace ? ` (${c.pace})` : ''}`);
+    show(why, 'has in mind today', () => c.agenda.describe());
     show(why, 'remembers', () => c.memory.describe());
     const mem = why.addFolder('Feelings from what went well or badly');
     for (const k of REMEMBERED_KINDS) slider(mem, OFFER_KINDS[k]?.label ?? k, () => c.memory.weight(k), (v) => (c.memory.feel[k] = v), 0.1, 3, 0.05);

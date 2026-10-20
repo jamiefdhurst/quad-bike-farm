@@ -4542,3 +4542,14 @@ Agreed with Jamie (all as recommended): two new skills, a "Watch me" slice on he
 - **Panel and console:** "Watching you" tune group; the Girls tab and `girl <name> watch-bump-start` / `watch-double-declutch` start a watch from anywhere; the two skills appear in Skills sliders and `girl.<name>.skills` on their own. Saved with the other skills (a save without them loads at their starting levels).
 - **Lines:** `watchOk`, `watchLearnt`, `watchMissed`, `watchGaveUp` for each girl (`watchLines.js`).
 - **Not checked:** how it looks and feels in the running game (whether she turns to face you, whether 8 s and 0.6 are right), the wheel by eye, or a bump-start on the tractor.
+
+## Her own day (#20, was TODO 125)
+
+Settled without questions: the issue was clear, and the numbers are first guesses.
+
+- `src/npc/agenda.js` (pure, tested): twelve `AGENDAS`, each a label and the offer kinds (chooser.js) that meet it (the ramp is `jumps`, a race is `race` and `raceDare`, tea is `tea` and `flask`, the Land Rover is `warmCab`). Each girl deals one at the start of a game from `agendaOdds` in characters.js (Jess the loud, quick ones; Amy tea, the bench, the cones, tidying), so personality is odds, not rules.
+- **Boost.** `Agenda.boost` gives `agendaBoost` (1.8) on those kinds, multiplied into the offer's weight in `updateMinds` beside the resume boost, the memory and the mood, all game and never fading. Urgent things (shelter) are not on any agenda, so nothing is forced and needs still decide.
+- **Mentioning it.** After `agendaMention` (60 s) times half to one and a half, the first time she `canRemark` she says `agenda_<id>` once (one line per agenda for each girl, `mindLines.js`). If she is busy at the time it waits until she is free.
+- **Not saved.** It is "today's" mood of mind, so it is rolled on every load, not in `captureGirls`; a farm continued the next day gives her a new one. The farm's character is still deterministic, but the agenda uses `Math.random`, like her starting needs.
+- **Panel and console:** Why shows "has in mind today"; `girl <name> agenda` says it now (Make her do); `girl.<name>.agenda` is settable (including `none`).
+- **Not checked:** how it reads in play (whether 1.8 is noticeable without being a rut), and the new lines are recorded but not heard.

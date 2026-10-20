@@ -25,6 +25,8 @@ export const CHARACTERS = [
     // What she wears on top, dealt each day (npc/outfits.js): mostly her polo. She never wears a crop-top, so its share is her polo's.
     outfitOdds: { polo: 0.55, plaid: 0.3, doublePolo: 0.15, cropTop: 0 },
     poppedChance: 0.1, // now and then a popped collar
+    // What she might have in mind for the day (npc/agenda.js): tea and tidying, the careful things.
+    agendaOdds: { tea: 3, bench: 2, cones: 2, tidy: 2, landRover: 2, fire: 2, hill: 1, ramp: 0.5, race: 0.5 },
     underOpen: [0, 1], // in two polos, buttons undone on her own under the other
     plaidButtons: [0, 1], // a buttoned plaid: done right up, or the top one undone
     params: {
@@ -89,6 +91,8 @@ export const CHARACTERS = [
     poloOpen: [0, 5], // buttons of her polo undone, dealt for each farm between these: none up to all of them
     // What she wears on top, dealt each day (npc/outfits.js); the crop-top only on a warm day, its share her polo's otherwise.
     outfitOdds: { polo: 0.5, plaid: 0.3, doublePolo: 0.15, cropTop: 0.05 },
+    // What she might have in mind for the day (npc/agenda.js): the loud, quick things.
+    agendaOdds: { ramp: 3, doughnuts: 3, race: 2, bigOne: 2, car: 2, hill: 1, landRover: 1, cones: 1, fire: 1, bench: 0.5 },
     poppedChance: 0.3, // her collar popped a good third of the time
     underOpen: [0, 4], // in two polos, buttons undone on her own under the other
     plaidButtons: [0, 3], // a buttoned plaid: done right up, down to three undone

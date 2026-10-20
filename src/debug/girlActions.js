@@ -100,6 +100,16 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'agenda',
+      label: '% says what she has in mind today',
+      run: (id) => {
+        const c = girl(id);
+        if (!c.agenda.id) return toast(`${nameOf(id)} has nothing in mind`);
+        c.agenda.nudge();
+        toast(`${nameOf(id)}: ${c.agenda.describe()}`);
+      },
+    },
+    {
       verb: 'forget',
       label: '% forgets how everything has gone',
       run: (id) => {
