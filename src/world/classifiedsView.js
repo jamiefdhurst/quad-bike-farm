@@ -186,7 +186,7 @@ export class ClassifiedsView {
   render() {
     const m = this.market;
     this.purseEl.textContent = `In the tin: £${m.purse.toLocaleString('en-GB')}`;
-    this.titleEl.textContent = this.page === 'sell' ? 'We buy' : 'For sale';
+    this.titleEl.textContent = this.page === 'sell' ? 'Wanted' : 'For sale';
     if (this.page === 'sell') return this.renderSell();
     const rows = m.ads.slice(0, SLIPS).map((ad, i) => {
       const why = m.whyNot(ad);
