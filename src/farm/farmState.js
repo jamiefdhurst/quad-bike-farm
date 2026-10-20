@@ -107,8 +107,9 @@ export function savedFaults(s) {
  * The girls as plain data: { favour: { id: score }, friction, fallenOut, skills: { id: { skill: level } }, memories: { id: { kind: weight } }, romance: { id: { locked, betrayed } } }.
  * Pranks, grudges and moods belong to the day and aren't kept.
  */
-export function captureGirls({ favour, fallingOut, skills, romance, lessons, companions = [] }) {
+export function captureGirls({ favour, fallingOut, skills, romance, lessons, quadCare, companions = [] }) {
   return {
+    care: quadCare?.capture(),
     favour: { ...favour.scores },
     friction: fallingOut.friction,
     fallenOut: !!fallingOut.active,
@@ -120,12 +121,13 @@ export function captureGirls({ favour, fallingOut, skills, romance, lessons, com
 }
 
 /** Puts the girls' saved state back the next morning (see captureGirls). */
-export function restoreGirls({ favour, fallingOut, skills, romance, lessons, companions = [] }, s, P = DEFAULT_FARM_PARAMS) {
+export function restoreGirls({ favour, fallingOut, skills, romance, lessons, quadCare, companions = [] }, s, P = DEFAULT_FARM_PARAMS) {
   if (!s) return;
   for (const id of favour.ids) if (num(s.favour?.[id])) favour.scores[id] = s.favour[id] * P.favourKept;
   if (s.fallenOut) fallingOut.friction = P.frictionFallenOut;
   else if (num(s.friction)) fallingOut.friction = s.friction * P.frictionKept;
   lessons?.restore(s.lessons);
+  quadCare?.restore(s.care);
   for (const c of companions) c.memory.restore(s.memories?.[c.character.id], P.memoryKept, c.params);
   for (const id of skills.ids) if (s.skills?.[id]) copyKnown(skills.levels[id], s.skills[id], Object.keys(skills.levels[id]));
   for (const id of romance.ids) {

@@ -90,6 +90,7 @@ export function buildGirlsTab(d) {
     show(st, 'numbness', () => (c.numbPlan ? `walking it off (${c.numbPlan.phase})` : `${round(c.numbness.value)} of 1`));
     show(st, 'drive somewhere', () => (c.drive?.trip ? `${c.drive.trip.name} (${c.drive.trip.stage === 'there' ? 'on the way' : 'on the way back'})` : 'no'));
     show(st, 'her quad', () => g.ownership.claims[id] ?? 'none');
+    show(st, 'how much she cares about it', () => `${round(g.quadCare.care[id])} of 1`);
     show(st, 'tidying', () => c.lineUpStatus);
     show(st, 'race score', () => `${g.race.tally[id]?.wins ?? 0} won, ${g.race.tally[id]?.losses ?? 0} lost`);
     show(st, 'jump score', () => { const s = g.jumpWatch.score[id]; return s ? JSON.stringify(s) : 'none yet'; });

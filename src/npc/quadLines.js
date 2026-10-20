@@ -13,6 +13,9 @@ const AMY_TEMPLATES = {
   earHard: line(60, ["That's Jess on {q}. She never lets it idle.", 'Listen to that. Jess is thrashing {q} again.']),
   earRough: line(60, ["That's Jess on {q}. It sounds poorly. That is not a healthy noise.", 'Jess is on {q}. Listen to the state of it.']),
   startSorry: line(30, ['Oh, {q}, I am so sorry. I flooded you.', 'Sorry, {q}. That was too much choke. My fault.', 'I am sorry, {q}. I did not mean to drown you.', 'Poor {q}. Sorry. Give it a minute.']),
+  quadDry: line(90, ['That is {q} nearly out of petrol. Look at the tank before you ruin it.', 'You are running {q} on fumes. It is not a toy, you know.', 'Is {q} running dry? Do not just ride it until it stops.']),
+  quadThrashed: line(90, ['Easy on {q}! It is not built to be flat out all day.', 'Stop thrashing {q}. It has feelings, you know.', 'Is that really good for {q}? Gently, please.']),
+  quadProud: line(180, ['Oh, {q} looks lovely now. Thank you.', 'Look at {q}. All clean. I could almost cry.', '{Q} is so shiny. I am very pleased with it.']),
   earSteady: line(60, ["That's Jess on {q}. I can tell by the sound.", 'I can hear Jess on {q}. At least it sounds happy.']),
 };
 
@@ -22,6 +25,9 @@ const JESS_TEMPLATES = {
   earRough: line(60, ["That's Amy on {q}. Hear that? She is killing it with kindness.", 'Amy is on {q}. It sounds like it is begging for mercy.']),
   startPat: line(15, ['Come on, {q}. You can do it.', 'There, {q}. Be good for me.', 'Come on, {q}, do it for me.', 'Hello, {q}. Wake up.']),
   startCheer: line(15, ['Yes! Well done, {q}!', 'Clever {q}! Told you it would.', 'That is it, {q}! I knew you had it in you.', 'Ha! {Q} loves me.']),
+  quadDry: line(90, ['Oi! {Q} is almost empty. Do not leave me pushing it.', 'You are going to run {q} dry, you know.', 'Put some petrol in {q} before it conks out, will you?']),
+  quadThrashed: line(90, ['Oi, go easy on {q}! You will break it.', 'You are flogging {q}. Ease off.', 'Gently on {q}! It is not a rental.']),
+  quadProud: line(180, ['Ooh, {q} is gleaming. Nice one.', 'Now {q} looks good. Proper clean.', '{Q} is spotless. I might not let anyone on it.']),
   earSteady: line(60, ["That's Amy on {q}. I can tell, she is going at walking pace.", 'Amy on {q}, listen. Nice and sensible. Boring.']),
 };
 
