@@ -2,6 +2,7 @@ import './bench.css';
 import * as THREE from 'three';
 import { PARTS } from './spares.js';
 import { registerTuning } from '../core/tuning.js';
+import { DEFAULT_SERVICE_PARAMS, SERVICE_PARAM_RANGES, ServiceRun, servicePlan, factsOf, stateOf, dueBook, applyServiceReward } from './service.js';
 import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, BenchJob, finishJob, jobAvailable, jobPart, inBay, plugCondition, readPlug, scoringLook, chainLook, bootLook, clutchLook, valvesLook, crashLook } from './benchJobs.js';
 
 // The jobs after the tenth (which is on 0) have the keys beside it.
@@ -26,7 +27,10 @@ export class Bench {
     this.unit = null;
     this.job = null;
     this.dt = 1 / 60;
+    this.serviceParams = { ...DEFAULT_SERVICE_PARAMS };
+    this.services = new Map(); // unit id -> the full service under way on it (it carries on if you step away and come back)
     registerTuning('Workshop bench', this.params, BENCH_PARAM_RANGES);
+    registerTuning('Service', this.serviceParams, SERVICE_PARAM_RANGES);
     // Something to look at to start work: a box over the bench top.
     const b = game.world.layout.bench;
     this.proxy = new THREE.Mesh(new THREE.BoxGeometry(b.length, 0.5, b.depth + 0.4), new THREE.MeshBasicMaterial({ visible: false }));
@@ -75,6 +79,7 @@ export class Bench {
   }
 
   canBegin(kind, unit) {
+    if ((kind === 'filter' || kind === 'belt') && !servicePlan(factsOf(unit)).includes(kind)) return false;
     return this.partOk(kind) && this.batteryHandsOk(kind, unit) && (unit.barnFind && kind !== 'chargeOn' && kind !== 'chargeOff' ? unit.barnFind.available(kind) : unit.barnFind && !unit.barnFind.tarpOff ? false : jobAvailable(kind, unit.engine, this.params, unit.quad.faults.hasChain, unit.quad.faults.hasValves, unit.quad.faults.hasClutch));
   }
 
@@ -107,7 +112,7 @@ export class Bench {
     this.el.style.display = 'block';
     document.body.classList.add('bench-open');
     this.game.player.moveEnabled = false;
-    if (!left) this.say(unit.engine.params.boreKit && !unit.engine.bore ? 'catalogue' : 'start');
+    if (!left) this.say(unit.engine.params.boreKit && !unit.engine.bore ? 'catalogue' : !unit.barnFind && dueBook(stateOf(unit), this.serviceParams) ? 'serviceDue' : 'start');
   }
 
   close() {
@@ -127,6 +132,55 @@ export class Bench {
     if (!this.canBegin(kind, this.unit)) return;
     this.job = new BenchJob(kind, this.params, this.game.spares);
     this.render();
+  }
+
+  // A full service ----------------------------------------------------------
+
+  /** The service Amy would do on this quad: its plan, or null where the bench can't (the barn find has to be got running first). */
+  servicePlanFor(unit) {
+    return unit.barnFind ? [] : servicePlan(factsOf(unit));
+  }
+
+  /** S on the menu: starts a full service, or carries on with the one already under way. */
+  startService() {
+    const unit = this.unit;
+    const plan = this.servicePlanFor(unit);
+    if (!unit || !plan.length) return;
+    if (!this.services.has(unit.id)) this.services.set(unit.id, new ServiceRun(unit.id, plan));
+    this.beginNextService();
+  }
+
+  /** Starts the next job of the full service, or says what is stopping it. */
+  beginNextService() {
+    const run = this.services.get(this.unit.id);
+    const kind = run?.next;
+    if (!kind) return;
+    if (!this.canBegin(kind, this.unit)) {
+      this.game.hud.toast(!this.partOk(kind) ? `The service wants ${PARTS[jobPart(kind)].one} and there is none on the shelf: order one from the parts rack` : `The ${JOBS[kind].name.toLowerCase()} can't be done on this one`);
+      this.render();
+      return;
+    }
+    this.begin(kind);
+    if (this.job) {
+      this.job.service = true;
+      this.render();
+    }
+  }
+
+  /** A job from a full service is finished: tick it off, and either start the next or finish the service. */
+  serviceStepDone(unit, kind, botched) {
+    const run = this.services.get(unit.id);
+    if (!run) return;
+    run.record(kind, botched);
+    if (!run.finished) {
+      this.beginNextService();
+      return;
+    }
+    this.services.delete(unit.id);
+    const took = applyServiceReward(unit.engine, unit.spec.roughnessRange?.[0], run, this.serviceParams);
+    this.game.hud.toast(run.clean ? (took > 0 ? 'Full service done: it runs noticeably smoother' : 'Full service done: it was already running as sweetly as it can') : 'Full service done, though not everything was done well', 4);
+    this.game.notebook.note(unit, { kind: 'job', job: 'service', botched: !run.clean }, { by: 'you' });
+    this.say(run.clean ? 'serviceDone' : 'botched');
   }
 
   /** Reacts to what a tap, hold or release did. */
@@ -156,12 +210,14 @@ export class Bench {
       else if (e.type === 'done') {
         const job = this.job;
         const unit = this.unit;
-        this.game.hud.toast(finishJob(job, { engine: unit.engine, faults: unit.quad.faults, fuel: unit.quad.fuel, tyres: unit.quad.tyres, sump: unit.quad.sump, batteryOut: () => this.game.batteryOut(unit), batteryIn: () => this.game.batteryIn(unit) }, this.params));
-        this.say(job.kind === 'bore' ? (job.botched ? 'boreBotched' : 'boreDone') : job.botched ? 'botched' : 'done');
+        this.game.hud.toast(finishJob(job, { engine: unit.engine, faults: unit.quad.faults, fuel: unit.quad.fuel, tyres: unit.quad.tyres, sump: unit.quad.sump, filter: unit.quad.filter, batteryOut: () => this.game.batteryOut(unit), batteryIn: () => this.game.batteryIn(unit) }, this.params));
+        if (!job.service) this.say(job.kind === 'bore' ? (job.botched ? 'boreBotched' : 'boreDone') : job.botched ? 'botched' : 'done');
         if (unit.barnFind) this.foundJobDone(unit, job.kind);
         this.game.notebook.note(unit, { kind: 'job', job: job.kind, botched: job.botched }, { by: 'you' });
         this.job = null;
         this.game.girlBenchFinished(job);
+        this.game.serviceJobNoted(unit, job.kind, job.botched);
+        if (job.service) this.serviceStepDone(unit, job.kind, job.botched);
       }
     }
     if (events.length) this.render();
@@ -184,6 +240,7 @@ export class Bench {
     }
     const job = this.job;
     if (!job) {
+      if (input.wasPressed('KeyS')) this.startService();
       this.kindsFor(this.unit).forEach((kind, i) => {
         const n = (i + 1) % 10; // the tenth job is on 0, the eleventh on the minus key, the twelfth on equals, the thirteenth on the left bracket, the fourteenth on the right, the fifteenth on the semicolon, the sixteenth on the quote
         const hit = i >= 10 ? input.wasPressed(OVERFLOW_KEYS[i - 10].code) : input.wasPressed(`Digit${n}`) || input.wasPressed(`Numpad${n}`);
@@ -228,6 +285,15 @@ export class Bench {
     this.keysEl = el.querySelector('.bn-keys');
   }
 
+  /** The last row of the menu: the full service, with how far it has got. */
+  serviceRow(unit) {
+    const plan = this.servicePlanFor(unit);
+    if (!plan.length) return '';
+    const run = this.services.get(unit.id);
+    const list = plan.map((k, i) => (run && i < run.results.length ? `✓ ${JOBS[k].name}` : JOBS[k].name)).join(', ');
+    return `<div class="bn-row"><span class="key">S</span>${run ? 'Carry on with the full service' : 'Full service'}<div class="bn-sub">${list}</div></div>`;
+  }
+
   /** The hold meter: the fill climbs, and where a window is, the green band is where to let go. */
   paintHold() {
     const job = this.job;
@@ -251,10 +317,12 @@ export class Bench {
         else if (lacking) note = ` (no ${PARTS[jobPart(k)].one} on the shelf)`;
         else if (!ok) note = k === 'chargeOn' ? (unit.engine.params.noStarter ? ' (no battery to take out)' : ' (empty your hands first)') : k === 'chargeOff' ? ' (carry its battery here first)' : k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'valves' ? ' (two-strokes have none)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
         return `<div class="bn-row${ok ? '' : ' off'}"><span class="key">${i >= 10 ? OVERFLOW_KEYS[i - 10].label : (i + 1) % 10}</span>${JOBS[k].name}${note}</div>`;
-      }).join('');
+      }).join('') + this.serviceRow(unit);
       this.keysEl.textContent = 'Press a number to start   ·   G step away';
       return;
     }
+    const run = job.service ? this.services.get(unit.id) : null;
+    if (run) this.titleEl.textContent = `Workbench   ·   ${unit.name}   ·   Service ${run.results.length + 1} of ${run.kinds.length}`;
     this.bodyEl.innerHTML = job.def.steps
       .map((s, i) => `<div class="bn-step ${i < job.index ? 'done' : i === job.index ? 'now' : ''}">${i < job.index ? '✓' : i + 1}  ${s.text}</div>`)
       .join('');

@@ -180,6 +180,13 @@ export class JobBoard {
     return this.today.includes(id);
   }
 
+  /** Adds a job of the day that isn't one of the fixed ones (a service for a quad that needs it): `def` is { chalk, hint }. It goes on top of `jobsPerDay`. */
+  add(id, def) {
+    if (this.today.includes(id)) return;
+    this.jobs = { ...this.jobs, [id]: def };
+    this.today.push(id);
+  }
+
   /** Ticks a job off. Returns true the first time, and whether that cleared the board is `cleared`. */
   complete(id) {
     if (!this.has(id) || this.finished.has(id)) return false;

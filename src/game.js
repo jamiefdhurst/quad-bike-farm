@@ -292,6 +292,7 @@ import { Notebook } from './workshop/notebook.js';
 import { SparesShelf } from './workshop/sparesShelf.js';
 import { MuckLoad, DEFAULT_MUCK_PARAMS, MUCK_PARAM_RANGES, JobBoard, DEFAULT_JOB_BOARD_PARAMS, JOB_BOARD_PARAM_RANGES, availableJobs } from './world/farmJobs.js';
 import { JobBoardView } from './world/jobBoard.js';
+import { ServiceJob, pickServiceJob, serviceChalk, servicePlan, factsOf, stateOf } from './workshop/service.js';
 import { DEFAULT_SPIKE_PARAMS, SPIKE_PARAM_RANGES, keepOutside } from './items/baleSpike.js';
 import { BaleSpikeRig } from './items/baleSpikeRig.js';
 import { dutchBarnShape } from './world/outbuildings.js';
@@ -1465,6 +1466,7 @@ export class Game {
     // The silage job needs the tractor, and enough bales still out of the barn for it to be worth asking.
     const jobIds = availableJobs(this.world.layout).filter((id) => id !== 'silage' || (!!this.tractorUnit && !!this.siloRect && this.baleRig.yard.countIn(this.siloRect) < this.spikeParams.balesNeeded));
     this.jobBoard = new JobBoard({ ids: jobIds, random: createRandom(this.seed ^ 0x7ab0), params: this.jobBoardParams });
+    this.setUpServiceJob();
     this.jobBoardView = new JobBoardView({ game: this, board: this.jobBoard, records: this.records });
     this.wallCalendar = new WallCalendar({ game: this, day: this.farm.day }); // between the two boards: the days crossed off
     this.photos = new PhotoHost(this); // the camera key and the corkboard beside the chalkboards (photos/)
@@ -5315,6 +5317,32 @@ export class Game {
   }
 
   /** You finished the job a girl left half done at the bench: she is pleased (npc/girlBench.js). */
+  /** A quad in a bad way: a full or partial service goes on the board for the day, on top of the other jobs (workshop/service.js). */
+  setUpServiceJob() {
+    this.serviceJob = null;
+    const quads = this.units
+      .filter((u) => !u.barnFind && u.quad.faults && u.engine)
+      .map((u) => ({ id: u.id, name: shortName(u.name), plan: servicePlan(factsOf(u)), state: stateOf(u) }));
+    const pick = pickServiceJob(quads, createRandom(this.seed ^ 0x5e71), this.bench?.serviceParams);
+    if (!pick) return;
+    this.serviceJob = new ServiceJob(pick);
+    this.jobBoard.add(`service:${pick.id}`, {
+      chalk: serviceChalk(pick),
+      hint: pick.full ? 'Do a full service at the bench: press S on the bench menu' : `At the bench: ${pick.kinds.join(', ')}`,
+    });
+  }
+
+  /** A bench job is finished on a vehicle: it counts towards a service on the board. */
+  serviceJobNoted(unit, kind, botched) {
+    const job = this.serviceJob;
+    if (!job || !job.note(unit.id, kind, botched)) return;
+    if (this.jobBoard.complete(`service:${job.id}`)) {
+      this.hud.toast('Service done: ticked off the board', 4);
+      this.jobBoardView.refresh();
+      if (this.jobBoard.cleared) this.achievements.note('boardCleared');
+    }
+  }
+
   girlBenchFinished(job) {
     const pn = this.girlBench.pending;
     if (!pn || pn.job !== job) return;

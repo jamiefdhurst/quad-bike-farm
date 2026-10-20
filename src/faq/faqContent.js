@@ -780,6 +780,23 @@ export const FAQ_SECTIONS = [
         tip: 'A pull after a hard knock is a bent track rod: the workbench straightens it.',
       },
       {
+        q: 'How do I give a quad a full service?',
+        a: `Park it in the bay, switch it off, take the toolbox to the bench and press <kbd>E</kbd>. The last row of the menu is "Full service": press <kbd>S</kbd>.
+          It takes you through the jobs that quad has, in order: the spark plug (it uses one from the shelf), the air filter, the oil (the pre-mix on a two-stroke, the
+          sump on a four-stroke), then the chain on the chain-driven quads or the belt on the rest. A diesel has no plug or sump on the bench, so it gets the filter and
+          the belt. Step away part way and <kbd>S</kbd> carries on where you left off. Do every job right and the quad runs noticeably smoother, though never smoother than
+          that quad can; botch a job and you get the work done without the smoothness. Amy writes it in her logbook.`,
+        tip: 'Press S on the bench menu for a full service: plug, filter, oil and chain or belt, in order.',
+      },
+      {
+        q: 'Why is there a service on the chalkboard?',
+        a: `A quad that has had a hard time (worn, with a dirty plug or a clogged air filter, low on oil, a slack chain or a slipping belt) can be put on the board for the day.
+          If it is badly worn it is a full service; if it is just a couple of things it is a part service, and the board names them ("Blue: plug, air filter"). It ticks off
+          when those jobs have been done properly on that quad at the bench, whether you started the full service or did them one at a time. Amy also tells you when you
+          open the bench on a quad that is due.`,
+        tip: 'A quad that is due a service gets a job on the chalkboard. Do it at the bench to tick it off.',
+      },
+      {
         q: 'How do I mend a bent rod or rim on the tractor, the UTV, a Land Rover or a car?',
         a: `The same way as on a quad, in the big bay in the barn's second span. Drive it in through the second door (the one nearer the generator), nose to the back
           wall, switch it off and use the bench with the toolbox on it. The big bay is the one with the trolley jack and axle stands beside it. The quads use the small bay
@@ -1639,7 +1656,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'What are the chalkboards in the barn?',
         a: `Today's farm jobs. Walk into the barn to the back wall and press <kbd>E</kbd> for a close look. Done jobs get a tick, and a bucket list
-          entry when you've cleared the lot. The jobs are the muck and, if the tractor is about, the silage; the bonfire is not a job, but you can light one any time; the board lists up to two a day. The records are on the board beside it.`,
+          entry when you've cleared the lot. The jobs are the muck and, if the tractor is about, the silage; the bonfire is not a job, but you can light one any time; the board lists up to two a day. When a quad is in a bad way, a service for it goes up as well, on top of those (see the service questions). The records are on the board beside it.`,
         tip: 'The chalkboard in the barn lists the day\'s farm jobs.',
       },
       {
