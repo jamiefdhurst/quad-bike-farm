@@ -98,7 +98,7 @@ describe('running heat', () => {
 
   it('only gives the orange a radiator', () => {
     const water = QUAD_SPECS.filter((s) => s.engine?.waterCooled);
-    expect(water.map((s) => s.name)).toEqual(['Orange quad']);
+    expect(water.map((s) => s.name)).toEqual(['Viper Adder 250']);
   });
 
   it('shows the worse of poor lubrication and heat on the gauge', () => {

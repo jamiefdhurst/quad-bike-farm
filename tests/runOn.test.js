@@ -51,7 +51,7 @@ describe('popping on the overrun', () => {
   });
 
   it('crackles a lot on a two-stroke, rarely on a healthy four-stroke, and more as it wears', () => {
-    const yellow = QUAD_SPECS.find((q) => q.name === 'Yellow quad').engine;
+    const yellow = QUAD_SPECS.find((q) => q.id === 'yellow').engine;
     const two = pops(make(yellow));
     const four = pops(make());
     const worn = pops(make(), { wear: 0.8 });

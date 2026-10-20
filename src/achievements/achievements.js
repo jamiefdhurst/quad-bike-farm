@@ -4,6 +4,8 @@
 // An achievement is a test over the stats, so adding one is one line in ACHIEVEMENTS. A `needs` vehicle that isn't on the farm this game
 // (the line-up changes every game) leaves the achievement out of the list and the total.
 
+import { thePhrase } from '../vehicle/names.js';
+
 export const DEFAULT_ACHIEVEMENT_PARAMS = {
   topSpeed: 14, // m/s you reach to count as up to speed
   flatOut: 22, // m/s for flat out
@@ -48,19 +50,19 @@ export const ACHIEVEMENT_PARAM_RANGES = {
 export const PLACES = ['ford', 'pasture', 'wood', 'dutchBarn', 'fieldShed', 'cattleGrid', 'farEnd'];
 
 const RIDE_NAMES = {
-  red: 'the red quad',
-  blue: 'the blue quad',
-  yellow: 'the yellow quad',
-  green: 'the green quad',
-  orange: 'the orange quad',
+  red: thePhrase('red'),
+  blue: thePhrase('blue'),
+  yellow: thePhrase('yellow'),
+  green: thePhrase('green'),
+  orange: thePhrase('orange'),
   kids: 'the kids\' quad',
   moto: 'the mini moto',
   atc: 'the three-wheeler',
   loan: 'the loan quad',
   tractor: 'the tractor',
-  utv: 'the UTV',
-  landrover: 'the Series III',
-  landrover200: 'the 200TDi',
+  utv: thePhrase('utv'),
+  landrover: thePhrase('landrover'),
+  landrover200: thePhrase('landrover200'),
 };
 
 const rideOf = (id) => ({ id: `ride-${id}`, group: 'Ride', name: `Ride ${RIDE_NAMES[id]}`, hint: 'Take it for a drive', points: 1, needs: id, test: (s) => s.has('rode', id) });
@@ -89,7 +91,7 @@ export const ACHIEVEMENTS = [
 
   { id: 'bogged', group: 'Mud', name: 'Stuck fast', hint: 'Get a quad stuck in a bog', points: 1, test: (s) => s.n('bogged') >= 1 },
   { id: 'freed', group: 'Mud', name: 'Out again', hint: 'Get a stuck quad out', points: 1, test: (s) => s.n('freed') >= 1 },
-  { id: 'winched', group: 'Mud', name: 'Winched out', hint: 'Pull a bogged quad out with the green\'s winch', points: 2, needs: 'green', test: (s) => s.n('winchedOut') >= 1 },
+  { id: 'winched', group: 'Mud', name: 'Winched out', hint: 'Pull a bogged quad out with the RB300\'s winch', points: 2, needs: 'green', test: (s) => s.n('winchedOut') >= 1 },
   { id: 'chained', group: 'Mud', name: 'Tractor to the rescue', hint: 'Pull a bogged quad out with the tractor\'s chain', points: 2, needs: 'tractor', test: (s) => s.n('chainedOut') >= 1 },
 
   { id: 'passenger', group: 'Company', name: 'Passenger', hint: 'Ride on the back while a girl drives', points: 1, test: (s) => s.n('pillionSeconds') >= s.p.passengerSeconds },
@@ -132,7 +134,7 @@ export const ACHIEVEMENTS = [
   { id: 'leads', group: 'Jobs', name: 'Jump start', hint: 'Clamp the jump leads onto a quad', points: 1, test: (s) => s.n('leads') >= 1 },
   { id: 'bump-start', group: 'Jobs', name: 'Bump start', hint: 'Get a manual going by rolling it and letting the clutch out', points: 2, test: (s) => s.n('bumpStart') >= 1 },
   { id: 'hitch', group: 'Jobs', name: 'Hitched', hint: 'Hook a trailer onto the tractor or a quad', points: 1, test: (s) => s.n('hitched') >= 1 },
-  { id: 'tip', group: 'Jobs', name: 'Tipped out', hint: 'Tip a trailer or the UTV\'s bed', points: 1, test: (s) => s.n('tipped') >= 1 },
+  { id: 'tip', group: 'Jobs', name: 'Tipped out', hint: 'Tip a trailer or the Yak\'s bed', points: 1, test: (s) => s.n('tipped') >= 1 },
   { id: 'muck', group: 'Jobs', name: 'Muck spreader', hint: 'Fork muck into the little trailer and spread it on the stubble', points: 2, test: (s) => s.n('muckSpread') >= 1 },
   { id: 'silage', group: 'Jobs', name: 'Bale lifter', hint: 'Spike silage bales with the tractor and carry them into the Dutch barn', points: 2, test: (s) => s.n('silageMoved') >= 1 },
   { id: 'bonfire', group: 'Jobs', name: 'Firestarter', hint: 'Carry three bundles of hedge cuttings to the ring of stones and light the bonfire', points: 2, test: (s) => s.n('bonfireLit') >= 1 },

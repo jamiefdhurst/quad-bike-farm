@@ -1,20 +1,12 @@
 // What the girls call the quads. Each game Jess gives the quads nicknames, one at a time, early on ("Grandad" for
-// the green, "the wasp" for the yellow), and from then on they turn up in what the girls say about a quad. Amy
+// the RB300, "the wasp" for the Hornet), and from then on they turn up in what the girls say about a quad. Amy
 // pretends not to use them, then slips. Lines are recorded, so a nickname can't be dropped into a sentence at
-// runtime: every line that names a quad is written out once for the colour and once for each possible nickname
+// runtime: every line that names a quad is written out once for the model's name and once for each possible nickname
 // (`expandQuadLines`), and the game picks the version for this game's names. Pure logic.
 
-export const QUAD_PHRASES = {
-  red: 'the red quad',
-  blue: 'the blue quad',
-  yellow: 'the yellow quad',
-  green: 'the green quad',
-  orange: 'the orange quad',
-  kids: "the kids' quad",
-  loan: 'the loan quad',
-  moto: 'the mini moto',
-  atc: 'the old three-wheeler',
-};
+import { thePhrase } from '../vehicle/names.js';
+
+export const QUAD_PHRASES = Object.fromEntries(['red', 'blue', 'yellow', 'green', 'orange', 'kids', 'loan', 'moto', 'atc'].map((id) => [id, thePhrase(id)]));
 
 // Two to pick from for each, so a game gets one of them. Each reads in "That's ___" and "Come on, ___".
 export const NICKNAMES = {
@@ -45,12 +37,12 @@ export const NAME_PARAM_RANGES = {
 
 const capital = (s) => s[0].toUpperCase() + s.slice(1);
 
-/** Key of the line for a situation about this quad, said with this nickname (or none: the colour). */
+/** Key of the line for a situation about this quad, said with this nickname (or none: the model's name). */
 export const quadKey = (kind, specId, nick = null) => (nick ? `${kind}:${specId}:${nick}` : `${kind}:${specId}`);
 
 /**
  * Written-out situations for templates of lines about a quad. `templates` is { kind: { cooldown, lines } }; `{q}` in a
- * line is the quad ("the green quad", "Grandad"), `{Q}` the same with a capital. Each template is written out for
+ * line is the quad ("the RB300", "Grandad"), `{Q}` the same with a capital. Each template is written out for
  * the colour and for every nickname, under `quadKey(kind, specId, nick)`.
  */
 export function expandQuadLines(templates) {

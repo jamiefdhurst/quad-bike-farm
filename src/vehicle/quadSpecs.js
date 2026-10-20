@@ -21,6 +21,8 @@
 //   fuelRange: [min, max] litres in the tank at the start. Below the reserve
 //     (reserveLitres) it'll only run on RESERVE.
 
+import { sayName, fullName } from './names.js';
+
 export const QUAD_SPECS = [
   {
     // Honda-style farm quad: soft, steady, low warm idle. The original tuning.
@@ -28,8 +30,8 @@ export const QUAD_SPECS = [
     strength: 'hill', // its hidden strength (strength.js): the girls work it out over games
     tyreSize: 'quad', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.5, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
-    label: 'red quad',
-    name: 'Red quad',
+    label: sayName('red'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('red'),
     bodyColor: 0xa8271f,
     style: 'utility',
     dashStyle: 'foreman',
@@ -69,8 +71,8 @@ export const QUAD_SPECS = [
     strength: 'mud', // its hidden strength (strength.js): the girls work it out over games
     tyreSize: 'quad', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.3, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
-    label: 'blue quad',
-    name: 'Blue quad',
+    label: sayName('blue'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('blue'),
     bodyColor: 0x1d4fa3,
     style: 'grizzly',
     dashStyle: 'grizzly',
@@ -138,8 +140,8 @@ export const QUAD_SPECS = [
     tyreSize: 'sport', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.4, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
-    label: 'yellow quad',
-    name: 'Yellow quad',
+    label: sayName('yellow'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('yellow'),
     bodyColor: 0xe9c21b,
     style: 'blaster',
     dashStyle: 'blaster',
@@ -242,8 +244,8 @@ export const QUAD_SPECS = [
     strength: 'mud', // its hidden strength (strength.js): the girls work it out over games
     tyreSize: 'quad', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.6, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
-    label: 'green quad',
-    name: 'Green quad',
+    label: sayName('green'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('green'),
     bodyColor: 0x33692c, // a deep green, a shade towards olive
     style: 'bayou',
     winch: true, // its front winch works (src/items/winch.js)
@@ -327,8 +329,8 @@ export const QUAD_SPECS = [
     strength: 'tarmac', // its hidden strength (strength.js): the girls work it out over games
     tyreSize: 'sport', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
-    label: 'orange quad',
-    name: 'Orange quad',
+    label: sayName('orange'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('orange'),
     bodyColor: 0xe86a12,
     style: 'racer', // a single race seat: no room for her on the back
     dashStyle: 'quadracer',
@@ -427,8 +429,8 @@ export const EXTRA_SPECS = [
     id: 'kids',
     tyreSize: 'kid', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.65, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
-    label: "kids' quad",
-    name: "Kids' quad",
+    label: sayName('kids'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('kids'),
     bodyColor: 0xd596ad, // a faded pink, paler than it was
     style: 'junior', // a Suzuki LT50's bulky plastics (juniorBody.js): the Viper Asp 50
     noHeadlight: true, // no lamps at all
@@ -532,8 +534,8 @@ export const EXTRA_SPECS = [
     bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
     miniMoto: true,
-    label: 'mini moto',
-    name: 'Mini moto',
+    label: sayName('moto'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('moto'),
     bodyColor: 0x3f6fa8, // a sun-faded blue (the YZ65's own is brighter; this is as it was)
     style: 'sport', // the quad body styles are unused (the model is its own), but the spec must name one that exists
     dashStyle: 'kidsKey',
@@ -639,8 +641,8 @@ export const EXTRA_SPECS = [
     chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
     threeWheeler: true,
     barLights: 'switch', // a plain on / off rocker on the left bar (P: off, dipped; lightSwitch.js), starting on
-    label: 'old three-wheeler',
-    name: 'Old three-wheeler',
+    label: sayName('atc'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('atc'),
     bodyColor: 0xb4553f, // a chalky, sun-bleached Honda red
     style: 'sport', // the quad body styles are unused (the model is its own), but the spec must name one that exists
     dashStyle: 'kidsKey',
@@ -745,8 +747,8 @@ export const EXTRA_SPECS = [
     tyreSize: 'quad', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     steadyLights: true, // a battery runs its headlight, so it doesn't follow the revs like the old quads' (headlight.js)
-    label: 'loan quad',
-    name: 'Loan quad',
+    label: sayName('loan'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('loan'),
     bodyColor: 0xaeb4ba, // a neutral silver
     style: 'kodiak', // a Kodiak 450's body (kodiakBody.js): the blue's machinery with its own flares, lamps, bumper, wheels and muffler
     dashStyle: 'kodiak',
@@ -814,8 +816,8 @@ export const TRACTOR_SPEC = {
   radiatorAt: { x: 0, y: 1.25, z: 1.3 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   steadyLights: true, // a battery runs its lights
   barLights: 'switch', // a plain on / off switch low on the panel's right (P: off, on; lightSwitch.js), starting on
-  label: 'tractor',
-  name: 'Tractor',
+  label: sayName('tractor'), // what the girls and the toasts call it (vehicle/names.js)
+  name: fullName('tractor'),
   tractor: true,
   wheelShake: 1.3, // its wheels shake with the body (a multiple of the body's own heave, pitch and roll)
   bodyColor: 0xa82a20, // a faded red bonnet
@@ -958,8 +960,8 @@ export const UTV_SPEC = {
   tyreSize: 'utv', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.3, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.95, z: 1.15 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
-  label: 'UTV',
-  name: 'UTV',
+  label: sayName('utv'), // what the girls and the toasts call it (vehicle/names.js)
+  name: fullName('utv'),
   utv: true,
   steadyLights: true, // a battery runs its lamps
   wheelShake: 0.9,
@@ -1108,8 +1110,8 @@ export const LAND_ROVER_SPEC = {
   tyreSize: 'landrover', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.6, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.95, z: 1.6 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
-  label: 'Series III',
-  name: 'Series III',
+  label: sayName('landrover'), // what the girls and the toasts call it (vehicle/names.js)
+  name: fullName('landrover'),
   landRover: true,
   steadyLights: true, // a battery runs its lamps
   wheelShake: 0.8,
@@ -1256,8 +1258,8 @@ export const DEFENDER_SPEC = {
   tyreSize: 'landrover', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.95, z: 1.6 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
-  label: '200TDi',
-  name: '200TDi',
+  label: sayName('landrover200'), // what the girls and the toasts call it (vehicle/names.js)
+  name: fullName('landrover200'),
   landRover: true,
   defender: true,
   steadyLights: true,
@@ -1429,8 +1431,8 @@ export const FIESTA_SPEC = {
   tyreSize: 'car', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.2, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js): a careful owner's car
   radiatorAt: { x: 0, y: 0.85, z: 1.5 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
-  label: 'Fiesta',
-  name: 'Fiesta',
+  label: sayName('fiesta'), // what the girls and the toasts call it (vehicle/names.js)
+  name: fullName('fiesta'),
   car: 'fiesta',
   owner: 'amy',
   steadyLights: true,
@@ -1511,8 +1513,8 @@ export const CORSA_SPEC = {
   tyreSize: 'car', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.85, z: 1.55 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
-  label: 'Corsa',
-  name: 'Corsa',
+  label: sayName('corsa'), // what the girls and the toasts call it (vehicle/names.js)
+  name: fullName('corsa'),
   car: 'corsa',
   owner: 'jess',
   steadyLights: true,

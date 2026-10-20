@@ -5,6 +5,8 @@
 // second quad of a model that is here would share its id. Every vehicle spec has to be in FOR_SALE or NOT_FOR_SALE (a test fails for one that
 // is in neither), so a vehicle added later joins the market or says why it stays out.
 
+import { fullName } from '../vehicle/names.js';
+
 export const DEFAULT_MARKET_PARAMS = {
   startPurseMin: 200, // a new farm starts with a purse dealt from the farm seed, between these (pounds)...
   startPurseMax: 600, // ...and this, in tens
@@ -36,20 +38,20 @@ export const MARKET_PARAM_RANGES = {
 };
 
 // What can be advertised: `price` is the going rate in pounds for one in fair nick; `colours` are body colours the seller might have it in
-// (the spec's own is always one of them); `kind` is how the ad describes it.
+// (the spec's own is always one of them). The ad names it from vehicle/names.js.
 export const FOR_SALE = {
-  red: { price: 520, kind: 'quad', colours: [0xa8271f, 0x1f5fb0, 0x2e2e30, 0xd8d4c8] },
-  blue: { price: 560, kind: 'quad', colours: [0x1d4fa3, 0xa8271f, 0x2e2e30, 0x7f8a45] },
-  yellow: { price: 480, kind: 'quad', colours: [0xe9c21b, 0x1d4fa3, 0xc8c4b8, 0x2e2e30] },
-  green: { price: 600, kind: 'quad', colours: [0x33692c, 0x8a3a26, 0x2e2e30, 0xd8d4c8] },
-  orange: { price: 640, kind: 'quad', colours: [0xe86a12, 0x1d4fa3, 0x2e2e30, 0xe9e6dc] },
-  kids: { price: 180, kind: 'kids quad', colours: [0xd596ad, 0x4f8fd0, 0x6aa84f, 0xe0b030] },
-  moto: { price: 240, kind: 'mini moto', colours: [0x3f6fa8, 0xa8271f, 0xe9c21b, 0x2e2e30] },
-  atc: { price: 280, kind: 'old three-wheeler', colours: [0xb4553f, 0x3f6fa8, 0xd8d4c8, 0x6b7a3a] },
-  tractor: { price: 3200, kind: 'tractor', colours: [0xa82a20, 0x2c4f8a, 0x3a6a3a, 0xc8a02c] },
-  utv: { price: 2400, kind: 'farm buggy', colours: [0x3b5b3a, 0x8a6a3a, 0x2e2e30, 0xa82a20] },
-  landrover: { price: 1700, kind: 'Series Land Rover', colours: [0x3b4a36, 0xa8a090, 0x3f5f7a, 0x6b2a22] },
-  landrover200: { price: 2600, kind: '200 Tdi Land Rover', colours: [0x3f5f7a, 0x3b4a36, 0xb8b4a8, 0x6b2a22] },
+  red: { price: 520, colours: [0xa8271f, 0x1f5fb0, 0x2e2e30, 0xd8d4c8] },
+  blue: { price: 560, colours: [0x1d4fa3, 0xa8271f, 0x2e2e30, 0x7f8a45] },
+  yellow: { price: 480, colours: [0xe9c21b, 0x1d4fa3, 0xc8c4b8, 0x2e2e30] },
+  green: { price: 600, colours: [0x33692c, 0x8a3a26, 0x2e2e30, 0xd8d4c8] },
+  orange: { price: 640, colours: [0xe86a12, 0x1d4fa3, 0x2e2e30, 0xe9e6dc] },
+  kids: { price: 180, colours: [0xd596ad, 0x4f8fd0, 0x6aa84f, 0xe0b030] },
+  moto: { price: 240, colours: [0x3f6fa8, 0xa8271f, 0xe9c21b, 0x2e2e30] },
+  atc: { price: 280, colours: [0xb4553f, 0x3f6fa8, 0xd8d4c8, 0x6b7a3a] },
+  tractor: { price: 3200, colours: [0xa82a20, 0x2c4f8a, 0x3a6a3a, 0xc8a02c] },
+  utv: { price: 2400, colours: [0x3b5b3a, 0x8a6a3a, 0x2e2e30, 0xa82a20] },
+  landrover: { price: 1700, colours: [0x3b4a36, 0xa8a090, 0x3f5f7a, 0x6b2a22] },
+  landrover200: { price: 2600, colours: [0x3f5f7a, 0x3b4a36, 0xb8b4a8, 0x6b2a22] },
 };
 
 // Everything else in the spec files, and why it is not for sale. Another vehicle goes in one list or the other.
@@ -146,13 +148,13 @@ export function makeAd(random, specId, spec, n, P = DEFAULT_MARKET_PARAMS) {
   const wear = Math.round((0.15 + 0.6 * lean) * 100) / 100; // how worn the body looks
   const rate = 1 + (random() * 2 - 1) * P.priceSpread;
   const price = Math.max(10, Math.round((sale.price * rate * (1 - P.wearDiscount * wear)) / 10) * 10);
-  return { id: `ad${n}-${specId}`, specId, colour, hours, miles, wear, bodyWear: wear, price, text: adText(sale.kind, colour, hours, wear, price) };
+  return { id: `ad${n}-${specId}`, specId, colour, hours, miles, wear, bodyWear: wear, price, text: adText(specId, colour, hours, wear, price) };
 }
 
 /** How the ad reads on the board: what it is, how it has been looked after, and the price. */
-export function adText(kind, colour, hours, wear, price) {
+export function adText(specId, colour, hours, wear, price) {
   const state = wear < 0.3 ? 'Good order' : wear < 0.55 ? 'Some wear' : 'Well used';
-  return `${colourName(colour)} ${kind}. ${state}, ${hours.toLocaleString('en-GB')} hrs. £${price.toLocaleString('en-GB')} ono`;
+  return `${colourName(colour)} ${fullName(specId)}. ${state}, ${hours.toLocaleString('en-GB')} hrs. £${price.toLocaleString('en-GB')} ono`;
 }
 
 /** The spec a bought vehicle has: the model's own with the colour and readings it was sold with. Same id, so everything that knows the model still does. */

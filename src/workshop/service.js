@@ -84,9 +84,9 @@ export function pickServiceJob(quads, random, P = DEFAULT_SERVICE_PARAMS) {
   return job;
 }
 
-/** The chalk for a service job: "Service the blue" for a full one, "Blue: plug, air filter" for a part. */
+/** The chalk for a service job: "Full service on the Bruin 660" for a full one, "Bruin 660: plug, air filter" for a part. */
 export function serviceChalk(job) {
-  return job.full ? `Full service on the ${job.name.toLowerCase()}` : `${job.name}: ${job.kinds.map((k) => SHORT[k]).join(', ')}`;
+  return job.full ? `Full service on the ${job.name}` : `${job.name}: ${job.kinds.map((k) => SHORT[k]).join(', ')}`;
 }
 
 /** A service job on the board: done when each of its kinds has been done at the bench on that quad and not botched. */
