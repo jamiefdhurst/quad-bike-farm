@@ -10,15 +10,21 @@ concurrency:
   group: test-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
-# Unit and Smoke run side by side; Test waits for both and is the one check main requires, so the required name never changes (#284).
+# The unit tests (in three shards) and Smoke run side by side; Test waits for them all and is the one check main requires, so the required
+# name never changes (#284, #286). Each checks out only the tree: the full history is gigabytes of audio, and nothing here reads it.
 jobs:
   Unit:
+    name: Unit ${{ matrix.shard }}/3
     runs-on: ubuntu-latest
+    strategy:
+      # Let the other shards finish, so one red run shows every failing test.
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@v7
         with:
-          # The build puts the last 300 commit subjects into the FAQ's "Recently changed"; the full history is gigabytes of audio.
-          fetch-depth: 300
+          fetch-depth: 1
       # The Node version in mise.toml, the same one used locally.
       - name: Setup Node
         uses: jdx/mise-action@v5
@@ -32,14 +38,11 @@ jobs:
         run: node --version && npm ci
       # A runner is two or three times slower than a laptop, so the heavy model tests need longer than the 5 s default.
       - name: Test
-        run: npm test -- --testTimeout=30000
-      - name: Build
-        run: npm run build
+        run: npm test -- --testTimeout=30000 --shard=${{ matrix.shard }}/3
 
   Smoke:
     runs-on: ubuntu-latest
     steps:
-      # Only the tree: the dev server's "Recently changed" then shows one commit, which the smoke test doesn't look at.
       - uses: actions/checkout@v7
         with:
           fetch-depth: 1
@@ -53,18 +56,22 @@ jobs:
           restore-keys: npm-${{ runner.os }}-
       - name: Install dependencies
         run: node --version && npm ci
+      # The smoke test plays the built game when there is one, so this is also the check that it builds. With one commit checked out, the
+      # FAQ's "Recently changed" has one entry; the release builds it again on main with 300.
+      - name: Build
+        run: npm run build
       # Runs the real game in headless Chrome (the runner's own) with software GL and fails on any error or oddity (tools/smoke.mjs).
       - name: Smoke test
         run: CHROME_PATH=$(which google-chrome) npm run smoke
         timeout-minutes: 12
 
-  # always(): if Unit or Smoke fails this would otherwise be skipped, and a skipped required check counts as passed.
+  # always(): if a Unit shard or Smoke fails this would otherwise be skipped, and a skipped required check counts as passed.
   Test:
     needs: [Unit, Smoke]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Unit and Smoke both passed
+      - name: Every shard and Smoke passed
         run: |
           echo "Unit: ${{ needs.Unit.result }}, Smoke: ${{ needs.Smoke.result }}"
           [ "${{ needs.Unit.result }}" = success ] && [ "${{ needs.Smoke.result }}" = success ]
