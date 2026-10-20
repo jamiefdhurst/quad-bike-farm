@@ -61,6 +61,7 @@ const JOB_TEXT = {
   carb: 'carb cleaned',
   mounts: 'engine mounts renewed',
   tyre: 'tyre mended',
+  newTyres: 'new tyres fitted',
   oil: 'two-stroke oil topped up',
   packing: 'silencer repacked',
   coolant: 'coolant topped up',

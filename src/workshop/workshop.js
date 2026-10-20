@@ -427,7 +427,7 @@ export class Workshop {
           <span class="ws-wpsi">${reading[w.i].toFixed(1)} psi</span>
           <button type="button" data-wheel="${w.i}" data-dir="1" aria-label="Pump up"${t.psi[w.i] >= t.P.maxPsi ? ' disabled' : ''}>+</button></div>`,
       )
-      .join('')}`;
+      .join('')}<div class="ws-tread${t.tread.front < 0.3 || t.tread.rear < 0.3 ? ' low' : ''}">Tread: ${t.treadText()}</div>`;
   }
 
   /** Takes the silencer off, or puts it back. */

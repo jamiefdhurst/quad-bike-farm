@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { PARTS } from './spares.js';
 import { registerTuning } from '../core/tuning.js';
 import { DEFAULT_SERVICE_PARAMS, SERVICE_PARAM_RANGES, ServiceRun, servicePlan, factsOf, stateOf, dueBook, applyServiceReward } from './service.js';
-import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, BenchJob, finishJob, jobAvailable, jobPart, inBay, plugCondition, readPlug, scoringLook, chainLook, bootLook, clutchLook, valvesLook, crashLook } from './benchJobs.js';
+import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, BenchJob, finishJob, jobAvailable, jobPart, tyreJobFor, inBay, plugCondition, readPlug, scoringLook, chainLook, bootLook, clutchLook, valvesLook, crashLook } from './benchJobs.js';
 
 // The jobs after the tenth (which is on 0) have the keys beside it.
 const OVERFLOW_KEYS = [
@@ -13,6 +13,7 @@ const OVERFLOW_KEYS = [
   { code: 'BracketRight', label: ']' },
   { code: 'Semicolon', label: ';' },
   { code: 'Quote', label: "'" },
+  { code: 'Period', label: '.' },
 ];
 
 /**
@@ -65,10 +66,25 @@ export class Bench {
     return unit.barnFind ? [...unit.barnFind.kinds, ...(unit.engine.params.noStarter ? [] : [charger])] : [...JOB_KINDS, charger];
   }
 
-  /** The shelf has the part the job fits (a job with no part always has it). */
-  partOk(kind) {
+  /** What fitting new tyres to this vehicle takes: { part, count, axle }, or null while its tyres are not worn enough. */
+  tyreJob(unit) {
+    return tyreJobFor(unit.quad.tyres, unit.spec.tyreSize);
+  }
+
+  /** The part a job uses on this vehicle, and how many: new tyres are the vehicle's own size and an axle's worth. */
+  partFor(kind, unit = this.unit) {
+    if (kind === 'newTyres') {
+      const t = unit && this.tyreJob(unit);
+      return t ? { part: t.part, count: t.count } : null;
+    }
     const part = jobPart(kind);
-    return !part || this.game.spares.has(part);
+    return part ? { part, count: 1 } : null;
+  }
+
+  /** The shelf has the part the job fits (a job with no part always has it). */
+  partOk(kind, unit = this.unit) {
+    const need = this.partFor(kind, unit);
+    return !need || this.game.spares.count(need.part) >= need.count;
   }
 
   /** A battery job needs your hands: out wants them empty, back in wants this quad's battery in them. */
@@ -80,7 +96,8 @@ export class Bench {
 
   canBegin(kind, unit) {
     if ((kind === 'filter' || kind === 'belt') && !servicePlan(factsOf(unit)).includes(kind)) return false;
-    return this.partOk(kind) && this.batteryHandsOk(kind, unit) && (unit.barnFind && kind !== 'chargeOn' && kind !== 'chargeOff' ? unit.barnFind.available(kind) : unit.barnFind && !unit.barnFind.tarpOff ? false : jobAvailable(kind, unit.engine, this.params, unit.quad.faults.hasChain, unit.quad.faults.hasValves, unit.quad.faults.hasClutch));
+    if (kind === 'newTyres' && !this.tyreJob(unit)) return false;
+    return this.partOk(kind, unit) && this.batteryHandsOk(kind, unit) && (unit.barnFind && kind !== 'chargeOn' && kind !== 'chargeOff' ? unit.barnFind.available(kind) : unit.barnFind && !unit.barnFind.tarpOff ? false : jobAvailable(kind, unit.engine, this.params, unit.quad.faults.hasChain, unit.quad.faults.hasValves, unit.quad.faults.hasClutch));
   }
 
   toolboxHere() {
@@ -130,7 +147,7 @@ export class Bench {
 
   begin(kind) {
     if (!this.canBegin(kind, this.unit)) return;
-    this.job = new BenchJob(kind, this.params, this.game.spares);
+    this.job = new BenchJob(kind, this.params, this.game.spares, kind === 'newTyres' ? this.tyreJob(this.unit) : null);
     this.render();
   }
 
@@ -156,7 +173,7 @@ export class Bench {
     const kind = run?.next;
     if (!kind) return;
     if (!this.canBegin(kind, this.unit)) {
-      this.game.hud.toast(!this.partOk(kind) ? `The service wants ${PARTS[jobPart(kind)].one} and there is none on the shelf: order one from the parts rack` : `The ${JOBS[kind].name.toLowerCase()} can't be done on this one`);
+      this.game.hud.toast(!this.partOk(kind) ? `The service wants ${PARTS[this.partFor(kind).part].one} and there is none on the shelf: order one from the parts rack` : `The ${JOBS[kind].name.toLowerCase()} can't be done on this one`);
       this.render();
       return;
     }
@@ -312,10 +329,13 @@ export class Bench {
       this.bodyEl.innerHTML = this.kindsFor(unit).map((k, i) => {
         const ok = this.canBegin(k, unit);
         let note = '';
-        const lacking = !this.partOk(k);
+        const lacking = !this.partOk(k, unit);
         if (find) note = find.isDone(k) ? ' ✓' : ok ? '' : k === 'chargeOn' ? (find.tarpOff ? ' (empty your hands first)' : ' (take the tarp off first)') : k === 'chargeOff' ? ' (carry its battery here first)' : ' (take the tarp off first)';
-        else if (lacking) note = ` (no ${PARTS[jobPart(k)].one} on the shelf)`;
-        else if (!ok) note = k === 'chargeOn' ? (unit.engine.params.noStarter ? ' (no battery to take out)' : ' (empty your hands first)') : k === 'chargeOff' ? ' (carry its battery here first)' : k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'valves' ? ' (two-strokes have none)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
+        else if (lacking) {
+          const need = this.partFor(k, unit);
+          note = k === 'newTyres' ? ` (needs ${need.count} ${need.count === 1 ? PARTS[need.part].one : PARTS[need.part].many} from the tyre rack)` : ` (no ${PARTS[need.part].one} on the shelf)`;
+        }
+        else if (!ok) note = k === 'chargeOn' ? (unit.engine.params.noStarter ? ' (no battery to take out)' : ' (empty your hands first)') : k === 'chargeOff' ? ' (carry its battery here first)' : k === 'newTyres' ? ' (the tread is fine)' : k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'valves' ? ' (two-strokes have none)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
         return `<div class="bn-row${ok ? '' : ' off'}"><span class="key">${i >= 10 ? OVERFLOW_KEYS[i - 10].label : (i + 1) % 10}</span>${JOBS[k].name}${note}</div>`;
       }).join('') + this.serviceRow(unit);
       this.keysEl.textContent = 'Press a number to start   ·   G step away';
