@@ -11,7 +11,7 @@ export const AGENDAS = {
   bigOne: { label: 'take a big one out', kinds: ['bigGo'] },
   hill: { label: 'time herself up the hill', kinds: ['climb'] },
   cones: { label: 'do the cones properly', kinds: ['cones'] },
-  landRover: { label: 'get the Land Rover out', kinds: ['warmCab'] },
+  landRover: { label: 'get a Moorland out', kinds: ['warmCab'] },
   car: { label: 'take her car out', kinds: ['carGo'] },
   bench: { label: 'get something done at the bench', kinds: ['benchWork'] },
   tea: { label: 'have a proper cup of tea', kinds: ['tea', 'flask'] },

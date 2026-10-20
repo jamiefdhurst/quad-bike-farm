@@ -27,7 +27,7 @@ export const BANTER = [
   { when: 'idle', lines: [['jess', "Your hair's gone a bit flat, Amy."], ['amy', "And yours looks like you've been dragged through that hedge."], ['jess', 'Windswept. Look it up.']] },
   { when: 'idle', lines: [['amy', "You're standing very close, Jess."], ['jess', 'Am I? Hadn\'t noticed.'], ['amy', 'Course you hadn\'t.']] },
   { when: 'idle', lines: [['jess', 'You know I am the better driver, right?'], ['amy', 'Is that what you call it?']] },
-  { when: 'idle', lines: [['amy', "I'll have you know I've been coming here for years."], ['jess', 'And you still can\'t start the red one.'], ['amy', 'It floods. Everyone knows it floods.']] },
+  { when: 'idle', lines: [['amy', "I'll have you know I've been coming here for years."], ['jess', 'And you still can\'t start the Farm 300.'], ['amy', 'It floods. Everyone knows it floods.']] },
   { when: 'idle', lines: [['jess', 'Amy, are you wearing perfume? Out here?'], ['amy', "It's called making an effort, Jess."]] },
   { when: 'idle', lines: [['amy', "Don't you have somewhere else to be, Jess?"], ['jess', 'Nope. Right here suits me.']] },
   { when: 'idle', lines: [['jess', "Go on, admit it. I'm your favourite."], ['amy', "Don't answer that."], ['jess', 'See? She is scared of the answer.']] },

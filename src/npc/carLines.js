@@ -6,12 +6,12 @@
 const line = (cooldown, lines) => ({ cooldown, lines });
 
 export const AMY_CAR_LINES = {
-  carGoOff: line(120, ['I am just taking the Fiesta down the road and back. Practice.', 'I need to practise. I will take the car out for a bit.', 'I am going to do some driving. Proper driving, in my car.']),
+  carGoOff: line(120, ['I am just taking the Finch down the road and back. Practice.', 'I need to practise. I will take the car out for a bit.', 'I am going to do some driving. Proper driving, in my car.']),
   carGoSetOff: line(60, ['Mirror, signal, manoeuvre.', 'Handbrake off. Gently does it.', 'Right. Clutch, first, and off we go.']),
   carGoWatch: line(120, ['She will have that exhaust off on the cattle grid one day.', 'You can hear her from the far end of the road.', 'She drives that car like she stole it.']),
   carGoDone: line(60, ['There. Back in one piece.', 'That was much better. I only stalled it once.', 'Parked, and straight, more or less.']),
   carNotMine: line(30, ["That is Jess's car. I am not driving that, she would never let me forget it.", "Not Jess's car. I would not even know where to start with it."]),
-  carTaken: line(60, ['Is that my car? Where are you going in my car?', 'That is my Fiesta! At least put the L plates away.', 'You could have asked before you took my car.']),
+  carTaken: line(60, ['Is that my car? Where are you going in my car?', 'That is my Finch! At least put the L plates away.', 'You could have asked before you took my car.']),
   carBack: line(60, ['Thank you for bringing it back. Next time, ask.', 'Is it all right? You did not rev it, did you?', 'Back where it belongs. Please ask next time.']),
   carBackDamaged: line(60, ['What have you done to my car?', 'There is something wrong with it now. I can hear it. What happened?', 'You have got it stuck. My car. In the mud.']),
   carRidden: line(60, ['Gently, please. It is not a quad.', 'Mind the choke, it does not like being cold.', 'All right, but I am watching you.']),
@@ -20,12 +20,12 @@ export const AMY_CAR_LINES = {
 };
 
 export const JESS_CAR_LINES = {
-  carGoOff: ['I am taking the Corsa out. Listen to this.', 'Back in a bit. Going to give the car a run.', 'Time to wake the neighbours.'],
+  carGoOff: ['I am taking the Griffin out. Listen to this.', 'Back in a bit. Going to give the car a run.', 'Time to wake the neighbours.'],
   carGoSetOff: ['Listen to that!', 'Here we go.', 'Hold on to your hats.'],
   carGoWatch: ['Look at her, ten to two on the wheel.', 'Amy drives like she is carrying eggs.', 'She will be back by teatime at that speed.'],
   carGoDone: ['Best car in the world, that.', 'Did you hear it on the straight? Did you?', 'Back. Nobody died.'],
-  carNotMine: ["Amy's car? She would never speak to me again.", 'Not the Fiesta. I like being alive.'],
-  carTaken: ['Oi! That is my car!', 'Where do you think you are going in my Corsa?', 'You had better give it some, at least.'],
+  carNotMine: ["Amy's car? She would never speak to me again.", 'Not the Finch. I like being alive.'],
+  carTaken: ['Oi! That is my car!', 'Where do you think you are going in my Griffin?', 'You had better give it some, at least.'],
   carBack: ['Did you give it some? Course you did.', 'Not bad. Still in one piece.', 'Told you it goes.'],
   carBackDamaged: ['You have broken my car. You are paying.', 'What have you done to it? It sounds worse than before, and that is saying something.', 'Stuck. You got my car stuck.'],
   carRidden: ['Go on then, let us see what you can do.', 'Put your foot down, it will not break. Probably.', 'Mind the exhaust on the bumps.'],

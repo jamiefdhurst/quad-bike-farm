@@ -8,7 +8,7 @@ export const GOSSIP_BANTER = [
   { when: 'gossip', lines: [['jess', 'Our friend still has not noticed how brilliant I have been all week.'], ['amy', 'Maybe because you have not been.'], ['jess', 'Rude.']] },
   { when: 'gossip', lines: [['amy', 'Did you see the way our friend took that corner earlier?'], ['jess', 'Into the hedge?'], ['amy', 'Near the hedge. Be kind.']] },
   { when: 'gossip', lines: [['jess', 'I reckon someone likes you best, Amy.'], ['amy', 'Do not be silly.'], ['jess', 'You went pink, though.']] },
-  { when: 'gossip', lines: [['amy', 'Someone has been riding the blue one like it owes money.'], ['jess', 'Good. That is how you ride it.']] },
+  { when: 'gossip', lines: [['amy', 'Someone has been riding the Bruin like it owes money.'], ['jess', 'Good. That is how you ride it.']] },
   { when: 'gossip', lines: [['jess', 'Go on, ask who the best driver is round here.'], ['amy', 'I am not asking.'], ['jess', 'Because you know the answer.']] },
   { when: 'gossip', lines: [['amy', 'Do not say anything, but the choke is getting better.'], ['jess', 'Slowly. Painfully slowly.']] },
   { when: 'gossip', lines: [['jess', 'I swear someone keeps leaving the tap on.'], ['amy', 'Keep your voice down.'], ['jess', 'It is only the truth.']] },
