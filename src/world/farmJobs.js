@@ -191,6 +191,7 @@ export class JobBoard {
   complete(id) {
     if (!this.has(id) || this.finished.has(id)) return false;
     this.finished.add(id);
+    this.onComplete?.(id); // the game pays for it (farm/classifieds.js)
     return true;
   }
 

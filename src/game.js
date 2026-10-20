@@ -295,6 +295,8 @@ import { Notebook } from './workshop/notebook.js';
 import { SparesShelf } from './workshop/sparesShelf.js';
 import { MuckLoad, DEFAULT_MUCK_PARAMS, MUCK_PARAM_RANGES, JobBoard, DEFAULT_JOB_BOARD_PARAMS, JOB_BOARD_PARAM_RANGES, availableJobs } from './world/farmJobs.js';
 import { JobBoardView } from './world/jobBoard.js';
+import { ClassifiedsView } from './world/classifiedsView.js';
+import { Market, DEFAULT_MARKET_PARAMS, MARKET_PARAM_RANGES, FOR_SALE, dealAds, withBought, colourName } from './farm/classifieds.js';
 import { ServiceJob, pickServiceJob, serviceChalk, servicePlan, factsOf, stateOf } from './workshop/service.js';
 import { DEFAULT_SPIKE_PARAMS, SPIKE_PARAM_RANGES, keepOutside } from './items/baleSpike.js';
 import { BaleSpikeRig } from './items/baleSpikeRig.js';
@@ -419,16 +421,26 @@ export class Game {
     const isBig = (spec) => spec.tractor || spec.utv || spec.landRover;
     const pool = [...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC];
     const chosen = fleetFromSave(this.farm.save?.fleet, [...QUAD_SPECS, ...pool]) ?? pickFleet(QUAD_SPECS, pool, createRandom(this.farmSeed ^ 0x51ee7));
-    this.fleetIds = chosen.map((s) => s.id);
-    const fleet = chosen.filter((s) => !isBig(s));
-    const bigSpecs = chosen.filter(isBig);
+    this.fleetIds = chosen.map((s) => s.id); // as dealt: what you bought is added to it each morning (farm/classifieds.js)
+    // What you bought turns up this morning, in the colour and condition it was sold in, in place of the dealt one of the model.
+    this.marketParams = { ...DEFAULT_MARKET_PARAMS };
+    registerTuning('Second-hand market', this.marketParams, MARKET_PARAM_RANGES);
+    this.market = new Market(this.marketParams);
+    this.market.restore(this.farm.save?.market);
+    const bySpecId = Object.fromEntries([...QUAD_SPECS, ...pool].map((s) => [s.id, s]));
+    const stocked = withBought(chosen, this.market.bought, bySpecId);
+    this.stockedIds = stocked.map((s) => s.id);
+    this.specsById = bySpecId;
+    const fleet = stocked.filter((s) => !isBig(s));
+    const bigSpecs = stocked.filter(isBig);
+    this.bigSpecs = Object.fromEntries(bigSpecs.map((s) => [s.id, s])); // the tractor, UTV and Land Rovers as they are this game (some bought, in their own colour)
     const keepOut = spawnKeepOut(this.world.layout); // nothing starts on a trailer, the tank, the barn doorway, a bale or the track
-    const { placed: spawns, home } = randomiseQuadSpawns(this.world.spawn, chosen.length, random, {
+    const { placed: spawns, home } = randomiseQuadSpawns(this.world.spawn, stocked.length, random, {
       homeCount: fleet.length,
-      big: chosen.map((_, i) => i >= fleet.length),
+      big: stocked.map((_, i) => i >= fleet.length),
       blocked: (x, z) => spawnBlocked(keepOut, x, z, { track: this.world.track, trackHalfWidth: this.world.layout.trackHalfWidth }),
     });
-    const bigSpawn = (spec) => spawns[fleet.length + bigSpecs.indexOf(spec)];
+    const bigSpawn = (spec) => spawns[fleet.length + bigSpecs.findIndex((s) => s.id === spec.id)];
 
     const plateRandom = createRandom(this.farmSeed ^ 0x91a7e);
     this.units = fleet.map(
@@ -564,14 +576,14 @@ export class Game {
     // The tractor, if it's here this game. It's a unit like the quads (you ride it, fuel it, hear it), but `girlUnits` is what the girls know about:
     // they leave it alone for now. Each of the three is null when it isn't on the farm, and everything that uses it checks.
     this.girlUnits = this.units;
-    this.tractorUnit = bigSpecs.includes(TRACTOR_SPEC) ? this.addTractor(bigSpawn(TRACTOR_SPEC)) : null;
+    this.tractorUnit = this.bigSpecs.tractor ? this.addTractor(bigSpawn(TRACTOR_SPEC)) : null;
     // The diesel UTV (vehicle/quadSpecs.js UTV_SPEC): another unit that isn't one of the girls' quads, which they ride in but don't drive.
-    this.utvUnit = bigSpecs.includes(UTV_SPEC) ? this.addUtv(bigSpawn(UTV_SPEC)) : null;
+    this.utvUnit = this.bigSpecs.utv ? this.addUtv(bigSpawn(UTV_SPEC)) : null;
     // The two Land Rovers, the old Series III and the 200TDi (LAND_ROVER_SPEC, DEFENDER_SPEC), either, both or neither: units like the UTV with a
     // petrol or diesel quad's quirks, that the girls ride in and take for a go. `landys.<kind>` is { kind, spec, unit, mount, ride }.
     this.landys = {};
     for (const [kind, spec] of [['landy', LAND_ROVER_SPEC], ['defender', DEFENDER_SPEC]]) {
-      this.landys[kind] = { kind, spec, unit: bigSpecs.includes(spec) ? this.addLandRover(bigSpawn(spec), spec) : null, mount: null, ride: null };
+      this.landys[kind] = { kind, spec, unit: this.bigSpecs[spec.id] ? this.addLandRover(bigSpawn(spec), this.bigSpecs[spec.id]) : null, mount: null, ride: null };
     }
     // The girls' own cars (vehicle/carModel.js), always here, by the Dutch barn: built and ridden like the Land Rovers, so
     // they live in `landys` too (with `car` set), but each is driven only by its owner (spec.owner) and minds if you take it (npc/carGo.js).
@@ -1475,6 +1487,10 @@ export class Game {
     this.jobBoard = new JobBoard({ ids: jobIds, random: createRandom(this.seed ^ 0x7ab0), params: this.jobBoardParams });
     this.setUpServiceJob();
     this.jobBoardView = new JobBoardView({ game: this, board: this.jobBoard, records: this.records });
+    // Each farm job ticked off pays (farm/classifieds.js); the neighbours' ads for vehicles are pinned up on the odd day, on the board beside the chalkboards.
+    this.jobBoard.onComplete = () => this.market.earn(this.marketParams.jobPay);
+    this.market.ads = dealAds(createRandom((this.farmSeed ^ Math.imul(this.farm.day, 0x9e3779b1)) >>> 0), { specs: this.specsById, onFarm: this.stockedIds, owned: this.market.bought, P: this.marketParams });
+    this.classifiedsView = new ClassifiedsView({ game: this, market: this.market });
     this.wallCalendar = new WallCalendar({ game: this, day: this.farm.day }); // between the two boards: the days crossed off
     this.photos = new PhotoHost(this); // the camera key and the corkboard beside the chalkboards (photos/)
     this.setUpEndOfDay();
@@ -1485,6 +1501,12 @@ export class Game {
       isAvailable: () => !this.handsFull && !this.player.isRiding,
       prompt: () => this.jobBoardView.prompt(),
       interact: () => this.jobBoardView.open(),
+    });
+    this.interaction.add({
+      target: this.classifiedsView.proxy,
+      isAvailable: () => !this.handsFull && !this.player.isRiding,
+      prompt: () => this.classifiedsView.prompt(),
+      interact: () => this.classifiedsView.open(),
     });
     this.interaction.add({
       target: this.jobBoardView.recordsProxy,
@@ -1859,7 +1881,7 @@ export class Game {
     if (this.menu.isOpen) return { mode: 'menu', menu: 'wheel' };
     if (this.workshop.isOpen) return { mode: 'menu', menu: 'workshop' };
     if (this.bench.isOpen) return { mode: 'menu', menu: 'bench' };
-    if (this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.photos.view.isOpen) return { mode: 'menu', menu: 'notebook' };
+    if (this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.photos.view.isOpen) return { mode: 'menu', menu: 'notebook' };
     if (this.player.isRiding) {
       const q = this.riddenUnit?.quad;
       return { mode: 'ride', seat: this.player.seat, bucketOpen, gear: q?.manual ? q.drivetrain.gear : null, gears: q?.gearbox?.gears ?? 0 };
@@ -2801,9 +2823,10 @@ export class Game {
 
   /** Builds the UTV, with its own seeded idle, roughness, fuel and hours, and adds it to `units` (not `girlUnits`). */
   addUtv(spawn) {
+    const spec = this.bigSpecs.utv; // as it is this game: bought, it has its own colour and hours
     const random = createRandom(this.farmSeed ^ 0x07c5);
     const unit = new QuadUnit({
-      spec: UTV_SPEC,
+      spec,
       spawn,
       scene: this.scene,
       physics: this.physics,
@@ -2811,12 +2834,12 @@ export class Game {
       world: this.world,
       audioHub: this.audioHub,
     });
-    unit.idleRpm = applyIdle(unit.engine.params, unit.quad.params, pickIdle(UTV_SPEC.idleRange, random));
-    unit.variation = applyVariation(UTV_SPEC, unit.engine.params, unit.quad.fuel, random);
-    unit.topRpm = applyTopRpm(UTV_SPEC, unit.engine.params, createRandom(this.farmSeed ^ 0x07c6));
-    unit.quad.usage.hours = pickReading(UTV_SPEC.hoursRange, random);
-    const [hoursLo, hoursHi] = UTV_SPEC.hoursRange;
-    unit.quad.usage.odoMiles = pickRelatedReading(UTV_SPEC.odoRange, (unit.quad.usage.hours - hoursLo) / (hoursHi - hoursLo), random);
+    unit.idleRpm = applyIdle(unit.engine.params, unit.quad.params, pickIdle(spec.idleRange, random));
+    unit.variation = applyVariation(spec, unit.engine.params, unit.quad.fuel, random);
+    unit.topRpm = applyTopRpm(spec, unit.engine.params, createRandom(this.farmSeed ^ 0x07c6));
+    unit.quad.usage.hours = pickReading(spec.hoursRange, random);
+    const [hoursLo, hoursHi] = spec.hoursRange;
+    unit.quad.usage.odoMiles = pickRelatedReading(spec.odoRange, (unit.quad.usage.hours - hoursLo) / (hoursHi - hoursLo), random);
     unit.quad.parkBrake = true;
     this.units = [...this.units, unit];
     unit.where = spawn.where;
@@ -3819,6 +3842,43 @@ export class Game {
   }
 
   /** Everything the farm keeps, as plain data (farm/farmSave.js writes it). */
+  /** Buys one of the board's ads (classifiedsView.js): the money goes now and the vehicle is in the yard tomorrow. Saved at once, so it is not lost if the tab closes. */
+  buyAd(ad) {
+    if (this.farm.seeded) return this.hud.toast('A seeded game is not kept, so nothing would turn up tomorrow', 3);
+    const why = this.market.whyNot(ad);
+    if (why) return this.hud.toast(why, 2.5);
+    const spec = this.specsById[ad.specId];
+    this.market.buy(ad);
+    this.saveFarm?.();
+    this.classifiedsView.refresh();
+    this.hud.toast(`Bought: the ${colourName(ad.colour)} ${spec.label}. It will be here in the morning`, 3.5);
+  }
+
+  /** Debug: puts up ads now, whatever the day's dice said (up to three, from the models not on the farm), and redraws the board. */
+  debugDealAds() {
+    const P = { ...this.marketParams, adDayChance: 1, secondAdChance: 1, thirdAdChance: 1 };
+    this.market.ads = dealAds(createRandom((Math.random() * 2 ** 31) >>> 0), { specs: this.specsById, onFarm: this.stockedIds, owned: this.market.bought, P });
+    this.classifiedsView.refresh();
+    return this.market.ads.length;
+  }
+
+  debugClearAds() {
+    this.market.ads = [];
+    this.classifiedsView.refresh();
+  }
+
+  debugSetPurse(pounds) {
+    this.market.purse = Math.max(0, Math.round(pounds));
+    this.classifiedsView.refresh();
+  }
+
+  /** One line about the market, for the debug panel and the console. */
+  describeMarket() {
+    const m = this.market;
+    const bought = m.bought.map((b) => `${colourName(b.colour)} ${this.specsById[b.specId]?.label ?? b.specId}`).join(', ');
+    return `£${m.purse} in the tin, ${m.ads.length ? m.ads.map((a) => a.text).join(' | ') : 'no ads today'}${bought ? `; bought: ${bought}` : ''}`;
+  }
+
   captureFarm() {
     const vehicles = {};
     for (const unit of this.units) {
@@ -3829,6 +3889,7 @@ export class Game {
       farmSeed: this.farmSeed,
       savedAt: Date.now(),
       fleet: this.fleetIds,
+      market: this.market.toJSON(),
       vehicles,
       pods: { ...this.podRack.at },
       girls: captureGirls(this),
@@ -4039,9 +4100,10 @@ export class Game {
 
   /** Builds the tractor, with its own seeded idle, roughness, fuel and hours, and adds it to `units` (not `girlUnits`). */
   addTractor(spawn) {
+    const spec = this.bigSpecs.tractor; // as it is this game: bought, it has its own colour and hours
     const random = createRandom(this.farmSeed ^ 0x7ac70);
     const unit = new QuadUnit({
-      spec: TRACTOR_SPEC,
+      spec,
       spawn,
       scene: this.scene,
       physics: this.physics,
@@ -4049,14 +4111,14 @@ export class Game {
       world: this.world,
       audioHub: this.audioHub,
     });
-    unit.idleRpm = applyIdle(unit.engine.params, unit.quad.params, pickIdle(TRACTOR_SPEC.idleRange, random));
-    unit.variation = applyVariation(TRACTOR_SPEC, unit.engine.params, unit.quad.fuel, random);
-    unit.topRpm = applyTopRpm(TRACTOR_SPEC, unit.engine.params, createRandom(this.farmSeed ^ 0x70b6));
-    unit.quad.usage.hours = pickReading(TRACTOR_SPEC.hoursRange, random);
+    unit.idleRpm = applyIdle(unit.engine.params, unit.quad.params, pickIdle(spec.idleRange, random));
+    unit.variation = applyVariation(spec, unit.engine.params, unit.quad.fuel, random);
+    unit.topRpm = applyTopRpm(spec, unit.engine.params, createRandom(this.farmSeed ^ 0x70b6));
+    unit.quad.usage.hours = pickReading(spec.hoursRange, random);
     // Its odometer isn't on the dash, but it counts from a start that goes with its hours (more hours, more miles).
-    const [hoursLo, hoursHi] = TRACTOR_SPEC.hoursRange;
-    unit.quad.usage.odoMiles = pickRelatedReading(TRACTOR_SPEC.odoRange, (unit.quad.usage.hours - hoursLo) / (hoursHi - hoursLo), random);
-    unit.quad.handSetting = pickReading(TRACTOR_SPEC.handStartRange, random); // the last driver left the hand throttle wherever
+    const [hoursLo, hoursHi] = spec.hoursRange;
+    unit.quad.usage.odoMiles = pickRelatedReading(spec.odoRange, (unit.quad.usage.hours - hoursLo) / (hoursHi - hoursLo), random);
+    unit.quad.handSetting = pickReading(spec.handStartRange, random); // the last driver left the hand throttle wherever
     this.units = [...this.units, unit];
     unit.where = spawn.where;
     return unit;
@@ -10130,7 +10192,7 @@ export class Game {
     // 5: raise the camera (photos/photoHost.js), unless you are in a menu, up the ladder or hidden in the hay.
     if (
       input.wasPressed('Digit5') &&
-      !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.photos.view.isOpen) &&
+      !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.photos.view.isOpen) &&
       !(this.climb || this.tryst || this.hiding.active)
     ) {
       this.photos.press();
@@ -10139,7 +10201,7 @@ export class Game {
     // 6: wave. Close girls wave back, a free girl further off comes over, a driving one pulls up (npc/playerWave.js).
     if (
       input.wasPressed('Digit6') &&
-      !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.photos.view.isOpen) &&
+      !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.photos.view.isOpen) &&
       !(this.climb || this.tryst || this.hiding.active)
     ) {
       this.waveAtGirls();
@@ -10180,6 +10242,9 @@ export class Game {
     } else if (this.jobBoardView.isOpen) {
       this.interaction.clear();
       this.jobBoardView.handleInput(input);
+    } else if (this.classifiedsView.isOpen) {
+      this.interaction.clear();
+      this.classifiedsView.handleInput(input);
     } else if (this.photos.view.isOpen) {
       this.interaction.clear();
       this.photos.view.handleInput(input);
