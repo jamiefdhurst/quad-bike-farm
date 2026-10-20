@@ -523,6 +523,13 @@ export const FAQ_SECTIONS = [
         tip: 'A girl who bogged her quad is warier of driving for a while; one who won a race is keener to race.',
       },
       {
+        q: 'Why does a girl keep going back to the same thing all day?',
+        a: `Each girl starts a game with something loose in mind for the day: Jess might want the ramp, doughnuts or a race, Amy a proper cup of tea, the cones or the Land
+          Rover out. She says so a minute or so in ("I am jumping that ramp today. Watch me."), and she is keener on it all game, so she picks it more often than she
+          otherwise would. It only nudges what she picks for herself, and a new game deals her a new one.`,
+        tip: 'Each girl starts with something in mind for the day and says so early on. She keeps drifting back to it.',
+      },
+      {
         q: 'Where are the bogs?',
         a: `Two on the track and one in the low ground of the field, dark churned patches with a wet shine, all on the map. New ones form wherever quads
           keep driving over wet grass, and rain swells them, so late in a long game the field isn't the one you started with.`,

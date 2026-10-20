@@ -46,6 +46,7 @@ import { BackNap } from './backNap.js';
 import { firstThink } from './chooser.js';
 import { DEFAULT_DOZE_PARAMS, dozePose } from './dozing.js';
 import { Memory } from './memory.js';
+import { Agenda } from './agenda.js';
 import { Intent, walkPace } from './intent.js';
 import { Mood } from './mood.js';
 import { standBy, tagPoint } from './pair.js';
@@ -155,6 +156,7 @@ export class Companion {
     // What she's set on (intent.js): how she walks to it, and whether you've stopped her on her way.
     this.intent = new Intent();
     this.memory = new Memory(); // how each kind of thing has gone for her (memory.js), nudging what she chooses
+    this.agenda = new Agenda(null, this.params); // what she has in mind for today (agenda.js), boosting those offers; the game deals hers once it knows who she is
     this.mood = new Mood(); // how she's been feeling over the last few minutes (mood.js)
     this.pace = null; // the chosen thing's pace for the walk to it ('hurry', 'brisk', 'dawdle'), cleared when the walk ends
     this.paceMul = 1;
