@@ -25,6 +25,7 @@ export const QUAD_SPECS = [
   {
     // Honda-style farm quad: soft, steady, low warm idle. The original tuning.
     id: 'red',
+    tyreSize: 'quad', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.5, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     label: 'red quad',
     name: 'Red quad',
@@ -64,6 +65,7 @@ export const QUAD_SPECS = [
     // when cold and runs lumpier until it's warm, warms a little quicker, and
     // pulls slightly harder. Its idle comes from the other recorded machine.
     id: 'blue',
+    tyreSize: 'quad', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.3, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     label: 'blue quad',
     name: 'Blue quad',
@@ -130,6 +132,7 @@ export const QUAD_SPECS = [
     // engine braking, and trails blue-white oil smoke. Sounds like a two-stroke
     // dirt bike. Automatic like the others.
     id: 'yellow',
+    tyreSize: 'sport', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.4, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
     label: 'yellow quad',
@@ -233,6 +236,7 @@ export const QUAD_SPECS = [
     // takes an age to warm up and wants plenty of choke. Rougher than the others,
     // and strong engine braking. It idles on a different recorded machine.
     id: 'green',
+    tyreSize: 'quad', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.6, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     label: 'green quad',
     name: 'Green quad',
@@ -316,6 +320,7 @@ export const QUAD_SPECS = [
     // her), barely any engine braking, and smokes like a chimney. Its idle is a
     // different two-stroke from the yellow's.
     id: 'orange',
+    tyreSize: 'sport', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     label: 'orange quad',
     name: 'Orange quad',
@@ -415,6 +420,7 @@ export const EXTRA_SPECS = [
     // physics together), light and slow, one seat, and it revs very high and sounds like an angry wasp. Pull-start as well as the
     // starter; it runs on the same pre-mix as the yellow.
     id: 'kids',
+    tyreSize: 'kid', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.65, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     label: "kids' quad",
     name: "Kids' quad",
@@ -517,6 +523,7 @@ export const EXTRA_SPECS = [
     // sound for now. Built by miniMotoModel.js: it rides on the quad physics with two wheels and the lean model (bikeLean.js) holding it up, and
     // leaning into corners. Anyone can ride it (it's nobody's), but there's no room on the back.
     id: 'moto',
+    tyreSize: 'kid', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
     miniMoto: true,
@@ -622,6 +629,7 @@ export const EXTRA_SPECS = [
     // pull-start only (no starter motor), a clutch (Shift) and a four-speed box, and a tall, narrow stance that tips if you throw it round
     // a corner. Worn out, hard to start and rough. Built by atcModel.js, with the yellow's sound until it gets its own. Solo.
     id: 'atc',
+    tyreSize: 'trike', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.8, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
     threeWheeler: true,
@@ -729,6 +737,7 @@ export const EXTRA_SPECS = [
     // A smart new quad on loan for the day: the Yamaha's body in neutral silver, fuel injected so it hardly wants any choke, starts on
     // the button, idles smooth and quiet and has almost no wear. Full tank, and a bit more power than the old farm quads.
     id: 'loan',
+    tyreSize: 'quad', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     steadyLights: true, // a battery runs its headlight, so it doesn't follow the revs like the old quads' (headlight.js)
     label: 'loan quad',
@@ -795,6 +804,7 @@ export const EXTRA_SPECS = [
 // (QuadUnit reads `tractor`). Runs on red diesel, so it doesn't mind it. Its sound is kyles's old tractor recordings.
 export const TRACTOR_SPEC = {
   id: 'tractor',
+  tyreSize: 'tractor', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.6, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 1.25, z: 1.3 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   steadyLights: true, // a battery runs its lights
@@ -940,6 +950,7 @@ export const TRACTOR_SPEC = {
 // Its sound borrows the tractor's recordings, played faster.
 export const UTV_SPEC = {
   id: 'utv',
+  tyreSize: 'utv', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.3, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.95, z: 1.15 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   label: 'UTV',
@@ -1089,6 +1100,7 @@ export const UTV_SPEC = {
 // hand throttle on the dash, a towing hitch, and a starting handle at the front for when the battery won't (vehicle/crankHandle.js).
 export const LAND_ROVER_SPEC = {
   id: 'landrover',
+  tyreSize: 'landrover', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.6, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.95, z: 1.6 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   label: 'Series III',
@@ -1236,6 +1248,7 @@ export const LAND_ROVER_SPEC = {
 // stops it, so no choke, no hand throttle and no starting handle.
 export const DEFENDER_SPEC = {
   id: 'landrover200',
+  tyreSize: 'landrover', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.95, z: 1.6 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   label: '200TDi',
@@ -1408,6 +1421,7 @@ const CAR_ENGINE = {
 // clean and looked after. L plates on (she is learning; item 167 has her pass in it).
 export const FIESTA_SPEC = {
   id: 'fiesta',
+  tyreSize: 'car', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.2, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js): a careful owner's car
   radiatorAt: { x: 0, y: 0.85, z: 1.5 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   label: 'Fiesta',
@@ -1489,6 +1503,7 @@ export const FIESTA_SPEC = {
 // and bonnet, a grey primer wing, and a big-bore exhaust that makes it sound far quicker than it is.
 export const CORSA_SPEC = {
   id: 'corsa',
+  tyreSize: 'car', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.85, z: 1.55 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   label: 'Corsa',

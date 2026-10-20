@@ -13,6 +13,25 @@ export const BRANDS = {
 };
 const BRAND_IDS = Object.keys(BRANDS);
 
+/**
+ * The kinds of tyre the barn stocks, which a vehicle's spec names as its `tyreSize`. The spares shelf has one part for each (`tyre` + the id with
+ * a capital: tyreKid, tyreQuad...), counted in single tyres; `one` and `many` are how the shelf and the toasts say them.
+ */
+export const TYRE_SIZES = {
+  kid: { one: 'small quad tyre', many: 'small quad tyres' }, // the kids' quad and the mini moto
+  quad: { one: 'quad tyre', many: 'quad tyres' }, // the utility quads
+  sport: { one: 'sport quad tyre', many: 'sport quad tyres' }, // the two-stroke sports quads
+  trike: { one: 'balloon tyre', many: 'balloon tyres' }, // the old three-wheeler's
+  utv: { one: 'utility vehicle tyre', many: 'utility vehicle tyres' },
+  landrover: { one: 'Land Rover tyre', many: 'Land Rover tyres' },
+  car: { one: 'car tyre', many: 'car tyres' },
+  tractor: { one: 'tractor tyre', many: 'tractor tyres' },
+};
+export const TYRE_SIZE_IDS = Object.keys(TYRE_SIZES);
+
+/** The spares shelf's part id for a tyre size: 'quad' is 'tyreQuad'. */
+export const tyrePart = (size) => `tyre${size[0].toUpperCase()}${size.slice(1)}`;
+
 export const DEFAULT_TYRE_PARAMS = {
   startBias: 0.5, // all four start up to this many psi either side of stock together (a shared low or high)
   startSpread: 0.4, // and each wheel up to this much either side of that
@@ -35,6 +54,14 @@ export const DEFAULT_TYRE_PARAMS = {
   minPsi: 1.5, // the lowest a tyre is dealt
   ventMinPsi: 0.5, // the lowest you can let one down to at the pump
   maxPsi: 7,
+  wearPerMetre: 0.00007, // tread lost per metre rolled on grass or the track: about 14 km makes a new tyre bald
+  wearTarmac: 2, // times as fast on tarmac
+  wearMud: 0.5, // times as fast in mud and puddles (soft ground is kind to a tyre)
+  wearDriven: 1.3, // times as fast on a driven wheel...
+  wearFree: 0.7, // ...and on one that only rolls
+  wearSpin: 0.004, // tread a second lost by a driven wheel spinning at its worst (a doughnut): a minute of it is a quarter of a tyre
+  baldPuncture: 3, // times as likely a puncture is to start with no tread left on the worst axle (1 with new tyres)
+  replaceBelow: 0.95, // the bench only offers new tyres once an axle is worn below this
 };
 
 export const TYRE_PARAM_RANGES = {
@@ -59,6 +86,14 @@ export const TYRE_PARAM_RANGES = {
   minPsi: [0, 5, 0.1],
   ventMinPsi: [0, 2, 0.1],
   maxPsi: [3, 12, 0.5],
+  wearPerMetre: [0, 0.001, 0.00001],
+  wearTarmac: [0, 5, 0.1],
+  wearMud: [0, 3, 0.1],
+  wearDriven: [0, 3, 0.1],
+  wearFree: [0, 3, 0.1],
+  wearSpin: [0, 0.05, 0.001],
+  baldPuncture: [1, 10, 0.5],
+  replaceBelow: [0, 1, 0.05],
 };
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -174,6 +209,53 @@ export class TyreSet {
     const pressure = 1 - lerp(t.psiGrip, t.psiMudGrip, m) * (this.psi[i] - t.stockPsi);
     const treadFactor = lerp(1 - this.P.treadDryLoss * (1 - tread), 1 - this.P.treadMudLoss * (1 - tread), m);
     return Math.max(0.2, pressure) * lerp(brand.grass, brand.mud, m) * treadFactor;
+  }
+
+  /** Which wheels (physics indices) are on an axle: a bike has one a side, a quad two, an outrigger none. */
+  axleWheels(axle) {
+    return this.realWheels.filter((w) => w.front === (axle === 'front'));
+  }
+
+  /**
+   * Wears the tyre on wheel `i` for `metres` rolled and `seconds` of wheelspin, on ground that is `tarmac` and `mud` (0..1 each). The tread is
+   * per axle, so each of its tyres wears its share. Returns how much came off the axle.
+   */
+  wearWheel(i, { metres = 0, tarmac = 0, mud = 0, spin = 0, seconds = 0, driven = false }) {
+    const P = this.P;
+    const w = this.realWheels.find((x) => x.i === i);
+    if (!w) return 0;
+    const axle = w.front ? 'front' : 'rear';
+    const rolled = metres * P.wearPerMetre * lerp(1, P.wearTarmac, clamp(tarmac, 0, 1)) * lerp(1, P.wearMud, clamp(mud, 0, 1)) * (driven ? P.wearDriven : P.wearFree);
+    const lost = (rolled + (driven ? spin * seconds * P.wearSpin : 0)) / this.axleWheels(axle).length;
+    this.tread[axle] = clamp(this.tread[axle] - lost, 0, 1);
+    return lost;
+  }
+
+  /** The axle with the least tread ('front' if they are level). */
+  get worstAxle() {
+    return this.tread.rear < this.tread.front ? 'rear' : 'front';
+  }
+
+  /** Whether the worn axle is worn enough for new tyres to be worth fitting. */
+  get wantsNew() {
+    return this.tread[this.worstAxle] < this.P.replaceBelow;
+  }
+
+  /** New tyres on an axle. Returns how many were fitted (the shelf's cost). */
+  replace(axle) {
+    this.tread[axle] = 1;
+    return this.axleWheels(axle).length;
+  }
+
+  /** Multiplier on how often a puncture starts: a bald tyre picks up every thorn. */
+  get punctureFactor() {
+    const worst = Math.min(this.tread.front, this.tread.rear);
+    return 1 + (this.P.baldPuncture - 1) * (1 - worst) * (1 - worst);
+  }
+
+  /** "Front 82%, rear 30%" for the gauge panel. */
+  treadText() {
+    return ['front', 'rear'].filter((a) => this.axleWheels(a).length).map((a) => `${a === 'front' ? 'Front' : 'Rear'} ${Math.round(this.tread[a] * 100)}%`).join('   ');
   }
 
   /** Rolling resistance multiplier from the average pressure: harder tyres roll easier. */

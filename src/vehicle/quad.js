@@ -12,6 +12,7 @@ import { poseBarPod, poseThumbThrottle, POD } from './foremanControls.js';
 import { Indicators, INDICATOR_PARAMS } from './indicators.js';
 import { SeatBelts, BELT_SEATS, beltLampMode, beltLampLit } from './seatBelts.js';
 import { TyreSet } from './tyres.js';
+import { wearLook, wornTyre } from './detail/tread.js';
 import { frostTexture } from './frostTexture.js';
 import { frostAfter, frostedColour, DEFAULT_FROST_PARAMS } from './seatFrost.js';
 import { ManualDrivetrain, gearLabel } from './manualDrivetrain.js';
@@ -781,7 +782,7 @@ export class Quad {
     const jolt = dt > 0 ? Math.abs(up - this.lastUp) / dt : 0;
     this.lastUp = up;
     const slipNow = this.manual && this.faults.hasClutch ? clutchSlipping(this.drivetrain, { running: this.engine.isRunning, throttle: throttleInput, slope: this.climb, speed: fwd }, this.faults.params) : 0;
-    this.faults.update(dt, { running: this.engine.isRunning, speed: Math.abs(fwd), throttle: throttleInput, jolt, clutchSlip: slipNow });
+    this.faults.update(dt, { running: this.engine.isRunning, speed: Math.abs(fwd), throttle: throttleInput, jolt, clutchSlip: slipNow, punctureFactor: this.tyres.punctureFactor });
     this.clutchSlip = this.manual && this.drivetrain.gear !== 0 ? clutchSlipUnderPower(this.faults.clutchWear, this.drivetrain.clutch > 0.5 ? this.throttle : 0, this.faults.params) : 0;
     this.checkCrash(dt);
     this.dust = this.world.dustParams ? dustLevel(this.world.dustParams, this.world.stubbleAt?.(this.position.x, this.position.z) ?? 0, this.world.wet ?? 0, fwd) : 0;
@@ -914,6 +915,22 @@ export class Quad {
       const weight = Math.min(2, Math.max(0.6, p.mass / 300));
       for (const w of this.physics.wheelInfo) {
         if (w.contact) this.world.wear.trample(w.point.x, w.point.z, groundSpeed * dt, { spin: w.driven ? this.physics.spinSlip : 0, wet, dt, weight });
+      }
+    }
+    // Tread wears with every metre rolled, faster on tarmac and under wheelspin, slower in mud (tyres.js).
+    if (!this.pinned && (groundSpeed > 0.2 || this.physics.spinSlip > 0.05)) {
+      const wheels = this.physics.wheelInfo;
+      for (let i = 0; i < wheels.length; i++) {
+        const w = wheels[i];
+        if (!w.contact) continue;
+        this.tyres.wearWheel(i, {
+          metres: groundSpeed * dt,
+          tarmac: this.world.roadMud?.tarmacAt(w.point.x, w.point.z) ?? 0,
+          mud: Math.max(w.mud ?? 0, w.puddle ?? 0),
+          spin: this.physics.spinSlip,
+          seconds: dt,
+          driven: !!w.driven,
+        });
       }
     }
     // Someone on foot shoving it along its length (the game sets pushDir while they hold the key); not with the parking brake on.
@@ -1075,6 +1092,15 @@ export class Quad {
     };
   }
 
+  /** A worn tyre shows it: its mesh swaps to a copy with the tread worn down (detail/tread.js), by looks so it only changes now and then. */
+  showTread(w) {
+    const look = wearLook(this.tyres.tread[w.front ? 'front' : 'rear']);
+    if (look === w.tyreLook) return;
+    w.tyreLook = look;
+    if (w.tyreMesh === undefined) w.tyreMesh = w.spin.children.find((c) => c.geometry?.userData.tyre) ?? null;
+    if (w.tyreMesh) w.tyreMesh.geometry = wornTyre(w.tyreMesh.geometry, look);
+  }
+
   update(dt, alpha, vibration) {
     this.model.position.lerpVectors(this.prevPos, this.currPos, alpha);
     // Sunk into a bog, it sits lower in the mud.
@@ -1107,6 +1133,7 @@ export class Quad {
         w.object.position.z += (w.z - pivotZ) * (Math.cos(turn) - 1);
       }
       w.spin.rotation.x = st.rotation;
+      this.showTread(w);
       this.wheelHeights[i] = w.object.position.y - this.groundOffset;
     }
     if (this.model.userData.suspension) poseSuspension(this.model, this.wheelHeights);

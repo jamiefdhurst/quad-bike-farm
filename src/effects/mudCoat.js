@@ -226,7 +226,8 @@ export class MudCoat {
     this.setTouch(findTouchPoints(model, this.frame));
     // The meshes the wear bake (vehicle/detail/wear.js) works through, in the background: everything this coat patched.
     const patched = new Set([...bodyCopies.values(), ...wheelCopies.values()]);
-    this.wearBake = bakeModelSteps(model, (o) => !patched.has(o.material));
+    // (not the tyres: they swap their geometry as the tread wears, detail/tread.js, and rubber has no edges to rub through)
+    this.wearBake = bakeModelSteps(model, (o) => !patched.has(o.material) || !!o.geometry.userData.tyre);
     this.wearBaked = false;
   }
 

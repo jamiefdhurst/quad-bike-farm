@@ -65,6 +65,7 @@ export function fixEverything(unit) {
   unit.quad.fuel.wax = 0;
   unit.quad.faults.kept.chainLube = 1; // a fresh chain, as the bench leaves it
   unit.quad.faults.kept.chainOff = false;
+  if (unit.quad.tyres) unit.quad.tyres.tread = { front: 1, rear: 1 }; // new rubber (without taking anything off the rack)
 }
 
 /** Straight to running and warm with the fuel on, as if started and left a while (no cranking). */
@@ -104,6 +105,7 @@ export function problemSummary(unit) {
   if (e.water > 0.05) bits.push('water in it');
   if (e.dieselSoak > 0.05) bits.push('diesel-soaked');
   if (unit.quad.fuel.water > 0.005 || unit.quad.fuel.sediment > 0.05) bits.push(`water in the fuel ${unit.quad.fuel.water.toFixed(2)}, tap bowl ${unit.quad.fuel.sediment.toFixed(2)}`);
+  if (unit.quad.tyres && Math.min(unit.quad.tyres.tread.front, unit.quad.tyres.tread.rear) < 0.15) bits.push(`bald tyres (${unit.quad.tyres.treadText()})`);
   if (e.battery < 0.25) bits.push('battery flat');
   if (unit.quad.brakes.wet > 0.1) bits.push(`brakes wet ${unit.quad.brakes.wet.toFixed(2)}`);
   if (unit.quad.brakes.binding) bits.push('brake binding');

@@ -128,9 +128,18 @@ const _r = new THREE.Matrix4();
 
 /**
  * A whole tyre: the carcass lathed from `carcassProfile` and every block from `treadBlocks`, merged into one indexed geometry with
- * the axle along X. `segments` is the lathe's sides (more for a big tyre).
+ * the axle along X. `segments` is the lathe's sides (more for a big tyre). The geometry remembers how it was made (`userData.tyre`)
+ * so `wornTyre` can make the same tyre with its tread worn down.
  */
 export function treadTyre(kind, { radius, width, rimR, count, segments = 40 }) {
+  const opts = { radius, width, rimR, count, segments };
+  const geo = buildTyre(kind, opts, 0, null);
+  geo.userData.tyre = { kind, opts, k: geo.userData.k, base: geo, variants: [] };
+  return geo;
+}
+
+function buildTyre(kind, opts, wear, fixedK) {
+  const { radius, width, rimR, count, segments } = opts;
   if (!TREAD_KINDS[kind]) throw new Error(`Unknown tread kind: ${kind}`);
   const carcass = lathe(carcassProfile(kind, { radius, width, rimR }), segments).rotateZ(-Math.PI / 2);
   carcass.deleteAttribute('uv');
@@ -141,16 +150,38 @@ export function treadTyre(kind, { radius, width, rimR, count, segments = 40 }) {
     g.deleteAttribute('uv');
     g.applyMatrix4(_r.makeRotationY(b.yaw));
     g.applyMatrix4(_r.makeRotationZ(-b.lean));
-    g.applyMatrix4(_m.makeTranslation(b.x, radius - b.out - b.h, 0));
+    g.applyMatrix4(_m.makeTranslation(b.x, radius - b.out - b.h - b.h * wear, 0)); // worn: the top sits lower by the share of its height worn off
     g.applyMatrix4(_r.makeRotationX(b.th));
     parts.push(g);
   }
   // The blocks' flat tops and leaning corners stand a few millimetres proud of where they were aimed: scale the lot so the outermost
-  // point is exactly on the radius.
+  // point is exactly on the radius. (A worn copy uses the new tyre's scale, so it is not stretched back out to the radius.)
   const geo = mergeGeometries(parts);
-  const k = radius / outerRadius(geo);
+  const k = fixedK ?? radius / outerRadius(geo);
   geo.scale(1, k, k);
+  geo.userData.k = k;
   return geo;
+}
+
+/** How much of the tread's depth each look has worn off, from new (0) to bald (3). */
+export const WEAR_LOOKS = [0, 0.4, 0.75, 0.92];
+
+/** Which look a tyre with this much tread (0 bald, 1 new) has. */
+export function wearLook(tread) {
+  return tread >= 0.7 ? 0 : tread >= 0.4 ? 1 : tread >= 0.15 ? 2 : 3;
+}
+
+/** The same tyre as `geo` (made by `treadTyre`) with the look's wear, built once and shared. A geometry not made by it comes back as it was. */
+export function wornTyre(geo, look) {
+  const spec = geo.userData.tyre;
+  if (!spec) return geo;
+  if (look === 0) return spec.base;
+  if (!spec.variants[look]) {
+    const g = buildTyre(spec.kind, spec.opts, WEAR_LOOKS[look], spec.k);
+    g.userData.tyre = spec;
+    spec.variants[look] = g;
+  }
+  return spec.variants[look];
 }
 
 /** The furthest any part of a geometry reaches from the axle (X): for checking a tyre against its wheel radius. */
