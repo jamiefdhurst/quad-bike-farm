@@ -344,6 +344,14 @@ export const FAQ_SECTIONS = [
         tip: 'A diesel dying on a hard frost has waxed. Warm it up, or treat the tank with the anti-gel by the coolant.',
       },
       {
+        q: 'Why won\'t the tractor (or UTV, or Land Rover) start after I filled it up?',
+        a: `If a diesel runs out of fuel, air gets into the fuel line, and it won't start again just because there is fuel in the tank. Fill it from the
+          green can first, then look at it and press <kbd>E</kbd> to open the toolbox, and hold <kbd>Q</kbd> (or the button) on "bleed the fuel at the lift
+          pump" for about six seconds, until it says it is bled. Let go early and what you have done stays done. Then give it the glow plugs and start it as
+          usual. Amy knows what is wrong and says so. Petrol quads never need it.`,
+        tip: 'A diesel that ran dry needs bleeding: open the toolbox and hold Q at the lift pump, once there is fuel in.',
+      },
+      {
         q: 'Why won\'t the throttle open (or shut) on a frosty morning?',
         a: `On a frosty morning a quad left out in the open can have a frozen throttle cable. Either it won't open past a crack, so the engine idles and
           you can't go anywhere, or it opens and then stays open when you let go. Don't fight it. Keep the engine running and the heat will free it in a
