@@ -51,6 +51,7 @@ import { SeatSpring, UpAccel, DEFAULT_SEAT_PARAMS } from './seatRide.js';
 import { DriveSwitch, driveEffects, DEFAULT_DRIVE_PARAMS } from './driveMode.js';
 import { fuelWaterLevel } from './fuelWater.js';
 import { DEFAULT_DIESEL_WAX_PARAMS, stepWax } from './dieselWax.js';
+import { DEFAULT_BLEED_PARAMS, runsDry, stepBleed } from './bleeding.js';
 import { reverseAllowed, chokeReach, DEFAULT_CONTROLS_PARAMS } from './controls.js';
 import { advanceUsage, isNeutral, dashClock, lampStates } from './dashState.js';
 
@@ -165,6 +166,7 @@ export class Quad {
     }
     this.carbIce = new CarbIcing(undefined, !engine.params.compressionIgnition && !engine.params.injected); // ice in the carb on a cold, damp day (carbIcing.js); a diesel or an injected engine has no carb
     this.iceHits = []; // 'crack' / 'break' from wheels on puddle ice, taken by takeIceHits()
+    this.bleedParams = DEFAULT_BLEED_PARAMS; // a diesel run dry and bled at the lift pump (bleeding.js); the game swaps in this game's tuning
     this.waxParams = DEFAULT_DIESEL_WAX_PARAMS; // diesel waxing in a hard frost (dieselWax.js); the game swaps in this game's tuning
     this.iceCable = new FrozenCable(); // a throttle cable frozen on a frosty morning (frozenCable.js); the game gives it this game's tuning and deals it
     this.brakes = new BrakeState(); // wet and binding brakes (brakeState.js); the game gives it this game's tuning and deals the binding ones
@@ -1023,6 +1025,7 @@ export class Quad {
         sun: w.warmth ?? 0,
         antiGel: this.fuel.antiGel,
       }, this.waxParams);
+      if (runsDry(this.fuel.bowlLevel, e.isRunning || this.starter, this.bleedParams)) this.fuel.airLock = 1;
     }
     this.fuel.update(dt, { rpm: e.rpm, throttle: e.throttle, choke: e.choke, running: e.isRunning, climb: this.climb });
     this.sump?.step(dt, { running: e.isRunning, work: e.lubeWork });
@@ -1030,6 +1033,24 @@ export class Quad {
   }
 
   /** The toolbox drain after red diesel: tank and carb emptied, the engine's soak cleared. Returns the litres lost. */
+  /** Whether this one has a fuel line that can fill with air: a diesel does. */
+  get canAirLock() {
+    return !!this.engine.params.compressionIgnition;
+  }
+
+  /**
+   * Works the lift pump's priming lever for dt seconds. It needs fuel in the tank to push; returns false (and does nothing) if there is none.
+   * At the end of a full bleed a little fuel is in the bowl again.
+   */
+  bleed(dt) {
+    if (!this.canAirLock || this.fuel.airLock <= 0) return true;
+    if (this.fuel.litres <= 0) return false;
+    const before = this.fuel.airLock;
+    this.fuel.airLock = stepBleed(before, dt, { pumping: true }, this.bleedParams);
+    if (before > 0 && this.fuel.airLock <= 0) this.fuel.bowl = Math.max(this.fuel.bowl, this.fuel.params.bowlCapacity);
+    return true;
+  }
+
   drainFuel() {
     this.engine.dieselSoak = 0;
     return this.fuel.drain();
@@ -1083,6 +1104,7 @@ export class Quad {
       additive: this.fuel.additive,
       fuelWater: fuelWaterLevel(this.fuel.bowlWater, this.fuel.waterParams),
       wax: this.fuel.wax,
+      airLock: this.fuel.airLock,
       speed: this.forwardSpeed,
       ambient: this.world.warmth ?? 0.5,
       chill: this.world.chill ?? 0,
