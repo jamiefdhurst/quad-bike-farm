@@ -4573,3 +4573,13 @@ Settled without questions: the issue says what dulls hearing; the numbers are fi
 - The tunables join "What catches the eye". The Girls tab shows "hearing" under her state, and `girl.<name>.hearing` reads it in the console.
 - Not checked in play: how it reads, or whether the rain is dull enough to notice.
 
+
+## Getting attached to a quad (#23, TODO 128)
+
+Decided with you: care attaches to the quad she owns (the claim in `ownership.js`), not to whichever she drives most; neglect is a quad in use on almost no fuel or thrashed; care feeds favour as well as lines.
+
+- `src/npc/quadCare.js` (pure, tested; tunables "Caring for her quad"). One care score per girl, 0 to 1, starting at `startCare` 0.4. Someone else at the controls of her running quad within `noticeRange` 45 m: under `lowFuel` 6% of the tank for `dryDelay` 4 s she says `quadDry`; throttle over 0.95 or revs over 92% of the redline for `thrashFor` 6 s (easing off wears the count down at 2 s a second) she says `quadThrashed`. At most one complaint every `speakCooldown` 120 s per girl. Her own driving never counts.
+- Each complaint costs her care (0.06 dry, 0.04 thrashed), so a girl let down again and again stops bothering below `minCare` 0.12. Hosing her quad adds 0.01 care a second, and after `proudAfter` 5 s she says `quadProud`, at most every 240 s.
+- Favour: washing her quad earns `favourWashPerSecond` 0.1 a second scaled by her care, on top of the existing favourite-quad wash score. If it is you thrashing it and she says so, you lose `favourThrash` 1.2 scaled by her care. Falling out is untouched: Jess or Amy thrashing it is words only.
+- Kept overnight (`captureGirls` `care`), in full; an old save without it starts at `startCare`. Girls tab "Her state" shows it, and the console has `girl.<name>.quadCare`.
+- Lines are `{q}` templates (colour or nickname), so each is written out per quad. Not checked in the running game: how often she speaks up, or whether 6 s flat out is right.

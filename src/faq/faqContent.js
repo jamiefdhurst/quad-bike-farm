@@ -1158,6 +1158,13 @@ export const FAQ_SECTIONS = [
           and how much you leave her out while her friend gets your time. The one who likes you more is kinder and keener. Treat them evenly and they stay even.`,
       },
       {
+        q: 'Why is she cross about her quad, or pleased with it?',
+        a: `Each girl is fond of the quad that is hers, and the more you look after it the fonder she gets. Run it nearly dry, or hold it flat out for several
+          seconds, and she tells you off from a good way off, and if it was you she likes you a little less. Hose it down and she is proud of it, and likes you
+          a little more. A girl who has been let down too often cares less and stops bothering, and how fond she is carries over to the next morning.`,
+        tip: 'Keep her quad fuelled and washed, and go easy on the throttle: she notices.',
+      },
+      {
         q: 'Why is she jealous?',
         a: `Spend your time with her friend while she stands there and she wants your attention more and more, over a few minutes. Come over, ride with her or
           talk to her and it eases. Jealous, she shows off, plays pranks, asks you for things and starts daft dares more, and when it gets bad she sulks, may refuse
