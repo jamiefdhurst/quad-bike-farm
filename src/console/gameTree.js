@@ -227,6 +227,7 @@ export function buildGameTree(g, host) {
       practising: text(() => g.practising.describe(id)),
       waiting: text(() => c().waitingText()),
       ...where(id),
+      quadCare: num(() => g.quadCare.care[id], (v) => (g.quadCare.care[id] = v), 0, 1, '', 'how much she cares about her quad'),
       favour: num(() => g.favour.scores[id], (v) => (g.favour.scores[id] = v), -30, 30, '', 'how she rates you'),
       standing: ro(() => g.favour.standing(id)),
       mood: text(() => g.favour.mood(id)),

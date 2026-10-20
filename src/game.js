@@ -123,6 +123,7 @@ import { TRAILER_PARAM_RANGES } from './vehicle/trailer.js';
 import { LOAD_PARAM_RANGES, mayLoad } from './vehicle/quadLoad.js';
 import { QuadNames, NAME_PARAM_RANGES, quadKey } from './npc/quadNames.js';
 import { Ownership, OWNERSHIP_PARAM_RANGES } from './npc/ownership.js';
+import { QuadCare, CARE_PARAM_RANGES } from './npc/quadCare.js';
 import { Hearing, EAR_PARAM_RANGES } from './npc/earing.js';
 import { Warming, WARMING_PARAM_RANGES, isChilly } from './npc/warming.js';
 import { CabShelter, CAB_SHELTER_PARAM_RANGES } from './npc/cabShelter.js';
@@ -916,6 +917,7 @@ export class Game {
     // What they call the quads, whose is whose, and placing a quad by ear (npc/quadNames.js, ownership.js, earing.js).
     this.quadNames = new QuadNames(this.girlUnits.map((u) => u.spec.id), { random: createRandom(this.farmSeed ^ 0x6a3e) });
     this.ownership = new Ownership(undefined, createRandom(this.farmSeed ^ 0x0c1a));
+    this.quadCare = new QuadCare(this.companions.map((c) => c.character.id)); // how much each girl cares about her quad (npc/quadCare.js)
     this.hearing = new Hearing();
     this.lessons = new Lessons(); // a girl on the back teaching you to drive a manual (npc/lessons.js)
     this.pillionCoach = new PillionCoach(); // the girl on the back coaching the girl driving (npc/pillionCoach.js)
@@ -1589,6 +1591,7 @@ export class Game {
     registerTuning('Loading ramps', this.trailer.lp, LOAD_PARAM_RANGES, { onChange: () => this.trailer.refreshRamps() });
     registerTuning('Quad names', this.quadNames.p, NAME_PARAM_RANGES);
     registerTuning('Whose quad', this.ownership.p, OWNERSHIP_PARAM_RANGES);
+    registerTuning('Caring for her quad', this.quadCare.p, CARE_PARAM_RANGES);
     registerTuning('Hearing a quad', this.hearing.p, EAR_PARAM_RANGES);
     registerTuning('Warming hands', this.warming.p, WARMING_PARAM_RANGES);
     registerTuning('Practising the clutch', this.practising.p, PRACTISING_PARAM_RANGES);
@@ -6601,6 +6604,11 @@ export class Game {
       const q = u.quad;
       return { id: u.spec.id, x: q.position.x, z: q.position.z, user, driver: user, running: q.engine.isRunning, speed: q.speed, throttle: q.throttle, temperature: q.engine.temperature, wear: q.engine.wear };
     });
+    const careQuads = this.girlUnits.map((u, i) => ({
+      ...quads[i],
+      revs: u.quad.engine.rpm / u.quad.engine.params.redlineRpm,
+      fuel: u.quad.fuel.litres / u.quad.fuel.params.tankCapacity,
+    }));
     const byId = Object.fromEntries(this.companions.map((c) => [c.character.id, c]));
     const later = (ms, fn) => setTimeout(fn, ms);
 
@@ -6629,6 +6637,20 @@ export class Game {
         later(3500, () => byId.jess?.voice.say('borrowTease', { force: true }));
       }
     }
+
+    // Caring for her quad: running it dry or thrashing it, and a wash (npc/quadCare.js).
+    const owners = Object.fromEntries(Object.entries(this.ownership.claims).map(([girl, spec]) => [spec, girl]));
+    for (const e of this.quadCare.update(dt, { girls, owners, quads: careQuads })) {
+      const kind = e.type === 'dry' ? 'quadDry' : 'quadThrashed';
+      if (byId[e.girl].voice.sayQuad(kind, e.spec, { urgent: true }) && e.by === 'you' && e.type === 'thrashed') {
+        this.favour.add(e.girl, this.quadCare.thrashFavour(e.girl));
+      }
+    }
+    const washed = this.washing && this.ownership.ownerOf(this.washing.spec.id);
+    if (washed && byId[washed]) {
+      this.favour.add(washed, this.quadCare.washFavour(washed, dt));
+      if (this.quadCare.wash(washed, dt)) byId[washed].voice.sayQuad('quadProud', this.washing.spec.id, { urgent: true });
+    } else this.quadCare.stopWash();
 
     // Hearing a quad out of sight.
     for (const e of this.hearing.update(dt, { girls, quads })) {

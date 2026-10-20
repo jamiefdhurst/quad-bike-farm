@@ -10,6 +10,7 @@ import { AirFilter } from '../src/vehicle/airFilter.js';
 import { QuirkSet } from '../src/vehicle/quirks.js';
 import { BarnFind } from '../src/vehicle/barnFind.js';
 import { Favour } from '../src/npc/favour.js';
+import { QuadCare } from '../src/npc/quadCare.js';
 import { FallingOut } from '../src/npc/fallingOut.js';
 import { Skills } from '../src/npc/skills.js';
 import { Romance } from '../src/npc/romance.js';
@@ -46,7 +47,7 @@ function unit() {
 
 function girls() {
   const ids = ['amy', 'jess'];
-  return { favour: new Favour(ids), fallingOut: new FallingOut(ids), skills: new Skills(ids), romance: new Romance(ids), lessons: new Lessons() };
+  return { favour: new Favour(ids), fallingOut: new FallingOut(ids), skills: new Skills(ids), romance: new Romance(ids), lessons: new Lessons(), quadCare: new QuadCare(ids) };
 }
 
 const save = (over = {}) => ({ version: SAVE_VERSION, day: 3, farmSeed: 1234, ...over });
@@ -227,6 +228,17 @@ describe('the girls from one day to the next', () => {
     expect(b.favour.scores.amy).toBe(10 * P.favourKept);
     expect(b.favour.scores.jess).toBe(-4 * P.favourKept);
     expect(b.skills.levels.jess.choke).toBe(0.9);
+  });
+
+  it('how much each girl cares about her quad carries, and an old save without it loads', () => {
+    const a = girls();
+    a.quadCare.care.jess = 0.85;
+    const b = girls();
+    restoreGirls(b, JSON.parse(JSON.stringify(captureGirls(a))), P);
+    expect(b.quadCare.care.jess).toBe(0.85);
+    const c = girls();
+    restoreGirls(c, { favour: {} }, P);
+    expect(c.quadCare.care.jess).toBe(c.quadCare.p.startCare);
   });
 
   it('the drills each girl has passed you on carry, and an old save without them loads', () => {
