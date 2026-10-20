@@ -27,7 +27,7 @@ Other sessions work in this checkout at the same time, so every item gets its ow
    ```
    The PR carries the issue's labels: exactly one type label, which decides the release's version bump (`✨ feature` minor, anything else patch), and `💥 breaking` on top only if an old farm save won't load or loses something (major). CLAUDE.md, "Versions and releases", says which; the required "Version label" check fails without one and says what the merge will release as. No AI attribution anywhere, and no Testing or Known limitation sections in the body.
 8. **Watch CI.** `gh pr checks --watch --fail-fast`. If Test fails, read the log (`gh run view <run id> --log-failed`), fix it in the worktree, commit, push and watch again. It merges itself once Test passes; confirm with `gh pr view --json state,mergedAt`. Don't stop while it's red, and never merge it by hand past a failing check.
-9. **Clean up.** Once merged: `tools/worktree.sh finish <n>`. The issue closes from the PR's "Closes #n". A merge that changes what ships makes a release on its own (`.github/workflows/release.yml`); check it appeared with `gh release list --limit 1`, and if the Release run failed, say so.
-10. **Tell Jamie** in a few lines what changed, what you checked and what you didn't, with the PR link and the release version.
+9. **Clean up.** Once merged: `tools/worktree.sh finish <n>`. The issue closes from the PR's "Closes #n". A merge that changes what ships makes a release on its own (`.github/workflows/release.yml`); the merge is the end of the item, so don't wait for the release.
+10. **Tell Jamie** in a few lines what changed, what you checked and what you didn't, with the PR link and the version it releases as (from the Version label check's summary).
 
 One issue per session. When it's done, stop; Jamie will start a fresh session for the next one. Ideas that come up on the way go to `/idea` (or a line at the end of your summary), not into this PR.
