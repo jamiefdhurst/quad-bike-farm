@@ -256,6 +256,13 @@ export function buildGirlsTab(d) {
   button(shop, 'Order a pack of each spare', () => g.sparesShelf.debugOrderAll());
   button(shop, 'Open the parcel', () => (g.spares.hasParcel ? g.sparesShelf.collect() : toast('There is no parcel at the barn door')));
 
+  // The second-hand market: the purse and the classified ads in the barn (farm/classifieds.js).
+  const market = sub('Second-hand market');
+  show(market, 'the market', () => g.describeMarket());
+  slider(market, 'Money in the tin (£)', () => g.market.purse, (v) => g.debugSetPurse(v), 0, 5000, 10);
+  button(market, 'Put ads up now', () => toast(`${g.debugDealAds()} ad(s) on the board`));
+  button(market, 'Take the ads down', () => g.debugClearAds());
+
   // The farm's jobs: the board, the muck, the bales and the bonfire.
   const jobs = sub('Jobs: the board, muck, bales and bonfire');
   show(jobs, 'the board', () => g.jobBoard.lines().map((l) => `${l.done ? '[x]' : '[ ]'} ${l.text}`).join('; ') || 'nothing on');

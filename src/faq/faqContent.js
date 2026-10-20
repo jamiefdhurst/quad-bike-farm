@@ -1689,6 +1689,24 @@ export const FAQ_SECTIONS = [
         tip: 'The chalkboard in the barn lists the day\'s farm jobs.',
       },
       {
+        q: 'How do I buy another vehicle?',
+        a: `Check the cork board of small ads on the barn's back wall, south of the calendar and the records, and press <kbd>E</kbd> for a close look. Most days it is bare, but
+          now and then a neighbour has something for sale: a quad, the tractor, the buggy or a Land Rover, in a colour that may not be the one you know, worn to some degree.
+          Press <kbd>1</kbd>, <kbd>2</kbd> or <kbd>3</kbd> to buy that ad. The money comes out of the tin straight away and the vehicle is in the yard when you load the next
+          day. Only a model that isn't on your farm is advertised, and you can have two bought vehicles at a time.`,
+        tip: 'The cork board in the barn has the odd vehicle for sale. Press E, then 1 to 3 to buy.',
+      },
+      {
+        q: 'How do I earn money?',
+        a: `Every job you tick off the chalkboard in the barn pays into the tin, the same for a muck, a silage or a service job. The cork board's close view says how much is in it.
+          A new farm starts with a little. You can't sell vehicles yet.`,
+        tip: 'Each farm job on the chalkboard pays into the tin, which buys vehicles from the small ads.',
+      },
+      {
+        q: 'Why was the bought vehicle not there?',
+        a: `It turns up the morning after you buy it, when the next day loads (call it a day at the barn calendar, or reload). A seeded game (<code>?seed=</code>) isn't kept, so it won't buy anything.`,
+      },
+      {
         q: 'How do I tell which day I am on?',
         a: `Look at the calendar on the barn's back wall, between the two chalkboards. Every day gone is crossed off in red and today is circled. A page
           is thirty days, then it turns over to the next month. The start screen's "Continue" button also says which day you are about to play.`,
