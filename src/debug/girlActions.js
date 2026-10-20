@@ -321,6 +321,20 @@ export function girlActions(g) {
       label: '% takes a call that goes badly (stands lower with you for a few minutes)',
       run: (id) => g.startPhoneCall(id, true),
     },
+    // What she says about the farm's money (npc/moneyLines.js, farm/marketTalk.js): each as the game says it, forced so it does not wait for the moment.
+    ...[
+      ['money-bought', 'moneyBought', 'on you buying a vehicle'],
+      ['money-sold', 'moneySold', 'on you selling one'],
+      ['money-in', 'moneyIn', 'on a job paying'],
+      ['money-ad', 'moneyAd', 'on an ad up'],
+      ['money-low', 'moneyLow', 'on a low tin'],
+      ['money-high', 'moneyHigh', 'on a full tin'],
+      ['money-arrived', 'moneyArrived', 'on a new vehicle'],
+    ].map(([verb, situation, what]) => ({
+      verb,
+      label: `% remarks ${what}`,
+      run: (id) => (g.saySomethingAboutMoney(situation, { force: true, girl: id, within: 1000 }) ? undefined : toast(`${nameOf(id)} has nothing to say`)),
+    })),
     {
       verb: 'car-go',
       label: '% drives her own car out and back (the Finch for Amy, the Griffin for Jess)',

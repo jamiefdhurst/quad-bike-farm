@@ -22,6 +22,8 @@ export const DEFAULT_MARKET_PARAMS = {
   wearDiscount: 0.35, // the fraction of the price a fully worn vehicle loses
 };
 
+const LEDGER_LENGTH = 5; // deals the tin's card remembers
+
 export const MARKET_PARAM_RANGES = {
   startPurseMin: [0, 1000, 10],
   startPurseMax: [0, 2000, 10],
@@ -178,6 +180,17 @@ export class Market {
     this.sold = []; // models sold that were dealt with the farm: they leave the fleet in the morning
     this.ads = [];
     this.today = { earned: 0, spent: 0, sold: 0 }; // this day's money, for the end-of-day card (not kept)
+    this.ledger = []; // the last few buys and sells, newest last: { day, deal: 'bought' | 'sold', specId, price } (the tin's card)
+  }
+
+  note(day, deal, specId, price) {
+    this.ledger.push({ day, deal, specId, price });
+    while (this.ledger.length > LEDGER_LENGTH) this.ledger.shift();
+  }
+
+  /** The vehicles bought yesterday, which turned up this morning (`day` is today). */
+  arrivals(day) {
+    return this.bought.filter((b) => Number.isFinite(b.boughtDay) && b.boughtDay === day - 1);
   }
 
   earn(amount) {
@@ -197,13 +210,14 @@ export class Market {
   }
 
   /** Takes the offer: the money now, and the vehicle gone in the morning. Returns { price } or null if it can't be sold. */
-  sell(specId, offer, ctx) {
+  sell(specId, offer, ctx, day = null) {
     if (this.sellWhyNot(specId, ctx)) return null;
     const at = this.bought.findIndex((b) => b.specId === specId);
     if (at >= 0) this.bought.splice(at, 1);
     else this.sold.push(specId);
     this.purse += offer.price;
     this.today.sold += offer.price;
+    this.note(day, 'sold', specId, offer.price);
     return { price: offer.price };
   }
 
@@ -216,24 +230,26 @@ export class Market {
   }
 
   /** Pays for the ad and takes it off the board; it turns up next morning. Returns the record, or null if it can't be bought. */
-  buy(ad) {
+  buy(ad, day = null) {
     if (this.whyNot(ad)) return null;
     this.purse -= ad.price;
     this.today.spent += ad.price;
     this.ads = this.ads.filter((a) => a !== ad);
     const { specId, colour, hours, miles, wear, bodyWear, price } = ad;
-    const record = { specId, colour, hours, miles, wear, bodyWear, price };
+    const record = { specId, colour, hours, miles, wear, bodyWear, price, boughtDay: day };
     this.bought.push(record);
+    this.note(day, 'bought', specId, price);
     return record;
   }
 
   toJSON() {
-    return { purse: this.purse, bought: this.bought.map((b) => ({ ...b })), sold: [...this.sold] };
+    return { purse: this.purse, bought: this.bought.map((b) => ({ ...b })), sold: [...this.sold], ledger: this.ledger.map((l) => ({ ...l })) };
   }
 
   restore(s) {
     if (!s) return;
     if (Number.isFinite(s.purse)) this.purse = s.purse;
+    if (Array.isArray(s.ledger)) this.ledger = s.ledger.filter((l) => l && (l.deal === 'bought' || l.deal === 'sold') && l.specId in FOR_SALE && Number.isFinite(l.price)).map((l) => ({ ...l })).slice(-LEDGER_LENGTH);
     if (Array.isArray(s.sold)) this.sold = s.sold.filter((id) => id in FOR_SALE);
     if (Array.isArray(s.bought)) this.bought = s.bought.filter((b) => b && b.specId in FOR_SALE && Number.isFinite(b.colour)).map((b) => ({ ...b }));
   }
@@ -251,4 +267,16 @@ export function withBought(chosen, bought, specs) {
     else out.push(used);
   }
   return out;
+}
+
+/** How full the tin looks, 0 (a coin or two) to 4 (notes piled over the rim), from what is in it. */
+export function tinLevel(purse, steps = TIN_STEPS) {
+  return steps.filter((at) => purse >= at).length;
+}
+
+export const TIN_STEPS = [100, 400, 1000, 2500];
+
+/** One ledger line for the tin's card: "Day 3: bought the Tamura Hornet 200 for £480". */
+export function ledgerText(entry) {
+  return `${entry.day ? `Day ${entry.day}: ` : ''}${entry.deal === 'sold' ? 'sold' : 'bought'} the ${fullName(entry.specId)} for £${entry.price.toLocaleString('en-GB')}`;
 }

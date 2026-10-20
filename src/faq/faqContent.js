@@ -1689,6 +1689,19 @@ export const FAQ_SECTIONS = [
         tip: 'The chalkboard in the barn lists the day\'s farm jobs.',
       },
       {
+        q: 'Where do I see how much money we have?',
+        a: `On the shelf under the cork board on the barn's back wall there is a biscuit tin: look at it and press <kbd>E</kbd> and the lid comes up. A card says what is in it,
+          what came in, went out and was sold today, and the last five deals. What shows in the tin grows with the money: a coin or two when it is nearly empty, change, stacks of coins, bundles
+          of notes, and notes piled over the rim when you are doing well. A toast also tells you the tin's total each time a job pays, and the end-of-day card says what moved.`,
+        tip: 'The biscuit tin on the shelf in the barn holds the farm\'s money. Look at it and press E.',
+      },
+      {
+        q: 'Do the girls say anything about the money?',
+        a: `A bit. They remark when you buy or sell a vehicle, when a bought one turns up in the yard, when there is an ad on the cork board and you are at the tin, when the tin is nearly
+          empty or well stocked, and now and then when a job pays. Amy is careful with the tin; Jess wants to spend it. Each remark has a cooldown, so it is not every time. There is a coin chink as well when
+          money goes in or out.`,
+      },
+      {
         q: 'What are the vehicles called?',
         a: `Every vehicle has a maker and a model, as on its badge: the Kestrel Farm 300, the Tamura Bruin 660, the Tamura Hornet 200, the Ridgeback RB300, the Viper Adder 250,
           the Viper Asp 50 (the kids' quad), the Tamura TZ 65 (the mini moto), the Kestrel T185 (the old three-wheeler), the Tamura Ursa 450 (the loan quad), the Hartley 35 (the tractor),

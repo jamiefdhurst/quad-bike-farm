@@ -86,6 +86,7 @@ import { AMY_UTV_LINES } from './utvLines.js';
 import { AMY_TRAILER_LINES } from './trailerLines.js';
 import { AMY_TRAILER_GUIDE_LINES } from './trailerGuideLines.js';
 import { AMY_FARM_JOB_LINES } from './farmJobLines.js';
+import { AMY_MONEY_LINES } from './moneyLines.js';
 import { AMY_FIRE_LINES } from './fireLines.js';
 import { AMY_LOAD_LINES } from './loadLines.js';
 import { AMY_RACE_LINES } from './raceLines.js';
@@ -1595,6 +1596,8 @@ export const VOICE_LINES = {
   ...AMY_TRAILER_GUIDE_LINES,
   // The farm jobs on the barn door's board (farmJobLines.js).
   ...AMY_FARM_JOB_LINES,
+  // The farm's money and the second-hand market (moneyLines.js).
+  ...AMY_MONEY_LINES,
   ...AMY_FIRE_LINES,
   ...AMY_LOAD_LINES,
   // Racing each other (raceLines.js).
