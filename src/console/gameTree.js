@@ -1,5 +1,6 @@
 // The game as the console sees it: a tree of values (vehicle.red.temperature, girl.amy.favour, weather.rain, tune.<group>.<key>...)
 // built over the live game. Every value reads and writes through the same fields and methods the debug panel uses.
+import { tinLevel, ledgerText } from '../farm/classifieds.js';
 import { netCharge } from '../engine/charging.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
 import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
@@ -320,6 +321,7 @@ export function buildGameTree(g, host) {
     spikeLift: num(() => g.baleRig.lift.lift, (v) => { g.baleRig.lift.lift = Math.max(0, Math.min(1, v)); }, 0, 1, '', 'the bale spike arms, 0 down to 1 up'),
     service: text(() => (g.serviceJob ? `${g.serviceJob.name}: ${g.serviceJob.kinds.join(', ')} (${g.serviceJob.left.size} left)` : 'no service job on the board'), 'the service job on the barn board'),
     purse: num(() => g.market.purse, (v) => g.debugSetPurse(v), 0, 100000, '£', 'money in the tin, for second-hand buying'),
+    tin: text(() => `£${g.market.purse} in the tin (${['a coin or two', 'change', 'stacks of coins', 'bundles of notes', 'notes over the rim'][tinLevel(g.market.purse)]}); ${g.market.ledger.length ? g.market.ledger.map(ledgerText).join('; ') : 'no deals yet'}`, 'what is in the money tin and the last few deals'),
     market: text(() => g.describeMarket(), 'the ads on the barn board and what you have bought (farm/classifieds.js)'),
     ads: flag(() => g.market.ads.length > 0, (v) => (v ? g.debugDealAds() : g.debugClearAds()), 'there are ads on the barn board (setting it puts some up, or takes them down)'),
     board: text(() => g.jobBoard.lines().map((l) => `${l.done ? '[x]' : '[ ]'} ${l.text}`).join('; ') || 'nothing on', "today's jobs on the barn door"),

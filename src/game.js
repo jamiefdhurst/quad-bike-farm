@@ -296,6 +296,9 @@ import { SparesShelf } from './workshop/sparesShelf.js';
 import { MuckLoad, DEFAULT_MUCK_PARAMS, MUCK_PARAM_RANGES, JobBoard, DEFAULT_JOB_BOARD_PARAMS, JOB_BOARD_PARAM_RANGES, availableJobs } from './world/farmJobs.js';
 import { JobBoardView } from './world/jobBoard.js';
 import { ClassifiedsView } from './world/classifiedsView.js';
+import { MoneyTinView } from './world/moneyTinView.js';
+import { CoinAudio } from './audio/coinAudio.js';
+import { MarketTalk, DEFAULT_MARKET_TALK_PARAMS, MARKET_TALK_RANGES } from './farm/marketTalk.js';
 import { Market, DEFAULT_MARKET_PARAMS, MARKET_PARAM_RANGES, FOR_SALE, dealAds, withBought, withoutSold, sellOffer, moneyFacts, colourName } from './farm/classifieds.js';
 import { ServiceJob, pickServiceJob, serviceChalk, servicePlan, factsOf, stateOf } from './workshop/service.js';
 import { DEFAULT_SPIKE_PARAMS, SPIKE_PARAM_RANGES, keepOutside } from './items/baleSpike.js';
@@ -1495,9 +1498,18 @@ export class Game {
     this.jobBoard.onComplete = (id) => {
       this.market.earn(this.marketParams.jobPay);
       this.hud.toast(`+£${this.marketParams.jobPay} for the job: ${(this.jobBoard.jobs[id]?.chalk ?? 'done').replace(/\.$/, '')}. £${this.market.purse.toLocaleString('en-GB')} in the tin`, 4);
+      this.refreshMarketViews();
+      this.coinAudio.chink(0.35);
+      this.saySomethingAboutMoney('moneyIn', { chance: this.marketTalkParams.jobPaidChance });
     };
     this.market.ads = dealAds(createRandom((this.farmSeed ^ Math.imul(this.farm.day, 0x9e3779b1)) >>> 0), { specs: this.specsById, onFarm: this.stockedIds, owned: this.market.bought, P: this.marketParams });
     this.classifiedsView = new ClassifiedsView({ game: this, market: this.market });
+    // The money tin on its shelf under the cork board, its coin chink, and when the girls remark on the money (farm/marketTalk.js).
+    this.moneyTin = new MoneyTinView({ game: this, market: this.market });
+    this.coinAudio = new CoinAudio(this.audioHub, this.moneyTin.position);
+    this.marketTalkParams = { ...DEFAULT_MARKET_TALK_PARAMS };
+    registerTuning('Money talk', this.marketTalkParams, MARKET_TALK_RANGES);
+    this.marketTalk = new MarketTalk(this.marketTalkParams);
     this.wallCalendar = new WallCalendar({ game: this, day: this.farm.day }); // between the two boards: the days crossed off
     this.photos = new PhotoHost(this); // the camera key and the corkboard beside the chalkboards (photos/)
     this.setUpEndOfDay();
@@ -1508,6 +1520,12 @@ export class Game {
       isAvailable: () => !this.handsFull && !this.player.isRiding,
       prompt: () => this.jobBoardView.prompt(),
       interact: () => this.jobBoardView.open(),
+    });
+    this.interaction.add({
+      target: this.moneyTin.proxy,
+      isAvailable: () => !this.handsFull && !this.player.isRiding,
+      prompt: () => this.moneyTin.prompt(),
+      interact: () => this.moneyTin.open(),
     });
     this.interaction.add({
       target: this.classifiedsView.proxy,
@@ -1888,7 +1906,7 @@ export class Game {
     if (this.menu.isOpen) return { mode: 'menu', menu: 'wheel' };
     if (this.workshop.isOpen) return { mode: 'menu', menu: 'workshop' };
     if (this.bench.isOpen) return { mode: 'menu', menu: 'bench' };
-    if (this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.photos.view.isOpen) return { mode: 'menu', menu: 'notebook' };
+    if (this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.moneyTin.isOpen || this.photos.view.isOpen) return { mode: 'menu', menu: 'notebook' };
     if (this.player.isRiding) {
       const q = this.riddenUnit?.quad;
       return { mode: 'ride', seat: this.player.seat, bucketOpen, gear: q?.manual ? q.drivetrain.gear : null, gears: q?.gearbox?.gears ?? 0 };
@@ -3855,11 +3873,56 @@ export class Game {
     const why = this.market.whyNot(ad);
     if (why) return this.hud.toast(why, 2.5);
     const spec = this.specsById[ad.specId];
-    this.market.buy(ad);
+    this.market.buy(ad, this.farm.day);
     this.notebook.note({ name: spec.name }, { kind: 'deal', deal: 'bought', price: ad.price }, { by: 'you', saw: true });
     this.saveFarm?.();
-    this.classifiedsView.refresh();
+    this.refreshMarketViews();
     this.hud.toast(`Bought: the ${colourName(ad.colour)} ${spec.label}. It will be here in the morning`, 3.5);
+    this.coinAudio.chink(0.9);
+    this.saySomethingAboutMoney('moneyBought', { chance: this.marketTalkParams.buyChance });
+  }
+
+  /** The board and the tin show the money and the ads as they are now. */
+  refreshMarketViews() {
+    this.classifiedsView.refresh();
+    this.moneyTin.refresh();
+  }
+
+  /**
+   * One girl says something about the money (npc/moneyLines.js): the nearest who is free to remark, or the nearest at all when `force` (the debug
+   * panel). `girl` picks her; `at` is where to measure from (you, by default). Returns the girl who said it, or null.
+   */
+  saySomethingAboutMoney(situation, { chance = 1, force = false, girl = null, at = this.player.position, within = 30 } = {}) {
+    const ranked = this.companions
+      .filter((c) => (!girl || c.character.id === girl) && (force || c.availability().canRemark) && c.root.position.distanceTo(at) < within)
+      .sort((a, b) => a.root.position.distanceTo(at) - b.root.position.distanceTo(at));
+    const c = ranked[0];
+    if (!c) return null;
+    const said = c.voice.say(situation, force ? { force: true } : { chance });
+    return said ? c : null;
+  }
+
+  /** The remarks that come from the state of things, not a moment: an ad on the board, the tin low or full, a bought vehicle turned up (farm/marketTalk.js). */
+  updateMarketTalk(dt) {
+    const free = this.companions.filter((c) => c.availability().canRemark);
+    const you = this.player.position;
+    const arrivals = this.market.arrivals(this.farm.day);
+    const arrived = arrivals.map((b) => this.units.find((u) => u.spec.id === b.specId)).filter(Boolean);
+    const p = this.marketTalkParams;
+    const kind = this.marketTalk.update(dt, {
+      atTin: you.distanceTo(this.moneyTin.position),
+      girlNear: free.some((c) => c.root.position.distanceTo(you) < 15),
+      purse: this.market.purse,
+      ads: this.market.ads,
+      arrivals: arrived.length,
+      arrivalGirlNear: arrived.some((u) => free.some((c) => c.root.position.distanceTo(u.quad.position) < p.arrivedRange)),
+    });
+    if (!kind) return;
+    const at = kind === 'moneyArrived' ? arrived.find((u) => free.some((c) => c.root.position.distanceTo(u.quad.position) < p.arrivedRange))?.quad.position : you;
+    const girl = this.saySomethingAboutMoney(kind, { at, within: kind === 'moneyArrived' ? p.arrivedRange : 15 });
+    if (!girl) return;
+    if (kind === 'moneyAd') this.marketTalk.saidAds(this.market.ads);
+    else this.marketTalk.said(kind);
   }
 
   /** The vehicles on the farm a buyer would take, each with its offer and why not if it can't go: [{ unit, specId, offer, why }]. */
@@ -3878,30 +3941,32 @@ export class Game {
   /** Sells a vehicle from the board (classifiedsView.js): the money now, the vehicle collected in the morning. Saved at once. */
   sellUnit(item) {
     if (this.farm.seeded) return this.hud.toast('A seeded game is not kept, so nobody would collect it', 3);
-    const done = this.market.sell(item.specId, item.offer, { onFarm: this.stockedIds, regulars: QUAD_SPECS.map((s) => s.id) });
+    const done = this.market.sell(item.specId, item.offer, { onFarm: this.stockedIds, regulars: QUAD_SPECS.map((s) => s.id) }, this.farm.day);
     if (!done) return this.hud.toast(item.why ?? 'Nobody wants that', 2.5);
     this.notebook.note(item.unit, { kind: 'deal', deal: 'sold', price: done.price }, { by: 'you', saw: true });
     this.saveFarm?.();
-    this.classifiedsView.refresh();
+    this.refreshMarketViews();
     this.hud.toast(`Sold: the ${item.unit.label} for £${done.price}. It is collected in the morning`, 3.5);
+    this.coinAudio.chink(0.9);
+    this.saySomethingAboutMoney('moneySold', { chance: this.marketTalkParams.sellChance });
   }
 
   /** Debug: puts up ads now, whatever the day's dice said (up to three, from the models not on the farm), and redraws the board. */
   debugDealAds() {
     const P = { ...this.marketParams, adDayChance: 1, secondAdChance: 1, thirdAdChance: 1 };
     this.market.ads = dealAds(createRandom((Math.random() * 2 ** 31) >>> 0), { specs: this.specsById, onFarm: this.stockedIds, owned: this.market.bought, P });
-    this.classifiedsView.refresh();
+    this.refreshMarketViews();
     return this.market.ads.length;
   }
 
   debugClearAds() {
     this.market.ads = [];
-    this.classifiedsView.refresh();
+    this.refreshMarketViews();
   }
 
   debugSetPurse(pounds) {
     this.market.purse = Math.max(0, Math.round(pounds));
-    this.classifiedsView.refresh();
+    this.refreshMarketViews();
   }
 
   /** One line about the market, for the debug panel and the console. */
@@ -10225,7 +10290,7 @@ export class Game {
     // 5: raise the camera (photos/photoHost.js), unless you are in a menu, up the ladder or hidden in the hay.
     if (
       input.wasPressed('Digit5') &&
-      !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.photos.view.isOpen) &&
+      !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.moneyTin.isOpen || this.photos.view.isOpen) &&
       !(this.climb || this.tryst || this.hiding.active)
     ) {
       this.photos.press();
@@ -10234,7 +10299,7 @@ export class Game {
     // 6: wave. Close girls wave back, a free girl further off comes over, a driving one pulls up (npc/playerWave.js).
     if (
       input.wasPressed('Digit6') &&
-      !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.photos.view.isOpen) &&
+      !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.moneyTin.isOpen || this.photos.view.isOpen) &&
       !(this.climb || this.tryst || this.hiding.active)
     ) {
       this.waveAtGirls();
@@ -10275,6 +10340,9 @@ export class Game {
     } else if (this.jobBoardView.isOpen) {
       this.interaction.clear();
       this.jobBoardView.handleInput(input);
+    } else if (this.moneyTin.isOpen) {
+      this.interaction.clear();
+      this.moneyTin.handleInput(input);
     } else if (this.classifiedsView.isOpen) {
       this.interaction.clear();
       this.classifiedsView.handleInput(input);
@@ -10460,6 +10528,8 @@ export class Game {
     fb.lap('farm features', performance.now());
     this.guard.run('updateMinds', () => this.updateMinds(dt, ridden));
     this.guard.run('updateMuddiness', () => this.updateMuddiness(dt));
+    this.guard.run('updateMoneyTin', () => this.moneyTin.update(dt));
+    this.guard.run('updateMarketTalk', () => this.updateMarketTalk(dt));
     this.guard.run('updateLens', () => this.updateLens(dt, ridden));
     this.guard.run('updatePair', () => this.updatePair(dt));
     this.watchNotices(dt);
