@@ -42,7 +42,8 @@ import { PILLION_PARAM_RANGES } from './npc/pillionParams.js';
 import { CHARACTERS } from './npc/characters.js';
 import { DEFAULT_NOTICE_PARAMS, NOTICE_PARAM_RANGES } from './npc/attention.js';
 import { NoticeWatch } from './npc/noticeWatch.js';
-import { Pair, PAIR_PARAM_RANGES, pairFacing } from './npc/pair.js';
+import { Pair, PAIR_PARAM_RANGES, pairFacing, standBy } from './npc/pair.js';
+import { MakeUp, MAKE_UP_PARAM_RANGES } from './npc/makeUp.js';
 import { AskAlong, ALONG_KINDS, ASK_ALONG_PARAM_RANGES } from './npc/askAlong.js';
 import { generalRequests } from './npc/generalRequests.js';
 import { DEFAULT_WAITING_PARAMS, WAITING_PARAM_RANGES } from './npc/waiting.js';
@@ -716,6 +717,7 @@ export class Game {
     this.fallingOut = new FallingOut(CHARACTERS.map((ch) => ch.id));
     this.fallingOutEvents = []; // banter moments waiting to be raised: fellOut, madeUp
     this.fallingOutApartAt = {}; // girl id -> clock when she was last sent off from her friend
+    this.makeUp = new MakeUp(); // the first move towards making up: a mug of tea or her quad (npc/makeUp.js)
     for (const c of this.companions) c.fallenOut = () => this.fallingOut.active;
     // A girl who likes you a lot asks you round the back of the barn, then onto her favourite quad (npc/romance.js).
     this.romance = new Romance(CHARACTERS.map((ch) => ch.id));
@@ -1546,6 +1548,7 @@ export class Game {
     this.achievements.fleet = [...this.units.map((u) => u.id), ...(this.rustyUnit ? ['rusty'] : [])];
     this.achievements.onUnlock((a) => this.achievementUnlocked(a));
     registerTuning('Falling out', this.fallingOut.p, FALLING_OUT_PARAM_RANGES);
+    registerTuning('Making up', this.makeUp.p, MAKE_UP_PARAM_RANGES);
     registerTuning('Romance', this.romance.p, ROMANCE_PARAM_RANGES);
     this.wearLedger ??= new WearLedger();
     registerTuning('Who wore it out', this.wearLedger.p, LEDGER_PARAM_RANGES);
@@ -4417,6 +4420,7 @@ export class Game {
     const mine = (list, act) => list.filter((o) => o.girl === id).map((o) => ({ ...o, take: () => act(o) }));
     const compare = this.comparingContext();
     return [
+      ...mine(this.makeUp.offers(this.makeUpContext()), (o) => this.handleMakeUp(this.makeUp.take(o))),
       ...mine(this.convoy.offers(this.convoyContext(ridden)), (o) => this.handleConvoyEvent(this.convoy.take(o))),
       ...(this.drag.active || this.hillClimb.active || this.coneCourse.active
         ? []
@@ -4814,6 +4818,80 @@ export class Game {
     } else if (event.type === 'madeUp') this.fallingOutEvents.push({ when: 'madeUp', edge: true, roles: { sorry: event.sorry } });
   }
 
+  /** What making up needs to know (npc/makeUp.js): how long the row has lasted, who is at fault, who is free, and whose own quad is there to give. */
+  makeUpContext() {
+    const fo = this.fallingOut;
+    return {
+      fallenOut: fo.active,
+      since: fo.elapsed,
+      fault: fo.fault,
+      girls: this.companions.map((c) => {
+        const friend = c.others()[0];
+        const unit = this.girlUnits.find((u) => u.spec.id === c.voice.favourite);
+        const q = unit?.quad;
+        const spare = q && friend && !q.isTipped && !q.rider && !q.driver && !q.passenger && !q.isGhostRiding && Math.abs(q.speed) < 0.5 && friend.canDrive(q) && !friend.takenByOther(q);
+        const r = c.root.position;
+        return { id: c.character.id, x: r.x, z: r.z, free: c.availability().free, settled: c.availability().canRemark && c.fsm.is('idle'), quad: spare ? unit.spec.id : null };
+      }),
+    };
+  }
+
+  /**
+   * She makes the first move (npc/makeUp.js): walks over to her friend with a mug of tea, or to offer her own quad, says so, and her
+   * friend takes it (the row ends, with no apology on top) or turns her down (it carries on and she waits before trying again).
+   */
+  handleMakeUp(e) {
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    const friend = this.companions.find((o) => o.character.id === e.friend);
+    if (!c || !friend) return this.makeUp.cancel(e.girl);
+    let mug = null;
+    const giveUp = () => {
+      c.release('makeUp');
+      this.makeUp.cancel(e.girl);
+      if (mug) {
+        c.endCarry();
+        this.mugs.remove(mug);
+      }
+    };
+    if (e.how === 'tea') {
+      mug = this.mugs.make(e.girl === 'amy' ? 0x3a6ea5 : 0xb8322a);
+      mug.position.copy(c.root.position);
+      if (!c.startCarry('mug', mug, carryWeight('mug'), { inHand: true })) {
+        this.mugs.remove(mug);
+        mug = null;
+        return giveUp();
+      }
+    }
+    c.hold('makeUp', 'making it up with her friend');
+    const at = standBy(c.root.position, friend.root.position, this.pair.p);
+    const arrived = () => {
+      c.release('makeUp');
+      const gone = !this.fallingOut.active || friend.root.position.distanceTo(c.root.position) > 4;
+      if (gone) return giveUp();
+      c.voice.say(e.how === 'tea' ? 'makeUpTea' : 'makeUpQuad', { force: true });
+      const accepted = this.makeUp.offered(e.girl);
+      setTimeout(() => {
+        if (!this.fallingOut.active) return;
+        friend.voice.say(accepted ? 'makeUpTaken' : 'makeUpRefused', { force: true });
+        if (accepted) {
+          this.fallingOut.end();
+          if (e.how === 'quad') {
+            const unit = this.girlUnits.find((u) => u.spec.id === e.quad);
+            if (unit && friend.fsm.is('idle') && friend.canDrive(unit.quad)) friend.requestDrive(unit.quad);
+          }
+        } else setTimeout(() => c.voice.say('makeUpTurnedDown', { force: true }), 2500);
+      }, 2800);
+      if (!mug) return;
+      const side = c.root.localToWorld(new THREE.Vector3(-0.35, 0, 0.3));
+      if (accepted && friend.startCarry('mug', mug, carryWeight('mug'), { sip: true, onSipped: () => friend.putDownCarry(side, 0, () => this.mugs.remove(mug)) })) {
+        c.endCarry();
+        return;
+      }
+      c.putDownCarry(side, 0, () => this.mugs.remove(mug));
+    };
+    if (!c.sneakTo({ x: at.x, z: at.z }, arrived, 1.2)) giveUp();
+  }
+
   /**
    * While they're fallen out: each tells you her side the first time you come close, they keep their distance, and
    * stood about together (near you) the falling out runs down faster. They make up on their own in the end.
@@ -4821,6 +4899,7 @@ export class Game {
   updateFallingOut(dt) {
     const fo = this.fallingOut;
     const p = fo.p;
+    this.makeUp.update(dt);
     if (this.companions.length < 2) return;
     const [a, b] = this.companions;
     const here = (c) => c.root.getWorldPosition(c.tmpV.clone());
@@ -4839,7 +4918,7 @@ export class Game {
       }
       // Too close to her friend: she goes and stands further off (not a headlong rush, and not every frame).
       const clock = fo.clock;
-      if (stood(c) && apart < p.apartRange && clock - (this.fallingOutApartAt[id] ?? -Infinity) > 8 && !c.warmingAt && !c.pendingSpot) {
+      if (stood(c) && apart < p.apartRange && clock - (this.fallingOutApartAt[id] ?? -Infinity) > 8 && !c.warmingAt && !c.pendingSpot && !this.makeUp.busy(id) && !this.makeUp.busy(c.others()[0]?.character.id)) {
         const friend = this.companions.find((o) => o !== c);
         const from = here(friend);
         const me = here(c);

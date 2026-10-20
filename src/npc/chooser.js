@@ -68,6 +68,8 @@ export const OFFER_KINDS = {
   workLight: { label: 'bring something round to light the way for you', satisfies: { purpose: 0.9, company: 0.6 }, pace: 'brisk' },
   trailerGuide: { label: 'guide you back with the trailer', satisfies: { purpose: 0.9, company: 0.5 }, pace: 'hurry' },
   pairUp: { label: 'go and stand with her friend', satisfies: { company: 0.9, purpose: 0.4 } },
+  makeUpTea: { label: 'take her friend a cup of tea to make up', satisfies: { company: 1, purpose: 0.4 } },
+  makeUpQuad: { label: 'offer her friend her own quad to make up', satisfies: { company: 1, purpose: 0.4 } },
   tagAlong: { label: 'tag along with her friend', satisfies: { company: 0.8, purpose: 0.5 }, pace: 'brisk' },
 };
 

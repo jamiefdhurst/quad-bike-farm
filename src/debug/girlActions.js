@@ -616,6 +616,16 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'makeup',
+      label: 'Make the first move to % (tea or her quad)',
+      run: (id) => {
+        if (!g.fallingOut.active) return toast('They have not fallen out');
+        g.makeUp.forced = id;
+        girl(id).mind.thinkIn = 0;
+        toast(`${nameOf(id)} will make the first move when she next thinks (and is free)`);
+      },
+    },
+    {
       verb: 'lineup',
       label: 'Amy lines the quads up by the barn',
       girls: ['amy'],
