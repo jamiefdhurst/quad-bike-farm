@@ -4553,3 +4553,13 @@ Settled without questions: the issue was clear, and the numbers are first guesse
 - **Not saved.** It is "today's" mood of mind, so it is rolled on every load, not in `captureGirls`; a farm continued the next day gives her a new one. The farm's character is still deterministic, but the agenda uses `Math.random`, like her starting needs.
 - **Panel and console:** Why shows "has in mind today"; `girl <name> agenda` says it now (Make her do); `girl.<name>.agenda` is settable (including `none`).
 - **Not checked:** how it reads in play (whether 1.8 is noticeable without being a rut), and the new lines are recorded but not heard.
+
+## Making up (#21, was TODO 126)
+
+No questions: the issue settles it (tea or the better quad, an offer that meets company so the chooser decides when).
+
+- `src/npc/makeUp.js` (pure, `tests/makeUp.test.js`). While they are fallen out, `makeUpTea` and `makeUpQuad` are offers (both meet company 1, purpose 0.4). The girl at fault may offer once the row has lasted `firstAfter` 45 s (`FallingOut.elapsed`, new), the other after a further `otherAfter` 90 s. She must be free and her friend stood or sat about within `range` 60 m. The quad is her own favourite, only if it is parked, upright, unridden and her friend could drive it. Weights `weight` 0.8, quad times `quadWeight` 1. It never starts anything itself; the debug panel's `forced` is the only other way in.
+- She walks to talking distance (`sneakTo`, a mug in her hand for tea, the same mug and carry as tea on the rack), says her line, and `acceptChance` 0.85 decides. Taken: her friend answers, takes the mug and has a sip, or with a quad goes and drives it, and `FallingOut.end()` runs with no `madeUp` banter on top (that exchange is an apology, which this replaces). Turned down: her friend says not yet, she says her bit, the row carries on and she does not try again for `refusedCooldown` 150 s. Walk-apart is off for both while one is on her way.
+- Lines: `makeUpTea`, `makeUpQuad`, `makeUpTaken`, `makeUpRefused`, `makeUpTurnedDown` for each girl (`fallingOutLines.js`).
+- Left alone: it is not in the save (a row not made up still leaves them cool the next morning, as before); the girl sulking in a cab is not free so she does not make a move until she is out; no favour change from being offered tea.
+- Checked: unit tests and the smoke test. Not checked in the running game: the walk, the mug changing hands, or how the pace feels; the numbers are guesses.

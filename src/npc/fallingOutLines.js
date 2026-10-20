@@ -11,6 +11,11 @@ export const AMY_FALLINGOUT_LINES = {
   sideDigs: line(120, ['She has been picking at me all day, and I have had enough.', 'I let it go the first three times. Not the fourth.', 'You heard what she said. I am not going to repeat it.']),
   sideThanks: line(30, ['Thank you. Somebody sees it.', 'See? That is all I wanted. For someone to say so.', 'Well. I am glad one of us is being sensible.']),
   nudged: line(30, ['Fine. But she has to say sorry first.', 'I will think about it. Do not push.', 'You are very good at this, you know. Annoyingly.']),
+  makeUpTea: line(20, ['I made you a tea. It is not an apology. It is a tea.', 'Here. Two sugars, the way you have it. Do not say anything.', 'I was putting the kettle on anyway. Do not read into it.']),
+  makeUpQuad: line(20, ['You can have mine, if you want a go. I mean it.', 'Take my quad. Go on. It is the better one and we both know it.', 'I am not using mine. You might as well.']),
+  makeUpTaken: line(20, ['Oh. Thank you. That is really kind.', 'All right. Yes. Thank you. I was being silly.', 'You are annoying, but that was nice. Thank you.']),
+  makeUpRefused: line(20, ['No. Not yet. I am still cross.', 'Keep it. I am not ready.', 'That is a start. It is not enough, though.']),
+  makeUpTurnedDown: line(20, ['Fine. I tried. Remember that I tried.', 'Well, I offered. That is all I can do.', 'Right. I will leave you to it, then.']),
 };
 
 export const JESS_FALLINGOUT_LINES = {
@@ -31,6 +36,11 @@ export const JESS_FALLINGOUT_LINES = {
   ],
   sideThanks: ['Ha! See? You get it.', 'Knew you would be on my side. Always are, really.', 'Right. So that is settled, then. Amy can think about it.'],
   nudged: ['Oh, go on, then. Not yet, though.', 'You are not going to leave this alone, are you?', 'I will say sorry when she does. Not before.'],
+  makeUpTea: ['Here. Tea. Do not make it weird.', 'Brought you a tea. You can still be cross, but you can be cross with a tea.', 'It is not poisoned. Go on, have it.'],
+  makeUpQuad: ['Have mine. Go on. Do not say I never gave you anything.', 'You can have my quad for a bit. I am being generous. Enjoy it.', 'Take it before I change my mind.'],
+  makeUpTaken: ['Go on, then. Cheers. We are fine, are we?', 'Ha. Fine. You win. Cheers, though.', 'Right. Good. That was exhausting, being cross.'],
+  makeUpRefused: ['Not yet. I want you to feel it a bit longer.', 'No, thanks. Try again in a bit.', 'Nice try. Still cross.'],
+  makeUpTurnedDown: ['Wow. Fine. I will keep it, then.', 'I try to be nice and this is what I get.', 'Your loss, honestly.'],
 };
 
 export const FALLING_OUT_BANTER = [

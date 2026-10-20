@@ -55,6 +55,7 @@ export class FallingOut {
     this.friction = 0;
     this.active = false;
     this.remaining = 0;
+    this.elapsed = 0; // seconds this falling out has lasted
     this.cause = null; // { kind: 'race' | 'borrow' | 'digs', fault } while it lasts
     this.told = {}; // girl id -> she's told you her side this time
     this.nudged = {}; // girl id -> clock when she was last nudged
@@ -82,6 +83,7 @@ export class FallingOut {
     const { durationMin, durationMax } = this.p;
     this.active = true;
     this.friction = 0;
+    this.elapsed = 0;
     this.remaining = durationMin + this.random() * (durationMax - durationMin);
     this.fault = fault ?? this.ids[Math.floor(this.random() * this.ids.length)];
     this.cause = { kind, fault: this.fault };
@@ -96,6 +98,7 @@ export class FallingOut {
     this.active = false;
     this.cause = null;
     this.remaining = 0;
+    this.elapsed = 0;
     this.friction = 0;
     this.cooldownUntil = this.clock + this.p.cooldown;
     return { type: 'madeUp', sorry };
@@ -108,6 +111,7 @@ export class FallingOut {
       this.friction = Math.max(0, this.friction - this.p.decayPerSecond * dt);
       return null;
     }
+    this.elapsed += dt;
     this.remaining -= dt * (together ? this.p.togetherRate : 1);
     return this.remaining <= 0 ? this.end() : null;
   }

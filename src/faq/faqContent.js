@@ -1176,6 +1176,13 @@ export const FAQ_SECTIONS = [
           and doing it to both quickly ends it).`,
       },
       {
+        q: 'How do the girls make up after a falling out?',
+        a: `Left alone, one of them makes the first move. After a minute or so it is usually the one at fault, and later the other might: she walks over
+          with a mug of tea, or offers her own favourite quad if it is parked. Her friend usually takes it and the row is over; now and then she turns it
+          down and the other waits a couple of minutes before trying again. You can still get them to make up from their wheels.`,
+        tip: 'After a falling out one girl may take the other a mug of tea, or offer her own quad.',
+      },
+      {
         q: 'Can I race them?',
         a: `Yes. Ride up to the start line by the yard and press <kbd>Enter</kbd>, or sit there with the engine running and Jess may dare you. Line up in the
           middle lane. A lap only counts if you go round the track. For a drag race, ride to the gravel strip in the middle of the field and press
