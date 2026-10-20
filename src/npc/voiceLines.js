@@ -393,57 +393,57 @@ export const VOICE_LINES = {
   // Which quad she likes best: she picks a favourite each game.
   likeRed: {
     cooldown: 240,
-    lines: ['I love the red one.', 'The red one is my favourite.', 'Good old red. Comfy, this.', 'This one just feels right.'],
+    lines: ['I love the Farm 300.', 'The Farm 300 is my favourite.', 'Good old Farm 300. Comfy, this.', 'This one just feels right.'],
   },
   likeBlue: {
     cooldown: 240,
-    lines: ['Ooh, I love the blue one.', 'The blue one is definitely the best.', 'This one feels posh.', 'Blue is my favourite. Smoothest seat.'],
+    lines: ['Ooh, I love the Bruin.', 'The Bruin is definitely the best.', 'This one feels posh.', 'The Bruin is my favourite. Smoothest seat.'],
   },
   likeYellow: {
     cooldown: 240,
     lines: [
-      'The yellow one! My favourite.',
-      'I love this little yellow one. So noisy!',
-      'This one is the most fun, the yellow one.',
+      'The Hornet! My favourite.',
+      'I love this little Hornet. So noisy!',
+      'This one is the most fun, the Hornet.',
       "It's tiny and loud and I love it.",
     ],
   },
   likeGreen: {
     cooldown: 240,
-    lines: ["I love the old green one. It's like a tractor.", 'The green one is my favourite. So comfy.', 'Good old green. Slow, but I trust it.', "This one's indestructible, I reckon."],
+    lines: ["I love the old RB300. It's like a tractor.", 'The RB300 is my favourite. So comfy.', 'Good old RB300. Slow, but I trust it.', "This one's indestructible, I reckon."],
   },
   likeOrange: {
     cooldown: 240,
-    lines: ["The orange one's my favourite. Don't tell the others."],
+    lines: ["The Adder's my favourite. Don't tell the others."],
   },
   preferGreen: {
     cooldown: 240,
-    lines: ["I'd rather be on the green one.", 'The green one is comfier, you know.', 'Can we take the green one next time? It feels safer.'],
+    lines: ["I'd rather be on the RB300.", 'The RB300 is comfier, you know.', 'Can we take the RB300 next time? It feels safer.'],
   },
   preferOrange: {
     cooldown: 240,
-    lines: ['I want a go on the orange one. Even if there is no room for me.', 'The orange one looks the most fun.', "One day you're letting me drive the orange one."],
+    lines: ['I want a go on the Adder. Even if there is no room for me.', 'The Adder looks the most fun.', "One day you're letting me drive the Adder."],
   },
   preferRed: {
     cooldown: 240,
-    lines: ["I'd rather be on the red one, to be honest.", 'The red one is comfier.', 'Can we take the red one next time?'],
+    lines: ["I'd rather be on the Farm 300, to be honest.", 'The Farm 300 is comfier.', 'Can we take the Farm 300 next time?'],
   },
   preferBlue: {
     cooldown: 240,
-    lines: ['I prefer the blue one, if I am honest.', 'The blue one has a nicer seat.', 'Can we go on the blue one next?'],
+    lines: ['I prefer the Bruin, if I am honest.', 'The Bruin has a nicer seat.', 'Can we go on the Bruin next?'],
   },
   preferYellow: {
     cooldown: 240,
-    lines: ["The yellow one's more fun than this.", 'Can we go on the yellow one after?', 'I miss the yellow one.'],
+    lines: ["The Hornet's more fun than this.", 'Can we go on the Hornet after?', 'I miss the Hornet.'],
   },
   // The kids' quad is Jess's alone (Amy never rides it, so her lines for it are never heard); the loan quad is anyone's.
   likeKids: {
     cooldown: 240,
-    lines: ["The little pink one's cute, but I'd never fit."],
+    lines: ["The little one's cute, but I'd never fit."],
   },
   preferKids: {
     cooldown: 240,
-    lines: ["I'd rather be on the little pink one. It's only a bit small."],
+    lines: ["I'd rather be on the little one. It's only a bit small."],
   },
   likeLoan: {
     cooldown: 240,

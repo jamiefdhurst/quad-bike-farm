@@ -1,6 +1,6 @@
 # Quad Bike Farm
 
-A first-person browser game on a British farm: a yard of quads with properly temperamental engines, a Land Rover or two, a tractor, a UTV, trailers, the weather and the day going by, and Amy and Jess, two friends who ride, drive, bicker and talk. The farm remembers between loads.
+A first-person browser game on a British farm: a yard of quads with properly temperamental engines, a Moorland or two, a tractor, a Yak, trailers, the weather and the day going by, and Amy and Jess, two friends who ride, drive, bicker and talk. The farm remembers between loads.
 
 Three.js, Rapier physics, Web Audio. Desktop, keyboard and mouse or a gamepad.
 

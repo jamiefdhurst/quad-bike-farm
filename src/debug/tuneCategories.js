@@ -4,8 +4,8 @@
 
 export const TUNE_CATEGORIES = {
   'Driving and towing': [
-    '2WD and 4WD', 'Throttle key', 'Brake key', 'Gamepad', 'Gamepad rumble', 'Brakes', 'Frozen throttle cable', 'Diesel waxing', 'Bleeding a diesel', 'Handbrake', 'Headlights', 'Vehicle lights', 'UTV lights', 'Indicators', 'Seat belts', 'Mud on the lens', 'Two-wheeler lean', 'Three-wheeler rider lean', 'Tyres', 'Quad strengths', 'Tyre squeal', 'Towing', 'Tow chain', 'Tow rope', 'Trailer', 'Tipping trailer', 'Trailer tub',
-    'UTV bed', 'UTV load', 'Land Rover load', 'Land Rover tailgate', '200TDi back door', 'Fiesta hatch', 'Corsa hatch', 'Bale trailer wear', 'Bale trailer mud', 'Tipping trailer wear', 'Tipping trailer mud', 'UTV riders', 'Land Rover riders', '200TDi riders', '200TDi back seats', 'Fiesta riders', 'Corsa riders', 'Trailer riders', 'Tractor creep', 'Tractor runaway',
+    '2WD and 4WD', 'Throttle key', 'Brake key', 'Gamepad', 'Gamepad rumble', 'Brakes', 'Frozen throttle cable', 'Diesel waxing', 'Bleeding a diesel', 'Handbrake', 'Headlights', 'Vehicle lights', 'Yak lights', 'Indicators', 'Seat belts', 'Mud on the lens', 'Two-wheeler lean', 'Three-wheeler rider lean', 'Tyres', 'Quad strengths', 'Tyre squeal', 'Towing', 'Tow chain', 'Tow rope', 'Trailer', 'Tipping trailer', 'Trailer tub',
+    'Yak bed', 'Yak load', 'Tor load', 'Tor tailgate', 'Crag back door', 'Finch hatch', 'Griffin hatch', 'Bale trailer wear', 'Bale trailer mud', 'Tipping trailer wear', 'Tipping trailer mud', 'Yak riders', 'Tor riders', 'Crag riders', 'Crag back seats', 'Finch riders', 'Griffin riders', 'Trailer riders', 'Tractor creep', 'Tractor runaway',
   ],
   'Engines, fuel and faults': ['Quirks', 'Engine oil', 'Dripping carb', 'Carb icing', 'Water in the fuel', 'Barn find', 'Red diesel mistake', 'Two-stroke smoke'],
   'Items and workshop': ['Toolbox', 'Logbook', 'Workshop bench', 'Service', 'Battery charger', 'Generator', 'Spares shelf', 'Girl at the bench', 'Bale spike', 'Phone calls', 'Jerry can', 'Pre-mix can', 'Diesel can', 'Oil bottle', 'Things walk off', 'Coolant bottle', 'Anti-gel bottle', 'Plug-saver', 'Hose', 'Jump leads', 'Winch', 'Loading ramps', 'Bell', 'Hayloft', 'Muck job', 'Job board', 'Second-hand market', 'Records', 'Photos'],
@@ -22,7 +22,7 @@ export const TUNE_CATEGORIES = {
   'Girls: things they do': [
     'Racing', 'Drag race', 'Drives that go somewhere', 'Taking you to see something', 'Hill climb', 'Cone course', 'Follow the leader', 'Doughnuts', 'Practising the clutch', 'Tarmac', 'Showing off', 'The jump', 'Hay ride', 'Hay ride seat', 'Mudguard ride', 'Muddy girls',
     'Tractor remarks', 'Mini moto nerve', 'Thrown off the moto', 'Tractor go', 'Tractor go drive', 'Tractor go start', 'Tractor go novice',
-    'UTV go drive', 'Land Rover go drive', 'Land Rover go handle', 'Their cars', 'Girl pushing a start', 'Girl steering a tow', 'Girl calling for help', 'Keeping it alive', 'Lights to work by', 'Guiding a trailer back', 'Starting the generator', 'Dares', 'Radio: the girls',
+    'Yak go drive', 'Tor go drive', 'Tor go handle', 'Their cars', 'Girl pushing a start', 'Girl steering a tow', 'Girl calling for help', 'Keeping it alive', 'Lights to work by', 'Guiding a trailer back', 'Starting the generator', 'Dares', 'Radio: the girls',
   ],
 };
 

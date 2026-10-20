@@ -32,7 +32,7 @@ export const OFFER_KINDS = {
   shelterBarn: { label: 'shelter in the barn doorway', satisfies: { warmth: 0.8 }, urgent: true, pace: 'hurry' },
   goIn: { label: 'go in out of the dark', satisfies: { warmth: 0.7, rest: 0.5 }, pace: 'brisk' },
   shelterCab: { label: 'shelter in a cab', satisfies: { warmth: 0.9, rest: 0.3 }, urgent: true, pace: 'hurry' },
-  warmCab: { label: "sit in a Land Rover with the heater on", satisfies: { warmth: 1, rest: 0.4 } },
+  warmCab: { label: "sit in a Moorland with the heater on", satisfies: { warmth: 1, rest: 0.4 } },
   tea: { label: 'make a cup of tea', satisfies: { warmth: 0.4, rest: 0.3, purpose: 0.5 } },
   fire: { label: 'sit by the bonfire', satisfies: { warmth: 0.9, rest: 0.6, company: 0.5, purpose: 0.3 }, pace: 'dawdle' },
   flask: { label: 'have a cup of tea from the flask at the top of the hill', satisfies: { warmth: 0.4, rest: 0.6, company: 0.6, purpose: 0.4 }, pace: 'dawdle' },

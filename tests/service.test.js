@@ -65,7 +65,7 @@ describe('the board', () => {
   it('posts a full service past the book wear, and takes the worst quad', () => {
     const job = pickServiceJob([quad('red', { wear: 0.35, clog: 0.9 }), quad('blue', { wear: 0.7 }), quad('green', { wear: 0.55 })], yes);
     expect(job).toMatchObject({ id: 'blue', full: true, kinds: servicePlan(petrol4) });
-    expect(serviceChalk({ ...job, name: 'Blue' })).toBe('Full service on the blue');
+    expect(serviceChalk({ ...job, name: 'Blue' })).toBe('Full service on the Blue');
   });
 
   it('does not always go up', () => {

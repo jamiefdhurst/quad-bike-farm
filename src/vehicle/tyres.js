@@ -23,7 +23,7 @@ export const TYRE_SIZES = {
   sport: { one: 'sport quad tyre', many: 'sport quad tyres' }, // the two-stroke sports quads
   trike: { one: 'balloon tyre', many: 'balloon tyres' }, // the old three-wheeler's
   utv: { one: 'utility vehicle tyre', many: 'utility vehicle tyres' },
-  landrover: { one: 'Land Rover tyre', many: 'Land Rover tyres' },
+  landrover: { one: 'Moorland tyre', many: 'Moorland tyres' },
   car: { one: 'car tyre', many: 'car tyres' },
   tractor: { one: 'tractor tyre', many: 'tractor tyres' },
 };

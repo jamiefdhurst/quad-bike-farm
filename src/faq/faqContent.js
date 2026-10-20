@@ -34,7 +34,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why is an option on the girl\'s wheel greyed out?',
-        a: `The wheel always shows every quad, Land Rover and car (the quads under "Quads", the rest under "Other vehicles"), so it never changes shape under you. An option she can't do just now is
+        a: `The wheel always shows every quad, Moorland and car (the quads under "Quads", the rest under "Other vehicles"), so it never changes shape under you. An option she can't do just now is
           greyed with the reason underneath: she is busy, someone is driving it, it is running already, or it is her friend's car. Her own
           car is the one she drives. With you and her friend already sat in it, she can still take the wheel, as long as nobody is at it.`,
       },
@@ -114,7 +114,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Where are all the vehicles?',
         a: `At most four start in the yard, the quad a girl is stood by among them. The rest have been left about the farm: by the gates and
-          hedges, out in the field, by the track or out east by the Dutch barn and the field shed. The tractor, the UTV and the Land Rovers are always
+          hedges, out in the field, by the track or out east by the Dutch barn and the field shed. The tractor, the Yak and the Moorlands are always
           out on the farm. Press <kbd>M</kbd> for the map, which shows every one.`,
         tip: 'Only a few vehicles start in the yard: press M to see where the rest were left.',
       },
@@ -192,14 +192,14 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where is the choke on each quad?',
-        a: `Look at the left bar. On the red and the green it is a ridged black slider in a slot on the switch housing, under the CHOKE label: <kbd>Q</kbd>
-          slides it towards the label and <kbd>Z</kbd> eases it back. The blue's is a lever hanging under its switch housing. The yellow's is not on the
+        a: `Look at the left bar. On the Farm 300 and the RB300 it is a ridged black slider in a slot on the switch housing, under the CHOKE label: <kbd>Q</kbd>
+          slides it towards the label and <kbd>Z</kbd> eases it back. The Bruin's is a lever hanging under its switch housing. The Hornet's is not on the
           bars at all: it is a black knob with the choke symbol on the left of the carb, down in the open engine bay, so you have to be all but stopped to
-          reach it, and it takes a hand off the bars. The fuel tap is beside it, on the tank's lower edge. The orange's is a lever on the pod on the left bar, beside the lights rocker, always in reach. The kids' quad's, the mini moto's and the old three-wheeler's are a knob on the left of the carb like the yellow's, with the fuel tap beside it, and their knobs come well out of the barrel when they are on. The others have a knob or a lever of their own,
-          so stand at the quad and watch what moves when you hold <kbd>Q</kbd>. The loan quad and Jess's Corsa have none: they are fuel injected and sort out a cold start themselves, and the loan quad has no fuel tap either.`,
+          reach it, and it takes a hand off the bars. The fuel tap is beside it, on the tank's lower edge. The Adder's is a lever on the pod on the left bar, beside the lights rocker, always in reach. The kids' quad's, the mini moto's and the old three-wheeler's are a knob on the left of the carb like the yellow's, with the fuel tap beside it, and their knobs come well out of the barrel when they are on. The others have a knob or a lever of their own,
+          so stand at the quad and watch what moves when you hold <kbd>Q</kbd>. The loan quad and Jess's Griffin have none: they are fuel injected and sort out a cold start themselves, and the loan quad has no fuel tap either.`,
       },
       {
-        q: 'How do I read the green quad’s speedo?',
+        q: 'How do I read the RB300’s speedo?',
         a: `It is a round dial on a bracket over the bars. The white figures round the edge are miles an hour, up to 40; the blue ring inside is
           kilometres an hour. The window at the top is the odometer, and the little lamps under the needle's hub are N for neutral and R for
           reverse, with the key beside them. It has no rev counter, fuel gauge or temperature gauge.`,
@@ -234,16 +234,16 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'The battery is flat. Now what?',
-        a: `Three ways out. The yellow, orange, kids' quad, mini moto and old three-wheeler have a pull-start: with the ignition on, hold <kbd>O</kbd>
+        a: `Three ways out. The Hornet, the Adder, the kids' quad, the mini moto and the old three-wheeler have a pull-start: with the ignition on, hold <kbd>O</kbd>
           for about half a second to a second and let go to yank (too short is weak, too long is botched). Or fetch the jump leads from the
           workbench, clamp the flat one (<kbd>E</kbd>) and then a running one (<kbd>E</kbd>), parked nose to nose since they only reach about
-          4.5 m. The Series III Land Rover has a starting handle too (the 200TDi hasn't: it wants the leads). Running an engine charges its battery again, but by the revs: about ten minutes revved, much longer at idle. The leads are slow: a flat battery wants a minute or two joined to a running quad before it will turn the engine. Or lift the battery out, charge it on the workbench charger and put it back (see the battery questions below). A jumped petrol engine
+          4.5 m. The Tor has a starting handle too (the Crag hasn't: it wants the leads). Running an engine charges its battery again, but by the revs: about ten minutes revved, much longer at idle. The leads are slow: a flat battery wants a minute or two joined to a running quad before it will turn the engine. Or lift the battery out, charge it on the workbench charger and put it back (see the battery questions below). A jumped petrol engine
           with a weak battery dies again at the first stop unless you keep the revs up. Leaving the key on with it stopped drains it flat in about eight minutes.`,
         tip: 'Leaving the key on with the engine off flattens the battery in about eight minutes.',
       },
       {
-        q: 'How do I bump-start a quad or Land Rover?',
-        a: `Only a manual (the red, yellow, green and old three-wheeler, the tractor and the Land Rovers) can be bump-started, and it works with a flat
+        q: 'How do I bump-start a quad or Moorland?',
+        a: `Only a manual (the Farm 300, Hornet, RB300 and old three-wheeler, the tractor and the Moorlands) can be bump-started, and it works with a flat
           battery. Key on (<kbd>K</kbd>), hold the clutch (<kbd>Shift</kbd>), pick second gear, and get it rolling downhill, pushed by a girl or towed
           on the chain. At a walking pace let the clutch out and the wheels turn the engine over until it fires. First gear turns it over at a
           slower roll but is harder to get going; third wants more speed. A two-stroke catches easily. A four-stroke wants the choke when it is
@@ -254,7 +254,7 @@ export const FAQ_SECTIONS = [
         q: 'Can the girls push me to start it?',
         a: `Yes. Sit in a manual that is not running, with the clutch in and second gear selected, and talk to either girl: "Push start it".
           She walks round to the back and pushes, switching the key on if you have not. When it is going fast enough Jess shouts "Now!" (Amy says
-          it more quietly): that is when you let the clutch out. Jess pushes harder, Amy tires sooner, and a Land Rover is slow to get moving. She
+          it more quietly): that is when you let the clutch out. Jess pushes harder, Amy tires sooner, and a Moorland is slow to get moving. She
           stops when it fires or when she has had enough.`,
       },
       {
@@ -268,11 +268,11 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do the diesels start?',
-        a: `The tractor and the UTV have glow plugs: turn the key (<kbd>K</kbd>), wait for the GLOW lamp to go out, then hold <kbd>R</kbd>.
-          In the cold the plugs take longer to heat. The UTV's key stops it again; the tractor's doesn't, you pull its stop knob (<kbd>O</kbd>).`,
+        a: `The tractor and the Yak have glow plugs: turn the key (<kbd>K</kbd>), wait for the GLOW lamp to go out, then hold <kbd>R</kbd>.
+          In the cold the plugs take longer to heat. The Yak's key stops it again; the tractor's doesn't, you pull its stop knob (<kbd>O</kbd>).`,
       },
       {
-        q: 'Why does the Series III crunch when I go into first or second?',
+        q: 'Why does the Tor crunch when I go into first or second?',
         a: `Those two gears have no synchromesh, so the box can't match them to the road for you. Nearly stop and they go in. To change down
           on the move, double-declutch: press the clutch (<kbd>Shift</kbd>) and go into neutral (<kbd>0</kbd>), let the clutch up, blip the throttle
           until the revs suit the speed (higher for second at a given speed than you might think), then clutch down and pick the gear. Wrong
@@ -280,11 +280,11 @@ export const FAQ_SECTIONS = [
         tip: 'To change down into first or second on the move: neutral, clutch up, blip the throttle, clutch down, gear.',
       },
       {
-        q: 'How does the Series III’s starting handle work?',
+        q: 'How does the Tor’s starting handle work?',
         a: `Stand at the front bumper. <kbd>1</kbd> holds the handle with your thumb round it, the natural way, and now and then the engine
           kicks back and you spend a few seconds nursing your hand. <kbd>2</kbd> holds it with your thumb alongside your fingers, which is safe.
           Then hold <kbd>P</kbd> and let go to swing it, with the same timing as a pull-start; each good swing turns it over once.`,
-        tip: 'On the Series III’s starting handle, keep your thumb alongside your fingers (2), not round the handle.',
+        tip: 'On the Tor’s starting handle, keep your thumb alongside your fingers (2), not round the handle.',
       },
     ],
   },
@@ -294,33 +294,33 @@ export const FAQ_SECTIONS = [
     entries: [
       {
         q: 'How do the gears work?',
-        a: `The blue, orange, kids' and loan quads, the mini moto and the UTV are automatics: <kbd>W</kbd> to go, <kbd>S</kbd> to brake.
-          The red, green and yellow quads, the old three-wheeler, the tractor and both Land Rovers have a clutch: hold <kbd>Shift</kbd> and press
-          <kbd>1</kbd> to <kbd>4</kbd> for a gear (the tractor has three, the 200TDi five), <kbd>B</kbd> for reverse and <kbd>0</kbd> for neutral. Pulling away
+        a: `The Bruin, the Adder, the kids' quad, the loan quad, the mini moto and the Yak are automatics: <kbd>W</kbd> to go, <kbd>S</kbd> to brake.
+          The Farm 300, RB300 and Hornet, the old three-wheeler, the tractor and both Moorlands have a clutch: hold <kbd>Shift</kbd> and press
+          <kbd>1</kbd> to <kbd>4</kbd> for a gear (the tractor has three, the Crag five), <kbd>B</kbd> for reverse and <kbd>0</kbd> for neutral. Pulling away
           in a high gear labours it and can stall it, and rushing a change can land you in a false neutral.`,
       },
       {
         q: 'Why do the revs follow my speed on the clutch vehicles?',
         a: `With the clutch up and a gear in, the engine is tied to the road: its revs are your speed in that gear (full revs at the gear's top speed),
           whatever the throttle does, so they climb as you speed up and fall as you slow, and each gear gives a different note. The throttle only
-          decides how hard it pulls. Press <kbd>Shift</kbd> and they come free of the road, and you can rev it in neutral. It's the red, green and yellow
-          quads, the old three-wheeler, the tractor and both Land Rovers; the automatics hold their revs in a band, like a CVT.`,
+          decides how hard it pulls. Press <kbd>Shift</kbd> and they come free of the road, and you can rev it in neutral. It's the Farm 300, RB300 and Hornet
+          quads, the old three-wheeler, the tractor and both Moorlands; the automatics hold their revs in a band, like a CVT.`,
         tip: 'On a clutch vehicle the revs follow your speed in the gear you are in. Change up to bring them down.',
       },
       {
         q: 'How do I reverse?',
-        a: `It's different on each, as on the real machines. Blue and loan: stopped, hold <kbd>S</kbd> and press <kbd>B</kbd>, then <kbd>S</kbd>
-          backs it up. Red: <kbd>B</kbd> with the clutch in and the bars turned. Green: <kbd>B</kbd> with the clutch in, stopped. UTV: stopped,
-          <kbd>B</kbd> flips the dash lever. The Land Rovers and the tractor: reverse is a gear. The yellow, orange, kids' quad, mini moto and three-wheeler
+        a: `It's different on each, as on the real machines. Bruin and loan quad: stopped, hold <kbd>S</kbd> and press <kbd>B</kbd>, then <kbd>S</kbd>
+          backs it up. Farm 300: <kbd>B</kbd> with the clutch in and the bars turned. RB300: <kbd>B</kbd> with the clutch in, stopped. Yak: stopped,
+          <kbd>B</kbd> flips the dash lever. The Moorlands and the tractor: reverse is a gear. The Hornet, Adder, kids' quad, mini moto and three-wheeler
           have no reverse at all: get off and hold <kbd>V</kbd> to push it. In reverse, <kbd>S</kbd> is the throttle and <kbd>W</kbd> the brake.`,
         tip: 'The two-strokes have no reverse: get off and hold V to push them.',
       },
       {
         q: 'Why does it spin its wheels in the mud?',
-        a: `The red and blue start every game in 2WD. <kbd>G</kbd> switches to 4WD (the rocker on the bars), which grips in the mud at the cost of a
-          little steering. The blue's diff lock (<kbd>U</kbd>) pulls hardest of all in the mud but pushes wide on grass; the UTV and the Land Rover have
-          a 4WD lever and a diff lock too. The green and the loan quad are always four-wheel drive; the yellow and orange are rear-wheel drive only.`,
-        tip: 'The red and blue start in 2WD. Press G for 4WD before the mud, not in it.',
+        a: `The Farm 300 and Bruin start every game in 2WD. <kbd>G</kbd> switches to 4WD (the rocker on the bars), which grips in the mud at the cost of a
+          little steering. The Bruin's diff lock (<kbd>U</kbd>) pulls hardest of all in the mud but pushes wide on grass; the Yak and the Moorlands have
+          a 4WD lever and a diff lock too. The RB300 and the loan quad are always four-wheel drive; the Hornet and Adder are rear-wheel drive only.`,
+        tip: 'The Farm 300 and Bruin start in 2WD. Press G for 4WD before the mud, not in it.',
       },
       {
         q: 'How do I go gently, or just give it a little throttle?',
@@ -335,7 +335,7 @@ export const FAQ_SECTIONS = [
         tip: 'After the ford the brakes are wet. Dab S as you ride to dry them.',
       },
       {
-        q: 'Why is the tractor (or UTV, or Land Rover) coughing and dying on a very frosty day?',
+        q: 'Why is the tractor (or Yak, or Moorland) coughing and dying on a very frosty day?',
         a: `In a hard frost the diesel waxes: it goes thick in the filter. A diesel left out in the open, especially with the engine off, loses power, runs
           roughly and cuts out, and when it is really waxed it won't start at all. Nothing is broken. Warm it: a running engine melts the wax, and so does a
           milder spell or the sun. Quicker, take the diesel anti-gel from the ground by the coolant bottle (<kbd>E</kbd> to pick it up), look at the
@@ -344,7 +344,7 @@ export const FAQ_SECTIONS = [
         tip: 'A diesel dying on a hard frost has waxed. Warm it up, or treat the tank with the anti-gel by the coolant.',
       },
       {
-        q: 'Why won\'t the tractor (or UTV, or Land Rover) start after I filled it up?',
+        q: 'Why won\'t the tractor (or Yak, or Moorland) start after I filled it up?',
         a: `If a diesel runs out of fuel, air gets into the fuel line, and it won't start again just because there is fuel in the tank. Fill it from the
           green can first, then look at it and press <kbd>E</kbd> to open the toolbox, and hold <kbd>Q</kbd> (or the button) on "bleed the fuel at the lift
           pump" for about six seconds, until it says it is bled. Let go early and what you have done stays done. Then give it the glow plugs and start it as
@@ -451,7 +451,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'What do the two-strokes need?',
-        a: `The yellow, orange, kids' quad, mini moto and three-wheeler run on pre-mix, about 50:1 oil in petrol. There's a yellow can of pre-mix
+        a: `The Hornet, Adder, kids' quad, mini moto and three-wheeler run on pre-mix, about 50:1 oil in petrol. There's a yellow can of pre-mix
           somewhere on the farm, and a bottle of two-stroke oil: hold <kbd>E</kbd> on the bottle with a can in your hands to add oil. Straight
           petrol in a two-stroke runs hot, nips up and in the end seizes solid. Too much oil, or pre-mix in a four-stroke, smokes like a bonfire
           and fouls the plug. The prompts tell you what's in the can you're holding; nothing tells you what's in a tank except how it runs.`,
@@ -468,7 +468,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'What about red diesel?',
-        a: `The dark green bowser holds red diesel, for the tractor and the UTV, with a dark green can somewhere about the farm. Diesel in a petrol quad
+        a: `The dark green bowser holds red diesel, for the tractor and the Yak, with a dark green can somewhere about the farm. Diesel in a petrol quad
           is slow poison: it runs rougher and weaker, smokes grey and stalls for good at about a fifth diesel. Petrol in a diesel does the same the other
           way. Take the toolbox to it and pump the tank out (<kbd>P</kbd> on a quad), then fill it with the right fuel. Water in the fuel is a different job: that one drains at the tap.`,
       },
@@ -486,7 +486,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I check the engine oil?',
-        a: `On a four-stroke (the red, blue, green and loan quads, the tractor, the UTV and both Land Rovers), stand at it and press <kbd>Y</kbd> to pull the
+        a: `On a four-stroke (the Farm 300, Bruin, RB300 and loan quad, the tractor, the Yak and both Moorlands), stand at it and press <kbd>Y</kbd> to pull the
           dipstick. To top up, park near the oil bottle by the petrol tank and hold <kbd>Y</kbd>, or carry the bottle over. One of them burns oil each game
           and puffs smoke on the overrun. Run one low and the tappets tick, then it knocks, and dry it seizes.`,
         tip: 'Tappets ticking? Check the oil with Y. One four-stroke burns oil every game.',
@@ -508,8 +508,8 @@ export const FAQ_SECTIONS = [
       {
         q: 'I’m stuck in a bog.',
         a: `Go into a bog slowly, or stop in one, and it drags you down. Not too deep: rock it, forwards, backwards, forwards, and each change of direction
-          works it looser. Too deep: use the green quad's winch (look at the green, <kbd>X</kbd> to take the hook, walk it over, <kbd>E</kbd> on the stuck
-          quad, then hold <kbd>X</kbd> by the green to wind in), or the tractor's tow chain. Next time, charge it with a run-up. A girl who has bogged her
+          works it looser. Too deep: use the RB300's winch (look at the RB300, <kbd>X</kbd> to take the hook, walk it over, <kbd>E</kbd> on the stuck
+          quad, then hold <kbd>X</kbd> by the RB300 to wind in), or the tractor's tow chain. Next time, charge it with a run-up. A girl who has bogged her
           own quad calls for you instead (see the next question).`,
         tip: 'Stuck? Rock it: forwards, backwards, forwards. Each change of direction works it looser.',
       },
@@ -517,7 +517,7 @@ export const FAQ_SECTIONS = [
         q: 'Amy or Jess is up on her quad waving and shouting. What do I do?',
         a: `She has bogged it (or tipped it over) and can't get out. Bogged, she stands up on the footboards and waves; tipped, she climbs off and waves
           beside it. She shouts where she is ("I am stuck by the ford!"), and the farm map rings her in red while she waits. Go to her. For a bog, hold
-          <kbd>V</kbd> by the quad to shove while she works the throttle (that is enough unless she is in deep), or hook the green's winch or the tractor's
+          <kbd>V</kbd> by the quad to shove while she works the throttle (that is enough unless she is in deep), or hook the RB300's winch or the tractor's
           chain on it as usual. For a tipped quad, look at it and press <kbd>E</kbd> to right it. She remembers it: coming quickly earns you more of her
           good opinion, and leaving her sitting there for three minutes costs you some. If nobody comes in about four minutes she gives up and gets down.`,
         tip: 'A girl waving and shouting is stuck. Shove her bogged quad with V, winch it, or right a tipped one with E.',
@@ -557,7 +557,7 @@ export const FAQ_SECTIONS = [
         tip: 'Hosing takes off today’s mud, not the years: the old dirt in the corners and the rust stay.',
       },
       {
-        q: 'Does mud get inside the cars and Land Rovers?',
+        q: 'Does mud get inside the cars and Moorlands?',
         a: `No. Mud builds up on the outside, on the wheels, arches, sills and doors, and the inside of the cab stays clean: seats, dash, carpet, and the
           painted door panels, pillars and roof lining too.`,
       },
@@ -571,7 +571,7 @@ export const FAQ_SECTIONS = [
         q: 'Why has mud appeared on my view, and how do I wipe it off?',
         a: `On a quad, the mini moto, the three-wheeler or the tractor, riding close behind another vehicle on the mud, through a puddle or the ford
           at speed, or fast in hard rain splatters your view. Press <kbd>X</kbd> to wipe: the first wipe only smears it wide and thin, the second
-          clears the smear, and raindrops go in one. Left alone it dries and drops off in a few minutes. The UTV, the Land Rovers and the cars
+          clears the smear, and raindrops go in one. Left alone it dries and drops off in a few minutes. The Yak, the Moorlands and the cars
           have a windscreen, so they stay clean. Hanging back, or going round the puddles, keeps it off.`,
         tip: 'Mud on your view? Press X to wipe it. Once smears, twice clears.',
       },
@@ -698,36 +698,36 @@ export const FAQ_SECTIONS = [
       {
         q: 'Do the headlights actually light anything?',
         a: `Yes. A lit headlamp throws real light on the ground and on whatever's in front of it, as bright as that vehicle's lamps are: the old
-          quads' lamps run off the engine, dim and yellow at tickover and brighter with the revs, and flicker on a rough engine. The Land
-          Rovers and the UTV have a light switch. In daylight you barely see it; after dark it's the only way to see where you're going.`,
+          quads' lamps run off the engine, dim and yellow at tickover and brighter with the revs, and flicker on a rough engine. The Moorlands
+          and the Yak have a light switch. In daylight you barely see it; after dark it's the only way to see where you're going.`,
         tip: 'After dark, rev an old quad and its headlights brighten.',
       },
       {
         q: 'How do I get some light to work by in the dark?',
-        a: `Ask a girl: "Light me up" on her wheel, after dark. She fetches something with headlights (a Land Rover or the UTV if there's one
+        a: `Ask a girl: "Light me up" on her wheel, after dark. She fetches something with headlights (a Moorland or the Yak if there's one
           about, otherwise a quad), drives it round to a few metres off facing you, and leaves it running with the lights on. Most of the time
           she then moves over to the passenger side (or onto the back of a quad); otherwise she gets out and stands by it. Amy does it without
           being asked if she sees you working at a quad or a gate in the dark for a while. Ride off, walk away, or tell her "That'll do" on her
           wheel and she puts it away.`,
-        tip: 'After dark, ask a girl to "Light me up" and she brings a Land Rover round to shine its lights on you.',
+        tip: 'After dark, ask a girl to "Light me up" and she brings a Moorland round to shine its lights on you.',
       },
       {
         q: 'Why do the girls want to go in?',
         a: `It's dark and getting cold. As the light goes they say so, and once it's dark they'd rather wait in the barn doorway or sit in a
-          Land Rover with the heater on than stand about outside. Ask them out from their wheel and they'll still come.`,
+          Moorland with the heater on than stand about outside. Ask them out from their wheel and they'll still come.`,
       },
       {
         q: 'Does the weather matter?',
         a: `Yes. Rain wets the ground, and wet grass and especially wet mud are slipperier and the bogs worse. It's colder in the morning and after dark than
           in the afternoon. Cold days want more choke, longer to warm
           up and drain batteries faster; a hard frost whitens the grass and the seats (your tyres melt a track through the grass, and sitting on a seat clears it). Dry stubble throws up dust that clogs air filters fast. Hot, sunny days make the
-          air-cooled quads overheat if you idle them or crawl through mud. The cars, Land Rovers, UTV and tractor have radiators and stay cool on any day, unless
+          air-cooled quads overheat if you idle them or crawl through mud. The cars, Moorlands, Yak and tractor have radiators and stay cool on any day, unless
           something is wrong with their cooling.`,
       },
       {
         q: 'Why is my quad losing power and rattling on a hot day?',
-        a: `It's too hot and pinking. The air-cooled quads (red, blue, yellow and green) cook if left idling for ages in the sun or crawled through the mud
-          with the throttle open. Ride along at a decent speed to cool it. The orange has a radiator and a fan, and stays cooler unless it's leaking.`,
+        a: `It's too hot and pinking. The air-cooled quads (Farm 300, Bruin, Hornet and RB300) cook if left idling for ages in the sun or crawled through the mud
+          with the throttle open. Ride along at a decent speed to cool it. The Adder has a radiator and a fan, and stays cooler unless it's leaking.`,
       },
       {
         q: 'The temperature needle is in the red on a car or the tractor. What is wrong?',
@@ -757,12 +757,12 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I know something’s wrong?',
         a: `Mostly by feel and sound; nothing on screen tells you. A slow puncture pulls the bars towards the soft tyre. A slipping belt flares the revs and
-          hardly goes. A sticking throttle lingers after you let go, then sticks for good. A dirty carb hunts and runs rough. A worn clutch on a manual quad flares the revs when you pull away or climb, hardly drives, and smells hot. A split intake boot makes the idle rise and fall by itself and the exhaust pop when you lift off (not on a diesel). Valve clearances that have worn wide make a four-stroke tick from the top of the engine. A hard knock on a post or a bad landing can bend a track rod (the bars pull to one side and a front wheel points out of line) or a rim (a wheel wobbles). A stretched chain (the sport quad, mini moto and three-wheeler) slaps over bumps and can jump off. Worn engine mounts (on any vehicle, but you feel it most on the tractor, the UTV and the Land Rovers) shake more through the seat and clonk when you stab the throttle. The girls see what you can't:
+          hardly goes. A sticking throttle lingers after you let go, then sticks for good. A dirty carb hunts and runs rough. A worn clutch on a manual quad flares the revs when you pull away or climb, hardly drives, and smells hot. A split intake boot makes the idle rise and fall by itself and the exhaust pop when you lift off (not on a diesel). Valve clearances that have worn wide make a four-stroke tick from the top of the engine. A hard knock on a post or a bad landing can bend a track rod (the bars pull to one side and a front wheel points out of line) or a rim (a wheel wobbles). A stretched chain (the sport quad, mini moto and three-wheeler) slaps over bumps and can jump off. Worn engine mounts (on any vehicle, but you feel it most on the tractor, the Yak and the Moorlands) shake more through the seat and clonk when you stab the throttle. The girls see what you can't:
           ride off and one behind you may shout about smoke or a soft tyre. Amy's logbook on the workbench records what she has found.`,
         tip: 'Read Amy’s logbook on the workbench: it is always true, unlike what Jess tells you.',
       },
       {
-        q: 'Why does the tractor, the UTV or the Land Rover shudder, and why has it started clonking?',
+        q: 'Why does the tractor, the Yak or the Moorland shudder, and why has it started clonking?',
         a: `Their engines sit on rubber mounts, so the engine rocks on its own: a shudder at idle, and a lurch as it starts and stops. That is normal. If it
           has got much worse and clonks when you go on or off the throttle, the mounts have perished. A quick fix with the toolbox (<kbd>M</kbd>) tightens them;
           the workbench renews them for good.`,
@@ -799,17 +799,17 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why is there a service on the chalkboard?',
         a: `A quad that has had a hard time (worn, with a dirty plug or a clogged air filter, low on oil, a slack chain or a slipping belt) can be put on the board for the day.
-          If it is badly worn it is a full service; if it is just a couple of things it is a part service, and the board names them ("Blue: plug, air filter"). It ticks off
+          If it is badly worn it is a full service; if it is just a couple of things it is a part service, and the board names them ("Bruin 660: plug, air filter"). It ticks off
           when those jobs have been done properly on that quad at the bench, whether you started the full service or did them one at a time. Amy also tells you when you
           open the bench on a quad that is due.`,
         tip: 'A quad that is due a service gets a job on the chalkboard. Do it at the bench to tick it off.',
       },
       {
-        q: 'How do I mend a bent rod or rim on the tractor, the UTV, a Land Rover or a car?',
+        q: 'How do I mend a bent rod or rim on the tractor, the Yak, a Moorland or a car?',
         a: `The same way as on a quad, in the big bay in the barn's second span. Drive it in through the second door (the one nearer the generator), nose to the back
           wall, switch it off and use the bench with the toolbox on it. The big bay is the one with the trolley jack and axle stands beside it. The quads use the small bay
-          in front of the bench. Jobs that don't apply (spark plugs on a diesel, a carb on the Corsa) are greyed out.`,
-        tip: 'The tractor, UTV, Land Rovers and cars are mended in the barn’s big bay, through the second door.',
+          in front of the bench. Jobs that don't apply (spark plugs on a diesel, a carb on the Griffin) are greyed out.`,
+        tip: 'The tractor, Yak, Moorlands and cars are mended in the barn’s big bay, through the second door.',
       },
       {
         q: 'Why is my four-stroke ticking, and what does the feeler gauge do?',
@@ -823,7 +823,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'It started on the leads and then died again when I stopped. Why?',
         a: `Idling hardly charges a battery, and under about 40% a petrol engine can't keep its spark going at idle. Keep the revs up for a few minutes
-          (a fast idle is enough to start with, more is better) and it charges; the loan quad's, tractor's, UTV's and Land Rover's lamps run off the battery
+          (a fast idle is enough to start with, more is better) and it charges; the loan quad's, tractor's, Yak's and Moorland's lamps run off the battery
           and slow it further, so switch them off. Amy will sit on the back and hold the revs for you. Jess will for a minute.`,
         tip: 'After a jump start, keep the revs up for ten minutes or it dies again at the first stop.',
       },
@@ -851,7 +851,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why did the mug (or the can) move by itself?',
         a: `A shaking engine walks loose things about, even standing still. A mug of tea left on a rack creeps towards the edge and, if the engine stays rough
-          for long enough, shakes off, and its owner is not pleased. Things in the bed of the UTV or a Land Rover shuffle about their spot, and a jerry can goes
+          for long enough, shakes off, and its owner is not pleased. Things in the bed of the Yak or a Moorland shuffle about their spot, and a jerry can goes
           over if the shake is hard for a while. A smooth warm engine does none of it; a cold, worn or rough one does it soonest. Switch it off, or put the can
           back on its feet by picking it up and standing it in the bed again.`,
         tip: 'Leave a mug on a rack beside a rough, cold engine idling and watch it walk.',
@@ -904,9 +904,9 @@ export const FAQ_SECTIONS = [
           minds. Jess says you have made it boring. Amy wanted it fixed, but will miss it. It is only a remark: nothing is held against you.`,
       },
       {
-        q: 'Why is she sat on my quad (or in the Land Rover) while it warms up?',
+        q: 'Why is she sat on my quad (or in the Moorland) while it warms up?',
         a: `A cold engine shakes about twice as hard as a warm one, and the girls like that. When one starts your usual vehicle for you, she often sits on it while
-          it warms (on the back of a quad, or in the passenger seat of a Land Rover or the UTV) and sometimes asks first. She is a little disappointed when it smooths out, and slow to get off
+          it warms (on the back of a quad, or in the passenger seat of a Moorland or the Yak) and sometimes asks first. She is a little disappointed when it smooths out, and slow to get off
           when you arrive. Say "No, I'll take it" if you would rather she didn't.`,
       },
       {
@@ -917,11 +917,11 @@ export const FAQ_SECTIONS = [
           you come over, and usually leaves the engine running for you.`,
       },
       {
-        q: 'Why does the back seat of the Land Rover bounce so much?',
-        a: `Each seat rides on its own spring, and the 200TDi's back bench is over the leaf springs: soft, bouncy and slow to settle, so it comes down hard on a
-          big bump. The UTV's bed has no cushion at all, so a big bump (the cattle grid, say) can throw whoever is in it off the floor. The pillion pad and the
+        q: 'Why does the back seat of the Moorland bounce so much?',
+        a: `Each seat rides on its own spring, and the Crag's back bench is over the leaf springs: soft, bouncy and slow to settle, so it comes down hard on a
+          big bump. The Yak's bed has no cushion at all, so a big bump (the cattle grid, say) can throw whoever is in it off the floor. The pillion pad and the
           front rack are firmer. The front seats are the smoothest. Whoever is sat in a seat that slams may say so.`,
-        tip: 'The 200TDi\'s back bench and the UTV\'s bed are the bumpiest seats; the front seats are the smoothest.',
+        tip: 'The Crag\'s back bench and the Yak\'s bed are the bumpiest seats; the front seats are the smoothest.',
       },
       {
         q: 'How do I get her to warm a quad up for me?',
@@ -931,11 +931,11 @@ export const FAQ_SECTIONS = [
         tip: 'Tell a girl "I\'ll be a minute" and she warms up your quad and waits on the back.',
       },
       {
-        q: 'Why is she sat alone in the Land Rover with the engine running, and how do I get her out?',
-        a: `She is sulking. It happens after a falling out goes badly for her, or when she feels you favour her friend. Look at the Land Rover and press <kbd>E</kbd>
+        q: 'Why is she sat alone in the Moorland with the engine running, and how do I get her out?',
+        a: `She is sulking. It happens after a falling out goes badly for her, or when she feels you favour her friend. Look at the Moorland and press <kbd>E</kbd>
           to knock on the window. Amy ignores the first knock, answers on the second and forgives you on the third. Jess revs the engine at you three times and then
           gives in. Don't knock too fast: three in a row and she is worse. Or leave her, and she gets out on her own after a few minutes.`,
-        tip: 'A girl sulking in the Land Rover? Knock on the window with E, but not too fast.',
+        tip: 'A girl sulking in the Moorland? Knock on the window with E, but not too fast.',
       },
       {
         q: 'Why is she sitting on the back of a quad that is running, with nobody riding it?',
@@ -1002,7 +1002,7 @@ export const FAQ_SECTIONS = [
         q: 'Does the weather change how an engine runs?',
         a: `A little. Cold, dry air is dense, so an engine pulls harder, but past a carburettor's fixed jet it also runs a touch leaner. Warm, muggy air
           (and rain, and wet ground) is thin: it is flatter and a little richer. Injected engines and diesels adjust for it, so they only feel the change in pull. On the
-          yellow and orange the toolbox's jet kit tells you what the day wants, and a damp day wants a smaller jet than a dry one at the same temperature.`,
+          the Hornet and Adder the toolbox's jet kit tells you what the day wants, and a damp day wants a smaller jet than a dry one at the same temperature.`,
         tip: 'Cold dry air makes an engine pull harder; warm muggy air makes it flatter. The jet kit tells you what the day wants.',
       },
       {
@@ -1019,8 +1019,8 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where do the new tyres come from, and what if there are none?',
-        a: `The tyre rack on the barn's second span, on the south wall left of the helmets, keeps a stack for each size: small quads (the kids' quad and the mini moto), quads, sport quads, the old three-wheeler, the UTV, the Land Rovers,
-          the cars and the tractor. The tag on each shelf says how many there are. Look at the rack and press <kbd>E</kbd>, then the number of a size to order two. The post van brings them like any other part (see "How do I order spare parts"), and you open the parcel by the barn door to put them on the rack. A quad starts with some in stock, but the UTV, Land Rovers, cars and tractor have none until you order, so watch their tread. With too few on the rack the bench greys the job out and says how many it wants.`,
+        a: `The tyre rack on the barn's second span, on the south wall left of the helmets, keeps a stack for each size: small quads (the kids' quad and the mini moto), quads, sport quads, the old three-wheeler, the Yak, the Moorlands,
+          the cars and the tractor. The tag on each shelf says how many there are. Look at the rack and press <kbd>E</kbd>, then the number of a size to order two. The post van brings them like any other part (see "How do I order spare parts"), and you open the parcel by the barn door to put them on the rack. A quad starts with some in stock, but the Yak, Moorlands, cars and tractor have none until you order, so watch their tread. With too few on the rack the bench greys the job out and says how many it wants.`,
       },
       {
         q: 'Why does it pull to one side and feel draggy?',
@@ -1031,12 +1031,12 @@ export const FAQ_SECTIONS = [
         q: 'Why does it knock when it is cold and then go quiet?',
         a: `That is piston slap. On an old, worn engine the piston is loose in its bore and clacks against the wall at idle and when you pull away. It goes
           as the engine warms and the piston swells to fit. It does no harm; it is just the engine's age. A service doesn't cure it, because the wear is in the
-          piston, but a new piston and rings do: on the two-strokes that is the top-end rebuild at the bench, and on the yellow the big-bore kit.`,
+          piston, but a new piston and rings do: on the two-strokes that is the top-end rebuild at the bench, and on the Hornet the big-bore kit.`,
       },
       {
         q: 'What can I tune with the toolbox?',
         a: `The idle screw, the carb mixture, the throttle stop (screw it out for more top speed), the rev limiter, the clutch springs and the tyre pressures, plus
-          a jet kit on the yellow and orange. Each shows its stock value and the trade-off. Taking the silencer off (<kbd>X</kbd>) makes it louder, rawer and
+          a jet kit on the Hornet and Adder. Each shows its stock value and the trade-off. Taking the silencer off (<kbd>X</kbd>) makes it louder, rawer and
           a little stronger. "Back to stock" undoes everything.`,
       },
       {
@@ -1149,7 +1149,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'What can I ask them to do?',
         a: `Get on the back of a quad, start one, take you for a ride, follow you, drive one, stand by one, sit on the front rack, climb onto the tractor
-          or into the UTV and the Land Rover, and more. The wheel only shows what makes sense at the time.`,
+          or into the Yak and the Moorland, and more. The wheel only shows what makes sense at the time.`,
       },
       {
         q: 'Why does she say I braked hard?',
@@ -1179,14 +1179,14 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I show her how to bump-start or double-declutch?',
         a: `Stand or ride near her while she is stood about, and open her wheel (<kbd>E</kbd> on her). "Watch me bump-start it" shows when you are on a manual with a
-          dead engine, and "Watch me double-declutch" when you are on a Land Rover or other box with no synchromesh in first and second. She turns to look; then do it
+          dead engine, and "Watch me double-declutch" when you are on a Moorland or other box with no synchromesh in first and second. She turns to look; then do it
           (the bump-start FAQ above, or neutral, clutch up, rev to match, clutch down). If she was looking while you did it she picks it up in one go, and
           she says so. If something else caught her eye she says she missed it, and you can ask again. She gives up after about 45 seconds if you do nothing.
           What she knows shows: a girl who has learnt to bump-start pushes harder and for longer, and one who has learnt to double-declutch stops grinding the gears.`,
       },
       {
         q: 'Can the girls teach me to drive a manual?',
-        a: `Yes. Drive a manual quad (the red, green or yellow) with a girl on the back and after a little while she may offer you a lesson. Amy sets one
+        a: `Yes. Drive a manual quad (the Farm 300, RB300 or Hornet) with a girl on the back and after a little while she may offer you a lesson. Amy sets one
           thing at a time: pulling away without revving it, clutch control on a hill, changing down before a bank, smooth gear changes, and stopping
           without stalling. She watches what the quad actually does, tells you how it went, and moves on once you have done it cleanly twice in a row.
           Jess has one lesson, "faster", and no patience. What you have passed is kept from one day to the next.`,
@@ -1318,8 +1318,8 @@ export const FAQ_SECTIONS = [
       {
         q: 'What do they do when I leave them alone?',
         a: `All sorts: wander off for a look round, start a quad, take one for a drive, race each other, go for a ride together, spin doughnuts, show off to you,
-          line the quads up by the barn, leave a mug of tea on a rack, sit with you on the rock at the top of the hill with a flask, sit on the bales or the paddock fence on a fine day (or doze on the bales when they are sleepy), run for the barn or climb into a Land Rover when it rains,
-          warm their hands over a running engine, start a Land Rover and sit in it to warm up, fetch jumpers when it's cold or wax jackets when it rains, or get their helmets from the hooks.`,
+          line the quads up by the barn, leave a mug of tea on a rack, sit with you on the rock at the top of the hill with a flask, sit on the bales or the paddock fence on a fine day (or doze on the bales when they are sleepy), run for the barn or climb into a Moorland when it rains,
+          warm their hands over a running engine, start a Moorland and sit in it to warm up, fetch jumpers when it's cold or wax jackets when it rains, or get their helmets from the hooks.`,
       },
       {
         q: 'Why has a girl gone to sleep on the bales?',
@@ -1372,12 +1372,12 @@ export const FAQ_SECTIONS = [
       {
         q: 'When do the girls put their hoods up?',
         a: `When it's raining properly and they have a coat on. The hood comes down again when the rain has nearly stopped, when they put a
-          helmet on, and when they're under a roof: in the barn, or in a car, a Land Rover or the UTV.`,
+          helmet on, and when they're under a roof: in the barn, or in a car, a Moorland or the Yak.`,
       },
       {
-        q: 'Why is a girl sitting in the Land Rover?',
-        a: `She's sheltering. When it rains, a girl stood about sometimes climbs into the UTV, a Land Rover or one of their cars (they have roofs) instead of running for the barn.
-          On a cold day she may walk over to a Land Rover, climb in, start it from her seat (choke and all, not stood out in the cold) and sit in it for a minute or two with the engine running. Only a flat battery makes her swing the starting handle outside. When the weather turns or she has had enough
+        q: 'Why is a girl sitting in the Moorland?',
+        a: `She's sheltering. When it rains, a girl stood about sometimes climbs into the Yak, a Moorland or one of their cars (they have roofs) instead of running for the barn.
+          On a cold day she may walk over to a Moorland, climb in, start it from her seat (choke and all, not stood out in the cold) and sit in it for a minute or two with the engine running. Only a flat battery makes her swing the starting handle outside. When the weather turns or she has had enough
           she gets out again, and switches off an engine she started herself. If you want the vehicle, just get in: she shuffles up and comes along.`,
       },
       {
@@ -1520,7 +1520,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Who is that on the lane, and why has someone come in at the gate?',
-        a: `Beyond the big gate is a quiet public lane. A van, a Land Rover, a tractor or a UTV goes by now and then, less after dark. Now and then a visitor turns in: the post van, whose driver opens the gate, drives up to the barn and leaves a parcel by the door, or a neighbour who parks at the barn and stands about for a while. Jess waves at them, Amy less often. If you are in their way they wait, then hoot, so pull over.`,
+        a: `Beyond the big gate is a quiet public lane. A van, a Moorland, a tractor or a Yak goes by now and then, less after dark. Now and then a visitor turns in: the post van, whose driver opens the gate, drives up to the barn and leaves a parcel by the door, or a neighbour who parks at the barn and stands about for a while. Jess waves at them, Amy less often. If you are in their way they wait, then hoot, so pull over.`,
         tip: 'The post van and neighbours come in at the big gate. Pull over for them.',
       },
       {
@@ -1546,9 +1546,9 @@ export const FAQ_SECTIONS = [
         tip: 'A flat battery takes about five minutes on the bench charger. The needle shows how far it has got.',
       },
       {
-        q: 'Can I take a battery out in the yard, and carry one in the UTV?',
-        a: `Yes, for any vehicle with a starter. Take the toolbox to it, switched off, press <kbd>E</kbd> to open it and then <kbd>H</kbd>: the battery stands by your feet. Pick it up with <kbd>E</kbd> and carry it like a can: look into the UTV's bed and press <kbd>E</kbd> to stand it in with the rest of your things, take it to the barn, charge it, and bring it back. Fit it by looking at its own vehicle, switched off, and pressing <kbd>E</kbd>, or by pressing <kbd>H</kbd> in the toolbox panel when it is lying close. A battery belongs to its vehicle, so the prompt tells you if you have the wrong one.`,
-        tip: 'Toolbox, then H takes a battery out. Carry it in the UTV bed.',
+        q: 'Can I take a battery out in the yard, and carry one in the Yak?',
+        a: `Yes, for any vehicle with a starter. Take the toolbox to it, switched off, press <kbd>E</kbd> to open it and then <kbd>H</kbd>: the battery stands by your feet. Pick it up with <kbd>E</kbd> and carry it like a can: look into the Yak's bed and press <kbd>E</kbd> to stand it in with the rest of your things, take it to the barn, charge it, and bring it back. Fit it by looking at its own vehicle, switched off, and pressing <kbd>E</kbd>, or by pressing <kbd>H</kbd> in the toolbox panel when it is lying close. A battery belongs to its vehicle, so the prompt tells you if you have the wrong one.`,
+        tip: 'Toolbox, then H takes a battery out. Carry it in the Yak bed.',
       },
       {
         q: 'Why is the quad completely dead with no clicking?',
@@ -1619,7 +1619,7 @@ export const FAQ_SECTIONS = [
   },
   {
     id: 'big',
-    title: 'The tractor, the UTV, the Land Rovers and the trailers',
+    title: 'The tractor, the Yak, the Moorlands and the trailers',
     entries: [
       {
         q: 'How do I drive the tractor?',
@@ -1637,7 +1637,7 @@ export const FAQ_SECTIONS = [
         q: 'How do I load a quad onto the bale trailer?',
         a: `Stand by the back of the trailer and press <kbd>T</kbd> to fold the ramps down. Switch the quad off (it can't be running, ridden or tipped over) and hold <kbd>X</kbd>
           within reach of the ramps: the trailer's winch drags it across to the foot of the ramps and winds it up. Or line it up straight on the ramps and hold
-          <kbd>V</kbd> to push it up yourself, and it rolls back if you let go. The tractor, the UTV and the Land Rovers are too big.`,
+          <kbd>V</kbd> to push it up yourself, and it rolls back if you let go. The tractor, the Yak and the Moorlands are too big.`,
         tip: 'Ramps down with T, switch the quad off, hold X to winch it on.',
       },
       {
@@ -1653,7 +1653,7 @@ export const FAQ_SECTIONS = [
       {
         q: "Why won't the ramps fold up, or the winch take my quad?",
         a: `The ramps can't fold up with a quad on them or being winched to them: get it all the way up, or off. The winch only takes a quad that is switched off, with
-          nobody on it, upright and not hooked to the green's winch or the chain, within about seven metres of the foot of the ramps with the ramps down.`,
+          nobody on it, upright and not hooked to the RB300's winch or the chain, within about seven metres of the foot of the ramps with the ramps down.`,
       },
       {
         q: 'Do the trailers get muddy?',
@@ -1662,7 +1662,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'What can the little trailer do?',
-        a: `Hook it to the tractor, the Land Rover or a quad with a rack (<kbd>J</kbd>), stand a jerry can, the toolbox or the jump leads in it (<kbd>E</kbd> at the tub),
+        a: `Hook it to the tractor, the Moorland or a quad with a rack (<kbd>J</kbd>), stand a jerry can, the toolbox or the jump leads in it (<kbd>E</kbd> at the tub),
           and tip it (<kbd>T</kbd>) when stopped. Jess may climb in against the rules.`,
       },
       {
@@ -1674,7 +1674,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why won\'t it reverse any more, and the trailer is folded up against me?',
-        a: `You have jack-knifed it: it folded to about sixty degrees and jammed against the tractor, quad or Land Rover. Pull forward a little and it
+        a: `You have jack-knifed it: it folded to about sixty degrees and jammed against the tractor, quad or Moorland. Pull forward a little and it
           straightens out, then try again with less lock.`,
       },
       {
@@ -1689,9 +1689,18 @@ export const FAQ_SECTIONS = [
         tip: 'The chalkboard in the barn lists the day\'s farm jobs.',
       },
       {
+        q: 'What are the vehicles called?',
+        a: `Every vehicle has a maker and a model, as on its badge: the Kestrel Farm 300, the Tamura Bruin 660, the Tamura Hornet 200, the Ridgeback RB300, the Viper Adder 250,
+          the Viper Asp 50 (the kids' quad), the Tamura TZ 65 (the mini moto), the Kestrel T185 (the old three-wheeler), the Tamura Ursa 450 (the loan quad), the Hartley 35 (the tractor),
+          the Ridgeback Yak 4010, the Moorland Tor and the Moorland Crag (the two trucks), and the girls' cars, the Thorne Finch (Amy's) and the Ashby Griffin (Jess's).
+          The girls say the short name: "the Farm 300", "the Hornet", "the Tor". The panels and the wheel show the maker too. A colour is only paint: a vehicle you buy second-hand
+          can be a different colour from the one you know, and it is still the same model.`,
+        tip: 'The girls call a quad by its model, not its colour: the Farm 300, the Bruin, the Hornet, the RB300, the Adder.',
+      },
+      {
         q: 'How do I buy another vehicle?',
         a: `Check the cork board of small ads on the barn's back wall, south of the calendar and the records, and press <kbd>E</kbd> for a close look. Most days it is bare, but
-          now and then a neighbour has something for sale: a quad, the tractor, the buggy or a Land Rover, in a colour that may not be the one you know, worn to some degree.
+          now and then a neighbour has something for sale: a quad, the tractor, the buggy or a Moorland, in a colour that may not be the one you know, worn to some degree.
           Press <kbd>1</kbd>, <kbd>2</kbd> or <kbd>3</kbd> to buy that ad. The money comes out of the tin straight away and the vehicle is in the yard when you load the next
           day. Only a model that isn't on your farm is advertised, and you can have four bought vehicles at a time.`,
         tip: 'The cork board in the barn has the odd vehicle for sale. Press E, then 1 to 3 to buy.',
@@ -1801,25 +1810,25 @@ export const FAQ_SECTIONS = [
           they are pulling). You can't walk through them either. Quads and the tractor still pass through an empty trailer if you drive them into it.`,
       },
       {
-        q: "Can I carry things in the UTV's bed?",
+        q: "Can I carry things in the Yak's bed?",
         a: `Yes. Hold a jerry can, the toolbox, the jump leads or the oil bottle, look into the bed and press <kbd>E</kbd> (the bed has to be down). It holds six.
           They ride along, and you pick one up again the same way as from the floor. Tip the bed (<kbd>T</kbd>, stopped) and everything slides out of the back.`,
       },
       {
-        q: 'Can I carry things in the Series III, and how do I drop the tailgate?',
+        q: 'Can I carry things in the Tor, and how do I drop the tailgate?',
         a: `Yes. Hold a jerry can, the toolbox, the jump leads or the oil bottle, look into the tub and press <kbd>E</kbd>: it holds six, between the wheel arches. <kbd>T</kbd>
           drops the tailgate (stopped, from the seat or standing beside the tub) and again to raise it. It lies flat behind the tub on its two chains, and swings shut by itself
-          if you drive off with it down. It doesn't tip like the UTV's bed, so what is in the tub stays there.`,
-        tip: 'T drops the Series III’s tailgate; E with something in your hands stands it in the tub.',
+          if you drive off with it down. It doesn't tip like the Yak's bed, so what is in the tub stays there.`,
+        tip: 'T drops the Tor’s tailgate; E with something in your hands stands it in the tub.',
       },
       {
-        q: 'How do I open the 200TDi’s back door?',
+        q: 'How do I open the Crag’s back door?',
         a: `Press <kbd>T</kbd>, stopped, from the seat or standing beside it, and the back door swings out on its hinge on the driver's side, spare wheel and all, onto the
-          load space behind the back bench. Press it again to shut it. It swings shut by itself if you drive off with it open, and it won't open while the 200TDi is moving.`,
-        tip: 'T swings the 200TDi’s back door out and shuts it again.',
+          load space behind the back bench. Press it again to shut it. It swings shut by itself if you drive off with it open, and it won't open while the Crag is moving.`,
+        tip: 'T swings the Crag’s back door out and shuts it again.',
       },
       {
-        q: 'Why do the Series III’s doors open?',
+        q: 'Why do the Tor’s doors open?',
         a: `They are hinged at the front and swing out, on the side you are using, for a couple of seconds when you get in or out and while a girl climbs in or down. They only
           open while it is nearly stopped and shut again as soon as it moves.`,
       },
@@ -1829,10 +1838,10 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I tow a dead quad with another quad?',
-        a: `Look at the red or blue quad (the green keeps its winch on <kbd>X</kbd>) and press <kbd>X</kbd> to take the tow rope off its rack. Walk the hook to the dead quad and press
+        a: `Look at the Farm 300 or Bruin (the RB300 keeps its winch on <kbd>X</kbd>) and press <kbd>X</kbd> to take the tow rope off its rack. Walk the hook to the dead quad and press
           <kbd>E</kbd> on it, then get on the towing quad and ride off gently. <kbd>E</kbd> on the dead quad unhooks it, and <kbd>X</kbd> puts the rope back. The rope stretches and goes slack, unlike the tractor's chain, and
           the dead quad has its brakes off, so it rolls on if you stop.`,
-        tip: 'Tow rope: X at a red or blue quad, E on the dead one. Take up the slack gently.',
+        tip: 'Tow rope: X at a Farm 300 or Bruin, E on the dead one. Take up the slack gently.',
       },
       {
         q: 'How do I get a girl to steer the quad I am towing?',
@@ -1845,75 +1854,75 @@ export const FAQ_SECTIONS = [
       },
       {
         q: "Why won't the tow rope come off the quad, or hook on?",
-        a: `The green quad's <kbd>X</kbd> is its winch, so take the rope from the red or blue one, with your hands empty and on foot. A trailer on the same quad's hitch has to come off first. The rope only reaches a few metres from the hitch
+        a: `The RB300's <kbd>X</kbd> is its winch, so take the rope from the Farm 300 or the Bruin, with your hands empty and on foot. A trailer on the same quad's hitch has to come off first. The rope only reaches a few metres from the hitch
           and comes out of your hand if you go further or get on something.`,
       },
       {
-        q: 'Can the girls ride in the UTV and the Land Rover?',
-        a: `Yes. Stop with the engine running and they may climb in, squabbling over the middle seat. Jess may ride in the UTV's bed, which is against the rules.
-          They drive both too (Amy only once she's had her day on the tractor), and you can ride beside the driver. The 200TDi has a back bench as well: ask a girl to "Get in the back", or look at its back half and press <kbd>B</kbd> to sit there yourself.`,
+        q: 'Can the girls ride in the Yak and the Moorland?',
+        a: `Yes. Stop with the engine running and they may climb in, squabbling over the middle seat. Jess may ride in the Yak's bed, which is against the rules.
+          They drive both too (Amy only once she's had her day on the tractor), and you can ride beside the driver. The Crag has a back bench as well: ask a girl to "Get in the back", or look at its back half and press <kbd>B</kbd> to sit there yourself.`,
       },
       {
-        q: 'What is the other Land Rover, the 200TDi?',
-        a: `A blue early-90s Defender 90 station wagon with a white roof and a rattly turbo diesel, a square back and the spare wheel on its rear door. Either Land Rover,
-          both or neither may be on the farm. Start it like the UTV: <kbd>K</kbd>, wait for the GLOW lamp to go out, then hold <kbd>R</kbd>. It has a clutch
+        q: 'What is the other Moorland, the Crag?',
+        a: `The Moorland Crag: a blue early-90s station wagon with a white roof and a rattly turbo diesel, a square back and the spare wheel on its rear door. Either Moorland,
+          both or neither may be on the farm. Start it like the Yak: <kbd>K</kbd>, wait for the GLOW lamp to go out, then hold <kbd>R</kbd>. It has a clutch
           and a five-speed gearbox (<kbd>1</kbd> to <kbd>5</kbd>) with synchromesh, so it never crunches, and it has no choke, hand throttle or starting handle. Its dash
           has three small gauges and a big speedometer, a radio in the middle and a flashing BELT lamp. Press <kbd>T</kbd> and its back door swings out on its hinge. It uses red diesel only.`,
-        tip: 'The 200TDi is a diesel: wait for the GLOW lamp to go out, then hold R. Red diesel only.',
+        tip: 'The Crag is a diesel: wait for the GLOW lamp to go out, then hold R. Red diesel only.',
       },
       {
-        q: 'Do I have to wear a seat belt in the UTV or a Land Rover?',
-        a: `Not to drive. The UTV and the 200TDi nag: with the key on and your belt off (or nobody in the driver's seat at all) the BELT lamp flashes and it bongs every
-          couple of seconds (quieter the further you are) until you press <kbd>;</kbd> to do it up. A girl near the 200TDi will mention the bong if it is yours that is off (Amy asks, Jess teases). The Series III is old enough to have no lamp and no bong, but it has belts if you want
+        q: 'Do I have to wear a seat belt in the Yak or a Moorland?',
+        a: `Not to drive. The Yak and the Crag nag: with the key on and your belt off (or nobody in the driver's seat at all) the BELT lamp flashes and it bongs every
+          couple of seconds (quieter the further you are) until you press <kbd>;</kbd> to do it up. A girl near the Crag will mention the bong if it is yours that is off (Amy asks, Jess teases). The Tor is old enough to have no lamp and no bong, but it has belts if you want
           one (<kbd>;</kbd> too): a diagonal and lap belt in the driver's and the left-hand seat, a lap belt in the middle. The girls buckle up a moment after
           they sit down in either.`
       },
       {
-        q: 'How do I turn the lights on in the UTV, a Land Rover or a car?',
-        a: `Sit in it with the key on and press <kbd>P</kbd>: dipped, then main beam, then off again. The UTV has one lamp on its dash that goes green for
-          dipped and blue for main beam. The 200TDi has a green lamp for the lights and a blue one for the main beam. The Series III has no lights lamp, only the
+        q: 'How do I turn the lights on in the Yak, a Moorland or a car?',
+        a: `Sit in it with the key on and press <kbd>P</kbd>: dipped, then main beam, then off again. The Yak has one lamp on its dash that goes green for
+          dipped and blue for main beam. The Crag has a green lamp for the lights and a blue one for the main beam. The Tor has no lights lamp, only the
           blue main beam one. The girls' cars work the same way. Most quads' lights come on with the engine and have no switch.`,
-        tip: 'P switches the lights in the UTV and both Land Rovers: dipped, main beam, off.',
+        tip: 'P switches the lights in the Yak and both Moorlands: dipped, main beam, off.',
       },
       {
-        q: 'How do I put the red, blue, green or loan quad\'s lights on main beam, or off?',
+        q: 'How do I put the Farm 300\'s, Bruin\'s, RB300\'s or loan quad\'s lights on main beam, or off?',
         a: `Press <kbd>P</kbd> while you ride it: it starts on dipped, then main beam (a longer, whiter beam), then off, then dipped again. The yellow rocker on
           the switch pod on the left bar is the lights, with OFF at the top and ON at the bottom, and the white one under it is HI and LO. They move as you press. The
           red rocker is the engine stop, showing RUN while the key is on, the round button is the starter (it goes in while you hold <kbd>R</kbd>), and the black
           slider under the pod is the choke (<kbd>Q</kbd> and <kbd>Z</kbd>): it slides along its slot. The 2WD and 4WD labels are by the rocker on the right bar
-          (<kbd>G</kbd>). The loan quad's pod is the blue's without the choke lever, since it is fuel injected. With the lights off the tail lamp is off too.`,
-        tip: 'P on the red quad: dipped, main beam, off. Its pod\'s yellow and white rockers show which.',
+          (<kbd>G</kbd>). The loan quad's pod is the Bruin's without the choke lever, since it is fuel injected. With the lights off the tail lamp is off too.`,
+        tip: 'P on the Farm 300: dipped, main beam, off. Its pod\'s yellow and white rockers show which.',
       },
       {
-        q: 'How do I switch the yellow quad\'s, orange quad\'s, old three-wheeler\'s or the tractor\'s lights on and off?',
+        q: 'How do I switch the Hornet\'s, Adder\'s, old three-wheeler\'s or the tractor\'s lights on and off?',
         a: `Press <kbd>P</kbd> while you ride it. They have a plain switch, not the others' three-way one: on (dipped) or off, and
-          they start on. The little rocker on the left bar (the yellow's just in from the brake lever, the three-wheeler's by the left grip, the tractor's a chrome bat low on its instrument panel, the orange's the yellow one on its pod) is the switch, and it rocks as you press. With the lights off the tail
+          they start on. The little rocker on the left bar (the Hornet's just in from the brake lever, the three-wheeler's by the left grip, the tractor's a chrome bat low on its instrument panel, the Adder's the yellow one on its pod) is the switch, and it rocks as you press. With the lights off the tail
           lamp is off too. The pull-start is on <kbd>O</kbd>, not <kbd>P</kbd>, so the two don't clash.`,
-        tip: 'P switches the yellow and orange quads\' lights on and off. Their pull-start is on O.',
+        tip: 'P switches the Hornet\'s and Adder\'s lights on and off. Their pull-start is on O.',
       },
       {
-        q: 'How do I put the blue quad\'s lights on main beam, or off, and where is its choke?',
-        a: `Press <kbd>P</kbd> while you ride it: dipped, main beam, off, dipped again, as on the red. The grey rocker on the switch pod on the left bar is the lights,
+        q: 'How do I put the Bruin\'s lights on main beam, or off, and where is its choke?',
+        a: `Press <kbd>P</kbd> while you ride it: dipped, main beam, off, dipped again, as on the Farm 300. The grey rocker on the switch pod on the left bar is the lights,
           with HI at the top, LO in the middle and OFF at the bottom, and it moves as you press. The red switch under it is the engine stop and the grey button is
           the starter. The black lever hanging under the pod is the choke (<kbd>Q</kbd> and <kbd>Z</kbd>): it swings towards you as you apply it, and it is always in
           reach on the move. The lamp column to the left of the display shows H for going, R in reverse and P stopped in neutral, and DIFF.LOCK lights when the lock
           is on (<kbd>U</kbd>). With the lights off the tail lamp is off too.`,
-        tip: 'P on the blue quad: dipped, main beam, off. The choke is the lever under the left pod.',
+        tip: 'P on the Bruin: dipped, main beam, off. The choke is the lever under the left pod.',
       },
       {
         q: 'How do I use the indicators and hazard lights?',
-        a: `In the UTV, either Land Rover or the girls' cars with the key on: <kbd>,</kbd> is left, <kbd>.</kbd> is right and <kbd>=</kbd> is the hazards (both sides). There is also a stalk on the left of the steering column that drops down for left and goes up for right, and a red hazard button on the dash that flashes with the hazards. The lamps at the
-          front and back of that side flash orange and the relay ticks. The Series III has one green "<- ->" lamp on its dash; the UTV and the 200TDi have a separate arrow for each side. Press the same key again to switch them off. A left or right
+        a: `In the Yak, either Moorland or the girls' cars with the key on: <kbd>,</kbd> is left, <kbd>.</kbd> is right and <kbd>=</kbd> is the hazards (both sides). There is also a stalk on the left of the steering column that drops down for left and goes up for right, and a red hazard button on the dash that flashes with the hazards. The lamps at the
+          front and back of that side flash orange and the relay ticks. The Tor has one green "<- ->" lamp on its dash; the Yak and the Crag have a separate arrow for each side. Press the same key again to switch them off. A left or right
           indicator also cancels itself once you have turned the wheel that way and straightened up, like a real stalk. The hazards stay on until you press <kbd>=</kbd>.`,
-        tip: "Comma and full stop are the left and right indicators in the UTV and Land Rovers, equals the hazards.",
+        tip: "Comma and full stop are the left and right indicators in the Yak and Moorlands, equals the hazards.",
       },
       {
-        q: 'Do the UTV and Land Rovers have a reverse light?',
-        a: `Yes. A clear lamp at the back lights up (the Series III has just the one, on the driver's side; the UTV and the 200TDi have one each side) when you select reverse with the key on: the lever on the UTV's console, or reverse gear in a Land Rover.
+        q: 'Do the Yak and Moorlands have a reverse light?',
+        a: `Yes. A clear lamp at the back lights up (the Tor has just the one, on the driver's side; the Yak and the Crag have one each side) when you select reverse with the key on: the lever on the Yak's console, or reverse gear in a Moorland.
           Look over your shoulder (<kbd>C</kbd>) or watch someone else back up at dusk to see it.`,
       },
       {
-        q: 'How do I put the Land Rover\'s handbrake on?',
+        q: 'How do I put the Moorland\'s handbrake on?',
         a: `<kbd>Space</kbd>, as on any vehicle. The lever between the seats comes up and the red BRAKE lamp on the dash lights; <kbd>Space</kbd> again lets it off.`,
       },
     ],
@@ -1923,58 +1932,58 @@ export const FAQ_SECTIONS = [
     title: "The girls' cars",
     entries: [
       {
-        q: 'How do I open the Fiesta\'s hatch?',
+        q: 'How do I open the Finch\'s hatch?',
         a: `Press <kbd>T</kbd>, stopped, from the driver's seat or standing beside the car, and the hatch lifts up and back on its gas struts onto the boot, with the parcel shelf and the carpet. Press it again to shut it.
-          It won't open while the Fiesta is moving, and swings shut by itself if you drive off with it up. Its doors swing out at the side you get in at.`,
-        tip: 'T lifts and shuts the Fiesta\'s hatch.',
+          It won't open while the Finch is moving, and swings shut by itself if you drive off with it up. Its doors swing out at the side you get in at.`,
+        tip: 'T lifts and shuts the Finch\'s hatch.',
       },
       {
-        q: 'How do I open the Corsa\'s hatch?',
+        q: 'How do I open the Griffin\'s hatch?',
         a: `The same way: press <kbd>T</kbd>, stopped, from the driver's seat or standing beside the car, and the hatch lifts up and back with its spoiler on gas struts, over Jess's bass box.
-          Press it again to shut it. It won't open while the Corsa is moving. Its doors swing out at the side you get in at.`,
-        tip: 'T lifts and shuts the Corsa\'s hatch too.',
+          Press it again to shut it. It won't open while the Griffin is moving. Its doors swing out at the side you get in at.`,
+        tip: 'T lifts and shuts the Griffin\'s hatch too.',
       },
       {
         q: 'Whose are the two cars?',
-        a: `The brown Fiesta is Amy's: an old Mk1, kept clean, with L plates on, because she is still learning. The red Corsa with the grey wing and the big exhaust is
+        a: `The brown Thorne Finch is Amy's: an old hatchback, kept clean, with L plates on, because she is still learning. The red Ashby Griffin with the grey wing and the big exhaust is
           Jess's. They park side by side on the tarmac at the end of the farm road, in front of the Dutch barn, and they are always there.`,
-        tip: "The Fiesta is Amy's and the Corsa is Jess's. They park at the end of the farm road, by the Dutch barn.",
+        tip: "The Finch is Amy's and the Griffin is Jess's. They park at the end of the farm road, by the Dutch barn.",
       },
       {
         q: 'Can I drive their cars?',
-        a: `Yes: look at one and press <kbd>E</kbd> to get in the driver's seat. They drive like the Land Rovers: <kbd>K</kbd> for the key, hold <kbd>R</kbd> to start,
-          <kbd>Shift</kbd> for the clutch and the number keys for the gears (four in the Fiesta, five in the Corsa). The Fiesta has a choke (<kbd>Q</kbd> and <kbd>Z</kbd>) for a cold start;
-          the Corsa is fuel injected, so it has none and sorts out a cold start itself. But they are their cars: see below.`,
+        a: `Yes: look at one and press <kbd>E</kbd> to get in the driver's seat. They drive like the Moorlands: <kbd>K</kbd> for the key, hold <kbd>R</kbd> to start,
+          <kbd>Shift</kbd> for the clutch and the number keys for the gears (four in the Finch, five in the Griffin). The Finch has a choke (<kbd>Q</kbd> and <kbd>Z</kbd>) for a cold start;
+          the Griffin is fuel injected, so it has none and sorts out a cold start itself. But they are their cars: see below.`,
       },
       {
         q: 'Why is Amy (or Jess) cross that I took her car?',
         a: `If she sees you drive off in it without her, she minds, and it costs you a little with her. Bring it back with something wrong with it, or stuck in the mud, and
           she minds more. Take her with you instead: ask her to get in first (look at her, <kbd>E</kbd>, and pick her car on the wheel), and she is happy to come, though she will tell you what she thinks of your
-          driving. Amy hates you going fast in her Fiesta; Jess hates you dawdling in her Corsa, and neither likes you stalling it.`,
+          driving. Amy hates you going fast in her Finch; Jess hates you dawdling in her Griffin, and neither likes you stalling it.`,
       },
       {
         q: 'Why does the car get stuck on the grass?',
         a: `They are road cars: front-wheel drive, low, and on road tyres. On the tarmac they are quick and easy, but on wet grass they slither, in mud they bog
-          down almost at once, and they scrape over bumps a Land Rover wouldn't notice. The tractor can pull one out.`,
+          down almost at once, and they scrape over bumps a Moorland wouldn't notice. The tractor can pull one out.`,
         tip: 'The girls\' cars are road cars: keep them on the tarmac, especially when it is wet.',
       },
       {
         q: 'Do the girls drive their cars?',
         a: `Yes, each her own and never the other's. Now and then one takes hers out down the farm road to the end and back, and you can ask her to from the wheel ("Drive it").
-          Amy goes carefully. Jess does not. Her friend may climb in with her. They also sit in them out of the rain, like the Land Rovers.`,
+          Amy goes carefully. Jess does not. Her friend may climb in with her. They also sit in them out of the rain, like the Moorlands.`,
       },
       {
         q: 'How do I turn the radio on?',
-        a: `In either Land Rover or one of the girls' cars, press <kbd>I</kbd> with the key on. <kbd>Shift</kbd>+<kbd>I</kbd> turns it up and
+        a: `In either Moorland or one of the girls' cars, press <kbd>I</kbd> with the key on. <kbd>Shift</kbd>+<kbd>I</kbd> turns it up and
           <kbd>Alt</kbd>+<kbd>I</kbd> turns it down; on a gamepad it is in the ring. There is one station, mostly talk with a tune now and then,
           and every radio on the farm plays the same thing. It goes quiet while the starter turns and when the battery is flat. Outside, you can hear
           one that has been left on from a few metres.`,
-        tip: 'Press I in a Land Rover or a car, key on, for the radio. Shift+I louder, Alt+I quieter.',
+        tip: 'Press I in a Moorland or a car, key on, for the radio. Shift+I louder, Alt+I quieter.',
       },
       {
         q: 'Why does the radio crackle and fade?',
-        a: `Each set is different. The Series III has an old dash radio that picks up the engine, so it spits more the harder you rev, and the station
-          drifts in and out. The 200TDi's is plainer. Amy's Fiesta has a cassette radio with a little warble, and Jess's Corsa a loud one with a
+        a: `Each set is different. The Tor has an old dash radio that picks up the engine, so it spits more the harder you rev, and the station
+          drifts in and out. The Crag's is plainer. Amy's Finch has a cassette radio with a little warble, and Jess's Griffin a loud one with a
           lot of bass that holds the station well.`,
       },
       {
@@ -2026,14 +2035,14 @@ export const FAQ_SECTIONS = [
         a: `Jess tapes it there to wind her up. Amy peels it off; Jess puts it back. Coach Amy well enough and she sticks it on the tractor herself, for good.`,
       },
       {
-        q: 'Is there anything special about the yellow and the orange?',
+        q: 'Is there anything special about the Hornet and the Adder?',
         spoiler: true,
-        a: `The yellow has a big-bore kit waiting at the workbench (job <kbd>8</kbd>): Jess's dream, about 18% more pull, more heat and much more wear. In about half of games
-          the orange has a weeping coolant hose: watch for a green damp patch under it, and fix it at the bench (job <kbd>7</kbd>) before it boils over. Now and then any radiator
+        a: `The Hornet has a big-bore kit waiting at the workbench (job <kbd>8</kbd>): Jess's dream, about 18% more pull, more heat and much more wear. In about half of games
+          the Adder has a weeping coolant hose: watch for a green damp patch under it, and fix it at the bench (job <kbd>7</kbd>) before it boils over. Now and then any radiator
           vehicle has one too, or a stuck thermostat; the coolant bottle at the petrol tank tops them up.`
       },
       {
-        q: 'Why does Jess call the green quad Grandad?',
+        q: 'Why does Jess call the RB300 Grandad?',
         spoiler: true,
         a: `Early in a game Jess gives every quad a nickname, picked from a short list each time. Amy says she won't use them, and holds out for a while.`,
       },
@@ -2050,9 +2059,9 @@ export const FAQ_SECTIONS = [
       },
       {
         q: "Can I tune the girls' cars?",
-        a: `Yes, like any vehicle. Open the tuning panel (<kbd>\`</kbd>), pick the Fiesta or the Corsa on the Vehicles tab, and every one of its own groups is there: the engine,
+        a: `Yes, like any vehicle. Open the tuning panel (<kbd>\`</kbd>), pick the Finch or the Griffin on the Vehicles tab, and every one of its own groups is there: the engine,
           the gearbox, the springs and grip, the sound, the shake. "Their cars" in the Tune tab sets how often the girls take them out, how they drive and how much they mind
-          you borrowing them, and "Fiesta riders" and "Corsa riders" how the girls ride in them.`,
+          you borrowing them, and "Finch riders" and "Griffin riders" how the girls ride in them.`,
       },
       {
         q: 'Is there a console?',
@@ -2083,31 +2092,31 @@ export const FAQ_SECTIONS = [
   },
 ];
 
-// A note for every vehicle, keyed by spec id (QUAD_SPECS, EXTRA_SPECS and the tractor, UTV and Land Rover specs). The facts strip
+// A note for every vehicle, keyed by spec id (QUAD_SPECS, EXTRA_SPECS and the tractor, Yak and Moorland specs). The facts strip
 // (engine, gearbox, tank, reverse) is generated from the spec; this is what a spec can't say.
 export const VEHICLE_NOTES = {
   red: {
-    blurb: 'The Kestrel Farm 300, a 1990s Honda-style farm quad: soft, steady and the smoothest of the lot, with a low warm idle, black wing flares, racks with tie-down hooks front and back, a pillion seat and a tow hitch on the back.',
+    blurb: 'The Kestrel Farm 300, a 1990s-style farm quad: soft, steady and the smoothest of the lot, with a low warm idle, black wing flares, racks with tie-down hooks front and back, a pillion seat and a tow hitch on the back.',
     tips: ['Starts every game in 2WD: G for 4WD.', 'Reverse wants the bars turned as you press B.', 'Has an OIL lamp on its little dash.'],
   },
   blue: {
-    blurb: 'The Tamura Bruin 660, a Grizzly-style farm quad: idles fast and keen, revs harder and higher, and has an LCD dash with fuel and temperature bars, a steel bumper, flat racks and a switch pod on the left bar.',
+    blurb: 'The Tamura Bruin 660, a big farm quad: idles fast and keen, revs harder and higher, and has an LCD dash with fuel and temperature bars, a steel bumper, flat racks and a switch pod on the left bar.',
     tips: ['Floods if you leave the choke on once it’s warming, so ease it off early.', 'U is the diff lock, which pulls hardest in the mud.'],
   },
   yellow: {
-    blurb: 'The Tamura Hornet 200, a Blaster-style two-stroke sport quad: the wheels are the edge of it, the plastics are small and the engine is out in the open. Weak low down, then comes on hard around 6,000 rpm and revs past 10,000, trailing blue smoke.',
+    blurb: 'The Tamura Hornet 200, a two-stroke sport quad: the wheels are the edge of it, the plastics are small and the engine is out in the open. Weak low down, then comes on hard around 6,000 rpm and revs past 10,000, trailing blue smoke.',
     tips: ['Loads up its plug if left idling: blip the throttle.', 'Pre-mix only.', 'Room for one on a slim pad at the back.', 'The choke knob and the fuel tap are on the left of the carb: stop to reach the choke.', 'Only a key on the bars: no lamps, no gauges.', 'P is a plain lights switch (the left bar); the pull-start is O.'],
   },
   green: {
-    blurb: 'The Kawasaki-style workhorse: older, heavier and slower, with a big lazy four-stroke that idles low and lumpy and pulls hard low down.',
+    blurb: 'The Ridgeback RB300, the workhorse: older, heavier and slower, with a big lazy four-stroke that idles low and lumpy and pulls hard low down.',
     tips: ['Has the winch: X to take the hook.', 'Takes an age to warm up and wants plenty of choke.', 'The choke slides on the switch housing on the left bar.', 'Always four-wheel drive.'],
   },
   orange: {
-    blurb: 'The Viper Adder 250, an LT250R-style two-stroke race quad: a triangle of a quad on a blue frame with big flat side panels and a wide duck-tail, lighter and lower than the yellow. It revs to 11,500 and smokes like a chimney.',
+    blurb: 'The Viper Adder 250, a two-stroke race quad: a triangle of a quad on a blue frame with big flat side panels and a wide duck-tail, lighter and lower than the Hornet. It revs to 11,500 and smokes like a chimney.',
     tips: ['Single race seat: nobody on the back.', 'Water-cooled, so it stays cooler, unless the hose is weeping.', 'The pod on the left bar has the lights rocker (P), the choke lever and the kill switch.', 'The pull-start is on O.'],
   },
   kids: {
-    blurb: 'The Viper Asp 50, an LT50-style 50cc kids’ quad, two thirds the size of the others and bulky for it, in faded pink with a blue seat. Jess insists on riding it anyway.',
+    blurb: 'The Viper Asp 50, a 50cc kids’ quad, two thirds the size of the others and bulky for it, in faded pink with a blue seat. Jess insists on riding it anyway.',
     tips: ['One seat, no reverse.', 'Pull-start (O) as well as the key.', 'No lights at all: the key, the choke knob on the carb and the fuel tap are all it has.'],
   },
   moto: {
@@ -2123,27 +2132,27 @@ export const VEHICLE_NOTES = {
     tips: ['Fuel injected: no choke and no fuel tap, even on a frosty morning.', 'Full tank and a bit more power than the old farm quads.', 'The dealer’s sticker is on the left rear fender.'],
   },
   tractor: {
-    blurb: 'An old red-and-grey Hartley 35 (a Massey-Ferguson-35-style tractor) on red diesel: heavy, slow and strong, with three gears, a hand throttle and a lot of hours.',
+    blurb: 'An old red-and-grey Hartley 35 on red diesel: heavy, slow and strong, with three gears, a hand throttle and a lot of hours.',
     tips: ['Wait for the GLOW lamp before cranking.', 'T swings the back door out.', 'The stop knob (O) stops it, not the key.', 'P switches its lights; the tail lamps follow and brighten on the brake.', 'Pulls the bale trailer and the tow chain.'],
   },
   utv: {
-    blurb: 'A dark green Ridgeback Yak 4010, a Mule-style side-by-side on red diesel: a bench seat with proper buckled belts, a roll cage with door nets and a tipping bed.',
+    blurb: 'A dark green Ridgeback Yak 4010, a side-by-side on red diesel: a bench seat with proper buckled belts, a roll cage with door nets and a tipping bed.',
     tips: ['Reverse is the dash lever: B when stopped.', 'T tips the bed.', 'Belts: ; clicks the buckle. The door nets swing out when it is stopped.', 'The key stops it, unlike the tractor.'],
   },
   landrover: {
-    blurb: 'An old Series III 88-inch pick-up in Bronze Green with a white roof: a 2.25 litre petrol four with a lot of miles on it, doors that swing open and a drop tailgate.',
+    blurb: 'The Moorland Tor, an old 88-inch pick-up in Bronze Green with a white roof: a 2.25 litre petrol four with a lot of miles on it, doors that swing open and a drop tailgate.',
     tips: ['First and second crunch on the move: nearly stop first.', 'A starting handle for a flat battery.', 'T drops the tailgate.', '] and [ work the hand throttle.'],
   },
   landrover200: {
-    blurb: 'An early-90s Defender 90 station wagon in Atlantic Blue with a white roof, the 200TDi: a rattly 2.5 litre turbo diesel, a back door that swings out on T with the spare on it, and a moulded dash with a radio.',
+    blurb: 'The Moorland Crag, an early-90s station wagon in Atlantic Blue with a white roof: a rattly 2.5 litre turbo diesel, a back door that swings out on T with the spare on it, and a moulded dash with a radio.',
     tips: ['Wait for the GLOW lamp before cranking.', 'Every gear has synchromesh: no crunching.', 'The belt lamp flashes and it bongs until you do your belt up.', 'Listen for the turbo whistling as it pulls, and chattering when you lift off.'],
   },
   fiesta: {
-    blurb: "Amy's car: a late-70s Mk1 Fiesta in 70s brown with a brown vinyl and check cloth inside, a 1.1 with a choke and four gears, clean, careful and on L plates. Its doors swing open and its hatch lifts on T. It lives on the tarmac by the Dutch barn.",
+    blurb: "Amy's car, the Thorne Finch: a late-70s hatchback in 70s brown with a brown vinyl and check cloth inside, a 1.1 with a choke and four gears, clean, careful and on L plates. Its doors swing open and its hatch lifts on T. It lives on the tarmac by the Dutch barn.",
     tips: ['A cold start wants the choke (Q).', 'T lifts the hatch.', 'Front-wheel drive on road tyres: stay on the road and the yard if it is wet.', 'Take it without Amy and she will not be pleased.'],
   },
   corsa: {
-    blurb: "Jess's car: a 1993 Corsa, red gone pink on the roof and bonnet, a grey primer wing, a wheel trim missing and a big exhaust. A 1.2 with fuel injection and five gears that sounds much faster than it is. Its doors swing open and its hatch lifts on T.",
+    blurb: "Jess's car, the Ashby Griffin: a 1990s hatchback, red gone pink on the roof and bonnet, a grey primer wing, a wheel trim missing and a big exhaust. A 1.2 with fuel injection and five gears that sounds much faster than it is. Its doors swing open and its hatch lifts on T.",
     tips: ['T lifts the hatch.', 'No choke: the injection sorts out a cold start itself.', 'There is rarely much petrol in it.', 'Jess minds less if you borrow it, as long as you do not dawdle.'],
   },
 };

@@ -549,7 +549,7 @@ export class Game {
     registerTuning('2WD and 4WD', DEFAULT_DRIVE_PARAMS, DRIVE_PARAM_RANGES);
     this.fourWdState = new Map(); // companion -> { quad: the switched quad she's driving or null, watch }
     registerTuning('Headlights', HEADLIGHT_PARAMS, HEADLIGHT_PARAM_RANGES);
-    registerTuning('UTV lights', LIGHT_SWITCH_PARAMS, LIGHT_SWITCH_PARAM_RANGES);
+    registerTuning('Yak lights', LIGHT_SWITCH_PARAMS, LIGHT_SWITCH_PARAM_RANGES);
     registerTuning('Indicators', INDICATOR_PARAMS, INDICATOR_PARAM_RANGES);
     registerTuning('Seat belts', SEAT_BELT_PARAMS, SEAT_BELT_PARAM_RANGES);
     registerTuning('Two-wheeler lean', DEFAULT_BIKE_PARAMS, BIKE_PARAM_RANGES);
@@ -863,9 +863,9 @@ export class Game {
     this.tractorMount = this.tractorUnit ? new TractorMount(this.tractorUnit.quad, (x, z) => this.world.heightAt(x, z)) : null;
     // The UTV's tipping bed, and the girls in its seats and bed (vehicle/utvBed.js, npc/utvRide.js, vehicle/utvMount.js).
     this.utvBed = new UtvBed();
-    registerTuning('UTV bed', this.utvBed.p, UTV_BED_PARAM_RANGES);
+    registerTuning('Yak bed', this.utvBed.p, UTV_BED_PARAM_RANGES);
     this.utvRide = new UtvRide(undefined, createRandom(this.seed ^ 0x07c9));
-    registerTuning('UTV riders', this.utvRide.p, UTV_RIDE_PARAM_RANGES);
+    registerTuning('Yak riders', this.utvRide.p, UTV_RIDE_PARAM_RANGES);
     this.utvMount = this.utvUnit ? new UtvMount(this.utvUnit.quad, (x, z) => this.world.heightAt(x, z)) : null;
     if (this.utvUnit) this.addUtvCargo(this.utvUnit.quad);
     this.utvPetrolSaid = false; // the girls have remarked on it running badly on petrol
@@ -877,19 +877,19 @@ export class Game {
       const rear = l.car ? CARS[l.kind].rear : series ? {} : LANDY_REAR_SEATS;
       const seed = { landy: 0x1a4d, defender: 0x1a5d, fiesta: 0x1a6d, corsa: 0x1a7d }[l.kind];
       l.ride = new UtvRide({ ...DEFAULT_UTV_RIDE_PARAMS, jessBedChance: 0, amyBedChance: 0, jessBedLoseChance: 0, amyBedLoseChance: 0 }, createRandom(this.seed ^ seed), { rear: Object.keys(rear), front: l.car ? ['left'] : undefined });
-      if (l.kind === 'landy') registerTuning('Land Rover riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
-      else if (l.kind === 'defender') registerTuning('200TDi riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
-      else if (l.kind === 'fiesta') registerTuning('Fiesta riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
-      else registerTuning('Corsa riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
+      if (l.kind === 'landy') registerTuning('Tor riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
+      else if (l.kind === 'defender') registerTuning('Crag riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
+      else if (l.kind === 'fiesta') registerTuning('Finch riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
+      else registerTuning('Griffin riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
       l.mount = l.unit ? new UtvMount(l.unit.quad, (x, z) => this.world.heightAt(x, z), l.car ? CAR_STAND : { ...LANDY_STAND, ...LANDY_REAR_STAND }, rear) : null;
       if (l.unit) l.unit.quad.tipHold = { left: 0, driver: 0 }; // seconds a backrest stays tipped after you climb past it
       if (l.unit && series) this.addLandyCargo(l);
-      else if (l.unit && l.kind === 'corsa') registerTuning('Corsa hatch', (l.unit.quad.tailgate ??= new Tailgate()).p, TAILGATE_PARAM_RANGES); // T lifts its hatch
-      else if (l.unit && l.kind === 'fiesta') registerTuning('Fiesta hatch', (l.unit.quad.tailgate ??= new Tailgate()).p, TAILGATE_PARAM_RANGES); // T lifts its hatch
-      else if (l.unit && l.kind === 'defender') registerTuning('200TDi back door', (l.unit.quad.tailgate ??= new Tailgate()).p, TAILGATE_PARAM_RANGES); // T swings its back door out
+      else if (l.unit && l.kind === 'corsa') registerTuning('Griffin hatch', (l.unit.quad.tailgate ??= new Tailgate()).p, TAILGATE_PARAM_RANGES); // T lifts its hatch
+      else if (l.unit && l.kind === 'fiesta') registerTuning('Finch hatch', (l.unit.quad.tailgate ??= new Tailgate()).p, TAILGATE_PARAM_RANGES); // T lifts its hatch
+      else if (l.unit && l.kind === 'defender') registerTuning('Crag back door', (l.unit.quad.tailgate ??= new Tailgate()).p, TAILGATE_PARAM_RANGES); // T swings its back door out
     }
     this.rearAccess = { ...DEFAULT_REAR_ACCESS_PARAMS };
-    registerTuning('200TDi back seats', this.rearAccess, REAR_ACCESS_PARAM_RANGES);
+    registerTuning('Crag back seats', this.rearAccess, REAR_ACCESS_PARAM_RANGES);
     // The little tipping trailer behind any quad with a rack (or the tractor), and the girl who rides in it (vehicle/tipTrailer.js, npc/trailerRide.js).
     this.tipTrailer = new TipTrailer({ scene: this.scene, world: this.world });
     // The trailers' wear and the mud on them, settable like a vehicle's.
@@ -1116,7 +1116,7 @@ export class Game {
             if (unit === winch.unit) return { text: 'X put the winch hook back' };
             return `Hook the winch cable on the ${unit.label}${quad.bog.stuck ? ' (it\'s stuck)' : ''}   ·   X put it back`;
           }
-          if (winch?.state === 'hooked' && winch.target === quad) return 'Unhook the winch   ·   hold X by the green quad to wind in';
+          if (winch?.state === 'hooked' && winch.target === quad) return 'Unhook the winch   ·   hold X by the RB300 to wind in';
           const chain = this.chain;
           if (chain?.state === 'carried') {
             if (unit === this.tractorUnit) return { text: 'X put the tow chain back' };
@@ -1610,10 +1610,10 @@ export class Game {
     registerTuning('Tractor go', this.tractorGo.p, TRACTORGO_PARAM_RANGES);
     registerTuning('L plates', this.lPlates.p, LPLATE_PARAM_RANGES);
     registerTuning('Tractor go drive', this.tractorDrive, TRACTOR_GO_DRIVE_RANGES);
-    registerTuning('UTV go drive', this.utvDrive, TRACTOR_GO_DRIVE_RANGES);
-    registerTuning('Land Rover go drive', this.landyDrive, TRACTOR_GO_DRIVE_RANGES);
+    registerTuning('Yak go drive', this.utvDrive, TRACTOR_GO_DRIVE_RANGES);
+    registerTuning('Tor go drive', this.landyDrive, TRACTOR_GO_DRIVE_RANGES);
     registerTuning('Their cars', this.carGo.p, CAR_GO_PARAM_RANGES);
-    registerTuning('Land Rover go handle', this.crankParams, CRANK_ATTEMPT_PARAM_RANGES);
+    registerTuning('Tor go handle', this.crankParams, CRANK_ATTEMPT_PARAM_RANGES);
     registerTuning('Girl pushing a start', this.pushParams, PUSH_PARAM_RANGES);
     registerTuning('Keeping it alive', this.keepParams, KEEPALIVE_PARAM_RANGES);
     registerTuning('Tractor go start', this.tractorStartParams, TRACTOR_START_PARAM_RANGES);
@@ -2952,15 +2952,15 @@ export class Game {
 
   /** The UTV's bed as somewhere to stand a can, the toolbox, the leads or the oil bottle (vehicle/cargoHold.js). They tip out with the bed. */
   addUtvCargo(quad) {
-    this.utvCargo = this.addBedCargo(quad, { name: "UTV's bed", blocked: () => this.utvBed.tip > 0.02 ? 'The bed is up' : null, yawFor: (item) => BED_CARGO_YAWS[item.model.name] ?? BED_CARGO_YAW });
-    registerTuning('UTV load', this.utvCargo.p, CARGO_PARAM_RANGES);
+    this.utvCargo = this.addBedCargo(quad, { name: "Yak's bed", blocked: () => this.utvBed.tip > 0.02 ? 'The bed is up' : null, yawFor: (item) => BED_CARGO_YAWS[item.model.name] ?? BED_CARGO_YAW });
+    registerTuning('Yak load', this.utvCargo.p, CARGO_PARAM_RANGES);
   }
 
   /** The Series' tub: the same standing and loading as the UTV's bed, a tailgate dropped or not (vehicle/tailgate.js). */
   addLandyCargo(l) {
-    l.cargo = this.addBedCargo(l.unit.quad, { name: "Land Rover's tub", blocked: () => null, yawFor: () => BED_CARGO_YAW, host: l.unit.quad.model });
-    registerTuning('Land Rover load', l.cargo.p, CARGO_PARAM_RANGES);
-    registerTuning('Land Rover tailgate', (l.unit.quad.tailgate ??= new Tailgate()).p, TAILGATE_PARAM_RANGES);
+    l.cargo = this.addBedCargo(l.unit.quad, { name: "Tor's tub", blocked: () => null, yawFor: () => BED_CARGO_YAW, host: l.unit.quad.model });
+    registerTuning('Tor load', l.cargo.p, CARGO_PARAM_RANGES);
+    registerTuning('Tor tailgate', (l.unit.quad.tailgate ??= new Tailgate()).p, TAILGATE_PARAM_RANGES);
   }
 
   /** A row of cargo spots (`bedCargo0`...) and a `bedProxy` box on a model to look at: what you hold goes in, unless `blocked` says why not. */
@@ -3430,14 +3430,14 @@ export class Game {
   utvWheelOption(c) {
     const mount = this.utvMount;
     const children = [];
-    if (c.fsm.is('onTrailer') && c.trailer === mount) children.push({ label: 'Get out of the UTV', run: () => (this.utvRide.dismiss(c.character.id), c.leaveTrailer()) });
+    if (c.fsm.is('onTrailer') && c.trailer === mount) children.push({ label: 'Get out of the Yak', run: () => (this.utvRide.dismiss(c.character.id), c.leaveTrailer()) });
     else if (c.fsm.is('idle') && this.utvFree()) {
-      if (mount.freeSlot(c.root.position)) children.push({ label: 'Get in the UTV', run: () => this.askIntoUtv(c, false) });
+      if (mount.freeSlot(c.root.position)) children.push({ label: 'Get in the Yak', run: () => this.askIntoUtv(c, false) });
       if (this.goFree('utv') && c.canDrive(this.utvUnit.quad)) children.push({ label: 'Drive it', run: () => this.askDriveVehicle(c, 'utv') });
       if (this.canAskStart(c, 'utv')) children.push({ label: 'Start it', run: () => c.requestStart(this.utvUnit.quad) });
       if (!mount.bedBusy && this.utvBed.tip < 0.02) children.push({ label: 'Ride in the bed', run: () => this.askIntoUtv(c, true) });
     }
-    return { label: 'UTV', color: this.utvUnit.spec.bodyColor, children };
+    return { label: 'Yak', color: this.utvUnit.spec.bodyColor, children };
   }
 
   /** Nobody is driving the UTV and it is standing still. */
@@ -11065,7 +11065,7 @@ export class Game {
     } else if (this.coolantBottle.held) {
       this.hud.setStatus('Coolant bottle\nY at a water-cooled engine that is off and cool to top it up; keep holding when it is full to flush a stuck thermostat\nG to put it down');
     } else if (this.antiGelBottle.held) {
-      this.hud.setStatus('Diesel anti-gel\nY at a diesel (tractor, UTV, Land Rover) to treat its tank, so it will not wax in a hard frost; it thaws what has waxed\nG to put it down');
+      this.hud.setStatus('Diesel anti-gel\nY at a diesel (tractor, Yak, Moorland) to treat its tank, so it will not wax in a hard frost; it thaws what has waxed\nG to put it down');
     } else if (this.oilBottle.held) {
       this.hud.setStatus('Oil bottle\nY at a four-stroke to top up its oil, near it\nG to put it down');
     } else if (this.toolbox.held) {

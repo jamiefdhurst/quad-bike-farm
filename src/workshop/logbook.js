@@ -2,6 +2,8 @@
 // Green, plug black."). She writes what she really saw (her walk-round, a plug pulled in front of her, a bench job), so unlike Jess it's true.
 // Pure logic, no Three.js or DOM. The notebook itself and the page you read are in notebook.js.
 
+import { modelOnly } from '../vehicle/names.js';
+
 export const DEFAULT_LOGBOOK_PARAMS = {
   maxEntries: 40, // the page is full after this many: the oldest entries are dropped
   repeatSeconds: 120, // she won't write the same thing about the same quad again inside this long
@@ -84,9 +86,9 @@ const JOB_TEXT = {
   chargeOff: 'battery charged and put back',
 };
 
-/** "Blue quad" is just "Blue" in a notebook; "Mini moto" stays as it is. */
+/** "Kestrel Farm 300" is just "Farm 300" in a notebook; "Mini moto" and "Tractor" stay as they are. */
 export function shortName(name) {
-  return name.replace(/ quad$/, '');
+  return modelOnly(name);
 }
 
 /**

@@ -9,7 +9,7 @@ export const CONTROLS = [
       `<kbd>E</kbd> interact with what you're looking at (at the hooks inside the barn door: put your helmet or goggles on, or hang them up)`,
       `<kbd>6</kbd> wave (on foot or on a quad): a girl close by waves back, one further off who is free comes over, and one who is driving pulls up and waits a bit. It is how to call her over an engine`,
       `<kbd>5</kbd> raise the camera (on foot or on a quad): the girls in the picture pose, pull a face or tell you to put it away, and the shot is pinned on the corkboard in the barn (<kbd>E</kbd> at the board for a closer look)`,
-      `At a quad: <kbd>K</kbd> <kbd>R</kbd> <kbd>Q</kbd> <kbd>Z</kbd> <kbd>F</kbd> work its engine, <kbd>Y</kbd> pull the dipstick on a four-stroke (hold it by the oil bottle to top up, or away from it to let out too much), with the coolant bottle in your hands <kbd>Y</kbd> tops up a stopped, cool radiator, with the diesel anti-gel <kbd>Y</kbd> treats a diesel's tank, <kbd>B</kbd> sit on the back, hold <kbd>V</kbd> to push it (the yellow, orange and kids' quads have no reverse)`,
+      `At a quad: <kbd>K</kbd> <kbd>R</kbd> <kbd>Q</kbd> <kbd>Z</kbd> <kbd>F</kbd> work its engine, <kbd>Y</kbd> pull the dipstick on a four-stroke (hold it by the oil bottle to top up, or away from it to let out too much), with the coolant bottle in your hands <kbd>Y</kbd> tops up a stopped, cool radiator, with the diesel anti-gel <kbd>Y</kbd> treats a diesel's tank, <kbd>B</kbd> sit on the back, hold <kbd>V</kbd> to push it (the Hornet, the Adder and the kids' quad have no reverse)`,
     ],
   },
   {
@@ -21,11 +21,11 @@ export const CONTROLS = [
   {
     title: 'On the quad',
     lines: [
-      `<kbd>K</kbd> ignition, hold <kbd>R</kbd> to crank, <kbd>O</kbd> pull-start (the two-strokes: hold, then let go), <kbd>P</kbd> lights on the red, blue and green: off, dipped, main beam (the switch pod on the left bar), and on the yellow and orange: on or off (a rocker on the left bar)`,
+      `<kbd>K</kbd> ignition, hold <kbd>R</kbd> to crank, <kbd>O</kbd> pull-start (the two-strokes: hold, then let go), <kbd>P</kbd> lights on the Farm 300, Bruin and RB300: off, dipped, main beam (the switch pod on the left bar), and on the Hornet and the Adder: on or off (a rocker on the left bar)`,
       `<kbd>Q</kbd> more choke, <kbd>Z</kbd> less, <kbd>F</kbd> fuel tap. Each quad's choke, tap and reverse are in a different place: look down for them, and some need you stopped or a hand off the bars`,
-      `Red, green and yellow have a clutch: hold <kbd>Shift</kbd> to change gear with <kbd>1</kbd> to <kbd>4</kbd>, <kbd>B</kbd> reverse (red: turn the bars as you press it; green: stopped), <kbd>0</kbd> neutral`,
-      `<kbd>W</kbd> throttle and <kbd>S</kbd> brake (tap for a little, hold for the lot), and backwards once reverse is on (blue and loan: hold it and press <kbd>B</kbd>; red, green: <kbd>B</kbd> with the clutch in), <kbd>A</kbd><kbd>D</kbd> steer`,
-      `Red and blue: <kbd>G</kbd> 2WD or 4WD (4WD for the mud; the rocker on the bars), blue: <kbd>U</kbd> diff lock (the UTV and Land Rover have both too)`,
+      `Farm 300, RB300 and Hornet have a clutch: hold <kbd>Shift</kbd> to change gear with <kbd>1</kbd> to <kbd>4</kbd>, <kbd>B</kbd> reverse (Farm 300: turn the bars as you press it; RB300: stopped), <kbd>0</kbd> neutral`,
+      `<kbd>W</kbd> throttle and <kbd>S</kbd> brake (tap for a little, hold for the lot), and backwards once reverse is on (Bruin and loan quad: hold it and press <kbd>B</kbd>; Farm 300, RB300: <kbd>B</kbd> with the clutch in), <kbd>A</kbd><kbd>D</kbd> steer`,
+      `Farm 300 and Bruin: <kbd>G</kbd> 2WD or 4WD (4WD for the mud; the rocker on the bars), blue: <kbd>U</kbd> diff lock (the Yak and Moorland have both too)`,
       `<kbd>Space</kbd> parking brake, <kbd>T</kbd> right it if it tips, <kbd>E</kbd> get off`,
       `Hold <kbd>L</kbd> for the horn: the girls beep back`,
       `<kbd>X</kbd> wipe mud off your view on an open vehicle (the first wipe smears it, the second clears it)`,
@@ -48,7 +48,7 @@ export const CONTROLS = [
     lines: [
       `On foot by the back of the bale trailer, <kbd>T</kbd> folds the ramps down or up (or from the tractor's seat, stopped). The bales are all at the front, so there is a clear bed`,
       `Switch a quad off, stand within reach, then hold <kbd>X</kbd> and the trailer's winch drags it to the ramp and up. Or line it up straight at the foot of the ramp and hold <kbd>V</kbd> to push it up (let go and it rolls back)`,
-      `<kbd>E</kbd> on the quad once it is aboard to strap it down or undo the strap; unstrapped it slides about when you brake or pull away hard. <kbd>Shift</kbd> + hold <kbd>X</kbd> lowers an unstrapped one back down. Not the tractor, the UTV or the Land Rovers`,
+      `<kbd>E</kbd> on the quad once it is aboard to strap it down or undo the strap; unstrapped it slides about when you brake or pull away hard. <kbd>Shift</kbd> + hold <kbd>X</kbd> lowers an unstrapped one back down. Not the tractor, the Yak or the Moorlands`,
     ],
   },
   {
@@ -66,7 +66,7 @@ export const CONTROLS = [
     ],
   },
   {
-    title: 'The UTV',
+    title: 'The Yak',
     lines: [
       `<kbd>K</kbd> key (wait for the GLOW lamp to go out), hold <kbd>R</kbd> to crank; the key stops it again. It is a diesel: red diesel only`,
       `<kbd>W</kbd> throttle, <kbd>S</kbd> brake, <kbd>A</kbd><kbd>D</kbd> steer. Stopped, <kbd>B</kbd> moves the console's lever from F to R, then <kbd>S</kbd> backs up`,
@@ -75,15 +75,15 @@ export const CONTROLS = [
     ],
   },
   {
-    title: 'The Land Rover (the Series III)',
+    title: 'The Moorland (the Tor)',
     lines: [
       `<kbd>K</kbd> key, hold <kbd>R</kbd> to start. Battery flat? Stand at the front: <kbd>1</kbd> thumb round the handle (it can kick back) or <kbd>2</kbd> thumb alongside your fingers, then hold <kbd>P</kbd> and let go to swing the starting handle`,
-      `Hold <kbd>Shift</kbd> for the clutch, <kbd>1</kbd>-<kbd>4</kbd> gears, <kbd>B</kbd> reverse (then <kbd>S</kbd> backs up), <kbd>0</kbd> neutral: first and second crunch on the move unless you stop or double-declutch. <kbd>Q</kbd><kbd>Z</kbd> choke, <kbd>]</kbd><kbd>[</kbd> hand throttle out and in, <kbd>G</kbd> 4WD, <kbd>U</kbd> diff lock, <kbd>P</kbd> lights (off, dipped, main beam: a blue lamp for the main beam), <kbd>,</kbd> <kbd>.</kbd> <kbd>=</kbd> left, right and hazards, <kbd>Space</kbd> handbrake, <kbd>;</kbd> seat belt (optional: an old Land Rover has no lamp or bong)`,
+      `Hold <kbd>Shift</kbd> for the clutch, <kbd>1</kbd>-<kbd>4</kbd> gears, <kbd>B</kbd> reverse (then <kbd>S</kbd> backs up), <kbd>0</kbd> neutral: first and second crunch on the move unless you stop or double-declutch. <kbd>Q</kbd><kbd>Z</kbd> choke, <kbd>]</kbd><kbd>[</kbd> hand throttle out and in, <kbd>G</kbd> 4WD, <kbd>U</kbd> diff lock, <kbd>P</kbd> lights (off, dipped, main beam: a blue lamp for the main beam), <kbd>,</kbd> <kbd>.</kbd> <kbd>=</kbd> left, right and hazards, <kbd>Space</kbd> handbrake, <kbd>;</kbd> seat belt (optional: an old Moorland has no lamp or bong)`,
       `<kbd>T</kbd> drops the tailgate or raises it (stopped, from the seat or beside the tub). <kbd>E</kbd> at the tub with a jerry can or the toolbox in your hands stands it in the tub. The doors swing out when you get in or out`,
     ],
   },
   {
-    title: 'The 200TDi',
+    title: 'The Crag',
     lines: [
       `<kbd>K</kbd> key (wait for the GLOW lamp to go out), hold <kbd>R</kbd> to crank; the key stops it. A diesel: red diesel only. No choke, hand throttle or starting handle`,
       `<kbd>T</kbd> swings the back door out on its hinge or shuts it (stopped, from the seat or beside it). The front doors swing out when you get in or out`,
@@ -91,16 +91,16 @@ export const CONTROLS = [
     ],
   },
   {
-    title: 'Amy\'s Fiesta',
+    title: 'Amy\'s Finch',
     lines: [
       `<kbd>K</kbd> key, hold <kbd>R</kbd> to start, <kbd>Q</kbd> <kbd>Z</kbd> choke, hold <kbd>Shift</kbd> for the clutch, <kbd>1</kbd>-<kbd>4</kbd> gears, <kbd>B</kbd> reverse, <kbd>Space</kbd> handbrake. <kbd>T</kbd> lifts the hatch or shuts it (stopped, from the seat or beside it). The doors swing out when you get in or out`,
     ],
   },
   {
-    title: 'The radio (the Land Rovers and the girls\' cars)',
+    title: 'The radio (the Moorlands and the girls\' cars)',
     lines: [
       `<kbd>I</kbd> radio on and off, <kbd>Shift</kbd>+<kbd>I</kbd> louder, <kbd>Alt</kbd>+<kbd>I</kbd> quieter. It needs the key on, and goes quiet while the starter turns`,
-      `Each has a set of its own: the Series' picks up the engine and drifts off the station, Amy's Fiesta has a cassette radio, Jess's Corsa a loud one with a lot of bass. Jess turns it up, Amy turns it off`,
+      `Each has a set of its own: the Series' picks up the engine and drifts off the station, Amy's Finch has a cassette radio, Jess's Griffin a loud one with a lot of bass. Jess turns it up, Amy turns it off`,
     ],
   },
   {
@@ -108,9 +108,9 @@ export const CONTROLS = [
     lines: [
       `<kbd>E</kbd> pick up a jerry can, hold <kbd>E</kbd> at a quad to pour or at the tank to refill, <kbd>G</kbd> put it down`,
       `Hose: <kbd>E</kbd> pick up, hold <kbd>E</kbd> to wash. Toolbox: <kbd>E</kbd> pick up, <kbd>E</kbd> on a quad to tinker`,
-      `Green quad's winch: <kbd>X</kbd> take the hook, <kbd>E</kbd> on a quad to hook it, hold <kbd>X</kbd> to wind in`,
+      `RB300's winch: <kbd>X</kbd> take the hook, <kbd>E</kbd> on a quad to hook it, hold <kbd>X</kbd> to wind in`,
       `Tractor's tow chain: <kbd>X</kbd> looking at the tractor to take it, <kbd>E</kbd> on a quad to hook it, then back the tractor up and drive off`,
-      `Tow rope on the red and blue quads' racks: <kbd>X</kbd> looking at one to take it, <kbd>E</kbd> on a dead quad to hook it, ride off gently; ask a girl on the wheel to steer it`,
+      `Tow rope on the Farm 300's and Bruin's racks: <kbd>X</kbd> looking at one to take it, <kbd>E</kbd> on a dead quad to hook it, ride off gently; ask a girl on the wheel to steer it`,
       `Hayloft ladder, workbench and Amy's logbook in the barn: <kbd>E</kbd>. On the bench menu <kbd>S</kbd> starts a full service`,
       `The bell by the barn doors: <kbd>E</kbd> to ring it and call the girls back`,
       `The calendar on the barn's back wall: <kbd>E</kbd> in the evening, with the girls back, to call it a day and go on to the next`,

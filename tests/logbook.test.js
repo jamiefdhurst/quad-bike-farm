@@ -68,9 +68,10 @@ describe('Logbook', () => {
 
 describe('names and times', () => {
   it('shortens quad names for the notebook', () => {
-    expect(shortName('Blue quad')).toBe('Blue');
-    expect(shortName("Kids' quad")).toBe("Kids'");
-    expect(shortName('Mini moto')).toBe('Mini moto');
+    expect(shortName('Tamura Bruin 660')).toBe('Bruin 660');
+    expect(shortName('Kestrel Farm 300')).toBe('Farm 300');
+    expect(shortName('Hartley 35')).toBe('Hartley 35');
+    expect(shortName('Tractor')).toBe('Tractor'); // no maker to drop
   });
 
   it('formats the clock and an entry', () => {

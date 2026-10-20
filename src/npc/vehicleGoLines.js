@@ -35,21 +35,21 @@ export const AMY_VEHICLEGO_LINES = {
 };
 
 export const JESS_VEHICLEGO_LINES = {
-  utvGoAsk: ['Right, I am having the UTV.', 'Nobody is using the UTV. Mine now.', 'Move aside, I am driving the big green one.'],
+  utvGoAsk: ['Right, I am having the Yak.', 'Nobody is using the Yak. Mine now.', 'Move aside, I am driving the Yak.'],
   utvGoSetOff: ['It has a bed! I can carry things! I have nothing to carry!', 'No gears, no clutch, I am a natural.', 'Hold on, here I go.'],
-  utvGoDone: ['Best thing ever. Again!', 'I am a UTV driver now. Call me that.', 'I only clipped the one thing. Maybe two.'],
+  utvGoDone: ['Best thing ever. Again!', 'I am a Yak driver now. Call me that.', 'I only clipped the one thing. Maybe two.'],
   utvGoWatch: ['Show off.', "Beginner's luck, that is all it is.", 'Oh, come on! She is good at it? Since when?'],
-  landyGoAsk: ['Right, I am having the Land Rover.', 'Nobody is using the Landy. Mine now.', 'Move aside, I am driving the old one.'],
+  landyGoAsk: ['Right, I am having the Tor.', 'Nobody is using the Tor. Mine now.', 'Move aside, I am driving the old one.'],
   landyGoSetOff: ['Where is the first gear? Is that first gear?', 'It is so slow to turn. Why is it so slow to turn?', 'This is brilliant, and I cannot feel the steering at all.'],
-  landyGoDone: ['That was the best thing ever. Again!', 'I am a Land Rover driver now. Call me that.', 'I only ground it a bit.'],
+  landyGoDone: ['That was the best thing ever. Again!', 'I am a Tor driver now. Call me that.', 'I only ground it a bit.'],
   landyGoWatch: ['Show off.', "Beginner's luck, that is all it is.", 'Oh, come on! She is good at it? Since when?'],
   landyGoSwing: ['I know how to do the handle. Thumb round it, obviously.', 'Easy. I swing it hard and it goes.', 'Flat battery? Pah. Handle time.'],
   landyGoKick: ['Ow! It bit me! It actually bit me!', 'My thumb! My thumb is broken! It is not broken. It really hurts.', 'Right. Thumb alongside. I knew that.'],
   landyGoNoLuck: ['It is dead. I did try. It is dead.', 'Nothing. Not even a cough.'],
   landyGoCrunch: ['That was not me, that was the gearbox.', 'It is crunching! Is it meant to crunch?', 'Sorry, sorry, sorry. Gearbox!'],
-  defenderGoAsk: ['Right, I am having the 200TDi.', 'Nobody is using the big blue one. Mine now.', 'Move aside, I am driving the diesel.'],
+  defenderGoAsk: ['Right, I am having the Crag.', 'Nobody is using the Crag. Mine now.', 'Move aside, I am driving the diesel.'],
   defenderGoSetOff: ['It sounds like a tractor and I love it.', 'Five gears! I am going to use all of them.', 'No crunching! I have no excuse this time.'],
-  defenderGoDone: ['That was brilliant. It never even crunched.', 'I am a 200TDi driver now. Call me that.', 'I put the belt on, so the bong left me alone. Mostly.'],
+  defenderGoDone: ['That was brilliant. It never even crunched.', 'I am a Crag driver now. Call me that.', 'I put the belt on, so the bong left me alone. Mostly.'],
   defenderGoWatch: ['Show off.', 'Oh, come on! She is good at it? Since when?', 'It is a lorry. You are driving a lorry.'],
   defenderBong: ['Bong, bong, bong. I get it, I get it.', 'It is only a noise. Ignore the noise.', 'Ha, it is nagging you. Belt up.'],
 };

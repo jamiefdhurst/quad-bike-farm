@@ -323,7 +323,7 @@ export function girlActions(g) {
     },
     {
       verb: 'car-go',
-      label: '% drives her own car out and back (the Fiesta for Amy, the Corsa for Jess)',
+      label: '% drives her own car out and back (the Finch for Amy, the Griffin for Jess)',
       run: (id) => {
         if (!free(id)) return;
         const kind = g.carGoContext(g.riddenUnit).girls[id]?.car;
@@ -403,11 +403,11 @@ export function girlActions(g) {
     },
     {
       verb: 'sulk',
-      label: '% sulks alone in a Land Rover (skips the row)',
+      label: '% sulks alone in a Moorland (skips the row)',
       run: (id) => {
         if (!free(id)) return;
         if (!g.sulking.begin(id, 'forced')) return toast(`${nameOf(g.sulking.who)} is already sulking`);
-        toast(`${nameOf(id)} is off to sulk in a Land Rover`);
+        toast(`${nameOf(id)} is off to sulk in a Moorland`);
       },
     },
     {
@@ -421,10 +421,10 @@ export function girlActions(g) {
     },
     {
       verb: 'warm-up',
-      label: '% warms up in a Land Rover',
+      label: '% warms up in a Moorland',
       run: (id) => {
         if (!free(id)) return;
-        toast(g.sendToCab(id, 'cold') ? `${nameOf(id)} is off to a Land Rover` : `No Land Rover free for ${nameOf(id)}`);
+        toast(g.sendToCab(id, 'cold') ? `${nameOf(id)} is off to a Moorland` : `No Moorland free for ${nameOf(id)}`);
       },
     },
     {
@@ -503,11 +503,11 @@ export function girlActions(g) {
     },
     {
       verb: 'back-seat',
-      label: '% gets in the back of the 200TDi',
+      label: '% gets in the back of the Crag',
       run: (id) => {
         const c = girl(id);
         const l = g.landys?.defender;
-        if (!l?.unit) return toast('The 200TDi isn\'t on the farm this game');
+        if (!l?.unit) return toast('The Crag isn\'t on the farm this game');
         if (!free(id)) return;
         g.askIntoLandy(c, l, { back: true }); // as asking from her wheel: it says if she can't
         if (c.traSlot?.rear) toast(`${c.name} is getting in the back of the 200TDi`);

@@ -25,7 +25,7 @@ export const AMY_UTV_LINES = {
   utvTipOut: line(30, ['You tipped the bed with me on it! I am sitting in the dirt!', 'I could have been hurt! Ow!', 'You see? You see? That is why it is not allowed.']),
   utvTipLaugh: line(30, ['Oh dear. Are you all right? I did tell you.', 'That was entirely preventable.', 'I will not laugh. I will not laugh. Sorry.']),
   utvBedRefuse: line(30, ['No. That is not a seat, it is a bed. I am riding properly.', 'I will not ride in the back. It is against the rules.', 'Not a chance. Ask Jess.']),
-  utvPetrolWarn: line(40, ['Stop! That is petrol. The UTV is a diesel!', 'No, no, no. Red diesel only for that one.', 'That is the wrong can. Petrol will ruin it.']),
+  utvPetrolWarn: line(40, ['Stop! That is petrol. The Yak is a diesel!', 'No, no, no. Red diesel only for that one.', 'That is the wrong can. Petrol will ruin it.']),
   utvPetrol: line(60, ['It is running terribly. Did someone put petrol in the diesel?', 'That does not sound right. It is a diesel, it does not like petrol.', 'It is coughing. Check what went in the tank.']),
   landyKick: line(20, ['Ouch! Are you all right? Keep your thumb out of the way.', 'It kicked back? Thumb on the same side as your fingers. Let me see your hand.', 'That is how people break their thumbs. Hold it properly.']),
 };

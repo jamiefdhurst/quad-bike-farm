@@ -54,9 +54,9 @@ describe('quad nicknames', () => {
 });
 
 describe('lines about a quad', () => {
-  it('are written for the colour and each nickname, with the quad filled in', () => {
+  it('are written for the model name and each nickname, with the quad filled in', () => {
     const lines = expandQuadLines({ x: { cooldown: 5, lines: ['{Q} is here.', 'Look at {q}.'] } });
-    expect(lines[quadKey('x', 'green')].lines).toEqual(['The green quad is here.', 'Look at the green quad.']);
+    expect(lines[quadKey('x', 'green')].lines).toEqual(['The RB300 is here.', 'Look at the RB300.']);
     expect(lines[quadKey('x', 'green', 'Grandad')].lines).toEqual(['Grandad is here.', 'Look at Grandad.']);
     expect(lines[quadKey('x', 'yellow', 'the wasp')].lines[1]).toBe('Look at the wasp.');
   });
