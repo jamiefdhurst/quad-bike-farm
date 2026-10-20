@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Attention, candidates, turnBetween, headingTo, NOTICE_KINDS, DEFAULT_NOTICE_PARAMS } from '../src/npc/attention.js';
+import { Attention, candidates, hearingFactor, turnBetween, headingTo, NOTICE_KINDS, DEFAULT_NOTICE_PARAMS } from '../src/npc/attention.js';
 import { DEFAULT_COMPANION_PARAMS } from '../src/npc/companionParams.js';
 
 const P = DEFAULT_COMPANION_PARAMS;
@@ -143,5 +143,37 @@ describe('holding and tiring', () => {
     const a = new Attention(P);
     const view = base({ people: [you({ talkingToMe: false })], vehicles: [{ key: 'red', x: 2, y: 0.8, z: 6, speed: 8 }], intent: { x: -5, y: 0, z: 2 } });
     expect(run(a, 0.5, view).key).toBe('intent');
+  });
+});
+
+describe('what she can hear', () => {
+  const N = DEFAULT_NOTICE_PARAMS;
+  it('hears everything in full on a dry day, outside, with no engine near', () => {
+    expect(hearingFactor({ rain: 0, indoors: false, engines: [80] })).toBe(1);
+  });
+
+  it('is dulled by rain, the barn and an engine beside her, all together more than any one', () => {
+    const rain = hearingFactor({ rain: 1 });
+    const barn = hearingFactor({ indoors: true });
+    const engine = hearingFactor({ engines: [0] });
+    expect(rain).toBeCloseTo(1 - N.hearRain);
+    expect(barn).toBeCloseTo(1 - N.hearBarn);
+    expect(engine).toBeCloseTo(1 - N.hearEngine);
+    expect(hearingFactor({ rain: 1, indoors: true, engines: [0] })).toBeLessThan(Math.min(rain, barn, engine));
+  });
+
+  it('never loses all of it, and an engine fades with distance', () => {
+    expect(hearingFactor({ rain: 1, indoors: true, engines: [0] }, { ...N, hearRain: 1, hearBarn: 1 })).toBe(N.hearFloor);
+    expect(hearingFactor({ engines: [6] })).toBeGreaterThan(hearingFactor({ engines: [1] }));
+  });
+
+  it('misses a far-off sound in a downpour but not a near one, and still sees what is not heard', () => {
+    const at = (z, kind) => [{ kind, key: 'a', x: 0, y: 1.5, z, strength: 1, age: 0 }];
+    const far = (hearing) => candidates(base({ hearing }), at(60, 'bang'), P, N).length;
+    expect(far(1)).toBe(1);
+    expect(far(0.3)).toBe(0);
+    expect(candidates(base({ hearing: 0.3 }), at(5, 'bang'), P, N)).toHaveLength(1);
+    const lurch = (hearing) => candidates(base({ hearing }), at(10, 'lurch'), P, N)[0].score;
+    expect(lurch(0.3)).toBe(lurch(1));
   });
 });

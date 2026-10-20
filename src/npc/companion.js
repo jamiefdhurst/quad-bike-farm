@@ -38,7 +38,7 @@ import { canRideRack } from './rackSeat.js';
 import { nextBoredWait, driftRestlessness, boredOdds, BORED_NORM } from './boredom.js';
 import { moveMethods, DEFAULT_MOVE_PARAMS } from './companionMoves.js';
 import { DEFAULT_IDLE_POSE_PARAMS } from './poseMoves.js';
-import { Attention, DEFAULT_NOTICE_PARAMS } from './attention.js';
+import { Attention, DEFAULT_NOTICE_PARAMS, hearingFactor } from './attention.js';
 import { reactingMethods } from './companionReacting.js';
 import { availabilityOf, JOBS } from './availability.js';
 import { Needs } from './needs.js';
@@ -1488,7 +1488,13 @@ Companion.prototype.updateAttention = function (dt, viewer) {
   if (hint && (hint.left -= dt) <= 0) this.attendHint = null;
   const focus = hint ?? (own || !look || look.intent ? null : look);
   const intent = !own && look?.intent ? look : null;
-  const pick = this.attention.update(dt, { self, facing: Math.atan2(dir.x, dir.z), people, vehicles, focus, intent, noGaze: own });
+  // What she can hear of the world beyond: the rain, the barn roof, an engine going beside her (attention's hearingFactor).
+  const hearing = hearingFactor(
+    { rain: world.rain, indoors: !!this.world.inBarn?.(at.x, at.z), engines: (world.engines ?? []).map((e) => Math.hypot(e.x - at.x, e.z - at.z)) },
+    this.attention.noticeParams,
+  );
+  this.hearingK = hearing;
+  const pick = this.attention.update(dt, { self, facing: Math.atan2(dir.x, dir.z), people, vehicles, focus, intent, noGaze: own, hearing });
   this.lookPick = pick;
   this.lookTurn = !own && pick ? pick.turnTo : null;
   // On the back behind you the pillion pose has her head, and turns it to whatever catches her eye.

@@ -55,6 +55,7 @@ export function buildGirlsTab(d) {
     show(f, 'doing', () => c.state + (c.quad && c.fsm.is('seated', 'mounting', 'driving', 'starting') ? ` (${c.quad.label})` : ''));
     show(f, 'free', () => { const a = c.availability(); return a.free ? 'yes' : `no: ${a.why}`; });
     show(f, 'looking at', () => c.attention.describe());
+    show(f, 'hearing', () => `${Math.round((c.hearingK ?? 1) * 100)}% (rain, the barn and engines dull it)`);
     show(f, 'reacting', () => c.reactingText);
 
     // --- Why she does what she does: what she wants (settable) and what she chose for it (npc/needs.js, npc/chooser.js).

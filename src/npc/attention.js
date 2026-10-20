@@ -61,6 +61,11 @@ export const DEFAULT_NOTICE_PARAMS = {
   lurchMaxSpeed: 4, // m/s: only from slower than this
   lurchEvery: 1, // seconds between lurch notices from one vehicle
   jumpMinAir: 0.35, // seconds in the air for a landing to count as a jump
+  hearRain: 0.5, // how much of what she can hear a full downpour takes away (0 none, 1 all)
+  hearBarn: 0.35, // and being inside the barn, for sounds from outside it
+  hearEngine: 0.6, // and a running engine right beside her, fading to nothing at hearEngineRange
+  hearEngineRange: 12, // metres within which a running engine drowns things out
+  hearFloor: 0.25, // the least of her hearing left, however loud it is: a bang still carries a little
 };
 
 export const NOTICE_PARAM_RANGES = {
@@ -74,6 +79,11 @@ export const NOTICE_PARAM_RANGES = {
   lurchMaxSpeed: [0.5, 10, 0.5],
   lurchEvery: [0.1, 5, 0.1],
   jumpMinAir: [0.05, 2, 0.05],
+  hearRain: [0, 1, 0.05],
+  hearBarn: [0, 1, 0.05],
+  hearEngine: [0, 1, 0.05],
+  hearEngineRange: [2, 40, 1],
+  hearFloor: [0.05, 1, 0.05],
 };
 
 const TAU = Math.PI * 2;
@@ -101,12 +111,26 @@ function sight(off, p) {
 }
 
 /**
+ * How much of her hearing is left, `hearFloor`..1, for the range of things she only hears. `env`: rain (0..1), indoors (she is in the
+ * barn), engines: distances in metres to running engines. Each dulls it on its own; together they multiply.
+ */
+export function hearingFactor(env, noticeParams = DEFAULT_NOTICE_PARAMS) {
+  const n = noticeParams;
+  let k = 1 - n.hearRain * Math.max(0, Math.min(1, env.rain ?? 0));
+  if (env.indoors) k *= 1 - n.hearBarn;
+  const nearest = Math.min(Infinity, ...(env.engines ?? []));
+  if (nearest < n.hearEngineRange) k *= 1 - n.hearEngine * (1 - nearest / n.hearEngineRange);
+  return Math.max(n.hearFloor, k);
+}
+
+/**
  * Everything she could look at this frame, scored. `view` (all positions as { x, y, z }):
  *   self: where her eyes are; facing: her heading
  *   people: [{ key, x, y, z, speaking, talkingToMe, warmth }] (you are key 'you'; warmth 0..1, how she feels about you)
  *   vehicles: [{ key, x, y, z, speed }] moving ones, not counting the one she's on
  *   focus: { x, y, z, weight } what she's busy with, or null
  *   intent: { x, y, z } where she's about to go, or null; noGaze: true to leave out looking about (her head is busy)
+ *   hearing: 0..1 (hearingFactor), how much of the range of heard sounds she has; 1 if left out
  * `notices` are the live ones, with their ages; `about` a point out in front of her to gaze at when nothing else is worth it (null for
  * none). Returns [{ key, kind, x, y, z, score, startling, habituates }].
  */
@@ -123,7 +147,7 @@ export function candidates(view, notices, p, noticeParams = DEFAULT_NOTICE_PARAM
     const seen = kind.heard ? 1 : sight(offOf(n), p);
     const interest = kind.interest ? p[kind.interest] : 1;
     const salience = noticeParams[n.kind] ?? 1;
-    const score = salience * (n.strength ?? 1) * fresh * reach(d, kind.range) * seen * interest;
+    const score = salience * (n.strength ?? 1) * fresh * reach(d, kind.heard ? kind.range * (view.hearing ?? 1) : kind.range) * seen * interest;
     if (score > 0) out.push({ key: n.key, kind: n.kind, x: n.x, y: n.y, z: n.z, score, startling: salience * (n.strength ?? 1) >= p.attentionStartle && n.age < 0.5, habituates: false });
   }
   for (const who of view.people ?? []) {
