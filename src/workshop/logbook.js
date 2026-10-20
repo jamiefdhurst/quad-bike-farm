@@ -105,6 +105,8 @@ export function entryText(what) {
     }
     case 'oil':
       return 'engine oil topped up';
+    case 'deal':
+      return `${what.deal === 'sold' ? 'sold' : 'bought'} for £${what.price}`;
     case 'fault':
       return FAULT_TEXT[what.fault] ?? null;
     case 'tinker':

@@ -6,6 +6,12 @@ import { formatEntry } from '../src/workshop/logbook.js';
 const p = DEFAULT_FARM_PARAMS;
 
 describe('the day recap card', () => {
+  it('carries the tin\'s line for the card', () => {
+    expect(dayRecap({ day: 2, money: '£310 in the tin (earned £120)' }, p).money).toBe('£310 in the tin (earned £120)');
+    expect(dayRecap({ day: 2 }, p).money).toBe('');
+  });
+
+
   it('keeps the last few log lines and counts the rest', () => {
     const entries = Array.from({ length: 9 }, (_, i) => `line ${i}`);
     const r = dayRecap({ day: 4, entries }, p);
