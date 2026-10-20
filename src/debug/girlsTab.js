@@ -306,6 +306,9 @@ export function buildGirlsTab(d) {
   button(out, 'Send a vehicle along the lane', () => g.trafficHost.debugPass());
   button(out, 'Send the post van', () => g.trafficHost.debugVisit('post') || toast('A visitor is already about'));
   button(out, 'Send a neighbour', () => g.trafficHost.debugVisit('neighbour') || toast('A visitor is already about'));
+  show(out, 'the neighbour over the lane', () => g.neighbourHost.describe());
+  button(out, 'Take you to the neighbour\'s gate', () => g.neighbourHost.debugGoTo() || toast('Get off your vehicle first'));
+  button(out, 'Make the neighbour say hello', () => g.neighbourHost.debugGreet() || toast('She has gone indoors'));
 
   // The farm's memory and the end of the day.
   const mem = sub('The farm that remembers');

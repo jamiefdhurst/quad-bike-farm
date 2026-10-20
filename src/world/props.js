@@ -10,6 +10,8 @@ import { buildJumpRamp } from './jumpRamp.js';
 import { buildHill } from './hillProps.js';
 import { buildWoods } from './woodsProps.js';
 import { buildOutbuildings } from './outbuildingProps.js';
+import { buildNeighbourFarm } from './neighbourFarmProps.js';
+import { laneBarriers } from './neighbourFarm.js';
 import { Gate, DEFAULT_GATE_PARAMS } from './gates.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -49,6 +51,7 @@ export function buildProps(ctx) {
   buildPaddock(c);
   const bale = buildBales(c);
   buildOutbuildings({ ...c, bale });
+  const neighbourFarm = buildNeighbourFarm(c);
   const silage = bale.silage;
   buildTrees(c);
   buildDistantTrees(c);
@@ -59,7 +62,7 @@ export function buildProps(ctx) {
   const hillProps = ctx.fields.hill ? buildHill(c) : null;
   if (ctx.fields.woods) buildWoods(c);
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
-  return { barn, jumpRamp, silage, puddles, gates, gateParams: c.gateParams, stream: hillProps?.stream ?? null };
+  return { barn, jumpRamp, silage, puddles, gates, neighbourFarm, gateParams: c.gateParams, stream: hillProps?.stream ?? null };
 }
 
 function buildBarn(c) {
@@ -313,9 +316,10 @@ function buildSteelGate({ scene, heights, fixedBox, gateParams, id, x, z, w, swi
 function buildPublicLane({ scene, layout, heights, fixedBox }) {
   const lane = layout.publicLane;
   if (!lane) return;
-  // An invisible wall along the lane's near edge: you can walk through the gate onto the verge, but not out into the road.
-  const wallX = lane.x - lane.halfWidth - 1.2;
-  fixedBox(wallX, 0, (lane.minZ + lane.maxZ) / 2, 0.3, 40, (lane.maxZ - lane.minZ) / 2 + 20);
+  // Invisible walls shut the lane in: along its near edge, you can walk through the gate onto the verge, but not out into the road; along
+  // the stretch that is open to ride (layout.publicLane.open, world/neighbourFarm.js) they leave the big gate and the neighbour's wall,
+  // and shut its far side and both ends.
+  for (const b of laneBarriers(layout)) fixedBox(b.x, 0, b.z, b.hx, 40, b.hz);
   const step = 1; // as fine as the terrain's own grid, or its bumps show through
   const cols = 5; // and across, so the camber of the ground doesn't
   const tarmac = new THREE.CanvasTexture(laneTexture());

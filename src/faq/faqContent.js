@@ -1520,8 +1520,22 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Who is that on the lane, and why has someone come in at the gate?',
-        a: `Beyond the big gate is a quiet public lane. A van, a Moorland, a tractor or a Yak goes by now and then, less after dark. Now and then a visitor turns in: the post van, whose driver opens the gate, drives up to the barn and leaves a parcel by the door, or a neighbour who parks at the barn and stands about for a while. Jess waves at them, Amy less often. If you are in their way they wait, then hoot, so pull over.`,
+        a: `Beyond the big gate is a quiet public lane, which you can ride along (see “Can I ride out onto the lane?”). A van, a Moorland, a tractor or a Yak goes by now and then, less after dark. Now and then a visitor turns in: the post van, whose driver opens the gate, drives up to the barn and leaves a parcel by the door, or a neighbour who parks at the barn and stands about for a while. Jess waves at them, Amy less often. If you are in their way they wait, then hoot, so pull over.`,
         tip: 'The post van and neighbours come in at the big gate. Pull over for them.',
+      },
+      {
+        q: 'Can I ride out onto the lane, and where does it go?',
+        a: `Yes. Open the big gate at the end of the farm road (look at it and press <kbd>E</kbd>), ride through and turn right, south, along the lane. Keep to the left for the traffic, which brakes for you. It is walled in on both sides, so the only place to turn off is the neighbour's gateway on the right, about 100 m down, and it ends 60 m or so further along, and 60 m north of the big gate, where an invisible wall stops you. You can walk it too.`,
+        tip: 'The lane runs south from the big gate to the neighbour\'s farm. Look out for the traffic.',
+      },
+      {
+        q: 'Who lives at the farm down the lane, and what does she say?',
+        a: `The neighbour, a woman older than Amy and Jess, who lives in the stone farmhouse behind the walled yard. Ride in at the gateway (the gate stands open) and she turns to watch you, waves and says hello. Come back later and she says so; get off and stand by her and she makes conversation now and then; ride off after a good chat and she says goodbye. She goes indoors at night, when the downstairs windows glow, and comes out again in the morning. The girls remark when you arrive, and may wave back. The Moorland, the buggy and the tractor parked about the yard are hers, for show: you cannot drive them, and they are not for sale.`,
+        tip: 'The neighbour is out in her yard by day, down the lane. Ride in and say hello.',
+      },
+      {
+        q: 'Why is the neighbour not in her yard?',
+        a: `She goes indoors when it gets dark and comes back out in the morning, so at night you will see only her windows and the lamp over her door lit. By day she may also be out of earshot of whoever is in the yard: she only turns and speaks when you, or a girl, comes within about 16 m.`,
       },
       {
         q: 'Why is the barn dark, and why has the charger gone dead?',

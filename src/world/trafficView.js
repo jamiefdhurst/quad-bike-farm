@@ -32,6 +32,23 @@ function silhouette() {
   return g;
 }
 
+/**
+ * One of the farm's own vehicle models (`model`: defender, series, tractor or utv) in a paint, with its tyres set on the ground and the body
+ * sunk by its springs, as quad.js does. Also used for the vehicles parked in the neighbour's yard (neighbourFarmProps.js).
+ */
+export function buildVehicleBody(model, colour, reg = null) {
+  const spec = MODELS[model];
+  const object = spec.build(colour, reg);
+  const wheels = spec.layout.wheels.map((w) => {
+    const o = object.getObjectByName(w.name);
+    o.position.set(w.x, w.radius + spec.offset + (spec.layout.spawnSag ?? 0), w.z); // the tyre on the ground, the body sunk by its springs
+    return { object: o, spin: o.getObjectByName('spin'), radius: w.radius, front: !!w.front };
+  });
+  const bodyRoot = object.getObjectByName('bodyRoot');
+  if (bodyRoot) bodyRoot.position.y = spec.offset; // the body hangs from the chassis origin, as in quad.js
+  return { object, spec, wheels, bodyRoot };
+}
+
 export class TrafficView {
   /** `groundAt(x, z)`: the drawn ground. `gltf`: the girls' model, for the visitors. */
   constructor(scene, groundAt, gltf) {
@@ -53,15 +70,7 @@ export class TrafficView {
       idle.object.visible = true;
       return idle;
     }
-    const spec = MODELS[model];
-    const object = spec.build(colour, reg);
-    const wheels = spec.layout.wheels.map((w) => {
-      const o = object.getObjectByName(w.name);
-      o.position.set(w.x, w.radius + spec.offset + (spec.layout.spawnSag ?? 0), w.z); // the tyre on the ground, the body sunk by its springs
-      return { object: o, spin: o.getObjectByName('spin'), radius: w.radius, front: !!w.front };
-    });
-    const bodyRoot = object.getObjectByName('bodyRoot');
-    if (bodyRoot) bodyRoot.position.y = spec.offset; // the body hangs from the chassis origin, as in quad.js
+    const { object, spec, wheels, bodyRoot } = buildVehicleBody(model, colour, reg);
     const seat = new THREE.Group();
     seat.position.set(spec.seat.x, spec.seat.y - 0.02, spec.seat.z);
     (bodyRoot ?? object).add(seat);

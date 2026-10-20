@@ -108,6 +108,16 @@ export class MapView {
     // The yard's hardstanding, the paddock, the drag strip's gravel.
     if (f.yard) disc(f.yard.x, f.yard.z, f.yard.r, C.gravel);
     if (f.dragStrip) poly(f.dragStrip, C.gravel);
+    if (f.neighbourYard) {
+      // The neighbour's walled yard: gravel inside a wall.
+      const y = f.neighbourYard;
+      rect(y, C.gravel);
+      const [u0, v0] = P(y.minX, y.minZ);
+      const [u1, v1] = P(y.maxX, y.maxZ);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = C.fence;
+      ctx.strokeRect(u0, v0, u1 - u0, v1 - v0);
+    }
 
     // The stream, wider over the ford.
     if (f.stream.length) {
