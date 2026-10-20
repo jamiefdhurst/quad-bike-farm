@@ -110,7 +110,7 @@ export const CONTROLS = [
       `Green quad's winch: <kbd>X</kbd> take the hook, <kbd>E</kbd> on a quad to hook it, hold <kbd>X</kbd> to wind in`,
       `Tractor's tow chain: <kbd>X</kbd> looking at the tractor to take it, <kbd>E</kbd> on a quad to hook it, then back the tractor up and drive off`,
       `Tow rope on the red and blue quads' racks: <kbd>X</kbd> looking at one to take it, <kbd>E</kbd> on a dead quad to hook it, ride off gently; ask a girl on the wheel to steer it`,
-      `Hayloft ladder, workbench and Amy's logbook in the barn: <kbd>E</kbd>`,
+      `Hayloft ladder, workbench and Amy's logbook in the barn: <kbd>E</kbd>. On the bench menu <kbd>S</kbd> starts a full service`,
       `The bell by the barn doors: <kbd>E</kbd> to ring it and call the girls back`,
       `The calendar on the barn's back wall: <kbd>E</kbd> in the evening, with the girls back, to call it a day and go on to the next`,
     ],

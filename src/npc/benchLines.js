@@ -34,6 +34,8 @@ export const AMY_BENCH_LINES = {
   benchNag: line(60, ['You are going to finish that for me, are you?', 'Still waiting on you with the quad in the bay.']),
   benchGaveUp: line(60, ['Fine, I will leave it, then.', 'Never mind. It can wait.']),
   benchFinished: line(40, ['Thank you. Much better than I managed.', 'That looks right. I knew you could do it.']),
+  serviceDue: line(90, ['That one is well past its service, you know. Plug, filter, oil, the lot.', 'I have got it in the book as due. Shall we do it properly today?', 'It has run a lot since the last time anyone had a spanner on it. A full service would not hurt.']),
+  serviceDone: line(40, ['There. Ticked off in the logbook, and you can hear the difference.', 'Full service, all done right. I will write it up.', 'That is a proper day at the bench. It runs like a different quad.']),
   plugWorn: line(20, ['Tan is fine, but the electrode is worn right down. It has done a lot of hours.', 'It has been running well enough, but the engine is getting old.']),
 };
 
@@ -46,6 +48,8 @@ export const JESS_BENCH_LINES = {
   boreCatalogue: ['Ooh, you have seen my catalogue. Big-bore kit, page twelve. Just saying.', 'I left it open on purpose. Look at the power figures.', 'One day, that yellow is getting the big kit. One day.'],
   boreDone: ['It is done! It is fitted! Can I ride it? Can I? Please?', 'Oh, it sounds angry now. I love it.', 'Told you. Page twelve. Best thing in the catalogue.'],
   boreBotched: ['It will be fine. A bit of wobble is character.', 'It is a bit off, is it? Still faster than before.'],
+  serviceDue: ['Ooh, is it service day? I will fetch the tea.', 'It sounds like a bag of spanners. Even I can tell.'],
+  serviceDone: ['Is that it? It sounds exactly the same to me.', 'Smooth! Can I have a go? Please?'],
   plugHealthy: ["Perfect. Boring, but perfect.", 'Looks fine to me. Brown is good.'],
   plugRich: ['Black! It is flooded, definitely.', 'Ooh, sooty. Somebody left the choke on.'],
   plugLean: ['White. That is boiling hot, that is.', 'It has gone white. Too much air, I reckon.'],
