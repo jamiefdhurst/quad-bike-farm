@@ -52,6 +52,7 @@ import { DriveSwitch, driveEffects, DEFAULT_DRIVE_PARAMS } from './driveMode.js'
 import { fuelWaterLevel } from './fuelWater.js';
 import { DEFAULT_DIESEL_WAX_PARAMS, stepWax } from './dieselWax.js';
 import { DEFAULT_BLEED_PARAMS, runsDry, stepBleed } from './bleeding.js';
+import { strengthEffects, bonusFor } from './strength.js';
 import { reverseAllowed, chokeReach, DEFAULT_CONTROLS_PARAMS } from './controls.js';
 import { advanceUsage, isNeutral, dashClock, lampStates } from './dashState.js';
 
@@ -99,7 +100,8 @@ export class Quad {
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, decay = null, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null, handLever = false, crank = null, landRover = false, utv = false, car = false, lightSwitch = false, barLights = false, driverStand = null, benchStand = null, chainDrive = false }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, decay = null, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null, handLever = false, crank = null, landRover = false, utv = false, car = false, lightSwitch = false, barLights = false, driverStand = null, benchStand = null, chainDrive = false, strengthSpec = null }) {
+    this.strengthSpec = strengthSpec;
     this.reverseStyle = reverseStyle; // where its reverse is and what it takes (controls.js)
     this.chokeStyle = chokeStyle;
     this.tapStyle = tapStyle;
@@ -361,6 +363,13 @@ export class Quad {
   /** Sine of the climb: how far its nose points up (negative downhill). */
   get climb() {
     return new THREE.Vector3(0, 0, 1).applyQuaternion(this.currQuat).y;
+  }
+
+  /** How steep, muddy and tarmacked it is under it now (the wheels' own last readings, 0..1 for the last two): strength.js and the girls' judging. */
+  groundUnder() {
+    const w = this.physics.wheels;
+    const mean = (k) => w.reduce((s, x) => s + (x[k] || 0), 0) / w.length;
+    return { climb: this.climb, mud: mean('mud'), tarmac: mean('tarmac'), speed: Math.abs(this.physics.forwardSpeed) };
   }
 
   /** True while all four wheels are off the ground. */
@@ -882,8 +891,11 @@ export class Quad {
     this.physics.hold = hold + this.bog.dragForce(inBog, p.mass, groundSpeed) + this.brakes.drag * p.mass; // a binding brake drags
     let wheelSteer = this.steer + this.faults.steerPull + this.faults.rodPull + this.tyres.steerPull + this.quirks.brakePull(this.brake);
     if (this.bike) wheelSteer = this.balanceBike(dt, wheelSteer);
+    // Its hidden strength (strength.js): a little more drive uphill or on tarmac, a little more grip in mud or on tarmac.
+    const sf = this.strengthSpec ? strengthEffects(this.strengthSpec, this.groundUnder()) : null;
+    this.physics.strengthGrip = this.strengthSpec ? { mud: bonusFor(this.strengthSpec, 'mud'), tarmac: bonusFor(this.strengthSpec, 'tarmac') } : null;
     this.physics.applyControls({
-      driveForce: Math.sign(drive) * (this.towJam && drive < 0 ? 0 : 1) * Math.max(0, Math.abs(drive) * this.faults.driveFactor * (1 - this.faults.params.clutchDriveLoss * this.clutchSlip) * this.tyres.driveFactor * this.tow.driveFactor * (this.drive ? this.driveEffects.driveScale : 1) - hold),
+      driveForce: (sf?.drive ?? 1) * Math.sign(drive) * (this.towJam && drive < 0 ? 0 : 1) * Math.max(0, Math.abs(drive) * this.faults.driveFactor * (1 - this.faults.params.clutchDriveLoss * this.clutchSlip) * this.tyres.driveFactor * this.tow.driveFactor * (this.drive ? this.driveEffects.driveScale : 1) - hold),
       brake,
       steer: wheelSteer,
       mudAt: (x, z) => Math.max(this.world.mudAt(x, z), this.churn),
