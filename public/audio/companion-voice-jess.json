@@ -174,7 +174,8 @@
   "audio/companion-voice-jess-171.mp3",
   "audio/companion-voice-jess-172.mp3",
   "audio/companion-voice-jess-173.mp3",
-  "audio/companion-voice-jess-174.mp3"
+  "audio/companion-voice-jess-174.mp3",
+  "audio/companion-voice-jess-175.mp3"
  ],
  "voice": "chatterbox|d9f55acd6998",
  "clips": {
@@ -18693,204 +18694,304 @@
    "start": 30.68,
    "dur": 3.72
   },
-  "You can be a sore loser as well as slow, can you?": {
+  "Some of these quads just pull on a hill and some of them sulk. You know which is which.": {
    "file": 173,
    "start": 34.48,
+   "dur": 5.11
+  },
+  "Because you are wrong.": {
+   "file": 173,
+   "start": 39.67,
+   "dur": 2.46
+  },
+  "The one you like struggles up the hill. I have watched it.": {
+   "file": 173,
+   "start": 42.21,
+   "dur": 3.63
+  },
+  "Eventually.": {
+   "file": 173,
+   "start": 45.92,
+   "dur": 0.63
+  },
+  "It is exactly the one I think.": {
+   "file": 173,
+   "start": 46.63,
+   "dur": 1.75
+  },
+  "It does not slow down. You are imagining it.": {
+   "file": 173,
+   "start": 48.46,
+   "dur": 3.43
+  },
+  "One of these just floats over the mud and the rest dig in. Mine floats.": {
+   "file": 173,
+   "start": 51.97,
+   "dur": 4.39
+  },
+  "That is floating.": {
+   "file": 173,
+   "start": 56.44,
+   "dur": 1.06
+  },
+  "You always pick the one that gets stuck in the gateway.": {
+   "file": 173,
+   "start": 57.58,
+   "dur": 2.55
+  },
+  "I was looking.": {
+   "file": 174,
+   "start": 0.1,
+   "dur": 1.82
+  },
+  "Of course you have.": {
+   "file": 174,
+   "start": 2.0,
+   "dur": 2.31
+  },
+  "And I say it is mine.": {
+   "file": 174,
+   "start": 4.39,
+   "dur": 1.93
+  },
+  "On the road there is one that really sticks. Round the bend, no drama.": {
+   "file": 174,
+   "start": 6.4,
+   "dur": 4.75
+  },
+  "It is exactly the one I am on.": {
+   "file": 174,
+   "start": 11.23,
+   "dur": 1.83
+  },
+  "Put me on the lane and I will show you which is quickest.": {
+   "file": 174,
+   "start": 13.14,
+   "dur": 2.51
+  },
+  "Quite obvious that it is mine.": {
+   "file": 174,
+   "start": 15.73,
+   "dur": 1.9
+  },
+  "The speed is the whole thing.": {
+   "file": 174,
+   "start": 17.71,
+   "dur": 1.66
+  },
+  "Write it down. It will not happen again.": {
+   "file": 174,
+   "start": 19.45,
+   "dur": 2.32
+  },
+  "There is a proper mud quad, you know. We both know which.": {
+   "file": 174,
+   "start": 21.85,
+   "dur": 3.13
+  },
+  "There is. And for once I am not going to argue.": {
+   "file": 174,
+   "start": 25.06,
+   "dur": 4.85
+  },
+  "You can be a sore loser as well as slow, can you?": {
+   "file": 174,
+   "start": 29.99,
    "dur": 2.74
   },
   "Then stop talking.": {
-   "file": 173,
-   "start": 37.3,
+   "file": 174,
+   "start": 32.81,
    "dur": 1.22
   },
   "I did not. You braked.": {
-   "file": 173,
-   "start": 38.6,
+   "file": 174,
+   "start": 34.11,
    "dur": 2.04
   },
   "Everything is yours, is it?": {
-   "file": 173,
-   "start": 40.72,
+   "file": 174,
+   "start": 36.23,
    "dur": 2.07
   },
   "That is mine. You can find your own.": {
-   "file": 173,
-   "start": 42.87,
+   "file": 174,
+   "start": 38.38,
    "dur": 3.84
   },
   "Do not talk to me.": {
-   "file": 173,
-   "start": 46.79,
+   "file": 174,
+   "start": 42.3,
    "dur": 1.4
   },
   "Oh, shut up, Amy. Just shut up for once.": {
-   "file": 173,
-   "start": 48.27,
+   "file": 174,
+   "start": 43.78,
    "dur": 2.54
   },
   "Then stop being so smug.": {
-   "file": 173,
-   "start": 50.89,
+   "file": 174,
+   "start": 46.4,
    "dur": 1.66
   },
   "It was a joke.": {
-   "file": 173,
-   "start": 52.63,
+   "file": 174,
+   "start": 48.14,
    "dur": 1.04
   },
   "Still not speaking?": {
-   "file": 173,
-   "start": 53.75,
+   "file": 174,
+   "start": 49.26,
    "dur": 1.21
   },
   "Suits me.": {
-   "file": 173,
-   "start": 55.04,
+   "file": 174,
+   "start": 50.55,
    "dur": 0.82
   },
   "Some people should grow up.": {
-   "file": 173,
-   "start": 55.94,
+   "file": 174,
+   "start": 51.45,
    "dur": 1.67
   },
   "Heard you telling everyone I was in the wrong.": {
-   "file": 173,
-   "start": 57.69,
+   "file": 174,
+   "start": 53.2,
    "dur": 2.6
   },
   "Nobody asked.": {
    "file": 174,
-   "start": 0.1,
+   "start": 55.88,
    "dur": 1.59
   },
   "I am not near you. You are near me.": {
    "file": 174,
-   "start": 1.77,
+   "start": 57.55,
    "dur": 3.54
   },
   "I will say sorry when you do.": {
-   "file": 174,
-   "start": 5.39,
+   "file": 175,
+   "start": 0.1,
    "dur": 2.42
   },
   "Lovely.": {
-   "file": 174,
-   "start": 7.89,
+   "file": 175,
+   "start": 2.6,
    "dur": 0.52
   },
   "You are being perfectly cold.": {
-   "file": 174,
-   "start": 8.49,
+   "file": 175,
+   "start": 3.2,
    "dur": 1.89
   },
   "You were a bit.": {
-   "file": 174,
-   "start": 10.46,
+   "file": 175,
+   "start": 5.17,
    "dur": 0.96
   },
   "Fine. Me too. Come here.": {
-   "file": 174,
-   "start": 11.5,
+   "file": 175,
+   "start": 6.21,
    "dur": 2.4
   },
   "Good. I was getting bored of it.": {
-   "file": 174,
-   "start": 13.98,
+   "file": 175,
+   "start": 8.69,
    "dur": 1.87
   },
   "All right. I might have gone too far. Sorry.": {
-   "file": 174,
-   "start": 15.93,
+   "file": 175,
+   "start": 10.64,
    "dur": 3.33
   },
   "Did. I did. Happy?": {
-   "file": 174,
-   "start": 19.34,
+   "file": 175,
+   "start": 14.05,
    "dur": 1.73
   },
   "Can we stop now? It is exhausting being this angry.": {
-   "file": 174,
-   "start": 21.15,
+   "file": 175,
+   "start": 15.86,
    "dur": 2.91
   },
   "Slightly. Cheers.": {
-   "file": 174,
-   "start": 24.14,
+   "file": 175,
+   "start": 18.85,
    "dur": 1.81
   },
   "Keep up, Amy!": {
-   "file": 174,
-   "start": 26.03,
+   "file": 175,
+   "start": 20.74,
    "dur": 1.02
   },
   "You are going far too slow!": {
-   "file": 174,
-   "start": 27.13,
+   "file": 175,
+   "start": 21.84,
    "dur": 2.35
   },
   "It is a good speed for a pensioner.": {
-   "file": 174,
-   "start": 29.56,
+   "file": 175,
+   "start": 24.27,
    "dur": 2.86
   },
   "Faster! Faster!": {
-   "file": 174,
-   "start": 32.5,
+   "file": 175,
+   "start": 27.21,
    "dur": 1.62
   },
   "Our friend still has not noticed how brilliant I have been all week.": {
-   "file": 174,
-   "start": 34.2,
+   "file": 175,
+   "start": 28.91,
    "dur": 3.71
   },
   "Into the hedge?": {
-   "file": 174,
-   "start": 37.99,
+   "file": 175,
+   "start": 32.7,
    "dur": 1.04
   },
   "I reckon someone likes you best, Amy.": {
-   "file": 174,
-   "start": 39.11,
+   "file": 175,
+   "start": 33.82,
    "dur": 2.02
   },
   "You went pink, though.": {
-   "file": 174,
-   "start": 41.21,
+   "file": 175,
+   "start": 35.92,
    "dur": 3.47
   },
   "Good. That is how you ride it.": {
-   "file": 174,
-   "start": 44.76,
+   "file": 175,
+   "start": 39.47,
    "dur": 2.09
   },
   "Go on, ask who the best driver is round here.": {
-   "file": 174,
-   "start": 46.93,
+   "file": 175,
+   "start": 41.64,
    "dur": 2.66
   },
   "Because you know the answer.": {
-   "file": 174,
-   "start": 49.67,
+   "file": 175,
+   "start": 44.38,
    "dur": 1.7
   },
   "Slowly. Painfully slowly.": {
-   "file": 174,
-   "start": 51.45,
+   "file": 175,
+   "start": 46.16,
    "dur": 2.62
   },
   "I swear someone keeps leaving the tap on.": {
-   "file": 174,
-   "start": 54.15,
+   "file": 175,
+   "start": 48.86,
    "dur": 2.45
   },
   "It is only the truth.": {
-   "file": 174,
-   "start": 56.68,
+   "file": 175,
+   "start": 51.39,
    "dur": 1.27
   },
   "Do not go soft on me now.": {
-   "file": 174,
-   "start": 58.03,
+   "file": 175,
+   "start": 52.74,
    "dur": 2.96
   }
  }
