@@ -4552,6 +4552,8 @@ export class Game {
     this.attentionWorld = {
       people: [{ key: 'you', x: eye.x, y: eye.y, z: eye.z }, ...girls],
       vehicles: vehicles.filter((v) => v.speed > 0.5).map((v) => ({ key: v.id, x: v.x, y: v.y, z: v.z, speed: v.speed })),
+      engines: vehicles.filter((v) => v.running).map((v) => ({ x: v.x, z: v.z })), // what drowns out the rest, for her hearing
+      rain: this.weather.rain,
     };
   }
 

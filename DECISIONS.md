@@ -4563,3 +4563,13 @@ No questions: the issue settles it (tea or the better quad, an offer that meets 
 - Lines: `makeUpTea`, `makeUpQuad`, `makeUpTaken`, `makeUpRefused`, `makeUpTurnedDown` for each girl (`fallingOutLines.js`).
 - Left alone: it is not in the save (a row not made up still leaves them cool the next morning, as before); the girl sulking in a cab is not free so she does not make a move until she is out; no favour change from being offered tea.
 - Checked: unit tests and the smoke test. Not checked in the running game: the walk, the mug changing hands, or how the pace feels; the numbers are guesses.
+
+## Sound shapes what they notice (#22, was TODO 127)
+
+Settled without questions: the issue says what dulls hearing; the numbers are first guesses.
+
+- `hearingFactor` (`attention.js`, pure, tested) gives each girl a 0.25 to 1 share of the range of the sounds she only hears (`heard: true` in `NOTICE_KINDS`). Rain takes up to `hearRain` (0.5) in a full downpour, being inside the barn `hearBarn` (0.35), and a running engine within `hearEngineRange` (12 m) up to `hearEngine` (0.6), fading with distance. They multiply, and `hearFloor` (0.25) is the least she keeps, so a bang still carries a little.
+- It scales the range in `candidates`, so a pop 35 m off in the rain goes unheard while one at 5 m does not. Things she has to see (a lurch, a jump, steam) are unchanged. Her own engine counts: a girl on a running quad hears less than one stood by it.
+- The tunables join "What catches the eye". The Girls tab shows "hearing" under her state, and `girl.<name>.hearing` reads it in the console.
+- Not checked in play: how it reads, or whether the rain is dull enough to notice.
+

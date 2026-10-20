@@ -1239,6 +1239,11 @@ export const FAQ_SECTIONS = [
           something at the top, or when their quad dies on a bank, and whoever's near the top times you when you finish.`,
       },
       {
+        q: "Why didn't the girls notice that noise?",
+        a: `They hear less in a downpour, inside the barn and with an engine running right beside them, so a far-off pop or backfire can go
+          unnoticed then. Something loud and close still gets their attention, and anything they have to see (a quad leaping off, steam) does not depend on hearing.`,
+      },
+      {
         q: 'How do I get them back?',
         a: `Ring the bell on the post by the barn doors (<kbd>E</kbd>). They hear it anywhere on the farm, stop what they're doing and gather at the barn.`,
         tip: 'Ring the bell by the barn doors and the girls come back from anywhere on the farm.',
