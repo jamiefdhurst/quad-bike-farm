@@ -10,8 +10,9 @@ concurrency:
   group: test-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+# Unit and Smoke run side by side; Test waits for both and is the one check main requires, so the required name never changes (#284).
 jobs:
-  Test:
+  Unit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -34,7 +35,36 @@ jobs:
         run: npm test -- --testTimeout=30000
       - name: Build
         run: npm run build
+
+  Smoke:
+    runs-on: ubuntu-latest
+    steps:
+      # Only the tree: the dev server's "Recently changed" then shows one commit, which the smoke test doesn't look at.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+      - name: Setup Node
+        uses: jdx/mise-action@v5
+      - name: Cache npm
+        uses: actions/cache@v6
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json', 'mise.toml') }}
+          restore-keys: npm-${{ runner.os }}-
+      - name: Install dependencies
+        run: node --version && npm ci
       # Runs the real game in headless Chrome (the runner's own) with software GL and fails on any error or oddity (tools/smoke.mjs).
       - name: Smoke test
         run: CHROME_PATH=$(which google-chrome) npm run smoke
-        timeout-minutes: 8
+        timeout-minutes: 12
+
+  # always(): if Unit or Smoke fails this would otherwise be skipped, and a skipped required check counts as passed.
+  Test:
+    needs: [Unit, Smoke]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Unit and Smoke both passed
+        run: |
+          echo "Unit: ${{ needs.Unit.result }}, Smoke: ${{ needs.Smoke.result }}"
+          [ "${{ needs.Unit.result }}" = success ] && [ "${{ needs.Smoke.result }}" = success ]
