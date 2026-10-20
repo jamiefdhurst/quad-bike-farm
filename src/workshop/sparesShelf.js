@@ -3,11 +3,14 @@ import * as THREE from 'three';
 import { registerTuning } from '../core/tuning.js';
 import { createRandom } from '../core/random.js';
 import { buildSparesModel } from './sparesModel.js';
-import { Spares, DEFAULT_SPARES_PARAMS, SPARES_PARAM_RANGES, PARTS, PART_IDS, partCount } from './spares.js';
+import { buildTyreRackModel } from './tyreRackModel.js';
+import { barnShape } from '../world/barn.js';
+import { Spares, DEFAULT_SPARES_PARAMS, SPARES_PARAM_RANGES, PARTS, PART_IDS, TYRE_IDS, ALL_PART_IDS, partCount } from './spares.js';
 
 /**
  * The parts rack on the barn's back wall beside the bench: the parts in their trays and on their pegs, as many as the spares shelf (spares.js) has, the order
- * panel you open with E, and the parcel the post van leaves at the barn door, which you open with E to put the order on the shelf.
+ * panel you open with E, and the parcel the post van leaves at the barn door, which you open with E to put the order on the shelf. The tyre rack on the
+ * annex's south wall is the same shelf's other half: its own stacks and its own order panel (`mode` says which is open), one parcel and one van.
  */
 export class SparesShelf {
   constructor(game) {
@@ -22,6 +25,19 @@ export class SparesShelf {
     this.model = buildSparesModel();
     this.model.position.set(x, floor, z);
     game.scene.add(this.model);
+    // The tyre rack on the annex's south wall, facing north into the big bay's span.
+    const inner = barnShape(L).innerAll;
+    const hooks = L.helmetHooks; // the helmet hooks take the middle of that wall: the rack fills the corner to their left
+    const tx = (inner.minX + hooks.x - hooks.length / 2 - 0.1) / 2;
+    const tz = inner.maxZ - 0.22; // the rack's back posts just touch the wall
+    this.tyreModel = buildTyreRackModel();
+    this.tyreModel.position.set(tx, game.world.heightAt(tx, tz), tz);
+    this.tyreModel.rotation.y = Math.PI;
+    game.scene.add(this.tyreModel);
+    this.tyreProxy = new THREE.Mesh(new THREE.BoxGeometry(3.4, 2.6, 1), new THREE.MeshBasicMaterial({ visible: false }));
+    this.tyreProxy.position.set(tx, game.world.heightAt(tx, tz) + 1.3, tz - 0.4);
+    game.scene.add(this.tyreProxy);
+    this.mode = 'parts'; // which rack's panel is open: 'parts' or 'tyres'
     this.proxy = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.8, 0.5), new THREE.MeshBasicMaterial({ visible: false }));
     this.proxy.position.set(x, floor + 1.4, z + 0.1);
     game.scene.add(this.proxy);
@@ -34,6 +50,12 @@ export class SparesShelf {
       isAvailable: () => !game.handsFull,
       prompt: () => 'Look at the parts rack',
       interact: () => this.open(),
+    });
+    game.interaction.add({
+      target: this.tyreProxy,
+      isAvailable: () => !game.handsFull,
+      prompt: () => 'Look at the tyre rack',
+      interact: () => this.open('tyres'),
     });
     game.interaction.add({
       target: this.parcelProxy,
@@ -76,9 +98,16 @@ export class SparesShelf {
   /** The rack shows as many of each part as there are on the shelf. */
   paintCrates() {
     this.model.userData.setCounts(this.spares.counts);
+    this.tyreModel.userData.setCounts(this.spares.counts);
   }
 
-  open() {
+  /** The ids the open panel orders: the parts rack's five, or the tyre rack's sizes. */
+  get ids() {
+    return this.mode === 'tyres' ? TYRE_IDS : PART_IDS;
+  }
+
+  open(mode = 'parts') {
+    this.mode = mode;
     this.render();
     this.el.style.display = 'block';
     document.body.classList.add('spares-open');
@@ -95,7 +124,7 @@ export class SparesShelf {
     this.game.player.moveEnabled = false;
     input.takeWheelSteps();
     if (input.wasPressed('KeyG') || input.wasPressed('KeyE') || input.wasPressed('Escape')) return this.close();
-    PART_IDS.forEach((id, i) => {
+    this.ids.forEach((id, i) => {
       if (input.wasPressed(`Digit${i + 1}`) || input.wasPressed(`Numpad${i + 1}`)) this.order(id);
     });
   }
@@ -123,32 +152,34 @@ export class SparesShelf {
 
   describe() {
     const sp = this.spares;
-    return `${PART_IDS.map((id) => `${id} ${sp.count(id)}${sp.ordered[id] ? `+${sp.ordered[id]} ordered` : ''}${sp.waiting[id] ? `+${sp.waiting[id]} parcel` : ''}`).join(', ')}${sp.due !== null ? `; van due in ${Math.max(0, Math.round(sp.due))} s` : ''}`;
+    return `${ALL_PART_IDS.map((id) => `${id} ${sp.count(id)}${sp.ordered[id] ? `+${sp.ordered[id]} ordered` : ''}${sp.waiting[id] ? `+${sp.waiting[id]} parcel` : ''}`).join(', ')}${sp.due !== null ? `; van due in ${Math.max(0, Math.round(sp.due))} s` : ''}`;
   }
 
   /** Every crate to `n` (the debug panel's fill and empty). */
   debugSetAll(n) {
-    for (const id of PART_IDS) this.spares.counts[id] = n;
+    for (const id of ALL_PART_IDS) this.spares.counts[id] = n;
     this.paintCrates();
   }
 
   debugOrderAll() {
-    for (const id of PART_IDS) this.spares.order(id);
+    for (const id of ALL_PART_IDS) this.spares.order(id);
   }
 
   build() {
     const el = document.createElement('div');
     el.className = 'spares';
     el.style.display = 'none';
-    el.innerHTML = '<div class="sp-card"><div class="sp-title">Parts rack</div><div class="sp-body"></div><div class="sp-keys"></div></div>';
+    el.innerHTML = '<div class="sp-card"><div class="sp-title"></div><div class="sp-body"></div><div class="sp-keys"></div></div>';
     document.body.appendChild(el);
     this.el = el;
+    this.titleEl = el.querySelector('.sp-title');
     this.bodyEl = el.querySelector('.sp-body');
     this.keysEl = el.querySelector('.sp-keys');
   }
 
   render() {
-    this.bodyEl.innerHTML = PART_IDS.map((id, i) => {
+    this.titleEl.textContent = this.mode === 'tyres' ? 'Tyre rack' : 'Parts rack';
+    this.bodyEl.innerHTML = this.ids.map((id, i) => {
       const full = this.spares.total(id) + this.spares.pack(id) > this.params.maxOnShelf;
       return `<div class="sp-row${this.spares.has(id) ? '' : ' none'}"><span class="key">${i + 1}</span>${PARTS[id].many[0].toUpperCase()}${PARTS[id].many.slice(1)}: ${this.spares.line(id)}${full ? '' : ` <em>(order ${this.spares.pack(id)})</em>`}</div>`;
     }).join('');

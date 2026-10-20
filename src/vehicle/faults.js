@@ -219,16 +219,17 @@ export class Faults {
    * @param {boolean} s.running  engine running
    * @param {number} s.speed     m/s over the ground
    * @param {number} s.throttle  0..1
+   * @param {number} [s.punctureFactor]  times as likely a puncture starts (bald tyres, tyres.js)
    * @param {number} [s.jolt]    m/s2 of vertical jolt from the ground (for a slack chain slapping)
    * @param {number} [s.clutchSlip]  0..1 how hard the clutch is being slipped just now (clutchSlipping below): that is what wears it
    */
-  update(dt, { running, speed, throttle, jolt = 0, clutchSlip = 0 }) {
+  update(dt, { running, speed, throttle, jolt = 0, clutchSlip = 0, punctureFactor = 1 }) {
     const p = this.params;
     this.events.length = 0;
     const moving = running && speed > p.movingSpeed;
     const hard = moving && throttle > p.hardThrottle;
     const chance = (every, kind) => 1 - Math.exp((-dt * this.prone[kind]) / every);
-    if (moving && !this.started.puncture && this.random() < chance(p.punctureEvery, 'puncture')) this.begin('puncture');
+    if (moving && !this.started.puncture && this.random() < chance(p.punctureEvery / punctureFactor, 'puncture')) this.begin('puncture');
     if (hard && !this.started.belt && this.random() < chance(p.beltEvery, 'belt')) this.begin('belt');
     if (running && !this.started.cable && this.random() < chance(p.cableEvery, 'cable')) this.begin('cable');
     if (running && !this.started.carb && this.random() < chance(p.carbEvery, 'carb')) this.begin('carb');

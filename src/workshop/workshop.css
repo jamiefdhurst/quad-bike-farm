@@ -210,6 +210,8 @@
 .ws-wname { width: 22px; opacity: 0.75; }
 .ws-wpsi { min-width: 62px; text-align: center; font-variant-numeric: tabular-nums; }
 .ws-wheel.low .ws-wpsi { color: #ffb347; }
+.ws-tread { opacity: 0.75; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.ws-tread.low { color: #ffb347; opacity: 1; }
 .ws-wheel button { width: 24px; height: 22px; cursor: pointer; }
 
 .ws-explain {

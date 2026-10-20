@@ -5,6 +5,7 @@
 
 import { canFitBore, fitBore } from '../engine/bigBore.js';
 import { canRebuildTopEnd, readScoring, rebuildTopEnd } from '../engine/topEnd.js';
+import { tyrePart } from '../vehicle/tyres.js';
 
 export const DEFAULT_BENCH_PARAMS = {
   holdScale: 1, // multiplier on how long every hold takes, so the whole bench can be quicker or slower
@@ -68,6 +69,9 @@ export const BENCH_PARAM_RANGES = {
   plugWornWear: [0, 1, 0.05],
 };
 
+/** A step's `part` of this means the tyres of the vehicle on the bench (its size and how many: `tyreJobFor`). */
+export const TYRES_PART = '@tyres';
+
 // need: seconds to hold. limit: if set, it's a window (let go between need and limit), and
 // holding to the limit overdoes it. 'inspect' steps tell you the state of the old part.
 export const JOBS = {
@@ -109,6 +113,17 @@ export const JOBS = {
       { id: 'patch', text: 'Find the hole and put a new inner tube in', kind: 'press', part: 'tube' },
       { id: 'on', text: 'Put the wheel back on', kind: 'press' },
       { id: 'pump', text: 'Pump it up: stop at the right pressure', kind: 'hold', need: 1.1, limit: 2.3 },
+    ],
+  },
+  // The worn axle's tyres, as many as it has from the tyre rack (the part is the vehicle's own size, so the step names a stand-in: see tyreJobFor).
+  newTyres: {
+    name: 'Fit new tyres',
+    steps: [
+      { id: 'jack', text: 'Jack up the worn end', kind: 'press' },
+      { id: 'off', text: 'Undo the nuts and take the old wheels off', kind: 'hold', need: 1 },
+      { id: 'tyres', text: 'Fit new tyres from the rack on the rims', kind: 'press', part: TYRES_PART },
+      { id: 'on', text: 'Put the wheels back on', kind: 'press' },
+      { id: 'pump', text: 'Pump them up: stop at the right pressure', kind: 'hold', need: 1.1, limit: 2.3 },
     ],
   },
   oil: {
@@ -289,7 +304,7 @@ export const JOBS = {
 };
 
 // The last row of the list is the charger, and says either 'chargeOn' or 'chargeOff' depending on where this quad's battery is (bench.js kindsFor).
-export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd', 'chain', 'valves', 'boot', 'clutch', 'crash'];
+export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd', 'chain', 'valves', 'boot', 'clutch', 'crash', 'newTyres'];
 
 /** What each reading means, the way Amy would say it. Order is the order Jess can be wrong in. */
 export const PLUG_KINDS = ['healthy', 'rich', 'lean', 'oily', 'worn'];
@@ -393,8 +408,9 @@ export function plugCondition(engine, P = DEFAULT_BENCH_PARAMS) {
  * { type: 'step', index }, { type: 'flaw', step, how: 'short' | 'over' } and { type: 'done' }.
  */
 export class BenchJob {
-  constructor(kind, params = DEFAULT_BENCH_PARAMS, spares = null) {
+  constructor(kind, params = DEFAULT_BENCH_PARAMS, spares = null, tyres = null) {
     this.spares = spares; // the shelf: a step with a `part` uses one up (spares.js)
+    this.tyres = tyres; // for the new tyres job: { part, count, axle } from tyreJobFor
     this.kind = kind;
     this.def = JOBS[kind];
     this.params = params;
@@ -440,8 +456,13 @@ export class BenchJob {
 
   press() {
     const events = [];
-    const part = this.step?.part;
-    if (part && this.spares && !this.spares.take(part)) return [{ type: 'noPart', part }];
+    const tyreStep = this.step?.part === TYRES_PART && this.tyres;
+    const part = tyreStep ? this.tyres.part : this.step?.part;
+    if (part && this.spares) {
+      const need = tyreStep ? this.tyres.count : 1;
+      if (this.spares.count(part) < need) return [{ type: 'noPart', part }];
+      for (let i = 0; i < need; i++) this.spares.take(part);
+    }
     if (this.step?.kind === 'press') this.advance(events);
     return events;
   }
@@ -515,6 +536,12 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     target.tyres?.level(target.tyres.tune.stockPsi); // pumped up to the pressure it should be
     if (botched) faults.leave('puncture', P.botchedLevel);
     return botched ? 'Wheel is back on, but the tyre is not holding' : 'Tyre patched, pumped and holding';
+  }
+  if (job.kind === 'newTyres') {
+    if (job.tyres) target.tyres?.replace(job.tyres.axle); // the worn end gets new rubber
+    target.tyres?.level(target.tyres.tune.stockPsi);
+    if (botched) faults.leave('puncture', P.botchedLevel); // not seated on the bead: it goes soft
+    return botched ? 'New tyres on, but one is not seated and it is going soft' : 'New tyres fitted, pumped and holding';
   }
   if (job.kind === 'packing') {
     engine.silencerBlown = botched ? P.packingBotched : 0;
@@ -648,14 +675,23 @@ export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = fal
   if (kind === 'plug') return !engine.params.compressionIgnition; // a diesel has glow plugs, not a plug to gap and clean
   if (kind === 'chargeOn') return !engine.batteryOut && !engine.params.noStarter; // a cord-only quad has no battery to take out
   if (kind === 'chargeOff') return !!engine.batteryOut;
+  if (kind === 'newTyres') return true; // (the bench checks the tyres are worn)
   if (kind === 'tarp' || kind === 'fuel' || kind === 'brake' || kind === 'filter' || kind === 'belt') return true; // the bench checks a filter or belt is fitted (service plans)
   if (kind === 'sump') return engine.params.strokes !== 2 && !engine.params.runsOnDiesel;
   return true;
 }
 
-/** The part a job uses up, if it uses one (the step that has a `part`). */
-export function jobPart(kind) {
-  return JOBS[kind]?.steps.find((s) => s.part)?.part ?? null;
+/** The part a job uses up, if it uses one (the step that has a `part`). The new tyres job's is the tyre size of `tyres` (a vehicle's size and tyre set). */
+export function jobPart(kind, size = null) {
+  const part = JOBS[kind]?.steps.find((s) => s.part)?.part ?? null;
+  return part === TYRES_PART ? (size ? tyrePart(size) : null) : part;
+}
+
+/** What fitting new tyres to a vehicle takes: { part, count, axle }, its worn axle's tyres from the rack. Null if its tyres are not worn enough. */
+export function tyreJobFor(tyres, size) {
+  if (!tyres || !size || !tyres.wantsNew) return null;
+  const axle = tyres.worstAxle;
+  return { part: tyrePart(size), count: tyres.axleWheels(axle).length, axle };
 }
 
 /** Is a quad's middle inside the bay painted on the floor? */

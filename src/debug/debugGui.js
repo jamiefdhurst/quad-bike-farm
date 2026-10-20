@@ -382,8 +382,11 @@ export class DebugGui {
     const t = this.vehicleFolders.tyres;
     WHEEL_NAMES.forEach((name, i) => set(t, `${name} psi`, () => round(unit().quad.tyres.psi[i], 1), (v) => { unit().quad.tyres.psi[i] = v; unit().quad.physics.applyParams(); }, 0.5, 7, 0.1));
     show(t, 'off the rim (per wheel)', () => [0, 1, 2, 3].map((i) => unit().quad.tyres.rimLevel(i).toFixed(2)).join('  '));
-    show(t, 'front tyres', () => `${BRANDS[unit().quad.tyres.brand.front].label}, tread ${unit().quad.tyres.tread.front.toFixed(2)}`);
-    show(t, 'rear tyres', () => `${BRANDS[unit().quad.tyres.brand.rear].label}, tread ${unit().quad.tyres.tread.rear.toFixed(2)}`);
+    show(t, 'front tyres', () => BRANDS[unit().quad.tyres.brand.front].label);
+    show(t, 'rear tyres', () => BRANDS[unit().quad.tyres.brand.rear].label);
+    set(t, 'front tread (0 bald, 1 new)', () => round(unit().quad.tyres.tread.front, 2), (v) => (unit().quad.tyres.tread.front = v), 0, 1, 0.01);
+    set(t, 'rear tread (0 bald, 1 new)', () => round(unit().quad.tyres.tread.rear, 2), (v) => (unit().quad.tyres.tread.rear = v), 0, 1, 0.01);
+    show(t, 'tyre size (what the rack stocks)', () => unit().spec.tyreSize);
     show(t, 'grip on grass (per wheel)', () => [0, 1, 2, 3].map((i) => unit().quad.tyres.grip(i, 0, 0).toFixed(2)).join('  '));
     show(t, 'grip in mud (per wheel)', () => [0, 1, 2, 3].map((i) => unit().quad.tyres.grip(i, 1, 0).toFixed(2)).join('  '));
 

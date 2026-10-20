@@ -6,7 +6,7 @@ import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
 import { REMEMBERED_KINDS } from '../npc/memory.js';
 import { AGENDA_IDS } from '../npc/agenda.js';
 import { group, value, slug } from './shell.js';
-import { PARTS, PART_IDS } from '../workshop/spares.js';
+import { PARTS, ALL_PART_IDS } from '../workshop/spares.js';
 import { getTuningGroups } from '../core/tuning.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
 import { applicableQuirks, featuresOf } from '../vehicle/quirks.js';
@@ -188,6 +188,8 @@ export function buildGameTree(g, host) {
       WHEEL_NAMES.forEach((name, i) => {
         tyres[`${slug(name)}Psi`] = num(() => q().tyres.psi[i], (v) => { q().tyres.psi[i] = v; q().physics.applyParams(); }, 0.5, 7, 'psi');
       });
+      tyres.frontTread = num(() => q().tyres.tread.front, (v) => (q().tyres.tread.front = v), 0, 1, '', '0 bald, 1 new');
+      tyres.rearTread = num(() => q().tyres.tread.rear, (v) => (q().tyres.tread.rear = v), 0, 1, '', '0 bald, 1 new');
       out.tyres = group(() => tyres);
       return out;
     }, `${u().name}`);
@@ -358,7 +360,7 @@ export function buildGameTree(g, host) {
   }), 'the diesel generator outside the barn');
   const spares = group(() => ({
     now: text(() => g.sparesShelf.describe(), 'what is on the rack, on order and in the parcel'),
-    ...Object.fromEntries(PART_IDS.map((id) => [id, num(() => g.spares.count(id), (v) => ((g.spares.counts[id] = Math.max(0, Math.round(v))), g.sparesShelf.paintCrates()), 0, 20, '', `${PARTS[id].many} on the rack`)])),
+    ...Object.fromEntries(ALL_PART_IDS.map((id) => [id, num(() => g.spares.count(id), (v) => ((g.spares.counts[id] = Math.max(0, Math.round(v))), g.sparesShelf.paintCrates()), 0, 20, '', `${PARTS[id].many} on the rack`)])),
     orderAll: flag(() => false, (v) => v && g.sparesShelf.debugOrderAll(), 'set to true: order a pack of every part'),
     openParcel: flag(() => false, (v) => v && g.spares.hasParcel && g.sparesShelf.collect(), 'set to true: open the parcel at the barn door'),
   }), 'the spares shelf in the barn');

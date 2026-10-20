@@ -953,8 +953,8 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'What can the workbench do?',
-        a: `Drive into the yellow bay in front of it, switch off, look at the bench and press <kbd>E</kbd>. <kbd>1</kbd> to <kbd>9</kbd>, <kbd>0</kbd>, <kbd>-</kbd>, <kbd>=</kbd>, <kbd>[</kbd>, <kbd>]</kbd>, <kbd>;</kbd> and <kbd>'</kbd> pick a job: a new plug,
-          clean the carb, fix a tyre, two-stroke oil, engine oil, repack a silencer, coolant, a big-bore kit, new engine mounts, a top-end rebuild for a two-stroke that has seized, adjusting and oiling the chain on the three chain-driven quads, setting the valve clearances on a four-stroke, renewing a split intake boot on a petrol engine, or fitting a new clutch plate on a manual quad. Each is a short list of steps; on a hold step keep
+        a: `Drive into the yellow bay in front of it, switch off, look at the bench and press <kbd>E</kbd>. <kbd>1</kbd> to <kbd>9</kbd>, <kbd>0</kbd>, <kbd>-</kbd>, <kbd>=</kbd>, <kbd>[</kbd>, <kbd>]</kbd>, <kbd>;</kbd>, <kbd>'</kbd> and <kbd>.</kbd> pick a job: a new plug,
+          clean the carb, fix a tyre, two-stroke oil, engine oil, repack a silencer, coolant, a big-bore kit, new engine mounts, a top-end rebuild for a two-stroke that has seized, adjusting and oiling the chain on the three chain-driven quads, setting the valve clearances on a four-stroke, renewing a split intake boot on a petrol engine, fitting a new clutch plate on a manual quad, or new tyres on a worn axle (from the tyre rack). Each is a short list of steps; on a hold step keep
           <kbd>E</kbd> down and let go inside the green band. Too soon or too long botches it and the fault comes back a little. Amy helps; Jess heckles.`,
       },
       {
@@ -992,6 +992,18 @@ export const FAQ_SECTIONS = [
         q: 'How do I set one tyre\'s pressure?',
         a: `Open the toolbox on a switched-off quad. Under the rows is the tyre pump and gauge, with a reading for each wheel. Click <kbd>−</kbd> to let a
           little air out of that tyre or <kbd>+</kbd> to pump it up. Softer tyres grip better in mud, harder ones roll easier on the track.`,
+      },
+      {
+        q: 'How do I tell when my tyres are worn out, and what do I do about it?',
+        a: `Tread wears away as you drive: faster on the tarmac, much faster if you spin the wheels or do doughnuts, and slower in mud. The lugs on the tyres themselves shrink and go smooth as it goes,
+          and the toolbox's pump and gauge shows "Tread: Front 82%  Rear 30%" under the pressures (in orange when one is low). A bald tyre has less grip, most of all in mud and on wet grass, and picks up a puncture more
+          easily. To put it right, park the vehicle in a bay at the workbench and choose "Fit new tyres": it takes the worn end's tyres (two on a quad, one on a bike) from the tyre rack. The job only appears once an end is worn.`,
+        tip: 'Tread wears with distance and wheelspin. Park it at the bench and fit new tyres from the tyre rack.',
+      },
+      {
+        q: 'Where do the new tyres come from, and what if there are none?',
+        a: `The tyre rack on the barn's second span, on the south wall left of the helmets, keeps a stack for each size: small quads (the kids' quad and the mini moto), quads, sport quads, the old three-wheeler, the UTV, the Land Rovers,
+          the cars and the tractor. The tag on each shelf says how many there are. Look at the rack and press <kbd>E</kbd>, then the number of a size to order two. The post van brings them like any other part (see "How do I order spare parts"), and you open the parcel by the barn door to put them on the rack. A quad starts with some in stock, but the UTV, Land Rovers, cars and tractor have none until you order, so watch their tread. With too few on the rack the bench greys the job out and says how many it wants.`,
       },
       {
         q: 'Why does it pull to one side and feel draggy?',
@@ -1532,7 +1544,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I order spare parts, and when do they come?',
-        a: `Look at the parts rack in the barn (back wall, beyond the workbench), press <kbd>E</kbd> and press the number of the part to order a pack. About five minutes later the post van comes in at the big gate (if no one else is visiting, and only in daylight) and leaves a parcel by the barn door. Look at the parcel and press <kbd>E</kbd> to open it and put what is in it on the rack. An order you have not had by the end of the day is still on its way the next morning, and so is a parcel you have not opened. You can only order what the rack would have room for.`,
+        a: `Look at the parts rack in the barn (back wall, beyond the workbench), press <kbd>E</kbd> and press the number of the part to order a pack. Tyres have their own rack, on the second span's south wall, and work the same way. About five minutes later the post van comes in at the big gate (if no one else is visiting, and only in daylight) and leaves a parcel by the barn door. Look at the parcel and press <kbd>E</kbd> to open it and put what is in it on the rack. An order you have not had by the end of the day is still on its way the next morning, and so is a parcel you have not opened. You can only order what the rack would have room for.`,
       },
       {
         q: 'How do I wave at the girls?',

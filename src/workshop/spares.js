@@ -1,6 +1,8 @@
 // The spares shelf in the barn: plugs, inner tubes, drive belts, jets and pistons and rings are counted, a job that fits one uses it up, and
 // when the shelf is bare you order more, which the post van brings (the parcel is left at the barn door, as any other). Pure, tested.
 
+import { TYRE_SIZES, TYRE_SIZE_IDS, tyrePart } from '../vehicle/tyres.js';
+
 /** The five parts. `one` and `many` are how the shelf and the toasts say them. */
 export const PARTS = {
   plug: { one: 'spark plug', many: 'spark plugs' },
@@ -9,7 +11,14 @@ export const PARTS = {
   jet: { one: 'main jet', many: 'main jets' },
   piston: { one: 'piston and rings', many: 'pistons and rings' },
 };
-export const PART_IDS = Object.keys(PARTS);
+export const PART_IDS = Object.keys(PARTS); // the parts rack's: the number keys order these
+
+/** The tyres, on their own rack in the barn (tyreRack.js): one part for each size (tyres.js TYRE_SIZES), counted in single tyres. */
+export const TYRE_IDS = TYRE_SIZE_IDS.map(tyrePart);
+for (const size of TYRE_SIZE_IDS) PARTS[tyrePart(size)] = { ...TYRE_SIZES[size], tyre: size };
+
+/** Everything the shelf counts. */
+export const ALL_PART_IDS = Object.keys(PARTS);
 
 /** Which part a bench job uses (on the step that has `part`), and which a toolbox quick fix uses. A plain job uses none. */
 export const FIX_PARTS = { puncture: 'tube', belt: 'belt' };
@@ -20,11 +29,27 @@ export const DEFAULT_SPARES_PARAMS = {
   startBelt: 2, // drive belts
   startJet: 2, // main jets (a size other than the stock one takes one; going back to stock gives it back)
   startPiston: 1, // pistons and rings
+  startTyreKid: 2, // tyres, singly: enough for an axle of the small quads
+  startTyreQuad: 4,
+  startTyreSport: 2,
+  startTyreTrike: 2,
+  startTyreUtv: 0, // the big vehicles come with whatever they were last fitted with: order when they need them
+  startTyreLandrover: 0,
+  startTyreCar: 0,
+  startTyreTractor: 0,
   packPlug: 4, // how many come in one order
   packTube: 2,
   packBelt: 2,
   packJet: 2,
   packPiston: 1,
+  packTyreKid: 2, // tyres come two at a time, an axle's worth
+  packTyreQuad: 2,
+  packTyreSport: 2,
+  packTyreTrike: 2,
+  packTyreUtv: 2,
+  packTyreLandrover: 2,
+  packTyreCar: 2,
+  packTyreTractor: 2,
   maxOnShelf: 8, // most of one part the shelf (plus what is ordered or in a parcel) will hold
   orderDelay: 270, // seconds from ordering to the post van setting off (it waits for a clear lane and daylight, then drives up: five or six minutes in all)
   orderJitter: 30, // and it is this much early or late
@@ -36,6 +61,8 @@ export const SPARES_PARAM_RANGES = {
   startBelt: [0, 10, 1],
   startJet: [0, 10, 1],
   startPiston: [0, 10, 1],
+  ...Object.fromEntries(TYRE_IDS.map((id) => [`start${id[0].toUpperCase()}${id.slice(1)}`, [0, 12, 1]])),
+  ...Object.fromEntries(TYRE_IDS.map((id) => [`pack${id[0].toUpperCase()}${id.slice(1)}`, [1, 8, 1]])),
   packPlug: [1, 10, 1],
   packTube: [1, 10, 1],
   packBelt: [1, 10, 1],
@@ -57,7 +84,7 @@ export class Spares {
   constructor(params = DEFAULT_SPARES_PARAMS, random = Math.random) {
     this.p = params;
     this.random = random;
-    this.counts = Object.fromEntries(PART_IDS.map((id) => [id, params[`start${cap(id)}`] ?? 0]));
+    this.counts = Object.fromEntries(ALL_PART_IDS.map((id) => [id, params[`start${cap(id)}`] ?? 0]));
     this.ordered = {}; // part -> how many are on order
     this.waiting = {}; // part -> how many are in the parcel at the barn door
     this.due = null; // seconds until the van sets off for the order, or null when none is waiting to go
@@ -160,7 +187,7 @@ export class Spares {
   restore(s) {
     if (!s) return;
     const n = (v) => (Number.isFinite(v) && v >= 0 ? Math.floor(v) : null);
-    for (const id of PART_IDS) {
+    for (const id of ALL_PART_IDS) {
       if (n(s.counts?.[id]) !== null) this.counts[id] = n(s.counts[id]);
       if (n(s.ordered?.[id])) this.ordered[id] = n(s.ordered[id]);
       if (n(s.waiting?.[id])) this.waiting[id] = n(s.waiting[id]);
