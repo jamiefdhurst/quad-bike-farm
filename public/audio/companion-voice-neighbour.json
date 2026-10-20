@@ -1,0 +1,128 @@
+{
+ "files": [
+  "audio/companion-voice-neighbour-000.mp3"
+ ],
+ "voice": "chatterbox|9379640bfc58",
+ "clips": {
+  "Morning. Mind the gate, it sticks.": {
+   "file": 0,
+   "start": 0.1,
+   "dur": 2.32
+  },
+  "Hello, you. Come in, mind the muck.": {
+   "file": 0,
+   "start": 2.5,
+   "dur": 2.33
+  },
+  "Well, look who it is. Come in, come in.": {
+   "file": 0,
+   "start": 4.91,
+   "dur": 2.93
+  },
+  "Hello there. I wondered who that was on the lane.": {
+   "file": 0,
+   "start": 7.92,
+   "dur": 3.03
+  },
+  "Ah, you found us. Park anywhere that is not in the way.": {
+   "file": 0,
+   "start": 11.03,
+   "dur": 3.56
+  },
+  "Back again? The kettle is still warm.": {
+   "file": 0,
+   "start": 14.67,
+   "dur": 2.48
+  },
+  "Hello again. Have you forgotten something?": {
+   "file": 0,
+   "start": 17.23,
+   "dur": 2.42
+  },
+  "You again. Come in, then.": {
+   "file": 0,
+   "start": 19.73,
+   "dur": 1.46
+  },
+  "Hello, love. Did you want something else?": {
+   "file": 0,
+   "start": 21.27,
+   "dur": 2.21
+  },
+  "You are soaked. Come in out of that.": {
+   "file": 0,
+   "start": 23.56,
+   "dur": 2.24
+  },
+  "Dreadful out, isn't it? Come in, quick.": {
+   "file": 0,
+   "start": 25.88,
+   "dur": 2.2
+  },
+  "Look at the state of you. Come in, come in.": {
+   "file": 0,
+   "start": 28.16,
+   "dur": 2.68
+  },
+  "The lane has been quiet today.": {
+   "file": 0,
+   "start": 30.92,
+   "dur": 1.38
+  },
+  "That is a fine machine you have there.": {
+   "file": 0,
+   "start": 32.38,
+   "dur": 1.62
+  },
+  "Mind my hens, they go everywhere.": {
+   "file": 0,
+   "start": 34.08,
+   "dur": 2.08
+  },
+  "The post van was late again.": {
+   "file": 0,
+   "start": 36.24,
+   "dur": 1.32
+  },
+  "I hear your engine from here, you know. Every morning.": {
+   "file": 0,
+   "start": 37.64,
+   "dur": 2.78
+  },
+  "The barn roof wants doing. It has wanted doing for years.": {
+   "file": 0,
+   "start": 40.5,
+   "dur": 3.49
+  },
+  "Have you eaten? I have a pie going spare.": {
+   "file": 0,
+   "start": 44.07,
+   "dur": 2.76
+  },
+  "The tractor will start when it feels like it.": {
+   "file": 0,
+   "start": 46.91,
+   "dur": 2.12
+  },
+  "Mind how you go on the lane.": {
+   "file": 0,
+   "start": 49.11,
+   "dur": 1.26
+  },
+  "Right, off you go. Shut the gate.": {
+   "file": 0,
+   "start": 50.45,
+   "dur": 2.26
+  },
+  "Come again. Bring a cake.": {
+   "file": 0,
+   "start": 52.79,
+   "dur": 1.87
+  },
+  "Bye, then. Watch out for the post van.": {
+   "file": 0,
+   "start": 54.74,
+   "dur": 2.18
+  }
+ }
+}
