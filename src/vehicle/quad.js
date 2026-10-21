@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { idealAdvance } from '../engine/ignitionTiming.js';
 import { lampSupply } from '../engine/charging.js';
 import { buildQuadModel, poseSuspension, setHeadlights, setTaillights, setSignalLamps, poseSignalControls, poseParkBrake } from './quadModel.js';
 import { FuelSystem } from './fuelSystem.js';
@@ -1447,6 +1448,8 @@ export class Quad {
       this.kickBack = Math.max(0, this.kickBack - dt);
       this.kickStart.rotation.x = this.kickStart.userData.restAngle + 1.5 * Math.sin(pull * Math.PI) - 0.5 * Math.min(1, this.engine.kicked / 0.3) - (this.pullHeld > 0 ? 0.12 : 0);
     }
+    // A girl driving it works the lever as she goes: it follows what the revs want (she does not leave it where it bites).
+    if (this.driver && !this.input && e.params.manualTiming && e.isRunning) e.advance += (idealAdvance(e.rpm, e.params.idleRpmWarm, e.params.maxRpm, e.params) - e.advance) * Math.min(1, 2 * dt);
     if (this.advanceArm) {
       this.advanceShown ??= this.engine.advance;
       this.advanceShown += (this.engine.advance - this.advanceShown) * Math.min(1, 12 * dt);

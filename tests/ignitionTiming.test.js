@@ -142,3 +142,12 @@ describe('starting the old bike the old way', () => {
     expect(r.caught).toBeLessThan(run({ advance: 0.2, tickles: 2 }).caught);
   });
 });
+
+describe('the debug panel’s readouts', () => {
+  it('list the spark lever only for an engine that has one', async () => {
+    const { engineReadouts } = await import('../src/debug/vehicleDebug.js');
+    const keys = (params) => engineReadouts(new EngineModel(params, { random: () => 0.5 })).map((r) => r.key);
+    expect(keys({ ...DEFAULT_ENGINE_PARAMS, ...PLOVER_SPEC.engine })).toEqual(expect.arrayContaining(['sparkLever', 'timingError', 'kickedBack']));
+    expect(keys({ ...DEFAULT_ENGINE_PARAMS })).not.toContain('sparkLever');
+  });
+});

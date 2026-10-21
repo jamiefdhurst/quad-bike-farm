@@ -4775,6 +4775,20 @@ export class Game {
     for (const unit of [this.rustyUnit, this.ploverUnit]) if (unit?.barnFind) this.updateFind(unit, dt);
   }
 
+  /** The old bike's kick-back on you: the nearest girl within 15 m says something (oldBikeLines.js). A girl's own is hers to say (startingAttempt.js). */
+  updateKickBack() {
+    for (const u of this.units) {
+      const q = u.quad;
+      if (!q.engine.params.kickStart) continue;
+      if (q.kickBack > 0 && !q.kickBackSaid) {
+        q.kickBackSaid = true;
+        if (q.helperPull || q.driver) continue; // she kicked it herself
+        const near = this.companions.filter((c) => c.root.position.distanceTo(q.position) < 15).sort((a, b) => a.root.position.distanceTo(q.position) - b.root.position.distanceTo(q.position))[0];
+        near?.voice.say('oldKick', { urgent: true });
+      } else if (q.kickBack <= 0) q.kickBackSaid = false;
+    }
+  }
+
   updateFind(unit, dt) {
     const find = unit.barnFind;
     const e = unit.engine;
@@ -11450,6 +11464,7 @@ export class Game {
     this.guard.run('updateCharger', () => this.updateCharger(dt));
     this.guard.run('updateGenerator', () => this.updateGenerator(dt));
     this.guard.run('updateBarnFind', () => this.updateBarnFind(dt));
+    this.guard.run('updateKickBack', () => this.updateKickBack());
     this.notebook.update(dt);
     this.sparesShelf.update(dt);
     this.guard.run('updateLoft', () => this.updateLoft(dt));

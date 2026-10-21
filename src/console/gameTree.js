@@ -137,6 +137,8 @@ export function buildGameTree(g, host) {
       if (q().drive) out.drive = choice(q().drive.hasLock ? DRIVE_MODES : ['2wd', '4wd'], () => q().drive.mode, (v) => (q().drive.mode = v), 'the 2WD / 4WD switch');
       if (!q().engine.params.injected && (!q().fuel.params.noTap || (q().landRover && !q().engine.params.compressionIgnition))) out.choke = num(() => q().choke, (v) => (q().choke = v), 0, 1); // the Land Rover has a choke but no tap
       for (const m of engineReadouts(e(), { manual: !!q().manual })) out[m.key] = typeof m.get(e()) === 'number' ? ro(() => m.get(e()), '', m.label) : text(() => String(m.get(e())), m.label);
+      if (e().params.manualTiming) out.sparkLever = num(() => e().advance, (v) => (e().advance = v), 0, 1, '', 'the advance-retard lever on the left bar: 0 retarded (easy and safe to kick, no power), 1 advanced (kicks back when kicked, wants the revs up)');
+      if (e().params.tickler) out.tickled = num(() => e().tickled, (v) => (e().tickled = v), 0, 3, '', 'fuel the tickler has put in the carb: enriches a cold start, floods the plug past ' + e().params.tickleFloodAbove);
       if (e().params.waterCooled) out.coolant = num(() => e().coolant, (v) => (e().coolant = v), 0, 1);
       if (e().params.waterCooled) out.thermostat = num(() => e().thermostat, (v) => (e().thermostat = v), 0, 1);
       if (q().sump) out.oil = num(() => q().sump.level, (v) => (q().sump.level = v), 0, q().sump.params.maxLevel, '', 'engine oil level (over 1 is overfilled)');
