@@ -294,6 +294,7 @@ export class Quad {
     this.helperGrip = 'along'; // how she holds the starting handle: 'round' (it can kick back) or 'along'
     this.pullByHer = false;
     this.lastLeft = null; // who last got off it and whether they set the parking brake: { who: 'you' | a girl's id, braked } (handbrake.js)
+    this.pto = { throttle: 0, load: 0 }; // a hydraulic fitting at work (the tractor's log splitter): the throttle its governor holds and the load it puts on the engine, both 0..1
     this.parkBrake = false; // the parking brake: wheels locked, so the throttle only revs the engine (toggled with Space)
     this.startTrouble = 0; // how many goes the last start by a girl took (npc/keepAlive.js reads it)
     this.helperThrottle = 0; // she's blipping the throttle (a quad's starting knack)
@@ -1107,11 +1108,11 @@ export class Quad {
       gearRpm: geared && gearTop > 0 ? (Math.abs(this.forwardSpeed) / gearTop) * this.engine.params.maxRpm : 0,
       gearLock: geared ? d.clutch * (1 - this.clutchSlip) : 0, // a slipping clutch lets the revs run away from the road
       starter: this.starter,
-      throttle: this.throttle,
+      throttle: Math.max(this.throttle, this.pto.throttle),
       choke: this.choke,
       load: this.drivetrain.engineLoad,
-      driveLoad: this.engineLoad.driveLoad,
-      resistLoad: this.engineLoad.resistLoad,
+      driveLoad: Math.max(this.engineLoad.driveLoad, this.pto.load),
+      resistLoad: Math.max(this.engineLoad.resistLoad, this.pto.load),
       overrunRpm: this.engineLoad.overrunRpm,
       fuel: this.fuel.bowlLevel,
       oil: this.fuel.oil,

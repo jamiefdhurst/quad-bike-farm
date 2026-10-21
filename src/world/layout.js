@@ -203,6 +203,9 @@ export const LAYOUT = {
   bench: { x: -62.8, z: 56.1, length: 4.2, depth: 0.7, height: 0.92 },
   // The trickle charger at the west end of the workbench (workshop/chargerModel.js): faces the bay, the way you stand at the bench.
   benchCharger: { x: -64.5, z: 56.2 },
+  // The woodpile at the wood's gate, on the grass field's north side (items/logSplitter.js): `piles` are where the rounds lie, as [x, z, yaw],
+  // `park` where the tractor stands to split them with the stack close by, and `stack` the log stack against the north hedge (`yaw` along it).
+  logYard: { piles: [[-22, -72.5, 0.3], [-13.5, -71.5, 1.1]], park: { x: -17.5, z: -68, yaw: Math.PI / 2 }, stack: { x: -6, z: -77.2, yaw: 0 } },
   // The bonfire site (world/bonfire.js): on the grass field's south side, well clear of the track, the yard's parking and the south hedge. The logs
   // the girls sit on stand round it. `brushwood` is where the hedge cuttings lie, as [x, z, yaw], along the inside of the south hedge: carry three to the pile.
   bonfire: { x: -6, z: 71, seatRadius: 2.4 },

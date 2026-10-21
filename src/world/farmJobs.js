@@ -154,6 +154,12 @@ export const FARM_JOBS = {
     hint: 'Mow and bale the patch in the north field with the tractor, load the bales on the trailer and take them to the Dutch barn',
     needs: 'hayMeadow',
   },
+  logs: {
+    label: 'Split and stack logs',
+    chalk: 'Split some logs and stack them at the wood',
+    hint: 'Fit the log splitter on the tractor, put a round on the beam and hold E to push it through, then carry the logs to the stack by the hedge',
+    needs: 'logYard',
+  },
   spray: SPRAY_JOB, // only on the board while the field wants it (the game leaves it off for the days a spray lasts)
 };
 

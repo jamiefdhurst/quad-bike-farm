@@ -297,6 +297,12 @@ export function buildGirlsTab(d) {
   button(jobs, 'Put the bale on the spike down', () => g.baleRig.putDown());
   button(jobs, 'Silage job done now', () => g.debugFinishSilage());
   button(jobs, 'Put the silage bales back', () => g.debugResetBales());
+  if (g.logStack) {
+    show(jobs, 'The log splitter', () => `${g.splitterFitted ? 'fitted' : 'not fitted'}, ram ${Math.round(g.splitter.ram * 100)}%, ${g.splitter.loaded ? 'a round on the beam' : 'beam empty'}, ${g.logStack.count} of ${g.splitterParams.capacity} logs stacked`);
+    button(jobs, 'Logs: fit the splitter / put the bale spike back', () => g.fitSplitter(!g.splitterFitted));
+    button(jobs, 'Logs: job done now', () => g.debugFinishLogs());
+    button(jobs, 'Logs: empty the stack and deal the rounds back', () => g.debugResetLogs());
+  }
   show(jobs, 'The bonfire', () => `${g.bonfire.state}, ${g.bonfire.piled} of ${g.bonfireParams.heapsNeeded} on the pile, ${Math.round(g.bonfire.intensity * 100)}% blaze${g.bonfire.damp ? ', smoky' : ''}`);
   button(jobs, 'Build and light the bonfire', () => g.debugLightFire());
   button(jobs, 'Put the bonfire out', () => g.bonfire.putOut() || toast('It is not lit'));

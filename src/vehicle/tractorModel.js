@@ -26,6 +26,9 @@ import { addHeadlightBeams, addTailLights } from './quadModel.js';
 
 export const SPIKE_RAIL_Z = -1.78; // the bale spike's mast, behind the lift housing
 export const SPIKE_PLATE_Z = -1.85; // and its plate on the carriage, where the spike starts (it points out of the back)
+// The log splitter that takes the spike's place (items/logSplitter.js), in the model's frame (y above the ground, the back at -z): a beam out
+// of the back with the ram's plate at its near end and the wedge at the far end; a round stands on its end between them.
+export const SPLITTER = { beamY: 0.95, beamTop: 1.02, faceZ: -2.05, stroke: 0.85, wedgeZ: -3.03, roundZ: -2.79, roundY: 1.17, roundR: 0.15 };
 export const TRACTOR_GROUND_OFFSET = -0.8; // chassis origin to the ground at rest, metres
 const REAR_R = MF_WHEELS.rearR; // big rear wheels
 const FRONT_R = MF_WHEELS.frontR; // small front ones
@@ -632,6 +635,41 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   mergeStatic(spikeMast);
   root.add(spikeMast);
 
+  // The log splitter (hidden until it is fitted in the spike's place; posed by poseLogSplitter): a frame on the lower links, a beam, a hydraulic
+  // cylinder over it with the ram's plate on the rod, and a wedge at the far end that the plate pushes a round onto.
+  const splitter = new THREE.Group();
+  splitter.name = 'logSplitter';
+  splitter.userData.keep = true;
+  const by = SPLITTER.beamY;
+  for (const s of [-1, 1]) {
+    tube([s * 0.4, 0.5, -1.45], [s * 0.3, by, -1.85], 0.022, MAT.steel, splitter);
+    tube([s * 0.3, by, -1.85], [s * 0.3, by + 0.5, SPIKE_RAIL_Z + 0.5], 0.02, MAT.steel, splitter); // up and forward to the top link
+  }
+  rbox(0.7, 0.1, 0.1, 0.02, MAT.red, 0, by, -1.85, splitter);
+  const beamLen = 1.4;
+  rbox(0.14, 0.14, beamLen, 0.012, MAT.red, 0, by, -1.8 - beamLen / 2, splitter);
+  rbox(0.34, 0.05, 0.4, 0.01, MAT.steel, 0, SPLITTER.beamTop - 0.005, SPLITTER.wedgeZ, splitter); // the base the wedge stands on
+  add(new THREE.CylinderGeometry(0.095, 0.095, 0.26, 3), MAT.chrome, splitter).position.set(0, SPLITTER.beamTop + 0.15, SPLITTER.wedgeZ); // the wedge, edge towards the ram
+  rbox(0.16, 0.06, 0.16, 0.01, MAT.steel, 0, by + 0.09, -1.95, splitter); // the cylinder's mounts on the beam
+  rbox(0.16, 0.06, 0.16, 0.01, MAT.steel, 0, by + 0.09, -2.7, splitter);
+  add(new THREE.CylinderGeometry(0.055, 0.055, 1.06, 12).rotateX(Math.PI / 2), MAT.black, splitter).position.set(0, by + 0.19, -2.25);
+  add(new THREE.CylinderGeometry(0.075, 0.075, 0.05, 12).rotateX(Math.PI / 2), MAT.steel, splitter).position.set(0, by + 0.19, -1.72);
+  for (const dz of [-0.4, 0.1]) add(new THREE.CylinderGeometry(0.06, 0.06, 0.03, 12).rotateX(Math.PI / 2), MAT.chrome, splitter).position.set(0, by + 0.19, -2.25 + dz);
+  tube([0.07, by + 0.2, -1.8], [0.2, by + 0.2, -1.5], 0.011, MAT.black, splitter, 6); // the hoses back to the tractor
+  tube([-0.07, by + 0.2, -1.8], [-0.2, by + 0.2, -1.5], 0.011, MAT.black, splitter, 6);
+  const ram = new THREE.Group();
+  ram.name = 'splitterRam';
+  ram.userData.keep = true;
+  const fz = SPLITTER.faceZ;
+  rbox(0.34, 0.26, 0.05, 0.012, MAT.steel, 0, SPLITTER.beamTop + 0.13, fz + 0.025, ram); // the plate
+  rbox(0.2, 0.1, 0.24, 0.01, MAT.rust, 0, by + 0.05, fz + 0.14, ram); // and its block, which rides the beam
+  add(new THREE.CylinderGeometry(0.022, 0.022, 0.5, 8).rotateX(Math.PI / 2), MAT.chrome, ram).position.set(0, by + 0.19, fz + 0.25 + 0.03); // the rod
+  splitter.add(ram);
+  splitter.visible = false;
+  mergeStatic(ram);
+  mergeStatic(splitter);
+  root.add(splitter);
+
   // Anchors for people and the camera. A girl can sit on top of each rear wheel arch (npc/mudguardRide.js).
   for (const [name, s] of [['mudguardLeft', 1], ['mudguardRight', -1]]) {
     const a = new THREE.Object3D();
@@ -699,4 +737,12 @@ export function poseBaleSpike(model, plateY, shown = true, lift = 0) {
   model.getObjectByName('spikeLever').rotation.x = 0.6 - 1.2 * lift;
   mast.visible = shown;
   model.getObjectByName('spikeCarriage').position.y = plateY;
+}
+
+/** Poses the log splitter on the back: `ram` is 0 (back) to 1 (the full stroke), and the whole fitting shows only while `shown`. */
+export function poseLogSplitter(model, ram = 0, shown = true) {
+  const g = model.getObjectByName('logSplitter');
+  if (!g) return;
+  g.visible = shown;
+  model.getObjectByName('splitterRam').position.z = -SPLITTER.stroke * ram;
 }

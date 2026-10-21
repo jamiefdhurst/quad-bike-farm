@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import * as THREE from 'three';
-import { buildTractorModel, TRACTOR_LAYOUT, poseBaleSpike, poseTractorControls } from '../src/vehicle/tractorModel.js';
+import { buildTractorModel, TRACTOR_LAYOUT, SPLITTER, poseBaleSpike, poseLogSplitter, poseTractorControls } from '../src/vehicle/tractorModel.js';
 import { TRACTOR_SPEC } from '../src/vehicle/quadSpecs.js';
 import { MF_PANEL, MF_COWL, MF_BONNET, panelY } from '../src/vehicle/mf35Body.js';
 
@@ -34,6 +34,21 @@ describe('tractor model', () => {
     poseBaleSpike(model, 0.6, false, 0);
     expect(model.getObjectByName('spikeLever').rotation.x).toBeGreaterThan(up);
     expect(model.getObjectByName('baleSpike').visible).toBe(false);
+  });
+
+  it('has a log splitter that is hidden until fitted, and whose ram runs along its beam to the wedge', () => {
+    const g = model.getObjectByName('logSplitter');
+    expect(g.visible).toBe(false);
+    poseLogSplitter(model, 0, true);
+    expect(g.visible).toBe(true);
+    expect(model.getObjectByName('splitterRam').position.z).toBeCloseTo(0);
+    poseLogSplitter(model, 1, true);
+    expect(model.getObjectByName('splitterRam').position.z).toBeCloseTo(-SPLITTER.stroke);
+    // At the end of its stroke the plate's face is short of the wedge, so the ram never runs into it.
+    expect(SPLITTER.faceZ - SPLITTER.stroke).toBeGreaterThan(SPLITTER.wedgeZ);
+    // A round stands between the plate and the wedge to start with, touching neither.
+    expect(SPLITTER.roundZ + SPLITTER.roundR).toBeLessThan(SPLITTER.faceZ);
+    expect(SPLITTER.roundZ - SPLITTER.roundR).toBeGreaterThan(SPLITTER.wedgeZ - 0.1);
   });
 
   it('keeps the anchors where the girls and the camera expect them', () => {
