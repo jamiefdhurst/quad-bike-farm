@@ -159,6 +159,8 @@ export const LAYOUT = {
   // field's second gateway, along the hedge.
   dutchBarn: { x: 186, z: -14, halfX: 7.5, halfZ: 4.5, bays: 3, eaves: 5.4, rise: 1.6, overhang: 0.4, openBays: 1, layers: 3 },
   fieldShed: { x: 89, z: -73, halfX: 3.2, halfZ: 2.2, wall: 0.5, wallHeight: 2.3, ridge: 3.5, door: { halfWidth: 0.9, height: 1.9 } },
+  // The hay patch (world/haymaking.js): a rectangle of the barley field's stubble beside the first gateway of its north side, level and dry, that the hay job mows, bales and clears.
+  hayMeadow: { minX: 100, maxX: 132, minZ: -26, maxZ: -8 },
   muckHeap: { x: 118, z: 15.2, halfX: 3.6, halfZ: 2.3, height: 1.5 },
   trough: { x: 146.8, z: -5.5, length: 2.4, width: 0.65, height: 0.6 },
 

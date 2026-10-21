@@ -146,6 +146,12 @@ export const FARM_JOBS = {
     hint: 'Spike them with the tractor, carry them east and leave them on the floor of the open bay',
     needs: 'dutchBarn',
   },
+  hay: {
+    label: 'Make hay',
+    chalk: 'Cut the hay patch, bale it and stack it in the Dutch barn',
+    hint: 'Mow and bale the patch in the north field with the tractor, load the bales on the trailer and take them to the Dutch barn',
+    needs: 'hayMeadow',
+  },
 };
 
 export const DEFAULT_JOB_BOARD_PARAMS = {

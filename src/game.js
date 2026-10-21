@@ -295,7 +295,7 @@ import { weatherModel, buildTarp } from './vehicle/rustyLook.js';
 import { planDamage, applyDamage } from './vehicle/rustyDamage.js';
 import { Notebook } from './workshop/notebook.js';
 import { SparesShelf } from './workshop/sparesShelf.js';
-import { MuckLoad, DEFAULT_MUCK_PARAMS, MUCK_PARAM_RANGES, JobBoard, DEFAULT_JOB_BOARD_PARAMS, JOB_BOARD_PARAM_RANGES, availableJobs } from './world/farmJobs.js';
+import { FARM_JOBS, MuckLoad, DEFAULT_MUCK_PARAMS, MUCK_PARAM_RANGES, JobBoard, DEFAULT_JOB_BOARD_PARAMS, JOB_BOARD_PARAM_RANGES, availableJobs } from './world/farmJobs.js';
 import { JobBoardView } from './world/jobBoard.js';
 import { ClassifiedsView } from './world/classifiedsView.js';
 import { MoneyTinView } from './world/moneyTinView.js';
@@ -313,6 +313,9 @@ import { FireSit, FIRE_SIT_PARAM_RANGES } from './npc/fireSit.js';
 import { PhotoHost } from './photos/photoHost.js';
 import { WallCalendar } from './world/wallCalendar.js';
 import { MuckView } from './world/muckView.js';
+import { Haymaking, DEFAULT_HAY_PARAMS, HAY_PARAM_RANGES, STACK_CAPACITY, trailerSlots } from './world/haymaking.js';
+import { HayView } from './world/hayView.js';
+import { HayLoading, HAY_LOADING_PARAM_RANGES } from './npc/hayLoading.js';
 import { shortName } from './workshop/logbook.js';
 import { Interaction } from './interaction/interaction.js';
 import { Wheel } from './interaction/wheel.js';
@@ -1500,10 +1503,14 @@ export class Game {
     this.setUpBonfire();
     this.jobBoardParams = { ...DEFAULT_JOB_BOARD_PARAMS };
     // The silage job needs the tractor, and enough bales still out of the barn for it to be worth asking.
-    const jobIds = availableJobs(this.world.layout).filter((id) => id !== 'silage' || (!!this.tractorUnit && !!this.siloRect && this.baleRig.yard.countIn(this.siloRect) < this.spikeParams.balesNeeded));
+    const hayStacked = Math.max(0, this.farm.save?.hay?.stacked ?? 0);
+    const jobIds = availableJobs(this.world.layout)
+      .filter((id) => id !== 'silage' || (!!this.tractorUnit && !!this.siloRect && this.baleRig.yard.countIn(this.siloRect) < this.spikeParams.balesNeeded))
+      .filter((id) => id !== 'hay' || (!!this.tractorUnit && !!this.siloRect && hayStacked + DEFAULT_HAY_PARAMS.balesNeeded <= STACK_CAPACITY)); // the hay needs the tractor and room in the barn
     this.jobBoard = new JobBoard({ ids: jobIds, random: createRandom(this.seed ^ 0x7ab0), params: this.jobBoardParams });
     this.setUpServiceJob();
     this.jobBoardView = new JobBoardView({ game: this, board: this.jobBoard, records: this.records });
+    this.setUpHay();
     // Each farm job ticked off pays (farm/classifieds.js); the neighbours' ads for vehicles are pinned up on the odd day, on the board beside the chalkboards.
     this.jobBoard.onComplete = (id) => {
       this.market.earn(this.marketParams.jobPay);
@@ -4008,6 +4015,7 @@ export class Game {
       generator: this.generator.toJSON(),
       headgear: this.headgear.capture(),
       bales: this.baleRig.yard.toJSON(),
+      hay: this.hay?.toJSON(),
       batteries: Object.fromEntries([...this.batteries].filter(([, b]) => b.out).map(([id, b]) => [id, { where: b.where === 'charger' ? 'charger' : 'loose' }])),
     };
   }
@@ -4572,6 +4580,10 @@ export class Game {
       ...mine(this.workLight.offers(this.workLightContext(c)), (o) => {
         c.voice.say('workLightOffer', { urgent: true, force: true });
         this.handleWorkLight(this.workLight.take(o));
+      }),
+      ...mine(this.hayLoading?.offers(this.hayLoadContext()) ?? [], (o) => {
+        this.companions.find((g) => g.character.id === o.girl).voice.say('hayGo', { urgent: true, force: true });
+        this.handleHayLoad(this.hayLoading.take(o));
       }),
       ...mine(this.generatorStart.offers(this.generatorStartContext()), (o) => {
         this.companions.find((g) => g.character.id === o.girl).voice.say('generatorGo', { urgent: true, force: true });
@@ -5801,6 +5813,255 @@ export class Game {
     if (!fields || area === 'out') return spot;
     const c = fields.clampToArea(area, spot.x, spot.z, area === 'road' || area === 'end' ? 1.5 : 3);
     return { x: c.x, z: c.z, yaw: Math.atan2(target.x - c.x, target.z - c.z) };
+  }
+
+
+  // Making hay -----------------------------------------------------------------------
+
+  /** The hay patch in the north field, its bales and the girls who carry them (world/haymaking.js, npc/hayLoading.js). */
+  setUpHay() {
+    const rect = this.world.layout.hayMeadow;
+    if (!rect) return;
+    this.hayParams = { ...DEFAULT_HAY_PARAMS };
+    this.hay = new Haymaking({ rect, params: this.hayParams });
+    this.hay.restore(this.farm.save?.hay, this.farm.day);
+    this.hayView = new HayView({ scene: this.scene, hay: this.hay, heightAt: (x, z) => this.world.heightAt(x, z), random: createRandom(this.farmSeed ^ 0x4a17) });
+    this.hayCapacity = 16;
+    this.haySlots = trailerSlots(this.hayCapacity);
+    this.hayLoading = new HayLoading();
+    this.hayStack();
+    if (this.jobBoard.has('hay')) this.hay.start();
+    this.hayView.refresh();
+    this.hayPhase = this.hay.phase;
+    registerTuning('Haymaking', this.hayParams, HAY_PARAM_RANGES);
+    registerTuning('Loading the hay', this.hayLoading.p, HAY_LOADING_PARAM_RANGES);
+    this.interaction.add({
+      target: this.hayView.loose,
+      isAvailable: () => this.hay.phase === 'load' && !this.handsFull && !this.player.isRiding,
+      prompt: () => this.hayBalePrompt(),
+      interact: () => this.heaveBale(),
+    });
+  }
+
+  /** The bales in the Dutch barn's bay, as many as the farm has stacked there. */
+  hayStack() {
+    const open = this.siloRect;
+    if (!open) return;
+    this.hayView.setStack(open, this.hay.stacked, this.world.heightAt((open.minX + open.maxX) / 2, (open.minZ + open.maxZ) / 2));
+  }
+
+  /** The tractor mowing and baling as it drives over the patch, the stages moving on, and the trailer unloading at the barn. */
+  updateHay(dt) {
+    const hay = this.hay;
+    this.hayLoading.update(dt);
+    this.hayView.update(dt);
+    const q = this.tractorUnit?.quad;
+    const events = q ? hay.update(dt, { x: q.position.x, z: q.position.z, heading: q.yaw, speed: q.speed, working: q.engine.isRunning, day: this.farm.day }) : [];
+    for (const e of events) {
+      if (e.type === 'cut' || e.type === 'baled') this.hayView.repaint(e.cells);
+      else if (e.type === 'bale') this.hayView.addLoose(e.bale);
+    }
+    if (hay.phase === 'stack' && this.siloRect) {
+      const m = this.trailer.model.position;
+      const done = hay.deliver(this.siloRect, { x: m.x, z: m.z, speed: Math.abs(this.trailer.signedSpeed) });
+      if (done) {
+        this.hayView.remove(done.ids);
+        this.hayStack();
+      }
+    }
+    if (hay.phase !== this.hayPhase) this.hayStageChanged(hay.phase);
+  }
+
+  /** Says the next thing to do when a stage is over, and ticks the job off at the end. */
+  hayStageChanged(phase) {
+    this.hayPhase = phase;
+    if (phase === 'bale') {
+      this.hud.toast('The patch is mown. Drive over the cut hay and the baler leaves bales behind you', 4);
+      this.saySomethingAboutHay('hayCut');
+    } else if (phase === 'load') {
+      this.hud.toast('Bales made. Bring the trailer to them: the girls will carry them up, or press E to heave one on', 5);
+      this.saySomethingAboutHay('hayBaled');
+    } else if (phase === 'stack') {
+      this.hud.toast('The trailer is loaded. Take it into the Dutch barn and stop', 4);
+      this.saySomethingAboutHay('hayLoaded');
+    } else if (phase === 'done') {
+      this.achievements.note('hayMade');
+      if (this.jobBoard.complete('hay')) {
+        this.hud.toast('Hay stacked. Ticked off the board on the barn door', 3);
+        this.jobBoardView.refresh();
+        if (this.jobBoard.cleared) this.achievements.note('boardCleared');
+      }
+      this.saySomethingAboutHay('hayDone');
+    }
+  }
+
+  /** One of the girls near the trailer says something about the hay (npc/hayLines.js). */
+  saySomethingAboutHay(key) {
+    const at = this.trailer.model.position;
+    const c = this.companions
+      .filter((g) => g.availability().canRemark && g.root.position.distanceTo(at) < 40)
+      .sort((a, b) => a.root.position.distanceTo(at) - b.root.position.distanceTo(at))[0];
+    c?.voice.say(key);
+  }
+
+  /** What the girls need to know to go and carry a bale (npc/hayLoading.js). */
+  hayLoadContext() {
+    const hay = this.hay;
+    const t = this.trailer;
+    const m = t.model.position;
+    const near = hay.nearest(m.x, m.z, hay.p.trailerReach);
+    return {
+      ready: hay.canLoad(hay.freeSlot(this.hayCapacity) >= 0 ? 1 : 0) && !!near,
+      at: near,
+      girls: this.companions.map((c) => ({
+        id: c.character.id,
+        x: c.root.position.x,
+        z: c.root.position.z,
+        free: c.availability().free,
+        weight: c.params.hayLoadWeight ?? 0,
+      })),
+    };
+  }
+
+  /** She takes the bale nearest her, carries it to the trailer's side and throws it up, a miss now and then (Jess's a lot more often than Amy's). */
+  handleHayLoad(e) {
+    if (!e) return;
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    const hay = this.hay;
+    const loading = this.hayLoading;
+    const done = () => {
+      c.release('hay');
+      loading.finished(e.girl, c.params.hayCooldown);
+    };
+    const at = c.root.position;
+    const bale = hay.nearest(at.x, at.z);
+    const slotIndex = hay.freeSlot(this.hayCapacity);
+    if (!bale || slotIndex < 0 || !hay.canLoad(1)) return loading.finished(e.girl, 0);
+    hay.claim(bale.id, e.girl, slotIndex);
+    c.hold('hay', 'carrying a bale to the trailer');
+    const away = () => {
+      hay.release(bale.id);
+      done();
+    };
+    const d = Math.hypot(at.x - bale.x, at.z - bale.z) || 1;
+    const spot = { x: bale.x + ((at.x - bale.x) / d) * 0.9, z: bale.z + ((at.z - bale.z) / d) * 0.9 };
+    const reached = () => {
+      const mesh = this.hayView.meshOf(bale.id);
+      const started = mesh && c.startCarry('squareBale', mesh, carryWeight('squareBale'), {
+        onLowered: (pos) => {
+          hay.release(bale.id, pos); // she was called away: it is left where she stood
+          this.hayView.putDown(hay.get(bale.id));
+          done();
+        },
+        onRaised: () => this.hayCarryUp(c, bale, slotIndex, done),
+      });
+      if (!started) away();
+    };
+    if (!c.sneakTo(spot, reached, 2)) away();
+  }
+
+  /** She has the bale in her hands: to the trailer's side, opposite its slot, and up it goes. */
+  hayCarryUp(c, bale, slotIndex, done) {
+    const slot = this.haySlots[slotIndex];
+    const side = slot.x >= 0 ? 1 : -1;
+    const stand = this.trailer.body.localToWorld(new THREE.Vector3(side * 1.85, 0, slot.z));
+    const arrive = () => {
+      const slotAt = this.trailer.body.localToWorld(new THREE.Vector3(slot.x, slot.y, slot.z));
+      if (Math.hypot(c.root.position.x - slotAt.x, c.root.position.z - slotAt.z) > 4) return c.dropCarry(); // the trailer has been driven off
+      this.hayThrow(c, bale, slotIndex, done);
+    };
+    if (!c.carryTo({ x: stand.x, z: stand.z }, arrive)) c.dropCarry();
+  }
+
+  /** The bale leaves her hands: up onto the trailer, or short of it. */
+  hayThrow(c, bale, slotIndex, done) {
+    const hay = this.hay;
+    const hand = c.root.localToWorld(new THREE.Vector3(-0.5, 1.05, 0.3));
+    c.endCarry();
+    if (Math.random() < c.params.hayMissChance) {
+      const short = c.root.localToWorld(new THREE.Vector3(0, 0, 0.9));
+      hay.release(bale.id, { x: short.x, z: short.z });
+      this.hayView.putDown(hay.get(bale.id));
+      c.voice.say('hayMiss', { urgent: true, force: true });
+      return done();
+    }
+    this.hayView.throwOnto(bale, this.trailer.body, this.haySlots[slotIndex], this.hayParams.throwSeconds, hand, () => {
+      hay.load(bale.id, slotIndex);
+      c.voice.say('hayThrown', { urgent: true, chance: 0.5 });
+    });
+    done();
+  }
+
+  hayBalePrompt() {
+    const m = this.trailer.model.position;
+    const p = this.player.position;
+    if (Math.hypot(p.x - m.x, p.z - m.z) > this.hayParams.playerReach) return { text: 'Hay bale   ·   bring the trailer closer to heave it on' };
+    if (this.hay.freeSlot(this.hayCapacity) < 0) return { text: 'The trailer is full' };
+    return 'Heave the bale onto the trailer';
+  }
+
+  /** E at a bale beside the trailer: you throw it up yourself. */
+  heaveBale() {
+    const hay = this.hay;
+    const p = this.player.position;
+    const m = this.trailer.model.position;
+    if (Math.hypot(p.x - m.x, p.z - m.z) > this.hayParams.playerReach) return;
+    const slotIndex = hay.freeSlot(this.hayCapacity);
+    const bale = hay.nearest(p.x, p.z, 4);
+    if (slotIndex < 0 || !bale) return;
+    hay.claim(bale.id, 'you', slotIndex);
+    const from = new THREE.Vector3(p.x, p.y - 0.4, p.z);
+    this.hayView.throwOnto(bale, this.trailer.body, this.haySlots[slotIndex], this.hayParams.throwSeconds, from, () => hay.load(bale.id, slotIndex));
+  }
+
+  /** The debug panel: the cut hay grows back at once (as it does after regrowDays), the stack stays. */
+  debugHayRegrow() {
+    const hay = this.hay;
+    hay.state.fill(0);
+    hay.cutDay = null;
+    hay.cut = 0;
+    hay.baledCells = 0;
+    this.hayView.refresh();
+  }
+
+  /** The debug panel: the barn's hay stack is taken away. */
+  debugHayEmptyStack() {
+    this.hay.stacked = 0;
+    this.hayStack();
+  }
+
+  /** The debug panel: jump the job to a stage (cut, bale, load, stack, done) with what it needs in place. */
+  debugHayStage(stage) {
+    const hay = this.hay;
+    if (!hay) return;
+    if (!this.jobBoard.has('hay')) this.jobBoard.add('hay', FARM_JOBS.hay);
+    if (!hay.active) hay.start();
+    const order = ['cut', 'bale', 'load', 'stack', 'done'];
+    const at = order.indexOf(stage);
+    hay.state.fill(0);
+    hay.bales.length = 0;
+    this.hayView.reset();
+    hay.cut = hay.made = hay.loaded = hay.delivered = 0;
+    if (at >= 1) {
+      hay.cut = hay.p.cutNeeded;
+      for (let i = 0; i < hay.p.cutNeeded; i++) hay.state[i] = 1;
+      this.hayView.refresh();
+    }
+    if (at >= 2) {
+      for (let i = hay.made; i < hay.p.balesNeeded; i++) this.hayView.addLoose(hay.drop({ x: hay.rect.minX + 6 + i * 3, z: (hay.rect.minZ + hay.rect.maxZ) / 2, heading: 0 }));
+    }
+    if (at >= 3) {
+      for (const b of hay.bales) {
+        hay.load(b.id, hay.freeSlot(this.hayCapacity));
+        this.hayView.seat(b, this.trailer.body, this.haySlots[b.slot]);
+      }
+    }
+    if (at >= 4) {
+      const done = hay.deliver({ minX: -1e9, maxX: 1e9, minZ: -1e9, maxZ: 1e9 }, { x: 0, z: 0, speed: 0 });
+      if (done) this.hayView.remove(done.ids);
+      this.hayStack();
+    }
+    this.hayStageChanged(hay.phase);
   }
 
   // Starting the generator --------------------------------------------------
@@ -10483,6 +10744,7 @@ export class Game {
     if (this.utvUnit) this.guard.run('updateUtv', () => this.updateUtv(dt, ridden, input));
     for (const l of Object.values(this.landys)) if (l.unit) this.guard.run('updateLandRover', () => this.updateLandRover(dt, ridden, input, l));
     this.guard.run('updateTipTrailer', () => this.updateTipTrailer(dt, ridden, input));
+    if (this.hay) this.guard.run('updateHay', () => this.updateHay(dt));
     if (this.tractorUnit) this.guard.run('updateBaleSpike', () => this.updateBaleSpike(dt, ridden, input));
     if (GO_KINDS.some((k) => this.goVehicle(k)) && auto) this.guard.run('updateTractorGo', () => this.updateTractorGo(dt, ridden));
     this.guard.run('updateRadios', () => this.updateRadios(dt));

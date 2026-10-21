@@ -271,6 +271,12 @@ export function buildGirlsTab(d) {
   button(jobs, 'Fill the trailer with muck', () => g.debugFillMuck());
   button(jobs, 'Muck job done now', () => g.debugFinishMuck());
   button(jobs, 'Empty the tub and clear the ground', () => g.debugResetMuck());
+  if (g.hay) {
+    show(jobs, 'the hay', () => `${g.hay.describe()}; ${g.hayLoading.describe()}`);
+    for (const stage of ['cut', 'bale', 'load', 'stack', 'done']) button(jobs, `Hay job: jump to the ${stage} stage`, () => g.debugHayStage(stage));
+    button(jobs, 'Hay: let the cut patch grow back', () => g.debugHayRegrow());
+    button(jobs, 'Hay: empty the barn stack', () => g.debugHayEmptyStack());
+  }
   slider(jobs, 'Bale spike arms (0 down, 1 up)', () => g.baleRig.lift.lift, (v) => (g.baleRig.lift.lift = v), 0, 1, 0.01);
   show(jobs, 'On the spike', () => g.baleRig.held?.id ?? 'nothing');
   button(jobs, 'Put the bale on the spike down', () => g.baleRig.putDown());
